@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Temp">
+      <UniqueIdentifier>{a1137185-83e5-4f59-a5d5-16387fa1df81}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Components">
+      <UniqueIdentifier>{7bc8f9de-3f9e-488b-9b43-3304b382acad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Structures">
+      <UniqueIdentifier>{342dfdde-e4fa-49ce-b3cc-7b705fa49d26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Base">
+      <UniqueIdentifier>{5ebe8275-0c90-40e3-9faa-2b94c8186d4d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="Temp\config.h">
+      <Filter>Temp</Filter>
+    </ClInclude>
+    <ClInclude Include="Temp\fp.h">
+      <Filter>Temp</Filter>
+    </ClInclude>
+    <ClInclude Include="Temp\intro.h">
+      <Filter>Temp</Filter>
+    </ClInclude>
+    <ClInclude Include="Device.h" />
+    <ClInclude Include="Components\Texture2D.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\Component.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NuajAPI\Math\Math.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NuajAPI\API\Types.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Structures\PixelFormats.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\Texture3D.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\Primitive.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Structures\VertexFormats.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\Material.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Components\ConstantBuffer.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Device.cpp" />
+    <ClCompile Include="Components\Texture2D.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\Component.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NuajAPI\Math\Math.cpp">
+      <Filter>Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\Texture3D.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\Primitive.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\Material.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Structures\VertexFormats.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\ConstantBuffer.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Structures\PixelFormats.cpp" />
+  </ItemGroup>
+</Project>

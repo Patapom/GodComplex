@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Utility">
+      <UniqueIdentifier>{68db7d10-c91a-4bcc-a3c5-ce181262c974}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intro">
+      <UniqueIdentifier>{7a0d4010-3453-4695-a62d-28dc46bef3a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RendererD3D11">
+      <UniqueIdentifier>{9721decf-4fb2-417b-9c8f-ae752d0bf0e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RendererD3D11\Components">
+      <UniqueIdentifier>{387979a7-ddf8-4f82-82cd-6eb14b027d81}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RendererD3D11\Structures">
+      <UniqueIdentifier>{2b646260-af2c-4547-98f4-fceabeac274c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NuajAPI">
+      <UniqueIdentifier>{1398a42e-41d9-4cdf-bb56-375f3de1a21b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NuajAPI\API">
+      <UniqueIdentifier>{cfa1cedf-076e-4875-9d76-111d9a2344a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NuajAPI\Math">
+      <UniqueIdentifier>{e11cc4c8-1f24-4c34-ba37-7fb4c6003159}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Utility\Events.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\ASMHelpers.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Intro.h">
+      <Filter>Intro</Filter>
+    </ClInclude>
+    <ClInclude Include="GodComplex.h" />
+    <ClInclude Include="RendererD3D11\Device.h">
+      <Filter>RendererD3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Renderer.h">
+      <Filter>RendererD3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\targetver.h">
+      <Filter>RendererD3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Component.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\ConstantBuffer.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Material.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Primitive.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Texture2D.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Texture3D.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Structures\PixelFormats.h">
+      <Filter>RendererD3D11\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Structures\VertexFormats.h">
+      <Filter>RendererD3D11\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="NuajAPI\API\Types.h">
+      <Filter>NuajAPI\API</Filter>
+    </ClInclude>
+    <ClInclude Include="NuajAPI\Math\Math.h">
+      <Filter>NuajAPI\Math</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GodComplex.cpp" />
+    <ClCompile Include="Intro\Intro.cpp">
+      <Filter>Intro</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Device.cpp">
+      <Filter>RendererD3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Component.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\ConstantBuffer.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Material.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Primitive.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Texture2D.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Texture3D.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Structures\PixelFormats.cpp">
+      <Filter>RendererD3D11\Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Structures\VertexFormats.cpp">
+      <Filter>RendererD3D11\Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="NuajAPI\Math\Math.cpp">
+      <Filter>NuajAPI\Math</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
