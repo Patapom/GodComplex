@@ -14,5 +14,5 @@ void	IntroExit()
 
 bool	IntroDo()
 {
-	return true;
+	return false;
 }

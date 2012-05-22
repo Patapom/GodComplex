@@ -104,7 +104,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>d3d11.lib;dxguid.lib;d3dcompiler.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dsound.lib;d3d11.lib;dxguid.lib;d3dcompiler.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
@@ -134,10 +134,14 @@
     <ClInclude Include="RendererD3D11\targetver.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="Sound\libv2.h" />
+    <ClInclude Include="Sound\v2mplayer.h" />
     <ClInclude Include="Utility\Events.h" />
     <ClInclude Include="Utility\ASMHelpers.h" />
     <ClInclude Include="Utility\Memory.h" />
     <ClInclude Include="Utility\Random.h" />
+    <ClInclude Include="Utility\Resources.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -152,8 +156,21 @@
     <ClCompile Include="RendererD3D11\Device.cpp" />
     <ClCompile Include="RendererD3D11\Structures\PixelFormats.cpp" />
     <ClCompile Include="RendererD3D11\Structures\VertexFormats.cpp" />
+    <ClCompile Include="Sound\v2mplayer.cpp" />
     <ClCompile Include="Utility\Memory.cpp" />
     <ClCompile Include="Utility\Random.cpp" />
+    <ClCompile Include="Utility\Resources.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="Sound\libv2.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\pzero_new.v2m">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GodComplex.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

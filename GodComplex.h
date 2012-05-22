@@ -14,7 +14,6 @@
 #pragma pack(8) // VERY important, so WNDCLASS gets the correct padding and we don't crash the system
 #endif
 
-
 #define WIN32_LEAN_AND_MEAN
 #define WIN32_EXTRA_LEAN
 
@@ -23,16 +22,22 @@
 //#include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include "resource.h"
 
 #include "NuajAPI/API/Types.h"
 #include "NuajAPI/Math/Math.h"
-
+#include "Utility/ASMHelpers.h"
 #include "Utility/Events.h"
 #include "Utility/Memory.h"
 #include "Utility/Random.h"
-#include "Utility/ASMHelpers.h"
+#include "Utility/Resources.h"
 
+// DirectX Renderer
 #include "RendererD3D11/Device.h"
+
+// V2 Sound Player
+#include "Sound/v2mplayer.h"
+#include "Sound/libv2.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -59,6 +64,9 @@ static struct WININFO
 // The DirectX device
 static Device*	gs_pDevice;
 
+//////////////////////////////////////////////////////////////////////////
+// The sound player
+static V2MPlayer	gs_Music;
 
 //////////////////////////////////////////////////////////////////////////
 // Progress callback

@@ -1,10 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="Utility">
       <UniqueIdentifier>{68db7d10-c91a-4bcc-a3c5-ce181262c974}</UniqueIdentifier>
     </Filter>
@@ -28,6 +24,13 @@
     </Filter>
     <Filter Include="NuajAPI\Math">
       <UniqueIdentifier>{e11cc4c8-1f24-4c34-ba37-7fb4c6003159}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sound">
+      <UniqueIdentifier>{9d107aef-9380-4f67-86aa-1bbcc0e5831d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -86,6 +89,18 @@
     <ClInclude Include="Utility\Random.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Sound\libv2.h">
+      <Filter>Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="Sound\v2mplayer.h">
+      <Filter>Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\Resources.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -128,5 +143,26 @@
     <ClCompile Include="Utility\Random.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
+    <ClCompile Include="Sound\v2mplayer.cpp">
+      <Filter>Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\Resources.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="Sound\libv2.lib">
+      <Filter>Sound</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\pzero_new.v2m">
+      <Filter>Resources</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GodComplex.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

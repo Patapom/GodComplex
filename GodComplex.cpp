@@ -77,12 +77,6 @@ static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		}
 
 		WindowInfos.Events.Keyboard.Press[conv] = 1;
-
-		if( wParam == VK_ESCAPE )
-		{
-			PostQuitMessage(0);
-			return( 0 );
-		}
 	}
 #endif
 
@@ -91,8 +85,12 @@ static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 void	WindowExit()
 {
-	// Kill the device
-//	gs_pDevice->Exit(); delete gs_pDevice;
+	// Kill the music
+	dsClose();
+	gs_Music.Close();
+
+	// Kill the DirectX device
+	gs_pDevice->Exit(); delete gs_pDevice;
 
 	// Destroy the Windows contexts
 	if ( WindowInfos.hDC != NULL )	ReleaseDC( WindowInfos.hWnd, WindowInfos.hDC );
@@ -168,8 +166,18 @@ bool	WindowInit()
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize DirectX Device
-// 	gs_pDevice = new Device();
-// 	gs_pDevice->Init( RESX, RESY, WindowInfos.hWnd, WindowInfos.bFullscreen, true );
+	gs_pDevice = new Device();
+	gs_pDevice->Init( RESX, RESY, WindowInfos.hWnd, WindowInfos.bFullscreen, true );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Initialize sound player
+	gs_Music.Init();
+
+	U32			TuneSize = 0;
+	const U8*	pTheTune = LoadResourceBinary( IDR_MUSIC, "MUSIC", &TuneSize );
+	gs_Music.Open( pTheTune );
+
+	dsInit( gs_Music.RenderProxy, &gs_Music, WindowInfos.hWnd );
 
 	return true;
 }
@@ -286,8 +294,6 @@ static void	ShowProgress( WININFO* _pInfos, int _Progress )
 // Entry point
 #ifdef _DEBUG
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow )
-//int __stdcall	main( int argc, wchar_t* args[] )
-//int WINAPI	main( int argc, wchar_t* args[] )
 #else
 void WINAPI	EntryPoint()	
 #endif
@@ -310,6 +316,9 @@ void WINAPI	EntryPoint()
 		MessageBox( 0, pMessageError, 0, MB_OK | MB_ICONEXCLAMATION );
 		ExitProcess( -2 );
 	}
+
+	// Start the music
+	gs_Music.Play();
 
 	//////////////////////////////////////////////////////////////////////////
 	// Run the message loop !
@@ -342,6 +351,9 @@ void WINAPI	EntryPoint()
 
 		SwapBuffers( WindowInfos.hDC );
 	}
+
+	// Stop the music
+	gs_Music.Stop();
 
 	IntroExit();
 
