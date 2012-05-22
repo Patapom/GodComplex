@@ -70,9 +70,10 @@ static float ASM_powf( float x, float y )
     return res;
 }
 
-static short opc1 = 0x043f;     // floor
+static U16	opc1 = 0x043f;     // floor
+static U16	opc2 = 0x083f;     // ceil
 
-static int ASM_ifloorf( float x )
+static int ASM_floorf( float x )
 {
     int res;
     short tmp;
@@ -84,6 +85,20 @@ static int ASM_ifloorf( float x )
     _asm fldcw   word  ptr [tmp]
 
     return res;
+}
+
+static int ASM_ceilf( float x )
+{
+	int res;
+	short tmp;
+
+	_asm fstcw   word  ptr [tmp]
+	_asm fld     dword ptr [x]
+	_asm fldcw   word  ptr [opc2]
+	_asm fistp   dword ptr [res]
+	_asm fldcw   word  ptr [tmp]
+
+	return res;
 }
 
 static void ASM_memset( void *dst, int val, int amount )

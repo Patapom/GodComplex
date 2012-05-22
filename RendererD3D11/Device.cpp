@@ -12,10 +12,10 @@ Device::~Device()
 
 void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool _sRGB )
 {
-	DXGI_RATIONAL   RefreshRate;
-	RefreshRate.Numerator = 60;
-	RefreshRate.Denominator = 1;
-
+ 	DXGI_RATIONAL   RefreshRate;
+ 	RefreshRate.Numerator = 60;
+ 	RefreshRate.Denominator = 1;
+ 
 	// Simple output buffer
 	DXGI_MODE_DESC ModeDesc;
 	ModeDesc.Width = _Width;
@@ -41,10 +41,10 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	SwapChainDesc.Windowed = !_Fullscreen;
 	SwapChainDesc.Flags = 0;
 
-	D3D_FEATURE_LEVEL	   pFeatureLevels[] = { D3D_FEATURE_LEVEL_11_0 };
+	D3D_FEATURE_LEVEL	   pFeatureLevels[] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0 };
 	D3D_FEATURE_LEVEL	   ObtainedFeatureLevel;
 
-	Check( D3D11CreateDeviceAndSwapChain( NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
+ 	Check( D3D11CreateDeviceAndSwapChain( NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
 #ifndef _DEBUG
 		D3D11_CREATE_DEVICE_SINGLETHREADED,
 #else
@@ -91,7 +91,6 @@ void	Device::UnRegisterComponent( Component& _Component )
 
 void	Device::Check( HRESULT _Result )
 {
-	if ( _Result != S_OK )
-		throw "SHIT!";
+	ASSERT( _Result == S_OK );
 }
 

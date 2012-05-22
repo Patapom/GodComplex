@@ -80,6 +80,12 @@
     <ClInclude Include="NuajAPI\Math\Math.h">
       <Filter>NuajAPI\Math</Filter>
     </ClInclude>
+    <ClInclude Include="Utility\Memory.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\Random.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -115,6 +121,12 @@
     </ClCompile>
     <ClCompile Include="NuajAPI\Math\Math.cpp">
       <Filter>NuajAPI\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\Memory.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\Random.cpp">
+      <Filter>Utility</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

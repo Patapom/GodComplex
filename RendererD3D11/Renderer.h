@@ -3,9 +3,8 @@
 #ifndef RENDERER_H_INCLUDED
 #define RENDERER_H_INCLUDED
 
-#include "targetver.h"
-
-#define WIN32_LEAN_AND_MEAN			 // Exclude rarely-used stuff from Windows headers
+//#include "targetver.h"
+//#define WIN32_LEAN_AND_MEAN			 // Exclude rarely-used stuff from Windows headers
 
 // #include "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include\d3d11.h"
 // #include "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include\dxgi.h"

@@ -3,8 +3,8 @@
 #include "ConstantBuffer.h"
 
 #include <stdio.h>
-#include "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include\D3Dcompiler.h"
-#include "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include\D3D11Shader.h"
+#include "D3Dcompiler.h"
+#include "D3D11Shader.h"
 
 
 Material::Material( Device& _Device, const VertexFormatDescriptor& _Format, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride ) : Component( _Device ), m_Format( _Format )
@@ -69,8 +69,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 	ID3DBlob*   pErrors;
 
 	Check( D3DPreprocess( _pShaderCode, strlen(_pShaderCode), NULL, _pMacros, this, &pCodeText, &pErrors ) );
-	if ( pErrors != NULL )
-		throw "Shader preprocess error !";
+	ASSERT( pErrors == NULL );	// Shader preprocess error !
 
 	U32 Flags1 = 0;
 #ifdef _DEBUG
@@ -85,13 +84,12 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 	U32 Flags2 = 0;
 
 	Check( D3DCompile( pCodeText->GetBufferPointer(), pCodeText->GetBufferSize(), NULL, _pMacros, this, _pEntryPoint, "fx_3_0", Flags1, Flags2, &pCode, &pErrors ) );
-	if ( pErrors != NULL )
-		throw "Shader compilation error !";
+	ASSERT( pErrors == NULL );	// Shader compilation error !
 
 	return pCode;
 }
 
-#ifndef FORBID_FILE_INCLUDE
+#ifndef FORBID_SHADER_INCLUDE
 
 HRESULT	Material::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, LPCVOID _pParentData, LPCVOID* _ppData, UINT* _pBytes )
 {

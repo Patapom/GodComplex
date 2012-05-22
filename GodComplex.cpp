@@ -1,32 +1,23 @@
-// GodComplex.cpp : Defines the entry point for the console application.
+//////////////////////////////////////////////////////////////////////////
+// Entry Point
+//////////////////////////////////////////////////////////////////////////
 //
 #include "GodComplex.h"
-#include <tchar.h>
+
+// Extern/undefined CRT shit that needs to be defined to avoid linking to actual CRT
+// Useful hints found at http://www.benshoof.org/blog/minicrt/ !
+#ifndef _DEBUG
+extern "C" int _fltused = 0;
+#endif
+extern "C" int __cdecl _purecall(void) { return 0; }
+double __cdecl ceil( double _X )	{ return ASM_ceilf( float(_X) ); }
+
 
 static const char*	pMessageError	= "intro_init()!\n\n"\
 									"  no memory?\n"\
 									"  no music?\n"\
 									"  no shaders?";
 static const char*	pWindowClass	= "god_complex";
-
-
-// The requested pixel format for our window
-// static const PIXELFORMATDESCRIPTOR	WindowPixelFormatDesc =
-// {
-// 	sizeof(PIXELFORMATDESCRIPTOR),
-// 	1,
-// 	PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
-// 	PFD_TYPE_RGBA,
-// 	32,
-// 	0, 0, 0, 0, 0, 0, 0, 0,
-// 	0, 0, 0, 0, 0,
-// 	32,			// zbuffer
-// 	0,			// stencil!
-// 	0,
-// 	PFD_MAIN_PLANE,
-// 	0, 0, 0, 0
-// };
-
 
 static DEVMODE	ScreenSettings =
 {	{0},
@@ -101,7 +92,7 @@ static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 void	WindowExit()
 {
 	// Kill the device
-	gs_pDevice->Exit(); delete gs_pDevice;
+//	gs_pDevice->Exit(); delete gs_pDevice;
 
 	// Destroy the Windows contexts
 	if ( WindowInfos.hDC != NULL )	ReleaseDC( WindowInfos.hWnd, WindowInfos.hDC );
@@ -177,8 +168,8 @@ bool	WindowInit()
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize DirectX Device
-	gs_pDevice = new Device();
-	gs_pDevice->Init( RESX, RESY, WindowInfos.hWnd, WindowInfos.bFullscreen, true );
+// 	gs_pDevice = new Device();
+// 	gs_pDevice->Init( RESX, RESY, WindowInfos.hWnd, WindowInfos.bFullscreen, true );
 
 	return true;
 }
@@ -207,9 +198,9 @@ static void DrawTime( float t )
 
 	if ( !(frame&3) )
 	{
-		m = ASM_ifloorf( t/60.0f );
-		s = ASM_ifloorf( t-60.0f*(float)m );
-		c = ASM_ifloorf( t*100.0f ) % 100;
+		m = ASM_floorf( t / 60.0f );
+		s = ASM_floorf( t - 60.0f * m );
+		c = ASM_floorf( t * 100.0f ) % 100;
 		sprintf( str, "%02d:%02d:%02d  [%d fps]", m, s, c, fps );
 		SetWindowText( WindowInfos.hWnd, str );
 	}
@@ -293,7 +284,13 @@ static void	ShowProgress( WININFO* _pInfos, int _Progress )
 
 //////////////////////////////////////////////////////////////////////////
 // Entry point
-void	EntryPoint()
+#ifdef _DEBUG
+int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow )
+//int __stdcall	main( int argc, wchar_t* args[] )
+//int WINAPI	main( int argc, wchar_t* args[] )
+#else
+void WINAPI	EntryPoint()	
+#endif
 {
 #ifdef ALLOW_WINDOWED
 	WindowInfos.bFullscreen = MessageBox( 0, "Fullscreen?", pWindowClass, MB_YESNO | MB_ICONQUESTION ) == IDYES;

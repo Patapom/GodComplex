@@ -11,7 +11,7 @@
 
 
 #ifdef A64BITS
-#pragma pack(8) // VERY important, so WNDCLASS get's the correct padding and we don't crash the system
+#pragma pack(8) // VERY important, so WNDCLASS gets the correct padding and we don't crash the system
 #endif
 
 
@@ -20,17 +20,19 @@
 
 #include <windows.h>
 #include <mmsystem.h>
-#include <string.h>
+//#include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "NuajAPI/API/Types.h"
 #include "NuajAPI/Math/Math.h"
 
-#define FORBID_FILE_INCLUDE	// We provide our OWN includes for shader files !
-#include "RendererD3D11/Device.h"
-
 #include "Utility/Events.h"
+#include "Utility/Memory.h"
+#include "Utility/Random.h"
 #include "Utility/ASMHelpers.h"
+
+#include "RendererD3D11/Device.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -51,9 +53,6 @@ static struct WININFO
 #endif
 
 } WindowInfos;
-
-
-//extern "C" int _fltused = 0;
 
 
 //////////////////////////////////////////////////////////////////////////

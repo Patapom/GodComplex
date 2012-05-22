@@ -53,7 +53,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>FORBID_SHADER_INCLUDE;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MinimalRebuild>false</MinimalRebuild>
@@ -65,6 +65,7 @@
       <CallingConvention>FastCall</CallingConvention>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -72,7 +73,8 @@
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxguid.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <EntryPointSymbol>EntryPoint</EntryPointSymbol>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -82,7 +84,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>FORBID_SHADER_INCLUDE;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
@@ -102,7 +104,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxguid.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;dxguid.lib;d3dcompiler.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
@@ -110,6 +112,9 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <EntryPointSymbol>EntryPoint</EntryPointSymbol>
     </Link>
+    <PostBuildEvent>
+      <Command>Tools/Compress.cmd "$(TargetDir)$(TargetFileName)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Intro\Intro.h" />
@@ -126,9 +131,13 @@
     <ClInclude Include="RendererD3D11\Renderer.h" />
     <ClInclude Include="RendererD3D11\Structures\PixelFormats.h" />
     <ClInclude Include="RendererD3D11\Structures\VertexFormats.h" />
-    <ClInclude Include="RendererD3D11\targetver.h" />
+    <ClInclude Include="RendererD3D11\targetver.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Utility\Events.h" />
     <ClInclude Include="Utility\ASMHelpers.h" />
+    <ClInclude Include="Utility\Memory.h" />
+    <ClInclude Include="Utility\Random.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -143,6 +152,8 @@
     <ClCompile Include="RendererD3D11\Device.cpp" />
     <ClCompile Include="RendererD3D11\Structures\PixelFormats.cpp" />
     <ClCompile Include="RendererD3D11\Structures\VertexFormats.cpp" />
+    <ClCompile Include="Utility\Memory.cpp" />
+    <ClCompile Include="Utility\Random.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
