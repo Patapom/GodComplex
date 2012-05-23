@@ -12,48 +12,49 @@ Device::~Device()
 
 void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool _sRGB )
 {
- 	DXGI_RATIONAL   RefreshRate;
- 	RefreshRate.Numerator = 60;
- 	RefreshRate.Denominator = 1;
- 
-	// Simple output buffer
-	DXGI_MODE_DESC ModeDesc;
-	ModeDesc.Width = _Width;
-	ModeDesc.Height = _Height;
-	ModeDesc.Scaling = DXGI_MODE_SCALING_STRETCHED;
-	ModeDesc.RefreshRate = RefreshRate;
-	ModeDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-	ModeDesc.Format = _sRGB ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
-
-	// No multisampling
-	DXGI_SAMPLE_DESC	SampleDesc;
-	SampleDesc.Count = 1;
-	SampleDesc.Quality = 0;
-
 	// Create a swap chain with 1 back buffer
 	DXGI_SWAP_CHAIN_DESC	SwapChainDesc;
-	SwapChainDesc.BufferDesc = ModeDesc;
-	SwapChainDesc.SampleDesc = SampleDesc;
-	SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+
+	// Simple output buffer
+	SwapChainDesc.BufferDesc.Width = _Width;
+	SwapChainDesc.BufferDesc.Height = _Height;
+	SwapChainDesc.BufferDesc.Format = _sRGB ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
+//	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_STRETCHED;
+	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
+	SwapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
+	SwapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+	SwapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+	SwapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER;
+//	SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
 	SwapChainDesc.BufferCount = 1;
+
+	// No multisampling
+	SwapChainDesc.SampleDesc.Count = 1;
+	SwapChainDesc.SampleDesc.Quality = 0;
+
 	SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	SwapChainDesc.OutputWindow = _Handle;
 	SwapChainDesc.Windowed = !_Fullscreen;
 	SwapChainDesc.Flags = 0;
 
-	D3D_FEATURE_LEVEL	   pFeatureLevels[] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0 };
-	D3D_FEATURE_LEVEL	   ObtainedFeatureLevel;
+//	D3D_FEATURE_LEVEL	pFeatureLevels[] = { D3D_FEATURE_LEVEL_11_0 };	// Support D3D11 only...
+//	D3D_FEATURE_LEVEL	pFeatureLevels[] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0 };  // We accept anything really !
+	D3D_FEATURE_LEVEL	pFeatureLevels[] = { D3D_FEATURE_LEVEL_10_0 };	// We accept anything really !
+	D3D_FEATURE_LEVEL	ObtainedFeatureLevel;
 
- 	Check( D3D11CreateDeviceAndSwapChain( NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
-#ifndef _DEBUG
-		D3D11_CREATE_DEVICE_SINGLETHREADED,
+ 	Check
+	(
+		D3D11CreateDeviceAndSwapChain( NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
+#ifdef _DEBUG
+			D3D11_CREATE_DEVICE_DEBUG,
 #else
-		D3D11_CREATE_DEVICE_SINGLETHREADED | D3D11_CREATE_DEVICE_DEBUG,
+			0,
 #endif
-		pFeatureLevels, 1,  // Support D3D11 only...
-		D3D11_SDK_VERSION,
-		&SwapChainDesc, &m_pSwapChain,
-		&m_pDevice, &ObtainedFeatureLevel, &m_pDeviceContext ) );
+			pFeatureLevels, 1,
+			D3D11_SDK_VERSION,
+			&SwapChainDesc, &m_pSwapChain,
+			&m_pDevice, &ObtainedFeatureLevel, &m_pDeviceContext )
+	);
 }
 
 void	Device::Exit()
@@ -91,6 +92,8 @@ void	Device::UnRegisterComponent( Component& _Component )
 
 void	Device::Check( HRESULT _Result )
 {
-	ASSERT( _Result == S_OK );
+	if ( _Result != S_OK )
+		PostQuitMessage( _Result );
+//	ASSERT( _Result == S_OK );
 }
 
