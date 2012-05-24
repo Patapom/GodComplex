@@ -129,11 +129,10 @@
     <ClInclude Include="RendererD3D11\Components\Texture3D.h" />
     <ClInclude Include="RendererD3D11\Device.h" />
     <ClInclude Include="RendererD3D11\Renderer.h" />
+    <ClInclude Include="RendererD3D11\Structures\DepthStencilFormats.h" />
+    <ClInclude Include="RendererD3D11\Structures\FormatDescriptor.h" />
     <ClInclude Include="RendererD3D11\Structures\PixelFormats.h" />
     <ClInclude Include="RendererD3D11\Structures\VertexFormats.h" />
-    <ClInclude Include="RendererD3D11\targetver.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="resource.h" />
     <ClInclude Include="Sound\libv2.h" />
     <ClInclude Include="Sound\v2mplayer.h" />
@@ -154,6 +153,7 @@
     <ClCompile Include="RendererD3D11\Components\Texture2D.cpp" />
     <ClCompile Include="RendererD3D11\Components\Texture3D.cpp" />
     <ClCompile Include="RendererD3D11\Device.cpp" />
+    <ClCompile Include="RendererD3D11\Structures\DepthStencilFormats.cpp" />
     <ClCompile Include="RendererD3D11\Structures\PixelFormats.cpp" />
     <ClCompile Include="RendererD3D11\Structures\VertexFormats.cpp" />
     <ClCompile Include="Sound\v2mplayer.cpp" />
@@ -165,9 +165,12 @@
     <Library Include="Sound\libv2.lib" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="PostFinal.fx" />
     <None Include="Resources\pzero_new.v2m">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="Resources\Shaders\PostFinal.fx" />
+    <None Include="Shaders\PostFinal.fx" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc" />

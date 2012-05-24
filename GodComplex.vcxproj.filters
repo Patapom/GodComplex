@@ -32,6 +32,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Resources\Shaders">
+      <UniqueIdentifier>{3f888d10-b9f0-4ea0-aece-23707df9271e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\Compressed">
+      <UniqueIdentifier>{86af87dc-e57b-4c1f-a261-0322b332bd58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\Includes">
+      <UniqueIdentifier>{3b094a8f-5111-4c23-96db-882790fa8599}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\Events.h">
@@ -48,9 +57,6 @@
       <Filter>RendererD3D11</Filter>
     </ClInclude>
     <ClInclude Include="RendererD3D11\Renderer.h">
-      <Filter>RendererD3D11</Filter>
-    </ClInclude>
-    <ClInclude Include="RendererD3D11\targetver.h">
       <Filter>RendererD3D11</Filter>
     </ClInclude>
     <ClInclude Include="RendererD3D11\Components\Component.h">
@@ -101,6 +107,12 @@
     <ClInclude Include="Utility\Resources.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="RendererD3D11\Structures\DepthStencilFormats.h">
+      <Filter>RendererD3D11\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Structures\FormatDescriptor.h">
+      <Filter>RendererD3D11\Structures</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -149,6 +161,9 @@
     <ClCompile Include="Utility\Resources.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
+    <ClCompile Include="RendererD3D11\Structures\DepthStencilFormats.cpp">
+      <Filter>RendererD3D11\Structures</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib">
@@ -159,6 +174,11 @@
     <None Include="Resources\pzero_new.v2m">
       <Filter>Resources</Filter>
     </None>
+    <None Include="Resources\Shaders\PostFinal.fx">
+      <Filter>Resources\Shaders</Filter>
+    </None>
+    <None Include="PostFinal.fx" />
+    <None Include="Shaders\PostFinal.fx" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

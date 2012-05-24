@@ -6,15 +6,18 @@
 
 #include <math.h>
 
-#define PI	  3.1415926535897932384626433832795f
-#define TWOPI   6.283185307179586476925286766559f
-#define HALFPI  1.5707963267948966192313216916398f
-#define INVPI   0.31830988618379067153776752674503f
+#define PI					3.1415926535897932384626433832795f
+#define TWOPI				6.283185307179586476925286766559f
+#define HALFPI				1.5707963267948966192313216916398f
+#define INVPI				0.31830988618379067153776752674503f
 #define RAD2DEG( a )		(57.295779513082320876798154814105f * a)
 #define DEG2RAD( a )		(0.01745329251994329576923690768489f * a)
-#define MIN( a, b )		 ((a) < (b) ? (a) : (b))
-#define MAX( a, b )		 ((a) > (b) ? (a) : (b))
+#define MIN( a, b )			((a) < (b) ? (a) : (b))
+#define MAX( a, b )			((a) > (b) ? (a) : (b))
 #define CLAMP( s, a, b )	((s) < (a) ? (a) : ((s) > (b) ? (b) : (s)))
+#define BYTE2FLOAT( b )		(b / 255.0f)
+
+static U8	FLOAT2BYTE( float f )	{ return U8( CLAMP( 255.0f * f, 0.0f, 255.0f ) ); }
 
 // Float2 used for point & vector operations
 class   NjFloat2

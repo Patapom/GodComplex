@@ -9,11 +9,11 @@ class Primitive : public Component
 private:	// FIELDS
 
 	const VertexFormatDescriptor&   m_Format;
-	D3D11_PRIMITIVE_TOPOLOGY	m_Topology;
+	D3D11_PRIMITIVE_TOPOLOGY		m_Topology;
 
-	ID3D11Buffer*   m_pVB;
-	ID3D11Buffer*   m_pIB;
-	int			 m_FacesCount;
+	ID3D11Buffer*					m_pVB;
+	ID3D11Buffer*					m_pIB;
+	int								m_FacesCount;
 
 
 public:	 // METHODS

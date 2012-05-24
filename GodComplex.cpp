@@ -38,47 +38,47 @@ static DEVMODE	ScreenSettings =
 
 static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
-// 	// Ignore screen savers
-// 	if ( uMsg == WM_SYSCOMMAND && (wParam == SC_SCREENSAVE || wParam == SC_MONITORPOWER) )
-// 		return 0;
-// 
-// 	if ( uMsg == WM_CLOSE || (uMsg == WM_KEYDOWN && wParam == VK_ESCAPE) )
-// 	{	// Quit on close or escape key
-// 		PostQuitMessage(0);
-// 		return 0 ;
-// 	}
-// 
-// 	// Handle standard keys
-// #ifdef _DEBUG
-// 	if ( uMsg == WM_CHAR )
-// 	{
-// 		int conv = 0;
-// 		switch( wParam )
-// 		{
-// 			case VK_LEFT:		conv = KEY_LEFT;		break;
-// 			case VK_RIGHT:		conv = KEY_RIGHT;		break;
-// 			case VK_UP:			conv = KEY_UP;			break;
-// 			case VK_PRIOR:		conv = KEY_PGUP;		break;
-// 			case VK_NEXT:		conv = KEY_PGDOWN;		break;
-// 			case VK_DOWN:		conv = KEY_DOWN;		break;
-// 			case VK_SPACE:		conv = KEY_SPACE;		break;
-// 			case VK_RSHIFT:		conv = KEY_RSHIFT;		break;
-// 			case VK_RCONTROL:	conv = KEY_RCONTROL;	break;
-// 			case VK_LSHIFT:		conv = KEY_LSHIFT;		break;
-// 			case VK_LCONTROL:	conv = KEY_LCONTROL;	break;
-// 		}
-// 		
-// 		for( int i=KEY_A; i <= KEY_Z; i++ )
-// 		{
-// 			if( wParam==(WPARAM)('A'+i-KEY_A) )
-// 				conv = i;
-// 			if( wParam==(WPARAM)('a'+i-KEY_A) )
-// 				conv = i;
-// 		}
-// 
-// 		WindowInfos.Events.Keyboard.Press[conv] = 1;
-// 	}
-// #endif
+	// Ignore screen savers
+	if ( uMsg == WM_SYSCOMMAND && (wParam == SC_SCREENSAVE || wParam == SC_MONITORPOWER) )
+		return 0;
+
+	if ( uMsg == WM_CLOSE || (uMsg == WM_KEYDOWN && wParam == VK_ESCAPE) )
+	{	// Quit on close or escape key
+		PostQuitMessage(0);
+		return 0 ;
+	}
+
+	// Handle standard keys
+#ifdef _DEBUG
+	if ( uMsg == WM_CHAR )
+	{
+		int conv = 0;
+		switch( wParam )
+		{
+			case VK_LEFT:		conv = KEY_LEFT;		break;
+			case VK_RIGHT:		conv = KEY_RIGHT;		break;
+			case VK_UP:			conv = KEY_UP;			break;
+			case VK_PRIOR:		conv = KEY_PGUP;		break;
+			case VK_NEXT:		conv = KEY_PGDOWN;		break;
+			case VK_DOWN:		conv = KEY_DOWN;		break;
+			case VK_SPACE:		conv = KEY_SPACE;		break;
+			case VK_RSHIFT:		conv = KEY_RSHIFT;		break;
+			case VK_RCONTROL:	conv = KEY_RCONTROL;	break;
+			case VK_LSHIFT:		conv = KEY_LSHIFT;		break;
+			case VK_LCONTROL:	conv = KEY_LCONTROL;	break;
+		}
+		
+		for( int i=KEY_A; i <= KEY_Z; i++ )
+		{
+			if( wParam==(WPARAM)('A'+i-KEY_A) )
+				conv = i;
+			if( wParam==(WPARAM)('a'+i-KEY_A) )
+				conv = i;
+		}
+
+		WindowInfos.Events.Keyboard.Press[conv] = 1;
+	}
+#endif
 
 	return DefWindowProc( hWnd, uMsg, wParam, lParam );
 }
@@ -90,6 +90,7 @@ void	WindowExit()
 	gs_Music.Close();
 
 	// Kill the DirectX device
+	ASSERT( gs_Device.ComponentsCount() == 0 );	// This means you forgot to clean up some components ! It's okay since the device is going to clean them up for you, but it's better yet if you know what your doing and take care of your own garbage...
 	gs_Device.Exit();
 
 	// Destroy the Windows contexts
@@ -167,6 +168,8 @@ bool	WindowInit()
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize DirectX Device
 	gs_Device.Init( RESX, RESY, WindowInfos.hWnd, WindowInfos.bFullscreen, true );
+	if ( !gs_Device.IsInitialized() )
+		return false;	// Oopsy daisy shit fuck hell !
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize sound player
@@ -292,7 +295,7 @@ static void	ShowProgress( WININFO* _pInfos, int _Progress )
 //////////////////////////////////////////////////////////////////////////
 // Entry point
 #ifdef _DEBUG
-int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow )
+int WINAPI	WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow )
 #else
 void WINAPI	EntryPoint()	
 #endif
@@ -351,6 +354,8 @@ void WINAPI	EntryPoint()
 
 		SwapBuffers( WindowInfos.hDC );
 	}
+	//
+	//////////////////////////////////////////////////////////////////////////
 
 	// Stop the music
 	gs_Music.Stop();

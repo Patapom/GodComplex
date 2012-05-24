@@ -1,7 +1,19 @@
 #include "Texture2D.h"
 
-Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const PixelFormatDescriptor& _Format, int _MipLevelsCount, const void* _ppContent[] ) : Component( _Device )
-	, m_Format( _Format )
+Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const PixelFormatDescriptor& _Format ) : Component( _Device ), m_Format( _Format )
+{
+	D3D11_TEXTURE2D_DESC	Desc;
+	_Texture.GetDesc( &Desc );
+
+	m_Width = Desc.Width;
+	m_Height = Desc.Height;
+	m_ArraySize = Desc.ArraySize;
+	m_MipLevelsCount = Desc.MipLevels;
+
+	m_pTexture = &_Texture;
+}
+
+Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const PixelFormatDescriptor& _Format, int _MipLevelsCount, const void* _ppContent[] ) : Component( _Device ), m_Format( _Format )
 {
 	ASSERT( _Width <= MAX_TEXTURE_SIZE );
 	ASSERT( _Height <= MAX_TEXTURE_SIZE );
@@ -44,6 +56,32 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 		Check( m_Device.DXDevice()->CreateTexture2D( &Desc, NULL, &m_pTexture ) );
 }
 
+Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const DepthStencilFormatDescriptor& _Format ) : Component( _Device ), m_Format( _Format ), m_pCachedDepthStencilView( NULL )
+{
+	ASSERT( _Width <= MAX_TEXTURE_SIZE );
+	ASSERT( _Height <= MAX_TEXTURE_SIZE );
+
+	m_Width = _Width;
+	m_Height = _Height;
+	m_ArraySize = 1;
+	m_MipLevelsCount = 1;
+
+	D3D11_TEXTURE2D_DESC	Desc;
+	Desc.Width = _Width;
+	Desc.Height = _Height;
+	Desc.ArraySize = 1;
+	Desc.MipLevels = 1;
+	Desc.Format = _Format.DirectXFormat();
+	Desc.SampleDesc.Count = 1;
+	Desc.SampleDesc.Quality = 0;
+	Desc.Usage = D3D11_USAGE_DEFAULT;
+	Desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
+	Desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG( 0 );
+
+	Check( m_Device.DXDevice()->CreateTexture2D( &Desc, NULL, &m_pTexture ) );
+}
+
 Texture2D::~Texture2D()
 {
 	ASSERT( m_pTexture != NULL );
@@ -52,7 +90,7 @@ Texture2D::~Texture2D()
 	m_pTexture = NULL;
 }
 
-ID3D11ShaderResourceView*	Texture2D::GetShaderView( int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize )
+ID3D11ShaderResourceView*	Texture2D::GetShaderView( int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize ) const
 {
 	if ( _ArraySize == 0 )
 		_ArraySize = m_ArraySize - _ArrayStart;
@@ -73,7 +111,7 @@ ID3D11ShaderResourceView*	Texture2D::GetShaderView( int _MipLevelStart, int _Mip
 	return pView;
 }
 
-ID3D11RenderTargetView*		Texture2D::GetTargetView( int _MipLevelIndex, int _ArrayStart, int _ArraySize )
+ID3D11RenderTargetView*		Texture2D::GetTargetView( int _MipLevelIndex, int _ArrayStart, int _ArraySize ) const
 {
 	if ( _ArraySize == 0 )
 		_ArraySize = m_ArraySize - _ArrayStart;
@@ -89,6 +127,21 @@ ID3D11RenderTargetView*		Texture2D::GetTargetView( int _MipLevelIndex, int _Arra
 	Check( m_Device.DXDevice()->CreateRenderTargetView( m_pTexture, &Desc, &pView ) );
 
 	return pView;
+}
+
+ID3D11DepthStencilView*		Texture2D::GetDepthStencilView() const
+{
+	if ( m_pCachedDepthStencilView == NULL )
+	{
+		D3D11_DEPTH_STENCIL_VIEW_DESC	Desc;
+		Desc.Format = m_Format.DirectXFormat();
+		Desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+		Desc.Texture2D.MipSlice = 0;
+
+		Check( m_Device.DXDevice()->CreateDepthStencilView( m_pTexture, &Desc, &m_pCachedDepthStencilView ) );
+	}
+
+	return m_pCachedDepthStencilView;
 }
 
 int	 Texture2D::ValidateMipLevels( int _Width, int _Height, int _MipLevelsCount )

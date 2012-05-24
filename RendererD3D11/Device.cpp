@@ -1,5 +1,6 @@
 #include "Device.h"
 #include "Components/Component.h"
+#include "Components/Texture2D.h"
 
 Device::Device() : m_pDevice( NULL ), m_pDeviceContext( NULL ), m_pComponentsStack( NULL )
 {
@@ -8,6 +9,19 @@ Device::Device() : m_pDevice( NULL ), m_pDeviceContext( NULL ), m_pComponentsSta
 Device::~Device()
 {
 	Exit();
+}
+
+int		Device::ComponentsCount() const
+{
+	int			Count = -2;	// Start without counting for our internal back buffer & depth stencil components
+	Component*	pCurrent = m_pComponentsStack;
+	while ( pCurrent != NULL )
+	{
+		Count++;
+		pCurrent = pCurrent->m_pNext;
+	}
+
+	return Count;
 }
 
 void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool _sRGB )
@@ -38,8 +52,7 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	SwapChainDesc.Flags = 0;
 
 //	D3D_FEATURE_LEVEL	pFeatureLevels[] = { D3D_FEATURE_LEVEL_11_0 };	// Support D3D11 only...
-//	D3D_FEATURE_LEVEL	pFeatureLevels[] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0 };  // We accept anything really !
-	D3D_FEATURE_LEVEL	pFeatureLevels[] = { D3D_FEATURE_LEVEL_10_0 };	// We accept anything really !
+	D3D_FEATURE_LEVEL	pFeatureLevels[] = { D3D_FEATURE_LEVEL_10_0 };	// Support D3D10 only...
 	D3D_FEATURE_LEVEL	ObtainedFeatureLevel;
 
  	Check
@@ -55,6 +68,12 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 			&SwapChainDesc, &m_pSwapChain,
 			&m_pDevice, &ObtainedFeatureLevel, &m_pDeviceContext )
 	);
+
+	// Store the default render target
+	m_pSwapChain->GetBuffer( 0, IID_ID3D11Texture2D, (void**) &m_pDefaultRenderTarget );
+
+	// Create the default depth stencil buffer
+	m_pDefaultDepthStencil = new Texture2D( *this, _Width, _Height, DepthStencilFormatD32F::DESCRIPTOR );
 }
 
 void	Device::Exit()
@@ -67,6 +86,14 @@ void	Device::Exit()
 		delete m_pComponentsStack;  // DIE !!
 
 	m_pDevice->Release(); m_pDevice = NULL; m_pDeviceContext = NULL;
+}
+
+void	Device::SetRenderTarget( const Texture2D& _Target, Texture2D* _pDepthStencil )
+{
+	ID3D11RenderTargetView*	pTargetView = _Target.GetTargetView( 0, 0, 0 );
+	ID3D11DepthStencilView*	pDepthStencilView = _pDepthStencil != NULL ? _pDepthStencil->GetDepthStencilView() : NULL;
+
+	m_pDeviceContext->OMSetRenderTargets( 1, &pTargetView, pDepthStencilView );
 }
 
 void	Device::RegisterComponent( Component& _Component )
