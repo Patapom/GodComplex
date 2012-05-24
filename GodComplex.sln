@@ -3,10 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GodComplex", "GodComplex.vcxproj", "{11EF6AA0-6311-479A-8E60-356233322356}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererD3D11", "RendererD3D11\RendererD3D11.vcxproj", "{220E78AE-9FA7-4177-8B31-7C6D54302A11}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "framework64k", "iQFramework64K\framework64k.vcxproj", "{91B645FD-82AF-44D4-9D0A-CD74BC0CAC3C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -21,17 +17,6 @@ Global
 		{11EF6AA0-6311-479A-8E60-356233322356}.Release|Win32.ActiveCfg = Release|Win32
 		{11EF6AA0-6311-479A-8E60-356233322356}.Release|Win32.Build.0 = Release|Win32
 		{11EF6AA0-6311-479A-8E60-356233322356}.Release|x64.ActiveCfg = Release|Win32
-		{220E78AE-9FA7-4177-8B31-7C6D54302A11}.Debug|Win32.ActiveCfg = Debug|Win32
-		{220E78AE-9FA7-4177-8B31-7C6D54302A11}.Debug|x64.ActiveCfg = Debug|Win32
-		{220E78AE-9FA7-4177-8B31-7C6D54302A11}.Release|Win32.ActiveCfg = Release|Win32
-		{220E78AE-9FA7-4177-8B31-7C6D54302A11}.Release|x64.ActiveCfg = Release|Win32
-		{91B645FD-82AF-44D4-9D0A-CD74BC0CAC3C}.Debug|Win32.ActiveCfg = Debug|Win32
-		{91B645FD-82AF-44D4-9D0A-CD74BC0CAC3C}.Debug|x64.ActiveCfg = Debug|x64
-		{91B645FD-82AF-44D4-9D0A-CD74BC0CAC3C}.Debug|x64.Build.0 = Debug|x64
-		{91B645FD-82AF-44D4-9D0A-CD74BC0CAC3C}.Release|Win32.ActiveCfg = Release|Win32
-		{91B645FD-82AF-44D4-9D0A-CD74BC0CAC3C}.Release|Win32.Build.0 = Release|Win32
-		{91B645FD-82AF-44D4-9D0A-CD74BC0CAC3C}.Release|x64.ActiveCfg = Release|x64
-		{91B645FD-82AF-44D4-9D0A-CD74BC0CAC3C}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

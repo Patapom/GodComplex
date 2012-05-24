@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////
 // Main include for the framework
 //
-// NOTE: Many routines were "borrowed" (rather violently stolen) from iQ's framework
+// NOTE: Many routines were "borrowed" (rather violently stolen) from iQ's 64K framework
 //
 #pragma once
 
@@ -9,9 +9,10 @@
 #define RESY	720
 #define ALLOW_WINDOWED
 
+#define MUSIC			// Enable music
 
 #ifdef A64BITS
-#pragma pack(8) // VERY important, so WNDCLASS gets the correct padding and we don't crash the system
+#pragma pack(8)			// VERY important, so WNDCLASS gets the correct padding and we don't crash the system
 #endif
 
 #define WIN32_LEAN_AND_MEAN

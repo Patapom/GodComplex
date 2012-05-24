@@ -61,11 +61,12 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <FloatingPointModel>Fast</FloatingPointModel>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <BrowseInformation>true</BrowseInformation>
       <CallingConvention>FastCall</CallingConvention>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
+      <StringPooling>true</StringPooling>
+      <StructMemberAlignment>1Byte</StructMemberAlignment>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -134,8 +135,12 @@
     <ClInclude Include="RendererD3D11\Structures\PixelFormats.h" />
     <ClInclude Include="RendererD3D11\Structures\VertexFormats.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="Sound\libv2.h" />
-    <ClInclude Include="Sound\v2mplayer.h" />
+    <ClInclude Include="Sound\libv2.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Sound\v2mplayer.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Utility\Events.h" />
     <ClInclude Include="Utility\ASMHelpers.h" />
     <ClInclude Include="Utility\Memory.h" />
@@ -156,16 +161,19 @@
     <ClCompile Include="RendererD3D11\Structures\DepthStencilFormats.cpp" />
     <ClCompile Include="RendererD3D11\Structures\PixelFormats.cpp" />
     <ClCompile Include="RendererD3D11\Structures\VertexFormats.cpp" />
-    <ClCompile Include="Sound\v2mplayer.cpp" />
+    <ClCompile Include="Sound\v2mplayer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Utility\Memory.cpp" />
     <ClCompile Include="Utility\Random.cpp" />
     <ClCompile Include="Utility\Resources.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="Sound\libv2.lib" />
+    <Library Include="Sound\libv2.lib">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </Library>
   </ItemGroup>
   <ItemGroup>
-    <None Include="PostFinal.fx" />
     <None Include="Resources\pzero_new.v2m">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -173,7 +181,6 @@
     <None Include="Resources\Shaders\PostFinal.fx">
       <FileType>Document</FileType>
     </None>
-    <None Include="Shaders\PostFinal.fx" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc" />

@@ -6,7 +6,9 @@
 
 
 Device		gs_Device;
+#ifdef MUSIC
 V2MPlayer	gs_Music;
+#endif
 WININFO		WindowInfos;
 
 
@@ -92,8 +94,10 @@ static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 void	WindowExit()
 {
 	// Kill the music
+#ifdef MUSIC
 	dsClose();
 	gs_Music.Close();
+#endif
 
 	// Kill the DirectX device
 	ASSERT( gs_Device.ComponentsCount() == 0, "Some DirectX components remain on exit !" );	// This means you forgot to clean up some components ! It's okay since the device is going to clean them up for you, but it's better yet if you know what your doing and take care of your own garbage...
@@ -179,6 +183,7 @@ bool	WindowInit()
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize sound player
+#ifdef MUSIC
 	gs_Music.Init();
 
 	U32			TuneSize = 0;
@@ -186,10 +191,12 @@ bool	WindowInit()
 	gs_Music.Open( pTheTune );
 
 	dsInit( gs_Music.RenderProxy, &gs_Music, WindowInfos.hWnd );
+#endif
 
 	return true;
 }
 
+#ifdef _DEBUG
 static void DrawTime( float t )
 {
 	static int		frame=0;
@@ -222,7 +229,6 @@ static void DrawTime( float t )
 	}
 }
 
-#ifdef _DEBUG
 void	HandleEvents()
 {
 	WindowInfos.Events.Keyboard.State[KEY_LEFT]     = GetAsyncKeyState( VK_LEFT );
@@ -327,7 +333,9 @@ void WINAPI	EntryPoint()
 	}
 
 	// Start the music
-//	gs_Music.Play();
+#ifdef MUSIC
+	gs_Music.Play();
+#endif
 
 	//////////////////////////////////////////////////////////////////////////
 	// Run the message loop !
@@ -364,7 +372,9 @@ void WINAPI	EntryPoint()
 	//////////////////////////////////////////////////////////////////////////
 
 	// Stop the music
+#ifdef MUSIC
 	gs_Music.Stop();
+#endif
 
 	IntroExit();
 
