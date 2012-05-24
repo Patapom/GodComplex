@@ -1,11 +1,16 @@
-#pragma once
-#include "../Renderer.h"
+#include "TestInclude.fx"
 
-// The base format descriptor interface
-class IFormatDescriptor
+struct	VS_IN
 {
-public:
-
-	virtual DXGI_FORMAT	DirectXFormat() const = 0;
-	virtual int			Size() const = 0;
+	float4	Position	: SV_POSITION;
 };
+
+VS_IN	VS( VS_IN _In )
+{
+	return _In;
+}
+
+float4	PS( VS_IN _In ) : SV_TARGET0
+{
+	return OUTPUT_COLOR;
+}

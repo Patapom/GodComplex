@@ -21,9 +21,9 @@ protected:  // CONSTANTS
 
 public:	 // PROPERTIES
 
-	virtual int			 Size() const = 0;
+	virtual int			Size() const = 0;
 	virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const = 0;
-	virtual int			 GetInputElementsCount() const = 0;
+	virtual int			GetInputElementsCount() const = 0;
 };
 
 struct VertexFormatPt4 : public VertexFormat
@@ -32,14 +32,13 @@ public:
 
 	static class Desc : public VertexFormatDescriptor
 	{
-		D3D11_INPUT_ELEMENT_DESC	m_pInputElements[1];
+		static D3D11_INPUT_ELEMENT_DESC	ms_pInputElements[1];
 
 	public:
 
-		Desc();
-		virtual int			 Size() const							{ return sizeof(VertexFormatPt4); }
-		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return (D3D11_INPUT_ELEMENT_DESC*) m_pInputElements; }
-		virtual int			 GetInputElementsCount() const			{ return 1; }
+		virtual int			Size() const							{ return sizeof(VertexFormatPt4); }
+		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return (D3D11_INPUT_ELEMENT_DESC*) ms_pInputElements; }
+		virtual int			GetInputElementsCount() const			{ return 1; }
 	} DESCRIPTOR;
 
 public:
@@ -54,14 +53,13 @@ public:
 
 	static class Desc : public VertexFormatDescriptor
 	{
-		D3D11_INPUT_ELEMENT_DESC	m_pInputElements[1];
+		static D3D11_INPUT_ELEMENT_DESC	ms_pInputElements[1];
 
 	public:
 
-		Desc();
-		virtual int			 Size() const							{ return sizeof(VertexFormatP3); }
-		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return (D3D11_INPUT_ELEMENT_DESC*) m_pInputElements; }
-		virtual int			 GetInputElementsCount() const			{ return 1; }
+		virtual int			Size() const							{ return sizeof(VertexFormatP3); }
+		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return (D3D11_INPUT_ELEMENT_DESC*) ms_pInputElements; }
+		virtual int			GetInputElementsCount() const			{ return 1; }
 	} DESCRIPTOR;
 
 public:

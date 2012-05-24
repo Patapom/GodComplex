@@ -174,11 +174,14 @@
     <None Include="Resources\pzero_new.v2m">
       <Filter>Resources</Filter>
     </None>
+    <None Include="PostFinal.fx" />
+    <None Include="Shaders\PostFinal.fx" />
     <None Include="Resources\Shaders\PostFinal.fx">
       <Filter>Resources\Shaders</Filter>
     </None>
-    <None Include="PostFinal.fx" />
-    <None Include="Shaders\PostFinal.fx" />
+    <None Include="Resources\Shaders\Includes\TestInclude.fx">
+      <Filter>Resources\Shaders\Includes</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

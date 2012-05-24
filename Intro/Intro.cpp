@@ -4,10 +4,13 @@
 static Texture2D*	gs_pRTHDR = NULL;
 
 // Primitives
-static Primitive*	gs_pPrimQuad = NULL;	// Screen quad for post-processes
+static Primitive*	gs_pPrimQuad = NULL;		// Screen quad for post-processes
+
+// Render states
+//static RenderSt
 
 // Materials
-static Material*	gs_MatPostFinal = NULL;	// Final post-process rendering to the screen
+static Material*	gs_pMatPostFinal = NULL;	// Final post-process rendering to the screen
 
 bool	IntroInit( IntroProgressDelegate& _Delegate )
 {
@@ -31,7 +34,7 @@ bool	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
 	{
-		gs_MatPostFinal = CreateMaterial( IDR_SHADER_POST_FINAL, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" );
+		gs_pMatPostFinal = CreateMaterial( IDR_SHADER_POST_FINAL, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" );
 	}
 
 	return true;
@@ -39,6 +42,8 @@ bool	IntroInit( IntroProgressDelegate& _Delegate )
 
 void	IntroExit()
 {
+	delete gs_pMatPostFinal;
+
 	delete gs_pPrimQuad;
 
 	delete gs_pRTHDR;
@@ -46,14 +51,16 @@ void	IntroExit()
 
 bool	IntroDo()
 {
-	{	// Render some shit to the HDR buffer
-		gs_Device.SetRenderTarget( *gs_pRTHDR );
-
-	}
+// 	{	// Render some shit to the HDR buffer
+// 		gs_Device.SetRenderTarget( *gs_pRTHDR );
+// 
+// 	}
 
 	{	// Render to screen
 //		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), &gs_Device.DefaultDepthStencil() );
 		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget() );
+		gs_pMatPostFinal->Use();
+		gs_pPrimQuad->Render( *gs_pMatPostFinal );
 	}
 
 	return false;

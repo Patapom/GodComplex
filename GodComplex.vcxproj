@@ -169,7 +169,10 @@
     <None Include="Resources\pzero_new.v2m">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="Resources\Shaders\PostFinal.fx" />
+    <None Include="Resources\Shaders\Includes\TestInclude.fx" />
+    <None Include="Resources\Shaders\PostFinal.fx">
+      <FileType>Document</FileType>
+    </None>
     <None Include="Shaders\PostFinal.fx" />
   </ItemGroup>
   <ItemGroup>

@@ -38,7 +38,7 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	SwapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
 	SwapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
 	SwapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-	SwapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER;
+	SwapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER | DXGI_USAGE_RENDER_TARGET_OUTPUT;
 //	SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
 	SwapChainDesc.BufferCount = 1;
 
@@ -70,7 +70,10 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	);
 
 	// Store the default render target
-	m_pSwapChain->GetBuffer( 0, IID_ID3D11Texture2D, (void**) &m_pDefaultRenderTarget );
+	ID3D11Texture2D*	pDefaultRenderSurface;
+	m_pSwapChain->GetBuffer( 0, IID_ID3D11Texture2D, (void**) &pDefaultRenderSurface );
+	ASSERT( pDefaultRenderSurface != NULL, "Failed to retrieve default render surface !" );
+	m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface, PixelFormatRGBA8::DESCRIPTOR );
 
 	// Create the default depth stencil buffer
 	m_pDefaultDepthStencil = new Texture2D( *this, _Width, _Height, DepthStencilFormatD32F::DESCRIPTOR );

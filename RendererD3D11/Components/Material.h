@@ -63,6 +63,6 @@ public:	// ID3DInclude Members
 
 private:
 
-	ID3DBlob*   CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint );
+	ID3DBlob*   CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget );
 };
 

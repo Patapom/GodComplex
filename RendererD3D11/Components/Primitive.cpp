@@ -3,6 +3,8 @@
 Primitive::Primitive( Device& _Device, int _VerticesCount, void* _pVertices, int _IndicesCount, U16* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const VertexFormatDescriptor& _Format ) : Component( _Device )
 	, m_Format( _Format )
 	, m_Topology( _Topology )
+	, m_pVB( NULL )
+	, m_pIB( NULL )
 {
 	{   // Create the vertex buffer
 		D3D11_BUFFER_DESC   Desc;
@@ -50,26 +52,13 @@ Primitive::Primitive( Device& _Device, int _VerticesCount, void* _pVertices, int
 		break;
 
 	default:
-		ASSERT( FALSE );	// Not supported !
+		ASSERT( FALSE, "Unsupported primitive type !" );
 	}
-
-//	 {   // Create the vertex layout
-//		 D3D11_INPUT_ELEMENT_DESC	Desc;
-//	 Desc.SemanticName;
-//	 Desc.SemanticIndex;
-//	 Desc.Format;
-//	 Desc.InputSlot;
-//	 Desc.AlignedByteOffset;
-//	 Desc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-//	 Desc.InstanceDataStepRate = ;
-// 
-//		 m_Device.DXDevice()->CreateInputLayout( &Desc, 1, );
-//	 }
 }
 
 Primitive::~Primitive()
 {
-	ASSERT( m_pVB != NULL );
+	ASSERT( m_pVB != NULL, "Invalid vertex buffer to destroy !" );
 
 	m_pVB->Release(); m_pVB = NULL;
 	if ( m_pIB != NULL ) m_pIB->Release(); m_pIB = NULL;
@@ -81,6 +70,8 @@ void	Primitive::Render( Material& _Material )
 	m_Device.DXContext()->IASetVertexBuffers( 0, 1, &m_pVB, &StrideOffset, &StrideOffset );
 	if ( m_pIB != NULL )
 		m_Device.DXContext()->IASetIndexBuffer( m_pIB, DXGI_FORMAT_R16_UINT, 0 );
+	else
+		m_Device.DXContext()->IASetIndexBuffer( NULL, DXGI_FORMAT_R16_UINT, 0 );
 
 	m_Device.DXContext()->IASetInputLayout( _Material.GetVertexLayout() );
 	m_Device.DXContext()->IASetPrimitiveTopology( m_Topology );

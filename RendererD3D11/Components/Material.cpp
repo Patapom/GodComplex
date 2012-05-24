@@ -12,9 +12,10 @@ Material::Material( Device& _Device, const VertexFormatDescriptor& _Format, cons
 	m_pIncludeOverride = _pIncludeOverride;
 
 	// Compile the compulsory vertex shader
-	ASSERT( _pEntryPointVS != NULL );
-	ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointVS );
-	m_Device.DXDevice()->CreateVertexShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pVS );
+	ASSERT( _pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
+	ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointVS, "vs_4_0" );
+	Check( m_Device.DXDevice()->CreateVertexShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pVS ) );
+	ASSERT( m_pVS != NULL, "Failed to create vertex shader !" );
 	m_VSConstants.Enumerate( *pShader );
 
 	// Create the vertex layout
@@ -23,8 +24,9 @@ Material::Material( Device& _Device, const VertexFormatDescriptor& _Format, cons
 	// Compile the optional geometry shader
 	if ( _pEntryPointGS != NULL )
 	{
-		ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointGS );
-		m_Device.DXDevice()->CreateGeometryShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pGS );
+		ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointGS, "gs_4_0" );
+		Check( m_Device.DXDevice()->CreateGeometryShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pGS ) );
+		ASSERT( m_pGS != NULL, "Failed to create geometry shader !" );
 		m_GSConstants.Enumerate( *pShader );
 	}
 	else
@@ -33,8 +35,9 @@ Material::Material( Device& _Device, const VertexFormatDescriptor& _Format, cons
 	// Compile the optional pixel shader
 	if ( _pEntryPointPS != NULL )
 	{
-		ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointPS );
-		m_Device.DXDevice()->CreatePixelShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pPS );
+		ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointPS, "ps_4_0" );
+		Check( m_Device.DXDevice()->CreatePixelShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pPS ) );
+		ASSERT( m_pPS != NULL, "Failed to create pixel shader !" );
 		m_PSConstants.Enumerate( *pShader );
 	}
 	else
@@ -43,7 +46,7 @@ Material::Material( Device& _Device, const VertexFormatDescriptor& _Format, cons
 
 Material::~Material()
 {
-	ASSERT( m_pVertexLayout != NULL );
+	ASSERT( m_pVertexLayout != NULL, "Invalid Vertex Layout to destroy !" );
 
 	m_pVertexLayout->Release(); m_pVertexLayout = NULL;
 	m_pVS->Release(); m_pVS = NULL;
@@ -62,14 +65,14 @@ void	Material::Use()
 		m_Device.DXContext()->PSSetShader( m_pPS, NULL, 0 );
 }
 
-ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint )
+ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget )
 {
 	ID3DBlob*   pCodeText;
 	ID3DBlob*   pCode;
 	ID3DBlob*   pErrors;
 
 	Check( D3DPreprocess( _pShaderCode, strlen(_pShaderCode), NULL, _pMacros, this, &pCodeText, &pErrors ) );
-	ASSERT( pErrors == NULL );	// Shader preprocess error !
+	ASSERT( pErrors == NULL, "Shader preprocess error !" );
 
 	U32 Flags1 = 0;
 #ifdef _DEBUG
@@ -83,8 +86,9 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 
 	U32 Flags2 = 0;
 
-	Check( D3DCompile( pCodeText->GetBufferPointer(), pCodeText->GetBufferSize(), NULL, _pMacros, this, _pEntryPoint, "fx_3_0", Flags1, Flags2, &pCode, &pErrors ) );
-	ASSERT( pErrors == NULL );	// Shader compilation error !
+	Check( D3DCompile( pCodeText->GetBufferPointer(), pCodeText->GetBufferSize(), NULL, _pMacros, this, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors ) );
+	ASSERT( pErrors == NULL, "Shader compilation error !" );
+	ASSERT( pCode != NULL, "Shader compilation failed => No error provided but didn't output any shader either !" );
 
 	return pCode;
 }
@@ -119,6 +123,7 @@ HRESULT	Material::Close( THIS_ LPCVOID pData )
 
 HRESULT	Material::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, LPCVOID _pParentData, LPCVOID* _ppData, UINT* _pBytes )
 {
+	ASSERT( m_pIncludeOverride != NULL, "You MUST provide an ID3DINCLUDE override when compiling with the FORBID_SHADER_INCLUDE option !" );
 	return m_pIncludeOverride->Open( _IncludeType, _pFileName, _pParentData, _ppData, _pBytes );
 }
 HRESULT	Material::Close( THIS_ LPCVOID _pData )

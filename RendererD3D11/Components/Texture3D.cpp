@@ -3,9 +3,9 @@
 Texture3D::Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const PixelFormatDescriptor& _Format, int _MipLevelsCount, const void* _ppContent[] ) : Component( _Device )
 	, m_Format( _Format )
 {
-	ASSERT( _Width <= MAX_TEXTURE_SIZE );
-	ASSERT( _Height <= MAX_TEXTURE_SIZE );
-	ASSERT( _Depth <= MAX_TEXTURE_SIZE );
+	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
+	ASSERT( _Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
+	ASSERT( _Depth <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
 
 	m_Width = _Width;
 	m_Height = _Height;
@@ -46,7 +46,7 @@ Texture3D::Texture3D( Device& _Device, int _Width, int _Height, int _Depth, cons
 
 Texture3D::~Texture3D()
 {
-	ASSERT( m_pTexture != NULL );
+	ASSERT( m_pTexture != NULL, "Invalid texture to destroy !" );
 
 	m_pTexture->Release();
 	m_pTexture = NULL;
@@ -97,6 +97,6 @@ int	 Texture3D::ValidateMipLevels( int _Width, int _Height, int _Depth, int _Mip
 	else
 		_MipLevelsCount = MIN( _MipLevelsCount, MaxMipLevelsCount );
 
-	ASSERT( _MipLevelsCount <= MAX_TEXTURE_POT );
+	ASSERT( _MipLevelsCount <= MAX_TEXTURE_POT, "Texture mip level out of range !" );
 	return _MipLevelsCount;
 }

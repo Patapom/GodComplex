@@ -4,6 +4,12 @@
 //
 #include "GodComplex.h"
 
+
+Device		gs_Device;
+V2MPlayer	gs_Music;
+WININFO		WindowInfos;
+
+
 // Extern/undefined CRT shit that needs to be defined to avoid linking to actual CRT
 // Useful hints found at http://www.benshoof.org/blog/minicrt/ !
 #ifndef _DEBUG
@@ -90,7 +96,7 @@ void	WindowExit()
 	gs_Music.Close();
 
 	// Kill the DirectX device
-	ASSERT( gs_Device.ComponentsCount() == 0 );	// This means you forgot to clean up some components ! It's okay since the device is going to clean them up for you, but it's better yet if you know what your doing and take care of your own garbage...
+	ASSERT( gs_Device.ComponentsCount() == 0, "Some DirectX components remain on exit !" );	// This means you forgot to clean up some components ! It's okay since the device is going to clean them up for you, but it's better yet if you know what your doing and take care of your own garbage...
 	gs_Device.Exit();
 
 	// Destroy the Windows contexts
@@ -321,7 +327,7 @@ void WINAPI	EntryPoint()
 	}
 
 	// Start the music
-	gs_Music.Play();
+//	gs_Music.Play();
 
 	//////////////////////////////////////////////////////////////////////////
 	// Run the message loop !

@@ -13,9 +13,9 @@
 
 #ifdef _DEBUG
 #include <assert.h>
-#define ASSERT( condition ) assert( condition )
+#define ASSERT( condition, text ) assert( condition || !text )
 #else
-#define ASSERT( condition )
+#define ASSERT( condition, text )
 #endif
 
 #define NUAJ_LIB

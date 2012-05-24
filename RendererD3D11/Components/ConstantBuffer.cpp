@@ -32,7 +32,7 @@ ConstantBuffer::ConstantBuffer( Device& _Device, int _Size, void* _pData ) : Com
 
 ConstantBuffer::~ConstantBuffer()
 {
-	ASSERT( m_pBuffer != NULL );
+	ASSERT( m_pBuffer != NULL, "Invalid constant buffer to destroy !" );
 	m_pBuffer->Release(); m_pBuffer = NULL;
 }
 

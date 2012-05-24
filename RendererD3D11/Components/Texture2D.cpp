@@ -15,8 +15,8 @@ Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const PixelFor
 
 Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const PixelFormatDescriptor& _Format, int _MipLevelsCount, const void* _ppContent[] ) : Component( _Device ), m_Format( _Format )
 {
-	ASSERT( _Width <= MAX_TEXTURE_SIZE );
-	ASSERT( _Height <= MAX_TEXTURE_SIZE );
+	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
+	ASSERT( _Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
 
 	m_Width = _Width;
 	m_Height = _Height;
@@ -33,7 +33,7 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 	Desc.SampleDesc.Count = 1;
 	Desc.SampleDesc.Quality = 0;
 	Desc.Usage = _ppContent != NULL ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
-	Desc.BindFlags = _ppContent != NULL ? D3D11_BIND_SHADER_RESOURCE : D3D11_BIND_RENDER_TARGET;
+	Desc.BindFlags = _ppContent != NULL ? D3D11_BIND_SHADER_RESOURCE : (D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
 	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
 	Desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG( 0 );
 
@@ -58,8 +58,8 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 
 Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const DepthStencilFormatDescriptor& _Format ) : Component( _Device ), m_Format( _Format ), m_pCachedDepthStencilView( NULL )
 {
-	ASSERT( _Width <= MAX_TEXTURE_SIZE );
-	ASSERT( _Height <= MAX_TEXTURE_SIZE );
+	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
+	ASSERT( _Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
 
 	m_Width = _Width;
 	m_Height = _Height;
@@ -84,7 +84,7 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const DepthStenc
 
 Texture2D::~Texture2D()
 {
-	ASSERT( m_pTexture != NULL );
+	ASSERT( m_pTexture != NULL, "Invalid texture to destroy !" );
 
 	m_pTexture->Release();
 	m_pTexture = NULL;
@@ -154,6 +154,6 @@ int	 Texture2D::ValidateMipLevels( int _Width, int _Height, int _MipLevelsCount 
 	else
 		_MipLevelsCount = MIN( _MipLevelsCount, MaxMipLevelsCount );
 
-	ASSERT( _MipLevelsCount <= MAX_TEXTURE_POT );
+	ASSERT( _MipLevelsCount <= MAX_TEXTURE_POT, "Texture mip level out of range !" );
 	return _MipLevelsCount;
 }

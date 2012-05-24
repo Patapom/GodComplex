@@ -3,7 +3,7 @@
 const U8*	LoadResourceBinary( U16 _ResourceID, const char* _pResourceType, U32* _pResourceSize )
 {
 	HRSRC	hResource = FindResourceA( NULL, MAKEINTRESOURCE( _ResourceID ), _pResourceType );
-	ASSERT( hResource != NULL );	// Couldn't find resource!
+	ASSERT( hResource != NULL, "Failed to find resource ID !" );	// Couldn't find resource!
 
 	// Optional: retrieve the size of the resource
 	if ( _pResourceSize != NULL )
@@ -12,7 +12,7 @@ const U8*	LoadResourceBinary( U16 _ResourceID, const char* _pResourceType, U32* 
 	// Load and lock the resource
 	HGLOBAL	hBinary = LoadResource( NULL, hResource );
 	LPVOID	pData = LockResource( hBinary );
-	ASSERT( pData != NULL );	// Couldn't lock resource!
+	ASSERT( pData != NULL, "Failed to lock resource for reading !" );	// Couldn't lock resource!
 
 	return (U8*) pData;
 }
@@ -31,22 +31,25 @@ char*	LoadResourceShader( U16 _ResourceID, U32& _CodeSize )
 	return pShaderSource;
 }
 
-static class	IncludesManager : public ID3DInclude
+//////////////////////////////////////////////////////////////////////////
+// Add new include files to this static array below
+namespace
 {
-private:
-
 	struct IncludePair
 	{
 		const char* pPath;			// The path to include/resolve
 		U16			ResourceID;		// The equivalent resource ID encoding the shader file
 	};
 
-	IncludePair	m_pIncludeFiles[1];
-// 	=
-// 		{
-// 			{ "", IDR_SHADER_POST_FINAL },
-// 		};
+	static IncludePair	m_pIncludeFiles[] =
+	{
+		{ "TestInclude.fx", IDR_SHADER_INCLUDE_TEST },
+	};
+}
 
+
+static class	IncludesManager : public ID3DInclude
+{
 public:
 
 	STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
@@ -61,7 +64,7 @@ public:
 				return S_OK;
 			}
 
-		ASSERT( false );	// No such file !
+		ASSERT( false, "Shader include file not found !" );
 		return S_FALSE;
 	}
 
@@ -77,12 +80,12 @@ Material*	CreateMaterial( U16 _ShaderResourceID, const VertexFormatDescriptor& _
 {
 	U32		CodeSize = 0;
 	char*	pShaderCode = LoadResourceShader( _ShaderResourceID, CodeSize );
-	ASSERT( pShaderCode != NULL );
+	ASSERT( pShaderCode != NULL, "Failed to load shader resource !" );
 
 	Material*	pResult = new Material( gs_Device, _Format, pShaderCode, _pMacros, _pEntryPointVS, _pEntryPointGS, _pEntryPointPS, &gs_IncludesManager );
-	ASSERT( pResult != NULL );
+	ASSERT( pResult != NULL, "Failed to create material !" );
 
-	delete pShaderCode;
+	delete pShaderCode;	// We musn't forget to delete this temporary buffer !
 
 	return pResult;
 }

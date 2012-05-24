@@ -48,7 +48,7 @@
 //////////////////////////////////////////////////////////////////////////
 // Main info about the system
 //
-static struct WININFO
+struct WININFO
 {
 	//---------------
 	HINSTANCE	hInstance;
@@ -62,25 +62,25 @@ static struct WININFO
 	MSYS_EVENTINFO	Events;
 #endif
 
-} WindowInfos;
-
+};
+extern WININFO	WindowInfos;
 
 //////////////////////////////////////////////////////////////////////////
 // The DirectX device
-static Device		gs_Device;
+extern Device		gs_Device;
 
 //////////////////////////////////////////////////////////////////////////
 // The sound player
-static V2MPlayer	gs_Music;
+extern V2MPlayer	gs_Music;
 
 //////////////////////////////////////////////////////////////////////////
 // Progress callback
 //
-typedef struct
+struct IntroProgressDelegate
 {
     void*	pInfos;
     void (*func)( WININFO* _pInfos, int _Progress );
-} IntroProgressDelegate;
+};
 
 
 //////////////////////////////////////////////////////////////////////////
