@@ -5,6 +5,8 @@
 #include "GodComplex.h"
 
 
+// u2 : ok test de commit avec GitHub !
+
 Device		gs_Device;
 #ifdef MUSIC
 V2MPlayer	gs_Music;
