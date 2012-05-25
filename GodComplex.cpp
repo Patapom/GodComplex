@@ -3,12 +3,14 @@
 //////////////////////////////////////////////////////////////////////////
 //
 #include "GodComplex.h"
-
+ 
 Device		gs_Device;
+
 #ifdef MUSIC
 V2MPlayer	gs_Music;
 #endif
-WININFO		WindowInfos;
+
+WININFO		gs_WindowInfos;
 
 
 // Extern/undefined CRT shit that needs to be defined to avoid linking to actual CRT
@@ -16,16 +18,16 @@ WININFO		WindowInfos;
 #ifndef _DEBUG
 extern "C" int _fltused = 0;
 #endif
-extern "C" int __cdecl _purecall(void) { return 0; }
-double __cdecl ceil( double _X )	{ return ASM_ceilf( float(_X) ); }
-
-
+extern "C" int __cdecl	_purecall(void)		{ return 0; }
+double __cdecl			ceil( double _X )	{ return ASM_ceilf( float(_X) ); }
+ 
+ 
 static const char*	pMessageError	= "intro_init()!\n\n"\
 									"  no memory?\n"\
 									"  no music?\n"\
 									"  no shaders?";
 static const char*	pWindowClass	= "god_complex";
-
+ 
 static DEVMODE	ScreenSettings =
 {	{0},
 #if _MSC_VER < 1400
@@ -83,7 +85,7 @@ static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				conv = i;
 		}
 
-		WindowInfos.Events.Keyboard.Press[conv] = 1;
+		gs_WindowInfos.Events.Keyboard.Press[conv] = 1;
 	}
 #endif
 
@@ -103,12 +105,12 @@ void	WindowExit()
 	gs_Device.Exit();
 
 	// Destroy the Windows contexts
-	if ( WindowInfos.hDC != NULL )	ReleaseDC( WindowInfos.hWnd, WindowInfos.hDC );
-	if ( WindowInfos.hWnd != NULL )	DestroyWindow( WindowInfos.hWnd );
+	if ( gs_WindowInfos.hDC != NULL )	ReleaseDC( gs_WindowInfos.hWnd, gs_WindowInfos.hDC );
+	if ( gs_WindowInfos.hWnd != NULL )	DestroyWindow( gs_WindowInfos.hWnd );
 
-	UnregisterClass( pWindowClass, WindowInfos.hInstance );
+	UnregisterClass( pWindowClass, gs_WindowInfos.hInstance );
 
-	if ( WindowInfos.bFullscreen )
+	if ( gs_WindowInfos.bFullscreen )
 	{
 		ChangeDisplaySettings( 0, 0 );
 		ShowCursor( 1 ); 
@@ -117,7 +119,21 @@ void	WindowExit()
 
 bool	WindowInit()
 {
-	WindowInfos.hInstance = GetModuleHandle( 0 );
+	gs_WindowInfos.hInstance = GetModuleHandle( 0 );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Initialize rounding mode once since we disabled fucking _ftol2 link error by adding a deprecated compile flag named /QIfist
+	// (always following the advice from http://www.benshoof.org/blog/minicrt/)
+	static U16	CW;
+    __asm
+	{
+		fstcw	CW							// store fpu control word  
+		mov		dx, word ptr [CW]  
+		or		dx, 0x0C00                  // rounding: truncate (default)
+		mov		CW, dx 
+		fldcw	CW							// load modfied control word  
+    }  
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Register the new window class
@@ -125,7 +141,7 @@ bool	WindowInit()
 	ASM_memset( &wc, 0, sizeof(WNDCLASSA) );
 	wc.style		 = CS_OWNDC;
 	wc.lpfnWndProc   = WndProc;
-	wc.hInstance	 = WindowInfos.hInstance;
+	wc.hInstance	 = gs_WindowInfos.hInstance;
 	wc.lpszClassName = pWindowClass;
 
 	if( !RegisterClass( (WNDCLASSA*) &wc ) )
@@ -134,7 +150,7 @@ bool	WindowInit()
 	//////////////////////////////////////////////////////////////////////////
 	// Create the window
 	U32	dwExStyle, dwStyle;
-	if ( WindowInfos.bFullscreen )
+	if ( gs_WindowInfos.bFullscreen )
 	{
 		if ( ChangeDisplaySettings( &ScreenSettings, CDS_FULLSCREEN ) != DISP_CHANGE_SUCCESSFUL )
 			return false;
@@ -157,26 +173,26 @@ bool	WindowInit()
 
 #ifdef ALLOW_WINDOWED
 	AdjustWindowRect( &WindowRect, dwStyle, 0 );
-	WindowInfos.hWnd = CreateWindowEx( dwExStyle, wc.lpszClassName, wc.lpszClassName, dwStyle,
+	gs_WindowInfos.hWnd = CreateWindowEx( dwExStyle, wc.lpszClassName, wc.lpszClassName, dwStyle,
 							   (GetSystemMetrics(SM_CXSCREEN)-WindowRect.right+WindowRect.left)>>1,
 							   (GetSystemMetrics(SM_CYSCREEN)-WindowRect.bottom+WindowRect.top)>>1,
-							   WindowRect.right-WindowRect.left, WindowRect.bottom-WindowRect.top, 0, 0, WindowInfos.hInstance, 0 );
+							   WindowRect.right-WindowRect.left, WindowRect.bottom-WindowRect.top, 0, 0, gs_WindowInfos.hInstance, 0 );
 #else
-	WindowInfos.hWnd = CreateWindowEx( dwExStyle, wc.lpszClassName, wc.lpszClassName, dwStyle, 0, 0, 
-								 WindowRect.right-WindowRect.left, WindowRect.bottom-WindowRect.top, 0, 0, WindowInfos.hInstance, 0 );
+	gs_WindowInfos.hWnd = CreateWindowEx( dwExStyle, wc.lpszClassName, wc.lpszClassName, dwStyle, 0, 0, 
+								 WindowRect.right-WindowRect.left, WindowRect.bottom-WindowRect.top, 0, 0, gs_WindowInfos.hInstance, 0 );
 #endif
-	if( WindowInfos.hWnd == NULL )
+	if( gs_WindowInfos.hWnd == NULL )
 		return false;	// Failed OldTime create the window !
 
-	if( (WindowInfos.hDC = GetDC( WindowInfos.hWnd )) == NULL )
+	if( (gs_WindowInfos.hDC = GetDC( gs_WindowInfos.hWnd )) == NULL )
 		return false;	// Failed OldTime retrieve a valid device context for GDI calls
 	
-	SetForegroundWindow( WindowInfos.hWnd );
-	SetFocus( WindowInfos.hWnd );
+	SetForegroundWindow( gs_WindowInfos.hWnd );
+	SetFocus( gs_WindowInfos.hWnd );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize DirectX Device
-	gs_Device.Init( RESX, RESY, WindowInfos.hWnd, WindowInfos.bFullscreen, true );
+	gs_Device.Init( RESX, RESY, gs_WindowInfos.hWnd, gs_WindowInfos.bFullscreen, true );
 	if ( !gs_Device.IsInitialized() )
 		return false;	// Oopsy daisy shit fuck hell !
 
@@ -189,7 +205,7 @@ bool	WindowInit()
 	const U8*	pTheTune = LoadResourceBinary( IDR_MUSIC, "MUSIC", &TuneSize );
 	gs_Music.Open( pTheTune );
 
-	dsInit( gs_Music.RenderProxy, &gs_Music, WindowInfos.hWnd );
+	dsInit( gs_Music.RenderProxy, &gs_Music, gs_WindowInfos.hWnd );
 #endif
 
 	return true;
@@ -207,7 +223,7 @@ void	DrawTime( float t )
 	if ( t < 0.0f )
 		return;
 
-	if ( WindowInfos.bFullscreen )
+	if ( gs_WindowInfos.bFullscreen )
 		return;
 
 	frame++;
@@ -224,58 +240,58 @@ void	DrawTime( float t )
 		s = ASM_floorf( t - 60.0f * m );
 		c = ASM_floorf( t * 100.0f ) % 100;
 		sprintf( str, "%02d:%02d:%02d  [%d fps]", m, s, c, fps );
-		SetWindowText( WindowInfos.hWnd, str );
+		SetWindowText( gs_WindowInfos.hWnd, str );
 	}
 }
 
 void	HandleEvents()
 {
-	WindowInfos.Events.Keyboard.State[KEY_LEFT]     = GetAsyncKeyState( VK_LEFT );
-	WindowInfos.Events.Keyboard.State[KEY_RIGHT]    = GetAsyncKeyState( VK_RIGHT );
-	WindowInfos.Events.Keyboard.State[KEY_UP]       = GetAsyncKeyState( VK_UP );
-	WindowInfos.Events.Keyboard.State[KEY_PGUP]     = GetAsyncKeyState( VK_PRIOR );
-	WindowInfos.Events.Keyboard.State[KEY_PGDOWN]   = GetAsyncKeyState( VK_NEXT );
-	WindowInfos.Events.Keyboard.State[KEY_DOWN]     = GetAsyncKeyState( VK_DOWN );
-	WindowInfos.Events.Keyboard.State[KEY_SPACE]    = GetAsyncKeyState( VK_SPACE );
-	WindowInfos.Events.Keyboard.State[KEY_RSHIFT]   = GetAsyncKeyState( VK_RSHIFT );
-	WindowInfos.Events.Keyboard.State[KEY_RCONTROL] = GetAsyncKeyState( VK_RCONTROL );
-	WindowInfos.Events.Keyboard.State[KEY_LSHIFT]   = GetAsyncKeyState( VK_LSHIFT );
-	WindowInfos.Events.Keyboard.State[KEY_LCONTROL] = GetAsyncKeyState( VK_LCONTROL );
-	WindowInfos.Events.Keyboard.State[KEY_1]        = GetAsyncKeyState( '1' );
-	WindowInfos.Events.Keyboard.State[KEY_2]        = GetAsyncKeyState( '2' );
-	WindowInfos.Events.Keyboard.State[KEY_3]        = GetAsyncKeyState( '3' );
-	WindowInfos.Events.Keyboard.State[KEY_4]        = GetAsyncKeyState( '4' );
-	WindowInfos.Events.Keyboard.State[KEY_5]        = GetAsyncKeyState( '5' );
-	WindowInfos.Events.Keyboard.State[KEY_6]        = GetAsyncKeyState( '6' );
-	WindowInfos.Events.Keyboard.State[KEY_7]        = GetAsyncKeyState( '7' );
-	WindowInfos.Events.Keyboard.State[KEY_8]        = GetAsyncKeyState( '8' );
-	WindowInfos.Events.Keyboard.State[KEY_9]        = GetAsyncKeyState( '9' );
-	WindowInfos.Events.Keyboard.State[KEY_0]        = GetAsyncKeyState( '0' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_LEFT]     = GetAsyncKeyState( VK_LEFT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_RIGHT]    = GetAsyncKeyState( VK_RIGHT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_UP]       = GetAsyncKeyState( VK_UP );
+	gs_WindowInfos.Events.Keyboard.State[KEY_PGUP]     = GetAsyncKeyState( VK_PRIOR );
+	gs_WindowInfos.Events.Keyboard.State[KEY_PGDOWN]   = GetAsyncKeyState( VK_NEXT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_DOWN]     = GetAsyncKeyState( VK_DOWN );
+	gs_WindowInfos.Events.Keyboard.State[KEY_SPACE]    = GetAsyncKeyState( VK_SPACE );
+	gs_WindowInfos.Events.Keyboard.State[KEY_RSHIFT]   = GetAsyncKeyState( VK_RSHIFT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_RCONTROL] = GetAsyncKeyState( VK_RCONTROL );
+	gs_WindowInfos.Events.Keyboard.State[KEY_LSHIFT]   = GetAsyncKeyState( VK_LSHIFT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_LCONTROL] = GetAsyncKeyState( VK_LCONTROL );
+	gs_WindowInfos.Events.Keyboard.State[KEY_1]        = GetAsyncKeyState( '1' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_2]        = GetAsyncKeyState( '2' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_3]        = GetAsyncKeyState( '3' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_4]        = GetAsyncKeyState( '4' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_5]        = GetAsyncKeyState( '5' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_6]        = GetAsyncKeyState( '6' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_7]        = GetAsyncKeyState( '7' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_8]        = GetAsyncKeyState( '8' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_9]        = GetAsyncKeyState( '9' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_0]        = GetAsyncKeyState( '0' );
 	for( int i=KEY_A; i<=KEY_Z; i++ )
-		WindowInfos.Events.Keyboard.State[i] = GetAsyncKeyState( 'A'+i-KEY_A );
+		gs_WindowInfos.Events.Keyboard.State[i] = GetAsyncKeyState( 'A'+i-KEY_A );
 
 	// Handle mouse events
 	POINT	p;
 	GetCursorPos( &p );
 
-	WindowInfos.Events.Mouse.ox = WindowInfos.Events.Mouse.x;
-	WindowInfos.Events.Mouse.oy = WindowInfos.Events.Mouse.y;
-	WindowInfos.Events.Mouse.x  = p.x;
-	WindowInfos.Events.Mouse.y  = p.y;
-	WindowInfos.Events.Mouse.dx = WindowInfos.Events.Mouse.x - WindowInfos.Events.Mouse.ox;
-	WindowInfos.Events.Mouse.dy = WindowInfos.Events.Mouse.y - WindowInfos.Events.Mouse.oy;
+	gs_WindowInfos.Events.Mouse.ox = gs_WindowInfos.Events.Mouse.x;
+	gs_WindowInfos.Events.Mouse.oy = gs_WindowInfos.Events.Mouse.y;
+	gs_WindowInfos.Events.Mouse.x  = p.x;
+	gs_WindowInfos.Events.Mouse.y  = p.y;
+	gs_WindowInfos.Events.Mouse.dx = gs_WindowInfos.Events.Mouse.x - gs_WindowInfos.Events.Mouse.ox;
+	gs_WindowInfos.Events.Mouse.dy = gs_WindowInfos.Events.Mouse.y - gs_WindowInfos.Events.Mouse.oy;
 
-	WindowInfos.Events.Mouse.obuttons[0] = WindowInfos.Events.Mouse.buttons[0];
-	WindowInfos.Events.Mouse.obuttons[1] = WindowInfos.Events.Mouse.buttons[1];
-	WindowInfos.Events.Mouse.buttons[0] = GetAsyncKeyState(VK_LBUTTON);
-	WindowInfos.Events.Mouse.buttons[1] = GetAsyncKeyState(VK_RBUTTON);
+	gs_WindowInfos.Events.Mouse.obuttons[0] = gs_WindowInfos.Events.Mouse.buttons[0];
+	gs_WindowInfos.Events.Mouse.obuttons[1] = gs_WindowInfos.Events.Mouse.buttons[1];
+	gs_WindowInfos.Events.Mouse.buttons[0] = GetAsyncKeyState(VK_LBUTTON);
+	gs_WindowInfos.Events.Mouse.buttons[1] = GetAsyncKeyState(VK_RBUTTON);
 
-	WindowInfos.Events.Mouse.dbuttons[0] = WindowInfos.Events.Mouse.buttons[0] - WindowInfos.Events.Mouse.obuttons[0];
-	WindowInfos.Events.Mouse.dbuttons[1] = WindowInfos.Events.Mouse.buttons[1] - WindowInfos.Events.Mouse.obuttons[1];
+	gs_WindowInfos.Events.Mouse.dbuttons[0] = gs_WindowInfos.Events.Mouse.buttons[0] - gs_WindowInfos.Events.Mouse.obuttons[0];
+	gs_WindowInfos.Events.Mouse.dbuttons[1] = gs_WindowInfos.Events.Mouse.buttons[1] - gs_WindowInfos.Events.Mouse.obuttons[1];
 }
 #endif
 
-
+ 
 //////////////////////////////////////////////////////////////////////////
 // Progress Bar Display
 //	_Progress = [0..100]
@@ -311,9 +327,10 @@ int WINAPI	WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLi
 void WINAPI	EntryPoint()	
 #endif
 {
+
 #ifdef ALLOW_WINDOWED
-//	WindowInfos.bFullscreen = MessageBox( 0, "Fullscreen?", pWindowClass, MB_YESNO | MB_ICONQUESTION ) == IDYES;
-	WindowInfos.bFullscreen = false;
+//	gs_WindowInfos.bFullscreen = MessageBox( 0, "Fullscreen?", pWindowClass, MB_YESNO | MB_ICONQUESTION ) == IDYES;
+	gs_WindowInfos.bFullscreen = false;
 #endif
 
 	if ( !WindowInit() )
@@ -323,12 +340,13 @@ void WINAPI	EntryPoint()
 		ExitProcess( -1 );
 	}
 
-	IntroProgressDelegate	Progress = { &WindowInfos, ShowProgress };
-	if ( !IntroInit( Progress ) )
+	IntroProgressDelegate	Progress = { &gs_WindowInfos, ShowProgress };
+	int	ErrorCode = 0;
+	if ( (ErrorCode = IntroInit( Progress )) )
 	{
 		WindowExit();
 		MessageBox( 0, pMessageError, 0, MB_OK | MB_ICONEXCLAMATION );
-		ExitProcess( -2 );
+		ExitProcess( ErrorCode );
 	}
 
 	// Start the music
@@ -370,7 +388,7 @@ void WINAPI	EntryPoint()
 
 // This was in iQ's framework, I don't know what it's for. I believe it's useful when using OpenGL but with DirectX it makes everything slow as hell (attempts to load/unload DLLs every frame) !
 // I left it here so everyone knows it must NOT be called...
-//		SwapBuffers( WindowInfos.hDC );
+//		SwapBuffers( gs_WindowInfos.hDC );
 	}
 	//
 	//////////////////////////////////////////////////////////////////////////
@@ -380,7 +398,7 @@ void WINAPI	EntryPoint()
 	gs_Music.Stop();
 #endif
 
-	IntroExit();
+ 	IntroExit();
 
 	WindowExit();
 

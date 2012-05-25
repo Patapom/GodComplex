@@ -14,9 +14,8 @@ static BlendState*			gs_pBS_Disabled = NULL;
 // Materials
 static Material*	gs_pMatPostFinal = NULL;	// Final post-process rendering to the screen
 
-bool	IntroInit( IntroProgressDelegate& _Delegate )
+int	IntroInit( IntroProgressDelegate& _Delegate )
 {
-
 	//////////////////////////////////////////////////////////////////////////
 	// Create render targets
 	gs_pRTHDR = new Texture2D( gs_Device, RESX, RESY, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
@@ -85,21 +84,26 @@ bool	IntroInit( IntroProgressDelegate& _Delegate )
 	// Create materials
 	{
 		gs_pMatPostFinal = CreateMaterial( IDR_SHADER_POST_FINAL, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" );
+		if ( gs_pMatPostFinal->HasErrors() ) return 1001;	// Material error !
 	}
 
-	return true;
+	return 0;
 }
 
 void	IntroExit()
 {
+	// Release materials
  	delete gs_pMatPostFinal;
 
+	// Release states
 	delete gs_pRS_CullNone;
 	delete gs_pDS_Disabled;
 	delete gs_pBS_Disabled;
 
- 	delete gs_pPrimQuad;
+	// Release primitives
+	delete gs_pPrimQuad;
 
+	// Release render targets & textures
 	delete gs_pRTHDR;
 }
 

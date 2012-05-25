@@ -50,8 +50,11 @@ private:	// FIELDS
 	ID3D11PixelShader*		m_pPS;
 	ShaderConstants			m_PSConstants;
 
+	bool					m_bHasErrors;
+
 public:	 // PROPERTIES
 
+	bool				HasErrors() const	{ return m_bHasErrors; }
 	ID3D11InputLayout*  GetVertexLayout()	{ return m_pVertexLayout; }
 
 public:	 // METHODS

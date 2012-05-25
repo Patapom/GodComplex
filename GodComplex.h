@@ -26,9 +26,11 @@
 #include "resource.h"
 
 #include "NuajAPI/API/Types.h"
+#include "NuajAPI/API/ASMHelpers.h"
 #include "NuajAPI/Math/Math.h"
-#include "Utility/ASMHelpers.h"
+#ifdef _DEBUG
 #include "Utility/Events.h"
+#endif
 #include "Utility/Memory.h"
 #include "Utility/Random.h"
 #include "Utility/Resources.h"
@@ -65,7 +67,7 @@ struct WININFO
 #endif
 
 };
-extern WININFO	WindowInfos;
+extern WININFO		gs_WindowInfos;
 
 //////////////////////////////////////////////////////////////////////////
 // The DirectX device
@@ -83,7 +85,6 @@ struct IntroProgressDelegate
     void*	pInfos;
     void (*func)( WININFO* _pInfos, int _Progress );
 };
-
 
 //////////////////////////////////////////////////////////////////////////
 // Main intro functions

@@ -2,56 +2,75 @@
 #include "Material.h"
 #include "ConstantBuffer.h"
 
+#include "../../NuajAPI/API/ASMHelpers.h"
 #include <stdio.h>
+
 #include "D3Dcompiler.h"
 #include "D3D11Shader.h"
 
 
-Material::Material( Device& _Device, const VertexFormatDescriptor& _Format, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride ) : Component( _Device ), m_Format( _Format )
+Material::Material( Device& _Device, const VertexFormatDescriptor& _Format, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride )
+	: Component( _Device )
+	, m_Format( _Format )
+	, m_pVertexLayout( NULL )
+	, m_pVS( NULL )
+	, m_pGS( NULL )
+	, m_pPS( NULL )
 {
 	m_pIncludeOverride = _pIncludeOverride;
+	m_bHasErrors = false;
 
 	// Compile the compulsory vertex shader
 	ASSERT( _pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
 	ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointVS, "vs_4_0" );
-	Check( m_Device.DXDevice().CreateVertexShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pVS ) );
-	ASSERT( m_pVS != NULL, "Failed to create vertex shader !" );
-	m_VSConstants.Enumerate( *pShader );
+	if ( pShader != NULL )
+	{
+		Check( m_Device.DXDevice().CreateVertexShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pVS ) );
+		ASSERT( m_bHasErrors = m_pVS != NULL, "Failed to create vertex shader !" );
+		m_VSConstants.Enumerate( *pShader );
 
-	// Create the vertex layout
-	Check( m_Device.DXDevice().CreateInputLayout( _Format.GetInputElements(), _Format.GetInputElementsCount(), pShader->GetBufferPointer(), pShader->GetBufferSize(), &m_pVertexLayout ) );
+		// Create the associated vertex layout
+		Check( m_Device.DXDevice().CreateInputLayout( _Format.GetInputElements(), _Format.GetInputElementsCount(), pShader->GetBufferPointer(), pShader->GetBufferSize(), &m_pVertexLayout ) );
+		ASSERT( m_bHasErrors |= m_pVertexLayout != NULL, "Failed to create vertex layout !" );
+	}
+	else
+		m_bHasErrors = true;
 
 	// Compile the optional geometry shader
 	if ( _pEntryPointGS != NULL )
 	{
 		ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointGS, "gs_4_0" );
-		Check( m_Device.DXDevice().CreateGeometryShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pGS ) );
-		ASSERT( m_pGS != NULL, "Failed to create geometry shader !" );
-		m_GSConstants.Enumerate( *pShader );
+		if ( pShader != NULL )
+		{
+			Check( m_Device.DXDevice().CreateGeometryShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pGS ) );
+			ASSERT( m_bHasErrors |= m_pGS != NULL, "Failed to create geometry shader !" );
+			m_GSConstants.Enumerate( *pShader );
+		}
+		else
+			m_bHasErrors = true;
 	}
-	else
-		m_pGS = NULL;
 
 	// Compile the optional pixel shader
 	if ( _pEntryPointPS != NULL )
 	{
 		ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointPS, "ps_4_0" );
-		Check( m_Device.DXDevice().CreatePixelShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pPS ) );
-		ASSERT( m_pPS != NULL, "Failed to create pixel shader !" );
-		m_PSConstants.Enumerate( *pShader );
+		if ( pShader != NULL )
+		{
+			Check( m_Device.DXDevice().CreatePixelShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pPS ) );
+			ASSERT( m_bHasErrors |= m_pPS != NULL, "Failed to create pixel shader !" );
+			m_PSConstants.Enumerate( *pShader );
+		}
+		else
+			m_bHasErrors = true;
 	}
-	else
-		m_pPS = NULL;
 }
 
 Material::~Material()
 {
-	ASSERT( m_pVertexLayout != NULL, "Invalid Vertex Layout to destroy !" );
-
-	m_pVertexLayout->Release(); delete m_pVertexLayout; m_pVertexLayout = NULL;
-	m_pVS->Release(); delete m_pVS; m_pVS = NULL;
-	if ( m_pGS != NULL ) { m_pGS->Release(); delete m_pGS; m_pGS = NULL; }
-	if ( m_pPS != NULL ) { m_pPS->Release(); delete m_pPS; m_pPS = NULL; }
+	if ( m_pVertexLayout != NULL ) { m_pVertexLayout->Release(); m_pVertexLayout = NULL; }
+	if ( m_pVS != NULL ) { m_pVS->Release(); m_pVS = NULL; }
+	if ( m_pGS != NULL ) { m_pGS->Release(); m_pGS = NULL; }
+	if ( m_pPS != NULL ) { m_pPS->Release(); m_pPS = NULL; }
 }
 
 void	Material::Use()
@@ -68,7 +87,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 	ID3DBlob*   pCode;
 	ID3DBlob*   pErrors;
 
-	Check( D3DPreprocess( _pShaderCode, strlen(_pShaderCode), NULL, _pMacros, this, &pCodeText, &pErrors ) );
+	D3DPreprocess( _pShaderCode, strlen(_pShaderCode), NULL, _pMacros, this, &pCodeText, &pErrors );
 	ASSERT( pErrors == NULL, "Shader preprocess error !" );
 
 	U32 Flags1 = 0;
@@ -83,9 +102,16 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 
 	U32 Flags2 = 0;
 
-	Check( D3DCompile( pCodeText->GetBufferPointer(), pCodeText->GetBufferSize(), NULL, _pMacros, this, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors ) );
-	ASSERT( pErrors == NULL, "Shader compilation error !" );
-	ASSERT( pCode != NULL, "Shader compilation failed => No error provided but didn't output any shader either !" );
+	D3DCompile( pCodeText->GetBufferPointer(), pCodeText->GetBufferSize(), NULL, _pMacros, this, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors );
+#ifdef _DEBUG
+	if ( pErrors != NULL )
+	{
+		MessageBox( NULL, (LPCTSTR) pErrors->GetBufferPointer(), "Shader Compilation Error !", MB_OK | MB_ICONERROR );
+		ASSERT( pErrors == NULL, "Shader compilation error !" );
+	}
+	else
+		ASSERT( pCode != NULL, "Shader compilation failed => No error provided but didn't output any shader either !" );
+#endif
 
 	return pCode;
 }
@@ -186,7 +212,7 @@ void	Material::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob )
 
 		int		NameLength = strlen(CBDesc.Name)+1;
 		m_ppConstantBufferNames[CBIndex] = new char[NameLength];
-		memcpy( m_ppConstantBufferNames[CBIndex], &CBDesc.Name, NameLength );
+		ASM_memcpy( m_ppConstantBufferNames[CBIndex], &CBDesc.Name, NameLength );
 	}
 
 	// Enumerate textures
@@ -199,7 +225,7 @@ void	Material::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob )
 
 		int		NameLength = strlen(SRVDesc.Name)+1;
 		m_ppShaderResourceViewNames[SRVIndex] = new char[NameLength];
-		memcpy( m_ppShaderResourceViewNames[SRVIndex], &SRVDesc.Name, NameLength );
+		ASM_memcpy( m_ppShaderResourceViewNames[SRVIndex], &SRVDesc.Name, NameLength );
 	}
 
 	pReflector->Release();

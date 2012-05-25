@@ -14,11 +14,6 @@ Device::Device()
 {
 }
 
-Device::~Device()
-{
-	Exit();
-}
-
 int		Device::ComponentsCount() const
 {
 	int			Count = -2;	// Start without counting for our internal back buffer & depth stencil components
@@ -168,8 +163,10 @@ void	Device::UnRegisterComponent( Component& _Component )
 
 void	Device::Check( HRESULT _Result )
 {
+#ifdef _DEBUG
 	if ( _Result != S_OK )
 		PostQuitMessage( _Result );
-//	ASSERT( _Result == S_OK );
+	ASSERT( _Result == S_OK, "DX HRESULT Check failed !" );
+#endif
 }
-
+ 

@@ -6,7 +6,7 @@ RasterizerState::RasterizerState( Device& _Device, D3D11_RASTERIZER_DESC& _Descr
 }
 RasterizerState::~RasterizerState()
 {
-	m_pState->Release(); delete m_pState; m_pState = NULL;
+	m_pState->Release();
 }
 
 DepthStencilState::DepthStencilState( Device& _Device, D3D11_DEPTH_STENCIL_DESC& _Description ) : Component( _Device )
@@ -15,7 +15,7 @@ DepthStencilState::DepthStencilState( Device& _Device, D3D11_DEPTH_STENCIL_DESC&
 }
 DepthStencilState::~DepthStencilState()
 {
-	m_pState->Release(); delete m_pState; m_pState = NULL;
+	m_pState->Release();
 }
 
 BlendState::BlendState( Device& _Device, D3D11_BLEND_DESC& _Description ) : Component( _Device )
@@ -24,5 +24,5 @@ BlendState::BlendState( Device& _Device, D3D11_BLEND_DESC& _Description ) : Comp
 }
 BlendState::~BlendState()
 {
-	m_pState->Release(); delete m_pState; m_pState = NULL;
+	m_pState->Release();
 }

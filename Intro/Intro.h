@@ -1,6 +1,7 @@
 #pragma once
 
-bool	IntroInit( IntroProgressDelegate& _Delegate );
+// Return 0 for no error, any other code will ExitProcess() with this code
+int		IntroInit( IntroProgressDelegate& _Delegate );
 void	IntroExit();
 
 // Return false to end the intro

@@ -41,12 +41,10 @@ namespace
 		U16			ResourceID;		// The equivalent resource ID encoding the shader file
 	};
 
-	static IncludePair	m_pIncludeFiles[] =
-	{
-		{ "Inc/TestInclude.fx", IDR_SHADER_INCLUDE_TEST },
-	};
+	static IncludePair	m_pIncludeFiles[] =	{ REGISTERED_INCLUDE_FILES };
 }
-
+//
+//////////////////////////////////////////////////////////////////////////
 
 static class	IncludesManager : public ID3DInclude
 {
@@ -83,9 +81,9 @@ Material*	CreateMaterial( U16 _ShaderResourceID, const VertexFormatDescriptor& _
 	ASSERT( pShaderCode != NULL, "Failed to load shader resource !" );
 
 	Material*	pResult = new Material( gs_Device, _Format, pShaderCode, _pMacros, _pEntryPointVS, _pEntryPointGS, _pEntryPointPS, &gs_IncludesManager );
-	ASSERT( pResult != NULL, "Failed to create material !" );
 
 	delete pShaderCode;	// We musn't forget to delete this temporary buffer !
 
 	return pResult;
 }
+

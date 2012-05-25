@@ -3,6 +3,13 @@
 //
 #pragma once
 
+
+// Don't forget to add any new include file pair down here \/
+#define REGISTERED_INCLUDE_FILES	\
+	{ "Inc/TestInclude.fx", IDR_SHADER_INCLUDE_TEST },	\
+
+
+
 #include "..\GodComplex.h"
 #include "d3dcommon.h"
 

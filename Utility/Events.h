@@ -75,5 +75,3 @@ typedef struct
 	MSYS_INPUT_KEYBORAD	Keyboard;
 	MSYS_INPUT_MOUSE	Mouse;
 } MSYS_EVENTINFO;
-
-//int	getKeyPress( int key );
