@@ -1,4 +1,4 @@
-#include "TestInclude.fx"
+#include "Inc/TestInclude.fx"
 
 struct	VS_IN
 {

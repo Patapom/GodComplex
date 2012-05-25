@@ -23,6 +23,7 @@
 
 typedef void	(*VisitorDelegate)( void* _pValue );
 
+#ifdef _DEBUG
 class	DictionaryString
 {
 protected:	// NESTED TYPES
@@ -54,6 +55,7 @@ public:
 	U32		Hash( char* _pKey ) const;
 	U32		Hash( U32 _Key ) const;
 };
+#endif
 
 class	DictionaryU32
 {

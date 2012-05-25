@@ -114,13 +114,20 @@
       <EntryPointSymbol>EntryPoint</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
-      <Command>Tools/Compress.cmd "$(TargetDir)$(TargetFileName)"</Command>
+      <Command>Tools/Compress.cmd "$(TargetDir)$(TargetFileName)"
+</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>cd Tools
+MinifyAll.cmd</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Intro\Intro.h" />
     <ClInclude Include="GodComplex.h" />
-    <ClInclude Include="NuajAPI\API\Hashtable.h" />
+    <ClInclude Include="NuajAPI\API\Hashtable.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="NuajAPI\API\Types.h" />
     <ClInclude Include="NuajAPI\Math\Math.h" />
     <ClInclude Include="RendererD3D11\Components\Component.h" />
@@ -148,7 +155,9 @@
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
     <ClCompile Include="Intro\Intro.cpp" />
-    <ClCompile Include="NuajAPI\API\Hashtable.cpp" />
+    <ClCompile Include="NuajAPI\API\Hashtable.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="NuajAPI\Math\Math.cpp" />
     <ClCompile Include="RendererD3D11\Components\Component.cpp" />
     <ClCompile Include="RendererD3D11\Components\ConstantBuffer.cpp" />
@@ -173,7 +182,9 @@
     <None Include="Resources\pzero_new.v2m">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="Resources\Shaders\Includes\TestInclude.fx" />
+    <None Include="Resources\Shaders\Compressed\Inc\TestInclude.fx" />
+    <None Include="Resources\Shaders\Compressed\PostFinal.fx" />
+    <None Include="Resources\Shaders\Inc\TestInclude.fx" />
     <None Include="Resources\Shaders\PostFinal.fx">
       <FileType>Document</FileType>
     </None>

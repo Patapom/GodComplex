@@ -43,7 +43,7 @@ namespace
 
 	static IncludePair	m_pIncludeFiles[] =
 	{
-		{ "TestInclude.fx", IDR_SHADER_INCLUDE_TEST },
+		{ "Inc/TestInclude.fx", IDR_SHADER_INCLUDE_TEST },
 	};
 }
 

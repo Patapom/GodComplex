@@ -92,8 +92,8 @@ Texture2D::~Texture2D()
 {
 	ASSERT( m_pTexture != NULL, "Invalid texture to destroy !" );
 
-	m_CachedShaderViews.ForEach( ReleaseDirectXObject );
-	m_CachedTargetViews.ForEach( ReleaseDirectXObject );
+// 	m_CachedShaderViews.ForEach( ReleaseDirectXObject );
+// 	m_CachedTargetViews.ForEach( ReleaseDirectXObject );
 
 	m_pTexture->Release();
 	m_pTexture = NULL;
@@ -107,10 +107,10 @@ ID3D11ShaderResourceView*	Texture2D::GetShaderView( int _MipLevelStart, int _Mip
 		_MipLevelsCount = m_MipLevelsCount - _MipLevelStart;
 
 	// Check if we already have it
-	U32	Hash = (((_MipLevelStart << 4) | _MipLevelsCount << 4) | _ArrayStart << 8) | _ArraySize;
-	ID3D11ShaderResourceView*	pExistingView = (ID3D11ShaderResourceView*) m_CachedShaderViews.Get( Hash );
-	if ( pExistingView != NULL )
-		return pExistingView;
+// 	U32	Hash = (((_MipLevelStart << 4) | _MipLevelsCount << 4) | _ArrayStart << 8) | _ArraySize;
+// 	ID3D11ShaderResourceView*	pExistingView = (ID3D11ShaderResourceView*) m_CachedShaderViews.Get( Hash );
+// 	if ( pExistingView != NULL )
+// 		return pExistingView;
 
 	// Create a new one
 	D3D11_SHADER_RESOURCE_VIEW_DESC	Desc;
@@ -124,7 +124,7 @@ ID3D11ShaderResourceView*	Texture2D::GetShaderView( int _MipLevelStart, int _Mip
 	ID3D11ShaderResourceView*	pView;
 	Check( m_Device.DXDevice().CreateShaderResourceView( m_pTexture, &Desc, &pView ) );
 
-	m_CachedShaderViews.Add( Hash, pView );
+// 	m_CachedShaderViews.Add( Hash, pView );
 
 	return pView;
 }
@@ -135,10 +135,10 @@ ID3D11RenderTargetView*		Texture2D::GetTargetView( int _MipLevelIndex, int _Arra
 		_ArraySize = m_ArraySize - _ArrayStart;
 
 	// Check if we already have it
-	U32	Hash = ((_MipLevelIndex << 4) | _ArrayStart << 8) | _ArraySize;
-	ID3D11RenderTargetView*	pExistingView = (ID3D11RenderTargetView*) m_CachedTargetViews.Get( Hash );
-	if ( pExistingView != NULL )
-		return pExistingView;
+// 	U32	Hash = ((_MipLevelIndex << 4) | _ArrayStart << 8) | _ArraySize;
+// 	ID3D11RenderTargetView*	pExistingView = (ID3D11RenderTargetView*) m_CachedTargetViews.Get( Hash );
+// 	if ( pExistingView != NULL )
+// 		return pExistingView;
 
 	// Create a new one
 	D3D11_RENDER_TARGET_VIEW_DESC	Desc;
@@ -151,7 +151,7 @@ ID3D11RenderTargetView*		Texture2D::GetTargetView( int _MipLevelIndex, int _Arra
 	ID3D11RenderTargetView*	pView;
 	Check( m_Device.DXDevice().CreateRenderTargetView( m_pTexture, &Desc, &pView ) );
 
-	m_CachedTargetViews.Add( Hash, pView );
+// 	m_CachedTargetViews.Add( Hash, pView );
 
 	return pView;
 }

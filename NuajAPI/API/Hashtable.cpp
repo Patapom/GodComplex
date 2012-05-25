@@ -1,17 +1,11 @@
 #include "Hashtable.h"
-#include "../Math/Math.h"
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _DEBUG
+
 //////////////////////////////////////////////////////////////////////////
 // String version
-//
-// DictionaryString::DictionaryString()
-// {
-// 	m_Size = HT_DEFAULT_SIZE;
-// 	m_ppTable = new Node*[m_Size];
-// }
-
 DictionaryString::DictionaryString( int _Size )
 {
 	m_Size = _Size;
@@ -115,12 +109,15 @@ U32	DictionaryString::Hash( U32 _Key ) const
 
   return hash;
 }
+#endif
 
 
 //////////////////////////////////////////////////////////////////////////
 // U32 version
 //
+#ifdef _DEBUG
 int	DictionaryU32::ms_MaxCollisionsCount = 0;
+#endif
 
 DictionaryU32::DictionaryU32( int _Size )
 {

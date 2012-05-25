@@ -35,11 +35,17 @@
     <Filter Include="Resources\Shaders">
       <UniqueIdentifier>{3f888d10-b9f0-4ea0-aece-23707df9271e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resources\Shaders\Compressed">
+    <Filter Include="Resources\Shaders\DEBUG">
+      <UniqueIdentifier>{fdebb790-3c07-4114-8db4-2451b446b9df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\Includes">
+      <UniqueIdentifier>{3b094a8f-5111-4c23-96db-882790fa8599}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\RELEASE %28Minified%29">
       <UniqueIdentifier>{86af87dc-e57b-4c1f-a261-0322b332bd58}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resources\Shaders\Includes">
-      <UniqueIdentifier>{3b094a8f-5111-4c23-96db-882790fa8599}</UniqueIdentifier>
+    <Filter Include="Resources\Shaders\RELEASE %28Minified%29\Includes">
+      <UniqueIdentifier>{8011b303-e883-47d4-b7c9-da0baafa5f93}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -187,10 +193,16 @@
       <Filter>Resources</Filter>
     </None>
     <None Include="Resources\Shaders\PostFinal.fx">
-      <Filter>Resources\Shaders</Filter>
+      <Filter>Resources\Shaders\DEBUG</Filter>
     </None>
-    <None Include="Resources\Shaders\Includes\TestInclude.fx">
-      <Filter>Resources\Shaders\Includes</Filter>
+    <None Include="Resources\Shaders\Compressed\PostFinal.fx">
+      <Filter>Resources\Shaders\RELEASE %28Minified%29</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\TestInclude.fx">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
+    <None Include="Resources\Shaders\Compressed\Inc\TestInclude.fx">
+      <Filter>Resources\Shaders\RELEASE %28Minified%29\Includes</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
