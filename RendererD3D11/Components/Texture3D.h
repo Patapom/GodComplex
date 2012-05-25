@@ -21,8 +21,8 @@ private:	// FIELDS
 	ID3D11Texture3D*	m_pTexture;
 
 	// Cached resource views
-// 	mutable DictionaryU32			m_CachedShaderViews;
-// 	mutable DictionaryU32			m_CachedTargetViews;
+	mutable DictionaryU32			m_CachedShaderViews;
+	mutable DictionaryU32			m_CachedTargetViews;
 
 
 public:	 // PROPERTIES

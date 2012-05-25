@@ -123,57 +123,131 @@ MinifyAll.cmd</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Intro\Intro.h" />
+    <ClInclude Include="Intro\Intro.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="GodComplex.h" />
     <ClInclude Include="NuajAPI\API\Hashtable.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="NuajAPI\API\Types.h" />
-    <ClInclude Include="NuajAPI\Math\Math.h" />
-    <ClInclude Include="RendererD3D11\Components\Component.h" />
-    <ClInclude Include="RendererD3D11\Components\ConstantBuffer.h" />
-    <ClInclude Include="RendererD3D11\Components\Material.h" />
-    <ClInclude Include="RendererD3D11\Components\Primitive.h" />
-    <ClInclude Include="RendererD3D11\Components\States.h" />
-    <ClInclude Include="RendererD3D11\Components\Texture2D.h" />
-    <ClInclude Include="RendererD3D11\Components\Texture3D.h" />
-    <ClInclude Include="RendererD3D11\Device.h" />
-    <ClInclude Include="RendererD3D11\Renderer.h" />
-    <ClInclude Include="RendererD3D11\Structures\DepthStencilFormats.h" />
-    <ClInclude Include="RendererD3D11\Structures\FormatDescriptor.h" />
-    <ClInclude Include="RendererD3D11\Structures\PixelFormats.h" />
-    <ClInclude Include="RendererD3D11\Structures\VertexFormats.h" />
+    <ClInclude Include="NuajAPI\API\Types.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="NuajAPI\Math\Math.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Component.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\ConstantBuffer.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Material.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Primitive.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\States.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Texture2D.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Texture3D.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Device.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Renderer.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Structures\DepthStencilFormats.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Structures\FormatDescriptor.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Structures\PixelFormats.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Structures\VertexFormats.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="resource.h" />
     <ClInclude Include="Sound\libv2.h" />
     <ClInclude Include="Sound\v2mplayer.h" />
-    <ClInclude Include="Utility\Events.h" />
-    <ClInclude Include="Utility\ASMHelpers.h" />
-    <ClInclude Include="Utility\Memory.h" />
-    <ClInclude Include="Utility\Random.h" />
-    <ClInclude Include="Utility\Resources.h" />
+    <ClInclude Include="Utility\Events.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Utility\ASMHelpers.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Utility\Memory.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Utility\Random.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Utility\Resources.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
-    <ClCompile Include="Intro\Intro.cpp" />
+    <ClCompile Include="Intro\Intro.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="NuajAPI\API\Hashtable.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="NuajAPI\Math\Math.cpp" />
-    <ClCompile Include="RendererD3D11\Components\Component.cpp" />
-    <ClCompile Include="RendererD3D11\Components\ConstantBuffer.cpp" />
-    <ClCompile Include="RendererD3D11\Components\Material.cpp" />
-    <ClCompile Include="RendererD3D11\Components\Primitive.cpp" />
-    <ClCompile Include="RendererD3D11\Components\States.cpp" />
-    <ClCompile Include="RendererD3D11\Components\Texture2D.cpp" />
-    <ClCompile Include="RendererD3D11\Components\Texture3D.cpp" />
-    <ClCompile Include="RendererD3D11\Device.cpp" />
-    <ClCompile Include="RendererD3D11\Structures\DepthStencilFormats.cpp" />
-    <ClCompile Include="RendererD3D11\Structures\PixelFormats.cpp" />
-    <ClCompile Include="RendererD3D11\Structures\VertexFormats.cpp" />
+    <ClCompile Include="NuajAPI\Math\Math.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Component.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\ConstantBuffer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Material.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Primitive.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\States.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Texture2D.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Texture3D.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Device.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Structures\DepthStencilFormats.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Structures\PixelFormats.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Structures\VertexFormats.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Sound\v2mplayer.cpp" />
-    <ClCompile Include="Utility\Memory.cpp" />
-    <ClCompile Include="Utility\Random.cpp" />
-    <ClCompile Include="Utility\Resources.cpp" />
+    <ClCompile Include="Utility\Memory.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Utility\Random.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Utility\Resources.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib" />
