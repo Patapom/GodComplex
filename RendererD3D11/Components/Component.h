@@ -9,7 +9,7 @@ protected:  // FIELDS
 	Component*	m_pPrevious;
 	Component*	m_pNext;
 
-public:	 // METHODS
+public:		// METHODS
 
 	Component( Device& _Device );
 	virtual ~Component();

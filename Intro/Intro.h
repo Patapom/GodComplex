@@ -3,5 +3,5 @@
 bool	IntroInit( IntroProgressDelegate& _Delegate );
 void	IntroExit();
 
-// Return true to end the intro
+// Return false to end the intro
 bool	IntroDo();

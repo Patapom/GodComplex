@@ -14,12 +14,15 @@
 #ifdef _DEBUG
 #include <assert.h>
 #define ASSERT( condition, text ) assert( condition || !text )
+#define ASSERT_RETURN_FALSE( condition, text ) assert( condition || !text )
 #else
 #define ASSERT( condition, text )
+#define ASSERT_RETURN_FALSE( condition, text ) return false
 #endif
 
 #define NUAJ_LIB
 #include "../NuajAPI/API/Types.h"
 #include "../NuajAPI/Math/Math.h"
+#include "../NuajAPI/API/Hashtable.h"
 
 #endif

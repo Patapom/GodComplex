@@ -40,6 +40,7 @@
 #include "RendererD3D11/Components/Material.h"
 #include "RendererD3D11/Components/ConstantBuffer.h"
 #include "RendererD3D11/Components/Primitive.h"
+#include "RendererD3D11/Components/States.h"
 
 // V2 Sound Player
 #include "Sound/v2mplayer.h"

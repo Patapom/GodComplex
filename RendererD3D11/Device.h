@@ -2,7 +2,17 @@
 #include "Renderer.h"
 
 class Component;
+class Material;
 class Texture2D;
+class RasterizerState;
+class DepthStencilState;
+class BlendState;
+
+class Viewport
+{
+public:
+
+};
 
 class Device
 {
@@ -10,25 +20,33 @@ private:	// FIELDS
 
 	ID3D11Device*			m_pDevice;
 	ID3D11DeviceContext*	m_pDeviceContext;
-
 	IDXGISwapChain*			m_pSwapChain;
 
 	Texture2D*				m_pDefaultRenderTarget;	// The back buffer to render to the screen
 	Texture2D*				m_pDefaultDepthStencil;	// The default depth stencil
 
-	Component*				m_pComponentsStack;
+	Component*				m_pComponentsStackTop;	// Remember this is the stack TOP so access the components using their m_pNext pointer to reach back to the bottom
+
+	Material*				m_pCurrentMaterial;		// The currently used material
+
+	RasterizerState*		m_pCurrentRasterizerState;
+	DepthStencilState*		m_pCurrentDepthStencilState;
+	BlendState*				m_pCurrentBlendState;
 
 
 public:	 // PROPERTIES
 
-	bool					IsInitialized() const	{ return m_pDeviceContext != NULL; }
+	bool					IsInitialized() const		{ return m_pDeviceContext != NULL; }
 	int						ComponentsCount() const;
 
-	ID3D11Device*			DXDevice()  { return m_pDevice; }
-	ID3D11DeviceContext*	DXContext() { return m_pDeviceContext; }
+	ID3D11Device&			DXDevice()					{ return *m_pDevice; }
+	ID3D11DeviceContext&	DXContext()					{ return *m_pDeviceContext; }
+	IDXGISwapChain&			DXSwapChain()				{ return *m_pSwapChain; }
 
 	const Texture2D&		DefaultRenderTarget() const	{ return *m_pDefaultRenderTarget; }
 	const Texture2D&		DefaultDepthStencil() const	{ return *m_pDefaultDepthStencil; }
+
+	Material*				CurrentMaterial()			{ return m_pCurrentMaterial; }
 
 
 public:	 // METHODS
@@ -40,7 +58,9 @@ public:	 // METHODS
 	void	Exit();
 
 	// Helpers
-	void	SetRenderTarget( const Texture2D& _Target, Texture2D* _pDepthStencil=NULL );
+	void	ClearRenderTarget( const Texture2D& _Target, const NjFloat4& _Color );
+	void	SetRenderTarget( const Texture2D& _Target, Texture2D* _pDepthStencil=NULL, D3D11_VIEWPORT* _pViewport=NULL );
+	void	SetStates( RasterizerState& _RasterizerState, DepthStencilState& _DepthStencilState, BlendState& _BlendState );
 
 private:
 

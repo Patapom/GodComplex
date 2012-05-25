@@ -100,7 +100,7 @@ void	WindowExit()
 #endif
 
 	// Kill the DirectX device
-	ASSERT( gs_Device.ComponentsCount() == 0, "Some DirectX components remain on exit !" );	// This means you forgot to clean up some components ! It's okay since the device is going to clean them up for you, but it's better yet if you know what your doing and take care of your own garbage...
+	ASSERT( gs_Device.ComponentsCount() == 0, "Some DirectX components remain on exit !	Did you forget some deletes ???" );	// This means you forgot to clean up some components ! It's okay since the device is going to clean them up for you, but it's better yet if you know what your doing and take care of your own garbage...
 	gs_Device.Exit();
 
 	// Destroy the Windows contexts
@@ -197,7 +197,7 @@ bool	WindowInit()
 }
 
 #ifdef _DEBUG
-static void DrawTime( float t )
+void	DrawTime( float t )
 {
 	static int		frame=0;
 	static float	OldTime=0.0;
@@ -234,8 +234,8 @@ void	HandleEvents()
 	WindowInfos.Events.Keyboard.State[KEY_LEFT]     = GetAsyncKeyState( VK_LEFT );
 	WindowInfos.Events.Keyboard.State[KEY_RIGHT]    = GetAsyncKeyState( VK_RIGHT );
 	WindowInfos.Events.Keyboard.State[KEY_UP]       = GetAsyncKeyState( VK_UP );
-    WindowInfos.Events.Keyboard.State[KEY_PGUP]     = GetAsyncKeyState( VK_PRIOR );
-    WindowInfos.Events.Keyboard.State[KEY_PGDOWN]   = GetAsyncKeyState( VK_NEXT );
+	WindowInfos.Events.Keyboard.State[KEY_PGUP]     = GetAsyncKeyState( VK_PRIOR );
+	WindowInfos.Events.Keyboard.State[KEY_PGDOWN]   = GetAsyncKeyState( VK_NEXT );
 	WindowInfos.Events.Keyboard.State[KEY_DOWN]     = GetAsyncKeyState( VK_DOWN );
 	WindowInfos.Events.Keyboard.State[KEY_SPACE]    = GetAsyncKeyState( VK_SPACE );
 	WindowInfos.Events.Keyboard.State[KEY_RSHIFT]   = GetAsyncKeyState( VK_RSHIFT );
@@ -252,8 +252,8 @@ void	HandleEvents()
 	WindowInfos.Events.Keyboard.State[KEY_8]        = GetAsyncKeyState( '8' );
 	WindowInfos.Events.Keyboard.State[KEY_9]        = GetAsyncKeyState( '9' );
 	WindowInfos.Events.Keyboard.State[KEY_0]        = GetAsyncKeyState( '0' );
-    for( int i=KEY_A; i<=KEY_Z; i++ )
-	    WindowInfos.Events.Keyboard.State[i] = GetAsyncKeyState( 'A'+i-KEY_A );
+	for( int i=KEY_A; i<=KEY_Z; i++ )
+		WindowInfos.Events.Keyboard.State[i] = GetAsyncKeyState( 'A'+i-KEY_A );
 
 	// Handle mouse events
 	POINT	p;
@@ -282,25 +282,25 @@ void	HandleEvents()
 //	_Progress = [0..100]
 static void	ShowProgress( WININFO* _pInfos, int _Progress )
 {
-    const int	xo = (( 28*RESX)>>8);
-    const int	y1 = ((200*RESY)>>8);
-    const int	yo = y1-8;
+	const int	xo = (( 28*RESX)>>8);
+	const int	y1 = ((200*RESY)>>8);
+	const int	yo = y1-8;
 
-    // Draw background
-    SelectObject( _pInfos->hDC, CreateSolidBrush(0x0045302c) );
-    Rectangle( _pInfos->hDC, 0, 0, RESX, RESY );
+	// Draw background
+	SelectObject( _pInfos->hDC, CreateSolidBrush(0x0045302c) );
+	Rectangle( _pInfos->hDC, 0, 0, RESX, RESY );
 
-    // Draw text
-    SetBkMode( _pInfos->hDC, TRANSPARENT );
-    SetTextColor( _pInfos->hDC, 0x00ffffff );
-    SelectObject( _pInfos->hDC, CreateFont( 44,0,0,0,0,0,0,0,0,0,0,ANTIALIASED_QUALITY,0,"arial") );
-    TextOut( _pInfos->hDC, (RESX-318)>>1, (RESY-38)>>1, "wait while loading...", 21 );
+	// Draw text
+	SetBkMode( _pInfos->hDC, TRANSPARENT );
+	SetTextColor( _pInfos->hDC, 0x00ffffff );
+	SelectObject( _pInfos->hDC, CreateFont( 44,0,0,0,0,0,0,0,0,0,0,ANTIALIASED_QUALITY,0,"arial") );
+	TextOut( _pInfos->hDC, (RESX-318)>>1, (RESY-38)>>1, "wait while loading...", 21 );
 
-    // Draw bar
-    SelectObject( _pInfos->hDC, CreateSolidBrush(0x00705030) );
-    Rectangle( _pInfos->hDC, xo, yo, (228*RESX) >> 8, y1 );
-    SelectObject( _pInfos->hDC, CreateSolidBrush(0x00f0d0b0) );
-    Rectangle( _pInfos->hDC, xo, yo, ((28 + (_Progress<<1))*RESX) >> 8, y1 );
+	// Draw bar
+	SelectObject( _pInfos->hDC, CreateSolidBrush(0x00705030) );
+	Rectangle( _pInfos->hDC, xo, yo, (228*RESX) >> 8, y1 );
+	SelectObject( _pInfos->hDC, CreateSolidBrush(0x00f0d0b0) );
+	Rectangle( _pInfos->hDC, xo, yo, ((28 + (_Progress<<1))*RESX) >> 8, y1 );
 }
 
 
@@ -361,12 +361,17 @@ void WINAPI	EntryPoint()
         static long	OldTime = 0; if( !OldTime ) OldTime=timeGetTime(); 
         float	DeltaTime = 0.001f * (float) (timeGetTime() - OldTime);
 		DrawTime( DeltaTime );
+
+		// Check for hash collisions => We must never have too many of them !
+		ASSERT( DictionaryU32::ms_MaxCollisionsCount < 2, "Too many collisions in hash tables ! Either increase size or use different hashing scheme !" );
 #endif
 
 		// Run the intro
-		bFinished |= IntroDo();
+		bFinished |= !IntroDo();
 
-		SwapBuffers( WindowInfos.hDC );
+// This was in iQ's framework, I don't know what it's for. I believe it's useful when using OpenGL but with DirectX it makes everything slow as hell (attempts to load/unload DLLs every frame) !
+// I left it here so everyone knows it must NOT be called...
+//		SwapBuffers( WindowInfos.hDC );
 	}
 	//
 	//////////////////////////////////////////////////////////////////////////

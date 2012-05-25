@@ -20,6 +20,11 @@ private:	// FIELDS
 
 	ID3D11Texture3D*	m_pTexture;
 
+	// Cached resource views
+	mutable DictionaryU32			m_CachedShaderViews;
+	mutable DictionaryU32			m_CachedTargetViews;
+
+
 public:	 // PROPERTIES
 
 	int	 GetWidth() const	{ return m_Width; }
@@ -33,8 +38,8 @@ public:	 // METHODS
 	Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const PixelFormatDescriptor& _Format, int _MipLevelsCount, const void* _ppContent[] );
 	~Texture3D();
 
-	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart, int _MipLevelsCount );
-	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex, int _FirstWSlice, int _WSize );
+	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart, int _MipLevelsCount ) const;
+	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const;
 
 private:
 	int	 ValidateMipLevels( int _Width, int _Height, int _Depth, int _MipLevelsCount );

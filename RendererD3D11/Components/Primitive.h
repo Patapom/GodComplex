@@ -13,6 +13,8 @@ private:	// FIELDS
 
 	ID3D11Buffer*					m_pVB;
 	ID3D11Buffer*					m_pIB;
+	int								m_VerticesCount;
+	int								m_IndicesCount;
 	int								m_FacesCount;
 
 

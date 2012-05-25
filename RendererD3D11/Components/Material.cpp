@@ -14,18 +14,18 @@ Material::Material( Device& _Device, const VertexFormatDescriptor& _Format, cons
 	// Compile the compulsory vertex shader
 	ASSERT( _pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
 	ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointVS, "vs_4_0" );
-	Check( m_Device.DXDevice()->CreateVertexShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pVS ) );
+	Check( m_Device.DXDevice().CreateVertexShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pVS ) );
 	ASSERT( m_pVS != NULL, "Failed to create vertex shader !" );
 	m_VSConstants.Enumerate( *pShader );
 
 	// Create the vertex layout
-	Check( m_Device.DXDevice()->CreateInputLayout( _Format.GetInputElements(), _Format.GetInputElementsCount(), pShader->GetBufferPointer(), pShader->GetBufferSize(), &m_pVertexLayout ) );
+	Check( m_Device.DXDevice().CreateInputLayout( _Format.GetInputElements(), _Format.GetInputElementsCount(), pShader->GetBufferPointer(), pShader->GetBufferSize(), &m_pVertexLayout ) );
 
 	// Compile the optional geometry shader
 	if ( _pEntryPointGS != NULL )
 	{
 		ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointGS, "gs_4_0" );
-		Check( m_Device.DXDevice()->CreateGeometryShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pGS ) );
+		Check( m_Device.DXDevice().CreateGeometryShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pGS ) );
 		ASSERT( m_pGS != NULL, "Failed to create geometry shader !" );
 		m_GSConstants.Enumerate( *pShader );
 	}
@@ -36,7 +36,7 @@ Material::Material( Device& _Device, const VertexFormatDescriptor& _Format, cons
 	if ( _pEntryPointPS != NULL )
 	{
 		ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointPS, "ps_4_0" );
-		Check( m_Device.DXDevice()->CreatePixelShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pPS ) );
+		Check( m_Device.DXDevice().CreatePixelShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pPS ) );
 		ASSERT( m_pPS != NULL, "Failed to create pixel shader !" );
 		m_PSConstants.Enumerate( *pShader );
 	}
@@ -48,21 +48,18 @@ Material::~Material()
 {
 	ASSERT( m_pVertexLayout != NULL, "Invalid Vertex Layout to destroy !" );
 
-	m_pVertexLayout->Release(); m_pVertexLayout = NULL;
-	m_pVS->Release(); m_pVS = NULL;
-	if ( m_pGS != NULL ) m_pGS->Release(); m_pGS = NULL;
-	if ( m_pPS != NULL ) m_pPS->Release(); m_pPS = NULL;
+	m_pVertexLayout->Release(); delete m_pVertexLayout; m_pVertexLayout = NULL;
+	m_pVS->Release(); delete m_pVS; m_pVS = NULL;
+	if ( m_pGS != NULL ) { m_pGS->Release(); delete m_pGS; m_pGS = NULL; }
+	if ( m_pPS != NULL ) { m_pPS->Release(); delete m_pPS; m_pPS = NULL; }
 }
 
 void	Material::Use()
 {
-	m_Device.DXContext()->IASetInputLayout( m_pVertexLayout );
-
-	m_Device.DXContext()->VSSetShader( m_pVS, NULL, 0 );
-	if ( m_pGS != NULL )
-		m_Device.DXContext()->GSSetShader( m_pGS, NULL, 0 );
-	if ( m_pPS != NULL )
-		m_Device.DXContext()->PSSetShader( m_pPS, NULL, 0 );
+	m_Device.DXContext().IASetInputLayout( m_pVertexLayout );
+	m_Device.DXContext().VSSetShader( m_pVS, NULL, 0 );
+	m_Device.DXContext().GSSetShader( m_pGS, NULL, 0 );
+	m_Device.DXContext().PSSetShader( m_pPS, NULL, 0 );
 }
 
 ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget )
@@ -139,7 +136,7 @@ void	Material::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buf
 	{
 		int	SlotIndex = m_VSConstants.GetBufferIndex( _pBufferName );
 		if ( SlotIndex != -1 )
-			m_Device.DXContext()->VSSetConstantBuffers( SlotIndex, 1, &pBuffer );
+			m_Device.DXContext().VSSetConstantBuffers( SlotIndex, 1, &pBuffer );
 	}
 }
 
@@ -149,7 +146,7 @@ void	Material::SetTexture( const char* _pBufferName, ID3D11ShaderResourceView* _
 	{
 		int	SlotIndex = m_VSConstants.GetShaderResourceViewIndex( _pBufferName );
 		if ( SlotIndex != -1 )
-			m_Device.DXContext()->VSSetShaderResources( SlotIndex, 1, &pView );
+			m_Device.DXContext().VSSetShaderResources( SlotIndex, 1, &pView );
 	}
 }
 

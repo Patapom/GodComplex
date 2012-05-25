@@ -1,6 +1,8 @@
 #include "Primitive.h"
 
 Primitive::Primitive( Device& _Device, int _VerticesCount, void* _pVertices, int _IndicesCount, U16* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const VertexFormatDescriptor& _Format ) : Component( _Device )
+	, m_VerticesCount( _VerticesCount )
+	, m_IndicesCount( _IndicesCount )
 	, m_Format( _Format )
 	, m_Topology( _Topology )
 	, m_pVB( NULL )
@@ -20,7 +22,7 @@ Primitive::Primitive( Device& _Device, int _VerticesCount, void* _pVertices, int
 		InitData.SysMemPitch = 0;
 		InitData.SysMemSlicePitch = 0;
 
-		Check( m_Device.DXDevice()->CreateBuffer( &Desc, &InitData, &m_pVB ) );
+		Check( m_Device.DXDevice().CreateBuffer( &Desc, &InitData, &m_pVB ) );
 	}
 
 	if ( _pIndices != NULL )
@@ -38,7 +40,7 @@ Primitive::Primitive( Device& _Device, int _VerticesCount, void* _pVertices, int
 		InitData.SysMemPitch = 0;
 		InitData.SysMemSlicePitch = 0;
 
-		Check( m_Device.DXDevice()->CreateBuffer( &Desc, &InitData, &m_pIB ) );
+		Check( m_Device.DXDevice().CreateBuffer( &Desc, &InitData, &m_pIB ) );
 	}
 
 	switch ( m_Topology )
@@ -66,13 +68,18 @@ Primitive::~Primitive()
 
 void	Primitive::Render( Material& _Material )
 {
-	U32 StrideOffset = 0;
-	m_Device.DXContext()->IASetVertexBuffers( 0, 1, &m_pVB, &StrideOffset, &StrideOffset );
-	if ( m_pIB != NULL )
-		m_Device.DXContext()->IASetIndexBuffer( m_pIB, DXGI_FORMAT_R16_UINT, 0 );
-	else
-		m_Device.DXContext()->IASetIndexBuffer( NULL, DXGI_FORMAT_R16_UINT, 0 );
+	m_Device.DXContext().IASetInputLayout( _Material.GetVertexLayout() );
+	m_Device.DXContext().IASetPrimitiveTopology( m_Topology );
 
-	m_Device.DXContext()->IASetInputLayout( _Material.GetVertexLayout() );
-	m_Device.DXContext()->IASetPrimitiveTopology( m_Topology );
+	U32 StrideOffset = 0;
+	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &StrideOffset, &StrideOffset );
+	if ( m_pIB != NULL )
+		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R16_UINT, 0 );
+	else
+		m_Device.DXContext().IASetIndexBuffer( NULL, DXGI_FORMAT_R16_UINT, 0 );
+
+	if ( m_pIB != NULL )
+		m_Device.DXContext().DrawIndexed( m_IndicesCount, 0, 0 );
+	else
+		m_Device.DXContext().Draw( m_VerticesCount, 0 );
 }

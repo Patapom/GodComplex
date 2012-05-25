@@ -20,7 +20,7 @@ void	FreeMemoryPool()
 
 void*	Alloc( size_t _Size )
 {
-	ASSERT( gs_pMemoryBuffer != NULL, "Alloc() called whereas memory pool is not initialized !\nDid you forget to call AllocateMemoryPool() ?" );
+	ASSERT( gs_pMemoryBuffer != NULL, "Alloc() called whereas memory pool is not initialized !	Did you forget to call AllocateMemoryPool() ?" );
 
 	void*	pResult = gs_pMemoryBufferAligned;
 	gs_pMemoryBufferAligned += gs_MemoryOffset;

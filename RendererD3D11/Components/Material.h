@@ -5,6 +5,14 @@
 
 class ConstantBuffer;
 
+
+#define USING_MATERIAL_START( Mat )	\
+{									\
+	(Mat).Use();					\
+	Material&	M = Mat;
+#define USING_MATERIAL_END	}
+
+
 class Material : public Component, ID3DInclude
 {
 protected:  // NESTED TYPES

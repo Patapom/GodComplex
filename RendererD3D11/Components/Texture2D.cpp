@@ -50,10 +50,10 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 			_Height = MAX( 1, (_Height >> 1) );
 		}
 
-		Check( m_Device.DXDevice()->CreateTexture2D( &Desc, pInitialData, &m_pTexture ) );
+		Check( m_Device.DXDevice().CreateTexture2D( &Desc, pInitialData, &m_pTexture ) );
 	}
 	else
-		Check( m_Device.DXDevice()->CreateTexture2D( &Desc, NULL, &m_pTexture ) );
+		Check( m_Device.DXDevice().CreateTexture2D( &Desc, NULL, &m_pTexture ) );
 }
 
 Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const DepthStencilFormatDescriptor& _Format ) : Component( _Device ), m_Format( _Format ), m_pCachedDepthStencilView( NULL )
@@ -79,12 +79,21 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const DepthStenc
 	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
 	Desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG( 0 );
 
-	Check( m_Device.DXDevice()->CreateTexture2D( &Desc, NULL, &m_pTexture ) );
+	Check( m_Device.DXDevice().CreateTexture2D( &Desc, NULL, &m_pTexture ) );
+}
+
+static void		ReleaseDirectXObject( void* _pValue )
+{
+	IUnknown*	pObject = (IUnknown*) _pValue;
+	pObject->Release();
 }
 
 Texture2D::~Texture2D()
 {
 	ASSERT( m_pTexture != NULL, "Invalid texture to destroy !" );
+
+	m_CachedShaderViews.ForEach( ReleaseDirectXObject );
+	m_CachedTargetViews.ForEach( ReleaseDirectXObject );
 
 	m_pTexture->Release();
 	m_pTexture = NULL;
@@ -97,6 +106,13 @@ ID3D11ShaderResourceView*	Texture2D::GetShaderView( int _MipLevelStart, int _Mip
 	if ( _MipLevelsCount == 0 )
 		_MipLevelsCount = m_MipLevelsCount - _MipLevelStart;
 
+	// Check if we already have it
+	U32	Hash = (((_MipLevelStart << 4) | _MipLevelsCount << 4) | _ArrayStart << 8) | _ArraySize;
+	ID3D11ShaderResourceView*	pExistingView = (ID3D11ShaderResourceView*) m_CachedShaderViews.Get( Hash );
+	if ( pExistingView != NULL )
+		return pExistingView;
+
+	// Create a new one
 	D3D11_SHADER_RESOURCE_VIEW_DESC	Desc;
 	Desc.Format = m_Format.DirectXFormat();
 	Desc.ViewDimension = m_ArraySize > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DARRAY : D3D11_SRV_DIMENSION_TEXTURE2D;
@@ -106,7 +122,9 @@ ID3D11ShaderResourceView*	Texture2D::GetShaderView( int _MipLevelStart, int _Mip
 	Desc.Texture2DArray.ArraySize = _ArraySize;
 
 	ID3D11ShaderResourceView*	pView;
-	Check( m_Device.DXDevice()->CreateShaderResourceView( m_pTexture, &Desc, &pView ) );
+	Check( m_Device.DXDevice().CreateShaderResourceView( m_pTexture, &Desc, &pView ) );
+
+	m_CachedShaderViews.Add( Hash, pView );
 
 	return pView;
 }
@@ -116,6 +134,13 @@ ID3D11RenderTargetView*		Texture2D::GetTargetView( int _MipLevelIndex, int _Arra
 	if ( _ArraySize == 0 )
 		_ArraySize = m_ArraySize - _ArrayStart;
 
+	// Check if we already have it
+	U32	Hash = ((_MipLevelIndex << 4) | _ArrayStart << 8) | _ArraySize;
+	ID3D11RenderTargetView*	pExistingView = (ID3D11RenderTargetView*) m_CachedTargetViews.Get( Hash );
+	if ( pExistingView != NULL )
+		return pExistingView;
+
+	// Create a new one
 	D3D11_RENDER_TARGET_VIEW_DESC	Desc;
 	Desc.Format = m_Format.DirectXFormat();
 	Desc.ViewDimension = m_ArraySize > 1 ? D3D11_RTV_DIMENSION_TEXTURE2DARRAY : D3D11_RTV_DIMENSION_TEXTURE2D;
@@ -124,7 +149,9 @@ ID3D11RenderTargetView*		Texture2D::GetTargetView( int _MipLevelIndex, int _Arra
 	Desc.Texture2DArray.ArraySize = _ArraySize;
 
 	ID3D11RenderTargetView*	pView;
-	Check( m_Device.DXDevice()->CreateRenderTargetView( m_pTexture, &Desc, &pView ) );
+	Check( m_Device.DXDevice().CreateRenderTargetView( m_pTexture, &Desc, &pView ) );
+
+	m_CachedTargetViews.Add( Hash, pView );
 
 	return pView;
 }
@@ -138,7 +165,7 @@ ID3D11DepthStencilView*		Texture2D::GetDepthStencilView() const
 		Desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		Desc.Texture2D.MipSlice = 0;
 
-		Check( m_Device.DXDevice()->CreateDepthStencilView( m_pTexture, &Desc, &m_pCachedDepthStencilView ) );
+		Check( m_Device.DXDevice().CreateDepthStencilView( m_pTexture, &Desc, &m_pCachedDepthStencilView ) );
 	}
 
 	return m_pCachedDepthStencilView;

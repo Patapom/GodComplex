@@ -38,24 +38,39 @@ Texture3D::Texture3D( Device& _Device, int _Width, int _Height, int _Depth, cons
 			_Depth = MAX( 1, (_Depth >> 1) );
 		}
 
-		Check( m_Device.DXDevice()->CreateTexture3D( &Desc, pInitialData, &m_pTexture ) );
+		Check( m_Device.DXDevice().CreateTexture3D( &Desc, pInitialData, &m_pTexture ) );
 	}
 	else
-		Check( m_Device.DXDevice()->CreateTexture3D( &Desc, NULL, &m_pTexture ) );
+		Check( m_Device.DXDevice().CreateTexture3D( &Desc, NULL, &m_pTexture ) );
+}
+
+static void		ReleaseDirectXObject( void* _pValue )
+{
+	IUnknown*	pObject = (IUnknown*) _pValue;
+	pObject->Release();
 }
 
 Texture3D::~Texture3D()
 {
 	ASSERT( m_pTexture != NULL, "Invalid texture to destroy !" );
 
+	m_CachedShaderViews.ForEach( ReleaseDirectXObject );
+	m_CachedTargetViews.ForEach( ReleaseDirectXObject );
+
 	m_pTexture->Release();
 	m_pTexture = NULL;
 }
 
-ID3D11ShaderResourceView*	Texture3D::GetShaderView( int _MipLevelStart, int _MipLevelsCount )
+ID3D11ShaderResourceView*	Texture3D::GetShaderView( int _MipLevelStart, int _MipLevelsCount ) const
 {
 	if ( _MipLevelsCount == 0 )
 		_MipLevelsCount = m_MipLevelsCount - _MipLevelStart;
+
+	// Check if we already have it
+	U32	Hash = (_MipLevelStart << 4) | _MipLevelsCount << 4;
+	ID3D11ShaderResourceView*	pExistingView = (ID3D11ShaderResourceView*) m_CachedShaderViews.Get( Hash );
+	if ( pExistingView != NULL )
+		return pExistingView;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC	Desc;
 	Desc.Format = m_Format.DirectXFormat();
@@ -64,15 +79,23 @@ ID3D11ShaderResourceView*	Texture3D::GetShaderView( int _MipLevelStart, int _Mip
 	Desc.Texture3D.MipLevels = _MipLevelsCount;
 
 	ID3D11ShaderResourceView*	pView;
-	Check( m_Device.DXDevice()->CreateShaderResourceView( m_pTexture, &Desc, &pView ) );
+	Check( m_Device.DXDevice().CreateShaderResourceView( m_pTexture, &Desc, &pView ) );
+
+	m_CachedShaderViews.Add( Hash, pView );
 
 	return pView;
 }
 
-ID3D11RenderTargetView*		Texture3D::GetTargetView( int _MipLevelIndex, int _FirstWSlice, int _WSize )
+ID3D11RenderTargetView*		Texture3D::GetTargetView( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const
 {
 	if ( _WSize == 0 )
 		_WSize = m_Depth - _FirstWSlice;
+
+	// Check if we already have it
+	U32	Hash = ((_MipLevelIndex << 4) | _FirstWSlice << 8) | _WSize;
+	ID3D11RenderTargetView*	pExistingView = (ID3D11RenderTargetView*) m_CachedTargetViews.Get( Hash );
+	if ( pExistingView != NULL )
+		return pExistingView;
 
 	D3D11_RENDER_TARGET_VIEW_DESC	Desc;
 	Desc.Format = m_Format.DirectXFormat();
@@ -82,7 +105,9 @@ ID3D11RenderTargetView*		Texture3D::GetTargetView( int _MipLevelIndex, int _Firs
 	Desc.Texture3D.WSize = _WSize;
 
 	ID3D11RenderTargetView*	pView;
-	Check( m_Device.DXDevice()->CreateRenderTargetView( m_pTexture, &Desc, &pView ) );
+	Check( m_Device.DXDevice().CreateRenderTargetView( m_pTexture, &Desc, &pView ) );
+
+	m_CachedTargetViews.Add( Hash, pView );
 
 	return pView;
 }

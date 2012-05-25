@@ -113,6 +113,12 @@
     <ClInclude Include="RendererD3D11\Structures\FormatDescriptor.h">
       <Filter>RendererD3D11\Structures</Filter>
     </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\States.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="NuajAPI\API\Hashtable.h">
+      <Filter>NuajAPI\API</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -163,6 +169,12 @@
     </ClCompile>
     <ClCompile Include="RendererD3D11\Structures\DepthStencilFormats.cpp">
       <Filter>RendererD3D11\Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\States.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="NuajAPI\API\Hashtable.cpp">
+      <Filter>NuajAPI\API</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

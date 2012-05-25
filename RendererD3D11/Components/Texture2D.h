@@ -11,6 +11,8 @@ protected:  // CONSTANTS
 	static const int	MAX_TEXTURE_SIZE = 8192;	// Should be enough !
 	static const int	MAX_TEXTURE_POT = 13;
 
+	static const int	HASHTABLE_SIZE = 1 << 13;	// 8Kb per hashtable, 2 hashtable per texture => 16Kb overhead
+
 private:	// FIELDS
 
 	int					m_Width;
@@ -22,6 +24,9 @@ private:	// FIELDS
 
 	ID3D11Texture2D*	m_pTexture;
 
+	// Cached resource views
+	mutable DictionaryU32			m_CachedShaderViews;
+	mutable DictionaryU32			m_CachedTargetViews;
 	mutable ID3D11DepthStencilView*	m_pCachedDepthStencilView;
 
 
