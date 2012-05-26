@@ -58,7 +58,7 @@ public:
 		for ( int FileIndex=0; FileIndex < FilesCount; FileIndex++, pPair++ )
 			if ( !strcmp( pFileName, pPair->pPath ) )
 			{	// Found it !
-				*ppData = LoadResourceShader( pPair->ResourceID, *pBytes );
+				*ppData = LoadResourceBinary( pPair->ResourceID, "SHADER", pBytes );	// We read the file WITHOUT the trailing '\0' character !
 				return S_OK;
 			}
 
@@ -68,7 +68,7 @@ public:
 
 	STDMETHOD(Close)(THIS_ LPCVOID pData)
 	{
-		delete pData;
+//		delete pData;	// No need to release the resource !
 		return S_OK;
 	}
 

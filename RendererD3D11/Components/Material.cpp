@@ -26,39 +26,43 @@ Material::Material( Device& _Device, const VertexFormatDescriptor& _Format, cons
 	if ( pShader != NULL )
 	{
 		Check( m_Device.DXDevice().CreateVertexShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pVS ) );
-		ASSERT( m_bHasErrors = m_pVS != NULL, "Failed to create vertex shader !" );
+		ASSERT( m_pVS != NULL, "Failed to create vertex shader !" );
 		m_VSConstants.Enumerate( *pShader );
+		m_bHasErrors |= m_pVS == NULL;
 
 		// Create the associated vertex layout
 		Check( m_Device.DXDevice().CreateInputLayout( _Format.GetInputElements(), _Format.GetInputElementsCount(), pShader->GetBufferPointer(), pShader->GetBufferSize(), &m_pVertexLayout ) );
-		ASSERT( m_bHasErrors |= m_pVertexLayout != NULL, "Failed to create vertex layout !" );
+		ASSERT( m_pVertexLayout != NULL, "Failed to create vertex layout !" );
+		m_bHasErrors |= m_pVertexLayout == NULL;
 	}
 	else
 		m_bHasErrors = true;
 
 	// Compile the optional geometry shader
-	if ( _pEntryPointGS != NULL )
+	if ( !m_bHasErrors && _pEntryPointGS != NULL )
 	{
 		ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointGS, "gs_4_0" );
 		if ( pShader != NULL )
 		{
 			Check( m_Device.DXDevice().CreateGeometryShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pGS ) );
-			ASSERT( m_bHasErrors |= m_pGS != NULL, "Failed to create geometry shader !" );
+			ASSERT( m_pGS != NULL, "Failed to create geometry shader !" );
 			m_GSConstants.Enumerate( *pShader );
+			m_bHasErrors |= m_pGS == NULL;
 		}
 		else
 			m_bHasErrors = true;
 	}
 
 	// Compile the optional pixel shader
-	if ( _pEntryPointPS != NULL )
+	if ( !m_bHasErrors && _pEntryPointPS != NULL )
 	{
 		ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointPS, "ps_4_0" );
 		if ( pShader != NULL )
 		{
 			Check( m_Device.DXDevice().CreatePixelShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pPS ) );
-			ASSERT( m_bHasErrors |= m_pPS != NULL, "Failed to create pixel shader !" );
+			ASSERT( m_pPS != NULL, "Failed to create pixel shader !" );
 			m_PSConstants.Enumerate( *pShader );
+			m_bHasErrors |= m_pPS == NULL;
 		}
 		else
 			m_bHasErrors = true;
@@ -81,11 +85,35 @@ void	Material::Use()
 	m_Device.DXContext().PSSetShader( m_pPS, NULL, 0 );
 }
 
+static char*	pTestShader =
+	"struct VS_IN\r\n" \
+	"{\r\n" \
+	"	float4	__Position : SV_POSITION;\r\n" \
+	"};\r\n" \
+	"\r\n" \
+	"VS_IN	VS( VS_IN _In ) { return _In; }\r\n" \
+	"\r\n" \
+	"\r\n" \
+	"\r\n" \
+	"\r\n" \
+	"\r\n" \
+	"\r\n" \
+	"\r\n" \
+	"\r\n" \
+	"\r\n" \
+	"\r\n" \
+	"\r\n" \
+	"";
+
 ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget )
 {
 	ID3DBlob*   pCodeText;
 	ID3DBlob*   pCode;
 	ID3DBlob*   pErrors;
+
+
+//_pShaderCode = pTestShader;
+
 
 	D3DPreprocess( _pShaderCode, strlen(_pShaderCode), NULL, _pMacros, this, &pCodeText, &pErrors );
 	ASSERT( pErrors == NULL, "Shader preprocess error !" );

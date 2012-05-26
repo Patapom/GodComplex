@@ -154,7 +154,6 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Utility\Events.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Utility\ASMHelpers.h" />
     <ClInclude Include="Utility\Memory.h" />
     <ClInclude Include="Utility\Random.h" />
     <ClInclude Include="Utility\Resources.h" />
