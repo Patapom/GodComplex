@@ -1,24 +1,8 @@
 #pragma once
 #include "../Renderer.h"
 
-struct VertexFormat
+class IVertexFormatDescriptor
 {
-};
-
-class VertexFormatDescriptor
-{
-protected:  // CONSTANTS
-
-	static const char*	POSITION;
-	static const char*	POSITION_TRANSFORMED;
-// 	static const char*	NORMAL;
-// 	static const char*	TANGENT;
-// 	static const char*	BITANGENT;
-// 	static const char*	COLOR;
-// 	static const char*	VIEW;
-// 	static const char*	CURVATURE;
-// 	static const char*	TEXCOORD;	// In the shader, this semantic is written as TEXCOORD0, TEXCOORD1, etc.
-
 public:	 // PROPERTIES
 
 	virtual int			Size() const = 0;
@@ -26,18 +10,18 @@ public:	 // PROPERTIES
 	virtual int			GetInputElementsCount() const = 0;
 };
 
-struct VertexFormatPt4 : public VertexFormat
+struct VertexFormatPt4
 {
 public:
 
-	static class Desc : public VertexFormatDescriptor
+	static class Desc : public IVertexFormatDescriptor
 	{
 		static D3D11_INPUT_ELEMENT_DESC	ms_pInputElements[1];
 
 	public:
 
 		virtual int			Size() const							{ return sizeof(VertexFormatPt4); }
-		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return (D3D11_INPUT_ELEMENT_DESC*) ms_pInputElements; }
+		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return ms_pInputElements; }
 		virtual int			GetInputElementsCount() const			{ return 1; }
 	} DESCRIPTOR;
 
@@ -47,18 +31,18 @@ public:
 
 };
 
-struct VertexFormatP3 : public VertexFormat
+struct VertexFormatP3
 {
 public:
 
-	static class Desc : public VertexFormatDescriptor
+	static class Desc : public IVertexFormatDescriptor
 	{
 		static D3D11_INPUT_ELEMENT_DESC	ms_pInputElements[1];
 
 	public:
 
 		virtual int			Size() const							{ return sizeof(VertexFormatP3); }
-		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return (D3D11_INPUT_ELEMENT_DESC*) ms_pInputElements; }
+		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return ms_pInputElements; }
 		virtual int			GetInputElementsCount() const			{ return 1; }
 	} DESCRIPTOR;
 

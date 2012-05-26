@@ -9,7 +9,7 @@
 #include "D3D11Shader.h"
 
 
-Material::Material( Device& _Device, const VertexFormatDescriptor& _Format, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride )
+Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride )
 	: Component( _Device )
 	, m_Format( _Format )
 	, m_pVertexLayout( NULL )
@@ -85,25 +85,25 @@ void	Material::Use()
 	m_Device.DXContext().PSSetShader( m_pPS, NULL, 0 );
 }
 
-static char*	pTestShader =
-	"struct VS_IN\r\n" \
-	"{\r\n" \
-	"	float4	__Position : SV_POSITION;\r\n" \
-	"};\r\n" \
-	"\r\n" \
-	"VS_IN	VS( VS_IN _In ) { return _In; }\r\n" \
-	"\r\n" \
-	"\r\n" \
-	"\r\n" \
-	"\r\n" \
-	"\r\n" \
-	"\r\n" \
-	"\r\n" \
-	"\r\n" \
-	"\r\n" \
-	"\r\n" \
-	"\r\n" \
-	"";
+// static char*	pTestShader =
+// 	"struct VS_IN\r\n" \
+// 	"{\r\n" \
+// 	"	float4	__Position : SV_POSITION;\r\n" \
+// 	"};\r\n" \
+// 	"\r\n" \
+// 	"VS_IN	VS( VS_IN _In ) { return _In; }\r\n" \
+// 	"\r\n" \
+// 	"\r\n" \
+// 	"\r\n" \
+// 	"\r\n" \
+// 	"\r\n" \
+// 	"\r\n" \
+// 	"\r\n" \
+// 	"\r\n" \
+// 	"\r\n" \
+// 	"\r\n" \
+// 	"\r\n" \
+// 	"";
 
 ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget )
 {

@@ -14,7 +14,7 @@
 #include "d3dcommon.h"
 
 class Material;
-class VertexFormatDescriptor;
+class IVertexFormatDescriptor;
 
 
 // Loads a binary resource in memory
@@ -27,4 +27,4 @@ const U8*	LoadResourceBinary( U16 _ResourceID, const char* _pResourceType, U32* 
 char*		LoadResourceShader( U16 _ResourceID, U32& _CodeSize );
 
 // Create a full-fledged material given the shader resource ID and the vertex format
-Material*	CreateMaterial( U16 _ShaderResourceID, const VertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, D3D_SHADER_MACRO* _pMacros=NULL );
+Material*	CreateMaterial( U16 _ShaderResourceID, const IVertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, D3D_SHADER_MACRO* _pMacros=NULL );

@@ -36,7 +36,7 @@ protected:  // NESTED TYPES
 
 private:	// FIELDS
 
-	const VertexFormatDescriptor&   m_Format;
+	const IVertexFormatDescriptor&	m_Format;
 	ID3DInclude*			m_pIncludeOverride;
 
 	ID3D11InputLayout*		m_pVertexLayout;
@@ -59,7 +59,7 @@ public:	 // PROPERTIES
 
 public:	 // METHODS
 
-	Material( Device& _Device, const VertexFormatDescriptor& _Format, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride );
+	Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride );
 	~Material();
 
 	void			SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer );

@@ -87,14 +87,14 @@ void	Device::Exit()
 	if ( m_pDevice == NULL )
 		return; // Already released !
 
-	// Dispose of all the registered components in order
+	// Dispose of all the registered components in reverse order
 	while ( m_pComponentsStackTop != NULL )
 		delete m_pComponentsStackTop;  // DIE !!
 
 	m_pDeviceContext->ClearState();
 	m_pDeviceContext->Flush();
 
-	m_pDeviceContext->Release(); delete m_pDeviceContext; m_pDeviceContext = NULL;
+	m_pDeviceContext->Release(); m_pDeviceContext = NULL;
 	m_pDevice->Release(); m_pDevice = NULL;
 }
 

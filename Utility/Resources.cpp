@@ -74,7 +74,7 @@ public:
 
 } gs_IncludesManager;
 
-Material*	CreateMaterial( U16 _ShaderResourceID, const VertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, D3D_SHADER_MACRO* _pMacros )
+Material*	CreateMaterial( U16 _ShaderResourceID, const IVertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, D3D_SHADER_MACRO* _pMacros )
 {
 	U32		CodeSize = 0;
 	char*	pShaderCode = LoadResourceShader( _ShaderResourceID, CodeSize );

@@ -25,10 +25,10 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	{
 		NjFloat4	pVertices[4] =
 		{
-			NjFloat4( -1.0f, +1.0f, 0.0f, 0.5f ),
-			NjFloat4( -1.0f, -1.0f, 0.0f, 0.5f ),
-			NjFloat4( +1.0f, +1.0f, 0.0f, 0.5f ),
-			NjFloat4( +1.0f, -1.0f, 0.0f, 0.5f ),
+			NjFloat4( -1.0f, +1.0f, 0.0f, 0.0f ),
+			NjFloat4( -1.0f, -1.0f, 0.0f, 0.0f ),
+			NjFloat4( +1.0f, +1.0f, 0.0f, 0.0f ),
+			NjFloat4( +1.0f, -1.0f, 0.0f, 0.0f ),
 		};
 		gs_pPrimQuad = new Primitive( gs_Device, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, VertexFormatPt4::DESCRIPTOR );
 	}

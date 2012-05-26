@@ -26,7 +26,7 @@ static const char*	pMessageError	= "intro_init()!\n\n"\
 									"  no memory?\n"\
 									"  no music?\n"\
 									"  no shaders?";
-static const char*	pWindowClass	= "god_complex";
+static const char*	pWindowClass	= "GodComplex";
  
 static DEVMODE	ScreenSettings =
 {	{0},
@@ -239,7 +239,7 @@ void	DrawTime( float t )
 		m = ASM_floorf( t / 60.0f );
 		s = ASM_floorf( t - 60.0f * m );
 		c = ASM_floorf( t * 100.0f ) % 100;
-		sprintf( str, "%02d:%02d:%02d  [%d fps]", m, s, c, fps );
+		sprintf( str, "%s %02d:%02d:%02d  [%d fps]", pWindowClass, m, s, c, fps );
 		SetWindowText( gs_WindowInfos.hWnd, str );
 	}
 }
@@ -309,7 +309,7 @@ static void	ShowProgress( WININFO* _pInfos, int _Progress )
 	SetBkMode( _pInfos->hDC, TRANSPARENT );
 	SetTextColor( _pInfos->hDC, 0x00ffffff );
 	SelectObject( _pInfos->hDC, CreateFont( 44,0,0,0,0,0,0,0,0,0,0,ANTIALIASED_QUALITY,0,"arial") );
-	TextOut( _pInfos->hDC, (RESX-318)>>1, (RESY-38)>>1, "wait while loading...", 21 );
+	TextOut( _pInfos->hDC, (RESX-318)>>1, (RESY-38)>>1, "Precomputing...", 21 );
 
 	// Draw bar
 	SelectObject( _pInfos->hDC, CreateSolidBrush(0x00705030) );

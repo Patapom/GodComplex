@@ -8,7 +8,7 @@ class Primitive : public Component
 {
 private:	// FIELDS
 
-	const VertexFormatDescriptor&   m_Format;
+	const IVertexFormatDescriptor&   m_Format;
 	D3D11_PRIMITIVE_TOPOLOGY		m_Topology;
 
 	ID3D11Buffer*					m_pVB;
@@ -20,7 +20,7 @@ private:	// FIELDS
 
 public:	 // METHODS
 
-	Primitive( Device& _Device, int _VerticesCount, void* _pVertices, int _IndicesCount, U16* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const VertexFormatDescriptor& _Format );
+	Primitive( Device& _Device, int _VerticesCount, void* _pVertices, int _IndicesCount, U16* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format );
 	~Primitive();
 
 	void			Render( Material& _Material );
