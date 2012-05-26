@@ -5,6 +5,7 @@
 //
 #pragma once
 
+// WARNING! If you ever change these, also reflect the changes in Resources/Shaders/Inc/Global.fx !
 #define RESX	1280	// 720p 16:9
 #define RESY	720
 #define ALLOW_WINDOWED
@@ -85,6 +86,10 @@ struct IntroProgressDelegate
     void*	pInfos;
     void (*func)( WININFO* _pInfos, int _Progress );
 };
+
+//////////////////////////////////////////////////////////////////////////
+// Helpers
+void	print( const char* _pText );	// Works only in DEBUG mode !
 
 //////////////////////////////////////////////////////////////////////////
 // Main intro functions

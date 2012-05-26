@@ -1,8 +1,8 @@
-#include "Inc/TestInclude.fx"
+#include "Inc/Global.fx"
 
 struct	VS_IN
 {
-	float4	Position	: SV_POSITION;
+	float4	__Position	: SV_POSITION;
 };
 
 VS_IN	VS( VS_IN _In )
@@ -12,5 +12,5 @@ VS_IN	VS( VS_IN _In )
 
 float4	PS( VS_IN _In ) : SV_TARGET0
 {
-	return OUTPUT_COLOR;
+	return float4( _In.__Position.xy * INV_SCREEN_SIZE, 0, 0 );
 }

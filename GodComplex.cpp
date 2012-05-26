@@ -388,9 +388,6 @@ void WINAPI	EntryPoint()
 
 		// Check for hash collisions => We must never have too many of them !
 		ASSERT( DictionaryU32::ms_MaxCollisionsCount < 2, "Too many collisions in hash tables ! Either increase size or use different hashing scheme !" );
-
-	 	print( "Test print !" );
-
 #endif
 
 		// Run the intro

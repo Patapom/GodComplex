@@ -77,6 +77,9 @@
       <EntryPointSymbol>
       </EntryPointSymbol>
     </Link>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -190,9 +193,9 @@ MinifyAll.cmd</Command>
     <None Include="Resources\pzero_new.v2m">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="Resources\Shaders\Compressed\Inc\TestInclude.fx" />
+    <None Include="Resources\Shaders\Compressed\Inc\Global.fx" />
     <None Include="Resources\Shaders\Compressed\PostFinal.fx" />
-    <None Include="Resources\Shaders\Inc\TestInclude.fx" />
+    <None Include="Resources\Shaders\Inc\Global.fx" />
     <None Include="Resources\Shaders\PostFinal.fx">
       <FileType>Document</FileType>
     </None>

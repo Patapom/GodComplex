@@ -74,7 +74,7 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 
 	// Store the default render target
 	ID3D11Texture2D*	pDefaultRenderSurface;
-	m_pSwapChain->GetBuffer( 0, IID_ID3D11Texture2D, (void**) &pDefaultRenderSurface );
+	m_pSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (void**) &pDefaultRenderSurface );
 	ASSERT( pDefaultRenderSurface != NULL, "Failed to retrieve default render surface !" );
 	m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface, PixelFormatRGBA8::DESCRIPTOR );
 
@@ -90,6 +90,8 @@ void	Device::Exit()
 	// Dispose of all the registered components in reverse order
 	while ( m_pComponentsStackTop != NULL )
 		delete m_pComponentsStackTop;  // DIE !!
+
+	m_pSwapChain->Release();
 
 	m_pDeviceContext->ClearState();
 	m_pDeviceContext->Flush();

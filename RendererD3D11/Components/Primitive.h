@@ -16,6 +16,7 @@ private:	// FIELDS
 	int								m_VerticesCount;
 	int								m_IndicesCount;
 	int								m_FacesCount;
+	U32								m_Stride;
 
 
 public:	 // METHODS

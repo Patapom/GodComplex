@@ -34,6 +34,8 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 		Check( m_Device.DXDevice().CreateInputLayout( _Format.GetInputElements(), _Format.GetInputElementsCount(), pShader->GetBufferPointer(), pShader->GetBufferSize(), &m_pVertexLayout ) );
 		ASSERT( m_pVertexLayout != NULL, "Failed to create vertex layout !" );
 		m_bHasErrors |= m_pVertexLayout == NULL;
+
+		pShader->Release();
 	}
 	else
 		m_bHasErrors = true;
@@ -48,6 +50,8 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 			ASSERT( m_pGS != NULL, "Failed to create geometry shader !" );
 			m_GSConstants.Enumerate( *pShader );
 			m_bHasErrors |= m_pGS == NULL;
+
+			pShader->Release();
 		}
 		else
 			m_bHasErrors = true;
@@ -63,6 +67,8 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 			ASSERT( m_pPS != NULL, "Failed to create pixel shader !" );
 			m_PSConstants.Enumerate( *pShader );
 			m_bHasErrors |= m_pPS == NULL;
+
+			pShader->Release();
 		}
 		else
 			m_bHasErrors = true;
@@ -85,6 +91,7 @@ void	Material::Use()
 	m_Device.DXContext().PSSetShader( m_pPS, NULL, 0 );
 }
 
+// Embedded shader for debug & testing...
 // static char*	pTestShader =
 // 	"struct VS_IN\r\n" \
 // 	"{\r\n" \

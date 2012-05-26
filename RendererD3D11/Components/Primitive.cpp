@@ -8,16 +8,18 @@ Primitive::Primitive( Device& _Device, int _VerticesCount, void* _pVertices, int
 	, m_pVB( NULL )
 	, m_pIB( NULL )
 {
+	m_Stride = _Format.Size();
+
 	{   // Create the vertex buffer
 		D3D11_BUFFER_DESC   Desc;
-		Desc.ByteWidth = _VerticesCount * _Format.Size();
+		Desc.ByteWidth = _VerticesCount * m_Stride;
 		Desc.Usage = D3D11_USAGE_IMMUTABLE;
 		Desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		Desc.CPUAccessFlags = 0;
 		Desc.MiscFlags = 0;
 		Desc.StructureByteStride = 0;
 
-		D3D11_SUBRESOURCE_DATA  InitData;
+		D3D11_SUBRESOURCE_DATA	InitData;
 		InitData.pSysMem = _pVertices;
 		InitData.SysMemPitch = 0;
 		InitData.SysMemSlicePitch = 0;
@@ -35,7 +37,7 @@ Primitive::Primitive( Device& _Device, int _VerticesCount, void* _pVertices, int
 		Desc.MiscFlags = 0;
 		Desc.StructureByteStride = 0;
 
-		D3D11_SUBRESOURCE_DATA  InitData;
+		D3D11_SUBRESOURCE_DATA	InitData;
 		InitData.pSysMem = _pIndices;
 		InitData.SysMemPitch = 0;
 		InitData.SysMemSlicePitch = 0;
@@ -71,8 +73,8 @@ void	Primitive::Render( Material& _Material )
 	m_Device.DXContext().IASetInputLayout( _Material.GetVertexLayout() );
 	m_Device.DXContext().IASetPrimitiveTopology( m_Topology );
 
-	U32 StrideOffset = 0;
-	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &StrideOffset, &StrideOffset );
+	U32 Offset = 0;
+	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &m_Stride, &Offset );
 	if ( m_pIB != NULL )
 		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R16_UINT, 0 );
 	else

@@ -198,11 +198,11 @@
     <None Include="Resources\Shaders\Compressed\PostFinal.fx">
       <Filter>Resources\Shaders\RELEASE %28Minified%29</Filter>
     </None>
-    <None Include="Resources\Shaders\Inc\TestInclude.fx">
-      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
-    </None>
-    <None Include="Resources\Shaders\Compressed\Inc\TestInclude.fx">
+    <None Include="Resources\Shaders\Compressed\Inc\Global.fx">
       <Filter>Resources\Shaders\RELEASE %28Minified%29\Includes</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\Global.fx">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

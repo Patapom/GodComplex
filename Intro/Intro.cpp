@@ -1,5 +1,8 @@
 #include "../GodComplex.h"
 
+#define CHECK_MATERIAL( pMaterial, ErrorCode )	if ( pMaterial->HasErrors() ) return ErrorCode;
+
+
 // Textures & Render targets
 static Texture2D*	gs_pRTHDR = NULL;
 
@@ -66,7 +69,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	{
 		D3D11_BLEND_DESC	Desc;
 		ASM_memset( &Desc, 0, sizeof(Desc) );
-		Desc.AlphaToCoverageEnable = true;
+		Desc.AlphaToCoverageEnable = false;
 		Desc.IndependentBlendEnable = false;
 		Desc.RenderTarget[0].BlendEnable = false;
 		Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_COLOR;
@@ -84,7 +87,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	// Create materials
 	{
 		gs_pMatPostFinal = CreateMaterial( IDR_SHADER_POST_FINAL, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" );
-		if ( gs_pMatPostFinal->HasErrors() ) return 1001;	// Material error !
+		CHECK_MATERIAL( gs_pMatPostFinal, 1001 );
 	}
 
 	return 0;
