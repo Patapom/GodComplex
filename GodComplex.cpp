@@ -289,6 +289,13 @@ void	HandleEvents()
 	gs_WindowInfos.Events.Mouse.dbuttons[0] = gs_WindowInfos.Events.Mouse.buttons[0] - gs_WindowInfos.Events.Mouse.obuttons[0];
 	gs_WindowInfos.Events.Mouse.dbuttons[1] = gs_WindowInfos.Events.Mouse.buttons[1] - gs_WindowInfos.Events.Mouse.obuttons[1];
 }
+
+void	print( const char* _pText )
+{
+	OutputDebugString( _pText );
+}
+#else
+void	print( const char* _pText )	{}	// Empty in release mode
 #endif
 
  
@@ -381,6 +388,9 @@ void WINAPI	EntryPoint()
 
 		// Check for hash collisions => We must never have too many of them !
 		ASSERT( DictionaryU32::ms_MaxCollisionsCount < 2, "Too many collisions in hash tables ! Either increase size or use different hashing scheme !" );
+
+	 	print( "Test print !" );
+
 #endif
 
 		// Run the intro
