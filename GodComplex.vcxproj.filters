@@ -47,6 +47,9 @@
     <Filter Include="Resources\Shaders\RELEASE %28Minified%29\Includes">
       <UniqueIdentifier>{8011b303-e883-47d4-b7c9-da0baafa5f93}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Procedural">
+      <UniqueIdentifier>{eeae6a5b-f4c7-4414-ba3c-c26c8ecd6474}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\Events.h">
@@ -125,6 +128,9 @@
     <ClInclude Include="NuajAPI\API\ASMHelpers.h">
       <Filter>NuajAPI\API</Filter>
     </ClInclude>
+    <ClInclude Include="Procedural\Noise.h">
+      <Filter>Procedural</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -181,6 +187,9 @@
     </ClCompile>
     <ClCompile Include="NuajAPI\API\Hashtable.cpp">
       <Filter>NuajAPI\API</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\Noise.cpp">
+      <Filter>Procedural</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

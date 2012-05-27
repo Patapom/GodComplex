@@ -1,0 +1,9 @@
+ This log contains the history of exe sizes
+--------------------------------------------
+
+. First version with working shader
+	packed executable 97280 -> 20992 bytes
+
+. Added static gs_Noise instance + Noise code
+	packed executable 97280 -> 21504 bytes
+

@@ -134,6 +134,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="NuajAPI\API\Hashtable.h" />
     <ClInclude Include="NuajAPI\API\Types.h" />
     <ClInclude Include="NuajAPI\Math\Math.h" />
+    <ClInclude Include="Procedural\Noise.h" />
     <ClInclude Include="RendererD3D11\Components\Component.h" />
     <ClInclude Include="RendererD3D11\Components\ConstantBuffer.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -166,6 +167,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Intro\Intro.cpp" />
     <ClCompile Include="NuajAPI\API\Hashtable.cpp" />
     <ClCompile Include="NuajAPI\Math\Math.cpp" />
+    <ClCompile Include="Procedural\Noise.cpp" />
     <ClCompile Include="RendererD3D11\Components\Component.cpp" />
     <ClCompile Include="RendererD3D11\Components\ConstantBuffer.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>

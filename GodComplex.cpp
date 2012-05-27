@@ -12,6 +12,8 @@ V2MPlayer	gs_Music;
 
 WININFO		gs_WindowInfos;
 
+Noise		gs_Noise;
+
 
 // Extern/undefined CRT shit that needs to be defined to avoid linking to actual CRT
 // Useful hints found at http://www.benshoof.org/blog/minicrt/ !
