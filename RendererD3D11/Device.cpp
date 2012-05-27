@@ -16,7 +16,7 @@ Device::Device()
 
 int		Device::ComponentsCount() const
 {
-	int			Count = -2;	// Start without counting for our internal back buffer & depth stencil components
+	int			Count = -2 - m_StatesCount;	// Start without counting for our internal back buffer & depth stencil components
 	Component*	pCurrent = m_pComponentsStackTop;
 	while ( pCurrent != NULL )
 	{
@@ -80,6 +80,86 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 
 	// Create the default depth stencil buffer
 	m_pDefaultDepthStencil = new Texture2D( *this, _Width, _Height, DepthStencilFormatD32F::DESCRIPTOR );
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Create default render states
+	m_StatesCount = 0;
+	{
+		D3D11_RASTERIZER_DESC	Desc;
+		ASM_memset( &Desc, 0, sizeof(Desc) );
+		Desc.FillMode = D3D11_FILL_SOLID;
+        Desc.CullMode = D3D11_CULL_NONE;
+        Desc.FrontCounterClockwise = TRUE;
+        Desc.DepthBias = D3D11_DEFAULT_DEPTH_BIAS;
+        Desc.DepthBiasClamp = D3D11_DEFAULT_DEPTH_BIAS_CLAMP;
+        Desc.SlopeScaledDepthBias = D3D11_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+        Desc.DepthClipEnable = TRUE;
+        Desc.ScissorEnable = FALSE;
+        Desc.MultisampleEnable = FALSE;
+        Desc.AntialiasedLineEnable = FALSE;
+
+		m_pRS_CullNone = new RasterizerState( *this, Desc ); m_StatesCount++;
+	}
+	{
+		D3D11_DEPTH_STENCIL_DESC	Desc;
+		ASM_memset( &Desc, 0, sizeof(Desc) );
+		Desc.DepthEnable = false;
+		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+		Desc.DepthFunc = D3D11_COMPARISON_LESS;
+		Desc.StencilEnable = false;
+		Desc.StencilReadMask = 0;
+		Desc.StencilWriteMask = 0;
+
+		m_pDS_Disabled = new DepthStencilState( *this, Desc ); m_StatesCount++;
+	}
+	{
+		D3D11_BLEND_DESC	Desc;
+		ASM_memset( &Desc, 0, sizeof(Desc) );
+		Desc.AlphaToCoverageEnable = false;
+		Desc.IndependentBlendEnable = false;
+		Desc.RenderTarget[0].BlendEnable = false;
+		Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_COLOR;
+		Desc.RenderTarget[0].DestBlend = D3D11_BLEND_DEST_COLOR;
+		Desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+		Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_DEST_ALPHA;
+		Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		Desc.RenderTarget[0].RenderTargetWriteMask = 0x0F;		// Seems to crash on my card when setting more than 4 bits of write mask ! (limited to 4 MRTs I suppose ?)
+
+		m_pBS_Disabled = new BlendState( *this, Desc ); m_StatesCount++;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Create default samplers
+	D3D11_SAMPLER_DESC	Desc;
+	Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	Desc.AddressU = Desc.AddressV = Desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	Desc.MipLODBias = 0.0f;
+	Desc.MaxAnisotropy = 16;
+	Desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	Desc.BorderColor[0] = Desc.BorderColor[2] = 1.0f;	Desc.BorderColor[1] = Desc.BorderColor[3] = 0.0f;
+	Desc.MinLOD = -D3D11_FLOAT32_MAX;
+	Desc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[0] );	// Linear Clamp
+	Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[1] );	// Point Clamp
+
+	Desc.AddressU = Desc.AddressV = Desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[3] );	// Point Wrap
+	Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[2] );	// Linear Wrap
+
+	Desc.AddressU = Desc.AddressV = Desc.AddressW = D3D11_TEXTURE_ADDRESS_MIRROR;
+	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[4] );	// Linear Mirror
+	Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[5] );	// Point Mirror
+
+	// Upload them once and for all
+	m_pDeviceContext->VSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
+	m_pDeviceContext->GSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
+	m_pDeviceContext->PSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 }
 
 void	Device::Exit()
@@ -90,6 +170,10 @@ void	Device::Exit()
 	// Dispose of all the registered components in reverse order
 	while ( m_pComponentsStackTop != NULL )
 		delete m_pComponentsStackTop;  // DIE !!
+
+	// Dispose of samplers
+	for ( int SamplerIndex=0; SamplerIndex < SAMPLERS_COUNT; SamplerIndex++ )
+		m_ppSamplers[SamplerIndex]->Release();
 
 	m_pSwapChain->Release();
 

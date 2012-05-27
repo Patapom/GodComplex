@@ -24,5 +24,6 @@
 #include "../NuajAPI/API/Types.h"
 #include "../NuajAPI/Math/Math.h"
 #include "../NuajAPI/API/Hashtable.h"
+#include "../NuajAPI/API/ASMHelpers.h"
 
 #endif

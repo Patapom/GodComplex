@@ -36,6 +36,9 @@ void	Noise::Init( int _Seed )
 		m_pPermutation[NOISE_SIZE+i] = m_pPermutation[i];
 
 	_randpopseed();
+
+	// Arbitrary default wrapping init
+	SetWrappingParameters( 0.001f, 1 );
 }
 
 void	Noise::Exit()
@@ -295,14 +298,14 @@ float	Noise::Noise6D( const NjFloat4& uvwr, const NjFloat2& st )
 
 void	Noise::SetWrappingParameters( float _Frequency, U32 _Seed )
 {
-	m_WrapRadius = _Frequency * 0.5f * NOISE_SIZE;
+	m_WrapRadius = _Frequency * 0.5f;
 
 	_randpushseed();
 	_srand( _Seed, RAND_DEFAULT_SEED_V );
 
-	m_WrapCenter0 = NjFloat2( _frand() * NOISE_SIZE, _frand() * NOISE_SIZE );
-	m_WrapCenter1 = NjFloat2( _frand() * NOISE_SIZE, _frand() * NOISE_SIZE );
-	m_WrapCenter2 = NjFloat2( _frand() * NOISE_SIZE, _frand() * NOISE_SIZE );
+	m_WrapCenter0 = NjFloat2( _frand(), _frand() );
+	m_WrapCenter1 = NjFloat2( _frand(), _frand() );
+	m_WrapCenter2 = NjFloat2( _frand(), _frand() );
 
 	_randpopseed();
 }
@@ -318,7 +321,7 @@ float	Noise::WrapNoise2D( const NjFloat2& uv )
 {
 	float		Angle0 = TWOPI * uv.x;
 	float		Angle1 = TWOPI * uv.y;
-	NjFloat4	Pos( m_WrapCenter0.x + cosf( Angle0 ), m_WrapCenter0.y + sinf( Angle0 ), m_WrapCenter1.x + cosf( Angle1 ), m_WrapCenter1.y + sinf( Angle1 ) );
+	NjFloat4	Pos( m_WrapCenter0.x + m_WrapRadius * cosf( Angle0 ), m_WrapCenter0.y + m_WrapRadius * sinf( Angle0 ), m_WrapCenter1.x + m_WrapRadius * cosf( Angle1 ), m_WrapCenter1.y + m_WrapRadius * sinf( Angle1 ) );
 	return Noise4D( Pos );
 }
 
@@ -327,7 +330,7 @@ float	Noise::WrapNoise3D( const NjFloat3& uvw )
 	float		Angle0 = TWOPI * uvw.x;
 	float		Angle1 = TWOPI * uvw.y;
 	float		Angle2 = TWOPI * uvw.z;
-	NjFloat4	Pos0( m_WrapCenter0.x + cosf( Angle0 ), m_WrapCenter0.y + sinf( Angle0 ), m_WrapCenter1.x + cosf( Angle1 ), m_WrapCenter1.y + sinf( Angle1 ) );
-	NjFloat2	Pos1( m_WrapCenter2.x + cosf( Angle1 ), m_WrapCenter2.y + sinf( Angle1 ) );
+	NjFloat4	Pos0( m_WrapCenter0.x + m_WrapRadius * cosf( Angle0 ), m_WrapCenter0.y + m_WrapRadius * sinf( Angle0 ), m_WrapCenter1.x + m_WrapRadius * cosf( Angle1 ), m_WrapCenter1.y + m_WrapRadius * sinf( Angle1 ) );
+	NjFloat2	Pos1( m_WrapCenter2.x + m_WrapRadius * cosf( Angle1 ), m_WrapCenter2.y + m_WrapRadius * sinf( Angle1 ) );
 	return Noise6D( Pos0, Pos1 );
 }

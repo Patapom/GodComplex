@@ -131,6 +131,12 @@
     <ClInclude Include="Procedural\Noise.h">
       <Filter>Procedural</Filter>
     </ClInclude>
+    <ClInclude Include="Procedural\TextureBuilder.h">
+      <Filter>Procedural</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\ConstantBuffers.h">
+      <Filter>Intro</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -189,6 +195,9 @@
       <Filter>NuajAPI\API</Filter>
     </ClCompile>
     <ClCompile Include="Procedural\Noise.cpp">
+      <Filter>Procedural</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\TextureBuilder.cpp">
       <Filter>Procedural</Filter>
     </ClCompile>
   </ItemGroup>

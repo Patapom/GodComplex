@@ -94,31 +94,6 @@ static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	return DefWindowProc( hWnd, uMsg, wParam, lParam );
 }
 
-void	WindowExit()
-{
-	// Kill the music
-#ifdef MUSIC
-	dsClose();
-	gs_Music.Close();
-#endif
-
-	// Kill the DirectX device
-	ASSERT( gs_Device.ComponentsCount() == 0, "Some DirectX components remain on exit !	Did you forget some deletes ???" );	// This means you forgot to clean up some components ! It's okay since the device is going to clean them up for you, but it's better yet if you know what your doing and take care of your own garbage...
-	gs_Device.Exit();
-
-	// Destroy the Windows contexts
-	if ( gs_WindowInfos.hDC != NULL )	ReleaseDC( gs_WindowInfos.hWnd, gs_WindowInfos.hDC );
-	if ( gs_WindowInfos.hWnd != NULL )	DestroyWindow( gs_WindowInfos.hWnd );
-
-	UnregisterClass( pWindowClass, gs_WindowInfos.hInstance );
-
-	if ( gs_WindowInfos.bFullscreen )
-	{
-		ChangeDisplaySettings( 0, 0 );
-		ShowCursor( 1 ); 
-	}
-}
-
 bool	WindowInit()
 {
 	gs_WindowInfos.hInstance = GetModuleHandle( 0 );
@@ -210,7 +185,39 @@ bool	WindowInit()
 	dsInit( gs_Music.RenderProxy, &gs_Music, gs_WindowInfos.hWnd );
 #endif
 
+	//////////////////////////////////////////////////////////////////////////
+	// Initialize other static fields
+	gs_Noise.Init( 1 );
+
 	return true;
+}
+
+void	WindowExit()
+{
+	// Free noise
+	gs_Noise.Exit();
+
+	// Kill the music
+#ifdef MUSIC
+	dsClose();
+	gs_Music.Close();
+#endif
+
+	// Kill the DirectX device
+	ASSERT( gs_Device.ComponentsCount() == 0, "Some DirectX components remain on exit !	Did you forget some deletes ???" );	// This means you forgot to clean up some components ! It's okay since the device is going to clean them up for you, but it's better yet if you know what your doing and take care of your own garbage...
+	gs_Device.Exit();
+
+	// Destroy the Windows contexts
+	if ( gs_WindowInfos.hDC != NULL )	ReleaseDC( gs_WindowInfos.hWnd, gs_WindowInfos.hDC );
+	if ( gs_WindowInfos.hWnd != NULL )	DestroyWindow( gs_WindowInfos.hWnd );
+
+	UnregisterClass( pWindowClass, gs_WindowInfos.hInstance );
+
+	if ( gs_WindowInfos.bFullscreen )
+	{
+		ChangeDisplaySettings( 0, 0 );
+		ShowCursor( 1 ); 
+	}
 }
 
 #ifdef _DEBUG
@@ -366,8 +373,15 @@ void WINAPI	EntryPoint()
 	//////////////////////////////////////////////////////////////////////////
 	// Run the message loop !
 	bool	bFinished = false;
+    float	StartTime = 0.001f * timeGetTime(); 
+	float	LastTime = StartTime;
+
 	while ( !bFinished )
 	{
+		float	Time = 0.001f * timeGetTime() - StartTime;
+	    float	DeltaTime = Time - LastTime;
+		LastTime = Time;
+
 		// Process Windows messages
 		MSG		msg;
 		while ( PeekMessage( &msg, 0, 0, 0, PM_REMOVE ) )
@@ -384,16 +398,14 @@ void WINAPI	EntryPoint()
 		HandleEvents();
 
 		// Show FPS
-        static long	OldTime = 0; if( !OldTime ) OldTime=timeGetTime(); 
-        float	DeltaTime = 0.001f * (float) (timeGetTime() - OldTime);
-		DrawTime( DeltaTime );
+		DrawTime( Time );
 
 		// Check for hash collisions => We must never have too many of them !
 		ASSERT( DictionaryU32::ms_MaxCollisionsCount < 2, "Too many collisions in hash tables ! Either increase size or use different hashing scheme !" );
 #endif
 
 		// Run the intro
-		bFinished |= !IntroDo();
+		bFinished |= !IntroDo( Time, DeltaTime );
 
 // This was in iQ's framework, I don't know what it's for. I believe it's useful when using OpenGL but with DirectX it makes everything slow as hell (attempts to load/unload DLLs every frame) !
 // I left it here so everyone knows it must NOT be called...

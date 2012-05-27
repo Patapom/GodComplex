@@ -16,7 +16,7 @@ private:	// FIELDS
 	int				 m_Height;
 	int				 m_Depth;
 	int				 m_MipLevelsCount;
-	const PixelFormatDescriptor&  m_Format;
+	const IPixelFormatDescriptor&  m_Format;
 
 	ID3D11Texture3D*	m_pTexture;
 
@@ -35,7 +35,7 @@ public:	 // PROPERTIES
 public:	 // METHODS
 
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !
-	Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const PixelFormatDescriptor& _Format, int _MipLevelsCount, const void* _ppContent[] );
+	Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* _ppContent[] );
 	~Texture3D();
 
 	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart, int _MipLevelsCount ) const;

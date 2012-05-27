@@ -6,7 +6,7 @@ struct PixelFormat
 {
 };
 
-class PixelFormatDescriptor : public IFormatDescriptor
+class IPixelFormatDescriptor : public IFormatDescriptor
 {
 public: // PROPERTIES
 
@@ -18,7 +18,7 @@ struct PixelFormatRGBA8 : public PixelFormat
 {
 public:
 
-	static class Desc : public PixelFormatDescriptor
+	static class Desc : public IPixelFormatDescriptor
 	{
 	public:
 
@@ -38,7 +38,7 @@ struct PixelFormatRGBA16F : public PixelFormat
 {
 public:
 
-	static class Desc : public PixelFormatDescriptor
+	static class Desc : public IPixelFormatDescriptor
 	{
 	public:
 

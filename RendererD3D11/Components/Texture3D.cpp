@@ -1,6 +1,6 @@
 #include "Texture3D.h"
 
-Texture3D::Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const PixelFormatDescriptor& _Format, int _MipLevelsCount, const void* _ppContent[] ) : Component( _Device )
+Texture3D::Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* _ppContent[] ) : Component( _Device )
 	, m_Format( _Format )
 {
 	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );

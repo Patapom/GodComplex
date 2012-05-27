@@ -5,4 +5,4 @@ int		IntroInit( IntroProgressDelegate& _Delegate );
 void	IntroExit();
 
 // Return false to end the intro
-bool	IntroDo();
+bool	IntroDo( float _Time, float _DeltaTime );

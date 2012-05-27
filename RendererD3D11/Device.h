@@ -10,6 +10,8 @@ class BlendState;
 
 class Device
 {
+	static const int	SAMPLERS_COUNT = 6;
+
 private:	// FIELDS
 
 	ID3D11Device*			m_pDevice;
@@ -19,13 +21,24 @@ private:	// FIELDS
 	Texture2D*				m_pDefaultRenderTarget;	// The back buffer to render to the screen
 	Texture2D*				m_pDefaultDepthStencil;	// The default depth stencil
 
+	ID3D11SamplerState*		m_ppSamplers[SAMPLERS_COUNT];
+
 	Component*				m_pComponentsStackTop;	// Remember this is the stack TOP so access the components using their m_pNext pointer to reach back to the bottom
 
 	Material*				m_pCurrentMaterial;		// The currently used material
-
 	RasterizerState*		m_pCurrentRasterizerState;
 	DepthStencilState*		m_pCurrentDepthStencilState;
 	BlendState*				m_pCurrentBlendState;
+
+	int						m_StatesCount;
+
+public:
+
+	RasterizerState*		m_pRS_CullNone;
+
+	DepthStencilState*		m_pDS_Disabled;
+
+	BlendState*				m_pBS_Disabled;
 
 
 public:	 // PROPERTIES

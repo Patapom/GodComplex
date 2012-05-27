@@ -1,6 +1,6 @@
 #include "Texture2D.h"
 
-Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const PixelFormatDescriptor& _Format ) : Component( _Device ), m_Format( _Format )
+Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFormatDescriptor& _Format ) : Component( _Device ), m_Format( _Format )
 {
 	D3D11_TEXTURE2D_DESC	Desc;
 	_Texture.GetDesc( &Desc );
@@ -13,7 +13,7 @@ Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const PixelFor
 	m_pTexture = &_Texture;
 }
 
-Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const PixelFormatDescriptor& _Format, int _MipLevelsCount, const void* _ppContent[] ) : Component( _Device ), m_Format( _Format )
+Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* _ppContent[] ) : Component( _Device ), m_Format( _Format )
 {
 	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
 	ASSERT( _Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
@@ -22,7 +22,7 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 	m_Height = _Height;
 	m_ArraySize = _ArraySize;
 
-	m_MipLevelsCount = ValidateMipLevels( _Width, _Height, _MipLevelsCount );
+	m_MipLevelsCount = ComputeMipLevelsCount( _Width, _Height, _MipLevelsCount );
 
 	D3D11_TEXTURE2D_DESC	Desc;
 	Desc.Width = _Width;
@@ -45,9 +45,7 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 			pInitialData[MipLevelIndex].pSysMem = _ppContent[MipLevelIndex];
 			pInitialData[MipLevelIndex].SysMemPitch = _Width * _Format.Size();
 			pInitialData[MipLevelIndex].SysMemSlicePitch = _Width * _Height * _Format.Size();
-
-			_Width = MAX( 1, (_Width >> 1) );
-			_Height = MAX( 1, (_Height >> 1) );
+			NextMipSize( _Width, _Height );
 		}
 
 		Check( m_Device.DXDevice().CreateTexture2D( &Desc, pInitialData, &m_pTexture ) );
@@ -171,7 +169,36 @@ ID3D11DepthStencilView*		Texture2D::GetDepthStencilView() const
 	return m_pCachedDepthStencilView;
 }
 
-int	 Texture2D::ValidateMipLevels( int _Width, int _Height, int _MipLevelsCount )
+void	Texture2D::Set( int _SlotIndex )
+{
+	ID3D11ShaderResourceView*	pView = GetShaderView( 0, 0, 0, 0 );
+	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &pView );
+	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &pView );
+	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &pView );
+}
+void	Texture2D::SetVS( int _SlotIndex )
+{
+	ID3D11ShaderResourceView*	pView = GetShaderView( 0, 0, 0, 0 );
+	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &pView );
+}
+void	Texture2D::SetGS( int _SlotIndex )
+{
+	ID3D11ShaderResourceView*	pView = GetShaderView( 0, 0, 0, 0 );
+	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &pView );
+}
+void	Texture2D::SetPS( int _SlotIndex )
+{
+	ID3D11ShaderResourceView*	pView = GetShaderView( 0, 0, 0, 0 );
+	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &pView );
+}
+
+void	Texture2D::NextMipSize( int& _Width, int& _Height )
+{
+	_Width = MAX( 1, _Width >> 1 );
+	_Height = MAX( 1, _Height >> 1 );
+}
+
+int	 Texture2D::ComputeMipLevelsCount( int _Width, int _Height, int _MipLevelsCount )
 {
 	int MaxSize = MAX( _Width, _Height );
 	int	MaxMipLevelsCount = int( ceilf( logf( MaxSize+1.0f ) / logf( 2.0f ) ) );

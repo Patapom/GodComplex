@@ -14,3 +14,12 @@ static const float	HALFPI = 1.5707963267948966192313216916398;		// PI/2
 static const float	RECIPI = 0.31830988618379067153776752674503;	// 1/PI
 
 //static const float4	OUTPUT_COLOR = float4( 1, 0, 0, 1 );	// A nice red !
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Samplers
+SamplerState LinearClamp	: register( s0 );
+SamplerState PointClamp		: register( s1 );
+SamplerState LinearWrap		: register( s2 );
+SamplerState PointWrap		: register( s3 );
+SamplerState LinearMirror	: register( s4 );
+SamplerState PointMirror	: register( s5 );

@@ -6,7 +6,7 @@
 
 class Texture2D : public Component
 {
-protected:  // CONSTANTS
+protected:	// CONSTANTS
 
 	static const int	MAX_TEXTURE_SIZE = 8192;	// Should be enough !
 	static const int	MAX_TEXTURE_POT = 13;
@@ -41,7 +41,7 @@ public:	 // PROPERTIES
 public:	 // METHODS
 
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !
-	Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const PixelFormatDescriptor& _Format, int _MipLevelsCount, const void* _ppContent[] );
+	Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* _ppContent[] );
 	// This is for creating a depth stencil buffer
 	Texture2D( Device& _Device, int _Width, int _Height, const DepthStencilFormatDescriptor& _Format );
 	~Texture2D();
@@ -50,10 +50,17 @@ public:	 // METHODS
 	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex, int _ArrayStart, int _ArraySize ) const;
 	ID3D11DepthStencilView*		GetDepthStencilView() const;
 
-	// Used by the Device for the default backbuffer
-	Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const PixelFormatDescriptor& _Format );
+	// Uploads the texture to the shader
+	void		Set( int _SlotIndex );
+	void		SetVS( int _SlotIndex );
+	void		SetGS( int _SlotIndex );
+	void		SetPS( int _SlotIndex );
 
-private:
-	int	 ValidateMipLevels( int _Width, int _Height, int _MipLevelsCount );
+	// Used by the Device for the default backbuffer
+	Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFormatDescriptor& _Format );
+
+public:
+	static void	NextMipSize( int& _Width, int& _Height );
+	static int	ComputeMipLevelsCount( int _Width, int _Height, int _MipLevelsCount );
 };
 

@@ -23,5 +23,10 @@ public:	 // METHODS
 	~ConstantBuffer();
 
 	void		UpdateData( const void* _pData );
+
+	void		Set( int _SlotIndex );
+	void		SetVS( int _SlotIndex );
+	void		SetGS( int _SlotIndex );
+	void		SetPS( int _SlotIndex );
 };
 

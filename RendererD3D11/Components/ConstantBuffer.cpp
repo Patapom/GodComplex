@@ -41,7 +41,26 @@ void	ConstantBuffer::UpdateData( const void* _pData )
 	D3D11_MAPPED_SUBRESOURCE	SubResource;
 	m_Device.DXContext().Map( m_pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &SubResource );
 
-	memcpy( SubResource.pData, _pData, m_Size );
+	ASM_memcpy( SubResource.pData, _pData, m_Size );
 
 	m_Device.DXContext().Unmap( m_pBuffer, 0 );
+}
+
+void	ConstantBuffer::Set( int _SlotIndex )
+{
+	m_Device.DXContext().VSSetConstantBuffers( 0, 1, &m_pBuffer );
+	m_Device.DXContext().GSSetConstantBuffers( 0, 1, &m_pBuffer );
+	m_Device.DXContext().PSSetConstantBuffers( 0, 1, &m_pBuffer );
+}
+void	ConstantBuffer::SetVS( int _SlotIndex )
+{
+	m_Device.DXContext().VSSetConstantBuffers( 0, 1, &m_pBuffer );
+}
+void	ConstantBuffer::SetGS( int _SlotIndex )
+{
+	m_Device.DXContext().GSSetConstantBuffers( 0, 1, &m_pBuffer );
+}
+void	ConstantBuffer::SetPS( int _SlotIndex )
+{
+	m_Device.DXContext().PSSetConstantBuffers( 0, 1, &m_pBuffer );
 }
