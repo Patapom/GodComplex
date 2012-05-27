@@ -4,6 +4,7 @@ TextureBuilder::TextureBuilder( int _Width, int _Height )
 	: m_ppBufferSpecific( NULL )
 	, m_Width( _Width )
 	, m_Height( _Height )
+	, m_bMipLevelsBuilt( false )
 {
 	m_MipLevelsCount = Texture2D::ComputeMipLevelsCount( _Width, _Height, 0 );
 	m_ppBufferGeneric = new NjFloat4*[m_MipLevelsCount];
@@ -22,9 +23,9 @@ TextureBuilder::~TextureBuilder()
 	ReleaseSpecificBuffer();
 }
 
-const void**	TextureBuilder::GetMips() const
+const void**	TextureBuilder::GetLastConvertedMips() const
 {
-	ASSERT( m_ppBufferSpecific != NULL, "Invalid final texture buffers ! Did you forget to call GenerateMips() ?" );
+	ASSERT( m_ppBufferSpecific != NULL, "Invalid final texture buffers ! Did you forget to call Convert() ?" );
 	return (const void**) m_ppBufferSpecific;
 }
 
@@ -42,7 +43,67 @@ void	TextureBuilder::Fill( FillDelegate _Filler )
 			(*_Filler)( X, Y, UV, *pScanline );
 		}
 	}
+	m_bMipLevelsBuilt = false;
+}
 
+void	TextureBuilder::SampleWrap( float _X, float _Y, NjFloat4& _Color )
+{
+	int		X0 = ASM_floorf( _X );
+	float	x = _X - X0;
+	float	rx = 1.0f - x;
+	int		X1 = (X0+1) % m_Width;
+			X0 = X0 % m_Width;
+
+	int		Y0 = ASM_floorf( _Y );
+	float	y = _Y - Y0;
+	float	ry = 1.0f - y;
+	int		Y1 = (Y0+1) % m_Height;
+			Y0 = Y0 % m_Height;
+
+	NjFloat4&	V00 = m_ppBufferGeneric[0][m_Width*Y0+X0];
+	NjFloat4&	V01 = m_ppBufferGeneric[0][m_Width*Y0+X1];
+	NjFloat4&	V10 = m_ppBufferGeneric[0][m_Width*Y1+X0];
+	NjFloat4&	V11 = m_ppBufferGeneric[0][m_Width*Y1+X1];
+
+	NjFloat4	V0 = rx * V00 + x * V01;
+	NjFloat4	V1 = rx * V10 + x * V11;
+
+	_Color.x = ry * V0.x + y * V1.x;
+	_Color.y = ry * V0.y + y * V1.y;
+	_Color.z = ry * V0.z + y * V1.z;
+	_Color.w = ry * V0.w + y * V1.w;
+}
+
+void	TextureBuilder::SampleClamp( float _X, float _Y, NjFloat4& _Color )
+{
+	int		X0 = ASM_floorf( _X );
+	float	x = _X - X0;
+	float	rx = 1.0f - x;
+	int		X1 = CLAMP( (X0+1), 0, m_Width-1 );
+			X0 = CLAMP( X0, 0, m_Width-1 );
+
+	int		Y0 = ASM_floorf( _Y );
+	float	y = _Y - Y0;
+	float	ry = 1.0f - y;
+	int		Y1 = CLAMP( (Y0+1), 0, m_Height-1 );
+			Y0 = CLAMP( Y0, 0, m_Height-1 );
+
+	NjFloat4&	V00 = m_ppBufferGeneric[0][m_Width*Y0+X0];
+	NjFloat4&	V01 = m_ppBufferGeneric[0][m_Width*Y0+X1];
+	NjFloat4&	V10 = m_ppBufferGeneric[0][m_Width*Y1+X0];
+	NjFloat4&	V11 = m_ppBufferGeneric[0][m_Width*Y1+X1];
+
+	NjFloat4	V0 = rx * V00 + x * V01;
+	NjFloat4	V1 = rx * V10 + x * V11;
+
+	_Color.x = ry * V0.x + y * V1.x;
+	_Color.y = ry * V0.y + y * V1.y;
+	_Color.z = ry * V0.z + y * V1.z;
+	_Color.w = ry * V0.w + y * V1.w;
+}
+
+void	TextureBuilder::GenerateMips()
+{
 	// Build remaining mip levels
 	int	Width = m_Width;
 	int	Height = m_Height;
@@ -94,10 +155,15 @@ void	TextureBuilder::Fill( FillDelegate _Filler )
 			}
 		}
 	}
+
+	m_bMipLevelsBuilt = true;
 }
 
-void*	TextureBuilder::GenerateMips( IPixelFormatDescriptor& _Format )
+void**	TextureBuilder::Convert( IPixelFormatDescriptor& _Format )
 {
+	if ( !m_bMipLevelsBuilt )
+		GenerateMips();
+
 	ReleaseSpecificBuffer();
 
 	// Allocate buffers

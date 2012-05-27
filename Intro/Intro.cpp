@@ -26,16 +26,33 @@ void	FillNoise( int x, int y, const NjFloat2& _UV, NjFloat4& _Color )
 	_Color.w = 1.0f;
 }
 
+void	FillRectangle( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
+{
+	float		Alpha = i.Coverage;
+	NjFloat4	C( i.Distance, 0, 0, 0 );	// Draw distance to border in red
+	if ( i.Distance > 1.0f )
+		Alpha = 0.0f;
+
+	P.Blend( C, Alpha );
+}
+
 int	IntroInit( IntroProgressDelegate& _Delegate )
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create render targets
-	gs_pRTHDR = new Texture2D( gs_Device, RESX, RESY, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
 	{
-		TextureBuilder	TB( 512, 512 );
-		TB.Fill( FillNoise );
-		TB.GenerateMips( PixelFormatRGBA16F::DESCRIPTOR );
-		gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.GetMips() );
+		gs_pRTHDR = new Texture2D( gs_Device, RESX, RESY, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
+
+		DrawUtils	Draw;
+		{
+			TextureBuilder	TB( 512, 512 );
+			TB.Fill( FillNoise );
+
+			Draw.SetupContext( 512, 512, TB.GetMips()[0] );
+ 			Draw.DrawRectangle( 10.0f, 13.4f, 57.39f, 82.78f, 20.0f, FillRectangle );
+
+			gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.Convert( PixelFormatRGBA16F::DESCRIPTOR ) );
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////

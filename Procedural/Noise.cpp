@@ -1,5 +1,6 @@
 #include "../GodComplex.h"
 
+// Used to generate a normalized random vector of variable size
 #define GENERATE_AND_NORMALIZE( pNoise, Shift, Count )	\
 {	float	SumSq = 0.0; \
 	for ( int j=0; j < Count; j++ )	\
@@ -19,6 +20,13 @@ const float	Noise::BIAS_S = 0.4646579661f;
 const float	Noise::BIAS_T = 0.9887465321f;
 
 Noise::Noise()
+	: m_pNoise1( NULL )
+	, m_pNoise2( NULL )
+	, m_pNoise3( NULL )
+	, m_pNoise4( NULL )
+	, m_pNoise5( NULL )
+	, m_pNoise6( NULL )
+	, m_pPermutation( NULL )
 {
 }
 
@@ -26,6 +34,16 @@ void	Noise::Init( int _Seed )
 {
 	_randpushseed();
 	_srand( _Seed, RAND_DEFAULT_SEED_V );
+
+	// Allocate tables
+	m_pNoise1 = new float[NOISE_SIZE];
+	m_pNoise2 = new float[2*NOISE_SIZE];
+	m_pNoise3 = new float[4*NOISE_SIZE];
+	m_pNoise4 = new float[4*NOISE_SIZE];
+	m_pNoise5 = new float[8*NOISE_SIZE];
+	m_pNoise6 = new float[8*NOISE_SIZE];
+
+	m_pPermutation = new U32[2*NOISE_SIZE];
 
 	// Fill the table of random numbers & permutations
 	for ( int i=0; i < NOISE_SIZE; i++ )
@@ -59,6 +77,14 @@ void	Noise::Init( int _Seed )
 
 void	Noise::Exit()
 {
+	delete[] m_pNoise1;
+	delete[] m_pNoise2;
+	delete[] m_pNoise3;
+	delete[] m_pNoise4;
+	delete[] m_pNoise5;
+	delete[] m_pNoise6;
+
+	delete[] m_pPermutation;
 }
 
 // This should generate a code like this:

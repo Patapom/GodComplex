@@ -52,6 +52,7 @@
 // Helpers
 #include "Procedural/Noise.h"
 #include "Procedural/TextureBuilder.h"
+#include "Procedural/DrawUtils/Draw.h"
 
 
 //////////////////////////////////////////////////////////////////////////

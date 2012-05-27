@@ -50,6 +50,9 @@
     <Filter Include="Procedural">
       <UniqueIdentifier>{eeae6a5b-f4c7-4414-ba3c-c26c8ecd6474}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Procedural\DrawUtils">
+      <UniqueIdentifier>{2061da43-c27f-4242-881f-975864950a0d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\Events.h">
@@ -137,6 +140,9 @@
     <ClInclude Include="Intro\ConstantBuffers.h">
       <Filter>Intro</Filter>
     </ClInclude>
+    <ClInclude Include="Procedural\DrawUtils\Draw.h">
+      <Filter>Procedural\DrawUtils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -199,6 +205,9 @@
     </ClCompile>
     <ClCompile Include="Procedural\TextureBuilder.cpp">
       <Filter>Procedural</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\DrawUtils\Draw.cpp">
+      <Filter>Procedural\DrawUtils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -41,7 +41,7 @@ public:	 // PROPERTIES
 public:	 // METHODS
 
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !
-	Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* _ppContent[] );
+	Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent );
 	// This is for creating a depth stencil buffer
 	Texture2D( Device& _Device, int _Width, int _Height, const DepthStencilFormatDescriptor& _Format );
 	~Texture2D();

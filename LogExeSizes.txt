@@ -20,3 +20,7 @@
  [27 mai 2012]
 . Fixed stupid ass non-normalized gradient vectors in noise
  	packed executable 102400 -> 23552 bytes (Increase due to more noise tables !)
+
+ [27 mai 2012]
+. Added draw utilities
+	packed executable 104448 -> 24576 bytes (Rhaaa! WTH? Did I really write 4Kb of code??)

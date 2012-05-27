@@ -20,13 +20,13 @@ protected:	// CONSTANTS
 
 protected:	// FIELDS
 
-	float		m_pNoise1[NOISE_SIZE];
-	float		m_pNoise2[2*NOISE_SIZE];
-	float		m_pNoise3[4*NOISE_SIZE];
-	float		m_pNoise4[4*NOISE_SIZE];
-	float		m_pNoise5[8*NOISE_SIZE];
-	float		m_pNoise6[8*NOISE_SIZE];
-	U32			m_pPermutation[2*NOISE_SIZE];
+	float*		m_pNoise1;
+	float*		m_pNoise2;
+	float*		m_pNoise3;
+	float*		m_pNoise4;
+	float*		m_pNoise5;
+	float*		m_pNoise6;
+	U32*		m_pPermutation;
 
 	float		m_WrapRadius;
 	NjFloat2	m_WrapCenter0;

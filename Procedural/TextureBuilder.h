@@ -16,6 +16,7 @@ protected:	// FIELDS
 	int			m_Width;
 	int			m_Height;
 	int			m_MipLevelsCount;
+	bool		m_bMipLevelsBuilt;
 
 	NjFloat4**	m_ppBufferGeneric;		// Generic buffer consisting of float4
 	void**		m_ppBufferSpecific;		// Specific buffer of given pixel format
@@ -23,7 +24,8 @@ protected:	// FIELDS
 
 public:		// PROPERTIES
 
-	const void**	GetMips() const;
+	NjFloat4**		GetMips()	{ return m_ppBufferGeneric; }
+	const void**	GetLastConvertedMips() const;
 
 public:		// METHODS
 
@@ -31,7 +33,10 @@ public:		// METHODS
  	~TextureBuilder();
 
 	void	Fill( FillDelegate _Filler );
-	void*	GenerateMips( IPixelFormatDescriptor& _Format );
+	void	SampleWrap( float _X, float _Y, NjFloat4& _Color );
+	void	SampleClamp( float _X, float _Y, NjFloat4& _Color );
+	void	GenerateMips();
+	void**	Convert( IPixelFormatDescriptor& _Format );
 
 private:
 	void	ReleaseSpecificBuffer();
