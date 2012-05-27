@@ -1,5 +1,16 @@
 #include "../GodComplex.h"
 
+#define GENERATE_AND_NORMALIZE( pNoise, Shift, Count )	\
+{	float	SumSq = 0.0; \
+	for ( int j=0; j < Count; j++ )	\
+	{	float	v = pNoise[(i<<Shift)+j] = 2.0f * _frand() - 1.0f;	\
+		SumSq += v*v;	\
+	}\
+	SumSq = 1.0f / sqrtf( SumSq );	\
+	for ( int j=0; j < Count; j++ )	\
+		pNoise[(i<<Shift)+j] *= SumSq;\
+}
+
 const float	Noise::BIAS_U = 0.1316519815f;
 const float	Noise::BIAS_V = 0.1984632145f;
 const float	Noise::BIAS_W = 0.1621987463f;
@@ -19,8 +30,13 @@ void	Noise::Init( int _Seed )
 	// Fill the table of random numbers & permutations
 	for ( int i=0; i < NOISE_SIZE; i++ )
 	{
-		for ( int j=0; j < 8; j++ )
-			m_pNoise[(i<<3)+j] = _frand();	// Generate 8 noise values (although we'll use only 6 of them for the 6D noise)
+		m_pNoise1[i] = _frand();
+		GENERATE_AND_NORMALIZE( m_pNoise2, 1, 2 );
+		GENERATE_AND_NORMALIZE( m_pNoise3, 2, 3 );
+		GENERATE_AND_NORMALIZE( m_pNoise4, 2, 4 );
+		GENERATE_AND_NORMALIZE( m_pNoise5, 3, 5 );
+		GENERATE_AND_NORMALIZE( m_pNoise6, 3, 6 );
+
 		m_pPermutation[i] = i;
 	}
 
@@ -49,14 +65,14 @@ void	Noise::Exit()
 //
 // 	float	fX0 = (BIAS_U+u) * NOISE_SIZE;
 // 	int		X0_ = ASM_floorf( fX0 );
-// 	float	t0 = fX0 - X0_;	float	r0 = 1.0f - t0;
+// 	float	t0 = fX0 - X0_;	float	r0 = t0 - 1.0f;
 // 			X0_ = X0_ & NOISE_MASK;
 // 	int		X0 = (X0_ + 1) & NOISE_MASK;
 //
 #define	NOISE_INDICES( Bias, Var, Index )	\
 	float	fX##Index = (Bias+Var) * NOISE_SIZE;	\
  	int		X##Index##_ = ASM_floorf( fX##Index );	\
- 	float	t##Index = fX##Index - X##Index##_;	float	r##Index = 1.0f - t##Index;	\
+ 	float	t##Index = fX##Index - X##Index##_;	float	r##Index = t##Index - 1.0f;	\
  			X##Index##_ = X##Index##_ & NOISE_MASK;	\
  	int		X##Index = (X##Index##_ + 1) & NOISE_MASK;
 

@@ -57,13 +57,31 @@ void	TextureBuilder::Fill( FillDelegate _Filler )
 		for ( int Y=0; Y < Height; Y++ )
 		{
 			int	Y0 = (Y << 1) + 0;
+
+// Phénomène curieux:
+// Dans mon programme de test avec le LOD de texture de noise, j'avais un bug où la texture rebouclait bizarrement dans les niveaux de mips supérieurs.
+// C'était dû à ce mauvais modulo ci-dessous (idem pour X plus bas).
+// Sauf qu'avec ce bug, je tournais à 2000 FPS
+// Après l'avoir corrigé, je suis tombé à 700 FPS !!
+// Hormis une sorte de "cache de cohérence du contenu des mips", j'ai aucune idée qui me vient à l'esprit pour expliquer cette chute !
+//
+// On parle ici de framerate qui change à cause du CONTENU d'une texture quand même ! C'est pas rien ! Depuis quand les cartes sont dépendantes du contenu des textures ???
+//
+#if 0
 			int	Y1 = (Y0+1) % Height;	// TODO: Handle WRAP/CLAMP
+#else
+			int	Y1 = (Y0+1) % SourceHeight;	// TODO: Handle WRAP/CLAMP
+#endif
 
 			NjFloat4*	pScanline = pTarget + Width * Y;
 			for ( int X=0; X < Width; X++ )
 			{
 				int	X0 = (X << 1) + 0;
+#if 0
 				int	X1 = (X0+1) % Width;	// TODO: Handle WRAP/CLAMP
+#else
+				int	X1 = (X0+1) % SourceWidth;	// TODO: Handle WRAP/CLAMP
+#endif
 
 				NjFloat4&	V00 = pSource[SourceWidth*Y0+X0];
 				NjFloat4&	V01 = pSource[SourceWidth*Y0+X1];

@@ -1,9 +1,22 @@
  This log contains the history of exe sizes
 --------------------------------------------
 
+ [26 mai 2012]
 . First version with working shader
 	packed executable 97280 -> 20992 bytes
 
+ [26 mai 2012]
 . Added static gs_Noise instance + Noise code
 	packed executable 97280 -> 21504 bytes
 
+ [27 mai 2012]
+. Added default samplers to the Device
+. Moved default states to the Device
+. Added the TextureBuilder class that fills up a Texture2D and constructs its mip maps
+. Tested a noise texture
+. Tested constant buffers
+	packed executable 100864 -> 23040 bytes (Added 1.5Kb !!)
+
+ [27 mai 2012]
+. Fixed stupid ass non-normalized gradient vectors in noise
+ 	packed executable 102400 -> 23552 bytes (Increase due to more noise tables !)

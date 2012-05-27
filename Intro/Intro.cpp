@@ -19,8 +19,9 @@ static ConstantBuffer*	gs_pCB_Test = NULL;
 
 void	FillNoise( int x, int y, const NjFloat2& _UV, NjFloat4& _Color )
 {
-//	float	C = gs_Noise.WrapNoise2D( _UV );
-	float	C = gs_Noise.Noise2D( 0.001f * _UV );
+//	float	C = abs( gs_Noise.Noise2D( 0.005f * _UV ) );	// Simple test with gradient noise that doesn't loop
+	float	C = abs( gs_Noise.WrapNoise2D( _UV ) );			// Advanced test with gradient noise that loops !
+
 	_Color.x = _Color.y = _Color.z = C;
 	_Color.w = 1.0f;
 }

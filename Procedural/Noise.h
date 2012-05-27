@@ -20,7 +20,12 @@ protected:	// CONSTANTS
 
 protected:	// FIELDS
 
-	float		m_pNoise[8*NOISE_SIZE];
+	float		m_pNoise1[NOISE_SIZE];
+	float		m_pNoise2[2*NOISE_SIZE];
+	float		m_pNoise3[4*NOISE_SIZE];
+	float		m_pNoise4[4*NOISE_SIZE];
+	float		m_pNoise5[8*NOISE_SIZE];
+	float		m_pNoise6[8*NOISE_SIZE];
 	U32			m_pPermutation[2*NOISE_SIZE];
 
 	float		m_WrapRadius;
@@ -81,20 +86,24 @@ private:
 		return	_p0 + (_p1 - _p0) * _x;
 	}
 
-// 	inline float	SCurve( float _t )
-// 	{
-// 		return	_t * _t * (3.0f - 2.0f * _t);		// 3 t^2 - 2 t^3  ==> Gives some sort of S-Shaped curve with 0 first derivatives at t=0 & t=1
-// 	}
-
+#if 1
+	// 6 t^5 - 15 t^4 + 10 t^3  ==> Gives some sort of S-Shaped curve with 0 first and second derivatives at t=0 & t=1
 	inline float	SCurve( float _t )
 	{
-		return	_t * _t * _t * (10.0f + _t * (-15.0f + _t *  6.0f));	// 6 t^5 - 15 t^4 + 10 t^3  ==> Gives some sort of S-Shaped curve with 0 first and second derivatives at t=0 & t=1
+		return	_t * _t * _t * (10.0f + _t * (-15.0f + _t *  6.0f));
 	}
+#else
+	// 3 t^2 - 2 t^3  ==> Gives some sort of S-Shaped curve with 0 first derivatives at t=0 & t=1
+	inline float	SCurve( float _t )
+	{
+		return	_t * _t * (3.0f - 2.0f * _t);
+	}
+#endif
 
-	inline float	Dot( U32 _Permutation, float u )												{ return m_pNoise[_Permutation<<3] * u; }
-	inline float	Dot( U32 _Permutation, float u, float v )										{ float* V = &m_pNoise[_Permutation<<3]; return V[0] * u + V[1] * v; }
-	inline float	Dot( U32 _Permutation, float u, float v, float w )								{ float* V = &m_pNoise[_Permutation<<3]; return V[0] * u + V[1] * v + V[2] * w; }
-	inline float	Dot( U32 _Permutation, float u, float v, float w, float r )						{ float* V = &m_pNoise[_Permutation<<3]; return V[0] * u + V[1] * v + V[2] * w + V[3] * r; }
-	inline float	Dot( U32 _Permutation, float u, float v, float w, float r, float s )			{ float* V = &m_pNoise[_Permutation<<3]; return V[0] * u + V[1] * v + V[2] * w + V[3] * r + V[4] * s; }
-	inline float	Dot( U32 _Permutation, float u, float v, float w, float r, float s, float t )	{ float* V = &m_pNoise[_Permutation<<3]; return V[0] * u + V[1] * v + V[2] * w + V[3] * r + V[4] * s + V[5] * t; }
+	inline float	Dot( U32 _Permutation, float u )												{ return m_pNoise1[_Permutation] * u; }
+	inline float	Dot( U32 _Permutation, float u, float v )										{ float* V = &m_pNoise2[_Permutation<<1]; return V[0] * u + V[1] * v; }
+	inline float	Dot( U32 _Permutation, float u, float v, float w )								{ float* V = &m_pNoise3[_Permutation<<2]; return V[0] * u + V[1] * v + V[2] * w; }
+	inline float	Dot( U32 _Permutation, float u, float v, float w, float r )						{ float* V = &m_pNoise4[_Permutation<<2]; return V[0] * u + V[1] * v + V[2] * w + V[3] * r; }
+	inline float	Dot( U32 _Permutation, float u, float v, float w, float r, float s )			{ float* V = &m_pNoise5[_Permutation<<3]; return V[0] * u + V[1] * v + V[2] * w + V[3] * r + V[4] * s; }
+	inline float	Dot( U32 _Permutation, float u, float v, float w, float r, float s, float t )	{ float* V = &m_pNoise6[_Permutation<<3]; return V[0] * u + V[1] * v + V[2] * w + V[3] * r + V[4] * s + V[5] * t; }
 };
