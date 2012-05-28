@@ -38,6 +38,12 @@ void	FillRectangle( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
 	P.Blend( C, Alpha );
 }
 
+void	FillLine( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
+{
+	float	D = MAX( 0.0f, 1.0f - i.Distance );
+	P.Blend( NjFloat4( 0, D, 0, 0 ), D * i.Coverage );
+}
+
 int	IntroInit( IntroProgressDelegate& _Delegate )
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -50,8 +56,12 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 			TextureBuilder	TB( 512, 512 );
 			TB.Fill( FillNoise );
 
-			Draw.SetupContext( 512, 512, TB.GetMips()[0] );
- 			Draw.DrawRectangle( 10.0f, 13.4f, 97.39f, 182.78f, 40.0f, 0.5f, FillRectangle );
+			Draw.SetupSurface( 512, 512, TB.GetMips()[0] );
+
+			Draw.DrawLine( 20.0f, 0.0f, 400.0f, 500.0f, 10.0f, FillLine );
+
+			Draw.SetupContext( 250.0f, 0.0f, 30.0f );
+ 			Draw.DrawRectangle( 10.0f, 13.4f, 197.39f, 382.78f, 40.0f, 0.5f, FillRectangle );
 
 			gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.Convert( PixelFormatRGBA16F::DESCRIPTOR ) );
 		}
@@ -120,6 +130,9 @@ bool	IntroDo( float _Time, float _DeltaTime )
 		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget() );
 
 		gs_CBTest.LOD = 10.0f * (1.0f - fabs( sinf( _Time ) ));
+
+//gs_CBTest.LOD = 0.0f;
+
 		gs_pCB_Test->UpdateData( &gs_CBTest );
 		gs_pCB_Test->SetPS( 0 );
 

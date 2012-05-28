@@ -30,3 +30,7 @@
  [28 mai 2012]
 . Optimized/Changed draw utilities
 	packed executable 103936 -> 24064 bytes (whoohoo!)
+
+ [28 mai 2012]
+. Upgraded and generalized the drawing utility to draw a generic convex quad
+	packed executable 105984 -> 25088 bytes

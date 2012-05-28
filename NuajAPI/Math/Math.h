@@ -16,6 +16,8 @@
 #define MAX( a, b )			((a) > (b) ? (a) : (b))
 #define CLAMP( s, a, b )	((s) < (a) ? (a) : ((s) > (b) ? (b) : (s)))
 #define BYTE2FLOAT( b )		(b / 255.0f)
+#define FLOAT32_MAX			3.402823466e+38f
+
 
 static U8	FLOAT2BYTE( float f )	{ return U8( CLAMP( 255.0f * f, 0.0f, 255.0f ) ); }
 
@@ -101,6 +103,7 @@ public:
 
 	NjFloat4() : x( 0 ), y( 0 ), z( 0 ), w( 0 )  {}
 	NjFloat4( float _x, float _y, float _z, float _w ) : x( _x ), y( _y ), z( _z ), w( _w )   {}
+	NjFloat4( const NjFloat2& _xy, float _z, float _w ) : x( _xy.x ), y( _xy.y ), z( _z ), w( _w ) {}
 	NjFloat4( const NjFloat3& _xyz, float _w ) : x( _xyz.x ), y( _xyz.y ), z( _xyz.z ), w( _w ) {}
 
 	NjFloat4	Min( const NjFloat4& b ) const  { return NjFloat4( MIN( x, b.x ), MIN( y, b.y ), MIN( z, b.z ), MIN( w, b.w ) ); }

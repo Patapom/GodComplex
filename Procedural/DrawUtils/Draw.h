@@ -21,20 +21,43 @@ public:		// NESTED TYPES
 
 		// Blends source with current value using provided alpha
 		//	RGBA = _Source * (1-t) + RGBA * t
-		void		Blend( NjFloat4& _Source, float t );
+		void		Blend( const NjFloat4& _Source, float t );
 	};
 
 	typedef void	(*FillDelegate)( const DrawInfos& _Infos, Pixel& _Pixel );
 
 protected:
 
-	struct	DrawContextRECT
+	struct	DrawContext
 	{
-		float	x0, y0, x1, y1;	// Borders
-		float	InvBorderSize;	// 1/border size
-		int		X, Y;			// Current pixel coordinates in surface
-		Pixel*	pScanline;		// Current scanline
-		FillDelegate	pFiller;// Filler delegate
+		DrawUtils*	pOwner;
+		int			X, Y;		// Currently drawn pixel
+		NjFloat4	P;			// Current position + UV
+		float		Coverage;	// Pixel coverage
+		virtual void	NewScanline() = 0;
+		virtual void	DrawPixel() = 0;
+	};
+
+	struct	DrawContextRECT : public DrawContext
+	{
+		virtual void	NewScanline();
+		virtual void	DrawPixel();
+
+		float			w, h;			// Rectangle width/height
+		float			x0, y0, x1, y1;	// Borders
+		float			InvBorderSize;	// 1/border size
+		Pixel*			pScanline;		// Current scanline
+		FillDelegate	pFiller;		// Filler delegate
+	};
+
+	struct	DrawContextLINE : public DrawContext
+	{
+		virtual void	NewScanline();
+		virtual void	DrawPixel();
+
+		float			dU;				// Small portion of UV space along U that offsets to the line's start
+		Pixel*			pScanline;		// Current scanline
+		FillDelegate	pFiller;		// Filler delegate
 	};
 
 protected:	// FIELDS
@@ -43,21 +66,35 @@ protected:	// FIELDS
 	int			m_Height;
 	NjFloat4*	m_pSurface;
 
+	// Transform
+	NjFloat2	m_X;
+	NjFloat2	m_Y;
+	NjFloat2	m_C;
+
 	DrawInfos	m_Infos;
 	DrawContextRECT	m_ContextRECT;
+	DrawContextLINE	m_ContextLINE;
 
 public:		// METHODS
 
 	DrawUtils();
 
-	void	SetupContext( int _Width, int _Height, NjFloat4* _pSurface );
+	void	SetupSurface( int _Width, int _Height, NjFloat4* _pSurface );
+	void	SetupContext( float _PivotX, float _PivotY, float _Angle );
 
 	// Draws a rectangle
 	//	border = thickness of the border
-	//	bias = bias in the border computation [0,1]
+	//	bias = bias in the border computation [0,1]. 1 shifts the border toward the outside of the rectangle.
 	void	DrawRectangle( float x, float y, float w, float h, float border, float bias, FillDelegate _Filler );
 
+	// Draws a line
+	void	DrawLine( float x0, float y0, float x1, float y1, float thickness, FillDelegate _Filler );
+
+
 protected:
-	void	SetInfosRECT( float _Coverage );
-	void	DrawSafePixel();
+	void	DrawQuad( NjFloat2 _pVertices[], DrawContext& _Context );
+	void	Transform( const NjFloat2& _SourcePosition, NjFloat4& _TransformedPosition ) const;
+
+// 	void	SetInfosRECT( float _Coverage );
+// 	void	DrawSafePixelRECT();
 };
