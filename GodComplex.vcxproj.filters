@@ -53,6 +53,12 @@
     <Filter Include="Procedural\DrawUtils">
       <UniqueIdentifier>{2061da43-c27f-4242-881f-975864950a0d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Procedural\Filters">
+      <UniqueIdentifier>{039a5b8b-67b2-4767-b12e-d42053849818}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Procedural\Generators">
+      <UniqueIdentifier>{b92acf28-60c0-4b5b-b8fd-a42c0f57b152}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\Events.h">
@@ -131,9 +137,6 @@
     <ClInclude Include="NuajAPI\API\ASMHelpers.h">
       <Filter>NuajAPI\API</Filter>
     </ClInclude>
-    <ClInclude Include="Procedural\Noise.h">
-      <Filter>Procedural</Filter>
-    </ClInclude>
     <ClInclude Include="Procedural\TextureBuilder.h">
       <Filter>Procedural</Filter>
     </ClInclude>
@@ -142,6 +145,12 @@
     </ClInclude>
     <ClInclude Include="Procedural\DrawUtils\Draw.h">
       <Filter>Procedural\DrawUtils</Filter>
+    </ClInclude>
+    <ClInclude Include="Procedural\Filters\FilterBlur.h">
+      <Filter>Procedural\Filters</Filter>
+    </ClInclude>
+    <ClInclude Include="Procedural\Generators\Noise.h">
+      <Filter>Procedural\Generators</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -200,14 +209,17 @@
     <ClCompile Include="NuajAPI\API\Hashtable.cpp">
       <Filter>NuajAPI\API</Filter>
     </ClCompile>
-    <ClCompile Include="Procedural\Noise.cpp">
-      <Filter>Procedural</Filter>
-    </ClCompile>
     <ClCompile Include="Procedural\TextureBuilder.cpp">
       <Filter>Procedural</Filter>
     </ClCompile>
     <ClCompile Include="Procedural\DrawUtils\Draw.cpp">
       <Filter>Procedural\DrawUtils</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\Filters\FilterBlur.cpp">
+      <Filter>Procedural\Filters</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\Generators\Noise.cpp">
+      <Filter>Procedural\Generators</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

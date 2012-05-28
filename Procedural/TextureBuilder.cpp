@@ -29,7 +29,7 @@ const void**	TextureBuilder::GetLastConvertedMips() const
 	return (const void**) m_ppBufferSpecific;
 }
 
-void	TextureBuilder::Fill( FillDelegate _Filler )
+void	TextureBuilder::Fill( FillDelegate _Filler, void* _pData )
 {
 	// Fill the mip level 0
 	NjFloat2	UV;
@@ -40,7 +40,7 @@ void	TextureBuilder::Fill( FillDelegate _Filler )
 		for ( int X=0; X < m_Width; X++, pScanline++ )
 		{
 			UV.x = float(X) / m_Width;
-			(*_Filler)( X, Y, UV, *pScanline );
+			(*_Filler)( X, Y, UV, *pScanline, _pData );
 		}
 	}
 	m_bMipLevelsBuilt = false;
@@ -51,15 +51,17 @@ void	TextureBuilder::SampleWrap( float _X, float _Y, NjFloat4& _Color )
 	int		X0 = ASM_floorf( _X );
 	float	x = _X - X0;
 	float	rx = 1.0f - x;
-	int		X1 = (X0+1) % m_Width;
-			X0 = X0 % m_Width;
+	int		X1 = (100*m_Width+X0+1) % m_Width;
+			X0 = (100*m_Width+X0) % m_Width;
 
 	int		Y0 = ASM_floorf( _Y );
 	float	y = _Y - Y0;
 	float	ry = 1.0f - y;
-	int		Y1 = (Y0+1) % m_Height;
-			Y0 = Y0 % m_Height;
+	int		Y1 = (100*m_Height+Y0+1) % m_Height;
+			Y0 = (100*m_Height+Y0) % m_Height;
 
+	ASSERT( X0 >= 0 && X0 < m_Width && X1 >= 0 && X1 < m_Width, "X out of range !" );
+	ASSERT( Y0 >= 0 && Y0 < m_Height && Y1 >= 0 && Y1 < m_Height, "Y out of range !" );
 	NjFloat4&	V00 = m_ppBufferGeneric[0][m_Width*Y0+X0];
 	NjFloat4&	V01 = m_ppBufferGeneric[0][m_Width*Y0+X1];
 	NjFloat4&	V10 = m_ppBufferGeneric[0][m_Width*Y1+X0];

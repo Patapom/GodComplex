@@ -1,4 +1,4 @@
-#include "../GodComplex.h"
+#include "../../GodComplex.h"
 
 // Used to generate a normalized random vector of variable size
 #define GENERATE_AND_NORMALIZE( pNoise, Shift, Count )	\

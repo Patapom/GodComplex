@@ -17,7 +17,7 @@ static Material*	gs_pMatPostFinal = NULL;	// Final post-process rendering to the
 static CBTest			gs_CBTest;
 static ConstantBuffer*	gs_pCB_Test = NULL;
 
-void	FillNoise( int x, int y, const NjFloat2& _UV, NjFloat4& _Color )
+void	FillNoise( int x, int y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
 {
 //	float	C = abs( gs_Noise.Noise2D( 0.005f * _UV ) );	// Simple test with gradient noise that doesn't loop
 	float	C = abs( gs_Noise.WrapNoise2D( _UV ) );			// Advanced test with gradient noise that loops !
@@ -60,7 +60,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 		DrawUtils	Draw;
 		{
 			TextureBuilder	TB( 512, 512 );
-			TB.Fill( FillNoise );
+			TB.Fill( FillNoise, NULL );
 
 			Draw.SetupSurface( 512, 512, TB.GetMips()[0] );
 
@@ -71,6 +71,8 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 
 			Draw.SetupContext( 250.0f, 0.0f, 30.0f );
  			Draw.DrawRectangle( 10.0f, 13.4f, 197.39f, 382.78f, 40.0f, 0.5f, FillRectangle );
+
+			Blur::BlurGaussian( TB, 0.0f, 40.0f );
 
 			gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.Convert( PixelFormatRGBA16F::DESCRIPTOR ) );
 		}

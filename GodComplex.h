@@ -50,8 +50,9 @@
 #include "Sound/libv2.h"
 
 // Helpers
-#include "Procedural/Noise.h"
 #include "Procedural/TextureBuilder.h"
+#include "Procedural/Generators/Noise.h"
+#include "Procedural/Filters/FilterBlur.h"
 #include "Procedural/DrawUtils/Draw.h"
 
 

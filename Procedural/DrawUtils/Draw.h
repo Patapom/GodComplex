@@ -83,10 +83,11 @@ protected:	// FIELDS
 	NjFloat2	m_Y;
 	NjFloat2	m_C;
 
-	DrawInfos	m_Infos;
-	DrawContextRECT	m_ContextRECT;
-	DrawContextLINE	m_ContextLINE;
+	DrawInfos			m_Infos;
+	DrawContextRECT		m_ContextRECT;
+	DrawContextLINE		m_ContextLINE;
 	DrawContextELLIPSE	m_ContextELLIPSE;
+
 
 public:		// METHODS
 

@@ -170,36 +170,6 @@ void	DrawUtils::DrawContextELLIPSE::DrawPixel()
 	pOwner->m_Infos.UV.y = P.w;
 	pOwner->m_Infos.Coverage = Coverage;
 
-// 	// Compute signed distance to border
-// 	float	fX = P.z * w;	// U * w = Pixel X in LOCAL rectangle space
-// 	float	fY = P.w * h;	// V * h = Pixel Y in LOCAL rectangle space
-// 
-// 	float	Dx0 = fX - x0;
-// 	float	Dy0 = fY - y0;
-// 	float	Dx1 = x1 - fX;
-// 	float	Dy1 = y1 - fY;
-// 
-// 	bool	bOutside = Dx0 < 0.0f || Dy0 < 0.0f || Dx1 < 0.0f || Dy1 < 0.0f;
-// 	float	D;
-// //* Comment this part to use manhattan distance instead of cartesian
-// 	if ( bOutside )
-// 	{
-// 		float	Bx = fX < x0 ? x0 : (fX > x1 ? x1 : fX);
-// 		float	By = fY < y0 ? y0 : (fY > y1 ? y1 : fY);
-// 		float	Dx = fX - Bx;
-// 		float	Dy = fY - By;
-// 		D = sqrtf( Dx*Dx + Dy*Dy );
-// 	}
-// 	else
-// //*/
-// 	{
-// 		D = MIN( MIN( MIN( Dx0, Dy0 ), Dx1 ), Dy1 );
-// 	}
-// 
-// 	// Normalize and re-sign
-// 	D *= (bOutside ? -1.0f : +1.0f) * InvBorderSize;
-// 	pOwner->m_Infos.Distance = D;
-
 	float	Du = 2.0f * (P.z - 0.5f);
 	float	Dv = 2.0f * (P.w - 0.5f);
 	float	D = 1.0f - sqrtf( Du*Du + Dv*Dv );

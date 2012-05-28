@@ -9,7 +9,7 @@ protected:	// CONSTANTS
 
 public:		// NESTED TYPES
 
-	typedef void	(*FillDelegate)( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color );
+	typedef void	(*FillDelegate)( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData );
 
 protected:	// FIELDS
 
@@ -24,6 +24,9 @@ protected:	// FIELDS
 
 public:		// PROPERTIES
 
+	int				GetWidth() const	{ return m_Width; }
+	int				GetHeight() const	{ return m_Height; }
+
 	NjFloat4**		GetMips()	{ return m_ppBufferGeneric; }
 	const void**	GetLastConvertedMips() const;
 
@@ -32,7 +35,7 @@ public:		// METHODS
 	TextureBuilder( int _Width, int _Height );
  	~TextureBuilder();
 
-	void	Fill( FillDelegate _Filler );
+	void	Fill( FillDelegate _Filler, void* _pData );
 	void	SampleWrap( float _X, float _Y, NjFloat4& _Color );
 	void	SampleClamp( float _X, float _Y, NjFloat4& _Color );
 	void	GenerateMips();
