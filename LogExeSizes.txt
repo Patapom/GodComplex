@@ -34,3 +34,7 @@
  [28 mai 2012]
 . Upgraded and generalized the drawing utility to draw a generic convex quad
 	packed executable 105984 -> 25088 bytes
+
+ [28 mai 2012]
+. Added ellipse drawing
+	packed executable 106496 -> 25600 bytes

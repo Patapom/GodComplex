@@ -38,6 +38,12 @@ void	FillRectangle( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
 	P.Blend( C, Alpha );
 }
 
+void	FillEllipse( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
+{
+	NjFloat4	C = i.Distance < 1.0f ? NjFloat4( 0, 0, i.Distance, i.Distance * i.Coverage ) : NjFloat4( 0, 1, 1, 0.5 );
+	P.Blend( C, C.w );
+}
+
 void	FillLine( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
 {
 	float	D = MAX( 0.0f, 1.0f - i.Distance );
@@ -59,6 +65,9 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 			Draw.SetupSurface( 512, 512, TB.GetMips()[0] );
 
 			Draw.DrawLine( 20.0f, 0.0f, 400.0f, 500.0f, 10.0f, FillLine );
+
+			Draw.SetupContext( 30.0f, 0.0f, 20.0f );
+ 			Draw.DrawEllipse( 10.0f, 13.4f, 497.39f, 282.78f, 40.0f, 0.0f, FillEllipse );
 
 			Draw.SetupContext( 250.0f, 0.0f, 30.0f );
  			Draw.DrawRectangle( 10.0f, 13.4f, 197.39f, 382.78f, 40.0f, 0.5f, FillRectangle );
@@ -131,7 +140,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 		gs_CBTest.LOD = 10.0f * (1.0f - fabs( sinf( _Time ) ));
 
-//gs_CBTest.LOD = 0.0f;
+gs_CBTest.LOD = 0.0f;
 
 		gs_pCB_Test->UpdateData( &gs_CBTest );
 		gs_pCB_Test->SetPS( 0 );

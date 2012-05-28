@@ -34,29 +34,41 @@ protected:
 		int			X, Y;		// Currently drawn pixel
 		NjFloat4	P;			// Current position + UV
 		float		Coverage;	// Pixel coverage
-		virtual void	NewScanline() = 0;
+		Pixel*		pScanline;	// Current scanline
+		virtual void	NewScanline()
+		{
+			pScanline = (Pixel*) pOwner->m_pSurface + pOwner->m_Width * Y;
+			pOwner->m_Infos.y = Y;
+		}
 		virtual void	DrawPixel() = 0;
 	};
 
 	struct	DrawContextRECT : public DrawContext
 	{
-		virtual void	NewScanline();
 		virtual void	DrawPixel();
 
 		float			w, h;			// Rectangle width/height
 		float			x0, y0, x1, y1;	// Borders
 		float			InvBorderSize;	// 1/border size
-		Pixel*			pScanline;		// Current scanline
 		FillDelegate	pFiller;		// Filler delegate
 	};
 
 	struct	DrawContextLINE : public DrawContext
 	{
-		virtual void	NewScanline();
 		virtual void	DrawPixel();
 
 		float			dU;				// Small portion of UV space along U that offsets to the line's start
-		Pixel*			pScanline;		// Current scanline
+		FillDelegate	pFiller;		// Filler delegate
+	};
+
+	struct	DrawContextELLIPSE : public DrawContext
+	{
+		virtual void	DrawPixel();
+
+		float			w, h;			// Rectangle width/height
+		float			x0, y0, x1, y1;	// Borders
+		float			DistanceBias;
+		float			InvDu, InvDv;	// 1/border size for U & V
 		FillDelegate	pFiller;		// Filler delegate
 	};
 
@@ -74,6 +86,7 @@ protected:	// FIELDS
 	DrawInfos	m_Infos;
 	DrawContextRECT	m_ContextRECT;
 	DrawContextLINE	m_ContextLINE;
+	DrawContextELLIPSE	m_ContextELLIPSE;
 
 public:		// METHODS
 
@@ -87,6 +100,11 @@ public:		// METHODS
 	//	bias = bias in the border computation [0,1]. 1 shifts the border toward the outside of the rectangle.
 	void	DrawRectangle( float x, float y, float w, float h, float border, float bias, FillDelegate _Filler );
 
+	// Draws an ellipse
+	//	border = thickness of the border
+	//	bias = bias in the border computation [0,1]. 1 shifts the border toward the outside of the rectangle.
+	void	DrawEllipse( float x, float y, float w, float h, float border, float bias, FillDelegate _Filler );
+
 	// Draws a line
 	void	DrawLine( float x0, float y0, float x1, float y1, float thickness, FillDelegate _Filler );
 
@@ -94,7 +112,4 @@ public:		// METHODS
 protected:
 	void	DrawQuad( NjFloat2 _pVertices[], DrawContext& _Context );
 	void	Transform( const NjFloat2& _SourcePosition, NjFloat4& _TransformedPosition ) const;
-
-// 	void	SetInfosRECT( float _Coverage );
-// 	void	DrawSafePixelRECT();
 };
