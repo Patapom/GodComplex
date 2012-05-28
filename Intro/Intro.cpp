@@ -29,8 +29,10 @@ void	FillNoise( int x, int y, const NjFloat2& _UV, NjFloat4& _Color )
 void	FillRectangle( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
 {
 	float		Alpha = i.Coverage;
-	NjFloat4	C( i.Distance, 0, 0, 0 );	// Draw distance to border in red
-	if ( i.Distance > 1.0f )
+	float		Distance = 1.0f - 2.0f * abs(i.Distance);
+
+	NjFloat4	C( Distance, 0, 0, 0 );	// Draw distance to border in red
+	if ( Distance < 0.0f )
 		Alpha = 0.0f;
 
 	P.Blend( C, Alpha );
@@ -49,7 +51,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 			TB.Fill( FillNoise );
 
 			Draw.SetupContext( 512, 512, TB.GetMips()[0] );
- 			Draw.DrawRectangle( 10.0f, 13.4f, 57.39f, 82.78f, 20.0f, FillRectangle );
+ 			Draw.DrawRectangle( 10.0f, 13.4f, 97.39f, 182.78f, 40.0f, 0.5f, FillRectangle );
 
 			gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.Convert( PixelFormatRGBA16F::DESCRIPTOR ) );
 		}

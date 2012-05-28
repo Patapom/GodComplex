@@ -231,6 +231,8 @@
     <None Include="Resources\Shaders\Inc\Global.fx">
       <Filter>Resources\Shaders\DEBUG\Includes</Filter>
     </None>
+    <None Include="LogExeSizes.txt" />
+    <None Include="Tools\GodComplex.kkm" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

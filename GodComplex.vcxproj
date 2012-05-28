@@ -119,7 +119,7 @@
       <EntryPointSymbol>EntryPoint</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
-      <Command>Tools/Compress.cmd "$(TargetDir)$(TargetFileName)"
+      <Command>Tools/Compress.cmd "$(TargetDir)$(TargetName)"
 </Command>
     </PostBuildEvent>
     <PreBuildEvent>
@@ -197,6 +197,7 @@ MinifyAll.cmd</Command>
     <Library Include="Sound\libv2.lib" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="LogExeSizes.txt" />
     <None Include="Resources\pzero_new.v2m">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -206,6 +207,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\PostFinal.fx">
       <FileType>Document</FileType>
     </None>
+    <None Include="Tools\GodComplex.kkm" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc" />

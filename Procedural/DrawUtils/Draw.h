@@ -26,12 +26,25 @@ public:		// NESTED TYPES
 
 	typedef void	(*FillDelegate)( const DrawInfos& _Infos, Pixel& _Pixel );
 
+protected:
+
+	struct	DrawContextRECT
+	{
+		float	x0, y0, x1, y1;	// Borders
+		float	InvBorderSize;	// 1/border size
+		int		X, Y;			// Current pixel coordinates in surface
+		Pixel*	pScanline;		// Current scanline
+		FillDelegate	pFiller;// Filler delegate
+	};
 
 protected:	// FIELDS
 
 	int			m_Width;
 	int			m_Height;
 	NjFloat4*	m_pSurface;
+
+	DrawInfos	m_Infos;
+	DrawContextRECT	m_ContextRECT;
 
 public:		// METHODS
 
@@ -41,5 +54,10 @@ public:		// METHODS
 
 	// Draws a rectangle
 	//	border = thickness of the border
-	void	DrawRectangle( float x, float y, float w, float h, float border, FillDelegate _Filler );
+	//	bias = bias in the border computation [0,1]
+	void	DrawRectangle( float x, float y, float w, float h, float border, float bias, FillDelegate _Filler );
+
+protected:
+	void	SetInfosRECT( float _Coverage );
+	void	DrawSafePixel();
 };

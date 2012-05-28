@@ -9,6 +9,7 @@
 . Added static gs_Noise instance + Noise code
 	packed executable 97280 -> 21504 bytes
 
+
  [27 mai 2012]
 . Added default samplers to the Device
 . Moved default states to the Device
@@ -24,3 +25,8 @@
  [27 mai 2012]
 . Added draw utilities
 	packed executable 104448 -> 24576 bytes (Rhaaa! WTH? Did I really write 4Kb of code??)
+
+
+ [28 mai 2012]
+. Optimized/Changed draw utilities
+	packed executable 103936 -> 24064 bytes (whoohoo !)
