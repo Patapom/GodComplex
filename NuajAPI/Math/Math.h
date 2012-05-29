@@ -31,6 +31,7 @@ public:
 	NjFloat2() : x( 0 ), y( 0 )  {}
 	NjFloat2( float _x, float _y ) : x( _x ), y( _y )  {}
 
+	float	   LengthSq() const  { return x*x + y*y; }
 	float	   Length() const  { return sqrtf( x*x + y*y ); }
 	NjFloat2&   Normalize() { float InvL = 1.0f / Length(); x *= InvL; y *= InvL; return *this; }
 
@@ -66,6 +67,7 @@ public:
 	NjFloat3( float _x, float _y, float _z ) : x( _x ), y( _y ), z( _z )	  {}
 	NjFloat3( const NjFloat2& _xy, float _z ) : x( _xy.x ), y( _xy.y ), z( _z ) {}
 
+	float	   LengthSq() const  { return x*x + y*y + z*z; }
 	float	   Length() const  { return sqrtf( x*x + y*y + z*z ); }
 	NjFloat3&   Normalize() { float InvL = 1.0f / Length(); x *= InvL; y *= InvL; z *= InvL; return *this; }
 

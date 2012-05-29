@@ -5,10 +5,6 @@
 
 class	Blur
 {
-protected:	// CONSTANTS
-
-protected:	// FIELDS
-
 public:		// METHODS
 
 	// _MinWeight is the value the gaussian weight will take farthest from the kernel center

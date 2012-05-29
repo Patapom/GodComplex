@@ -97,8 +97,6 @@ struct IntroProgressDelegate
 // Helpers
 void	print( const char* _pText );	// Works only in DEBUG mode !
 
-extern Noise	gs_Noise;
-
 
 //////////////////////////////////////////////////////////////////////////
 // Main intro functions

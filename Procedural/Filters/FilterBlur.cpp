@@ -142,7 +142,7 @@ void	Blur::BlurGaussian( TextureBuilder& _Builder, float _SizeX, float _SizeY, b
 		BS.InvSumWeights = 1.0f;
 		for ( int i=0; i < BS.Size; i++ )
 		{
-			BS.pWeights[i] = expf( k * (1+i)*(1+i) );
+			BS.pWeights[i] = ASM_expf( k * (1+i)*(1+i) );
 			BS.InvSumWeights += 2.0f * BS.pWeights[i];
 		}
 		BS.InvSumWeights = 1.0f / BS.InvSumWeights;
@@ -166,7 +166,7 @@ void	Blur::BlurGaussian( TextureBuilder& _Builder, float _SizeX, float _SizeY, b
 		BS.InvSumWeights = 1.0f;
 		for ( int i=0; i < BS.Size; i++ )
 		{
-			BS.pWeights[i] = expf( k * (1+i)*(1+i) );
+			BS.pWeights[i] = ASM_expf( k * (1+i)*(1+i) );
 			BS.InvSumWeights += 2.0f * BS.pWeights[i];
 		}
 		BS.InvSumWeights = 1.0f / BS.InvSumWeights;

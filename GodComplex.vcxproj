@@ -101,7 +101,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
       <CallingConvention>FastCall</CallingConvention>
-      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4996;4723</DisableSpecificWarnings>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <AdditionalOptions>/QIfist %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>

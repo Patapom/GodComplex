@@ -38,3 +38,11 @@
  [28 mai 2012]
 . Added ellipse drawing
 	packed executable 106496 -> 25600 bytes
+
+ [28 mai 2012]
+. Added gaussian blur filter
+	packed executable 110080 -> 26624 bytes
+
+ [29 mai 2012]
+. Added cellular & Worley noise
+	packed executable 108544 -> 26112 bytes (passed a lot of code into functions and also removed inlines. That might explain why it's smaller)

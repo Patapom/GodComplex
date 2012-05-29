@@ -19,18 +19,7 @@ const float	Noise::BIAS_R = 0.7685431298f;
 const float	Noise::BIAS_S = 0.4646579661f;
 const float	Noise::BIAS_T = 0.9887465321f;
 
-Noise::Noise()
-	: m_pNoise1( NULL )
-	, m_pNoise2( NULL )
-	, m_pNoise3( NULL )
-	, m_pNoise4( NULL )
-	, m_pNoise5( NULL )
-	, m_pNoise6( NULL )
-	, m_pPermutation( NULL )
-{
-}
-
-void	Noise::Init( int _Seed )
+Noise::Noise( int _Seed )
 {
 	_randpushseed();
 	_srand( _Seed, RAND_DEFAULT_SEED_V );
@@ -73,9 +62,10 @@ void	Noise::Init( int _Seed )
 
 	// Arbitrary default wrapping init
 	SetWrappingParameters( 0.001f, 1 );
+	SetCellularWrappingParameters( 16, 16, 16 );
 }
 
-void	Noise::Exit()
+Noise::~Noise()
 {
 	delete[] m_pNoise1;
 	delete[] m_pNoise2;
@@ -102,7 +92,7 @@ void	Noise::Exit()
  			X##Index##_ = X##Index##_ & NOISE_MASK;	\
  	int		X##Index = (X##Index##_ + 1) & NOISE_MASK;
 
-float	Noise::Noise1D( float u )
+float	Noise::Noise1D( float u ) const
 {
 	NOISE_INDICES( BIAS_U, u, 0 )
 
@@ -114,7 +104,7 @@ float	Noise::Noise1D( float u )
 	return Lerp( N0, N1, t0 );
 }
 
-float	Noise::Noise2D( const NjFloat2& uv )
+float	Noise::Noise2D( const NjFloat2& uv ) const
 {
 	NOISE_INDICES( BIAS_U, uv.x, 0 )
 	NOISE_INDICES( BIAS_V, uv.y, 1 )
@@ -130,7 +120,7 @@ float	Noise::Noise2D( const NjFloat2& uv )
 	return BiLerp( N00, N01, N11, N10, t0, t1 );
 }
 
-float	Noise::Noise3D( const NjFloat3& uvw )
+float	Noise::Noise3D( const NjFloat3& uvw ) const
 {
 	NOISE_INDICES( BIAS_U, uvw.x, 0 )
 	NOISE_INDICES( BIAS_V, uvw.y, 1 )
@@ -152,7 +142,7 @@ float	Noise::Noise3D( const NjFloat3& uvw )
 	return TriLerp( N000, N001, N011, N010, N100, N101, N111, N110, t0, t1, t2 );
 }
 
-float	Noise::Noise4D( const NjFloat4& uvwr )
+float	Noise::Noise4D( const NjFloat4& uvwr ) const
 {
 	NOISE_INDICES( BIAS_U, uvwr.x, 0 )
 	NOISE_INDICES( BIAS_V, uvwr.y, 1 )
@@ -187,7 +177,7 @@ float	Noise::Noise4D( const NjFloat4& uvwr )
 	return Lerp( N0, N1, t3 );
 }
 
-float	Noise::Noise5D( const NjFloat4& uvwr, float s )
+float	Noise::Noise5D( const NjFloat4& uvwr, float s ) const
 {
 	NOISE_INDICES( BIAS_U, uvwr.x, 0 )
 	NOISE_INDICES( BIAS_V, uvwr.y, 1 )
@@ -243,7 +233,7 @@ float	Noise::Noise5D( const NjFloat4& uvwr, float s )
 	return BiLerp( N00, N01, N11, N10, t3, t4 );
 }
 
-float	Noise::Noise6D( const NjFloat4& uvwr, const NjFloat2& st )
+float	Noise::Noise6D( const NjFloat4& uvwr, const NjFloat2& st ) const
 {
 	NOISE_INDICES( BIAS_U, uvwr.x, 0 )
 	NOISE_INDICES( BIAS_V, uvwr.y, 1 )
@@ -352,14 +342,14 @@ void	Noise::SetWrappingParameters( float _Frequency, U32 _Seed )
 	_randpopseed();
 }
 
-float	Noise::WrapNoise1D( float u )
+float	Noise::WrapNoise1D( float u ) const
 {
 	float		Angle = TWOPI * u;
 	NjFloat2	Pos( m_WrapCenter0.x + cosf( Angle ), m_WrapCenter0.y + sinf( Angle ) );
 	return Noise2D( Pos );
 }
 
-float	Noise::WrapNoise2D( const NjFloat2& uv )
+float	Noise::WrapNoise2D( const NjFloat2& uv ) const
 {
 	float		Angle0 = TWOPI * uv.x;
 	float		Angle1 = TWOPI * uv.y;
@@ -367,7 +357,7 @@ float	Noise::WrapNoise2D( const NjFloat2& uv )
 	return Noise4D( Pos );
 }
 
-float	Noise::WrapNoise3D( const NjFloat3& uvw )
+float	Noise::WrapNoise3D( const NjFloat3& uvw ) const
 {
 	float		Angle0 = TWOPI * uvw.x;
 	float		Angle1 = TWOPI * uvw.y;
@@ -376,3 +366,290 @@ float	Noise::WrapNoise3D( const NjFloat3& uvw )
 	NjFloat2	Pos1( m_WrapCenter2.x + m_WrapRadius * cosf( Angle1 ), m_WrapCenter2.y + m_WrapRadius * sinf( Angle1 ) );
 	return Noise6D( Pos0, Pos1 );
 }
+
+//////////////////////////////////////////////////////////////////////////
+// Cellular noise
+void	Noise::SetCellularWrappingParameters( int _SizeX, int _SizeY, int _SizeZ )
+{
+	m_SizeX = _SizeX;
+	m_SizeY = _SizeY;
+	m_SizeZ = _SizeZ;
+}
+
+float	Noise::Cellular2D( const NjFloat2& _UV, CombineDistancesDelegate _Combine, bool _bWrap ) const
+{
+	int	CellX = ASM_floorf( _UV.x );
+	int	CellY = ASM_floorf( _UV.y );
+
+	// Read center spot offset for all 9 cells and choose closest distance
+	float	pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };
+	for ( int Y=CellY-1; Y <= CellY+1; Y++ )
+		for ( int X=CellX-1; X <= CellX+1; X++ )
+		{
+			U32	Hx = _bWrap ? (X + 100*m_SizeX) % m_SizeX : X;
+			U32	Hy = _bWrap ? (Y + 100*m_SizeY) % m_SizeY : Y;
+
+			// Hash two integers into a single integer using FNV hash (http://isthe.com/chongo/tech/comp/fnv/#FNV-source)
+			U32	Hash = U32( (((OFFSET_BASIS ^ Hx) * FNV_PRIME) ^ Hy) * FNV_PRIME );
+			LCGRandom( Hash );
+
+			NjFloat2	CellCenter;
+			CellCenter.x = X + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
+			CellCenter.y = Y + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
+
+			// Check if the distance to that point is the closest
+			float	SqDistance = (_UV - CellCenter).LengthSq();
+			if ( SqDistance < pSqDistances[0] )
+			{
+				pSqDistances[2] = pSqDistances[1];
+				pSqDistances[1] = pSqDistances[0];
+				pSqDistances[0] = SqDistance;
+			}
+			else if ( SqDistance < pSqDistances[1] )
+			{
+				pSqDistances[2] = pSqDistances[1];
+				pSqDistances[1] = SqDistance;
+			}
+			else if ( SqDistance < pSqDistances[2] )
+				pSqDistances[2] = SqDistance;
+		}
+
+	return _Combine( pSqDistances );
+}
+
+float	Noise::Cellular3D( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bool _bWrap ) const
+{
+	int	CellX = ASM_floorf( _UVW.x );
+	int	CellY = ASM_floorf( _UVW.y );
+	int	CellZ = ASM_floorf( _UVW.z );
+
+	float		pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };	// Only keep the 3 closest distances
+
+	// Read center spot offset for all 9 cells and choose closest distance
+	float	MinSqDistance = FLOAT32_MAX;
+	for ( int Z=CellZ-1; Z <= CellZ+1; Z++ )
+		for ( int Y=CellY-1; Y <= CellY+1; Y++ )
+			for ( int X=CellX-1; X <= CellX+1; X++ )
+			{
+				U32	Hx = _bWrap ? (X + 100*m_SizeX) % m_SizeX : X;
+				U32	Hy = _bWrap ? (Y + 100*m_SizeY) % m_SizeY : Y;
+				U32	Hz = _bWrap ? (Z + 100*m_SizeZ) % m_SizeZ : Z;
+
+				// Hash three integers into a single integer using FNV hash (http://isthe.com/chongo/tech/comp/fnv/#FNV-source)
+				U32	Hash = U32( (((((OFFSET_BASIS ^ Hx) * FNV_PRIME) ^ Hy) * FNV_PRIME) ^ Hz) * FNV_PRIME );
+				Hash = LCGRandom(Hash);
+
+				LCGRandom( Hash );
+
+				NjFloat3	CellCenter;
+				CellCenter.x = X + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
+				CellCenter.y = Y + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
+				CellCenter.z = Z + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
+
+				// Check if the distance to that point is the closest
+				float	SqDistance = (_UVW - CellCenter).LengthSq();
+				if ( SqDistance < pSqDistances[0] )
+				{
+					pSqDistances[2] = pSqDistances[1];
+					pSqDistances[1] = pSqDistances[0];
+					pSqDistances[0] = SqDistance;
+				}
+				else if ( SqDistance < pSqDistances[1] )
+				{
+					pSqDistances[2] = pSqDistances[1];
+					pSqDistances[1] = SqDistance;
+				}
+				else if ( SqDistance < pSqDistances[2] )
+					pSqDistances[2] = SqDistance;
+			}
+
+	return _Combine( pSqDistances );
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Worley Noise (from https://github.com/freethenation/CellNoiseDemo)
+// I though about implementing the optimization suggested in Worley's paper to skip inelegible neighbor cubes that are too far away but I remembered I am writing a 64K intro... Less code the better !
+float	Noise::Worley2D( const NjFloat2& _UV, CombineDistancesDelegate _Combine, bool _bWrap ) const
+{
+	int	CellX = ASM_floorf( _UV.x );
+	int CellY = ASM_floorf( _UV.y );
+
+	NjFloat2	Point;
+
+	float		pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };	// Only keep the 3 closest distances
+
+	for ( int Y=CellY-1; Y <= CellY+1; Y++ )
+		for ( int X=CellX-1; X <= CellX+1; X++ )
+		{
+			U32	Hx = _bWrap ? (X + 100*m_SizeX) % m_SizeX : X;
+			U32	Hy = _bWrap ? (Y + 100*m_SizeY) % m_SizeY : Y;
+
+			// Hash two integers into a single integer using FNV hash (http://isthe.com/chongo/tech/comp/fnv/#FNV-source)
+			U32	Hash = U32( (((OFFSET_BASIS ^ Hx) * FNV_PRIME) ^ Hy) * FNV_PRIME );
+				Hash = LCGRandom(Hash);
+
+			// Determine how many feature points are in the square
+			int	PointsCount = PoissonPointsCount( Hash );
+
+			// Randomly place the feature points in the cube & find the closest distance
+			for ( int PointIndex=0; PointIndex < PointsCount; PointIndex++ )
+			{
+				Hash = LCGRandom(Hash);
+				Point.x = X + Hash * 2.3283064370807973754314699618685e-10f;
+
+				Hash = LCGRandom(Hash);
+				Point.y = Y + Hash * 2.3283064370807973754314699618685e-10f;
+
+				// Check if the distance to that point is the closest
+				float	SqDistance = (Point - _UV).LengthSq();
+				if ( SqDistance < pSqDistances[0] )
+				{
+					pSqDistances[2] = pSqDistances[1];
+					pSqDistances[1] = pSqDistances[0];
+					pSqDistances[0] = SqDistance;
+				}
+				else if ( SqDistance < pSqDistances[1] )
+				{
+					pSqDistances[2] = pSqDistances[1];
+					pSqDistances[1] = SqDistance;
+				}
+				else if ( SqDistance < pSqDistances[2] )
+					pSqDistances[2] = SqDistance;
+			}
+		}
+
+	return _Combine( pSqDistances );
+}
+
+float	Noise::Worley3D( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bool _bWrap ) const
+{
+	int	CellX = ASM_floorf( _UVW.x );
+	int CellY = ASM_floorf( _UVW.y );
+	int CellZ = ASM_floorf( _UVW.z );
+
+	NjFloat3	Point;
+	float		pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };	// Only keep the 3 closest distances
+
+	for ( int Z=CellZ-1; Z <= CellZ+1; Z++ )
+		for ( int Y=CellY-1; Y <= CellY+1; Y++ )
+			for ( int X=CellX-1; X <= CellX+1; X++ )
+			{
+				U32	Hx = _bWrap ? (X + 100*m_SizeX) % m_SizeX : X;
+				U32	Hy = _bWrap ? (Y + 100*m_SizeY) % m_SizeY : Y;
+				U32	Hz = _bWrap ? (Z + 100*m_SizeZ) % m_SizeZ : Z;
+
+				// Hash three integers into a single integer using FNV hash (http://isthe.com/chongo/tech/comp/fnv/#FNV-source)
+				U32	Hash = U32( (((((OFFSET_BASIS ^ Hx) * FNV_PRIME) ^ Hy) * FNV_PRIME) ^ Hz) * FNV_PRIME );
+				Hash = LCGRandom(Hash);
+
+				// Determine how many feature points are in the cube
+				int	PointsCount = PoissonPointsCount( Hash );
+
+				// Randomly place the feature points in the cube & find the closest distance
+				for ( int PointIndex=0; PointIndex < PointsCount; PointIndex++ )
+				{
+					Hash = LCGRandom(Hash);
+					Point.x = X + Hash * 2.3283064370807973754314699618685e-10f;
+
+					Hash = LCGRandom(Hash);
+					Point.y = Y + Hash * 2.3283064370807973754314699618685e-10f;
+
+					Hash = LCGRandom(Hash);
+					Point.z = Z + Hash * 2.3283064370807973754314699618685e-10f;
+
+					// Check if the distance to that point is the closest
+					float	SqDistance = (Point - _UVW).LengthSq();
+					if ( SqDistance < pSqDistances[0] )
+					{
+						pSqDistances[2] = pSqDistances[1];
+						pSqDistances[1] = pSqDistances[0];
+						pSqDistances[0] = SqDistance;
+					}
+					else if ( SqDistance < pSqDistances[1] )
+					{
+						pSqDistances[2] = pSqDistances[1];
+						pSqDistances[1] = SqDistance;
+					}
+					else if ( SqDistance < pSqDistances[2] )
+						pSqDistances[2] = SqDistance;
+				}
+			}
+
+	return _Combine( pSqDistances );
+}
+
+U32	Noise::LCGRandom( U32& _LastValue ) const
+{
+	return _LastValue = U32( (1103515245u * _LastValue + 12345u) );
+}
+
+#if 0
+// Generated using mathmatica with "AccountingForm[N[Table[CDF[PoissonDistribution[4], i], {i, 1, 9}], 20]*2^32]"
+// Follows Poisson distribution: http://en.wikipedia.org/wiki/Poisson_distribution
+int	Noise::PoissonPointsCount( U32 _Random ) const
+{
+	if ( _Random < 393325350 ) return 1;
+	else if ( _Random < 1022645910 ) return 2;
+	else if ( _Random < 1861739990 ) return 3;
+	else if ( _Random < 2700834071 ) return 4;
+	else if ( _Random < 3372109335 ) return 5;
+	else if ( _Random < 3819626178 ) return 6;
+	else if ( _Random < 4075350088 ) return 7;
+	else if ( _Random < 4203212043 ) return 8;
+
+	return 9;
+}
+#else
+// Same but with less points
+int	Noise::PoissonPointsCount( U32 _Random ) const
+{
+// Value		Normalized							Complemented
+//  393325350	0.09157819442720576059706643237664	0.90842180557279423940293356762336
+// 1022645910	0.23810330551073497755237272417927	0.76189669448926502244762727582073
+// 1861739990	0.43347012028877393349278111324943	0.56652987971122606650721888675057
+// 2700834071	0.62883693529964353314126923986274	0.37116306470035646685873076013726
+// 3372109335	0.78513038712207469789359595111888	0.21486961287792530210640404888112
+// 3819626178	0.88932602174797235563117367113735	0.11067397825202764436882632886265
+// 4075350088	0.948866384324819404707481014707	0.051133615675180595292518985293
+// 4203212043	0.97863656561324292924563468649183	0.02136343438675707075436531350817
+
+// 	{	// This is used to GENERATE the table of propability distributions
+// 		// (from http://en.wikipedia.org/wiki/Poisson_distribution)
+// 		//
+// 		// Poisson distribution is Pr( X = k ) = lambda^k . e^-lambda / k!
+// 		// X = amount of points in the cube
+// 		// k = average points count
+// 		//
+// 		const int		AVERAGE_POINTS = 2;		// k = the average number of points we need per cell
+// 		const int		FACT_K = 1*2;			// k!
+// 		const int		MAX_POINTS = 8;
+// 
+// 		float	pProbabilities[MAX_POINTS+1];
+// 		float	pProbabilityOffsets[MAX_POINTS+1];
+// 		for ( int i=0; i <= MAX_POINTS; i++ )
+// 		{
+// 			int	PointsCount = i+1;	// Amount of points we expect
+// 			pProbabilities[i] = powf( float(PointsCount), float(AVERAGE_POINTS) ) * ASM_expf( -float(PointsCount) ) / FACT_K;
+// 			pProbabilityOffsets[i] = (i > 0 ? pProbabilityOffsets[i-1] : 0) + pProbabilities[i];
+// 		}
+// 
+// 		U32	pNumbers[MAX_POINTS];
+// 		for ( int i=0; i < MAX_POINTS; i++ )
+// 		{
+// //			float	fNormalizedProbability = pProbabilityOffsets[i] / pProbabilityOffsets[MAX_POINTS];
+// 			float	fNormalizedProbability = pProbabilityOffsets[i];
+// 			pNumbers[i] = U32( 4294967296.0f * fNormalizedProbability );
+// 		}
+// 
+// 		pNumbers[MAX_POINTS] = 0;
+// 	}
+
+	if ( _Random < 	 790015040 ) return 1;
+	if ( _Random < 	1952536192 ) return 2;
+	if ( _Random < 	2914788352 ) return 3;
+	if ( _Random < 	3544108800 ) return 4;
+// 	if ( _Random < 	3905849344 ) return 5;
+// 	if ( _Random < 	4097480192 ) return 6;
+	return 5;
+}
+#endif

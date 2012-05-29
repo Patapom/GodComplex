@@ -17,10 +17,17 @@ static Material*	gs_pMatPostFinal = NULL;	// Final post-process rendering to the
 static CBTest			gs_CBTest;
 static ConstantBuffer*	gs_pCB_Test = NULL;
 
+//float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[0] ); }	// Use F1 = closest distance
+//float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[1] ); }	// Use F2 = second closest distance
+float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[1] ) - sqrtf( _pDistances[0] ); }	// Use F2 - F1
+
 void	FillNoise( int x, int y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
 {
-//	float	C = abs( gs_Noise.Noise2D( 0.005f * _UV ) );	// Simple test with gradient noise that doesn't loop
-	float	C = abs( gs_Noise.WrapNoise2D( _UV ) );			// Advanced test with gradient noise that loops !
+ 	Noise&	N = *((Noise*) _pData);
+// //	float	C = abs( N.Noise2D( 0.005f * _UV ) );	// Simple test with gradient noise that doesn't loop
+// 	float	C = abs( N.WrapNoise2D( _UV ) );			// Advanced test with gradient noise that loops !
+//	float	C = N.Cellular2D( 16.0f * _UV, CombineDistances, true );	// Simple cellular (NOT Worley !)
+	float	C = N.Worley2D( 16.0f * _UV, CombineDistances, true );		// Worley noise
 
 	_Color.x = _Color.y = _Color.z = C;
 	_Color.w = 1.0f;
@@ -60,7 +67,9 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 		DrawUtils	Draw;
 		{
 			TextureBuilder	TB( 512, 512 );
-			TB.Fill( FillNoise, NULL );
+
+ 			Noise	N( 1 );
+			TB.Fill( FillNoise, &N );
 
 			Draw.SetupSurface( 512, 512, TB.GetMips()[0] );
 
@@ -72,7 +81,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 			Draw.SetupContext( 250.0f, 0.0f, 30.0f );
  			Draw.DrawRectangle( 10.0f, 13.4f, 197.39f, 382.78f, 40.0f, 0.5f, FillRectangle );
 
-			Blur::BlurGaussian( TB, 0.0f, 40.0f );
+//			Blur::BlurGaussian( TB, 20.0f, 20.0f, true, 0.5f );
 
 			gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.Convert( PixelFormatRGBA16F::DESCRIPTOR ) );
 		}
