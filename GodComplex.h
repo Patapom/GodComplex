@@ -52,7 +52,7 @@
 // Helpers
 #include "Procedural/TextureBuilder.h"
 #include "Procedural/Generators/Noise.h"
-#include "Procedural/Filters/FilterBlur.h"
+#include "Procedural/Filters/Filters.h"
 #include "Procedural/DrawUtils/Draw.h"
 
 

@@ -146,11 +146,11 @@
     <ClInclude Include="Procedural\DrawUtils\Draw.h">
       <Filter>Procedural\DrawUtils</Filter>
     </ClInclude>
-    <ClInclude Include="Procedural\Filters\FilterBlur.h">
-      <Filter>Procedural\Filters</Filter>
-    </ClInclude>
     <ClInclude Include="Procedural\Generators\Noise.h">
       <Filter>Procedural\Generators</Filter>
+    </ClInclude>
+    <ClInclude Include="Procedural\Filters\Filters.h">
+      <Filter>Procedural\Filters</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -215,11 +215,11 @@
     <ClCompile Include="Procedural\DrawUtils\Draw.cpp">
       <Filter>Procedural\DrawUtils</Filter>
     </ClCompile>
-    <ClCompile Include="Procedural\Filters\FilterBlur.cpp">
-      <Filter>Procedural\Filters</Filter>
-    </ClCompile>
     <ClCompile Include="Procedural\Generators\Noise.cpp">
       <Filter>Procedural\Generators</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\Filters\Filters.cpp">
+      <Filter>Procedural\Filters</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

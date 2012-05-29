@@ -29,6 +29,17 @@ const void**	TextureBuilder::GetLastConvertedMips() const
 	return (const void**) m_ppBufferSpecific;
 }
 
+void	CopyFiller( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+{
+	const TextureBuilder&	Source = *((const TextureBuilder*) _pData);
+	Source.SampleClamp( _UV.x * Source.GetWidth(), _UV.y * Source.GetHeight(), _Color );
+}
+
+void	TextureBuilder::CopyFrom( const TextureBuilder& _Source )
+{
+	Fill( CopyFiller, (void*) &_Source );
+}
+
 void	TextureBuilder::Fill( FillDelegate _Filler, void* _pData )
 {
 	// Fill the mip level 0
@@ -46,7 +57,7 @@ void	TextureBuilder::Fill( FillDelegate _Filler, void* _pData )
 	m_bMipLevelsBuilt = false;
 }
 
-void	TextureBuilder::SampleWrap( float _X, float _Y, NjFloat4& _Color )
+void	TextureBuilder::SampleWrap( float _X, float _Y, NjFloat4& _Color ) const
 {
 	int		X0 = ASM_floorf( _X );
 	float	x = _X - X0;
@@ -76,7 +87,7 @@ void	TextureBuilder::SampleWrap( float _X, float _Y, NjFloat4& _Color )
 	_Color.w = ry * V0.w + y * V1.w;
 }
 
-void	TextureBuilder::SampleClamp( float _X, float _Y, NjFloat4& _Color )
+void	TextureBuilder::SampleClamp( float _X, float _Y, NjFloat4& _Color ) const
 {
 	int		X0 = ASM_floorf( _X );
 	float	x = _X - X0;

@@ -35,9 +35,11 @@ public:		// METHODS
 	TextureBuilder( int _Width, int _Height );
  	~TextureBuilder();
 
+	void	CopyFrom( const TextureBuilder& _Source );
 	void	Fill( FillDelegate _Filler, void* _pData );
-	void	SampleWrap( float _X, float _Y, NjFloat4& _Color );
-	void	SampleClamp( float _X, float _Y, NjFloat4& _Color );
+	void	Get( int _X, int _Y, NjFloat4& _Color ) const	{ _Color = m_ppBufferGeneric[0][m_Width*_Y+_X]; }
+	void	SampleWrap( float _X, float _Y, NjFloat4& _Color ) const;
+	void	SampleClamp( float _X, float _Y, NjFloat4& _Color ) const;
 	void	GenerateMips();
 	void**	Convert( IPixelFormatDescriptor& _Format );
 

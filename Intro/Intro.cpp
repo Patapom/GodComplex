@@ -81,7 +81,8 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 			Draw.SetupContext( 250.0f, 0.0f, 30.0f );
  			Draw.DrawRectangle( 10.0f, 13.4f, 197.39f, 382.78f, 40.0f, 0.5f, FillRectangle );
 
-//			Blur::BlurGaussian( TB, 20.0f, 20.0f, true, 0.5f );
+//			Filters::BlurGaussian( TB, 20.0f, 20.0f, true, 0.5f );
+//			Filters::UnsharpMask( TB, 20.0f );
 
 			gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.Convert( PixelFormatRGBA16F::DESCRIPTOR ) );
 		}

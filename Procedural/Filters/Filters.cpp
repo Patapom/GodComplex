@@ -122,7 +122,7 @@ void	FillBlurGaussianVC( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, 
 	_Color = Data.InvSumWeights * SumColors;
 }
 
-void	Blur::BlurGaussian( TextureBuilder& _Builder, float _SizeX, float _SizeY, bool _bWrap, float _MinWeight )
+void	Filters::BlurGaussian( TextureBuilder& _Builder, float _SizeX, float _SizeY, bool _bWrap, float _MinWeight )
 {
 	int	W = _Builder.GetWidth(), H = _Builder.GetHeight();
 
@@ -175,4 +175,28 @@ void	Blur::BlurGaussian( TextureBuilder& _Builder, float _SizeX, float _SizeY, b
 
 		delete[] BS.pWeights;
 	}
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Unsharp masking
+void	FillUnsharpMaskSubtract( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+{
+	TextureBuilder&	SourceSmooth = *((TextureBuilder*) _pData);
+
+	NjFloat4	Smooth;
+	SourceSmooth.Get( _X, _Y, Smooth );
+
+	_Color = 2.0f * _Color - Smooth;
+	_Color = _Color.Max( NjFloat4::Zero );	// Clip negatives
+}
+
+void	Filters::UnsharpMask( TextureBuilder& _Builder, float _Size )
+{
+	// Blur the source
+	TextureBuilder	Temp( _Builder.GetWidth(), _Builder.GetHeight() );
+	Temp.CopyFrom( _Builder );
+	BlurGaussian( Temp, _Size, _Size );
+
+	// Subtract
+	_Builder.Fill( FillUnsharpMaskSubtract, &Temp );
 }
