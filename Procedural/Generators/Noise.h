@@ -89,6 +89,7 @@ public:		// METHODS
 
 	// --------- ALGORITHMS ---------
 	float	FractionalBrownianMotion( GetNoise2DDelegate _GetNoise, void* _pData, const NjFloat2& uv, float _FrequencyFactor=2.0f, float _AmplitudeFactor=0.5f, int _OctavesCount=4 ) const;
+	float	RidgedMultiFractal( GetNoise2DDelegate _GetNoise, void* _pData, const NjFloat2& _UV, float _FrequencyFactor=2.0f, float _AmplitudeFactor=0.5f, int _OctavesCount=4 ) const;
 
 private:
 

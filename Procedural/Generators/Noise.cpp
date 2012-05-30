@@ -841,6 +841,32 @@ float	Noise::FractionalBrownianMotion( GetNoise2DDelegate _GetNoise, void* _pDat
 	return Result;
 }
 
+float	Noise::RidgedMultiFractal( GetNoise2DDelegate _GetNoise, void* _pData, const NjFloat2& _UV, float _FrequencyFactor, float _AmplitudeFactor, int _OctavesCount ) const
+{
+	NjFloat2	UV = _UV;
+
+	float		Result = 0.0f;
+	float		Frequency = 1.0f;
+	float		Amplitude = 1.0f;
+	float		PreviousNoise = 1.0f;
+	float		SumAmplitudes = 0.0f;
+	for ( int Octave=0; Octave < _OctavesCount; Octave++ )
+	{
+		float	NoiseValue = _GetNoise( UV, _pData );
+//				NoiseValue *= NoiseValue;	// Try with an EXP !
+				NoiseValue = ASM_expf( -NoiseValue*NoiseValue );
+		Result += Amplitude * PreviousNoise * NoiseValue;
+		PreviousNoise = NoiseValue;
+
+		SumAmplitudes += Amplitude;
+		Amplitude *= _AmplitudeFactor;
+		UV.x *= _FrequencyFactor;
+		UV.y *= _FrequencyFactor;
+	}
+
+	Result = Result / SumAmplitudes;
+	return Result;
+}
 
 /*
 //////////////////////////////////////////////////////////////////////////
