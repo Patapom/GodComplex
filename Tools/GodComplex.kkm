@@ -4,18 +4,18 @@ Functions by packed size:
     0.00/      21: V2MPlayer::RenderProxy                             GodComplex.obj
     0.00/      26: DrawUtils::DrawContext::NewScanline                Draw.obj
     0.00/      31: Component::`scalar deleting destructor'            Component.obj
-    0.00/      31: ConstantBuffer::`vector deleting destructor'       
+    0.00/      31: ConstantBuffer::`scalar deleting destructor'       ConstantBuffer.obj
     0.00/      31: Material::`scalar deleting destructor'             Material.obj
-    0.00/      31: Primitive::`scalar deleting destructor'            Primitive.obj
+    0.00/      31: Primitive::`vector deleting destructor'            
     0.00/      31: RasterizerState::`scalar deleting destructor'      States.obj
-    0.00/      31: DepthStencilState::`scalar deleting destructor'    States.obj
+    0.00/      31: DepthStencilState::`vector deleting destructor'    
     0.00/      31: BlendState::`scalar deleting destructor'           States.obj
-    0.00/      31: Texture2D::`vector deleting destructor'            
+    0.00/      31: Texture2D::`scalar deleting destructor'            Texture2D.obj
     0.00/       4: DepthStencilFormatD32F::Desc::DirectXFormat        DepthStencilFormats.obj
-    0.00/       4: PixelFormatRGBA8::Desc::Size                       PixelFormats.obj
     0.00/      17: DepthStencilFormatD32F::Desc::Write                DepthStencilFormats.obj
     0.00/      17: DepthStencilFormatD32F::Desc::Read                 DepthStencilFormats.obj
     0.00/       4: PixelFormatRGBA8::Desc::DirectXFormat              PixelFormats.obj
+    0.00/       4: DepthStencilFormatD32F::Desc::Size                 DepthStencilFormats.obj
     0.00/      71: PixelFormatRGBA8::Desc::Write                      PixelFormats.obj
     0.00/      77: PixelFormatRGBA8::Desc::Read                       PixelFormats.obj
     0.00/       4: PixelFormatRGBA16F::Desc::DirectXFormat            PixelFormats.obj
@@ -24,9 +24,9 @@ Functions by packed size:
     0.00/      77: PixelFormatRGBA16F::Desc::Read                     PixelFormats.obj
     0.00/       4: VertexFormatPt4::Desc::Size                        VertexFormats.obj
     0.00/       6: VertexFormatPt4::Desc::GetInputElements            VertexFormats.obj
-    0.00/       4: VertexFormatP3::Desc::GetInputElementsCount        VertexFormats.obj
     0.00/       4: VertexFormatP3::Desc::Size                         VertexFormats.obj
     0.00/       6: VertexFormatP3::Desc::GetInputElements             VertexFormats.obj
+    0.00/       4: VertexFormatP3::Desc::GetInputElementsCount        VertexFormats.obj
     0.00/     102: IncludesManager::Open                              Resources.obj
     0.00/      59: IncludesManager::Close                             Resources.obj
     0.00/     318: _dsInit@12                                         libv2:dsio.obj
@@ -101,6 +101,7 @@ Functions by packed size:
     0.00/      21: _randpushseed                                      Random.obj
     0.00/      33: _frand                                             Random.obj
     0.00/      11: _rand                                              Random.obj
+    0.00/      37: _randGauss                                         Random.obj
     0.00/      26: V2MPlayer::Stop                                    v2mplayer.obj
     0.00/      35: V2MPlayer::Close                                   v2mplayer.obj
     0.00/    1405: V2MPlayer::Tick                                    v2mplayer.obj
@@ -157,16 +158,19 @@ Functions by packed size:
     0.00/     426: TextureBuilder::GenerateMips                       TextureBuilder.obj
     0.00/     415: TextureBuilder::SampleClamp                        TextureBuilder.obj
     0.00/     376: TextureBuilder::SampleWrap                         TextureBuilder.obj
+    0.00/      42: CopyFiller                                         TextureBuilder.obj
     0.00/     255: TextureBuilder::Convert                            TextureBuilder.obj
     0.00/     188: TextureBuilder::TextureBuilder                     TextureBuilder.obj
+    0.00/     111: Noise::FractionalBrownianMotion                    Noise.obj
     0.00/      44: Noise::PoissonPointsCount                          Noise.obj
     0.00/      16: Noise::LCGRandom                                   Noise.obj
     0.00/      13: Noise::SetCellularWrappingParameters               Noise.obj
     0.00/      31: ASM_floorf                                         
     0.00/     115: Noise::SetWrappingParameters                       Noise.obj
-    0.00/      43: Noise::~Noise                                      Noise.obj
-    0.00/     637: Noise::Noise                                       Noise.obj
-    0.00/     445: Noise::Worley2D                                    Noise.obj
+    0.00/      57: Noise::~Noise                                      Noise.obj
+    0.00/     641: Noise::Noise                                       Noise.obj
+    0.00/     992: Noise::Create2DWaveletNoiseTile                    Noise.obj
+    0.00/     434: Noise::Worley                                      Noise.obj
     0.00/      38: DrawUtils::Transform                               Draw.obj
     0.00/      29: DrawUtils::SetupSurface                            Draw.obj
     0.00/      31: ASM_ceilf                                          
@@ -192,14 +196,15 @@ Functions by packed size:
     0.00/      46: DictionaryU32::~DictionaryU32                      Hashtable.obj
     0.00/      52: DictionaryU32::DictionaryU32                       Hashtable.obj
     0.00/      81: IntroExit                                          Intro.obj
-    0.00/      12: CombineDistances                                   Intro.obj
     0.00/      21: operator*                                          
     0.00/      63: FillLine                                           Intro.obj
     0.00/      95: FillEllipse                                        Intro.obj
     0.00/      67: FillRectangle                                      Intro.obj
-    0.00/      48: FillNoise                                          Intro.obj
+    0.00/       8: CombineDistances                                   Intro.obj
     0.00/     149: IntroDo                                            Intro.obj
-    0.00/     418: IntroInit                                          Intro.obj
+    0.00/      33: NoiseDelegate                                      Intro.obj
+    0.00/      34: FillNoise                                          Intro.obj
+    0.00/     426: IntroInit                                          Intro.obj
     0.00/     246: ShowProgress                                       
     0.00/      98: WindowExit                                         GodComplex.obj
     0.00/      81: WndProc                                            
@@ -219,10 +224,11 @@ Functions by packed size:
     0.00/      43: Primitive::~Primitive                              Primitive.obj
     0.00/     157: Primitive::Primitive                               Primitive.obj
     0.00/      40: operator*                                          
-    0.00/     415: FillBlurGaussianVC                                 FilterBlur.obj
-    0.00/     417: FillBlurGaussianHC                                 FilterBlur.obj
-    0.00/     415: FillBlurGaussianVW                                 FilterBlur.obj
-    0.00/     415: FillBlurGaussianHW                                 FilterBlur.obj
+    0.00/     207: FillUnsharpMaskSubtract                            Filters.obj
+    0.00/     415: FillBlurGaussianVC                                 Filters.obj
+    0.00/     417: FillBlurGaussianHC                                 Filters.obj
+    0.00/     415: FillBlurGaussianVW                                 Filters.obj
+    0.00/     415: FillBlurGaussianHW                                 Filters.obj
     0.00/       5: `dynamic initializer for 'gs_Device''              
 
 Data by packed size:
@@ -291,13 +297,10 @@ Data by packed size:
     0.00/      28: `Ronan::syWRonan::SetFrame'::`2'::p2b              libv2:ronan.obj
     0.00/      28: `Ronan::syWRonan::SetFrame'::`2'::p1a              libv2:ronan.obj
     0.00/      28: `Ronan::syWRonan::SetFrame'::`2'::p2a              libv2:ronan.obj
-    0.00/       4: __real@3f400000                                    libv2:ronan.obj
-    0.00/       4: __real@40400000                                    libv2:ronan.obj
     0.00/       4: __real@bf000000                                    libv2:ronan.obj
     0.00/       4: __real@40800000                                    libv2:ronan.obj
     0.00/       4: __real@463b8000                                    libv2:ronan.obj
     0.00/       4: __real@457a0000                                    libv2:ronan.obj
-    0.00/       4: __real@41000000                                    libv2:ronan.obj
     0.00/       4: __real@3c000000                                    libv2:ronan.obj
     0.00/       4: __real@42800000                                    libv2:ronan.obj
     0.00/       4: __real@3c449ba6                                    libv2:ronan.obj
@@ -335,6 +338,8 @@ Data by packed size:
     0.00/       8: `string'                                           Resources.obj
     0.00/       8: IncludesManager::`vftable'                         Resources.obj
     0.00/       4: __real@437f0000                                    
+    0.00/       4: __real@40000000                                    
+    0.00/       4: __real@3f000000                                    
     0.00/       4: __real@3f800000                                    
     0.00/       4: __real@3a800000                                    
     0.00/       4: __real@33800000                                    
@@ -342,12 +347,30 @@ Data by packed size:
     0.00/       4: __real@4f800000                                    
     0.00/       4: __real@3b808081                                    
     0.00/       4: __real@3a03126f                                    
-    0.00/       4: __real@40000000                                    
-    0.00/       4: __real@3f000000                                    
     0.00/       4: __real@bf800000                                    
     0.00/       4: __real@3c8efa35                                    
-    0.00/       4: __real@41800000                                    
+    0.00/       4: __real@41000000                                    
+    0.00/       4: __real@c0000000                                    
+    0.00/       4: __real@40c90fdb                                    
     0.00/       4: __real@3e800000                                    
+    0.00/       4: __real@3f400000                                    
+    0.00/       4: __real@3b686402                                    
+    0.00/       4: __real@3f27c45d                                    
+    0.00/       4: __real@3d0b2d90                                    
+    0.00/       4: __real@be79a177                                    
+    0.00/       4: __real@bcd477bc                                    
+    0.00/       4: __real@3dd394b8                                    
+    0.00/       4: __real@3c3ef49d                                    
+    0.00/       4: __real@bd35e95b                                    
+    0.00/       4: __real@bba52696                                    
+    0.00/       4: __real@3c9ca18c                                    
+    0.00/       4: __real@3b0e581d                                    
+    0.00/       4: __real@bc06e3b4                                    
+    0.00/       4: __real@ba75e41d                                    
+    0.00/       4: __real@3b68533b                                    
+    0.00/       4: __real@39d6f545                                    
+    0.00/       4: __real@bac8472c                                    
+    0.00/       4: __real@39af1cb9                                    
     0.00/       4: __real@7f7fffff                                    
     0.00/       4: __real@43fdb1ec                                    
     0.00/       4: __real@4394170a                                    
@@ -358,7 +381,7 @@ Data by packed size:
     0.00/       4: __real@43f8b1ec                                    
     0.00/       4: __real@43fa0000                                    
     0.00/       4: __real@43be0000                                    
-    0.00/       4: __real@41a00000                                    
+    0.00/       8: __real@41a00000                                    
     0.00/       8: __real@4118128000000000                            
     0.00/       4: __real@434f63d7                                    
     0.00/       4: __real@43c6170a                                    
@@ -369,6 +392,7 @@ Data by packed size:
     0.00/       4: __real@433163d7                                    
     0.00/       4: __real@ff7fffff                                    
     0.00/       8: __real@4000000000000000                            
+    0.00/       4: __real@40400000                                    
     0.00/       4: __real@437a0000                                    
     0.00/       4: __real@41f00000                                    
     0.00/      20: __IMPORT_DESCRIPTOR_d3d11                          d3d11:d3d11.dll
@@ -410,8 +434,8 @@ Data by packed size:
     0.00/      82: gs_Device                                          GodComplex.obj
 
 Functions by object file and packed size:
-    0.00/      31: ConstantBuffer::`vector deleting destructor'       
-    0.00/      31: Texture2D::`vector deleting destructor'            
+    0.00/      31: Primitive::`vector deleting destructor'            
+    0.00/      31: DepthStencilState::`vector deleting destructor'    
     0.00/      30: ASM_memcpy                                         
     0.00/      58: FLOAT2BYTE                                         
     0.00/      28: ASM_memset                                         
@@ -437,6 +461,7 @@ Functions by object file and packed size:
     0.00/       1: Component::Check                                   Component.obj
     0.00/      17: Component::~Component                              Component.obj
     0.00/      30: Component::Component                               Component.obj
+    0.00/      31: ConstantBuffer::`scalar deleting destructor'       ConstantBuffer.obj
     0.00/      26: ConstantBuffer::SetPS                              ConstantBuffer.obj
     0.00/      81: ConstantBuffer::UpdateData                         ConstantBuffer.obj
     0.00/      26: ConstantBuffer::~ConstantBuffer                    ConstantBuffer.obj
@@ -444,6 +469,7 @@ Functions by object file and packed size:
     0.00/       4: DepthStencilFormatD32F::Desc::DirectXFormat        DepthStencilFormats.obj
     0.00/      17: DepthStencilFormatD32F::Desc::Write                DepthStencilFormats.obj
     0.00/      17: DepthStencilFormatD32F::Desc::Read                 DepthStencilFormats.obj
+    0.00/       4: DepthStencilFormatD32F::Desc::Size                 DepthStencilFormats.obj
     0.00/       1: Device::Check                                      Device.obj
     0.00/      41: Device::UnRegisterComponent                        Device.obj
     0.00/      20: Device::RegisterComponent                          Device.obj
@@ -467,10 +493,11 @@ Functions by object file and packed size:
     0.00/     435: DrawUtils::DrawLine                                Draw.obj
     0.00/     167: DrawUtils::DrawRectangle                           Draw.obj
     0.00/       6: _DirectSoundCreate@12                              dsound:DSOUND.dll
-    0.00/     415: FillBlurGaussianVC                                 FilterBlur.obj
-    0.00/     417: FillBlurGaussianHC                                 FilterBlur.obj
-    0.00/     415: FillBlurGaussianVW                                 FilterBlur.obj
-    0.00/     415: FillBlurGaussianHW                                 FilterBlur.obj
+    0.00/     207: FillUnsharpMaskSubtract                            Filters.obj
+    0.00/     415: FillBlurGaussianVC                                 Filters.obj
+    0.00/     417: FillBlurGaussianHC                                 Filters.obj
+    0.00/     415: FillBlurGaussianVW                                 Filters.obj
+    0.00/     415: FillBlurGaussianHW                                 Filters.obj
     0.00/      21: V2MPlayer::RenderProxy                             GodComplex.obj
     0.00/      98: WindowExit                                         GodComplex.obj
     0.00/       3: __purecall                                         GodComplex.obj
@@ -483,13 +510,14 @@ Functions by object file and packed size:
     0.00/      46: DictionaryU32::~DictionaryU32                      Hashtable.obj
     0.00/      52: DictionaryU32::DictionaryU32                       Hashtable.obj
     0.00/      81: IntroExit                                          Intro.obj
-    0.00/      12: CombineDistances                                   Intro.obj
     0.00/      63: FillLine                                           Intro.obj
     0.00/      95: FillEllipse                                        Intro.obj
     0.00/      67: FillRectangle                                      Intro.obj
-    0.00/      48: FillNoise                                          Intro.obj
+    0.00/       8: CombineDistances                                   Intro.obj
     0.00/     149: IntroDo                                            Intro.obj
-    0.00/     418: IntroInit                                          Intro.obj
+    0.00/      33: NoiseDelegate                                      Intro.obj
+    0.00/      34: FillNoise                                          Intro.obj
+    0.00/     426: IntroInit                                          Intro.obj
     0.00/       6: _CreateThread@24                                   kernel32:KERNEL32.dll
     0.00/       6: _WaitForSingleObject@8                             kernel32:KERNEL32.dll
     0.00/       6: _SetThreadPriority@8                               kernel32:KERNEL32.dll
@@ -562,14 +590,15 @@ Functions by object file and packed size:
     0.00/     383: Material::Material                                 Material.obj
     0.00/     135: NjHalf::operator float                             Math.obj
     0.00/     119: NjHalf::NjHalf                                     Math.obj
+    0.00/     111: Noise::FractionalBrownianMotion                    Noise.obj
     0.00/      44: Noise::PoissonPointsCount                          Noise.obj
     0.00/      16: Noise::LCGRandom                                   Noise.obj
     0.00/      13: Noise::SetCellularWrappingParameters               Noise.obj
     0.00/     115: Noise::SetWrappingParameters                       Noise.obj
-    0.00/      43: Noise::~Noise                                      Noise.obj
-    0.00/     637: Noise::Noise                                       Noise.obj
-    0.00/     445: Noise::Worley2D                                    Noise.obj
-    0.00/       4: PixelFormatRGBA8::Desc::Size                       PixelFormats.obj
+    0.00/      57: Noise::~Noise                                      Noise.obj
+    0.00/     641: Noise::Noise                                       Noise.obj
+    0.00/     992: Noise::Create2DWaveletNoiseTile                    Noise.obj
+    0.00/     434: Noise::Worley                                      Noise.obj
     0.00/       4: PixelFormatRGBA8::Desc::DirectXFormat              PixelFormats.obj
     0.00/      71: PixelFormatRGBA8::Desc::Write                      PixelFormats.obj
     0.00/      77: PixelFormatRGBA8::Desc::Read                       PixelFormats.obj
@@ -577,7 +606,6 @@ Functions by object file and packed size:
     0.00/       4: PixelFormatRGBA16F::Desc::Size                     PixelFormats.obj
     0.00/     107: PixelFormatRGBA16F::Desc::Write                    PixelFormats.obj
     0.00/      77: PixelFormatRGBA16F::Desc::Read                     PixelFormats.obj
-    0.00/      31: Primitive::`scalar deleting destructor'            Primitive.obj
     0.00/     150: Primitive::Render                                  Primitive.obj
     0.00/      43: Primitive::~Primitive                              Primitive.obj
     0.00/     157: Primitive::Primitive                               Primitive.obj
@@ -587,13 +615,13 @@ Functions by object file and packed size:
     0.00/      21: _randpushseed                                      Random.obj
     0.00/      33: _frand                                             Random.obj
     0.00/      11: _rand                                              Random.obj
+    0.00/      37: _randGauss                                         Random.obj
     0.00/     102: IncludesManager::Open                              Resources.obj
     0.00/      59: IncludesManager::Close                             Resources.obj
     0.00/      57: LoadResourceBinary                                 Resources.obj
     0.00/      54: LoadResourceShader                                 Resources.obj
     0.00/      60: CreateMaterial                                     Resources.obj
     0.00/      31: RasterizerState::`scalar deleting destructor'      States.obj
-    0.00/      31: DepthStencilState::`scalar deleting destructor'    States.obj
     0.00/      31: BlendState::`scalar deleting destructor'           States.obj
     0.00/      26: BlendState::~BlendState                            States.obj
     0.00/      40: BlendState::BlendState                             States.obj
@@ -601,6 +629,7 @@ Functions by object file and packed size:
     0.00/      40: DepthStencilState::DepthStencilState               States.obj
     0.00/      26: RasterizerState::~RasterizerState                  States.obj
     0.00/      40: RasterizerState::RasterizerState                   States.obj
+    0.00/      31: Texture2D::`scalar deleting destructor'            Texture2D.obj
     0.00/      29: Texture2D::NextMipSize                             Texture2D.obj
     0.00/      71: Texture2D::GetDepthStencilView                     Texture2D.obj
     0.00/      98: Texture2D::GetTargetView                           Texture2D.obj
@@ -617,6 +646,7 @@ Functions by object file and packed size:
     0.00/     426: TextureBuilder::GenerateMips                       TextureBuilder.obj
     0.00/     415: TextureBuilder::SampleClamp                        TextureBuilder.obj
     0.00/     376: TextureBuilder::SampleWrap                         TextureBuilder.obj
+    0.00/      42: CopyFiller                                         TextureBuilder.obj
     0.00/     255: TextureBuilder::Convert                            TextureBuilder.obj
     0.00/     188: TextureBuilder::TextureBuilder                     TextureBuilder.obj
     0.00/      26: V2MPlayer::Stop                                    v2mplayer.obj
@@ -630,9 +660,9 @@ Functions by object file and packed size:
     0.00/      48: V2MPlayer::Open                                    v2mplayer.obj
     0.00/       4: VertexFormatPt4::Desc::Size                        VertexFormats.obj
     0.00/       6: VertexFormatPt4::Desc::GetInputElements            VertexFormats.obj
-    0.00/       4: VertexFormatP3::Desc::GetInputElementsCount        VertexFormats.obj
     0.00/       4: VertexFormatP3::Desc::Size                         VertexFormats.obj
     0.00/       6: VertexFormatP3::Desc::GetInputElements             VertexFormats.obj
+    0.00/       4: VertexFormatP3::Desc::GetInputElementsCount        VertexFormats.obj
 
 Classes/Namespaces by packed size:
     0.00/    2948: V2MPlayer
@@ -645,13 +675,13 @@ Classes/Namespaces by packed size:
     0.00/     101: DepthStencilState
     0.00/     101: BlendState
     0.00/    1063: Texture2D
-    0.00/      54: DepthStencilFormatD32F::Desc
-    0.00/     172: PixelFormatRGBA8::Desc
+    0.00/      58: DepthStencilFormatD32F::Desc
+    0.00/     168: PixelFormatRGBA8::Desc
     0.00/     208: PixelFormatRGBA16F::Desc
     0.00/      50: VertexFormatPt4::Desc
     0.00/      54: VertexFormatP3::Desc
     0.00/     169: IncludesManager
-    0.00/ 3176225: <global>
+    0.00/ 3176610: <global>
     0.00/     133: Ronan
     0.00/      65: Ronan::ResDef
     0.00/      36: Ronan::Resonator
@@ -660,7 +690,7 @@ Classes/Namespaces by packed size:
     0.00/    1287: Device
     0.00/     363: Material::ShaderConstants
     0.00/    1882: TextureBuilder
-    0.00/    1313: Noise
+    0.00/    2423: Noise
     0.00/    2896: DrawUtils
     0.00/     136: DrawUtils::DrawContextELLIPSE
     0.00/     146: DrawUtils::DrawContextLINE
@@ -681,31 +711,31 @@ Classes/Namespaces by packed size:
 Object files by packed size:
     0.00/ 3155355: GodComplex.obj
     0.00/    3669: Draw.obj
-    0.00/    1108: 
+    0.00/    1196: 
     0.00/      83: Component.obj
-    0.00/     222: ConstantBuffer.obj
+    0.00/     253: ConstantBuffer.obj
     0.00/    1178: Material.obj
-    0.00/     385: Primitive.obj
-    0.00/     303: States.obj
-    0.00/    1032: Texture2D.obj
-    0.00/      58: DepthStencilFormats.obj
-    0.00/     388: PixelFormats.obj
+    0.00/     354: Primitive.obj
+    0.00/     272: States.obj
+    0.00/    1063: Texture2D.obj
+    0.00/      62: DepthStencilFormats.obj
+    0.00/     384: PixelFormats.obj
     0.00/     140: VertexFormats.obj
     0.00/     364: Resources.obj
     0.00/    1255: libv2:dsio.obj
     0.00/   11552: libv2:synth.obj
-    0.00/    4709: libv2:ronan.obj
+    0.00/    4697: libv2:ronan.obj
     0.00/      34: dsound:DSOUND.dll
     0.00/     156: kernel32:KERNEL32.dll
-    0.00/     168: Random.obj
+    0.00/     205: Random.obj
     0.00/    3009: v2mplayer.obj
     0.00/    1303: Device.obj
-    0.00/    1882: TextureBuilder.obj
-    0.00/    1313: Noise.obj
+    0.00/    1924: TextureBuilder.obj
+    0.00/    2423: Noise.obj
     0.00/     446: Math.obj
     0.00/     226: Hashtable.obj
-    0.00/     941: Intro.obj
-    0.00/    1662: FilterBlur.obj
+    0.00/     964: Intro.obj
+    0.00/    1869: Filters.obj
     0.00/      36: d3dcompiler:D3DCOMPILER_43.dll
     0.00/      52: gdi32:GDI32.dll
     0.00/      92: user32:USER32.dll
@@ -713,5 +743,5 @@ Object files by packed size:
     0.00/      48: d3d11:d3d11.dll
     0.00/      16: dxguid:d3d10guid.obj
 
-Overall code:     0.00/   34131
-Overall data:     0.00/ 3159082
+Overall code:     0.00/   35550
+Overall data:     0.00/ 3159158

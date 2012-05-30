@@ -19,15 +19,28 @@ static ConstantBuffer*	gs_pCB_Test = NULL;
 
 //float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[0] ); }	// Use F1 = closest distance
 //float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[1] ); }	// Use F2 = second closest distance
-float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[1] ) - sqrtf( _pDistances[0] ); }	// Use F2 - F1
+//float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[1] ) - sqrtf( _pDistances[0] ); }	// Use F2 - F1
+float	CombineDistances( float _pDistances[] )	{ return _pDistances[1] - sqrt(_pDistances[0]); }	// Use F2² - F1
+
+float	NoiseDelegate( const NjFloat2& _UV, void* _pData )
+{
+	Noise&	N = *((Noise*) _pData);
+//	return 2.0f * abs( N.Perlin( 0.003f * _UV ) );
+//	return N.Cellular( 16.0f * _UV, CombineDistances, true );
+	return 3.0f * abs(N.Worley( 8.0f * _UV, CombineDistances, true ));
+//	return abs(N.Wavelet( _UV ));
+}
 
 void	FillNoise( int x, int y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
 {
  	Noise&	N = *((Noise*) _pData);
-// //	float	C = abs( N.Noise2D( 0.005f * _UV ) );	// Simple test with gradient noise that doesn't loop
-// 	float	C = abs( N.WrapNoise2D( _UV ) );			// Advanced test with gradient noise that loops !
-//	float	C = N.Cellular2D( 16.0f * _UV, CombineDistances, true );	// Simple cellular (NOT Worley !)
-	float	C = N.Worley2D( 16.0f * _UV, CombineDistances, true );		// Worley noise
+
+//	float	C = abs( N.Perlin( 0.005f * _UV ) );					// Simple test with gradient noise that doesn't loop
+// 	float	C = abs( N.WrapPerlin( _UV ) );							// Advanced test with gradient noise that loops !
+//	float	C = N.Cellular( 16.0f * _UV, CombineDistances, true );	// Simple cellular (NOT Worley !)
+//	float	C = N.Worley( 16.0f * _UV, CombineDistances, true );	// Worley noise
+//	float	C = abs(N.Wavelet( _UV ));								// Wavelet noise
+	float	C = N.FractionalBrownianMotion( NoiseDelegate, _pData, _UV );	// Fractional Brownian Motion
 
 	_Color.x = _Color.y = _Color.z = C;
 	_Color.w = 1.0f;
@@ -69,6 +82,9 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 			TextureBuilder	TB( 512, 512 );
 
  			Noise	N( 1 );
+
+N.Create2DWaveletNoiseTile( 6 );
+
 			TB.Fill( FillNoise, &N );
 
 			Draw.SetupSurface( 512, 512, TB.GetMips()[0] );

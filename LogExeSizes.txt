@@ -46,3 +46,8 @@
  [29 mai 2012]
 . Added cellular & Worley noise
 	packed executable 108544 -> 26112 bytes (passed a lot of code into functions and also removed inlines. That might explain why it's smaller)
+
+ [29 mai 2012]
+. Added wavelet noise
+. Added noise algorithms
+	packed executable 110080 -> 26624 bytes

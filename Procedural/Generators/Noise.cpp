@@ -20,6 +20,7 @@ const float	Noise::BIAS_S = 0.4646579661f;
 const float	Noise::BIAS_T = 0.9887465321f;
 
 Noise::Noise( int _Seed )
+	: m_pWavelet2D( NULL )
 {
 	_randpushseed();
 	_srand( _Seed, RAND_DEFAULT_SEED_V );
@@ -73,8 +74,10 @@ Noise::~Noise()
 	delete[] m_pNoise4;
 	delete[] m_pNoise5;
 	delete[] m_pNoise6;
-
 	delete[] m_pPermutation;
+
+	if ( m_pWavelet2D != NULL )
+		delete[] m_pWavelet2D;
 }
 
 // This should generate a code like this:
@@ -92,7 +95,7 @@ Noise::~Noise()
  			X##Index##_ = X##Index##_ & NOISE_MASK;	\
  	int		X##Index = (X##Index##_ + 1) & NOISE_MASK;
 
-float	Noise::Noise1D( float u ) const
+float	Noise::Perlin( float u ) const
 {
 	NOISE_INDICES( BIAS_U, u, 0 )
 
@@ -104,7 +107,7 @@ float	Noise::Noise1D( float u ) const
 	return Lerp( N0, N1, t0 );
 }
 
-float	Noise::Noise2D( const NjFloat2& uv ) const
+float	Noise::Perlin( const NjFloat2& uv ) const
 {
 	NOISE_INDICES( BIAS_U, uv.x, 0 )
 	NOISE_INDICES( BIAS_V, uv.y, 1 )
@@ -120,7 +123,7 @@ float	Noise::Noise2D( const NjFloat2& uv ) const
 	return BiLerp( N00, N01, N11, N10, t0, t1 );
 }
 
-float	Noise::Noise3D( const NjFloat3& uvw ) const
+float	Noise::Perlin( const NjFloat3& uvw ) const
 {
 	NOISE_INDICES( BIAS_U, uvw.x, 0 )
 	NOISE_INDICES( BIAS_V, uvw.y, 1 )
@@ -142,7 +145,7 @@ float	Noise::Noise3D( const NjFloat3& uvw ) const
 	return TriLerp( N000, N001, N011, N010, N100, N101, N111, N110, t0, t1, t2 );
 }
 
-float	Noise::Noise4D( const NjFloat4& uvwr ) const
+float	Noise::Perlin( const NjFloat4& uvwr ) const
 {
 	NOISE_INDICES( BIAS_U, uvwr.x, 0 )
 	NOISE_INDICES( BIAS_V, uvwr.y, 1 )
@@ -177,7 +180,7 @@ float	Noise::Noise4D( const NjFloat4& uvwr ) const
 	return Lerp( N0, N1, t3 );
 }
 
-float	Noise::Noise5D( const NjFloat4& uvwr, float s ) const
+float	Noise::Perlin( const NjFloat4& uvwr, float s ) const
 {
 	NOISE_INDICES( BIAS_U, uvwr.x, 0 )
 	NOISE_INDICES( BIAS_V, uvwr.y, 1 )
@@ -233,7 +236,7 @@ float	Noise::Noise5D( const NjFloat4& uvwr, float s ) const
 	return BiLerp( N00, N01, N11, N10, t3, t4 );
 }
 
-float	Noise::Noise6D( const NjFloat4& uvwr, const NjFloat2& st ) const
+float	Noise::Perlin( const NjFloat4& uvwr, const NjFloat2& st ) const
 {
 	NOISE_INDICES( BIAS_U, uvwr.x, 0 )
 	NOISE_INDICES( BIAS_V, uvwr.y, 1 )
@@ -342,29 +345,29 @@ void	Noise::SetWrappingParameters( float _Frequency, U32 _Seed )
 	_randpopseed();
 }
 
-float	Noise::WrapNoise1D( float u ) const
+float	Noise::WrapPerlin( float u ) const
 {
 	float		Angle = TWOPI * u;
 	NjFloat2	Pos( m_WrapCenter0.x + cosf( Angle ), m_WrapCenter0.y + sinf( Angle ) );
-	return Noise2D( Pos );
+	return Perlin( Pos );
 }
 
-float	Noise::WrapNoise2D( const NjFloat2& uv ) const
+float	Noise::WrapPerlin( const NjFloat2& uv ) const
 {
 	float		Angle0 = TWOPI * uv.x;
 	float		Angle1 = TWOPI * uv.y;
 	NjFloat4	Pos( m_WrapCenter0.x + m_WrapRadius * cosf( Angle0 ), m_WrapCenter0.y + m_WrapRadius * sinf( Angle0 ), m_WrapCenter1.x + m_WrapRadius * cosf( Angle1 ), m_WrapCenter1.y + m_WrapRadius * sinf( Angle1 ) );
-	return Noise4D( Pos );
+	return Perlin( Pos );
 }
 
-float	Noise::WrapNoise3D( const NjFloat3& uvw ) const
+float	Noise::WrapPerlin( const NjFloat3& uvw ) const
 {
 	float		Angle0 = TWOPI * uvw.x;
 	float		Angle1 = TWOPI * uvw.y;
 	float		Angle2 = TWOPI * uvw.z;
 	NjFloat4	Pos0( m_WrapCenter0.x + m_WrapRadius * cosf( Angle0 ), m_WrapCenter0.y + m_WrapRadius * sinf( Angle0 ), m_WrapCenter1.x + m_WrapRadius * cosf( Angle1 ), m_WrapCenter1.y + m_WrapRadius * sinf( Angle1 ) );
 	NjFloat2	Pos1( m_WrapCenter2.x + m_WrapRadius * cosf( Angle1 ), m_WrapCenter2.y + m_WrapRadius * sinf( Angle1 ) );
-	return Noise6D( Pos0, Pos1 );
+	return Perlin( Pos0, Pos1 );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -376,7 +379,7 @@ void	Noise::SetCellularWrappingParameters( int _SizeX, int _SizeY, int _SizeZ )
 	m_SizeZ = _SizeZ;
 }
 
-float	Noise::Cellular2D( const NjFloat2& _UV, CombineDistancesDelegate _Combine, bool _bWrap ) const
+float	Noise::Cellular( const NjFloat2& _UV, CombineDistancesDelegate _Combine, bool _bWrap ) const
 {
 	int	CellX = ASM_floorf( _UV.x );
 	int	CellY = ASM_floorf( _UV.y );
@@ -391,7 +394,6 @@ float	Noise::Cellular2D( const NjFloat2& _UV, CombineDistancesDelegate _Combine,
 
 			// Hash two integers into a single integer using FNV hash (http://isthe.com/chongo/tech/comp/fnv/#FNV-source)
 			U32	Hash = U32( (((OFFSET_BASIS ^ Hx) * FNV_PRIME) ^ Hy) * FNV_PRIME );
-			LCGRandom( Hash );
 
 			NjFloat2	CellCenter;
 			CellCenter.x = X + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
@@ -417,7 +419,7 @@ float	Noise::Cellular2D( const NjFloat2& _UV, CombineDistancesDelegate _Combine,
 	return _Combine( pSqDistances );
 }
 
-float	Noise::Cellular3D( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bool _bWrap ) const
+float	Noise::Cellular( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bool _bWrap ) const
 {
 	int	CellX = ASM_floorf( _UVW.x );
 	int	CellY = ASM_floorf( _UVW.y );
@@ -437,9 +439,6 @@ float	Noise::Cellular3D( const NjFloat3& _UVW, CombineDistancesDelegate _Combine
 
 				// Hash three integers into a single integer using FNV hash (http://isthe.com/chongo/tech/comp/fnv/#FNV-source)
 				U32	Hash = U32( (((((OFFSET_BASIS ^ Hx) * FNV_PRIME) ^ Hy) * FNV_PRIME) ^ Hz) * FNV_PRIME );
-				Hash = LCGRandom(Hash);
-
-				LCGRandom( Hash );
 
 				NjFloat3	CellCenter;
 				CellCenter.x = X + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
@@ -469,7 +468,7 @@ float	Noise::Cellular3D( const NjFloat3& _UVW, CombineDistancesDelegate _Combine
 //////////////////////////////////////////////////////////////////////////
 // Worley Noise (from https://github.com/freethenation/CellNoiseDemo)
 // I though about implementing the optimization suggested in Worley's paper to skip inelegible neighbor cubes that are too far away but I remembered I am writing a 64K intro... Less code the better !
-float	Noise::Worley2D( const NjFloat2& _UV, CombineDistancesDelegate _Combine, bool _bWrap ) const
+float	Noise::Worley( const NjFloat2& _UV, CombineDistancesDelegate _Combine, bool _bWrap ) const
 {
 	int	CellX = ASM_floorf( _UV.x );
 	int CellY = ASM_floorf( _UV.y );
@@ -486,7 +485,6 @@ float	Noise::Worley2D( const NjFloat2& _UV, CombineDistancesDelegate _Combine, b
 
 			// Hash two integers into a single integer using FNV hash (http://isthe.com/chongo/tech/comp/fnv/#FNV-source)
 			U32	Hash = U32( (((OFFSET_BASIS ^ Hx) * FNV_PRIME) ^ Hy) * FNV_PRIME );
-				Hash = LCGRandom(Hash);
 
 			// Determine how many feature points are in the square
 			int	PointsCount = PoissonPointsCount( Hash );
@@ -521,7 +519,7 @@ float	Noise::Worley2D( const NjFloat2& _UV, CombineDistancesDelegate _Combine, b
 	return _Combine( pSqDistances );
 }
 
-float	Noise::Worley3D( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bool _bWrap ) const
+float	Noise::Worley( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bool _bWrap ) const
 {
 	int	CellX = ASM_floorf( _UVW.x );
 	int CellY = ASM_floorf( _UVW.y );
@@ -540,7 +538,6 @@ float	Noise::Worley3D( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, 
 
 				// Hash three integers into a single integer using FNV hash (http://isthe.com/chongo/tech/comp/fnv/#FNV-source)
 				U32	Hash = U32( (((((OFFSET_BASIS ^ Hx) * FNV_PRIME) ^ Hy) * FNV_PRIME) ^ Hz) * FNV_PRIME );
-				Hash = LCGRandom(Hash);
 
 				// Determine how many feature points are in the cube
 				int	PointsCount = PoissonPointsCount( Hash );
@@ -653,3 +650,388 @@ int	Noise::PoissonPointsCount( U32 _Random ) const
 	return 5;
 }
 #endif
+
+//////////////////////////////////////////////////////////////////////////
+// Wavelet Noise
+// Taken from http://graphics.pixar.com/library/WaveletNoise/paper.pdf
+//
+#define GETNOISE( pNoise, x, y )	pNoise[((y)<<_POT)+(x)]
+void	Noise::Create2DWaveletNoiseTile( int _POT )
+{
+	if ( m_pWavelet2D != NULL )
+		delete[] m_pWavelet2D;
+
+	int	Size = 1 << _POT;
+	int	HalfSize = Size >> 1;
+	int	Mask = Size - 1;
+	int	HalfMask = Mask >> 1;
+
+	m_WaveletPOT = _POT;
+	m_WaveletSize = Size;
+	m_WaveletMask = Mask;
+	m_pWavelet2D = new float[Size*Size];
+	float*	ppTemp[2] =
+	{
+		new float[Size*Size],
+		new float[Size*Size]
+	};
+
+	// Fill with gaussian noise
+	for ( int Y=0; Y < Size; Y++ )
+		for ( int X=0; X < Size; X++ )
+		{
+			// FFS! Ain't the gaussian RNG supposed to yield values in [-1,1] ???
+// 			float	Rand = _randGauss();
+// 			Rand = CLAMP( Rand, -1.0f, 1.0f );
+			float	Rand = 0.25f * _randGauss();
+
+			GETNOISE( m_pWavelet2D, X, Y) = GETNOISE( ppTemp[0], X, Y ) = Rand;
+		}
+
+	// Wavelet analysis coefficients for quadratic B-splines (cf. Chapter 3.3 of the paper)
+	float	pWeights_[2*16] =
+	{
+		0.000334,-0.001528, 0.000410, 0.003545,-0.000938,-0.008233, 0.002172, 0.019120,
+		-0.005040,-0.044412, 0.011655, 0.103311,-0.025936,-0.243780, 0.033979, 0.655340,
+		0.655340, 0.033979,-0.243780,-0.025936, 0.103311, 0.011655,-0.044412,-0.005040,
+		0.019120, 0.002172,-0.008233,-0.000938, 0.003546, 0.000410,-0.001528, 0.000334
+	};
+	float*	pWeights = &pWeights_[16];
+
+	//////////////////////////////////////////////////////////////////////////
+	// Horizontal processing
+	for ( int y=0; y < Size; y++ )
+	{
+		// Downsample
+		for ( int x=0; x < HalfSize; x++ )
+		{
+			GETNOISE( ppTemp[1], x, y ) = 0.0f;
+			for ( int k=-16; k < 16; k++ )
+				GETNOISE( ppTemp[1], x, y ) += pWeights[k] * GETNOISE( ppTemp[0], (x+k) & Mask, y );
+		}
+		
+		// Upsample again by reconstructing lower frequency quadratic B-spline
+		for ( int x=0; x < Size; x++ )
+		{
+			GETNOISE( ppTemp[0], x, y )  = 0.25f * (GETNOISE( ppTemp[1], (x-1)&HalfMask, y ) + GETNOISE( ppTemp[1], (x+2)&HalfMask, y ));
+			GETNOISE( ppTemp[0], x, y ) += 0.75f * (GETNOISE( ppTemp[1], x, y ) + GETNOISE( ppTemp[1], (x+1)&HalfMask, y ));
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Vertical processing
+	for ( int x=0; x < Size; x++ )
+	{
+		// Downsample
+		for ( int y=0; y < HalfSize; y++ )
+		{
+			GETNOISE( ppTemp[1], x, y ) = 0.0f;
+			for ( int k=-16; k < 16; k++ )
+				GETNOISE( ppTemp[1], x, y ) += pWeights[k] * GETNOISE( ppTemp[0], x, (y+k) & Mask );
+		}
+		
+		// Upsample again by reconstructing lower frequency quadratic B-spline
+		for ( int y=0; y < Size; y++ )
+		{
+			GETNOISE( ppTemp[0], x, y )  = 0.25f * (GETNOISE( ppTemp[1], x, (y-1)&HalfMask ) + GETNOISE( ppTemp[1], x, (y+2)&HalfMask ));
+			GETNOISE( ppTemp[0], x, y ) += 0.75f * (GETNOISE( ppTemp[1], x, y ) + GETNOISE( ppTemp[1], x, (y+1)&HalfMask ));
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Subtract low-frequency version of the noise to the original noise, leaving only high frequency residual (i.e. wavelet space)
+	for ( int y=0; y < Size; y++ )
+	{
+		float*	pSourceScanline = &ppTemp[0][y<<_POT];
+		float*	pTargetScanline = &m_pWavelet2D[y<<_POT];
+		for ( int x=0; x < Size; x++ )
+			*pTargetScanline++ -= *pSourceScanline++;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Avoid even/odd variance difference by adding odd-offset version of noise to itself.
+	int Offset = HalfSize + 1;
+	for ( int y=0; y < Size; y++ )
+	{
+		float*	pTargetScanline = &ppTemp[0][y<<_POT];
+		for ( int x=0; x < Size; x++ )
+			*pTargetScanline++ = GETNOISE( m_pWavelet2D, (Offset+y) & Mask, (Offset+x) & Mask );
+	}
+
+	for ( int y=0; y < Size; y++ )
+	{
+		float*	pSourceScanline = &ppTemp[0][y<<_POT];
+		float*	pTargetScanline = &m_pWavelet2D[y<<_POT];
+		for ( int x=0; x < Size; x++ )
+			*pTargetScanline++ += *pSourceScanline++;
+	}
+
+	delete[] ppTemp[0];
+	delete[] ppTemp[1];
+}
+
+float	Noise::Wavelet( const NjFloat2& _UV ) const
+{
+	ASSERT( m_pWavelet2D != NULL, "Did you forget to call Create2DWaveletNoiseTile() ?" );
+
+	float	pPixelPosition[2] =	{ _UV.x * m_WaveletSize, _UV.y * m_WaveletSize };
+
+//return m_pWavelet2D[ASM_floorf(pPixelPosition[0]) + (ASM_floorf(pPixelPosition[1]) << m_WaveletPOT)];
+
+	// Evaluate quadratic B-spline basis functions
+	int		pPixelCenter[2];
+	float	ppWeights[2][3];
+	for ( int i=0; i < 2; i++ )
+	{
+		float	fPositionOffset = pPixelPosition[i] - 0.5f;
+		pPixelCenter[i] = ASM_ceilf( fPositionOffset );
+		float	t = pPixelCenter[i] - fPositionOffset;
+		float	r = 1.0f - t;
+
+		// Weights for 3D query
+		ppWeights[i][0] = 0.5f * t*t;
+		ppWeights[i][2] = 0.5f * r*r;
+		ppWeights[i][1] = 1.0f - ppWeights[i][0] - ppWeights[i][2];
+	}
+
+	// Evaluate noise by weighting noise coefficients by basis function values
+	float	Result = 0.0f;
+	int		f[2];
+	int		c[2];
+	for ( f[1]=-1; f[1] <= 1; f[1]++ )
+	{
+		c[1] = (pPixelCenter[1] + f[1]) & m_WaveletMask;
+		for ( f[0]=-1; f[0] <= 1; f[0]++ )
+		{
+			c[0] = (pPixelCenter[0] + f[0]) & m_WaveletMask;
+
+			float Weight = 1.0f;
+			for ( int i=0; i < 2; i++ )
+				Weight *= ppWeights[i][f[i]+1];
+
+			Result += Weight * m_pWavelet2D[(c[1] << m_WaveletPOT)+c[0]];
+		}
+	}
+
+	return Result;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Algorithms
+float	Noise::FractionalBrownianMotion( GetNoise2DDelegate _GetNoise, void* _pData, const NjFloat2& _UV, float _FrequencyFactor, float _AmplitudeFactor, int _OctavesCount ) const
+{
+	NjFloat2	UV = _UV;
+
+	float		Result = 0.0f;
+	float		Frequency = 1.0f;
+	float		Amplitude = 1.0f;
+	float		SumAmplitudes = 0.0f;
+	for ( int Octave=0; Octave < _OctavesCount; Octave++ )
+	{
+		float	NoiseValue = _GetNoise( UV, _pData );
+		Result += Amplitude * NoiseValue;
+
+		SumAmplitudes += Amplitude;
+		Amplitude *= _AmplitudeFactor;
+		UV.x *= _FrequencyFactor;
+		UV.y *= _FrequencyFactor;
+	}
+
+	Result /= SumAmplitudes;
+	return Result;
+}
+
+
+/*
+//////////////////////////////////////////////////////////////////////////
+// Wavelet Noise tile generation
+// Note: this code is designed for brevity, not efficiency; many operations can be hoisted,
+* precomputed, or vectorized. Some of the straightforward details, such as tile meshing,
+* decorrelating bands and fading out the last band, are omitted in the interest of space.
+
+static float*	noiseTileData;
+static int		noiseTileSize;
+
+int Mod(int x, int n) { int m=x%n; return (m<0) ? m+n : m; }
+
+#define ARAD 16
+void Downsample( float* from, float* to, int n, int stride )
+{
+	float* a, aCoeffs[2*ARAD] =
+	{
+		0.000334,-0.001528, 0.000410, 0.003545,-0.000938,-0.008233, 0.002172, 0.019120,
+		-0.005040,-0.044412, 0.011655, 0.103311,-0.025936,-0.243780, 0.033979, 0.655340,
+		0.655340, 0.033979,-0.243780,-0.025936, 0.103311, 0.011655,-0.044412,-0.005040,
+		0.019120, 0.002172,-0.008233,-0.000938, 0.003546, 0.000410,-0.001528, 0.000334
+	};
+	a = &aCoeffs[ARAD];
+
+	for ( int i=0; i<n/2; i++ )
+	{
+		to[i*stride] = 0;
+		for ( int k=-ARAD; k<=ARAD; k++ )
+			to[i*stride] += a[k] * from[Mod( 2*i+k, n ) * stride];
+	}
+}
+
+void Upsample( float *from, float *to, int n, int stride)
+{
+	float	pCoeffs[4] = { 0.25, 0.75, 0.75, 0.25 };
+	float*	p = &pCoeffs[2];
+	for ( int i=0; i<n; i++ )
+	{
+		to[i*stride] = 0;
+// 		for (int k=i/2; k<=i/2+1; k++)
+// 			to[i*stride] += p[i-2*k] * from[Mod(i/2 + k,n/2)*stride];
+
+		to[i*stride] += p[i-2*k] * from[Mod(i/2 + k,n/2)*stride];
+	}
+}
+
+void GenerateNoiseTile( int n, int olap)
+{
+	if (n%2) n++; // tile size must be even 
+
+	int sz=n*n*n*sizeof(float);
+	float*	temp1 = malloc(sz);
+	float*	temp2 = malloc(sz);
+	float*	noise= malloc(sz);
+
+	// Step 1. Fill the tile with random numbers in the range -1 to 1. 
+	for (i=0; i<n*n*n; i++)
+		noise[i] = gaussianNoise();
+
+	// Steps 2 and 3. Downsample and upsample the tile 
+	for (int iy=0; iy<n; iy++)
+		for (int iz=0; iz<n; iz++)
+		{ // each x row 
+			i = iy*n + iz*n*n;
+			Downsample( &noise[i], &temp1[i], n, 1 );
+			Upsample( &temp1[i], &temp2[i], n, 1 );
+		}
+
+	for (int ix=0; ix<n; ix++)
+		for (int iz=0; iz<n; iz++)
+		{ // each y row 
+			i = ix + iz*n*n;
+			Downsample( &temp2[i], &temp1[i], n, n );
+			Upsample( &temp1[i], &temp2[i], n, n );
+		}
+
+	for (int ix=0; ix<n; ix++)
+		for (int iy=0; iy<n; iy++)
+		{ // each z row 
+			i = ix + iy*n;
+			Downsample( &temp2[i], &temp1[i], n, n*n );
+			Upsample( &temp1[i], &temp2[i], n, n*n );
+		}
+
+	// Step 4. Subtract out the coarse-scale contribution 
+	for (i=0; i<n*n*n; i++)
+		noise[i] -= temp2[i];
+
+	// Avoid even/odd variance difference by adding odd-offset version of noise to itself.
+	int offset=n/2;
+	if ( offset%2 == 0 )
+		offset++;
+
+	for ( i=0,ix=0; ix<n; ix++ )
+		for ( iy=0; iy<n; iy++ )
+			for ( iz=0; iz<n; iz++ )
+				temp1[i++] = noise[ Mod(ix+offset,n) + Mod(iy+offset,n)*n + Mod(iz+offset,n)*n*n ];
+
+	for (i=0; i<n*n*n; i++ )
+		noise[i] += temp1[i];
+
+	free(temp1);
+	free(temp2);
+	noiseTileData = noise; noiseTileSize = n;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Noise evaluation
+float WNoise( float p[3])
+{ // Non-projected 3D noise
+	int i, f[3], c[3], mid[3], n=noiseTileSize; // f, c = filter, noise coeff indices
+	float w[3][3], t, result =0;
+	// Evaluate quadratic B-spline basis functions
+	for (i=0; i<3; i++)
+	{
+		mid[i]=ceil(p[i]-0.5); t=mid[i]-(p[i]-0.5);
+		w[i][0]=t*t/2; w[i][2]=(1-t)*(1-t)/2; w[i][1]=1-w[i][0]-w[i][2];
+	}
+	// Evaluate noise by weighting noise coefficients by basis function values
+	for(f[2]=-1;f[2]<=1;f[2]++) for(f[1]=-1;f[1]<=1;f[1]++) for(f[0]=-1;f[0]<=1;f[0]++)
+	{
+		float weight=1;
+		for (i=0; i<3; i++) {c[i]=Mod(mid[i]+f[i],n); weight*=w[i][f[i]+1];}
+		result += weight * noiseTileData[c[2]*n*n+c[1]*n+c[0]];
+	}
+
+	return result;
+}
+
+
+// 3D noise projected onto 2D
+float WProjectedNoise( float p[3], float normal[3] )
+{
+	int i, c[3], min[3], max[3], n=noiseTileSize; // c = noise coeff location
+	float support, result=0;
+
+	// Bound the support of the basis functions for this projection direction
+	for (i=0; i<3; i++)
+	{
+		support = 3*abs(normal[i]) + 3*sqrt((1-normal[i]*normal[i])/2);
+		min[i] = ceil( p[i] - (3*abs(normal[i]) + 3*sqrt((1-normal[i]*normal[i])/2)) );
+		max[i] = floor( p[i] + (3*abs(normal[i]) + 3*sqrt((1-normal[i]*normal[i])/2)) );
+	}
+
+	// Loop over the noise coefficients within the bound.
+	for(c[2]=min[2];c[2]<=max[2];c[2]++)
+	{
+		for(c[1]=min[1];c[1]<=max[1];c[1]++)
+		{
+			for(c[0]=min[0];c[0]<=max[0];c[0]++)
+			{
+				// Dot the normal with the vector from c to p
+				float	dot = 0.0f;
+				for (i=0; i<3; i++)
+					dot+=normal[i]*(p[i]-c[i]);
+
+				// Evaluate the basis function at c moved halfway to p along the normal.
+				float weight=1;
+				for (i=0; i<3; i++)
+				{
+					float	t = (c[i]+normal[i]*dot/2)-(p[i]-1.5);
+					float	t1=t-1;
+					float	t2=2-t;
+					float	t3=3-t;
+					weight *= (t<=0||t>=3) ? 0 : (t<1) ? t*t/2 : (t<2)? 1-(t1*t1+t2*t2)/2 : t3*t3/2;
+				}
+
+				// Evaluate noise by weighting noise coefficients by basis function values.
+				result += weight * noiseTileData[ Mod(c[2],n)*n*n + Mod(c[1],n)*n + Mod(c[0],n)];
+			}
+		}
+	}
+	return result;
+}
+
+
+float WMultibandNoise( float p[3],float s,float *normal,int firstBand,int nbands,float *w)
+{
+	float q[3], result=0, variance=0; int i, b;
+	for (b=0; b<nbands && s+firstBand+b<0; b++)
+	{
+		for (i=0; i<=2; i++) {q[i]=2*p[i]*pow(2,firstBand+b);}
+		result += (normal) ? w[b] * WProjectedNoise(q,normal) : w[b] * WNoise(q);
+	}
+	for (b=0; b<nbands; b++) {variance+=w[b]*w[b];}
+
+	// Adjust the noise so it has a variance of 1.
+	if (variance) result /= sqrt(variance * ((normal) ? 0.296 : 0.210));
+
+	return result;
+}
+*/

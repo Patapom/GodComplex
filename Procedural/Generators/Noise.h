@@ -24,8 +24,11 @@ protected:	// CONSTANTS
 
 public:		// NESTED TYPES
 
-	// WARNING: Notice you get an arary of three SQUARED distances !
+	// WARNING: Notice you get an array of three SQUARED distances !
 	typedef float	(*CombineDistancesDelegate)( float _pSqDistances[] );
+
+	typedef float	(*GetNoise2DDelegate)( const NjFloat2& _UV, void* _pData );
+
 
 protected:	// FIELDS
 
@@ -48,29 +51,44 @@ protected:	// FIELDS
 	int			m_SizeY;
 	int			m_SizeZ;
 
+	// Wavelet noise tile
+	int			m_WaveletPOT;
+	int			m_WaveletSize;
+	int			m_WaveletMask;
+	float*		m_pWavelet2D;
+
 public:		// METHODS
 
 	Noise( int _Seed );
  	~Noise();
 
-	float	Noise1D( float u ) const;
-	float	Noise2D( const NjFloat2& uv ) const;
-	float	Noise3D( const NjFloat3& uvw ) const;
-	float	Noise4D( const NjFloat4& uvwr ) const;
-	float	Noise5D( const NjFloat4& uvwr, float s ) const;
-	float	Noise6D( const NjFloat4& uvwr, const NjFloat2& st ) const;
-
-	void	SetCellularWrappingParameters( int _SizeX, int _SizeY, int _SizeZ );
-	float	Cellular2D( const NjFloat2& uv, CombineDistancesDelegate _Combine, bool _bWrap=false ) const;
-	float	Cellular3D( const NjFloat3& uvw, CombineDistancesDelegate _Combine, bool _bWrap=false ) const;
-	float	Worley2D( const NjFloat2& uv, CombineDistancesDelegate _Combine, bool _bWrap=false ) const;
-	float	Worley3D( const NjFloat3& uvw, CombineDistancesDelegate _Combine, bool _bWrap=false ) const;
+	// --------- PERLIN ---------
+	float	Perlin( float u ) const;
+	float	Perlin( const NjFloat2& uv ) const;
+	float	Perlin( const NjFloat3& uvw ) const;
+	float	Perlin( const NjFloat4& uvwr ) const;
+	float	Perlin( const NjFloat4& uvwr, float s ) const;
+	float	Perlin( const NjFloat4& uvwr, const NjFloat2& st ) const;
 
 	// Noises that wrap !
 	void	SetWrappingParameters( float _Frequency, U32 _Seed );
-	float	WrapNoise1D( float u ) const;
-	float	WrapNoise2D( const NjFloat2& uv ) const;
-	float	WrapNoise3D( const NjFloat3& uvw ) const;
+	float	WrapPerlin( float u ) const;
+	float	WrapPerlin( const NjFloat2& uv ) const;
+	float	WrapPerlin( const NjFloat3& uvw ) const;
+
+	// --------- CELLULAR ---------
+	void	SetCellularWrappingParameters( int _SizeX, int _SizeY, int _SizeZ );
+	float	Cellular( const NjFloat2& uv, CombineDistancesDelegate _Combine, bool _bWrap=false ) const;
+	float	Cellular( const NjFloat3& uvw, CombineDistancesDelegate _Combine, bool _bWrap=false ) const;
+	float	Worley( const NjFloat2& uv, CombineDistancesDelegate _Combine, bool _bWrap=false ) const;
+	float	Worley( const NjFloat3& uvw, CombineDistancesDelegate _Combine, bool _bWrap=false ) const;
+
+	// --------- WAVELET ---------
+	void	Create2DWaveletNoiseTile( int _POT );
+	float	Wavelet( const NjFloat2& uv ) const;
+
+	// --------- ALGORITHMS ---------
+	float	FractionalBrownianMotion( GetNoise2DDelegate _GetNoise, void* _pData, const NjFloat2& uv, float _FrequencyFactor=2.0f, float _AmplitudeFactor=0.5f, int _OctavesCount=4 ) const;
 
 private:
 
@@ -127,4 +145,6 @@ private:
 
 	U32		LCGRandom( U32& _LastValue ) const;
 	int		PoissonPointsCount( U32 _Random ) const;
+
+	void	WaveletDownsampleUpsample( float* _pSource, float* _pTarget, int _X, int _Y, int _Size, int _Stride ) const;
 };
