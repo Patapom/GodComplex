@@ -13,7 +13,7 @@ static const float	TWOPI = 6.283185307179586476925286766559;		// 2PI
 static const float	HALFPI = 1.5707963267948966192313216916398;		// PI/2
 static const float	RECIPI = 0.31830988618379067153776752674503;	// 1/PI
 
-//static const float4	OUTPUT_COLOR = float4( 1, 0, 0, 1 );	// A nice red !
+static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.patapom.com/index.php/Colorimetry)
 
 // On old ATIs, the SampleLevel() function doesn't work so you should use the other implementation (although I'm pretty sure it will fuck everything up if you start sampling textures within conditional branches)
 //

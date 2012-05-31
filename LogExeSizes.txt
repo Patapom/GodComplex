@@ -51,3 +51,8 @@
 . Added wavelet noise
 . Added noise algorithms
 	packed executable 110080 -> 26624 bytes
+
+ [31 mai 2012]
+. Added filters
+. Added fillers
+	packed executable 112128 -> 27648 bytes

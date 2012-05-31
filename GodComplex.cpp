@@ -3,7 +3,9 @@
 //////////////////////////////////////////////////////////////////////////
 //
 #include "GodComplex.h"
- 
+
+const NjFloat4	LUMINANCE = NjFloat4( 0.2126f, 0.7152f, 0.0722f, 0.0f );
+
 Device		gs_Device;
 
 #ifdef MUSIC

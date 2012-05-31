@@ -152,6 +152,9 @@
     <ClInclude Include="Procedural\Filters\Filters.h">
       <Filter>Procedural\Filters</Filter>
     </ClInclude>
+    <ClInclude Include="Procedural\Generators\Fillers.h">
+      <Filter>Procedural\Generators</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -220,6 +223,9 @@
     </ClCompile>
     <ClCompile Include="Procedural\Filters\Filters.cpp">
       <Filter>Procedural\Filters</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\Generators\Fillers.cpp">
+      <Filter>Procedural\Generators</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

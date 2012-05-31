@@ -200,3 +200,64 @@ void	Filters::UnsharpMask( TextureBuilder& _Builder, float _Size )
 	// Subtract
 	_Builder.Fill( FillUnsharpMaskSubtract, &Temp );
 }
+
+//////////////////////////////////////////////////////////////////////////
+// Luminance tweaking
+struct __BCGStruct
+{
+	float	B, C, G;
+};
+void	FillBCG( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+{
+	__BCGStruct&	BCG = *((__BCGStruct*) _pData);
+
+	float	Luma = _Color | LUMINANCE;
+	float	ContrastedLuma = BCG.B + BCG.C * (Luma - 0.5f);
+			ContrastedLuma = CLAMP01( ContrastedLuma );
+	float	NewLuma = ASM_powf( ContrastedLuma, BCG.G );
+
+	_Color = _Color * (NewLuma / Luma);
+}
+
+void	Filters::BrightnessContrastGamma( TextureBuilder& _Builder, float _Brightness, float _Contrast, float _Gamma )
+{
+	__BCGStruct	BCG;
+	BCG.B = 0.5f + _Brightness;
+	BCG.C = tanf( HALFPI * 0.5f * (1.0f + _Contrast) );
+	BCG.G = _Gamma;
+
+	_Builder.Fill( FillBCG, &BCG );
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Filters
+struct __EmbossStruct
+{
+	TextureBuilder*	pSource;
+	NjFloat2		Direction;
+	float			Amplitude;
+};
+void	FillEmboss( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+{
+	__EmbossStruct&	Params = *((__EmbossStruct*) _pData);
+
+	NjFloat4	C0, C1;
+	Params.pSource->SampleWrap( _X + Params.Direction.x, _Y + Params.Direction.y, C0 );
+	Params.pSource->SampleWrap( _X - Params.Direction.x, _Y - Params.Direction.y, C1 );
+
+	_Color = 0.5f * NjFloat4::One + Params.Amplitude * (C0 - C1);
+}
+
+void	Filters::Emboss( TextureBuilder& _Builder, const NjFloat2& _Direction, float _Amplitude )
+{
+	TextureBuilder	Temp( _Builder.GetWidth(), _Builder.GetHeight() );
+	Temp.CopyFrom( _Builder );
+
+	__EmbossStruct	Params;
+	Params.pSource = &Temp;
+	Params.Direction = _Direction;
+	Params.Direction.Normalize();
+	Params.Amplitude = _Amplitude;
+
+	_Builder.Fill( FillEmboss, &Params );
+}

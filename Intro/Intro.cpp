@@ -50,10 +50,10 @@ void	FillNoise( int x, int y, const NjFloat2& _UV, NjFloat4& _Color, void* _pDat
 //	float	C = abs( N.Perlin( 0.005f * _UV ) );					// Simple test with gradient noise that doesn't loop
 // 	float	C = abs( N.WrapPerlin( _UV ) );							// Advanced test with gradient noise that loops !
 //	float	C = N.Cellular( 16.0f * _UV, CombineDistances, true );	// Simple cellular (NOT Worley !)
-//	float	C = N.Worley( 16.0f * _UV, CombineDistances, true );	// Worley noise
+	float	C = N.Worley( 16.0f * _UV, CombineDistances, true );	// Worley noise
 //	float	C = abs(N.Wavelet( _UV ));								// Wavelet noise
 //	float	C = N.FractionalBrownianMotion( FBMDelegate, _pData, _UV );	// Fractional Brownian Motion
-	float	C = N.RidgedMultiFractal( RMFDelegate, _pData, _UV );	// Ridged Multi Fractal
+//	float	C = N.RidgedMultiFractal( RMFDelegate, _pData, _UV );	// Ridged Multi Fractal
 
 	_Color.x = _Color.y = _Color.z = C;
 	_Color.w = 1.0f;
@@ -94,10 +94,9 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 		{
 			TextureBuilder	TB( 512, 512 );
 
+//* General tests for drawing tools and filtering
  			Noise	N( 1 );
-
-N.Create2DWaveletNoiseTile( 6 );
-
+			N.Create2DWaveletNoiseTile( 6 );	// If you need to use wavelet noise...
 			TB.Fill( FillNoise, &N );
 
 			Draw.SetupSurface( 512, 512, TB.GetMips()[0] );
@@ -112,6 +111,17 @@ N.Create2DWaveletNoiseTile( 6 );
 
 //			Filters::BlurGaussian( TB, 20.0f, 20.0f, true, 0.5f );
 //			Filters::UnsharpMask( TB, 20.0f );
+//			Filters::BrightnessContrastGamma( TB, 0.2f, 0.0f, 2.0f );
+//			Filters::Emboss( TB, NjFloat2( 1, 1 ), 4.0f );
+//*/
+
+// 			// Test the dirtyness filler
+//			Fillers::Dirtyness( TB, N, 0.5f, 0.0f, 0.1f, 0.3f, 0.01f );
+
+			// Test the AO converter
+			TextureBuilder	PipoTemp( TB.GetWidth(), TB.GetHeight() );
+			PipoTemp.CopyFrom( TB );
+			Fillers::ComputeAO( PipoTemp, TB, 2.0f );
 
 			gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.Convert( PixelFormatRGBA16F::DESCRIPTOR ) );
 		}

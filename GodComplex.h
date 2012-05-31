@@ -26,6 +26,7 @@
 #include <math.h>
 #include "resource.h"
 
+#define NUAJ_LIB
 #include "NuajAPI/API/Types.h"
 #include "NuajAPI/API/ASMHelpers.h"
 #include "NuajAPI/Math/Math.h"
@@ -52,9 +53,12 @@
 // Helpers
 #include "Procedural/TextureBuilder.h"
 #include "Procedural/Generators/Noise.h"
+#include "Procedural/Generators/Fillers.h"
 #include "Procedural/Filters/Filters.h"
 #include "Procedural/DrawUtils/Draw.h"
 
+
+extern const NjFloat4	LUMINANCE;	// D65 Illuminant with observer at 2°
 
 //////////////////////////////////////////////////////////////////////////
 // Main info about the system
