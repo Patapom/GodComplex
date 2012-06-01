@@ -137,7 +137,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="NuajAPI\Math\Math.h" />
     <ClInclude Include="Procedural\DrawUtils\Draw.h" />
     <ClInclude Include="Procedural\Filters\Filters.h" />
-    <ClInclude Include="Procedural\Generators\Fillers.h" />
+    <ClInclude Include="Procedural\Generators\Generators.h" />
     <ClInclude Include="Procedural\Generators\Noise.h" />
     <ClInclude Include="Procedural\TextureBuilder.h" />
     <ClInclude Include="RendererD3D11\Components\Component.h" />
@@ -174,7 +174,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="NuajAPI\Math\Math.cpp" />
     <ClCompile Include="Procedural\DrawUtils\Draw.cpp" />
     <ClCompile Include="Procedural\Filters\Filters.cpp" />
-    <ClCompile Include="Procedural\Generators\Fillers.cpp" />
+    <ClCompile Include="Procedural\Generators\Generators.cpp" />
     <ClCompile Include="Procedural\Generators\Noise.cpp" />
     <ClCompile Include="Procedural\TextureBuilder.cpp" />
     <ClCompile Include="RendererD3D11\Components\Component.cpp" />

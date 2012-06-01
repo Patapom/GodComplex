@@ -18,6 +18,7 @@ protected:	// CONSTANTS
 	static const float	BIAS_S;
 	static const float	BIAS_T;
 
+public:
 	// Constants used in FNV hash function (http://isthe.com/chongo/tech/comp/fnv/#FNV-source)
 	static const U32	OFFSET_BASIS = 2166136261;
 	static const U32	FNV_PRIME = 16777619;
@@ -144,8 +145,10 @@ private:
 	float	Dot( U32 _Permutation, float u, float v, float w, float r, float s ) const			{ float* V = &m_pNoise5[_Permutation<<3]; return V[0] * u + V[1] * v + V[2] * w + V[3] * r + V[4] * s; }
 	float	Dot( U32 _Permutation, float u, float v, float w, float r, float s, float t ) const	{ float* V = &m_pNoise6[_Permutation<<3]; return V[0] * u + V[1] * v + V[2] * w + V[3] * r + V[4] * s + V[5] * t; }
 
-	U32		LCGRandom( U32& _LastValue ) const;
 	int		PoissonPointsCount( U32 _Random ) const;
 
 	void	WaveletDownsampleUpsample( float* _pSource, float* _pTarget, int _X, int _Y, int _Size, int _Stride ) const;
+
+public:
+	static U32		LCGRandom( U32& _LastValue );
 };

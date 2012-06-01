@@ -575,7 +575,7 @@ float	Noise::Worley( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bo
 	return _Combine( pSqDistances );
 }
 
-U32	Noise::LCGRandom( U32& _LastValue ) const
+U32	Noise::LCGRandom( U32& _LastValue )
 {
 	return _LastValue = U32( (1103515245u * _LastValue + 12345u) );
 }

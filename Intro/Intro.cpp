@@ -94,7 +94,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 		{
 			TextureBuilder	TB( 512, 512 );
 
-//* General tests for drawing tools and filtering
+/* General tests for drawing tools and filtering
  			Noise	N( 1 );
 			N.Create2DWaveletNoiseTile( 6 );	// If you need to use wavelet noise...
 			TB.Fill( FillNoise, &N );
@@ -115,13 +115,18 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 //			Filters::Emboss( TB, NjFloat2( 1, 1 ), 4.0f );
 //*/
 
-// 			// Test the dirtyness filler
-//			Fillers::Dirtyness( TB, N, 0.5f, 0.0f, 0.1f, 0.3f, 0.01f );
+// 			// Test the dirtyness generator
+//			Generators::Dirtyness( TB, N, 0.5f, 0.0f, 0.1f, 0.3f, 0.01f );
 
-			// Test the AO converter
-			TextureBuilder	PipoTemp( TB.GetWidth(), TB.GetHeight() );
-			PipoTemp.CopyFrom( TB );
-			Fillers::ComputeAO( PipoTemp, TB, 2.0f );
+			// Test the secret marble generator
+			Generators::Marble( TB );
+
+// 			// Test the AO converter
+// 			TextureBuilder	PipoTemp( TB.GetWidth(), TB.GetHeight() );
+// 			PipoTemp.CopyFrom( TB );
+// 			Fillers::ComputeAO( PipoTemp, TB, 2.0f );
+
+
 
 			gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.Convert( PixelFormatRGBA16F::DESCRIPTOR ) );
 		}

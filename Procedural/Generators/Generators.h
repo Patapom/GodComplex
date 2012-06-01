@@ -1,9 +1,9 @@
 //////////////////////////////////////////////////////////////////////////
-// Filler algorithms
+// Generator algorithms
 //
 #pragma once
 
-class	Fillers
+class	Generators
 {
 public:		// METHODS
 
@@ -17,4 +17,7 @@ public:		// METHODS
 	//	_DirtAmplitude, amplitude of variation for the dirt stains
 	//	_PullBackForce, the force with which any too bright dirt spots are pulled back toward the average intensity
 	static void	Dirtyness( TextureBuilder& _Builder, const Noise& _Noise, float _InitialIntensity=1.0f, float _AverageIntensity=0.0f, float _DirtNoiseFrequency=0.1f, float _DirtAmplitude=0.1f, float _PullBackForce=0.01f );
+
+	// Generates a "marble" texture (courtezy of Pierre Terdiman a.k.a. Zappy, thanks to him for digging up that old routine !)
+	static void	Marble( TextureBuilder& _Builder, int _BootSize=30 );
 };
