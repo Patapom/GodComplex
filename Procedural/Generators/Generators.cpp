@@ -130,35 +130,126 @@ void	Generators::Dirtyness( TextureBuilder& _Builder, const Noise& _Noise, float
 
 //////////////////////////////////////////////////////////////////////////
 // Secret marble recipe
+// struct __MarbleStruct
+// {
+// 	U32		Width;
+// 	S16		Min, Max;
+// 	S16*	pBuffer;
+// };
+// void	FillMarble( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+// {
+// 	__MarbleStruct&	Params = *((__MarbleStruct*) _pData);
+// 
+// 	S16		iValue = Params.pBuffer[Params.Width*_Y+_X];
+// 	float	Value = float(iValue - Params.Min) / (Params.Max - Params.Min);
+// 	_Color.x = _Color.y = _Color.z = Value;
+// }
+// 
+// void	Generators::Marble( TextureBuilder& _Builder, int _BootSize )
+// {
+// 	int			W = _Builder.GetWidth();
+// 	int			H = _Builder.GetHeight();
+// 	H += _BootSize;		// Skip the first lines are sometimes ugly 
+// 
+// Original version using S16 words
+//
+// 	S16*	pBuffer = new S16[W*H];
+// 
+// 	// Build marble
+// 	static U16	RNG0 = 0;
+// 	static U16	RNG1 = 0;
+// 	static U16	RNG2 = 0;
+// 	static S16	RandOffset;
+// 
+// 	S16		Min = 32767;
+// 	S16		Max = -32768;
+// 	S16*	pScanline = pBuffer + 2*W;
+// 	for ( int Y=0; Y < H-2; Y++ )
+// 		for ( int X=0; X < W; X++ )
+// 		{
+// 			// Do your magic trick
+// 			_asm	mov     ax, RNG0
+// 			_asm	mov     cx, RNG1
+// 			_asm	add     ax, cx
+// 			_asm	rol     ax, cl
+// 			_asm	add     cx, 0x01234
+// 			_asm	ror     cx, 1
+// 			_asm	mov     RNG0, ax
+// 			_asm	mov     RNG1, cx
+// //			_asm	add     ax, RNG2
+// //			_asm	dec     RNG2
+// 
+// // 			_asm	sar     ax,0ch
+// // 			_asm	inc     ax
+// 			_asm	mov		RandOffset, ax
+// 
+// 
+// //			RandOffset = (RandOffset % 5) - 2;	// Intéressant !
+// 			RandOffset = 1 + RandOffset / 10000;
+// 
+// 
+// 			// Average previous line's colors
+// //			S16	Average = pScanline[-W];	// Sad lines
+// 			S16	Average = (pScanline[-W] + pScanline[-W+1]) >> 1;					// Original recipe !
+// //			S16	Average = (pScanline[-W-1] + pScanline[-W] + pScanline[-W+1]) / 3;	// Sympa !!
+// 			Average += RandOffset;
+// 
+// 			*pScanline++ = Average;
+// 
+// 			Min = MIN( Min, Average );
+// 			Max = MAX( Max, Average );
+// 		}
+// 
+// 	// Renormalize
+// 	__MarbleStruct	Params;
+// 	Params.Width = W;
+// 	Params.Min = Min;
+// 	Params.Max = Max;
+// 	Params.pBuffer = pBuffer + W * _BootSize;
+// 	_Builder.Fill( FillMarble, &Params );
+// 
+// 	delete[] pBuffer;
+// }
+
+struct __MarbleRandomStruct
+{
+	U16	C0, C1, C2;
+};
+float	CalcColor( __MarbleRandomStruct& _Marble )
+{
+	U32	A = _Marble.C0;
+	U32	C = _Marble.C1;
+	A += C;
+	A <<= C & 0xFF;	A |= A >> 16;	// Random ROL
+	C += 0x1234;					// Add magic value
+	C = (C >> 1) | (C << 15);		// ROR 1
+	_Marble.C0 = U16(A);
+	_Marble.C1 = U16(C);
+
+	A += _Marble.C2--;
+
+	return A / 65535.0f;
+}
+U32	LCGRandom( U32& _LastValue )
+{
+	return _LastValue = U32( (1103515245u * _LastValue + 12345u) );
+}
+
 struct __MarbleStruct
 {
 	U32		Width;
-	S16		Min, Max;
-	S16*	pBuffer;
+	float	Min, Factor;
+	float*	pBuffer;
 };
 void	FillMarble( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
 {
 	__MarbleStruct&	Params = *((__MarbleStruct*) _pData);
 
-	S16		iValue = Params.pBuffer[Params.Width*_Y+_X];
-	float	Value = float(iValue - Params.Min) / (Params.Max - Params.Min);
+	float	Value = Params.pBuffer[Params.Width*_Y+_X];
+	Value = Params.Factor * (Value - Params.Min);
 	_Color.x = _Color.y = _Color.z = Value;
 }
-// float	CalcColor( __MarbleStruct& _Marble )
-// {
-// 	U32	A = _Marble.C0;
-// 	U32	C = _Marble.C1;
-// 	A += C
-// 	A <<= C & 0xFF;	A |= A >> 16;	// Random ROL
-// 	C += 0x1234;					// Add magic value
-// 	C = (C >> 1) | (C << 15);		// ROR 1
-// 	_Marble.C0 = U16(A);
-// 	_Marble.C1 = U16(C);
-// 
-// 	A += _Marble.C2--;
-// 
-// 	return A / 65535.0f;
-// }
+
 
 void	Generators::Marble( TextureBuilder& _Builder, int _BootSize )
 {
@@ -166,96 +257,49 @@ void	Generators::Marble( TextureBuilder& _Builder, int _BootSize )
 	int			H = _Builder.GetHeight();
 	H += _BootSize;		// Skip the first lines are sometimes ugly 
 
-	S16*	pBuffer = new S16[W*H];
+	float*		pBuffer = new float[W*H];
 
-	// Build marble
-	static U16	RNG0 = 0;
-	static U16	RNG1 = 0;
-	static U16	RNG2 = 0;
-	static U16	RandOffset;
+	__MarbleRandomStruct	RNG;
+	RNG.C0 = RNG.C1 = RNG.C2 = 0;
 
-	S16		Min = 32767;
-	S16		Max = -32768;
-	S16*	pScanline = pBuffer + 2*W;
-	for ( int Y=0; Y < H-2; Y++ )
+	// Fill up the first N lines
+	U32		RandomSeed = 1;
+	float	Min = FLOAT32_MAX, Max = -FLOAT32_MAX;
+	float*	pTarget = pBuffer + 2*W;
+	for ( int Y=2; Y < H; Y++ )
+	{
+		float*	pSource = &pBuffer[W*(Y-1)];
 		for ( int X=0; X < W; X++ )
 		{
-			// Do your magic trick
-// 			RNG0 += RNG1;
-// 			RNG0 <<= RNG1 & 0xFF;	RNG0 |= RNG0 >> 16;	// Random ROL
-// 
-// 			RNG1 += 0x1234;								// Add magic value
-// 			RNG1 = (RNG1 >> 1) | (RNG1 << 15);			// ROR 1
-// 
-// 			U32	Offset = RNG0;
-// 			Offset += RNG2--;
-// 			Offset = (Offset >> 12) + 1;
+//			float		RandomColor = CalcColor( RNG );
+			LCGRandom( RandomSeed );
+			float		RandomColor = RandomSeed / 2147483648.0f - 1.0f;
 
-		_asm	mov     ax, RNG0
-		_asm	mov     cx, RNG1
-		_asm	add     ax, cx
-		_asm	rol     ax, cl
-		_asm	add     cx, 0x01234
-		_asm	ror     cx, 1
-		_asm	mov     RNG0, ax
-		_asm	mov     RNG1, cx
-		_asm	add     ax, RNG2
-		_asm	dec     RNG2
+			float	C0 = pSource[(X+W-1) % W];
+			float	C1 = pSource[X];
+			float	C2 = pSource[(X+1) % W];
 
-		_asm	sar     ax,0ch
-		_asm	inc     ax
-		_asm	mov		RandOffset, ax
+			float	C = 0.5f * (C1 + C2);
+//			float	C = (C0 + C1 + C2) / 3.0f;
+					C += 0.2f * RandomColor;
 
-			// Average previous line's colors
-			S16	Average = (pScanline[-W] + pScanline[-W+1]) >> 1;
-			Average += RandOffset;
+			C = fmodf( C, 1.0f );
+			Min = MIN( Min, C );
+			Max = MAX( Max, C );
 
-			*pScanline++ = Average;
-
-			Min = MIN( Min, Average );
-			Max = MAX( Max, Average );
+			*pTarget++ = C;
 		}
+	}
 
 	// Renormalize
 	__MarbleStruct	Params;
 	Params.Width = W;
 	Params.Min = Min;
-	Params.Max = Max;
+	Params.Factor = 1.0f / (Max - Min);
 	Params.pBuffer = pBuffer + W * _BootSize;
 	_Builder.Fill( FillMarble, &Params );
 
 	delete[] pBuffer;
- 
-// 	__MarbleStruct	Params;
-// 	Params.C0 = Params.C1 = Params.C2 = 0;
-// 
-// 	// Fill up the last 2 lines with a uniform color
-// 	float		InitialColor = CalcColor( Params );
-// 	NjFloat4*	pScanline = _Builder.GetMips()[0][W*(H-2)];	// Start from the last 2 end scanlines
-// 	for ( int Y=0; Y < 2; Y++, pScanline++ )
-// 		pScanline->x = pScanline->y = pScanline->z = InitialColor;
-// 
-// 	// Fill up the first N lines
-// 	NjFloat4*	pTarget = _Builder.GetMips()[0];
-// 	for ( int Y=0; Y < _InitialLinesCount; Y++ )
-// 	{
-// 		NjFloat4*	pSource = _Builder.GetMips()[0][W*((H+Y-1) % H)];
-// 		for ( int X=0; X < W; X++ )
-// 		{
-// 			float		RandomColor = CalcColor( Params );
-// 
-// 			NjFloat4&	C0 = pSource[X];
-// 			NjFloat4&	C1 = pSource[(X+1) % W];
-// 			NjFloat4	C = 0.5f * (C0 + C1);
-// 						C += RandomColor;
-// 
-// 			C.x = fmodf( C.x, 1.0f );
-// 			C.y = fmodf( C.y, 1.0f );
-// 			C.z = fmodf( C.z, 1.0f );
-// 
-// 			*pTarget++ = C;
-// 		}
-// 	}
 }
 
 /*

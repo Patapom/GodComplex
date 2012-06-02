@@ -119,7 +119,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 //			Generators::Dirtyness( TB, N, 0.5f, 0.0f, 0.1f, 0.3f, 0.01f );
 
 			// Test the secret marble generator
-			Generators::Marble( TB );
+			Generators::Marble( TB, 30 );
 
 // 			// Test the AO converter
 // 			TextureBuilder	PipoTemp( TB.GetWidth(), TB.GetHeight() );
