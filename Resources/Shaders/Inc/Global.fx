@@ -5,6 +5,7 @@
 // WARNING! These must correspond to the resolution set in GodComplex.h !
 static const float	RESX = 1280.0;
 static const float	RESY = 720.0;
+static const float	ASPECT_RATIO = RESX / RESY;
 static const float2	SCREEN_SIZE = float2( RESX, RESY );
 static const float2	INV_SCREEN_SIZE = float2( 1.0/RESX, 1.0/RESY );
 

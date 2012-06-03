@@ -26,7 +26,6 @@
 . Added draw utilities
 	packed executable 104448 -> 24576 bytes (Rhaaa! WTH? Did I really write 4Kb of code??)
 
-
  [28 mai 2012]
 . Optimized/Changed draw utilities
 	packed executable 103936 -> 24064 bytes (whoohoo!)
@@ -56,7 +55,6 @@
 . Added filters
 . Added fillers
 	packed executable 112128 -> 27648 bytes
-
 
  [3 juin 2012]
 . Added dilate/erode (slow!) filters

@@ -57,6 +57,11 @@ float	_frand()
 	return u / (4294967295.0f);	// Denominator = 2^32-1
 }
 
+float	_frand( float min, float max )
+{
+	return min + (max-min) * _frand();
+}
+
 // Produce a uniform random sample from the open interval ]0, 1[.
 // The method will not return either end point.
 float	_frandStrict()

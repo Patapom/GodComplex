@@ -14,9 +14,10 @@
 void	_srand( U32 u, U32 v );
 void	_randpushseed();
 void	_randpopseed();
-float	_frand();					// [0,1]
-float	_frandStrict();				// ]0,1[
-U32		_rand();					// [0,2^32[
-U32		_rand( U32 min, U32 max );	// [min,max]
-U32		_rand( U32 size );			// [0,size[
+float	_frand();						// [0,1]
+float	_frand( float min, float max );	// [min,max]
+float	_frandStrict();					// ]0,1[
+U32		_rand();						// [0,2^32[
+U32		_rand( U32 min, U32 max );		// [min,max]
+U32		_rand( U32 size );				// [0,size[
 float	_randGauss();

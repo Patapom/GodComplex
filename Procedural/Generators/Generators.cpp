@@ -55,9 +55,7 @@ void	FillAO( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData
 	if ( Params.bWriteOnlyAlpha )
 		return;
 
-	_Color.x = SumAO;
-	_Color.y = SumAO;
-	_Color.z = SumAO;
+	_Color.Set( SumAO, SumAO, SumAO, 1.0f );
 }
 
 void Generators::ComputeAO( const TextureBuilder& _Source, TextureBuilder& _Target, float _HeightFactor, int _DirectionsCount, int _SamplesCount, bool _bWriteOnlyAlpha )
@@ -121,8 +119,7 @@ void	Generators::Dirtyness( TextureBuilder& _Builder, const Noise& _Noise, float
 		NjFloat4&	Pixel = _Builder.GetMips()[0][_Builder.GetWidth() * (_Builder.GetHeight()-1) + X];
 //		float		InitialValue = _AverageIntensity + abs( _Noise.Perlin( NjFloat2( _InitNoiseFrequency * float(X) / _Builder.GetWidth(), 0.0f ) ) );
 		float		InitialValue = _InitialIntensity;
-		Pixel.x = Pixel.y = Pixel.z = InitialValue;
-		Pixel.w = 0.0f;
+		Pixel.Set( InitialValue, InitialValue, InitialValue, 0.0f );
 	}
 
 	_Builder.Fill( FillDirtyness, &Params );
@@ -147,7 +144,7 @@ void	FillMarble( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _p
 
 	float	Value = Params.pBuffer[Params.Width*_Y+_X];
 	Value = Params.Factor * (Value - Params.Min);
-	_Color.x = _Color.y = _Color.z = Value;
+	_Color.Set( Value, Value, Value, 1.0f );
 }
 
 void	Generators::Marble( TextureBuilder& _Builder, int _BootSize, float _NoiseAmplitude, float _Weight0, float _Weight1, float _Weight2, float _WeightsNormalizer )

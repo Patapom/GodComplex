@@ -6,6 +6,7 @@ DrawUtils::DrawUtils()
 	m_ContextRECT.pOwner = this;
 	m_ContextLINE.pOwner = this;
 	m_ContextELLIPSE.pOwner = this;
+	m_ContextSCRATCH.pOwner = this;
 
 	m_X = NjFloat2::UnitX;
 	m_Y = NjFloat2::UnitY;
@@ -24,14 +25,16 @@ void	DrawUtils::SetupContext( float _PivotX, float _PivotY, float _Angle )
 	_Angle = DEG2RAD( _Angle );
 	float	c = cosf(_Angle), s =sinf(_Angle);
 
-	m_C.x = _PivotX;	m_C.y = _PivotY;
-	m_X.x = c;			m_X.y = s;
-	m_Y.x = -s;			m_Y.y = c;
+	m_C.Set( _PivotX, _PivotY );
+	m_X.Set(  c, s );
+	m_Y.Set( -s, c );
 }
 
 //////////////////////////////////////////////////////////////////////////
-void	DrawUtils::DrawRectangle( float x, float y, float w, float h, float border, float bias, FillDelegate _Filler )
+void	DrawUtils::DrawRectangle( float x, float y, float w, float h, float border, float bias, FillDelegate _Filler, void* _pData ) const
 {
+	m_Infos.pData = _pData;
+
 	// Setup rectangle-specific parameters
 	m_ContextRECT.pFiller = _Filler;
 	m_ContextRECT.x0 = bias*border;
@@ -43,23 +46,20 @@ void	DrawUtils::DrawRectangle( float x, float y, float w, float h, float border,
 	m_ContextRECT.InvBorderSize = border != 0.0f ? 1.0f / border : 0.0f;
 
 	// Build quad vertices
-	NjFloat2	pVertices[4];
-	pVertices[0].x = x;
-	pVertices[0].y = y;
-	pVertices[1].x = x;
-	pVertices[1].y = y + h;
-	pVertices[2].x = x + w;
-	pVertices[2].y = y + h;
-	pVertices[3].x = x + w;
-	pVertices[3].y = y;
+	NjFloat4	pVertices[4];
+	pVertices[0].Set( x, y, 0, 0 );
+	pVertices[1].Set( x, y + h, 0, 1 );
+	pVertices[2].Set( x + w, y + h, 1, 1 );
+	pVertices[3].Set( x + w, y, 1, 0 );
 
 	DrawQuad( pVertices, m_ContextRECT );
 }
 void	DrawUtils::DrawContextRECT::DrawPixel()
 {
-	pOwner->m_Infos.x = X;
-	pOwner->m_Infos.UV.x = P.z;
-	pOwner->m_Infos.UV.y = P.w;
+	int	WrappedX = (X+pOwner->m_Width) % pOwner->m_Width;
+
+	pOwner->m_Infos.x = WrappedX;
+	pOwner->m_Infos.UV.Set( P.z, P.w );
 	pOwner->m_Infos.Coverage = Coverage;
 
 	// Compute signed distance to border
@@ -93,12 +93,14 @@ void	DrawUtils::DrawContextRECT::DrawPixel()
 	pOwner->m_Infos.Distance = D;
 
 	// Invoke pixel drawing
-	pFiller( pOwner->m_Infos, pScanline[X] );
+	pFiller( pOwner->m_Infos, pScanline[WrappedX] );
 }
 
 //////////////////////////////////////////////////////////////////////////
-void	DrawUtils::DrawLine( float x0, float y0, float x1, float y1, float thickness, FillDelegate _Filler )
+void	DrawUtils::DrawLine( float x0, float y0, float x1, float y1, float thickness, FillDelegate _Filler, void* _pData ) const
 {
+	m_Infos.pData = _pData;
+
 	// Setup line-specific parameters
 	m_ContextLINE.pFiller = _Filler;
 
@@ -115,19 +117,20 @@ void	DrawUtils::DrawLine( float x0, float y0, float x1, float y1, float thicknes
 	U = U / L;
 	NjFloat2	V( -U.y, U.x );
 
-	NjFloat2	pVertices[4];
-	pVertices[0] = P0 + thickness * (V - U);
-	pVertices[1] = pVertices[0] + (2.0f * thickness + L) * U;
-	pVertices[2] = pVertices[1] - (2.0f * thickness) * V;
-	pVertices[3] = pVertices[0] - (2.0f * thickness) * V;
+	NjFloat4	pVertices[4];
+	pVertices[0] = NjFloat4( P0 + thickness * (V - U), 0, 1 );
+	pVertices[1] = NjFloat4( P1 + thickness * (V + U), 1, 1 );
+	pVertices[2] = NjFloat4( P1 + thickness * (U - V), 1, 0 );
+	pVertices[3] = NjFloat4( P0 - thickness * (U + V), 0, 0 );
 
 	DrawQuad( pVertices, m_ContextLINE );
 }
 void	DrawUtils::DrawContextLINE::DrawPixel()
 {
-	pOwner->m_Infos.x = X;
-	pOwner->m_Infos.UV.x = P.z;
-	pOwner->m_Infos.UV.y = P.w;
+	int	WrappedX = (X+pOwner->m_Width) % pOwner->m_Width;
+
+	pOwner->m_Infos.x = WrappedX;
+	pOwner->m_Infos.UV.Set( P.z, P.w );
 	pOwner->m_Infos.Coverage = Coverage;
 
 	// Compute distance to the line
@@ -137,12 +140,14 @@ void	DrawUtils::DrawContextLINE::DrawPixel()
 	pOwner->m_Infos.Distance = sqrtf( Du*Du + Dv*Dv );
 
 	// Invoke pixel drawing
-	pFiller( pOwner->m_Infos, pScanline[X] );
+	pFiller( pOwner->m_Infos, pScanline[WrappedX] );
 }
 
 //////////////////////////////////////////////////////////////////////////
-void	DrawUtils::DrawEllipse( float x, float y, float w, float h, float border, float bias, FillDelegate _Filler )
+void	DrawUtils::DrawEllipse( float x, float y, float w, float h, float border, float bias, FillDelegate _Filler, void* _pData ) const
 {
+	m_Infos.pData = _pData;
+
 	// Setup rectangle-specific parameters
 	m_ContextELLIPSE.pFiller = _Filler;
 	m_ContextELLIPSE.w = w;
@@ -151,23 +156,20 @@ void	DrawUtils::DrawEllipse( float x, float y, float w, float h, float border, f
 	m_ContextELLIPSE.DistanceBias = -bias * border / w;
 
 	// Build quad vertices
-	NjFloat2	pVertices[4];
-	pVertices[0].x = x;
-	pVertices[0].y = y;
-	pVertices[1].x = x;
-	pVertices[1].y = y + h;
-	pVertices[2].x = x + w;
-	pVertices[2].y = y + h;
-	pVertices[3].x = x + w;
-	pVertices[3].y = y;
+	NjFloat4	pVertices[4];
+	pVertices[0].Set( x, y, 0, 0 );
+	pVertices[1].Set( x, y + h, 0, 1 );
+	pVertices[2].Set( x + w, y + h, 1, 1 );
+	pVertices[3].Set( x + w, y, 1, 0 );
 
 	DrawQuad( pVertices, m_ContextELLIPSE );
 }
 void	DrawUtils::DrawContextELLIPSE::DrawPixel()
 {
-	pOwner->m_Infos.x = X;
-	pOwner->m_Infos.UV.x = P.z;
-	pOwner->m_Infos.UV.y = P.w;
+	int	WrappedX = (X+pOwner->m_Width) % pOwner->m_Width;
+
+	pOwner->m_Infos.x = WrappedX;
+	pOwner->m_Infos.UV.Set( P.z, P.w );
 	pOwner->m_Infos.Coverage = Coverage;
 
 	float	Du = 2.0f * (P.z - 0.5f);
@@ -181,25 +183,93 @@ void	DrawUtils::DrawContextELLIPSE::DrawPixel()
 	pOwner->m_Infos.Distance = D * InvDu;
 
 	// Invoke pixel drawing
-	pFiller( pOwner->m_Infos, pScanline[X] );
+	pFiller( pOwner->m_Infos, pScanline[WrappedX] );
 }
 
+
 //////////////////////////////////////////////////////////////////////////
-void	DrawUtils::Transform( const NjFloat2& _SourcePosition, NjFloat4& _TransformedPosition ) const
+// Compound drawing
+void	DrawUtils::DrawScratch( const NjFloat2& _Position, const NjFloat2& _Direction, float _Length, float _ThicknessStart, float _ThicknessEnd, float _CurveAngle, float _StepSize, ScratchFillDelegate _Filler, void* _pData ) const
+{
+	m_Infos.pData = _pData;
+
+	int	StepsCount = ASM_ceilf( _Length / _StepSize );
+
+	m_ContextSCRATCH.pFiller = _Filler;
+	m_ContextSCRATCH.Distance = 0.0f;
+	m_ContextSCRATCH.StepDistance = _StepSize;
+	m_ContextSCRATCH.U = 0.0f;
+	m_ContextSCRATCH.StepU = _Length / (StepsCount * StepsCount * _StepSize);
+
+	float		StepAngle = DEG2RAD( _CurveAngle ) * _StepSize;
+	NjFloat2	RotX( cosf( StepAngle ), -sinf( StepAngle ) );
+	NjFloat2	RotY( -RotX.y, RotX.x );
+
+	NjFloat2	Position = _Position;
+	NjFloat2	Direction = _Direction;
+				Direction.Normalize();
+	NjFloat2	Normal( -Direction.y, Direction.x );
+	float		Thickness = _ThicknessStart;
+
+	float		StepThickness = (_ThicknessEnd - _ThicknessStart) * _StepSize / _Length;
+
+	NjFloat4	pVertices[4];
+	pVertices[3] = NjFloat4( Position - Thickness * Normal, 0, 0 );
+	pVertices[2] = NjFloat4( Position + Thickness * Normal, 0, 0 );
+
+	for ( int StepIndex=0; StepIndex < StepsCount; StepIndex++ )
+	{
+		pVertices[0] = pVertices[3];	pVertices[0].z = 0.0;	pVertices[0].w = 0.0f;
+		pVertices[1] = pVertices[2];	pVertices[1].z = 0.0f;	pVertices[1].w = 1.0f;
+
+		// March along the scratch and build new vertices
+		Thickness += StepThickness;
+		Position = Position + _StepSize * Direction;
+		Direction = NjFloat2( Direction | RotX, Direction | RotY );
+		pVertices[3] = NjFloat4( Position - Thickness * Normal, 1, 0 );
+		pVertices[2] = NjFloat4( Position + Thickness * Normal, 1, 1 );
+
+		DrawQuad( pVertices, m_ContextSCRATCH );
+
+		m_ContextSCRATCH.Distance += m_ContextSCRATCH.StepDistance;
+		m_ContextSCRATCH.U += m_ContextSCRATCH.StepU;
+	}
+}
+
+void	DrawUtils::DrawContextSCRATCH::DrawPixel()
+{
+	int	WrappedX = (X+pOwner->m_Width) % pOwner->m_Width;
+
+	pOwner->m_Infos.x = WrappedX;
+	pOwner->m_Infos.UV.Set( P.z, P.w );
+	pOwner->m_Infos.Coverage = Coverage;
+
+	// Compute distance to the center of the scratch
+	pOwner->m_Infos.Distance = 2.0f * (pOwner->m_Infos.UV.y - 0.5f);
+
+	// Invoke pixel drawing
+	pFiller( pOwner->m_Infos, pScanline[WrappedX], Distance + P.z * StepDistance, U + P.z * StepU );
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+void	DrawUtils::Transform( const NjFloat4& _SourcePosition, NjFloat4& _TransformedPosition ) const
 {
 	_TransformedPosition.x = m_C.x + m_X.x * _SourcePosition.x + m_Y.x * _SourcePosition.y;
 	_TransformedPosition.y = m_C.y + m_X.y * _SourcePosition.x + m_Y.y * _SourcePosition.y;
+	_TransformedPosition.z = _SourcePosition.z;
+	_TransformedPosition.w = _SourcePosition.w;
 }
 
 // Here, we're assuming (x,y) couples are CCW and form a convex quadrilateral
-void	DrawUtils::DrawQuad( NjFloat2 _pVertices[], DrawContext& _Context )
+void	DrawUtils::DrawQuad( NjFloat4 _pVertices[], DrawContext& _Context ) const
 {
 	// Build doubled list of vertices with UVs
 	NjFloat4	pVertices[8];
-	Transform( _pVertices[0], pVertices[0] ); pVertices[0].z = 0.0f; pVertices[0].w = 0.0f;
-	Transform( _pVertices[1], pVertices[1] ); pVertices[1].z = 1.0f; pVertices[1].w = 0.0f;
-	Transform( _pVertices[2], pVertices[2] ); pVertices[2].z = 1.0f; pVertices[2].w = 1.0f;
-	Transform( _pVertices[3], pVertices[3] ); pVertices[3].z = 0.0f; pVertices[3].w = 1.0f;
+	Transform( _pVertices[0], pVertices[0] );
+	Transform( _pVertices[1], pVertices[1] );
+	Transform( _pVertices[2], pVertices[2] );
+	Transform( _pVertices[3], pVertices[3] );
 	for ( int i=0; i < 4; i++ )
 		pVertices[4+i] = pVertices[i];
 
@@ -219,7 +289,8 @@ void	DrawUtils::DrawQuad( NjFloat2 _pVertices[], DrawContext& _Context )
 	int			L = Top, R = 4+Top;			// Left & Right indices: Left will increase, Right will decrease
 	NjFloat4	LPos, RPos;					// Left & Right position & UV
 	NjFloat4	LSlope, RSlope;				// Left & Right slope
-	while ( _Context.Y < m_Height )
+//	while ( _Context.Y < m_Height )
+	while ( true )
 	{
 		while ( LDy < 0.0f && L <= R )
 		{	// Rebuild left slope
@@ -251,15 +322,18 @@ void	DrawUtils::DrawQuad( NjFloat2 _pVertices[], DrawContext& _Context )
 			break;	// The quad is over !
 
 		// Draw the scanline
-		if ( _Context.Y > 0 )
+		// The comments left here are the original lines you need to draw in CLAMP mode
+//		if ( _Context.Y > 0 )
 		{
 			_Context.X = ASM_floorf( LPos.x );
-			bool		bClipLeft = _Context.X < 0;
-			_Context.X = MAX( 0, _Context.X );
+//			bool		bClipLeft = _Context.X < 0;
+			bool		bClipLeft = false;	// Don't ever clip since we wrap !
+//			_Context.X = MAX( 0, _Context.X );
 
 			int			RX = ASM_ceilf( RPos.x );
-			bool		bClipRight = RX >= m_Width;
-						RX = MIN( m_Width-1, RX );
+//			bool		bClipRight = RX >= m_Width;
+			bool		bClipRight = false;	// Don't ever clip since we wrap !
+//						RX = MIN( m_Width-1, RX );
 
 			// Compute slope & start position
 			NjFloat4	Slope = RPos - LPos;

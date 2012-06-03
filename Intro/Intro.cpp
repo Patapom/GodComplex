@@ -19,8 +19,8 @@ static ConstantBuffer*	gs_pCB_Test = NULL;
 
 //float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[0] ); }	// Use F1 = closest distance
 //float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[1] ); }	// Use F2 = second closest distance
-//float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[1] ) - sqrtf( _pDistances[0] ); }	// Use F2 - F1
-float	CombineDistances( float _pDistances[] )	{ return _pDistances[1] - sqrt(_pDistances[0]); }	// Use F2² - F1 => Alligator scales ! ^^
+float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[1] ) - sqrtf( _pDistances[0] ); }	// Use F2 - F1
+//float	CombineDistances( float _pDistances[] )	{ return _pDistances[1] - sqrt(_pDistances[0]); }	// Use F2² - F1 => Alligator scales ! ^^
 
 float	FBMDelegate( const NjFloat2& _UV, void* _pData )
 {
@@ -55,8 +55,7 @@ void	FillNoise( int x, int y, const NjFloat2& _UV, NjFloat4& _Color, void* _pDat
 //	float	C = N.FractionalBrownianMotion( FBMDelegate, _pData, _UV );	// Fractional Brownian Motion
 //	float	C = N.RidgedMultiFractal( RMFDelegate, _pData, _UV );	// Ridged Multi Fractal
 
-	_Color.x = _Color.y = _Color.z = C;
-	_Color.w = 1.0f;
+	_Color.Set( C, C, C, 1.0f );
 }
 
 void	FillRectangle( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
@@ -83,6 +82,17 @@ void	FillLine( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
 	P.Blend( NjFloat4( 0, D, 0, 0 ), D * i.Coverage );
 }
 
+void	FillScratch( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P, float _Distance, float _U )
+{
+ 	Noise&	N = *((Noise*) i.pData);
+
+ 	float		Value = 1.0f * N.Perlin( 0.001f * NjFloat2( float(i.x) / i.w, float(i.y) / i.h ) );
+ 				Value += abs( 4.0f * N.Perlin( 0.005f * (Value + _U) ) );
+
+	NjFloat4	Color( Value, Value, Value, i.Coverage * (1.0f - abs(i.Distance)) );
+	P.Blend( Color, Color.w );
+}
+
 int	IntroInit( IntroProgressDelegate& _Delegate )
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -93,21 +103,20 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 		DrawUtils	Draw;
 		{
 			TextureBuilder	TB( 512, 512 );
+			Draw.SetupSurface( 512, 512, TB.GetMips()[0] );	// Let's draw into the first mip level !
 
-//* General tests for drawing tools and filtering
+/* General tests for drawing tools and filtering
  			Noise	N( 1 );
 			N.Create2DWaveletNoiseTile( 6 );	// If you need to use wavelet noise...
 			TB.Fill( FillNoise, &N );
 
-			Draw.SetupSurface( 512, 512, TB.GetMips()[0] );
-
-			Draw.DrawLine( 20.0f, 0.0f, 400.0f, 500.0f, 10.0f, FillLine );
+			Draw.DrawLine( 20.0f, 0.0f, 400.0f, 500.0f, 10.0f, FillLine, NULL );
 
 			Draw.SetupContext( 30.0f, 0.0f, 20.0f );
- 			Draw.DrawEllipse( 10.0f, 13.4f, 497.39f, 282.78f, 40.0f, 0.0f, FillEllipse );
+ 			Draw.DrawEllipse( 10.0f, 13.4f, 497.39f, 282.78f, 40.0f, 0.0f, FillEllipse, NULL );
 
 			Draw.SetupContext( 250.0f, 0.0f, 30.0f );
- 			Draw.DrawRectangle( 10.0f, 13.4f, 197.39f, 382.78f, 40.0f, 0.5f, FillRectangle );
+ 			Draw.DrawRectangle( 10.0f, 13.4f, 197.39f, 382.78f, 40.0f, 0.5f, FillRectangle, NULL );
 
 //			Filters::BlurGaussian( TB, 20.0f, 20.0f, true, 0.5f );
 //			Filters::UnsharpMask( TB, 20.0f );
@@ -115,6 +124,12 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 //			Filters::Emboss( TB, NjFloat2( 1, 1 ), 4.0f );
 //			Filters::Erode( TB );
 //			Filters::Dilate( TB );
+
+// 			// Test the AO converter
+// 			TextureBuilder	PipoTemp( TB.GetWidth(), TB.GetHeight() );
+// 			PipoTemp.CopyFrom( TB );
+// 			Generators::ComputeAO( PipoTemp, TB, 2.0f );
+
 //*/
 
 // 			// Test the dirtyness generator
@@ -124,12 +139,27 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 //			Generators::Marble( TB, 30, 0.2f, 0.5f, 1.0f, 0.5f, 0.5f );
 //			Generators::Marble3D( TB, 16, 0.2f );
 
-// 			// Test the AO converter
-// 			TextureBuilder	PipoTemp( TB.GetWidth(), TB.GetHeight() );
-// 			PipoTemp.CopyFrom( TB );
-// 			Fillers::ComputeAO( PipoTemp, TB, 2.0f );
 
+//* Test advanced drawing
 
+ 			Noise	N( 1 );
+			for ( int i=0; i < 10; i++ )
+			{
+				NjFloat2	Pos;
+				Pos.x = _frand( 0.0f, 512.0f );
+				Pos.y = _frand( 0.0f, 512.0f );
+				NjFloat2	Dir;
+				Dir.x = _frand( -1.0f, +1.0f );
+				Dir.y = _frand( -1.0f, +1.0f );
+
+				float	Length = _frand( 100.0f, 500.0f );
+				float	Thickness = _frand( 1.0f, 4.0f );
+				float	Curve = _frand( -0.1f, 0.1f );
+
+				Draw.DrawScratch( Pos, Dir, Length, Thickness, 0.01f, Curve, 10.0f, FillScratch, &N );
+			}
+
+//*/
 
 			gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.Convert( PixelFormatRGBA16F::DESCRIPTOR ) );
 		}
