@@ -261,3 +261,73 @@ void	Filters::Emboss( TextureBuilder& _Builder, const NjFloat2& _Direction, floa
 
 	_Builder.Fill( FillEmboss, &Params );
 }
+
+
+//////////////////////////////////////////////////////////////////////////
+// Erosion
+struct __ErosionStruct
+{
+	TextureBuilder*	pSource;
+	int				Size;
+	float			Amplitude;
+};
+void	FillErode( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+{
+	__ErosionStruct&	Params = *((__ErosionStruct*) _pData);
+
+	NjFloat4	C;
+	_Color = FLOAT32_MAX * NjFloat4::One;
+	for ( int Y=-Params.Size; Y <= Params.Size; Y++ )
+		for ( int X=-Params.Size; X <= Params.Size; X++ )
+		{
+			Params.pSource->SampleWrap( float(_X + X), float(_Y + Y), C );
+			_Color = _Color.Min( C );
+		}
+}
+
+void	Filters::Erode( TextureBuilder& _Builder, int _KernelSize )
+{
+	TextureBuilder	Temp( _Builder.GetWidth(), _Builder.GetHeight() );
+	Temp.CopyFrom( _Builder );
+
+	__ErosionStruct	Params;
+	Params.pSource = &Temp;
+	Params.Size = _KernelSize;
+
+	_Builder.Fill( FillErode, &Params );
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Dilation
+struct __DilationStruct
+{
+	TextureBuilder*	pSource;
+	int				Size;
+	float			Amplitude;
+};
+void	FillDilate( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+{
+	__DilationStruct&	Params = *((__DilationStruct*) _pData);
+
+	NjFloat4	C;
+	_Color = -FLOAT32_MAX * NjFloat4::One;
+	for ( int Y=-Params.Size; Y <= Params.Size; Y++ )
+		for ( int X=-Params.Size; X <= Params.Size; X++ )
+		{
+			Params.pSource->SampleWrap( float(_X + X), float(_Y + Y), C );
+			_Color = _Color.Max( C );
+		}
+}
+
+void	Filters::Dilate( TextureBuilder& _Builder, int _KernelSize )
+{
+	TextureBuilder	Temp( _Builder.GetWidth(), _Builder.GetHeight() );
+	Temp.CopyFrom( _Builder );
+
+	__DilationStruct	Params;
+	Params.pSource = &Temp;
+	Params.Size = _KernelSize;
+
+	_Builder.Fill( FillDilate, &Params );
+}

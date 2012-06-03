@@ -56,3 +56,9 @@
 . Added filters
 . Added fillers
 	packed executable 112128 -> 27648 bytes
+
+
+ [3 juin 2012]
+. Added dilate/erode (slow!) filters
+. Added the modified "Marble" generator from Pierre
+	packed executable 112640 -> 27648 bytes
