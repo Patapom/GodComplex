@@ -39,9 +39,11 @@ protected:
 		Pixel*		pScanline;		// Current scanline
 		virtual void	NewScanline()
 		{
-			int	WrappedY = (Y + pOwner->m_Height) % pOwner->m_Height;
+			int	WrappedY = Y % pOwner->m_Height;
+				WrappedY = WrappedY < 0 ? WrappedY + pOwner->m_Height : WrappedY;	// Ensure always positive !
+
 			pScanline = (Pixel*) pOwner->m_pSurface + pOwner->m_Width * WrappedY;
-			pOwner->m_Infos.y = WrappedY;
+			pOwner->m_Infos.y = Y;
 		}
 		virtual void	DrawPixel() = 0;
 	};
@@ -134,6 +136,7 @@ public:		// METHODS
 	//	_StepSize, size of each subdivision
 	void	DrawScratch( const NjFloat2& _Position, const NjFloat2& _Direction, float _Length, float _ThicknessStart, float _ThicknessEnd, float _CurveAngle, float _StepSize, ScratchFillDelegate _Filler, void* _pData ) const;
 
+	void	DrawSplotch( const NjFloat2& _Position, const NjFloat2& _Size, float _Angle, const Noise& _Noise, float _Perturbation ) const;
 
 protected:
 	void	DrawQuad( NjFloat4 _pVertices[], DrawContext& _Context ) const;

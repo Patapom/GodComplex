@@ -93,6 +93,28 @@ void	FillScratch( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P, float _Dis
 	P.Blend( Color, Color.w );
 }
 
+void	FillSplotch( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
+{
+ 	Noise&	N = *((Noise*) i.pData);
+
+	NjFloat2	UV = i.UV;
+	UV.x -= 0.5f;
+	UV.y -= 0.5f;
+
+	float	Scale = 1.0f + 1.0f * N.Perlin( NjFloat2( 0.005f * i.x / i.w, 0.005f * i.y / i.h ) );
+	UV.x *= Scale;
+	UV.y *= Scale;
+
+	float	Distance2Center = UV.Length();
+
+	float	C = 1.2f * (1.0f - 2.0f * Distance2Center);
+			C = CLAMP01( C );
+	float	A = C * C * i.Coverage;
+	NjFloat4	Color( C, C, C, A );
+
+	P.Blend( Color, Color.w );
+}
+
 int	IntroInit( IntroProgressDelegate& _Delegate )
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -143,6 +165,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 //* Test advanced drawing
 
  			Noise	N( 1 );
+			// Draw scratches
 			for ( int i=0; i < 10; i++ )
 			{
 				NjFloat2	Pos;
@@ -153,12 +176,49 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 				Dir.y = _frand( -1.0f, +1.0f );
 
 				float	Length = _frand( 100.0f, 500.0f );
-				float	Thickness = _frand( 1.0f, 4.0f );
-				float	Curve = _frand( -0.1f, 0.1f );
+				float	Thickness = _frand( 4.0f, 5.0f );
+				float	Curve = _frand( -0.05f, 0.05f );
 
 				Draw.DrawScratch( Pos, Dir, Length, Thickness, 0.01f, Curve, 10.0f, FillScratch, &N );
 			}
 
+			// Draw splotches
+			for ( int Y=0; Y < 20; Y++ )
+			{
+				int		Count = _rand( 10, 20 );
+
+				float	Angle = _frand( -180.0f, +180.0f );
+				float	DeltaAngle = _frand( 0.0f, 40.0f );		// Splotches rotate with time
+						DeltaAngle /= Count;
+
+				NjFloat2	Pos;
+				Pos.x = _frand( -512.0f, 512.0f );
+				Pos.y = _frand( -512.0f, 512.0f );
+
+				NjFloat2	Size;
+				Size.x = _frand( 40.0f, 50.0f );
+				Size.y = _frand( 40.0f, 50.0f );
+				float	DeltaSize = _frand( 0.0f, 30.0f );	// Splotches get bigger or smaller with time
+						DeltaSize /= Count;
+
+				float	Step = _frand( 0.25f, 1.0f ) * Size.x;	// Splotches interpenetrate
+
+				for ( int X=0; X < Count; X++ )
+				{
+					Draw.SetupContext( Pos.x, Pos.y, Angle );
+					Draw.DrawRectangle( 0.0f, 0.0f, Size.x, Size.y, 0.1f * Size.Min(), 0.0f, FillSplotch, &N );
+
+					Angle += DeltaAngle;
+					float	AngleRad = DEG2RAD( Angle );
+					Pos = Pos + Step * NjFloat2( cosf(AngleRad), sinf(AngleRad) );
+					Size.x += DeltaSize;
+				}
+			}
+
+// Draw.DrawRectangle( 0.0f, 0.0f, 100.0f, 100.0f, 10.0f, 0.0f, FillSplotch, &N );
+
+//			Filters::BrightnessContrastGamma( TB, 0.1f, 0.7f, 2.0f );
+//			Filters::Erode( TB, 3 );
 //*/
 
 			gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.Convert( PixelFormatRGBA16F::DESCRIPTOR ) );

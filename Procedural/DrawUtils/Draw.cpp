@@ -56,9 +56,10 @@ void	DrawUtils::DrawRectangle( float x, float y, float w, float h, float border,
 }
 void	DrawUtils::DrawContextRECT::DrawPixel()
 {
-	int	WrappedX = (X+pOwner->m_Width) % pOwner->m_Width;
+	int	WrappedX = X % pOwner->m_Width;
+		WrappedX = WrappedX < 0 ? WrappedX + pOwner->m_Width : WrappedX;
 
-	pOwner->m_Infos.x = WrappedX;
+	pOwner->m_Infos.x = X;
 	pOwner->m_Infos.UV.Set( P.z, P.w );
 	pOwner->m_Infos.Coverage = Coverage;
 
@@ -127,9 +128,10 @@ void	DrawUtils::DrawLine( float x0, float y0, float x1, float y1, float thicknes
 }
 void	DrawUtils::DrawContextLINE::DrawPixel()
 {
-	int	WrappedX = (X+pOwner->m_Width) % pOwner->m_Width;
+	int	WrappedX = X % pOwner->m_Width;
+		WrappedX = WrappedX < 0 ? WrappedX + pOwner->m_Width : WrappedX;
 
-	pOwner->m_Infos.x = WrappedX;
+	pOwner->m_Infos.x = X;
 	pOwner->m_Infos.UV.Set( P.z, P.w );
 	pOwner->m_Infos.Coverage = Coverage;
 
@@ -166,9 +168,10 @@ void	DrawUtils::DrawEllipse( float x, float y, float w, float h, float border, f
 }
 void	DrawUtils::DrawContextELLIPSE::DrawPixel()
 {
-	int	WrappedX = (X+pOwner->m_Width) % pOwner->m_Width;
+	int	WrappedX = X % pOwner->m_Width;
+		WrappedX = WrappedX < 0 ? WrappedX + pOwner->m_Width : WrappedX;
 
-	pOwner->m_Infos.x = WrappedX;
+	pOwner->m_Infos.x = X;
 	pOwner->m_Infos.UV.Set( P.z, P.w );
 	pOwner->m_Infos.Coverage = Coverage;
 
@@ -188,7 +191,14 @@ void	DrawUtils::DrawContextELLIPSE::DrawPixel()
 
 
 //////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 // Compound drawing
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////
+// Scratches
 void	DrawUtils::DrawScratch( const NjFloat2& _Position, const NjFloat2& _Direction, float _Length, float _ThicknessStart, float _ThicknessEnd, float _CurveAngle, float _StepSize, ScratchFillDelegate _Filler, void* _pData ) const
 {
 	m_Infos.pData = _pData;
@@ -238,9 +248,10 @@ void	DrawUtils::DrawScratch( const NjFloat2& _Position, const NjFloat2& _Directi
 
 void	DrawUtils::DrawContextSCRATCH::DrawPixel()
 {
-	int	WrappedX = (X+pOwner->m_Width) % pOwner->m_Width;
+	int	WrappedX = X % pOwner->m_Width;
+		WrappedX = WrappedX < 0 ? WrappedX + pOwner->m_Width : WrappedX;
 
-	pOwner->m_Infos.x = WrappedX;
+	pOwner->m_Infos.x = X;
 	pOwner->m_Infos.UV.Set( P.z, P.w );
 	pOwner->m_Infos.Coverage = Coverage;
 
@@ -277,15 +288,15 @@ void	DrawUtils::DrawQuad( NjFloat4 _pVertices[], DrawContext& _Context ) const
 	float	Min = FLOAT32_MAX;
 	int		Top = -1;
 	for ( int i=0; i < 4; i++ )
-		if ( _pVertices[i].y < Min )
+		if ( pVertices[i].y < Min )
 		{
-			Min = _pVertices[i].y;
+			Min = pVertices[i].y;
 			Top = i;
 		}
 
 	// Start drawing
 	_Context.Y = ASM_floorf( pVertices[Top].y );
-	int			LDy = 0, RDy = 0;			// Amount of pixels to trace for the left & right segments until the next segment (or end of the quad)
+	int			LDy = -1, RDy = -1;			// Amount of pixels to trace for the left & right segments until the next segment (or end of the quad)
 	int			L = Top, R = 4+Top;			// Left & Right indices: Left will increase, Right will decrease
 	NjFloat4	LPos, RPos;					// Left & Right position & UV
 	NjFloat4	LSlope, RSlope;				// Left & Right slope

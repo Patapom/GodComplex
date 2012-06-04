@@ -212,7 +212,8 @@ void	FillBCG( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pDat
 	__BCGStruct&	BCG = *((__BCGStruct*) _pData);
 
 	float	Luma = _Color | LUMINANCE;
-	float	ContrastedLuma = BCG.B + BCG.C * (Luma - 0.5f);
+//	float	ContrastedLuma = BCG.B + BCG.C * (Luma - 0.5f);
+	float	ContrastedLuma = 0.5f + BCG.C * (Luma + BCG.B);
 			ContrastedLuma = CLAMP01( ContrastedLuma );
 	float	NewLuma = ASM_powf( ContrastedLuma, BCG.G );
 
@@ -222,7 +223,8 @@ void	FillBCG( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pDat
 void	Filters::BrightnessContrastGamma( TextureBuilder& _Builder, float _Brightness, float _Contrast, float _Gamma )
 {
 	__BCGStruct	BCG;
-	BCG.B = 0.5f + _Brightness;
+//	BCG.B = 0.5f + _Brightness;
+	BCG.B = _Brightness - 0.5f;
 	BCG.C = tanf( HALFPI * 0.5f * (1.0f + _Contrast) );
 	BCG.G = _Gamma;
 
@@ -267,9 +269,9 @@ void	Filters::Emboss( TextureBuilder& _Builder, const NjFloat2& _Direction, floa
 // Erosion
 struct __ErosionStruct
 {
-	TextureBuilder*	pSource;
-	int				Size;
-	float			Amplitude;
+	NjFloat4*	pSource;
+	int			W, H;
+	int			Size;
 };
 void	FillErode( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
 {
@@ -277,12 +279,16 @@ void	FillErode( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pD
 
 	NjFloat4	C;
 	_Color = FLOAT32_MAX * NjFloat4::One;
-	for ( int Y=-Params.Size; Y <= Params.Size; Y++ )
-		for ( int X=-Params.Size; X <= Params.Size; X++ )
+	for ( int Y=_Y-Params.Size; Y <= _Y+Params.Size; Y++ )
+	{
+		int			SampleY = ((Params.H+Y) % Params.H);
+		NjFloat4*	pScanline = &Params.pSource[Params.W * SampleY];
+		for ( int X=_X-Params.Size; X <= _X+Params.Size; X++ )
 		{
-			Params.pSource->SampleWrap( float(_X + X), float(_Y + Y), C );
-			_Color = _Color.Min( C );
+			int	SampleX = (Params.W+X) % Params.W;
+			_Color = _Color.Min( pScanline[SampleX] );
 		}
+	}
 }
 
 void	Filters::Erode( TextureBuilder& _Builder, int _KernelSize )
@@ -291,7 +297,9 @@ void	Filters::Erode( TextureBuilder& _Builder, int _KernelSize )
 	Temp.CopyFrom( _Builder );
 
 	__ErosionStruct	Params;
-	Params.pSource = &Temp;
+	Params.pSource = Temp.GetMips()[0];
+	Params.W = Temp.GetWidth();
+	Params.H = Temp.GetHeight();
 	Params.Size = _KernelSize;
 
 	_Builder.Fill( FillErode, &Params );
@@ -302,9 +310,9 @@ void	Filters::Erode( TextureBuilder& _Builder, int _KernelSize )
 // Dilation
 struct __DilationStruct
 {
-	TextureBuilder*	pSource;
-	int				Size;
-	float			Amplitude;
+	NjFloat4*	pSource;
+	int			W, H;
+	int			Size;
 };
 void	FillDilate( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
 {
@@ -312,12 +320,16 @@ void	FillDilate( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _p
 
 	NjFloat4	C;
 	_Color = -FLOAT32_MAX * NjFloat4::One;
-	for ( int Y=-Params.Size; Y <= Params.Size; Y++ )
-		for ( int X=-Params.Size; X <= Params.Size; X++ )
+	for ( int Y=_Y-Params.Size; Y <= _Y+Params.Size; Y++ )
+	{
+		int			SampleY = ((Params.H+Y) % Params.H);
+		NjFloat4*	pScanline = &Params.pSource[Params.W * SampleY];
+		for ( int X=_X-Params.Size; X <= _X+Params.Size; X++ )
 		{
-			Params.pSource->SampleWrap( float(_X + X), float(_Y + Y), C );
-			_Color = _Color.Max( C );
+			int	SampleX = (Params.W+X) % Params.W;
+			_Color = _Color.Max( pScanline[SampleX] );
 		}
+	}
 }
 
 void	Filters::Dilate( TextureBuilder& _Builder, int _KernelSize )
@@ -326,7 +338,9 @@ void	Filters::Dilate( TextureBuilder& _Builder, int _KernelSize )
 	Temp.CopyFrom( _Builder );
 
 	__DilationStruct	Params;
-	Params.pSource = &Temp;
+	Params.pSource = Temp.GetMips()[0];
+	Params.W = Temp.GetWidth();
+	Params.H = Temp.GetHeight();
 	Params.Size = _KernelSize;
 
 	_Builder.Fill( FillDilate, &Params );
