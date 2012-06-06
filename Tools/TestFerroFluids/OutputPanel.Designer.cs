@@ -1,4 +1,4 @@
-﻿namespace TestSPH
+﻿namespace TestFerrofluids
 {
 	partial class OutputPanel
 	{

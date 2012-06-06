@@ -10,7 +10,7 @@ using System.Drawing.Imaging;
 
 using WMath;
 
-namespace TestSPH
+namespace TestFerrofluids
 {
 	public partial class OutputPanel : Panel
 	{
@@ -18,6 +18,7 @@ namespace TestSPH
 		public Form1		m_Owner = null;
 		public float		m_Time = 0.0f;
 		public Point2D		m_Center = new Point2D();
+		public float		m_SimulationSize = 100.0f;
 
 		public OutputPanel()
 		{
@@ -37,7 +38,7 @@ namespace TestSPH
 
 		public void		UpdateBitmap( Form1.Particle[] _Particles )
 		{
-			float	SizeNormalizer = 1.0f / Form1.SIMULATION_SPACE_SIZE;
+			float	SizeNormalizer = 1.0f / m_SimulationSize;
 
 			using ( Graphics G = Graphics.FromImage( m_Bitmap ) )
 			{

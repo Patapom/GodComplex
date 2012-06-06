@@ -8,8 +8,8 @@
     <ProjectGuid>{B6408E29-14A7-4B29-B527-19AEFDF939F2}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ExtinctionDistanceTest</RootNamespace>
-    <AssemblyName>ExtinctionDistanceTest</AssemblyName>
+    <RootNamespace>TestFerrofluids</RootNamespace>
+    <AssemblyName>TestFerrofluids</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>

@@ -1,4 +1,4 @@
-﻿namespace TestSPH
+﻿namespace TestFerrofluids
 {
 	partial class OldForm1
 	{
@@ -36,7 +36,7 @@
 // 			this.label1 = new System.Windows.Forms.Label();
 // 			this.floatTrackbarControlStepSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 // 			this.floatTrackbarControlOpacityCoefficient = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-// 			this.panelOutput = new TestSPH.OutputPanel();
+// 			this.panelOutput = new TestFerrofluids.OutputPanel();
 // 			this.buttonReset = new System.Windows.Forms.Button();
 // 			this.panel1.SuspendLayout();
 // 			this.SuspendLayout();
