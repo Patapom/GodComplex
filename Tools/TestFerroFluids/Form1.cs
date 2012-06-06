@@ -25,6 +25,15 @@ namespace TestSPH
 		public const float	SIMULATION_SPACE_SIZE = 100.0f;
 		public const float	SIMULATION_DELTA_TIME = 0.05f;
 
+// 		public const float	DEFAULT_ATTRACTION_FORCE = 500.0f;
+// 		public const float	DEFAULT_REPULSION_FORCE = 11.0f;
+// 		public const float	DEFAULT_REPULSION_POWER = 5.0f;
+
+		public const float	DEFAULT_ATTRACTION_FORCE = 200.0f;
+		public const float	DEFAULT_REPULSION_FORCE = 11.0f;
+		public const float	DEFAULT_REPULSION_POWER = 7.0f;
+		public const float	DEFAULT_SIZE_FACTOR = 91.0f;
+
 		#endregion
 
 		#region NESTED TYPES
@@ -46,7 +55,6 @@ namespace TestSPH
 		};
 
 		protected Point2D		m_FieldCenter = new Point2D( 0.0f, 0.0f );
-		protected float			m_FieldAttraction = 10.0f;
 		protected float			m_FieldAmplitude = 0.0f;
 
 		#endregion
@@ -56,6 +64,11 @@ namespace TestSPH
 		public Form1()
 		{
 			InitializeComponent();
+
+			floatTrackbarControlAttractionFactor.Value = DEFAULT_ATTRACTION_FORCE;
+			floatTrackbarControlRepulsionForce.Value = DEFAULT_REPULSION_FORCE;
+			floatTrackbarControlRepulsionCoefficient.Value = DEFAULT_REPULSION_POWER;
+			floatTrackbarControlSizeFactor.Value = DEFAULT_SIZE_FACTOR;
 		}
 
 		protected unsafe override void OnLoad( EventArgs e )
@@ -68,6 +81,7 @@ namespace TestSPH
 
 		void	Reset()
 		{
+			m_StepCount = 0;
 			for ( int i=0; i < PARTICLES_COUNT; i++ )
 			{
 				Point2D	Pos = new Point2D( SIMULATION_SPACE_SIZE * (float) SimpleRNG.GetNormal(), SIMULATION_SPACE_SIZE * (float) SimpleRNG.GetNormal() );
@@ -81,14 +95,19 @@ namespace TestSPH
 
 		#region EVENT HANDLERS
 
-		int	m_StepCount = 0;
+		int		m_StepCount = 0;
+		float	m_ParticlesSizeFactor;
 		void Application_Idle( object sender, EventArgs e )
 		{
 			if ( !checkBoxSimulate.Checked )
 				return;
 
 			float	ForceFactor = SIMULATION_DELTA_TIME*SIMULATION_DELTA_TIME / PARTICLES_MASS;
-			m_FieldAttraction = floatTrackbarControlAttractionFactor.Value;
+
+			float	FieldAttraction = 1.0f / floatTrackbarControlAttractionFactor.Value;
+			float	SelfRepulsion = 1.0f / floatTrackbarControlRepulsionForce.Value;
+			float	RepulsionPower = -floatTrackbarControlRepulsionCoefficient.Value;
+			m_ParticlesSizeFactor = 1.0f / floatTrackbarControlSizeFactor.Value;
 
 			// Apply simulation step
 			//
@@ -106,7 +125,7 @@ namespace TestSPH
 				Distance2CenterSq_i = ToCenter_i.SquareMagnitude();
 				ParticleSize_i = ComputeParticleSize( (float) Math.Sqrt( Distance2CenterSq_i ) );
 
-				Distance2CenterSq_i /= m_FieldAttraction;							// Artificially decrease the distance to augment attraction
+				Distance2CenterSq_i *= FieldAttraction;								// Artificially decrease the distance to augment attraction
 				Distance2CenterSq_i = Math.Max( 1.0f, Distance2CenterSq_i );		// Limit to avoid infinity
 
 				Distance2Center_i = (float) Math.Sqrt( Distance2CenterSq_i );
@@ -132,16 +151,16 @@ namespace TestSPH
 
 						Pi2Pj = Pj - Pi;
 						DistancePi2PjSq = Pi2Pj.SquareMagnitude();
-						DistancePi2Pj = (float) Math.Sqrt( DistancePi2PjSq );
-
-						Pi2Pj.x /= DistancePi2Pj;	// Normalize interaction vector
-						Pi2Pj.y /= DistancePi2Pj;
 
 						// We now have the sizes of each 2 particles and the distance between them
 						// We need to devise a repulsion force that will counteract the attraction toward the magnetic center
 						DistanceMin = ParticleSize_i + ParticleSize_j;	// This is the minimum distance the particles can come close together
 
-						RepulsionAmplitude = Math.Max( 0.0f, 1.0f - (DistancePi2Pj - DistanceMin) / DistanceMin );
+
+						// Compute repulsion
+						DistancePi2Pj = (float) Math.Sqrt( DistancePi2PjSq );
+						RepulsionAmplitude = (float) Math.Pow( Math.Max( 1.0f, SelfRepulsion * (DistancePi2Pj - DistanceMin)), RepulsionPower );
+
 
 						Force.x -= RepulsionAmplitude * Pi2Pj.x;
 						Force.y -= RepulsionAmplitude * Pi2Pj.y;
@@ -178,7 +197,8 @@ namespace TestSPH
 		/// <returns></returns>
 		private float	ComputeParticleSize( float _Distance2Center )
 		{
-			return 10.0f;
+			_Distance2Center *= m_ParticlesSizeFactor;
+			return 10.0f * (float) Math.Exp( -_Distance2Center * _Distance2Center );
 		}
 
 		private void buttonReset_Click( object sender, EventArgs e )
@@ -186,22 +206,25 @@ namespace TestSPH
 			Reset();
 		}
 
-		private void floatTrackbarControlCloudExtinction_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
-		{
-		}
-
-		private void floatTrackbarControlOpacityCoefficient_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
-		{
-		}
-
-		private void floatTrackbarControlStepSize_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
-		{
-		}
-
+		protected bool	m_bButtonDown = false;
 		private void panelOutput_MouseDown( object sender, MouseEventArgs e )
 		{
+			m_bButtonDown = (e.Button | MouseButtons.Left) != 0;
+		}
+
+		private void panelOutput_MouseMove( object sender, MouseEventArgs e )
+		{
+			if ( !m_bButtonDown )
+				return;
+
 			m_FieldCenter.x =  SIMULATION_SPACE_SIZE * (2.0f * e.X / panelOutput.Width - 1.0f);
 			m_FieldCenter.y =  SIMULATION_SPACE_SIZE * (1.0f - 2.0f * e.Y / panelOutput.Height);
+		}
+
+		private void panelOutput_MouseUp( object sender, MouseEventArgs e )
+		{
+			if ( (e.Button | MouseButtons.Left) != 0 )
+				m_bButtonDown = false;
 		}
 
 		private void checkBoxSimulate_CheckedChanged( object sender, EventArgs e )

@@ -36,16 +36,18 @@
 			this.label3 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlStepSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlOpacityCoefficient = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlRepulsionForce = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlRepulsionCoefficient = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.timerSimulation = new System.Windows.Forms.Timer(this.components);
+			this.floatTrackbarControlSizeFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label4 = new System.Windows.Forms.Label();
 			this.panelOutput = new TestSPH.OutputPanel();
 			this.panel1.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlAttractionFactor
 			// 
-			this.floatTrackbarControlAttractionFactor.Location = new System.Drawing.Point(90, 37);
+			this.floatTrackbarControlAttractionFactor.Location = new System.Drawing.Point(116, 37);
 			this.floatTrackbarControlAttractionFactor.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlAttractionFactor.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlAttractionFactor.Name = "floatTrackbarControlAttractionFactor";
@@ -55,7 +57,6 @@
 			this.floatTrackbarControlAttractionFactor.TabIndex = 1;
 			this.floatTrackbarControlAttractionFactor.Value = 100F;
 			this.floatTrackbarControlAttractionFactor.VisibleRangeMax = 200F;
-			this.floatTrackbarControlAttractionFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlCloudExtinction_ValueChanged);
 			// 
 			// panel1
 			// 
@@ -63,10 +64,12 @@
 			this.panel1.Controls.Add(this.buttonReset);
 			this.panel1.Controls.Add(this.checkBoxSimulate);
 			this.panel1.Controls.Add(this.label3);
+			this.panel1.Controls.Add(this.label4);
 			this.panel1.Controls.Add(this.label2);
 			this.panel1.Controls.Add(this.label1);
-			this.panel1.Controls.Add(this.floatTrackbarControlStepSize);
-			this.panel1.Controls.Add(this.floatTrackbarControlOpacityCoefficient);
+			this.panel1.Controls.Add(this.floatTrackbarControlRepulsionForce);
+			this.panel1.Controls.Add(this.floatTrackbarControlSizeFactor);
+			this.panel1.Controls.Add(this.floatTrackbarControlRepulsionCoefficient);
 			this.panel1.Controls.Add(this.floatTrackbarControlAttractionFactor);
 			this.panel1.Location = new System.Drawing.Point(6, 422);
 			this.panel1.Name = "panel1";
@@ -99,20 +102,20 @@
 			// label3
 			// 
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(3, 134);
+			this.label3.Location = new System.Drawing.Point(3, 63);
 			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(87, 13);
+			this.label3.Size = new System.Drawing.Size(84, 13);
 			this.label3.TabIndex = 2;
-			this.label3.Text = "Step Size (metre)";
+			this.label3.Text = "Repulsion Force";
 			// 
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(3, 108);
+			this.label2.Location = new System.Drawing.Point(3, 85);
 			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(96, 13);
+			this.label2.Size = new System.Drawing.Size(87, 13);
 			this.label2.TabIndex = 2;
-			this.label2.Text = "Opacity Coefficient";
+			this.label2.Text = "Repulsion Power";
 			// 
 			// label1
 			// 
@@ -123,37 +126,57 @@
 			this.label1.TabIndex = 2;
 			this.label1.Text = "Attraction Force";
 			// 
-			// floatTrackbarControlStepSize
+			// floatTrackbarControlRepulsionForce
 			// 
-			this.floatTrackbarControlStepSize.Location = new System.Drawing.Point(127, 131);
-			this.floatTrackbarControlStepSize.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlStepSize.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlStepSize.Name = "floatTrackbarControlStepSize";
-			this.floatTrackbarControlStepSize.RangeMax = 10000F;
-			this.floatTrackbarControlStepSize.RangeMin = 0F;
-			this.floatTrackbarControlStepSize.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlStepSize.TabIndex = 1;
-			this.floatTrackbarControlStepSize.Value = 10F;
-			this.floatTrackbarControlStepSize.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlStepSize_ValueChanged);
+			this.floatTrackbarControlRepulsionForce.Location = new System.Drawing.Point(116, 59);
+			this.floatTrackbarControlRepulsionForce.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRepulsionForce.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRepulsionForce.Name = "floatTrackbarControlRepulsionForce";
+			this.floatTrackbarControlRepulsionForce.RangeMax = 10000F;
+			this.floatTrackbarControlRepulsionForce.RangeMin = 0F;
+			this.floatTrackbarControlRepulsionForce.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlRepulsionForce.TabIndex = 1;
+			this.floatTrackbarControlRepulsionForce.Value = 100F;
+			this.floatTrackbarControlRepulsionForce.VisibleRangeMax = 200F;
 			// 
-			// floatTrackbarControlOpacityCoefficient
+			// floatTrackbarControlRepulsionCoefficient
 			// 
-			this.floatTrackbarControlOpacityCoefficient.Location = new System.Drawing.Point(127, 105);
-			this.floatTrackbarControlOpacityCoefficient.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlOpacityCoefficient.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlOpacityCoefficient.Name = "floatTrackbarControlOpacityCoefficient";
-			this.floatTrackbarControlOpacityCoefficient.RangeMax = 10F;
-			this.floatTrackbarControlOpacityCoefficient.RangeMin = 0F;
-			this.floatTrackbarControlOpacityCoefficient.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlOpacityCoefficient.TabIndex = 1;
-			this.floatTrackbarControlOpacityCoefficient.Value = 1F;
-			this.floatTrackbarControlOpacityCoefficient.VisibleRangeMax = 1F;
-			this.floatTrackbarControlOpacityCoefficient.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlOpacityCoefficient_ValueChanged);
+			this.floatTrackbarControlRepulsionCoefficient.Location = new System.Drawing.Point(116, 82);
+			this.floatTrackbarControlRepulsionCoefficient.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRepulsionCoefficient.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRepulsionCoefficient.Name = "floatTrackbarControlRepulsionCoefficient";
+			this.floatTrackbarControlRepulsionCoefficient.RangeMax = 100F;
+			this.floatTrackbarControlRepulsionCoefficient.RangeMin = 0F;
+			this.floatTrackbarControlRepulsionCoefficient.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlRepulsionCoefficient.TabIndex = 1;
+			this.floatTrackbarControlRepulsionCoefficient.Value = 3F;
 			// 
 			// timerSimulation
 			// 
 			this.timerSimulation.Enabled = true;
 			this.timerSimulation.Interval = 10;
+			// 
+			// floatTrackbarControlSizeFactor
+			// 
+			this.floatTrackbarControlSizeFactor.Location = new System.Drawing.Point(116, 126);
+			this.floatTrackbarControlSizeFactor.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlSizeFactor.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlSizeFactor.Name = "floatTrackbarControlSizeFactor";
+			this.floatTrackbarControlSizeFactor.RangeMax = 1000F;
+			this.floatTrackbarControlSizeFactor.RangeMin = 0F;
+			this.floatTrackbarControlSizeFactor.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlSizeFactor.TabIndex = 1;
+			this.floatTrackbarControlSizeFactor.Value = 100F;
+			this.floatTrackbarControlSizeFactor.VisibleRangeMax = 200F;
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(3, 129);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(60, 13);
+			this.label4.TabIndex = 2;
+			this.label4.Text = "Size Factor";
 			// 
 			// panelOutput
 			// 
@@ -162,6 +185,8 @@
 			this.panelOutput.Size = new System.Drawing.Size(400, 400);
 			this.panelOutput.TabIndex = 0;
 			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
+			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
+			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseUp);
 			// 
 			// Form1
 			// 
@@ -186,12 +211,14 @@
 		private System.Windows.Forms.Panel panel1;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Label label1;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlOpacityCoefficient;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRepulsionCoefficient;
 		private System.Windows.Forms.Label label3;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlStepSize;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRepulsionForce;
 		private System.Windows.Forms.CheckBox checkBoxSimulate;
 		private System.Windows.Forms.Button buttonReset;
 		private System.Windows.Forms.Timer timerSimulation;
+		private System.Windows.Forms.Label label4;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlSizeFactor;
 	}
 }
 

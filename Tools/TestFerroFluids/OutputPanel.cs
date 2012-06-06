@@ -49,17 +49,26 @@ namespace TestSPH
 					G.FillEllipse( Brushes.Red, X-2.5f, Y-2.5f, 5, 5 );
 				}
 
-				if ( _Particles != null )
+				try
 				{
-					for ( int i=0; i < _Particles.Length; i++ )
+					if ( _Particles != null )
 					{
-						Point2D	P = _Particles[i].P;
-						float	Size = Width * _Particles[i].Size * SizeNormalizer;
-						float	X = Width * 0.5f * (1.0f + P.x * SizeNormalizer);
-						float	Y = Height * 0.5f * (1.0f - P.y * SizeNormalizer);
-						G.DrawEllipse( Pens.Black, X - Size, Y - Size, 2.0f * Size, 2.0f * Size );
+						for ( int i=0; i < _Particles.Length; i++ )
+						{
+							Point2D	P = _Particles[i].P;
+							float	Size = Width * _Particles[i].Size * SizeNormalizer;
+							float	X = Width * 0.5f * (1.0f + P.x * SizeNormalizer);
+							float	Y = Height * 0.5f * (1.0f - P.y * SizeNormalizer);
+							G.DrawEllipse( Pens.Black, X - Size, Y - Size, 2.0f * Size, 2.0f * Size );
+						}
 					}
 				}
+				catch ( Exception )
+				{
+					// Notify of exception !
+					G.DrawRectangle( Pens.Red, 2, 2, Width-4, Height-4 );
+				}
+
 				G.DrawString( "Simulation Time = " + m_Time, Font, Brushes.Black, 0, 10 );
 			}
 			Invalidate();
