@@ -18,6 +18,7 @@ static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illumin
 
 // On old ATIs, the SampleLevel() function doesn't work so you should use the other implementation (although I'm pretty sure it will fuck everything up if you start sampling textures within conditional branches)
 //
+#define Tex2D( Texture, Sampler, UV )	Texture.Sample( Sampler, UV.xy )
 #if 1
 #define Tex2DLOD( Texture, Sampler, UV, MipLevel )	Texture.SampleLevel( Sampler, UV.xy, MipLevel )
 #define Tex3DLOD( Texture, Sampler, UVW, MipLevel )	Texture.SampleLevel( Sampler, UVW.xyz, MipLevel )

@@ -25,7 +25,8 @@ struct	PS_IN
 
 PS_IN	VS( VS_IN _In )
 {
-	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
+//	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
+	float4	WorldPosition = float4( _In.Position.x, _In.Position.y, -_In.Position.z, 1.0 );
 
 	PS_IN	Out;
 	Out.__Position = mul( WorldPosition, _World2Proj );

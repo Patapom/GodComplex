@@ -48,19 +48,19 @@ void	ConstantBuffer::UpdateData( const void* _pData )
 
 void	ConstantBuffer::Set( int _SlotIndex )
 {
-	m_Device.DXContext().VSSetConstantBuffers( 0, 1, &m_pBuffer );
-	m_Device.DXContext().GSSetConstantBuffers( 0, 1, &m_pBuffer );
-	m_Device.DXContext().PSSetConstantBuffers( 0, 1, &m_pBuffer );
+	m_Device.DXContext().VSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
+	m_Device.DXContext().GSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
+	m_Device.DXContext().PSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
 }
 void	ConstantBuffer::SetVS( int _SlotIndex )
 {
-	m_Device.DXContext().VSSetConstantBuffers( 0, 1, &m_pBuffer );
+	m_Device.DXContext().VSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
 }
 void	ConstantBuffer::SetGS( int _SlotIndex )
 {
-	m_Device.DXContext().GSSetConstantBuffers( 0, 1, &m_pBuffer );
+	m_Device.DXContext().GSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
 }
 void	ConstantBuffer::SetPS( int _SlotIndex )
 {
-	m_Device.DXContext().PSSetConstantBuffers( 0, 1, &m_pBuffer );
+	m_Device.DXContext().PSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
 }

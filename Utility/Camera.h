@@ -69,7 +69,7 @@ public:		// METHODS
 	Camera( Device& _Device );
 	~Camera();
 
-	void	Upload();
+	void	Upload( int _SlotIndex );
 
 	void	SetPerspective( float _FOV, float _AspectRatio, float _Near, float _Far );
 	void	LookAt( const NjFloat3& _Position, const NjFloat3& _Target, const NjFloat3& _Up );

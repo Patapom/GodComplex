@@ -93,6 +93,9 @@ Texture2D::~Texture2D()
 	m_CachedShaderViews.ForEach( ReleaseDirectXObject );
 	m_CachedTargetViews.ForEach( ReleaseDirectXObject );
 
+	if ( m_pCachedDepthStencilView != NULL )
+		m_pCachedDepthStencilView->Release();
+
 	m_pTexture->Release();
 	m_pTexture = NULL;
 }
@@ -161,6 +164,11 @@ ID3D11DepthStencilView*		Texture2D::GetDepthStencilView() const
 		D3D11_DEPTH_STENCIL_VIEW_DESC	Desc;
 		Desc.Format = m_Format.DirectXFormat();
 		Desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+#ifdef DIRECTX11
+		Desc.Flags = D3D11_DSV_READ_ONLY_DEPTH | D3D11_DSV_READ_ONLY_STENCIL;	// Change that if that poses a problem later...
+#else
+		Desc.Flags = 0;
+#endif
 		Desc.Texture2D.MipSlice = 0;
 
 		Check( m_Device.DXDevice().CreateDepthStencilView( m_pTexture, &Desc, &m_pCachedDepthStencilView ) );

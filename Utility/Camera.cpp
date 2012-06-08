@@ -47,10 +47,10 @@ void	Camera::LookAt( const NjFloat3& _Position, const NjFloat3& _Target, const N
 	UpdateCompositions();
 }
 
-void	Camera::Upload()
+void	Camera::Upload( int _SlotIndex )
 {
 	m_pCB->UpdateData();
-	m_pCB->Set( 0 );
+	m_pCB->Set( _SlotIndex );
 }
 
 void	Camera::UpdateCompositions()

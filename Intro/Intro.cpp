@@ -301,6 +301,7 @@ void	IntroExit()
 	delete gs_pCB_Test;
 
 	// Release materials
+ 	delete gs_pMatTestDisplay;
  	delete gs_pMatPostFinal;
 
 	// Release primitives
@@ -318,7 +319,8 @@ void	IntroExit()
 
 bool	IntroDo( float _Time, float _DeltaTime )
 {
-	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
+//	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
+	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.5f, 0.4f, 0.25f, 1.0f ) );
 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
 
 	//////////////////////////////////////////////////////////////////////////
@@ -326,7 +328,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	// TODO: Animate camera...
 
-	gs_pCamera->Upload();
+	gs_pCamera->Upload( 0 );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -338,6 +340,8 @@ bool	IntroDo( float _Time, float _DeltaTime )
 //		gs_Device.SetStates( *gs_Device.m_pRS_CullBack, *gs_Device.m_pDS_ReadWriteLess, *gs_Device.m_pBS_Disabled );
 
 		gs_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3::One );
+		gs_pCB_Object->UpdateData();
+		gs_pCB_Object->Set( 1 );
 
 		gs_pPrimSphereInternal->Render( *gs_pMatTestDisplay );
 
@@ -358,8 +362,10 @@ bool	IntroDo( float _Time, float _DeltaTime )
 		gs_pCB_Test->SetPS( 1 );
 
 		gs_pTexTestNoise->SetPS( 0 );
+		gs_pRTHDR->SetPS( 1 );
 
 		gs_pPrimQuad->Render( M );
+
 	USING_MATERIAL_END
 
 	// Present !
