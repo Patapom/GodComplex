@@ -1,21 +1,33 @@
 #include "../GodComplex.h"
 #include "ConstantBuffers.h"
 
-#define CHECK_MATERIAL( pMaterial, ErrorCode )	if ( pMaterial->HasErrors() ) return ErrorCode;
+#define CHECK_MATERIAL( pMaterial, ErrorCode )	if ( (pMaterial)->HasErrors() ) return ErrorCode;
+
+static Camera*		gs_pCamera = NULL;
 
 // Textures & Render targets
 static Texture2D*	gs_pRTHDR = NULL;
-static Texture2D*	gs_pTexTestNoise = NULL;
+//static Texture2D*	gs_pTexTestNoise = NULL;
 
 // Primitives
 static Primitive*	gs_pPrimQuad = NULL;		// Screen quad for post-processes
+static Primitive*	gs_pPrimSphereInternal;
+static Primitive*	gs_pPrimSphereExternal;
 
 // Materials
 static Material*	gs_pMatPostFinal = NULL;	// Final post-process rendering to the screen
+static Material*	gs_pMatTestDisplay = NULL;	// Some test material for primitive display
 
 // Constant buffers
-static CBTest			gs_CBTest;
-static ConstantBuffer*	gs_pCB_Test = NULL;
+static CB<CBTest>*		gs_pCB_Test = NULL;
+static CB<CBObject>*	gs_pCB_Object = NULL;
+
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+/*
 
 //float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[0] ); }	// Use F1 = closest distance
 //float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[1] ); }	// Use F2 = second closest distance
@@ -114,20 +126,35 @@ void	FillSplotch( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
 
 	P.Blend( Color, Color.w );
 }
+*/
+
+#include "Build2DTextures.cpp"
+
 
 int	IntroInit( IntroProgressDelegate& _Delegate )
 {
 	//////////////////////////////////////////////////////////////////////////
-	// Create render targets
+	// Create our camera
+	gs_pCamera = new Camera( gs_Device );
+
+	gs_pCamera->SetPerspective( HALFPI, float(RESX) / RESY, 0.01f, 1000.0f );
+	gs_pCamera->LookAt( NjFloat3( 0.0f, 0.0f, 10.0f ), NjFloat3( 0.0f, 0.0f, 0.0f ), NjFloat3::UnitY );
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Create render targets & textures
 	{
 		gs_pRTHDR = new Texture2D( gs_Device, RESX, RESY, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
+
+		Build2DTextures( _Delegate );
+/*
 
 		DrawUtils	Draw;
 		{
 			TextureBuilder	TB( 512, 512 );
 			Draw.SetupSurface( 512, 512, TB.GetMips()[0] );	// Let's draw into the first mip level !
 
-/* General tests for drawing tools and filtering
+/ * General tests for drawing tools and filtering
  			Noise	N( 1 );
 			N.Create2DWaveletNoiseTile( 6 );	// If you need to use wavelet noise...
 			TB.Fill( FillNoise, &N );
@@ -152,7 +179,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 // 			PipoTemp.CopyFrom( TB );
 // 			Generators::ComputeAO( PipoTemp, TB, 2.0f );
 
-//*/
+// * /
 
 // 			// Test the dirtyness generator
 //			Generators::Dirtyness( TB, N, 0.5f, 0.0f, 0.1f, 0.3f, 0.01f );
@@ -162,7 +189,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 //			Generators::Marble3D( TB, 16, 0.2f );
 
 
-//* Test advanced drawing
+// * Test advanced drawing
 
  			Noise	N( 1 );
 			// Draw scratches
@@ -219,10 +246,11 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 
 //			Filters::BrightnessContrastGamma( TB, 0.1f, 0.7f, 2.0f );
 //			Filters::Erode( TB, 3 );
-//*/
+// * /
 
 			gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.Convert( PixelFormatRGBA16F::DESCRIPTOR ) );
 		}
+*/
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -236,19 +264,31 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 			NjFloat4( +1.0f, -1.0f, 0.0f, 0.0f ),
 		};
 		gs_pPrimQuad = new Primitive( gs_Device, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, VertexFormatPt4::DESCRIPTOR );
+
+
+		{	// Build some spheres
+			GeometryBuilder::MapperSpherical	Mapper( 4.0f, 2.0f );
+
+			gs_pPrimSphereInternal = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
+			GeometryBuilder::BuildSphere( 20, 10, *gs_pPrimSphereInternal, Mapper );
+
+			gs_pPrimSphereExternal = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
+			GeometryBuilder::BuildSphere( 20, 10, *gs_pPrimSphereExternal, Mapper );
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create materials
 	{
-		gs_pMatPostFinal = CreateMaterial( IDR_SHADER_POST_FINAL, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" );
-		CHECK_MATERIAL( gs_pMatPostFinal, 1001 );
+		CHECK_MATERIAL( gs_pMatPostFinal = CreateMaterial( IDR_SHADER_POST_FINAL, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 1001 );
+		CHECK_MATERIAL( gs_pMatTestDisplay = CreateMaterial( IDR_SHADER_TEST_DISPLAY, VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 1002 );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create constant buffers
 	{
-		gs_pCB_Test = new ConstantBuffer( gs_Device, sizeof(gs_CBTest) );
+		gs_pCB_Test = new CB<CBTest>( gs_Device );
+		gs_pCB_Object = new CB<CBObject>( gs_Device );
 	}
 
 	return 0;
@@ -257,42 +297,65 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 void	IntroExit()
 {
 	// Release constant buffers
+	delete gs_pCB_Object;
 	delete gs_pCB_Test;
 
 	// Release materials
  	delete gs_pMatPostFinal;
 
 	// Release primitives
+	delete gs_pPrimSphereInternal;
+	delete gs_pPrimSphereExternal;
 	delete gs_pPrimQuad;
 
 	// Release render targets & textures
-	delete gs_pTexTestNoise;
+	Delete2DTextures();
 	delete gs_pRTHDR;
+
+	// Release the camera
+	delete gs_pCamera;
 }
 
 bool	IntroDo( float _Time, float _DeltaTime )
 {
 	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
+	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Update the camera settings and upload its data to the shaders
+
+	// TODO: Animate camera...
+
+	gs_pCamera->Upload();
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Render some shit to the HDR buffer
+	gs_Device.SetRenderTarget( *gs_pRTHDR, &gs_Device.DefaultDepthStencil() );
+	USING_MATERIAL_START( *gs_pMatTestDisplay )
+
+		gs_Device.SetStates( *gs_Device.m_pRS_CullNone, *gs_Device.m_pDS_Disabled, *gs_Device.m_pBS_Disabled );
+//		gs_Device.SetStates( *gs_Device.m_pRS_CullBack, *gs_Device.m_pDS_ReadWriteLess, *gs_Device.m_pBS_Disabled );
+
+		gs_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3::One );
+
+		gs_pPrimSphereInternal->Render( *gs_pMatTestDisplay );
+
+	USING_MATERIAL_END
 
 	// Setup default states
 	gs_Device.SetStates( *gs_Device.m_pRS_CullNone, *gs_Device.m_pDS_Disabled, *gs_Device.m_pBS_Disabled );
-
-// 	{	// Render some shit to the HDR buffer
-// 		gs_Device.SetRenderTarget( *gs_pRTHDR );
-// 
-// 	}
 
 	// Render to screen
 	USING_MATERIAL_START( *gs_pMatPostFinal )
 //		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), &gs_Device.DefaultDepthStencil() );
 		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget() );
 
-		gs_CBTest.LOD = 10.0f * (1.0f - fabs( sinf( _Time ) ));
+		gs_pCB_Test->m.LOD = 10.0f * (1.0f - fabs( sinf( _Time ) ));
+//gs_CBTest.LOD = 0.0f;
 
-gs_CBTest.LOD = 0.0f;
-
-		gs_pCB_Test->UpdateData( &gs_CBTest );
-		gs_pCB_Test->SetPS( 0 );
+		gs_pCB_Test->UpdateData();
+		gs_pCB_Test->SetPS( 1 );
 
 		gs_pTexTestNoise->SetPS( 0 );
 

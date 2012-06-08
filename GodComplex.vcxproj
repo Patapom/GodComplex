@@ -139,6 +139,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Procedural\Filters\Filters.h" />
     <ClInclude Include="Procedural\Generators\Generators.h" />
     <ClInclude Include="Procedural\Generators\Noise.h" />
+    <ClInclude Include="Procedural\GeometryBuilder.h" />
     <ClInclude Include="Procedural\TextureBuilder.h" />
     <ClInclude Include="RendererD3D11\Components\Component.h" />
     <ClInclude Include="RendererD3D11\Components\ConstantBuffer.h">
@@ -160,6 +161,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="resource.h" />
     <ClInclude Include="Sound\libv2.h" />
     <ClInclude Include="Sound\v2mplayer.h" />
+    <ClInclude Include="Utility\Camera.h" />
     <ClInclude Include="Utility\Events.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClInclude>
@@ -169,6 +171,10 @@ MinifyAll.cmd</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
+    <ClCompile Include="Intro\Build2DTextures.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Intro\Intro.cpp" />
     <ClCompile Include="NuajAPI\API\Hashtable.cpp" />
     <ClCompile Include="NuajAPI\Math\Math.cpp" />
@@ -176,6 +182,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Procedural\Filters\Filters.cpp" />
     <ClCompile Include="Procedural\Generators\Generators.cpp" />
     <ClCompile Include="Procedural\Generators\Noise.cpp" />
+    <ClCompile Include="Procedural\GeometryBuilder.cpp" />
     <ClCompile Include="Procedural\TextureBuilder.cpp" />
     <ClCompile Include="RendererD3D11\Components\Component.cpp" />
     <ClCompile Include="RendererD3D11\Components\ConstantBuffer.cpp">
@@ -193,6 +200,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="RendererD3D11\Structures\PixelFormats.cpp" />
     <ClCompile Include="RendererD3D11\Structures\VertexFormats.cpp" />
     <ClCompile Include="Sound\v2mplayer.cpp" />
+    <ClCompile Include="Utility\Camera.cpp" />
     <ClCompile Include="Utility\Memory.cpp" />
     <ClCompile Include="Utility\Random.cpp" />
     <ClCompile Include="Utility\Resources.cpp" />
@@ -211,6 +219,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\PostFinal.fx">
       <FileType>Document</FileType>
     </None>
+    <None Include="Resources\Shaders\TestDisplay.fx" />
     <None Include="Tools\GodComplex.kkm" />
   </ItemGroup>
   <ItemGroup>

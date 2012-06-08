@@ -36,6 +36,7 @@
 #include "Utility/Memory.h"
 #include "Utility/Random.h"
 #include "Utility/Resources.h"
+#include "Utility/Camera.h"
 
 // DirectX Renderer
 #include "RendererD3D11/Device.h"
@@ -50,12 +51,15 @@
 #include "Sound/v2mplayer.h"
 #include "Sound/libv2.h"
 
-// Helpers
+// 2D Procedural
 #include "Procedural/TextureBuilder.h"
 #include "Procedural/Generators/Noise.h"
 #include "Procedural/Generators/Generators.h"
 #include "Procedural/Filters/Filters.h"
 #include "Procedural/DrawUtils/Draw.h"
+
+// 3D Procedural
+#include "Procedural/GeometryBuilder.h"
 
 
 extern const NjFloat4	LUMINANCE;	// D65 Illuminant with observer at 2°

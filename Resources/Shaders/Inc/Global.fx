@@ -34,3 +34,20 @@ SamplerState LinearWrap		: register( s2 );
 SamplerState PointWrap		: register( s3 );
 SamplerState LinearMirror	: register( s4 );
 SamplerState PointMirror	: register( s5 );
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Constants
+
+//[
+cbuffer	cbCamera	: register( b0 )
+{
+	float4		_CameraParams;
+	float4x4	_Camera2World;
+	float4x4	_World2Camera;
+	float4x4	_Camera2Proj;
+	float4x4	_ProjCamera;
+	float4x4	_World2Proj;
+	float4x4	_Proj2World;
+};
+//]

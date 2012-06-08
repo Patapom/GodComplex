@@ -112,6 +112,9 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 		Desc.StencilWriteMask = 0;
 
 		m_pDS_Disabled = new DepthStencilState( *this, Desc ); m_StatesCount++;
+
+		Desc.DepthEnable = true;
+		m_pDS_ReadWriteLess = new DepthStencilState( *this, Desc ); m_StatesCount++;
 	}
 	{
 		D3D11_BLEND_DESC	Desc;
@@ -189,7 +192,12 @@ void	Device::ClearRenderTarget( const Texture2D& _Target, const NjFloat4& _Color
 	m_pDeviceContext->ClearRenderTargetView( _Target.GetTargetView( 0, 0, 0 ), &_Color.x );
 }
 
-void	Device::SetRenderTarget( const Texture2D& _Target, Texture2D* _pDepthStencil, D3D11_VIEWPORT* _pViewport )
+void	Device::ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil )
+{
+	m_pDeviceContext->ClearDepthStencilView( _DepthStencil.GetDepthStencilView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, _Z, _Stencil );
+}
+
+void	Device::SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil, D3D11_VIEWPORT* _pViewport )
 {
 	ID3D11RenderTargetView*	pTargetView = _Target.GetTargetView( 0, 0, 0 );
 	ID3D11DepthStencilView*	pDepthStencilView = _pDepthStencil != NULL ? _pDepthStencil->GetDepthStencilView() : NULL;

@@ -221,8 +221,13 @@ namespace TestFerrofluids
 				NewPi = m_Particles[1][i].P;	// This means we'll need an extra RT since we cannot read from the writing RT !
 												// NOTE: NewPi also is OldPi in this case (same read/write buffer containing P(t-Dt) (READ) and that will contain P(t+Dt) AFTER WRITING)
 
-				NewPi.x = 2.0f * Pi.x - NewPi.x + Force.x;
-				NewPi.y = 2.0f * Pi.y - NewPi.y + Force.y;
+				float	Vx = Pi.x - NewPi.x;
+				float	Vy = Pi.y - NewPi.y;
+
+// 				NewPi.x = 2.0f * Pi.x - NewPi.x + Force.x;
+// 				NewPi.y = 2.0f * Pi.y - NewPi.y + Force.y;
+				NewPi.x = Pi.x + 0.5f * Vx + Force.x;
+				NewPi.y = Pi.y - 0.5f * Vy + Force.y;
 			}
 
 			// Swap

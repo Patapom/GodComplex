@@ -50,14 +50,20 @@
     <Filter Include="Procedural">
       <UniqueIdentifier>{eeae6a5b-f4c7-4414-ba3c-c26c8ecd6474}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Procedural\DrawUtils">
+    <Filter Include="Procedural\2D">
+      <UniqueIdentifier>{facb27c7-6ee9-47ad-991c-25c5b0f79bbf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Procedural\2D\DrawUtils">
       <UniqueIdentifier>{2061da43-c27f-4242-881f-975864950a0d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Procedural\Filters">
+    <Filter Include="Procedural\2D\Filters">
       <UniqueIdentifier>{039a5b8b-67b2-4767-b12e-d42053849818}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Procedural\Generators">
+    <Filter Include="Procedural\2D\Generators">
       <UniqueIdentifier>{b92acf28-60c0-4b5b-b8fd-a42c0f57b152}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Procedural\3D">
+      <UniqueIdentifier>{487e73e2-1719-4838-bad3-94def321907f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -137,23 +143,29 @@
     <ClInclude Include="NuajAPI\API\ASMHelpers.h">
       <Filter>NuajAPI\API</Filter>
     </ClInclude>
-    <ClInclude Include="Procedural\TextureBuilder.h">
-      <Filter>Procedural</Filter>
-    </ClInclude>
     <ClInclude Include="Intro\ConstantBuffers.h">
       <Filter>Intro</Filter>
     </ClInclude>
     <ClInclude Include="Procedural\DrawUtils\Draw.h">
-      <Filter>Procedural\DrawUtils</Filter>
+      <Filter>Procedural\2D\DrawUtils</Filter>
     </ClInclude>
     <ClInclude Include="Procedural\Generators\Noise.h">
-      <Filter>Procedural\Generators</Filter>
+      <Filter>Procedural\2D\Generators</Filter>
     </ClInclude>
     <ClInclude Include="Procedural\Filters\Filters.h">
-      <Filter>Procedural\Filters</Filter>
+      <Filter>Procedural\2D\Filters</Filter>
     </ClInclude>
     <ClInclude Include="Procedural\Generators\Generators.h">
-      <Filter>Procedural\Generators</Filter>
+      <Filter>Procedural\2D\Generators</Filter>
+    </ClInclude>
+    <ClInclude Include="Procedural\TextureBuilder.h">
+      <Filter>Procedural\2D</Filter>
+    </ClInclude>
+    <ClInclude Include="Procedural\GeometryBuilder.h">
+      <Filter>Procedural\3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\Camera.h">
+      <Filter>Utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -212,20 +224,29 @@
     <ClCompile Include="NuajAPI\API\Hashtable.cpp">
       <Filter>NuajAPI\API</Filter>
     </ClCompile>
-    <ClCompile Include="Procedural\TextureBuilder.cpp">
-      <Filter>Procedural</Filter>
-    </ClCompile>
     <ClCompile Include="Procedural\DrawUtils\Draw.cpp">
-      <Filter>Procedural\DrawUtils</Filter>
+      <Filter>Procedural\2D\DrawUtils</Filter>
     </ClCompile>
     <ClCompile Include="Procedural\Generators\Noise.cpp">
-      <Filter>Procedural\Generators</Filter>
+      <Filter>Procedural\2D\Generators</Filter>
     </ClCompile>
     <ClCompile Include="Procedural\Filters\Filters.cpp">
-      <Filter>Procedural\Filters</Filter>
+      <Filter>Procedural\2D\Filters</Filter>
     </ClCompile>
     <ClCompile Include="Procedural\Generators\Generators.cpp">
-      <Filter>Procedural\Generators</Filter>
+      <Filter>Procedural\2D\Generators</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\TextureBuilder.cpp">
+      <Filter>Procedural\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\GeometryBuilder.cpp">
+      <Filter>Procedural\3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\Camera.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Build2DTextures.cpp">
+      <Filter>Intro</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -251,6 +272,9 @@
     </None>
     <None Include="LogExeSizes.txt" />
     <None Include="Tools\GodComplex.kkm" />
+    <None Include="Resources\Shaders\TestDisplay.fx">
+      <Filter>Resources\Shaders\DEBUG</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

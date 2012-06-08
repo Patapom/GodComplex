@@ -11,6 +11,7 @@
 #define TWOPI				6.283185307179586476925286766559f
 #define HALFPI				1.5707963267948966192313216916398f
 #define INVPI				0.31830988618379067153776752674503f
+#define INV2PI				0.15915494309189533576888376337251f
 #define RAD2DEG( a )		(57.295779513082320876798154814105f * a)
 #define DEG2RAD( a )		(0.01745329251994329576923690768489f * a)
 #define MIN( a, b )			((a) < (b) ? (a) : (b))
@@ -50,6 +51,7 @@ public:
 	NjFloat2	operator*( float v ) const				{ return NjFloat2( x * v, y * v ); }
 	NjFloat2	operator/( float v ) const				{ return NjFloat2( x / v, y / v ); }
 	float		operator|( const NjFloat2& v ) const	{ return x*v.x + y*v.y; }
+	float		operator^( const NjFloat2& v ) const	{ return x*v.y - y*v.x; }	// Returns the Z component of the orthogonal vector
 
 	static const NjFloat2	Zero;
 	static const NjFloat2	One;
@@ -90,7 +92,7 @@ public:
 	float		operator|( const NjFloat3& v ) const	{ return x*v.x + y*v.y + z*v.z; }
 	NjFloat3	operator-() const						{ return NjFloat3( -x, -y, -z ); }
 				operator NjFloat2() const				{ return NjFloat2( x, y ); }
-	NjFloat3	operator^( const NjFloat3& v ) const	{ return NjFloat3( y * v.z - v.y * z, x * v.z - v.x * z, x * v.y - v.x * y ); }
+	NjFloat3	operator^( const NjFloat3& v ) const	{ return NjFloat3( y * v.z - v.y * z, z * v.x - v.z * x, x * v.y - v.x * y ); }
 
 	static const NjFloat3	Zero;
 	static const NjFloat3	One;
@@ -134,6 +136,8 @@ public:
 	NjFloat4	operator/( float v ) const				{ return NjFloat4( x / v, y / v, z / v, w / v ); }
 	float		operator|( const NjFloat4& v ) const	{ return x*v.x + y*v.y + z*v.z + w*v.w; }
 
+	static NjFloat4	QuatFromAngleAxis( float _Angle, const NjFloat3& _Axis );
+
 	static const NjFloat4	Zero;
 	static const NjFloat4	One;
 	static const NjFloat4	UnitX;
@@ -161,6 +165,13 @@ public:
 
 //	NjFloat4		operator*( const NjFloat4& b ) const;
 	NjFloat4x4		operator*( const NjFloat4x4& b ) const;
+
+	static NjFloat4x4	FromAngleAxis( float _Angle, const NjFloat3& _Axis )	{ return FromQuat( NjFloat4::QuatFromAngleAxis( _Angle, _Axis ) ); }
+	static NjFloat4x4	FromQuat( const NjFloat4& _Quat );
+	static NjFloat4x4	PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S );
+
+	static const NjFloat4x4	Zero;
+	static const NjFloat4x4	Identity;
 };
 
 NjFloat4   operator*( const NjFloat4& a, const NjFloat4x4& b );

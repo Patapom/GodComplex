@@ -30,3 +30,15 @@ public:	 // METHODS
 	void		SetPS( int _SlotIndex );
 };
 
+template<typename T> class	CB : public ConstantBuffer
+{
+public:		// FIELDS
+
+	T		m;
+
+
+public:		// METHODS
+
+	CB( Device& _Device ) : ConstantBuffer( _Device, sizeof(T) )	{}
+	void		UpdateData()	{ ConstantBuffer::UpdateData( &m ); }
+};

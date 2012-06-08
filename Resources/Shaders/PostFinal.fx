@@ -3,7 +3,7 @@
 Texture2D	_TexNoise	: register(t0);
 
 //[
-cbuffer	cbTextureLOD	: register( b0 )
+cbuffer	cbTextureLOD	: register( b1 )
 {
 	float	_LOD;
 };

@@ -37,6 +37,7 @@ public:
 	RasterizerState*		m_pRS_CullNone;
 
 	DepthStencilState*		m_pDS_Disabled;
+	DepthStencilState*		m_pDS_ReadWriteLess;
 
 	BlendState*				m_pBS_Disabled;
 
@@ -67,7 +68,8 @@ public:	 // METHODS
 
 	// Helpers
 	void	ClearRenderTarget( const Texture2D& _Target, const NjFloat4& _Color );
-	void	SetRenderTarget( const Texture2D& _Target, Texture2D* _pDepthStencil=NULL, D3D11_VIEWPORT* _pViewport=NULL );
+	void	ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil );
+	void	SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil=NULL, D3D11_VIEWPORT* _pViewport=NULL );
 	void	SetStates( RasterizerState& _RasterizerState, DepthStencilState& _DepthStencilState, BlendState& _BlendState );
 
 private:

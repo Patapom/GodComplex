@@ -18,6 +18,19 @@ const NjFloat4	NjFloat4::UnitY( 0, 1, 0, 0 );
 const NjFloat4	NjFloat4::UnitZ( 0, 0, 1, 0 );
 const NjFloat4	NjFloat4::UnitW( 0, 0, 1, 1 );
 
+const NjFloat4x4	NjFloat4x4::Zero = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+const NjFloat4x4	NjFloat4x4::Identity = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+
+NjFloat4	NjFloat4::QuatFromAngleAxis( float _Angle, const NjFloat3& _Axis )
+{
+	_Angle *= 0.5f;
+
+	float	c = cosf(_Angle);
+	float	s = sinf(_Angle);
+
+	return NjFloat4( s * _Axis, c );
+}
+
 NjFloat4x4  NjFloat4x4::Inverse() const
 {
 	float	Det = Determinant();
@@ -77,6 +90,71 @@ NjFloat4   operator*( const NjFloat4& a, const NjFloat4x4& b )
 }
 
 
+NjFloat4x4	NjFloat4x4::FromQuat( const NjFloat4& _Quat )
+{
+	NjFloat4	q = _Quat;
+	q.Normalize();
+
+	float	xs = 2.0f * q.x;
+	float	ys = 2.0f * q.y;
+	float	zs = 2.0f * q.z;
+
+	float	wx, wy, wz, xx, xy, xz, yy, yz, zz;
+	wx = q.w * xs;	wy = q.w * ys;	wz = q.w * zs;
+	xx = q.x * xs;	xy = q.x * ys;	xz = q.x * zs;
+	yy = q.y * ys;	yz = q.y * zs;	zz = q.z * zs;
+
+	NjFloat4x4	Result;
+	Result.m[4*0+0] = 1.0f - yy - zz;
+	Result.m[4*0+1] =        xy + wz;
+	Result.m[4*0+2] =        xz - wy;
+	Result.m[4*0+3] = 0.0f;
+
+	Result.m[4*1+0] =        xy - wz;
+	Result.m[4*1+1] = 1.0f - xx - zz;
+	Result.m[4*1+2] =        yz + wx;
+	Result.m[4*1+3] = 0.0f;
+
+	Result.m[4*2+0] =        xz + wy;
+	Result.m[4*2+1] =        yz - wx;
+	Result.m[4*2+2] = 1.0f - xx - yy;
+	Result.m[4*2+3] = 0.0f;
+
+	Result.m[4*3+0] = 0.0f;
+	Result.m[4*3+1] = 0.0f;
+	Result.m[4*3+2] = 0.0f;
+	Result.m[4*3+3] = 1.0f;
+
+	return	Result;
+}
+
+NjFloat4x4	NjFloat4x4::PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S )
+{
+	NjFloat4x4	Result = NjFloat4x4::FromQuat( R );
+
+	Result.m[4*0+0] *= S.x;
+	Result.m[4*0+1] *= S.x;
+	Result.m[4*0+2] *= S.x;
+	Result.m[4*0+3] *= S.x;
+	Result.m[4*1+0] *= S.y;
+	Result.m[4*1+1] *= S.y;
+	Result.m[4*1+2] *= S.y;
+	Result.m[4*1+3] *= S.y;
+	Result.m[4*2+0] *= S.z;
+	Result.m[4*2+1] *= S.z;
+	Result.m[4*2+2] *= S.z;
+	Result.m[4*2+3] *= S.z;
+
+	Result.m[4*3+0] = P.x;
+	Result.m[4*3+1] = P.y;
+	Result.m[4*3+2] = P.z;
+
+	return Result;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Half floats encoding
 #define F16_EXPONENT_BITS 0x1F
 #define F16_EXPONENT_SHIFT 10
 #define F16_EXPONENT_BIAS 15
