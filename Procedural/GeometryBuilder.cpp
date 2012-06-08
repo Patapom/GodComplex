@@ -142,18 +142,18 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 		int	CurrentBandOffset = j * (BandLength+1);
 		int	NextBandOffset = (j+1) * (BandLength+1);
 
-		for ( int i=0; i <= BandLength; i++, pIndex+=IStride )
+		for ( int i=0; i <= BandLength; i++ )
 		{
-			_Writer.WriteIndex( pIndex, CurrentBandOffset + i );	IndicesCount--;
-			_Writer.WriteIndex( pIndex, NextBandOffset + i );		IndicesCount--;
+			_Writer.WriteIndex( pIndex, CurrentBandOffset + i );	pIndex+=IStride;	IndicesCount--;
+			_Writer.WriteIndex( pIndex, NextBandOffset + i );		pIndex+=IStride;	IndicesCount--;
 		}
 
 // 		// Write last looping indices to close that band
-// 		_Writer.WriteIndex( pIndex, CurrentBandOffset + 0 );	IndicesCount--;
-// 		_Writer.WriteIndex( pIndex, NextBandOffset + 0 );		IndicesCount--;
+// 		_Writer.WriteIndex( pIndex, CurrentBandOffset + 0 );	pIndex+=IStride;	IndicesCount--;
+// 		_Writer.WriteIndex( pIndex, NextBandOffset + 0 );		pIndex+=IStride;	IndicesCount--;
 
 		// Write a last degenerate index so we smoothly transition to next band
-		_Writer.WriteIndex( pIndex, NextBandOffset + 0 );		IndicesCount--;
+		_Writer.WriteIndex( pIndex, NextBandOffset + BandLength );		pIndex+=IStride;	IndicesCount--;
 	}
 	ASSERT( IndicesCount == 0, "Wrong contruction !" );
 

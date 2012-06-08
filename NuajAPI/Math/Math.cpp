@@ -66,15 +66,15 @@ float	   NjFloat4x4::Determinant() const
 
 float	   NjFloat4x4::CoFactor( int x, int y ) const
 {
-	static int  NextIndex[7] = { 1, 2, 3, 0, 1, 2, 3 };
+	static int  IndexLoop[7] = { 0, 1, 2, 3, 0, 1, 2 };
 
-	return	((	m[4*NextIndex[x+1]+NextIndex[y+1]]*m[4*NextIndex[x+2]+NextIndex[y+2]]*m[4*NextIndex[x+3]+NextIndex[y+3]] +
-				m[4*NextIndex[x+1]+NextIndex[y+2]]*m[4*NextIndex[x+2]+NextIndex[y+3]]*m[4*NextIndex[x+3]+NextIndex[y+1]] +
-				m[4*NextIndex[x+1]+NextIndex[y+3]]*m[4*NextIndex[x+2]+NextIndex[y+1]]*m[4*NextIndex[x+3]+NextIndex[y+2]] )
+	return	((	m[4*IndexLoop[x+1]+IndexLoop[y+1]]*m[4*IndexLoop[x+2]+IndexLoop[y+2]]*m[4*IndexLoop[x+3]+IndexLoop[y+3]] +
+				m[4*IndexLoop[x+1]+IndexLoop[y+2]]*m[4*IndexLoop[x+2]+IndexLoop[y+3]]*m[4*IndexLoop[x+3]+IndexLoop[y+1]] +
+				m[4*IndexLoop[x+1]+IndexLoop[y+3]]*m[4*IndexLoop[x+2]+IndexLoop[y+1]]*m[4*IndexLoop[x+3]+IndexLoop[y+2]] )
 
-			-(	m[4*NextIndex[x+3]+NextIndex[y+1]]*m[4*NextIndex[x+2]+NextIndex[y+2]]*m[4*NextIndex[x+1]+NextIndex[y+3]] +
-				m[4*NextIndex[x+3]+NextIndex[y+2]]*m[4*NextIndex[x+2]+NextIndex[y+3]]*m[4*NextIndex[x+1]+NextIndex[y+1]] +
-				m[4*NextIndex[x+3]+NextIndex[y+3]]*m[4*NextIndex[x+2]+NextIndex[y+1]]*m[4*NextIndex[x+1]+NextIndex[y+2]] ))
+			-(	m[4*IndexLoop[x+3]+IndexLoop[y+1]]*m[4*IndexLoop[x+2]+IndexLoop[y+2]]*m[4*IndexLoop[x+1]+IndexLoop[y+3]] +
+				m[4*IndexLoop[x+3]+IndexLoop[y+2]]*m[4*IndexLoop[x+2]+IndexLoop[y+3]]*m[4*IndexLoop[x+1]+IndexLoop[y+1]] +
+				m[4*IndexLoop[x+3]+IndexLoop[y+3]]*m[4*IndexLoop[x+2]+IndexLoop[y+1]]*m[4*IndexLoop[x+1]+IndexLoop[y+2]] ))
 			* (((x + y) & 1) == 1 ? -1.0f : +1.0f);
 }
 

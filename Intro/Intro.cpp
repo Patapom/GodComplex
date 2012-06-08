@@ -137,7 +137,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	// Create our camera
 	gs_pCamera = new Camera( gs_Device );
 
-	gs_pCamera->SetPerspective( HALFPI, float(RESX) / RESY, 0.01f, 1000.0f );
+	gs_pCamera->SetPerspective( HALFPI, float(RESX) / RESY, 0.01f, 5000.0f );
 	gs_pCamera->LookAt( NjFloat3( 0.0f, 0.0f, 10.0f ), NjFloat3( 0.0f, 0.0f, 0.0f ), NjFloat3::UnitY );
 
 

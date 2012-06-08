@@ -17,12 +17,18 @@ void	Camera::SetPerspective( float _FOV, float _AspectRatio, float _Near, float 
 
 	m_pCB->m.Params.Set( W, H, _Near, _Far );
 
+	float	Q =  _Far / (_Far - _Near);
+
 	m_pCB->m.Camera2Proj.SetRow( 0, NjFloat4( 1.0f / W, 0.0f, 0.0f, 0.0f ) );
 	m_pCB->m.Camera2Proj.SetRow( 1, NjFloat4( 0.0f, 1.0f / H, 0.0f, 0.0f ) );
-	m_pCB->m.Camera2Proj.SetRow( 2, NjFloat4( 0.0f, 0.0f, _Far / (_Far - _Near), 1.0f ) );
-	m_pCB->m.Camera2Proj.SetRow( 3, NjFloat4( 0.0f, 0.0f, _Near*_Far / (_Near - _Far), 0.0f ) );
+	m_pCB->m.Camera2Proj.SetRow( 2, NjFloat4( 0.0f, 0.0f, Q, 1.0f ) );
+	m_pCB->m.Camera2Proj.SetRow( 3, NjFloat4( 0.0f, 0.0f, -_Near * Q, 0.0f ) );
 
 	m_pCB->m.Proj2Camera = m_pCB->m.Camera2Proj.Inverse();
+
+// IDENTITY CHECK
+//NjFloat4x4	I = m_pCB->m.Proj2Camera * m_pCB->m.Camera2Proj;
+// IDENTITY CHECK
 
 	UpdateCompositions();
 }
@@ -44,6 +50,10 @@ void	Camera::LookAt( const NjFloat3& _Position, const NjFloat3& _Target, const N
 
 	m_pCB->m.World2Camera = m_pCB->m.Camera2World.Inverse();
 
+// IDENTITY CHECK
+//NjFloat4x4	I = m_pCB->m.World2Camera * m_pCB->m.Camera2World;
+// IDENTITY CHECK
+
 	UpdateCompositions();
 }
 
@@ -58,7 +68,16 @@ void	Camera::UpdateCompositions()
 	m_pCB->m.World2Proj = m_pCB->m.World2Camera * m_pCB->m.Camera2Proj;
 	m_pCB->m.Proj2World = m_pCB->m.World2Proj.Inverse();
 
-// CHECK
+// CHECKS
 //m_pCB->m.Proj2World = m_pCB->m.Proj2Camera * m_pCB->m.Camera2World;
-// CHECK
+
+NjFloat4	T2 = NjFloat4( 0, 0, 0, 1 ) * m_pCB->m.World2Camera;
+
+NjFloat4	T0 = NjFloat4( 0, 0, 9.95f, 1 ) * m_pCB->m.World2Proj;
+T0 = T0 / T0.w;
+
+NjFloat4	T1 = NjFloat4( 5, 5, 0, 1 ) * m_pCB->m.World2Proj;
+T1 = T1 / T1.w;
+
+// CHECKS
 }
