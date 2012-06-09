@@ -38,10 +38,15 @@ public:		// NESTED TYPES
 		virtual void	Finalize( void* _pVertices, void* _pIndices ) = 0;
 	};
 
+	typedef void	(*TweakVertexDelegate)( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tangent, NjFloat2& _UV, void* _pUserData );
 
 public:		// METHODS
 
 	// Builds a uniformly subdivided sphere
-	static void		BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions, IGeometryWriter& _Writer, const MapperBase& _Mapper );
+	static void		BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
 
+
+private:
+
+	static void		WriteVertex( IGeometryWriter& _Writer, void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
 };

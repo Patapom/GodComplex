@@ -30,6 +30,13 @@ static CB<CBObject>*	gs_pCB_Object = NULL;
 
 #include "Build2DTextures.cpp"
 
+void	TweakSphere( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tangent, NjFloat2& _UV, void* _pUserData )
+{
+	Noise&	N = *((Noise*) _pUserData);
+
+	_Position = _Position + _Normal * 0.2f * N.Perlin( 0.01f * _Position );	// Add perlin
+}
+
 int	IntroInit( IntroProgressDelegate& _Delegate )
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -62,8 +69,10 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 		{	// Build some spheres
 			GeometryBuilder::MapperSpherical	Mapper( 4.0f, 2.0f );
 
+			Noise	N( 1 );
+
 			gs_pPrimSphereInternal = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
-			GeometryBuilder::BuildSphere( 20, 10, *gs_pPrimSphereInternal, Mapper );
+			GeometryBuilder::BuildSphere( 20, 10, *gs_pPrimSphereInternal, Mapper, TweakSphere, &N );
 
 			gs_pPrimSphereExternal = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
 			GeometryBuilder::BuildSphere( 20, 10, *gs_pPrimSphereExternal, Mapper );
@@ -120,7 +129,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	// Update the camera settings and upload its data to the shaders
 
 	// TODO: Animate camera...
-	gs_pCamera->LookAt( NjFloat3( 0.0f, 0.0f, 5.0f ), NjFloat3( 0.0f, 0.0f, 0.0f ), NjFloat3::UnitY );
+	gs_pCamera->LookAt( NjFloat3( 0.0f, 0.0f, 2.0f ), NjFloat3( 0.0f, 0.0f, 0.0f ), NjFloat3::UnitY );
 
 	gs_pCamera->Upload( 0 );
 
@@ -132,7 +141,10 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 		gs_Device.SetStates( *gs_Device.m_pRS_CullBack, *gs_Device.m_pDS_ReadWriteLess, *gs_Device.m_pBS_Disabled );
 
-		gs_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3::One );
+		static float	ObjectAngle = 0.0f;
+		ObjectAngle += _TV(0.5f) * _DeltaTime;
+
+		gs_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( ObjectAngle, NjFloat3::UnitY ), NjFloat3::One );
 		gs_pCB_Object->UpdateData();
 		gs_pCB_Object->Set( 1 );
 
@@ -147,7 +159,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	USING_MATERIAL_START( *gs_pMatPostFinal )
 		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget() );
 
-		gs_pCB_Test->m.LOD = _TV(10.0f) * (1.0f - fabs( sinf( _TV(1.0f) * _Time ) ));
+		gs_pCB_Test->m.LOD = 10.0f * (1.0f - fabs( sinf( _TV(1.0f) * _Time ) ));
 //gs_CBTest.LOD = 0.0f;
 
 		gs_pCB_Test->UpdateData();

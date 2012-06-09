@@ -1,5 +1,7 @@
 #include "../GodComplex.h"
 
+#define WRITE( pVertex, P, N, T, UV )	WriteVertex( _Writer, pVertex, P, N, T, UV, _TweakVertex, _pUserData )
+
 
 //////////////////////////////////////////////////////////////////////////
 // Spherical mapping
@@ -34,7 +36,7 @@ void	GeometryBuilder::MapperSpherical::Map( const NjFloat3& _Position, const NjF
 
 //////////////////////////////////////////////////////////////////////////
 //
-void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions, IGeometryWriter& _Writer, const MapperBase& _Mapper )
+void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
 {
 	int	BandLength = _PhiSubdivisions;
 	int	VerticesCount = (BandLength+1) * (1 + _ThetaSubdivisions + 1);	// 1 band at the top and bottom of the sphere + as many subdivisions as required
@@ -79,7 +81,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			_Mapper.Map( Position, Normal, Tangent, UV );
 
 			// Write vertex
-			_Writer.WriteVertex( pVertex, NjFloat3::UnitY, NjFloat3::UnitY, Tangent, UV );
+			WRITE( pVertex, NjFloat3::UnitY, NjFloat3::UnitY, Tangent, UV );
 		}
 	}
 
@@ -105,7 +107,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			_Mapper.Map( Position, Normal, Tangent, UV );
 
 			// Write vertex
-			_Writer.WriteVertex( pVertex, Position, Normal, Tangent, UV );
+			WRITE( pVertex, Position, Normal, Tangent, UV );
 		}
 	}
 
@@ -129,7 +131,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			_Mapper.Map( Position, Normal, Tangent, UV );
 
 			// Write vertex
-			_Writer.WriteVertex( pVertex, -NjFloat3::UnitY, -NjFloat3::UnitY, Tangent, UV );
+			WRITE( pVertex, -NjFloat3::UnitY, -NjFloat3::UnitY, Tangent, UV );
 		}
 	}
 	ASSERT( VerticesCount == 0, "Wrong contruction !" );
@@ -161,4 +163,21 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 	//////////////////////////////////////////////////////////////////////////
 	// Finalize
 	_Writer.Finalize( pVerticesArray, pIndicesArray );
+}
+
+void	GeometryBuilder::WriteVertex( IGeometryWriter& _Writer, void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV, TweakVertexDelegate _TweakVertex, void* _pUserData )
+{
+	if ( _TweakVertex == NULL )
+	{
+		_Writer.WriteVertex( _pVertex, _Position, _Normal, _Tangent, _UV );
+		return;
+	}
+
+	// Ask the user to tweak the vertices first !
+	NjFloat3	P = _Position;
+	NjFloat3	N = _Normal;
+	NjFloat3	T = _Tangent;
+	NjFloat2	UV = _UV;
+	(*_TweakVertex)( P, N, T, UV, _pUserData );
+	_Writer.WriteVertex( _pVertex, P, N, T, UV );
 }
