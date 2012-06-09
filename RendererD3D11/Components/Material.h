@@ -5,11 +5,11 @@
 
 class ConstantBuffer;
 
-
 #define USING_MATERIAL_START( Mat )	\
 {									\
 	(Mat).Use();					\
 	Material&	M = Mat;
+
 #define USING_MATERIAL_END	}
 
 

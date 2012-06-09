@@ -7,8 +7,3 @@ struct CBTest
 {
 	float	LOD;	// Animated texture LOD
 };
-
-struct CBObject
-{
-	NjFloat4x4	Local2World;	// Local=>World transform to rotate the object
-};

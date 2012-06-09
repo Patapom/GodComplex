@@ -65,6 +65,9 @@
     <Filter Include="Procedural\3D">
       <UniqueIdentifier>{487e73e2-1719-4838-bad3-94def321907f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Intro\Effects">
+      <UniqueIdentifier>{821ccdea-1a47-4c1a-9260-631f4e6fde0c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\Events.h">
@@ -170,6 +173,9 @@
     <ClInclude Include="Utility\tweakval.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectTranslucency.h">
+      <Filter>Intro\Effects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -253,6 +259,9 @@
     </ClCompile>
     <ClCompile Include="Utility\tweakval.cpp">
       <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectTranslucency.cpp">
+      <Filter>Intro\Effects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

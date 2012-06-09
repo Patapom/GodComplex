@@ -129,6 +129,7 @@ MinifyAll.cmd</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Intro\ConstantBuffers.h" />
+    <ClInclude Include="Intro\Effects\EffectTranslucency.h" />
     <ClInclude Include="Intro\Intro.h" />
     <ClInclude Include="GodComplex.h" />
     <ClInclude Include="NuajAPI\API\ASMHelpers.h" />
@@ -176,6 +177,7 @@ MinifyAll.cmd</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectTranslucency.cpp" />
     <ClCompile Include="Intro\Intro.cpp" />
     <ClCompile Include="NuajAPI\API\Hashtable.cpp" />
     <ClCompile Include="NuajAPI\Math\Math.cpp" />
