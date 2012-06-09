@@ -16,16 +16,14 @@ static const float	RECIPI = 0.31830988618379067153776752674503;	// 1/PI
 
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.patapom.com/index.php/Colorimetry)
 
+
+#define Tex2D( Texture, Sampler, UV )					Texture.Sample( Sampler, UV.xy )
 // On old ATIs, the SampleLevel() function doesn't work so you should use the other implementation (although I'm pretty sure it will fuck everything up if you start sampling textures within conditional branches)
-//
-#define Tex2D( Texture, Sampler, UV )	Texture.Sample( Sampler, UV.xy )
-#if 1
-#define Tex2DLOD( Texture, Sampler, UV, MipLevel )	Texture.SampleLevel( Sampler, UV.xy, MipLevel )
-#define Tex3DLOD( Texture, Sampler, UVW, MipLevel )	Texture.SampleLevel( Sampler, UVW.xyz, MipLevel )
-#else
-#define Tex2DLOD( Texture, Sampler, UV, MipLevel )	Texture.Sample( Sampler, UV.xy )
-#define Tex3DLOD( Texture, Sampler, UVW, MipLevel )	Texture.Sample( Sampler, UVW.xyz )
-#endif
+#define Tex2DLOD( Texture, Sampler, UV, MipLevel )		Texture.SampleLevel( Sampler, UV.xy, MipLevel )
+#define Tex3DLOD( Texture, Sampler, UVW, MipLevel )		Texture.SampleLevel( Sampler, UVW.xyz, MipLevel )
+// #define Tex2DLOD( Texture, Sampler, UV, MipLevel )	Texture.Sample( Sampler, UV.xy )
+// #define Tex3DLOD( Texture, Sampler, UVW, MipLevel )	Texture.Sample( Sampler, UVW.xyz )
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Samplers
@@ -40,7 +38,7 @@ SamplerState PointMirror	: register( s5 );
 ////////////////////////////////////////////////////////////////////////////////////////
 // Constants
 
-//[
+//[ // Minifier doesn't'support cbuffers !
 cbuffer	cbCamera	: register( b0 )
 {
 	float4		_CameraParams;

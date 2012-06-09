@@ -23,9 +23,8 @@
 #define HT_DEFAULT_SIZE	8192//1 << 13	// Default size if 8Kb
 #define HT_MAX_KEYLEN	50
 
-typedef void	(*VisitorDelegate)( void* _pValue );
-
 #ifdef _DEBUG
+
 class	DictionaryString
 {
 protected:	// NESTED TYPES
@@ -54,11 +53,50 @@ public:		// METHODS
 
 public:
 
-	U32		Hash( char* _pKey ) const;
-	U32		Hash( U32 _Key ) const;
+	static U32	Hash( const char* _pKey );
+	static U32	Hash( U32 _Key );
 };
+
+// Specific dictionary storing explicit typed values
+template<typename T> class	Dictionary
+{
+protected:	// NESTED TYPES
+
+	struct	Node
+	{
+		struct Node*	pNext;
+		U32				Key;
+		T				Value;
+	};
+
+public:
+
+	typedef void	(*VisitorDelegate)( T& _Value, void* _pUserData );
+
+
+protected:	// FIELDS
+
+	Node**	m_ppTable;
+	int		m_Size;
+
+public:
+	static int	ms_MaxCollisionsCount;	// You can examine this to know if one of the dictionaries has too many collisions (i.e. size too small)
+
+public:		// METHODS
+
+	Dictionary( int _Size=HT_DEFAULT_SIZE );
+	~Dictionary();
+
+	T*		Get( U32 _Key ) const;				// retrieve entry
+	T&		Add( U32 _Key );					// store entry
+	T&		Add( U32 _Key, const T& _Value );	// store entry
+	void	Remove( U32 _Key );					// remove entry
+	void	ForEach( VisitorDelegate _pDelegate, void* _pUserData );
+};
+
 #endif
 
+// General dictionary storing blind values
 class	DictionaryU32
 {
 protected:	// NESTED TYPES
@@ -70,6 +108,10 @@ protected:	// NESTED TYPES
 		void*			pValue;
 	};
  
+public:
+
+	typedef void	(*VisitorDelegate)( void*& _pValue, void* _pUserData );
+
 protected:	// FIELDS
 
 	Node**	m_ppTable;
@@ -88,5 +130,8 @@ public:		// METHODS
 	void*	Get( U32 _Key ) const;				// retrieve entry
 	void	Add( U32 _Key, void* _pValue );	// store entry
 	void	Remove( U32 _Key );			// remove entry
-	void	ForEach( VisitorDelegate _pDelegate );
+	void	ForEach( VisitorDelegate _pDelegate, void* _pUserData );
 };
+
+
+#include "Hashtable.inl"

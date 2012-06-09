@@ -89,7 +89,7 @@ void	DictionaryString::Remove( char* _pKey )
 	}
 }
 
-U32	DictionaryString::Hash( char* _pKey ) const
+U32	DictionaryString::Hash( const char* _pKey )
 {
   /* djb2 */
   U32 hash = 5381;
@@ -101,7 +101,7 @@ U32	DictionaryString::Hash( char* _pKey ) const
   return hash;
 }
 
-U32	DictionaryString::Hash( U32 _Key ) const
+U32	DictionaryString::Hash( U32 _Key )
 {
 	U32	hash = 5381;
 
@@ -112,11 +112,12 @@ U32	DictionaryString::Hash( U32 _Key ) const
 
   return hash;
 }
+
 #endif
 
 
 //////////////////////////////////////////////////////////////////////////
-// U32 version
+// U32 General version
 //
 #ifdef _DEBUG
 int	DictionaryU32::ms_MaxCollisionsCount = 0;
@@ -178,7 +179,7 @@ void*	DictionaryU32::Get( U32 _Key ) const
 
 void	DictionaryU32::Add( U32 _Key, void* _pValue )
 {
-	U32		idx = _Key;
+	U32		idx = _Key % m_Size;
  
 	Node*	pNode = new Node();
 	pNode->Key = _Key;
@@ -212,14 +213,14 @@ void	DictionaryU32::Remove( U32 _Key )
 	}
 }
 
-void	DictionaryU32::ForEach( VisitorDelegate _pDelegate )
+void	DictionaryU32::ForEach( VisitorDelegate _pDelegate, void* _pUserData )
 {
 	for ( int i=0; i < m_Size; i++ )
 	{
 		Node*	pNode = m_ppTable[i];
 		while ( pNode != NULL )
 		{
-			(*_pDelegate)( pNode->pValue );
+			(*_pDelegate)( pNode->pValue, _pUserData );
 			pNode = pNode->pNext;
 		}
 	}

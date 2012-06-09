@@ -80,7 +80,7 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const DepthStenc
 	Check( m_Device.DXDevice().CreateTexture2D( &Desc, NULL, &m_pTexture ) );
 }
 
-static void		ReleaseDirectXObject( void* _pValue )
+static void		ReleaseDirectXObject( void*& _pValue, void* _pUserData )
 {
 	IUnknown*	pObject = (IUnknown*) _pValue;
 	pObject->Release();
@@ -90,8 +90,8 @@ Texture2D::~Texture2D()
 {
 	ASSERT( m_pTexture != NULL, "Invalid texture to destroy !" );
 
-	m_CachedShaderViews.ForEach( ReleaseDirectXObject );
-	m_CachedTargetViews.ForEach( ReleaseDirectXObject );
+	m_CachedShaderViews.ForEach( ReleaseDirectXObject, NULL );
+	m_CachedTargetViews.ForEach( ReleaseDirectXObject, NULL );
 
 	if ( m_pCachedDepthStencilView != NULL )
 		m_pCachedDepthStencilView->Release();

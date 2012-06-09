@@ -167,6 +167,9 @@
     <ClInclude Include="Utility\Camera.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Utility\tweakval.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -248,6 +251,9 @@
     <ClCompile Include="Intro\Build2DTextures.cpp">
       <Filter>Intro</Filter>
     </ClCompile>
+    <ClCompile Include="Utility\tweakval.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib">
@@ -277,6 +283,9 @@
     </None>
     <None Include="Resources\Shaders\Compressed\TestDisplay.fx">
       <Filter>Resources\Shaders\RELEASE %28Minified%29</Filter>
+    </None>
+    <None Include="NuajAPI\API\Hashtable.inl">
+      <Filter>NuajAPI\API</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

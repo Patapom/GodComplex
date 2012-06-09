@@ -168,6 +168,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Utility\Memory.h" />
     <ClInclude Include="Utility\Random.h" />
     <ClInclude Include="Utility\Resources.h" />
+    <ClInclude Include="Utility\tweakval.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -204,12 +205,14 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Utility\Memory.cpp" />
     <ClCompile Include="Utility\Random.cpp" />
     <ClCompile Include="Utility\Resources.cpp" />
+    <ClCompile Include="Utility\tweakval.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib" />
   </ItemGroup>
   <ItemGroup>
     <None Include="LogExeSizes.txt" />
+    <None Include="NuajAPI\API\Hashtable.inl" />
     <None Include="Resources\pzero_new.v2m">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -224,7 +227,12 @@ MinifyAll.cmd</Command>
     <None Include="Tools\GodComplex.kkm" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="GodComplex.rc" />
+    <ResourceCompile Include="GodComplex.rc">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Resources\Shaders</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Resources\Shaders\Compressed</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

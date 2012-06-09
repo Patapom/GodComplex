@@ -2,6 +2,7 @@ kkrunchy 0.23 alpha >> pack ratio report
 
 Functions by packed size:
     0.00/      21: V2MPlayer::RenderProxy                             GodComplex.obj
+    0.00/      31: CB<CBTest>::`vector deleting destructor'           
     0.00/      44: DrawUtils::DrawContext::NewScanline                Draw.obj
     0.00/      38: `vector constructor iterator'                      Draw.obj
     0.00/      94: NjFloat4::Max                                      Filters.obj
@@ -15,9 +16,9 @@ Functions by packed size:
     0.00/      31: RasterizerState::`vector deleting destructor'      
     0.00/      31: DepthStencilState::`vector deleting destructor'    
     0.00/      31: BlendState::`scalar deleting destructor'           States.obj
-    0.00/      31: Texture2D::`vector deleting destructor'            
+    0.00/      31: Texture2D::`scalar deleting destructor'            Texture2D.obj
     0.00/       4: DepthStencilFormatD32F::Desc::DirectXFormat        DepthStencilFormats.obj
-    0.00/       4: PixelFormatRGBA8::Desc::Size                       PixelFormats.obj
+    0.00/       4: VertexFormatP3N3G3T2::Desc::GetInputElementsCount  VertexFormats.obj
     0.00/      17: DepthStencilFormatD32F::Desc::Write                DepthStencilFormats.obj
     0.00/      17: DepthStencilFormatD32F::Desc::Read                 DepthStencilFormats.obj
     0.00/       4: PixelFormatRGBA8::Desc::DirectXFormat              PixelFormats.obj
@@ -29,12 +30,11 @@ Functions by packed size:
     0.00/      77: PixelFormatRGBA16F::Desc::Read                     PixelFormats.obj
     0.00/       4: VertexFormatPt4::Desc::Size                        VertexFormats.obj
     0.00/       6: VertexFormatPt4::Desc::GetInputElements            VertexFormats.obj
-    0.00/       4: VertexFormatP3::Desc::GetInputElementsCount        VertexFormats.obj
+    0.00/       4: VertexFormatPt4::Desc::GetInputElementsCount       VertexFormats.obj
     0.00/       4: VertexFormatP3::Desc::Size                         VertexFormats.obj
     0.00/       6: VertexFormatP3::Desc::GetInputElements             VertexFormats.obj
     0.00/       4: VertexFormatP3N3G3T2::Desc::Size                   VertexFormats.obj
     0.00/       6: VertexFormatP3N3G3T2::Desc::GetInputElements       VertexFormats.obj
-    0.00/      31: CB<CBObject>::`vector deleting destructor'         
     0.00/     102: IncludesManager::Open                              Resources.obj
     0.00/      69: IncludesManager::Close                             Resources.obj
     0.00/     318: _dsInit@12                                         libv2:dsio.obj
@@ -138,21 +138,21 @@ Functions by packed size:
     0.00/      43: Device::Device                                     Device.obj
     0.00/      28: ASM_memset                                         
     0.00/      33: Device::ClearDepthStencil                          Device.obj
-    0.00/     104: Device::SetRenderTarget                            Device.obj
-    0.00/      40: Device::ClearRenderTarget                          Device.obj
+    0.00/     102: Device::SetRenderTarget                            Device.obj
+    0.00/      37: Device::ClearRenderTarget                          Device.obj
     0.00/     933: Device::Init                                       Device.obj
     0.00/      29: Texture2D::NextMipSize                             Texture2D.obj
-    0.00/       7: ReleaseDirectXObject                               
+    0.00/       9: ReleaseDirectXObject                               
     0.00/      31: ASM_ceilf                                          
     0.00/      66: Texture2D::ComputeMipLevelsCount                   Texture2D.obj
     0.00/      64: Texture2D::GetDepthStencilView                     Texture2D.obj
-    0.00/      98: Texture2D::GetTargetView                           Texture2D.obj
-    0.00/     119: Texture2D::GetShaderView                           Texture2D.obj
+    0.00/     106: Texture2D::GetTargetView                           Texture2D.obj
+    0.00/     125: Texture2D::GetShaderView                           Texture2D.obj
     0.00/      72: Texture2D::~Texture2D                              Texture2D.obj
     0.00/     153: Texture2D::Texture2D                               Texture2D.obj
     0.00/     301: Texture2D::Texture2D                               Texture2D.obj
     0.00/      90: Texture2D::Texture2D                               Texture2D.obj
-    0.00/      41: Texture2D::SetPS                                   Texture2D.obj
+    0.00/      39: Texture2D::SetPS                                   Texture2D.obj
     0.00/      17: Primitive::WriteIndex                              Primitive.obj
     0.00/      12: Primitive::WriteVertex                             Primitive.obj
     0.00/     196: Primitive::Build                                   Primitive.obj
@@ -234,10 +234,10 @@ Functions by packed size:
     0.00/      49: NjFloat4::QuatFromAngleAxis                        Math.obj
     0.00/     263: NjFloat4x4::FromQuat                               Math.obj
     0.00/     143: NjFloat4x4::PRS                                    Math.obj
-    0.00/      39: DictionaryU32::ForEach                             Hashtable.obj
+    0.00/      41: DictionaryU32::ForEach                             Hashtable.obj
     0.00/      32: DictionaryU32::Get                                 Hashtable.obj
     0.00/      28: ASM_memset                                         
-    0.00/      57: DictionaryU32::Add                                 Hashtable.obj
+    0.00/      69: DictionaryU32::Add                                 Hashtable.obj
     0.00/      46: DictionaryU32::~DictionaryU32                      Hashtable.obj
     0.00/      52: DictionaryU32::DictionaryU32                       Hashtable.obj
     0.00/      17: Delete2DTextures                                   Intro.obj
@@ -247,7 +247,7 @@ Functions by packed size:
     0.00/     198: FillSplotch                                        Intro.obj
     0.00/     148: FillScratch                                        Intro.obj
     0.00/     775: Build2DTextures                                    Intro.obj
-    0.00/     402: IntroDo                                            Intro.obj
+    0.00/     406: IntroDo                                            Intro.obj
     0.00/     483: IntroInit                                          Intro.obj
     0.00/     246: ShowProgress                                       
     0.00/      98: WindowExit                                         GodComplex.obj
@@ -353,8 +353,7 @@ Data by packed size:
     0.00/       8: `string'                                           GodComplex.obj
     0.00/      16: `string'                                           GodComplex.obj
     0.00/       4: `string'                                           Intro.obj
-    0.00/       4: `string'                                           Intro.obj
-    0.00/       4: CB<CBObject>::`vftable'                            Intro.obj
+    0.00/       8: `string'                                           Intro.obj
     0.00/       4: Noise::BIAS_U                                      Noise.obj
     0.00/       4: Noise::BIAS_V                                      Noise.obj
     0.00/      64: NjFloat4x4::Identity                               Math.obj
@@ -388,6 +387,7 @@ Data by packed size:
     0.00/      16: VertexFormatP3::Desc::`vftable'                    VertexFormats.obj
     0.00/      16: VertexFormatP3N3G3T2::Desc::`vftable'              VertexFormats.obj
     0.00/       4: `string'                                           v2mplayer.obj
+    0.00/       4: CB<Camera::CBData>::`vftable'                      Camera.obj
     0.00/      16: `string'                                           Resources.obj
     0.00/       8: `string'                                           Resources.obj
     0.00/       8: IncludesManager::`vftable'                         Resources.obj
@@ -395,7 +395,7 @@ Data by packed size:
     0.00/       4: __real@437f0000                                    
     0.00/       4: __real@41200000                                    
     0.00/       4: __real@41700000                                    
-    0.00/       8: __real@40c00000                                    
+    0.00/       4: __real@40c00000                                    
     0.00/       8: __real@3fe921fb60000000                            
     0.00/       4: __real@3f800000                                    
     0.00/       4: __real@3a800000                                    
@@ -484,15 +484,14 @@ Data by packed size:
     0.00/      90: gs_Device                                          GodComplex.obj
 
 Functions by object file and packed size:
+    0.00/      31: CB<CBTest>::`vector deleting destructor'           
     0.00/      31: Material::`vector deleting destructor'             
     0.00/      31: RasterizerState::`vector deleting destructor'      
     0.00/      31: DepthStencilState::`vector deleting destructor'    
-    0.00/      31: Texture2D::`vector deleting destructor'            
-    0.00/      31: CB<CBObject>::`vector deleting destructor'         
     0.00/      30: ASM_memcpy                                         
     0.00/      58: FLOAT2BYTE                                         
     0.00/      28: ASM_memset                                         
-    0.00/       7: ReleaseDirectXObject                               
+    0.00/       9: ReleaseDirectXObject                               
     0.00/      31: ASM_ceilf                                          
     0.00/      30: ASM_memcpy                                         
     0.00/      30: ASM_memcpy                                         
@@ -539,8 +538,8 @@ Functions by object file and packed size:
     0.00/     131: Device::Exit                                       Device.obj
     0.00/      43: Device::Device                                     Device.obj
     0.00/      33: Device::ClearDepthStencil                          Device.obj
-    0.00/     104: Device::SetRenderTarget                            Device.obj
-    0.00/      40: Device::ClearRenderTarget                          Device.obj
+    0.00/     102: Device::SetRenderTarget                            Device.obj
+    0.00/      37: Device::ClearRenderTarget                          Device.obj
     0.00/     933: Device::Init                                       Device.obj
     0.00/      44: DrawUtils::DrawContext::NewScanline                Draw.obj
     0.00/      38: `vector constructor iterator'                      Draw.obj
@@ -581,9 +580,9 @@ Functions by object file and packed size:
     0.00/       3: __purecall                                         GodComplex.obj
     0.00/     424: WindowInit                                         GodComplex.obj
     0.00/     286: EntryPoint                                         GodComplex.obj
-    0.00/      39: DictionaryU32::ForEach                             Hashtable.obj
+    0.00/      41: DictionaryU32::ForEach                             Hashtable.obj
     0.00/      32: DictionaryU32::Get                                 Hashtable.obj
-    0.00/      57: DictionaryU32::Add                                 Hashtable.obj
+    0.00/      69: DictionaryU32::Add                                 Hashtable.obj
     0.00/      46: DictionaryU32::~DictionaryU32                      Hashtable.obj
     0.00/      52: DictionaryU32::DictionaryU32                       Hashtable.obj
     0.00/      17: Delete2DTextures                                   Intro.obj
@@ -592,7 +591,7 @@ Functions by object file and packed size:
     0.00/     198: FillSplotch                                        Intro.obj
     0.00/     148: FillScratch                                        Intro.obj
     0.00/     775: Build2DTextures                                    Intro.obj
-    0.00/     402: IntroDo                                            Intro.obj
+    0.00/     406: IntroDo                                            Intro.obj
     0.00/     483: IntroInit                                          Intro.obj
     0.00/       6: _CreateThread@24                                   kernel32:KERNEL32.dll
     0.00/       6: _WaitForSingleObject@8                             kernel32:KERNEL32.dll
@@ -679,7 +678,6 @@ Functions by object file and packed size:
     0.00/     123: Noise::Perlin                                      Noise.obj
     0.00/      57: Noise::~Noise                                      Noise.obj
     0.00/     612: Noise::Noise                                       Noise.obj
-    0.00/       4: PixelFormatRGBA8::Desc::Size                       PixelFormats.obj
     0.00/       4: PixelFormatRGBA8::Desc::DirectXFormat              PixelFormats.obj
     0.00/      71: PixelFormatRGBA8::Desc::Write                      PixelFormats.obj
     0.00/      77: PixelFormatRGBA8::Desc::Read                       PixelFormats.obj
@@ -717,16 +715,17 @@ Functions by object file and packed size:
     0.00/      45: DepthStencilState::DepthStencilState               States.obj
     0.00/      26: RasterizerState::~RasterizerState                  States.obj
     0.00/      45: RasterizerState::RasterizerState                   States.obj
+    0.00/      31: Texture2D::`scalar deleting destructor'            Texture2D.obj
     0.00/      29: Texture2D::NextMipSize                             Texture2D.obj
     0.00/      66: Texture2D::ComputeMipLevelsCount                   Texture2D.obj
     0.00/      64: Texture2D::GetDepthStencilView                     Texture2D.obj
-    0.00/      98: Texture2D::GetTargetView                           Texture2D.obj
-    0.00/     119: Texture2D::GetShaderView                           Texture2D.obj
+    0.00/     106: Texture2D::GetTargetView                           Texture2D.obj
+    0.00/     125: Texture2D::GetShaderView                           Texture2D.obj
     0.00/      72: Texture2D::~Texture2D                              Texture2D.obj
     0.00/     153: Texture2D::Texture2D                               Texture2D.obj
     0.00/     301: Texture2D::Texture2D                               Texture2D.obj
     0.00/      90: Texture2D::Texture2D                               Texture2D.obj
-    0.00/      41: Texture2D::SetPS                                   Texture2D.obj
+    0.00/      39: Texture2D::SetPS                                   Texture2D.obj
     0.00/      42: TextureBuilder::ReleaseSpecificBuffer              TextureBuilder.obj
     0.00/      46: TextureBuilder::~TextureBuilder                    TextureBuilder.obj
     0.00/     172: TextureBuilder::TextureBuilder                     TextureBuilder.obj
@@ -744,9 +743,10 @@ Functions by object file and packed size:
     0.00/     359: V2MPlayer::Render                                  v2mplayer.obj
     0.00/     255: V2MPlayer::Play                                    v2mplayer.obj
     0.00/      48: V2MPlayer::Open                                    v2mplayer.obj
+    0.00/       4: VertexFormatP3N3G3T2::Desc::GetInputElementsCount  VertexFormats.obj
     0.00/       4: VertexFormatPt4::Desc::Size                        VertexFormats.obj
     0.00/       6: VertexFormatPt4::Desc::GetInputElements            VertexFormats.obj
-    0.00/       4: VertexFormatP3::Desc::GetInputElementsCount        VertexFormats.obj
+    0.00/       4: VertexFormatPt4::Desc::GetInputElementsCount       VertexFormats.obj
     0.00/       4: VertexFormatP3::Desc::Size                         VertexFormats.obj
     0.00/       6: VertexFormatP3::Desc::GetInputElements             VertexFormats.obj
     0.00/       4: VertexFormatP3N3G3T2::Desc::Size                   VertexFormats.obj
@@ -757,8 +757,12 @@ Functions by object file and packed size:
 
 Classes/Namespaces by packed size:
     0.00/    2948: V2MPlayer
+    0.00/       0: CB<CBObject>
+    0.00/       4: CB<Camera::CBData>
+    0.00/     275: ConstantBuffer
+    0.00/      31: CB<CBTest>
     0.00/      44: DrawUtils::DrawContext
-    0.00/ 3179702: <global>
+    0.00/ 3179708: <global>
     0.00/     285: NjFloat4
     0.00/    1279: Noise
     0.00/     160: NjFloat3
@@ -768,17 +772,13 @@ Classes/Namespaces by packed size:
     0.00/     106: RasterizerState
     0.00/     106: DepthStencilState
     0.00/     106: BlendState
-    0.00/    1068: Texture2D
+    0.00/    1080: Texture2D
     0.00/      54: DepthStencilFormatD32F::Desc
-    0.00/     192: VertexFormatP3N3G3T2::Desc
-    0.00/     172: PixelFormatRGBA8::Desc
+    0.00/     168: PixelFormatRGBA8::Desc
+    0.00/     196: VertexFormatP3N3G3T2::Desc
     0.00/     208: PixelFormatRGBA16F::Desc
-    0.00/     131: VertexFormatPt4::Desc
-    0.00/      78: VertexFormatP3::Desc
-    0.00/       0: CB<Camera::CBData>
-    0.00/       0: CB<CBTest>
-    0.00/     275: ConstantBuffer
-    0.00/      35: CB<CBObject>
+    0.00/     135: VertexFormatPt4::Desc
+    0.00/      74: VertexFormatP3::Desc
     0.00/     179: IncludesManager
     0.00/     133: Ronan
     0.00/      65: Ronan::ResDef
@@ -786,7 +786,7 @@ Classes/Namespaces by packed size:
     0.00/     525: Ronan::syWRonan
     0.00/     751: Camera
     0.00/      46: `anonymous namespace'
-    0.00/    1438: Device
+    0.00/    1433: Device
     0.00/     363: Material::ShaderConstants
     0.00/    1677: TextureBuilder
     0.00/    2707: DrawUtils
@@ -797,7 +797,7 @@ Classes/Namespaces by packed size:
     0.00/      98: DrawUtils::Pixel
     0.00/    1621: NjFloat4x4
     0.00/     254: NjHalf
-    0.00/     226: DictionaryU32
+    0.00/     240: DictionaryU32
     0.00/     716: GeometryBuilder
     0.00/     288: GeometryBuilder::MapperSpherical
     0.00/     432: `Ronan::syWRonan::SetFrame'::`2'
@@ -812,22 +812,22 @@ Classes/Namespaces by packed size:
 
 Object files by packed size:
     0.00/ 3155426: GodComplex.obj
+    0.00/    2205: Intro.obj
+    0.00/    1359: 
+    0.00/     799: Camera.obj
+    0.00/     275: ConstantBuffer.obj
     0.00/    3695: Draw.obj
     0.00/    2888: Filters.obj
     0.00/    1279: Noise.obj
     0.00/    1104: GeometryBuilder.obj
-    0.00/    1392: 
     0.00/      78: Component.obj
     0.00/    1116: Material.obj
     0.00/     789: Primitive.obj
     0.00/     256: States.obj
-    0.00/    1037: Texture2D.obj
+    0.00/    1080: Texture2D.obj
     0.00/      58: DepthStencilFormats.obj
-    0.00/     469: VertexFormats.obj
-    0.00/     388: PixelFormats.obj
-    0.00/    2201: Intro.obj
-    0.00/     275: ConstantBuffer.obj
-    0.00/     795: Camera.obj
+    0.00/     384: PixelFormats.obj
+    0.00/     473: VertexFormats.obj
     0.00/     374: Resources.obj
     0.00/    1255: libv2:dsio.obj
     0.00/   11592: libv2:synth.obj
@@ -836,10 +836,10 @@ Object files by packed size:
     0.00/     156: kernel32:KERNEL32.dll
     0.00/     207: Random.obj
     0.00/    2977: v2mplayer.obj
-    0.00/    1454: Device.obj
+    0.00/    1449: Device.obj
     0.00/    1719: TextureBuilder.obj
     0.00/    2116: Math.obj
-    0.00/     226: Hashtable.obj
+    0.00/     240: Hashtable.obj
     0.00/     674: Generators.obj
     0.00/      36: d3dcompiler:D3DCOMPILER_43.dll
     0.00/      52: gdi32:GDI32.dll
@@ -848,5 +848,5 @@ Object files by packed size:
     0.00/      48: d3d11:d3d11.dll
     0.00/      16: dxguid:d3d10guid.obj
 
-Overall code:     0.00/   41477
+Overall code:     0.00/   41504
 Overall data:     0.00/ 3159530

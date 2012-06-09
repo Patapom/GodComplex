@@ -145,10 +145,9 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	// Render to screen
 	USING_MATERIAL_START( *gs_pMatPostFinal )
-//		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), &gs_Device.DefaultDepthStencil() );
 		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget() );
 
-		gs_pCB_Test->m.LOD = 10.0f * (1.0f - fabs( sinf( _Time ) ));
+		gs_pCB_Test->m.LOD = _TV(10.0f) * (1.0f - fabs( sinf( _TV(1.0f) * _Time ) ));
 //gs_CBTest.LOD = 0.0f;
 
 		gs_pCB_Test->UpdateData();

@@ -64,4 +64,5 @@
  [9 juin 2012]
 . Geometry builders
 . First display test with a magnificent sphere rendered into an offscreen buffer and showing its normals
+. Added tweakable values (only compiles in DEBUG !)
 	packed executable 117760 -> 29696 bytes

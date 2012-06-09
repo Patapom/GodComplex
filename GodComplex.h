@@ -36,6 +36,7 @@
 #include "Utility/Random.h"
 #include "Utility/Resources.h"
 #include "Utility/Camera.h"
+#include "Utility/tweakval.h"
 
 // DirectX Renderer
 #include "RendererD3D11/Device.h"
