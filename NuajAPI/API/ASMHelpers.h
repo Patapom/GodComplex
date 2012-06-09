@@ -3,6 +3,10 @@
 //--------------------------------------------------------------------------//
 #pragma once
 
+// Override some functions with our own implementations
+#define memset( a, b, c )	ASM_memset( a, b, c )
+#define memcpy( a, b, c )	ASM_memcpy( a, b, c )
+
 static float ASM_log2f( float x )
 {
     float res;
@@ -69,6 +73,34 @@ static float ASM_powf( float x, float y )
 
     return res;
 }
+
+// Fast acos() using cubic polynomial approximation
+// http://stackoverflow.com/questions/3380628/fast-arc-cos-algorithm
+static float FAST_acosf( float x )
+{
+   return (-0.69813170079773212f * x * x - 0.87266462599716477f) * x + 1.5707963267948966f;
+}
+
+// From http://www.jbox.dk/sanos/source/lib/math/acos.asm.html
+static float ASM_acosf( float x )
+{
+    float res;
+
+	_asm fld     dword ptr [x]           // Load real from stack
+	_asm fld     st(0)                   // Load x
+	_asm fld     st(0)                   // Load x
+	_asm fmul                            // x²
+	_asm fld1                            // Load 1
+	_asm fsubr                           // 1 - x²
+	_asm fsqrt                           // sqrt( 1 - x² )
+	_asm fxch                            // Exchange st, st(1)
+	_asm fpatan                          // This gives the arc cosine !
+    _asm fstp    st(0)
+    _asm fstp    dword ptr [res];
+
+	return res;
+}
+
 
 static U16	opc1 = 0x043f;     // floor
 static U16	opc2 = 0x083f;     // ceil

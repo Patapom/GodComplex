@@ -70,14 +70,13 @@ void	Camera::UpdateCompositions()
 
 // CHECKS
 //m_pCB->m.Proj2World = m_pCB->m.Proj2Camera * m_pCB->m.Camera2World;
-
-NjFloat4	T2 = NjFloat4( 0, 0, 0, 1 ) * m_pCB->m.World2Camera;
-
-NjFloat4	T0 = NjFloat4( 0, 0, 9.95f, 1 ) * m_pCB->m.World2Proj;
-T0 = T0 / T0.w;
-
-NjFloat4	T1 = NjFloat4( 5, 5, 0, 1 ) * m_pCB->m.World2Proj;
-T1 = T1 / T1.w;
-
+// 
+//NjFloat4	T2 = NjFloat4( 0, 0, 0, 1 ) * m_pCB->m.World2Camera;
+// 
+//NjFloat4	T0 = NjFloat4( 0, 0, 9.95f, 1 ) * m_pCB->m.World2Proj;
+// T0 = T0 / T0.w;
+// 
+//NjFloat4	T1 = NjFloat4( 5, 5, 0, 1 ) * m_pCB->m.World2Proj;
+// T1 = T1 / T1.w;
 // CHECKS
 }

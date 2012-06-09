@@ -203,7 +203,7 @@ void	DrawUtils::DrawScratch( const NjFloat2& _Position, const NjFloat2& _Directi
 {
 	m_Infos.pData = _pData;
 
-	int	StepsCount = ASM_ceilf( _Length / _StepSize );
+	int	StepsCount = ceilf( _Length / _StepSize );
 
 	m_ContextSCRATCH.pFiller = _Filler;
 	m_ContextSCRATCH.Distance = 0.0f;
@@ -295,7 +295,7 @@ void	DrawUtils::DrawQuad( NjFloat4 _pVertices[], DrawContext& _Context ) const
 		}
 
 	// Start drawing
-	_Context.Y = ASM_floorf( pVertices[Top].y );
+	_Context.Y = floorf( pVertices[Top].y );
 	int			LDy = -1, RDy = -1;			// Amount of pixels to trace for the left & right segments until the next segment (or end of the quad)
 	int			L = Top, R = 4+Top;			// Left & Right indices: Left will increase, Right will decrease
 	NjFloat4	LPos, RPos;					// Left & Right position & UV
@@ -308,7 +308,7 @@ void	DrawUtils::DrawQuad( NjFloat4 _pVertices[], DrawContext& _Context ) const
 			NjFloat4&	Current = pVertices[L];
 			NjFloat4&	Next = pVertices[++L];
 			LSlope = Next - Current;
-			int		EndY = ASM_floorf( Next.y );
+			int		EndY = floorf( Next.y );
 			LDy = EndY - _Context.Y;
 			if ( LDy < 0 )
 				continue;	// Too low a slope !
@@ -321,7 +321,7 @@ void	DrawUtils::DrawQuad( NjFloat4 _pVertices[], DrawContext& _Context ) const
 			NjFloat4&	Current = pVertices[R];
 			NjFloat4&	Next = pVertices[--R];
 			RSlope = Next - Current;
-			int		EndY = ASM_floorf( Next.y );
+			int		EndY = floorf( Next.y );
 			RDy = EndY - _Context.Y;
 			if ( RDy < 0 )
 				continue;	// Too low a slope !
@@ -336,12 +336,12 @@ void	DrawUtils::DrawQuad( NjFloat4 _pVertices[], DrawContext& _Context ) const
 		// The comments left here are the original lines you need to draw in CLAMP mode
 //		if ( _Context.Y > 0 )
 		{
-			_Context.X = ASM_floorf( LPos.x );
+			_Context.X = floorf( LPos.x );
 //			bool		bClipLeft = _Context.X < 0;
 			bool		bClipLeft = false;	// Don't ever clip since we wrap !
 //			_Context.X = MAX( 0, _Context.X );
 
-			int			RX = ASM_ceilf( RPos.x );
+			int			RX = ceilf( RPos.x );
 //			bool		bClipRight = RX >= m_Width;
 			bool		bClipRight = false;	// Don't ever clip since we wrap !
 //						RX = MIN( m_Width-1, RX );
@@ -357,7 +357,7 @@ void	DrawUtils::DrawQuad( NjFloat4 _pVertices[], DrawContext& _Context ) const
 			// Draw left pixel
 			if ( !bClipLeft )
 			{
-				_Context.Coverage = ASM_ceilf( LPos.x ) - LPos.x;
+				_Context.Coverage = ceilf( LPos.x ) - LPos.x;
 				_Context.DrawPixel();
 				_Context.X++;
 				_Context.P = _Context.P + Slope;
@@ -374,7 +374,7 @@ void	DrawUtils::DrawQuad( NjFloat4 _pVertices[], DrawContext& _Context ) const
 			// Draw right pixel
 			if ( !bClipRight )
 			{
-				_Context.Coverage = RPos.x - ASM_floorf( RPos.x );
+				_Context.Coverage = RPos.x - floorf( RPos.x );
 				_Context.DrawPixel();
 			}
 		}

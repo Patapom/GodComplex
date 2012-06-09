@@ -1,11 +1,11 @@
 #include "Hashtable.h"
-#include "../Math/Math.h"
-#include "ASMHelpers.h"
 
-#include <stdlib.h>
-#include <string.h>
+#define NULL 0
 
 #ifdef _DEBUG
+
+#undef memset
+#include <string.h>
 
 //////////////////////////////////////////////////////////////////////////
 // String version
@@ -13,7 +13,7 @@ DictionaryString::DictionaryString( int _Size )
 {
 	m_Size = _Size;
 	m_ppTable = new Node*[m_Size];
-	ASM_memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
 }
 DictionaryString::~DictionaryString()
 {
@@ -126,7 +126,7 @@ DictionaryU32::DictionaryU32( int _Size )
 {
 	m_Size = _Size;
 	m_ppTable = new Node*[m_Size];
-	ASM_memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
 }
 DictionaryU32::~DictionaryU32()
 {

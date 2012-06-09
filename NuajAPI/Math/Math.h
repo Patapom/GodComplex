@@ -7,6 +7,27 @@
 
 #include <math.h>
 
+// Simply atan( sin / cos )
+static float _acosf( float x )
+{
+	return atanf( sqrtf(1.0f - x*x) / x );
+}
+static float _asinf( float x )
+{
+	return atanf( x / sqrtf(1.0f - x*x) );
+}
+
+// Override some functions with our own implementations
+#define log2f( a )		ASM_log2f( a )
+#define expf( a )		ASM_expf( a )
+#define powf( a, b )	ASM_powf( a, b )
+#define fmodf( a, b )	ASM_fmodf( a, b )
+#define floorf( a )		ASM_floorf( a )
+#define ceilf( a )		ASM_ceilf( a )
+#define acosf( a )		_acosf( a )
+#define asinf( a )		_asinf( a )
+
+
 #define PI					3.1415926535897932384626433832795f
 #define TWOPI				6.283185307179586476925286766559f
 #define HALFPI				1.5707963267948966192313216916398f

@@ -21,7 +21,7 @@ WININFO		gs_WindowInfos;
 extern "C" int _fltused = 0;
 #endif
 extern "C" int __cdecl	_purecall(void)		{ return 0; }
-double __cdecl			ceil( double _X )	{ return ASM_ceilf( float(_X) ); }
+double __cdecl			ceil( double _X )	{ return ceilf( float(_X) ); }
  
  
 static const char*	pMessageError	= "intro_init()!\n\n"\
@@ -115,7 +115,7 @@ bool	WindowInit()
 	//////////////////////////////////////////////////////////////////////////
 	// Register the new window class
 	WNDCLASSA	wc;
-	ASM_memset( &wc, 0, sizeof(WNDCLASSA) );
+	memset( &wc, 0, sizeof(WNDCLASSA) );
 	wc.style		 = CS_OWNDC;
 	wc.lpfnWndProc   = WndProc;
 	wc.hInstance	 = gs_WindowInfos.hInstance;
@@ -241,9 +241,9 @@ void	DrawTime( float t )
 
 	if ( !(frame&3) )
 	{
-		m = ASM_floorf( t / 60.0f );
-		s = ASM_floorf( t - 60.0f * m );
-		c = ASM_floorf( t * 100.0f ) % 100;
+		m = floorf( t / 60.0f );
+		s = floorf( t - 60.0f * m );
+		c = floorf( t * 100.0f ) % 100;
 		sprintf( str, "%s %02d:%02d:%02d  [%d fps]", pWindowClass, m, s, c, fps );
 		SetWindowText( gs_WindowInfos.hWnd, str );
 	}

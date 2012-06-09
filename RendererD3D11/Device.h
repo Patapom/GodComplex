@@ -37,6 +37,7 @@ private:	// FIELDS
 public:
 
 	RasterizerState*		m_pRS_CullNone;
+	RasterizerState*		m_pRS_CullBack;
 
 	DepthStencilState*		m_pDS_Disabled;
 	DepthStencilState*		m_pDS_ReadWriteLess;

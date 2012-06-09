@@ -21,9 +21,8 @@
 
 #include <windows.h>
 #include <mmsystem.h>
-//#include <string.h>
+#include <string.h>
 #include <stdio.h>
-#include <math.h>
 #include "resource.h"
 
 #define NUAJ_LIB

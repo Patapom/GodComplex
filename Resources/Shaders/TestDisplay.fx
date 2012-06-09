@@ -26,16 +26,10 @@ struct	PS_IN
 
 PS_IN	VS( VS_IN _In )
 {
-//	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
-	float4	WorldPosition = float4( _In.Position.x, _In.Position.y, _In.Position.z, 1.0 );
+	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
 
 	PS_IN	Out;
-//	Out.__Position = mul( WorldPosition, _World2Proj );
-// 	Out.__Position = mul( WorldPosition, _Camera2Proj );
-// 	Out.__Position.z *= 1.0;
-
-	Out.__Position = WorldPosition / WorldPosition.z;
-
+	Out.__Position = mul( WorldPosition, _World2Proj );
 	Out.Normal = _In.Normal;
 	Out.UV = _In.UV;
 
@@ -44,7 +38,7 @@ PS_IN	VS( VS_IN _In )
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
-	return float4( _In.Normal, 1 );
-	return float4( _In.UV, 0, 0 );
+	return float4( _In.Normal, 1.0 );
+//	return float4( _In.UV, 0, 1.0 );
 //	return Tex2DLOD( _TexNoise, LinearWrap, UV, _LOD );
 }

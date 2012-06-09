@@ -90,7 +90,7 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	m_StatesCount = 0;
 	{
 		D3D11_RASTERIZER_DESC	Desc;
-		ASM_memset( &Desc, 0, sizeof(Desc) );
+		memset( &Desc, 0, sizeof(Desc) );
 		Desc.FillMode = D3D11_FILL_SOLID;
         Desc.CullMode = D3D11_CULL_NONE;
         Desc.FrontCounterClockwise = TRUE;
@@ -103,10 +103,14 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
         Desc.AntialiasedLineEnable = FALSE;
 
 		m_pRS_CullNone = new RasterizerState( *this, Desc ); m_StatesCount++;
+
+		// Create CullBack state
+		Desc.CullMode = D3D11_CULL_BACK;
+		m_pRS_CullBack = new RasterizerState( *this, Desc ); m_StatesCount++;
 	}
 	{
 		D3D11_DEPTH_STENCIL_DESC	Desc;
-		ASM_memset( &Desc, 0, sizeof(Desc) );
+		memset( &Desc, 0, sizeof(Desc) );
 		Desc.DepthEnable = false;
 		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 		Desc.DepthFunc = D3D11_COMPARISON_LESS;
@@ -116,12 +120,13 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 
 		m_pDS_Disabled = new DepthStencilState( *this, Desc ); m_StatesCount++;
 
+		// Create R/W Less state
 		Desc.DepthEnable = true;
 		m_pDS_ReadWriteLess = new DepthStencilState( *this, Desc ); m_StatesCount++;
 	}
 	{
 		D3D11_BLEND_DESC	Desc;
-		ASM_memset( &Desc, 0, sizeof(Desc) );
+		memset( &Desc, 0, sizeof(Desc) );
 		Desc.AlphaToCoverageEnable = false;
 		Desc.IndependentBlendEnable = false;
 		Desc.RenderTarget[0].BlendEnable = false;

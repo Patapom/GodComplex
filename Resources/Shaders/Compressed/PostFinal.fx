@@ -1,2 +1,2 @@
 #include"Inc/Global.fx"
-Texture2D _TexNoise:register(t0);cbuffer cbTextureLOD:register( b0){float _LOD;};struct VS_IN{float4 Position:SV_POSITION;};VS_IN VS(VS_IN V){return V;}float4 PS(VS_IN V):SV_TARGET0{float2 P=2.*V.Position.xy*INV_SCREEN_SIZE;return Tex2DLOD(_TexNoise,LinearWrap,P,_LOD);}
+Texture2D _TexNoise:register(t0),_TexHDR:register(t1);cbuffer cbTextureLOD:register( b1){float _LOD;};struct VS_IN{float4 Position:SV_POSITION;};VS_IN VS(VS_IN V){return V;}float4 PS(VS_IN V):SV_TARGET0{float4 n=Tex2D(_TexHDR,LinearWrap,V.Position.xy*INV_SCREEN_SIZE);float2 P=2.*float2(ASPECT_RATIO*V.Position.x,V.Position.y)*INV_SCREEN_SIZE;float4 t=Tex2DLOD(_TexNoise,LinearWrap,P,_LOD);return lerp(t,n,n.w);}

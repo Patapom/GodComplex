@@ -59,13 +59,13 @@ void	TextureBuilder::Fill( FillDelegate _Filler, void* _pData )
 
 void	TextureBuilder::SampleWrap( float _X, float _Y, NjFloat4& _Color ) const
 {
-	int		X0 = ASM_floorf( _X );
+	int		X0 = floorf( _X );
 	float	x = _X - X0;
 	float	rx = 1.0f - x;
 	int		X1 = (100*m_Width+X0+1) % m_Width;
 			X0 = (100*m_Width+X0) % m_Width;
 
-	int		Y0 = ASM_floorf( _Y );
+	int		Y0 = floorf( _Y );
 	float	y = _Y - Y0;
 	float	ry = 1.0f - y;
 	int		Y1 = (100*m_Height+Y0+1) % m_Height;
@@ -89,13 +89,13 @@ void	TextureBuilder::SampleWrap( float _X, float _Y, NjFloat4& _Color ) const
 
 void	TextureBuilder::SampleClamp( float _X, float _Y, NjFloat4& _Color ) const
 {
-	int		X0 = ASM_floorf( _X );
+	int		X0 = floorf( _X );
 	float	x = _X - X0;
 	float	rx = 1.0f - x;
 	int		X1 = CLAMP( (X0+1), 0, m_Width-1 );
 			X0 = CLAMP( X0, 0, m_Width-1 );
 
-	int		Y0 = ASM_floorf( _Y );
+	int		Y0 = floorf( _Y );
 	float	y = _Y - Y0;
 	float	ry = 1.0f - y;
 	int		Y1 = CLAMP( (Y0+1), 0, m_Height-1 );

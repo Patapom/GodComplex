@@ -134,6 +134,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 #endif
 		Flags1 |= D3D10_SHADER_ENABLE_STRICTNESS;
 		Flags1 |= D3D10_SHADER_IEEE_STRICTNESS;
+		Flags1 |= D3D10_SHADER_PACK_MATRIX_ROW_MAJOR;	// MOST IMPORTANT FLAG !
 
 	U32 Flags2 = 0;
 
@@ -247,7 +248,7 @@ void	Material::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob )
 
 		int		NameLength = strlen(CBDesc.Name)+1;
 		m_ppConstantBufferNames[CBIndex] = new char[NameLength];
-		ASM_memcpy( m_ppConstantBufferNames[CBIndex], &CBDesc.Name, NameLength );
+		memcpy( m_ppConstantBufferNames[CBIndex], &CBDesc.Name, NameLength );
 	}
 
 	// Enumerate textures
@@ -260,7 +261,7 @@ void	Material::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob )
 
 		int		NameLength = strlen(SRVDesc.Name)+1;
 		m_ppShaderResourceViewNames[SRVIndex] = new char[NameLength];
-		ASM_memcpy( m_ppShaderResourceViewNames[SRVIndex], &SRVDesc.Name, NameLength );
+		memcpy( m_ppShaderResourceViewNames[SRVIndex], &SRVDesc.Name, NameLength );
 	}
 
 	pReflector->Release();

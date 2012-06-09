@@ -25,7 +25,7 @@ char*	LoadResourceShader( U16 _ResourceID, U32& _CodeSize )
 	// Copy it and append the missing NULL character terminator
 	char*	pShaderSource = new char[_CodeSize];
 
-	ASM_memcpy( pShaderSource, pData, _CodeSize-1 );
+	memcpy( pShaderSource, pData, _CodeSize-1 );
 	pShaderSource[_CodeSize-1] = '\0';	// Add the NULL terminator
 
 	return pShaderSource;

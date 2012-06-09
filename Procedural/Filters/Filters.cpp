@@ -135,14 +135,14 @@ void	Filters::BlurGaussian( TextureBuilder& _Builder, float _SizeX, float _SizeY
 		BS.W = W;
 		BS.H = H;
 
-		BS.Size = ASM_ceilf( _SizeX );
+		BS.Size = ceilf( _SizeX );
 		float	k = logf( _MinWeight ) / (_SizeX*_SizeX);
 
 		BS.pWeights = new float[BS.Size];
 		BS.InvSumWeights = 1.0f;
 		for ( int i=0; i < BS.Size; i++ )
 		{
-			BS.pWeights[i] = ASM_expf( k * (1+i)*(1+i) );
+			BS.pWeights[i] = expf( k * (1+i)*(1+i) );
 			BS.InvSumWeights += 2.0f * BS.pWeights[i];
 		}
 		BS.InvSumWeights = 1.0f / BS.InvSumWeights;
@@ -159,14 +159,14 @@ void	Filters::BlurGaussian( TextureBuilder& _Builder, float _SizeX, float _SizeY
 		BS.W = W;
 		BS.H = H;
 
-		BS.Size = ASM_ceilf( _SizeY );
+		BS.Size = ceilf( _SizeY );
 		float	k = logf( _MinWeight ) / (_SizeY*_SizeY);
 
 		BS.pWeights = new float[BS.Size];
 		BS.InvSumWeights = 1.0f;
 		for ( int i=0; i < BS.Size; i++ )
 		{
-			BS.pWeights[i] = ASM_expf( k * (1+i)*(1+i) );
+			BS.pWeights[i] = expf( k * (1+i)*(1+i) );
 			BS.InvSumWeights += 2.0f * BS.pWeights[i];
 		}
 		BS.InvSumWeights = 1.0f / BS.InvSumWeights;
@@ -215,7 +215,7 @@ void	FillBCG( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pDat
 //	float	ContrastedLuma = BCG.B + BCG.C * (Luma - 0.5f);
 	float	ContrastedLuma = 0.5f + BCG.C * (Luma + BCG.B);
 			ContrastedLuma = CLAMP01( ContrastedLuma );
-	float	NewLuma = ASM_powf( ContrastedLuma, BCG.G );
+	float	NewLuma = powf( ContrastedLuma, BCG.G );
 
 	_Color = _Color * (NewLuma / Luma);
 }

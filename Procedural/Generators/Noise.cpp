@@ -83,14 +83,14 @@ Noise::~Noise()
 // This should generate a code like this:
 //
 // 	float	fX0 = (BIAS_U+u) * NOISE_SIZE;
-// 	int		X0_ = ASM_floorf( fX0 );
+// 	int		X0_ = floorf( fX0 );
 // 	float	t0 = fX0 - X0_;	float	r0 = t0 - 1.0f;
 // 			X0_ = X0_ & NOISE_MASK;
 // 	int		X0 = (X0_ + 1) & NOISE_MASK;
 //
 #define	NOISE_INDICES( Bias, Var, Index )	\
 	float	fX##Index = (Bias+Var) * NOISE_SIZE;	\
- 	int		X##Index##_ = ASM_floorf( fX##Index );	\
+ 	int		X##Index##_ = floorf( fX##Index );	\
  	float	t##Index = fX##Index - X##Index##_;	float	r##Index = t##Index - 1.0f;	\
  			X##Index##_ = X##Index##_ & NOISE_MASK;	\
  	int		X##Index = (X##Index##_ + 1) & NOISE_MASK;
@@ -381,8 +381,8 @@ void	Noise::SetCellularWrappingParameters( int _SizeX, int _SizeY, int _SizeZ )
 
 float	Noise::Cellular( const NjFloat2& _UV, CombineDistancesDelegate _Combine, bool _bWrap ) const
 {
-	int	CellX = ASM_floorf( _UV.x );
-	int	CellY = ASM_floorf( _UV.y );
+	int	CellX = floorf( _UV.x );
+	int	CellY = floorf( _UV.y );
 
 	// Read center spot offset for all 9 cells and choose closest distance
 	float	pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };
@@ -421,9 +421,9 @@ float	Noise::Cellular( const NjFloat2& _UV, CombineDistancesDelegate _Combine, b
 
 float	Noise::Cellular( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bool _bWrap ) const
 {
-	int	CellX = ASM_floorf( _UVW.x );
-	int	CellY = ASM_floorf( _UVW.y );
-	int	CellZ = ASM_floorf( _UVW.z );
+	int	CellX = floorf( _UVW.x );
+	int	CellY = floorf( _UVW.y );
+	int	CellZ = floorf( _UVW.z );
 
 	float		pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };	// Only keep the 3 closest distances
 
@@ -470,8 +470,8 @@ float	Noise::Cellular( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, 
 // I though about implementing the optimization suggested in Worley's paper to skip inelegible neighbor cubes that are too far away but I remembered I am writing a 64K intro... Less code the better !
 float	Noise::Worley( const NjFloat2& _UV, CombineDistancesDelegate _Combine, bool _bWrap ) const
 {
-	int	CellX = ASM_floorf( _UV.x );
-	int CellY = ASM_floorf( _UV.y );
+	int	CellX = floorf( _UV.x );
+	int CellY = floorf( _UV.y );
 
 	NjFloat2	Point;
 
@@ -521,9 +521,9 @@ float	Noise::Worley( const NjFloat2& _UV, CombineDistancesDelegate _Combine, boo
 
 float	Noise::Worley( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bool _bWrap ) const
 {
-	int	CellX = ASM_floorf( _UVW.x );
-	int CellY = ASM_floorf( _UVW.y );
-	int CellZ = ASM_floorf( _UVW.z );
+	int	CellX = floorf( _UVW.x );
+	int CellY = floorf( _UVW.y );
+	int CellZ = floorf( _UVW.z );
 
 	NjFloat3	Point;
 	float		pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };	// Only keep the 3 closest distances
@@ -626,7 +626,7 @@ int	Noise::PoissonPointsCount( U32 _Random ) const
 // 		for ( int i=0; i <= MAX_POINTS; i++ )
 // 		{
 // 			int	PointsCount = i+1;	// Amount of points we expect
-// 			pProbabilities[i] = powf( float(PointsCount), float(AVERAGE_POINTS) ) * ASM_expf( -float(PointsCount) ) / FACT_K;
+// 			pProbabilities[i] = powf( float(PointsCount), float(AVERAGE_POINTS) ) * expf( -float(PointsCount) ) / FACT_K;
 // 			pProbabilityOffsets[i] = (i > 0 ? pProbabilityOffsets[i-1] : 0) + pProbabilities[i];
 // 		}
 // 
@@ -776,7 +776,7 @@ float	Noise::Wavelet( const NjFloat2& _UV ) const
 
 	float	pPixelPosition[2] =	{ _UV.x * m_WaveletSize, _UV.y * m_WaveletSize };
 
-//return m_pWavelet2D[ASM_floorf(pPixelPosition[0]) + (ASM_floorf(pPixelPosition[1]) << m_WaveletPOT)];
+//return m_pWavelet2D[floorf(pPixelPosition[0]) + (floorf(pPixelPosition[1]) << m_WaveletPOT)];
 
 	// Evaluate quadratic B-spline basis functions
 	int		pPixelCenter[2];
@@ -784,7 +784,7 @@ float	Noise::Wavelet( const NjFloat2& _UV ) const
 	for ( int i=0; i < 2; i++ )
 	{
 		float	fPositionOffset = pPixelPosition[i] - 0.5f;
-		pPixelCenter[i] = ASM_ceilf( fPositionOffset );
+		pPixelCenter[i] = ceilf( fPositionOffset );
 		float	t = pPixelCenter[i] - fPositionOffset;
 		float	r = 1.0f - t;
 
@@ -854,7 +854,7 @@ float	Noise::RidgedMultiFractal( GetNoise2DDelegate _GetNoise, void* _pData, con
 	{
 		float	NoiseValue = _GetNoise( UV, _pData );
 //				NoiseValue *= NoiseValue;	// Try with an EXP !
-				NoiseValue = ASM_expf( -NoiseValue*NoiseValue );
+				NoiseValue = expf( -NoiseValue*NoiseValue );
 		Result += Amplitude * PreviousNoise * NoiseValue;
 		PreviousNoise = NoiseValue;
 

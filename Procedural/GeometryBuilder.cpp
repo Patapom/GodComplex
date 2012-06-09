@@ -40,7 +40,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 	int	VerticesCount = (BandLength+1) * (1 + _ThetaSubdivisions + 1);	// 1 band at the top and bottom of the sphere + as many subdivisions as required
 
 	int	BandsCount = 1 + _ThetaSubdivisions;
-	int	IndicesCount = (2*(BandLength+1)+1) * BandsCount;
+	int	IndicesCount = (2*(BandLength+1+1)) * BandsCount;
 
 	// Create the buffers
 	void*	pVerticesArray = NULL;
@@ -152,8 +152,9 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 // 		_Writer.WriteIndex( pIndex, CurrentBandOffset + 0 );	pIndex+=IStride;	IndicesCount--;
 // 		_Writer.WriteIndex( pIndex, NextBandOffset + 0 );		pIndex+=IStride;	IndicesCount--;
 
-		// Write a last degenerate index so we smoothly transition to next band
+		// Write 2 last degenerate indices so we smoothly transition to next band
 		_Writer.WriteIndex( pIndex, NextBandOffset + BandLength );		pIndex+=IStride;	IndicesCount--;
+		_Writer.WriteIndex( pIndex, NextBandOffset + BandLength+1 );	pIndex+=IStride;	IndicesCount--;
 	}
 	ASSERT( IndicesCount == 0, "Wrong contruction !" );
 

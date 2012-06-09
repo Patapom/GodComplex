@@ -275,6 +275,9 @@
     <None Include="Resources\Shaders\TestDisplay.fx">
       <Filter>Resources\Shaders\DEBUG</Filter>
     </None>
+    <None Include="Resources\Shaders\Compressed\TestDisplay.fx">
+      <Filter>Resources\Shaders\RELEASE %28Minified%29</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

@@ -60,3 +60,8 @@
 . Added dilate/erode (slow!) filters
 . Added the modified "Marble" generator from Pierre
 	packed executable 112640 -> 27648 bytes
+
+ [9 juin 2012]
+. Geometry builders
+. First display test with a magnificent sphere rendered into an offscreen buffer and showing its normals
+	packed executable 117760 -> 29696 bytes

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Types.h"
+#include "../Math/Math.h"
+#include "ASMHelpers.h"
 
 // Source: http://blog.2of1.org/2011/07/11/simple-c-hashtable-code/
 //
