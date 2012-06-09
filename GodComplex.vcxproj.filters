@@ -296,6 +296,9 @@
     <None Include="NuajAPI\API\Hashtable.inl">
       <Filter>NuajAPI\API</Filter>
     </None>
+    <None Include="Resources\Shaders\TranslucencyBuildZBuffer.fx">
+      <Filter>Resources\Shaders\DEBUG</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

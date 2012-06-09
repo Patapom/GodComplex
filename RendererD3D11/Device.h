@@ -38,11 +38,16 @@ public:
 
 	RasterizerState*		m_pRS_CullNone;
 	RasterizerState*		m_pRS_CullBack;
+	RasterizerState*		m_pRS_CullFront;
 
 	DepthStencilState*		m_pDS_Disabled;
 	DepthStencilState*		m_pDS_ReadWriteLess;
 
 	BlendState*				m_pBS_Disabled;
+	BlendState*				m_pBS_Disabled_RedOnly;
+	BlendState*				m_pBS_Disabled_GreenOnly;
+	BlendState*				m_pBS_Disabled_BlueOnly;
+	BlendState*				m_pBS_Disabled_AlphaOnly;
 
 
 public:	 // PROPERTIES

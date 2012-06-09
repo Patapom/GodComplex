@@ -104,6 +104,10 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 
 		m_pRS_CullNone = new RasterizerState( *this, Desc ); m_StatesCount++;
 
+		// Create CullFront state
+		Desc.CullMode = D3D11_CULL_FRONT;
+		m_pRS_CullFront = new RasterizerState( *this, Desc ); m_StatesCount++;
+
 		// Create CullBack state
 		Desc.CullMode = D3D11_CULL_BACK;
 		m_pRS_CullBack = new RasterizerState( *this, Desc ); m_StatesCount++;
@@ -136,9 +140,19 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 		Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
 		Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_DEST_ALPHA;
 		Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-		Desc.RenderTarget[0].RenderTargetWriteMask = 0x0F;		// Seems to crash on my card when setting more than 4 bits of write mask ! (limited to 4 MRTs I suppose ?)
+		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;	// Write all channels
 
 		m_pBS_Disabled = new BlendState( *this, Desc ); m_StatesCount++;
+
+		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED;
+		m_pBS_Disabled_RedOnly = new BlendState( *this, Desc ); m_StatesCount++;
+		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_GREEN;
+		m_pBS_Disabled_GreenOnly = new BlendState( *this, Desc ); m_StatesCount++;
+		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_BLUE;
+		m_pBS_Disabled_BlueOnly = new BlendState( *this, Desc ); m_StatesCount++;
+		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALPHA;
+		m_pBS_Disabled_AlphaOnly = new BlendState( *this, Desc ); m_StatesCount++;
+		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	}
 
 	//////////////////////////////////////////////////////////////////////////

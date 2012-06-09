@@ -141,7 +141,8 @@ bool	IntroDo( float _Time, float _DeltaTime )
 		gs_pCB_Test->UpdateData();
 		gs_pCB_Test->SetPS( 1 );
 
-		gs_pTexTestNoise->SetPS( 0 );
+//		gs_pTexTestNoise->SetPS( 0 );
+		gs_pEffectTranslucency->GetZBuffer()->SetPS( 0 );
 		gs_pRTHDR->SetPS( 1 );
 
 		gs_pPrimQuad->Render( M );

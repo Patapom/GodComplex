@@ -221,6 +221,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\Compressed\Inc\Global.fx" />
     <None Include="Resources\Shaders\Compressed\PostFinal.fx" />
     <None Include="Resources\Shaders\Compressed\TestDisplay.fx" />
+    <None Include="Resources\Shaders\TranslucencyBuildZBuffer.fx" />
     <None Include="Resources\Shaders\Inc\Global.fx" />
     <None Include="Resources\Shaders\PostFinal.fx">
       <FileType>Document</FileType>
