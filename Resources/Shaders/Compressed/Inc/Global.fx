@@ -2,4 +2,4 @@ static const float RESX=1280.,RESY=720.,ASPECT_RATIO=RESX/RESY;static const floa
 #define TEX2D( Texture,Sampler,UV)Texture.Sample( Sampler,UV.xy)
 #define TEX2DLOD( Texture,Sampler,UV,MipLevel)Texture.SampleLevel( Sampler,UV.xy,MipLevel)
 #define TEX3DLOD( Texture,Sampler,UVW,MipLevel)Texture.SampleLevel( Sampler,UVW.xyz,MipLevel)
-SamplerState LinearClamp:register(s0),PointClamp:register(s1),LinearWrap:register(s2),PointWrap:register(s3),LinearMirror:register(s4),PointMirror:register(s5);cbuffer cbCamera:register( b0){float4 _CameraParams;float4x4 _Camera2World;float4x4 _World2Camera;float4x4 _Camera2Proj;float4x4 _ProjCamera;float4x4 _World2Proj;float4x4 _Proj2World;};
+SamplerState LinearClamp:register(s0),PointClamp:register(s1),LinearWrap:register(s2),PointWrap:register(s3),LinearMirror:register(s4),PointMirror:register(s5);cbuffer cbCamera:register( b0){float4 _CameraData;float4x4 _Camera2World;float4x4 _World2Camera;float4x4 _Camera2Proj;float4x4 _ProjCamera;float4x4 _World2Proj;float4x4 _Proj2World;};

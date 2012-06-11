@@ -39,9 +39,7 @@ struct	VS_IN
 VS_IN	VS( VS_IN _In )	{ return _In; }
 
 
-//#define SAMPLE( x, y, i )	I[5*(2+y)+(2+x)] = SampleIrradiance( UV, float2( x, y ), _Phase##i );
-#define SAMPLE( x, y, i )	I += SampleIrradiance( UV, float2( x, y ), _Phase##i );
-
+// #define SAMPLE( x, y, i )	I += SampleIrradiance( UV, float2( x, y ), _Phase##i );
 float3	SampleIrradiance( float2 _UV, float2 _dXY, float3 _Phase )
 {
 	float3	NeighborIrradiance = TEX2DLOD( _TexIrradiance, LinearMirror, _UV + _dXY * dUV, 0.0 ).xyz;
@@ -76,6 +74,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 		float3	ToLight = normalize( LightPosition - Position );
 		float	Diffuse = saturate(dot( Normal, ToLight ));
 
+//		return 100.0;
 		return float4( Diffuse * _ExternalLight, 0.0 );
 	}
 
@@ -92,16 +91,27 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 	// Try with 9 samples first
 	float3	I = 0.0;
 
-	SAMPLE( -1, -1, 1 );	SAMPLE( 0, -1, 1 );	SAMPLE( +1, -1, 1 );
-	SAMPLE( -1, 0, 1 );		SAMPLE( 0, 0, 0 );	SAMPLE( +1, 0, 1 );
-	SAMPLE( -1, +1, 1 );	SAMPLE( 0, +1, 1 );	SAMPLE( +1, +1, 1 );
+// 	SAMPLE( -1, -1, 1 );	SAMPLE( 0, -1, 1 );	SAMPLE( +1, -1, 1 );
+// 	SAMPLE( -1, 0, 1 );		SAMPLE( 0, 0, 0 );	SAMPLE( +1, 0, 1 );
+// 	SAMPLE( -1, +1, 1 );	SAMPLE( 0, +1, 1 );	SAMPLE( +1, +1, 1 );
+// 
+// 	// Then add 12 more samples
+// 	SAMPLE( -1, -2, 2 );	SAMPLE( 0, -2, 2 );	SAMPLE( +1, -2, 2 );
+// 	SAMPLE( -2, -1, 2 );						SAMPLE( +2, -1, 2 );
+// 	SAMPLE( -2,  0, 2 );						SAMPLE( +2, 0, 2 );
+// 	SAMPLE( -2, +1, 2 );						SAMPLE( +2, +1, 2 );
+// 	SAMPLE( -1, +2, 2 );	SAMPLE( 0, +2, 2 );	SAMPLE( +1, +2, 2 );
 
-	// Then add 12 samples
-	SAMPLE( -1, -2, 2 );	SAMPLE( 0, -2, 2 );	SAMPLE( +1, -2, 2 );
-	SAMPLE( -2, -1, 2 );						SAMPLE( +2, -1, 2 );
-	SAMPLE( -2,  0, 2 );						SAMPLE( +2, 0, 2 );
-	SAMPLE( -2, +1, 2 );						SAMPLE( +2, +1, 2 );
-	SAMPLE( -1, +2, 2 );	SAMPLE( 0, +2, 2 );	SAMPLE( +1, +2, 2 );
+	I += SampleIrradiance( UV, float2( -1, -1 ), _Phase1 );	I += SampleIrradiance( UV, float2(  0, -1 ), _Phase1 );	I += SampleIrradiance( UV, float2( +1, -1 ), _Phase1 );
+	I += SampleIrradiance( UV, float2( -1,  0 ), _Phase1 );	I += SampleIrradiance( UV, float2(  0,  0 ), _Phase0 );	I += SampleIrradiance( UV, float2( +1,  0 ), _Phase1 );
+	I += SampleIrradiance( UV, float2( -1, +1 ), _Phase1 );	I += SampleIrradiance( UV, float2(  0, +1 ), _Phase1 );	I += SampleIrradiance( UV, float2( +1, +1 ), _Phase1 );
+
+	// Then add 12 more samples
+	I += SampleIrradiance( UV, float2( -1, -2 ), _Phase2 );	I += SampleIrradiance( UV, float2(  0, -2 ), _Phase2 );	I += SampleIrradiance( UV, float2( +1, -2 ), _Phase2 );
+	I += SampleIrradiance( UV, float2( -2, -1 ), _Phase2 );															I += SampleIrradiance( UV, float2( +2, -1 ), _Phase2 );
+	I += SampleIrradiance( UV, float2( -2,  0 ), _Phase2 );															I += SampleIrradiance( UV, float2( +2,  0 ), _Phase2 );
+	I += SampleIrradiance( UV, float2( -2, +1 ), _Phase2 );															I += SampleIrradiance( UV, float2( +2, +1 ), _Phase2 );
+	I += SampleIrradiance( UV, float2( -1, +2 ), _Phase2 );	I += SampleIrradiance( UV, float2(  0, +2 ), _Phase2 );	I += SampleIrradiance( UV, float2( +1, +2 ), _Phase2 );
 
 	return float4( SliceExtinction * I, 0.0 );
 }

@@ -292,6 +292,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\Compressed\TestDisplay.fx" />
     <None Include="Resources\Shaders\Compressed\TranslucencyBuildZBuffer.fx" />
     <None Include="Resources\Shaders\Compressed\TranslucencyDiffusion.fx" />
+    <None Include="Resources\Shaders\Compressed\TranslucencyDisplay.fx" />
     <None Include="Resources\Shaders\TranslucencyBuildZBuffer.fx" />
     <None Include="Resources\Shaders\Inc\Global.fx" />
     <None Include="Resources\Shaders\PostFinal.fx">

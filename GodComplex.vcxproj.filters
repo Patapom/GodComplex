@@ -314,6 +314,9 @@
     <None Include="Resources\Shaders\TranslucencyDisplay.fx">
       <Filter>Resources\Shaders\DEBUG\EffectTranslucency</Filter>
     </None>
+    <None Include="Resources\Shaders\Compressed\TranslucencyDisplay.fx">
+      <Filter>Resources\Shaders\RELEASE %28Minified%29</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">
