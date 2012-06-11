@@ -6,7 +6,7 @@ class EffectTranslucency
 {
 private:	// CONSTANTS
 
-	static const int	DIFFUSION_SIZE = 128;
+	static const int	DIFFUSION_SIZE = 128;	// If you change this, also make sure you change the "TARGET_SIZE" macro in the m_pMatDiffusion material compilation !
 	static const int	DIFFUSION_PASSES_COUNT = 64;
 
 
@@ -70,6 +70,11 @@ private:	// FIELDS
 	CB<CBObject>*		m_pCB_Object;
 	CB<CBDiffusion>*	m_pCB_Diffusion;
 	CB<CBPass>*			m_pCB_Pass;
+
+
+	// Params
+public:
+	float				m_EmissivePower;
 
 
 public:		// PROPERTIES

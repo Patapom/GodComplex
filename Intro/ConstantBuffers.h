@@ -5,5 +5,6 @@
 
 struct CBTest
 {
-	float	LOD;	// Animated texture LOD
+	float	LOD;		// Animated texture LOD
+	float	BackLight;	// 1 to enable backlighting
 };

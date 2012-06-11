@@ -117,7 +117,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	// Update the camera settings and upload its data to the shaders
 
 	// TODO: Animate camera...
-	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(0.0f), _TV(1.4f) ), NjFloat3( 0.0f, 0.0f, 0.0f ), NjFloat3::UnitY );
+	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(-0.2f), _TV(1.4f) ), NjFloat3( 0.0f, -0.2f, 0.0f ), NjFloat3::UnitY );
 
 	gs_pCamera->Upload( 0 );
 
@@ -136,6 +136,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget() );
 
 		gs_pCB_Test->m.LOD = 10.0f * (1.0f - fabs( sinf( _TV(1.0f) * _Time ) ));
+		gs_pCB_Test->m.BackLight = 1.0f - gs_pEffectTranslucency->m_EmissivePower;
 //gs_CBTest.LOD = 0.0f;
 		gs_pCB_Test->UpdateData();
 

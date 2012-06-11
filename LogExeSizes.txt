@@ -74,4 +74,4 @@
  [11 juin 2012]
 . Added torus geometry builder
 . Finished a first version of the diffuse scattering effect with blocker
-	packed executable 125440 -> 32256 bytes
+	packed executable 125952 -> 32256 bytes

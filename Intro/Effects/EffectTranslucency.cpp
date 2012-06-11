@@ -15,7 +15,7 @@ void	TweakTorusInternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tang
 	Noise&	N = *((Noise*) _pUserData);
 
 //	_Position = 0.4f * (_Position + _Normal * 0.5f * N.Perlin( 0.01f * _Position ));	// Scale down and add perlin
-	_Position = 0.3f * (_Position + 0.05f * N.PerlinVector( 0.001f * _Position ));
+	_Position = 0.3f * (_Position + 0.1f * N.PerlinVector( 0.001f * _Position ));
 }
 
 EffectTranslucency::EffectTranslucency( Primitive& _Quad, Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_Quad( _Quad ), m_RTTarget( _RTTarget )
@@ -36,7 +36,7 @@ EffectTranslucency::EffectTranslucency( Primitive& _Quad, Texture2D& _RTTarget )
 		Noise	N( 1 );
 
 		m_pPrimTorusInternal = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
-		GeometryBuilder::BuildTorus( 20, 10, 1.0f, 0.2f, *m_pPrimTorusInternal, Mapper, TweakTorusInternal, &N );
+		GeometryBuilder::BuildTorus( 80, 50, 1.0f, 0.2f, *m_pPrimTorusInternal, Mapper, TweakTorusInternal, &N );
 
 		m_pPrimSphereExternal = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
 		GeometryBuilder::BuildSphere( 80, 50, *m_pPrimSphereExternal, Mapper, TweakSphereExternal, &N );
@@ -79,25 +79,14 @@ EffectTranslucency::~EffectTranslucency()
 
 void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 {
-	NjFloat3	TorusPosition = NjFloat3( 0.8f * sinf( _TV(0.45f) * _Time ), 0.8f * sinf( _TV(0.33f) * _Time ), 0.4f * cosf( _TV(0.5f) * _Time ) * sinf( _TV(0.17f) * _Time ) );	// Oscillate within the quiche
-	NjFloat4	TorusRotation = NjFloat4::QuatFromAngleAxis( _TV(0.25f) * _Time, NjFloat3::UnitY );																					// Rotate, too
+	NjFloat3	TorusPosition = NjFloat3(
+		0.8f * sinf( _TV(0.95f) * _Time ) * sinf( _TV(0.7f) * _Time ),
+		0.8f * sinf( _TV(0.83f) * _Time ) * sinf( _TV(-0.19f) * _Time ),
+		0.2f * cosf( _TV(0.5f) * _Time ) * sinf( _TV(-0.17f) * _Time ) );							// Oscillate within the quiche
 
-	float		EmissivePower = SATURATE( -4.0f * sinf( _TV(0.5f) * _Time ) );
+	NjFloat4	TorusRotation = NjFloat4::QuatFromAngleAxis( _TV(1.35f) * _Time, NjFloat3::UnitY );	// Rotate, too
 
-// 	float	Left = 0.0f, Right = 0.0f;
-// 	for ( int ch=0; ch < 16; ch++ )
-// 	{
-// 		float	l, r;
-// 		synthGetChannelVU( gs_pMusicPlayerWorkMem, 0, &l, &r );
-// 		if ( l != 0.0f || r != 0.0f )
-// 		{
-// 			Left = MAX( Left, l );
-// 			Right = MAX( Right, r );
-// 		}
-// 	}
-// 
-// print( "Left = %f  -  Right = %f\r\n", Left, Right );
-
+	m_EmissivePower = SATURATE( -4.0f * sinf( _TV(0.5f) * _Time ) );
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Render the internal & external objects into the RGBA ZBuffer
@@ -167,8 +156,8 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 		m_pCB_Diffusion->m.Phase2 = PhaseFactor * ComputePhase( ScatteringAnisotropy, 2, 12, m_pCB_Diffusion->m.TexelSize, m_pCB_Diffusion->m.SliceThickness );
 
 //		m_pCB_Diffusion->m.ExternalLight = _TV(2.0f) * NjFloat3( 1.0f, 1.0f, 1.0f );
-		m_pCB_Diffusion->m.ExternalLight = _TV(1.4f) * (1.4f - EmissivePower) * NjFloat3( 1.0f, 1.0f, 1.0f );
-		m_pCB_Diffusion->m.InternalEmissive = _TV(10.0f) * EmissivePower * NjFloat3( 1.0f, 0.8f, 0.2f );
+		m_pCB_Diffusion->m.ExternalLight = _TV(1.4f) * (1.4f - m_EmissivePower) * NjFloat3( 1.0f, 1.0f, 1.0f );
+		m_pCB_Diffusion->m.InternalEmissive = _TV(10.0f) * m_EmissivePower * NjFloat3( 1.0f, 0.8f, 0.2f );
 
 		m_pCB_Diffusion->UpdateData();
 

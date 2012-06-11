@@ -7,6 +7,7 @@ Texture2D	_TexHDR		: register(t1);
 cbuffer	cbTextureLOD	: register( b1 )
 {
 	float	_LOD;
+	float	_BackLight;
 };
 //]
 
@@ -22,7 +23,7 @@ VS_IN	VS( VS_IN _In )
 
 float4	ComputeBackground( float2 _UV )
 {
-	float3	PlanePosition = float3( 0.0, -4.0f, 0.0 );
+	float3	PlanePosition = float3( 0.0, -2.0f, 0.0 );
 	float3	PlaneNormal = float3( 0, 1, 0 );
 
 	float3	LightPosition = float3( 0.0, 0.0, 0.0 );
@@ -32,19 +33,37 @@ float4	ComputeBackground( float2 _UV )
 
 	// Compute view
 	float3	CamPos = _Camera2World[3].xyz;
-	float3	CamView = mul( float4( _UV.xy * _CameraData.xy, 1.0, 0.0 ), _Camera2World ).xyz;
+//	float3	CamView = mul( float4( _UV.xy * _CameraData.xy, 1.0, 0.0 ), _Camera2World ).xyz;
+	float3	CamView = mul( float4( _CameraData.x * (2.0 * _UV.x - 1.0), _CameraData.y * (1.0 - 2.0 * _UV.y), 1.0, 0.0 ), _Camera2World ).xyz;
 
-	float	HitDistance = dot( CamPos - PlanePosition, PlaneNormal ) / dot( CamView, PlaneNormal );
-	return 0.5 * pow( abs(HitDistance), 0.25 );
+	// Compute plane intersection distance
+	float	PlaneDistance = dot( PlanePosition - CamPos, PlaneNormal ) / dot( CamView, PlaneNormal );
+			PlaneDistance = PlaneDistance < 0.0 ? 1000.0 : PlaneDistance;
+	float3	PlaneHit = CamPos + PlaneDistance * CamView;
+//return float4( 0.2 * PlaneHit, 1 );
+
+	PlaneDistance = 0.5 * pow( abs(PlaneDistance), 0.25 );
+//return PlaneDistance;
+
+	// Compute distance to the sphere
+	float3	SphereCenter = float3( 0.0, 0.0, 0.0 );
+	float	SphereDistance = length( SphereCenter - PlaneHit );
+
+	SphereDistance = pow( saturate( 0.42 * SphereDistance ), 3.0 );
+//return SphereDistance;
+
+	// Combine
+	return PlaneDistance * SphereDistance;
 }
 
 float4	PS( VS_IN _In ) : SV_TARGET0
 {
 	float4	SourceHDR = TEX2D( _TexHDR, LinearWrap, _In.Position.xy * INV_SCREEN_SIZE );
 
-	float2	UV = 2.0 * float2( ASPECT_RATIO * _In.Position.x, _In.Position.y ) * INV_SCREEN_SIZE;
+//	float2	UV = 2.0 * float2( ASPECT_RATIO * _In.Position.x, _In.Position.y ) * INV_SCREEN_SIZE;
 //	float4	Background = TEX2DLOD( _TexNoise, LinearWrap, UV, _LOD );
-	float4	Background = ComputeBackground( UV );
+	float4	Background = lerp( 0.1, 1.0, _BackLight ) * ComputeBackground( _In.Position.xy * INV_SCREEN_SIZE );
+
 //return Background;
 //return 0.5 * ((Background.y - Background.x) - (Background.w - Background.z));
 //return 0.5 * Background.y;
