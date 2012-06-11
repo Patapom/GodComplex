@@ -11,6 +11,8 @@
 #ifndef V2MPLAYER_H_
 #define V2MPLAYER_H_
 
+#define V2MPLAYER_SYNC_FUNCTIONS
+
 /*************************************************************************************/
 /**                                                                                 **/
 /**  Type definitions                                                               **/

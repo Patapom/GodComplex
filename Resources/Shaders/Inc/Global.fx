@@ -41,7 +41,7 @@ SamplerState PointMirror	: register( s5 );
 //[ // Minifier doesn't'support cbuffers !
 cbuffer	cbCamera	: register( b0 )
 {
-	float4		_CameraParams;
+	float4		_CameraData;
 	float4x4	_Camera2World;
 	float4x4	_World2Camera;
 	float4x4	_Camera2Proj;

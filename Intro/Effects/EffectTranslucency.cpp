@@ -79,8 +79,25 @@ EffectTranslucency::~EffectTranslucency()
 
 void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 {
-	NjFloat3	TorusPosition = NjFloat3( 0.8f * cosf( _TV(0.45f) * _Time ), 0.8f * sinf( _TV(0.33f) * _Time ), 0.4f * cosf( _TV(0.5f) * _Time ) * sinf( _TV(0.17f) * _Time ) );	// Oscillate within the quiche
+	NjFloat3	TorusPosition = NjFloat3( 0.8f * sinf( _TV(0.45f) * _Time ), 0.8f * sinf( _TV(0.33f) * _Time ), 0.4f * cosf( _TV(0.5f) * _Time ) * sinf( _TV(0.17f) * _Time ) );	// Oscillate within the quiche
 	NjFloat4	TorusRotation = NjFloat4::QuatFromAngleAxis( _TV(0.25f) * _Time, NjFloat3::UnitY );																					// Rotate, too
+
+	float		EmissivePower = SATURATE( -4.0f * sinf( _TV(0.5f) * _Time ) );
+
+// 	float	Left = 0.0f, Right = 0.0f;
+// 	for ( int ch=0; ch < 16; ch++ )
+// 	{
+// 		float	l, r;
+// 		synthGetChannelVU( gs_pMusicPlayerWorkMem, 0, &l, &r );
+// 		if ( l != 0.0f || r != 0.0f )
+// 		{
+// 			Left = MAX( Left, l );
+// 			Right = MAX( Right, r );
+// 		}
+// 	}
+// 
+// print( "Left = %f  -  Right = %f\r\n", Left, Right );
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Render the internal & external objects into the RGBA ZBuffer
@@ -144,12 +161,14 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 		m_pCB_Diffusion->m.Albedo = _TV(0.8f) * NjFloat3::One;
 
 		NjFloat3	ScatteringAnisotropy = _TV(0.0f) * NjFloat3::One;
-		m_pCB_Diffusion->m.Phase0 = _TV(4.6f) * ComputePhase( ScatteringAnisotropy, 0, 1, m_pCB_Diffusion->m.TexelSize, m_pCB_Diffusion->m.SliceThickness );
-		m_pCB_Diffusion->m.Phase1 = _TV(4.6f) * ComputePhase( ScatteringAnisotropy, 1, 8, m_pCB_Diffusion->m.TexelSize, m_pCB_Diffusion->m.SliceThickness );
-		m_pCB_Diffusion->m.Phase2 = _TV(4.6f) * ComputePhase( ScatteringAnisotropy, 2, 12, m_pCB_Diffusion->m.TexelSize, m_pCB_Diffusion->m.SliceThickness );
+		float		PhaseFactor = _TV(4.6f);
+		m_pCB_Diffusion->m.Phase0 = PhaseFactor * ComputePhase( ScatteringAnisotropy, 0, 1, m_pCB_Diffusion->m.TexelSize, m_pCB_Diffusion->m.SliceThickness );
+		m_pCB_Diffusion->m.Phase1 = PhaseFactor * ComputePhase( ScatteringAnisotropy, 1, 8, m_pCB_Diffusion->m.TexelSize, m_pCB_Diffusion->m.SliceThickness );
+		m_pCB_Diffusion->m.Phase2 = PhaseFactor * ComputePhase( ScatteringAnisotropy, 2, 12, m_pCB_Diffusion->m.TexelSize, m_pCB_Diffusion->m.SliceThickness );
 
-		m_pCB_Diffusion->m.ExternalLight = _TV(2.0f) * NjFloat3( 1.0f, 1.0f, 1.0f );
-		m_pCB_Diffusion->m.InternalEmissive = _TV(0.0f) * NjFloat3( 1.0f, 0.8f, 0.2f );
+//		m_pCB_Diffusion->m.ExternalLight = _TV(2.0f) * NjFloat3( 1.0f, 1.0f, 1.0f );
+		m_pCB_Diffusion->m.ExternalLight = _TV(1.4f) * (1.4f - EmissivePower) * NjFloat3( 1.0f, 1.0f, 1.0f );
+		m_pCB_Diffusion->m.InternalEmissive = _TV(10.0f) * EmissivePower * NjFloat3( 1.0f, 0.8f, 0.2f );
 
 		m_pCB_Diffusion->UpdateData();
 
@@ -195,7 +214,7 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 
 		// Render the torus
 		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( TorusPosition, TorusRotation, NjFloat3::One );
-		m_pCB_Object->m.EmissiveColor = NjFloat4( 0.2f * NjFloat3::One + m_pCB_Diffusion->m.InternalEmissive, 1.0f );
+		m_pCB_Object->m.EmissiveColor = NjFloat4( 0.0f * NjFloat3::One + m_pCB_Diffusion->m.InternalEmissive, 1.0f );
 		m_pCB_Object->UpdateData();
 
 		m_pPrimTorusInternal->Render( *m_pMatDisplay );

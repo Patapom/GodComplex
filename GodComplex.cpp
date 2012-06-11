@@ -10,6 +10,7 @@ Device		gs_Device;
 
 #ifdef MUSIC
 V2MPlayer	gs_Music;
+void*		gs_pMusicPlayerWorkMem;
 #endif
 
 WININFO		gs_WindowInfos;
@@ -178,11 +179,20 @@ bool	WindowInit()
 #ifdef MUSIC
 	gs_Music.Init();
 
+	int	WorkMemSize = synthGetSize();
+	gs_pMusicPlayerWorkMem = new U8[WorkMemSize];
+
 	U32			TuneSize = 0;
 	const U8*	pTheTune = LoadResourceBinary( IDR_MUSIC, "MUSIC", &TuneSize );
 	gs_Music.Open( pTheTune );
 
 	dsInit( gs_Music.RenderProxy, &gs_Music, gs_WindowInfos.hWnd );
+
+// Readback positions
+// sS32*	pPositions = NULL;
+// U32		PositionsCount = gs_Music.CalcPositions( &pPositions );
+// delete[] pPositions;
+
 #endif
 
 	//////////////////////////////////////////////////////////////////////////
@@ -196,6 +206,8 @@ void	WindowExit()
 	// Kill the music
 #ifdef MUSIC
 	dsClose();
+
+	delete[] gs_pMusicPlayerWorkMem;
 	gs_Music.Close();
 #endif
 
@@ -295,12 +307,18 @@ void	HandleEvents()
 	gs_WindowInfos.Events.Mouse.dbuttons[1] = gs_WindowInfos.Events.Mouse.buttons[1] - gs_WindowInfos.Events.Mouse.obuttons[1];
 }
 
-void	print( const char* _pText )
+void	print( const char* _pText, ... )
 {
-	OutputDebugString( _pText );
+	va_list	argptr;
+	va_start( argptr, _pText );
+	char	pTemp[4096];
+	sprintf( pTemp, _pText, argptr );
+	va_end( argptr );
+
+	OutputDebugString( pTemp );
 }
 #else
-void	print( const char* _pText )	{}	// Empty in release mode
+void	print( const char* _pText, ... )	{}	// Empty in release mode
 #endif
 
  
@@ -370,7 +388,7 @@ void WINAPI	EntryPoint()
 	// Run the message loop !
 	bool	bFinished = false;
     float	StartTime = 0.001f * timeGetTime(); 
-	float	LastTime = StartTime;
+	float	LastTime = 0.0f;
 
 	while ( !bFinished )
 	{

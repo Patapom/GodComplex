@@ -98,7 +98,7 @@ void	FillSplotch( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
 	float	Distance2Center = UV.Length();
 
 	float	C = 1.2f * (1.0f - 2.0f * Distance2Center);
-			C = CLAMP01( C );
+			C = SATURATE( C );
 	float	A = C * C * i.Coverage;
 	NjFloat4	Color( C, C, C, A );
 

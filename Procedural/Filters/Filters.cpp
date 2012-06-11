@@ -214,7 +214,7 @@ void	FillBCG( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pDat
 	float	Luma = _Color | LUMINANCE;
 //	float	ContrastedLuma = BCG.B + BCG.C * (Luma - 0.5f);
 	float	ContrastedLuma = 0.5f + BCG.C * (Luma + BCG.B);
-			ContrastedLuma = CLAMP01( ContrastedLuma );
+			ContrastedLuma = SATURATE( ContrastedLuma );
 	float	NewLuma = powf( ContrastedLuma, BCG.G );
 
 	_Color = _Color * (NewLuma / Luma);

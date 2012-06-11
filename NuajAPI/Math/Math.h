@@ -18,38 +18,31 @@ static float _asinf( float x )
 }
 
 // Override some functions with our own implementations
-#define log2f( a )		ASM_log2f( a )
-#define expf( a )		ASM_expf( a )
-#define powf( a, b )	ASM_powf( a, b )
-#define fmodf( a, b )	ASM_fmodf( a, b )
-#define floorf( a )		ASM_floorf( a )
-#define ceilf( a )		ASM_ceilf( a )
-#define acosf( a )		_acosf( a )
-#define asinf( a )		_asinf( a )
+#define log2f( a )			ASM_log2f( a )
+#define expf( a )			ASM_expf( a )
+#define powf( a, b )		ASM_powf( a, b )
+#define fmodf( a, b )		ASM_fmodf( a, b )
+#define floorf( a )			ASM_floorf( a )
+#define ceilf( a )			ASM_ceilf( a )
+#define acosf( a )			_acosf( a )
+#define asinf( a )			_asinf( a )
 
+static const float			PI = 3.1415926535897932384626433832795f;		// ??
+static const float			TWOPI = 6.283185307179586476925286766559f;		// 2PI
+static const float			HALFPI = 1.5707963267948966192313216916398f;	// PI/2
+static const float			INVPI = 0.31830988618379067153776752674503f;	// 1/PI
+static const float			INV2PI = 0.15915494309189533576888376337251f;	// 1/(2PI)
+static const float			INV4PI = 0.07957747154594766788444188168626f;	// 1/(4PI)
+static const float			FLOAT32_MAX = 3.402823466e+38f;
 
-static const float	PI = 3.1415926535897932384626433832795f;		// ??
-static const float	TWOPI = 6.283185307179586476925286766559f;		// 2PI
-static const float	HALFPI = 1.5707963267948966192313216916398f;	// PI/2
-static const float	INVPI = 0.31830988618379067153776752674503f;	// 1/PI
-static const float	INV2PI = 0.15915494309189533576888376337251f;	// 1/(2PI)
-static const float	INV4PI = 0.07957747154594766788444188168626f;	// 1/(4PI)
-
-// #define PI					3.1415926535897932384626433832795f
-// #define TWOPI				6.283185307179586476925286766559f
-// #define HALFPI				1.5707963267948966192313216916398f
-// #define INVPI				0.31830988618379067153776752674503f
-// #define INV2PI				0.15915494309189533576888376337251f
 #define RAD2DEG( a )		(57.295779513082320876798154814105f * a)
 #define DEG2RAD( a )		(0.01745329251994329576923690768489f * a)
-#define MIN( a, b )			((a) < (b) ? (a) : (b))
-#define MAX( a, b )			((a) > (b) ? (a) : (b))
-#define CLAMP( s, a, b )	((s) < (a) ? (a) : ((s) > (b) ? (b) : (s)))
-#define CLAMP01( s )		((s) < 0.0f ? 0.0f : ((s) > 1.0f ? 1.0f : (s)))
 #define BYTE2FLOAT( b )		(b / 255.0f)
-#define FLOAT32_MAX			3.402823466e+38f
-
-static U8	FLOAT2BYTE( float f )	{ return U8( CLAMP( 255.0f * f, 0.0f, 255.0f ) ); }
+template<class T> inline T	MIN( const T a, const T b )						{ return a < b ? a : b;  }
+template<class T> inline T	MAX( const T a, const T b )						{ return a > b ? a : b;  }
+template<class T> inline T	CLAMP( const T x, const T min, const T max )	{ return MIN( MAX( min, x ), max ); }
+template<class T> inline T	SATURATE( const T x )							{ return x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x); }
+static U8					FLOAT2BYTE( float f )							{ return U8( CLAMP( 255.0f * f, 0.0f, 255.0f ) ); }
 
 
 // Float2 used for point & vector operations
