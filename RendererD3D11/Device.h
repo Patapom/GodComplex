@@ -78,7 +78,8 @@ public:	 // METHODS
 	void	ClearRenderTarget( const Texture2D& _Target, const NjFloat4& _Color );
 	void	ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil );
 	void	SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil=NULL, D3D11_VIEWPORT* _pViewport=NULL );
-	void	SetStates( RasterizerState& _RasterizerState, DepthStencilState& _DepthStencilState, BlendState& _BlendState );
+	void	RemoveRenderTargets();
+	void	SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _pDepthStencilState, BlendState* _pBlendState );
 
 private:
 

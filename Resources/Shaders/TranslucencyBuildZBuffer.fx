@@ -28,7 +28,7 @@ struct	PS_IN
 PS_IN	VS( VS_IN _In )
 {
 	float4	Position = mul( float4( _In.Position, 1.0 ), _Local2World );	// We assume the object is already in clip space, we only rotate it a bit
-	float	Z = 1.0 + Position.z;					// Keep the linear Z in [0,2]
+	float	Z = 1.0 - Position.z;					// Keep the linear Z in [0,2]
 
 	Position.z = 0.5 * Z;							// Finally, clip space Z is in [0,1]
 

@@ -1,6 +1,9 @@
+//////////////////////////////////////////////////////////////////////////
+// This shader finally displays the object with its diffused irradiance
+//
 #include "Inc/Global.fx"
 
-Texture2D	_TexNoise	: register(t0);
+Texture2D	_TexIrradiance	: register(t0);
 
 //[
 cbuffer	cbObject	: register( b1 )
@@ -31,14 +34,16 @@ PS_IN	VS( VS_IN _In )
 	PS_IN	Out;
 	Out.__Position = mul( WorldPosition, _World2Proj );
 	Out.Normal = _In.Normal;
-	Out.UV = _In.UV;
+
+	Out.UV = 0.5 * (1.0 + _In.Position.xy);	// Planar mapping
+	Out.UV.y = 1.0 - Out.UV.y;
 
 	return Out;
 }
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
-	return float4( _In.Normal, 1.0 );
+//	return float4( _In.Normal, 1.0 );
 //	return float4( _In.UV, 0, 1.0 );
-//	return TEX2DLOD( _TexNoise, LinearWrap, UV, _LOD );
+	return float4( TEX2D( _TexIrradiance, LinearClamp, _In.UV ).xyz, 1.0 );
 }

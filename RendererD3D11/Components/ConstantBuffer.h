@@ -32,13 +32,15 @@ public:	 // METHODS
 
 template<typename T> class	CB : public ConstantBuffer
 {
-public:		// FIELDS
+protected:	// FIELDS
 
+	int		m_SlotIndex;
+
+public:
 	T		m;
-
 
 public:		// METHODS
 
-	CB( Device& _Device ) : ConstantBuffer( _Device, sizeof(T) )	{}
-	void		UpdateData()	{ ConstantBuffer::UpdateData( &m ); }
+	CB( Device& _Device, int _SlotIndex ) : ConstantBuffer( _Device, sizeof(T) ), m_SlotIndex( _SlotIndex )	{}
+	void		UpdateData()	{ ConstantBuffer::UpdateData( &m ); Set( m_SlotIndex ); }
 };

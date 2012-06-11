@@ -9,6 +9,10 @@ Global
 		Debug|Win32 = Debug|Win32
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		DebugPackedShaders|Mixed Platforms = DebugPackedShaders|Mixed Platforms
+		DebugPackedShaders|Win32 = DebugPackedShaders|Win32
+		DebugPackedShaders|x64 = DebugPackedShaders|x64
+		DebugPackedShaders|x86 = DebugPackedShaders|x86
 		Release|Mixed Platforms = Release|Mixed Platforms
 		Release|Win32 = Release|Win32
 		Release|x64 = Release|x64
@@ -21,6 +25,12 @@ Global
 		{11EF6AA0-6311-479A-8E60-356233322356}.Debug|Win32.Build.0 = Debug|Win32
 		{11EF6AA0-6311-479A-8E60-356233322356}.Debug|x64.ActiveCfg = Debug|Win32
 		{11EF6AA0-6311-479A-8E60-356233322356}.Debug|x86.ActiveCfg = Debug|Win32
+		{11EF6AA0-6311-479A-8E60-356233322356}.DebugPackedShaders|Mixed Platforms.ActiveCfg = DebugPackedShaders|Win32
+		{11EF6AA0-6311-479A-8E60-356233322356}.DebugPackedShaders|Mixed Platforms.Build.0 = DebugPackedShaders|Win32
+		{11EF6AA0-6311-479A-8E60-356233322356}.DebugPackedShaders|Win32.ActiveCfg = DebugPackedShaders|Win32
+		{11EF6AA0-6311-479A-8E60-356233322356}.DebugPackedShaders|Win32.Build.0 = DebugPackedShaders|Win32
+		{11EF6AA0-6311-479A-8E60-356233322356}.DebugPackedShaders|x64.ActiveCfg = DebugPackedShaders|Win32
+		{11EF6AA0-6311-479A-8E60-356233322356}.DebugPackedShaders|x86.ActiveCfg = DebugPackedShaders|Win32
 		{11EF6AA0-6311-479A-8E60-356233322356}.Release|Mixed Platforms.ActiveCfg = Release|Win32
 		{11EF6AA0-6311-479A-8E60-356233322356}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{11EF6AA0-6311-479A-8E60-356233322356}.Release|Win32.ActiveCfg = Release|Win32

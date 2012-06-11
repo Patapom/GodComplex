@@ -1,5 +1,7 @@
 #pragma once
 
+#define MAKE_STRING(a)	#a
+
 //////////////////////////////////////////////////////////////////////////
 // Simple types definition
 typedef signed char		S8;

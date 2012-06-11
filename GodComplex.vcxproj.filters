@@ -68,6 +68,9 @@
     <Filter Include="Intro\Effects">
       <UniqueIdentifier>{821ccdea-1a47-4c1a-9260-631f4e6fde0c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\EffectTranslucency">
+      <UniqueIdentifier>{ec3741a5-fc8f-4ceb-aed7-932619453652}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\Events.h">
@@ -297,7 +300,19 @@
       <Filter>NuajAPI\API</Filter>
     </None>
     <None Include="Resources\Shaders\TranslucencyBuildZBuffer.fx">
-      <Filter>Resources\Shaders\DEBUG</Filter>
+      <Filter>Resources\Shaders\DEBUG\EffectTranslucency</Filter>
+    </None>
+    <None Include="Resources\Shaders\TranslucencyDiffusion.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectTranslucency</Filter>
+    </None>
+    <None Include="Resources\Shaders\Compressed\TranslucencyBuildZBuffer.fx">
+      <Filter>Resources\Shaders\RELEASE %28Minified%29</Filter>
+    </None>
+    <None Include="Resources\Shaders\Compressed\TranslucencyDiffusion.fx">
+      <Filter>Resources\Shaders\RELEASE %28Minified%29</Filter>
+    </None>
+    <None Include="Resources\Shaders\TranslucencyDisplay.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectTranslucency</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

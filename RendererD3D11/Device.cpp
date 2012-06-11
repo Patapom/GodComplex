@@ -241,19 +241,34 @@ void	Device::SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepth
 	m_pDeviceContext->OMSetRenderTargets( 1, &pTargetView, pDepthStencilView );
 }
 
-void	Device::SetStates( RasterizerState& _RasterizerState, DepthStencilState& _DepthStencilState, BlendState& _BlendState )
+void	Device::RemoveRenderTargets()
 {
-	if ( &_RasterizerState != m_pCurrentRasterizerState )
-		m_pDeviceContext->RSSetState( _RasterizerState.m_pState );
-	m_pCurrentRasterizerState = &_RasterizerState;
+	static ID3D11RenderTargetView*	ppEmpty[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, };
+	m_pDeviceContext->OMSetRenderTargets( 8, ppEmpty, NULL );
+}
 
-	if ( &_DepthStencilState != m_pCurrentDepthStencilState )
-		m_pDeviceContext->OMSetDepthStencilState( _DepthStencilState.m_pState, 0 );
-	m_pCurrentDepthStencilState = &_DepthStencilState;
+void	Device::SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _pDepthStencilState, BlendState* _pBlendState )
+{
+	if ( _pRasterizerState != NULL )
+	{
+		if ( _pRasterizerState != m_pCurrentRasterizerState )
+			m_pDeviceContext->RSSetState( _pRasterizerState->m_pState );
+		m_pCurrentRasterizerState = _pRasterizerState;
+	}
 
-	if ( &_BlendState != m_pCurrentBlendState )
-		m_pDeviceContext->OMSetBlendState( _BlendState.m_pState, &NjFloat4::One.x, ~0L );
-	m_pCurrentBlendState = &_BlendState;
+	if ( _pDepthStencilState != NULL )
+	{
+		if ( _pDepthStencilState != m_pCurrentDepthStencilState )
+			m_pDeviceContext->OMSetDepthStencilState( _pDepthStencilState->m_pState, 0 );
+		m_pCurrentDepthStencilState = _pDepthStencilState;
+	}
+
+	if ( _pBlendState != NULL )
+	{
+		if ( _pBlendState != m_pCurrentBlendState )
+			m_pDeviceContext->OMSetBlendState( _pBlendState->m_pState, &NjFloat4::One.x, ~0L );
+		m_pCurrentBlendState = _pBlendState;
+	}
 }
 
 void	Device::RegisterComponent( Component& _Component )

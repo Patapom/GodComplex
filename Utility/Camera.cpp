@@ -2,7 +2,7 @@
 
 Camera::Camera( Device& _Device ) : m_Device( _Device )
 {
-	m_pCB = new CB<CBData>( m_Device );
+	m_pCB = new CB<CBData>( m_Device, 0 );
 	m_pCB->m.Camera2World = m_pCB->m.World2Camera = m_pCB->m.Camera2Proj = m_pCB->m.Proj2Camera = NjFloat4x4::Identity;
 }
 Camera::~Camera()
@@ -60,7 +60,6 @@ void	Camera::LookAt( const NjFloat3& _Position, const NjFloat3& _Target, const N
 void	Camera::Upload( int _SlotIndex )
 {
 	m_pCB->UpdateData();
-	m_pCB->Set( _SlotIndex );
 }
 
 void	Camera::UpdateCompositions()

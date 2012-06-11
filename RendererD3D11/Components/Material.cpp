@@ -123,7 +123,13 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 
 
 	D3DPreprocess( _pShaderCode, strlen(_pShaderCode), NULL, _pMacros, this, &pCodeText, &pErrors );
-	ASSERT( pErrors == NULL, "Shader preprocess error !" );
+#if defined(_DEBUG) || defined(DEBUG_SHADER)
+	if ( pErrors != NULL )
+	{
+		MessageBox( NULL, (LPCTSTR) pErrors->GetBufferPointer(), "Shader PreProcess Error !", MB_OK | MB_ICONERROR );
+		ASSERT( pErrors == NULL, "Shader preprocess error !" );
+	}
+#endif
 
 	U32 Flags1 = 0;
 #ifdef _DEBUG
@@ -139,7 +145,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 	U32 Flags2 = 0;
 
 	D3DCompile( pCodeText->GetBufferPointer(), pCodeText->GetBufferSize(), NULL, _pMacros, this, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors );
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEBUG_SHADER)
 	if ( pErrors != NULL )
 	{
 		MessageBox( NULL, (LPCTSTR) pErrors->GetBufferPointer(), "Shader Compilation Error !", MB_OK | MB_ICONERROR );

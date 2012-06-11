@@ -73,13 +73,13 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create constant buffers
 	{
-		gs_pCB_Test = new CB<CBTest>( gs_Device );
+		gs_pCB_Test = new CB<CBTest>( gs_Device, 1 );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create effects
 	{
-		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency(), 2000 );	// Error codes should increase in hundreds like 2000, 2100, 2200, etc.
+		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pPrimQuad, *gs_pRTHDR ), 2000 );	// Error codes for effects should increase in hundreds like 2000, 2100, 2200, etc.
 	}
 
 	return 0;
@@ -117,7 +117,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	// Update the camera settings and upload its data to the shaders
 
 	// TODO: Animate camera...
-	gs_pCamera->LookAt( NjFloat3( 0.0f, 0.0f, 2.0f ), NjFloat3( 0.0f, 0.0f, 0.0f ), NjFloat3::UnitY );
+	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(0.0f), _TV(1.4f) ), NjFloat3( 0.0f, 0.0f, 0.0f ), NjFloat3::UnitY );
 
 	gs_pCamera->Upload( 0 );
 
@@ -129,7 +129,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	gs_pEffectTranslucency->Render( _Time, _DeltaTime );
 
 	// Setup default states
-	gs_Device.SetStates( *gs_Device.m_pRS_CullNone, *gs_Device.m_pDS_Disabled, *gs_Device.m_pBS_Disabled );
+	gs_Device.SetStates( gs_Device.m_pRS_CullNone, gs_Device.m_pDS_Disabled, gs_Device.m_pBS_Disabled );
 
 	// Render to screen
 	USING_MATERIAL_START( *gs_pMatPostFinal )
@@ -137,12 +137,11 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 		gs_pCB_Test->m.LOD = 10.0f * (1.0f - fabs( sinf( _TV(1.0f) * _Time ) ));
 //gs_CBTest.LOD = 0.0f;
-
 		gs_pCB_Test->UpdateData();
-		gs_pCB_Test->SetPS( 1 );
 
 //		gs_pTexTestNoise->SetPS( 0 );
-		gs_pEffectTranslucency->GetZBuffer()->SetPS( 0 );
+//		gs_pEffectTranslucency->GetZBuffer()->SetPS( 0 );
+		gs_pEffectTranslucency->GetIrradiance()->SetPS( 0 );
 		gs_pRTHDR->SetPS( 1 );
 
 		gs_pPrimQuad->Render( M );
