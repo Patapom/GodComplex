@@ -331,6 +331,16 @@ float	Noise::Perlin( const NjFloat4& uvwr, const NjFloat2& st ) const
 	return TriLerp( N000, N001, N011, N010, N100, N101, N111, N110, t3, t4, t5 );
 }
 
+NjFloat3	Noise::PerlinVector( const NjFloat3& _uvw ) const
+{
+	NjFloat3	uvw = _uvw;
+	NjFloat3	Result;
+	Result.x = Perlin( uvw );	uvw.x += BIAS_U; uvw.y += BIAS_V; uvw.z += BIAS_W;
+	Result.y = Perlin( uvw );	uvw.x += BIAS_R; uvw.y += BIAS_S; uvw.z += BIAS_T;
+	Result.z = Perlin( uvw );
+	return Result;
+}
+
 void	Noise::SetWrappingParameters( float _Frequency, U32 _Seed )
 {
 	m_WrapRadius = _Frequency * 0.5f;

@@ -127,6 +127,9 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 		// Create R/W Less state
 		Desc.DepthEnable = true;
 		m_pDS_ReadWriteLess = new DepthStencilState( *this, Desc ); m_StatesCount++;
+
+		Desc.DepthFunc = D3D11_COMPARISON_GREATER;
+		m_pDS_ReadWriteGreater = new DepthStencilState( *this, Desc ); m_StatesCount++;
 	}
 	{
 		D3D11_BLEND_DESC	Desc;

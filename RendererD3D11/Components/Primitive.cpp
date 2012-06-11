@@ -73,6 +73,7 @@ void	Primitive::WriteVertex( void* _pVertex, const NjFloat3& _Position, const Nj
 
 void	Primitive::WriteIndex( void* _pIndex, int _Index )
 {
+	ASSERT( _Index < m_VerticesCount, "Index out of range !" );
 	*((U16*) _pIndex) = _Index;
 }
 

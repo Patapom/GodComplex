@@ -1,6 +1,7 @@
 #include "../GodComplex.h"
 
-#define WRITE( pVertex, P, N, T, UV )	WriteVertex( _Writer, pVertex, P, N, T, UV, _TweakVertex, _pUserData )
+#define VWRITE( pVertex, P, N, T, UV )	WriteVertex( _Writer, pVertex, P, N, T, UV, _TweakVertex, _pUserData );	pVertex+=VStride;	VerticesCount--
+#define IWRITE( pIndex, i )				_Writer.WriteIndex( pIndex, i );	pIndex+=IStride;	IndicesCount--
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -42,7 +43,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 	int	VerticesCount = (BandLength+1) * (1 + _ThetaSubdivisions + 1);	// 1 band at the top and bottom of the sphere + as many subdivisions as required
 
 	int	BandsCount = 1 + _ThetaSubdivisions;
-	int	IndicesCount = (2*(BandLength+1+1)) * BandsCount;
+	int	IndicesCount = (2*(BandLength+1+1)) * BandsCount - 2;
 
 	// Create the buffers
 	void*	pVerticesArray = NULL;
@@ -63,7 +64,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 
 	// Top band
 	{
-		for ( int i=0; i <= BandLength; i++, pVertex+=VStride, VerticesCount-- )
+		for ( int i=0; i <= BandLength; i++ )
 		{
 			float	Phi = TWOPI * i / BandLength;
 			Tangent.x = cosf( Phi );
@@ -81,7 +82,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			_Mapper.Map( Position, Normal, Tangent, UV );
 
 			// Write vertex
-			WRITE( pVertex, NjFloat3::UnitY, NjFloat3::UnitY, Tangent, UV );
+			VWRITE( pVertex, NjFloat3::UnitY, NjFloat3::UnitY, Tangent, UV );
 		}
 	}
 
@@ -89,7 +90,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 	for ( int j=0; j < _ThetaSubdivisions; j++ )
 	{
 		float	Theta = PI * (1+j) / (1 + _ThetaSubdivisions);
-		for ( int i=0; i <= BandLength; i++, pVertex+=VStride, VerticesCount-- )
+		for ( int i=0; i <= BandLength; i++ )
 		{
 			float	Phi = TWOPI * i / BandLength;
 
@@ -107,13 +108,13 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			_Mapper.Map( Position, Normal, Tangent, UV );
 
 			// Write vertex
-			WRITE( pVertex, Position, Normal, Tangent, UV );
+			VWRITE( pVertex, Position, Normal, Tangent, UV );
 		}
 	}
 
 	// Bottom band
 	{
-		for ( int i=0; i <= BandLength; i++, pVertex+=VStride, VerticesCount-- )
+		for ( int i=0; i <= BandLength; i++ )
 		{
 			float	Phi = TWOPI * i / BandLength;
 			Tangent.x = cosf( Phi );
@@ -131,7 +132,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			_Mapper.Map( Position, Normal, Tangent, UV );
 
 			// Write vertex
-			WRITE( pVertex, -NjFloat3::UnitY, -NjFloat3::UnitY, Tangent, UV );
+			VWRITE( pVertex, -NjFloat3::UnitY, -NjFloat3::UnitY, Tangent, UV );
 		}
 	}
 	ASSERT( VerticesCount == 0, "Wrong contruction !" );
@@ -146,17 +147,93 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 
 		for ( int i=0; i <= BandLength; i++ )
 		{
-			_Writer.WriteIndex( pIndex, CurrentBandOffset + i );	pIndex+=IStride;	IndicesCount--;
-			_Writer.WriteIndex( pIndex, NextBandOffset + i );		pIndex+=IStride;	IndicesCount--;
+			IWRITE( pIndex, CurrentBandOffset + i );
+			IWRITE( pIndex, NextBandOffset + i );
 		}
 
-// 		// Write last looping indices to close that band
-// 		_Writer.WriteIndex( pIndex, CurrentBandOffset + 0 );	pIndex+=IStride;	IndicesCount--;
-// 		_Writer.WriteIndex( pIndex, NextBandOffset + 0 );		pIndex+=IStride;	IndicesCount--;
+		if ( j == BandsCount-1 )
+			continue;	// Not for the last band...
 
 		// Write 2 last degenerate indices so we smoothly transition to next band
-		_Writer.WriteIndex( pIndex, NextBandOffset + BandLength );		pIndex+=IStride;	IndicesCount--;
-		_Writer.WriteIndex( pIndex, NextBandOffset + BandLength+1 );	pIndex+=IStride;	IndicesCount--;
+		IWRITE( pIndex, NextBandOffset + BandLength );
+		IWRITE( pIndex, NextBandOffset + BandLength+1 );
+	}
+	ASSERT( IndicesCount == 0, "Wrong contruction !" );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Finalize
+	_Writer.Finalize( pVerticesArray, pIndicesArray );
+}
+
+void	GeometryBuilder::BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, float _LargeRadius, float _SmallRadius, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
+{
+	int	BandLength = _ThetaSubdivisions;
+	int	BandsCount = _PhiSubdivisions;
+
+	int	VerticesCount = BandsCount * (BandLength+1);
+	int	IndicesCount = 2*(BandLength+1+1) * BandsCount - 2;
+
+	// Create the buffers
+	void*	pVerticesArray = NULL;
+	void*	pIndicesArray = NULL;
+	int		VStride, IStride;
+
+	_Writer.CreateBuffers( VerticesCount, IndicesCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, pVerticesArray, pIndicesArray, VStride, IStride );
+	ASSERT( pVerticesArray != NULL, "Invalid vertex buffer !" );
+	ASSERT( pIndicesArray != NULL, "Invalid index buffer !" );
+
+	U8*		pVertex = (U8*) pVerticesArray;
+	U8*		pIndex = (U8*) pIndicesArray;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build vertices
+	NjFloat3	Position, Normal, Tangent;
+	NjFloat2	UV;
+
+	for ( int j=0; j < BandsCount; j++ )
+	{
+		float		Phi = TWOPI * j / BandsCount;
+
+		NjFloat3	X( cosf(Phi), sinf(Phi), 0.0f );	// Radial branch in X^Y plane at this angle
+		NjFloat3	Center = _LargeRadius * X;			// Center of the small ring
+
+		Tangent.x = -sinf(Phi);
+		Tangent.y = cosf(Phi);
+		Tangent.z = 0.0f;
+
+		for ( int i=0; i <= BandLength; i++ )
+		{
+			float	Theta = TWOPI * i / BandLength;
+
+			Normal = cosf(Theta) * X + sinf(Theta) * NjFloat3::UnitZ;
+			Position = Center + _SmallRadius * Normal;
+			_Mapper.Map( Position, Normal, Tangent, UV );
+
+			VWRITE( pVertex, Position, Normal, Tangent, UV );
+		}
+	}
+	ASSERT( VerticesCount == 0, "Wrong contruction !" );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build indices
+	for ( int j=0; j < BandsCount; j++ )
+	{
+		int	CurrentBandOffset = j * (BandLength+1);
+		int	NextBandOffset = ((j+1) % _PhiSubdivisions) * (BandLength+1);
+		int	NextNextBandOffset = ((j+2) % _PhiSubdivisions) * (BandLength+1);
+
+		for ( int i=0; i <= BandLength; i++ )
+		{
+			IWRITE( pIndex, CurrentBandOffset + i );
+			IWRITE( pIndex, NextBandOffset + i );
+		}
+
+		if ( j == BandsCount-1 )
+			continue;	// Not for the last band...
+
+		// Write 2 last degenerate indices so we smoothly transition to next band
+		IWRITE( pIndex, NextBandOffset + BandLength );
+		IWRITE( pIndex, NextNextBandOffset );
 	}
 	ASSERT( IndicesCount == 0, "Wrong contruction !" );
 

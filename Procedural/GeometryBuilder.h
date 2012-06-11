@@ -45,6 +45,8 @@ public:		// METHODS
 	// Builds a uniformly subdivided sphere
 	static void		BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
 
+	// Builds a torus in the XY plane
+	static void		BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, float _LargeRadius, float _SmallRadius, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
 
 private:
 

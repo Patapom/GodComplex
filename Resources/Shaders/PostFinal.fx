@@ -28,8 +28,9 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 	float4	Background = TEX2DLOD( _TexNoise, LinearWrap, UV, _LOD );
 //return Background;
 //return 0.5 * ((Background.y - Background.x) - (Background.w - Background.z));
-//return (Background.w - Background.z);
-//return 0.5 * Background.x;
+//return 0.5 * Background.y;
+//return 1.0 * (Background.y - Background.x);
+//return 1.0 * (Background.w - Background.z);
 //return float4( UV, 0, 0 );
 
 	return lerp( Background, SourceHDR, SourceHDR.w );	// Alpha blend...

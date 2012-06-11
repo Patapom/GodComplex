@@ -42,6 +42,7 @@ public:
 
 	DepthStencilState*		m_pDS_Disabled;
 	DepthStencilState*		m_pDS_ReadWriteLess;
+	DepthStencilState*		m_pDS_ReadWriteGreater;
 
 	BlendState*				m_pBS_Disabled;
 	BlendState*				m_pBS_Disabled_RedOnly;

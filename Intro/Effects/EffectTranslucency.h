@@ -15,6 +15,7 @@ public:		// NESTED TYPES
 	struct CBObject
 	{
 		NjFloat4x4	Local2World;	// Local=>World transform to rotate the object
+		NjFloat4	EmissiveColor;
 	};
 
 	struct CBDiffusion
@@ -59,7 +60,7 @@ private:	// FIELDS
 	Material*			m_pMatDiffusion;	// Performs light diffusion through the volume
 	Material*			m_pMatDisplay;		// Some material for primitive display
 
-	Primitive*			m_pPrimSphereInternal;
+	Primitive*			m_pPrimTorusInternal;
 	Primitive*			m_pPrimSphereExternal;
 
 	Texture2D*			m_pRTZBuffer;

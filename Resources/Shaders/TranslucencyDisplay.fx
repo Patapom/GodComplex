@@ -9,6 +9,7 @@ Texture2D	_TexIrradiance	: register(t0);
 cbuffer	cbObject	: register( b1 )
 {
 	float4x4	_Local2World;
+	float4		_EmissiveColor;
 };
 //]
 
@@ -45,5 +46,5 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 {
 //	return float4( _In.Normal, 1.0 );
 //	return float4( _In.UV, 0, 1.0 );
-	return float4( TEX2D( _TexIrradiance, LinearClamp, _In.UV ).xyz, 1.0 );
+	return float4( lerp( TEX2D( _TexIrradiance, LinearClamp, _In.UV ).xyz, _EmissiveColor.xyz, _EmissiveColor.w ), 1.0 );
 }

@@ -7,14 +7,15 @@ void	TweakSphereExternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tan
 {
 	Noise&	N = *((Noise*) _pUserData);
 
-	_Position = _Position + _Normal * 0.2f * (-1.0f + N.Perlin( 0.02f * _Position ));	// Add perlin inward
+	_Position = _Position + _Normal * 0.2f * (-1.0f + N.Perlin( 0.0005f * _Position ));	// Add perlin inward
 }
 
-void	TweakSphereInternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tangent, NjFloat2& _UV, void* _pUserData )
+void	TweakTorusInternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tangent, NjFloat2& _UV, void* _pUserData )
 {
 	Noise&	N = *((Noise*) _pUserData);
 
-	_Position = 0.4f * (_Position + _Normal * 0.5f * N.Perlin( 0.01f * _Position ));	// Scale down and add perlin
+//	_Position = 0.4f * (_Position + _Normal * 0.5f * N.Perlin( 0.01f * _Position ));	// Scale down and add perlin
+	_Position = 0.3f * (_Position + 0.05f * N.PerlinVector( 0.001f * _Position ));
 }
 
 EffectTranslucency::EffectTranslucency( Primitive& _Quad, Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_Quad( _Quad ), m_RTTarget( _RTTarget )
@@ -34,11 +35,11 @@ EffectTranslucency::EffectTranslucency( Primitive& _Quad, Texture2D& _RTTarget )
 
 		Noise	N( 1 );
 
-		m_pPrimSphereInternal = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
-		GeometryBuilder::BuildSphere( 20, 10, *m_pPrimSphereInternal, Mapper, TweakSphereInternal, &N );
+		m_pPrimTorusInternal = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
+		GeometryBuilder::BuildTorus( 20, 10, 1.0f, 0.2f, *m_pPrimTorusInternal, Mapper, TweakTorusInternal, &N );
 
 		m_pPrimSphereExternal = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
-		GeometryBuilder::BuildSphere( 40, 20, *m_pPrimSphereExternal, Mapper, TweakSphereExternal, &N );
+		GeometryBuilder::BuildSphere( 80, 50, *m_pPrimSphereExternal, Mapper, TweakSphereExternal, &N );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -68,7 +69,7 @@ EffectTranslucency::~EffectTranslucency()
 	delete m_pDepthStencil;
 	delete m_pRTZBuffer;
 
-	delete m_pPrimSphereInternal;
+	delete m_pPrimTorusInternal;
 	delete m_pPrimSphereExternal;
 
 	delete m_pMatDiffusion;
@@ -78,12 +79,13 @@ EffectTranslucency::~EffectTranslucency()
 
 void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 {
+	NjFloat3	TorusPosition = NjFloat3( 0.8f * cosf( _TV(0.45f) * _Time ), 0.8f * sinf( _TV(0.33f) * _Time ), 0.4f * cosf( _TV(0.5f) * _Time ) * sinf( _TV(0.17f) * _Time ) );	// Oscillate within the quiche
+	NjFloat4	TorusRotation = NjFloat4::QuatFromAngleAxis( _TV(0.25f) * _Time, NjFloat3::UnitY );																					// Rotate, too
+
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Render the internal & external objects into the RGBA ZBuffer
 	gs_Device.ClearRenderTarget( *m_pRTZBuffer, NjFloat4( 2.0f, 0.0f, 2.0f, 0.0f ) );
 	gs_Device.SetRenderTarget( *m_pRTZBuffer, m_pDepthStencil );
-
-	gs_Device.SetStates( NULL, gs_Device.m_pDS_ReadWriteLess, NULL );
 
 	{	USING_MATERIAL_START( *m_pMatBuildZBuffer )
 
@@ -93,35 +95,27 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 
 			// Front
 		gs_Device.ClearDepthStencil( *m_pDepthStencil, 1.0f, 0 );
- 		gs_Device.SetStates( gs_Device.m_pRS_CullBack, NULL, gs_Device.m_pBS_Disabled_RedOnly );
+ 		gs_Device.SetStates( gs_Device.m_pRS_CullBack, gs_Device.m_pDS_ReadWriteLess, gs_Device.m_pBS_Disabled_RedOnly );
 		m_pPrimSphereExternal->Render( *m_pMatBuildZBuffer );
 
 			// Back
-		gs_Device.ClearDepthStencil( *m_pDepthStencil, 1.0f, 0 );
- 		gs_Device.SetStates( gs_Device.m_pRS_CullFront, NULL, gs_Device.m_pBS_Disabled_GreenOnly );
+		gs_Device.ClearDepthStencil( *m_pDepthStencil, 0.0f, 0 );
+ 		gs_Device.SetStates( gs_Device.m_pRS_CullFront, gs_Device.m_pDS_ReadWriteGreater, gs_Device.m_pBS_Disabled_GreenOnly );
 		m_pPrimSphereExternal->Render( *m_pMatBuildZBuffer );
 
 		// === Render rotating internal object ===
-		static float	ObjectAngle = 0.0f;
-		ObjectAngle += _TV(0.25f) * _DeltaTime;
-
-		static float	ObjectAngle2 = 0.0f;
-		ObjectAngle2 += _TV(0.25f) * _DeltaTime;
-		static float	ObjectAngle3 = 0.0f;
-		ObjectAngle3 += _TV(0.13f) * _DeltaTime;
-
-		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3( 0.2f * cosf( ObjectAngle2 ), 0.2f * sinf( ObjectAngle3 ), 0.2f * cosf( ObjectAngle2 ) * sinf( ObjectAngle3 ) ), NjFloat4::QuatFromAngleAxis( ObjectAngle, NjFloat3::UnitY ), NjFloat3::One );
+		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( TorusPosition, TorusRotation, NjFloat3::One );
 		m_pCB_Object->UpdateData();
 
 			// Front
 		gs_Device.ClearDepthStencil( *m_pDepthStencil, 1.0f, 0 );
- 		gs_Device.SetStates( gs_Device.m_pRS_CullBack, NULL, gs_Device.m_pBS_Disabled_BlueOnly );
-		m_pPrimSphereInternal->Render( *m_pMatBuildZBuffer );
+ 		gs_Device.SetStates( gs_Device.m_pRS_CullBack, gs_Device.m_pDS_ReadWriteLess, gs_Device.m_pBS_Disabled_BlueOnly );
+		m_pPrimTorusInternal->Render( *m_pMatBuildZBuffer );
 
 			// Back
-		gs_Device.ClearDepthStencil( *m_pDepthStencil, 1.0f, 0 );
- 		gs_Device.SetStates( gs_Device.m_pRS_CullFront, NULL, gs_Device.m_pBS_Disabled_AlphaOnly );
-		m_pPrimSphereInternal->Render( *m_pMatBuildZBuffer );
+		gs_Device.ClearDepthStencil( *m_pDepthStencil, 0.0f, 0 );
+ 		gs_Device.SetStates( gs_Device.m_pRS_CullFront, gs_Device.m_pDS_ReadWriteGreater, gs_Device.m_pBS_Disabled_AlphaOnly );
+		m_pPrimTorusInternal->Render( *m_pMatBuildZBuffer );
 
 		USING_MATERIAL_END
 	}
@@ -190,12 +184,21 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 		gs_Device.SetRenderTarget( m_RTTarget, &gs_Device.DefaultDepthStencil() );
 		gs_Device.SetStates( gs_Device.m_pRS_CullBack, gs_Device.m_pDS_ReadWriteLess, NULL );
 
-		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3::One );
-		m_pCB_Object->UpdateData();
-
 		m_ppRTDiffusion[0]->SetPS( 0 );
 
+		// Render the sphere
+		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( _TV(0.0f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
+		m_pCB_Object->m.EmissiveColor = NjFloat4::Zero;
+		m_pCB_Object->UpdateData();
+
 		m_pPrimSphereExternal->Render( *m_pMatDisplay );
+
+		// Render the torus
+		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( TorusPosition, TorusRotation, NjFloat3::One );
+		m_pCB_Object->m.EmissiveColor = NjFloat4( 0.2f * NjFloat3::One + m_pCB_Diffusion->m.InternalEmissive, 1.0f );
+		m_pCB_Object->UpdateData();
+
+		m_pPrimTorusInternal->Render( *m_pMatDisplay );
 
 		USING_MATERIAL_END
 	}

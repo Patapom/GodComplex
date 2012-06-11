@@ -71,6 +71,8 @@ public:		// METHODS
 	float	Perlin( const NjFloat4& uvwr, float s ) const;
 	float	Perlin( const NjFloat4& uvwr, const NjFloat2& st ) const;
 
+	NjFloat3	PerlinVector( const NjFloat3& uvw ) const;
+
 	// Noises that wrap !
 	void	SetWrappingParameters( float _Frequency, U32 _Seed );
 	float	WrapPerlin( float u ) const;
