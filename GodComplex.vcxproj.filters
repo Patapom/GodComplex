@@ -266,6 +266,9 @@
     <ClCompile Include="Intro\Effects\EffectTranslucency.cpp">
       <Filter>Intro\Effects</Filter>
     </ClCompile>
+    <ClCompile Include="Intro\Build3DTextures.cpp">
+      <Filter>Intro</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib">
@@ -317,6 +320,7 @@
     <None Include="Resources\Shaders\Compressed\TranslucencyDisplay.fx">
       <Filter>Resources\Shaders\RELEASE %28Minified%29</Filter>
     </None>
+    <None Include="Notes.txt" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

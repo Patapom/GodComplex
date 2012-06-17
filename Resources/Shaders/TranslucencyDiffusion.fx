@@ -6,7 +6,7 @@
 static const float2	dUV = 1.0 / TARGET_SIZE;	// TARGET_SIZE is passed as a macro and represents the size of the render target
 
 //[
-cbuffer	cbDiffusion	: register( b1 )
+cbuffer	cbDiffusion	: register( b10 )
 {
 	float	_BBoxSize;					// Size of the bbox (in meters)
 	float	_SliceThickness;			// Thickness of each slice we take (in meters)
@@ -19,7 +19,7 @@ cbuffer	cbDiffusion	: register( b1 )
 	float3	_InternalEmissive;			// The emissive color of the internal object (normally 0)
 };
 
-cbuffer	cbPass	: register( b2 )
+cbuffer	cbPass	: register( b11 )
 {
 	float	_PassIndex;					// Index of the pass
 	float	_CurrentZ;					// Current pass' Z in [0,2]
@@ -27,8 +27,8 @@ cbuffer	cbPass	: register( b2 )
 };
 //]
 
-Texture2D	_TexZBuffer		: register(t0);
-Texture2D	_TexIrradiance	: register(t1);
+Texture2D	_TexZBuffer		: register(t10);
+Texture2D	_TexIrradiance	: register(t11);
 
 
 struct	VS_IN
@@ -42,7 +42,7 @@ VS_IN	VS( VS_IN _In )	{ return _In; }
 // #define SAMPLE( x, y, i )	I += SampleIrradiance( UV, float2( x, y ), _Phase##i );
 float3	SampleIrradiance( float2 _UV, float2 _dXY, float3 _Phase )
 {
-	float3	NeighborIrradiance = TEX2DLOD( _TexIrradiance, LinearMirror, _UV + _dXY * dUV, 0.0 ).xyz;
+	float3	NeighborIrradiance = TEXLOD( _TexIrradiance, LinearMirror, _UV + _dXY * dUV, 0.0 ).xyz;
 	float3	Extinction = 1.0;//exp( -_ExtinctionCoeff * length( _dXY ) );
 	return _Phase * Extinction * NeighborIrradiance;
 }
@@ -51,7 +51,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 {
 	float2	UV = _In.__Position.xy * dUV;
 
-	float4	ObjZ = TEX2DLOD( _TexZBuffer, LinearClamp, UV, 0.0 );	// Objects' Z in [0,2]
+	float4	ObjZ = TEXLOD( _TexZBuffer, LinearClamp, UV, 0.0 );	// Objects' Z in [0,2]
 
 	clip( _NextZ - ObjZ.x );	// Don't do anything if we're standing BEFORE the object's closest Z (i.e. we've not entered the object yet !)
 	clip( ObjZ.y - _CurrentZ );	// Don't do anything if we're standing AFTER the object's farthest Z (i.e. we've already exited the object !)
@@ -85,22 +85,11 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 	// We're definitely completely inside the object and outside of the internal blocker so we should perform diffusion...
 	float3	SliceExtinction = exp( -_ExtinctionCoeff * _SliceThickness );
 
-// float3	I = TEX2DLOD( _TexIrradiance, LinearClamp, UV, 0.0 ).xyz;
+// float3	I = TEXLOD( _TexIrradiance, LinearClamp, UV, 0.0 ).xyz;
 // return float4( SliceExtinction * I, 0.0 );
 
 	// Try with 9 samples first
 	float3	I = 0.0;
-
-// 	SAMPLE( -1, -1, 1 );	SAMPLE( 0, -1, 1 );	SAMPLE( +1, -1, 1 );
-// 	SAMPLE( -1, 0, 1 );		SAMPLE( 0, 0, 0 );	SAMPLE( +1, 0, 1 );
-// 	SAMPLE( -1, +1, 1 );	SAMPLE( 0, +1, 1 );	SAMPLE( +1, +1, 1 );
-// 
-// 	// Then add 12 more samples
-// 	SAMPLE( -1, -2, 2 );	SAMPLE( 0, -2, 2 );	SAMPLE( +1, -2, 2 );
-// 	SAMPLE( -2, -1, 2 );						SAMPLE( +2, -1, 2 );
-// 	SAMPLE( -2,  0, 2 );						SAMPLE( +2, 0, 2 );
-// 	SAMPLE( -2, +1, 2 );						SAMPLE( +2, +1, 2 );
-// 	SAMPLE( -1, +2, 2 );	SAMPLE( 0, +2, 2 );	SAMPLE( +1, +2, 2 );
 
 	I += SampleIrradiance( UV, float2( -1, -1 ), _Phase1 );	I += SampleIrradiance( UV, float2(  0, -1 ), _Phase1 );	I += SampleIrradiance( UV, float2( +1, -1 ), _Phase1 );
 	I += SampleIrradiance( UV, float2( -1,  0 ), _Phase1 );	I += SampleIrradiance( UV, float2(  0,  0 ), _Phase0 );	I += SampleIrradiance( UV, float2( +1,  0 ), _Phase1 );

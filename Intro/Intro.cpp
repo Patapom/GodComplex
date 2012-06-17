@@ -12,15 +12,15 @@ static Camera*			gs_pCamera = NULL;
 
 // Textures & Render targets
 static Texture2D*		gs_pRTHDR = NULL;
-//static Texture2D*		gs_pTexTestNoise = NULL;
 
 // Primitives
-static Primitive*		gs_pPrimQuad = NULL;		// Screen quad for post-processes
+Primitive*				gs_pPrimQuad = NULL;		// Screen quad for post-processes
 
 // Materials
 static Material*		gs_pMatPostFinal = NULL;	// Final post-process rendering to the screen
 
 // Constant buffers
+static CB<CBGlobal>*	gs_pCB_Global = NULL;
 static CB<CBTest>*		gs_pCB_Test = NULL;
 
 // Effects
@@ -33,6 +33,7 @@ static EffectTranslucency*	gs_pEffectTranslucency = NULL;
 //////////////////////////////////////////////////////////////////////////
 
 #include "Build2DTextures.cpp"
+#include "Build3DTextures.cpp"
 
 int	IntroInit( IntroProgressDelegate& _Delegate )
 {
@@ -41,6 +42,8 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	gs_pCamera = new Camera( gs_Device );
 	gs_pCamera->SetPerspective( HALFPI, float(RESX) / RESY, 0.01f, 5000.0f );
 
+	// NOTE: Camera reserves the CB slot #0 for itself !
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create render targets & textures
@@ -48,6 +51,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 		gs_pRTHDR = new Texture2D( gs_Device, RESX, RESY, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
 
 		Build2DTextures( _Delegate );
+		Build3DTextures( _Delegate );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -73,13 +77,14 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create constant buffers
 	{
-		gs_pCB_Test = new CB<CBTest>( gs_Device, 1 );
+		gs_pCB_Global = new CB<CBGlobal>( gs_Device, 1, true );	// Global params go to slot #1
+		gs_pCB_Test = new CB<CBTest>( gs_Device, 10 );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create effects
 	{
-		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pPrimQuad, *gs_pRTHDR ), 2000 );	// Error codes for effects should increase in hundreds like 2000, 2100, 2200, etc.
+		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), 2000 );	// Error codes for effects should increase in hundreds like 2000, 2100, 2200, etc.
 	}
 
 	return 0;
@@ -92,6 +97,7 @@ void	IntroExit()
 
 	// Release constant buffers
 	delete gs_pCB_Test;
+	delete gs_pCB_Global;
 
 	// Release materials
  	delete gs_pMatPostFinal;
@@ -100,6 +106,7 @@ void	IntroExit()
 	delete gs_pPrimQuad;
 
 	// Release render targets & textures
+	Delete3DTextures();
 	Delete2DTextures();
 	delete gs_pRTHDR;
 
@@ -112,6 +119,10 @@ bool	IntroDo( float _Time, float _DeltaTime )
 //	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
 	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.5f, 0.25f, 0.125f, 0.0f ) );
 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
+
+	// Upload global parameters
+	gs_pCB_Global->m.Time.Set( _Time, _DeltaTime, 1.0f / _Time, 1.0f / _DeltaTime );
+	gs_pCB_Global->UpdateData();
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update the camera settings and upload its data to the shaders
@@ -140,10 +151,10 @@ bool	IntroDo( float _Time, float _DeltaTime )
 //gs_CBTest.LOD = 0.0f;
 		gs_pCB_Test->UpdateData();
 
-//		gs_pTexTestNoise->SetPS( 0 );
-//		gs_pEffectTranslucency->GetZBuffer()->SetPS( 0 );
-		gs_pEffectTranslucency->GetIrradiance()->SetPS( 0 );
-		gs_pRTHDR->SetPS( 1 );
+//		gs_pTexTestNoise->SetPS( 10 );
+//		gs_pEffectTranslucency->GetZBuffer()->SetPS( 10 );
+		gs_pEffectTranslucency->GetIrradiance()->SetPS( 10 );
+		gs_pRTHDR->SetPS( 11 );
 
 		gs_pPrimQuad->Render( M );
 

@@ -215,10 +215,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="RendererD3D11\Components\Primitive.h" />
     <ClInclude Include="RendererD3D11\Components\States.h" />
     <ClInclude Include="RendererD3D11\Components\Texture2D.h" />
-    <ClInclude Include="RendererD3D11\Components\Texture3D.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Texture3D.h" />
     <ClInclude Include="RendererD3D11\Device.h" />
     <ClInclude Include="RendererD3D11\Renderer.h" />
     <ClInclude Include="RendererD3D11\Structures\DepthStencilFormats.h" />
@@ -245,6 +242,11 @@ MinifyAll.cmd</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Intro\Build3DTextures.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Intro\Effects\EffectTranslucency.cpp" />
     <ClCompile Include="Intro\Intro.cpp" />
     <ClCompile Include="NuajAPI\API\Hashtable.cpp" />
@@ -263,10 +265,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="RendererD3D11\Components\Primitive.cpp" />
     <ClCompile Include="RendererD3D11\Components\States.cpp" />
     <ClCompile Include="RendererD3D11\Components\Texture2D.cpp" />
-    <ClCompile Include="RendererD3D11\Components\Texture3D.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Texture3D.cpp" />
     <ClCompile Include="RendererD3D11\Device.cpp" />
     <ClCompile Include="RendererD3D11\Structures\DepthStencilFormats.cpp" />
     <ClCompile Include="RendererD3D11\Structures\PixelFormats.cpp" />
@@ -283,6 +282,7 @@ MinifyAll.cmd</Command>
   </ItemGroup>
   <ItemGroup>
     <None Include="LogExeSizes.txt" />
+    <None Include="Notes.txt" />
     <None Include="NuajAPI\API\Hashtable.inl" />
     <None Include="Resources\pzero_new.v2m">
       <DeploymentContent>true</DeploymentContent>
