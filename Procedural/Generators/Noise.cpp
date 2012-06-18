@@ -376,7 +376,7 @@ float	Noise::WrapPerlin( const NjFloat3& uvw ) const
 	float		Angle1 = TWOPI * uvw.y;
 	float		Angle2 = TWOPI * uvw.z;
 	NjFloat4	Pos0( m_WrapCenter0.x + m_WrapRadius * cosf( Angle0 ), m_WrapCenter0.y + m_WrapRadius * sinf( Angle0 ), m_WrapCenter1.x + m_WrapRadius * cosf( Angle1 ), m_WrapCenter1.y + m_WrapRadius * sinf( Angle1 ) );
-	NjFloat2	Pos1( m_WrapCenter2.x + m_WrapRadius * cosf( Angle1 ), m_WrapCenter2.y + m_WrapRadius * sinf( Angle1 ) );
+	NjFloat2	Pos1( m_WrapCenter2.x + m_WrapRadius * cosf( Angle2 ), m_WrapCenter2.y + m_WrapRadius * sinf( Angle2 ) );
 	return Perlin( Pos0, Pos1 );
 }
 

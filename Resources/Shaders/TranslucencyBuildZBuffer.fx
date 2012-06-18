@@ -5,9 +5,11 @@
 #include "Inc/Global.fx"
 
 //[
-cbuffer	cbObject	: register( b1 )
+cbuffer	cbObject	: register( b10 )
 {
 	float4x4	_Local2World;
+	float4		_EmissiveColor;
+	float4		_NoiseOffset;
 };
 //]
 
@@ -27,7 +29,7 @@ struct	PS_IN
 
 PS_IN	VS( VS_IN _In )
 {
-	float4	Position = mul( float4( _In.Position, 1.0 ), _Local2World );	// We assume the object is already in clip space, we only rotate it a bit
+	float4	Position = mul( float4( Distort( _In.Position, _In.Normal, _NoiseOffset ), 1.0 ), _Local2World );	// We assume the object is already in clip space, we only rotate it a bit
 	float	Z = 1.0 - Position.z;					// Keep the linear Z in [0,2]
 
 	Position.z = 0.5 * Z;							// Finally, clip space Z is in [0,1]

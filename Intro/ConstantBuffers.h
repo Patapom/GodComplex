@@ -3,6 +3,11 @@
 //
 #pragma once
 
+struct CBGlobal 
+{
+	NjFloat4	Time;	// X=Time Y=DeltaTime ZW = 1/XY
+};
+
 struct CBTest
 {
 	float	LOD;		// Animated texture LOD

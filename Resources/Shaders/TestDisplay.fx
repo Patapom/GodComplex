@@ -1,9 +1,9 @@
 #include "Inc/Global.fx"
 
-Texture2D	_TexNoise	: register(t0);
+Texture2D	_TexNoise	: register(t10);
 
 //[
-cbuffer	cbObject	: register( b1 )
+cbuffer	cbObject	: register( b10 )
 {
 	float4x4	_Local2World;
 };
@@ -40,5 +40,5 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 {
 	return float4( _In.Normal, 1.0 );
 //	return float4( _In.UV, 0, 1.0 );
-//	return TEX2DLOD( _TexNoise, LinearWrap, UV, _LOD );
+//	return TEXLOD( _TexNoise, LinearWrap, UV, _LOD );
 }

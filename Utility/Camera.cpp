@@ -2,7 +2,7 @@
 
 Camera::Camera( Device& _Device ) : m_Device( _Device )
 {
-	m_pCB = new CB<CBData>( m_Device, 0 );
+	m_pCB = new CB<CBData>( m_Device, 0, true );
 	m_pCB->m.Camera2World = m_pCB->m.World2Camera = m_pCB->m.Camera2Proj = m_pCB->m.Proj2Camera = NjFloat4x4::Identity;
 }
 Camera::~Camera()

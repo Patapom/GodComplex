@@ -204,6 +204,7 @@ class   NjHalf
 public:
 	U16 raw;
 
+	NjHalf() : raw( 0 )	{}
 	NjHalf( float value );
 	operator float() const;
 };
@@ -212,6 +213,10 @@ class   NjHalf4
 {
 public:
 	NjHalf  x, y, z, w;
+
+	NjHalf4()							{ x = y = z = w = 0.0f; }
+	NjHalf4( const NjFloat4& value )	{ x = value.x; y = value.y; z = value.z; w = value.w; }
+	operator NjFloat4() const			{ return NjFloat4( x, y, z, w ); }
 };
 
 #endif  // _NUAJ_MATH_H_

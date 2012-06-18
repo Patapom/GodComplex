@@ -17,12 +17,11 @@ static const float	RECIPI = 0.31830988618379067153776752674503;	// 1/PI
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.patapom.com/index.php/Colorimetry)
 
 
-#define TEX2D( Texture, Sampler, UV )					Texture.Sample( Sampler, UV.xy )
+#define TEX( Texture, Sampler, UV )					Texture.Sample( Sampler, UV )
+
 // On old ATIs, the SampleLevel() function doesn't work so you should use the other implementation (although I'm pretty sure it will fuck everything up if you start sampling textures within conditional branches)
-#define TEX2DLOD( Texture, Sampler, UV, MipLevel )		Texture.SampleLevel( Sampler, UV.xy, MipLevel )
-#define TEX3DLOD( Texture, Sampler, UVW, MipLevel )		Texture.SampleLevel( Sampler, UVW.xyz, MipLevel )
-// #define TEX2DLOD( Texture, Sampler, UV, MipLevel )	Texture.Sample( Sampler, UV.xy )
-// #define TEX3DLOD( Texture, Sampler, UVW, MipLevel )	Texture.Sample( Sampler, UVW.xyz )
+#define TEXLOD( Texture, Sampler, UV, MipLevel )		Texture.SampleLevel( Sampler, UV, MipLevel )
+// #define TEXLOD( Texture, Sampler, UV, MipLevel )	Texture.Sample( Sampler, UV )
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -49,4 +48,26 @@ cbuffer	cbCamera	: register( b0 )
 	float4x4	_World2Proj;
 	float4x4	_Proj2World;
 };
+
+cbuffer	cbGlobal	: register( b1 )
+{
+	float4		_Time;		// X=time Y=DeltaTime Z=1/Time W=1/DeltaTime
+};
 //]
+
+
+Texture3D	_TexNoise3D	: register(t0);
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Distort position with noise
+// float3	Distort( float3 _Position, float3 _Normal, float4 _NoiseOffset )
+// {
+// 	float	Noise = _NoiseOffset.w * (-1.0 + TEXLOD( _TexNoise3D, LinearWrap, 0.2 * (_Position + _NoiseOffset.xyz), 0.0 ).x);
+// 	return	_Position + Noise * _Normal;
+// }
+
+float3	Distort( float3 _Position, float3 _Normal, float4 _NoiseOffset )
+{
+	return _Position + _NoiseOffset.w * TEXLOD( _TexNoise3D, LinearWrap, 0.2 * (_Position + _NoiseOffset.xyz), 0.0 ).xyz;
+}

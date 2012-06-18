@@ -7,7 +7,8 @@ void	TweakSphereExternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tan
 {
 	Noise&	N = *((Noise*) _pUserData);
 
-	_Position = _Position + _Normal * 0.2f * (-1.0f + N.Perlin( 0.0005f * _Position ));	// Add perlin inward
+//	_Position = _Position + _Normal * 0.2f * (-1.0f + N.Perlin( 0.0005f * _Position ));	// Add perlin inward
+	_Position = 0.8f * _Position;	// Scale a little
 }
 
 void	TweakTorusInternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tangent, NjFloat2& _UV, void* _pUserData )
@@ -18,7 +19,7 @@ void	TweakTorusInternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tang
 	_Position = 0.3f * (_Position + 0.1f * N.PerlinVector( 0.001f * _Position ));
 }
 
-EffectTranslucency::EffectTranslucency( Primitive& _Quad, Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_Quad( _Quad ), m_RTTarget( _RTTarget )
+EffectTranslucency::EffectTranslucency( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _RTTarget )
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
@@ -53,9 +54,9 @@ EffectTranslucency::EffectTranslucency( Primitive& _Quad, Texture2D& _RTTarget )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
-	m_pCB_Object = new CB<CBObject>( gs_Device, 1 );
-	m_pCB_Diffusion = new CB<CBDiffusion>( gs_Device, 1 );
-	m_pCB_Pass = new CB<CBPass>( gs_Device, 2 );
+	m_pCB_Object = new CB<CBObject>( gs_Device, 10 );
+	m_pCB_Diffusion = new CB<CBDiffusion>( gs_Device, 10 );
+	m_pCB_Pass = new CB<CBPass>( gs_Device, 11 );
 }
 
 EffectTranslucency::~EffectTranslucency()
@@ -88,6 +89,9 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 
 	m_EmissivePower = SATURATE( -4.0f * sinf( _TV(0.5f) * _Time ) );
 
+	NjFloat4	SphereNoise = NjFloat4( _Time * 0.2f * NjFloat3( 1.0f, -0.5f, 0.9f ), 0.2f );
+	NjFloat4	TorusNoise = NjFloat4( _Time * 0.2f * NjFloat3( 1.0f, -0.5f, 0.9f ), 0.0f );
+
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Render the internal & external objects into the RGBA ZBuffer
 	gs_Device.ClearRenderTarget( *m_pRTZBuffer, NjFloat4( 2.0f, 0.0f, 2.0f, 0.0f ) );
@@ -97,6 +101,7 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 
 		// === Render external object ===
 		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3::One );
+		m_pCB_Object->m.NoiseOffset = SphereNoise;
 		m_pCB_Object->UpdateData();
 
 			// Front
@@ -111,6 +116,7 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 
 		// === Render rotating internal object ===
 		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( TorusPosition, TorusRotation, NjFloat3::One );
+		m_pCB_Object->m.NoiseOffset = TorusNoise;
 		m_pCB_Object->UpdateData();
 
 			// Front
@@ -161,7 +167,7 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 
 		m_pCB_Diffusion->UpdateData();
 
-		m_pRTZBuffer->SetPS( 0 );
+		m_pRTZBuffer->SetPS( 10 );
 
 		// Diffuse light through multiple passes
 		for ( int PassIndex=0; PassIndex <= DIFFUSION_PASSES_COUNT; PassIndex++ )
@@ -173,8 +179,8 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 			m_pCB_Pass->m.NextZ = 2.0f * (PassIndex+1) / DIFFUSION_PASSES_COUNT;
 			m_pCB_Pass->UpdateData();
 
-			m_ppRTDiffusion[0]->SetPS( 1 );
-			m_Quad.Render( *m_pMatDiffusion );
+			m_ppRTDiffusion[0]->SetPS( 11 );
+			gs_pPrimQuad->Render( *m_pMatDiffusion );
 
 			// Swap irradiance maps
 			Texture2D*	pTemp = m_ppRTDiffusion[0];
@@ -192,11 +198,12 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 		gs_Device.SetRenderTarget( m_RTTarget, &gs_Device.DefaultDepthStencil() );
 		gs_Device.SetStates( gs_Device.m_pRS_CullBack, gs_Device.m_pDS_ReadWriteLess, NULL );
 
-		m_ppRTDiffusion[0]->SetPS( 0 );
+		m_ppRTDiffusion[0]->SetPS( 10 );
 
 		// Render the sphere
 		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( _TV(0.0f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
 		m_pCB_Object->m.EmissiveColor = NjFloat4::Zero;
+		m_pCB_Object->m.NoiseOffset = SphereNoise;
 		m_pCB_Object->UpdateData();
 
 		m_pPrimSphereExternal->Render( *m_pMatDisplay );
@@ -204,6 +211,7 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 		// Render the torus
 		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( TorusPosition, TorusRotation, NjFloat3::One );
 		m_pCB_Object->m.EmissiveColor = NjFloat4( 0.0f * NjFloat3::One + m_pCB_Diffusion->m.InternalEmissive, 1.0f );
+		m_pCB_Object->m.NoiseOffset = TorusNoise;
 		m_pCB_Object->UpdateData();
 
 		m_pPrimTorusInternal->Render( *m_pMatDisplay );

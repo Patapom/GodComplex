@@ -16,6 +16,7 @@ public:		// NESTED TYPES
 	{
 		NjFloat4x4	Local2World;	// Local=>World transform to rotate the object
 		NjFloat4	EmissiveColor;
+		NjFloat4	NoiseOffset;	// XYZ=Noise Position  W=NoiseAmplitude
 	};
 
 	struct CBDiffusion
@@ -53,7 +54,6 @@ public:		// NESTED TYPES
 private:	// FIELDS
 
 	int					m_ErrorCode;
-	Primitive&			m_Quad;
 	Texture2D&			m_RTTarget;
 
 	Material*			m_pMatBuildZBuffer;	// Renders the internal & exteral objects into a single RGBA16F linear ZBuffer
@@ -86,7 +86,7 @@ public:		// PROPERTIES
 
 public:		// METHODS
 
-	EffectTranslucency( Primitive& _Quad, Texture2D& _RTTarget );
+	EffectTranslucency( Texture2D& _RTTarget );
 	~EffectTranslucency();
 
 	void	Render( float _Time, float _DeltaTime );

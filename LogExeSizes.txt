@@ -75,3 +75,9 @@
 . Added torus geometry builder
 . Finished a first version of the diffuse scattering effect with blocker
 	packed executable 125952 -> 32256 bytes
+
+ [17 juin 2012]
+. Build default wrapping 3D noise texture
+. Re-organized constant buffers/textures
+. Added dynamic vertex noise distortion
+	packed executable 136192 -> 34816 bytes

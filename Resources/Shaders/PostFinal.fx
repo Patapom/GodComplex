@@ -1,10 +1,10 @@
 #include "Inc/Global.fx"
 
-Texture2D	_TexNoise	: register(t0);
-Texture2D	_TexHDR		: register(t1);
+Texture2D	_TexNoise	: register(t10);
+Texture2D	_TexHDR		: register(t11);
 
 //[
-cbuffer	cbTextureLOD	: register( b1 )
+cbuffer	cbTextureLOD	: register( b10 )
 {
 	float	_LOD;
 	float	_BackLight;
@@ -58,10 +58,10 @@ float4	ComputeBackground( float2 _UV )
 
 float4	PS( VS_IN _In ) : SV_TARGET0
 {
-	float4	SourceHDR = TEX2D( _TexHDR, LinearWrap, _In.Position.xy * INV_SCREEN_SIZE );
+	float4	SourceHDR = TEX( _TexHDR, LinearWrap, _In.Position.xy * INV_SCREEN_SIZE );
 
-//	float2	UV = 2.0 * float2( ASPECT_RATIO * _In.Position.x, _In.Position.y ) * INV_SCREEN_SIZE;
-//	float4	Background = TEX2DLOD( _TexNoise, LinearWrap, UV, _LOD );
+	float2	UV = 2.0 * float2( ASPECT_RATIO * _In.Position.x, _In.Position.y ) * INV_SCREEN_SIZE;
+//	float4	Background = TEXLOD( _TexNoise, LinearWrap, UV, _LOD );
 	float4	Background = lerp( 0.1, 1.0, _BackLight ) * ComputeBackground( _In.Position.xy * INV_SCREEN_SIZE );
 
 //return Background;
@@ -70,6 +70,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 //return 1.0 * (Background.y - Background.x);
 //return 1.0 * (Background.w - Background.z);
 //return float4( UV, 0, 0 );
+//return TEXLOD( _TexNoise3D, LinearWrap, float3( UV, frac( 0.125 * _Time.x ) ), 0.0 );
 
 	return lerp( Background, SourceHDR, SourceHDR.w );	// Alpha blend...
 }

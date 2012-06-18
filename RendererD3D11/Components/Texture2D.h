@@ -51,10 +51,10 @@ public:	 // METHODS
 	ID3D11DepthStencilView*		GetDepthStencilView() const;
 
 	// Uploads the texture to the shader
-	void		Set( int _SlotIndex );
-	void		SetVS( int _SlotIndex );
-	void		SetGS( int _SlotIndex );
-	void		SetPS( int _SlotIndex );
+	void		Set( int _SlotIndex, bool _bIKnowWhatImDoing=false );
+	void		SetVS( int _SlotIndex, bool _bIKnowWhatImDoing=false );
+	void		SetGS( int _SlotIndex, bool _bIKnowWhatImDoing=false );
+	void		SetPS( int _SlotIndex, bool _bIKnowWhatImDoing=false );
 
 	// Used by the Device for the default backbuffer
 	Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFormatDescriptor& _Format );
