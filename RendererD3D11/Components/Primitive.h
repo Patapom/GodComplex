@@ -1,11 +1,17 @@
 #pragma once
 
+#define SUPPORT_GEO_BUILDERS
+
 #include "Component.h"
 #include "../Structures/VertexFormats.h"
-#include "../../Procedural/GeometryBuilder.h"
 #include "Material.h"
 
+#ifdef SUPPORT_GEO_BUILDERS
+#include "../../Procedural/GeometryBuilder.h"
 class Primitive : public Component, public GeometryBuilder::IGeometryWriter
+#else
+class Primitive : public Component
+#endif
 {
 private:	// FIELDS
 
@@ -28,11 +34,13 @@ public:	 // METHODS
 
 	void			Render( Material& _Material );
 
+#ifdef SUPPORT_GEO_BUILDERS
 	// IGeometryWriter implementation
 	virtual void	CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, void*& _pVertices, void*& _pIndices, int& _VertexStride, int& _IndexStride );
 	virtual void	WriteVertex( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV );
 	virtual void	WriteIndex( void* _pIndex, int _Index );
 	virtual void	Finalize( void* _pVertices, void* _pIndices );
+#endif
 
 private:
 

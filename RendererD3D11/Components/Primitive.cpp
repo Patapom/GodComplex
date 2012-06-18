@@ -50,6 +50,8 @@ void	Primitive::Render( Material& _Material )
 		m_Device.DXContext().Draw( m_VerticesCount, 0 );
 }
 
+#ifdef SUPPORT_GEO_BUILDERS
+
 // IGeometryWriter Implementation
 void	Primitive::CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, void*& _pVertices, void*& _pIndices, int& _VertexStride, int& _IndexStride )
 {
@@ -136,3 +138,5 @@ void	Primitive::Build( void* _pVertices, U16* _pIndices )
 		ASSERT( FALSE, "Unsupported primitive type !" );
 	}
 }
+
+#endif
