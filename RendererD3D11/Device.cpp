@@ -298,9 +298,9 @@ void	Device::UnRegisterComponent( Component& _Component )
 void	Device::Check( HRESULT _Result )
 {
 #ifdef _DEBUG
+	ASSERT( _Result == S_OK, "DX HRESULT Check failed !" );
 	if ( _Result != S_OK )
 		PostQuitMessage( _Result );
-	ASSERT( _Result == S_OK, "DX HRESULT Check failed !" );
 #endif
 }
  

@@ -21,6 +21,7 @@ private:	// FIELDS
 	int					m_MipLevelsCount;
 
 	const IFormatDescriptor&	m_Format;
+	bool				m_bIsDepthStencil;
 
 	ID3D11Texture2D*	m_pTexture;
 
@@ -43,7 +44,7 @@ public:	 // METHODS
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !
 	Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent );
 	// This is for creating a depth stencil buffer
-	Texture2D( Device& _Device, int _Width, int _Height, const DepthStencilFormatDescriptor& _Format );
+	Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format );
 	~Texture2D();
 
 	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize ) const;

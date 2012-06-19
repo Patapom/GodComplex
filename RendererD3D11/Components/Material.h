@@ -17,21 +17,31 @@ class ConstantBuffer;
 
 class Material : public Component, ID3DInclude
 {
-protected:  // NESTED TYPES
+public:		// NESTED TYPES
 
 	class	ShaderConstants
 	{
-	public:
-		int		m_ConstantBuffersCount;
-		char**	m_ppConstantBufferNames;
-		int		m_ShaderResourceViewsCount;
-		char**	m_ppShaderResourceViewNames;
+	public:	// NESTED TYPES
 
-		ShaderConstants() : m_ConstantBuffersCount( 0 ), m_ppConstantBufferNames( NULL ), m_ShaderResourceViewsCount( 0 ), m_ppShaderResourceViewNames( NULL ) {}
+		struct BindingDesc
+		{
+			char*	pName;
+			int		Slot;
+
+			~BindingDesc();
+
+			void	SetName( const char* _pName );
+		};
+
+	public:
+
+		DictionaryString<BindingDesc*>	m_ConstantBufferName2Descriptor;
+		DictionaryString<BindingDesc*>	m_TextureName2Descriptor;
+
 		~ShaderConstants();
 
 		void	Enumerate( ID3DBlob& _ShaderBlob );
-		int		GetBufferIndex( const char* _pBufferName ) const;
+		int		GetConstantBufferIndex( const char* _pBufferName ) const;
 		int		GetShaderResourceViewIndex( const char* _pTextureName ) const;
 	};
 
@@ -39,6 +49,7 @@ protected:  // NESTED TYPES
 private:	// FIELDS
 
 	const IVertexFormatDescriptor&	m_Format;
+	const char*				m_pShaderPath;
 	ID3DInclude*			m_pIncludeOverride;
 
 	ID3D11InputLayout*		m_pVertexLayout;
@@ -54,6 +65,9 @@ private:	// FIELDS
 
 	bool					m_bHasErrors;
 
+	Dictionary<const char*>	m_Pointer2FileName;
+
+
 public:	 // PROPERTIES
 
 	bool				HasErrors() const	{ return m_bHasErrors; }
@@ -61,11 +75,13 @@ public:	 // PROPERTIES
 
 public:	 // METHODS
 
-	Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride );
+	Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride );
 	~Material();
 
 	void			SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer );
+	void			SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer );
 	void			SetTexture( const char* _pTextureName, ID3D11ShaderResourceView* _pData );
+	void			SetTexture( int _BufferSlot, ID3D11ShaderResourceView* _pData );
 
 	void			Use();
 
@@ -76,6 +92,7 @@ public:	// ID3DInclude Members
 
 private:
 
-	ID3DBlob*   CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget );
+	ID3DBlob*		CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget );
+	const char*		GetShaderPath( const char* _pShaderFileName ) const;
 };
 

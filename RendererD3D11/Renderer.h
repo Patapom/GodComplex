@@ -11,18 +11,8 @@
 #include "d3d11.h"
 #include "dxgi.h"
 
-#ifdef _DEBUG
-#include <assert.h>
-#define ASSERT( condition, text ) assert( condition || !text )
-#define ASSERT_RETURN_FALSE( condition, text ) assert( condition || !text )
-#else
-#define ASSERT( condition, text )
-#define ASSERT_RETURN_FALSE( condition, text ) return false
-#endif
-
-#define NUAJ_LIB
+#define NUAJ_LIB   // Override the NjFloatX types with our math lib
 #include "../NuajAPI/API/Types.h"
-#include "../NuajAPI/Math/Math.h"
 #include "../NuajAPI/API/Hashtable.h"
 #include "../NuajAPI/API/ASMHelpers.h"
 

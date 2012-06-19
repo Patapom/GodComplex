@@ -5,9 +5,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Temp">
-      <UniqueIdentifier>{a1137185-83e5-4f59-a5d5-16387fa1df81}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Components">
       <UniqueIdentifier>{7bc8f9de-3f9e-488b-9b43-3304b382acad}</UniqueIdentifier>
     </Filter>
@@ -20,15 +17,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="Temp\config.h">
-      <Filter>Temp</Filter>
-    </ClInclude>
-    <ClInclude Include="Temp\fp.h">
-      <Filter>Temp</Filter>
-    </ClInclude>
-    <ClInclude Include="Temp\intro.h">
-      <Filter>Temp</Filter>
-    </ClInclude>
     <ClInclude Include="Device.h" />
     <ClInclude Include="Components\Texture2D.h">
       <Filter>Components</Filter>
@@ -61,6 +49,15 @@
     <ClInclude Include="Components\ConstantBuffer.h">
       <Filter>Components</Filter>
     </ClInclude>
+    <ClInclude Include="Components\States.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Structures\DepthStencilFormats.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Structures\FormatDescriptor.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.cpp" />
@@ -89,5 +86,11 @@
       <Filter>Components</Filter>
     </ClCompile>
     <ClCompile Include="Structures\PixelFormats.cpp" />
+    <ClCompile Include="Components\States.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Structures\DepthStencilFormats.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

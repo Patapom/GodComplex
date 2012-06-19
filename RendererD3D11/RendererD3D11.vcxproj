@@ -38,16 +38,16 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(IncludePath);$(DXSDK_DIR)Include</IncludePath>
+    <IncludePath>$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LibraryPath>$(LibraryPath);$(DXSDK_DIR)Lib\x86</LibraryPath>
+    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(IncludePath);$(DXSDK_DIR)Include</IncludePath>
+    <IncludePath>$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LibraryPath>$(LibraryPath);$(DXSDK_DIR)Lib\x86</LibraryPath>
+    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -90,22 +90,16 @@
     <ClInclude Include="Components\ConstantBuffer.h" />
     <ClInclude Include="Components\Material.h" />
     <ClInclude Include="Components\Primitive.h" />
+    <ClInclude Include="Components\States.h" />
     <ClInclude Include="Components\Texture2D.h" />
     <ClInclude Include="Components\Texture3D.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Structures\DepthStencilFormats.h" />
+    <ClInclude Include="Structures\FormatDescriptor.h" />
     <ClInclude Include="Structures\PixelFormats.h" />
     <ClInclude Include="Structures\VertexFormats.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="Temp\config.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Temp\fp.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Temp\intro.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\NuajAPI\Math\Math.cpp" />
@@ -113,9 +107,11 @@
     <ClCompile Include="Components\ConstantBuffer.cpp" />
     <ClCompile Include="Components\Material.cpp" />
     <ClCompile Include="Components\Primitive.cpp" />
+    <ClCompile Include="Components\States.cpp" />
     <ClCompile Include="Components\Texture2D.cpp" />
     <ClCompile Include="Components\Texture3D.cpp" />
     <ClCompile Include="Device.cpp" />
+    <ClCompile Include="Structures\DepthStencilFormats.cpp" />
     <ClCompile Include="Structures\PixelFormats.cpp" />
     <ClCompile Include="Structures\VertexFormats.cpp" />
   </ItemGroup>

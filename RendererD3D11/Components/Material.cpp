@@ -2,23 +2,28 @@
 #include "Material.h"
 #include "ConstantBuffer.h"
 
-#include "../../NuajAPI/API/ASMHelpers.h"
 #include <stdio.h>
+#include <io.h>
 
 #include "D3Dcompiler.h"
 #include "D3D11Shader.h"
 
 
-Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride )
+Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride )
 	: Component( _Device )
 	, m_Format( _Format )
 	, m_pVertexLayout( NULL )
 	, m_pVS( NULL )
 	, m_pGS( NULL )
 	, m_pPS( NULL )
+	, m_pShaderPath( NULL )
 {
 	m_pIncludeOverride = _pIncludeOverride;
 	m_bHasErrors = false;
+
+	// Store the default NULL pointer to point to the shader path
+	m_pShaderPath = GetShaderPath( _pShaderFileName );
+	m_Pointer2FileName.Add( NULL, m_pShaderPath );
 
 	// Compile the compulsory vertex shader
 	ASSERT( _pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
@@ -75,8 +80,11 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 	}
 }
 
+void	DeleteChars( const char*& _pValue, void* _pUserData )	{ delete[] _pValue; }
+
 Material::~Material()
 {
+	if ( m_pShaderPath != NULL ) delete[] m_pShaderPath;
 	if ( m_pVertexLayout != NULL ) { m_pVertexLayout->Release(); m_pVertexLayout = NULL; }
 	if ( m_pVS != NULL ) { m_pVS->Release(); m_pVS = NULL; }
 	if ( m_pGS != NULL ) { m_pGS->Release(); m_pGS = NULL; }
@@ -126,7 +134,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 #if defined(_DEBUG) || defined(DEBUG_SHADER)
 	if ( pErrors != NULL )
 	{
-		MessageBox( NULL, (LPCTSTR) pErrors->GetBufferPointer(), "Shader PreProcess Error !", MB_OK | MB_ICONERROR );
+		MessageBoxA( NULL, (LPCSTR) pErrors->GetBufferPointer(), "Shader PreProcess Error !", MB_OK | MB_ICONERROR );
 		ASSERT( pErrors == NULL, "Shader preprocess error !" );
 	}
 #endif
@@ -144,11 +152,15 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 
 	U32 Flags2 = 0;
 
-	D3DCompile( pCodeText->GetBufferPointer(), pCodeText->GetBufferSize(), NULL, _pMacros, this, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors );
+	LPCVOID	pCodePointer = pCodeText->GetBufferPointer();
+	size_t	CodeSize = pCodeText->GetBufferSize();
+	size_t	CodeLength = strlen( (char*) pCodePointer );
+
+	D3DCompile( pCodePointer, CodeSize, NULL, _pMacros, this, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors );
 #if defined(_DEBUG) || defined(DEBUG_SHADER)
 	if ( pErrors != NULL )
 	{
-		MessageBox( NULL, (LPCTSTR) pErrors->GetBufferPointer(), "Shader Compilation Error !", MB_OK | MB_ICONERROR );
+		MessageBoxA( NULL, (LPCSTR) pErrors->GetBufferPointer(), "Shader Compilation Error !", MB_OK | MB_ICONERROR );
 		ASSERT( pErrors == NULL, "Shader compilation error !" );
 	}
 	else
@@ -162,23 +174,46 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 
 HRESULT	Material::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, LPCVOID _pParentData, LPCVOID* _ppData, UINT* _pBytes )
 {
+	const char**	ppShaderPath = m_Pointer2FileName.Get( U32(_pParentData) );
+	ASSERT( ppShaderPath != NULL, "Failed to retrieve data pointer !" );
+	const char*	pShaderPath = *ppShaderPath;
+
+	char	pFullName[4096];
+	sprintf_s( pFullName, 4096, "%s%s", pShaderPath, _pFileName );
+
 	FILE*	pFile;
-	fopen_s( &pFile, _pFileName, "r" );
+	fopen_s( &pFile, pFullName, "rb" );
+	ASSERT( pFile != NULL, "Include file not found !" );
 
 	fseek( pFile, 0, SEEK_END );
-	*_pBytes = ftell( pFile );
+	U32	Size = ftell( pFile );
 	fseek( pFile, 0, SEEK_SET );
 
-	*_ppData = new char[*_pBytes];
-	fread_s( const_cast<void*>( *_ppData ), *_pBytes, 1, *_pBytes, pFile );
+	char*	pBuffer = new char[Size];
+	fread_s( pBuffer, Size, 1, Size, pFile );
+//	pBuffer[Size] = '\0';
+
+	*_pBytes = Size;
+	*_ppData = pBuffer;
 
 	fclose( pFile );
+
+	// Register this shader's path as attached to the data pointer
+	const char*	pIncludedShaderPath = GetShaderPath( pFullName );
+	m_Pointer2FileName.Add( U32(*_ppData), pIncludedShaderPath );
 
 	return S_OK;
 }
 
 HRESULT	Material::Close( THIS_ LPCVOID pData )
 {
+	// Remove entry from dictionary
+	const char**	ppShaderPath = m_Pointer2FileName.Get( U32(pData) );
+	ASSERT( ppShaderPath != NULL, "Failed to retrieve data pointer !" );
+	delete[] *ppShaderPath;
+	m_Pointer2FileName.Remove( U32(pData) );
+
+	// Delete file content
 	delete[] pData;
 
 	return S_OK;
@@ -201,39 +236,65 @@ HRESULT	Material::Close( THIS_ LPCVOID _pData )
 void	Material::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer )
 {
 	ID3D11Buffer*	pBuffer = _Buffer.GetBuffer();
+
 	{
-		int	SlotIndex = m_VSConstants.GetBufferIndex( _pBufferName );
+		int	SlotIndex = m_VSConstants.GetConstantBufferIndex( _pBufferName );
 		if ( SlotIndex != -1 )
 			m_Device.DXContext().VSSetConstantBuffers( SlotIndex, 1, &pBuffer );
 	}
+	{
+		int	SlotIndex = m_GSConstants.GetConstantBufferIndex( _pBufferName );
+		if ( SlotIndex != -1 )
+			m_Device.DXContext().GSSetConstantBuffers( SlotIndex, 1, &pBuffer );
+	}
+	{
+		int	SlotIndex = m_PSConstants.GetConstantBufferIndex( _pBufferName );
+		if ( SlotIndex != -1 )
+			m_Device.DXContext().PSSetConstantBuffers( SlotIndex, 1, &pBuffer );
+	}
+}
+void	Material::SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer )
+{
+	ID3D11Buffer*	pBuffer = _Buffer.GetBuffer();
+	m_Device.DXContext().VSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
+	m_Device.DXContext().GSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
+	m_Device.DXContext().PSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
 }
 
 void	Material::SetTexture( const char* _pBufferName, ID3D11ShaderResourceView* _pData )
 {
-	ID3D11ShaderResourceView*	pView = _pData;
 	{
 		int	SlotIndex = m_VSConstants.GetShaderResourceViewIndex( _pBufferName );
 		if ( SlotIndex != -1 )
-			m_Device.DXContext().VSSetShaderResources( SlotIndex, 1, &pView );
+			m_Device.DXContext().VSSetShaderResources( SlotIndex, 1, &_pData );
+	}
+	{
+		int	SlotIndex = m_GSConstants.GetShaderResourceViewIndex( _pBufferName );
+		if ( SlotIndex != -1 )
+			m_Device.DXContext().GSSetShaderResources( SlotIndex, 1, &_pData );
+	}
+	{
+		int	SlotIndex = m_PSConstants.GetShaderResourceViewIndex( _pBufferName );
+		if ( SlotIndex != -1 )
+			m_Device.DXContext().PSSetShaderResources( SlotIndex, 1, &_pData );
 	}
 }
+void	Material::SetTexture( int _BufferSlot, ID3D11ShaderResourceView* _pData )
+{
+	m_Device.DXContext().VSSetShaderResources( _BufferSlot, 1, &_pData );
+	m_Device.DXContext().GSSetShaderResources( _BufferSlot, 1, &_pData );
+	m_Device.DXContext().PSSetShaderResources( _BufferSlot, 1, &_pData );
+}
 
+static void	DeleteBindingDescriptors( Material::ShaderConstants::BindingDesc*& _pValue, void* _pUserData )
+{
+	delete _pValue;
+}
 Material::ShaderConstants::~ShaderConstants()
 {
-	if ( m_ppConstantBufferNames != NULL )
-	{
-		for ( int CBIndex=0; CBIndex < m_ConstantBuffersCount; CBIndex++ )
-			delete[] m_ppConstantBufferNames[CBIndex];
-		delete[] m_ppConstantBufferNames;
-	}
-	if ( m_ppShaderResourceViewNames != NULL )
-	{
-		for ( int SRVIndex=0; SRVIndex < m_ShaderResourceViewsCount; SRVIndex++ )
-			delete[] m_ppShaderResourceViewNames[SRVIndex];
-		delete[] m_ppShaderResourceViewNames;
-	}
+	m_ConstantBufferName2Descriptor.ForEach( DeleteBindingDescriptors, NULL );
+	m_TextureName2Descriptor.ForEach( DeleteBindingDescriptors, NULL );
 }
-
 void	Material::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob )
 {
 	ID3D11ShaderReflection*	pReflector = NULL; 
@@ -242,51 +303,79 @@ void	Material::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob )
 	D3D11_SHADER_DESC	ShaderDesc;
 	pReflector->GetDesc( &ShaderDesc );
 
-	// Enumerate constant buffers
-	m_ConstantBuffersCount = ShaderDesc.ConstantBuffers;
-	m_ppConstantBufferNames = new char*[m_ConstantBuffersCount];
-	for ( int CBIndex=0; CBIndex < m_ConstantBuffersCount; CBIndex++ )
+	// Enumerate bound resources
+	for ( int ResourceIndex=0; ResourceIndex < int(ShaderDesc.BoundResources); ResourceIndex++ )
 	{
-		ID3D11ShaderReflectionConstantBuffer*	pCB = pReflector->GetConstantBufferByIndex( CBIndex );
+		D3D11_SHADER_INPUT_BIND_DESC	BindDesc;
+		pReflector->GetResourceBindingDesc( ResourceIndex, &BindDesc );
 
-		D3D11_SHADER_BUFFER_DESC	CBDesc;
-		pCB->GetDesc( &CBDesc );
+		BindingDesc**	ppDesc = NULL;
+		switch ( BindDesc.Type )
+		{
+		case D3D_SIT_TEXTURE:
+			ppDesc = &m_TextureName2Descriptor.Add( BindDesc.Name );
+			break;
 
-		int		NameLength = strlen(CBDesc.Name)+1;
-		m_ppConstantBufferNames[CBIndex] = new char[NameLength];
-		memcpy( m_ppConstantBufferNames[CBIndex], &CBDesc.Name, NameLength );
-	}
+		case D3D_SIT_CBUFFER:
+			ppDesc = &m_ConstantBufferName2Descriptor.Add( BindDesc.Name );
+			break;
+		}
+		if ( ppDesc == NULL )
+			continue;	// We're not interested in that type !
 
-	// Enumerate textures
-	m_ShaderResourceViewsCount = ShaderDesc.BoundResources;
-	m_ppShaderResourceViewNames = new char*[m_ShaderResourceViewsCount];
-	for ( int SRVIndex=0; SRVIndex < m_ShaderResourceViewsCount; SRVIndex++ )
-	{
-		D3D11_SHADER_INPUT_BIND_DESC	SRVDesc;
-		pReflector->GetResourceBindingDesc( SRVIndex, &SRVDesc );
-
-		int		NameLength = strlen(SRVDesc.Name)+1;
-		m_ppShaderResourceViewNames[SRVIndex] = new char[NameLength];
-		memcpy( m_ppShaderResourceViewNames[SRVIndex], &SRVDesc.Name, NameLength );
+		*ppDesc = new BindingDesc();
+		(*ppDesc)->SetName( BindDesc.Name );
+		(*ppDesc)->Slot = BindDesc.BindPoint;
 	}
 
 	pReflector->Release();
 }
 
-int		Material::ShaderConstants::GetBufferIndex( const char* _pBufferName ) const
+void	Material::ShaderConstants::BindingDesc::SetName( const char* _pName )
 {
-	for ( int CBIndex=0; CBIndex < m_ConstantBuffersCount; CBIndex++ )
-		if ( !strcmp( _pBufferName, m_ppConstantBufferNames[CBIndex] ) )
-			return CBIndex;
+	int		NameLength = strlen(_pName)+1;
+	pName = new char[NameLength];
+	strcpy_s( pName, NameLength+1, _pName );
+}
+Material::ShaderConstants::BindingDesc::~BindingDesc()
+{
+//	delete[] pName;	// This makes a heap corruption, I don't know why and I don't give a fuck about these C++ problems...
+}
 
-	return -1;
+int		Material::ShaderConstants::GetConstantBufferIndex( const char* _pBufferName ) const
+{
+	BindingDesc**	ppValue = m_ConstantBufferName2Descriptor.Get( _pBufferName );
+	return ppValue != NULL ? (*ppValue)->Slot : -1;
 }
 
 int		Material::ShaderConstants::GetShaderResourceViewIndex( const char* _pTextureName ) const
 {
-	for ( int SRVIndex=0; SRVIndex < m_ShaderResourceViewsCount; SRVIndex++ )
-		if ( !strcmp( _pTextureName, m_ppShaderResourceViewNames[SRVIndex] ) )
-			return SRVIndex;
+	BindingDesc**	ppValue = m_TextureName2Descriptor.Get( _pTextureName );
+	return ppValue != NULL ? (*ppValue)->Slot : -1;
+}
 
-	return -1;
+const char*	Material::GetShaderPath( const char* _pShaderFileName ) const
+{
+	char*	pResult = NULL;
+	if ( _pShaderFileName != NULL )
+	{
+		int	FileNameLength = strlen(_pShaderFileName)+1;
+		pResult = new char[FileNameLength];
+		strcpy_s( pResult, FileNameLength, _pShaderFileName );
+
+		char*	pLastSlash = strrchr( pResult, '\\' );
+		if ( pLastSlash == NULL )
+			pLastSlash = strrchr( pResult, '/' );
+		if ( pLastSlash != NULL )
+			pLastSlash[1] = '\0';
+	}
+
+	if ( pResult == NULL )
+	{	// Empty string...
+		pResult = new char[1];
+		pResult = '\0';
+		return pResult;
+	}
+
+	return pResult;
 }

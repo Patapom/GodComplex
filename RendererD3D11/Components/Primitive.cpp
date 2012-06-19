@@ -50,43 +50,6 @@ void	Primitive::Render( Material& _Material )
 		m_Device.DXContext().Draw( m_VerticesCount, 0 );
 }
 
-#ifdef SUPPORT_GEO_BUILDERS
-
-// IGeometryWriter Implementation
-void	Primitive::CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, void*& _pVertices, void*& _pIndices, int& _VertexStride, int& _IndexStride )
-{
-	ASSERT( _VerticesCount <= 65536, "Too many vertices !" );	// Time to start accounting for large meshes d00d !
-
-	m_VerticesCount = _VerticesCount;
-	m_IndicesCount = _IndicesCount;
-	m_Topology = _Topology;
-
-	_VertexStride = m_Format.Size();
-	_pVertices = new U8[_VertexStride * m_VerticesCount];
-
-	_IndexStride = sizeof(U16);
-	_pIndices = new U16[m_IndicesCount];
-}
-
-void	Primitive::WriteVertex( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV )
-{
-	m_Format.Write( _pVertex, _Position, _Normal, _Tangent, _UV );
-}
-
-void	Primitive::WriteIndex( void* _pIndex, int _Index )
-{
-	ASSERT( _Index < m_VerticesCount, "Index out of range !" );
-	*((U16*) _pIndex) = _Index;
-}
-
-void	Primitive::Finalize( void* _pVertices, void* _pIndices )
-{
-	Build( _pVertices, (U16*) _pIndices );
-
-	delete[] _pVertices;
-	delete[] _pIndices;
-}
-
 void	Primitive::Build( void* _pVertices, U16* _pIndices )
 {
 	{   // Create the vertex buffer
@@ -137,6 +100,43 @@ void	Primitive::Build( void* _pVertices, U16* _pIndices )
 	default:
 		ASSERT( FALSE, "Unsupported primitive type !" );
 	}
+}
+
+#ifdef SUPPORT_GEO_BUILDERS
+
+// IGeometryWriter Implementation
+void	Primitive::CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, void*& _pVertices, void*& _pIndices, int& _VertexStride, int& _IndexStride )
+{
+	ASSERT( _VerticesCount <= 65536, "Too many vertices !" );	// Time to start accounting for large meshes d00d !
+
+	m_VerticesCount = _VerticesCount;
+	m_IndicesCount = _IndicesCount;
+	m_Topology = _Topology;
+
+	_VertexStride = m_Format.Size();
+	_pVertices = new U8[_VertexStride * m_VerticesCount];
+
+	_IndexStride = sizeof(U16);
+	_pIndices = new U16[m_IndicesCount];
+}
+
+void	Primitive::WriteVertex( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV )
+{
+	m_Format.Write( _pVertex, _Position, _Normal, _Tangent, _UV );
+}
+
+void	Primitive::WriteIndex( void* _pIndex, int _Index )
+{
+	ASSERT( _Index < m_VerticesCount, "Index out of range !" );
+	*((U16*) _pIndex) = _Index;
+}
+
+void	Primitive::Finalize( void* _pVertices, void* _pIndices )
+{
+	Build( _pVertices, (U16*) _pIndices );
+
+	delete[] _pVertices;
+	delete[] _pIndices;
 }
 
 #endif
