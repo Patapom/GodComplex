@@ -64,7 +64,7 @@ ID3D11ShaderResourceView*	Texture3D::GetShaderView( int _MipLevelStart, int _Mip
 		_MipLevelsCount = m_MipLevelsCount - _MipLevelStart;
 
 	// Check if we already have it
-	U32	Hash = (_MipLevelStart << 4) | _MipLevelsCount << 4;
+	U32	Hash = _MipLevelsCount | (_MipLevelStart << 4);
 	ID3D11ShaderResourceView*	pExistingView = (ID3D11ShaderResourceView*) m_CachedShaderViews.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;
@@ -89,7 +89,7 @@ ID3D11RenderTargetView*		Texture3D::GetTargetView( int _MipLevelIndex, int _Firs
 		_WSize = m_Depth - _FirstWSlice;
 
 	// Check if we already have it
-	U32	Hash = ((_MipLevelIndex << 4) | _FirstWSlice << 8) | _WSize;
+	U32	Hash = _WSize | ((_FirstWSlice | (_MipLevelIndex << 12)) << 12);
 	ID3D11RenderTargetView*	pExistingView = (ID3D11RenderTargetView*) m_CachedTargetViews.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;

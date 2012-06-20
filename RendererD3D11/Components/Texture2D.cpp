@@ -1,6 +1,10 @@
 #include "Texture2D.h"
 
-Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFormatDescriptor& _Format ) : Component( _Device ), m_Format( _Format ), m_bIsDepthStencil( false )
+Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFormatDescriptor& _Format )
+	: Component( _Device )
+	, m_Format( _Format )
+	, m_bIsDepthStencil( false )
+	, m_pCachedDepthStencilView( NULL )
 {
 	D3D11_TEXTURE2D_DESC	Desc;
 	_Texture.GetDesc( &Desc );
@@ -13,7 +17,11 @@ Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFo
 	m_pTexture = &_Texture;
 }
 
-Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent ) : Component( _Device ), m_Format( _Format ), m_bIsDepthStencil( false )
+Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent )
+	: Component( _Device )
+	, m_Format( _Format )
+	, m_bIsDepthStencil( false )
+	, m_pCachedDepthStencilView( NULL )
 {
 	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
 	ASSERT( _Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
@@ -54,7 +62,11 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 		Check( m_Device.DXDevice().CreateTexture2D( &Desc, NULL, &m_pTexture ) );
 }
 
-Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format ) : Component( _Device ), m_Format( _Format ), m_pCachedDepthStencilView( NULL ), m_bIsDepthStencil( true )
+Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format )
+	: Component( _Device )
+	, m_Format( _Format )
+	, m_bIsDepthStencil( true )
+	, m_pCachedDepthStencilView( NULL )
 {
 	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
 	ASSERT( _Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
@@ -108,7 +120,7 @@ ID3D11ShaderResourceView*	Texture2D::GetShaderView( int _MipLevelStart, int _Mip
 		_MipLevelsCount = m_MipLevelsCount - _MipLevelStart;
 
 	// Check if we already have it
-	U32	Hash = (((_MipLevelStart << 4) | _MipLevelsCount << 4) | _ArrayStart << 8) | _ArraySize;
+	U32	Hash = _ArraySize | ((_ArrayStart | ((_MipLevelsCount | (_MipLevelStart << 4)) << 12)) << 12);
 	ID3D11ShaderResourceView*	pExistingView = (ID3D11ShaderResourceView*) m_CachedShaderViews.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;
@@ -136,7 +148,7 @@ ID3D11RenderTargetView*		Texture2D::GetTargetView( int _MipLevelIndex, int _Arra
 		_ArraySize = m_ArraySize - _ArrayStart;
 
 	// Check if we already have it
-	U32	Hash = ((_MipLevelIndex << 4) | _ArrayStart << 8) | _ArraySize;
+	U32	Hash = _ArraySize | ((_ArrayStart | (_MipLevelIndex << 12)) << 12);
 	ID3D11RenderTargetView*	pExistingView = (ID3D11RenderTargetView*) m_CachedTargetViews.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;
