@@ -30,6 +30,8 @@ private:	// FIELDS
 	mutable DictionaryU32			m_CachedTargetViews;
 	mutable ID3D11DepthStencilView*	m_pCachedDepthStencilView;
 
+	D3D11_MAPPED_SUBRESOURCE	m_LockedResource;
+
 
 public:	 // PROPERTIES
 
@@ -42,7 +44,7 @@ public:	 // PROPERTIES
 public:	 // METHODS
 
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !
-	Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent );
+	Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging=false );
 	// This is for creating a depth stencil buffer
 	Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format );
 	~Texture2D();
@@ -60,8 +62,14 @@ public:	 // METHODS
 	// Used by the Device for the default backbuffer
 	Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFormatDescriptor& _Format );
 
+	// Texture access by the CPU
+	void		CopyFrom( Texture2D& _SourceTexture );
+	D3D11_MAPPED_SUBRESOURCE&	Map( int _MipLevelIndex, int _ArrayIndex );
+	void		UnMap( int _MipLevelIndex, int _ArrayIndex );
+
 public:
 	static void	NextMipSize( int& _Width, int& _Height );
 	static int	ComputeMipLevelsCount( int _Width, int _Height, int _MipLevelsCount );
+	int			CalcSubResource( int _MipLevelIndex, int _ArrayIndex );
 };
 

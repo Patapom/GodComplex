@@ -17,7 +17,7 @@ Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFo
 	m_pTexture = &_Texture;
 }
 
-Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent )
+Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging )
 	: Component( _Device )
 	, m_Format( _Format )
 	, m_bIsDepthStencil( false )
@@ -40,10 +40,19 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 	Desc.Format = _Format.DirectXFormat();
 	Desc.SampleDesc.Count = 1;
 	Desc.SampleDesc.Quality = 0;
-	Desc.Usage = _ppContent != NULL ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
-	Desc.BindFlags = _ppContent != NULL ? D3D11_BIND_SHADER_RESOURCE : (D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
-	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
-	Desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG( 0 );
+	if ( _bStaging )
+	{
+		Desc.Usage = D3D11_USAGE_STAGING;
+		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		Desc.BindFlags = 0;
+	}
+	else
+	{
+		Desc.Usage = _ppContent != NULL ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
+		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
+		Desc.BindFlags = _ppContent != NULL ? D3D11_BIND_SHADER_RESOURCE : (D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
+	}
+	Desc.MiscFlags = 0;
 
 	if ( _ppContent != NULL )
 	{
@@ -220,6 +229,22 @@ void	Texture2D::SetPS( int _SlotIndex, bool _bIKnowWhatImDoing )
 	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &pView );
 }
 
+void	Texture2D::CopyFrom( Texture2D& _SourceTexture )
+{
+	m_Device.DXContext().CopyResource( m_pTexture, _SourceTexture.m_pTexture );
+}
+
+D3D11_MAPPED_SUBRESOURCE&	Texture2D::Map( int _MipLevelIndex, int _ArrayIndex )
+{
+	Check( m_Device.DXContext().Map( m_pTexture, CalcSubResource( _MipLevelIndex, _ArrayIndex ), D3D11_MAP_READ, 0, &m_LockedResource ) );
+	return m_LockedResource;
+}
+
+void	Texture2D::UnMap( int _MipLevelIndex, int _ArrayIndex )
+{
+	m_Device.DXContext().Unmap( m_pTexture, CalcSubResource( _MipLevelIndex, _ArrayIndex ) );
+}
+
 void	Texture2D::NextMipSize( int& _Width, int& _Height )
 {
 	_Width = MAX( 1, _Width >> 1 );
@@ -238,4 +263,9 @@ int	 Texture2D::ComputeMipLevelsCount( int _Width, int _Height, int _MipLevelsCo
 
 	ASSERT( _MipLevelsCount <= MAX_TEXTURE_POT, "Texture mip level out of range !" );
 	return _MipLevelsCount;
+}
+
+int	Texture2D::CalcSubResource( int _MipLevelIndex, int _ArrayIndex )
+{
+	return _MipLevelIndex + (_ArrayIndex * m_MipLevelsCount);
 }

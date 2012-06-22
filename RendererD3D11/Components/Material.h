@@ -78,9 +78,9 @@ public:	 // METHODS
 	Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride );
 	~Material();
 
-	void			SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer );
+	bool			SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer );
 	void			SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer );
-	void			SetTexture( const char* _pTextureName, ID3D11ShaderResourceView* _pData );
+	bool			SetTexture( const char* _pTextureName, ID3D11ShaderResourceView* _pData );
 	void			SetTexture( int _BufferSlot, ID3D11ShaderResourceView* _pData );
 
 	void			Use();

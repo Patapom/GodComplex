@@ -143,6 +143,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 #ifdef _DEBUG
 		Flags1 |= D3D10_SHADER_DEBUG;
 		Flags1 |= D3D10_SHADER_SKIP_OPTIMIZATION;
+//		Flags1 |= D3D10_SHADER_WARNINGS_ARE_ERRORS;
 #else
 		Flags1 |= D3D10_SHADER_OPTIMIZATION_LEVEL3;
 #endif
@@ -158,7 +159,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 
 	D3DCompile( pCodePointer, CodeSize, NULL, _pMacros, this, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors );
 #if defined(_DEBUG) || defined(DEBUG_SHADER)
-	if ( pErrors != NULL )
+	if ( pCode == NULL && pErrors != NULL )
 	{
 		MessageBoxA( NULL, (LPCSTR) pErrors->GetBufferPointer(), "Shader Compilation Error !", MB_OK | MB_ICONERROR );
 		ASSERT( pErrors == NULL, "Shader compilation error !" );
@@ -233,25 +234,31 @@ HRESULT	Material::Close( THIS_ LPCVOID _pData )
 
 #endif
 
-void	Material::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer )
+bool	Material::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer )
 {
+	bool	bUsed = false;
 	ID3D11Buffer*	pBuffer = _Buffer.GetBuffer();
 
 	{
 		int	SlotIndex = m_VSConstants.GetConstantBufferIndex( _pBufferName );
 		if ( SlotIndex != -1 )
 			m_Device.DXContext().VSSetConstantBuffers( SlotIndex, 1, &pBuffer );
+		bUsed |= SlotIndex != -1;
 	}
 	{
 		int	SlotIndex = m_GSConstants.GetConstantBufferIndex( _pBufferName );
 		if ( SlotIndex != -1 )
 			m_Device.DXContext().GSSetConstantBuffers( SlotIndex, 1, &pBuffer );
+		bUsed |= SlotIndex != -1;
 	}
 	{
 		int	SlotIndex = m_PSConstants.GetConstantBufferIndex( _pBufferName );
 		if ( SlotIndex != -1 )
 			m_Device.DXContext().PSSetConstantBuffers( SlotIndex, 1, &pBuffer );
+		bUsed |= SlotIndex != -1;
 	}
+
+	return	bUsed;
 }
 void	Material::SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer )
 {
@@ -261,23 +268,29 @@ void	Material::SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer )
 	m_Device.DXContext().PSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
 }
 
-void	Material::SetTexture( const char* _pBufferName, ID3D11ShaderResourceView* _pData )
+bool	Material::SetTexture( const char* _pBufferName, ID3D11ShaderResourceView* _pData )
 {
+	bool	bUsed = false;
 	{
 		int	SlotIndex = m_VSConstants.GetShaderResourceViewIndex( _pBufferName );
 		if ( SlotIndex != -1 )
 			m_Device.DXContext().VSSetShaderResources( SlotIndex, 1, &_pData );
+		bUsed |= SlotIndex != -1;
 	}
 	{
 		int	SlotIndex = m_GSConstants.GetShaderResourceViewIndex( _pBufferName );
 		if ( SlotIndex != -1 )
 			m_Device.DXContext().GSSetShaderResources( SlotIndex, 1, &_pData );
+		bUsed |= SlotIndex != -1;
 	}
 	{
 		int	SlotIndex = m_PSConstants.GetShaderResourceViewIndex( _pBufferName );
 		if ( SlotIndex != -1 )
 			m_Device.DXContext().PSSetShaderResources( SlotIndex, 1, &_pData );
+		bUsed |= SlotIndex != -1;
 	}
+
+	return	bUsed;
 }
 void	Material::SetTexture( int _BufferSlot, ID3D11ShaderResourceView* _pData )
 {
