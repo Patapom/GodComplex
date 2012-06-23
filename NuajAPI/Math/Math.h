@@ -18,6 +18,7 @@ static float _asinf( float x )
 }
 
 // Override some functions with our own implementations
+#ifdef GODCOMPLEX
 #define log2f( a )			ASM_log2f( a )
 #define expf( a )			ASM_expf( a )
 #define powf( a, b )		ASM_powf( a, b )
@@ -26,6 +27,7 @@ static float _asinf( float x )
 #define ceilf( a )			ASM_ceilf( a )
 #define acosf( a )			_acosf( a )
 #define asinf( a )			_asinf( a )
+#endif
 
 static const float			PI = 3.1415926535897932384626433832795f;		// ??
 static const float			TWOPI = 6.283185307179586476925286766559f;		// 2PI
@@ -204,7 +206,6 @@ class   NjHalf
 public:
 	U16 raw;
 
-	NjHalf() : raw( 0 )	{}
 	NjHalf( float value );
 	operator float() const;
 };
@@ -214,9 +215,11 @@ class   NjHalf4
 public:
 	NjHalf  x, y, z, w;
 
-	NjHalf4()							{ x = y = z = w = 0.0f; }
-	NjHalf4( const NjFloat4& value )	{ x = value.x; y = value.y; z = value.z; w = value.w; }
-	operator NjFloat4() const			{ return NjFloat4( x, y, z, w ); }
+	NjHalf4() : x( 0.0f ), y( 0.0f ), z( 0.0f ), w( 0.0f )	{}
+	NjHalf4( float _x, float _y, float _z, float _w ) : x( _x ), y( _y ), z( _z ), w( _w )	{}
+	NjHalf4( const NjFloat4& v ) : x( v.x ), y( v.y ), z( v.y ), w( v.w )	{}
+
+	operator NjFloat4()	{ return NjFloat4( x, y, z, w ); }
 };
 
 #endif  // _NUAJ_MATH_H_

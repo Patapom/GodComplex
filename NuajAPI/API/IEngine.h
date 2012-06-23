@@ -14,15 +14,15 @@ enum NJ_TEXTURE_FORMAT
 {
 //	NJ_TEXTURE_FORMAT_ARGB,
 //	NJ_TEXTURE_FORMAT_ARGB_sRGB,
-	NJ_TEXTURE_FORMAT_ABGR16F,		// Only this is used right now
+	NJ_TEXTURE_FORMAT_ABGR16F,
 //	NJ_TEXTURE_FORMAT_RG16F,
-//	NJ_TEXTURE_FORMAT_R32F,
+	NJ_TEXTURE_FORMAT_R32F,
 };
 
 enum NJ_PRIMITIVE_TOPOLOGY
 {
-//	NJ_PRIMITIVE_TRIANGLE_LIST,
-	NJ_PRIMITIVE_TRIANGLE_STRIP,	// Only this is used right now
+	NJ_PRIMITIVE_TRIANGLE_LIST,
+	NJ_PRIMITIVE_TRIANGLE_STRIP,
 //	NJ_PRIMITIVE_POINT_LIST
 };
 
@@ -30,9 +30,9 @@ enum NJ_VERTEX_FORMAT
 {
 	NJ_VERTEX_PT4,					// Point Transformed in clip space
 	NJ_VERTEX_P3,					// Point
-//	NJ_VERTEX_P3N3,					// Point & normal
-//	NJ_VERTEX_P3T2,					// Point & UV
-//	NJ_VERTEX_P3N3T2,				// Point & normal & UV
+// 	NJ_VERTEX_P3N3,					// Point & normal
+// 	NJ_VERTEX_P3T2,					// Point & UV
+	NJ_VERTEX_P3N3G3T2,				// Point & normal & tangent & UV
 };
 
 enum NJ_RENDER_STATE
@@ -53,8 +53,6 @@ enum NJ_SAMPLER_STATE
 
 struct NJ_MACRO
 {
-	NJ_MACRO( const char* _pKey, const char* _pValue ) : pKey( _pKey ), pValue( _pValue ) {}
-
 	const char* pKey;
 	const char* pValue;
 };
@@ -90,28 +88,29 @@ public: // MEMORY
 	virtual void*	Allocate( size_t _Size ) = 0;
 
 	// Releases memory
-	virtual void	Release( void* _pMemory ) = 0;
+	virtual void	Delete( void* _pMemory ) = 0;
 
 
 public: // TEXTURES & RENDER TARGETS
 
-	virtual NjITexture*	CreateTexture2D( int _Width, int _Height, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, const void* _ppContent[] ) = 0;
-//	virtual NjITexture*	CreateTexture2DArray( int _Width, int _Height, int _ArraySize, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, const void* _ppContent[] ) = 0;
-	virtual NjITexture*	CreateTexture3D( int _Width, int _Height, int _Depth, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, const void* _ppContent[] ) = 0;
+	virtual NjITexture*	CreateTexture2D( const char* _pDebugName, int _Width, int _Height, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, const void* const* _ppContent ) = 0;
+//	virtual NjITexture*	CreateTexture2DArray( const char* _pDebugName, int _Width, int _Height, int _ArraySize, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, const void* const* _ppContent ) = 0;
+	virtual NjITexture*	CreateTexture3D( const char* _pDebugName, int _Width, int _Height, int _Depth, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, const void* const* _ppContent ) = 0;
 
-	virtual NjITexture*	CreateRenderTarget2D( int _Width, int _Height, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, bool cpuReadBack, bool isTemporary ) = 0;
-//	virtual NjITexture*	CreateRenderTarget2DArray( int _Width, int _Height, int _ArraySize, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, bool cpuReadBack, bool isTemporary ) = 0;
-	virtual NjITexture*	CreateRenderTarget3D( int _Width, int _Height, int _Depth, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, bool cpuReadBack, bool isTemporary ) = 0;
+	virtual NjITexture*	CreateRenderTarget2D( const char* _pDebugName, int _Width, int _Height, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, bool _CPUReadBack, bool _IsTemporary ) = 0;
+//	virtual NjITexture*	CreateRenderTarget2DArray( const char* _pDebugName, int _Width, int _Height, int _ArraySize, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, bool _CPUReadBack, bool _IsTemporary ) = 0;
+	virtual NjITexture*	CreateRenderTarget3D( const char* _pDebugName, int _Width, int _Height, int _Depth, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, bool _CPUReadBack, bool _IsTemporary ) = 0;
 
 	// Sets the multiple render targets and optional _Depth stencil buffer
-	virtual void		SetRenderTargets( const NjViewport& _Viewport, int _RenderTargetsCount, NjITextureView* _ppRenderTargets[], NjITextureView* _pDepthStencil ) = 0;
+	// If _pViewport is NULL then the render target's full viewport is used with default ZMin/Max=0/1
+	virtual void		SetRenderTargets( int _RenderTargetsCount, NjITextureView** _ppRenderTargets, NjITextureView* _pDepthStencil, const NjViewport* _pViewport ) = 0;
 
 
 public: // GEOMETRY
 
 	// Creates a nice primitive to render with
 	// NOTE: indicesCount can be 0 and indices can be NULL, in which case the provided primitive is obviously a non-indexed primitive
-	virtual NjIPrimitive*	CreatePrimitive( int _VerticesCount, void* _pVertices, int _IndicesCount, U16* _pIndices, NJ_PRIMITIVE_TOPOLOGY _Topology, NJ_VERTEX_FORMAT _Format ) = 0;
+	virtual NjIPrimitive*	CreatePrimitive( const char* _pDebugName, int _VerticesCount, void* _pVertices, int _IndicesCount, U16* _pIndices, NJ_PRIMITIVE_TOPOLOGY _Topology, NJ_VERTEX_FORMAT _Format ) = 0;
 
 
 public: // RENDER STATES
@@ -122,13 +121,12 @@ public: // RENDER STATES
 
 public: // SHADERS
 
-	// Creates & compiles a shader from a shader ID + some macros
-	// NOTE: if _CompilerMacrosCount is equal to 0 then _pCompilerMacros should be NULL
-	virtual NjIShader*	CreateShader( NjResourceID _ShaderID, int _CompilerMacrosCount, NJ_MACRO* _pCompilerMacros ) = 0;
+	// Creates & compiles a shader from a shader ID + a NULL-terminated array of macros (or NULL if no macro)
+	virtual NjIShader*	CreateShader( const char* _pDebugName, NjResourceID _ShaderID, NJ_MACRO* _pCompilerMacros ) = 0;
 
 	// Creates a constant buffer to feed a shader with
 	// NOTE: If _IsDynamic is false then _pInitData cannot be NULL and must be filled with the immutable constant buffer
-	virtual NjIConstantBuffer*	CreateConstantBuffer( bool _IsDynamic, int _BufferSize, void* _pInitData ) = 0;
+	virtual NjIConstantBuffer*	CreateConstantBuffer( const char* _pDebugName, bool _IsDynamic, int _BufferSize, void* _pInitData ) = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -137,8 +135,8 @@ class NjIPrimitive : public NjIDisposable
 {
 public: // METHODS
 
-	// Render this primitive
-	virtual void	Render() = 0;
+	// Render this primitive using the provided shader
+	virtual void	Render( NjIShader& _Shader ) = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -159,16 +157,18 @@ public: // METHODS
 	// NOTE: if _MipLevelsCount==0 then you should include ALL mip levels
 	// NOTE: if _ArraySize==0 then you should include ALL array slices
 	// NOTE: A typical view query with all parameters equal to 0 means returning the complete texture/render target view with all its mips and arrays
+	// NOTE: For textures created with the "_IsTemporary" flag, Shader/Target views can be queried EVEN if the texture has not been physically allocated !
 	virtual NjITextureView*	GetShaderView( int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize ) = 0;
 	virtual NjITextureView*	GetRenderTargetView( int _MipLevelIndex, int _ArrayStart, int _ArraySize ) = 0;
 
 	// Allocate/Free render target (Temporary render targets only)
+	// NOTE: For textures created with the "_IsTemporary" flag, Shader/Target views can be queried EVEN if the texture has not been physically allocated !
 	virtual void	AllocateTemp() = 0;
 	// NOTE: Dispose() can be called without having called FreeTemp(), in which case you should obviously free the temporary texture as well
 	virtual void	FreeTemp() = 0;
 
 	// Locking (Render targets only)
-	virtual void*	LockRead( int _MipLevelIndex ) = 0;
+	virtual void*	LockRead( int _MipLevelIndex, int& _RowPitch, int& _DepthPitch ) = 0;
 	virtual void	Unlock() = 0;
 };
 
@@ -191,11 +191,14 @@ class NjIShader : public NjIDisposable
 public: // METHODS
 
 	// Sends data to the specified constant buffer
-	virtual void	SetConstantBuffer( const char* _pBufferName, NjIConstantBuffer& _Buffer ) = 0;
+	// Returns true if the constant buffer was indeed required by the shader
+	virtual bool	SetConstantBuffer( const char* _pBufferName, NjIConstantBuffer& _Buffer ) = 0;
+	virtual void	SetConstantBuffer( int _BufferSlot, NjIConstantBuffer& _Buffer ) = 0;
 
 	// Sets the texture by name
 	// Shouldn't crash if the texture doesn't exist !
-	virtual void	SetTexture( const char* _pTextureName, NjITextureView* _pTexture, NJ_SAMPLER_STATE _SamplerState ) = 0;
+	virtual bool	SetTexture( const char* _pTextureName, NjITextureView* _pTexture, NJ_SAMPLER_STATE _SamplerState ) = 0;
+	virtual void	SetTexture( int _BufferSlot, NjITextureView* _pTexture, NJ_SAMPLER_STATE _SamplerState ) = 0;
 
 //	 // Gets a texture sampler by name
 //	 // Returns NULL if name does not exist

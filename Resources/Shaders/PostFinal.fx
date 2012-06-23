@@ -64,6 +64,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 //	float4	Background = TEXLOD( _TexNoise, LinearWrap, UV, _LOD );
 	float4	Background = lerp( 0.1, 1.0, _BackLight ) * ComputeBackground( _In.Position.xy * INV_SCREEN_SIZE );
 
+
 //return Background;
 //return 0.5 * ((Background.y - Background.x) - (Background.w - Background.z));
 //return 0.5 * Background.y;

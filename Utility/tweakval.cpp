@@ -39,7 +39,7 @@ namespace tweakval
 		static char	pStringKey[1024];
 		sprintf_s( pStringKey, 1024, "%s#%d", _pFileName, _Counter );
 
-		U32	Hash = DictionaryString::Hash( pStringKey );
+		U32	Hash = DictionaryString<int>::Hash( pStringKey );
 		return Hash;
 	}
 
@@ -60,7 +60,7 @@ namespace tweakval
 	Tweakable&	AddTweakableValue( const char* _pFilename, size_t _Counter )
 	{
 		// First, see if this file is in the files list
-		U32		Key = DictionaryString::Hash( _pFilename );
+		U32		Key = DictionaryString<int>::Hash( _pFilename );
 		TweakableSourceFile*	pFileEntry = g_TweakableFiles.Get( Key );
 		if ( pFileEntry == NULL )
 		{	// if it's not found, add to the list of tweakable files, assume it's unmodified since the program has been built 

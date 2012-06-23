@@ -8,93 +8,102 @@
 struct  NuajConfigurationCloud
 {
 	NuajConfigurationCloud()
-		: m_FarClipCloudsKm			( 100.0f )
-		, m_ShadowMaxTraceDistanceKm( 200.0f )
-		, m_VoxelMipFactor			( 0.003f )
-		, m_VoxelMipFactorShadow	( 0.002f )
+		: FarClipCloudsKm			( 100.0f )
+		, ShadowMaxTraceDistanceKm	( 200.0f )
+		, VoxelMipFactor			( 0.003f )
+		, VoxelMipFactorShadow		( 0.002f )
 	{}
 
-	float		m_FarClipCloudsKm;
-	float		m_ShadowMaxTraceDistanceKm;
-	float		m_VoxelMipFactor;
-	float		m_VoxelMipFactorShadow;
+	float		FarClipCloudsKm;
+	float		ShadowMaxTraceDistanceKm;
+	float		VoxelMipFactor;
+	float		VoxelMipFactorShadow;
 };
 
 struct  NuajConfigurationCloudLow : public NuajConfigurationCloud
 {
 	NuajConfigurationCloudLow() : NuajConfigurationCloud()
-		, m_MinStepsCount			( 64 )
-		, m_MaxStepsCount			( 96 )
-		, m_MaxStepsForThicknessKm	( 30.0f )
-		, m_ShadowMinStepsCount		( 16 )
-		, m_ShadowMaxStepsCount		( 16 )
-		, m_ShadowMaxStepsForThicknessKm( 50.0f )
-		, m_ShadowMapFilterSize		( 3.0f )
-		, m_ShadowFilterMinWeight	( 0.05f )
-		, m_ShadowMapInitialAttenuation( 0.8f, 1.0f )   // We only use shadow map initial values if dot(View,Light) > within this range of values
+		, MinStepsCount				( 64 )
+		, MaxStepsCount				( 96 )
+		, MaxStepsForThicknessKm	( 30.0f )
+		, ShadowMinStepsCount		( 16 )
+		, ShadowMaxStepsCount		( 16 )
+		, ShadowMaxStepsForThicknessKm( 50.0f )
+		, ShadowMapFilterSize		( 3.0f )
+		, ShadowFilterMinWeight		( 0.05f )
+		, ShadowMapInitialAttenuation( 0.8f, 1.0f )   // We only use shadow map initial values if dot(View,Light) > within this range of values
 	{}
 
-	int			m_MinStepsCount;
-	int			m_MaxStepsCount;
-	float		m_MaxStepsForThicknessKm;
-	int			m_ShadowMinStepsCount;
-	int			m_ShadowMaxStepsCount;
-	float		m_ShadowMaxStepsForThicknessKm;
-	float		m_ShadowMapFilterSize;
-	float		m_ShadowFilterMinWeight;
-	NjFloat2	m_ShadowMapInitialAttenuation;  // We attenuate the initial shadowing by the high-altitude clouds depending on the dot(View,Light) using 2 thresholds given by this variable
+	int			MinStepsCount;
+	int			MaxStepsCount;
+	float		MaxStepsForThicknessKm;
+	int			ShadowMinStepsCount;
+	int			ShadowMaxStepsCount;
+	float		ShadowMaxStepsForThicknessKm;
+	float		ShadowMapFilterSize;
+	float		ShadowFilterMinWeight;
+	NjFloat2	ShadowMapInitialAttenuation;  // We attenuate the initial shadowing by the high-altitude clouds depending on the dot(View,Light) using 2 thresholds given by this variable
 };
 
 struct  NuajConfigurationCloudHigh : public NuajConfigurationCloud
 {
 	NuajConfigurationCloudHigh() : NuajConfigurationCloud()
-		, m_FullRefreshFramesCount	( 32 )
-		, m_MaxCameraAltitudeKm		( 8.0f )
-		, m_HemisphereMaxRadiusFactor( 0.4f )
-		, m_CloudStepsCount			( 32 )
-		, m_ShadowStepsCount		( 8 )
+		, FullRefreshFramesCount	( 32 )
+		, MaxCameraAltitudeKm		( 8.0f )
+		, HemisphereMaxRadiusFactor	( 0.4f )
+		, CloudStepsCount			( 32 )
+		, ShadowStepsCount			( 8 )
 	{}
 
-	int			m_FullRefreshFramesCount;
-	float		m_MaxCameraAltitudeKm;
-	float		m_HemisphereMaxRadiusFactor;
-	int			m_CloudStepsCount;
-	int			m_ShadowStepsCount;
+	int			FullRefreshFramesCount;					// The amount of frames after which the entire cloud texture should be refreshed
+														// This is an important parameter as it will dictate the amount of time to allocate
+														//  to the task of computing the high-altitude cloud map.
+														// . A low value will accelerate the refresh but also take a longer time per frame for
+														//  the computation, with a loss of framerate obviously.
+														// . A high value will make the cloud refresh slowly but the framerate will be spared.
+	float		MaxCameraAltitudeKm;					// The maximum altitude we allow the camera to go
+	float		HemisphereMaxRadiusFactor;				// The factor to apply to the computed radius of the hemispherical map
+
+	// Ray-marching details
+	int			CloudStepsCount;						// Amount of steps to use for ray-marching
+
+	// Shadow map
+	int			ShadowStepsCount;						// Amount of steps to use for shadow ray-marching
 };
 
 struct  NuajConfiguration
 {
 	NuajConfiguration()
-		: m_Enabled					( false )
-		, m_WorldUnit2Kilometer		( 0.01f )
-		, m_GroundAltitude			( 0.0f )
-		, m_MyXInYourWorld			( 1, 0, 0 )
-		, m_MyYInYourWorld			( 0, 1, 0 )
-		, m_MyZInYourWorld			( 0, 0, 1 )
-		, m_RefinementZThreshold	( 100.f )
+		: Enabled					( true )
+		, WorldUnit2Kilometer		( 0.01f )
+		, GroundAltitude			( 0.0f )
+		, MyXInYourWorld			( 1, 0, 0 )
+		, MyYInYourWorld			( 0, 1, 0 )
+		, MyZInYourWorld			( 0, 0, 1 )
+		, RefinementZThreshold		( 100.f )
 
-		, m_SunIntensity			( 100.f)
-		, m_RayleighWavelengths		( 0.650f, 0.570f, 0.475f )  // Standard RGB wavelengths in µm
-		, m_MoonAlbedo				( 0.12f )
+		, SunIntensity				( 100.f)
+		, RayleighWavelengths		( 0.650f, 0.570f, 0.475f )  // Standard RGB wavelengths in µm
+		, MoonAlbedo				( 0.12f )
 	{}
 
 	// Global
-	bool		m_Enabled;
-	float		m_WorldUnit2Kilometer;
-	float		m_GroundAltitude;
+	bool		Enabled;
+	float		WorldUnit2Kilometer;
+	float		GroundAltitude;
 
-	NjFloat3	m_MyXInYourWorld;		   // How do you write my unit X vector in your world space ?
-	NjFloat3	m_MyYInYourWorld;		   // How do you write my unit Y vector in your world space ?
-	NjFloat3	m_MyZInYourWorld;		   // How do you write my unit Z vector in your world space ?
-	float		m_RefinementZThreshold;
+	NjFloat3	MyXInYourWorld;						// How do you write my unit X vector in your world space ?
+	NjFloat3	MyYInYourWorld;						// How do you write my unit Y vector in your world space ?
+	NjFloat3	MyZInYourWorld;						// How do you write my unit Z vector in your world space ?
+	float		RefinementZThreshold;
 
-	float		m_SunIntensity;
-	NjFloat3	m_RayleighWavelengths;
-	float		m_MoonAlbedo;
+	float		SunIntensity;
+	NjFloat3	RayleighWavelengths;
+	float		MoonAlbedo;
 
 	// Cloud layers
-	NuajConfigurationCloudLow   m_CloudLayerLow;
-	NuajConfigurationCloudHigh  m_CloudLayerHigh;
+	NuajConfigurationCloudLow   CloudLayerLow;
+	NuajConfigurationCloudHigh  CloudLayerHigh;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -102,50 +111,50 @@ struct  NuajConfiguration
 struct	NuajQualityCloudLow
 {
 	NuajQualityCloudLow()
-		: m_DeepShadowMapSize			( 512 )
-		, m_FilteredDeepShadowMapSize	( 256 )
+		: DeepShadowMapSize			( 512 )
+		, FilteredDeepShadowMapSize	( 256 )
 	{}
 
-	int			m_DeepShadowMapSize;
-	int			m_FilteredDeepShadowMapSize;
+	int			DeepShadowMapSize;
+	int			FilteredDeepShadowMapSize;
 };
 
 struct	NuajQualityCloudHigh
 {
 	NuajQualityCloudHigh()
-		: m_CloudMapSize			( 2048 )
-		, m_DeepShadowMapSize		( 512 )
+		: CloudMapSize				( 2048 )
+		, DeepShadowMapSize			( 512 )
 	{}
 
-	int			m_CloudMapSize;
-	int			m_DeepShadowMapSize;
+	int			CloudMapSize;
+	int			DeepShadowMapSize;
 };
 
 struct	NuajQuality
 {
 	NuajQuality()
-		: m_SkyDomeSubdivisionsTheta( 40 )
-		, m_SkyDomeSubdivisionsPhi	( 80 )
+		: SkyDomeSubdivisionsTheta	( 40 )
+		, SkyDomeSubdivisionsPhi	( 80 )
 
-		, m_SkyEnvironmentMapWidth	( 256 )
-		, m_SkyEnvironmentMapHeight	( 128 )
-		, m_ProbeRenderWidth		( 32 )
-		, m_ProbeRenderHeight		( 16 )
+		, SkyEnvironmentMapWidth	( 256 )
+		, SkyEnvironmentMapHeight	( 128 )
+		, ProbeRenderWidth			( 32 )
+		, ProbeRenderHeight			( 16 )
 	{}
 
 	// Skydome geometry Resolution
-	int			m_SkyDomeSubdivisionsTheta;
-	int			m_SkyDomeSubdivisionsPhi;
+	int			SkyDomeSubdivisionsTheta;
+	int			SkyDomeSubdivisionsPhi;
 
 	// Probes & Environment Map Resolution
-	int			m_SkyEnvironmentMapWidth;
-	int			m_SkyEnvironmentMapHeight;
-	int			m_ProbeRenderWidth;
-	int			m_ProbeRenderHeight;
+	int			SkyEnvironmentMapWidth;
+	int			SkyEnvironmentMapHeight;
+	int			ProbeRenderWidth;
+	int			ProbeRenderHeight;
 
 	// Cloud layers
-	NuajQualityCloudLow		m_CloudLayerLow;
-	NuajQualityCloudHigh	m_CloudLayerHigh;
+	NuajQualityCloudLow		CloudLayerLow;
+	NuajQualityCloudHigh	CloudLayerHigh;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -153,172 +162,174 @@ struct	NuajQuality
 struct  NuajParametersCloud
 {
 	NuajParametersCloud()
-		: m_Enabled					( true )
-		, m_AltitudeKm				( 2.0f )
-		, m_ThicknessKm				( 5.0f )
-		, m_Density					( 1.f)
-		, m_CoverageOffset			( -0.05f)
-		, m_CoverageContrast		( 0.2f)
-		, m_CoverageGamma			( 1.0f)
-		, m_FarClipKm				( 100.f )
-		, m_DirectionalFactor		( 0.22f )
-		, m_AlbedoDirectional		( 0.95f )
-		, m_IsotropicFactor			( 1.0f )
-		, m_AlbedoIsotropic			( 0.22f )
-		, m_IsotropicAmbientColor	( 0.7045f, 0.7399f, 0.7773f )
-		, m_IsotropicBlendWithSkyColor( 0.0f )  // Use full ambient color, no sky color (to be increased toward 1 at sunset to get the nice redish sky colors)
-		, m_IsotropicDirectLightFactor( 50.0f )
-		, m_IsotropicAmbientLightFactor( 20.0f )
-		, m_IsotropicTerrainReflectedLightFactor( 0.05f )
-		, m_NoiseSize				( 0.005f )
-		, m_NoiseSizeVerticalFactor	( 1.0f )
-		, m_NoiseFrequencyFactor	( 3.0f )
-		, m_NoiseAmplitudeFactor	( 0.4f )
-		, m_ShadowOpacity			( 1.0f )
-		, m_ShadowFarClipKm			( 200.f )
-		, m_WindForce				( 0.2f )
-		, m_WindAngle				( 0.0f )
-		, m_EvolutionSpeed			( 8.0f )
-		, m_LocalCoverageCenter		( 0, 0 )
-		, m_LocalCoverageSize		( 1, 1 )
-		, m_LocalCoverageEnabled	( false )
-		, m_LocalCoverageScrollWithWind ( true )
+		: Enabled					( true )
+		, AltitudeKm				( 2.0f )
+		, ThicknessKm				( 5.0f )
+		, Density					( 1.f)
+		, CoverageOffset			( -0.05f)
+		, CoverageContrast			( 0.2f)
+		, CoverageGamma				( 1.0f)
+		, FarClipKm					( 100.f )
+		, DirectionalFactor			( 0.22f )
+		, AlbedoDirectional			( 0.95f )
+		, IsotropicFactor			( 1.0f )
+		, AlbedoIsotropic			( 0.22f )
+		, IsotropicAmbientColor		( 0.7045f, 0.7399f, 0.7773f )
+		, IsotropicBlendWithSkyColor( 0.0f )  // Use full ambient color, no sky color (to be increased toward 1 at sunset to get the nice redish sky colors)
+		, IsotropicDirectLightFactor( 50.0f )
+		, IsotropicAmbientLightFactor( 20.0f )
+		, IsotropicTerrainReflectedLightFactor( 0.05f )
+		, NoiseSize					( 0.005f )
+		, NoiseSizeVerticalFactor	( 1.0f )
+		, NoiseFrequencyFactor		( 3.0f )
+		, NoiseAmplitudeFactor		( 0.4f )
+		, ShadowOpacity				( 1.0f )
+		, ShadowFarClipKm			( 200.f )
+		, WindForce					( 0.2f )
+		, WindAngle					( 0.0f )
+		, EvolutionSpeed			( 8.0f )
+		, LocalCoverageCenter		( 0, 0 )
+		, LocalCoverageSize			( 1, 1 )
+		, LocalCoverageEnabled		( false )
+		, LocalCoverageScrollWithWind( true )
 	{
 	}
 
-	bool		m_Enabled;
+	bool		Enabled;
 
 	// Geometry
-	float		m_AltitudeKm;
-	float		m_ThicknessKm;
-	float		m_FarClipKm;
+	float		AltitudeKm;
+	float		ThicknessKm;
+	float		FarClipKm;
 
 	// Density and coverage
-	float		m_Density;
-	float		m_CoverageOffset;
-	float		m_CoverageContrast;
-	float		m_CoverageGamma;
+	float		Density;
+	float		CoverageOffset;
+	float		CoverageContrast;
+	float		CoverageGamma;
 
 	// Local coverage
-	NjFloat2	m_LocalCoverageCenter;
-	NjFloat2	m_LocalCoverageSize;
-	bool		m_LocalCoverageEnabled;
-	bool		m_LocalCoverageScrollWithWind;
+	NjFloat2	LocalCoverageCenter;
+	NjFloat2	LocalCoverageSize;
+	bool		LocalCoverageEnabled;
+	bool		LocalCoverageScrollWithWind;
 
 	// Noise & octaves 
-	float		m_NoiseSize;
-	float		m_NoiseSizeVerticalFactor;
-	float		m_NoiseAmplitudeFactor;
-	float		m_NoiseFrequencyFactor;
+	float		NoiseSize;
+	float		NoiseSizeVerticalFactor;
+	float		NoiseAmplitudeFactor;
+	float		NoiseFrequencyFactor;
 
 	// Lighting params
-	float		m_DirectionalFactor;
-	float		m_AlbedoDirectional;
-	float		m_IsotropicFactor;
-	float		m_AlbedoIsotropic;
-	float		m_IsotropicDirectLightFactor;
-	float		m_IsotropicAmbientLightFactor;
-	float		m_IsotropicTerrainReflectedLightFactor;
-	NjFloat3	m_IsotropicAmbientColor;
-	float		m_IsotropicBlendWithSkyColor;
+	float		DirectionalFactor;
+	float		AlbedoDirectional;
+	float		IsotropicFactor;
+	float		AlbedoIsotropic;
+	float		IsotropicDirectLightFactor;
+	float		IsotropicAmbientLightFactor;
+	float		IsotropicTerrainReflectedLightFactor;
+	NjFloat3	IsotropicAmbientColor;
+	float		IsotropicBlendWithSkyColor;
 
 	// Shadowing
-	float		m_ShadowOpacity;
-	float		m_ShadowFarClipKm;
+	float		ShadowOpacity;
+	float		ShadowFarClipKm;
 
 	// Animation
-	float		m_WindForce;
-	float		m_WindAngle;
-	float		m_EvolutionSpeed;
+	float		WindForce;
+	float		WindAngle;
+	float		EvolutionSpeed;
 };
 
 struct  NuajParametersCloudLow : NuajParametersCloud
 {
 	NuajParametersCloudLow() : NuajParametersCloud()
-		, m_AutoComputeShadowOpacity( true )
-		, m_ShadowFarDistanceKm		( 200.0f )
+		, AutoComputeShadowOpacity	( true )
+		, ShadowFarDistanceKm		( 200.0f )
 	{
 		//////////////////////////////////////////////////////////////////////////
 		// Override the parameters for low altitude clouds
-		m_AltitudeKm = 4.0f;
-		m_ThicknessKm = 8.0f;
+		AltitudeKm = 4.0f;
+		ThicknessKm = 8.0f;
 
-		m_Density = 2.0f;
-		m_DirectionalFactor = 0.22f;
-		m_AlbedoDirectional = 0.95f;
-		m_IsotropicFactor = 1.0f;
-		m_AlbedoIsotropic = 0.022f;
+		Density = 2.0f;
+		DirectionalFactor = 0.22f;
+		AlbedoDirectional = 0.95f;
+		IsotropicFactor = 1.0f;
+		AlbedoIsotropic = 0.022f;
 
-		m_CoverageOffset = -0.147f;
-		m_CoverageContrast = 0.588f;
-		m_NoiseSize = 0.0015f;
-		m_NoiseAmplitudeFactor = 0.4f;
-		m_NoiseFrequencyFactor = 4.0f;
+		CoverageOffset = -0.147f;
+		CoverageContrast = 0.588f;
+		NoiseSize = 0.0015f;
+		NoiseAmplitudeFactor = 0.4f;
+		NoiseFrequencyFactor = 4.0f;
 	}
 
-	bool		m_AutoComputeShadowOpacity;
-	float		m_ShadowFarDistanceKm;
+	bool		AutoComputeShadowOpacity;
+	float		ShadowFarDistanceKm;
 };
 
 struct  NuajSkyParameters
 {
 	NuajSkyParameters()
-		: m_Enabled				( true )
-		, m_SunDirection		( 0, 1, 1 )
-		, m_LightSourceBlend	( 0 )				// Full sun !
-		, m_RayleighDensity		( 1e-5f * 8.0f )	// Clear sky
-		, m_MieDensity			( 1e-4f * 1.0f )	// Almost no fog
-		, m_ScatteringAnisotropy( 0.75f )
-		, m_FarClipKm			( 200.f )
-		, m_NightSkyAmbientColor( 0.01f, 0.01f, 0.01f )
-		, m_SkyBackgroundColor	( 0.0f, 0.0f, 0.0f )								// Clear the sky with a black background so we have the exact sky color
-		, m_TerrainAlbedo		( 37.0f / 255.0f, 24.0f / 255.0f, 16.0f / 255.0f )  // Some red-ish tint for terrain reflection. Could be localized by a texture...
-		, m_pLocalCoverageTexture( 0 )
+		: Enabled				( true )
+		, SunDirection			( 0, 1, 1 )
+		, LightSourceBlend		( 0 )				// Full sun !
+		, RayleighDensity		( 1e-5f * 8.0f )	// Clear sky
+		, MieDensity			( 1e-4f * 1.0f )	// Almost no fog
+		, ScatteringAnisotropy( 0.75f )
+		, FarClipKm				( 200.f )
+		, NightSkyAmbientColor	( 0.01f, 0.01f, 0.01f )
+		, SkyBackgroundColor	( 0.0f, 0.0f, 0.0f )								// Clear the sky with a black background so we have the exact sky color
+		, TerrainAlbedo			( 37.0f / 255.0f, 24.0f / 255.0f, 16.0f / 255.0f )  // Some red-ish tint for terrain reflection. Could be localized by a texture...
+		, pTexLocalCoverage		( 0 )
 	{}
 
-	bool		m_Enabled;
-	NjFloat3	m_SunDirection;
-	NjFloat3	m_MoonDirection;
-	float		m_LightSourceBlend;
-	float		m_RayleighDensity;
-	float		m_MieDensity;
-	float		m_ScatteringAnisotropy;
-	float		m_FarClipKm;
-	NjFloat3	m_NightSkyAmbientColor;
-	NjFloat3	m_SkyBackgroundColor;
-	NjFloat3	m_TerrainAlbedo;
-	NjITexture* m_pLocalCoverageTexture;
+	bool					Enabled;
+	NjFloat3				SunDirection;
+	NjFloat3				MoonDirection;
+	float					LightSourceBlend;
+	float					RayleighDensity;
+	float					MieDensity;
+	float					ScatteringAnisotropy;
+	float					FarClipKm;
+	NjFloat3				NightSkyAmbientColor;
+	NjFloat3				SkyBackgroundColor;
+	NjFloat3				TerrainAlbedo;
+	NjITexture*				pTexLocalCoverage;
 
-	NjFloat3	m_LightningPosition0;
-	NjFloat3	m_LightningColor0;
-	NjFloat3	m_LightningPosition1;
-	NjFloat3	m_LightningColor1;
+	NjFloat3				LightningPosition0;
+	NjFloat3				LightningColor0;
+	NjFloat3				LightningPosition1;
+	NjFloat3				LightningColor1;
 
-	NuajParametersCloudLow	m_CloudLayerLow;
-	NuajParametersCloud		m_CloudLayerHigh;
+	NuajParametersCloudLow	CloudLayerLow;
+	NuajParametersCloud		CloudLayerHigh;
 };
 
 //////////////////////////////////////////////////////////////////////////
 // Rendering parameters, fed each frame to the renderer
 struct  NuajRenderParameters
 {
-	NuajRenderParameters( NjITextureView& _ZBuffer, NjITextureView& _DownscaledZBuffer, NjITexture& _HDRTarget )
-		: m_ZBuffer( _ZBuffer )
-		, m_DownscaledZBuffer( _DownscaledZBuffer )
-		, m_HDRTarget( _HDRTarget )
+	NuajRenderParameters( NjITextureView& _TexZBuffer, NjITextureView& _TexDownsampledZBuffer, NjITexture& _TexHDRTarget )
+		: TexZBuffer( _TexZBuffer )
+		, TexDownsampledZBuffer( _TexDownsampledZBuffer )
+		, TexHDRTarget( _TexHDRTarget )
 	{}
 
-	float		m_DeltaTime;
+	float				DeltaTime;
 
-	bool		m_IsPerspectiveProjection;
-	float		m_CameraFOV;			// VERTICAL FOV !
-	float		m_CameraHeight;			// Vertical height if ortho
-	float		m_CameraAspectRatio;	// Width / Height
-	float		m_CameraNearClip;
-	float		m_CameraFarClip;
-	NjFloat4x4  m_Camera2World;			// View matrix
+	bool				IsPerspectiveProjection;
+	float				CameraFOV;						// VERTICAL FOV !
+	float				CameraHeight;					// Vertical height if ortho
+	float				CameraAspectRatio;				// Width / Height
+	float				CameraNearClip;
+	float				CameraFarClip;
+	bool				bCameraZPointingTowardTarget;	// True if your view matrix's Z (i.e. AT vector) is pointing toward the target (i.e. viewing the scene). If false, your Z is considered to be -AT and will be reversed by Nuaj'
+	NjFloat4x4			Camera2World;					// View matrix
+	NjFloat4x4			Camera2Proj;					// Projection matrix
 
-	NjITextureView&	m_ZBuffer;			// The ZBuffer (full resolution)
-	NjITextureView& m_DownscaledZBuffer;// The ZBuffer, downscaled by 1/4
-	NjITexture& m_HDRTarget;			// The HDR buffer we will render the sky into
+	NjITextureView&		TexZBuffer;						// The ZBuffer (full resolution)
+	NjITextureView&		TexDownsampledZBuffer;			// The ZBuffer, downsampled by 1/4
+	NjITexture&			TexHDRTarget;					// The HDR buffer we will render the sky into
 };

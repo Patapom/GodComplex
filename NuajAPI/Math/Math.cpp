@@ -1,4 +1,4 @@
-#include "../../GodComplex.h"
+#include "../API/Types.h"
 
 const NjFloat2	NjFloat2::Zero( 0, 0 );
 const NjFloat2	NjFloat2::One( 1, 1 );
@@ -16,7 +16,7 @@ const NjFloat4	NjFloat4::One( 1, 1, 1, 1 );
 const NjFloat4	NjFloat4::UnitX( 1, 0, 0, 0 );
 const NjFloat4	NjFloat4::UnitY( 0, 1, 0, 0 );
 const NjFloat4	NjFloat4::UnitZ( 0, 0, 1, 0 );
-const NjFloat4	NjFloat4::UnitW( 0, 0, 1, 1 );
+const NjFloat4	NjFloat4::UnitW( 0, 0, 0, 1 );
 
 const NjFloat4x4	NjFloat4x4::Zero = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 const NjFloat4x4	NjFloat4x4::Identity = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };

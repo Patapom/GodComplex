@@ -28,7 +28,6 @@
 #define NUAJ_LIB
 #include "NuajAPI/API/Types.h"
 #include "NuajAPI/API/ASMHelpers.h"
-#include "NuajAPI/Math/Math.h"
 #ifdef _DEBUG
 #include "Utility/Events.h"
 #endif

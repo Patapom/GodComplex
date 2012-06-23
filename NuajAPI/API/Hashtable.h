@@ -4,6 +4,9 @@
 #include "../Math/Math.h"
 #include "ASMHelpers.h"
 
+// #undef memset
+// #include <string.h>
+
 // Source: http://blog.2of1.org/2011/07/11/simple-c-hashtable-code/
 //
 // simple hashtable
@@ -25,7 +28,7 @@
 
 #ifdef _DEBUG
 
-class	DictionaryString
+template<typename T> class	DictionaryString
 {
 protected:	// NESTED TYPES
 
@@ -33,29 +36,37 @@ protected:	// NESTED TYPES
 	{
 		struct Node*	pNext;
 		char*			pKey;
-		void*			pValue;
+		T				Value;
 	};
- 
+
+public:
+
+	typedef void	(*VisitorDelegate)( T& _Value, void* _pUserData );
+
 protected:	// FIELDS
 
 	Node**	m_ppTable;
 	int		m_Size;
+	int		m_EntriesCount;
 
 public:		// METHODS
 
-//	DictionaryString();
 	DictionaryString( int _Size=HT_DEFAULT_SIZE );
 	~DictionaryString();
 
-	void*	Get( char* _pKey ) const;				// retrieve entry
-	void	Add( char* _pKey, void* _pValue );	// store entry
-	void	Remove( char* _pKey );			// remove entry
+	T*		Get( const char* _pKey ) const;					// retrieve entry
+	T&		Add( const char* _pKey );						// store entry
+	void	Add( const char* _pKey, const T& _Value );		// store entry
+	void	Remove( const char* _pKey );					// remove entry
+	void	ForEach( VisitorDelegate _pDelegate, void* _pUserData );
 
 public:
 
 	static U32	Hash( const char* _pKey );
 	static U32	Hash( U32 _Key );
 };
+
+#endif
 
 // Specific dictionary storing explicit typed values
 template<typename T> class	Dictionary
@@ -78,6 +89,7 @@ protected:	// FIELDS
 
 	Node**	m_ppTable;
 	int		m_Size;
+	int		m_EntriesCount;
 
 public:
 	static int	ms_MaxCollisionsCount;	// You can examine this to know if one of the dictionaries has too many collisions (i.e. size too small)
@@ -93,8 +105,6 @@ public:		// METHODS
 	void	Remove( U32 _Key );					// remove entry
 	void	ForEach( VisitorDelegate _pDelegate, void* _pUserData );
 };
-
-#endif
 
 // General dictionary storing blind values
 class	DictionaryU32

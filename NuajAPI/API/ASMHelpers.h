@@ -3,6 +3,8 @@
 //--------------------------------------------------------------------------//
 #pragma once
 
+#ifdef GODCOMPLEX
+
 // Override some functions with our own implementations
 #define memset( a, b, c )	ASM_memset( a, b, c )
 #define memcpy( a, b, c )	ASM_memcpy( a, b, c )
@@ -166,3 +168,5 @@ static int ASM_strlen( const char *ori )
 
     return res;    
 }
+
+#endif

@@ -1,6 +1,14 @@
 #pragma once
 
-#define MAKE_STRING(a)	#a
+#ifdef _DEBUG
+#include <assert.h>
+#define ASSERT( condition, text ) assert( condition || !text )
+#define ASSERT_RETURN_FALSE( condition, text ) assert( condition || !text ) return false
+#else
+#define ASSERT( condition, text )
+#define ASSERT_RETURN_FALSE( condition, text ) return false
+#endif
+
 
 //////////////////////////////////////////////////////////////////////////
 // Simple types definition
@@ -15,3 +23,6 @@ typedef signed long		S64;
 
 typedef int NjErrorID;
 typedef int NjResourceID;
+
+
+#include "../Math/Math.h"

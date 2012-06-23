@@ -419,6 +419,9 @@ void WINAPI	EntryPoint()
 
 		// Reload in-file constants
 		ReloadChangedTweakableValues();
+
+		// Reload modified shaders
+		Material::WatchShadersModifications();
 #endif
 
 		// Run the intro

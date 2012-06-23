@@ -2,120 +2,6 @@
 
 #define NULL 0
 
-#ifdef _DEBUG
-
-#undef memset
-#include <string.h>
-
-//////////////////////////////////////////////////////////////////////////
-// String version
-DictionaryString::DictionaryString( int _Size )
-{
-	m_Size = _Size;
-	m_ppTable = new Node*[m_Size];
-	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
-}
-DictionaryString::~DictionaryString()
-{
-	for ( int i=0; i < m_Size; i++ )
-	{
-		Node*	pNode = m_ppTable[i];
-		while ( pNode != NULL )
-		{
-			Node*	pOld = pNode;
-			pNode = pNode->pNext;
- 
-			delete pOld->pKey;
-			pOld->pKey = NULL;
-
-			delete pOld;
-		}
-	}
-
-	delete[] m_ppTable;
-}
-
-void*	DictionaryString::Get( char* _pKey ) const
-{
-	U32		idx = Hash( _pKey ) % m_Size;
-	Node*	pNode = m_ppTable[idx];
-	while ( pNode != NULL )
-	{
-		if ( !strncmp( _pKey, pNode->pKey, HT_MAX_KEYLEN ) )
-			return pNode->pValue;
- 
-		pNode = pNode->pNext;
-	}
- 
-	return NULL;
-}
-
-void	DictionaryString::Add( char* _pKey, void* _pValue )
-{
-	U32		idx = Hash( _pKey ) % m_Size;
- 
-	Node*	pNode = new Node();
-	pNode->pValue = _pValue;
-	pNode->pKey = new char[strnlen( _pKey, HT_MAX_KEYLEN) + 1];
-	strcpy( pNode->pKey, _pKey );
- 
-	pNode->pNext = m_ppTable[idx];
-	m_ppTable[idx] = pNode;
-}
-
-void	DictionaryString::Remove( char* _pKey )
-{
-	U32		idx = Hash( _pKey ) % m_Size;
- 
-	Node*	pPrevious = NULL;
-	Node*	pCurrent = m_ppTable[idx];
-	while ( pCurrent != NULL )
-	{
-		if ( !strncmp( _pKey, pCurrent->pKey, HT_MAX_KEYLEN ) )
-		{
-			if ( pPrevious != NULL )
-				pPrevious->pNext = pCurrent->pNext;	// Link over...
-			else
-				m_ppTable[idx] = pCurrent->pNext;	// We replaced the root key...
- 
-			delete pCurrent->pKey;
-			delete pCurrent;
- 
-			return;
-		}
- 
-		pPrevious = pCurrent;
-		pCurrent = pCurrent->pNext;
-	}
-}
-
-U32	DictionaryString::Hash( const char* _pKey )
-{
-  /* djb2 */
-  U32 hash = 5381;
-  int c;
- 
-  while ( c = *_pKey++ )
-    hash = ((hash << 5) + hash) + c;
- 
-  return hash;
-}
-
-U32	DictionaryString::Hash( U32 _Key )
-{
-	U32	hash = 5381;
-
-	hash = ((hash << 5) + hash) + (_Key & 0xFF);	_Key >>= 8;
-	hash = ((hash << 5) + hash) + (_Key & 0xFF);	_Key >>= 8;
-	hash = ((hash << 5) + hash) + (_Key & 0xFF);	_Key >>= 8;
-	hash = ((hash << 5) + hash) + _Key;
-
-  return hash;
-}
-
-#endif
-
-
 //////////////////////////////////////////////////////////////////////////
 // U32 General version
 //
@@ -127,7 +13,7 @@ DictionaryU32::DictionaryU32( int _Size )
 {
 	m_Size = _Size;
 	m_ppTable = new Node*[m_Size];
-	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+	ASM_memset( m_ppTable, 0, m_Size*sizeof(Node*) );
 }
 DictionaryU32::~DictionaryU32()
 {

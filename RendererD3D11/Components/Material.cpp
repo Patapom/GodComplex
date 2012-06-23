@@ -22,21 +22,88 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 	m_bHasErrors = false;
 
 	// Store the default NULL pointer to point to the shader path
+	m_pShaderFileName = _pShaderFileName;
+
+#ifndef GODCOMPLEX
 	m_pShaderPath = GetShaderPath( _pShaderFileName );
 	m_Pointer2FileName.Add( NULL, m_pShaderPath );
+#endif
+
+#ifdef _DEBUG
+	if ( _pShaderFileName != NULL )
+	{
+		// Just ensure the file exists !
+		FILE*	pFile;
+		fopen_s( &pFile, _pShaderFileName, "rb" );
+		ASSERT( pFile != NULL, "Shader file not found !" );
+		fclose( pFile );
+
+		// Register as a watched shader
+		ms_WatchedShaders.Add( _pShaderFileName, this );
+
+		m_LastShaderModificationTime = GetFileModTime( _pShaderFileName );
+	}
+#endif
+
+	m_pEntryPointVS = _pEntryPointVS;
+	m_pEntryPointGS = _pEntryPointGS;
+	m_pEntryPointPS = _pEntryPointPS;
+
+	if ( _pMacros != NULL )
+	{
+		D3D_SHADER_MACRO*	pMacro = _pMacros;
+		while ( pMacro->Name != NULL )
+			pMacro++;
+
+		int	MacrosCount = 1 + pMacro - _pMacros;
+		m_pMacros = new D3D_SHADER_MACRO[MacrosCount];
+		memcpy( m_pMacros, _pMacros, MacrosCount*sizeof(D3D_SHADER_MACRO) );
+	}
+	else
+		m_pMacros = NULL;
+
+	CompileShaders( _pShaderCode );
+}
+
+Material::~Material()
+{
+#ifdef _DEBUG
+	// Unregister as a watched shader
+	if ( m_pShaderFileName != NULL )
+		ms_WatchedShaders.Remove( m_pShaderFileName );
+#endif
+
+	if ( m_pShaderPath != NULL ) delete[] m_pShaderPath;
+	if ( m_pVertexLayout != NULL ) { m_pVertexLayout->Release(); m_pVertexLayout = NULL; }
+	if ( m_pVS != NULL ) { m_pVS->Release(); m_pVS = NULL; }
+	if ( m_pGS != NULL ) { m_pGS->Release(); m_pGS = NULL; }
+	if ( m_pPS != NULL ) { m_pPS->Release(); m_pPS = NULL; }
+
+	if ( m_pMacros != NULL ) delete[] m_pMacros;
+}
+
+void	Material::CompileShaders( const char* _pShaderCode )
+{
+	// Release any pre-existing shader
+	if ( m_pVertexLayout != NULL ) m_pVertexLayout->Release();
+	if ( m_pVS != NULL )	m_pVS->Release();
+	if ( m_pGS != NULL )	m_pGS->Release();
+	if ( m_pPS != NULL )	m_pPS->Release();
 
 	// Compile the compulsory vertex shader
-	ASSERT( _pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
-	ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointVS, "vs_4_0" );
+	ASSERT( m_pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
+	ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_4_0" );
 	if ( pShader != NULL )
 	{
 		Check( m_Device.DXDevice().CreateVertexShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pVS ) );
 		ASSERT( m_pVS != NULL, "Failed to create vertex shader !" );
+#ifndef GODCOMPLEX
 		m_VSConstants.Enumerate( *pShader );
+#endif
 		m_bHasErrors |= m_pVS == NULL;
 
 		// Create the associated vertex layout
-		Check( m_Device.DXDevice().CreateInputLayout( _Format.GetInputElements(), _Format.GetInputElementsCount(), pShader->GetBufferPointer(), pShader->GetBufferSize(), &m_pVertexLayout ) );
+		Check( m_Device.DXDevice().CreateInputLayout( m_Format.GetInputElements(), m_Format.GetInputElementsCount(), pShader->GetBufferPointer(), pShader->GetBufferSize(), &m_pVertexLayout ) );
 		ASSERT( m_pVertexLayout != NULL, "Failed to create vertex layout !" );
 		m_bHasErrors |= m_pVertexLayout == NULL;
 
@@ -46,14 +113,16 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 		m_bHasErrors = true;
 
 	// Compile the optional geometry shader
-	if ( !m_bHasErrors && _pEntryPointGS != NULL )
+	if ( !m_bHasErrors && m_pEntryPointGS != NULL )
 	{
-		ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointGS, "gs_4_0" );
+		ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_4_0" );
 		if ( pShader != NULL )
 		{
 			Check( m_Device.DXDevice().CreateGeometryShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pGS ) );
 			ASSERT( m_pGS != NULL, "Failed to create geometry shader !" );
+#ifndef GODCOMPLEX
 			m_GSConstants.Enumerate( *pShader );
+#endif
 			m_bHasErrors |= m_pGS == NULL;
 
 			pShader->Release();
@@ -63,14 +132,16 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 	}
 
 	// Compile the optional pixel shader
-	if ( !m_bHasErrors && _pEntryPointPS != NULL )
+	if ( !m_bHasErrors && m_pEntryPointPS != NULL )
 	{
-		ID3DBlob*   pShader = CompileShader( _pShaderCode, _pMacros, _pEntryPointPS, "ps_4_0" );
+		ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_4_0" );
 		if ( pShader != NULL )
 		{
 			Check( m_Device.DXDevice().CreatePixelShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pPS ) );
 			ASSERT( m_pPS != NULL, "Failed to create pixel shader !" );
+#ifndef GODCOMPLEX
 			m_PSConstants.Enumerate( *pShader );
+#endif
 			m_bHasErrors |= m_pPS == NULL;
 
 			pShader->Release();
@@ -81,15 +152,6 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 }
 
 void	DeleteChars( const char*& _pValue, void* _pUserData )	{ delete[] _pValue; }
-
-Material::~Material()
-{
-	if ( m_pShaderPath != NULL ) delete[] m_pShaderPath;
-	if ( m_pVertexLayout != NULL ) { m_pVertexLayout->Release(); m_pVertexLayout = NULL; }
-	if ( m_pVS != NULL ) { m_pVS->Release(); m_pVS = NULL; }
-	if ( m_pGS != NULL ) { m_pGS->Release(); m_pGS = NULL; }
-	if ( m_pPS != NULL ) { m_pPS->Release(); m_pPS = NULL; }
-}
 
 void	Material::Use()
 {
@@ -126,9 +188,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 	ID3DBlob*   pCode;
 	ID3DBlob*   pErrors;
 
-
 //_pShaderCode = pTestShader;
-
 
 	D3DPreprocess( _pShaderCode, strlen(_pShaderCode), NULL, _pMacros, this, &pCodeText, &pErrors );
 #if defined(_DEBUG) || defined(DEBUG_SHADER)
@@ -171,10 +231,12 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 	return pCode;
 }
 
-#ifndef FORBID_SHADER_INCLUDE
-
 HRESULT	Material::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, LPCVOID _pParentData, LPCVOID* _ppData, UINT* _pBytes )
 {
+	if ( m_pIncludeOverride != NULL )
+		return m_pIncludeOverride->Open( _IncludeType, _pFileName, _pParentData, _ppData, _pBytes );
+
+#ifndef GODCOMPLEX
 	const char**	ppShaderPath = m_Pointer2FileName.Get( U32(_pParentData) );
 	ASSERT( ppShaderPath != NULL, "Failed to retrieve data pointer !" );
 	const char*	pShaderPath = *ppShaderPath;
@@ -202,38 +264,76 @@ HRESULT	Material::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, 
 	// Register this shader's path as attached to the data pointer
 	const char*	pIncludedShaderPath = GetShaderPath( pFullName );
 	m_Pointer2FileName.Add( U32(*_ppData), pIncludedShaderPath );
-
-	return S_OK;
-}
-
-HRESULT	Material::Close( THIS_ LPCVOID pData )
-{
-	// Remove entry from dictionary
-	const char**	ppShaderPath = m_Pointer2FileName.Get( U32(pData) );
-	ASSERT( ppShaderPath != NULL, "Failed to retrieve data pointer !" );
-	delete[] *ppShaderPath;
-	m_Pointer2FileName.Remove( U32(pData) );
-
-	// Delete file content
-	delete[] pData;
-
-	return S_OK;
-}
-
 #else
-
-HRESULT	Material::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, LPCVOID _pParentData, LPCVOID* _ppData, UINT* _pBytes )
-{
-	ASSERT( m_pIncludeOverride != NULL, "You MUST provide an ID3DINCLUDE override when compiling with the FORBID_SHADER_INCLUDE option !" );
-	return m_pIncludeOverride->Open( _IncludeType, _pFileName, _pParentData, _ppData, _pBytes );
-}
-HRESULT	Material::Close( THIS_ LPCVOID _pData )
-{
-	return m_pIncludeOverride->Close( _pData );
-}
-
+	ASSERT( false, "You MUST provide an ID3DINCLUDE override when compiling with the GODCOMPLEX option !" );
 #endif
 
+	return S_OK;
+}
+
+HRESULT	Material::Close( THIS_ LPCVOID _pData )
+{
+	if ( m_pIncludeOverride != NULL )
+		return m_pIncludeOverride->Close( _pData );
+
+#ifndef GODCOMPLEX
+	// Remove entry from dictionary
+	const char**	ppShaderPath = m_Pointer2FileName.Get( U32(_pData) );
+	ASSERT( ppShaderPath != NULL, "Failed to retrieve data pointer !" );
+	delete[] *ppShaderPath;
+	m_Pointer2FileName.Remove( U32(_pData) );
+
+	// Delete file content
+	delete[] _pData;
+#endif
+
+	return S_OK;
+}
+
+#ifndef GODCOMPLEX
+const char*	Material::GetShaderPath( const char* _pShaderFileName ) const
+{
+	char*	pResult = NULL;
+	if ( _pShaderFileName != NULL )
+	{
+		int	FileNameLength = strlen(_pShaderFileName)+1;
+		pResult = new char[FileNameLength];
+		strcpy_s( pResult, FileNameLength, _pShaderFileName );
+
+		char*	pLastSlash = strrchr( pResult, '\\' );
+		if ( pLastSlash == NULL )
+			pLastSlash = strrchr( pResult, '/' );
+		if ( pLastSlash != NULL )
+			pLastSlash[1] = '\0';
+	}
+
+	if ( pResult == NULL )
+	{	// Empty string...
+		pResult = new char[1];
+		pResult = '\0';
+		return pResult;
+	}
+
+	return pResult;
+}
+#endif
+
+void	Material::SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer )
+{
+	ID3D11Buffer*	pBuffer = _Buffer.GetBuffer();
+	m_Device.DXContext().VSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
+	m_Device.DXContext().GSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
+	m_Device.DXContext().PSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
+}
+
+void	Material::SetTexture( int _BufferSlot, ID3D11ShaderResourceView* _pData )
+{
+	m_Device.DXContext().VSSetShaderResources( _BufferSlot, 1, &_pData );
+	m_Device.DXContext().GSSetShaderResources( _BufferSlot, 1, &_pData );
+	m_Device.DXContext().PSSetShaderResources( _BufferSlot, 1, &_pData );
+}
+
+#ifndef GODCOMPLEX
 bool	Material::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer )
 {
 	bool	bUsed = false;
@@ -260,13 +360,6 @@ bool	Material::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buf
 
 	return	bUsed;
 }
-void	Material::SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer )
-{
-	ID3D11Buffer*	pBuffer = _Buffer.GetBuffer();
-	m_Device.DXContext().VSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
-	m_Device.DXContext().GSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
-	m_Device.DXContext().PSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
-}
 
 bool	Material::SetTexture( const char* _pBufferName, ID3D11ShaderResourceView* _pData )
 {
@@ -291,12 +384,6 @@ bool	Material::SetTexture( const char* _pBufferName, ID3D11ShaderResourceView* _
 	}
 
 	return	bUsed;
-}
-void	Material::SetTexture( int _BufferSlot, ID3D11ShaderResourceView* _pData )
-{
-	m_Device.DXContext().VSSetShaderResources( _BufferSlot, 1, &_pData );
-	m_Device.DXContext().GSSetShaderResources( _BufferSlot, 1, &_pData );
-	m_Device.DXContext().PSSetShaderResources( _BufferSlot, 1, &_pData );
 }
 
 static void	DeleteBindingDescriptors( Material::ShaderConstants::BindingDesc*& _pValue, void* _pUserData )
@@ -352,7 +439,7 @@ void	Material::ShaderConstants::BindingDesc::SetName( const char* _pName )
 }
 Material::ShaderConstants::BindingDesc::~BindingDesc()
 {
-//	delete[] pName;	// This makes a heap corruption, I don't know why and I don't give a fuck about these C++ problems...
+//	delete[] pName;	// This makes a heap corruption, I don't know why and I don't give a fuck about these C++ problems... (certainly some shit about allocating memory from a DLL and releasing it from another one or something like this)
 }
 
 int		Material::ShaderConstants::GetConstantBufferIndex( const char* _pBufferName ) const
@@ -366,29 +453,67 @@ int		Material::ShaderConstants::GetShaderResourceViewIndex( const char* _pTextur
 	BindingDesc**	ppValue = m_TextureName2Descriptor.Get( _pTextureName );
 	return ppValue != NULL ? (*ppValue)->Slot : -1;
 }
+#endif
 
-const char*	Material::GetShaderPath( const char* _pShaderFileName ) const
+//////////////////////////////////////////////////////////////////////////
+// Shader rebuild on modifications mechanism...
+#ifdef _DEBUG
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
+DictionaryString<Material*>	Material::ms_WatchedShaders;
+
+static void	WatchShader( Material*& _Value, void* _pUserData ) { _Value->WatchShaderModifications(); }
+void		Material::WatchShadersModifications()
 {
-	char*	pResult = NULL;
-	if ( _pShaderFileName != NULL )
-	{
-		int	FileNameLength = strlen(_pShaderFileName)+1;
-		pResult = new char[FileNameLength];
-		strcpy_s( pResult, FileNameLength, _pShaderFileName );
+	static int	LastTime = -1;
+	int			CurrentTime = timeGetTime();
+	if ( LastTime >= 0 && (CurrentTime - LastTime) < REFRESH_CHANGES_INTERVAL )
+		return;	// Too soon to check !
 
-		char*	pLastSlash = strrchr( pResult, '\\' );
-		if ( pLastSlash == NULL )
-			pLastSlash = strrchr( pResult, '/' );
-		if ( pLastSlash != NULL )
-			pLastSlash[1] = '\0';
-	}
+	// Update last check time
+	LastTime = CurrentTime;
 
-	if ( pResult == NULL )
-	{	// Empty string...
-		pResult = new char[1];
-		pResult = '\0';
-		return pResult;
-	}
-
-	return pResult;
+	ms_WatchedShaders.ForEach( WatchShader, NULL );
 }
+
+void		Material::WatchShaderModifications()
+{
+	// Check if the shader file changed since last time
+	time_t	LastModificationTime = GetFileModTime( m_pShaderFileName );
+	if ( LastModificationTime <= m_LastShaderModificationTime )
+		return;	// No change !
+
+	m_LastShaderModificationTime = LastModificationTime;
+
+	// Reload file
+	FILE*	pFile = NULL;
+	fopen_s( &pFile, m_pShaderFileName, "rb" );
+	ASSERT( pFile != NULL, "Failed to open shader file !" );
+
+	fseek( pFile, 0, SEEK_END );
+	size_t	FileSize = ftell( pFile );
+	fseek( pFile, 0, SEEK_SET );
+
+	char*	pShaderCode = new char[FileSize+1];
+	fread_s( pShaderCode, FileSize, 1, FileSize, pFile );
+	pShaderCode[FileSize] = '\0';
+
+	fclose( pFile );
+
+	// Compile
+	CompileShaders( pShaderCode );
+
+	delete[] pShaderCode;
+}
+
+time_t		Material::GetFileModTime( const char* _pFileName )
+{	
+	struct _stat statInfo;
+	_stat( _pFileName, &statInfo );
+
+	return statInfo.st_mtime;
+}
+
+#endif
