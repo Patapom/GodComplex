@@ -16,6 +16,7 @@
 	{ IDR_SHADER_TRANSLUCENCY_BUILD_ZBUFFER,	NULL },	\
 	{ IDR_SHADER_TRANSLUCENCY_DIFFUSION,		NULL },	\
 	{ IDR_SHADER_TRANSLUCENCY_DISPLAY,			NULL },	\
+	{ IDR_SHADER_ROOM_DISPLAY,					"./Resources/Shaders/RoomDisplay.fx" },	\
 
 
 #include "..\GodComplex.h"

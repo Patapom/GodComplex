@@ -23,7 +23,7 @@ VS_IN	VS( VS_IN _In )
 
 float4	ComputeBackground( float2 _UV )
 {
-	float3	PlanePosition = float3( 0.0, -2.0f, 0.0 );
+	float3	PlanePosition = float3( 0.0, -1.0f, 0.0 );
 	float3	PlaneNormal = float3( 0, 1, 0 );
 
 	float3	LightPosition = float3( 0.0, 0.0, 0.0 );
@@ -33,7 +33,6 @@ float4	ComputeBackground( float2 _UV )
 
 	// Compute view
 	float3	CamPos = _Camera2World[3].xyz;
-//	float3	CamView = mul( float4( _UV.xy * _CameraData.xy, 1.0, 0.0 ), _Camera2World ).xyz;
 	float3	CamView = mul( float4( _CameraData.x * (2.0 * _UV.x - 1.0), _CameraData.y * (1.0 - 2.0 * _UV.y), 1.0, 0.0 ), _Camera2World ).xyz;
 
 	// Compute plane intersection distance
@@ -46,7 +45,7 @@ float4	ComputeBackground( float2 _UV )
 //return PlaneDistance;
 
 	// Compute distance to the sphere
-	float3	SphereCenter = float3( 0.0, 0.0, 0.0 );
+	float3	SphereCenter = float3( 0.0, 1.0, 0.0 );
 	float	SphereDistance = length( SphereCenter - PlaneHit );
 
 	SphereDistance = pow( saturate( 0.42 * SphereDistance ), 3.0 );

@@ -107,6 +107,8 @@ void	FillSplotch( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
 
 int	Build2DTextures( IntroProgressDelegate& _Delegate )
 {
+return 0;
+
 	DrawUtils	Draw;
 	{
 		TextureBuilder	TB( 512, 512 );

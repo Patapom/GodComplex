@@ -3,7 +3,7 @@
 //
 #include "Inc/Global.fx"
 
-Texture2D	_TexLightmap	: register(t10);
+Texture2D	_TexLightMap	: register(t10);
 
 //[
 cbuffer	cbObject	: register( b10 )
@@ -46,6 +46,12 @@ PS_IN	VS( VS_IN _In )
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
 //	return float4( _In.Normal, 1.0 );
-	return float4( _In.UV, 0, 1.0 );
-	return float4( _In.UV2, 0, 1.0 );
+//	return float4( _In.UV, 0, 1.0 );
+//	return float4( _In.UV2, 0, 1.0 );
+
+	return float4( _TexLightMap.SampleLevel( LinearClamp, _In.UV2, 0.0 ).xyz, 1.0 );
+
+	float4	Color = _TexLightMap.SampleLevel( LinearClamp, _In.UV, 0.0 );
+	return float4( Color.xyz, 1.0 );
+	return float4( lerp( float3( _In.UV, 0 ), Color, Color.x + Color.y ), 1.0 );
 }

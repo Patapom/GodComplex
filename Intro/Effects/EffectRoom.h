@@ -55,7 +55,11 @@ public:		// METHODS
 protected:
 
 	void		BuildRoom();
+
+	void		RenderDirect( RayTracer& _Tracer, TextureBuilder& _Positions, TextureBuilder& _Normals, TextureBuilder& _Tangents, int _RaysCount, NjFloat3* _pRays, TextureBuilder** _ppLightMaps );
+
 	NjFloat2	GetLightMapAspectRatios();
 	NjFloat2	LightUV( int _FaceIndex, const NjFloat2& _UV );
+	void		DrawQuad( DrawUtils& _DrawPosition, DrawUtils& _DrawNormal, DrawUtils& _DrawTangent, const NjFloat2& _TopLeft, const NjFloat2& _BottomRight, const RayTracer::Quad& _Quad );
 
 };
