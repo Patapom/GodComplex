@@ -71,6 +71,9 @@
     <Filter Include="Resources\Shaders\DEBUG\EffectTranslucency">
       <UniqueIdentifier>{ec3741a5-fc8f-4ceb-aed7-932619453652}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\EffectRoom">
+      <UniqueIdentifier>{3994ffd7-88e3-4ed0-9553-c919a2b06f67}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\Events.h">
@@ -179,6 +182,12 @@
     <ClInclude Include="Intro\Effects\EffectTranslucency.h">
       <Filter>Intro\Effects</Filter>
     </ClInclude>
+    <ClInclude Include="Procedural\RayTracer.h">
+      <Filter>Procedural\3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectRoom.h">
+      <Filter>Intro\Effects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -269,6 +278,12 @@
     <ClCompile Include="Intro\Build3DTextures.cpp">
       <Filter>Intro</Filter>
     </ClCompile>
+    <ClCompile Include="Procedural\RayTracer.cpp">
+      <Filter>Procedural\3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectRoom.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib">
@@ -321,6 +336,9 @@
       <Filter>Resources\Shaders\RELEASE %28Minified%29</Filter>
     </None>
     <None Include="Notes.txt" />
+    <None Include="Resources\Shaders\RoomDisplay.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

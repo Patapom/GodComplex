@@ -3,6 +3,7 @@
 #include "ConstantBuffers.h"
 
 #include "Effects/EffectTranslucency.h"
+#include "Effects/EffectRoom.h"
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) return ErrorCode;
 #define CHECK_EFFECT( pEffect, ErrorCode )			{ int EffectError = (pEffect)->GetErrorCode(); if ( EffectError != 0 ) return ErrorCode + EffectError; }
@@ -25,6 +26,7 @@ static CB<CBTest>*		gs_pCB_Test = NULL;
 
 // Effects
 static EffectTranslucency*	gs_pEffectTranslucency = NULL;
+static EffectRoom*			gs_pEffectRoom = NULL;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -84,7 +86,10 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create effects
 	{
-		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), 2000 );	// Error codes for effects should increase in hundreds like 2000, 2100, 2200, etc.
+		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), 2000 );					// Error codes for effects should increase in thousands like 2000, 3000, 4000, etc.
+		gs_pEffectRoom->RenderLightmap( _Delegate );
+
+		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), 3000 );
 	}
 
 	return 0;
@@ -94,6 +99,7 @@ void	IntroExit()
 {
 	// Release effects
 	delete gs_pEffectTranslucency;
+	delete gs_pEffectRoom;
 
 	// Release constant buffers
 	delete gs_pCB_Test;
@@ -137,6 +143,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	// Render some shit to the HDR buffer
 	gs_Device.SetRenderTarget( *gs_pRTHDR, &gs_Device.DefaultDepthStencil() );
 
+	gs_pEffectRoom->Render( _Time, _DeltaTime );
 	gs_pEffectTranslucency->Render( _Time, _DeltaTime );
 
 	// Setup default states

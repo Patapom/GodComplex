@@ -59,6 +59,7 @@
 
 // 3D Procedural
 #include "Procedural/GeometryBuilder.h"
+#include "Procedural/RayTracer.h"
 
 
 

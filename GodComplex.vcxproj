@@ -194,6 +194,7 @@ MinifyAll.cmd</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Intro\ConstantBuffers.h" />
+    <ClInclude Include="Intro\Effects\EffectRoom.h" />
     <ClInclude Include="Intro\Effects\EffectTranslucency.h" />
     <ClInclude Include="Intro\Intro.h" />
     <ClInclude Include="GodComplex.h" />
@@ -206,6 +207,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Procedural\Generators\Generators.h" />
     <ClInclude Include="Procedural\Generators\Noise.h" />
     <ClInclude Include="Procedural\GeometryBuilder.h" />
+    <ClInclude Include="Procedural\RayTracer.h" />
     <ClInclude Include="Procedural\TextureBuilder.h" />
     <ClInclude Include="RendererD3D11\Components\Component.h" />
     <ClInclude Include="RendererD3D11\Components\ConstantBuffer.h">
@@ -247,6 +249,7 @@ MinifyAll.cmd</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectRoom.cpp" />
     <ClCompile Include="Intro\Effects\EffectTranslucency.cpp" />
     <ClCompile Include="Intro\Intro.cpp" />
     <ClCompile Include="NuajAPI\API\Hashtable.cpp" />
@@ -256,6 +259,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Procedural\Generators\Generators.cpp" />
     <ClCompile Include="Procedural\Generators\Noise.cpp" />
     <ClCompile Include="Procedural\GeometryBuilder.cpp" />
+    <ClCompile Include="Procedural\RayTracer.cpp" />
     <ClCompile Include="Procedural\TextureBuilder.cpp" />
     <ClCompile Include="RendererD3D11\Components\Component.cpp" />
     <ClCompile Include="RendererD3D11\Components\ConstantBuffer.cpp">
@@ -293,6 +297,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\Compressed\TranslucencyBuildZBuffer.fx" />
     <None Include="Resources\Shaders\Compressed\TranslucencyDiffusion.fx" />
     <None Include="Resources\Shaders\Compressed\TranslucencyDisplay.fx" />
+    <None Include="Resources\Shaders\RoomDisplay.fx" />
     <None Include="Resources\Shaders\TranslucencyBuildZBuffer.fx" />
     <None Include="Resources\Shaders\Inc\Global.fx" />
     <None Include="Resources\Shaders\PostFinal.fx">
