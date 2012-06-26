@@ -28,9 +28,9 @@ void	RayTracer::InitGeometry( int _QuadsCount, const Quad* _pQuads )
 	}
 }
 
-bool	RayTracer::RayTrace( Ray& _Ray )
+bool	RayTracer::Trace( Ray& _Ray )
 {
-	bool	bHit = false;
+	_Ray.pHitQuad = NULL;
 	_Ray.HitDistance = FLOAT32_MAX;	// Infinity...
 
 	Quad_Internal*	pQuad = m_pQuads;
@@ -40,7 +40,7 @@ bool	RayTracer::RayTrace( Ray& _Ray )
 		float		HeightFromQuad = ToCenter | pQuad->Normal;		// Negative if above quad
 		float		SlopeToQuad = _Ray.Direction | pQuad->Normal;	// Rate at which we get closer to the quad
 		float		HitDistance = HeightFromQuad / SlopeToQuad;		// Distance at which we'll hit the quad's plane
-		if ( HitDistance < 0.0f || HitDistance > _Ray.HitDistance )
+		if ( HitDistance <= 0.0f || HitDistance > _Ray.HitDistance )
 			continue;	// No hit, or we hit too far away from best hit...
 
 		// Compute hit position and check we're within the quad
@@ -53,13 +53,12 @@ bool	RayTracer::RayTrace( Ray& _Ray )
 
 		// We have a hit !
 		// Now, all we need to do is to find the UVs where it happened
-		bHit = true;
 		_Ray.HitDistance = HitDistance;
 		_Ray.pHitQuad = pQuad;
 		_Ray.HitUV.Set( 0.5f + DistanceX * pQuad->SizeAndInvSize.z, 0.5f + DistanceY * pQuad->SizeAndInvSize.w );
 	}
 
-	return bHit;
+	return _Ray.pHitQuad != NULL;
 }
 
 void	RayTracer::ExitGeometry()

@@ -190,6 +190,7 @@ public:
 
 //	NjFloat4		operator*( const NjFloat4& b ) const;
 	NjFloat4x4		operator*( const NjFloat4x4& b ) const;
+	float&			operator()( int _Row, int _Column );
 
 	static NjFloat4x4	FromAngleAxis( float _Angle, const NjFloat3& _Axis )	{ return FromQuat( NjFloat4::QuatFromAngleAxis( _Angle, _Axis ) ); }
 	static NjFloat4x4	FromQuat( const NjFloat4& _Quat );
@@ -197,6 +198,9 @@ public:
 
 	static const NjFloat4x4	Zero;
 	static const NjFloat4x4	Identity;
+	static NjFloat4x4	RotationX( float _Angle );
+	static NjFloat4x4	RotationY( float _Angle );
+	static NjFloat4x4	RotationZ( float _Angle );
 };
 
 NjFloat4   operator*( const NjFloat4& a, const NjFloat4x4& b );

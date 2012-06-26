@@ -10,6 +10,8 @@ Camera::~Camera()
 	delete m_pCB;
 }
 
+Camera::CBData&	Camera::GetCB()	{ return m_pCB->m; }
+
 void	Camera::SetPerspective( float _FOV, float _AspectRatio, float _Near, float _Far )
 {
 	float	H = tanf( 0.5f * _FOV );

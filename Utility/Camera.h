@@ -47,22 +47,8 @@ private:	// FIELDS
 
 public:		// PROPERTIES
  
-// 	// Gets or sets vertical field of view (in radians)
-// 	float		GetFOV() const					{ return m_FOV; }
-// 	void		SetFOV( float value )			{ m_FOV = value; UpdateProjection(); }
-// 
-// 	// Gets or sets near & far clip distances
-// 	float		GetNear() const					{ return m_Near; }
-// 	void		SetNear( float value )			{ m_Near = value; UpdateProjection(); }
-// 	float		GetFar() const					{ return m_Far; }
-// 	void		SetFar( float value )			{ m_Far = value; UpdateProjection(); }
-// 
-// 	// Gets or sets screen aspect ratio
-// 	float		GetAspectRatio() const			{ return m_FOV; }
-// 	void		SetAspectRatio( float value )	{ m_AspectRatio = value; UpdateProjection(); }
-
-// 	// Gets the constant buffer to send to shaders
-// 	const ConstantBuffer&	GetCB() const	{ return *m_pCB; }
+	// Gets the constant buffer to send to shaders
+	CBData&	GetCB();
 
 public:		// METHODS
 
@@ -73,8 +59,5 @@ public:		// METHODS
 
 	void	SetPerspective( float _FOV, float _AspectRatio, float _Near, float _Far );
 	void	LookAt( const NjFloat3& _Position, const NjFloat3& _Target, const NjFloat3& _Up );
-
-private:
-
 	void	UpdateCompositions();
 };

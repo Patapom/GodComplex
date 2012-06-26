@@ -56,7 +56,7 @@ public:		// METHODS
 	void	InitGeometry( int _QuadsCount, const Quad* _pQuads );
 
 	// Traces a ray in the geometry
-	bool	RayTrace( Ray& _Ray );
+	bool	Trace( Ray& _Ray );
 
 	void	ExitGeometry();
 };

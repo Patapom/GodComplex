@@ -263,3 +263,64 @@ NjFloat4x4  NjFloat4x4::operator*( const NjFloat4x4& b ) const
 
 	return R;
 }
+
+float&	NjFloat4x4::operator()( int _Row, int _Column )
+{
+	NjFloat4*	pRow = 0;
+	switch ( _Row&3 )
+	{
+	case 0: pRow = (NjFloat4*) &m[4*0]; break;
+	case 1: pRow = (NjFloat4*) &m[4*1]; break;
+	case 2: pRow = (NjFloat4*) &m[4*2]; break;
+	case 3: pRow = (NjFloat4*) &m[4*3]; break;
+	}
+
+	switch ( _Column&3 )
+	{
+	case 0: return pRow->x;
+	case 1: return pRow->y;
+	case 2: return pRow->z;
+	case 3: return pRow->w;
+	}
+	return *((float*) 0);
+}
+
+NjFloat4x4	NjFloat4x4::RotationX( float _Angle )
+{
+	float	C = cosf(_Angle);
+	float	S = sinf(_Angle);
+
+	NjFloat4x4	R = NjFloat4x4::Identity;
+	R( 1, 1 ) = +C;		R( 1, 2 ) = +S;
+	R( 2, 1 ) = -S;		R( 2, 2 ) = +C;
+
+	return R;
+}
+
+NjFloat4x4	NjFloat4x4::RotationY( float _Angle )
+{
+	float	C = cosf(_Angle);
+	float	S = sinf(_Angle);
+
+	NjFloat4x4	R = NjFloat4x4::Identity;
+	R( 0, 0 ) = +C;		R( 0, 2 ) = -S;
+	R( 2, 0 ) = +S;		R( 2, 2 ) = +C;
+
+	return R;
+}
+
+NjFloat4x4	NjFloat4x4::RotationZ( float _Angle )
+{
+	float	C = cosf(_Angle);
+	float	S = sinf(_Angle);
+
+	NjFloat4x4	R = NjFloat4x4::Identity;
+	R( 0, 0 ) = +C;		R( 0, 1 ) = +S;
+	R( 1, 0 ) = -S;		R( 1, 1 ) = +C;
+
+	return R;
+}
+
+// { m[1, 1] = +fCosine; m[1, 2] = +fSine; m[2, 1] = -fSine; m[2, 2] = +fCosine; return this; }
+// { m[0, 0] = +fCosine; m[0, 2] = -fSine; m[2, 0] = +fSine; m[2, 2] = +fCosine; return this; }
+// { m[0, 0] = +fCosine; m[0, 1] = +fSine; m[1, 0] = -fSine; m[1, 1] = +fCosine; return this; }
