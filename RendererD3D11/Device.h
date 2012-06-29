@@ -49,6 +49,8 @@ public:
 	BlendState*				m_pBS_Disabled_GreenOnly;
 	BlendState*				m_pBS_Disabled_BlueOnly;
 	BlendState*				m_pBS_Disabled_AlphaOnly;
+	BlendState*				m_pBS_AlphaBlend;
+	BlendState*				m_pBS_PremultipliedAlpha;
 
 
 public:	 // PROPERTIES

@@ -188,7 +188,9 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 	ID3DBlob*   pCode;
 	ID3DBlob*   pErrors;
 
+
 //_pShaderCode = pTestShader;
+
 
 	D3DPreprocess( _pShaderCode, strlen(_pShaderCode), NULL, _pMacros, this, &pCodeText, &pErrors );
 #if defined(_DEBUG) || defined(DEBUG_SHADER)

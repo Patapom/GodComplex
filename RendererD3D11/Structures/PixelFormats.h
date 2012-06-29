@@ -34,6 +34,26 @@ public:
 
 };
 
+struct PixelFormatRGBA8_sRGB : public PixelFormat
+{
+public:
+
+	static class Desc : public IPixelFormatDescriptor
+	{
+	public:
+
+		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; }
+		virtual int			Size() const					{ return sizeof(PixelFormatRGBA8_sRGB); }
+		virtual void		Write( PixelFormat& _Pixel, const NjFloat4& _Color )	{ PixelFormatRGBA8_sRGB& P = (PixelFormatRGBA8_sRGB&)( _Pixel ); P.R = FLOAT2BYTE( _Color.x ); P.G = FLOAT2BYTE( _Color.y ); P.B = FLOAT2BYTE( _Color.z ); P.A = FLOAT2BYTE( _Color.w ); }
+		virtual NjFloat4	Read( const PixelFormat& _Pixel ) const					{ const PixelFormatRGBA8_sRGB& P = (const PixelFormatRGBA8_sRGB&)( _Pixel ); return NjFloat4( BYTE2FLOAT( P.R ), BYTE2FLOAT( P.G ), BYTE2FLOAT( P.B ), BYTE2FLOAT( P.A ) ); }
+	} DESCRIPTOR;
+
+public:
+
+	U8  R, G, B, A;
+
+};
+
 struct PixelFormatRGBA16F : public PixelFormat
 {
 public:

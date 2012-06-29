@@ -156,6 +156,18 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALPHA;
 		m_pBS_Disabled_AlphaOnly = new BlendState( *this, Desc ); m_StatesCount++;
 		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		// Alpha blending (Dst = SrcAlpha * Src + (1-SrcAlpha) * Dst)
+		Desc.RenderTarget[0].BlendEnable = true;
+		Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		Desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+		m_pBS_AlphaBlend = new BlendState( *this, Desc ); m_StatesCount++;
+
+		// Premultiplied alpa (Dst = Src + (1-SrcAlpha)*Dst)
+		Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+		Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		m_pBS_PremultipliedAlpha = new BlendState( *this, Desc ); m_StatesCount++;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
