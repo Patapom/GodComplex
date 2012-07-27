@@ -34,7 +34,11 @@ Primitive::~Primitive()
 
 void	Primitive::Render( Material& _Material )
 {
-	m_Device.DXContext().IASetInputLayout( _Material.GetVertexLayout() );
+	ID3D11InputLayout*	pLayout = _Material.GetVertexLayout();
+	if ( pLayout == NULL )
+		return;	// Material is not initialied yet...
+
+	m_Device.DXContext().IASetInputLayout( pLayout );
 	m_Device.DXContext().IASetPrimitiveTopology( m_Topology );
 
 	U32 Offset = 0;
@@ -50,8 +54,32 @@ void	Primitive::Render( Material& _Material )
 		m_Device.DXContext().Draw( m_VerticesCount, 0 );
 }
 
+void	Primitive::RenderInstanced( Material& _Material, int _InstancesCount )
+{
+	ID3D11InputLayout*	pLayout = _Material.GetVertexLayout();
+	if ( pLayout == NULL )
+		return;	// Material is not initialied yet...
+
+	m_Device.DXContext().IASetInputLayout( pLayout );
+	m_Device.DXContext().IASetPrimitiveTopology( m_Topology );
+
+	U32 Offset = 0;
+	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &m_Stride, &Offset );
+	if ( m_pIB != NULL )
+		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R16_UINT, 0 );
+	else
+		m_Device.DXContext().IASetIndexBuffer( NULL, DXGI_FORMAT_UNKNOWN, 0 );
+
+	if ( m_pIB != NULL )
+		m_Device.DXContext().DrawIndexedInstanced( m_IndicesCount, _InstancesCount, 0, 0, 0 );
+	else
+		m_Device.DXContext().DrawInstanced( m_VerticesCount, _InstancesCount, 0, 0 );
+}
+
 void	Primitive::Build( void* _pVertices, U16* _pIndices )
 {
+	ASSERT( m_VerticesCount <= 65536, "Time to upgrade to U32 indices !" );
+
 	{   // Create the vertex buffer
 		D3D11_BUFFER_DESC   Desc;
 		Desc.ByteWidth = m_VerticesCount * m_Stride;

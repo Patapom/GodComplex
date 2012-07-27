@@ -22,6 +22,7 @@ private:	// FIELDS
 
 	const IFormatDescriptor&	m_Format;
 	bool				m_bIsDepthStencil;
+	bool				m_bIsCubeMap;
 
 	ID3D11Texture2D*	m_pTexture;
 

@@ -6,6 +6,7 @@
 class Component;
 class Material;
 class Texture2D;
+class Texture3D;
 class RasterizerState;
 class DepthStencilState;
 class BlendState;
@@ -43,6 +44,7 @@ public:
 	DepthStencilState*		m_pDS_Disabled;
 	DepthStencilState*		m_pDS_ReadWriteLess;
 	DepthStencilState*		m_pDS_ReadWriteGreater;
+	DepthStencilState*		m_pDS_ReadLessEqual;			// No write !
 
 	BlendState*				m_pBS_Disabled;
 	BlendState*				m_pBS_Disabled_RedOnly;
@@ -79,6 +81,7 @@ public:	 // METHODS
 
 	// Helpers
 	void	ClearRenderTarget( const Texture2D& _Target, const NjFloat4& _Color );
+	void	ClearRenderTarget( const Texture3D& _Target, const NjFloat4& _Color );
 	void	ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil );
 	void	SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil=NULL, D3D11_VIEWPORT* _pViewport=NULL );
 	void	SetRenderTargets( int _Width, int _Height, int _TargetsCount, ID3D11RenderTargetView** _ppTargets, ID3D11DepthStencilView* _pDepthStencil=NULL, D3D11_VIEWPORT* _pViewport=NULL );

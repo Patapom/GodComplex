@@ -1,6 +1,7 @@
 #include "Device.h"
 #include "Components/Component.h"
 #include "Components/Texture2D.h"
+#include "Components/Texture3D.h"
 #include "Components/States.h"
 
 Device::Device()
@@ -130,6 +131,10 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 
 		Desc.DepthFunc = D3D11_COMPARISON_GREATER;
 		m_pDS_ReadWriteGreater = new DepthStencilState( *this, Desc ); m_StatesCount++;
+
+		Desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		m_pDS_ReadLessEqual = new DepthStencilState( *this, Desc ); m_StatesCount++;
 	}
 	{
 		D3D11_BLEND_DESC	Desc;
@@ -225,6 +230,11 @@ void	Device::Exit()
 }
 
 void	Device::ClearRenderTarget( const Texture2D& _Target, const NjFloat4& _Color )
+{
+	m_pDeviceContext->ClearRenderTargetView( _Target.GetTargetView( 0, 0, 0 ), &_Color.x );
+}
+
+void	Device::ClearRenderTarget( const Texture3D& _Target, const NjFloat4& _Color )
 {
 	m_pDeviceContext->ClearRenderTargetView( _Target.GetTargetView( 0, 0, 0 ), &_Color.x );
 }

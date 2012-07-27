@@ -33,6 +33,7 @@ public:	 // METHODS
 	~Primitive();
 
 	void			Render( Material& _Material );
+	void			RenderInstanced( Material& _Material, int _InstancesCount );
 
 #ifdef SUPPORT_GEO_BUILDERS
 	// IGeometryWriter implementation

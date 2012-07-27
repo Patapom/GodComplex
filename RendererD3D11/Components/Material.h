@@ -4,6 +4,16 @@
 #include "../Structures/VertexFormats.h"
 
 #define REFRESH_CHANGES_INTERVAL	500
+#define COMPILE_AT_RUNTIME		// Define this to start compiling shaders at runtime and avoid blocking (useful for debugging)
+								// If you enable that option then the shader will start compiling as soon as WatchShaderModifications() is called on the material
+
+#define COMPILE_THREADED		// Define this to launch shader compilation in different threads
+
+
+//#define __DEBUG_UPLOAD_ONLY_ONCE	// If defined, then the constants & textures will be uploaded only once (once the material is compiled)
+									// This allows to test the importance of constants/texture uploads in the performance of the application
+									// Obviously, if you switch textures & render targets often this will give you complete crap results !
+
 
 class ConstantBuffer;
 
@@ -30,6 +40,9 @@ public:		// NESTED TYPES
 		{
 			char*	pName;
 			int		Slot;
+#ifdef __DEBUG_UPLOAD_ONLY_ONCE
+			bool	bUploaded;
+#endif
 
 			~BindingDesc();
 
@@ -48,6 +61,7 @@ public:		// NESTED TYPES
 		int		GetShaderResourceViewIndex( const char* _pTextureName ) const;
 	};
 #endif
+
 
 private:	// FIELDS
 
@@ -84,7 +98,17 @@ private:	// FIELDS
 public:	 // PROPERTIES
 
 	bool				HasErrors() const	{ return m_bHasErrors; }
-	ID3D11InputLayout*  GetVertexLayout()	{ return m_pVertexLayout; }
+	ID3D11InputLayout*  GetVertexLayout()
+	{
+		if ( !LockMaterial() )
+			return NULL;	// Probably compiling...
+
+		ID3D11InputLayout*	pResult = m_pVertexLayout;
+
+		UnlockMaterial();
+
+		return pResult;
+	}
 
 public:	 // METHODS
 
@@ -100,6 +124,7 @@ public:	 // METHODS
 
 	void			Use();
 
+
 public:	// ID3DInclude Members
 
     STDMETHOD(Open)( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, LPCVOID _pParentData, LPCVOID* _ppData, UINT* _pBytes );
@@ -110,12 +135,30 @@ private:
 	void			CompileShaders( const char* _pShaderCode );
 	ID3DBlob*		CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget );
 #ifndef GODCOMPLEX
+	const char*		CopyString( const char* _pShaderFileName ) const;
 	const char*		GetShaderPath( const char* _pShaderFileName ) const;
 #endif
 
+
+#ifdef COMPILE_THREADED
+	//////////////////////////////////////////////////////////////////////////
+	// Threaded compilation
+	HANDLE			m_hCompileThread;
+	HANDLE			m_hCompileMutex;
+
+	// Returns true if the shaders are safe to access (i.e. have been compiled and no other thread is accessing them)
+	// WARNING: Calling this will take ownership of the mutex if the function returns true ! You thus must call UnlockMaterial() later...
+	bool			LockMaterial() const;
+	void			UnlockMaterial() const;
+
+	void			StartThreadedCompilation();
+public:
+	void			RebuildShader();
+#endif
+
+
 	//////////////////////////////////////////////////////////////////////////
 	// Shader auto-reload on change mechanism
-#ifdef _DEBUG
 private:
 	// The dictionary of watched materials
 	static DictionaryString<Material*>	ms_WatchedShaders;
@@ -126,6 +169,5 @@ public:
 	// Call this every time you need to rebuild shaders whose code has changed
 	static void		WatchShadersModifications();
 	void			WatchShaderModifications();
-#endif
 };
 

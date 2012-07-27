@@ -4,6 +4,7 @@ Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFo
 	: Component( _Device )
 	, m_Format( _Format )
 	, m_bIsDepthStencil( false )
+	, m_bIsCubeMap( false )
 	, m_pCachedDepthStencilView( NULL )
 {
 	D3D11_TEXTURE2D_DESC	Desc;
@@ -28,7 +29,17 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 
 	m_Width = _Width;
 	m_Height = _Height;
-	m_ArraySize = _ArraySize;
+	if ( _ArraySize == -6 )
+	{	// Special cube map case !
+		m_ArraySize = 6;
+		m_bIsCubeMap = true;
+	}
+	else
+	{
+		ASSERT( _ArraySize > 0, "Invalid array size !" );
+		m_ArraySize = _ArraySize;
+		m_bIsCubeMap = false;
+	}
 
 	m_MipLevelsCount = ComputeMipLevelsCount( _Width, _Height, _MipLevelsCount );
 
