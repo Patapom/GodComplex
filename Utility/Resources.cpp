@@ -82,6 +82,11 @@ struct	ShaderResource
 
 Material*	CreateMaterial( U16 _ShaderResourceID, const IVertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, D3D_SHADER_MACRO* _pMacros )
 {
+	return CreateMaterial( _ShaderResourceID, _Format, _pEntryPointVS, NULL, NULL, _pEntryPointGS, _pEntryPointPS, _pMacros );
+}
+
+Material*	CreateMaterial( U16 _ShaderResourceID, const IVertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, D3D_SHADER_MACRO* _pMacros )
+{
 	const char*	pFileName = NULL;
 
 #ifdef _DEBUG
@@ -102,7 +107,7 @@ Material*	CreateMaterial( U16 _ShaderResourceID, const IVertexFormatDescriptor& 
 	char*	pShaderCode = LoadResourceShader( _ShaderResourceID, CodeSize );
 	ASSERT( pShaderCode != NULL, "Failed to load shader resource !" );
 
-	Material*	pResult = new Material( gs_Device, _Format, pFileName, pShaderCode, _pMacros, _pEntryPointVS, _pEntryPointGS, _pEntryPointPS, &gs_IncludesManager );
+	Material*	pResult = new Material( gs_Device, _Format, pFileName, pShaderCode, _pMacros, _pEntryPointVS, _pEntryPointHS, _pEntryPointDS, _pEntryPointGS, _pEntryPointPS, &gs_IncludesManager );
 
 	delete pShaderCode;	// We musn't forget to delete this temporary buffer !
 

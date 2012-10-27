@@ -299,6 +299,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\Compressed\TranslucencyDisplay.fx" />
     <None Include="Resources\Shaders\RenderCubeMap.fx" />
     <None Include="Resources\Shaders\RoomDisplay.fx" />
+    <None Include="Resources\Shaders\RoomTesselation.fx" />
     <None Include="Resources\Shaders\TranslucencyBuildZBuffer.fx" />
     <None Include="Resources\Shaders\Inc\Global.fx" />
     <None Include="Resources\Shaders\PostFinal.fx">

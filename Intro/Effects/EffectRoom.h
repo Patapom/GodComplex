@@ -21,6 +21,13 @@ protected:	// NESTED TYPES
 // 		NjFloat4	NoiseOffset;	// XYZ=Noise Position  W=NoiseAmplitude
  	};
 
+	struct CBTesselate
+	{
+		NjFloat3	dUV;
+		float		__PAD0;
+		NjFloat2	TesselationFactors;
+	};
+
 	struct MaterialDescriptor 
 	{
 		int			LightSourceIndex;	// -1 For standard reflective materials
@@ -35,8 +42,11 @@ private:	// FIELDS
 	Material*			m_pMatDisplay;			// Displays the room
 	Material*			m_pMatRenderCubeMap;	// Renders the cube map
 
+	Material*			m_pMatTestTesselation;	// My first Domain Shader!
+
 	// Primitives
 	Primitive*			m_pPrimRoom;
+	Primitive*			m_pPrimTesselatedQuad;
 
 	// Textures
 	Texture2D*			m_pRTMaterial;			// The array texture that will contain material informations
@@ -49,6 +59,7 @@ private:	// FIELDS
 
 	// Constant buffers
  	CB<CBObject>*		m_pCB_Object;
+ 	CB<CBTesselate>*	m_pCB_Tesselate;
 
 
 	// Misc

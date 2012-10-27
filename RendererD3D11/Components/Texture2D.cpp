@@ -18,7 +18,7 @@ Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFo
 	m_pTexture = &_Texture;
 }
 
-Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging )
+Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging, bool _bWriteable )
 	: Component( _Device )
 	, m_Format( _Format )
 	, m_bIsDepthStencil( false )
@@ -55,7 +55,7 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 	if ( _bStaging )
 	{
 		Desc.Usage = D3D11_USAGE_STAGING;
-		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | (_bWriteable ? D3D11_CPU_ACCESS_WRITE : 0);
 		Desc.BindFlags = 0;
 		Desc.MiscFlags = 0;
 	}
@@ -206,11 +206,7 @@ ID3D11DepthStencilView*		Texture2D::GetDepthStencilView() const
 		D3D11_DEPTH_STENCIL_VIEW_DESC	Desc;
 		Desc.Format = ((IDepthStencilFormatDescriptor&) m_Format).WritableDirectXFormat();
 		Desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-#ifdef DIRECTX11
-		Desc.Flags = D3D11_DSV_READ_ONLY_DEPTH | D3D11_DSV_READ_ONLY_STENCIL;	// Change that if that poses a problem later...
-#else
 		Desc.Flags = 0;
-#endif
 		Desc.Texture2D.MipSlice = 0;
 
 		Check( m_Device.DXDevice().CreateDepthStencilView( m_pTexture, &Desc, &m_pCachedDepthStencilView ) );
@@ -225,6 +221,8 @@ void	Texture2D::Set( int _SlotIndex, bool _bIKnowWhatImDoing )
 
 	ID3D11ShaderResourceView*	pView = GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &pView );
+	m_Device.DXContext().HSSetShaderResources( _SlotIndex, 1, &pView );
+	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &pView );
 	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &pView );
 	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &pView );
 }
@@ -234,6 +232,20 @@ void	Texture2D::SetVS( int _SlotIndex, bool _bIKnowWhatImDoing )
 
 	ID3D11ShaderResourceView*	pView = GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &pView );
+}
+void	Texture2D::SetHS( int _SlotIndex, bool _bIKnowWhatImDoing )
+{
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+
+	ID3D11ShaderResourceView*	pView = GetShaderView( 0, 0, 0, 0 );
+	m_Device.DXContext().HSSetShaderResources( _SlotIndex, 1, &pView );
+}
+void	Texture2D::SetDS( int _SlotIndex, bool _bIKnowWhatImDoing )
+{
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+
+	ID3D11ShaderResourceView*	pView = GetShaderView( 0, 0, 0, 0 );
+	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &pView );
 }
 void	Texture2D::SetGS( int _SlotIndex, bool _bIKnowWhatImDoing )
 {

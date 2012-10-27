@@ -20,7 +20,7 @@ static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illumin
 #define TEX( Texture, Sampler, UV )					Texture.Sample( Sampler, UV )
 
 // On old ATIs, the SampleLevel() function doesn't work so you should use the other implementation (although I'm pretty sure it will fuck everything up if you start sampling textures within conditional branches)
-#define TEXLOD( Texture, Sampler, UV, MipLevel )		Texture.SampleLevel( Sampler, UV, MipLevel )
+#define TEXLOD( Texture, Sampler, UV, MipLevel )	Texture.SampleLevel( Sampler, UV, MipLevel )
 // #define TEXLOD( Texture, Sampler, UV, MipLevel )	Texture.Sample( Sampler, UV )
 
 
@@ -71,3 +71,17 @@ float3	Distort( float3 _Position, float3 _Normal, float4 _NoiseOffset )
 {
 	return _Position + _NoiseOffset.w * TEXLOD( _TexNoise3D, LinearWrap, 0.2 * (_Position + _NoiseOffset.xyz), 0.0 ).xyz;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Standard bilinear interpolation on a quad
+//
+//	a ---- d --> U
+//	|      |
+//	|      |
+//	|      |
+//	b ---- c
+//  :
+//  v V
+//
+#define BILERP( a, b, c, d, uv )	lerp( lerp( a, d, uv.x ), lerp( b, c, uv.x ), uv.y )

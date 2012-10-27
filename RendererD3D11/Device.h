@@ -40,6 +40,7 @@ public:
 	RasterizerState*		m_pRS_CullNone;
 	RasterizerState*		m_pRS_CullBack;
 	RasterizerState*		m_pRS_CullFront;
+	RasterizerState*		m_pRS_WireFrame;
 
 	DepthStencilState*		m_pDS_Disabled;
 	DepthStencilState*		m_pDS_ReadWriteLess;
@@ -53,6 +54,7 @@ public:
 	BlendState*				m_pBS_Disabled_AlphaOnly;
 	BlendState*				m_pBS_AlphaBlend;
 	BlendState*				m_pBS_PremultipliedAlpha;
+	BlendState*				m_pBS_Max;
 
 
 public:	 // PROPERTIES
@@ -92,7 +94,9 @@ private:
 
 	void	RegisterComponent( Component& _Component );
 	void	UnRegisterComponent( Component& _Component );
-	void	Check( HRESULT _Result );
+
+public:
+	static void	Check( HRESULT _Result );
 
 	friend class Component;
 };

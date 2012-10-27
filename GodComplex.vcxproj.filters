@@ -342,6 +342,9 @@
     <None Include="Resources\Shaders\RenderCubeMap.fx">
       <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
     </None>
+    <None Include="Resources\Shaders\RoomTesselation.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

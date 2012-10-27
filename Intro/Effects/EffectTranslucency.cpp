@@ -61,21 +61,21 @@ EffectTranslucency::EffectTranslucency( Texture2D& _RTTarget ) : m_ErrorCode( 0 
 
 EffectTranslucency::~EffectTranslucency()
 {
-	delete m_pCB_Pass;
-	delete m_pCB_Diffusion;
-	delete m_pCB_Object;
+	SafeDelete( m_pCB_Pass );
+	SafeDelete( m_pCB_Diffusion );
+	SafeDelete( m_pCB_Object );
 
-	delete m_ppRTDiffusion[1];
-	delete m_ppRTDiffusion[0];
-	delete m_pDepthStencil;
-	delete m_pRTZBuffer;
+	SafeDelete( m_ppRTDiffusion[1] );
+	SafeDelete( m_ppRTDiffusion[0] );
+	SafeDelete( m_pDepthStencil );
+	SafeDelete( m_pRTZBuffer );
 
-	delete m_pPrimTorusInternal;
-	delete m_pPrimSphereExternal;
+	SafeDelete( m_pPrimTorusInternal );
+	SafeDelete( m_pPrimSphereExternal );
 
-	delete m_pMatDiffusion;
- 	delete m_pMatBuildZBuffer;
- 	delete m_pMatDisplay;
+	SafeDelete( m_pMatDiffusion );
+ 	SafeDelete( m_pMatBuildZBuffer );
+ 	SafeDelete( m_pMatDisplay );
 }
 
 void	EffectTranslucency::Render( float _Time, float _DeltaTime )

@@ -28,7 +28,7 @@ class ConstantBuffer;
 	Material&	M = Mat;
 
 #define USING_MATERIAL_END	\
-	gs_Device.RemoveRenderTargets(); /* Just to ensure we don't leave any attached RT we may need later as a texture !*/	\
+	M.GetDevice().RemoveRenderTargets(); /* Just to ensure we don't leave any attached RT we may need later as a texture !*/	\
 }
 
 
@@ -83,6 +83,12 @@ private:	// FIELDS
 	const char*				m_pEntryPointVS;
 	ID3D11VertexShader*		m_pVS;
 
+	const char*				m_pEntryPointHS;
+	ID3D11HullShader*		m_pHS;
+
+	const char*				m_pEntryPointDS;
+	ID3D11DomainShader*		m_pDS;
+
 	const char*				m_pEntryPointGS;
 	ID3D11GeometryShader*	m_pGS;
 
@@ -93,6 +99,8 @@ private:	// FIELDS
 
 #ifndef GODCOMPLEX
 	ShaderConstants			m_VSConstants;
+	ShaderConstants			m_HSConstants;
+	ShaderConstants			m_DSConstants;
 	ShaderConstants			m_GSConstants;
 	ShaderConstants			m_PSConstants;
 
@@ -117,7 +125,7 @@ public:	 // PROPERTIES
 
 public:	 // METHODS
 
-	Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride );
+	Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride );
 	~Material();
 
 	void			SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer );
@@ -139,8 +147,9 @@ private:
 
 	void			CompileShaders( const char* _pShaderCode );
 	ID3DBlob*		CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget );
-#ifndef GODCOMPLEX
+
 	const char*		CopyString( const char* _pShaderFileName ) const;
+#ifndef GODCOMPLEX
 	const char*		GetShaderPath( const char* _pShaderFileName ) const;
 #endif
 

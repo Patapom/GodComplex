@@ -55,6 +55,28 @@ public:
 
 };
 
+struct VertexFormatP3T2
+{
+public:
+
+	static class Desc : public IVertexFormatDescriptor
+	{
+		static D3D11_INPUT_ELEMENT_DESC	ms_pInputElements[2];
+
+	public:
+
+		virtual int			Size() const							{ return sizeof(VertexFormatP3T2); }
+		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return ms_pInputElements; }
+		virtual int			GetInputElementsCount() const			{ return 2; }
+		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV ) const;
+	} DESCRIPTOR;
+
+public:
+
+	NjFloat3	P;
+	NjFloat2	UV;
+
+};
 
 struct VertexFormatP3N3G3T2
 {

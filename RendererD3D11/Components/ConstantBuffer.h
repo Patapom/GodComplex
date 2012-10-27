@@ -26,6 +26,8 @@ public:	 // METHODS
 
 	void		Set( int _SlotIndex );
 	void		SetVS( int _SlotIndex );
+	void		SetHS( int _SlotIndex );
+	void		SetDS( int _SlotIndex );
 	void		SetGS( int _SlotIndex );
 	void		SetPS( int _SlotIndex );
 };

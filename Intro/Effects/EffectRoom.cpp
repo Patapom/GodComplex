@@ -7,49 +7,95 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
-	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T2T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
-	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_RENDER_CUBEMAP, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PS" ), 1 );
+// 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T2T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
+// 	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_RENDER_CUBEMAP, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PS" ), 1 );
+
+ 	CHECK_MATERIAL( m_pMatTestTesselation = CreateMaterial( IDR_SHADER_ROOM_TESSELATION, VertexFormatP3T2::DESCRIPTOR, "VS", "HS", "DS", NULL, "PS" ), 1 );
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the room geometry
 //	BuildRoom();
 
+	float VERT_OFFSET = 0.2f;
+	VertexFormatP3T2	pVertices[4] =
+	{
+// 		{ NjFloat3( -1.0f, VERT_OFFSET+1.0f, 0.0f ), NjFloat2( 0.0f, 0.0f ) },	// Top-left
+// 		{ NjFloat3( -1.0f, VERT_OFFSET-1.0f, 0.0f ), NjFloat2( 0.0f, 1.0f ) },	// Bottom-left
+// 		{ NjFloat3( 1.0f, VERT_OFFSET-1.0f, 0.0f ), NjFloat2( 1.0f, 1.0f ) },	// Bottom-right
+// 		{ NjFloat3( 1.0f, VERT_OFFSET+1.0f, 0.0f ), NjFloat2( 1.0f, 0.0f ) },	// Top-right
+
+		{ NjFloat3( -1.0f, VERT_OFFSET+0.0f, -1.0f ), NjFloat2( 0.0f, 0.0f ) },	// Top-left
+		{ NjFloat3( -1.0f, VERT_OFFSET+0.0f, 1.0f ), NjFloat2( 0.0f, 1.0f ) },	// Bottom-left
+		{ NjFloat3( 1.0f, VERT_OFFSET+0.0f, 1.0f ), NjFloat2( 1.0f, 1.0f ) },	// Bottom-right
+		{ NjFloat3( 1.0f, VERT_OFFSET+0.0f, -1.0f ), NjFloat2( 1.0f, 0.0f ) },	// Top-right
+	};
+
+//	Primitive*	pPrim = new Primitive( gs_Device, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_4_CONTROL_POINT_PATCH, VertexFormatP3T2::DESCRIPTOR );
+	m_pPrimTesselatedQuad = new Primitive( gs_Device, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST, VertexFormatP3T2::DESCRIPTOR );
+
+
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
  	m_pCB_Object = new CB<CBObject>( gs_Device, 10 );
+ 	m_pCB_Tesselate = new CB<CBTesselate>( gs_Device, 10 );
 }
 
 EffectRoom::~EffectRoom()
 {
- 	delete m_pCB_Object;
+ 	SafeDelete( m_pCB_Object );
+ 	SafeDelete( m_pCB_Tesselate );
 
-	delete m_pMatRenderCubeMap;
- 	delete m_pMatDisplay;
+	SafeDelete( m_pMatRenderCubeMap );
+ 	SafeDelete( m_pMatDisplay );
+ 	SafeDelete( m_pMatTestTesselation );
 
-	delete m_pRTGeometry;
-	delete m_pRTMaterial;
-	delete m_pCubeMapCamera;
+	SafeDelete( m_pRTGeometry );
+	SafeDelete( m_pRTMaterial );
+	SafeDelete( m_pCubeMapCamera );
 
-	delete m_pPrimRoom;
-	delete m_pTexLightmap;
+	SafeDelete( m_pPrimTesselatedQuad );
+	SafeDelete( m_pPrimRoom );
+	SafeDelete( m_pTexLightmap );
 }
 
 void	EffectRoom::Render( float _Time, float _DeltaTime )
 {
-	{	USING_MATERIAL_START( *m_pMatDisplay )
+// 	{	USING_MATERIAL_START( *m_pMatDisplay )
+// 
+// 		gs_Device.SetRenderTarget( m_RTTarget, &gs_Device.DefaultDepthStencil() );
+// 		gs_Device.SetStates( gs_Device.m_pRS_CullBack, gs_Device.m_pDS_ReadWriteLess, NULL );
+// 
+// 		m_pTexLightmap->SetPS( 10 );
+// 
+// 		// Render the room
+// 		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( _TV(1.0f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
+// 		m_pCB_Object->UpdateData();
+// 
+// 		m_pPrimRoom->Render( *m_pMatDisplay );
+// 
+// 		USING_MATERIAL_END
+// 	}
 
-		gs_Device.SetRenderTarget( m_RTTarget, &gs_Device.DefaultDepthStencil() );
-		gs_Device.SetStates( gs_Device.m_pRS_CullBack, gs_Device.m_pDS_ReadWriteLess, NULL );
 
-		m_pTexLightmap->SetPS( 10 );
+	//////////////////////////////////////////////////////////////////////////
+	// Test the tesselation!
+	{USING_MATERIAL_START( *m_pMatTestTesselation );
 
-		// Render the room
-		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( _TV(1.0f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
-		m_pCB_Object->UpdateData();
+//		gs_Device.SetStates( gs_Device.m_pRS_CullBack, gs_Device.m_pDS_ReadWriteLess, gs_Device.m_pBS_Disabled );
+		gs_Device.SetStates( gs_Device.m_pRS_WireFrame, gs_Device.m_pDS_ReadWriteLess, gs_Device.m_pBS_Disabled );
+		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), &gs_Device.DefaultDepthStencil() );
 
-		m_pPrimRoom->Render( *m_pMatDisplay );
+		gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4::Zero );
 
-		USING_MATERIAL_END
+		m_pCB_Tesselate->m.dUV = gs_Device.DefaultRenderTarget().GetdUV();
+		m_pCB_Tesselate->m.TesselationFactors.x = _TV( 128.0f );	// Edge tesselation
+		m_pCB_Tesselate->m.TesselationFactors.y = _TV( 128.0f );	// Inside tesselation
+ 		m_pCB_Tesselate->UpdateData();
+
+		m_pPrimTesselatedQuad->Render( M );
+
+	 USING_MATERIAL_END
 	}
 }
 

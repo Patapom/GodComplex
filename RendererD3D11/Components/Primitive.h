@@ -29,11 +29,16 @@ private:	// FIELDS
 public:	 // METHODS
 
 	Primitive( Device& _Device, int _VerticesCount, void* _pVertices, int _IndicesCount, U16* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format );
-	Primitive( Device& _Device, const IVertexFormatDescriptor& _Format );
+	Primitive( Device& _Device, const IVertexFormatDescriptor& _Format );	// Used by geometry builders
+	Primitive( Device& _Device, int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format );	// Used to build dynamic buffers
 	~Primitive();
 
 	void			Render( Material& _Material );
+	void			Render( Material& _Material, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset );
 	void			RenderInstanced( Material& _Material, int _InstancesCount );
+	void			RenderInstanced( Material& _Material, int _InstancesCount, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset );
+
+	void			UpdateDynamic( void* _pVertices, U16* _pIndices, int _VerticesCount=-1, int _IndicesCount=-1 );
 
 #ifdef SUPPORT_GEO_BUILDERS
 	// IGeometryWriter implementation
@@ -45,6 +50,6 @@ public:	 // METHODS
 
 private:
 
-	void			Build( void* _pVertices, U16* _pIndices );
+	void			Build( void* _pVertices, U16* _pIndices, bool _bDynamic );
 };
 

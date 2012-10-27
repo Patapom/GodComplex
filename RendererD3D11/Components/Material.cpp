@@ -9,11 +9,13 @@
 #include "D3D11Shader.h"
 
 
-Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride )
+Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride )
 	: Component( _Device )
 	, m_Format( _Format )
 	, m_pVertexLayout( NULL )
 	, m_pVS( NULL )
+	, m_pHS( NULL )
+	, m_pDS( NULL )
 	, m_pGS( NULL )
 	, m_pPS( NULL )
 	, m_pShaderPath( NULL )
@@ -26,8 +28,8 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 	m_bHasErrors = false;
 
 	// Store the default NULL pointer to point to the shader path
-#ifndef GODCOMPLEX
 	m_pShaderFileName = CopyString( _pShaderFileName );
+#ifndef GODCOMPLEX
 	m_pShaderPath = GetShaderPath( _pShaderFileName );
 	m_Pointer2FileName.Add( NULL, m_pShaderPath );
 #endif
@@ -51,6 +53,8 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 #endif
 
 	m_pEntryPointVS = _pEntryPointVS;
+	m_pEntryPointHS = _pEntryPointHS;
+	m_pEntryPointDS = _pEntryPointDS;
 	m_pEntryPointGS = _pEntryPointGS;
 	m_pEntryPointPS = _pEntryPointPS;
 
@@ -99,9 +103,11 @@ Material::~Material()
 	}
 #endif
 
-	if ( m_pShaderPath != NULL ) delete[] m_pShaderPath;
+	SafeDeleteArray( m_pShaderPath );
 	if ( m_pVertexLayout != NULL ) { m_pVertexLayout->Release(); m_pVertexLayout = NULL; }
 	if ( m_pVS != NULL ) { m_pVS->Release(); m_pVS = NULL; }
+	if ( m_pHS != NULL ) { m_pHS->Release(); m_pHS = NULL; }
+	if ( m_pDS != NULL ) { m_pDS->Release(); m_pDS = NULL; }
 	if ( m_pGS != NULL ) { m_pGS->Release(); m_pGS = NULL; }
 	if ( m_pPS != NULL ) { m_pPS->Release(); m_pPS = NULL; }
 
@@ -113,9 +119,12 @@ void	Material::CompileShaders( const char* _pShaderCode )
 	// Release any pre-existing shader
 	if ( m_pVertexLayout != NULL ) m_pVertexLayout->Release();
 	if ( m_pVS != NULL )	m_pVS->Release();
+	if ( m_pHS != NULL )	m_pHS->Release();
+	if ( m_pDS != NULL )	m_pDS->Release();
 	if ( m_pGS != NULL )	m_pGS->Release();
 	if ( m_pPS != NULL )	m_pPS->Release();
 
+	//////////////////////////////////////////////////////////////////////////
 	// Compile the compulsory vertex shader
 	ASSERT( m_pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
 	ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_4_0" );
@@ -138,6 +147,47 @@ void	Material::CompileShaders( const char* _pShaderCode )
 	else
 		m_bHasErrors = true;
 
+	//////////////////////////////////////////////////////////////////////////
+	// Compile the optional hull shader
+	if ( !m_bHasErrors && m_pEntryPointHS != NULL )
+	{
+		ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointHS, "hs_5_0" );
+		if ( pShader != NULL )
+		{
+			Check( m_Device.DXDevice().CreateHullShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pHS ) );
+			ASSERT( m_pHS != NULL, "Failed to create hull shader !" );
+#ifndef GODCOMPLEX
+			m_HSConstants.Enumerate( *pShader );
+#endif
+			m_bHasErrors |= m_pHS == NULL;
+
+			pShader->Release();
+		}
+		else
+			m_bHasErrors = true;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Compile the optional domain shader
+	if ( !m_bHasErrors && m_pEntryPointDS != NULL )
+	{
+		ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointDS, "ds_5_0" );
+		if ( pShader != NULL )
+		{
+			Check( m_Device.DXDevice().CreateDomainShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pDS ) );
+			ASSERT( m_pDS != NULL, "Failed to create domain shader !" );
+#ifndef GODCOMPLEX
+			m_DSConstants.Enumerate( *pShader );
+#endif
+			m_bHasErrors |= m_pDS == NULL;
+
+			pShader->Release();
+		}
+		else
+			m_bHasErrors = true;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional geometry shader
 	if ( !m_bHasErrors && m_pEntryPointGS != NULL )
 	{
@@ -157,6 +207,7 @@ void	Material::CompileShaders( const char* _pShaderCode )
 			m_bHasErrors = true;
 	}
 
+	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional pixel shader
 	if ( !m_bHasErrors && m_pEntryPointPS != NULL )
 	{
@@ -188,6 +239,8 @@ void	Material::Use()
 	{
 		m_Device.DXContext().IASetInputLayout( m_pVertexLayout );
 		m_Device.DXContext().VSSetShader( m_pVS, NULL, 0 );
+		m_Device.DXContext().HSSetShader( m_pHS, NULL, 0 );
+		m_Device.DXContext().DSSetShader( m_pDS, NULL, 0 );
 		m_Device.DXContext().GSSetShader( m_pGS, NULL, 0 );
 		m_Device.DXContext().PSSetShader( m_pPS, NULL, 0 );
 	}
@@ -334,8 +387,14 @@ void	Material::SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer )
 
 	ID3D11Buffer*	pBuffer = _Buffer.GetBuffer();
 	m_Device.DXContext().VSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
-	m_Device.DXContext().GSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
-	m_Device.DXContext().PSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
+	if ( m_pHS != NULL )
+		m_Device.DXContext().HSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
+	if ( m_pDS != NULL )
+		m_Device.DXContext().DSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
+	if ( m_pGS != NULL )
+		m_Device.DXContext().GSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
+	if ( m_pPS != NULL )
+		m_Device.DXContext().PSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
 
 	UnlockMaterial();
 }
@@ -346,8 +405,14 @@ void	Material::SetTexture( int _BufferSlot, ID3D11ShaderResourceView* _pData )
 		return;	// Someone else is locking it !
 
 	m_Device.DXContext().VSSetShaderResources( _BufferSlot, 1, &_pData );
-	m_Device.DXContext().GSSetShaderResources( _BufferSlot, 1, &_pData );
-	m_Device.DXContext().PSSetShaderResources( _BufferSlot, 1, &_pData );
+	if ( m_pHS != NULL )
+		m_Device.DXContext().HSSetShaderResources( _BufferSlot, 1, &_pData );
+	if ( m_pDS != NULL )
+		m_Device.DXContext().DSSetShaderResources( _BufferSlot, 1, &_pData );
+	if ( m_pGS != NULL )
+		m_Device.DXContext().GSSetShaderResources( _BufferSlot, 1, &_pData );
+	if ( m_pPS != NULL )
+		m_Device.DXContext().PSSetShaderResources( _BufferSlot, 1, &_pData );
 
 	UnlockMaterial();
 }
@@ -369,6 +434,18 @@ bool	Material::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buf
 			int	SlotIndex = m_VSConstants.GetConstantBufferIndex( _pBufferName );
 			if ( SlotIndex != -1 )
 				m_Device.DXContext().VSSetConstantBuffers( SlotIndex, 1, &pBuffer );
+			bUsed |= SlotIndex != -1;
+		}
+		{
+			int	SlotIndex = m_HSConstants.GetConstantBufferIndex( _pBufferName );
+			if ( SlotIndex != -1 )
+				m_Device.DXContext().HSSetConstantBuffers( SlotIndex, 1, &pBuffer );
+			bUsed |= SlotIndex != -1;
+		}
+		{
+			int	SlotIndex = m_DSConstants.GetConstantBufferIndex( _pBufferName );
+			if ( SlotIndex != -1 )
+				m_Device.DXContext().DSSetConstantBuffers( SlotIndex, 1, &pBuffer );
 			bUsed |= SlotIndex != -1;
 		}
 		{
@@ -403,6 +480,18 @@ bool	Material::SetTexture( const char* _pBufferName, ID3D11ShaderResourceView* _
 			int	SlotIndex = m_VSConstants.GetShaderResourceViewIndex( _pBufferName );
 			if ( SlotIndex != -1 )
 				m_Device.DXContext().VSSetShaderResources( SlotIndex, 1, &_pData );
+			bUsed |= SlotIndex != -1;
+		}
+		{
+			int	SlotIndex = m_HSConstants.GetShaderResourceViewIndex( _pBufferName );
+			if ( SlotIndex != -1 )
+				m_Device.DXContext().HSSetShaderResources( SlotIndex, 1, &_pData );
+			bUsed |= SlotIndex != -1;
+		}
+		{
+			int	SlotIndex = m_DSConstants.GetShaderResourceViewIndex( _pBufferName );
+			if ( SlotIndex != -1 )
+				m_Device.DXContext().DSSetShaderResources( SlotIndex, 1, &_pData );
 			bUsed |= SlotIndex != -1;
 		}
 		{
@@ -480,7 +569,7 @@ void	Material::ShaderConstants::BindingDesc::SetName( const char* _pName )
 }
 Material::ShaderConstants::BindingDesc::~BindingDesc()
 {
-//	delete[] pName;	// This makes a heap corruption, I don't know why and I don't give a fuck about these C++ problems... (certainly some shit about allocating memory from a DLL and releasing it from another one or something like this)
+//	delete[] pName;	// This makes a heap corruption, I don't know why and I don't give a fuck about these C++ problems... (certainly some shit about allocating memory from a DLL and releasing it from another one or something like this) (which I don't give a shit about either BTW)
 }
 
 int		Material::ShaderConstants::GetConstantBufferIndex( const char* _pBufferName ) const
@@ -533,6 +622,18 @@ void	Material::UnlockMaterial() const
 #endif
 }
 
+const char*	Material::CopyString( const char* _pShaderFileName ) const
+{
+	if ( _pShaderFileName == NULL )
+		return NULL;
+
+	int		Length = strlen(_pShaderFileName)+1;
+	char*	pResult = new char[Length];
+	strcpy_s( pResult, Length, _pShaderFileName );
+
+	return pResult;
+}
+
 #ifndef GODCOMPLEX
 const char*	Material::GetShaderPath( const char* _pShaderFileName ) const
 {
@@ -556,18 +657,6 @@ const char*	Material::GetShaderPath( const char* _pShaderFileName ) const
 		pResult = '\0';
 		return pResult;
 	}
-
-	return pResult;
-}
-
-const char*	Material::CopyString( const char* _pShaderFileName ) const
-{
-	if ( _pShaderFileName == NULL )
-		return NULL;
-
-	int		Length = strlen(_pShaderFileName)+1;
-	char*	pResult = new char[Length];
-	strcpy_s( pResult, Length, _pShaderFileName );
 
 	return pResult;
 }
@@ -632,7 +721,6 @@ void		Material::WatchShaderModifications()
 
 void		Material::RebuildShader()
 {
-
 	DWORD	ErrorCode = WaitForSingleObject( m_hCompileMutex, 30000 );
 #ifdef _DEBUG
 	ASSERT( ErrorCode == WAIT_OBJECT_0, "Failed shader rebuild after 30 seconds waiting for access !" );

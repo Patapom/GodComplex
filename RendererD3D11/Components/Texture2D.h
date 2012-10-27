@@ -31,32 +31,36 @@ private:	// FIELDS
 	mutable DictionaryU32			m_CachedTargetViews;
 	mutable ID3D11DepthStencilView*	m_pCachedDepthStencilView;
 
-	D3D11_MAPPED_SUBRESOURCE	m_LockedResource;
+	D3D11_MAPPED_SUBRESOURCE		m_LockedResource;
 
 
 public:	 // PROPERTIES
 
-	int	 GetWidth() const			{ return m_Width; }
-	int	 GetHeight() const			{ return m_Height; }
-	int	 GetArraySize() const		{ return m_ArraySize; }
-	int	 GetMipLevelsCount() const	{ return m_MipLevelsCount; }
+	int			GetWidth() const			{ return m_Width; }
+	int			GetHeight() const			{ return m_Height; }
+	int			GetArraySize() const		{ return m_ArraySize; }
+	int			GetMipLevelsCount() const	{ return m_MipLevelsCount; }
+
+	NjFloat3	GetdUV() const				{ return NjFloat3( 1.0f / m_Width, 1.0f / m_Height, 0.0f ); }
 
 
 public:	 // METHODS
 
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !
-	Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging=false );
+	Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging=false, bool _bWriteable=false );
 	// This is for creating a depth stencil buffer
 	Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format );
 	~Texture2D();
 
-	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize ) const;
+	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart=0, int _MipLevelsCount=0, int _ArrayStart=0, int _ArraySize=0 ) const;
 	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex, int _ArrayStart, int _ArraySize ) const;
 	ID3D11DepthStencilView*		GetDepthStencilView() const;
 
 	// Uploads the texture to the shader
 	void		Set( int _SlotIndex, bool _bIKnowWhatImDoing=false );
 	void		SetVS( int _SlotIndex, bool _bIKnowWhatImDoing=false );
+	void		SetHS( int _SlotIndex, bool _bIKnowWhatImDoing=false );
+	void		SetDS( int _SlotIndex, bool _bIKnowWhatImDoing=false );
 	void		SetGS( int _SlotIndex, bool _bIKnowWhatImDoing=false );
 	void		SetPS( int _SlotIndex, bool _bIKnowWhatImDoing=false );
 

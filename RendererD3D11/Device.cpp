@@ -112,6 +112,11 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 		// Create CullBack state
 		Desc.CullMode = D3D11_CULL_BACK;
 		m_pRS_CullBack = new RasterizerState( *this, Desc ); m_StatesCount++;
+
+		// Create the wireframe state
+		Desc.FillMode = D3D11_FILL_WIREFRAME;
+        Desc.CullMode = D3D11_CULL_NONE;
+		m_pRS_WireFrame = new RasterizerState( *this, Desc ); m_StatesCount++;
 	}
 	{
 		D3D11_DEPTH_STENCIL_DESC	Desc;
@@ -173,6 +178,15 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 		Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
 		Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
 		m_pBS_PremultipliedAlpha = new BlendState( *this, Desc ); m_StatesCount++;
+
+		// Max (Dst = max(Src,Dst))
+		Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+		Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		Desc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+		Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+		Desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_MAX;
+		Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_MAX;
+		m_pBS_Max = new BlendState( *this, Desc ); m_StatesCount++;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -211,6 +225,8 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 
 	// Upload them once and for all
 	m_pDeviceContext->VSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
+	m_pDeviceContext->HSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
+	m_pDeviceContext->DSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 	m_pDeviceContext->GSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 	m_pDeviceContext->PSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 }

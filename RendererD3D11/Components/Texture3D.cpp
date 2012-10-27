@@ -115,6 +115,8 @@ void	Texture3D::Set( int _SlotIndex, bool _bIKnowWhatImDoing )
 
 	ID3D11ShaderResourceView*	pView = GetShaderView( 0, 0 );
 	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &pView );
+	m_Device.DXContext().HSSetShaderResources( _SlotIndex, 1, &pView );
+	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &pView );
 	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &pView );
 	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &pView );
 }
@@ -124,6 +126,20 @@ void	Texture3D::SetVS( int _SlotIndex, bool _bIKnowWhatImDoing )
 
 	ID3D11ShaderResourceView*	pView = GetShaderView( 0, 0 );
 	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &pView );
+}
+void	Texture3D::SetHS( int _SlotIndex, bool _bIKnowWhatImDoing )
+{
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+
+	ID3D11ShaderResourceView*	pView = GetShaderView( 0, 0 );
+	m_Device.DXContext().HSSetShaderResources( _SlotIndex, 1, &pView );
+}
+void	Texture3D::SetDS( int _SlotIndex, bool _bIKnowWhatImDoing )
+{
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+
+	ID3D11ShaderResourceView*	pView = GetShaderView( 0, 0 );
+	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &pView );
 }
 void	Texture3D::SetGS( int _SlotIndex, bool _bIKnowWhatImDoing )
 {

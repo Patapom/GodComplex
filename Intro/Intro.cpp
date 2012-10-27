@@ -61,13 +61,12 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	{
 		NjFloat4	pVertices[4] =
 		{
-			NjFloat4( -1.0f, +1.0f, 0.0f, 0.0f ),
-			NjFloat4( -1.0f, -1.0f, 0.0f, 0.0f ),
-			NjFloat4( +1.0f, +1.0f, 0.0f, 0.0f ),
-			NjFloat4( +1.0f, -1.0f, 0.0f, 0.0f ),
+			NjFloat4( -1.0f, +1.0f, 0.0f, 1.0f ),
+			NjFloat4( -1.0f, -1.0f, 0.0f, 1.0f ),
+			NjFloat4( +1.0f, +1.0f, 0.0f, 1.0f ),
+			NjFloat4( +1.0f, -1.0f, 0.0f, 1.0f ),
 		};
 		gs_pPrimQuad = new Primitive( gs_Device, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, VertexFormatPt4::DESCRIPTOR );
-
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -98,26 +97,26 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 void	IntroExit()
 {
 	// Release effects
-	delete gs_pEffectTranslucency;
-	delete gs_pEffectRoom;
+	SafeDelete( gs_pEffectTranslucency );
+	SafeDelete( gs_pEffectRoom );
 
 	// Release constant buffers
-	delete gs_pCB_Test;
-	delete gs_pCB_Global;
+	SafeDelete( gs_pCB_Test );
+	SafeDelete( gs_pCB_Global );
 
 	// Release materials
- 	delete gs_pMatPostFinal;
+ 	SafeDelete( gs_pMatPostFinal );
 
 	// Release primitives
-	delete gs_pPrimQuad;
+	SafeDelete( gs_pPrimQuad );
 
 	// Release render targets & textures
 	Delete3DTextures();
 	Delete2DTextures();
-	delete gs_pRTHDR;
+	SafeDelete( gs_pRTHDR );
 
 	// Release the camera
-	delete gs_pCamera;
+	SafeDelete( gs_pCamera );
 }
 
 bool	IntroDo( float _Time, float _DeltaTime )
@@ -146,6 +145,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	gs_pEffectRoom->Render( _Time, _DeltaTime );
 //	gs_pEffectTranslucency->Render( _Time, _DeltaTime );
 
+/*
 	// Setup default states
 	gs_Device.SetStates( gs_Device.m_pRS_CullNone, gs_Device.m_pDS_Disabled, gs_Device.m_pBS_Disabled );
 
@@ -166,6 +166,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 		gs_pPrimQuad->Render( M );
 
 	USING_MATERIAL_END
+*/
 
 	// Present !
 	gs_Device.DXSwapChain().Present( 0, 0 );
