@@ -2,10 +2,10 @@
 
 #ifdef _DEBUG
 #include <assert.h>
-#define ASSERT( condition, text ) assert( condition || !text )
-#define ASSERT_RETURN_FALSE( condition, text ) assert( condition || !text ) return false
+#define ASSERT( condition, text ) assert( (condition) || !text )
+#define ASSERT_RETURN_FALSE( condition, text ) assert( (condition) || !text ) return false
 #else
-#define ASSERT( condition, text )
+#define ASSERT( condition, text )	(condition)
 #define ASSERT_RETURN_FALSE( condition, text ) return false
 #endif
 
@@ -26,3 +26,4 @@ typedef int NjResourceID;
 
 
 #include "../Math/Math.h"
+

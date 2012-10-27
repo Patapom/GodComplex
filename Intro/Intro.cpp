@@ -87,7 +87,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	// Create effects
 	{
 		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), 2000 );					// Error codes for effects should increase in thousands like 2000, 3000, 4000, etc.
-		gs_pEffectRoom->RenderLightmap( _Delegate );
+//		gs_pEffectRoom->RenderLightmap( _Delegate );
 
 		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), 3000 );
 	}

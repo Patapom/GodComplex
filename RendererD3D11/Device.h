@@ -1,7 +1,7 @@
 #pragma once
 #include "Renderer.h"
 
-//#define DIRECTX11	// Define this to use DX11, otherwise DX10 will be used
+#define DIRECTX11	// Define this to use DX11, otherwise DX10 will be used
 
 class Component;
 class Material;
@@ -13,7 +13,7 @@ class BlendState;
 
 class Device
 {
-	static const int	SAMPLERS_COUNT = 6;
+	static const int	SAMPLERS_COUNT = 7;
 
 private:	// FIELDS
 

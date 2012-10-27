@@ -196,7 +196,7 @@ return 0;
 				Draw.DrawRectangle( 0.0f, 0.0f, Size.x, Size.y, 0.1f * Size.Min(), 0.0f, FillSplotch, &N );
 
 				Angle += DeltaAngle;
-				float	AngleRad = DEG2RAD( Angle );
+				float	AngleRad = NUAJDEG2RAD( Angle );
 				Pos = Pos + Step * NjFloat2( cosf(AngleRad), sinf(AngleRad) );
 				Size.x += DeltaSize;
 			}

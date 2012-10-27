@@ -12,11 +12,13 @@ class NjITextureBuffer;
 
 enum NJ_TEXTURE_FORMAT
 {
-//	NJ_TEXTURE_FORMAT_ARGB,
-//	NJ_TEXTURE_FORMAT_ARGB_sRGB,
-	NJ_TEXTURE_FORMAT_ABGR16F,
+	NJ_TEXTURE_FORMAT_RGBA8,
+	NJ_TEXTURE_FORMAT_RGBA8_sRGB,
+	NJ_TEXTURE_FORMAT_RGBA16_UINT,
+	NJ_TEXTURE_FORMAT_RGBA16F,
 //	NJ_TEXTURE_FORMAT_RG16F,
 	NJ_TEXTURE_FORMAT_R32F,
+//	NJ_TEXTURE_FORMAT_R16_UINT,
 };
 
 enum NJ_PRIMITIVE_TOPOLOGY
@@ -94,7 +96,7 @@ public: // MEMORY
 public: // TEXTURES & RENDER TARGETS
 
 	virtual NjITexture*	CreateTexture2D( const char* _pDebugName, int _Width, int _Height, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, const void* const* _ppContent ) = 0;
-//	virtual NjITexture*	CreateTexture2DArray( const char* _pDebugName, int _Width, int _Height, int _ArraySize, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, const void* const* _ppContent ) = 0;
+	virtual NjITexture*	CreateTexture2DArray( const char* _pDebugName, int _Width, int _Height, int _ArraySize, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, const void* const* _ppContent ) = 0;
 	virtual NjITexture*	CreateTexture3D( const char* _pDebugName, int _Width, int _Height, int _Depth, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, const void* const* _ppContent ) = 0;
 
 	virtual NjITexture*	CreateRenderTarget2D( const char* _pDebugName, int _Width, int _Height, NJ_TEXTURE_FORMAT _Format, int _MipLevelsCount, bool _CPUReadBack, bool _IsTemporary ) = 0;
@@ -104,6 +106,9 @@ public: // TEXTURES & RENDER TARGETS
 	// Sets the multiple render targets and optional _Depth stencil buffer
 	// If _pViewport is NULL then the render target's full viewport is used with default ZMin/Max=0/1
 	virtual void		SetRenderTargets( int _RenderTargetsCount, NjITextureView** _ppRenderTargets, NjITextureView* _pDepthStencil, const NjViewport* _pViewport ) = 0;
+
+	// Clears the render target
+	virtual void		ClearRenderTarget( NjITexture& _RenderTarget, const NjFloat4& _Color ) = 0;
 
 
 public: // GEOMETRY
@@ -125,8 +130,12 @@ public: // SHADERS
 	virtual NjIShader*	CreateShader( const char* _pDebugName, NjResourceID _ShaderID, NJ_MACRO* _pCompilerMacros ) = 0;
 
 	// Creates a constant buffer to feed a shader with
-	// NOTE: If _IsDynamic is false then _pInitData cannot be NULL and must be filled with the immutable constant buffer
-	virtual NjIConstantBuffer*	CreateConstantBuffer( const char* _pDebugName, bool _IsDynamic, int _BufferSize, void* _pInitData ) = 0;
+	// NOTE: If _pInitData == NULL then the constant buffer is considered dynamic
+	virtual NjIConstantBuffer*	CreateConstantBuffer( const char* _pDebugName, int _BufferSize, void* _pInitData ) = 0;
+
+public:	// PROFILING
+	virtual void		AddProfileTask( const char* _pTaskName ) = 0;
+
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -137,6 +146,7 @@ public: // METHODS
 
 	// Render this primitive using the provided shader
 	virtual void	Render( NjIShader& _Shader ) = 0;
+	virtual void	RenderInstanced( NjIShader& _Shader, int _InstancesCount ) = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -158,8 +168,8 @@ public: // METHODS
 	// NOTE: if _ArraySize==0 then you should include ALL array slices
 	// NOTE: A typical view query with all parameters equal to 0 means returning the complete texture/render target view with all its mips and arrays
 	// NOTE: For textures created with the "_IsTemporary" flag, Shader/Target views can be queried EVEN if the texture has not been physically allocated !
-	virtual NjITextureView*	GetShaderView( int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize ) = 0;
-	virtual NjITextureView*	GetRenderTargetView( int _MipLevelIndex, int _ArrayStart, int _ArraySize ) = 0;
+	virtual NjITextureView*	GetShaderView( int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize ) const = 0;
+	virtual NjITextureView*	GetRenderTargetView( int _MipLevelIndex, int _ArrayStart, int _ArraySize ) const = 0;
 
 	// Allocate/Free render target (Temporary render targets only)
 	// NOTE: For textures created with the "_IsTemporary" flag, Shader/Target views can be queried EVEN if the texture has not been physically allocated !
@@ -192,8 +202,8 @@ public: // METHODS
 
 	// Sends data to the specified constant buffer
 	// Returns true if the constant buffer was indeed required by the shader
-	virtual bool	SetConstantBuffer( const char* _pBufferName, NjIConstantBuffer& _Buffer ) = 0;
-	virtual void	SetConstantBuffer( int _BufferSlot, NjIConstantBuffer& _Buffer ) = 0;
+	virtual bool	SetConstantBuffer( const char* _pBufferName, const NjIConstantBuffer& _Buffer ) = 0;
+	virtual void	SetConstantBuffer( int _BufferSlot, const NjIConstantBuffer& _Buffer ) = 0;
 
 	// Sets the texture by name
 	// Shouldn't crash if the texture doesn't exist !

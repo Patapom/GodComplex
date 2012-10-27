@@ -24,7 +24,7 @@
 // the hashtable uses basic linked-lists for handling collisions
 // 
 #define HT_DEFAULT_SIZE	8192//1 << 13	// Default size if 8Kb
-#define HT_MAX_KEYLEN	50
+#define HT_MAX_KEYLEN	1024
 
 #ifdef _DEBUG
 
@@ -91,8 +91,10 @@ protected:	// FIELDS
 	int		m_Size;
 	int		m_EntriesCount;
 
+#ifdef _DEBUG
 public:
 	static int	ms_MaxCollisionsCount;	// You can examine this to know if one of the dictionaries has too many collisions (i.e. size too small)
+#endif
 
 public:		// METHODS
 

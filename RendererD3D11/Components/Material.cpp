@@ -18,15 +18,16 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 	, m_pPS( NULL )
 	, m_pShaderPath( NULL )
 	, m_LastShaderModificationTime( 0 )
+#ifdef COMPILE_THREADED
 	, m_hCompileThread( 0 )
+#endif
 {
 	m_pIncludeOverride = _pIncludeOverride;
 	m_bHasErrors = false;
 
 	// Store the default NULL pointer to point to the shader path
-	m_pShaderFileName = CopyString( _pShaderFileName );
-
 #ifndef GODCOMPLEX
+	m_pShaderFileName = CopyString( _pShaderFileName );
 	m_pShaderPath = GetShaderPath( _pShaderFileName );
 	m_Pointer2FileName.Add( NULL, m_pShaderPath );
 #endif
@@ -66,13 +67,15 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 	else
 		m_pMacros = NULL;
 
+#ifdef COMPILE_THREADED
 	// Create the mutex for compilation exclusivity
 	m_hCompileMutex = CreateMutexA( NULL, false, m_pShaderFileName );
 	ASSERT( m_hCompileMutex != 0, "Failed to create compilation mutex !" );
+#endif
 
 #ifndef COMPILE_AT_RUNTIME
 #ifdef COMPILE_THREADED
-	ASSERT( false, "The COMPILE_THREADED option should work in pair with the COMPILE_AT_RUNTIME option ! (i.e. You CANNOT define COMPILE_THREADED without defining COMPILE_AT_RUNTIME at the same time !)" );
+	ASSERT( false, "The COMPILE_THREADED option should only work in pair with the COMPILE_AT_RUNTIME option ! (i.e. You CANNOT define COMPILE_THREADED without defining COMPILE_AT_RUNTIME at the same time !)" );
 #endif
 
 	// Compile immediately
@@ -82,8 +85,10 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 
 Material::~Material()
 {
+#ifdef COMPILE_THREADED
 	// Destroy mutex
 	CloseHandle( m_hCompileMutex );
+#endif
 
 #ifdef _DEBUG
 	// Unregister as a watched shader
@@ -515,13 +520,20 @@ int		Material::ShaderConstants::GetShaderResourceViewIndex( const char* _pTextur
 
 bool	Material::LockMaterial() const
 {
+#ifdef COMPILE_THREADED
 	return WaitForSingleObject( m_hCompileMutex, 0 ) == WAIT_OBJECT_0;
+#else
+	return true;
+#endif
 }
 void	Material::UnlockMaterial() const
 {
+#ifdef COMPILE_THREADED
 	ASSERT( ReleaseMutex( m_hCompileMutex ), "Failed to release mutex !" );
+#endif
 }
 
+#ifndef GODCOMPLEX
 const char*	Material::GetShaderPath( const char* _pShaderFileName ) const
 {
 	char*	pResult = NULL;
@@ -559,6 +571,7 @@ const char*	Material::CopyString( const char* _pShaderFileName ) const
 
 	return pResult;
 }
+#endif
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -583,11 +596,13 @@ void		Material::WatchShadersModifications()
 	ms_WatchedShaders.ForEach( WatchShader, NULL );
 }
 
+#ifdef COMPILE_THREADED
 void	ThreadCompileMaterial( void* _pData )
 {
 	Material*	pMaterial = (Material*) _pData;
 	pMaterial->RebuildShader();
 }
+#endif
 
 void		Material::WatchShaderModifications()
 {
@@ -617,10 +632,15 @@ void		Material::WatchShaderModifications()
 
 void		Material::RebuildShader()
 {
-#endif
 
 	DWORD	ErrorCode = WaitForSingleObject( m_hCompileMutex, 30000 );
+#ifdef _DEBUG
 	ASSERT( ErrorCode == WAIT_OBJECT_0, "Failed shader rebuild after 30 seconds waiting for access !" );
+#else
+	if ( ErrorCode != WAIT_OBJECT_0 )
+		ExitProcess( -1 );	// Failed !
+#endif
+#endif
  
 	// Reload file
 	FILE*	pFile = NULL;

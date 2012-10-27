@@ -12,7 +12,7 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the room geometry
-	BuildRoom();
+//	BuildRoom();
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
@@ -52,6 +52,8 @@ void	EffectRoom::Render( float _Time, float _DeltaTime )
 		USING_MATERIAL_END
 	}
 }
+
+/*
 
 void	EffectRoom::BuildRoom()
 {
@@ -243,9 +245,9 @@ void	EffectRoom::RenderLightmap( IntroProgressDelegate& _Delegate )
 	m_pCubeMapCamera = new Camera( gs_Device );
 
 	// Perform actual rendering
-	TextureBuilder*	ppTBLightMaps0[LIGHT_SOURCES_COUNT];
-	TextureBuilder*	ppTBLightMaps1[LIGHT_SOURCES_COUNT];
-	RenderDirect( TBWorldPosition, TBWorldNormal, TBWorldTangent, ppTBLightMaps0 );
+// 	TextureBuilder*	ppTBLightMaps0[LIGHT_SOURCES_COUNT];
+// 	TextureBuilder*	ppTBLightMaps1[LIGHT_SOURCES_COUNT];
+// 	RenderDirect( TBWorldPosition, TBWorldNormal, TBWorldTangent, ppTBLightMaps0 );
 
 
 	// Finally, build the lightmap with its content
@@ -578,3 +580,4 @@ NjFloat2	EffectRoom::LightUV( int _FaceIndex, const NjFloat2& _UV, bool _bBias )
 
 	return NjFloat2( UV.x + InsideUV.y * dUV.x, UV.y + InsideUV.x * dUV.y );
 }
+*/

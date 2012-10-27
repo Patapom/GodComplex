@@ -38,10 +38,9 @@ static const float			INV4PI = 0.07957747154594766788444188168626f;	// 1/(4PI)
 static const float			FLOAT32_MAX = 3.402823466e+38f;
 static const float			GOLDEN_RATIO = 1.6180339887498948482045868343656f;	// Phi = (1+sqrt(5)) / 2
 
-
-#define RAD2DEG( a )		(57.295779513082320876798154814105f * a)
-#define DEG2RAD( a )		(0.01745329251994329576923690768489f * a)
-#define BYTE2FLOAT( b )		(b / 255.0f)
+#define NUAJRAD2DEG( a )	(57.295779513082320876798154814105f * a)
+#define NUAJDEG2RAD( a )	(0.01745329251994329576923690768489f * a)
+#define NUAJBYTE2FLOAT( b )	(b / 255.0f)
 template<class T> inline T	MIN( const T a, const T b )						{ return a < b ? a : b;  }
 template<class T> inline T	MAX( const T a, const T b )						{ return a > b ? a : b;  }
 template<class T> inline T	CLAMP( const T x, const T min, const T max )	{ return MIN( MAX( min, x ), max ); }
@@ -65,6 +64,7 @@ public:
 	float		Length() const		{ return sqrtf( x*x + y*y ); }
 	NjFloat2&	Normalize()			{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; return *this; }
 
+	NjFloat2	Lerp( const NjFloat2& b, float t ) const	{ float r = 1.0f - t; return NjFloat2( x * r + b.x * t, y * r + b.y * t ); }
 	NjFloat2	Min( const NjFloat2& b ) const	{ return NjFloat2( MIN( x, b.x ), MIN( y, b.y ) ); }
 	NjFloat2	Max( const NjFloat2& b ) const	{ return NjFloat2( MAX( x, b.x ), MAX( y, b.y ) ); }
 	float		Min() const						{ return MIN( x, y ); }
@@ -104,6 +104,7 @@ public:
 	float		Length() const		{ return sqrtf( x*x + y*y + z*z ); }
 	NjFloat3&   Normalize()			{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; z *= InvL; return *this; }
 
+	NjFloat3	Lerp( const NjFloat3& b, float t ) const	{ float r = 1.0f - t; return NjFloat3( x * r + b.x * t, y * r + b.y * t, z * r + b.z * t ); }
 	NjFloat3	Min( const NjFloat3& b ) const	{ return NjFloat3( MIN( x, b.x ), MIN( y, b.y ), MIN( z, b.z ) ); }
 	NjFloat3	Max( const NjFloat3& b ) const	{ return NjFloat3( MAX( x, b.x ), MAX( y, b.y ), MAX( z, b.z ) ); }
 	float		Min() const						{ return MIN( MIN( x, y ), z ); }
@@ -147,6 +148,7 @@ public:
 	float		Length() const		{ return sqrtf( x*x + y*y + z*z + w*w ); }
 	NjFloat4&   Normalize()			{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; z *= InvL; w *= InvL; return *this; }
 
+	NjFloat4	Lerp( const NjFloat4& b, float t ) const	{ float r = 1.0f - t; return NjFloat4( x * r + b.x * t, y * r + b.y * t, z * r + b.z * t, w * r + b.w * t ); }
 	NjFloat4	Min( const NjFloat4& b ) const	{ return NjFloat4( MIN( x, b.x ), MIN( y, b.y ), MIN( z, b.z ), MIN( w, b.w ) ); }
 	NjFloat4	Max( const NjFloat4& b ) const	{ return NjFloat4( MAX( x, b.x ), MAX( y, b.y ), MAX( z, b.z ), MAX( w, b.w ) ); }
 	float		Min() const						{ return MIN( MIN( MIN( x, y ), z), w ); }
@@ -196,11 +198,13 @@ public:
 	static NjFloat4x4	FromQuat( const NjFloat4& _Quat );
 	static NjFloat4x4	PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S );
 
+	static NjFloat4x4	RotX( float _Angle );
+	static NjFloat4x4	RotY( float _Angle );
+	static NjFloat4x4	RotZ( float _Angle );
+	static NjFloat4x4	PYR( float _Pitch, float _Yaw, float _Roll );
+
 	static const NjFloat4x4	Zero;
 	static const NjFloat4x4	Identity;
-	static NjFloat4x4	RotationX( float _Angle );
-	static NjFloat4x4	RotationY( float _Angle );
-	static NjFloat4x4	RotationZ( float _Angle );
 };
 
 NjFloat4   operator*( const NjFloat4& a, const NjFloat4x4& b );

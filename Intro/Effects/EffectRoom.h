@@ -72,21 +72,21 @@ public:		// METHODS
 	void	Render( float _Time, float _DeltaTime );
 
 	// Light map rendering
-	void	RenderLightmap( IntroProgressDelegate& _Delegate );
+//	void	RenderLightmap( IntroProgressDelegate& _Delegate );
 
 
 protected:
-
-	void		BuildRoom();
-
-	void		RenderDirect( TextureBuilder& _Positions, TextureBuilder& _Normals, TextureBuilder& _Tangents, TextureBuilder** _ppLightMaps );
-	void		RenderDirectOLD( RayTracer& _Tracer, TextureBuilder& _Positions, TextureBuilder& _Normals, TextureBuilder& _Tangents, int _RaysCount, NjFloat3* _pRays, TextureBuilder** _ppLightMaps );
-
-	void		RenderCubeMap( const NjFloat3& _Position, const NjFloat3& _At, const NjFloat3& _Up, float _Near, float _Far );
-	void		ReadBack( NjFloat4** _ppTarget );
-
-	NjFloat2	GetLightMapAspectRatios();
-	NjFloat2	LightUV( int _FaceIndex, const NjFloat2& _UV, bool _bBias=false );
-	void		DrawQuad( DrawUtils& _DrawPosition, DrawUtils& _DrawNormal, DrawUtils& _DrawTangent, const NjFloat2& _TopLeft, const NjFloat2& _BottomRight, const RayTracer::Quad& _Quad );
+ 
+// 	void		BuildRoom();
+// 
+// 	void		RenderDirect( TextureBuilder& _Positions, TextureBuilder& _Normals, TextureBuilder& _Tangents, TextureBuilder** _ppLightMaps );
+// 	void		RenderDirectOLD( RayTracer& _Tracer, TextureBuilder& _Positions, TextureBuilder& _Normals, TextureBuilder& _Tangents, int _RaysCount, NjFloat3* _pRays, TextureBuilder** _ppLightMaps );
+// 
+// 	void		RenderCubeMap( const NjFloat3& _Position, const NjFloat3& _At, const NjFloat3& _Up, float _Near, float _Far );
+// 	void		ReadBack( NjFloat4** _ppTarget );
+// 
+// 	NjFloat2	GetLightMapAspectRatios();
+// 	NjFloat2	LightUV( int _FaceIndex, const NjFloat2& _UV, bool _bBias=false );
+// 	void		DrawQuad( DrawUtils& _DrawPosition, DrawUtils& _DrawNormal, DrawUtils& _DrawTangent, const NjFloat2& _TopLeft, const NjFloat2& _BottomRight, const RayTracer::Quad& _Quad );
 
 };

@@ -201,6 +201,14 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[5] );	// Point Mirror
 
+	Desc.AddressU = Desc.AddressV = Desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	Desc.BorderColor[0] = 0.0f;
+	Desc.BorderColor[1] = 0.0f;
+	Desc.BorderColor[2] = 0.0f;
+	Desc.BorderColor[3] = 0.0f;
+	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[6] );	// Linear Border
+
 	// Upload them once and for all
 	m_pDeviceContext->VSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 	m_pDeviceContext->GSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );

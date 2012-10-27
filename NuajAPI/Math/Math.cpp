@@ -152,6 +152,43 @@ NjFloat4x4	NjFloat4x4::PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3
 	return Result;
 }
 
+NjFloat4x4	NjFloat4x4::RotX( float _Angle )
+{
+	NjFloat4x4	R = NjFloat4x4::Identity;
+	float C = cosf( _Angle );
+	float S = sinf( _Angle );
+	R.m[4*1+1] = C;		R.m[4*1+2] = S;
+	R.m[4*2+1] = -S;	R.m[4*2+2] = C;
+	return R;
+}
+NjFloat4x4	NjFloat4x4::RotY( float _Angle )
+{
+	NjFloat4x4	R = NjFloat4x4::Identity;
+	float C = cosf( _Angle );
+	float S = sinf( _Angle );
+	R.m[4*0+0] = C;		R.m[4*0+2] = -S;
+	R.m[4*2+0] = S;		R.m[4*2+2] = C;
+	return R;
+}
+NjFloat4x4	NjFloat4x4::RotZ( float _Angle )
+{
+	NjFloat4x4	R = NjFloat4x4::Identity;
+	float C = cosf( _Angle );
+	float S = sinf( _Angle );
+	R.m[4*0+0] = C;		R.m[4*0+1] = S;
+	R.m[4*1+0] = -S;	R.m[4*1+1] = C;
+	return R;
+}
+NjFloat4x4	NjFloat4x4::PYR( float _Pitch, float _Yaw, float _Roll )
+{
+	NjFloat4x4	Pitch = NjFloat4x4::RotX( _Pitch );
+	NjFloat4x4	Yaw = NjFloat4x4::RotX( _Yaw );
+	NjFloat4x4	Roll = NjFloat4x4::RotX( _Roll );
+
+	NjFloat4x4	Result = Pitch * Yaw * Roll;
+	return Result;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Half floats encoding
@@ -284,43 +321,3 @@ float&	NjFloat4x4::operator()( int _Row, int _Column )
 	}
 	return *((float*) 0);
 }
-
-NjFloat4x4	NjFloat4x4::RotationX( float _Angle )
-{
-	float	C = cosf(_Angle);
-	float	S = sinf(_Angle);
-
-	NjFloat4x4	R = NjFloat4x4::Identity;
-	R( 1, 1 ) = +C;		R( 1, 2 ) = +S;
-	R( 2, 1 ) = -S;		R( 2, 2 ) = +C;
-
-	return R;
-}
-
-NjFloat4x4	NjFloat4x4::RotationY( float _Angle )
-{
-	float	C = cosf(_Angle);
-	float	S = sinf(_Angle);
-
-	NjFloat4x4	R = NjFloat4x4::Identity;
-	R( 0, 0 ) = +C;		R( 0, 2 ) = -S;
-	R( 2, 0 ) = +S;		R( 2, 2 ) = +C;
-
-	return R;
-}
-
-NjFloat4x4	NjFloat4x4::RotationZ( float _Angle )
-{
-	float	C = cosf(_Angle);
-	float	S = sinf(_Angle);
-
-	NjFloat4x4	R = NjFloat4x4::Identity;
-	R( 0, 0 ) = +C;		R( 0, 1 ) = +S;
-	R( 1, 0 ) = -S;		R( 1, 1 ) = +C;
-
-	return R;
-}
-
-// { m[1, 1] = +fCosine; m[1, 2] = +fSine; m[2, 1] = -fSine; m[2, 2] = +fCosine; return this; }
-// { m[0, 0] = +fCosine; m[0, 2] = -fSine; m[2, 0] = +fSine; m[2, 2] = +fCosine; return this; }
-// { m[0, 0] = +fCosine; m[0, 1] = +fSine; m[1, 0] = -fSine; m[1, 1] = +fCosine; return this; }

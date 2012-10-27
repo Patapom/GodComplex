@@ -31,6 +31,7 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 	m_Height = _Height;
 	if ( _ArraySize == -6 )
 	{	// Special cube map case !
+		ASSERT( _Width == _Height, "When creating a cube map, width & height must match !" );
 		m_ArraySize = 6;
 		m_bIsCubeMap = true;
 	}
@@ -46,7 +47,7 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 	D3D11_TEXTURE2D_DESC	Desc;
 	Desc.Width = _Width;
 	Desc.Height = _Height;
-	Desc.ArraySize = _ArraySize;
+	Desc.ArraySize = m_ArraySize;
 	Desc.MipLevels = m_MipLevelsCount;
 	Desc.Format = _Format.DirectXFormat();
 	Desc.SampleDesc.Count = 1;
@@ -56,27 +57,36 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 		Desc.Usage = D3D11_USAGE_STAGING;
 		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 		Desc.BindFlags = 0;
+		Desc.MiscFlags = 0;
 	}
 	else
 	{
 		Desc.Usage = _ppContent != NULL ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
 		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
 		Desc.BindFlags = _ppContent != NULL ? D3D11_BIND_SHADER_RESOURCE : (D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
+		Desc.MiscFlags = m_bIsCubeMap ? D3D11_RESOURCE_MISC_TEXTURECUBE : 0;
 	}
-	Desc.MiscFlags = 0;
 
 	if ( _ppContent != NULL )
 	{
-		D3D11_SUBRESOURCE_DATA  pInitialData[MAX_TEXTURE_POT];
-		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+		D3D11_SUBRESOURCE_DATA*	pInitialData = new D3D11_SUBRESOURCE_DATA[m_MipLevelsCount*m_ArraySize];
+
+		for ( int ArrayIndex=0; ArrayIndex < m_ArraySize; ArrayIndex++ )
 		{
-			pInitialData[MipLevelIndex].pSysMem = _ppContent[MipLevelIndex];
-			pInitialData[MipLevelIndex].SysMemPitch = _Width * _Format.Size();
-			pInitialData[MipLevelIndex].SysMemSlicePitch = _Width * _Height * _Format.Size();
-			NextMipSize( _Width, _Height );
+			_Width = m_Width;
+			_Height = m_Height;
+			for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+			{
+				pInitialData[ArrayIndex*m_MipLevelsCount+MipLevelIndex].pSysMem = _ppContent[ArrayIndex*m_MipLevelsCount+MipLevelIndex];
+				pInitialData[ArrayIndex*m_MipLevelsCount+MipLevelIndex].SysMemPitch = _Width * _Format.Size();
+				pInitialData[ArrayIndex*m_MipLevelsCount+MipLevelIndex].SysMemSlicePitch = _Width * _Height * _Format.Size();
+				NextMipSize( _Width, _Height );
+			}
 		}
 
 		Check( m_Device.DXDevice().CreateTexture2D( &Desc, pInitialData, &m_pTexture ) );
+
+		delete[] pInitialData;
 	}
 	else
 		Check( m_Device.DXDevice().CreateTexture2D( &Desc, NULL, &m_pTexture ) );
@@ -148,7 +158,7 @@ ID3D11ShaderResourceView*	Texture2D::GetShaderView( int _MipLevelStart, int _Mip
 	// Create a new one
 	D3D11_SHADER_RESOURCE_VIEW_DESC	Desc;
 	Desc.Format = m_bIsDepthStencil ? ((IDepthStencilFormatDescriptor&) m_Format).ReadableDirectXFormat() : m_Format.DirectXFormat();
-	Desc.ViewDimension = m_ArraySize > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DARRAY : D3D11_SRV_DIMENSION_TEXTURE2D;
+	Desc.ViewDimension = m_ArraySize > 1 ? (m_bIsCubeMap ? D3D10_1_SRV_DIMENSION_TEXTURECUBE : D3D11_SRV_DIMENSION_TEXTURE2DARRAY) : D3D11_SRV_DIMENSION_TEXTURE2D;
 	Desc.Texture2DArray.MostDetailedMip = _MipLevelStart;
 	Desc.Texture2DArray.MipLevels = _MipLevelsCount;
 	Desc.Texture2DArray.FirstArraySlice = _ArrayStart;

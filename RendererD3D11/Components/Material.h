@@ -4,11 +4,16 @@
 #include "../Structures/VertexFormats.h"
 
 #define REFRESH_CHANGES_INTERVAL	500
-#define COMPILE_AT_RUNTIME		// Define this to start compiling shaders at runtime and avoid blocking (useful for debugging)
-								// If you enable that option then the shader will start compiling as soon as WatchShaderModifications() is called on the material
 
-#define COMPILE_THREADED		// Define this to launch shader compilation in different threads
+#ifndef GODCOMPLEX
+// This is useful only for applications, not demos !
 
+#define COMPILE_AT_RUNTIME			// Define this to start compiling shaders at runtime and avoid blocking (useful for debugging)
+									// If you enable that option then the shader will start compiling as soon as WatchShaderModifications() is called on the material
+
+#define COMPILE_THREADED			// Define this to launch shader compilation in different threads
+
+#endif
 
 //#define __DEBUG_UPLOAD_ONLY_ONCE	// If defined, then the constants & textures will be uploaded only once (once the material is compiled)
 									// This allows to test the importance of constants/texture uploads in the performance of the application
@@ -140,16 +145,16 @@ private:
 #endif
 
 
+	// Returns true if the shaders are safe to access (i.e. have been compiled and no other thread is accessing them)
+	// WARNING: Calling this will take ownership of the mutex if the function returns true ! You thus must call UnlockMaterial() later...
+	bool			LockMaterial() const;
+	void			UnlockMaterial() const;
+
 #ifdef COMPILE_THREADED
 	//////////////////////////////////////////////////////////////////////////
 	// Threaded compilation
 	HANDLE			m_hCompileThread;
 	HANDLE			m_hCompileMutex;
-
-	// Returns true if the shaders are safe to access (i.e. have been compiled and no other thread is accessing them)
-	// WARNING: Calling this will take ownership of the mutex if the function returns true ! You thus must call UnlockMaterial() later...
-	bool			LockMaterial() const;
-	void			UnlockMaterial() const;
 
 	void			StartThreadedCompilation();
 public:
