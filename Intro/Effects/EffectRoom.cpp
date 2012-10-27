@@ -89,8 +89,8 @@ void	EffectRoom::Render( float _Time, float _DeltaTime )
 		gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4::Zero );
 
 		m_pCB_Tesselate->m.dUV = gs_Device.DefaultRenderTarget().GetdUV();
-		m_pCB_Tesselate->m.TesselationFactors.x = _TV( 128.0f );	// Edge tesselation
-		m_pCB_Tesselate->m.TesselationFactors.y = _TV( 128.0f );	// Inside tesselation
+		m_pCB_Tesselate->m.TesselationFactors.x = _TV( 64.0f );	// Edge tesselation
+		m_pCB_Tesselate->m.TesselationFactors.y = _TV( 64.0f );	// Inside tesselation
  		m_pCB_Tesselate->UpdateData();
 
 		m_pPrimTesselatedQuad->Render( M );

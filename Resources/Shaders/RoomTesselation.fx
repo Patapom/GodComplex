@@ -74,8 +74,18 @@ HS_PATCH_OUT	PatchHS( InputPatch<VS_IN, 4> _In, uint _PatchID : SV_PRIMITIVEID )
 ///////////////////////////////////////////////////////////////////
 // Per-control point Hull Shader
 //
+// Type of Partitioning | Range
+// -----------------------------
+// Fractional_odd		 [1..63]
+// Fractional_even		 [2..64]
+// Integer				 [1..64]
+// Pow2					 [1..64]
+//
 [domain( "quad" )]						// Either "tri", "quad" or "isoline"
-[partitioning( "integer" )]				// Either "integer", "fractional_even", "fractional_odd", or "pow2"
+[partitioning( "fractional_odd" )]	// Either "integer", "fractional_even", "fractional_odd", or "pow2"
+//[partitioning( "fractional_even" )]
+//[partitioning( "integer" )]
+//[partitioning( "pow2" )]
 [outputtopology( "triangle_ccw" )]		// Either "line", "triangle_cw", or "triangle_ccw"
 [outputcontrolpoints( 4 )]
 [patchconstantfunc( "PatchHS" )]
