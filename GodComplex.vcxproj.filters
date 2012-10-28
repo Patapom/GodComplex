@@ -188,6 +188,7 @@
     <ClInclude Include="Intro\Effects\EffectRoom.h">
       <Filter>Intro\Effects</Filter>
     </ClInclude>
+    <ClInclude Include="ErrorCodes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />

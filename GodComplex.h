@@ -27,6 +27,7 @@
 
 #define NUAJ_LIB
 #include "NuajAPI/API/Types.h"
+#include "ErrorCodes.h"
 #include "NuajAPI/API/ASMHelpers.h"
 #ifdef _DEBUG
 #include "Utility/Events.h"

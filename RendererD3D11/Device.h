@@ -96,7 +96,7 @@ private:
 	void	UnRegisterComponent( Component& _Component );
 
 public:
-	static void	Check( HRESULT _Result );
+	static bool	Check( HRESULT _Result );
 
 	friend class Component;
 };

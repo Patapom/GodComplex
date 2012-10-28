@@ -193,6 +193,7 @@ MinifyAll.cmd</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ErrorCodes.h" />
     <ClInclude Include="Intro\ConstantBuffers.h" />
     <ClInclude Include="Intro\Effects\EffectRoom.h" />
     <ClInclude Include="Intro\Effects\EffectTranslucency.h" />

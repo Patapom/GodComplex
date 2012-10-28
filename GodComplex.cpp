@@ -25,10 +25,10 @@ extern "C" int __cdecl	_purecall(void)		{ return 0; }
 double __cdecl			ceil( double _X )	{ return ceilf( float(_X) ); }
  
  
-static const char*	pMessageError	= "intro_init()!\n\n"\
-									"  no memory?\n"\
-									"  no music?\n"\
-									"  no shaders?";
+static const char*	pMessageError	= "!IntroInit()!\n\n"\
+									"	No DirectX?"\
+									"	No memory?\n"\
+									"	No music?\n";
 static const char*	pWindowClass	= "GodComplex";
  
 static DEVMODE	ScreenSettings =
@@ -95,7 +95,8 @@ static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	return DefWindowProc( hWnd, uMsg, wParam, lParam );
 }
 
-bool	WindowInit()
+// Return 0 for no error
+int	WindowInit()
 {
 	gs_WindowInfos.hInstance = GetModuleHandle( 0 );
 
@@ -123,7 +124,7 @@ bool	WindowInit()
 	wc.lpszClassName = pWindowClass;
 
 	if( !RegisterClass( (WNDCLASSA*) &wc ) )
-		return false;	// Failed !
+		return ERR_REGISTER_CLASS;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the window
@@ -131,7 +132,7 @@ bool	WindowInit()
 	if ( gs_WindowInfos.bFullscreen )
 	{
 		if ( ChangeDisplaySettings( &ScreenSettings, CDS_FULLSCREEN ) != DISP_CHANGE_SUCCESSFUL )
-			return false;
+			return ERR_CHANGE_DISPLAY_SETTINGS;
 
 		dwExStyle = WS_EX_APPWINDOW;
 		dwStyle   = WS_VISIBLE | WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
@@ -160,19 +161,21 @@ bool	WindowInit()
 								 WindowRect.right-WindowRect.left, WindowRect.bottom-WindowRect.top, 0, 0, gs_WindowInfos.hInstance, 0 );
 #endif
 	if( gs_WindowInfos.hWnd == NULL )
-		return false;	// Failed OldTime create the window !
+		return ERR_CREATE_WINDOW;
 
 	if( (gs_WindowInfos.hDC = GetDC( gs_WindowInfos.hWnd )) == NULL )
-		return false;	// Failed OldTime retrieve a valid device context for GDI calls
+		return ERR_RETRIEVE_DC;
 	
 	SetForegroundWindow( gs_WindowInfos.hWnd );
 	SetFocus( gs_WindowInfos.hWnd );
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize DirectX Device
 	gs_Device.Init( RESX, RESY, gs_WindowInfos.hWnd, gs_WindowInfos.bFullscreen, true );
 	if ( !gs_Device.IsInitialized() )
-		return false;	// Oopsy daisy shit fuck hell !
+		return ERR_DX_INIT_DEVICE;	// Oopsy daisy shit fuck hell !
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize sound player
@@ -184,7 +187,10 @@ bool	WindowInit()
 
 	U32			TuneSize = 0;
 	const U8*	pTheTune = LoadResourceBinary( IDR_MUSIC, "MUSIC", &TuneSize );
-	gs_Music.Open( pTheTune );
+	if ( pTheTune == NULL )
+		return ERR_MUSIC_RESOURCE_NOT_FOUND;
+	if ( !gs_Music.Open( pTheTune ) )
+		return ERR_MUSIC_INIT;
 
 	dsInit( gs_Music.RenderProxy, &gs_Music, gs_WindowInfos.hWnd );
 
@@ -198,7 +204,7 @@ bool	WindowInit()
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize other static fields
 
-	return true;
+	return 0;
 }
 
 void	WindowExit()
@@ -363,20 +369,20 @@ void WINAPI	EntryPoint()
 	gs_WindowInfos.bFullscreen = false;
 #endif
 
-	if ( !WindowInit() )
-	{
-		WindowExit();
-		MessageBox( 0, pMessageError, 0, MB_OK | MB_ICONEXCLAMATION );
-		ExitProcess( -1 );
-	}
-
-	IntroProgressDelegate	Progress = { &gs_WindowInfos, ShowProgress };
 	int	ErrorCode = 0;
-	if ( (ErrorCode = IntroInit( Progress )) )
+	if ( (ErrorCode = WindowInit()) )
 	{
 		WindowExit();
 		MessageBox( 0, pMessageError, 0, MB_OK | MB_ICONEXCLAMATION );
 		ExitProcess( ErrorCode );
+	}
+
+	IntroProgressDelegate	Progress = { &gs_WindowInfos, ShowProgress };
+	if ( (ErrorCode = IntroInit( Progress )) )
+	{
+		WindowExit();
+		MessageBox( 0, pMessageError, 0, MB_OK | MB_ICONEXCLAMATION );
+		ExitProcess( -ErrorCode );
 	}
 
 	// Start the music

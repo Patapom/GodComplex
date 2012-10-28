@@ -8,9 +8,9 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
 // 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T2T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
-// 	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_RENDER_CUBEMAP, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PS" ), 1 );
+// 	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_RENDER_CUBEMAP, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PS" ), 2 );
 
- 	CHECK_MATERIAL( m_pMatTestTesselation = CreateMaterial( IDR_SHADER_ROOM_TESSELATION, VertexFormatP3T2::DESCRIPTOR, "VS", "HS", "DS", NULL, "PS" ), 1 );
+ 	CHECK_MATERIAL( m_pMatTestTesselation = CreateMaterial( IDR_SHADER_ROOM_TESSELATION, VertexFormatP3T2::DESCRIPTOR, "VS", "HS", "DS", NULL, "PS" ), 3 );
 
 
 	//////////////////////////////////////////////////////////////////////////
