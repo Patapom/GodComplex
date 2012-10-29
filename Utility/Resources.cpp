@@ -99,8 +99,10 @@ Material*	CreateMaterial( U16 _ShaderResourceID, const IVertexFormatDescriptor& 
 	int	ShadersCount = sizeof(pShaderResources) / sizeof(ShaderResource);
 	for ( int ShaderIndex=0; ShaderIndex < ShadersCount; ShaderIndex++ )
 		if ( _ShaderResourceID == pShaderResources[ShaderIndex].ResourceID )
+		{
 			pFileName = pShaderResources[ShaderIndex].pShaderFileName;
-
+			break;
+		}
 #endif
 
 	U32		CodeSize = 0;
@@ -108,6 +110,37 @@ Material*	CreateMaterial( U16 _ShaderResourceID, const IVertexFormatDescriptor& 
 	ASSERT( pShaderCode != NULL, "Failed to load shader resource !" );
 
 	Material*	pResult = new Material( gs_Device, _Format, pFileName, pShaderCode, _pMacros, _pEntryPointVS, _pEntryPointHS, _pEntryPointDS, _pEntryPointGS, _pEntryPointPS, &gs_IncludesManager );
+
+	delete pShaderCode;	// We musn't forget to delete this temporary buffer !
+
+	return pResult;
+}
+
+ComputeShader*	CreateComputeShader( U16 _ShaderResourceID, const char* _pEntryPoint, D3D_SHADER_MACRO* _pMacros )
+{
+	const char*	pFileName = NULL;
+
+#ifdef _DEBUG
+	// To support automatic reloading of shader changes, you need to register the shader file name here
+	ShaderResource	pShaderResources[] =
+	{
+		REGISTERED_SHADER_FILES
+	};
+
+	int	ShadersCount = sizeof(pShaderResources) / sizeof(ShaderResource);
+	for ( int ShaderIndex=0; ShaderIndex < ShadersCount; ShaderIndex++ )
+		if ( _ShaderResourceID == pShaderResources[ShaderIndex].ResourceID )
+		{
+			pFileName = pShaderResources[ShaderIndex].pShaderFileName;
+			break;
+		}
+#endif
+
+	U32		CodeSize = 0;
+	char*	pShaderCode = LoadResourceShader( _ShaderResourceID, CodeSize );
+	ASSERT( pShaderCode != NULL, "Failed to load shader resource !" );
+
+	ComputeShader*	pResult = new ComputeShader( gs_Device, pFileName, pShaderCode, _pMacros, _pEntryPoint, &gs_IncludesManager );
 
 	delete pShaderCode;	// We musn't forget to delete this temporary buffer !
 

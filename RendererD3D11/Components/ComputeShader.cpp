@@ -1,5 +1,5 @@
 
-#include "Material.h"
+#include "ComputeShader.h"
 #include "ConstantBuffer.h"
 
 #include <stdio.h>
@@ -8,19 +8,14 @@
 #include "D3Dcompiler.h"
 #include "D3D11Shader.h"
 
+ComputeShader*	ComputeShader::ms_pCurrentShader = NULL;
 
-Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride )
+ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, ID3DInclude* _pIncludeOverride )
 	: Component( _Device )
-	, m_Format( _Format )
-	, m_pVertexLayout( NULL )
-	, m_pVS( NULL )
-	, m_pHS( NULL )
-	, m_pDS( NULL )
-	, m_pGS( NULL )
-	, m_pPS( NULL )
+	, m_pCS( NULL )
 	, m_pShaderPath( NULL )
 	, m_LastShaderModificationTime( 0 )
-#ifdef COMPILE_THREADED
+#ifdef COMPUTE_SHADER_COMPILE_THREADED
 	, m_hCompileThread( 0 )
 #endif
 {
@@ -46,17 +41,13 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 		// Register as a watched shader
 		ms_WatchedShaders.Add( _pShaderFileName, this );
 
-#ifndef COMPILE_AT_RUNTIME
+#ifndef COMPUTE_SHADER_COMPILE_AT_RUNTIME
 		m_LastShaderModificationTime = GetFileModTime( _pShaderFileName );
 #endif
 	}
 #endif
 
-	m_pEntryPointVS = _pEntryPointVS;
-	m_pEntryPointHS = _pEntryPointHS;
-	m_pEntryPointDS = _pEntryPointDS;
-	m_pEntryPointGS = _pEntryPointGS;
-	m_pEntryPointPS = _pEntryPointPS;
+	m_pEntryPointCS = _pEntryPoint;
 
 	if ( _pMacros != NULL )
 	{
@@ -71,15 +62,15 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 	else
 		m_pMacros = NULL;
 
-#ifdef COMPILE_THREADED
+#ifdef COMPUTE_SHADER_COMPILE_THREADED
 	// Create the mutex for compilation exclusivity
 	m_hCompileMutex = CreateMutexA( NULL, false, m_pShaderFileName );
 	ASSERT( m_hCompileMutex != 0, "Failed to create compilation mutex !" );
 #endif
 
-#ifndef COMPILE_AT_RUNTIME
-#ifdef COMPILE_THREADED
-	ASSERT( false, "The COMPILE_THREADED option should only work in pair with the COMPILE_AT_RUNTIME option ! (i.e. You CANNOT define COMPILE_THREADED without defining COMPILE_AT_RUNTIME at the same time !)" );
+#ifndef COMPUTE_SHADER_COMPILE_AT_RUNTIME
+#ifdef COMPUTE_SHADER_COMPILE_THREADED
+	ASSERT( false, "The COMPUTE_SHADER_COMPILE_THREADED option should only work in pair with the COMPUTE_SHADER_COMPILE_AT_RUNTIME option ! (i.e. You CANNOT define COMPUTE_SHADER_COMPILE_THREADED without defining COMPUTE_SHADER_COMPILE_AT_RUNTIME at the same time !)" );
 #endif
 
 	// Compile immediately
@@ -87,9 +78,9 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 #endif
 }
 
-Material::~Material()
+ComputeShader::~ComputeShader()
 {
-#ifdef COMPILE_THREADED
+#ifdef COMPUTE_SHADER_COMPILE_THREADED
 	// Destroy mutex
 	CloseHandle( m_hCompileMutex );
 #endif
@@ -104,180 +95,61 @@ Material::~Material()
 #endif
 
 	SafeDeleteArray( m_pShaderPath );
-	if ( m_pVertexLayout != NULL ) { m_pVertexLayout->Release(); m_pVertexLayout = NULL; }
-	if ( m_pVS != NULL ) { m_pVS->Release(); m_pVS = NULL; }
-	if ( m_pHS != NULL ) { m_pHS->Release(); m_pHS = NULL; }
-	if ( m_pDS != NULL ) { m_pDS->Release(); m_pDS = NULL; }
-	if ( m_pGS != NULL ) { m_pGS->Release(); m_pGS = NULL; }
-	if ( m_pPS != NULL ) { m_pPS->Release(); m_pPS = NULL; }
-
-	if ( m_pMacros != NULL ) delete[] m_pMacros;
+	if ( m_pCS != NULL ) { m_pCS->Release(); m_pCS = NULL; }
+	SafeDeleteArray( m_pMacros );
 }
 
-void	Material::CompileShaders( const char* _pShaderCode )
+void	ComputeShader::CompileShaders( const char* _pShaderCode )
 {
 	// Release any pre-existing shader
-	if ( m_pVertexLayout != NULL ) m_pVertexLayout->Release();
-	if ( m_pVS != NULL )	m_pVS->Release();
-	if ( m_pHS != NULL )	m_pHS->Release();
-	if ( m_pDS != NULL )	m_pDS->Release();
-	if ( m_pGS != NULL )	m_pGS->Release();
-	if ( m_pPS != NULL )	m_pPS->Release();
+	if ( m_pCS != NULL )	m_pCS->Release();
 
 	//////////////////////////////////////////////////////////////////////////
-	// Compile the compulsory vertex shader
-	ASSERT( m_pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
-	ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_4_0" );
+	// Compile the compute shader
+	ASSERT( m_pEntryPointCS != NULL, "Invalid ComputeShader entry point!" );
+	ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointCS, "cs_5_0" );
 	if ( pShader != NULL )
 	{
-		Check( m_Device.DXDevice().CreateVertexShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pVS ) );
-		ASSERT( m_pVS != NULL, "Failed to create vertex shader !" );
+		Check( m_Device.DXDevice().CreateComputeShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pCS ) );
+		ASSERT( m_pCS != NULL, "Failed to create vertex shader !" );
 #ifndef GODCOMPLEX
-		m_VSConstants.Enumerate( *pShader );
+		m_CSConstants.Enumerate( *pShader );
 #endif
-		m_bHasErrors |= m_pVS == NULL;
-
-		// Create the associated vertex layout
-		Check( m_Device.DXDevice().CreateInputLayout( m_Format.GetInputElements(), m_Format.GetInputElementsCount(), pShader->GetBufferPointer(), pShader->GetBufferSize(), &m_pVertexLayout ) );
-		ASSERT( m_pVertexLayout != NULL, "Failed to create vertex layout !" );
-		m_bHasErrors |= m_pVertexLayout == NULL;
+		m_bHasErrors |= m_pCS == NULL;
 
 		pShader->Release();
 	}
 	else
 		m_bHasErrors = true;
-
-	//////////////////////////////////////////////////////////////////////////
-	// Compile the optional hull shader
-	if ( !m_bHasErrors && m_pEntryPointHS != NULL )
-	{
-		ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointHS, "hs_5_0" );
-		if ( pShader != NULL )
-		{
-			Check( m_Device.DXDevice().CreateHullShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pHS ) );
-			ASSERT( m_pHS != NULL, "Failed to create hull shader !" );
-#ifndef GODCOMPLEX
-			m_HSConstants.Enumerate( *pShader );
-#endif
-			m_bHasErrors |= m_pHS == NULL;
-
-			pShader->Release();
-		}
-		else
-			m_bHasErrors = true;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	// Compile the optional domain shader
-	if ( !m_bHasErrors && m_pEntryPointDS != NULL )
-	{
-		ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointDS, "ds_5_0" );
-		if ( pShader != NULL )
-		{
-			Check( m_Device.DXDevice().CreateDomainShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pDS ) );
-			ASSERT( m_pDS != NULL, "Failed to create domain shader !" );
-#ifndef GODCOMPLEX
-			m_DSConstants.Enumerate( *pShader );
-#endif
-			m_bHasErrors |= m_pDS == NULL;
-
-			pShader->Release();
-		}
-		else
-			m_bHasErrors = true;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	// Compile the optional geometry shader
-	if ( !m_bHasErrors && m_pEntryPointGS != NULL )
-	{
-		ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_4_0" );
-		if ( pShader != NULL )
-		{
-			Check( m_Device.DXDevice().CreateGeometryShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pGS ) );
-			ASSERT( m_pGS != NULL, "Failed to create geometry shader !" );
-#ifndef GODCOMPLEX
-			m_GSConstants.Enumerate( *pShader );
-#endif
-			m_bHasErrors |= m_pGS == NULL;
-
-			pShader->Release();
-		}
-		else
-			m_bHasErrors = true;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	// Compile the optional pixel shader
-	if ( !m_bHasErrors && m_pEntryPointPS != NULL )
-	{
-		ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_4_0" );
-		if ( pShader != NULL )
-		{
-			Check( m_Device.DXDevice().CreatePixelShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pPS ) );
-			ASSERT( m_pPS != NULL, "Failed to create pixel shader !" );
-#ifndef GODCOMPLEX
-			m_PSConstants.Enumerate( *pShader );
-#endif
-			m_bHasErrors |= m_pPS == NULL;
-
-			pShader->Release();
-		}
-		else
-			m_bHasErrors = true;
-	}
 }
 
-void	DeleteChars( const char*& _pValue, void* _pUserData )	{ delete[] _pValue; }
-
-void	Material::Use()
+void	ComputeShader::Use()
 {
-	if ( !LockMaterial() )
+	if ( !Lock() )
 		return;	// Someone else is locking it !
 
-	if ( m_pVertexLayout != NULL )
-	{
-		m_Device.DXContext().IASetInputLayout( m_pVertexLayout );
-		m_Device.DXContext().VSSetShader( m_pVS, NULL, 0 );
-		m_Device.DXContext().HSSetShader( m_pHS, NULL, 0 );
-		m_Device.DXContext().DSSetShader( m_pDS, NULL, 0 );
-		m_Device.DXContext().GSSetShader( m_pGS, NULL, 0 );
-		m_Device.DXContext().PSSetShader( m_pPS, NULL, 0 );
-	}
+	m_Device.DXContext().CSSetShader( m_pCS, NULL, 0 );
+	ms_pCurrentShader = this;
 
-	UnlockMaterial();
+	Unlock();
 }
 
-// Embedded shader for debug & testing...
-// static char*	pTestShader =
-// 	"struct VS_IN\r\n" \
-// 	"{\r\n" \
-// 	"	float4	__Position : SV_POSITION;\r\n" \
-// 	"};\r\n" \
-// 	"\r\n" \
-// 	"VS_IN	VS( VS_IN _In ) { return _In; }\r\n" \
-// 	"\r\n" \
-// 	"\r\n" \
-// 	"\r\n" \
-// 	"\r\n" \
-// 	"\r\n" \
-// 	"\r\n" \
-// 	"\r\n" \
-// 	"\r\n" \
-// 	"\r\n" \
-// 	"\r\n" \
-// 	"\r\n" \
-// 	"";
+void	ComputeShader::Run( int _GroupsCountX, int _GroupsCountY, int _GroupsCountZ )
+{
+	ASSERT( ms_pCurrentShader == this, "You must call Use() before calling Run() on a ComputeShader!" );
+	if ( !Lock() )
+		return;	// Someone else is locking it !
 
-ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget )
+	m_Device.DXContext().Dispatch( _GroupsCountX, _GroupsCountY, _GroupsCountZ );
+
+	Unlock();
+}
+
+ID3DBlob*   ComputeShader::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget )
 {
 	ID3DBlob*   pCodeText;
 	ID3DBlob*   pCode;
 	ID3DBlob*   pErrors;
-
-
-//_pShaderCode = pTestShader;
-
 
 	D3DPreprocess( _pShaderCode, strlen(_pShaderCode), NULL, _pMacros, this, &pCodeText, &pErrors );
 #if defined(_DEBUG) || defined(DEBUG_SHADER)
@@ -321,7 +193,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO*
 	return pCode;
 }
 
-HRESULT	Material::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, LPCVOID _pParentData, LPCVOID* _ppData, UINT* _pBytes )
+HRESULT	ComputeShader::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, LPCVOID _pParentData, LPCVOID* _ppData, UINT* _pBytes )
 {
 	if ( m_pIncludeOverride != NULL )
 		return m_pIncludeOverride->Open( _IncludeType, _pFileName, _pParentData, _ppData, _pBytes );
@@ -361,7 +233,7 @@ HRESULT	Material::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, 
 	return S_OK;
 }
 
-HRESULT	Material::Close( THIS_ LPCVOID _pData )
+HRESULT	ComputeShader::Close( THIS_ LPCVOID _pData )
 {
 	if ( m_pIncludeOverride != NULL )
 		return m_pIncludeOverride->Close( _pData );
@@ -380,149 +252,136 @@ HRESULT	Material::Close( THIS_ LPCVOID _pData )
 	return S_OK;
 }
 
-void	Material::SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer )
+void	ComputeShader::SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer )
 {
-	if ( !LockMaterial() )
+	if ( !Lock() )
 		return;	// Someone else is locking it !
 
 	ID3D11Buffer*	pBuffer = _Buffer.GetBuffer();
-	m_Device.DXContext().VSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
-	if ( m_pHS != NULL )
-		m_Device.DXContext().HSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
-	if ( m_pDS != NULL )
-		m_Device.DXContext().DSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
-	if ( m_pGS != NULL )
-		m_Device.DXContext().GSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
-	if ( m_pPS != NULL )
-		m_Device.DXContext().PSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
+	m_Device.DXContext().CSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
 
-	UnlockMaterial();
+	Unlock();
 }
 
-void	Material::SetTexture( int _BufferSlot, ID3D11ShaderResourceView* _pData )
+void	ComputeShader::SetTexture( int _BufferSlot, ID3D11ShaderResourceView* _pData )
 {
-	if ( !LockMaterial() )
+	if ( !Lock() )
 		return;	// Someone else is locking it !
 
-	m_Device.DXContext().VSSetShaderResources( _BufferSlot, 1, &_pData );
-	if ( m_pHS != NULL )
-		m_Device.DXContext().HSSetShaderResources( _BufferSlot, 1, &_pData );
-	if ( m_pDS != NULL )
-		m_Device.DXContext().DSSetShaderResources( _BufferSlot, 1, &_pData );
-	if ( m_pGS != NULL )
-		m_Device.DXContext().GSSetShaderResources( _BufferSlot, 1, &_pData );
-	if ( m_pPS != NULL )
-		m_Device.DXContext().PSSetShaderResources( _BufferSlot, 1, &_pData );
+	m_Device.DXContext().CSSetShaderResources( _BufferSlot, 1, &_pData );
 
-	UnlockMaterial();
+	Unlock();
+}
+
+void	ComputeShader::SetStructuredBuffer( int _BufferSlot, StructuredBuffer& _Buffer )
+{
+	if ( !Lock() )
+		return;	// Someone else is locking it !
+
+	ID3D11ShaderResourceView*	pView = _Buffer.GetShaderView();
+	m_Device.DXContext().CSSetShaderResources( _BufferSlot, 1, &pView );
+
+	Unlock();
+}
+
+void	ComputeShader::SetUnorderedAccessView( int _BufferSlot, StructuredBuffer& _Buffer )
+{
+	if ( !Lock() )
+		return;	// Someone else is locking it !
+
+	ID3D11UnorderedAccessView*	pUAV = _Buffer.GetUnorderedAccessView();
+	U32							UAVInitCount = -1;
+	m_Device.DXContext().CSSetUnorderedAccessViews( _BufferSlot, 1, &pUAV, &UAVInitCount );
+
+	Unlock();
 }
 
 
 #ifndef GODCOMPLEX
-bool	Material::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer )
+bool	ComputeShader::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer )
 {
-	if ( !LockMaterial() )
+	if ( !Lock() )
 		return	true;	// Someone else is locking it !
 
-	bool	bUsed = true;
-	if ( m_pVertexLayout != NULL )
-	{
-		bUsed = false;
-		ID3D11Buffer*	pBuffer = _Buffer.GetBuffer();
+	bool	bUsed = false;
+	ID3D11Buffer*	pBuffer = _Buffer.GetBuffer();
 
-		{
-			int	SlotIndex = m_VSConstants.GetConstantBufferIndex( _pBufferName );
-			if ( SlotIndex != -1 )
-				m_Device.DXContext().VSSetConstantBuffers( SlotIndex, 1, &pBuffer );
-			bUsed |= SlotIndex != -1;
-		}
-		{
-			int	SlotIndex = m_HSConstants.GetConstantBufferIndex( _pBufferName );
-			if ( SlotIndex != -1 )
-				m_Device.DXContext().HSSetConstantBuffers( SlotIndex, 1, &pBuffer );
-			bUsed |= SlotIndex != -1;
-		}
-		{
-			int	SlotIndex = m_DSConstants.GetConstantBufferIndex( _pBufferName );
-			if ( SlotIndex != -1 )
-				m_Device.DXContext().DSSetConstantBuffers( SlotIndex, 1, &pBuffer );
-			bUsed |= SlotIndex != -1;
-		}
-		{
-			int	SlotIndex = m_GSConstants.GetConstantBufferIndex( _pBufferName );
-			if ( SlotIndex != -1 )
-				m_Device.DXContext().GSSetConstantBuffers( SlotIndex, 1, &pBuffer );
-			bUsed |= SlotIndex != -1;
-		}
-		{
-			int	SlotIndex = m_PSConstants.GetConstantBufferIndex( _pBufferName );
-			if ( SlotIndex != -1 )
-				m_Device.DXContext().PSSetConstantBuffers( SlotIndex, 1, &pBuffer );
-			bUsed |= SlotIndex != -1;
-		}
+	{
+		int	SlotIndex = m_VSConstants.GetConstantBufferIndex( _pBufferName );
+		if ( SlotIndex != -1 )
+			m_Device.DXContext().CSSetConstantBuffers( SlotIndex, 1, &pBuffer );
+		bUsed |= SlotIndex != -1;
 	}
 
-	UnlockMaterial();
+	Unlock();
 
 	return	bUsed;
 }
 
-bool	Material::SetTexture( const char* _pBufferName, ID3D11ShaderResourceView* _pData )
+bool	ComputeShader::SetTexture( const char* _pTextureName, ID3D11ShaderResourceView* _pData )
 {
-	if ( !LockMaterial() )
+	if ( !Lock() )
 		return	true;	// Someone else is locking it !
 
-	bool	bUsed = true;
-	if ( m_pVertexLayout != NULL )
+	bool	bUsed = false;
 	{
-		bUsed = false;
-		{
-			int	SlotIndex = m_VSConstants.GetShaderResourceViewIndex( _pBufferName );
-			if ( SlotIndex != -1 )
-				m_Device.DXContext().VSSetShaderResources( SlotIndex, 1, &_pData );
-			bUsed |= SlotIndex != -1;
-		}
-		{
-			int	SlotIndex = m_HSConstants.GetShaderResourceViewIndex( _pBufferName );
-			if ( SlotIndex != -1 )
-				m_Device.DXContext().HSSetShaderResources( SlotIndex, 1, &_pData );
-			bUsed |= SlotIndex != -1;
-		}
-		{
-			int	SlotIndex = m_DSConstants.GetShaderResourceViewIndex( _pBufferName );
-			if ( SlotIndex != -1 )
-				m_Device.DXContext().DSSetShaderResources( SlotIndex, 1, &_pData );
-			bUsed |= SlotIndex != -1;
-		}
-		{
-			int	SlotIndex = m_GSConstants.GetShaderResourceViewIndex( _pBufferName );
-			if ( SlotIndex != -1 )
-				m_Device.DXContext().GSSetShaderResources( SlotIndex, 1, &_pData );
-			bUsed |= SlotIndex != -1;
-		}
-		{
-			int	SlotIndex = m_PSConstants.GetShaderResourceViewIndex( _pBufferName );
-			if ( SlotIndex != -1 )
-				m_Device.DXContext().PSSetShaderResources( SlotIndex, 1, &_pData );
-			bUsed |= SlotIndex != -1;
-		}
+		int	SlotIndex = m_CSConstants.GetShaderResourceViewIndex( _pTextureName );
+		if ( SlotIndex != -1 )
+			m_Device.DXContext().CSSetShaderResources( SlotIndex, 1, &_pData );
+		bUsed |= SlotIndex != -1;
 	}
 
-	UnlockMaterial();
+	Unlock();
 
 	return	bUsed;
 }
 
-static void	DeleteBindingDescriptors( Material::ShaderConstants::BindingDesc*& _pValue, void* _pUserData )
+bool	ComputeShader::SetStructuredBuffer( const char* _pBufferName, StructuredBuffer& _Buffer )
+{
+	if ( !Lock() )
+		return	true;	// Someone else is locking it !
+
+	bool	bUsed = false;
+	{
+		int	SlotIndex = m_CSConstants.GetStructuredBufferIndex( _pBufferName );
+		if ( SlotIndex != -1 )
+			m_Device.DXContext().CSSetShaderResources( SlotIndex, 1, &_Buffer.GetShaderView() );
+		bUsed |= SlotIndex != -1;
+	}
+
+	Unlock();
+
+	return	bUsed;
+}
+
+bool	ComputeShader::SetUnorderedAccessView( const char* _pBufferName, StructuredBuffer& _Buffer )
+{
+	if ( !Lock() )
+		return	true;	// Someone else is locking it !
+
+	bool	bUsed = false;
+	{
+		int	SlotIndex = m_CSConstants.GetUnorderedAccesViewIndex( _pBufferName );
+		if ( SlotIndex != -1 )
+			m_Device.DXContext().CSSetUnorderedAccessViews( SlotIndex, 1, &_Buffer.GetUnorderedAccessView() );
+		bUsed |= SlotIndex != -1;
+	}
+
+	Unlock();
+
+	return	bUsed;
+}
+
+static void	DeleteBindingDescriptors( ComputeShader::ShaderConstants::BindingDesc*& _pValue, void* _pUserData )
 {
 	delete _pValue;
 }
-Material::ShaderConstants::~ShaderConstants()
+ComputeShader::ShaderConstants::~ShaderConstants()
 {
 	m_ConstantBufferName2Descriptor.ForEach( DeleteBindingDescriptors, NULL );
 	m_TextureName2Descriptor.ForEach( DeleteBindingDescriptors, NULL );
 }
-void	Material::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob )
+void	ComputeShader::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob )
 {
 	ID3D11ShaderReflection*	pReflector = NULL; 
 	D3DReflect( _ShaderBlob.GetBufferPointer(), _ShaderBlob.GetBufferSize(), IID_ID3D11ShaderReflection, (void**) &pReflector );
@@ -546,6 +405,19 @@ void	Material::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob )
 		case D3D_SIT_CBUFFER:
 			ppDesc = &m_ConstantBufferName2Descriptor.Add( BindDesc.Name );
 			break;
+
+		case D3D_SIT_STRUCTURED:
+			ppDesc = &m_StructuredBufferName2Descriptor.Add( BindDesc.Name );
+			break;
+
+		case D3D_SIT_UAV_RWTYPED:
+		case D3D_SIT_UAV_RWSTRUCTURED:
+		case D3D_SIT_UAV_RWBYTEADDRESS:
+		case D3D_SIT_UAV_APPEND_STRUCTURED:
+		case D3D_SIT_UAV_CONSUME_STRUCTURED:
+		case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
+			ppDesc = &m_UAVName2Descriptor.Add( BindDesc.Name );
+			break;
 		}
 		if ( ppDesc == NULL )
 			continue;	// We're not interested in that type !
@@ -561,18 +433,18 @@ void	Material::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob )
 	pReflector->Release();
 }
 
-void	Material::ShaderConstants::BindingDesc::SetName( const char* _pName )
+void	ComputeShader::ShaderConstants::BindingDesc::SetName( const char* _pName )
 {
 	int		NameLength = strlen(_pName)+1;
 	pName = new char[NameLength];
 	strcpy_s( pName, NameLength+1, _pName );
 }
-Material::ShaderConstants::BindingDesc::~BindingDesc()
+ComputeShader::ShaderConstants::BindingDesc::~BindingDesc()
 {
 //	delete[] pName;	// This makes a heap corruption, I don't know why and I don't give a fuck about these C++ problems... (certainly some shit about allocating memory from a DLL and releasing it from another one or something like this) (which I don't give a shit about either BTW)
 }
 
-int		Material::ShaderConstants::GetConstantBufferIndex( const char* _pBufferName ) const
+int		ComputeShader::ShaderConstants::GetConstantBufferIndex( const char* _pBufferName ) const
 {
 	BindingDesc**	ppValue = m_ConstantBufferName2Descriptor.Get( _pBufferName );
 
@@ -589,7 +461,7 @@ int		Material::ShaderConstants::GetConstantBufferIndex( const char* _pBufferName
 	return ppValue != NULL ? (*ppValue)->Slot : -1;
 }
 
-int		Material::ShaderConstants::GetShaderResourceViewIndex( const char* _pTextureName ) const
+int		ComputeShader::ShaderConstants::GetShaderResourceViewIndex( const char* _pTextureName ) const
 {
 	BindingDesc**	ppValue = m_TextureName2Descriptor.Get( _pTextureName );
 
@@ -605,24 +477,58 @@ int		Material::ShaderConstants::GetShaderResourceViewIndex( const char* _pTextur
 
 	return ppValue != NULL ? (*ppValue)->Slot : -1;
 }
+
+int		ComputeShader::ShaderConstants::GetStructuredBufferIndex( const char* _pUAVName ) const
+{
+	BindingDesc**	ppValue = m_StructuredBufferName2Descriptor.Get( _pUAVName );
+
+#ifdef __DEBUG_UPLOAD_ONLY_ONCE
+	// Ensure the texture is uploaded only once !
+	if ( ppValue != NULL )
+	{
+		if ( (*ppValue)->bUploaded )
+			return -1;
+		(*ppValue)->bUploaded = true;	// Now it has been uploaded ! Don't come back !
+	}
 #endif
 
-bool	Material::LockMaterial() const
+	return ppValue != NULL ? (*ppValue)->Slot : -1;
+}
+
+int		ComputeShader::ShaderConstants::GetUnorderedAccesViewIndex( const char* _pUAVName ) const
 {
-#ifdef COMPILE_THREADED
+	BindingDesc**	ppValue = m_UAVName2Descriptor.Get( _pUAVName );
+
+#ifdef __DEBUG_UPLOAD_ONLY_ONCE
+	// Ensure the texture is uploaded only once !
+	if ( ppValue != NULL )
+	{
+		if ( (*ppValue)->bUploaded )
+			return -1;
+		(*ppValue)->bUploaded = true;	// Now it has been uploaded ! Don't come back !
+	}
+#endif
+
+	return ppValue != NULL ? (*ppValue)->Slot : -1;
+}
+#endif
+
+bool	ComputeShader::Lock() const
+{
+#ifdef COMPUTE_SHADER_COMPILE_THREADED
 	return WaitForSingleObject( m_hCompileMutex, 0 ) == WAIT_OBJECT_0;
 #else
 	return true;
 #endif
 }
-void	Material::UnlockMaterial() const
+void	ComputeShader::Unlock() const
 {
-#ifdef COMPILE_THREADED
+#ifdef COMPUTE_SHADER_COMPILE_THREADED
 	ASSERT( ReleaseMutex( m_hCompileMutex ), "Failed to release mutex !" );
 #endif
 }
 
-const char*	Material::CopyString( const char* _pShaderFileName ) const
+const char*	ComputeShader::CopyString( const char* _pShaderFileName ) const
 {
 	if ( _pShaderFileName == NULL )
 		return NULL;
@@ -635,7 +541,7 @@ const char*	Material::CopyString( const char* _pShaderFileName ) const
 }
 
 #ifndef GODCOMPLEX
-const char*	Material::GetShaderPath( const char* _pShaderFileName ) const
+const char*	ComputeShader::GetShaderPath( const char* _pShaderFileName ) const
 {
 	char*	pResult = NULL;
 	if ( _pShaderFileName != NULL )
@@ -668,15 +574,15 @@ const char*	Material::GetShaderPath( const char* _pShaderFileName ) const
 #include <sys/types.h>
 #include <sys/stat.h>
 
-DictionaryString<Material*>	Material::ms_WatchedShaders;
+DictionaryString<ComputeShader*>	ComputeShader::ms_WatchedShaders;
 
-static void	WatchShader( Material*& _Value, void* _pUserData )	{ _Value->WatchShaderModifications(); }
+static void	WatchShader( ComputeShader*& _Value, void* _pUserData )	{ _Value->WatchShaderModifications(); }
 
-void		Material::WatchShadersModifications()
+void		ComputeShader::WatchShadersModifications()
 {
 	static int	LastTime = -1;
 	int			CurrentTime = timeGetTime();
-	if ( LastTime >= 0 && (CurrentTime - LastTime) < REFRESH_CHANGES_INTERVAL )
+	if ( LastTime >= 0 && (CurrentTime - LastTime) < COMPUTE_SHADER_REFRESH_CHANGES_INTERVAL )
 		return;	// Too soon to check !
 
 	// Update last check time
@@ -685,33 +591,33 @@ void		Material::WatchShadersModifications()
 	ms_WatchedShaders.ForEach( WatchShader, NULL );
 }
 
-#ifdef COMPILE_THREADED
+#ifdef COMPUTE_SHADER_COMPILE_THREADED
 void	ThreadCompileMaterial( void* _pData )
 {
-	Material*	pMaterial = (Material*) _pData;
+	ComputeShader*	pMaterial = (ComputeShader*) _pData;
 	pMaterial->RebuildShader();
 }
 #endif
 
-void		Material::WatchShaderModifications()
+void		ComputeShader::WatchShaderModifications()
 {
-	if ( !LockMaterial() )
+	if ( !Lock() )
 		return;	// Someone else is locking it !
 
 	// Check if the shader file changed since last time
 	time_t	LastModificationTime = GetFileModTime( m_pShaderFileName );
 	if ( LastModificationTime <= m_LastShaderModificationTime )
 	{	// No change !
-		UnlockMaterial();
+		Unlock();
 		return;
 	}
 
 	m_LastShaderModificationTime = LastModificationTime;
 
 	// We're up to date
-	UnlockMaterial();
+	Unlock();
 
-#ifdef COMPILE_THREADED
+#ifdef COMPUTE_SHADER_COMPILE_THREADED
 	ASSERT( m_hCompileThread == 0, "Compilation thread already exists !" );
 
 	DWORD	ThreadID;
@@ -719,7 +625,7 @@ void		Material::WatchShaderModifications()
     SetThreadPriority( m_hCompileThread, THREAD_PRIORITY_HIGHEST );
 }
 
-void		Material::RebuildShader()
+void		ComputeShader::RebuildShader()
 {
 	DWORD	ErrorCode = WaitForSingleObject( m_hCompileMutex, 30000 );
 #ifdef _DEBUG
@@ -751,9 +657,9 @@ void		Material::RebuildShader()
 	delete[] pShaderCode;
 
 	// Release the mutex: it's now safe to access the shader !
-	UnlockMaterial();
+	Unlock();
 
-#ifdef COMPILE_THREADED
+#ifdef COMPUTE_SHADER_COMPILE_THREADED
 	// Close the thread once we're done !
 	if ( m_hCompileThread )
 		CloseHandle( m_hCompileThread );
@@ -761,10 +667,126 @@ void		Material::RebuildShader()
 #endif
 }
 
-time_t		Material::GetFileModTime( const char* _pFileName )
+time_t		ComputeShader::GetFileModTime( const char* _pFileName )
 {	
 	struct _stat statInfo;
 	_stat( _pFileName, &statInfo );
 
 	return statInfo.st_mtime;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// The structured buffer class
+//
+ComputeShader::StructuredBuffer::StructuredBuffer( Device& _Device, int _ElementSize, int _ElementsCount, bool _bWriteable ) : Component( _Device )
+{
+	ASSERT( (_ElementSize&3)==0, "Element size must be a multiple of 4!" );
+	m_ElementSize = _ElementSize;
+	m_ElementsCount = _ElementsCount;
+	m_Size = _ElementSize * _ElementsCount;
+
+	// Create the vertex buffer
+	D3D11_BUFFER_DESC   Desc;
+	Desc.ByteWidth = m_Size;
+	Desc.Usage = D3D11_USAGE_DEFAULT;
+	Desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+	Desc.CPUAccessFlags = 0;
+	Desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	Desc.StructureByteStride = _ElementSize;
+
+	Check( m_Device.DXDevice().CreateBuffer( &Desc, NULL, &m_pBuffer ) );
+
+	// Create the CPU accessible version of the buffer
+	Desc.Usage = D3D11_USAGE_STAGING;
+	Desc.BindFlags = 0;
+	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | (_bWriteable ? D3D11_CPU_ACCESS_WRITE : 0);
+	
+	Check( m_Device.DXDevice().CreateBuffer( &Desc, NULL, &m_pCPUBuffer ) );
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Create the Shader Resource View for the reading
+	D3D11_SHADER_RESOURCE_VIEW_DESC	ViewDesc;
+	ViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+	ViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	ViewDesc.Buffer.FirstElement = 0;
+	ViewDesc.Buffer.NumElements = _ElementsCount;
+
+	Check( m_Device.DXDevice().CreateShaderResourceView( m_pBuffer, &ViewDesc, &m_pShaderView ) );
+
+ 
+	// Create the Unordered Access View for the Buffers
+	// This is used for writing the buffer during the sort and transpose
+	D3D11_UNORDERED_ACCESS_VIEW_DESC	UnorderedViewDesc;
+	UnorderedViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+	UnorderedViewDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+	UnorderedViewDesc.Buffer.FirstElement = 0;
+	UnorderedViewDesc.Buffer.NumElements = _ElementsCount;
+	UnorderedViewDesc.Buffer.Flags = 0;
+
+	Check( m_Device.DXDevice().CreateUnorderedAccessView( m_pBuffer, &UnorderedViewDesc, &m_pUnorderedAccessView ) );
+}
+
+ComputeShader::StructuredBuffer::~StructuredBuffer()
+{
+	m_pUnorderedAccessView->Release();
+	m_pShaderView->Release();
+	m_pCPUBuffer->Release();
+	m_pBuffer->Release();
+	m_pCPUBuffer->Release();
+}
+
+void	ComputeShader::StructuredBuffer::Read( void* _pData, int _ElementsCount ) const
+{
+	int	Size = m_ElementSize * (_ElementsCount < 0 ? m_ElementsCount : _ElementsCount);
+
+	// Copy from actual buffer
+	m_Device.DXContext().CopyResource( m_pCPUBuffer, m_pBuffer );
+
+	// Read from staging resource
+	D3D11_MAPPED_SUBRESOURCE	SubResource;
+	m_Device.DXContext().Map( m_pCPUBuffer, 0, D3D11_MAP_READ, 0, &SubResource );
+
+	memcpy( _pData, SubResource.pData, Size );
+
+	m_Device.DXContext().Unmap( m_pCPUBuffer, 0 );
+}
+
+void	ComputeShader::StructuredBuffer::Write( void* _pData, int _ElementsCount )
+{
+	int	Size = m_ElementSize * (_ElementsCount < 0 ? m_ElementsCount : _ElementsCount);
+
+	// Write to staging resource
+	D3D11_MAPPED_SUBRESOURCE	SubResource;
+	m_Device.DXContext().Map( m_pCPUBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &SubResource );
+
+	memcpy( SubResource.pData, _pData, Size );
+
+	m_Device.DXContext().Unmap( m_pCPUBuffer, 0 );
+
+	// Copy to actual buffer
+	m_Device.DXContext().CopyResource( m_pBuffer, m_pCPUBuffer );
+}
+
+void	ComputeShader::StructuredBuffer::Clear( U32 _pValue[4] )
+{
+	m_Device.DXContext().ClearUnorderedAccessViewUint( m_pUnorderedAccessView, _pValue );
+}
+
+void	ComputeShader::StructuredBuffer::Clear( const NjFloat4& _Value )
+{
+	m_Device.DXContext().ClearUnorderedAccessViewFloat( m_pUnorderedAccessView, &_Value.x );
+}
+
+void	ComputeShader::StructuredBuffer::SetInput( int _SlotIndex )
+{
+	ID3D11ShaderResourceView*	pView = GetShaderView();
+	m_Device.DXContext().CSSetShaderResources( _SlotIndex, 1, &pView );
+}
+
+void	ComputeShader::StructuredBuffer::SetOutput( int _SlotIndex )
+{
+	ID3D11UnorderedAccessView*	pView = GetUnorderedAccessView();
+	U32							UAVInitialCount = -1;
+	m_Device.DXContext().CSSetUnorderedAccessViews( _SlotIndex, 1, &pView, &UAVInitialCount );
 }

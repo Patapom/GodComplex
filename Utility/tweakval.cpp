@@ -170,7 +170,7 @@ void	ReloadChangedTweakableValues()
 {
 	static int	LastTime = -1;
 	int			CurrentTime = timeGetTime();
-	if ( LastTime >= 0 && (CurrentTime - LastTime) < REFRESH_CHANGES_INTERVAL )
+	if ( LastTime >= 0 && (CurrentTime - LastTime) < MATERIAL_REFRESH_CHANGES_INTERVAL )
 		return;	// Too soon to check !
 
 	// Update last check time

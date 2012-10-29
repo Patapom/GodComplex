@@ -189,6 +189,9 @@
       <Filter>Intro\Effects</Filter>
     </ClInclude>
     <ClInclude Include="ErrorCodes.h" />
+    <ClInclude Include="RendererD3D11\Components\ComputeShader.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -285,6 +288,9 @@
     <ClCompile Include="Intro\Effects\EffectRoom.cpp">
       <Filter>Intro\Effects</Filter>
     </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\ComputeShader.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib">
@@ -344,6 +350,9 @@
       <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
     </None>
     <None Include="Resources\Shaders\RoomTesselation.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
+    </None>
+    <None Include="Resources\Shaders\RoomTestCompute.fx">
       <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
     </None>
   </ItemGroup>

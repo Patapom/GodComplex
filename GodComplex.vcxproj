@@ -211,6 +211,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Procedural\RayTracer.h" />
     <ClInclude Include="Procedural\TextureBuilder.h" />
     <ClInclude Include="RendererD3D11\Components\Component.h" />
+    <ClInclude Include="RendererD3D11\Components\ComputeShader.h" />
     <ClInclude Include="RendererD3D11\Components\ConstantBuffer.h">
       <DeploymentContent>false</DeploymentContent>
     </ClInclude>
@@ -263,6 +264,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Procedural\RayTracer.cpp" />
     <ClCompile Include="Procedural\TextureBuilder.cpp" />
     <ClCompile Include="RendererD3D11\Components\Component.cpp" />
+    <ClCompile Include="RendererD3D11\Components\ComputeShader.cpp" />
     <ClCompile Include="RendererD3D11\Components\ConstantBuffer.cpp">
       <DeploymentContent>false</DeploymentContent>
     </ClCompile>
@@ -301,6 +303,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\RenderCubeMap.fx" />
     <None Include="Resources\Shaders\RoomDisplay.fx" />
     <None Include="Resources\Shaders\RoomTesselation.fx" />
+    <None Include="Resources\Shaders\RoomTestCompute.fx" />
     <None Include="Resources\Shaders\TranslucencyBuildZBuffer.fx" />
     <None Include="Resources\Shaders\Inc\Global.fx" />
     <None Include="Resources\Shaders\PostFinal.fx">

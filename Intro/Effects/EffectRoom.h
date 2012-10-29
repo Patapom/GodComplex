@@ -41,8 +41,9 @@ private:	// FIELDS
 
 	Material*			m_pMatDisplay;			// Displays the room
 	Material*			m_pMatRenderCubeMap;	// Renders the cube map
-
 	Material*			m_pMatTestTesselation;	// My first Domain Shader!
+
+	ComputeShader*		m_pCSTest;				// My first Compute Shader!
 
 	// Primitives
 	Primitive*			m_pPrimRoom;

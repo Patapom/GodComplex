@@ -20,7 +20,7 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 	, m_pPS( NULL )
 	, m_pShaderPath( NULL )
 	, m_LastShaderModificationTime( 0 )
-#ifdef COMPILE_THREADED
+#ifdef MATERIAL_COMPILE_THREADED
 	, m_hCompileThread( 0 )
 #endif
 {
@@ -46,7 +46,7 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 		// Register as a watched shader
 		ms_WatchedShaders.Add( _pShaderFileName, this );
 
-#ifndef COMPILE_AT_RUNTIME
+#ifndef MATERIAL_COMPILE_AT_RUNTIME
 		m_LastShaderModificationTime = GetFileModTime( _pShaderFileName );
 #endif
 	}
@@ -71,15 +71,15 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 	else
 		m_pMacros = NULL;
 
-#ifdef COMPILE_THREADED
+#ifdef MATERIAL_COMPILE_THREADED
 	// Create the mutex for compilation exclusivity
 	m_hCompileMutex = CreateMutexA( NULL, false, m_pShaderFileName );
 	ASSERT( m_hCompileMutex != 0, "Failed to create compilation mutex !" );
 #endif
 
-#ifndef COMPILE_AT_RUNTIME
-#ifdef COMPILE_THREADED
-	ASSERT( false, "The COMPILE_THREADED option should only work in pair with the COMPILE_AT_RUNTIME option ! (i.e. You CANNOT define COMPILE_THREADED without defining COMPILE_AT_RUNTIME at the same time !)" );
+#ifndef MATERIAL_COMPILE_AT_RUNTIME
+#ifdef MATERIAL_COMPILE_THREADED
+	ASSERT( false, "The MATERIAL_COMPILE_THREADED option should only work in pair with the MATERIAL_COMPILE_AT_RUNTIME option ! (i.e. You CANNOT define MATERIAL_COMPILE_THREADED without defining MATERIAL_COMPILE_AT_RUNTIME at the same time !)" );
 #endif
 
 	// Compile immediately
@@ -89,7 +89,7 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 
 Material::~Material()
 {
-#ifdef COMPILE_THREADED
+#ifdef MATERIAL_COMPILE_THREADED
 	// Destroy mutex
 	CloseHandle( m_hCompileMutex );
 #endif
@@ -110,8 +110,7 @@ Material::~Material()
 	if ( m_pDS != NULL ) { m_pDS->Release(); m_pDS = NULL; }
 	if ( m_pGS != NULL ) { m_pGS->Release(); m_pGS = NULL; }
 	if ( m_pPS != NULL ) { m_pPS->Release(); m_pPS = NULL; }
-
-	if ( m_pMacros != NULL ) delete[] m_pMacros;
+	SafeDeleteArray( m_pMacros );
 }
 
 void	Material::CompileShaders( const char* _pShaderCode )
@@ -228,11 +227,9 @@ void	Material::CompileShaders( const char* _pShaderCode )
 	}
 }
 
-void	DeleteChars( const char*& _pValue, void* _pUserData )	{ delete[] _pValue; }
-
 void	Material::Use()
 {
-	if ( !LockMaterial() )
+	if ( !Lock() )
 		return;	// Someone else is locking it !
 
 	if ( m_pVertexLayout != NULL )
@@ -245,7 +242,7 @@ void	Material::Use()
 		m_Device.DXContext().PSSetShader( m_pPS, NULL, 0 );
 	}
 
-	UnlockMaterial();
+	Unlock();
 }
 
 // Embedded shader for debug & testing...
@@ -382,7 +379,7 @@ HRESULT	Material::Close( THIS_ LPCVOID _pData )
 
 void	Material::SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer )
 {
-	if ( !LockMaterial() )
+	if ( !Lock() )
 		return;	// Someone else is locking it !
 
 	ID3D11Buffer*	pBuffer = _Buffer.GetBuffer();
@@ -396,12 +393,12 @@ void	Material::SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer )
 	if ( m_pPS != NULL )
 		m_Device.DXContext().PSSetConstantBuffers( _BufferSlot, 1, &pBuffer );
 
-	UnlockMaterial();
+	Unlock();
 }
 
 void	Material::SetTexture( int _BufferSlot, ID3D11ShaderResourceView* _pData )
 {
-	if ( !LockMaterial() )
+	if ( !Lock() )
 		return;	// Someone else is locking it !
 
 	m_Device.DXContext().VSSetShaderResources( _BufferSlot, 1, &_pData );
@@ -414,14 +411,14 @@ void	Material::SetTexture( int _BufferSlot, ID3D11ShaderResourceView* _pData )
 	if ( m_pPS != NULL )
 		m_Device.DXContext().PSSetShaderResources( _BufferSlot, 1, &_pData );
 
-	UnlockMaterial();
+	Unlock();
 }
 
 
 #ifndef GODCOMPLEX
 bool	Material::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer )
 {
-	if ( !LockMaterial() )
+	if ( !Lock() )
 		return	true;	// Someone else is locking it !
 
 	bool	bUsed = true;
@@ -462,14 +459,14 @@ bool	Material::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buf
 		}
 	}
 
-	UnlockMaterial();
+	Unlock();
 
 	return	bUsed;
 }
 
 bool	Material::SetTexture( const char* _pBufferName, ID3D11ShaderResourceView* _pData )
 {
-	if ( !LockMaterial() )
+	if ( !Lock() )
 		return	true;	// Someone else is locking it !
 
 	bool	bUsed = true;
@@ -508,7 +505,7 @@ bool	Material::SetTexture( const char* _pBufferName, ID3D11ShaderResourceView* _
 		}
 	}
 
-	UnlockMaterial();
+	Unlock();
 
 	return	bUsed;
 }
@@ -607,17 +604,17 @@ int		Material::ShaderConstants::GetShaderResourceViewIndex( const char* _pTextur
 }
 #endif
 
-bool	Material::LockMaterial() const
+bool	Material::Lock() const
 {
-#ifdef COMPILE_THREADED
+#ifdef MATERIAL_COMPILE_THREADED
 	return WaitForSingleObject( m_hCompileMutex, 0 ) == WAIT_OBJECT_0;
 #else
 	return true;
 #endif
 }
-void	Material::UnlockMaterial() const
+void	Material::Unlock() const
 {
-#ifdef COMPILE_THREADED
+#ifdef MATERIAL_COMPILE_THREADED
 	ASSERT( ReleaseMutex( m_hCompileMutex ), "Failed to release mutex !" );
 #endif
 }
@@ -676,7 +673,7 @@ void		Material::WatchShadersModifications()
 {
 	static int	LastTime = -1;
 	int			CurrentTime = timeGetTime();
-	if ( LastTime >= 0 && (CurrentTime - LastTime) < REFRESH_CHANGES_INTERVAL )
+	if ( LastTime >= 0 && (CurrentTime - LastTime) < MATERIAL_REFRESH_CHANGES_INTERVAL )
 		return;	// Too soon to check !
 
 	// Update last check time
@@ -685,7 +682,7 @@ void		Material::WatchShadersModifications()
 	ms_WatchedShaders.ForEach( WatchShader, NULL );
 }
 
-#ifdef COMPILE_THREADED
+#ifdef MATERIAL_COMPILE_THREADED
 void	ThreadCompileMaterial( void* _pData )
 {
 	Material*	pMaterial = (Material*) _pData;
@@ -695,23 +692,23 @@ void	ThreadCompileMaterial( void* _pData )
 
 void		Material::WatchShaderModifications()
 {
-	if ( !LockMaterial() )
+	if ( !Lock() )
 		return;	// Someone else is locking it !
 
 	// Check if the shader file changed since last time
 	time_t	LastModificationTime = GetFileModTime( m_pShaderFileName );
 	if ( LastModificationTime <= m_LastShaderModificationTime )
 	{	// No change !
-		UnlockMaterial();
+		Unlock();
 		return;
 	}
 
 	m_LastShaderModificationTime = LastModificationTime;
 
 	// We're up to date
-	UnlockMaterial();
+	Unlock();
 
-#ifdef COMPILE_THREADED
+#ifdef MATERIAL_COMPILE_THREADED
 	ASSERT( m_hCompileThread == 0, "Compilation thread already exists !" );
 
 	DWORD	ThreadID;
@@ -751,9 +748,9 @@ void		Material::RebuildShader()
 	delete[] pShaderCode;
 
 	// Release the mutex: it's now safe to access the shader !
-	UnlockMaterial();
+	Unlock();
 
-#ifdef COMPILE_THREADED
+#ifdef MATERIAL_COMPILE_THREADED
 	// Close the thread once we're done !
 	if ( m_hCompileThread )
 		CloseHandle( m_hCompileThread );

@@ -43,6 +43,7 @@
 #include "RendererD3D11/Components/Texture2D.h"
 #include "RendererD3D11/Components/Texture3D.h"
 #include "RendererD3D11/Components/Material.h"
+#include "RendererD3D11/Components/ComputeShader.h"
 #include "RendererD3D11/Components/ConstantBuffer.h"
 #include "RendererD3D11/Components/Primitive.h"
 #include "RendererD3D11/Components/States.h"

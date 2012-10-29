@@ -38,7 +38,7 @@
 //   Also, putting _TV's in header files is not a good idea.
 //=========================================================
 
-#define REFRESH_CHANGES_INTERVAL	500		// Time in ms between checks for changes
+#define MATERIAL_REFRESH_CHANGES_INTERVAL	500		// Time in ms between checks for changes
 
 
 // Do only in debug builds

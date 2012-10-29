@@ -12,6 +12,26 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 
  	CHECK_MATERIAL( m_pMatTestTesselation = CreateMaterial( IDR_SHADER_ROOM_TESSELATION, VertexFormatP3T2::DESCRIPTOR, "VS", "HS", "DS", NULL, "PS" ), 3 );
 
+	CHECK_MATERIAL( m_pCSTest = CreateComputeShader( IDR_SHADER_ROOM_TEST_COMPUTE, "CS" ), 4 );
+
+	// Test the shader immediately
+	{
+		struct	Pipo
+		{
+			U32			Constant;
+			NjFloat3	Color;
+		};
+
+		SB<Pipo>	Output;
+		Output.Init( gs_Device, 32*32, false );
+		Output.SetOutput( 0 );
+
+		m_pCSTest->Use();
+		m_pCSTest->Run( 2, 2, 1 );
+
+		Output.Read();
+	}
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the room geometry
@@ -49,6 +69,7 @@ EffectRoom::~EffectRoom()
 	SafeDelete( m_pMatRenderCubeMap );
  	SafeDelete( m_pMatDisplay );
  	SafeDelete( m_pMatTestTesselation );
+ 	SafeDelete( m_pCSTest );
 
 	SafeDelete( m_pRTGeometry );
 	SafeDelete( m_pRTMaterial );
