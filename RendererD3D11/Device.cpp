@@ -62,8 +62,7 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 #endif
 	D3D_FEATURE_LEVEL	ObtainedFeatureLevel;
 
- 	Check
-	(
+ 	if ( !Check(
 		D3D11CreateDeviceAndSwapChain( NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
 #ifdef _DEBUG
 			D3D11_CREATE_DEVICE_DEBUG,
@@ -73,8 +72,9 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 			pFeatureLevels, 1,
 			D3D11_SDK_VERSION,
 			&SwapChainDesc, &m_pSwapChain,
-			&m_pDevice, &ObtainedFeatureLevel, &m_pDeviceContext )
-	);
+			&m_pDevice, &ObtainedFeatureLevel, &m_pDeviceContext ) )
+		)
+		return;
 
 	// Store the default render target
 	ID3D11Texture2D*	pDefaultRenderSurface;
@@ -346,12 +346,18 @@ void	Device::UnRegisterComponent( Component& _Component )
 		m_pComponentsStackTop = _Component.m_pPrevious;	// We were the top of the stack !
 }
 
-void	Device::Check( HRESULT _Result )
+bool	Device::Check( HRESULT _Result )
 {
 #ifdef _DEBUG
 	ASSERT( _Result == S_OK, "DX HRESULT Check failed !" );
 	if ( _Result != S_OK )
 		PostQuitMessage( _Result );
+	return true;
+#else
+	if ( _Result != S_OK )
+		return false;	// So we can put a break point here...
+
+	return true;
 #endif
 }
  

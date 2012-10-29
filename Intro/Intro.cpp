@@ -72,7 +72,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create materials
 	{
-		CHECK_MATERIAL( gs_pMatPostFinal = CreateMaterial( IDR_SHADER_POST_FINAL, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 1001 );
+		CHECK_MATERIAL( gs_pMatPostFinal = CreateMaterial( IDR_SHADER_POST_FINAL, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), ERR_EFFECT_INTRO+1 );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -85,10 +85,10 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create effects
 	{
-		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), 2000 );					// Error codes for effects should increase in thousands like 2000, 3000, 4000, etc.
+		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
 //		gs_pEffectRoom->RenderLightmap( _Delegate );
 
-		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), 3000 );
+		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_ROOM );
 	}
 
 	return 0;
