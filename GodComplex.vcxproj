@@ -300,7 +300,9 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\Compressed\TranslucencyBuildZBuffer.fx" />
     <None Include="Resources\Shaders\Compressed\TranslucencyDiffusion.fx" />
     <None Include="Resources\Shaders\Compressed\TranslucencyDisplay.fx" />
+    <None Include="Resources\Shaders\Inc\RayTracing.fx" />
     <None Include="Resources\Shaders\RenderCubeMap.fx" />
+    <None Include="Resources\Shaders\RoomBuildLightMap.fx" />
     <None Include="Resources\Shaders\RoomDisplay.fx" />
     <None Include="Resources\Shaders\RoomTesselation.fx" />
     <None Include="Resources\Shaders\RoomTestCompute.fx" />

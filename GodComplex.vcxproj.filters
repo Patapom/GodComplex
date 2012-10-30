@@ -355,6 +355,12 @@
     <None Include="Resources\Shaders\RoomTestCompute.fx">
       <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
     </None>
+    <None Include="Resources\Shaders\RoomBuildLightMap.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\RayTracing.fx">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

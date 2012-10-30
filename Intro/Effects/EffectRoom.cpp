@@ -12,9 +12,8 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 
  	CHECK_MATERIAL( m_pMatTestTesselation = CreateMaterial( IDR_SHADER_ROOM_TESSELATION, VertexFormatP3T2::DESCRIPTOR, "VS", "HS", "DS", NULL, "PS" ), 3 );
 
-	CHECK_MATERIAL( m_pCSTest = CreateComputeShader( IDR_SHADER_ROOM_TEST_COMPUTE, "CS" ), 4 );
-
 	// Test the shader immediately
+	CHECK_MATERIAL( m_pCSTest = CreateComputeShader( IDR_SHADER_ROOM_TEST_COMPUTE, "CS" ), 4 );
 	{
 		struct	Pipo
 		{
@@ -30,6 +29,14 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 		m_pCSTest->Run( 2, 2, 1 );
 
 		Output.Read();
+	}
+
+
+	{
+		ComputeShader*	pCSComputeLightMap;
+		CHECK_MATERIAL( pCSComputeLightMap = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "CS" ), 5 );
+
+		SafeDelete( pCSComputeLightMap );
 	}
 
 
