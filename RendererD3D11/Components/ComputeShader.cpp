@@ -745,7 +745,8 @@ void	ComputeShader::StructuredBuffer::Read( void* _pData, int _ElementsCount ) c
 
 	// Read from staging resource
 	D3D11_MAPPED_SUBRESOURCE	SubResource;
-	m_Device.DXContext().Map( m_pCPUBuffer, 0, D3D11_MAP_READ, 0, &SubResource );
+	Check( m_Device.DXContext().Map( m_pCPUBuffer, 0, D3D11_MAP_READ, 0, &SubResource ) );
+	ASSERT( SubResource.pData != NULL, "Failed to Map resource for reading !" );
 
 	memcpy( _pData, SubResource.pData, Size );
 
@@ -758,7 +759,8 @@ void	ComputeShader::StructuredBuffer::Write( void* _pData, int _ElementsCount )
 
 	// Write to staging resource
 	D3D11_MAPPED_SUBRESOURCE	SubResource;
-	m_Device.DXContext().Map( m_pCPUBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &SubResource );
+	Check( m_Device.DXContext().Map( m_pCPUBuffer, 0, D3D11_MAP_WRITE, 0, &SubResource ) );
+	ASSERT( SubResource.pData != NULL, "Failed to Map resource for writing !" );
 
 	memcpy( SubResource.pData, _pData, Size );
 

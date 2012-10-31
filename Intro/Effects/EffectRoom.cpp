@@ -33,8 +33,47 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 
 
 	{
+		struct LightMapInfos
+		{
+			NjFloat3	Position;
+			U32			Seed0;
+			NjFloat3	Normal;
+			U32			Seed1;
+			NjFloat3	Tangent;
+			U32			Seed2;
+			NjFloat3	BiTangent;
+			U32			Seed3;
+		};
+
+		struct	LightMapResult
+		{
+			NjFloat4	Irradiance;
+		};
+
 		ComputeShader*	pCSComputeLightMap;
-		CHECK_MATERIAL( pCSComputeLightMap = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "CS" ), 5 );
+		CHECK_MATERIAL( pCSComputeLightMap = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "CS_Direct" ), 5 );
+
+		SB<LightMapInfos>	Input( gs_Device, 1, true );
+		SB<LightMapResult>	Output( gs_Device, 1, false );
+
+		Input.m[0].Position.Set( 0, 0, 0 );
+		Input.m[0].Normal.Set( 0, 1, 0 );
+		Input.m[0].Tangent.Set( 1, 0, 0 );
+		Input.m[0].BiTangent.Set( 0, 0, 1 );
+
+		Input.m[0].Seed0 = 128;
+		Input.m[0].Seed1 = 129;
+		Input.m[0].Seed2 = 130;
+		Input.m[0].Seed3 = 131;
+
+		Input.Write();
+		Input.SetInput( 0 );
+		Output.SetOutput( 0 );
+
+		pCSComputeLightMap->Use();
+		pCSComputeLightMap->Run( 1, 1, 1 );
+
+		Output.Read();
 
 		SafeDelete( pCSComputeLightMap );
 	}
