@@ -53,6 +53,7 @@ void	ConstantBuffer::Set( int _SlotIndex )
 	m_Device.DXContext().DSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
 	m_Device.DXContext().GSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
 	m_Device.DXContext().PSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
+	m_Device.DXContext().CSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
 }
 void	ConstantBuffer::SetVS( int _SlotIndex )
 {
@@ -73,4 +74,8 @@ void	ConstantBuffer::SetGS( int _SlotIndex )
 void	ConstantBuffer::SetPS( int _SlotIndex )
 {
 	m_Device.DXContext().PSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
+}
+void	ConstantBuffer::SetCS( int _SlotIndex )
+{
+	m_Device.DXContext().CSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
 }

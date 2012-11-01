@@ -10,7 +10,7 @@ class EffectRoom
 private:	// CONSTANTS
 
 	static const int	LIGHTMAP_SIZE = 128;		// Size of the lightmap
-	static const int	LIGHTMAP_CUBEMAP_SIZE = 32;	// Size of the cube maps rendered for each texel of the light map
+//	static const int	LIGHTMAP_CUBEMAP_SIZE = 32;	// Size of the cube maps rendered for each texel of the light map
 
 protected:	// NESTED TYPES
 
@@ -88,7 +88,9 @@ public:		// METHODS
 
 
 protected:
- 
+
+	void		ComputeLightMaps();
+
 // 	void		BuildRoom();
 // 
 // 	void		RenderDirect( TextureBuilder& _Positions, TextureBuilder& _Normals, TextureBuilder& _Tangents, TextureBuilder** _ppLightMaps );

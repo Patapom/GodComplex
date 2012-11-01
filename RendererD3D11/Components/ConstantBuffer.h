@@ -30,6 +30,7 @@ public:	 // METHODS
 	void		SetDS( int _SlotIndex );
 	void		SetGS( int _SlotIndex );
 	void		SetPS( int _SlotIndex );
+	void		SetCS( int _SlotIndex );
 };
 
 template<typename T> class	CB : public ConstantBuffer

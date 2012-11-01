@@ -12,72 +12,26 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 
  	CHECK_MATERIAL( m_pMatTestTesselation = CreateMaterial( IDR_SHADER_ROOM_TESSELATION, VertexFormatP3T2::DESCRIPTOR, "VS", "HS", "DS", NULL, "PS" ), 3 );
 
-	// Test the shader immediately
-	CHECK_MATERIAL( m_pCSTest = CreateComputeShader( IDR_SHADER_ROOM_TEST_COMPUTE, "CS" ), 4 );
-	{
-		struct	Pipo
-		{
-			U32			Constant;
-			NjFloat3	Color;
-		};
+// 	// Test the shader immediately
+// 	CHECK_MATERIAL( m_pCSTest = CreateComputeShader( IDR_SHADER_ROOM_TEST_COMPUTE, "CS" ), 4 );
+// 	{
+// 		struct	Pipo
+// 		{
+// 			U32			Constant;
+// 			NjFloat3	Color;
+// 		};
+// 
+// 		SB<Pipo>	Output;
+// 		Output.Init( gs_Device, 32*32, false );
+// 		Output.SetOutput( 0 );
+// 
+// 		m_pCSTest->Use();
+// 		m_pCSTest->Run( 2, 2, 1 );
+// 
+// 		Output.Read();
+// 	}
 
-		SB<Pipo>	Output;
-		Output.Init( gs_Device, 32*32, false );
-		Output.SetOutput( 0 );
-
-		m_pCSTest->Use();
-		m_pCSTest->Run( 2, 2, 1 );
-
-		Output.Read();
-	}
-
-
-	{
-		struct LightMapInfos
-		{
-			NjFloat3	Position;
-			U32			Seed0;
-			NjFloat3	Normal;
-			U32			Seed1;
-			NjFloat3	Tangent;
-			U32			Seed2;
-			NjFloat3	BiTangent;
-			U32			Seed3;
-		};
-
-		struct	LightMapResult
-		{
-			NjFloat4	Irradiance;
-		};
-
-		ComputeShader*	pCSComputeLightMap;
-		CHECK_MATERIAL( pCSComputeLightMap = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "CS_Direct" ), 5 );
-
-		SB<LightMapInfos>	Input( gs_Device, 1, true );
-		SB<LightMapResult>	Output( gs_Device, 1, false );
-
-		Input.m[0].Position.Set( 0, 0, 0 );
-		Input.m[0].Normal.Set( 0, 1, 0 );
-		Input.m[0].Tangent.Set( 1, 0, 0 );
-		Input.m[0].BiTangent.Set( 0, 0, 1 );
-
-		Input.m[0].Seed0 = 128;
-		Input.m[0].Seed1 = 129;
-		Input.m[0].Seed2 = 130;
-		Input.m[0].Seed3 = 131;
-
-		Input.Write();
-		Input.SetInput( 0 );
-		Output.SetOutput( 0 );
-
-		pCSComputeLightMap->Use();
-		pCSComputeLightMap->Run( 1, 1, 1 );
-
-		Output.Read();
-
-		SafeDelete( pCSComputeLightMap );
-	}
-
+	ComputeLightMaps();
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the room geometry
@@ -164,6 +118,223 @@ void	EffectRoom::Render( float _Time, float _DeltaTime )
 
 	 USING_MATERIAL_END
 	}
+}
+
+void	EffectRoom::ComputeLightMaps()
+{
+	ComputeShader*	pCSComputeLightMapDirectDirect;
+	CHECK_MATERIAL( pCSComputeLightMapDirect = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "CS_Direct" ), 5 );
+	ComputeShader*	pCSComputeLightMapIndirect;
+	CHECK_MATERIAL( pCSComputeLightMapIndirect = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "CS_Indirect" ), 6 );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Allocate the input & output buffers
+	struct LightMapInfos
+	{
+		NjFloat3	Position;
+		U32			Seed0;
+		NjFloat3	Normal;
+		U32			Seed1;
+		NjFloat3	Tangent;
+		U32			Seed2;
+		NjFloat3	BiTangent;
+		U32			Seed3;
+	};
+
+	struct	LightMapResult
+	{
+		NjFloat4	Irradiance;
+	};
+
+	SB<LightMapInfos>	LMInfos0( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, true );	// Floor
+	SB<LightMapInfos>	LMInfos1( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, true );	// Ceiling
+	SB<LightMapInfos>	LMInfos2( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, true );	// Left
+	SB<LightMapInfos>	LMInfos3( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, true );	// Right
+	SB<LightMapInfos>	LMInfos4( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, true );	// Back
+	SB<LightMapInfos>	LMInfos5( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, true );	// Front
+	SB<LightMapInfos>*	ppLMInfos[6] = { &LMInfos0, &LMInfos1, &LMInfos2, &LMInfos3, &LMInfos4, &LMInfos5 };
+
+	SB<LightMapResult>	Result00( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, false );
+	SB<LightMapResult>	Result01( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, false );
+	SB<LightMapResult>	Result02( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
+	SB<LightMapResult>	Result03( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
+	SB<LightMapResult>	Result04( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
+	SB<LightMapResult>	Result05( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
+	SB<LightMapResult>*	ppResults0[6] = { &Result00, &Result01, &Result02, &Result03, &Result04, &Result05 };
+
+	SB<LightMapResult>	Result10( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, false );
+	SB<LightMapResult>	Result11( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, false );
+	SB<LightMapResult>	Result12( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
+	SB<LightMapResult>	Result13( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
+	SB<LightMapResult>	Result14( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
+	SB<LightMapResult>	Result15( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
+	SB<LightMapResult>*	ppResults1[6] = { &Result10, &Result11, &Result12, &Result13, &Result14, &Result15 };
+
+	SB<LightMapResult>	AccumResult0( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, false );
+	SB<LightMapResult>	AccumResult1( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, false );
+	SB<LightMapResult>	AccumResult2( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
+	SB<LightMapResult>	AccumResult3( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
+	SB<LightMapResult>	AccumResult4( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
+	SB<LightMapResult>	AccumResult5( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
+	SB<LightMapResult>*	ppAccumResults[6] = { &AccumResult0, &AccumResult1, &AccumResult2, &AccumResult3, &AccumResult4, &AccumResult5 };
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Generate the input informations
+	NjFloat2	pSizes[6] =
+	{
+		NjFloat2( ROOM_SIZE, ROOM_SIZE ),
+		NjFloat2( ROOM_SIZE, ROOM_SIZE ),
+		NjFloat2( ROOM_SIZE, ROOM_SIZE/2 ),
+		NjFloat2( ROOM_SIZE, ROOM_SIZE/2 ),
+		NjFloat2( ROOM_SIZE, ROOM_SIZE/2 ),
+		NjFloat2( ROOM_SIZE, ROOM_SIZE/2 ),
+	};
+	int			pIntSizes[2*6] =
+	{
+		LIGHTMAP_SIZE, LIGHTMAP_SIZE,
+		LIGHTMAP_SIZE, LIGHTMAP_SIZE,
+		LIGHTMAP_SIZE, LIGHTMAP_SIZE/2,
+		LIGHTMAP_SIZE, LIGHTMAP_SIZE/2,
+		LIGHTMAP_SIZE, LIGHTMAP_SIZE/2,
+		LIGHTMAP_SIZE, LIGHTMAP_SIZE/2,
+	};
+	NjFloat3	pCenters[6] =
+	{
+		NjFloat3( 0.0f, ROOM_HEIGHT, 0.0f ),
+		NjFloat3( 0.0f, 0.0f, 0.0f ),
+		NjFloat3( -0.5f * ROOM_SIZE, 0.0f, 0.0f ),
+		NjFloat3( +0.5f * ROOM_SIZE, 0.0f, 0.0f ),
+		NjFloat3( 0.0f, 0.0f, -0.5f * ROOM_SIZE ),
+		NjFloat3( 0.0f, 0.0f, +0.5f * ROOM_SIZE ),
+	};
+	NjFloat3	pNormals[6] =
+	{
+		NjFloat3( 0.0f, -1.0f, 0.0f ),
+		NjFloat3( 0.0f, +1.0f, 0.0f ),
+		NjFloat3( -1.0f, 0.0f, 0.0f ),
+		NjFloat3( +1.0f, 0.0f, 0.0f ),
+		NjFloat3( 0.0f, 0.0f, -1.0f ),
+		NjFloat3( 0.0f, 0.0f, +1.0f ),
+	};
+	NjFloat3	pTangents[6] =
+	{
+		NjFloat3( -1.0f, 0.0f, 0.0f ),
+		NjFloat3( +1.0f, 0.0f, 0.0f ),
+		NjFloat3( 0.0f, 0.0f, +1.0f ),
+		NjFloat3( 0.0f, 0.0f, -1.0f ),
+		NjFloat3( -1.0f, 0.0f, 0.0f ),
+		NjFloat3( +1.0f, 0.0f, 0.0f ),
+	};
+	NjFloat3	pBiTangents[6] =
+	{
+		NjFloat3( 0.0f, 0.0f, +1.0f ),
+		NjFloat3( 0.0f, 0.0f, +1.0f ),
+		NjFloat3( 0.0f, +1.0f, 0.0f ),
+		NjFloat3( 0.0f, +1.0f, 0.0f ),
+		NjFloat3( 0.0f, +1.0f, 0.0f ),
+		NjFloat3( 0.0f, +1.0f, 0.0f ),
+	};
+
+	for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
+	{
+		int			W = pIntSizes[2*FaceIndex+0];
+		int			H = pIntSizes[2*FaceIndex+1];
+
+		NjFloat2	Size = pSizes[FaceIndex];
+		NjFloat3&	C = pCenters[FaceIndex];
+		NjFloat3&	N = pNormals[FaceIndex];
+		NjFloat3&	T = pTangents[FaceIndex];
+		NjFloat3&	B = pBiTangents[FaceIndex];
+
+		static const float	SMALL_OFFSET = 0.01f;
+
+		LightMapInfos*	pDest = ppLMInfos[FaceIndex]->m;
+		for ( int Y=0; Y < H; Y++ )
+		{
+			float	fY = CLAMP( float(Y), SMALL_OFFSET, (H-1)-SMALL_OFFSET ) / (H-1) - 0.5f;		// in ]-0.5,0.5[
+					fY *= Size.y;																	// in ]-0.5*Size,+0.5*Size[
+			for ( int X=0; X < W; X++, pDest++ )
+			{
+				float	fX = CLAMP( float(X), SMALL_OFFSET, (W-1)-SMALL_OFFSET ) / (W-1) - 0.5f;	// in ]-0.5,0.5[
+						fX *= Size.x;																// in ]-0.5*Size,+0.5*Size[
+
+				pDest->Position = C + fX * T + fY * B;
+
+				pDest->Normal = N;
+				pDest->Tangent = T;
+				pDest->BiTangent = B;
+
+				pDest->Seed0 = 128;
+				pDest->Seed1 = 129;
+				pDest->Seed2 = 130;
+				pDest->Seed3 = 131;
+			}
+		}
+
+		// Write to buffer
+		ppLMInfos[FaceIndex]->Write();
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Compute direct lighting
+	struct	CBRender
+	{
+		U32	LightMapSizeX;
+		U32	LightMapSizeY;
+	};
+	CB<CBRender>	CB_Render( gs_Device, 10 );
+
+	pCSComputeLightMapDirect->Use();
+
+	for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
+	{
+		ppLMInfos[FaceIndex]->SetInput( 0 );
+		ppResults1[FaceIndex]->SetOutput( 0 );
+		ppAccumResults[FaceIndex]->SetOutput( 1 );
+
+		CB_Render.m.LightMapSizeX = pIntSizes[2*FaceIndex+0];
+		CB_Render.m.LightMapSizeY = pIntSizes[2*FaceIndex+1];
+		CB_Render.UpdateData();
+
+		pCSComputeLightMapDirect->Run( CB_Render.m.LightMapSizeX, CB_Render.m.LightMapSizeY, 1 );
+
+//		ppResults1[FaceIndex]->Read();	// CHECK
+
+		// Swap
+		SB<LightMapResult>*	pTemp = ppResults0[FaceIndex];
+		ppResults0[FaceIndex] = ppResults1[FaceIndex];
+		ppResults1[FaceIndex] = pTemp;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Compute indirect lighting
+	pCSComputeLightMapIndirect->Use();
+
+	for ( int BounceIndex=0; BounceIndex < 10; BounceIndex++ )
+		for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
+		{
+			ppLMInfos[FaceIndex]->SetInput( 0 );
+			ppResults0[FaceIndex]->SetInput( 1 );
+			ppResults1[FaceIndex]->SetOutput( 0 );
+			ppAccumResults[FaceIndex]->SetOutput( 1 );
+
+			CB_Render.m.LightMapSizeX = pIntSizes[2*FaceIndex+0];
+			CB_Render.m.LightMapSizeY = pIntSizes[2*FaceIndex+1];
+			CB_Render.UpdateData();
+
+			pCSComputeLightMapDirect->Run( CB_Render.m.LightMapSizeX, CB_Render.m.LightMapSizeY, 1 );
+
+//			ppResults1[FaceIndex]->Read();	// CHECK
+
+			// Swap
+			SB<LightMapResult>*	pTemp = ppResults0[FaceIndex];
+			ppResults0[FaceIndex] = ppResults1[FaceIndex];
+			ppResults1[FaceIndex] = pTemp;
+		}
+
+	SafeDelete( pCSComputeLightMapIndirect );
+	SafeDelete( pCSComputeLightMapDirect );
 }
 
 /*
@@ -384,21 +555,21 @@ void	EffectRoom::RenderDirect( TextureBuilder& _Positions, TextureBuilder& _Norm
 	for ( int Y=0; Y < H; Y++ )
 	{
 		NjFloat4*	pPosition = _Positions.GetMips()[0] + W * Y;
-		NjFloat4*	pNormal = _Normals.GetMips()[0] + W * Y;
-		NjFloat4*	pTangent = _Tangents.GetMips()[0] + W * Y;
+		NjFloat4*	pNormals = _Normals.GetMips()[0] + W * Y;
+		NjFloat4*	pTangents = _Tangents.GetMips()[0] + W * Y;
 		for ( int LightIndex=0; LightIndex < LIGHT_SOURCES_COUNT; LightIndex++ )
 			ppTarget[LightIndex] = _ppLightMaps[LightIndex]->GetMips()[0] + W * Y;
 
 		for ( int X=0; X < W; X++ )
 		{
 			// Initialize the tangential base
-			Normal.x = pNormal->x;
-			Normal.y = pNormal->y;
-			Normal.z = pNormal->z;
+			Normal.x = pNormals->x;
+			Normal.y = pNormals->y;
+			Normal.z = pNormals->z;
 
-			Tangent.x = pTangent->x;
-			Tangent.y = pTangent->y;
-			Tangent.z = pTangent->z;
+			Tangent.x = pTangents->x;
+			Tangent.y = pTangents->y;
+			Tangent.z = pTangents->z;
 
 			BiTangent = Normal ^ Tangent;
 
@@ -494,21 +665,21 @@ void	EffectRoom::RenderDirectOLD( RayTracer& _Tracer, TextureBuilder& _Positions
 	for ( int Y=0; Y < H; Y++ )
 	{
 		NjFloat4*	pPosition = _Positions.GetMips()[0] + W * Y;
-		NjFloat4*	pNormal = _Normals.GetMips()[0] + W * Y;
-		NjFloat4*	pTangent = _Tangents.GetMips()[0] + W * Y;
+		NjFloat4*	pNormals = _Normals.GetMips()[0] + W * Y;
+		NjFloat4*	pTangents = _Tangents.GetMips()[0] + W * Y;
 		for ( int LightIndex=0; LightIndex < LIGHT_SOURCES_COUNT; LightIndex++ )
 			ppTarget[LightIndex] = _ppLightMaps[LightIndex]->GetMips()[0] + W * Y;
 
 		for ( int X=0; X < W; X++ )
 		{
 			// Initialize the tangential base
-			Normal.x = pNormal->x;
-			Normal.y = pNormal->y;
-			Normal.z = pNormal->z;
+			Normal.x = pNormals->x;
+			Normal.y = pNormals->y;
+			Normal.z = pNormals->z;
 
-			Tangent.x = pTangent->x;
-			Tangent.y = pTangent->y;
-			Tangent.z = pTangent->z;
+			Tangent.x = pTangents->x;
+			Tangent.y = pTangents->y;
+			Tangent.z = pTangents->z;
 
 			BiTangent = Normal ^ Tangent;
 
@@ -549,8 +720,8 @@ void	EffectRoom::RenderDirectOLD( RayTracer& _Tracer, TextureBuilder& _Positions
 
 			// Next texel...
 			pPosition++;
-			pNormal++;
-			pTangent++;
+			pNormals++;
+			pTangents++;
 		}
 	}
 }

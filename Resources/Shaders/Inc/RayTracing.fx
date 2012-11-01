@@ -103,14 +103,15 @@ float3	CosineSampleHemisphere( float2 _UV )
 }
 
 // Generates a position on a rectangular patch using stratified sampling
+// Returns a position in [-0.5*_Size,+0.5*_Size]
 float2	GenerateRectanglePosition( uint _RayIndex, uint _RaysCount, inout uint4 _Seed, float2 _Size )
 {
 	float	AspectRatio = _Size.x / _Size.y;
 	uint2	RaysCount;
-			RaysCount.x = max( 1, uint( floor( AspectRatio * _RaysCount ) ) );
-			RaysCount.y = _RaysCount / RaysCount.x;
+			RaysCount.y = max( 1, uint( floor( AspectRatio * _RaysCount ) ) );
+			RaysCount.x = _RaysCount / RaysCount.y;
 
-	float2	PatchSize = _Size / RaysCount;
+	float2	StratifiedSize = _Size / RaysCount;	// Size of stratified patch
 
 	// Stratified position
 	uint2	iPos;
@@ -119,7 +120,7 @@ float2	GenerateRectanglePosition( uint _RayIndex, uint _RaysCount, inout uint4 _
 
 	float2	uv = Random2( _Seed );
 
-	return (iPos + uv) * PatchSize - 0.5 * _Size;
+	return (iPos + uv) * StratifiedSize - 0.5 * _Size;
 }
 
 
