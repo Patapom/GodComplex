@@ -122,7 +122,7 @@ void	EffectRoom::Render( float _Time, float _DeltaTime )
 
 void	EffectRoom::ComputeLightMaps()
 {
-	ComputeShader*	pCSComputeLightMapDirectDirect;
+	ComputeShader*	pCSComputeLightMapDirect;
 	CHECK_MATERIAL( pCSComputeLightMapDirect = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "CS_Direct" ), 5 );
 	ComputeShader*	pCSComputeLightMapIndirect;
 	CHECK_MATERIAL( pCSComputeLightMapIndirect = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "CS_Indirect" ), 6 );
@@ -312,10 +312,15 @@ void	EffectRoom::ComputeLightMaps()
 	pCSComputeLightMapIndirect->Use();
 
 	for ( int BounceIndex=0; BounceIndex < 10; BounceIndex++ )
+	{
+		// Upload previous pass's results
+		for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
+			ppResults0[FaceIndex]->SetInput( 4+FaceIndex );
+		
+		// Run
 		for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 		{
 			ppLMInfos[FaceIndex]->SetInput( 0 );
-			ppResults0[FaceIndex]->SetInput( 1 );
 			ppResults1[FaceIndex]->SetOutput( 0 );
 			ppAccumResults[FaceIndex]->SetOutput( 1 );
 
@@ -323,7 +328,7 @@ void	EffectRoom::ComputeLightMaps()
 			CB_Render.m.LightMapSizeY = pIntSizes[2*FaceIndex+1];
 			CB_Render.UpdateData();
 
-			pCSComputeLightMapDirect->Run( CB_Render.m.LightMapSizeX, CB_Render.m.LightMapSizeY, 1 );
+			pCSComputeLightMapIndirect->Run( CB_Render.m.LightMapSizeX, CB_Render.m.LightMapSizeY, 1 );
 
 //			ppResults1[FaceIndex]->Read();	// CHECK
 
@@ -332,6 +337,7 @@ void	EffectRoom::ComputeLightMaps()
 			ppResults0[FaceIndex] = ppResults1[FaceIndex];
 			ppResults1[FaceIndex] = pTemp;
 		}
+	}
 
 	SafeDelete( pCSComputeLightMapIndirect );
 	SafeDelete( pCSComputeLightMapDirect );

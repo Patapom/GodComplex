@@ -52,19 +52,15 @@ cbuffer	cbRender	: register( b10 )
 
 //[
 StructuredBuffer<LightMapInfos>		_Input : register( t0 );
-StructuredBuffer<LightMapResult>	_PreviousPass : register( t1 );
-
-RWStructuredBuffer<LightMapResult>	_Output : register( u0 );
-RWStructuredBuffer<LightMapResult>	_AccumOutput : register( u1 );
-
-
-// The 6 light map colors from the previous pass
-StructuredBuffer<LightMapResult>	_PreviousPass0 : register( t4 );
+StructuredBuffer<LightMapResult>	_PreviousPass0 : register( t4 );	// The 6 light map colors from the previous pass
 StructuredBuffer<LightMapResult>	_PreviousPass1 : register( t5 );
 StructuredBuffer<LightMapResult>	_PreviousPass2 : register( t6 );
 StructuredBuffer<LightMapResult>	_PreviousPass3 : register( t7 );
 StructuredBuffer<LightMapResult>	_PreviousPass4 : register( t8 );
 StructuredBuffer<LightMapResult>	_PreviousPass5 : register( t9 );
+
+RWStructuredBuffer<LightMapResult>	_Output : register( u0 );
+RWStructuredBuffer<LightMapResult>	_AccumOutput : register( u1 );
 //]
 
 
@@ -149,7 +145,6 @@ void	GenerateRayDirect( uint _TexelIndex, uint _TexelGroup, uint _RayIndex, uint
 // }
 
 groupshared uint4	shSumRadianceInt;
-groupshared float4	shSumRadiance;
 
 [numthreads( 1024, 1, 1 )]
 void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a Dispatch call, per dimension of the dispatch call
@@ -157,11 +152,7 @@ void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset wit
 					uint3 _GroupThreadID	: SV_GroupThreadID,		// Defines the thread offset within the group, per dimension of the group
 					uint  _GroupIndex		: SV_GroupIndex )		// Provides a flattened index for a given thread within a given group
 {
-//	SumRadiance = 0.0;
-// 	GroupMemoryBarrierWithGroupSync();
-
 	shSumRadianceInt = 0;
-	shSumRadiance = 0.0;
  	GroupMemoryBarrierWithGroupSync();
 
 	uint	TexelIndex, TexelGroup, RayIndex, RaysCount;
@@ -184,9 +175,6 @@ void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset wit
 //float4	Radiance = 0.5 * IRRADIANCE_WEIGHT_DIRECT;
 
 	// Accumulate
-//	InterlockedAdd( RayIndex, shSumRadiance, Radiance );
-
-
 	uint4	RadianceInt = uint4( 16777216.0 * Radiance );
 	InterlockedAdd( shSumRadianceInt.x, RadianceInt.x );
 	InterlockedAdd( shSumRadianceInt.y, RadianceInt.y );
@@ -216,7 +204,7 @@ Ray	GenerateRayIndirect( uint _TexelIndex, uint _TexelGroup, uint _RayIndex, uin
 	float3	Direction = CosineSampleHemisphere( Random2( _Seed ) );
 
 	Ray	Result;
-		Result.P = Source.Position;
+		Result.P = Source.Position + 1e-3 * Source.Normal;	// Offset just a chouia
 		Result.V = Direction.x * Source.Tangent + Direction.y * Source.BiTangent + Direction.z * Source.Normal;
 
 	return Result;
@@ -229,7 +217,6 @@ void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset wit
 					uint  _GroupIndex		: SV_GroupIndex )		// Provides a flattened index for a given thread within a given group
 {
 	shSumRadianceInt = 0;
-	shSumRadiance = 0.0;
  	GroupMemoryBarrierWithGroupSync();
 
 	uint	TexelIndex, TexelGroup, RayIndex, RaysCount;
@@ -238,16 +225,11 @@ void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset wit
 	uint4	Seed = BuildSeed( TexelGroup, _Input[TexelIndex] );
 
 	// Generate the 4 rays
-	float3	Position, Normal;
-	float4	ToLight0, ToLight1, ToLight2, ToLight3;
-	GenerateRayIndirect( TexelIndex, TexelGroup, RayIndex, RaysCount, Seed, Position, Normal, ToLight0, ToLight1, ToLight2, ToLight3 );
+	Ray	R = GenerateRayIndirect( TexelIndex, TexelGroup, RayIndex, RaysCount, Seed );
 
 	// Compute radiance coming from the walls
-	float4	Radiance = float4(	-dot( LIGHT_NORMAL, ToLight0.xyz ) * ToLight0.w,
-								-dot( LIGHT_NORMAL, ToLight1.xyz ) * ToLight1.w,
-								-dot( LIGHT_NORMAL, ToLight2.xyz ) * ToLight2.w,
-								-dot( LIGHT_NORMAL, ToLight3.xyz ) * ToLight3.w
-							 ) * dot( Normal, ToLight0.xyz ) * IRRADIANCE_WEIGHT_DIRECT;
+
+	float4	Radiance = Ray * IRRADIANCE_WEIGHT_DIRECT;
 
 	// Accumulate
 	uint4	RadianceInt = uint4( 16777216.0 * Radiance );
