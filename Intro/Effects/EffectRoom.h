@@ -43,28 +43,16 @@ private:	// FIELDS
 	Material*			m_pMatRenderCubeMap;	// Renders the cube map
 	Material*			m_pMatTestTesselation;	// My first Domain Shader!
 
-	ComputeShader*		m_pCSTest;				// My first Compute Shader!
-
 	// Primitives
 	Primitive*			m_pPrimRoom;
 	Primitive*			m_pPrimTesselatedQuad;
 
 	// Textures
-	Texture2D*			m_pRTMaterial;			// The array texture that will contain material informations
-	Texture2D*			m_pRTGeometry;			// The array texture that will contain geometric informations
-	Texture2D*			m_pRTStagingMaterial;
-	Texture2D*			m_pRTStagingGeometry;
-	Texture2D*			m_pDepthStencilCubeMap;	// The depth stencil surface for cube map rendering
-
-	Texture2D*			m_pTexLightmap;
+	Texture2D*			m_pTexLightMaps;		// The array texture that will contain the room's light map
 
 	// Constant buffers
  	CB<CBObject>*		m_pCB_Object;
  	CB<CBTesselate>*	m_pCB_Tesselate;
-
-
-	// Misc
-	Camera*				m_pCubeMapCamera;
 
 
 	static MaterialDescriptor	ms_pMaterials[];
@@ -89,10 +77,8 @@ public:		// METHODS
 
 protected:
 
-	void		ComputeLightMaps();
-
-// 	void		BuildRoom();
-// 
+	void		BuildRoom();
+ 
 // 	void		RenderDirect( TextureBuilder& _Positions, TextureBuilder& _Normals, TextureBuilder& _Tangents, TextureBuilder** _ppLightMaps );
 // 	void		RenderDirectOLD( RayTracer& _Tracer, TextureBuilder& _Positions, TextureBuilder& _Normals, TextureBuilder& _Tangents, int _RaysCount, NjFloat3* _pRays, TextureBuilder** _ppLightMaps );
 // 

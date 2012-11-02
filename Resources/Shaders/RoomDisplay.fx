@@ -3,7 +3,7 @@
 //
 #include "Inc/Global.fx"
 
-Texture2D	_TexLightMap	: register(t10);
+Texture2DArray	_TexLightMaps	: register(t10);
 
 //[
 cbuffer	cbObject	: register( b10 )
@@ -18,7 +18,7 @@ struct	VS_IN
 	float3	Normal		: NORMAL;
 	float3	Tangent		: TANGENT;
 	float2	UV			: TEXCOORD0;
-	float2	UV2			: TEXCOORD1;
+	float3	UV2			: TEXCOORD1;
 };
 
 struct	PS_IN
@@ -26,7 +26,7 @@ struct	PS_IN
 	float4	__Position	: SV_POSITION;
 	float3	Normal		: NORMAL;
 	float2	UV			: TEXCOORD0;
-	float2	UV2			: TEXCOORD1;
+	float3	UV2			: TEXCOORD1;
 };
 
 PS_IN	VS( VS_IN _In )
@@ -36,7 +36,6 @@ PS_IN	VS( VS_IN _In )
 	PS_IN	Out;
 	Out.__Position = mul( WorldPosition, _World2Proj );
 	Out.Normal = _In.Normal;
-
 	Out.UV = _In.UV;
 	Out.UV2 = _In.UV2;
 
@@ -45,13 +44,14 @@ PS_IN	VS( VS_IN _In )
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
+//	return 1;
 //	return float4( _In.Normal, 1.0 );
 //	return float4( _In.UV, 0, 1.0 );
-//	return float4( _In.UV2, 0, 1.0 );
+//	return float4( _In.UV2, 1.0 );
 
-	return float4( _TexLightMap.SampleLevel( LinearClamp, _In.UV2, 0.0 ).xyz, 1.0 );
+	return _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );
 
-	float4	Color = _TexLightMap.SampleLevel( LinearClamp, _In.UV, 0.0 );
-	return float4( Color.xyz, 1.0 );
-	return float4( lerp( float3( _In.UV, 0 ), Color, Color.x + Color.y ), 1.0 );
+// 	float4	Color = _TexLightMap.SampleLevel( LinearClamp, _In.UV, 0.0 );
+// 	return float4( Color.xyz, 1.0 );
+// 	return float4( lerp( float3( _In.UV, 0 ), Color, Color.x + Color.y ), 1.0 );
 }

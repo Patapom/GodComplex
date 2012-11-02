@@ -7,14 +7,14 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
-// 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T2T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
+ 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T2T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
 // 	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_RENDER_CUBEMAP, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PS" ), 2 );
 
  	CHECK_MATERIAL( m_pMatTestTesselation = CreateMaterial( IDR_SHADER_ROOM_TESSELATION, VertexFormatP3T2::DESCRIPTOR, "VS", "HS", "DS", NULL, "PS" ), 3 );
 
 // 	// Test the shader immediately
-// 	CHECK_MATERIAL( m_pCSTest = CreateComputeShader( IDR_SHADER_ROOM_TEST_COMPUTE, "CS" ), 4 );
 // 	{
+// 		CHECK_MATERIAL( m_pCSTest = CreateComputeShader( IDR_SHADER_ROOM_TEST_COMPUTE, "CS" ), 4 );
 // 		struct	Pipo
 // 		{
 // 			U32			Constant;
@@ -29,13 +29,13 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 // 		m_pCSTest->Run( 2, 2, 1 );
 // 
 // 		Output.Read();
+// 		SafeDelete( m_pCSTest );
 // 	}
 
-	ComputeLightMaps();
-
 	//////////////////////////////////////////////////////////////////////////
-	// Build the room geometry
-//	BuildRoom();
+	// Build the room geometry & compute lightmaps
+	BuildRoom();
+
 
 	float VERT_OFFSET = 0.2f;
 	VertexFormatP3T2	pVertices[4] =
@@ -69,63 +69,182 @@ EffectRoom::~EffectRoom()
 	SafeDelete( m_pMatRenderCubeMap );
  	SafeDelete( m_pMatDisplay );
  	SafeDelete( m_pMatTestTesselation );
- 	SafeDelete( m_pCSTest );
-
-	SafeDelete( m_pRTGeometry );
-	SafeDelete( m_pRTMaterial );
-	SafeDelete( m_pCubeMapCamera );
 
 	SafeDelete( m_pPrimTesselatedQuad );
 	SafeDelete( m_pPrimRoom );
-	SafeDelete( m_pTexLightmap );
+	SafeDelete( m_pTexLightMaps );
 }
 
 void	EffectRoom::Render( float _Time, float _DeltaTime )
 {
-// 	{	USING_MATERIAL_START( *m_pMatDisplay )
+	{	USING_MATERIAL_START( *m_pMatDisplay )
+
+//		gs_Device.SetRenderTarget( m_RTTarget, &gs_Device.DefaultDepthStencil() );
+ 		gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4::Zero );
+		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), &gs_Device.DefaultDepthStencil() );
+		gs_Device.SetStates( gs_Device.m_pRS_CullNone, gs_Device.m_pDS_ReadWriteLess, NULL );
+
+//		m_pTexLightMaps->SetPS( 10 );
+
+		// Render the room
+		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( _TV(1.0f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
+		m_pCB_Object->UpdateData();
+
+		m_pPrimRoom->Render( *m_pMatDisplay );
+
+		USING_MATERIAL_END
+	}
+
+
+// 	//////////////////////////////////////////////////////////////////////////
+// 	// Test the tesselation!
+// 	{
+// 		USING_MATERIAL_START( *m_pMatTestTesselation );
 // 
-// 		gs_Device.SetRenderTarget( m_RTTarget, &gs_Device.DefaultDepthStencil() );
-// 		gs_Device.SetStates( gs_Device.m_pRS_CullBack, gs_Device.m_pDS_ReadWriteLess, NULL );
+// //		gs_Device.SetStates( gs_Device.m_pRS_CullBack, gs_Device.m_pDS_ReadWriteLess, gs_Device.m_pBS_Disabled );
+// 		gs_Device.SetStates( gs_Device.m_pRS_WireFrame, gs_Device.m_pDS_ReadWriteLess, gs_Device.m_pBS_Disabled );
+// 		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), &gs_Device.DefaultDepthStencil() );
 // 
-// 		m_pTexLightmap->SetPS( 10 );
+// 		gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4::Zero );
 // 
-// 		// Render the room
-// 		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( _TV(1.0f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
-// 		m_pCB_Object->UpdateData();
+// 		m_pCB_Tesselate->m.dUV = gs_Device.DefaultRenderTarget().GetdUV();
+// 		m_pCB_Tesselate->m.TesselationFactors.x = _TV( 64.0f );	// Edge tesselation
+// 		m_pCB_Tesselate->m.TesselationFactors.y = _TV( 64.0f );	// Inside tesselation
+//  		m_pCB_Tesselate->UpdateData();
 // 
-// 		m_pPrimRoom->Render( *m_pMatDisplay );
+// 		m_pPrimTesselatedQuad->Render( M );
 // 
 // 		USING_MATERIAL_END
 // 	}
-
-
-	//////////////////////////////////////////////////////////////////////////
-	// Test the tesselation!
-	{USING_MATERIAL_START( *m_pMatTestTesselation );
-
-//		gs_Device.SetStates( gs_Device.m_pRS_CullBack, gs_Device.m_pDS_ReadWriteLess, gs_Device.m_pBS_Disabled );
-		gs_Device.SetStates( gs_Device.m_pRS_WireFrame, gs_Device.m_pDS_ReadWriteLess, gs_Device.m_pBS_Disabled );
-		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), &gs_Device.DefaultDepthStencil() );
-
-		gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4::Zero );
-
-		m_pCB_Tesselate->m.dUV = gs_Device.DefaultRenderTarget().GetdUV();
-		m_pCB_Tesselate->m.TesselationFactors.x = _TV( 64.0f );	// Edge tesselation
-		m_pCB_Tesselate->m.TesselationFactors.y = _TV( 64.0f );	// Inside tesselation
- 		m_pCB_Tesselate->UpdateData();
-
-		m_pPrimTesselatedQuad->Render( M );
-
-	 USING_MATERIAL_END
-	}
 }
 
-void	EffectRoom::ComputeLightMaps()
+void	EffectRoom::BuildRoom()
 {
-	ComputeShader*	pCSComputeLightMapDirect;
-	CHECK_MATERIAL( pCSComputeLightMapDirect = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "CS_Direct" ), 5 );
-	ComputeShader*	pCSComputeLightMapIndirect;
-	CHECK_MATERIAL( pCSComputeLightMapIndirect = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "CS_Indirect" ), 6 );
+	//////////////////////////////////////////////////////////////////////////
+	// Generate the input informations
+	NjFloat2	pSizes[6] =
+	{
+		NjFloat2( ROOM_SIZE, ROOM_SIZE ),
+		NjFloat2( ROOM_SIZE, ROOM_SIZE ),
+		NjFloat2( ROOM_SIZE, ROOM_HEIGHT ),
+		NjFloat2( ROOM_SIZE, ROOM_HEIGHT ),
+		NjFloat2( ROOM_SIZE, ROOM_HEIGHT ),
+		NjFloat2( ROOM_SIZE, ROOM_HEIGHT ),
+	};
+	int			pIntSizes[2*6] =
+	{
+		LIGHTMAP_SIZE, LIGHTMAP_SIZE,
+		LIGHTMAP_SIZE, LIGHTMAP_SIZE,
+		LIGHTMAP_SIZE, LIGHTMAP_SIZE/2,
+		LIGHTMAP_SIZE, LIGHTMAP_SIZE/2,
+		LIGHTMAP_SIZE, LIGHTMAP_SIZE/2,
+		LIGHTMAP_SIZE, LIGHTMAP_SIZE/2,
+	};
+	NjFloat3	pCenters[6] =
+	{
+		NjFloat3( 0.0f, ROOM_HEIGHT, 0.0f ),
+		NjFloat3( 0.0f, 0.0f, 0.0f ),
+		NjFloat3( -0.5f * ROOM_SIZE, 0.5f * ROOM_HEIGHT, 0.0f ),
+		NjFloat3( +0.5f * ROOM_SIZE, 0.5f * ROOM_HEIGHT, 0.0f ),
+		NjFloat3( 0.0f, 0.5f * ROOM_HEIGHT, -0.5f * ROOM_SIZE ),
+		NjFloat3( 0.0f, 0.5f * ROOM_HEIGHT, +0.5f * ROOM_SIZE ),
+	};
+	NjFloat3	pNormals[6] =
+	{
+		NjFloat3( 0.0f, -1.0f, 0.0f ),
+		NjFloat3( 0.0f, +1.0f, 0.0f ),
+		NjFloat3( +1.0f, 0.0f, 0.0f ),
+		NjFloat3( -1.0f, 0.0f, 0.0f ),
+		NjFloat3( 0.0f, 0.0f, +1.0f ),
+		NjFloat3( 0.0f, 0.0f, -1.0f ),
+	};
+	NjFloat3	pTangents[6] =
+	{
+		NjFloat3( -1.0f, 0.0f, 0.0f ),
+		NjFloat3( +1.0f, 0.0f, 0.0f ),
+		NjFloat3( 0.0f, 0.0f, +1.0f ),
+		NjFloat3( 0.0f, 0.0f, -1.0f ),
+		NjFloat3( -1.0f, 0.0f, 0.0f ),
+		NjFloat3( +1.0f, 0.0f, 0.0f ),
+	};
+	NjFloat3	pBiTangents[6] =
+	{
+		NjFloat3( 0.0f, 0.0f, +1.0f ),
+		NjFloat3( 0.0f, 0.0f, +1.0f ),
+		NjFloat3( 0.0f, +1.0f, 0.0f ),
+		NjFloat3( 0.0f, +1.0f, 0.0f ),
+		NjFloat3( 0.0f, +1.0f, 0.0f ),
+		NjFloat3( 0.0f, +1.0f, 0.0f ),
+	};
+	NjFloat4	pLightMapUVs[6] = 
+	{
+		NjFloat4( 0.0f, 0.0f, 1.0f, 1.0f ),
+		NjFloat4( 0.0f, 0.0f, 1.0f, 1.0f ),
+		NjFloat4( 0.0f, 0.0f, 1.0f, 0.5f ),
+		NjFloat4( 0.0f, 0.5f, 1.0f, 0.5f ),
+		NjFloat4( 0.0f, 0.0f, 1.0f, 0.5f ),
+		NjFloat4( 0.0f, 0.5f, 1.0f, 0.5f ),
+	};
+	float		pLightMapArrayIndex[6] =
+	{
+		0, 1,
+		2, 2,
+		3, 3
+	};
+
+	//////////////////////////////////////////////////////////////////////////
+	// Generate the primitive
+	VertexFormatP3N3G3T2T3	pVertices[4*6];
+	U16						pIndices[6*6];
+	for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
+	{
+		NjFloat2	Size = pSizes[FaceIndex];
+		NjFloat3	C = pCenters[FaceIndex];
+		NjFloat3	N = pNormals[FaceIndex];
+		NjFloat3	T = pTangents[FaceIndex];
+		NjFloat3	B = pBiTangents[FaceIndex];
+		NjFloat4	UV = pLightMapUVs[FaceIndex];
+		float		ArrayIndex = pLightMapArrayIndex[FaceIndex];
+
+		// Top-left corner
+		pVertices[4*FaceIndex+0].Position = C - 0.5f * Size.x * T + 0.5f * Size.y * B;
+		pVertices[4*FaceIndex+0].Normal = N;
+		pVertices[4*FaceIndex+0].Tangent = T;
+		pVertices[4*FaceIndex+0].UV.Set( 0.0f, 0.0f );
+		pVertices[4*FaceIndex+0].UV2.Set( UV.x + UV.z * 0.0f, UV.y + UV.w * 0.0f, ArrayIndex );
+
+		// Bottom-left corner
+		pVertices[4*FaceIndex+1].Position = C - 0.5f * Size.x * T - 0.5f * Size.y * B;
+		pVertices[4*FaceIndex+1].Normal = N;
+		pVertices[4*FaceIndex+1].Tangent = T;
+		pVertices[4*FaceIndex+1].UV.Set( 0.0f, 1.0f );
+		pVertices[4*FaceIndex+1].UV2.Set( UV.x + UV.z * 0.0f, UV.y + UV.w * 1.0f, ArrayIndex );
+
+		// Bottom-right corner
+		pVertices[4*FaceIndex+2].Position = C + 0.5f * Size.x * T - 0.5f * Size.y * B;
+		pVertices[4*FaceIndex+2].Normal = N;
+		pVertices[4*FaceIndex+2].Tangent = T;
+		pVertices[4*FaceIndex+2].UV.Set( 1.0f, 1.0f );
+		pVertices[4*FaceIndex+2].UV2.Set( UV.x + UV.z * 1.0f, UV.y + UV.w * 1.0f, ArrayIndex );
+
+		// Top-right corner
+		pVertices[4*FaceIndex+3].Position = C + 0.5f * Size.x * T + 0.5f * Size.y * B;
+		pVertices[4*FaceIndex+3].Normal = N;
+		pVertices[4*FaceIndex+3].Tangent = T;
+		pVertices[4*FaceIndex+3].UV.Set( 1.0f, 0.0f );
+		pVertices[4*FaceIndex+3].UV2.Set( UV.x + UV.z * 1.0f, UV.y + UV.w * 0.0f, ArrayIndex );
+
+		// Build indices
+		pIndices[6*FaceIndex+0] = 4 * FaceIndex + 0;
+		pIndices[6*FaceIndex+1] = 4 * FaceIndex + 1;
+		pIndices[6*FaceIndex+2] = 4 * FaceIndex + 2;
+		pIndices[6*FaceIndex+3] = 4 * FaceIndex + 0;
+		pIndices[6*FaceIndex+4] = 4 * FaceIndex + 2;
+		pIndices[6*FaceIndex+5] = 4 * FaceIndex + 3;
+	}
+
+	m_pPrimRoom = new Primitive( gs_Device, 24, pVertices, 36, pIndices, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, VertexFormatP3N3G3T2T3::DESCRIPTOR );
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Allocate the input & output buffers
@@ -146,96 +265,24 @@ void	EffectRoom::ComputeLightMaps()
 		NjFloat4	Irradiance;
 	};
 
-	SB<LightMapInfos>	LMInfos0( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, true );	// Floor
-	SB<LightMapInfos>	LMInfos1( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, true );	// Ceiling
-	SB<LightMapInfos>	LMInfos2( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, true );	// Left
-	SB<LightMapInfos>	LMInfos3( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, true );	// Right
-	SB<LightMapInfos>	LMInfos4( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, true );	// Back
-	SB<LightMapInfos>	LMInfos5( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, true );	// Front
-	SB<LightMapInfos>*	ppLMInfos[6] = { &LMInfos0, &LMInfos1, &LMInfos2, &LMInfos3, &LMInfos4, &LMInfos5 };
+	SB<LightMapInfos>*	ppLMInfos[6];
+	SB<LightMapResult>*	ppResults0[6];
+	SB<LightMapResult>*	ppResults1[6];
+ 	SB<LightMapResult>*	ppAccumResults[6];
+	for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
+	{
+		int		W = pIntSizes[2*FaceIndex+0];
+		int		H = pIntSizes[2*FaceIndex+1];
+		int		Size = W*H;
 
-	SB<LightMapResult>	Result00( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, false );
-	SB<LightMapResult>	Result01( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, false );
-	SB<LightMapResult>	Result02( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
-	SB<LightMapResult>	Result03( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
-	SB<LightMapResult>	Result04( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
-	SB<LightMapResult>	Result05( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
-	SB<LightMapResult>*	ppResults0[6] = { &Result00, &Result01, &Result02, &Result03, &Result04, &Result05 };
-
-	SB<LightMapResult>	Result10( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, false );
-	SB<LightMapResult>	Result11( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, false );
-	SB<LightMapResult>	Result12( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
-	SB<LightMapResult>	Result13( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
-	SB<LightMapResult>	Result14( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
-	SB<LightMapResult>	Result15( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
-	SB<LightMapResult>*	ppResults1[6] = { &Result10, &Result11, &Result12, &Result13, &Result14, &Result15 };
-
-	SB<LightMapResult>	AccumResult0( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, false );
-	SB<LightMapResult>	AccumResult1( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE, false );
-	SB<LightMapResult>	AccumResult2( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
-	SB<LightMapResult>	AccumResult3( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
-	SB<LightMapResult>	AccumResult4( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
-	SB<LightMapResult>	AccumResult5( gs_Device, LIGHTMAP_SIZE*LIGHTMAP_SIZE/2, false );
-	SB<LightMapResult>*	ppAccumResults[6] = { &AccumResult0, &AccumResult1, &AccumResult2, &AccumResult3, &AccumResult4, &AccumResult5 };
-
+		ppLMInfos[FaceIndex] = new SB<LightMapInfos>( gs_Device, Size, true );
+		ppResults0[FaceIndex] = new SB<LightMapResult>( gs_Device, Size, false );
+		ppResults1[FaceIndex] = new SB<LightMapResult>( gs_Device, Size, false );
+		ppAccumResults[FaceIndex] = new SB<LightMapResult>( gs_Device, Size, false );
+	}
 
 	//////////////////////////////////////////////////////////////////////////
-	// Generate the input informations
-	NjFloat2	pSizes[6] =
-	{
-		NjFloat2( ROOM_SIZE, ROOM_SIZE ),
-		NjFloat2( ROOM_SIZE, ROOM_SIZE ),
-		NjFloat2( ROOM_SIZE, ROOM_SIZE/2 ),
-		NjFloat2( ROOM_SIZE, ROOM_SIZE/2 ),
-		NjFloat2( ROOM_SIZE, ROOM_SIZE/2 ),
-		NjFloat2( ROOM_SIZE, ROOM_SIZE/2 ),
-	};
-	int			pIntSizes[2*6] =
-	{
-		LIGHTMAP_SIZE, LIGHTMAP_SIZE,
-		LIGHTMAP_SIZE, LIGHTMAP_SIZE,
-		LIGHTMAP_SIZE, LIGHTMAP_SIZE/2,
-		LIGHTMAP_SIZE, LIGHTMAP_SIZE/2,
-		LIGHTMAP_SIZE, LIGHTMAP_SIZE/2,
-		LIGHTMAP_SIZE, LIGHTMAP_SIZE/2,
-	};
-	NjFloat3	pCenters[6] =
-	{
-		NjFloat3( 0.0f, ROOM_HEIGHT, 0.0f ),
-		NjFloat3( 0.0f, 0.0f, 0.0f ),
-		NjFloat3( -0.5f * ROOM_SIZE, 0.0f, 0.0f ),
-		NjFloat3( +0.5f * ROOM_SIZE, 0.0f, 0.0f ),
-		NjFloat3( 0.0f, 0.0f, -0.5f * ROOM_SIZE ),
-		NjFloat3( 0.0f, 0.0f, +0.5f * ROOM_SIZE ),
-	};
-	NjFloat3	pNormals[6] =
-	{
-		NjFloat3( 0.0f, -1.0f, 0.0f ),
-		NjFloat3( 0.0f, +1.0f, 0.0f ),
-		NjFloat3( -1.0f, 0.0f, 0.0f ),
-		NjFloat3( +1.0f, 0.0f, 0.0f ),
-		NjFloat3( 0.0f, 0.0f, -1.0f ),
-		NjFloat3( 0.0f, 0.0f, +1.0f ),
-	};
-	NjFloat3	pTangents[6] =
-	{
-		NjFloat3( -1.0f, 0.0f, 0.0f ),
-		NjFloat3( +1.0f, 0.0f, 0.0f ),
-		NjFloat3( 0.0f, 0.0f, +1.0f ),
-		NjFloat3( 0.0f, 0.0f, -1.0f ),
-		NjFloat3( -1.0f, 0.0f, 0.0f ),
-		NjFloat3( +1.0f, 0.0f, 0.0f ),
-	};
-	NjFloat3	pBiTangents[6] =
-	{
-		NjFloat3( 0.0f, 0.0f, +1.0f ),
-		NjFloat3( 0.0f, 0.0f, +1.0f ),
-		NjFloat3( 0.0f, +1.0f, 0.0f ),
-		NjFloat3( 0.0f, +1.0f, 0.0f ),
-		NjFloat3( 0.0f, +1.0f, 0.0f ),
-		NjFloat3( 0.0f, +1.0f, 0.0f ),
-	};
-
+	// Generate the input information for each texel of the light map
 	for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 	{
 		int			W = pIntSizes[2*FaceIndex+0];
@@ -276,8 +323,14 @@ void	EffectRoom::ComputeLightMaps()
 		ppLMInfos[FaceIndex]->Write();
 	}
 
+//*
 	//////////////////////////////////////////////////////////////////////////
 	// Compute direct lighting
+	ComputeShader*	pCSComputeLightMapDirect;
+	CHECK_MATERIAL( pCSComputeLightMapDirect = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "CS_Direct" ), 5 );
+	ComputeShader*	pCSComputeLightMapIndirect;
+	CHECK_MATERIAL( pCSComputeLightMapIndirect = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "CS_Indirect" ), 6 );
+
 	struct	CBRender
 	{
 		U32	LightMapSizeX;
@@ -341,6 +394,67 @@ void	EffectRoom::ComputeLightMaps()
 
 	SafeDelete( pCSComputeLightMapIndirect );
 	SafeDelete( pCSComputeLightMapDirect );
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build the final light map
+	NjHalf4*	ppContent[4];
+				ppContent[0] = new NjHalf4[LIGHTMAP_SIZE * LIGHTMAP_SIZE];
+				ppContent[1] = new NjHalf4[LIGHTMAP_SIZE * LIGHTMAP_SIZE];
+				ppContent[2] = new NjHalf4[LIGHTMAP_SIZE * LIGHTMAP_SIZE];
+				ppContent[3] = new NjHalf4[LIGHTMAP_SIZE * LIGHTMAP_SIZE];
+
+	// The first 2 maps (ceiling and floor) are easy
+	for ( int FaceIndex=0; FaceIndex < 2; FaceIndex++ )
+	{
+		ppAccumResults[FaceIndex]->Read();	// Retrieve the accumulated results for that face
+
+		LightMapResult*	pSource = ppAccumResults[FaceIndex]->m;
+		NjHalf4*		pDest = ppContent[FaceIndex];
+		for ( int Y=0; Y < LIGHTMAP_SIZE; Y++ )
+			for ( int X=0; X < LIGHTMAP_SIZE; X++, pSource++, pDest++ )
+			{
+				pDest->x = pSource->Irradiance.x;
+				pDest->y = pSource->Irradiance.y;
+				pDest->z = pSource->Irradiance.z;
+				pDest->w = pSource->Irradiance.w;
+			}
+	}
+
+	// The next 4 maps (walls) need to be packed 2 by 2
+	for ( int FaceIndex=2; FaceIndex < 6; FaceIndex++ )
+	{
+		ppAccumResults[FaceIndex]->Read();	// Retrieve the accumulated results for that face
+
+		LightMapResult*	pSource = ppAccumResults[FaceIndex]->m;
+
+		int				TargetFaceIndex = 2 + ((FaceIndex-2) >> 1);
+		int				TargetFaceOffsetY = ((FaceIndex-2) & 1) * LIGHTMAP_SIZE/2;
+		NjHalf4*		pDest = ppContent[TargetFaceIndex] + TargetFaceOffsetY*LIGHTMAP_SIZE;
+		for ( int Y=0; Y < LIGHTMAP_SIZE/2; Y++ )
+			for ( int X=0; X < LIGHTMAP_SIZE; X++, pSource++, pDest++ )
+			{
+				pDest->x = pSource->Irradiance.x;
+				pDest->y = pSource->Irradiance.y;
+				pDest->z = pSource->Irradiance.z;
+				pDest->w = pSource->Irradiance.w;
+			}
+	}
+
+	m_pTexLightMaps = new Texture2D( gs_Device, LIGHTMAP_SIZE, LIGHTMAP_SIZE, 4, PixelFormatRGBA16F::DESCRIPTOR, 1, (void**) ppContent );
+
+	SafeDelete( ppContent[0] );
+	SafeDelete( ppContent[1] );
+	SafeDelete( ppContent[2] );
+	SafeDelete( ppContent[3] );
+//*/
+	for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
+	{
+		SafeDelete( ppLMInfos[FaceIndex] );
+		SafeDelete( ppResults0[FaceIndex] );
+		SafeDelete( ppResults1[FaceIndex] );
+		SafeDelete( ppAccumResults[FaceIndex] );
+	}
 }
 
 /*

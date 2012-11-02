@@ -24,6 +24,14 @@ static const float3	LIGHT_POS1 = float3( -0.5 * ROOM_SIZE.x + 1.5 + LIGHT_SIZE.x
 static const float3	LIGHT_POS2 = float3( -0.5 * ROOM_SIZE.x + 1.5 + LIGHT_SIZE.x * (0.5 + 2.0 * 2), ROOM_CEILING_HEIGHT, 0.0 );
 static const float3	LIGHT_POS3 = float3( -0.5 * ROOM_SIZE.x + 1.5 + LIGHT_SIZE.x * (0.5 + 2.0 * 3), ROOM_CEILING_HEIGHT, 0.0 );
 
+// Wall material description
+static const float	WALL_REFLECTANCE = 0.2;
+static const float	WALL_REFLECTANCE0 = WALL_REFLECTANCE;
+static const float	WALL_REFLECTANCE1 = WALL_REFLECTANCE;
+static const float	WALL_REFLECTANCE2 = WALL_REFLECTANCE;
+static const float	WALL_REFLECTANCE3 = WALL_REFLECTANCE;
+static const float	WALL_REFLECTANCE4 = WALL_REFLECTANCE;
+static const float	WALL_REFLECTANCE5 = WALL_REFLECTANCE;
 
 struct	LightMapInfos
 {
@@ -188,7 +196,7 @@ void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset wit
 	if ( _GroupThreadID.x == 0 )
 	{
 		_Output[TexelIndex].Irradiance = SumRadiance;
-		_OutputAccum[TexelIndex].Irradiance = SumRadiance;
+		_AccumOutput[TexelIndex].Irradiance = SumRadiance;
 	}
 }
 
@@ -210,11 +218,29 @@ Ray	GenerateRayIndirect( uint _TexelIndex, uint _TexelGroup, uint _RayIndex, uin
 	return Result;
 }
 
+float4	SampleIrradiance( StructuredBuffer<LightMapResult> _PreviousPass, float2 _UV, uint2 _LightMapSize )
+{
+	float2	UV = _UV * _LightMapSize;
+	uint2	IntUV0 = uint2( floor( UV ) );
+	float2	uv = UV - IntUV0;
+	uint2	IntUV1 = min( IntUV0+1, _LightMapSize-1 );
+			IntUV0 = min( IntUV0, _LightMapSize-1 );
+
+	float4	I00 = _PreviousPass[_LightMapSize.x*IntUV0.y+IntUV0.x].Irradiance;
+	float4	I01 = _PreviousPass[_LightMapSize.x*IntUV0.y+IntUV1.x].Irradiance;
+	float4	I10 = _PreviousPass[_LightMapSize.x*IntUV1.y+IntUV0.x].Irradiance;
+	float4	I11 = _PreviousPass[_LightMapSize.x*IntUV1.y+IntUV1.x].Irradiance;
+
+	float4	I0 = lerp( I00, I01, uv.x );
+	float4	I1 = lerp( I10, I11, uv.x );
+	return lerp( I0, I1, uv.y );
+}
+
 [numthreads( 1024, 1, 1 )]
-void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a Dispatch call, per dimension of the dispatch call
-					uint3 _ThreadID			: SV_DispatchThreadID,	// Defines the global thread offset within the Dispatch call, per dimension of the group
-					uint3 _GroupThreadID	: SV_GroupThreadID,		// Defines the thread offset within the group, per dimension of the group
-					uint  _GroupIndex		: SV_GroupIndex )		// Provides a flattened index for a given thread within a given group
+void	CS_Indirect(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a Dispatch call, per dimension of the dispatch call
+						uint3 _ThreadID			: SV_DispatchThreadID,	// Defines the global thread offset within the Dispatch call, per dimension of the group
+						uint3 _GroupThreadID	: SV_GroupThreadID,		// Defines the thread offset within the group, per dimension of the group
+						uint  _GroupIndex		: SV_GroupIndex )		// Provides a flattened index for a given thread within a given group
 {
 	shSumRadianceInt = 0;
  	GroupMemoryBarrierWithGroupSync();
@@ -228,8 +254,36 @@ void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset wit
 	Ray	R = GenerateRayIndirect( TexelIndex, TexelGroup, RayIndex, RaysCount, Seed );
 
 	// Compute radiance coming from the walls
+	Intersection	I;
+	float			ClosestHitDistance = INFINITY;
+	float4			Radiance = 0.0;
 
-	float4	Radiance = Ray * IRRADIANCE_WEIGHT_DIRECT;
+	// Test lights first
+	ClosestHitDistance = min( ClosestHitDistance, IntersectRectangle( R, I, LIGHT_POS0, LIGHT_NORMAL, float3( LIGHT_SIZE.x, 0, 0 ), float3( 0, 0, LIGHT_SIZE.y ), -1 ) );
+	ClosestHitDistance = min( ClosestHitDistance, IntersectRectangle( R, I, LIGHT_POS1, LIGHT_NORMAL, float3( LIGHT_SIZE.x, 0, 0 ), float3( 0, 0, LIGHT_SIZE.y ), -1 ) );
+	ClosestHitDistance = min( ClosestHitDistance, IntersectRectangle( R, I, LIGHT_POS2, LIGHT_NORMAL, float3( LIGHT_SIZE.x, 0, 0 ), float3( 0, 0, LIGHT_SIZE.y ), -1 ) );
+	ClosestHitDistance = min( ClosestHitDistance, IntersectRectangle( R, I, LIGHT_POS3, LIGHT_NORMAL, float3( LIGHT_SIZE.x, 0, 0 ), float3( 0, 0, LIGHT_SIZE.y ), -1 ) );
+	if ( ClosestHitDistance >= INFINITY )
+	{	// This means we didn't hit a light
+		// We can safely assume we're hitting a wall
+		ClosestHitDistance = IntersectAABoxIn( R, I, ROOM_POSITION, ROOM_INV_HALF_SIZE, 0 );
+
+		// Retrieve irradiance from the previous pass
+		float4	SourceIrradiance = 0.0;
+		uint2	LightMapHalfSize = uint2( _LightMapSize.x, _LightMapSize.x/2 );
+		switch ( I.MaterialID )
+		{
+		case 0: SourceIrradiance = WALL_REFLECTANCE0 * SampleIrradiance( _PreviousPass0, I.UV, _LightMapSize.xx ); break;	// Top
+		case 1: SourceIrradiance = WALL_REFLECTANCE1 * SampleIrradiance( _PreviousPass1, I.UV, _LightMapSize.xx ); break;	// Bottom
+		case 2: SourceIrradiance = WALL_REFLECTANCE2 * SampleIrradiance( _PreviousPass2, I.UV, LightMapHalfSize ); break;	// Left
+		case 3: SourceIrradiance = WALL_REFLECTANCE3 * SampleIrradiance( _PreviousPass3, I.UV, LightMapHalfSize ); break;	// Right
+		case 4: SourceIrradiance = WALL_REFLECTANCE4 * SampleIrradiance( _PreviousPass4, I.UV, LightMapHalfSize ); break;	// Back
+		case 5: SourceIrradiance = WALL_REFLECTANCE5 * SampleIrradiance( _PreviousPass5, I.UV, LightMapHalfSize ); break;	// Front
+		}
+
+		// Convert into radiance
+		Radiance *= IRRADIANCE_WEIGHT_INDIRECT * RECITWOPI;
+	}
 
 	// Accumulate
 	uint4	RadianceInt = uint4( 16777216.0 * Radiance );
@@ -245,7 +299,7 @@ void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset wit
 	if ( _GroupThreadID.x == 0 )
 	{
 		_Output[TexelIndex].Irradiance = SumRadiance;
-		_OutputAccum[TexelIndex].Irradiance += SumRadiance;
+		_AccumOutput[TexelIndex].Irradiance += SumRadiance;
 	}
 }
 
