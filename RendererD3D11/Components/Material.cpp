@@ -24,6 +24,8 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 	, m_hCompileThread( 0 )
 #endif
 {
+	ASSERT( _pShaderCode != NULL, "Shader code is NULL!" );
+
 	m_pIncludeOverride = _pIncludeOverride;
 	m_bHasErrors = false;
 
@@ -40,15 +42,18 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 		// Just ensure the file exists !
 		FILE*	pFile;
 		fopen_s( &pFile, _pShaderFileName, "rb" );
-		ASSERT( pFile != NULL, "Shader file not found !" );
-		fclose( pFile );
+		ASSERT( pFile != NULL, "Shader file not found => You can ignore this assert but shader file will NOT be watched for modification!" );
+		if ( pFile != NULL )
+		{
+			fclose( pFile );
 
-		// Register as a watched shader
-		ms_WatchedShaders.Add( _pShaderFileName, this );
+			// Register as a watched shader
+			ms_WatchedShaders.Add( _pShaderFileName, this );
 
 #ifndef MATERIAL_COMPILE_AT_RUNTIME
-		m_LastShaderModificationTime = GetFileModTime( _pShaderFileName );
+			m_LastShaderModificationTime = GetFileModTime( _pShaderFileName );
 #endif
+		}
 	}
 #endif
 

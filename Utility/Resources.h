@@ -14,9 +14,9 @@
 #define REGISTERED_SHADER_FILES		\
 	{ IDR_SHADER_POST_FINAL,					"./Resources/Shaders/PostFinal.fx" },	\
 	{ IDR_SHADER_TEST_DISPLAY,					NULL },	\
-	{ IDR_SHADER_TRANSLUCENCY_BUILD_ZBUFFER,	"./Resources/Shaders/TranslucencyBuildZBuffer" },	\
-	{ IDR_SHADER_TRANSLUCENCY_DIFFUSION,		"./Resources/Shaders/TranslucencyDiffusion" },	\
-	{ IDR_SHADER_TRANSLUCENCY_DISPLAY,			"./Resources/Shaders/TranslucencyDisplay" },	\
+	{ IDR_SHADER_TRANSLUCENCY_BUILD_ZBUFFER,	"./Resources/Shaders/TranslucencyBuildZBuffer.fx" },	\
+	{ IDR_SHADER_TRANSLUCENCY_DIFFUSION,		"./Resources/Shaders/TranslucencyDiffusion.fx" },	\
+	{ IDR_SHADER_TRANSLUCENCY_DISPLAY,			"./Resources/Shaders/TranslucencyDisplay.fx" },	\
 	{ IDR_SHADER_ROOM_DISPLAY,					"./Resources/Shaders/RoomDisplay.fx" },	\
 	{ IDR_SHADER_ROOM_TESSELATION,				"./Resources/Shaders/RoomTesselation.fx" },	\
 	{ IDR_SHADER_ROOM_TEST_COMPUTE,				"./Resources/Shaders/RoomTestCompute.fx" },	\
