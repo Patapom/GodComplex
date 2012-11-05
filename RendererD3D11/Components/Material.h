@@ -123,6 +123,9 @@ public:	 // PROPERTIES
 		return pResult;
 	}
 
+	const IVertexFormatDescriptor&	GetFormat()	{ return m_Format; }
+
+
 public:	 // METHODS
 
 	Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride );

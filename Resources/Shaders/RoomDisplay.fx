@@ -48,8 +48,17 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 //	return float4( _In.Normal, 1.0 );
 //	return float4( _In.UV, 0, 1.0 );
 //	return float4( _In.UV2, 1.0 );
+//	return float4( _In.UV2.xy, 0, 1.0 );
 
-	return _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );
+// 	return 0.25 * (1+_In.UV2.z);
+// 	return 10.0 * _TexLightMaps.SampleLevel( LinearClamp, float3( _In.UV, 1 ), 0.0 );
+	return 5.0 * _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );
+//	return _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 ) / 20.0;
+//	return 0.2 * _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );
+//	return _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );
+
+	float3	Normal = _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 ).xyz;
+	return float4( 100.0 * abs( Normal - _In.Normal ), 0 );
 
 // 	float4	Color = _TexLightMap.SampleLevel( LinearClamp, _In.UV, 0.0 );
 // 	return float4( Color.xyz, 1.0 );

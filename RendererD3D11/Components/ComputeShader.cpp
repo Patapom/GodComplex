@@ -19,6 +19,10 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, con
 	, m_hCompileThread( 0 )
 #endif
 {
+#ifndef DIRECTX11
+	ASSERT( false, "You can't use Compute Shaders if you don't define DIRECTX11!" );
+#endif
+
 	m_pIncludeOverride = _pIncludeOverride;
 	m_bHasErrors = false;
 
@@ -733,7 +737,6 @@ ComputeShader::StructuredBuffer::~StructuredBuffer()
 	m_pShaderView->Release();
 	m_pCPUBuffer->Release();
 	m_pBuffer->Release();
-	m_pCPUBuffer->Release();
 }
 
 void	ComputeShader::StructuredBuffer::Read( void* _pData, int _ElementsCount ) const

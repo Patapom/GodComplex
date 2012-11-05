@@ -155,10 +155,15 @@ void	Material::CompileShaders( const char* _pShaderCode )
 	// Compile the optional hull shader
 	if ( !m_bHasErrors && m_pEntryPointHS != NULL )
 	{
+#ifndef DIRECTX11
+		ASSERT( false, "You can't use Hull Shaders if you don't define DIRECTX11!" );
+#endif
 		ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointHS, "hs_5_0" );
 		if ( pShader != NULL )
 		{
-			Check( m_Device.DXDevice().CreateHullShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pHS ) );
+			void*	pBuffer = pShader->GetBufferPointer();
+			U32		BufferLength = pShader->GetBufferSize();
+			Check( m_Device.DXDevice().CreateHullShader( pBuffer, BufferLength, NULL, &m_pHS ) );
 			ASSERT( m_pHS != NULL, "Failed to create hull shader !" );
 #ifndef GODCOMPLEX
 			m_HSConstants.Enumerate( *pShader );
@@ -175,6 +180,9 @@ void	Material::CompileShaders( const char* _pShaderCode )
 	// Compile the optional domain shader
 	if ( !m_bHasErrors && m_pEntryPointDS != NULL )
 	{
+#ifndef DIRECTX11
+		ASSERT( false, "You can't use Domain Shaders if you don't define DIRECTX11!" );
+#endif
 		ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointDS, "ds_5_0" );
 		if ( pShader != NULL )
 		{

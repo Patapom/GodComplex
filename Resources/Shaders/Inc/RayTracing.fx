@@ -135,7 +135,7 @@ struct	Ray
 struct	Intersection
 {
 	float	Distance;
-//	float3	Position;
+	float3	Position;
 	float3	Normal;
 	float3	Tangent;
 	float3	BiTangent;
@@ -143,28 +143,26 @@ struct	Intersection
 	uint	MaterialID;
 };
 
-// Initializes the intersection structure
-// void	InitializeIntersection( inout Intersection _Intersection, float _Distance, float3 _Normal, float3 _Tangent, uint _MaterialID )
-// {
-// 	_Intersection.Distance = _Distance;
-// 	_Intersection.Normal = _Normal;
-// 	_Intersection.Tangent = _Tangent;
-// 	_Intersection.MaterialID = _MaterialID;
-// }
-
 // Updates the intersection structure if the provided distance is closer than existing intersection
-void	UpdateClosestIntersection( inout Intersection _Intersection, float _Distance, const float2 _InvHalfSize, const float3 _Center, const float3 _Normal, const float3 _Tangent, const float3 _BiTangent, const uint _MaterialID )
+void	UpdateClosestIntersection( Ray _Ray, inout Intersection _Intersection, float _Distance, const float2 _InvHalfSize, const float3 _Center, const float3 _Normal, const float3 _Tangent, const float3 _BiTangent, const uint _MaterialID )
 {
 	float	Closer = saturate( 10000.0 * (_Intersection.Distance - _Distance) );	// 0 if superior or equal, 1 if inferior
 	_Intersection.Distance = lerp( _Intersection.Distance, _Distance, Closer );
+	_Intersection.Position = lerp( _Intersection.Position, _Ray.P + _Distance * _Ray.V, Closer );
 	_Intersection.Normal = lerp( _Intersection.Normal, _Normal, Closer );
 	_Intersection.Tangent = lerp( _Intersection.Tangent, _Tangent, Closer );
 	_Intersection.BiTangent = lerp( _Intersection.BiTangent, _BiTangent, Closer );
 	_Intersection.MaterialID = lerp( _Intersection.MaterialID, _MaterialID, Closer );
 
-	float3	DPos = _Intersection.Distance - _Center;
-	float2	UV = float2( dot( DPos, _Tangent ), dot( DPos, _BiTangent ) ) * _InvHalfSize;
+	float3	DPos = _Intersection.Position - _Center;
+	float2	UV = 0.5 * (1.0 + float2( dot( DPos, _Tangent ), dot( DPos, _BiTangent ) ) * _InvHalfSize);
 	_Intersection.UV = lerp( _Intersection.UV, UV, Closer );
+}
+
+// Clamps to ]-infinity,-_Tolerance] and [+_Tolerance,+infinity[
+float3	EnsureNotZeroFlubb( float3 _Value, float _Tolerance )
+{
+	return 2.0 * _Value - max( _Value, _Tolerance ) - min( _Value, -_Tolerance ) + _Tolerance * (sign( _Value ) + 1.0 - abs( sign( _Value ) ));
 }
 
 // AABox intersection, knowing that we are INSIDE the box
@@ -178,7 +176,7 @@ float	IntersectAABoxIn( Ray _Ray, inout Intersection _Intersection, const float3
 	float3	V = _Ray.V * _InvHalfSize;
 
 	// Now we look for an intersection with a box of size [-1,+1]
-	float3	InvV = 1.0 / V;
+	float3	InvV = 1.0 / EnsureNotZeroFlubb( V, 1e-6 );
 	float3	DeltaPos = (+1.0 - P) * InvV;	// Distances to positive +X +Y +Z faces
 	float3	DeltaNeg = (-1.0 - P) * InvV;	// Distances to negative -X -Y -Z faces
 
@@ -188,12 +186,12 @@ float	IntersectAABoxIn( Ray _Ray, inout Intersection _Intersection, const float3
 
 	// Isolate closest hit
 	const float3	HalfSize = 1.0 / _InvHalfSize;
-	UpdateClosestIntersection( _Intersection, DeltaPos.y, float2( _InvHalfSize.x, _InvHalfSize.z ), _Position + float3( 0, +HalfSize.y, 0 ), float3( 0, -1, 0 ), float3( -1, 0, 0 ), float3( 0, 0, +1 ), _BaseMaterialID + 0 );	// Ceiling
-	UpdateClosestIntersection( _Intersection, DeltaNeg.y, float2( _InvHalfSize.x, _InvHalfSize.z ), _Position + float3( 0, -HalfSize.y, 0 ), float3( 0, +1, 0 ), float3( +1, 0, 0 ), float3( 0, 0, +1 ), _BaseMaterialID + 1 );	// Floor
-	UpdateClosestIntersection( _Intersection, DeltaPos.x, float2( _InvHalfSize.z, _InvHalfSize.y ), _Position + float3( -HalfSize.x, 0, 0 ), float3( -1, 0, 0 ), float3( 0, 0, +1 ), float3( 0, +1, 0 ), _BaseMaterialID + 2 );	// Left
-	UpdateClosestIntersection( _Intersection, DeltaNeg.x, float2( _InvHalfSize.z, _InvHalfSize.y ), _Position + float3( +HalfSize.x, 0, 0 ), float3( +1, 0, 0 ), float3( 0, 0, -1 ), float3( 0, +1, 0 ), _BaseMaterialID + 3 );	// Right
-	UpdateClosestIntersection( _Intersection, DeltaPos.z, float2( _InvHalfSize.x, _InvHalfSize.y ), _Position + float3( 0, 0, -HalfSize.z ), float3( 0, 0, -1 ), float3( -1, 0, 0 ), float3( 0, +1, 0 ), _BaseMaterialID + 4 );	// Back
-	UpdateClosestIntersection( _Intersection, DeltaNeg.z, float2( _InvHalfSize.x, _InvHalfSize.y ), _Position + float3( 0, 0, +HalfSize.z ), float3( 0, 0, +1 ), float3( +1, 0, 0 ), float3( 0, +1, 0 ), _BaseMaterialID + 5 );	// Front
+	UpdateClosestIntersection( _Ray, _Intersection, DeltaPos.y, float2( _InvHalfSize.x, _InvHalfSize.z ), _Position + float3( 0, +HalfSize.y, 0 ), float3( 0, -1, 0 ), float3( -1, 0, 0 ), float3( 0, 0, +1 ), _BaseMaterialID + 0 );	// Ceiling
+	UpdateClosestIntersection( _Ray, _Intersection, DeltaNeg.y, float2( _InvHalfSize.x, _InvHalfSize.z ), _Position + float3( 0, -HalfSize.y, 0 ), float3( 0, +1, 0 ), float3( +1, 0, 0 ), float3( 0, 0, +1 ), _BaseMaterialID + 1 );	// Floor
+	UpdateClosestIntersection( _Ray, _Intersection, DeltaPos.x, float2( _InvHalfSize.z, _InvHalfSize.y ), _Position + float3( -HalfSize.x, 0, 0 ), float3( +1, 0, 0 ), float3( 0, 0, +1 ), float3( 0, +1, 0 ), _BaseMaterialID + 2 );	// Left
+ 	UpdateClosestIntersection( _Ray, _Intersection, DeltaNeg.x, float2( _InvHalfSize.z, _InvHalfSize.y ), _Position + float3( +HalfSize.x, 0, 0 ), float3( -1, 0, 0 ), float3( 0, 0, -1 ), float3( 0, +1, 0 ), _BaseMaterialID + 3 );	// Right
+ 	UpdateClosestIntersection( _Ray, _Intersection, DeltaPos.z, float2( _InvHalfSize.x, _InvHalfSize.y ), _Position + float3( 0, 0, -HalfSize.z ), float3( 0, 0, +1 ), float3( -1, 0, 0 ), float3( 0, +1, 0 ), _BaseMaterialID + 4 );	// Back
+ 	UpdateClosestIntersection( _Ray, _Intersection, DeltaNeg.z, float2( _InvHalfSize.x, _InvHalfSize.y ), _Position + float3( 0, 0, +HalfSize.z ), float3( 0, 0, -1 ), float3( +1, 0, 0 ), float3( 0, +1, 0 ), _BaseMaterialID + 5 );	// Front
 
 	return _Intersection.Distance;
 }
@@ -216,10 +214,10 @@ float	IntersectRectangle( Ray _Ray, inout Intersection _Intersection, const floa
 	_Intersection.Distance = lerp( _Intersection.Distance, INFINITY, saturate( -10000.0 * _Intersection.Distance ) );
 
 	// Compute hit position on the plane
-	float3	HitPosition = _Ray.P + _Intersection.Distance * _Ray.V;
+	_Intersection.Position = _Ray.P + _Intersection.Distance * _Ray.V;
 
 	// Compute "UV coordinates"
-	float3	DPos = HitPosition - _Position;
+	float3	DPos = _Intersection.Position - _Position;
 	_Intersection.UV = float2( dot( DPos, _X ), dot( DPos, _Z ) );
 
 	// Patch hit distance if UV is outside [-1,+1]

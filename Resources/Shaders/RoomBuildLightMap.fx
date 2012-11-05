@@ -12,9 +12,10 @@ static const float	IRRADIANCE_WEIGHT_INDIRECT = TWOPI / (GROUPS_PER_TEXEL_INDIRE
 
 // Room description
 static const float3	ROOM_SIZE = float3( 10.0, 5.0, 10.0 );		// 10x5x10 m^3
-static const float3	ROOM_INV_HALF_SIZE = 2.0 / ROOM_SIZE;
+static const float3	ROOM_HALF_SIZE = 0.5 * ROOM_SIZE;
+static const float3	ROOM_INV_HALF_SIZE = 1.0 / ROOM_HALF_SIZE;
 static const float3	ROOM_POSITION = float3( 0.0, 2.5, 0.0 );	// 0 is the floor's height
-static const float	ROOM_CEILING_HEIGHT = ROOM_POSITION.y + 0.5 * ROOM_SIZE.y; 
+static const float	ROOM_CEILING_HEIGHT = ROOM_POSITION.y + ROOM_HALF_SIZE.y; 
 
 // Light description
 static const float2	LIGHT_SIZE = float2( 1.0, 8.0 );
@@ -25,7 +26,8 @@ static const float3	LIGHT_POS2 = float3( -0.5 * ROOM_SIZE.x + 1.5 + LIGHT_SIZE.x
 static const float3	LIGHT_POS3 = float3( -0.5 * ROOM_SIZE.x + 1.5 + LIGHT_SIZE.x * (0.5 + 2.0 * 3), ROOM_CEILING_HEIGHT, 0.0 );
 
 // Wall material description
-static const float	WALL_REFLECTANCE = 0.2;
+//static const float	WALL_REFLECTANCE = 0.2;###
+static const float	WALL_REFLECTANCE = 1.0;
 static const float	WALL_REFLECTANCE0 = WALL_REFLECTANCE;
 static const float	WALL_REFLECTANCE1 = WALL_REFLECTANCE;
 static const float	WALL_REFLECTANCE2 = WALL_REFLECTANCE;
@@ -174,11 +176,11 @@ void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset wit
 	GenerateRayDirect( TexelIndex, TexelGroup, RayIndex, RaysCount, Seed, Position, Normal, ToLight0, ToLight1, ToLight2, ToLight3 );
 
 	// Compute radiance coming from the 4 lights
-	float4	Radiance = float4(	-dot( LIGHT_NORMAL, ToLight0.xyz ) * ToLight0.w,
-								-dot( LIGHT_NORMAL, ToLight1.xyz ) * ToLight1.w,
-								-dot( LIGHT_NORMAL, ToLight2.xyz ) * ToLight2.w,
-								-dot( LIGHT_NORMAL, ToLight3.xyz ) * ToLight3.w
-							 ) * dot( Normal, ToLight0.xyz ) * IRRADIANCE_WEIGHT_DIRECT;
+	float4	Radiance = float4(	saturate( -dot( LIGHT_NORMAL, ToLight0.xyz ) ) * ToLight0.w,
+								saturate( -dot( LIGHT_NORMAL, ToLight1.xyz ) ) * ToLight1.w,
+								saturate( -dot( LIGHT_NORMAL, ToLight2.xyz ) ) * ToLight2.w,
+								saturate( -dot( LIGHT_NORMAL, ToLight3.xyz ) ) * ToLight3.w
+							 ) * saturate( dot( Normal, ToLight0.xyz ) ) * IRRADIANCE_WEIGHT_DIRECT;
 
 //float4	Radiance = 0.5 * IRRADIANCE_WEIGHT_DIRECT;
 
@@ -214,6 +216,8 @@ Ray	GenerateRayIndirect( uint _TexelIndex, uint _TexelGroup, uint _RayIndex, uin
 	Ray	Result;
 		Result.P = Source.Position + 1e-3 * Source.Normal;	// Offset just a chouia
 		Result.V = Direction.x * Source.Tangent + Direction.y * Source.BiTangent + Direction.z * Source.Normal;
+
+//Result.V = Source.Normal;###
 
 	return Result;
 }
@@ -251,7 +255,7 @@ void	CS_Indirect(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset w
 	uint4	Seed = BuildSeed( TexelGroup, _Input[TexelIndex] );
 
 	// Generate the 4 rays
-	Ray	R = GenerateRayIndirect( TexelIndex, TexelGroup, RayIndex, RaysCount, Seed );
+	Ray		R = GenerateRayIndirect( TexelIndex, TexelGroup, RayIndex, RaysCount, Seed );
 
 	// Compute radiance coming from the walls
 	Intersection	I;
@@ -259,11 +263,17 @@ void	CS_Indirect(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset w
 	float4			Radiance = 0.0;
 
 	// Test lights first
-	ClosestHitDistance = min( ClosestHitDistance, IntersectRectangle( R, I, LIGHT_POS0, LIGHT_NORMAL, float3( LIGHT_SIZE.x, 0, 0 ), float3( 0, 0, LIGHT_SIZE.y ), -1 ) );
-	ClosestHitDistance = min( ClosestHitDistance, IntersectRectangle( R, I, LIGHT_POS1, LIGHT_NORMAL, float3( LIGHT_SIZE.x, 0, 0 ), float3( 0, 0, LIGHT_SIZE.y ), -1 ) );
-	ClosestHitDistance = min( ClosestHitDistance, IntersectRectangle( R, I, LIGHT_POS2, LIGHT_NORMAL, float3( LIGHT_SIZE.x, 0, 0 ), float3( 0, 0, LIGHT_SIZE.y ), -1 ) );
-	ClosestHitDistance = min( ClosestHitDistance, IntersectRectangle( R, I, LIGHT_POS3, LIGHT_NORMAL, float3( LIGHT_SIZE.x, 0, 0 ), float3( 0, 0, LIGHT_SIZE.y ), -1 ) );
-	if ( ClosestHitDistance >= INFINITY )
+// 	ClosestHitDistance = min( ClosestHitDistance, IntersectRectangle( R, I, LIGHT_POS0, LIGHT_NORMAL, float3( LIGHT_SIZE.x, 0, 0 ), float3( 0, 0, LIGHT_SIZE.y ), -1 ) );
+// 	ClosestHitDistance = min( ClosestHitDistance, IntersectRectangle( R, I, LIGHT_POS1, LIGHT_NORMAL, float3( LIGHT_SIZE.x, 0, 0 ), float3( 0, 0, LIGHT_SIZE.y ), -1 ) );
+// 	ClosestHitDistance = min( ClosestHitDistance, IntersectRectangle( R, I, LIGHT_POS2, LIGHT_NORMAL, float3( LIGHT_SIZE.x, 0, 0 ), float3( 0, 0, LIGHT_SIZE.y ), -1 ) );
+// 	ClosestHitDistance = min( ClosestHitDistance, IntersectRectangle( R, I, LIGHT_POS3, LIGHT_NORMAL, float3( LIGHT_SIZE.x, 0, 0 ), float3( 0, 0, LIGHT_SIZE.y ), -1 ) );
+
+I.Distance = INFINITY;
+I.Position = I.Normal = I.Tangent = I.BiTangent = 0.0;
+I.UV = 0.0;
+I.MaterialID = -1;
+
+//	if ( ClosestHitDistance >= INFINITY )
 	{	// This means we didn't hit a light
 		// We can safely assume we're hitting a wall
 		ClosestHitDistance = IntersectAABoxIn( R, I, ROOM_POSITION, ROOM_INV_HALF_SIZE, 0 );
@@ -282,7 +292,12 @@ void	CS_Indirect(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset w
 		}
 
 		// Convert into radiance
-		Radiance *= IRRADIANCE_WEIGHT_INDIRECT * RECITWOPI;
+		Radiance = SourceIrradiance * IRRADIANCE_WEIGHT_INDIRECT * RECITWOPI;
+
+// Radiance = float4( abs( R.V ), 0 );
+// Radiance = float4( R.P, 0 );
+//Radiance = I.MaterialID;
+//Radiance = 0.0004 * I.Distance;
 	}
 
 	// Accumulate
@@ -300,6 +315,13 @@ void	CS_Indirect(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset w
 	{
 		_Output[TexelIndex].Irradiance = SumRadiance;
 		_AccumOutput[TexelIndex].Irradiance += SumRadiance;
+//		_AccumOutput[TexelIndex].Irradiance = SumRadiance;
+//		_AccumOutput[TexelIndex].Irradiance = I.Distance;
+//		_AccumOutput[TexelIndex].Irradiance = float4( I.UV, 0, 0 );
+//		_AccumOutput[TexelIndex].Irradiance = float4( I.Position, 0 );
+//		_AccumOutput[TexelIndex].Irradiance = float4( R.P, 0 );
+//		_AccumOutput[TexelIndex].Irradiance = float4( R.V, 0 );
+//		_AccumOutput[TexelIndex].Irradiance = float4( 1, 0, 0, 1 );
 	}
 }
 

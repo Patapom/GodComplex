@@ -7,7 +7,7 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
- 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T2T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
+ 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T2T3::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
 // 	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_RENDER_CUBEMAP, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PS" ), 2 );
 
  	CHECK_MATERIAL( m_pMatTestTesselation = CreateMaterial( IDR_SHADER_ROOM_TESSELATION, VertexFormatP3T2::DESCRIPTOR, "VS", "HS", "DS", NULL, "PS" ), 3 );
@@ -82,9 +82,9 @@ void	EffectRoom::Render( float _Time, float _DeltaTime )
 //		gs_Device.SetRenderTarget( m_RTTarget, &gs_Device.DefaultDepthStencil() );
  		gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4::Zero );
 		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), &gs_Device.DefaultDepthStencil() );
-		gs_Device.SetStates( gs_Device.m_pRS_CullNone, gs_Device.m_pDS_ReadWriteLess, NULL );
+		gs_Device.SetStates( gs_Device.m_pRS_CullNone, gs_Device.m_pDS_ReadWriteLess, gs_Device.m_pBS_Disabled );
 
-//		m_pTexLightMaps->SetPS( 10 );
+		m_pTexLightMaps->SetPS( 10 );
 
 		// Render the room
 		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( _TV(1.0f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
@@ -176,14 +176,16 @@ void	EffectRoom::BuildRoom()
 		NjFloat3( 0.0f, +1.0f, 0.0f ),
 		NjFloat3( 0.0f, +1.0f, 0.0f ),
 	};
+	static const float	SCALED_V = 0.5f - 1.0f / LIGHTMAP_SIZE;			// So we don't sample other texels from adjacent faces...
+	static const float	SCALED_OFFSET = 0.5f + 1.0f / LIGHTMAP_SIZE;
 	NjFloat4	pLightMapUVs[6] = 
 	{
 		NjFloat4( 0.0f, 0.0f, 1.0f, 1.0f ),
 		NjFloat4( 0.0f, 0.0f, 1.0f, 1.0f ),
-		NjFloat4( 0.0f, 0.0f, 1.0f, 0.5f ),
-		NjFloat4( 0.0f, 0.5f, 1.0f, 0.5f ),
-		NjFloat4( 0.0f, 0.0f, 1.0f, 0.5f ),
-		NjFloat4( 0.0f, 0.5f, 1.0f, 0.5f ),
+		NjFloat4( 0.0f, 0.0f, 1.0f, SCALED_V ),
+		NjFloat4( 0.0f, SCALED_OFFSET, 1.0f, SCALED_V ),
+		NjFloat4( 0.0f, 0.0f, 1.0f, SCALED_V ),
+		NjFloat4( 0.0f, SCALED_OFFSET, 1.0f, SCALED_V ),
 	};
 	float		pLightMapArrayIndex[6] =
 	{
@@ -211,28 +213,28 @@ void	EffectRoom::BuildRoom()
 		pVertices[4*FaceIndex+0].Normal = N;
 		pVertices[4*FaceIndex+0].Tangent = T;
 		pVertices[4*FaceIndex+0].UV.Set( 0.0f, 0.0f );
-		pVertices[4*FaceIndex+0].UV2.Set( UV.x + UV.z * 0.0f, UV.y + UV.w * 0.0f, ArrayIndex );
+		pVertices[4*FaceIndex+0].UV2.Set( UV.x + UV.z * 0.0f, UV.y + UV.w * 1.0f, ArrayIndex );
 
 		// Bottom-left corner
 		pVertices[4*FaceIndex+1].Position = C - 0.5f * Size.x * T - 0.5f * Size.y * B;
 		pVertices[4*FaceIndex+1].Normal = N;
 		pVertices[4*FaceIndex+1].Tangent = T;
 		pVertices[4*FaceIndex+1].UV.Set( 0.0f, 1.0f );
-		pVertices[4*FaceIndex+1].UV2.Set( UV.x + UV.z * 0.0f, UV.y + UV.w * 1.0f, ArrayIndex );
+		pVertices[4*FaceIndex+1].UV2.Set( UV.x + UV.z * 0.0f, UV.y + UV.w * 0.0f, ArrayIndex );
 
 		// Bottom-right corner
 		pVertices[4*FaceIndex+2].Position = C + 0.5f * Size.x * T - 0.5f * Size.y * B;
 		pVertices[4*FaceIndex+2].Normal = N;
 		pVertices[4*FaceIndex+2].Tangent = T;
 		pVertices[4*FaceIndex+2].UV.Set( 1.0f, 1.0f );
-		pVertices[4*FaceIndex+2].UV2.Set( UV.x + UV.z * 1.0f, UV.y + UV.w * 1.0f, ArrayIndex );
+		pVertices[4*FaceIndex+2].UV2.Set( UV.x + UV.z * 1.0f, UV.y + UV.w * 0.0f, ArrayIndex );
 
 		// Top-right corner
 		pVertices[4*FaceIndex+3].Position = C + 0.5f * Size.x * T + 0.5f * Size.y * B;
 		pVertices[4*FaceIndex+3].Normal = N;
 		pVertices[4*FaceIndex+3].Tangent = T;
 		pVertices[4*FaceIndex+3].UV.Set( 1.0f, 0.0f );
-		pVertices[4*FaceIndex+3].UV2.Set( UV.x + UV.z * 1.0f, UV.y + UV.w * 0.0f, ArrayIndex );
+		pVertices[4*FaceIndex+3].UV2.Set( UV.x + UV.z * 1.0f, UV.y + UV.w * 1.0f, ArrayIndex );
 
 		// Build indices
 		pIndices[6*FaceIndex+0] = 4 * FaceIndex + 0;
@@ -364,7 +366,7 @@ void	EffectRoom::BuildRoom()
 	// Compute indirect lighting
 	pCSComputeLightMapIndirect->Use();
 
-	for ( int BounceIndex=0; BounceIndex < 10; BounceIndex++ )
+	for ( int BounceIndex=0; BounceIndex < 1; BounceIndex++ )
 	{
 		// Upload previous pass's results
 		for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
