@@ -29,7 +29,7 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 // 		m_pCSTest->Run( 2, 2, 1 );
 // 
 // 		Output.Read();
-// 		SafeDelete( m_pCSTest );
+// 		delete m_pCSTest );
 // 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -63,16 +63,16 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 
 EffectRoom::~EffectRoom()
 {
- 	SafeDelete( m_pCB_Object );
- 	SafeDelete( m_pCB_Tesselate );
+ 	delete m_pCB_Object;
+ 	delete m_pCB_Tesselate;
 
-	SafeDelete( m_pMatRenderCubeMap );
- 	SafeDelete( m_pMatDisplay );
- 	SafeDelete( m_pMatTestTesselation );
+	delete m_pMatRenderCubeMap;
+ 	delete m_pMatDisplay;
+ 	delete m_pMatTestTesselation;
 
-	SafeDelete( m_pPrimTesselatedQuad );
-	SafeDelete( m_pPrimRoom );
-	SafeDelete( m_pTexLightMaps );
+	delete m_pPrimTesselatedQuad;
+	delete m_pPrimRoom;
+	delete m_pTexLightMaps;
 }
 
 void	EffectRoom::Render( float _Time, float _DeltaTime )
@@ -392,8 +392,8 @@ void	EffectRoom::BuildRoom()
 		}
 	}
 
-	SafeDelete( pCSComputeLightMapIndirect );
-	SafeDelete( pCSComputeLightMapDirect );
+	delete pCSComputeLightMapIndirect;
+	delete pCSComputeLightMapDirect;
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -443,17 +443,17 @@ void	EffectRoom::BuildRoom()
 
 	m_pTexLightMaps = new Texture2D( gs_Device, LIGHTMAP_SIZE, LIGHTMAP_SIZE, 4, PixelFormatRGBA16F::DESCRIPTOR, 1, (void**) ppContent );
 
-	SafeDelete( ppContent[0] );
-	SafeDelete( ppContent[1] );
-	SafeDelete( ppContent[2] );
-	SafeDelete( ppContent[3] );
+	delete ppContent[0];
+	delete ppContent[1];
+	delete ppContent[2];
+	delete ppContent[3];
 //*/
 	for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 	{
-		SafeDelete( ppLMInfos[FaceIndex] );
-		SafeDelete( ppResults0[FaceIndex] );
-		SafeDelete( ppResults1[FaceIndex] );
-		SafeDelete( ppAccumResults[FaceIndex] );
+		delete ppLMInfos[FaceIndex];
+		delete ppResults0[FaceIndex];
+		delete ppResults1[FaceIndex];
+		delete ppAccumResults[FaceIndex];
 	}
 }
 

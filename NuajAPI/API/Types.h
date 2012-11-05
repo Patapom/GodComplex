@@ -28,7 +28,7 @@ typedef int NjResourceID;
 //////////////////////////////////////////////////////////////////////////
 //
 #ifndef GODCOMPLEX
-template<typename T> void		SafeDelete( T*& _pBuffer )
+template<typename T> void		delete T*& _pBuffer )
 {
 	if ( _pBuffer == NULL )
 		return;
@@ -36,32 +36,32 @@ template<typename T> void		SafeDelete( T*& _pBuffer )
 	_pBuffer = NULL;
 }
 
-template<typename T> void		SafeDeleteArray( T*& _pBuffer )
+template<typename T> void		delete[] T*& _pBuffer )
 {
 	if ( _pBuffer == NULL )
 		return;
 	delete[] _pBuffer;
 	_pBuffer = NULL;
 }
-#else
-//For the GodComplex intro, don't use templates! That makes the exe fat!
-static void		SafeDelete__( void*& _pBuffer )
-{
-	if ( _pBuffer == 0 )
-		return;
-	delete _pBuffer;
-	_pBuffer = 0;
-}
-
-static void		SafeDeleteArray__( void*& _pBuffer )
-{
-	if ( _pBuffer == 0 )
-		return;
-	delete[] _pBuffer;
-	_pBuffer = 0;
-}
-#define SafeDelete( a )			SafeDelete__( (void*&) (a) );
-#define SafeDeleteArray( a )	SafeDeleteArray__( (void*&) (a) );
+//#else
+// //For the GodComplex intro, don't use templates! That makes the exe fat!
+// static void		SafeDelete__( void*& _pBuffer )
+// {
+// 	if ( _pBuffer == 0 )
+// 		return;
+// 	delete _pBuffer;
+// 	_pBuffer = 0;
+// }
+// 
+// static void		SafeDeleteArray__( void*& _pBuffer )
+// {
+// 	if ( _pBuffer == 0 )
+// 		return;
+// 	delete[] _pBuffer;
+// 	_pBuffer = 0;
+// }
+// #define delete a )			SafeDelete__( (void*&) (a) );
+// #define delete[] a )	SafeDeleteArray__( (void*&) (a) );
 #endif
 
 #include "../Math/Math.h"

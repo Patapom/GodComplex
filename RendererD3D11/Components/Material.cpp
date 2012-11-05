@@ -108,14 +108,14 @@ Material::~Material()
 	}
 #endif
 
-	SafeDeleteArray( m_pShaderPath );
+	if ( m_pShaderPath != NULL ) { delete[] m_pShaderPath; m_pShaderPath = NULL; }
 	if ( m_pVertexLayout != NULL ) { m_pVertexLayout->Release(); m_pVertexLayout = NULL; }
 	if ( m_pVS != NULL ) { m_pVS->Release(); m_pVS = NULL; }
 	if ( m_pHS != NULL ) { m_pHS->Release(); m_pHS = NULL; }
 	if ( m_pDS != NULL ) { m_pDS->Release(); m_pDS = NULL; }
 	if ( m_pGS != NULL ) { m_pGS->Release(); m_pGS = NULL; }
 	if ( m_pPS != NULL ) { m_pPS->Release(); m_pPS = NULL; }
-	SafeDeleteArray( m_pMacros );
+	if ( m_pMacros != NULL ) { delete[] m_pMacros; m_pMacros = NULL; }
 }
 
 void	Material::CompileShaders( const char* _pShaderCode )

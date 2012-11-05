@@ -234,7 +234,7 @@ public:		// METHODS
 
 	SB() : m( NULL ), m_pBuffer( NULL ) {}
 	SB( Device& _Device, int _ElementsCount, bool _bWriteable ) : m( NULL ), m_pBuffer( NULL ) { Init( _Device, _ElementsCount, _bWriteable ); }
-	~SB()								{ SafeDelete( m_pBuffer ); SafeDeleteArray( m ); }
+	~SB()								{ delete m_pBuffer; delete[] m; }
 
 	void	Init( Device& _Device, int _ElementsCount, bool _bWriteable )
 	{

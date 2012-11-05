@@ -94,9 +94,9 @@ ComputeShader::~ComputeShader()
 	}
 #endif
 
-	SafeDeleteArray( m_pShaderPath );
+	if ( m_pShaderPath != NULL ) { delete[] m_pShaderPath; m_pShaderPath = NULL; }
 	if ( m_pCS != NULL ) { m_pCS->Release(); m_pCS = NULL; }
-	SafeDeleteArray( m_pMacros );
+	if ( m_pMacros != NULL ) { delete[] m_pMacros; m_pMacros = NULL; }
 }
 
 void	ComputeShader::CompileShaders( const char* _pShaderCode )

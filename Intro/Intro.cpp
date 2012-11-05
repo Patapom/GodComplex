@@ -95,26 +95,26 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 void	IntroExit()
 {
 	// Release effects
-	SafeDelete( gs_pEffectTranslucency );
-	SafeDelete( gs_pEffectRoom );
+	delete gs_pEffectTranslucency;
+	delete gs_pEffectRoom;
 
 	// Release constant buffers
-	SafeDelete( gs_pCB_Test );
-	SafeDelete( gs_pCB_Global );
+	delete gs_pCB_Test;
+	delete gs_pCB_Global;
 
 	// Release materials
- 	SafeDelete( gs_pMatPostFinal );
+ 	delete gs_pMatPostFinal;
 
 	// Release primitives
-	SafeDelete( gs_pPrimQuad );
+	delete gs_pPrimQuad;
 
 	// Release render targets & textures
 	Delete3DTextures();
 	Delete2DTextures();
-	SafeDelete( gs_pRTHDR );
+	delete gs_pRTHDR;
 
 	// Release the camera
-	SafeDelete( gs_pCamera );
+	delete gs_pCamera;
 }
 
 bool	IntroDo( float _Time, float _DeltaTime )
