@@ -85,9 +85,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create effects
 	{
-		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), ERR_EFFECT_ROOM );
-//		gs_pEffectRoom->RenderLightmap( _Delegate );
-
+//		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
 		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
 	}
 
@@ -142,10 +140,10 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	// Render some shit to the HDR buffer
 	gs_Device.SetRenderTarget( *gs_pRTHDR, &gs_Device.DefaultDepthStencil() );
 
-	gs_pEffectRoom->Render( _Time, _DeltaTime );
-//	gs_pEffectTranslucency->Render( _Time, _DeltaTime );
+//	gs_pEffectRoom->Render( _Time, _DeltaTime );
+	gs_pEffectTranslucency->Render( _Time, _DeltaTime );
 
-/*
+//*
 	// Setup default states
 	gs_Device.SetStates( gs_Device.m_pRS_CullNone, gs_Device.m_pDS_Disabled, gs_Device.m_pBS_Disabled );
 
@@ -166,7 +164,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 		gs_pPrimQuad->Render( M );
 
 	USING_MATERIAL_END
-*/
+//*/
 
 	// Present !
 	gs_Device.DXSwapChain().Present( 0, 0 );
