@@ -76,10 +76,14 @@ RWStructuredBuffer<LightMapResult>	_AccumOutput : register( u1 );
 
 //////////////////////////////////////////////////////////////////////////
 // Builds the seeds for the RNGs
-uint4	BuildSeed( uint _TexelGroup, LightMapInfos _Infos )
+uint4	BuildSeed( uint _TexelIndex, LightMapInfos _Infos )
 {
-	uint	Seed3 = LCGStep( _Infos.Seed3, 37587 * _TexelGroup, 890567 );	// Modify 4th seed with texel group for different random values
-	return uint4( _Infos.Seed0, _Infos.Seed1, _Infos.Seed2, Seed3 );
+	return uint4(	// Modify seeds with texel index for different random values
+			LCGStep( _Infos.Seed0, 37587 * _TexelIndex, 890567 ),
+			LCGStep( _Infos.Seed1, 37587 * _TexelIndex, 890567 ),
+			LCGStep( _Infos.Seed2, 37587 * _TexelIndex, 890567 ),
+			LCGStep( _Infos.Seed3, 37587 * _TexelIndex, 890567 )
+		);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -112,10 +116,6 @@ void	GenerateRayDirect( uint _TexelIndex, uint _TexelGroup, uint _RayIndex, uint
 	_ToLight0.xyz = LightPos - _Position;
 	_ToLight0.w = 1.0 / dot( _ToLight0.xyz, _ToLight0.xyz );	// 1/r²
 	_ToLight0.xyz *= sqrt( _ToLight0.w );
-
-//_ToLight0 = float4( LightPos, 0 );
-//_ToLight0 = float4( LocalLightPos, 0, 0 );
-//_ToLight0 = float4( 1, 2, 0, 0 );
 
 	LocalLightPos = GenerateRectanglePosition( _RayIndex, _RaysCount, _Seed, LIGHT_SIZE );
 	LightPos = LIGHT_POS1 + float3( LocalLightPos.x, 0.0, LocalLightPos.y );
@@ -168,7 +168,7 @@ void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset wit
 	uint	TexelIndex, TexelGroup, RayIndex, RaysCount;
 	ComputeTexelRayInfos( _GroupID.xy, _GroupIndex.x, GROUPS_PER_TEXEL_DIRECT, TexelIndex, TexelGroup, RayIndex, RaysCount );
 
-	uint4	Seed = BuildSeed( TexelGroup, _Input[TexelIndex] );
+	uint4	Seed = BuildSeed( TexelIndex, _Input[TexelIndex] );
 
 	// Generate the 4 rays
 	float3	Position, Normal;
@@ -198,6 +198,7 @@ void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset wit
 	if ( _GroupThreadID.x == 0 )
 	{
 		_Output[TexelIndex].Irradiance = SumRadiance;
+//		_Output[TexelIndex].Irradiance = float4( 1, 0, 0, 0 );
 		_AccumOutput[TexelIndex].Irradiance = SumRadiance;
 	}
 }
@@ -213,11 +214,15 @@ Ray	GenerateRayIndirect( uint _TexelIndex, uint _TexelGroup, uint _RayIndex, uin
 
 	float3	Direction = CosineSampleHemisphere( Random2( _Seed ) );
 
+// float2	Test = float2( Random1( _Seed ), 0.1 );
+// float3	Direction = CosineSampleHemisphere( Test );
+
 	Ray	Result;
 		Result.P = Source.Position + 1e-3 * Source.Normal;	// Offset just a chouia
 		Result.V = Direction.x * Source.Tangent + Direction.y * Source.BiTangent + Direction.z * Source.Normal;
 
-//Result.V = Source.Normal;###
+//Result.V = Source.Normal;//###
+//Result.V = normalize( -1.0.xxx );
 
 	return Result;
 }
@@ -252,7 +257,7 @@ void	CS_Indirect(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset w
 	uint	TexelIndex, TexelGroup, RayIndex, RaysCount;
 	ComputeTexelRayInfos( _GroupID.xy, _GroupIndex.x, GROUPS_PER_TEXEL_INDIRECT, TexelIndex, TexelGroup, RayIndex, RaysCount );
 
-	uint4	Seed = BuildSeed( TexelGroup, _Input[TexelIndex] );
+	uint4	Seed = BuildSeed( TexelIndex, _Input[TexelIndex] );
 
 	// Generate the 4 rays
 	Ray		R = GenerateRayIndirect( TexelIndex, TexelGroup, RayIndex, RaysCount, Seed );
@@ -271,7 +276,7 @@ void	CS_Indirect(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset w
 I.Distance = INFINITY;
 I.Position = I.Normal = I.Tangent = I.BiTangent = 0.0;
 I.UV = 0.0;
-I.MaterialID = -1;
+I.MaterialID = 123456;
 
 //	if ( ClosestHitDistance >= INFINITY )
 	{	// This means we didn't hit a light
@@ -294,6 +299,10 @@ I.MaterialID = -1;
 		// Convert into radiance
 		Radiance = SourceIrradiance * IRRADIANCE_WEIGHT_INDIRECT * RECITWOPI;
 
+//Radiance = SourceIrradiance;
+//Radiance = abs(SampleIrradiance( _PreviousPass5, I.UV, _LightMapSize.xx ).yzwx);
+//Radiance = _PreviousPass5[_LightMapSize.x * uint(I.UV.y * _LightMapSize.x) + uint(I.UV.x * _LightMapSize.x)].Irradiance.xyzw;
+
 // Radiance = float4( abs( R.V ), 0 );
 // Radiance = float4( R.P, 0 );
 //Radiance = I.MaterialID;
@@ -315,13 +324,14 @@ I.MaterialID = -1;
 	{
 		_Output[TexelIndex].Irradiance = SumRadiance;
 		_AccumOutput[TexelIndex].Irradiance += SumRadiance;
-//		_AccumOutput[TexelIndex].Irradiance = SumRadiance;
+//		_AccumOutput[TexelIndex].Irradiance = Radiance;
 //		_AccumOutput[TexelIndex].Irradiance = I.Distance;
 //		_AccumOutput[TexelIndex].Irradiance = float4( I.UV, 0, 0 );
 //		_AccumOutput[TexelIndex].Irradiance = float4( I.Position, 0 );
 //		_AccumOutput[TexelIndex].Irradiance = float4( R.P, 0 );
 //		_AccumOutput[TexelIndex].Irradiance = float4( R.V, 0 );
 //		_AccumOutput[TexelIndex].Irradiance = float4( 1, 0, 0, 1 );
+//		_AccumOutput[TexelIndex].Irradiance = I.MaterialID;
 	}
 }
 

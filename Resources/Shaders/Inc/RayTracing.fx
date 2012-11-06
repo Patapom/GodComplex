@@ -60,13 +60,15 @@ uint	LCGStep( inout uint z, uint A, uint C )
 uint	TausStep( inout uint z, int S1, int S2, int S3, uint M )
 {  
 	uint	b = ((z << S1) ^ z) >> S2;
-	return z = ((z & M) << S3) ^ b;
+	z = ((z & M) << S3) ^ b;
+
+	return z;
 }
 
 // Values of the z vector must vary per-thread and be randomly chosen and > 128
 // Combined period is lcm(p1,p2,p3,p4)~ 2^121  
 float	Random1( inout uint4 z )
-{  
+{
 	return 2.3283064365387e-10 * (					// Periods  
 		TausStep( z.x, 13, 19, 12, 4294967294UL ) ^	// p1=2^31-1  
 		TausStep( z.y, 2, 25, 4, 4294967288UL ) ^	// p2=2^30-1  
@@ -93,7 +95,7 @@ float3	Random3( inout uint4 _Seed )
 //
 float3	CosineSampleHemisphere( float2 _UV )
 {
-    float	Radius = sqrt(_UV.y);
+    float	Radius = sqrt( _UV.y );
     float	Phi = TWOPI * _UV.x;
  
 	float2	SinCos;
@@ -147,6 +149,7 @@ struct	Intersection
 void	UpdateClosestIntersection( Ray _Ray, inout Intersection _Intersection, float _Distance, const float2 _InvHalfSize, const float3 _Center, const float3 _Normal, const float3 _Tangent, const float3 _BiTangent, const uint _MaterialID )
 {
 	float	Closer = saturate( 10000.0 * (_Intersection.Distance - _Distance) );	// 0 if superior or equal, 1 if inferior
+
 	_Intersection.Distance = lerp( _Intersection.Distance, _Distance, Closer );
 	_Intersection.Position = lerp( _Intersection.Position, _Ray.P + _Distance * _Ray.V, Closer );
 	_Intersection.Normal = lerp( _Intersection.Normal, _Normal, Closer );
@@ -155,7 +158,7 @@ void	UpdateClosestIntersection( Ray _Ray, inout Intersection _Intersection, floa
 	_Intersection.MaterialID = lerp( _Intersection.MaterialID, _MaterialID, Closer );
 
 	float3	DPos = _Intersection.Position - _Center;
-	float2	UV = 0.5 * (1.0 + float2( dot( DPos, _Tangent ), dot( DPos, _BiTangent ) ) * _InvHalfSize);
+	float2	UV = 0.5 * (1.0 + float2( dot( DPos, _Tangent ), -dot( DPos, _BiTangent ) ) * _InvHalfSize);
 	_Intersection.UV = lerp( _Intersection.UV, UV, Closer );
 }
 

@@ -81,6 +81,11 @@ public:		// NESTED TYPES
 		ID3D11ShaderResourceView*	m_pShaderView;
 		ID3D11UnorderedAccessView*  m_pUnorderedAccessView;
 
+		// Structure to keep track of current outputs
+		int							m_pAssignedToOutputSlot[D3D11_PS_CS_UAV_REGISTER_COUNT];
+		static StructuredBuffer*	ms_ppOutputs[D3D11_PS_CS_UAV_REGISTER_COUNT];
+
+
 	public:		// PROPERTIES
 
 		int				GetElementSize() const		{ return m_ElementSize; }

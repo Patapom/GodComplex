@@ -354,13 +354,16 @@ void	EffectRoom::BuildRoom()
 
 		pCSComputeLightMapDirect->Run( CB_Render.m.LightMapSizeX, CB_Render.m.LightMapSizeY, 1 );
 
-//		ppResults1[FaceIndex]->Read();	// CHECK
+// 		ppResults1[FaceIndex]->Read();	// CHECK
 
 		// Swap
 		SB<LightMapResult>*	pTemp = ppResults0[FaceIndex];
 		ppResults0[FaceIndex] = ppResults1[FaceIndex];
 		ppResults1[FaceIndex] = pTemp;
 	}
+
+// ppResults0[5]->Read();	// CHECK
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compute indirect lighting
@@ -371,7 +374,10 @@ void	EffectRoom::BuildRoom()
 		// Upload previous pass's results
 		for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 			ppResults0[FaceIndex]->SetInput( 4+FaceIndex );
-		
+
+//ppResults0[0]->SetInput( 9 );
+//ppResults0[5]->SetInput( 9 );
+
 		// Run
 		for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 		{

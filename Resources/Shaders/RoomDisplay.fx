@@ -52,9 +52,10 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 
 // 	return 0.25 * (1+_In.UV2.z);
 // 	return 10.0 * _TexLightMaps.SampleLevel( LinearClamp, float3( _In.UV, 1 ), 0.0 );
-	return 5.0 * _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );
-//	return _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 ) / 20.0;
-//	return 0.2 * _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );
+	return 5.0 * _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );	// Radiance
+	return _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 ) / 6.0;	// MaterialID
+//	return _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );			// UVs
+//	return 0.2 * _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );	// Position
 //	return _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );
 
 	float3	Normal = _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 ).xyz;

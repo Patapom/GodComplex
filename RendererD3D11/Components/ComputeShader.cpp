@@ -682,9 +682,13 @@ time_t		ComputeShader::GetFileModTime( const char* _pFileName )
 //////////////////////////////////////////////////////////////////////////
 // The structured buffer class
 //
+ComputeShader::StructuredBuffer*	ComputeShader::StructuredBuffer::ms_ppOutputs[D3D11_PS_CS_UAV_REGISTER_COUNT] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+
 ComputeShader::StructuredBuffer::StructuredBuffer( Device& _Device, int _ElementSize, int _ElementsCount, bool _bWriteable ) : Component( _Device )
 {
 	ASSERT( (_ElementSize&3)==0, "Element size must be a multiple of 4!" );
+	for ( int i=0; i < D3D11_PS_CS_UAV_REGISTER_COUNT; i++ )
+		m_pAssignedToOutputSlot[i] = -1;
 	m_ElementSize = _ElementSize;
 	m_ElementsCount = _ElementsCount;
 	m_Size = _ElementSize * _ElementsCount;
@@ -785,13 +789,43 @@ void	ComputeShader::StructuredBuffer::Clear( const NjFloat4& _Value )
 
 void	ComputeShader::StructuredBuffer::SetInput( int _SlotIndex )
 {
+	// Unassign this buffer to any output it was previously bound to
+	// NOTE: This mechanism may seem a bit heavy but it's really necessary to avoid scartching one's head too often
+	//	when a buffer seems to be empty in the compute shader, whereas it has silently been NOT ASSIGNED AS INPUT
+	//	for the only reason that it's still assigned as output somewhere...
+	//
+	{
+		U32							UAVInitialCount = -1;
+		ID3D11UnorderedAccessView*	pView = NULL;
+		for ( int OutputSlotIndex=0; OutputSlotIndex < D3D11_PS_CS_UAV_REGISTER_COUNT; OutputSlotIndex++ )
+			if ( m_pAssignedToOutputSlot[OutputSlotIndex] != -1 )
+			{	// We're still assigned to an output...
+				m_Device.DXContext().CSSetUnorderedAccessViews( OutputSlotIndex, 1, &pView, &UAVInitialCount );
+				m_pAssignedToOutputSlot[OutputSlotIndex] = -1;
+				ms_ppOutputs[OutputSlotIndex] = NULL;
+			}
+	}
+
+	// We can now safely assign it as an input
 	ID3D11ShaderResourceView*	pView = GetShaderView();
 	m_Device.DXContext().CSSetShaderResources( _SlotIndex, 1, &pView );
 }
 
 void	ComputeShader::StructuredBuffer::SetOutput( int _SlotIndex )
 {
+#ifdef _DEBUG
+	ASSERT( ms_ppOutputs[_SlotIndex] != this, "StructureBuffer already assigned to this output slot! It's only a warning, you can ignore this but you should consider removing this redundant SetOutput() from your code..." );
+#endif
+
 	ID3D11UnorderedAccessView*	pView = GetUnorderedAccessView();
 	U32							UAVInitialCount = -1;
 	m_Device.DXContext().CSSetUnorderedAccessViews( _SlotIndex, 1, &pView, &UAVInitialCount );
+
+	// Remove any previous output buffer
+	if ( ms_ppOutputs[_SlotIndex] != NULL )
+		ms_ppOutputs[_SlotIndex]->m_pAssignedToOutputSlot[_SlotIndex] = -1;	// Not an output anymore!
+
+	// Store ourselves as the new current output
+	ms_ppOutputs[_SlotIndex] = this;					// We are the new output!
+	m_pAssignedToOutputSlot[_SlotIndex] = _SlotIndex;	// And we're assigned to that slot
 }
