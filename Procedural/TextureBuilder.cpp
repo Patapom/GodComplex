@@ -7,10 +7,10 @@ TextureBuilder::TextureBuilder( int _Width, int _Height )
 	, m_bMipLevelsBuilt( false )
 {
 	m_MipLevelsCount = Texture2D::ComputeMipLevelsCount( _Width, _Height, 0 );
-	m_ppBufferGeneric = new NjFloat4*[m_MipLevelsCount];
+	m_ppBufferGeneric = new Pixel*[m_MipLevelsCount];
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
-		m_ppBufferGeneric[MipLevelIndex] = new NjFloat4[_Width*_Height];
+		m_ppBufferGeneric[MipLevelIndex] = new Pixel[_Width*_Height];
 		Texture2D::NextMipSize( _Width, _Height );
 	}
 }
@@ -29,10 +29,10 @@ const void**	TextureBuilder::GetLastConvertedMips() const
 	return (const void**) m_ppBufferSpecific;
 }
 
-void	CopyFiller( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+void	CopyFiller( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 {
 	const TextureBuilder&	Source = *((const TextureBuilder*) _pData);
-	Source.SampleClamp( _UV.x * Source.GetWidth(), _UV.y * Source.GetHeight(), _Color );
+	Source.SampleClamp( _UV.x * Source.GetWidth(), _UV.y * Source.GetHeight(), _Pixel );
 }
 
 void	TextureBuilder::CopyFrom( const TextureBuilder& _Source )
@@ -46,7 +46,7 @@ void	TextureBuilder::Fill( FillDelegate _Filler, void* _pData )
 	NjFloat2	UV;
 	for ( int Y=0; Y < m_Height; Y++ )
 	{
-		NjFloat4*	pScanline = m_ppBufferGeneric[0] + m_Width * Y;
+		Pixel*	pScanline = m_ppBufferGeneric[0] + m_Width * Y;
 		UV.y = float(Y) / m_Height;
 		for ( int X=0; X < m_Width; X++, pScanline++ )
 		{
@@ -57,7 +57,12 @@ void	TextureBuilder::Fill( FillDelegate _Filler, void* _pData )
 	m_bMipLevelsBuilt = false;
 }
 
-void	TextureBuilder::SampleWrap( float _X, float _Y, NjFloat4& _Color ) const
+void	TextureBuilder::Get( int _X, int _Y, Pixel& _Color ) const
+{
+	_Color = m_ppBufferGeneric[0][m_Width*_Y+_X];
+}
+
+void	TextureBuilder::SampleWrap( float _X, float _Y, Pixel& _Pixel ) const
 {
 	int		X0 = floorf( _X );
 	float	x = _X - X0;
@@ -71,23 +76,29 @@ void	TextureBuilder::SampleWrap( float _X, float _Y, NjFloat4& _Color ) const
 	int		Y1 = (100*m_Height+Y0+1) % m_Height;
 			Y0 = (100*m_Height+Y0) % m_Height;
 
-	ASSERT( X0 >= 0 && X0 < m_Width && X1 >= 0 && X1 < m_Width, "X out of range !" );
-	ASSERT( Y0 >= 0 && Y0 < m_Height && Y1 >= 0 && Y1 < m_Height, "Y out of range !" );
-	NjFloat4&	V00 = m_ppBufferGeneric[0][m_Width*Y0+X0];
-	NjFloat4&	V01 = m_ppBufferGeneric[0][m_Width*Y0+X1];
-	NjFloat4&	V10 = m_ppBufferGeneric[0][m_Width*Y1+X0];
-	NjFloat4&	V11 = m_ppBufferGeneric[0][m_Width*Y1+X1];
+	ASSERT( X0 >= 0 && X0 < m_Width && X1 >= 0 && X1 < m_Width, "X out of range !" );	// Should never happen
+	ASSERT( Y0 >= 0 && Y0 < m_Height && Y1 >= 0 && Y1 < m_Height, "Y out of range !" );	// Should never happen
+	Pixel&	V00 = m_ppBufferGeneric[0][m_Width*Y0+X0];
+	Pixel&	V01 = m_ppBufferGeneric[0][m_Width*Y0+X1];
+	Pixel&	V10 = m_ppBufferGeneric[0][m_Width*Y1+X0];
+	Pixel&	V11 = m_ppBufferGeneric[0][m_Width*Y1+X1];
 
-	NjFloat4	V0 = rx * V00 + x * V01;
-	NjFloat4	V1 = rx * V10 + x * V11;
+	NjFloat4	V0 = rx * V00.RGBA + x * V01.RGBA;
+	NjFloat4	V1 = rx * V10.RGBA + x * V11.RGBA;
+	float		H0 = rx * V00.Height + x * V01.Height;
+	float		H1 = rx * V10.Height + x * V11.Height;
+	float		R0 = rx * V00.Roughness + x * V01.Roughness;
+	float		R1 = rx * V10.Roughness + x * V11.Roughness;
 
-	_Color.x = ry * V0.x + y * V1.x;
-	_Color.y = ry * V0.y + y * V1.y;
-	_Color.z = ry * V0.z + y * V1.z;
-	_Color.w = ry * V0.w + y * V1.w;
+	_Pixel.RGBA.x = ry * V0.x + y * V1.x;
+	_Pixel.RGBA.y = ry * V0.y + y * V1.y;
+	_Pixel.RGBA.z = ry * V0.z + y * V1.z;
+	_Pixel.RGBA.w = ry * V0.w + y * V1.w;
+	_Pixel.Height = ry * H0 + y * H1;
+	_Pixel.Roughness = ry * R0 + y * R1;
 }
 
-void	TextureBuilder::SampleClamp( float _X, float _Y, NjFloat4& _Color ) const
+void	TextureBuilder::SampleClamp( float _X, float _Y, Pixel& _Pixel ) const
 {
 	int		X0 = floorf( _X );
 	float	x = _X - X0;
@@ -101,21 +112,27 @@ void	TextureBuilder::SampleClamp( float _X, float _Y, NjFloat4& _Color ) const
 	int		Y1 = CLAMP( (Y0+1), 0, m_Height-1 );
 			Y0 = CLAMP( Y0, 0, m_Height-1 );
 
-	NjFloat4&	V00 = m_ppBufferGeneric[0][m_Width*Y0+X0];
-	NjFloat4&	V01 = m_ppBufferGeneric[0][m_Width*Y0+X1];
-	NjFloat4&	V10 = m_ppBufferGeneric[0][m_Width*Y1+X0];
-	NjFloat4&	V11 = m_ppBufferGeneric[0][m_Width*Y1+X1];
+	Pixel&	V00 = m_ppBufferGeneric[0][m_Width*Y0+X0];
+	Pixel&	V01 = m_ppBufferGeneric[0][m_Width*Y0+X1];
+	Pixel&	V10 = m_ppBufferGeneric[0][m_Width*Y1+X0];
+	Pixel&	V11 = m_ppBufferGeneric[0][m_Width*Y1+X1];
 
-	NjFloat4	V0 = rx * V00 + x * V01;
-	NjFloat4	V1 = rx * V10 + x * V11;
+	NjFloat4	V0 = rx * V00.RGBA + x * V01.RGBA;
+	NjFloat4	V1 = rx * V10.RGBA + x * V11.RGBA;
+	float		H0 = rx * V00.Height + x * V01.Height;
+	float		H1 = rx * V10.Height + x * V11.Height;
+	float		R0 = rx * V00.Roughness + x * V01.Roughness;
+	float		R1 = rx * V10.Roughness + x * V11.Roughness;
 
-	_Color.x = ry * V0.x + y * V1.x;
-	_Color.y = ry * V0.y + y * V1.y;
-	_Color.z = ry * V0.z + y * V1.z;
-	_Color.w = ry * V0.w + y * V1.w;
+	_Pixel.RGBA.x = ry * V0.x + y * V1.x;
+	_Pixel.RGBA.y = ry * V0.y + y * V1.y;
+	_Pixel.RGBA.z = ry * V0.z + y * V1.z;
+	_Pixel.RGBA.w = ry * V0.w + y * V1.w;
+	_Pixel.Height = ry * H0 + y * H1;
+	_Pixel.Roughness = ry * R0 + y * R1;
 }
 
-void	TextureBuilder::GenerateMips()
+void	TextureBuilder::GenerateMips( bool _bTreatRGBAsNormal ) const
 {
 	// Build remaining mip levels
 	int	Width = m_Width;
@@ -126,8 +143,8 @@ void	TextureBuilder::GenerateMips()
 		int		SourceHeight = Height;
 		Texture2D::NextMipSize( Width, Height );
 
-		NjFloat4*	pSource = m_ppBufferGeneric[MipLevelIndex-1];
-		NjFloat4*	pTarget = m_ppBufferGeneric[MipLevelIndex];
+		Pixel*	pSource = m_ppBufferGeneric[MipLevelIndex-1];
+		Pixel*	pTarget = m_ppBufferGeneric[MipLevelIndex];
 		for ( int Y=0; Y < Height; Y++ )
 		{
 			int	Y0 = (Y << 1) + 0;
@@ -147,8 +164,8 @@ void	TextureBuilder::GenerateMips()
 			int	Y1 = (Y0+1) % SourceHeight;	// TODO: Handle WRAP/CLAMP
 #endif
 
-			NjFloat4*	pScanline = pTarget + Width * Y;
-			for ( int X=0; X < Width; X++ )
+			Pixel*	pScanline = pTarget + Width * Y;
+			for ( int X=0; X < Width; X++, pScanline++ )
 			{
 				int	X0 = (X << 1) + 0;
 #if 0
@@ -157,14 +174,28 @@ void	TextureBuilder::GenerateMips()
 				int	X1 = (X0+1) % SourceWidth;	// TODO: Handle WRAP/CLAMP
 #endif
 
-				NjFloat4&	V00 = pSource[SourceWidth*Y0+X0];
-				NjFloat4&	V01 = pSource[SourceWidth*Y0+X1];
-				NjFloat4&	V10 = pSource[SourceWidth*Y1+X0];
-				NjFloat4&	V11 = pSource[SourceWidth*Y1+X1];
+				Pixel&	V00 = pSource[SourceWidth*Y0+X0];
+				Pixel&	V01 = pSource[SourceWidth*Y0+X1];
+				Pixel&	V10 = pSource[SourceWidth*Y1+X0];
+				Pixel&	V11 = pSource[SourceWidth*Y1+X1];
 
-				NjFloat4	V = 0.25f * (V00 + V01 + V10 + V11);
+				if ( _bTreatRGBAsNormal )
+				{
+					NjFloat3	N00 = 2.0f * NjFloat3(V00.RGBA) - NjFloat3::One;
+					NjFloat3	N01 = 2.0f * NjFloat3(V01.RGBA) - NjFloat3::One;
+					NjFloat3	N10 = 2.0f * NjFloat3(V10.RGBA) - NjFloat3::One;
+					NjFloat3	N11 = 2.0f * NjFloat3(V11.RGBA) - NjFloat3::One;
 
-				*pScanline++ = V;
+					NjFloat3	N = 0.25f * (N00 + N01 + N10 + N11);
+					pScanline->RGBA.x = 0.5f * (1.0f + N.x);
+					pScanline->RGBA.y = 0.5f * (1.0f + N.y);
+					pScanline->RGBA.z = 0.5f * (1.0f + N.z);
+					pScanline->RGBA.w = 0.25f * (V00.RGBA.w + V01.RGBA.w + V10.RGBA.w + V11.RGBA.w);
+				}
+				else
+					pScanline->RGBA = 0.25f * (V00.RGBA + V01.RGBA + V10.RGBA + V11.RGBA);
+				pScanline->Height = 0.25f * (V00.Height + V01.Height + V10.Height + V11.Height);
+				pScanline->Roughness = 0.25f * (V00.Roughness + V01.Roughness + V10.Roughness + V11.Roughness);
 			}
 		}
 	}
@@ -172,40 +203,157 @@ void	TextureBuilder::GenerateMips()
 	m_bMipLevelsBuilt = true;
 }
 
-void**	TextureBuilder::Convert( IPixelFormatDescriptor& _Format )
+TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA_NxNyHR =
+{
+	0,		// int		PosR;
+	1,		// int		PosG;
+	2,		// int		PosB;
+	3,		// int		PosA;
+
+			// Position of the height & roughness fields
+	6,		// int		PosHeight;
+	7,		// int		PosRoughness;
+
+			// Position of the normal fields
+	true,	// bool	GenerateNormal;	// If true, the normal will be generated
+	true,	// bool	PackNormalXY;	// If true, only the XY components of the normal will be stored. Z will then be extracted by sqrt(1-X²-Y²)
+	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
+	4,		// int		PosNormalX;
+	5,		// int		PosNormalY;
+	-1,		// int		PosNormalZ;
+
+			// Position of the AO field
+	false,	// bool	GenerateAO;
+	2.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
+	-1,		// int		PosAO;
+};
+
+void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params ) const
 {
 	if ( !m_bMipLevelsBuilt )
 		GenerateMips();
 
 	ReleaseSpecificBuffer();
 
-	// Allocate buffers
-	m_ppBufferSpecific = new void*[m_MipLevelsCount];
-	int	Width = m_Width;
-	int	Height = m_Height;
-	int	PixelSize = _Format.Size();
-	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+	//////////////////////////////////////////////////////////////////////////
+	// Generate normal
+	TextureBuilder	TBNormal( m_Width, m_Height );
+	if ( _Params.GenerateNormal )
 	{
-		NjFloat4*	pSource = m_ppBufferGeneric[MipLevelIndex];
-		U8*			pTarget = new U8[Width*Height*PixelSize];
-		m_ppBufferSpecific[MipLevelIndex] = (void*) pTarget;
+		ASSERT( _Params.PosNormalX != -1, "You must specify a position for the X component of the normal if GenerateNormal is true!" );
+		ASSERT( _Params.PosNormalY != -1, "You must specify a position for the Y component of the normal if GenerateNormal is true!" );
+		ASSERT( !_Params.PackNormalXY || _Params.PosNormalZ == -1, "You cannot specify a position for the Z component of the normal if PackNormalXY is true!" );
+		Generators::ComputeNormal( *this, TBNormal, _Params.NormalFactor, _Params.PackNormalXY );
+		TBNormal.GenerateMips( true );
+	}
 
-		// Copy
-		for ( int Y=0; Y < Height; Y++ )
+	//////////////////////////////////////////////////////////////////////////
+	// Generate AO
+	TextureBuilder	TBAO( m_Width, m_Height );
+	if ( _Params.GenerateAO )
+	{
+		ASSERT( _Params.PosAO != -1, "You must specify a position for the Ambient Occlusion if GenerateAO is true!" );
+		Generators::ComputeAO( *this, TBNormal, _Params.AOFactor );
+		TBAO.GenerateMips();
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Compute the amount of textures to create in the array
+	int	MaxPosition = -1;
+	MaxPosition = MAX( MaxPosition, _Params.PosR );
+	MaxPosition = MAX( MaxPosition, _Params.PosG );
+	MaxPosition = MAX( MaxPosition, _Params.PosB );
+	MaxPosition = MAX( MaxPosition, _Params.PosA );
+	MaxPosition = MAX( MaxPosition, _Params.PosNormalX );
+	MaxPosition = MAX( MaxPosition, _Params.PosNormalY );
+	MaxPosition = MAX( MaxPosition, _Params.PosNormalZ );
+	MaxPosition = MAX( MaxPosition, _Params.PosHeight );
+	MaxPosition = MAX( MaxPosition, _Params.PosRoughness );
+	MaxPosition = MAX( MaxPosition, _Params.PosAO );
+
+	int	ArraySize = (MaxPosition+3) >> 2;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Allocate buffers
+	m_ppBufferSpecific = new void*[m_MipLevelsCount*ArraySize];
+	for ( int ArrayIndex=0; ArrayIndex < ArraySize; ArrayIndex++ )
+	{
+		int	Width = m_Width;
+		int	Height = m_Height;
+		int	ComponentsOffset = ArrayIndex << 2;
+		int	PixelSize = _Format.Size();
+
+		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 		{
-			PixelFormat*	pScanline = (PixelFormat*) &pTarget[PixelSize*Width*Y];
-			for ( int X=0; X < Width; X++, pScanline+=PixelSize )
-				_Format.Write( *pScanline, *pSource++ );
-		}
+			Pixel*	pSource0 = m_ppBufferGeneric[MipLevelIndex];
+			Pixel*	pSource1 = TBNormal.GetMips()[MipLevelIndex];
+			Pixel*	pSource2 = TBAO.GetMips()[MipLevelIndex];
 
-		// Downscale
-		Texture2D::NextMipSize( Width, Height );
+			U8*		pDest = new U8[Width*Height*PixelSize];
+			m_ppBufferSpecific[m_MipLevelsCount*ArrayIndex+MipLevelIndex] = (void*) pDest;
+
+			// Copy
+			for ( int Y=0; Y < Height; Y++ )
+			{
+				NjFloat4		Temp;
+				Pixel*			pScanlineSource0 = &pSource0[Width*Y];
+				Pixel*			pScanlineSource1 = &pSource1[Width*Y];
+				Pixel*			pScanlineSource2 = &pSource2[Width*Y];
+				PixelFormat*	pScanlineDest = (PixelFormat*) &pDest[PixelSize*Width*Y];
+				for ( int X=0; X < Width; X++, pScanlineDest+=PixelSize, pScanlineSource0++, pScanlineSource1++, pScanlineSource2++ )
+				{
+					Temp.x = BuildComponent( ComponentsOffset+0, _Params, *pScanlineSource0, *pScanlineSource1, *pScanlineSource2 );
+					Temp.y = BuildComponent( ComponentsOffset+1, _Params, *pScanlineSource0, *pScanlineSource1, *pScanlineSource2 );
+					Temp.z = BuildComponent( ComponentsOffset+2, _Params, *pScanlineSource0, *pScanlineSource1, *pScanlineSource2 );
+					Temp.w = BuildComponent( ComponentsOffset+3, _Params, *pScanlineSource0, *pScanlineSource1, *pScanlineSource2 );
+
+					_Format.Write( *pScanlineDest, Temp );
+				}
+			}
+
+			// Downsample
+			Texture2D::NextMipSize( Width, Height );
+		}
 	}
 
 	return m_ppBufferSpecific;
 }
 
-void	TextureBuilder::ReleaseSpecificBuffer()
+float	TextureBuilder::BuildComponent( int _ComponentIndex, const ConversionParams& _Params, Pixel& _Pixel0, Pixel& _Pixel1, Pixel& _Pixel2 ) const
+{
+	// Check if it's the color
+	if ( _ComponentIndex == _Params.PosR )
+		return _Pixel0.RGBA.x;
+	if ( _ComponentIndex == _Params.PosG )
+		return _Pixel0.RGBA.y;
+	if ( _ComponentIndex == _Params.PosB )
+		return _Pixel0.RGBA.z;
+	if ( _ComponentIndex == _Params.PosA )
+		return _Pixel0.RGBA.w;
+
+	// Check if it's the height or roughness
+	if ( _ComponentIndex == _Params.PosHeight )
+		return _Pixel0.Height;
+	if ( _ComponentIndex == _Params.PosRoughness )
+		return _Pixel0.Roughness;
+
+	// Check if it's the normal
+	if ( _ComponentIndex == _Params.PosNormalX )
+		return _Pixel1.RGBA.x;
+	if ( _ComponentIndex == _Params.PosNormalY )
+		return _Pixel1.RGBA.y;
+	if ( _ComponentIndex == _Params.PosNormalZ )
+		return _Pixel1.RGBA.z;
+
+	// Check if it's the ambient occlusion
+	if ( _ComponentIndex == _Params.PosAO )
+		return _Pixel2.RGBA.x;
+
+	// Empty component => WASTE !!!!
+	return 0.0f;
+}
+
+void	TextureBuilder::ReleaseSpecificBuffer() const
 {
 	if ( m_ppBufferSpecific == NULL )
 		return;

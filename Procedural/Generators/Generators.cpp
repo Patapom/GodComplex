@@ -1,14 +1,54 @@
 #include "../../GodComplex.h"
 
+
+//////////////////////////////////////////////////////////////////////////
+// Normal Map
+//
+struct __NormalStruct
+{
+	const TextureBuilder*	pSource;
+	float			HeightFactor;
+	bool			bNormalize;
+};
+void	FillNormal( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+{
+	__NormalStruct&	Params = *((__NormalStruct*) _pData);
+
+	float	X = float(_X);
+	float	Y = float(_Y);
+
+	Pixel	Left; Params.pSource->SampleWrap( X - 1, Y, Left );
+	Pixel	Right; Params.pSource->SampleWrap( X + 1, Y, Right );
+	Pixel	Top; Params.pSource->SampleWrap( X, Y - 1, Top );
+	Pixel	Bottom; Params.pSource->SampleWrap( X, Y + 1, Bottom );
+
+	NjFloat3	Dx( 1.0f, Params.HeightFactor * (Right.Height - Left.Height), 0.0f );
+	NjFloat3	Dy( 0.0f, Params.HeightFactor * (Bottom.Height - Top.Height), 1.0f );
+
+	NjFloat3	Normal = Dy ^ Dx;
+	if ( Params.bNormalize )
+		Normal.Normalize();
+
+	_Pixel.RGBA.Set( 0.5f * (1.0f + Normal.x), 0.5f * (1.0f + Normal.y), 0.5f * (1.0f + Normal.z), 0.0f );
+}
+
+void Generators::ComputeNormal( const TextureBuilder& _Source, TextureBuilder& _Target, float _HeightFactor, bool _bNormalize )
+{
+	__NormalStruct	Params;
+	Params.pSource = &_Source;
+	Params.HeightFactor = _HeightFactor;
+	Params.bNormalize = _bNormalize;
+
+	_Target.Fill( FillNormal, &Params );
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 // AO
 // The algorithm here is to find the "horizon" of the height field for each of the samplings directions
-// We slice the circle of directions about the considered point then for each direction we march forward
-//	and analyze the height of the height field at that position.
-// The height and the distance we marched give us the slope of the horizon, which we keep if it exceeds the
-//	maximum for that direction.
-// In the end, we obtain a portion of horizon that is not occluded by the surrounding heights. Summing these
-//	portions we get the AO...
+// We slice the circle of directions about the considered point then for each direction we march forward and analyze the height of the height field at that position.
+// The height and the distance we marched give us the slope of the horizon, which we keep if it exceeds the maximum for that direction.
+// In the end, we obtain a portion of horizon that is not occluded by the surrounding heights. Summing these portions we get the AO...
 //
 struct __AOStruct
 {
@@ -18,7 +58,7 @@ struct __AOStruct
 	int				SamplesCount;
 	bool			bWriteOnlyAlpha;
 };
-void	FillAO( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+void	FillAO( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__AOStruct&	Params = *((__AOStruct*) _pData);
 
@@ -38,11 +78,10 @@ void	FillAO( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData
 		{
 			Position = Position + Direction;	// March one step
 
-			NjFloat4	C;
-			Params.pSource->SampleWrap( Position.x, Position.y, C );
-			float		Height = C | LUMINANCE;	// Transform into luminance, which we consider being the height
+			Pixel	P;
+			Params.pSource->SampleWrap( Position.x, Position.y, P );
 
-			float		Slope = Params.HeightFactor * Height / (1.0f + SampleIndex);	// The slope of the horizon
+			float	Slope = Params.HeightFactor * P.Height / (1.0f + SampleIndex);	// The slope of the horizon
 			MaxSlope = MAX( MaxSlope, Slope );
 		}
 
@@ -51,11 +90,11 @@ void	FillAO( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData
 	}
 	SumAO /= HALFPI * Params.DirectionsCount;	// Normalize
 
-	_Color.w = SumAO;
+	_Pixel.RGBA.w = SumAO;
 	if ( Params.bWriteOnlyAlpha )
 		return;
 
-	_Color.Set( SumAO, SumAO, SumAO, 1.0f );
+	_Pixel.RGBA.Set( SumAO, SumAO, SumAO, SumAO );
 }
 
 void Generators::ComputeAO( const TextureBuilder& _Source, TextureBuilder& _Target, float _HeightFactor, int _DirectionsCount, int _SamplesCount, bool _bWriteOnlyAlpha )
@@ -70,6 +109,7 @@ void Generators::ComputeAO( const TextureBuilder& _Source, TextureBuilder& _Targ
 	_Target.Fill( FillAO, &Params );
 }
 
+
 //////////////////////////////////////////////////////////////////////////
 // Dirtyness
 struct __DirtynessStruct
@@ -81,18 +121,18 @@ struct __DirtynessStruct
 	float			PullBackForce;
 	float			AverageIntensity;
 };
-void	FillDirtyness( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+void	FillDirtyness( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__DirtynessStruct&	Params = *((__DirtynessStruct*) _pData);
 
-	NjFloat4	C[3];
-	Params.pBuilder->SampleWrap( _X-1.0f, _Y-1.0f, C[0] );
-	Params.pBuilder->SampleWrap( _X+0.0f, _Y-1.0f, C[1] );
-	Params.pBuilder->SampleWrap( _X+1.0f, _Y-1.0f, C[2] );
+	Pixel	P[3];
+	Params.pBuilder->SampleWrap( _X-1.0f, _Y-1.0f, P[0] );
+	Params.pBuilder->SampleWrap( _X+0.0f, _Y-1.0f, P[1] );
+	Params.pBuilder->SampleWrap( _X+1.0f, _Y-1.0f, P[2] );
 
 //	NjFloat4	F = C[0] + C[2] - C[1];	// Some sort of average
 //	NjFloat4	F = 0.333f * (C[0] + C[2] + C[1]);
-	NjFloat4	F = C[1];
+	NjFloat4	F = P[1].RGBA;
 	float		fOffset = Params.DirtAmplitude * Params.pNoise->Perlin( Params.DirtNoiseFrequency * _UV ) + F.w;
 
 	F.x += fOffset;
@@ -100,7 +140,7 @@ void	FillDirtyness( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void*
 	F.z += fOffset;
 	F.w = Params.PullBackForce * (Params.AverageIntensity - (F | LUMINANCE));	// Will yield -1 when F reaches the average intensity so the color is always somewhat brought back to average
 
-	_Color = F;
+	_Pixel.RGBA = F;
 }
 
 void	Generators::Dirtyness( TextureBuilder& _Builder, const Noise& _Noise, float _InitialIntensity, float _AverageIntensity, float _DirtNoiseFrequency, float _DirtAmplitude, float _PullBackForce )
@@ -116,10 +156,10 @@ void	Generators::Dirtyness( TextureBuilder& _Builder, const Noise& _Noise, float
 	// Setup last line used as initial seed
 	for ( int X=0; X < _Builder.GetWidth(); X++ )
 	{
-		NjFloat4&	Pixel = _Builder.GetMips()[0][_Builder.GetWidth() * (_Builder.GetHeight()-1) + X];
-//		float		InitialValue = _AverageIntensity + abs( _Noise.Perlin( NjFloat2( _InitNoiseFrequency * float(X) / _Builder.GetWidth(), 0.0f ) ) );
-		float		InitialValue = _InitialIntensity;
-		Pixel.Set( InitialValue, InitialValue, InitialValue, 0.0f );
+		Pixel&	P = _Builder.GetMips()[0][_Builder.GetWidth() * (_Builder.GetHeight()-1) + X];
+//		float	InitialValue = _AverageIntensity + abs( _Noise.Perlin( NjFloat2( _InitNoiseFrequency * float(X) / _Builder.GetWidth(), 0.0f ) ) );
+		float	InitialValue = _InitialIntensity;
+		P.RGBA.Set( InitialValue, InitialValue, InitialValue, 0.0f );
 	}
 
 	_Builder.Fill( FillDirtyness, &Params );
@@ -136,24 +176,27 @@ struct __MarbleStruct
 {
 	U32		Width;
 	float	Min, Factor;
+	float	HeightFactor;
 	float*	pBuffer;
 };
-void	FillMarble( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+void	FillMarble( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__MarbleStruct&	Params = *((__MarbleStruct*) _pData);
 
 	float	Value = Params.pBuffer[Params.Width*_Y+_X];
-	Value = Params.Factor * (Value - Params.Min);
-	_Color.Set( Value, Value, Value, 1.0f );
+			Value = Params.Factor * (Value - Params.Min);
+
+	_Pixel.RGBA.Set( Value, Value, Value, 1.0f );
+	_Pixel.Height = Params.HeightFactor * Value;
 }
 
-void	Generators::Marble( TextureBuilder& _Builder, int _BootSize, float _NoiseAmplitude, float _Weight0, float _Weight1, float _Weight2, float _WeightsNormalizer )
+void	Generators::Marble( TextureBuilder& _Builder, float _HeightFactor, int _BootSize, float _NoiseAmplitude, float _Weight0, float _Weight1, float _Weight2, float _WeightsNormalizer )
 {
 	int	W = _Builder.GetWidth();
 	int	H = _Builder.GetHeight();
-	H += _BootSize;		// Skip the first lines which are sometimes ugly 
+		H += _BootSize;		// Skip the first lines which are sometimes ugly 
 
-	float*		pBuffer = new float[W*H];
+	float*	pBuffer = new float[W*H];
 
 	// Fill up the first N lines
 	U32		RandomSeed = 1;
@@ -186,6 +229,7 @@ void	Generators::Marble( TextureBuilder& _Builder, int _BootSize, float _NoiseAm
 	__MarbleStruct	Params;
 	Params.Width = W;
 	Params.Min = Min;
+	Params.HeightFactor = _HeightFactor;
 	Params.Factor = 1.0f / (Max - Min);
 	Params.pBuffer = pBuffer + W * _BootSize;
 	_Builder.Fill( FillMarble, &Params );

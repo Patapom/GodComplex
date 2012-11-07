@@ -13,7 +13,7 @@ DrawUtils::DrawUtils()
 	m_C = NjFloat2::Zero;
 }
 
-void	DrawUtils::SetupSurface( int _Width, int _Height, NjFloat4* _pSurface )
+void	DrawUtils::SetupSurface( int _Width, int _Height, Pixel* _pSurface )
 {
 	m_Infos.w = m_Width = _Width;
 	m_Infos.h = m_Height = _Height;
@@ -387,8 +387,26 @@ void	DrawUtils::DrawQuad( NjFloat4 _pVertices[], DrawContext& _Context ) const
 	}
 }
 
-void	DrawUtils::Pixel::Blend( const NjFloat4& _Source, float t )
+//////////////////////////////////////////////////////////////////////////
+// The fat pixel structure
+//
+Pixel::Pixel()
+{
+	RGBA = NjFloat4::Zero;
+	Height = 0.0f;
+	Roughness = 0.0f;
+}
+Pixel::Pixel( const NjFloat4& _RGBA, float _Height, float _Roughness )
+{
+	RGBA = _RGBA;
+	Height = _Height;
+	Roughness = _Roughness;
+}
+void	Pixel::Blend( const Pixel& _Source, float t )
 {
 	float	r = 1.0f - t;
-	RGBA = RGBA * r + _Source * t;
+
+	RGBA = RGBA * r + _Source.RGBA * t;
+	Height = Height * r + _Source.Height * t;
+	Roughness = Roughness * r + _Source.Roughness * t;
 }

@@ -12,114 +12,134 @@ struct __BlurStruct
 };
 
 // Wrap versions
-void	FillBlurGaussianHW( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+void	FillBlurGaussianHW( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__BlurStruct&	Data = *((__BlurStruct*) _pData);
 
 	float	Xl = _X-1.0f, Xr = _X+1.0f;
 	float	Y = float(_Y);
 
-	NjFloat4	SumColors;
-	Data.pSource->SampleWrap( float(_X), Y, SumColors );
+	Data.pSource->SampleWrap( float(_X), Y, _Pixel );
 
-	NjFloat4	Temp;
+	Pixel	Temp;
 	for ( int i=0; i < Data.Size; i++ )
 	{
 		float	Weight = Data.pWeights[i];
 
 		// Accumulate from the left
 		Data.pSource->SampleWrap( Xl, Y, Temp );	Xl--;
-		SumColors = SumColors + Weight * Temp;
+		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
+		_Pixel.Height += Weight * Temp.Height;
+		_Pixel.Roughness += Weight * Temp.Roughness;
 
 		// Accumulate from the right
 		Data.pSource->SampleWrap( Xr, Y, Temp );	Xr++;
-		SumColors = SumColors + Weight * Temp;
+		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
+		_Pixel.Height += Weight * Temp.Height;
+		_Pixel.Roughness += Weight * Temp.Roughness;
 	}
 
 	// Normalize result
-	_Color = Data.InvSumWeights * SumColors;
+	_Pixel.RGBA = Data.InvSumWeights * _Pixel.RGBA;
+	_Pixel.Roughness *= Data.InvSumWeights;
+	_Pixel.Height *= Data.InvSumWeights;
 }
-void	FillBlurGaussianVW( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+void	FillBlurGaussianVW( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__BlurStruct&	Data = *((__BlurStruct*) _pData);
 
 	float	X = float(_X);
 	float	Yl = _Y-1.0f, Yr = _Y+1.0f;
 
-	NjFloat4	SumColors;
-	Data.pSource->SampleWrap( X, float(_Y), SumColors );
+	Data.pSource->SampleWrap( X, float(_Y), _Pixel );
 
-	NjFloat4	Temp;
+	Pixel	Temp;
 	for ( int i=0; i < Data.Size; i++ )
 	{
 		float	Weight = Data.pWeights[i];
 
 		// Accumulate from the top
 		Data.pSource->SampleWrap( X, Yl, Temp );	Yl--;
-		SumColors = SumColors + Weight * Temp;
+		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
+		_Pixel.Height += Weight * Temp.Height;
+		_Pixel.Roughness += Weight * Temp.Roughness;
 
 		// Accumulate from the bottom
 		Data.pSource->SampleWrap( X, Yr, Temp );	Yr++;
-		SumColors = SumColors + Weight * Temp;
+		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
+		_Pixel.Height += Weight * Temp.Height;
+		_Pixel.Roughness += Weight * Temp.Roughness;
 	}
 
 	// Normalize result
-	_Color = Data.InvSumWeights * SumColors;
+	_Pixel.RGBA = Data.InvSumWeights * _Pixel.RGBA;
+	_Pixel.Roughness *= Data.InvSumWeights;
+	_Pixel.Height *= Data.InvSumWeights;
 }
 // Clamp versions
-void	FillBlurGaussianHC( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+void	FillBlurGaussianHC( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__BlurStruct&	Data = *((__BlurStruct*) _pData);
 
 	float	Xl = _X-1.0f, Xr = _X+1.0f;
 	float	Y = float(_Y);
 
-	NjFloat4	SumColors;
-	Data.pSource->SampleClamp( Xl, Y, SumColors );
+	Data.pSource->SampleClamp( float(_X), Y, _Pixel );
 
-	NjFloat4	Temp;
+	Pixel	Temp;
 	for ( int i=0; i < Data.Size; i++ )
 	{
 		float	Weight = Data.pWeights[i];
 
 		// Accumulate from the left
 		Data.pSource->SampleClamp( Xl, Y, Temp );	Xl--;
-		SumColors = SumColors + Weight * Temp;
+		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
+		_Pixel.Height += Weight * Temp.Height;
+		_Pixel.Roughness += Weight * Temp.Roughness;
 
 		// Accumulate from the right
 		Data.pSource->SampleClamp( Xr, Y, Temp );	Xr++;
-		SumColors = SumColors + Weight * Temp;
+		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
+		_Pixel.Height += Weight * Temp.Height;
+		_Pixel.Roughness += Weight * Temp.Roughness;
 	}
 
 	// Normalize result
-	_Color = Data.InvSumWeights * SumColors;
+	_Pixel.RGBA = Data.InvSumWeights * _Pixel.RGBA;
+	_Pixel.Roughness *= Data.InvSumWeights;
+	_Pixel.Height *= Data.InvSumWeights;
 }
-void	FillBlurGaussianVC( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+void	FillBlurGaussianVC( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__BlurStruct&	Data = *((__BlurStruct*) _pData);
 
 	float	X = float(_X);
 	float	Yl = _Y-1.0f, Yr = _Y+1.0f;
 
-	NjFloat4	SumColors;
-	Data.pSource->SampleClamp( X, float(_Y), SumColors );
+	Data.pSource->SampleClamp( X, float(_Y), _Pixel );
 
-	NjFloat4	Temp;
+	Pixel	Temp;
 	for ( int i=0; i < Data.Size; i++ )
 	{
 		float	Weight = Data.pWeights[i];
 
 		// Accumulate from the top
 		Data.pSource->SampleClamp( X, Yl, Temp );	Yl--;
-		SumColors = SumColors + Weight * Temp;
+		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
+		_Pixel.Height += Weight * Temp.Height;
+		_Pixel.Roughness += Weight * Temp.Roughness;
 
 		// Accumulate from the bottom
 		Data.pSource->SampleClamp( X, Yr, Temp );	Yr++;
-		SumColors = SumColors + Weight * Temp;
+		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
+		_Pixel.Height += Weight * Temp.Height;
+		_Pixel.Roughness += Weight * Temp.Roughness;
 	}
 
 	// Normalize result
-	_Color = Data.InvSumWeights * SumColors;
+	_Pixel.RGBA = Data.InvSumWeights * _Pixel.RGBA;
+	_Pixel.Roughness *= Data.InvSumWeights;
+	_Pixel.Height *= Data.InvSumWeights;
 }
 
 void	Filters::BlurGaussian( TextureBuilder& _Builder, float _SizeX, float _SizeY, bool _bWrap, float _MinWeight )
@@ -179,15 +199,21 @@ void	Filters::BlurGaussian( TextureBuilder& _Builder, float _SizeX, float _SizeY
 
 //////////////////////////////////////////////////////////////////////////
 // Unsharp masking
-void	FillUnsharpMaskSubtract( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+void	FillUnsharpMaskSubtract( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 {
 	TextureBuilder&	SourceSmooth = *((TextureBuilder*) _pData);
 
-	NjFloat4	Smooth;
+	Pixel	Smooth;
 	SourceSmooth.Get( _X, _Y, Smooth );
 
-	_Color = 2.0f * _Color - Smooth;
-	_Color = _Color.Max( NjFloat4::Zero );	// Clip negatives
+	_Pixel.RGBA = 2.0f * _Pixel.RGBA - Smooth.RGBA;
+	_Pixel.Height = 2.0f * _Pixel.Height - Smooth.Height;
+	_Pixel.Roughness = 2.0f * _Pixel.Roughness - Smooth.Roughness;
+
+	// Clip negatives
+	_Pixel.RGBA = _Pixel.RGBA.Max( NjFloat4::Zero );
+	_Pixel.Height = MAX( 0.0f, _Pixel.Height );
+	_Pixel.Roughness = MAX( 0.0f, _Pixel.Roughness );
 }
 
 void	Filters::UnsharpMask( TextureBuilder& _Builder, float _Size )
@@ -207,17 +233,17 @@ struct __BCGStruct
 {
 	float	B, C, G;
 };
-void	FillBCG( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+void	FillBCG( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__BCGStruct&	BCG = *((__BCGStruct*) _pData);
 
-	float	Luma = _Color | LUMINANCE;
+	float	Luma = _Pixel.RGBA | LUMINANCE;
 //	float	ContrastedLuma = BCG.B + BCG.C * (Luma - 0.5f);
 	float	ContrastedLuma = 0.5f + BCG.C * (Luma + BCG.B);
 			ContrastedLuma = SATURATE( ContrastedLuma );
 	float	NewLuma = powf( ContrastedLuma, BCG.G );
 
-	_Color = _Color * (NewLuma / Luma);
+	_Pixel.RGBA = _Pixel.RGBA * (NewLuma / Luma);
 }
 
 void	Filters::BrightnessContrastGamma( TextureBuilder& _Builder, float _Brightness, float _Contrast, float _Gamma )
@@ -239,15 +265,17 @@ struct __EmbossStruct
 	NjFloat2		Direction;
 	float			Amplitude;
 };
-void	FillEmboss( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+void	FillEmboss( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__EmbossStruct&	Params = *((__EmbossStruct*) _pData);
 
-	NjFloat4	C0, C1;
+	Pixel	C0, C1;
 	Params.pSource->SampleWrap( _X + Params.Direction.x, _Y + Params.Direction.y, C0 );
 	Params.pSource->SampleWrap( _X - Params.Direction.x, _Y - Params.Direction.y, C1 );
 
-	_Color = 0.5f * NjFloat4::One + Params.Amplitude * (C0 - C1);
+	_Pixel.RGBA = 0.5f * NjFloat4::One + Params.Amplitude * (C0.RGBA - C1.RGBA);
+	_Pixel.Height = 0.5f + Params.Amplitude * (C0.Height - C1.Height);
+	_Pixel.Roughness = 0.5f + Params.Amplitude * (C0.Roughness - C1.Roughness);
 }
 
 void	Filters::Emboss( TextureBuilder& _Builder, const NjFloat2& _Direction, float _Amplitude )
@@ -269,24 +297,27 @@ void	Filters::Emboss( TextureBuilder& _Builder, const NjFloat2& _Direction, floa
 // Erosion
 struct __ErosionStruct
 {
-	NjFloat4*	pSource;
-	int			W, H;
-	int			Size;
+	Pixel*	pSource;
+	int		W, H;
+	int		Size;
 };
-void	FillErode( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+void	FillErode( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__ErosionStruct&	Params = *((__ErosionStruct*) _pData);
 
-	NjFloat4	C;
-	_Color = FLOAT32_MAX * NjFloat4::One;
+	_Pixel.RGBA = FLOAT32_MAX * NjFloat4::One;
+	_Pixel.Height = FLOAT32_MAX;
+	_Pixel.Roughness = FLOAT32_MAX;
 	for ( int Y=_Y-Params.Size; Y <= _Y+Params.Size; Y++ )
 	{
-		int			SampleY = ((Params.H+Y) % Params.H);
-		NjFloat4*	pScanline = &Params.pSource[Params.W * SampleY];
+		int		SampleY = ((Params.H+Y) % Params.H);
+		Pixel*	pScanline = &Params.pSource[Params.W * SampleY];
 		for ( int X=_X-Params.Size; X <= _X+Params.Size; X++ )
 		{
 			int	SampleX = (Params.W+X) % Params.W;
-			_Color = _Color.Min( pScanline[SampleX] );
+			_Pixel.RGBA = _Pixel.RGBA.Min( pScanline[SampleX].RGBA );
+			_Pixel.Height = MIN( _Pixel.Height, pScanline[SampleX].Height );
+			_Pixel.Roughness = MIN( _Pixel.Roughness, pScanline[SampleX].Roughness );
 		}
 	}
 }
@@ -310,24 +341,27 @@ void	Filters::Erode( TextureBuilder& _Builder, int _KernelSize )
 // Dilation
 struct __DilationStruct
 {
-	NjFloat4*	pSource;
-	int			W, H;
-	int			Size;
+	Pixel*	pSource;
+	int		W, H;
+	int		Size;
 };
-void	FillDilate( int _X, int _Y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+void	FillDilate( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__DilationStruct&	Params = *((__DilationStruct*) _pData);
 
-	NjFloat4	C;
-	_Color = -FLOAT32_MAX * NjFloat4::One;
+	_Pixel.RGBA = -FLOAT32_MAX * NjFloat4::One;
+	_Pixel.Height = -FLOAT32_MAX;
+	_Pixel.Roughness = -FLOAT32_MAX;
 	for ( int Y=_Y-Params.Size; Y <= _Y+Params.Size; Y++ )
 	{
-		int			SampleY = ((Params.H+Y) % Params.H);
-		NjFloat4*	pScanline = &Params.pSource[Params.W * SampleY];
+		int		SampleY = ((Params.H+Y) % Params.H);
+		Pixel*	pScanline = &Params.pSource[Params.W * SampleY];
 		for ( int X=_X-Params.Size; X <= _X+Params.Size; X++ )
 		{
 			int	SampleX = (Params.W+X) % Params.W;
-			_Color = _Color.Max( pScanline[SampleX] );
+			_Pixel.RGBA = _Pixel.RGBA.Max( pScanline[SampleX].RGBA );
+			_Pixel.Height = MAX( _Pixel.Height, pScanline[SampleX].Height );
+			_Pixel.Roughness = MAX( _Pixel.Roughness, pScanline[SampleX].Roughness );
 		}
 	}
 }

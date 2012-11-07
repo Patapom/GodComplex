@@ -48,31 +48,31 @@ void	FillNoise( int x, int y, const NjFloat2& _UV, NjFloat4& _Color, void* _pDat
 	_Color.Set( C, C, C, 1.0f );
 }
 
-void	FillRectangle( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
+void	FillRectangle( const DrawUtils::DrawInfos& i, Pixel& P )
 {
 	float		Alpha = i.Coverage;
 	float		Distance = 1.0f - 2.0f * abs(i.Distance);
 
-	NjFloat4	C( Distance, 0, 0, 0 );	// Draw distance to border in red
+	Pixel	P2( NjFloat4( Distance, 0, 0, 0 ) );	// Draw distance to border in red
 	if ( Distance < 0.0f )
 		Alpha = 0.0f;
 
-	P.Blend( C, Alpha );
+	P.Blend( P2, Alpha );
 }
 
-void	FillEllipse( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
+void	FillEllipse( const DrawUtils::DrawInfos& i, Pixel& P )
 {
-	NjFloat4	C = i.Distance < 1.0f ? NjFloat4( 0, 0, i.Distance, i.Distance * i.Coverage ) : NjFloat4( 0, 1, 1, 0.5 );
-	P.Blend( C, C.w );
+	Pixel	C( i.Distance < 1.0f ? NjFloat4( 0, 0, i.Distance, i.Distance * i.Coverage ) : NjFloat4( 0, 1, 1, 0.5 ) );
+	P.Blend( C, C.RGBA.w );
 }
 
-void	FillLine( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
+void	FillLine( const DrawUtils::DrawInfos& i, Pixel& P )
 {
 	float	D = MAX( 0.0f, 1.0f - i.Distance );
-	P.Blend( NjFloat4( 0, D, 0, 0 ), D * i.Coverage );
+	P.Blend( Pixel( NjFloat4( 0, D, 0, 0 ) ), D * i.Coverage );
 }
 
-void	FillScratch( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P, float _Distance, float _U )
+void	FillScratch( const DrawUtils::DrawInfos& i, Pixel& P, float _Distance, float _U )
 {
  	Noise&	N = *((Noise*) i.pData);
 
@@ -80,10 +80,10 @@ void	FillScratch( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P, float _Dis
  				Value += abs( 4.0f * N.Perlin( 0.005f * (Value + _U) ) );
 
 	NjFloat4	Color( Value, Value, Value, i.Coverage * (1.0f - abs(i.Distance)) );
-	P.Blend( Color, Color.w );
+	P.Blend( Pixel( Color ), Color.w );
 }
 
-void	FillSplotch( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
+void	FillSplotch( const DrawUtils::DrawInfos& i, Pixel& P )
 {
  	Noise&	N = *((Noise*) i.pData);
 
@@ -102,7 +102,7 @@ void	FillSplotch( const DrawUtils::DrawInfos& i, DrawUtils::Pixel& P )
 	float	A = C * C * i.Coverage;
 	NjFloat4	Color( C, C, C, A );
 
-	P.Blend( Color, Color.w );
+	P.Blend( Pixel( Color ), Color.w );
 }
 
 int	Build2DTextures( IntroProgressDelegate& _Delegate )
@@ -208,7 +208,7 @@ return 0;
 //			Filters::Erode( TB, 3 );
 //*/
 
-		gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.Convert( PixelFormatRGBA16F::DESCRIPTOR ) );
+		gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.Convert( PixelFormatRGBA16F::DESCRIPTOR, TextureBuilder::CONV_RGBA_NxNyHR ) );
 	}
 
 	return 0;	// OK !

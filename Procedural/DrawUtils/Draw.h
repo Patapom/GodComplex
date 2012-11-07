@@ -2,6 +2,22 @@
 //
 #pragma once
 
+// A pixel is a color + a height + a roughness
+// From a bunch of pixels we can thus deduce the diffuse, specular, ambient occlusion, height and normal maps
+struct	Pixel
+{
+ 	NjFloat4	RGBA;
+	float		Height;
+	float		Roughness;
+
+	Pixel();
+	Pixel( const NjFloat4& _RGBA, float _Height=0.0f, float _Roughness=0.0f );
+
+	// Blends source with current value using provided interpolant
+	//	this = this * (1-t) + _Source * t
+	void		Blend( const Pixel& _Source, float t );
+};
+
 class	DrawUtils
 {
 public:		// NESTED TYPES
@@ -14,15 +30,6 @@ public:		// NESTED TYPES
 		NjFloat2	UV;			// Normalized size of the surface
 		float		Distance;	// Normalized distance to the border of the primitive
 		void*		pData;		// User data
-	};
-
-	struct	Pixel
-	{
-		NjFloat4	RGBA;		// For the moment we only draw RGBA textures
-
-		// Blends source with current value using provided alpha
-		//	RGBA = _Source * (1-t) + RGBA * t
-		void		Blend( const NjFloat4& _Source, float t );
 	};
 
 	typedef void	(*FillDelegate)( const DrawInfos& _Infos, Pixel& _Pixel );
@@ -42,7 +49,7 @@ protected:
 			int	WrappedY = Y % pOwner->m_Height;
 				WrappedY = WrappedY < 0 ? WrappedY + pOwner->m_Height : WrappedY;	// Ensure always positive !
 
-			pScanline = (Pixel*) pOwner->m_pSurface + pOwner->m_Width * WrappedY;
+			pScanline = pOwner->m_pSurface + pOwner->m_Width * WrappedY;
 			pOwner->m_Infos.y = Y;
 		}
 		virtual void	DrawPixel() = 0;
@@ -93,7 +100,7 @@ protected:	// FIELDS
 
 	int			m_Width;
 	int			m_Height;
-	NjFloat4*	m_pSurface;
+	Pixel*		m_pSurface;
 
 	// Transform
 	NjFloat2	m_X;
@@ -111,8 +118,8 @@ public:		// METHODS
 
 	DrawUtils();
 
-	void	SetupSurface( int _Width, int _Height, NjFloat4* _pSurface );
-	void	SetupContext( float _PivotX, float _PivotY, float _Angle );
+	void	SetupSurface( int _Width, int _Height, Pixel* _pSurface );
+	void	SetupContext( float _PivotX, float _PivotY, float _Angle );	// Use this to setup your transform context
 
 	// Draws a rectangle
 	//	border = thickness of the border

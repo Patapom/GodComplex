@@ -21,9 +21,9 @@ static const float3	LIGHT_POS3 = float3( -0.5 * ROOM_SIZE.x + 1.5 + LIGHT_SIZE.x
 
 // Wall material description
 //static const float	WALL_REFLECTANCE = 0.2;###
-static const float	WALL_REFLECTANCE = 0.4;
-static const float	WALL_REFLECTANCE0 = WALL_REFLECTANCE;
-static const float	WALL_REFLECTANCE1 = WALL_REFLECTANCE;
+static const float	WALL_REFLECTANCE = 0.3;
+static const float	WALL_REFLECTANCE0 = 0.2;//WALL_REFLECTANCE;
+static const float	WALL_REFLECTANCE1 = 0.6;//WALL_REFLECTANCE;
 static const float	WALL_REFLECTANCE2 = WALL_REFLECTANCE;
 static const float	WALL_REFLECTANCE3 = WALL_REFLECTANCE;
 static const float	WALL_REFLECTANCE4 = WALL_REFLECTANCE;
