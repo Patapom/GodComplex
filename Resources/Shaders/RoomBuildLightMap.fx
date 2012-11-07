@@ -169,10 +169,10 @@ void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset wit
 	GenerateRayDirect( Infos, RayIndex, RaysCount, Seed, Position, Normal, ToLight0, ToLight1, ToLight2, ToLight3 );
 
 	// Compute radiance coming from the 4 lights
-	float4	Radiance = float4(	saturate( -dot( LIGHT_NORMAL, ToLight0.xyz ) ) * ToLight0.w,
-								saturate( -dot( LIGHT_NORMAL, ToLight1.xyz ) ) * ToLight1.w,
-								saturate( -dot( LIGHT_NORMAL, ToLight2.xyz ) ) * ToLight2.w,
-								saturate( -dot( LIGHT_NORMAL, ToLight3.xyz ) ) * ToLight3.w
+	float4	Radiance = float4(	 saturate( -dot( LIGHT_NORMAL, ToLight0.xyz ) ) * ToLight0.w,
+								 saturate( -dot( LIGHT_NORMAL, ToLight1.xyz ) ) * ToLight1.w,
+								 saturate( -dot( LIGHT_NORMAL, ToLight2.xyz ) ) * ToLight2.w,
+								 saturate( -dot( LIGHT_NORMAL, ToLight3.xyz ) ) * ToLight3.w
 							 ) * saturate( dot( Normal, ToLight0.xyz ) );
 
 	Radiance *= TWOPI / 1024.0;	// The contribution of each radiance to the final irradiance integral

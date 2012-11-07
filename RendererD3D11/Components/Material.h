@@ -27,8 +27,10 @@ class ConstantBuffer;
 	(Mat).Use();					\
 	Material&	M = Mat;
 
+// #define USING_MATERIAL_END	\
+// M.GetDevice().RemoveRenderTargets(); /* Just to ensure we don't leave any attached RT we may need later as a texture !*/	\
+// }
 #define USING_MATERIAL_END	\
-	M.GetDevice().RemoveRenderTargets(); /* Just to ensure we don't leave any attached RT we may need later as a texture !*/	\
 }
 
 

@@ -9,6 +9,11 @@ Texture2DArray	_TexLightMaps	: register(t10);
 cbuffer	cbObject	: register( b10 )
 {
 	float4x4	_Local2World;
+
+	float3		_LightColor0;
+	float3		_LightColor1;
+	float3		_LightColor2;
+	float3		_LightColor3;
 };
 //]
 
@@ -42,26 +47,55 @@ PS_IN	VS( VS_IN _In )
 	return Out;
 }
 
+// float4	PS( PS_IN _In ) : SV_TARGET0
+// {
+// //	return 1;
+// //	return float4( _In.Normal, 1.0 );
+// //	return float4( _In.UV, 0, 1.0 );
+// //	return float4( _In.UV2, 1.0 );
+// //	return float4( _In.UV2.xy, 0, 1.0 );
+// 
+// // 	return 0.25 * (1+_In.UV2.z);
+// // 	return 10.0 * _TexLightMaps.SampleLevel( LinearClamp, float3( _In.UV, 1 ), 0.0 );
+// 	return 5.0 * _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );	// Radiance
+// 	return _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 ) / 6.0;	// MaterialID
+// //	return _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );			// UVs
+// //	return 0.2 * _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );	// Position
+// //	return _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );
+// 
+// 	float3	Normal = _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 ).xyz;
+// 	return float4( 100.0 * abs( Normal - _In.Normal ), 0 );
+// 
+// // 	float4	Color = _TexLightMap.SampleLevel( LinearClamp, _In.UV, 0.0 );
+// // 	return float4( Color.xyz, 1.0 );
+// // 	return float4( lerp( float3( _In.UV, 0 ), Color, Color.x + Color.y ), 1.0 );
+// }
+
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
-//	return 1;
-//	return float4( _In.Normal, 1.0 );
-//	return float4( _In.UV, 0, 1.0 );
-//	return float4( _In.UV2, 1.0 );
-//	return float4( _In.UV2.xy, 0, 1.0 );
+	float4	LightInfluences = _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );	// Radiance weight from each light source
+	float3	Irradiance  = LightInfluences.x  * _LightColor0
+						+ LightInfluences.y  * _LightColor1
+						+ LightInfluences.z  * _LightColor2
+						+ LightInfluences.w  * _LightColor3;
 
-// 	return 0.25 * (1+_In.UV2.z);
-// 	return 10.0 * _TexLightMaps.SampleLevel( LinearClamp, float3( _In.UV, 1 ), 0.0 );
-	return 5.0 * _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );	// Radiance
-	return _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 ) / 6.0;	// MaterialID
-//	return _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );			// UVs
-//	return 0.2 * _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );	// Position
-//	return _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 );
+	float3	Radiance = Irradiance * RECITWOPI;
 
-	float3	Normal = _TexLightMaps.SampleLevel( LinearClamp, _In.UV2, 0.0 ).xyz;
-	return float4( 100.0 * abs( Normal - _In.Normal ), 0 );
+	return float4( Radiance, 1 );
+}
 
-// 	float4	Color = _TexLightMap.SampleLevel( LinearClamp, _In.UV, 0.0 );
-// 	return float4( Color.xyz, 1.0 );
-// 	return float4( lerp( float3( _In.UV, 0 ), Color, Color.x + Color.y ), 1.0 );
+float4	PS_Emissive( PS_IN _In ) : SV_TARGET0
+{
+	// Isolate light index
+	float	LightIndex = _In.UV2.z;
+	float3	LightColor = _LightColor0;
+			LightColor = lerp( LightColor, _LightColor1, saturate( 10000.0 * (LightIndex - 0.5) ) );
+			LightColor = lerp( LightColor, _LightColor2, saturate( 10000.0 * (LightIndex - 1.5) ) );
+			LightColor = lerp( LightColor, _LightColor3, saturate( 10000.0 * (LightIndex - 2.5) ) );
+
+	float3	Radiance = LightColor * RECITWOPI;	// Light color is light's irradiance in W/m² but we need to get radiance
+
+	Radiance = max( Radiance, 0.2 );
+
+	return float4( Radiance, 1 );
 }

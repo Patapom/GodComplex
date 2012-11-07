@@ -8,12 +8,27 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
  	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T2T3::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
-// 	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_RENDER_CUBEMAP, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PS" ), 2 );
+ 	CHECK_MATERIAL( m_pMatDisplayEmissive = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T2T3::DESCRIPTOR, "VS", NULL, "PS_Emissive" ), 2 );
 
- 	CHECK_MATERIAL( m_pMatTestTesselation = CreateMaterial( IDR_SHADER_ROOM_TESSELATION, VertexFormatP3T2::DESCRIPTOR, "VS", "HS", "DS", NULL, "PS" ), 3 );
+	//////////////////////////////////////////////////////////////////////////
+	// Build the room geometry & compute lightmaps
+	BuildRoom();
 
-// 	// Test the shader immediately
+	//////////////////////////////////////////////////////////////////////////
+	// Create the constant buffers
+ 	m_pCB_Object = new CB<CBObject>( gs_Device, 10 );
+ 	m_pCB_Tesselate = new CB<CBTesselate>( gs_Device, 10 );
+
+
+	// Build animation parameters
+	float	LightUpTimeBase = 2.0f;
+	float	LightUpTimeVariance = 0.1f;
+	m_LightUpTime.Set( _frand( LightUpTimeBase-LightUpTimeVariance, LightUpTimeBase+LightUpTimeVariance ), _frand( LightUpTimeBase-LightUpTimeVariance, LightUpTimeBase+LightUpTimeVariance ), _frand( LightUpTimeBase-LightUpTimeVariance, LightUpTimeBase+LightUpTimeVariance ), _frand( LightUpTimeBase-LightUpTimeVariance, LightUpTimeBase+LightUpTimeVariance ) );
+	m_LightFailTimer = NjFloat4::Zero;
+
+// 	// Test tessealation shader
 // 	{
+// 		CHECK_MATERIAL( m_pMatTestTesselation = CreateMaterial( IDR_SHADER_ROOM_TESSELATION, VertexFormatP3T2::DESCRIPTOR, "VS", "HS", "DS", NULL, "PS" ), 3 );
 // 		CHECK_MATERIAL( m_pCSTest = CreateComputeShader( IDR_SHADER_ROOM_TEST_COMPUTE, "CS" ), 4 );
 // 		struct	Pipo
 // 		{
@@ -31,34 +46,23 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 // 		Output.Read();
 // 		delete m_pCSTest );
 // 	}
-
-	//////////////////////////////////////////////////////////////////////////
-	// Build the room geometry & compute lightmaps
-	BuildRoom();
-
-
-	float VERT_OFFSET = 0.2f;
-	VertexFormatP3T2	pVertices[4] =
-	{
-// 		{ NjFloat3( -1.0f, VERT_OFFSET+1.0f, 0.0f ), NjFloat2( 0.0f, 0.0f ) },	// Top-left
-// 		{ NjFloat3( -1.0f, VERT_OFFSET-1.0f, 0.0f ), NjFloat2( 0.0f, 1.0f ) },	// Bottom-left
-// 		{ NjFloat3( 1.0f, VERT_OFFSET-1.0f, 0.0f ), NjFloat2( 1.0f, 1.0f ) },	// Bottom-right
-// 		{ NjFloat3( 1.0f, VERT_OFFSET+1.0f, 0.0f ), NjFloat2( 1.0f, 0.0f ) },	// Top-right
-
-		{ NjFloat3( -1.0f, VERT_OFFSET+0.0f, -1.0f ), NjFloat2( 0.0f, 0.0f ) },	// Top-left
-		{ NjFloat3( -1.0f, VERT_OFFSET+0.0f, 1.0f ), NjFloat2( 0.0f, 1.0f ) },	// Bottom-left
-		{ NjFloat3( 1.0f, VERT_OFFSET+0.0f, 1.0f ), NjFloat2( 1.0f, 1.0f ) },	// Bottom-right
-		{ NjFloat3( 1.0f, VERT_OFFSET+0.0f, -1.0f ), NjFloat2( 1.0f, 0.0f ) },	// Top-right
-	};
-
-//	Primitive*	pPrim = new Primitive( gs_Device, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_4_CONTROL_POINT_PATCH, VertexFormatP3T2::DESCRIPTOR );
-	m_pPrimTesselatedQuad = new Primitive( gs_Device, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST, VertexFormatP3T2::DESCRIPTOR );
-
-
-	//////////////////////////////////////////////////////////////////////////
-	// Create the constant buffers
- 	m_pCB_Object = new CB<CBObject>( gs_Device, 10 );
- 	m_pCB_Tesselate = new CB<CBTesselate>( gs_Device, 10 );
+// 
+// 	float VERT_OFFSET = 0.2f;
+// 	VertexFormatP3T2	pVertices[4] =
+// 	{
+// // 		{ NjFloat3( -1.0f, VERT_OFFSET+1.0f, 0.0f ), NjFloat2( 0.0f, 0.0f ) },	// Top-left
+// // 		{ NjFloat3( -1.0f, VERT_OFFSET-1.0f, 0.0f ), NjFloat2( 0.0f, 1.0f ) },	// Bottom-left
+// // 		{ NjFloat3( 1.0f, VERT_OFFSET-1.0f, 0.0f ), NjFloat2( 1.0f, 1.0f ) },	// Bottom-right
+// // 		{ NjFloat3( 1.0f, VERT_OFFSET+1.0f, 0.0f ), NjFloat2( 1.0f, 0.0f ) },	// Top-right
+// 
+// 		{ NjFloat3( -1.0f, VERT_OFFSET+0.0f, -1.0f ), NjFloat2( 0.0f, 0.0f ) },	// Top-left
+// 		{ NjFloat3( -1.0f, VERT_OFFSET+0.0f, 1.0f ), NjFloat2( 0.0f, 1.0f ) },	// Bottom-left
+// 		{ NjFloat3( 1.0f, VERT_OFFSET+0.0f, 1.0f ), NjFloat2( 1.0f, 1.0f ) },	// Bottom-right
+// 		{ NjFloat3( 1.0f, VERT_OFFSET+0.0f, -1.0f ), NjFloat2( 1.0f, 0.0f ) },	// Top-right
+// 	};
+// 
+// //	Primitive*	pPrim = new Primitive( gs_Device, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_4_CONTROL_POINT_PATCH, VertexFormatP3T2::DESCRIPTOR );
+// 	m_pPrimTesselatedQuad = new Primitive( gs_Device, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST, VertexFormatP3T2::DESCRIPTOR );
 }
 
 EffectRoom::~EffectRoom()
@@ -66,32 +70,84 @@ EffectRoom::~EffectRoom()
  	delete m_pCB_Object;
  	delete m_pCB_Tesselate;
 
-	delete m_pMatRenderCubeMap;
  	delete m_pMatDisplay;
- 	delete m_pMatTestTesselation;
+ 	delete m_pMatDisplayEmissive;
 
-	delete m_pPrimTesselatedQuad;
 	delete m_pPrimRoom;
+	delete m_pPrimRoomLights;
 	delete m_pTexLightMaps;
+
+// 	delete m_pMatTestTesselation;
+//	delete m_pPrimTesselatedQuad;
+}
+
+float	EffectRoom::AnimateFailure( float& _TimerTillFailure, float& _TimeSinceFailure, float& _FailureDuration, float _FailMinTime, float _FailDeltaTime, float _DeltaTime )
+{
+	float	OldTimer = _TimerTillFailure;
+	_TimerTillFailure -= _DeltaTime;
+	if ( _TimerTillFailure >= 0.0f )
+		return 1.0f;	// Still okay!
+
+	// Animate failure
+	if ( OldTimer >= 0.0f )
+	{
+		_TimeSinceFailure = 0.0f;					// Reset failure animation time
+		_FailureDuration = _frand( 1.0f, 2.0f );	// ...and failure duration
+	}
+	else
+		_TimeSinceFailure += _DeltaTime;
+
+	float	t = _TimeSinceFailure / _FailureDuration;
+	if ( t > 1.0f )
+		_TimerTillFailure = _FailMinTime + _frand() * _FailDeltaTime;	// Finished failure animation => Restart light timer until next failure
+
+	return SATURATE( 10.0f * sinf( 10.0f * t*t ) );
+
+	t = 2.0f * t - 1.0f;
+//	return expf( -t*t );
+	return 0.0f;
+	return 1.0f - SATURATE( 1.0f - 8.0f * expf( -powf(1.1f-abs(t), 8.0f) ) );
 }
 
 void	EffectRoom::Render( float _Time, float _DeltaTime )
 {
+	//////////////////////////////////////////////////////////////////////////
+	// Animate lights
+	float		LightMaxIntensity = 10.0f;
+	float		LightIntensity = LightMaxIntensity * (1.0f - expf( -1.0f * _Time ));
+	NjFloat4	LightIntensities = LightIntensity * NjFloat4::One;
+
+	NjFloat4	FailTimeMin( 1.0f, 10.0f, 0.2f, 5.0f );
+	NjFloat4	FailTimeDelta( 4.0f, 5.0f, 1.0f, 15.0f );
+
+		// Check for failures
+	LightIntensities.x *= AnimateFailure( m_LightFailTimer.x, m_LightFailureTimer.x, m_LightFailureDuration.x, FailTimeMin.x, FailTimeDelta.x, _DeltaTime );
+	LightIntensities.y *= AnimateFailure( m_LightFailTimer.y, m_LightFailureTimer.y, m_LightFailureDuration.y, FailTimeMin.y, FailTimeDelta.y, _DeltaTime );
+	LightIntensities.z *= AnimateFailure( m_LightFailTimer.z, m_LightFailureTimer.z, m_LightFailureDuration.z, FailTimeMin.z, FailTimeDelta.z, _DeltaTime );
+	LightIntensities.w *= AnimateFailure( m_LightFailTimer.w, m_LightFailureTimer.w, m_LightFailureDuration.w, FailTimeMin.w, FailTimeDelta.w, _DeltaTime );
+
+	m_pCB_Object->m.LightColor0.Set( LightIntensities.x, LightIntensities.x, LightIntensities.x, 0 );
+	m_pCB_Object->m.LightColor1.Set( LightIntensities.y, LightIntensities.y, LightIntensities.y, 0 );
+	m_pCB_Object->m.LightColor2.Set( LightIntensities.x, LightIntensities.x, LightIntensities.x, 0 );
+	m_pCB_Object->m.LightColor3.Set( LightIntensities.w, LightIntensities.w, LightIntensities.w, 0 );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Display the room
+	//
+ 	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4::Zero );
+	gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), &gs_Device.DefaultDepthStencil() );
+	gs_Device.SetStates( gs_Device.m_pRS_CullNone, gs_Device.m_pDS_ReadWriteLess, gs_Device.m_pBS_Disabled );
+
+	m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( _TV(1.0f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
+	m_pCB_Object->UpdateData();
+
 	{	USING_MATERIAL_START( *m_pMatDisplay )
-
-//		gs_Device.SetRenderTarget( m_RTTarget, &gs_Device.DefaultDepthStencil() );
- 		gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4::Zero );
-		gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), &gs_Device.DefaultDepthStencil() );
-		gs_Device.SetStates( gs_Device.m_pRS_CullNone, gs_Device.m_pDS_ReadWriteLess, gs_Device.m_pBS_Disabled );
-
 		m_pTexLightMaps->SetPS( 10 );
-
-		// Render the room
-		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( _TV(1.0f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
-		m_pCB_Object->UpdateData();
-
 		m_pPrimRoom->Render( *m_pMatDisplay );
-
+		USING_MATERIAL_END
+	}
+	{	USING_MATERIAL_START( *m_pMatDisplayEmissive )
+		m_pPrimRoomLights->Render( *m_pMatDisplayEmissive );
 		USING_MATERIAL_END
 	}
 
@@ -195,57 +251,104 @@ void	EffectRoom::BuildRoom()
 	};
 
 	//////////////////////////////////////////////////////////////////////////
-	// Generate the primitive
-	VertexFormatP3N3G3T2T3	pVertices[4*6];
-	U16						pIndices[6*6];
-	for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
+	// Generate the primitives
 	{
-		NjFloat2	Size = pSizes[FaceIndex];
-		NjFloat3	C = pCenters[FaceIndex];
-		NjFloat3	N = pNormals[FaceIndex];
-		NjFloat3	T = pTangents[FaceIndex];
-		NjFloat3	B = pBiTangents[FaceIndex];
-		NjFloat4	UV = pLightMapUVs[FaceIndex];
-		float		ArrayIndex = pLightMapArrayIndex[FaceIndex];
+		VertexFormatP3N3G3T2T3	pVertices[4*6];
+		U16						pIndices[6*6];
+		for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
+		{
+			NjFloat2	Size = pSizes[FaceIndex];
+			NjFloat3	C = pCenters[FaceIndex];
+			NjFloat3	N = pNormals[FaceIndex];
+			NjFloat3	T = pTangents[FaceIndex];
+			NjFloat3	B = pBiTangents[FaceIndex];
+			NjFloat4	UV = pLightMapUVs[FaceIndex];
+			float		ArrayIndex = pLightMapArrayIndex[FaceIndex];
 
-		// Top-left corner
-		pVertices[4*FaceIndex+0].Position = C - 0.5f * Size.x * T + 0.5f * Size.y * B;
-		pVertices[4*FaceIndex+0].Normal = N;
-		pVertices[4*FaceIndex+0].Tangent = T;
-		pVertices[4*FaceIndex+0].UV.Set( 0.0f, 0.0f );
-		pVertices[4*FaceIndex+0].UV2.Set( UV.x + UV.z * 0.0f, UV.y + UV.w * 1.0f, ArrayIndex );
+			// Top-left corner
+			pVertices[4*FaceIndex+0].Position = C - 0.5f * Size.x * T + 0.5f * Size.y * B;
+			pVertices[4*FaceIndex+0].Normal = N;
+			pVertices[4*FaceIndex+0].Tangent = T;
+			pVertices[4*FaceIndex+0].UV.Set( 0.0f, 0.0f );
+			pVertices[4*FaceIndex+0].UV2.Set( UV.x + UV.z * 0.0f, UV.y + UV.w * 1.0f, ArrayIndex );
 
-		// Bottom-left corner
-		pVertices[4*FaceIndex+1].Position = C - 0.5f * Size.x * T - 0.5f * Size.y * B;
-		pVertices[4*FaceIndex+1].Normal = N;
-		pVertices[4*FaceIndex+1].Tangent = T;
-		pVertices[4*FaceIndex+1].UV.Set( 0.0f, 1.0f );
-		pVertices[4*FaceIndex+1].UV2.Set( UV.x + UV.z * 0.0f, UV.y + UV.w * 0.0f, ArrayIndex );
+			// Bottom-left corner
+			pVertices[4*FaceIndex+1].Position = C - 0.5f * Size.x * T - 0.5f * Size.y * B;
+			pVertices[4*FaceIndex+1].Normal = N;
+			pVertices[4*FaceIndex+1].Tangent = T;
+			pVertices[4*FaceIndex+1].UV.Set( 0.0f, 1.0f );
+			pVertices[4*FaceIndex+1].UV2.Set( UV.x + UV.z * 0.0f, UV.y + UV.w * 0.0f, ArrayIndex );
 
-		// Bottom-right corner
-		pVertices[4*FaceIndex+2].Position = C + 0.5f * Size.x * T - 0.5f * Size.y * B;
-		pVertices[4*FaceIndex+2].Normal = N;
-		pVertices[4*FaceIndex+2].Tangent = T;
-		pVertices[4*FaceIndex+2].UV.Set( 1.0f, 1.0f );
-		pVertices[4*FaceIndex+2].UV2.Set( UV.x + UV.z * 1.0f, UV.y + UV.w * 0.0f, ArrayIndex );
+			// Bottom-right corner
+			pVertices[4*FaceIndex+2].Position = C + 0.5f * Size.x * T - 0.5f * Size.y * B;
+			pVertices[4*FaceIndex+2].Normal = N;
+			pVertices[4*FaceIndex+2].Tangent = T;
+			pVertices[4*FaceIndex+2].UV.Set( 1.0f, 1.0f );
+			pVertices[4*FaceIndex+2].UV2.Set( UV.x + UV.z * 1.0f, UV.y + UV.w * 0.0f, ArrayIndex );
 
-		// Top-right corner
-		pVertices[4*FaceIndex+3].Position = C + 0.5f * Size.x * T + 0.5f * Size.y * B;
-		pVertices[4*FaceIndex+3].Normal = N;
-		pVertices[4*FaceIndex+3].Tangent = T;
-		pVertices[4*FaceIndex+3].UV.Set( 1.0f, 0.0f );
-		pVertices[4*FaceIndex+3].UV2.Set( UV.x + UV.z * 1.0f, UV.y + UV.w * 1.0f, ArrayIndex );
+			// Top-right corner
+			pVertices[4*FaceIndex+3].Position = C + 0.5f * Size.x * T + 0.5f * Size.y * B;
+			pVertices[4*FaceIndex+3].Normal = N;
+			pVertices[4*FaceIndex+3].Tangent = T;
+			pVertices[4*FaceIndex+3].UV.Set( 1.0f, 0.0f );
+			pVertices[4*FaceIndex+3].UV2.Set( UV.x + UV.z * 1.0f, UV.y + UV.w * 1.0f, ArrayIndex );
 
-		// Build indices
-		pIndices[6*FaceIndex+0] = 4 * FaceIndex + 0;
-		pIndices[6*FaceIndex+1] = 4 * FaceIndex + 1;
-		pIndices[6*FaceIndex+2] = 4 * FaceIndex + 2;
-		pIndices[6*FaceIndex+3] = 4 * FaceIndex + 0;
-		pIndices[6*FaceIndex+4] = 4 * FaceIndex + 2;
-		pIndices[6*FaceIndex+5] = 4 * FaceIndex + 3;
+			// Build indices
+			pIndices[6*FaceIndex+0] = 4 * FaceIndex + 0;
+			pIndices[6*FaceIndex+1] = 4 * FaceIndex + 1;
+			pIndices[6*FaceIndex+2] = 4 * FaceIndex + 2;
+			pIndices[6*FaceIndex+3] = 4 * FaceIndex + 0;
+			pIndices[6*FaceIndex+4] = 4 * FaceIndex + 2;
+			pIndices[6*FaceIndex+5] = 4 * FaceIndex + 3;
+		}
+
+		m_pPrimRoom = new Primitive( gs_Device, 24, pVertices, 36, pIndices, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, VertexFormatP3N3G3T2T3::DESCRIPTOR );
 	}
 
-	m_pPrimRoom = new Primitive( gs_Device, 24, pVertices, 36, pIndices, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, VertexFormatP3N3G3T2T3::DESCRIPTOR );
+	{	// Lights
+		VertexFormatP3N3G3T2T3	pVertices[4*4];
+		U16						pIndices[4*6];
+
+		NjFloat2				LightSize( 1.0f, 8.0f );	// Neons are 1x8 m²
+		float					FirstLightPosX = -0.5f * ROOM_SIZE + (ROOM_SIZE - 7 * LightSize.x) / 2.0f;
+		float					LightPosY = ROOM_HEIGHT - 1e-3f;
+		float					LightPosZ = -0.5f * ROOM_SIZE + (ROOM_SIZE - LightSize.y) / 2.0f;
+
+		for ( int LightIndex=0; LightIndex < 4; LightIndex++ )
+		{
+			float	LightPosX = FirstLightPosX + 2.0f * LightSize.x * LightIndex;
+
+			pVertices[4*LightIndex+0].Position.Set( LightPosX+0*LightSize.x, LightPosY, LightPosZ+0*LightSize.y );
+			pVertices[4*LightIndex+0].Normal.Set( 0, -1, 0 );
+			pVertices[4*LightIndex+0].UV.Set( 0, 0 );
+			pVertices[4*LightIndex+0].UV2.Set( 0, 0, float(LightIndex) );
+
+			pVertices[4*LightIndex+1].Position.Set( LightPosX+1*LightSize.x, LightPosY, LightPosZ+0*LightSize.y );
+			pVertices[4*LightIndex+1].Normal.Set( 0, -1, 0 );
+			pVertices[4*LightIndex+1].UV.Set( 1, 0 );
+			pVertices[4*LightIndex+1].UV2.Set( 1, 0, float(LightIndex) );
+
+			pVertices[4*LightIndex+2].Position.Set( LightPosX+1*LightSize.x, LightPosY, LightPosZ+1*LightSize.y );
+			pVertices[4*LightIndex+2].Normal.Set( 0, -1, 0 );
+			pVertices[4*LightIndex+2].UV.Set( 1, 1 );
+			pVertices[4*LightIndex+2].UV2.Set( 1, 1, float(LightIndex) );
+
+			pVertices[4*LightIndex+3].Position.Set( LightPosX+0*LightSize.x, LightPosY, LightPosZ+1*LightSize.y );
+			pVertices[4*LightIndex+3].Normal.Set( 0, -1, 0 );
+			pVertices[4*LightIndex+3].UV.Set( 0, 1 );
+			pVertices[4*LightIndex+3].UV2.Set( 0, 1, float(LightIndex) );
+
+			// Build indices
+			pIndices[6*LightIndex+0] = 4*LightIndex+0;
+			pIndices[6*LightIndex+1] = 4*LightIndex+1;
+			pIndices[6*LightIndex+2] = 4*LightIndex+2;
+			pIndices[6*LightIndex+3] = 4*LightIndex+0;
+			pIndices[6*LightIndex+4] = 4*LightIndex+2;
+			pIndices[6*LightIndex+5] = 4*LightIndex+3;
+		}
+
+		m_pPrimRoomLights = new Primitive( gs_Device, 16, pVertices, 24, pIndices, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, VertexFormatP3N3G3T2T3::DESCRIPTOR );
+	}
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -367,8 +470,6 @@ void	EffectRoom::BuildRoom()
 		ppResults0[FaceIndex] = ppResults1[FaceIndex];
 		ppResults1[FaceIndex] = pTemp;
 	}
-
-// ppResults0[5]->Read();	// CHECK
 
 
 	//////////////////////////////////////////////////////////////////////////

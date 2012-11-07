@@ -20,8 +20,11 @@ protected:	// NESTED TYPES
 	struct CBObject
 	{
 		NjFloat4x4	Local2World;	// Local=>World transform to rotate the object
-// 		NjFloat4	EmissiveColor;
-// 		NjFloat4	NoiseOffset;	// XYZ=Noise Position  W=NoiseAmplitude
+
+		NjFloat4	LightColor0;
+		NjFloat4	LightColor1;
+		NjFloat4	LightColor2;
+		NjFloat4	LightColor3;
  	};
 
 	struct CBTesselate
@@ -43,12 +46,13 @@ private:	// FIELDS
 	Texture2D&			m_RTTarget;
 
 	Material*			m_pMatDisplay;			// Displays the room
-	Material*			m_pMatRenderCubeMap;	// Renders the cube map
-	Material*			m_pMatTestTesselation;	// My first Domain Shader!
+	Material*			m_pMatDisplayEmissive;	// Displays the lights
+//	Material*			m_pMatTestTesselation;	// My first Domain Shader!
 
 	// Primitives
 	Primitive*			m_pPrimRoom;
-	Primitive*			m_pPrimTesselatedQuad;
+	Primitive*			m_pPrimRoomLights;
+//	Primitive*			m_pPrimTesselatedQuad;
 
 	// Textures
 	Texture2D*			m_pTexLightMaps;		// The array texture that will contain the room's light map
@@ -57,8 +61,13 @@ private:	// FIELDS
  	CB<CBObject>*		m_pCB_Object;
  	CB<CBTesselate>*	m_pCB_Tesselate;
 
+	// Animation parameters
+	NjFloat4			m_LightUpTime;
+	NjFloat4			m_LightFailTimer;		// Time before the light fails
+	NjFloat4			m_LightFailureTimer;	// Time since the light failed (used to animate the failure)
+	NjFloat4			m_LightFailureDuration;	// Duration of the failure
 
-	static MaterialDescriptor	ms_pMaterials[];
+//	static MaterialDescriptor	ms_pMaterials[];
 
 	// Params
 public:
@@ -72,24 +81,12 @@ public:		// METHODS
 	EffectRoom( Texture2D& _RTTarget );
 	~EffectRoom();
 
-	void	Render( float _Time, float _DeltaTime );
-
-	// Light map rendering
-//	void	RenderLightmap( IntroProgressDelegate& _Delegate );
+	void		Render( float _Time, float _DeltaTime );
 
 
 protected:
 
 	void		BuildRoom();
- 
-// 	void		RenderDirect( TextureBuilder& _Positions, TextureBuilder& _Normals, TextureBuilder& _Tangents, TextureBuilder** _ppLightMaps );
-// 	void		RenderDirectOLD( RayTracer& _Tracer, TextureBuilder& _Positions, TextureBuilder& _Normals, TextureBuilder& _Tangents, int _RaysCount, NjFloat3* _pRays, TextureBuilder** _ppLightMaps );
-// 
-// 	void		RenderCubeMap( const NjFloat3& _Position, const NjFloat3& _At, const NjFloat3& _Up, float _Near, float _Far );
-// 	void		ReadBack( NjFloat4** _ppTarget );
-// 
-// 	NjFloat2	GetLightMapAspectRatios();
-// 	NjFloat2	LightUV( int _FaceIndex, const NjFloat2& _UV, bool _bBias=false );
-// 	void		DrawQuad( DrawUtils& _DrawPosition, DrawUtils& _DrawNormal, DrawUtils& _DrawTangent, const NjFloat2& _TopLeft, const NjFloat2& _BottomRight, const RayTracer::Quad& _Quad );
+	float		AnimateFailure( float& _TimerTillFailure, float& _TimeSinceFailure, float& _FailureDuration, float _FailMinTime, float _FailDeltaTime, float _DeltaTime );
 
 };
