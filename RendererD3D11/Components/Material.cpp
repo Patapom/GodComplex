@@ -19,7 +19,9 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 	, m_pGS( NULL )
 	, m_pPS( NULL )
 	, m_pShaderPath( NULL )
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 	, m_LastShaderModificationTime( 0 )
+#endif
 #ifdef MATERIAL_COMPILE_THREADED
 	, m_hCompileThread( 0 )
 #endif
@@ -30,7 +32,9 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 	m_bHasErrors = false;
 
 	// Store the default NULL pointer to point to the shader path
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 	m_pShaderFileName = CopyString( _pShaderFileName );
+#endif
 #ifndef GODCOMPLEX
 	m_pShaderPath = GetShaderPath( _pShaderFileName );
 	m_Pointer2FileName.Add( NULL, m_pShaderPath );
@@ -427,8 +431,38 @@ void	Material::SetTexture( int _BufferSlot, ID3D11ShaderResourceView* _pData )
 	Unlock();
 }
 
+bool	Material::Lock() const
+{
+#ifdef MATERIAL_COMPILE_THREADED
+	return WaitForSingleObject( m_hCompileMutex, 0 ) == WAIT_OBJECT_0;
+#else
+	return true;
+#endif
+}
+void	Material::Unlock() const
+{
+#ifdef MATERIAL_COMPILE_THREADED
+	ASSERT( ReleaseMutex( m_hCompileMutex ), "Failed to release mutex !" );
+#endif
+}
 
+
+const char*	Material::CopyString( const char* _pShaderFileName ) const
+{
+	if ( _pShaderFileName == NULL )
+		return NULL;
+
+	int		Length = strlen(_pShaderFileName)+1;
+	char*	pResult = new char[Length];
+	memcpy( pResult, _pShaderFileName, Length );
+
+	return pResult;
+}
+
+// When compiling normally (i.e. not for the GodComplex 64K intro), allow strings to access shader variables
+//
 #ifndef GODCOMPLEX
+
 bool	Material::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer )
 {
 	if ( !Lock() )
@@ -615,36 +649,7 @@ int		Material::ShaderConstants::GetShaderResourceViewIndex( const char* _pTextur
 
 	return ppValue != NULL ? (*ppValue)->Slot : -1;
 }
-#endif
 
-bool	Material::Lock() const
-{
-#ifdef MATERIAL_COMPILE_THREADED
-	return WaitForSingleObject( m_hCompileMutex, 0 ) == WAIT_OBJECT_0;
-#else
-	return true;
-#endif
-}
-void	Material::Unlock() const
-{
-#ifdef MATERIAL_COMPILE_THREADED
-	ASSERT( ReleaseMutex( m_hCompileMutex ), "Failed to release mutex !" );
-#endif
-}
-
-const char*	Material::CopyString( const char* _pShaderFileName ) const
-{
-	if ( _pShaderFileName == NULL )
-		return NULL;
-
-	int		Length = strlen(_pShaderFileName)+1;
-	char*	pResult = new char[Length];
-	strcpy_s( pResult, Length, _pShaderFileName );
-
-	return pResult;
-}
-
-#ifndef GODCOMPLEX
 const char*	Material::GetShaderPath( const char* _pShaderFileName ) const
 {
 	char*	pResult = NULL;
@@ -670,11 +675,14 @@ const char*	Material::GetShaderPath( const char* _pShaderFileName ) const
 
 	return pResult;
 }
-#endif
+
+#endif	// #ifndef GODCOMPLEX
 
 
 //////////////////////////////////////////////////////////////////////////
 // Shader rebuild on modifications mechanism...
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
+
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -778,3 +786,5 @@ time_t		Material::GetFileModTime( const char* _pFileName )
 
 	return statInfo.st_mtime;
 }
+
+#endif	// #if defined(_DEBUG) || !defined(GODCOMPLEX)

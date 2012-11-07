@@ -50,6 +50,7 @@ VS_IN	VS( VS_IN _In )	{ return _In; }
 // Constant per-patch data generation
 //	This must AT LEAST output the tesselation factor for edges and triangles
 //
+//[
 HS_PATCH_OUT	PatchHS( InputPatch<VS_IN, 4> _In, uint _PatchID : SV_PRIMITIVEID )
 {	
     HS_PATCH_OUT	Out;
@@ -70,6 +71,7 @@ HS_PATCH_OUT	PatchHS( InputPatch<VS_IN, 4> _In, uint _PatchID : SV_PRIMITIVEID )
 
     return Out;
 }
+//]
 
 ///////////////////////////////////////////////////////////////////
 // Per-control point Hull Shader
@@ -81,6 +83,7 @@ HS_PATCH_OUT	PatchHS( InputPatch<VS_IN, 4> _In, uint _PatchID : SV_PRIMITIVEID )
 // Integer				 [1..64]
 // Pow2					 [1..64]
 //
+//[
 [domain( "quad" )]						// Either "tri", "quad" or "isoline"
 [partitioning( "fractional_odd" )]	// Either "integer", "fractional_even", "fractional_odd", or "pow2"
 //[partitioning( "fractional_even" )]
@@ -96,10 +99,13 @@ HS_OUT	HS( InputPatch<VS_IN, 4> _In, uint _ControlPointID : SV_OUTPUTCONTROLPOIN
 
     return Out;
 }
+//]
+
 
 ///////////////////////////////////////////////////////////////////
 // Called for each generated vertex
 //
+//[
 [domain( "quad" )]
 PS_IN	DS( HS_PATCH_OUT _PatchIn, const OutputPatch<HS_OUT, 4> _ControlPointsIn, float2 _UV : SV_DOMAINLOCATION )
 {
@@ -119,6 +125,7 @@ PS_IN	DS( HS_PATCH_OUT _PatchIn, const OutputPatch<HS_OUT, 4> _ControlPointsIn, 
 
 	return Out;
 }
+//]
 
 ///////////////////////////////////////////////////////////////////
 float4	PS( PS_IN _In ) : SV_TARGET0

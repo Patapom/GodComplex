@@ -140,7 +140,9 @@ template<typename T> void	DictionaryString<T>::ForEach( VisitorDelegate _pDelega
 //////////////////////////////////////////////////////////////////////////
 // U32 specific version
 //
+#ifdef _DEBUG
 template<typename T> int	Dictionary<T>::ms_MaxCollisionsCount = 0;
+#endif
 
 template<typename T> Dictionary<T>::Dictionary( int _Size ) : m_EntriesCount( 0 )
 {

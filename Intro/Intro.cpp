@@ -42,7 +42,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create our camera
 	gs_pCamera = new Camera( gs_Device );
-	gs_pCamera->SetPerspective( HALFPI, float(RESX) / RESY, 0.01f, 5000.0f );
+	gs_pCamera->SetPerspective( NUAJDEG2RAD( 80.0f ), float(RESX) / RESY, 0.01f, 5000.0f );
 
 	// NOTE: Camera reserves the CB slot #0 for itself !
 
@@ -85,8 +85,8 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create effects
 	{
-		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
 //		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
+		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), ERR_EFFECT_ROOM );
 	}
 
 	return 0;
@@ -132,7 +132,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	// TODO: Animate camera...
 //	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(0.8f), _TV(1.4f) ), NjFloat3( 0.0f, 0.8f, 0.0f ), NjFloat3::UnitY );
-	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(2.0f), _TV(1.4f) ), NjFloat3( 0.0f, 2.0f, 0.0f ), NjFloat3::UnitY );
+	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(1.5f), _TV(1.4f) ), NjFloat3( 0.0f, 1.7f, 0.0f ), NjFloat3::UnitY );
 
 	gs_pCamera->Upload( 0 );
 

@@ -180,9 +180,11 @@ public:
 	// Shader auto-reload on change mechanism
 private:
 	// The dictionary of watched materials
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 	static DictionaryString<Material*>	ms_WatchedShaders;
 	time_t			m_LastShaderModificationTime;
 	time_t			GetFileModTime( const char* _pFileName );
+#endif
 
 public:
 	// Call this every time you need to rebuild shaders whose code has changed

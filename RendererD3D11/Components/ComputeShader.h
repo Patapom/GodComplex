@@ -176,8 +176,8 @@ private:
 	void			CompileShaders( const char* _pShaderCode );
 	ID3DBlob*		CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget );
 
-	const char*		CopyString( const char* _pShaderFileName ) const;
 #ifndef GODCOMPLEX
+	const char*		CopyString( const char* _pShaderFileName ) const;
 	const char*		GetShaderPath( const char* _pShaderFileName ) const;
 #endif
 
@@ -202,10 +202,13 @@ public:
 	//////////////////////////////////////////////////////////////////////////
 	// Shader auto-reload on change mechanism
 private:
+
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 	// The dictionary of watched materials
 	static DictionaryString<ComputeShader*>	ms_WatchedShaders;
 	time_t			m_LastShaderModificationTime;
 	time_t			GetFileModTime( const char* _pFileName );
+#endif
 
 public:
 	// Call this every time you need to rebuild shaders whose code has changed

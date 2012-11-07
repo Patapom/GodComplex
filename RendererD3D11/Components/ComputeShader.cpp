@@ -14,7 +14,9 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, con
 	: Component( _Device )
 	, m_pCS( NULL )
 	, m_pShaderPath( NULL )
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 	, m_LastShaderModificationTime( 0 )
+#endif
 #ifdef COMPUTE_SHADER_COMPILE_THREADED
 	, m_hCompileThread( 0 )
 #endif
@@ -27,8 +29,8 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, con
 	m_bHasErrors = false;
 
 	// Store the default NULL pointer to point to the shader path
-	m_pShaderFileName = CopyString( _pShaderFileName );
 #ifndef GODCOMPLEX
+	m_pShaderFileName = CopyString( _pShaderFileName );
 	m_pShaderPath = GetShaderPath( _pShaderFileName );
 	m_Pointer2FileName.Add( NULL, m_pShaderPath );
 #endif
@@ -171,7 +173,8 @@ ID3DBlob*   ComputeShader::CompileShader( const char* _pShaderCode, D3D_SHADER_M
 //		Flags1 |= D3D10_SHADER_WARNINGS_ARE_ERRORS;
 		Flags1 |= D3D10_SHADER_PREFER_FLOW_CONTROL;
 #else
-		Flags1 |= D3D10_SHADER_OPTIMIZATION_LEVEL3;
+//		Flags1 |= D3D10_SHADER_OPTIMIZATION_LEVEL3;	// Seems to "optimize" (strip really) the important lines that check for threadID before writing to concurrent targets
+		Flags1 |= D3D10_SHADER_OPTIMIZATION_LEVEL1;
 #endif
 		Flags1 |= D3D10_SHADER_ENABLE_STRICTNESS;
 		Flags1 |= D3D10_SHADER_IEEE_STRICTNESS;
@@ -300,8 +303,26 @@ void	ComputeShader::SetUnorderedAccessView( int _BufferSlot, StructuredBuffer& _
 	Unlock();
 }
 
+bool	ComputeShader::Lock() const
+{
+#ifdef COMPUTE_SHADER_COMPILE_THREADED
+	return WaitForSingleObject( m_hCompileMutex, 0 ) == WAIT_OBJECT_0;
+#else
+	return true;
+#endif
+}
+void	ComputeShader::Unlock() const
+{
+#ifdef COMPUTE_SHADER_COMPILE_THREADED
+	ASSERT( ReleaseMutex( m_hCompileMutex ), "Failed to release mutex !" );
+#endif
+}
 
+
+// When compiling normally (i.e. not for the GodComplex 64K intro), allow strings to access shader variables
+//
 #ifndef GODCOMPLEX
+
 bool	ComputeShader::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer )
 {
 	if ( !Lock() )
@@ -515,22 +536,6 @@ int		ComputeShader::ShaderConstants::GetUnorderedAccesViewIndex( const char* _pU
 
 	return ppValue != NULL ? (*ppValue)->Slot : -1;
 }
-#endif
-
-bool	ComputeShader::Lock() const
-{
-#ifdef COMPUTE_SHADER_COMPILE_THREADED
-	return WaitForSingleObject( m_hCompileMutex, 0 ) == WAIT_OBJECT_0;
-#else
-	return true;
-#endif
-}
-void	ComputeShader::Unlock() const
-{
-#ifdef COMPUTE_SHADER_COMPILE_THREADED
-	ASSERT( ReleaseMutex( m_hCompileMutex ), "Failed to release mutex !" );
-#endif
-}
 
 const char*	ComputeShader::CopyString( const char* _pShaderFileName ) const
 {
@@ -544,7 +549,6 @@ const char*	ComputeShader::CopyString( const char* _pShaderFileName ) const
 	return pResult;
 }
 
-#ifndef GODCOMPLEX
 const char*	ComputeShader::GetShaderPath( const char* _pShaderFileName ) const
 {
 	char*	pResult = NULL;
@@ -570,11 +574,14 @@ const char*	ComputeShader::GetShaderPath( const char* _pShaderFileName ) const
 
 	return pResult;
 }
-#endif
+
+#endif	// #ifndef GODCOMPLEX
 
 
 //////////////////////////////////////////////////////////////////////////
 // Shader rebuild on modifications mechanism...
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
+
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -678,6 +685,9 @@ time_t		ComputeShader::GetFileModTime( const char* _pFileName )
 
 	return statInfo.st_mtime;
 }
+
+#endif	// #if defined(_DEBUG) || !defined(GODCOMPLEX)
+
 
 //////////////////////////////////////////////////////////////////////////
 // The structured buffer class

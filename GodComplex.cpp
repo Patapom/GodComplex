@@ -18,7 +18,7 @@ WININFO		gs_WindowInfos;
 
 // Extern/undefined CRT shit that needs to be defined to avoid linking to actual CRT
 // Useful hints found at http://www.benshoof.org/blog/minicrt/ !
-#ifndef _DEBUG
+#if !defined(_DEBUG) && !defined(DEBUG_SHADER)
 extern "C" int _fltused = 0;
 #endif
 extern "C" int __cdecl	_purecall(void)		{ return 0; }
@@ -26,7 +26,7 @@ double __cdecl			ceil( double _X )	{ return ceilf( float(_X) ); }
  
  
 static const char*	pMessageError	= "!IntroInit()!\n\n"\
-									"	No DirectX?"\
+									"	No DirectX?\n"\
 									"	No memory?\n"\
 									"	No music?\n";
 static const char*	pWindowClass	= "GodComplex";
@@ -357,7 +357,7 @@ static void	ShowProgress( WININFO* _pInfos, int _Progress )
 
 //////////////////////////////////////////////////////////////////////////
 // Entry point
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEBUG_SHADER)
 int WINAPI	WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow )
 #else
 void WINAPI	EntryPoint()	

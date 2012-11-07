@@ -4,6 +4,8 @@
 #include "Inc/Global.fx"
 #include "Inc/RayTracing.fx"
 
+//[
+
 // Room description
 static const float3	ROOM_SIZE = float3( 10.0, 5.0, 10.0 );		// 10x5x10 m^3
 static const float3	ROOM_HALF_SIZE = 0.5 * ROOM_SIZE;
@@ -47,7 +49,6 @@ struct	LightMapResult
 };
 
 
-//[
 cbuffer	cbRender	: register( b10 )
 {
 	uint2	_LightMapSize;
@@ -55,9 +56,7 @@ cbuffer	cbRender	: register( b10 )
 	uint	_PassesCount;
 	float	_RadianceWeight;
 };
-//]
 
-//[
 StructuredBuffer<LightMapInfos>		_Input : register( t0 );
 StructuredBuffer<LightMapResult>	_PreviousPass0 : register( t4 );	// The 6 light map colors from the previous pass
 StructuredBuffer<LightMapResult>	_PreviousPass1 : register( t5 );
@@ -68,7 +67,6 @@ StructuredBuffer<LightMapResult>	_PreviousPass5 : register( t9 );
 
 RWStructuredBuffer<LightMapResult>	_Output : register( u0 );
 RWStructuredBuffer<LightMapResult>	_AccumOutput : register( u1 );
-//]
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -230,6 +228,7 @@ float4	SampleIrradiance( StructuredBuffer<LightMapResult> _PreviousPass, float2 
 	return lerp( I0, I1, uv.y );
 }
 
+
 [numthreads( 1024, 1, 1 )]
 void	CS_Indirect(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a Dispatch call, per dimension of the dispatch call
 						uint3 _ThreadID			: SV_DispatchThreadID,	// Defines the global thread offset within the Dispatch call, per dimension of the group
@@ -326,3 +325,4 @@ I.MaterialID = 123456;
 	}
 }
 
+//]

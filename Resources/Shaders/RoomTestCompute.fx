@@ -24,14 +24,16 @@ cbuffer	cbRender	: register( b10 )
 };
 //]
 
-//{
+//[
 //StructuredBuffer<Data>		_Input : register( t0 );
 RWStructuredBuffer<Data>	_Output : register( u0 );
 //]
 
 
 // For more infos about the thread groups and threads: http://msdn.microsoft.com/en-us/library/windows/desktop/ff476405(v=vs.85).aspx
+//[
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, 1 )]
+//]
 void	CS(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a Dispatch call, per dimension of the dispatch call
 			uint3 _ThreadID			: SV_DispatchThreadID,	// Defines the global thread offset within the Dispatch call, per dimension of the group
 			uint3 _GroupThreadID	: SV_GroupThreadID,		// Defines the thread offset within the group, per dimension of the group
