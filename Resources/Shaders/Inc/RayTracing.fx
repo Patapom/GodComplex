@@ -104,6 +104,19 @@ float3	CosineSampleHemisphere( float2 _UV )
     return float3( Radius * SinCos, sqrt( 1.0 - _UV.y ) );
 }
 
+// Same as above but stratified
+float3	CosineSampleHemisphere( float2 _UV, const uint _RayIndex, const uint _RaysCount )
+{
+    float	Radius = sqrt( _UV.y );
+    float	Phi = TWOPI * _UV.x;
+ 
+	float2	SinCos;
+	sincos( Phi, SinCos.x, SinCos.y );
+ 
+    return float3( Radius * SinCos, sqrt( 1.0 - _UV.y ) );
+}
+
+
 // Generates a position on a rectangular patch using stratified sampling
 // Returns a position in [-0.5*_Size,+0.5*_Size]
 float2	GenerateRectanglePosition( uint _RayIndex, uint _RaysCount, inout uint4 _Seed, float2 _Size )

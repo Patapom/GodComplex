@@ -335,8 +335,11 @@ void	EffectRoom::BuildRoom()
 
 	struct	CBRender
 	{
-		U32	LightMapSizeX;
-		U32	LightMapSizeY;
+		U32		LightMapSizeX;
+		U32		LightMapSizeY;
+		U32		PassIndex;
+		U32		PassesCount;
+		float	RadianceWeight;
 	};
 	CB<CBRender>	CB_Render( gs_Device, 10 );
 
@@ -350,6 +353,9 @@ void	EffectRoom::BuildRoom()
 
 		CB_Render.m.LightMapSizeX = pIntSizes[2*FaceIndex+0];
 		CB_Render.m.LightMapSizeY = pIntSizes[2*FaceIndex+1];
+		CB_Render.m.PassIndex = 0;
+		CB_Render.m.PassesCount = 1;
+		CB_Render.m.RadianceWeight = 1.0f;
 		CB_Render.UpdateData();
 
 		pCSComputeLightMapDirect->Run( CB_Render.m.LightMapSizeX, CB_Render.m.LightMapSizeY, 1 );
@@ -369,27 +375,33 @@ void	EffectRoom::BuildRoom()
 	// Compute indirect lighting
 	pCSComputeLightMapIndirect->Use();
 
-	for ( int BounceIndex=0; BounceIndex < 1; BounceIndex++ )
+	for ( int BounceIndex=0; BounceIndex < ROOM_BOUNCES_COUNT; BounceIndex++ )
 	{
 		// Upload previous pass's results
 		for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 			ppResults0[FaceIndex]->SetInput( 4+FaceIndex );
 
-//ppResults0[0]->SetInput( 9 );
-//ppResults0[5]->SetInput( 9 );
-
 		// Run
 		for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 		{
 			ppLMInfos[FaceIndex]->SetInput( 0 );
+
+			ppResults1[FaceIndex]->Clear( NjFloat4::Zero );
 			ppResults1[FaceIndex]->SetOutput( 0 );
 			ppAccumResults[FaceIndex]->SetOutput( 1 );
 
 			CB_Render.m.LightMapSizeX = pIntSizes[2*FaceIndex+0];
 			CB_Render.m.LightMapSizeY = pIntSizes[2*FaceIndex+1];
-			CB_Render.UpdateData();
+			CB_Render.m.RadianceWeight = 1.0f / ROOM_RAY_GROUPS_COUNT;
+			CB_Render.m.PassesCount = ROOM_RAY_GROUPS_COUNT;
 
-			pCSComputeLightMapIndirect->Run( CB_Render.m.LightMapSizeX, CB_Render.m.LightMapSizeY, 1 );
+			for ( int PassIndex=0; PassIndex < ROOM_RAY_GROUPS_COUNT; PassIndex++ )
+			{
+				CB_Render.m.PassIndex = PassIndex;
+				CB_Render.UpdateData();
+
+				pCSComputeLightMapIndirect->Run( CB_Render.m.LightMapSizeX, CB_Render.m.LightMapSizeY, 1 );
+			}
 
 //			ppResults1[FaceIndex]->Read();	// CHECK
 

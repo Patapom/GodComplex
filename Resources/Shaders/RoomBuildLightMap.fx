@@ -4,12 +4,6 @@
 #include "Inc/Global.fx"
 #include "Inc/RayTracing.fx"
 
-static const uint	GROUPS_PER_TEXEL_DIRECT = 1;	// Amount of thread groups per texel for direct lighting (must be POT)
-static const uint	GROUPS_PER_TEXEL_INDIRECT = 1;	// Amount of thread groups per texel for indirect lighting (must be POT)
-
-static const float	IRRADIANCE_WEIGHT_DIRECT = TWOPI / (GROUPS_PER_TEXEL_DIRECT << 10);		// The contribution of each radiance to the final irradiance
-static const float	IRRADIANCE_WEIGHT_INDIRECT = TWOPI / (GROUPS_PER_TEXEL_INDIRECT << 10);	// The contribution of each radiance to the final irradiance
-
 // Room description
 static const float3	ROOM_SIZE = float3( 10.0, 5.0, 10.0 );		// 10x5x10 m^3
 static const float3	ROOM_HALF_SIZE = 0.5 * ROOM_SIZE;
@@ -27,7 +21,7 @@ static const float3	LIGHT_POS3 = float3( -0.5 * ROOM_SIZE.x + 1.5 + LIGHT_SIZE.x
 
 // Wall material description
 //static const float	WALL_REFLECTANCE = 0.2;###
-static const float	WALL_REFLECTANCE = 1.0;
+static const float	WALL_REFLECTANCE = 0.4;
 static const float	WALL_REFLECTANCE0 = WALL_REFLECTANCE;
 static const float	WALL_REFLECTANCE1 = WALL_REFLECTANCE;
 static const float	WALL_REFLECTANCE2 = WALL_REFLECTANCE;
@@ -57,6 +51,9 @@ struct	LightMapResult
 cbuffer	cbRender	: register( b10 )
 {
 	uint2	_LightMapSize;
+	uint	_PassIndex;
+	uint	_PassesCount;
+	float	_RadianceWeight;
 };
 //]
 
@@ -75,8 +72,17 @@ RWStructuredBuffer<LightMapResult>	_AccumOutput : register( u1 );
 
 
 //////////////////////////////////////////////////////////////////////////
+// Computes the flattened texel/ray informations
+void	ComputeTexelRayInfos( const uint2 _GroupID, const uint _ThreadIndex, const uint _PassIndex, const uint _PassesCount, out uint _TexelIndex, out uint _RayIndex, out uint _RaysCount )
+{
+	_TexelIndex = _LightMapSize.x * _GroupID.y + _GroupID.x;
+	_RayIndex = (_PassIndex << 10) + _ThreadIndex;		// The flattened thread index
+	_RaysCount = _PassesCount << 10;
+}
+
+//////////////////////////////////////////////////////////////////////////
 // Builds the seeds for the RNGs
-uint4	BuildSeed( uint _TexelIndex, LightMapInfos _Infos )
+uint4	BuildSeed( LightMapInfos _Infos, uint _TexelIndex )
 {
 	return uint4(	// Modify seeds with texel index for different random values
 			LCGStep( _Infos.Seed0, 37587 * _TexelIndex, 890567 ),
@@ -87,28 +93,13 @@ uint4	BuildSeed( uint _TexelIndex, LightMapInfos _Infos )
 }
 
 //////////////////////////////////////////////////////////////////////////
-// Computes the flattened texel/ray informations
-void	ComputeTexelRayInfos( uint2 _GroupID, uint _GroupIndex, const uint _GroupsPerTexel, out uint _TexelIndex, out uint _TexelGroup, out uint _RayIndex, out uint _RaysCount )
-{
-	uint	TexelX = _GroupID.x / _GroupsPerTexel;		// Position of the texel on X
-	uint	TexelY = _GroupID.y;
-
-	_TexelGroup = _GroupID.x & (_GroupsPerTexel-1);		// Index of the thread group for that texel (in [0,GROUPS_PER_TEXEL-1])
-	_TexelIndex = _LightMapSize.x * TexelY + TexelX;
-	_RayIndex = (_TexelGroup << 10) + _GroupIndex;		// The flattened thread index
-	_RaysCount = _GroupsPerTexel << 10;
-}
-
-//////////////////////////////////////////////////////////////////////////
 // Direct lighting samples the 4 light sources
 // Each thread casts 4 rays toward the 4 lights
 //
-void	GenerateRayDirect( uint _TexelIndex, uint _TexelGroup, uint _RayIndex, uint _RaysCount, inout uint4 _Seed, out float3 _Position, out float3 _Normal, out float4 _ToLight0, out float4 _ToLight1, out float4 _ToLight2, out float4 _ToLight3 )
+void	GenerateRayDirect( LightMapInfos _Infos, uint _RayIndex, uint _RaysCount, inout uint4 _Seed, out float3 _Position, out float3 _Normal, out float4 _ToLight0, out float4 _ToLight1, out float4 _ToLight2, out float4 _ToLight3 )
 {
-	LightMapInfos	Source = _Input[_TexelIndex];
-
-	_Position = Source.Position;
-	_Normal = Source.Normal;
+	_Position = _Infos.Position;
+	_Normal = _Infos.Normal;
 
 	// Generate positions on lights
 	float2	LocalLightPos = GenerateRectanglePosition( _RayIndex, _RaysCount, _Seed, LIGHT_SIZE );
@@ -165,24 +156,26 @@ void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset wit
 	shSumRadianceInt = 0;
  	GroupMemoryBarrierWithGroupSync();
 
-	uint	TexelIndex, TexelGroup, RayIndex, RaysCount;
-	ComputeTexelRayInfos( _GroupID.xy, _GroupIndex.x, GROUPS_PER_TEXEL_DIRECT, TexelIndex, TexelGroup, RayIndex, RaysCount );
+	uint	TexelIndex, RayIndex, RaysCount;
+	ComputeTexelRayInfos( _GroupID.xy, _GroupIndex.x, _PassIndex, _PassesCount, TexelIndex, RayIndex, RaysCount );
 
-	uint4	Seed = BuildSeed( TexelIndex, _Input[TexelIndex] );
+	LightMapInfos	Infos = _Input[TexelIndex];
+
+	uint4	Seed = BuildSeed( Infos, RayIndex );
 
 	// Generate the 4 rays
 	float3	Position, Normal;
 	float4	ToLight0, ToLight1, ToLight2, ToLight3;
-	GenerateRayDirect( TexelIndex, TexelGroup, RayIndex, RaysCount, Seed, Position, Normal, ToLight0, ToLight1, ToLight2, ToLight3 );
+	GenerateRayDirect( Infos, RayIndex, RaysCount, Seed, Position, Normal, ToLight0, ToLight1, ToLight2, ToLight3 );
 
 	// Compute radiance coming from the 4 lights
 	float4	Radiance = float4(	saturate( -dot( LIGHT_NORMAL, ToLight0.xyz ) ) * ToLight0.w,
 								saturate( -dot( LIGHT_NORMAL, ToLight1.xyz ) ) * ToLight1.w,
 								saturate( -dot( LIGHT_NORMAL, ToLight2.xyz ) ) * ToLight2.w,
 								saturate( -dot( LIGHT_NORMAL, ToLight3.xyz ) ) * ToLight3.w
-							 ) * saturate( dot( Normal, ToLight0.xyz ) ) * IRRADIANCE_WEIGHT_DIRECT;
+							 ) * saturate( dot( Normal, ToLight0.xyz ) );
 
-//float4	Radiance = 0.5 * IRRADIANCE_WEIGHT_DIRECT;
+	Radiance *= TWOPI / 1024.0;	// The contribution of each radiance to the final irradiance integral
 
 	// Accumulate
 	uint4	RadianceInt = uint4( 16777216.0 * Radiance );
@@ -194,11 +187,11 @@ void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset wit
 	// Store result
 	GroupMemoryBarrierWithGroupSync();
 	float4	SumRadiance = shSumRadianceInt / 16777216.0;
+			SumRadiance *= _RadianceWeight;
 
 	if ( _GroupThreadID.x == 0 )
 	{
 		_Output[TexelIndex].Irradiance = SumRadiance;
-//		_Output[TexelIndex].Irradiance = float4( 1, 0, 0, 0 );
 		_AccumOutput[TexelIndex].Irradiance = SumRadiance;
 	}
 }
@@ -208,21 +201,13 @@ void	CS_Direct(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset wit
 // Indirect lighting samples the room
 // Each thread casts a single ray toward the room and gathers existing lighting
 //
-Ray	GenerateRayIndirect( uint _TexelIndex, uint _TexelGroup, uint _RayIndex, uint _RaysCount, inout uint4 _Seed )
+Ray	GenerateRayIndirect( LightMapInfos _Infos, uint _RayIndex, uint _RaysCount, inout uint4 _Seed )
 {
-	LightMapInfos	Source = _Input[_TexelIndex];
-
-	float3	Direction = CosineSampleHemisphere( Random2( _Seed ) );
-
-// float2	Test = float2( Random1( _Seed ), 0.1 );
-// float3	Direction = CosineSampleHemisphere( Test );
+	float3	Direction = CosineSampleHemisphere( Random2( _Seed ), _RayIndex, _RaysCount );
 
 	Ray	Result;
-		Result.P = Source.Position + 1e-3 * Source.Normal;	// Offset just a chouia
-		Result.V = Direction.x * Source.Tangent + Direction.y * Source.BiTangent + Direction.z * Source.Normal;
-
-//Result.V = Source.Normal;//###
-//Result.V = normalize( -1.0.xxx );
+		Result.P = _Infos.Position + 1e-3 * _Infos.Normal;	// Offset just a chouia
+		Result.V = Direction.x * _Infos.Tangent + Direction.y * _Infos.BiTangent + Direction.z * _Infos.Normal;
 
 	return Result;
 }
@@ -254,13 +239,15 @@ void	CS_Indirect(	uint3 _GroupID			: SV_GroupID,			// Defines the group offset w
 	shSumRadianceInt = 0;
  	GroupMemoryBarrierWithGroupSync();
 
-	uint	TexelIndex, TexelGroup, RayIndex, RaysCount;
-	ComputeTexelRayInfos( _GroupID.xy, _GroupIndex.x, GROUPS_PER_TEXEL_INDIRECT, TexelIndex, TexelGroup, RayIndex, RaysCount );
+	uint	TexelIndex, RayIndex, RaysCount;
+	ComputeTexelRayInfos( _GroupID.xy, _GroupIndex.x, _PassIndex, _PassesCount, TexelIndex, RayIndex, RaysCount );
 
-	uint4	Seed = BuildSeed( TexelIndex, _Input[TexelIndex] );
+	LightMapInfos	Infos = _Input[TexelIndex];
 
-	// Generate the 4 rays
-	Ray		R = GenerateRayIndirect( TexelIndex, TexelGroup, RayIndex, RaysCount, Seed );
+	uint4	Seed = BuildSeed( Infos, RayIndex );
+
+	// Generate a random ray on the hemisphere
+	Ray		R = GenerateRayIndirect( Infos, RayIndex, RaysCount, Seed );
 
 	// Compute radiance coming from the walls
 	Intersection	I;
@@ -296,8 +283,11 @@ I.MaterialID = 123456;
 		case 5: SourceIrradiance = WALL_REFLECTANCE5 * SampleIrradiance( _PreviousPass5, I.UV, LightMapHalfSize ); break;	// Front
 		}
 
-		// Convert into radiance
-		Radiance = SourceIrradiance * IRRADIANCE_WEIGHT_INDIRECT * RECITWOPI;
+// Complete code would be:
+// 		Radiance = SourceIrradiance * RECITWOPI;	// Convert into radiance by dividing by 2PI (i.e. assuming perfect diffuse reflection)
+// 		Radiance *= TWOPI / 1024.0;					// Weight by small contribution to the integral
+//
+		Radiance = SourceIrradiance / 1024.0;
 
 //Radiance = SourceIrradiance;
 //Radiance = abs(SampleIrradiance( _PreviousPass5, I.UV, _LightMapSize.xx ).yzwx);
@@ -319,10 +309,11 @@ I.MaterialID = 123456;
 	// Store result
 	GroupMemoryBarrierWithGroupSync();
 	float4	SumRadiance = shSumRadianceInt / 16777216.0;
+			SumRadiance *= _RadianceWeight;
 
 	if ( _GroupThreadID.x == 0 )
 	{
-		_Output[TexelIndex].Irradiance = SumRadiance;
+		_Output[TexelIndex].Irradiance += SumRadiance;
 		_AccumOutput[TexelIndex].Irradiance += SumRadiance;
 //		_AccumOutput[TexelIndex].Irradiance = Radiance;
 //		_AccumOutput[TexelIndex].Irradiance = I.Distance;

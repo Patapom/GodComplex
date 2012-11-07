@@ -3,6 +3,9 @@
 #define ROOM_HEIGHT	5.0f		// The height of the room, in meters
 #define ROOM_SIZE	10.0f		// The size of the room, in meters
 
+#define ROOM_BOUNCES_COUNT		4
+#define ROOM_RAY_GROUPS_COUNT	1
+
 template<typename> class CB;
 
 class EffectRoom
