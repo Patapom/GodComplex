@@ -1,6 +1,7 @@
 
 #include "ComputeShader.h"
 #include "ConstantBuffer.h"
+#include "Material.h"
 
 #include <stdio.h>
 #include <io.h>
@@ -29,8 +30,10 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, con
 	m_bHasErrors = false;
 
 	// Store the default NULL pointer to point to the shader path
-#ifndef GODCOMPLEX
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 	m_pShaderFileName = CopyString( _pShaderFileName );
+#endif
+#ifndef GODCOMPLEX
 	m_pShaderPath = GetShaderPath( _pShaderFileName );
 	m_Pointer2FileName.Add( NULL, m_pShaderPath );
 #endif
@@ -113,11 +116,11 @@ void	ComputeShader::CompileShaders( const char* _pShaderCode )
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the compute shader
 	ASSERT( m_pEntryPointCS != NULL, "Invalid ComputeShader entry point!" );
-	ID3DBlob*   pShader = CompileShader( _pShaderCode, m_pMacros, m_pEntryPointCS, "cs_5_0" );
+	ID3DBlob*   pShader = Material::CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointCS, "cs_5_0", this, true );
 	if ( pShader != NULL )
 	{
 		Check( m_Device.DXDevice().CreateComputeShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pCS ) );
-		ASSERT( m_pCS != NULL, "Failed to create vertex shader !" );
+		ASSERT( m_pCS != NULL, "Failed to create compute shader!" );
 #ifndef GODCOMPLEX
 		m_CSConstants.Enumerate( *pShader );
 #endif
@@ -150,56 +153,7 @@ void	ComputeShader::Run( int _GroupsCountX, int _GroupsCountY, int _GroupsCountZ
 
 	Unlock();
 }
-
-ID3DBlob*   ComputeShader::CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget )
-{
-	ID3DBlob*   pCodeText;
-	ID3DBlob*   pCode;
-	ID3DBlob*   pErrors;
-
-	D3DPreprocess( _pShaderCode, strlen(_pShaderCode), NULL, _pMacros, this, &pCodeText, &pErrors );
-#if defined(_DEBUG) || defined(DEBUG_SHADER)
-	if ( pErrors != NULL )
-	{
-		MessageBoxA( NULL, (LPCSTR) pErrors->GetBufferPointer(), "Shader PreProcess Error !", MB_OK | MB_ICONERROR );
-		ASSERT( pErrors == NULL, "Shader preprocess error !" );
-	}
-#endif
-
-	U32 Flags1 = 0;
-#ifdef _DEBUG
-		Flags1 |= D3D10_SHADER_DEBUG;
-		Flags1 |= D3D10_SHADER_SKIP_OPTIMIZATION;
-//		Flags1 |= D3D10_SHADER_WARNINGS_ARE_ERRORS;
-		Flags1 |= D3D10_SHADER_PREFER_FLOW_CONTROL;
-#else
-//		Flags1 |= D3D10_SHADER_OPTIMIZATION_LEVEL3;	// Seems to "optimize" (strip really) the important lines that check for threadID before writing to concurrent targets
-		Flags1 |= D3D10_SHADER_OPTIMIZATION_LEVEL1;
-#endif
-		Flags1 |= D3D10_SHADER_ENABLE_STRICTNESS;
-		Flags1 |= D3D10_SHADER_IEEE_STRICTNESS;
-		Flags1 |= D3D10_SHADER_PACK_MATRIX_ROW_MAJOR;	// MOST IMPORTANT FLAG !
-
-	U32 Flags2 = 0;
-
-	LPCVOID	pCodePointer = pCodeText->GetBufferPointer();
-	size_t	CodeSize = pCodeText->GetBufferSize();
-	size_t	CodeLength = strlen( (char*) pCodePointer );
-
-	D3DCompile( pCodePointer, CodeSize, NULL, _pMacros, this, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors );
-#if defined(_DEBUG) || defined(DEBUG_SHADER)
-	if ( pCode == NULL && pErrors != NULL )
-	{
-		MessageBoxA( NULL, (LPCSTR) pErrors->GetBufferPointer(), "Shader Compilation Error !", MB_OK | MB_ICONERROR );
-		ASSERT( pErrors == NULL, "Shader compilation error !" );
-	}
-	else
-		ASSERT( pCode != NULL, "Shader compilation failed => No error provided but didn't output any shader either !" );
-#endif
-
-	return pCode;
-}
-
+ 
 HRESULT	ComputeShader::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, LPCVOID _pParentData, LPCVOID* _ppData, UINT* _pBytes )
 {
 	if ( m_pIncludeOverride != NULL )
@@ -316,6 +270,18 @@ void	ComputeShader::Unlock() const
 #ifdef COMPUTE_SHADER_COMPILE_THREADED
 	ASSERT( ReleaseMutex( m_hCompileMutex ), "Failed to release mutex !" );
 #endif
+}
+
+const char*	ComputeShader::CopyString( const char* _pShaderFileName ) const
+{
+	if ( _pShaderFileName == NULL )
+		return NULL;
+
+	int		Length = strlen(_pShaderFileName)+1;
+	char*	pResult = new char[Length];
+	memcpy( pResult, _pShaderFileName, Length );
+
+	return pResult;
 }
 
 
@@ -535,18 +501,6 @@ int		ComputeShader::ShaderConstants::GetUnorderedAccesViewIndex( const char* _pU
 #endif
 
 	return ppValue != NULL ? (*ppValue)->Slot : -1;
-}
-
-const char*	ComputeShader::CopyString( const char* _pShaderFileName ) const
-{
-	if ( _pShaderFileName == NULL )
-		return NULL;
-
-	int		Length = strlen(_pShaderFileName)+1;
-	char*	pResult = new char[Length];
-	strcpy_s( pResult, Length, _pShaderFileName );
-
-	return pResult;
 }
 
 const char*	ComputeShader::GetShaderPath( const char* _pShaderFileName ) const

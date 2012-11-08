@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utility", "Packages\Cirrus.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestFerrofluids", "Tools\TestFerroFluids\TestFerrofluids.csproj", "{B6408E29-14A7-4B29-B527-19AEFDF939F2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConcatenateShaders", "Tools\ConcatenateShaders\ConcatenateShaders.csproj", "{B741A6E5-1850-49B7-9129-29AF1EA44686}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -65,6 +67,16 @@ Global
 		{B6408E29-14A7-4B29-B527-19AEFDF939F2}.Release|x64.Build.0 = Release|x64
 		{B6408E29-14A7-4B29-B527-19AEFDF939F2}.Release|x86.ActiveCfg = Release|x86
 		{B6408E29-14A7-4B29-B527-19AEFDF939F2}.Release|x86.Build.0 = Release|x86
+		{B741A6E5-1850-49B7-9129-29AF1EA44686}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{B741A6E5-1850-49B7-9129-29AF1EA44686}.Debug|Any CPU.Build.0 = Debug|x86
+		{B741A6E5-1850-49B7-9129-29AF1EA44686}.Debug|x64.ActiveCfg = Debug|x86
+		{B741A6E5-1850-49B7-9129-29AF1EA44686}.Debug|x86.ActiveCfg = Debug|x86
+		{B741A6E5-1850-49B7-9129-29AF1EA44686}.Debug|x86.Build.0 = Debug|x86
+		{B741A6E5-1850-49B7-9129-29AF1EA44686}.Release|Any CPU.ActiveCfg = Release|x86
+		{B741A6E5-1850-49B7-9129-29AF1EA44686}.Release|Any CPU.Build.0 = Release|x86
+		{B741A6E5-1850-49B7-9129-29AF1EA44686}.Release|x64.ActiveCfg = Release|x86
+		{B741A6E5-1850-49B7-9129-29AF1EA44686}.Release|x86.ActiveCfg = Release|x86
+		{B741A6E5-1850-49B7-9129-29AF1EA44686}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

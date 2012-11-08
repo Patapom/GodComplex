@@ -103,3 +103,7 @@
 
 	packed executable 157184 -> 40960 bytes (+6144 bytes !!!!!)
 
+ [8 november 2012]
+. Added support for binary embedded shader resources
+ => There is a significant 512 bytes gain compared to minified text shaders (although it yields the same size as yesterday but I believe the size increase "per block", let's see on the long run!)
+	packed executable 170496 -> 40960 bytes

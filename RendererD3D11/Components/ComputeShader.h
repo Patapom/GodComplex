@@ -174,10 +174,9 @@ public:	// ID3DInclude Members
 private:
 
 	void			CompileShaders( const char* _pShaderCode );
-	ID3DBlob*		CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget );
 
-#ifndef GODCOMPLEX
 	const char*		CopyString( const char* _pShaderFileName ) const;
+#ifndef GODCOMPLEX
 	const char*		GetShaderPath( const char* _pShaderFileName ) const;
 #endif
 

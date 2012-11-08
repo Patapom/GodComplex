@@ -8,16 +8,24 @@
 #ifndef GODCOMPLEX
 // This is useful only for applications, not demos !
 
-#define MATERIAL_COMPILE_AT_RUNTIME			// Define this to start compiling shaders at runtime and avoid blocking (useful for debugging)
+#define MATERIAL_COMPILE_AT_RUNTIME	// Define this to start compiling shaders at runtime and avoid blocking (useful for debugging)
 									// If you enable that option then the shader will start compiling as soon as WatchShaderModifications() is called on the material
 
-#define MATERIAL_COMPILE_THREADED			// Define this to launch shader compilation in different threads
+#define MATERIAL_COMPILE_THREADED	// Define this to launch shader compilation in different threads
 
 #endif
 
 //#define __DEBUG_UPLOAD_ONLY_ONCE	// If defined, then the constants & textures will be uploaded only once (once the material is compiled)
 									// This allows to test the importance of constants/texture uploads in the performance of the application
 									// Obviously, if you switch textures & render targets often this will give you complete crap results !
+
+
+// Define this to save the binary blobs for each shader (only works in DEBUG mode)
+#define SAVE_SHADER_BLOB_TO		"./Resources/Shaders/Binary/"
+
+#ifdef GODCOMPLEX
+#define USE_BINARY_BLOBS			// Define this to use pre-compiled binary blobs resources rather than text files
+#endif
 
 
 class ConstantBuffer;
@@ -142,6 +150,9 @@ public:	 // METHODS
 
 	void			Use();
 
+	// Static shader compilation helper
+	static ID3DBlob*	CompileShader( const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget, ID3DInclude* _pInclude, bool _bComputeShader=false );
+
 
 public:	// ID3DInclude Members
 
@@ -151,7 +162,6 @@ public:	// ID3DInclude Members
 private:
 
 	void			CompileShaders( const char* _pShaderCode );
-	ID3DBlob*		CompileShader( const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget );
 
 	const char*		CopyString( const char* _pShaderFileName ) const;
 #ifndef GODCOMPLEX

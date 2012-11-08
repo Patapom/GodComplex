@@ -1,10 +1,37 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// SHADER RESOURCES
+//
+There are 2 possibilities for shader inclusion in RELEASE mode:
+	* Use minified text shaders (minified through shader minifier by LLB)
+	* Use precompiled binary shaders (simply the binary blob resulting from the DX compiler)
+
+Testing with only my 3 current shaders, I have a small gain size as seen below:
+// Shaders = minified text
+1>   - packed executable 161792 -> 41472 bytes
+// Shaders = binary
+1>   - packed executable 170496 -> 40960 bytes
+---> 512 bytes gained
+
+I'm confident this gain will become more significant when I have all the shaders present, but perhaps the trend will invert at some point so I keep the minimized text shaders option.
+
+*** If you wish to use the BINARY shader resources option, you must define USE_BINARY_BLOBS in Material.h (also works for Compute Shaders)
+ then you need to edit the properties of the GodComplex.rc file and specify "Resources\Shaders\Binary" in the "Additional Include Directories" property
+
+*** If you wish to use the MINIFIED TEXT shader resources option, you must undefine USE_BINARY_BLOBS in Material.h 
+ then you need to edit the properties of the GodComplex.rc file and specify "Resources\Shaders\Compressed" in the "Additional Include Directories" property
+ finally, edit the GodComplex.rc and comment the #ifdef _DEBUG condition surrounding the shader include files
+
+
+Ideally, I know I should copy/paste the Release configuration and create a "Release Binary" config that does all this but I don't have the balls for now...
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Son code patché, ENFIN en cartesien !
 // http://www.flight404.com/p5/molecules_1/molecules_1.pde
-
+//
 //  FLIGHT404 v7
 //
 //  Magnetic particle experiment.

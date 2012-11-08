@@ -1,24 +1,24 @@
  GodComplex
 
- Timestamp is 509ac8ec (Wed Nov 07 21:47:40 2012)
+ Timestamp is 509c0751 (Thu Nov 08 20:26:09 2012)
 
  Preferred load address is 00600000
 
  Start         Length     Name                   Class
- 0001:00000000 0000f761H .text                   CODE
- 0001:0000f761 00000005H .text$yc                CODE
- 0002:00000000 000000d8H .idata$5                DATA
- 0002:000000d8 00000bccH .rdata                  DATA
- 0002:00000ca4 0000008cH .idata$2                DATA
- 0002:00000d30 00000014H .idata$3                DATA
- 0002:00000d44 000000d8H .idata$4                DATA
- 0002:00000e1c 00000376H .idata$6                DATA
- 0002:00001192 00000000H .edata                  DATA
+ 0001:00000000 0000f6ecH .text                   CODE
+ 0001:0000f6ec 00000005H .text$yc                CODE
+ 0002:00000000 000000d4H .idata$5                DATA
+ 0002:000000d8 00000b9cH .rdata                  DATA
+ 0002:00000c74 0000008cH .idata$2                DATA
+ 0002:00000d00 00000014H .idata$3                DATA
+ 0002:00000d14 000000d4H .idata$4                DATA
+ 0002:00000de8 00000368H .idata$6                DATA
+ 0002:00001150 00000000H .edata                  DATA
  0003:00000000 00000800H .data                   DATA
  0003:00000800 0032397aH .bss                    DATA
  0004:00000000 00000004H .CRT$XCU                DATA
- 0005:00000000 000002ccH .rsrc$01                DATA
- 0005:000002d0 00017638H .rsrc$02                DATA
+ 0005:00000000 0000011cH .rsrc$01                DATA
+ 0005:00000120 00018028H .rsrc$02                DATA
 
   Address         Publics by Value              Rva+Base       Lib:Object
 
@@ -36,103 +36,103 @@
  0001:000001f1       ??$MAX@M@@YIMMM@Z          006011f1 f i EffectRoom.obj
  0001:0000020d       ??$SATURATE@M@@YIMM@Z      0060120d f i EffectRoom.obj
  0001:00000233       ??BNjHalf4@@QAE?AVNjFloat4@@XZ 00601233 f i Intro.obj
- 0001:00000279       ?NewScanline@DrawContext@DrawUtils@@UAEXXZ 00601279 f i Draw.obj
- 0001:000002a5       ?Max@NjFloat4@@QBE?AV1@ABV1@@Z 006012a5 f i Filters.obj
- 0001:00000301       ?Normalize@NjFloat3@@QAEAAV1@XZ 00601301 f i Generators.obj
- 0001:00000336       ??TNjFloat3@@QBE?AV0@ABV0@@Z 00601336 f i Generators.obj
- 0001:00000365       ?TriLerp@Noise@@ABEMMMMMMMMMMMM@Z 00601365 f i Noise.obj
- 0001:000003b4       ?SCurve@Noise@@ABEMM@Z     006013b4 f i Noise.obj
- 0001:000003dc       ?Dot@Noise@@ABEMIMMMMMM@Z  006013dc f i Noise.obj
- 0001:00000416       ??_GComponent@@UAEPAXI@Z   00601416 f i Component.obj
- 0001:00000416       ??_EComponent@@UAEPAXI@Z   00601416 f i  CIL library: CIL module
- 0001:00000435       ??_GComputeShader@@UAEPAXI@Z 00601435 f i ComputeShader.obj
- 0001:00000435       ??_EComputeShader@@UAEPAXI@Z 00601435 f i  CIL library: CIL module
- 0001:00000454       ??_EStructuredBuffer@ComputeShader@@UAEPAXI@Z 00601454 f i  CIL library: CIL module
- 0001:00000454       ??_GStructuredBuffer@ComputeShader@@UAEPAXI@Z 00601454 f i ComputeShader.obj
- 0001:00000473       ??_EMaterial@@UAEPAXI@Z    00601473 f i  CIL library: CIL module
- 0001:00000473       ??_GMaterial@@UAEPAXI@Z    00601473 f i Material.obj
- 0001:00000492       ??_GPrimitive@@UAEPAXI@Z   00601492 f i Primitive.obj
- 0001:00000492       ??_EPrimitive@@UAEPAXI@Z   00601492 f i  CIL library: CIL module
- 0001:000004b1       ??_GRasterizerState@@UAEPAXI@Z 006014b1 f i States.obj
- 0001:000004b1       ??_ERasterizerState@@UAEPAXI@Z 006014b1 f i  CIL library: CIL module
- 0001:000004d0       ??_GDepthStencilState@@UAEPAXI@Z 006014d0 f i States.obj
- 0001:000004d0       ??_EDepthStencilState@@UAEPAXI@Z 006014d0 f i  CIL library: CIL module
- 0001:000004ef       ??_GBlendState@@UAEPAXI@Z  006014ef f i States.obj
- 0001:000004ef       ??_EBlendState@@UAEPAXI@Z  006014ef f i  CIL library: CIL module
- 0001:0000050e       ??_ETexture2D@@UAEPAXI@Z   0060150e f i  CIL library: CIL module
- 0001:0000050e       ??_GTexture2D@@UAEPAXI@Z   0060150e f i Texture2D.obj
- 0001:0000052d       ??_GTexture3D@@UAEPAXI@Z   0060152d f i Texture3D.obj
- 0001:0000052d       ??_ETexture3D@@UAEPAXI@Z   0060152d f i  CIL library: CIL module
- 0001:0000054c       ?DirectXFormat@Desc@DepthStencilFormatD32F@@UBE?AW4DXGI_FORMAT@@XZ 0060154c f i DepthStencilFormats.obj
- 0001:00000550       ?WritableDirectXFormat@Desc@DepthStencilFormatD32F@@UBE?AW4DXGI_FORMAT@@XZ 00601550 f i DepthStencilFormats.obj
- 0001:00000554       ?Write@Desc@DepthStencilFormatD32F@@UAEXAAUDepthStencilFormat@@AAMAAH@Z 00601554 f i DepthStencilFormats.obj
- 0001:00000565       ?Read@Desc@DepthStencilFormatD32F@@UBEXABUDepthStencilFormat@@AAMAAH@Z 00601565 f i DepthStencilFormats.obj
- 0001:00000576       ?DirectXFormat@Desc@PixelFormatRGBA8@@UBE?AW4DXGI_FORMAT@@XZ 00601576 f i PixelFormats.obj
- 0001:0000057a       ?Write@Desc@PixelFormatRGBA8@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 0060157a f i PixelFormats.obj
- 0001:0000057a       ?Write@Desc@PixelFormatRGBA8_sRGB@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 0060157a f i PixelFormats.obj
- 0001:000005c5       ?DirectXFormat@Desc@PixelFormatRGBA8_sRGB@@UBE?AW4DXGI_FORMAT@@XZ 006015c5 f i PixelFormats.obj
- 0001:000005c9       ?Read@Desc@PixelFormatRGBA8@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 006015c9 f i PixelFormats.obj
- 0001:000005c9       ?Read@Desc@PixelFormatRGBA8_sRGB@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 006015c9 f i PixelFormats.obj
- 0001:00000616       ?DirectXFormat@Desc@PixelFormatRGBA16F@@UBE?AW4DXGI_FORMAT@@XZ 00601616 f i PixelFormats.obj
- 0001:0000061a       ?Size@Desc@PixelFormatRGBA16_UINT@@UBEHXZ 0060161a f i PixelFormats.obj
- 0001:0000061a       ?Size@Desc@PixelFormatRGBA16F@@UBEHXZ 0060161a f i PixelFormats.obj
- 0001:0000061e       ?Write@Desc@PixelFormatRGBA16F@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 0060161e f i PixelFormats.obj
- 0001:00000689       ?Read@Desc@PixelFormatRGBA16F@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 00601689 f i PixelFormats.obj
- 0001:000006d6       ?DirectXFormat@Desc@PixelFormatRG16F@@UBE?AW4DXGI_FORMAT@@XZ 006016d6 f i PixelFormats.obj
- 0001:000006da       ?Size@Desc@PixelFormatRGBA8@@UBEHXZ 006016da f i PixelFormats.obj
- 0001:000006da       ?GetInputElementsCount@Desc@VertexFormatP3N3G3T2@@UBEHXZ 006016da f i VertexFormats.obj
- 0001:000006da       ?Size@Desc@PixelFormatRG16F@@UBEHXZ 006016da f i PixelFormats.obj
- 0001:000006da       ?Size@Desc@DepthStencilFormatD32F@@UBEHXZ 006016da f i DepthStencilFormats.obj
- 0001:000006da       ?Size@Desc@PixelFormatR32F@@UBEHXZ 006016da f i PixelFormats.obj
- 0001:000006da       ?Size@Desc@PixelFormatRGBA8_sRGB@@UBEHXZ 006016da f i PixelFormats.obj
- 0001:000006de       ?Write@Desc@PixelFormatRG16F@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 006016de f i PixelFormats.obj
- 0001:0000071b       ?Read@Desc@PixelFormatRG16F@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 0060171b f i PixelFormats.obj
- 0001:0000074c       ?DirectXFormat@Desc@PixelFormatRGBA16_UINT@@UBE?AW4DXGI_FORMAT@@XZ 0060174c f i PixelFormats.obj
- 0001:0000074c       ?Size@Desc@VertexFormatP3@@UBEHXZ 0060174c f i VertexFormats.obj
- 0001:00000750       ?Write@Desc@PixelFormatRGBA16_UINT@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 00601750 f i PixelFormats.obj
- 0001:000007a3       ?Read@Desc@PixelFormatRGBA16_UINT@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 006017a3 f i PixelFormats.obj
- 0001:000007f0       ?Write@Desc@PixelFormatRGBA32F@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 006017f0 f i PixelFormats.obj
- 0001:00000813       ?Read@Desc@PixelFormatRGBA32F@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 00601813 f i PixelFormats.obj
- 0001:00000836       ?DirectXFormat@Desc@PixelFormatR32F@@UBE?AW4DXGI_FORMAT@@XZ 00601836 f i PixelFormats.obj
- 0001:00000836       ?ReadableDirectXFormat@Desc@DepthStencilFormatD32F@@UBE?AW4DXGI_FORMAT@@XZ 00601836 f i DepthStencilFormats.obj
- 0001:0000083a       ?Write@Desc@PixelFormatR32F@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 0060183a f i PixelFormats.obj
- 0001:0000084b       ?Read@Desc@PixelFormatR32F@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 0060184b f i PixelFormats.obj
- 0001:00000867       ?DirectXFormat@Desc@PixelFormatR16_UINT@@UBE?AW4DXGI_FORMAT@@XZ 00601867 f i PixelFormats.obj
- 0001:0000086b       ?DirectXFormat@Desc@PixelFormatRGBA32F@@UBE?AW4DXGI_FORMAT@@XZ 0060186b f i PixelFormats.obj
- 0001:0000086b       ?Size@Desc@PixelFormatR16_UINT@@UBEHXZ 0060186b f i PixelFormats.obj
- 0001:0000086b       ?GetInputElementsCount@Desc@VertexFormatP3T2@@UBEHXZ 0060186b f i VertexFormats.obj
- 0001:0000086f       ?Write@Desc@PixelFormatR16_UINT@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 0060186f f i PixelFormats.obj
- 0001:00000890       ?Read@Desc@PixelFormatR16_UINT@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 00601890 f i PixelFormats.obj
- 0001:000008b9       ?Size@Desc@PixelFormatRGBA32F@@UBEHXZ 006018b9 f i PixelFormats.obj
- 0001:000008b9       ?Size@Desc@VertexFormatPt4@@UBEHXZ 006018b9 f i VertexFormats.obj
- 0001:000008bd       ?GetInputElements@Desc@VertexFormatPt4@@UBEPAUD3D11_INPUT_ELEMENT_DESC@@XZ 006018bd f i VertexFormats.obj
- 0001:000008c3       ?GetInputElements@Desc@VertexFormatP3@@UBEPAUD3D11_INPUT_ELEMENT_DESC@@XZ 006018c3 f i VertexFormats.obj
- 0001:000008c9       ?GetInputElementsCount@Desc@VertexFormatPt4@@UBEHXZ 006018c9 f i VertexFormats.obj
- 0001:000008c9       ?GetInputElementsCount@Desc@VertexFormatP3@@UBEHXZ 006018c9 f i VertexFormats.obj
- 0001:000008cd       ?Size@Desc@VertexFormatP3T2@@UBEHXZ 006018cd f i VertexFormats.obj
- 0001:000008d1       ?GetInputElements@Desc@VertexFormatP3T2@@UBEPAUD3D11_INPUT_ELEMENT_DESC@@XZ 006018d1 f i VertexFormats.obj
- 0001:000008d7       ?Size@Desc@VertexFormatP3N3G3T2@@UBEHXZ 006018d7 f i VertexFormats.obj
- 0001:000008db       ?GetInputElements@Desc@VertexFormatP3N3G3T2@@UBEPAUD3D11_INPUT_ELEMENT_DESC@@XZ 006018db f i VertexFormats.obj
- 0001:000008e1       ?Size@Desc@VertexFormatP3N3G3T2T2@@UBEHXZ 006018e1 f i VertexFormats.obj
- 0001:000008e5       ?GetInputElements@Desc@VertexFormatP3N3G3T2T2@@UBEPAUD3D11_INPUT_ELEMENT_DESC@@XZ 006018e5 f i VertexFormats.obj
- 0001:000008eb       ?GetInputElementsCount@Desc@VertexFormatP3N3G3T2T2@@UBEHXZ 006018eb f i VertexFormats.obj
- 0001:000008eb       ?GetInputElementsCount@Desc@VertexFormatP3N3G3T2T3@@UBEHXZ 006018eb f i VertexFormats.obj
- 0001:000008ef       ?Size@Desc@VertexFormatP3N3G3T2T3@@UBEHXZ 006018ef f i VertexFormats.obj
- 0001:000008f3       ?GetInputElements@Desc@VertexFormatP3N3G3T2T3@@UBEPAUD3D11_INPUT_ELEMENT_DESC@@XZ 006018f3 f i VertexFormats.obj
- 0001:000008f9       ??_E?$CB@UCBTest@@@@UAEPAXI@Z 006018f9 f i  CIL library: CIL module
- 0001:000008f9       ??_G?$CB@UCBGlobal@@@@UAEPAXI@Z 006018f9 f i Intro.obj
- 0001:000008f9       ??_G?$CB@UCBTesselate@EffectRoom@@@@UAEPAXI@Z 006018f9 f i EffectRoom.obj
- 0001:000008f9       ??_G?$CB@UCBData@Camera@@@@UAEPAXI@Z 006018f9 f i Camera.obj
- 0001:000008f9       ??_E?$CB@UCBTesselate@EffectRoom@@@@UAEPAXI@Z 006018f9 f i  CIL library: CIL module
- 0001:000008f9       ??_E?$CB@UCBObject@EffectRoom@@@@UAEPAXI@Z 006018f9 f i  CIL library: CIL module
- 0001:000008f9       ??_E?$CB@UCBRender@?BE@??BuildRoom@EffectRoom@@IAEXXZ@@@UAEPAXI@Z 006018f9 f i  CIL library: CIL module
- 0001:000008f9       ??_E?$CB@UCBData@Camera@@@@UAEPAXI@Z 006018f9 f i  CIL library: CIL module
- 0001:000008f9       ??_E?$CB@UCBGlobal@@@@UAEPAXI@Z 006018f9 f i  CIL library: CIL module
- 0001:000008f9       ??_EConstantBuffer@@UAEPAXI@Z 006018f9 f i  CIL library: CIL module
- 0001:000008f9       ??_G?$CB@UCBRender@?BE@??BuildRoom@EffectRoom@@IAEXXZ@@@UAEPAXI@Z 006018f9 f i EffectRoom.obj
- 0001:000008f9       ??_G?$CB@UCBObject@EffectRoom@@@@UAEPAXI@Z 006018f9 f i EffectRoom.obj
- 0001:000008f9       ??_G?$CB@UCBTest@@@@UAEPAXI@Z 006018f9 f i Intro.obj
- 0001:000008f9       ??_GConstantBuffer@@UAEPAXI@Z 006018f9 f i ConstantBuffer.obj
+ 0001:00000279       ??_EConstantBuffer@@UAEPAXI@Z 00601279 f i  CIL library: CIL module
+ 0001:00000279       ??_E?$CB@UCBRender@?BE@??BuildRoom@EffectRoom@@IAEXXZ@@@UAEPAXI@Z 00601279 f i  CIL library: CIL module
+ 0001:00000279       ??_G?$CB@UCBGlobal@@@@UAEPAXI@Z 00601279 f i Intro.obj
+ 0001:00000279       ??_G?$CB@UCBTesselate@EffectRoom@@@@UAEPAXI@Z 00601279 f i EffectRoom.obj
+ 0001:00000279       ??_GConstantBuffer@@UAEPAXI@Z 00601279 f i ConstantBuffer.obj
+ 0001:00000279       ??_G?$CB@UCBObject@EffectRoom@@@@UAEPAXI@Z 00601279 f i EffectRoom.obj
+ 0001:00000279       ??_E?$CB@UCBObject@EffectRoom@@@@UAEPAXI@Z 00601279 f i  CIL library: CIL module
+ 0001:00000279       ??_E?$CB@UCBTesselate@EffectRoom@@@@UAEPAXI@Z 00601279 f i  CIL library: CIL module
+ 0001:00000279       ??_E?$CB@UCBGlobal@@@@UAEPAXI@Z 00601279 f i  CIL library: CIL module
+ 0001:00000279       ??_E?$CB@UCBData@Camera@@@@UAEPAXI@Z 00601279 f i  CIL library: CIL module
+ 0001:00000279       ??_E?$CB@UCBTest@@@@UAEPAXI@Z 00601279 f i  CIL library: CIL module
+ 0001:00000279       ??_G?$CB@UCBData@Camera@@@@UAEPAXI@Z 00601279 f i Camera.obj
+ 0001:00000279       ??_G?$CB@UCBTest@@@@UAEPAXI@Z 00601279 f i Intro.obj
+ 0001:00000279       ??_G?$CB@UCBRender@?BE@??BuildRoom@EffectRoom@@IAEXXZ@@@UAEPAXI@Z 00601279 f i EffectRoom.obj
+ 0001:00000298       ?NewScanline@DrawContext@DrawUtils@@UAEXXZ 00601298 f i Draw.obj
+ 0001:000002c4       ?Max@NjFloat4@@QBE?AV1@ABV1@@Z 006012c4 f i Filters.obj
+ 0001:00000320       ?Normalize@NjFloat3@@QAEAAV1@XZ 00601320 f i Generators.obj
+ 0001:00000355       ??TNjFloat3@@QBE?AV0@ABV0@@Z 00601355 f i Generators.obj
+ 0001:00000384       ?TriLerp@Noise@@ABEMMMMMMMMMMMM@Z 00601384 f i Noise.obj
+ 0001:000003d3       ?SCurve@Noise@@ABEMM@Z     006013d3 f i Noise.obj
+ 0001:000003fb       ?Dot@Noise@@ABEMIMMMMMM@Z  006013fb f i Noise.obj
+ 0001:00000435       ??_GComponent@@UAEPAXI@Z   00601435 f i Component.obj
+ 0001:00000435       ??_EComponent@@UAEPAXI@Z   00601435 f i  CIL library: CIL module
+ 0001:00000454       ??_EComputeShader@@UAEPAXI@Z 00601454 f i  CIL library: CIL module
+ 0001:00000454       ??_GComputeShader@@UAEPAXI@Z 00601454 f i ComputeShader.obj
+ 0001:00000473       ??_GStructuredBuffer@ComputeShader@@UAEPAXI@Z 00601473 f i ComputeShader.obj
+ 0001:00000473       ??_EStructuredBuffer@ComputeShader@@UAEPAXI@Z 00601473 f i  CIL library: CIL module
+ 0001:00000492       ??_EMaterial@@UAEPAXI@Z    00601492 f i  CIL library: CIL module
+ 0001:00000492       ??_GMaterial@@UAEPAXI@Z    00601492 f i Material.obj
+ 0001:000004b1       ??_EPrimitive@@UAEPAXI@Z   006014b1 f i  CIL library: CIL module
+ 0001:000004b1       ??_GPrimitive@@UAEPAXI@Z   006014b1 f i Primitive.obj
+ 0001:000004d0       ??_GRasterizerState@@UAEPAXI@Z 006014d0 f i States.obj
+ 0001:000004d0       ??_ERasterizerState@@UAEPAXI@Z 006014d0 f i  CIL library: CIL module
+ 0001:000004ef       ??_GDepthStencilState@@UAEPAXI@Z 006014ef f i States.obj
+ 0001:000004ef       ??_EDepthStencilState@@UAEPAXI@Z 006014ef f i  CIL library: CIL module
+ 0001:0000050e       ??_GBlendState@@UAEPAXI@Z  0060150e f i States.obj
+ 0001:0000050e       ??_EBlendState@@UAEPAXI@Z  0060150e f i  CIL library: CIL module
+ 0001:0000052d       ??_ETexture2D@@UAEPAXI@Z   0060152d f i  CIL library: CIL module
+ 0001:0000052d       ??_GTexture2D@@UAEPAXI@Z   0060152d f i Texture2D.obj
+ 0001:0000054c       ??_ETexture3D@@UAEPAXI@Z   0060154c f i  CIL library: CIL module
+ 0001:0000054c       ??_GTexture3D@@UAEPAXI@Z   0060154c f i Texture3D.obj
+ 0001:0000056b       ?DirectXFormat@Desc@DepthStencilFormatD32F@@UBE?AW4DXGI_FORMAT@@XZ 0060156b f i DepthStencilFormats.obj
+ 0001:0000056f       ?WritableDirectXFormat@Desc@DepthStencilFormatD32F@@UBE?AW4DXGI_FORMAT@@XZ 0060156f f i DepthStencilFormats.obj
+ 0001:00000573       ?Write@Desc@DepthStencilFormatD32F@@UAEXAAUDepthStencilFormat@@AAMAAH@Z 00601573 f i DepthStencilFormats.obj
+ 0001:00000584       ?Read@Desc@DepthStencilFormatD32F@@UBEXABUDepthStencilFormat@@AAMAAH@Z 00601584 f i DepthStencilFormats.obj
+ 0001:00000595       ?DirectXFormat@Desc@PixelFormatRGBA8@@UBE?AW4DXGI_FORMAT@@XZ 00601595 f i PixelFormats.obj
+ 0001:00000599       ?DirectXFormat@Desc@PixelFormatRGBA8_sRGB@@UBE?AW4DXGI_FORMAT@@XZ 00601599 f i PixelFormats.obj
+ 0001:0000059d       ?Write@Desc@PixelFormatRGBA8@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 0060159d f i PixelFormats.obj
+ 0001:0000059d       ?Write@Desc@PixelFormatRGBA8_sRGB@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 0060159d f i PixelFormats.obj
+ 0001:000005e8       ?Read@Desc@PixelFormatRGBA8@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 006015e8 f i PixelFormats.obj
+ 0001:000005e8       ?Read@Desc@PixelFormatRGBA8_sRGB@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 006015e8 f i PixelFormats.obj
+ 0001:00000635       ?DirectXFormat@Desc@PixelFormatRGBA16F@@UBE?AW4DXGI_FORMAT@@XZ 00601635 f i PixelFormats.obj
+ 0001:00000639       ?Size@Desc@PixelFormatRGBA16_UINT@@UBEHXZ 00601639 f i PixelFormats.obj
+ 0001:00000639       ?Size@Desc@PixelFormatRGBA16F@@UBEHXZ 00601639 f i PixelFormats.obj
+ 0001:0000063d       ?Write@Desc@PixelFormatRGBA16F@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 0060163d f i PixelFormats.obj
+ 0001:000006a8       ?Read@Desc@PixelFormatRGBA16F@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 006016a8 f i PixelFormats.obj
+ 0001:000006f5       ?DirectXFormat@Desc@PixelFormatRG16F@@UBE?AW4DXGI_FORMAT@@XZ 006016f5 f i PixelFormats.obj
+ 0001:000006f9       ?Size@Desc@PixelFormatRGBA8_sRGB@@UBEHXZ 006016f9 f i PixelFormats.obj
+ 0001:000006f9       ?Size@Desc@PixelFormatRG16F@@UBEHXZ 006016f9 f i PixelFormats.obj
+ 0001:000006f9       ?Size@Desc@PixelFormatRGBA8@@UBEHXZ 006016f9 f i PixelFormats.obj
+ 0001:000006f9       ?Size@Desc@PixelFormatR32F@@UBEHXZ 006016f9 f i PixelFormats.obj
+ 0001:000006f9       ?Size@Desc@DepthStencilFormatD32F@@UBEHXZ 006016f9 f i DepthStencilFormats.obj
+ 0001:000006f9       ?GetInputElementsCount@Desc@VertexFormatP3N3G3T2@@UBEHXZ 006016f9 f i VertexFormats.obj
+ 0001:000006fd       ?Write@Desc@PixelFormatRG16F@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 006016fd f i PixelFormats.obj
+ 0001:0000073a       ?Read@Desc@PixelFormatRG16F@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 0060173a f i PixelFormats.obj
+ 0001:0000076b       ?Write@Desc@PixelFormatRGBA16_UINT@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 0060176b f i PixelFormats.obj
+ 0001:000007be       ?Read@Desc@PixelFormatRGBA16_UINT@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 006017be f i PixelFormats.obj
+ 0001:0000080b       ?Write@Desc@PixelFormatRGBA32F@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 0060180b f i PixelFormats.obj
+ 0001:0000082e       ?Read@Desc@PixelFormatRGBA32F@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 0060182e f i PixelFormats.obj
+ 0001:00000851       ?DirectXFormat@Desc@PixelFormatR32F@@UBE?AW4DXGI_FORMAT@@XZ 00601851 f i PixelFormats.obj
+ 0001:00000851       ?ReadableDirectXFormat@Desc@DepthStencilFormatD32F@@UBE?AW4DXGI_FORMAT@@XZ 00601851 f i DepthStencilFormats.obj
+ 0001:00000855       ?Write@Desc@PixelFormatR32F@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 00601855 f i PixelFormats.obj
+ 0001:00000866       ?Read@Desc@PixelFormatR32F@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 00601866 f i PixelFormats.obj
+ 0001:00000882       ?DirectXFormat@Desc@PixelFormatR16_UINT@@UBE?AW4DXGI_FORMAT@@XZ 00601882 f i PixelFormats.obj
+ 0001:00000886       ?Size@Desc@PixelFormatR16_UINT@@UBEHXZ 00601886 f i PixelFormats.obj
+ 0001:00000886       ?DirectXFormat@Desc@PixelFormatRGBA32F@@UBE?AW4DXGI_FORMAT@@XZ 00601886 f i PixelFormats.obj
+ 0001:00000886       ?GetInputElementsCount@Desc@VertexFormatP3T2@@UBEHXZ 00601886 f i VertexFormats.obj
+ 0001:0000088a       ?Write@Desc@PixelFormatR16_UINT@@UBEXAAUPixelFormat@@ABVNjFloat4@@@Z 0060188a f i PixelFormats.obj
+ 0001:000008ab       ?Read@Desc@PixelFormatR16_UINT@@UBE?AVNjFloat4@@ABUPixelFormat@@@Z 006018ab f i PixelFormats.obj
+ 0001:000008d4       ?Size@Desc@PixelFormatRGBA32F@@UBEHXZ 006018d4 f i PixelFormats.obj
+ 0001:000008d4       ?Size@Desc@VertexFormatPt4@@UBEHXZ 006018d4 f i VertexFormats.obj
+ 0001:000008d8       ?GetInputElements@Desc@VertexFormatPt4@@UBEPAUD3D11_INPUT_ELEMENT_DESC@@XZ 006018d8 f i VertexFormats.obj
+ 0001:000008de       ?Size@Desc@VertexFormatP3@@UBEHXZ 006018de f i VertexFormats.obj
+ 0001:000008de       ?DirectXFormat@Desc@PixelFormatRGBA16_UINT@@UBE?AW4DXGI_FORMAT@@XZ 006018de f i PixelFormats.obj
+ 0001:000008e2       ?GetInputElements@Desc@VertexFormatP3@@UBEPAUD3D11_INPUT_ELEMENT_DESC@@XZ 006018e2 f i VertexFormats.obj
+ 0001:000008e8       ?GetInputElementsCount@Desc@VertexFormatP3@@UBEHXZ 006018e8 f i VertexFormats.obj
+ 0001:000008e8       ?GetInputElementsCount@Desc@VertexFormatPt4@@UBEHXZ 006018e8 f i VertexFormats.obj
+ 0001:000008ec       ?Size@Desc@VertexFormatP3T2@@UBEHXZ 006018ec f i VertexFormats.obj
+ 0001:000008f0       ?GetInputElements@Desc@VertexFormatP3T2@@UBEPAUD3D11_INPUT_ELEMENT_DESC@@XZ 006018f0 f i VertexFormats.obj
+ 0001:000008f6       ?Size@Desc@VertexFormatP3N3G3T2@@UBEHXZ 006018f6 f i VertexFormats.obj
+ 0001:000008fa       ?GetInputElements@Desc@VertexFormatP3N3G3T2@@UBEPAUD3D11_INPUT_ELEMENT_DESC@@XZ 006018fa f i VertexFormats.obj
+ 0001:00000900       ?Size@Desc@VertexFormatP3N3G3T2T2@@UBEHXZ 00601900 f i VertexFormats.obj
+ 0001:00000904       ?GetInputElements@Desc@VertexFormatP3N3G3T2T2@@UBEPAUD3D11_INPUT_ELEMENT_DESC@@XZ 00601904 f i VertexFormats.obj
+ 0001:0000090a       ?GetInputElementsCount@Desc@VertexFormatP3N3G3T2T3@@UBEHXZ 0060190a f i VertexFormats.obj
+ 0001:0000090a       ?GetInputElementsCount@Desc@VertexFormatP3N3G3T2T2@@UBEHXZ 0060190a f i VertexFormats.obj
+ 0001:0000090e       ?Size@Desc@VertexFormatP3N3G3T2T3@@UBEHXZ 0060190e f i VertexFormats.obj
+ 0001:00000912       ?GetInputElements@Desc@VertexFormatP3N3G3T2T3@@UBEPAUD3D11_INPUT_ELEMENT_DESC@@XZ 00601912 f i VertexFormats.obj
  0001:00000918       ?Open@IncludesManager@@UAGJW4_D3D_INCLUDE_TYPE@@PBDPBXPAPBXPAI@Z 00601918 f i Resources.obj
  0001:0000097e       ?Close@IncludesManager@@UAGJPBX@Z 0060197e f i Resources.obj
  0001:000009c2       _dsInit@12                 006019c2     libv2:dsio.obj
@@ -157,8 +157,8 @@
  0001:00002d5b       _RONAN_                    00603d5b     libv2:synth.obj
  0001:00002dbc       _synthInit@12              00603dbc     libv2:synth.obj
  0001:00002eb2       _synthRender@20            00603eb2     libv2:synth.obj
- 0001:000032c6       _synthProcessMIDI@8        006042c6     libv2:synth.obj
  0001:000032c6       _MIDI_                     006042c6     libv2:synth.obj
+ 0001:000032c6       _synthProcessMIDI@8        006042c6     libv2:synth.obj
  0001:000035da       _synthSetGlobals@8         006045da     libv2:synth.obj
  0001:00003682       _synthSetSampler@12        00604682     libv2:synth.obj
  0001:00003685       _synthSetVUMode@8          00604685     libv2:synth.obj
@@ -196,254 +196,252 @@
  0001:00004110       ?LoadResourceBinary@@YIPBEGPBDPAI@Z 00605110 f   Resources.obj
  0001:00004167       ?LoadResourceShader@@YIPADGAAI@Z 00605167 f   Resources.obj
  0001:0000419a       ?CreateComputeShader@@YIPAVComputeShader@@GPBDPAU_D3D_SHADER_MACRO@@@Z 0060519a f   Resources.obj
- 0001:000041dc       ?CreateMaterial@@YIPAVMaterial@@GABVIVertexFormatDescriptor@@PBD1111PAU_D3D_SHADER_MACRO@@@Z 006051dc f   Resources.obj
- 0001:0000421c       ?CreateMaterial@@YIPAVMaterial@@GABVIVertexFormatDescriptor@@PBD11PAU_D3D_SHADER_MACRO@@@Z 0060521c f   Resources.obj
- 0001:00004225       ?_srand@@YIXII@Z           00605225 f   Random.obj
- 0001:00004235       ?_rand@@YIIXZ              00605235 f   Random.obj
- 0001:00004272       ?_randpopseed@@YIXXZ       00605272 f   Random.obj
- 0001:00004287       ?_randpushseed@@YIXXZ      00605287 f   Random.obj
- 0001:0000429c       ?_frand@@YIMXZ             0060529c f   Random.obj
- 0001:000042bd       ?_rand@@YIII@Z             006052bd f   Random.obj
- 0001:000042c8       ?_rand@@YIIII@Z            006052c8 f   Random.obj
- 0001:000042e5       ?_frand@@YIMMM@Z           006052e5 f   Random.obj
- 0001:000042fc       ??1Camera@@QAE@XZ          006052fc f   Camera.obj
- 0001:0000430a       ?Upload@Camera@@QAEXH@Z    0060530a f   Camera.obj
- 0001:00004328       ??0Camera@@QAE@AAVDevice@@@Z 00605328 f   Camera.obj
- 0001:000043c9       ?UpdateCompositions@Camera@@QAEXXZ 006053c9 f   Camera.obj
- 0001:0000441b       ?LookAt@Camera@@QAEXABVNjFloat3@@00@Z 0060541b f   Camera.obj
- 0001:000044f0       ?SetPerspective@Camera@@QAEXMMMM@Z 006054f0 f   Camera.obj
- 0001:000045d5       ?Stop@V2MPlayer@@QAEXK@Z   006055d5 f   v2mplayer.obj
- 0001:000045ef       ?Close@V2MPlayer@@QAEXXZ   006055ef f   v2mplayer.obj
- 0001:00004612       ?Tick@V2MPlayer@@AAEXXZ    00605612 f   v2mplayer.obj
- 0001:00004b7c       ?Reset@V2MPlayer@@AAEXXZ   00605b7c f   v2mplayer.obj
- 0001:00004d92       ?InitBase@V2MPlayer@@AAEHPBX@Z 00605d92 f   v2mplayer.obj
- 0001:00004e9b       ?UpdateSampleDelta@?A0x646310df@@YIXKKKKPAK0@Z 00605e9b f   v2mplayer.obj
- 0001:00004ec9       ?Render@V2MPlayer@@QAEXPAMKH@Z 00605ec9 f   v2mplayer.obj
- 0001:00005030       ?Play@V2MPlayer@@QAEXK@Z   00606030 f   v2mplayer.obj
- 0001:0000512f       ?Open@V2MPlayer@@QAEHPBXK@Z 0060612f f   v2mplayer.obj
- 0001:0000515f       ?Write@Desc@VertexFormatP3N3G3T2T2@@UBEXPAXABVNjFloat3@@11ABVNjFloat2@@@Z 0060615f f   VertexFormats.obj
- 0001:000051a0       ?Write@Desc@VertexFormatP3N3G3T2@@UBEXPAXABVNjFloat3@@11ABVNjFloat2@@@Z 006061a0 f   VertexFormats.obj
- 0001:000051d6       ?Write@Desc@VertexFormatP3T2@@UBEXPAXABVNjFloat3@@11ABVNjFloat2@@@Z 006061d6 f   VertexFormats.obj
- 0001:000051fa       ?Write@Desc@VertexFormatP3@@UBEXPAXABVNjFloat3@@11ABVNjFloat2@@@Z 006061fa f   VertexFormats.obj
- 0001:0000520e       ?Write@Desc@VertexFormatP3N3G3T2T3@@UBEXPAXABVNjFloat3@@11ABVNjFloat2@@@Z 0060620e f   VertexFormats.obj
- 0001:00005254       ?Write@Desc@VertexFormatPt4@@UBEXPAXABVNjFloat3@@11ABVNjFloat2@@@Z 00606254 f   VertexFormats.obj
- 0001:00005285       ?Check@Device@@SI_NJ@Z     00606285 f   Device.obj
- 0001:00005293       ?UnRegisterComponent@Device@@AAEXAAVComponent@@@Z 00606293 f   Device.obj
- 0001:000052bc       ?RegisterComponent@Device@@AAEXAAVComponent@@@Z 006062bc f   Device.obj
- 0001:000052d0       ?SetStates@Device@@QAEXPAVRasterizerState@@PAVDepthStencilState@@PAVBlendState@@@Z 006062d0 f   Device.obj
- 0001:00005338       ?SetRenderTargets@Device@@QAEXHHHPAPAUID3D11RenderTargetView@@PAUID3D11DepthStencilView@@PAUD3D11_VIEWPORT@@@Z 00606338 f   Device.obj
- 0001:00005384       ?Exit@Device@@QAEXXZ       00606384 f   Device.obj
- 0001:00005407       ?ComponentsCount@Device@@QBEHXZ 00606407 f   Device.obj
- 0001:00005421       ??0Device@@QAE@XZ          00606421 f   Device.obj
- 0001:00005468       ?ClearDepthStencil@Device@@QAEXABVTexture2D@@ME@Z 00606468 f   Device.obj
- 0001:0000548e       ?SetRenderTarget@Device@@QAEXABVTexture2D@@PBV2@PAUD3D11_VIEWPORT@@@Z 0060648e f   Device.obj
- 0001:000054c5       ?ClearRenderTarget@Device@@QAEXABVTexture2D@@ABVNjFloat4@@@Z 006064c5 f   Device.obj
- 0001:000054e8       ?Init@Device@@QAEXHHPAUHWND__@@_N1@Z 006064e8 f   Device.obj
- 0001:00005b70       ?ComputeMipLevelsCount@Texture3D@@SIHHHHH@Z 00606b70 f   Texture3D.obj
- 0001:00005baf       ?NextMipSize@Texture3D@@SIXAAH00@Z 00606baf f   Texture3D.obj
- 0001:00005bd9       ?GetShaderView@Texture3D@@QBEPAUID3D11ShaderResourceView@@HH@Z 00606bd9 f   Texture3D.obj
- 0001:00005c37       ??1Texture3D@@UAE@XZ       00606c37 f   Texture3D.obj
- 0001:00005c79       ??0Texture3D@@QAE@AAVDevice@@HHHABVIPixelFormatDescriptor@@HPBQBX@Z 00606c79 f   Texture3D.obj
- 0001:00005dae       ?Set@Texture3D@@QAEXH_N@Z  00606dae f   Texture3D.obj
- 0001:00005e57       ?ComputeMipLevelsCount@Texture2D@@SIHHHH@Z 00606e57 f   Texture2D.obj
- 0001:00005e99       ?NextMipSize@Texture2D@@SIXAAH0@Z 00606e99 f   Texture2D.obj
- 0001:00005eb6       ?GetDepthStencilView@Texture2D@@QBEPAUID3D11DepthStencilView@@XZ 00606eb6 f   Texture2D.obj
- 0001:00005ef7       ?GetTargetView@Texture2D@@QBEPAUID3D11RenderTargetView@@HHH@Z 00606ef7 f   Texture2D.obj
- 0001:00005f61       ?GetShaderView@Texture2D@@QBEPAUID3D11ShaderResourceView@@HHHH@Z 00606f61 f   Texture2D.obj
- 0001:00005ffb       ??1Texture2D@@UAE@XZ       00606ffb f   Texture2D.obj
- 0001:0000604a       ??0Texture2D@@QAE@AAVDevice@@HHABVIDepthStencilFormatDescriptor@@@Z 0060704a f   Texture2D.obj
- 0001:000060e7       ??0Texture2D@@QAE@AAVDevice@@HHHABVIPixelFormatDescriptor@@HPBQBX_N3@Z 006070e7 f   Texture2D.obj
- 0001:0000629f       ??0Texture2D@@QAE@AAVDevice@@AAUID3D11Texture2D@@ABVIPixelFormatDescriptor@@@Z 0060729f f   Texture2D.obj
- 0001:00006303       ?SetPS@Texture2D@@QAEXH_N@Z 00607303 f   Texture2D.obj
- 0001:00006327       ?WriteIndex@Primitive@@UAEXPAXH@Z 00607327 f   Primitive.obj
- 0001:00006338       ?WriteVertex@Primitive@@UAEXPAXABVNjFloat3@@11ABVNjFloat2@@@Z 00607338 f   Primitive.obj
- 0001:00006344       ?CreateBuffers@Primitive@@UAEXHHW4D3D_PRIMITIVE_TOPOLOGY@@AAPAX1AAH2@Z 00607344 f   Primitive.obj
- 0001:000063a7       ?Build@Primitive@@AAEXPAXPAG_N@Z 006073a7 f   Primitive.obj
- 0001:0000648e       ??1Primitive@@UAE@XZ       0060748e f   Primitive.obj
- 0001:000064c0       ??0Primitive@@QAE@AAVDevice@@HPAXHPAGW4D3D_PRIMITIVE_TOPOLOGY@@ABVIVertexFormatDescriptor@@@Z 006074c0 f   Primitive.obj
- 0001:0000651e       ?Finalize@Primitive@@UAEXPAX0@Z 0060751e f   Primitive.obj
- 0001:00006545       ?Render@Primitive@@QAEXAAVMaterial@@HHHHH@Z 00607545 f   Primitive.obj
- 0001:000065eb       ?Render@Primitive@@QAEXAAVMaterial@@@Z 006075eb f   Primitive.obj
- 0001:00006604       ?Unlock@Material@@ABEXXZ   00607604 f   Material.obj
- 0001:00006605       ?Lock@Material@@ABE_NXZ    00607605 f   Material.obj
- 0001:00006608       ?Close@Material@@UAGJPBX@Z 00607608 f   Material.obj
- 0001:00006628       ?Open@Material@@UAGJW4_D3D_INCLUDE_TYPE@@PBDPBXPAPBXPAI@Z 00607628 f   Material.obj
- 0001:00006653       ?CompileShader@Material@@AAEPAUID3D10Blob@@PBDPAU_D3D_SHADER_MACRO@@00@Z 00607653 f   Material.obj
- 0001:000066f7       ?Use@Material@@QAEXXZ      006076f7 f   Material.obj
- 0001:00006774       ?CompileShaders@Material@@AAEXPBD@Z 00607774 f   Material.obj
- 0001:000069f3       ??1Material@@UAE@XZ        006079f3 f   Material.obj
- 0001:00006a8d       ??0Material@@QAE@AAVDevice@@ABVIVertexFormatDescriptor@@PBD2PAU_D3D_SHADER_MACRO@@22222PAUID3DInclude@@@Z 00607a8d f   Material.obj
- 0001:00006b19       ?Set@ConstantBuffer@@QAEXH@Z 00607b19 f   ConstantBuffer.obj
- 0001:00006b88       ?UpdateData@ConstantBuffer@@QAEXPBX@Z 00607b88 f   ConstantBuffer.obj
- 0001:00006bca       ??1ConstantBuffer@@UAE@XZ  00607bca f   ConstantBuffer.obj
- 0001:00006be4       ??0ConstantBuffer@@QAE@AAVDevice@@HPAX@Z 00607be4 f   ConstantBuffer.obj
- 0001:00006c3f       ?Unlock@ComputeShader@@ABEXXZ 00607c3f f   ComputeShader.obj
- 0001:00006c40       ?Lock@ComputeShader@@ABE_NXZ 00607c40 f   ComputeShader.obj
- 0001:00006c43       ?Close@ComputeShader@@UAGJPBX@Z 00607c43 f   ComputeShader.obj
- 0001:00006c63       ?Open@ComputeShader@@UAGJW4_D3D_INCLUDE_TYPE@@PBDPBXPAPBXPAI@Z 00607c63 f   ComputeShader.obj
- 0001:00006c8e       ?CompileShader@ComputeShader@@AAEPAUID3D10Blob@@PBDPAU_D3D_SHADER_MACRO@@00@Z 00607c8e f   ComputeShader.obj
- 0001:00006d30       ?SetOutput@StructuredBuffer@ComputeShader@@QAEXH@Z 00607d30 f   ComputeShader.obj
- 0001:00006d73       ?SetInput@StructuredBuffer@ComputeShader@@QAEXH@Z 00607d73 f   ComputeShader.obj
- 0001:00006dde       ?Clear@StructuredBuffer@ComputeShader@@QAEXABVNjFloat4@@@Z 00607dde f   ComputeShader.obj
- 0001:00006df6       ?Write@StructuredBuffer@ComputeShader@@QAEXPAXH@Z 00607df6 f   ComputeShader.obj
- 0001:00006e54       ?Read@StructuredBuffer@ComputeShader@@QBEXPAXH@Z 00607e54 f   ComputeShader.obj
- 0001:00006eb2       ??1StructuredBuffer@ComputeShader@@UAE@XZ 00607eb2 f   ComputeShader.obj
- 0001:00006ee3       ??0StructuredBuffer@ComputeShader@@QAE@AAVDevice@@HH_N@Z 00607ee3 f   ComputeShader.obj
- 0001:00006fd5       ?Run@ComputeShader@@QAEXHHH@Z 00607fd5 f   ComputeShader.obj
- 0001:00006fff       ?Use@ComputeShader@@QAEXXZ 00607fff f   ComputeShader.obj
- 0001:00007025       ?CompileShaders@ComputeShader@@AAEXPBD@Z 00608025 f   ComputeShader.obj
- 0001:0000708f       ??1ComputeShader@@UAE@XZ   0060808f f   ComputeShader.obj
- 0001:000070d8       ??0ComputeShader@@QAE@AAVDevice@@PBD1PAU_D3D_SHADER_MACRO@@1PAUID3DInclude@@@Z 006080d8 f   ComputeShader.obj
- 0001:0000711f       ?Check@Component@@QBEXJ@Z  0060811f f   Component.obj
- 0001:00007120       ??1Component@@UAE@XZ       00608120 f   Component.obj
- 0001:00007131       ??0Component@@QAE@AAVDevice@@@Z 00608131 f   Component.obj
- 0001:0000714a       ?BuildComponent@TextureBuilder@@ABEMHABUConversionParams@1@AAUPixel@@11@Z 0060814a f   TextureBuilder.obj
- 0001:000071b6       ?Get@TextureBuilder@@QBEXHHAAUPixel@@@Z 006081b6 f   TextureBuilder.obj
- 0001:000071f8       ?ReleaseSpecificBuffer@TextureBuilder@@ABEXXZ 006081f8 f   TextureBuilder.obj
- 0001:00007222       ?Fill@TextureBuilder@@QAEXP6IXHHABVNjFloat2@@AAUPixel@@PAX@Z2@Z 00608222 f   TextureBuilder.obj
- 0001:00007294       ??1TextureBuilder@@QAE@XZ  00608294 f   TextureBuilder.obj
- 0001:0000730a       ?GenerateMips@TextureBuilder@@QBEX_N@Z 0060830a f   TextureBuilder.obj
- 0001:00007700       ?SampleClamp@TextureBuilder@@QBEXMMAAUPixel@@@Z 00608700 f   TextureBuilder.obj
- 0001:000078f2       ?SampleWrap@TextureBuilder@@QBEXMMAAUPixel@@@Z 006088f2 f   TextureBuilder.obj
- 0001:00007ad1       ?CopyFiller@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 00608ad1 f   TextureBuilder.obj
- 0001:00007af9       ??0TextureBuilder@@QAE@HH@Z 00608af9 f   TextureBuilder.obj
- 0001:00007ba0       ?Convert@TextureBuilder@@QBEPAPAXABVIPixelFormatDescriptor@@ABUConversionParams@1@@Z 00608ba0 f   TextureBuilder.obj
- 0001:00007f00       ?SetCellularWrappingParameters@Noise@@QAEXHHH@Z 00608f00 f   Noise.obj
- 0001:00007f2c       ?SetWrappingParameters@Noise@@QAEXMI@Z 00608f2c f   Noise.obj
- 0001:00007fa2       ?Perlin@Noise@@QBEMABVNjFloat4@@ABVNjFloat2@@@Z 00608fa2 f   Noise.obj
- 0001:00009bae       ?Perlin@Noise@@QBEMABVNjFloat3@@@Z 0060abae f   Noise.obj
- 0001:00009e53       ?Perlin@Noise@@QBEMABVNjFloat2@@@Z 0060ae53 f   Noise.obj
- 0001:00009f8a       ?Perlin@Noise@@QBEMM@Z     0060af8a f   Noise.obj
- 0001:0000a005       ??1Noise@@QAE@XZ           0060b005 f   Noise.obj
- 0001:0000a03e       ??0Noise@@QAE@H@Z          0060b03e f   Noise.obj
- 0001:0000a2c2       ?WrapPerlin@Noise@@QBEMABVNjFloat3@@@Z 0060b2c2 f   Noise.obj
- 0001:0000a33a       ?PerlinVector@Noise@@QBE?AVNjFloat3@@ABV2@@Z 0060b33a f   Noise.obj
- 0001:0000a41b       ?FillDilate@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060b41b f   Filters.obj
- 0001:0000a549       ?FillErode@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060b549 f   Filters.obj
- 0001:0000a6d5       ?FillEmboss@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060b6d5 f   Filters.obj
- 0001:0000a816       ?FillBCG@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060b816 f   Filters.obj
- 0001:0000a8a5       ?FillUnsharpMaskSubtract@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060b8a5 f   Filters.obj
- 0001:0000a979       ?FillBlurGaussianVC@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060b979 f   Filters.obj
- 0001:0000ab55       ?FillBlurGaussianHC@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060bb55 f   Filters.obj
- 0001:0000ad31       ?FillBlurGaussianVW@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060bd31 f   Filters.obj
- 0001:0000af0d       ?FillBlurGaussianHW@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060bf0d f   Filters.obj
- 0001:0000b0e9       ?Transform@DrawUtils@@IBEXABVNjFloat4@@AAV2@@Z 0060c0e9 f   Draw.obj
- 0001:0000b11b       ?SetupSurface@DrawUtils@@QAEXHHPAUPixel@@@Z 0060c11b f   Draw.obj
- 0001:0000b171       ??0Pixel@@QAE@ABVNjFloat4@@MM@Z 0060c171 f   Draw.obj
- 0001:0000b191       ??0Pixel@@QAE@XZ           0060c191 f   Draw.obj
- 0001:0000b1b6       ?DrawPixel@DrawContextSCRATCH@DrawUtils@@UAEXXZ 0060c1b6 f   Draw.obj
- 0001:0000b229       ?DrawPixel@DrawContextELLIPSE@DrawUtils@@UAEXXZ 0060c229 f   Draw.obj
- 0001:0000b2b5       ?DrawPixel@DrawContextLINE@DrawUtils@@UAEXXZ 0060c2b5 f   Draw.obj
- 0001:0000b347       ?DrawPixel@DrawContextRECT@DrawUtils@@UAEXXZ 0060c347 f   Draw.obj
- 0001:0000b48b       ?SetupContext@DrawUtils@@QAEXMMM@Z 0060c48b f   Draw.obj
- 0001:0000b4c1       ??0DrawUtils@@QAE@XZ       0060c4c1 f   Draw.obj
- 0001:0000b5e3       ?Blend@Pixel@@QAEXABU1@M@Z 0060c5e3 f   Draw.obj
- 0001:0000b667       ?DrawQuad@DrawUtils@@IBEXQAVNjFloat4@@AAUDrawContext@1@@Z 0060c667 f   Draw.obj
- 0001:0000bcd8       ?DrawRectangle@DrawUtils@@QBEXMMMMMMP6IXABUDrawInfos@1@AAUPixel@@@ZPAX@Z 0060ccd8 f   Draw.obj
- 0001:0000bdb5       ?DrawScratch@DrawUtils@@QBEXABVNjFloat2@@0MMMMMP6IXABUDrawInfos@1@AAUPixel@@MM@ZPAX@Z 0060cdb5 f   Draw.obj
- 0001:0000c10c       ??DNjFloat4x4@@QBE?AV0@ABV0@@Z 0060d10c f   Math.obj
- 0001:0000c314       ??BNjHalf@@QBEMXZ          0060d314 f   Math.obj
- 0001:0000c39b       ??0NjHalf@@QAE@M@Z         0060d39b f   Math.obj
- 0001:0000c412       ?CoFactor@NjFloat4x4@@QBEMHH@Z 0060d412 f   Math.obj
- 0001:0000c4fd       ?Determinant@NjFloat4x4@@QBEMXZ 0060d4fd f   Math.obj
- 0001:0000c579       ?Inverse@NjFloat4x4@@QBE?AV1@XZ 0060d579 f   Math.obj
- 0001:0000c6b3       ?QuatFromAngleAxis@NjFloat4@@SI?AV1@MABVNjFloat3@@@Z 0060d6b3 f   Math.obj
- 0001:0000c6f4       ?FromQuat@NjFloat4x4@@SI?AV1@ABVNjFloat4@@@Z 0060d6f4 f   Math.obj
- 0001:0000c7fb       ?PRS@NjFloat4x4@@SI?AV1@ABVNjFloat3@@ABVNjFloat4@@0@Z 0060d7fb f   Math.obj
- 0001:0000c88a       ?ForEach@DictionaryU32@@QAEXP6IXAAPAXPAX@Z1@Z 0060d88a f   Hashtable.obj
- 0001:0000c8b7       ?Get@DictionaryU32@@QBEPAXI@Z 0060d8b7 f   Hashtable.obj
- 0001:0000c8f3       ?Add@DictionaryU32@@QAEXIPAX@Z 0060d8f3 f   Hashtable.obj
- 0001:0000c938       ??1DictionaryU32@@QAE@XZ   0060d938 f   Hashtable.obj
- 0001:0000c966       ??0DictionaryU32@@QAE@H@Z  0060d966 f   Hashtable.obj
- 0001:0000c99a       ?Delete3DTextures@@YIXXZ   0060d99a f   Intro.obj
- 0001:0000c9ab       ?Delete2DTextures@@YIXXZ   0060d9ab f   Intro.obj
- 0001:0000c9bc       ?IntroExit@@YIXXZ          0060d9bc f   Intro.obj
- 0001:0000ca5c       ?CombineDistances@@YIMQAM@Z 0060da5c f   Intro.obj
- 0001:0000caa2       ?FillSplotch@@YIXABUDrawInfos@DrawUtils@@AAUPixel@@@Z 0060daa2 f   Intro.obj
- 0001:0000cb59       ?FillScratch@@YIXABUDrawInfos@DrawUtils@@AAUPixel@@MM@Z 0060db59 f   Intro.obj
- 0001:0000cbed       ?Build3DTextures@@YIHAAUIntroProgressDelegate@@@Z 0060dbed f   Intro.obj
- 0001:0000d192       ?IntroDo@@YI_NMM@Z         0060e192 f   Intro.obj
- 0001:0000d283       ?Build2DTextures@@YIHAAUIntroProgressDelegate@@@Z 0060e283 f   Intro.obj
- 0001:0000d286       ?IntroInit@@YIHAAUIntroProgressDelegate@@@Z 0060e286 f   Intro.obj
- 0001:0000d42e       ??1EffectTranslucency@@QAE@XZ 0060e42e f   EffectTranslucency.obj
- 0001:0000d4e4       ?TweakTorusInternal@@YIXAAVNjFloat3@@00AAVNjFloat2@@PAX@Z 0060e4e4 f   EffectTranslucency.obj
- 0001:0000d55a       ?TweakSphereExternal@@YIXAAVNjFloat3@@00AAVNjFloat2@@PAX@Z 0060e55a f   EffectTranslucency.obj
- 0001:0000d581       ??1EffectRoom@@QAE@XZ      0060e581 f   EffectRoom.obj
- 0001:0000d67b       ?BuildRoom@EffectRoom@@IAEXXZ 0060e67b f   EffectRoom.obj
- 0001:0000e82c       ?AnimateFailure@EffectRoom@@IAEMAAM00MMM@Z 0060f82c f   EffectRoom.obj
- 0001:0000e8bc       ??0EffectRoom@@QAE@AAVTexture2D@@@Z 0060f8bc f   EffectRoom.obj
- 0001:0000ea0d       ?Render@EffectRoom@@QAEXMM@Z 0060fa0d f   EffectRoom.obj
- 0001:0000ed5c       __purecall                 0060fd5c f   GodComplex.obj
- 0001:0000ed7b       ?WindowExit@@YIXXZ         0060fd7b f   GodComplex.obj
- 0001:0000ede9       ?WindowInit@@YIHXZ         0060fde9 f   GodComplex.obj
- 0001:0000efcc       ?EntryPoint@@YGXXZ         0060ffcc f   GodComplex.obj
- 0001:0000f149       ??1BlendState@@UAE@XZ      00610149 f   States.obj
- 0001:0000f163       ??0BlendState@@QAE@AAVDevice@@AAUD3D11_BLEND_DESC@@@Z 00610163 f   States.obj
- 0001:0000f190       ??1DepthStencilState@@UAE@XZ 00610190 f   States.obj
- 0001:0000f1aa       ??0DepthStencilState@@QAE@AAVDevice@@AAUD3D11_DEPTH_STENCIL_DESC@@@Z 006101aa f   States.obj
- 0001:0000f1d7       ??1RasterizerState@@UAE@XZ 006101d7 f   States.obj
- 0001:0000f1f1       ??0RasterizerState@@QAE@AAVDevice@@AAUD3D11_RASTERIZER_DESC@@@Z 006101f1 f   States.obj
- 0001:0000f238       ?Map@MapperSpherical@GeometryBuilder@@UBEXABVNjFloat3@@00AAVNjFloat2@@@Z 00610238 f   GeometryBuilder.obj
- 0001:0000f2d6       ?FillMarble@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 006102d6 f   Generators.obj
- 0001:0000f322       ?FillDirtyness@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 00610322 f   Generators.obj
- 0001:0000f456       ?FillAO@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 00610456 f   Generators.obj
- 0001:0000f5b7       ?ComputeAO@Generators@@SIXABVTextureBuilder@@AAV2@MHH_N@Z 006105b7 f   Generators.obj
- 0001:0000f5e5       ?FillNormal@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 006105e5 f   Generators.obj
- 0001:0000f73a       ?ComputeNormal@Generators@@SIXABVTextureBuilder@@AAV2@M_N@Z 0061073a f   Generators.obj
- 0002:00000000       __imp__D3DPreprocess@28    00611000     d3dcompiler:D3DCOMPILER_43.dll
- 0002:00000004       __imp__D3DCompile@44       00611004     d3dcompiler:D3DCOMPILER_43.dll
- 0002:00000008       \177D3DCOMPILER_43_NULL_THUNK_DATA 00611008     d3dcompiler:D3DCOMPILER_43.dll
- 0002:0000000c       __imp__DirectSoundCreate@12 0061100c     dsound:DSOUND.dll
- 0002:00000010       \177DSOUND_NULL_THUNK_DATA 00611010     dsound:DSOUND.dll
- 0002:00000014       __imp__SetBkMode@8         00611014     gdi32:GDI32.dll
- 0002:00000018       __imp__CreateFontA@56      00611018     gdi32:GDI32.dll
- 0002:0000001c       __imp__SetTextColor@8      0061101c     gdi32:GDI32.dll
+ 0001:000041da       ?CreateMaterial@@YIPAVMaterial@@GABVIVertexFormatDescriptor@@PBD1111PAU_D3D_SHADER_MACRO@@@Z 006051da f   Resources.obj
+ 0001:0000421a       ?CreateMaterial@@YIPAVMaterial@@GABVIVertexFormatDescriptor@@PBD11PAU_D3D_SHADER_MACRO@@@Z 0060521a f   Resources.obj
+ 0001:00004223       ?_srand@@YIXII@Z           00605223 f   Random.obj
+ 0001:00004233       ?_rand@@YIIXZ              00605233 f   Random.obj
+ 0001:00004270       ?_randpopseed@@YIXXZ       00605270 f   Random.obj
+ 0001:00004285       ?_randpushseed@@YIXXZ      00605285 f   Random.obj
+ 0001:0000429a       ?_frand@@YIMXZ             0060529a f   Random.obj
+ 0001:000042bb       ?_rand@@YIII@Z             006052bb f   Random.obj
+ 0001:000042c6       ?_rand@@YIIII@Z            006052c6 f   Random.obj
+ 0001:000042e3       ?_frand@@YIMMM@Z           006052e3 f   Random.obj
+ 0001:000042fa       ??1Camera@@QAE@XZ          006052fa f   Camera.obj
+ 0001:00004308       ?Upload@Camera@@QAEXH@Z    00605308 f   Camera.obj
+ 0001:00004326       ??0Camera@@QAE@AAVDevice@@@Z 00605326 f   Camera.obj
+ 0001:000043c7       ?UpdateCompositions@Camera@@QAEXXZ 006053c7 f   Camera.obj
+ 0001:00004419       ?LookAt@Camera@@QAEXABVNjFloat3@@00@Z 00605419 f   Camera.obj
+ 0001:000044ee       ?SetPerspective@Camera@@QAEXMMMM@Z 006054ee f   Camera.obj
+ 0001:000045d3       ?Stop@V2MPlayer@@QAEXK@Z   006055d3 f   v2mplayer.obj
+ 0001:000045ed       ?Close@V2MPlayer@@QAEXXZ   006055ed f   v2mplayer.obj
+ 0001:00004610       ?Tick@V2MPlayer@@AAEXXZ    00605610 f   v2mplayer.obj
+ 0001:00004b7a       ?Reset@V2MPlayer@@AAEXXZ   00605b7a f   v2mplayer.obj
+ 0001:00004d90       ?InitBase@V2MPlayer@@AAEHPBX@Z 00605d90 f   v2mplayer.obj
+ 0001:00004e99       ?UpdateSampleDelta@?A0x646310df@@YIXKKKKPAK0@Z 00605e99 f   v2mplayer.obj
+ 0001:00004ec7       ?Render@V2MPlayer@@QAEXPAMKH@Z 00605ec7 f   v2mplayer.obj
+ 0001:0000502e       ?Play@V2MPlayer@@QAEXK@Z   0060602e f   v2mplayer.obj
+ 0001:0000512d       ?Open@V2MPlayer@@QAEHPBXK@Z 0060612d f   v2mplayer.obj
+ 0001:0000515d       ?Write@Desc@VertexFormatP3N3G3T2T2@@UBEXPAXABVNjFloat3@@11ABVNjFloat2@@@Z 0060615d f   VertexFormats.obj
+ 0001:0000519e       ?Write@Desc@VertexFormatP3N3G3T2@@UBEXPAXABVNjFloat3@@11ABVNjFloat2@@@Z 0060619e f   VertexFormats.obj
+ 0001:000051d4       ?Write@Desc@VertexFormatP3T2@@UBEXPAXABVNjFloat3@@11ABVNjFloat2@@@Z 006061d4 f   VertexFormats.obj
+ 0001:000051f8       ?Write@Desc@VertexFormatP3@@UBEXPAXABVNjFloat3@@11ABVNjFloat2@@@Z 006061f8 f   VertexFormats.obj
+ 0001:0000520c       ?Write@Desc@VertexFormatP3N3G3T2T3@@UBEXPAXABVNjFloat3@@11ABVNjFloat2@@@Z 0060620c f   VertexFormats.obj
+ 0001:00005252       ?Write@Desc@VertexFormatPt4@@UBEXPAXABVNjFloat3@@11ABVNjFloat2@@@Z 00606252 f   VertexFormats.obj
+ 0001:00005283       ?Check@Device@@SI_NJ@Z     00606283 f   Device.obj
+ 0001:00005291       ?UnRegisterComponent@Device@@AAEXAAVComponent@@@Z 00606291 f   Device.obj
+ 0001:000052ba       ?RegisterComponent@Device@@AAEXAAVComponent@@@Z 006062ba f   Device.obj
+ 0001:000052ce       ?SetStates@Device@@QAEXPAVRasterizerState@@PAVDepthStencilState@@PAVBlendState@@@Z 006062ce f   Device.obj
+ 0001:00005336       ?SetRenderTargets@Device@@QAEXHHHPAPAUID3D11RenderTargetView@@PAUID3D11DepthStencilView@@PAUD3D11_VIEWPORT@@@Z 00606336 f   Device.obj
+ 0001:00005382       ?Exit@Device@@QAEXXZ       00606382 f   Device.obj
+ 0001:00005405       ?ComponentsCount@Device@@QBEHXZ 00606405 f   Device.obj
+ 0001:0000541f       ??0Device@@QAE@XZ          0060641f f   Device.obj
+ 0001:00005466       ?ClearDepthStencil@Device@@QAEXABVTexture2D@@ME@Z 00606466 f   Device.obj
+ 0001:0000548c       ?SetRenderTarget@Device@@QAEXABVTexture2D@@PBV2@PAUD3D11_VIEWPORT@@@Z 0060648c f   Device.obj
+ 0001:000054c3       ?ClearRenderTarget@Device@@QAEXABVTexture2D@@ABVNjFloat4@@@Z 006064c3 f   Device.obj
+ 0001:000054e6       ?Init@Device@@QAEXHHPAUHWND__@@_N1@Z 006064e6 f   Device.obj
+ 0001:00005b6e       ?ComputeMipLevelsCount@Texture3D@@SIHHHHH@Z 00606b6e f   Texture3D.obj
+ 0001:00005bad       ?NextMipSize@Texture3D@@SIXAAH00@Z 00606bad f   Texture3D.obj
+ 0001:00005bd7       ?GetShaderView@Texture3D@@QBEPAUID3D11ShaderResourceView@@HH@Z 00606bd7 f   Texture3D.obj
+ 0001:00005c35       ??1Texture3D@@UAE@XZ       00606c35 f   Texture3D.obj
+ 0001:00005c77       ??0Texture3D@@QAE@AAVDevice@@HHHABVIPixelFormatDescriptor@@HPBQBX@Z 00606c77 f   Texture3D.obj
+ 0001:00005dac       ?Set@Texture3D@@QAEXH_N@Z  00606dac f   Texture3D.obj
+ 0001:00005e55       ?ComputeMipLevelsCount@Texture2D@@SIHHHH@Z 00606e55 f   Texture2D.obj
+ 0001:00005e97       ?NextMipSize@Texture2D@@SIXAAH0@Z 00606e97 f   Texture2D.obj
+ 0001:00005eb4       ?GetDepthStencilView@Texture2D@@QBEPAUID3D11DepthStencilView@@XZ 00606eb4 f   Texture2D.obj
+ 0001:00005ef5       ?GetTargetView@Texture2D@@QBEPAUID3D11RenderTargetView@@HHH@Z 00606ef5 f   Texture2D.obj
+ 0001:00005f5f       ?GetShaderView@Texture2D@@QBEPAUID3D11ShaderResourceView@@HHHH@Z 00606f5f f   Texture2D.obj
+ 0001:00005ff9       ??1Texture2D@@UAE@XZ       00606ff9 f   Texture2D.obj
+ 0001:00006048       ??0Texture2D@@QAE@AAVDevice@@HHABVIDepthStencilFormatDescriptor@@@Z 00607048 f   Texture2D.obj
+ 0001:000060e5       ??0Texture2D@@QAE@AAVDevice@@HHHABVIPixelFormatDescriptor@@HPBQBX_N3@Z 006070e5 f   Texture2D.obj
+ 0001:0000629d       ??0Texture2D@@QAE@AAVDevice@@AAUID3D11Texture2D@@ABVIPixelFormatDescriptor@@@Z 0060729d f   Texture2D.obj
+ 0001:00006301       ?SetPS@Texture2D@@QAEXH_N@Z 00607301 f   Texture2D.obj
+ 0001:00006325       ?WriteIndex@Primitive@@UAEXPAXH@Z 00607325 f   Primitive.obj
+ 0001:00006336       ?WriteVertex@Primitive@@UAEXPAXABVNjFloat3@@11ABVNjFloat2@@@Z 00607336 f   Primitive.obj
+ 0001:00006342       ?CreateBuffers@Primitive@@UAEXHHW4D3D_PRIMITIVE_TOPOLOGY@@AAPAX1AAH2@Z 00607342 f   Primitive.obj
+ 0001:000063a5       ?Build@Primitive@@AAEXPAXPAG_N@Z 006073a5 f   Primitive.obj
+ 0001:0000648c       ??1Primitive@@UAE@XZ       0060748c f   Primitive.obj
+ 0001:000064be       ??0Primitive@@QAE@AAVDevice@@HPAXHPAGW4D3D_PRIMITIVE_TOPOLOGY@@ABVIVertexFormatDescriptor@@@Z 006074be f   Primitive.obj
+ 0001:0000651c       ?Finalize@Primitive@@UAEXPAX0@Z 0060751c f   Primitive.obj
+ 0001:00006543       ?Render@Primitive@@QAEXAAVMaterial@@HHHHH@Z 00607543 f   Primitive.obj
+ 0001:000065e9       ?Render@Primitive@@QAEXAAVMaterial@@@Z 006075e9 f   Primitive.obj
+ 0001:00006602       ?Unlock@Material@@ABEXXZ   00607602 f   Material.obj
+ 0001:00006603       ?Lock@Material@@ABE_NXZ    00607603 f   Material.obj
+ 0001:00006606       ?Close@Material@@UAGJPBX@Z 00607606 f   Material.obj
+ 0001:00006626       ?Open@Material@@UAGJW4_D3D_INCLUDE_TYPE@@PBDPBXPAPBXPAI@Z 00607626 f   Material.obj
+ 0001:0000666f       ?Use@Material@@QAEXXZ      0060766f f   Material.obj
+ 0001:000066ec       ?CompileShader@Material@@SIPAUID3D10Blob@@PBD0PAU_D3D_SHADER_MACRO@@00PAUID3DInclude@@_N@Z 006076ec f   Material.obj
+ 0001:0000678b       ?CompileShaders@Material@@AAEXPBD@Z 0060778b f   Material.obj
+ 0001:00006a07       ??1Material@@UAE@XZ        00607a07 f   Material.obj
+ 0001:00006aa1       ??0Material@@QAE@AAVDevice@@ABVIVertexFormatDescriptor@@PBD2PAU_D3D_SHADER_MACRO@@22222PAUID3DInclude@@@Z 00607aa1 f   Material.obj
+ 0001:00006b2d       ?Set@ConstantBuffer@@QAEXH@Z 00607b2d f   ConstantBuffer.obj
+ 0001:00006b9c       ?UpdateData@ConstantBuffer@@QAEXPBX@Z 00607b9c f   ConstantBuffer.obj
+ 0001:00006bde       ??1ConstantBuffer@@UAE@XZ  00607bde f   ConstantBuffer.obj
+ 0001:00006bf8       ??0ConstantBuffer@@QAE@AAVDevice@@HPAX@Z 00607bf8 f   ConstantBuffer.obj
+ 0001:00006c53       ?Unlock@ComputeShader@@ABEXXZ 00607c53 f   ComputeShader.obj
+ 0001:00006c54       ?Lock@ComputeShader@@ABE_NXZ 00607c54 f   ComputeShader.obj
+ 0001:00006c57       ?Close@ComputeShader@@UAGJPBX@Z 00607c57 f   ComputeShader.obj
+ 0001:00006c77       ?Open@ComputeShader@@UAGJW4_D3D_INCLUDE_TYPE@@PBDPBXPAPBXPAI@Z 00607c77 f   ComputeShader.obj
+ 0001:00006cc0       ?SetOutput@StructuredBuffer@ComputeShader@@QAEXH@Z 00607cc0 f   ComputeShader.obj
+ 0001:00006d03       ?SetInput@StructuredBuffer@ComputeShader@@QAEXH@Z 00607d03 f   ComputeShader.obj
+ 0001:00006d6e       ?Clear@StructuredBuffer@ComputeShader@@QAEXABVNjFloat4@@@Z 00607d6e f   ComputeShader.obj
+ 0001:00006d86       ?Write@StructuredBuffer@ComputeShader@@QAEXPAXH@Z 00607d86 f   ComputeShader.obj
+ 0001:00006de4       ?Read@StructuredBuffer@ComputeShader@@QBEXPAXH@Z 00607de4 f   ComputeShader.obj
+ 0001:00006e42       ??1StructuredBuffer@ComputeShader@@UAE@XZ 00607e42 f   ComputeShader.obj
+ 0001:00006e73       ??0StructuredBuffer@ComputeShader@@QAE@AAVDevice@@HH_N@Z 00607e73 f   ComputeShader.obj
+ 0001:00006f65       ?Run@ComputeShader@@QAEXHHH@Z 00607f65 f   ComputeShader.obj
+ 0001:00006f8f       ?Use@ComputeShader@@QAEXXZ 00607f8f f   ComputeShader.obj
+ 0001:00006fb5       ?CompileShaders@ComputeShader@@AAEXPBD@Z 00607fb5 f   ComputeShader.obj
+ 0001:00007018       ??1ComputeShader@@UAE@XZ   00608018 f   ComputeShader.obj
+ 0001:00007061       ??0ComputeShader@@QAE@AAVDevice@@PBD1PAU_D3D_SHADER_MACRO@@1PAUID3DInclude@@@Z 00608061 f   ComputeShader.obj
+ 0001:000070aa       ?Check@Component@@QBEXJ@Z  006080aa f   Component.obj
+ 0001:000070ab       ??1Component@@UAE@XZ       006080ab f   Component.obj
+ 0001:000070bc       ??0Component@@QAE@AAVDevice@@@Z 006080bc f   Component.obj
+ 0001:000070d5       ?BuildComponent@TextureBuilder@@ABEMHABUConversionParams@1@AAUPixel@@11@Z 006080d5 f   TextureBuilder.obj
+ 0001:00007141       ?Get@TextureBuilder@@QBEXHHAAUPixel@@@Z 00608141 f   TextureBuilder.obj
+ 0001:00007183       ?ReleaseSpecificBuffer@TextureBuilder@@ABEXXZ 00608183 f   TextureBuilder.obj
+ 0001:000071ad       ?Fill@TextureBuilder@@QAEXP6IXHHABVNjFloat2@@AAUPixel@@PAX@Z2@Z 006081ad f   TextureBuilder.obj
+ 0001:0000721f       ??1TextureBuilder@@QAE@XZ  0060821f f   TextureBuilder.obj
+ 0001:00007295       ?GenerateMips@TextureBuilder@@QBEX_N@Z 00608295 f   TextureBuilder.obj
+ 0001:0000768b       ?SampleClamp@TextureBuilder@@QBEXMMAAUPixel@@@Z 0060868b f   TextureBuilder.obj
+ 0001:0000787d       ?SampleWrap@TextureBuilder@@QBEXMMAAUPixel@@@Z 0060887d f   TextureBuilder.obj
+ 0001:00007a5c       ?CopyFiller@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 00608a5c f   TextureBuilder.obj
+ 0001:00007a84       ??0TextureBuilder@@QAE@HH@Z 00608a84 f   TextureBuilder.obj
+ 0001:00007b2b       ?Convert@TextureBuilder@@QBEPAPAXABVIPixelFormatDescriptor@@ABUConversionParams@1@@Z 00608b2b f   TextureBuilder.obj
+ 0001:00007e8b       ?SetCellularWrappingParameters@Noise@@QAEXHHH@Z 00608e8b f   Noise.obj
+ 0001:00007eb7       ?SetWrappingParameters@Noise@@QAEXMI@Z 00608eb7 f   Noise.obj
+ 0001:00007f2d       ?Perlin@Noise@@QBEMABVNjFloat4@@ABVNjFloat2@@@Z 00608f2d f   Noise.obj
+ 0001:00009b39       ?Perlin@Noise@@QBEMABVNjFloat3@@@Z 0060ab39 f   Noise.obj
+ 0001:00009dde       ?Perlin@Noise@@QBEMABVNjFloat2@@@Z 0060adde f   Noise.obj
+ 0001:00009f15       ?Perlin@Noise@@QBEMM@Z     0060af15 f   Noise.obj
+ 0001:00009f90       ??1Noise@@QAE@XZ           0060af90 f   Noise.obj
+ 0001:00009fc9       ??0Noise@@QAE@H@Z          0060afc9 f   Noise.obj
+ 0001:0000a24d       ?WrapPerlin@Noise@@QBEMABVNjFloat3@@@Z 0060b24d f   Noise.obj
+ 0001:0000a2c5       ?PerlinVector@Noise@@QBE?AVNjFloat3@@ABV2@@Z 0060b2c5 f   Noise.obj
+ 0001:0000a3a6       ?FillDilate@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060b3a6 f   Filters.obj
+ 0001:0000a4d4       ?FillErode@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060b4d4 f   Filters.obj
+ 0001:0000a660       ?FillEmboss@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060b660 f   Filters.obj
+ 0001:0000a7a1       ?FillBCG@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060b7a1 f   Filters.obj
+ 0001:0000a830       ?FillUnsharpMaskSubtract@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060b830 f   Filters.obj
+ 0001:0000a904       ?FillBlurGaussianVC@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060b904 f   Filters.obj
+ 0001:0000aae0       ?FillBlurGaussianHC@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060bae0 f   Filters.obj
+ 0001:0000acbc       ?FillBlurGaussianVW@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060bcbc f   Filters.obj
+ 0001:0000ae98       ?FillBlurGaussianHW@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 0060be98 f   Filters.obj
+ 0001:0000b074       ?Transform@DrawUtils@@IBEXABVNjFloat4@@AAV2@@Z 0060c074 f   Draw.obj
+ 0001:0000b0a6       ?SetupSurface@DrawUtils@@QAEXHHPAUPixel@@@Z 0060c0a6 f   Draw.obj
+ 0001:0000b0fc       ??0Pixel@@QAE@ABVNjFloat4@@MM@Z 0060c0fc f   Draw.obj
+ 0001:0000b11c       ??0Pixel@@QAE@XZ           0060c11c f   Draw.obj
+ 0001:0000b141       ?DrawPixel@DrawContextSCRATCH@DrawUtils@@UAEXXZ 0060c141 f   Draw.obj
+ 0001:0000b1b4       ?DrawPixel@DrawContextELLIPSE@DrawUtils@@UAEXXZ 0060c1b4 f   Draw.obj
+ 0001:0000b240       ?DrawPixel@DrawContextLINE@DrawUtils@@UAEXXZ 0060c240 f   Draw.obj
+ 0001:0000b2d2       ?DrawPixel@DrawContextRECT@DrawUtils@@UAEXXZ 0060c2d2 f   Draw.obj
+ 0001:0000b416       ?SetupContext@DrawUtils@@QAEXMMM@Z 0060c416 f   Draw.obj
+ 0001:0000b44c       ??0DrawUtils@@QAE@XZ       0060c44c f   Draw.obj
+ 0001:0000b56e       ?Blend@Pixel@@QAEXABU1@M@Z 0060c56e f   Draw.obj
+ 0001:0000b5f2       ?DrawQuad@DrawUtils@@IBEXQAVNjFloat4@@AAUDrawContext@1@@Z 0060c5f2 f   Draw.obj
+ 0001:0000bc63       ?DrawRectangle@DrawUtils@@QBEXMMMMMMP6IXABUDrawInfos@1@AAUPixel@@@ZPAX@Z 0060cc63 f   Draw.obj
+ 0001:0000bd40       ?DrawScratch@DrawUtils@@QBEXABVNjFloat2@@0MMMMMP6IXABUDrawInfos@1@AAUPixel@@MM@ZPAX@Z 0060cd40 f   Draw.obj
+ 0001:0000c097       ??DNjFloat4x4@@QBE?AV0@ABV0@@Z 0060d097 f   Math.obj
+ 0001:0000c29f       ??BNjHalf@@QBEMXZ          0060d29f f   Math.obj
+ 0001:0000c326       ??0NjHalf@@QAE@M@Z         0060d326 f   Math.obj
+ 0001:0000c39d       ?CoFactor@NjFloat4x4@@QBEMHH@Z 0060d39d f   Math.obj
+ 0001:0000c488       ?Determinant@NjFloat4x4@@QBEMXZ 0060d488 f   Math.obj
+ 0001:0000c504       ?Inverse@NjFloat4x4@@QBE?AV1@XZ 0060d504 f   Math.obj
+ 0001:0000c63e       ?QuatFromAngleAxis@NjFloat4@@SI?AV1@MABVNjFloat3@@@Z 0060d63e f   Math.obj
+ 0001:0000c67f       ?FromQuat@NjFloat4x4@@SI?AV1@ABVNjFloat4@@@Z 0060d67f f   Math.obj
+ 0001:0000c786       ?PRS@NjFloat4x4@@SI?AV1@ABVNjFloat3@@ABVNjFloat4@@0@Z 0060d786 f   Math.obj
+ 0001:0000c815       ?ForEach@DictionaryU32@@QAEXP6IXAAPAXPAX@Z1@Z 0060d815 f   Hashtable.obj
+ 0001:0000c842       ?Get@DictionaryU32@@QBEPAXI@Z 0060d842 f   Hashtable.obj
+ 0001:0000c87e       ?Add@DictionaryU32@@QAEXIPAX@Z 0060d87e f   Hashtable.obj
+ 0001:0000c8c3       ??1DictionaryU32@@QAE@XZ   0060d8c3 f   Hashtable.obj
+ 0001:0000c8f1       ??0DictionaryU32@@QAE@H@Z  0060d8f1 f   Hashtable.obj
+ 0001:0000c925       ?Delete3DTextures@@YIXXZ   0060d925 f   Intro.obj
+ 0001:0000c936       ?Delete2DTextures@@YIXXZ   0060d936 f   Intro.obj
+ 0001:0000c947       ?IntroExit@@YIXXZ          0060d947 f   Intro.obj
+ 0001:0000c9e7       ?CombineDistances@@YIMQAM@Z 0060d9e7 f   Intro.obj
+ 0001:0000ca2d       ?FillSplotch@@YIXABUDrawInfos@DrawUtils@@AAUPixel@@@Z 0060da2d f   Intro.obj
+ 0001:0000cae4       ?FillScratch@@YIXABUDrawInfos@DrawUtils@@AAUPixel@@MM@Z 0060dae4 f   Intro.obj
+ 0001:0000cb78       ?Build3DTextures@@YIHAAUIntroProgressDelegate@@@Z 0060db78 f   Intro.obj
+ 0001:0000d11d       ?IntroDo@@YI_NMM@Z         0060e11d f   Intro.obj
+ 0001:0000d20e       ?Build2DTextures@@YIHAAUIntroProgressDelegate@@@Z 0060e20e f   Intro.obj
+ 0001:0000d211       ?IntroInit@@YIHAAUIntroProgressDelegate@@@Z 0060e211 f   Intro.obj
+ 0001:0000d3b9       ??1EffectTranslucency@@QAE@XZ 0060e3b9 f   EffectTranslucency.obj
+ 0001:0000d46f       ?TweakTorusInternal@@YIXAAVNjFloat3@@00AAVNjFloat2@@PAX@Z 0060e46f f   EffectTranslucency.obj
+ 0001:0000d4e5       ?TweakSphereExternal@@YIXAAVNjFloat3@@00AAVNjFloat2@@PAX@Z 0060e4e5 f   EffectTranslucency.obj
+ 0001:0000d50c       ??1EffectRoom@@QAE@XZ      0060e50c f   EffectRoom.obj
+ 0001:0000d606       ?BuildRoom@EffectRoom@@IAEXXZ 0060e606 f   EffectRoom.obj
+ 0001:0000e7b7       ?AnimateFailure@EffectRoom@@IAEMAAM00MMM@Z 0060f7b7 f   EffectRoom.obj
+ 0001:0000e847       ??0EffectRoom@@QAE@AAVTexture2D@@@Z 0060f847 f   EffectRoom.obj
+ 0001:0000e998       ?Render@EffectRoom@@QAEXMM@Z 0060f998 f   EffectRoom.obj
+ 0001:0000ece7       __purecall                 0060fce7 f   GodComplex.obj
+ 0001:0000ed06       ?WindowExit@@YIXXZ         0060fd06 f   GodComplex.obj
+ 0001:0000ed74       ?WindowInit@@YIHXZ         0060fd74 f   GodComplex.obj
+ 0001:0000ef57       ?EntryPoint@@YGXXZ         0060ff57 f   GodComplex.obj
+ 0001:0000f0d4       ??1BlendState@@UAE@XZ      006100d4 f   States.obj
+ 0001:0000f0ee       ??0BlendState@@QAE@AAVDevice@@AAUD3D11_BLEND_DESC@@@Z 006100ee f   States.obj
+ 0001:0000f11b       ??1DepthStencilState@@UAE@XZ 0061011b f   States.obj
+ 0001:0000f135       ??0DepthStencilState@@QAE@AAVDevice@@AAUD3D11_DEPTH_STENCIL_DESC@@@Z 00610135 f   States.obj
+ 0001:0000f162       ??1RasterizerState@@UAE@XZ 00610162 f   States.obj
+ 0001:0000f17c       ??0RasterizerState@@QAE@AAVDevice@@AAUD3D11_RASTERIZER_DESC@@@Z 0061017c f   States.obj
+ 0001:0000f1c3       ?Map@MapperSpherical@GeometryBuilder@@UBEXABVNjFloat3@@00AAVNjFloat2@@@Z 006101c3 f   GeometryBuilder.obj
+ 0001:0000f261       ?FillMarble@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 00610261 f   Generators.obj
+ 0001:0000f2ad       ?FillDirtyness@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 006102ad f   Generators.obj
+ 0001:0000f3e1       ?FillAO@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 006103e1 f   Generators.obj
+ 0001:0000f542       ?ComputeAO@Generators@@SIXABVTextureBuilder@@AAV2@MHH_N@Z 00610542 f   Generators.obj
+ 0001:0000f570       ?FillNormal@@YIXHHABVNjFloat2@@AAUPixel@@PAX@Z 00610570 f   Generators.obj
+ 0001:0000f6c5       ?ComputeNormal@Generators@@SIXABVTextureBuilder@@AAV2@M_N@Z 006106c5 f   Generators.obj
+ 0002:00000000       __imp__D3DCreateBlob@8     00611000     d3dcompiler:D3DCOMPILER_43.dll
+ 0002:00000004       \177D3DCOMPILER_43_NULL_THUNK_DATA 00611004     d3dcompiler:D3DCOMPILER_43.dll
+ 0002:00000008       __imp__DirectSoundCreate@12 00611008     dsound:DSOUND.dll
+ 0002:0000000c       \177DSOUND_NULL_THUNK_DATA 0061100c     dsound:DSOUND.dll
+ 0002:00000010       __imp__Rectangle@20        00611010     gdi32:GDI32.dll
+ 0002:00000014       __imp__CreateFontA@56      00611014     gdi32:GDI32.dll
+ 0002:00000018       __imp__SetTextColor@8      00611018     gdi32:GDI32.dll
+ 0002:0000001c       __imp__SetBkMode@8         0061101c     gdi32:GDI32.dll
  0002:00000020       __imp__SelectObject@8      00611020     gdi32:GDI32.dll
- 0002:00000024       __imp__Rectangle@20        00611024     gdi32:GDI32.dll
- 0002:00000028       __imp__TextOutA@20         00611028     gdi32:GDI32.dll
- 0002:0000002c       __imp__CreateSolidBrush@4  0061102c     gdi32:GDI32.dll
- 0002:00000030       \177GDI32_NULL_THUNK_DATA  00611030     gdi32:GDI32.dll
- 0002:00000034       __imp__SizeofResource@8    00611034     kernel32:KERNEL32.dll
- 0002:00000038       __imp__LockResource@4      00611038     kernel32:KERNEL32.dll
- 0002:0000003c       __imp__LoadResource@8      0061103c     kernel32:KERNEL32.dll
- 0002:00000040       __imp__EnterCriticalSection@4 00611040     kernel32:KERNEL32.dll
- 0002:00000044       __imp__InitializeCriticalSection@4 00611044     kernel32:KERNEL32.dll
- 0002:00000048       __imp__SetThreadPriority@8 00611048     kernel32:KERNEL32.dll
- 0002:0000004c       __imp__WaitForSingleObject@8 0061104c     kernel32:KERNEL32.dll
- 0002:00000050       __imp__CreateThread@24     00611050     kernel32:KERNEL32.dll
- 0002:00000054       __imp__FindResourceA@12    00611054     kernel32:KERNEL32.dll
- 0002:00000058       __imp__GetModuleHandleA@4  00611058     kernel32:KERNEL32.dll
- 0002:0000005c       __imp__GlobalFree@4        0061105c     kernel32:KERNEL32.dll
- 0002:00000060       __imp__GlobalAlloc@8       00611060     kernel32:KERNEL32.dll
- 0002:00000064       __imp__LeaveCriticalSection@4 00611064     kernel32:KERNEL32.dll
- 0002:00000068       __imp__ExitProcess@4       00611068     kernel32:KERNEL32.dll
- 0002:0000006c       __imp__DeleteCriticalSection@4 0061106c     kernel32:KERNEL32.dll
- 0002:00000070       __imp__CreateEventA@16     00611070     kernel32:KERNEL32.dll
- 0002:00000074       __imp__CloseHandle@4       00611074     kernel32:KERNEL32.dll
- 0002:00000078       __imp__SetEvent@4          00611078     kernel32:KERNEL32.dll
- 0002:0000007c       \177KERNEL32_NULL_THUNK_DATA 0061107c     kernel32:KERNEL32.dll
- 0002:00000080       __imp__DestroyWindow@4     00611080     user32:USER32.dll
- 0002:00000084       __imp__PostQuitMessage@4   00611084     user32:USER32.dll
- 0002:00000088       __imp__SetForegroundWindow@4 00611088     user32:USER32.dll
- 0002:0000008c       __imp__SetFocus@4          0061108c     user32:USER32.dll
- 0002:00000090       __imp__GetDC@4             00611090     user32:USER32.dll
- 0002:00000094       __imp__ShowCursor@4        00611094     user32:USER32.dll
- 0002:00000098       __imp__MessageBoxA@16      00611098     user32:USER32.dll
- 0002:0000009c       __imp__CreateWindowExA@48  0061109c     user32:USER32.dll
- 0002:000000a0       __imp__PeekMessageA@20     006110a0     user32:USER32.dll
- 0002:000000a4       __imp__ReleaseDC@8         006110a4     user32:USER32.dll
- 0002:000000a8       __imp__DefWindowProcA@16   006110a8     user32:USER32.dll
- 0002:000000ac       __imp__DispatchMessageA@4  006110ac     user32:USER32.dll
- 0002:000000b0       __imp__GetSystemMetrics@4  006110b0     user32:USER32.dll
- 0002:000000b4       __imp__AdjustWindowRect@12 006110b4     user32:USER32.dll
- 0002:000000b8       __imp__ChangeDisplaySettingsA@8 006110b8     user32:USER32.dll
- 0002:000000bc       __imp__RegisterClassA@4    006110bc     user32:USER32.dll
- 0002:000000c0       __imp__UnregisterClassA@8  006110c0     user32:USER32.dll
- 0002:000000c4       \177USER32_NULL_THUNK_DATA 006110c4     user32:USER32.dll
- 0002:000000c8       __imp__timeGetTime@0       006110c8     winmm:WINMM.dll
- 0002:000000cc       \177WINMM_NULL_THUNK_DATA  006110cc     winmm:WINMM.dll
- 0002:000000d0       __imp__D3D11CreateDeviceAndSwapChain@48 006110d0     d3d11:d3d11.dll
- 0002:000000d4       \177d3d11_NULL_THUNK_DATA  006110d4     d3d11:d3d11.dll
+ 0002:00000024       __imp__TextOutA@20         00611024     gdi32:GDI32.dll
+ 0002:00000028       __imp__CreateSolidBrush@4  00611028     gdi32:GDI32.dll
+ 0002:0000002c       \177GDI32_NULL_THUNK_DATA  0061102c     gdi32:GDI32.dll
+ 0002:00000030       __imp__SizeofResource@8    00611030     kernel32:KERNEL32.dll
+ 0002:00000034       __imp__LockResource@4      00611034     kernel32:KERNEL32.dll
+ 0002:00000038       __imp__LoadResource@8      00611038     kernel32:KERNEL32.dll
+ 0002:0000003c       __imp__InitializeCriticalSection@4 0061103c     kernel32:KERNEL32.dll
+ 0002:00000040       __imp__SetThreadPriority@8 00611040     kernel32:KERNEL32.dll
+ 0002:00000044       __imp__WaitForSingleObject@8 00611044     kernel32:KERNEL32.dll
+ 0002:00000048       __imp__CreateThread@24     00611048     kernel32:KERNEL32.dll
+ 0002:0000004c       __imp__FindResourceA@12    0061104c     kernel32:KERNEL32.dll
+ 0002:00000050       __imp__GetModuleHandleA@4  00611050     kernel32:KERNEL32.dll
+ 0002:00000054       __imp__GlobalFree@4        00611054     kernel32:KERNEL32.dll
+ 0002:00000058       __imp__GlobalAlloc@8       00611058     kernel32:KERNEL32.dll
+ 0002:0000005c       __imp__LeaveCriticalSection@4 0061105c     kernel32:KERNEL32.dll
+ 0002:00000060       __imp__ExitProcess@4       00611060     kernel32:KERNEL32.dll
+ 0002:00000064       __imp__DeleteCriticalSection@4 00611064     kernel32:KERNEL32.dll
+ 0002:00000068       __imp__CreateEventA@16     00611068     kernel32:KERNEL32.dll
+ 0002:0000006c       __imp__CloseHandle@4       0061106c     kernel32:KERNEL32.dll
+ 0002:00000070       __imp__EnterCriticalSection@4 00611070     kernel32:KERNEL32.dll
+ 0002:00000074       __imp__SetEvent@4          00611074     kernel32:KERNEL32.dll
+ 0002:00000078       \177KERNEL32_NULL_THUNK_DATA 00611078     kernel32:KERNEL32.dll
+ 0002:0000007c       __imp__DestroyWindow@4     0061107c     user32:USER32.dll
+ 0002:00000080       __imp__PostQuitMessage@4   00611080     user32:USER32.dll
+ 0002:00000084       __imp__SetForegroundWindow@4 00611084     user32:USER32.dll
+ 0002:00000088       __imp__SetFocus@4          00611088     user32:USER32.dll
+ 0002:0000008c       __imp__GetDC@4             0061108c     user32:USER32.dll
+ 0002:00000090       __imp__ShowCursor@4        00611090     user32:USER32.dll
+ 0002:00000094       __imp__MessageBoxA@16      00611094     user32:USER32.dll
+ 0002:00000098       __imp__CreateWindowExA@48  00611098     user32:USER32.dll
+ 0002:0000009c       __imp__PeekMessageA@20     0061109c     user32:USER32.dll
+ 0002:000000a0       __imp__ReleaseDC@8         006110a0     user32:USER32.dll
+ 0002:000000a4       __imp__DefWindowProcA@16   006110a4     user32:USER32.dll
+ 0002:000000a8       __imp__DispatchMessageA@4  006110a8     user32:USER32.dll
+ 0002:000000ac       __imp__GetSystemMetrics@4  006110ac     user32:USER32.dll
+ 0002:000000b0       __imp__AdjustWindowRect@12 006110b0     user32:USER32.dll
+ 0002:000000b4       __imp__ChangeDisplaySettingsA@8 006110b4     user32:USER32.dll
+ 0002:000000b8       __imp__RegisterClassA@4    006110b8     user32:USER32.dll
+ 0002:000000bc       __imp__UnregisterClassA@8  006110bc     user32:USER32.dll
+ 0002:000000c0       \177USER32_NULL_THUNK_DATA 006110c0     user32:USER32.dll
+ 0002:000000c4       __imp__timeGetTime@0       006110c4     winmm:WINMM.dll
+ 0002:000000c8       \177WINMM_NULL_THUNK_DATA  006110c8     winmm:WINMM.dll
+ 0002:000000cc       __imp__D3D11CreateDeviceAndSwapChain@48 006110cc     d3d11:d3d11.dll
+ 0002:000000d0       \177d3d11_NULL_THUNK_DATA  006110d0     d3d11:d3d11.dll
  0002:000000d8       ??_C@_00CNPNBAHC@?$AA@     006110d8     libv2:ronan.obj
  0002:000007d4       __real@3e2aaaab            006117d4     libv2:ronan.obj
  0002:000007d8       __real@428c0000            006117d8     libv2:ronan.obj
@@ -471,13 +469,6 @@
  0002:0000090c       ??_C@_0M@ONMLCJJB@PS_Emissive?$AA@ 0061190c     EffectRoom.obj
  0002:00000924       ??_C@_09LPLGMFBO@CS_Direct?$AA@ 00611924     EffectRoom.obj
  0002:00000930       ??_C@_0M@DOOHGNE@CS_Indirect?$AA@ 00611930     EffectRoom.obj
- 0002:0000093c       ??_7?$CB@UCBTest@@@@6B@    0061193c     Intro.obj
- 0002:0000093c       ??_7?$CB@UCBObject@EffectRoom@@@@6B@ 0061193c     EffectRoom.obj
- 0002:0000093c       ??_7?$CB@UCBGlobal@@@@6B@  0061193c     Intro.obj
- 0002:0000093c       ??_7?$CB@UCBTesselate@EffectRoom@@@@6B@ 0061193c     EffectRoom.obj
- 0002:0000093c       ??_7?$CB@UCBData@Camera@@@@6B@ 0061193c     Camera.obj
- 0002:0000093c       ??_7?$CB@UCBRender@?BE@??BuildRoom@EffectRoom@@IAEXXZ@@@6B@ 0061193c     EffectRoom.obj
- 0002:0000093c       ??_7ConstantBuffer@@6B@    0061193c     ConstantBuffer.obj
  0002:0000094c       ?BIAS_U@Noise@@1MB         0061194c     Noise.obj
  0002:00000950       ?BIAS_V@Noise@@1MB         00611950     Noise.obj
  0002:00000954       ?BIAS_W@Noise@@1MB         00611954     Noise.obj
@@ -490,108 +481,109 @@
  0002:000009c8       ??_7DrawContextELLIPSE@DrawUtils@@6B@ 006119c8     Draw.obj
  0002:000009d0       ??_7DrawContextSCRATCH@DrawUtils@@6B@ 006119d0     Draw.obj
  0002:000009d8       ??_7Component@@6B@         006119d8     Component.obj
- 0002:000009dc       ??_C@_06JAGLAGGB@cs_5_0?$AA@ 006119dc     ComputeShader.obj
- 0002:000009e4       ??_7ComputeShader@@6BComponent@@@ 006119e4     ComputeShader.obj
- 0002:000009e8       ??_7ComputeShader@@6BID3DInclude@@@ 006119e8     ComputeShader.obj
- 0002:000009f0       ??_7StructuredBuffer@ComputeShader@@6B@ 006119f0     ComputeShader.obj
- 0002:000009f4       ??_C@_06BNDBNCGN@vs_4_0?$AA@ 006119f4     Material.obj
- 0002:000009fc       ??_C@_06JCGMFCJL@hs_5_0?$AA@ 006119fc     Material.obj
- 0002:00000a04       ??_C@_06FFMMDIOP@ds_5_0?$AA@ 00611a04     Material.obj
- 0002:00000a0c       ??_C@_06NMJIEFBH@gs_4_0?$AA@ 00611a0c     Material.obj
- 0002:00000a14       ??_C@_06HOOBOHFH@ps_4_0?$AA@ 00611a14     Material.obj
- 0002:00000a1c       ??_7Material@@6BComponent@@@ 00611a1c     Material.obj
- 0002:00000a20       ??_7Material@@6BID3DInclude@@@ 00611a20     Material.obj
- 0002:00000a28       ??_7IGeometryWriter@GeometryBuilder@@6B@ 00611a28     Primitive.obj
- 0002:00000a38       ??_7Primitive@@6BComponent@@@ 00611a38     Primitive.obj
- 0002:00000a3c       ??_7Primitive@@6BIGeometryWriter@GeometryBuilder@@@ 00611a3c     Primitive.obj
- 0002:00000a4c       ??_7RasterizerState@@6B@   00611a4c     States.obj
- 0002:00000a50       ??_7DepthStencilState@@6B@ 00611a50     States.obj
- 0002:00000a54       ??_7BlendState@@6B@        00611a54     States.obj
- 0002:00000a58       ??_7Texture2D@@6B@         00611a58     Texture2D.obj
- 0002:00000a5c       ??_7Texture3D@@6B@         00611a5c     Texture3D.obj
- 0002:00000a60       __GUID_6f15aaf2_d208_4e89_9ab4_489535d34f9c 00611a60     Device.obj
- 0002:00000a70       ??_7Desc@DepthStencilFormatD32F@@6B@ 00611a70     DepthStencilFormats.obj
- 0002:00000a88       ??_7Desc@PixelFormatRGBA8@@6B@ 00611a88     PixelFormats.obj
- 0002:00000a98       ??_7Desc@PixelFormatRGBA8_sRGB@@6B@ 00611a98     PixelFormats.obj
- 0002:00000aa8       ??_7Desc@PixelFormatRGBA16F@@6B@ 00611aa8     PixelFormats.obj
- 0002:00000ab8       ??_7Desc@PixelFormatRG16F@@6B@ 00611ab8     PixelFormats.obj
- 0002:00000ac8       ??_7Desc@PixelFormatRGBA16_UINT@@6B@ 00611ac8     PixelFormats.obj
- 0002:00000ad8       ??_7Desc@PixelFormatRGBA32F@@6B@ 00611ad8     PixelFormats.obj
- 0002:00000ae8       ??_7Desc@PixelFormatR32F@@6B@ 00611ae8     PixelFormats.obj
- 0002:00000af8       ??_7Desc@PixelFormatR16_UINT@@6B@ 00611af8     PixelFormats.obj
- 0002:00000b08       ??_C@_08CMDKBPJM@TEXCOORD?$AA@ 00611b08     VertexFormats.obj
- 0002:00000b14       ??_C@_07HOFFNMLH@TANGENT?$AA@ 00611b14     VertexFormats.obj
- 0002:00000b1c       ??_C@_06IOJAGNKJ@NORMAL?$AA@ 00611b1c     VertexFormats.obj
- 0002:00000b24       ??_C@_0M@JBONJELN@SV_POSITION?$AA@ 00611b24     VertexFormats.obj
- 0002:00000b30       ??_C@_08JPMAAECC@POSITION?$AA@ 00611b30     VertexFormats.obj
- 0002:00000b3c       ??_7Desc@VertexFormatPt4@@6B@ 00611b3c     VertexFormats.obj
- 0002:00000b4c       ??_7Desc@VertexFormatP3@@6B@ 00611b4c     VertexFormats.obj
- 0002:00000b5c       ??_7Desc@VertexFormatP3T2@@6B@ 00611b5c     VertexFormats.obj
- 0002:00000b6c       ??_7Desc@VertexFormatP3N3G3T2@@6B@ 00611b6c     VertexFormats.obj
- 0002:00000b7c       ??_7Desc@VertexFormatP3N3G3T2T2@@6B@ 00611b7c     VertexFormats.obj
- 0002:00000b8c       ??_7Desc@VertexFormatP3N3G3T2T3@@6B@ 00611b8c     VertexFormats.obj
- 0002:00000b9c       ??_C@_01CLKCMJKC@?5?$AA@   00611b9c     v2mplayer.obj
- 0002:00000ba0       ??_C@_0BC@ELLIBNMD@Inc?1RayTracing?4fx?$AA@ 00611ba0     Resources.obj
- 0002:00000bb4       ??_C@_0O@NIPOMGOO@Inc?1Global?4fx?$AA@ 00611bb4     Resources.obj
- 0002:00000bc4       ??_C@_06BMJMJFME@SHADER?$AA@ 00611bc4     Resources.obj
- 0002:00000bcc       ??_7IncludesManager@@6B@   00611bcc     Resources.obj
- 0002:00000bd4       __real@477fff00            00611bd4      CIL library: CIL module
- 0002:00000bd8       __real@3f800000            00611bd8      CIL library: CIL module
- 0002:00000bdc       __real@00000000            00611bdc      CIL library: CIL module
- 0002:00000be0       __real@41200000            00611be0      CIL library: CIL module
- 0002:00000be4       __real@41700000            00611be4      CIL library: CIL module
- 0002:00000be8       __real@40c00000            00611be8      CIL library: CIL module
- 0002:00000bf0       __real@3fe6571840000000    00611bf0      CIL library: CIL module
- 0002:00000bf8       __real@3a800000            00611bf8      CIL library: CIL module
- 0002:00000bfc       __real@33800000            00611bfc      CIL library: CIL module
- 0002:00000c00       __real@bf800000            00611c00      CIL library: CIL module
- 0002:00000c04       __real@2f800000            00611c04      CIL library: CIL module
- 0002:00000c08       __real@4f800000            00611c08      CIL library: CIL module
- 0002:00000c0c       __real@37800080            00611c0c      CIL library: CIL module
- 0002:00000c10       __real@3b808081            00611c10      CIL library: CIL module
- 0002:00000c14       __real@437f0000            00611c14      CIL library: CIL module
- 0002:00000c18       __real@4000000000000000    00611c18      CIL library: CIL module
- 0002:00000c20       __real@3a03126f            00611c20      CIL library: CIL module
- 0002:00000c24       __real@45800000            00611c24      CIL library: CIL module
- 0002:00000c28       __real@40000000            00611c28      CIL library: CIL module
- 0002:00000c2c       __real@3f000000            00611c2c      CIL library: CIL module
- 0002:00000c30       __real@3c8efa35            00611c30      CIL library: CIL module
- 0002:00000c34       __real@3e000000            00611c34      CIL library: CIL module
- 0002:00000c38       __real@3a83126f            00611c38      CIL library: CIL module
- 0002:00000c3c       __real@3e800000            00611c3c      CIL library: CIL module
- 0002:00000c40       __real@ff7fffff            00611c40      CIL library: CIL module
- 0002:00000c44       __real@3f99999a            00611c44      CIL library: CIL module
- 0002:00000c48       __real@3ba3d70a            00611c48      CIL library: CIL module
- 0002:00000c4c       __real@40800000            00611c4c      CIL library: CIL module
- 0002:00000c50       __real@3e99999a            00611c50      CIL library: CIL module
- 0002:00000c54       __real@3dcccccd            00611c54      CIL library: CIL module
- 0002:00000c58       __real@3f4ccccd            00611c58      CIL library: CIL module
- 0002:00000c5c       __real@40600000            00611c5c      CIL library: CIL module
- 0002:00000c60       __real@c0800000            00611c60      CIL library: CIL module
- 0002:00000c64       __real@409ff7cf            00611c64      CIL library: CIL module
- 0002:00000c68       __real@40400000            00611c68      CIL library: CIL module
- 0002:00000c6c       __real@40200000            00611c6c      CIL library: CIL module
- 0002:00000c70       __real@c0a00000            00611c70      CIL library: CIL module
- 0002:00000c74       __real@40a00000            00611c74      CIL library: CIL module
- 0002:00000c78       __real@3ff33333            00611c78      CIL library: CIL module
- 0002:00000c7c       __real@40066666            00611c7c      CIL library: CIL module
- 0002:00000c80       __real@bc23d71f            00611c80      CIL library: CIL module
- 0002:00000c84       __real@3f800011            00611c84      CIL library: CIL module
- 0002:00000c88       __real@459c4000            00611c88      CIL library: CIL module
- 0002:00000c8c       __real@3fe38e39            00611c8c      CIL library: CIL module
- 0002:00000c90       __real@3d000000            00611c90      CIL library: CIL module
- 0002:00000c94       __real@3e4ccccd            00611c94      CIL library: CIL module
- 0002:00000c98       __real@3fb33333            00611c98      CIL library: CIL module
- 0002:00000c9c       __real@3fc00000            00611c9c      CIL library: CIL module
- 0002:00000ca0       __real@3fd9999a            00611ca0      CIL library: CIL module
- 0002:00000ca4       __IMPORT_DESCRIPTOR_d3d11  00611ca4     d3d11:d3d11.dll
- 0002:00000cb8       __IMPORT_DESCRIPTOR_D3DCOMPILER_43 00611cb8     d3dcompiler:D3DCOMPILER_43.dll
- 0002:00000ccc       __IMPORT_DESCRIPTOR_WINMM  00611ccc     winmm:WINMM.dll
- 0002:00000ce0       __IMPORT_DESCRIPTOR_KERNEL32 00611ce0     kernel32:KERNEL32.dll
- 0002:00000cf4       __IMPORT_DESCRIPTOR_USER32 00611cf4     user32:USER32.dll
- 0002:00000d08       __IMPORT_DESCRIPTOR_GDI32  00611d08     gdi32:GDI32.dll
- 0002:00000d1c       __IMPORT_DESCRIPTOR_DSOUND 00611d1c     dsound:DSOUND.dll
- 0002:00000d30       __NULL_IMPORT_DESCRIPTOR   00611d30     d3d11:d3d11.dll
+ 0002:000009dc       ??_7ComputeShader@@6BComponent@@@ 006119dc     ComputeShader.obj
+ 0002:000009e0       ??_7ComputeShader@@6BID3DInclude@@@ 006119e0     ComputeShader.obj
+ 0002:000009e8       ??_7StructuredBuffer@ComputeShader@@6B@ 006119e8     ComputeShader.obj
+ 0002:000009ec       ??_7ConstantBuffer@@6B@    006119ec     ConstantBuffer.obj
+ 0002:000009ec       ??_7?$CB@UCBRender@?BE@??BuildRoom@EffectRoom@@IAEXXZ@@@6B@ 006119ec     EffectRoom.obj
+ 0002:000009ec       ??_7?$CB@UCBData@Camera@@@@6B@ 006119ec     Camera.obj
+ 0002:000009ec       ??_7?$CB@UCBObject@EffectRoom@@@@6B@ 006119ec     EffectRoom.obj
+ 0002:000009ec       ??_7?$CB@UCBTesselate@EffectRoom@@@@6B@ 006119ec     EffectRoom.obj
+ 0002:000009ec       ??_7?$CB@UCBTest@@@@6B@    006119ec     Intro.obj
+ 0002:000009ec       ??_7?$CB@UCBGlobal@@@@6B@  006119ec     Intro.obj
+ 0002:000009f0       ??_7Material@@6BComponent@@@ 006119f0     Material.obj
+ 0002:000009f4       ??_7Material@@6BID3DInclude@@@ 006119f4     Material.obj
+ 0002:000009fc       ??_7IGeometryWriter@GeometryBuilder@@6B@ 006119fc     Primitive.obj
+ 0002:00000a0c       ??_7Primitive@@6BComponent@@@ 00611a0c     Primitive.obj
+ 0002:00000a10       ??_7Primitive@@6BIGeometryWriter@GeometryBuilder@@@ 00611a10     Primitive.obj
+ 0002:00000a20       ??_7RasterizerState@@6B@   00611a20     States.obj
+ 0002:00000a24       ??_7DepthStencilState@@6B@ 00611a24     States.obj
+ 0002:00000a28       ??_7BlendState@@6B@        00611a28     States.obj
+ 0002:00000a2c       ??_7Texture2D@@6B@         00611a2c     Texture2D.obj
+ 0002:00000a30       ??_7Texture3D@@6B@         00611a30     Texture3D.obj
+ 0002:00000a34       __GUID_6f15aaf2_d208_4e89_9ab4_489535d34f9c 00611a34     Device.obj
+ 0002:00000a44       ??_7Desc@DepthStencilFormatD32F@@6B@ 00611a44     DepthStencilFormats.obj
+ 0002:00000a5c       ??_7Desc@PixelFormatRGBA8@@6B@ 00611a5c     PixelFormats.obj
+ 0002:00000a6c       ??_7Desc@PixelFormatRGBA8_sRGB@@6B@ 00611a6c     PixelFormats.obj
+ 0002:00000a7c       ??_7Desc@PixelFormatRGBA16F@@6B@ 00611a7c     PixelFormats.obj
+ 0002:00000a8c       ??_7Desc@PixelFormatRG16F@@6B@ 00611a8c     PixelFormats.obj
+ 0002:00000a9c       ??_7Desc@PixelFormatRGBA16_UINT@@6B@ 00611a9c     PixelFormats.obj
+ 0002:00000aac       ??_7Desc@PixelFormatRGBA32F@@6B@ 00611aac     PixelFormats.obj
+ 0002:00000abc       ??_7Desc@PixelFormatR32F@@6B@ 00611abc     PixelFormats.obj
+ 0002:00000acc       ??_7Desc@PixelFormatR16_UINT@@6B@ 00611acc     PixelFormats.obj
+ 0002:00000adc       ??_C@_08CMDKBPJM@TEXCOORD?$AA@ 00611adc     VertexFormats.obj
+ 0002:00000ae8       ??_C@_07HOFFNMLH@TANGENT?$AA@ 00611ae8     VertexFormats.obj
+ 0002:00000af0       ??_C@_06IOJAGNKJ@NORMAL?$AA@ 00611af0     VertexFormats.obj
+ 0002:00000af8       ??_C@_0M@JBONJELN@SV_POSITION?$AA@ 00611af8     VertexFormats.obj
+ 0002:00000b04       ??_C@_08JPMAAECC@POSITION?$AA@ 00611b04     VertexFormats.obj
+ 0002:00000b10       ??_7Desc@VertexFormatPt4@@6B@ 00611b10     VertexFormats.obj
+ 0002:00000b20       ??_7Desc@VertexFormatP3@@6B@ 00611b20     VertexFormats.obj
+ 0002:00000b30       ??_7Desc@VertexFormatP3T2@@6B@ 00611b30     VertexFormats.obj
+ 0002:00000b40       ??_7Desc@VertexFormatP3N3G3T2@@6B@ 00611b40     VertexFormats.obj
+ 0002:00000b50       ??_7Desc@VertexFormatP3N3G3T2T2@@6B@ 00611b50     VertexFormats.obj
+ 0002:00000b60       ??_7Desc@VertexFormatP3N3G3T2T3@@6B@ 00611b60     VertexFormats.obj
+ 0002:00000b70       ??_C@_01CLKCMJKC@?5?$AA@   00611b70     v2mplayer.obj
+ 0002:00000b74       ??_C@_0BC@ELLIBNMD@Inc?1RayTracing?4fx?$AA@ 00611b74     Resources.obj
+ 0002:00000b88       ??_C@_0O@NIPOMGOO@Inc?1Global?4fx?$AA@ 00611b88     Resources.obj
+ 0002:00000b98       ??_C@_06BMJMJFME@SHADER?$AA@ 00611b98     Resources.obj
+ 0002:00000ba0       ??_7IncludesManager@@6B@   00611ba0     Resources.obj
+ 0002:00000ba8       __real@477fff00            00611ba8      CIL library: CIL module
+ 0002:00000bac       __real@3f800000            00611bac      CIL library: CIL module
+ 0002:00000bb0       __real@00000000            00611bb0      CIL library: CIL module
+ 0002:00000bb4       __real@41200000            00611bb4      CIL library: CIL module
+ 0002:00000bb8       __real@41700000            00611bb8      CIL library: CIL module
+ 0002:00000bbc       __real@40c00000            00611bbc      CIL library: CIL module
+ 0002:00000bc0       __real@3fe6571840000000    00611bc0      CIL library: CIL module
+ 0002:00000bc8       __real@3a800000            00611bc8      CIL library: CIL module
+ 0002:00000bcc       __real@33800000            00611bcc      CIL library: CIL module
+ 0002:00000bd0       __real@bf800000            00611bd0      CIL library: CIL module
+ 0002:00000bd4       __real@2f800000            00611bd4      CIL library: CIL module
+ 0002:00000bd8       __real@4f800000            00611bd8      CIL library: CIL module
+ 0002:00000bdc       __real@37800080            00611bdc      CIL library: CIL module
+ 0002:00000be0       __real@3b808081            00611be0      CIL library: CIL module
+ 0002:00000be4       __real@437f0000            00611be4      CIL library: CIL module
+ 0002:00000be8       __real@4000000000000000    00611be8      CIL library: CIL module
+ 0002:00000bf0       __real@3a03126f            00611bf0      CIL library: CIL module
+ 0002:00000bf4       __real@45800000            00611bf4      CIL library: CIL module
+ 0002:00000bf8       __real@40000000            00611bf8      CIL library: CIL module
+ 0002:00000bfc       __real@3f000000            00611bfc      CIL library: CIL module
+ 0002:00000c00       __real@3c8efa35            00611c00      CIL library: CIL module
+ 0002:00000c04       __real@3e000000            00611c04      CIL library: CIL module
+ 0002:00000c08       __real@3a83126f            00611c08      CIL library: CIL module
+ 0002:00000c0c       __real@3e800000            00611c0c      CIL library: CIL module
+ 0002:00000c10       __real@ff7fffff            00611c10      CIL library: CIL module
+ 0002:00000c14       __real@3f99999a            00611c14      CIL library: CIL module
+ 0002:00000c18       __real@3ba3d70a            00611c18      CIL library: CIL module
+ 0002:00000c1c       __real@40800000            00611c1c      CIL library: CIL module
+ 0002:00000c20       __real@3e99999a            00611c20      CIL library: CIL module
+ 0002:00000c24       __real@3dcccccd            00611c24      CIL library: CIL module
+ 0002:00000c28       __real@3f4ccccd            00611c28      CIL library: CIL module
+ 0002:00000c2c       __real@40600000            00611c2c      CIL library: CIL module
+ 0002:00000c30       __real@c0800000            00611c30      CIL library: CIL module
+ 0002:00000c34       __real@409ff7cf            00611c34      CIL library: CIL module
+ 0002:00000c38       __real@40400000            00611c38      CIL library: CIL module
+ 0002:00000c3c       __real@40200000            00611c3c      CIL library: CIL module
+ 0002:00000c40       __real@c0a00000            00611c40      CIL library: CIL module
+ 0002:00000c44       __real@40a00000            00611c44      CIL library: CIL module
+ 0002:00000c48       __real@3ff33333            00611c48      CIL library: CIL module
+ 0002:00000c4c       __real@40066666            00611c4c      CIL library: CIL module
+ 0002:00000c50       __real@bc23d71f            00611c50      CIL library: CIL module
+ 0002:00000c54       __real@3f800011            00611c54      CIL library: CIL module
+ 0002:00000c58       __real@459c4000            00611c58      CIL library: CIL module
+ 0002:00000c5c       __real@3fe38e39            00611c5c      CIL library: CIL module
+ 0002:00000c60       __real@3d000000            00611c60      CIL library: CIL module
+ 0002:00000c64       __real@3e4ccccd            00611c64      CIL library: CIL module
+ 0002:00000c68       __real@3fb33333            00611c68      CIL library: CIL module
+ 0002:00000c6c       __real@3fc00000            00611c6c      CIL library: CIL module
+ 0002:00000c70       __real@3fd9999a            00611c70      CIL library: CIL module
+ 0002:00000c74       __IMPORT_DESCRIPTOR_d3d11  00611c74     d3d11:d3d11.dll
+ 0002:00000c88       __IMPORT_DESCRIPTOR_D3DCOMPILER_43 00611c88     d3dcompiler:D3DCOMPILER_43.dll
+ 0002:00000c9c       __IMPORT_DESCRIPTOR_WINMM  00611c9c     winmm:WINMM.dll
+ 0002:00000cb0       __IMPORT_DESCRIPTOR_KERNEL32 00611cb0     kernel32:KERNEL32.dll
+ 0002:00000cc4       __IMPORT_DESCRIPTOR_USER32 00611cc4     user32:USER32.dll
+ 0002:00000cd8       __IMPORT_DESCRIPTOR_GDI32  00611cd8     gdi32:GDI32.dll
+ 0002:00000cec       __IMPORT_DESCRIPTOR_DSOUND 00611cec     dsound:DSOUND.dll
+ 0002:00000d00       __NULL_IMPORT_DESCRIPTOR   00611d00     d3d11:d3d11.dll
  0003:00000000       _AUX_                      00613000     libv2:synth.obj
  0003:000003d0       ?CONV_RGBA_NxNyHR@TextureBuilder@@2UConversionParams@1@A 006133d0     TextureBuilder.obj
  0003:00000504       ?LUMINANCE@@3VNjFloat4@@B  00613504     GodComplex.obj
@@ -653,37 +645,37 @@
  0001:00003874       ?flerp@Ronan@@YIMMMM@Z     00604874 f   libv2:ronan.obj
  0001:00003887       ?db2lin@Ronan@@YIMMMM@Z    00604887 f   libv2:ronan.obj
  0001:00004149       ?ASM_memcpy@@YIXPAXPBXH@Z  00605149 f    CIL library: CIL module
- 0001:0000544c       ?ASM_memset@@YIXPAXHH@Z    0060644c f    CIL library: CIL module
- 0001:00005b48       ?ReleaseDirectXObject@@YIXAAPAXPAX@Z 00606b48 f    CIL library: CIL module
- 0001:00005b51       ?ASM_ceilf@@YIHM@Z         00606b51 f    CIL library: CIL module
- 0001:00005e2f       ?ReleaseDirectXObject@@YIXAAPAXPAX@Z 00606e2f f    CIL library: CIL module
- 0001:00005e38       ?ASM_ceilf@@YIHM@Z         00606e38 f    CIL library: CIL module
- 0001:000066d9       ?ASM_memcpy@@YIXPAXPBXH@Z  006076d9 f    CIL library: CIL module
- 0001:00006afb       ?ASM_memcpy@@YIXPAXPBXH@Z  00607afb f    CIL library: CIL module
- 0001:00006d12       ?ASM_memcpy@@YIXPAXPBXH@Z  00607d12 f    CIL library: CIL module
- 0001:000071d9       ?ASM_floorf@@YIHM@Z        006081d9 f    CIL library: CIL module
- 0001:000072c2       ??D@YI?AVNjFloat4@@MABV0@@Z 006082c2 f    CIL library: CIL module
- 0001:000072ea       ??D@YI?AVNjFloat3@@MABV0@@Z 006082ea f    CIL library: CIL module
- 0001:00007f0d       ?ASM_floorf@@YIHM@Z        00608f0d f    CIL library: CIL module
- 0001:0000a3cd       ?ASM_powf@@YIMMM@Z         0060b3cd f    CIL library: CIL module
- 0001:0000a3f3       ??D@YI?AVNjFloat4@@MABV0@@Z 0060b3f3 f    CIL library: CIL module
- 0001:0000b133       ?ASM_ceilf@@YIHM@Z         0060c133 f    CIL library: CIL module
- 0001:0000b152       ?ASM_floorf@@YIHM@Z        0060c152 f    CIL library: CIL module
- 0001:0000b5a4       ??D@YI?AVNjFloat4@@MABV0@@Z 0060c5a4 f    CIL library: CIL module
- 0001:0000b5cc       ??D@YI?AVNjFloat2@@MABV0@@Z 0060c5cc f    CIL library: CIL module
- 0001:0000c54f       ??D@YI?AVNjFloat3@@MABV0@@Z 0060d54f f    CIL library: CIL module
- 0001:0000c8d7       ?ASM_memset@@YIXPAXHH@Z    0060d8d7 f    CIL library: CIL module
- 0001:0000ca68       ??D@YI?AVNjFloat4@@MABV0@@Z 0060da68 f    CIL library: CIL module
- 0001:0000ca8d       ??D@YI?AVNjFloat2@@MABV0@@Z 0060da8d f    CIL library: CIL module
- 0001:0000d4c4       ??D@YI?AVNjFloat3@@MABV0@@Z 0060e4c4 f    CIL library: CIL module
- 0001:0000d5db       ?ASM_powf@@YIMMM@Z         0060e5db f    CIL library: CIL module
- 0001:0000d601       ?ASM_expf@@YIMM@Z          0060e601 f    CIL library: CIL module
- 0001:0000d626       ??D@YI?AVNjFloat4@@MABV0@@Z 0060e626 f    CIL library: CIL module
- 0001:0000d65b       ??D@YI?AVNjFloat3@@MABV0@@Z 0060e65b f    CIL library: CIL module
- 0001:0000ec15       ?ShowProgress@@YIXPAUWININFO@@H@Z 0060fc15 f    CIL library: CIL module
- 0001:0000ed0b       ?WndProc@@YGJPAUHWND__@@IIJ@Z 0060fd0b f    CIL library: CIL module
- 0001:0000ed5f       ?ASM_memset@@YIXPAXHH@Z    0060fd5f f    CIL library: CIL module
- 0001:0000f113       ?FLOAT2BYTE@@YIEM@Z        00610113 f    CIL library: CIL module
- 0001:0000f21e       ?_acosf@@YIMM@Z            0061021e f    CIL library: CIL module
- 0001:0000f30b       ??D@YI?AVNjFloat2@@MABV0@@Z 0061030b f    CIL library: CIL module
- 0001:0000f761       ??__Egs_Device@@YAXXZ      00610761 f    CIL library: CIL module
+ 0001:0000544a       ?ASM_memset@@YIXPAXHH@Z    0060644a f    CIL library: CIL module
+ 0001:00005b46       ?ReleaseDirectXObject@@YIXAAPAXPAX@Z 00606b46 f    CIL library: CIL module
+ 0001:00005b4f       ?ASM_ceilf@@YIHM@Z         00606b4f f    CIL library: CIL module
+ 0001:00005e2d       ?ReleaseDirectXObject@@YIXAAPAXPAX@Z 00606e2d f    CIL library: CIL module
+ 0001:00005e36       ?ASM_ceilf@@YIHM@Z         00606e36 f    CIL library: CIL module
+ 0001:00006651       ?ASM_memcpy@@YIXPAXPBXH@Z  00607651 f    CIL library: CIL module
+ 0001:00006b0f       ?ASM_memcpy@@YIXPAXPBXH@Z  00607b0f f    CIL library: CIL module
+ 0001:00006ca2       ?ASM_memcpy@@YIXPAXPBXH@Z  00607ca2 f    CIL library: CIL module
+ 0001:00007164       ?ASM_floorf@@YIHM@Z        00608164 f    CIL library: CIL module
+ 0001:0000724d       ??D@YI?AVNjFloat4@@MABV0@@Z 0060824d f    CIL library: CIL module
+ 0001:00007275       ??D@YI?AVNjFloat3@@MABV0@@Z 00608275 f    CIL library: CIL module
+ 0001:00007e98       ?ASM_floorf@@YIHM@Z        00608e98 f    CIL library: CIL module
+ 0001:0000a358       ?ASM_powf@@YIMMM@Z         0060b358 f    CIL library: CIL module
+ 0001:0000a37e       ??D@YI?AVNjFloat4@@MABV0@@Z 0060b37e f    CIL library: CIL module
+ 0001:0000b0be       ?ASM_ceilf@@YIHM@Z         0060c0be f    CIL library: CIL module
+ 0001:0000b0dd       ?ASM_floorf@@YIHM@Z        0060c0dd f    CIL library: CIL module
+ 0001:0000b52f       ??D@YI?AVNjFloat4@@MABV0@@Z 0060c52f f    CIL library: CIL module
+ 0001:0000b557       ??D@YI?AVNjFloat2@@MABV0@@Z 0060c557 f    CIL library: CIL module
+ 0001:0000c4da       ??D@YI?AVNjFloat3@@MABV0@@Z 0060d4da f    CIL library: CIL module
+ 0001:0000c862       ?ASM_memset@@YIXPAXHH@Z    0060d862 f    CIL library: CIL module
+ 0001:0000c9f3       ??D@YI?AVNjFloat4@@MABV0@@Z 0060d9f3 f    CIL library: CIL module
+ 0001:0000ca18       ??D@YI?AVNjFloat2@@MABV0@@Z 0060da18 f    CIL library: CIL module
+ 0001:0000d44f       ??D@YI?AVNjFloat3@@MABV0@@Z 0060e44f f    CIL library: CIL module
+ 0001:0000d566       ?ASM_powf@@YIMMM@Z         0060e566 f    CIL library: CIL module
+ 0001:0000d58c       ?ASM_expf@@YIMM@Z          0060e58c f    CIL library: CIL module
+ 0001:0000d5b1       ??D@YI?AVNjFloat4@@MABV0@@Z 0060e5b1 f    CIL library: CIL module
+ 0001:0000d5e6       ??D@YI?AVNjFloat3@@MABV0@@Z 0060e5e6 f    CIL library: CIL module
+ 0001:0000eba0       ?ShowProgress@@YIXPAUWININFO@@H@Z 0060fba0 f    CIL library: CIL module
+ 0001:0000ec96       ?WndProc@@YGJPAUHWND__@@IIJ@Z 0060fc96 f    CIL library: CIL module
+ 0001:0000ecea       ?ASM_memset@@YIXPAXHH@Z    0060fcea f    CIL library: CIL module
+ 0001:0000f09e       ?FLOAT2BYTE@@YIEM@Z        0061009e f    CIL library: CIL module
+ 0001:0000f1a9       ?_acosf@@YIMM@Z            006101a9 f    CIL library: CIL module
+ 0001:0000f296       ??D@YI?AVNjFloat2@@MABV0@@Z 00610296 f    CIL library: CIL module
+ 0001:0000f6ec       ??__Egs_Device@@YAXXZ      006106ec f    CIL library: CIL module
