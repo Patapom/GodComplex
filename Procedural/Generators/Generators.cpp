@@ -22,8 +22,8 @@ void	FillNormal( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pDat
 	Pixel	Top; Params.pSource->SampleWrap( X, Y - 1, Top );
 	Pixel	Bottom; Params.pSource->SampleWrap( X, Y + 1, Bottom );
 
-	NjFloat3	Dx( 1.0f, Params.HeightFactor * (Right.Height - Left.Height), 0.0f );
-	NjFloat3	Dy( 0.0f, Params.HeightFactor * (Bottom.Height - Top.Height), 1.0f );
+	NjFloat3	Dx( 1.0f, 0.0f, Params.HeightFactor * (Right.Height - Left.Height) );
+	NjFloat3	Dy( 0.0f, -1.0f, Params.HeightFactor * (Bottom.Height - Top.Height) );
 
 	NjFloat3	Normal = Dy ^ Dx;
 	if ( Params.bNormalize )

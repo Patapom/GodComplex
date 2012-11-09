@@ -20,7 +20,12 @@ void	DrawUtils::SetupSurface( int _Width, int _Height, Pixel* _pSurface )
 	m_pSurface = _pSurface;
 }
 
-void	DrawUtils::SetupContext( float _PivotX, float _PivotY, float _Angle )
+void	DrawUtils::SetupSurface( TextureBuilder& _TB )
+{
+	SetupSurface( _TB.GetWidth(), _TB.GetHeight(), _TB.GetMips()[0] );
+}
+
+void	DrawUtils::SetupTransform( float _PivotX, float _PivotY, float _Angle )
 {
 	_Angle = NUAJDEG2RAD( _Angle );
 	float	c = cosf(_Angle), s =sinf(_Angle);
@@ -385,28 +390,4 @@ void	DrawUtils::DrawQuad( NjFloat4 _pVertices[], DrawContext& _Context ) const
 		LPos = LPos + LSlope;
 		RPos = RPos + RSlope;
 	}
-}
-
-//////////////////////////////////////////////////////////////////////////
-// The fat pixel structure
-//
-Pixel::Pixel()
-{
-	RGBA = NjFloat4::Zero;
-	Height = 0.0f;
-	Roughness = 0.0f;
-}
-Pixel::Pixel( const NjFloat4& _RGBA, float _Height, float _Roughness )
-{
-	RGBA = _RGBA;
-	Height = _Height;
-	Roughness = _Roughness;
-}
-void	Pixel::Blend( const Pixel& _Source, float t )
-{
-	float	r = 1.0f - t;
-
-	RGBA = RGBA * r + _Source.RGBA * t;
-	Height = Height * r + _Source.Height * t;
-	Roughness = Roughness * r + _Source.Roughness * t;
 }

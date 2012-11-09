@@ -192,7 +192,7 @@ return 0;
 
 			for ( int X=0; X < Count; X++ )
 			{
-				Draw.SetupContext( Pos.x, Pos.y, Angle );
+				Draw.SetupTransform( Pos.x, Pos.y, Angle );
 				Draw.DrawRectangle( 0.0f, 0.0f, Size.x, Size.y, 0.1f * Size.Min(), 0.0f, FillSplotch, &N );
 
 				Angle += DeltaAngle;
@@ -208,7 +208,7 @@ return 0;
 //			Filters::Erode( TB, 3 );
 //*/
 
-		gs_pTexTestNoise = new Texture2D( gs_Device, 512, 512, 1, PixelFormatRGBA16F::DESCRIPTOR, 0, TB.Convert( PixelFormatRGBA16F::DESCRIPTOR, TextureBuilder::CONV_RGBA_NxNyHR ) );
+		gs_pTexTestNoise = TB.CreateTexture( PixelFormatRGBA16F::DESCRIPTOR, TextureBuilder::CONV_RGBA_NxNyHR_M );
 	}
 
 	return 0;	// OK !

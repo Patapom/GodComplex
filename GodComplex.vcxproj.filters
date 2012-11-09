@@ -192,6 +192,9 @@
     <ClInclude Include="RendererD3D11\Components\ComputeShader.h">
       <Filter>RendererD3D11\Components</Filter>
     </ClInclude>
+    <ClInclude Include="Procedural\FatPixel.h">
+      <Filter>Procedural\2D</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />

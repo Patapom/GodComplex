@@ -205,6 +205,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="NuajAPI\API\Types.h" />
     <ClInclude Include="NuajAPI\Math\Math.h" />
     <ClInclude Include="Procedural\DrawUtils\Draw.h" />
+    <ClInclude Include="Procedural\FatPixel.h" />
     <ClInclude Include="Procedural\Filters\Filters.h" />
     <ClInclude Include="Procedural\Generators\Generators.h" />
     <ClInclude Include="Procedural\Generators\Noise.h" />

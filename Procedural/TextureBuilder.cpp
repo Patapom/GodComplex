@@ -40,6 +40,18 @@ void	TextureBuilder::CopyFrom( const TextureBuilder& _Source )
 	Fill( CopyFiller, (void*) &_Source );
 }
 
+void	TextureBuilder::Clear( const Pixel& _Pixel )
+{
+	// Clear the mip level 0
+	for ( int Y=0; Y < m_Height; Y++ )
+	{
+		Pixel*	pScanline = m_ppBufferGeneric[0] + m_Width * Y;
+		for ( int X=0; X < m_Width; X++, pScanline++ )
+			memcpy( pScanline, &_Pixel, sizeof(Pixel) );
+	}
+	m_bMipLevelsBuilt = false;
+}
+
 void	TextureBuilder::Fill( FillDelegate _Filler, void* _pData )
 {
 	// Fill the mip level 0
@@ -96,6 +108,7 @@ void	TextureBuilder::SampleWrap( float _X, float _Y, Pixel& _Pixel ) const
 	_Pixel.RGBA.w = ry * V0.w + y * V1.w;
 	_Pixel.Height = ry * H0 + y * H1;
 	_Pixel.Roughness = ry * R0 + y * R1;
+	_Pixel.MatID = V00.MatID;	// Arbitrary!
 }
 
 void	TextureBuilder::SampleClamp( float _X, float _Y, Pixel& _Pixel ) const
@@ -130,6 +143,7 @@ void	TextureBuilder::SampleClamp( float _X, float _Y, Pixel& _Pixel ) const
 	_Pixel.RGBA.w = ry * V0.w + y * V1.w;
 	_Pixel.Height = ry * H0 + y * H1;
 	_Pixel.Roughness = ry * R0 + y * R1;
+	_Pixel.MatID = V00.MatID;	// Arbitrary!
 }
 
 void	TextureBuilder::GenerateMips( bool _bTreatRGBAsNormal ) const
@@ -196,6 +210,7 @@ void	TextureBuilder::GenerateMips( bool _bTreatRGBAsNormal ) const
 					pScanline->RGBA = 0.25f * (V00.RGBA + V01.RGBA + V10.RGBA + V11.RGBA);
 				pScanline->Height = 0.25f * (V00.Height + V01.Height + V10.Height + V11.Height);
 				pScanline->Roughness = 0.25f * (V00.Roughness + V01.Roughness + V10.Roughness + V11.Roughness);
+				pScanline->MatID = V00.MatID;	// Arbitrary! We really should choose the material shared by most of the pixels... Need to create a mini hashtable... Pain... See later...
 			}
 		}
 	}
@@ -203,7 +218,7 @@ void	TextureBuilder::GenerateMips( bool _bTreatRGBAsNormal ) const
 	m_bMipLevelsBuilt = true;
 }
 
-TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA_NxNyHR =
+TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA_NxNyHR_M =
 {
 	0,		// int		PosR;
 	1,		// int		PosG;
@@ -214,21 +229,46 @@ TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA_NxNyHR =
 	6,		// int		PosHeight;
 	7,		// int		PosRoughness;
 
+			// Position of the Material ID
+	8,		// int		PosMatID;
+
 			// Position of the normal fields
-	true,	// bool	GenerateNormal;	// If true, the normal will be generated
-	true,	// bool	PackNormalXY;	// If true, only the XY components of the normal will be stored. Z will then be extracted by sqrt(1-X²-Y²)
 	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
 	4,		// int		PosNormalX;
 	5,		// int		PosNormalY;
 	-1,		// int		PosNormalZ;
 
 			// Position of the AO field
-	false,	// bool	GenerateAO;
-	2.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
+	1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
 	-1,		// int		PosAO;
 };
 
-void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params ) const
+TextureBuilder::ConversionParams	TextureBuilder::CONV_NxNyNzH =
+{
+	-1,		// int		PosR;
+	-1,		// int		PosG;
+	-1,		// int		PosB;
+	-1,		// int		PosA;
+
+			// Position of the height & roughness fields
+	3,		// int		PosHeight;
+	-1,		// int		PosRoughness;
+
+			// Position of the Material ID
+	-1,		// int		PosMatID;
+
+			// Position of the normal fields
+	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
+	0,		// int		PosNormalX;
+	1,		// int		PosNormalY;
+	2,		// int		PosNormalZ;
+
+			// Position of the AO field
+	1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
+	-1,		// int		PosAO;
+};
+
+void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params, int& _ArraySize ) const
 {
 	if ( !m_bMipLevelsBuilt )
 		GenerateMips();
@@ -238,21 +278,19 @@ void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const Con
 	//////////////////////////////////////////////////////////////////////////
 	// Generate normal
 	TextureBuilder	TBNormal( m_Width, m_Height );
-	if ( _Params.GenerateNormal )
+	if ( _Params.PosNormalX != -1 )
 	{
-		ASSERT( _Params.PosNormalX != -1, "You must specify a position for the X component of the normal if GenerateNormal is true!" );
-		ASSERT( _Params.PosNormalY != -1, "You must specify a position for the Y component of the normal if GenerateNormal is true!" );
-		ASSERT( !_Params.PackNormalXY || _Params.PosNormalZ == -1, "You cannot specify a position for the Z component of the normal if PackNormalXY is true!" );
-		Generators::ComputeNormal( *this, TBNormal, _Params.NormalFactor, _Params.PackNormalXY );
+		ASSERT( _Params.PosNormalY != -1, "You must specify a position for the Y component of the normal if PosNormalX is not -1!" );
+		bool	bPackNormal = _Params.PosNormalZ == -1;
+		Generators::ComputeNormal( *this, TBNormal, _Params.NormalFactor, bPackNormal );
 		TBNormal.GenerateMips( true );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Generate AO
 	TextureBuilder	TBAO( m_Width, m_Height );
-	if ( _Params.GenerateAO )
+	if ( _Params.PosAO != -1 )
 	{
-		ASSERT( _Params.PosAO != -1, "You must specify a position for the Ambient Occlusion if GenerateAO is true!" );
 		Generators::ComputeAO( *this, TBNormal, _Params.AOFactor );
 		TBAO.GenerateMips();
 	}
@@ -269,19 +307,21 @@ void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const Con
 	MaxPosition = MAX( MaxPosition, _Params.PosNormalZ );
 	MaxPosition = MAX( MaxPosition, _Params.PosHeight );
 	MaxPosition = MAX( MaxPosition, _Params.PosRoughness );
+	MaxPosition = MAX( MaxPosition, _Params.PosMatID );
 	MaxPosition = MAX( MaxPosition, _Params.PosAO );
 
-	int	ArraySize = (MaxPosition+3) >> 2;
+	_ArraySize = (MaxPosition+4) >> 2;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Allocate buffers
-	m_ppBufferSpecific = new void*[m_MipLevelsCount*ArraySize];
-	for ( int ArrayIndex=0; ArrayIndex < ArraySize; ArrayIndex++ )
+	m_ppBufferSpecific = new void*[m_MipLevelsCount*_ArraySize];
+
+	int	PixelSize = _Format.Size();
+	for ( int ArrayIndex=0; ArrayIndex < _ArraySize; ArrayIndex++ )
 	{
 		int	Width = m_Width;
 		int	Height = m_Height;
 		int	ComponentsOffset = ArrayIndex << 2;
-		int	PixelSize = _Format.Size();
 
 		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 		{
@@ -295,11 +335,11 @@ void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const Con
 			// Copy
 			for ( int Y=0; Y < Height; Y++ )
 			{
-				NjFloat4		Temp;
-				Pixel*			pScanlineSource0 = &pSource0[Width*Y];
-				Pixel*			pScanlineSource1 = &pSource1[Width*Y];
-				Pixel*			pScanlineSource2 = &pSource2[Width*Y];
-				PixelFormat*	pScanlineDest = (PixelFormat*) &pDest[PixelSize*Width*Y];
+				NjFloat4	Temp;
+				Pixel*		pScanlineSource0 = &pSource0[Width*Y];
+				Pixel*		pScanlineSource1 = &pSource1[Width*Y];
+				Pixel*		pScanlineSource2 = &pSource2[Width*Y];
+				U8*			pScanlineDest = &pDest[PixelSize*Width*Y];
 				for ( int X=0; X < Width; X++, pScanlineDest+=PixelSize, pScanlineSource0++, pScanlineSource1++, pScanlineSource2++ )
 				{
 					Temp.x = BuildComponent( ComponentsOffset+0, _Params, *pScanlineSource0, *pScanlineSource1, *pScanlineSource2 );
@@ -307,7 +347,7 @@ void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const Con
 					Temp.z = BuildComponent( ComponentsOffset+2, _Params, *pScanlineSource0, *pScanlineSource1, *pScanlineSource2 );
 					Temp.w = BuildComponent( ComponentsOffset+3, _Params, *pScanlineSource0, *pScanlineSource1, *pScanlineSource2 );
 
-					_Format.Write( *pScanlineDest, Temp );
+					_Format.Write( pScanlineDest, Temp );
 				}
 			}
 
@@ -317,6 +357,14 @@ void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const Con
 	}
 
 	return m_ppBufferSpecific;
+}
+
+Texture2D*	TextureBuilder::CreateTexture( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params, bool _bStaging, bool _bWriteable ) const
+{
+	int			ArraySize;
+	void**		ppContent = Convert( _Format, _Params, ArraySize );
+	Texture2D*	pResult = new Texture2D( gs_Device, m_Width, m_Height, ArraySize, _Format, m_MipLevelsCount, ppContent, _bStaging, _bWriteable );
+	return pResult;
 }
 
 float	TextureBuilder::BuildComponent( int _ComponentIndex, const ConversionParams& _Params, Pixel& _Pixel0, Pixel& _Pixel1, Pixel& _Pixel2 ) const
@@ -336,6 +384,10 @@ float	TextureBuilder::BuildComponent( int _ComponentIndex, const ConversionParam
 		return _Pixel0.Height;
 	if ( _ComponentIndex == _Params.PosRoughness )
 		return _Pixel0.Roughness;
+
+	// Check if it's the material ID
+	if ( _ComponentIndex == _Params.PosMatID )
+		return float(_Pixel0.MatID);
 
 	// Check if it's the normal
 	if ( _ComponentIndex == _Params.PosNormalX )

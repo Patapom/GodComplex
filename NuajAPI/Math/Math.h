@@ -41,10 +41,11 @@ static const float			GOLDEN_RATIO = 1.6180339887498948482045868343656f;	// Phi =
 #define NUAJRAD2DEG( a )	(57.295779513082320876798154814105f * a)
 #define NUAJDEG2RAD( a )	(0.01745329251994329576923690768489f * a)
 #define NUAJBYTE2FLOAT( b )	(b / 255.0f)
-template<class T> inline T	MIN( const T a, const T b )						{ return a < b ? a : b;  }
-template<class T> inline T	MAX( const T a, const T b )						{ return a > b ? a : b;  }
-template<class T> inline T	CLAMP( const T x, const T min, const T max )	{ return MIN( MAX( min, x ), max ); }
-template<class T> inline T	SATURATE( const T x )							{ return x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x); }
+template<class T> inline T	MIN( const T& a, const T& b )					{ return a < b ? a : b;  }
+template<class T> inline T	MAX( const T& a, const T& b )					{ return a > b ? a : b;  }
+template<class T> inline T	CLAMP( const T& x, const T& min, const T& max )	{ return MIN( MAX( min, x ), max ); }
+template<class T> inline T	LERP( const T& a, const T& b, float t )			{ return a * (1.0f - t) + b * t; }
+template<class T> inline T	SATURATE( const T& x )							{ return x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x); }
 static U8					FLOAT2BYTE( float f )							{ return U8( CLAMP( 255.0f * f, 0.0f, 255.0f ) ); }
 
 
@@ -183,21 +184,22 @@ public:
 
 	float	m[16];
 
-	NjFloat4		GetRow( int _RowIndex ) const								{ return NjFloat4( m[4*_RowIndex+0], m[4*_RowIndex+1], m[4*_RowIndex+2], m[4*_RowIndex+3] ); }
-	NjFloat4x4&		SetRow( int _RowIndex, const NjFloat4& _Row )				{ m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _Row.w; return *this; }
-	NjFloat4x4&		SetRow( int _RowIndex, const NjFloat3& _Row, float _w=0 )	{ m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _w; return *this; }
-	NjFloat4x4		Inverse() const;
-	float			Determinant() const;
-	float			CoFactor( int x, int y ) const;
+	NjFloat4			GetRow( int _RowIndex ) const								{ return NjFloat4( m[4*_RowIndex+0], m[4*_RowIndex+1], m[4*_RowIndex+2], m[4*_RowIndex+3] ); }
+	NjFloat4x4&			SetRow( int _RowIndex, const NjFloat4& _Row )				{ m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _Row.w; return *this; }
+	NjFloat4x4&			SetRow( int _RowIndex, const NjFloat3& _Row, float _w=0 )	{ m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _w; return *this; }
+	NjFloat4x4			Inverse() const;
+	float				Determinant() const;
+	float				CoFactor( int x, int y ) const;
 
-//	NjFloat4		operator*( const NjFloat4& b ) const;
-	NjFloat4x4		operator*( const NjFloat4x4& b ) const;
-	float&			operator()( int _Row, int _Column );
+//	NjFloat4			operator*( const NjFloat4& b ) const;
+	NjFloat4x4			operator*( const NjFloat4x4& b ) const;
+	float&				operator()( int _Row, int _Column );
 
 	static NjFloat4x4	FromAngleAxis( float _Angle, const NjFloat3& _Axis )	{ return FromQuat( NjFloat4::QuatFromAngleAxis( _Angle, _Axis ) ); }
 	static NjFloat4x4	FromQuat( const NjFloat4& _Quat );
 	static NjFloat4x4	PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S );
 
+	static NjFloat4x4	Rot( const NjFloat3& _Source, const NjFloat3& _Target );	// Generate the rotation matrix that rotates the _Source vector into the _Target vector
 	static NjFloat4x4	RotX( float _Angle );
 	static NjFloat4x4	RotY( float _Angle );
 	static NjFloat4x4	RotZ( float _Angle );

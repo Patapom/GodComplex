@@ -2,21 +2,7 @@
 //
 #pragma once
 
-// A pixel is a color + a height + a roughness
-// From a bunch of pixels we can thus deduce the diffuse, specular, ambient occlusion, height and normal maps
-struct	Pixel
-{
- 	NjFloat4	RGBA;
-	float		Height;
-	float		Roughness;
-
-	Pixel();
-	Pixel( const NjFloat4& _RGBA, float _Height=0.0f, float _Roughness=0.0f );
-
-	// Blends source with current value using provided interpolant
-	//	this = this * (1-t) + _Source * t
-	void		Blend( const Pixel& _Source, float t );
-};
+#include "../FatPixel.h"
 
 class	DrawUtils
 {
@@ -26,9 +12,9 @@ public:		// NESTED TYPES
 	{
 		int			x, y;		// Pixel coordinates in the surface
 		int			w, h;		// Size of the surface
-		float		Coverage;	// Coverage of the pixel (1 for internal pixels, less than 1 
+		float		Coverage;	// Coverage of the pixel (1 for internal pixels, less than 1 for other pixels
 		NjFloat2	UV;			// Normalized size of the surface
-		float		Distance;	// Normalized distance to the border of the primitive
+		float		Distance;	// Normalized distance to the border of the primitive (positive or negative if there is a bias)
 		void*		pData;		// User data
 	};
 
@@ -119,7 +105,8 @@ public:		// METHODS
 	DrawUtils();
 
 	void	SetupSurface( int _Width, int _Height, Pixel* _pSurface );
-	void	SetupContext( float _PivotX, float _PivotY, float _Angle );	// Use this to setup your transform context
+	void	SetupSurface( TextureBuilder& _TB );
+	void	SetupTransform( float _PivotX, float _PivotY, float _Angle );	// Use this to setup your transform context
 
 	// Draws a rectangle
 	//	border = thickness of the border

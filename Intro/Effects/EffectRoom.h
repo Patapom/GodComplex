@@ -55,6 +55,7 @@ private:	// FIELDS
 //	Primitive*			m_pPrimTesselatedQuad;
 
 	// Textures
+	Texture2D*			m_pTexWalls;			// The fat texture for the walls
 	Texture2D*			m_pTexLightMaps;		// The array texture that will contain the room's light map
 
 	// Constant buffers
@@ -86,7 +87,8 @@ public:		// METHODS
 
 protected:
 
-	void		BuildRoom();
+	void		BuildRoom( const TextureBuilder& _TB );
+	void		BuildRoomTextures( TextureBuilder& _TB );
 	float		AnimateFailure( float& _TimerTillFailure, float& _TimeSinceFailure, float& _FailureDuration, float _FailMinTime, float _FailDeltaTime, float _DeltaTime );
 
 };

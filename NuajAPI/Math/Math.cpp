@@ -152,6 +152,19 @@ NjFloat4x4	NjFloat4x4::PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3
 	return Result;
 }
 
+NjFloat4x4	NjFloat4x4::Rot( const NjFloat3& _Source, const NjFloat3& _Target )
+{
+	NjFloat3	Ortho = _Source ^ _Target;
+	float		Length = Ortho.Length();
+	if ( Length > 1e-6f )
+		Ortho = Ortho / Length;
+	else
+		Ortho.Set( 1, 0, 0 );
+	float		Angle = asinf( Length );
+	NjFloat4x4	R = FromAngleAxis( Angle, Ortho );
+	return R;
+}
+
 NjFloat4x4	NjFloat4x4::RotX( float _Angle )
 {
 	NjFloat4x4	R = NjFloat4x4::Identity;

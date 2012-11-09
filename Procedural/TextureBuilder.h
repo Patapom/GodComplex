@@ -4,7 +4,7 @@
 //
 #pragma once
 
-struct Pixel;
+#include "FatPixel.h"
 
 class	TextureBuilder
 {
@@ -34,23 +34,24 @@ public:		// NESTED TYPES
 		int		PosHeight;
 		int		PosRoughness;
 
+		// Position of the MaterialID
+		int		PosMatID;
+
 		// Position of the normal fields
-		bool	GenerateNormal;	// If true, the normal will be generated
-		bool	PackNormalXY;	// If true, only the XY components of the normal will be stored. Z will then be extracted by sqrt(1-X²-Y²)
 		float	NormalFactor;	// Factor to apply to the height to generate the normals
-		int		PosNormalX;
+		int		PosNormalX;		// As soon as one of these positions is different of -1, normal will be generated
 		int		PosNormalY;
-		int		PosNormalZ;
+		int		PosNormalZ;		// If -1, normal will get normalized and packed only as XY. Z will then be extracted by sqrt(1-X²-Y²)
 
 		// Position of the AO field
-		bool	GenerateAO;
 		float	AOFactor;		// Factor to apply to the height to generate the AO
-		int		PosAO;
+		int		PosAO;			// If not -1, AO will be generated
 
 		// TODO: Curvature? Dirt accumulation? Gradient?
 	};
 
-	static ConversionParams		CONV_RGBA_NxNyHR;	// Generates an array of 2 textures: 1st is RGBA, 2nd is Normal(X+Y), Height, Roughness
+	static ConversionParams		CONV_RGBA_NxNyHR_M;	// Generates an array of 3 textures: 1st is RGBA, 2nd is Normal(X+Y), Height, Roughness, 3rd is MaterialID
+	static ConversionParams		CONV_NxNyNzH;		// Generates an array of 1 texture: Normal(X+Y+Z) + Height
 
 
 protected:	// FIELDS
@@ -72,19 +73,26 @@ public:		// PROPERTIES
 	Pixel**			GetMips()			{ return m_ppBufferGeneric; }
 	const void**	GetLastConvertedMips() const;
 
+
 public:		// METHODS
 
 	TextureBuilder( int _Width, int _Height );
  	~TextureBuilder();
 
 	void			CopyFrom( const TextureBuilder& _Source );
+	void			Clear( const Pixel& _Pixel );
 	void			Fill( FillDelegate _Filler, void* _pData );
 	void			Get( int _X, int _Y, Pixel& _Color ) const;
 	void			SampleWrap( float _X, float _Y, Pixel& _Pixel ) const;
 	void			SampleClamp( float _X, float _Y, Pixel& _Pixel ) const;
 	void			GenerateMips( bool _bTreatRGBAsNormal=false ) const;
 
-	void**			Convert( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params ) const;
+	// Converts the generic content into an array of mip-maps of a specific pixel format, ready to build a Texture2D
+	// NOTE: You don't need to delete the returned pointers
+	void**			Convert( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params, int& _ArraySize ) const;
+
+	// Call Convert() and directly generate a texture
+	Texture2D*		CreateTexture( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params, bool _bStaging=false, bool _bWriteable=false ) const;
 
 private:
 	void			ReleaseSpecificBuffer() const;
