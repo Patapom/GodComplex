@@ -7,8 +7,8 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
- 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T2T3::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
- 	CHECK_MATERIAL( m_pMatDisplayEmissive = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T2T3::DESCRIPTOR, "VS", NULL, "PS_Emissive" ), 2 );
+ 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T3T3::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
+ 	CHECK_MATERIAL( m_pMatDisplayEmissive = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T3T3::DESCRIPTOR, "VS", NULL, "PS_Emissive" ), 2 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the room geometry & compute lightmaps
@@ -260,7 +260,7 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 	//////////////////////////////////////////////////////////////////////////
 	// Generate the primitives
 	{
-		VertexFormatP3N3G3T2T3	pVertices[4*6];
+		VertexFormatP3N3G3T3T3	pVertices[4*6];
 		U16						pIndices[6*6];
 		for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 		{
@@ -272,32 +272,34 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 			NjFloat4	UV = pLightMapUVs[FaceIndex];
 			float		ArrayIndex = pLightMapArrayIndex[FaceIndex];
 
+			float		TextureIndex = FaceIndex < 2 ? 0.0f : 1.0f;	// Use wall texture for walls...
+
 			// Top-left corner
 			pVertices[4*FaceIndex+0].Position = C - 0.5f * Size.x * T + 0.5f * Size.y * B;
 			pVertices[4*FaceIndex+0].Normal = N;
 			pVertices[4*FaceIndex+0].Tangent = T;
-			pVertices[4*FaceIndex+0].UV.Set( 0.0f, 0.0f );
+			pVertices[4*FaceIndex+0].UV.Set( 0.0f, 0.0f, TextureIndex );
 			pVertices[4*FaceIndex+0].UV2.Set( UV.x + UV.z * 0.0f, UV.y + UV.w * 1.0f, ArrayIndex );
 
 			// Bottom-left corner
 			pVertices[4*FaceIndex+1].Position = C - 0.5f * Size.x * T - 0.5f * Size.y * B;
 			pVertices[4*FaceIndex+1].Normal = N;
 			pVertices[4*FaceIndex+1].Tangent = T;
-			pVertices[4*FaceIndex+1].UV.Set( 0.0f, 1.0f );
+			pVertices[4*FaceIndex+1].UV.Set( 0.0f, 1.0f, TextureIndex );
 			pVertices[4*FaceIndex+1].UV2.Set( UV.x + UV.z * 0.0f, UV.y + UV.w * 0.0f, ArrayIndex );
 
 			// Bottom-right corner
 			pVertices[4*FaceIndex+2].Position = C + 0.5f * Size.x * T - 0.5f * Size.y * B;
 			pVertices[4*FaceIndex+2].Normal = N;
 			pVertices[4*FaceIndex+2].Tangent = T;
-			pVertices[4*FaceIndex+2].UV.Set( 1.0f, 1.0f );
+			pVertices[4*FaceIndex+2].UV.Set( 1.0f, 1.0f, TextureIndex );
 			pVertices[4*FaceIndex+2].UV2.Set( UV.x + UV.z * 1.0f, UV.y + UV.w * 0.0f, ArrayIndex );
 
 			// Top-right corner
 			pVertices[4*FaceIndex+3].Position = C + 0.5f * Size.x * T + 0.5f * Size.y * B;
 			pVertices[4*FaceIndex+3].Normal = N;
 			pVertices[4*FaceIndex+3].Tangent = T;
-			pVertices[4*FaceIndex+3].UV.Set( 1.0f, 0.0f );
+			pVertices[4*FaceIndex+3].UV.Set( 1.0f, 0.0f, TextureIndex );
 			pVertices[4*FaceIndex+3].UV2.Set( UV.x + UV.z * 1.0f, UV.y + UV.w * 1.0f, ArrayIndex );
 
 			// Build indices
@@ -309,11 +311,11 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 			pIndices[6*FaceIndex+5] = 4 * FaceIndex + 3;
 		}
 
-		m_pPrimRoom = new Primitive( gs_Device, 24, pVertices, 36, pIndices, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, VertexFormatP3N3G3T2T3::DESCRIPTOR );
+		m_pPrimRoom = new Primitive( gs_Device, 24, pVertices, 36, pIndices, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, VertexFormatP3N3G3T3T3::DESCRIPTOR );
 	}
 
 	{	// Lights
-		VertexFormatP3N3G3T2T3	pVertices[4*4];
+		VertexFormatP3N3G3T3T3	pVertices[4*4];
 		U16						pIndices[4*6];
 
 		NjFloat2				LightSize( 1.0f, 8.0f );	// Neons are 1x8 m²
@@ -327,22 +329,22 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 
 			pVertices[4*LightIndex+0].Position.Set( LightPosX+0*LightSize.x, LightPosY, LightPosZ+0*LightSize.y );
 			pVertices[4*LightIndex+0].Normal.Set( 0, -1, 0 );
-			pVertices[4*LightIndex+0].UV.Set( 0, 0 );
+			pVertices[4*LightIndex+0].UV.Set( 0, 0, 0 );
 			pVertices[4*LightIndex+0].UV2.Set( 0, 0, float(LightIndex) );
 
 			pVertices[4*LightIndex+1].Position.Set( LightPosX+1*LightSize.x, LightPosY, LightPosZ+0*LightSize.y );
 			pVertices[4*LightIndex+1].Normal.Set( 0, -1, 0 );
-			pVertices[4*LightIndex+1].UV.Set( 1, 0 );
+			pVertices[4*LightIndex+1].UV.Set( 1, 0, 0 );
 			pVertices[4*LightIndex+1].UV2.Set( 1, 0, float(LightIndex) );
 
 			pVertices[4*LightIndex+2].Position.Set( LightPosX+1*LightSize.x, LightPosY, LightPosZ+1*LightSize.y );
 			pVertices[4*LightIndex+2].Normal.Set( 0, -1, 0 );
-			pVertices[4*LightIndex+2].UV.Set( 1, 1 );
+			pVertices[4*LightIndex+2].UV.Set( 1, 1, 0 );
 			pVertices[4*LightIndex+2].UV2.Set( 1, 1, float(LightIndex) );
 
 			pVertices[4*LightIndex+3].Position.Set( LightPosX+0*LightSize.x, LightPosY, LightPosZ+1*LightSize.y );
 			pVertices[4*LightIndex+3].Normal.Set( 0, -1, 0 );
-			pVertices[4*LightIndex+3].UV.Set( 0, 1 );
+			pVertices[4*LightIndex+3].UV.Set( 0, 1, 0 );
 			pVertices[4*LightIndex+3].UV2.Set( 0, 1, float(LightIndex) );
 
 			// Build indices
@@ -354,7 +356,7 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 			pIndices[6*LightIndex+5] = 4*LightIndex+3;
 		}
 
-		m_pPrimRoomLights = new Primitive( gs_Device, 16, pVertices, 24, pIndices, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, VertexFormatP3N3G3T2T3::DESCRIPTOR );
+		m_pPrimRoomLights = new Primitive( gs_Device, 16, pVertices, 24, pIndices, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, VertexFormatP3N3G3T3T3::DESCRIPTOR );
 	}
 
 

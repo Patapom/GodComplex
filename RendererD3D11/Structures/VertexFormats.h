@@ -156,7 +156,7 @@ public:
 
 };
 
-struct VertexFormatP3N3G3T2T3
+struct VertexFormatP3N3G3T3T3
 {
 public:
 
@@ -166,7 +166,7 @@ public:
 
 	public:
 
-		virtual int			Size() const							{ return sizeof(VertexFormatP3N3G3T2T3); }
+		virtual int			Size() const							{ return sizeof(VertexFormatP3N3G3T3T3); }
 		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return ms_pInputElements; }
 		virtual int			GetInputElementsCount() const			{ return 5; }
 		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV ) const;
@@ -177,7 +177,7 @@ public:
 	NjFloat3	Position;
 	NjFloat3	Normal;
 	NjFloat3	Tangent;
-	NjFloat2	UV;
+	NjFloat3	UV;
 	NjFloat3	UV2;
 
 };

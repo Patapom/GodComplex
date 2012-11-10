@@ -23,7 +23,7 @@ struct	VS_IN
 	float3	Position	: POSITION;
 	float3	Normal		: NORMAL;
 	float3	Tangent		: TANGENT;
-	float2	UV			: TEXCOORD0;
+	float3	UV			: TEXCOORD0;
 	float3	UV2			: TEXCOORD1;
 };
 
@@ -31,7 +31,7 @@ struct	PS_IN
 {
 	float4	__Position	: SV_POSITION;
 	float3	Normal		: NORMAL;
-	float2	UV			: TEXCOORD0;
+	float3	UV			: TEXCOORD0;
 	float3	UV2			: TEXCOORD1;
 };
 
@@ -59,7 +59,9 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	float3	Radiance = Irradiance * RECITWOPI;
 
 //return 10.0 * _TexWalls.Sample( LinearWrap, float3( _In.UV, 1.0 ) ).z;	// Show height
-	float4	TexColor = _TexWalls.Sample( LinearWrap, float3( _In.UV, 0.0 ) );
+	float4	TexColor = 1.0;
+	if ( _In.UV.z > 0.0 )
+		TexColor = _TexWalls.Sample( LinearWrap, float3( _In.UV.xy, 0.0 ) );
 //	return TexColor;
 	Radiance *= clamp( TexColor.xyz, 0.1, 1.0 );
 

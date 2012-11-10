@@ -17,10 +17,10 @@ void	FillNormal( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pDat
 	float	X = float(_X);
 	float	Y = float(_Y);
 
-	Pixel	Left; Params.pSource->SampleWrap( X - 1, Y, Left );
-	Pixel	Right; Params.pSource->SampleWrap( X + 1, Y, Right );
-	Pixel	Top; Params.pSource->SampleWrap( X, Y - 1, Top );
-	Pixel	Bottom; Params.pSource->SampleWrap( X, Y + 1, Bottom );
+	Pixel	Left; Params.pSource->SampleWrap( X - 1, Y, 0, Left );
+	Pixel	Right; Params.pSource->SampleWrap( X + 1, Y, 0, Right );
+	Pixel	Top; Params.pSource->SampleWrap( X, Y - 1, 0, Top );
+	Pixel	Bottom; Params.pSource->SampleWrap( X, Y + 1, 0, Bottom );
 
 	NjFloat3	Dx( 1.0f, 0.0f, Params.HeightFactor * (Right.Height - Left.Height) );
 	NjFloat3	Dy( 0.0f, -1.0f, Params.HeightFactor * (Bottom.Height - Top.Height) );
@@ -79,7 +79,7 @@ void	FillAO( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 			Position = Position + Direction;	// March one step
 
 			Pixel	P;
-			Params.pSource->SampleWrap( Position.x, Position.y, P );
+			Params.pSource->SampleWrap( Position.x, Position.y, 0, P );
 
 			float	Slope = Params.HeightFactor * P.Height / (1.0f + SampleIndex);	// The slope of the horizon
 			MaxSlope = MAX( MaxSlope, Slope );
@@ -126,9 +126,9 @@ void	FillDirtyness( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _p
 	__DirtynessStruct&	Params = *((__DirtynessStruct*) _pData);
 
 	Pixel	P[3];
-	Params.pBuilder->SampleWrap( _X-1.0f, _Y-1.0f, P[0] );
-	Params.pBuilder->SampleWrap( _X+0.0f, _Y-1.0f, P[1] );
-	Params.pBuilder->SampleWrap( _X+1.0f, _Y-1.0f, P[2] );
+	Params.pBuilder->SampleWrap( _X-1.0f, _Y-1.0f, 0, P[0] );
+	Params.pBuilder->SampleWrap( _X+0.0f, _Y-1.0f, 0, P[1] );
+	Params.pBuilder->SampleWrap( _X+1.0f, _Y-1.0f, 0, P[2] );
 
 //	NjFloat4	F = C[0] + C[2] - C[1];	// Some sort of average
 //	NjFloat4	F = 0.333f * (C[0] + C[2] + C[1]);

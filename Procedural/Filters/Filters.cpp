@@ -19,7 +19,7 @@ void	FillBlurGaussianHW( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, voi
 	float	Xl = _X-1.0f, Xr = _X+1.0f;
 	float	Y = float(_Y);
 
-	Data.pSource->SampleWrap( float(_X), Y, _Pixel );
+	Data.pSource->SampleWrap( float(_X), Y, 0, _Pixel );
 
 	Pixel	Temp;
 	for ( int i=0; i < Data.Size; i++ )
@@ -27,13 +27,13 @@ void	FillBlurGaussianHW( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, voi
 		float	Weight = Data.pWeights[i];
 
 		// Accumulate from the left
-		Data.pSource->SampleWrap( Xl, Y, Temp );	Xl--;
+		Data.pSource->SampleWrap( Xl, Y, 0, Temp );	Xl--;
 		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
 		_Pixel.Height += Weight * Temp.Height;
 		_Pixel.Roughness += Weight * Temp.Roughness;
 
 		// Accumulate from the right
-		Data.pSource->SampleWrap( Xr, Y, Temp );	Xr++;
+		Data.pSource->SampleWrap( Xr, Y, 0, Temp );	Xr++;
 		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
 		_Pixel.Height += Weight * Temp.Height;
 		_Pixel.Roughness += Weight * Temp.Roughness;
@@ -51,7 +51,7 @@ void	FillBlurGaussianVW( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, voi
 	float	X = float(_X);
 	float	Yl = _Y-1.0f, Yr = _Y+1.0f;
 
-	Data.pSource->SampleWrap( X, float(_Y), _Pixel );
+	Data.pSource->SampleWrap( X, float(_Y), 0, _Pixel );
 
 	Pixel	Temp;
 	for ( int i=0; i < Data.Size; i++ )
@@ -59,13 +59,13 @@ void	FillBlurGaussianVW( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, voi
 		float	Weight = Data.pWeights[i];
 
 		// Accumulate from the top
-		Data.pSource->SampleWrap( X, Yl, Temp );	Yl--;
+		Data.pSource->SampleWrap( X, Yl, 0, Temp );	Yl--;
 		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
 		_Pixel.Height += Weight * Temp.Height;
 		_Pixel.Roughness += Weight * Temp.Roughness;
 
 		// Accumulate from the bottom
-		Data.pSource->SampleWrap( X, Yr, Temp );	Yr++;
+		Data.pSource->SampleWrap( X, Yr, 0, Temp );	Yr++;
 		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
 		_Pixel.Height += Weight * Temp.Height;
 		_Pixel.Roughness += Weight * Temp.Roughness;
@@ -84,7 +84,7 @@ void	FillBlurGaussianHC( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, voi
 	float	Xl = _X-1.0f, Xr = _X+1.0f;
 	float	Y = float(_Y);
 
-	Data.pSource->SampleClamp( float(_X), Y, _Pixel );
+	Data.pSource->SampleClamp( float(_X), Y, 0, _Pixel );
 
 	Pixel	Temp;
 	for ( int i=0; i < Data.Size; i++ )
@@ -92,13 +92,13 @@ void	FillBlurGaussianHC( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, voi
 		float	Weight = Data.pWeights[i];
 
 		// Accumulate from the left
-		Data.pSource->SampleClamp( Xl, Y, Temp );	Xl--;
+		Data.pSource->SampleClamp( Xl, Y, 0, Temp );	Xl--;
 		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
 		_Pixel.Height += Weight * Temp.Height;
 		_Pixel.Roughness += Weight * Temp.Roughness;
 
 		// Accumulate from the right
-		Data.pSource->SampleClamp( Xr, Y, Temp );	Xr++;
+		Data.pSource->SampleClamp( Xr, Y, 0, Temp );	Xr++;
 		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
 		_Pixel.Height += Weight * Temp.Height;
 		_Pixel.Roughness += Weight * Temp.Roughness;
@@ -116,7 +116,7 @@ void	FillBlurGaussianVC( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, voi
 	float	X = float(_X);
 	float	Yl = _Y-1.0f, Yr = _Y+1.0f;
 
-	Data.pSource->SampleClamp( X, float(_Y), _Pixel );
+	Data.pSource->SampleClamp( X, float(_Y), 0, _Pixel );
 
 	Pixel	Temp;
 	for ( int i=0; i < Data.Size; i++ )
@@ -124,13 +124,13 @@ void	FillBlurGaussianVC( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, voi
 		float	Weight = Data.pWeights[i];
 
 		// Accumulate from the top
-		Data.pSource->SampleClamp( X, Yl, Temp );	Yl--;
+		Data.pSource->SampleClamp( X, Yl, 0, Temp );	Yl--;
 		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
 		_Pixel.Height += Weight * Temp.Height;
 		_Pixel.Roughness += Weight * Temp.Roughness;
 
 		// Accumulate from the bottom
-		Data.pSource->SampleClamp( X, Yr, Temp );	Yr++;
+		Data.pSource->SampleClamp( X, Yr, 0, Temp );	Yr++;
 		_Pixel.RGBA = _Pixel.RGBA + Weight * Temp.RGBA;
 		_Pixel.Height += Weight * Temp.Height;
 		_Pixel.Roughness += Weight * Temp.Roughness;
@@ -204,7 +204,7 @@ void	FillUnsharpMaskSubtract( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel
 	TextureBuilder&	SourceSmooth = *((TextureBuilder*) _pData);
 
 	Pixel	Smooth;
-	SourceSmooth.Get( _X, _Y, Smooth );
+	SourceSmooth.Get( _X, _Y, 0, Smooth );
 
 	_Pixel.RGBA = 2.0f * _Pixel.RGBA - Smooth.RGBA;
 	_Pixel.Height = 2.0f * _Pixel.Height - Smooth.Height;
@@ -270,8 +270,8 @@ void	FillEmboss( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pDat
 	__EmbossStruct&	Params = *((__EmbossStruct*) _pData);
 
 	Pixel	C0, C1;
-	Params.pSource->SampleWrap( _X + Params.Direction.x, _Y + Params.Direction.y, C0 );
-	Params.pSource->SampleWrap( _X - Params.Direction.x, _Y - Params.Direction.y, C1 );
+	Params.pSource->SampleWrap( _X + Params.Direction.x, _Y + Params.Direction.y, 0, C0 );
+	Params.pSource->SampleWrap( _X - Params.Direction.x, _Y - Params.Direction.y, 0, C1 );
 
 	_Pixel.RGBA = 0.5f * NjFloat4::One + Params.Amplitude * (C0.RGBA - C1.RGBA);
 	_Pixel.Height = 0.5f + Params.Amplitude * (C0.Height - C1.Height);

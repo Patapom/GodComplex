@@ -62,6 +62,7 @@ protected:	// FIELDS
 	mutable bool	m_bMipLevelsBuilt;
 
 	Pixel**			m_ppBufferGeneric;		// Generic buffer consisting of meta-pixels
+	int*			m_pMipSizes;
 	mutable void**	m_ppBufferSpecific;		// Specific buffer of given pixel format
 
 
@@ -69,6 +70,8 @@ public:		// PROPERTIES
 
 	int				GetWidth() const	{ return m_Width; }
 	int				GetHeight() const	{ return m_Height; }
+	int				GetWidth( int _MipLevel ) const	{ return m_pMipSizes[(_MipLevel<<1)+0]; }
+	int				GetHeight( int _MipLevel ) const	{ return m_pMipSizes[(_MipLevel<<1)+1]; }
 
 	Pixel**			GetMips()			{ return m_ppBufferGeneric; }
 	const void**	GetLastConvertedMips() const;
@@ -79,12 +82,13 @@ public:		// METHODS
 	TextureBuilder( int _Width, int _Height );
  	~TextureBuilder();
 
-	void			CopyFrom( const TextureBuilder& _Source );
+	void			CopyFromFast( const TextureBuilder& _Source );	// Copies from a source TB using mip 0 only
+	void			CopyFrom( const TextureBuilder& _Source );		// Same but if the sizes are different and target is smaller, the copy will be performed using the best mip level as source (implies generation of the mip maps on the source builder)
 	void			Clear( const Pixel& _Pixel );
 	void			Fill( FillDelegate _Filler, void* _pData );
-	void			Get( int _X, int _Y, Pixel& _Color ) const;
-	void			SampleWrap( float _X, float _Y, Pixel& _Pixel ) const;
-	void			SampleClamp( float _X, float _Y, Pixel& _Pixel ) const;
+	void			Get( int _X, int _Y, int _MipLevel, Pixel& _Color ) const;
+	void			SampleWrap( float _X, float _Y, int _MipLevel, Pixel& _Pixel ) const;
+	void			SampleClamp( float _X, float _Y, int _MipLevel, Pixel& _Pixel ) const;
 	void			GenerateMips( bool _bTreatRGBAsNormal=false ) const;
 
 	// Converts the generic content into an array of mip-maps of a specific pixel format, ready to build a Texture2D

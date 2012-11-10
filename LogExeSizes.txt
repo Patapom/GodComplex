@@ -107,3 +107,13 @@
 . Added support for binary embedded shader resources
  => There is a significant 512 bytes gain compared to minified text shaders (although it yields the same size as yesterday but I believe the size increase "per block", let's see on the long run!)
 	packed executable 170496 -> 40960 bytes
+
+ [10 november 2012]
+. Generate my first "fat texture"
+ => A white rounded rectangle with tapered borders
+. This texture is used by the light maps computer to influence the local frame for rays
+ => Nice "rounded" look on the borders !
+ => It's just awesome how the system is flexible => I use the original wall TextureBuilder (containing only fat pixels) and ask the builder to convert the fat pixels into a normal map of the appropriate size (i.e. the size of my light maps). All this in 2 lines of code!
+. Modified the "Sample()" and "Get()" functions on the TextureBuilder to sample mips
+. Modified the "CopyFrom()" function to make it sample from the appropriate mip level if the source & target sizes mismatch by a factor>2
+	packed executable 173568 -> 41984 bytes

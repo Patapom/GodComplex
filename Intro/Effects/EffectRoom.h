@@ -12,8 +12,8 @@ class EffectRoom
 {
 private:	// CONSTANTS
 
-	static const int	LIGHTMAP_SIZE = 128;		// Size of the lightmap
-//	static const int	LIGHTMAP_CUBEMAP_SIZE = 32;	// Size of the cube maps rendered for each texel of the light map
+	static const int	LIGHTMAP_SIZE = 256;		// Size of the lightmap
+
 
 protected:	// NESTED TYPES
 

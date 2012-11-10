@@ -8,9 +8,12 @@ TextureBuilder::TextureBuilder( int _Width, int _Height )
 {
 	m_MipLevelsCount = Texture2D::ComputeMipLevelsCount( _Width, _Height, 0 );
 	m_ppBufferGeneric = new Pixel*[m_MipLevelsCount];
+	m_pMipSizes = new int[2*m_MipLevelsCount];
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
 		m_ppBufferGeneric[MipLevelIndex] = new Pixel[_Width*_Height];
+		m_pMipSizes[2*MipLevelIndex+0] = _Width;
+		m_pMipSizes[2*MipLevelIndex+1] = _Height;
 		Texture2D::NextMipSize( _Width, _Height );
 	}
 }
@@ -19,6 +22,7 @@ TextureBuilder::~TextureBuilder()
 {
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 		delete[] m_ppBufferGeneric[MipLevelIndex];
+	delete[] m_pMipSizes;
 	delete[] m_ppBufferGeneric;
 	ReleaseSpecificBuffer();
 }
@@ -29,15 +33,59 @@ const void**	TextureBuilder::GetLastConvertedMips() const
 	return (const void**) m_ppBufferSpecific;
 }
 
-void	CopyFiller( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+namespace Fillers
 {
-	const TextureBuilder&	Source = *((const TextureBuilder*) _pData);
-	Source.SampleClamp( _UV.x * Source.GetWidth(), _UV.y * Source.GetHeight(), _Pixel );
+	struct __FillerSampleStruct
+	{
+		const TextureBuilder*	pSource;
+		int						W, H;
+		int						MipLevel;
+	};
+
+	void	CopyFillerFast( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+	{
+		__FillerSampleStruct*	pStruct = (__FillerSampleStruct*) _pData;
+		pStruct->pSource->SampleClamp( _UV.x * pStruct->W, _UV.y * pStruct->H, 0, _Pixel );
+	}
+
+	void	CopyFiller( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+	{
+		__FillerSampleStruct*	pStruct = (__FillerSampleStruct*) _pData;
+		pStruct->pSource->SampleClamp( _UV.x * pStruct->W, _UV.y * pStruct->H, pStruct->MipLevel, _Pixel );
+	}
+}
+
+void	TextureBuilder::CopyFromFast( const TextureBuilder& _Source )
+{
+	Fillers::__FillerSampleStruct	Param;
+	Param.pSource = &_Source;
+	Param.W = _Source.GetWidth();
+	Param.H = _Source.GetHeight();
+	Fill( Fillers::CopyFillerFast, (void*) &Param );
 }
 
 void	TextureBuilder::CopyFrom( const TextureBuilder& _Source )
 {
-	Fill( CopyFiller, (void*) &_Source );
+	int	MipLevel = 0;
+	if ( _Source.m_Width >= 2*m_Width || _Source.m_Height >= 2*m_Height )
+	{	// The source is more than twice our size, we must generate its mips and sample from the immediately superior mip
+		if ( !_Source.m_bMipLevelsBuilt )
+			_Source.GenerateMips( false );
+
+		float	RatioW = float(_Source.m_Width) / m_Width;
+		float	RatioH = float(_Source.m_Height) / m_Height;
+		float	Ratio = MAX( RatioW, RatioH );	// We need to use the mip level of the worst ratio...
+		float	fMipLevel = log2f( Ratio );		// This is the exact mip we need to sample from
+		MipLevel = floorf( fMipLevel );			// In reality, we sample from the nearest lower mip (for example, if the source is 3.5 larger than the destination, fMipLevel=1.8 and we sample from MipLevel=1 which is well suited to accomodate sizes from 2x to 4x)
+	}
+
+	Fillers::__FillerSampleStruct	Param;
+	Param.pSource = &_Source;
+	Param.W = _Source.m_pMipSizes[2*MipLevel+0];
+	Param.H = _Source.m_pMipSizes[2*MipLevel+1];
+	Param.MipLevel = MipLevel;
+
+	Fill( Fillers::CopyFiller, (void*) &Param );
 }
 
 void	TextureBuilder::Clear( const Pixel& _Pixel )
@@ -69,31 +117,44 @@ void	TextureBuilder::Fill( FillDelegate _Filler, void* _pData )
 	m_bMipLevelsBuilt = false;
 }
 
-void	TextureBuilder::Get( int _X, int _Y, Pixel& _Color ) const
+void	TextureBuilder::Get( int _X, int _Y, int _MipLevel, Pixel& _Color ) const
 {
-	_Color = m_ppBufferGeneric[0][m_Width*_Y+_X];
+	ASSERT( _MipLevel == 0 || m_bMipLevelsBuilt, "You must call GenerateMips() prior getting a pixel from a mip level different than 0!" );
+
+	int		W = m_pMipSizes[(_MipLevel<<1)+0];
+	int		H = m_pMipSizes[(_MipLevel<<1)+1];
+
+	ASSERT( _X >= 0 && _X < W, "X out of range !" );
+	ASSERT( _Y >= 0 && _Y < H, "Y out of range !" );
+
+	_Color = m_ppBufferGeneric[_MipLevel][W*_Y+_X];
 }
 
-void	TextureBuilder::SampleWrap( float _X, float _Y, Pixel& _Pixel ) const
+void	TextureBuilder::SampleWrap( float _X, float _Y, int _MipLevel, Pixel& _Pixel ) const
 {
+	ASSERT( _MipLevel == 0 || m_bMipLevelsBuilt, "You must call GenerateMips() prior sampling from a mip level different than 0!" );
+
+	int		W = m_pMipSizes[(_MipLevel<<1)+0];
+	int		H = m_pMipSizes[(_MipLevel<<1)+1];
+
 	int		X0 = floorf( _X );
 	float	x = _X - X0;
 	float	rx = 1.0f - x;
-	int		X1 = (100*m_Width+X0+1) % m_Width;
-			X0 = (100*m_Width+X0) % m_Width;
+	int		X1 = (100*W+X0+1) % W;
+			X0 = (100*W+X0) % W;
 
 	int		Y0 = floorf( _Y );
 	float	y = _Y - Y0;
 	float	ry = 1.0f - y;
-	int		Y1 = (100*m_Height+Y0+1) % m_Height;
-			Y0 = (100*m_Height+Y0) % m_Height;
+	int		Y1 = (100*H+Y0+1) % H;
+			Y0 = (100*H+Y0) % H;
 
-	ASSERT( X0 >= 0 && X0 < m_Width && X1 >= 0 && X1 < m_Width, "X out of range !" );	// Should never happen
-	ASSERT( Y0 >= 0 && Y0 < m_Height && Y1 >= 0 && Y1 < m_Height, "Y out of range !" );	// Should never happen
-	Pixel&	V00 = m_ppBufferGeneric[0][m_Width*Y0+X0];
-	Pixel&	V01 = m_ppBufferGeneric[0][m_Width*Y0+X1];
-	Pixel&	V10 = m_ppBufferGeneric[0][m_Width*Y1+X0];
-	Pixel&	V11 = m_ppBufferGeneric[0][m_Width*Y1+X1];
+	ASSERT( X0 >= 0 && X0 < W && X1 >= 0 && X1 < W, "X out of range !" );	// Should never happen
+	ASSERT( Y0 >= 0 && Y0 < H && Y1 >= 0 && Y1 < H, "Y out of range !" );	// Should never happen
+	Pixel&	V00 = m_ppBufferGeneric[_MipLevel][W*Y0+X0];
+	Pixel&	V01 = m_ppBufferGeneric[_MipLevel][W*Y0+X1];
+	Pixel&	V10 = m_ppBufferGeneric[_MipLevel][W*Y1+X0];
+	Pixel&	V11 = m_ppBufferGeneric[_MipLevel][W*Y1+X1];
 
 	NjFloat4	V0 = rx * V00.RGBA + x * V01.RGBA;
 	NjFloat4	V1 = rx * V10.RGBA + x * V11.RGBA;
@@ -111,24 +172,29 @@ void	TextureBuilder::SampleWrap( float _X, float _Y, Pixel& _Pixel ) const
 	_Pixel.MatID = V00.MatID;	// Arbitrary!
 }
 
-void	TextureBuilder::SampleClamp( float _X, float _Y, Pixel& _Pixel ) const
+void	TextureBuilder::SampleClamp( float _X, float _Y, int _MipLevel, Pixel& _Pixel ) const
 {
+	ASSERT( _MipLevel == 0 || m_bMipLevelsBuilt, "You must call GenerateMips() prior sampling from a mip level different than 0!" );
+
+	int		W = m_pMipSizes[(_MipLevel<<1)+0];
+	int		H = m_pMipSizes[(_MipLevel<<1)+1];
+
 	int		X0 = floorf( _X );
 	float	x = _X - X0;
 	float	rx = 1.0f - x;
-	int		X1 = CLAMP( (X0+1), 0, m_Width-1 );
-			X0 = CLAMP( X0, 0, m_Width-1 );
+	int		X1 = CLAMP( (X0+1), 0, W-1 );
+			X0 = CLAMP( X0, 0, W-1 );
 
 	int		Y0 = floorf( _Y );
 	float	y = _Y - Y0;
 	float	ry = 1.0f - y;
-	int		Y1 = CLAMP( (Y0+1), 0, m_Height-1 );
-			Y0 = CLAMP( Y0, 0, m_Height-1 );
+	int		Y1 = CLAMP( (Y0+1), 0, H-1 );
+			Y0 = CLAMP( Y0, 0, H-1 );
 
-	Pixel&	V00 = m_ppBufferGeneric[0][m_Width*Y0+X0];
-	Pixel&	V01 = m_ppBufferGeneric[0][m_Width*Y0+X1];
-	Pixel&	V10 = m_ppBufferGeneric[0][m_Width*Y1+X0];
-	Pixel&	V11 = m_ppBufferGeneric[0][m_Width*Y1+X1];
+	Pixel&	V00 = m_ppBufferGeneric[_MipLevel][W*Y0+X0];
+	Pixel&	V01 = m_ppBufferGeneric[_MipLevel][W*Y0+X1];
+	Pixel&	V10 = m_ppBufferGeneric[_MipLevel][W*Y1+X0];
+	Pixel&	V11 = m_ppBufferGeneric[_MipLevel][W*Y1+X1];
 
 	NjFloat4	V0 = rx * V00.RGBA + x * V01.RGBA;
 	NjFloat4	V1 = rx * V10.RGBA + x * V11.RGBA;
