@@ -1,6 +1,6 @@
 #pragma once
 
-#define CODE_WORKSHOP
+//#define CODE_WORKSHOP	// Pour Flure et 'lrik
 
 #define NOISE3D_SIZE	32
 #define NOISE3D_SHIFT	5

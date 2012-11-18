@@ -63,14 +63,15 @@ void	Primitive::Render( Material& _Material, int _StartVertex, int _VerticesCoun
 	U32 Offset = 0;
 	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &m_Stride, &Offset );
 	if ( m_pIB != NULL )
+	{
 		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R16_UINT, 0 );
-	else
-		m_Device.DXContext().IASetIndexBuffer( NULL, DXGI_FORMAT_UNKNOWN, 0 );
-
-	if ( m_pIB != NULL )
 		m_Device.DXContext().DrawIndexed( _IndicesCount, _StartIndex, _BaseVertexOffset );
+	}
 	else
+	{
+		m_Device.DXContext().IASetIndexBuffer( NULL, DXGI_FORMAT_UNKNOWN, 0 );
 		m_Device.DXContext().Draw( _VerticesCount, _StartVertex );
+	}
 }
 
 void	Primitive::RenderInstanced( Material& _Material, int _InstancesCount )
@@ -89,14 +90,15 @@ void	Primitive::RenderInstanced( Material& _Material, int _InstancesCount, int _
 	U32 Offset = 0;
 	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &m_Stride, &Offset );
 	if ( m_pIB != NULL )
+	{
 		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R16_UINT, 0 );
-	else
-		m_Device.DXContext().IASetIndexBuffer( NULL, DXGI_FORMAT_UNKNOWN, 0 );
-
-	if ( m_pIB != NULL )
 		m_Device.DXContext().DrawIndexedInstanced( _IndicesCount, _InstancesCount, _StartIndex, _BaseVertexOffset, 0 );
+	}
 	else
+	{
+		m_Device.DXContext().IASetIndexBuffer( NULL, DXGI_FORMAT_UNKNOWN, 0 );
 		m_Device.DXContext().DrawInstanced( _VerticesCount, _InstancesCount, _StartVertex, 0 );
+	}
 }
 
 void	Primitive::Build( void* _pVertices, U16* _pIndices, bool _bDynamic )
