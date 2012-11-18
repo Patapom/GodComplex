@@ -1,5 +1,7 @@
 #pragma once
 
+#define CODE_WORKSHOP
+
 #define NOISE3D_SIZE	32
 #define NOISE3D_SHIFT	5
 

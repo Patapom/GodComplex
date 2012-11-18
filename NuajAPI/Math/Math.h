@@ -218,6 +218,7 @@ class   NjHalf
 public:
 	U16 raw;
 
+	NjHalf()	{ raw=0; }
 	NjHalf( float value );
 	operator float() const;
 };

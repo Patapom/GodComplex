@@ -28,7 +28,7 @@ private:	// NESTED TYPES
 
 	struct	CBData
 	{
-		NjFloat4	Params;				// X=AspectRaio*tan(FOV/2)  Y=tan(FOV/2)  Z=Near  W=Far
+		NjFloat4	Params;				// X=AspectRatio*tan(FOV/2)  Y=tan(FOV/2)  Z=Near  W=Far
 		NjFloat4x4	Camera2World;
 		NjFloat4x4	World2Camera;
 		NjFloat4x4	Camera2Proj;

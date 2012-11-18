@@ -167,6 +167,8 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 
 		m_pCB_Diffusion->UpdateData();
 
+gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), NULL );
+
 		m_pRTZBuffer->SetPS( 10 );
 
 		// Diffuse light through multiple passes

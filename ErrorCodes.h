@@ -28,3 +28,4 @@
 #define ERR_EFFECT_INTRO				1000	// The main intro program
 #define ERR_EFFECT_TRANSLUCENCY			2000
 #define ERR_EFFECT_ROOM					3000
+#define ERR_EFFECT_PARTICLES			4000

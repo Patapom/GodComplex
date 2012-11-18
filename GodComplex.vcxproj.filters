@@ -74,6 +74,9 @@
     <Filter Include="Resources\Shaders\DEBUG\EffectRoom">
       <UniqueIdentifier>{3994ffd7-88e3-4ed0-9553-c919a2b06f67}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\EffectParticles">
+      <UniqueIdentifier>{66bf50ff-cb5b-4b26-ab07-09e9871a9ec0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\Events.h">
@@ -195,6 +198,9 @@
     <ClInclude Include="Procedural\FatPixel.h">
       <Filter>Procedural\2D</Filter>
     </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectParticles.h">
+      <Filter>Intro\Effects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -294,6 +300,9 @@
     <ClCompile Include="RendererD3D11\Components\ComputeShader.cpp">
       <Filter>RendererD3D11\Components</Filter>
     </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectParticles.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib">
@@ -363,6 +372,12 @@
     </None>
     <None Include="Resources\Shaders\Inc\RayTracing.fx">
       <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
+    <None Include="Resources\Shaders\ParticlesCompute.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectParticles</Filter>
+    </None>
+    <None Include="Resources\Shaders\ParticlesDisplay.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectParticles</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

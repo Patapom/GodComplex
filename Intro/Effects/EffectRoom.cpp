@@ -30,7 +30,7 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 	m_LightUpTime.Set( _frand( LightUpTimeBase-LightUpTimeVariance, LightUpTimeBase+LightUpTimeVariance ), _frand( LightUpTimeBase-LightUpTimeVariance, LightUpTimeBase+LightUpTimeVariance ), _frand( LightUpTimeBase-LightUpTimeVariance, LightUpTimeBase+LightUpTimeVariance ), _frand( LightUpTimeBase-LightUpTimeVariance, LightUpTimeBase+LightUpTimeVariance ) );
 	m_LightFailTimer = NjFloat4::Zero;
 
-// 	// Test tessealation shader
+// 	// Test tesselation shader
 // 	{
 // 		CHECK_MATERIAL( m_pMatTestTesselation = CreateMaterial( IDR_SHADER_ROOM_TESSELATION, VertexFormatP3T2::DESCRIPTOR, "VS", "HS", "DS", NULL, "PS" ), 3 );
 // 		CHECK_MATERIAL( m_pCSTest = CreateComputeShader( IDR_SHADER_ROOM_TEST_COMPUTE, "CS" ), 4 );
@@ -140,7 +140,8 @@ void	EffectRoom::Render( float _Time, float _DeltaTime )
 	//////////////////////////////////////////////////////////////////////////
 	// Display the room
 	//
- 	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4::Zero );
+//	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4::Zero );
+//	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
 	gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), &gs_Device.DefaultDepthStencil() );
 	gs_Device.SetStates( gs_Device.m_pRS_CullNone, gs_Device.m_pDS_ReadWriteLess, gs_Device.m_pBS_Disabled );
 

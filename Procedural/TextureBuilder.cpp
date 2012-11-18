@@ -42,11 +42,11 @@ namespace Fillers
 		int						MipLevel;
 	};
 
-	void	CopyFillerFast( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
-	{
-		__FillerSampleStruct*	pStruct = (__FillerSampleStruct*) _pData;
-		pStruct->pSource->SampleClamp( _UV.x * pStruct->W, _UV.y * pStruct->H, 0, _Pixel );
-	}
+// 	void	CopyFillerFast( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+// 	{
+// 		__FillerSampleStruct*	pStruct = (__FillerSampleStruct*) _pData;
+// 		pStruct->pSource->SampleClamp( _UV.x * pStruct->W, _UV.y * pStruct->H, 0, _Pixel );
+// 	}
 
 	void	CopyFiller( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 	{
@@ -61,7 +61,9 @@ void	TextureBuilder::CopyFromFast( const TextureBuilder& _Source )
 	Param.pSource = &_Source;
 	Param.W = _Source.GetWidth();
 	Param.H = _Source.GetHeight();
-	Fill( Fillers::CopyFillerFast, (void*) &Param );
+	Param.MipLevel = 0;
+//	Fill( Fillers::CopyFillerFast, (void*) &Param );
+	Fill( Fillers::CopyFiller, (void*) &Param );
 }
 
 void	TextureBuilder::CopyFrom( const TextureBuilder& _Source )

@@ -4,6 +4,7 @@
 
 #include "Effects/EffectTranslucency.h"
 #include "Effects/EffectRoom.h"
+#include "Effects/EffectParticles.h"
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) return ErrorCode;
 #define CHECK_EFFECT( pEffect, ErrorCode )			{ int EffectError = (pEffect)->GetErrorCode(); if ( EffectError != 0 ) return ErrorCode + EffectError; }
@@ -27,6 +28,7 @@ static CB<CBTest>*		gs_pCB_Test = NULL;
 // Effects
 static EffectTranslucency*	gs_pEffectTranslucency = NULL;
 static EffectRoom*			gs_pEffectRoom = NULL;
+static EffectParticles*		gs_pEffectParticles = NULL;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -85,8 +87,17 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create effects
 	{
-//		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
+#ifndef CODE_WORKSHOP
+
+#ifdef DIRECTX11
 		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), ERR_EFFECT_ROOM );
+#else
+		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
+#endif
+
+#else
+		CHECK_EFFECT( gs_pEffectParticles = new EffectParticles(), ERR_EFFECT_PARTICLES );
+#endif
 	}
 
 	return 0;
@@ -97,6 +108,7 @@ void	IntroExit()
 	// Release effects
 	delete gs_pEffectTranslucency;
 	delete gs_pEffectRoom;
+	delete gs_pEffectParticles;
 
 	// Release constant buffers
 	delete gs_pCB_Test;
@@ -117,21 +129,19 @@ void	IntroExit()
 	delete gs_pCamera;
 }
 
+#ifndef CODE_WORKSHOP
 bool	IntroDo( float _Time, float _DeltaTime )
 {
-//	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
-	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.5f, 0.25f, 0.125f, 0.0f ) );
-	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
-
 	// Upload global parameters
 	gs_pCB_Global->m.Time.Set( _Time, _DeltaTime, 1.0f / _Time, 1.0f / _DeltaTime );
 	gs_pCB_Global->UpdateData();
+
+#ifdef DIRECTX11
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update the camera settings and upload its data to the shaders
 
 	// TODO: Animate camera...
-//	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(0.8f), _TV(1.4f) ), NjFloat3( 0.0f, 0.8f, 0.0f ), NjFloat3::UnitY );
 	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(1.5f), _TV(1.4f) ), NjFloat3( 0.0f, 1.7f, 0.0f ), NjFloat3::UnitY );
 
 	gs_pCamera->Upload( 0 );
@@ -139,11 +149,28 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Render some shit to the HDR buffer
-	gs_Device.SetRenderTarget( *gs_pRTHDR, &gs_Device.DefaultDepthStencil() );
+	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
+	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
+//	gs_Device.SetRenderTarget( *gs_pRTHDR, &gs_Device.DefaultDepthStencil() );
 
 	gs_pEffectRoom->Render( _Time, _DeltaTime );
 
-/*
+#else
+
+	//////////////////////////////////////////////////////////////////////////
+	// Update the camera settings and upload its data to the shaders
+
+	// TODO: Animate camera...
+	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(0.8f), _TV(1.4f) ), NjFloat3( 0.0f, 0.8f, 0.0f ), NjFloat3::UnitY );
+
+	gs_pCamera->Upload( 0 );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Render the effects
+//	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
+	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.5f, 0.25f, 0.125f, 0.0f ) );
+	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
+
 	gs_pEffectTranslucency->Render( _Time, _DeltaTime );
 
 	// Setup default states
@@ -166,10 +193,59 @@ bool	IntroDo( float _Time, float _DeltaTime )
 		gs_pPrimQuad->Render( M );
 
 	USING_MATERIAL_END
-//*/
+
+#endif
+
+
+// 	//////////////////////////////////////////////////////////////////////////
+// 	// Render particles only
+// 
+// 	// TODO: Animate camera...
+// 	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(1.5f), _TV(2.0f) ), NjFloat3( 0.0f, 1.5f, 0.0f ), NjFloat3::UnitY );
+// 	gs_pCamera->Upload( 0 );
+// 
+// 
+// 	//////////////////////////////////////////////////////////////////////////
+// 	// Render some shit to the HDR buffer
+// 	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
+// 
+// 	gs_pEffectParticles->Render( _Time, _DeltaTime );
+
 
 	// Present !
 	gs_Device.DXSwapChain().Present( 0, 0 );
 
 	return true;	// True means continue !
 }
+
+#else	// CODE WORKSHOP
+
+bool	IntroDo( float _Time, float _DeltaTime )
+{
+	// Upload global parameters
+	gs_pCB_Global->m.Time.Set( _Time, _DeltaTime, 1.0f / _Time, 1.0f / _DeltaTime );
+	gs_pCB_Global->UpdateData();
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Render particles only
+
+	// TODO: Animate camera...
+	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(1.5f), _TV(2.0f) ), NjFloat3( 0.0f, 1.5f, 0.0f ), NjFloat3::UnitY );
+	gs_pCamera->Upload( 0 );
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Render some shit to the HDR buffer
+	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
+
+	gs_pEffectParticles->Render( _Time, _DeltaTime );
+
+	// Present !
+	gs_Device.DXSwapChain().Present( 0, 0 );
+
+	return true;	// True means continue !
+}
+
+
+#endif
