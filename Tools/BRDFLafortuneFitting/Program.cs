@@ -217,6 +217,16 @@ namespace BRDFLafortuneFitting
 				if ( LobesCount <= 0 || LobesCount > 100 )
 					throw new Exception( "Number of lobes must be in [1,100]!" );
 
+				// Attempt to create the target file first, just to ensure we don't bump into a problem after the lengthy minimization process...
+				try
+				{
+					using ( TargetFile.Create() ) {}
+				}
+				catch ( Exception _e )
+				{
+					throw new Exception( "Failed to create the target coefficients file: " + _e.Message );
+				}
+
 				// Load the BRDF
 				double[][]	BRDF = LoadBRDF( SourceBRDF );
 
@@ -268,8 +278,11 @@ namespace BRDFLafortuneFitting
 				{
 					for ( int ThetaDiffIndex=0; ThetaDiffIndex < SAMPLES_COUNT_THETA; ThetaDiffIndex++ )
 					{
-						for ( int ThetaHalfIndex=0; ThetaHalfIndex < SAMPLES_COUNT_THETA; ThetaHalfIndex++, BRDFSampleIndex++ )
+						for ( int ThetaHalfIndex=0; ThetaHalfIndex < SAMPLES_COUNT_THETA; ThetaHalfIndex++ )
 						{
+							BRDFSample	Sample = new BRDFSample();
+							ms_BRDFSamples[BRDFSampleIndex++] = Sample;
+
 							// Generate random stratified samples
 							double	PhiDiff = dPhi * (PhiDiffIndex + RNG.NextDouble());
 							double	ThetaDiff = dTheta * (ThetaDiffIndex + RNG.NextDouble());
@@ -283,10 +296,10 @@ namespace BRDFLafortuneFitting
 								TableIndex += (BRDF_SAMPLING_RES_PHI_D / 2) * ThetaDiff_index( ThetaDiff );
 								TableIndex += (BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D / 2) * ThetaHalf_index( ThetaHalf );
 
-							ms_BRDFSamples[BRDFSampleIndex].m_BRDFIndex = TableIndex;
+							Sample.m_BRDFIndex = TableIndex;
 
 							// Build the dot product coefficients
-							ms_BRDFSamples[BRDFSampleIndex].m_DotProduct.Set(
+							Sample.m_DotProduct.Set(
 								In.x*Out.x,
 								In.y*Out.y,
 								In.z*Out.z
@@ -297,21 +310,59 @@ namespace BRDFLafortuneFitting
 
 				// Show modeless progress form
 				ms_ProgressForm = new ProgressForm();
+				ms_ProgressForm.Show();
+				ms_ProgressForm.BRDFComponentIndex = 0;
+				ms_ProgressForm.Progress = 0.0;
 
 				// Perform local minimization for each R,G,B component
 				CosineLobe[][]	CosineLobes = new CosineLobe[3][];
 				double[][]		RMSErrors = new double[3][];
-				for ( int ComponentIndex=0; ComponentIndex < 3; ComponentIndex++ )
+				try
 				{
-					CosineLobes[ComponentIndex] = new CosineLobe[LobesCount];
-					RMSErrors[ComponentIndex] = new double[LobesCount];
+					for ( int ComponentIndex=2; ComponentIndex < 3; ComponentIndex++ )
+					{
+						CosineLobes[ComponentIndex] = new CosineLobe[LobesCount];
+						RMSErrors[ComponentIndex] = new double[LobesCount];
 
-					ms_ProgressForm.BRDFComponentIndex = ComponentIndex;
+						ms_ProgressForm.BRDFComponentIndex = ComponentIndex;
 
-					FitBRDF( BRDF[ComponentIndex], CosineLobes[ComponentIndex], 1, BFGS_CONVERGENCE_TOLERANCE, RMSErrors[ComponentIndex], ShowProgress );
+						FitBRDF( BRDF[ComponentIndex], CosineLobes[ComponentIndex], 1, BFGS_CONVERGENCE_TOLERANCE, RMSErrors[ComponentIndex], ShowProgress );
+					}
+				}
+				catch ( Exception _e )
+				{
+					throw new Exception( "BRDF Fitting failed: " + _e.Message );
 				}
 
 				ms_ProgressForm.Dispose();
+
+				// Save the result
+				try
+				{
+					using ( FileStream Stream = TargetFile.Create() )
+						using ( BinaryWriter Writer = new BinaryWriter( Stream ) )
+						{
+							// Write the amount of lobes
+							Writer.Write( LobesCount );
+
+							// Write the coefficients
+							for ( int ComponentIndex=0; ComponentIndex < 3; ComponentIndex++ )
+							{
+								for ( int LobeIndex=0; LobeIndex < LobesCount; LobeIndex++ )
+								{
+									CosineLobe	Lobe = CosineLobes[ComponentIndex][LobeIndex];
+									Writer.Write( Lobe.C.x );
+									Writer.Write( Lobe.C.y );
+									Writer.Write( Lobe.C.z );
+									Writer.Write( Lobe.N );
+								}
+							}
+						}
+				}
+				catch ( Exception _e )
+				{
+					throw new Exception( "Error writing the result cosine lobe coefficients: " + _e.Message );
+				}
 			}
 			catch ( Exception _e )
 			{
@@ -331,11 +382,12 @@ namespace BRDFLafortuneFitting
 		/// </summary>
 		/// <param name="_BRDF">The BRDF to fit into cosine lobes</param>
 		/// <param name="_Lobes">The array of resulting cosine lobes</param>
-		/// <param name="_InitialCoefficientsAttemptsCount">The amount of attempts with different initial coefficients</param>
+		/// <param name="_InitialGuesses">An array of initial lobe coefficients</param>
 		/// <param name="_BFGSConvergenceTolerance">The convergence tolerance for the BFGS algorithm (the lower the tolerance, the longer it will compute)</param>
 		/// <param name="_RMS">The resulting array of RMS errors for each cosine lobe</param>
 		/// <param name="_Delegate">An optional delegate to pass the method to get feedback about the mapping as it can be a lengthy process (!!)</param>
-		private static void		FitBRDF( double[] _BRDF, CosineLobe[] _Lobes, int _InitialCoefficientsAttemptsCount, double _BFGSConvergenceTolerance, double[] _RMS, BRDFMappingFeedback _Delegate )
+		/// <returns>The global minimum for all the cosine lobes put together</returns>
+		private static double		FitBRDF( double[] _BRDF, CosineLobe[] _Lobes, CosineLobe[] _InitialGuesses, double _BFGSConvergenceTolerance, double[] _RMS, BRDFMappingFeedback _Delegate )
 		{
 			int			LobesCount = _Lobes.GetLength( 0 );
 
@@ -375,16 +427,16 @@ namespace BRDFLafortuneFitting
 
 					// 1.1.1] Set the initial lobe coefficients
 					// TODO: Guess various initial directions (at the time we assume _InitialCoefficientsAttemptsCount == 1)
-					Context.m_Lobes[LobeIndex].C.Set( -1, -1, 1 );	// Standard Phong reflection
-					Context.m_Lobes[LobeIndex].N = 1;
+					Context.m_Lobes[0].C.Set( -1, -1, 1 );	// Standard Phong reflection
+					Context.m_Lobes[0].N = 1;
 
 //					Context.m_LobeDirection = RandomInitialDirections[DirectionIndex++];
 
 					// 1.1.2] Copy coefficients into working array
-					LocalLobeCoefficients[1+0] = Context.m_Lobes[LobeIndex].C.x;
-					LocalLobeCoefficients[1+1] = Context.m_Lobes[LobeIndex].C.y;
-					LocalLobeCoefficients[1+2] = Context.m_Lobes[LobeIndex].C.z;
-					LocalLobeCoefficients[1+3] = Context.m_Lobes[LobeIndex].N;
+					LocalLobeCoefficients[1+0] = Context.m_Lobes[0].C.x;
+					LocalLobeCoefficients[1+1] = Context.m_Lobes[0].C.y;
+					LocalLobeCoefficients[1+2] = Context.m_Lobes[0].C.z;
+					LocalLobeCoefficients[1+3] = Context.m_Lobes[0].N;
 
 					//////////////////////////////////////////////////////////////////////////
 					// At this point, we have a fixed direction and the best estimated ZH coefficients to map the provided SH in this direction.
@@ -411,8 +463,8 @@ namespace BRDFLafortuneFitting
 					MinError = FunctionMinimum;
 
 					// Save that "optimal" lobe data
-					_Lobes[LobeIndex].C.Set( Context.m_Lobes[LobeIndex].C.x, Context.m_Lobes[LobeIndex].C.y, Context.m_Lobes[LobeIndex].C.z );
-					_Lobes[LobeIndex].N = Context.m_Lobes[LobeIndex].N;
+					_Lobes[LobeIndex].C.Set( Context.m_Lobes[0].C.x, Context.m_Lobes[0].C.y, Context.m_Lobes[0].C.z );
+					_Lobes[LobeIndex].N = Context.m_Lobes[0].N;
 
 					_RMS[LobeIndex] = FunctionMinimum;
 				}
@@ -421,15 +473,19 @@ namespace BRDFLafortuneFitting
 				// 1.2] At this point, we have the "best" cosine lobe fit for the given BRDF
 				// We must subtract the influence of that lobe from the current BRDF and restart fitting with a new lobe...
 				//
-				CosineLobe	LobeToSubtract = Context.m_Lobes[LobeIndex];
+				CosineLobe	LobeToSubtract = Context.m_Lobes[0];
 				for ( int SampleIndex=0; SampleIndex < ms_BRDFSamples.Length; SampleIndex++ )
 				{
 					BRDFSample	Sample = ms_BRDFSamples[SampleIndex];
 
 					double		LobeInfluence = Sample.m_DotProduct.x*LobeToSubtract.C.x + Sample.m_DotProduct.y*LobeToSubtract.C.y + Sample.m_DotProduct.z*LobeToSubtract.C.z;
+								LobeInfluence = Math.Max( EPS, LobeInfluence );
 								LobeInfluence = Math.Pow( LobeInfluence, LobeToSubtract.N );
 
-					Context.m_BRDF[SampleIndex] -= LobeInfluence;
+					double		CurrentBRDFValue = Context.m_BRDF[SampleIndex];
+								CurrentBRDFValue -= LobeInfluence;
+
+					Context.m_BRDF[SampleIndex] = CurrentBRDFValue;
 				}
 			}
 
@@ -439,7 +495,7 @@ namespace BRDFLafortuneFitting
 			// We will finally apply a global BFGS minimzation using all of the total cosine lobes
 			//
 			double[]	GlobalLobeCoefficients = new double[1+4*_Lobes.Length];	// Don't forget the BFGS function annoyingly uses indices starting from 1!
-			ms_TempCoefficientsGlobal = new double[1+4*_Lobes.Length];	// Don't forget the BFGS function annoyingly uses indices starting from 1!
+			ms_TempCoefficientsGlobal = new double[1+4*_Lobes.Length];
 
 			// 2.1] Re-assign the original BRDF to which we compare to
 			Context.m_BRDF = _BRDF;
@@ -482,6 +538,8 @@ namespace BRDFLafortuneFitting
 			// Give final 100% feedback
 			if ( _Delegate != null )
 				_Delegate( 1.0f );
+
+			return FunctionMinimumGlobal;
 		}
 
 		#region BFGS Minimization
@@ -513,18 +571,17 @@ namespace BRDFLafortuneFitting
 
 			double	Normalizer = 1.0 / ms_BRDFSamples.Length;
 
-			// Copy coefficients as we will offset each of them a little
-			_Coefficients.CopyTo( ms_TempCoefficientsLocal, 0 );
-
 			// Compute derivatives for each coefficient
 			_Gradients[0] = 0.0;
 			for ( int DerivativeIndex=1; DerivativeIndex < _Coefficients.Length; DerivativeIndex++ )
 			{
-				ms_TempCoefficientsLocal[DerivativeIndex] += DERIVATIVE_OFFSET;	// Add a tiny delta for derivative estimate
+				// Copy coefficients and add a tiny delta for derivative estimate
+				_Coefficients.CopyTo( ms_TempCoefficientsLocal, 0 );
+				ms_TempCoefficientsLocal[DerivativeIndex] += DERIVATIVE_OFFSET;
 
 				// Copy current coefficients into the current cosine lobe
 				Context.m_Lobes[0].C.Set( ms_TempCoefficientsLocal[1], ms_TempCoefficientsLocal[2], ms_TempCoefficientsLocal[3] );	// Remember those stupid coefficients are indexed from 1!
-				Context.m_Lobes[0].N = ms_TempCoefficientsLocal[4];
+				Context.m_Lobes[0].N = Math.Max( EPS, ms_TempCoefficientsLocal[4] );	// Exponents are constrained to be strictly positive!
 
 				// Sum differences between current ZH estimates and current SH goal estimates
 				double	SumSquareDifference = ComputeSummedDifferences( ms_BRDFSamples, Normalizer, Context.m_BRDF, Context.m_Lobes );
@@ -568,22 +625,21 @@ namespace BRDFLafortuneFitting
 
 			double	Normalizer = 1.0 / ms_BRDFSamples.Length;
 
-			// Copy coefficients as we will offset each of them a little
-			_Coefficients.CopyTo( ms_TempCoefficientsGlobal, 0 );
-
 			// Compute derivatives for each coefficient
 			_Gradients[0] = 0.0;
 			for ( int DerivativeIndex=1; DerivativeIndex < _Coefficients.Length; DerivativeIndex++ )
 			{
-				ms_TempCoefficientsLocal[DerivativeIndex] += DERIVATIVE_OFFSET;	// Add a tiny delta for derivative estimate
+				// Copy coefficients and add a tiny delta for derivative estimate
+				_Coefficients.CopyTo( ms_TempCoefficientsGlobal, 0 );
+				ms_TempCoefficientsGlobal[DerivativeIndex] += DERIVATIVE_OFFSET;	// Add a tiny delta for derivative estimate
 
 				// Copy current coefficients into the current cosine lobes
 				for ( int LobeIndex=0; LobeIndex < Context.m_Lobes.Length; LobeIndex++ )
 				{
 					CosineLobe	Lobe = Context.m_Lobes[LobeIndex];
 					int			CoeffOffset = 1+4*LobeIndex;	// Remember those stupid coefficients are indexed from 1!
-					Lobe.C.Set( _Coefficients[CoeffOffset+0], _Coefficients[CoeffOffset+1], _Coefficients[CoeffOffset+2] );
-					Lobe.N = _Coefficients[CoeffOffset+3];
+					Lobe.C.Set( ms_TempCoefficientsGlobal[CoeffOffset+0], ms_TempCoefficientsGlobal[CoeffOffset+1], ms_TempCoefficientsGlobal[CoeffOffset+2] );
+					Lobe.N = Math.Max( EPS, ms_TempCoefficientsGlobal[CoeffOffset+3] );	// Exponents are constrained to be strictly positive!
 				}
 
 				// Sum differences between current ZH estimates and current SH goal estimates
@@ -608,7 +664,7 @@ namespace BRDFLafortuneFitting
 		{
 			// Sum differences between current ZH estimates and current SH goal estimates
 			double	SumSquareDifference = 0.0;
-			double		GoalValue, CurrentValue, TempLobeDot;
+			double	GoalValue, CurrentValue, TempLobeDot;
 
 			int		SamplesCount = _Samples.Length;
 			int		LobesCount = _LobeEstimates.Length;
@@ -625,6 +681,7 @@ namespace BRDFLafortuneFitting
 				{
 					CosineLobe	Lobe = _LobeEstimates[LobeIndex];
 					TempLobeDot = Lobe.C.x * Sample.m_DotProduct.x + Lobe.C.y * Sample.m_DotProduct.y + Lobe.C.z * Sample.m_DotProduct.z;
+					TempLobeDot = Math.Max( EPS, TempLobeDot );
 					TempLobeDot = Math.Pow( TempLobeDot, Lobe.N );
 					CurrentValue += TempLobeDot;
 				}
