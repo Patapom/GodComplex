@@ -78,7 +78,11 @@ namespace BRDFLafortuneFitting
 	{
 		#region CONSTANTS
 
+		const int		SAMPLES_COUNT_THETA = 40;	// The total amount of samples will thus be (2*SAMPLES_COUNT_THETA)*SAMPLES_COUNT_THETA*SAMPLES_COUNT_THETA
+		const int		TOTAL_SAMPLES_COUNT = 2*SAMPLES_COUNT_THETA*SAMPLES_COUNT_THETA*SAMPLES_COUNT_THETA;
 
+		const double	BFGS_CONVERGENCE_TOLERANCE = 1e-3;		// Don't exit unless we reach below this threshold...
+		const double	DERIVATIVE_OFFSET = 1e-3;
 
 		#endregion
 
@@ -150,10 +154,17 @@ namespace BRDFLafortuneFitting
 			}
 		}
 
-		class	LocalFitEvaluationContext
+		class	BRDFSample
 		{
-			public double[]		m_BRDF = null;				// The temporary BRDF coefficients
-			public CosineLobe	m_Lobe = new CosineLobe();	// The current cosine lobe coefficients
+			public int			m_BRDFIndex = 0;				// The flattened index in the BRDF table
+			public Vector3		m_DotProduct = new Vector3();	// The 3 coefficients of the dot product between the incoming/outgoing directions corresponding to the BRDF index
+		}
+
+		class	BRDFFitEvaluationContext
+		{
+			public double[]		m_BRDF = null;					// The temporary BRDF coefficients
+			public CosineLobe[]	m_Lobes = null;					// The current cosine lobe coefficients
+			public double		m_SumSquareDifference = 0;
 		}
 
 		/// <summary>
@@ -171,6 +182,18 @@ namespace BRDFLafortuneFitting
 		/// <param name="_Gradient">The evaluated gradient</param>
 		/// <param name="_Params">User params</param>
 		protected delegate void		BFGSFunctionGradientEval( double[] _Coefficients, double[] _Gradients, object _Params );
+
+		/// <summary>
+		/// The delegate to use to receive feedback for the mapping method "MapSHIntoZH()"
+		/// </summary>
+		/// <param name="_Progress">A value in [0,1] indicating mapping progress</param>
+		protected delegate void		BRDFMappingFeedback( double _Progress );
+
+		#endregion
+
+		#region FIELDS
+
+		static BRDFSample[]		ms_BRDFSamples = new BRDFSample[TOTAL_SAMPLES_COUNT];
 
 		#endregion
 
@@ -198,39 +221,97 @@ namespace BRDFLafortuneFitting
 				double[][]	BRDF = LoadBRDF( SourceBRDF );
 
 				// DEBUG CHECK
-				{	// Generate a bunch of incoming/outgoing directions, get their Half/Diff angles then regenerate back incoming/outgoing directions from these angles and check the relative incoming/outgoing directions are conserved
-					// This is important to ensure we sample only the relevant (i.e. changing) parts of the BRDF in our minimization scheme
-					// (I want to actually sample the BRDF using the half/diff angles and generate incoming/outgoing vectors from these, rather than sample all the possible 4D space)
-					//
-					Random	RNG = new Random( 1 );
-					for ( int i=0; i < 10000; i++ )
-					{
-						double	Phi_i = 2.0 * Math.PI * RNG.NextDouble();
-						double	Theta_i = 0.5 * Math.PI * RNG.NextDouble();
-						double	Phi_r = 2.0 * Math.PI * RNG.NextDouble();
-						double	Theta_r = 0.5 * Math.PI * RNG.NextDouble();
-
-						double	Theta_half, Phi_half, Theta_diff, Phi_diff;
-						std_coords_to_half_diff_coords( Theta_i, Phi_i, Theta_r, Phi_r, out Theta_half, out Phi_half, out Theta_diff, out Phi_diff );
-
-						// Convert back...
-						double	NewTheta_i, NewPhi_i, NewTheta_r, NewPhi_r;
-						half_diff_coords_to_std_coords( Theta_half, Phi_half, Theta_diff, Phi_diff, out NewTheta_i, out NewPhi_i, out NewTheta_r, out NewPhi_r );
-
-						// Check
-						const double Tol = 1e-4;
-						if ( Math.Abs( NewTheta_i - Theta_i ) > Tol
-							|| Math.Abs( NewTheta_r - Theta_r ) > Tol )
-							throw new Exception( "ARGH!" );
-						if ( Math.Abs( NewPhi_i - Phi_i ) > Tol
-							|| Math.Abs( NewPhi_r - Phi_r ) > Tol )
-							throw new Exception( "ARGH!" );
-					}
-				}
+// 				{	// Generate a bunch of incoming/outgoing directions, get their Half/Diff angles then regenerate back incoming/outgoing directions from these angles and check the relative incoming/outgoing directions are conserved
+// 					// This is important to ensure we sample only the relevant (i.e. changing) parts of the BRDF in our minimization scheme
+// 					// (I want to actually sample the BRDF using the half/diff angles and generate incoming/outgoing vectors from these, rather than sample all the possible 4D space)
+// 					//
+// 					Random	RNG = new Random( 1 );
+// 					for ( int i=0; i < 10000; i++ )
+// 					{
+// 						double	Phi_i = 2.0 * Math.PI * (RNG.NextDouble() - 0.5);
+// 						double	Theta_i = 0.5 * Math.PI * RNG.NextDouble();
+// 						double	Phi_r = 2.0 * Math.PI * (RNG.NextDouble() - 0.5);
+// 						double	Theta_r = 0.5 * Math.PI * RNG.NextDouble();
+// 
+// 						double	Theta_half, Phi_half, Theta_diff, Phi_diff;
+// 						std_coords_to_half_diff_coords( Theta_i, Phi_i, Theta_r, Phi_r, out Theta_half, out Phi_half, out Theta_diff, out Phi_diff );
+// 
+// 						// Convert back...
+// 						double	NewTheta_i, NewPhi_i, NewTheta_r, NewPhi_r;
+// 						half_diff_coords_to_std_coords( Theta_half, Phi_half, Theta_diff, Phi_diff, out NewTheta_i, out NewPhi_i, out NewTheta_r, out NewPhi_r );
+// 
+// 						// Check
+// 						const double Tol = 1e-4;
+// 						if ( Math.Abs( NewTheta_i - Theta_i ) > Tol
+// 							|| Math.Abs( NewTheta_r - Theta_r ) > Tol )
+// 							throw new Exception( "ARGH THETA!" );
+// 						if ( Math.Abs( NewPhi_i - Phi_i ) > Tol
+// 							|| Math.Abs( NewPhi_r - Phi_r ) > Tol )
+// 							throw new Exception( "ARGH PHI!" );
+// 					}
+// 				}
 				// DEBUG CHECK
 
-				// 
+				// Generate the sampling base
+				// => We generate and store as many samples as possible in the 90*90*360/2 source array
+				// => We generate the associated incoming/outgoing direction
+				// => We store the 3 dot product coefficients for the sample, which we will use to evaluate the cosine lobe
+				//
+				Random	RNG = new Random( 1 );
+				double	dPhi = Math.PI / (2*SAMPLES_COUNT_THETA);
+				double	dTheta = 0.5*Math.PI / SAMPLES_COUNT_THETA;
 
+				Vector3	In = new Vector3();
+				Vector3	Out = new Vector3();
+				int		BRDFSampleIndex = 0;
+				for ( int PhiDiffIndex=0; PhiDiffIndex < 2*SAMPLES_COUNT_THETA; PhiDiffIndex++ )
+				{
+					for ( int ThetaDiffIndex=0; ThetaDiffIndex < SAMPLES_COUNT_THETA; ThetaDiffIndex++ )
+					{
+						for ( int ThetaHalfIndex=0; ThetaHalfIndex < SAMPLES_COUNT_THETA; ThetaHalfIndex++, BRDFSampleIndex++ )
+						{
+							// Generate random stratified samples
+							double	PhiDiff = dPhi * (PhiDiffIndex + RNG.NextDouble());
+							double	ThetaDiff = dTheta * (ThetaDiffIndex + RNG.NextDouble());
+							double	ThetaHalf = dTheta * (ThetaHalfIndex + RNG.NextDouble());
+
+							// Retrieve incoming/outgoing vectors
+							half_diff_coords_to_std_coords( ThetaHalf, 0.0, ThetaDiff, PhiDiff, ref In, ref Out );
+
+							// Build the general BRDF index
+							int	TableIndex = PhiDiff_index( PhiDiff );
+								TableIndex += (BRDF_SAMPLING_RES_PHI_D / 2) * ThetaDiff_index( ThetaDiff );
+								TableIndex += (BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D / 2) * ThetaHalf_index( ThetaHalf );
+
+							ms_BRDFSamples[BRDFSampleIndex].m_BRDFIndex = TableIndex;
+
+							// Build the dot product coefficients
+							ms_BRDFSamples[BRDFSampleIndex].m_DotProduct.Set(
+								In.x*Out.x,
+								In.y*Out.y,
+								In.z*Out.z
+								);
+						}
+					}
+				}
+
+				// Show modeless progress form
+				ms_ProgressForm = new ProgressForm();
+
+				// Perform local minimization for each R,G,B component
+				CosineLobe[][]	CosineLobes = new CosineLobe[3][];
+				double[][]		RMSErrors = new double[3][];
+				for ( int ComponentIndex=0; ComponentIndex < 3; ComponentIndex++ )
+				{
+					CosineLobes[ComponentIndex] = new CosineLobe[LobesCount];
+					RMSErrors[ComponentIndex] = new double[LobesCount];
+
+					ms_ProgressForm.BRDFComponentIndex = ComponentIndex;
+
+					FitBRDF( BRDF[ComponentIndex], CosineLobes[ComponentIndex], 1, BFGS_CONVERGENCE_TOLERANCE, RMSErrors[ComponentIndex], ShowProgress );
+				}
+
+				ms_ProgressForm.Dispose();
 			}
 			catch ( Exception _e )
 			{
@@ -238,225 +319,155 @@ namespace BRDFLafortuneFitting
 			}
 		}
 
+		private static ProgressForm	ms_ProgressForm = null;
+		private static void		ShowProgress( double _Progress )
+		{
+			ms_ProgressForm.Progress = _Progress;
+		}
+
 		/// <summary>
 		/// Performs mapping of a BRDF into N sets of cosine lobes coefficients
 		/// WARNING: Takes hell of a time to compute !
 		/// </summary>
 		/// <param name="_BRDF">The BRDF to fit into cosine lobes</param>
-		/// <param name="_ZHAxes">The double array of resulting ZH axes (i.e. [θ,ϕ] couples)</param>
-		/// <param name="_ZHCoefficients">The double array of resulting ZH coefficients (the dimension of the outter array gives the amount of requested ZH lobes while the dimension of the inner arrays should be of size "_Order")</param>
-		/// <param name="_HemisphereResolution">The resolution of the hemisphere used to perform initial guess of directions (e.g. using a resolution of 100 will test for 20 * (4*20) possible lobe orientations)</param>
+		/// <param name="_Lobes">The array of resulting cosine lobes</param>
+		/// <param name="_InitialCoefficientsAttemptsCount">The amount of attempts with different initial coefficients</param>
 		/// <param name="_BFGSConvergenceTolerance">The convergence tolerance for the BFGS algorithm (the lower the tolerance, the longer it will compute)</param>
-		/// <param name="_FunctionSamplingResolution">The resolution of the sphere used to perform function sampling and measuring the error (e.g. using a resolution of 100 will estimate the function with 100 * (2*100) samples)</param>
-		/// <param name="_RMS">The resulting array of RMS errors for each ZH lobe</param>
+		/// <param name="_RMS">The resulting array of RMS errors for each cosine lobe</param>
 		/// <param name="_Delegate">An optional delegate to pass the method to get feedback about the mapping as it can be a lengthy process (!!)</param>
-// 		protected static void		FitBRDF( double[] _BRDF, CosineLobe[] _Lobes, double[][] _ZHCoefficients, int _HemisphereResolution, int _FunctionSamplingResolution, double _BFGSConvergenceTolerance, out double[] _RMS, ZHMappingFeedback _Delegate )
-// 		{
-// 			int			LobesCount = _Lobes.GetLength( 0 );
-// 			Random		RNG = new Random( 1 );
-// 
-// 			double[]	LobeCoefficients = new double[_Order];
-// 			double[]	SHCoefficients = new double[_Order*_Order];
-// 			_SHCoefficients.CopyTo( SHCoefficients, 0 );
-// 
-// 			_RMS = new double[LobesCount];
-// 
-// 			// Build the local function evaluation context
-// 			LocalFitEvaluationContext	ContextLocal = new LocalFitEvaluationContext();
-// 			ContextLocal.m_BRDF = new double[_BRDF.Length];
-// 			_BRDF.CopyTo( ContextLocal.m_BRDF, 0 );	// Duplicate BRDF as we will modify it for each new lobe
-// 
-// 			ContextLocal.m_Lobe.C.Set( 0, 0, 0 );
-// 			ContextLocal.m_Lobe.N = 0;
-// 
-// 			// Pre-compute a table of SH coefficients samples
-// 			ContextLocal.m_SHSamples.Initialize( _Order, _FunctionSamplingResolution );
-// 			ContextLocal.m_Normalizer = 1.0 / ContextLocal.m_SHSamples.SamplesCount;
-// //			ContextLocal.m_Normalizer = 4.0 * Math.PI / ContextGlobal.m_SHSamples.SamplesCount;
-// //			ContextLocal.m_Normalizer = 1.0;		// Seems to yield better results with this but it's slow!
-// 			ContextLocal.m_SHEvaluation = new double[ContextLocal.m_SHSamples.SamplesCount];
-// 
-// 			// Prepare the hemisphere of random directions for lobe best fit
-// 			Vector2D[]	RandomInitialDirections = new Vector2D[_HemisphereResolution*(4*_HemisphereResolution)];
-// 			int		DirectionIndex = 0;
-// 			for ( int ThetaIndex=0; ThetaIndex < _HemisphereResolution; ThetaIndex++ )
-// 				for ( int PhiIndex=0; PhiIndex < 4*_HemisphereResolution; PhiIndex++ )
-// 					RandomInitialDirections[DirectionIndex++] = new Vector2D( (float) Math.Acos( Math.Sqrt( 1.0 - (ThetaIndex + RNG.NextDouble()) / _HemisphereResolution) ), (float) (2.0 * Math.PI * (PhiIndex + RNG.NextDouble()) / (4*_HemisphereResolution) ) );
-// 
-// 			// Prepare the fixed list of coefficients' denominators
-// 			double[]	LobeCoefficientsDenominators = new double[_Order];
-// 			for ( int CoefficientIndex=0; CoefficientIndex < _Order; CoefficientIndex++ )
-// 				LobeCoefficientsDenominators[CoefficientIndex] = 4.0 * Math.PI / (2 * CoefficientIndex + 1);
-// 
-// 			// Prepare feedback data
-// 			float	fCurrentProgress = 0.0f;
-// 			float	fProgressDelta = 1.0f / (LobesCount * _HemisphereResolution * (4*_HemisphereResolution));
-// 			int		FeedbackCount = 0;
-// 			int		FeedbackThreshold = (LobesCount * _HemisphereResolution*(4*_HemisphereResolution)) / 100;
-// 
-// 			// Compute the best fit for each lobe
-// 			int		CrashesCount = 0;
-// 			for ( int LobeIndex=0; LobeIndex < LobesCount; LobeIndex++ )
-// 			{
-// 				// 1] Evaluate goal SH coefficients for every sample directions
-// 				//	(changes on a per-lobe basis as we'll later subtract the ZH coefficients from the goal SH coefficients)
-// 				for ( int SampleIndex=0; SampleIndex < ContextLocal.m_SHSamples.SamplesCount; SampleIndex++ )
-// 				{
-// 					SHSamplesCollection.SHSample	Sample = ContextLocal.m_SHSamples.Samples[SampleIndex];
-// 					ContextLocal.m_SHEvaluation[SampleIndex] = EvaluateSH( SHCoefficients, Sample.m_Theta, Sample.m_Phi, _Order );
-// 				}
-// 
-// 				// 2] Evaluate lobe approximation given a set of directions and keep the best fit
-// 				DirectionIndex = 0;
-// 				double	MinError = double.MaxValue;
-// 				for ( int ThetaIndex=0; ThetaIndex < _HemisphereResolution; ThetaIndex++ )
-// 					for ( int PhiIndex=0; PhiIndex < 4*_HemisphereResolution; PhiIndex++ )
-// 					{
-// 						// Update external feedback on progression
-// 						if ( _Delegate != null )
-// 						{
-// 							fCurrentProgress += fProgressDelta;
-// 							FeedbackCount++;
-// 							if ( FeedbackCount > FeedbackThreshold )
-// 							{	// Send feedback
-// 								FeedbackCount = 0;
-// 								_Delegate( fCurrentProgress );
-// 							}
-// 						}
-// 
-// 						// 2.1] Set the lobe direction
-// 						ContextLocal.m_LobeDirection = RandomInitialDirections[DirectionIndex++];
-// 
-// 						// 2.2] Find the best approximate initial coefficients given the direction
-// 						double[]	Coefficients = new double[1+_Order];
-// 									Coefficients[1+0] = SHCoefficients[0];	// We use the exact ambient term (rotational invariant)
-// 						for ( int l=1; l < _Order; l++ )
-// 						{
-// 							Coefficients[1+l] = 0.0;
-// 							for ( int m=-l; m <= +l; m++ )
-// 								Coefficients[1+l] += SHCoefficients[l*(l+1)+m] * ComputeSH( l, m, ContextLocal.m_LobeDirection.x, ContextLocal.m_LobeDirection.y );
-// 
-// 							Coefficients[1+l] *= LobeCoefficientsDenominators[l];
-// 						}
-// 
-// 						//////////////////////////////////////////////////////////////////////////
-// 						// At this point, we have a fixed direction and the best estimated ZH coefficients to map the provided SH in this direction.
-// 						//
-// 						// We then need to apply BFGS minimization to optimize the ZH coefficients yielding the smallest possible error...
-// 						//
-// 
-// 						// 2.3] Apply BFGS minimization
-// 						int		IterationsCount = 0;
-// 						double	FunctionMinimum = double.MaxValue;
-// 						try
-// 						{
-// 							dfpmin( Coefficients, _BFGSConvergenceTolerance, out IterationsCount, out FunctionMinimum, new BFGSFunctionEval( ZHMappingLocalFunctionEval ), new BFGSFunctionGradientEval( ZHMappingLocalFunctionGradientEval ), ContextLocal );
-// 						}
-// 						catch ( Exception )
-// 						{
-// 							CrashesCount++;
-// 							continue;
-// 						}
-// 
-// 						if ( FunctionMinimum >= MinError )
-// 							continue;	// Larger error than best candidate so far...
-// 
-// 						MinError = FunctionMinimum;
-// 
-// 						// Save that "optimal" lobe data
-// 						_ZHAxes[LobeIndex] = ContextLocal.m_LobeDirection;
-// 						for ( int l=0; l < _Order; l++ )
-// 							_ZHCoefficients[LobeIndex][l] = Coefficients[1+l];
-// 
-// 						_RMS[LobeIndex] = FunctionMinimum;
-// 				}
-// 
-// 				//////////////////////////////////////////////////////////////////////////
-// 				//
-// 				// At this point, we have the "best" ZH lobe fit for the given set of spherical harmonics coefficients
-// 				//
-// 				// We must subtract the ZH influence from the current Spherical Harmonics, which we simply do by subtracting
-// 				//	the rotated ZH coefficients from the current SH.
-// 				//
-// 				// Then, we are ready to start the process all over again with another lobe, hence fitting the original SH
-// 				//	better and better with every new lobe
-// 				//
-// 
-// 				// 3] Rotate the ZH toward the fit axis
-// 				double[]	RotatedZHCoefficients = new double[_Order*_Order];
-// 				ComputeRotatedZHCoefficients( _ZHCoefficients[LobeIndex], SphericalToCartesian( _ZHAxes[LobeIndex].x, _ZHAxes[LobeIndex].y ), RotatedZHCoefficients );
-// 
-// 				// 4] Subtract the rotated ZH coefficients to the SH coefficients
-// 				for ( int CoefficientIndex=0; CoefficientIndex < _Order*_Order; CoefficientIndex++ )
-// 					SHCoefficients[CoefficientIndex] -= RotatedZHCoefficients[CoefficientIndex];
-// 			}
-// 
-// 
-// 			//////////////////////////////////////////////////////////////////////////
-// 			//
-// 			// At this point, we have a set of SH lobes that are individual best fits to the goal SH coefficients
-// 			//
-// 			// We will finally apply a global BFGS minimzation using the total ZH Lobes' axes and coefficients
-// 			//
-// 
-// 			// Build the function evaluation context
-// 			ZHMappingGlobalFunctionEvaluationContext	ContextGlobal = new ZHMappingGlobalFunctionEvaluationContext();
-// 														ContextGlobal.m_Order = _Order;
-// 														ContextGlobal.m_LobesCount = LobesCount;
-// 														// Placeholders
-// 														ContextGlobal.m_ZHCoefficients = new double[_Order];
-// 														ContextGlobal.m_RotatedZHCoefficients = new double[_Order*_Order];
-// 														ContextGlobal.m_SumRotatedZHCoefficients = new double[_Order*_Order];
-// 
-// 			// Build the array of derivatives deltas
-// 			ContextGlobal.m_DerivativesDelta = new double[1+LobesCount * (2+_Order)];
-// 			for ( int LobeIndex=0; LobeIndex < LobesCount; LobeIndex++ )
-// 			{
-// 				ContextGlobal.m_DerivativesDelta[1 + LobeIndex * (2+_Order) + 0] = Math.PI / _FunctionSamplingResolution;				// Dθ
-// 				ContextGlobal.m_DerivativesDelta[1 + LobeIndex * (2+_Order) + 1] = 2.0 * Math.PI / (2.0 * _FunctionSamplingResolution);	// DPhi
-// 				for ( int CoefficientIndex = 0; CoefficientIndex < _Order; CoefficientIndex++ )
-// 					ContextGlobal.m_DerivativesDelta[1 + LobeIndex * (2+_Order) + 2 + CoefficientIndex] = 1e-3;							// Standard deviation of 1e-3 for ZH coefficients
-// 			}
-// 
-// 			// Pre-compute a table of SH coefficients samples
-// 			ContextGlobal.m_SHSamples = ContextLocal.m_SHSamples;
-// 			ContextGlobal.m_Normalizer = ContextGlobal.m_SHSamples.SamplesCount;
-// //			ContextGlobal.m_Normalizer = 4.0 * Math.PI / ContextGlobal.m_SHSamples.SamplesCount;
-// //			ContextGlobal.m_Normalizer = 1.0;		// Seems to yield better results with this but it's slow!
-// 			ContextGlobal.m_SHEvaluation = ContextLocal.m_SHEvaluation;
-// 
-// 			// Compute estimate of the goal SH for every sample direction
-// 			for ( int SampleIndex=0; SampleIndex < ContextLocal.m_SHSamples.SamplesCount; SampleIndex++ )
-// 			{
-// 				SHSamplesCollection.SHSample	Sample = ContextGlobal.m_SHSamples.Samples[SampleIndex];
-// 				ContextGlobal.m_SHEvaluation[SampleIndex] = EvaluateSH( _SHCoefficients, Sample.m_Theta, Sample.m_Phi, _Order );
-// 			}
-// 
-// 			// Build the concatenaed set of ZH axes & coefficients
-// 			double[]	CoefficientsGlobal = new double[1+LobesCount*(2+_Order)];
-// 			for ( int LobeIndex=0; LobeIndex < LobesCount; LobeIndex++ )
-// 			{
-// 				// Set axes
-// 				CoefficientsGlobal[1+LobeIndex*(2+_Order)+0] = _ZHAxes[LobeIndex].x;
-// 				CoefficientsGlobal[1+LobeIndex*(2+_Order)+1] = _ZHAxes[LobeIndex].y;
-// 
-// 				// Set ZH coefficients
-// 				for ( int CoefficientIndex=0; CoefficientIndex < _Order; CoefficientIndex++ )
-// 					CoefficientsGlobal[1+LobeIndex*(2+_Order)+2+CoefficientIndex] = _ZHCoefficients[LobeIndex][CoefficientIndex];
-// 			}
-// 
-// 			// Apply BFGS minimzation on the entire set of coefficients
-// 			int		IterationsCountGlobal = 0;
-// 			double	FunctionMinimumGlobal = double.MaxValue;
-// 			try
-// 			{
-// 				dfpmin( CoefficientsGlobal, _BFGSConvergenceTolerance, out IterationsCountGlobal, out FunctionMinimumGlobal, new BFGSFunctionEval( ZHMappingGlobalFunctionEval ), new BFGSFunctionGradientEval( ZHMappingGlobalFunctionGradientEval ), ContextGlobal );
-// 			}
-// 			catch ( Exception )
-// 			{
-// 			}
-// 
-// 			// Save the optimized results
+		private static void		FitBRDF( double[] _BRDF, CosineLobe[] _Lobes, int _InitialCoefficientsAttemptsCount, double _BFGSConvergenceTolerance, double[] _RMS, BRDFMappingFeedback _Delegate )
+		{
+			int			LobesCount = _Lobes.GetLength( 0 );
+
+			// Build the local function evaluation context
+			BRDFFitEvaluationContext	Context = new BRDFFitEvaluationContext();
+			Context.m_Lobes = new CosineLobe[1] { new CosineLobe() };
+			Context.m_BRDF = new double[_BRDF.Length];
+			_BRDF.CopyTo( Context.m_BRDF, 0 );	// Duplicate BRDF as we will modify it for each new lobe
+
+			// Prepare feedback data
+			float	fCurrentProgress = 0.0f;
+			float	fProgressDelta = 1.0f / (LobesCount * _InitialCoefficientsAttemptsCount);
+			int		FeedbackCount = 0;
+			int		FeedbackThreshold = (LobesCount * _InitialCoefficientsAttemptsCount) / 100;	// Notify every percent
+
+			//////////////////////////////////////////////////////////////////////////
+			// 1] Compute the best fit for each lobe
+			int			CrashesCount = 0;
+			double[]	LocalLobeCoefficients = new double[1+4];	// Don't forget the BFGS function annoyingly uses indices starting from 1!
+			for ( int LobeIndex=0; LobeIndex < LobesCount; LobeIndex++ )
+			{
+				// 1.1] Perform minification using several attempts with different initial coefficients and keep the best fit
+				double	MinError = double.MaxValue;
+				for ( int AttemptIndex = 0; AttemptIndex < _InitialCoefficientsAttemptsCount; AttemptIndex++ )
+				{
+					// Update external feedback on progression
+					if ( _Delegate != null )
+					{
+						fCurrentProgress += fProgressDelta;
+						FeedbackCount++;
+						if ( FeedbackCount > FeedbackThreshold )
+						{	// Send feedback
+							FeedbackCount = 0;
+							_Delegate( fCurrentProgress );
+						}
+					}
+
+					// 1.1.1] Set the initial lobe coefficients
+					// TODO: Guess various initial directions (at the time we assume _InitialCoefficientsAttemptsCount == 1)
+					Context.m_Lobes[LobeIndex].C.Set( -1, -1, 1 );	// Standard Phong reflection
+					Context.m_Lobes[LobeIndex].N = 1;
+
+//					Context.m_LobeDirection = RandomInitialDirections[DirectionIndex++];
+
+					// 1.1.2] Copy coefficients into working array
+					LocalLobeCoefficients[1+0] = Context.m_Lobes[LobeIndex].C.x;
+					LocalLobeCoefficients[1+1] = Context.m_Lobes[LobeIndex].C.y;
+					LocalLobeCoefficients[1+2] = Context.m_Lobes[LobeIndex].C.z;
+					LocalLobeCoefficients[1+3] = Context.m_Lobes[LobeIndex].N;
+
+					//////////////////////////////////////////////////////////////////////////
+					// At this point, we have a fixed direction and the best estimated ZH coefficients to map the provided SH in this direction.
+					//
+					// We then need to apply BFGS minimization to optimize the ZH coefficients yielding the smallest possible error...
+					//
+
+					// 1.1.3] Apply BFGS minimization
+					int		IterationsCount = 0;
+					double	FunctionMinimum = 0;
+					try
+					{
+						FunctionMinimum = dfpmin( LocalLobeCoefficients, _BFGSConvergenceTolerance, out IterationsCount, new BFGSFunctionEval( BRDFMappingLocalFunctionEval ), new BFGSFunctionGradientEval( BRDFMappingLocalFunctionGradientEval ), Context );
+					}
+					catch ( Exception )
+					{
+						CrashesCount++;
+						continue;
+					}
+
+					if ( FunctionMinimum >= MinError )
+						continue;	// Larger error than best candidate so far...
+
+					MinError = FunctionMinimum;
+
+					// Save that "optimal" lobe data
+					_Lobes[LobeIndex].C.Set( Context.m_Lobes[LobeIndex].C.x, Context.m_Lobes[LobeIndex].C.y, Context.m_Lobes[LobeIndex].C.z );
+					_Lobes[LobeIndex].N = Context.m_Lobes[LobeIndex].N;
+
+					_RMS[LobeIndex] = FunctionMinimum;
+				}
+
+				//////////////////////////////////////////////////////////////////////////
+				// 1.2] At this point, we have the "best" cosine lobe fit for the given BRDF
+				// We must subtract the influence of that lobe from the current BRDF and restart fitting with a new lobe...
+				//
+				CosineLobe	LobeToSubtract = Context.m_Lobes[LobeIndex];
+				for ( int SampleIndex=0; SampleIndex < ms_BRDFSamples.Length; SampleIndex++ )
+				{
+					BRDFSample	Sample = ms_BRDFSamples[SampleIndex];
+
+					double		LobeInfluence = Sample.m_DotProduct.x*LobeToSubtract.C.x + Sample.m_DotProduct.y*LobeToSubtract.C.y + Sample.m_DotProduct.z*LobeToSubtract.C.z;
+								LobeInfluence = Math.Pow( LobeInfluence, LobeToSubtract.N );
+
+					Context.m_BRDF[SampleIndex] -= LobeInfluence;
+				}
+			}
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// 2] At this point, we have a set of SH lobes that are individual best fits to the goal SH coefficients
+			// We will finally apply a global BFGS minimzation using all of the total cosine lobes
+			//
+			double[]	GlobalLobeCoefficients = new double[1+4*_Lobes.Length];	// Don't forget the BFGS function annoyingly uses indices starting from 1!
+			ms_TempCoefficientsGlobal = new double[1+4*_Lobes.Length];	// Don't forget the BFGS function annoyingly uses indices starting from 1!
+
+			// 2.1] Re-assign the original BRDF to which we compare to
+			Context.m_BRDF = _BRDF;
+
+			// 2.2] Re-assign the best lobes as initial best guess
+			Context.m_Lobes = _Lobes;
+			for ( int LobeIndex=0; LobeIndex < _Lobes.Length; LobeIndex++ )
+			{
+				CosineLobe	SourceLobe = _Lobes[LobeIndex];
+				GlobalLobeCoefficients[1+4*LobeIndex+0] = SourceLobe.C.x;
+				GlobalLobeCoefficients[1+4*LobeIndex+1] = SourceLobe.C.y;
+				GlobalLobeCoefficients[1+4*LobeIndex+2] = SourceLobe.C.z;
+				GlobalLobeCoefficients[1+4*LobeIndex+3] = SourceLobe.N;
+			}
+
+			// 2.3] Apply BFGS minimzation to the entire set of coefficients
+			int		IterationsCountGlobal = 0;
+			double	FunctionMinimumGlobal = double.MaxValue;
+			try
+			{
+				FunctionMinimumGlobal = dfpmin( GlobalLobeCoefficients, _BFGSConvergenceTolerance, out IterationsCountGlobal, new BFGSFunctionEval( BRDFMappingGlobalFunctionEval ), new BFGSFunctionGradientEval( BRDFMappingGlobalFunctionGradientEval ), Context );
+			}
+			catch ( Exception )
+			{
+				CrashesCount++;
+			}
+
+			// 2.4] Save the final optimized results
 // 			for ( int LobeIndex=0; LobeIndex < LobesCount; LobeIndex++ )
 // 			{
 // 				// Set axes
@@ -467,398 +478,166 @@ namespace BRDFLafortuneFitting
 // 				for ( int CoefficientIndex=0; CoefficientIndex < _Order; CoefficientIndex++ )
 // 					_ZHCoefficients[LobeIndex][CoefficientIndex] = CoefficientsGlobal[1+LobeIndex*(2+_Order)+2+CoefficientIndex];
 // 			}
-// 
-// 			// Give final 100% feedback
-// 			if ( _Delegate != null )
-// 				_Delegate( 1.0f );
-// 		}
 
-		#region BRDF Handling
-
-		//////////////////////////////////////////////////////////////////////////
-		// This code is a translation from http://people.csail.mit.edu/wojciech/BRDFDatabase/code/BRDFRead.cpp
-		//////////////////////////////////////////////////////////////////////////
-		//
-		const int		BRDF_SAMPLING_RES_THETA_H = 90;
-		const int		BRDF_SAMPLING_RES_THETA_D = 90;
-		const int		BRDF_SAMPLING_RES_PHI_D = 360;
-
-		const double	BRDF_SCALE_RED = 1.0 / 1500.0;
-		const double	BRDF_SCALE_GREEN = 1.15 / 1500.0;
-		const double	BRDF_SCALE_BLUE = 1.66 / 1500.0;
-
-		/// <summary>
-		/// Given a pair of incoming/outgoing angles, look up the BRDF.
-		/// </summary>
-		/// <param name="_BRDF">One of the R,G,B BRDFs</param>
-		/// <param name="_ThetaIn"></param>
-		/// <param name="_PhiIn"></param>
-		/// <param name="_ThetaOut"></param>
-		/// <param name="_PhiOut"></param>
-		/// <param name="_ComponentScale">Should be BRDF_SCALE_RED, BRDF_SCALE_GREEN, BRDF_SCALE_BLUE depending on the component</param>
-		/// <returns></returns>
-		static double	LookupBRDF( double[] _BRDF, double _ThetaIn, double _PhiIn, double _ThetaOut, double _PhiOut )//, double _ComponentScale )
-		{
-			// Convert to half angle / difference angle coordinates
-			double ThetaHalf, PhiHalf, ThetaDiff, PhiDiff;
-			std_coords_to_half_diff_coords(	_ThetaIn, _PhiIn, _ThetaOut, _PhiOut,
-											out ThetaHalf, out PhiHalf, out ThetaDiff, out PhiDiff );
-
-			// Find index (note that PhiHalf is ignored, since isotropic BRDFs are assumed)
-			int TableIndex = PhiDiff_index( PhiDiff );
-				TableIndex += (BRDF_SAMPLING_RES_PHI_D / 2) * ThetaDiff_index( ThetaDiff );
-				TableIndex += (BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D / 2) * ThetaHalf_index( ThetaHalf );
-
-			double	Result = _BRDF[TableIndex];
-//					Result *= _ComponentScale;
-			return Result;
+			// Give final 100% feedback
+			if ( _Delegate != null )
+				_Delegate( 1.0f );
 		}
 
-		/// <summary>
-		/// Convert standard (Theta,Phi) coordinates to half vector & difference vector coordinates
-		/// (from http://graphics.stanford.edu/papers/brdf_change_of_variables/brdf_change_of_variables.pdf)
-		/// </summary>
-		/// <param name="_ThetaIn"></param>
-		/// <param name="_PhiIn"></param>
-		/// <param name="_ThetaOut"></param>
-		/// <param name="_PhiOut"></param>
-		/// <param name="_ThetaHalf"></param>
-		/// <param name="_PhiHalf"></param>
-		/// <param name="_ThetaDiff"></param>
-		/// <param name="_PhiDiff"></param>
-		// 
-		static private Vector3	In = new Vector3();
-		static private Vector3	Out = new Vector3();
-		static private Vector3	Half = new Vector3();
-		static private Vector3	Diff = new Vector3();
-		static private Vector3	Tangent = new Vector3() { x=1.0, y=0.0, z=0.0 };
-		static private Vector3	BiTangent = new Vector3() { x=0.0, y=1.0, z=0.0 };
-		static private Vector3	Normal = new Vector3() { x=0.0, y=0.0, z=1.0 };
-		static private Vector3	Temp = new Vector3();
-		static void std_coords_to_half_diff_coords( double _ThetaIn, double _PhiIn, double _ThetaOut, double _PhiOut,
-													out double _ThetaHalf, out double _PhiHalf, out double _ThetaDiff, out double _PhiDiff )
+		#region BFGS Minimization
+
+		#region Local Minimization Delegates
+
+		protected static double	BRDFMappingLocalFunctionEval( double[] _Coefficients, object _Params )
 		{
-			// compute in vector
-			double in_vec_z = Math.Cos(_ThetaIn);
-			double proj_in_vec = Math.Sin(_ThetaIn);
-			double in_vec_x = proj_in_vec*Math.Cos(_PhiIn);
-			double in_vec_y = proj_in_vec*Math.Sin(_PhiIn);
-			In.Set( in_vec_x, in_vec_y, in_vec_z );
+			BRDFFitEvaluationContext	Context = _Params as BRDFFitEvaluationContext;
 
-			// compute out vector
-			double out_vec_z = Math.Cos(_ThetaOut);
-			double proj_out_vec = Math.Sin(_ThetaOut);
-			double out_vec_x = proj_out_vec*Math.Cos(_PhiOut);
-			double out_vec_y = proj_out_vec*Math.Sin(_PhiOut);
-			Out.Set( out_vec_x, out_vec_y, out_vec_z );
+			// Copy current coefficients into the current cosine lobe
+			Context.m_Lobes[0].C.Set( _Coefficients[1], _Coefficients[2], _Coefficients[3] );	// Remember those stupid coefficients are indexed from 1!
+			Context.m_Lobes[0].N = _Coefficients[4];
 
-			// compute halfway vector
-			Half.Set( in_vec_x + out_vec_x, in_vec_y + out_vec_y, in_vec_z + out_vec_z );
-			Half.Normalize();
+			// Sum differences between current lobe estimates and current goal BRDF
+			double	Normalizer = 1.0 / ms_BRDFSamples.Length;
+			double	SumSquareDifference = ComputeSummedDifferences( ms_BRDFSamples, Normalizer, Context.m_BRDF, Context.m_Lobes );
 
-			// compute  _ThetaHalf, _PhiHalf
-			_ThetaHalf = Math.Acos( Half.z );
-			_PhiHalf = Math.Atan2( Half.y, Half.x );
+			// Keep the result for gradient eval
+			Context.m_SumSquareDifference = SumSquareDifference;
 
-			// Compute diff vector
-			In.Rotate( ref Normal, -_PhiHalf, out Temp );
-			Temp.Rotate( ref BiTangent, -_ThetaHalf, out Diff );
-	
-			// Compute _ThetaDiff, _PhiDiff	
-			_ThetaDiff = Math.Acos( Diff.z );
-			_PhiDiff = Math.Atan2( Diff.y, Diff.x );
+			return	SumSquareDifference;
 		}
 
-		static void	half_diff_coords_to_std_coords( double _ThetaHalf, double _PhiHalf, double _ThetaDiff, double _PhiDiff,
-													out double _ThetaIn, out double _PhiIn, out double _ThetaOut, out double _PhiOut )
+		static double[]	ms_TempCoefficientsLocal = new double[5];
+		protected static void	BRDFMappingLocalFunctionGradientEval( double[] _Coefficients, double[] _Gradients, object _Params )
 		{
-			double	SinTheta_half = Math.Sin( _ThetaHalf );
-			Vector3	Half = new Vector3() { x=Math.Cos( _PhiHalf ) * SinTheta_half, y=Math.Sin( _PhiHalf ) * SinTheta_half, z=Math.Cos( _ThetaHalf ) };
+			BRDFFitEvaluationContext	Context = _Params as BRDFFitEvaluationContext;
 
-			// Build the 2 vectors representing the frame in which we can use the diff angles
-			Vector3	OrthoX;
-			Half.Cross( ref Normal, out OrthoX );
-			if ( OrthoX.LengthSq() < 1e-6 )
-				OrthoX.Set( 1, 0, 0 );
-			else
-				OrthoX.Normalize();
+			double	Normalizer = 1.0 / ms_BRDFSamples.Length;
 
-			Vector3	OrthoY;
-			Half.Cross( ref OrthoX, out OrthoY );
+			// Copy coefficients as we will offset each of them a little
+			_Coefficients.CopyTo( ms_TempCoefficientsLocal, 0 );
 
-			// Rotate using diff angles to retrieve incoming direction
-			Half.Rotate( ref OrthoX, -_ThetaDiff, out Temp );
-			Temp.Rotate( ref Half, _PhiDiff, out In );
-
-			// We can get the outgoing vector either by rotating the incoming vector half a circle
-// 			Vector3	Out2  = new Vector3();
-// 			Temp.Rotate( ref Half, _PhiDiff + Math.PI, out Out2 );
-
-			// ...or by mirroring in "Half tangent space"
-			double	MirrorX = -In.Dot( ref OrthoX );
-			double	MirrorY = -In.Dot( ref OrthoY );
-			double	z = In.Dot( ref Half );
-			Vector3	Out2 = new Vector3();
-			Out2.Set(
-				MirrorX*OrthoX.x + MirrorY*OrthoY.x + z*Half.x,
-				MirrorX*OrthoX.y + MirrorY*OrthoY.y + z*Half.y,
-				MirrorX*OrthoX.z + MirrorY*OrthoY.z + z*Half.z
-			);
-
-			// CHECK
-// 			Vector3	CheckHalf = new Vector3() { x = In.x+Out.x, y = In.y+Out.y, z = In.z+Out.z };
-// 					CheckHalf.Normalize();	// Is this Half ???
-			// CHECK
-
-			// Finally, we can retrieve the angles we came here to look for...
-			_ThetaIn = Math.Acos( In.z );
-			_PhiIn = Math.Atan2( In.y, In.z );
-			_ThetaOut = Math.Acos( Out.z );
-			_PhiOut = Math.Atan2( Out.y, Out.z );
-		}
-
-		// Lookup _ThetaHalf index
-		// This is a non-linear mapping!
-		// In:  [0 .. pi/2]
-		// Out: [0 .. 89]
-		static int ThetaHalf_index( double _ThetaHalf )
-		{
-			if ( _ThetaHalf <= 0.0 )
-				return 0;
-
-			double	ThetaHalf_deg = ((_ThetaHalf / (0.5*Math.PI)) * BRDF_SAMPLING_RES_THETA_H);
-			double	temp = ThetaHalf_deg*BRDF_SAMPLING_RES_THETA_H;
-					temp = Math.Sqrt( temp );
-
-			int Index = (int) Math.Floor( temp );
-				Index = Math.Max( 0, Math.Min( Index, BRDF_SAMPLING_RES_THETA_H-1 ) );
-			return Index;
-		}
-
-		// Lookup _ThetaDiff index
-		// In:  [0 .. pi/2]
-		// Out: [0 .. 89]
-		static int ThetaDiff_index( double _ThetaDiff )
-		{
-			int Index = (int) Math.Floor( _ThetaDiff / (Math.PI * 0.5) * BRDF_SAMPLING_RES_THETA_D );
-				Index = Math.Max( 0, Math.Min( Index, BRDF_SAMPLING_RES_THETA_D-1 ) );
-			return Index;
-		}
-
-		// Lookup _PhiDiff index
-		static int PhiDiff_index( double _PhiDiff )
-		{
-			// Because of reciprocity, the BRDF is unchanged under
-			// _PhiDiff -> _PhiDiff + PI
-			if ( _PhiDiff < 0.0 )
-				_PhiDiff += Math.PI;
-
-			// In: _PhiDiff in [0 .. PI]
-			// Out: tmp in [0 .. 179]
-			int	Index = (int) Math.Floor( 2*_PhiDiff / Math.PI * BRDF_SAMPLING_RES_PHI_D );
-				Index = Math.Max( 0, Math.Min( Index, BRDF_SAMPLING_RES_PHI_D/2-1 ) );
-			return Index;
-		}
-
-		/// <summary>
-		/// Loads a MERL BRDF file
-		/// </summary>
-		/// <param name="_BRDFFile"></param>
-		/// <returns></returns>
-		protected static double[][]	LoadBRDF( FileInfo _BRDFFile )
-		{
-			double[][]	Result = null;
-			try
+			// Compute derivatives for each coefficient
+			_Gradients[0] = 0.0;
+			for ( int DerivativeIndex=1; DerivativeIndex < _Coefficients.Length; DerivativeIndex++ )
 			{
-				using ( FileStream S = _BRDFFile.OpenRead() )
-					using ( BinaryReader Reader = new BinaryReader( S ) )
-					{
-						// Check coefficients count is the expected value
-						int	DimX = Reader.ReadInt32();
-						int	DimY = Reader.ReadInt32();
-						int	DimZ = Reader.ReadInt32();
-						int	CoeffsCount = DimX*DimY*DimZ;
-						if ( CoeffsCount != BRDF_SAMPLING_RES_THETA_H*BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D/2 )
-							throw new Exception( "The amount of coefficients stored in the file is not the expected value (i.e. " + CoeffsCount + "! (is it a BRDF file?)" );
+				ms_TempCoefficientsLocal[DerivativeIndex] += DERIVATIVE_OFFSET;	// Add a tiny delta for derivative estimate
 
-						// Allocate the R,G,B arrays
-						Result = new double[3][];
-						Result[0] = new double[CoeffsCount];
-						Result[1] = new double[CoeffsCount];
-						Result[2] = new double[CoeffsCount];
+				// Copy current coefficients into the current cosine lobe
+				Context.m_Lobes[0].C.Set( ms_TempCoefficientsLocal[1], ms_TempCoefficientsLocal[2], ms_TempCoefficientsLocal[3] );	// Remember those stupid coefficients are indexed from 1!
+				Context.m_Lobes[0].N = ms_TempCoefficientsLocal[4];
 
-						// Read content
-						for ( int ComponentIndex=0; ComponentIndex < 3; ComponentIndex++ )
-						{
-							double	Factor = 1.0;
-							if ( ComponentIndex == 0 )
-								Factor = BRDF_SCALE_RED;
-							else if ( ComponentIndex == 0 )
-								Factor = BRDF_SCALE_GREEN;
-							else 
-								Factor = BRDF_SCALE_BLUE;
+				// Sum differences between current ZH estimates and current SH goal estimates
+				double	SumSquareDifference = ComputeSummedDifferences( ms_BRDFSamples, Normalizer, Context.m_BRDF, Context.m_Lobes );
 
-							double[]	ComponentArray = Result[ComponentIndex];
-							for ( int CoeffIndex=0; CoeffIndex < CoeffsCount; CoeffIndex++ )
-								ComponentArray[CoeffIndex] = Factor * Reader.ReadDouble();
-						}
-					}
+				// Compute delta with fixed central square difference
+				_Gradients[DerivativeIndex] = (SumSquareDifference - Context.m_SumSquareDifference) / DERIVATIVE_OFFSET;
 			}
-			catch ( Exception _e )
-			{	// Forward...
-				throw new Exception( "Failed to load source BRDF file: " + _e.Message );
-			}
-
-			return Result;
 		}
 
 		#endregion
 
-		#region BFGS Minimization
+		#region Global Minimization Delegates
 
-// 		#region Local Minimization Delegates
-// 
-// 		protected static double	ZHMappingLocalFunctionEval( double[] _Coefficients, object _Params )
-// 		{
-// 			ZHMappingLocalFunctionEvaluationContext	ContextLocal = _Params as ZHMappingLocalFunctionEvaluationContext;
-// 
-// 			// Rotate current ZH coefficients
-// 			Array.Copy( _Coefficients, 1, ContextLocal.m_ZHCoefficients, 0, ContextLocal.m_Order );
-// 			ComputeRotatedZHCoefficients( ContextLocal.m_ZHCoefficients, SphericalToCartesian( ContextLocal.m_LobeDirection.x, ContextLocal.m_LobeDirection.y ), ContextLocal.m_RotatedZHCoefficients );
-// 
-// 			// Sum differences between current ZH estimates and current SH goal estimates
-// 			double	SumSquareDifference = ComputeSummedDifferences( ContextLocal.m_SHSamples, ContextLocal.m_Normalizer, ContextLocal.m_SHEvaluation, ContextLocal.m_RotatedZHCoefficients, ContextLocal.m_Order );
-// 
-// 			// Keep the result for gradient eval
-// 			ContextLocal.m_SumSquareDifference = SumSquareDifference;
-// 
-// 			return	SumSquareDifference;
-// 		}
-// 
-// 		protected static void	ZHMappingLocalFunctionGradientEval( double[] _Coefficients, double[] _Gradients, object _Params )
-// 		{
-// 			ZHMappingLocalFunctionEvaluationContext	ContextLocal = _Params as ZHMappingLocalFunctionEvaluationContext;
-// 
-// 			// Compute derivatives for each coefficient
-// 			_Gradients[0] = 0.0;
-// 			for ( int DerivativeIndex=1; DerivativeIndex < _Coefficients.Length; DerivativeIndex++ )
-// 			{
-// 				// Copy coefficients and add them their delta for current derivative
-// 				double[]	Coefficients = new double[_Coefficients.Length];
-// 				_Coefficients.CopyTo( Coefficients, 0 );
-// 				Coefficients[DerivativeIndex] += 1e-3f;
-// 
-// 				// Rotate ZH coefficients
-// 				Array.Copy( Coefficients, 1, ContextLocal.m_ZHCoefficients, 0, ContextLocal.m_Order );
-// 				ComputeRotatedZHCoefficients( ContextLocal.m_ZHCoefficients, SphericalToCartesian( ContextLocal.m_LobeDirection.x, ContextLocal.m_LobeDirection.y ), ContextLocal.m_RotatedZHCoefficients );
-// 
-// 				// Sum differences between current ZH estimates and current SH goal estimates
-// 				double	SumSquareDifference = ComputeSummedDifferences( ContextLocal.m_SHSamples, ContextLocal.m_Normalizer, ContextLocal.m_SHEvaluation, ContextLocal.m_RotatedZHCoefficients, ContextLocal.m_Order );
-// 
-// 				// Compute delta with fixed square difference
-// 				_Gradients[DerivativeIndex] = (SumSquareDifference - ContextLocal.m_SumSquareDifference) / 1e-3;
-// 			}
-// 		}
-// 
-// 		#endregion
-// 
-// 		#region Global Minimization Delegates
-// 
-// 		protected static double	ZHMappingGlobalFunctionEval( double[] _Coefficients, object _Params )
-// 		{
-// 			ZHMappingGlobalFunctionEvaluationContext	ContextGlobal = _Params as ZHMappingGlobalFunctionEvaluationContext;
-// 
-// 			// Rotate current ZH coefficients for each lobe
-// 			for ( int CoefficientIndex=0; CoefficientIndex < ContextGlobal.m_Order * ContextGlobal.m_Order; CoefficientIndex++ )
-// 				ContextGlobal.m_SumRotatedZHCoefficients[CoefficientIndex] = 0.0;
-// 			for ( int LobeIndex=0; LobeIndex < ContextGlobal.m_LobesCount; LobeIndex++ )
-// 			{
-// 				Array.Copy( _Coefficients, 1 + LobeIndex * (2+ContextGlobal.m_Order) + 2, ContextGlobal.m_ZHCoefficients, 0, ContextGlobal.m_Order );
-// 				ComputeRotatedZHCoefficients( ContextGlobal.m_ZHCoefficients, SphericalToCartesian( _Coefficients[1 + LobeIndex * (2+ContextGlobal.m_Order) + 0], _Coefficients[1 + LobeIndex * (2+ContextGlobal.m_Order) + 1] ), ContextGlobal.m_RotatedZHCoefficients );
-// 
-// 				// Accumulate rotated ZH coefficients
-// 				for ( int CoefficientIndex=0; CoefficientIndex < ContextGlobal.m_Order * ContextGlobal.m_Order; CoefficientIndex++ )
-// 					ContextGlobal.m_SumRotatedZHCoefficients[CoefficientIndex] += ContextGlobal.m_RotatedZHCoefficients[CoefficientIndex];
-// 			}
-// 
-// 			// Sum differences between current rotated ZH estimate and SH goal
-// 			double	SumSquareDifference = ComputeSummedDifferences( ContextGlobal.m_SHSamples, ContextGlobal.m_Normalizer, ContextGlobal.m_SHEvaluation, ContextGlobal.m_SumRotatedZHCoefficients, ContextGlobal.m_Order );
-// 
-// 			// Keep the result for gradient eval
-// 			ContextGlobal.m_SumSquareDifference = SumSquareDifference;
-// 
-// 			return	SumSquareDifference;
-// 		}
-// 
-// 		protected static void	ZHMappingGlobalFunctionGradientEval( double[] _Coefficients, double[] _Gradients, object _Params )
-// 		{
-// 			ZHMappingGlobalFunctionEvaluationContext	ContextGlobal = _Params as ZHMappingGlobalFunctionEvaluationContext;
-// 
-// 			// Compute derivatives for each coefficient
-// 			_Gradients[0] = 0.0;
-// 			for ( int DerivativeIndex=1; DerivativeIndex < _Coefficients.Length; DerivativeIndex++ )
-// 			{
-// 				// Copy coefficients and add them their delta
-// 				double[]	Coefficients = new double[_Coefficients.Length];
-// 				_Coefficients.CopyTo( Coefficients, 0 );
-// 				Coefficients[DerivativeIndex] += ContextGlobal.m_DerivativesDelta[DerivativeIndex];
-// 
-// 				// Rotate current ZH coefficients for each lobe
-// 				for ( int CoefficientIndex=0; CoefficientIndex < ContextGlobal.m_Order * ContextGlobal.m_Order; CoefficientIndex++ )
-// 					ContextGlobal.m_SumRotatedZHCoefficients[CoefficientIndex] = 0.0;
-// 				for ( int LobeIndex=0; LobeIndex < ContextGlobal.m_LobesCount; LobeIndex++ )
-// 				{
-// 					Array.Copy( Coefficients, 1 + LobeIndex * (2+ContextGlobal.m_Order) + 2, ContextGlobal.m_ZHCoefficients, 0, ContextGlobal.m_Order );
-// 					ComputeRotatedZHCoefficients( ContextGlobal.m_ZHCoefficients, SphericalToCartesian( Coefficients[1 + LobeIndex * (2+ContextGlobal.m_Order) + 0], Coefficients[1 + LobeIndex * (2+ContextGlobal.m_Order) + 1] ), ContextGlobal.m_RotatedZHCoefficients );
-// 
-// 					// Accumulate rotated ZH coefficients
-// 					for ( int CoefficientIndex=0; CoefficientIndex < ContextGlobal.m_Order * ContextGlobal.m_Order; CoefficientIndex++ )
-// 						ContextGlobal.m_SumRotatedZHCoefficients[CoefficientIndex] += ContextGlobal.m_RotatedZHCoefficients[CoefficientIndex];
-// 				}
-// 
-// 				// Sum differences between current ZH estimates and current SH goal estimates
-// 				double	SumSquareDifference = ComputeSummedDifferences( ContextGlobal.m_SHSamples, ContextGlobal.m_Normalizer, ContextGlobal.m_SHEvaluation, ContextGlobal.m_SumRotatedZHCoefficients, ContextGlobal.m_Order );
-// 
-// 				// Compute difference with fixed square difference
-// 				_Gradients[DerivativeIndex] = (SumSquareDifference - ContextGlobal.m_SumSquareDifference) / ContextGlobal.m_DerivativesDelta[DerivativeIndex];
-// 			}
-// 		}
-// 
-// 		#endregion
+		protected static double	BRDFMappingGlobalFunctionEval( double[] _Coefficients, object _Params )
+		{
+			BRDFFitEvaluationContext	Context = _Params as BRDFFitEvaluationContext;
+
+			// Copy current coefficients into the current cosine lobes
+			for ( int LobeIndex=0; LobeIndex < Context.m_Lobes.Length; LobeIndex++ )
+			{
+				CosineLobe	Lobe = Context.m_Lobes[LobeIndex];
+				int			CoeffOffset = 1+4*LobeIndex;	// Remember those stupid coefficients are indexed from 1!
+				Lobe.C.Set( _Coefficients[CoeffOffset+0], _Coefficients[CoeffOffset+1], _Coefficients[CoeffOffset+2] );
+				Lobe.N = _Coefficients[CoeffOffset+3];
+			}
+
+			// Sum differences between current lobe estimates and current goal BRDF
+			double	Normalizer = 1.0 / ms_BRDFSamples.Length;
+			double	SumSquareDifference = ComputeSummedDifferences( ms_BRDFSamples, Normalizer, Context.m_BRDF, Context.m_Lobes );
+
+			// Keep the result for gradient eval
+			Context.m_SumSquareDifference = SumSquareDifference;
+
+			return	SumSquareDifference;
+		}
+
+		static double[]	ms_TempCoefficientsGlobal = new double[5];
+		protected static void	BRDFMappingGlobalFunctionGradientEval( double[] _Coefficients, double[] _Gradients, object _Params )
+		{
+			BRDFFitEvaluationContext	Context = _Params as BRDFFitEvaluationContext;
+
+			double	Normalizer = 1.0 / ms_BRDFSamples.Length;
+
+			// Copy coefficients as we will offset each of them a little
+			_Coefficients.CopyTo( ms_TempCoefficientsGlobal, 0 );
+
+			// Compute derivatives for each coefficient
+			_Gradients[0] = 0.0;
+			for ( int DerivativeIndex=1; DerivativeIndex < _Coefficients.Length; DerivativeIndex++ )
+			{
+				ms_TempCoefficientsLocal[DerivativeIndex] += DERIVATIVE_OFFSET;	// Add a tiny delta for derivative estimate
+
+				// Copy current coefficients into the current cosine lobes
+				for ( int LobeIndex=0; LobeIndex < Context.m_Lobes.Length; LobeIndex++ )
+				{
+					CosineLobe	Lobe = Context.m_Lobes[LobeIndex];
+					int			CoeffOffset = 1+4*LobeIndex;	// Remember those stupid coefficients are indexed from 1!
+					Lobe.C.Set( _Coefficients[CoeffOffset+0], _Coefficients[CoeffOffset+1], _Coefficients[CoeffOffset+2] );
+					Lobe.N = _Coefficients[CoeffOffset+3];
+				}
+
+				// Sum differences between current ZH estimates and current SH goal estimates
+				double	SumSquareDifference = ComputeSummedDifferences( ms_BRDFSamples, Normalizer, Context.m_BRDF, Context.m_Lobes );
+
+				// Compute delta with fixed central square difference
+				_Gradients[DerivativeIndex] = (SumSquareDifference - Context.m_SumSquareDifference) / DERIVATIVE_OFFSET;
+			}
+		}
+
+		#endregion
 
 		/// <summary>
-		/// Computes the square difference between a current SH estimate and a goal SH function given a set of samples
+		/// Computes the square difference between a current cosine lobe estimate and a goal BRDF given a set of samples
 		/// </summary>
 		/// <param name="_SamplesCollection">The collection of samples to use for the computation</param>
 		/// <param name="_Normalizer">The normalizer for the final result</param>
-		/// <param name="_GoalSHEvaluation">The goal SH function's evaluations for each sample</param>
-		/// <param name="_SHEstimate">The estimate SH function's coefficients</param>
-		/// <param name="_Order">The SH order</param>
+		/// <param name="_GoalBDRF">The goal BRDF function to compute square difference from</param>
+		/// <param name="_LobeEstimates">The cosine lobes matching the BRDF</param>
 		/// <returns>The square difference between goal and estimate</returns>
-// 		protected static double		ComputeSummedDifferences( SHSamplesCollection _SamplesCollection, double _Normalizer, double[] _GoalSHEvaluation, double[] _SHEstimate, int _Order )
-// 		{
-// 			// Sum differences between current ZH estimates and current SH goal estimates
-// 			double	SumSquareDifference = 0.0;
-// 			for ( int SampleIndex=0; SampleIndex < _SamplesCollection.SamplesCount; SampleIndex++ )
-// 			{
-// 				SHSamplesCollection.SHSample	Sample = _SamplesCollection.Samples[SampleIndex];
-// 
-// 				double		GoalValue = _GoalSHEvaluation[SampleIndex];
-// 
-// 				// Estimate ZH
-// 				double		CurrentValue = 0.0;
-// 				for ( int CoefficientIndex=0; CoefficientIndex < _Order * _Order; CoefficientIndex++ )
-// 					CurrentValue += _SHEstimate[CoefficientIndex] * Sample.m_SHFactors[CoefficientIndex];
-// 
-// 				// Sum difference between estimate and goal
-// 				SumSquareDifference += (CurrentValue - GoalValue) * (CurrentValue - GoalValue);
-// 			}
-// 
-// 			// Normalize
-// 			SumSquareDifference *= _Normalizer;
-// 
-// 			return	SumSquareDifference;
-// 		}
+		private static double		ComputeSummedDifferences( BRDFSample[] _Samples, double _Normalizer, double[] _GoalBDRF, CosineLobe[] _LobeEstimates )
+		{
+			// Sum differences between current ZH estimates and current SH goal estimates
+			double	SumSquareDifference = 0.0;
+			double		GoalValue, CurrentValue, TempLobeDot;
+
+			int		SamplesCount = _Samples.Length;
+			int		LobesCount = _LobeEstimates.Length;
+
+			for ( int SampleIndex=0; SampleIndex < SamplesCount; SampleIndex++ )
+			{
+				BRDFSample	Sample = _Samples[SampleIndex];
+
+				GoalValue = _GoalBDRF[Sample.m_BRDFIndex];
+
+				// Estimate cosine lobe value in that direction
+				CurrentValue = 0.0;
+				for ( int LobeIndex=0; LobeIndex < LobesCount; LobeIndex++ )
+				{
+					CosineLobe	Lobe = _LobeEstimates[LobeIndex];
+					TempLobeDot = Lobe.C.x * Sample.m_DotProduct.x + Lobe.C.y * Sample.m_DotProduct.y + Lobe.C.z * Sample.m_DotProduct.z;
+					TempLobeDot = Math.Pow( TempLobeDot, Lobe.N );
+					CurrentValue += TempLobeDot;
+				}
+
+				// Sum difference between estimate and goal
+				SumSquareDifference += (CurrentValue - GoalValue) * (CurrentValue - GoalValue);
+			}
+
+			// Normalize
+			SumSquareDifference *= _Normalizer;
+
+			return	SumSquareDifference;
+		}
 
 		#region BFGS Algorithm
 
@@ -873,12 +652,13 @@ namespace BRDFLafortuneFitting
 		/// <param name="_Coefficients">The array of initial coefficients (indexed from 1!!) that will also contain the resulting coefficients when the routine has converged</param>
 		/// <param name="_ConvergenceTolerance">The tolerance error to accept as the minimum of the function</param>
 		/// <param name="_PerformedIterationsCount">The amount of iterations performed to reach the minimum</param>
-		/// <param name="_Minimum">The found minimum</param>
 		/// <param name="_FunctionEval">The delegate used to evaluate the function to minimize</param>
 		/// <param name="_FunctionGradientEval">The delegate used to evaluate the gradient of the function to minimize</param>
 		/// <param name="_Params">Some user params passed to the evaluation functions</param>
-		protected static void	dfpmin( double[] _Coefficients, double _ConvergenceTolerance, out int _PerformedIterationsCount, out double _Minimum, BFGSFunctionEval _FunctionEval, BFGSFunctionGradientEval _FunctionGradientEval, object _Params )
+		/// <returns>The found minimum</returns>
+		protected static double	dfpmin( double[] _Coefficients, double _ConvergenceTolerance, out int _PerformedIterationsCount, BFGSFunctionEval _FunctionEval, BFGSFunctionGradientEval _FunctionGradientEval, object _Params )
 		{
+			double		Minimum = double.MaxValue;
 			int			n = _Coefficients.Length - 1;
 
 			int			check,i,its,j;
@@ -914,8 +694,8 @@ namespace BRDFLafortuneFitting
 				_PerformedIterationsCount = its;
 
 				// The new function evaluation occurs in lnsrch
-				lnsrch( n, _Coefficients, fp, g, xi, pnew, out _Minimum, stpmax, out check, _FunctionEval, _Params );
-				fp = _Minimum;
+				lnsrch( n, _Coefficients, fp, g, xi, pnew, out Minimum, stpmax, out check, _FunctionEval, _Params );
+				fp = Minimum;
 
 				for ( i=1; i<=n; i++ )
 				{
@@ -933,7 +713,7 @@ namespace BRDFLafortuneFitting
 				}
 
 				if ( test < TOLX )
-					return;	// Done!
+					return Minimum;	// Done!
 
 				// Save the old gradient
 				for ( i=1; i <= n; i++ )
@@ -944,7 +724,7 @@ namespace BRDFLafortuneFitting
 
 				// Test for convergence on zero gradient
 				test = 0.0;
-				den = Math.Max( _Minimum, 1.0 );
+				den = Math.Max( Minimum, 1.0 );
 				for ( i=1; i <= n; i++ )
 				{
 					temp = Math.Abs( g[i] ) * Math.Max( Math.Abs( _Coefficients[i] ), 1.0 ) / den;
@@ -953,7 +733,7 @@ namespace BRDFLafortuneFitting
 				}
 
 				if ( test < _ConvergenceTolerance )
-					return;	// Done!
+					return Minimum;	// Done!
 
 				// Compute difference of gradients
 				for ( i=1; i <= n ; i++ )
@@ -1081,6 +861,277 @@ namespace BRDFLafortuneFitting
 		}
 
 		#endregion
+
+		#endregion
+
+		#region BRDF Handling
+
+		//////////////////////////////////////////////////////////////////////////
+		// This code is a translation from http://people.csail.mit.edu/wojciech/BRDFDatabase/code/BRDFRead.cpp
+		//////////////////////////////////////////////////////////////////////////
+		//
+		const int		BRDF_SAMPLING_RES_THETA_H = 90;
+		const int		BRDF_SAMPLING_RES_THETA_D = 90;
+		const int		BRDF_SAMPLING_RES_PHI_D = 360;
+
+		const double	BRDF_SCALE_RED = 1.0 / 1500.0;
+		const double	BRDF_SCALE_GREEN = 1.15 / 1500.0;
+		const double	BRDF_SCALE_BLUE = 1.66 / 1500.0;
+
+		/// <summary>
+		/// Given a pair of incoming/outgoing angles, look up the BRDF.
+		/// </summary>
+		/// <param name="_BRDF">One of the R,G,B BRDFs</param>
+		/// <param name="_ThetaIn"></param>
+		/// <param name="_PhiIn"></param>
+		/// <param name="_ThetaOut"></param>
+		/// <param name="_PhiOut"></param>
+		/// <param name="_ComponentScale">Should be BRDF_SCALE_RED, BRDF_SCALE_GREEN, BRDF_SCALE_BLUE depending on the component</param>
+		/// <returns></returns>
+		static double	LookupBRDF( double[] _BRDF, double _ThetaIn, double _PhiIn, double _ThetaOut, double _PhiOut )//, double _ComponentScale )
+		{
+			// Convert to half angle / difference angle coordinates
+			double ThetaHalf, PhiHalf, ThetaDiff, PhiDiff;
+			std_coords_to_half_diff_coords(	_ThetaIn, _PhiIn, _ThetaOut, _PhiOut,
+											out ThetaHalf, out PhiHalf, out ThetaDiff, out PhiDiff );
+
+			// Find index (note that PhiHalf is ignored, since isotropic BRDFs are assumed)
+			int TableIndex = PhiDiff_index( PhiDiff );
+				TableIndex += (BRDF_SAMPLING_RES_PHI_D / 2) * ThetaDiff_index( ThetaDiff );
+				TableIndex += (BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D / 2) * ThetaHalf_index( ThetaHalf );
+
+			double	Result = _BRDF[TableIndex];
+//					Result *= _ComponentScale;
+			return Result;
+		}
+
+		/// <summary>
+		/// Convert standard (Theta,Phi) coordinates to half vector & difference vector coordinates
+		/// (from http://graphics.stanford.edu/papers/brdf_change_of_variables/brdf_change_of_variables.pdf)
+		/// </summary>
+		/// <param name="_ThetaIn"></param>
+		/// <param name="_PhiIn"></param>
+		/// <param name="_ThetaOut"></param>
+		/// <param name="_PhiOut"></param>
+		/// <param name="_ThetaHalf"></param>
+		/// <param name="_PhiHalf"></param>
+		/// <param name="_ThetaDiff"></param>
+		/// <param name="_PhiDiff"></param>
+		// 
+		static private Vector3	In = new Vector3();
+		static private Vector3	Out = new Vector3();
+		static private Vector3	Half = new Vector3();
+		static private Vector3	Diff = new Vector3();
+		static private Vector3	Tangent = new Vector3() { x=1.0, y=0.0, z=0.0 };
+		static private Vector3	BiTangent = new Vector3() { x=0.0, y=1.0, z=0.0 };
+		static private Vector3	Normal = new Vector3() { x=0.0, y=0.0, z=1.0 };
+		static private Vector3	Temp = new Vector3();
+		static void std_coords_to_half_diff_coords( double _ThetaIn, double _PhiIn, double _ThetaOut, double _PhiOut,
+													out double _ThetaHalf, out double _PhiHalf, out double _ThetaDiff, out double _PhiDiff )
+		{
+			// compute in vector
+			double in_vec_z = Math.Cos(_ThetaIn);
+			double proj_in_vec = Math.Sin(_ThetaIn);
+			double in_vec_x = proj_in_vec*Math.Cos(_PhiIn);
+			double in_vec_y = proj_in_vec*Math.Sin(_PhiIn);
+			In.Set( in_vec_x, in_vec_y, in_vec_z );
+
+			// compute out vector
+			double out_vec_z = Math.Cos(_ThetaOut);
+			double proj_out_vec = Math.Sin(_ThetaOut);
+			double out_vec_x = proj_out_vec*Math.Cos(_PhiOut);
+			double out_vec_y = proj_out_vec*Math.Sin(_PhiOut);
+			Out.Set( out_vec_x, out_vec_y, out_vec_z );
+
+			// compute halfway vector
+			Half.Set( in_vec_x + out_vec_x, in_vec_y + out_vec_y, in_vec_z + out_vec_z );
+			Half.Normalize();
+
+			// compute  _ThetaHalf, _PhiHalf
+			_ThetaHalf = Math.Acos( Half.z );
+			_PhiHalf = Math.Atan2( Half.y, Half.x );
+
+			// Compute diff vector
+			In.Rotate( ref Normal, -_PhiHalf, out Temp );
+			Temp.Rotate( ref BiTangent, -_ThetaHalf, out Diff );
+	
+			// Compute _ThetaDiff, _PhiDiff	
+			_ThetaDiff = Math.Acos( Diff.z );
+			_PhiDiff = Math.Atan2( Diff.y, Diff.x );
+		}
+
+		static void	half_diff_coords_to_std_coords( double _ThetaHalf, double _PhiHalf, double _ThetaDiff, double _PhiDiff,
+													out double _ThetaIn, out double _PhiIn, out double _ThetaOut, out double _PhiOut )
+		{
+			double	SinTheta_half = Math.Sin( _ThetaHalf );
+			Vector3	Half = new Vector3() { x=Math.Cos( _PhiHalf ) * SinTheta_half, y=Math.Sin( _PhiHalf ) * SinTheta_half, z=Math.Cos( _ThetaHalf ) };
+
+			// Build the 2 vectors representing the frame in which we can use the diff angles
+			Vector3	OrthoX;
+			Half.Cross( ref Normal, out OrthoX );
+			if ( OrthoX.LengthSq() < 1e-6 )
+				OrthoX.Set( 1, 0, 0 );
+			else
+				OrthoX.Normalize();
+
+			Vector3	OrthoY;
+			Half.Cross( ref OrthoX, out OrthoY );
+
+			// Rotate using diff angles to retrieve incoming direction
+			Half.Rotate( ref OrthoX, -_ThetaDiff, out Temp );
+			Temp.Rotate( ref Half, _PhiDiff, out In );
+
+			// We can get the outgoing vector either by rotating the incoming vector half a circle
+// 			Temp.Rotate( ref Half, _PhiDiff + Math.PI, out Out );
+
+			// ...or by mirroring in "Half tangent space"
+			double	MirrorX = -In.Dot( ref OrthoX );
+			double	MirrorY = -In.Dot( ref OrthoY );
+			double	z = In.Dot( ref Half );
+			Out.Set(
+				MirrorX*OrthoX.x + MirrorY*OrthoY.x + z*Half.x,
+				MirrorX*OrthoX.y + MirrorY*OrthoY.y + z*Half.y,
+				MirrorX*OrthoX.z + MirrorY*OrthoY.z + z*Half.z
+			);
+
+			// CHECK
+// 			Vector3	CheckHalf = new Vector3() { x = In.x+Out.x, y = In.y+Out.y, z = In.z+Out.z };
+// 					CheckHalf.Normalize();	// Is this Half ???
+			// CHECK
+
+			// Finally, we can retrieve the angles we came here to look for...
+			_ThetaIn = Math.Acos( In.z );
+			_PhiIn = Math.Atan2( In.y, In.x );
+			_ThetaOut = Math.Acos( Out.z );
+			_PhiOut = Math.Atan2( Out.y, Out.x );
+		}
+
+		static void	half_diff_coords_to_std_coords( double _ThetaHalf, double _PhiHalf, double _ThetaDiff, double _PhiDiff,
+													ref Vector3 _In, ref Vector3 _Out )
+		{
+			double	SinTheta_half = Math.Sin( _ThetaHalf );
+			Vector3	Half = new Vector3() { x=Math.Cos( _PhiHalf ) * SinTheta_half, y=Math.Sin( _PhiHalf ) * SinTheta_half, z=Math.Cos( _ThetaHalf ) };
+
+			// Build the 2 vectors representing the frame in which we can use the diff angles
+			Vector3	OrthoX;
+			Half.Cross( ref Normal, out OrthoX );
+			if ( OrthoX.LengthSq() < 1e-6 )
+				OrthoX.Set( 1, 0, 0 );
+			else
+				OrthoX.Normalize();
+
+			Vector3	OrthoY;
+			Half.Cross( ref OrthoX, out OrthoY );
+
+			// Rotate using diff angles to retrieve incoming direction
+			Half.Rotate( ref OrthoX, -_ThetaDiff, out Temp );
+			Temp.Rotate( ref Half, _PhiDiff, out _In );
+
+			// ...or by mirroring in "Half tangent space"
+			double	MirrorX = -_In.Dot( ref OrthoX );
+			double	MirrorY = -_In.Dot( ref OrthoY );
+			double	z = _In.Dot( ref Half );
+			_Out.Set(
+				MirrorX*OrthoX.x + MirrorY*OrthoY.x + z*Half.x,
+				MirrorX*OrthoX.y + MirrorY*OrthoY.y + z*Half.y,
+				MirrorX*OrthoX.z + MirrorY*OrthoY.z + z*Half.z
+			);
+		}
+
+		// Lookup _ThetaHalf index
+		// This is a non-linear mapping!
+		// In:  [0 .. pi/2]
+		// Out: [0 .. 89]
+		static int ThetaHalf_index( double _ThetaHalf )
+		{
+			if ( _ThetaHalf <= 0.0 )
+				return 0;
+
+			double	ThetaHalf_deg = ((_ThetaHalf / (0.5*Math.PI)) * BRDF_SAMPLING_RES_THETA_H);
+			double	temp = ThetaHalf_deg*BRDF_SAMPLING_RES_THETA_H;
+					temp = Math.Sqrt( temp );
+
+			int Index = (int) Math.Floor( temp );
+				Index = Math.Max( 0, Math.Min( Index, BRDF_SAMPLING_RES_THETA_H-1 ) );
+			return Index;
+		}
+
+		// Lookup _ThetaDiff index
+		// In:  [0 .. pi/2]
+		// Out: [0 .. 89]
+		static int ThetaDiff_index( double _ThetaDiff )
+		{
+			int Index = (int) Math.Floor( _ThetaDiff / (Math.PI * 0.5) * BRDF_SAMPLING_RES_THETA_D );
+				Index = Math.Max( 0, Math.Min( Index, BRDF_SAMPLING_RES_THETA_D-1 ) );
+			return Index;
+		}
+
+		// Lookup _PhiDiff index
+		static int PhiDiff_index( double _PhiDiff )
+		{
+			// Because of reciprocity, the BRDF is unchanged under
+			// _PhiDiff -> _PhiDiff + PI
+			if ( _PhiDiff < 0.0 )
+				_PhiDiff += Math.PI;
+
+			// In: _PhiDiff in [0 .. PI]
+			// Out: tmp in [0 .. 179]
+			int	Index = (int) Math.Floor( 2*_PhiDiff / Math.PI * BRDF_SAMPLING_RES_PHI_D );
+				Index = Math.Max( 0, Math.Min( Index, BRDF_SAMPLING_RES_PHI_D/2-1 ) );
+			return Index;
+		}
+
+		/// <summary>
+		/// Loads a MERL BRDF file
+		/// </summary>
+		/// <param name="_BRDFFile"></param>
+		/// <returns></returns>
+		protected static double[][]	LoadBRDF( FileInfo _BRDFFile )
+		{
+			double[][]	Result = null;
+			try
+			{
+				using ( FileStream S = _BRDFFile.OpenRead() )
+					using ( BinaryReader Reader = new BinaryReader( S ) )
+					{
+						// Check coefficients count is the expected value
+						int	DimX = Reader.ReadInt32();
+						int	DimY = Reader.ReadInt32();
+						int	DimZ = Reader.ReadInt32();
+						int	CoeffsCount = DimX*DimY*DimZ;
+						if ( CoeffsCount != BRDF_SAMPLING_RES_THETA_H*BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D/2 )
+							throw new Exception( "The amount of coefficients stored in the file is not the expected value (i.e. " + CoeffsCount + "! (is it a BRDF file?)" );
+
+						// Allocate the R,G,B arrays
+						Result = new double[3][];
+						Result[0] = new double[CoeffsCount];
+						Result[1] = new double[CoeffsCount];
+						Result[2] = new double[CoeffsCount];
+
+						// Read content
+						for ( int ComponentIndex=0; ComponentIndex < 3; ComponentIndex++ )
+						{
+							double	Factor = 1.0;
+							if ( ComponentIndex == 0 )
+								Factor = BRDF_SCALE_RED;
+							else if ( ComponentIndex == 0 )
+								Factor = BRDF_SCALE_GREEN;
+							else 
+								Factor = BRDF_SCALE_BLUE;
+
+							double[]	ComponentArray = Result[ComponentIndex];
+							for ( int CoeffIndex=0; CoeffIndex < CoeffsCount; CoeffIndex++ )
+								ComponentArray[CoeffIndex] = Factor * Reader.ReadDouble();
+						}
+					}
+			}
+			catch ( Exception _e )
+			{	// Forward...
+				throw new Exception( "Failed to load source BRDF file: " + _e.Message );
+			}
+
+			return Result;
+		}
 
 		#endregion
 	}
