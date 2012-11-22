@@ -78,7 +78,7 @@ namespace BRDFLafortuneFitting
 	{
 		#region CONSTANTS
 
-		const int		SAMPLES_COUNT_THETA = 40;	// The total amount of samples will thus be (2*SAMPLES_COUNT_THETA)*SAMPLES_COUNT_THETA*SAMPLES_COUNT_THETA
+		const int		SAMPLES_COUNT_THETA = 90;//40;				// Use 90 to cover the entire BRDF (1 458 000 samples).
 		const int		TOTAL_SAMPLES_COUNT = 2*SAMPLES_COUNT_THETA*SAMPLES_COUNT_THETA*SAMPLES_COUNT_THETA;
 
 		const double	BFGS_CONVERGENCE_TOLERANCE = 1e-3;		// Don't exit unless we reach below this threshold...
@@ -142,21 +142,36 @@ namespace BRDFLafortuneFitting
 			}
 		}
 
+		[System.Diagnostics.DebuggerDisplay( "Axis=({C.x}, {C.y}, {C.z}) N={N}" )]
 		struct	CosineLobe
 		{
 			public Vector3	C;		// Cx, Cy, Cz coefficients of the generalized cosine lobe model
 			public double	N;		// Exponent
 
+			// DEBUG => Keep track of the error with this lobe
+			public double	Error;
+
 			public	CosineLobe( Vector3 _C, double _N )
 			{
 				C = _C;
 				N = _N;
+				Error = double.MaxValue;
+			}
+
+			public void		CopyFrom( CosineLobe _Source )
+			{
+				C.x = _Source.C.x;
+				C.y = _Source.C.y;
+				C.z = _Source.C.z;
+				N = _Source.N;
+				Error = _Source.Error;
 			}
 		}
 
 		class	BRDFSample
 		{
 			public int			m_BRDFIndex = 0;				// The flattened index in the BRDF table
+			public double		m_CosThetaIn = 0.0;				// Optional multiply by cos theta to alleviate deviations at grazing angles
 			public Vector3		m_DotProduct = new Vector3();	// The 3 coefficients of the dot product between the incoming/outgoing directions corresponding to the BRDF index
 		}
 
@@ -193,7 +208,7 @@ namespace BRDFLafortuneFitting
 
 		#region FIELDS
 
-		static BRDFSample[]		ms_BRDFSamples = new BRDFSample[TOTAL_SAMPLES_COUNT];
+		static BRDFSample[]		ms_BRDFSamples = null;
 
 		#endregion
 
@@ -230,25 +245,51 @@ namespace BRDFLafortuneFitting
 				// Load the BRDF
 				double[][]	BRDF = LoadBRDF( SourceBRDF );
 
-				// DEBUG CHECK
+// 				// DEBUG CHECK
 // 				{	// Generate a bunch of incoming/outgoing directions, get their Half/Diff angles then regenerate back incoming/outgoing directions from these angles and check the relative incoming/outgoing directions are conserved
 // 					// This is important to ensure we sample only the relevant (i.e. changing) parts of the BRDF in our minimization scheme
 // 					// (I want to actually sample the BRDF using the half/diff angles and generate incoming/outgoing vectors from these, rather than sample all the possible 4D space)
 // 					//
-// 					Random	RNG = new Random( 1 );
+// 					Random	TempRNG = new Random( 1 );
+// 					Vector3	TempIn = new Vector3(), TempOut = new Vector3();
+// 					double	MinThetaHalf = double.MaxValue, MaxThetaHalf = -double.MaxValue;
+// 					double	MinPhiHalf = double.MaxValue, MaxPhiHalf = -double.MaxValue;
+// 					double	MinThetaDiff = double.MaxValue, MaxThetaDiff = -double.MaxValue;
+// 					double	MinPhiDiff = double.MaxValue, MaxPhiDiff = -double.MaxValue;
 // 					for ( int i=0; i < 10000; i++ )
 // 					{
-// 						double	Phi_i = 2.0 * Math.PI * (RNG.NextDouble() - 0.5);
-// 						double	Theta_i = 0.5 * Math.PI * RNG.NextDouble();
-// 						double	Phi_r = 2.0 * Math.PI * (RNG.NextDouble() - 0.5);
-// 						double	Theta_r = 0.5 * Math.PI * RNG.NextDouble();
+// 						double	Phi_i = 2.0 * Math.PI * (TempRNG.NextDouble() - 0.5);
+// 						double	Theta_i = 0.5 * Math.PI * TempRNG.NextDouble();
+// 						double	Phi_r = 2.0 * Math.PI * (TempRNG.NextDouble() - 0.5);
+// 						double	Theta_r = 0.5 * Math.PI * TempRNG.NextDouble();
 // 
 // 						double	Theta_half, Phi_half, Theta_diff, Phi_diff;
 // 						std_coords_to_half_diff_coords( Theta_i, Phi_i, Theta_r, Phi_r, out Theta_half, out Phi_half, out Theta_diff, out Phi_diff );
 // 
+// 
+// // 						MinThetaHalf = Math.Min( MinThetaHalf, Theta_half );
+// // 						MaxThetaHalf = Math.Max( MaxThetaHalf, Theta_half );
+// // 						MinThetaDiff = Math.Min( MinThetaDiff, Theta_diff );
+// // 						MaxThetaDiff = Math.Max( MaxThetaDiff, Theta_diff );
+// // 						MinPhiHalf = Math.Min( MinPhiHalf, Phi_half );
+// // 						MaxPhiHalf = Math.Max( MaxPhiHalf, Phi_half );
+// // 						MinPhiDiff = Math.Min( MinPhiDiff, Phi_diff );
+// // 						MaxPhiDiff = Math.Max( MaxPhiDiff, Phi_diff );
+// 
+// // 						if ( Theta_half > MaxThetaHalf )
+// // 						{
+// // 							MaxThetaHalf = Theta_half;
+// // 							MaxPhiHalf = Phi_half;
+// // 							MaxThetaDiff = Theta_diff;
+// // 							MaxPhiDiff = Phi_diff;
+// // 						}
+// 
 // 						// Convert back...
 // 						double	NewTheta_i, NewPhi_i, NewTheta_r, NewPhi_r;
 // 						half_diff_coords_to_std_coords( Theta_half, Phi_half, Theta_diff, Phi_diff, out NewTheta_i, out NewPhi_i, out NewTheta_r, out NewPhi_r );
+// 
+// 						// Convert back into directions
+// 						half_diff_coords_to_std_coords( Theta_half, Phi_half, Theta_diff, Phi_diff, ref TempIn, ref TempOut );
 // 
 // 						// Check
 // 						const double Tol = 1e-4;
@@ -258,9 +299,58 @@ namespace BRDFLafortuneFitting
 // 						if ( Math.Abs( NewPhi_i - Phi_i ) > Tol
 // 							|| Math.Abs( NewPhi_r - Phi_r ) > Tol )
 // 							throw new Exception( "ARGH PHI!" );
+// 
+// 						if ( NewTheta_i > 0.5 * Math.PI )
+// 							throw new Exception( "Incoming direction below surface!" );
+// 						if ( NewTheta_r > 0.5 * Math.PI )
+// 							throw new Exception( "Outgoing direction below surface!" );
+// 						if ( TempIn.z < 0.0 )
+// 							throw new Exception( "VECTOR Incoming direction below surface!" );
+// 						if ( TempOut.z < 0.0 )
+// 							throw new Exception( "VECTOR Outgoing direction below surface!" );
 // 					}
 // 				}
-				// DEBUG CHECK
+// 				// DEBUG CHECK
+
+// DEBUG CHECK
+// I can't understand the purpose of certain "wrong angles" in the BRDF table
+// When Theta_half is near PI/2, and difference angles make the incoming or outgoing directions go BELOW the fucking surface, what does it mean????
+// {
+// 	double	ThetaHalf = 0.5*Math.PI;
+// 	double	ThetaDiff = 0.1*Math.PI;	// This should make the incoming direction go BELOW the surface...
+// 	double	PhiDiff = 0.0;
+// 
+// 	// Check it's below the surface
+// 	Vector3	TempIn = new Vector3(), TempOut = new Vector3();
+// 	half_diff_coords_to_std_coords( ThetaHalf, 0, ThetaDiff, PhiDiff, ref TempIn, ref TempOut );
+// 
+// 	// Get BRDF index
+// 	int	TableIndex = PhiDiff_index( PhiDiff );
+// 		TableIndex += (BRDF_SAMPLING_RES_PHI_D / 2) * ThetaDiff_index( ThetaDiff );
+// 		TableIndex += (BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D / 2) * ThetaHalf_index( ThetaHalf );
+// 
+// 	// What the fuck is there??
+// 	double	Value = BRDF[0][TableIndex];
+// 
+// 	// A tiny negative value...
+// }
+// DEBUG CHECK
+
+
+
+// DEBUG Clear out BRDF values to make sure we only read positive samples. If we find a negative sample then there is an error!
+// for ( int PhiDiffIndex=0; PhiDiffIndex < BRDF_SAMPLING_RES_PHI_D/2; PhiDiffIndex++ )
+// 	for ( int ThetaDiffIndex=0; ThetaDiffIndex < BRDF_SAMPLING_RES_THETA_D; ThetaDiffIndex++ )
+// 		for ( int ThetaHalfIndex=0; ThetaHalfIndex < BRDF_SAMPLING_RES_THETA_H; ThetaHalfIndex++ )
+// 		{
+// 			int	TableIndex = PhiDiffIndex;
+// 				TableIndex += (BRDF_SAMPLING_RES_PHI_D / 2) * ThetaDiffIndex;
+// 				TableIndex += (BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D / 2) * ThetaHalfIndex;
+// 
+// 			BRDF[0][TableIndex] = -1.0f;
+// 		}
+// DEBUG
+
 
 				// Generate the sampling base
 				// => We generate and store as many samples as possible in the 90*90*360/2 source array
@@ -271,22 +361,25 @@ namespace BRDFLafortuneFitting
 				double	dPhi = Math.PI / (2*SAMPLES_COUNT_THETA);
 				double	dTheta = 0.5*Math.PI / SAMPLES_COUNT_THETA;
 
+				Vector3	MinValues = new Vector3() { x=+double.MaxValue, y=+double.MaxValue, z=+double.MaxValue };
+				Vector3	MaxValues = new Vector3() { x=-double.MaxValue, y=-double.MaxValue, z=-double.MaxValue };
+
 				Vector3	In = new Vector3();
 				Vector3	Out = new Vector3();
-				int		BRDFSampleIndex = 0;
+				List<BRDFSample>	Samples = new List<BRDFSample>();
 				for ( int PhiDiffIndex=0; PhiDiffIndex < 2*SAMPLES_COUNT_THETA; PhiDiffIndex++ )
 				{
 					for ( int ThetaDiffIndex=0; ThetaDiffIndex < SAMPLES_COUNT_THETA; ThetaDiffIndex++ )
 					{
 						for ( int ThetaHalfIndex=0; ThetaHalfIndex < SAMPLES_COUNT_THETA; ThetaHalfIndex++ )
 						{
-							BRDFSample	Sample = new BRDFSample();
-							ms_BRDFSamples[BRDFSampleIndex++] = Sample;
-
 							// Generate random stratified samples
-							double	PhiDiff = dPhi * (PhiDiffIndex + RNG.NextDouble());
-							double	ThetaDiff = dTheta * (ThetaDiffIndex + RNG.NextDouble());
-							double	ThetaHalf = dTheta * (ThetaHalfIndex + RNG.NextDouble());
+// 							double	PhiDiff = dPhi * (PhiDiffIndex + RNG.NextDouble());
+// 							double	ThetaDiff = dTheta * (ThetaDiffIndex + RNG.NextDouble());
+// 							double	ThetaHalf = dTheta * (ThetaHalfIndex + RNG.NextDouble());
+							double	PhiDiff = dPhi * PhiDiffIndex;
+							double	ThetaDiff = dTheta * ThetaDiffIndex;
+							double	ThetaHalf = dTheta * ThetaHalfIndex;
 
 							// Retrieve incoming/outgoing vectors
 							half_diff_coords_to_std_coords( ThetaHalf, 0.0, ThetaDiff, PhiDiff, ref In, ref Out );
@@ -296,7 +389,107 @@ namespace BRDFLafortuneFitting
 								TableIndex += (BRDF_SAMPLING_RES_PHI_D / 2) * ThetaDiff_index( ThetaDiff );
 								TableIndex += (BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D / 2) * ThetaHalf_index( ThetaHalf );
 
+// 							if ( TableIndex == 0xFD200 )
+// 								PhiDiff++;
+
+							// Let's make sure it's one of those negative values...
+							double	R = BRDF[0][TableIndex];
+							double	G = BRDF[1][TableIndex];
+							double	B = BRDF[2][TableIndex];
+
+							// Check the in & out directions are valid (i.e. ABOVE the surface)
+							const double	Z_TOL = 0.001;
+							if ( In.z <= Z_TOL || Out.z <= Z_TOL )
+							{	// Invalid sample...
+
+// 								try
+// 								{
+// 									if ( R > 1.0 ) throw new Exception( "Significant positive value in supposedly invalid sample (RED)!" );
+// 									if ( G > 1.0 ) throw new Exception( "Significant positive value in supposedly invalid sample (GREEN)!" );
+// 									if ( B > 1.0 ) throw new Exception( "Significant positive value in supposedly invalid sample (BLUE)!" );
+// 								}
+// 								catch ( Exception )
+// 								{
+// 									
+// 								}
+
+								continue;
+							}
+
+							//////////////////////////////////////////////////////////////////////////
+							// Replace any invalid value
+							double	SumValidValues = 0.0;
+							int		ValidValuesCount = 0;
+							if ( IsValid( R ) )
+							{	// Red is valid
+								SumValidValues += R;
+								ValidValuesCount++;
+							}
+							if ( IsValid( G ) )
+							{	// Green is valid
+								SumValidValues += G;
+								ValidValuesCount++;
+							}
+							if ( IsValid( B ) )
+							{	// Blue is valid
+								SumValidValues += B;
+								ValidValuesCount++;
+							}
+							if ( ValidValuesCount != 3 )
+							{
+								SumValidValues /= Math.Max( 1, ValidValuesCount );	// Get the average of valid values
+								if ( !IsValid( R ) )
+									R = SumValidValues;	// Replace Red by average...
+								if ( !IsValid( G ) )
+									G = SumValidValues;	// Replace Red by average...
+								if ( !IsValid( B ) )
+									B = SumValidValues;	// Replace Red by average...
+
+								BRDF[0][TableIndex] = R;
+								BRDF[1][TableIndex] = G;
+								BRDF[2][TableIndex] = B;
+							}
+
+
+							//////////////////////////////////////////////////////////////////////////
+							BRDFSample	Sample = new BRDFSample();
+							Samples.Add( Sample );
+
 							Sample.m_BRDFIndex = TableIndex;
+
+							// Store the cos(ThetaIn)
+							Sample.m_CosThetaIn = In.z;
+
+
+// DEBUG Keep min/max values to have an idea of what we're manipulating here...
+MinValues.x = Math.Min( MinValues.x, R );
+MaxValues.x = Math.Max( MaxValues.x, R );
+MinValues.y = Math.Min( MinValues.y, G );
+MaxValues.y = Math.Max( MaxValues.y, G );
+MinValues.z = Math.Min( MinValues.z, B );
+MaxValues.z = Math.Max( MaxValues.z, B );
+// DEBUG
+
+// DEBUG
+// Patch the BRDF to make it look like an obvious cosine lobe from a standard Phong reflection
+{
+// 	Vector3	Half = new Vector3() { x=In.x+Out.x, y=In.y+Out.y, z=In.z+Out.z };
+// 			Half.Normalize();
+// 	BRDF[0][TableIndex] = Math.Pow( Half.z, 17.2 );	// The exponent is very particular
+
+	Vector3	Reflect = new Vector3() { x=-In.x, y=-In.y, z=In.z };
+	double	Dot = Reflect.Dot( ref Out );
+			Dot = Math.Max( 0, Dot );
+			Dot = Math.Pow( Dot, 17.2 );	// The exponent is very particular
+			Dot /= In.z;					// cos(ThetaIn)
+
+	if ( Dot < 0.0 )
+		throw new Exception( "OUCH!" );
+
+	BRDF[0][TableIndex] = Dot;
+}
+// DEBUG
+
 
 							// Build the dot product coefficients
 							Sample.m_DotProduct.Set(
@@ -308,25 +501,52 @@ namespace BRDFLafortuneFitting
 					}
 				}
 
+				// We got our samples!
+				ms_BRDFSamples = Samples.ToArray();
+
+				double	PercentageOfTableUsed = (double) (ms_BRDFSamples.Length) / (BRDF_SAMPLING_RES_THETA_H*BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D / 2);
+
+
 				// Show modeless progress form
 				ms_ProgressForm = new ProgressForm();
 				ms_ProgressForm.Show();
 				ms_ProgressForm.BRDFComponentIndex = 0;
 				ms_ProgressForm.Progress = 0.0;
 
+				// Build a list of initial guesses
+				CosineLobe[]	InitialGuesses = new CosineLobe[1];
+				InitialGuesses[0] = new CosineLobe(
+					new Vector3() { x=-1, y=-1, z=1 },	// Standard Phong reflection
+// 					new Vector3() { x=0, y=0, z=1 },
+ 					17.2 );
+
+// 				CosineLobe[]	InitialGuesses = new CosineLobe[100];
+// 				for ( int i=0; i < InitialGuesses.Length; i++ )
+// 				{
+// 					Vector3	Direction = new Vector3() { x=2.0*RNG.NextDouble()-1.0, y=2.0*RNG.NextDouble()-1.0, z=RNG.NextDouble() };
+// 					InitialGuesses[i] = new CosineLobe( Direction, 1.0 );
+// 				}
+
 				// Perform local minimization for each R,G,B component
 				CosineLobe[][]	CosineLobes = new CosineLobe[3][];
 				double[][]		RMSErrors = new double[3][];
 				try
 				{
-					for ( int ComponentIndex=2; ComponentIndex < 3; ComponentIndex++ )
+					for ( int ComponentIndex=0; ComponentIndex < 3; ComponentIndex++ )
 					{
 						CosineLobes[ComponentIndex] = new CosineLobe[LobesCount];
 						RMSErrors[ComponentIndex] = new double[LobesCount];
 
 						ms_ProgressForm.BRDFComponentIndex = ComponentIndex;
 
-						FitBRDF( BRDF[ComponentIndex], CosineLobes[ComponentIndex], 1, BFGS_CONVERGENCE_TOLERANCE, RMSErrors[ComponentIndex], ShowProgress );
+						FitBRDF( BRDF[ComponentIndex], CosineLobes[ComponentIndex], InitialGuesses, BFGS_CONVERGENCE_TOLERANCE, RMSErrors[ComponentIndex], ShowProgress );
+
+		
+// 						// CHECK We get the sam result starting from another initial guess
+// 						CosineLobe[]	TempLobes = new CosineLobe[LobesCount]; 
+// 						InitialGuesses[0] = new CosineLobe( new Vector3() { x=0, y=0, z=1 }, 1 );
+// 						FitBRDF( BRDF[ComponentIndex], TempLobes, InitialGuesses, BFGS_CONVERGENCE_TOLERANCE, RMSErrors[ComponentIndex], ShowProgress );
+// 						// CHECK
 					}
 				}
 				catch ( Exception _e )
@@ -370,6 +590,19 @@ namespace BRDFLafortuneFitting
 			}
 		}
 
+		private static bool		IsValid( double _BRDFValue )
+		{
+			if ( _BRDFValue < 0.0 )
+				return false;
+			if ( _BRDFValue > 10000.0 )
+				return false;
+
+			if ( double.IsNaN( _BRDFValue ) )
+				return false;
+
+			return true;
+		}
+
 		private static ProgressForm	ms_ProgressForm = null;
 		private static void		ShowProgress( double _Progress )
 		{
@@ -399,19 +632,22 @@ namespace BRDFLafortuneFitting
 
 			// Prepare feedback data
 			float	fCurrentProgress = 0.0f;
-			float	fProgressDelta = 1.0f / (LobesCount * _InitialCoefficientsAttemptsCount);
+			float	fProgressDelta = 1.0f / (LobesCount * _InitialGuesses.Length);
 			int		FeedbackCount = 0;
-			int		FeedbackThreshold = (LobesCount * _InitialCoefficientsAttemptsCount) / 100;	// Notify every percent
+			int		FeedbackThreshold = (LobesCount * _InitialGuesses.Length) / 100;	// Notify every percent
 
 			//////////////////////////////////////////////////////////////////////////
 			// 1] Compute the best fit for each lobe
 			int			CrashesCount = 0;
 			double[]	LocalLobeCoefficients = new double[1+4];	// Don't forget the BFGS function annoyingly uses indices starting from 1!
+			List<CosineLobe>	BestFits = new List<CosineLobe>( _InitialGuesses.Length );
 			for ( int LobeIndex=0; LobeIndex < LobesCount; LobeIndex++ )
 			{
+				BestFits.Clear();
+
 				// 1.1] Perform minification using several attempts with different initial coefficients and keep the best fit
 				double	MinError = double.MaxValue;
-				for ( int AttemptIndex = 0; AttemptIndex < _InitialCoefficientsAttemptsCount; AttemptIndex++ )
+				for ( int AttemptIndex = 0; AttemptIndex < _InitialGuesses.Length; AttemptIndex++ )
 				{
 					// Update external feedback on progression
 					if ( _Delegate != null )
@@ -426,11 +662,7 @@ namespace BRDFLafortuneFitting
 					}
 
 					// 1.1.1] Set the initial lobe coefficients
-					// TODO: Guess various initial directions (at the time we assume _InitialCoefficientsAttemptsCount == 1)
-					Context.m_Lobes[0].C.Set( -1, -1, 1 );	// Standard Phong reflection
-					Context.m_Lobes[0].N = 1;
-
-//					Context.m_LobeDirection = RandomInitialDirections[DirectionIndex++];
+					Context.m_Lobes[0].CopyFrom( _InitialGuesses[AttemptIndex] );
 
 					// 1.1.2] Copy coefficients into working array
 					LocalLobeCoefficients[1+0] = Context.m_Lobes[0].C.x;
@@ -465,6 +697,10 @@ namespace BRDFLafortuneFitting
 					// Save that "optimal" lobe data
 					_Lobes[LobeIndex].C.Set( Context.m_Lobes[0].C.x, Context.m_Lobes[0].C.y, Context.m_Lobes[0].C.z );
 					_Lobes[LobeIndex].N = Context.m_Lobes[0].N;
+					_Lobes[LobeIndex].Error = FunctionMinimum;
+
+					// Keep in the list of best fits
+					BestFits.Insert( 0, _Lobes[LobeIndex] );
 
 					_RMS[LobeIndex] = FunctionMinimum;
 				}
@@ -473,7 +709,7 @@ namespace BRDFLafortuneFitting
 				// 1.2] At this point, we have the "best" cosine lobe fit for the given BRDF
 				// We must subtract the influence of that lobe from the current BRDF and restart fitting with a new lobe...
 				//
-				CosineLobe	LobeToSubtract = Context.m_Lobes[0];
+				CosineLobe	LobeToSubtract = _Lobes[LobeIndex];
 				for ( int SampleIndex=0; SampleIndex < ms_BRDFSamples.Length; SampleIndex++ )
 				{
 					BRDFSample	Sample = ms_BRDFSamples[SampleIndex];
@@ -484,6 +720,7 @@ namespace BRDFLafortuneFitting
 
 					double		CurrentBRDFValue = Context.m_BRDF[SampleIndex];
 								CurrentBRDFValue -= LobeInfluence;
+								CurrentBRDFValue = Math.Max( 0, CurrentBRDFValue );
 
 					Context.m_BRDF[SampleIndex] = CurrentBRDFValue;
 				}
@@ -550,6 +787,10 @@ namespace BRDFLafortuneFitting
 		{
 			BRDFFitEvaluationContext	Context = _Params as BRDFFitEvaluationContext;
 
+			// PATCH: Make sure the coefficient is strictly positive
+			if ( _Coefficients[4] < EPS )
+				_Coefficients[4] = EPS;
+
 			// Copy current coefficients into the current cosine lobe
 			Context.m_Lobes[0].C.Set( _Coefficients[1], _Coefficients[2], _Coefficients[3] );	// Remember those stupid coefficients are indexed from 1!
 			Context.m_Lobes[0].N = _Coefficients[4];
@@ -568,6 +809,9 @@ namespace BRDFLafortuneFitting
 		protected static void	BRDFMappingLocalFunctionGradientEval( double[] _Coefficients, double[] _Gradients, object _Params )
 		{
 			BRDFFitEvaluationContext	Context = _Params as BRDFFitEvaluationContext;
+
+			if ( _Coefficients[4] < EPS )
+				throw new Exception( "Invalid negative exponent!" );
 
 			double	Normalizer = 1.0 / ms_BRDFSamples.Length;
 
@@ -618,7 +862,7 @@ namespace BRDFLafortuneFitting
 			return	SumSquareDifference;
 		}
 
-		static double[]	ms_TempCoefficientsGlobal = new double[5];
+		static double[]	ms_TempCoefficientsGlobal = null;
 		protected static void	BRDFMappingGlobalFunctionGradientEval( double[] _Coefficients, double[] _Gradients, object _Params )
 		{
 			BRDFFitEvaluationContext	Context = _Params as BRDFFitEvaluationContext;
@@ -673,7 +917,15 @@ namespace BRDFLafortuneFitting
 			{
 				BRDFSample	Sample = _Samples[SampleIndex];
 
+				// Get BRDF value for that sample
 				GoalValue = _GoalBDRF[Sample.m_BRDFIndex];
+				if ( GoalValue < 0.0 )
+					throw new Exception( "Unexpected negative value!" );
+				if ( double.IsNaN( GoalValue ) )
+					throw new Exception( "Unexpected NaN!" );
+
+				// DEBUG => Multiply by cos(ThetaIn) to test if it gets us a better conditioning
+// 				GoalValue *= Sample.m_CosThetaIn;
 
 				// Estimate cosine lobe value in that direction
 				CurrentValue = 0.0;
@@ -687,7 +939,8 @@ namespace BRDFLafortuneFitting
 				}
 
 				// Sum difference between estimate and goal
-				SumSquareDifference += (CurrentValue - GoalValue) * (CurrentValue - GoalValue);
+//				SumSquareDifference += (CurrentValue - GoalValue) * (CurrentValue - GoalValue);
+				SumSquareDifference += Math.Abs( CurrentValue - GoalValue );	// Just to avoid super large numbers!
 			}
 
 			// Normalize
@@ -702,6 +955,18 @@ namespace BRDFLafortuneFitting
 		protected static readonly double	EPS = 3.0e-8;
 		protected static readonly double	TOLX = 4*EPS;
 		protected static readonly double	STPMX = 100.0;			// Scaled maximum step length allowed in line searches.
+
+		protected static void		ENSUREVALID( double[] _Coefficients )
+		{
+			for ( int i=1; i < _Coefficients.Length; i++ )
+			{
+				double	v = _Coefficients[i];
+				if ( double.IsInfinity( v ) )
+					throw new Exception( "Infinity!" );
+				if ( double.IsNaN( v ) )
+					throw new Exception( "NaN!" );
+			}
+		}
 
 		/// <summary>
 		/// Performs BFGS function minimzation on a quadratic form function evaluated by the provided delegate
@@ -752,6 +1017,7 @@ namespace BRDFLafortuneFitting
 
 				// The new function evaluation occurs in lnsrch
 				lnsrch( n, _Coefficients, fp, g, xi, pnew, out Minimum, stpmax, out check, _FunctionEval, _Params );
+				ENSUREVALID( _Coefficients );
 				fp = Minimum;
 
 				for ( i=1; i<=n; i++ )
@@ -759,6 +1025,7 @@ namespace BRDFLafortuneFitting
 					xi[i] = pnew[i] - _Coefficients[i];	// Update the line direction
 					_Coefficients[i] = pnew[i];			// as well as the current point
 				}
+				ENSUREVALID( _Coefficients );
 
 				// Test for convergence on Delta X
 				test = 0.0;
@@ -871,12 +1138,18 @@ namespace BRDFLafortuneFitting
 
 			alamin = TOLY / test;
 			alam = 1.0;
-			for (;;)
+			int	IterationsCount = 0;
+			while ( true )
 			{
+				IterationsCount++;
+
 				for ( i=1; i <= n; i++ )
 					x[i] = xold[i] + alam * p[i];
 
 				f = _FunctionEval( x, _Params );
+				if ( double.IsInfinity( f ) )
+					throw new Exception( "Infinity!" );
+				ENSUREVALID( x );
 				if ( alam < alamin )
 				{
 					for ( i=1; i <= n; i++ )
@@ -1021,7 +1294,7 @@ namespace BRDFLafortuneFitting
 													out double _ThetaIn, out double _PhiIn, out double _ThetaOut, out double _PhiOut )
 		{
 			double	SinTheta_half = Math.Sin( _ThetaHalf );
-			Vector3	Half = new Vector3() { x=Math.Cos( _PhiHalf ) * SinTheta_half, y=Math.Sin( _PhiHalf ) * SinTheta_half, z=Math.Cos( _ThetaHalf ) };
+			Half.Set( Math.Cos( _PhiHalf ) * SinTheta_half, Math.Sin( _PhiHalf ) * SinTheta_half, Math.Cos( _ThetaHalf ) );
 
 			// Build the 2 vectors representing the frame in which we can use the diff angles
 			Vector3	OrthoX;
@@ -1067,7 +1340,7 @@ namespace BRDFLafortuneFitting
 													ref Vector3 _In, ref Vector3 _Out )
 		{
 			double	SinTheta_half = Math.Sin( _ThetaHalf );
-			Vector3	Half = new Vector3() { x=Math.Cos( _PhiHalf ) * SinTheta_half, y=Math.Sin( _PhiHalf ) * SinTheta_half, z=Math.Cos( _ThetaHalf ) };
+			Half.Set( Math.Cos( _PhiHalf ) * SinTheta_half, Math.Sin( _PhiHalf ) * SinTheta_half, Math.Cos( _ThetaHalf ) );
 
 			// Build the 2 vectors representing the frame in which we can use the diff angles
 			Vector3	OrthoX;
@@ -1093,6 +1366,9 @@ namespace BRDFLafortuneFitting
 				MirrorX*OrthoX.y + MirrorY*OrthoY.y + z*Half.y,
 				MirrorX*OrthoX.z + MirrorY*OrthoY.z + z*Half.z
 			);
+
+// 			if ( _In.z < -0.5 || _Out.z < -0.5 )
+// 				throw new Exception( "RHA MAIS MERDE!" );
 		}
 
 		// Lookup _ThetaHalf index
@@ -1166,6 +1442,8 @@ namespace BRDFLafortuneFitting
 						Result[2] = new double[CoeffsCount];
 
 						// Read content
+						int[]		NegativeValuesCount = new int[3] { 0, 0, 0 };
+						double[]	MinValues = new double[3] { double.MaxValue, double.MaxValue, double.MaxValue };
 						for ( int ComponentIndex=0; ComponentIndex < 3; ComponentIndex++ )
 						{
 							double	Factor = 1.0;
@@ -1178,7 +1456,13 @@ namespace BRDFLafortuneFitting
 
 							double[]	ComponentArray = Result[ComponentIndex];
 							for ( int CoeffIndex=0; CoeffIndex < CoeffsCount; CoeffIndex++ )
-								ComponentArray[CoeffIndex] = Factor * Reader.ReadDouble();
+							{
+								double	Value = Factor * Reader.ReadDouble();
+								ComponentArray[CoeffIndex] = Value;
+								if ( Value < 0.0 )
+									NegativeValuesCount[ComponentIndex]++;
+								MinValues[ComponentIndex] = Math.Min( MinValues[ComponentIndex], Value );
+							}
 						}
 					}
 			}
