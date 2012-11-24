@@ -78,11 +78,9 @@ namespace BRDFLafortuneFitting
 	{
 		#region CONSTANTS
 
-		const int		SAMPLES_COUNT_THETA = 90;//40;				// Use 90 to cover the entire BRDF (1 458 000 samples).
-		const int		TOTAL_SAMPLES_COUNT = 2*SAMPLES_COUNT_THETA*SAMPLES_COUNT_THETA*SAMPLES_COUNT_THETA;
-
-		const double	BFGS_CONVERGENCE_TOLERANCE = 1e-3;		// Don't exit unless we reach below this threshold...
-		const double	DERIVATIVE_OFFSET = 1e-3;
+		const int		SAMPLES_COUNT_THETA = 90;				// Use 90 to cover the entire BRDF (1 458 000 samples).
+		const double	BFGS_CONVERGENCE_TOLERANCE = 1e-4;		// Don't exit unless we reach below this threshold...
+		const double	DERIVATIVE_OFFSET = 5e-3;
 
 		#endregion
 
@@ -171,7 +169,7 @@ namespace BRDFLafortuneFitting
 		class	BRDFSample
 		{
 			public int			m_BRDFIndex = 0;				// The flattened index in the BRDF table
-			public double		m_CosThetaIn = 0.0;				// Optional multiply by cos theta to alleviate deviations at grazing angles
+			public double		m_CosThetaIn = 0.0;			// Optional divide by cos theta to alleviate deviations at grazing angles
 			public Vector3		m_DotProduct = new Vector3();	// The 3 coefficients of the dot product between the incoming/outgoing directions corresponding to the BRDF index
 		}
 
@@ -374,12 +372,12 @@ namespace BRDFLafortuneFitting
 						for ( int ThetaHalfIndex=0; ThetaHalfIndex < SAMPLES_COUNT_THETA; ThetaHalfIndex++ )
 						{
 							// Generate random stratified samples
-// 							double	PhiDiff = dPhi * (PhiDiffIndex + RNG.NextDouble());
-// 							double	ThetaDiff = dTheta * (ThetaDiffIndex + RNG.NextDouble());
-// 							double	ThetaHalf = dTheta * (ThetaHalfIndex + RNG.NextDouble());
-							double	PhiDiff = dPhi * PhiDiffIndex;
-							double	ThetaDiff = dTheta * ThetaDiffIndex;
-							double	ThetaHalf = dTheta * ThetaHalfIndex;
+							double	PhiDiff = dPhi * (PhiDiffIndex + RNG.NextDouble());
+							double	ThetaDiff = dTheta * (ThetaDiffIndex + RNG.NextDouble());
+							double	ThetaHalf = dTheta * (ThetaHalfIndex + RNG.NextDouble());
+// 							double	PhiDiff = dPhi * PhiDiffIndex;
+// 							double	ThetaDiff = dTheta * ThetaDiffIndex;
+// 							double	ThetaHalf = dTheta * ThetaHalfIndex;
 
 							// Retrieve incoming/outgoing vectors
 							half_diff_coords_to_std_coords( ThetaHalf, 0.0, ThetaDiff, PhiDiff, ref In, ref Out );
@@ -389,35 +387,17 @@ namespace BRDFLafortuneFitting
 								TableIndex += (BRDF_SAMPLING_RES_PHI_D / 2) * ThetaDiff_index( ThetaDiff );
 								TableIndex += (BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D / 2) * ThetaHalf_index( ThetaHalf );
 
-// 							if ( TableIndex == 0xFD200 )
-// 								PhiDiff++;
+							// Check the in & out directions are valid (i.e. ABOVE the surface)
+							const double	Z_TOL = 0.001;
+							if ( In.z <= Z_TOL || Out.z <= Z_TOL )
+								continue;	// Invalid sample...
 
-							// Let's make sure it's one of those negative values...
+							//////////////////////////////////////////////////////////////////////////
+							// Replace any invalid value
 							double	R = BRDF[0][TableIndex];
 							double	G = BRDF[1][TableIndex];
 							double	B = BRDF[2][TableIndex];
 
-							// Check the in & out directions are valid (i.e. ABOVE the surface)
-							const double	Z_TOL = 0.001;
-							if ( In.z <= Z_TOL || Out.z <= Z_TOL )
-							{	// Invalid sample...
-
-// 								try
-// 								{
-// 									if ( R > 1.0 ) throw new Exception( "Significant positive value in supposedly invalid sample (RED)!" );
-// 									if ( G > 1.0 ) throw new Exception( "Significant positive value in supposedly invalid sample (GREEN)!" );
-// 									if ( B > 1.0 ) throw new Exception( "Significant positive value in supposedly invalid sample (BLUE)!" );
-// 								}
-// 								catch ( Exception )
-// 								{
-// 									
-// 								}
-
-								continue;
-							}
-
-							//////////////////////////////////////////////////////////////////////////
-							// Replace any invalid value
 							double	SumValidValues = 0.0;
 							int		ValidValuesCount = 0;
 							if ( IsValid( R ) )
@@ -441,9 +421,9 @@ namespace BRDFLafortuneFitting
 								if ( !IsValid( R ) )
 									R = SumValidValues;	// Replace Red by average...
 								if ( !IsValid( G ) )
-									G = SumValidValues;	// Replace Red by average...
+									G = SumValidValues;	// Replace Green by average...
 								if ( !IsValid( B ) )
-									B = SumValidValues;	// Replace Red by average...
+									B = SumValidValues;	// Replace Blue by average...
 
 								BRDF[0][TableIndex] = R;
 								BRDF[1][TableIndex] = G;
@@ -460,6 +440,13 @@ namespace BRDFLafortuneFitting
 							// Store the cos(ThetaIn)
 							Sample.m_CosThetaIn = In.z;
 
+							// Build the dot product coefficients used by the Lafortune model
+							Sample.m_DotProduct.Set(
+								In.x*Out.x,
+								In.y*Out.y,
+								In.z*Out.z
+								);
+
 
 // DEBUG Keep min/max values to have an idea of what we're manipulating here...
 MinValues.x = Math.Min( MinValues.x, R );
@@ -472,31 +459,20 @@ MaxValues.z = Math.Max( MaxValues.z, B );
 
 // DEBUG
 // Patch the BRDF to make it look like an obvious cosine lobe from a standard Phong reflection
-{
-// 	Vector3	Half = new Vector3() { x=In.x+Out.x, y=In.y+Out.y, z=In.z+Out.z };
-// 			Half.Normalize();
-// 	BRDF[0][TableIndex] = Math.Pow( Half.z, 17.2 );	// The exponent is very particular
-
-	Vector3	Reflect = new Vector3() { x=-In.x, y=-In.y, z=In.z };
-	double	Dot = Reflect.Dot( ref Out );
-			Dot = Math.Max( 0, Dot );
-			Dot = Math.Pow( Dot, 17.2 );	// The exponent is very particular
-			Dot /= In.z;					// cos(ThetaIn)
-
-	if ( Dot < 0.0 )
-		throw new Exception( "OUCH!" );
-
-	BRDF[0][TableIndex] = Dot;
-}
+// {
+// 	Vector3	Reflect = new Vector3() { x=-In.x, y=-In.y, z=In.z };
+// 	double	Dot = Reflect.Dot( ref Out );
+// 
+// // 	Vector3	Half = new Vector3() { x=In.x+Out.x, y=In.y+Out.y, z=In.z+Out.z };
+// // 			Half.Normalize();
+// // 	double	Dot = Half.z;
+// 			Dot = Math.Max( 0, Dot );
+// 			Dot = Math.Pow( Dot, 17.2 );	// The exponent is very particular
+// //			Dot /= In.z;					// / cos(ThetaIn)
+// 
+// 	BRDF[0][TableIndex] = Dot;
+// }
 // DEBUG
-
-
-							// Build the dot product coefficients
-							Sample.m_DotProduct.Set(
-								In.x*Out.x,
-								In.y*Out.y,
-								In.z*Out.z
-								);
 						}
 					}
 				}
@@ -504,7 +480,7 @@ MaxValues.z = Math.Max( MaxValues.z, B );
 				// We got our samples!
 				ms_BRDFSamples = Samples.ToArray();
 
-				double	PercentageOfTableUsed = (double) (ms_BRDFSamples.Length) / (BRDF_SAMPLING_RES_THETA_H*BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D / 2);
+				double	PercentageOfTableUsed = (double) ms_BRDFSamples.Length / (BRDF_SAMPLING_RES_THETA_H*BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D / 2);
 
 
 				// Show modeless progress form
@@ -516,9 +492,10 @@ MaxValues.z = Math.Max( MaxValues.z, B );
 				// Build a list of initial guesses
 				CosineLobe[]	InitialGuesses = new CosineLobe[1];
 				InitialGuesses[0] = new CosineLobe(
-					new Vector3() { x=-1, y=-1, z=1 },	// Standard Phong reflection
-// 					new Vector3() { x=0, y=0, z=1 },
- 					17.2 );
+//					new Vector3() { x=-1, y=-1, z=1 },	// Standard Phong reflection
+ 					new Vector3() { x=0, y=0, z=1 },	// Dumb test
+// 					17.2 );
+ 					1.0 );
 
 // 				CosineLobe[]	InitialGuesses = new CosineLobe[100];
 // 				for ( int i=0; i < InitialGuesses.Length; i++ )
@@ -541,8 +518,7 @@ MaxValues.z = Math.Max( MaxValues.z, B );
 
 						FitBRDF( BRDF[ComponentIndex], CosineLobes[ComponentIndex], InitialGuesses, BFGS_CONVERGENCE_TOLERANCE, RMSErrors[ComponentIndex], ShowProgress );
 
-		
-// 						// CHECK We get the sam result starting from another initial guess
+// 						// CHECK We get the same result starting from another initial guess
 // 						CosineLobe[]	TempLobes = new CosineLobe[LobesCount]; 
 // 						InitialGuesses[0] = new CosineLobe( new Vector3() { x=0, y=0, z=1 }, 1 );
 // 						FitBRDF( BRDF[ComponentIndex], TempLobes, InitialGuesses, BFGS_CONVERGENCE_TOLERANCE, RMSErrors[ComponentIndex], ShowProgress );
@@ -709,20 +685,31 @@ MaxValues.z = Math.Max( MaxValues.z, B );
 				// 1.2] At this point, we have the "best" cosine lobe fit for the given BRDF
 				// We must subtract the influence of that lobe from the current BRDF and restart fitting with a new lobe...
 				//
+				double		OldMaxValue = -double.MaxValue;
+				double		NewMaxValue = -double.MaxValue;
 				CosineLobe	LobeToSubtract = _Lobes[LobeIndex];
 				for ( int SampleIndex=0; SampleIndex < ms_BRDFSamples.Length; SampleIndex++ )
 				{
 					BRDFSample	Sample = ms_BRDFSamples[SampleIndex];
 
 					double		LobeInfluence = Sample.m_DotProduct.x*LobeToSubtract.C.x + Sample.m_DotProduct.y*LobeToSubtract.C.y + Sample.m_DotProduct.z*LobeToSubtract.C.z;
-								LobeInfluence = Math.Max( EPS, LobeInfluence );
+								LobeInfluence = Math.Max( 0.0, LobeInfluence );
 								LobeInfluence = Math.Pow( LobeInfluence, LobeToSubtract.N );
 
-					double		CurrentBRDFValue = Context.m_BRDF[SampleIndex];
-								CurrentBRDFValue -= LobeInfluence;
-								CurrentBRDFValue = Math.Max( 0, CurrentBRDFValue );
+					double		CurrentBRDFValue = Context.m_BRDF[Sample.m_BRDFIndex];
+								CurrentBRDFValue *= Sample.m_CosThetaIn;
 
-					Context.m_BRDF[SampleIndex] = CurrentBRDFValue;
+// 					if ( CurrentBRDFValue > 100.0 )
+// 						return 1;
+
+					OldMaxValue = Math.Max( OldMaxValue, CurrentBRDFValue );
+
+								CurrentBRDFValue -= LobeInfluence;
+								CurrentBRDFValue = Math.Max( 0, CurrentBRDFValue );	// Constrain to positive values only
+
+					NewMaxValue = Math.Max( NewMaxValue, CurrentBRDFValue );
+
+					Context.m_BRDF[Sample.m_BRDFIndex] = CurrentBRDFValue;
 				}
 			}
 
@@ -761,16 +748,12 @@ MaxValues.z = Math.Max( MaxValues.z, B );
 			}
 
 			// 2.4] Save the final optimized results
-// 			for ( int LobeIndex=0; LobeIndex < LobesCount; LobeIndex++ )
-// 			{
-// 				// Set axes
-// 				_ZHAxes[LobeIndex].x = (float) CoefficientsGlobal[1+LobeIndex*(2+_Order)+0];
-// 				_ZHAxes[LobeIndex].y = (float) CoefficientsGlobal[1+LobeIndex*(2+_Order)+1];
-// 
-// 				// Set ZH coefficients
-// 				for ( int CoefficientIndex=0; CoefficientIndex < _Order; CoefficientIndex++ )
-// 					_ZHCoefficients[LobeIndex][CoefficientIndex] = CoefficientsGlobal[1+LobeIndex*(2+_Order)+2+CoefficientIndex];
-// 			}
+			for ( int LobeIndex=0; LobeIndex < _Lobes.Length; LobeIndex++ )
+			{
+				CosineLobe	TargetLobe = _Lobes[LobeIndex];
+				TargetLobe.C.Set( GlobalLobeCoefficients[1+4*LobeIndex+0], GlobalLobeCoefficients[1+4*LobeIndex+1], GlobalLobeCoefficients[1+4*LobeIndex+2] );
+				TargetLobe.N = GlobalLobeCoefficients[1+4*LobeIndex+3];
+			}
 
 			// Give final 100% feedback
 			if ( _Delegate != null )
@@ -833,6 +816,9 @@ MaxValues.z = Math.Max( MaxValues.z, B );
 				// Compute delta with fixed central square difference
 				_Gradients[DerivativeIndex] = (SumSquareDifference - Context.m_SumSquareDifference) / DERIVATIVE_OFFSET;
 			}
+
+//			_Gradients[4] = Math.Log( _Gradients[4] );	// Use log of gradient instead since we're dealing with an exponent here...
+//			_Gradients[4] = Math.Sign( _Gradients[4] ) * Math.Log( 1+Math.Abs(_Gradients[4]) );	// Use log of gradient instead since we're dealing with an exponent here...
 		}
 
 		#endregion
@@ -919,13 +905,13 @@ MaxValues.z = Math.Max( MaxValues.z, B );
 
 				// Get BRDF value for that sample
 				GoalValue = _GoalBDRF[Sample.m_BRDFIndex];
-				if ( GoalValue < 0.0 )
-					throw new Exception( "Unexpected negative value!" );
+// 				if ( GoalValue < 0.0 )
+// 					throw new Exception( "Unexpected negative value!" );
 				if ( double.IsNaN( GoalValue ) )
 					throw new Exception( "Unexpected NaN!" );
 
 				// DEBUG => Multiply by cos(ThetaIn) to test if it gets us a better conditioning
-// 				GoalValue *= Sample.m_CosThetaIn;
+ 				GoalValue *= Sample.m_CosThetaIn;
 
 				// Estimate cosine lobe value in that direction
 				CurrentValue = 0.0;
@@ -933,14 +919,14 @@ MaxValues.z = Math.Max( MaxValues.z, B );
 				{
 					CosineLobe	Lobe = _LobeEstimates[LobeIndex];
 					TempLobeDot = Lobe.C.x * Sample.m_DotProduct.x + Lobe.C.y * Sample.m_DotProduct.y + Lobe.C.z * Sample.m_DotProduct.z;
-					TempLobeDot = Math.Max( EPS, TempLobeDot );
+					TempLobeDot = Math.Max( 0.0, TempLobeDot );
 					TempLobeDot = Math.Pow( TempLobeDot, Lobe.N );
 					CurrentValue += TempLobeDot;
 				}
 
 				// Sum difference between estimate and goal
-//				SumSquareDifference += (CurrentValue - GoalValue) * (CurrentValue - GoalValue);
-				SumSquareDifference += Math.Abs( CurrentValue - GoalValue );	// Just to avoid super large numbers!
+				SumSquareDifference += (CurrentValue - GoalValue) * (CurrentValue - GoalValue);
+//				SumSquareDifference += Math.Abs( CurrentValue - GoalValue );	// Just to avoid super large numbers!
 			}
 
 			// Normalize

@@ -1,5 +1,7 @@
 #pragma once
 
+#define EFFECT_PARTICLES_COUNT	16
+
 template<typename> class CB;
 
 class EffectParticles
@@ -14,6 +16,8 @@ public:		// NESTED TYPES
 	struct CBRender
 	{
 		NjFloat3	dUV;
+		float		__PAD;
+		NjFloat2	DeltaTime;
 	};
 
 private:	// FIELDS
@@ -26,6 +30,8 @@ private:	// FIELDS
 	Primitive*			m_pPrimParticle;
 
 	Texture2D*			m_pRTParticlePositions[3];
+	Texture2D*			m_pRTParticleRotations[3];
+public:	Texture2D*			m_pTexVoronoi;
 
 	CB<CBRender>*		m_pCB_Render;
 
@@ -47,5 +53,7 @@ public:		// METHODS
 	void	Render( float _Time, float _DeltaTime );
 
 protected:
+	
+	void	BuildVoronoiTexture( TextureBuilder& _TB, VertexFormatPt4* _pVertices );
 
 };

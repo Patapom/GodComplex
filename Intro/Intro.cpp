@@ -89,13 +89,20 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	{
 #ifndef CODE_WORKSHOP
 
+// TEST
+CHECK_EFFECT( gs_pEffectParticles = new EffectParticles(), ERR_EFFECT_PARTICLES );
+
+
 #ifdef DIRECTX11
 		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), ERR_EFFECT_ROOM );
+		gs_pEffectRoom->m_pTexVoronoi = gs_pEffectParticles->m_pTexVoronoi;
 #else
 		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
 #endif
 
-#else
+		//////////////////////////////////////////////////////////////////////////
+#else	// WORKSHOP!
+
 		CHECK_EFFECT( gs_pEffectParticles = new EffectParticles(), ERR_EFFECT_PARTICLES );
 #endif
 	}
@@ -238,6 +245,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	//////////////////////////////////////////////////////////////////////////
 	// Render some shit to the HDR buffer
 	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
+	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
 
 	gs_pEffectParticles->Render( _Time, _DeltaTime );
 
@@ -246,6 +254,5 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	return true;	// True means continue !
 }
-
 
 #endif

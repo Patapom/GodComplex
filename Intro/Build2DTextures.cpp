@@ -7,10 +7,10 @@ static Texture2D*	gs_pTexTestNoise = NULL;
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-//float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[0] ); }	// Use F1 = closest distance
-//float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[1] ); }	// Use F2 = second closest distance
-float	CombineDistances( float _pDistances[] )	{ return sqrtf( _pDistances[1] ) - sqrtf( _pDistances[0] ); }	// Use F2 - F1
-//float	CombineDistances( float _pDistances[] )	{ return _pDistances[1] - sqrt(_pDistances[0]); }	// Use F2² - F1 => Alligator scales ! ^^
+//float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[] )	{ return sqrtf( _pDistances[0] ); }	// Use F1 = closest distance
+//float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[] )	{ return sqrtf( _pDistances[1] ); }	// Use F2 = second closest distance
+float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[] )	{ return sqrtf( _pDistances[1] ) - sqrtf( _pDistances[0] ); }	// Use F2 - F1
+//float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[] )	{ return _pDistances[1] - sqrt(_pDistances[0]); }	// Use F2² - F1 => Alligator scales ! ^^
 
 float	FBMDelegate( const NjFloat2& _UV, void* _pData )
 {

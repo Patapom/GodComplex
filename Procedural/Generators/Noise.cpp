@@ -331,6 +331,15 @@ float	Noise::Perlin( const NjFloat4& uvwr, const NjFloat2& st ) const
 	return TriLerp( N000, N001, N011, N010, N100, N101, N111, N110, t3, t4, t5 );
 }
 
+NjFloat2	Noise::PerlinVector( const NjFloat2& _uv ) const
+{
+	NjFloat2	uv = _uv;
+	NjFloat2	Result;
+	Result.x = Perlin( uv );	uv.x += BIAS_U; uv.y += BIAS_V;
+	Result.y = Perlin( uv );
+	return Result;
+}
+
 NjFloat3	Noise::PerlinVector( const NjFloat3& _uvw ) const
 {
 	NjFloat3	uvw = _uvw;
@@ -396,6 +405,9 @@ float	Noise::Cellular( const NjFloat2& _UV, CombineDistancesDelegate _Combine, b
 
 	// Read center spot offset for all 9 cells and choose closest distance
 	float	pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };
+	int		pCellX[3] = { -1, -1, -1 };
+	int		pCellY[3] = { -1, -1, -1 };
+
 	for ( int Y=CellY-1; Y <= CellY+1; Y++ )
 		for ( int X=CellX-1; X <= CellX+1; X++ )
 		{
@@ -416,17 +428,36 @@ float	Noise::Cellular( const NjFloat2& _UV, CombineDistancesDelegate _Combine, b
 				pSqDistances[2] = pSqDistances[1];
 				pSqDistances[1] = pSqDistances[0];
 				pSqDistances[0] = SqDistance;
+
+				pCellX[2] = pCellX[1];
+				pCellX[1] = pCellX[0];
+				pCellX[0] = X;
+
+				pCellY[2] = pCellY[1];
+				pCellY[1] = pCellY[0];
+				pCellY[0] = Y;
 			}
 			else if ( SqDistance < pSqDistances[1] )
 			{
 				pSqDistances[2] = pSqDistances[1];
 				pSqDistances[1] = SqDistance;
+
+				pCellX[2] = pCellX[1];
+				pCellX[1] = X;
+
+				pCellY[2] = pCellY[1];
+				pCellY[1] = Y;
 			}
 			else if ( SqDistance < pSqDistances[2] )
+			{
 				pSqDistances[2] = SqDistance;
+
+				pCellX[2] = X;
+				pCellY[2] = Y;
+			}
 		}
 
-	return _Combine( pSqDistances );
+	return _Combine( pSqDistances, pCellX, pCellY, NULL );
 }
 
 float	Noise::Cellular( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bool _bWrap ) const
@@ -436,6 +467,9 @@ float	Noise::Cellular( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, 
 	int	CellZ = floorf( _UVW.z );
 
 	float		pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };	// Only keep the 3 closest distances
+	int			pCellX[3] = { -1, -1, -1 };
+	int			pCellY[3] = { -1, -1, -1 };
+	int			pCellZ[3] = { -1, -1, -1 };
 
 	// Read center spot offset for all 9 cells and choose closest distance
 	float	MinSqDistance = FLOAT32_MAX;
@@ -462,17 +496,44 @@ float	Noise::Cellular( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, 
 					pSqDistances[2] = pSqDistances[1];
 					pSqDistances[1] = pSqDistances[0];
 					pSqDistances[0] = SqDistance;
+
+					pCellX[2] = pCellX[1];
+					pCellX[1] = pCellX[0];
+					pCellX[0] = X;
+
+					pCellY[2] = pCellY[1];
+					pCellY[1] = pCellY[0];
+					pCellY[0] = Y;
+
+					pCellZ[2] = pCellZ[1];
+					pCellZ[1] = pCellZ[0];
+					pCellZ[0] = Z;
 				}
 				else if ( SqDistance < pSqDistances[1] )
 				{
 					pSqDistances[2] = pSqDistances[1];
 					pSqDistances[1] = SqDistance;
+
+					pCellX[2] = pCellX[1];
+					pCellX[1] = X;
+
+					pCellY[2] = pCellY[1];
+					pCellY[1] = Y;
+
+					pCellZ[2] = pCellZ[1];
+					pCellZ[1] = Z;
 				}
 				else if ( SqDistance < pSqDistances[2] )
+				{
 					pSqDistances[2] = SqDistance;
+
+					pCellX[2] = X;
+					pCellY[2] = Y;
+					pCellZ[2] = Z;
+				}
 			}
 
-	return _Combine( pSqDistances );
+	return _Combine( pSqDistances, pCellX, pCellY, pCellZ );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -486,6 +547,8 @@ float	Noise::Worley( const NjFloat2& _UV, CombineDistancesDelegate _Combine, boo
 	NjFloat2	Point;
 
 	float		pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };	// Only keep the 3 closest distances
+	int			pCellX[3] = { -1, -1, -1 };
+	int			pCellY[3] = { -1, -1, -1 };
 
 	for ( int Y=CellY-1; Y <= CellY+1; Y++ )
 		for ( int X=CellX-1; X <= CellX+1; X++ )
@@ -499,7 +562,7 @@ float	Noise::Worley( const NjFloat2& _UV, CombineDistancesDelegate _Combine, boo
 			// Determine how many feature points are in the square
 			int	PointsCount = PoissonPointsCount( Hash );
 
-			// Randomly place the feature points in the cube & find the closest distance
+			// Randomly place the feature points in the square & find the closest distance
 			for ( int PointIndex=0; PointIndex < PointsCount; PointIndex++ )
 			{
 				Hash = LCGRandom(Hash);
@@ -515,18 +578,37 @@ float	Noise::Worley( const NjFloat2& _UV, CombineDistancesDelegate _Combine, boo
 					pSqDistances[2] = pSqDistances[1];
 					pSqDistances[1] = pSqDistances[0];
 					pSqDistances[0] = SqDistance;
+
+					pCellX[2] = pCellX[1];
+					pCellX[1] = pCellX[0];
+					pCellX[0] = X;
+
+					pCellY[2] = pCellY[1];
+					pCellY[1] = pCellY[0];
+					pCellY[0] = Y;
 				}
 				else if ( SqDistance < pSqDistances[1] )
 				{
 					pSqDistances[2] = pSqDistances[1];
 					pSqDistances[1] = SqDistance;
+
+					pCellX[2] = pCellX[1];
+					pCellX[1] = X;
+
+					pCellY[2] = pCellY[1];
+					pCellY[1] = Y;
 				}
 				else if ( SqDistance < pSqDistances[2] )
+				{
 					pSqDistances[2] = SqDistance;
+
+					pCellX[2] = X;
+					pCellY[2] = Y;
+				}
 			}
 		}
 
-	return _Combine( pSqDistances );
+	return _Combine( pSqDistances, pCellX, pCellY, NULL );
 }
 
 float	Noise::Worley( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bool _bWrap ) const
@@ -537,6 +619,9 @@ float	Noise::Worley( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bo
 
 	NjFloat3	Point;
 	float		pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };	// Only keep the 3 closest distances
+	int			pCellX[3] = { -1, -1, -1 };
+	int			pCellY[3] = { -1, -1, -1 };
+	int			pCellZ[3] = { -1, -1, -1 };
 
 	for ( int Z=CellZ-1; Z <= CellZ+1; Z++ )
 		for ( int Y=CellY-1; Y <= CellY+1; Y++ )
@@ -571,18 +656,45 @@ float	Noise::Worley( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bo
 						pSqDistances[2] = pSqDistances[1];
 						pSqDistances[1] = pSqDistances[0];
 						pSqDistances[0] = SqDistance;
+
+						pCellX[2] = pCellX[1];
+						pCellX[1] = pCellX[0];
+						pCellX[0] = X;
+
+						pCellY[2] = pCellY[1];
+						pCellY[1] = pCellY[0];
+						pCellY[0] = Y;
+
+						pCellZ[2] = pCellZ[1];
+						pCellZ[1] = pCellZ[0];
+						pCellZ[0] = Z;
 					}
 					else if ( SqDistance < pSqDistances[1] )
 					{
 						pSqDistances[2] = pSqDistances[1];
 						pSqDistances[1] = SqDistance;
+
+						pCellX[2] = pCellX[1];
+						pCellX[1] = X;
+
+						pCellY[2] = pCellY[1];
+						pCellY[1] = Y;
+
+						pCellZ[2] = pCellZ[1];
+						pCellZ[1] = Z;
 					}
 					else if ( SqDistance < pSqDistances[2] )
+					{
 						pSqDistances[2] = SqDistance;
+
+						pCellX[2] = X;
+						pCellY[2] = Y;
+						pCellZ[2] = Z;
+					}
 				}
 			}
 
-	return _Combine( pSqDistances );
+	return _Combine( pSqDistances, pCellX, pCellY, pCellZ );
 }
 
 U32	Noise::LCGRandom( U32& _LastValue )

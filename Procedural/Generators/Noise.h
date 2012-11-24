@@ -26,7 +26,8 @@ public:
 public:		// NESTED TYPES
 
 	// WARNING: Notice you get an array of three SQUARED distances !
-	typedef float	(*CombineDistancesDelegate)( float _pSqDistances[] );
+	// The pointers to pCellXYZ contain the indices of the cells where the minimal distances were found
+	typedef float	(*CombineDistancesDelegate)( float _pSqDistances[], int _pCellX[], int _pCellY[], int _pCellZ[] );
 
 	typedef float	(*GetNoise2DDelegate)( const NjFloat2& _UV, void* _pData );
 
@@ -71,6 +72,7 @@ public:		// METHODS
 	float	Perlin( const NjFloat4& uvwr, float s ) const;
 	float	Perlin( const NjFloat4& uvwr, const NjFloat2& st ) const;
 
+	NjFloat2	PerlinVector( const NjFloat2& uv ) const;
 	NjFloat3	PerlinVector( const NjFloat3& uvw ) const;
 
 	// Noises that wrap !

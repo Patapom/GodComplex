@@ -151,6 +151,9 @@ void	EffectRoom::Render( float _Time, float _DeltaTime )
 	{	USING_MATERIAL_START( *m_pMatDisplay )
 		m_pTexLightMaps->SetPS( 10 );
 		m_pTexWalls->SetPS( 11 );
+
+m_pTexVoronoi->SetPS( 12 );
+
 		m_pPrimRoom->Render( *m_pMatDisplay );
 		USING_MATERIAL_END
 	}

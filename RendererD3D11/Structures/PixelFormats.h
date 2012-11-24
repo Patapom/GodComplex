@@ -74,6 +74,26 @@ public:
 
 };
 
+struct PixelFormatR16F : public PixelFormat
+{
+public:
+
+	static class Desc : public IPixelFormatDescriptor
+	{
+	public:
+
+		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_R16_FLOAT; }
+		virtual int			Size() const					{ return sizeof(PixelFormatR16F); }
+		virtual void		Write( U8* _pPixel, const NjFloat4& _Color ) const	{ PixelFormatR16F& P = (PixelFormatR16F&)( *_pPixel ); P.R = _Color.x; }
+		virtual NjFloat4	Read( const U8* _pPixel ) const						{ const PixelFormatR16F& P = (const PixelFormatR16F&)( *_pPixel ); return NjFloat4( P.R, 0, 0, 0 ); }
+	} DESCRIPTOR;
+
+public:
+
+	NjHalf  R;
+
+};
+
 struct PixelFormatRG16F : public PixelFormat
 {
 public:

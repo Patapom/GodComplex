@@ -57,6 +57,7 @@ private:	// FIELDS
 	// Textures
 	Texture2D*			m_pTexWalls;			// The fat texture for the walls
 	Texture2D*			m_pTexLightMaps;		// The array texture that will contain the room's light map
+public:	Texture2D*			m_pTexVoronoi;		// Test voronoï texture
 
 	// Constant buffers
  	CB<CBObject>*		m_pCB_Object;
@@ -89,6 +90,8 @@ protected:
 
 	void		BuildRoom( const TextureBuilder& _TB );
 	void		BuildRoomTextures( TextureBuilder& _TB );
+	void		BuildVoronoiTexture( TextureBuilder& _TB );
+
 	float		AnimateFailure( float& _TimerTillFailure, float& _TimeSinceFailure, float& _FailureDuration, float _FailMinTime, float _FailDeltaTime, float _DeltaTime );
 
 };
