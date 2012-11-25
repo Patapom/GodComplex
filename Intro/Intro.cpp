@@ -11,6 +11,8 @@
 
 
 static Camera*			gs_pCamera = NULL;
+Video*					gs_pVideo = NULL;
+
 
 // Textures & Render targets
 static Texture2D*		gs_pRTHDR = NULL;
@@ -41,6 +43,13 @@ static EffectParticles*		gs_pEffectParticles = NULL;
 
 int	IntroInit( IntroProgressDelegate& _Delegate )
 {
+	//////////////////////////////////////////////////////////////////////////
+	// Attempt to create the video capture object
+	gs_pVideo = new Video( gs_Device, gs_WindowInfos.hWnd );
+	gs_pVideo->Init( 0 );	// Use first device
+	gs_pVideo->Play();		// GO!
+
+
 	//////////////////////////////////////////////////////////////////////////
 	// Create our camera
 	gs_pCamera = new Camera( gs_Device );
@@ -134,6 +143,10 @@ void	IntroExit()
 
 	// Release the camera
 	delete gs_pCamera;
+
+	// Release the video capture object
+	gs_pVideo->Exit();
+	delete gs_pVideo;
 }
 
 #ifndef CODE_WORKSHOP

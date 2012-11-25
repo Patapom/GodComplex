@@ -172,6 +172,9 @@ int	WindowInit()
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize DirectX Device
+// 
+// 	Video	Test( *((Device*) NULL), gs_WindowInfos.hWnd );
+// 
 	gs_Device.Init( RESX, RESY, gs_WindowInfos.hWnd, gs_WindowInfos.bFullscreen, true );
 	if ( !gs_Device.IsInitialized() )
 		return ERR_DX_INIT_DEVICE;	// Oopsy daisy shit fuck hell !
@@ -262,7 +265,7 @@ void	DrawTime( float t )
 		m = floorf( t / 60.0f );
 		s = floorf( t - 60.0f * m );
 		c = floorf( t * 100.0f ) % 100;
-		sprintf( str, "%s %02d:%02d:%02d  [%d fps]", pWindowClass, m, s, c, fps );
+		sprintf_s( str, 64, "%s %02d:%02d:%02d  [%d fps]", pWindowClass, m, s, c, fps );
 		SetWindowText( gs_WindowInfos.hWnd, str );
 	}
 }
@@ -318,7 +321,7 @@ void	print( const char* _pText, ... )
 	va_list	argptr;
 	va_start( argptr, _pText );
 	char	pTemp[4096];
-	sprintf( pTemp, _pText, argptr );
+	sprintf_s( pTemp, 4096, _pText, argptr );
 	va_end( argptr );
 
 	OutputDebugString( pTemp );

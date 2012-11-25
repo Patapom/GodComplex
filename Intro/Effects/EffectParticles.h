@@ -8,9 +8,6 @@ class EffectParticles
 {
 private:	// CONSTANTS
 
-	static const int	TEXTURE_SIZE = 512;
-
-
 public:		// NESTED TYPES
 
 	struct CBRender

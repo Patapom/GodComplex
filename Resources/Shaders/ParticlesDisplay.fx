@@ -12,10 +12,15 @@ cbuffer	cbRender	: register( b10 )
 };
 //]
 
+// struct	VS_IN
+// {
+// 	float3	Position		: POSITION;
+// 	uint	ParticleIndex	: SV_INSTANCEID;
+// };
 struct	VS_IN
 {
-	float3	Position		: POSITION;
-	uint	ParticleIndex	: SV_INSTANCEID;
+	float4	__Position		: SV_POSITION;
+	uint	ParticleIndex	: SV_VERTEXID;
 };
 
 struct	GS_IN

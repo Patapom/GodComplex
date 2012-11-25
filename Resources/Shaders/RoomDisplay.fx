@@ -84,6 +84,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	};
 //Radiance = _TexVoronoi.Sample( PointWrap, _In.UV.xy ).x / 256.0;
 Radiance = Colors[ParticleIndex % 10];
+Radiance = _TexVoronoi.SampleLevel( PointWrap, _In.UV.xy, 0.0 ).y;
 
 
 	return float4( Radiance, 1 );

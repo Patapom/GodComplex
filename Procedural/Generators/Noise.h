@@ -27,7 +27,7 @@ public:		// NESTED TYPES
 
 	// WARNING: Notice you get an array of three SQUARED distances !
 	// The pointers to pCellXYZ contain the indices of the cells where the minimal distances were found
-	typedef float	(*CombineDistancesDelegate)( float _pSqDistances[], int _pCellX[], int _pCellY[], int _pCellZ[] );
+	typedef float	(*CombineDistancesDelegate)( float _pSqDistances[], int _pCellX[], int _pCellY[], int _pCellZ[], void* _pData );
 
 	typedef float	(*GetNoise2DDelegate)( const NjFloat2& _UV, void* _pData );
 
@@ -83,10 +83,10 @@ public:		// METHODS
 
 	// --------- CELLULAR ---------
 	void	SetCellularWrappingParameters( int _SizeX, int _SizeY, int _SizeZ );
-	float	Cellular( const NjFloat2& uv, CombineDistancesDelegate _Combine, bool _bWrap=false ) const;
-	float	Cellular( const NjFloat3& uvw, CombineDistancesDelegate _Combine, bool _bWrap=false ) const;
-	float	Worley( const NjFloat2& uv, CombineDistancesDelegate _Combine, bool _bWrap=false ) const;
-	float	Worley( const NjFloat3& uvw, CombineDistancesDelegate _Combine, bool _bWrap=false ) const;
+	float	Cellular( const NjFloat2& uv, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;
+	float	Cellular( const NjFloat3& uvw, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;
+	float	Worley( const NjFloat2& uv, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;
+	float	Worley( const NjFloat3& uvw, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;
 
 	// --------- WAVELET ---------
 	void	Create2DWaveletNoiseTile( int _POT );

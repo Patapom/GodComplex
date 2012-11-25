@@ -398,7 +398,7 @@ void	Noise::SetCellularWrappingParameters( int _SizeX, int _SizeY, int _SizeZ )
 	m_SizeZ = _SizeZ;
 }
 
-float	Noise::Cellular( const NjFloat2& _UV, CombineDistancesDelegate _Combine, bool _bWrap ) const
+float	Noise::Cellular( const NjFloat2& _UV, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
 {
 	int	CellX = floorf( _UV.x );
 	int	CellY = floorf( _UV.y );
@@ -431,11 +431,11 @@ float	Noise::Cellular( const NjFloat2& _UV, CombineDistancesDelegate _Combine, b
 
 				pCellX[2] = pCellX[1];
 				pCellX[1] = pCellX[0];
-				pCellX[0] = X;
+				pCellX[0] = Hx;
 
 				pCellY[2] = pCellY[1];
 				pCellY[1] = pCellY[0];
-				pCellY[0] = Y;
+				pCellY[0] = Hy;
 			}
 			else if ( SqDistance < pSqDistances[1] )
 			{
@@ -443,24 +443,24 @@ float	Noise::Cellular( const NjFloat2& _UV, CombineDistancesDelegate _Combine, b
 				pSqDistances[1] = SqDistance;
 
 				pCellX[2] = pCellX[1];
-				pCellX[1] = X;
+				pCellX[1] = Hx;
 
 				pCellY[2] = pCellY[1];
-				pCellY[1] = Y;
+				pCellY[1] = Hy;
 			}
 			else if ( SqDistance < pSqDistances[2] )
 			{
 				pSqDistances[2] = SqDistance;
 
-				pCellX[2] = X;
-				pCellY[2] = Y;
+				pCellX[2] = Hx;
+				pCellY[2] = Hy;
 			}
 		}
 
-	return _Combine( pSqDistances, pCellX, pCellY, NULL );
+	return _Combine( pSqDistances, pCellX, pCellY, NULL, _pData );
 }
 
-float	Noise::Cellular( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bool _bWrap ) const
+float	Noise::Cellular( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
 {
 	int	CellX = floorf( _UVW.x );
 	int	CellY = floorf( _UVW.y );
@@ -499,15 +499,15 @@ float	Noise::Cellular( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, 
 
 					pCellX[2] = pCellX[1];
 					pCellX[1] = pCellX[0];
-					pCellX[0] = X;
+					pCellX[0] = Hx;
 
 					pCellY[2] = pCellY[1];
 					pCellY[1] = pCellY[0];
-					pCellY[0] = Y;
+					pCellY[0] = Hy;
 
 					pCellZ[2] = pCellZ[1];
 					pCellZ[1] = pCellZ[0];
-					pCellZ[0] = Z;
+					pCellZ[0] = Hz;
 				}
 				else if ( SqDistance < pSqDistances[1] )
 				{
@@ -515,31 +515,31 @@ float	Noise::Cellular( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, 
 					pSqDistances[1] = SqDistance;
 
 					pCellX[2] = pCellX[1];
-					pCellX[1] = X;
+					pCellX[1] = Hx;
 
 					pCellY[2] = pCellY[1];
-					pCellY[1] = Y;
+					pCellY[1] = Hy;
 
 					pCellZ[2] = pCellZ[1];
-					pCellZ[1] = Z;
+					pCellZ[1] = Hz;
 				}
 				else if ( SqDistance < pSqDistances[2] )
 				{
 					pSqDistances[2] = SqDistance;
 
-					pCellX[2] = X;
-					pCellY[2] = Y;
-					pCellZ[2] = Z;
+					pCellX[2] = Hx;
+					pCellY[2] = Hy;
+					pCellZ[2] = Hz;
 				}
 			}
 
-	return _Combine( pSqDistances, pCellX, pCellY, pCellZ );
+	return _Combine( pSqDistances, pCellX, pCellY, pCellZ, _pData );
 }
 
 //////////////////////////////////////////////////////////////////////////
 // Worley Noise (from https://github.com/freethenation/CellNoiseDemo)
 // I though about implementing the optimization suggested in Worley's paper to skip inelegible neighbor cubes that are too far away but I remembered I am writing a 64K intro... Less code the better !
-float	Noise::Worley( const NjFloat2& _UV, CombineDistancesDelegate _Combine, bool _bWrap ) const
+float	Noise::Worley( const NjFloat2& _UV, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
 {
 	int	CellX = floorf( _UV.x );
 	int CellY = floorf( _UV.y );
@@ -581,11 +581,11 @@ float	Noise::Worley( const NjFloat2& _UV, CombineDistancesDelegate _Combine, boo
 
 					pCellX[2] = pCellX[1];
 					pCellX[1] = pCellX[0];
-					pCellX[0] = X;
+					pCellX[0] = Hx;
 
 					pCellY[2] = pCellY[1];
 					pCellY[1] = pCellY[0];
-					pCellY[0] = Y;
+					pCellY[0] = Hy;
 				}
 				else if ( SqDistance < pSqDistances[1] )
 				{
@@ -593,25 +593,25 @@ float	Noise::Worley( const NjFloat2& _UV, CombineDistancesDelegate _Combine, boo
 					pSqDistances[1] = SqDistance;
 
 					pCellX[2] = pCellX[1];
-					pCellX[1] = X;
+					pCellX[1] = Hx;
 
 					pCellY[2] = pCellY[1];
-					pCellY[1] = Y;
+					pCellY[1] = Hy;
 				}
 				else if ( SqDistance < pSqDistances[2] )
 				{
 					pSqDistances[2] = SqDistance;
 
-					pCellX[2] = X;
-					pCellY[2] = Y;
+					pCellX[2] = Hx;
+					pCellY[2] = Hy;
 				}
 			}
 		}
 
-	return _Combine( pSqDistances, pCellX, pCellY, NULL );
+	return _Combine( pSqDistances, pCellX, pCellY, NULL, _pData );
 }
 
-float	Noise::Worley( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bool _bWrap ) const
+float	Noise::Worley( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
 {
 	int	CellX = floorf( _UVW.x );
 	int CellY = floorf( _UVW.y );
@@ -659,15 +659,15 @@ float	Noise::Worley( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bo
 
 						pCellX[2] = pCellX[1];
 						pCellX[1] = pCellX[0];
-						pCellX[0] = X;
+						pCellX[0] = Hx;
 
 						pCellY[2] = pCellY[1];
 						pCellY[1] = pCellY[0];
-						pCellY[0] = Y;
+						pCellY[0] = Hy;
 
 						pCellZ[2] = pCellZ[1];
 						pCellZ[1] = pCellZ[0];
-						pCellZ[0] = Z;
+						pCellZ[0] = Hz;
 					}
 					else if ( SqDistance < pSqDistances[1] )
 					{
@@ -675,26 +675,26 @@ float	Noise::Worley( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, bo
 						pSqDistances[1] = SqDistance;
 
 						pCellX[2] = pCellX[1];
-						pCellX[1] = X;
+						pCellX[1] = Hx;
 
 						pCellY[2] = pCellY[1];
-						pCellY[1] = Y;
+						pCellY[1] = Hy;
 
 						pCellZ[2] = pCellZ[1];
-						pCellZ[1] = Z;
+						pCellZ[1] = Hz;
 					}
 					else if ( SqDistance < pSqDistances[2] )
 					{
 						pSqDistances[2] = SqDistance;
 
-						pCellX[2] = X;
-						pCellY[2] = Y;
-						pCellZ[2] = Z;
+						pCellX[2] = Hx;
+						pCellY[2] = Hy;
+						pCellZ[2] = Hz;
 					}
 				}
 			}
 
-	return _Combine( pSqDistances, pCellX, pCellY, pCellZ );
+	return _Combine( pSqDistances, pCellX, pCellY, pCellZ, _pData );
 }
 
 U32	Noise::LCGRandom( U32& _LastValue )

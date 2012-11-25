@@ -7,17 +7,17 @@ static Texture2D*	gs_pTexTestNoise = NULL;
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-//float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[] )	{ return sqrtf( _pDistances[0] ); }	// Use F1 = closest distance
-//float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[] )	{ return sqrtf( _pDistances[1] ); }	// Use F2 = second closest distance
-float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[] )	{ return sqrtf( _pDistances[1] ) - sqrtf( _pDistances[0] ); }	// Use F2 - F1
-//float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[] )	{ return _pDistances[1] - sqrt(_pDistances[0]); }	// Use F2² - F1 => Alligator scales ! ^^
+//float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[], void* _pData )	{ return sqrtf( _pDistances[0] ); }	// Use F1 = closest distance
+//float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[], void* _pData )	{ return sqrtf( _pDistances[1] ); }	// Use F2 = second closest distance
+float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[], void* _pData )	{ return sqrtf( _pDistances[1] ) - sqrtf( _pDistances[0] ); }	// Use F2 - F1
+//float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[], void* _pData )	{ return _pDistances[1] - sqrt(_pDistances[0]); }	// Use F2² - F1 => Alligator scales ! ^^
 
 float	FBMDelegate( const NjFloat2& _UV, void* _pData )
 {
 	Noise&	N = *((Noise*) _pData);
 //	return 2.0f * abs( N.Perlin( 0.003f * _UV ) );
-//	return N.Cellular( 16.0f * _UV, CombineDistances, true );
-	return 3.0f * abs(N.Worley( 8.0f * _UV, CombineDistances, true ));	// F2² - F1 => Ugly corruption texture
+//	return N.Cellular( 16.0f * _UV, CombineDistances, NULL, true );
+	return 3.0f * abs(N.Worley( 8.0f * _UV, CombineDistances, NULL, true ));	// F2² - F1 => Ugly corruption texture
 //	return abs(N.Wavelet( _UV ));
 }
 
@@ -27,9 +27,9 @@ float	RMFDelegate( const NjFloat2& _UV, void* _pData )
 
 //	return 4.0f * N.Perlin( 0.002f * _UV );
 //	return 8.0f * N.WrapPerlin( _UV );		// Excellent !
-//	return 2.0f * N.Cellular( 16.0f * _UV, CombineDistances, true );
-//	return 6.0f * abs(N.Worley( 8.0f * _UV, CombineDistances, true ) - 0.4f);	// Use this with F1 => Corruption texture
-	return 6.0f * abs(N.Worley( 8.0f * _UV, CombineDistances, true ) + 0.0f);	// Use this with F2²-F1 => Funny crystaline structure
+//	return 2.0f * N.Cellular( 16.0f * _UV, CombineDistances, NULL, true );
+//	return 6.0f * abs(N.Worley( 8.0f * _UV, CombineDistances, NULL, true ) - 0.4f);	// Use this with F1 => Corruption texture
+	return 6.0f * abs(N.Worley( 8.0f * _UV, CombineDistances, NULL, true ) + 0.0f);	// Use this with F2²-F1 => Funny crystaline structure
 //	return 3.0f * N.Wavelet( _UV );
 }
 
@@ -39,8 +39,8 @@ void	FillNoise( int x, int y, const NjFloat2& _UV, NjFloat4& _Color, void* _pDat
 
 //	float	C = abs( N.Perlin( 0.005f * _UV ) );					// Simple test with gradient noise that doesn't loop
 // 	float	C = abs( N.WrapPerlin( _UV ) );							// Advanced test with gradient noise that loops !
-//	float	C = N.Cellular( 16.0f * _UV, CombineDistances, true );	// Simple cellular (NOT Worley !)
-	float	C = N.Worley( 16.0f * _UV, CombineDistances, true );	// Worley noise
+//	float	C = N.Cellular( 16.0f * _UV, CombineDistances, NULL, true );	// Simple cellular (NOT Worley !)
+	float	C = N.Worley( 16.0f * _UV, CombineDistances, NULL, true );	// Worley noise
 //	float	C = abs(N.Wavelet( _UV ));								// Wavelet noise
 //	float	C = N.FractionalBrownianMotion( FBMDelegate, _pData, _UV );	// Fractional Brownian Motion
 //	float	C = N.RidgedMultiFractal( RMFDelegate, _pData, _UV );	// Ridged Multi Fractal

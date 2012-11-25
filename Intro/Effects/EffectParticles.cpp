@@ -8,53 +8,34 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
 	CHECK_MATERIAL( m_pMatCompute = CreateMaterial( IDR_SHADER_PARTICLES_COMPUTE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
-	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_PARTICLES_DISPLAY, VertexFormatP3::DESCRIPTOR, "VS", "GS", "PS" ), 2 );
+	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_PARTICLES_DISPLAY, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PS" ), 2 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the awesome particle primitive
-	{
-		VertexFormatP3	Vertices;
-		m_pPrimParticle = new Primitive( gs_Device, 1, &Vertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatP3::DESCRIPTOR );
-	}
+// 	{
+// 		VertexFormatP3	Vertices;
+// 		m_pPrimParticle = new Primitive( gs_Device, 1, &Vertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatP3::DESCRIPTOR );
+// 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build textures & render targets
-	PixelFormatRGBA32F*	pInitialPosition = new PixelFormatRGBA32F[TEXTURE_SIZE*TEXTURE_SIZE];
-	PixelFormatRGBA32F*	pInitialRotation = new PixelFormatRGBA32F[TEXTURE_SIZE*TEXTURE_SIZE];
+	PixelFormatRGBA32F*	pInitialPosition = new PixelFormatRGBA32F[EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT];
+	PixelFormatRGBA32F*	pInitialRotation = new PixelFormatRGBA32F[EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT];
 	PixelFormatRGBA32F*	pScanlinePosition = pInitialPosition;
 	PixelFormatRGBA32F*	pScanlineRotation = pInitialRotation;
 
-	int		TotalCount = TEXTURE_SIZE*TEXTURE_SIZE;
+	int		TotalCount = EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT;
 	int		ParticlesPerDimension = U32(floor(powf( float(TotalCount), 1.0f/3.0f )));
 	float	CubeSize = 1.0f;
 
-	for ( int Y=0; Y < TEXTURE_SIZE; Y++ )
-		for ( int X=0; X < TEXTURE_SIZE; X++, pScanlinePosition++, pScanlineRotation++ )
+	for ( int Y=0; Y < EFFECT_PARTICLES_COUNT; Y++ )
+		for ( int X=0; X < EFFECT_PARTICLES_COUNT; X++, pScanlinePosition++, pScanlineRotation++ )
 		{
-// 			int		ParticleIndex = TEXTURE_SIZE*Y+X;
-// 			int		ParticleZ = ParticleIndex / (ParticlesPerDimension*ParticlesPerDimension);
-// 					ParticleIndex -= ParticlesPerDimension*ParticlesPerDimension*ParticleZ;
-// 
-// 			int		ParticleY = ParticleIndex / ParticlesPerDimension;
-// 					ParticleIndex -= ParticlesPerDimension*ParticleY;
-// 
-// 			int		ParticleX = ParticleIndex;
-// 
-// 			pScanlinePosition->R = CubeSize * (float(ParticleX) / (ParticlesPerDimension-1) - 0.5f);
-// 			pScanlinePosition->G = CubeSize * (float(ParticleY) / (ParticlesPerDimension-1) - 0.5f) + 1.5f;
-// 			pScanlinePosition->B = CubeSize * (float(ParticleZ) / (ParticlesPerDimension-1) - 0.5f);
-// 			pScanlinePosition->A = 0.0f;
-// 
-// 			pScanlineRotation->R = 0;
-// 			pScanlineRotation->G = 0;
-// 			pScanlineRotation->B = 1;
-// 			pScanlineRotation->A = 0.0f;
-
 			float	R = 0.5f;
 			float	r = 0.2f;
 
-			float	Alpha = TWOPI * X / TEXTURE_SIZE;
-			float	Beta = TWOPI * Y / TEXTURE_SIZE;
+			float	Alpha = TWOPI * X / EFFECT_PARTICLES_COUNT;
+			float	Beta = TWOPI * Y / EFFECT_PARTICLES_COUNT;
 
 			NjFloat3	T( cosf(Alpha), 0.0f, sinf(Alpha) );
 			NjFloat3	Center = NjFloat3( 0, 0.5, 0 ) + R * T;
@@ -80,20 +61,20 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 	void*	ppContentRotation[1];
 			ppContentRotation[0] = (void*) pInitialRotation;
 
-	Texture2D*	pTempPosition = new Texture2D( gs_Device, TEXTURE_SIZE, TEXTURE_SIZE, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, ppContentPosition );
-	Texture2D*	pTempRotation = new Texture2D( gs_Device, TEXTURE_SIZE, TEXTURE_SIZE, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, ppContentRotation );
+	Texture2D*	pTempPosition = new Texture2D( gs_Device, EFFECT_PARTICLES_COUNT, EFFECT_PARTICLES_COUNT, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, ppContentPosition );
+	Texture2D*	pTempRotation = new Texture2D( gs_Device, EFFECT_PARTICLES_COUNT, EFFECT_PARTICLES_COUNT, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, ppContentRotation );
 
-	m_pRTParticlePositions[0] = new Texture2D( gs_Device, TEXTURE_SIZE, TEXTURE_SIZE, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );
-	m_pRTParticlePositions[1] = new Texture2D( gs_Device, TEXTURE_SIZE, TEXTURE_SIZE, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );
-	m_pRTParticlePositions[2] = new Texture2D( gs_Device, TEXTURE_SIZE, TEXTURE_SIZE, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );
+	m_pRTParticlePositions[0] = new Texture2D( gs_Device, EFFECT_PARTICLES_COUNT, EFFECT_PARTICLES_COUNT, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );
+	m_pRTParticlePositions[1] = new Texture2D( gs_Device, EFFECT_PARTICLES_COUNT, EFFECT_PARTICLES_COUNT, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );
+	m_pRTParticlePositions[2] = new Texture2D( gs_Device, EFFECT_PARTICLES_COUNT, EFFECT_PARTICLES_COUNT, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );
 
 	m_pRTParticlePositions[0]->CopyFrom( *pTempPosition );
 	m_pRTParticlePositions[1]->CopyFrom( *pTempPosition );
 	m_pRTParticlePositions[2]->CopyFrom( *pTempPosition );
 
-	m_pRTParticleRotations[0] = new Texture2D( gs_Device, TEXTURE_SIZE, TEXTURE_SIZE, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );
-	m_pRTParticleRotations[1] = new Texture2D( gs_Device, TEXTURE_SIZE, TEXTURE_SIZE, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );
-	m_pRTParticleRotations[2] = new Texture2D( gs_Device, TEXTURE_SIZE, TEXTURE_SIZE, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );
+	m_pRTParticleRotations[0] = new Texture2D( gs_Device, EFFECT_PARTICLES_COUNT, EFFECT_PARTICLES_COUNT, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );
+	m_pRTParticleRotations[1] = new Texture2D( gs_Device, EFFECT_PARTICLES_COUNT, EFFECT_PARTICLES_COUNT, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );
+	m_pRTParticleRotations[2] = new Texture2D( gs_Device, EFFECT_PARTICLES_COUNT, EFFECT_PARTICLES_COUNT, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );
 
 	m_pRTParticleRotations[0]->CopyFrom( *pTempRotation );
 	m_pRTParticleRotations[1]->CopyFrom( *pTempRotation );
@@ -120,7 +101,7 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 		TextureBuilder::ConversionParams	Conv =
 		{
 			0,		// int		PosR;
-			-1,		// int		PosG;
+			1,		// int		PosG;
 			-1,		// int		PosB;
 			-1,		// int		PosA;
 
@@ -142,9 +123,9 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 			-1,		// int		PosAO;
 		};
 
-		m_pTexVoronoi = TB.CreateTexture( PixelFormatR16F::DESCRIPTOR, Conv );
+		m_pTexVoronoi = TB.CreateTexture( PixelFormatRG16F::DESCRIPTOR, Conv );
 
-//		m_pPrimParticle = new Primitive( gs_Device, EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatPt4::DESCRIPTOR );
+		m_pPrimParticle = new Primitive( gs_Device, EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatPt4::DESCRIPTOR );
 	}
 }
 
@@ -215,7 +196,8 @@ void	EffectParticles::Render( float _Time, float _DeltaTime )
 		m_pRTParticlePositions[1]->SetVS( 10 );
 		m_pRTParticleRotations[1]->SetVS( 11 );
 
-		m_pPrimParticle->RenderInstanced( *m_pMatDisplay, TEXTURE_SIZE*TEXTURE_SIZE );
+//		m_pPrimParticle->RenderInstanced( *m_pMatDisplay, EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT );
+		m_pPrimParticle->Render( *m_pMatDisplay );
 
 		USING_MATERIAL_END
 	}
@@ -226,6 +208,11 @@ void	EffectParticles::Render( float _Time, float _DeltaTime )
 
 namespace	// Drawers & Fillers
 {
+	struct	__VoronoiInfos
+	{
+		int					ParticleIndex;
+		float				Distance;
+	};
 	struct	__PerturbVoronoi
 	{
 		Noise*				pNoise;
@@ -234,20 +221,21 @@ namespace	// Drawers & Fillers
 		VertexFormatPt4*	pVertices;
 	};
 
-	float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[] )
+	float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[], void* _pData )
 	{
-		int		ParticleIndex = EFFECT_PARTICLES_COUNT*_pCellY[0] + _pCellX[0];
-		return float(ParticleIndex);
-//		float	NormalizedIndex = ParticleIndex / 65535.0f;		// Because no matter what, we must generate values in [0,1]
-//		return NormalizedIndex;
+		__VoronoiInfos&	Infos = *((__VoronoiInfos*) _pData);
+		Infos.ParticleIndex = EFFECT_PARTICLES_COUNT*_pCellY[0] + _pCellX[0];
+		Infos.Distance = sqrtf( _pDistances[0] );
+		return 0.0f;
 	}
 	void	FillVoronoi( int x, int y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 	{
  		Noise&	N = *((Noise*) _pData);
 
- 		float	C = N.Cellular( EFFECT_PARTICLES_COUNT * _UV, CombineDistances, true );	// Simple cellular (NOT Worley !) => Means only 1 point per cell, exactly what we need for a single particle ID
+		__VoronoiInfos	Infos;
+ 		N.Cellular( EFFECT_PARTICLES_COUNT * _UV, CombineDistances, &Infos, true );	// Simple cellular (NOT Worley !) => Means only 1 point per cell, exactly what we need for a single particle ID
 
-		_Pixel.RGBA.Set( C, C, C, 1.0f );
+		_Pixel.RGBA.Set( float(Infos.ParticleIndex), Infos.Distance, 0, 0 );
 	}
 	void	PerturbVoronoi( int x, int y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 	{
@@ -255,7 +243,7 @@ namespace	// Drawers & Fillers
 		
 		// Perturb the UVs a little
 		NjFloat2	Disturb = Params.pNoise->PerlinVector( 0.025f * _UV );
-		NjFloat2	NewUV = _UV + 0.04f * Disturb;
+		NjFloat2	NewUV = _UV + 0*0.04f * Disturb;
 
 		// Use POINT SAMPLING to fetch the original color from the voronoï texture
 		// (because we're dealing with particle indices here, not colors that can be linearly interpolated!)
@@ -264,13 +252,24 @@ namespace	// Drawers & Fillers
 		Params.pVoronoi->Get( X, Y, 0, _Pixel );
 
 		// Update the particles's Min/Max UVs
-// 		int			ParticleIndex = int(_Pixel.RGBA.x);
-// 		ASSERT(ParticleIndex < EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT, "WTF?!" );
-// 		NjFloat4&	ParticleVertex = Params.pVertices[ParticleIndex].Pt;
-// 		ParticleVertex.x = MIN( ParticleVertex.x, NewUV.x );
-// 		ParticleVertex.y = MIN( ParticleVertex.y, NewUV.y );
-// 		ParticleVertex.z = MAX( ParticleVertex.z, NewUV.x );
-// 		ParticleVertex.w = MAX( ParticleVertex.w, NewUV.y );
+		int			ParticleIndex = int(_Pixel.RGBA.x);
+		ASSERT(ParticleIndex >= 0, "WTF?!" );
+		ASSERT(ParticleIndex < EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT, "WTF?!" );
+		NjFloat4&	ParticleVertex = Params.pVertices[ParticleIndex].Pt;
+
+		// Check if new UV is not too far from existing min/max boundaries, in which case it would indicate a wrap
+		// We want to overlap the border instead...
+		float	DeltaU = NewUV.x - ParticleVertex.x;
+		float	DeltaV = NewUV.y - ParticleVertex.y;
+		if ( DeltaU > 0.2f )
+			NewUV.x -= 1.0f;	// Overlap instead
+		if ( DeltaV > 0.2f )
+			NewUV.y -= 1.0f;	// Overlap instead
+
+		ParticleVertex.x = MIN( ParticleVertex.x, NewUV.x );
+		ParticleVertex.y = MIN( ParticleVertex.y, NewUV.y );
+		ParticleVertex.z = MAX( ParticleVertex.z, NewUV.x );
+		ParticleVertex.w = MAX( ParticleVertex.w, NewUV.y );
 	}
 };
 
@@ -290,4 +289,26 @@ void	EffectParticles::BuildVoronoiTexture( TextureBuilder& _TB, VertexFormatPt4*
 	// Perturb the original voronoï with a small noise to break the regular cell patterns
 	__PerturbVoronoi	S = { &N, &TempVoronoi, TempVoronoi.GetWidth(), TempVoronoi.GetHeight(), _pVertices };
 	_TB.Fill( ::PerturbVoronoi, &S );
+
+	// Reparse vertices to make border particles wrap correctly
+	for ( int VertexIndex=0; VertexIndex < EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT; VertexIndex++ )
+	{
+		NjFloat4&	UVs = _pVertices[VertexIndex].Pt;
+
+		float		DeltaU = UVs.z - UVs.x;
+		float		DeltaV = UVs.w - UVs.y;
+
+// 		ASSERT( DeltaU < 0.2f, "WTF?!" );
+// 		ASSERT( DeltaV < 0.2f, "WTF?!" );
+
+// 		if ( DeltaU < 0.2f && DeltaV < 0.2f )
+// 			continue;	// Seems to be okay...
+// 
+// 		// A large Du or Dv means the particle wraps around the texture
+// 		// We need to make it overlap the borders instead...
+// 		//
+// 		float	OverlapU = UVs.z - 1.0f;
+// 		float	OverlapV = UVs.w - 1.0f;
+// 		UVs.Set( OverlapU, OverlapV, UVs.x, UVs.y );
+ 	}
 }
