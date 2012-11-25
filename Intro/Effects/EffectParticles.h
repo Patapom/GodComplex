@@ -23,11 +23,13 @@ private:	// FIELDS
 
 	Material*			m_pMatCompute;
 	Material*			m_pMatDisplay;
+	Material*			m_pMatDebugVoronoi;
 
 	Primitive*			m_pPrimParticle;
 
-	Texture2D*			m_pRTParticlePositions[3];
-	Texture2D*			m_pRTParticleRotations[3];
+	Texture2D*			m_ppRTParticlePositions[3];
+	Texture2D*			m_ppRTParticleNormals[2];
+	Texture2D*			m_ppRTParticleTangents[2];
 public:	Texture2D*			m_pTexVoronoi;
 
 	CB<CBRender>*		m_pCB_Render;
@@ -51,6 +53,5 @@ public:		// METHODS
 
 protected:
 	
-	void	BuildVoronoiTexture( TextureBuilder& _TB, VertexFormatPt4* _pVertices );
-
+	void	BuildVoronoiTexture( TextureBuilder& _TB, NjFloat2* _pCellCenters, VertexFormatPt4* _pVertices );
 };

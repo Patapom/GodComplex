@@ -41,13 +41,19 @@ static EffectParticles*		gs_pEffectParticles = NULL;
 #include "Build2DTextures.cpp"
 #include "Build3DTextures.cpp"
 
+void	DevicesEnumerator( int _DeviceIndex, const BSTR& _FriendlyName, const BSTR& _DevicePath, IMoniker* _pMoniker, void* _pUserData )
+{
+
+}
+
 int	IntroInit( IntroProgressDelegate& _Delegate )
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Attempt to create the video capture object
-	gs_pVideo = new Video( gs_Device, gs_WindowInfos.hWnd );
-	gs_pVideo->Init( 0 );	// Use first device
-	gs_pVideo->Play();		// GO!
+// 	gs_pVideo = new Video( gs_Device, gs_WindowInfos.hWnd );
+// 	gs_pVideo->EnumerateDevices( DevicesEnumerator, NULL );
+// 	gs_pVideo->Init( 0 );	// Use first device
+// 	gs_pVideo->Play();		// GO!
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -145,8 +151,11 @@ void	IntroExit()
 	delete gs_pCamera;
 
 	// Release the video capture object
-	gs_pVideo->Exit();
-	delete gs_pVideo;
+	if ( gs_pVideo != NULL )
+	{
+		gs_pVideo->Exit();
+	 	delete gs_pVideo;
+	}
 }
 
 #ifndef CODE_WORKSHOP

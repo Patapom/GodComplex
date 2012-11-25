@@ -398,6 +398,33 @@ void	Noise::SetCellularWrappingParameters( int _SizeX, int _SizeY, int _SizeZ )
 	m_SizeZ = _SizeZ;
 }
 
+// Gets the cell locus for the specified cell coordinates
+void	Noise::CellularGetCenter( int _CellX, int _CellY, NjFloat2& _Center, bool _bWrap ) const
+{
+	U32	Hx = _bWrap ? (_CellX + 100*m_SizeX) % m_SizeX : _CellX;
+	U32	Hy = _bWrap ? (_CellY + 100*m_SizeY) % m_SizeY : _CellY;
+
+	// Hash two integers into a single integer using FNV hash (http://isthe.com/chongo/tech/comp/fnv/#FNV-source)
+	U32	Hash = U32( (((OFFSET_BASIS ^ Hx) * FNV_PRIME) ^ Hy) * FNV_PRIME );
+
+	_Center.x = _CellX + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
+	_Center.y = _CellY + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
+}
+
+void	Noise::CellularGetCenter( int _CellX, int _CellY, int _CellZ, NjFloat3& _Center, bool _bWrap ) const
+{
+	U32	Hx = _bWrap ? (_CellX + 100*m_SizeX) % m_SizeX : _CellX;
+	U32	Hy = _bWrap ? (_CellY + 100*m_SizeY) % m_SizeY : _CellY;
+	U32	Hz = _bWrap ? (_CellZ + 100*m_SizeZ) % m_SizeZ : _CellZ;
+
+	// Hash three integers into a single integer using FNV hash (http://isthe.com/chongo/tech/comp/fnv/#FNV-source)
+	U32	Hash = U32( (((((OFFSET_BASIS ^ Hx) * FNV_PRIME) ^ Hy) * FNV_PRIME) ^ Hz) * FNV_PRIME );
+
+	_Center.x = _CellX + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
+	_Center.y = _CellY + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
+	_Center.z = _CellZ + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
+}
+
 float	Noise::Cellular( const NjFloat2& _UV, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
 {
 	int	CellX = floorf( _UV.x );

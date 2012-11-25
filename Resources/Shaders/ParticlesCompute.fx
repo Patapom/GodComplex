@@ -3,10 +3,10 @@
 //
 #include "Inc/Global.fx"
 
-Texture2D	_TexParticlesPosition0	: register(t10);
-Texture2D	_TexParticlesPosition1	: register(t11);
-Texture2D	_TexParticlesRotation0	: register(t12);
-Texture2D	_TexParticlesRotation1	: register(t13);
+Texture2D	_TexParticlesPositions0	: register(t10);
+Texture2D	_TexParticlesPositions1	: register(t11);
+Texture2D	_TexParticlesNormals	: register(t12);
+Texture2D	_TexParticlesTangents	: register(t13);
 
 //[
 cbuffer	cbRender	: register( b10 )
@@ -24,7 +24,8 @@ struct	VS_IN
 struct	PS_OUT
 {
 	float4	Position	: SV_TARGET0;
-	float3	Orientation	: SV_TARGET1;
+	float3	Normal		: SV_TARGET1;
+	float3	Tangent		: SV_TARGET2;
 };
 
 float3	RotateVector( float3 _Vector, float3 _Axis, float _Angle )
@@ -51,16 +52,17 @@ PS_OUT	PS( VS_IN _In )
 {
 	float2	UV = _In.__Position.xy * _dUV.xy;
 
-	float4	Position2 = _TexParticlesPosition0.SampleLevel( PointClamp, UV, 0.0 );
-	float4	Position1 = _TexParticlesPosition1.SampleLevel( PointClamp, UV, 0.0 );
-	float3	Pt_2 = Position2.xyz;
+	// Read back positions from frame-2 and frame-1
+	float4	Position1 = _TexParticlesPositions1.SampleLevel( PointClamp, UV, 0.0 );
+	float4	Position2 = _TexParticlesPositions0.SampleLevel( PointClamp, UV, 0.0 );
 	float3	Pt_1 = Position1.xyz;
+	float3	Pt_2 = Position2.xyz;
+			Pt_2 = Pt_1 - (Pt_1 - Pt_2) * _DeltaTime.y;	// Time-correction
 
-	float3	Dir_2 = _TexParticlesRotation0.SampleLevel( PointClamp, UV, 0.0 ).xyz;
-	float3	Dir_1 = _TexParticlesRotation1.SampleLevel( PointClamp, UV, 0.0 ).xyz;
+	// Read back normal & tangent
+	float3	Normal = _TexParticlesNormals.SampleLevel( PointClamp, UV, 0.0 ).xyz;
+	float3	Tangent = _TexParticlesTangents.SampleLevel( PointClamp, UV, 0.0 ).xyz;
 
-	Pt_2 = Pt_1 - (Pt_1 - Pt_2) * _DeltaTime.y;
-	Dir_2 = Dir_1 - (Dir_1 - Dir_2) * _DeltaTime.y;
 
 	float3	Acceleration = 0.0;
 	float3	Velocity = 0.0;
@@ -77,6 +79,8 @@ PS_OUT	PS( VS_IN _In )
 	float3	NewPosition = 2.0 * Pt_1 - Pt_2 + _DeltaTime.x * (Velocity + _DeltaTime.x * Acceleration);
 //	float3	NewPosition = Pt_1  + ( Pt_1 - Pt_2) * (_DeltaTime.x / _PreviousDeltaTime) + Acceleration * _DeltaTime.x * _DeltaTime.x;
 
+NewPosition = Pt_1;
+
 	///////////////////////////////////////////
 	// Manage rotations
 	UVW = 0.5 * Pt_1;
@@ -84,14 +88,18 @@ PS_OUT	PS( VS_IN _In )
 			AxisAngle.xyz = normalize( AxisAngle.xyz );
 			AxisAngle.w *= _DeltaTime.x;
 
-	float3	NewRotation = normalize( RotateVector( Dir_1, AxisAngle.xyz, AxisAngle.w ) );
+	float3	NewNormal = normalize( RotateVector( Normal, AxisAngle.xyz, AxisAngle.w ) );
+	float3	NewTangent = normalize( RotateVector( Tangent, AxisAngle.xyz, AxisAngle.w ) );
 
-//NewRotation = normalize( float3( 1, 1, 1 ) );	// ###
-//NewRotation = Dir_1;
+NewNormal = Normal;
+//NewNormal = float3( 0, 1, 0 );
+NewTangent = Tangent;
+//NewTangent = float3( 1, 0, 0 );
 
 	PS_OUT	Out;
 	Out.Position = float4( NewPosition, 0 );
-	Out.Orientation = NewRotation;
+	Out.Normal = NewNormal;
+	Out.Tangent = NewTangent;
 
 	return Out;
 }

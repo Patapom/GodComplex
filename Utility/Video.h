@@ -17,7 +17,7 @@ class Device;
 class ConstantBuffer;
 template<typename> class CB;
 
-class	Video : public IVMRSurfaceAllocator9, IVMRImagePresenter9, IVMRMonitorConfig9, IVMRImagePresenterConfig9
+class	Video : public IVMRImagePresenter9, IVMRSurfaceAllocator9, IVMRMonitorConfig9, IVMRImagePresenterConfig9
 {
 public:		// NESTED TYPES
 
@@ -88,6 +88,6 @@ public:	// IVMRImagePresenterConfig9
 private:
 	IBaseFilter*	QueryMediaSourceDevice( int _DeviceIndex );
 	HRESULT			EnumerateDevices( REFGUID _Category, IEnumMoniker** _ppEnum );
-	void			ConfigureVRM9();
+	void			ConfigureVMR9();
 	void			ReleaseVMR9();
 };

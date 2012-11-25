@@ -83,6 +83,8 @@ public:		// METHODS
 
 	// --------- CELLULAR ---------
 	void	SetCellularWrappingParameters( int _SizeX, int _SizeY, int _SizeZ );
+	void	CellularGetCenter( int _CellX, int _CellY, NjFloat2& _Center, bool _bWrap=false ) const;
+	void	CellularGetCenter( int _CellX, int _CellY, int _CellZ, NjFloat3& _Center, bool _bWrap=false ) const;
 	float	Cellular( const NjFloat2& uv, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;
 	float	Cellular( const NjFloat3& uvw, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;
 	float	Worley( const NjFloat2& uv, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;

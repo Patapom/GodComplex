@@ -56,7 +56,7 @@ void	Video::Init( int _DeviceIndex )
 
 	// Prepare VMR9 filter
 	ASSERT( SUCCEEDED( hr = CoCreateInstance( CLSID_VideoMixingRenderer9, 0, CLSCTX_INPROC_SERVER, IID_IBaseFilter, (LPVOID*) &m_pVMR9 ) ), "Failed to create VMR9 instance!" );
-	ConfigureVRM9();
+	ConfigureVMR9();
 
 	// Add VMR9 filter to Graph
 	ASSERT( SUCCEEDED( hr = m_pGraphBuilder->AddFilter( m_pVMR9, L"VMR9" ) ), "Failed to add VMR9 as rendering filter!" );
@@ -187,14 +187,14 @@ HRESULT	Video::EnumerateDevices( REFGUID _Category, IEnumMoniker** _ppEnum )
 	return hr;
 }
 
-void	Video::ConfigureVRM9()
+void	Video::ConfigureVMR9()
 {
 	HRESULT	hr;
 
 	IVMRFilterConfig9*	pVMRConfig;
 	ASSERT( SUCCEEDED( hr = m_pVMR9->QueryInterface( IID_IVMRFilterConfig9, (LPVOID*) &pVMRConfig ) ), "Failed to retrieve VMR9 config!" );
-	pVMRConfig->SetNumberOfStreams( 1 );
 	pVMRConfig->SetRenderingMode( VMR9Mode_Renderless );
+	pVMRConfig->SetNumberOfStreams( 1 );
 	pVMRConfig->Release();
 
 	ASSERT( SUCCEEDED( hr = m_pVMR9->QueryInterface( IID_IVMRSurfaceAllocatorNotify9, (LPVOID*) &m_pVMRAllocatorNotify ) ), "Failed to retrieve VMR9 surface allocator!" );
