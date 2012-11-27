@@ -24,8 +24,8 @@ struct	VS_IN
 struct	PS_OUT
 {
 	float4	Position	: SV_TARGET0;
-	float3	Normal		: SV_TARGET1;
-	float3	Tangent		: SV_TARGET2;
+	float4	Normal		: SV_TARGET1;
+	float4	Tangent		: SV_TARGET2;
 };
 
 float3	RotateVector( float3 _Vector, float3 _Axis, float _Angle )
@@ -54,15 +54,20 @@ PS_OUT	PS( VS_IN _In )
 
 	// Read back positions from frame-2 and frame-1
 	float4	Position1 = _TexParticlesPositions1.SampleLevel( PointClamp, UV, 0.0 );
+	float	Life = Position1.w + _Time.y;	// Increase life
 	float4	Position2 = _TexParticlesPositions0.SampleLevel( PointClamp, UV, 0.0 );
 	float3	Pt_1 = Position1.xyz;
 	float3	Pt_2 = Position2.xyz;
 			Pt_2 = Pt_1 - (Pt_1 - Pt_2) * _DeltaTime.y;	// Time-correction
 
-	// Read back normal & tangent
-	float3	Normal = _TexParticlesNormals.SampleLevel( PointClamp, UV, 0.0 ).xyz;
-	float3	Tangent = _TexParticlesTangents.SampleLevel( PointClamp, UV, 0.0 ).xyz;
+	// Life is invalid if negative
+	float	InvalidLife = saturate( 10000.0 * Life );
 
+	// Read back normal & tangent
+	float4	NormalSize = _TexParticlesNormals.SampleLevel( PointClamp, UV, 0.0 );
+	float3	Normal = NormalSize.xyz;
+	float	Size = NormalSize.w;
+	float3	Tangent = _TexParticlesTangents.SampleLevel( PointClamp, UV, 0.0 ).xyz;
 
 	float3	Acceleration = 0.0;
 	float3	Velocity = 0.0;
@@ -70,16 +75,20 @@ PS_OUT	PS( VS_IN _In )
 	///////////////////////////////////////////
 	// Manage positions
 	float3	UVW = 1.0 * Pt_1;
-			UVW += 10.0 * _Time.x;
- 	Acceleration += 0.01 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 ).xyz;
+			UVW += 4.0 * _Time.x;
+	Acceleration += 0.01 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 ).xyz;
 //	Velocity += 0.0002 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 ).xyz;
 
-	Acceleration += float3( 0, 0.001, 0 );
+	Acceleration += float3( 0, 0.0005, 0 );	// Add buoyancy...
+
+	// Nullify velocity and acceleration if life is negative
+	Velocity *= InvalidLife;
+	Acceleration *= InvalidLife;
 
 	float3	NewPosition = 2.0 * Pt_1 - Pt_2 + _DeltaTime.x * (Velocity + _DeltaTime.x * Acceleration);
 //	float3	NewPosition = Pt_1  + ( Pt_1 - Pt_2) * (_DeltaTime.x / _PreviousDeltaTime) + Acceleration * _DeltaTime.x * _DeltaTime.x;
 
-NewPosition = Pt_1;
+//NewPosition = Pt_1;
 
 	///////////////////////////////////////////
 	// Manage rotations
@@ -88,18 +97,27 @@ NewPosition = Pt_1;
 			AxisAngle.xyz = normalize( AxisAngle.xyz );
 			AxisAngle.w *= _DeltaTime.x;
 
+	// Nullify rotation if life is negative
+	AxisAngle.w *= InvalidLife;
+
 	float3	NewNormal = normalize( RotateVector( Normal, AxisAngle.xyz, AxisAngle.w ) );
 	float3	NewTangent = normalize( RotateVector( Tangent, AxisAngle.xyz, AxisAngle.w ) );
 
-NewNormal = Normal;
+//NewNormal = Normal;
 //NewNormal = float3( 0, 1, 0 );
-NewTangent = Tangent;
+//NewTangent = Tangent;
 //NewTangent = float3( 1, 0, 0 );
 
+	///////////////////////////////////////////
+	// Manage size
+	float	dSize = -0.2 * _Time.y;
+			dSize *= InvalidLife;
+	Size = max( 0.0, Size + dSize );	// Decrease size with time...
+
 	PS_OUT	Out;
-	Out.Position = float4( NewPosition, 0 );
-	Out.Normal = NewNormal;
-	Out.Tangent = NewTangent;
+	Out.Position = float4( NewPosition, Life );
+	Out.Normal = float4( NewNormal, Size );
+	Out.Tangent = float4( NewTangent, 0.0 );
 
 	return Out;
 }

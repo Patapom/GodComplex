@@ -1,6 +1,6 @@
 #pragma once
 
-#define EFFECT_PARTICLES_COUNT	16
+#define EFFECT_PARTICLES_COUNT	64
 
 template<typename> class CB;
 

@@ -52,9 +52,13 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 			-1,		// int		PosAO;
 		};
 
-		m_pTexVoronoi = TB.CreateTexture( PixelFormatRG16F::DESCRIPTOR, Conv );
+		m_pTexVoronoi = TB.CreateTexture( PixelFormatRG32F::DESCRIPTOR, Conv );
 
 		m_pPrimParticle = new Primitive( gs_Device, EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatPt4::DESCRIPTOR );
+
+		// Build cell centers
+		for ( int ParticleIndex=0; ParticleIndex < EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT; ParticleIndex++ )
+			pCellCenters[ParticleIndex].Set( 0.5f * (pVertices[ParticleIndex].Pt.x + pVertices[ParticleIndex].Pt.z), 0.5f * (pVertices[ParticleIndex].Pt.y + pVertices[ParticleIndex].Pt.w) );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -78,41 +82,47 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 			float		Alpha = TWOPI * X / EFFECT_PARTICLES_COUNT;	// Angle on the great circle
 			float		Beta = TWOPI * Y / EFFECT_PARTICLES_COUNT;	// Angle on the small circle
 
-			NjFloat3	T( cosf(Alpha), 0.0f, -sinf(Alpha) );		// Gives the direction of the center on the great circle
+			NjFloat3	T( cosf(Alpha), 0.0f, -sinf(Alpha) );		// Gives the direction to the center on the great circle in the Z^X plane
 			NjFloat3	Center = NjFloat3( 0, 0.5f, 0 ) + R * T;	// Center on the great circle
-			NjFloat3	Ortho( T.z, 0, -T.x );						// Tangent to the great circle
-//			NjFloat3	B = T ^ Ortho;
-			NjFloat3	B( 0, 1, 0 );								// Obviously, always the UP vector
+			NjFloat3	Ortho( T.z, 0, -T.x );						// Tangent to the great circle in the Z^X plane
+			NjFloat3	B( 0, 1, 0 );								// Bitangent is obviously, always the Y vector
 
 			NjFloat3	Normal = cosf(Beta) * T + sinf(Beta) * B;	// The normal to the small circle, also the direction to the point on the surface
 			NjFloat3	Tangent = Ortho;
 			NjFloat3	Pos = Center + r * Normal;					// Position on the surface of the small circle
 
+			float		Radius = R + r * cosf(Beta);				// Radius of the circle where the particle is standing
+			float		Perimeter = TWOPI * Radius;					// Perimeter of that circle
+			float		ParticleSize = 0.5f * Perimeter;			// Size of a single particle on that circle
 
+			float		ParticleLife = -1.0f - 2.0f * (1.0f - Normal.y);	// Start with a negative life depending on height
+ 
 // DEBUG Generate on a plane for verification
-Pos.x = 0.1f * (CellCenter.x - 0.5f * EFFECT_PARTICLES_COUNT);
-Pos.y = 0.8;
-Pos.z = 0.1f * (CellCenter.y - 0.5f * EFFECT_PARTICLES_COUNT);
-
-Normal.Set( 0, 1, 0 );	// Facing up
-Tangent.Set( 1, 0, 0 );	// Right
+// Pos.x = 2.0f * (CellCenter.x - 0.5f);
+// Pos.y = 0.5f;
+// Pos.z = -2.0f * (CellCenter.y - 0.5f);
+// Normal.Set( 0, 1, 0 );	// Facing up
+// Tangent.Set( 1, 0, 0 );	// Right
+// ParticleSize = 1.0f;// / EFFECT_PARTICLES_COUNT;	// Size of a single particle on that circle
 // DEBUG
 
 
 			pScanlinePosition->R = Pos.x;
 			pScanlinePosition->G = Pos.y;
 			pScanlinePosition->B = Pos.z;
-			pScanlinePosition->A = 0.0f;
+			pScanlinePosition->A = ParticleLife;
 
 			pScanlineNormal->R = Normal.x;
 			pScanlineNormal->G = Normal.y;
 			pScanlineNormal->B = Normal.z;
-			pScanlineNormal->A = 0.0f;
+//			pScanlineNormal->A = (0.025f + 0.002f) * EFFECT_PARTICLES_COUNT;	// Half size + a little epsilon to make the tiles join correctly
+//			pScanlineNormal->A = (0.1f + 0*0.002f) * EFFECT_PARTICLES_COUNT;	// Half size + a little epsilon to make the tiles join correctly
+			pScanlineNormal->A = ParticleSize;
 
 			pScanlineTangent->R = Tangent.x;
 			pScanlineTangent->G = Tangent.y;
 			pScanlineTangent->B = Tangent.z;
-			pScanlineTangent->A = 0.0f;
+			pScanlineTangent->A = 0.0f;		// Unused
 		}
 
 	// Unfortunately, we need to create Textures to initialize our RenderTargets
@@ -251,7 +261,7 @@ void	EffectParticles::Render( float _Time, float _DeltaTime )
 0, // FLOAT TopLeftX;
 0, // FLOAT TopLeftY;
 0.2f * RESX, // FLOAT Width;
-0.2f * RESY, // FLOAT Height;
+0.2f * RESX, // FLOAT Height;
 0, // FLOAT MinDepth;
 1, // FLOAT MaxDepth;
 };
@@ -294,7 +304,7 @@ namespace	// Drawers & Fillers
  		Noise&	N = *((Noise*) _pData);
 
 		__VoronoiInfos	Infos;
- 		N.Cellular( EFFECT_PARTICLES_COUNT * _UV, CombineDistances, &Infos, true );	// Simple cellular (NOT Worley !) => Means only 1 point per cell, exactly what we need for a single particle ID
+ 		N.Cellular( EFFECT_PARTICLES_COUNT * _UV, CombineDistances, &Infos, true );	// Simple cellular (NOT Worley !) => Means only 1 point per cell, exactly what we need for a unique particle ID
 
 		_Pixel.RGBA.Set( float(Infos.ParticleIndex), Infos.Distance, 0, 0 );
 	}
@@ -303,8 +313,8 @@ namespace	// Drawers & Fillers
  		__PerturbVoronoi&	Params = *((__PerturbVoronoi*) _pData);
 		
 		// Perturb the UVs a little
-		NjFloat2	Disturb = Params.pNoise->PerlinVector( 0.025f * _UV );
-		NjFloat2	NewUV = _UV + 0*0.04f * Disturb;
+		NjFloat2	Disturb = Params.pNoise->PerlinVector( 0.02f * _UV );
+		NjFloat2	NewUV = _UV + 0.0125f * Disturb;
 
 		// Use POINT SAMPLING to fetch the original color from the voronoï texture
 		// (because we're dealing with particle indices here, not colors that can be linearly interpolated!)
@@ -313,34 +323,37 @@ namespace	// Drawers & Fillers
 		Params.pVoronoi->Get( X, Y, 0, _Pixel );
 
 		// Update the particles's Min/Max UVs
-		int			ParticleIndex = int(_Pixel.RGBA.x);
-		ASSERT(ParticleIndex >= 0, "WTF?!" );
-		ASSERT(ParticleIndex < EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT, "WTF?!" );
+		int		ParticleIndex = int(_Pixel.RGBA.x);
+		ASSERT( ParticleIndex >= 0, "WTF?!" );
+		ASSERT( ParticleIndex < EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT, "WTF?!" );
 		NjFloat4&	ParticleVertex = Params.pVertices[ParticleIndex].Pt;
 
-		if ( ParticleIndex == 0x2F && NewUV.x < 0.4f )
-			ParticleIndex++;
+// 		if ( ParticleIndex == 0x2F && NewUV.x < 0.4f )
+// 			ParticleIndex++;
 
 		// Check if new UV is not too far from existing min/max boundaries, in which case it would indicate a wrap
 		// We want to overlap the border instead...
-		float	DeltaU = NewUV.x - ParticleVertex.x;
-		float	DeltaV = NewUV.y - ParticleVertex.y;
-		if ( DeltaU > 0.2f )
-			NewUV.x -= 1.0f;	// Overlap instead
-		if ( DeltaV > 0.2f )
-			NewUV.y -= 1.0f;	// Overlap instead
+		float	OVERLAP_TOLERANCE = 4.0f / EFFECT_PARTICLES_COUNT;
 
-		DeltaU = ParticleVertex.z - NewUV.x;
-		DeltaV = ParticleVertex.w - NewUV.y;
-		if ( DeltaU > 0.2f )
-			NewUV.x += 1.0f;	// Overlap instead
-		if ( DeltaV > 0.2f )
-			NewUV.y += 1.0f;	// Overlap instead
+		NjFloat2	UV = _UV;
+		float	DeltaU = UV.x - ParticleVertex.x;
+		float	DeltaV = UV.y - ParticleVertex.y;
+		if ( DeltaU > OVERLAP_TOLERANCE )
+			UV.x -= 1.0f;	// Overlap instead
+		if ( DeltaV > OVERLAP_TOLERANCE )
+			UV.y -= 1.0f;	// Overlap instead
 
-		ParticleVertex.x = MIN( ParticleVertex.x, NewUV.x );
-		ParticleVertex.y = MIN( ParticleVertex.y, NewUV.y );
-		ParticleVertex.z = MAX( ParticleVertex.z, NewUV.x );
-		ParticleVertex.w = MAX( ParticleVertex.w, NewUV.y );
+		DeltaU = ParticleVertex.z - UV.x;
+		DeltaV = ParticleVertex.w - UV.y;
+		if ( DeltaU > OVERLAP_TOLERANCE )
+			UV.x += 1.0f;	// Overlap instead
+		if ( DeltaV > OVERLAP_TOLERANCE )
+			UV.y += 1.0f;	// Overlap instead
+
+		ParticleVertex.x = MIN( ParticleVertex.x, UV.x );
+		ParticleVertex.y = MIN( ParticleVertex.y, UV.y );
+		ParticleVertex.z = MAX( ParticleVertex.z, UV.x );
+		ParticleVertex.w = MAX( ParticleVertex.w, UV.y );
 	}
 };
 
