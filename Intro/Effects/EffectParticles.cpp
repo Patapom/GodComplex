@@ -83,7 +83,7 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 			float		Beta = TWOPI * Y / EFFECT_PARTICLES_COUNT;	// Angle on the small circle
 
 			NjFloat3	T( cosf(Alpha), 0.0f, -sinf(Alpha) );		// Gives the direction to the center on the great circle in the Z^X plane
-			NjFloat3	Center = NjFloat3( 0, 0.5f, 0 ) + R * T;	// Center on the great circle
+			NjFloat3	Center = NjFloat3( 0, 0.8f, 0 ) + R * T;	// Center on the great circle
 			NjFloat3	Ortho( T.z, 0, -T.x );						// Tangent to the great circle in the Z^X plane
 			NjFloat3	B( 0, 1, 0 );								// Bitangent is obviously, always the Y vector
 
@@ -95,7 +95,7 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 			float		Perimeter = TWOPI * Radius;					// Perimeter of that circle
 			float		ParticleSize = 0.5f * Perimeter;			// Size of a single particle on that circle
 
-			float		ParticleLife = -1.0f - 2.0f * (1.0f - Normal.y);	// Start with a negative life depending on height
+			float		ParticleLife = -1.0f - 4.0f * (1.0f - Normal.y);	// Start with a negative life depending on height
  
 // DEBUG Generate on a plane for verification
 // Pos.x = 2.0f * (CellCenter.x - 0.5f);
@@ -122,7 +122,7 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 			pScanlineTangent->R = Tangent.x;
 			pScanlineTangent->G = Tangent.y;
 			pScanlineTangent->B = Tangent.z;
-			pScanlineTangent->A = 0.0f;		// Unused
+			pScanlineTangent->A = Normal.y > 0.0f ? 1.0f : -1.0f;	// Determines the particle's behavior...
 		}
 
 	// Unfortunately, we need to create Textures to initialize our RenderTargets

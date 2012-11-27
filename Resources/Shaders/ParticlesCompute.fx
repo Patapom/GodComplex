@@ -67,19 +67,34 @@ PS_OUT	PS( VS_IN _In )
 	float4	NormalSize = _TexParticlesNormals.SampleLevel( PointClamp, UV, 0.0 );
 	float3	Normal = NormalSize.xyz;
 	float	Size = NormalSize.w;
-	float3	Tangent = _TexParticlesTangents.SampleLevel( PointClamp, UV, 0.0 ).xyz;
+	float4	TangentBehavior = _TexParticlesTangents.SampleLevel( PointClamp, UV, 0.0 );
+	float3	Tangent = TangentBehavior.xyz;
 
 	float3	Acceleration = 0.0;
 	float3	Velocity = 0.0;
 
 	///////////////////////////////////////////
 	// Manage positions
-	float3	UVW = 1.0 * Pt_1;
-			UVW += 4.0 * _Time.x;
-	Acceleration += 0.01 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 ).xyz;
-//	Velocity += 0.0002 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 ).xyz;
+	if ( TangentBehavior.w > 0.0 )
+	{	// The particle should get uplifted by buoyancy
+		Acceleration += float3( 0, 0.0005, 0 );	// Add buoyancy...
 
-	Acceleration += float3( 0, 0.0005, 0 );	// Add buoyancy...
+		// Add noise to make it move
+		float3	UVW = 1.0 * Pt_1;
+				UVW += 400.0 * _Time.x;
+
+		Acceleration += 0.01 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 ).xyz;
+//		Velocity += 0.0002 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 ).xyz;
+	}
+	else
+	{	// The particle should fall with gravity
+		Acceleration -= float3( 0, 0.0005, 0 );	// Add gravity...
+
+		// Add a tiny noise but quickly moving
+		float3	UVW = 10.0 * Pt_1;
+				UVW += 400.0 * _Time.x;
+		Acceleration += 0.025 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 ).xyz;
+	}
 
 	// Nullify velocity and acceleration if life is negative
 	Velocity *= InvalidLife;
@@ -92,7 +107,7 @@ PS_OUT	PS( VS_IN _In )
 
 	///////////////////////////////////////////
 	// Manage rotations
-	UVW = 0.5 * Pt_1;
+	float3	UVW = 0.5 * Pt_1;
 	float4	AxisAngle = 1.0 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 );
 			AxisAngle.xyz = normalize( AxisAngle.xyz );
 			AxisAngle.w *= _DeltaTime.x;
@@ -117,7 +132,7 @@ PS_OUT	PS( VS_IN _In )
 	PS_OUT	Out;
 	Out.Position = float4( NewPosition, Life );
 	Out.Normal = float4( NewNormal, Size );
-	Out.Tangent = float4( NewTangent, 0.0 );
+	Out.Tangent = float4( NewTangent, TangentBehavior.w);
 
 	return Out;
 }
