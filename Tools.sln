@@ -15,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PNG2RAW", "Tools\PNG2RAW\PN
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BRDFLafortuneFitting", "Tools\BRDFLafortuneFitting\BRDFLafortuneFitting.csproj", "{5800906F-18A5-454B-B393-DD76AED7CE8B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BRDFLafortuneFitting2", "Tools\BRDFLafortuneFitting2\BRDFLafortuneFitting2.csproj", "{2AA334BB-68D9-430F-A357-4E4EE916E75E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BRDFSlices", "Tools\BRDFSlices\BRDFSlices.csproj", "{4609B718-96F6-4755-997C-AE7AF5BCBD0F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +91,7 @@ Global
 		{10594C0B-7AF5-44A6-901A-4695457E2FD9}.Debug|x86.ActiveCfg = Debug|x86
 		{10594C0B-7AF5-44A6-901A-4695457E2FD9}.Debug|x86.Build.0 = Debug|x86
 		{10594C0B-7AF5-44A6-901A-4695457E2FD9}.Release|Any CPU.ActiveCfg = Release|x86
+		{10594C0B-7AF5-44A6-901A-4695457E2FD9}.Release|Any CPU.Build.0 = Release|x86
 		{10594C0B-7AF5-44A6-901A-4695457E2FD9}.Release|x64.ActiveCfg = Release|x86
 		{10594C0B-7AF5-44A6-901A-4695457E2FD9}.Release|x86.ActiveCfg = Release|x86
 		{10594C0B-7AF5-44A6-901A-4695457E2FD9}.Release|x86.Build.0 = Release|x86
@@ -100,6 +105,25 @@ Global
 		{5800906F-18A5-454B-B393-DD76AED7CE8B}.Release|x64.ActiveCfg = Release|x86
 		{5800906F-18A5-454B-B393-DD76AED7CE8B}.Release|x86.ActiveCfg = Release|x86
 		{5800906F-18A5-454B-B393-DD76AED7CE8B}.Release|x86.Build.0 = Release|x86
+		{2AA334BB-68D9-430F-A357-4E4EE916E75E}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{2AA334BB-68D9-430F-A357-4E4EE916E75E}.Debug|x64.ActiveCfg = Debug|x86
+		{2AA334BB-68D9-430F-A357-4E4EE916E75E}.Debug|x86.ActiveCfg = Debug|x86
+		{2AA334BB-68D9-430F-A357-4E4EE916E75E}.Debug|x86.Build.0 = Debug|x86
+		{2AA334BB-68D9-430F-A357-4E4EE916E75E}.Release|Any CPU.ActiveCfg = Release|x86
+		{2AA334BB-68D9-430F-A357-4E4EE916E75E}.Release|Any CPU.Build.0 = Release|x86
+		{2AA334BB-68D9-430F-A357-4E4EE916E75E}.Release|x64.ActiveCfg = Release|x86
+		{2AA334BB-68D9-430F-A357-4E4EE916E75E}.Release|x86.ActiveCfg = Release|x86
+		{2AA334BB-68D9-430F-A357-4E4EE916E75E}.Release|x86.Build.0 = Release|x86
+		{4609B718-96F6-4755-997C-AE7AF5BCBD0F}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{4609B718-96F6-4755-997C-AE7AF5BCBD0F}.Debug|Any CPU.Build.0 = Debug|x86
+		{4609B718-96F6-4755-997C-AE7AF5BCBD0F}.Debug|x64.ActiveCfg = Debug|x86
+		{4609B718-96F6-4755-997C-AE7AF5BCBD0F}.Debug|x86.ActiveCfg = Debug|x86
+		{4609B718-96F6-4755-997C-AE7AF5BCBD0F}.Debug|x86.Build.0 = Debug|x86
+		{4609B718-96F6-4755-997C-AE7AF5BCBD0F}.Release|Any CPU.ActiveCfg = Release|x86
+		{4609B718-96F6-4755-997C-AE7AF5BCBD0F}.Release|Any CPU.Build.0 = Release|x86
+		{4609B718-96F6-4755-997C-AE7AF5BCBD0F}.Release|x64.ActiveCfg = Release|x86
+		{4609B718-96F6-4755-997C-AE7AF5BCBD0F}.Release|x86.ActiveCfg = Release|x86
+		{4609B718-96F6-4755-997C-AE7AF5BCBD0F}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

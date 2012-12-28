@@ -1,4 +1,8 @@
 ﻿//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+// Difference with first fitting project is that this one is using Levenberg-Marquardt optimization
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 // This is a program that will attempt to fit a BRDF from the MERL database (http://www.merl.com/brdf/) into
 //	several generalized cosine lobes as described in the Lafortune model (http://www.graphics.cornell.edu/pubs/1997/LFTG97.pdf).
 // 
@@ -37,30 +41,8 @@
 // So, using Cx,Cy,Cz (each different on R,G and B) and n we can describe a single cosine lobe.
 // Using several of these lobes as a sum, we can describe more complex models.
 //
-// This is the goal of this little application that will attempt to fit complex 4D BRDFs from the MERL database (each file is 33MB!)
-//	into several cosine lobes.
-//
-// Lafortune advises to use the Levenberg-Marquardt algorithm which will perform a least-square fit of a function but I will rather
-//	re-use my BFGS minimization scheme I used in my SH library to match several rotated ZH to compose a single SH...
-//
-// The algorithm then becomes:
-//
-//	Read and store BRDF into an array
-//	For each R,G,B component
-//	{
-//		For each lobe in LOBES_COUNT (provided as a parameter)
-//		{
-//			Use BFGS to determine best fit (Cx,Cy,Cz,n) to the BRDF
-//			Subtract the resulting cosine lobe from the BRDF (hence removing the effect of the lobe from the actual BRDF)
-//		}
-//		Final BFGS to determine best fit of all lobes to the original BRDF
-//	}
-//
-// Perhaps it's actually a bad idea to separate the BRDF as the sum of several lobes to compute an approximation lobe by lobe rather than
-//	using all the lobes at once, but since the Lafortune approximation works with an independent sum of lobes, why not also rendering the
-//	computation of those lobes' coefficients independent from one another?
-// There is a small sentence in the Lafortune paper that says all the lobes should be computed together though, I wonder which solution
-//	is the best?
+// This is the goal of this little application that will attempt to fit complex 4D BRDFs from the MERL database (each file is 33MB!) into several cosine lobes.
+// After failing at using BFGS, I'm now using Levenberg-Marquardt as advised by Lafortune.
 //
 //////////////////////////////////////////////////////////////////////////
 //
@@ -169,7 +151,7 @@ namespace BRDFLafortuneFitting
 		class	BRDFSample
 		{
 			public int			m_BRDFIndex = 0;				// The flattened index in the BRDF table
-			public double		m_CosThetaIn = 0.0;				// Optional divide by cos theta to alleviate deviations at grazing angles
+			public double		m_CosThetaIn = 0.0;			// Optional divide by cos theta to alleviate deviations at grazing angles
 			public Vector3		m_DotProduct = new Vector3();	// The 3 coefficients of the dot product between the incoming/outgoing directions corresponding to the BRDF index
 		}
 
@@ -206,7 +188,8 @@ namespace BRDFLafortuneFitting
 
 		#region FIELDS
 
-		static BRDFSample[]		ms_BRDFSamples = null;
+		static BRDFSample[]			ms_BRDFSamples = null;
+		static LevenbergMarquardt	ms_Solver = new LevenbergMarquardt();
 
 		#endregion
 
@@ -488,6 +471,25 @@ MaxValues.z = Math.Max( MaxValues.z, B );
 				ms_ProgressForm.Show();
 				ms_ProgressForm.BRDFComponentIndex = 0;
 				ms_ProgressForm.Progress = 0.0;
+
+
+				//////////////////////////////////////////////////////////////////////////
+				// Setup the solver
+				{
+					ms_Solver.Init( ms_BRDFSamples.Length, 4*LobesCount, 45 );
+
+					ms_Solver.AbsoluteTolerance = 0.005;
+					ms_Solver.RelativeTolerance = 0.01;
+     
+					for ( int LobeIndex=0; LobeIndex < LobesCount; LobeIndex++ )
+					{
+						ms_Solver.VectorConstraints.SetConstraint( 4*LobeIndex+0, -2.0, +2.0 );	// Cx
+						ms_Solver.VectorConstraints.SetConstraint( 4*LobeIndex+1, -2.0, +2.0 );	// Cy
+						ms_Solver.VectorConstraints.SetConstraint( 4*LobeIndex+2,  0.0, +1.5 );	// Cz
+						ms_Solver.VectorConstraints.SetConstraint( 4*LobeIndex+3,  1.0, +128 );	// Exponent
+					}
+				}
+
 
 				// Build a list of initial guesses
 				CosineLobe[]	InitialGuesses = new CosineLobe[10];

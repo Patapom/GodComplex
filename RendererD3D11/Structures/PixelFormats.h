@@ -94,6 +94,26 @@ public:
 
 };
 
+struct PixelFormatR16_UINT : public PixelFormat
+{
+public:
+
+	static class Desc : public IPixelFormatDescriptor
+	{
+	public:
+
+		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_R16_UINT; }
+		virtual int			Size() const					{ return sizeof(PixelFormatR16_UINT); }
+		virtual void		Write( U8* _pPixel, const NjFloat4& _Color ) const	{ PixelFormatR16_UINT& P = (PixelFormatR16_UINT&)( *_pPixel ); P.R = U16( 65535.0f * _Color.x ); }
+		virtual NjFloat4	Read( const U8* _pPixel ) const						{ const PixelFormatR16_UINT& P = (const PixelFormatR16_UINT&)( *_pPixel ); return NjFloat4( P.R / 65535.0f, 0, 0, 0 ); }
+	} DESCRIPTOR;
+
+public:
+
+	U16	R;
+
+};
+
 struct PixelFormatRG16F : public PixelFormat
 {
 public:
@@ -134,26 +154,6 @@ public:
 
 };
 
-struct PixelFormatRGBA32F : public PixelFormat
-{
-public:
-
-	static class Desc : public IPixelFormatDescriptor
-	{
-	public:
-
-		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_R32G32B32A32_FLOAT; }
-		virtual int			Size() const					{ return sizeof(PixelFormatRGBA32F); }
-		virtual void		Write( U8* _pPixel, const NjFloat4& _Color ) const	{ PixelFormatRGBA32F& P = (PixelFormatRGBA32F&)( *_pPixel ); P.R = _Color.x; P.G = _Color.y; P.B = _Color.z; P.A = _Color.w; }
-		virtual NjFloat4	Read( const U8* _pPixel ) const						{ const PixelFormatRGBA32F& P = (const PixelFormatRGBA32F&)( *_pPixel ); return NjFloat4( P.R, P.G, P.B, P.A ); }
-	} DESCRIPTOR;
-
-public:
-
-	float  R, G, B, A;
-
-};
-
 struct PixelFormatR32F : public PixelFormat
 {
 public:
@@ -174,7 +174,7 @@ public:
 
 };
 
-struct PixelFormatR16_UINT : public PixelFormat
+struct PixelFormatRG32F : public PixelFormat
 {
 public:
 
@@ -182,14 +182,34 @@ public:
 	{
 	public:
 
-		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_R16_UINT; }
-		virtual int			Size() const					{ return sizeof(PixelFormatR16_UINT); }
-		virtual void		Write( U8* _pPixel, const NjFloat4& _Color ) const	{ PixelFormatR16_UINT& P = (PixelFormatR16_UINT&)( *_pPixel ); P.R = U16( 65535.0f * _Color.x ); }
-		virtual NjFloat4	Read( const U8* _pPixel ) const						{ const PixelFormatR16_UINT& P = (const PixelFormatR16_UINT&)( *_pPixel ); return NjFloat4( P.R / 65535.0f, 0, 0, 0 ); }
+		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_R32G32_FLOAT; }
+		virtual int			Size() const					{ return sizeof(PixelFormatRG32F); }
+		virtual void		Write( U8* _pPixel, const NjFloat4& _Color ) const	{ PixelFormatRG32F& P = (PixelFormatRG32F&)( *_pPixel ); P.R = _Color.x; P.G = _Color.y; }
+		virtual NjFloat4	Read( const U8* _pPixel ) const						{ const PixelFormatRG32F& P = (const PixelFormatRG32F&)( *_pPixel ); return NjFloat4( P.R, P.G, 0, 0 ); }
 	} DESCRIPTOR;
 
 public:
 
-	U16	R;
+	float	R, G;
+
+};
+
+struct PixelFormatRGBA32F : public PixelFormat
+{
+public:
+
+	static class Desc : public IPixelFormatDescriptor
+	{
+	public:
+
+		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_R32G32B32A32_FLOAT; }
+		virtual int			Size() const					{ return sizeof(PixelFormatRGBA32F); }
+		virtual void		Write( U8* _pPixel, const NjFloat4& _Color ) const	{ PixelFormatRGBA32F& P = (PixelFormatRGBA32F&)( *_pPixel ); P.R = _Color.x; P.G = _Color.y; P.B = _Color.z; P.A = _Color.w; }
+		virtual NjFloat4	Read( const U8* _pPixel ) const						{ const PixelFormatRGBA32F& P = (const PixelFormatRGBA32F&)( *_pPixel ); return NjFloat4( P.R, P.G, P.B, P.A ); }
+	} DESCRIPTOR;
+
+public:
+
+	float  R, G, B, A;
 
 };

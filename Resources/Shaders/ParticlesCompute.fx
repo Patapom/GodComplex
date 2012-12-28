@@ -3,10 +3,10 @@
 //
 #include "Inc/Global.fx"
 
-Texture2D	_TexParticlesPosition0	: register(t10);
-Texture2D	_TexParticlesPosition1	: register(t11);
-Texture2D	_TexParticlesRotation0	: register(t12);
-Texture2D	_TexParticlesRotation1	: register(t13);
+Texture2D	_TexParticlesPositions0	: register(t10);
+Texture2D	_TexParticlesPositions1	: register(t11);
+Texture2D	_TexParticlesNormals	: register(t12);
+Texture2D	_TexParticlesTangents	: register(t13);
 
 //[
 cbuffer	cbRender	: register( b10 )
@@ -24,7 +24,8 @@ struct	VS_IN
 struct	PS_OUT
 {
 	float4	Position	: SV_TARGET0;
-	float3	Orientation	: SV_TARGET1;
+	float4	Normal		: SV_TARGET1;
+	float4	Tangent		: SV_TARGET2;
 };
 
 float3	RotateVector( float3 _Vector, float3 _Axis, float _Angle )
@@ -51,47 +52,87 @@ PS_OUT	PS( VS_IN _In )
 {
 	float2	UV = _In.__Position.xy * _dUV.xy;
 
-	float4	Position2 = _TexParticlesPosition0.SampleLevel( PointClamp, UV, 0.0 );
-	float4	Position1 = _TexParticlesPosition1.SampleLevel( PointClamp, UV, 0.0 );
-	float3	Pt_2 = Position2.xyz;
+	// Read back positions from frame-2 and frame-1
+	float4	Position1 = _TexParticlesPositions1.SampleLevel( PointClamp, UV, 0.0 );
+	float	Life = Position1.w + _Time.y;	// Increase life
+	float4	Position2 = _TexParticlesPositions0.SampleLevel( PointClamp, UV, 0.0 );
 	float3	Pt_1 = Position1.xyz;
+	float3	Pt_2 = Position2.xyz;
+			Pt_2 = Pt_1 - (Pt_1 - Pt_2) * _DeltaTime.y;	// Time-correction
 
-	float3	Dir_2 = _TexParticlesRotation0.SampleLevel( PointClamp, UV, 0.0 ).xyz;
-	float3	Dir_1 = _TexParticlesRotation1.SampleLevel( PointClamp, UV, 0.0 ).xyz;
+	// Life is invalid if negative
+	float	InvalidLife = saturate( 10000.0 * Life );
 
-	Pt_2 = Pt_1 - (Pt_1 - Pt_2) * _DeltaTime.y;
-	Dir_2 = Dir_1 - (Dir_1 - Dir_2) * _DeltaTime.y;
+	// Read back normal & tangent
+	float4	NormalSize = _TexParticlesNormals.SampleLevel( PointClamp, UV, 0.0 );
+	float3	Normal = NormalSize.xyz;
+	float	Size = NormalSize.w;
+	float4	TangentBehavior = _TexParticlesTangents.SampleLevel( PointClamp, UV, 0.0 );
+	float3	Tangent = TangentBehavior.xyz;
 
 	float3	Acceleration = 0.0;
 	float3	Velocity = 0.0;
 
 	///////////////////////////////////////////
 	// Manage positions
-	float3	UVW = 1.0 * Pt_1;
-			UVW += 10.0 * _Time.x;
- 	Acceleration += 0.01 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 ).xyz;
-//	Velocity += 0.0002 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 ).xyz;
+	if ( TangentBehavior.w > 0.0 )
+	{	// The particle should get uplifted by buoyancy
+		Acceleration += float3( 0, 0.0005, 0 );	// Add buoyancy...
 
-	Acceleration += float3( 0, 0.001, 0 );
+		// Add noise to make it move
+		float3	UVW = 1.0 * Pt_1;
+				UVW += 400.0 * _Time.x;
+
+		Acceleration += 0.01 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 ).xyz;
+//		Velocity += 0.0002 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 ).xyz;
+	}
+	else
+	{	// The particle should fall with gravity
+		Acceleration -= float3( 0, 0.0005, 0 );	// Add gravity...
+
+		// Add a tiny noise but quickly moving
+		float3	UVW = 10.0 * Pt_1;
+				UVW += 400.0 * _Time.x;
+		Acceleration += 0.025 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 ).xyz;
+	}
+
+	// Nullify velocity and acceleration if life is negative
+	Velocity *= InvalidLife;
+	Acceleration *= InvalidLife;
 
 	float3	NewPosition = 2.0 * Pt_1 - Pt_2 + _DeltaTime.x * (Velocity + _DeltaTime.x * Acceleration);
 //	float3	NewPosition = Pt_1  + ( Pt_1 - Pt_2) * (_DeltaTime.x / _PreviousDeltaTime) + Acceleration * _DeltaTime.x * _DeltaTime.x;
 
+//NewPosition = Pt_1;
+
 	///////////////////////////////////////////
 	// Manage rotations
-	UVW = 0.5 * Pt_1;
+	float3	UVW = 0.5 * Pt_1;
 	float4	AxisAngle = 1.0 * _TexNoise3D.SampleLevel( LinearWrap, UVW, 0.0 );
 			AxisAngle.xyz = normalize( AxisAngle.xyz );
 			AxisAngle.w *= _DeltaTime.x;
 
-	float3	NewRotation = normalize( RotateVector( Dir_1, AxisAngle.xyz, AxisAngle.w ) );
+	// Nullify rotation if life is negative
+	AxisAngle.w *= InvalidLife;
 
-//NewRotation = normalize( float3( 1, 1, 1 ) );	// ###
-//NewRotation = Dir_1;
+	float3	NewNormal = normalize( RotateVector( Normal, AxisAngle.xyz, AxisAngle.w ) );
+	float3	NewTangent = normalize( RotateVector( Tangent, AxisAngle.xyz, AxisAngle.w ) );
+
+//NewNormal = Normal;
+//NewNormal = float3( 0, 1, 0 );
+//NewTangent = Tangent;
+//NewTangent = float3( 1, 0, 0 );
+
+	///////////////////////////////////////////
+	// Manage size
+	float	dSize = -0.2 * _Time.y;
+			dSize *= InvalidLife;
+	Size = max( 0.0, Size + dSize );	// Decrease size with time...
 
 	PS_OUT	Out;
-	Out.Position = float4( NewPosition, 0 );
-	Out.Orientation = NewRotation;
+	Out.Position = float4( NewPosition, Life );
+	Out.Normal = float4( NewNormal, Size );
+	Out.Tangent = float4( NewTangent, TangentBehavior.w);
 
 	return Out;
 }
