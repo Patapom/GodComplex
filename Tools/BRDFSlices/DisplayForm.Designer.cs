@@ -41,6 +41,7 @@
 			this.floatTrackbarControlWarpFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxUseWarping = new System.Windows.Forms.CheckBox();
 			this.panelDisplay = new BRDFSlices.DisplayPanel( this.components );
+			this.checkBoxShowIsolines = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// label1
@@ -152,7 +153,7 @@
 			// checkBoxUseWarping
 			// 
 			this.checkBoxUseWarping.AutoSize = true;
-			this.checkBoxUseWarping.Location = new System.Drawing.Point( 150, 553 );
+			this.checkBoxUseWarping.Location = new System.Drawing.Point( 412, 553 );
 			this.checkBoxUseWarping.Name = "checkBoxUseWarping";
 			this.checkBoxUseWarping.Size = new System.Drawing.Size( 88, 17 );
 			this.checkBoxUseWarping.TabIndex = 5;
@@ -168,12 +169,24 @@
 			this.panelDisplay.Slice = null;
 			this.panelDisplay.TabIndex = 3;
 			// 
+			// checkBoxShowIsolines
+			// 
+			this.checkBoxShowIsolines.AutoSize = true;
+			this.checkBoxShowIsolines.Location = new System.Drawing.Point( 150, 553 );
+			this.checkBoxShowIsolines.Name = "checkBoxShowIsolines";
+			this.checkBoxShowIsolines.Size = new System.Drawing.Size( 90, 17 );
+			this.checkBoxShowIsolines.TabIndex = 5;
+			this.checkBoxShowIsolines.Text = "Show isolines";
+			this.checkBoxShowIsolines.UseVisualStyleBackColor = true;
+			this.checkBoxShowIsolines.CheckedChanged += new System.EventHandler( this.checkBoxShowIsolines_CheckedChanged );
+			// 
 			// DisplayForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF( 6F, 13F );
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size( 512, 610 );
 			this.Controls.Add( this.checkBoxUseWarping );
+			this.Controls.Add( this.checkBoxShowIsolines );
 			this.Controls.Add( this.checkBoxDifferences );
 			this.Controls.Add( this.floatTrackbarControlWarpFactor );
 			this.Controls.Add( this.floatTrackbarControlExposure );
@@ -206,6 +219,7 @@
 		private System.Windows.Forms.Label label4;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlWarpFactor;
 		private System.Windows.Forms.CheckBox checkBoxUseWarping;
+		private System.Windows.Forms.CheckBox checkBoxShowIsolines;
 
 	}
 }

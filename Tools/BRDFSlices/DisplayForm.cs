@@ -15,6 +15,7 @@ namespace BRDFSlices
 	{
 		protected Vector3[,,]	m_BRDF = null;
 		protected Bitmap		m_Slice = null;
+		protected Pen			m_Pen = null;
 
 		public DisplayForm( Vector3[,,] _BRDF )
 		{
@@ -22,6 +23,9 @@ namespace BRDFSlices
 
 			m_BRDF = _BRDF;
 			m_Slice = new Bitmap( 90, 90, PixelFormat.Format32bppArgb );
+
+			m_Pen = new Pen( Color.Black, 1.0f );
+			m_Pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
 
 			integerTrackbarControlPhiD_ValueChanged( integerTrackbarControlPhiD, 0 );
 		}
@@ -375,10 +379,26 @@ namespace BRDFSlices
 		{
 			double	ThetaD = Math.PI * _ThetaDIndex / 180.0;
 			double	PhiD = Math.PI * _Warp / 180.0;
-			double	ThetaH_Max = Math.Atan( 1.0 / (Math.Tan( ThetaD ) * Math.Cos( PhiD )) );
+			double	ThetaH_Max = Math.Atan( Math.Tan( 0.5*Math.PI - ThetaD ) / Math.Cos( PhiD ) );
 
-			double	ThetaH = Math.PI * _ThetaHIndex / 180.0;
-			LookupBRDFTrilinear( m_BRDF, ThetaH, ThetaD, PhiD, ref _Result );
+// 			double	ThetaH = Math.PI * _ThetaHIndex / 180.0;
+// 			LookupBRDFTrilinear( m_BRDF, ThetaH, ThetaD, 0.5*Math.PI, ref _Result );
+
+			int		ThetaH_MaxIndex = Math.Max( 1, (int) (ThetaH_Max * 180 / Math.PI) );
+
+			// Add a security slice
+			ThetaH_MaxIndex = Math.Min( 89, ThetaH_MaxIndex+4 );
+
+			int		WarpedThetaHIndex = (int) (89 * _ThetaHIndex / ThetaH_MaxIndex);	// Scale so we reach 90° at max ThetaH
+			if ( WarpedThetaHIndex > 89 )
+			{
+				_Result = new Vector3();	// Out of range
+				return;
+			}
+
+			int	ThetaH = (int) (89 * Math.Sqrt( WarpedThetaHIndex / 89.0 ));	// Square ThetaH
+
+			_Result = m_BRDF[ThetaH,_ThetaDIndex,90];
 		}
 
 		protected unsafe void	Redraw()
@@ -400,11 +420,12 @@ namespace BRDFSlices
 				byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + Y * LockedBitmap.Stride;
 				for ( int X=0; X < 90; X++ )
 				{
-					int	ThetaH = (int) (89 * Math.Sqrt( X/89.0 ));	// Square ThetaH
-
 					if ( !bUseWarping )
 					{
+						int	ThetaH = (int) (89 * Math.Sqrt( X/89.0 ));	// Square ThetaH
+
 						Temp = m_BRDF[ThetaH,ThetaD,PhiD];
+
 						if ( !bShowDifferences )
 						{
 							Temp.x = Math.Pow( Exposure * Temp.x, Gamma );
@@ -421,7 +442,12 @@ namespace BRDFSlices
 					}
 					else
 					{	// Use slice warping !
+						int	ThetaH = X;	// Don't square ThetaH yet!
+
 						WarpSlice( ThetaH, ThetaD, Warp, ref Temp );
+						Temp.x = Math.Pow( Exposure * Temp.x, Gamma );
+						Temp.y = Math.Pow( Exposure * Temp.y, Gamma );
+						Temp.z = Math.Pow( Exposure * Temp.z, Gamma );
 					}
 
 					R = (byte) Math.Max( 0, Math.Min( 255, 255.0 * Temp.x ) );
@@ -435,6 +461,39 @@ namespace BRDFSlices
 				}
 			}
 			m_Slice.UnlockBits( LockedBitmap );
+
+			if ( checkBoxShowIsolines.Checked )
+			{
+				PointF	P0 = new PointF(), P1 = new PointF();
+
+				using ( Graphics Graph = Graphics.FromImage( m_Slice ) )
+				{
+					double	ThetaHalf, PhiHalf, ThetaDiff, PhiDiff;
+					double	ThetaHalfN, PhiHalfN, ThetaDiffN, PhiDiffN;
+					for ( int IsolineIndex=0; IsolineIndex < 4; IsolineIndex++ )
+					{
+//						double	Angle = (1+IsolineIndex) * 0.5 * Math.PI / 4;
+						double	Angle = 0.25 * Math.PI;
+
+						for ( int i=0; i < 40; i++ )
+						{
+							double	Phi = i * Math.PI / 40;
+//							std_coords_to_half_diff_coords( Angle, Phi, Angle, Math.PI + Phi, out ThetaHalf, out PhiHalf, out ThetaDiff, out PhiDiff );
+							std_coords_to_half_diff_coords( Angle, 0, i * Math.PI / 80.0, Math.PI, out ThetaHalf, out PhiHalf, out ThetaDiff, out PhiDiff );
+
+							Phi = (i+1) * Math.PI / 40;
+//							std_coords_to_half_diff_coords( Angle, Phi, Angle, Math.PI + Phi, out ThetaHalfN, out PhiHalfN, out ThetaDiffN, out PhiDiffN );
+							std_coords_to_half_diff_coords( Angle, 0, (i+1) * Math.PI / 80.0, Math.PI, out ThetaHalfN, out PhiHalfN, out ThetaDiffN, out PhiDiffN );
+
+							P0.X = (float) (m_Slice.Width * ThetaHalf * 0.63661977236758134307553505349006);			// divided by PI/2
+							P0.Y = (float) (m_Slice.Height * (1.0f - ThetaDiff * 0.63661977236758134307553505349006));	// divided by PI/2
+							P1.X = (float) (m_Slice.Width * ThetaHalfN * 0.63661977236758134307553505349006);			// divided by PI/2
+							P1.Y = (float) (m_Slice.Height * (1.0f - ThetaDiffN * 0.63661977236758134307553505349006));	// divided by PI/2
+							Graph.DrawLine( m_Pen, P0, P1 );
+						}
+					}
+				}
+			}
 
 			panelDisplay.Slice = m_Slice;	// Will trigger update
 		}
@@ -466,6 +525,11 @@ namespace BRDFSlices
 		}
 
 		private void floatTrackbarControlWarpFactor_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			Redraw();
+		}
+
+		private void checkBoxShowIsolines_CheckedChanged( object sender, EventArgs e )
 		{
 			Redraw();
 		}
