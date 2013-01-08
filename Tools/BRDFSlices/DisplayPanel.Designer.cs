@@ -29,6 +29,9 @@
 		private void InitializeComponent()
 		{
 			components = new System.ComponentModel.Container();
+
+			m_Pen = new System.Drawing.Pen( System.Drawing.Color.Black, 1.0f );
+			m_Pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
 		}
 
 		#endregion

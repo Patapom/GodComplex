@@ -13,13 +13,26 @@ namespace BRDFSlices
 {
 	public partial class DisplayForm : Form
 	{
+		const int	INTERSECTIONS_TABLE_SIZE = 256;
+
 		protected Vector3[,,]	m_BRDF = null;
 		protected Bitmap		m_Slice = null;
 		protected Pen			m_Pen = null;
 
+		protected double[,]		m_Intersections = null;
+
+
 		public DisplayForm( Vector3[,,] _BRDF )
 		{
 			InitializeComponent();
+
+
+
+//			SaveAllSlices();
+
+			BuildScaleTable();
+//			LoadScaleTable();
+
 
 			m_BRDF = _BRDF;
 			m_Slice = new Bitmap( 90, 90, PixelFormat.Format32bppArgb );
@@ -136,7 +149,7 @@ namespace BRDFSlices
 		static private Vector3	BiTangent = new Vector3() { x=0.0, y=1.0, z=0.0 };
 		static private Vector3	Normal = new Vector3() { x=0.0, y=0.0, z=1.0 };
 		static private Vector3	Temp = new Vector3();
-		static void std_coords_to_half_diff_coords( double _ThetaIn, double _PhiIn, double _ThetaOut, double _PhiOut,
+		public static void std_coords_to_half_diff_coords( double _ThetaIn, double _PhiIn, double _ThetaOut, double _PhiOut,
 													out double _ThetaHalf, out double _PhiHalf, out double _ThetaDiff, out double _PhiDiff )
 		{
 			// compute in vector
@@ -166,11 +179,11 @@ namespace BRDFSlices
 			Temp.Rotate( ref BiTangent, -_ThetaHalf, out Diff );
 	
 			// Compute _ThetaDiff, _PhiDiff	
-			_ThetaDiff = Math.Acos( Diff.z );
+			_ThetaDiff = Math.Acos( Math.Min( 1.0, Diff.z ) );
 			_PhiDiff = Math.Atan2( Diff.y, Diff.x );
 		}
 
-		static void	half_diff_coords_to_std_coords( double _ThetaHalf, double _PhiHalf, double _ThetaDiff, double _PhiDiff,
+		public static void	half_diff_coords_to_std_coords( double _ThetaHalf, double _PhiHalf, double _ThetaDiff, double _PhiDiff,
 													out double _ThetaIn, out double _PhiIn, out double _ThetaOut, out double _PhiOut )
 		{
 			double	SinTheta_half = Math.Sin( _ThetaHalf );
@@ -216,7 +229,7 @@ namespace BRDFSlices
 			_PhiOut = Math.Atan2( Out.y, Out.x );
 		}
 
-		static void	half_diff_coords_to_std_coords( double _ThetaHalf, double _PhiHalf, double _ThetaDiff, double _PhiDiff,
+		public static void	half_diff_coords_to_std_coords( double _ThetaHalf, double _PhiHalf, double _ThetaDiff, double _PhiDiff,
 													ref Vector3 _In, ref Vector3 _Out )
 		{
 			double	SinTheta_half = Math.Sin( _ThetaHalf );
@@ -255,7 +268,7 @@ namespace BRDFSlices
 		// This is a non-linear mapping!
 		// In:  [0 .. pi/2]
 		// Out: [0 .. 89]
-		static int ThetaHalf_index( double _ThetaHalf, out double _Interpolant )
+		public static int ThetaHalf_index( double _ThetaHalf, out double _Interpolant )
 		{
 			if ( _ThetaHalf <= 0.0 )
 			{
@@ -276,7 +289,7 @@ namespace BRDFSlices
 		// Lookup _ThetaDiff index
 		// In:  [0 .. pi/2]
 		// Out: [0 .. 89]
-		static int ThetaDiff_index( double _ThetaDiff, out double _Interpolant )
+		public static int ThetaDiff_index( double _ThetaDiff, out double _Interpolant )
 		{
 			double	fIndex = _ThetaDiff / (Math.PI * 0.5) * BRDF_SAMPLING_RES_THETA_D;
 			int		Index = (int) Math.Floor( fIndex );
@@ -286,7 +299,7 @@ namespace BRDFSlices
 		}
 
 		// Lookup _PhiDiff index
-		static int PhiDiff_index( double _PhiDiff, out double _Interpolant )
+		public static int PhiDiff_index( double _PhiDiff, out double _Interpolant )
 		{
 			// Because of reciprocity, the BRDF is unchanged under
 			// _PhiDiff -> _PhiDiff + PI
@@ -373,9 +386,262 @@ namespace BRDFSlices
 			return Result;
 		}
 
+		protected void	SaveAllSlices()
+		{
+			FileInfo[]	BRDFFiles = new DirectoryInfo( @"D:\Docs\Computer Graphics\Rendering, Radiosity, Photon Maps\BRDFs & Reflection Models\MERL\MERL Database of BRDF\people.csail.mit.edu\wojciech\BRDFDatabase\brdfs" ).GetFiles( "*.binary" );
+
+			int	PitchThetaD = BRDF_SAMPLING_RES_PHI_D/2;
+			int	PitchThetaH = PitchThetaD*BRDF_SAMPLING_RES_THETA_D;
+
+			float[,,]	Values = new float[BRDF_SAMPLING_RES_THETA_D,BRDF_SAMPLING_RES_THETA_H,3];
+			foreach ( FileInfo BRDFFile in BRDFFiles )
+			{
+				using ( FileStream S = BRDFFile.OpenRead() )
+					using ( BinaryReader Reader = new BinaryReader( S ) )
+					{
+						// Check coefficients count is the expected value
+						int	DimX = Reader.ReadInt32();
+						int	DimY = Reader.ReadInt32();
+						int	DimZ = Reader.ReadInt32();
+						int	CoeffsCount = DimX*DimY*DimZ;
+// 						if ( CoeffsCount != BRDF_SAMPLING_RES_THETA_H*BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D/2 )
+// 							throw new Exception( "The amount of coefficients stored in the file is not the expected value (i.e. " + CoeffsCount + "! (is it a BRDF file?)" );
+
+						long	BaseOffset = S.Position;
+						for ( int ComponentIndex=0; ComponentIndex < 3; ComponentIndex++ )
+						{
+							double	Factor = 1.0;
+							if ( ComponentIndex == 0 )
+								Factor = BRDF_SCALE_RED;
+							else if ( ComponentIndex == 0 )
+								Factor = BRDF_SCALE_GREEN;
+							else 
+								Factor = BRDF_SCALE_BLUE;
+
+							// Read the PhiD=90° slice
+							// 
+							double	Temp;
+							for ( int ThetaH=0; ThetaH < 90; ThetaH++ )
+							{
+								for ( int ThetaD=0; ThetaD < 90; ThetaD++ )
+								{
+									long	Offset = 90 + 90*(ThetaD + 90*ThetaH);
+											Offset *= sizeof(double);
+
+									S.Position = BaseOffset + Offset;
+									Temp = Reader.ReadDouble();
+									Temp *= Factor;
+
+									Values[ThetaH,ThetaD,ComponentIndex] = (float) Temp;
+								}
+							}
+
+							// Go to next component
+							BaseOffset += CoeffsCount * sizeof(double);
+						}
+					}
+
+				string	TargetName = Path.GetDirectoryName( BRDFFile.FullName ) + "\\Slices\\" + Path.GetFileNameWithoutExtension( BRDFFile.FullName ) + ".slice";
+				using ( FileStream S = new FileInfo( TargetName ).Create() )
+					using ( BinaryWriter Writer = new BinaryWriter( S ) )
+					{
+						for ( int ThetaH=0; ThetaH < 90; ThetaH++ )
+							for ( int ThetaD=0; ThetaD < 90; ThetaD++ )
+							{
+								Writer.Write( Values[ThetaH,ThetaD,0] );
+								Writer.Write( Values[ThetaH,ThetaD,1] );
+								Writer.Write( Values[ThetaH,ThetaD,2] );
+							}
+					}
+			}
+		}
+
 		#endregion
 
-		protected void	WarpSlice( int _ThetaHIndex, int _ThetaDIndex, double _Warp, ref Vector3 _Result )
+
+		/// <summary>
+		/// Numerically computes the intersection of a straight line with a strange curve we know the equation of...
+		/// We're using the http://en.wikipedia.org/wiki/Newton's_method
+		/// 
+		/// The computation is occurring in [ThetaH,ThetaD] space:
+		/// 
+		///      ^ ThetaD
+		///      |
+		/// PI/2 +----------/-----+ <!----- The entire space of [ThetaH,ThetaD] both in [0,PI/2]
+		///      |   ...   /      |
+		///      |      ..o       |
+		///      |       /  .. <!---------- Curve defined by C(y)=[atan( tan(PI/2 - y) / cos( PhiD )), y]
+		///      |      /      .  |         where y is ThetaD € [0,PI/2] and PhiD determining the curvature (PhiD=PI/2 gives the square shape at ThetaH = PI/2 & ThetaD = PI/2)
+		///      |     /        . |
+		///      |    /         . |
+		///      |   /           .|
+		///      |  /            .|
+		///      | /             .|
+		///      |/              .|
+		///      +----------------+--> ThetaH
+		///                      PI/2
+		/// 
+		/// We're looking for intersection point o given 2 values: the slope of the straight line and PhiD that guides the curvature of
+		///  the strange curve C(y)
+		/// 
+		/// The position of a point P on the line is given by P(x)=[x,slope.x] (we know the slope)
+		/// 
+		/// we find o so that o = P(x) = C(y)
+		/// So we can write:
+		/// 
+		///   x = atan( tan(PI/2 - y) / cos(PhiD))
+		///   y = slope.x
+		/// 
+		/// Replacing:
+		///   x = atan( tan(PI/2 - slope.x) / cos(PhiD) )
+		/// 
+		/// Tanning:
+		///   tan(x) = tan(PI/2 - slope.x) / cos(PhiD)
+		/// 
+		/// Or:
+		///   tan(x).tan(slope.x) = 1 / cos(PhiD)
+		/// 
+		/// We know "slope" and "PhiD", we need solve to find x which is the ThetaH at which the intersection occurs...
+		/// </summary>
+		/// <param name="a"></param>
+		/// <param name="b"></param>
+		/// <returns></returns>
+		protected double	SolveNewton( double a, double b, out int _IterationsCount )
+		{
+			if ( a > 1.0 )
+				a = 1.0 / a;	// Mirror to avoid badly formed equations... (the scale factor is symmetric anyway)
+
+			// Compute the original intersection of the straight line of slope tan( ThetaH0 / ThetaD0 ) with the line ThetaD = PI/2
+			double	OriginalThetaH = 0.5 * Math.PI;
+			double	OriginalThetaD = 0.5 * Math.PI * a;	// ThetaD_without_intersection = PI/2 * slope
+			double	OriginalSqLength = OriginalThetaD*OriginalThetaD + OriginalThetaH*OriginalThetaH;
+
+			// Start from 0 and iterate
+			double	x = 0.4999 * Math.PI;		// Start from nearby PI/2 where the function is ill defined but will converge quickly
+			double	Value = Math.Tan(a*x) * Math.Tan(x) - b;
+			_IterationsCount = 0;
+			bool	bError = false;
+			while ( Value > 1e-4 )
+			{
+				_IterationsCount++;
+
+				// Compute the step we need to perform...
+				double	Derivative = a * Math.Tan(x) / (Math.Cos(a * x) * Math.Cos(a * x)) + Math.Tan(a * x) / (Math.Cos(x)*Math.Cos(x));
+				if ( Math.Abs( Derivative ) < 1e-10 )
+				{	// Can't go on!
+					bError = true;
+					break;
+				}
+
+				double	Step = Value / Derivative;
+				x -= Step;
+
+				// Estimate new error...
+				double	OldValue = Value;
+				Value = Math.Tan(a*x) * Math.Tan(x) - b;
+
+				double	ErrorDiff = OldValue - Value;
+				if ( ErrorDiff < 1e-4 )
+				{	// Seems to be either static or divergent... There is no obvious solution but we'll accept the current value anyway...
+					bError = true;
+					break;
+				}
+			}
+
+			double	IntersectionThetaH = Math.Min( 0.5 * Math.PI, x );
+			double	IntersectionThetaD = a * IntersectionThetaH;
+			double	IntersectionSqLength = IntersectionThetaH*IntersectionThetaH + IntersectionThetaD*IntersectionThetaD;
+
+			double	ScaleFactor = Math.Sqrt( IntersectionSqLength / OriginalSqLength );
+			if ( ScaleFactor > 1.0 )
+				throw new Exception( "Crap!" );
+
+			return ScaleFactor;
+		}
+
+		protected void	BuildScaleTable()
+		{
+			m_Intersections = new double[INTERSECTIONS_TABLE_SIZE,INTERSECTIONS_TABLE_SIZE];
+
+			// Use Newton Raphson method to compute the interesection
+			//  for the equation f(x) = tan(a.x).tan(x) - b = 0
+			//
+			// The derivative of f(x) is:
+			//	f'(x) = a.tan(x)/cos²(a.x) + tan(a.x)/cos²(x)
+			//
+			int	SumIterations = 0;
+			for ( int Y=0; Y < INTERSECTIONS_TABLE_SIZE; Y++ )
+			{
+				double	PhiD = Y * 0.5 * Math.PI / (INTERSECTIONS_TABLE_SIZE-1);
+				double	b = 1.0 / Math.Cos( PhiD );
+
+				for ( int X=0; X < INTERSECTIONS_TABLE_SIZE; X++ )
+				{
+					double	SlopeAngle = X * 0.5 * Math.PI / (INTERSECTIONS_TABLE_SIZE-1);
+					double	a = Math.Tan( SlopeAngle );
+
+					int		IterationsCount;
+					double	Intersection = SolveNewton( a, b, out IterationsCount );
+					m_Intersections[X,Y] = (float) Intersection;
+
+					SumIterations += IterationsCount;
+				}
+			}
+			double	AverageIterationsCount = (double) SumIterations / (INTERSECTIONS_TABLE_SIZE*INTERSECTIONS_TABLE_SIZE);	// Get average iterations per texel
+
+			// Save the result
+			using ( FileStream S = new FileInfo( "Intersections" + INTERSECTIONS_TABLE_SIZE + "x" + INTERSECTIONS_TABLE_SIZE + ".double" ).Create() )
+				using ( BinaryWriter Writer = new BinaryWriter( S ) )
+				{
+					for ( int Y=0; Y < INTERSECTIONS_TABLE_SIZE; Y++ )
+						for ( int X=0; X < INTERSECTIONS_TABLE_SIZE; X++ )
+							Writer.Write( m_Intersections[X,Y] );
+				}
+		}
+
+		protected void	LoadScaleTable()
+		{
+			m_Intersections = new double[INTERSECTIONS_TABLE_SIZE,INTERSECTIONS_TABLE_SIZE];
+			using ( FileStream S = new FileInfo( "Intersections" + INTERSECTIONS_TABLE_SIZE + "x" + INTERSECTIONS_TABLE_SIZE + ".double" ).OpenRead() )
+				using ( BinaryReader Reader = new BinaryReader( S ) )
+				{
+					for ( int Y=0; Y < INTERSECTIONS_TABLE_SIZE; Y++ )
+						for ( int X=0; X < INTERSECTIONS_TABLE_SIZE; X++ )
+							m_Intersections[X,Y] = Reader.ReadDouble();
+				}
+		}
+
+		protected double	ComputeScaleFactor( double _ThetaH, double _ThetaD, double _PhiD )
+		{
+			double	SlopeAngle = Math.Atan( Math.Max( 1e-10, _ThetaD ) / _ThetaH );	// This is one dimension of the table
+//			double	CosPhiD = Math.Cos( _PhiD );					// This is the other dimension
+
+			double	U = INTERSECTIONS_TABLE_SIZE * SlopeAngle * 2.0 / Math.PI;
+			int		U0 = (int) Math.Floor( U );
+			double	u = U - U0;
+					U0 = Math.Min( INTERSECTIONS_TABLE_SIZE-1, U0 );
+			int		U1 = Math.Min( INTERSECTIONS_TABLE_SIZE-1, U0+1 );
+
+//			double	V = INTERSECTIONS_TABLE_SIZE * CosPhiD;
+			double	V = INTERSECTIONS_TABLE_SIZE * _PhiD * 2.0 / Math.PI;
+			int		V0 = (int) Math.Floor( V );
+			double	v = V - V0;
+					V0 = Math.Min( INTERSECTIONS_TABLE_SIZE-1, V0 );
+			int		V1 = Math.Min( INTERSECTIONS_TABLE_SIZE-1, V0+1 );
+
+			double	I00 = m_Intersections[U0,V0];
+			double	I01 = m_Intersections[U1,V0];
+			double	I10 = m_Intersections[U0,V1];
+			double	I11 = m_Intersections[U1,V1];
+
+			double	I0 = (1.0-u) * I00 + u * I01;
+			double	I1 = (1.0-u) * I10 + u * I11;
+
+			double	I = (1.0-v) * I0 + v * I1;
+			return I;
+		}
+
+		protected void	WarpSlice_Compress( int _ThetaHIndex, int _ThetaDIndex, double _Warp, ref Vector3 _Result )
 		{
 			double	ThetaD = Math.PI * _ThetaDIndex / 180.0;
 			double	PhiD = Math.PI * _Warp / 180.0;
@@ -399,6 +665,38 @@ namespace BRDFSlices
 			int	ThetaH = (int) (89 * Math.Sqrt( WarpedThetaHIndex / 89.0 ));	// Square ThetaH
 
 			_Result = m_BRDF[ThetaH,_ThetaDIndex,90];
+		}
+
+		protected void	WarpSlice( int _ThetaHIndex, int _ThetaDIndex, double _Warp, ref Vector3 _Result )
+		{
+			double	ThetaH = Math.PI * _ThetaHIndex / 180.0;
+			double	ThetaD = Math.PI * _ThetaDIndex / 180.0;
+			double	PhiD = Math.PI * _Warp / 180.0;
+			if ( PhiD > 0.5 * Math.PI )
+				PhiD = Math.PI - PhiD;
+
+			double	Scale = ComputeScaleFactor( ThetaH, ThetaD, PhiD );
+
+			double	ScaledThetaH = ThetaH / Scale;
+			double	ScaledThetaD = ThetaD / Scale;
+
+// 			int		ScaledThetaHIndex = (int) Math.Min( 89, 89 * Math.Sqrt( 2.0 * ScaledThetaH / Math.PI ) );
+// 			int		ScaledThetaDIndex = (int) Math.Min( 89, 180 * ScaledThetaD / Math.PI );
+			int		ScaledThetaHIndex = (int) (89 * Math.Sqrt( 2.0 * ScaledThetaH / Math.PI ));
+			int		ScaledThetaDIndex = (int) (180 * ScaledThetaD / Math.PI);
+			if ( ScaledThetaHIndex > 89 || ScaledThetaDIndex > 89 )
+			{	// Out of range!
+				_Result.Set( 0, 0, 0 );
+				return;
+			}
+
+			_Result = m_BRDF[ScaledThetaHIndex,ScaledThetaDIndex,90];
+
+// 
+// int	U = _ThetaHIndex * INTERSECTIONS_TABLE_SIZE / 90;
+// int	V = _ThetaDIndex * INTERSECTIONS_TABLE_SIZE / 90;
+// double	C = m_Intersections[U,V];
+// _Result.Set( C, C, C );
 		}
 
 		protected unsafe void	Redraw()
@@ -442,7 +740,7 @@ namespace BRDFSlices
 					}
 					else
 					{	// Use slice warping !
-						int	ThetaH = X;	// Don't square ThetaH yet!
+						int	ThetaH = X;	// Don't square ThetaH just yet!
 
 						WarpSlice( ThetaH, ThetaD, Warp, ref Temp );
 						Temp.x = Math.Pow( Exposure * Temp.x, Gamma );
@@ -462,39 +760,39 @@ namespace BRDFSlices
 			}
 			m_Slice.UnlockBits( LockedBitmap );
 
-			if ( checkBoxShowIsolines.Checked )
-			{
-				PointF	P0 = new PointF(), P1 = new PointF();
+// 			if ( checkBoxShowIsolines.Checked )
+// 			{
+// 				PointF	P0 = new PointF(), P1 = new PointF();
+// 
+// 				using ( Graphics Graph = Graphics.FromImage( m_Slice ) )
+// 				{
+// 					double	ThetaHalf, PhiHalf, ThetaDiff, PhiDiff;
+// 					double	ThetaHalfN, PhiHalfN, ThetaDiffN, PhiDiffN;
+// 					for ( int IsolineIndex=0; IsolineIndex < 8; IsolineIndex++ )
+// 					{
+// 						double	Angle = (1+IsolineIndex) * 0.49 * Math.PI / 8;
+// //						double	Angle = 0.25 * Math.PI;
+// 
+// 						for ( int i=0; i < 40; i++ )
+// 						{
+// 							double	Phi = i * Math.PI / 40;
+// 							std_coords_to_half_diff_coords( Angle, 0, Angle, Phi, out ThetaHalf, out PhiHalf, out ThetaDiff, out PhiDiff );
+// 
+// 							Phi = (i+1) * Math.PI / 40;
+// 							std_coords_to_half_diff_coords( Angle, 0, Angle, Phi, out ThetaHalfN, out PhiHalfN, out ThetaDiffN, out PhiDiffN );
+// 
+// 							P0.X = (float) (m_Slice.Width * ThetaHalf * 0.63661977236758134307553505349006);			// divided by PI/2
+// 							P0.Y = (float) (m_Slice.Height * (1.0f - ThetaDiff * 0.63661977236758134307553505349006));	// divided by PI/2
+// 							P1.X = (float) (m_Slice.Width * ThetaHalfN * 0.63661977236758134307553505349006);			// divided by PI/2
+// 							P1.Y = (float) (m_Slice.Height * (1.0f - ThetaDiffN * 0.63661977236758134307553505349006));	// divided by PI/2
+// 							Graph.DrawLine( m_Pen, P0, P1 );
+// 						}
+// 					}
+// 				}
+// 			}
 
-				using ( Graphics Graph = Graphics.FromImage( m_Slice ) )
-				{
-					double	ThetaHalf, PhiHalf, ThetaDiff, PhiDiff;
-					double	ThetaHalfN, PhiHalfN, ThetaDiffN, PhiDiffN;
-					for ( int IsolineIndex=0; IsolineIndex < 4; IsolineIndex++ )
-					{
-//						double	Angle = (1+IsolineIndex) * 0.5 * Math.PI / 4;
-						double	Angle = 0.25 * Math.PI;
-
-						for ( int i=0; i < 40; i++ )
-						{
-							double	Phi = i * Math.PI / 40;
-//							std_coords_to_half_diff_coords( Angle, Phi, Angle, Math.PI + Phi, out ThetaHalf, out PhiHalf, out ThetaDiff, out PhiDiff );
-							std_coords_to_half_diff_coords( Angle, 0, i * Math.PI / 80.0, Math.PI, out ThetaHalf, out PhiHalf, out ThetaDiff, out PhiDiff );
-
-							Phi = (i+1) * Math.PI / 40;
-//							std_coords_to_half_diff_coords( Angle, Phi, Angle, Math.PI + Phi, out ThetaHalfN, out PhiHalfN, out ThetaDiffN, out PhiDiffN );
-							std_coords_to_half_diff_coords( Angle, 0, (i+1) * Math.PI / 80.0, Math.PI, out ThetaHalfN, out PhiHalfN, out ThetaDiffN, out PhiDiffN );
-
-							P0.X = (float) (m_Slice.Width * ThetaHalf * 0.63661977236758134307553505349006);			// divided by PI/2
-							P0.Y = (float) (m_Slice.Height * (1.0f - ThetaDiff * 0.63661977236758134307553505349006));	// divided by PI/2
-							P1.X = (float) (m_Slice.Width * ThetaHalfN * 0.63661977236758134307553505349006);			// divided by PI/2
-							P1.Y = (float) (m_Slice.Height * (1.0f - ThetaDiffN * 0.63661977236758134307553505349006));	// divided by PI/2
-							Graph.DrawLine( m_Pen, P0, P1 );
-						}
-					}
-				}
-			}
-
+			panelDisplay.ShowIsoLines = checkBoxShowIsolines.Checked;
+			panelDisplay.PhiD = Math.PI * PhiD / 180.0;
 			panelDisplay.Slice = m_Slice;	// Will trigger update
 		}
 
