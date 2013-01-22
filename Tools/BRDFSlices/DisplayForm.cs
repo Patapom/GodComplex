@@ -517,7 +517,7 @@ namespace BRDFSlices
 			double	OriginalSqLength = OriginalThetaD*OriginalThetaD + OriginalThetaH*OriginalThetaH;
 
 			// Start from 0 and iterate
-			double	x = 0.4999 * Math.PI;		// Start from nearby PI/2 where the function is ill defined but will converge quickly
+			double	x = 0.499999 * Math.PI;		// Start from nearby PI/2 where the function is ill defined but will converge quickly
 			double	Value = Math.Tan(a*x) * Math.Tan(x) - b;
 			_IterationsCount = 0;
 			bool	bError = false;
@@ -555,6 +555,9 @@ namespace BRDFSlices
 			double	ScaleFactor = Math.Sqrt( IntersectionSqLength / OriginalSqLength );
 			if ( ScaleFactor > 1.0 )
 				throw new Exception( "Crap!" );
+
+//			ScaleFactor = Math.Min( 1.0, ScaleFactor * 1.1 );
+			ScaleFactor = ScaleFactor * floatTrackbarControlScaleFactor.Value;
 
 			return ScaleFactor;
 		}
@@ -692,7 +695,7 @@ namespace BRDFSlices
 
 			_Result = m_BRDF[ScaledThetaHIndex,ScaledThetaDIndex,90];
 
-// 
+
 // int	U = _ThetaHIndex * INTERSECTIONS_TABLE_SIZE / 90;
 // int	V = _ThetaDIndex * INTERSECTIONS_TABLE_SIZE / 90;
 // double	C = m_Intersections[U,V];
@@ -742,10 +745,26 @@ namespace BRDFSlices
 					{	// Use slice warping !
 						int	ThetaH = X;	// Don't square ThetaH just yet!
 
-						WarpSlice( ThetaH, ThetaD, Warp, ref Temp );
-						Temp.x = Math.Pow( Exposure * Temp.x, Gamma );
-						Temp.y = Math.Pow( Exposure * Temp.y, Gamma );
-						Temp.z = Math.Pow( Exposure * Temp.z, Gamma );
+//						WarpSlice( ThetaH, ThetaD, Warp, ref Temp );
+						WarpSlice( ThetaH, ThetaD, PhiD, ref Temp );
+
+						if ( !bShowDifferences )
+						{
+							Temp.x = Math.Pow( Exposure * Temp.x, Gamma );
+							Temp.y = Math.Pow( Exposure * Temp.y, Gamma );
+							Temp.z = Math.Pow( Exposure * Temp.z, Gamma );
+						}
+						else
+						{
+							ThetaH = (int) (89 * Math.Sqrt( X/89.0 ));	// Square ThetaH
+							Temp2 = m_BRDF[ThetaH,ThetaD,PhiD];
+							Temp2.x = Math.Max( 0.0, Temp2.x );
+							Temp2.y = Math.Max( 0.0, Temp2.y );
+							Temp2.z = Math.Max( 0.0, Temp2.z );
+							Temp.x = 10.0 * Exposure * Math.Abs( Temp.x - Temp2.x );
+							Temp.y = 10.0 * Exposure * Math.Abs( Temp.y - Temp2.y );
+							Temp.z = 10.0 * Exposure * Math.Abs( Temp.z - Temp2.z );
+						}
 					}
 
 					R = (byte) Math.Max( 0, Math.Min( 255, 255.0 * Temp.x ) );
@@ -829,6 +848,17 @@ namespace BRDFSlices
 
 		private void checkBoxShowIsolines_CheckedChanged( object sender, EventArgs e )
 		{
+			Redraw();
+		}
+
+		private void floatTrackbarControlScaleFactor_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+
+		}
+
+		private void buttonRebuild_Click( object sender, EventArgs e )
+		{
+			BuildScaleTable();
 			Redraw();
 		}
 	}

@@ -40,8 +40,11 @@
 			this.label4 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlWarpFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxUseWarping = new System.Windows.Forms.CheckBox();
-			this.panelDisplay = new BRDFSlices.DisplayPanel( this.components );
 			this.checkBoxShowIsolines = new System.Windows.Forms.CheckBox();
+			this.label5 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlScaleFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.buttonRebuild = new System.Windows.Forms.Button();
+			this.panelDisplay = new BRDFSlices.DisplayPanel( this.components );
 			this.SuspendLayout();
 			// 
 			// label1
@@ -161,14 +164,6 @@
 			this.checkBoxUseWarping.UseVisualStyleBackColor = true;
 			this.checkBoxUseWarping.CheckedChanged += new System.EventHandler( this.checkBoxUseWarping_CheckedChanged );
 			// 
-			// panelDisplay
-			// 
-			this.panelDisplay.Location = new System.Drawing.Point( 31, 12 );
-			this.panelDisplay.Name = "panelDisplay";
-			this.panelDisplay.Size = new System.Drawing.Size( 450, 450 );
-			this.panelDisplay.Slice = null;
-			this.panelDisplay.TabIndex = 3;
-			// 
 			// checkBoxShowIsolines
 			// 
 			this.checkBoxShowIsolines.AutoSize = true;
@@ -180,16 +175,60 @@
 			this.checkBoxShowIsolines.UseVisualStyleBackColor = true;
 			this.checkBoxShowIsolines.CheckedChanged += new System.EventHandler( this.checkBoxShowIsolines_CheckedChanged );
 			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point( 12, 606 );
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size( 34, 13 );
+			this.label5.TabIndex = 1;
+			this.label5.Text = "Scale";
+			// 
+			// floatTrackbarControlScaleFactor
+			// 
+			this.floatTrackbarControlScaleFactor.Location = new System.Drawing.Point( 60, 604 );
+			this.floatTrackbarControlScaleFactor.MaximumSize = new System.Drawing.Size( 10000, 20 );
+			this.floatTrackbarControlScaleFactor.MinimumSize = new System.Drawing.Size( 70, 20 );
+			this.floatTrackbarControlScaleFactor.Name = "floatTrackbarControlScaleFactor";
+			this.floatTrackbarControlScaleFactor.RangeMax = 2F;
+			this.floatTrackbarControlScaleFactor.RangeMin = 0F;
+			this.floatTrackbarControlScaleFactor.Size = new System.Drawing.Size( 330, 20 );
+			this.floatTrackbarControlScaleFactor.TabIndex = 4;
+			this.floatTrackbarControlScaleFactor.Value = 1F;
+			this.floatTrackbarControlScaleFactor.VisibleRangeMax = 2F;
+			this.floatTrackbarControlScaleFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler( this.floatTrackbarControlScaleFactor_ValueChanged );
+			// 
+			// buttonRebuild
+			// 
+			this.buttonRebuild.Location = new System.Drawing.Point( 396, 601 );
+			this.buttonRebuild.Name = "buttonRebuild";
+			this.buttonRebuild.Size = new System.Drawing.Size( 104, 23 );
+			this.buttonRebuild.TabIndex = 6;
+			this.buttonRebuild.Text = "Rebuild";
+			this.buttonRebuild.UseVisualStyleBackColor = true;
+			this.buttonRebuild.Click += new System.EventHandler( this.buttonRebuild_Click );
+			// 
+			// panelDisplay
+			// 
+			this.panelDisplay.Location = new System.Drawing.Point( 31, 12 );
+			this.panelDisplay.Name = "panelDisplay";
+			this.panelDisplay.Size = new System.Drawing.Size( 450, 450 );
+			this.panelDisplay.Slice = null;
+			this.panelDisplay.TabIndex = 3;
+			// 
 			// DisplayForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF( 6F, 13F );
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size( 512, 610 );
+			this.ClientSize = new System.Drawing.Size( 512, 629 );
+			this.Controls.Add( this.buttonRebuild );
 			this.Controls.Add( this.checkBoxUseWarping );
 			this.Controls.Add( this.checkBoxShowIsolines );
 			this.Controls.Add( this.checkBoxDifferences );
+			this.Controls.Add( this.floatTrackbarControlScaleFactor );
 			this.Controls.Add( this.floatTrackbarControlWarpFactor );
 			this.Controls.Add( this.floatTrackbarControlExposure );
+			this.Controls.Add( this.label5 );
 			this.Controls.Add( this.floatTrackbarControlGamma );
 			this.Controls.Add( this.label4 );
 			this.Controls.Add( this.panelDisplay );
@@ -220,6 +259,9 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlWarpFactor;
 		private System.Windows.Forms.CheckBox checkBoxUseWarping;
 		private System.Windows.Forms.CheckBox checkBoxShowIsolines;
+		private System.Windows.Forms.Label label5;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScaleFactor;
+		private System.Windows.Forms.Button buttonRebuild;
 
 	}
 }
