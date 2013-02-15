@@ -14,17 +14,17 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the awesome particle primitive
-// 	{
-// 		VertexFormatP3	Vertices;
-// 		m_pPrimParticle = new Primitive( gs_Device, 1, &Vertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatP3::DESCRIPTOR );
-// 	}
+	{
+		VertexFormatP3	Vertices;
+		m_pPrimParticle = new Primitive( gs_Device, 1, &Vertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatP3::DESCRIPTOR );
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build our voronoï texture & our initial positions & data
-	NjFloat2	pCellCenters[EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT];
+	NjFloat2*	pCellCenters = new NjFloat2[EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT];
 	{
 		TextureBuilder		TB( 1024, 1024 );
-		VertexFormatPt4		pVertices[EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT];
+		VertexFormatPt4*	pVertices = new VertexFormatPt4[EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT];
 		BuildVoronoiTexture( TB, pCellCenters, pVertices );
 
 		TextureBuilder::ConversionParams	Conv =
@@ -54,11 +54,14 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 
 		m_pTexVoronoi = TB.CreateTexture( PixelFormatRG32F::DESCRIPTOR, Conv );
 
+
 		m_pPrimParticle = new Primitive( gs_Device, EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatPt4::DESCRIPTOR );
 
 		// Build cell centers
 		for ( int ParticleIndex=0; ParticleIndex < EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT; ParticleIndex++ )
 			pCellCenters[ParticleIndex].Set( 0.5f * (pVertices[ParticleIndex].Pt.x + pVertices[ParticleIndex].Pt.z), 0.5f * (pVertices[ParticleIndex].Pt.y + pVertices[ParticleIndex].Pt.w) );
+
+		delete[] pVertices;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -71,7 +74,7 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 	PixelFormatRGBA32F*	pScanlineTangent = pInitialTangents;
 
 	int		TotalCount = EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT;
-	int		ParticlesPerDimension = U32(floor(powf( float(TotalCount), 1.0f/3.0f )));
+	int		ParticlesPerDimension = U32(floorf(powf( float(TotalCount), 1.0f/3.0f )));
 	float	R = 0.5f;	// Great radius of the torus
 	float	r = 0.2f;	// Small radius of the torus
 
@@ -124,6 +127,8 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 			pScanlineTangent->B = Tangent.z;
 			pScanlineTangent->A = Normal.y > 0.0f ? 1.0f : -1.0f;	// Determines the particle's behavior...
 		}
+
+	delete[]	pCellCenters;
 
 	// Unfortunately, we need to create Textures to initialize our RenderTargets
 	void*		ppContentPositions[1];

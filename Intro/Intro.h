@@ -8,7 +8,9 @@
 extern Primitive*	gs_pPrimQuad;		// Screen quad for post-processes
 extern Texture3D*	gs_pTexNoise3D;		// General purpose 3D noise texture (32x32x32)
 
+#ifdef _DEBUG
 extern Video*		gs_pVideo;			// Global video capture from the webcam
+#endif
 
 
 // Return 0 for no error, any other code will ExitProcess() with this code

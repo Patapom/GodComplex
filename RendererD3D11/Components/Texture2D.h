@@ -52,8 +52,8 @@ public:	 // METHODS
 	Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format );
 	~Texture2D();
 
-	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart=0, int _MipLevelsCount=0, int _ArrayStart=0, int _ArraySize=0 ) const;
-	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex, int _ArrayStart, int _ArraySize ) const;
+	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart=0, int _MipLevelsCount=0, int _ArrayStart=0, int _ArraySize=1 ) const;
+	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=1 ) const;
 	ID3D11DepthStencilView*		GetDepthStencilView() const;
 
 	// Uploads the texture to the shader

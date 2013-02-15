@@ -5,13 +5,16 @@
 #include "Effects/EffectTranslucency.h"
 #include "Effects/EffectRoom.h"
 #include "Effects/EffectParticles.h"
+#include "Effects/EffectDeferred.h"
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) return ErrorCode;
 #define CHECK_EFFECT( pEffect, ErrorCode )			{ int EffectError = (pEffect)->GetErrorCode(); if ( EffectError != 0 ) return ErrorCode + EffectError; }
 
 
 static Camera*			gs_pCamera = NULL;
+#ifdef _DEBUG
 Video*					gs_pVideo = NULL;
+#endif
 
 
 // Textures & Render targets
@@ -31,6 +34,7 @@ static CB<CBTest>*		gs_pCB_Test = NULL;
 static EffectTranslucency*	gs_pEffectTranslucency = NULL;
 static EffectRoom*			gs_pEffectRoom = NULL;
 static EffectParticles*		gs_pEffectParticles = NULL;
+static EffectDeferred*		gs_pEffectDeferred = NULL;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -108,6 +112,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 CHECK_EFFECT( gs_pEffectParticles = new EffectParticles(), ERR_EFFECT_PARTICLES );
 
 
+
 #ifdef DIRECTX11
 		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), ERR_EFFECT_ROOM );
 		gs_pEffectRoom->m_pTexVoronoi = gs_pEffectParticles->m_pTexVoronoi;
@@ -118,7 +123,8 @@ CHECK_EFFECT( gs_pEffectParticles = new EffectParticles(), ERR_EFFECT_PARTICLES 
 		//////////////////////////////////////////////////////////////////////////
 #else	// WORKSHOP!
 
-		CHECK_EFFECT( gs_pEffectParticles = new EffectParticles(), ERR_EFFECT_PARTICLES );
+//		CHECK_EFFECT( gs_pEffectParticles = new EffectParticles(), ERR_EFFECT_PARTICLES );
+		CHECK_EFFECT( gs_pEffectDeferred = new EffectDeferred(), ERR_EFFECT_DEFERRED );
 #endif
 	}
 
@@ -131,6 +137,7 @@ void	IntroExit()
 	delete gs_pEffectTranslucency;
 	delete gs_pEffectRoom;
 	delete gs_pEffectParticles;
+	delete gs_pEffectDeferred;
 
 	// Release constant buffers
 	delete gs_pCB_Test;
@@ -151,11 +158,13 @@ void	IntroExit()
 	delete gs_pCamera;
 
 	// Release the video capture object
+#ifdef _DEBUG
 	if ( gs_pVideo != NULL )
 	{
 		gs_pVideo->Exit();
 	 	delete gs_pVideo;
 	}
+#endif
 }
 
 #ifndef CODE_WORKSHOP
@@ -266,10 +275,13 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Render some shit to the HDR buffer
-	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
-	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
+// 	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
+// 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
+// 
+// 	gs_pEffectParticles->Render( _Time, _DeltaTime );
 
-	gs_pEffectParticles->Render( _Time, _DeltaTime );
+	gs_pEffectDeferred->Render( _Time, _DeltaTime );
+
 
 	// Present !
 	gs_Device.DXSwapChain().Present( 0, 0 );

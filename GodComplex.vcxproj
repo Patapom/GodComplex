@@ -196,6 +196,7 @@ MinifyAll.cmd</Command>
   <ItemGroup>
     <ClInclude Include="ErrorCodes.h" />
     <ClInclude Include="Intro\ConstantBuffers.h" />
+    <ClInclude Include="Intro\Effects\EffectDeferred.h" />
     <ClInclude Include="Intro\Effects\EffectParticles.h" />
     <ClInclude Include="Intro\Effects\EffectRoom.h" />
     <ClInclude Include="Intro\Effects\EffectTranslucency.h" />
@@ -255,6 +256,7 @@ MinifyAll.cmd</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectDeferred.cpp" />
     <ClCompile Include="Intro\Effects\EffectParticles.cpp" />
     <ClCompile Include="Intro\Effects\EffectRoom.cpp" />
     <ClCompile Include="Intro\Effects\EffectTranslucency.cpp" />

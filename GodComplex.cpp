@@ -4,7 +4,7 @@
 //
 #include "GodComplex.h"
 
-const NjFloat4	LUMINANCE = NjFloat4( 0.2126f, 0.7152f, 0.0722f, 0.0f );
+const NjFloat4	LUMINANCE = NjFloat4( 0.2126f, 0.7152f, 0.0722f, 0.0f );	// D65 illuminant
 
 Device		gs_Device;
 

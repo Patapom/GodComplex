@@ -204,6 +204,9 @@
     <ClInclude Include="Utility\Video.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectDeferred.h">
+      <Filter>Intro\Effects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -308,6 +311,9 @@
     </ClCompile>
     <ClCompile Include="Utility\Video.cpp">
       <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectDeferred.cpp">
+      <Filter>Intro\Effects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

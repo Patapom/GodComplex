@@ -1,3 +1,5 @@
+#ifdef _DEBUG
+
 //////////////////////////////////////////////////////////////////////////
 // Live Video Capture from a webcam
 // Interesting code grabbed from http://www.geekpage.jp/en/programming/directshow/
@@ -91,3 +93,5 @@ private:
 	void			ConfigureVMR9();
 	void			ReleaseVMR9();
 };
+
+#endif

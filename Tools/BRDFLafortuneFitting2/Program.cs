@@ -189,15 +189,12 @@ namespace BRDFLafortuneFitting
 		#region FIELDS
 
 		static BRDFSample[]			ms_BRDFSamples = null;
-//		static LevenbergMarquardt	ms_Solver = new LevenbergMarquardt();
+		static LevenbergMarquardt	ms_Solver = new LevenbergMarquardt();
 
 		#endregion
 
 		static void Main( string[] args )
 		{
-			SaveAllSlices();
-
-
 			try
 			{
 				// Analyze arguments
@@ -478,20 +475,20 @@ MaxValues.z = Math.Max( MaxValues.z, B );
 
 				//////////////////////////////////////////////////////////////////////////
 				// Setup the solver
-// 				{
-// 					ms_Solver.Init( ms_BRDFSamples.Length, 4*LobesCount, 45 );
-// 
-// 					ms_Solver.AbsoluteTolerance = 0.005;
-// 					ms_Solver.RelativeTolerance = 0.01;
-//      
-// 					for ( int LobeIndex=0; LobeIndex < LobesCount; LobeIndex++ )
-// 					{
-// 						ms_Solver.VectorConstraints.SetConstraint( 4*LobeIndex+0, -2.0, +2.0 );	// Cx
-// 						ms_Solver.VectorConstraints.SetConstraint( 4*LobeIndex+1, -2.0, +2.0 );	// Cy
-// 						ms_Solver.VectorConstraints.SetConstraint( 4*LobeIndex+2,  0.0, +1.5 );	// Cz
-// 						ms_Solver.VectorConstraints.SetConstraint( 4*LobeIndex+3,  1.0, +128 );	// Exponent
-// 					}
-// 				}
+				{
+					ms_Solver.Init( ms_BRDFSamples.Length, 4*LobesCount, 45 );
+
+					ms_Solver.AbsoluteTolerance = 0.005;
+					ms_Solver.RelativeTolerance = 0.01;
+     
+					for ( int LobeIndex=0; LobeIndex < LobesCount; LobeIndex++ )
+					{
+						ms_Solver.VectorConstraints.SetConstraint( 4*LobeIndex+0, -2.0, +2.0 );	// Cx
+						ms_Solver.VectorConstraints.SetConstraint( 4*LobeIndex+1, -2.0, +2.0 );	// Cy
+						ms_Solver.VectorConstraints.SetConstraint( 4*LobeIndex+2,  0.0, +1.5 );	// Cz
+						ms_Solver.VectorConstraints.SetConstraint( 4*LobeIndex+3,  1.0, +128 );	// Exponent
+					}
+				}
 
 
 				// Build a list of initial guesses

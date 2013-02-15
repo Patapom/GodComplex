@@ -6,6 +6,7 @@
 static const float	RESX = 1280.0;
 static const float	RESY = 720.0;
 static const float	ASPECT_RATIO = RESX / RESY;
+static const float	INV_ASPECT_RATIO = RESY / RESX;
 static const float2	SCREEN_SIZE = float2( RESX, RESY );
 static const float2	INV_SCREEN_SIZE = float2( 1.0/RESX, 1.0/RESY );
 
@@ -86,3 +87,33 @@ float3	Distort( float3 _Position, float3 _Normal, float4 _NoiseOffset )
 //  v V
 //
 #define BILERP( a, b, c, d, uv )	lerp( lerp( a, d, uv.x ), lerp( b, c, uv.x ), uv.y )
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Rotates a vector about an axis
+// float3	RotateVector( float3 v, float3 _Axis, float _Angle )
+// {
+//     _Axis = normalize( _Axis );
+//     float3	n = _Axis * dot( _Axis, v );
+// 	float2	SC;
+// 	sincos( _Angle, SC.x, SC.y );
+//     return n + SC.y * (v - n) + SC.x * cross( _Axis, v );
+// }
+
+float3	RotateVector( float3 _Vector, float3 _Axis, float _Angle )
+{
+	float2	SinCos;
+	sincos( _Angle, SinCos.x, SinCos.y );
+
+	float3	Result = _Vector * SinCos.y;
+	float	temp = dot( _Vector, _Axis );
+			temp *= 1.0 - SinCos.y;
+
+	Result += _Axis * temp;
+
+	float3	Ortho = cross( _Axis, _Vector );
+
+	Result += Ortho * SinCos.x;
+
+	return Result;
+}

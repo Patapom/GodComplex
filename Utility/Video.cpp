@@ -1,3 +1,5 @@
+#ifdef _DEBUG
+
 #include "../GodComplex.h"
 
 Video::Video( Device& _Device, HWND _hWnd )
@@ -325,3 +327,5 @@ HRESULT Video::GetRenderingPrefs( DWORD* dwRenderFlags )
 {
 	return S_OK;
 }
+
+#endif

@@ -28,24 +28,6 @@ struct	PS_OUT
 	float4	Tangent		: SV_TARGET2;
 };
 
-float3	RotateVector( float3 _Vector, float3 _Axis, float _Angle )
-{
-	float2	SinCos;
-	sincos( _Angle, SinCos.x, SinCos.y );
-
-	float3	Result = _Vector * SinCos.y;
-	float	temp = dot( _Vector, _Axis );
-			temp *= 1.0 - SinCos.y;
-
-	Result += _Axis * temp;
-
-	float3	Ortho = cross( _Axis, _Vector );
-
-	Result += Ortho * SinCos.x;
-
-	return Result;
-}
-
 VS_IN	VS( VS_IN _In )	{ return _In; }
 
 PS_OUT	PS( VS_IN _In )
