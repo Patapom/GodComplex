@@ -424,6 +424,12 @@
     <None Include="Resources\Shaders\SceneFillGBuffer.fx">
       <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
     </None>
+    <None Include="Resources\Shaders\SceneDepthPass.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneShading.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

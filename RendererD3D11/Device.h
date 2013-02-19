@@ -47,6 +47,7 @@ public:
 	DepthStencilState*		m_pDS_ReadWriteGreater;
 	DepthStencilState*		m_pDS_ReadLessEqual;			// No write !
 
+	BlendState*				m_pBS_ZPrePass;					// Special double-speed Z Prepass blend mode with no color write (from §3.6.1 http://developer.download.nvidia.com/GPU_Programming_Guide/GPU_Programming_Guide_G80.pdf)
 	BlendState*				m_pBS_Disabled;
 	BlendState*				m_pBS_Disabled_RedOnly;
 	BlendState*				m_pBS_Disabled_GreenOnly;

@@ -55,7 +55,7 @@ void	Primitive::Render( Material& _Material, int _StartVertex, int _VerticesCoun
 		return;	// Material is not initialied yet...
 
 	// Ensure material & primitive use the same vertex format
-	ASSERT( m_Format == _Material.GetFormat(), "Material and Primimtive must use the same vertex format !" );
+	ASSERT( m_Format == _Material.GetFormat(), "Material and Primitive must use the same vertex format !" );
 
 	m_Device.DXContext().IASetInputLayout( pLayout );
 	m_Device.DXContext().IASetPrimitiveTopology( m_Topology );

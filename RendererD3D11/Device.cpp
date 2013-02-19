@@ -153,8 +153,13 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 		Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
 		Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_DEST_ALPHA;
 		Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;	// Write all channels
 
+		// Special "no blend + no color write" for double speed Z pre-pass
+		Desc.RenderTarget[0].RenderTargetWriteMask = 0;	// Write no channels
+		m_pBS_ZPrePass = new BlendState( *this, Desc ); m_StatesCount++;
+
+		// Disabled
+		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;	// Write all channels
 		m_pBS_Disabled = new BlendState( *this, Desc ); m_StatesCount++;
 
 		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED;
@@ -187,6 +192,7 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 		Desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_MAX;
 		Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_MAX;
 		m_pBS_Max = new BlendState( *this, Desc ); m_StatesCount++;
+
 	}
 
 	//////////////////////////////////////////////////////////////////////////

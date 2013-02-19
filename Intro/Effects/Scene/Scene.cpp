@@ -80,7 +80,7 @@ Scene::Object::~Object()
 
 void	Scene::Object::Update( float _Time, float _DeltaTime )
 {
-//	m_pCB_Object->m.Local2World = Glop!
+	m_pCB_Object->m.Local2World = NjFloat4x4::Identity;	// TODO !
 }
 
 void	Scene::Object::Render( Material& _Material, bool _bDepthPass ) const
@@ -117,6 +117,7 @@ void	Scene::Object::DestroyPrimitives()
 
 Scene::Object::Primitive&	Scene::Object::GetPrimitiveAt( int _PrimitiveIndex )
 {
+	ASSERT( _PrimitiveIndex < m_PrimitivesCount, "Primitive index out of range!" );
 	return *m_ppPrimitives[_PrimitiveIndex];
 }
 
@@ -134,11 +135,32 @@ Scene::Object::Primitive::~Primitive()
 
 void	Scene::Object::Primitive::Render( Material& _Material, bool _bDepthPass ) const
 {
+	ASSERT( m_pPrimitive != NULL, "Primitive was not set!" );
+
 	if ( !_bDepthPass )
 	{	// Send our primitive infos & textures
+		ASSERT( m_pTextures != NULL, "Textures were not set!" );
+
 		m_pCB_Primitive->UpdateData();
 		m_pTextures->Set( 10 );
 	}
 
 	m_pPrimitive->Render( _Material );
+}
+
+void	Scene::Object::Primitive::SetRenderPrimitive( ::Primitive& _Primitive )
+{
+	m_pPrimitive = &_Primitive;
+}
+
+void	Scene::Object::Primitive::SetMaterial( MaterialParameters& _Material )
+{
+	m_pCB_Primitive->m.MatIDs[0] = _Material.MatIDs[0];
+	m_pCB_Primitive->m.MatIDs[1] = _Material.MatIDs[1];
+	m_pCB_Primitive->m.MatIDs[2] = _Material.MatIDs[2];
+	m_pCB_Primitive->m.MatIDs[3] = _Material.MatIDs[3];
+	m_pCB_Primitive->m.Thickness = _Material.Thickness;
+
+	ASSERT( _Material.pTextures != NULL, "Invalid textures for primitive material!" );
+	m_pTextures = _Material.pTextures;
 }

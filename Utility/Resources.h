@@ -22,6 +22,13 @@
 	{ IDR_SHADER_ROOM_TEST_COMPUTE,				"./Resources/Shaders/RoomTestCompute.fx" },	\
 	{ IDR_SHADER_ROOM_BUILD_LIGHTMAP,			"./Resources/Shaders/RoomBuildLightMap.fx" },	\
 	{ IDR_SHADER_PARTICLES_COMPUTE,				"./Resources/Shaders/ParticlesCompute.fx" },	\
+/* Deferred Rendered Scene */ \
+	{ IDR_SHADER_SCENE_DEPTH_PASS,				"./Resources/Shaders/SceneDepthPass.fx" },	\
+	{ IDR_SHADER_SCENE_FILL_GBUFFER,			"./Resources/Shaders/SceneFillGBuffer.fx" },	\
+	{ IDR_SHADER_SCENE_SHADING,					"./Resources/Shaders/SceneShading.fx" },	\
+\
+\
+/* ============= Workshop ============= */ \
 	{ IDR_SHADER_PARTICLES_DISPLAY,				"./Resources/Shaders/ParticlesDisplay.fx" }, 	\
 /*	{ IDR_SHADER_DEFERRED_FILL_DEPTHPASS,		"./Resources/Shaders/DeferredDepthPass.fx" }, */	\
 	{ IDR_SHADER_DEFERRED_FILL_GBUFFER,			"./Resources/Shaders/DeferredFillGBuffer.fx" },	\

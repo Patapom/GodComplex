@@ -402,7 +402,9 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\RoomDisplay.fx" />
     <None Include="Resources\Shaders\RoomTesselation.fx" />
     <None Include="Resources\Shaders\RoomTestCompute.fx" />
+    <None Include="Resources\Shaders\SceneDepthPass.fx" />
     <None Include="Resources\Shaders\SceneFillGBuffer.fx" />
+    <None Include="Resources\Shaders\SceneShading.fx" />
     <None Include="Resources\Shaders\TranslucencyBuildZBuffer.fx" />
     <None Include="Resources\Shaders\Inc\Global.fx" />
     <None Include="Resources\Shaders\PostFinal.fx">
@@ -423,6 +425,7 @@ MinifyAll.cmd</Command>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">Resources\Shaders\</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Resources\Shaders\Binary</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">Resources\Shaders\Binary</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">_DEBUG;CODE_WORKSHOP</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

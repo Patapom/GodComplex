@@ -73,7 +73,7 @@ float3x3	ComputeRotation( float3 _NewNormalTS )
 {
 	float3	BaseNormalTS = float3( 0, 0, 1 );
 	float	e = dot( BaseNormalTS, _NewNormalTS );
-	vec3	Ortho = cross( BaseNormalTS, _NewNormalTS );	// Rotation axis * sin( angle )
+	float3	Ortho = cross( BaseNormalTS, _NewNormalTS );	// Rotation axis * sin( angle )
 	
 	float	h = 1.0 / (1.0 + e);      // Optimization by Gottfried Chen
 	
@@ -119,12 +119,12 @@ PS_OUT	PS( PS_IN _In )
 
 	// Sample layers with parallax based on thickness of each layer
 	float2	UV = _In.UV;
-	float4	TexSpecular = _TexObject.Sample( LinearWrap, UV, 5 );							// Specular is sampled first as it's tied to the top layer
-	float4	TexLayer3 = _TexObject.Sample( LinearWrap, UV, 3 );	UV += dUV * _Thickness.z;	// Layer 3 is sampled at entry point (top layer)
-	float4	TexLayer2 = _TexObject.Sample( LinearWrap, UV, 2 );	UV += dUV * _Thickness.y;	// Layer 2
-	float4	TexLayer1 = _TexObject.Sample( LinearWrap, UV, 1 );	UV += dUV * _Thickness.x;	// Layer 1
-	float4	TexLayer0 = _TexObject.Sample( LinearWrap, UV, 0 );								// Layer 0
-	float4	TexNormal = _TexObject.Sample( LinearWrap, UV, 4 );								// Normal Map is always assigned to bottom layer
+	float4	TexSpecular = _TexMaterial.Sample( LinearWrap,	float3( UV, 5 ) );								// Specular is sampled first as it's tied to the top layer
+	float4	TexLayer3 = _TexMaterial.Sample( LinearWrap,	float3( UV, 3 ) );	UV += dUV * _Thickness.z;	// Layer 3 is sampled at entry point (top layer)
+	float4	TexLayer2 = _TexMaterial.Sample( LinearWrap,	float3( UV, 2 ) );	UV += dUV * _Thickness.y;	// Layer 2
+	float4	TexLayer1 = _TexMaterial.Sample( LinearWrap,	float3( UV, 1 ) );	UV += dUV * _Thickness.x;	// Layer 1
+	float4	TexLayer0 = _TexMaterial.Sample( LinearWrap,	float3( UV, 0 ) );								// Layer 0
+	float4	TexNormal = _TexMaterial.Sample( LinearWrap,	float3( UV, 4 ) );								// Normal Map is always assigned to bottom layer
 
 	// Transform tangent space & get normal+tangent into camera space
 	float3		NormalMap = 2.0 * TexNormal.xyz - 1.0;
@@ -149,9 +149,9 @@ PS_OUT	PS( PS_IN _In )
 	Out.DiffuseAlbedo = float4( DiffuseAlbedo, CameraTangent.z );	// XYZ=Diffuse Albedo W=TangentZ
 	Out.SpecularAlbedo = TexSpecular;								// XYZ=Specular Albedo
 	Out.WeightMatIDs0 = float4(										// 4 couples of [Weight,MatID] each in [0,255]
-								WriteWeightMatID( DiffuseWeight.x, _MatIDs.x ),
-								WriteWeightMatID( DiffuseWeight.y, _MatIDs.y ),
-								WriteWeightMatID( DiffuseWeight.z, _MatIDs.z ),
+								WriteWeightMatID( DiffuseWeights.x, _MatIDs.x ),
+								WriteWeightMatID( DiffuseWeights.y, _MatIDs.y ),
+								WriteWeightMatID( DiffuseWeights.z, _MatIDs.z ),
 								WriteWeightMatID( 1.0, _MatIDs.w )
 							);
 

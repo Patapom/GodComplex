@@ -24,6 +24,13 @@ public:		// NESTED TYPES
 		{
 		public:		// NESTED TYPES
 
+			struct	MaterialParameters
+			{
+				Texture2D*	pTextures;
+				int			MatIDs[4];
+				NjFloat3	Thickness;
+			};
+
 			struct	CBPrimitive
 			{
 				int			MatIDs[4];	// 4 material IDs in [0,255], one for each layer of the primitive
@@ -37,7 +44,7 @@ public:		// NESTED TYPES
 
 			CB<CBPrimitive>*	m_pCB_Primitive;
 			::Primitive*		m_pPrimitive;		// Actual renderable primitive
-			::Texture2D*		m_pTextures;		// Texture2DArray with 4 layers + normal + specular
+			Texture2D*			m_pTextures;		// Texture2DArray with 4 layers + normal + specular
 
 		public:		// PROPERTIES
 
@@ -47,6 +54,9 @@ public:		// NESTED TYPES
 			~Primitive();
 
 			void	Render( Material& _Material, bool _bDepthPass=false ) const;
+
+			void	SetRenderPrimitive( ::Primitive& _Primitive );
+			void	SetMaterial( MaterialParameters& _Material );
 		};
 
 		struct	CBObject
@@ -99,3 +109,6 @@ public:		// METHODS
 	void		DestroyObjects();
 	Object&		CreateObjectAt( int _ObjectIndex, const char* _pName );
 };
+
+
+typedef	Scene::Object::Primitive::MaterialParameters	PrimitiveMaterial;

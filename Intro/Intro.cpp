@@ -15,24 +15,24 @@
 #define CHECK_EFFECT( pEffect, ErrorCode )			{ int EffectError = (pEffect)->GetErrorCode(); if ( EffectError != 0 ) return ErrorCode + EffectError; }
 
 
-static Camera*			gs_pCamera = NULL;
+static Camera*				gs_pCamera = NULL;
 // Video*					gs_pVideo = NULL;
 
 // Main scene
-static Scene*			gs_pScene = NULL;
+static Scene*				gs_pScene = NULL;
 
 // Textures & Render targets
-static Texture2D*		gs_pRTHDR = NULL;
+static Texture2D*			gs_pRTHDR = NULL;
 
 // Primitives
-Primitive*				gs_pPrimQuad = NULL;		// Screen quad for post-processes
+Primitive*					gs_pPrimQuad = NULL;		// Screen quad for post-processes
 
 // Materials
-static Material*		gs_pMatPostFinal = NULL;	// Final post-process rendering to the screen
+static Material*			gs_pMatPostFinal = NULL;	// Final post-process rendering to the screen
 
 // Constant buffers
-static CB<CBGlobal>*	gs_pCB_Global = NULL;
-static CB<CBTest>*		gs_pCB_Test = NULL;
+static CB<CBGlobal>*		gs_pCB_Global = NULL;
+static CB<CBTest>*			gs_pCB_Test = NULL;
 
 // Effects
 static EffectTranslucency*	gs_pEffectTranslucency = NULL;
@@ -52,6 +52,9 @@ static EffectScene*			gs_pEffectScene = NULL;
 // {
 // }
 
+void	PrepareScene();
+void	ReleaseScene();
+
 int	IntroInit( IntroProgressDelegate& _Delegate )
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -64,14 +67,14 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create our camera
-	gs_pCamera = new Camera( gs_Device );
+	gs_pCamera = new Camera( gs_Device );	// NOTE: Camera reserves the CB slot #0 for itself !
 	gs_pCamera->SetPerspective( NUAJDEG2RAD( 80.0f ), float(RESX) / RESY, 0.01f, 5000.0f );
-	// NOTE: Camera reserves the CB slot #0 for itself !
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create & initialize our scene
 	gs_pScene = new Scene( gs_Device );
+	PrepareScene();
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -117,7 +120,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 // 
 //		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
 
-		CHECK_EFFECT( gs_pEffectScene = new EffectScene( *gs_pScene ), ERR_EFFECT_SCENE );
+		CHECK_EFFECT( gs_pEffectScene = new EffectScene( gs_Device, *gs_pScene, *gs_pPrimQuad ), ERR_EFFECT_SCENE );
 	}
 
 	return 0;
@@ -146,6 +149,7 @@ void	IntroExit()
 	delete gs_pRTHDR;
 
 	// Release the scene
+	ReleaseScene();
 	delete gs_pScene;
 
 	// Release the camera
@@ -234,12 +238,51 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	// Prepare scene
 	gs_pEffectScene->Render( _Time, _DeltaTime );
 
+
 #endif
-
-
 
 	// Present !
 	gs_Device.DXSwapChain().Present( 0, 0 );
 
 	return true;	// True means continue !
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Build the scene with all the objects & primitives
+namespace
+{
+	Primitive*	gs_pPrimSphere0;
+}
+
+void	PrepareScene()
+{
+	// Create a sphere primitive
+	{
+		GeometryBuilder::MapperSpherical	Mapper;
+		gs_pPrimSphere0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
+		GeometryBuilder::BuildSphere( 60, 30, *gs_pPrimSphere0, Mapper );
+	}
+
+	gs_pScene->AllocateObjects( 1 );
+
+	// Create our sphere object
+	{
+		Scene::Object&	Sphere0 = gs_pScene->CreateObjectAt( 0, "Sphere0" );
+		Sphere0.AllocatePrimitives( 1 );
+		Sphere0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimSphere0 );
+
+		PrimitiveMaterial	Mat =
+		{
+			NULL,
+			{ 0, 1, 2, 3 },
+			NjFloat3( 0, 0, 0 ),
+		};
+
+//		Sphere0.GetPrimitiveAt( 0 ).SetMaterial( Mat );
+	}
+}
+
+void	ReleaseScene()
+{
+	delete gs_pPrimSphere0;
 }

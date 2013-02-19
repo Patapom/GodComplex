@@ -28,17 +28,16 @@ private:	// FIELDS
 	Material*			m_pMatFillGBuffer;
 	Material*			m_pMatShading;
 
+	Texture2D*			m_pDepthStencil;
 	Texture2D*			m_pRT;
 
 public:
 
+	Device&				m_Device;
 	Scene&				m_Scene;
+
 	CB<CBRender>*		m_pCB_Render;
-
-
-	// Params
-public:
-
+	Primitive&			m_ScreenQuad;
 
 public:		// PROPERTIES
 
@@ -46,7 +45,7 @@ public:		// PROPERTIES
 
 public:		// METHODS
 
-	EffectScene( Scene& _Scene );
+	EffectScene( Device& _Device, Scene& _Scene, Primitive& _ScreenQuad );
 	~EffectScene();
 
 	void	Render( float _Time, float _DeltaTime );
