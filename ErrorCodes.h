@@ -28,5 +28,9 @@
 #define ERR_EFFECT_INTRO				1000	// The main intro program
 #define ERR_EFFECT_TRANSLUCENCY			2000
 #define ERR_EFFECT_ROOM					3000
-#define ERR_EFFECT_PARTICLES			4000
-#define ERR_EFFECT_DEFERRED				5000
+#define ERR_EFFECT_SCENE				4000
+
+
+// Code Workshop
+#define ERR_EFFECT_PARTICLES			2000
+#define ERR_EFFECT_DEFERRED				3000

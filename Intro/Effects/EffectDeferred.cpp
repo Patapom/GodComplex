@@ -13,9 +13,9 @@ EffectDeferred::EffectDeferred() : m_ErrorCode( 0 )
 	//////////////////////////////////////////////////////////////////////////
 	// Build the primitives
 	{
-		GeometryBuilder::MapperSpherical	Mapper();
+		GeometryBuilder::MapperSpherical	Mapper;
 		m_pPrimSphere = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
-		GeometryBuilder::BuildSphere( 60, 30, *pPrimSphere, Mapper );
+		GeometryBuilder::BuildSphere( 60, 30, *m_pPrimSphere, Mapper );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -85,16 +85,15 @@ EffectDeferred::~EffectDeferred()
 
 	delete m_pPrimSphere;
 
-	delete m_pMatCompute;
- 	delete m_pMatDisplay;
-	delete m_pMatDebugVoronoi;
+	delete m_pMatFillGBuffer;
 }
 
 void	EffectDeferred::Render( float _Time, float _DeltaTime )
 {
+/*
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Render objects in Z pre-pass
-	{	USING_MATERIAL_START( *m_pMatCompute )
+	{	USING_MATERIAL_START( *m_pMatFillGBuffer )
 	
 		ID3D11RenderTargetView*	ppRenderTargets[2] =
 		{
@@ -136,9 +135,9 @@ void	EffectDeferred::Render( float _Time, float _DeltaTime )
 		m_pPrimParticle->Render( *m_pMatDisplay );
 
 		USING_MATERIAL_END
-	}
+	}*/
 }
-
+/*
 namespace	// Drawers & Fillers
 {
 	struct	__VoronoiInfos
@@ -253,3 +252,4 @@ void	EffectDeferred::BuildVoronoiTexture( TextureBuilder& _TB, NjFloat2* _pCellC
 		for ( int X=0; X < EFFECT_PARTICLES_COUNT; X++ )
 			N.CellularGetCenter( X, Y, _pCellCenters[EFFECT_PARTICLES_COUNT*Y+X], true );
 }
+*/

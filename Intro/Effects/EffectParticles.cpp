@@ -14,10 +14,10 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the awesome particle primitive
-	{
-		VertexFormatP3	Vertices;
-		m_pPrimParticle = new Primitive( gs_Device, 1, &Vertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatP3::DESCRIPTOR );
-	}
+// 	{
+// 		VertexFormatP3	Vertices;
+// 		m_pPrimParticle = new Primitive( gs_Device, 1, &Vertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatP3::DESCRIPTOR );
+// 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build our voronoï texture & our initial positions & data

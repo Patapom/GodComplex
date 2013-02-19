@@ -22,8 +22,8 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, con
 	, m_hCompileThread( 0 )
 #endif
 {
-#ifndef DIRECTX11
-	ASSERT( false, "You can't use Compute Shaders if you don't define DIRECTX11!" );
+#ifdef DIRECTX10
+	ASSERT( false, "You can't use Compute Shaders if you define DIRECTX10!" );
 #endif
 
 	m_pIncludeOverride = _pIncludeOverride;

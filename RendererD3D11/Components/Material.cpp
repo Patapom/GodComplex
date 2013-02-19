@@ -161,8 +161,8 @@ void	Material::CompileShaders( const char* _pShaderCode )
 	// Compile the optional hull shader
 	if ( !m_bHasErrors && m_pEntryPointHS != NULL )
 	{
-#ifndef DIRECTX11
-		ASSERT( false, "You can't use Hull Shaders if you don't define DIRECTX11!" );
+#ifdef DIRECTX10
+		ASSERT( false, "You can't use Hull Shaders if you define DIRECTX10!" );
 #endif
 		ID3DBlob*   pShader = CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointHS, "hs_5_0", this );
 		if ( pShader != NULL )
@@ -186,8 +186,8 @@ void	Material::CompileShaders( const char* _pShaderCode )
 	// Compile the optional domain shader
 	if ( !m_bHasErrors && m_pEntryPointDS != NULL )
 	{
-#ifndef DIRECTX11
-		ASSERT( false, "You can't use Domain Shaders if you don't define DIRECTX11!" );
+#ifdef DIRECTX10
+		ASSERT( false, "You can't use Domain Shaders if you define DIRECTX10!" );
 #endif
 		ID3DBlob*   pShader = CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointDS, "ds_5_0", this );
 		if ( pShader != NULL )

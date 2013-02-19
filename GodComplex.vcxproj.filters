@@ -77,6 +77,18 @@
     <Filter Include="Resources\Shaders\DEBUG\EffectParticles">
       <UniqueIdentifier>{66bf50ff-cb5b-4b26-ab07-09e9871a9ec0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\EffectDeferred">
+      <UniqueIdentifier>{dab91c5c-566c-4058-82b5-53ea025b8baa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intro\Effects\AtelierCode">
+      <UniqueIdentifier>{474e4644-248d-4e55-98c5-e0fe1774da11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\EffectScene">
+      <UniqueIdentifier>{a260f0eb-7b88-4977-82f3-51abec10de2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intro\Effects\Scene">
+      <UniqueIdentifier>{01860707-0530-4e35-b653-3844c1e8a4e2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\Events.h">
@@ -198,14 +210,20 @@
     <ClInclude Include="Procedural\FatPixel.h">
       <Filter>Procedural\2D</Filter>
     </ClInclude>
-    <ClInclude Include="Intro\Effects\EffectParticles.h">
-      <Filter>Intro\Effects</Filter>
-    </ClInclude>
     <ClInclude Include="Utility\Video.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectParticles.h">
+      <Filter>Intro\Effects\AtelierCode</Filter>
+    </ClInclude>
     <ClInclude Include="Intro\Effects\EffectDeferred.h">
-      <Filter>Intro\Effects</Filter>
+      <Filter>Intro\Effects\AtelierCode</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Effects\Scene\EffectScene.h">
+      <Filter>Intro\Effects\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Effects\Scene\Scene.h">
+      <Filter>Intro\Effects\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -306,14 +324,23 @@
     <ClCompile Include="RendererD3D11\Components\ComputeShader.cpp">
       <Filter>RendererD3D11\Components</Filter>
     </ClCompile>
-    <ClCompile Include="Intro\Effects\EffectParticles.cpp">
-      <Filter>Intro\Effects</Filter>
-    </ClCompile>
     <ClCompile Include="Utility\Video.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectDeferred.cpp">
-      <Filter>Intro\Effects</Filter>
+      <Filter>Intro\Effects\AtelierCode</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectParticles.cpp">
+      <Filter>Intro\Effects\AtelierCode</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\Scene\EffectScene.cpp">
+      <Filter>Intro\Effects\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\Scene\Scene.cpp">
+      <Filter>Intro\Effects\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\IntroWorkshop.cpp">
+      <Filter>Intro</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -390,6 +417,12 @@
     </None>
     <None Include="Resources\Shaders\ParticlesDisplay.fx">
       <Filter>Resources\Shaders\DEBUG\EffectParticles</Filter>
+    </None>
+    <None Include="Resources\Shaders\DeferredFillGBuffer.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectDeferred</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneFillGBuffer.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

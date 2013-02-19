@@ -1,21 +1,25 @@
+//////////////////////////////////////////////////////////////////////////
+// Main intro code
+//
 #include "../GodComplex.h"
 
 #include "ConstantBuffers.h"
 
 #include "Effects/EffectTranslucency.h"
 #include "Effects/EffectRoom.h"
-#include "Effects/EffectParticles.h"
-#include "Effects/EffectDeferred.h"
+
+#include "Effects/Scene/Scene.h"
+#include "Effects/Scene/EffectScene.h"
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) return ErrorCode;
 #define CHECK_EFFECT( pEffect, ErrorCode )			{ int EffectError = (pEffect)->GetErrorCode(); if ( EffectError != 0 ) return ErrorCode + EffectError; }
 
 
 static Camera*			gs_pCamera = NULL;
-#ifdef _DEBUG
-Video*					gs_pVideo = NULL;
-#endif
+// Video*					gs_pVideo = NULL;
 
+// Main scene
+static Scene*			gs_pScene = NULL;
 
 // Textures & Render targets
 static Texture2D*		gs_pRTHDR = NULL;
@@ -33,8 +37,7 @@ static CB<CBTest>*		gs_pCB_Test = NULL;
 // Effects
 static EffectTranslucency*	gs_pEffectTranslucency = NULL;
 static EffectRoom*			gs_pEffectRoom = NULL;
-static EffectParticles*		gs_pEffectParticles = NULL;
-static EffectDeferred*		gs_pEffectDeferred = NULL;
+static EffectScene*			gs_pEffectScene = NULL;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -45,10 +48,9 @@ static EffectDeferred*		gs_pEffectDeferred = NULL;
 #include "Build2DTextures.cpp"
 #include "Build3DTextures.cpp"
 
-void	DevicesEnumerator( int _DeviceIndex, const BSTR& _FriendlyName, const BSTR& _DevicePath, IMoniker* _pMoniker, void* _pUserData )
-{
-
-}
+// void	DevicesEnumerator( int _DeviceIndex, const BSTR& _FriendlyName, const BSTR& _DevicePath, IMoniker* _pMoniker, void* _pUserData )
+// {
+// }
 
 int	IntroInit( IntroProgressDelegate& _Delegate )
 {
@@ -64,8 +66,12 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	// Create our camera
 	gs_pCamera = new Camera( gs_Device );
 	gs_pCamera->SetPerspective( NUAJDEG2RAD( 80.0f ), float(RESX) / RESY, 0.01f, 5000.0f );
-
 	// NOTE: Camera reserves the CB slot #0 for itself !
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Create & initialize our scene
+	gs_pScene = new Scene( gs_Device );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -106,26 +112,12 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create effects
 	{
-#ifndef CODE_WORKSHOP
+// 		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), ERR_EFFECT_ROOM );
+// 		gs_pEffectRoom->m_pTexVoronoi = gs_pEffectParticles->m_pTexVoronoi;
+// 
+//		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
 
-// TEST
-CHECK_EFFECT( gs_pEffectParticles = new EffectParticles(), ERR_EFFECT_PARTICLES );
-
-
-
-#ifdef DIRECTX11
-		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), ERR_EFFECT_ROOM );
-		gs_pEffectRoom->m_pTexVoronoi = gs_pEffectParticles->m_pTexVoronoi;
-#else
-		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
-#endif
-
-		//////////////////////////////////////////////////////////////////////////
-#else	// WORKSHOP!
-
-//		CHECK_EFFECT( gs_pEffectParticles = new EffectParticles(), ERR_EFFECT_PARTICLES );
-		CHECK_EFFECT( gs_pEffectDeferred = new EffectDeferred(), ERR_EFFECT_DEFERRED );
-#endif
+		CHECK_EFFECT( gs_pEffectScene = new EffectScene( *gs_pScene ), ERR_EFFECT_SCENE );
 	}
 
 	return 0;
@@ -136,8 +128,7 @@ void	IntroExit()
 	// Release effects
 	delete gs_pEffectTranslucency;
 	delete gs_pEffectRoom;
-	delete gs_pEffectParticles;
-	delete gs_pEffectDeferred;
+	delete gs_pEffectScene;
 
 	// Release constant buffers
 	delete gs_pCB_Test;
@@ -154,27 +145,27 @@ void	IntroExit()
 	Delete2DTextures();
 	delete gs_pRTHDR;
 
+	// Release the scene
+	delete gs_pScene;
+
 	// Release the camera
 	delete gs_pCamera;
 
 	// Release the video capture object
-#ifdef _DEBUG
-	if ( gs_pVideo != NULL )
-	{
-		gs_pVideo->Exit();
-	 	delete gs_pVideo;
-	}
-#endif
+// 	if ( gs_pVideo != NULL )
+// 	{
+// 		gs_pVideo->Exit();
+// 	 	delete gs_pVideo;
+// 	}
 }
 
-#ifndef CODE_WORKSHOP
 bool	IntroDo( float _Time, float _DeltaTime )
 {
 	// Upload global parameters
 	gs_pCB_Global->m.Time.Set( _Time, _DeltaTime, 1.0f / _Time, 1.0f / _DeltaTime );
 	gs_pCB_Global->UpdateData();
 
-#ifdef DIRECTX11
+#if 0	// TEST ROOM
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update the camera settings and upload its data to the shaders
@@ -193,7 +184,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	gs_pEffectRoom->Render( _Time, _DeltaTime );
 
-#else
+#elif 0	// TEST TRANSLUCENCY
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update the camera settings and upload its data to the shaders
@@ -232,55 +223,19 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	USING_MATERIAL_END
 
-#endif
-
-
-// 	//////////////////////////////////////////////////////////////////////////
-// 	// Render particles only
-// 
-// 	// TODO: Animate camera...
-// 	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(1.5f), _TV(2.0f) ), NjFloat3( 0.0f, 1.5f, 0.0f ), NjFloat3::UnitY );
-// 	gs_pCamera->Upload( 0 );
-// 
-// 
-// 	//////////////////////////////////////////////////////////////////////////
-// 	// Render some shit to the HDR buffer
-// 	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
-// 
-// 	gs_pEffectParticles->Render( _Time, _DeltaTime );
-
-
-	// Present !
-	gs_Device.DXSwapChain().Present( 0, 0 );
-
-	return true;	// True means continue !
-}
-
-#else	// CODE WORKSHOP
-
-bool	IntroDo( float _Time, float _DeltaTime )
-{
-	// Upload global parameters
-	gs_pCB_Global->m.Time.Set( _Time, _DeltaTime, 1.0f / _Time, 1.0f / _DeltaTime );
-	gs_pCB_Global->UpdateData();
-
+#elif 1	// TEST FULL SCENE
 
 	//////////////////////////////////////////////////////////////////////////
-	// Render particles only
-
-	// TODO: Animate camera...
-	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(1.5f), _TV(2.0f) ), NjFloat3( 0.0f, 1.5f, 0.0f ), NjFloat3::UnitY );
+	// Animate camera
+	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(0.8f), _TV(2.0f) ), NjFloat3( 0.0f, 0.8f, 0.0f ), NjFloat3::UnitY );
 	gs_pCamera->Upload( 0 );
 
-
 	//////////////////////////////////////////////////////////////////////////
-	// Render some shit to the HDR buffer
-// 	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
-// 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
-// 
-// 	gs_pEffectParticles->Render( _Time, _DeltaTime );
+	// Prepare scene
+	gs_pEffectScene->Render( _Time, _DeltaTime );
 
-	gs_pEffectDeferred->Render( _Time, _DeltaTime );
+#endif
+
 
 
 	// Present !
@@ -288,5 +243,3 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	return true;	// True means continue !
 }
-
-#endif
