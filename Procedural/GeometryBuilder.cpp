@@ -5,37 +5,6 @@
 
 
 //////////////////////////////////////////////////////////////////////////
-// Spherical mapping
-//
-GeometryBuilder::MapperSpherical::MapperSpherical( float _WrapU, float _WrapV, const NjFloat3& _Center, const NjFloat3& _X, const NjFloat3& _Y )
-	: m_WrapU( _WrapU )
-	, m_WrapV( _WrapV )
-	, m_Center( _Center )
-	, m_X( _X )
-	, m_Y( _Y )
-{
-	m_X.Normalize();
-	m_Y.Normalize();
-	m_Z = m_X ^ m_Y;
-	m_Z.Normalize();
-}
-void	GeometryBuilder::MapperSpherical::Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV ) const
-{
-	NjFloat3	Dir = _Position - m_Center;
-	Dir.Normalize();
-	float	X = Dir | m_X;
-	float	Y = Dir | m_Y;
-	float	Z = Dir | m_Z;
-
-	float	Phi = atan2f( X, Z );		// Phi=0 at +Z and 90° at +X
-	float	Theta = acosf( Y );			// Theta=0 at +Y and 180° at -Y
-
-	_UV.x = m_WrapU * INV2PI * Phi;
-	_UV.y = m_WrapV * INVPI * Theta;
-}
-
-
-//////////////////////////////////////////////////////////////////////////
 //
 void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
 {
@@ -242,6 +211,77 @@ void	GeometryBuilder::BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, 
 	_Writer.Finalize( pVerticesArray, pIndicesArray );
 }
 
+void	GeometryBuilder::BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const NjFloat3& _X, const NjFloat3& _Y, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
+{
+	ASSERT( _SubdivisionsX > 0 && _SubdivisionsY > 0, "Can't create a plane with 0 subdivision!" );
+
+	int	VerticesCount = (_SubdivisionsX+1) * (_SubdivisionsY+1);
+	int	IndicesCount = 2*(_SubdivisionsX+1+1) * _SubdivisionsY - 2;
+
+	// Create the buffers
+	void*	pVerticesArray = NULL;
+	void*	pIndicesArray = NULL;
+	int		VStride, IStride;
+
+	_Writer.CreateBuffers( VerticesCount, IndicesCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, pVerticesArray, pIndicesArray, VStride, IStride );
+	ASSERT( pVerticesArray != NULL, "Invalid vertex buffer !" );
+	ASSERT( pIndicesArray != NULL, "Invalid index buffer !" );
+
+	U8*		pVertex = (U8*) pVerticesArray;
+	U8*		pIndex = (U8*) pIndicesArray;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build vertices
+	NjFloat3	Tangent = _X;					Tangent.Normalize();
+	NjFloat3	BiTangent = _Y;					BiTangent.Normalize();
+	NjFloat3	Normal = Tangent ^ BiTangent;	Normal.Normalize();
+
+	NjFloat3	Position;
+	NjFloat2	UV;
+
+	for ( int j=0; j <= _SubdivisionsY; j++ )
+	{
+		float	Y = 1.0f - 2.0f * j / _SubdivisionsY;
+		for ( int i=0; i <= _SubdivisionsX; i++ )
+		{
+			float	X = 2.0f * i / _SubdivisionsX - 1.0f;
+
+			Position = X * _X + Y * _Y;
+			_Mapper.Map( Position, Normal, Tangent, UV );
+
+			VWRITE( pVertex, Position, Normal, Tangent, UV );
+		}
+	}
+	ASSERT( VerticesCount == 0, "Wrong contruction !" );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build indices
+	for ( int j=0; j < _SubdivisionsY; j++ )
+	{
+		int	CurrentBandOffset = j * (_SubdivisionsX+1);
+		int	NextBandOffset = (j+1) * (_SubdivisionsX+1);
+
+		for ( int i=0; i <= _SubdivisionsX; i++ )
+		{
+			IWRITE( pIndex, CurrentBandOffset + i );
+			IWRITE( pIndex, NextBandOffset + i );
+		}
+
+		if ( j == _SubdivisionsY-1 )
+			continue;	// Not for the last band...
+
+		// Write 2 last degenerate indices so we smoothly transition to next band
+		IWRITE( pIndex, NextBandOffset-1 );
+		IWRITE( pIndex, NextBandOffset );
+	}
+	ASSERT( IndicesCount == 0, "Wrong contruction !" );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Finalize
+	_Writer.Finalize( pVerticesArray, pIndicesArray );
+}
+
+
 void	GeometryBuilder::WriteVertex( IGeometryWriter& _Writer, void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV, TweakVertexDelegate _TweakVertex, void* _pUserData )
 {
 	if ( _TweakVertex == NULL )
@@ -258,3 +298,55 @@ void	GeometryBuilder::WriteVertex( IGeometryWriter& _Writer, void* _pVertex, con
 	(*_TweakVertex)( P, N, T, UV, _pUserData );
 	_Writer.WriteVertex( _pVertex, P, N, T, UV );
 }
+
+
+//////////////////////////////////////////////////////////////////////////
+// Spherical mapping
+//
+GeometryBuilder::MapperSpherical::MapperSpherical( float _WrapU, float _WrapV, const NjFloat3& _Center, const NjFloat3& _X, const NjFloat3& _Y )
+	: m_WrapU( _WrapU )
+	, m_WrapV( _WrapV )
+	, m_Center( _Center )
+	, m_X( _X )
+	, m_Y( _Y )
+{
+	m_X.Normalize();
+	m_Y.Normalize();
+	m_Z = m_X ^ m_Y;
+	m_Z.Normalize();
+}
+void	GeometryBuilder::MapperSpherical::Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV ) const
+{
+	NjFloat3	Dir = _Position - m_Center;
+	Dir.Normalize();
+	float	X = Dir | m_X;
+	float	Y = Dir | m_Y;
+	float	Z = Dir | m_Z;
+
+	float	Phi = atan2f( X, Z );		// Phi=0 at +Z and 90° at +X
+	float	Theta = acosf( Y );			// Theta=0 at +Y and 180° at -Y
+
+	_UV.x = m_WrapU * INV2PI * Phi;
+	_UV.y = m_WrapV * INVPI * Theta;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Planar mapping
+//
+GeometryBuilder::MapperPlanar::MapperPlanar( float _WrapU, float _WrapV, const NjFloat3& _Center, const NjFloat3& _Tangent, const NjFloat3& _BiTangent )
+	: m_WrapU( _WrapU )
+	, m_WrapV( _WrapV )
+	, m_Center( _Center )
+	, m_Tangent( _Tangent )
+	, m_BiTangent( _BiTangent )
+{
+}
+void	GeometryBuilder::MapperPlanar::Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV ) const
+{
+	NjFloat3	Delta = _Position - m_Center;
+
+	_UV.x = m_WrapU * (Delta | m_Tangent);
+	_UV.y = m_WrapV * (Delta | m_BiTangent);
+}
+

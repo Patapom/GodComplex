@@ -24,6 +24,11 @@ VS_IN	VS( VS_IN _In )
 float4	PS( VS_IN _In ) : SV_TARGET0
 {
 	float2	UV = dUV * _In.__Position.xy;
-return float4( UV, 0, 0 );
-	return 1.0 / _TexDepth.SampleLevel( LinearClamp, UV, 0.0 ).x;
+//return float4( UV, 0, 0 );
+
+	float	Zproj = _TexDepth.SampleLevel( LinearClamp, UV, 0.0 ).x;
+	float	Q = _CameraData.w / (_CameraData.w - _CameraData.z);	// Zf / (Zf-Zn)
+	float	Z = (Q * _CameraData.z) / (Q - Zproj);
+
+	return 0.2 * Z;
 }

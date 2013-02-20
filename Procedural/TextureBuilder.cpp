@@ -286,12 +286,51 @@ void	TextureBuilder::GenerateMips( bool _bTreatRGBAsNormal ) const
 	m_bMipLevelsBuilt = true;
 }
 
+TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA =
+{
+	0, 1, 2, 3, false,	// RGBA + bLinearize
+
+			// Position of the height & roughness fields
+	-1,		// int		PosHeight;
+	-1,		// int		PosRoughness;
+
+			// Position of the Material ID
+	-1,		// int		PosMatID;
+
+			// Position of the normal fields
+	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
+	true,	// bool		bOffsetNormal;
+	-1, -1, -1,	// Normal fields
+
+			// Position of the AO field
+	1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
+	-1,		// int		PosAO;
+};
+
+TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA_sRGB =
+{
+	0, 1, 2, 3, true,	// RGBA + bLinearize
+
+			// Position of the height & roughness fields
+	-1,		// int		PosHeight;
+	-1,		// int		PosRoughness;
+
+			// Position of the Material ID
+	-1,		// int		PosMatID;
+
+			// Position of the normal fields
+	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
+	true,	// bool		bOffsetNormal;
+	-1, -1, -1,	// Normal fields
+
+			// Position of the AO field
+	1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
+	-1,		// int		PosAO;
+};
+
 TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA_NxNyHR_M =
 {
-	0,		// int		PosR;
-	1,		// int		PosG;
-	2,		// int		PosB;
-	3,		// int		PosA;
+	0, 1, 2, 3, false,	// RGBA + bLinearize
 
 			// Position of the height & roughness fields
 	6,		// int		PosHeight;
@@ -302,9 +341,8 @@ TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA_NxNyHR_M =
 
 			// Position of the normal fields
 	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
-	4,		// int		PosNormalX;
-	5,		// int		PosNormalY;
-	-1,		// int		PosNormalZ;
+	true,	// bool		bOffsetNormal;
+	4, 5, -1,	// Normal fields
 
 			// Position of the AO field
 	1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
@@ -313,10 +351,7 @@ TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA_NxNyHR_M =
 
 TextureBuilder::ConversionParams	TextureBuilder::CONV_NxNyNzH =
 {
-	-1,		// int		PosR;
-	-1,		// int		PosG;
-	-1,		// int		PosB;
-	-1,		// int		PosA;
+	-1,	-1, -1, -1, false,	// RGBA + bLinearize
 
 			// Position of the height & roughness fields
 	3,		// int		PosHeight;
@@ -327,9 +362,8 @@ TextureBuilder::ConversionParams	TextureBuilder::CONV_NxNyNzH =
 
 			// Position of the normal fields
 	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
-	0,		// int		PosNormalX;
-	1,		// int		PosNormalY;
-	2,		// int		PosNormalZ;
+	true,	// bool		bOffsetNormal;
+	0, 1, 2,	// Normal fields
 
 			// Position of the AO field
 	1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
@@ -435,15 +469,52 @@ Texture2D*	TextureBuilder::CreateTexture( const IPixelFormatDescriptor& _Format,
 	return pResult;
 }
 
+Texture2D*	TextureBuilder::Concat( int _SourcesCount, void** _pppArrays[], int _ArraySizes[], const IPixelFormatDescriptor& _Format, bool _bStaging, bool _bWriteable ) const
+{
+	int	TotalArraySize = 0;
+	for ( int SourceIndex=0; SourceIndex < _SourcesCount; SourceIndex++ )
+		TotalArraySize += _ArraySizes[SourceIndex];
+
+	// Concatenate all arrays into one giant array
+	void**	ppFinalArray = new void*[m_MipLevelsCount*TotalArraySize];
+	TotalArraySize = 0;
+	for ( int SourceIndex=0; SourceIndex < _SourcesCount; SourceIndex++ )
+		for ( int ArrayIndex=0; ArrayIndex < _ArraySizes[SourceIndex]; ArrayIndex++ )
+		{
+			for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+				ppFinalArray[m_MipLevelsCount*(TotalArraySize+ArrayIndex)+MipLevelIndex] = _pppArrays[SourceIndex][m_MipLevelsCount*ArrayIndex+MipLevelIndex];
+
+			TotalArraySize += _ArraySizes[SourceIndex];
+		}
+
+	Texture2D*	pResult = new Texture2D( gs_Device, m_Width, m_Height, TotalArraySize, _Format, m_MipLevelsCount, ppFinalArray, _bStaging, _bWriteable );
+
+	delete[] ppFinalArray;
+
+	return pResult;
+}
+
 float	TextureBuilder::BuildComponent( int _ComponentIndex, const ConversionParams& _Params, Pixel& _Pixel0, Pixel& _Pixel1, Pixel& _Pixel2 ) const
 {
 	// Check if it's the color
-	if ( _ComponentIndex == _Params.PosR )
-		return _Pixel0.RGBA.x;
-	if ( _ComponentIndex == _Params.PosG )
-		return _Pixel0.RGBA.y;
-	if ( _ComponentIndex == _Params.PosB )
-		return _Pixel0.RGBA.z;
+	if ( _Params.bLinearizeColors )
+	{
+		if ( _ComponentIndex == _Params.PosR )
+			return sRGB2Linear( _Pixel0.RGBA.x );
+		if ( _ComponentIndex == _Params.PosG )
+			return sRGB2Linear( _Pixel0.RGBA.y );
+		if ( _ComponentIndex == _Params.PosB )
+			return sRGB2Linear( _Pixel0.RGBA.z );
+	}
+	else
+	{
+		if ( _ComponentIndex == _Params.PosR )
+			return _Pixel0.RGBA.x;
+		if ( _ComponentIndex == _Params.PosG )
+			return _Pixel0.RGBA.y;
+		if ( _ComponentIndex == _Params.PosB )
+			return _Pixel0.RGBA.z;
+	}
 	if ( _ComponentIndex == _Params.PosA )
 		return _Pixel0.RGBA.w;
 
@@ -459,11 +530,11 @@ float	TextureBuilder::BuildComponent( int _ComponentIndex, const ConversionParam
 
 	// Check if it's the normal
 	if ( _ComponentIndex == _Params.PosNormalX )
-		return _Pixel1.RGBA.x;
+		return _Params.bOffsetNormal ? 0.5f * (1.0f + _Pixel1.RGBA.x) : _Pixel1.RGBA.x;
 	if ( _ComponentIndex == _Params.PosNormalY )
-		return _Pixel1.RGBA.y;
+		return _Params.bOffsetNormal ? 0.5f * (1.0f + _Pixel1.RGBA.y) : _Pixel1.RGBA.y;
 	if ( _ComponentIndex == _Params.PosNormalZ )
-		return _Pixel1.RGBA.z;
+		return _Params.bOffsetNormal ? 0.5f * (1.0f + _Pixel1.RGBA.z) : _Pixel1.RGBA.z;
 
 	// Check if it's the ambient occlusion
 	if ( _ComponentIndex == _Params.PosAO )
@@ -471,6 +542,16 @@ float	TextureBuilder::BuildComponent( int _ComponentIndex, const ConversionParam
 
 	// Empty component => WASTE !!!!
 	return 0.0f;
+}
+
+float	TextureBuilder::sRGB2Linear( float _sRGB )
+{
+	return _sRGB > 0.04045f ? powf( (_sRGB + 0.055f) / 1.055f, 2.4f ) : _sRGB / 12.92f;
+}
+
+float	TextureBuilder::Linear2sRGB( float _Linear )
+{
+	return _Linear > 0.0031308f ? 1.055f * powf( _Linear, 1.0f / 2.4f ) - 0.055f : 12.92f * _Linear;
 }
 
 void	TextureBuilder::ReleaseSpecificBuffer() const
@@ -482,3 +563,48 @@ void	TextureBuilder::ReleaseSpecificBuffer() const
 		delete[] m_ppBufferSpecific[MipLevelIndex];
 	delete[] m_ppBufferSpecific;
 }
+
+
+#ifdef _DEBUG
+#include <stdio.h>
+
+// Loads a RAW image from disk (RAW images can be created by the Tool/PNG2RAW project)
+// Warning: There is absolutely NO check on the size of the file. You must know what you're doing here!
+void	TextureBuilder::LoadFromRAWFile( const char* _pPath, bool _bAsHeight )
+{
+	int		Size = 4*m_Width*m_Height;
+
+	U8*		pRAW = new U8[Size];
+	FILE*	pFile = fopen( _pPath, "rb" );
+	ASSERT( pFile != NULL, "Invalid file!" );
+	fread_s( pRAW, Size, 1, Size, pFile );
+	fclose( pFile );
+
+	for ( int Y=0; Y < m_Height; Y++ )
+	{
+		U8*		pScanlineSource = &pRAW[4*m_Width*Y];
+		Pixel*	pScanlineTarget = &m_ppBufferGeneric[0][m_Width*Y];
+		for ( int X=0; X < m_Width; X++, pScanlineTarget++ )
+		{
+			float	R = *pScanlineSource++ / 255.0f;
+			float	G = *pScanlineSource++ / 255.0f;
+			float	B = *pScanlineSource++ / 255.0f;
+			float	A = *pScanlineSource++ / 255.0f;
+			if ( _bAsHeight )
+			{
+				pScanlineTarget->Height = 0.2126f * R + 0.7152f * G + 0.0722f * B;
+				pScanlineTarget->RGBA.Set( 0, 0, 0, 0 );
+			}
+			else
+			{
+				pScanlineTarget->RGBA.Set( R, G, B, A );
+				pScanlineTarget->Height = 0.0f;
+			}
+			pScanlineTarget->Roughness = 0.0f;
+		}
+	}
+
+	delete[] pRAW;
+}
+
+#endif

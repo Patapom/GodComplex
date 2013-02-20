@@ -1,6 +1,11 @@
 //////////////////////////////////////////////////////////////////////////
 // This shader displays the objects in our fat G-Buffer
 //
+//	TODO: Don't use a texture array => Separate textures are cooler so we can easily send 1x1 blank textures for unused layers
+//		  Also useful to have several formats (like diffuse in sRGB and stuff)
+//
+//	TODO: Use PTMs !!!
+//
 #include "Inc/Global.fx"
 
 cbuffer	cbObject	: register( b10 )
@@ -11,11 +16,15 @@ cbuffer	cbObject	: register( b10 )
 cbuffer	cbPrimitive	: register( b11 )
 {
 	int4		_MatIDs;		// 4 material IDs for each of the 4 layers
-	float3		_Thickness;		// 3 thicknesses for the top 3 layers
+	float3		_Thickness;		// 3 thicknesses for the top 3 layers (X=layer#1, Y=layer#2, Z=layer#3)
+	float3		_Extinction;	// 3 extinction coefficients for the top 3 layers (X=layer#1, Y=layer#2, Z=layer#3)
+	float3		_IOR;			// 3 indices of refraction for the top 3 layers (X=layer#1, Y=layer#2, Z=layer#3)
+	// TODO: Add diffusion (i.e. mip bias) for each transmissive layer
 	// TODO: Add tiling + offset for each layer
 };
+
+
 Texture2DArray	_TexMaterial	: register(t10);	// 4 Slices of diffuse+blend masks + normal map + specular map = 6 textures per primitive
-// TODO: Don't use a texture array => Separate textures are cooler so we can easily send 1x1 blank textures for unused layers
 
 // struct	PomParameters
 // {
@@ -112,6 +121,8 @@ PS_OUT	PS( PS_IN _In )
 
 	// Compute change in UVs for change in world space
 	float3	ViewTS = float3( dot( View, WorldTangent ), dot( View, WorldBiTangent ), dot( View, WorldNormal ) );
+	float	DistanceFactor = 1.0 / max( 1e-3, ViewTS.z );	// Depends on view angle with surface
+
 //	float2	dUV = ViewTS.xy / ViewTS.z;	// The amount of 
 // 	float2	dUVx = float2( ddx( UV.x ), ddy( UV.x ) );
 // 	float2	dUVy = float2( ddx( UV.y ), ddy( UV.y ) );
@@ -138,10 +149,18 @@ PS_OUT	PS( PS_IN _In )
 
 	//////////////////////////////////////////////////////////////////////
 	// Apply Pom model
-	float3	DiffuseAlbedo = lerp( lerp( lerp( TexLayer0.xyz, TexLayer1.xyz, TexLayer1.w ), TexLayer2.xyz, TexLayer2.w ), TexLayer3.xyz, TexLayer3.w );
-	float3	DiffuseWeights = 1.0 - float3( TexLayer1.w, TexLayer2.w, TexLayer3.w );	// The weight of light passing through each layer, individually
-			DiffuseWeights.y *= DiffuseWeights.z;									// Cumulated weight of light reaching layer 1
-			DiffuseWeights.x *= DiffuseWeights.y;									// Cumulated weight of light reaching layer 0
+	float3	LayerDistances = DistanceFactor * _Thickness;
+	float3	LayerExtinctions = exp( -_Extinction * LayerDistances );				// The extinction of light going through some distance for each layer
+
+	float3	Layer2 = lerp( TexLayer2.xyz, TexLayer3.xyz, TexLayer3.w * LayerExtinctions.z );	// Layer 2 is only visible if extinction from layer 3 is low
+	float3	Layer1 = lerp( TexLayer1.xyz, Layer2, TexLayer2.w * LayerExtinctions.y );			// Layer 1 is only visible if extinction from layer 2 is low
+	float3	Layer0 = lerp( TexLayer0.xyz, Layer1, TexLayer1.w * LayerExtinctions.x );			// Layer 0 is only visible if extinction from layer 1 is low
+
+	float3	DiffuseAlbedo = Layer0;													// This is the final diffuse color seen through all layers
+
+	float3	LayerWeights = 1.0 - float3( TexLayer1.w, TexLayer2.w, TexLayer3.w );	// The weight of light passing through each layer, individually
+			LayerWeights.y *= LayerWeights.z;										// Cumulated weight of light reaching layer 1
+			LayerWeights.x *= LayerWeights.y;										// Cumulated weight of light reaching layer 0
 
 	// Write final result
 	PS_OUT	Out;
@@ -149,10 +168,10 @@ PS_OUT	PS( PS_IN _In )
 	Out.DiffuseAlbedo = float4( DiffuseAlbedo, CameraTangent.z );	// XYZ=Diffuse Albedo W=TangentZ
 	Out.SpecularAlbedo = TexSpecular;								// XYZ=Specular Albedo
 	Out.WeightMatIDs0 = float4(										// 4 couples of [Weight,MatID] each in [0,255]
-								WriteWeightMatID( DiffuseWeights.x, _MatIDs.x ),
-								WriteWeightMatID( DiffuseWeights.y, _MatIDs.y ),
-								WriteWeightMatID( DiffuseWeights.z, _MatIDs.z ),
-								WriteWeightMatID( 1.0, _MatIDs.w )
+								WriteWeightMatID( LayerWeights.x,	_MatIDs.x ),
+								WriteWeightMatID( LayerWeights.y,	_MatIDs.y ),
+								WriteWeightMatID( LayerWeights.z,	_MatIDs.z ),
+								WriteWeightMatID( TexLayer3.w,		_MatIDs.w )
 							);
 
 	return Out;

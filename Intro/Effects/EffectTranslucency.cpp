@@ -100,7 +100,7 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 	{	USING_MATERIAL_START( *m_pMatBuildZBuffer )
 
 		// === Render external object ===
-		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3::One );
+		m_pCB_Object->m.Local2World.PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3::One );
 		m_pCB_Object->m.NoiseOffset = SphereNoise;
 		m_pCB_Object->UpdateData();
 
@@ -115,7 +115,7 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 		m_pPrimSphereExternal->Render( *m_pMatBuildZBuffer );
 
 		// === Render rotating internal object ===
-		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( TorusPosition, TorusRotation, NjFloat3::One );
+		m_pCB_Object->m.Local2World.PRS( TorusPosition, TorusRotation, NjFloat3::One );
 		m_pCB_Object->m.NoiseOffset = TorusNoise;
 		m_pCB_Object->UpdateData();
 
@@ -203,7 +203,7 @@ gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), NULL );
 		m_ppRTDiffusion[0]->SetPS( 10 );
 
 		// Render the sphere
-		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3( 0, 1, 0 ), NjFloat4::QuatFromAngleAxis( _TV(0.0f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
+		m_pCB_Object->m.Local2World.PRS( NjFloat3( 0, 1, 0 ), NjFloat4::QuatFromAngleAxis( _TV(0.0f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
 		m_pCB_Object->m.EmissiveColor = NjFloat4::Zero;
 		m_pCB_Object->m.NoiseOffset = SphereNoise;
 		m_pCB_Object->UpdateData();
@@ -211,7 +211,7 @@ gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), NULL );
 		m_pPrimSphereExternal->Render( *m_pMatDisplay );
 
 		// Render the torus
-		m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3( 0, 1, 0 ) + TorusPosition, TorusRotation, NjFloat3::One );
+		m_pCB_Object->m.Local2World.PRS( NjFloat3( 0, 1, 0 ) + TorusPosition, TorusRotation, NjFloat3::One );
 		m_pCB_Object->m.EmissiveColor = NjFloat4( 0.0f * NjFloat3::One + m_pCB_Diffusion->m.InternalEmissive, 1.0f );
 		m_pCB_Object->m.NoiseOffset = TorusNoise;
 		m_pCB_Object->UpdateData();

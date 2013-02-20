@@ -196,15 +196,15 @@ public:
 	NjFloat4x4			operator*( const NjFloat4x4& b ) const;
 	float&				operator()( int _Row, int _Column );
 
-	static NjFloat4x4	FromAngleAxis( float _Angle, const NjFloat3& _Axis )	{ return FromQuat( NjFloat4::QuatFromAngleAxis( _Angle, _Axis ) ); }
-	static NjFloat4x4	FromQuat( const NjFloat4& _Quat );
-	static NjFloat4x4	PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S );
+	NjFloat4x4&			FromAngleAxis( float _Angle, const NjFloat3& _Axis )	{ return FromQuat( NjFloat4::QuatFromAngleAxis( _Angle, _Axis ) ); }
+	NjFloat4x4&			FromQuat( const NjFloat4& _Quat );
+	NjFloat4x4&			PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S=NjFloat3::One );
 
-	static NjFloat4x4	Rot( const NjFloat3& _Source, const NjFloat3& _Target );	// Generate the rotation matrix that rotates the _Source vector into the _Target vector
-	static NjFloat4x4	RotX( float _Angle );
-	static NjFloat4x4	RotY( float _Angle );
-	static NjFloat4x4	RotZ( float _Angle );
-	static NjFloat4x4	PYR( float _Pitch, float _Yaw, float _Roll );
+	NjFloat4x4&			Rot( const NjFloat3& _Source, const NjFloat3& _Target );	// Generate the rotation matrix that rotates the _Source vector into the _Target vector
+	NjFloat4x4&			RotX( float _Angle );
+	NjFloat4x4&			RotY( float _Angle );
+	NjFloat4x4&			RotZ( float _Angle );
+	NjFloat4x4&			PYR( float _Pitch, float _Yaw, float _Roll );
 
 	static const NjFloat4x4	Zero;
 	static const NjFloat4x4	Identity;

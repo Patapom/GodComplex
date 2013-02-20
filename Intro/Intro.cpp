@@ -231,7 +231,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Animate camera
-	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(0.8f), _TV(2.0f) ), NjFloat3( 0.0f, 0.8f, 0.0f ), NjFloat3::UnitY );
+	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(2.0f), _TV(2.0f) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
 	gs_pCamera->Upload( 0 );
 
 	//////////////////////////////////////////////////////////////////////////
@@ -252,37 +252,92 @@ bool	IntroDo( float _Time, float _DeltaTime )
 namespace
 {
 	Primitive*	gs_pPrimSphere0;
+	Primitive*	gs_pPrimPlane0;
+	Texture2D*	gs_pSceneTexture0;
 }
 
 void	PrepareScene()
 {
-	// Create a sphere primitive
+	// Create our complex material texture
 	{
-		GeometryBuilder::MapperSpherical	Mapper;
-		gs_pPrimSphere0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
-		GeometryBuilder::BuildSphere( 60, 30, *gs_pPrimSphere0, Mapper );
+		TextureBuilder	TBLayer0( 512, 512 );			TBLayer0.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Layer0.raw" );
+		TextureBuilder	TBLayer1( 512, 512 );			TBLayer1.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Layer1.raw" );
+		TextureBuilder	TBLayer2( 512, 512 );			TBLayer2.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Layer2.raw" );
+		TextureBuilder	TBLayer3( 512, 512 );			TBLayer3.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Layer3.raw" );
+		TextureBuilder	TBLayerSpecular( 512, 512 );	TBLayerSpecular.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Specular.raw" );
+		TextureBuilder	TBLayerHeight( 512, 512 );		TBLayerHeight.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Height.raw", true );
+
+		// Convert all layers
+		int		pArraySizes[6];
+		void**	pppContents[6];
+		pppContents[0] = TBLayer0.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[0] );
+		pppContents[1] = TBLayer1.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[1] );
+		pppContents[2] = TBLayer2.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[2] );
+		pppContents[3] = TBLayer3.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[3] );
+		pppContents[4] = TBLayerSpecular.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[4] );
+		pppContents[5] = TBLayerHeight.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_NxNyNzH, pArraySizes[5] );
+
+		// Generate the final texture array
+		gs_pSceneTexture0 = TBLayer0.Concat( 6, pppContents, pArraySizes, PixelFormatRGBA8::DESCRIPTOR );
 	}
 
-	gs_pScene->AllocateObjects( 1 );
+	// Create a primitives
+	{
+		GeometryBuilder::MapperSpherical	MapperSphere;
+		gs_pPrimSphere0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
+		GeometryBuilder::BuildSphere( 60, 30, *gs_pPrimSphere0, MapperSphere );
+
+		GeometryBuilder::MapperPlanar		MapperPlane( 1.0f, 1.0f );
+		gs_pPrimPlane0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
+		GeometryBuilder::BuildPlane( 1, 1, 10.0f * NjFloat3::UnitX, -10.0f * NjFloat3::UnitZ, *gs_pPrimPlane0, MapperPlane );
+	}
+
+	gs_pScene->AllocateObjects( 2 );
 
 	// Create our sphere object
 	{
 		Scene::Object&	Sphere0 = gs_pScene->CreateObjectAt( 0, "Sphere0" );
+						Sphere0.SetPRS( NjFloat3::UnitY, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ) );
+
 		Sphere0.AllocatePrimitives( 1 );
 		Sphere0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimSphere0 );
 
 		PrimitiveMaterial	Mat =
 		{
-			NULL,
+			gs_pSceneTexture0,
 			{ 0, 1, 2, 3 },
 			NjFloat3( 0, 0, 0 ),
+			NjFloat3( 1, 0, 0 ),
+			NjFloat3( 1, 1, 1 ),
 		};
 
-//		Sphere0.GetPrimitiveAt( 0 ).SetMaterial( Mat );
+		Sphere0.GetPrimitiveAt( 0 ).SetMaterial( Mat );
+	}
+
+	// Create our plane object
+	{
+		Scene::Object&	Plane0 = gs_pScene->CreateObjectAt( 1, "Plane0" );
+						Plane0.SetPRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ) );
+
+		Plane0.AllocatePrimitives( 1 );
+		Plane0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimPlane0 );
+
+		PrimitiveMaterial	Mat =
+		{
+			gs_pSceneTexture0,
+			{ 0, 1, 2, 3 },
+			NjFloat3( 0, 0, 0 ),
+			NjFloat3( 1, 0, 0 ),
+			NjFloat3( 1, 1, 1 ),
+		};
+
+		Plane0.GetPrimitiveAt( 0 ).SetMaterial( Mat );
 	}
 }
 
 void	ReleaseScene()
 {
 	delete gs_pPrimSphere0;
+	delete gs_pPrimPlane0;
+	delete gs_pSceneTexture0;
 }

@@ -29,6 +29,20 @@ public:		// NESTED TYPES
 		virtual void	Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV ) const;
 	};
 
+	// Planar mapping
+	class	MapperPlanar : public MapperBase
+	{
+	protected:
+
+		float		m_WrapU;
+		float		m_WrapV;
+		NjFloat3	m_Center, m_Tangent, m_BiTangent;
+
+	public:
+		MapperPlanar( float _WrapU=1.0f, float _WrapV=1.0f, const NjFloat3& _Center=NjFloat3::Zero, const NjFloat3& _Tangent=NjFloat3::UnitZ, const NjFloat3& _BiTangent=NjFloat3::UnitX );
+		virtual void	Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV ) const;
+	};
+
 	class	IGeometryWriter
 	{
 	public:
@@ -47,6 +61,9 @@ public:		// METHODS
 
 	// Builds a torus in the XY plane
 	static void		BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, float _LargeRadius, float _SmallRadius, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
+
+	// Builds a subdivided plane
+	static void		BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const NjFloat3& _X, const NjFloat3& _Y, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
 
 private:
 

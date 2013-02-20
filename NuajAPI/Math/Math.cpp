@@ -90,7 +90,7 @@ NjFloat4   operator*( const NjFloat4& a, const NjFloat4x4& b )
 }
 
 
-NjFloat4x4	NjFloat4x4::FromQuat( const NjFloat4& _Quat )
+NjFloat4x4&	NjFloat4x4::FromQuat( const NjFloat4& _Quat )
 {
 	NjFloat4	q = _Quat;
 	q.Normalize();
@@ -104,55 +104,54 @@ NjFloat4x4	NjFloat4x4::FromQuat( const NjFloat4& _Quat )
 	xx = q.x * xs;	xy = q.x * ys;	xz = q.x * zs;
 	yy = q.y * ys;	yz = q.y * zs;	zz = q.z * zs;
 
-	NjFloat4x4	Result;
-	Result.m[4*0+0] = 1.0f - yy - zz;
-	Result.m[4*0+1] =        xy + wz;
-	Result.m[4*0+2] =        xz - wy;
-	Result.m[4*0+3] = 0.0f;
+	m[4*0+0] = 1.0f - yy - zz;
+	m[4*0+1] =        xy + wz;
+	m[4*0+2] =        xz - wy;
+	m[4*0+3] = 0.0f;
 
-	Result.m[4*1+0] =        xy - wz;
-	Result.m[4*1+1] = 1.0f - xx - zz;
-	Result.m[4*1+2] =        yz + wx;
-	Result.m[4*1+3] = 0.0f;
+	m[4*1+0] =        xy - wz;
+	m[4*1+1] = 1.0f - xx - zz;
+	m[4*1+2] =        yz + wx;
+	m[4*1+3] = 0.0f;
 
-	Result.m[4*2+0] =        xz + wy;
-	Result.m[4*2+1] =        yz - wx;
-	Result.m[4*2+2] = 1.0f - xx - yy;
-	Result.m[4*2+3] = 0.0f;
+	m[4*2+0] =        xz + wy;
+	m[4*2+1] =        yz - wx;
+	m[4*2+2] = 1.0f - xx - yy;
+	m[4*2+3] = 0.0f;
 
-	Result.m[4*3+0] = 0.0f;
-	Result.m[4*3+1] = 0.0f;
-	Result.m[4*3+2] = 0.0f;
-	Result.m[4*3+3] = 1.0f;
+	m[4*3+0] = 0.0f;
+	m[4*3+1] = 0.0f;
+	m[4*3+2] = 0.0f;
+	m[4*3+3] = 1.0f;
 
-	return	Result;
+	return	*this;
 }
 
-NjFloat4x4	NjFloat4x4::PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S )
+NjFloat4x4&	NjFloat4x4::PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S )
 {
-	NjFloat4x4	Result = NjFloat4x4::FromQuat( R );
+	FromQuat( R );
 
-	Result.m[4*0+0] *= S.x;
-	Result.m[4*0+1] *= S.x;
-	Result.m[4*0+2] *= S.x;
-	Result.m[4*0+3] *= S.x;
-	Result.m[4*1+0] *= S.y;
-	Result.m[4*1+1] *= S.y;
-	Result.m[4*1+2] *= S.y;
-	Result.m[4*1+3] *= S.y;
-	Result.m[4*2+0] *= S.z;
-	Result.m[4*2+1] *= S.z;
-	Result.m[4*2+2] *= S.z;
-	Result.m[4*2+3] *= S.z;
+	m[4*0+0] *= S.x;
+	m[4*0+1] *= S.x;
+	m[4*0+2] *= S.x;
+	m[4*0+3] *= S.x;
+	m[4*1+0] *= S.y;
+	m[4*1+1] *= S.y;
+	m[4*1+2] *= S.y;
+	m[4*1+3] *= S.y;
+	m[4*2+0] *= S.z;
+	m[4*2+1] *= S.z;
+	m[4*2+2] *= S.z;
+	m[4*2+3] *= S.z;
 
-	Result.m[4*3+0] = P.x;
-	Result.m[4*3+1] = P.y;
-	Result.m[4*3+2] = P.z;
+	m[4*3+0] = P.x;
+	m[4*3+1] = P.y;
+	m[4*3+2] = P.z;
 
-	return Result;
+	return	*this;
 }
 
-NjFloat4x4	NjFloat4x4::Rot( const NjFloat3& _Source, const NjFloat3& _Target )
+NjFloat4x4&	NjFloat4x4::Rot( const NjFloat3& _Source, const NjFloat3& _Target )
 {
 	NjFloat3	Ortho = _Source ^ _Target;
 	float		Length = Ortho.Length();
@@ -160,46 +159,53 @@ NjFloat4x4	NjFloat4x4::Rot( const NjFloat3& _Source, const NjFloat3& _Target )
 		Ortho = Ortho / Length;
 	else
 		Ortho.Set( 1, 0, 0 );
-	float		Angle = asinf( Length );
-	NjFloat4x4	R = FromAngleAxis( Angle, Ortho );
-	return R;
+
+	float	Angle = asinf( Length );
+	return FromAngleAxis( Angle, Ortho );
 }
 
-NjFloat4x4	NjFloat4x4::RotX( float _Angle )
+NjFloat4x4&	NjFloat4x4::RotX( float _Angle )
 {
-	NjFloat4x4	R = NjFloat4x4::Identity;
-	float C = cosf( _Angle );
-	float S = sinf( _Angle );
-	R.m[4*1+1] = C;		R.m[4*1+2] = S;
-	R.m[4*2+1] = -S;	R.m[4*2+2] = C;
-	return R;
-}
-NjFloat4x4	NjFloat4x4::RotY( float _Angle )
-{
-	NjFloat4x4	R = NjFloat4x4::Identity;
-	float C = cosf( _Angle );
-	float S = sinf( _Angle );
-	R.m[4*0+0] = C;		R.m[4*0+2] = -S;
-	R.m[4*2+0] = S;		R.m[4*2+2] = C;
-	return R;
-}
-NjFloat4x4	NjFloat4x4::RotZ( float _Angle )
-{
-	NjFloat4x4	R = NjFloat4x4::Identity;
-	float C = cosf( _Angle );
-	float S = sinf( _Angle );
-	R.m[4*0+0] = C;		R.m[4*0+1] = S;
-	R.m[4*1+0] = -S;	R.m[4*1+1] = C;
-	return R;
-}
-NjFloat4x4	NjFloat4x4::PYR( float _Pitch, float _Yaw, float _Roll )
-{
-	NjFloat4x4	Pitch = NjFloat4x4::RotX( _Pitch );
-	NjFloat4x4	Yaw = NjFloat4x4::RotX( _Yaw );
-	NjFloat4x4	Roll = NjFloat4x4::RotX( _Roll );
+	*this = Identity;
 
-	NjFloat4x4	Result = Pitch * Yaw * Roll;
-	return Result;
+	float C = cosf( _Angle );
+	float S = sinf( _Angle );
+	m[4*1+1] = C;	m[4*1+2] = S;
+	m[4*2+1] = -S;	m[4*2+2] = C;
+
+	return *this;
+}
+NjFloat4x4&	NjFloat4x4::RotY( float _Angle )
+{
+	*this = Identity;
+
+	float C = cosf( _Angle );
+	float S = sinf( _Angle );
+	m[4*0+0] = C;	m[4*0+2] = -S;
+	m[4*2+0] = S;	m[4*2+2] = C;
+
+	return *this;
+}
+NjFloat4x4&	NjFloat4x4::RotZ( float _Angle )
+{
+	*this = Identity;
+
+	float C = cosf( _Angle );
+	float S = sinf( _Angle );
+	m[4*0+0] = C;	m[4*0+1] = S;
+	m[4*1+0] = -S;	m[4*1+1] = C;
+
+	return *this;
+}
+NjFloat4x4&	NjFloat4x4::PYR( float _Pitch, float _Yaw, float _Roll )
+{
+	NjFloat4x4	Pitch;	Pitch.RotX( _Pitch );
+	NjFloat4x4	Yaw;	Yaw.RotX( _Yaw );
+	NjFloat4x4	Roll;	Roll.RotX( _Roll );
+
+	*this = Pitch * Yaw * Roll;
+
+	return *this;
 }
 
 

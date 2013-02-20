@@ -145,7 +145,7 @@ void	EffectRoom::Render( float _Time, float _DeltaTime )
 	gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), &gs_Device.DefaultDepthStencil() );
 	gs_Device.SetStates( gs_Device.m_pRS_CullNone, gs_Device.m_pDS_ReadWriteLess, gs_Device.m_pBS_Disabled );
 
-	m_pCB_Object->m.Local2World = NjFloat4x4::PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( _TV(0.1f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
+	m_pCB_Object->m.Local2World.PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( _TV(0.1f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
 	m_pCB_Object->UpdateData();
 
 	{	USING_MATERIAL_START( *m_pMatDisplay )
@@ -451,7 +451,7 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 					pDest->Position = C + fX * T + fY * B + Height * N;
 
 					// Rotate local tangent space with normal map
-					NjFloat4x4	Rot = NjFloat4x4::Rot( N, WSNormal );
+					NjFloat4x4	Rot; Rot.Rot( N, WSNormal );
 					pDest->Normal = NjFloat4( N, 0.0f ) * Rot;
 					pDest->Tangent = NjFloat4( T, 0.0f ) * Rot;
 					pDest->BiTangent = NjFloat4( B, 0.0f ) * Rot;

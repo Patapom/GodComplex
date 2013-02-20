@@ -14,13 +14,14 @@ void	FillNormal( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pDat
 {
 	__NormalStruct&	Params = *((__NormalStruct*) _pData);
 
-	float	X = float(_X);
-	float	Y = float(_Y);
+	float		X = float(_X);
+	float		Y = float(_Y);
 
-	Pixel	Left; Params.pSource->SampleWrap( X - 1, Y, 0, Left );
-	Pixel	Right; Params.pSource->SampleWrap( X + 1, Y, 0, Right );
-	Pixel	Top; Params.pSource->SampleWrap( X, Y - 1, 0, Top );
-	Pixel	Bottom; Params.pSource->SampleWrap( X, Y + 1, 0, Bottom );
+	Pixel		Center;	Params.pSource->SampleWrap( X, Y, 0, Center );
+	Pixel		Left;	Params.pSource->SampleWrap( X - 1, Y, 0, Left );
+	Pixel		Right;	Params.pSource->SampleWrap( X + 1, Y, 0, Right );
+	Pixel		Top;	Params.pSource->SampleWrap( X, Y - 1, 0, Top );
+	Pixel		Bottom; Params.pSource->SampleWrap( X, Y + 1, 0, Bottom );
 
 	NjFloat3	Dx( 1.0f, 0.0f, Params.HeightFactor * (Right.Height - Left.Height) );
 	NjFloat3	Dy( 0.0f, -1.0f, Params.HeightFactor * (Bottom.Height - Top.Height) );
@@ -29,7 +30,7 @@ void	FillNormal( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pDat
 	if ( Params.bNormalize )
 		Normal.Normalize();
 
-	_Pixel.RGBA.Set( 0.5f * (1.0f + Normal.x), 0.5f * (1.0f + Normal.y), 0.5f * (1.0f + Normal.z), 0.0f );
+	_Pixel.RGBA.Set( 0.5f * (1.0f + Normal.x), 0.5f * (1.0f + Normal.y), 0.5f * (1.0f + Normal.z), Center.Height );
 }
 
 void Generators::ComputeNormal( const TextureBuilder& _Source, TextureBuilder& _Target, float _HeightFactor, bool _bNormalize )

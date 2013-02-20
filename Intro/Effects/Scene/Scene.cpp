@@ -68,8 +68,17 @@ Scene::Object&	Scene::CreateObjectAt( int _ObjectIndex, const char* _pName )
 
 //////////////////////////////////////////////////////////////////////////
 // Object
-Scene::Object::Object( Scene& _Owner, const char* _pName ) : m_Owner( _Owner ), m_pName( _pName ), m_PrimitivesCount( 0 ), m_ppPrimitives( NULL )
+Scene::Object::Object( Scene& _Owner, const char* _pName )
+	: m_Owner( _Owner )
+	, m_pName( _pName )
+	, m_PrimitivesCount( 0 )
+	, m_ppPrimitives( NULL )
+	, m_Position( NjFloat3::Zero )
+	, m_Rotation( NjFloat3::UnitY, 0.0f )
+	, m_Scale( NjFloat3::One )
+	, m_bPRSDirty( true )
 {
+	m_Rotation = NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY );
 	m_pCB_Object = new CB<CBObject>( m_Owner.m_Device, 10 );
 }
 Scene::Object::~Object()
@@ -78,9 +87,22 @@ Scene::Object::~Object()
 	DestroyPrimitives();
 }
 
+void	Scene::Object::SetPRS( const NjFloat3& _Position, const NjFloat4& _Rotation, const NjFloat3& _Scale )
+{
+	m_Position = _Position;
+	m_Rotation = _Rotation;
+	m_Scale = _Scale;
+	m_bPRSDirty = true;
+}
+
 void	Scene::Object::Update( float _Time, float _DeltaTime )
 {
-	m_pCB_Object->m.Local2World = NjFloat4x4::Identity;	// TODO !
+	if ( !m_bPRSDirty )
+		return;	// Already up to date!
+
+	// Rebuild transform from PRS
+	m_pCB_Object->m.Local2World.PRS( m_Position, m_Rotation, m_Scale );
+	m_bPRSDirty = false;
 }
 
 void	Scene::Object::Render( Material& _Material, bool _bDepthPass ) const
@@ -142,7 +164,7 @@ void	Scene::Object::Primitive::Render( Material& _Material, bool _bDepthPass ) c
 		ASSERT( m_pTextures != NULL, "Textures were not set!" );
 
 		m_pCB_Primitive->UpdateData();
-		m_pTextures->Set( 10 );
+		m_pTextures->SetPS( 10 );
 	}
 
 	m_pPrimitive->Render( _Material );
@@ -160,6 +182,8 @@ void	Scene::Object::Primitive::SetMaterial( MaterialParameters& _Material )
 	m_pCB_Primitive->m.MatIDs[2] = _Material.MatIDs[2];
 	m_pCB_Primitive->m.MatIDs[3] = _Material.MatIDs[3];
 	m_pCB_Primitive->m.Thickness = _Material.Thickness;
+	m_pCB_Primitive->m.Extinction = _Material.Extinction;	// TODO: Translate extinctions into values depending on thickness
+	m_pCB_Primitive->m.IOR = _Material.IOR;
 
 	ASSERT( _Material.pTextures != NULL, "Invalid textures for primitive material!" );
 	m_pTextures = _Material.pTextures;
