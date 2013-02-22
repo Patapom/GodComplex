@@ -1,15 +1,18 @@
 #include "../../../GodComplex.h"
 #include "Scene.h"
+#include "MaterialBank.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Scene
 Scene::Scene( Device& _Device ) : m_Device( _Device )
 {
+	m_pMaterials = new MaterialBank( _Device );
 }
 
 Scene::~Scene()
 {
 	DestroyObjects();
+	delete m_pMaterials;
 }
 
 void	Scene::Update( float _Time, float _DeltaTime )
@@ -21,6 +24,9 @@ void	Scene::Update( float _Time, float _DeltaTime )
 
 void	Scene::Render( Material& _Material, bool _bDepthPass ) const
 {
+	// Upload our materials
+	m_pMaterials->UpdateMaterialsBuffer();
+
 	for ( int ObjectIndex=0; ObjectIndex < m_ObjectsCount; ObjectIndex++ )
 		if ( m_ppObjects[ObjectIndex] != NULL )
 			m_ppObjects[ObjectIndex]->Render( _Material, _bDepthPass );
@@ -175,16 +181,50 @@ void	Scene::Object::Primitive::SetRenderPrimitive( ::Primitive& _Primitive )
 	m_pPrimitive = &_Primitive;
 }
 
-void	Scene::Object::Primitive::SetMaterial( MaterialParameters& _Material )
-{
-	m_pCB_Primitive->m.MatIDs[0] = _Material.MatIDs[0];
-	m_pCB_Primitive->m.MatIDs[1] = _Material.MatIDs[1];
-	m_pCB_Primitive->m.MatIDs[2] = _Material.MatIDs[2];
-	m_pCB_Primitive->m.MatIDs[3] = _Material.MatIDs[3];
-	m_pCB_Primitive->m.Thickness = _Material.Thickness;
-	m_pCB_Primitive->m.Extinction = _Material.Extinction;	// TODO: Translate extinctions into values depending on thickness
-	m_pCB_Primitive->m.IOR = _Material.IOR;
+// void	Scene::Object::Primitive::SetMaterial( MaterialParameters& _Material )
+// {
+// 	m_pCB_Primitive->m.MatIDs[0] = _Material.MatIDs[0];
+// 	m_pCB_Primitive->m.MatIDs[1] = _Material.MatIDs[1];
+// 	m_pCB_Primitive->m.MatIDs[2] = _Material.MatIDs[2];
+// 	m_pCB_Primitive->m.MatIDs[3] = _Material.MatIDs[3];
+// 	m_pCB_Primitive->m.Thickness = _Material.Thickness;
+// 	m_pCB_Primitive->m.Extinction = _Material.Extinction;	// TODO: Translate extinctions into values depending on thickness
+// 	m_pCB_Primitive->m.IOR = _Material.IOR;
+// 
+// 	ASSERT( _Material.pTextures != NULL, "Invalid textures for primitive material!" );
+// 	m_pTextures = _Material.pTextures;
+// }
 
-	ASSERT( _Material.pTextures != NULL, "Invalid textures for primitive material!" );
-	m_pTextures = _Material.pTextures;
+void	Scene::Object::Primitive::SetLayerMaterials( Texture2D& _LayeredTextures, int _Mat0, int _Mat1, int _Mat2, int _Mat3 )
+{
+	const MaterialBank::Material::DynamicParameters*	ppMats[4] =
+	{
+		&m_Owner.m_Owner.m_pMaterials->GetMaterialAt( _Mat0 ).GetDynamic(),
+		&m_Owner.m_Owner.m_pMaterials->GetMaterialAt( _Mat1 ).GetDynamic(),
+		&m_Owner.m_Owner.m_pMaterials->GetMaterialAt( _Mat2 ).GetDynamic(),
+		&m_Owner.m_Owner.m_pMaterials->GetMaterialAt( _Mat3 ).GetDynamic(),
+	};
+
+	m_pTextures = &_LayeredTextures;
+
+	m_pCB_Primitive->m.MatIDs[0] = _Mat0;
+	m_pCB_Primitive->m.MatIDs[1] = _Mat1;
+	m_pCB_Primitive->m.MatIDs[2] = _Mat2;
+	m_pCB_Primitive->m.MatIDs[3] = _Mat3;
+
+	m_pCB_Primitive->m.Thickness.Set( MAX( 1e-6f, ppMats[0]->Thickness ), MAX( 1e-6f, ppMats[1]->Thickness ), MAX( 1e-6f, ppMats[2]->Thickness ), MAX( 1e-6f, ppMats[3]->Thickness ) );
+	m_pCB_Primitive->m.IOR.Set( ppMats[1]->IOR, ppMats[2]->IOR, ppMats[3]->IOR );
+	m_pCB_Primitive->m.Frosting.Set( ppMats[1]->Frosting, ppMats[2]->Frosting, ppMats[3]->Frosting );
+
+	// Extinctions are given as [0,1] numbers from totally transparent to completely opaque
+	// We need to convert them into actual extinction values to be used in the classical exp( -Sigma_t * Distance(millimeters) ) formula
+	// We simply assume the opacity of the layer below should be a very low value for extinction=1 when the ray of light travels the layer's whole thickness:
+	const float	LOW_OPACITY_VALUE = 1e-3;
+	NjFloat3	TargetValueAtThickness(
+		logf( LERP( LOW_OPACITY_VALUE, 1.0f, ppMats[1]->Opacity ) ) / m_pCB_Primitive->m.Thickness.y,
+		logf( LERP( LOW_OPACITY_VALUE, 1.0f, ppMats[2]->Opacity ) ) / m_pCB_Primitive->m.Thickness.z,
+		logf( LERP( LOW_OPACITY_VALUE, 1.0f, ppMats[3]->Opacity ) ) / m_pCB_Primitive->m.Thickness.w
+		);
+
+	m_pCB_Primitive->m.Extinction = TargetValueAtThickness;
 }

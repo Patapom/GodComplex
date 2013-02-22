@@ -10,7 +10,7 @@
 #define RESY	720
 #define ALLOW_WINDOWED
 
-#define MUSIC			// Enable music
+//#define MUSIC			// Enable music
 
 #ifdef A64BITS
 #pragma pack(8)			// VERY important, so WNDCLASS gets the correct padding and we don't crash the system

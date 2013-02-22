@@ -38,7 +38,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			float	Phi = TWOPI * i / BandLength;
 			Tangent.x = cosf( Phi );
 			Tangent.y = 0.0f;
-			Tangent.z = sinf( Phi );
+			Tangent.z = -sinf( Phi );
 
 			// Create a dummy position that is slightly offseted from the top of the sphere so UVs are not all identical
 			Position.y = 1.0f;
@@ -71,7 +71,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 
 			Tangent.x = cosf( Phi );
 			Tangent.y = 0.0f;
-			Tangent.z = sinf( Phi );
+			Tangent.z = -sinf( Phi );
 
 			// Ask for UVs
 			_Mapper.Map( Position, Normal, Tangent, UV );
@@ -88,7 +88,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			float	Phi = TWOPI * i / BandLength;
 			Tangent.x = cosf( Phi );
 			Tangent.y = 0.0f;
-			Tangent.z = sinf( Phi );
+			Tangent.z = -sinf( Phi );
 
 			// Create a dummy position that is slightly offseted from the bottom of the sphere so UVs are not all identical
 			Position.y = -1.0f;

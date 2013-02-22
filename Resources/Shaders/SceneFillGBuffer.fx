@@ -15,8 +15,8 @@ cbuffer	cbObject	: register( b10 )
 
 cbuffer	cbPrimitive	: register( b11 )
 {
-	int4		_MatIDs;		// 4 material IDs for each of the 4 layers
-	float3		_Thickness;		// 3 thicknesses for the top 3 layers (X=layer#1, Y=layer#2, Z=layer#3)
+	uint4		_MatIDs;		// 4 material IDs for each of the 4 layers
+	float4		_Thickness;		// 3 thicknesses for the top 3 layers (X=layer#1, Y=layer#2, Z=layer#3)
 	float3		_Extinction;	// 3 extinction coefficients for the top 3 layers (X=layer#1, Y=layer#2, Z=layer#3)
 	float3		_IOR;			// 3 indices of refraction for the top 3 layers (X=layer#1, Y=layer#2, Z=layer#3)
 	// TODO: Add diffusion (i.e. mip bias) for each transmissive layer
@@ -54,7 +54,7 @@ struct	PS_OUT
 	float4	NormalTangent		: SV_TARGET0;	// XY=Normal  ZW=TangentXY
 	float4	DiffuseAlbedo		: SV_TARGET1;	// XYZ=Diffuse Albedo W=TangentZ
 	float4	SpecularAlbedo		: SV_TARGET2;	// XYZ=Specular Albedo
-	int4	WeightMatIDs0		: SV_TARGET3;	// 4 couples of [Weight,MatID] each in [0,255]
+	uint4	WeightMatIDs0		: SV_TARGET3;	// 4 couples of [Weight,MatID] each in [0,255]
 };
 
 PS_IN	VS( VS_IN _In )
@@ -102,17 +102,17 @@ float3x3	ComputeRotation( float3 _NewNormalTS )
 	return Transform;
 }
 
-int	WriteWeightMatID( float _Weight, int _MatID )
+uint	WriteWeightMatID( float _Weight, uint _MatID )
 {
-	int	Weight = int( _Weight * 255.0 );
-	int	Concat = (_MatID << 8) | Weight;	// [0,65535]
+	uint	Weight = int( _Weight * 255.0 );
+	uint	Concat = (_MatID << 8) | Weight;	// [0,65535]
 	return Concat;
 }
 
 PS_OUT	PS( PS_IN _In )
 {
 	// Compute view vector
-	float3	View = normalize( _In.Position - _Camera2World[3].xyz );	// Pointing toward the surface
+	float3	View = normalize( _Camera2World[3].xyz - _In.Position );	// Pointing toward the camera
 
 	// Compute tangent space
 	float3	WorldNormal = normalize( _In.Normal );
@@ -128,14 +128,16 @@ PS_OUT	PS( PS_IN _In )
 // 	float2	dUVy = float2( ddx( UV.y ), ddy( UV.y ) );
 	float2	dUV = 0.0;	// Let's do that later... It's complicated and unnecessary
 
+	// TODO: Account for refraction => 1 dUV per layer
+
 	// Sample layers with parallax based on thickness of each layer
 	float2	UV = _In.UV;
-	float4	TexSpecular = _TexMaterial.Sample( LinearWrap,	float3( UV, 5 ) );								// Specular is sampled first as it's tied to the top layer
+	float4	TexSpecular = _TexMaterial.Sample( LinearWrap,	float3( UV, 4 ) );								// Specular is sampled first as it's tied to the top layer
 	float4	TexLayer3 = _TexMaterial.Sample( LinearWrap,	float3( UV, 3 ) );	UV += dUV * _Thickness.z;	// Layer 3 is sampled at entry point (top layer)
 	float4	TexLayer2 = _TexMaterial.Sample( LinearWrap,	float3( UV, 2 ) );	UV += dUV * _Thickness.y;	// Layer 2
 	float4	TexLayer1 = _TexMaterial.Sample( LinearWrap,	float3( UV, 1 ) );	UV += dUV * _Thickness.x;	// Layer 1
 	float4	TexLayer0 = _TexMaterial.Sample( LinearWrap,	float3( UV, 0 ) );								// Layer 0
-	float4	TexNormal = _TexMaterial.Sample( LinearWrap,	float3( UV, 4 ) );								// Normal Map is always assigned to bottom layer
+	float4	TexNormal = _TexMaterial.Sample( LinearWrap,	float3( UV, 5 ) );								// Normal Map is always assigned to bottom layer
 
 	// Transform tangent space & get normal+tangent into camera space
 	float3		NormalMap = 2.0 * TexNormal.xyz - 1.0;
@@ -143,36 +145,63 @@ PS_OUT	PS( PS_IN _In )
 
 	float3	NewNormal = mul( WorldNormal, Rotation );
 	float3	NewTangent = mul( WorldTangent, Rotation );
+// 	float3	NewNormal = WorldNormal;
+// 	float3	NewTangent = WorldTangent;
+
+// NewNormal = TexNormal.xyz;
 
 	float2	CameraNormal = float2( dot( NewNormal, _World2Camera[0].xyz ), dot( NewNormal, _World2Camera[1].xyz ) );	// We only need XY
-	float3	CameraTangent = float3( dot( NewTangent, _World2Camera[0].xyz ), dot( NewTangent, _World2Camera[1].xyz ), dot( NewTangent, _World2Camera[2].xyz ) );
+	float3	CameraTangent = float3( dot( NewTangent, _World2Camera[0].xyz ), dot( NewTangent, _World2Camera[1].xyz ), -dot( NewTangent, _World2Camera[2].xyz ) );
+
+//CameraTangent = NewTangent;
 
 	//////////////////////////////////////////////////////////////////////
 	// Apply Pom model
-	float3	LayerDistances = DistanceFactor * _Thickness;
-	float3	LayerExtinctions = exp( -_Extinction * LayerDistances );				// The extinction of light going through some distance for each layer
+	float3	LayerDistances = DistanceFactor * _Thickness.yzw;
+	float3	LayerExtinctions = exp( _Extinction * LayerDistances );				// The extinction of light going through some distance for each layer
+			LayerExtinctions.x *= TexLayer1.w;									// Apply masking of each layer as well
+			LayerExtinctions.y *= TexLayer2.w;
+			LayerExtinctions.z *= TexLayer3.w;
 
-	float3	Layer2 = lerp( TexLayer2.xyz, TexLayer3.xyz, TexLayer3.w * LayerExtinctions.z );	// Layer 2 is only visible if extinction from layer 3 is low
-	float3	Layer1 = lerp( TexLayer1.xyz, Layer2, TexLayer2.w * LayerExtinctions.y );			// Layer 1 is only visible if extinction from layer 2 is low
-	float3	Layer0 = lerp( TexLayer0.xyz, Layer1, TexLayer1.w * LayerExtinctions.x );			// Layer 0 is only visible if extinction from layer 1 is low
+	float3	Layer0 = TexLayer0.xyz;	// Full base layer
+	float3	Layer1 = lerp( Layer0, TexLayer1.xyz, LayerExtinctions.x );			// Layer 0 is only visible if extinction from layer 1 is low
+	float3	Layer2 = lerp( Layer1, TexLayer2.xyz, LayerExtinctions.y );			// Layer 1 is only visible if extinction from layer 2 is low
+	float3	Layer3 = lerp( Layer2, TexLayer3.xyz, LayerExtinctions.z );			// Layer 2 is only visible if extinction from layer 3 is low
+	float3	DiffuseAlbedo = Layer3;												// This is the final diffuse color seen through all layers
 
-	float3	DiffuseAlbedo = Layer0;													// This is the final diffuse color seen through all layers
-
-	float3	LayerWeights = 1.0 - float3( TexLayer1.w, TexLayer2.w, TexLayer3.w );	// The weight of light passing through each layer, individually
-			LayerWeights.y *= LayerWeights.z;										// Cumulated weight of light reaching layer 1
-			LayerWeights.x *= LayerWeights.y;										// Cumulated weight of light reaching layer 0
+	float3	Transparency = 1.0 - LayerExtinctions;								// Individual transparency
+			Transparency.y *= Transparency.z;									// Cumulated transparency for layer 2 as seen through layer 3
+			Transparency.x *= Transparency.y;									// Cumulated transparency for layer 1 as seen through layer 2 and 3
+ 	float4	LayerWeights = float4(
+									Transparency.x * 1.0,						// Weight of layer 0 seen through 1, 2, 3
+ 									Transparency.y * TexLayer1.w,				// Weight of layer 1 seen through 1, 2
+ 									Transparency.z * TexLayer2.w,				// Weight of layer 2 seen through 1
+ 									TexLayer3.w									// Weight of layer 3 seen directly
+								);
+	float	SumWeights = dot( LayerWeights, 1.0 );
+	LayerWeights /= SumWeights;													// We normalize weights as we can't exceed one!
 
 	// Write final result
 	PS_OUT	Out;
-	Out.NormalTangent = float4( CameraNormal, CameraTangent.xy );	// XY=Normal  ZW=TangentXY
-	Out.DiffuseAlbedo = float4( DiffuseAlbedo, CameraTangent.z );	// XYZ=Diffuse Albedo W=TangentZ
-	Out.SpecularAlbedo = TexSpecular;								// XYZ=Specular Albedo
-	Out.WeightMatIDs0 = float4(										// 4 couples of [Weight,MatID] each in [0,255]
-								WriteWeightMatID( LayerWeights.x,	_MatIDs.x ),
-								WriteWeightMatID( LayerWeights.y,	_MatIDs.y ),
-								WriteWeightMatID( LayerWeights.z,	_MatIDs.z ),
-								WriteWeightMatID( TexLayer3.w,		_MatIDs.w )
+	Out.NormalTangent = float4( CameraNormal, CameraTangent.xy );				// XY=Normal  ZW=TangentXY
+	Out.DiffuseAlbedo = float4( DiffuseAlbedo, CameraTangent.z );				// XYZ=Diffuse Albedo W=TangentZ
+	Out.SpecularAlbedo = float4( TexSpecular.xyz, _Thickness.x * TexNormal.w );	// XYZ=Specular Albedo W=Height (in millimeters)
+	Out.WeightMatIDs0 = uint4(													// 4 couples of [Weight,MatID] each in [0,255]
+								WriteWeightMatID( LayerWeights.x, _MatIDs.x ),
+								WriteWeightMatID( LayerWeights.y, _MatIDs.y ),
+								WriteWeightMatID( LayerWeights.z, _MatIDs.z ),
+								WriteWeightMatID( LayerWeights.w, _MatIDs.w )
 							);
+
+//Out.DiffuseAlbedo = float4( _In.UV, 0, 0 );
+//Out.DiffuseAlbedo = float4( LayerWeights.zzz, 0 );
+//Out.DiffuseAlbedo = float4( LayerExtinctions.yyy, 0 );
+//Out.DiffuseAlbedo = float4( TexLayer2.www, 0 );
+//Out.DiffuseAlbedo = float4( Layer3, 0 );
+//Out.DiffuseAlbedo = float4( 1.0 * LayerExtinctions.xxx, 0 );
+//Out.DiffuseAlbedo = float4( -0.125 * _Extinction.yyy, 0 );
+//Out.DiffuseAlbedo = 0.5 * DistanceFactor;
+//Out.DiffuseAlbedo = float4( ViewTS, 0 );
 
 	return Out;
 }

@@ -25,11 +25,16 @@ private:	// FIELDS
 	int					m_ErrorCode;
 
 	Material*			m_pMatDepthPass;
+	Material*			m_pMatBuildLinearZ;
 	Material*			m_pMatFillGBuffer;
 	Material*			m_pMatShading;
 
-	Texture2D*			m_pDepthStencil;
-	Texture2D*			m_pRT;
+	Texture2D*			m_pDepthStencilFront;
+	Texture2D*			m_pDepthStencilBack;
+	Texture2D*			m_pRTZBuffer;	// Front & Back ZBuffers stored in linear space in a RG32F target
+
+	Texture2D*			m_pRTGBuffer0_2;
+	Texture2D*			m_pRTGBuffer3;
 
 public:
 
@@ -48,6 +53,6 @@ public:		// METHODS
 	EffectScene( Device& _Device, Scene& _Scene, Primitive& _ScreenQuad );
 	~EffectScene();
 
-	void	Render( float _Time, float _DeltaTime );
+	void	Render( float _Time, float _DeltaTime, Texture2D* _pTex );
 
 };

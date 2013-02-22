@@ -4,11 +4,8 @@
 // 
 #pragma once
 
-#include "../../../NuajAPI/API/Hashtable.h"
-// #include "../../../RendererD3D11/Renderer.h"
-// #include "../../../RendererD3D11/Device.h"
-
 template<typename> class CB;
+class	MaterialBank;
 
 class Scene
 {
@@ -24,24 +21,25 @@ public:		// NESTED TYPES
 		{
 		public:		// NESTED TYPES
 
-			struct	MaterialParameters
-			{
-				Texture2D*	pTextures;
-				int			MatIDs[4];
-				NjFloat3	Thickness;
-				NjFloat3	Extinction;
-				NjFloat3	IOR;
-			};
+// 			struct	MaterialParameters
+// 			{
+// 				Texture2D*		pTextures;
+// 				unsigned int	MatIDs[4];
+// 				NjFloat4		Thickness;
+// 				NjFloat3		Extinction;
+// 				NjFloat3		IOR;
+// 			};
 
 			struct	CBPrimitive
 			{
-				int			MatIDs[4];	// 4 material IDs in [0,255], one for each layer of the primitive
-				NjFloat3	Thickness;	// The thickness of the 3 top layers
-				float		__Pad0;
-				NjFloat3	Extinction;	// The extinction coefficients of the 3 top layers
-				float		__Pad1;
-				NjFloat3	IOR;		// The IOR of the 3 top layers
-				float		__Pad2;
+				unsigned int	MatIDs[4];	// 4 material IDs in [0,255] from the material bank, one for each layer of the primitive
+				NjFloat4		Thickness;	// The thickness of the 4 layers, in millimeters. Thickness of layer 0 serves as multiplier for the height map.
+				NjFloat3		Extinction;	// The extinction coefficients of the top 3 layers
+				float			__Pad1;
+				NjFloat3		IOR;		// The IOR of the top 3 layers
+				float			__Pad2;
+				NjFloat3		Frosting;	// The frosting coefficient of the top 3 layers
+				float			__Pad3;
 
 				// TODO: Add tiling + offset for each layer
 			};
@@ -64,7 +62,8 @@ public:		// NESTED TYPES
 			void	Render( Material& _Material, bool _bDepthPass=false ) const;
 
 			void	SetRenderPrimitive( ::Primitive& _Primitive );
-			void	SetMaterial( MaterialParameters& _Material );
+//			void	SetMaterial( MaterialParameters& _Material );
+			void	SetLayerMaterials( Texture2D& _LayeredTextures, int _Mat0, int _Mat1, int _Mat2, int _Mat3 );
 		};
 
 		struct	CBObject
@@ -106,12 +105,16 @@ public:		// NESTED TYPES
 
 private:	// FIELDS
 
-	Device&		m_Device;
-	int			m_ObjectsCount;
-	Object**	m_ppObjects;
+	Device&			m_Device;
+	int				m_ObjectsCount;
+	Object**		m_ppObjects;
+
+	MaterialBank*	m_pMaterials;
 
 
 public:		// PROPERTIES
+
+	MaterialBank&	GetMaterialBank()	{ return *m_pMaterials; }
 
 public:		// METHODS
 
@@ -128,4 +131,4 @@ public:		// METHODS
 };
 
 
-typedef	Scene::Object::Primitive::MaterialParameters	PrimitiveMaterial;
+// typedef	Scene::Object::Primitive::MaterialParameters	PrimitiveMaterial;

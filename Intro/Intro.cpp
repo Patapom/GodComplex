@@ -8,6 +8,7 @@
 #include "Effects/EffectTranslucency.h"
 #include "Effects/EffectRoom.h"
 
+#include "Effects/Scene/MaterialBank.h"
 #include "Effects/Scene/Scene.h"
 #include "Effects/Scene/EffectScene.h"
 
@@ -163,6 +164,13 @@ void	IntroExit()
 // 	}
 }
 
+namespace
+{
+	Primitive*	gs_pPrimSphere0;
+	Primitive*	gs_pPrimPlane0;
+	Texture2D*	gs_pSceneTexture0;
+}
+
 bool	IntroDo( float _Time, float _DeltaTime )
 {
 	// Upload global parameters
@@ -236,7 +244,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Prepare scene
-	gs_pEffectScene->Render( _Time, _DeltaTime );
+	gs_pEffectScene->Render( _Time, _DeltaTime, gs_pSceneTexture0 );
 
 
 #endif
@@ -249,15 +257,55 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 //////////////////////////////////////////////////////////////////////////
 // Build the scene with all the objects & primitives
-namespace
-{
-	Primitive*	gs_pPrimSphere0;
-	Primitive*	gs_pPrimPlane0;
-	Texture2D*	gs_pSceneTexture0;
-}
 
 void	PrepareScene()
 {
+	// Build our material bank
+	{
+		MaterialBank&	Bank = gs_pScene->GetMaterialBank();
+
+		int	MaterialsCount = 4;
+
+		const char*		ppMatNames[] = {
+			"Empty",
+			"Wood",
+			"Metal",
+			"Phenolic",
+		};
+
+		MaterialBank::Material::StaticParameters	pMatParamsStatic[] = {
+			{0.001,0.001,0.001,0.001,0,0.001,0,1,0},										// Empty
+			{3.9810717055349722,6.309573444801933,0.471,0.521,0.87,1.041,0.02,0.04,1.3},	// Wood
+			{1047.1285480508996,3.2359365692962827,0.281,1.001,0.47,0.561,0.01,0.01,0.33},	// Metal
+			{1230.268770812381,7.413102413009175,0.321,0.501,0.35,0.941,0.01,0.15,0.02},	// Phenolic
+
+// 			{ 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9},										// Empty
+// 			{ 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9},										// Empty
+// 			{ 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9},										// Empty
+// 			{ 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9},										// Empty
+
+		};
+
+		// Thickness		// Material thickness in millimeters
+		// Opacity			// Opacity in [0,1]
+		// IOR				// Index of Refraction
+		// Frosting			// A frosting coefficient in [0,1]
+		//
+		MaterialBank::Material::DynamicParameters	pMatParamsDynamic[] = {
+			{ 0.0f, 0.0f, 1.0f, 0.0f },		// Empty material lets light completely through
+			{ 10.0f, 1, MAX_FLOAT, 0 },
+			{ 10.0f, 1, MAX_FLOAT, 0 },
+			{ 1.0f, 0.5f, 1.2f, 0.01f },	// Phenolic is used as transparent coating with slight refraction and frosting
+		};
+
+		Bank.AllocateMaterials( MaterialsCount );
+		for ( int MaterialIndex=0; MaterialIndex < MaterialsCount; MaterialIndex++ )
+		{
+			Bank.GetMaterialAt( MaterialIndex ).SetStaticParameters( Bank, ppMatNames[MaterialIndex], pMatParamsStatic[MaterialIndex] );
+			Bank.GetMaterialAt( MaterialIndex ).SetDynamicParameters( pMatParamsDynamic[MaterialIndex] );
+		}
+	}
+
 	// Create our complex material texture
 	{
 		TextureBuilder	TBLayer0( 512, 512 );			TBLayer0.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Layer0.raw" );
@@ -281,9 +329,9 @@ void	PrepareScene()
 		gs_pSceneTexture0 = TBLayer0.Concat( 6, pppContents, pArraySizes, PixelFormatRGBA8::DESCRIPTOR );
 	}
 
-	// Create a primitives
+	// Create primitives
 	{
-		GeometryBuilder::MapperSpherical	MapperSphere;
+		GeometryBuilder::MapperSpherical	MapperSphere( 4.0f, 2.0f );
 		gs_pPrimSphere0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
 		GeometryBuilder::BuildSphere( 60, 30, *gs_pPrimSphere0, MapperSphere );
 
@@ -301,17 +349,7 @@ void	PrepareScene()
 
 		Sphere0.AllocatePrimitives( 1 );
 		Sphere0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimSphere0 );
-
-		PrimitiveMaterial	Mat =
-		{
-			gs_pSceneTexture0,
-			{ 0, 1, 2, 3 },
-			NjFloat3( 0, 0, 0 ),
-			NjFloat3( 1, 0, 0 ),
-			NjFloat3( 1, 1, 1 ),
-		};
-
-		Sphere0.GetPrimitiveAt( 0 ).SetMaterial( Mat );
+		Sphere0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture0, 1, 2, 3, 0 );	// Wood + Metal + Phenolic coating + Empty
 	}
 
 	// Create our plane object
@@ -321,17 +359,7 @@ void	PrepareScene()
 
 		Plane0.AllocatePrimitives( 1 );
 		Plane0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimPlane0 );
-
-		PrimitiveMaterial	Mat =
-		{
-			gs_pSceneTexture0,
-			{ 0, 1, 2, 3 },
-			NjFloat3( 0, 0, 0 ),
-			NjFloat3( 1, 0, 0 ),
-			NjFloat3( 1, 1, 1 ),
-		};
-
-		Plane0.GetPrimitiveAt( 0 ).SetMaterial( Mat );
+		Plane0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture0, 1, 2, 3, 0 );	// Wood + Metal + Phenolic coating + Empty
 	}
 }
 

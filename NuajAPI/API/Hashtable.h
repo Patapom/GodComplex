@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Types.h"
-#include "../Math/Math.h"
 #include "ASMHelpers.h"
+#include "../Math/Math.h"
 
 // #undef memset
 // #include <string.h>

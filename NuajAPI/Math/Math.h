@@ -7,34 +7,34 @@
 
 #include <math.h>
 
-// Simply atan( sin / cos )
-static float _acosf( float x )
-{
-	return atanf( sqrtf(1.0f - x*x) / x );
-}
-static float _asinf( float x )
-{
-	return atanf( x / sqrtf(1.0f - x*x) );
-}
-
 // Override some functions with our own implementations
 #ifdef GODCOMPLEX
+// Simply atan( sin / cos )
+// static float _acosf( float x )
+// {
+// 	return atanf( sqrtf(1.0f - x*x) / x );
+// }
+// static float _asinf( float x )
+// {
+// 	return atanf( x / sqrtf(1.0f - x*x) );
+// }
+
 #define log2f( a )			ASM_log2f( a )
 #define expf( a )			ASM_expf( a )
 #define powf( a, b )		ASM_powf( a, b )
 #define fmodf( a, b )		ASM_fmodf( a, b )
 #define floorf( a )			ASM_floorf( a )
 #define ceilf( a )			ASM_ceilf( a )
-#define acosf( a )			_acosf( a )
-#define asinf( a )			_asinf( a )
+#define acosf( a )			ASM_acosf( a )
+#define asinf( a )			ASM_asinf( a )
 #endif
 
-static const float			PI = 3.1415926535897932384626433832795f;		// ??
-static const float			TWOPI = 6.283185307179586476925286766559f;		// 2PI
-static const float			HALFPI = 1.5707963267948966192313216916398f;	// PI/2
-static const float			INVPI = 0.31830988618379067153776752674503f;	// 1/PI
-static const float			INV2PI = 0.15915494309189533576888376337251f;	// 1/(2PI)
-static const float			INV4PI = 0.07957747154594766788444188168626f;	// 1/(4PI)
+static const float			PI = 3.1415926535897932384626433832795f;			// ??
+static const float			TWOPI = 6.283185307179586476925286766559f;			// 2PI
+static const float			HALFPI = 1.5707963267948966192313216916398f;		// PI/2
+static const float			INVPI = 0.31830988618379067153776752674503f;		// 1/PI
+static const float			INV2PI = 0.15915494309189533576888376337251f;		// 1/(2PI)
+static const float			INV4PI = 0.07957747154594766788444188168626f;		// 1/(4PI)
 static const float			FLOAT32_MAX = 3.402823466e+38f;
 static const float			GOLDEN_RATIO = 1.6180339887498948482045868343656f;	// Phi = (1+sqrt(5)) / 2
 

@@ -13,8 +13,9 @@ static const float2	INV_SCREEN_SIZE = float2( 1.0/RESX, 1.0/RESY );
 static const float	PI = 3.1415926535897932384626433832795;			// ...
 static const float	TWOPI = 6.283185307179586476925286766559;		// 2PI
 static const float	HALFPI = 1.5707963267948966192313216916398;		// PI/2
-static const float	RECIPI = 0.31830988618379067153776752674503;	// 1/PI
-static const float	RECITWOPI = 0.15915494309189533576888376337251;	// 1/2PI
+static const float	INVPI = 0.31830988618379067153776752674503;		// 1/PI
+static const float	INVHALFPI = 0.63661977236758134307553505349006;	// 1/(PI/2)
+static const float	INVTWOPI = 0.15915494309189533576888376337251;	// 1/2PI
 
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.patapom.com/index.php/Colorimetry)
 

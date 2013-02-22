@@ -8,6 +8,7 @@
 #define REGISTERED_INCLUDE_FILES	\
 	{ "Inc/Global.fx", IDR_SHADER_INCLUDE_GLOBAL },	\
 	{ "Inc/RayTracing.fx", IDR_SHADER_INCLUDE_RAY_TRACING },	\
+	{ "Inc/LayeredMaterials.fx", IDR_SHADER_INCLUDE_LAYERED_MATERIALS },	\
 
 
 // Add any shader files that need to be watched for automatic reloading (works only in DEBUG mode !)
@@ -24,6 +25,7 @@
 	{ IDR_SHADER_PARTICLES_COMPUTE,				"./Resources/Shaders/ParticlesCompute.fx" },	\
 /* Deferred Rendered Scene */ \
 	{ IDR_SHADER_SCENE_DEPTH_PASS,				"./Resources/Shaders/SceneDepthPass.fx" },	\
+	{ IDR_SHADER_SCENE_BUILD_LINEARZ,			"./Resources/Shaders/SceneBuildLinearZ.fx" },	\
 	{ IDR_SHADER_SCENE_FILL_GBUFFER,			"./Resources/Shaders/SceneFillGBuffer.fx" },	\
 	{ IDR_SHADER_SCENE_SHADING,					"./Resources/Shaders/SceneShading.fx" },	\
 \
@@ -33,8 +35,12 @@
 /*	{ IDR_SHADER_DEFERRED_FILL_DEPTHPASS,		"./Resources/Shaders/DeferredDepthPass.fx" }, */	\
 	{ IDR_SHADER_DEFERRED_FILL_GBUFFER,			"./Resources/Shaders/DeferredFillGBuffer.fx" },	\
 /*	{ IDR_SHADER_DEFERRED_SHADING,				"./Resources/Shaders/DeferredShading.fx" },	*/ \
+\
+\
+/* ============= Includes ============= */ \
 	{ IDR_SHADER_INCLUDE_GLOBAL,				NULL },	\
 	{ IDR_SHADER_INCLUDE_RAY_TRACING,			NULL },	\
+	{ IDR_SHADER_INCLUDE_LAYERED_MATERIALS,		NULL },	\
 
 
 #include "..\GodComplex.h"

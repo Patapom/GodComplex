@@ -30,7 +30,7 @@ void	FillNormal( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pDat
 	if ( Params.bNormalize )
 		Normal.Normalize();
 
-	_Pixel.RGBA.Set( 0.5f * (1.0f + Normal.x), 0.5f * (1.0f + Normal.y), 0.5f * (1.0f + Normal.z), Center.Height );
+	_Pixel.RGBA.Set( Normal.x, Normal.y, Normal.z, Center.Height );
 }
 
 void Generators::ComputeNormal( const TextureBuilder& _Source, TextureBuilder& _Target, float _HeightFactor, bool _bNormalize )

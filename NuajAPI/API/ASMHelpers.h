@@ -96,9 +96,25 @@ static float ASM_acosf( float x )
 	_asm fsubr                           // 1 - x²
 	_asm fsqrt                           // sqrt( 1 - x² )
 	_asm fxch                            // Exchange st, st(1)
-	_asm fpatan                          // This gives the arc cosine !
-    _asm fstp    st(0)
-    _asm fstp    dword ptr [res];
+	_asm fpatan                          // atan( sqrt( 1 - x*x ) / x ) = This gives the arc cosine !
+	_asm fstp    dword ptr [res];
+
+	return res;
+}
+
+static float ASM_asinf( float x )
+{
+    float res;
+
+	_asm fld     dword ptr [x]           // Load real from stack
+	_asm fld     st(0)                   // Load x
+	_asm fld     st(0)                   // Load x
+	_asm fmul                            // x²
+	_asm fld1                            // Load 1
+	_asm fsubr                           // 1 - x²
+	_asm fsqrt                           // sqrt( 1 - x² )
+	_asm fpatan                          // atan( x / sqrt( 1 - x*x ) ) = This gives the arc sine !
+	_asm fstp    dword ptr [res];
 
 	return res;
 }

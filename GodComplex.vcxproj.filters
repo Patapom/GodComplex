@@ -225,6 +225,9 @@
     <ClInclude Include="Intro\Effects\Scene\Scene.h">
       <Filter>Intro\Effects\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="Intro\Effects\Scene\MaterialBank.h">
+      <Filter>Intro\Effects\Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -342,6 +345,9 @@
     <ClCompile Include="Intro\IntroWorkshop.cpp">
       <Filter>Intro</Filter>
     </ClCompile>
+    <ClCompile Include="Intro\Effects\Scene\MaterialBank.cpp">
+      <Filter>Intro\Effects\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib">
@@ -429,6 +435,12 @@
     </None>
     <None Include="Resources\Shaders\SceneShading.fx">
       <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneBuildLinearZ.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\LayeredMaterials.fx">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
