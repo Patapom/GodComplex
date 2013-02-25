@@ -6,7 +6,17 @@
 
 cbuffer	cbRender	: register( b10 )
 {
-	float3		dUV;
+	float3		_dUV;
+};
+
+cbuffer	cbLight	: register( b11 )
+{
+	float3		_LightPosition;
+	float3		_LightDirection;
+	float3		_LightIrradiance;
+	float4		_LightData;			// For directionals: X=Hotspot Radius Y=Falloff Radius Z=Length
+									// For points: X=Radius
+									// For spots: X=Hotspot Angle Y=Falloff Angle Z=Length W=tan(Falloff Angle/2)
 };
 
 Texture2DArray		_TexGBuffer0 : register( t10 );	// 3 First render targets as RGBA16F
@@ -18,13 +28,107 @@ Texture2DArray		_TexMaterial	: register(t13);	// 4 Slices of diffuse+blend masks
 
 struct	VS_IN
 {
+	float3	Position	: POSITION;
+	float2	UV			: TEXCOORD0;
+};
+
+struct	PS_IN
+{
 	float4	__Position	: SV_POSITION;
 };
 
-VS_IN	VS( VS_IN _In )
+
+//////////////////////////////////////////////////////////////////////////
+// Light-specific functions
+#if LIGHT_TYPE == 0
+// ======================= DIRECTIONAL LIGHT =======================
+// We're drawing a cylinder that we must orient to fit the light's direction
+//
+PS_IN	VS( VS_IN _In )
 {
-	return _In;
+	float3	Z = normalize( cross( _LightDirection, float3( 1, 0, 0 ) ) );	// Won't work if Light is aligned with X!
+	float3	X = cross( Z, _LightDirection );
+
+	float	Length = _LightData.z * _In.UV.y;
+	float	Radius = _LightData.y;	// Falloff radius is the largest radius. We should increase it to compensate for radial discretization of faces that will cut through a perfect cylinder... TODO!
+	float3	LocalPosition = float3( Radius * _In.Position.x, Length, Radius * _In.Position.z );
+	float3	WorldPosition = _LightPosition + LocalPosition.x * X + LocalPosition.y * _LightDirection + LocalPosition.z * Z;
+
+	// Project
+	PS_IN	Out;
+	Out.__Position = mul( float4( WorldPosition, 1.0 ), _World2Proj );
+	Out.__Position.z = max( 0.0, Out.__Position.z );	// Account for the case we're INSIDE the light volume
+
+	return Out;
 }
+
+#elif LIGHT_TYPE == 1
+// ======================= POINT LIGHT =======================
+// We're drawing a quad that must bound the point light's sphere
+//
+PS_IN	VS( VS_IN _In )
+{
+	PS_IN	Out;
+
+	float3	ToCenter = _LightPosition - _Camera2World[3].xyz;
+	float	SqDistance = dot( ToCenter, ToCenter );
+	float	Distance = sqrt( SqDistance );
+	if ( Distance < _LightData.x )
+	{	// We're inside the sphere => the quad must cover the entire screen unfortunately...
+		Out.__Position = float4( _In.UV, 0.0, 1.0 );
+		return Out;
+	}
+
+	float	Front = dot( ToCenter, _Camera2World[2].xyz );
+	if ( Front < 0.0 )
+	{	// Don't display anything if behind the camera
+		Out.__Position = float4( -2.0, -2.0, 0.0, 1.0 );
+		return Out;
+	}
+
+	// The camera is outside and in front of the sphere
+	// We must compute the size of the quand in view space, which is larger than the radius of the sphere because of perspective projection
+	float3	X = normalize( cross( ToCenter, float3( 0, 1, 0 ) ) );	// Won't work if camera is aligned with Y but that's quite improbable!
+	float3	Y = normalize( cross( X, ToCenter ) );
+
+	float	r = _LightData.x;
+	float	Radius = Distance * r / sqrt( SqDistance - r*r );
+
+	float3	WorldPosition = _LightPosition + Radius * (_In.UV.x * X + _In.UV.y * Y);
+
+	// Project
+	Out.__Position = mul( float4( WorldPosition, 1.0 ), _World2Proj );
+
+	return Out;
+}
+
+#else
+// ======================= SPOT LIGHT =======================
+// We're drawing a cone that we must orient to fit the light's direction
+//
+PS_IN	VS( VS_IN _In )
+{
+	float3	Z = normalize( cross( _LightDirection, float3( 1, 0, 0 ) ) );	// Won't work if Light is aligned with X!
+	float3	X = cross( Z, _LightDirection );
+
+	float	Length = _LightData.z * _In.UV.y;
+	float	Radius = Length * _LightData.w;	// Falloff radius is the largest at the bottom. We should increase it to compensate for radial discretization of faces that will cut through a perfect cylinder... TODO!
+	float3	LocalPosition = float3( Radius * _In.Position.x, Length, Radius * _In.Position.z );
+	float3	WorldPosition = _LightPosition + LocalPosition.x * X + LocalPosition.y * _LightDirection + LocalPosition.z * Z;
+
+	// Project
+	PS_IN	Out;
+	Out.__Position = mul( float4( WorldPosition, 1.0 ), _World2Proj );
+	Out.__Position.z = max( 0.0, Out.__Position.z );	// Account for the case we're INSIDE the light volume
+
+	return Out;
+}
+
+#endif
+
+
+//////////////////////////////////////////////////////////////////////////
+// Main code
 
 struct	WeightMatID
 {
@@ -40,9 +144,9 @@ WeightMatID	ReadWeightMatID( uint _Packed )
 	return Out;
 }
 
-float4	PS( VS_IN _In ) : SV_TARGET0
+float4	PS( PS_IN _In ) : SV_TARGET0
 {
-	float2	UV = dUV.xy * _In.__Position.xy;
+	float2	UV = _dUV.xy * _In.__Position.xy;
 
 	float4	Buf0 = _TexGBuffer0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
 	float4	Buf1 = _TexGBuffer0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
@@ -60,6 +164,10 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 	};
 // return 0.25 * Mats[0].ID;
 // return 1.0 * Mats[0].Weight;
+
+	float3	CameraView = float3( (2.0 * UV.x - 1.0) * _CameraData.x, (1.0 - 2.0 * UV.y) * _CameraData.y, 1.0 );
+	float3	CameraPosition = Z * CameraView;
+			CameraView = normalize( CameraView );
 
 	float3	CameraNormal = float3( Buf0.xy, sqrt( 1.0 - dot( Buf0.xy, Buf0.xy ) ) );
 	float3	CameraTangent = float3( Buf0.zw, Buf1.w );
@@ -82,6 +190,8 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 //return _Materials[0].Amplitude.x;
 
 
+	float3	WorldView = CameraView.x * _Camera2World[0].xyz + CameraView.y * _Camera2World[1].xyz + CameraView.z * _Camera2World[2].xyz;
+	float3	WorldPosition = CameraPosition.x * _Camera2World[0].xyz + CameraPosition.y * _Camera2World[1].xyz + CameraPosition.z * _Camera2World[2].xyz + _Camera2World[3].xyz;
 	float3	WorldNormal = CameraNormal.x * _Camera2World[0].xyz + CameraNormal.y * _Camera2World[1].xyz - CameraNormal.z * _Camera2World[2].xyz;
 	float3	WorldTangent = CameraTangent.x * _Camera2World[0].xyz + CameraTangent.y * _Camera2World[1].xyz - CameraTangent.z * _Camera2World[2].xyz;
 	float3	WorldBiTangent = normalize( cross( WorldNormal, WorldTangent ) );
@@ -92,6 +202,26 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 	float3	Diffuse = Buf1.xyz;
 	float3	Specular = Buf2.xyz;
 	float	Height = Buf2.w;
-return float4( Diffuse, 1 );
-return Height;
+// return float4( Diffuse, 1 );
+// return Height;
+
+	// Display the half vector space data
+	float3	ViewTS = -float3( dot( WorldView, WorldTangent ), dot( WorldView, WorldBiTangent ), dot( WorldView, WorldNormal ) );
+	float3	LightTS = float3( dot( _LightDirection, WorldTangent ), dot( _LightDirection, WorldBiTangent ), dot( _LightDirection, WorldNormal ) );
+	HalfVectorSpaceParams	ViewParams = Tangent2HalfVector( ViewTS, LightTS );
+
+//return float4( _LightDirection, 1 );
+//return float4( -WorldView, 1 );
+//return saturate( dot( -WorldView, WorldNormal ) );
+//return saturate( dot( _LightDirection, WorldNormal ) );
+// return float4( LightTS, 1 );
+// return float4( ViewTS, 1 );
+//return saturate( ViewTS.z );
+// return saturate( LightTS.z );
+// return float4( LightTS, 1 );
+//return float4( pow( ViewParams.Half.zzz, 10 ), 1 );
+//return float4( ViewParams.UV, 0, 0 );
+
+	MatReflectance	Reflectance = LayeredMatEval( ViewParams, _Materials[1] );
+return Reflectance.Specular;
 }

@@ -32,7 +32,9 @@ struct	HalfVectorSpaceParams
 	float3	TSView, TSLight;
 	float3	Half;
 	float	CosThetaH, CosThetaD;
-	float	ThetaH, ThetaD, PhiD;
+	float2	ThetaHD;
+	float	PhiD;
+	float2	UV;		// Material slice UVs
 };
 
 HalfVectorSpaceParams	Tangent2HalfVector( float3 _TSView, float3 _TSLight )
@@ -43,17 +45,19 @@ HalfVectorSpaceParams	Tangent2HalfVector( float3 _TSView, float3 _TSLight )
 	Result.Half = normalize( _TSLight + _TSView );
 	Result.CosThetaH = Result.Half.z;
 	Result.CosThetaD = dot( _TSLight, Result.Half );
+
+	Result.ThetaHD = float2( acos( Result.CosThetaH ), acos( Result.CosThetaD ) );
 	Result.PhiD = 0.0;	// If needed later... ?
 
-	Result.ThetaH = acos( Result.CosThetaH );
-	Result.ThetaD = acos( Result.CosThetaD );
+	Result.UV = INVHALFPI * Result.ThetaHD;
+	Result.UV.y = 1.0 - Result.UV.y;
 
 	return Result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Material reflectance evaluation
-struct	MatEvalParams
+struct	MatReflectance
 {
 	float	Specular;
 	float	Diffuse;
@@ -61,9 +65,9 @@ struct	MatEvalParams
 	// Total reflectance is the sum of all these values...
 };
 
-MatEvalParams	LayeredMatEval( HalfVectorSpaceParams _ViewParams, MaterialParams _MatParams )
+MatReflectance	LayeredMatEval( HalfVectorSpaceParams _ViewParams, MaterialParams _MatParams )
 {
-	MatEvalParams	Result;
+	MatReflectance	Result;
 
 	// =================== COMPUTE DIFFUSE ===================
 	// I borrowed the diffuse term from §5.3 of http://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf
@@ -81,8 +85,7 @@ MatEvalParams	LayeredMatEval( HalfVectorSpaceParams _ViewParams, MaterialParams 
 	Result.RetroDiffuse *= INVPI;
 
 	// =================== COMPUTE SPECULAR ===================
-	float2	UV = INVHALFPI * float2( _ViewParams.ThetaH, HALFPI - _ViewParams.ThetaD );
-	float2	Cxy = _MatParams.Offset + _MatParams.Amplitude * exp( _MatParams.Falloff * pow( UV, _MatParams.Exponent ) );
+	float2	Cxy = _MatParams.Offset + _MatParams.Amplitude * exp( _MatParams.Falloff * pow( _ViewParams.UV, _MatParams.Exponent ) );
 
 	Result.Specular = Cxy.x * Cxy.y - _MatParams.Offset*_MatParams.Offset;	// Specular & Fresnel lovingly modulating each other
 

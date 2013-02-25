@@ -178,8 +178,14 @@ PS_OUT	PS( PS_IN _In )
  									Transparency.z * TexLayer2.w,				// Weight of layer 2 seen through 1
  									TexLayer3.w									// Weight of layer 3 seen directly
 								);
-	float	SumWeights = dot( LayerWeights, 1.0 );
-	LayerWeights /= SumWeights;													// We normalize weights as we can't exceed one!
+
+
+// I don't think weights should be normalized after all!
+// The idea is rather to apply the materials one after another, light filtering through as "diffuse"
+//	reaches the level below and weights should better be there to tell if the model applies or not
+//
+// 	float	SumWeights = dot( LayerWeights, 1.0 );
+// 	LayerWeights /= SumWeights;													// We normalize weights as we can't exceed one!
 
 	// Write final result
 	PS_OUT	Out;
