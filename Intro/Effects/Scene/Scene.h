@@ -103,11 +103,66 @@ public:		// NESTED TYPES
 		Primitive&	GetPrimitiveAt( int _PrimitiveIndex );
 	};
 
+	class	Light
+	{
+	public:		// FIELDS
+
+		bool		m_bEnabled;
+
+		NjFloat3	m_Position;
+		NjFloat3	m_Direction;
+		NjFloat3	m_Radiance;
+
+		union
+		{
+			// DIRECTIONAL
+			struct
+			{
+				float		m_RadiusHotSpot;	// Radius of the hotspot
+				float		m_RadiusFalloff;	// Radius of the falloff
+				float		m_Length;			// Length of the directional
+			};
+
+			// POINT LIGHTS
+			struct
+			{
+				float		m_Radius;			// Radius of influence
+			};
+
+			// SPOTS
+			struct
+			{
+				float		m_AngleHotSpot;		// Angle of the hotspot
+				float		m_AngleFalloff;		// Angle of the falloff
+				float		m_Length;			// Length of the spot
+			};
+		} m_Data;
+
+	public:		// METHODS
+
+		Light();
+
+		void	SetDirectional( const NjFloat3& _Irradiance, const NjFloat3& _Position, const NjFloat3& _Direction, float _RadiusHotSpot, float _RadiusFalloff, float _Length );
+		void	SetPoint( const NjFloat3& _Radiance, const NjFloat3& _Position, float _Radius );
+		void	SetSpot( const NjFloat3& _Radiance, const NjFloat3& _Position, const NjFloat3& _Direction, float _AngleHotspot, float _AngleFalloff, float _Length );
+	};
+
 private:	// FIELDS
 
 	Device&			m_Device;
+
 	int				m_ObjectsCount;
 	Object**		m_ppObjects;
+
+	int				m_LightsCountDirectional;
+	int				m_EnabledLightsCountDirectional;
+	Light*			m_pLightsDirectional;
+	int				m_LightsCountPoint;
+	int				m_EnabledLightsCountPoint;
+	Light*			m_pLightsPoint;
+	int				m_LightsCountSpot;
+	int				m_EnabledLightsCountSpot;
+	Light*			m_pLightsSpot;
 
 	MaterialBank*	m_pMaterials;
 
@@ -115,6 +170,17 @@ private:	// FIELDS
 public:		// PROPERTIES
 
 	MaterialBank&	GetMaterialBank()	{ return *m_pMaterials; }
+
+	int				GetDirectionalLightsCount() const			{ return m_LightsCountDirectional; }
+	int				GetEnabledDirectionalLightsCount() const	{ return m_EnabledLightsCountDirectional; }
+	const Light*	GetDirectionalLights() const				{ return m_pLightsDirectional; }
+	int				GetPointLightsCount() const					{ return m_LightsCountPoint; }
+	int				GetEnabledPointLightsCount() const			{ return m_EnabledLightsCountPoint; }
+	const Light*	GetPointLights() const						{ return m_pLightsPoint; }
+	int				GetSpotLightsCount() const					{ return m_LightsCountSpot; }
+	int				GetEnabledSpotLightsCount() const			{ return m_EnabledLightsCountSpot; }
+	const Light*	GetSpotLights() const						{ return m_pLightsSpot; }
+
 
 public:		// METHODS
 
@@ -128,6 +194,16 @@ public:		// METHODS
 	void		AllocateObjects( int _ObjectsCount );
 	void		DestroyObjects();
 	Object&		CreateObjectAt( int _ObjectIndex, const char* _pName );
+
+	// Lights management
+	void		AllocateLights( int _DirectionalsCount, int _PointsCount, int _SpotsCount );
+	void		DestroyLights();
+	Light&		GetDirectionalLightAt( int _LightIndex );
+	Light&		GetPointLightAt( int _LightIndex );
+	Light&		GetSpotLightAt( int _LightIndex );
+	void		SetDirectionalLightEnabled( int _LightIndex, bool _bEnabled );
+	void		SetPointLightEnabled( int _LightIndex, bool _bEnabled );
+	void		SetSpotLightEnabled( int _LightIndex, bool _bEnabled );
 };
 
 

@@ -42,13 +42,15 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 
 			// Create a dummy position that is slightly offseted from the top of the sphere so UVs are not all identical
 			Position.y = 1.0f;
-			Position.x = 0.001f * Tangent.z;
+			Position.x = -0.001f * Tangent.z;
 			Position.z = 0.001f * Tangent.x;
 //			Position.Normalize();
 			Normal = Position;	Normal.Normalize();
 
 			// Ask for UVs
-			_Mapper.Map( Position, Normal, Tangent, UV );
+			_Mapper.Map( Position, Normal, Tangent, UV, i == BandLength );
+
+			Position.x = Position.z = 0.0f;
 
 			// Write vertex
 			VWRITE( pVertex, NjFloat3::UnitY, NjFloat3::UnitY, Tangent, UV );
@@ -74,7 +76,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			Tangent.z = -sinf( Phi );
 
 			// Ask for UVs
-			_Mapper.Map( Position, Normal, Tangent, UV );
+			_Mapper.Map( Position, Normal, Tangent, UV, i == BandLength );
 
 			// Write vertex
 			VWRITE( pVertex, Position, Normal, Tangent, UV );
@@ -92,13 +94,15 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 
 			// Create a dummy position that is slightly offseted from the bottom of the sphere so UVs are not all identical
 			Position.y = -1.0f;
-			Position.x = 0.001f * Tangent.z;
+			Position.x = -0.001f * Tangent.z;
 			Position.z = 0.001f * Tangent.x;
 //			Position.Normalize();
 			Normal = Position;	Normal.Normalize();
 
 			// Ask for UVs
-			_Mapper.Map( Position, Normal, Tangent, UV );
+			_Mapper.Map( Position, Normal, Tangent, UV, i == BandLength );
+
+			Position.x = Position.z = 0.0f;
 
 			// Write vertex
 			VWRITE( pVertex, -NjFloat3::UnitY, -NjFloat3::UnitY, Tangent, UV );
@@ -126,6 +130,143 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 		// Write 2 last degenerate indices so we smoothly transition to next band
 		IWRITE( pIndex, NextBandOffset + BandLength );
 		IWRITE( pIndex, NextBandOffset + BandLength+1 );
+	}
+	ASSERT( IndicesCount == 0, "Wrong contruction !" );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Finalize
+	_Writer.Finalize( pVerticesArray, pIndicesArray );
+}
+
+void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdivisions, bool _bIncludeCaps, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
+{
+	ASSERT( _RadialSubdivisions > 1, "Can't create a cylinder with less than 2 radial subdivisions!" );
+	ASSERT( _VerticalSubdivisions > 0, "Can't create a cylinder with 0 vertical subdivisions!" );
+
+	int	BandLength = 1+_RadialSubdivisions;
+	int	BandsCount = _bIncludeCaps ? 1 + (1+_VerticalSubdivisions) + 1 : 1+_VerticalSubdivisions;	// 1 band at the top and bottom for the optional caps + as many subdivisions as required
+	int	VerticesCount = BandLength * BandsCount;
+
+	int	IndicesCount = 2 * (BandLength+1) * (BandsCount-1) - 2;
+
+	// Create the buffers
+	void*	pVerticesArray = NULL;
+	void*	pIndicesArray = NULL;
+	int		VStride, IStride;
+
+	_Writer.CreateBuffers( VerticesCount, IndicesCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, pVerticesArray, pIndicesArray, VStride, IStride );
+	ASSERT( pVerticesArray != NULL, "Invalid vertex buffer !" );
+	ASSERT( pIndicesArray != NULL, "Invalid index buffer !" );
+
+	U8*		pVertex = (U8*) pVerticesArray;
+	U8*		pIndex = (U8*) pIndicesArray;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build vertices
+	NjFloat3	Position, Normal, Tangent;
+	NjFloat2	UV;
+
+	// Top vertices
+	if ( _bIncludeCaps )
+	{
+		for ( int i=0; i <= _RadialSubdivisions; i++ )
+		{
+			float	Phi = TWOPI * i / _RadialSubdivisions;
+			Tangent.x = cosf( Phi );
+			Tangent.y = 0.0f;
+			Tangent.z = -sinf( Phi );
+
+			// Create a dummy position that is slightly offseted from the top of the sphere so UVs are not all identical
+			Position.y = 1.0f;
+			Position.x = -0.001f * Tangent.z;
+			Position.z = 0.001f * Tangent.x;
+			Normal = NjFloat3::UnitY;
+
+			// Ask for UVs
+			_Mapper.Map( Position, Normal, Tangent, UV, i == _RadialSubdivisions );
+
+			Position.x = Position.z = 0.0f;
+
+			// Write vertex
+			VWRITE( pVertex, NjFloat3::UnitY, NjFloat3::UnitY, Tangent, UV );
+		}
+	}
+
+	// Generic bands
+	for ( int j=0; j <= _VerticalSubdivisions; j++ )
+	{
+		float	Y = 1.0f - 2.0f * j / _VerticalSubdivisions;
+		for ( int i=0; i <= _RadialSubdivisions; i++ )
+		{
+			float	Phi = TWOPI * i / _RadialSubdivisions;
+
+			Position.x = sinf( Phi );
+			Position.y = Y;
+			Position.z = cosf( Phi );
+
+			Normal.x = sinf( Phi );
+			Normal.y = 0;
+			Normal.z = cosf( Phi );
+
+			Tangent.x = cosf( Phi );
+			Tangent.y = 0.0f;
+			Tangent.z = -sinf( Phi );
+
+			// Ask for UVs
+			_Mapper.Map( Position, Normal, Tangent, UV, i == _RadialSubdivisions );
+
+			// Write vertex
+			VWRITE( pVertex, Position, Normal, Tangent, UV );
+		}
+	}
+
+	// Bottom band
+	if ( _bIncludeCaps )
+	{
+		for ( int i=0; i <= _RadialSubdivisions; i++ )
+		{
+			float	Phi = TWOPI * i / _RadialSubdivisions;
+			Tangent.x = cosf( Phi );
+			Tangent.y = 0.0f;
+			Tangent.z = -sinf( Phi );
+
+			// Create a dummy position that is slightly offseted from the bottom of the sphere so UVs are not all identical
+			Position.y = -1.0f;
+			Position.x = -0.001f * Tangent.z;
+			Position.z = 0.001f * Tangent.x;
+			Normal = -NjFloat3::UnitY;
+
+			// Ask for UVs
+			_Mapper.Map( Position, Normal, Tangent, UV, i == _RadialSubdivisions );
+
+			Position.x = Position.z = 0.0f;
+
+			// Write vertex
+			VWRITE( pVertex, -NjFloat3::UnitY, -NjFloat3::UnitY, Tangent, UV );
+		}
+	}
+	ASSERT( VerticesCount == 0, "Wrong contruction !" );
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build indices
+	for ( int j=0; j < BandsCount-1; j++ )
+	{
+		int	CurrentBandOffset = j * BandLength;
+		int	NextBandOffset = (j+1) * BandLength;
+
+		for ( int i=0; i < BandLength; i++ )
+		{
+			IWRITE( pIndex, CurrentBandOffset + i );
+			IWRITE( pIndex, NextBandOffset + i );
+		}
+
+		if ( j == BandsCount-2 )
+			continue;	// Not for the last band...
+
+		// Write 2 last degenerate indices so we smoothly transition to next band
+		IWRITE( pIndex, NextBandOffset + BandLength-1 );
+		IWRITE( pIndex, NextBandOffset + BandLength );
 	}
 	ASSERT( IndicesCount == 0, "Wrong contruction !" );
 
@@ -176,7 +317,7 @@ void	GeometryBuilder::BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, 
 
 			Normal = cosf(Theta) * X + sinf(Theta) * NjFloat3::UnitZ;
 			Position = Center + _SmallRadius * Normal;
-			_Mapper.Map( Position, Normal, Tangent, UV );
+			_Mapper.Map( Position, Normal, Tangent, UV, i == BandLength );
 
 			VWRITE( pVertex, Position, Normal, Tangent, UV );
 		}
@@ -247,7 +388,7 @@ void	GeometryBuilder::BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const 
 			float	X = 2.0f * i / _SubdivisionsX - 1.0f;
 
 			Position = X * _X + Y * _Y;
-			_Mapper.Map( Position, Normal, Tangent, UV );
+			_Mapper.Map( Position, Normal, Tangent, UV, false );
 
 			VWRITE( pVertex, Position, Normal, Tangent, UV );
 		}
@@ -315,7 +456,7 @@ GeometryBuilder::MapperSpherical::MapperSpherical( float _WrapU, float _WrapV, c
 	m_Z = m_X ^ m_Y;
 	m_Z.Normalize();
 }
-void	GeometryBuilder::MapperSpherical::Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV ) const
+void	GeometryBuilder::MapperSpherical::Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const
 {
 	NjFloat3	Dir = _Position - m_Center;
 	Dir.Normalize();
@@ -324,10 +465,44 @@ void	GeometryBuilder::MapperSpherical::Map( const NjFloat3& _Position, const NjF
 	float	Z = Dir | m_Z;
 
 	float	Phi = atan2f( X, Z );		// Phi=0 at +Z and 90° at +X
+			Phi = fmodf( Phi + TWOPI, TWOPI );
+			Phi += _bIsBandEndVertex ? TWOPI : 0.0f;
+
 	float	Theta = acosf( Y );			// Theta=0 at +Y and 180° at -Y
 
 	_UV.x = m_WrapU * INV2PI * Phi;
 	_UV.y = m_WrapV * INVPI * Theta;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Cylindrical mapping
+//
+GeometryBuilder::MapperCylindrical::MapperCylindrical( float _WrapU, float _WrapV, const NjFloat3& _Center, const NjFloat3& _X, const NjFloat3& _Z )
+	: m_WrapU( _WrapU )
+	, m_WrapV( _WrapV )
+	, m_Center( _Center )
+	, m_X( _X )
+	, m_Z( _Z )
+{
+	m_X.Normalize();
+	m_Z.Normalize();
+	m_Y = m_Z ^ m_X;
+	m_Y.Normalize();
+}
+void	GeometryBuilder::MapperCylindrical::Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const
+{
+	NjFloat3	Dir = _Position - m_Center;
+	float	X = Dir | m_X;
+	float	Y = Dir | m_Y;
+	float	Z = Dir | m_Z;
+
+	float	Phi = atan2f( X, Z );		// Phi=0 at +Z and 90° at +X
+			Phi = fmodf( Phi + TWOPI, TWOPI );
+			Phi += _bIsBandEndVertex ? TWOPI : 0.0f;
+
+	_UV.x = m_WrapU * INV2PI * Phi;
+	_UV.y = m_WrapV * Y;
 }
 
 
@@ -342,7 +517,7 @@ GeometryBuilder::MapperPlanar::MapperPlanar( float _WrapU, float _WrapV, const N
 	, m_BiTangent( _BiTangent )
 {
 }
-void	GeometryBuilder::MapperPlanar::Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV ) const
+void	GeometryBuilder::MapperPlanar::Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const
 {
 	NjFloat3	Delta = _Position - m_Center;
 

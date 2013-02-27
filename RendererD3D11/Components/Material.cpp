@@ -818,12 +818,13 @@ void		Material::WatchShaderModifications()
 		return;
 	}
 
+#ifdef MATERIAL_COMPILE_THREADED
+
 	m_LastShaderModificationTime = LastModificationTime;
 
 	// We're up to date
 	Unlock();
 
-#ifdef MATERIAL_COMPILE_THREADED
 	ASSERT( m_hCompileThread == 0, "Compilation thread already exists !" );
 
 	DWORD	ThreadID;
@@ -838,14 +839,20 @@ void		Material::RebuildShader()
 	ASSERT( ErrorCode == WAIT_OBJECT_0, "Failed shader rebuild after 30 seconds waiting for access !" );
 #else
 	if ( ErrorCode != WAIT_OBJECT_0 )
-		ExitProcess( -1 );	// Failed !
+		ExitProcess( -1 );	// Brutal fail!
 #endif
+
 #endif
  
 	// Reload file
 	FILE*	pFile = NULL;
 	fopen_s( &pFile, m_pShaderFileName, "rb" );
-	ASSERT( pFile != NULL, "Failed to open shader file !" );
+//	ASSERT( pFile != NULL, "Failed to open shader file !" );
+	if ( pFile == NULL )
+	{	// Failed! Unlock but don't update time stamp so we try again next time...
+		Unlock();
+		return;
+	}
 
 	fseek( pFile, 0, SEEK_END );
 	size_t	FileSize = ftell( pFile );
@@ -862,15 +869,17 @@ void		Material::RebuildShader()
 
 	delete[] pShaderCode;
 
-	// Release the mutex: it's now safe to access the shader !
-	Unlock();
-
 #ifdef MATERIAL_COMPILE_THREADED
 	// Close the thread once we're done !
 	if ( m_hCompileThread )
 		CloseHandle( m_hCompileThread );
 	m_hCompileThread = 0;
+#else
+	m_LastShaderModificationTime = LastModificationTime;
 #endif
+
+	// Release the mutex: it's now safe to access the shader !
+	Unlock();
 }
 
 time_t		Material::GetFileModTime( const char* _pFileName )

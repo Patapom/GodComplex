@@ -298,12 +298,12 @@ TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA =
 	-1,		// int		PosMatID;
 
 			// Position of the normal fields
-	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
+//	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
 	true,	// bool		bOffsetNormal;
 	-1, -1, -1,	// Normal fields
 
 			// Position of the AO field
-	1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
+//	1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
 	-1,		// int		PosAO;
 };
 
@@ -319,12 +319,12 @@ TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA_sRGB =
 	-1,		// int		PosMatID;
 
 			// Position of the normal fields
-	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
+//	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
 	true,	// bool		bOffsetNormal;
 	-1, -1, -1,	// Normal fields
 
 			// Position of the AO field
-	1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
+//	1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
 	-1,		// int		PosAO;
 };
 
@@ -340,12 +340,12 @@ TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA_NxNyHR_M =
 	8,		// int		PosMatID;
 
 			// Position of the normal fields
-	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
+//	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
 	true,	// bool		bOffsetNormal;
 	4, 5, -1,	// Normal fields
 
 			// Position of the AO field
-	1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
+//	1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
 	-1,		// int		PosAO;
 };
 
@@ -361,16 +361,16 @@ TextureBuilder::ConversionParams	TextureBuilder::CONV_NxNyNzH =
 	-1,		// int		PosMatID;
 
 			// Position of the normal fields
-	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
+//	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
 	true,	// bool		bOffsetNormal;
 	0, 1, 2,	// Normal fields
 
 			// Position of the AO field
-	1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
+//	1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
 	-1,		// int		PosAO;
 };
 
-void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params, int& _ArraySize ) const
+void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params, int& _ArraySize, float _NormalFactor, float _AOFactor ) const
 {
 	if ( !m_bMipLevelsBuilt )
 		GenerateMips();
@@ -384,7 +384,7 @@ void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const Con
 	{
 		ASSERT( _Params.PosNormalY != -1, "You must specify a position for the Y component of the normal if PosNormalX is not -1!" );
 		bool	bPackNormal = _Params.PosNormalZ == -1;
-		Generators::ComputeNormal( *this, TBNormal, _Params.NormalFactor, bPackNormal );
+		Generators::ComputeNormal( *this, TBNormal, _NormalFactor, bPackNormal );
 		TBNormal.GenerateMips( true );
 	}
 
@@ -393,7 +393,7 @@ void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const Con
 	TextureBuilder	TBAO( m_Width, m_Height );
 	if ( _Params.PosAO != -1 )
 	{
-		Generators::ComputeAO( *this, TBNormal, _Params.AOFactor );
+		Generators::ComputeAO( *this, TBNormal, _AOFactor );
 		TBAO.GenerateMips();
 	}
 

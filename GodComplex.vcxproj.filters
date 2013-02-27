@@ -442,6 +442,12 @@
     <None Include="Resources\Shaders\Inc\LayeredMaterials.fx">
       <Filter>Resources\Shaders\DEBUG\Includes</Filter>
     </None>
+    <None Include="Resources\Shaders\SceneIndirectLighting.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneShadingStencil.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

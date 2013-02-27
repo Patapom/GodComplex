@@ -408,7 +408,9 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\SceneBuildLinearZ.fx" />
     <None Include="Resources\Shaders\SceneDepthPass.fx" />
     <None Include="Resources\Shaders\SceneFillGBuffer.fx" />
+    <None Include="Resources\Shaders\SceneIndirectLighting.fx" />
     <None Include="Resources\Shaders\SceneShading.fx" />
+    <None Include="Resources\Shaders\SceneShadingStencil.fx" />
     <None Include="Resources\Shaders\TranslucencyBuildZBuffer.fx" />
     <None Include="Resources\Shaders\Inc\Global.fx" />
     <None Include="Resources\Shaders\PostFinal.fx">

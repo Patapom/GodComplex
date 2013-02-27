@@ -98,7 +98,7 @@ static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 // Return 0 for no error
 int	WindowInit()
 {
-	gs_WindowInfos.hInstance = GetModuleHandle( 0 );
+	gs_WindowInfos.hInstance = GetModuleHandle( NULL );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize rounding mode once since we disabled fucking _ftol2 link error by adding a deprecated compile flag named /QIfist
@@ -151,7 +151,7 @@ int	WindowInit()
 	WindowRect.bottom	= RESY;
 
 #ifdef ALLOW_WINDOWED
-	AdjustWindowRect( &WindowRect, dwStyle, 0 );
+	AdjustWindowRect( &WindowRect, dwStyle, false );
 	gs_WindowInfos.hWnd = CreateWindowEx( dwExStyle, wc.lpszClassName, wc.lpszClassName, dwStyle,
 							   (GetSystemMetrics(SM_CXSCREEN)-WindowRect.right+WindowRect.left)>>1,
 							   (GetSystemMetrics(SM_CYSCREEN)-WindowRect.bottom+WindowRect.top)>>1,

@@ -27,7 +27,9 @@
 	{ IDR_SHADER_SCENE_DEPTH_PASS,				"./Resources/Shaders/SceneDepthPass.fx" },	\
 	{ IDR_SHADER_SCENE_BUILD_LINEARZ,			"./Resources/Shaders/SceneBuildLinearZ.fx" },	\
 	{ IDR_SHADER_SCENE_FILL_GBUFFER,			"./Resources/Shaders/SceneFillGBuffer.fx" },	\
+	{ IDR_SHADER_SCENE_SHADING_STENCIL,			"./Resources/Shaders/SceneShadingStencil.fx" },	\
 	{ IDR_SHADER_SCENE_SHADING,					"./Resources/Shaders/SceneShading.fx" },	\
+	{ IDR_SHADER_SCENE_INDIRECT_LIGHTING,		"./Resources/Shaders/SceneIndirectLighting.fx" },	\
 \
 \
 /* ============= Workshop ============= */ \

@@ -14,7 +14,9 @@ Texture2DArray		_TexGBuffer0 : register( t10 );	// 3 First render targets as RGB
 Texture2D<uint4>	_TexGBuffer1 : register( t11 );	// [Weight,MatID] target as RGBA16_UINT
 Texture2D			_TexDepth : register( t12 );
 
-Texture2DArray		_TexMaterial	: register(t13);	// 4 Slices of diffuse+blend masks + normal map + specular map = 6 textures per primitive
+Texture2DArray		_TexDiffuseSpecular	: register(t13);	// Diffuse + Specular in 2 slices
+
+Texture2DArray		_TexMaterial	: register(t14);	// 4 Slices of diffuse+blend masks + normal map + specular map = 6 textures per primitive
 
 
 struct	VS_IN
@@ -96,10 +98,10 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 //return float4( WorldTangent, 1 );
 //return float4( WorldBiTangent, 1 );
 
-	float3	Diffuse = Buf1.xyz;
-	float3	Specular = Buf2.xyz;
+	float3	DiffuseAlbedo = Buf1.xyz;
+	float3	SpecularAlbedo = Buf2.xyz;
 	float	Height = Buf2.w;
-// return float4( Diffuse, 1 );
+//return float4( DiffuseAlbedo, 1 );
 // return Height;
 
 	// Display the half vector space data
@@ -120,5 +122,14 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 //return float4( ViewParams.UV, 0, 0 );
 
 	MatReflectance	Reflectance = LayeredMatEval( ViewParams, _Materials[1] );
-return Reflectance.Specular;
+//return Reflectance.Specular;
+
+	float3	AccDiffuse = _TexDiffuseSpecular.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
+	float3	AccSpecular = _TexDiffuseSpecular.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
+
+return float4( DiffuseAlbedo * AccDiffuse + SpecularAlbedo * AccSpecular, 1 );
+
+return float4( AccDiffuse, 1 );
+return float4( AccSpecular, 1 );
+return float4( lerp( DiffuseAlbedo, AccDiffuse, 0.5 ), 1 );
 }

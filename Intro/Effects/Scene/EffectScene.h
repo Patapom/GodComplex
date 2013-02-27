@@ -15,19 +15,37 @@ public:		// NESTED TYPES
 	struct CBRender
 	{
 		NjFloat3	dUV;
-		float		__PAD;
-		NjFloat2	DeltaTime;
+	};
+
+	struct CBLight
+	{
+		NjFloat3	Position;
+		float		__PAD0;
+		NjFloat3	Direction;
+		float		__PAD1;
+		NjFloat3	Radiance;
+		float		__PAD2;
+		NjFloat4	Data;
 	};
 
 
 private:	// FIELDS
+
+	Device&				m_Device;
+	Scene&				m_Scene;
 
 	int					m_ErrorCode;
 
 	Material*			m_pMatDepthPass;
 	Material*			m_pMatBuildLinearZ;
 	Material*			m_pMatFillGBuffer;
-	Material*			m_pMatShading;
+	Material*			m_pMatShading_Directional_StencilPass;
+	Material*			m_pMatShading_Directional;
+	Material*			m_pMatShading_Point_StencilPass;
+	Material*			m_pMatShading_Point;
+	Material*			m_pMatShading_Spot_StencilPass;
+	Material*			m_pMatShading_Spot;
+	Material*			m_pMatIndirectLighting;
 
 	Texture2D*			m_pDepthStencilFront;
 	Texture2D*			m_pDepthStencilBack;
@@ -36,13 +54,14 @@ private:	// FIELDS
 	Texture2D*			m_pRTGBuffer0_2;
 	Texture2D*			m_pRTGBuffer3;
 
-public:
+	Texture2D*			m_pRTAccumulatorDiffuseSpecular;
 
-	Device&				m_Device;
-	Scene&				m_Scene;
+	Primitive*			m_pPrimCylinder;
+	Primitive*			m_pPrimSphere;
+	Primitive&			m_ScreenQuad;
 
 	CB<CBRender>*		m_pCB_Render;
-	Primitive&			m_ScreenQuad;
+	CB<CBLight>*		m_pCB_Light;
 
 public:		// PROPERTIES
 

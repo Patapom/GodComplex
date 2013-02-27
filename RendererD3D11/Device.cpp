@@ -12,6 +12,9 @@ Device::Device()
 	, m_pCurrentRasterizerState( NULL )
 	, m_pCurrentDepthStencilState( NULL )
 	, m_pCurrentBlendState( NULL )
+	, m_BlendFactors( 1, 1, 1, 1 )
+	, m_BlendMasks( ~0 )
+	, m_StencilRef( 0 )
 {
 }
 
@@ -30,7 +33,7 @@ int		Device::ComponentsCount() const
 
 void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool _sRGB )
 {
-	// Create a swap chain with 1 back buffer
+	// Create a swap chain with 2 back buffers
 	DXGI_SWAP_CHAIN_DESC	SwapChainDesc;
 
 	// Simple output buffer
@@ -44,7 +47,7 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	SwapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 	SwapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER | DXGI_USAGE_RENDER_TARGET_OUTPUT;
 //	SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
-	SwapChainDesc.BufferCount = 1;
+	SwapChainDesc.BufferCount = 2;
 
 	// No multisampling
 	SwapChainDesc.SampleDesc.Count = 1;
@@ -56,20 +59,22 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	SwapChainDesc.Flags = 0;
 
 #ifdef DIRECTX10
-	D3D_FEATURE_LEVEL	pFeatureLevels[] = { D3D_FEATURE_LEVEL_10_0 };	// Support D3D10 only...
+	D3D_FEATURE_LEVEL	FeatureLevel = D3D_FEATURE_LEVEL_10_0;	// Support D3D10 only...
 #else
-	D3D_FEATURE_LEVEL	pFeatureLevels[] = { D3D_FEATURE_LEVEL_11_0 };	// Support D3D11...
+	D3D_FEATURE_LEVEL	FeatureLevel = D3D_FEATURE_LEVEL_11_0;	// Support D3D11...
 #endif
 	D3D_FEATURE_LEVEL	ObtainedFeatureLevel;
 
+
  	if ( !Check(
 		D3D11CreateDeviceAndSwapChain( NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
+
 #ifdef _DEBUG
 			D3D11_CREATE_DEVICE_DEBUG,
 #else
 			0,
 #endif
-			pFeatureLevels, 1,
+			&FeatureLevel, 1,
 			D3D11_SDK_VERSION,
 			&SwapChainDesc, &m_pSwapChain,
 			&m_pDevice, &ObtainedFeatureLevel, &m_pDeviceContext ) )
@@ -125,8 +130,8 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 		Desc.DepthFunc = D3D11_COMPARISON_LESS;
 		Desc.StencilEnable = false;
-		Desc.StencilReadMask = 0;
-		Desc.StencilWriteMask = 0;
+		Desc.StencilReadMask = 0xFF;
+		Desc.StencilWriteMask = 0xFF;
 
 		m_pDS_Disabled = new DepthStencilState( *this, Desc ); m_StatesCount++;
 
@@ -140,6 +145,42 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 		Desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 		m_pDS_ReadLessEqual = new DepthStencilState( *this, Desc ); m_StatesCount++;
+
+		// ============= Stencil operations =============
+		Desc.StencilEnable = true;
+
+		// First stencil operation is increment stencil if a back face fails the depth test and decrement it if a front face fails the depth test
+		// The net effect is that objects INSIDE a volume will have a stencil != 0
+		// Objects in front of a volume will be increased by back faces and decreased by front faces so their stencil == 0
+		// Objects behind a volume will keep stencil at 0 because both back & front depth tests succeed
+		//
+		Desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;		// Always pass stencil, only depth is important here!
+		Desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;		// Will always occur
+		Desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;		// Will never occur
+		Desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;	// If failed, decrement
+
+		Desc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;		// Always pass stencil, only depth is important here!
+		Desc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;		// Will always occur
+		Desc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;		// Will never occur
+		Desc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;	// If failed, increment
+
+		m_pDS_ReadLessEqual_StencilIncBackDecFront = new DepthStencilState( *this, Desc ); m_StatesCount++;
+
+		// Second stencil operation is the one that succeeds if stencil is != 0
+		// This is the state we need after the stencil pass that used the state above
+		Desc.DepthEnable = false;									// No depth test for this pass!
+
+		Desc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;	// Pass if stencil is not 0
+		Desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;		// Don't care
+		Desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;		// Don't care
+		Desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;	// Don't care
+
+		Desc.BackFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;		// Pass if stencil is not 0
+		Desc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;		// Don't care
+		Desc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;		// Don't care
+		Desc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;	// Don't care
+
+		m_pDS_ReadLessEqual_StencilFailIfZero = new DepthStencilState( *this, Desc ); m_StatesCount++;
 	}
 	{
 		D3D11_BLEND_DESC	Desc;
@@ -184,6 +225,11 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 		Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
 		m_pBS_PremultipliedAlpha = new BlendState( *this, Desc ); m_StatesCount++;
 
+		// Additive
+		Desc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+		Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+		m_pBS_Additive = new BlendState( *this, Desc ); m_StatesCount++;
+
 		// Max (Dst = max(Src,Dst))
 		Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
 		Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
@@ -192,7 +238,6 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 		Desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_MAX;
 		Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_MAX;
 		m_pBS_Max = new BlendState( *this, Desc ); m_StatesCount++;
-
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -242,7 +287,7 @@ void	Device::Exit()
 	if ( m_pDevice == NULL )
 		return; // Already released !
 
-	// Dispose of all the registered components in reverse order
+	// Dispose of all the registered components in reverse order (we should only be left with default targets & states if you were clean)
 	while ( m_pComponentsStackTop != NULL )
 		delete m_pComponentsStackTop;  // DIE !!
 
@@ -269,9 +314,9 @@ void	Device::ClearRenderTarget( const Texture3D& _Target, const NjFloat4& _Color
 	m_pDeviceContext->ClearRenderTargetView( _Target.GetTargetView( 0, 0, 0 ), &_Color.x );
 }
 
-void	Device::ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil )
+void	Device::ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth, bool _bClearStencil )
 {
-	m_pDeviceContext->ClearDepthStencilView( _DepthStencil.GetDepthStencilView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, _Z, _Stencil );
+	m_pDeviceContext->ClearDepthStencilView( _DepthStencil.GetDepthStencilView(), (_bClearDepth ? D3D11_CLEAR_DEPTH : 0) | (_bClearStencil ? D3D11_CLEAR_STENCIL : 0), _Z, _Stencil );
 }
 
 void	Device::SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil, D3D11_VIEWPORT* _pViewport )
@@ -319,16 +364,23 @@ void	Device::SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _
 	if ( _pDepthStencilState != NULL )
 	{
 		if ( _pDepthStencilState != m_pCurrentDepthStencilState )
-			m_pDeviceContext->OMSetDepthStencilState( _pDepthStencilState->m_pState, 0 );
+			m_pDeviceContext->OMSetDepthStencilState( _pDepthStencilState->m_pState, m_StencilRef );
 		m_pCurrentDepthStencilState = _pDepthStencilState;
 	}
 
 	if ( _pBlendState != NULL )
 	{
 		if ( _pBlendState != m_pCurrentBlendState )
-			m_pDeviceContext->OMSetBlendState( _pBlendState->m_pState, &NjFloat4::One.x, ~0L );
+			m_pDeviceContext->OMSetBlendState( _pBlendState->m_pState, &m_BlendFactors.x, m_BlendMasks );
 		m_pCurrentBlendState = _pBlendState;
 	}
+}
+
+void	Device::SetStatesReferences( const NjFloat4& _BlendFactors, U32 _BlendSampleMask, U8 _StencilRef )
+{
+	m_BlendFactors = _BlendFactors;
+	m_BlendMasks = _BlendSampleMask;
+	m_StencilRef = _StencilRef;
 }
 
 void	Device::RegisterComponent( Component& _Component )

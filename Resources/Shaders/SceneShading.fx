@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////
-// This shader performs the actual shading
+// This shader performs the actual scene lighting
 //
 #include "Inc/Global.fx"
 #include "Inc/LayeredMaterials.fx"
@@ -13,7 +13,7 @@ cbuffer	cbLight	: register( b11 )
 {
 	float3		_LightPosition;
 	float3		_LightDirection;
-	float3		_LightIrradiance;
+	float3		_LightRadiance;
 	float4		_LightData;			// For directionals: X=Hotspot Radius Y=Falloff Radius Z=Length
 									// For points: X=Radius
 									// For spots: X=Hotspot Angle Y=Falloff Angle Z=Length W=tan(Falloff Angle/2)
@@ -28,108 +28,118 @@ Texture2DArray		_TexMaterial	: register(t13);	// 4 Slices of diffuse+blend masks
 
 struct	VS_IN
 {
-	float3	Position	: POSITION;
-	float2	UV			: TEXCOORD0;
+	float4	__Position	: SV_POSITION;
 };
 
 struct	PS_IN
 {
 	float4	__Position	: SV_POSITION;
+	float3	LightX		: LIGHTX;
+	float3	LightZ		: LIGHTZ;
+};
+
+struct	PS_OUT
+{
+	float3	Diffuse		: SV_TARGET0;
+	float3	Specular	: SV_TARGET1;
 };
 
 
 //////////////////////////////////////////////////////////////////////////
 // Light-specific functions
+
 #if LIGHT_TYPE == 0
 // ======================= DIRECTIONAL LIGHT =======================
-// We're drawing a cylinder that we must orient to fit the light's direction
-//
+
 PS_IN	VS( VS_IN _In )
 {
-	float3	Z = normalize( cross( _LightDirection, float3( 1, 0, 0 ) ) );	// Won't work if Light is aligned with X!
-	float3	X = cross( Z, _LightDirection );
-
-	float	Length = _LightData.z * _In.UV.y;
-	float	Radius = _LightData.y;	// Falloff radius is the largest radius. We should increase it to compensate for radial discretization of faces that will cut through a perfect cylinder... TODO!
-	float3	LocalPosition = float3( Radius * _In.Position.x, Length, Radius * _In.Position.z );
-	float3	WorldPosition = _LightPosition + LocalPosition.x * X + LocalPosition.y * _LightDirection + LocalPosition.z * Z;
-
-	// Project
 	PS_IN	Out;
-	Out.__Position = mul( float4( WorldPosition, 1.0 ), _World2Proj );
-	Out.__Position.z = max( 0.0, Out.__Position.z );	// Account for the case we're INSIDE the light volume
+	Out.__Position = _In.__Position;
+	Out.LightZ = normalize( cross( _LightDirection, float3( 1, 0, 0 ) ) );	// Won't work if light is aligned with X!
+	Out.LightX = cross( Out.LightZ, _LightDirection );
 
 	return Out;
+}
+
+float3	ComputeLightIrradiance( PS_IN _In, float3 _Position, float3 _Normal, out float3 _ToLight )
+{
+	_ToLight = _LightDirection;
+
+	// Compute radial attenuation
+	float3	ToSource = _LightPosition - _Position;
+	float2	ToSource2D = float2( dot( ToSource, _In.LightX ), dot( ToSource, _In.LightZ ) );
+	float2	Radius = length( ToSource2D );
+	float	Attenuation = smoothstep( _LightData.y, _LightData.x, Radius );
+
+	// Compute radiance
+	float	NdotL = saturate( -dot( _ToLight, _Normal ) );
+
+	return Attenuation * NdotL * _LightRadiance;	// For directionals, this is irradiance
 }
 
 #elif LIGHT_TYPE == 1
 // ======================= POINT LIGHT =======================
-// We're drawing a quad that must bound the point light's sphere
-//
+
 PS_IN	VS( VS_IN _In )
 {
 	PS_IN	Out;
-
-	float3	ToCenter = _LightPosition - _Camera2World[3].xyz;
-	float	SqDistance = dot( ToCenter, ToCenter );
-	float	Distance = sqrt( SqDistance );
-	if ( Distance < _LightData.x )
-	{	// We're inside the sphere => the quad must cover the entire screen unfortunately...
-		Out.__Position = float4( _In.UV, 0.0, 1.0 );
-		return Out;
-	}
-
-	float	Front = dot( ToCenter, _Camera2World[2].xyz );
-	if ( Front < 0.0 )
-	{	// Don't display anything if behind the camera
-		Out.__Position = float4( -2.0, -2.0, 0.0, 1.0 );
-		return Out;
-	}
-
-	// The camera is outside and in front of the sphere
-	// We must compute the size of the quand in view space, which is larger than the radius of the sphere because of perspective projection
-	float3	X = normalize( cross( ToCenter, float3( 0, 1, 0 ) ) );	// Won't work if camera is aligned with Y but that's quite improbable!
-	float3	Y = normalize( cross( X, ToCenter ) );
-
-	float	r = _LightData.x;
-	float	Radius = Distance * r / sqrt( SqDistance - r*r );
-
-	float3	WorldPosition = _LightPosition + Radius * (_In.UV.x * X + _In.UV.y * Y);
-
-	// Project
-	Out.__Position = mul( float4( WorldPosition, 1.0 ), _World2Proj );
+	Out.__Position = _In.__Position;
+	Out.LightZ = Out.LightX = 0.0;
 
 	return Out;
+}
+
+float3	ComputeLightIrradiance( PS_IN _In, float3 _Position, float3 _Normal, out float3 _ToLight )
+{
+	_ToLight = _LightPosition - _Position;
+
+	// Compute radial attenuation
+	float	SqDistance = dot( _ToLight, _ToLight );
+	float	Attenuation = PI / SqDistance;
+
+	// Compute radiance
+	_ToLight /= sqrt( SqDistance );
+	float	NdotL = saturate( dot( _ToLight, _Normal ) );
+
+	return Attenuation * NdotL * _LightRadiance;
 }
 
 #else
 // ======================= SPOT LIGHT =======================
-// We're drawing a cone that we must orient to fit the light's direction
-//
+
 PS_IN	VS( VS_IN _In )
 {
-	float3	Z = normalize( cross( _LightDirection, float3( 1, 0, 0 ) ) );	// Won't work if Light is aligned with X!
-	float3	X = cross( Z, _LightDirection );
-
-	float	Length = _LightData.z * _In.UV.y;
-	float	Radius = Length * _LightData.w;	// Falloff radius is the largest at the bottom. We should increase it to compensate for radial discretization of faces that will cut through a perfect cylinder... TODO!
-	float3	LocalPosition = float3( Radius * _In.Position.x, Length, Radius * _In.Position.z );
-	float3	WorldPosition = _LightPosition + LocalPosition.x * X + LocalPosition.y * _LightDirection + LocalPosition.z * Z;
-
-	// Project
 	PS_IN	Out;
-	Out.__Position = mul( float4( WorldPosition, 1.0 ), _World2Proj );
-	Out.__Position.z = max( 0.0, Out.__Position.z );	// Account for the case we're INSIDE the light volume
+	Out.__Position = _In.__Position;
+	Out.LightZ = normalize( cross( _LightDirection, float3( 1, 0, 0 ) ) );	// Won't work if light is aligned with X!
+	Out.LightX = cross( Out.LightZ, _LightDirection );
 
 	return Out;
 }
 
-#endif
+float3	ComputeLightIrradiance( PS_IN _In, float3 _Position, float3 _Normal, out float3 _ToLight )
+{
+	_ToLight = _LightPosition - _Position;
 
+	// Compute radial attenuation
+	float	SqDistance = dot( _ToLight, _ToLight );
+	float	Attenuation = PI / SqDistance;
+
+	// Compute angular attenuation
+	_ToLight /= sqrt( SqDistance );
+	float	Angle = acos( -dot( _ToLight, _LightDirection ) );
+	Attenuation *= smoothstep( _LightData.y, _LightData.x, Angle );
+
+	// Compute radiance
+	float	NdotL = saturate( dot( _ToLight, _Normal ) );
+
+	return Attenuation * NdotL * _LightRadiance;
+}
+
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 // Main code
-
 struct	WeightMatID
 {
 	uint	ID;
@@ -144,9 +154,12 @@ WeightMatID	ReadWeightMatID( uint _Packed )
 	return Out;
 }
 
-float4	PS( PS_IN _In ) : SV_TARGET0
+PS_OUT	PS( PS_IN _In )
 {
+	PS_OUT	Out = (PS_OUT) 0;
+
 	float2	UV = _dUV.xy * _In.__Position.xy;
+//return float4( 1, 0, 0, 1 );
 
 	float4	Buf0 = _TexGBuffer0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
 	float4	Buf1 = _TexGBuffer0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
@@ -205,9 +218,16 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 // return float4( Diffuse, 1 );
 // return Height;
 
+
+	// Compute light irradiance
+	float3	ToLight;
+	float3	LightIrradiance = ComputeLightIrradiance( _In, WorldPosition, WorldNormal, ToLight );
+
+	float3	LightTS = float3( dot( ToLight, WorldTangent ), dot( ToLight, WorldBiTangent ), dot( ToLight, WorldNormal ) );
+
+
 	// Display the half vector space data
 	float3	ViewTS = -float3( dot( WorldView, WorldTangent ), dot( WorldView, WorldBiTangent ), dot( WorldView, WorldNormal ) );
-	float3	LightTS = float3( dot( _LightDirection, WorldTangent ), dot( _LightDirection, WorldBiTangent ), dot( _LightDirection, WorldNormal ) );
 	HalfVectorSpaceParams	ViewParams = Tangent2HalfVector( ViewTS, LightTS );
 
 //return float4( _LightDirection, 1 );
@@ -222,6 +242,11 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 //return float4( pow( ViewParams.Half.zzz, 10 ), 1 );
 //return float4( ViewParams.UV, 0, 0 );
 
-	MatReflectance	Reflectance = LayeredMatEval( ViewParams, _Materials[1] );
-return Reflectance.Specular;
+	MatReflectance	Reflectance = LayeredMatEval( ViewParams, _Materials[0] );
+//return Reflectance.Specular;
+
+
+	Out.Diffuse = LightIrradiance * (Reflectance.Diffuse + Reflectance.RetroDiffuse);
+	Out.Specular = LightIrradiance * Reflectance.Specular;
+	return Out;
 }

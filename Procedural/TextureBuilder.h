@@ -39,14 +39,14 @@ public:		// NESTED TYPES
 		int		PosMatID;
 
 		// Position of the normal fields
-		float	NormalFactor;	// Factor to apply to the height to generate the normals
+//		float	NormalFactor;	// Factor to apply to the height to generate the normals
 		bool	bOffsetNormal;	// True to store as (1+Normal)/2
 		int		PosNormalX;		// As soon as one of these positions is different of -1, normal will be generated
 		int		PosNormalY;
 		int		PosNormalZ;		// If -1, normal will get normalized and packed only as XY. Z will then be extracted by sqrt(1-X²-Y²)
 
 		// Position of the AO field
-		float	AOFactor;		// Factor to apply to the height to generate the AO
+//		float	AOFactor;		// Factor to apply to the height to generate the AO
 		int		PosAO;			// If not -1, AO will be generated
 
 		// TODO: Curvature? Dirt accumulation? Gradient?
@@ -97,7 +97,7 @@ public:		// METHODS
 
 	// Converts the generic content into an array of mip-maps of a specific pixel format, ready to build a Texture2D
 	// NOTE: You don't need to delete the returned pointers
-	void**			Convert( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params, int& _ArraySize ) const;
+	void**			Convert( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params, int& _ArraySize, float _NormalFactor=1, float _AOFactor=1 ) const;
 
 	// Calls Convert() and directly generate a texture
 	Texture2D*		CreateTexture( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params, bool _bStaging=false, bool _bWriteable=false ) const;

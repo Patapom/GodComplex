@@ -4,13 +4,23 @@
 
 //////////////////////////////////////////////////////////////////////////
 // Scene
-Scene::Scene( Device& _Device ) : m_Device( _Device )
+Scene::Scene( Device& _Device )
+	: m_Device					( _Device )
+	, m_ObjectsCount			( 0 )
+	, m_ppObjects				( NULL )
+	, m_LightsCountDirectional	( 0 )
+	, m_pLightsDirectional		( NULL )
+	, m_LightsCountPoint		( 0 )
+	, m_pLightsPoint			( NULL )
+	, m_LightsCountSpot			( 0 )
+	, m_pLightsSpot			( NULL )
 {
 	m_pMaterials = new MaterialBank( _Device );
 }
 
 Scene::~Scene()
 {
+	DestroyLights();
 	DestroyObjects();
 	delete m_pMaterials;
 }
@@ -69,6 +79,82 @@ Scene::Object&	Scene::CreateObjectAt( int _ObjectIndex, const char* _pName )
 	m_ppObjects[_ObjectIndex] = pNewObject;
 
 	return *pNewObject;
+}
+
+void	Scene::AllocateLights( int _DirectionalsCount, int _PointsCount, int _SpotsCount )
+{
+	DestroyLights();
+
+	m_EnabledLightsCountDirectional = m_LightsCountDirectional = _DirectionalsCount;
+	m_pLightsDirectional = new Light[m_LightsCountDirectional];
+
+	m_EnabledLightsCountPoint = m_LightsCountPoint = _PointsCount;
+	m_pLightsPoint = new Light[_PointsCount];
+
+	m_EnabledLightsCountSpot = m_LightsCountSpot = _SpotsCount;
+	m_pLightsSpot = new Light[_SpotsCount];
+}
+
+void	Scene::DestroyLights()
+{
+	if ( m_pLightsDirectional != NULL )
+		delete[] m_pLightsDirectional;
+	m_pLightsDirectional = NULL;
+	m_LightsCountDirectional = 0;
+
+	if ( m_pLightsPoint != NULL )
+		delete[] m_pLightsPoint;
+	m_pLightsPoint = NULL;
+	m_LightsCountPoint = 0;
+
+	if ( m_pLightsSpot != NULL )
+		delete[] m_pLightsSpot;
+	m_pLightsSpot = NULL;
+	m_LightsCountSpot = 0;
+}
+
+Scene::Light&	Scene::GetDirectionalLightAt( int _LightIndex )
+{
+	ASSERT( _LightIndex < m_LightsCountDirectional, "Directional light index out of range!" );
+	return m_pLightsDirectional[_LightIndex];
+}
+Scene::Light&	Scene::GetPointLightAt( int _LightIndex )
+{
+	ASSERT( _LightIndex < m_LightsCountPoint, "Point light index out of range!" );
+	return m_pLightsPoint[_LightIndex];
+}
+Scene::Light&	Scene::GetSpotLightAt( int _LightIndex )
+{
+	ASSERT( _LightIndex < m_LightsCountSpot, "Spot light index out of range!" );
+	return m_pLightsSpot[_LightIndex];
+}
+
+void	Scene::SetDirectionalLightEnabled( int _LightIndex, bool _bEnabled )
+{
+	Scene::Light&	L = GetDirectionalLightAt( _LightIndex );
+	if ( _bEnabled && !L.m_bEnabled )
+		m_EnabledLightsCountDirectional++;
+	else if ( !_bEnabled && L.m_bEnabled )
+		m_EnabledLightsCountDirectional--;
+	L.m_bEnabled = _bEnabled;
+}
+void	Scene::SetPointLightEnabled( int _LightIndex, bool _bEnabled )
+{
+	Scene::Light&	L = GetDirectionalLightAt( _LightIndex );
+	if ( _bEnabled && !L.m_bEnabled )
+		m_EnabledLightsCountPoint++;
+	else if ( !_bEnabled && L.m_bEnabled )
+		m_EnabledLightsCountPoint--;
+	L.m_bEnabled = _bEnabled;
+}
+void	Scene::SetSpotLightEnabled( int _LightIndex, bool _bEnabled )
+{
+	Scene::Light&	L = GetDirectionalLightAt( _LightIndex );
+	if ( _bEnabled && !L.m_bEnabled )
+		m_EnabledLightsCountSpot++;
+	else if ( !_bEnabled && L.m_bEnabled )
+		m_EnabledLightsCountSpot--;
+	L.m_bEnabled = _bEnabled;
 }
 
 
@@ -227,4 +313,39 @@ void	Scene::Object::Primitive::SetLayerMaterials( Texture2D& _LayeredTextures, i
 		);
 
 	m_pCB_Primitive->m.Extinction = TargetValueAtThickness;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Light
+Scene::Light::Light() : m_bEnabled( true )
+{
+}
+void	Scene::Light::SetDirectional( const NjFloat3& _Irradiance, const NjFloat3& _Position, const NjFloat3& _Direction, float _RadiusHotSpot, float _RadiusFalloff, float _Length )
+{
+	m_Radiance = _Irradiance;
+	m_Position = _Position;
+	m_Direction = _Direction;
+	m_Direction.Normalize();
+	m_Data.m_RadiusHotSpot = _RadiusHotSpot;
+	m_Data.m_RadiusFalloff = _RadiusFalloff;
+	m_Data.m_Length = _Length;
+}
+
+void	Scene::Light::SetPoint( const NjFloat3& _Radiance, const NjFloat3& _Position, float _Radius )
+{
+	m_Radiance = _Radiance;
+	m_Position = _Position;
+	m_Data.m_Radius = _Radius;
+}
+
+void	Scene::Light::SetSpot( const NjFloat3& _Radiance, const NjFloat3& _Position, const NjFloat3& _Direction, float _AngleHotSpot, float _AngleFalloff, float _Length )
+{
+	m_Radiance = _Radiance;
+	m_Position = _Position;
+	m_Direction = _Direction;
+	m_Direction.Normalize();
+	m_Data.m_AngleHotSpot = _AngleHotSpot;
+	m_Data.m_AngleFalloff = _AngleFalloff;
+	m_Data.m_Length = _Length;
 }

@@ -35,6 +35,11 @@ private:	// FIELDS
 
 	int						m_StatesCount;
 
+	// Default blend & stencil refs
+	NjFloat4				m_BlendFactors;
+	U32						m_BlendMasks;
+	U8						m_StencilRef;
+
 public:
 
 	RasterizerState*		m_pRS_CullNone;
@@ -46,6 +51,8 @@ public:
 	DepthStencilState*		m_pDS_ReadWriteLess;
 	DepthStencilState*		m_pDS_ReadWriteGreater;
 	DepthStencilState*		m_pDS_ReadLessEqual;			// No write !
+	DepthStencilState*		m_pDS_ReadLessEqual_StencilIncBackDecFront;	// Useful for deferred rendering
+	DepthStencilState*		m_pDS_ReadLessEqual_StencilFailIfZero;		// Useful for deferred rendering
 
 	BlendState*				m_pBS_ZPrePass;					// Special double-speed Z Prepass blend mode with no color write (from §3.6.1 http://developer.download.nvidia.com/GPU_Programming_Guide/GPU_Programming_Guide_G80.pdf)
 	BlendState*				m_pBS_Disabled;
@@ -55,6 +62,7 @@ public:
 	BlendState*				m_pBS_Disabled_AlphaOnly;
 	BlendState*				m_pBS_AlphaBlend;
 	BlendState*				m_pBS_PremultipliedAlpha;
+	BlendState*				m_pBS_Additive;
 	BlendState*				m_pBS_Max;
 
 
@@ -85,11 +93,12 @@ public:	 // METHODS
 	// Helpers
 	void	ClearRenderTarget( const Texture2D& _Target, const NjFloat4& _Color );
 	void	ClearRenderTarget( const Texture3D& _Target, const NjFloat4& _Color );
-	void	ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil );
+	void	ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth=true, bool _bClearStencil=true );
 	void	SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil=NULL, D3D11_VIEWPORT* _pViewport=NULL );
 	void	SetRenderTargets( int _Width, int _Height, int _TargetsCount, ID3D11RenderTargetView** _ppTargets, ID3D11DepthStencilView* _pDepthStencil=NULL, D3D11_VIEWPORT* _pViewport=NULL );
 	void	RemoveRenderTargets();
 	void	SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _pDepthStencilState, BlendState* _pBlendState );
+	void	SetStatesReferences( const NjFloat4& _BlendMasks, U32 _BlendSampleMask, U8 _StencilRef );
 
 private:
 

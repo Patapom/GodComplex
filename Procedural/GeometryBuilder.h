@@ -12,7 +12,7 @@ public:		// NESTED TYPES
 	class	MapperBase
 	{
 	public:
-		virtual void	Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV ) const = 0;
+		virtual void	Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const = 0;
 	};
 
 	// Spherical mapping
@@ -26,7 +26,21 @@ public:		// NESTED TYPES
 
 	public:
 		MapperSpherical( float _WrapU=2.0f, float _WrapV=1.0f, const NjFloat3& _Center=NjFloat3::Zero, const NjFloat3& _X=NjFloat3::UnitX, const NjFloat3& _Y=NjFloat3::UnitY );
-		virtual void	Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV ) const;
+		virtual void	Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const;
+	};
+
+	// Cylindrical mapping
+	class	MapperCylindrical : public MapperBase
+	{
+	protected:
+
+		float		m_WrapU;
+		float		m_WrapV;
+		NjFloat3	m_Center, m_X, m_Y, m_Z;
+
+	public:
+		MapperCylindrical( float _WrapU=2.0f, float _WrapV=1.0f, const NjFloat3& _Center=NjFloat3::Zero, const NjFloat3& _X=NjFloat3::UnitX, const NjFloat3& _Z=NjFloat3::UnitZ );
+		virtual void	Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const;
 	};
 
 	// Planar mapping
@@ -40,7 +54,7 @@ public:		// NESTED TYPES
 
 	public:
 		MapperPlanar( float _WrapU=1.0f, float _WrapV=1.0f, const NjFloat3& _Center=NjFloat3::Zero, const NjFloat3& _Tangent=NjFloat3::UnitZ, const NjFloat3& _BiTangent=NjFloat3::UnitX );
-		virtual void	Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV ) const;
+		virtual void	Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const;
 	};
 
 	class	IGeometryWriter
@@ -58,6 +72,9 @@ public:		// METHODS
 
 	// Builds a uniformly subdivided sphere
 	static void		BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
+
+	// Builds a uniformly subdivided cylinder
+	static void		BuildCylinder( int _RadialSubdivisions, int _VerticalSubdivisions, bool _bIncludeCaps, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
 
 	// Builds a torus in the XY plane
 	static void		BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, float _LargeRadius, float _SmallRadius, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
