@@ -240,7 +240,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	//////////////////////////////////////////////////////////////////////////
 	// Animate camera
 //	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(2.0f), _TV(2.0f) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
-	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), 2.0f + sinf( 1.0f * _Time ), _TV(2.0f) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
+	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), 1.5f + sinf( 1.0f * _Time ), _TV(2.0f) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
 	gs_pCamera->Upload( 0 );
 
 	//////////////////////////////////////////////////////////////////////////
@@ -326,7 +326,7 @@ void	PrepareScene()
 		pppContents[2] = TBLayer2.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[2] );
 		pppContents[3] = TBLayer3.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[3] );
 		pppContents[4] = TBLayerSpecular.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[4] );
-		pppContents[5] = TBLayerHeight.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_NxNyNzH, pArraySizes[5], 4.0f );
+		pppContents[5] = TBLayerHeight.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_NxNyNzH, pArraySizes[5], 10.0f );
 
 		// Generate the final texture array
 		gs_pSceneTexture0 = TBLayer0.Concat( 6, pppContents, pArraySizes, PixelFormatRGBA8::DESCRIPTOR );
@@ -368,16 +368,16 @@ void	PrepareScene()
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the lights
-	gs_pScene->AllocateLights( 1, 1, 1 );
+	gs_pScene->AllocateLights( 1, 0, 0 );
 
- 	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( NjFloat3( 1, 0, 0 ), NjFloat3( 4, 4, 4 ), -NjFloat3( 1, 1, 1 ), 2.0f, 3.0f, 16.0f );
+ 	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( 5.0f * NjFloat3::One, NjFloat3( 4, 4, 4 ), -NjFloat3( 1, 1, 1 ), 2.0f, 3.0f, 16.0f );
 //	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( NjFloat3( 1, 0, 0 ), NjFloat3( 0, 4, 0 ), -NjFloat3( 0, 1, 0 ), 0.5f, 1.0f, 8.0f );
 
-	gs_pScene->GetPointLightAt( 0 ).SetPoint( NjFloat3( 0, 0.2, 0 ), NjFloat3( 0, 0.5f, 1.5f ), 2.0f );
-//	gs_pScene->GetPointLightAt( 0 ).SetPoint( NjFloat3( 0, 1, 0 ), NjFloat3( 0, 1, 0 ), 1.0f );
-
- 	gs_pScene->GetSpotLightAt( 0 ).SetSpot( NjFloat3( 0, 0, 8 ), NjFloat3( -4, 4, 4 ), -NjFloat3( -1, 1, 1 ), NUAJDEG2RAD(30.0f), NUAJDEG2RAD(40.0f), 16.0f );
-//	gs_pScene->GetSpotLightAt( 0 ).SetSpot( NjFloat3( 0, 0, 4 ), NjFloat3( 0, 4, 0 ), -NjFloat3( 0, 1, 0 ), NUAJDEG2RAD(30.0f), NUAJDEG2RAD(40.0f), 8.0f );
+// 	gs_pScene->GetPointLightAt( 0 ).SetPoint( NjFloat3( 0, 0.2, 0 ), NjFloat3( 0, 0.5f, 1.5f ), 2.0f );
+// //	gs_pScene->GetPointLightAt( 0 ).SetPoint( NjFloat3( 0, 1, 0 ), NjFloat3( 0, 1, 0 ), 1.0f );
+// 
+//  	gs_pScene->GetSpotLightAt( 0 ).SetSpot( NjFloat3( 0, 0, 8 ), NjFloat3( -4, 4, 4 ), -NjFloat3( -1, 1, 1 ), NUAJDEG2RAD(30.0f), NUAJDEG2RAD(40.0f), 16.0f );
+// //	gs_pScene->GetSpotLightAt( 0 ).SetSpot( NjFloat3( 0, 0, 4 ), NjFloat3( 0, 4, 0 ), -NjFloat3( 0, 1, 0 ), NUAJDEG2RAD(30.0f), NUAJDEG2RAD(40.0f), 8.0f );
 }
 
 void	ReleaseScene()

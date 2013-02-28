@@ -47,6 +47,9 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 {
 	float2	UV = _dUV.xy * _In.__Position.xy;
 
+//return float4( _TexMaterial.SampleLevel( LinearClamp, float3( UV, 5 ), 0.0 ).xyz, 1 );
+
+
 	float4	Buf0 = _TexGBuffer0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
 	float4	Buf1 = _TexGBuffer0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
 	float4	Buf2 = _TexGBuffer0.SampleLevel( LinearClamp, float3( UV, 2 ), 0.0 );
@@ -68,8 +71,10 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 	float3	CameraPosition = Z * CameraView;
 			CameraView = normalize( CameraView );
 
+	Buf0.xy = 2.0 * (Buf0.xy - 0.5);	// Unpack
 	float3	CameraNormal = float3( Buf0.xy, sqrt( 1.0 - dot( Buf0.xy, Buf0.xy ) ) );
 	float3	CameraTangent = float3( Buf0.zw, Buf1.w );
+	CameraTangent = 2.0 * (CameraTangent - 0.5);	// Unpack
 //return float4( CameraNormal, 1 );
 // return float4( CameraTangent, 1 );
 // return float4( _World2Camera[2].xyz, 1 );
@@ -127,9 +132,9 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 	float3	AccDiffuse = _TexDiffuseSpecular.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 	float3	AccSpecular = _TexDiffuseSpecular.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
 
-return float4( DiffuseAlbedo * AccDiffuse + SpecularAlbedo * AccSpecular, 1 );
-
 return float4( AccDiffuse, 1 );
-return float4( AccSpecular, 1 );
+//return float4( 0.33 * AccDiffuse, 1 );
+//return float4( DiffuseAlbedo * AccDiffuse + SpecularAlbedo * AccSpecular, 1 );
+//return float4( AccSpecular, 1 );
 return float4( lerp( DiffuseAlbedo, AccDiffuse, 0.5 ), 1 );
 }

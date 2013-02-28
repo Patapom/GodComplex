@@ -88,15 +88,15 @@ float3x3	ComputeRotation( float3 _NewNormalTS )
 	
 	float3x3	Transform;
 	Transform[0].x = e + h * Ortho.x * Ortho.x;
-	Transform[0].y = h * Ortho.x * Ortho.y - Ortho.z;
-	Transform[0].z = h * Ortho.x * Ortho.z + Ortho.y;
+	Transform[1].x = h * Ortho.x * Ortho.y - Ortho.z;
+	Transform[2].x = h * Ortho.x * Ortho.z + Ortho.y;
 
-	Transform[1].x = h * Ortho.x * Ortho.y + Ortho.z;
+	Transform[0].y = h * Ortho.x * Ortho.y + Ortho.z;
 	Transform[1].y = e + h * Ortho.y * Ortho.y;
-	Transform[1].z = h * Ortho.y * Ortho.z - Ortho.x;
+	Transform[2].y = h * Ortho.y * Ortho.z - Ortho.x;
 
-	Transform[2].x = h * Ortho.x * Ortho.z - Ortho.y;
-	Transform[2].y = h * Ortho.y * Ortho.z + Ortho.x;
+	Transform[0].z = h * Ortho.x * Ortho.z - Ortho.y;
+	Transform[1].z = h * Ortho.y * Ortho.z + Ortho.x;
 	Transform[2].z = e + h * Ortho.z * Ortho.z;
 
 	return Transform;
@@ -138,22 +138,35 @@ PS_OUT	PS( PS_IN _In )
 	float4	TexLayer1 = _TexMaterial.Sample( LinearWrap,	float3( UV, 1 ) );	UV += dUV * _Thickness.x;	// Layer 1
 	float4	TexLayer0 = _TexMaterial.Sample( LinearWrap,	float3( UV, 0 ) );								// Layer 0
 	float4	TexNormal = _TexMaterial.Sample( LinearWrap,	float3( UV, 5 ) );								// Normal Map is always assigned to bottom layer
+//###	float4	TexNormal = _TexMaterial.SampleLevel( LinearWrap,	float3( UV, 5 ), 0.0 );								// Normal Map is always assigned to bottom layer
 
 	// Transform tangent space & get normal+tangent into camera space
-	float3		NormalMap = 2.0 * TexNormal.xyz - 1.0;
+	float3		NormalMap = normalize( 2.0 * TexNormal.xyz - 1.0 );
 	float3x3	Rotation = ComputeRotation( NormalMap );
 
-	float3	NewNormal = mul( WorldNormal, Rotation );
-	float3	NewTangent = mul( WorldTangent, Rotation );
-// 	float3	NewNormal = WorldNormal;
-// 	float3	NewTangent = WorldTangent;
+	WorldNormal = mul( WorldNormal, Rotation );
+	WorldTangent = mul( WorldTangent, Rotation );
 
-// NewNormal = TexNormal.xyz;
+// WorldNormal = normalize( WorldNormal );
+// WorldTangent = normalize( WorldTangent );
+//WorldNormal = normalize( _In.Normal );
 
-	float2	CameraNormal = float2( dot( NewNormal, _World2Camera[0].xyz ), dot( NewNormal, _World2Camera[1].xyz ) );	// We only need XY
-	float3	CameraTangent = float3( dot( NewTangent, _World2Camera[0].xyz ), dot( NewTangent, _World2Camera[1].xyz ), -dot( NewTangent, _World2Camera[2].xyz ) );
+	float3	CameraNormal = float3( dot( WorldNormal, _World2Camera[0].xyz ), dot( WorldNormal, _World2Camera[1].xyz ), -dot( WorldNormal, _World2Camera[2].xyz ) );
+	float3	CameraTangent = float3( dot( WorldTangent, _World2Camera[0].xyz ), dot( WorldTangent, _World2Camera[1].xyz ), -dot( WorldTangent, _World2Camera[2].xyz ) );
+			CameraTangent = normalize( CameraTangent );
 
-//CameraTangent = NewTangent;
+// ### Store 3 vector in tangent for testing...
+// CameraTangent = CameraNormal;
+
+	// Pack for storage
+	CameraTangent = 0.5 * (1.0 + CameraTangent);
+
+	// Stereographic projection of normal (from http://aras-p.info/texts/CompactNormalStorage.html#method07stereo)
+	// See also http://en.wikipedia.org/wiki/Stereographic_projection
+	CameraNormal.xy /= 1.0 + CameraNormal.z;	// Gives quite a large value for negative normals
+	CameraNormal /= 1.7777;						// So we simply divide by a number larger than 1 to account for "some parts" of the negative normals but we hope there won't be too much negative ones
+	CameraNormal = 0.5 * (1.0 + CameraNormal);
+
 
 	//////////////////////////////////////////////////////////////////////
 	// Apply Pom model
@@ -184,12 +197,12 @@ PS_OUT	PS( PS_IN _In )
 // The idea is rather to apply the materials one after another, light filtering through as "diffuse"
 //	reaches the level below and weights should better be there to tell if the model applies or not
 //
-// 	float	SumWeights = dot( LayerWeights, 1.0 );
-// 	LayerWeights /= SumWeights;													// We normalize weights as we can't exceed one!
+	float	SumWeights = dot( LayerWeights, 1.0 );
+	LayerWeights /= SumWeights;													// We normalize weights as we can't exceed one!
 
 	// Write final result
 	PS_OUT	Out;
-	Out.NormalTangent = float4( CameraNormal, CameraTangent.xy );				// XY=Normal  ZW=TangentXY
+	Out.NormalTangent = float4( CameraNormal.xy, CameraTangent.xy );				// XY=Normal  ZW=TangentXY
 	Out.DiffuseAlbedo = float4( DiffuseAlbedo, CameraTangent.z );				// XYZ=Diffuse Albedo W=TangentZ
 	Out.SpecularAlbedo = float4( TexSpecular.xyz, _Thickness.x * TexNormal.w );	// XYZ=Specular Albedo W=Height (in millimeters)
 	Out.WeightMatIDs0 = uint4(													// 4 couples of [Weight,MatID] each in [0,255]
@@ -208,6 +221,10 @@ PS_OUT	PS( PS_IN _In )
 //Out.DiffuseAlbedo = float4( -0.125 * _Extinction.yyy, 0 );
 //Out.DiffuseAlbedo = 0.5 * DistanceFactor;
 //Out.DiffuseAlbedo = float4( ViewTS, 0 );
+// Out.DiffuseAlbedo = float4( WorldNormal, 0 );
+//Out.DiffuseAlbedo = float4( Rotation[2], 0 );
+//Out.DiffuseAlbedo = length( NormalMap );
+
 
 	return Out;
 }

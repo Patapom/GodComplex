@@ -214,7 +214,7 @@ void	TextureBuilder::SampleClamp( float _X, float _Y, int _MipLevel, Pixel& _Pix
 	_Pixel.MatID = V00.MatID;	// Arbitrary!
 }
 
-void	TextureBuilder::GenerateMips( bool _bTreatRGBAsNormal ) const
+void	TextureBuilder::GenerateMips( bool _bTreatRGBAsNormal, bool _bNormalizeNormals ) const
 {
 	// Build remaining mip levels
 	int	Width = m_Width;
@@ -263,15 +263,17 @@ void	TextureBuilder::GenerateMips( bool _bTreatRGBAsNormal ) const
 
 				if ( _bTreatRGBAsNormal )
 				{
-					NjFloat3	N00 = 2.0f * NjFloat3(V00.RGBA) - NjFloat3::One;
-					NjFloat3	N01 = 2.0f * NjFloat3(V01.RGBA) - NjFloat3::One;
-					NjFloat3	N10 = 2.0f * NjFloat3(V10.RGBA) - NjFloat3::One;
-					NjFloat3	N11 = 2.0f * NjFloat3(V11.RGBA) - NjFloat3::One;
+					NjFloat3	N00 = NjFloat3(V00.RGBA);
+					NjFloat3	N01 = NjFloat3(V01.RGBA);
+					NjFloat3	N10 = NjFloat3(V10.RGBA);
+					NjFloat3	N11 = NjFloat3(V11.RGBA);
 
 					NjFloat3	N = 0.25f * (N00 + N01 + N10 + N11);
-					pScanline->RGBA.x = 0.5f * (1.0f + N.x);
-					pScanline->RGBA.y = 0.5f * (1.0f + N.y);
-					pScanline->RGBA.z = 0.5f * (1.0f + N.z);
+					if ( _bNormalizeNormals )
+						N.Normalize();
+					pScanline->RGBA.x = N.x;
+					pScanline->RGBA.y = N.y;
+					pScanline->RGBA.z = N.z;
 					pScanline->RGBA.w = 0.25f * (V00.RGBA.w + V01.RGBA.w + V10.RGBA.w + V11.RGBA.w);
 				}
 				else
@@ -299,7 +301,7 @@ TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA =
 
 			// Position of the normal fields
 //	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
-	true,	// bool		bOffsetNormal;
+	true,	// bool		bPackNormal;
 	-1, -1, -1,	// Normal fields
 
 			// Position of the AO field
@@ -320,7 +322,7 @@ TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA_sRGB =
 
 			// Position of the normal fields
 //	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
-	true,	// bool		bOffsetNormal;
+	true,	// bool		bPackNormal;
 	-1, -1, -1,	// Normal fields
 
 			// Position of the AO field
@@ -341,7 +343,7 @@ TextureBuilder::ConversionParams	TextureBuilder::CONV_RGBA_NxNyHR_M =
 
 			// Position of the normal fields
 //	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
-	true,	// bool		bOffsetNormal;
+	true,	// bool		bPackNormal;
 	4, 5, -1,	// Normal fields
 
 			// Position of the AO field
@@ -362,7 +364,7 @@ TextureBuilder::ConversionParams	TextureBuilder::CONV_NxNyNzH =
 
 			// Position of the normal fields
 //	1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
-	true,	// bool		bOffsetNormal;
+	true,	// bool		bPackNormal;
 	0, 1, 2,	// Normal fields
 
 			// Position of the AO field
@@ -370,7 +372,7 @@ TextureBuilder::ConversionParams	TextureBuilder::CONV_NxNyNzH =
 	-1,		// int		PosAO;
 };
 
-void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params, int& _ArraySize, float _NormalFactor, float _AOFactor ) const
+void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params, int& _ArraySize, float _NormalFactor, bool _bNormalizeNormals, float _AOFactor ) const
 {
 	if ( !m_bMipLevelsBuilt )
 		GenerateMips();
@@ -383,9 +385,9 @@ void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const Con
 	if ( _Params.PosNormalX != -1 )
 	{
 		ASSERT( _Params.PosNormalY != -1, "You must specify a position for the Y component of the normal if PosNormalX is not -1!" );
-		bool	bPackNormal = _Params.PosNormalZ == -1;
-		Generators::ComputeNormal( *this, TBNormal, _NormalFactor, bPackNormal );
-		TBNormal.GenerateMips( true );
+		bool	bNormalize = _bNormalizeNormals || _Params.PosNormalZ == -1;
+		Generators::ComputeNormal( *this, TBNormal, _NormalFactor, bNormalize );
+		TBNormal.GenerateMips( true, true );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -530,11 +532,11 @@ float	TextureBuilder::BuildComponent( int _ComponentIndex, const ConversionParam
 
 	// Check if it's the normal
 	if ( _ComponentIndex == _Params.PosNormalX )
-		return _Params.bOffsetNormal ? 0.5f * (1.0f + _Pixel1.RGBA.x) : _Pixel1.RGBA.x;
+		return _Params.bPackNormal ? 0.5f * (1.0f + _Pixel1.RGBA.x) : _Pixel1.RGBA.x;
 	if ( _ComponentIndex == _Params.PosNormalY )
-		return _Params.bOffsetNormal ? 0.5f * (1.0f + _Pixel1.RGBA.y) : _Pixel1.RGBA.y;
+		return _Params.bPackNormal ? 0.5f * (1.0f + _Pixel1.RGBA.y) : _Pixel1.RGBA.y;
 	if ( _ComponentIndex == _Params.PosNormalZ )
-		return _Params.bOffsetNormal ? 0.5f * (1.0f + _Pixel1.RGBA.z) : _Pixel1.RGBA.z;
+		return _Params.bPackNormal ? 0.5f * (1.0f + _Pixel1.RGBA.z) : _Pixel1.RGBA.z;
 
 	// Check if it's the ambient occlusion
 	if ( _ComponentIndex == _Params.PosAO )

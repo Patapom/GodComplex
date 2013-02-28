@@ -40,7 +40,7 @@ public:		// NESTED TYPES
 
 		// Position of the normal fields
 //		float	NormalFactor;	// Factor to apply to the height to generate the normals
-		bool	bOffsetNormal;	// True to store as (1+Normal)/2
+		bool	bPackNormal;	// True to store as (1+Normal)/2
 		int		PosNormalX;		// As soon as one of these positions is different of -1, normal will be generated
 		int		PosNormalY;
 		int		PosNormalZ;		// If -1, normal will get normalized and packed only as XY. Z will then be extracted by sqrt(1-X²-Y²)
@@ -93,11 +93,11 @@ public:		// METHODS
 	void			Get( int _X, int _Y, int _MipLevel, Pixel& _Color ) const;
 	void			SampleWrap( float _X, float _Y, int _MipLevel, Pixel& _Pixel ) const;
 	void			SampleClamp( float _X, float _Y, int _MipLevel, Pixel& _Pixel ) const;
-	void			GenerateMips( bool _bTreatRGBAsNormal=false ) const;
+	void			GenerateMips( bool _bTreatRGBAsNormal=false, bool _bNormalizeNormals=true ) const;
 
 	// Converts the generic content into an array of mip-maps of a specific pixel format, ready to build a Texture2D
 	// NOTE: You don't need to delete the returned pointers
-	void**			Convert( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params, int& _ArraySize, float _NormalFactor=1, float _AOFactor=1 ) const;
+	void**			Convert( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params, int& _ArraySize, float _NormalFactor=1, bool _bNormalizeNormals=true, float _AOFactor=1 ) const;
 
 	// Calls Convert() and directly generate a texture
 	Texture2D*		CreateTexture( const IPixelFormatDescriptor& _Format, const ConversionParams& _Params, bool _bStaging=false, bool _bWriteable=false ) const;
