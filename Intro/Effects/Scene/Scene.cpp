@@ -81,6 +81,12 @@ Scene::Object&	Scene::CreateObjectAt( int _ObjectIndex, const char* _pName )
 	return *pNewObject;
 }
 
+Scene::Object&		Scene::GetObjectAt( int _ObjectIndex )
+{
+	ASSERT( _ObjectIndex < m_ObjectsCount, "Object index out of range!" );
+	return *m_ppObjects[_ObjectIndex];
+}
+
 void	Scene::AllocateLights( int _DirectionalsCount, int _PointsCount, int _SpotsCount )
 {
 	DestroyLights();
@@ -301,6 +307,7 @@ void	Scene::Object::Primitive::SetLayerMaterials( Texture2D& _LayeredTextures, i
 	m_pCB_Primitive->m.Thickness.Set( MAX( 1e-6f, ppMats[0]->Thickness ), MAX( 1e-6f, ppMats[1]->Thickness ), MAX( 1e-6f, ppMats[2]->Thickness ), MAX( 1e-6f, ppMats[3]->Thickness ) );
 	m_pCB_Primitive->m.IOR.Set( ppMats[1]->IOR, ppMats[2]->IOR, ppMats[3]->IOR );
 	m_pCB_Primitive->m.Frosting.Set( ppMats[1]->Frosting, ppMats[2]->Frosting, ppMats[3]->Frosting );
+	m_pCB_Primitive->m.NoDiffuse.Set( ppMats[0]->NoDiffuse, ppMats[1]->NoDiffuse, ppMats[2]->NoDiffuse, ppMats[3]->NoDiffuse );
 
 	// Extinctions are given as [0,1] numbers from totally transparent to completely opaque
 	// We need to convert them into actual extinction values to be used in the classical exp( -Sigma_t * Distance(millimeters) ) formula

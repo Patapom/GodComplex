@@ -209,6 +209,7 @@ void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D* _pTex )
 //				m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_ReadLessEqual_StencilFailIfZero, m_Device.m_pBS_Additive );
 //				m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_Disabled, m_Device.m_pBS_Additive );
 				m_Device.SetStates( NULL, m_Device.m_pDS_ReadLessEqual_StencilFailIfZero, m_Device.m_pBS_Additive );
+//m_Device.SetStates( NULL, m_Device.m_pDS_Disabled, m_Device.m_pBS_Additive );
 				m_ScreenQuad.Render( M );
 
 				USING_MATERIAL_END

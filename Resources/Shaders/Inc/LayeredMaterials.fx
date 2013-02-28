@@ -9,15 +9,9 @@
 
 struct	MaterialParams
 {
-	// Specular (X) & Fresnel (Y) parameters
-	float2	Amplitude;
-	float2	Falloff;
-	float2	Exponent;
+	float4	AmplitudeFalloff;
+	float4	ExponentDiffuse;
 	float	Offset;
-
-	// Diffuse parameters
-	float	DiffuseReflectance;
-	float	DiffuseRoughness;
 };
 
 tbuffer	tbMaterials : register( t8 )
@@ -56,6 +50,33 @@ HalfVectorSpaceParams	Tangent2HalfVector( float3 _TSView, float3 _TSLight )
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
+//
+struct	WeightMatID
+{
+	uint	ID;
+	float	Weight;
+};
+
+MaterialParams	ComputeWeightedMaterialParams( WeightMatID _MatLayers[4] )
+{
+	MaterialParams	M[4] = {
+		_Materials[_MatLayers[0].ID],
+		_Materials[_MatLayers[1].ID],
+		_Materials[_MatLayers[2].ID],
+		_Materials[_MatLayers[3].ID],
+	};
+
+	float4	W = float4( _MatLayers[0].Weight, _MatLayers[1].Weight, _MatLayers[2].Weight, _MatLayers[3].Weight );
+
+	MaterialParams	R;
+	R.AmplitudeFalloff = W.x * M[0].AmplitudeFalloff + W.y * M[1].AmplitudeFalloff + W.z * M[2].AmplitudeFalloff + W.w * M[3].AmplitudeFalloff;
+	R.ExponentDiffuse = W.x * M[0].ExponentDiffuse + W.y * M[1].ExponentDiffuse + W.z * M[2].ExponentDiffuse + W.w * M[3].ExponentDiffuse;
+	R.Offset = W.x * M[0].Offset + W.y * M[1].Offset + W.z * M[2].Offset + W.w * M[3].Offset;
+
+	return R;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
 // Material reflectance evaluation
 struct	MatReflectance
 {
@@ -71,7 +92,7 @@ MatReflectance	LayeredMatEval( HalfVectorSpaceParams _ViewParams, MaterialParams
 
 	// =================== COMPUTE DIFFUSE ===================
 	// I borrowed the diffuse term from §5.3 of http://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf
-	float	Fd90 = 0.5 + _MatParams.DiffuseRoughness * _ViewParams.CosThetaD * _ViewParams.CosThetaD;
+	float	Fd90 = 0.5 + _MatParams.ExponentDiffuse.w * _ViewParams.CosThetaD * _ViewParams.CosThetaD;
 	float	a = 1.0 - _ViewParams.TSLight.z;	// 1-cos(ThetaL) = 1-cos(ThetaV)
 	float	Cos5 = a * a;
 			Cos5 *= Cos5 * a;
@@ -81,11 +102,11 @@ MatReflectance	LayeredMatEval( HalfVectorSpaceParams _ViewParams, MaterialParams
 	Result.RetroDiffuse = max( 0, Result.Diffuse-1 );	// Retro-reflection starts above 1
 	Result.Diffuse = min( 1, Result.Diffuse );			// Clamp diffuse to avoid double-counting retro-reflection...
 
-	Result.Diffuse *= INVPI;
-	Result.RetroDiffuse *= INVPI;
+	Result.Diffuse *= _MatParams.ExponentDiffuse.z * INVPI;
+	Result.RetroDiffuse *= _MatParams.ExponentDiffuse.z * INVPI;
 
 	// =================== COMPUTE SPECULAR ===================
-	float2	Cxy = _MatParams.Offset + _MatParams.Amplitude * exp( _MatParams.Falloff * pow( _ViewParams.UV, _MatParams.Exponent ) );
+	float2	Cxy = _MatParams.Offset + _MatParams.AmplitudeFalloff.xy * exp( _MatParams.AmplitudeFalloff.zw * pow( _ViewParams.UV, _MatParams.ExponentDiffuse.xy ) );
 
 	Result.Specular = Cxy.x * Cxy.y - _MatParams.Offset*_MatParams.Offset;	// Specular & Fresnel lovingly modulating each other
 

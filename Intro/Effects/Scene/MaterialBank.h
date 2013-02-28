@@ -21,17 +21,20 @@ public:		// NESTED TYPES
 		struct	StaticParameters
 		{
 			// Specular & Fresnel parameters
-			float	AmplitudeX;
-			float	AmplitudeY;
-			float	FalloffX;
-			float	FalloffY;
-			float	ExponentX;
-			float	ExponentY;
-			float	Offset;
-
+			// FLOAT4 + FLOAT2
+			float		AmplitudeX;
+			float		AmplitudeY;
+			float		FalloffX;
+			float		FalloffY;
+			float		ExponentX;
+			float		ExponentY;
 			// Diffuse parameters
-			float	DiffuseReflectance;
-			float	DiffuseRoughness;
+			// FLOAT2, completing previous one
+			float		DiffuseReflectance;
+			float		DiffuseRoughness;
+
+			float		Offset;
+			NjFloat3	__PAD0;
 		};
 
 		// Dynamic parameters are tied to the layer using the material and could vary per-primitive if necessary
@@ -41,6 +44,7 @@ public:		// NESTED TYPES
 			float	Opacity;			// Opacity in [0,1]
 			float	IOR;				// Index of Refraction
 			float	Frosting;			// A frosting coefficient in [0,1]
+			float	NoDiffuse;			// A coefficient in [0,1] that will determine if the diffuse should be completely used as specular color (1)
 		};
 
 	protected:		// FIELDS
@@ -56,9 +60,6 @@ public:		// NESTED TYPES
 		const DynamicParameters&	GetDynamic() const	{ return m_Dynamic; }
 
 	public:		// METHODS
-
-// 		Material();
-// 		~Material();
 
 		void	SetStaticParameters( MaterialBank& _Owner, const char* _pName, const StaticParameters& _Parameters );
 		void	SetDynamicParameters( const DynamicParameters& _Parameters );

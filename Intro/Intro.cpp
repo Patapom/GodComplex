@@ -240,11 +240,19 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	//////////////////////////////////////////////////////////////////////////
 	// Animate camera
 //	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(2.0f), _TV(2.0f) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
-	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), 1.5f + sinf( 1.0f * _Time ), _TV(2.0f) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
+//	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), 2.0f + sinf( 1.0f * _Time ), _TV(2.0f) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
+	gs_pCamera->LookAt( NjFloat3( 2.0f * sinf( 0.2f * _Time ), 2.0f + sinf( 1.0f * _Time ), 2.0f * cosf( 0.2f * _Time ) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
 	gs_pCamera->Upload( 0 );
 
+
 	//////////////////////////////////////////////////////////////////////////
-	// Prepare scene
+	// Animate the scene
+// 	gs_pScene->GetObjectAt( 0 ).SetPRS( NjFloat3::UnitY, NjFloat4::QuatFromAngleAxis( 0.5f * _Time, NjFloat3::UnitY ) );
+// 	gs_pScene->GetObjectAt( 1 ).SetPRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( -0.1f * _Time, NjFloat3::UnitY ) );
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Render the scene
 	gs_pEffectScene->Render( _Time, _DeltaTime, gs_pSceneTexture0 );
 
 
@@ -276,10 +284,10 @@ void	PrepareScene()
 		};
 
 		MaterialBank::Material::StaticParameters	pMatParamsStatic[] = {
-			{0.001,0.001,0.001,0.001,0,0.001,0,1,0},										// Empty
-			{3.9810717055349722,6.309573444801933,0.471,0.521,0.87,1.041,0.02,0.04,1.3},	// Wood
-			{1047.1285480508996,3.2359365692962827,0.281,1.001,0.47,0.561,0.01,0.01,0.33},	// Metal
-			{1230.268770812381,7.413102413009175,0.321,0.501,0.35,0.941,0.01,0.15,0.02},	// Phenolic
+			{0.001,0.001,0.001,0.001,0,0.001,0,0,0},										// Empty
+			{3.9810717055349722,6.309573444801933,0.471,0.521,0.87,1.041,0.04,1.3,0.02},	// Wood
+			{1047.1285480508996,3.2359365692962827,0.281,1.001,0.47,0.561,0.01,0.33,0.01},	// Metal
+			{1230.268770812381,7.413102413009175,0.321,0.501,0.35,0.941,0.15,0.02,0.01},	// Phenolic
 
 // 			{ 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9},										// Empty
 // 			{ 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9},										// Empty
@@ -294,10 +302,10 @@ void	PrepareScene()
 		// Frosting			// A frosting coefficient in [0,1]
 		//
 		MaterialBank::Material::DynamicParameters	pMatParamsDynamic[] = {
-			{ 0.0f, 0.0f, 1.0f, 0.0f },		// Empty material lets light completely through
-			{ 10.0f, 1, MAX_FLOAT, 0 },
-			{ 10.0f, 1, MAX_FLOAT, 0 },
-			{ 1.0f, 0.5f, 1.2f, 0.01f },	// Phenolic is used as transparent coating with slight refraction and frosting
+			{ 0.0f, 0.0f, 1.0f, 0.0f, 0 },		// Empty material lets light completely through
+			{ 5.0f, 1, MAX_FLOAT, 0, 0 },
+			{ 5.0f, 1, MAX_FLOAT, 0, 1 },		// Metal has no diffuse hence the diffuse texture is used to color the specular
+			{ 1.0f, 0.1f, 1.2f, 0.01f, 0 },		// Phenolic is used as transparent coating with slight refraction and frosting
 		};
 
 		Bank.AllocateMaterials( MaterialsCount );
@@ -326,7 +334,7 @@ void	PrepareScene()
 		pppContents[2] = TBLayer2.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[2] );
 		pppContents[3] = TBLayer3.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[3] );
 		pppContents[4] = TBLayerSpecular.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[4] );
-		pppContents[5] = TBLayerHeight.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_NxNyNzH, pArraySizes[5], 10.0f );
+		pppContents[5] = TBLayerHeight.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_NxNyNzH, pArraySizes[5], 4.0f );
 
 		// Generate the final texture array
 		gs_pSceneTexture0 = TBLayer0.Concat( 6, pppContents, pArraySizes, PixelFormatRGBA8::DESCRIPTOR );
@@ -368,16 +376,16 @@ void	PrepareScene()
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the lights
-	gs_pScene->AllocateLights( 1, 0, 0 );
+	gs_pScene->AllocateLights( 1, 1, 1 );
 
- 	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( 5.0f * NjFloat3::One, NjFloat3( 4, 4, 4 ), -NjFloat3( 1, 1, 1 ), 2.0f, 3.0f, 16.0f );
+ 	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( 50.0f * NjFloat3::One, NjFloat3( 4, 4, 4 ), -NjFloat3( 1, 1, 1 ), 2.0f, 3.0f, 16.0f );
 //	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( NjFloat3( 1, 0, 0 ), NjFloat3( 0, 4, 0 ), -NjFloat3( 0, 1, 0 ), 0.5f, 1.0f, 8.0f );
 
-// 	gs_pScene->GetPointLightAt( 0 ).SetPoint( NjFloat3( 0, 0.2, 0 ), NjFloat3( 0, 0.5f, 1.5f ), 2.0f );
-// //	gs_pScene->GetPointLightAt( 0 ).SetPoint( NjFloat3( 0, 1, 0 ), NjFloat3( 0, 1, 0 ), 1.0f );
-// 
-//  	gs_pScene->GetSpotLightAt( 0 ).SetSpot( NjFloat3( 0, 0, 8 ), NjFloat3( -4, 4, 4 ), -NjFloat3( -1, 1, 1 ), NUAJDEG2RAD(30.0f), NUAJDEG2RAD(40.0f), 16.0f );
-// //	gs_pScene->GetSpotLightAt( 0 ).SetSpot( NjFloat3( 0, 0, 4 ), NjFloat3( 0, 4, 0 ), -NjFloat3( 0, 1, 0 ), NUAJDEG2RAD(30.0f), NUAJDEG2RAD(40.0f), 8.0f );
+	gs_pScene->GetPointLightAt( 0 ).SetPoint( 20.0f * NjFloat3( 1, 1, 1 ), NjFloat3( -3.0f, 1.5f, -1.5f ), 8.0f );
+//	gs_pScene->GetPointLightAt( 0 ).SetPoint( NjFloat3( 0, 1, 0 ), NjFloat3( 0, 1, 0 ), 1.0f );
+
+ 	gs_pScene->GetSpotLightAt( 0 ).SetSpot( 50.0f * NjFloat3( 1, 1, 1 ), NjFloat3( -4, 3, 3 ), NjFloat3( 1, -2, -1 ), NUAJDEG2RAD(30.0f), NUAJDEG2RAD(40.0f), 16.0f );
+//	gs_pScene->GetSpotLightAt( 0 ).SetSpot( NjFloat3( 0, 0, 4 ), NjFloat3( 0, 4, 0 ), -NjFloat3( 0, 1, 0 ), NUAJDEG2RAD(30.0f), NUAJDEG2RAD(40.0f), 8.0f );
 }
 
 void	ReleaseScene()

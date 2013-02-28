@@ -47,7 +47,7 @@ void	MaterialBank::UpdateMaterialsBuffer()
 
 	for ( int MaterialIndex=0; MaterialIndex < m_MaterialsCount; MaterialIndex++ )
 	{
-		Material::StaticParameters&	Params = m_pTB_Materials->m[0];
+		Material::StaticParameters&	Params = m_pTB_Materials->m[MaterialIndex];
 
 		// Copy bulk of parameters
 		memcpy( &Params, &m_pMaterials[MaterialIndex].GetStatic(), sizeof(Material::StaticParameters) );
@@ -57,6 +57,18 @@ void	MaterialBank::UpdateMaterialsBuffer()
 		Params.FalloffX = logf( FALLOFF_GOAL / max( 1e-3f, Params.AmplitudeX ) ) / x;
 		float	y = powf( max( 1e-4f, Params.FalloffY ), Params.ExponentY );	// We must reach the goal at this position
 		Params.FalloffY = logf( FALLOFF_GOAL / max( 1e-3f, Params.AmplitudeY ) ) / y;
+
+// float	Offset = float(MaterialIndex) / m_MaterialsCount;
+// float	A = 0.25f/9;
+// Params.AmplitudeX = Offset + A*0.0f;
+// Params.AmplitudeY = Offset + A*1.0f;
+// Params.FalloffX = Offset + A*2.0f;
+// Params.FalloffY = Offset + A*3.0f;
+// Params.ExponentX = Offset + A*4.0f;
+// Params.ExponentY = Offset + A*5.0f;
+// Params.DiffuseReflectance = Offset + A*6.0f;
+// Params.DiffuseRoughness = Offset + A*7.0f;
+// Params.Offset = Offset + A*8.0f;
 	}
 
 	m_pTB_Materials->UpdateData();

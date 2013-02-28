@@ -40,6 +40,7 @@ public:		// NESTED TYPES
 				float			__Pad2;
 				NjFloat3		Frosting;	// The frosting coefficient of the top 3 layers
 				float			__Pad3;
+				NjFloat4		NoDiffuse;	// The "no diffuse" coefficient of the 4 layers
 
 				// TODO: Add tiling + offset for each layer
 			};
@@ -194,6 +195,7 @@ public:		// METHODS
 	void		AllocateObjects( int _ObjectsCount );
 	void		DestroyObjects();
 	Object&		CreateObjectAt( int _ObjectIndex, const char* _pName );
+	Object&		GetObjectAt( int _ObjectIndex );
 
 	// Lights management
 	void		AllocateLights( int _DirectionalsCount, int _PointsCount, int _SpotsCount );

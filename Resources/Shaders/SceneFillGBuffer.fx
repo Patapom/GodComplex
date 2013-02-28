@@ -19,6 +19,8 @@ cbuffer	cbPrimitive	: register( b11 )
 	float4		_Thickness;		// 3 thicknesses for the top 3 layers (X=layer#1, Y=layer#2, Z=layer#3)
 	float3		_Extinction;	// 3 extinction coefficients for the top 3 layers (X=layer#1, Y=layer#2, Z=layer#3)
 	float3		_IOR;			// 3 indices of refraction for the top 3 layers (X=layer#1, Y=layer#2, Z=layer#3)
+	float3		_Frosting;		// 3 "frosting coefficients" for the top 3 layers (X=layer#1, Y=layer#2, Z=layer#3)
+	float4		_NoDiffuse;		// 4 no diffuse indices telling if the diffuse texture should be used to tint the specular instead
 	// TODO: Add diffusion (i.e. mip bias) for each transmissive layer
 	// TODO: Add tiling + offset for each layer
 };
@@ -182,16 +184,25 @@ PS_OUT	PS( PS_IN _In )
 	float3	Layer3 = lerp( Layer2, TexLayer3.xyz, LayerExtinctions.z );			// Layer 2 is only visible if extinction from layer 3 is low
 	float3	DiffuseAlbedo = Layer3;												// This is the final diffuse color seen through all layers
 
-	float3	Transparency = 1.0 - LayerExtinctions;								// Individual transparency
+	// Compute perceived specular
+	// We proceed the same as for diffuse above except we also interpolate between specular and diffuse for each layer depending on the layer's "NoDiffuse" parameter
+	// The goal is to use the diffuse texture instead of the specified specular as soon as we encounter a NoDiffuse layer (like a metal for example)
+	Layer0 = lerp( TexSpecular.xyz, TexLayer0.xyz, _NoDiffuse.x );
+	Layer1 = lerp( Layer0, lerp( TexSpecular.xyz, TexLayer1.xyz, _NoDiffuse.y ), LayerExtinctions.x );
+	Layer2 = lerp( Layer1, lerp( TexSpecular.xyz, TexLayer2.xyz, _NoDiffuse.z ), LayerExtinctions.y );
+	Layer3 = lerp( Layer2, lerp( TexSpecular.xyz, TexLayer3.xyz, _NoDiffuse.w ), LayerExtinctions.z );
+	float3	SpecularAlbedo = Layer3;
+
+	// Compute layers' weights
+	float3	Transparency = 1.0 - LayerExtinctions;								// Individual transparencies
 			Transparency.y *= Transparency.z;									// Cumulated transparency for layer 2 as seen through layer 3
 			Transparency.x *= Transparency.y;									// Cumulated transparency for layer 1 as seen through layer 2 and 3
  	float4	LayerWeights = float4(
 									Transparency.x * 1.0,						// Weight of layer 0 seen through 1, 2, 3
- 									Transparency.y * TexLayer1.w,				// Weight of layer 1 seen through 1, 2
- 									Transparency.z * TexLayer2.w,				// Weight of layer 2 seen through 1
+ 									Transparency.y * TexLayer1.w,				// Weight of layer 1 seen through 2, 3
+ 									Transparency.z * TexLayer2.w,				// Weight of layer 2 seen through 3
  									TexLayer3.w									// Weight of layer 3 seen directly
 								);
-
 
 // I don't think weights should be normalized after all!
 // The idea is rather to apply the materials one after another, light filtering through as "diffuse"
@@ -202,9 +213,9 @@ PS_OUT	PS( PS_IN _In )
 
 	// Write final result
 	PS_OUT	Out;
-	Out.NormalTangent = float4( CameraNormal.xy, CameraTangent.xy );				// XY=Normal  ZW=TangentXY
+	Out.NormalTangent = float4( CameraNormal.xy, CameraTangent.xy );			// XY=Normal  ZW=TangentXY
 	Out.DiffuseAlbedo = float4( DiffuseAlbedo, CameraTangent.z );				// XYZ=Diffuse Albedo W=TangentZ
-	Out.SpecularAlbedo = float4( TexSpecular.xyz, _Thickness.x * TexNormal.w );	// XYZ=Specular Albedo W=Height (in millimeters)
+	Out.SpecularAlbedo = float4( SpecularAlbedo, _Thickness.x * TexNormal.w );	// XYZ=Specular Albedo W=Height (in millimeters)
 	Out.WeightMatIDs0 = uint4(													// 4 couples of [Weight,MatID] each in [0,255]
 								WriteWeightMatID( LayerWeights.x, _MatIDs.x ),
 								WriteWeightMatID( LayerWeights.y, _MatIDs.y ),
@@ -224,7 +235,7 @@ PS_OUT	PS( PS_IN _In )
 // Out.DiffuseAlbedo = float4( WorldNormal, 0 );
 //Out.DiffuseAlbedo = float4( Rotation[2], 0 );
 //Out.DiffuseAlbedo = length( NormalMap );
-
+//Out.DiffuseAlbedo = float4( LayerWeights.xyz, 0 );
 
 	return Out;
 }

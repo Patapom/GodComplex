@@ -29,12 +29,6 @@ VS_IN	VS( VS_IN _In )
 	return _In;
 }
 
-struct	WeightMatID
-{
-	uint	ID;
-	float	Weight;
-};
-
 WeightMatID	ReadWeightMatID( uint _Packed )
 {
 	WeightMatID	Out;
@@ -132,9 +126,10 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 	float3	AccDiffuse = _TexDiffuseSpecular.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 	float3	AccSpecular = _TexDiffuseSpecular.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
 
-return float4( AccDiffuse, 1 );
-//return float4( 0.33 * AccDiffuse, 1 );
-//return float4( DiffuseAlbedo * AccDiffuse + SpecularAlbedo * AccSpecular, 1 );
 //return float4( AccSpecular, 1 );
-return float4( lerp( DiffuseAlbedo, AccDiffuse, 0.5 ), 1 );
+//return float4( AccDiffuse, 1 );
+//return float4( 0.33 * AccDiffuse, 1 );
+return float4( DiffuseAlbedo * AccDiffuse + SpecularAlbedo * AccSpecular, 1 );
+//return float4( AccSpecular, 1 );
+//return float4( lerp( DiffuseAlbedo, AccDiffuse, 0.5 ), 1 );
 }
