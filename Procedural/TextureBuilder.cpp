@@ -609,4 +609,36 @@ void	TextureBuilder::LoadFromRAWFile( const char* _pPath, bool _bAsHeight )
 	delete[] pRAW;
 }
 
+// Loads a FLOAT image from disk (FLOAT images can be created by the Tool/HDR2RAW project)
+// Warning: There is absolutely NO check on the size of the file. You must know what you're doing here!
+void	TextureBuilder::LoadFromFloatFile( const char* _pPath )
+{
+	int		Size = 3*m_Width*m_Height;
+
+	float*	pRAW = new float[Size];
+	FILE*	pFile = fopen( _pPath, "rb" );
+	ASSERT( pFile != NULL, "Invalid file!" );
+	fread_s( pRAW, Size*sizeof(float), sizeof(float), Size, pFile );
+	fclose( pFile );
+
+	for ( int Y=0; Y < m_Height; Y++ )
+	{
+		float*	pScanlineSource = &pRAW[3*m_Width*Y];
+		Pixel*	pScanlineTarget = &m_ppBufferGeneric[0][m_Width*Y];
+		for ( int X=0; X < m_Width; X++, pScanlineTarget++ )
+		{
+			float	R = *pScanlineSource++;
+			float	G = *pScanlineSource++;
+			float	B = *pScanlineSource++;
+			float	A = 1.0f;
+			
+			pScanlineTarget->RGBA.Set( R, G, B, A );
+			pScanlineTarget->Height = 0.0f;
+			pScanlineTarget->Roughness = 0.0f;
+		}
+	}
+
+	delete[] pRAW;
+}
+
 #endif

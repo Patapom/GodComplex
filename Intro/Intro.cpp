@@ -69,7 +69,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create our camera
 	gs_pCamera = new Camera( gs_Device );	// NOTE: Camera reserves the CB slot #0 for itself !
-	gs_pCamera->SetPerspective( NUAJDEG2RAD( 80.0f ), float(RESX) / RESY, 0.01f, 5000.0f );
+	gs_pCamera->SetPerspective( NUAJDEG2RAD( 80.0f ), float(RESX) / RESY, 0.01f, 1000.0f );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -168,7 +168,9 @@ namespace
 {
 	Primitive*	gs_pPrimSphere0;
 	Primitive*	gs_pPrimPlane0;
+	Primitive*	gs_pPrimTorus0;
 	Texture2D*	gs_pSceneTexture0;
+	Texture2D*	gs_pTexEnvMap;
 }
 
 bool	IntroDo( float _Time, float _DeltaTime )
@@ -241,7 +243,16 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	// Animate camera
 //	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(2.0f), _TV(2.0f) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
 //	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), 2.0f + sinf( 1.0f * _Time ), _TV(2.0f) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
-	gs_pCamera->LookAt( NjFloat3( 2.0f * sinf( 0.2f * _Time ), 2.0f + sinf( 1.0f * _Time ), 2.0f * cosf( 0.2f * _Time ) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
+
+// _Time = 11.4f;	// Black negative normals ?
+// _Time = 11.55f;	// Black specks
+
+	float	t = 1.0f * _Time;
+
+//	t = 31.415926535897932384626433832795f;
+//	t = _TV( 41.2f );
+
+	gs_pCamera->LookAt( NjFloat3( 2.0f * sinf( 0.2f * t ), 2.0f + sinf( 1.0f * t ), 2.0f * cosf( 0.2f * t ) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
 	gs_pCamera->Upload( 0 );
 
 
@@ -288,12 +299,6 @@ void	PrepareScene()
 			{3.9810717055349722,6.309573444801933,0.471,0.521,0.87,1.041,0.04,1.3,0.02},	// Wood
 			{1047.1285480508996,3.2359365692962827,0.281,1.001,0.47,0.561,0.01,0.33,0.01},	// Metal
 			{1230.268770812381,7.413102413009175,0.321,0.501,0.35,0.941,0.15,0.02,0.01},	// Phenolic
-
-// 			{ 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9},										// Empty
-// 			{ 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9},										// Empty
-// 			{ 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9},										// Empty
-// 			{ 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9},										// Empty
-
 		};
 
 		// Thickness		// Material thickness in millimeters
@@ -341,6 +346,15 @@ void	PrepareScene()
 	}
 
 	//////////////////////////////////////////////////////////////////////////
+	// Create the env map
+	{
+		TextureBuilder	TBEnvMap( 1024, 512 );		TBEnvMap.LoadFromFloatFile( "./Resources/Images/uffizi-large_1024x512.float" );
+		gs_pTexEnvMap = TBEnvMap.CreateTexture( PixelFormatRGBA16F::DESCRIPTOR, TextureBuilder::CONV_RGBA );
+
+		gs_pScene->SetEnvMap( *gs_pTexEnvMap );
+	}
+
+	//////////////////////////////////////////////////////////////////////////
 	// Create primitives
 	{
 		GeometryBuilder::MapperSpherical	MapperSphere( 4.0f, 2.0f );
@@ -350,9 +364,13 @@ void	PrepareScene()
 		GeometryBuilder::MapperPlanar		MapperPlane( 1.0f, 1.0f );
 		gs_pPrimPlane0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
 		GeometryBuilder::BuildPlane( 1, 1, 10.0f * NjFloat3::UnitX, -10.0f * NjFloat3::UnitZ, *gs_pPrimPlane0, MapperPlane );
+
+		GeometryBuilder::MapperPlanar		MapperPlane2( 1.0f, 1.0f, NjFloat3::Zero, NjFloat3::UnitX, NjFloat3::UnitY );
+		gs_pPrimTorus0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
+		GeometryBuilder::BuildTorus( 60, 30, 1.0f, 0.3f, *gs_pPrimTorus0, MapperPlane2 );
 	}
 
-	gs_pScene->AllocateObjects( 2 );
+	gs_pScene->AllocateObjects( 3 );
 
 	// Create our sphere object
 	{
@@ -364,9 +382,19 @@ void	PrepareScene()
 		Sphere0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture0, 1, 2, 3, 0 );	// Wood + Metal + Phenolic coating + Empty
 	}
 
+	// Create our torus object
+	{
+		Scene::Object&	Torus0 = gs_pScene->CreateObjectAt( 1, "Torus" );
+						Torus0.SetPRS( NjFloat3( 2.0f, 0.3f, 1.5f ), NjFloat4::QuatFromAngleAxis( 0.5f * PI, NjFloat3::UnitX ) );
+
+		Torus0.AllocatePrimitives( 1 );
+		Torus0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimTorus0 );
+		Torus0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture0, 1, 2, 3, 0 );		// Wood + Metal + Phenolic coating + Empty
+	}
+
 	// Create our plane object
 	{
-		Scene::Object&	Plane0 = gs_pScene->CreateObjectAt( 1, "Plane0" );
+		Scene::Object&	Plane0 = gs_pScene->CreateObjectAt( 2, "Plane0" );
 						Plane0.SetPRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ) );
 
 		Plane0.AllocatePrimitives( 1 );
@@ -378,10 +406,11 @@ void	PrepareScene()
 	// Create the lights
 	gs_pScene->AllocateLights( 1, 1, 1 );
 
- 	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( 50.0f * NjFloat3::One, NjFloat3( 4, 4, 4 ), -NjFloat3( 1, 1, 1 ), 2.0f, 3.0f, 16.0f );
-//	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( NjFloat3( 1, 0, 0 ), NjFloat3( 0, 4, 0 ), -NjFloat3( 0, 1, 0 ), 0.5f, 1.0f, 8.0f );
+ 	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( 20.0f * NjFloat3::One, NjFloat3( 4, 4, 4 ), -NjFloat3( 1, 1, 1 ), 2.0f, 3.0f, 16.0f );
+//	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( 50.0f * NjFloat3::One, NjFloat3( 0, 4, 0 ), -NjFloat3( 0, 1, 0 ), 1.0f, 1.5f, 8.0f );
 
-	gs_pScene->GetPointLightAt( 0 ).SetPoint( 20.0f * NjFloat3( 1, 1, 1 ), NjFloat3( -3.0f, 1.5f, -1.5f ), 8.0f );
+//	gs_pScene->GetPointLightAt( 0 ).SetPoint( 20.0f * NjFloat3( 1, 1, 1 ), NjFloat3( -3.0f, 1.5f, -1.5f ), 8.0f );
+	gs_pScene->GetPointLightAt( 0 ).SetPoint( 100.0f * NjFloat3( 1, 1, 1 ), NjFloat3( -3.0f, 5.5f, -1.5f ), 30.0f );
 //	gs_pScene->GetPointLightAt( 0 ).SetPoint( NjFloat3( 0, 1, 0 ), NjFloat3( 0, 1, 0 ), 1.0f );
 
  	gs_pScene->GetSpotLightAt( 0 ).SetSpot( 50.0f * NjFloat3( 1, 1, 1 ), NjFloat3( -4, 3, 3 ), NjFloat3( 1, -2, -1 ), NUAJDEG2RAD(30.0f), NUAJDEG2RAD(40.0f), 16.0f );
@@ -391,6 +420,8 @@ void	PrepareScene()
 void	ReleaseScene()
 {
 	delete gs_pPrimSphere0;
+	delete gs_pPrimTorus0;
 	delete gs_pPrimPlane0;
 	delete gs_pSceneTexture0;
+	delete gs_pTexEnvMap;
 }

@@ -162,8 +162,8 @@ PS_OUT	PS( PS_IN _In )
 	// Prepare necessary informations
 	float	Z = _TexDepth.SampleLevel( LinearClamp, UV, 0.0 ).x;
 
-	float3	Diffuse = Buf1.xyz;
-	float3	Specular = Buf2.xyz;
+	float3	DiffuseAlbedo = Buf1.xyz;
+	float3	SpecularAlbedo = Buf2.xyz;
 	float	Height = Buf2.w;
 
 	WeightMatID		Mats[4] = {
@@ -177,7 +177,7 @@ PS_OUT	PS( PS_IN _In )
 	float3	CameraPosition = Z * CameraView;
 			CameraView = normalize( CameraView );
 
-	// Unpack tangent
+	// Recompose and unpack tangent
 	float3	CameraTangent = 2.0 * float3( Buf0.zw, Buf1.w ) - 1.0;
 
 	// Unpack stereographic normal (from http://aras-p.info/texts/CompactNormalStorage.html#method07stereo)
@@ -190,7 +190,7 @@ PS_OUT	PS( PS_IN _In )
 	float3	WorldView = CameraView.x * _Camera2World[0].xyz + CameraView.y * _Camera2World[1].xyz + CameraView.z * _Camera2World[2].xyz;
 	float3	WorldPosition = CameraPosition.x * _Camera2World[0].xyz + CameraPosition.y * _Camera2World[1].xyz + CameraPosition.z * _Camera2World[2].xyz + _Camera2World[3].xyz;
 	float3	WorldNormal = CameraNormal.x * _Camera2World[0].xyz + CameraNormal.y * _Camera2World[1].xyz - CameraNormal.z * _Camera2World[2].xyz;
-	float3	WorldTangent = CameraTangent.x * _Camera2World[0].xyz + CameraTangent.y * _Camera2World[1].xyz - CameraTangent.z * _Camera2World[2].xyz;
+	float3	WorldTangent = CameraTangent.x * _Camera2World[0].xyz + CameraTangent.y * _Camera2World[1].xyz + CameraTangent.z * _Camera2World[2].xyz;
 	float3	WorldBiTangent = normalize( cross( WorldNormal, WorldTangent ) );
 
 	// Compute light irradiance
@@ -206,16 +206,24 @@ PS_OUT	PS( PS_IN _In )
 	MaterialParams	MatParams = ComputeWeightedMaterialParams( Mats );
 	MatReflectance	Reflectance = LayeredMatEval( ViewParams, MatParams );
 
-	Out.Diffuse = LightIrradiance * (Reflectance.Diffuse + Reflectance.RetroDiffuse);
-	Out.Specular = LightIrradiance * Reflectance.Specular * Specular;
+
+// DEBUG Use a simple blinn-phong model with lambert for diffuse
+// float	S = 100.0;
+// float	Kd = 0.2 * INVPI;
+// float	Ks = 0.3 * INVPI;
+// 
+// float	SpecFactor = (S+2) * (S+4) / (8.0*PI*(exp2(-0.5*S) + S));
+// Reflectance.Specular = Ks * SpecFactor * pow( saturate( ViewParams.Half.z ), S );
+// Reflectance.Diffuse = Kd * saturate( LightTS.z );
+// Reflectance.RetroDiffuse = 0.0;
+// DEBUG
 
 
-//Out.Specular = Specular;
-//Out.Diffuse = Diffuse;
-//Out.Diffuse = Mats[2].Weight;
-//Out.Diffuse = 0.25 * Mats[3].ID;
-//Out.Diffuse = 0.125 * _Materials[1].Amplitude.y;
+	Out.Diffuse = LightIrradiance * (Reflectance.Diffuse + Reflectance.RetroDiffuse) * DiffuseAlbedo;
+	Out.Specular = LightIrradiance * Reflectance.Specular * SpecularAlbedo;
 
+
+// DEBUG => Show the array of material parameters
 // uint	MatID = uint( floor( 4*UV.y ) );
 // uint	ComponentIndex = uint( floor( 9 * UV.x ) );
 // float	Bli = 0.0;
@@ -232,6 +240,7 @@ PS_OUT	PS( PS_IN _In )
 // case 8: Bli = 1.0 * _Materials[MatID].Offset; break;
 // }
 // Out.Diffuse = Bli;
+// DEBUG
 
 	return Out;
 }

@@ -291,9 +291,15 @@ void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D* _pTex )
 	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget(), &m_Device.DefaultDepthStencil() );
 
 	m_pRTAccumulatorDiffuseSpecular->SetPS( 13 );
+	const Texture2D*	pTexEnvMap = m_Scene.GetEnvMap();
+	if ( pTexEnvMap != NULL )
+		pTexEnvMap->SetPS( 14 );
 
-_pTex->SetPS( 14 );	// DEBUG
-	
+// DEBUG
+const Texture2D*	pTexLayeredMat = m_Scene.GetObjectAt(0).GetPrimitiveAt(0).GetLayeredTexture();
+if ( pTexLayeredMat != NULL )
+	pTexLayeredMat->SetPS( 15 );
+// DEBUG
 
 	m_pCB_Render->UpdateData();
 	m_ScreenQuad.Render( M );

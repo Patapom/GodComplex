@@ -140,25 +140,17 @@ PS_OUT	PS( PS_IN _In )
 	float4	TexLayer1 = _TexMaterial.Sample( LinearWrap,	float3( UV, 1 ) );	UV += dUV * _Thickness.x;	// Layer 1
 	float4	TexLayer0 = _TexMaterial.Sample( LinearWrap,	float3( UV, 0 ) );								// Layer 0
 	float4	TexNormal = _TexMaterial.Sample( LinearWrap,	float3( UV, 5 ) );								// Normal Map is always assigned to bottom layer
-//###	float4	TexNormal = _TexMaterial.SampleLevel( LinearWrap,	float3( UV, 5 ), 0.0 );								// Normal Map is always assigned to bottom layer
 
 	// Transform tangent space & get normal+tangent into camera space
 	float3		NormalMap = normalize( 2.0 * TexNormal.xyz - 1.0 );
 	float3x3	Rotation = ComputeRotation( NormalMap );
 
-	WorldNormal = mul( WorldNormal, Rotation );
-	WorldTangent = mul( WorldTangent, Rotation );
+// 	WorldNormal = mul( WorldNormal, Rotation );
+// 	WorldTangent = mul( WorldTangent, Rotation );
 
-// WorldNormal = normalize( WorldNormal );
-// WorldTangent = normalize( WorldTangent );
-//WorldNormal = normalize( _In.Normal );
-
-	float3	CameraNormal = float3( dot( WorldNormal, _World2Camera[0].xyz ), dot( WorldNormal, _World2Camera[1].xyz ), -dot( WorldNormal, _World2Camera[2].xyz ) );
-	float3	CameraTangent = float3( dot( WorldTangent, _World2Camera[0].xyz ), dot( WorldTangent, _World2Camera[1].xyz ), -dot( WorldTangent, _World2Camera[2].xyz ) );
+	float3	CameraNormal = float3( dot( WorldNormal, _Camera2World[0].xyz ), dot( WorldNormal, _Camera2World[1].xyz ), -dot( WorldNormal, _Camera2World[2].xyz ) );
+	float3	CameraTangent = float3( dot( WorldTangent, _Camera2World[0].xyz ), dot( WorldTangent, _Camera2World[1].xyz ), dot( WorldTangent, _Camera2World[2].xyz ) );
 			CameraTangent = normalize( CameraTangent );
-
-// ### Store 3 vector in tangent for testing...
-// CameraTangent = CameraNormal;
 
 	// Pack for storage
 	CameraTangent = 0.5 * (1.0 + CameraTangent);
@@ -172,6 +164,8 @@ PS_OUT	PS( PS_IN _In )
 
 	//////////////////////////////////////////////////////////////////////
 	// Apply Pom model
+
+	// Compute perceived diffuse
 	float3	LayerDistances = DistanceFactor * _Thickness.yzw;
 	float3	LayerExtinctions = exp( _Extinction * LayerDistances );				// The extinction of light going through some distance for each layer
 			LayerExtinctions.x *= TexLayer1.w;									// Apply masking of each layer as well
@@ -184,6 +178,7 @@ PS_OUT	PS( PS_IN _In )
 	float3	Layer3 = lerp( Layer2, TexLayer3.xyz, LayerExtinctions.z );			// Layer 2 is only visible if extinction from layer 3 is low
 	float3	DiffuseAlbedo = Layer3;												// This is the final diffuse color seen through all layers
 
+
 	// Compute perceived specular
 	// We proceed the same as for diffuse above except we also interpolate between specular and diffuse for each layer depending on the layer's "NoDiffuse" parameter
 	// The goal is to use the diffuse texture instead of the specified specular as soon as we encounter a NoDiffuse layer (like a metal for example)
@@ -192,6 +187,7 @@ PS_OUT	PS( PS_IN _In )
 	Layer2 = lerp( Layer1, lerp( TexSpecular.xyz, TexLayer2.xyz, _NoDiffuse.z ), LayerExtinctions.y );
 	Layer3 = lerp( Layer2, lerp( TexSpecular.xyz, TexLayer3.xyz, _NoDiffuse.w ), LayerExtinctions.z );
 	float3	SpecularAlbedo = Layer3;
+
 
 	// Compute layers' weights
 	float3	Transparency = 1.0 - LayerExtinctions;								// Individual transparencies
@@ -204,9 +200,11 @@ PS_OUT	PS( PS_IN _In )
  									TexLayer3.w									// Weight of layer 3 seen directly
 								);
 
-// I don't think weights should be normalized after all!
+// I don't think weights should be normalized!
 // The idea is rather to apply the materials one after another, light filtering through as "diffuse"
 //	reaches the level below and weights should better be there to tell if the model applies or not
+// Unfortunately, I don't think it's going to be realistic to apply the model layer by layer as it's
+//	quite costly already...
 //
 	float	SumWeights = dot( LayerWeights, 1.0 );
 	LayerWeights /= SumWeights;													// We normalize weights as we can't exceed one!
@@ -222,20 +220,6 @@ PS_OUT	PS( PS_IN _In )
 								WriteWeightMatID( LayerWeights.z, _MatIDs.z ),
 								WriteWeightMatID( LayerWeights.w, _MatIDs.w )
 							);
-
-//Out.DiffuseAlbedo = float4( _In.UV, 0, 0 );
-//Out.DiffuseAlbedo = float4( LayerWeights.zzz, 0 );
-//Out.DiffuseAlbedo = float4( LayerExtinctions.yyy, 0 );
-//Out.DiffuseAlbedo = float4( TexLayer2.www, 0 );
-//Out.DiffuseAlbedo = float4( Layer3, 0 );
-//Out.DiffuseAlbedo = float4( 1.0 * LayerExtinctions.xxx, 0 );
-//Out.DiffuseAlbedo = float4( -0.125 * _Extinction.yyy, 0 );
-//Out.DiffuseAlbedo = 0.5 * DistanceFactor;
-//Out.DiffuseAlbedo = float4( ViewTS, 0 );
-// Out.DiffuseAlbedo = float4( WorldNormal, 0 );
-//Out.DiffuseAlbedo = float4( Rotation[2], 0 );
-//Out.DiffuseAlbedo = length( NormalMap );
-//Out.DiffuseAlbedo = float4( LayerWeights.xyz, 0 );
 
 	return Out;
 }

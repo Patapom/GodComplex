@@ -163,6 +163,11 @@ void	Scene::SetSpotLightEnabled( int _LightIndex, bool _bEnabled )
 	L.m_bEnabled = _bEnabled;
 }
 
+void	Scene::SetEnvMap( Texture2D& _EnvMap )
+{
+	m_pTexEnvMap = &_EnvMap;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Object

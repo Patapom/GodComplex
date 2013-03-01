@@ -115,6 +115,7 @@ public:		// METHODS
 #ifdef _DEBUG
 	// We allow loading RAW textures from disk in debug mode
 	void			LoadFromRAWFile( const char* _pPath, bool _bAsHeight=false );
+	void			LoadFromFloatFile( const char* _pPath );
 #endif
 
 

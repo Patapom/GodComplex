@@ -55,6 +55,8 @@ public:		// NESTED TYPES
 
 		public:		// PROPERTIES
 
+			const Texture2D*	GetLayeredTexture() const	{ return m_pTextures; }
+
 		public:		// METHODS
 
 			Primitive( Object& _Owner );
@@ -165,6 +167,8 @@ private:	// FIELDS
 	int				m_EnabledLightsCountSpot;
 	Light*			m_pLightsSpot;
 
+	Texture2D*		m_pTexEnvMap;
+
 	MaterialBank*	m_pMaterials;
 
 
@@ -182,6 +186,7 @@ public:		// PROPERTIES
 	int				GetEnabledSpotLightsCount() const			{ return m_EnabledLightsCountSpot; }
 	const Light*	GetSpotLights() const						{ return m_pLightsSpot; }
 
+	const Texture2D*	GetEnvMap() const						{ return m_pTexEnvMap; }
 
 public:		// METHODS
 
@@ -206,6 +211,8 @@ public:		// METHODS
 	void		SetDirectionalLightEnabled( int _LightIndex, bool _bEnabled );
 	void		SetPointLightEnabled( int _LightIndex, bool _bEnabled );
 	void		SetSpotLightEnabled( int _LightIndex, bool _bEnabled );
+
+	void		SetEnvMap( Texture2D& _EnvMap );
 };
 
 

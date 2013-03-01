@@ -38,7 +38,7 @@ HalfVectorSpaceParams	Tangent2HalfVector( float3 _TSView, float3 _TSLight )
 	Result.TSLight = _TSLight;
 	Result.Half = normalize( _TSLight + _TSView );
 	Result.CosThetaH = Result.Half.z;
-	Result.CosThetaD = dot( _TSLight, Result.Half );
+	Result.CosThetaD = clamp( dot( _TSLight, Result.Half ), -1.0, +1.0 );
 
 	Result.ThetaHD = float2( acos( Result.CosThetaH ), acos( Result.CosThetaD ) );
 	Result.PhiD = 0.0;	// If needed later... ?
@@ -97,10 +97,10 @@ MatReflectance	LayeredMatEval( HalfVectorSpaceParams _ViewParams, MaterialParams
 	float	Cos5 = a * a;
 			Cos5 *= Cos5 * a;
 	Result.Diffuse = 1.0 + (Fd90-1)*Cos5;
-	Result.Diffuse *= Result.Diffuse;					// Diffuse uses double Fresnel from both ThetaV and ThetaL
+	Result.Diffuse *= Result.Diffuse;						// Diffuse uses double Fresnel from both ThetaV and ThetaL
 
-	Result.RetroDiffuse = max( 0, Result.Diffuse-1 );	// Retro-reflection starts above 1
-	Result.Diffuse = min( 1, Result.Diffuse );			// Clamp diffuse to avoid double-counting retro-reflection...
+	Result.RetroDiffuse = max( 0.0, Result.Diffuse-1.0 );	// Retro-reflection starts above 1
+	Result.Diffuse = min( 1.0, Result.Diffuse );			// Clamp diffuse to avoid double-counting retro-reflection...
 
 	Result.Diffuse *= _MatParams.ExponentDiffuse.z * INVPI;
 	Result.RetroDiffuse *= _MatParams.ExponentDiffuse.z * INVPI;
