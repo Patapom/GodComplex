@@ -32,15 +32,14 @@ EffectTranslucency::EffectTranslucency( Texture2D& _RTTarget ) : m_ErrorCode( 0 
 	//////////////////////////////////////////////////////////////////////////
 	// Build some sphere primitives
 	{
-		GeometryBuilder::MapperSpherical	Mapper( 4.0f, 2.0f );
-
 		Noise	N( 1 );
 
 		m_pPrimTorusInternal = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
-		GeometryBuilder::BuildTorus( 80, 50, 1.0f, 0.2f, *m_pPrimTorusInternal, Mapper, TweakTorusInternal, &N );
+		GeometryBuilder::BuildTorus( 80, 50, 1.0f, 0.2f, *m_pPrimTorusInternal, NULL, TweakTorusInternal, &N );
 
 		m_pPrimSphereExternal = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
-		GeometryBuilder::BuildSphere( 80, 50, *m_pPrimSphereExternal, Mapper, TweakSphereExternal, &N );
+		GeometryBuilder::MapperSpherical	Mapper( 4.0f, 2.0f );
+		GeometryBuilder::BuildSphere( 80, 50, *m_pPrimSphereExternal, &Mapper, TweakSphereExternal, &N );
 	}
 
 	//////////////////////////////////////////////////////////////////////////

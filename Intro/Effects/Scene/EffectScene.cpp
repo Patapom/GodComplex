@@ -51,11 +51,10 @@ EffectScene::EffectScene( Device& _Device, Scene& _Scene, Primitive& _ScreenQuad
 	{
 		m_pPrimCylinder = new Primitive( _Device, VertexFormatP3T2::DESCRIPTOR );
 		GeometryBuilder::MapperCylindrical	Mapper( 1, -0.5f, NjFloat3::UnitY );	// V will be 0 at the top and 1 at the bottom
-		GeometryBuilder::BuildCylinder( 32, 1, true, *m_pPrimCylinder, Mapper );
+		GeometryBuilder::BuildCylinder( 32, 1, true, *m_pPrimCylinder, &Mapper );
 
 		m_pPrimSphere = new Primitive( _Device, VertexFormatP3T2::DESCRIPTOR );
-		GeometryBuilder::MapperSpherical	Mapper2;
-		GeometryBuilder::BuildSphere( 32, 16, *m_pPrimSphere, Mapper2 );
+		GeometryBuilder::BuildSphere( 32, 16, *m_pPrimSphere, NULL );
 	}
 
 	//////////////////////////////////////////////////////////////////////////

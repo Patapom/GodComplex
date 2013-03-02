@@ -215,5 +215,7 @@ PS_OUT	PS( PS_IN _In )
 								WriteWeightMatID( LayerWeights.w, _MatIDs.w )
 							);
 
+// Out.DiffuseAlbedo = float4( UV, 0, 0 );
+
 	return Out;
 }

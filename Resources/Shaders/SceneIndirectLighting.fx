@@ -111,7 +111,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 	float3	CameraPosition = Z * CameraView;
 			CameraView = normalize( CameraView );
 
-// return sqrt(DiffuseAlbedo);
+//return sqrt(DiffuseAlbedo);
 // return Mats[0].Weight;
 //return 0.2 * Mats[0].ID;
 

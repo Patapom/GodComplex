@@ -169,6 +169,7 @@ namespace
 	Primitive*	gs_pPrimSphere0;
 	Primitive*	gs_pPrimPlane0;
 	Primitive*	gs_pPrimTorus0;
+	Primitive*	gs_pPrimCube0;
 	Texture2D*	gs_pSceneTexture0;
 	Texture2D*	gs_pSceneTexture1;
 	Texture2D*	gs_pTexEnvMap;
@@ -260,8 +261,9 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Animate the scene
-// 	gs_pScene->GetObjectAt( 0 ).SetPRS( NjFloat3::UnitY, NjFloat4::QuatFromAngleAxis( 0.5f * _Time, NjFloat3::UnitY ) );
+//	gs_pScene->GetObjectAt( 0 ).SetPRS( NjFloat3::UnitY, NjFloat4::QuatFromAngleAxis( 0.5f * _Time, NjFloat3::UnitY ) );
 // 	gs_pScene->GetObjectAt( 1 ).SetPRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( -0.1f * _Time, NjFloat3::UnitY ) );
+//	gs_pScene->GetObjectAt( 0 ).SetPRS( NjFloat3::UnitY, NjFloat4::QuatFromAngleAxis( 0.5f * _Time, NjFloat3( 1, 1, 1 ) ) );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -400,15 +402,18 @@ void	PrepareScene()
 	{
 		GeometryBuilder::MapperSpherical	MapperSphere( 4.0f, 2.0f );
 		gs_pPrimSphere0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
-		GeometryBuilder::BuildSphere( 60, 30, *gs_pPrimSphere0, MapperSphere );
+		GeometryBuilder::BuildSphere( 60, 30, *gs_pPrimSphere0, &MapperSphere );
 
 		GeometryBuilder::MapperPlanar		MapperPlane( 1.0f, 1.0f );
 		gs_pPrimPlane0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
-		GeometryBuilder::BuildPlane( 1, 1, 10.0f * NjFloat3::UnitX, -10.0f * NjFloat3::UnitZ, *gs_pPrimPlane0, MapperPlane );
+		GeometryBuilder::BuildPlane( 1, 1, 10.0f * NjFloat3::UnitX, -10.0f * NjFloat3::UnitZ, *gs_pPrimPlane0, &MapperPlane );
 
-		GeometryBuilder::MapperPlanar		MapperPlane2( 1.0f, 1.0f, NjFloat3::Zero, NjFloat3::UnitX, NjFloat3::UnitY );
 		gs_pPrimTorus0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
-		GeometryBuilder::BuildTorus( 60, 30, 1.0f, 0.3f, *gs_pPrimTorus0, MapperPlane2 );
+		GeometryBuilder::BuildTorus( 60, 30, 1.0f, 0.3f, *gs_pPrimTorus0, NULL );
+
+		gs_pPrimCube0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
+//		GeometryBuilder::MapperCube		MapperCube( 2.0f, 2.0f );
+		GeometryBuilder::BuildCube( 1, 1, 1, *gs_pPrimCube0, NULL );
 	}
 
 	gs_pScene->AllocateObjects( 3 );
@@ -416,10 +421,11 @@ void	PrepareScene()
 	// Create our sphere object
 	{
 		Scene::Object&	Sphere0 = gs_pScene->CreateObjectAt( 0, "Sphere0" );
-						Sphere0.SetPRS( NjFloat3::UnitY, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ) );
+						Sphere0.SetPRS( 0.5f * NjFloat3::UnitY, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), 0.5f * NjFloat3::One );
 
 		Sphere0.AllocatePrimitives( 1 );
-		Sphere0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimSphere0 );
+//		Sphere0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimSphere0 );
+		Sphere0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimCube0 );
 		Sphere0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture0, 1, 2, 3, 0 );	// Wood + Metal + Phenolic coating + Empty
 	}
 
@@ -461,9 +467,11 @@ void	PrepareScene()
 
 void	ReleaseScene()
 {
-	delete gs_pPrimSphere0;
-	delete gs_pPrimTorus0;
+	delete gs_pPrimCube0;
 	delete gs_pPrimPlane0;
+	delete gs_pPrimTorus0;
+	delete gs_pPrimSphere0;
+
 	delete gs_pSceneTexture0;
 	delete gs_pSceneTexture1;
 	delete gs_pTexEnvMap;

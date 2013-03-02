@@ -23,12 +23,15 @@ const NjFloat4x4	NjFloat4x4::Identity = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0,
 
 NjFloat4	NjFloat4::QuatFromAngleAxis( float _Angle, const NjFloat3& _Axis )
 {
+	NjFloat3	NormalizedAxis = _Axis;
+				NormalizedAxis.Normalize();
+
 	_Angle *= 0.5f;
 
 	float	c = cosf(_Angle);
 	float	s = sinf(_Angle);
 
-	return NjFloat4( s * _Axis, c );
+	return NjFloat4( s * NormalizedAxis, c );
 }
 
 NjFloat4x4  NjFloat4x4::Inverse() const

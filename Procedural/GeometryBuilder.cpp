@@ -6,7 +6,7 @@
 
 //////////////////////////////////////////////////////////////////////////
 //
-void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
+void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions, IGeometryWriter& _Writer, const MapperBase* _pMapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
 {
 	int	BandLength = _PhiSubdivisions;
 	int	VerticesCount = (BandLength+1) * (1 + _ThetaSubdivisions + 1);	// 1 band at the top and bottom of the sphere + as many subdivisions as required
@@ -48,7 +48,10 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			Normal = Position;	Normal.Normalize();
 
 			// Ask for UVs
-			_Mapper.Map( Position, Normal, Tangent, UV, i == BandLength );
+			if ( _pMapper )
+				_pMapper->Map( Position, Normal, Tangent, UV, i == BandLength );
+			else
+				UV.Set( 2.0f * float(i) / BandLength, 0.0f );
 
 			Position.x = Position.z = 0.0f;
 
@@ -76,7 +79,10 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			Tangent.z = -sinf( Phi );
 
 			// Ask for UVs
-			_Mapper.Map( Position, Normal, Tangent, UV, i == BandLength );
+			if (_pMapper )
+				_pMapper->Map( Position, Normal, Tangent, UV, i == BandLength );
+			else
+				UV.Set( 2.0f * float(i) / BandLength, float(j) / _ThetaSubdivisions );
 
 			// Write vertex
 			VWRITE( pVertex, Position, Normal, Tangent, UV );
@@ -100,7 +106,10 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			Normal = Position;	Normal.Normalize();
 
 			// Ask for UVs
-			_Mapper.Map( Position, Normal, Tangent, UV, i == BandLength );
+			if ( _pMapper )
+				_pMapper->Map( Position, Normal, Tangent, UV, i == BandLength );
+			else
+				UV.Set( 2.0f * float(i) / BandLength, 1.0f );
 
 			Position.x = Position.z = 0.0f;
 
@@ -108,7 +117,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			VWRITE( pVertex, -NjFloat3::UnitY, -NjFloat3::UnitY, Tangent, UV );
 		}
 	}
-	ASSERT( VerticesCount == 0, "Wrong contruction !" );
+	ASSERT( VerticesCount == 0, "Wrong contruction!" );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -131,14 +140,14 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 		IWRITE( pIndex, NextBandOffset + BandLength );
 		IWRITE( pIndex, NextBandOffset + BandLength+1 );
 	}
-	ASSERT( IndicesCount == 0, "Wrong contruction !" );
+	ASSERT( IndicesCount == 0, "Wrong contruction!" );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Finalize
 	_Writer.Finalize( pVerticesArray, pIndicesArray );
 }
 
-void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdivisions, bool _bIncludeCaps, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
+void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdivisions, bool _bIncludeCaps, IGeometryWriter& _Writer, const MapperBase* _pMapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
 {
 	ASSERT( _RadialSubdivisions > 1, "Can't create a cylinder with less than 2 radial subdivisions!" );
 	ASSERT( _VerticalSubdivisions > 0, "Can't create a cylinder with 0 vertical subdivisions!" );
@@ -183,7 +192,10 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Normal = NjFloat3::UnitY;
 
 			// Ask for UVs
-			_Mapper.Map( Position, Normal, Tangent, UV, i == _RadialSubdivisions );
+			if ( _pMapper )
+				_pMapper->Map( Position, Normal, Tangent, UV, i == _RadialSubdivisions );
+			else
+				UV.Set( 2.0f * float(i) / _RadialSubdivisions, 0.0f );
 
 			Position.x = Position.z = 0.0f;
 
@@ -213,7 +225,10 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Tangent.z = -sinf( Phi );
 
 			// Ask for UVs
-			_Mapper.Map( Position, Normal, Tangent, UV, i == _RadialSubdivisions );
+			if ( _pMapper )
+				_pMapper->Map( Position, Normal, Tangent, UV, i == _RadialSubdivisions );
+			else
+				UV.Set( 2.0f * float(i) / _RadialSubdivisions, float(j) / _VerticalSubdivisions );
 
 			// Write vertex
 			VWRITE( pVertex, Position, Normal, Tangent, UV );
@@ -237,7 +252,10 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Normal = -NjFloat3::UnitY;
 
 			// Ask for UVs
-			_Mapper.Map( Position, Normal, Tangent, UV, i == _RadialSubdivisions );
+			if ( _pMapper )
+				_pMapper->Map( Position, Normal, Tangent, UV, i == _RadialSubdivisions );
+			else
+				UV.Set( 2.0f * float(i) / _RadialSubdivisions, 1.0f );
 
 			Position.x = Position.z = 0.0f;
 
@@ -245,7 +263,7 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			VWRITE( pVertex, -NjFloat3::UnitY, -NjFloat3::UnitY, Tangent, UV );
 		}
 	}
-	ASSERT( VerticesCount == 0, "Wrong contruction !" );
+	ASSERT( VerticesCount == 0, "Wrong contruction!" );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -268,14 +286,14 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 		IWRITE( pIndex, NextBandOffset + BandLength-1 );
 		IWRITE( pIndex, NextBandOffset + BandLength );
 	}
-	ASSERT( IndicesCount == 0, "Wrong contruction !" );
+	ASSERT( IndicesCount == 0, "Wrong contruction!" );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Finalize
 	_Writer.Finalize( pVerticesArray, pIndicesArray );
 }
 
-void	GeometryBuilder::BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, float _LargeRadius, float _SmallRadius, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
+void	GeometryBuilder::BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, float _LargeRadius, float _SmallRadius, IGeometryWriter& _Writer, const MapperBase* _pMapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
 {
 	int	BandLength = _ThetaSubdivisions;
 	int	BandsCount = _PhiSubdivisions;
@@ -317,12 +335,16 @@ void	GeometryBuilder::BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, 
 
 			Normal = cosf(Theta) * X + sinf(Theta) * NjFloat3::UnitZ;
 			Position = Center + _SmallRadius * Normal;
-			_Mapper.Map( Position, Normal, Tangent, UV, i == BandLength );
+
+			if ( _pMapper )
+				_pMapper->Map( Position, Normal, Tangent, UV, i == BandLength );
+			else
+				UV.Set( 4.0f * float(j) / BandsCount, float(j) / BandLength );
 
 			VWRITE( pVertex, Position, Normal, Tangent, UV );
 		}
 	}
-	ASSERT( VerticesCount == 0, "Wrong contruction !" );
+	ASSERT( VerticesCount == 0, "Wrong contruction!" );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build indices
@@ -345,14 +367,14 @@ void	GeometryBuilder::BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, 
 		IWRITE( pIndex, NextBandOffset + BandLength );
 		IWRITE( pIndex, NextNextBandOffset );
 	}
-	ASSERT( IndicesCount == 0, "Wrong contruction !" );
+	ASSERT( IndicesCount == 0, "Wrong contruction!" );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Finalize
 	_Writer.Finalize( pVerticesArray, pIndicesArray );
 }
 
-void	GeometryBuilder::BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const NjFloat3& _X, const NjFloat3& _Y, IGeometryWriter& _Writer, const MapperBase& _Mapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
+void	GeometryBuilder::BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const NjFloat3& _X, const NjFloat3& _Y, IGeometryWriter& _Writer, const MapperBase* _pMapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
 {
 	ASSERT( _SubdivisionsX > 0 && _SubdivisionsY > 0, "Can't create a plane with 0 subdivision!" );
 
@@ -388,12 +410,15 @@ void	GeometryBuilder::BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const 
 			float	X = 2.0f * i / _SubdivisionsX - 1.0f;
 
 			Position = X * _X + Y * _Y;
-			_Mapper.Map( Position, Normal, Tangent, UV, false );
+			if ( _pMapper )
+				_pMapper->Map( Position, Normal, Tangent, UV, false );
+			else
+				UV.Set( float(i) / _SubdivisionsX, float(j) / _SubdivisionsY );
 
 			VWRITE( pVertex, Position, Normal, Tangent, UV );
 		}
 	}
-	ASSERT( VerticesCount == 0, "Wrong contruction !" );
+	ASSERT( VerticesCount == 0, "Wrong contruction!" );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build indices
@@ -415,7 +440,129 @@ void	GeometryBuilder::BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const 
 		IWRITE( pIndex, NextBandOffset-1 );
 		IWRITE( pIndex, NextBandOffset );
 	}
-	ASSERT( IndicesCount == 0, "Wrong contruction !" );
+	ASSERT( IndicesCount == 0, "Wrong contruction!" );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Finalize
+	_Writer.Finalize( pVerticesArray, pIndicesArray );
+}
+
+void	GeometryBuilder::BuildCube( int _SubdivisionsX, int _SubdivisionsY, int _SubdivisionsZ, IGeometryWriter& _Writer, const MapperBase* _pMapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
+{
+	ASSERT( _SubdivisionsX > 0 && _SubdivisionsY > 0 && _SubdivisionsZ > 0, "Can't create a cube with 0 subdivision!" );
+
+	int	SizeX = _SubdivisionsX+1;
+	int	SizeY = _SubdivisionsY+1;
+	int	SizeZ = _SubdivisionsZ+1;
+
+	int	VerticesCount = 2*(SizeX*SizeY + SizeX*SizeZ + SizeY*SizeZ);
+	int	IndicesCount = 2*( (2*(SizeZ+1) * _SubdivisionsY - 2) + (2*(SizeX+1) * _SubdivisionsZ - 2) + (2*(SizeX+1) * _SubdivisionsZ - 2) ) + 2*5;
+
+	// Create the buffers
+	void*	pVerticesArray = NULL;
+	void*	pIndicesArray = NULL;
+	int		VStride, IStride;
+
+	_Writer.CreateBuffers( VerticesCount, IndicesCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, pVerticesArray, pIndicesArray, VStride, IStride );
+	ASSERT( pVerticesArray != NULL, "Invalid vertex buffer !" );
+	ASSERT( pIndicesArray != NULL, "Invalid index buffer !" );
+
+	U8*		pVertex = (U8*) pVerticesArray;
+	U8*		pIndex = (U8*) pIndicesArray;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build vertices
+	NjFloat3	pNormals[6] = {
+		-NjFloat3::UnitX,
+		 NjFloat3::UnitX,
+		-NjFloat3::UnitY,
+		 NjFloat3::UnitY,
+		-NjFloat3::UnitZ,
+		 NjFloat3::UnitZ,
+	};
+	NjFloat3	pTangents[6] = {
+		 NjFloat3::UnitZ,
+		-NjFloat3::UnitZ,
+		 NjFloat3::UnitX,
+		 NjFloat3::UnitX,
+		-NjFloat3::UnitX,
+		 NjFloat3::UnitX,
+	};
+
+	int			pSizesX[6] = { SizeZ, SizeZ, SizeX, SizeX, SizeX, SizeX };
+	int			pSizesY[6] = { SizeY, SizeY, SizeZ, SizeZ, SizeZ, SizeZ };
+
+	NjFloat3	Position, Normal, X, Y;
+	NjFloat2	UV;
+
+	for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
+	{
+		int		Sx = pSizesX[FaceIndex];
+		int		Sy = pSizesY[FaceIndex];
+		Normal = pNormals[FaceIndex];
+		X = pTangents[FaceIndex];
+		Y = Normal ^ X;
+
+		for ( int j=0; j < Sy; j++ )
+		{
+			float	y = 1.0f - 2.0f * float(j) / (Sy-1);
+			for ( int i=0; i < Sx; i++ )
+			{
+				float	x = 2.0f * float(i) / (Sx-1) - 1.0f;
+
+				Position = Normal + x * X + y * Y;
+
+				if ( _pMapper )
+					_pMapper->Map( Position, Normal, X, UV, false );
+				else
+					UV.Set( 0.5f * (1.0f + x), 0.5f * (1.0f + y) );
+
+				VWRITE( pVertex, Position, Normal, X, UV );
+			}
+		}
+	}
+	ASSERT( VerticesCount == 0, "Wrong contruction!" );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build indices
+	int		FaceOffset = 0;
+	for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
+	{
+		int		Sx = pSizesX[FaceIndex];
+		int		Sy = pSizesY[FaceIndex];
+
+ 		if ( FaceIndex > 0 )
+		{	// Write a first degenerate vertex for that face to make a clean junction with previous face...
+ 			IWRITE( pIndex, FaceOffset+0 );
+		}
+
+		for ( int j=0; j < Sy-1; j++ )
+		{
+			int	CurrentBandOffset = FaceOffset + j * Sx;
+			int	NextBandOffset = FaceOffset + (j+1) * Sx;
+
+			for ( int i=0; i < Sx; i++ )
+			{
+				IWRITE( pIndex, CurrentBandOffset + i );
+				IWRITE( pIndex, NextBandOffset + i );
+			}
+
+			if ( j == _SubdivisionsY-1 )
+				continue;	// Not for the last band...
+
+			// Write 2 last degenerate indices so we smoothly transition to next band
+			IWRITE( pIndex, NextBandOffset+Sx-1 );
+			IWRITE( pIndex, NextBandOffset+Sx );
+		}
+
+		FaceOffset += Sx*Sy;
+
+ 		if ( FaceIndex < 5 )
+ 		{	// Write one last degenerate vertex for that face to make a clean junction with next face...
+			IWRITE( pIndex, FaceOffset-1 );
+		}
+	}
+	ASSERT( IndicesCount == 0, "Wrong contruction!" );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Finalize
@@ -525,3 +672,77 @@ void	GeometryBuilder::MapperPlanar::Map( const NjFloat3& _Position, const NjFloa
 	_UV.y = m_WrapV * (Delta | m_BiTangent);
 }
 
+
+//////////////////////////////////////////////////////////////////////////
+// Cube mapping
+//
+GeometryBuilder::MapperCube::MapperCube( float _WrapU, float _WrapV, const NjFloat3& _Center, const NjFloat3& _X, const NjFloat3& _Y, const NjFloat3& _Z )
+	: m_WrapU( _WrapU )
+	, m_WrapV( _WrapV )
+	, m_Center( _Center )
+	, m_X( _X )
+	, m_Y( _Y )
+	, m_Z( _Z )
+{
+	m_World2CubeMap.SetRow( 0, m_X, 0 );
+	m_World2CubeMap.SetRow( 1, m_Y, 0 );
+	m_World2CubeMap.SetRow( 2, m_Z, 0 );
+	m_World2CubeMap.SetRow( 3, m_Center, 1 );
+	m_World2CubeMap = m_World2CubeMap.Inverse();
+}
+void	GeometryBuilder::MapperCube::Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const
+{
+	NjFloat4	P = NjFloat4( _Position, 1 ) * m_World2CubeMap;
+	NjFloat4	D = NjFloat4( _Normal, 0 ) * m_World2CubeMap;
+
+	float		pHits[6];
+	pHits[0] = -(1.0f + P.x) / D.x;	// -X
+	pHits[1] =  (1.0f - P.x) / D.x;	// +X
+	pHits[2] = -(1.0f + P.y) / D.y;	// -Y
+	pHits[3] =  (1.0f - P.y) / D.y;	// +Y
+	pHits[4] = -(1.0f + P.z) / D.z;	// -Z
+	pHits[5] =  (1.0f - P.z) / D.z;	// +Z
+
+	int		MinHit = -1;
+	float	fMinHit = +MAX_FLOAT;
+	for ( int HitIndex=0; HitIndex < 6; HitIndex++ )
+		if ( pHits[HitIndex] >= 0.0 && pHits[HitIndex] < fMinHit )
+		{	// New closer hit!
+			MinHit = HitIndex;
+			fMinHit = pHits[HitIndex];
+		}
+	
+	NjFloat4	HitPos = P + fMinHit * D;
+	switch ( MinHit )
+	{
+	case 0:	// -X
+		_UV.x = 0.5f * (1.0f + HitPos.z);
+		_UV.y = 0.5f * (1.0f + HitPos.y);
+		break;
+	case 1:	// +X
+		_UV.x = 0.5f * (1.0f - HitPos.z);
+		_UV.y = 0.5f * (1.0f + HitPos.y);
+		break;
+
+	case 2:	// -Y
+		_UV.x = 0.5f * (1.0f + HitPos.x);
+		_UV.y = 0.5f * (1.0f - HitPos.z);
+		break;
+	case 3:	// +Y
+		_UV.x = 0.5f * (1.0f + HitPos.x);
+		_UV.y = 0.5f * (1.0f + HitPos.z);
+		break;
+
+	case 4:	// -Z
+		_UV.x = 0.5f * (1.0f - HitPos.x);
+		_UV.y = 0.5f * (1.0f + HitPos.y);
+		break;
+	case 5:	// +Z
+		_UV.x = 0.5f * (1.0f + HitPos.x);
+		_UV.y = 0.5f * (1.0f + HitPos.y);
+		break;
+	}
+
+	_UV.x *= m_WrapU;
+	_UV.y *= m_WrapV;
+}
