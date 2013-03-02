@@ -111,6 +111,10 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 	float3	CameraPosition = Z * CameraView;
 			CameraView = normalize( CameraView );
 
+// return sqrt(DiffuseAlbedo);
+// return Mats[0].Weight;
+//return 0.2 * Mats[0].ID;
+
 	// Recompose and unpack tangent
 	float3	CameraTangent = 2.0 * float3( Buf0.zw, Buf1.w ) - 1.0;
 
@@ -119,6 +123,8 @@ float3	PS( VS_IN _In ) : SV_TARGET0
  	Buf0.xy = (1.7777 * 2.0) * (Buf0.xy - 0.5);
 	float	NormalScale = 2.0 / (1.0 + dot( Buf0.xy, Buf0.xy ) );
 	float3	CameraNormal = float3( NormalScale * Buf0.xy, 1.0-NormalScale );
+
+//return float3( 1, 1, -1 ) * CameraNormal;
 
 	// Transform everything into world space
 // 	float3	WorldView = CameraView.x * _Camera2World[0].xyz + CameraView.y * _Camera2World[1].xyz + CameraView.z * _Camera2World[2].xyz;
@@ -181,7 +187,9 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 	float3	AccDiffuse = _TexDiffuseSpecular.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 	float3	AccSpecular = _TexDiffuseSpecular.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
 
-AccSpecular += Reflection;
+//AccSpecular += Reflection;
 
-	return float4( AccDiffuse + AccSpecular, 1 );
+//return AccDiffuse;
+
+	return AccDiffuse + AccSpecular;
 }

@@ -69,7 +69,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create our camera
 	gs_pCamera = new Camera( gs_Device );	// NOTE: Camera reserves the CB slot #0 for itself !
-	gs_pCamera->SetPerspective( NUAJDEG2RAD( 80.0f ), float(RESX) / RESY, 0.01f, 1000.0f );
+	gs_pCamera->SetPerspective( NUAJDEG2RAD( 50.0f ), float(RESX) / RESY, 0.01f, 1000.0f );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -170,6 +170,7 @@ namespace
 	Primitive*	gs_pPrimPlane0;
 	Primitive*	gs_pPrimTorus0;
 	Texture2D*	gs_pSceneTexture0;
+	Texture2D*	gs_pSceneTexture1;
 	Texture2D*	gs_pTexEnvMap;
 }
 
@@ -252,7 +253,8 @@ bool	IntroDo( float _Time, float _DeltaTime )
 //	t = 31.415926535897932384626433832795f;
 //	t = _TV( 41.2f );
 
-	gs_pCamera->LookAt( NjFloat3( 2.0f * sinf( 0.2f * t ), 2.0f + sinf( 1.0f * t ), 2.0f * cosf( 0.2f * t ) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
+	float	Radius = 4.0f;
+	gs_pCamera->LookAt( NjFloat3( Radius * sinf( 0.2f * t ), 2.0f + sinf( 1.0f * t ), Radius * cosf( 0.2f * t ) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
 	gs_pCamera->Upload( 0 );
 
 
@@ -285,32 +287,35 @@ void	PrepareScene()
 	{
 		MaterialBank&	Bank = gs_pScene->GetMaterialBank();
 
-		int	MaterialsCount = 4;
+		int	MaterialsCount = 5;
 
 		const char*		ppMatNames[] = {
 			"Empty",
 			"Wood",
 			"Metal",
 			"Phenolic",
+			"Rubber",
 		};
 
 		MaterialBank::Material::StaticParameters	pMatParamsStatic[] = {
 			{0.001,0.001,0.001,0.001,0,0.001,0,0,0},										// Empty
 			{3.9810717055349722,6.309573444801933,0.471,0.521,0.87,1.041,0.04,1.3,0.02},	// Wood
-			{1047.1285480508996,3.2359365692962827,0.281,1.001,0.47,0.561,0.01,0.33,0.01},	// Metal
+			{1047.1285480508996,3.2359365692962827,0.281,1.001,0.47,0.561,0.15,0.33,0.01},	// Metal
 			{1230.268770812381,7.413102413009175,0.321,0.501,0.35,0.941,0.15,0.02,0.01},	// Phenolic
+			{2.6302679918953817,15.488166189124811,0.541,0.481,0.94,0.891,0.13,0.81,0.01},	// Rubber
 		};
 
 		// Thickness		// Material thickness in millimeters
 		// Opacity			// Opacity in [0,1]
-		// IOR				// Index of Refraction
-		// Frosting			// A frosting coefficient in [0,1]
+		// IOR				// Index of Refraction (for non opaque materials only)
+		// Frosting			// A frosting coefficient in [0,1] (for non opaque materials only)
 		//
 		MaterialBank::Material::DynamicParameters	pMatParamsDynamic[] = {
 			{ 0.0f, 0.0f, 1.0f, 0.0f, 0 },		// Empty material lets light completely through
-			{ 5.0f, 1, MAX_FLOAT, 0, 0 },
+			{ 5.0f, 1, MAX_FLOAT, 0, 0 },		// Wood is simply opaque
 			{ 5.0f, 1, MAX_FLOAT, 0, 1 },		// Metal has no diffuse hence the diffuse texture is used to color the specular
 			{ 1.0f, 0.1f, 1.2f, 0.01f, 0 },		// Phenolic is used as transparent coating with slight refraction and frosting
+			{ 1.0f, 1, MAX_FLOAT, 0, 0 },		// Rubber is simply opaque
 		};
 
 		Bank.AllocateMaterials( MaterialsCount );
@@ -322,27 +327,63 @@ void	PrepareScene()
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	// Create our complex material texture
+	// Create our complex material textures
 	{
-		TextureBuilder	TBLayer0( 512, 512 );			TBLayer0.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Layer0.raw" );
-		TextureBuilder	TBLayer1( 512, 512 );			TBLayer1.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Layer1.raw" );
-		TextureBuilder	TBLayer2( 512, 512 );			TBLayer2.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Layer2.raw" );
-		TextureBuilder	TBLayer3( 512, 512 );			TBLayer3.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Layer3.raw" );
-		TextureBuilder	TBLayerSpecular( 512, 512 );	TBLayerSpecular.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Specular.raw" );
-		TextureBuilder	TBLayerHeight( 512, 512 );		TBLayerHeight.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Height.raw", true );
+		const char*	ppNames[] = {
+				// Wood + metal
+				"./Resources/Images/LayeredMaterial0-Layer0.raw",
+				"./Resources/Images/LayeredMaterial0-Layer1.raw",
+				"./Resources/Images/LayeredMaterial0-Layer2.raw",
+				"./Resources/Images/LayeredMaterial0-Layer3.raw",
+				"./Resources/Images/LayeredMaterial0-Specular.raw",
+				"./Resources/Images/LayeredMaterial0-Height.raw",
 
-		// Convert all layers
+				// Blue rubber
+				"./Resources/Images/LayeredMaterial1-Layer0.raw",
+				"./Resources/Images/LayeredMaterial1-Layer1.raw",
+				"./Resources/Images/LayeredMaterial1-Layer2.raw",
+				"./Resources/Images/LayeredMaterial1-Layer3.raw",
+				"./Resources/Images/LayeredMaterial1-Specular.raw",
+				"./Resources/Images/LayeredMaterial1-Height.raw",
+		};
+		Texture2D**	pppTargetTextures[2] = {
+			&gs_pSceneTexture0,
+			&gs_pSceneTexture1,
+		};
+
+		TextureBuilder	TBLayer0( 512, 512 );
+		TextureBuilder	TBLayer1( 512, 512 );
+		TextureBuilder	TBLayer2( 512, 512 );
+		TextureBuilder	TBLayer3( 512, 512 );
+		TextureBuilder	TBLayerSpecular( 512, 512 );
+		TextureBuilder	TBLayerHeight( 512, 512 );
+
 		int		pArraySizes[6];
 		void**	pppContents[6];
-		pppContents[0] = TBLayer0.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[0] );
-		pppContents[1] = TBLayer1.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[1] );
-		pppContents[2] = TBLayer2.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[2] );
-		pppContents[3] = TBLayer3.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[3] );
-		pppContents[4] = TBLayerSpecular.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[4] );
-		pppContents[5] = TBLayerHeight.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_NxNyNzH, pArraySizes[5], 4.0f );
 
-		// Generate the final texture array
-		gs_pSceneTexture0 = TBLayer0.Concat( 6, pppContents, pArraySizes, PixelFormatRGBA8::DESCRIPTOR );
+		// Convert all layers into a single texture
+		for ( int TextureIndex=0; TextureIndex < 2; TextureIndex++ )
+		{
+			const char**	ppTexNames = &ppNames[6*TextureIndex];
+			Texture2D**		ppTargetTexture = pppTargetTextures[TextureIndex];
+
+			TBLayer0.LoadFromRAWFile( ppTexNames[0] );
+			TBLayer1.LoadFromRAWFile( ppTexNames[1] );
+			TBLayer2.LoadFromRAWFile( ppTexNames[2] );
+			TBLayer3.LoadFromRAWFile( ppTexNames[3] );
+			TBLayerSpecular.LoadFromRAWFile( ppTexNames[4] );
+			TBLayerHeight.LoadFromRAWFile( ppTexNames[5] );
+
+			pppContents[0] = TBLayer0.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[0] );
+			pppContents[1] = TBLayer1.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[1] );
+			pppContents[2] = TBLayer2.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[2] );
+			pppContents[3] = TBLayer3.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[3] );
+			pppContents[4] = TBLayerSpecular.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[4] );
+			pppContents[5] = TBLayerHeight.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_NxNyNzH, pArraySizes[5], 4.0f );
+
+			// Generate the final texture array
+			*ppTargetTexture = TBLayer0.Concat( 6, pppContents, pArraySizes, PixelFormatRGBA8::DESCRIPTOR );
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -389,7 +430,8 @@ void	PrepareScene()
 
 		Torus0.AllocatePrimitives( 1 );
 		Torus0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimTorus0 );
-		Torus0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture0, 1, 2, 3, 0 );		// Wood + Metal + Phenolic coating + Empty
+//		Torus0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture0, 1, 2, 3, 0 );	// Wood + Metal + Phenolic coating + Empty
+		Torus0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture1, 4, 0, 0, 0 );		// Blue rubber
 	}
 
 	// Create our plane object
@@ -406,7 +448,7 @@ void	PrepareScene()
 	// Create the lights
 	gs_pScene->AllocateLights( 1, 1, 1 );
 
- 	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( 20.0f * NjFloat3::One, NjFloat3( 4, 4, 4 ), -NjFloat3( 1, 1, 1 ), 2.0f, 3.0f, 16.0f );
+ 	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( 20.0f * NjFloat3::One, NjFloat3( 4, 4, 4 ), -NjFloat3( 1, 1, 1 ), 10.0f, 12.0f, 16.0f );
 //	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( 50.0f * NjFloat3::One, NjFloat3( 0, 4, 0 ), -NjFloat3( 0, 1, 0 ), 1.0f, 1.5f, 8.0f );
 
 //	gs_pScene->GetPointLightAt( 0 ).SetPoint( 20.0f * NjFloat3( 1, 1, 1 ), NjFloat3( -3.0f, 1.5f, -1.5f ), 8.0f );
@@ -423,5 +465,6 @@ void	ReleaseScene()
 	delete gs_pPrimTorus0;
 	delete gs_pPrimPlane0;
 	delete gs_pSceneTexture0;
+	delete gs_pSceneTexture1;
 	delete gs_pTexEnvMap;
 }

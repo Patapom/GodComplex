@@ -1,7 +1,9 @@
 //////////////////////////////////////////////////////////////////////////
-// This shader fills up the G-Buffer
+// This shader displays the objects
 //
 #include "Inc/Global.fx"
+
+Texture2DArray	_TexObject	: register(t10);
 
 //[
 cbuffer	cbObject	: register( b10 )
@@ -9,9 +11,6 @@ cbuffer	cbObject	: register( b10 )
 	float4x4	_Local2World;
 };
 //]
-
-Texture2D	_TexDiffuseSpec			: register(t10);
-Texture2D	_TexNormalRoughnessAO	: register(t11);
 
 struct	VS_IN
 {
@@ -32,7 +31,7 @@ struct	PS_IN
 
 struct	PS_OUT
 {
-	float4	Diffuse_Spec		: SV_TARGET0;
+	float4	Albedo_MatID		: SV_TARGET0;
 	float4	Normal_Roughness_AO	: SV_TARGET1;
 };
 
@@ -55,26 +54,22 @@ PS_IN	VS( VS_IN _In )
 
 PS_OUT	PS( PS_IN _In )
 {
-	float4	Tex0 = _TexDiffuseSpec.Sample( LinearWrap, _In.UV, 0 );			// RGB=Albedo A=Specular
-	float4	Tex1 = _TexNormalRoughnessAO.Sample( LinearWrap, _In.UV, 1 );	// RG=NormalXY B=Roughness A=Ambient Occlusion
+	float4	Tex0 = _TexObject.Sample( LinearWrap, _In.UV, 0 );	// RGB=Albedo A=AO
+	float4	Tex1 = _TexObject.Sample( LinearWrap, _In.UV, 1 );	// RGB=Normal A=Roughness
 
 	float3	WorldNormal = normalize( _In.Normal );
 	float3	WorldTangent = normalize( _In.Tangent );
 	float3	WorldBiTangent = normalize( _In.BiTangent );
 
-	float3	NormalMap = float3( 2.0 * Tex1.xy - 1.0, 0.0 );
-			NormalMap.z = sqrt( 1.0 - dot(NormalMap.xy,NormalMap.xy) );
+	float3	NormalMap = 2.0 * Tex1.xyz - 1.0;
 
-	WorldNormal = NormalMap.x * WorldTangent + NormalMap.y * WorldBiTangent + NormalMap.z * WorldNormal;
+	float3	NewNormal = NormalMap.x * WorldTangent + NormalMap.y * WorldBiTangent + NormalMap.z * WorldNormal;
 
-	float3	CameraNormal = mul( float4( WorldNormal, 0.0 ), _World2Camera ).xyz;
-
-	// Stereographic projection (from http://en.wikipedia.org/wiki/Stereographic_projection)
-	float2	StereoNormal = CameraNormal.xy / (1.7777 * (1 + CameraNormal.z));
+	float3	CameraNormal = mul( float4( NewNormal, 0.0 ), _World2Camera ).xyz;
 
 	PS_OUT	Out;
-	Out.Diffuse_Spec = Tex0;
-	Out.Normal_Roughness_AO = float4( StereoNormal, Tex1.zw );
+	Out.Albedo_MatID = float4( Tex0.xyz, 0 );
+	Out.Normal_Roughness_AO = float4( CameraNormal.xy, Tex1.w, Tex0.w );
 
 	return Out;
 }

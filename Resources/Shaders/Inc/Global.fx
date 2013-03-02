@@ -43,11 +43,11 @@ SamplerState PointMirror	: register( s5 );
 //[ // Minifier doesn't'support cbuffers !
 cbuffer	cbCamera	: register( b0 )
 {
-	float4		_CameraData;
+	float4		_CameraData;		// X=tan(FOV_H/2) Y=tan(FOV_V/2) Z=Near W=Far
 	float4x4	_Camera2World;
 	float4x4	_World2Camera;
 	float4x4	_Camera2Proj;
-	float4x4	_ProjCamera;
+	float4x4	_Proj2Camera;
 	float4x4	_World2Proj;
 	float4x4	_Proj2World;
 };

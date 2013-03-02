@@ -448,6 +448,15 @@
     <None Include="Resources\Shaders\SceneShadingStencil.fx">
       <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
     </None>
+    <None Include="Resources\Shaders\DeferredDepthPass.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectDeferred</Filter>
+    </None>
+    <None Include="Resources\Shaders\DeferredShading.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectDeferred</Filter>
+    </None>
+    <None Include="Resources\Shaders\DeferredShadingStencil.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectDeferred</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

@@ -258,7 +258,9 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Intro\Effects\EffectTranslucency.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Intro\Effects\Scene\MaterialBank.h" />
+    <ClInclude Include="Intro\Effects\Scene\MaterialBank.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Intro\Effects\Scene\EffectScene.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClInclude>
@@ -335,7 +337,9 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Intro\Effects\EffectTranslucency.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Intro\Effects\Scene\MaterialBank.cpp" />
+    <ClCompile Include="Intro\Effects\Scene\MaterialBank.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Intro\Effects\Scene\EffectScene.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClCompile>
@@ -395,7 +399,10 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\Compressed\TranslucencyBuildZBuffer.fx" />
     <None Include="Resources\Shaders\Compressed\TranslucencyDiffusion.fx" />
     <None Include="Resources\Shaders\Compressed\TranslucencyDisplay.fx" />
+    <None Include="Resources\Shaders\DeferredDepthPass.fx" />
     <None Include="Resources\Shaders\DeferredFillGBuffer.fx" />
+    <None Include="Resources\Shaders\DeferredShading.fx" />
+    <None Include="Resources\Shaders\DeferredShadingStencil.fx" />
     <None Include="Resources\Shaders\Inc\LayeredMaterials.fx" />
     <None Include="Resources\Shaders\Inc\RayTracing.fx" />
     <None Include="Resources\Shaders\ParticlesCompute.fx" />

@@ -85,8 +85,8 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create effects
 	{
-		CHECK_EFFECT( gs_pEffectParticles = new EffectParticles(), ERR_EFFECT_PARTICLES );
-//		CHECK_EFFECT( gs_pEffectDeferred = new EffectDeferred(), ERR_EFFECT_DEFERRED );
+//		CHECK_EFFECT( gs_pEffectParticles = new EffectParticles(), ERR_EFFECT_PARTICLES );
+		CHECK_EFFECT( gs_pEffectDeferred = new EffectDeferred(), ERR_EFFECT_DEFERRED );
 	}
 
 	return 0;
@@ -135,9 +135,9 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
 
- 	gs_pEffectParticles->Render( _Time, _DeltaTime );
+// 	gs_pEffectParticles->Render( _Time, _DeltaTime );
 
-// 	gs_pEffectDeferred->Render( _Time, _DeltaTime );
+ 	gs_pEffectDeferred->Render( _Time, _DeltaTime );
 
 
 	// Present !

@@ -224,7 +224,7 @@ PS_OUT	PS( PS_IN _In )
 
 
 // DEBUG => Show the array of material parameters
-// uint	MatID = uint( floor( 4*UV.y ) );
+// uint	MatID = uint( floor( 5*UV.y ) );
 // uint	ComponentIndex = uint( floor( 9 * UV.x ) );
 // float	Bli = 0.0;
 // switch ( ComponentIndex )

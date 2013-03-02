@@ -34,9 +34,10 @@
 \
 /* ============= Workshop ============= */ \
 	{ IDR_SHADER_PARTICLES_DISPLAY,				"./Resources/Shaders/ParticlesDisplay.fx" }, 	\
-/*	{ IDR_SHADER_DEFERRED_FILL_DEPTHPASS,		"./Resources/Shaders/DeferredDepthPass.fx" }, */	\
+	{ IDR_SHADER_DEFERRED_DEPTH_PASS,			"./Resources/Shaders/DeferredDepthPass.fx" },	\
 	{ IDR_SHADER_DEFERRED_FILL_GBUFFER,			"./Resources/Shaders/DeferredFillGBuffer.fx" },	\
-/*	{ IDR_SHADER_DEFERRED_SHADING,				"./Resources/Shaders/DeferredShading.fx" },	*/ \
+	{ IDR_SHADER_DEFERRED_SHADING_STENCIL,		"./Resources/Shaders/DeferredShadingStencil.fx" }, \
+	{ IDR_SHADER_DEFERRED_SHADING,				"./Resources/Shaders/DeferredShading.fx" }, \
 \
 \
 /* ============= Includes ============= */ \

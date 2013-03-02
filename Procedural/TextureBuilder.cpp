@@ -607,6 +607,8 @@ void	TextureBuilder::LoadFromRAWFile( const char* _pPath, bool _bAsHeight )
 	}
 
 	delete[] pRAW;
+
+	m_bMipLevelsBuilt = false;
 }
 
 // Loads a FLOAT image from disk (FLOAT images can be created by the Tool/HDR2RAW project)
@@ -639,6 +641,8 @@ void	TextureBuilder::LoadFromFloatFile( const char* _pPath )
 	}
 
 	delete[] pRAW;
+
+	m_bMipLevelsBuilt = false;
 }
 
 #endif

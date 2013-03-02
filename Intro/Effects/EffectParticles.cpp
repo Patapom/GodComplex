@@ -33,6 +33,7 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 			1,		// int		PosG;
 			-1,		// int		PosB;
 			-1,		// int		PosA;
+			false,
 
 					// Position of the height & roughness fields
 			-1,		// int		PosHeight;
@@ -42,13 +43,14 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 			-1,		// int		PosMatID;
 
 					// Position of the normal fields
-			1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
+//			1.0f,	// float	NormalFactor;	// Factor to apply to the height to generate the normals
+			true,
 			-1,		// int		PosNormalX;
 			-1,		// int		PosNormalY;
 			-1,		// int		PosNormalZ;
 
 					// Position of the AO field
-			1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
+//			1.0f,	// float	AOFactor;		// Factor to apply to the height to generate the AO
 			-1,		// int		PosAO;
 		};
 

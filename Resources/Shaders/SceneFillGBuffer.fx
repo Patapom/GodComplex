@@ -25,13 +25,7 @@ cbuffer	cbPrimitive	: register( b11 )
 	// TODO: Add tiling + offset for each layer
 };
 
-
-Texture2DArray	_TexMaterial	: register(t10);	// 4 Slices of diffuse+blend masks + normal map + specular map = 6 textures per primitive
-
-// struct	PomParameters
-// {
-// };
-// TextureBuffer<PomParameters>	_TexMaterials : register(t11);
+Texture2DArray	_TexMaterial	: register(t10);	// 4 Slices of diffuse+blend masks + specular map + normal map = 6 textures per primitive
 
 struct	VS_IN
 {

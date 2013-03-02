@@ -12,7 +12,7 @@ public:		// NESTED TYPES
 	{
 		NjFloat3	dUV;
 		float		__PAD;
-		NjFloat2	DeltaTime;
+		NjFloat3	Ambient;
 	};
 
 	class	Object
@@ -26,7 +26,8 @@ public:		// NESTED TYPES
 
 	public:		// FIELDS
 		NjFloat3	m_Position;
-		NjFloat4	m_Rotation;
+		NjFloat4	m_Rotation;	// Quaternion
+		NjFloat3	m_Scale;
 
 		// Animation
 		float		m_AnimRotationSpeed;
@@ -38,34 +39,73 @@ public:		// NESTED TYPES
 
 		CB<CBObject>*	m_pCB_Object;
 		Primitive*		m_pPrimitive;
-		Texture2D*		m_pTexDiffuseAO;
-		Texture2D*		m_pTexNormal;
+		Texture2D*		m_pTexDiffuseSpec;
+		Texture2D*		m_pTexNormalRoughnessAO;
 
 	public:		// METHODS
 
 		Object();
-		virtual ~Object();
+		~Object();
 
-		virtual void	Upload() const;
-		virtual void	Render() const;
+		void			SetPrimitive( Primitive& _Primitive, const Texture2D& _TexDiffuseAO, const Texture2D& _TexNormal );
+
+		void			Render( bool _IsDepthPass ) const;
 	};
 
-// 	class	Sphere : public Object
-// 	{
-// 	public:		// FIELDS
-// 
-// 
-// 	protected:
-// 
-// 	public:		// METHODS
-// 
-// 		Sphere();
-// 		virtual ~Sphere();
-// 
-// //		virtual void	Upload() const;
-// //		virtual void	Render() const;
-// 	};
+	class	Light
+	{
+	protected:
 
+		struct	CBLight
+		{
+			NjFloat3	Position;
+			U32			Type;
+			NjFloat3	Direction;
+			float		__PAD1;
+			NjFloat3	Color;
+			float		__PAD2;
+			NjFloat4	Data;
+		};
+
+	public:
+
+		enum LIGHT_TYPE {
+			OMNI,
+			SPOT,
+			DIRECTIONAL
+		}			m_Type;
+		NjFloat3	m_Position;
+		NjFloat3	m_Direction;
+		NjFloat3	m_Color;
+		union
+		{
+			struct {	// OMNI
+				float	RadiusHotspot;
+				float	RadiusFalloff;
+			};
+			struct {	// DIRECTION
+				float	RadiusHotspot;
+				float	RadiusFalloff;
+				float	Length;
+			};
+			struct {	// SPOT
+				float	AngleHotspot;
+				float	AngleFalloff;
+				float	Length;
+			};
+		} m_Data;
+
+	protected:
+
+		CB<CBLight>*	m_pCBLight;
+
+	public:
+
+		Light();
+		~Light();
+
+		void		Upload();
+	};
 
 
 private:	// FIELDS
@@ -74,14 +114,22 @@ private:	// FIELDS
 
 	Material*			m_pMatDepthPass;
 	Material*			m_pMatFillGBuffer;
+	Material*			m_pMatShading_StencilPass;
 	Material*			m_pMatShading;
 
+	int					m_ObjectsCount;
+	Object**			m_ppObjects;
+
+	int					m_LightsCount;
+	Light**				m_ppLights;
+
+	Texture2D*			m_pRTGBuffer;
+	Texture2D*			m_pRTLightAccumulation;
+
+	Primitive*			m_pPrimCylinder;
 	Primitive*			m_pPrimSphere;
 
-	Texture2D*			m_pRT;
-
 public:
-//	Texture2D*			m_pTexVoronoi;
 
 	CB<CBRender>*		m_pCB_Render;
 
@@ -103,5 +151,5 @@ public:		// METHODS
 
 protected:
 	
-	void	BuildVoronoiTexture( TextureBuilder& _TB, NjFloat2* _pCellCenters, VertexFormatPt4* _pVertices );
+//	void	BuildVoronoiTexture( TextureBuilder& _TB, NjFloat2* _pCellCenters, VertexFormatPt4* _pVertices );
 };
