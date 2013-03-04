@@ -13,6 +13,8 @@ EffectScene::EffectScene( Device& _Device, Scene& _Scene, Primitive& _ScreenQuad
 	CHECK_MATERIAL( m_pMatFillGBuffer = CreateMaterial( IDR_SHADER_SCENE_FILL_GBUFFER, VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
 	CHECK_MATERIAL( m_pMatIndirectLighting = CreateMaterial( IDR_SHADER_SCENE_INDIRECT_LIGHTING, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
 
+Render back faces into a little target
+
 	D3D_SHADER_MACRO	pMacrosDirectional[] = {
 		{ "LIGHT_TYPE", "0" },
 		{ NULL,	NULL }

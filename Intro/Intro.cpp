@@ -172,6 +172,8 @@ namespace
 	Primitive*	gs_pPrimCube0;
 	Texture2D*	gs_pSceneTexture0;
 	Texture2D*	gs_pSceneTexture1;
+	Texture2D*	gs_pSceneTexture2;
+	Texture2D*	gs_pSceneTexture3;
 	Texture2D*	gs_pTexEnvMap;
 }
 
@@ -289,22 +291,30 @@ void	PrepareScene()
 	{
 		MaterialBank&	Bank = gs_pScene->GetMaterialBank();
 
-		int	MaterialsCount = 5;
+		const int	MaterialsCount = 9;
 
-		const char*		ppMatNames[] = {
+		const char*		ppMatNames[MaterialsCount] = {
 			"Empty",
 			"Wood",
 			"Metal",
 			"Phenolic",
 			"Rubber",
+			"Marble",
+			"Moss",
+			"Fabric",
+			"Aluminium",
 		};
 
-		MaterialBank::Material::StaticParameters	pMatParamsStatic[] = {
-			{0.001,0.001,0.001,0.001,0,0.001,0,0,0},										// Empty
-			{3.9810717055349722,6.309573444801933,0.471,0.521,0.87,1.041,0.04,1.3,0.02},	// Wood
-			{1047.1285480508996,3.2359365692962827,0.281,1.001,0.47,0.561,0.15,0.33,0.01},	// Metal
-			{1230.268770812381,7.413102413009175,0.321,0.501,0.35,0.941,0.15,0.02,0.01},	// Phenolic
-			{2.6302679918953817,15.488166189124811,0.541,0.481,0.94,0.891,0.13,0.81,0.01},	// Rubber
+		MaterialBank::Material::StaticParameters	pMatParamsStatic[MaterialsCount] = {
+			{0.001,0.001,0.001,0.001,0,0.001,0,0,0},										// #0 Empty
+			{3.9810717055349722,6.309573444801933,0.471,0.521,0.87,1.041,0.04,1.3,0.02},	// #1 Wood
+			{1047.1285480508996,3.2359365692962827,0.281,1.001,0.47,0.561,0.15,0.33,0.01},	// #2 Metal
+			{1230.268770812381,7.413102413009175,0.321,0.501,0.35,0.941,0.15,0.02,0.01},	// #3 Phenolic
+			{2.6302679918953817,15.488166189124811,0.541,0.481,0.94,0.891,0.13,0.81,0.01},	// #4 Rubber
+			{812.8305161640995,4.36515832240166,0.191,0.521,0.49,1.031,0.23,0.14,0.01},		// #5 Marble
+			{0.02754228703338166,21.87761623949553,0.651,1.001,5.11,0.941,0.32,1.77,0},		// #6 Moss (based on fabric preset)
+			{0.14454397707459277,2.5703957827688635,1.001,0.641,2.65,1.111,0.03,2.54,0.03},	// #7 Fabric (based on blue-fabric)
+			{1584.893192461114,0.6918309709189365,0.301,0.441,0.48,1.421,0.05,0.35,0.03},	// #8 Brushed Aluminium (based on aluminium + added a little diffuse)
 		};
 
 		// Thickness		// Material thickness in millimeters
@@ -312,12 +322,16 @@ void	PrepareScene()
 		// IOR				// Index of Refraction (for non opaque materials only)
 		// Frosting			// A frosting coefficient in [0,1] (for non opaque materials only)
 		//
-		MaterialBank::Material::DynamicParameters	pMatParamsDynamic[] = {
+		MaterialBank::Material::DynamicParameters	pMatParamsDynamic[MaterialsCount] = {
 			{ 0.0f, 0.0f, 1.0f, 0.0f, 0 },		// Empty material lets light completely through
 			{ 5.0f, 1, MAX_FLOAT, 0, 0 },		// Wood is simply opaque
 			{ 5.0f, 1, MAX_FLOAT, 0, 1 },		// Metal has no diffuse hence the diffuse texture is used to color the specular
 			{ 1.0f, 0.1f, 1.2f, 0.01f, 0 },		// Phenolic is used as transparent coating with slight refraction and frosting
 			{ 1.0f, 1, MAX_FLOAT, 0, 0 },		// Rubber is simply opaque
+			{ 1.0f, 1, MAX_FLOAT, 0, 0 },		// Marble is simply opaque
+			{ 1.0f, 1, MAX_FLOAT, 0, 0 },		// Moss is simply opaque
+			{ 1.0f, 1, MAX_FLOAT, 0, 0 },		// Fabric is simply opaque
+			{ 1.0f, 1, MAX_FLOAT, 0, 0 },		// Aluminium is simply opaque
 		};
 
 		Bank.AllocateMaterials( MaterialsCount );
@@ -331,7 +345,9 @@ void	PrepareScene()
 	//////////////////////////////////////////////////////////////////////////
 	// Create our complex material textures
 	{
-		const char*	ppNames[] = {
+		const int	LayeredTexturesCount = 4;
+
+		const char*	ppNames[LayeredTexturesCount*6] = {
 				// Wood + metal
 				"./Resources/Images/LayeredMaterial0-Layer0.raw",
 				"./Resources/Images/LayeredMaterial0-Layer1.raw",
@@ -347,10 +363,28 @@ void	PrepareScene()
 				"./Resources/Images/LayeredMaterial1-Layer3.raw",
 				"./Resources/Images/LayeredMaterial1-Specular.raw",
 				"./Resources/Images/LayeredMaterial1-Height.raw",
+
+				// White marble + moss
+				"./Resources/Images/LayeredMaterial2-Layer0.raw",
+				"./Resources/Images/LayeredMaterial2-Layer1.raw",
+				"./Resources/Images/LayeredMaterial2-Layer2.raw",
+				"./Resources/Images/LayeredMaterial2-Layer3.raw",
+				"./Resources/Images/LayeredMaterial2-Specular.raw",
+				"./Resources/Images/LayeredMaterial2-Height.raw",
+
+				// Brushed Aluminium + water puddles
+				"./Resources/Images/LayeredMaterial3-Layer0.raw",
+				"./Resources/Images/LayeredMaterial3-Layer1.raw",
+				"./Resources/Images/LayeredMaterial3-Layer2.raw",
+				"./Resources/Images/LayeredMaterial3-Layer3.raw",
+				"./Resources/Images/LayeredMaterial3-Specular.raw",
+				"./Resources/Images/LayeredMaterial3-Height.raw",
 		};
-		Texture2D**	pppTargetTextures[2] = {
+		Texture2D**	pppTargetTextures[LayeredTexturesCount] = {
 			&gs_pSceneTexture0,
 			&gs_pSceneTexture1,
+			&gs_pSceneTexture2,
+			&gs_pSceneTexture3,
 		};
 
 		TextureBuilder	TBLayer0( 512, 512 );
@@ -363,8 +397,7 @@ void	PrepareScene()
 		int		pArraySizes[6];
 		void**	pppContents[6];
 
-		// Convert all layers into a single texture
-		for ( int TextureIndex=0; TextureIndex < 2; TextureIndex++ )
+		for ( int TextureIndex=0; TextureIndex < LayeredTexturesCount; TextureIndex++ )
 		{
 			const char**	ppTexNames = &ppNames[6*TextureIndex];
 			Texture2D**		ppTargetTexture = pppTargetTextures[TextureIndex];
@@ -374,8 +407,9 @@ void	PrepareScene()
 			TBLayer2.LoadFromRAWFile( ppTexNames[2] );
 			TBLayer3.LoadFromRAWFile( ppTexNames[3] );
 			TBLayerSpecular.LoadFromRAWFile( ppTexNames[4] );
-			TBLayerHeight.LoadFromRAWFile( ppTexNames[5] );
+			TBLayerHeight.LoadFromRAWFile( ppTexNames[5], true );
 
+			// Convert all layers into a single texture
 			pppContents[0] = TBLayer0.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[0] );
 			pppContents[1] = TBLayer1.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[1] );
 			pppContents[2] = TBLayer2.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[2] );
@@ -402,9 +436,10 @@ void	PrepareScene()
 	{
 		GeometryBuilder::MapperSpherical	MapperSphere( 4.0f, 2.0f );
 		gs_pPrimSphere0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
-		GeometryBuilder::BuildSphere( 60, 30, *gs_pPrimSphere0, &MapperSphere );
+//		GeometryBuilder::BuildSphere( 60, 30, *gs_pPrimSphere0, &MapperSphere );
+		GeometryBuilder::BuildSphere( 60, 30, *gs_pPrimSphere0 );
 
-		GeometryBuilder::MapperPlanar		MapperPlane( 1.0f, 1.0f );
+		GeometryBuilder::MapperPlanar		MapperPlane( 0.125f, 0.125f );
 		gs_pPrimPlane0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
 		GeometryBuilder::BuildPlane( 1, 1, 10.0f * NjFloat3::UnitX, -10.0f * NjFloat3::UnitZ, *gs_pPrimPlane0, &MapperPlane );
 
@@ -416,49 +451,67 @@ void	PrepareScene()
 		GeometryBuilder::BuildCube( 1, 1, 1, *gs_pPrimCube0, NULL );
 	}
 
-	gs_pScene->AllocateObjects( 3 );
+	gs_pScene->AllocateObjects( 5 );
+
+	// Create our plane object
+	{
+		Scene::Object&	Plane0 = gs_pScene->CreateObjectAt( 0, "Plane0" );
+						Plane0.SetPRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ) );
+
+		Plane0.AllocatePrimitives( 1 );
+		Plane0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimPlane0 );
+		Plane0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture3, 8, 3, 0, 0 );		// Brushed aluminium + Water + Empty
+	}
 
 	// Create our sphere object
 	{
-		Scene::Object&	Sphere0 = gs_pScene->CreateObjectAt( 0, "Sphere0" );
-						Sphere0.SetPRS( 0.5f * NjFloat3::UnitY, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), 0.5f * NjFloat3::One );
+		Scene::Object&	Sphere0 = gs_pScene->CreateObjectAt( 1, "Sphere0" );
+						Sphere0.SetPRS( NjFloat3( 0, 0.8f, 0 ), NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), 0.8f * NjFloat3::One );
 
 		Sphere0.AllocatePrimitives( 1 );
-//		Sphere0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimSphere0 );
-		Sphere0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimCube0 );
-		Sphere0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture0, 1, 2, 3, 0 );	// Wood + Metal + Phenolic coating + Empty
+		Sphere0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimSphere0 );
+		Sphere0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture2, 5, 6, 0, 0 );	// Marble + Moss + Empty
 	}
 
 	// Create our torus object
 	{
-		Scene::Object&	Torus0 = gs_pScene->CreateObjectAt( 1, "Torus" );
+		Scene::Object&	Torus0 = gs_pScene->CreateObjectAt( 2, "Torus" );
 						Torus0.SetPRS( NjFloat3( 2.0f, 0.3f, 1.5f ), NjFloat4::QuatFromAngleAxis( 0.5f * PI, NjFloat3::UnitX ) );
 
 		Torus0.AllocatePrimitives( 1 );
 		Torus0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimTorus0 );
 //		Torus0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture0, 1, 2, 3, 0 );	// Wood + Metal + Phenolic coating + Empty
 		Torus0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture1, 4, 0, 0, 0 );		// Blue rubber
+
+		Scene::Object&	Torus1 = gs_pScene->CreateObjectAt( 3, "Torus" );
+//						Torus1.SetPRS( NjFloat3( 2.0f, 0.9f, 1.5f ), NjFloat4::QuatFromAngleAxis( 0.5f * PI, NjFloat3::UnitX ) );
+						Torus1.SetPRS( NjFloat3( -2.0f, 0.3f, 1.6f ), NjFloat4::QuatFromAngleAxis( 0.5f * PI, NjFloat3::UnitX ) );
+
+		Torus1.AllocatePrimitives( 1 );
+		Torus1.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimTorus0 );
+		Torus1.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture1, 7, 0, 0, 0 );		// Blue fabric
 	}
 
-	// Create our plane object
+	// Create our cube object
 	{
-		Scene::Object&	Plane0 = gs_pScene->CreateObjectAt( 2, "Plane0" );
-						Plane0.SetPRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ) );
+		Scene::Object&	Cube0 = gs_pScene->CreateObjectAt( 4, "Sphere0" );
+						Cube0.SetPRS( NjFloat3( -1.5f, 0.5f, -1.0f ), NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), 0.5f * NjFloat3::One );
 
-		Plane0.AllocatePrimitives( 1 );
-		Plane0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimPlane0 );
-		Plane0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture0, 1, 2, 3, 0 );	// Wood + Metal + Phenolic coating + Empty
+		Cube0.AllocatePrimitives( 1 );
+		Cube0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimCube0 );
+		Cube0.GetPrimitiveAt( 0 ).SetLayerMaterials( *gs_pSceneTexture0, 1, 2, 3, 0 );	// Wood + Metal + Phenolic coating + Empty
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the lights
 	gs_pScene->AllocateLights( 1, 1, 1 );
+//	gs_pScene->AllocateLights( 1, 0, 0 );
 
- 	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( 20.0f * NjFloat3::One, NjFloat3( 4, 4, 4 ), -NjFloat3( 1, 1, 1 ), 10.0f, 12.0f, 16.0f );
+ 	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( 10.0f * NjFloat3::One, NjFloat3( 4, 4, 4 ), -NjFloat3( 1, 1, 1 ), 10.0f, 12.0f, 16.0f );
 //	gs_pScene->GetDirectionalLightAt( 0 ).SetDirectional( 50.0f * NjFloat3::One, NjFloat3( 0, 4, 0 ), -NjFloat3( 0, 1, 0 ), 1.0f, 1.5f, 8.0f );
 
 //	gs_pScene->GetPointLightAt( 0 ).SetPoint( 20.0f * NjFloat3( 1, 1, 1 ), NjFloat3( -3.0f, 1.5f, -1.5f ), 8.0f );
-	gs_pScene->GetPointLightAt( 0 ).SetPoint( 100.0f * NjFloat3( 1, 1, 1 ), NjFloat3( -3.0f, 5.5f, -1.5f ), 30.0f );
+	gs_pScene->GetPointLightAt( 0 ).SetPoint( 100.0f * NjFloat3( 1, 1, 1 ), NjFloat3( -3.0f, 5.5f, -1.5f ), 40.0f );
 //	gs_pScene->GetPointLightAt( 0 ).SetPoint( NjFloat3( 0, 1, 0 ), NjFloat3( 0, 1, 0 ), 1.0f );
 
  	gs_pScene->GetSpotLightAt( 0 ).SetSpot( 50.0f * NjFloat3( 1, 1, 1 ), NjFloat3( -4, 3, 3 ), NjFloat3( 1, -2, -1 ), NUAJDEG2RAD(30.0f), NUAJDEG2RAD(40.0f), 16.0f );
@@ -472,7 +525,9 @@ void	ReleaseScene()
 	delete gs_pPrimTorus0;
 	delete gs_pPrimSphere0;
 
-	delete gs_pSceneTexture0;
+	delete gs_pSceneTexture3;
+	delete gs_pSceneTexture2;
 	delete gs_pSceneTexture1;
+	delete gs_pSceneTexture0;
 	delete gs_pTexEnvMap;
 }

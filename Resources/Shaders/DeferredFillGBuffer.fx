@@ -70,7 +70,7 @@ PS_OUT	PS( PS_IN _In )
 	float3	CameraNormal = mul( float4( WorldNormal, 0.0 ), _World2Camera ).xyz;
 
 	// Stereographic projection (from http://en.wikipedia.org/wiki/Stereographic_projection)
-	float2	StereoNormal = CameraNormal.xy / (1.7777 * (1 + CameraNormal.z));
+	float2	StereoNormal = CameraNormal.xy / (1.57 * (1 + CameraNormal.z));
 
 	PS_OUT	Out;
 	Out.Diffuse_Spec = Tex0;

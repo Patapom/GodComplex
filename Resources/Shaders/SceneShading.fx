@@ -68,7 +68,7 @@ float3	ComputeLightIrradiance( PS_IN _In, float3 _Position, float3 _Normal, out 
 	// Compute radial attenuation
 	float3	ToSource = _LightPosition - _Position;
 	float2	ToSource2D = float2( dot( ToSource, _In.LightX ), dot( ToSource, _In.LightZ ) );
-	float2	Radius = length( ToSource2D );
+	float	Radius = length( ToSource2D );
 	float	Attenuation = smoothstep( _LightData.y, _LightData.x, Radius );
 
 	// Compute radiance
@@ -148,6 +148,80 @@ WeightMatID	ReadWeightMatID( uint _Packed )
 	return Out;
 }
 
+/*
+DualMaterialParams	TempComputeDualWeightedMaterialParams( WeightMatID _MatLayers[4] )
+{
+	MaterialParams	M[4] = {
+		_Materials[_MatLayers[0].ID],
+		_Materials[_MatLayers[1].ID],
+		_Materials[_MatLayers[2].ID],
+		_Materials[_MatLayers[3].ID],
+	};
+
+	float4	W = float4( _MatLayers[0].Weight, _MatLayers[1].Weight, _MatLayers[2].Weight, _MatLayers[3].Weight );
+	float2	SumWeights = max( 1.0, float2( W.x + W.z, W.y + W.w ) );
+	W /= SumWeights.xyxy;	// We normalize weights as we can't exceed one since we're collapsing all 4 material params into two lists of interpolated params!
+
+	DualMaterialParams	R;
+	R.Amplitude = float4( W.x * M[0].AmplitudeFalloff.xy + W.z * M[2].AmplitudeFalloff.xy, W.y * M[1].AmplitudeFalloff.xy + W.w * M[3].AmplitudeFalloff.xy );	// Interlace amplitudes
+	R.Falloff = float4( W.x * M[0].AmplitudeFalloff.zw + W.z * M[2].AmplitudeFalloff.zw, W.y * M[1].AmplitudeFalloff.zw + W.w * M[3].AmplitudeFalloff.zw );		// Interlace falloffs
+	R.Exponent = float4( W.x * M[0].ExponentDiffuse.xy + W.z * M[2].ExponentDiffuse.xy, W.y * M[1].ExponentDiffuse.xy + W.w * M[3].ExponentDiffuse.xy );		// Interlace exponents
+	R.Diffuse = float4( W.x * M[0].ExponentDiffuse.zw + W.z * M[2].ExponentDiffuse.zw, W.y * M[1].ExponentDiffuse.zw + W.w * M[3].ExponentDiffuse.zw );			// Interlace diffuses
+	R.Offset = float2( W.x * M[0].Offset + W.z * M[2].Offset, W.y * M[1].Offset + W.w * M[3].Offset );															// Interlace offsets
+
+	// Amplitude is coded in log space AND brought back in [0,1]
+	float2	MinLogAmplitude = float2( -6.9077552789821370520539743640531, -6.9077552789821370520539743640531 );	// log(0.001), log(0.001)
+	float2	MaxLogAmplitude = float2( +7.6009024595420823614712064855113, +3.9120230054281460586187507879106 );	// log(2000), log(50)
+	float2	DeltaLogAmplitude = MaxLogAmplitude - MinLogAmplitude;
+	R.Amplitude = MinLogAmplitude.xyxy + DeltaLogAmplitude.xyxy * R.Amplitude;
+
+	return R;
+}
+
+
+// Version with 2 layers
+MatReflectance	TempLayeredMatEval( HalfVectorSpaceParams _ViewParams, DualMaterialParams _MatParams )
+{
+	MatReflectance	Result;
+
+	// =================== COMPUTE DIFFUSE ===================
+	// I borrowed the diffuse term from §5.3 of http://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf
+	float2	Fd90 = 0.5 + _MatParams.Diffuse.yw * _ViewParams.CosThetaD * _ViewParams.CosThetaD;
+	float	a = 1.0 - _ViewParams.TSLight.z;	// 1-cos(ThetaL) = 1-cos(ThetaV)
+	float	Cos5 = a * a;
+			Cos5 *= Cos5 * a;
+	float2	Diffuse = 1.0 + (Fd90-1.0)*Cos5;
+			Diffuse *= Diffuse;						// Diffuse uses double Fresnel from both ThetaV and ThetaL
+
+	float2	RetroDiffuse = max( 0.0, Diffuse-1.0 );	// Retro-reflection starts above 1
+			Diffuse = min( 1.0, Diffuse );			// Clamp diffuse to avoid double-counting retro-reflection...
+
+	Result.Diffuse = INVPI * dot( _MatParams.Diffuse.xz, Diffuse );
+	Result.RetroDiffuse = INVPI * dot( _MatParams.Diffuse.xz, RetroDiffuse );
+
+// Result.Diffuse = Result.RetroDiffuse = 0;
+
+// Result.Diffuse = INVPI * _MatParams.Diffuse.x * (Diffuse.x + Diffuse.y);
+// Result.RetroDiffuse = INVPI * _MatParams.Diffuse.x * (RetroDiffuse.x + RetroDiffuse.y);
+
+// Result.Diffuse = _MatParams.Diffuse.x * Diffuse.x;
+// Result.Diffuse = Diffuse.y;
+// Result.Diffuse = 0.0 + _MatParams.Diffuse.x;
+
+
+	// =================== COMPUTE SPECULAR ===================
+	float4	Cxy = _MatParams.Offset.xxyy + exp( _MatParams.Amplitude + _MatParams.Falloff * pow( _ViewParams.UV.xyxy, _MatParams.Exponent ) );
+
+	float2	Specular = Cxy.xz * Cxy.yw - _MatParams.Offset*_MatParams.Offset;	// Specular & Fresnel lovingly modulating each other
+	Result.Specular = Specular.x + Specular.y;
+
+//Result.Specular = Cxy.x*Cxy.y;// + Cxy.z*Cxy.w;
+//Result.Specular = Cxy.z*Cxy.w;
+
+	return Result;
+}
+*/
+
 PS_OUT	PS( PS_IN _In )
 {
 	PS_OUT	Out = (PS_OUT) 0;
@@ -182,7 +256,7 @@ PS_OUT	PS( PS_IN _In )
 
 	// Unpack stereographic normal (from http://aras-p.info/texts/CompactNormalStorage.html#method07stereo)
 	// See also http://en.wikipedia.org/wiki/Stereographic_projection
- 	Buf0.xy = (1.7777 * 2.0) * (Buf0.xy - 0.5);
+ 	Buf0.xy = (1.57 * 2.0) * (Buf0.xy - 0.5);
 	float	NormalScale = 2.0 / (1.0 + dot( Buf0.xy, Buf0.xy ) );
 	float3	CameraNormal = float3( NormalScale * Buf0.xy, NormalScale-1.0 );
 
@@ -203,8 +277,9 @@ PS_OUT	PS( PS_IN _In )
 	HalfVectorSpaceParams	ViewParams = Tangent2HalfVector( ViewTS, LightTS );
 
 	// Retrieve weighted material params
-	MaterialParams	MatParams = ComputeWeightedMaterialParams( Mats );
-	MatReflectance	Reflectance = LayeredMatEval( ViewParams, MatParams );
+//	MaterialParams		MatParams = ComputeSingleWeightedMaterialParams( Mats );
+	DualMaterialParams	MatParams = ComputeDualWeightedMaterialParams( Mats );
+	MatReflectance		Reflectance = LayeredMatEval( ViewParams, MatParams );
 
 
 // DEBUG Use a simple blinn-phong model with lambert for diffuse

@@ -100,7 +100,7 @@ float3x3	ComputeRotation( float3 _NewNormalTS )
 
 uint	WriteWeightMatID( float _Weight, uint _MatID )
 {
-	uint	Weight = int( _Weight * 255.0 );
+	uint	Weight = int( floor( _Weight * 255.0 ) );
 	uint	Concat = (_MatID << 8) | Weight;	// [0,65535]
 	return Concat;
 }
@@ -139,8 +139,8 @@ PS_OUT	PS( PS_IN _In )
 	float3		NormalMap = normalize( 2.0 * TexNormal.xyz - 1.0 );
 	float3x3	Rotation = ComputeRotation( NormalMap );
 
-// 	WorldNormal = mul( WorldNormal, Rotation );
-// 	WorldTangent = mul( WorldTangent, Rotation );
+	WorldNormal = mul( WorldNormal, Rotation );
+	WorldTangent = mul( WorldTangent, Rotation );
 
 	float3	CameraNormal = float3( dot( WorldNormal, _Camera2World[0].xyz ), dot( WorldNormal, _Camera2World[1].xyz ), -dot( WorldNormal, _Camera2World[2].xyz ) );
 	float3	CameraTangent = float3( dot( WorldTangent, _Camera2World[0].xyz ), dot( WorldTangent, _Camera2World[1].xyz ), dot( WorldTangent, _Camera2World[2].xyz ) );
@@ -152,7 +152,7 @@ PS_OUT	PS( PS_IN _In )
 	// Stereographic projection of normal (from http://aras-p.info/texts/CompactNormalStorage.html#method07stereo)
 	// See also http://en.wikipedia.org/wiki/Stereographic_projection
 	CameraNormal.xy /= 1.0 + CameraNormal.z;	// Gives quite a large value for negative normals
-	CameraNormal /= 1.7777;						// So we simply divide by a number larger than 1 to account for "some parts" of the negative normals but we hope there won't be too much negative ones
+	CameraNormal /= 1.57;						// So we simply divide by a number larger than 1 to account for "some parts" of the negative normals but we hope there won't be too much negative ones
 	CameraNormal = 0.5 * (1.0 + CameraNormal);
 
 
@@ -200,8 +200,8 @@ PS_OUT	PS( PS_IN _In )
 // Unfortunately, I don't think it's going to be realistic to apply the model layer by layer as it's
 //	quite costly already...
 //
-	float	SumWeights = dot( LayerWeights, 1.0 );
-	LayerWeights /= SumWeights;													// We normalize weights as we can't exceed one!
+// 	float	SumWeights = dot( LayerWeights, 1.0 );
+// 	LayerWeights /= SumWeights;													// We normalize weights as we can't exceed one!
 
 	// Write final result
 	PS_OUT	Out;
@@ -215,7 +215,7 @@ PS_OUT	PS( PS_IN _In )
 								WriteWeightMatID( LayerWeights.w, _MatIDs.w )
 							);
 
-// Out.DiffuseAlbedo = float4( UV, 0, 0 );
+//Out.DiffuseAlbedo = LayerWeights;
 
 	return Out;
 }

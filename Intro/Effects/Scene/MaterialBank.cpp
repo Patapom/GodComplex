@@ -58,6 +58,20 @@ void	MaterialBank::UpdateMaterialsBuffer()
 		float	y = powf( max( 1e-4f, Params.FalloffY ), Params.ExponentY );	// We must reach the goal at this position
 		Params.FalloffY = logf( FALLOFF_GOAL / max( 1e-3f, Params.AmplitudeY ) ) / y;
 
+		// Store amplitudes in log space
+// 		Params.AmplitudeX = logf( Params.AmplitudeX );
+// 		Params.AmplitudeY = logf( Params.AmplitudeY );
+
+		// Store amplitudes as [0,1] values
+		float	MinX = logf(0.001f);
+		float	MaxX = logf(2000.0f);
+		Params.AmplitudeX = (logf( Params.AmplitudeX ) - MinX) / (MaxX - MinX);
+
+		float	MinY = logf(0.001f);
+		float	MaxY = logf(50.0f);
+		Params.AmplitudeY = (logf( Params.AmplitudeY ) - MinY) / (MaxY - MinY);
+
+
 // float	Offset = float(MaterialIndex) / m_MaterialsCount;
 // float	A = 0.25f/9;
 // Params.AmplitudeX = Offset + A*0.0f;

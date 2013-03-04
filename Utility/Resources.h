@@ -43,7 +43,7 @@
 /* ============= Includes ============= */ \
 	{ IDR_SHADER_INCLUDE_GLOBAL,				NULL },	\
 	{ IDR_SHADER_INCLUDE_RAY_TRACING,			NULL },	\
-	{ IDR_SHADER_INCLUDE_LAYERED_MATERIALS,		NULL },	\
+	{ IDR_SHADER_INCLUDE_LAYERED_MATERIALS,		"./Resources/Shaders/Inc/LayeredMaterials.fx" },	\
 
 
 #include "..\GodComplex.h"

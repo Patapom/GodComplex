@@ -18,24 +18,35 @@ namespace PNG2RAW
 //			Convert( args[0], args[1] );
 
 
-// 			// Material 0
-// 			string[]	FileNames = new string[]
-// 			{
-// 				"LayeredMaterial0-Layer0",
-// 				"LayeredMaterial0-Layer1",
-// 				"LayeredMaterial0-Layer2",
-// 				"LayeredMaterial0-Layer3",
-// 				"LayeredMaterial0-Specular",
-// 				"LayeredMaterial0-Height",
-// 			};
-
-			// Material 1
 			string[]	FileNames = new string[]
 			{
+				// Material 0
+				"LayeredMaterial0-Layer0",
+				"LayeredMaterial0-Layer1",
+				"LayeredMaterial0-Layer2",
+				"LayeredMaterial0-Layer3",
+				"LayeredMaterial0-Specular",
+				"LayeredMaterial0-Height",
+
+				// Material 1
 				"LayeredMaterial1-Layer0",
 				"LayeredMaterial1-Layer3",
 				"LayeredMaterial1-Specular",
 				"LayeredMaterial1-Height",
+
+				// Material 2
+				"LayeredMaterial2-Layer0",
+				"LayeredMaterial2-Layer1",
+				"LayeredMaterial2-Height",
+
+				// Material 3
+				"LayeredMaterial3-Layer0",
+				"LayeredMaterial3-Layer1",
+				"LayeredMaterial3-Layer2",
+				"LayeredMaterial3-Layer3",
+				"LayeredMaterial3-Specular",
+				"LayeredMaterial3-Height",
+
 			};
 
 			foreach ( string FileName in FileNames )

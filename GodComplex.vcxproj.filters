@@ -80,14 +80,14 @@
     <Filter Include="Resources\Shaders\DEBUG\EffectDeferred">
       <UniqueIdentifier>{dab91c5c-566c-4058-82b5-53ea025b8baa}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Intro\Effects\AtelierCode">
-      <UniqueIdentifier>{474e4644-248d-4e55-98c5-e0fe1774da11}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resources\Shaders\DEBUG\EffectScene">
       <UniqueIdentifier>{a260f0eb-7b88-4977-82f3-51abec10de2d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Intro\Effects\Scene">
       <UniqueIdentifier>{01860707-0530-4e35-b653-3844c1e8a4e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intro\Effects\Workshop">
+      <UniqueIdentifier>{474e4644-248d-4e55-98c5-e0fe1774da11}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -214,10 +214,10 @@
       <Filter>Utility</Filter>
     </ClInclude>
     <ClInclude Include="Intro\Effects\EffectParticles.h">
-      <Filter>Intro\Effects\AtelierCode</Filter>
+      <Filter>Intro\Effects\Workshop</Filter>
     </ClInclude>
     <ClInclude Include="Intro\Effects\EffectDeferred.h">
-      <Filter>Intro\Effects\AtelierCode</Filter>
+      <Filter>Intro\Effects\Workshop</Filter>
     </ClInclude>
     <ClInclude Include="Intro\Effects\Scene\EffectScene.h">
       <Filter>Intro\Effects\Scene</Filter>
@@ -331,10 +331,10 @@
       <Filter>Utility</Filter>
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectDeferred.cpp">
-      <Filter>Intro\Effects\AtelierCode</Filter>
+      <Filter>Intro\Effects\Workshop</Filter>
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectParticles.cpp">
-      <Filter>Intro\Effects\AtelierCode</Filter>
+      <Filter>Intro\Effects\Workshop</Filter>
     </ClCompile>
     <ClCompile Include="Intro\Effects\Scene\EffectScene.cpp">
       <Filter>Intro\Effects\Scene</Filter>

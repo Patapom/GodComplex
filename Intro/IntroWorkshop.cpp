@@ -45,7 +45,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create our camera
 	gs_pCamera = new Camera( gs_Device );
-	gs_pCamera->SetPerspective( NUAJDEG2RAD( 80.0f ), float(RESX) / RESY, 0.01f, 5000.0f );
+	gs_pCamera->SetPerspective( NUAJDEG2RAD( 50.0f ), float(RESX) / RESY, 0.01f, 5000.0f );
 
 	// NOTE: Camera reserves the CB slot #0 for itself !
 

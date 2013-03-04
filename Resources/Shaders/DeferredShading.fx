@@ -76,7 +76,7 @@ PS_OUT	PS( VS_IN _In )
 	float	Z = (Q * _CameraData.z) / (Q - Zproj);
 
 	// Unproject normal
- 	Tex1.xy = (1.7777 * 2.0) * (Tex1.xy - 0.5);
+ 	Tex1.xy = (1.57 * 2.0) * (Tex1.xy - 0.5);
 	float	NormalScale = 2.0 / (1.0 + dot( Tex1.xy, Tex1.xy ) );
 	float3	CameraNormal = float3( NormalScale * Tex1.xy, NormalScale-1.0 );
 

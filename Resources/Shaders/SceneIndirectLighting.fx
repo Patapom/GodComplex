@@ -111,6 +111,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 	float3	CameraPosition = Z * CameraView;
 			CameraView = normalize( CameraView );
 
+//return 100.0 * abs( Mats[0].Weight - DiffuseAlbedo.x );
 //return sqrt(DiffuseAlbedo);
 // return Mats[0].Weight;
 //return 0.2 * Mats[0].ID;
@@ -120,7 +121,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 
 	// Unpack stereographic normal (from http://aras-p.info/texts/CompactNormalStorage.html#method07stereo)
 	// See also http://en.wikipedia.org/wiki/Stereographic_projection
- 	Buf0.xy = (1.7777 * 2.0) * (Buf0.xy - 0.5);
+ 	Buf0.xy = (1.57 * 2.0) * (Buf0.xy - 0.5);
 	float	NormalScale = 2.0 / (1.0 + dot( Buf0.xy, Buf0.xy ) );
 	float3	CameraNormal = float3( NormalScale * Buf0.xy, 1.0-NormalScale );
 
@@ -187,8 +188,9 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 	float3	AccDiffuse = _TexDiffuseSpecular.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 	float3	AccSpecular = _TexDiffuseSpecular.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
 
-//AccSpecular += Reflection;
+AccSpecular += Reflection;
 
+//return AccSpecular;
 //return AccDiffuse;
 
 	return AccDiffuse + AccSpecular;
