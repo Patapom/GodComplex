@@ -354,24 +354,21 @@ void	Device::RemoveRenderTargets()
 
 void	Device::SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _pDepthStencilState, BlendState* _pBlendState )
 {
-	if ( _pRasterizerState != NULL )
+	if ( _pRasterizerState != NULL && _pRasterizerState != m_pCurrentRasterizerState )
 	{
-		if ( _pRasterizerState != m_pCurrentRasterizerState )
-			m_pDeviceContext->RSSetState( _pRasterizerState->m_pState );
+		m_pDeviceContext->RSSetState( _pRasterizerState->m_pState );
 		m_pCurrentRasterizerState = _pRasterizerState;
 	}
 
-	if ( _pDepthStencilState != NULL )
+	if ( _pDepthStencilState != NULL && _pDepthStencilState != m_pCurrentDepthStencilState )
 	{
-		if ( _pDepthStencilState != m_pCurrentDepthStencilState )
-			m_pDeviceContext->OMSetDepthStencilState( _pDepthStencilState->m_pState, m_StencilRef );
+		m_pDeviceContext->OMSetDepthStencilState( _pDepthStencilState->m_pState, m_StencilRef );
 		m_pCurrentDepthStencilState = _pDepthStencilState;
 	}
 
-	if ( _pBlendState != NULL )
+	if ( _pBlendState != NULL && _pBlendState != m_pCurrentBlendState )
 	{
-		if ( _pBlendState != m_pCurrentBlendState )
-			m_pDeviceContext->OMSetBlendState( _pBlendState->m_pState, &m_BlendFactors.x, m_BlendMasks );
+		m_pDeviceContext->OMSetBlendState( _pBlendState->m_pState, &m_BlendFactors.x, m_BlendMasks );
 		m_pCurrentBlendState = _pBlendState;
 	}
 }

@@ -1,10 +1,5 @@
 //////////////////////////////////////////////////////////////////////////
-// This shader displays the objects in our fat G-Buffer
-//
-//	TODO: Don't use a texture array => Separate textures are cooler so we can easily send 1x1 blank textures for unused layers
-//		  Also useful to have several formats (like diffuse in sRGB and stuff)
-//
-//	TODO: Use PTMs !!!
+// This shader displays the objects's backfaces in a simplified G-Buffer
 //
 #include "Inc/Global.fx"
 
@@ -47,14 +42,10 @@ struct	PS_IN
 
 struct	PS_OUT
 {
-#ifndef	RENDER_BACK_FACES
 	float4	NormalTangent		: SV_TARGET0;	// XY=Normal  ZW=TangentXY
 	float4	DiffuseAlbedo		: SV_TARGET1;	// XYZ=Diffuse Albedo W=TangentZ
 	float4	SpecularAlbedo		: SV_TARGET2;	// XYZ=Specular Albedo
 	uint4	WeightMatIDs0		: SV_TARGET3;	// 4 couples of [Weight,MatID] each in [0,255]
-#else
-	float4	Diffuse				: SV_TARGET0;
-#endif
 };
 
 PS_IN	VS( VS_IN _In )
@@ -139,6 +130,26 @@ PS_OUT	PS( PS_IN _In )
 	float4	TexLayer0 = _TexMaterial.Sample( LinearWrap,	float3( UV, 0 ) );								// Layer 0
 	float4	TexNormal = _TexMaterial.Sample( LinearWrap,	float3( UV, 5 ) );								// Normal Map is always assigned to bottom layer
 
+	// Transform tangent space & get normal+tangent into camera space
+	float3		NormalMap = normalize( 2.0 * TexNormal.xyz - 1.0 );
+	float3x3	Rotation = ComputeRotation( NormalMap );
+
+	WorldNormal = mul( WorldNormal, Rotation );
+	WorldTangent = mul( WorldTangent, Rotation );
+
+	float3	CameraNormal = float3( dot( WorldNormal, _Camera2World[0].xyz ), dot( WorldNormal, _Camera2World[1].xyz ), -dot( WorldNormal, _Camera2World[2].xyz ) );
+	float3	CameraTangent = float3( dot( WorldTangent, _Camera2World[0].xyz ), dot( WorldTangent, _Camera2World[1].xyz ), dot( WorldTangent, _Camera2World[2].xyz ) );
+			CameraTangent = normalize( CameraTangent );
+
+	// Pack for storage
+	CameraTangent = 0.5 * (1.0 + CameraTangent);
+
+	// Stereographic projection of normal (from http://aras-p.info/texts/CompactNormalStorage.html#method07stereo)
+	// See also http://en.wikipedia.org/wiki/Stereographic_projection
+	CameraNormal.xy /= 1.0 + CameraNormal.z;	// Gives quite a large value for negative normals
+	CameraNormal /= 1.57;						// So we simply divide by a number larger than 1 to account for "some parts" of the negative normals but we hope there won't be too much negative ones
+	CameraNormal = 0.5 * (1.0 + CameraNormal);
+
 
 	//////////////////////////////////////////////////////////////////////
 	// Apply Pom model
@@ -156,8 +167,6 @@ PS_OUT	PS( PS_IN _In )
 	float3	Layer3 = lerp( Layer2, TexLayer3.xyz, LayerExtinctions.z );			// Layer 2 is only visible if extinction from layer 3 is low
 	float3	DiffuseAlbedo = Layer3;												// This is the final diffuse color seen through all layers
 
-
-#ifndef	RENDER_BACK_FACES
 
 	// Compute perceived specular
 	// We proceed the same as for diffuse above except we also interpolate between specular and diffuse for each layer depending on the layer's "NoDiffuse" parameter
@@ -189,28 +198,6 @@ PS_OUT	PS( PS_IN _In )
 // 	float	SumWeights = dot( LayerWeights, 1.0 );
 // 	LayerWeights /= SumWeights;													// We normalize weights as we can't exceed one!
 
-	//////////////////////////////////////////////////////////////////////
-	// Transform tangent space & get normal+tangent into camera space
-	float3		NormalMap = normalize( 2.0 * TexNormal.xyz - 1.0 );
-	float3x3	Rotation = ComputeRotation( NormalMap );
-
-	WorldNormal = mul( WorldNormal, Rotation );
-	WorldTangent = mul( WorldTangent, Rotation );
-
-	float3	CameraNormal = float3( dot( WorldNormal, _Camera2World[0].xyz ), dot( WorldNormal, _Camera2World[1].xyz ), -dot( WorldNormal, _Camera2World[2].xyz ) );
-	float3	CameraTangent = float3( dot( WorldTangent, _Camera2World[0].xyz ), dot( WorldTangent, _Camera2World[1].xyz ), dot( WorldTangent, _Camera2World[2].xyz ) );
-			CameraTangent = normalize( CameraTangent );
-
-	// Pack for storage
-	CameraTangent = 0.5 * (1.0 + CameraTangent);
-
-	// Stereographic projection of normal (from http://aras-p.info/texts/CompactNormalStorage.html#method07stereo)
-	// See also http://en.wikipedia.org/wiki/Stereographic_projection
-	CameraNormal.xy /= 1.0 + CameraNormal.z;	// Gives quite a large value for negative normals
-	CameraNormal /= 1.57;						// So we simply divide by a number larger than 1 to account for "some parts" of the negative normals but we hope there won't be too much negative ones
-	CameraNormal = 0.5 * (1.0 + CameraNormal);
-
-
 	// Write final result
 	PS_OUT	Out;
 	Out.NormalTangent = float4( CameraNormal.xy, CameraTangent.xy );			// XY=Normal  ZW=TangentXY
@@ -224,11 +211,6 @@ PS_OUT	PS( PS_IN _In )
 							);
 
 //Out.DiffuseAlbedo = LayerWeights;
-
-#else
-	PS_OUT	Out;
-	Out.Diffuse = float4( DiffuseAlbedo, 0 );
-#endif
 
 	return Out;
 }

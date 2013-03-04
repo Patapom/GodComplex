@@ -73,9 +73,8 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// Create & initialize our scene
+	// Create our scene
 	gs_pScene = new Scene( gs_Device );
-	PrepareScene();
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -123,6 +122,12 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 
 		CHECK_EFFECT( gs_pEffectScene = new EffectScene( gs_Device, *gs_pScene, *gs_pPrimQuad ), ERR_EFFECT_SCENE );
 	}
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Initialize the scene last so it gives us the opportunity to fix shader errors first instead of waiting for the scene to be ready!
+	PrepareScene();
+
 
 	return 0;
 }
@@ -255,6 +260,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 //	t = 31.415926535897932384626433832795f;
 //	t = _TV( 41.2f );
+//	t = 32 + 11.0f/60;
 
 	float	Radius = 4.0f;
 	gs_pCamera->LookAt( NjFloat3( Radius * sinf( 0.2f * t ), 2.0f + sinf( 1.0f * t ), Radius * cosf( 0.2f * t ) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
@@ -270,7 +276,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Render the scene
-	gs_pEffectScene->Render( _Time, _DeltaTime, gs_pSceneTexture0 );
+	gs_pEffectScene->Render( _Time, _DeltaTime );
 
 
 #endif

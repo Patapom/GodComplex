@@ -9,42 +9,60 @@ EffectScene::EffectScene( Device& _Device, Scene& _Scene, Primitive& _ScreenQuad
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
 	CHECK_MATERIAL( m_pMatDepthPass = CreateMaterial( IDR_SHADER_SCENE_DEPTH_PASS, VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, NULL ), 1 );
-	CHECK_MATERIAL( m_pMatBuildLinearZ = CreateMaterial( IDR_SHADER_SCENE_BUILD_LINEARZ, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
-	CHECK_MATERIAL( m_pMatFillGBuffer = CreateMaterial( IDR_SHADER_SCENE_FILL_GBUFFER, VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
-	CHECK_MATERIAL( m_pMatIndirectLighting = CreateMaterial( IDR_SHADER_SCENE_INDIRECT_LIGHTING, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
+	CHECK_MATERIAL( m_pMatBuildLinearZ = CreateMaterial( IDR_SHADER_SCENE_BUILD_LINEARZ, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
+	CHECK_MATERIAL( m_pMatIndirectLighting = CreateMaterial( IDR_SHADER_SCENE_INDIRECT_LIGHTING, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
 
-Render back faces into a little target
+	// GBuffer
+	CHECK_MATERIAL( m_pMatFillGBuffer = CreateMaterial( IDR_SHADER_SCENE_FILL_GBUFFER, VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
 
+	D3D_SHADER_MACRO	pMacrosGBufferBackFaces[] = {
+		{ "RENDER_BACK_FACES", "1" },
+		{ NULL,	NULL }
+	};
+	CHECK_MATERIAL( m_pMatFillGBufferBackFaces = CreateMaterial( IDR_SHADER_SCENE_FILL_GBUFFER, VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS", pMacrosGBufferBackFaces ), 5 );
+
+	// Downsampling
+	CHECK_MATERIAL( m_pMatDownSample = CreateMaterial( IDR_SHADER_SCENE_DOWNSAMPLE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
+
+	// Lighting
 	D3D_SHADER_MACRO	pMacrosDirectional[] = {
 		{ "LIGHT_TYPE", "0" },
 		{ NULL,	NULL }
 	};
-	CHECK_MATERIAL( m_pMatShading_Directional_StencilPass = CreateMaterial( IDR_SHADER_SCENE_SHADING_STENCIL, VertexFormatP3T2::DESCRIPTOR, "VS", NULL, NULL, pMacrosDirectional ), 1 );
-	CHECK_MATERIAL( m_pMatShading_Directional = CreateMaterial( IDR_SHADER_SCENE_SHADING, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosDirectional ), 1 );
+	CHECK_MATERIAL( m_pMatShading_Directional_StencilPass = CreateMaterial( IDR_SHADER_SCENE_SHADING_STENCIL, VertexFormatP3T2::DESCRIPTOR, "VS", NULL, NULL, pMacrosDirectional ), 7 );
+	CHECK_MATERIAL( m_pMatShading_Directional = CreateMaterial( IDR_SHADER_SCENE_SHADING, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosDirectional ), 8 );
 	D3D_SHADER_MACRO	pMacrosPoint[] = {
 		{ "LIGHT_TYPE", "1" },
 		{ NULL,	NULL }
 	};
-	CHECK_MATERIAL( m_pMatShading_Point_StencilPass = CreateMaterial( IDR_SHADER_SCENE_SHADING_STENCIL, VertexFormatP3T2::DESCRIPTOR, "VS", NULL, NULL, pMacrosPoint ), 1 );
-	CHECK_MATERIAL( m_pMatShading_Point = CreateMaterial( IDR_SHADER_SCENE_SHADING, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosPoint ), 1 );
+	CHECK_MATERIAL( m_pMatShading_Point_StencilPass = CreateMaterial( IDR_SHADER_SCENE_SHADING_STENCIL, VertexFormatP3T2::DESCRIPTOR, "VS", NULL, NULL, pMacrosPoint ), 9 );
+	CHECK_MATERIAL( m_pMatShading_Point = CreateMaterial( IDR_SHADER_SCENE_SHADING, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosPoint ), 10 );
 	D3D_SHADER_MACRO	pMacrosSpot[] = {
 		{ "LIGHT_TYPE", "2" },
 		{ NULL,	NULL }
 	};
-	CHECK_MATERIAL( m_pMatShading_Spot_StencilPass = CreateMaterial( IDR_SHADER_SCENE_SHADING_STENCIL, VertexFormatP3T2::DESCRIPTOR, "VS", NULL, NULL, pMacrosSpot ), 1 );
-	CHECK_MATERIAL( m_pMatShading_Spot = CreateMaterial( IDR_SHADER_SCENE_SHADING, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosSpot ), 1 );
+	CHECK_MATERIAL( m_pMatShading_Spot_StencilPass = CreateMaterial( IDR_SHADER_SCENE_SHADING_STENCIL, VertexFormatP3T2::DESCRIPTOR, "VS", NULL, NULL, pMacrosSpot ), 11 );
+	CHECK_MATERIAL( m_pMatShading_Spot = CreateMaterial( IDR_SHADER_SCENE_SHADING, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosSpot ), 12 );
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the render targets
 	int		W = m_Device.DefaultRenderTarget().GetWidth();
 	int		H = m_Device.DefaultRenderTarget().GetHeight();
 
-	m_pDepthStencilFront = new Texture2D( m_Device, W, H, DepthStencilFormatD24S8::DESCRIPTOR );
-	m_pDepthStencilBack = new Texture2D( m_Device, W, H, DepthStencilFormatD24S8::DESCRIPTOR );
-	m_pRTZBuffer= new Texture2D( m_Device, W, H, 1, PixelFormatRG32F::DESCRIPTOR, 1, NULL );
+	int		SmallW = W >> 1;
+	int		SmallH = H >> 1;
 
+	m_pDepthStencilFront = new Texture2D( m_Device, W, H, DepthStencilFormatD24S8::DESCRIPTOR );
+//	m_pRTGBuffer0_2 = new Texture2D( m_Device, W, H, 3, PixelFormatRGBA8::DESCRIPTOR, 1, NULL );
 	m_pRTGBuffer0_2 = new Texture2D( m_Device, W, H, 3, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
 	m_pRTGBuffer3 = new Texture2D( m_Device, W, H, 1, PixelFormatRGBA16_UINT::DESCRIPTOR, 1, NULL );
+
+	m_pDepthStencilBack = new Texture2D( m_Device, SmallW, SmallH, DepthStencilFormatD32F::DESCRIPTOR );
+	m_pRTGBufferBack = new Texture2D( m_Device, SmallW, SmallH, 1, PixelFormatRGBA8::DESCRIPTOR, 1, NULL );
+
+	m_pRTZBuffer= new Texture2D( m_Device, W, H, 1, PixelFormatRG32F::DESCRIPTOR, 1, NULL );
+//	m_pRTZBufferFrontDownSampled = new Texture2D( m_Device, SmallW, SmallH, 1, PixelFormatR32F::DESCRIPTOR, 1, NULL );
 
 	m_pRTAccumulatorDiffuseSpecular = new Texture2D( m_Device, W, H, 2, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
 
@@ -62,12 +80,14 @@ Render back faces into a little target
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
 	m_pCB_Render = new CB<CBRender>( m_Device, 10 );
+	m_pCB_RenderDownSampled = new CB<CBRender>( m_Device, 10 );
 	m_pCB_Light = new CB<CBLight>( m_Device, 11 );
 }
 
 EffectScene::~EffectScene()
 {
 	delete m_pCB_Light;
+	delete m_pCB_RenderDownSampled;
 	delete m_pCB_Render;
 
 	delete m_pPrimSphere;
@@ -75,8 +95,10 @@ EffectScene::~EffectScene()
 
 	delete m_pRTAccumulatorDiffuseSpecular;
 
+	delete m_pRTGBufferBack;
 	delete m_pRTGBuffer3;
 	delete m_pRTGBuffer0_2;
+//	delete m_pRTZBufferFrontDownSampled;
 	delete m_pRTZBuffer;
 	delete m_pDepthStencilBack;
 	delete m_pDepthStencilFront;
@@ -88,17 +110,23 @@ EffectScene::~EffectScene()
 	delete m_pMatShading_Directional;
 	delete m_pMatShading_Directional_StencilPass;
 	delete m_pMatIndirectLighting;
+	delete m_pMatDownSample;
+	delete m_pMatFillGBufferBackFaces;
  	delete m_pMatFillGBuffer;
 	delete m_pMatBuildLinearZ;
 	delete m_pMatDepthPass;
 }
 
-void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D* _pTex )
+void	EffectScene::Render( float _Time, float _DeltaTime )
 {
 	int		W = m_Device.DefaultRenderTarget().GetWidth();
 	int		H = m_Device.DefaultRenderTarget().GetHeight();
 
+	int		SmallW = W >> 1;
+	int		SmallH = H >> 1;
+
 	m_pCB_Render->m.dUV.Set( 1.0f / W, 1.0f / H, 0.0f );
+	m_pCB_RenderDownSampled->m.dUV.Set( 1.0f / SmallW, 1.0f / SmallH, 0.0f );
 
 	// Update scene once
 	m_Scene.Update( _Time, _DeltaTime );
@@ -117,11 +145,11 @@ void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D* _pTex )
 	m_Scene.Render( M, true );
 
 	// 1.2] Render back faces in back Z buffer
-	m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_ZPrePass );
+	m_Device.SetStates( m_Device.m_pRS_CullFront, NULL, NULL );
 
 	m_Device.ClearDepthStencil( *m_pDepthStencilBack, 1.0f, 0 );
 
-	m_Device.SetRenderTargets( W, H, 0, ppRenderTargets, m_pDepthStencilBack->GetDepthStencilView() );
+	m_Device.SetRenderTargets( SmallW, SmallH, 0, ppRenderTargets, m_pDepthStencilBack->GetDepthStencilView() );
 	m_Scene.Render( M, true );
 
 	USING_MATERIAL_END
@@ -143,9 +171,23 @@ void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D* _pTex )
 
 	USING_MATERIAL_END
 
+	// 2.2] Downsample front ZBuffer
+// 	USING_MATERIAL_START( *m_pMatDownSample )
+// 
+// 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
+// 	m_Device.SetRenderTarget( *m_pRTZBufferFrontDownSampled );
+// 
+// 	m_pRTZBuffer->SetPS( 10 );
+// 
+// 	m_pCB_RenderDownSampled->UpdateData();
+// 	m_ScreenQuad.Render( M );
+// 
+// 	USING_MATERIAL_END
+
 
 	//////////////////////////////////////////////////////////////////////////
-	// 3] Render the scene in our first G-Buffer
+	// 3] Render the scene in our G-Buffers
+	// 3.1] Front faces into the fat GBuffer
 	USING_MATERIAL_START( *m_pMatFillGBuffer )
 
 	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_ReadLessEqual, m_Device.m_pBS_Disabled );
@@ -163,6 +205,16 @@ void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D* _pTex )
 
 	USING_MATERIAL_END
 	
+// 	// 3.2] Back faces into the light GBuffer
+// 	USING_MATERIAL_START( *m_pMatFillGBufferBackFaces )
+// 
+// 	m_Device.SetStates( m_Device.m_pRS_CullFront, NULL, NULL );
+// 
+// 	m_Device.SetRenderTarget( *m_pRTGBufferBack, m_pDepthStencilBack );
+// 	m_Scene.Render( M );
+// 
+// 	USING_MATERIAL_END
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// 4] Apply shading using my Pom materials! ^^
@@ -176,11 +228,10 @@ void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D* _pTex )
 	m_pRTGBuffer3->SetPS( 11 );
 	m_pRTZBuffer->SetPS( 12 );
 
-//	m_Device.SetStates( m_Device.m_pRS_CullNone, NULL, NULL );
-
 	m_pCB_Render->UpdateData();
 
 	// TODO: DrawInstanced with a texture buffer of light infos!
+	// Can't now, because of changes of stencil states and shit...
 
 	// 4.1] Process directionals
 	if ( m_Scene.GetEnabledDirectionalLightsCount() > 0 )
@@ -289,17 +340,20 @@ void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D* _pTex )
 	USING_MATERIAL_START( *m_pMatIndirectLighting )
 
 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
-	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget(), &m_Device.DefaultDepthStencil() );
+	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget() );
 
-	m_pRTAccumulatorDiffuseSpecular->SetPS( 13 );
+//	m_pRTZBufferFrontDownSampled->SetPS( 13 );
+
+	m_pRTAccumulatorDiffuseSpecular->SetPS( 14 );
 	const Texture2D*	pTexEnvMap = m_Scene.GetEnvMap();
 	if ( pTexEnvMap != NULL )
-		pTexEnvMap->SetPS( 14 );
+		pTexEnvMap->SetPS( 15 );
 
 // DEBUG
 const Texture2D*	pTexLayeredMat = m_Scene.GetObjectAt(0).GetPrimitiveAt(0).GetLayeredTexture();
 if ( pTexLayeredMat != NULL )
-	pTexLayeredMat->SetPS( 15 );
+	pTexLayeredMat->SetPS( 16 );
+m_pRTGBufferBack->SetPS( 17 );
 // DEBUG
 
 	m_pCB_Render->UpdateData();

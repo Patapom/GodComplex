@@ -39,6 +39,8 @@ private:	// FIELDS
 	Material*			m_pMatDepthPass;
 	Material*			m_pMatBuildLinearZ;
 	Material*			m_pMatFillGBuffer;
+	Material*			m_pMatFillGBufferBackFaces;
+	Material*			m_pMatDownSample;
 	Material*			m_pMatShading_Directional_StencilPass;
 	Material*			m_pMatShading_Directional;
 	Material*			m_pMatShading_Point_StencilPass;
@@ -50,9 +52,12 @@ private:	// FIELDS
 	Texture2D*			m_pDepthStencilFront;
 	Texture2D*			m_pDepthStencilBack;
 	Texture2D*			m_pRTZBuffer;	// Front & Back ZBuffers stored in linear space in a RG32F target
+	Texture2D*			m_pRTZBufferFrontDownSampled;
 
+	// Front & back GBuffers
 	Texture2D*			m_pRTGBuffer0_2;
 	Texture2D*			m_pRTGBuffer3;
+	Texture2D*			m_pRTGBufferBack;
 
 	Texture2D*			m_pRTAccumulatorDiffuseSpecular;
 
@@ -61,6 +66,7 @@ private:	// FIELDS
 	Primitive&			m_ScreenQuad;
 
 	CB<CBRender>*		m_pCB_Render;
+	CB<CBRender>*		m_pCB_RenderDownSampled;
 	CB<CBLight>*		m_pCB_Light;
 
 public:		// PROPERTIES
@@ -72,6 +78,6 @@ public:		// METHODS
 	EffectScene( Device& _Device, Scene& _Scene, Primitive& _ScreenQuad );
 	~EffectScene();
 
-	void	Render( float _Time, float _DeltaTime, Texture2D* _pTex );
+	void	Render( float _Time, float _DeltaTime );
 
 };

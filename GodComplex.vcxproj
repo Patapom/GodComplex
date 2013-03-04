@@ -414,6 +414,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\RoomTestCompute.fx" />
     <None Include="Resources\Shaders\SceneBuildLinearZ.fx" />
     <None Include="Resources\Shaders\SceneDepthPass.fx" />
+    <None Include="Resources\Shaders\SceneDownSample.fx" />
     <None Include="Resources\Shaders\SceneFillGBuffer.fx" />
     <None Include="Resources\Shaders\SceneIndirectLighting.fx" />
     <None Include="Resources\Shaders\SceneShading.fx" />
