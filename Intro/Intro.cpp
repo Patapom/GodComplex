@@ -261,6 +261,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 //	t = 31.415926535897932384626433832795f;
 //	t = _TV( 41.2f );
 //	t = 32 + 11.0f/60;
+	t = 1.71f;
 
 	float	Radius = 4.0f;
 	gs_pCamera->LookAt( NjFloat3( Radius * sinf( 0.2f * t ), 2.0f + sinf( 1.0f * t ), Radius * cosf( 0.2f * t ) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );

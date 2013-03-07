@@ -43,7 +43,8 @@ void*	DictionaryU32::Get( U32 _Key ) const
 	{
 		if ( _Key == pNode->Key )
 		{
-			ms_MaxCollisionsCount = MAX( ms_MaxCollisionsCount, CollisionsCount );
+			if ( CollisionsCount > ms_MaxCollisionsCount )
+				ms_MaxCollisionsCount = CollisionsCount;
 			return pNode->pValue;
 		}
  

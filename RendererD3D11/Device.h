@@ -94,8 +94,9 @@ public:	 // METHODS
 	void	ClearRenderTarget( const Texture2D& _Target, const NjFloat4& _Color );
 	void	ClearRenderTarget( const Texture3D& _Target, const NjFloat4& _Color );
 	void	ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth=true, bool _bClearStencil=true );
-	void	SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil=NULL, D3D11_VIEWPORT* _pViewport=NULL );
-	void	SetRenderTargets( int _Width, int _Height, int _TargetsCount, ID3D11RenderTargetView** _ppTargets, ID3D11DepthStencilView* _pDepthStencil=NULL, D3D11_VIEWPORT* _pViewport=NULL );
+	void	SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
+	void	SetRenderTarget( int _Width, int _Height, const ID3D11RenderTargetView& _Target, ID3D11DepthStencilView* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
+	void	SetRenderTargets( int _Width, int _Height, int _TargetsCount, ID3D11RenderTargetView* const * _ppTargets, ID3D11DepthStencilView* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
 	void	RemoveRenderTargets();
 	void	SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _pDepthStencilState, BlendState* _pBlendState );
 	void	SetStatesReferences( const NjFloat4& _BlendMasks, U32 _BlendSampleMask, U8 _StencilRef );

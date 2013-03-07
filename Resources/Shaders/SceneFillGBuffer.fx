@@ -194,8 +194,8 @@ PS_OUT	PS( PS_IN _In )
 	float3		NormalMap = normalize( 2.0 * TexNormal.xyz - 1.0 );
 	float3x3	Rotation = ComputeRotation( NormalMap );
 
-	WorldNormal = mul( WorldNormal, Rotation );
-	WorldTangent = mul( WorldTangent, Rotation );
+// 	WorldNormal = mul( WorldNormal, Rotation );
+// 	WorldTangent = mul( WorldTangent, Rotation );
 
 	float3	CameraNormal = float3( dot( WorldNormal, _Camera2World[0].xyz ), dot( WorldNormal, _Camera2World[1].xyz ), -dot( WorldNormal, _Camera2World[2].xyz ) );
 	float3	CameraTangent = float3( dot( WorldTangent, _Camera2World[0].xyz ), dot( WorldTangent, _Camera2World[1].xyz ), dot( WorldTangent, _Camera2World[2].xyz ) );

@@ -42,12 +42,12 @@ public:	 // METHODS
 	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const;
 
 	// Uploads the texture to the shader
-	void		Set( int _SlotIndex, bool _bIKnowWhatImDoing=false );
-	void		SetVS( int _SlotIndex, bool _bIKnowWhatImDoing=false );
-	void		SetHS( int _SlotIndex, bool _bIKnowWhatImDoing=false );
-	void		SetDS( int _SlotIndex, bool _bIKnowWhatImDoing=false );
-	void		SetGS( int _SlotIndex, bool _bIKnowWhatImDoing=false );
-	void		SetPS( int _SlotIndex, bool _bIKnowWhatImDoing=false );
+	void		Set( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
+	void		SetVS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
+	void		SetHS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
+	void		SetDS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
+	void		SetGS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
+	void		SetPS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
 
 public:
 	static void	NextMipSize( int& _Width, int& _Height, int& _Depth );

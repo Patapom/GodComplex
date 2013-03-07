@@ -57,12 +57,12 @@ public:	 // METHODS
 	ID3D11DepthStencilView*		GetDepthStencilView() const;
 
 	// Uploads the texture to the shader
-	void		Set( int _SlotIndex, bool _bIKnowWhatImDoing=false ) const;
-	void		SetVS( int _SlotIndex, bool _bIKnowWhatImDoing=false ) const;
-	void		SetHS( int _SlotIndex, bool _bIKnowWhatImDoing=false ) const;
-	void		SetDS( int _SlotIndex, bool _bIKnowWhatImDoing=false ) const;
-	void		SetGS( int _SlotIndex, bool _bIKnowWhatImDoing=false ) const;
-	void		SetPS( int _SlotIndex, bool _bIKnowWhatImDoing=false ) const;
+	void		Set( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
+	void		SetVS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
+	void		SetHS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
+	void		SetDS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
+	void		SetGS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
+	void		SetPS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
 
 	// Used by the Device for the default backbuffer
 	Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFormatDescriptor& _Format );

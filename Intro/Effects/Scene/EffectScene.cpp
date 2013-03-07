@@ -50,19 +50,15 @@ EffectScene::EffectScene( Device& _Device, Scene& _Scene, Primitive& _ScreenQuad
 	int		W = m_Device.DefaultRenderTarget().GetWidth();
 	int		H = m_Device.DefaultRenderTarget().GetHeight();
 
-	int		SmallW = W >> 1;
-	int		SmallH = H >> 1;
-
 	m_pDepthStencilFront = new Texture2D( m_Device, W, H, DepthStencilFormatD24S8::DESCRIPTOR );
 //	m_pRTGBuffer0_2 = new Texture2D( m_Device, W, H, 3, PixelFormatRGBA8::DESCRIPTOR, 1, NULL );
 	m_pRTGBuffer0_2 = new Texture2D( m_Device, W, H, 3, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
 	m_pRTGBuffer3 = new Texture2D( m_Device, W, H, 1, PixelFormatRGBA16_UINT::DESCRIPTOR, 1, NULL );
 
-	m_pDepthStencilBack = new Texture2D( m_Device, SmallW, SmallH, DepthStencilFormatD32F::DESCRIPTOR );
-	m_pRTGBufferBack = new Texture2D( m_Device, SmallW, SmallH, 1, PixelFormatRGBA8::DESCRIPTOR, 1, NULL );
+	m_pDepthStencilBack = new Texture2D( m_Device, W, H, DepthStencilFormatD32F::DESCRIPTOR );
+	m_pRTGBufferBack = new Texture2D( m_Device, W, H, 1, PixelFormatRGBA8::DESCRIPTOR, 1, NULL );
 
-	m_pRTZBuffer= new Texture2D( m_Device, W, H, 1, PixelFormatRG32F::DESCRIPTOR, 1, NULL );
-//	m_pRTZBufferFrontDownSampled = new Texture2D( m_Device, SmallW, SmallH, 1, PixelFormatR32F::DESCRIPTOR, 1, NULL );
+	m_pRTZBuffer= new Texture2D( m_Device, W, H, 1, PixelFormatRG32F::DESCRIPTOR, 6, NULL );
 
 	m_pRTAccumulatorDiffuseSpecular = new Texture2D( m_Device, W, H, 2, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
 
@@ -122,11 +118,7 @@ void	EffectScene::Render( float _Time, float _DeltaTime )
 	int		W = m_Device.DefaultRenderTarget().GetWidth();
 	int		H = m_Device.DefaultRenderTarget().GetHeight();
 
-	int		SmallW = W >> 1;
-	int		SmallH = H >> 1;
-
 	m_pCB_Render->m.dUV.Set( 1.0f / W, 1.0f / H, 0.0f );
-	m_pCB_RenderDownSampled->m.dUV.Set( 1.0f / SmallW, 1.0f / SmallH, 0.0f );
 
 	// Update scene once
 	m_Scene.Update( _Time, _DeltaTime );
@@ -149,7 +141,7 @@ void	EffectScene::Render( float _Time, float _DeltaTime )
 
 	m_Device.ClearDepthStencil( *m_pDepthStencilBack, 1.0f, 0 );
 
-	m_Device.SetRenderTargets( SmallW, SmallH, 0, ppRenderTargets, m_pDepthStencilBack->GetDepthStencilView() );
+	m_Device.SetRenderTargets( W, H, 0, ppRenderTargets, m_pDepthStencilBack->GetDepthStencilView() );
 	m_Scene.Render( M, true );
 
 	USING_MATERIAL_END
@@ -171,18 +163,31 @@ void	EffectScene::Render( float _Time, float _DeltaTime )
 
 	USING_MATERIAL_END
 
-	// 2.2] Downsample front ZBuffer
-// 	USING_MATERIAL_START( *m_pMatDownSample )
-// 
-// 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
-// 	m_Device.SetRenderTarget( *m_pRTZBufferFrontDownSampled );
-// 
-// 	m_pRTZBuffer->SetPS( 10 );
-// 
-// 	m_pCB_RenderDownSampled->UpdateData();
-// 	m_ScreenQuad.Render( M );
-// 
-// 	USING_MATERIAL_END
+	// 2.2] Downsample ZBuffer
+	// NOTE: Commenting this makes us lose 150 FPS => from 600 to 450 drop !!
+	{
+		USING_MATERIAL_START( *m_pMatDownSample )
+
+		int	PreviousWidth, PreviousHeight;
+		int	CurrentWidth = m_pRTZBuffer->GetWidth();
+		int	CurrentHeight = m_pRTZBuffer->GetHeight();
+		for ( int MipLevelIndex=1; MipLevelIndex < m_pRTZBuffer->GetMipLevelsCount(); MipLevelIndex++ )
+		{
+			PreviousWidth = CurrentWidth;
+			PreviousHeight = CurrentHeight;
+			CurrentWidth >>= 1;
+			CurrentHeight >>= 1;
+			m_Device.SetRenderTarget( CurrentWidth, CurrentHeight, *m_pRTZBuffer->GetTargetView( MipLevelIndex ) );
+
+			m_pRTZBuffer->SetPS( 10, true, m_pRTZBuffer->GetShaderView( MipLevelIndex-1, 1 ) );
+
+			m_pCB_RenderDownSampled->m.dUV.Set( 1.0f / CurrentWidth, 1.0f / CurrentHeight, 0.0f );
+			m_pCB_RenderDownSampled->UpdateData();
+			m_ScreenQuad.Render( M );
+		}
+
+		USING_MATERIAL_END
+	}
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -220,7 +225,11 @@ void	EffectScene::Render( float _Time, float _DeltaTime )
 	// 4] Apply shading using my Pom materials! ^^
 	m_Device.ClearRenderTarget( *m_pRTAccumulatorDiffuseSpecular, NjFloat4::Zero );
 
-	ID3D11RenderTargetView*	ppRenderTargets[2] = { m_pRTAccumulatorDiffuseSpecular->GetTargetView( 0, 0, 1 ), m_pRTAccumulatorDiffuseSpecular->GetTargetView( 0, 1, 1 ) };
+	ID3D11RenderTargetView*	ppRenderTargets[2] =
+	{
+		m_pRTAccumulatorDiffuseSpecular->GetTargetView( 0, 0, 1 ),
+		m_pRTAccumulatorDiffuseSpecular->GetTargetView( 0, 1, 1 ) 
+	};
 	m_Device.SetRenderTargets( W, H, 2, ppRenderTargets, m_pDepthStencilFront->GetDepthStencilView() );
 
 	// Set our buffers for next shaders...

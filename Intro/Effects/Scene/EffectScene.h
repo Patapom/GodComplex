@@ -52,7 +52,6 @@ private:	// FIELDS
 	Texture2D*			m_pDepthStencilFront;
 	Texture2D*			m_pDepthStencilBack;
 	Texture2D*			m_pRTZBuffer;	// Front & Back ZBuffers stored in linear space in a RG32F target
-	Texture2D*			m_pRTZBufferFrontDownSampled;
 
 	// Front & back GBuffers
 	Texture2D*			m_pRTGBuffer0_2;
