@@ -123,6 +123,8 @@ void	EffectScene::Render( float _Time, float _DeltaTime )
 	// Update scene once
 	m_Scene.Update( _Time, _DeltaTime );
 
+//	D3DPERF_BeginEvent( D3DCOLOR( 0xFFFF0000 ), L"Pidoum!" );
+
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Render scene in depth pre-pass in front & back Z Buffers
 	USING_MATERIAL_START( *m_pMatDepthPass )
@@ -136,6 +138,10 @@ void	EffectScene::Render( float _Time, float _DeltaTime )
 	m_Device.SetRenderTargets( W, H, 0, ppRenderTargets, m_pDepthStencilFront->GetDepthStencilView() );
 	m_Scene.Render( M, true );
 
+
+//	D3DPERF_SetMarker( D3DCOLOR( 0xFF7F0000 ), L"Marker!" );
+
+
 	// 1.2] Render back faces in back Z buffer
 	m_Device.SetStates( m_Device.m_pRS_CullFront, NULL, NULL );
 
@@ -146,6 +152,7 @@ void	EffectScene::Render( float _Time, float _DeltaTime )
 
 	USING_MATERIAL_END
 
+//	D3DPERF_EndEvent();
 
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Concatenate and linearize front & back Z Buffers
