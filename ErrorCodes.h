@@ -29,6 +29,7 @@
 #define ERR_EFFECT_TRANSLUCENCY			2000
 #define ERR_EFFECT_ROOM					3000
 #define ERR_EFFECT_SCENE				4000
+#define ERR_EFFECT_VOLUMETRIC			5000
 
 
 // Code Workshop

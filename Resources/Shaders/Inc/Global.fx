@@ -2,6 +2,9 @@
 // Global stuff
 ////////////////////////////////////////////////////////////////////////////////////////
 //
+#ifndef _GLOBAL_INC_
+#define _GLOBAL_INC_
+
 // WARNING! These must correspond to the resolution set in GodComplex.h !
 static const float	RESX = 1280.0;
 static const float	RESY = 720.0;
@@ -118,3 +121,5 @@ float3	RotateVector( float3 _Vector, float3 _Axis, float _Angle )
 
 	return Result;
 }
+
+#endif	// _GLOBAL_INC_

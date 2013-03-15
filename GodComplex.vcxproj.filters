@@ -89,6 +89,9 @@
     <Filter Include="Intro\Effects\Workshop">
       <UniqueIdentifier>{474e4644-248d-4e55-98c5-e0fe1774da11}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\EffectVolumetric">
+      <UniqueIdentifier>{b121d7c4-8b68-4d49-b700-72f13635b10d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\Events.h">
@@ -228,6 +231,9 @@
     <ClInclude Include="Intro\Effects\Scene\MaterialBank.h">
       <Filter>Intro\Effects\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectVolumetric.h">
+      <Filter>Intro\Effects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -348,6 +354,9 @@
     <ClCompile Include="Intro\Effects\Scene\MaterialBank.cpp">
       <Filter>Intro\Effects\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetric.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib">
@@ -459,6 +468,21 @@
     </None>
     <None Include="Resources\Shaders\SceneDownSample.fx">
       <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricComputeTransmittance.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDisplay.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\Volumetric.fx">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricCombine.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDepthWrite.fx">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -7,6 +7,7 @@
 
 #include "Effects/EffectTranslucency.h"
 #include "Effects/EffectRoom.h"
+#include "Effects/EffectVolumetric.h"
 
 #include "Effects/Scene/MaterialBank.h"
 #include "Effects/Scene/Scene.h"
@@ -39,6 +40,7 @@ static CB<CBTest>*			gs_pCB_Test = NULL;
 static EffectTranslucency*	gs_pEffectTranslucency = NULL;
 static EffectRoom*			gs_pEffectRoom = NULL;
 static EffectScene*			gs_pEffectScene = NULL;
+static EffectVolumetric*	gs_pEffectVolumetric = NULL;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -119,14 +121,16 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 // 		gs_pEffectRoom->m_pTexVoronoi = gs_pEffectParticles->m_pTexVoronoi;
 // 
 //		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
+// 
+// 		CHECK_EFFECT( gs_pEffectScene = new EffectScene( gs_Device, *gs_pScene, *gs_pPrimQuad ), ERR_EFFECT_SCENE );
 
-		CHECK_EFFECT( gs_pEffectScene = new EffectScene( gs_Device, *gs_pScene, *gs_pPrimQuad ), ERR_EFFECT_SCENE );
+		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pPrimQuad ), ERR_EFFECT_VOLUMETRIC );
 	}
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize the scene last so it gives us the opportunity to fix shader errors first instead of waiting for the scene to be ready!
-	PrepareScene();
+//	PrepareScene();
 
 
 	return 0;
@@ -135,9 +139,10 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 void	IntroExit()
 {
 	// Release effects
+	delete gs_pEffectVolumetric;
+	delete gs_pEffectScene;
 	delete gs_pEffectTranslucency;
 	delete gs_pEffectRoom;
-	delete gs_pEffectScene;
 
 	// Release constant buffers
 	delete gs_pCB_Test;
@@ -246,7 +251,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	USING_MATERIAL_END
 
-#elif 1	// TEST FULL SCENE
+#elif 0	// TEST FULL SCENE
 
 	//////////////////////////////////////////////////////////////////////////
 	// Animate camera
@@ -278,6 +283,25 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	//////////////////////////////////////////////////////////////////////////
 	// Render the scene
 	gs_pEffectScene->Render( _Time, _DeltaTime );
+
+
+#elif 1	// TEST VOLUMETRIC
+
+	//////////////////////////////////////////////////////////////////////////
+	// Update the camera settings and upload its data to the shaders
+
+	// TODO: Animate camera...
+	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(0.8f), _TV(1.4f) ), NjFloat3( 0.0f, 0.8f, 0.0f ), NjFloat3::UnitY );
+
+	gs_pCamera->Upload( 0 );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Render the effects
+//	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
+// 	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.5f, 0.25f, 0.125f, 0.0f ) );
+// 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
+
+	gs_pEffectVolumetric->Render( _Time, _DeltaTime );
 
 
 #endif

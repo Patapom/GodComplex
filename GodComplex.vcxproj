@@ -258,6 +258,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Intro\Effects\EffectTranslucency.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectVolumetric.h" />
     <ClInclude Include="Intro\Effects\Scene\MaterialBank.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClInclude>
@@ -337,6 +338,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Intro\Effects\EffectTranslucency.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetric.cpp" />
     <ClCompile Include="Intro\Effects\Scene\MaterialBank.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClCompile>
@@ -405,6 +407,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\DeferredShadingStencil.fx" />
     <None Include="Resources\Shaders\Inc\LayeredMaterials.fx" />
     <None Include="Resources\Shaders\Inc\RayTracing.fx" />
+    <None Include="Resources\Shaders\Inc\Volumetric.fx" />
     <None Include="Resources\Shaders\ParticlesCompute.fx" />
     <None Include="Resources\Shaders\ParticlesDisplay.fx" />
     <None Include="Resources\Shaders\RenderCubeMap.fx" />
@@ -427,6 +430,10 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\TestDisplay.fx" />
     <None Include="Resources\Shaders\TranslucencyDiffusion.fx" />
     <None Include="Resources\Shaders\TranslucencyDisplay.fx" />
+    <None Include="Resources\Shaders\VolumetricCombine.fx" />
+    <None Include="Resources\Shaders\VolumetricComputeTransmittance.fx" />
+    <None Include="Resources\Shaders\VolumetricDepthWrite.fx" />
+    <None Include="Resources\Shaders\VolumetricDisplay.fx" />
     <None Include="Tools\GodComplex.kkm" />
   </ItemGroup>
   <ItemGroup>

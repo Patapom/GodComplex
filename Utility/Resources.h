@@ -9,6 +9,7 @@
 	{ "Inc/Global.fx", IDR_SHADER_INCLUDE_GLOBAL },	\
 	{ "Inc/RayTracing.fx", IDR_SHADER_INCLUDE_RAY_TRACING },	\
 	{ "Inc/LayeredMaterials.fx", IDR_SHADER_INCLUDE_LAYERED_MATERIALS },	\
+	{ "Inc/Volumetric.fx", IDR_SHADER_INCLUDE_VOLUMETRIC },	\
 
 
 // Add any shader files that need to be watched for automatic reloading (works only in DEBUG mode !)
@@ -31,6 +32,11 @@
 	{ IDR_SHADER_SCENE_SHADING_STENCIL,			"./Resources/Shaders/SceneShadingStencil.fx" },	\
 	{ IDR_SHADER_SCENE_SHADING,					"./Resources/Shaders/SceneShading.fx" },	\
 	{ IDR_SHADER_SCENE_INDIRECT_LIGHTING,		"./Resources/Shaders/SceneIndirectLighting.fx" },	\
+/* Volumetric Effect */ \
+	{ IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE,"./Resources/Shaders/VolumetricComputeTransmittance.fx" },	\
+	{ IDR_SHADER_VOLUMETRIC_DEPTH_WRITE,		"./Resources/Shaders/VolumetricDepthWrite.fx" },	\
+	{ IDR_SHADER_VOLUMETRIC_DISPLAY,			"./Resources/Shaders/VolumetricDisplay.fx" },	\
+	{ IDR_SHADER_VOLUMETRIC_COMBINE,			"./Resources/Shaders/VolumetricCombine.fx" },	\
 \
 \
 /* ============= Workshop ============= */ \
@@ -45,6 +51,7 @@
 	{ IDR_SHADER_INCLUDE_GLOBAL,				NULL },	\
 	{ IDR_SHADER_INCLUDE_RAY_TRACING,			NULL },	\
 	{ IDR_SHADER_INCLUDE_LAYERED_MATERIALS,		"./Resources/Shaders/Inc/LayeredMaterials.fx" },	\
+	{ IDR_SHADER_INCLUDE_VOLUMETRIC,			"./Resources/Shaders/Inc/Volumetric.fx" },	\
 
 
 #include "..\GodComplex.h"
