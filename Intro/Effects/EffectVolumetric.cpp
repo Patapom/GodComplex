@@ -10,7 +10,7 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Primitive& _ScreenQuad ) : 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
  	CHECK_MATERIAL( m_pMatDepthWrite = CreateMaterial( IDR_SHADER_VOLUMETRIC_DEPTH_WRITE, VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
-// 	CHECK_MATERIAL( m_pMatComputeTransmittance = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE, VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
+ 	CHECK_MATERIAL( m_pMatComputeTransmittance = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
 // 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
  	CHECK_MATERIAL( m_pMatCombine = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMBINE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
 	
@@ -111,28 +111,30 @@ m_LightDirection.Set( cosf(_Time), 1, sinf( _Time ) );
 
 	USING_MATERIAL_END
 
-// 	// 2.2] Compute transmittance map
-// 	m_Device.ClearRenderTarget( *m_pRTTransmittanceMap, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
-// 
-// 	ID3D11RenderTargetView*	ppViews[2] = {
-// 		m_pRTTransmittanceMap->GetTargetView( 0, 0, 1 ),
-// 		m_pRTTransmittanceMap->GetTargetView( 0, 1, 1 ),
-// 	};
-// 	m_Device.SetRenderTargets( m_pRTTransmittanceMap->GetWidth(), m_pRTTransmittanceMap->GetHeight(), 2, ppViews );
-// 
-// 	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
-// 
-// 	USING_MATERIAL_START( *m_pMatComputeTransmittance )
-// 
-// 		m_pCB_Object->m.Local2Proj;
-// 		m_pCB_Object->m.dUV = m_pRTTransmittanceMap->GetdUV();
-// 		m_pCB_Object->UpdateData();
-// 
-// 		m_pPrimBox->Render( M );
-// 
-// 	USING_MATERIAL_END
-// 
-// 
+	// 2.2] Compute transmittance map
+	m_Device.ClearRenderTarget( *m_pRTTransmittanceMap, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+
+	ID3D11RenderTargetView*	ppViews[2] = {
+		m_pRTTransmittanceMap->GetTargetView( 0, 0, 1 ),
+		m_pRTTransmittanceMap->GetTargetView( 0, 1, 1 ),
+	};
+	m_Device.SetRenderTargets( m_pRTTransmittanceMap->GetWidth(), m_pRTTransmittanceMap->GetHeight(), 2, ppViews );
+
+	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
+
+	USING_MATERIAL_START( *m_pMatComputeTransmittance )
+
+		m_pCB_Object->m.Local2Proj;
+		m_pCB_Object->m.dUV = m_pRTTransmittanceMap->GetdUV();
+		m_pCB_Object->UpdateData();
+
+		m_pRTTransmittanceZ->SetPS( 10 );
+
+		m_ScreenQuad.Render( M );
+
+	USING_MATERIAL_END
+
+
 // 	//////////////////////////////////////////////////////////////////////////
 // 	// 3] Render the actual volume
 // 	m_Device.ClearRenderTarget( *m_pRTRender, NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) );
@@ -159,6 +161,7 @@ m_LightDirection.Set( cosf(_Time), 1, sinf( _Time ) );
 
 // DEBUG
 m_pRTTransmittanceZ->SetPS( 10 );
+m_pRTTransmittanceMap->SetPS( 11 );
 
 		m_ScreenQuad.Render( M );
 
@@ -230,7 +233,7 @@ void	EffectVolumetric::ComputeShadowTransform( NjFloat4x4& _Local2Proj )
 
 	m_pCB_Shadow->m.World2Shadow = World2Light * Light2Shadow;
 	m_pCB_Shadow->m.Shadow2World = Shadow2Light * Light2World;
-	m_pCB_Shadow->m.ZBounds = SizeLight.z;
+	m_pCB_Shadow->m.ZMax.Set( SizeLight.z, 1.0f / SizeLight.z );
 
 // CHECK
 // NjFloat3	CheckMin( FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX ), CheckMax( -FLOAT32_MAX, -FLOAT32_MAX, -FLOAT32_MAX );
@@ -248,5 +251,13 @@ void	EffectVolumetric::ComputeShadowTransform( NjFloat4x4& _Local2Proj )
 // 	CheckMin = CheckMin.Min( CornerShadow );
 // 	CheckMax = CheckMax.Max( CornerShadow );
 // }
+// CHECK
+
+// CHECK
+NjFloat3	Test0 = NjFloat4( 0.0f, 0.0f, 0.5f * SizeLight.z, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
+NjFloat3	Test1 = NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
+NjFloat3	DeltaTest0 = Test1 - Test0;
+NjFloat3	Test2 = NjFloat4( 0.0f, 0.0f, SizeLight.z, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
+NjFloat3	DeltaTest1 = Test2 - Test0;
 // CHECK
 }

@@ -22,6 +22,8 @@ static const float	INVTWOPI = 0.15915494309189533576888376337251;	// 1/2PI
 
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.patapom.com/index.php/Colorimetry)
 
+static const float	INFINITY = 1e6;
+
 
 #define TEX( Texture, Sampler, UV )					Texture.Sample( Sampler, UV )
 
@@ -57,7 +59,7 @@ cbuffer	cbCamera	: register( b0 )
 
 cbuffer	cbGlobal	: register( b1 )
 {
-	float4		_Time;		// X=time Y=DeltaTime Z=1/Time W=1/DeltaTime
+	float4		_Time;		// X=Time Y=DeltaTime Z=1/Time W=1/DeltaTime
 };
 //]
 

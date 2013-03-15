@@ -27,7 +27,7 @@ public:		// NESTED TYPES
 	{
 		NjFloat4x4	World2Shadow;
 		NjFloat4x4	Shadow2World;
-		float		ZBounds;
+		NjFloat2	ZMax;
 	};
 
 private:	// FIELDS
