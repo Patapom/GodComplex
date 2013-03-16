@@ -6,52 +6,52 @@
 
 // Don't forget to add any new include file pair down here \/
 #define REGISTERED_INCLUDE_FILES	\
-	{ "Inc/Global.fx", IDR_SHADER_INCLUDE_GLOBAL },	\
-	{ "Inc/RayTracing.fx", IDR_SHADER_INCLUDE_RAY_TRACING },	\
-	{ "Inc/LayeredMaterials.fx", IDR_SHADER_INCLUDE_LAYERED_MATERIALS },	\
-	{ "Inc/Volumetric.fx", IDR_SHADER_INCLUDE_VOLUMETRIC },	\
+	{ "Inc/Global.hlsl", IDR_SHADER_INCLUDE_GLOBAL },	\
+	{ "Inc/RayTracing.hlsl", IDR_SHADER_INCLUDE_RAY_TRACING },	\
+	{ "Inc/LayeredMaterials.hlsl", IDR_SHADER_INCLUDE_LAYERED_MATERIALS },	\
+	{ "Inc/Volumetric.hlsl", IDR_SHADER_INCLUDE_VOLUMETRIC },	\
 
 
 // Add any shader files that need to be watched for automatic reloading (works only in DEBUG mode !)
 #define REGISTERED_SHADER_FILES		\
-	{ IDR_SHADER_POST_FINAL,					"./Resources/Shaders/PostFinal.fx" },	\
+	{ IDR_SHADER_POST_FINAL,					"./Resources/Shaders/PostFinal.hlsl" },	\
 	{ IDR_SHADER_TEST_DISPLAY,					NULL },	\
-	{ IDR_SHADER_TRANSLUCENCY_BUILD_ZBUFFER,	"./Resources/Shaders/TranslucencyBuildZBuffer.fx" },	\
-	{ IDR_SHADER_TRANSLUCENCY_DIFFUSION,		"./Resources/Shaders/TranslucencyDiffusion.fx" },	\
-	{ IDR_SHADER_TRANSLUCENCY_DISPLAY,			"./Resources/Shaders/TranslucencyDisplay.fx" },	\
-	{ IDR_SHADER_ROOM_DISPLAY,					"./Resources/Shaders/RoomDisplay.fx" },	\
-	{ IDR_SHADER_ROOM_TESSELATION,				"./Resources/Shaders/RoomTesselation.fx" },	\
-	{ IDR_SHADER_ROOM_TEST_COMPUTE,				"./Resources/Shaders/RoomTestCompute.fx" },	\
-	{ IDR_SHADER_ROOM_BUILD_LIGHTMAP,			"./Resources/Shaders/RoomBuildLightMap.fx" },	\
-	{ IDR_SHADER_PARTICLES_COMPUTE,				"./Resources/Shaders/ParticlesCompute.fx" },	\
+	{ IDR_SHADER_TRANSLUCENCY_BUILD_ZBUFFER,	"./Resources/Shaders/TranslucencyBuildZBuffer.hlsl" },	\
+	{ IDR_SHADER_TRANSLUCENCY_DIFFUSION,		"./Resources/Shaders/TranslucencyDiffusion.hlsl" },	\
+	{ IDR_SHADER_TRANSLUCENCY_DISPLAY,			"./Resources/Shaders/TranslucencyDisplay.hlsl" },	\
+	{ IDR_SHADER_ROOM_DISPLAY,					"./Resources/Shaders/RoomDisplay.hlsl" },	\
+	{ IDR_SHADER_ROOM_TESSELATION,				"./Resources/Shaders/RoomTesselation.hlsl" },	\
+	{ IDR_SHADER_ROOM_TEST_COMPUTE,				"./Resources/Shaders/RoomTestCompute.hlsl" },	\
+	{ IDR_SHADER_ROOM_BUILD_LIGHTMAP,			"./Resources/Shaders/RoomBuildLightMap.hlsl" },	\
+	{ IDR_SHADER_PARTICLES_COMPUTE,				"./Resources/Shaders/ParticlesCompute.hlsl" },	\
 /* Deferred Rendered Scene */ \
-	{ IDR_SHADER_SCENE_DEPTH_PASS,				"./Resources/Shaders/SceneDepthPass.fx" },	\
-	{ IDR_SHADER_SCENE_BUILD_LINEARZ,			"./Resources/Shaders/SceneBuildLinearZ.fx" },	\
-	{ IDR_SHADER_SCENE_FILL_GBUFFER,			"./Resources/Shaders/SceneFillGBuffer.fx" },	\
-	{ IDR_SHADER_SCENE_DOWNSAMPLE,				"./Resources/Shaders/SceneDownSample.fx" },	\
-	{ IDR_SHADER_SCENE_SHADING_STENCIL,			"./Resources/Shaders/SceneShadingStencil.fx" },	\
-	{ IDR_SHADER_SCENE_SHADING,					"./Resources/Shaders/SceneShading.fx" },	\
-	{ IDR_SHADER_SCENE_INDIRECT_LIGHTING,		"./Resources/Shaders/SceneIndirectLighting.fx" },	\
+	{ IDR_SHADER_SCENE_DEPTH_PASS,				"./Resources/Shaders/SceneDepthPass.hlsl" },	\
+	{ IDR_SHADER_SCENE_BUILD_LINEARZ,			"./Resources/Shaders/SceneBuildLinearZ.hlsl" },	\
+	{ IDR_SHADER_SCENE_FILL_GBUFFER,			"./Resources/Shaders/SceneFillGBuffer.hlsl" },	\
+	{ IDR_SHADER_SCENE_DOWNSAMPLE,				"./Resources/Shaders/SceneDownSample.hlsl" },	\
+	{ IDR_SHADER_SCENE_SHADING_STENCIL,			"./Resources/Shaders/SceneShadingStencil.hlsl" },	\
+	{ IDR_SHADER_SCENE_SHADING,					"./Resources/Shaders/SceneShading.hlsl" },	\
+	{ IDR_SHADER_SCENE_INDIRECT_LIGHTING,		"./Resources/Shaders/SceneIndirectLighting.hlsl" },	\
 /* Volumetric Effect */ \
-	{ IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE,"./Resources/Shaders/VolumetricComputeTransmittance.fx" },	\
-	{ IDR_SHADER_VOLUMETRIC_DEPTH_WRITE,		"./Resources/Shaders/VolumetricDepthWrite.fx" },	\
-	{ IDR_SHADER_VOLUMETRIC_DISPLAY,			"./Resources/Shaders/VolumetricDisplay.fx" },	\
-	{ IDR_SHADER_VOLUMETRIC_COMBINE,			"./Resources/Shaders/VolumetricCombine.fx" },	\
+	{ IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE,"./Resources/Shaders/VolumetricComputeTransmittance.hlsl" },	\
+	{ IDR_SHADER_VOLUMETRIC_DEPTH_WRITE,		"./Resources/Shaders/VolumetricDepthWrite.hlsl" },	\
+	{ IDR_SHADER_VOLUMETRIC_DISPLAY,			"./Resources/Shaders/VolumetricDisplay.hlsl" },	\
+	{ IDR_SHADER_VOLUMETRIC_COMBINE,			"./Resources/Shaders/VolumetricCombine.hlsl" },	\
 \
 \
 /* ============= Workshop ============= */ \
-	{ IDR_SHADER_PARTICLES_DISPLAY,				"./Resources/Shaders/ParticlesDisplay.fx" }, 	\
-	{ IDR_SHADER_DEFERRED_DEPTH_PASS,			"./Resources/Shaders/DeferredDepthPass.fx" },	\
-	{ IDR_SHADER_DEFERRED_FILL_GBUFFER,			"./Resources/Shaders/DeferredFillGBuffer.fx" },	\
-	{ IDR_SHADER_DEFERRED_SHADING_STENCIL,		"./Resources/Shaders/DeferredShadingStencil.fx" }, \
-	{ IDR_SHADER_DEFERRED_SHADING,				"./Resources/Shaders/DeferredShading.fx" }, \
+	{ IDR_SHADER_PARTICLES_DISPLAY,				"./Resources/Shaders/ParticlesDisplay.hlsl" }, 	\
+	{ IDR_SHADER_DEFERRED_DEPTH_PASS,			"./Resources/Shaders/DeferredDepthPass.hlsl" },	\
+	{ IDR_SHADER_DEFERRED_FILL_GBUFFER,			"./Resources/Shaders/DeferredFillGBuffer.hlsl" },	\
+	{ IDR_SHADER_DEFERRED_SHADING_STENCIL,		"./Resources/Shaders/DeferredShadingStencil.hlsl" }, \
+	{ IDR_SHADER_DEFERRED_SHADING,				"./Resources/Shaders/DeferredShading.hlsl" }, \
 \
 \
 /* ============= Includes ============= */ \
 	{ IDR_SHADER_INCLUDE_GLOBAL,				NULL },	\
 	{ IDR_SHADER_INCLUDE_RAY_TRACING,			NULL },	\
-	{ IDR_SHADER_INCLUDE_LAYERED_MATERIALS,		"./Resources/Shaders/Inc/LayeredMaterials.fx" },	\
-	{ IDR_SHADER_INCLUDE_VOLUMETRIC,			"./Resources/Shaders/Inc/Volumetric.fx" },	\
+	{ IDR_SHADER_INCLUDE_LAYERED_MATERIALS,		"./Resources/Shaders/Inc/LayeredMaterials.hlsl" },	\
+	{ IDR_SHADER_INCLUDE_VOLUMETRIC,			"./Resources/Shaders/Inc/Volumetric.hlsl" },	\
 
 
 #include "..\GodComplex.h"
@@ -79,3 +79,5 @@ Material*		CreateMaterial( U16 _ShaderResourceID, const IVertexFormatDescriptor&
 // Create a full-fledged compute shader given the shader resource ID
 // NOTE: The ShaderFileName is only here for debug purpose
 ComputeShader*	CreateComputeShader( U16 _ShaderResourceID, const char* _pEntryPoint, D3D_SHADER_MACRO* _pMacros=NULL );
+
+const char*		LoadCSO( const char* _pCSOPath );

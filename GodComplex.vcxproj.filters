@@ -367,122 +367,104 @@
     <None Include="Resources\pzero_new.v2m">
       <Filter>Resources</Filter>
     </None>
-    <None Include="Resources\Shaders\PostFinal.fx">
+    <None Include="Resources\Shaders\PostFinal.hlsl">
       <Filter>Resources\Shaders\DEBUG</Filter>
     </None>
-    <None Include="Resources\Shaders\Compressed\PostFinal.fx">
-      <Filter>Resources\Shaders\RELEASE %28Minified%29</Filter>
-    </None>
-    <None Include="Resources\Shaders\Compressed\Inc\Global.fx">
-      <Filter>Resources\Shaders\RELEASE %28Minified%29\Includes</Filter>
-    </None>
-    <None Include="Resources\Shaders\Inc\Global.fx">
+    <None Include="Resources\Shaders\Inc\Global.hlsl">
       <Filter>Resources\Shaders\DEBUG\Includes</Filter>
     </None>
     <None Include="LogExeSizes.txt" />
     <None Include="Tools\GodComplex.kkm" />
-    <None Include="Resources\Shaders\TestDisplay.fx">
-      <Filter>Resources\Shaders\DEBUG</Filter>
-    </None>
-    <None Include="Resources\Shaders\Compressed\TestDisplay.fx">
-      <Filter>Resources\Shaders\RELEASE %28Minified%29</Filter>
-    </None>
     <None Include="NuajAPI\API\Hashtable.inl">
       <Filter>NuajAPI\API</Filter>
     </None>
-    <None Include="Resources\Shaders\TranslucencyBuildZBuffer.fx">
+    <None Include="Resources\Shaders\TranslucencyBuildZBuffer.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectTranslucency</Filter>
     </None>
-    <None Include="Resources\Shaders\TranslucencyDiffusion.fx">
+    <None Include="Resources\Shaders\TranslucencyDiffusion.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectTranslucency</Filter>
     </None>
-    <None Include="Resources\Shaders\Compressed\TranslucencyBuildZBuffer.fx">
-      <Filter>Resources\Shaders\RELEASE %28Minified%29</Filter>
-    </None>
-    <None Include="Resources\Shaders\Compressed\TranslucencyDiffusion.fx">
-      <Filter>Resources\Shaders\RELEASE %28Minified%29</Filter>
-    </None>
-    <None Include="Resources\Shaders\TranslucencyDisplay.fx">
+    <None Include="Resources\Shaders\TranslucencyDisplay.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectTranslucency</Filter>
-    </None>
-    <None Include="Resources\Shaders\Compressed\TranslucencyDisplay.fx">
-      <Filter>Resources\Shaders\RELEASE %28Minified%29</Filter>
     </None>
     <None Include="Notes.txt" />
-    <None Include="Resources\Shaders\RoomDisplay.fx">
+    <None Include="Resources\Shaders\RoomDisplay.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
     </None>
-    <None Include="Resources\Shaders\RenderCubeMap.fx">
+    <None Include="Resources\Shaders\RoomTesselation.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
     </None>
-    <None Include="Resources\Shaders\RoomTesselation.fx">
+    <None Include="Resources\Shaders\RoomTestCompute.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
     </None>
-    <None Include="Resources\Shaders\RoomTestCompute.fx">
+    <None Include="Resources\Shaders\RoomBuildLightMap.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
     </None>
-    <None Include="Resources\Shaders\RoomBuildLightMap.fx">
-      <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
-    </None>
-    <None Include="Resources\Shaders\Inc\RayTracing.fx">
+    <None Include="Resources\Shaders\Inc\RayTracing.hlsl">
       <Filter>Resources\Shaders\DEBUG\Includes</Filter>
     </None>
-    <None Include="Resources\Shaders\ParticlesCompute.fx">
+    <None Include="Resources\Shaders\ParticlesCompute.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectParticles</Filter>
     </None>
-    <None Include="Resources\Shaders\ParticlesDisplay.fx">
+    <None Include="Resources\Shaders\ParticlesDisplay.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectParticles</Filter>
     </None>
-    <None Include="Resources\Shaders\DeferredFillGBuffer.fx">
+    <None Include="Resources\Shaders\DeferredFillGBuffer.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectDeferred</Filter>
     </None>
-    <None Include="Resources\Shaders\SceneFillGBuffer.fx">
+    <None Include="Resources\Shaders\SceneFillGBuffer.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
     </None>
-    <None Include="Resources\Shaders\SceneDepthPass.fx">
+    <None Include="Resources\Shaders\SceneDepthPass.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
     </None>
-    <None Include="Resources\Shaders\SceneShading.fx">
+    <None Include="Resources\Shaders\SceneShading.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
     </None>
-    <None Include="Resources\Shaders\SceneBuildLinearZ.fx">
+    <None Include="Resources\Shaders\SceneBuildLinearZ.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
     </None>
-    <None Include="Resources\Shaders\Inc\LayeredMaterials.fx">
+    <None Include="Resources\Shaders\Inc\LayeredMaterials.hlsl">
       <Filter>Resources\Shaders\DEBUG\Includes</Filter>
     </None>
-    <None Include="Resources\Shaders\SceneIndirectLighting.fx">
+    <None Include="Resources\Shaders\SceneIndirectLighting.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
     </None>
-    <None Include="Resources\Shaders\SceneShadingStencil.fx">
+    <None Include="Resources\Shaders\SceneShadingStencil.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
     </None>
-    <None Include="Resources\Shaders\DeferredDepthPass.fx">
+    <None Include="Resources\Shaders\DeferredDepthPass.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectDeferred</Filter>
     </None>
-    <None Include="Resources\Shaders\DeferredShading.fx">
+    <None Include="Resources\Shaders\DeferredShading.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectDeferred</Filter>
     </None>
-    <None Include="Resources\Shaders\DeferredShadingStencil.fx">
+    <None Include="Resources\Shaders\DeferredShadingStencil.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectDeferred</Filter>
     </None>
-    <None Include="Resources\Shaders\SceneDownSample.fx">
+    <None Include="Resources\Shaders\SceneDownSample.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
     </None>
-    <None Include="Resources\Shaders\VolumetricComputeTransmittance.fx">
+    <None Include="Resources\Shaders\VolumetricComputeTransmittance.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
     </None>
-    <None Include="Resources\Shaders\VolumetricDisplay.fx">
+    <None Include="Resources\Shaders\VolumetricDisplay.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
     </None>
-    <None Include="Resources\Shaders\Inc\Volumetric.fx">
+    <None Include="Resources\Shaders\Inc\Volumetric.hlsl">
       <Filter>Resources\Shaders\DEBUG\Includes</Filter>
     </None>
-    <None Include="Resources\Shaders\VolumetricCombine.fx">
+    <None Include="Resources\Shaders\VolumetricCombine.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
     </None>
-    <None Include="Resources\Shaders\VolumetricDepthWrite.fx">
+    <None Include="Resources\Shaders\VolumetricDepthWrite.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneFillGBufferBack.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\RoomRenderCubeMap.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

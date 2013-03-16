@@ -229,6 +229,21 @@ void	Material::CompileShaders( const char* _pShaderCode )
 	// Compile the optional pixel shader
 	if ( !m_bHasErrors && m_pEntryPointPS != NULL )
 	{
+
+#ifdef _DEBUG
+// CSO TEST
+// We use a special pre-compiled CSO read from file here
+if ( *m_pEntryPointPS == 1 )
+{
+	U32	BufferSize = *((U32*) (m_pEntryPointPS+1));
+	U8*	pBufferPointer = (U8*) m_pEntryPointPS+5;
+	Check( m_Device.DXDevice().CreatePixelShader( pBufferPointer, BufferSize, NULL, &m_pPS ) );
+	ASSERT( m_pPS != NULL, "Failed to create pixel shader!" );
+	return;
+}
+// TEST
+#endif
+
 		ID3DBlob*   pShader = CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_4_0", this );
 		if ( pShader != NULL )
 		{
@@ -310,7 +325,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 	size_t	CodeSize = pCodeText->GetBufferSize();
 	size_t	CodeLength = strlen( (char*) pCodePointer );
 
-	D3DCompile( pCodePointer, CodeSize, NULL, _pMacros, _pInclude, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors );
+	D3DCompile( pCodePointer, CodeSize, _pShaderFileName, _pMacros, _pInclude, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors );
 #if defined(_DEBUG) || defined(DEBUG_SHADER)
 	if ( pCode == NULL && pErrors != NULL )
 	{

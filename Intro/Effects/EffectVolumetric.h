@@ -74,7 +74,7 @@ public:		// METHODS
 	EffectVolumetric( Device& _Device, Primitive& _ScreenQuad );
 	~EffectVolumetric();
 
-	void		Render( float _Time, float _DeltaTime );
+	void		Render( float _Time, float _DeltaTime, Camera& _Camera );
 
 protected:
 

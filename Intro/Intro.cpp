@@ -291,7 +291,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	// Update the camera settings and upload its data to the shaders
 
 	// TODO: Animate camera...
-	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(0.8f), _TV(1.4f) ), NjFloat3( 0.0f, 0.8f, 0.0f ), NjFloat3::UnitY );
+	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(0.8f), _TV(4.0f) ), NjFloat3( 0.0f, 0.8f, 0.0f ), NjFloat3::UnitY );
 
 	gs_pCamera->Upload( 0 );
 
@@ -301,7 +301,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 // 	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.5f, 0.25f, 0.125f, 0.0f ) );
 // 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
 
-	gs_pEffectVolumetric->Render( _Time, _DeltaTime );
+	gs_pEffectVolumetric->Render( _Time, _DeltaTime, *gs_pCamera );
 
 
 #endif

@@ -1,2 +1,2 @@
-#include"Inc/Global.fx"
+#include"Inc/Global.hlsl"
 cbuffer cbObject:register( b10){float4x4 _Local2World;float4 _EmissiveColor;float4 _NoiseOffset;};struct VS_IN{float3 Position:POSITION;float3 Normal:NORMAL;float3 Tangent:TANGENT;float2 UV:TEXCOORD0;};struct PS_IN{float4 __Position:SV_POSITION;float Z:Z;};PS_IN VS(VS_IN P){float4 f=mul(float4(Distort(P.Position,P.Normal,_NoiseOffset),1.),_Local2World);float Z=1.-f.z;f.z=.5*Z;PS_IN N;N.__Position=f;N.Z=Z;return N;}float4 PS(PS_IN P):SV_TARGET0{return P.Z;}

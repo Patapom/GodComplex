@@ -5,7 +5,7 @@
 //
 #pragma once
 
-// WARNING! If you ever change these, also reflect the changes in Resources/Shaders/Inc/Global.fx !
+// WARNING! If you ever change these, also reflect the changes in Resources/Shaders/Inc/Global.hlsl !
 #define RESX	1280	// 720p 16:9
 #define RESY	720
 #define ALLOW_WINDOWED

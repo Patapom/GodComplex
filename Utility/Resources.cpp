@@ -147,3 +147,24 @@ ComputeShader*	CreateComputeShader( U16 _ShaderResourceID, const char* _pEntryPo
 	return pResult;
 }
 
+
+// Totally experimental
+const char*		LoadCSO( const char* _pCSOPath )
+{
+	FILE*	pFile = fopen( _pCSOPath, "rb" );
+	ASSERT( pFile != NULL, "Invalid file!" );
+
+	fseek( pFile, 0, SEEK_END );
+	U32	FileSize = ftell( pFile );
+	fseek( pFile, 0, SEEK_SET );
+
+	U8*		pRAW = new U8[5+FileSize];
+
+	fread_s( pRAW+5, FileSize, 1, FileSize, pFile );
+	fclose( pFile );
+
+	pRAW[0] = 1;	// Indicator of a CSO file
+	*((U32*) (pRAW+1)) = FileSize;
+
+	return (const char*) pRAW;
+}

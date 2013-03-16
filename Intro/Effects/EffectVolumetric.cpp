@@ -11,8 +11,12 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Primitive& _ScreenQuad ) : 
 	// Create the materials
  	CHECK_MATERIAL( m_pMatDepthWrite = CreateMaterial( IDR_SHADER_VOLUMETRIC_DEPTH_WRITE, VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
  	CHECK_MATERIAL( m_pMatComputeTransmittance = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
-// 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
+ 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
  	CHECK_MATERIAL( m_pMatCombine = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMBINE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
+
+//	const char*	pCSO = LoadCSO( "./Resources/Shaders/CSO/VolumetricCombine.cso" );
+//	CHECK_MATERIAL( m_pMatCombine = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMBINE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, pCSO ), 4 );
+//	delete[] pCSO;
 	
 
 	//////////////////////////////////////////////////////////////////////////
@@ -72,7 +76,7 @@ EffectVolumetric::~EffectVolumetric()
 	delete m_pMatDepthWrite;
 }
 
-void	EffectVolumetric::Render( float _Time, float _DeltaTime )
+void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
 {
 // DEBUG
 m_LightDirection.Set( cosf(_Time), 1, sinf( _Time ) );
@@ -124,10 +128,6 @@ m_LightDirection.Set( cosf(_Time), 1, sinf( _Time ) );
 
 	USING_MATERIAL_START( *m_pMatComputeTransmittance )
 
-		m_pCB_Object->m.Local2Proj;
-		m_pCB_Object->m.dUV = m_pRTTransmittanceMap->GetdUV();
-		m_pCB_Object->UpdateData();
-
 		m_pRTTransmittanceZ->SetPS( 10 );
 
 		m_ScreenQuad.Render( M );
@@ -135,18 +135,39 @@ m_LightDirection.Set( cosf(_Time), 1, sinf( _Time ) );
 	USING_MATERIAL_END
 
 
-// 	//////////////////////////////////////////////////////////////////////////
-// 	// 3] Render the actual volume
-// 	m_Device.ClearRenderTarget( *m_pRTRender, NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) );
-// 
-// 	USING_MATERIAL_START( *m_pMatDisplay )
-// 
-// 		m_pCB_Object->m.dUV = m_pRTRender->GetdUV();
-// 		m_pCB_Object->UpdateData();
-// 
-// 		m_pPrimBox->Render( M );
-// 
-// 	USING_MATERIAL_END
+	//////////////////////////////////////////////////////////////////////////
+	// 3] Render the actual volume
+
+	// 2.1] Render front & back depths
+	m_Device.ClearRenderTarget( *m_pRTRenderZ, NjFloat4( 1e4f, -1e4f, 0.0f, 0.0f ) );
+
+	USING_MATERIAL_START( *m_pMatDepthWrite )
+
+		m_Device.SetRenderTarget( *m_pRTRenderZ );
+
+		m_pCB_Object->m.Local2Proj = m_Box2World * _Camera.GetCB().World2Proj;
+		m_pCB_Object->m.dUV = m_pRTRenderZ->GetdUV();
+		m_pCB_Object->UpdateData();
+
+	 	m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_RedOnly );
+		m_pPrimBox->Render( M );
+
+	 	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_GreenOnly );
+		m_pPrimBox->Render( M );
+
+	USING_MATERIAL_END
+
+	// 3.2] Render the actual volume
+	m_Device.ClearRenderTarget( *m_pRTRender, NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) );
+
+	USING_MATERIAL_START( *m_pMatDisplay )
+
+		m_pRTRenderZ->SetPS( 10 );
+		m_pRTTransmittanceMap->SetPS( 11 );
+
+		m_ScreenQuad.Render( M );
+
+	USING_MATERIAL_END
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -160,7 +181,7 @@ m_LightDirection.Set( cosf(_Time), 1, sinf( _Time ) );
 		m_pCB_Splat->UpdateData();
 
 // DEBUG
-m_pRTTransmittanceZ->SetPS( 10 );
+m_pRTRenderZ->SetPS( 10 );
 m_pRTTransmittanceMap->SetPS( 11 );
 
 		m_ScreenQuad.Render( M );

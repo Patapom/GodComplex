@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{11EF6AA0-6311-479A-8E60-356233322356}</ProjectGuid>
+    <ProjectGuid>{B74F66F3-1660-4BF2-B317-1CEA8EE5E6BD}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>GodComplex</RootNamespace>
   </PropertyGroup>
@@ -63,7 +63,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -395,45 +395,37 @@ MinifyAll.cmd</Command>
     <None Include="Resources\pzero_new.v2m">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="Resources\Shaders\Compressed\Inc\Global.fx" />
-    <None Include="Resources\Shaders\Compressed\PostFinal.fx" />
-    <None Include="Resources\Shaders\Compressed\TestDisplay.fx" />
-    <None Include="Resources\Shaders\Compressed\TranslucencyBuildZBuffer.fx" />
-    <None Include="Resources\Shaders\Compressed\TranslucencyDiffusion.fx" />
-    <None Include="Resources\Shaders\Compressed\TranslucencyDisplay.fx" />
-    <None Include="Resources\Shaders\DeferredDepthPass.fx" />
-    <None Include="Resources\Shaders\DeferredFillGBuffer.fx" />
-    <None Include="Resources\Shaders\DeferredShading.fx" />
-    <None Include="Resources\Shaders\DeferredShadingStencil.fx" />
-    <None Include="Resources\Shaders\Inc\LayeredMaterials.fx" />
-    <None Include="Resources\Shaders\Inc\RayTracing.fx" />
-    <None Include="Resources\Shaders\Inc\Volumetric.fx" />
-    <None Include="Resources\Shaders\ParticlesCompute.fx" />
-    <None Include="Resources\Shaders\ParticlesDisplay.fx" />
-    <None Include="Resources\Shaders\RenderCubeMap.fx" />
-    <None Include="Resources\Shaders\RoomBuildLightMap.fx" />
-    <None Include="Resources\Shaders\RoomDisplay.fx" />
-    <None Include="Resources\Shaders\RoomTesselation.fx" />
-    <None Include="Resources\Shaders\RoomTestCompute.fx" />
-    <None Include="Resources\Shaders\SceneBuildLinearZ.fx" />
-    <None Include="Resources\Shaders\SceneDepthPass.fx" />
-    <None Include="Resources\Shaders\SceneDownSample.fx" />
-    <None Include="Resources\Shaders\SceneFillGBuffer.fx" />
-    <None Include="Resources\Shaders\SceneIndirectLighting.fx" />
-    <None Include="Resources\Shaders\SceneShading.fx" />
-    <None Include="Resources\Shaders\SceneShadingStencil.fx" />
-    <None Include="Resources\Shaders\TranslucencyBuildZBuffer.fx" />
-    <None Include="Resources\Shaders\Inc\Global.fx" />
-    <None Include="Resources\Shaders\PostFinal.fx">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="Resources\Shaders\TestDisplay.fx" />
-    <None Include="Resources\Shaders\TranslucencyDiffusion.fx" />
-    <None Include="Resources\Shaders\TranslucencyDisplay.fx" />
-    <None Include="Resources\Shaders\VolumetricCombine.fx" />
-    <None Include="Resources\Shaders\VolumetricComputeTransmittance.fx" />
-    <None Include="Resources\Shaders\VolumetricDepthWrite.fx" />
-    <None Include="Resources\Shaders\VolumetricDisplay.fx" />
+    <None Include="Resources\Shaders\DeferredDepthPass.hlsl" />
+    <None Include="Resources\Shaders\DeferredFillGBuffer.hlsl" />
+    <None Include="Resources\Shaders\DeferredShading.hlsl" />
+    <None Include="Resources\Shaders\DeferredShadingStencil.hlsl" />
+    <None Include="Resources\Shaders\Inc\Global.hlsl" />
+    <None Include="Resources\Shaders\Inc\LayeredMaterials.hlsl" />
+    <None Include="Resources\Shaders\Inc\RayTracing.hlsl" />
+    <None Include="Resources\Shaders\Inc\Volumetric.hlsl" />
+    <None Include="Resources\Shaders\ParticlesCompute.hlsl" />
+    <None Include="Resources\Shaders\ParticlesDisplay.hlsl" />
+    <None Include="Resources\Shaders\PostFinal.hlsl" />
+    <None Include="Resources\Shaders\RoomBuildLightMap.hlsl" />
+    <None Include="Resources\Shaders\RoomDisplay.hlsl" />
+    <None Include="Resources\Shaders\RoomRenderCubeMap.hlsl" />
+    <None Include="Resources\Shaders\RoomTesselation.hlsl" />
+    <None Include="Resources\Shaders\RoomTestCompute.hlsl" />
+    <None Include="Resources\Shaders\SceneBuildLinearZ.hlsl" />
+    <None Include="Resources\Shaders\SceneDepthPass.hlsl" />
+    <None Include="Resources\Shaders\SceneDownSample.hlsl" />
+    <None Include="Resources\Shaders\SceneFillGBuffer.hlsl" />
+    <None Include="Resources\Shaders\SceneFillGBufferBack.hlsl" />
+    <None Include="Resources\Shaders\SceneIndirectLighting.hlsl" />
+    <None Include="Resources\Shaders\SceneShading.hlsl" />
+    <None Include="Resources\Shaders\SceneShadingStencil.hlsl" />
+    <None Include="Resources\Shaders\TranslucencyBuildZBuffer.hlsl" />
+    <None Include="Resources\Shaders\TranslucencyDiffusion.hlsl" />
+    <None Include="Resources\Shaders\TranslucencyDisplay.hlsl" />
+    <None Include="Resources\Shaders\VolumetricCombine.hlsl" />
+    <None Include="Resources\Shaders\VolumetricComputeTransmittance.hlsl" />
+    <None Include="Resources\Shaders\VolumetricDepthWrite.hlsl" />
+    <None Include="Resources\Shaders\VolumetricDisplay.hlsl" />
     <None Include="Tools\GodComplex.kkm" />
   </ItemGroup>
   <ItemGroup>
