@@ -56,8 +56,8 @@ float4	FastCos( float4 _Angle )
 
 float	GetTransmittance( float3 _WorldPosition )
 {
-//	float3	ShadowPosition = mul( float4( _WorldPosition, 1.0 ), _World2Shadow ).xyz;
-float3	ShadowPosition = _WorldPosition;
+	float3	ShadowPosition = mul( float4( _WorldPosition, 1.0 ), _World2Shadow ).xyz;
+//float3	ShadowPosition = _WorldPosition;
 	float2	UV = float2( 0.5 * (1.0 + ShadowPosition.x), 0.5 * (1.0 - ShadowPosition.y) );
 	float	Z = ShadowPosition.z;
 

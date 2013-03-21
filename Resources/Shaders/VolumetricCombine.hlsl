@@ -26,11 +26,17 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 	float2	UV = _In.__Position.xy * _dUV.xy;
 //return float4( UV, 0, 1 );
 
-	float2	Depth = _TexDebug0.SampleLevel( LinearClamp, UV, 0.0 ).xy;
-return 0.3 * (Depth.y - Depth.x);
+//	float3	BackgroundColor = 1.1 * float3( 135, 206, 235 ) / 255.0;
+	float3	BackgroundColor = 0.3;
+	float4	ScatteringExtinction = _TexDebug0.SampleLevel( LinearClamp, UV, 0.0 );
+return float4( BackgroundColor * ScatteringExtinction.w + ScatteringExtinction.xyz, 1.0 );
+
+// 	float2	Depth = _TexDebug0.SampleLevel( LinearClamp, UV, 0.0 ).xy;
+// return 0.3 * (Depth.y - Depth.x);
 
 	float4	C0 = _TexDebug1.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
 	float4	C1 = _TexDebug1.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
+return 1.0 * C0;
 return 1.0 * abs( C0.x );
 return 4.0 * abs(C0);
 

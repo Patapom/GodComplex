@@ -131,6 +131,8 @@ namespace TestDCT
 		{
 			InitializeComponent();
 
+			Color	C = Color.SkyBlue;
+
 			// Build the test curve
 			float[][]	Curve = new float[CURVE_SIZE][];
 
@@ -146,6 +148,9 @@ namespace TestDCT
 						Density *= Density;
 						Density *= Smoothstep( 0.0f, 3.0f, x );
 						Density *= Smoothstep( 6.0f, 4.0f, x );
+
+				Density *= 1.0f - (x < 3.0f ? Smoothstep( 2.0f, 3.0f, x ) : Smoothstep( 4.0f, 3.0f, x ));
+
 				float	ExtinctionCoeff = 8.0f * Density;
 				float	Transmittance = (float) Math.Exp( -ExtinctionCoeff * StepSize );
 				TotalTransmittance *= Transmittance;

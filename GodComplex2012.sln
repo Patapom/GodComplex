@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GodComplex2012", "GodComplex2012.vcxproj", "{11EF6AA0-6311-479A-8E60-356233322356}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug Workshop|Win32 = Debug Workshop|Win32
+		Debug|Win32 = Debug|Win32
+		DebugPackedShaders|Win32 = DebugPackedShaders|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{11EF6AA0-6311-479A-8E60-356233322356}.Debug Workshop|Win32.ActiveCfg = Debug Workshop|Win32
+		{11EF6AA0-6311-479A-8E60-356233322356}.Debug Workshop|Win32.Build.0 = Debug Workshop|Win32
+		{11EF6AA0-6311-479A-8E60-356233322356}.Debug|Win32.ActiveCfg = Debug|Win32
+		{11EF6AA0-6311-479A-8E60-356233322356}.Debug|Win32.Build.0 = Debug|Win32
+		{11EF6AA0-6311-479A-8E60-356233322356}.DebugPackedShaders|Win32.ActiveCfg = DebugPackedShaders|Win32
+		{11EF6AA0-6311-479A-8E60-356233322356}.DebugPackedShaders|Win32.Build.0 = DebugPackedShaders|Win32
+		{11EF6AA0-6311-479A-8E60-356233322356}.Release|Win32.ActiveCfg = Release|Win32
+		{11EF6AA0-6311-479A-8E60-356233322356}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

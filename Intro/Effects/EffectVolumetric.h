@@ -14,7 +14,9 @@ public:		// NESTED TYPES
 
 	struct CBObject
 	{
-		NjFloat4x4	Local2Proj;	// Local=>Proj transform to locate & project the object to the render target
+//		NjFloat4x4	Local2Proj;	// Local=>Proj transform to locate & project the object to the render target
+		NjFloat4x4	Local2View;
+		NjFloat4x4	View2Proj;
 		NjFloat3	dUV;
 	};
 
@@ -46,6 +48,7 @@ private:	// FIELDS
 	// Light infos
 	NjFloat3			m_LightDirection;
 
+	// Internal Data
 	Material*			m_pMatDepthWrite;
 	Material*			m_pMatComputeTransmittance;
 	Material*			m_pMatDisplay;
@@ -64,6 +67,9 @@ private:	// FIELDS
 	CB<CBSplat>*		m_pCB_Splat;
 	CB<CBShadow>*		m_pCB_Shadow;
 
+	NjFloat4x4			m_World2Light;
+	NjFloat4x4			m_Light2ShadowNormalized;	// Yields a normalized Z instead of world units like World2Shadow
+
 
 public:		// PROPERTIES
 
@@ -78,6 +84,6 @@ public:		// METHODS
 
 protected:
 
-	void		ComputeShadowTransform( NjFloat4x4& _Local2Proj );
+	void		ComputeShadowTransform();
 
 };

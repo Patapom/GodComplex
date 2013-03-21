@@ -4,13 +4,12 @@
 #include "Inc/Global.hlsl"
 #include "Inc/Volumetric.hlsl"
 
-static const float	STEPS_COUNT = 32.0;
+static const float	STEPS_COUNT = 128.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
 
 //[
-cbuffer	cbObject	: register( b10 )
+cbuffer	cbSplat	: register( b10 )
 {
-	float4x4	_Local2Proj;
 	float3		_dUV;
 };
 //]
@@ -33,7 +32,9 @@ VS_IN	VS( VS_IN _In )	{ return _In; }
 
 PS_OUT	PS( VS_IN _In )
 {
-	PS_OUT	Out = (PS_OUT) 0;
+	PS_OUT	Out;
+	Out.C0 = float4( 2, 0, 0, 0 );	// These are the default DCT coefficients to obtain a transmittance of 1
+	Out.C1 = float4( 0, 0, 0, 0 );
 
 	float2	UV = _In.__Position.xy * _dUV.xy;
 
@@ -50,6 +51,7 @@ PS_OUT	PS( VS_IN _In )
 
 // Out.C0 = float4( WorldPosStart, 0 );
 // Out.C1 = float4( WorldPosEnd, 0 );
+// return Out;
 
 	float4	Step = float4( WorldPosEnd - WorldPosStart, ZMinMax.y - ZMinMax.x ) * INV_STEPS_COUNT;
 	float4	Position = float4( WorldPosStart, 0.0 ) + 0.5 * Step;
@@ -71,6 +73,7 @@ PS_OUT	PS( VS_IN _In )
 		float	Density = GetVolumeDensity( Position.xyz );
 
 //Density = 0.0;
+Density *= 2.0;
 
 		float	Sigma_t = SCATTERING_COEFF * Density;
 
@@ -90,7 +93,7 @@ PS_OUT	PS( VS_IN _In )
 	Out.C0 *= 2.0 * dx;
 	Out.C1 *= 2.0 * dx;
 
-//Out.C0 = Out.C1 = FullTransmittance;
+//Out.C0 = Out.C1 = Transmittance;
 
 	return Out;
 }

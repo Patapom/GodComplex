@@ -79,7 +79,7 @@ EffectVolumetric::~EffectVolumetric()
 void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
 {
 // DEBUG
-m_LightDirection.Set( cosf(_Time), 1, sinf( _Time ) );
+//m_LightDirection.Set( cosf(_Time), 1, sinf( _Time ) );
 // DEBUG
 
 
@@ -87,8 +87,7 @@ m_LightDirection.Set( cosf(_Time), 1, sinf( _Time ) );
 	// 1] Compute transforms
 	m_Box2World.PRS( m_Position, m_Rotation, m_Scale );
 
-	NjFloat4x4	Local2Proj;
-	ComputeShadowTransform( Local2Proj );
+	ComputeShadowTransform();
 
 	m_pCB_Shadow->UpdateData();
 
@@ -103,7 +102,8 @@ m_LightDirection.Set( cosf(_Time), 1, sinf( _Time ) );
 
 		m_Device.SetRenderTarget( *m_pRTTransmittanceZ );
 
-		m_pCB_Object->m.Local2Proj = m_Box2World * m_pCB_Shadow->m.World2Shadow;
+		m_pCB_Object->m.Local2View = m_Box2World * m_World2Light;
+		m_pCB_Object->m.View2Proj = m_Light2ShadowNormalized; // Here we use the alternate projection matrix that actually scales Z in [0,1] for ZBuffer compliance (since original World2Shadow keeps the Z in world units)
 		m_pCB_Object->m.dUV = m_pRTTransmittanceZ->GetdUV();
 		m_pCB_Object->UpdateData();
 
@@ -130,6 +130,9 @@ m_LightDirection.Set( cosf(_Time), 1, sinf( _Time ) );
 
 		m_pRTTransmittanceZ->SetPS( 10 );
 
+		m_pCB_Splat->m.dUV = m_pRTTransmittanceMap->GetdUV();
+		m_pCB_Splat->UpdateData();
+
 		m_ScreenQuad.Render( M );
 
 	USING_MATERIAL_END
@@ -138,32 +141,38 @@ m_LightDirection.Set( cosf(_Time), 1, sinf( _Time ) );
 	//////////////////////////////////////////////////////////////////////////
 	// 3] Render the actual volume
 
-	// 2.1] Render front & back depths
+	// 3.1] Render front & back depths
 	m_Device.ClearRenderTarget( *m_pRTRenderZ, NjFloat4( 1e4f, -1e4f, 0.0f, 0.0f ) );
 
 	USING_MATERIAL_START( *m_pMatDepthWrite )
 
 		m_Device.SetRenderTarget( *m_pRTRenderZ );
 
-		m_pCB_Object->m.Local2Proj = m_Box2World * _Camera.GetCB().World2Proj;
+		m_pCB_Object->m.Local2View = m_Box2World * _Camera.GetCB().World2Camera;
+		m_pCB_Object->m.View2Proj = _Camera.GetCB().Camera2Proj;
 		m_pCB_Object->m.dUV = m_pRTRenderZ->GetdUV();
 		m_pCB_Object->UpdateData();
 
-	 	m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_RedOnly );
+	 	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_RedOnly );
 		m_pPrimBox->Render( M );
 
-	 	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_GreenOnly );
+	 	m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_GreenOnly );
 		m_pPrimBox->Render( M );
 
 	USING_MATERIAL_END
 
 	// 3.2] Render the actual volume
 	m_Device.ClearRenderTarget( *m_pRTRender, NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) );
+	m_Device.SetRenderTarget( *m_pRTRender );
+	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
 
 	USING_MATERIAL_START( *m_pMatDisplay )
 
 		m_pRTRenderZ->SetPS( 10 );
 		m_pRTTransmittanceMap->SetPS( 11 );
+
+		m_pCB_Splat->m.dUV = m_pRTRender->GetdUV();
+		m_pCB_Splat->UpdateData();
 
 		m_ScreenQuad.Render( M );
 
@@ -181,15 +190,18 @@ m_LightDirection.Set( cosf(_Time), 1, sinf( _Time ) );
 		m_pCB_Splat->UpdateData();
 
 // DEBUG
-m_pRTRenderZ->SetPS( 10 );
+m_pRTRender->SetPS( 10 );
+//m_pRTRenderZ->SetPS( 10 );
+//m_pRTTransmittanceZ->SetPS( 10 );
 m_pRTTransmittanceMap->SetPS( 11 );
+// DEBUG
 
 		m_ScreenQuad.Render( M );
 
 	USING_MATERIAL_END
 }
 
-void	EffectVolumetric::ComputeShadowTransform( NjFloat4x4& _Local2Proj )
+void	EffectVolumetric::ComputeShadowTransform()
 {
 	// Build basis for directional light
 	m_LightDirection.Normalize();
@@ -229,6 +241,12 @@ void	EffectVolumetric::ComputeShadowTransform( NjFloat4x4& _Local2Proj )
 	}
 	Center = Center / 8.0f;
 
+	NjFloat3	SizeLight = Max - Min;
+
+	// Offset center to Z start of box
+	float	CenterZ = Center | m_LightDirection;	// How much the center is already in light direction?
+	Center = Center + (Max.z-CenterZ) * m_LightDirection;
+
 	// Build LIGHT => WORLD transform & inverse
 	NjFloat4x4	Light2World;
 	Light2World.SetRow( 0, X, 0 );
@@ -236,42 +254,50 @@ void	EffectVolumetric::ComputeShadowTransform( NjFloat4x4& _Local2Proj )
 	Light2World.SetRow( 2, -m_LightDirection, 0 );
 	Light2World.SetRow( 3, Center, 1 );
 
-	NjFloat4x4	World2Light = Light2World.Inverse();
+	m_World2Light = Light2World.Inverse();
 
 	// Build projection transforms
-	NjFloat3	CenterLight = 0.5f * (Min + Max);
-	NjFloat3	SizeLight = Max - Min;
-
 	NjFloat4x4	Shadow2Light;
 	Shadow2Light.SetRow( 0, NjFloat4( 0.5f * SizeLight.x, 0, 0, 0 ) );
 	Shadow2Light.SetRow( 1, NjFloat4( 0, 0.5f * SizeLight.y, 0, 0 ) );
-//	Shadow2Light.SetRow( 2, NjFloat4( 0, 0, SizeLight.z, 0 ) );
-//	Shadow2Light.SetRow( 3, NjFloat4( 0, 0, -0.5f * SizeLight.z, 1 ) );
 	Shadow2Light.SetRow( 2, NjFloat4( 0, 0, 1, 0 ) );
-	Shadow2Light.SetRow( 3, NjFloat4( 0, 0, -0.5f * SizeLight.z, 1 ) );
+//	Shadow2Light.SetRow( 3, NjFloat4( 0, 0, -0.5f * SizeLight.z, 1 ) );
+	Shadow2Light.SetRow( 3, NjFloat4( 0, 0, 0, 1 ) );
 
 	NjFloat4x4	Light2Shadow = Shadow2Light.Inverse();
 
-	m_pCB_Shadow->m.World2Shadow = World2Light * Light2Shadow;
+	m_pCB_Shadow->m.World2Shadow = m_World2Light * Light2Shadow;
 	m_pCB_Shadow->m.Shadow2World = Shadow2Light * Light2World;
 	m_pCB_Shadow->m.ZMax.Set( SizeLight.z, 1.0f / SizeLight.z );
 
+
+	// Create an alternate projection matrix that doesn't keep the World Z but instead projects it in [0,1]
+	Shadow2Light.SetRow( 2, NjFloat4( 0, 0, SizeLight.z, 0 ) );
+//	Shadow2Light.SetRow( 3, NjFloat4( 0, 0, -0.5f * SizeLight.z, 1 ) );
+	Shadow2Light.SetRow( 3, NjFloat4( 0, 0, 0, 1 ) );
+
+	m_Light2ShadowNormalized = Shadow2Light.Inverse();
+
+
 // CHECK
-// NjFloat3	CheckMin( FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX ), CheckMax( -FLOAT32_MAX, -FLOAT32_MAX, -FLOAT32_MAX );
-// NjFloat3	CornerShadow;
-// for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
-// {
-// 	CornerLocal.x = 2.0f * (CornerIndex & 1) - 1.0f;
-// 	CornerLocal.y = 2.0f * ((CornerIndex >> 1) & 1) - 1.0f;
-// 	CornerLocal.z = 2.0f * ((CornerIndex >> 2) & 1) - 1.0f;
-// 
-// 	CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Box2World;
-// 
-// 	CornerShadow = NjFloat4( CornerWorld, 1 ) * m_pCB_Shadow->m.World2Shadow;
-// 
-// 	CheckMin = CheckMin.Min( CornerShadow );
-// 	CheckMax = CheckMax.Max( CornerShadow );
-// }
+NjFloat3	CheckMin( FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX ), CheckMax( -FLOAT32_MAX, -FLOAT32_MAX, -FLOAT32_MAX );
+NjFloat3	CornerShadow;
+for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
+{
+	CornerLocal.x = 2.0f * (CornerIndex & 1) - 1.0f;
+	CornerLocal.y = 2.0f * ((CornerIndex >> 1) & 1) - 1.0f;
+	CornerLocal.z = 2.0f * ((CornerIndex >> 2) & 1) - 1.0f;
+
+	CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Box2World;
+
+ 	CornerShadow = NjFloat4( CornerWorld, 1 ) * m_pCB_Shadow->m.World2Shadow;
+//	CornerShadow = NjFloat4( CornerWorld, 1 ) * m_World2ShadowNormalized;
+
+	NjFloat4	CornerWorldAgain = NjFloat4( CornerShadow, 1 ) * m_pCB_Shadow->m.Shadow2World;
+
+	CheckMin = CheckMin.Min( CornerShadow );
+	CheckMax = CheckMax.Max( CornerShadow );
+}
 // CHECK
 
 // CHECK

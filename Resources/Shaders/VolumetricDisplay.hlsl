@@ -8,9 +8,8 @@ static const float	STEPS_COUNT = 64.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
 
 //[
-cbuffer	cbObject	: register( b10 )
+cbuffer	cbSplat	: register( b10 )
 {
-	float4x4	_Local2Proj;
 	float3		_dUV;
 };
 //]
@@ -25,63 +24,87 @@ struct	VS_IN
 };
 
 
+float	TempGetTransmittance( float3 _WorldPosition )
+{
+	float3	ShadowPosition = mul( float4( _WorldPosition, 1.0 ), _World2Shadow ).xyz;
+	float2	UV = float2( 0.5 * (1.0 + ShadowPosition.x), 0.5 * (1.0 - ShadowPosition.y) );
+	float	Z = ShadowPosition.z;
+
+	float4	C0 = _TexTransmittanceMap.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
+//return C0.x;
+	float4	C1 = _TexTransmittanceMap.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
+
+	float	x = Z * _ShadowZMax.y;
+			x = 1.0 + 2.0 * x;
+
+	const float4	CosTerm0 = PI * float4( 0, 1, 2, 3 );	// /8 is there because we use 8 coefficients
+	const float4	CosTerm1 = PI * float4( 4, 5, 6, 7 );
+
+	float4	Cos0 = cos( CosTerm0 * x );
+	float4	Cos1 = cos( CosTerm1 * x );
+
+	Cos0.x = 0.5;	// Patch for inverse DCT
+
+	return saturate( dot( Cos0, C0 ) + dot( Cos1, C1 ) );
+}
+
+
+
 VS_IN	VS( VS_IN _In )	{ return _In; }
 
 float4	PS( VS_IN _In ) : SV_TARGET0
 {
-return float4( 1, 0, 0, 1 );
-
 	float2	UV = _In.__Position.xy * _dUV.xy;
+
+//return float4( UV, 0, 1 );
 
 	// Sample min/max depths at position
 	float2	ZMinMax = _TexDepth.SampleLevel( LinearClamp, UV, 0.0 ).xy;
 	float	Depth = ZMinMax.y - ZMinMax.x;
 	if ( Depth <= 0.0 )
-		return 0.0;	// Empty interval, no trace needed...
+		return float4( 0, 0, 0, 1 );	// Empty interval, no trace needed...
+//return Depth;
 
 	// Retrieve start & end positions in world space
-	float2	ShadowPos = float2( 2.0 * UV.x - 1.0, 1.0 - 2.0 * UV.y );
-	float3	WorldPosStart = mul( float4( ShadowPos, ZMinMax.x, 1.0 ), _Shadow2World ).xyz;
-	float3	WorldPosEnd = mul( float4( ShadowPos, ZMinMax.y, 1.0 ), _Shadow2World ).xyz;
-
-// Out.C0 = float4( WorldPosStart, 0 );
-// Out.C1 = float4( WorldPosEnd, 0 );
+	float3	View = float3( _CameraData.x * (2.0 * UV.x - 1.0), _CameraData.y * (1.0 - 2.0 * UV.y), 1.0 );
+	float3	WorldPosStart = mul( float4( ZMinMax.x * View, 1.0 ), _Camera2World ).xyz;
+	float3	WorldPosEnd = mul( float4( ZMinMax.y * View, 1.0 ), _Camera2World ).xyz;
+// return float4( 1.0 * WorldPosStart, 0 );
+//return float4( 1.0 * WorldPosEnd, 0 );
 
 	float4	Step = float4( WorldPosEnd - WorldPosStart, ZMinMax.y - ZMinMax.x ) * INV_STEPS_COUNT;
 	float4	Position = float4( WorldPosStart, 0.0 ) + 0.5 * Step;
 
-	float	dx = Step.w * _ShadowZMax.y;					// Normalized Z step size
+	// Compute phase
+	float	Phase = 1.0 / (4 * PI);
 
-	// Prepare the angles & angle steps for the DCT coefficients
-	const float4	CosTerm0 = PI * float4( 0, 1, 2, 3 );
-	const float4	CosTerm1 = PI * float4( 4, 5, 6, 7 );
-	float	StartX = ZMinMax.x * _ShadowZMax.y + 0.5 * dx;	// This is the normalized Z we're starting from...
-	float4	Angle0 = CosTerm0 * StartX;
-	float4	Angle1 = CosTerm1 * StartX;
-	float4	dAngle0 = CosTerm0 * dx;						// This is the increment in phase
-	float4	dAngle1 = CosTerm1 * dx;
-
+	// Start integration
+	float3	Scattering = 0.0;
 	float	Transmittance = 1.0;
 	for ( float StepIndex=0; StepIndex < STEPS_COUNT; StepIndex++ )
 	{
 		float	Density = GetVolumeDensity( Position.xyz );
 
-//Density = 0.0;
+Density = 0.1;
 
 		float	Sigma_t = SCATTERING_COEFF * Density;
 
-		float	StepTransmittance = exp( -Sigma_t * Step.w );
-		Transmittance *= StepTransmittance;
+		// Compute scattering
+		float	Shadowing = TempGetTransmittance( Position.xyz );
+		float3	Light = 5.0 * Shadowing;
+		float3	StepScattering = Sigma_t * Phase * Light * Step.w;
+		Scattering += Transmittance * StepScattering;
 
-		// Accumulate cosine weights for the DCT
-// 		Out.C0 += Transmittance * cos( Angle0 );
-// 		Out.C1 += Transmittance * cos( Angle1 );
+		// Compute extinction
+		float	StepTransmittance = exp( -Sigma_t * Step.w );
+//		Transmittance *= StepTransmittance;
 
 		// Advance in world and phase
 		Position += Step;
-		Angle0 += dAngle0;
-		Angle1 += dAngle1;
 	}
 
-	return 0;
+//Transmittance = 0.0;
+
+	return float4( Scattering, Transmittance );
+	return Transmittance;
 }
