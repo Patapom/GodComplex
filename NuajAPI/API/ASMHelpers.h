@@ -6,8 +6,8 @@
 #ifdef GODCOMPLEX
 
 // Override some functions with our own implementations
-#define memset( a, b, c )	ASM_memset( a, b, c )
-#define memcpy( a, b, c )	ASM_memcpy( a, b, c )
+#define memset( dst, val, amount )	ASM_memset( dst, val, amount )
+#define memcpy( dst, src, amount )	ASM_memcpy( dst, src, amount )
 
 static float ASM_log2f( float x )
 {
@@ -159,19 +159,19 @@ static void ASM_memset( void *dst, int val, int amount )
     _asm rep stosb
 }
 
-static void ASM_memcpy( void *dst, const void *ori, int amount )
+static void ASM_memcpy( void *dst, const void *src, int amount )
 {
     _asm mov edi, dst
-    _asm mov esi, ori
+    _asm mov esi, src
     _asm mov ecx, amount
     _asm rep movsb
 }
 
-static int ASM_strlen( const char *ori )
+static int ASM_strlen( const char *src )
 {
     int res;
 
-    _asm mov esi, ori
+    _asm mov esi, src
     _asm xor ecx, ecx
     _asm myloop:
     _asm    mov al, [esi]

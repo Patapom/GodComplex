@@ -386,6 +386,19 @@ void	Device::SetStatesReferences( const NjFloat4& _BlendFactors, U32 _BlendSampl
 	m_StencilRef = _StencilRef;
 }
 
+void	Device::RemoveShaderResources( int _SlotIndex, int _SlotsCount )
+{
+	ID3D11ShaderResourceView*	ppNULL[128];
+	memset( ppNULL, NULL, _SlotsCount*sizeof(ID3D11ShaderResourceView*) );
+
+	m_pDeviceContext->VSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	m_pDeviceContext->HSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	m_pDeviceContext->DSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	m_pDeviceContext->GSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	m_pDeviceContext->PSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	m_pDeviceContext->CSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+}
+
 void	Device::RegisterComponent( Component& _Component )
 {
 	// Attach to the end of the list

@@ -27,6 +27,7 @@ public:		// NESTED TYPES
 
 	struct CBShadow 
 	{
+		NjFloat4	LightDirection;
 		NjFloat4x4	World2Shadow;
 		NjFloat4x4	Shadow2World;
 		NjFloat2	ZMax;

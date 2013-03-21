@@ -79,9 +79,11 @@ EffectVolumetric::~EffectVolumetric()
 void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
 {
 // DEBUG
-//m_LightDirection.Set( cosf(_Time), 1, sinf( _Time ) );
+//m_LightDirection.Set( cosf(_Time), 2.0f * sinf( 0.324f * _Time ), sinf( _Time ) );
+//m_LightDirection.Set( 0, 1, 0 );
 // DEBUG
 
+	D3DPERF_BeginEvent( D3DCOLOR( 0xFF00FF00 ), L"Compute Shadow" );
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Compute transforms
@@ -91,11 +93,14 @@ void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
 
 	m_pCB_Shadow->UpdateData();
 
+	D3DPERF_EndEvent();
 
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Compute the transmittance function map
 
 	// 2.1] Render front & back depths
+	D3DPERF_BeginEvent( D3DCOLOR( 0xFF000000 ), L"Render TFM Z" );
+
 	m_Device.ClearRenderTarget( *m_pRTTransmittanceZ, NjFloat4( 1e4f, -1e4f, 0.0f, 0.0f ) );
 
 	USING_MATERIAL_START( *m_pMatDepthWrite )
@@ -107,15 +112,23 @@ void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
 		m_pCB_Object->m.dUV = m_pRTTransmittanceZ->GetdUV();
 		m_pCB_Object->UpdateData();
 
+		D3DPERF_SetMarker(  D3DCOLOR( 0x00FF00FF ), L"Render Front Faces" );
+
 	 	m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_RedOnly );
 		m_pPrimBox->Render( M );
+
+		D3DPERF_SetMarker(  D3DCOLOR( 0xFFFF00FF ), L"Render Back Faces" );
 
 	 	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_GreenOnly );
 		m_pPrimBox->Render( M );
 
 	USING_MATERIAL_END
 
+	D3DPERF_EndEvent();
+
 	// 2.2] Compute transmittance map
+	D3DPERF_BeginEvent( D3DCOLOR( 0xFF400000 ), L"Render TFM" );
+
 	m_Device.ClearRenderTarget( *m_pRTTransmittanceMap, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 
 	ID3D11RenderTargetView*	ppViews[2] = {
@@ -137,11 +150,17 @@ void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
 
 	USING_MATERIAL_END
 
+	// Remove contention on Transmittance Z that we don't need next...
+	m_Device.RemoveShaderResources( 10 );
+
+	D3DPERF_EndEvent();
 
 	//////////////////////////////////////////////////////////////////////////
 	// 3] Render the actual volume
 
 	// 3.1] Render front & back depths
+	D3DPERF_BeginEvent( D3DCOLOR( 0xFF800000 ), L"Render Volume Z" );
+
 	m_Device.ClearRenderTarget( *m_pRTRenderZ, NjFloat4( 1e4f, -1e4f, 0.0f, 0.0f ) );
 
 	USING_MATERIAL_START( *m_pMatDepthWrite )
@@ -153,15 +172,23 @@ void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
 		m_pCB_Object->m.dUV = m_pRTRenderZ->GetdUV();
 		m_pCB_Object->UpdateData();
 
+		D3DPERF_SetMarker(  D3DCOLOR( 0x00FF00FF ), L"Render Front Faces" );
+
 	 	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_RedOnly );
 		m_pPrimBox->Render( M );
+
+		D3DPERF_SetMarker(  D3DCOLOR( 0xFFFF00FF ), L"Render Back Faces" );
 
 	 	m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_GreenOnly );
 		m_pPrimBox->Render( M );
 
 	USING_MATERIAL_END
 
+	D3DPERF_EndEvent();
+
 	// 3.2] Render the actual volume
+	D3DPERF_BeginEvent( D3DCOLOR( 0xFFC00000 ), L"Render Volume" );
+
 	m_Device.ClearRenderTarget( *m_pRTRender, NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) );
 	m_Device.SetRenderTarget( *m_pRTRender );
 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
@@ -178,9 +205,12 @@ void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
 
 	USING_MATERIAL_END
 
+	D3DPERF_EndEvent();
 
 	//////////////////////////////////////////////////////////////////////////
 	// 4] Combine with screen
+	D3DPERF_BeginEvent( D3DCOLOR( 0xFFFF0000 ), L"Render TFM Z" );
+
 	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget(), NULL );
 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
 
@@ -199,6 +229,8 @@ m_pRTTransmittanceMap->SetPS( 11 );
 		m_ScreenQuad.Render( M );
 
 	USING_MATERIAL_END
+
+	D3DPERF_EndEvent();
 }
 
 void	EffectVolumetric::ComputeShadowTransform()
@@ -266,6 +298,7 @@ void	EffectVolumetric::ComputeShadowTransform()
 
 	NjFloat4x4	Light2Shadow = Shadow2Light.Inverse();
 
+	m_pCB_Shadow->m.LightDirection = NjFloat4( m_LightDirection, 0 );
 	m_pCB_Shadow->m.World2Shadow = m_World2Light * Light2Shadow;
 	m_pCB_Shadow->m.Shadow2World = Shadow2Light * Light2World;
 	m_pCB_Shadow->m.ZMax.Set( SizeLight.z, 1.0f / SizeLight.z );

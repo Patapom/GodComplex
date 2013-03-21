@@ -101,6 +101,11 @@ public:	 // METHODS
 	void	SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _pDepthStencilState, BlendState* _pBlendState );
 	void	SetStatesReferences( const NjFloat4& _BlendMasks, U32 _BlendSampleMask, U8 _StencilRef );
 
+	// Clears the shader resource registers
+	// Useful to cleanup textures that may otherwise be considered as required by shaders that don't really need them.
+	// Helps to clear up resource contention for draw calls
+	void	RemoveShaderResources( int _SlotIndex, int _SlotsCount=1 );
+
 private:
 
 	void	RegisterComponent( Component& _Component );
