@@ -7,6 +7,8 @@ class EffectVolumetric
 private:	// CONSTANTS
 
 	static const int	SHADOW_MAP_SIZE = 128;
+	static const int	FRACTAL_TEXTURE_POT = 7;
+	static const int	FRACTAL_OCTAVES = 8;
 	static const float	SCREEN_TARGET_RATIO;
 
 
@@ -57,6 +59,7 @@ private:	// FIELDS
 
 	Primitive*			m_pPrimBox;
 
+	Texture3D*			m_pTexFractal;
 	Texture2D*			m_pRTTransmittanceZ;
 	Texture2D*			m_pRTTransmittanceMap;
 	Texture2D*			m_pRTRenderZ;
@@ -86,5 +89,6 @@ public:		// METHODS
 protected:
 
 	void		ComputeShadowTransform();
+	Texture3D*	BuildFractalTexture();
 
 };

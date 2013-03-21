@@ -64,7 +64,8 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 	// Sample min/max depths at position
 	float2	ZMinMax = _TexDepth.SampleLevel( LinearClamp, UV, 0.0 ).xy;
 	float	Depth = ZMinMax.y - ZMinMax.x;
-	if ( Depth <= 0.0 )
+//	Depth = max( 1e-3, Depth );
+	if ( Depth <= 1e-3 )
 		return float4( 0, 0, 0, 1 );	// Empty interval, no trace needed...
 //return Depth;
 
@@ -75,20 +76,26 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 // return float4( 1.0 * WorldPosStart, 0 );
 //return float4( 1.0 * WorldPosEnd, 0 );
 
-	float4	Step = float4( WorldPosEnd - WorldPosStart, ZMinMax.y - ZMinMax.x ) * INV_STEPS_COUNT;
+//	float	StepsCount = ceil( Depth * 8.0 );
+//	float	StepsCount = Depth * 16.0;
+	float	StepsCount = STEPS_COUNT;
+			StepsCount = min( STEPS_COUNT, StepsCount );
+	float	InvStepsCount = 1.0 / StepsCount;
+
+	float4	Step = float4( WorldPosEnd - WorldPosStart, ZMinMax.y - ZMinMax.x ) * InvStepsCount;
 	float4	Position = float4( WorldPosStart, 0.0 ) + 0.5 * Step;
 
 	// Compute phase
 	float3	LightDirection = mul( float4( _LightDirection, 0.0 ), _World2Camera ).xyz;	// Light in camera space
 			View = normalize( View );
-	float	g = 0.25;
+	float	g = 0;//0.25;
 	float	CosTheta = dot( View, LightDirection );
 	float	Phase = 1.0 / (4 * PI) * (1 - g*g) * pow( 1+g*g-g*CosTheta, -1.5 );
 
 	// Start integration
 	float3	Scattering = 0.0;
 	float	Transmittance = 1.0;
-	for ( float StepIndex=0; StepIndex < STEPS_COUNT; StepIndex++ )
+	for ( float StepIndex=0.0; StepIndex < StepsCount; StepIndex++ )
 	{
 		float	Density = GetVolumeDensity( Position.xyz );
 
@@ -98,7 +105,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 
 		// Compute scattering
 		float	Shadowing = GetTransmittance( Position.xyz );
-		float3	Light = 25.0 * Shadowing;
+		float3	Light = 15.0 * Shadowing;
 		float3	StepScattering = Sigma_t * Phase * Light * Step.w;
 		Scattering += Transmittance * StepScattering;
 
@@ -119,6 +126,8 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 // 
 // Scattering = 0.9 * 0.25 * _TexTransmittanceMap.SampleLevel( LinearClamp, float3( Scattering.xy, 1 ), 0.0 ).w;
 
+//Scattering = 0.03 * StepsCount;
+//Scattering = Depth;
 
 	return float4( Scattering, Transmittance );
 	return Transmittance;

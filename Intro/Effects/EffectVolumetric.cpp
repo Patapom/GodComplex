@@ -39,7 +39,8 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Primitive& _ScreenQuad ) : 
 	m_pRTRenderZ = new Texture2D( m_Device, m_RenderWidth, m_RenderHeight, 1, PixelFormatRG16F::DESCRIPTOR, 1, NULL );
 	m_pRTRender = new Texture2D( m_Device, m_RenderWidth, m_RenderHeight, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
 
-
+	m_pTexFractal = BuildFractalTexture();
+	
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
 	m_pCB_Object = new CB<CBObject>( m_Device, 10 );
@@ -63,6 +64,7 @@ EffectVolumetric::~EffectVolumetric()
 	delete m_pCB_Splat;
 	delete m_pCB_Object;
 
+	delete m_pTexFractal;
 	delete m_pRTRender;
 	delete m_pRTRenderZ;
 	delete m_pRTTransmittanceMap;
@@ -80,13 +82,18 @@ void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
 {
 // DEBUG
 //m_LightDirection.Set( cosf(_Time), 2.0f * sinf( 0.324f * _Time ), sinf( _Time ) );
+m_LightDirection.Set( cosf(_Time), 1.0f, sinf( _Time ) );
 //m_LightDirection.Set( 0, 1, 0 );
 // DEBUG
 
 	D3DPERF_BeginEvent( D3DCOLOR( 0xFF00FF00 ), L"Compute Shadow" );
 
+	m_pTexFractal->SetPS( 16 );
+
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Compute transforms
+m_Position.Set( 0, 0, 0 );
+m_Scale.Set( 4.0f, 1.0f, 4.0f );
 	m_Box2World.PRS( m_Position, m_Rotation, m_Scale );
 
 	ComputeShadowTransform();
@@ -340,4 +347,133 @@ NjFloat3	DeltaTest0 = Test1 - Test0;
 NjFloat3	Test2 = NjFloat4( 0.0f, 0.0f, SizeLight.z, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
 NjFloat3	DeltaTest1 = Test2 - Test0;
 // CHECK
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Builds a fractal texture compositing several octaves of tiling Perlin noise
+// Successive mips don't average previous mips but rather attenuate higher octaves
+Texture3D*	EffectVolumetric::BuildFractalTexture()
+{
+	Noise*	pNoises[FRACTAL_OCTAVES];
+	float	NoiseFrequency = 0.0001f;
+	float	FrequencyFactor = 2.0f;
+	float	AmplitudeFactor = 0.5f;
+
+	for ( int OctaveIndex=0; OctaveIndex < FRACTAL_OCTAVES; OctaveIndex++ )
+	{
+		pNoises[OctaveIndex] = new Noise( 1+OctaveIndex );
+		pNoises[OctaveIndex]->SetWrappingParameters( NoiseFrequency, 198746+OctaveIndex );
+		NoiseFrequency *= FrequencyFactor;
+	}
+
+	int		Size = 1 << FRACTAL_TEXTURE_POT;
+	int		MipsCount = 1+FRACTAL_TEXTURE_POT;
+
+	float	Normalizer = 0.0f;
+	float	Amplitude = 1.0f;
+	for ( int OctaveIndex=1; OctaveIndex < FRACTAL_OCTAVES; OctaveIndex++ )
+	{
+		Normalizer += Amplitude;
+		Amplitude *= AmplitudeFactor;
+	}
+	Normalizer = 1.0f / Normalizer;
+
+	float**	ppMips = new float*[MipsCount];
+
+	// Build first mip
+	ppMips[0] = new float[Size*Size*Size];
+#if 1
+	NjFloat3	UVW;
+	for ( int Z=0; Z < Size; Z++ )
+	{
+		UVW.z = float( Z ) / Size;
+		float*	pSlice = ppMips[0] + Size*Size*Z;
+		for ( int Y=0; Y < Size; Y++ )
+		{
+			UVW.y = float( Y ) / Size;
+			float*	pScanline = pSlice + Size * Y;
+			for ( int X=0; X < Size; X++ )
+			{
+				UVW.x = float( X ) / Size;
+
+				float	V = 0.0f;
+				float	Amplitude = 1.0f;
+				float	Frequency = 1.0f;
+				for ( int OctaveIndex=0; OctaveIndex < FRACTAL_OCTAVES; OctaveIndex++ )
+				{
+					V += Amplitude * pNoises[OctaveIndex]->WrapPerlin( Frequency * UVW );
+					Amplitude *= AmplitudeFactor;
+//					Frequency *= FrequencyFactor;
+				}
+				V *= Normalizer;
+				*pScanline++ = V;
+			}
+		}
+	}
+	FILE*	pFile = NULL;
+	fopen_s( &pFile, "FractalNoise.float", "wb" );
+	ASSERT( pFile != NULL, "Couldn't write fractal file!" );
+	fwrite( ppMips[0], sizeof(float), Size*Size*Size, pFile );
+	fclose( pFile );
+#else
+	FILE*	pFile = NULL;
+	fopen_s( &pFile, "FractalNoise.float", "rb" );
+	ASSERT( pFile != NULL, "Couldn't load fractal file!" );
+	fread_s( ppMips[0], Size*Size*Size*sizeof(float), sizeof(float), Size*Size*Size, pFile );
+	fclose( pFile );
+#endif
+
+	// Build other mips
+	for ( int MipIndex=1; MipIndex < MipsCount; MipIndex++ )
+	{
+		int		SourceSize = Size;
+		Size >>= 1;
+
+		float*	pSource = ppMips[MipIndex-1];
+		float*	pTarget = new float[Size*Size*Size];
+		ppMips[MipIndex] = pTarget;
+
+		for ( int Z=0; Z < Size; Z++ )
+		{
+			float*	pSlice0 = pSource + SourceSize*SourceSize*(2*Z);
+			float*	pSlice1 = pSource + SourceSize*SourceSize*(2*Z+1);
+			float*	pSliceT = pTarget + Size*Size*Z;
+			for ( int Y=0; Y < Size; Y++ )
+			{
+				float*	pScanline00 = pSlice0 + SourceSize * (2*Y);
+				float*	pScanline01 = pSlice0 + SourceSize * (2*Y+1);
+				float*	pScanline10 = pSlice1 + SourceSize * (2*Y);
+				float*	pScanline11 = pSlice1 + SourceSize * (2*Y+1);
+				float*	pScanlineT = pSliceT + Size*Y;
+				for ( int X=0; X < Size; X++ )
+				{
+					float	V  = pScanline00[0] + pScanline00[1];	// From slice 0, current line
+							V += pScanline01[0] + pScanline01[1];	// From slice 0, next line
+							V += pScanline10[0] + pScanline10[1];	// From slice 1, current line
+							V += pScanline11[0] + pScanline11[1];	// From slice 1, next line
+					V *= 0.125f;
+
+					*pScanlineT++ = V;
+
+					pScanline00 += 2;
+					pScanline01 += 2;
+					pScanline10 += 2;
+					pScanline11 += 2;
+				}
+			}
+		}
+	}
+	Size = 1 << FRACTAL_TEXTURE_POT;	// Restore size after mip modifications
+
+	// Build actual texture
+	Texture3D*	pResult = new Texture3D( m_Device, Size, Size, Size, PixelFormatR32F::DESCRIPTOR, 0, (void**) ppMips );
+
+	for ( int MipIndex=0; MipIndex < MipsCount; MipIndex++ )
+		delete[] ppMips[MipIndex];
+	delete[] ppMips;
+
+	for ( int OctaveIndex=0; OctaveIndex < FRACTAL_OCTAVES; OctaveIndex++ )
+		delete pNoises[OctaveIndex];
+
+	return pResult;
 }

@@ -290,14 +290,16 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	//////////////////////////////////////////////////////////////////////////
 	// Update the camera settings and upload its data to the shaders
 
-	float	t = 0.5f * _Time;
-	float	R = 5.0f;
+	float	t = 0.25f * _Time;
+	float	R = 6.0f;
 //t = 0;
 
+// 	float	H = _TV(6.5f);
+	float	H = 4.0f * cosf(2.0f*t);
 
-	// TODO: Animate camera...
+// TODO: Animate camera...
 //	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(0.2f), _TV(4.0f) ), NjFloat3( 0.0f, 1.5f, 0.0f ), NjFloat3::UnitY );
-	gs_pCamera->LookAt( NjFloat3( R*sinf(t), _TV(6.5f), R*cosf(t) ), NjFloat3( 0.0f, 2.0f, 0.0f ), NjFloat3::UnitY );
+	gs_pCamera->LookAt( NjFloat3( R*sinf(t), H, R*cosf(t) ), NjFloat3( 0.0f, 2.0f, 0.0f ), NjFloat3::UnitY );
 
 	gs_pCamera->Upload( 0 );
 

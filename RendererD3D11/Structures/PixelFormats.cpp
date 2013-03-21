@@ -1,6 +1,7 @@
 #pragma once
 #include "PixelFormats.h"
 
+PixelFormatR8::Desc				PixelFormatR8::DESCRIPTOR;
 PixelFormatRGBA8::Desc			PixelFormatRGBA8::DESCRIPTOR;
 PixelFormatRGBA8_sRGB::Desc		PixelFormatRGBA8_sRGB::DESCRIPTOR;
 PixelFormatR16F::Desc			PixelFormatR16F::DESCRIPTOR;

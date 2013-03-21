@@ -20,6 +20,7 @@ cbuffer	cbShadow	: register( b11 )
 };
 
 Texture2DArray	_TexTransmittanceMap	: register(t11);
+Texture3D		_TexFractal	: register(t16);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -40,22 +41,40 @@ float4	fbm( float3 _UVW, float _AmplitudeFactor, float _FrequencyFactor )
 
 float	GetVolumeDensity( float3 _Position )
 {
-_Position.x += _Time;
+//_Position.x += _Time.x;
 
-	float3	UVW = 0.05 * _Position;
-
-	float	Noise = fbm( UVW, 0.5, 2.0 ).x;
-			Noise *= Noise;
-			Noise *= 4.0;
-
-
+// Hardcoded sphere
 // float3	Center = float3( 0.0, 2.5, 0.0 );
 // float	Radius = 0.4;
 // float	Distance = length( _Position - Center );
 // return Distance < Radius ? 1 : 0;
 
 
+#if 0
+	float3	UVW = 0.05 * _Position;
+
+	float	Noise = fbm( UVW, 0.5, 2.0 ).x;
+			Noise *= Noise;
+			Noise *= 4.0;
+
 	return saturate( Noise - 0.07 );
+#else
+
+//	float3	UVW = 0.025 * _Position;
+	float3	UVW = 0.125 * _Position;
+
+//UVW.y -= 0.1 * _Time.x;
+//UVW.y -= 0.1 * _Time.x + sin( 0.1 * (UVW.x + _Time.x) );
+
+	float	Noise = _TexFractal.SampleLevel( LinearWrap, UVW, 0.0 ).x;
+			Noise *= 2.0;
+			Noise *= Noise;
+
+float	y = 0.5 * (_Position.y+1.0);
+float	Offset = lerp( -0.02, 0.0, y );
+
+	return saturate( Noise + Offset );
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -109,7 +128,7 @@ float	GetTransmittance( float3 _WorldPosition )
 	float2	Cos1 = float2( Temp0.w, Temp1 );
 #endif
 
-	return saturate( dot( Cos0, C0 ) + dot( Cos1, C1 ) );
+	return saturate( dot( Cos0, C0 ) + dot( Cos1, C1.xy ) );
 }
 
 #endif	// _VOLUMETRIC_INC_

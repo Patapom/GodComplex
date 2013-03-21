@@ -14,6 +14,26 @@ public: // PROPERTIES
 	virtual NjFloat4	Read( const U8* _pPixel ) const = 0;
 };
 
+struct PixelFormatR8 : public PixelFormat
+{
+public:
+
+	static class Desc : public IPixelFormatDescriptor
+	{
+	public:
+
+		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_R8_UNORM; }
+		virtual int			Size() const					{ return sizeof(PixelFormatR8); }
+		virtual void		Write( U8* _pPixel, const NjFloat4& _Color ) const	{ PixelFormatR8& P = (PixelFormatR8&)( *_pPixel ); P.R = FLOAT2BYTE( _Color.x ); }
+		virtual NjFloat4	Read( const U8* _pPixel ) const						{ const PixelFormatR8& P = (const PixelFormatR8&)( *_pPixel ); return NjFloat4( NUAJBYTE2FLOAT( P.R ), 0, 0, 1 ); }
+	} DESCRIPTOR;
+
+public:
+
+	U8  R;
+
+};
+
 struct PixelFormatRGBA8 : public PixelFormat
 {
 public:
