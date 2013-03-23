@@ -86,7 +86,7 @@ EffectVolumetric::~EffectVolumetric()
 void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
 {
 // DEBUG
-//m_LightDirection.Set( 0, 1, 0 );
+//m_LightDirection.Set( 0, 1, -1 );
 //m_LightDirection.Set( 1, 2.0, -5 );
 //m_LightDirection.Set( cosf(_Time), 2.0f * sinf( 0.324f * _Time ), sinf( _Time ) );
 m_LightDirection.Set( cosf(_Time), 2.0f * sinf( 4.0f * 0.324f * _Time ), sinf( _Time ) );	// Fast vertical change
@@ -249,8 +249,8 @@ m_Scale.Set( 128.0f, 1.0f, 128.0f );
 
 // DEBUG
 m_pRTRender->SetPS( 10 );
-//m_pRTTransmittanceZ->SetPS( 11 );
-m_pRTRenderZ->SetPS( 11 );
+m_pRTTransmittanceZ->SetPS( 11 );
+//m_pRTRenderZ->SetPS( 11 );
 m_pRTTransmittanceMap->SetPS( 12 );
 // DEBUG
 
@@ -261,11 +261,113 @@ m_pRTTransmittanceMap->SetPS( 12 );
 	D3DPERF_EndEvent();
 }
 
+//#define	SPLAT_TO_BOX
+#ifdef	SPLAT_TO_BOX
+//////////////////////////////////////////////////////////////////////////
+// Here, shadow map is simply made to fit the top/bottom of the box
 void	EffectVolumetric::ComputeShadowTransform()
 {
 	// Build basis for directional light
 	m_LightDirection.Normalize();
+
+	bool		Above = m_LightDirection.y > 0.0f;
+
+	NjFloat3	X = NjFloat3::UnitX;
+	NjFloat3	Y = NjFloat3::UnitZ;
+
+	NjFloat3	Center = m_Position + NjFloat3( 0, (Above ? +1 : -1) * m_Scale.y, 0 );
+
+	NjFloat3	SizeLight = NjFloat3( 2.0f * m_Scale.x, 2.0f * m_Scale.z, 2.0f * m_Scale.y / fabs(m_LightDirection.y) );
+
+	// Build LIGHT => WORLD transform & inverse
+	NjFloat4x4	Light2World;
+	Light2World.SetRow( 0, X, 0 );
+	Light2World.SetRow( 1, Y, 0 );
+	Light2World.SetRow( 2, -m_LightDirection, 0 );
+	Light2World.SetRow( 3, Center, 1 );
+
+	m_World2Light = Light2World.Inverse();
+
+	// Build projection transforms
+	NjFloat4x4	Shadow2Light;
+	Shadow2Light.SetRow( 0, NjFloat4( 0.5f * SizeLight.x, 0, 0, 0 ) );
+	Shadow2Light.SetRow( 1, NjFloat4( 0, 0.5f * SizeLight.y, 0, 0 ) );
+	Shadow2Light.SetRow( 2, NjFloat4( 0, 0, 1, 0 ) );
+	Shadow2Light.SetRow( 3, NjFloat4( 0, 0, 0, 1 ) );
+
+	NjFloat4x4	Light2Shadow = Shadow2Light.Inverse();
+
+	m_pCB_Shadow->m.LightDirection = NjFloat4( m_LightDirection, 0 );
+	m_pCB_Shadow->m.World2Shadow = m_World2Light * Light2Shadow;
+	m_pCB_Shadow->m.Shadow2World = Shadow2Light * Light2World;
+	m_pCB_Shadow->m.ZMax.Set( SizeLight.z, 1.0f / SizeLight.z );
+
+
+	// Create an alternate projection matrix that doesn't keep the World Z but instead projects it in [0,1]
+	Shadow2Light.SetRow( 2, NjFloat4( 0, 0, SizeLight.z, 0 ) );
+	Shadow2Light.SetRow( 3, NjFloat4( 0, 0, 0, 1 ) );
+
+	m_Light2ShadowNormalized = Shadow2Light.Inverse();
+
+// CHECK
+NjFloat3	CheckMin( FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX ), CheckMax( -FLOAT32_MAX, -FLOAT32_MAX, -FLOAT32_MAX );
+NjFloat3	CornerLocal, CornerWorld, CornerShadow;
+NjFloat4x4	World2ShadowNormalized = m_World2Light * m_Light2ShadowNormalized;
+for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
+{
+	CornerLocal.x = 2.0f * (CornerIndex & 1) - 1.0f;
+	CornerLocal.y = 2.0f * ((CornerIndex >> 1) & 1) - 1.0f;
+	CornerLocal.z = 2.0f * ((CornerIndex >> 2) & 1) - 1.0f;
+
+	CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Box2World;
+
+// 	CornerShadow = NjFloat4( CornerWorld, 1 ) * m_pCB_Shadow->m.World2Shadow;
+	CornerShadow = NjFloat4( CornerWorld, 1 ) * World2ShadowNormalized;
+
+	NjFloat4	CornerWorldAgain = NjFloat4( CornerShadow, 1 ) * m_pCB_Shadow->m.Shadow2World;
+
+	CheckMin = CheckMin.Min( CornerShadow );
+	CheckMax = CheckMax.Max( CornerShadow );
+}
+// CHECK
+
+// CHECK
+NjFloat3	Test0 = NjFloat4( 0.0f, 0.0f, 0.5f * SizeLight.z, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
+NjFloat3	Test1 = NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
+NjFloat3	DeltaTest0 = Test1 - Test0;
+NjFloat3	Test2 = NjFloat4( 0.0f, 0.0f, SizeLight.z, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
+NjFloat3	DeltaTest1 = Test2 - Test0;
+// CHECK
+}
+
+#else
+//////////////////////////////////////////////////////////////////////////
+// Here, shadow is fit to bounding volume as seen from light
+void	EffectVolumetric::ComputeShadowTransform()
+{
+	// Build basis for directional light
+	m_LightDirection.Normalize();
+
 	NjFloat3	X, Y;
+#if 1
+	// Use a ground vector
+	if ( fabs( m_LightDirection.x - 1.0f ) < 1e-3f )
+	{	// Special case
+		X = NjFloat3::UnitZ;
+		Y = NjFloat3::UnitY;
+	}
+	else
+	{
+		X = NjFloat3::UnitX ^ m_LightDirection;
+		X.Normalize();
+		Y = X ^ m_LightDirection;
+	}
+#elif 1
+	// Force both X,Y vectors to the ground
+	float	fFactor = (m_LightDirection.y > 0.0f ? 1.0f : -1.0f);
+	X = fFactor * NjFloat3::UnitX;
+	Y = NjFloat3::UnitZ;
+#else
 	if ( fabs( m_LightDirection.y - 1.0f ) < 1e-3f )
 	{	// Special case
 		X = NjFloat3::UnitX;
@@ -277,6 +379,7 @@ void	EffectVolumetric::ComputeShadowTransform()
 		X.Normalize();
 		Y = X ^ m_LightDirection;
 	}
+#endif
 
 	// Project the box's corners to the light plane
 	NjFloat3	Center = NjFloat3::Zero;
@@ -370,17 +473,11 @@ NjFloat3	DeltaTest1 = Test2 - Test0;
 // CHECK
 }
 
+#endif
+
 //////////////////////////////////////////////////////////////////////////
 // Builds a fractal texture compositing several octaves of tiling Perlin noise
-// Successive mips don't average previous mips but rather attenuate higher octaves
-namespace
-{
-	float	CombineDistances( float _pSqDistances[], int _pCellX[], int _pCellY[], int _pCellZ[], void* _pData )
-	{
-		return _pSqDistances[0];
-	}
-}
-
+// Successive mips don't average previous mips but rather attenuate higher octaves <= WRONG! ^^
 #define USE_WIDE_NOISE
 #ifdef USE_WIDE_NOISE
 
@@ -544,12 +641,10 @@ static const int TEXTURE_MIPS = 5;		// Max mips is the lowest dimension's mip
 				{
 					float	V = *pScanline++;
 							V = (V-ScaleMin)/(ScaleMax-ScaleMin);
+					*pScanlineT++ = U8( MIN( 255, int(256 * V) ) );
 
 					Min = MIN( Min, V );
 					Max = MAX( Max, V );
-//					*pScanlineT = U8( 255 * (0.5f * (1.0f + V)) );
-
-					*pScanlineT++ = U8( MIN( 255, int(256 * V) ) );
 				}
 			}
 		}
@@ -581,6 +676,18 @@ static const int TEXTURE_MIPS = 5;		// Max mips is the lowest dimension's mip
 }
 
 #else
+//////////////////////////////////////////////////////////////////////////
+// This generator doesn't use a wide texture but a cube texture
+// Most vertical space is wasted since we never sample there anyway!
+
+namespace
+{
+	float	CombineDistances( float _pSqDistances[], int _pCellX[], int _pCellY[], int _pCellZ[], void* _pData )
+	{
+		return _pSqDistances[0];
+	}
+}
+
 
 Texture3D*	EffectVolumetric::BuildFractalTexture( bool _bBuildFirst )
 {

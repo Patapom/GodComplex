@@ -140,7 +140,7 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 
 #ifdef	PACK_R8
 	const float	Min = -0.15062222, Max = 0.16956991;
-	float	Temp = _TexFractal1.SampleLevel( LinearWrap, UVW1, 0.0 ).x;	// Packed in [0,1]
+	float	Temp = _TexFractal1.SampleLevel( LinearWrap, UVW1, _MipBias ).x;	// Packed in [0,1]
 			Temp = Min + (Max - Min) * Temp;	// Unpack in [Min,Max]
 	Noise += 0.707 * Temp;
 #else
