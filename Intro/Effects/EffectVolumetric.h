@@ -97,5 +97,4 @@ protected:
 
 	void		ComputeShadowTransform();
 	Texture3D*	BuildFractalTexture( bool _bLoadFirst );
-
 };

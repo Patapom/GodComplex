@@ -74,6 +74,16 @@ float	__IntegrateScattering( float _PrevSigmaS, float _SigmaS, float _PrevSigmaT
 // ============= FORWARD TRACE ============= 
 float3	IntegrateScattering( float3 _Light0, float3 _Light1, float _Sigma_s0, float _Sigma_s1, float _Sigma_t0, float _Sigma_t1, float _Step, out float _Extinction )
 {
+
+// This is completely wrong obviously, I just wanted to test if sampling a "pre-integration texture" would be faster than
+//	performing the integration with ALU instructions and... it is!
+// Except that unfortunately we have 3 varying parameters here: Start & End Densities as well as step distance
+// The only way to make it work as a 2D texture would be to fix the step distance...
+//
+// _Extinction = 0;
+// return _TexDepth.SampleLevel( LinearClamp, float2( _Sigma_s0, _Sigma_s1 ), 0.0 ).x;
+
+
 	const float	SUB_STEPS_COUNT = 4.0;
 	const float	INV_SUB_STEPS_COUNT = 1.0 / SUB_STEPS_COUNT;
 
@@ -95,7 +105,7 @@ float3	IntegrateScattering( float3 _Light0, float3 _Light1, float _Sigma_s0, flo
 
 		Sigma_s += DSigma_s;
 		Sigma_t += DSigma_t;
-//		L += dL;
+		L += dL;
 	}
 
 	_Extinction = IntegrateExtinction( _Sigma_t0, _Sigma_t1, _Step );
@@ -166,20 +176,34 @@ ZMinMax.y = ZMinMax.x + min( 8.0, Depth );	// Don't trace more than 8 units in l
 // return float4( 1.0 * WorldPosStart, 0 );
 //return float4( 1.0 * WorldPosEnd, 0 );
 
-//	float	StepsCount = ceil( Depth * 8.0 );
+//#define FIX_STEP_SIZE	0.01
+#ifndef FIX_STEP_SIZE
+//	float	StepsCount = ceil( Depth * 8.0 );	// This introduces ugly artefacts
 	float	StepsCount = STEPS_COUNT;
 			StepsCount = min( STEPS_COUNT, StepsCount );
-	float	InvStepsCount = 1.0 / StepsCount;
 
-	float4	Step = float4( WorldPosEnd - WorldPosStart, ZMinMax.y - ZMinMax.x ) * InvStepsCount;
+	float4	Step = float4( WorldPosEnd - WorldPosStart, ZMinMax.y - ZMinMax.x ) / StepsCount;
 	float4	Position = float4( WorldPosStart, 0.0 ) + 0.5 * Step;
+
+#else	// Here, the steps have a fixed size and we simply determine their amount
+		// This strategy misses a lot of details and requires lots of steps!
+		// It was necessary to use a 2D pre-integration table with constant steps but unfortunately the
+		//	time we would have gained sampling a 2D texture instead of performing integration with ALU
+		//	is lost due to the fact we're using too many steps!
+	float	StepsCount = Depth / FIX_STEP_SIZE;
+			StepsCount = min( STEPS_COUNT, StepsCount );
+
+	float4	Step = FIX_STEP_SIZE * float4( View, 1.0 );
+	float4	Position = float4( WorldPosStart, 0.0 ) + 0.5 * Step;
+
+#endif
 
 	// Compute phase
 	float3	LightDirection = mul( float4( _LightDirection, 0.0 ), _World2Camera ).xyz;	// Light in camera space
 			View = normalize( View );
 	float	g = 0.25;
 	float	CosTheta = dot( View, LightDirection );
-	float	Phase = 1.0 / (4 * PI) * (1 - g*g) * pow( 1+g*g-g*CosTheta, -1.5 );
+	float	Phase = 1.0 / (4 * PI) * (1 - g*g) * pow( max(0.0, 1+g*g-g*CosTheta ), -1.5 );
 
 	// Start integration
 	float	Sigma_t = 0.0;
@@ -208,7 +232,8 @@ ZMinMax.y = ZMinMax.x + min( 8.0, Depth );	// Don't trace more than 8 units in l
 		Light = Shadowing;
 
 if ( false )//_VolumeParams.y < 0.5 )
-{
+{	// ======================== Old Strategy without sub-step integration ========================
+
 		// Compute extinction
 //		float	StepTransmittance = exp( -Sigma_t * Step.w );
 		float	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );
@@ -219,25 +244,16 @@ if ( false )//_VolumeParams.y < 0.5 )
 		Scattering += Transmittance * StepScattering;
 }
 else
-{
-//		// Compute extinction
-//		float	StepTransmittance = exp( -Sigma_t * Step.w );
-//		float	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );
-//  		float	StepTransmittance;
-//  		IntegrateScattering( PreviousLight, Light, PreviousSigma_s, Sigma_s, PreviousSigma_t, Sigma_t, Step.w, StepTransmittance );
-// 		Transmittance *= StepTransmittance;
-// 
-// 		// Compute scattering
-// 		float3	StepScattering = Sigma_s * Light * Step.w;	// Constant sigma
-// 		Scattering += Transmittance * StepScattering;
-
+{	// ======================== New Strategy WITH sub-step integration ========================
+	// More accurate but also a little more hungry, but always better than using more samples!
 		float	StepTransmittance;
 		float3	StepScattering = IntegrateScattering( PreviousLight, Light, PreviousSigma_s, Sigma_s, PreviousSigma_t, Sigma_t, Step.w, StepTransmittance );
 		Scattering += Transmittance * StepScattering;
 		Transmittance *= StepTransmittance;
 }
 
-//Scattering += 0.25 * float3( 1, 0, 0 ) * Shadowing * Step.w;
+// Used to visualize transmittance function map
+//Scattering += 0.025 * float3( 1, 0, 0 ) * Shadowing * Step.w;
 
 		// Advance in world and phase
 		Position += Step;

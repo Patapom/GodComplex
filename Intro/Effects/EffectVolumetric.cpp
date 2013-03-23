@@ -41,7 +41,7 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Primitive& _ScreenQuad ) : 
 
 //	m_pTexFractal0 = BuildFractalTexture( true );
 	m_pTexFractal1 = BuildFractalTexture( false );
-	
+
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
 	m_pCB_Object = new CB<CBObject>( m_Device, 10 );
