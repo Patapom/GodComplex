@@ -39,7 +39,7 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Primitive& _ScreenQuad ) : 
 	m_pRTRenderZ = new Texture2D( m_Device, m_RenderWidth, m_RenderHeight, 1, PixelFormatRG16F::DESCRIPTOR, 1, NULL );
 	m_pRTRender = new Texture2D( m_Device, m_RenderWidth, m_RenderHeight, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
 
-	m_pTexFractal0 = BuildFractalTexture( true );
+//	m_pTexFractal0 = BuildFractalTexture( true );
 	m_pTexFractal1 = BuildFractalTexture( false );
 	
 	//////////////////////////////////////////////////////////////////////////
@@ -90,8 +90,10 @@ m_LightDirection.Set( 0, 1, 0 );
 
 	D3DPERF_BeginEvent( D3DCOLOR( 0xFF00FF00 ), L"Compute Shadow" );
 
-	m_pTexFractal0->SetPS( 16 );
-	m_pTexFractal1->SetPS( 17 );
+	if ( m_pTexFractal0 != NULL )
+		m_pTexFractal0->SetPS( 16 );
+	if ( m_pTexFractal1 != NULL )
+		m_pTexFractal1->SetPS( 17 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Compute transforms
@@ -362,12 +364,160 @@ namespace
 		return _pSqDistances[0];
 	}
 }
+
+#define USE_WIDE_NOISE
+#ifdef USE_WIDE_NOISE
+
+// ========================================================================
+// Since we're using a very thin slab of volume, vertical precision is not necessary
+// The scale of the world=>noise transform is World * 0.05, meaning the noise will tile every 20 world units.
+// The cloud slab is 2 world units thick, meaning 10% of its vertical size is used.
+// That also means that we can reuse 90% of its volume and convert it into a surface.
+//
+// The total volume is 128x128x128. The actually used volume is 128*128*13 (13 is 10% of 128).
+// Keeping the height at 16 (rounding 13 up to next POT), the available surface is 131072.
+//
+// This yields a final teture size of 360x360x16
+//
 Texture3D*	EffectVolumetric::BuildFractalTexture( bool _bBuildFirst )
 {
 	Noise*	pNoises[FRACTAL_OCTAVES];
 	float	NoiseFrequency = 0.0001f;
 	float	FrequencyFactor = 2.0f;
-	float	AmplitudeFactor = _bBuildFirst ? 0.5f : 0.707f;
+	float	AmplitudeFactor = _bBuildFirst ? 0.707f : 0.707f;
+
+	for ( int OctaveIndex=0; OctaveIndex < FRACTAL_OCTAVES; OctaveIndex++ )
+	{
+		pNoises[OctaveIndex] = new Noise( _bBuildFirst ? 1+OctaveIndex : 37951+OctaveIndex );
+		pNoises[OctaveIndex]->SetWrappingParameters( NoiseFrequency, 198746+OctaveIndex );
+		NoiseFrequency *= FrequencyFactor;
+	}
+
+static const int TEXTURE_SIZE_XY = 360;
+static const int TEXTURE_SIZE_Z = 16;
+static const int TEXTURE_MIPS = 5;		// Max mips is the lowest dimension's mip
+
+	int		SizeXY = TEXTURE_SIZE_XY;
+	int		SizeZ = TEXTURE_SIZE_Z;
+
+	float	Normalizer = 0.0f;
+	float	Amplitude = 1.0f;
+	for ( int OctaveIndex=1; OctaveIndex < FRACTAL_OCTAVES; OctaveIndex++ )
+	{
+		Normalizer += Amplitude;
+		Amplitude *= AmplitudeFactor;
+	}
+	Normalizer = 1.0f / Normalizer;
+
+	float**	ppMips = new float*[TEXTURE_MIPS];
+
+	// Build first mip
+	ppMips[0] = new float[SizeXY*SizeXY*SizeZ];
+
+#if 0
+	NjFloat3	UVW;
+	for ( int Z=0; Z < SizeZ; Z++ )
+	{
+		UVW.z = float( Z ) / SizeXY;	// Here we keep a cubic aspect ratio for voxels so we also divide by the same size as other dimensions: we don't want the noise to quickly loop vertically!
+		float*	pSlice = ppMips[0] + SizeXY*SizeXY*Z;
+		for ( int Y=0; Y < SizeXY; Y++ )
+		{
+			UVW.y = float( Y ) / SizeXY;
+			float*	pScanline = pSlice + SizeXY * Y;
+			for ( int X=0; X < SizeXY; X++ )
+			{
+				UVW.x = float( X ) / SizeXY;
+
+				float	V = 0.0f;
+				float	Amplitude = 1.0f;
+				for ( int OctaveIndex=0; OctaveIndex < FRACTAL_OCTAVES; OctaveIndex++ )
+				{
+					V += Amplitude * pNoises[OctaveIndex]->WrapPerlin( UVW );
+					Amplitude *= AmplitudeFactor;
+				}
+				V *= Normalizer;
+				*pScanline++ = V;
+			}
+		}
+	}
+	FILE*	pFile = NULL;
+	fopen_s( &pFile, _bBuildFirst ? "FractalNoise0.float" : "FractalNoise1.float", "wb" );
+	ASSERT( pFile != NULL, "Couldn't write fractal file!" );
+	fwrite( ppMips[0], sizeof(float), SizeXY*SizeXY*SizeZ, pFile );
+	fclose( pFile );
+#else
+	FILE*	pFile = NULL;
+	fopen_s( &pFile, _bBuildFirst ? "FractalNoise0.float" : "FractalNoise1.float", "rb" );
+	ASSERT( pFile != NULL, "Couldn't load fractal file!" );
+	fread_s( ppMips[0], SizeXY*SizeXY*SizeZ*sizeof(float), sizeof(float), SizeXY*SizeXY*SizeZ, pFile );
+	fclose( pFile );
+#endif
+
+
+	// Build other mips
+	for ( int MipIndex=1; MipIndex < TEXTURE_MIPS; MipIndex++ )
+	{
+		int		SourceSizeXY = SizeXY;
+		int		SourceSizeZ = SizeZ;
+		SizeXY = MAX( 1, SizeXY >> 1 );
+		SizeZ = MAX( 1, SizeZ >> 1 );
+
+		float*	pSource = ppMips[MipIndex-1];
+		float*	pTarget = new float[SizeXY*SizeXY*SizeZ];
+		ppMips[MipIndex] = pTarget;
+
+		for ( int Z=0; Z < SizeZ; Z++ )
+		{
+			float*	pSlice0 = pSource + SourceSizeXY*SourceSizeXY*(2*Z);
+			float*	pSlice1 = pSource + SourceSizeXY*SourceSizeXY*(2*Z+1);
+			float*	pSliceT = pTarget + SizeXY*SizeXY*Z;
+			for ( int Y=0; Y < SizeXY; Y++ )
+			{
+				float*	pScanline00 = pSlice0 + SourceSizeXY * (2*Y);
+				float*	pScanline01 = pSlice0 + SourceSizeXY * (2*Y+1);
+				float*	pScanline10 = pSlice1 + SourceSizeXY * (2*Y);
+				float*	pScanline11 = pSlice1 + SourceSizeXY * (2*Y+1);
+				float*	pScanlineT = pSliceT + SizeXY*Y;
+				for ( int X=0; X < SizeXY; X++ )
+				{
+					float	V  = pScanline00[0] + pScanline00[1];	// From slice 0, current line
+							V += pScanline01[0] + pScanline01[1];	// From slice 0, next line
+							V += pScanline10[0] + pScanline10[1];	// From slice 1, current line
+							V += pScanline11[0] + pScanline11[1];	// From slice 1, next line
+					V *= 0.125f;
+
+					*pScanlineT++ = V;
+
+					pScanline00 += 2;
+					pScanline01 += 2;
+					pScanline10 += 2;
+					pScanline11 += 2;
+				}
+			}
+		}
+	}
+
+	// Build actual texture
+	Texture3D*	pResult = new Texture3D( m_Device, TEXTURE_SIZE_XY, TEXTURE_SIZE_XY, TEXTURE_SIZE_Z, PixelFormatR32F::DESCRIPTOR, TEXTURE_MIPS, (void**) ppMips );
+
+	for ( int MipIndex=0; MipIndex < TEXTURE_MIPS; MipIndex++ )
+		delete[] ppMips[MipIndex];
+	delete[] ppMips;
+
+	for ( int OctaveIndex=0; OctaveIndex < FRACTAL_OCTAVES; OctaveIndex++ )
+		delete pNoises[OctaveIndex];
+
+	return pResult;
+}
+
+#else
+
+Texture3D*	EffectVolumetric::BuildFractalTexture( bool _bBuildFirst )
+{
+	Noise*	pNoises[FRACTAL_OCTAVES];
+	float	NoiseFrequency = 0.0001f;
+	float	FrequencyFactor = 2.0f;
+	float	AmplitudeFactor = _bBuildFirst ? 0.707f : 0.707f;
 
 	for ( int OctaveIndex=0; OctaveIndex < FRACTAL_OCTAVES; OctaveIndex++ )
 	{
@@ -397,14 +547,7 @@ Texture3D*	EffectVolumetric::BuildFractalTexture( bool _bBuildFirst )
 	ppMips[0] = new float[Size*Size*Size];
 
 //#define USE_CELLULAR_NOISE
-//#define USE_WIDE_NOISE
-
-#ifdef USE_WIDE_NOISE
-// ========================================================================
-// Since we're using a very thin slab of
-
-
-#elif defined(USE_CELLULAR_NOISE)
+#if defined(USE_CELLULAR_NOISE)
 // ========================================================================
 #if 0
 	NjFloat3	UVW;
@@ -546,3 +689,5 @@ Texture3D*	EffectVolumetric::BuildFractalTexture( bool _bBuildFirst )
 
 	return pResult;
 }
+
+#endif

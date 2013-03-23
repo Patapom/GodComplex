@@ -120,7 +120,7 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 //	float	Noise = _TexFractal0.SampleLevel( LinearWrap, 0.1 * UVW0, 4.0 ).x;
 	float	Noise = _TexNoise3D.SampleLevel( LinearWrap, UVW0, 0.0 ).x;
 
-	float3	UVW1 = 0.0 + 0.05 * _Position;	// Low frequency for the high frequnecy noise
+	float3	UVW1 = 0.0 + float3( 0.02, 0.02, 0.5 ) * _Position.xzy;	// Low frequency for the high frequency noise
 			UVW1.z -= 0.05 * _Time.x;	// Good
 	Noise += 0.707 * _TexFractal1.SampleLevel( LinearWrap, UVW1, 0.0 ).x;
 //	Noise *= 4.0;

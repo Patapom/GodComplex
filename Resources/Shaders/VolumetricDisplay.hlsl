@@ -4,7 +4,7 @@
 #include "Inc/Global.hlsl"
 #include "Inc/Volumetric.hlsl"
 
-static const float	STEPS_COUNT = 32.0;
+static const float	STEPS_COUNT = 8.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
 
 //[
@@ -70,7 +70,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 //return Depth;
 
 //### Super important line to get a nice precision everywhere: we lack details at a distance (i.e. we don't trace the clouds fully) but who cares since we keep a nice precision?
-ZMinMax.y = ZMinMax.x + min( 8.0, Depth );	// Don't trace more than 16 units in length
+//ZMinMax.y = ZMinMax.x + min( 8.0, Depth );	// Don't trace more than 16 units in length
 //ZMinMax.y = ZMinMax.x + min( 16.0, Depth );	// Don't trace more than 16 units in length
 
 	// Retrieve start & end positions in world space
