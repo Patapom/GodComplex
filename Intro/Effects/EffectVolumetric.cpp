@@ -86,9 +86,11 @@ EffectVolumetric::~EffectVolumetric()
 void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
 {
 // DEBUG
+//m_LightDirection.Set( 0, 1, 0 );
+//m_LightDirection.Set( 1, 2.0, -5 );
 //m_LightDirection.Set( cosf(_Time), 2.0f * sinf( 0.324f * _Time ), sinf( _Time ) );
+m_LightDirection.Set( cosf(_Time), 2.0f * sinf( 4.0f * 0.324f * _Time ), sinf( _Time ) );	// Fast vertical change
 //m_LightDirection.Set( cosf(_Time), 1.0f, sinf( _Time ) );
-m_LightDirection.Set( 0, 1, 0 );
 // DEBUG
 
 	D3DPERF_BeginEvent( D3DCOLOR( 0xFF00FF00 ), L"Compute Shadow" );
@@ -407,7 +409,8 @@ Texture3D*	EffectVolumetric::BuildFractalTexture( bool _bBuildFirst )
 		NoiseFrequency *= FrequencyFactor;
 	}
 
-static const int TEXTURE_SIZE_XY = 360;
+//static const int TEXTURE_SIZE_XY = 360;	// 280 FPS full res
+static const int TEXTURE_SIZE_XY = 180;		// 400 FPS full res
 static const int TEXTURE_SIZE_Z = 16;
 static const int TEXTURE_MIPS = 5;		// Max mips is the lowest dimension's mip
 
@@ -429,6 +432,7 @@ static const int TEXTURE_MIPS = 5;		// Max mips is the lowest dimension's mip
 	ppMips[0] = new float[SizeXY*SizeXY*SizeZ];
 
 #if 0
+	// Build & Save
 	NjFloat3	UVW;
 	for ( int Z=0; Z < SizeZ; Z++ )
 	{
@@ -460,13 +464,13 @@ static const int TEXTURE_MIPS = 5;		// Max mips is the lowest dimension's mip
 	fwrite( ppMips[0], sizeof(float), SizeXY*SizeXY*SizeZ, pFile );
 	fclose( pFile );
 #else
+	// Only load
 	FILE*	pFile = NULL;
 	fopen_s( &pFile, _bBuildFirst ? "FractalNoise0.float" : "FractalNoise1.float", "rb" );
 	ASSERT( pFile != NULL, "Couldn't load fractal file!" );
 	fread_s( ppMips[0], SizeXY*SizeXY*SizeZ*sizeof(float), sizeof(float), SizeXY*SizeXY*SizeZ, pFile );
 	fclose( pFile );
 #endif
-
 
 	// Build other mips
 	for ( int MipIndex=1; MipIndex < TEXTURE_MIPS; MipIndex++ )
@@ -511,8 +515,60 @@ static const int TEXTURE_MIPS = 5;		// Max mips is the lowest dimension's mip
 		}
 	}
 
-	// Build actual texture
+#define PACK_R8	// Use R8 instead of R32F
+#ifdef PACK_R8
+
+	const float	ScaleMin = -0.15062222f, ScaleMax = 0.16956991f;
+
+	// Convert mips to U8
+	U8**	ppMipsU8 = new U8*[TEXTURE_MIPS];
+
+	SizeXY = TEXTURE_SIZE_XY;
+	SizeZ = TEXTURE_SIZE_Z;
+	for ( int MipIndex=0; MipIndex < TEXTURE_MIPS; MipIndex++ )
+	{
+		float*	pSource = ppMips[MipIndex];
+		U8*		pTarget = new U8[SizeXY*SizeXY*SizeZ];
+		ppMipsU8[MipIndex] = pTarget;
+
+		float	Min = +1.0, Max = -1.0f;
+		for ( int Z=0; Z < SizeZ; Z++ )
+		{
+			float*	pSlice = pSource + SizeXY*SizeXY*Z;
+			U8*		pSliceT = pTarget + SizeXY*SizeXY*Z;
+			for ( int Y=0; Y < SizeXY; Y++ )
+			{
+				float*	pScanline = pSlice + SizeXY * Y;
+				U8*		pScanlineT = pSliceT + SizeXY*Y;
+				for ( int X=0; X < SizeXY; X++ )
+				{
+					float	V = *pScanline++;
+							V = (V-ScaleMin)/(ScaleMax-ScaleMin);
+
+					Min = MIN( Min, V );
+					Max = MAX( Max, V );
+//					*pScanlineT = U8( 255 * (0.5f * (1.0f + V)) );
+
+					*pScanlineT++ = U8( MIN( 255, int(256 * V) ) );
+				}
+			}
+		}
+
+		SizeXY = MAX( 1, SizeXY >> 1 );
+		SizeZ = MAX( 1, SizeZ >> 1 );
+	}
+
+	// Build actual R8 texture
+	Texture3D*	pResult = new Texture3D( m_Device, TEXTURE_SIZE_XY, TEXTURE_SIZE_XY, TEXTURE_SIZE_Z, PixelFormatR8::DESCRIPTOR, TEXTURE_MIPS, (void**) ppMipsU8 );
+
+	for ( int MipIndex=0; MipIndex < TEXTURE_MIPS; MipIndex++ )
+		delete[] ppMipsU8[MipIndex];
+	delete[] ppMipsU8;
+
+#else
+	// Build actual R32F texture
 	Texture3D*	pResult = new Texture3D( m_Device, TEXTURE_SIZE_XY, TEXTURE_SIZE_XY, TEXTURE_SIZE_Z, PixelFormatR32F::DESCRIPTOR, TEXTURE_MIPS, (void**) ppMips );
+#endif
 
 	for ( int MipIndex=0; MipIndex < TEXTURE_MIPS; MipIndex++ )
 		delete[] ppMips[MipIndex];

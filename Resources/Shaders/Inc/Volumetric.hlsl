@@ -10,6 +10,7 @@
 
 #define	ANIMATE
 #define	BOX_HEIGHT	2.0
+#define	PACK_R8	// Noise is packed in a R8 texture instead of R32F
 
 static const float	EXTINCTION_COEFF = 4.0;
 static const float	SCATTERING_COEFF = 4.0;
@@ -129,17 +130,24 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 #ifdef	ANIMATE	
 	UVW0 += 0.25 * float3( 0, 0, -0.05 * _Time.x );
 #endif
-
 //	float	Noise = _TexFractal0.SampleLevel( LinearWrap, 0.1 * UVW0, 4.0 ).x;
-	float	Noise = _TexNoise3D.SampleLevel( LinearWrap, UVW0, 0.0 ).x;	// Use small 32^3 noise
+	float	Noise = _TexNoise3D.SampleLevel( LinearWrap, UVW0, 0*_MipBias ).x;	// Use small 32^3 noise (no need mip bias on that low freq noise anyway or we may lose the defining shape)
 
-	float3	UVW1 = 0.0 + float3( 0.02, 0.02, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
+	float3	UVW1 = 0.0 + float3( 0.04, 0.04, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
 #ifdef	ANIMATE	
-	UVW1.y += 0.01 * _Time.x;	// Good
+	UVW1.y -= 0.01 * _Time.x;	// Good
 #endif
+
+#ifdef	PACK_R8
+	const float	Min = -0.15062222, Max = 0.16956991;
+	float	Temp = _TexFractal1.SampleLevel( LinearWrap, UVW1, 0.0 ).x;	// Packed in [0,1]
+			Temp = Min + (Max - Min) * Temp;	// Unpack in [Min,Max]
+	Noise += 0.707 * Temp;
+#else
 	Noise += 0.707 * _TexFractal1.SampleLevel( LinearWrap, UVW1, _MipBias + _VolumeParams.x ).x;
+#endif
+
 //	Noise *= 4.0;
-//	Noise *= Noise;
 
 //	float	y = _Position.y - 1.0;			// Slab is in [0,2] so that gives us a value in [-1 (bottom), 1 (top)]
 	float	y = (_Position.y - 0.5 * BOX_HEIGHT) * 2.0 / BOX_HEIGHT;	// Slab is in [0,4] so that gives us a value in [-1 (bottom), 1 (top)]
@@ -149,11 +157,13 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 	float	BottomY = 1-saturate(-y);
 			BottomY *= BottomY;
 
-	float3	HeightOffsets = float3( -0.005, 0.0, 0.1 );	// Bottom, Middle, Top offsets
-//	float3	HeightOffsets = float3( 0.105, 0.05, 0.05 );	// Bottom, Middle, Top offsets
+//	float3	HeightOffsets = float3( -0.005, 0.0, 0.1 );	// Bottom, Middle, Top offsets
+	float3	HeightOffsets = float3( 0.025, 0.05, 0.10 );	// Bottom, Middle, Top offsets
+//	float3	HeightOffsets = float3( -0.05, 0.05, 0.15 );	// Bottom, Middle, Top offsets
 	float	Offset = lerp( HeightOffsets.z, HeightOffsets.y, TopY ) + lerp( HeightOffsets.x, HeightOffsets.y, BottomY );
 
 	float	Density = saturate( Noise + Offset );
+//	Density *= Density;
 	return (1.0 - saturate(y)) * Density;	// Apply bevel
 
 #endif

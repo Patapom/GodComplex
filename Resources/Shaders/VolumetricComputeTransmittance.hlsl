@@ -44,12 +44,21 @@ PS_OUT	PS( VS_IN _In )
 	if ( Depth <= 1e-3 )
 		return Out;	// Empty interval, no trace needed...
 
+	// Ensure we trace a minimum distance
 	const float	MinDepth = 0.1;
 	if ( Depth < MinDepth )
 	{
 		Depth = MinDepth;
 		float	CenterZ = 0.5 * (ZMinMax.x + ZMinMax.y);
 		ZMinMax = CenterZ + float2( -0.5, +0.5 ) * Depth;
+	}
+
+	// Ensure we trace a maximum distance
+	const float	MaxDepth = 64.0;
+	if ( Depth > MaxDepth )
+	{
+		Depth = MaxDepth;
+		ZMinMax.y = ZMinMax.x + Depth;
 	}
 
 	float	InvDepth = 1.0 / Depth;

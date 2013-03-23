@@ -6,7 +6,7 @@ class EffectVolumetric
 {
 private:	// CONSTANTS
 
-	static const int	SHADOW_MAP_SIZE = 512;
+	static const int	SHADOW_MAP_SIZE = 256;
 	static const int	FRACTAL_TEXTURE_POT = 7;
 	static const int	FRACTAL_OCTAVES = 8;
 	static const float	SCREEN_TARGET_RATIO;
