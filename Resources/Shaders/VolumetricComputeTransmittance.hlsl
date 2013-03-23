@@ -82,7 +82,7 @@ PS_OUT	PS( VS_IN _In )
 	float	Transmittance = 1.0;
 	for ( float StepIndex=0; StepIndex < STEPS_COUNT; StepIndex++ )
 	{
-		float	Density = GetVolumeDensity( Position.xyz );
+		float	Density = GetVolumeDensity( Position.xyz, 0.0 );
 
 
 // Hardcode empty density outside the box

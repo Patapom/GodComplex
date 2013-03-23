@@ -112,7 +112,7 @@ m_LightDirection.Set( 0, 1, 0 );
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Compute transforms
 m_Position.Set( 0, 1.0f, -20 );
-m_Scale.Set( 128.0f, 1.0f, 128.0f );	// 64
+m_Scale.Set( 128.0f, 1.0f, 128.0f );
 	m_Box2World.PRS( m_Position, m_Rotation, m_Scale );
 
 	ComputeShadowTransform();

@@ -165,9 +165,27 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 		return float4( 0, 0, 0, 1 );	// Empty interval, no trace needed...
 //return Depth;
 
+#if 1
 //### Super important line to get a nice precision everywhere: we lack details at a distance (i.e. we don't trace the clouds fully) but who cares since we keep a nice precision?
-ZMinMax.y = ZMinMax.x + min( 8.0, Depth );	// Don't trace more than 8 units in length
-//ZMinMax.y = ZMinMax.x + min( 16.0, Depth );	// Don't trace more than 16 units in length (less precision, prefer line above)
+//ZMinMax.y = ZMinMax.x + min( 8.0, Depth );	// Don't trace more than 8 units in length
+ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than 16 units in length (less precision, prefer line above)
+
+	float	MipBias = 0.0;
+
+#elif 0
+	// Instead of clamping max depth, I'm instead add mip bias based on the max depth we should have clamped and actual depth
+	float	MaxDepth = 8.0;	// We should have clamped at 4 units max
+	float	DepthClampingRatio = max( 1.0, Depth / MaxDepth );
+
+	float	MipBias = 0.0 + 0.5 * log2( DepthClampingRatio );
+
+	// For example, if we need to trace twice the max depth, then the mip bias will be 1
+
+#else
+	float	MipBias = 0.01 * ZMinMax.x;
+
+#endif
+
 
 	// Retrieve start & end positions in world space
 	float3	View = float3( _CameraData.x * (2.0 * UV.x - 1.0), _CameraData.y * (1.0 - 2.0 * UV.y), 1.0 );
@@ -178,8 +196,8 @@ ZMinMax.y = ZMinMax.x + min( 8.0, Depth );	// Don't trace more than 8 units in l
 
 //#define FIX_STEP_SIZE	0.01
 #ifndef FIX_STEP_SIZE
-//	float	StepsCount = ceil( Depth * 8.0 );	// This introduces ugly artefacts
-	float	StepsCount = STEPS_COUNT;
+	float	StepsCount = ceil( Depth * 8.0 );	// This introduces ugly artefacts
+//	float	StepsCount = STEPS_COUNT;
 			StepsCount = min( STEPS_COUNT, StepsCount );
 
 	float4	Step = float4( WorldPosEnd - WorldPosStart, ZMinMax.y - ZMinMax.x ) / StepsCount;
@@ -213,7 +231,10 @@ ZMinMax.y = ZMinMax.x + min( 8.0, Depth );	// Don't trace more than 8 units in l
 	float	Transmittance = 1.0;
 	for ( float StepIndex=0.0; StepIndex < StepsCount; StepIndex++ )
 	{
-		float	Density = GetVolumeDensity( Position.xyz );
+
+//MipBias = 0.01 * Position.w;
+
+		float	Density = GetVolumeDensity( Position.xyz, MipBias );
 
 //Density = 0.1;
 
@@ -231,7 +252,7 @@ ZMinMax.y = ZMinMax.x + min( 8.0, Depth );	// Don't trace more than 8 units in l
 		float3	PreviousLight = Light;
 		Light = Shadowing;
 
-if ( false )//_VolumeParams.y < 0.5 )
+if ( true )//_VolumeParams.y < 0.5 )
 {	// ======================== Old Strategy without sub-step integration ========================
 
 		// Compute extinction
@@ -274,6 +295,7 @@ else
 //Scattering = Depth;
 
 //return float4( Transmittance.xxx, 0 );
+//return float4( 1.0 * MipBias.xxx, Transmittance );
 	return float4( Scattering, Transmittance );
 	return Transmittance;
 }

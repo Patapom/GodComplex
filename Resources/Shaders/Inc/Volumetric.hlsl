@@ -9,9 +9,10 @@
 							// After testing, it takes more time to user Taylor series!! ^^
 
 #define	ANIMATE
+#define	BOX_HEIGHT	2.0
 
-static const float	EXTINCTION_COEFF = 20.0;
-static const float	SCATTERING_COEFF = 20.0;
+static const float	EXTINCTION_COEFF = 4.0;
+static const float	SCATTERING_COEFF = 4.0;
 
 
 cbuffer	cbShadow	: register( b11 )
@@ -65,7 +66,7 @@ float4	fbm( float3 _UVW, float _AmplitudeFactor, float _FrequencyFactor )
 	return V;
 }
 
-float	GetVolumeDensity( float3 _Position )
+float	GetVolumeDensity( float3 _Position, float _MipBias )
 {
 //_Position.x += _Time.x;
 
@@ -132,15 +133,17 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 //	float	Noise = _TexFractal0.SampleLevel( LinearWrap, 0.1 * UVW0, 4.0 ).x;
 	float	Noise = _TexNoise3D.SampleLevel( LinearWrap, UVW0, 0.0 ).x;	// Use small 32^3 noise
 
-	float3	UVW1 = 0.0 + float3( 0.02, 0.02, 0.5 ) * _Position.xzy;	// Low frequency for the high frequency noise
+	float3	UVW1 = 0.0 + float3( 0.02, 0.02, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
 #ifdef	ANIMATE	
 	UVW1.y += 0.01 * _Time.x;	// Good
 #endif
-	Noise += 0.707 * _TexFractal1.SampleLevel( LinearWrap, UVW1, _VolumeParams.x ).x;
+	Noise += 0.707 * _TexFractal1.SampleLevel( LinearWrap, UVW1, _MipBias + _VolumeParams.x ).x;
 //	Noise *= 4.0;
 //	Noise *= Noise;
 
-	float	y = _Position.y - 1.0;	// Slab is in [0,2] so that gives us a value in [-1 (bottom), 1 (top)]
+//	float	y = _Position.y - 1.0;			// Slab is in [0,2] so that gives us a value in [-1 (bottom), 1 (top)]
+	float	y = (_Position.y - 0.5 * BOX_HEIGHT) * 2.0 / BOX_HEIGHT;	// Slab is in [0,4] so that gives us a value in [-1 (bottom), 1 (top)]
+
 	float	TopY = 1-saturate(y);
 			TopY *= TopY;
 	float	BottomY = 1-saturate(-y);
@@ -169,11 +172,6 @@ float	Erf( float z )
 	float	z2 = z*z;
 	return 1.1283791670955125738961589031215 * z * (1.0 + z2 * ((-1.0/3.0) + z2 * ((1.0/10.0) + z2 * ((-1.0/42.0) + z2 * (1.0/216.0)))));
 }
-
-// float	IntegrateExtinction( float _Sigma_t0, float _Sigma_t1, float _StepSize )
-// {
-// 	return exp( -0.5 * (_Sigma_t0 + _Sigma_t1) * _StepSize );
-// }
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
