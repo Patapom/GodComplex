@@ -90,6 +90,15 @@ static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 		gs_WindowInfos.Events.Keyboard.Press[conv] = 1;
 	}
+	if ( uMsg == WM_KEYDOWN || uMsg == WM_KEYUP )
+	{
+// 		switch ( wParam )
+// 		{
+// 		case VK_NUMPAD0:
+// 			break;
+// 		}
+		gs_WindowInfos.pKeys[wParam&0xFF] = uMsg == WM_KEYDOWN;
+	}
 #endif
 
 	return DefWindowProc( hWnd, uMsg, wParam, lParam );

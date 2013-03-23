@@ -35,6 +35,11 @@ public:		// NESTED TYPES
 		NjFloat2	ZMax;
 	};
 
+	struct CBVolume 
+	{
+		NjFloat4	Params;
+	};
+
 private:	// FIELDS
 
 	int					m_ErrorCode;
@@ -71,6 +76,7 @@ private:	// FIELDS
 	CB<CBObject>*		m_pCB_Object;
 	CB<CBSplat>*		m_pCB_Splat;
 	CB<CBShadow>*		m_pCB_Shadow;
+	CB<CBVolume>*		m_pCB_Volume;
 
 	NjFloat4x4			m_World2Light;
 	NjFloat4x4			m_Light2ShadowNormalized;	// Yields a normalized Z instead of world units like World2Shadow

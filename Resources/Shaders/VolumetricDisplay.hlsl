@@ -4,7 +4,7 @@
 #include "Inc/Global.hlsl"
 #include "Inc/Volumetric.hlsl"
 
-static const float	STEPS_COUNT = 8.0;
+static const float	STEPS_COUNT = 16.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
 
 //[
@@ -48,10 +48,96 @@ float	TempGetTransmittance( float3 _WorldPosition )
 
 	Cos0.x = 0.5;	// Patch for inverse DCT
 
-	return saturate( dot( Cos0, C0 ) + dot( Cos1, C1 ) );
+	return saturate( dot( Cos0, C0 ) + dot( Cos1, C1.xy ) );
 }
 
+float	Eval( float a, float b, float c, float d, float x )
+{
+	return 1.0 / (4.0 * pow( d, 1.5 )) * exp( -x * (c + d * x) ) *
+		( -1.7724538509055160272981674833411 * exp( pow( c + 2.0 * d * x, 2.0 ) / (4.0 * d) ) * (b * c - 2 * a * d) * Erf( (c + 2 * d * x) / (2 * sqrt(d)) ) - 2 * b * sqrt( d ) );
+}
 
+// Doesn't work when current density is lower than previous one: b and b become negative and the sqrts get fucked up!
+// I guess this should use erfi() and complex numbers but that's a bit too harsh for me!
+float	__IntegrateScattering( float _PrevSigmaS, float _SigmaS, float _PrevSigmaT, float _SigmaT, float _Step )
+{
+	float	InvStep = 1.0 / _Step;
+	float	a = _PrevSigmaS;
+	float	b = (_SigmaS - _PrevSigmaS) * InvStep;
+	float	c = _PrevSigmaT;
+	float	d = (_SigmaT - _PrevSigmaT) * InvStep;
+
+	return Eval( a, b, c, d, _Step ) - Eval( a, b, c, d, 0.0 );
+}
+
+#if 1
+// ============= FORWARD TRACE ============= 
+float3	IntegrateScattering( float3 _Light0, float3 _Light1, float _Sigma_s0, float _Sigma_s1, float _Sigma_t0, float _Sigma_t1, float _Step, out float _Extinction )
+{
+	const float	SUB_STEPS_COUNT = 4.0;
+	const float	INV_SUB_STEPS_COUNT = 1.0 / SUB_STEPS_COUNT;
+
+	float	Sigma_s = _Sigma_s0;
+	float	DSigma_s = (_Sigma_s1 - _Sigma_s0) * INV_SUB_STEPS_COUNT;
+	float	Sigma_t = _Sigma_t0;
+	float	DSigma_t = (_Sigma_t1 - _Sigma_t0) * INV_SUB_STEPS_COUNT;
+	float3	L = _Light0;
+	float3	dL = (_Light1 - _Light0) * INV_SUB_STEPS_COUNT;
+	float	d = _Step * INV_SUB_STEPS_COUNT;
+
+	_Extinction = 1.0;
+	float3	I = 0.0;
+	for ( float SubStep=0; SubStep < SUB_STEPS_COUNT; SubStep++ )
+	{
+		_Extinction = IntegrateExtinction( _Sigma_t0, Sigma_t, SubStep * d );
+//		_Extinction *= exp( -Sigma_t * d );
+		I += L * Sigma_s * d * _Extinction;
+
+		Sigma_s += DSigma_s;
+		Sigma_t += DSigma_t;
+//		L += dL;
+	}
+
+	_Extinction = IntegrateExtinction( _Sigma_t0, _Sigma_t1, _Step );
+
+	return I;
+}
+#else
+// ============= BACKWARD TRACE ============= 
+float3	IntegrateScattering( float3 _Light0, float3 _Light1, float _Sigma_s0, float _Sigma_s1, float _Sigma_t0, float _Sigma_t1, float _Step, out float _Extinction )
+{
+	const float	SUB_STEPS_COUNT = 8.0;
+	const float	INV_SUB_STEPS_COUNT = 1.0 / SUB_STEPS_COUNT;
+
+	float	Sigma_s = _Sigma_s1;
+	float	DSigma_s = (_Sigma_s0 - _Sigma_s1) * INV_SUB_STEPS_COUNT;
+	float	Sigma_t = _Sigma_t1;
+	float	DSigma_t = (_Sigma_t0 - _Sigma_t1) * INV_SUB_STEPS_COUNT;
+	float3	L = _Light1;
+	float3	dL = (_Light0 - _Light1) * INV_SUB_STEPS_COUNT;
+	float	d = _Step * INV_SUB_STEPS_COUNT;
+
+
+//return _Light1 * _Sigma_s1 * _Step;
+
+	_Extinction = 1.0;
+	float3	I = 0.0;
+	for ( float SubStep=0; SubStep < SUB_STEPS_COUNT; SubStep++ )
+	{
+//_Extinction = IntegrateExtinction( _Sigma_t0, _Sigma_t0 + (_Sigma_t1 - _Sigma_t0) * SubStep * INV_SUB_STEPS_COUNT, SubStep * d );
+		I *= exp( -Sigma_t * d );
+		I += L * Sigma_s * d;
+
+		Sigma_s += DSigma_s;
+		Sigma_t += DSigma_t;
+		L += dL;
+	}
+
+_Extinction = IntegrateExtinction( _Sigma_t0, _Sigma_t1, _Step );
+
+	return I;
+}
+#endif
 
 VS_IN	VS( VS_IN _In )	{ return _In; }
 
@@ -70,8 +156,8 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 //return Depth;
 
 //### Super important line to get a nice precision everywhere: we lack details at a distance (i.e. we don't trace the clouds fully) but who cares since we keep a nice precision?
-//ZMinMax.y = ZMinMax.x + min( 8.0, Depth );	// Don't trace more than 16 units in length
-//ZMinMax.y = ZMinMax.x + min( 16.0, Depth );	// Don't trace more than 16 units in length
+ZMinMax.y = ZMinMax.x + min( 8.0, Depth );	// Don't trace more than 8 units in length
+//ZMinMax.y = ZMinMax.x + min( 16.0, Depth );	// Don't trace more than 16 units in length (less precision, prefer line above)
 
 	// Retrieve start & end positions in world space
 	float3	View = float3( _CameraData.x * (2.0 * UV.x - 1.0), _CameraData.y * (1.0 - 2.0 * UV.y), 1.0 );
@@ -80,9 +166,8 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 // return float4( 1.0 * WorldPosStart, 0 );
 //return float4( 1.0 * WorldPosEnd, 0 );
 
-	float	StepsCount = ceil( Depth * 8.0 );
-//	float	StepsCount = Depth * 4.0;
-//	float	StepsCount = STEPS_COUNT;
+//	float	StepsCount = ceil( Depth * 8.0 );
+	float	StepsCount = STEPS_COUNT;
 			StepsCount = min( STEPS_COUNT, StepsCount );
 	float	InvStepsCount = 1.0 / StepsCount;
 
@@ -98,6 +183,8 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 
 	// Start integration
 	float	Sigma_t = 0.0;
+	float	Sigma_s = 0.0;
+	float3	Light = GetTransmittance( WorldPosStart.xyz );		// Start with light at start position
 	float3	Scattering = 0.0;
 	float	Transmittance = 1.0;
 	for ( float StepIndex=0.0; StepIndex < StepsCount; StepIndex++ )
@@ -107,29 +194,58 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 //Density = 0.1;
 
 		float	PreviousSigma_t = Sigma_t;
+		float	PreviousSigma_s = Sigma_s;
 		Sigma_t = EXTINCTION_COEFF * Density;
-		float	Sigma_s = SCATTERING_COEFF * Density;
+		Sigma_s = SCATTERING_COEFF * Density;
 
+		float	Shadowing = GetTransmittance( Position.xyz );
+//		float	Shadowing = GetTransmittance( (Position + 0.5 * Step).xyz );
+
+// const float	ShadowAttenuation = 0.9;
+// Shadowing = 1.0 - (ShadowAttenuation * (1.0 - Shadowing));
+
+		float3	PreviousLight = Light;
+		Light = Shadowing;
+
+if ( false )//_VolumeParams.y < 0.5 )
+{
 		// Compute extinction
 //		float	StepTransmittance = exp( -Sigma_t * Step.w );
 		float	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );
 		Transmittance *= StepTransmittance;
 
 		// Compute scattering
-		float	Shadowing = GetTransmittance( Position.xyz );
-
-const float	ShadowAttenuation = 0.9;
-Shadowing = 1.0 - (ShadowAttenuation * (1.0 - Shadowing));
-
-		float3	Light = 15.0 * Shadowing;
-		float3	StepScattering = Sigma_s * Phase * Light * Step.w;
+		float3	StepScattering = Sigma_s * Light * Step.w;	// Constant sigma
 		Scattering += Transmittance * StepScattering;
+}
+else
+{
+//		// Compute extinction
+//		float	StepTransmittance = exp( -Sigma_t * Step.w );
+//		float	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );
+//  		float	StepTransmittance;
+//  		IntegrateScattering( PreviousLight, Light, PreviousSigma_s, Sigma_s, PreviousSigma_t, Sigma_t, Step.w, StepTransmittance );
+// 		Transmittance *= StepTransmittance;
+// 
+// 		// Compute scattering
+// 		float3	StepScattering = Sigma_s * Light * Step.w;	// Constant sigma
+// 		Scattering += Transmittance * StepScattering;
+
+		float	StepTransmittance;
+		float3	StepScattering = IntegrateScattering( PreviousLight, Light, PreviousSigma_s, Sigma_s, PreviousSigma_t, Sigma_t, Step.w, StepTransmittance );
+		Scattering += Transmittance * StepScattering;
+		Transmittance *= StepTransmittance;
+}
 
 //Scattering += 0.25 * float3( 1, 0, 0 ) * Shadowing * Step.w;
 
 		// Advance in world and phase
 		Position += Step;
 	}
+
+
+	Scattering *= lerp( 15.0, 15.0, _VolumeParams.y ) * Phase;
+
 
 // Transmittance = 0.0;
 // Scattering = mul( float4( WorldPosEnd, 1.0 ), _World2Shadow ).xyz;

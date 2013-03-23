@@ -5,8 +5,10 @@
 #ifndef _VOLUMETRIC_INC_
 #define _VOLUMETRIC_INC_
 
-//#define	USE_FAST_COS	// Use Taylor series instead of actual cosine
+#define	USE_FAST_COS	// Use Taylor series instead of actual cosine
 							// After testing, it takes more time to user Taylor series!! ^^
+
+#define	ANIMATE
 
 static const float	EXTINCTION_COEFF = 20.0;
 static const float	SCATTERING_COEFF = 20.0;
@@ -19,6 +21,12 @@ cbuffer	cbShadow	: register( b11 )
 	float4x4	_Shadow2World;
 	float2		_ShadowZMax;
 };
+
+
+cbuffer	cbVolume	: register( b12 )
+{
+	float4		_VolumeParams;
+}
 
 Texture2DArray	_TexTransmittanceMap	: register(t11);
 Texture3D		_TexFractal0	: register(t16);
@@ -116,13 +124,19 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 	// Use a low frequency texture perturbed by a scrolling high frequency texture
 	// This time, the high frequency texture is much larger in XZ then in Y (thin slab) so tiling is not visible
 
-	float3	UVW0 = 0.25 * (float3( 0.01, 0.05, 0.01 ) * _Position + float3( 0, 0, -0.05 * _Time.x ));	// Very low frequency for the 32^3 noise
+	float3	UVW0 = 0.25 * float3( 0.01, 0.05, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
+#ifdef	ANIMATE	
+	UVW0 += 0.25 * float3( 0, 0, -0.05 * _Time.x );
+#endif
+
 //	float	Noise = _TexFractal0.SampleLevel( LinearWrap, 0.1 * UVW0, 4.0 ).x;
-	float	Noise = _TexNoise3D.SampleLevel( LinearWrap, UVW0, 0.0 ).x;
+	float	Noise = _TexNoise3D.SampleLevel( LinearWrap, UVW0, 0.0 ).x;	// Use small 32^3 noise
 
 	float3	UVW1 = 0.0 + float3( 0.02, 0.02, 0.5 ) * _Position.xzy;	// Low frequency for the high frequency noise
-			UVW1.z -= 0.05 * _Time.x;	// Good
-	Noise += 0.707 * _TexFractal1.SampleLevel( LinearWrap, UVW1, 0.0 ).x;
+#ifdef	ANIMATE	
+	UVW1.y += 0.01 * _Time.x;	// Good
+#endif
+	Noise += 0.707 * _TexFractal1.SampleLevel( LinearWrap, UVW1, _VolumeParams.x ).x;
 //	Noise *= 4.0;
 //	Noise *= Noise;
 
@@ -148,6 +162,19 @@ float	IntegrateExtinction( float _Sigma_t0, float _Sigma_t1, float _StepSize )
 {
 	return exp( -0.5 * (_Sigma_t0 + _Sigma_t1) * _StepSize );
 }
+
+// From http://mathworld.wolfram.com/Erf.html
+float	Erf( float z )
+{
+	float	z2 = z*z;
+	return 1.1283791670955125738961589031215 * z * (1.0 + z2 * ((-1.0/3.0) + z2 * ((1.0/10.0) + z2 * ((-1.0/42.0) + z2 * (1.0/216.0)))));
+}
+
+// float	IntegrateExtinction( float _Sigma_t0, float _Sigma_t1, float _StepSize )
+// {
+// 	return exp( -0.5 * (_Sigma_t0 + _Sigma_t1) * _StepSize );
+// }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Shadow Mapping

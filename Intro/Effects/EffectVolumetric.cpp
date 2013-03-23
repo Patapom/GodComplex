@@ -47,7 +47,9 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Primitive& _ScreenQuad ) : 
 	m_pCB_Object = new CB<CBObject>( m_Device, 10 );
 	m_pCB_Splat = new CB<CBSplat>( m_Device, 10 );
 	m_pCB_Shadow = new CB<CBShadow>( m_Device, 11 );
+	m_pCB_Volume = new CB<CBVolume>( m_Device, 12 );
 
+	m_pCB_Volume->m.Params.Set( 0, 0, 0, 0 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Setup our volume & light
@@ -61,6 +63,7 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Primitive& _ScreenQuad ) : 
 
 EffectVolumetric::~EffectVolumetric()
 {
+	delete m_pCB_Volume;
 	delete m_pCB_Shadow;
 	delete m_pCB_Splat;
 	delete m_pCB_Object;
@@ -89,6 +92,17 @@ m_LightDirection.Set( 0, 1, 0 );
 // DEBUG
 
 	D3DPERF_BeginEvent( D3DCOLOR( 0xFF00FF00 ), L"Compute Shadow" );
+
+#ifdef _DEBUG
+	if ( gs_WindowInfos.pKeys[VK_NUMPAD1] )
+		m_pCB_Volume->m.Params.x -= 0.5f * _DeltaTime;
+	if ( gs_WindowInfos.pKeys[VK_NUMPAD7] )
+		m_pCB_Volume->m.Params.x += 0.5f * _DeltaTime;
+
+	m_pCB_Volume->m.Params.y = gs_WindowInfos.pKeys[VK_RETURN];
+#endif
+
+	m_pCB_Volume->UpdateData();
 
 	if ( m_pTexFractal0 != NULL )
 		m_pTexFractal0->SetPS( 16 );

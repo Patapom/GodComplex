@@ -83,6 +83,7 @@ struct WININFO
 #ifdef _DEBUG
 	//---------------
 	MSYS_EVENTINFO	Events;
+	U8				pKeys[256];
 #endif
 
 };
