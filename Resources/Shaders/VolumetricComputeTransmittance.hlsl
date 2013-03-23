@@ -78,6 +78,7 @@ PS_OUT	PS( VS_IN _In )
 
 	Out.C0 = Out.C1 = 0.0;
 
+	float	Sigma_t = 0.0;
 	float	Transmittance = 1.0;
 	for ( float StepIndex=0; StepIndex < STEPS_COUNT; StepIndex++ )
 	{
@@ -91,11 +92,13 @@ PS_OUT	PS( VS_IN _In )
 //Density = 0.0;
 //Density *= 4.0;
 
-		float	Sigma_t = SCATTERING_COEFF * Density;
+		float	PreviousSigma_t = Sigma_t;
+		Sigma_t = EXTINCTION_COEFF * Density;
 
 //Sigma_t *= 10.0;//###
 
-		float	StepTransmittance = exp( -Sigma_t * Step.w );
+//		float	StepTransmittance = exp( -Sigma_t * Step.w );
+		float	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );
 		Transmittance *= StepTransmittance;
 
 		// Accumulate cosine weights for the DCT

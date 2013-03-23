@@ -39,7 +39,8 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Primitive& _ScreenQuad ) : 
 	m_pRTRenderZ = new Texture2D( m_Device, m_RenderWidth, m_RenderHeight, 1, PixelFormatRG16F::DESCRIPTOR, 1, NULL );
 	m_pRTRender = new Texture2D( m_Device, m_RenderWidth, m_RenderHeight, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
 
-	m_pTexFractal = BuildFractalTexture();
+	m_pTexFractal0 = BuildFractalTexture( true );
+	m_pTexFractal1 = BuildFractalTexture( false );
 	
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
@@ -64,7 +65,8 @@ EffectVolumetric::~EffectVolumetric()
 	delete m_pCB_Splat;
 	delete m_pCB_Object;
 
-	delete m_pTexFractal;
+	delete m_pTexFractal1;
+	delete m_pTexFractal0;
 	delete m_pRTRender;
 	delete m_pRTRenderZ;
 	delete m_pRTTransmittanceMap;
@@ -82,18 +84,19 @@ void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
 {
 // DEBUG
 //m_LightDirection.Set( cosf(_Time), 2.0f * sinf( 0.324f * _Time ), sinf( _Time ) );
-m_LightDirection.Set( cosf(_Time), 1.0f, sinf( _Time ) );
-//m_LightDirection.Set( 0, 1, 0 );
+//m_LightDirection.Set( cosf(_Time), 1.0f, sinf( _Time ) );
+m_LightDirection.Set( 0, 1, 0 );
 // DEBUG
 
 	D3DPERF_BeginEvent( D3DCOLOR( 0xFF00FF00 ), L"Compute Shadow" );
 
-	m_pTexFractal->SetPS( 16 );
+	m_pTexFractal0->SetPS( 16 );
+	m_pTexFractal1->SetPS( 17 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Compute transforms
-m_Position.Set( 0, 0, 0 );
-m_Scale.Set( 4.0f, 1.0f, 4.0f );
+m_Position.Set( 0, 1.0f, -20 );
+m_Scale.Set( 128.0f, 1.0f, 128.0f );	// 64
 	m_Box2World.PRS( m_Position, m_Rotation, m_Scale );
 
 	ComputeShadowTransform();
@@ -168,7 +171,7 @@ m_Scale.Set( 4.0f, 1.0f, 4.0f );
 	// 3.1] Render front & back depths
 	D3DPERF_BeginEvent( D3DCOLOR( 0xFF800000 ), L"Render Volume Z" );
 
-	m_Device.ClearRenderTarget( *m_pRTRenderZ, NjFloat4( 1e4f, -1e4f, 0.0f, 0.0f ) );
+	m_Device.ClearRenderTarget( *m_pRTRenderZ, NjFloat4( 0.0f, -1e4f, 0.0f, 0.0f ) );
 
 	USING_MATERIAL_START( *m_pMatDepthWrite )
 
@@ -228,9 +231,9 @@ m_Scale.Set( 4.0f, 1.0f, 4.0f );
 
 // DEBUG
 m_pRTRender->SetPS( 10 );
-//m_pRTRenderZ->SetPS( 10 );
-//m_pRTTransmittanceZ->SetPS( 10 );
-m_pRTTransmittanceMap->SetPS( 11 );
+//m_pRTTransmittanceZ->SetPS( 11 );
+m_pRTRenderZ->SetPS( 11 );
+m_pRTTransmittanceMap->SetPS( 12 );
 // DEBUG
 
 		m_ScreenQuad.Render( M );
@@ -352,17 +355,27 @@ NjFloat3	DeltaTest1 = Test2 - Test0;
 //////////////////////////////////////////////////////////////////////////
 // Builds a fractal texture compositing several octaves of tiling Perlin noise
 // Successive mips don't average previous mips but rather attenuate higher octaves
-Texture3D*	EffectVolumetric::BuildFractalTexture()
+namespace
+{
+	float	CombineDistances( float _pSqDistances[], int _pCellX[], int _pCellY[], int _pCellZ[], void* _pData )
+	{
+		return _pSqDistances[0];
+	}
+}
+Texture3D*	EffectVolumetric::BuildFractalTexture( bool _bBuildFirst )
 {
 	Noise*	pNoises[FRACTAL_OCTAVES];
 	float	NoiseFrequency = 0.0001f;
 	float	FrequencyFactor = 2.0f;
-	float	AmplitudeFactor = 0.5f;
+	float	AmplitudeFactor = _bBuildFirst ? 0.5f : 0.707f;
 
 	for ( int OctaveIndex=0; OctaveIndex < FRACTAL_OCTAVES; OctaveIndex++ )
 	{
-		pNoises[OctaveIndex] = new Noise( 1+OctaveIndex );
+		pNoises[OctaveIndex] = new Noise( _bBuildFirst ? 1+OctaveIndex : 37951+OctaveIndex );
 		pNoises[OctaveIndex]->SetWrappingParameters( NoiseFrequency, 198746+OctaveIndex );
+
+		int	CellsCount = 4 << OctaveIndex;
+		pNoises[OctaveIndex]->SetCellularWrappingParameters( CellsCount, CellsCount, CellsCount );
 		NoiseFrequency *= FrequencyFactor;
 	}
 
@@ -382,7 +395,61 @@ Texture3D*	EffectVolumetric::BuildFractalTexture()
 
 	// Build first mip
 	ppMips[0] = new float[Size*Size*Size];
-#if 1
+
+//#define USE_CELLULAR_NOISE
+//#define USE_WIDE_NOISE
+
+#ifdef USE_WIDE_NOISE
+// ========================================================================
+// Since we're using a very thin slab of
+
+
+#elif defined(USE_CELLULAR_NOISE)
+// ========================================================================
+#if 0
+	NjFloat3	UVW;
+	for ( int Z=0; Z < Size; Z++ )
+	{
+		UVW.z = float( Z ) / Size;
+		float*	pSlice = ppMips[0] + Size*Size*Z;
+		for ( int Y=0; Y < Size; Y++ )
+		{
+			UVW.y = float( Y ) / Size;
+			float*	pScanline = pSlice + Size * Y;
+			for ( int X=0; X < Size; X++ )
+			{
+				UVW.x = float( X ) / Size;
+
+				float	V = 0.0f;
+				float	Amplitude = 1.0f;
+				float	Frequency = 1.0f;
+				for ( int OctaveIndex=0; OctaveIndex < FRACTAL_OCTAVES; OctaveIndex++ )
+				{
+					V += Amplitude * pNoises[OctaveIndex]->Worley( Frequency * UVW, CombineDistances, NULL, true );
+					Amplitude *= AmplitudeFactor;
+//					Frequency *= FrequencyFactor;
+				}
+				V *= Normalizer;
+				*pScanline++ = V;
+			}
+		}
+	}
+	FILE*	pFile = NULL;
+	fopen_s( &pFile, "CellularNoise.float", "wb" );
+	ASSERT( pFile != NULL, "Couldn't write cellular file!" );
+	fwrite( ppMips[0], sizeof(float), Size*Size*Size, pFile );
+	fclose( pFile );
+#else
+	FILE*	pFile = NULL;
+	fopen_s( &pFile, "CellularNoise.float", "rb" );
+	ASSERT( pFile != NULL, "Couldn't load cellular file!" );
+	fread_s( ppMips[0], Size*Size*Size*sizeof(float), sizeof(float), Size*Size*Size, pFile );
+	fclose( pFile );
+#endif
+
+#else
+// ========================================================================
+#if 0
 	NjFloat3	UVW;
 	for ( int Z=0; Z < Size; Z++ )
 	{
@@ -411,16 +478,18 @@ Texture3D*	EffectVolumetric::BuildFractalTexture()
 		}
 	}
 	FILE*	pFile = NULL;
-	fopen_s( &pFile, "FractalNoise.float", "wb" );
+	fopen_s( &pFile, _bBuildFirst ? "FractalNoise0.float" : "FractalNoise1.float", "wb" );
 	ASSERT( pFile != NULL, "Couldn't write fractal file!" );
 	fwrite( ppMips[0], sizeof(float), Size*Size*Size, pFile );
 	fclose( pFile );
 #else
 	FILE*	pFile = NULL;
-	fopen_s( &pFile, "FractalNoise.float", "rb" );
+	fopen_s( &pFile, _bBuildFirst ? "FractalNoise0.float" : "FractalNoise1.float", "rb" );
 	ASSERT( pFile != NULL, "Couldn't load fractal file!" );
 	fread_s( ppMips[0], Size*Size*Size*sizeof(float), sizeof(float), Size*Size*Size, pFile );
 	fclose( pFile );
+#endif
+
 #endif
 
 	// Build other mips
