@@ -41,11 +41,10 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 	float3	View = normalize( float3( _CameraData.x * (2.0 * UV.x - 1.0), -_CameraData.y * (2.0 * UV.y - 1.0), 1.0 ) );
 			View = mul( float4( View, 0.0 ), _Camera2World ).xyz;
 	float	Sun = saturate( dot( _LightDirection, View ) );
-	float3	BackgroundColor = float3( 0.6, 0.71, 0.75 ) - View.y * 0.2 * float3( 1.0, 0.5, 1.0 ) + 0.15*0.5;	// Sky gradient
-			BackgroundColor += 0.2*float3(1.0,.6,0.1)*pow( Sun, 8.0 );	// Sun glow
+	float3	BackgroundColor = float3( 0.6, 0.71, 0.75 ) - View.y * 0.2 * float3( 1.0, 0.9, 1.0 ) + 0.15*0.5;	// Sky gradient
+//			BackgroundColor += 0.8 * float3(1.0,0.8,0.6) * pow( Sun, 8.0 );	// Sun glow
 			BackgroundColor *= 0.95;
-// 	col = mix( col, res.xyz, res.w );
-// 	col += 0.1*vec3(1.0,0.4,0.2)*pow( sun, 3.0 );
+//		 	BackgroundColor += 0.2 * float3(1.0,0.95,0.8) * pow( Sun, 3.0 );
 
 	float4	ScatteringExtinction = _TexDebug0.SampleLevel( LinearClamp, UV, 0.0 );
 return float4( BackgroundColor * ScatteringExtinction.w + ScatteringExtinction.xyz, 1.0 );

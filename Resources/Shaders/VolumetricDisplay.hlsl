@@ -4,7 +4,7 @@
 #include "Inc/Global.hlsl"
 #include "Inc/Volumetric.hlsl"
 
-static const float	STEPS_COUNT = 16.0;
+static const float	STEPS_COUNT = 64.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
 
 //[
@@ -69,6 +69,41 @@ float	__IntegrateScattering( float _PrevSigmaS, float _SigmaS, float _PrevSigmaT
 
 	return Eval( a, b, c, d, _Step ) - Eval( a, b, c, d, 0.0 );
 }
+
+// Exponential Integral
+// (http://en.wikipedia.org/wiki/Exponential_integral)
+float	Ei( float z )
+{
+ 	return 0.5772156649015328606065 + log( 1e-4 + abs(z) ) + z * (1.0 + z * (0.25 + z * ( (1.0/18.0) + z * ( (1.0/96.0) + z * (1.0/600.0) ) ) ) );		// For x!=0
+}
+
+// =============================================
+// Compute an approximate isotropic diffusion through infinite slabs
+float3	ComputeIsotropicScattering( float3 _Position, float _Density )
+{
+	const float	_Sigma_scattering_Isotropic = 0.01;
+
+	float	y = saturate( 2.0 * (_Position.y / BOX_HEIGHT - 0.5) );
+			y *= y;
+			y = 1.0 - y;	// Max at center!
+//			y *= y;
+
+	float3	SkyRadiance = 0.05 * float3( 0.6, 0.71, 0.75 );
+	float3	SunRadiance = 0.08 * float3( 1.0, 1.0, 1.0 );
+	float3	GroundRadiance = 0.02 * float3( 1.0, 0.8, 0.2 );
+	float3	IsotropicLightTop = y * (SkyRadiance + SunRadiance);
+	float3	IsotropicLightBottom = y * (SkyRadiance + SunRadiance) + GroundRadiance;
+
+	float	IsotropicSphereRadiusTopKm = BOX_HEIGHT - _Position.y;
+	float	IsotropicSphereRadiusBottomKm = _Position.y;
+
+	float	a = -_Sigma_scattering_Isotropic * IsotropicSphereRadiusTopKm;
+	float3  IsotropicScatteringTop = IsotropicLightTop * max( 0.0, exp( a ) - a * Ei( a ));
+			a = -_Sigma_scattering_Isotropic * IsotropicSphereRadiusBottomKm;
+	float3  IsotropicScatteringBottom = IsotropicLightBottom * max( 0.0, exp( a ) - a * Ei( a ));
+	return  _Density * (IsotropicScatteringTop + IsotropicScatteringBottom);
+}
+
 
 #if 1
 // ============= FORWARD TRACE ============= 
@@ -246,22 +281,26 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 		float	Shadowing = GetTransmittance( Position.xyz );
 //		float	Shadowing = GetTransmittance( (Position + 0.5 * Step).xyz );
 
-// const float	ShadowAttenuation = 0.9;
-// Shadowing = 1.0 - (ShadowAttenuation * (1.0 - Shadowing));
+const float	ShadowAttenuation = 0.95;
+Shadowing = 1.0 - (ShadowAttenuation * (1.0 - Shadowing));
 
 		float3	PreviousLight = Light;
 		Light = Shadowing;
 
-if ( true )//_VolumeParams.y < 0.5 )
+if ( false)//_VolumeParams.y > 0.5 )
 {	// ======================== Old Strategy without sub-step integration ========================
 
 		// Compute extinction
 //		float	StepTransmittance = exp( -Sigma_t * Step.w );
 		float	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );
+// if ( _VolumeParams.y < 0.5 )
+// 	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );
+
 		Transmittance *= StepTransmittance;
 
 		// Compute scattering
 		float3	StepScattering = Sigma_s * Light * Step.w;	// Constant sigma
+				StepScattering += ComputeIsotropicScattering( Position, Density );
 		Scattering += Transmittance * StepScattering;
 }
 else
@@ -269,6 +308,7 @@ else
 	// More accurate but also a little more hungry, but always better than using more samples!
 		float	StepTransmittance;
 		float3	StepScattering = IntegrateScattering( PreviousLight, Light, PreviousSigma_s, Sigma_s, PreviousSigma_t, Sigma_t, Step.w, StepTransmittance );
+				StepScattering += ComputeIsotropicScattering( Position, Density );
 		Scattering += Transmittance * StepScattering;
 		Transmittance *= StepTransmittance;
 }

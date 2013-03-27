@@ -66,6 +66,7 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	D3D_FEATURE_LEVEL	ObtainedFeatureLevel;
 
 
+
  	if ( !Check(
 		D3D11CreateDeviceAndSwapChain( NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
 

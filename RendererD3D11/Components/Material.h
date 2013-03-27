@@ -3,6 +3,7 @@
 #include "Component.h"
 #include "../Structures/VertexFormats.h"
 
+#define WATCH_SHADER_MODIFICATIONS	// Define this to reload shaders from disk if they changed
 #define MATERIAL_REFRESH_CHANGES_INTERVAL	500
 
 #ifndef GODCOMPLEX
