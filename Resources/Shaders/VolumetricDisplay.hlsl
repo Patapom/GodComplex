@@ -231,7 +231,7 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 
 //#define FIX_STEP_SIZE	0.01
 #ifndef FIX_STEP_SIZE
-	float	StepsCount = ceil( Depth * 8.0 );	// This introduces ugly artefacts
+	float	StepsCount = ceil( Depth * 4.0 );	// This introduces ugly artefacts
 //	float	StepsCount = STEPS_COUNT;
 			StepsCount = min( STEPS_COUNT, StepsCount );
 
@@ -300,7 +300,7 @@ if ( false)//_VolumeParams.y > 0.5 )
 
 		// Compute scattering
 		float3	StepScattering = Sigma_s * Light * Step.w;	// Constant sigma
-				StepScattering += ComputeIsotropicScattering( Position, Density );
+				StepScattering += ComputeIsotropicScattering( Position.xyz, Density );
 		Scattering += Transmittance * StepScattering;
 }
 else
@@ -308,7 +308,7 @@ else
 	// More accurate but also a little more hungry, but always better than using more samples!
 		float	StepTransmittance;
 		float3	StepScattering = IntegrateScattering( PreviousLight, Light, PreviousSigma_s, Sigma_s, PreviousSigma_t, Sigma_t, Step.w, StepTransmittance );
-				StepScattering += ComputeIsotropicScattering( Position, Density );
+				StepScattering += ComputeIsotropicScattering( Position.xyz, Density );
 		Scattering += Transmittance * StepScattering;
 		Transmittance *= StepTransmittance;
 }

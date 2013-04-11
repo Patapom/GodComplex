@@ -328,6 +328,14 @@ void	Device::SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepth
 	SetRenderTargets( _Target.GetWidth(), _Target.GetHeight(), 1, &pTargetView, pDepthStencilView, _pViewport );
 }
 
+void	Device::SetRenderTarget( const Texture3D& _Target, const Texture2D* _pDepthStencil, const D3D11_VIEWPORT* _pViewport )
+{
+	ID3D11RenderTargetView*	pTargetView = _Target.GetTargetView( 0, 0, 0 );
+	ID3D11DepthStencilView*	pDepthStencilView = _pDepthStencil != NULL ? _pDepthStencil->GetDepthStencilView() : NULL;
+
+	SetRenderTargets( _Target.GetWidth(), _Target.GetHeight(), 1, &pTargetView, pDepthStencilView, _pViewport );
+}
+
 void	Device::SetRenderTarget( int _Width, int _Height, const ID3D11RenderTargetView& _Target, ID3D11DepthStencilView* _pDepthStencil, const D3D11_VIEWPORT* _pViewport )
 {
 	const ID3D11RenderTargetView*	pTargetView = &_Target;

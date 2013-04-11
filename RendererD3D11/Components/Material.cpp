@@ -327,7 +327,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 
 	D3DCompile( pCodePointer, CodeSize, _pShaderFileName, _pMacros, _pInclude, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors );
 #if defined(_DEBUG) || defined(DEBUG_SHADER)
-	if ( pCode == NULL && pErrors != NULL )
+	if ( pCode == NULL || pErrors != NULL )
 	{
 		MessageBoxA( NULL, (LPCSTR) pErrors->GetBufferPointer(), "Shader Compilation Error !", MB_OK | MB_ICONERROR );
 		ASSERT( pErrors == NULL, "Shader compilation error !" );

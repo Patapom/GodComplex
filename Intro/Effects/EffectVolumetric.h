@@ -71,6 +71,11 @@ private:	// FIELDS
 	Texture2D*			m_pRTRenderZ;
 	Texture2D*			m_pRTRender;
 
+	// Sky rendering
+	Texture2D*			m_pRTTransmittance;
+	Texture2D*			m_pRTIrradiance;
+	Texture3D*			m_pRTInScattering;
+
 	int					m_RenderWidth, m_RenderHeight;
 
 	CB<CBObject>*		m_pCB_Object;
@@ -80,6 +85,9 @@ private:	// FIELDS
 
 	NjFloat4x4			m_World2Light;
 	NjFloat4x4			m_Light2ShadowNormalized;	// Yields a normalized Z instead of world units like World2Shadow
+
+
+	// Atmosphere Pre-Computation
 
 
 public:		// PROPERTIES
@@ -94,6 +102,9 @@ public:		// METHODS
 	void		Render( float _Time, float _DeltaTime, Camera& _Camera );
 
 protected:
+
+	void		PreComputeSkyTables();
+	void		FreeSkyTables();
 
 	void		ComputeShadowTransform();
 	Texture3D*	BuildFractalTexture( bool _bLoadFirst );

@@ -466,6 +466,12 @@
     <None Include="Resources\Shaders\RoomRenderCubeMap.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
     </None>
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmosphere.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\Atmosphere.hlsl">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

@@ -32,6 +32,8 @@ public:	 // PROPERTIES
 	int	 GetDepth() const			{ return m_Depth; }
 	int	 GetMipLevelsCount() const	{ return m_MipLevelsCount; }
 
+	NjFloat4	GetdUVW() const		{ return NjFloat4( 1.0f / m_Width, 1.0f / m_Height, 1.0f / m_Depth, 0.0f ); }
+
 public:	 // METHODS
 
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !

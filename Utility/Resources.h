@@ -10,6 +10,7 @@
 	{ "Inc/RayTracing.hlsl", IDR_SHADER_INCLUDE_RAY_TRACING },	\
 	{ "Inc/LayeredMaterials.hlsl", IDR_SHADER_INCLUDE_LAYERED_MATERIALS },	\
 	{ "Inc/Volumetric.hlsl", IDR_SHADER_INCLUDE_VOLUMETRIC },	\
+	{ "Inc/Atmosphere.hlsl", IDR_SHADER_INCLUDE_ATMOSPHERE },	\
 
 
 // Add any shader files that need to be watched for automatic reloading (works only in DEBUG mode !)
@@ -33,6 +34,7 @@
 	{ IDR_SHADER_SCENE_SHADING,					"./Resources/Shaders/SceneShading.hlsl" },	\
 	{ IDR_SHADER_SCENE_INDIRECT_LIGHTING,		"./Resources/Shaders/SceneIndirectLighting.hlsl" },	\
 /* Volumetric Effect */ \
+	{ IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE,"./Resources/Shaders/VolumetricPreComputeAtmosphere.hlsl" },	\
 	{ IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE,"./Resources/Shaders/VolumetricComputeTransmittance.hlsl" },	\
 	{ IDR_SHADER_VOLUMETRIC_DEPTH_WRITE,		"./Resources/Shaders/VolumetricDepthWrite.hlsl" },	\
 	{ IDR_SHADER_VOLUMETRIC_DISPLAY,			"./Resources/Shaders/VolumetricDisplay.hlsl" },	\
@@ -52,6 +54,7 @@
 	{ IDR_SHADER_INCLUDE_RAY_TRACING,			NULL },	\
 	{ IDR_SHADER_INCLUDE_LAYERED_MATERIALS,		"./Resources/Shaders/Inc/LayeredMaterials.hlsl" },	\
 	{ IDR_SHADER_INCLUDE_VOLUMETRIC,			"./Resources/Shaders/Inc/Volumetric.hlsl" },	\
+	{ IDR_SHADER_INCLUDE_ATMOSPHERE,			"./Resources/Shaders/Inc/Atmosphere.hlsl" },	\
 
 
 #include "..\GodComplex.h"

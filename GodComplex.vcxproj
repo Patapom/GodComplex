@@ -403,6 +403,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\DeferredFillGBuffer.hlsl" />
     <None Include="Resources\Shaders\DeferredShading.hlsl" />
     <None Include="Resources\Shaders\DeferredShadingStencil.hlsl" />
+    <None Include="Resources\Shaders\Inc\Atmosphere.hlsl" />
     <None Include="Resources\Shaders\Inc\Global.hlsl" />
     <None Include="Resources\Shaders\Inc\LayeredMaterials.hlsl" />
     <None Include="Resources\Shaders\Inc\RayTracing.hlsl" />
@@ -430,6 +431,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\VolumetricComputeTransmittance.hlsl" />
     <None Include="Resources\Shaders\VolumetricDepthWrite.hlsl" />
     <None Include="Resources\Shaders\VolumetricDisplay.hlsl" />
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmosphere.hlsl" />
     <None Include="Tools\GodComplex.kkm" />
   </ItemGroup>
   <ItemGroup>
