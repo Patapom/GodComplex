@@ -3,6 +3,7 @@
 //
 #include "Inc/Global.hlsl"
 #include "Inc/Volumetric.hlsl"
+#include "Inc/Atmosphere.hlsl"
 
 static const float	STEPS_COUNT = 64.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
@@ -15,7 +16,6 @@ cbuffer	cbSplat	: register( b10 )
 //]
 
 Texture2D		_TexDepth			: register(t10);
-Texture2DArray	_TexTransmittance	: register(t11);
 
 
 struct	VS_IN
@@ -24,32 +24,34 @@ struct	VS_IN
 };
 
 
-float	TempGetTransmittance( float3 _WorldPosition )
+// Fast analytical noise
+float hash( float n )
 {
-	float3	ShadowPosition = mul( float4( _WorldPosition, 1.0 ), _World2Shadow ).xyz;
-	float2	UV = float2( 0.5 * (1.0 + ShadowPosition.x), 0.5 * (1.0 - ShadowPosition.y) );
-	float	Z = ShadowPosition.z;
-
-	float4	C0 = _TexTransmittanceMap.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
-//return C0.x;
-	float4	C1 = _TexTransmittanceMap.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
-
-	float2	ZMinMax = C1.zw;
-	if ( Z < ZMinMax.x )
-		return 1.0;	// We're not even in the shadow yet!
-
-	float	x = saturate( (Z - ZMinMax.x) / (ZMinMax.y - ZMinMax.x) );
-
-	const float4	CosTerm0 = PI * float4( 0, 1, 2, 3 );
-	const float2	CosTerm1 = PI * float2( 4, 5 );
-
-	float4	Cos0 = cos( CosTerm0 * x );
-	float2	Cos1 = cos( CosTerm1 * x );
-
-	Cos0.x = 0.5;	// Patch for inverse DCT
-
-	return saturate( dot( Cos0, C0 ) + dot( Cos1, C1.xy ) );
+	return frac( sin(n) * 43758.5453 );
 }
+
+float FastNoise( float3 x )
+{
+	float3	p = floor(x);
+	float3	f = frac(x);
+
+	f = smoothstep( 0.0, 1.0, f );
+
+	float	n = p.x + 57.0 * p.y + 113.0 *p.z;
+
+// 	float4	V0 = float4( hash( n +   0.0 ), hash( n +   1.0 ), hash( n +  57.0 ), hash( n +  58.0 ) );
+// 	float4	V1 = float4( hash( n + 113.0 ), hash( n + 114.0 ), hash( n + 170.0 ), hash( n + 171.0 ) );
+// 
+// 	float4	V = lerp( V0, V1, f.z );
+// 	float2	V2 = lerp( V.xy, V.zw, f.y );
+// 	return lerp( V2.x, V2.y, f.x );
+
+	return lerp(	lerp(	lerp( hash( n +   0.0 ), hash( n +   1.0 ), f.x ),
+							lerp( hash( n +  57.0 ), hash( n +  58.0 ), f.x ), f.y ),
+					lerp(	lerp( hash( n + 113.0 ), hash( n + 114.0 ), f.x ),
+							lerp( hash( n + 170.0 ), hash( n + 171.0 ), f.x ), f.y ), f.z );
+}
+
 
 float	Eval( float a, float b, float c, float d, float x )
 {
@@ -79,23 +81,31 @@ float	Ei( float z )
 
 // =============================================
 // Compute an approximate isotropic diffusion through infinite slabs
-float3	ComputeIsotropicScattering( float3 _Position, float _Density )
+float3	ComputeIsotropicScattering( float3 _Position, float _Density, float3 _SunLight )
 {
-	const float	_Sigma_scattering_Isotropic = 0.01;
+	const float	_Sigma_scattering_Isotropic = 0.1;
 
-	float	y = saturate( 2.0 * (_Position.y / BOX_HEIGHT - 0.5) );
+	float	y = saturate( 2.0 * ((_Position.y - BOX_BASE) / BOX_HEIGHT - 0.5) );
 			y *= y;
 			y = 1.0 - y;	// Max at center!
 //			y *= y;
 
-	float3	SkyRadiance = 0.05 * float3( 0.6, 0.71, 0.75 );
-	float3	SunRadiance = 0.08 * float3( 1.0, 1.0, 1.0 );
-	float3	GroundRadiance = 0.02 * float3( 1.0, 0.8, 0.2 );
+
+//	float3	SkyRadiance = 0.05 * float3( 0.6, 0.71, 0.75 );
+	float3	SkyRadiance = 4.0 * GetIrradiance( _TexIrradiance, 0*(BOX_BASE + 0.5 * BOX_HEIGHT), _LightDirection.y );
+
+	float3	SunRadiance = 0.1 * _SunLight;
+
+	float3	GroundReflectance = 0;//0.04 * float3( 1.0, 0.8, 0.2 );
+	float3	GroundRadiance = GroundReflectance * _SunLight;
+
 	float3	IsotropicLightTop = y * (SkyRadiance + SunRadiance);
 	float3	IsotropicLightBottom = y * (SkyRadiance + SunRadiance) + GroundRadiance;
 
-	float	IsotropicSphereRadiusTopKm = BOX_HEIGHT - _Position.y;
-	float	IsotropicSphereRadiusBottomKm = _Position.y;
+	float	BoxTop = BOX_BASE + BOX_HEIGHT;
+	float	BoxBottom = BOX_BASE;
+	float	IsotropicSphereRadiusTopKm = BoxTop - _Position.y;
+	float	IsotropicSphereRadiusBottomKm = _Position.y - BoxBottom;
 
 	float	a = -_Sigma_scattering_Isotropic * IsotropicSphereRadiusTopKm;
 	float3  IsotropicScatteringTop = IsotropicLightTop * max( 0.0, exp( a ) - a * Ei( a ));
@@ -190,8 +200,6 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 {
 	float2	UV = _In.__Position.xy * _dUV.xy;
 
-//return float4( UV, 0, 1 );
-
 	// Sample min/max depths at position
 	float2	ZMinMax = _TexDepth.SampleLevel( LinearClamp, UV, 0.0 ).xy;
 	float	Depth = ZMinMax.y - ZMinMax.x;
@@ -218,9 +226,7 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 
 #else
 	float	MipBias = 0.01 * ZMinMax.x;
-
 #endif
-
 
 	// Retrieve start & end positions in world space
 	float3	View = float3( _CameraData.x * (2.0 * UV.x - 1.0), _CameraData.y * (1.0 - 2.0 * UV.y), 1.0 );
@@ -231,12 +237,15 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 
 //#define FIX_STEP_SIZE	0.01
 #ifndef FIX_STEP_SIZE
-	float	StepsCount = ceil( Depth * 4.0 );	// This introduces ugly artefacts
+	float	StepsCount = ceil( Depth * BOX_HEIGHT );
 //	float	StepsCount = STEPS_COUNT;
 			StepsCount = min( STEPS_COUNT, StepsCount );
 
 	float4	Step = float4( WorldPosEnd - WorldPosStart, ZMinMax.y - ZMinMax.x ) / StepsCount;
-	float4	Position = float4( WorldPosStart, 0.0 ) + 0.5 * Step;
+
+	float	PosOffset = 0.5;	// Fixed offset
+//	float	PosOffset = FastNoise( float3( 2.0*_In.__Position.xy, 0.0 ) );	// Random offset
+	float4	Position = float4( WorldPosStart, 0.0 ) + PosOffset * Step;
 
 #else	// Here, the steps have a fixed size and we simply determine their amount
 		// This strategy misses a lot of details and requires lots of steps!
@@ -254,40 +263,38 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 	// Compute phase
 	float3	LightDirection = mul( float4( _LightDirection, 0.0 ), _World2Camera ).xyz;	// Light in camera space
 			View = normalize( View );
-	float	g = 0.25;
+	float	g = 0.15;
 	float	CosTheta = dot( View, LightDirection );
 	float	Phase = 1.0 / (4 * PI) * (1 - g*g) * pow( max(0.0, 1+g*g-g*CosTheta ), -1.5 );
+
+	// Get Sun light
+	float3	SunLight = 10.0 * GetTransmittanceWithShadow( BOX_BASE + BOX_HEIGHT, _LightDirection.y );
 
 	// Start integration
 	float	Sigma_t = 0.0;
 	float	Sigma_s = 0.0;
-	float3	Light = GetTransmittance( WorldPosStart.xyz );		// Start with light at start position
+	float3	Light = SunLight * GetTransmittance( WorldPosStart.xyz );		// Start with light at start position
 	float3	Scattering = 0.0;
 	float	Transmittance = 1.0;
 	for ( float StepIndex=0.0; StepIndex < StepsCount; StepIndex++ )
 	{
-
-//MipBias = 0.01 * Position.w;
-
 		float	Density = GetVolumeDensity( Position.xyz, MipBias );
-
-//Density = 0.1;
 
 		float	PreviousSigma_t = Sigma_t;
 		float	PreviousSigma_s = Sigma_s;
 		Sigma_t = EXTINCTION_COEFF * Density;
 		Sigma_s = SCATTERING_COEFF * Density;
 
-		float	Shadowing = GetTransmittance( Position.xyz );
-//		float	Shadowing = GetTransmittance( (Position + 0.5 * Step).xyz );
+//		float	Shadowing = GetTransmittance( Position.xyz );
+		float	Shadowing = GetTransmittance( (Position + 0.5 * Step).xyz );
 
-const float	ShadowAttenuation = 0.95;
+const float	ShadowAttenuation = 0.85;
 Shadowing = 1.0 - (ShadowAttenuation * (1.0 - Shadowing));
 
 		float3	PreviousLight = Light;
-		Light = Shadowing;
+		Light = SunLight * Shadowing;
 
-if ( false)//_VolumeParams.y > 0.5 )
+if ( true)//_VolumeParams.y > 0.5 )
 {	// ======================== Old Strategy without sub-step integration ========================
 
 		// Compute extinction
@@ -300,7 +307,7 @@ if ( false)//_VolumeParams.y > 0.5 )
 
 		// Compute scattering
 		float3	StepScattering = Sigma_s * Light * Step.w;	// Constant sigma
-				StepScattering += ComputeIsotropicScattering( Position.xyz, Density );
+				StepScattering += ComputeIsotropicScattering( Position.xyz, Density, SunLight );
 		Scattering += Transmittance * StepScattering;
 }
 else
@@ -308,7 +315,7 @@ else
 	// More accurate but also a little more hungry, but always better than using more samples!
 		float	StepTransmittance;
 		float3	StepScattering = IntegrateScattering( PreviousLight, Light, PreviousSigma_s, Sigma_s, PreviousSigma_t, Sigma_t, Step.w, StepTransmittance );
-				StepScattering += ComputeIsotropicScattering( Position.xyz, Density );
+				StepScattering += ComputeIsotropicScattering( Position.xyz, Density, SunLight );
 		Scattering += Transmittance * StepScattering;
 		Transmittance *= StepTransmittance;
 }
@@ -320,8 +327,7 @@ else
 		Position += Step;
 	}
 
-
-	Scattering *= lerp( 15.0, 15.0, _VolumeParams.y ) * Phase;
+	Scattering *= Phase;
 
 
 // Transmittance = 0.0;
@@ -329,7 +335,7 @@ else
 // Scattering.xy = float2( 0.5 * (1.0 + Scattering.x), 0.5 * (1.0 - Scattering.y) );
 // Scattering.z *= 0.25;
 // 
-// Scattering = 0.9 * 0.25 * _TexTransmittanceMap.SampleLevel( LinearClamp, float3( Scattering.xy, 1 ), 0.0 ).w;
+// Scattering = 0.9 * 0.25 * _TexCloudTransmittance.SampleLevel( LinearClamp, float3( Scattering.xy, 1 ), 0.0 ).w;
 
 //Scattering = 0.03 * StepsCount;
 //Scattering = Depth;

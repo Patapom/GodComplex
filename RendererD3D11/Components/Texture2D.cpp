@@ -304,3 +304,70 @@ int	Texture2D::CalcSubResource( int _MipLevelIndex, int _ArrayIndex )
 {
 	return _MipLevelIndex + (_ArrayIndex * m_MipLevelsCount);
 }
+
+#ifdef _DEBUG
+
+#include <stdio.h>
+
+// I/O for staging textures
+void	Texture2D::Save( const char* _pFileName )
+{
+	FILE*	pFile;
+	fopen_s( &pFile, _pFileName, "wb" );
+	ASSERT( pFile != NULL, "Can't create file!" );
+
+	// Write the dimensions
+	fwrite( &m_Width, sizeof(int), 1, pFile );
+	fwrite( &m_Height, sizeof(int), 1, pFile );
+	fwrite( &m_ArraySize, sizeof(int), 1, pFile );
+	fwrite( &m_MipLevelsCount, sizeof(int), 1, pFile );
+
+	// Write each slice
+	for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
+	{
+		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+		{
+			Map( MipLevelIndex, SliceIndex );
+			fwrite( m_LockedResource.pData, m_LockedResource.DepthPitch, 1, pFile );
+			UnMap( MipLevelIndex, SliceIndex );
+		}
+	}
+
+	// We're done!
+	fclose( pFile );
+}
+
+void	Texture2D::Load( const char* _pFileName )
+{
+	FILE*	pFile;
+	fopen_s( &pFile, _pFileName, "rb" );
+	ASSERT( pFile != NULL, "Can't load file!" );
+
+	// Read the dimensions
+	int	W, H, A, M;
+	fread_s( &W, sizeof(int), sizeof(int), 1, pFile );
+	fread_s( &H, sizeof(int), sizeof(int), 1, pFile );
+	fread_s( &A, sizeof(int), sizeof(int), 1, pFile );
+	fread_s( &M, sizeof(int), sizeof(int), 1, pFile );
+
+	ASSERT( W == m_Width, "Incompatible width!" );
+	ASSERT( H == m_Height, "Incompatible height!" );
+	ASSERT( A == m_ArraySize, "Incompatible array size!" );
+	ASSERT( M == m_MipLevelsCount, "Incompatible mip levels count!" );
+
+	// Read each slice
+	for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
+	{
+		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+		{
+			Map( MipLevelIndex, SliceIndex );
+			fread_s( m_LockedResource.pData, m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
+			UnMap( MipLevelIndex, SliceIndex );
+		}
+	}
+
+	// We're done!
+	fclose( pFile );
+}
+
+#endif

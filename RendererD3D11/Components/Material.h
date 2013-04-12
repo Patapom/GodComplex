@@ -16,6 +16,8 @@
 
 #endif
 
+#define WARNING_AS_ERRORS			// Also report warnings in the message box
+
 //#define __DEBUG_UPLOAD_ONLY_ONCE	// If defined, then the constants & textures will be uploaded only once (once the material is compiled)
 									// This allows to test the importance of constants/texture uploads in the performance of the application
 									// Obviously, if you switch textures & render targets often this will give you complete crap results !

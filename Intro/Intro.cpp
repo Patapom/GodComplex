@@ -307,8 +307,10 @@ bool	IntroDo( float _Time, float _DeltaTime )
 //	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(0.2f), _TV(4.0f) ), NjFloat3( 0.0f, 1.5f, 0.0f ), NjFloat3::UnitY );
 //	gs_pCamera->LookAt( NjFloat3( R*sinf(t), H, R*cosf(t) ), NjFloat3( 0.0f, 2.0f, 0.0f ), NjFloat3::UnitY );
 //	gs_pCamera->LookAt( NjFloat3( 0, 1, 6 ), NjFloat3( 0.0f, 1.0f, -10.0f ), NjFloat3::UnitY );		// Inside clouds
-	gs_pCamera->LookAt( NjFloat3( 0, -10, 6 ), NjFloat3( 0.0f, -2.0f, -10.0f ), NjFloat3::UnitY );	// Below
+//	gs_pCamera->LookAt( NjFloat3( 0, -10, 6 ), NjFloat3( 0.0f, -2.0f, -10.0f ), NjFloat3::UnitY );	// Below
 //	gs_pCamera->LookAt( NjFloat3( 0, -10, 6 ), NjFloat3( 0.0f, -2.0f, 6.1f ), NjFloat3::UnitY );	// Below looking up
+
+	gs_pCamera->LookAt( NjFloat3( 0, 0, 6 ), NjFloat3( 0.0f, 8.0f, -10.0f ), NjFloat3::UnitY );		// Ground level looking up
 
 	gs_pCamera->Upload( 0 );
 

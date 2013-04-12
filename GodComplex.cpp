@@ -230,7 +230,8 @@ void	WindowExit()
 #endif
 
 	// Kill the DirectX device
-	ASSERT( gs_Device.ComponentsCount() == 0, "Some DirectX components remain on exit !	Did you forget some deletes ???" );	// This means you forgot to clean up some components ! It's okay since the device is going to clean them up for you, but it's better yet if you know what your doing and take care of your own garbage...
+	int	RemainingComponents = gs_Device.ComponentsCount();
+	ASSERT( RemainingComponents == 0, "Some DirectX components remain on exit !	Did you forget some deletes ???" );	// This means you forgot to clean up some components ! It's okay since the device is going to clean them up for you, but it's better yet if you know what your doing and take care of your own garbage...
 	gs_Device.Exit();
 
 	// Destroy the Windows contexts

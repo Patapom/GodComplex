@@ -102,12 +102,16 @@ EffectVolumetric::~EffectVolumetric()
 void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
 {
 // DEBUG
-float	t = 0;//0.05f * _Time;
+float	t = 0.25f * _Time;
 //m_LightDirection.Set( 0, 1, -1 );
 //m_LightDirection.Set( 1, 2.0, -5 );
 //m_LightDirection.Set( cosf(_Time), 2.0f * sinf( 0.324f * _Time ), sinf( _Time ) );
-m_LightDirection.Set( sinf(t), 2.0f * sinf( 0.4f + 4.0f * 0.324f * t ), -cosf( t ) );	// Fast vertical change
 //m_LightDirection.Set( cosf(_Time), 1.0f, sinf( _Time ) );
+//m_LightDirection.Set( sinf(t), 2.0f * sinf( 0.4f + 4.0f * 0.324f * t ), -cosf( t ) );	// Fast vertical change
+
+//float	SunAngle = LERP( -0.05f * PI, 0.499f * PI, 0.5f * (1.0f + sinf( t )) );		// Oscillating between slightly below horizon to zenith
+float	SunAngle = LERP( -0.01f * PI, 0.499f * PI, 0.5f * (1.0f + sinf( t )) );		// Oscillating between slightly below horizon to zenith
+m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 // DEBUG
 
 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF00FF00 ), L"Compute Shadow" );
@@ -130,8 +134,12 @@ m_LightDirection.Set( sinf(t), 2.0f * sinf( 0.4f + 4.0f * 0.324f * t ), -cosf( t
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Compute transforms
-m_Position.Set( 0, 4.0f, -20 );
-m_Scale.Set( 128.0f, 4.0f, 128.0f );
+	const float	BOX_BASE = 10.0f;	// 10km  <== Find better way to keep visual aspect!
+	const float	BOX_HEIGHT = 6.0f;	// 6km high
+
+	m_Position.Set( 0, BOX_BASE + 0.5f * BOX_HEIGHT, -20 );
+	m_Scale.Set( 128.0f, 0.5f * BOX_HEIGHT, 128.0f );
+
 	m_Box2World.PRS( m_Position, m_Rotation, m_Scale );
 
 	ComputeShadowTransform();
@@ -893,18 +901,23 @@ const float Rg = 6360.0;
 const float Rt = 6420.0;
 const float RL = 6421.0;
 
-const int TRANSMITTANCE_W = 256;
-const int TRANSMITTANCE_H = 64;
+#define TRANSMITTANCE_W	256
+#define TRANSMITTANCE_H	64
 
-const int SKY_W = 64;
-const int SKY_H = 16;
+#define IRRADIANCE_W	64
+#define IRRADIANCE_H	16
 
-const int RES_R = 32;
-const int RES_MU = 128;
-const int RES_MU_S = 32;
-const int RES_NU = 8;
+#define RES_R			32
+#define RES_MU			128
+#define RES_MU_S		32
+#define RES_NU			8
 
-const int RES_3D_U = RES_MU_S * RES_NU;	// Full texture will be 256*128*32
+#define RES_3D_U		(RES_MU_S * RES_NU)	// Full texture will be 256*128*32
+
+#define FILENAME_IRRADIANCE		"./TexIrradiance_64x16.bin"
+#define FILENAME_TRANSMITTANCE	"./TexTransmittance_256x64.bin"
+#define FILENAME_SCATTERING		"./TexScattering_256x128x32.bin"
+
 
 struct	CBPreCompute
 {
@@ -914,15 +927,17 @@ struct	CBPreCompute
 
 void	EffectVolumetric::PreComputeSkyTables()
 {
+	m_pRTTransmittance = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );				// transmittance (final)
+	m_pRTIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );						// irradiance (final)
+	m_pRTInScattering = new Texture3D( m_Device, RES_3D_U, RES_MU, RES_R, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );							// inscatter (final)
 
-	Texture2D*	pRTDeltaIrradiance = new Texture2D( m_Device, SKY_W, SKY_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );						// deltaE (temp)
+//#define BUILD_SKY_SCATTERING	// Build or load?
+#ifdef BUILD_SKY_SCATTERING
+
+	Texture2D*	pRTDeltaIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );			// deltaE (temp)
 	Texture3D*	pRTDeltaScatteringRayleigh = new Texture3D( m_Device, RES_3D_U, RES_MU, RES_R, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );		// deltaSR (temp)
 	Texture3D*	pRTDeltaScatteringMie = new Texture3D( m_Device, RES_3D_U, RES_MU, RES_R, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );			// deltaSM (temp)
 	Texture3D*	pRTDeltaScattering = new Texture3D( m_Device, RES_3D_U, RES_MU, RES_R, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );				// deltaJ (temp)
-
-	Texture2D*	pRTTransmittance = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );		// transmittance (final)
-	Texture2D*	pRTIrradiance = new Texture2D( m_Device, SKY_W, SKY_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );							// irradiance (final)
-	Texture3D*	pRTInScattering = new Texture3D( m_Device, RES_3D_U, RES_MU, RES_R, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );					// inscatter (final)
 
 	Material*	pMatComputeTransmittance;
 	Material*	pMatComputeIrradiance_Single;
@@ -933,11 +948,13 @@ void	EffectVolumetric::PreComputeSkyTables()
 	Material*	pMatMergeInitialScattering;
 	Material*	pMatAccumulateIrradiance;
 	Material*	pMatAccumulateInScattering;
+
+	CHECK_MATERIAL( pMatComputeInScattering_Delta = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PreComputeInScattering_Delta" ), 14 );			// inscatterS
+
 	CHECK_MATERIAL( pMatComputeTransmittance = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PreComputeTransmittance" ), 10 );
 	CHECK_MATERIAL( pMatComputeIrradiance_Single = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PreComputeIrradiance_Single" ), 11 );				// irradiance1
-	CHECK_MATERIAL( pMatComputeIrradiance_Delta = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PreComputeIrradiance_Delta" ), 12 );			// irradianceN
+	CHECK_MATERIAL( pMatComputeIrradiance_Delta = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PreComputeIrradiance_Delta" ), 12 );				// irradianceN
 	CHECK_MATERIAL( pMatComputeInScattering_Single = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PreComputeInScattering_Single" ), 13 );			// inscatter1
-	CHECK_MATERIAL( pMatComputeInScattering_Delta = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PreComputeInScattering_Delta" ), 14 );			// inscatterS
 	CHECK_MATERIAL( pMatComputeInScattering_Multiple = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PreComputeInScattering_Multiple" ), 15 );		// inscatterN
 	CHECK_MATERIAL( pMatMergeInitialScattering = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "MergeInitialScattering" ), 16 );					// copyInscatter1
 	CHECK_MATERIAL( pMatAccumulateIrradiance = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "AccumulateIrradiance" ), 17 );						// copyIrradiance
@@ -954,18 +971,18 @@ void	EffectVolumetric::PreComputeSkyTables()
 	// Computes transmittance texture T (line 1 in algorithm 4.1)
 	USING_MATERIAL_START( *pMatComputeTransmittance )
 
-		m_Device.SetRenderTarget( *pRTTransmittance );
+		m_Device.SetRenderTarget( *m_pRTTransmittance );
 
-		CB.m.dUVW = NjFloat4( pRTTransmittance->GetdUV(), 0.0f );
+		CB.m.dUVW = NjFloat4( m_pRTTransmittance->GetdUV(), 0.0f );
 		CB.UpdateData();
 
 		m_ScreenQuad.Render( M );
 
 	USING_MATERIAL_END
 
-	// Assign to slot 10
+	// Assign to slot 7
 	m_Device.RemoveRenderTargets();
-	pRTTransmittance->SetPS( 10 );
+	m_pRTTransmittance->SetPS( 7, true );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Computes irradiance texture deltaE (line 2 in algorithm 4.1)
@@ -986,7 +1003,7 @@ void	EffectVolumetric::PreComputeSkyTables()
 
 	// ==================================================
  	// Clear irradiance texture E (line 4 in algorithm 4.1)
-	m_Device.ClearRenderTarget( *pRTIrradiance, NjFloat4::Zero );
+	m_Device.ClearRenderTarget( *m_pRTIrradiance, NjFloat4::Zero );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Computes single scattering texture deltaS (line 3 in algorithm 4.1)
@@ -1012,9 +1029,9 @@ void	EffectVolumetric::PreComputeSkyTables()
 	// Merges DeltaScatteringRayleigh & Mie into initial inscatter texture S (line 5 in algorithm 4.1)
 	USING_MATERIAL_START( *pMatMergeInitialScattering )
 
-		m_Device.SetRenderTarget( *pRTInScattering );
+		m_Device.SetRenderTarget( *m_pRTInScattering );
 
-		CB.m.dUVW = pRTInScattering->GetdUVW();
+		CB.m.dUVW = m_pRTInScattering->GetdUVW();
 		CB.UpdateData();
 
 		m_ScreenQuad.RenderInstanced( M, RES_R );
@@ -1086,9 +1103,9 @@ void	EffectVolumetric::PreComputeSkyTables()
 
 		USING_MATERIAL_START( *pMatAccumulateIrradiance )
 
-			m_Device.SetRenderTarget( *pRTIrradiance );
+			m_Device.SetRenderTarget( *m_pRTIrradiance );
 
-			CB.m.dUVW = NjFloat4( pRTIrradiance->GetdUV(), 0 );
+			CB.m.dUVW = NjFloat4( m_pRTIrradiance->GetdUV(), 0 );
 			CB.UpdateData();
 
 			m_ScreenQuad.Render( M );
@@ -1099,9 +1116,9 @@ void	EffectVolumetric::PreComputeSkyTables()
  		// Adds deltaS into inscatter texture S (line 11 in algorithm 4.1)
 		USING_MATERIAL_START( *pMatAccumulateInScattering )
 
-			m_Device.SetRenderTarget( *pRTInScattering );
+			m_Device.SetRenderTarget( *m_pRTInScattering );
 
-			CB.m.dUVW = pRTInScattering->GetdUVW();
+			CB.m.dUVW = m_pRTInScattering->GetdUVW();
 			CB.UpdateData();
 
 			m_ScreenQuad.RenderInstanced( M, RES_R );
@@ -1111,10 +1128,10 @@ void	EffectVolumetric::PreComputeSkyTables()
 		m_Device.SetStates( NULL, NULL, m_Device.m_pBS_Disabled );
 	}
 
-	// Assign final textures to slots 11 & 12
+	// Assign final textures to slots 8 & 9
 	m_Device.RemoveRenderTargets();
-	pRTInScattering->SetPS( 11 );
-	pRTIrradiance->SetPS( 12 );
+	m_pRTInScattering->SetPS( 8, true );
+	m_pRTIrradiance->SetPS( 9, true );
 
 	// Release materials & temporary RTs
 	delete pMatAccumulateInScattering;
@@ -1131,6 +1148,47 @@ void	EffectVolumetric::PreComputeSkyTables()
 	delete pRTDeltaScatteringRayleigh;
 	delete pRTDeltaScatteringMie;
 	delete pRTDeltaScattering;
+
+	// Save tables
+	Texture3D*	pStagingScattering = new Texture3D( m_Device, RES_3D_U, RES_MU, RES_R, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true );
+	Texture2D*	pStagingTransmittance = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true );
+	Texture2D*	pStagingIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true );
+
+	pStagingScattering->CopyFrom( *m_pRTInScattering );
+	pStagingTransmittance->CopyFrom( *m_pRTTransmittance );
+	pStagingIrradiance->CopyFrom( *m_pRTIrradiance );
+
+	pStagingIrradiance->Save( FILENAME_IRRADIANCE );
+	pStagingTransmittance->Save( FILENAME_TRANSMITTANCE );
+	pStagingScattering->Save( FILENAME_SCATTERING );
+
+	delete pStagingIrradiance;
+	delete pStagingTransmittance;
+	delete pStagingScattering;
+
+#else
+	// Load tables
+	Texture3D*	pStagingScattering = new Texture3D( m_Device, RES_3D_U, RES_MU, RES_R, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
+	Texture2D*	pStagingTransmittance = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
+	Texture2D*	pStagingIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
+
+	pStagingIrradiance->Load( FILENAME_IRRADIANCE );
+	pStagingTransmittance->Load( FILENAME_TRANSMITTANCE );
+	pStagingScattering->Load( FILENAME_SCATTERING );
+
+	m_pRTInScattering->CopyFrom( *pStagingScattering );
+	m_pRTTransmittance->CopyFrom( *pStagingTransmittance );
+	m_pRTIrradiance->CopyFrom( *pStagingIrradiance );
+
+	delete pStagingIrradiance;
+	delete pStagingTransmittance;
+	delete pStagingScattering;
+
+	m_pRTTransmittance->SetPS( 7, true );
+	m_pRTInScattering->SetPS( 8, true );
+	m_pRTIrradiance->SetPS( 9, true );
+
+#endif
 }
 
 void	EffectVolumetric::FreeSkyTables()

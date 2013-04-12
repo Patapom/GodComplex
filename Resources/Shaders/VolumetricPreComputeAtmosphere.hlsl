@@ -27,7 +27,6 @@ struct	PS_IN
 {
 	float4	__Position	: SV_POSITION;
 	uint	SliceIndex	: SV_RENDERTARGETARRAYINDEX;
-//	uint	InstanceID	: SV_INSTANCEID;
 };
 
 struct	PS_OUT
@@ -109,16 +108,14 @@ float4	PreComputeTransmittance( VS_IN _In ) : SV_TARGET0
 {
 	float2	UV = _In.__Position.xy * _dUVW.xy;
 
-	float	AltitudeKm = UV.x*UV.x * ATMOSPHERE_THICKNESS_KM;					// Grow quadratically to have more precision near the ground
-	float	CosTheta = -0.15 + tan( 1.5 * UV.y ) / tan(1.5) * (1.0 + 0.15);	// Grow tangentially to have more precision horizontally
-//	float	CosTheta = lerp( -0.15, 1.0, UV.y );							// Grow linearly
+	float	AltitudeKm = UV.y*UV.y * ATMOSPHERE_THICKNESS_KM;				// Grow quadratically to have more precision near the ground
+	float	CosTheta = -0.15 + tan( 1.5 * UV.x ) / tan(1.5) * (1.0 + 0.15);	// Grow tangentially to have more precision horizontally
+//	float	CosTheta = lerp( -0.15, 1.0, UV.x );							// Grow linearly
 
 	float3	OpticalDepth = SIGMA_SCATTERING_RAYLEIGH * ComputeOpticalDepth( AltitudeKm, CosTheta, HREF_RAYLEIGH ) + SIGMA_EXTINCTION_MIE * ComputeOpticalDepth( AltitudeKm, CosTheta, HREF_MIE );
 
 	return float4( exp( -OpticalDepth ), 0.0 );
-
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 // Pre-Computes the ground irradiance table accounting for single scattering only
@@ -131,7 +128,7 @@ float4	PreComputeIrradiance_Single( VS_IN _In ) : SV_TARGET0
 
 	float	Reflectance = saturate( CosThetaSun );
 
-    return float4( GetTransmittance( AltitudeKm, CosThetaSun ) * Reflectance, 0.0 );	// Return Sun reflectance attenuated by atmosphere as seen from given altitude (clarify: should be used as TOP_ALTITUDE - RequiredAltitude?)
+    return float4( GetTransmittance( AltitudeKm, CosThetaSun ) * Reflectance, 0.0 );	// Return Sun reflectance attenuated by atmosphere as seen from given altitude
 }
 
 
@@ -231,26 +228,26 @@ float3	InScatter_Delta( float _AltitudeKm, float _CosThetaView, float _CosThetaS
 	_CosThetaSun = clamp( _CosThetaSun, -1.0, 1.0 );
 
 	float	var = sqrt( 1.0 - _CosThetaView*_CosThetaView ) * sqrt( 1.0 - _CosThetaSun*_CosThetaSun );
-	_CosGamma = clamp( _CosGamma, _CosThetaSun * _CosThetaView - var, _CosThetaSun * _CosThetaView + var );
+	_CosGamma = clamp( _CosGamma, _CosThetaSun * _CosThetaView - var, _CosThetaSun * _CosThetaView + var );	//### WTF?? Clarify!!!
 
-	float	cthetamin = -sqrt( 1.0 - (GROUND_RADIUS_KM / r) * (GROUND_RADIUS_KM / r) );	// Minimum cos(theta) before we hit the ground
+	float	cthetaground = -sqrt( 1.0 - (GROUND_RADIUS_KM / r) * (GROUND_RADIUS_KM / r) );	// Minimum cos(theta) before we hit the ground
  
 	float3	View = float3( sqrt( 1.0 - _CosThetaView * _CosThetaView ), _CosThetaView, 0.0 );
 	float	sx = View.x == 0.0 ? 0.0 : (_CosGamma - _CosThetaSun * _CosThetaView) / View.x;
-	float3	Sun = float3( sx, _CosThetaSun, sqrt( max( 0.0, 1.0 - sx * sx - _CosThetaSun * _CosThetaSun ) ) );
+	float3	Sun = float3( sx, _CosThetaSun, sqrt( max( 0.0, 1.0 - sx * sx - _CosThetaSun * _CosThetaSun ) ) );	// Sun from View + Gamma?
 
 	float3	Scattering = 0.0;
 
 	// Integral over 4.PI around x with two nested loops over w directions (theta,phi) -- Eq (7)
 	for ( int ThetaIndex=0; ThetaIndex < _StepsCount; ThetaIndex++ )
 	{
-		float	Theta = (float(ThetaIndex) + 0.5) * dTheta;
+		float	Theta = (ThetaIndex + 0.5) * dTheta;
 		float	stheta, ctheta;
 		sincos( Theta, stheta, ctheta );
 
 		float3	GroundReflectance = 0.0;
 		float	Distance2Ground = -1.0;		// -1 = A hint that ground is not visible in that direction
-		if ( ctheta < cthetamin )
+		if ( ctheta < cthetaground )
 		{	// Ground is visible in sampling direction w: compute transmittance between x and ground
 			Distance2Ground = -r * ctheta - sqrt( r * r * (ctheta * ctheta - 1.0 ) + GROUND_RADIUS_KM * GROUND_RADIUS_KM);
 			GroundReflectance = (AVERAGE_GROUND_REFLECTANCE / PI) * GetTransmittance( 0.0, -(r * ctheta + Distance2Ground) / GROUND_RADIUS_KM, Distance2Ground );
@@ -258,7 +255,7 @@ float3	InScatter_Delta( float _AltitudeKm, float _CosThetaView, float _CosThetaS
 
 		for ( int PhiIndex=0; PhiIndex < 2 * _StepsCount; PhiIndex++ )
 		{
-			float	Phi = (float(PhiIndex) + 0.5) * dPhi;
+			float	Phi = (PhiIndex + 0.5) * dPhi;
 			float	sphi, cphi;
 			sincos( Phi, sphi, cphi );
 
@@ -321,9 +318,9 @@ float3	PreComputeInScattering_Delta( PS_IN _In ) : SV_TARGET0
 
 //////////////////////////////////////////////////////////////////////////
 // Pre-Computes the irradiance table accounting for multiple scattering
+//float3	PreComputeIrradiance_Delta( VS_IN _In, uniform uint _StepsCount=32 ) : SV_TARGET0	// warning on usage about a missing CB at slot 2... ?
 float3	PreComputeIrradiance_Delta( VS_IN _In ) : SV_TARGET0
 {
-//	, uniform uint _StepsCount=32
 const uint _StepsCount=32;
 
 	const float	dPhi = PI / _StepsCount;

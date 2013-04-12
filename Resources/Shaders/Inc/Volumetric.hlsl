@@ -9,11 +9,12 @@
 							// After testing, it takes more time to user Taylor series!! ^^
 
 #define	ANIMATE
-#define	BOX_HEIGHT	8.0
-#define	PACK_R8	// Noise is packed in a R8 texture instead of R32F
+#define	BOX_BASE	10.0	// 10km (!!)
+#define	BOX_HEIGHT	6.0		// 6km high
+#define	PACK_R8				// Noise is packed in a R8 texture instead of R32F
 
-static const float	EXTINCTION_COEFF = 4.0;
-static const float	SCATTERING_COEFF = 4.0;
+static const float	EXTINCTION_COEFF = 1.0;
+static const float	SCATTERING_COEFF = 1.0;
 
 
 cbuffer	cbShadow	: register( b11 )
@@ -30,7 +31,7 @@ cbuffer	cbVolume	: register( b12 )
 	float4		_VolumeParams;
 }
 
-Texture2DArray	_TexTransmittanceMap	: register(t11);
+Texture2DArray	_TexCloudTransmittance	: register(t11);
 Texture3D		_TexFractal0	: register(t16);
 Texture3D		_TexFractal1	: register(t17);
 
@@ -126,9 +127,11 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 	// Use a low frequency texture perturbed by a scrolling high frequency texture
 	// This time, the high frequency texture is much larger in XZ then in Y (thin slab) so tiling is not visible
 
-	float	y = saturate( _Position.y / BOX_HEIGHT );	// That gives us a value in [0 (bottom), 1 (top)]
+	float	y = saturate( (_Position.y - BOX_BASE) / BOX_HEIGHT );	// That gives us a value in [0 (bottom), 1 (top)]
 
-	float3	UVW0 = 0.25 * float3( 0.01, 0.05, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
+	const float	FREQUENCY_MULTIPLIER = 1.0;
+
+	float3	UVW0 = FREQUENCY_MULTIPLIER * 0.25 * float3( 0.01, 0.05, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
 #ifdef	ANIMATE	
 	UVW0 += 0.25 * float3( 0, 0, -0.05 * _Time.x );
 #endif
@@ -138,7 +141,7 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 Noise *= sqrt(y);	// Goes to 0 at bottom
 
 //	float3	UVW1 = 0.0 + float3( 0.04, 0.04, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
-	float3	UVW1 = 0.0 + float3( 0.02, 0.02, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
+	float3	UVW1 = 0.0 + FREQUENCY_MULTIPLIER * float3( 0.02, 0.02, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
 #ifdef	ANIMATE	
 	UVW1.y -= 0.01 * _Time.x;	// Good
 #endif
@@ -225,8 +228,8 @@ float	GetTransmittance( float3 _WorldPosition )
 	float2	UV = float2( 0.5 * (1.0 + ShadowPosition.x), 0.5 * (1.0 - ShadowPosition.y) );
 	float	Z = ShadowPosition.z;
 
-	float4	C0 = _TexTransmittanceMap.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
-	float4	C1 = _TexTransmittanceMap.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
+	float4	C0 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
+	float4	C1 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
 
 	float2	ZMinMax = C1.zw;
 	if ( Z < ZMinMax.x )

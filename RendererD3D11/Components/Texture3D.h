@@ -24,6 +24,8 @@ private:	// FIELDS
 	mutable DictionaryU32			m_CachedShaderViews;
 	mutable DictionaryU32			m_CachedTargetViews;
 
+	D3D11_MAPPED_SUBRESOURCE		m_LockedResource;
+
 
 public:	 // PROPERTIES
 
@@ -37,7 +39,7 @@ public:	 // PROPERTIES
 public:	 // METHODS
 
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !
-	Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent );
+	Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging=false, bool _bWriteable=false, bool _bUnOrderedAccess=false );
 	~Texture3D();
 
 	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart, int _MipLevelsCount ) const;
@@ -50,6 +52,17 @@ public:	 // METHODS
 	void		SetDS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
 	void		SetGS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
 	void		SetPS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
+
+	// Texture access by the CPU
+	void		CopyFrom( Texture3D& _SourceTexture );
+	D3D11_MAPPED_SUBRESOURCE&	Map( int _MipLevelIndex );
+	void		UnMap( int _MipLevelIndex );
+
+#ifdef _DEBUG
+	// I/O for staging textures
+	void		Save( const char* _pFileName );
+	void		Load( const char* _pFileName );
+#endif
 
 public:
 	static void	NextMipSize( int& _Width, int& _Height, int& _Depth );

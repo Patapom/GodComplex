@@ -327,9 +327,14 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 
 	D3DCompile( pCodePointer, CodeSize, _pShaderFileName, _pMacros, _pInclude, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors );
 #if defined(_DEBUG) || defined(DEBUG_SHADER)
-	if ( pCode == NULL || pErrors != NULL )
+#ifdef WARNING_AS_ERRORS
+	if ( pErrors != NULL )
+#else
+	if ( pCode == NULL && pErrors != NULL )
+#endif
 	{
-		MessageBoxA( NULL, (LPCSTR) pErrors->GetBufferPointer(), "Shader Compilation Error !", MB_OK | MB_ICONERROR );
+		const char*	pErrorText = (LPCSTR) pErrors->GetBufferPointer();
+		MessageBoxA( NULL, pErrorText, "Shader Compilation Error !", MB_OK | MB_ICONERROR );
 		ASSERT( pErrors == NULL, "Shader compilation error !" );
 	}
 	else
@@ -339,46 +344,46 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 // Save the binary blob to disk
 #if defined(_DEBUG) && defined(SAVE_SHADER_BLOB_TO)
 {
-ASSERT( _pShaderFileName != NULL, "Can't save binary blob => Invalid shader file name!" );
+	ASSERT( _pShaderFileName != NULL, "Can't save binary blob => Invalid shader file name!" );
 
-const char*	pFileName = strrchr( _pShaderFileName, '/' );
-if ( pFileName == NULL )
-	pFileName = strrchr( _pShaderFileName, '\\' );
-ASSERT( pFileName != NULL, "Can't retrieve last /!" );
-int		FileNameIndex = 1+pFileName - _pShaderFileName;
-const char*	pExtension = strrchr( _pShaderFileName, '.' );
-ASSERT( pExtension != NULL, "Can't retrieve extension!" );
-int		ExtensionIndex = pExtension - _pShaderFileName;
-char	pFileNameWithoutExtension[1024];
-memcpy( pFileNameWithoutExtension, pFileName+1, ExtensionIndex-FileNameIndex );
-pFileNameWithoutExtension[ExtensionIndex-FileNameIndex] = '\0';	// End the file name here
+	const char*	pFileName = strrchr( _pShaderFileName, '/' );
+	if ( pFileName == NULL )
+		pFileName = strrchr( _pShaderFileName, '\\' );
+	ASSERT( pFileName != NULL, "Can't retrieve last /!" );
+	int		FileNameIndex = 1+pFileName - _pShaderFileName;
+	const char*	pExtension = strrchr( _pShaderFileName, '.' );
+	ASSERT( pExtension != NULL, "Can't retrieve extension!" );
+	int		ExtensionIndex = pExtension - _pShaderFileName;
+	char	pFileNameWithoutExtension[1024];
+	memcpy( pFileNameWithoutExtension, pFileName+1, ExtensionIndex-FileNameIndex );
+	pFileNameWithoutExtension[ExtensionIndex-FileNameIndex] = '\0';	// End the file name here
 
-char	pFinalShaderName[1024];
-sprintf( pFinalShaderName, "%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, _pEntryPoint );
+	char	pFinalShaderName[1024];
+	sprintf( pFinalShaderName, "%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, _pEntryPoint );
 
-// Create the binary file
-FILE*	pFile;
-fopen_s( &pFile, pFinalShaderName, "wb" );
-ASSERT( pFile != NULL, "Can't create file!" );
+	// Create the binary file
+	FILE*	pFile;
+	fopen_s( &pFile, pFinalShaderName, "wb" );
+	ASSERT( pFile != NULL, "Can't create file!" );
 
-// Write the entry point's length
-int	Length = strlen( _pEntryPoint )+1;
-fwrite( &Length, sizeof(int), 1, pFile );
+	// Write the entry point's length
+	int	Length = strlen( _pEntryPoint )+1;
+	fwrite( &Length, sizeof(int), 1, pFile );
 
-// Write the entry point name
-fwrite( _pEntryPoint, 1, Length, pFile );
+	// Write the entry point name
+	fwrite( _pEntryPoint, 1, Length, pFile );
 
-// Write the blob's length
-Length = pCode->GetBufferSize();
-ASSERT( Length < 65536, "Shader length doesn't fit on 16 bits!" );
-fwrite( &Length, sizeof(int), 1, pFile );
+	// Write the blob's length
+	Length = pCode->GetBufferSize();
+	ASSERT( Length < 65536, "Shader length doesn't fit on 16 bits!" );
+	fwrite( &Length, sizeof(int), 1, pFile );
 
-// Write the blob's content
-pCodePointer = pCode->GetBufferPointer();
-fwrite( pCodePointer, 1, Length, pFile );
+	// Write the blob's content
+	pCodePointer = pCode->GetBufferPointer();
+	fwrite( pCodePointer, 1, Length, pFile );
 
-// We're done!
-fclose( pFile );
+	// We're done!
+	fclose( pFile );
 }
 #endif
 
