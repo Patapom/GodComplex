@@ -3,7 +3,7 @@
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
-const float	EffectVolumetric::SCREEN_TARGET_RATIO = 0.5f;
+const float	EffectVolumetric::SCREEN_TARGET_RATIO = 1.0f;
 
 EffectVolumetric::EffectVolumetric( Device& _Device, Primitive& _ScreenQuad ) : m_Device( _Device ), m_ScreenQuad( _ScreenQuad ), m_ErrorCode( 0 )
 {
@@ -135,9 +135,9 @@ m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Compute transforms
 	const float	BOX_BASE = 10.0f;	// 10km  <== Find better way to keep visual aspect!
-	const float	BOX_HEIGHT = 6.0f;	// 6km high
+	const float	BOX_HEIGHT = 4.0f;	// 4km high
 
-	m_Position.Set( 0, BOX_BASE + 0.5f * BOX_HEIGHT, -20 );
+	m_Position.Set( 0, BOX_BASE + 0.5f * BOX_HEIGHT, -100 );
 	m_Scale.Set( 128.0f, 0.5f * BOX_HEIGHT, 128.0f );
 
 	m_Box2World.PRS( m_Position, m_Rotation, m_Scale );

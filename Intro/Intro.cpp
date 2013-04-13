@@ -310,7 +310,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 //	gs_pCamera->LookAt( NjFloat3( 0, -10, 6 ), NjFloat3( 0.0f, -2.0f, -10.0f ), NjFloat3::UnitY );	// Below
 //	gs_pCamera->LookAt( NjFloat3( 0, -10, 6 ), NjFloat3( 0.0f, -2.0f, 6.1f ), NjFloat3::UnitY );	// Below looking up
 
-	gs_pCamera->LookAt( NjFloat3( 0, 0, 6 ), NjFloat3( 0.0f, 8.0f, -10.0f ), NjFloat3::UnitY );		// Ground level looking up
+	gs_pCamera->LookAt( NjFloat3( 0, 0, 6 ), NjFloat3( 0.0f, 6.0f, -10.0f ), NjFloat3::UnitY );		// Ground level looking up
 
 	gs_pCamera->Upload( 0 );
 

@@ -6,15 +6,20 @@
 #define _VOLUMETRIC_INC_
 
 #define	USE_FAST_COS	// Use Taylor series instead of actual cosine
-							// After testing, it takes more time to user Taylor series!! ^^
 
 #define	ANIMATE
 #define	BOX_BASE	10.0	// 10km (!!)
-#define	BOX_HEIGHT	6.0		// 6km high
+#define	BOX_HEIGHT	4.0		// 4km high
 #define	PACK_R8				// Noise is packed in a R8 texture instead of R32F
 
-static const float	EXTINCTION_COEFF = 1.0;
-static const float	SCATTERING_COEFF = 1.0;
+static const float	EXTINCTION_COEFF = 4.0;
+static const float	SCATTERING_COEFF = 4.0;
+
+static const float	SUN_INTENSITY = 100.0;
+
+
+static const float	FREQUENCY_MULTIPLIER_LOW = 0.25;	// Noise low frequency multiplier
+static const float	FREQUENCY_MULTIPLIER_HIGH = 1.5;	// Noise high frequency multiplier
 
 
 cbuffer	cbShadow	: register( b11 )
@@ -72,13 +77,6 @@ float	GetVolumeDensity( float3 _Position, float _MipBias )
 {
 //_Position.x += _Time.x;
 
-// Hardcoded sphere
-// float3	Center = float3( 0.0, 2.5, 0.0 );
-// float	Radius = 0.4;
-// float	Distance = length( _Position - Center );
-// return Distance < Radius ? 1 : 0;
-
-
 #if 0
 	//====================================================
 	// Use 6 octaves of noise
@@ -129,20 +127,19 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 
 	float	y = saturate( (_Position.y - BOX_BASE) / BOX_HEIGHT );	// That gives us a value in [0 (bottom), 1 (top)]
 
-	const float	FREQUENCY_MULTIPLIER = 1.0;
-
-	float3	UVW0 = FREQUENCY_MULTIPLIER * 0.25 * float3( 0.01, 0.05, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
-#ifdef	ANIMATE	
-	UVW0 += 0.25 * float3( 0, 0, -0.05 * _Time.x );
+	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * float3( 0.01, 0.1, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
+#ifdef	ANIMATE
+	UVW0 += (0.25 * _Time.x) * float3( 0.02, 0, -0.05 );
 #endif
 //	float	Noise = _TexFractal0.SampleLevel( LinearWrap, 0.1 * UVW0, 4.0 ).x;
 	float	Noise = _TexNoise3D.SampleLevel( LinearWrap, UVW0, 0*_MipBias ).x;	// Use small 32^3 noise (no need mip bias on that low freq noise anyway or we may lose the defining shape)
 
-Noise *= sqrt(y);	// Goes to 0 at bottom
+Noise *= sqrt(y);		// Goes to 0 at bottom
+//Noise *= pow( y, 0.01 );	// Goes to 0 at bottom
 
-//	float3	UVW1 = 0.0 + float3( 0.04, 0.04, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
-	float3	UVW1 = 0.0 + FREQUENCY_MULTIPLIER * float3( 0.02, 0.02, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
-#ifdef	ANIMATE	
+//	float3	UVW1 = float3( 0.04, 0.04, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
+	float3	UVW1 = FREQUENCY_MULTIPLIER_HIGH * float3( 0.02, 0.02, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
+#ifdef	ANIMATE
 	UVW1.y -= 0.01 * _Time.x;	// Good
 #endif
 
@@ -155,12 +152,12 @@ Noise *= sqrt(y);	// Goes to 0 at bottom
 	float	Noise2 = _TexFractal1.SampleLevel( LinearWrap, UVW1, _MipBias + _VolumeParams.x ).x;
 #endif
 	
-	Noise += 0.707 * Noise2;	// Add detail
+//	Noise += 0.707 * (2.0 * (Noise2 - 0.02));	// Add detail
+	Noise += 0.707 * (1.0 * (Noise2 - 0.01));	// Add detail
 
 //	Noise *= 4.0;
 
 	y = 2.0 * y - 1.0;	// -1 at bottom, +1 at top
-
 	float	TopY = 1-saturate(y);
 			TopY *= TopY;
 	float	BottomY = 1-saturate(-y);
@@ -168,7 +165,7 @@ Noise *= sqrt(y);	// Goes to 0 at bottom
 
 //	float3	HeightOffsets = float3( -0.005, 0.0, 0.1 );	// Bottom, Middle, Top offsets
 //	float3	HeightOffsets = float3( 0.025, 0.05, 0.10 );	// Bottom, Middle, Top offsets
-	float3	HeightOffsets = float3( -0.04, -0.01, 0.01 );	// Bottom, Middle, Top offsets
+	float3	HeightOffsets = float3( 0.0, +0.02, 0.1 );	// Bottom, Middle, Top offsets
 	float	Offset = lerp( HeightOffsets.z, HeightOffsets.y, TopY ) + lerp( HeightOffsets.x, HeightOffsets.y, BottomY );
 
 	float	Contrast = 0.5;

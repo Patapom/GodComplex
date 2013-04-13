@@ -162,7 +162,8 @@ float3	GetTransmittance( float _AltitudeKm, float _CosTheta )
 float3	GetTransmittanceWithShadow( float _AltitudeKm, float _CosTheta )
 {
 	float	RadiusKm = GROUND_RADIUS_KM + _AltitudeKm;
-	return _CosTheta < -sqrt(1.0 - (GROUND_RADIUS_KM / RadiusKm) * (GROUND_RADIUS_KM / RadiusKm)) ? 0.0 : GetTransmittance( _AltitudeKm, _CosTheta );
+	float	CosThetaGround = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM / (RadiusKm*RadiusKm)) );
+	return _CosTheta < CosThetaGround ? 0.0 : GetTransmittance( _AltitudeKm, _CosTheta );
 }
 
 
@@ -350,11 +351,10 @@ float3	ComputeSkyColor( float3 _PositionKm, float3 _View, float3 _Sun, float _Di
 		float3	GroundNormal = EndPositionKm / EndRadiusKm;
 		float	EndCosThetaSun = dot( _Sun, GroundNormal );
 
-		float	CosThetaGround = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM / (EndRadiusKm*EndRadiusKm)) );
-		float3	SunTransmittance = EndCosThetaSun > CosThetaGround ? GetTransmittance( EndAltitudeKm, EndCosThetaSun ) : 0.0;	// Here, we account for shadowing by the planet
-		float3	DirectSunLight = saturate( EndCosThetaSun ) * SunTransmittance;													// Lighting by direct Sun light
+		float3	SunTransmittance = GetTransmittanceWithShadow( EndAltitudeKm, EndCosThetaSun );		// Here, we account for shadowing by the planet
+		float3	DirectSunLight = saturate( EndCosThetaSun ) * SunTransmittance;						// Lighting by direct Sun light
 
-		float3	GroundIrradiance = GetIrradiance( _TexIrradiance, EndAltitudeKm, EndCosThetaSun );								// Lighting by multiple-scattered light
+		float3	GroundIrradiance = GetIrradiance( _TexIrradiance, EndAltitudeKm, EndCosThetaSun );	// Lighting by multiple-scattered light
 
 		L0 = (_GroundReflectance * INVPI) * (DirectSunLight + GroundIrradiance);
 

@@ -92,6 +92,17 @@ float3	TempComputeSkyColor( float3 _PositionKm, float3 _View, float3 _Sun, float
 	return PhaseFunctionRayleigh( CosGamma ) * Lin.xyz + PhaseFunctionMie( CosGamma ) * GetMieFromRayleighAndMieRed( Lin ) + L0 * GetTransmittance( StartAltitudeKm, CosThetaView );
 }
 
+float3	HDR( float3 L, float _Exposure=0.5 )
+{
+    L = L * _Exposure;
+//     L.r = L.r < 1.413 ? pow(L.r * 0.38317, 1.0 / 2.2) : 1.0 - exp(-L.r);
+//     L.g = L.g < 1.413 ? pow(L.g * 0.38317, 1.0 / 2.2) : 1.0 - exp(-L.g);
+//     L.b = L.b < 1.413 ? pow(L.b * 0.38317, 1.0 / 2.2) : 1.0 - exp(-L.b);
+
+	L = 1.0 - exp( -L );
+
+    return L;
+}
 
 float3	PS( VS_IN _In ) : SV_TARGET0
 {
@@ -127,11 +138,12 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 	// From sky's multiple scattering
 	float3	PositionKm = 0.01 * _Camera2World[3].xyz;
 	float3	BackgroundColor = TempComputeSkyColor( PositionKm, View, _LightDirection );
-			BackgroundColor *= 10.0;
+			BackgroundColor *= SUN_INTENSITY;
 //return BackgroundColor;
+//return HDR( BackgroundColor );
 
 	float4	ScatteringExtinction = _TexDebug0.SampleLevel( LinearClamp, UV, 0.0 );
-return BackgroundColor * ScatteringExtinction.w + ScatteringExtinction.xyz;
+return HDR( BackgroundColor * ScatteringExtinction.w + ScatteringExtinction.xyz );
 
 	float4	C0 = _TexDebug2.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
 	float4	C1 = _TexDebug2.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );

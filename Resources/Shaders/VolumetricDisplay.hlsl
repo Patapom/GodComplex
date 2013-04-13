@@ -5,7 +5,7 @@
 #include "Inc/Volumetric.hlsl"
 #include "Inc/Atmosphere.hlsl"
 
-static const float	STEPS_COUNT = 64.0;
+static const float	STEPS_COUNT = 32.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
 
 //[
@@ -15,7 +15,7 @@ cbuffer	cbSplat	: register( b10 )
 };
 //]
 
-Texture2D		_TexDepth			: register(t10);
+Texture2D		_TexDepth	: register(t10);
 
 
 struct	VS_IN
@@ -81,26 +81,33 @@ float	Ei( float z )
 
 // =============================================
 // Compute an approximate isotropic diffusion through infinite slabs
-float3	ComputeIsotropicScattering( float3 _Position, float _Density, float3 _SunLight )
+float3	ComputeIsotropicScattering( float3 _Position, float _Density, float3 _SunLight, float3 _SkyLightTop, float3 _SkyLightBottom )
 {
 	const float	_Sigma_scattering_Isotropic = 0.1;
 
+#if 0	// Ponder contributions with "insideness" of layer
 	float	y = saturate( 2.0 * ((_Position.y - BOX_BASE) / BOX_HEIGHT - 0.5) );
 			y *= y;
 			y = 1.0 - y;	// Max at center!
-//			y *= y;
+#elif 0	// Ponder contribution by distance to top
+	float	y = saturate( (_Position.y - BOX_BASE) / BOX_HEIGHT );
+			y *= y;
+#else
+	float	y = 1.0;	// Constant throughout the layer
+#endif
 
+//y = 1.0;
 
-//	float3	SkyRadiance = 0.05 * float3( 0.6, 0.71, 0.75 );
-	float3	SkyRadiance = 4.0 * GetIrradiance( _TexIrradiance, 0*(BOX_BASE + 0.5 * BOX_HEIGHT), _LightDirection.y );
+	float3	SkyRadianceTop = 0.05 * _SkyLightTop;
+	float3	SkyRadianceBottom = 0.05 * _SkyLightBottom;
 
-	float3	SunRadiance = 0.1 * _SunLight;
+	float3	SunRadiance = 0.01 * _SunLight;
 
-	float3	GroundReflectance = 0;//0.04 * float3( 1.0, 0.8, 0.2 );
+	float3	GroundReflectance = 0.005 * float3( 1.0, 0.8, 0.2 );
 	float3	GroundRadiance = GroundReflectance * _SunLight;
 
-	float3	IsotropicLightTop = y * (SkyRadiance + SunRadiance);
-	float3	IsotropicLightBottom = y * (SkyRadiance + SunRadiance) + GroundRadiance;
+	float3	IsotropicLightTop = y * (SkyRadianceTop + SunRadiance);
+	float3	IsotropicLightBottom = 1 * (SkyRadianceBottom + SunRadiance) + GroundRadiance;
 
 	float	BoxTop = BOX_BASE + BOX_HEIGHT;
 	float	BoxBottom = BOX_BASE;
@@ -209,9 +216,10 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 //return Depth;
 
 #if 1
+
 //### Super important line to get a nice precision everywhere: we lack details at a distance (i.e. we don't trace the clouds fully) but who cares since we keep a nice precision?
 //ZMinMax.y = ZMinMax.x + min( 8.0, Depth );	// Don't trace more than 8 units in length
-ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than 16 units in length (less precision, prefer line above)
+ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than N times the box height's in length (less precision, prefer line above)
 
 	float	MipBias = 0.0;
 
@@ -237,9 +245,9 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 
 //#define FIX_STEP_SIZE	0.01
 #ifndef FIX_STEP_SIZE
-	float	StepsCount = ceil( Depth * BOX_HEIGHT );
-//	float	StepsCount = STEPS_COUNT;
+	float	StepsCount = ceil( Depth * 2.0 * BOX_HEIGHT );
 			StepsCount = min( STEPS_COUNT, StepsCount );
+//	float	StepsCount = STEPS_COUNT;
 
 	float4	Step = float4( WorldPosEnd - WorldPosStart, ZMinMax.y - ZMinMax.x ) / StepsCount;
 
@@ -267,8 +275,10 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 	float	CosTheta = dot( View, LightDirection );
 	float	Phase = 1.0 / (4 * PI) * (1 - g*g) * pow( max(0.0, 1+g*g-g*CosTheta ), -1.5 );
 
-	// Get Sun light
-	float3	SunLight = 10.0 * GetTransmittanceWithShadow( BOX_BASE + BOX_HEIGHT, _LightDirection.y );
+	// Get Sun light & Sky lights
+	float3	SunLight = SUN_INTENSITY * GetTransmittanceWithShadow( BOX_BASE + BOX_HEIGHT, _LightDirection.y );
+	float3	SkyLightTop = SUN_INTENSITY * GetIrradiance( _TexIrradiance, 0*(BOX_BASE + 1.0 * BOX_HEIGHT), _LightDirection.y );
+	float3	SkyLightBottom = SUN_INTENSITY * GetIrradiance( _TexIrradiance, 0*(BOX_BASE + 0.0 * BOX_HEIGHT), _LightDirection.y );
 
 	// Start integration
 	float	Sigma_t = 0.0;
@@ -306,16 +316,16 @@ if ( true)//_VolumeParams.y > 0.5 )
 		Transmittance *= StepTransmittance;
 
 		// Compute scattering
-		float3	StepScattering = Sigma_s * Light * Step.w;	// Constant sigma
-				StepScattering += ComputeIsotropicScattering( Position.xyz, Density, SunLight );
+		float3	StepScattering  = Sigma_s * Phase * Light * Step.w;
+				StepScattering += ComputeIsotropicScattering( Position.xyz, Density, SunLight, SkyLightTop, SkyLightBottom ) * Step.w;
 		Scattering += Transmittance * StepScattering;
 }
 else
 {	// ======================== New Strategy WITH sub-step integration ========================
 	// More accurate but also a little more hungry, but always better than using more samples!
 		float	StepTransmittance;
-		float3	StepScattering = IntegrateScattering( PreviousLight, Light, PreviousSigma_s, Sigma_s, PreviousSigma_t, Sigma_t, Step.w, StepTransmittance );
-				StepScattering += ComputeIsotropicScattering( Position.xyz, Density, SunLight );
+		float3	StepScattering  = Phase * IntegrateScattering( PreviousLight, Light, PreviousSigma_s, Sigma_s, PreviousSigma_t, Sigma_t, Step.w, StepTransmittance );
+				StepScattering += ComputeIsotropicScattering( Position.xyz, Density, SunLight, SkyLightTop, SkyLightBottom ) * Step.w;
 		Scattering += Transmittance * StepScattering;
 		Transmittance *= StepTransmittance;
 }
@@ -327,21 +337,6 @@ else
 		Position += Step;
 	}
 
-	Scattering *= Phase;
-
-
-// Transmittance = 0.0;
-// Scattering = mul( float4( WorldPosEnd, 1.0 ), _World2Shadow ).xyz;
-// Scattering.xy = float2( 0.5 * (1.0 + Scattering.x), 0.5 * (1.0 - Scattering.y) );
-// Scattering.z *= 0.25;
-// 
-// Scattering = 0.9 * 0.25 * _TexCloudTransmittance.SampleLevel( LinearClamp, float3( Scattering.xy, 1 ), 0.0 ).w;
-
-//Scattering = 0.03 * StepsCount;
-//Scattering = Depth;
-
-//return float4( Transmittance.xxx, 0 );
-//return float4( 1.0 * MipBias.xxx, Transmittance );
 	return float4( Scattering, Transmittance );
 	return Transmittance;
 }
