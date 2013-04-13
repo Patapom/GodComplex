@@ -335,11 +335,11 @@ float3	ComputeSkyColor( float3 _PositionKm, float3 _View, float3 _Sun, float _Di
 //		return 0.0;	// Lost in space...
 
 	float	CosThetaSun = dot( StartNormal, _Sun );
-    float	CosGamma = dot( _View, _Sun );
-	float	StartAltitudeKm = max( 0.0, StartRadiusKm - GROUND_RADIUS_KM );
+	float	CosGamma = dot( _View, _Sun );
+	float	StartAltitudeKm = StartRadiusKm - GROUND_RADIUS_KM;
 
 	// Compute sky radiance
-    float4	Lin = Sample4DScatteringTable( _TexScattering, StartAltitudeKm, CosThetaView, CosThetaSun, CosGamma );
+	float4	Lin = Sample4DScatteringTable( _TexScattering, StartAltitudeKm, CosThetaView, CosThetaSun, CosGamma );
 
 	// Compute end point's radiance
 	float3	L0 = 0.0;
@@ -349,12 +349,14 @@ float3	ComputeSkyColor( float3 _PositionKm, float3 _View, float3 _Sun, float _Di
 		float	EndRadiusKm = length( EndPositionKm );
 		float	EndAltitudeKm = EndRadiusKm - GROUND_RADIUS_KM;
 		float3	GroundNormal = EndPositionKm / EndRadiusKm;
-		float	EndCosThetaSun = dot( _Sun, GroundNormal );
+		float	EndCosThetaView = dot( GroundNormal, _View );
+		float	EndCosThetaSun = dot( GroundNormal, _Sun );
 
-		float3	SunTransmittance = GetTransmittanceWithShadow( EndAltitudeKm, EndCosThetaSun );		// Here, we account for shadowing by the planet
-		float3	DirectSunLight = saturate( EndCosThetaSun ) * SunTransmittance;						// Lighting by direct Sun light
+		float	CosThetaGround = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM / (EndRadiusKm*EndRadiusKm)) );
+		float3	SunTransmittance = EndCosThetaSun > CosThetaGround ? GetTransmittance( EndAltitudeKm, EndCosThetaSun ) : 0.0;	// Here, we account for shadowing by the planet
+		float3	DirectSunLight = saturate( EndCosThetaSun ) * SunTransmittance;													// Lighting by direct Sun light
 
-		float3	GroundIrradiance = GetIrradiance( _TexIrradiance, EndAltitudeKm, EndCosThetaSun );	// Lighting by multiple-scattered light
+		float3	GroundIrradiance = GetIrradiance( _TexIrradiance, EndAltitudeKm, EndCosThetaSun );								// Lighting by multiple-scattered light
 
 		L0 = (_GroundReflectance * INVPI) * (DirectSunLight + GroundIrradiance);
 
@@ -362,19 +364,22 @@ float3	ComputeSkyColor( float3 _PositionKm, float3 _View, float3 _Sun, float _Di
 		if ( EndAltitudeKm > 0.01 )
 		{
 			float3	ViewTransmittance = GetTransmittance( StartAltitudeKm, CosThetaView, _DistanceKm );						
-			float4	EndLin = Sample4DScatteringTable( _TexScattering, StartAltitudeKm, CosThetaView, CosThetaSun, CosGamma );
+			float4	EndLin = Sample4DScatteringTable( _TexScattering, EndAltitudeKm, EndCosThetaView, EndCosThetaSun, CosGamma );
 			Lin -= ViewTransmittance.xyzx * EndLin;
 		}
+
+		L0 *= GetTransmittance( StartAltitudeKm, CosThetaView, _DistanceKm );	// Attenuated through the atmosphere until end point
 	}
 	else
 	{	// We're looking up. Check if we can see the Sun...
-		L0 = smoothstep( 0.999, 0.9995, CosGamma );	// 1 if we're looking directly at the Sun (warning: bad for the eyes!)
+		L0 = smoothstep( 0.999, 0.9995, CosGamma );					// 1 if we're looking directly at the Sun (warning: bad for the eyes!)
+		L0 *= GetTransmittance( StartAltitudeKm, CosThetaView );	// Attenuated through the atmosphere
 	}
 
 	// Compute final radiance
 	Lin = max( 0.0, Lin );
 
-	return PhaseFunctionRayleigh( CosGamma ) * Lin.xyz + PhaseFunctionMie( CosGamma ) * GetMieFromRayleighAndMieRed( Lin ) + L0 * GetTransmittance( StartAltitudeKm, CosThetaView );
+	return PhaseFunctionRayleigh( CosGamma ) * Lin.xyz + PhaseFunctionMie( CosGamma ) * GetMieFromRayleighAndMieRed( Lin ) + L0;
 }
 
 #endif	// _ATMOSPHERE_INC_

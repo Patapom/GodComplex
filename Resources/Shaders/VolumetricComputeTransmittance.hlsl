@@ -54,7 +54,7 @@ PS_OUT	PS( VS_IN _In )
 	}
 
 	// Ensure we trace a maximum distance
-	const float	MaxDepth = 64.0;
+	const float	MaxDepth = 32.0 * BOX_HEIGHT;
 	if ( Depth > MaxDepth )
 	{
 		Depth = MaxDepth;

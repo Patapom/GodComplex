@@ -8,7 +8,7 @@
 #define	USE_FAST_COS	// Use Taylor series instead of actual cosine
 
 #define	ANIMATE
-#define	BOX_BASE	10.0	// 10km (!!)
+#define	BOX_BASE	8.0		// 8km (!!) (need to lower that but keep clouds' aspect)
 #define	BOX_HEIGHT	4.0		// 4km high
 #define	PACK_R8				// Noise is packed in a R8 texture instead of R32F
 
@@ -16,6 +16,8 @@ static const float	EXTINCTION_COEFF = 4.0;
 static const float	SCATTERING_COEFF = 4.0;
 
 static const float	SUN_INTENSITY = 100.0;
+
+static const float	WORLD2KM = 0.5;						// 1 World unit equals 0.5km
 
 
 static const float	FREQUENCY_MULTIPLIER_LOW = 0.25;	// Noise low frequency multiplier
@@ -40,6 +42,35 @@ Texture2DArray	_TexCloudTransmittance	: register(t11);
 Texture3D		_TexFractal0	: register(t16);
 Texture3D		_TexFractal1	: register(t17);
 
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Fast analytical Perlin noise
+float Hash( float n )
+{
+	return frac( sin(n) * 43758.5453 );
+}
+
+float FastNoise( float3 x )
+{
+	float3	p = floor(x);
+	float3	f = frac(x);
+
+	f = smoothstep( 0.0, 1.0, f );
+
+	float	n = p.x + 57.0 * p.y + 113.0 * p.z;
+
+	return lerp(	lerp(	lerp( Hash( n +   0.0 ), Hash( n +   1.0 ), f.x ),
+							lerp( Hash( n +  57.0 ), Hash( n +  58.0 ), f.x ), f.y ),
+					lerp(	lerp( Hash( n + 113.0 ), Hash( n + 114.0 ), f.x ),
+							lerp( Hash( n + 170.0 ), Hash( n + 171.0 ), f.x ), f.y ), f.z );
+}
+
+// Fast analytical noise for screen-space perturbation
+float	FastScreenNoise( float2 _XY )
+{
+	return Hash( 1.579849 * _XY.x - 2.60165409 * _XY.y )
+		 * Hash( -1.3468489 * _XY.y + 2.31765 * _XY.x );
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Volume density
@@ -129,7 +160,7 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 
 	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * float3( 0.01, 0.1, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
 #ifdef	ANIMATE
-	UVW0 += (0.25 * _Time.x) * float3( 0.02, 0, -0.05 );
+	UVW0 += _Time.x * float3( 0.005, 0, -0.0125 );
 #endif
 //	float	Noise = _TexFractal0.SampleLevel( LinearWrap, 0.1 * UVW0, 4.0 ).x;
 	float	Noise = _TexNoise3D.SampleLevel( LinearWrap, UVW0, 0*_MipBias ).x;	// Use small 32^3 noise (no need mip bias on that low freq noise anyway or we may lose the defining shape)
@@ -140,7 +171,7 @@ Noise *= sqrt(y);		// Goes to 0 at bottom
 //	float3	UVW1 = float3( 0.04, 0.04, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
 	float3	UVW1 = FREQUENCY_MULTIPLIER_HIGH * float3( 0.02, 0.02, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
 #ifdef	ANIMATE
-	UVW1.y -= 0.01 * _Time.x;	// Good
+	UVW1 += _Time.x * float3( 0.0, -0.01, 0.0 );	// Good
 #endif
 
 #ifdef	PACK_R8
@@ -165,7 +196,8 @@ Noise *= sqrt(y);		// Goes to 0 at bottom
 
 //	float3	HeightOffsets = float3( -0.005, 0.0, 0.1 );	// Bottom, Middle, Top offsets
 //	float3	HeightOffsets = float3( 0.025, 0.05, 0.10 );	// Bottom, Middle, Top offsets
-	float3	HeightOffsets = float3( 0.0, +0.02, 0.1 );	// Bottom, Middle, Top offsets
+//	float3	HeightOffsets = float3( 0.0, +0.02, 0.1 );	// Bottom, Middle, Top offsets (Nice coverage!)
+	float3	HeightOffsets = -0.02 + float3( 0.0, +0.02, 0.1 );	// Bottom, Middle, Top offsets (Nice coverage!)
 	float	Offset = lerp( HeightOffsets.z, HeightOffsets.y, TopY ) + lerp( HeightOffsets.x, HeightOffsets.y, BottomY );
 
 	float	Contrast = 0.5;
@@ -219,7 +251,7 @@ float4	FastCos( float4 _Angle )
 	return 1.0 + x2 * (-0.5 + x2 * ((1.0/24.0) + x2 * (-(1.0/720.0) + x2 * (1.0/40320.0))));
 }
 
-float	GetTransmittance( float3 _WorldPosition )
+float	GetCloudTransmittance( float3 _WorldPosition )
 {
 	float3	ShadowPosition = mul( float4( _WorldPosition, 1.0 ), _World2Shadow ).xyz;
 	float2	UV = float2( 0.5 * (1.0 + ShadowPosition.x), 0.5 * (1.0 - ShadowPosition.y) );

@@ -107,11 +107,11 @@ float	t = 0.25f * _Time;
 //m_LightDirection.Set( 1, 2.0, -5 );
 //m_LightDirection.Set( cosf(_Time), 2.0f * sinf( 0.324f * _Time ), sinf( _Time ) );
 //m_LightDirection.Set( cosf(_Time), 1.0f, sinf( _Time ) );
-//m_LightDirection.Set( sinf(t), 2.0f * sinf( 0.4f + 4.0f * 0.324f * t ), -cosf( t ) );	// Fast vertical change
 
-//float	SunAngle = LERP( -0.05f * PI, 0.499f * PI, 0.5f * (1.0f + sinf( t )) );		// Oscillating between slightly below horizon to zenith
 float	SunAngle = LERP( -0.01f * PI, 0.499f * PI, 0.5f * (1.0f + sinf( t )) );		// Oscillating between slightly below horizon to zenith
-m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
+float	SunPhi = 0.5923f * t;
+m_LightDirection.Set( sinf( SunPhi ), sinf( SunAngle ), -cosf( SunPhi ) );
+// m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 // DEBUG
 
 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF00FF00 ), L"Compute Shadow" );
@@ -134,11 +134,11 @@ m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Compute transforms
-	const float	BOX_BASE = 10.0f;	// 10km  <== Find better way to keep visual aspect!
+	const float	BOX_BASE = 8.0f;	// 10km  <== Find better way to keep visual aspect!
 	const float	BOX_HEIGHT = 4.0f;	// 4km high
 
 	m_Position.Set( 0, BOX_BASE + 0.5f * BOX_HEIGHT, -100 );
-	m_Scale.Set( 128.0f, 0.5f * BOX_HEIGHT, 128.0f );
+	m_Scale.Set( 200.0f, 0.5f * BOX_HEIGHT, 200.0f );
 
 	m_Box2World.PRS( m_Position, m_Rotation, m_Scale );
 
@@ -274,9 +274,9 @@ m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 
 // DEBUG
 m_pRTRender->SetPS( 10 );
-m_pRTTransmittanceZ->SetPS( 11 );
+//m_pRTTransmittanceZ->SetPS( 11 );
 //m_pRTRenderZ->SetPS( 11 );
-m_pRTTransmittanceMap->SetPS( 12 );
+//m_pRTTransmittanceMap->SetPS( 12 );
 // DEBUG
 
 		m_ScreenQuad.Render( M );

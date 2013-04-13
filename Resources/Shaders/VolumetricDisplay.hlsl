@@ -24,35 +24,6 @@ struct	VS_IN
 };
 
 
-// Fast analytical noise
-float hash( float n )
-{
-	return frac( sin(n) * 43758.5453 );
-}
-
-float FastNoise( float3 x )
-{
-	float3	p = floor(x);
-	float3	f = frac(x);
-
-	f = smoothstep( 0.0, 1.0, f );
-
-	float	n = p.x + 57.0 * p.y + 113.0 *p.z;
-
-// 	float4	V0 = float4( hash( n +   0.0 ), hash( n +   1.0 ), hash( n +  57.0 ), hash( n +  58.0 ) );
-// 	float4	V1 = float4( hash( n + 113.0 ), hash( n + 114.0 ), hash( n + 170.0 ), hash( n + 171.0 ) );
-// 
-// 	float4	V = lerp( V0, V1, f.z );
-// 	float2	V2 = lerp( V.xy, V.zw, f.y );
-// 	return lerp( V2.x, V2.y, f.x );
-
-	return lerp(	lerp(	lerp( hash( n +   0.0 ), hash( n +   1.0 ), f.x ),
-							lerp( hash( n +  57.0 ), hash( n +  58.0 ), f.x ), f.y ),
-					lerp(	lerp( hash( n + 113.0 ), hash( n + 114.0 ), f.x ),
-							lerp( hash( n + 170.0 ), hash( n + 171.0 ), f.x ), f.y ), f.z );
-}
-
-
 float	Eval( float a, float b, float c, float d, float x )
 {
 	return 1.0 / (4.0 * pow( d, 1.5 )) * exp( -x * (c + d * x) ) *
@@ -98,10 +69,10 @@ float3	ComputeIsotropicScattering( float3 _Position, float _Density, float3 _Sun
 
 //y = 1.0;
 
-	float3	SkyRadianceTop = 0.05 * _SkyLightTop;
-	float3	SkyRadianceBottom = 0.05 * _SkyLightBottom;
+	float3	SkyRadianceTop = 0.1 * _SkyLightTop;
+	float3	SkyRadianceBottom = 0.1 * _SkyLightBottom;
 
-	float3	SunRadiance = 0.01 * _SunLight;
+	float3	SunRadiance = 0.02 * _SunLight;
 
 	float3	GroundReflectance = 0.005 * float3( 1.0, 0.8, 0.2 );
 	float3	GroundRadiance = GroundReflectance * _SunLight;
@@ -245,7 +216,8 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 
 //#define FIX_STEP_SIZE	0.01
 #ifndef FIX_STEP_SIZE
-	float	StepsCount = ceil( Depth * 2.0 * BOX_HEIGHT );
+//	float	StepsCount = ceil( Depth * 2.0 * BOX_HEIGHT );
+	float	StepsCount = ceil( 2.0 * FastScreenNoise( _In.__Position.xy ) + Depth * 2.0 * BOX_HEIGHT );	// Add noise to hide banding
 			StepsCount = min( STEPS_COUNT, StepsCount );
 //	float	StepsCount = STEPS_COUNT;
 
@@ -271,19 +243,23 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 	// Compute phase
 	float3	LightDirection = mul( float4( _LightDirection, 0.0 ), _World2Camera ).xyz;	// Light in camera space
 			View = normalize( View );
-	float	g = 0.15;
+
+	const float	g_iso = 0.1;
+	const float	g_forward = 0.85;
 	float	CosTheta = dot( View, LightDirection );
-	float	Phase = 1.0 / (4 * PI) * (1 - g*g) * pow( max(0.0, 1+g*g-g*CosTheta ), -1.5 );
+	float	Phase_iso = 1.0 / (4 * PI) * (1 - g_iso*g_iso) * pow( max(0.0, 1+g_iso*g_iso-g_iso*CosTheta ), -1.5 );
+	float	Phase_forward = 1.0 / (4 * PI) * (1 - g_forward*g_forward) * pow( max(0.0, 1+g_forward*g_forward-g_forward*CosTheta ), -1.5 );
+	float	Phase = lerp( Phase_iso, Phase_forward, 0.2 );
 
 	// Get Sun light & Sky lights
 	float3	SunLight = SUN_INTENSITY * GetTransmittanceWithShadow( BOX_BASE + BOX_HEIGHT, _LightDirection.y );
-	float3	SkyLightTop = SUN_INTENSITY * GetIrradiance( _TexIrradiance, 0*(BOX_BASE + 1.0 * BOX_HEIGHT), _LightDirection.y );
+	float3	SkyLightTop = SUN_INTENSITY * GetIrradiance( _TexIrradiance, (BOX_BASE + 1.0 * BOX_HEIGHT), _LightDirection.y );
 	float3	SkyLightBottom = SUN_INTENSITY * GetIrradiance( _TexIrradiance, 0*(BOX_BASE + 0.0 * BOX_HEIGHT), _LightDirection.y );
 
 	// Start integration
 	float	Sigma_t = 0.0;
 	float	Sigma_s = 0.0;
-	float3	Light = SunLight * GetTransmittance( WorldPosStart.xyz );		// Start with light at start position
+	float3	Light = SunLight * GetCloudTransmittance( WorldPosStart.xyz );		// Start with light at start position
 	float3	Scattering = 0.0;
 	float	Transmittance = 1.0;
 	for ( float StepIndex=0.0; StepIndex < StepsCount; StepIndex++ )
@@ -295,16 +271,17 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 		Sigma_t = EXTINCTION_COEFF * Density;
 		Sigma_s = SCATTERING_COEFF * Density;
 
-//		float	Shadowing = GetTransmittance( Position.xyz );
-		float	Shadowing = GetTransmittance( (Position + 0.5 * Step).xyz );
+//		float	Shadowing = GetCloudTransmittance( Position.xyz );
+		float	Shadowing = GetCloudTransmittance( (Position + 0.5 * Step).xyz );
 
-const float	ShadowAttenuation = 0.85;
-Shadowing = 1.0 - (ShadowAttenuation * (1.0 - Shadowing));
+		const float	ShadowStrength = 0.85;	// Shadow %
+		Shadowing = 1.0 - (ShadowStrength * (1.0 - Shadowing));
+		Shadowing *= smoothstep( 0.0, 1.0, smoothstep( 0.0, 0.03, abs(_LightDirection.y) ) );	// Full shadowing when the light is horizontal
 
 		float3	PreviousLight = Light;
 		Light = SunLight * Shadowing;
 
-if ( true)//_VolumeParams.y > 0.5 )
+if ( true )//_VolumeParams.y > 0.5 )
 {	// ======================== Old Strategy without sub-step integration ========================
 
 		// Compute extinction
@@ -317,7 +294,7 @@ if ( true)//_VolumeParams.y > 0.5 )
 
 		// Compute scattering
 		float3	StepScattering  = Sigma_s * Phase * Light * Step.w;
-				StepScattering += ComputeIsotropicScattering( Position.xyz, Density, SunLight, SkyLightTop, SkyLightBottom ) * Step.w;
+//				StepScattering += ComputeIsotropicScattering( Position.xyz, Density, SunLight, SkyLightTop, SkyLightBottom ) * Step.w;
 		Scattering += Transmittance * StepScattering;
 }
 else
@@ -338,5 +315,4 @@ else
 	}
 
 	return float4( Scattering, Transmittance );
-	return Transmittance;
 }

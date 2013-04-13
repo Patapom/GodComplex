@@ -26,8 +26,6 @@ VS_IN	VS( VS_IN _In )	{ return _In; }
 
 
 
-
-
 float3	TempComputeSkyColor( float3 _PositionKm, float3 _View, float3 _Sun, float _DistanceKm=-1, float3 _GroundReflectance=0.0 )
 {
 	float3	StartPositionKm = _PositionKm - EARTH_CENTER_KM;	// Start position from origin (i.e. center of the Earth)
@@ -49,11 +47,11 @@ float3	TempComputeSkyColor( float3 _PositionKm, float3 _View, float3 _Sun, float
 //		return 0.0;	// Lost in space...
 
 	float	CosThetaSun = dot( StartNormal, _Sun );
-    float	CosGamma = dot( _View, _Sun );
+	float	CosGamma = dot( _View, _Sun );
 	float	StartAltitudeKm = StartRadiusKm - GROUND_RADIUS_KM;
 
 	// Compute sky radiance
-    float4	Lin = Sample4DScatteringTable( _TexScattering, StartAltitudeKm, CosThetaView, CosThetaSun, CosGamma );
+	float4	Lin = Sample4DScatteringTable( _TexScattering, StartAltitudeKm, CosThetaView, CosThetaSun, CosGamma );
 
 	// Compute end point's radiance
 	float3	L0 = 0.0;
@@ -63,7 +61,8 @@ float3	TempComputeSkyColor( float3 _PositionKm, float3 _View, float3 _Sun, float
 		float	EndRadiusKm = length( EndPositionKm );
 		float	EndAltitudeKm = EndRadiusKm - GROUND_RADIUS_KM;
 		float3	GroundNormal = EndPositionKm / EndRadiusKm;
-		float	EndCosThetaSun = dot( _Sun, GroundNormal );
+		float	EndCosThetaView = dot( GroundNormal, _View );
+		float	EndCosThetaSun = dot( GroundNormal, _Sun );
 
 		float	CosThetaGround = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM / (EndRadiusKm*EndRadiusKm)) );
 		float3	SunTransmittance = EndCosThetaSun > CosThetaGround ? GetTransmittance( EndAltitudeKm, EndCosThetaSun ) : 0.0;	// Here, we account for shadowing by the planet
@@ -77,48 +76,142 @@ float3	TempComputeSkyColor( float3 _PositionKm, float3 _View, float3 _Sun, float
 		if ( EndAltitudeKm > 0.01 )
 		{
 			float3	ViewTransmittance = GetTransmittance( StartAltitudeKm, CosThetaView, _DistanceKm );						
-			float4	EndLin = Sample4DScatteringTable( _TexScattering, StartAltitudeKm, CosThetaView, CosThetaSun, CosGamma );
+			float4	EndLin = Sample4DScatteringTable( _TexScattering, EndAltitudeKm, EndCosThetaView, EndCosThetaSun, CosGamma );
 			Lin -= ViewTransmittance.xyzx * EndLin;
 		}
+
+		L0 *= GetTransmittance( StartAltitudeKm, CosThetaView, _DistanceKm );	// Attenuated through the atmosphere until end point
 	}
 	else
 	{	// We're looking up. Check if we can see the Sun...
-		L0 = smoothstep( 0.999, 0.9995, CosGamma );	// 1 if we're looking directly at the Sun (warning: bad for the eyes!)
+		L0 = smoothstep( 0.999, 0.9995, CosGamma );					// 1 if we're looking directly at the Sun (warning: bad for the eyes!)
+		L0 *= GetTransmittance( StartAltitudeKm, CosThetaView );	// Attenuated through the atmosphere
 	}
 
 	// Compute final radiance
 	Lin = max( 0.0, Lin );
 
-	return PhaseFunctionRayleigh( CosGamma ) * Lin.xyz + PhaseFunctionMie( CosGamma ) * GetMieFromRayleighAndMieRed( Lin ) + L0 * GetTransmittance( StartAltitudeKm, CosThetaView );
+	return PhaseFunctionRayleigh( CosGamma ) * Lin.xyz + PhaseFunctionMie( CosGamma ) * GetMieFromRayleighAndMieRed( Lin ) + L0;
 }
 
 float3	HDR( float3 L, float _Exposure=0.5 )
 {
-    L = L * _Exposure;
-//     L.r = L.r < 1.413 ? pow(L.r * 0.38317, 1.0 / 2.2) : 1.0 - exp(-L.r);
-//     L.g = L.g < 1.413 ? pow(L.g * 0.38317, 1.0 / 2.2) : 1.0 - exp(-L.g);
-//     L.b = L.b < 1.413 ? pow(L.b * 0.38317, 1.0 / 2.2) : 1.0 - exp(-L.b);
-
+	L = L * _Exposure;
 	L = 1.0 - exp( -L );
+	return L;
+}
 
-    return L;
+// This function assumes we're standing below the cloud and thus get the full extinction
+float	GetFastCloudTransmittance( float3 _WorldPosition )
+{
+	float3	ShadowPosition = mul( float4( _WorldPosition, 1.0 ), _World2Shadow ).xyz;
+	float2	UV = float2( 0.5 * (1.0 + ShadowPosition.x), 0.5 * (1.0 - ShadowPosition.y) );
+
+	float4	C0 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
+	return C0.x - C0.y + C0.z - C0.w;	// Skip smaller coefficients... No need to tap further.
+	float4	C1 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
+	return C0.x - C0.y + C0.z - C0.w + C1.x - C1.y;
+}
+
+float	ComputeCloudShadowing( float3 _PositionWorld, float3 _View, float _Distance, float _StepOffset=0.5, uniform uint _StepsCount=64 )
+{
+//	uint	StepsCount = ceil( lerp( 16.0, float(_StepsCount), saturate( _Distance / 150.0 ) ) );
+	uint	StepsCount = ceil( 2.0 * _StepOffset + lerp( 16.0, float(_StepsCount), saturate( _Distance / 150.0 ) ) );	// Fantastic noise hides banding!
+
+//return 0.01 * StepsCount;
+
+	float3	Step = (_Distance / StepsCount) * _View;
+//	_PositionWorld += _StepOffset * Step;
+
+	float	SumIncomingLight = 0.0;
+	for ( uint StepIndex=0; StepIndex < StepsCount; StepIndex++ )
+	{
+//		SumIncomingLight += GetCloudTransmittance( _PositionWorld );
+		SumIncomingLight += GetFastCloudTransmittance( _PositionWorld );
+		_PositionWorld += Step;
+	}
+	return saturate( SumIncomingLight / _StepsCount );
+}
+
+float3	ComputeFinalColor( float3 _PositionWorld, float3 _View, float3 _Sun, float4 _CloudScatteringExtinction, float _StepOffset=0.5 )
+{
+//	return SUN_INTENSITY * TempComputeSkyColor( _PositionKm, _View, _Sun );	// Not accounting for shadowing
+
+	float3	PositionKm = WORLD2KM * _PositionWorld;
+
+	// Compute sky radiance arriving at camera, not accounting for cloud
+	float3	StartPositionKm = PositionKm - EARTH_CENTER_KM;	// Start position from origin (i.e. center of the Earth)
+	float	StartRadiusKm = length( StartPositionKm );
+	float	StartAltitudeKm = StartRadiusKm - GROUND_RADIUS_KM;
+	float3	StartNormal = StartPositionKm / StartRadiusKm;
+	float	CosThetaView = dot( StartNormal, _View );
+	float	CosThetaSun = dot( StartNormal, _Sun );
+
+	float	CosGamma = dot( _View, _Sun );
+
+	float4	Lin = Sample4DScatteringTable( _TexScattering, StartAltitudeKm, CosThetaView, CosThetaSun, CosGamma );
+	float3	Lin_Rayleigh = Lin.xyz;
+	float3	Lin_Mie = GetMieFromRayleighAndMieRed( Lin );
+// return INVFOURPI * SUN_INTENSITY * Lin_Mie;
+// return INVFOURPI * SUN_INTENSITY * Lin_Rayleigh;
+
+	// Compute intersection with the bottom cloud plane
+	float	Height2Plane = BOX_BASE + 0.2 * BOX_HEIGHT - _PositionWorld.y;
+	float	HitDistance = Height2Plane / _View.y;
+//return 0.1 * HitDistanceKm;
+	if ( HitDistance < 0.0 )
+		HitDistance = -_PositionWorld.y / _View.y;	// We're hitting the ground instead...
+
+	float	HitDistanceKm = WORLD2KM * HitDistance;
+	HitDistanceKm = min( 30.0, HitDistanceKm );	// Beyond that, we're outside the clouds...
+	HitDistance = HitDistanceKm / WORLD2KM;
+
+	// Account for cloud shadowing
+	float3	CloudPositionKm = PositionKm + HitDistanceKm * _View - EARTH_CENTER_KM;
+	float	CloudRadiusKm = length( CloudPositionKm );
+	float	CloudAltitudeKm = CloudRadiusKm - GROUND_RADIUS_KM;
+	float3	CloudNormal = CloudPositionKm / CloudRadiusKm;
+	float	CloudCosThetaView = dot( CloudNormal, _View );
+	float	CloudCosThetaSun = dot( CloudNormal, _Sun );
+
+	// Compute sky radiance arriving at cloud (i.e. above and inside cloud)
+	float4	Lin_cloud2atmosphere = Sample4DScatteringTable( _TexScattering, CloudAltitudeKm, CloudCosThetaView, CloudCosThetaSun, CosGamma );
+	float3	Lin_cloud2atmosphere_Rayleigh = Lin_cloud2atmosphere.xyz;
+	float3	Lin_cloud2atmosphere_Mie = GetMieFromRayleighAndMieRed( Lin_cloud2atmosphere );
+// return 10 * INVFOURPI * SUN_INTENSITY * Lin_cloud2atmosphere_Mie;
+// return INVFOURPI * SUN_INTENSITY * Lin_cloud2atmosphere_Rayleigh;
+
+	// Compute sky radiance between camera and cloud
+	float3	Transmittance = GetTransmittance( StartAltitudeKm, CosThetaView, HitDistanceKm );
+	float3	Lin_camera2cloud_Rayleigh = max( 0.0, Lin_Rayleigh - Transmittance * Lin_cloud2atmosphere_Rayleigh );
+	float3	Lin_camera2cloud_Mie = max( 0.0, Lin_Mie - Transmittance * Lin_cloud2atmosphere_Mie );
+
+// return INVFOURPI * SUN_INTENSITY * Lin_camera2cloud_Mie;
+// return INVFOURPI * SUN_INTENSITY * Lin_camera2cloud_Rayleigh;
+
+	// Attenuate in-scattered light between camera and cloud due to shadowing
+	float	Shadowing = ComputeCloudShadowing( _PositionWorld, _View, HitDistance, _StepOffset );
+//return Shadowing;
+	const float	ShadowingStrength = 1.0;
+	Lin_camera2cloud_Rayleigh *= 1.0 - (ShadowingStrength * (1.0 - Shadowing));
+	Lin_camera2cloud_Mie *= 1.0 - (ShadowingStrength * (1.0 - Shadowing));
+
+	// Rebuild final camera2atmosphere scattering, accounting for cloud extinction
+	Lin_Rayleigh = Lin_camera2cloud_Rayleigh + _CloudScatteringExtinction.w * Transmittance * Lin_cloud2atmosphere_Rayleigh;
+	Lin_Mie = Lin_camera2cloud_Mie + _CloudScatteringExtinction.w * Transmittance * Lin_cloud2atmosphere_Mie;
+// return INVFOURPI * SUN_INTENSITY * Lin_Mie;
+// return INVFOURPI * SUN_INTENSITY * Lin_Rayleigh;
+
+	// Compute Sun radiance at the end of the ray
+	float3	L0 = smoothstep( 0.999, 0.9995, CosGamma );					// 1 if we're looking directly at the Sun (warning: bad for the eyes!)
+			L0 *= _CloudScatteringExtinction.w * GetTransmittance( StartAltitudeKm, CosThetaView );	// Attenuated through the atmosphere
+
+	return SUN_INTENSITY * (PhaseFunctionRayleigh( CosGamma ) * Lin_Rayleigh + PhaseFunctionMie( CosGamma ) * Lin_Mie + L0) + _CloudScatteringExtinction.xyz;
 }
 
 float3	PS( VS_IN _In ) : SV_TARGET0
 {
 	float2	UV = _In.__Position.xy * _dUV.xy;
-//return float4( UV, 0, 1 );
-	
-// 	float2	Depth = _TexDebug1.SampleLevel( LinearClamp, UV, 0.0 ).xy;
-// return 0.5 * Depth.y;
-// return 0.5 * (Depth.y - Depth.x);
-
-//	float3	BackgroundColor = 0.9 * float3( 135, 206, 235 ) / 255.0;
-//	float3	BackgroundColor = 0.3;
-
-//return 4.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.0 / RESOLUTION_ALTITUDE + fmod( 0.1 * _Time.x, 1.0 ) ), 0.0 );
-//return _TexCloudTransmittance.SampleLevel( LinearClamp, UV, 0.0 );
-//return 50.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 );
 
 	float3	View = normalize( float3( _CameraData.x * (2.0 * UV.x - 1.0), -_CameraData.y * (2.0 * UV.y - 1.0), 1.0 ) );
 			View = mul( float4( View, 0.0 ), _Camera2World ).xyz;
@@ -128,31 +221,21 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 // float3	Mie = GetMieFromRayleighAndMieRed( Pipo );
 // return 10.0 * Mie;
 
-	// From iQ's clouds
-// 	float3	BackgroundColor = float3( 0.6, 0.71, 0.75 ) - View.y * 0.2 * float3( 1.0, 0.9, 1.0 ) + 0.15*0.5;	// Sky gradient
-// //			BackgroundColor += 0.8 * float3(1.0,0.8,0.6) * pow( Sun, 8.0 );	// Sun glow
-// 			BackgroundColor *= 0.95;
-// //		 	BackgroundColor += 0.2 * float3(1.0,0.95,0.8) * pow( Sun, 3.0 );
-
+// Debug transmittance function map
+// 	float4	C0 = _TexDebug2.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
+// 	float4	C1 = _TexDebug2.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
+// return 1.0 * C0.xyz;
+// return 1.0 * abs( C0.x );
+// return 4.0 * abs(C0.xyz);
+// 
+// 	float3	ShadowPos = float3( 2.0 * fmod( 0.5 * _Time.x, 1.0 ) - 1.0, 1.0 - 2.0 * UV.y, _ShadowZMax.x * UV.x );
+// 	return 0.999 * GetCloudTransmittance( ShadowPos );
 
 	// From sky's multiple scattering
-	float3	PositionKm = 0.01 * _Camera2World[3].xyz;
-	float3	BackgroundColor = TempComputeSkyColor( PositionKm, View, _LightDirection );
-			BackgroundColor *= SUN_INTENSITY;
-//return BackgroundColor;
-//return HDR( BackgroundColor );
-
+	float	StepOffset = FastScreenNoise( _In.__Position.xy );
+	float3	PositionWorld = _Camera2World[3].xyz;
 	float4	ScatteringExtinction = _TexDebug0.SampleLevel( LinearClamp, UV, 0.0 );
-return HDR( BackgroundColor * ScatteringExtinction.w + ScatteringExtinction.xyz );
-
-	float4	C0 = _TexDebug2.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
-	float4	C1 = _TexDebug2.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
-return 1.0 * C0.xyz;
-return 1.0 * abs( C0.x );
-return 4.0 * abs(C0.xyz);
-
-//return fmod( 0.5 * _Time.x, 1.0 );
-
-	float3	ShadowPos = float3( 2.0 * fmod( 0.5 * _Time.x, 1.0 ) - 1.0, 1.0 - 2.0 * UV.y, _ShadowZMax.x * UV.x );
-	return 0.999 * GetTransmittance( ShadowPos );
+	float3	FinalColor = ComputeFinalColor( PositionWorld, View, _LightDirection, ScatteringExtinction, StepOffset );
+//return FinalColor;
+	return HDR( FinalColor );
 }
