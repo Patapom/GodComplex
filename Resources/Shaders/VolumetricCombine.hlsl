@@ -25,6 +25,13 @@ VS_IN	VS( VS_IN _In )	{ return _In; }
 
 
 
+float3	HDR( float3 L, float _Exposure=0.5 )
+{
+	L = L * _Exposure;
+	L = 1.0 - exp( -L );
+	return L;
+}
+
 
 float3	TempComputeSkyColor( float3 _PositionKm, float3 _View, float3 _Sun, float _DistanceKm=-1, float3 _GroundReflectance=0.0 )
 {
@@ -92,13 +99,6 @@ float3	TempComputeSkyColor( float3 _PositionKm, float3 _View, float3 _Sun, float
 	Lin = max( 0.0, Lin );
 
 	return PhaseFunctionRayleigh( CosGamma ) * Lin.xyz + PhaseFunctionMie( CosGamma ) * GetMieFromRayleighAndMieRed( Lin ) + L0;
-}
-
-float3	HDR( float3 L, float _Exposure=0.5 )
-{
-	L = L * _Exposure;
-	L = 1.0 - exp( -L );
-	return L;
 }
 
 // This function assumes we're standing below the cloud and thus get the full extinction
@@ -213,6 +213,16 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 {
 	float2	UV = _In.__Position.xy * _dUV.xy;
 
+// DEBUG
+if ( UV.x < 0.2 && UV.y > 0.8 )
+{	// Show the transmittance map
+	UV.x /= 0.2;
+	UV.y = (UV.y - 0.8) / 0.2;
+	return _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
+}
+// DEBUG
+
+
 	float3	View = normalize( float3( _CameraData.x * (2.0 * UV.x - 1.0), -_CameraData.y * (2.0 * UV.y - 1.0), 1.0 ) );
 			View = mul( float4( View, 0.0 ), _Camera2World ).xyz;
 	float	Sun = saturate( dot( _LightDirection, View ) );
@@ -235,6 +245,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 	float	StepOffset = FastScreenNoise( _In.__Position.xy );
 	float3	PositionWorld = _Camera2World[3].xyz;
 	float4	ScatteringExtinction = _TexDebug0.SampleLevel( LinearClamp, UV, 0.0 );
+return HDR( ScatteringExtinction.xyz );
 	float3	FinalColor = ComputeFinalColor( PositionWorld, View, _LightDirection, ScatteringExtinction, StepOffset );
 //return FinalColor;
 	return HDR( FinalColor );

@@ -254,7 +254,7 @@ float4	FastCos( float4 _Angle )
 float	GetCloudTransmittance( float3 _WorldPosition )
 {
 	float3	ShadowPosition = mul( float4( _WorldPosition, 1.0 ), _World2Shadow ).xyz;
-	float2	UV = float2( 0.5 * (1.0 + ShadowPosition.x), 0.5 * (1.0 - ShadowPosition.y) );
+	float2	UV = ShadowPosition.xy;
 	float	Z = ShadowPosition.z;
 
 	float4	C0 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
@@ -272,7 +272,9 @@ float	GetCloudTransmittance( float3 _WorldPosition )
 #ifndef USE_FAST_COS
 	float4	Temp0 = cos( float4( CosTerm0.yzw, CosTerm1.x) * x );
 	float	Temp1 = cos( CosTerm1.y * x );
-	float4	Cos0 = float4( 0.5, Temp0.xyz );
+// 	float4	Cos0 = float4( 0.5, Temp0.xyz );
+// 	float2	Cos1 = float2( Temp0.w, Temp1 );
+	float4	Cos0 = float4( 1.0, Temp0.xyz );
 	float2	Cos1 = float2( Temp0.w, Temp1 );
 #else
 	float4	Temp0 = FastCos( float4( CosTerm0.yzw, CosTerm1.x) * x );
