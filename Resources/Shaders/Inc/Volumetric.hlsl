@@ -29,7 +29,7 @@ cbuffer	cbShadow	: register( b11 )
 	float3		_LightDirection;
 	float4x4	_World2Shadow;
 	float4x4	_Shadow2World;
-	float2		_ShadowZMax;
+	float2		_ShadowZMinMax;
 };
 
 

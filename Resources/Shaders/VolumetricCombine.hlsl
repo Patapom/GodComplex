@@ -238,7 +238,7 @@ if ( UV.x < 0.2 && UV.y > 0.8 )
 // return 1.0 * abs( C0.x );
 // return 4.0 * abs(C0.xyz);
 // 
-// 	float3	ShadowPos = float3( 2.0 * fmod( 0.5 * _Time.x, 1.0 ) - 1.0, 1.0 - 2.0 * UV.y, _ShadowZMax.x * UV.x );
+// 	float3	ShadowPos = float3( 2.0 * fmod( 0.5 * _Time.x, 1.0 ) - 1.0, 1.0 - 2.0 * UV.y, _ShadowZMinMax.x * UV.x );
 // 	return 0.999 * GetCloudTransmittance( ShadowPos );
 
 	// From sky's multiple scattering

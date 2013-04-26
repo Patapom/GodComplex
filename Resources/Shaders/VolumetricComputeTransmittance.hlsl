@@ -77,7 +77,7 @@ PS_OUT	PS( VS_IN _In )
 #ifdef USE_OBJECT_ZBUFFER
 	float2	ZMinMax = _TexDepth.SampleLevel( LinearClamp, UV, 0.0 ).xy;
 #else
-	float2	ZMinMax = float2( 0.0, _ShadowZMax.x );
+	float2	ZMinMax = _ShadowZMinMax;
 #endif
 
 	float	Depth = ZMinMax.y - ZMinMax.x;
@@ -85,19 +85,19 @@ PS_OUT	PS( VS_IN _In )
 		return Out;	// Empty interval, no trace needed...
 
 	// Ensure we trace a minimum distance
-	const float	MinDepth = 0.1;
-	if ( Depth < MinDepth )
+	const float	MIN_DEPTH = 0.1;
+	if ( Depth < MIN_DEPTH )
 	{
-		Depth = MinDepth;
+		Depth = MIN_DEPTH;
 		float	CenterZ = 0.5 * (ZMinMax.x + ZMinMax.y);
 		ZMinMax = CenterZ + float2( -0.5, +0.5 ) * Depth;
 	}
 
 	// Ensure we trace a maximum distance
-	const float	MaxDepth = 32.0 * BOX_HEIGHT;
-	if ( Depth > MaxDepth )
+	const float	MAX_DEPTH = 32.0 * BOX_HEIGHT;
+	if ( Depth > MAX_DEPTH )
 	{
-		Depth = MaxDepth;
+		Depth = MAX_DEPTH;
 		ZMinMax.y = ZMinMax.x + Depth;
 	}
 

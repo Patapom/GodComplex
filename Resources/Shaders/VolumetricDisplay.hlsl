@@ -405,7 +405,8 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 		float3	PreviousLight = Light;
 		Light = SunLight * Shadowing;
 
-if ( _VolumeParams.y > 0.5 )
+if ( true )
+//if ( _VolumeParams.y > 0.5 )
 {	// ======================== Old Strategy without sub-step integration ========================
 
 		// Compute extinction
@@ -418,7 +419,7 @@ if ( _VolumeParams.y > 0.5 )
 
 		// Compute scattering
 		float3	StepScattering  = Sigma_s * Phase * Light * Step.w;
-//				StepScattering += ComputeIsotropicScattering( Position.xyz, Density, SunLight, SkyLightTop, SkyLightBottom ) * Step.w;
+				StepScattering += ComputeIsotropicScattering( Position.xyz, Density, SunLight, SkyLightTop, SkyLightBottom ) * Step.w;
 		Scattering += Transmittance * StepScattering;
 }
 else
@@ -446,10 +447,10 @@ else
 
 
 
-// float4	ShadowPos = mul( float4( WorldPosEnd, 1.0 ), _World2Shadow );
+// float4	ShadowPos = mul( float4( WorldPosStart, 1.0 ), _World2Shadow );
 // float4	Trans = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( ShadowPos.xy, 0 ), 0.0 );
-// // return float4( ShadowPos.xy, 0, 1 );
-// // return Trans;
+// //return float4( ShadowPos.xy, 0, 1 );
+// //return Trans;
 // FinalColor = lerp( FinalColor, Trans, 0.8 );
 
 

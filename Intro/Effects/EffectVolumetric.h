@@ -33,7 +33,7 @@ public:		// NESTED TYPES
 		NjFloat4	LightDirection;
 		NjFloat4x4	World2Shadow;
 		NjFloat4x4	Shadow2World;
-		NjFloat2	ZMax;
+		NjFloat2	ZMinMax;
 	};
 
 	struct CBVolume 
@@ -126,6 +126,7 @@ protected:
 	NjFloat3	Project2ShadowPlane( const NjFloat3& _PositionKm, float& Distance2PlaneKm );
 	NjFloat2	World2ShadowQuad( const NjFloat3& _PositionKm, float& Distance2PlaneKm );
 	NjFloat3	FindTangent( NjFloat4x4& _Camera2World, float _TanFovV );
+	void		ComputeFrustumIntersection( NjFloat3 _pCameraFrustumKm[5], float _PlaneHeight, NjFloat2& _QuadMin, NjFloat2& _QuadMax );
 
 	Texture3D*	BuildFractalTexture( bool _bLoadFirst );
 };
