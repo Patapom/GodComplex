@@ -432,6 +432,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\VolumetricDepthWrite.hlsl" />
     <None Include="Resources\Shaders\VolumetricDisplay.hlsl" />
     <None Include="Resources\Shaders\VolumetricPreComputeAtmosphere.hlsl" />
+    <None Include="Resources\Shaders\VolumetricTerrain.hlsl" />
     <None Include="Tools\GodComplex.kkm" />
   </ItemGroup>
   <ItemGroup>

@@ -3,7 +3,8 @@
 //--------------------------------------------------------------------------//
 #pragma once
 
-#ifdef GODCOMPLEX
+//#ifdef GODCOMPLEX
+#if 1
 
 // Override some functions with our own implementations
 #define memset( dst, val, amount )	ASM_memset( dst, val, amount )

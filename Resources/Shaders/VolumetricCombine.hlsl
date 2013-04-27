@@ -5,7 +5,7 @@
 #include "Inc/Volumetric.hlsl"
 #include "Inc/Atmosphere.hlsl"
 
-Texture2D		_TexDebug0	: register(t10);
+Texture2DArray	_TexDebug0	: register(t10);
 Texture2D		_TexDebug1	: register(t11);
 Texture2DArray	_TexDebug2	: register(t12);
 
@@ -102,16 +102,16 @@ float3	TempComputeSkyColor( float3 _PositionKm, float3 _View, float3 _Sun, float
 }
 
 // This function assumes we're standing below the cloud and thus get the full extinction
-float	GetFastCloudTransmittance( float3 _WorldPosition )
-{
-	float3	ShadowPosition = mul( float4( _WorldPosition, 1.0 ), _World2Shadow ).xyz;
-	float2	UV = float2( 0.5 * (1.0 + ShadowPosition.x), 0.5 * (1.0 - ShadowPosition.y) );
-
-	float4	C0 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
-	return C0.x - C0.y + C0.z - C0.w;	// Skip smaller coefficients... No need to tap further.
-	float4	C1 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
-	return C0.x - C0.y + C0.z - C0.w + C1.x - C1.y;
-}
+// float	GetFastCloudTransmittance( float3 _WorldPosition )
+// {
+// 	float3	ShadowPosition = mul( float4( _WorldPosition, 1.0 ), _World2Shadow ).xyz;
+// 	float2	UV = float2( 0.5 * (1.0 + ShadowPosition.x), 0.5 * (1.0 - ShadowPosition.y) );
+// 
+// 	float4	C0 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
+// 	return C0.x - C0.y + C0.z - C0.w;	// Skip smaller coefficients... No need to tap further.
+// 	float4	C1 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
+// 	return C0.x - C0.y + C0.z - C0.w + C1.x - C1.y;
+// }
 
 float	ComputeCloudShadowing( float3 _PositionWorld, float3 _View, float _Distance, float _StepOffset=0.5, uniform uint _StepsCount=64 )
 {
@@ -241,12 +241,38 @@ if ( UV.x < 0.2 && UV.y > 0.8 )
 // 	float3	ShadowPos = float3( 2.0 * fmod( 0.5 * _Time.x, 1.0 ) - 1.0, 1.0 - 2.0 * UV.y, _ShadowZMinMax.x * UV.x );
 // 	return 0.999 * GetCloudTransmittance( ShadowPos );
 
-	// From sky's multiple scattering
-	float	StepOffset = FastScreenNoise( _In.__Position.xy );
-	float3	PositionWorld = _Camera2World[3].xyz;
-	float4	ScatteringExtinction = _TexDebug0.SampleLevel( LinearClamp, UV, 0.0 );
-return HDR( ScatteringExtinction.xyz );
-	float3	FinalColor = ComputeFinalColor( PositionWorld, View, _LightDirection, ScatteringExtinction, StepOffset );
-//return FinalColor;
+	// Load terrain background
+	float4	TerrainAlpha = _TexDebug1.SampleLevel( LinearClamp, UV, 0.0 );
+	float3	Terrain = TerrainAlpha.xyz;
+//return TerrainAlpha.w;
+ //return HDR( Terrain );
+
+	// Load scattering & extinction from sky and clouds
+	float3	Scattering = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
+	float3	Extinction = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
+//return HDR( Scattering );
+//return HDR( Extinction );
+
+	// Compute Sun's color
+	float	CameraAltitudeKm = WORLD2KM * _Camera2World[3].y;
+	float	CosThetaView = View.y;
+	float	CosGamma = dot( View, _LightDirection );
+
+	float3	DirectSunLight = smoothstep( 0.999, 0.9995, CosGamma );					// 1 if we're looking directly at the Sun (warning: bad for the eyes!)
+			DirectSunLight *= (1.0-TerrainAlpha.w) * SUN_INTENSITY * GetTransmittance( CameraAltitudeKm, CosThetaView );	// Attenuated through the atmosphere
+//return HDR( DirectSunLight );
+
+	// Compose color
+	float3	FinalColor = (Terrain + DirectSunLight) * Extinction + Scattering;
 	return HDR( FinalColor );
+
+// 	// From sky's multiple scattering
+// 	float4	ScatteringExtinction = _TexDebug0.SampleLevel( LinearClamp, UV, 0.0 );
+// //return HDR( ScatteringExtinction.xyz );
+// 
+// 	float	StepOffset = FastScreenNoise( _In.__Position.xy );
+// 	float3	PositionWorld = _Camera2World[3].xyz;
+// 	float3	FinalColor = ComputeFinalColor( PositionWorld, View, _LightDirection, ScatteringExtinction, StepOffset );
+// //return FinalColor;
+// 	return HDR( FinalColor );
 }

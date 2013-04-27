@@ -186,7 +186,7 @@ private:
 	bool			Lock() const;
 	void			Unlock() const;
 
-#ifdef MATERIAL_COMPILE_THREADED
+#ifdef COMPUTE_SHADER_COMPILE_THREADED
 	//////////////////////////////////////////////////////////////////////////
 	// Threaded compilation
 	HANDLE			m_hCompileThread;

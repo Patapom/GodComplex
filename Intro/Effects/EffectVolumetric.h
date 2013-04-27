@@ -45,7 +45,10 @@ private:	// FIELDS
 
 	int					m_ErrorCode;
 	Device&				m_Device;
+
+	Texture2D&			m_RTHDR;
 	Primitive&			m_ScreenQuad;
+	Camera&				m_Camera;
 
 	// PRS of our volume box
 	NjFloat3			m_Position;
@@ -112,17 +115,17 @@ public:		// PROPERTIES
 
 public:		// METHODS
 
-	EffectVolumetric( Device& _Device, Primitive& _ScreenQuad, Camera& _Camera );
+	EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera );
 	~EffectVolumetric();
 
-	void		Render( float _Time, float _DeltaTime, Camera& _Camera );
+	void		Render( float _Time, float _DeltaTime );
 
 protected:
 
 	void		PreComputeSkyTables();
 	void		FreeSkyTables();
 
-	void		ComputeShadowTransform( Camera& _Camera );
+	void		ComputeShadowTransform();
 	NjFloat3	Project2ShadowPlane( const NjFloat3& _PositionKm, float& Distance2PlaneKm );
 	NjFloat2	World2ShadowQuad( const NjFloat3& _PositionKm, float& Distance2PlaneKm );
 	NjFloat3	FindTangent( NjFloat4x4& _Camera2World, float _TanFovV );

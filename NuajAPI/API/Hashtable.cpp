@@ -1,4 +1,5 @@
 #include "Hashtable.h"
+//#include <string.h>
 
 #define NULL 0
 
@@ -13,7 +14,7 @@ DictionaryU32::DictionaryU32( int _Size )
 {
 	m_Size = _Size;
 	m_ppTable = new Node*[m_Size];
-	ASM_memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
 }
 DictionaryU32::~DictionaryU32()
 {
