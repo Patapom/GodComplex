@@ -214,19 +214,22 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 	float2	UV = _In.__Position.xy * _dUV.xy;
 
 // DEBUG
+#if 0
 if ( UV.x < 0.2 && UV.y > 0.8 )
 {	// Show the transmittance map
 	UV.x /= 0.2;
 	UV.y = (UV.y - 0.8) / 0.2;
 	return _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 }
+#endif
 // DEBUG
 
 
 	float3	View = normalize( float3( _CameraData.x * (2.0 * UV.x - 1.0), -_CameraData.y * (2.0 * UV.y - 1.0), 1.0 ) );
 			View = mul( float4( View, 0.0 ), _Camera2World ).xyz;
-	float	Sun = saturate( dot( _LightDirection, View ) );
 
+//	float	Sun = saturate( dot( _LightDirection, View ) );
+//
 // float4	Pipo = Sample4DScatteringTable( _TexScattering, 0.0, View.y, _LightDirection.y, dot( View, _LightDirection ) );
 // float3	Mie = GetMieFromRayleighAndMieRed( Pipo );
 // return 10.0 * Mie;
@@ -258,12 +261,18 @@ if ( UV.x < 0.2 && UV.y > 0.8 )
 	float	CosThetaView = View.y;
 	float	CosGamma = dot( View, _LightDirection );
 
-	float3	DirectSunLight = smoothstep( 0.999, 0.9995, CosGamma );					// 1 if we're looking directly at the Sun (warning: bad for the eyes!)
-			DirectSunLight *= (1.0-TerrainAlpha.w) * SUN_INTENSITY * GetTransmittance( CameraAltitudeKm, CosThetaView );	// Attenuated through the atmosphere
+	float3	SunColor = SUN_INTENSITY * GetTransmittance( CameraAltitudeKm, CosThetaView );	// Attenuated through the atmosphere
+	float3	DirectSunLight = smoothstep( 0.999, 0.9995, CosGamma );							// 1 if we're looking directly at the Sun (warning: bad for the eyes!)
+			DirectSunLight *= (1.0-TerrainAlpha.w) * SunColor;
 //return HDR( DirectSunLight );
 
 	// Compose color
 	float3	FinalColor = (Terrain + DirectSunLight) * Extinction + Scattering;
+
+	// Add a nice bloom for the Sun
+	FinalColor += 0.02 * smoothstep( 0.9, 1.0, sqrt(CosGamma) ) * SunColor * smoothstep( 0.1, 0.3, _LightDirection.y );
+	FinalColor += 0.002 * smoothstep( 0.1, 1.0, sqrt(CosGamma) ) * SunColor * smoothstep( 0.1, 0.3, _LightDirection.y );
+
 	return HDR( FinalColor );
 
 // 	// From sky's multiple scattering

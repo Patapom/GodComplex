@@ -57,11 +57,12 @@ float	ComputeCloudShadowing( float3 _PositionWorld, float3 _View, float _Distanc
 	return saturate( SumIncomingLight / _StepsCount );
 }
 
-void	ComputeFinalColor( float3 _PositionWorld, float3 _View, float _DistanceKm, float3 _Sun, float4 _CloudScatteringExtinction, float _StepOffset, out float3 _Scattering, out float3 _Extinction )
+void	ComputeFinalColor( float3 _PositionWorld, float3 _View, float2 _DistanceKm, float3 _Sun, float4 _CloudScatteringExtinction, float _GroundBlocking, float _StepOffset, out float3 _Scattering, out float3 _Extinction )
 {
 	float3	PositionKm = WORLD2KM * _PositionWorld;
 
-	// Compute sky radiance arriving at camera, not accounting for cloud
+	////////////////////////////////////////////////////////////
+	// Compute sky radiance arriving at camera, not accounting for clouds
 	float3	StartPositionKm = PositionKm - EARTH_CENTER_KM;	// Start position from origin (i.e. center of the Earth)
 	float	StartRadiusKm = length( StartPositionKm );
 	float	StartAltitudeKm = StartRadiusKm - GROUND_RADIUS_KM;
@@ -75,58 +76,41 @@ void	ComputeFinalColor( float3 _PositionWorld, float3 _View, float _DistanceKm, 
 	float3	Lin_Rayleigh = Lin.xyz;
 	float3	Lin_Mie = GetMieFromRayleighAndMieRed( Lin );
 
-	// Compute intersection with the bottom cloud plane
-	float	Height2Plane = BOX_BASE + 0.2 * BOX_HEIGHT - _PositionWorld.y;
-	float	HitDistance = Height2Plane / _View.y;
-	if ( HitDistance < 0.0 )
-		HitDistance = -_PositionWorld.y / _View.y;		// We're hitting the ground instead...
-
-	float	HitDistanceKm = WORLD2KM * HitDistance;
-	HitDistanceKm = min( 30.0, HitDistanceKm );			// Beyond that, we're outside the clouds...
-	HitDistanceKm = min( _DistanceKm, HitDistanceKm );	// Don't go further than ZBuffer either...
-
-	HitDistance = HitDistanceKm / WORLD2KM;				// Retrieve world distance we need later for shadowing
-
+	////////////////////////////////////////////////////////////
 	// Account for cloud shadowing
-	float3	CloudPositionKm = PositionKm + HitDistanceKm * _View - EARTH_CENTER_KM;
-	float	CloudRadiusKm = length( CloudPositionKm );
-	float	CloudAltitudeKm = CloudRadiusKm - GROUND_RADIUS_KM;
-	float3	CloudNormal = CloudPositionKm / CloudRadiusKm;
-	float	CloudCosThetaView = dot( CloudNormal, _View );
-	float	CloudCosThetaSun = dot( CloudNormal, _Sun );
+	float3	HitPositionKm = PositionKm + _DistanceKm.x * _View - EARTH_CENTER_KM;
+	float	HitRadiusKm = length( HitPositionKm );
+	float	HitAltitudeKm = HitRadiusKm - GROUND_RADIUS_KM;
+	float3	HitNormal = HitPositionKm / HitRadiusKm;
+	float	HitCosThetaView = dot( HitNormal, _View );
+	float	HitCosThetaSun = dot( HitNormal, _Sun );
 
 	// Compute sky radiance arriving at cloud/ground (i.e. above and inside cloud)
-	float4	Lin_cloud2atmosphere = Sample4DScatteringTable( _TexScattering, CloudAltitudeKm, CloudCosThetaView, CloudCosThetaSun, CosGamma );
-	float3	Lin_cloud2atmosphere_Rayleigh = Lin_cloud2atmosphere.xyz;
-	float3	Lin_cloud2atmosphere_Mie = GetMieFromRayleighAndMieRed( Lin_cloud2atmosphere );
+	float4	Lin_hit2atmosphere = Sample4DScatteringTable( _TexScattering, HitAltitudeKm, HitCosThetaView, HitCosThetaSun, CosGamma );
+	float3	Lin_hit2atmosphere_Rayleigh = Lin_hit2atmosphere.xyz;
+	float3	Lin_hit2atmosphere_Mie = GetMieFromRayleighAndMieRed( Lin_hit2atmosphere );
 
-	// Compute sky radiance between camera and cloud
-	float3	Transmittance = GetTransmittance( StartAltitudeKm, CosThetaView, HitDistanceKm );
-	float3	Lin_camera2cloud_Rayleigh = max( 0.0, Lin_Rayleigh - Transmittance * Lin_cloud2atmosphere_Rayleigh );
-	float3	Lin_camera2cloud_Mie = max( 0.0, Lin_Mie - Transmittance * Lin_cloud2atmosphere_Mie );
+	// Compute sky radiance between camera and hit
+	float3	Transmittance = GetTransmittance( StartAltitudeKm, CosThetaView, _DistanceKm.y );
+	float3	Lin_camera2cloud_Rayleigh = max( 0.0, Lin_Rayleigh - Transmittance * Lin_hit2atmosphere_Rayleigh );
+	float3	Lin_camera2cloud_Mie = max( 0.0, Lin_Mie - Transmittance * Lin_hit2atmosphere_Mie );
 
-	// Attenuate in-scattered light between camera and cloud due to shadowing
-	float	Shadowing = ComputeCloudShadowing( _PositionWorld, _View, HitDistance, _StepOffset );
-//return Shadowing;
-	const float	ShadowingStrength = 1.0;
-	Lin_camera2cloud_Rayleigh *= 1.0 - (ShadowingStrength * (1.0 - Shadowing));
-	Lin_camera2cloud_Mie *= 1.0 - (ShadowingStrength * (1.0 - Shadowing));
+	// Attenuate in-scattered light between camera and hit due to shadowing by the cloud
+	float	Shadowing = ComputeCloudShadowing( _PositionWorld, _View, _DistanceKm.x / WORLD2KM, _StepOffset );
 
+	const float	GODRAYS_STRENGTH = 1.0;
+	Lin_camera2cloud_Rayleigh *= 1.0 - (GODRAYS_STRENGTH * (1.0 - Shadowing));
+	Lin_camera2cloud_Mie *= 1.0 - (GODRAYS_STRENGTH * (1.0 - Shadowing));
+
+	////////////////////////////////////////////////////////////
 	// Rebuild final camera2atmosphere scattering, accounting for cloud extinction
-	float	CloudExtinction = _DistanceKm < 0.99*INFINITY ? _CloudScatteringExtinction.w : 1.0;	// Completely mask remaining segment if we hit the ground
-	Lin_Rayleigh = Lin_camera2cloud_Rayleigh + CloudExtinction * Transmittance * Lin_cloud2atmosphere_Rayleigh;
-	Lin_Mie = Lin_camera2cloud_Mie + CloudExtinction * Transmittance * Lin_cloud2atmosphere_Mie;
+	float	CloudExtinction = _GroundBlocking * _CloudScatteringExtinction.w;	// Completely mask remaining segment if we hit the ground
 
-// 	// Compute Sun radiance at the end of the ray
-// 	float3	L0 = smoothstep( 0.999, 0.9995, CosGamma );					// 1 if we're looking directly at the Sun (warning: bad for the eyes!)
-// 			L0 *= _CloudScatteringExtinction.w * GetTransmittance( StartAltitudeKm, CosThetaView );	// Attenuated through the atmosphere
-// 
-// 	return SUN_INTENSITY * (PhaseFunctionRayleigh( CosGamma ) * Lin_Rayleigh + PhaseFunctionMie( CosGamma ) * Lin_Mie + L0) + _CloudScatteringExtinction.xyz;
+	Lin_Rayleigh = Lin_camera2cloud_Rayleigh + CloudExtinction * Transmittance * Lin_hit2atmosphere_Rayleigh;
+	Lin_Mie = Lin_camera2cloud_Mie + CloudExtinction * Transmittance * Lin_hit2atmosphere_Mie;
 
 	// Finalize extinction & scattering
-	_Extinction = Transmittance;
-	_Extinction *= _DistanceKm < 0.99*INFINITY ? _CloudScatteringExtinction.w : 1.0;	// Mask by cloud if not watching the ground
-
+	_Extinction = Transmittance * _CloudScatteringExtinction.w;	// Combine with cloud
 	_Scattering = SUN_INTENSITY * (PhaseFunctionRayleigh( CosGamma ) * Lin_Rayleigh + PhaseFunctionMie( CosGamma ) * Lin_Mie) + _CloudScatteringExtinction.xyz;
 }
 
@@ -279,6 +263,13 @@ _Extinction = IntegrateExtinction( _Sigma_t0, _Sigma_t1, _Step );
 
 VS_IN	VS( VS_IN _In )	{ return _In; }
 
+PS_OUT	ReturnTestValue( float3 _Value )
+{
+	PS_OUT	Out;
+	Out.Scattering = Out.Extinction = _Value;
+	return Out;
+}
+
 PS_OUT	PS( VS_IN _In )
 {
 	float2	UV = _In.__Position.xy * _dUV.xy;
@@ -292,6 +283,9 @@ PS_OUT	PS( VS_IN _In )
 	ZMinMax.y = min( ZMinMax.y, Z );
 
 	float	Depth = ZMinMax.y - ZMinMax.x;
+
+//return ReturnTestValue( 0.1 * Z );
+//return ReturnTestValue( 0.1 * ZMinMax.y );
 
 #if 1
 
@@ -412,19 +406,27 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 		Position += Step;
 	}
 
+
+	// Compute intersection with the bottom cloud plane or the ground
+	float	HitDistance = ZMinMax.y < 0.0 ? Z : ZMinMax.y;
+	float	HitDistanceKm = WORLD2KM * HitDistance;
+	float	AerialPerspectiveHitDistanceKm = 4.0 * HitDistanceKm;	// Here we fake an increase of aerial perspective
+
+//	HitDistanceKm = min( 30.0, HitDistanceKm );			// Beyond that, we're outside the clouds...
+
 	// Store Scattering & Exinction as 2 colors
 	float	StepOffset = FastScreenNoise( _In.__Position.xy );
 	float3	PositionWorld = _Camera2World[3].xyz;
 	float3	ViewWorld = mul( float4( View, 0.0 ), _Camera2World ).xyz;
-	float	DistanceKm = Z < 0.99 * _CameraData.w ? WORLD2KM * Z : INFINITY;
 
+	float	GroundBlocking = Z < 0.99*_CameraData.w ? 0 : 1;
 
-Scattering = 0;
-Transmittance = 1;
+//Scattering = 0;
+//Transmittance = 1;
 
 
 	PS_OUT	Out;
-	ComputeFinalColor( PositionWorld, ViewWorld, DistanceKm, _LightDirection, float4( Scattering, Transmittance ), StepOffset, Out.Scattering, Out.Extinction );
+	ComputeFinalColor( PositionWorld, ViewWorld, float2( HitDistanceKm, AerialPerspectiveHitDistanceKm ), _LightDirection, float4( Scattering, Transmittance ), GroundBlocking, StepOffset, Out.Scattering, Out.Extinction );
 
 	return Out;
 }

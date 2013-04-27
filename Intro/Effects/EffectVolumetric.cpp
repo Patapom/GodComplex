@@ -3,6 +3,8 @@
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
+//#define BUILD_SKY_SCATTERING	// Build or load? (warning: the computation shader takes hell of a time to compile!) (but the computation itself takes less than a second! ^^)
+
 static const float	SCREEN_TARGET_RATIO = 0.5f;
 
 static const float	EARTH_RADIUS_KM = 6360.0f;
@@ -1438,7 +1440,6 @@ void	EffectVolumetric::PreComputeSkyTables()
 	m_pRTIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );						// irradiance (final)
 	m_pRTInScattering = new Texture3D( m_Device, RES_3D_U, RES_MU, RES_R, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );							// inscatter (final)
 
-//#define BUILD_SKY_SCATTERING	// Build or load?
 #ifdef BUILD_SKY_SCATTERING
 
 	Texture2D*	pRTDeltaIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );			// deltaE (temp)

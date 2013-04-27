@@ -9,6 +9,8 @@
 static const float	TERRAIN_HEIGHT = 6.0;	// Original value is 140
 static const float	TERRAIN_FACTOR = TERRAIN_HEIGHT / 140.0;
 
+static const float	ALBEDO_MULTIPLIER = 0.5;
+
 //[
 cbuffer	cbObject	: register( b10 )
 {
@@ -240,6 +242,8 @@ float3	ComputeTerrainColor( float3 _Position, float _Distance, float3 _Shadow, f
 			s = smoothstep( 0.1, 0.15, s );
 	Albedo = lerp( Albedo, 0.4 * float3(0.6, 0.65, 0.7), s );
 #endif
+
+	Albedo *= ALBEDO_MULTIPLIER;
 
 //return 50.0 * Albedo;
 
