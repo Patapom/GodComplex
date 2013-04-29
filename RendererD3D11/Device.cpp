@@ -395,17 +395,23 @@ void	Device::SetStatesReferences( const NjFloat4& _BlendFactors, U32 _BlendSampl
 	m_StencilRef = _StencilRef;
 }
 
-void	Device::RemoveShaderResources( int _SlotIndex, int _SlotsCount )
+void	Device::RemoveShaderResources( int _SlotIndex, int _SlotsCount, U32 _ShaderStages )
 {
 	ID3D11ShaderResourceView*	ppNULL[128];
 	memset( ppNULL, NULL, _SlotsCount*sizeof(ID3D11ShaderResourceView*) );
 
-	m_pDeviceContext->VSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
-	m_pDeviceContext->HSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
-	m_pDeviceContext->DSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
-	m_pDeviceContext->GSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
-	m_pDeviceContext->PSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
-	m_pDeviceContext->CSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	if ( (_ShaderStages & SSF_VERTEX_SHADER) != 0 )
+		m_pDeviceContext->VSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	if ( (_ShaderStages & SSF_HULL_SHADER) != 0 )
+		m_pDeviceContext->HSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	if ( (_ShaderStages & SSF_DOMAIN_SHADER) != 0 )
+		m_pDeviceContext->DSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	if ( (_ShaderStages & SSF_GEOMETRY_SHADER) != 0 )
+		m_pDeviceContext->GSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	if ( (_ShaderStages & SSF_PIXEL_SHADER) != 0 )
+		m_pDeviceContext->PSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	if ( (_ShaderStages & SSF_COMPUTE_SHADER) != 0 )
+		m_pDeviceContext->CSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
 }
 
 void	Device::RegisterComponent( Component& _Component )

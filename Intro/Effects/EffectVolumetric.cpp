@@ -3,7 +3,7 @@
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
-const float	EffectVolumetric::SCREEN_TARGET_RATIO = 1.0f;
+const float	EffectVolumetric::SCREEN_TARGET_RATIO = 0.5f;
 
 EffectVolumetric::EffectVolumetric( Device& _Device, Primitive& _ScreenQuad ) : m_Device( _Device ), m_ScreenQuad( _ScreenQuad ), m_ErrorCode( 0 )
 {
@@ -110,8 +110,8 @@ float	t = 0.25f * _Time;
 
 float	SunAngle = LERP( -0.01f * PI, 0.499f * PI, 0.5f * (1.0f + sinf( t )) );		// Oscillating between slightly below horizon to zenith
 float	SunPhi = 0.5923f * t;
-m_LightDirection.Set( sinf( SunPhi ), sinf( SunAngle ), -cosf( SunPhi ) );
-// m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
+//m_LightDirection.Set( sinf( SunPhi ), sinf( SunAngle ), -cosf( SunPhi ) );			// Turns around
+m_LightDirection.Set( 0.01, sinf( SunAngle ), -cosf( SunAngle ) );					// Simple vertical oscillation
 // DEBUG
 
 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF00FF00 ), L"Compute Shadow" );
@@ -262,7 +262,7 @@ m_LightDirection.Set( sinf( SunPhi ), sinf( SunAngle ), -cosf( SunPhi ) );
 
 	//////////////////////////////////////////////////////////////////////////
 	// 4] Combine with screen
-	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFF0000 ), L"Render TFM Z" );
+	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFF0000 ), L"Render Combine" );
 
 	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget(), NULL );
 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
@@ -284,6 +284,8 @@ m_pRTRender->SetPS( 10 );
 	USING_MATERIAL_END
 
 	PERF_END_EVENT();
+
+	m_pRTTransmittanceMap->RemoveFromLastAssignedSlots();
 }
 
 //#define	SPLAT_TO_BOX

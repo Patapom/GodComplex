@@ -15,6 +15,9 @@ Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFo
 	m_ArraySize = Desc.ArraySize;
 	m_MipLevelsCount = Desc.MipLevels;
 
+	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
+		m_LastAssignedSlots[ShaderStageIndex] = -1;;
+
 	m_pTexture = &_Texture;
 }
 
@@ -227,13 +230,20 @@ void	Texture2D::Set( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResour
 	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &_pView );
+	m_LastAssignedSlots[0] = _SlotIndex;
+	m_LastAssignedSlots[1] = _SlotIndex;
+	m_LastAssignedSlots[2] = _SlotIndex;
+	m_LastAssignedSlots[3] = _SlotIndex;
+	m_LastAssignedSlots[4] = _SlotIndex;
 }
+
 void	Texture2D::SetVS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &_pView );
+	m_LastAssignedSlots[0] = _SlotIndex;
 }
 void	Texture2D::SetHS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
@@ -241,6 +251,7 @@ void	Texture2D::SetHS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().HSSetShaderResources( _SlotIndex, 1, &_pView );
+	m_LastAssignedSlots[1] = _SlotIndex;
 }
 void	Texture2D::SetDS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
@@ -248,6 +259,7 @@ void	Texture2D::SetDS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &_pView );
+	m_LastAssignedSlots[2] = _SlotIndex;
 }
 void	Texture2D::SetGS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
@@ -255,6 +267,7 @@ void	Texture2D::SetGS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &_pView );
+	m_LastAssignedSlots[3] = _SlotIndex;
 }
 void	Texture2D::SetPS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
@@ -262,6 +275,25 @@ void	Texture2D::SetPS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &_pView );
+	m_LastAssignedSlots[4] = _SlotIndex;
+}
+
+void	Texture2D::RemoveFromLastAssignedSlots() const
+{
+	Device::SHADER_STAGE_FLAGS	pStageFlags[] = {
+		Device::SSF_VERTEX_SHADER,
+		Device::SSF_HULL_SHADER,
+		Device::SSF_DOMAIN_SHADER,
+		Device::SSF_GEOMETRY_SHADER,
+		Device::SSF_PIXEL_SHADER,
+		Device::SSF_COMPUTE_SHADER,
+	};
+	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
+		if ( m_LastAssignedSlots[ShaderStageIndex] != -1 )
+		{
+			m_Device.RemoveShaderResources( m_LastAssignedSlots[ShaderStageIndex], 1, pStageFlags[ShaderStageIndex] );
+			m_LastAssignedSlots[ShaderStageIndex] = -1;
+		}
 }
 
 void	Texture2D::CopyFrom( Texture2D& _SourceTexture )

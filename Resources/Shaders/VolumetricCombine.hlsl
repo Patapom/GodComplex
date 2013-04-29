@@ -108,9 +108,9 @@ float	GetFastCloudTransmittance( float3 _WorldPosition )
 	float2	UV = float2( 0.5 * (1.0 + ShadowPosition.x), 0.5 * (1.0 - ShadowPosition.y) );
 
 	float4	C0 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
-	return C0.x - C0.y + C0.z - C0.w;	// Skip smaller coefficients... No need to tap further.
+	return 2.0*0.5 * C0.x - C0.y + C0.z - C0.w;	// Skip smaller coefficients... No need to tap further.
 	float4	C1 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
-	return C0.x - C0.y + C0.z - C0.w + C1.x - C1.y;
+	return 2.0*0.5 * C0.x - C0.y + C0.z - C0.w + C1.x - C1.y;
 }
 
 float	ComputeCloudShadowing( float3 _PositionWorld, float3 _View, float _Distance, float _StepOffset=0.5, uniform uint _StepsCount=64 )
