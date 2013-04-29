@@ -437,7 +437,7 @@ void	GeometryBuilder::BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const 
 			continue;	// Not for the last band...
 
 		// Write 2 last degenerate indices so we smoothly transition to next band
-		IWRITE( pIndex, NextBandOffset-1 );
+		IWRITE( pIndex, NextBandOffset+_SubdivisionsX );
 		IWRITE( pIndex, NextBandOffset );
 	}
 	ASSERT( IndicesCount == 0, "Wrong contruction!" );

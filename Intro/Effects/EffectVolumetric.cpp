@@ -3,16 +3,28 @@
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
-const float	EffectVolumetric::SCREEN_TARGET_RATIO = 0.5f;
+//#define BUILD_SKY_SCATTERING	// Build or load? (warning: the computation shader takes hell of a time to compile!) (but the computation itself takes less than a second! ^^)
 
-EffectVolumetric::EffectVolumetric( Device& _Device, Primitive& _ScreenQuad ) : m_Device( _Device ), m_ScreenQuad( _ScreenQuad ), m_ErrorCode( 0 )
+static const float	SCREEN_TARGET_RATIO = 0.5f;
+
+static const float	EARTH_RADIUS_KM = 6360.0f;
+
+static const float	BOX_BASE = 8.0f;	// 10km  <== Find better way to keep visual aspect!
+static const float	BOX_HEIGHT = 4.0f;	// 4km high
+
+
+EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera ) : m_Device( _Device ), m_RTHDR( _RTHDR ), m_ScreenQuad( _ScreenQuad ), m_Camera( _Camera ), m_ErrorCode( 0 )
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
  	CHECK_MATERIAL( m_pMatDepthWrite = CreateMaterial( IDR_SHADER_VOLUMETRIC_DEPTH_WRITE, VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
- 	CHECK_MATERIAL( m_pMatComputeTransmittance = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
- 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
- 	CHECK_MATERIAL( m_pMatCombine = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMBINE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
+ 	CHECK_MATERIAL( m_pMatSplatCameraFrustum = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE, VertexFormatP3::DESCRIPTOR, "VS_SplatFrustum", NULL, "PS_SplatFrustum" ), 2 );
+ 	CHECK_MATERIAL( m_pMatComputeTransmittance = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
+ 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
+ 	CHECK_MATERIAL( m_pMatCombine = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMBINE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 5 );
+#ifdef SHOW_TERRAIN
+	CHECK_MATERIAL( m_pMatTerrain = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
+#endif
 
 //	const char*	pCSO = LoadCSO( "./Resources/Shaders/CSO/VolumetricCombine.cso" );
 //	CHECK_MATERIAL( m_pMatCombine = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMBINE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, pCSO ), 4 );
@@ -24,14 +36,58 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Primitive& _ScreenQuad ) : 
 	PreComputeSkyTables();
 
 	//////////////////////////////////////////////////////////////////////////
-	// Build the box primitive
+	// Build the primitives
 	{
 		m_pPrimBox = new Primitive( m_Device, VertexFormatP3::DESCRIPTOR );
 		GeometryBuilder::BuildCube( 1, 1, 1, *m_pPrimBox );
 	}
 
+// 	{
+// 		float		TanFovH = m_Camera.GetCB().Params.x;
+// 		float		TanFovV = m_Camera.GetCB().Params.y;
+// 		float		FarClip = m_Camera.GetCB().Params.w;
+// 
+// 		// Build the 5 vertices of the frustum pyramid, in camera space
+// 		NjFloat3	pVertices[5];
+// 		pVertices[0] = NjFloat3( 0, 0, 0 );
+// 		pVertices[1] = FarClip * NjFloat3( -TanFovH, +TanFovV, 1 );
+// 		pVertices[2] = FarClip * NjFloat3( -TanFovH, -TanFovV, 1 );
+// 		pVertices[3] = FarClip * NjFloat3( +TanFovH, -TanFovV, 1 );
+// 		pVertices[4] = FarClip * NjFloat3( +TanFovH, +TanFovV, 1 );
+// 
+// 		U16			pIndices[18];
+// 		pIndices[3*0+0] = 0;	// Left face
+// 		pIndices[3*0+1] = 1;
+// 		pIndices[3*0+2] = 2;
+// 		pIndices[3*1+0] = 0;	// Bottom face
+// 		pIndices[3*1+1] = 2;
+// 		pIndices[3*1+2] = 3;
+// 		pIndices[3*2+0] = 0;	// Right face
+// 		pIndices[3*2+1] = 3;
+// 		pIndices[3*2+2] = 4;
+// 		pIndices[3*3+0] = 0;	// Top face
+// 		pIndices[3*3+1] = 4;
+// 		pIndices[3*3+2] = 1;
+// 		pIndices[3*4+0] = 1;	// Back faces
+// 		pIndices[3*4+1] = 3;
+// 		pIndices[3*4+2] = 2;
+// 		pIndices[3*5+0] = 1;
+// 		pIndices[3*5+1] = 4;
+// 		pIndices[3*5+2] = 3;
+// 
+// 		m_pPrimFrustum = new Primitive( m_Device, 5, pVertices, 18, pIndices, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, VertexFormatP3::DESCRIPTOR );
+// 	}
+
+#ifdef SHOW_TERRAIN
+	{
+		m_pPrimTerrain = new Primitive( m_Device, VertexFormatP3::DESCRIPTOR );
+		GeometryBuilder::BuildPlane( 200, 200, NjFloat3::UnitX, -NjFloat3::UnitZ, *m_pPrimTerrain );
+	}
+#endif
+
 	//////////////////////////////////////////////////////////////////////////
 	// Build textures & render targets
+	m_pRTCameraFrustumSplat = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, PixelFormatR8::DESCRIPTOR, 1, NULL );
 	m_pRTTransmittanceZ = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, PixelFormatRG16F::DESCRIPTOR, 1, NULL );
 	m_pRTTransmittanceMap = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 2, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
 
@@ -41,10 +97,11 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Primitive& _ScreenQuad ) : 
 	m_RenderHeight = int( ceilf( H * SCREEN_TARGET_RATIO ) );
 
 	m_pRTRenderZ = new Texture2D( m_Device, m_RenderWidth, m_RenderHeight, 1, PixelFormatRG16F::DESCRIPTOR, 1, NULL );
-	m_pRTRender = new Texture2D( m_Device, m_RenderWidth, m_RenderHeight, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
+	m_pRTRender = new Texture2D( m_Device, m_RenderWidth, m_RenderHeight, 2, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
 
 //	m_pTexFractal0 = BuildFractalTexture( true );
 	m_pTexFractal1 = BuildFractalTexture( false );
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
@@ -78,7 +135,13 @@ EffectVolumetric::~EffectVolumetric()
 	delete m_pRTRenderZ;
 	delete m_pRTTransmittanceMap;
 	delete m_pRTTransmittanceZ;
+	delete m_pRTCameraFrustumSplat;
 
+#ifdef SHOW_TERRAIN
+	delete m_pMatTerrain;
+	delete m_pPrimTerrain;
+#endif
+	delete m_pPrimFrustum;
 	delete m_pPrimBox;
 
 	FreeSkyTables();
@@ -86,6 +149,7 @@ EffectVolumetric::~EffectVolumetric()
  	delete m_pMatCombine;
  	delete m_pMatDisplay;
  	delete m_pMatComputeTransmittance;
+ 	delete m_pMatSplatCameraFrustum;
 	delete m_pMatDepthWrite;
 }
 
@@ -99,7 +163,7 @@ EffectVolumetric::~EffectVolumetric()
 #define PERF_MARKER( Color, Text )
 #endif
 
-void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
+void	EffectVolumetric::Render( float _Time, float _DeltaTime )
 {
 // DEBUG
 float	t = 0.25f * _Time;
@@ -109,9 +173,13 @@ float	t = 0.25f * _Time;
 //m_LightDirection.Set( cosf(_Time), 1.0f, sinf( _Time ) );
 
 float	SunAngle = LERP( -0.01f * PI, 0.499f * PI, 0.5f * (1.0f + sinf( t )) );		// Oscillating between slightly below horizon to zenith
+
+//SunAngle = -0.015f * PI;	// Sexy Sunset
+//SunAngle = 0.15f * PI;	// Sexy Sunset
+
 float	SunPhi = 0.5923f * t;
-//m_LightDirection.Set( sinf( SunPhi ), sinf( SunAngle ), -cosf( SunPhi ) );			// Turns around
-m_LightDirection.Set( 0.01, sinf( SunAngle ), -cosf( SunAngle ) );					// Simple vertical oscillation
+//m_LightDirection.Set( sinf( SunPhi ), sinf( SunAngle ), -cosf( SunPhi ) );
+m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 // DEBUG
 
 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF00FF00 ), L"Compute Shadow" );
@@ -134,9 +202,6 @@ m_LightDirection.Set( 0.01, sinf( SunAngle ), -cosf( SunAngle ) );					// Simple
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Compute transforms
-	const float	BOX_BASE = 8.0f;	// 10km  <== Find better way to keep visual aspect!
-	const float	BOX_HEIGHT = 4.0f;	// 4km high
-
 	m_Position.Set( 0, BOX_BASE + 0.5f * BOX_HEIGHT, -100 );
 	m_Scale.Set( 200.0f, 0.5f * BOX_HEIGHT, 200.0f );
 
@@ -149,52 +214,47 @@ m_LightDirection.Set( 0.01, sinf( SunAngle ), -cosf( SunAngle ) );					// Simple
 	PERF_END_EVENT();
 
 	//////////////////////////////////////////////////////////////////////////
-	// 2] Compute the transmittance function map
+	// 1] Compute the transmittance function map
+	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
 
-	// 2.1] Render front & back depths
-	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF000000 ), L"Render TFM Z" );
+// Actually, we lose some perf!
+// 	// 1.1] Splat the camera frustum that will help us isolate the pixels we actually need to compute
+// 	m_Device.ClearRenderTarget( *m_pRTCameraFrustumSplat, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+// 	m_Device.SetRenderTarget( *m_pRTCameraFrustumSplat );
+// 
+// 	USING_MATERIAL_START( *m_pMatSplatCameraFrustum )
+// 
+// 		m_pCB_Splat->m.dUV = m_pRTCameraFrustumSplat->GetdUV();
+// 		m_pCB_Splat->UpdateData();
+// 
+// 		m_pPrimFrustum->Render( M );
+// 
+// 	USING_MATERIAL_END
 
-	m_Device.ClearRenderTarget( *m_pRTTransmittanceZ, NjFloat4( 1e4f, -1e4f, 0.0f, 0.0f ) );
-
-	USING_MATERIAL_START( *m_pMatDepthWrite )
-
-		m_Device.SetRenderTarget( *m_pRTTransmittanceZ );
-
-		m_pCB_Object->m.Local2View = m_Box2World * m_World2Light;
-		m_pCB_Object->m.View2Proj = m_Light2ShadowNormalized; // Here we use the alternate projection matrix that actually scales Z in [0,1] for ZBuffer compliance (since original World2Shadow keeps the Z in world units)
-		m_pCB_Object->m.dUV = m_pRTTransmittanceZ->GetdUV();
-		m_pCB_Object->UpdateData();
-
-		PERF_MARKER(  D3DCOLOR( 0x00FF00FF ), L"Render Front Faces" );
-
-	 	m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_RedOnly );
-		m_pPrimBox->Render( M );
-
-		PERF_MARKER(  D3DCOLOR( 0xFFFF00FF ), L"Render Back Faces" );
-
-	 	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_GreenOnly );
-		m_pPrimBox->Render( M );
-
-	USING_MATERIAL_END
-
-	PERF_END_EVENT();
-
-	// 2.2] Compute transmittance map
+	// 1.2] Compute transmittance map
 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF400000 ), L"Render TFM" );
 
 	m_Device.ClearRenderTarget( *m_pRTTransmittanceMap, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+
+	D3D11_VIEWPORT	Viewport = {
+		0.0f,
+		0.0f,
+		float(m_ViewportWidth),
+		float(m_ViewportHeight),
+		0.0f,	// MinDepth
+		1.0f,	// MaxDepth
+	};
 
 	ID3D11RenderTargetView*	ppViews[2] = {
 		m_pRTTransmittanceMap->GetTargetView( 0, 0, 1 ),
 		m_pRTTransmittanceMap->GetTargetView( 0, 1, 1 ),
 	};
-	m_Device.SetRenderTargets( m_pRTTransmittanceMap->GetWidth(), m_pRTTransmittanceMap->GetHeight(), 2, ppViews );
-
-	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
+	m_Device.SetRenderTargets( m_pRTTransmittanceMap->GetWidth(), m_pRTTransmittanceMap->GetHeight(), 2, ppViews, NULL, &Viewport );
 
 	USING_MATERIAL_START( *m_pMatComputeTransmittance )
 
 		m_pRTTransmittanceZ->SetPS( 10 );
+//		m_pRTCameraFrustumSplat->SetPS( 11 );
 
 		m_pCB_Splat->m.dUV = m_pRTTransmittanceMap->GetdUV();
 		m_pCB_Splat->UpdateData();
@@ -203,10 +263,34 @@ m_LightDirection.Set( 0.01, sinf( SunAngle ), -cosf( SunAngle ) );					// Simple
 
 	USING_MATERIAL_END
 
-	// Remove contention on Transmittance Z that we don't need next...
+	// Remove contention on that Transmittance Z we don't need for the next pass...
 	m_Device.RemoveShaderResources( 10 );
 
 	PERF_END_EVENT();
+
+	//////////////////////////////////////////////////////////////////////////
+	// 2] Show terrain
+#ifdef SHOW_TERRAIN
+ 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF000000 ), L"Render Terrain" );
+
+	USING_MATERIAL_START( *m_pMatTerrain )
+
+		m_Device.SetRenderTarget( m_RTHDR, &m_Device.DefaultDepthStencil() );
+	 	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+
+		m_pRTTransmittanceMap->SetPS( 12 );
+
+		m_pCB_Object->m.Local2View.PRS( NjFloat3( 0, 0, 0 ), NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3( 100, 1, 100 ) );
+		m_pCB_Object->m.dUV = m_RTHDR.GetdUV();
+		m_pCB_Object->UpdateData();
+
+		m_pPrimTerrain->Render( M );
+
+	USING_MATERIAL_END
+
+	PERF_END_EVENT();
+#endif
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// 3] Render the actual volume
@@ -220,8 +304,8 @@ m_LightDirection.Set( 0.01, sinf( SunAngle ), -cosf( SunAngle ) );					// Simple
 
 		m_Device.SetRenderTarget( *m_pRTRenderZ );
 
-		m_pCB_Object->m.Local2View = m_Box2World * _Camera.GetCB().World2Camera;
-		m_pCB_Object->m.View2Proj = _Camera.GetCB().Camera2Proj;
+		m_pCB_Object->m.Local2View = m_Box2World * m_Camera.GetCB().World2Camera;
+		m_pCB_Object->m.View2Proj = m_Camera.GetCB().Camera2Proj;
 		m_pCB_Object->m.dUV = m_pRTRenderZ->GetdUV();
 		m_pCB_Object->UpdateData();
 
@@ -242,14 +326,21 @@ m_LightDirection.Set( 0.01, sinf( SunAngle ), -cosf( SunAngle ) );					// Simple
 	// 3.2] Render the actual volume
 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFC00000 ), L"Render Volume" );
 
-	m_Device.ClearRenderTarget( *m_pRTRender, NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) );
-	m_Device.SetRenderTarget( *m_pRTRender );
-	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
-
 	USING_MATERIAL_START( *m_pMatDisplay )
 
+		m_Device.ClearRenderTarget( *m_pRTRender, NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) );
+//		m_Device.SetRenderTarget( *m_pRTRender );
+
+		ID3D11RenderTargetView*	ppViews[] = {
+			m_pRTRender->GetTargetView( 0, 0, 1 ),
+			m_pRTRender->GetTargetView( 0, 1, 1 )
+		};
+		m_Device.SetRenderTargets( m_pRTRender->GetWidth(), m_pRTRender->GetHeight(), 2, ppViews );
+		m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
+
 		m_pRTRenderZ->SetPS( 10 );
-		m_pRTTransmittanceMap->SetPS( 11 );
+		m_Device.DefaultDepthStencil().SetPS( 11 );
+		m_pRTTransmittanceMap->SetPS( 12 );
 
 		m_pCB_Splat->m.dUV = m_pRTRender->GetdUV();
 		m_pCB_Splat->UpdateData();
@@ -262,7 +353,7 @@ m_LightDirection.Set( 0.01, sinf( SunAngle ), -cosf( SunAngle ) );					// Simple
 
 	//////////////////////////////////////////////////////////////////////////
 	// 4] Combine with screen
-	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFF0000 ), L"Render Combine" );
+	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFF0000 ), L"Render TFM Z" );
 
 	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget(), NULL );
 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
@@ -273,7 +364,8 @@ m_LightDirection.Set( 0.01, sinf( SunAngle ), -cosf( SunAngle ) );					// Simple
 		m_pCB_Splat->UpdateData();
 
 // DEBUG
-m_pRTRender->SetPS( 10 );
+m_pRTRender->SetPS( 10 );	// Cloud rendering, with scattering and extinction
+m_RTHDR.SetPS( 11 );		// Background scene
 //m_pRTTransmittanceZ->SetPS( 11 );
 //m_pRTRenderZ->SetPS( 11 );
 //m_pRTTransmittanceMap->SetPS( 12 );
@@ -285,10 +377,13 @@ m_pRTRender->SetPS( 10 );
 
 	PERF_END_EVENT();
 
-	m_pRTTransmittanceMap->RemoveFromLastAssignedSlots();
+	// Remove contention on SRVs for next pass...
+	m_Device.RemoveShaderResources( 11 );
+	m_Device.RemoveShaderResources( 12 );
 }
 
 //#define	SPLAT_TO_BOX
+#define USE_NUAJ_SHADOW
 #ifdef	SPLAT_TO_BOX
 //////////////////////////////////////////////////////////////////////////
 // Here, shadow map is simply made to fit the top/bottom of the box
@@ -367,7 +462,7 @@ NjFloat3	DeltaTest1 = Test2 - Test0;
 // CHECK
 }
 
-#else
+#elif !defined(USE_NUAJ_SHADOW)
 //////////////////////////////////////////////////////////////////////////
 // Here, shadow is fit to bounding volume as seen from light
 void	EffectVolumetric::ComputeShadowTransform()
@@ -376,7 +471,7 @@ void	EffectVolumetric::ComputeShadowTransform()
 	m_LightDirection.Normalize();
 
 	NjFloat3	X, Y;
-#if 1
+#if 0
 	// Use a ground vector
 	if ( fabs( m_LightDirection.x - 1.0f ) < 1e-3f )
 	{	// Special case
@@ -498,6 +593,394 @@ NjFloat3	DeltaTest0 = Test1 - Test0;
 NjFloat3	Test2 = NjFloat4( 0.0f, 0.0f, SizeLight.z, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
 NjFloat3	DeltaTest1 = Test2 - Test0;
 // CHECK
+}
+
+#else
+
+// Projects a world position in kilometers into the shadow plane
+NjFloat3	EffectVolumetric::Project2ShadowPlane( const NjFloat3& _PositionKm, float& _Distance2PlaneKm )
+{
+// 	NjFloat3	Center2PositionKm = _PositionKm - m_ShadowPlaneCenterKm;
+// 	_Distance2PlaneKm = Center2PositionKm | m_ShadowPlaneNormal;
+// 	return _PositionKm + _Distance2PlaneKm * m_ShadowPlaneNormal;
+
+	// We're now assuming the plane normal is always Y up and we need to project the position to the plane following m_ShadowPlaneNormal, which is the light's direction
+	float	VerticalDistanceToPlane = _PositionKm.y - m_ShadowPlaneCenterKm.y;
+	_Distance2PlaneKm = VerticalDistanceToPlane / m_ShadowPlaneNormal.y;
+	return _PositionKm - _Distance2PlaneKm * m_ShadowPlaneNormal;
+}
+
+// Projects a world position in kilometers into the shadow quad
+NjFloat2	EffectVolumetric::World2ShadowQuad( const NjFloat3& _PositionKm, float& _Distance2PlaneKm )
+{
+	NjFloat3	ProjectedPositionKm = Project2ShadowPlane( _PositionKm, _Distance2PlaneKm );
+	NjFloat3	Center2ProjPositionKm = ProjectedPositionKm - m_ShadowPlaneCenterKm;
+	return NjFloat2( Center2ProjPositionKm | m_ShadowPlaneX, Center2ProjPositionKm | m_ShadowPlaneY );
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Update shadow parameters
+// The idea is this:
+//
+//        ..           /
+//  top       ..      / Light direction
+//  cloud ------ ..  /
+//               ---x..
+//                     --..
+//        -------          -- ..
+//        ///////-----         -  .. Tangent plane to the top cloud sphere
+//        /////////////--        -
+//        //Earth/////////-
+//
+// 1) We compute the tangent plane to the top cloud sphere by projecting the Earth's center to the cloud sphere's surface following the Sun's direction.
+// 2) We project the camera frustum onto that plane
+// 3) We compute the bounding quadrilateral to that frustum
+// 4) We compute the data necessary to transform a world position into a shadow map position, and the reverse
+//
+void	EffectVolumetric::ComputeShadowTransform()
+{
+	static const NjFloat3	PLANET_CENTER_KM = NjFloat3( 0, -EARTH_RADIUS_KM, 0 );
+
+	float		TanFovH = m_Camera.GetCB().Params.x;
+	float		TanFovV = m_Camera.GetCB().Params.y;
+	NjFloat4x4&	Camera2World = m_Camera.GetCB().Camera2World;
+	NjFloat3	CameraPositionKm = Camera2World.GetRow( 3 );
+
+	static const float	SHADOW_FAR_CLIP_DISTANCE = 250.0f;
+	static const float	SHADOW_SCALE = 1.1f;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Compute shadow plane tangent space
+	m_LightDirection.Normalize();
+
+	NjFloat3	ClippedSunDirection = -m_LightDirection;
+// 	if ( ClippedSunDirection.y > 0.0f )
+// 		ClippedSunDirection = -ClippedSunDirection;	// We always require a vector facing down
+
+	const float	MIN_THRESHOLD = 1e-2f;
+	if ( ClippedSunDirection.y > 0.0 && ClippedSunDirection.y < MIN_THRESHOLD )
+	{	// If the ray is too horizontal, the matrix becomes full of zeroes and is not inversible...
+		ClippedSunDirection.y = MIN_THRESHOLD;
+		ClippedSunDirection.Normalize();
+	}
+	else if ( ClippedSunDirection.y < 0.0 && ClippedSunDirection.y > -MIN_THRESHOLD )
+	{	// If the ray is too horizontal, the matrix becomes full of zeroes and is not inversible...
+		ClippedSunDirection.y = -MIN_THRESHOLD;
+		ClippedSunDirection.Normalize();
+	}
+
+// TODO: Fix this !
+//			 // Clip Sun's direction to avoid grazing angles
+//			 if ( ClippedSunDirection.y < (float) Math.Cos( m_shadowSunSetMaxAngle ) )
+//			 {
+// //				ClippedSunDirection.y = Math.Max( ClippedSunDirection.y, (float) Math.Cos( m_shadowSunSetMaxAngle ) );
+// //				ClippedSunDirection /= Math.Max( 1e-3f, 1.0f-ClippedSunDirection.y );		// Project to unit circle
+//				 ClippedSunDirection /= (float) Math.Sqrt( ClippedSunDirection.x*ClippedSunDirection.x + ClippedSunDirection.Z*ClippedSunDirection.Z );		// Project to unit circle
+//				 ClippedSunDirection.y = 1.0f / (float) Math.Tan( m_shadowSunSetMaxAngle );	// Replace Y by tangent
+//				 ClippedSunDirection.Normalize();
+//			 }
+
+	// Force both X,Y vectors to the ground, normal is light's direction alwaus pointing toward the ground
+	float	fFactor = 1;//(m_LightDirection.y > 0.0f ? 1.0f : -1.0f);
+	m_ShadowPlaneX = fFactor * NjFloat3::UnitX;
+	m_ShadowPlaneY = NjFloat3::UnitZ;
+ 	m_ShadowPlaneNormal = ClippedSunDirection;
+//	m_ShadowPlaneCenterKm = NjFloat3( CameraPositionKm.x, 0, CameraPositionKm.z ) + (BOX_BASE + (m_LightDirection.y > 0.0f ? 1 : 0) * MAX( 1e-3f, BOX_HEIGHT )) * NjFloat3::UnitY;	// Center on camera for a start...
+	m_ShadowPlaneCenterKm = NjFloat4( 0, m_LightDirection.y > 0 ? 1.0f : -1.0f, 0, 1 ) * m_Box2World;
+
+	float	ZSize = BOX_HEIGHT / abs(ClippedSunDirection.y);	// Since we're blocking the XY axes on the plane, Z changes with the light's vertical component
+																// Slanter rays will yield longer Z's
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build camera frustum
+	NjFloat3  pCameraFrustumKm[5];
+	pCameraFrustumKm[0] = NjFloat3::Zero;
+	pCameraFrustumKm[1] = SHADOW_FAR_CLIP_DISTANCE * NjFloat3( -TanFovH, -TanFovV, 1.0f );
+	pCameraFrustumKm[2] = SHADOW_FAR_CLIP_DISTANCE * NjFloat3( +TanFovH, -TanFovV, 1.0f );
+	pCameraFrustumKm[3] = SHADOW_FAR_CLIP_DISTANCE * NjFloat3( +TanFovH, +TanFovV, 1.0f );
+	pCameraFrustumKm[4] = SHADOW_FAR_CLIP_DISTANCE * NjFloat3( -TanFovH, +TanFovV, 1.0f );
+
+	// Transform into WORLD space
+	for ( int i=0; i < 5; i++ )
+		pCameraFrustumKm[i] = NjFloat4( pCameraFrustumKm[i], 1.0f ) * Camera2World;
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build WORLD => LIGHT transform & inverse
+	//
+	//	^ N                     ^
+	//	|                      / -Z, pointing toward the light
+	//	|                    /
+	// C|                P'/
+	//  *-----*----------*-------------> X  <== Cloud plane
+	//	 \    |        /
+	//	  \   |h     /
+	//	   \  |    / d
+	//	    \ |  /
+	//	     \|/
+	//	    P *
+	//
+	// P is the point we need to transform into light space
+	// X is one axis of the 2 axes of the 2D plane
+	// -Z is the vector pointing toward the light
+	// N=(0,1,0) is the plane normal
+	// C is m_ShadowPlaneCenterKm
+	// 
+	// We pose h = [C-P].N
+	// We need to find	d = h / -Zy  which is the distance to the plane by following the light direction (i.e. projection)
+	//					d = [P-C].N/Zy
+	//
+	// We retrieve the projected point's position P' = P - d*Z and we're now on the shadow plane
+	// We then retrieve the x component of the 2D plane vector by writing:
+	//
+	// Plane x	= [P' - C].X
+	//			= [P - d*Z - C].X
+	//			= [P - [(P-C).N/Zy]*Z - C].X
+	//			= [P - [(P-C).N]*Z/Zy - C].X
+	//
+	// Let's write Z' = Z/Zy , the scaled version of Z that accounts for lengthening due to grazing angles
+	// So:
+	// Plane x	= [P - [(P-C).N]*Z' - C].X
+	//			= [P - [P.N - C.N]*Z' - C].X
+	//			= P.X - [P.N - C.N]*(Z'.X) - C.X
+	//			= P.X - (P.N)*(Z'.X) + (C.N)*(Z'.X) - C.X
+	//			= P.[X - N*(Z'.X)] + C.[N*(Z'.X) - X]
+	//
+	// Writing X' = X - N*(Z'.X), we finally have:
+	//
+	//		Plane x = P.X' - C.X'
+	//
+	// And the same obviously goes for Y.
+	// In matrix form, this gives:
+	//
+	//	|  X'x   Y'x     0   |
+	//	|  X'y   Y'y    1/Zy |
+	//	|  X'z   Y'z     0   |
+	//	| -C.X' -C.Y' -Cy/Zy |
+	//
+	NjFloat3	ScaledZ = m_ShadowPlaneNormal / m_ShadowPlaneNormal.y;
+
+	float		ZdotX = ScaledZ | m_ShadowPlaneX;
+	NjFloat3	NewX = m_ShadowPlaneX - NjFloat3( 0, ZdotX, 0 );
+
+	float		ZdotY = ScaledZ | m_ShadowPlaneY;
+	NjFloat3	NewY = m_ShadowPlaneY - NjFloat3( 0, ZdotY, 0 );
+
+	NjFloat3	NewZ( 0, 1/m_ShadowPlaneNormal.y, 0 );
+
+	NjFloat3	Translation = NjFloat3( -m_ShadowPlaneCenterKm | NewX, -m_ShadowPlaneCenterKm | NewY, -m_ShadowPlaneCenterKm | NewZ );
+
+	m_World2Light.SetRow( 0, NjFloat4( NewX.x, NewY.x, NewZ.x, 0 ) );
+	m_World2Light.SetRow( 1, NjFloat4( NewX.y, NewY.y, NewZ.y, 0 ) );
+	m_World2Light.SetRow( 2, NjFloat4( NewX.z, NewY.z, NewZ.z, 0 ) );
+	m_World2Light.SetRow( 3, NjFloat4( Translation.x, Translation.y, Translation.z, 1 ) );
+
+	NjFloat4x4	Light2World = m_World2Light.Inverse();
+
+// CHECK: We reproject the frustum and verify the values
+NjFloat4	pCheckProjected[5];
+for ( int i=0; i < 5; i++ )
+	pCheckProjected[i] = NjFloat4( pCameraFrustumKm[i], 1 ) * m_World2Light;
+// CHECK
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Compute bounding quad
+	// Simply use a coarse quad and don't give a fuck (advantage is that it's always axis aligned despite camera orientation)
+	NjFloat2	QuadMin( +1e6f, +1e6f );
+	NjFloat2	QuadMax( -1e6f, -1e6f );
+
+	if ( m_LightDirection.y > 0.0f )
+	{	// When the Sun is above the clouds, project the frustum's corners to plane and keep the bounding quad of these points
+
+		// Project frustum to shadow plane
+		float		pDistances2Plane[5];
+		NjFloat2	pFrustumProjKm[5];
+		NjFloat2	Center = NjFloat2::Zero;
+		for ( int i=0; i < 5; i++ )
+		{
+			pFrustumProjKm[i] = World2ShadowQuad( pCameraFrustumKm[i], pDistances2Plane[i] );
+			Center = Center + pFrustumProjKm[i];
+		}
+
+//		// Re-center about the center
+// 		Center = Center / 5;
+// 		m_ShadowPlaneCenterKm = m_ShadowPlaneCenterKm + Center.x * m_ShadowPlaneX + Center.y * m_ShadowPlaneY;
+// 
+// 		// Reproject using new center
+// 		NjFloat2	Center2 = NjFloat2::Zero;
+// 		for ( int i=0; i < 5; i++ )
+// 		{
+// 			pFrustumProjKm[i] = World2ShadowQuad( pCameraFrustumKm[i], pDistances2Plane[i] );
+// 			Center2 = Center2 + pFrustumProjKm[i];
+// 		}
+// 		Center2 = Center2 / 5;	// Ensure it's equal to 0!
+
+		for ( int i=0; i < 5; i++ )
+		{
+			QuadMin = QuadMin.Min( pFrustumProjKm[i] );
+			QuadMax = QuadMax.Max( pFrustumProjKm[i] );
+		}
+	}
+	else
+	{	// If the Sun is below the clouds then there's no need to account for godrays and we should only focus
+		//	on the cloud volume that will actually be lit by the Sun and that we can see.
+		// To do this, we unfortunately have to compute the intersection of the camera frustum with the cloud box
+		//	and compute our bounding quad from there...
+		//
+		ComputeFrustumIntersection( pCameraFrustumKm, BOX_BASE, QuadMin, QuadMax );
+		ComputeFrustumIntersection( pCameraFrustumKm, BOX_BASE + BOX_HEIGHT, QuadMin, QuadMax );
+	}
+
+	// Also compute the cloud box's bounding quad and clip our quad values with it since it's useless to have a quad larger
+	//	than what the cloud is covering anyway...
+	NjFloat2	CloudQuadMin( +1e6f, +1e6f );
+	NjFloat2	CloudQuadMax( -1e6f, -1e6f );
+	for ( int BoxCornerIndex=0; BoxCornerIndex < 8; BoxCornerIndex++ )
+	{
+		int			Z = BoxCornerIndex >> 2;
+		int			Y = (BoxCornerIndex >> 1) & 1;
+		int			X = BoxCornerIndex & 1;
+		NjFloat3	CornerLocal( 2*float(X)-1, 2*float(Y)-1, 2*float(Z)-1 );
+		NjFloat3	CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Box2World;
+
+		float		Distance;
+		NjFloat2	CornerProj = World2ShadowQuad( CornerWorld, Distance );
+
+		CloudQuadMin = CloudQuadMin.Min( CornerProj );
+		CloudQuadMax = CloudQuadMax.Max( CornerProj );
+	}
+
+	QuadMin = QuadMin.Max( CloudQuadMin );
+	QuadMax = QuadMax.Min( CloudQuadMax );
+
+	NjFloat2	QuadSize = QuadMax - QuadMin;
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Determine the rendering viewport based on quad's size
+
+// Statistics of min/max sizes
+static NjFloat2		s_QuadSizeMin = NjFloat2( +1e6f, +1e6f );
+static NjFloat2		s_QuadSizeMax = NjFloat2( -1e6f, -1e6f );
+s_QuadSizeMin = s_QuadSizeMin.Min( QuadSize );
+s_QuadSizeMax = s_QuadSizeMax.Max( QuadSize );
+
+	// This is the max reported size for a quad when clipping is set at 100km
+	// A quad of exactly this size should fit the shadow map's size exactly
+	const float	REFERENCE_SHADOW_FAR_CLIP = 100.0f;				// The size was determined using a default clip distance of 100km
+	float		MaxWorldSize = 180.0f;							// The 180 factor is arbitrary and comes from experimenting with s_QuadSizeMax and moving the camera around and storing the largest value...
+				MaxWorldSize *= SHADOW_FAR_CLIP_DISTANCE / (SHADOW_SCALE * REFERENCE_SHADOW_FAR_CLIP);
+
+// 	ASSERT( QuadSize.x < MaxWorldSize, "Increase max world size!" );
+// 	ASSERT( QuadSize.y < MaxWorldSize, "Increase max world size!" );
+	float		WorldSizeX = MAX( MaxWorldSize, QuadSize.x );
+	float		WorldSizeY = MAX( MaxWorldSize, QuadSize.y );
+
+	float		TexelRatioX = MaxWorldSize / WorldSizeX;		// Scale factor compared to our max accountable world size.
+	float		TexelRatioY = MaxWorldSize / WorldSizeY;		// A ratio below 1 means we exceeded the maximum bounds and texels will be skipped.
+																// This should be avoided as much as possible as it results in a lack of precision...
+//	ASSERT( TexelRatioX >= 1.0f, "Increase quad size max to avoid texel squeeze!" );	// We can't avoid that with slant rays...
+//	ASSERT( TexelRatioY >= 1.0f, "Increase quad size max to avoid texel squeeze!" );	// We can't avoid that with slant rays...
+
+	NjFloat2	World2TexelScale( (SHADOW_MAP_SIZE-1) / WorldSizeX, (SHADOW_MAP_SIZE-1) / WorldSizeY );	// Actual scale to convert from world to shadow texels
+
+	// Normalized size in texels
+	NjFloat2	QuadMinTexel = World2TexelScale * QuadMin;
+	NjFloat2	QuadMaxTexel = World2TexelScale * QuadMax;
+	NjFloat2	QuadSizeTexel = QuadMaxTexel - QuadMinTexel;
+
+	// Compute viewport size in texels
+	int	ViewMinX = int( floorf( QuadMinTexel.x ) );
+	int	ViewMinY = int( floorf( QuadMinTexel.y ) );
+	int	ViewMaxX = int(  ceilf( QuadMaxTexel.x ) );
+	int	ViewMaxY = int(  ceilf( QuadMaxTexel.y ) );
+
+	m_ViewportWidth = ViewMaxX - ViewMinX;
+	m_ViewportHeight = ViewMaxY - ViewMinY;
+
+	NjFloat2	UVMin( (QuadMinTexel.x - ViewMinX) / SHADOW_MAP_SIZE, (QuadMinTexel.y - ViewMinY) / SHADOW_MAP_SIZE );
+	NjFloat2	UVMax( (QuadMaxTexel.x - ViewMinX) / SHADOW_MAP_SIZE, (QuadMaxTexel.y - ViewMinY) / SHADOW_MAP_SIZE );
+	NjFloat2	UVSize = UVMax - UVMin;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build the matrix to transform UVs into Light coordinates
+	// We can write QuadPos = QuadMin + (QuadMax-QuadMin) / (UVmax-UVmin) * (UV - UVmin)
+	// Unfolding, we obtain:
+	//
+	//	QuadPos = [QuadMin - (QuadMax-QuadMin) / (UVmax-UVmin) * UVmin] + [(QuadMax-QuadMin) / (UVmax-UVmin)] * UV
+	//
+	NjFloat2	Scale( QuadSize.x / UVSize.x, QuadSize.y / UVSize.y );
+	NjFloat2	Offset = QuadMin - Scale * UVMin;
+
+	NjFloat4x4	UV2Light;
+	UV2Light.SetRow( 0, NjFloat4( Scale.x, 0, 0, 0 ) );
+	UV2Light.SetRow( 1, NjFloat4( 0, Scale.y, 0, 0 ) );
+	UV2Light.SetRow( 2, NjFloat4( 0, 0, 1, 0 ) );
+	UV2Light.SetRow( 3, NjFloat4( Offset.x, Offset.y, 0, 1 ) );
+
+	NjFloat4x4	Light2UV = UV2Light.Inverse();
+
+
+// CHECK
+NjFloat4	Test0 = NjFloat4( QuadMin.x, QuadMin.y, 0, 1 ) * Light2UV;	// Get back UV min/max
+NjFloat4	Test1 = NjFloat4( QuadMax.x, QuadMax.y, 0, 1 ) * Light2UV;
+NjFloat4	Test2 = NjFloat4( UVMin.x, UVMin.y, 0, 1 ) * UV2Light;			// Get back quad min/max
+NjFloat4	Test3 = NjFloat4( UVMax.x, UVMax.y, 0, 1 ) * UV2Light;
+// CHECK
+
+	m_pCB_Shadow->m.LightDirection = NjFloat4( m_LightDirection, 0 );
+	m_pCB_Shadow->m.World2Shadow = m_World2Light * Light2UV;
+	m_pCB_Shadow->m.Shadow2World = UV2Light * Light2World;
+	m_pCB_Shadow->m.ZMinMax.Set( 0, ZSize );
+
+
+// CHECK: We reproject the frustum and verify the UVs...
+NjFloat4	pCheckUVs[5];
+for ( int i=0; i < 5; i++ )
+	pCheckUVs[i] = NjFloat4( pCameraFrustumKm[i], 1 ) * m_pCB_Shadow->m.World2Shadow;
+// CHECK
+
+
+	// Create an alternate projection matrix that doesn't keep the World Z but instead projects it in [0,1]
+// 	UV2Light.SetRow( 2, NjFloat4( 0, 0, ZSize, 0 ) );
+// 
+// 	m_Light2ShadowNormalized = UV2Light.Inverse();
+}
+
+// Computes the intersection of the 5 points camera frustum in WORLD space with a plane and returns the bounding quad of the intersected points
+void	EffectVolumetric::ComputeFrustumIntersection( NjFloat3 _pCameraFrustumKm[5], float _PlaneHeight, NjFloat2& _QuadMin, NjFloat2& _QuadMax )
+{
+	int		pEdges[2*8] = {
+		0, 1,
+		0, 2,
+		0, 3,
+		0, 4,
+		1, 2,
+		2, 3,
+		3, 4,
+		4, 1
+	};
+	for ( int EdgeIndex=0; EdgeIndex < 8; EdgeIndex++ )
+	{
+		NjFloat3&	V0 = _pCameraFrustumKm[pEdges[2*EdgeIndex+0]];
+		NjFloat3&	V1 = _pCameraFrustumKm[pEdges[2*EdgeIndex+1]];
+		NjFloat3	V = V1 - V0;
+		float		VerticalDistance = _PlaneHeight - V0.y;
+		float		Distance2Intersection = VerticalDistance / V.y;	// Time until we reach the plane following V
+		if ( Distance2Intersection < 0.0f || Distance2Intersection > 1.0f )
+			continue;	// No intersection...
+
+		NjFloat3	Intersection = V0 + Distance2Intersection * V;
+
+		// Project to shadow plane
+		float		Distance2ShadowPlane;
+		NjFloat2	Projection = World2ShadowQuad( Intersection, Distance2ShadowPlane );
+
+		// Update bounding-quad
+		_QuadMin = _QuadMin.Min( Projection );
+		_QuadMax = _QuadMax.Max( Projection );
+	}
 }
 
 #endif
@@ -933,7 +1416,6 @@ void	EffectVolumetric::PreComputeSkyTables()
 	m_pRTIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );						// irradiance (final)
 	m_pRTInScattering = new Texture3D( m_Device, RES_3D_U, RES_MU, RES_R, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );							// inscatter (final)
 
-//#define BUILD_SKY_SCATTERING	// Build or load?
 #ifdef BUILD_SKY_SCATTERING
 
 	Texture2D*	pRTDeltaIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );			// deltaE (temp)
@@ -984,6 +1466,7 @@ void	EffectVolumetric::PreComputeSkyTables()
 
 	// Assign to slot 7
 	m_Device.RemoveRenderTargets();
+	m_pRTTransmittance->SetVS( 7, true );
 	m_pRTTransmittance->SetPS( 7, true );
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1132,7 +1615,9 @@ void	EffectVolumetric::PreComputeSkyTables()
 
 	// Assign final textures to slots 8 & 9
 	m_Device.RemoveRenderTargets();
+	m_pRTInScattering->SetVS( 8, true );
 	m_pRTInScattering->SetPS( 8, true );
+	m_pRTIrradiance->SetVS( 9, true );
 	m_pRTIrradiance->SetPS( 9, true );
 
 	// Release materials & temporary RTs
@@ -1186,8 +1671,11 @@ void	EffectVolumetric::PreComputeSkyTables()
 	delete pStagingTransmittance;
 	delete pStagingScattering;
 
+	m_pRTTransmittance->SetVS( 7, true );
 	m_pRTTransmittance->SetPS( 7, true );
+	m_pRTInScattering->SetVS( 8, true );
 	m_pRTInScattering->SetPS( 8, true );
+	m_pRTIrradiance->SetVS( 9, true );
 	m_pRTIrradiance->SetPS( 9, true );
 
 #endif

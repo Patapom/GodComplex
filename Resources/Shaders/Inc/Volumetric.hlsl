@@ -29,7 +29,7 @@ cbuffer	cbShadow	: register( b11 )
 	float3		_LightDirection;
 	float4x4	_World2Shadow;
 	float4x4	_Shadow2World;
-	float2		_ShadowZMax;
+	float2		_ShadowZMinMax;
 };
 
 
@@ -38,7 +38,7 @@ cbuffer	cbVolume	: register( b12 )
 	float4		_VolumeParams;
 }
 
-Texture2DArray	_TexCloudTransmittance	: register(t11);
+Texture2DArray	_TexCloudTransmittance	: register(t12);
 Texture3D		_TexFractal0	: register(t16);
 Texture3D		_TexFractal1	: register(t17);
 
@@ -254,7 +254,7 @@ float4	FastCos( float4 _Angle )
 float	GetCloudTransmittance( float3 _WorldPosition )
 {
 	float3	ShadowPosition = mul( float4( _WorldPosition, 1.0 ), _World2Shadow ).xyz;
-	float2	UV = float2( 0.5 * (1.0 + ShadowPosition.x), 0.5 * (1.0 - ShadowPosition.y) );
+	float2	UV = ShadowPosition.xy;
 	float	Z = ShadowPosition.z;
 
 	float4	C0 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
@@ -272,7 +272,9 @@ float	GetCloudTransmittance( float3 _WorldPosition )
 #ifndef USE_FAST_COS
 	float4	Temp0 = cos( float4( CosTerm0.yzw, CosTerm1.x) * x );
 	float	Temp1 = cos( CosTerm1.y * x );
-	float4	Cos0 = float4( 0.5, Temp0.xyz );
+// 	float4	Cos0 = float4( 0.5, Temp0.xyz );
+// 	float2	Cos1 = float2( Temp0.w, Temp1 );
+	float4	Cos0 = float4( 1.0, Temp0.xyz );
 	float2	Cos1 = float2( Temp0.w, Temp1 );
 #else
 	float4	Temp0 = FastCos( float4( CosTerm0.yzw, CosTerm1.x) * x );
@@ -282,6 +284,19 @@ float	GetCloudTransmittance( float3 _WorldPosition )
 #endif
 
 	return saturate( dot( Cos0, C0 ) + dot( Cos1, C1.xy ) );
+}
+
+// This function assumes we're standing below the cloud and thus get the full extinction
+float	GetFastCloudTransmittance( float3 _WorldPosition )
+{
+	float3	ShadowPosition = mul( float4( _WorldPosition, 1.0 ), _World2Shadow ).xyz;
+//	float2	UV = float2( 0.5 * (1.0 + ShadowPosition.x), 0.5 * (1.0 - ShadowPosition.y) );
+	float2	UV = ShadowPosition.xy;
+
+	float4	C0 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
+return C0.x - C0.y + C0.z - C0.w;	// Skip smaller coefficients... No need to tap further.
+	float4	C1 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
+	return C0.x - C0.y + C0.z - C0.w + C1.x - C1.y;
 }
 
 #endif	// _VOLUMETRIC_INC_

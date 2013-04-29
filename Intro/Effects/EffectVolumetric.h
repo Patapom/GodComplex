@@ -1,5 +1,7 @@
 #pragma once
 
+#define SHOW_TERRAIN
+
 template<typename> class CB;
 
 class EffectVolumetric
@@ -9,7 +11,6 @@ private:	// CONSTANTS
 	static const int	SHADOW_MAP_SIZE = 256;
 	static const int	FRACTAL_TEXTURE_POT = 7;
 	static const int	FRACTAL_OCTAVES = 8;
-	static const float	SCREEN_TARGET_RATIO;
 
 
 public:		// NESTED TYPES
@@ -32,7 +33,7 @@ public:		// NESTED TYPES
 		NjFloat4	LightDirection;
 		NjFloat4x4	World2Shadow;
 		NjFloat4x4	Shadow2World;
-		NjFloat2	ZMax;
+		NjFloat2	ZMinMax;
 	};
 
 	struct CBVolume 
@@ -44,7 +45,10 @@ private:	// FIELDS
 
 	int					m_ErrorCode;
 	Device&				m_Device;
+
+	Texture2D&			m_RTHDR;
 	Primitive&			m_ScreenQuad;
+	Camera&				m_Camera;
 
 	// PRS of our volume box
 	NjFloat3			m_Position;
@@ -58,14 +62,21 @@ private:	// FIELDS
 
 	// Internal Data
 	Material*			m_pMatDepthWrite;
+	Material*			m_pMatSplatCameraFrustum;
 	Material*			m_pMatComputeTransmittance;
 	Material*			m_pMatDisplay;
 	Material*			m_pMatCombine;
 
 	Primitive*			m_pPrimBox;
+	Primitive*			m_pPrimFrustum;
+#ifdef SHOW_TERRAIN
+	Primitive*			m_pPrimTerrain;
+	Material*			m_pMatTerrain;
+#endif
 
 	Texture3D*			m_pTexFractal0;
 	Texture3D*			m_pTexFractal1;
+	Texture2D*			m_pRTCameraFrustumSplat;
 	Texture2D*			m_pRTTransmittanceZ;
 	Texture2D*			m_pRTTransmittanceMap;
 	Texture2D*			m_pRTRenderZ;
@@ -86,6 +97,14 @@ private:	// FIELDS
 	NjFloat4x4			m_World2Light;
 	NjFloat4x4			m_Light2ShadowNormalized;	// Yields a normalized Z instead of world units like World2Shadow
 
+	NjFloat3			m_ShadowPlaneCenterKm;
+	NjFloat3			m_ShadowPlaneNormal;
+	NjFloat3			m_ShadowPlaneX;
+	NjFloat3			m_ShadowPlaneY;
+	NjFloat2			m_ShadowPlaneOffsetKm;
+
+	int					m_ViewportWidth;
+	int					m_ViewportHeight;
 
 	// Atmosphere Pre-Computation
 
@@ -96,10 +115,10 @@ public:		// PROPERTIES
 
 public:		// METHODS
 
-	EffectVolumetric( Device& _Device, Primitive& _ScreenQuad );
+	EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera );
 	~EffectVolumetric();
 
-	void		Render( float _Time, float _DeltaTime, Camera& _Camera );
+	void		Render( float _Time, float _DeltaTime );
 
 protected:
 
@@ -107,5 +126,10 @@ protected:
 	void		FreeSkyTables();
 
 	void		ComputeShadowTransform();
+	NjFloat3	Project2ShadowPlane( const NjFloat3& _PositionKm, float& Distance2PlaneKm );
+	NjFloat2	World2ShadowQuad( const NjFloat3& _PositionKm, float& Distance2PlaneKm );
+	NjFloat3	FindTangent( NjFloat4x4& _Camera2World, float _TanFovV );
+	void		ComputeFrustumIntersection( NjFloat3 _pCameraFrustumKm[5], float _PlaneHeight, NjFloat2& _QuadMin, NjFloat2& _QuadMax );
+
 	Texture3D*	BuildFractalTexture( bool _bLoadFirst );
 };

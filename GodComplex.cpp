@@ -275,7 +275,9 @@ void	DrawTime( float t )
 		m = floorf( t / 60.0f );
 		s = floorf( t - 60.0f * m );
 		c = floorf( t * 100.0f ) % 100;
-		sprintf_s( str, 64, "%s %02d:%02d:%02d  [%d fps]", pWindowClass, m, s, c, fps );
+		float	ms = 1000.0f / fps;
+
+		sprintf_s( str, 64, "%s %02d:%02d:%02d  [%d fps] [%4.4f ms]", pWindowClass, m, s, c, fps, ms );
 		SetWindowText( gs_WindowInfos.hWnd, str );
 	}
 }

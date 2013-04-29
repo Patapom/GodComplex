@@ -126,7 +126,8 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 // 
 // 		CHECK_EFFECT( gs_pEffectScene = new EffectScene( gs_Device, *gs_pScene, *gs_pPrimQuad ), ERR_EFFECT_SCENE );
 
-		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pPrimQuad ), ERR_EFFECT_VOLUMETRIC );
+//		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
+		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_VOLUMETRIC );
 	}
 
 
@@ -310,18 +311,26 @@ bool	IntroDo( float _Time, float _DeltaTime )
 //	gs_pCamera->LookAt( NjFloat3( 0, -10, 6 ), NjFloat3( 0.0f, -2.0f, -10.0f ), NjFloat3::UnitY );	// Below
 //	gs_pCamera->LookAt( NjFloat3( 0, -10, 6 ), NjFloat3( 0.0f, -2.0f, 6.1f ), NjFloat3::UnitY );	// Below looking up
 
-	float	CameraHeight = 2.0f;
-	gs_pCamera->LookAt( NjFloat3( 0, CameraHeight + 0.1f, 6 ), NjFloat3( 0.0f, CameraHeight + 6.0f, -10.0f ), NjFloat3::UnitY );		// Ground level looking up
+//	float	CameraHeight = 6.0f;	// Elevated
+//	float	CameraHeight = 3.0f;	// Slightly elevated
+ 	float	CameraHeight = 1.5f;	// Ground level
+//	gs_pCamera->LookAt( NjFloat3( 0, CameraHeight, 6 ), NjFloat3( 0.0f, CameraHeight + 6.0f, -10.0f ), NjFloat3::UnitY );		// looking up
+	gs_pCamera->LookAt( NjFloat3( 0, CameraHeight, 6 ), NjFloat3( 0.0f, CameraHeight + 1.0f, -10.0f ), NjFloat3::UnitY );		// slightly looking up
+//	gs_pCamera->LookAt( NjFloat3( 0, CameraHeight, 6 ), NjFloat3( 0.0f, CameraHeight + 1.0f, -10.0f ), NjFloat3::UnitY );		// looking forward
+
+
+// 	NjFloat3	Center = NjFloat3( 0, CameraHeight, 6 );
+// 	float		ViewAngle = 0.5f * t;
+// 	gs_pCamera->LookAt( Center, Center + NjFloat3( sinf(ViewAngle), +0.1f, -cosf(ViewAngle) ), NjFloat3::UnitY );
 
 	gs_pCamera->Upload( 0 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Render the effects
-//	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
-// 	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.5f, 0.25f, 0.125f, 0.0f ) );
-// 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
+ 	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+ 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
 
-	gs_pEffectVolumetric->Render( _Time, _DeltaTime, *gs_pCamera );
+	gs_pEffectVolumetric->Render( _Time, _DeltaTime );
 
 
 #endif

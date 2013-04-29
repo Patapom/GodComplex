@@ -8,16 +8,8 @@
 #include <math.h>
 
 // Override some functions with our own implementations
-#ifdef GODCOMPLEX
-// Simply atan( sin / cos )
-// static float _acosf( float x )
-// {
-// 	return atanf( sqrtf(1.0f - x*x) / x );
-// }
-// static float _asinf( float x )
-// {
-// 	return atanf( x / sqrtf(1.0f - x*x) );
-// }
+//#ifdef GODCOMPLEX
+#if 1
 
 #define log2f( a )			ASM_log2f( a )
 #define expf( a )			ASM_expf( a )
@@ -27,6 +19,13 @@
 #define ceilf( a )			ASM_ceilf( a )
 #define acosf( a )			ASM_acosf( a )
 #define asinf( a )			ASM_asinf( a )
+
+#else
+
+// #define log2f( a )			(float(logf( a ) * 1.4426950408889634073599246810019))
+// #define floorf( a )			int(floorf( a ))
+// #define ceilf( a )			int(ceilf( a ))
+
 #endif
 
 static const float			PI = 3.1415926535897932384626433832795f;			// ??
@@ -199,6 +198,7 @@ public:
 	NjFloat4x4&			FromAngleAxis( float _Angle, const NjFloat3& _Axis )	{ return FromQuat( NjFloat4::QuatFromAngleAxis( _Angle, _Axis ) ); }
 	NjFloat4x4&			FromQuat( const NjFloat4& _Quat );
 	NjFloat4x4&			PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S=NjFloat3::One );
+	static NjFloat4x4	BuildFromPRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S=NjFloat3::One );
 
 	NjFloat4x4&			Rot( const NjFloat3& _Source, const NjFloat3& _Target );	// Generate the rotation matrix that rotates the _Source vector into the _Target vector
 	NjFloat4x4&			RotX( float _Angle );

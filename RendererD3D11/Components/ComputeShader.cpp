@@ -298,7 +298,7 @@ bool	ComputeShader::SetConstantBuffer( const char* _pBufferName, ConstantBuffer&
 	ID3D11Buffer*	pBuffer = _Buffer.GetBuffer();
 
 	{
-		int	SlotIndex = m_VSConstants.GetConstantBufferIndex( _pBufferName );
+		int	SlotIndex = m_CSConstants.GetConstantBufferIndex( _pBufferName );
 		if ( SlotIndex != -1 )
 			m_Device.DXContext().CSSetConstantBuffers( SlotIndex, 1, &pBuffer );
 		bUsed |= SlotIndex != -1;
@@ -336,7 +336,10 @@ bool	ComputeShader::SetStructuredBuffer( const char* _pBufferName, StructuredBuf
 	{
 		int	SlotIndex = m_CSConstants.GetStructuredBufferIndex( _pBufferName );
 		if ( SlotIndex != -1 )
-			m_Device.DXContext().CSSetShaderResources( SlotIndex, 1, &_Buffer.GetShaderView() );
+		{
+			ID3D11ShaderResourceView*	pView = _Buffer.GetShaderView();
+			m_Device.DXContext().CSSetShaderResources( SlotIndex, 1, &pView );
+		}
 		bUsed |= SlotIndex != -1;
 	}
 
@@ -354,7 +357,12 @@ bool	ComputeShader::SetUnorderedAccessView( const char* _pBufferName, Structured
 	{
 		int	SlotIndex = m_CSConstants.GetUnorderedAccesViewIndex( _pBufferName );
 		if ( SlotIndex != -1 )
-			m_Device.DXContext().CSSetUnorderedAccessViews( SlotIndex, 1, &_Buffer.GetUnorderedAccessView() );
+		{
+			ID3D11UnorderedAccessView*	pUAV = _Buffer.GetUnorderedAccessView();
+			U32							UAVInitCount = -1;
+			m_Device.DXContext().CSSetUnorderedAccessViews( SlotIndex, 1, &pUAV, &UAVInitCount );
+		}
+
 		bUsed |= SlotIndex != -1;
 	}
 
@@ -557,7 +565,7 @@ void		ComputeShader::WatchShadersModifications()
 }
 
 #ifdef COMPUTE_SHADER_COMPILE_THREADED
-void	ThreadCompileMaterial( void* _pData )
+void	ThreadCompileComputeShader( void* _pData )
 {
 	ComputeShader*	pMaterial = (ComputeShader*) _pData;
 	pMaterial->RebuildShader();
@@ -586,7 +594,7 @@ void		ComputeShader::WatchShaderModifications()
 	ASSERT( m_hCompileThread == 0, "Compilation thread already exists !" );
 
 	DWORD	ThreadID;
-    m_hCompileThread = CreateThread( NULL, 0, (LPTHREAD_START_ROUTINE) ThreadCompileMaterial, this, 0, &ThreadID );
+    m_hCompileThread = CreateThread( NULL, 0, (LPTHREAD_START_ROUTINE) ThreadCompileComputeShader, this, 0, &ThreadID );
     SetThreadPriority( m_hCompileThread, THREAD_PRIORITY_HIGHEST );
 }
 

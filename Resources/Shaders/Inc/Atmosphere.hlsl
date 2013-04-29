@@ -21,7 +21,9 @@ static const float3	SIGMA_SCATTERING_RAYLEIGH = float3( 0.0058, 0.0135, 0.0331 )
 
 // Mie Scattering + Extinction
 static const float	HREF_MIE = 1.2;
+//static const float	HREF_MIE = 0.5;
 static const float	SIGMA_SCATTERING_MIE = 0.004;
+//static const float	SIGMA_SCATTERING_MIE = 0.1;	// Foggy!
 static const float	SIGMA_EXTINCTION_MIE = SIGMA_SCATTERING_MIE / 0.9;
 static const float	MIE_ANISOTROPY = 0.76;
 

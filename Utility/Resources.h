@@ -39,6 +39,7 @@
 	{ IDR_SHADER_VOLUMETRIC_DEPTH_WRITE,		"./Resources/Shaders/VolumetricDepthWrite.hlsl" },	\
 	{ IDR_SHADER_VOLUMETRIC_DISPLAY,			"./Resources/Shaders/VolumetricDisplay.hlsl" },	\
 	{ IDR_SHADER_VOLUMETRIC_COMBINE,			"./Resources/Shaders/VolumetricCombine.hlsl" },	\
+	{ IDR_SHADER_VOLUMETRIC_TERRAIN,			"./Resources/Shaders/VolumetricTerrain.hlsl" },	\
 \
 \
 /* ============= Workshop ============= */ \

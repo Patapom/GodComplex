@@ -12,7 +12,7 @@
 #define MATERIAL_COMPILE_AT_RUNTIME	// Define this to start compiling shaders at runtime and avoid blocking (useful for debugging)
 									// If you enable that option then the shader will start compiling as soon as WatchShaderModifications() is called on the material
 
-#define MATERIAL_COMPILE_THREADED	// Define this to launch shader compilation in different threads
+#define MATERIAL_COMPILE_THREADED	// Define this to launch shader compilation in different threads (compiles much faster but shaders are not immediately ready!)
 
 #endif
 

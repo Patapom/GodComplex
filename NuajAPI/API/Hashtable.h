@@ -28,6 +28,7 @@
 
 #ifdef _DEBUG
 
+// Hashtable of strings, only used to access constants & uniforms by name in the shaders in DEBUG mode
 template<typename T> class	DictionaryString
 {
 protected:	// NESTED TYPES

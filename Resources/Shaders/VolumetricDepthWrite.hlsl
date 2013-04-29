@@ -10,13 +10,6 @@ cbuffer	cbObject	: register( b10 )
 	float4x4	_View2Proj;
 	float2		_dUV;
 };
-
-cbuffer	cbShadow	: register( b11 )
-{
-	float4x4	_World2Shadow;
-	float4x4	_Shadow2World;
-	float		_ShadowZMax;
-};
 //]
 
 struct	VS_IN

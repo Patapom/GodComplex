@@ -60,7 +60,7 @@ cbuffer	cbCamera	: register( b0 )
 
 cbuffer	cbGlobal	: register( b1 )
 {
-	float4		_Time;		// X=Time Y=DeltaTime Z=1/Time W=1/DeltaTime
+	float4		_Time;				// X=Time Y=DeltaTime Z=1/Time W=1/DeltaTime
 };
 //]
 
