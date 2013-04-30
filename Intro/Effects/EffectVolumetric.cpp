@@ -7,13 +7,18 @@
 
 static const float	SCREEN_TARGET_RATIO = 0.5f;
 
-static const float	EARTH_RADIUS_KM = 6360.0f;
+static const float	GROUND_RADIUS_KM = 6360.0f;
+static const float	ATMOSPHERE_THICKNESS_KM = 60.0f;
 
 static const float	BOX_BASE = 8.0f;	// 10km  <== Find better way to keep visual aspect!
 static const float	BOX_HEIGHT = 4.0f;	// 4km high
 
+static const float	TRANSMITTANCE_TAN_MAX = 1.5;	// Close to PI/2 to maximize precision at grazing angles
+//#define USE_PRECISE_COS_THETA_MIN
 
-EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera ) : m_Device( _Device ), m_RTHDR( _RTHDR ), m_ScreenQuad( _ScreenQuad ), m_Camera( _Camera ), m_ErrorCode( 0 )
+
+
+EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera ) : m_Device( _Device ), m_RTHDR( _RTHDR ), m_ScreenQuad( _ScreenQuad ), m_Camera( _Camera ), m_ErrorCode( 0 ), m_pTableTransmittance( NULL )
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
@@ -639,7 +644,7 @@ NjFloat2	EffectVolumetric::World2ShadowQuad( const NjFloat3& _PositionKm, float&
 //
 void	EffectVolumetric::ComputeShadowTransform()
 {
-	static const NjFloat3	PLANET_CENTER_KM = NjFloat3( 0, -EARTH_RADIUS_KM, 0 );
+	static const NjFloat3	PLANET_CENTER_KM = NjFloat3( 0, -GROUND_RADIUS_KM, 0 );
 
 	float		TanFovH = m_Camera.GetCB().Params.x;
 	float		TanFovV = m_Camera.GetCB().Params.y;
@@ -1382,21 +1387,6 @@ Texture3D*	EffectVolumetric::BuildFractalTexture( bool _bBuildFirst )
 
 //////////////////////////////////////////////////////////////////////////
 // 
-const float Rg = 6360.0;
-const float Rt = 6420.0;
-const float RL = 6421.0;
-
-#define TRANSMITTANCE_W	256
-#define TRANSMITTANCE_H	64
-
-#define IRRADIANCE_W	64
-#define IRRADIANCE_H	16
-
-#define RES_R			32
-#define RES_MU			128
-#define RES_MU_S		32
-#define RES_NU			8
-
 #define RES_3D_U		(RES_MU_S * RES_NU)	// Full texture will be 256*128*32
 
 #define FILENAME_IRRADIANCE		"./TexIrradiance_64x16.bin"
@@ -1655,16 +1645,21 @@ void	EffectVolumetric::PreComputeSkyTables()
 
 #else
 	// Load tables
-	Texture3D*	pStagingScattering = new Texture3D( m_Device, RES_3D_U, RES_MU, RES_R, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
 	Texture2D*	pStagingTransmittance = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
+	Texture3D*	pStagingScattering = new Texture3D( m_Device, RES_3D_U, RES_MU, RES_R, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
 	Texture2D*	pStagingIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
 
-	pStagingIrradiance->Load( FILENAME_IRRADIANCE );
+#if 1
+	BuildTransmittanceTable( TRANSMITTANCE_W, TRANSMITTANCE_H, *pStagingTransmittance );
+#else
 	pStagingTransmittance->Load( FILENAME_TRANSMITTANCE );
+#endif
+
+	pStagingIrradiance->Load( FILENAME_IRRADIANCE );
 	pStagingScattering->Load( FILENAME_SCATTERING );
 
-	m_pRTInScattering->CopyFrom( *pStagingScattering );
 	m_pRTTransmittance->CopyFrom( *pStagingTransmittance );
+	m_pRTInScattering->CopyFrom( *pStagingScattering );
 	m_pRTIrradiance->CopyFrom( *pStagingIrradiance );
 
 	delete pStagingIrradiance;
@@ -1686,4 +1681,306 @@ void	EffectVolumetric::FreeSkyTables()
 	delete m_pRTInScattering;
 	delete m_pRTIrradiance;
 	delete m_pRTTransmittance;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// This computes the transmittance of Sun light as seen through the atmosphere
+// This results in a 2D table with [CosSunDirection, AltitudeKm] as the 2 entries.
+// It's done with the CPU because:
+//	1] It's fast to compute
+//	2] We need to access it from the CPU to compute the Sun's intensity & color for the directional light
+//
+void	EffectVolumetric::BuildTransmittanceTable( int _Width, int _Height, Texture2D& _StagingTexture ) {
+
+	if ( m_pTableTransmittance != NULL ) {
+		delete[] m_pTableTransmittance;
+	}
+
+	m_pTableTransmittance = new NjFloat3[_Width*_Height];
+
+	float	HRefRayleigh = 8.0f;
+	float	HRefMie = 1.2f;
+
+	float	Sigma_s_Mie = 0.004f;	// !!!May cause strong optical depths and very low values if increased!!
+	NjFloat3	Sigma_t_Mie = (Sigma_s_Mie / 0.9f) * NjFloat3::One;	// Should this be a parameter as well?? People might set it to values > 1 and that's physically incorrect...
+	NjFloat3	Sigma_s_Rayleigh( 0.0058f, 0.0135f, 0.0331f );
+								  
+NjFloat3	MaxopticalDepth = NjFloat3::Zero;
+int		MaxOpticalDepthX = -1;
+int		MaxOpticalDepthY = -1;
+	NjFloat2	UV;
+	for ( int Y=0; Y < _Height; Y++ ) {
+		UV.y = Y / (_Height-1.0f);
+		float	AltitudeKm = 1e-3f + UV.y*UV.y * ATMOSPHERE_THICKNESS_KM;					// Grow quadratically to have more precision near the ground
+
+#ifdef USE_PRECISE_COS_THETA_MIN
+		float	RadiusKm = GROUND_RADIUS_KM + AltitudeKm;
+		float	CosThetaMin = -1e-3f - sqrtf( 1.0f - GROUND_RADIUS_KM*GROUND_RADIUS_KM / (RadiusKm*RadiusKm) );	// -0.13639737868529368408722196006097 at 60km
+#else
+		float	CosThetaMin = -0.15f;
+#endif
+
+		NjFloat3*	scanline = m_pTableTransmittance + _Width * Y;
+
+		for ( int X=0; X < _Width; X++, scanline++ ) {	// CosTheta changes sign at X=0xB8 (UV.x = 71%) ==> 0xB7=-0.00226515974 & 0xB8=+0.00191573682
+			UV.x = float(X) / _Width;
+
+			float	t = tan( TRANSMITTANCE_TAN_MAX * UV.x ) / tan(TRANSMITTANCE_TAN_MAX);	// Grow tangentially to have more precision horizontally
+// 			float	t = UV.x;									// Grow linearly
+// 			float	t = UV.x*UV.x;								// Grow quadratically
+//			float	CosTheta = LERP( -0.15f, 1.0f, t );
+			float	CosTheta = LERP( CosThetaMin, 1.0f, t );
+
+			bool	groundHit = false;
+			NjFloat3	OpticalDepth = Sigma_s_Rayleigh * ComputeOpticalDepth( AltitudeKm, CosTheta, HRefRayleigh, groundHit ) + Sigma_t_Mie * ComputeOpticalDepth( AltitudeKm, CosTheta, HRefMie, groundHit );
+			if ( groundHit ) {
+				scanline->Set( 0, 0, 0 );	// Special case...
+				continue;
+			}
+
+if ( OpticalDepth.z > MaxopticalDepth.z ) {
+	MaxopticalDepth = OpticalDepth;
+	MaxOpticalDepthX = X;
+	MaxOpticalDepthY = Y;
+}
+
+			// Here, the blue channel's optical depth's max value has been reported to be 19.6523819
+			//	but the minimum supported value for Half16 has been measured to be something like 6.10351563e-5 (equivalent to d = -ln(6.10351563e-5) = 9.7040605270200343321767940202312)
+			// What I'm doing here is patching very long optical depths in the blue channel to remap
+			//	the [8,19.6523819] interval into [8,9.704061]
+			//
+			static const float	MAX_OPTICAL_DEPTH = 19.652382f;
+			if ( OpticalDepth.z > 8.0f ) {
+				OpticalDepth.z = 8.0f + (9.70f-8.0f) * SATURATE( (OpticalDepth.z - 8.0f) / (MAX_OPTICAL_DEPTH-8.0f) );
+			}
+
+			scanline->Set( expf( -OpticalDepth.x ), expf( -OpticalDepth.y ), expf( -OpticalDepth.z )  );
+// 			scanline->x = 1.0f - idMath::Pow( scanline->x, 1.0f/8 );
+// 			scanline->y = 1.0f - idMath::Pow( scanline->y, 1.0f/8 );
+// 			scanline->z = 1.0f - idMath::Pow( scanline->z, 1.0f/8 );
+
+#ifdef _DEBUG
+// CHECK Ensure we never get 0 from a non 0 value
+NjHalf	TestX( scanline->x );
+if ( scanline->x != 0.0f && TestX.raw == 0 ) {
+	DebugBreak();
+}
+NjHalf	TestY( scanline->y );
+if ( scanline->y != 0.0f && TestY.raw == 0 ) {
+	DebugBreak();
+}
+NjHalf	TestZ( scanline->z );
+if ( scanline->z != 0.0f && TestZ.raw == 0 ) {
+	DebugBreak();
+}
+// CHECK
+#endif
+		}
+	}
+
+
+
+
+#ifdef _DEBUG
+
+float	MaxHitDistanceKm = SphereIntersectionExit( NjFloat3::Zero, NjFloat3::UnitX, ATMOSPHERE_THICKNESS_KM );
+
+NjFloat3	Test0 = GetTransmittance( 0.0f, cosf( NUAJDEG2RAD(90.0f - 0.00f) ), 200.0f );
+NjFloat3	Test1 = GetTransmittance( 0.0f, cosf( HALFPI ), MaxHitDistanceKm );
+#endif
+
+
+
+
+	// Build an actual RGBA16F texture from this table
+	{
+		D3D11_MAPPED_SUBRESOURCE	LockedResource = _StagingTexture.Map( 0, 0 );
+		NjHalf4*	pTarget = (NjHalf4*) LockedResource.pData;
+		for ( int Y=0; Y < _Height; Y++ ) {
+			NjFloat3*	pScanlineSource = m_pTableTransmittance + _Width*Y;
+			NjHalf4*	pScanlineTarget = pTarget + _Width*Y;
+			for ( int X=0; X < _Width; X++, pScanlineSource++, pScanlineTarget++ ) {
+
+				*pScanlineTarget = NjFloat4( *pScanlineSource, 0 );
+			}
+		}
+		_StagingTexture.UnMap( 0, 0 );
+	}
+}
+
+float		EffectVolumetric::ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, const float _Href, bool& _bGroundHit, int _StepsCount ) const
+{
+	// Compute distance to atmosphere or ground, whichever comes first
+	NjFloat4	PositionKm = NjFloat4( 0.0f, 1e-2f + _AltitudeKm, 0.0f, 0.0f );
+	NjFloat3	View = NjFloat3( sqrtf( 1.0f - _CosTheta*_CosTheta ), _CosTheta, 0.0f );
+	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, _bGroundHit );
+	if ( _bGroundHit )
+		return 1e5f;	// Completely opaque due to hit with ground: no light can come this way...
+						// Be careful with large values in 16F!
+
+	NjFloat3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
+
+	float	Result = 0.0;
+	NjFloat4	StepKm = (TraceDistanceKm / _StepsCount) * NjFloat4( View, 1.0 );
+
+	// Integrate until the hit
+	float	PreviousAltitudeKm = _AltitudeKm;
+	for ( int i=0; i < _StepsCount; i++ )
+	{
+		PositionKm = PositionKm + StepKm;
+		_AltitudeKm = (NjFloat3(PositionKm) - EarthCenterKm).Length() - GROUND_RADIUS_KM;
+		Result += expf( (PreviousAltitudeKm + _AltitudeKm) * (-0.5f / _Href) );	// Gives the integral of a linear interpolation in altitude
+		PreviousAltitudeKm = _AltitudeKm;
+	}
+
+	return Result * StepKm.w;
+}
+
+NjFloat3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta ) const
+{
+	float	NormalizedAltitude = sqrtf( _AltitudeKm * (1.0f / ATMOSPHERE_THICKNESS_KM) );
+
+#ifdef USE_PRECISE_COS_THETA_MIN
+	float	RadiusKm = GROUND_RADIUS_KM + _AltitudeKm;
+	float	CosThetaMin = -sqrt( 1.0f - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (RadiusKm*RadiusKm) );
+#else
+	float	CosThetaMin = -0.15;
+#endif
+ 	float	NormalizedCosTheta = atan( (_CosTheta - CosThetaMin) / (1.0f - CosThetaMin) * tan(TRANSMITTANCE_TAN_MAX) ) / TRANSMITTANCE_TAN_MAX;
+
+	NjFloat2	UV( NormalizedCosTheta, 1e-2f + NormalizedAltitude );
+
+	return SampleTransmittance( UV );
+}
+
+NjFloat3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm ) const
+{
+	// P0 = [0, _RadiusKm]
+	// V  = [SinTheta, CosTheta]
+	//
+	float	RadiusKm = GROUND_RADIUS_KM + _AltitudeKm;
+	float	RadiusKm2 = sqrt( RadiusKm*RadiusKm + _DistanceKm*_DistanceKm + 2.0f * RadiusKm * _CosTheta * _DistanceKm );	// sqrt[ (P0 + d.V)² ]
+	float	CosTheta2 = (RadiusKm * _CosTheta + _DistanceKm) / RadiusKm2;													// dot( P0 + d.V, V ) / RadiusKm2
+	float	AltitudeKm2 = RadiusKm2 - GROUND_RADIUS_KM;
+
+	NjFloat3	T0, T1;
+	if ( _CosTheta > -1e-3f )
+	{
+		T0 = GetTransmittance( _AltitudeKm, _CosTheta );
+		T1 = GetTransmittance( AltitudeKm2, CosTheta2 );
+	}
+	else
+	{
+		T0 = GetTransmittance( AltitudeKm2, -CosTheta2 );
+		T1 = GetTransmittance( _AltitudeKm, -_CosTheta );
+	}
+
+	NjFloat3	Result = T0 / T1;
+	return Result;
+}
+
+NjFloat3	EffectVolumetric::SampleTransmittance( const NjFloat2 _UV ) const {
+
+	float	X = _UV.x * (TRANSMITTANCE_W-1);
+	float	Y = _UV.y * TRANSMITTANCE_H;
+	int		X0 = floorf( X );
+	X0 = CLAMP( 0, TRANSMITTANCE_W-1, X0 );
+	float	x = X - X0;
+	int		Y0 = floorf( Y );
+	Y0 = CLAMP( 0, TRANSMITTANCE_H-1, Y0 );
+	float	y = Y - Y0;
+	int		X1 = MIN( TRANSMITTANCE_W-1, X0+1 );
+	int		Y1 = MIN( TRANSMITTANCE_H-1, Y0+1 );
+
+	// Bilerp values
+	const NjFloat3&	V00 = m_pTableTransmittance[TRANSMITTANCE_W*Y0+X0];
+	const NjFloat3&	V01 = m_pTableTransmittance[TRANSMITTANCE_W*Y0+X1];
+	const NjFloat3&	V10 = m_pTableTransmittance[TRANSMITTANCE_W*Y1+X0];
+	const NjFloat3&	V11 = m_pTableTransmittance[TRANSMITTANCE_W*Y1+X1];
+	NjFloat3	V0 = V00 + x * (V01 - V00);
+	NjFloat3	V1 = V10 + x * (V11 - V10);
+	NjFloat3	V = V0 + y * (V1 - V0);
+	return V;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+// Planetary Helpers
+//
+void	EffectVolumetric::ComputeSphericalData( const NjFloat3& _PositionKm, float& _AltitudeKm, NjFloat3& _Normal ) const
+{
+	NjFloat3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
+	NjFloat3	Center2Position = _PositionKm - EarthCenterKm;
+	float	Radius2PositionKm = Center2Position.Length();
+	_AltitudeKm = Radius2PositionKm - GROUND_RADIUS_KM;
+	_Normal = Center2Position / Radius2PositionKm;
+}
+
+// ====== Intersections ======
+
+// Computes the enter intersection of a ray and a sphere
+// (No check for validity!)
+float	EffectVolumetric::SphereIntersectionEnter( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm ) const
+{
+	NjFloat3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
+	float	R = _SphereAltitudeKm + GROUND_RADIUS_KM;
+	NjFloat3	D = _PositionKm - EarthCenterKm;
+	float	c = (D | D) - R*R;
+	float	b = D | _View;
+
+	float	Delta = b*b - c;
+
+	return -b - sqrt(Delta);
+}
+
+// Computes the exit intersection of a ray and a sphere
+// (No check for validity!)
+float	EffectVolumetric::SphereIntersectionExit( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm ) const
+{
+	NjFloat3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
+	float	R = _SphereAltitudeKm + GROUND_RADIUS_KM;
+	NjFloat3	D = _PositionKm - EarthCenterKm;
+	float	c = (D | D) - R*R;
+	float	b = D | _View;
+
+	float	Delta = b*b - c;
+
+	return -b + sqrt(Delta);
+}
+
+// Computes both intersections of a ray and a sphere
+// Returns INFINITY if no hit is found
+void	EffectVolumetric::SphereIntersections( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm, NjFloat2& _Hits ) const
+{
+	NjFloat3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
+	float	R = _SphereAltitudeKm + GROUND_RADIUS_KM;
+	NjFloat3	D = _PositionKm - EarthCenterKm;
+	float	c = (D | D) - R*R;
+	float	b = D | _View;
+
+	float	Delta = b*b - c;
+	if ( Delta < 0.0 ) {
+		_Hits.Set( 1e6f, 1e6f );
+		return;
+	}
+
+	Delta = sqrt(Delta);
+
+	_Hits.Set( -b - Delta, -b + Delta );
+}
+
+// Computes the nearest hit between provided sphere and ground sphere
+float	EffectVolumetric::ComputeNearestHit( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm, bool& _IsGround ) const
+{
+	NjFloat2	GroundHits;
+	SphereIntersections( _PositionKm, _View, 0.0, GroundHits );
+	float	SphereHit = SphereIntersectionExit( _PositionKm, _View, _SphereAltitudeKm );
+
+	_IsGround = false;
+	if ( GroundHits.x < 0.0f || SphereHit < GroundHits.x )
+		return SphereHit;	// We hit the top of the atmosphere...
+	
+	// We hit the ground first
+	_IsGround = true;
+	return GroundHits.x;
 }

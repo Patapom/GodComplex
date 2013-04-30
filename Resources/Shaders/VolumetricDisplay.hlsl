@@ -430,5 +430,9 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 	PS_OUT	Out;
 	ComputeFinalColor( PositionWorld, ViewWorld, float2( HitDistanceKm, AerialPerspectiveHitDistanceKm ), _LightDirection, float4( Scattering, Transmittance ), GroundBlocking, StepOffset, Out.Scattering, Out.Extinction );
 
+//###
+Out.Scattering = GetTransmittance( 0.0, View.y, HitDistanceKm );
+//Out.Scattering = 0.01 * HitDistance;
+
 	return Out;
 }

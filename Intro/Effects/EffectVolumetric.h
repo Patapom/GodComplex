@@ -8,9 +8,21 @@ class EffectVolumetric
 {
 private:	// CONSTANTS
 
-	static const int	SHADOW_MAP_SIZE = 256;
-	static const int	FRACTAL_TEXTURE_POT = 7;
-	static const int	FRACTAL_OCTAVES = 8;
+	static const int		SHADOW_MAP_SIZE = 256;
+	static const int		FRACTAL_TEXTURE_POT = 7;
+	static const int		FRACTAL_OCTAVES = 8;
+
+	static const int		TRANSMITTANCE_W = 256;
+	static const int		TRANSMITTANCE_H = 64;
+	static const int		TRANSMITTANCE_TABLE_STEPS_COUNT = 500;	// Default amount of integration steps to perform to compute this table
+
+	static const int		IRRADIANCE_W = 64;
+	static const int		IRRADIANCE_H = 16;
+
+	static const int		RES_R	 = 32;
+	static const int		RES_MU	 = 128;
+	static const int		RES_MU_S = 32;
+	static const int		RES_NU	 = 8;
 
 
 public:		// NESTED TYPES
@@ -107,7 +119,7 @@ private:	// FIELDS
 	int					m_ViewportHeight;
 
 	// Atmosphere Pre-Computation
-
+	NjFloat3*			m_pTableTransmittance;
 
 public:		// PROPERTIES
 
@@ -122,9 +134,27 @@ public:		// METHODS
 
 protected:
 
+	// Sky tables computation
 	void		PreComputeSkyTables();
 	void		FreeSkyTables();
 
+	// Tables Pre-computation
+	void		BuildTransmittanceTable( int _Width, int _Height, Texture2D& _StagingTexture );
+
+	float		ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, const float _Href, bool& _bGroundHit, int _StepsCount=TRANSMITTANCE_TABLE_STEPS_COUNT ) const;
+	NjFloat3	GetTransmittance( float _AltitudeKm, float _CosTheta ) const;
+	NjFloat3	GetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm ) const;
+	NjFloat3	SampleTransmittance( const NjFloat2 _UV ) const;
+
+	// Sphere-tracing
+	void		ComputeSphericalData( const NjFloat3& _PositionKm, float& _AltitudeKm, NjFloat3& _Normal ) const;
+	float		SphereIntersectionEnter( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm ) const;
+	float		SphereIntersectionExit( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm ) const;
+	void		SphereIntersections( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm, NjFloat2& _Hits ) const;
+	float		ComputeNearestHit( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm, bool& _IsGround ) const;
+
+
+	// Shadow computation
 	void		ComputeShadowTransform();
 	NjFloat3	Project2ShadowPlane( const NjFloat3& _PositionKm, float& Distance2PlaneKm );
 	NjFloat2	World2ShadowQuad( const NjFloat3& _PositionKm, float& Distance2PlaneKm );

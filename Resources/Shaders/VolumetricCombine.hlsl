@@ -225,6 +225,12 @@ if ( UV.x < 0.2 && UV.y > 0.8 )
 // DEBUG
 
 
+
+//return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 );
+
+
+
+
 	float3	View = normalize( float3( _CameraData.x * (2.0 * UV.x - 1.0), -_CameraData.y * (2.0 * UV.y - 1.0), 1.0 ) );
 			View = mul( float4( View, 0.0 ), _Camera2World ).xyz;
 
@@ -253,6 +259,7 @@ if ( UV.x < 0.2 && UV.y > 0.8 )
 	// Load scattering & extinction from sky and clouds
 	float3	Scattering = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 	float3	Extinction = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
+return Scattering;
 //return HDR( Scattering );
 //return HDR( Extinction );
 

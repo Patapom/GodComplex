@@ -155,7 +155,17 @@ float3	GetMieFromRayleighAndMieRed( float4 _RayleighMieRed )
 float3	GetTransmittance( float _AltitudeKm, float _CosTheta )
 {
 	float	NormalizedAltitude = sqrt( _AltitudeKm * (1.0 / ATMOSPHERE_THICKNESS_KM) );
-	float	NormalizedCosTheta = atan( (_CosTheta + 0.15) / (1.0 + 0.15) * tan(1.5) ) / 1.5;
+
+const float	TAN_MAX = 1.5;
+
+#if 0
+	float	RadiusKm = GROUND_RADIUS_KM + _AltitudeKm;
+	float	CosThetaMin = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (RadiusKm*RadiusKm) );
+#else
+	float	CosThetaMin = -0.15;
+#endif
+ 	float	NormalizedCosTheta = atan( (_CosTheta - CosThetaMin) / (1.0 - CosThetaMin) * tan(TAN_MAX) ) / TAN_MAX;
+
 	float2	UV = float2( NormalizedCosTheta, NormalizedAltitude );
 
 	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
@@ -181,8 +191,13 @@ float3	GetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm )
 	float	CosTheta2 = (RadiusKm * _CosTheta + _DistanceKm) / RadiusKm2;												// dot( P0 + d.V, V ) / RadiusKm2
 	float	AltitudeKm2 = RadiusKm2 - GROUND_RADIUS_KM;
 
-	return _CosTheta > 0.0	? min( GetTransmittance( _AltitudeKm, _CosTheta ) / GetTransmittance( AltitudeKm2, CosTheta2 ), 1.0 )
-							: min( GetTransmittance( AltitudeKm2, -CosTheta2 ) / GetTransmittance( _AltitudeKm, -_CosTheta ), 1.0 );
+	return _CosTheta > -1e-3	? min( GetTransmittance( _AltitudeKm, _CosTheta ) / GetTransmittance( AltitudeKm2, CosTheta2 ), 1.0 )
+								: min( GetTransmittance( AltitudeKm2, -CosTheta2 ) / GetTransmittance( _AltitudeKm, -_CosTheta ), 1.0 );
+
+// 	float3	T0 = _CosTheta > 0.0 ? GetTransmittance( _AltitudeKm, _CosTheta ) : GetTransmittance( AltitudeKm2, -CosTheta2 );
+// 	float3	T1 = _CosTheta > 0.0 ? GetTransmittance( AltitudeKm2, CosTheta2 ) : GetTransmittance( _AltitudeKm, -_CosTheta );
+// 	T0.z = min( T0.z, 0.5 * T1.z );
+// 	return T0 / T1;
 }
 
 float3	GetIrradiance( Texture2D _TexIrradiance, float _AltitudeKm, float _CosThetaSun )

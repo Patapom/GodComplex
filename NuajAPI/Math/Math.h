@@ -38,9 +38,9 @@ static const float			FLOAT32_MAX = 3.402823466e+38f;
 static const float			GOLDEN_RATIO = 1.6180339887498948482045868343656f;	// Phi = (1+sqrt(5)) / 2
 
 #define MAX_FLOAT			3.40282e+038f
-#define NUAJRAD2DEG( a )	(57.295779513082320876798154814105f * a)
-#define NUAJDEG2RAD( a )	(0.01745329251994329576923690768489f * a)
-#define NUAJBYTE2FLOAT( b )	(b / 255.0f)
+#define NUAJRAD2DEG( a )	(57.295779513082320876798154814105f * (a))
+#define NUAJDEG2RAD( a )	(0.01745329251994329576923690768489f * (a))
+#define NUAJBYTE2FLOAT( b )	((b) / 255.0f)
 template<class T> inline T	MIN( const T& a, const T& b )					{ return a < b ? a : b;  }
 template<class T> inline T	MAX( const T& a, const T& b )					{ return a > b ? a : b;  }
 template<class T> inline T	CLAMP( const T& x, const T& min, const T& max )	{ return MIN( MAX( min, x ), max ); }
@@ -76,6 +76,7 @@ public:
 	NjFloat2	operator*( const NjFloat2& v ) const	{ return NjFloat2( x*v.x, y*v.y ); }
 	NjFloat2	operator*( float v ) const				{ return NjFloat2( x * v, y * v ); }
 	NjFloat2	operator/( float v ) const				{ return NjFloat2( x / v, y / v ); }
+	NjFloat2	operator/( const NjFloat2& v ) const	{ return NjFloat2( x / v.x, y / v.y ); }
 	float		operator|( const NjFloat2& v ) const	{ return x*v.x + y*v.y; }
 	float		operator^( const NjFloat2& v ) const	{ return x*v.y - y*v.x; }	// Returns the Z component of the orthogonal vector
 
@@ -116,6 +117,7 @@ public:
 	NjFloat3	operator*( const NjFloat3& v ) const	{ return NjFloat3( x*v.x, y*v.y, z*v.z ); }
 	NjFloat3	operator*( float v ) const				{ return NjFloat3( x * v, y * v, z * v ); }
 	NjFloat3	operator/( float v ) const				{ return NjFloat3( x / v, y / v, z / v ); }
+	NjFloat3	operator/( const NjFloat3& v ) const	{ return NjFloat3( x / v.x, y / v.y, z / v.z ); }
 	float		operator|( const NjFloat3& v ) const	{ return x*v.x + y*v.y + z*v.z; }
 	NjFloat3	operator-() const						{ return NjFloat3( -x, -y, -z ); }
 				operator NjFloat2() const				{ return NjFloat2( x, y ); }
@@ -162,6 +164,7 @@ public:
 	NjFloat4	operator*( const NjFloat4& v ) const	{ return NjFloat4( x*v.x, y*v.y, z*v.z, w*v.w ); }
 	NjFloat4	operator*( float v ) const				{ return NjFloat4( x * v, y * v, z * v, w * v ); }
 	NjFloat4	operator/( float v ) const				{ return NjFloat4( x / v, y / v, z / v, w / v ); }
+	NjFloat4	operator/( const NjFloat4& v ) const	{ return NjFloat4( x / v.x, y / v.y, z / v.z, w / v.w ); }
 	float		operator|( const NjFloat4& v ) const	{ return x*v.x + y*v.y + z*v.z + w*v.w; }
 
 	static NjFloat4	QuatFromAngleAxis( float _Angle, const NjFloat3& _Axis );
@@ -231,7 +234,7 @@ public:
 
 	NjHalf4() : x( 0.0f ), y( 0.0f ), z( 0.0f ), w( 0.0f )	{}
 	NjHalf4( float _x, float _y, float _z, float _w ) : x( _x ), y( _y ), z( _z ), w( _w )	{}
-	NjHalf4( const NjFloat4& v ) : x( v.x ), y( v.y ), z( v.y ), w( v.w )	{}
+	NjHalf4( const NjFloat4& v ) : x( v.x ), y( v.y ), z( v.z ), w( v.w )	{}
 
 	operator NjFloat4()	{ return NjFloat4( x, y, z, w ); }
 };
