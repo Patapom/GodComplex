@@ -1711,7 +1711,7 @@ int		MaxOpticalDepthY = -1;
 	NjFloat2	UV;
 	for ( int Y=0; Y < _Height; Y++ ) {
 		UV.y = Y / (_Height-1.0f);
-		float	AltitudeKm = 1e-3f + UV.y*UV.y * ATMOSPHERE_THICKNESS_KM;					// Grow quadratically to have more precision near the ground
+		float	AltitudeKm = UV.y*UV.y * ATMOSPHERE_THICKNESS_KM;					// Grow quadratically to have more precision near the ground
 
 #ifdef USE_PRECISE_COS_THETA_MIN
 		float	RadiusKm = GROUND_RADIUS_KM + AltitudeKm;
@@ -1731,10 +1731,21 @@ int		MaxOpticalDepthY = -1;
 //			float	CosTheta = LERP( -0.15f, 1.0f, t );
 			float	CosTheta = LERP( CosThetaMin, 1.0f, t );
 
+
+// const float	CosThetaEps = 8e-3f;
+// if ( CosTheta > 0.0f && CosTheta < CosThetaEps )	CosTheta = CosThetaEps;
+// if ( CosTheta < 0.0f && CosTheta > -CosThetaEps )	CosTheta = -CosThetaEps;
+
+if ( CosTheta > 0.0f )
+	CosTheta = LERP( 0.02f, 1.0f, CosTheta );
+else
+	CosTheta = LERP( -0.02f, -1.0f, -CosTheta );
+
+
 			bool	groundHit = false;
 			NjFloat3	OpticalDepth = Sigma_s_Rayleigh * ComputeOpticalDepth( AltitudeKm, CosTheta, HRefRayleigh, groundHit ) + Sigma_t_Mie * ComputeOpticalDepth( AltitudeKm, CosTheta, HRefMie, groundHit );
 			if ( groundHit ) {
-				scanline->Set( 0, 0, 0 );	// Special case...
+				scanline->Set( 1e-4f, 1e-4f, 1e-4f );	// Special case...
 				continue;
 			}
 
@@ -1755,6 +1766,9 @@ if ( OpticalDepth.z > MaxopticalDepth.z ) {
 			}
 
 			scanline->Set( expf( -OpticalDepth.x ), expf( -OpticalDepth.y ), expf( -OpticalDepth.z )  );
+
+scanline->Set( 1e-4f+expf( -OpticalDepth.x ), 1e-4f+expf( -OpticalDepth.y ), 1e-4f+expf( -OpticalDepth.z )  );
+
 // 			scanline->x = 1.0f - idMath::Pow( scanline->x, 1.0f/8 );
 // 			scanline->y = 1.0f - idMath::Pow( scanline->y, 1.0f/8 );
 // 			scanline->z = 1.0f - idMath::Pow( scanline->z, 1.0f/8 );
@@ -1782,10 +1796,8 @@ if ( scanline->z != 0.0f && TestZ.raw == 0 ) {
 
 
 #ifdef _DEBUG
-
 float	MaxHitDistanceKm = SphereIntersectionExit( NjFloat3::Zero, NjFloat3::UnitX, ATMOSPHERE_THICKNESS_KM );
-
-NjFloat3	Test0 = GetTransmittance( 0.0f, cosf( NUAJDEG2RAD(90.0f - 0.00f) ), 200.0f );
+NjFloat3	Test0 = GetTransmittance( 0.0f, cosf( NUAJDEG2RAD(90.0f + 0.5f) ), 10.0f );
 NjFloat3	Test1 = GetTransmittance( 0.0f, cosf( HALFPI ), MaxHitDistanceKm );
 #endif
 
@@ -1838,7 +1850,7 @@ float		EffectVolumetric::ComputeOpticalDepth( float _AltitudeKm, float _CosTheta
 
 NjFloat3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta ) const
 {
-	float	NormalizedAltitude = sqrtf( _AltitudeKm * (1.0f / ATMOSPHERE_THICKNESS_KM) );
+	float	NormalizedAltitude = sqrtf( max( 0.0f, _AltitudeKm ) * (1.0f / ATMOSPHERE_THICKNESS_KM) );
 
 #ifdef USE_PRECISE_COS_THETA_MIN
 	float	RadiusKm = GROUND_RADIUS_KM + _AltitudeKm;
@@ -1848,9 +1860,10 @@ NjFloat3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta 
 #endif
  	float	NormalizedCosTheta = atan( (_CosTheta - CosThetaMin) / (1.0f - CosThetaMin) * tan(TRANSMITTANCE_TAN_MAX) ) / TRANSMITTANCE_TAN_MAX;
 
-	NjFloat2	UV( NormalizedCosTheta, 1e-2f + NormalizedAltitude );
+	NjFloat2	UV( NormalizedCosTheta, NormalizedAltitude );
 
-	return SampleTransmittance( UV );
+	NjFloat3	Result = SampleTransmittance( UV );
+	return Result;
 }
 
 NjFloat3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm ) const
@@ -1876,6 +1889,13 @@ NjFloat3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta,
 	}
 
 	NjFloat3	Result = T0 / T1;
+
+//CHECK No really 16-bits precision computation...
+NjHalf4		T0Half = NjHalf4( NjFloat4( T0, 0 ) );
+NjHalf4		T1Half = NjHalf4( NjFloat4( T1, 0 ) );
+NjFloat4	ResultHalf = NjHalf4( NjFloat4( T0Half ) / NjFloat4( T1Half ) );
+//CHECK
+
 	return Result;
 }
 

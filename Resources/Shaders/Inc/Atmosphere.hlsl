@@ -154,7 +154,7 @@ float3	GetMieFromRayleighAndMieRed( float4 _RayleighMieRed )
 // Tables access
 float3	GetTransmittance( float _AltitudeKm, float _CosTheta )
 {
-	float	NormalizedAltitude = sqrt( _AltitudeKm * (1.0 / ATMOSPHERE_THICKNESS_KM) );
+	float	NormalizedAltitude = sqrt( saturate( _AltitudeKm * (1.0 / ATMOSPHERE_THICKNESS_KM) ) );
 
 const float	TAN_MAX = 1.5;
 
@@ -166,7 +166,8 @@ const float	TAN_MAX = 1.5;
 #endif
  	float	NormalizedCosTheta = atan( (_CosTheta - CosThetaMin) / (1.0 - CosThetaMin) * tan(TAN_MAX) ) / TAN_MAX;
 
-	float2	UV = float2( NormalizedCosTheta, NormalizedAltitude );
+	float2	UV = float2( NormalizedCosTheta, NormalizedAltitude );	// For CosTheta=0.01  => U=0.73294567479959475196454899060789
+																	// For CosTheta=0.001 => U=0.7170674487513882415177428025293
 
 	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 }
@@ -189,11 +190,11 @@ float3	GetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm )
 	float	RadiusKm = GROUND_RADIUS_KM + _AltitudeKm;
 	float	RadiusKm2 = sqrt( RadiusKm*RadiusKm + _DistanceKm*_DistanceKm + 2.0 * RadiusKm * _CosTheta * _DistanceKm );	// sqrt[ (P0 + d.V)² ]
 	float	CosTheta2 = (RadiusKm * _CosTheta + _DistanceKm) / RadiusKm2;												// dot( P0 + d.V, V ) / RadiusKm2
-	float	AltitudeKm2 = RadiusKm2 - GROUND_RADIUS_KM;
+	float	AltitudeKm2 = max( 0.0, RadiusKm2 - GROUND_RADIUS_KM );
 
-	return _CosTheta > -1e-3	? min( GetTransmittance( _AltitudeKm, _CosTheta ) / GetTransmittance( AltitudeKm2, CosTheta2 ), 1.0 )
-								: min( GetTransmittance( AltitudeKm2, -CosTheta2 ) / GetTransmittance( _AltitudeKm, -_CosTheta ), 1.0 );
-
+	return _CosTheta > 0.0	? saturate( GetTransmittance( _AltitudeKm, _CosTheta ) / GetTransmittance( AltitudeKm2, CosTheta2 ) )
+							: saturate( GetTransmittance( AltitudeKm2, -CosTheta2 ) / GetTransmittance( _AltitudeKm, -_CosTheta ) );
+ 
 // 	float3	T0 = _CosTheta > 0.0 ? GetTransmittance( _AltitudeKm, _CosTheta ) : GetTransmittance( AltitudeKm2, -CosTheta2 );
 // 	float3	T1 = _CosTheta > 0.0 ? GetTransmittance( AltitudeKm2, CosTheta2 ) : GetTransmittance( _AltitudeKm, -_CosTheta );
 // 	T0.z = min( T0.z, 0.5 * T1.z );

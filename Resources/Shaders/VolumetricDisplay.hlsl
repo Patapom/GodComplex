@@ -431,8 +431,20 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 	ComputeFinalColor( PositionWorld, ViewWorld, float2( HitDistanceKm, AerialPerspectiveHitDistanceKm ), _LightDirection, float4( Scattering, Transmittance ), GroundBlocking, StepOffset, Out.Scattering, Out.Extinction );
 
 //###
+HitDistanceKm *= 10.0;
+//HitDistanceKm = 10000.0;
+if ( ViewWorld.y > 0.0 )
+	HitDistanceKm = min( HitDistanceKm, SphereIntersectionExit( WORLD2KM * PositionWorld, ViewWorld, ATMOSPHERE_THICKNESS_KM ) );
+else
+	HitDistanceKm = min( HitDistanceKm, SphereIntersectionEnter( WORLD2KM * PositionWorld, ViewWorld, 0.0 ) );
+
+//View.y = 0.01;	// Min positive value
+//View.y = -0.012;	// Max negative value
 Out.Scattering = GetTransmittance( 0.0, View.y, HitDistanceKm );
+//Out.Scattering += View.y < 0.0 ? float3( 0.5, 0, 0 ) : 0.0; 
 //Out.Scattering = 0.01 * HitDistance;
+
+//Out.Scattering = GetTransmittance( 0.0, -View.y );
 
 	return Out;
 }
