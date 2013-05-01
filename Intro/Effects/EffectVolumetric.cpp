@@ -13,7 +13,7 @@ static const float	ATMOSPHERE_THICKNESS_KM = 60.0f;
 static const float	BOX_BASE = 8.0f;	// 10km  <== Find better way to keep visual aspect!
 static const float	BOX_HEIGHT = 4.0f;	// 4km high
 
-static const float	TRANSMITTANCE_TAN_MAX = 1.5;	// Close to PI/2 to maximize precision at grazing angles
+static const float	TRANSMITTANCE_TAN_MAX = 1.5f;	// Close to PI/2 to maximize precision at grazing angles
 //#define USE_PRECISE_COS_THETA_MIN
 
 
@@ -1714,8 +1714,8 @@ int		MaxOpticalDepthY = -1;
 		float	AltitudeKm = UV.y*UV.y * ATMOSPHERE_THICKNESS_KM;					// Grow quadratically to have more precision near the ground
 
 #ifdef USE_PRECISE_COS_THETA_MIN
-		float	RadiusKm = GROUND_RADIUS_KM + AltitudeKm;
-		float	CosThetaMin = -1e-3f - sqrtf( 1.0f - GROUND_RADIUS_KM*GROUND_RADIUS_KM / (RadiusKm*RadiusKm) );	// -0.13639737868529368408722196006097 at 60km
+		float	RadiusKm = GROUND_RADIUS_KM + 1e-2f + AltitudeKm;
+		float	CosThetaMin = -1e-2f + -sqrtf( 1.0f - GROUND_RADIUS_KM*GROUND_RADIUS_KM / (RadiusKm*RadiusKm) );	// -0.13639737868529368408722196006097 at 60km
 #else
 		float	CosThetaMin = -0.15f;
 #endif
@@ -1736,13 +1736,20 @@ int		MaxOpticalDepthY = -1;
 // if ( CosTheta > 0.0f && CosTheta < CosThetaEps )	CosTheta = CosThetaEps;
 // if ( CosTheta < 0.0f && CosTheta > -CosThetaEps )	CosTheta = -CosThetaEps;
 
-if ( CosTheta > 0.0f )
-	CosTheta = LERP( 0.02f, 1.0f, CosTheta );
-else
-	CosTheta = LERP( -0.02f, -1.0f, -CosTheta );
+// if ( CosTheta > 0.0f )
+// 	CosTheta = LERP( 0.02f, 1.0f, CosTheta );
+// else
+// 	CosTheta = LERP( -0.02f, -1.0f, -CosTheta );
+
+float	RadiusKm = GROUND_RADIUS_KM + 1e-2f + AltitudeKm;
+float	CosThetaGround = -sqrtf( 1.0f - GROUND_RADIUS_KM*GROUND_RADIUS_KM / (RadiusKm*RadiusKm) );	// -0.13639737868529368408722196006097 at 60km
+// if ( CosTheta > CosThetaGround )
+// 	CosTheta = LERP( CosThetaGround+0.01f, 1.0f, CosTheta / (1.0f-CosThetaGround) );
+// else
+// 	CosTheta = LERP( CosThetaGround+0.1001f, -1.0f, -CosTheta / (1.0f+CosThetaGround) );
 
 
-			bool	groundHit = false;
+			bool		groundHit = false;
 			NjFloat3	OpticalDepth = Sigma_s_Rayleigh * ComputeOpticalDepth( AltitudeKm, CosTheta, HRefRayleigh, groundHit ) + Sigma_t_Mie * ComputeOpticalDepth( AltitudeKm, CosTheta, HRefMie, groundHit );
 			if ( groundHit ) {
 				scanline->Set( 1e-4f, 1e-4f, 1e-4f );	// Special case...
@@ -1755,40 +1762,40 @@ if ( OpticalDepth.z > MaxopticalDepth.z ) {
 	MaxOpticalDepthY = Y;
 }
 
-			// Here, the blue channel's optical depth's max value has been reported to be 19.6523819
-			//	but the minimum supported value for Half16 has been measured to be something like 6.10351563e-5 (equivalent to d = -ln(6.10351563e-5) = 9.7040605270200343321767940202312)
-			// What I'm doing here is patching very long optical depths in the blue channel to remap
-			//	the [8,19.6523819] interval into [8,9.704061]
-			//
-			static const float	MAX_OPTICAL_DEPTH = 19.652382f;
-			if ( OpticalDepth.z > 8.0f ) {
-				OpticalDepth.z = 8.0f + (9.70f-8.0f) * SATURATE( (OpticalDepth.z - 8.0f) / (MAX_OPTICAL_DEPTH-8.0f) );
-			}
+//### 			// Here, the blue channel's optical depth's max value has been reported to be 19.6523819
+// 			//	but the minimum supported value for Half16 has been measured to be something like 6.10351563e-5 (equivalent to d = -ln(6.10351563e-5) = 9.7040605270200343321767940202312)
+// 			// What I'm doing here is patching very long optical depths in the blue channel to remap
+// 			//	the [8,19.6523819] interval into [8,9.704061]
+// 			//
+// 			static const float	MAX_OPTICAL_DEPTH = 19.652382f;
+// 			if ( OpticalDepth.z > 8.0f ) {
+// 				OpticalDepth.z = 8.0f + (9.70f-8.0f) * SATURATE( (OpticalDepth.z - 8.0f) / (MAX_OPTICAL_DEPTH-8.0f) );
+// 			}
 
 			scanline->Set( expf( -OpticalDepth.x ), expf( -OpticalDepth.y ), expf( -OpticalDepth.z )  );
 
-scanline->Set( 1e-4f+expf( -OpticalDepth.x ), 1e-4f+expf( -OpticalDepth.y ), 1e-4f+expf( -OpticalDepth.z )  );
+//scanline->Set( 1e-4f+expf( -OpticalDepth.x ), 1e-4f+expf( -OpticalDepth.y ), 1e-4f+expf( -OpticalDepth.z ) );	// Just to avoid any division by 0 in the shader...
 
 // 			scanline->x = 1.0f - idMath::Pow( scanline->x, 1.0f/8 );
 // 			scanline->y = 1.0f - idMath::Pow( scanline->y, 1.0f/8 );
 // 			scanline->z = 1.0f - idMath::Pow( scanline->z, 1.0f/8 );
 
-#ifdef _DEBUG
-// CHECK Ensure we never get 0 from a non 0 value
-NjHalf	TestX( scanline->x );
-if ( scanline->x != 0.0f && TestX.raw == 0 ) {
-	DebugBreak();
-}
-NjHalf	TestY( scanline->y );
-if ( scanline->y != 0.0f && TestY.raw == 0 ) {
-	DebugBreak();
-}
-NjHalf	TestZ( scanline->z );
-if ( scanline->z != 0.0f && TestZ.raw == 0 ) {
-	DebugBreak();
-}
-// CHECK
-#endif
+// #ifdef _DEBUG
+// // CHECK Ensure we never get 0 from a non 0 value
+// NjHalf	TestX( scanline->x );
+// if ( scanline->x != 0.0f && TestX.raw == 0 ) {
+// 	DebugBreak();
+// }
+// NjHalf	TestY( scanline->y );
+// if ( scanline->y != 0.0f && TestY.raw == 0 ) {
+// 	DebugBreak();
+// }
+// NjHalf	TestZ( scanline->z );
+// if ( scanline->z != 0.0f && TestZ.raw == 0 ) {
+// 	DebugBreak();
+// }
+// // CHECK
+// #endif
 		}
 	}
 
@@ -1796,9 +1803,26 @@ if ( scanline->z != 0.0f && TestZ.raw == 0 ) {
 
 
 #ifdef _DEBUG
-float	MaxHitDistanceKm = SphereIntersectionExit( NjFloat3::Zero, NjFloat3::UnitX, ATMOSPHERE_THICKNESS_KM );
-NjFloat3	Test0 = GetTransmittance( 0.0f, cosf( NUAJDEG2RAD(90.0f + 0.5f) ), 10.0f );
-NjFloat3	Test1 = GetTransmittance( 0.0f, cosf( HALFPI ), MaxHitDistanceKm );
+const float	WORLD2KM = 0.5f;
+const float	CameraAltitudeKm = WORLD2KM * 1.5f;
+NjFloat3	PositionWorldKm( 0, CameraAltitudeKm, 0 );
+
+//float		ViewAngle = NUAJDEG2RAD(90.0f + 1.0f);	// Slightly downward
+//float		ViewAngle = NUAJDEG2RAD(90.0f + 0.5f);	// Slightly downward
+
+float		CameraRadiusKm = GROUND_RADIUS_KM+CameraAltitudeKm;
+float		ViewAngle = acosf( -sqrtf( 1-GROUND_RADIUS_KM*GROUND_RADIUS_KM/(CameraRadiusKm*CameraRadiusKm) ) );
+
+NjFloat3	View = NjFloat3( sinf(ViewAngle), cosf(ViewAngle), 0 );
+
+float		HitDistanceKm = 200.0f;
+
+	HitDistanceKm = MIN( HitDistanceKm, SphereIntersectionExit( PositionWorldKm, View, ATMOSPHERE_THICKNESS_KM ) );	// Limit to the atmosphere
+
+if ( View.y < 0.0f )
+	HitDistanceKm = MIN( HitDistanceKm, SphereIntersectionEnter( PositionWorldKm, View, 0.0f ) );					// Limit to the ground
+
+NjFloat3	Test0 = GetTransmittance( PositionWorldKm.y, View.y, HitDistanceKm );
 #endif
 
 
@@ -1826,9 +1850,9 @@ float		EffectVolumetric::ComputeOpticalDepth( float _AltitudeKm, float _CosTheta
 	NjFloat4	PositionKm = NjFloat4( 0.0f, 1e-2f + _AltitudeKm, 0.0f, 0.0f );
 	NjFloat3	View = NjFloat3( sqrtf( 1.0f - _CosTheta*_CosTheta ), _CosTheta, 0.0f );
 	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, _bGroundHit );
-	if ( _bGroundHit )
-		return 1e5f;	// Completely opaque due to hit with ground: no light can come this way...
-						// Be careful with large values in 16F!
+//### 	if ( _bGroundHit )
+// 		return 1e5f;	// Completely opaque due to hit with ground: no light can come this way...
+// 						// Be careful with large values in 16F!
 
 	NjFloat3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
 
@@ -1876,8 +1900,13 @@ NjFloat3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta,
 	float	CosTheta2 = (RadiusKm * _CosTheta + _DistanceKm) / RadiusKm2;													// dot( P0 + d.V, V ) / RadiusKm2
 	float	AltitudeKm2 = RadiusKm2 - GROUND_RADIUS_KM;
 
+// 	if ( _CosTheta * CosTheta2 < 0.0f )
+// 		DebugBreak();
+
+	float	CosThetaGround = -sqrtf( 1.0f - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (RadiusKm*RadiusKm) );
+
 	NjFloat3	T0, T1;
-	if ( _CosTheta > -1e-3f )
+	if ( _CosTheta > CosThetaGround )
 	{
 		T0 = GetTransmittance( _AltitudeKm, _CosTheta );
 		T1 = GetTransmittance( AltitudeKm2, CosTheta2 );
@@ -1891,9 +1920,9 @@ NjFloat3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta,
 	NjFloat3	Result = T0 / T1;
 
 //CHECK No really 16-bits precision computation...
-NjHalf4		T0Half = NjHalf4( NjFloat4( T0, 0 ) );
-NjHalf4		T1Half = NjHalf4( NjFloat4( T1, 0 ) );
-NjFloat4	ResultHalf = NjHalf4( NjFloat4( T0Half ) / NjFloat4( T1Half ) );
+// NjHalf4		T0Half = NjHalf4( NjFloat4( T0, 0 ) );
+// NjHalf4		T1Half = NjHalf4( NjFloat4( T1, 0 ) );
+// NjFloat4	ResultHalf = NjHalf4( NjFloat4( T0Half ) / NjFloat4( T1Half ) );
 //CHECK
 
 	return Result;
@@ -1939,18 +1968,21 @@ void	EffectVolumetric::ComputeSphericalData( const NjFloat3& _PositionKm, float&
 // ====== Intersections ======
 
 // Computes the enter intersection of a ray and a sphere
-// (No check for validity!)
 float	EffectVolumetric::SphereIntersectionEnter( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm ) const
 {
 	NjFloat3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
-	float	R = _SphereAltitudeKm + GROUND_RADIUS_KM;
+	float		R = _SphereAltitudeKm + GROUND_RADIUS_KM;
 	NjFloat3	D = _PositionKm - EarthCenterKm;
-	float	c = (D | D) - R*R;
-	float	b = D | _View;
+	float		c = (D | D) - R*R;
+	float		b = D | _View;
 
-	float	Delta = b*b - c;
+	float		Delta = b*b - c;
+	if ( Delta < 0.0f )
+		return 1e6f;
 
-	return -b - sqrt(Delta);
+	Delta = sqrt(Delta);
+	float	HitDistance = -b - Delta;
+	return  HitDistance;
 }
 
 // Computes the exit intersection of a ray and a sphere
@@ -1958,14 +1990,18 @@ float	EffectVolumetric::SphereIntersectionEnter( const NjFloat3& _PositionKm, co
 float	EffectVolumetric::SphereIntersectionExit( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm ) const
 {
 	NjFloat3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
-	float	R = _SphereAltitudeKm + GROUND_RADIUS_KM;
+	float		R = _SphereAltitudeKm + GROUND_RADIUS_KM;
 	NjFloat3	D = _PositionKm - EarthCenterKm;
-	float	c = (D | D) - R*R;
-	float	b = D | _View;
+	float		c = (D | D) - R*R;
+	float		b = D | _View;
 
-	float	Delta = b*b - c;
+	float		Delta = b*b - c;
+	if ( Delta < 0.0f )
+		return 1e6f;
 
-	return -b + sqrt(Delta);
+	Delta = sqrt(Delta);
+	float	HitDistance = -b + Delta;
+	return  HitDistance;
 }
 
 // Computes both intersections of a ray and a sphere

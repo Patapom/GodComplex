@@ -9,7 +9,7 @@ static const float	STEPS_COUNT = 32.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
 
 
-static const float	AERIAL_PERSPECTIVE_FAKE_FACTOR = 2.0;	// To fake an increase in aerial perspective on the terrain
+static const float	AERIAL_PERSPECTIVE_FAKE_FACTOR = 1.0;	// To fake an increase in aerial perspective on the terrain
 
 //[
 cbuffer	cbSplat	: register( b10 )
@@ -32,6 +32,84 @@ struct	PS_OUT
 	float3	Scattering	: SV_TARGET0;
 	float3	Extinction	: SV_TARGET1;
 };
+
+
+
+
+
+float3	TempGetTransmittance( float _AltitudeKm, float _CosTheta )
+{
+	float	NormalizedAltitude = sqrt( saturate( _AltitudeKm * (1.0 / ATMOSPHERE_THICKNESS_KM) ) );
+
+const float	TAN_MAX = 1.5;
+
+#if 0
+	float	RadiusKm = GROUND_RADIUS_KM + 1e-2 + _AltitudeKm;
+	float	CosThetaMin = -1e-2 + -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (RadiusKm*RadiusKm) );
+#else
+	float	CosThetaMin = -0.15;
+#endif
+ 	float	NormalizedCosTheta = atan( (_CosTheta - CosThetaMin) / (1.0 - CosThetaMin) * tan(TAN_MAX) ) / TAN_MAX;
+
+	float2	UV = float2( NormalizedCosTheta, NormalizedAltitude );	// For CosTheta=0.01  => U=0.73294567479959475196454899060789
+																	// For CosTheta=0.001 => U=0.7170674487513882415177428025293
+
+	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+}
+
+// Transmittance(=transparency) of atmosphere up to a given distance
+// We assume the segment is not intersecting ground
+float3	TempGetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm )
+{
+	// P0 = [0, _RadiusKm]
+	// V  = [SinTheta, CosTheta]
+	//
+	float	RadiusKm = GROUND_RADIUS_KM + _AltitudeKm;
+
+	float	CosThetaGround = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (RadiusKm*RadiusKm) );
+//	_DistanceKm = lerp( _DistanceKm, 200.0, smoothstep( 0.01, 0.0, abs(_CosTheta - CosThetaGround) ) );
+//	_DistanceKm = _DistanceKm * lerp( 1.0, 1.0, smoothstep( 0.01, 0.0, abs(_CosTheta - CosThetaGround) ) );
+//return smoothstep( 0.01, 0.0, abs(_CosTheta - CosThetaGround) );
+
+	float	RadiusKm2 = sqrt( RadiusKm*RadiusKm + _DistanceKm*_DistanceKm + 2.0 * RadiusKm * _CosTheta * _DistanceKm );	// sqrt[ (P0 + d.V)² ]
+	float	CosTheta2 = (RadiusKm * _CosTheta + _DistanceKm) / RadiusKm2;												// dot( P0 + d.V, V ) / RadiusKm2
+	float	AltitudeKm2 = RadiusKm2 - GROUND_RADIUS_KM;
+
+
+// 	float3	T0 = TempGetTransmittance( _AltitudeKm, abs(_CosTheta) );
+// 	float3	T1 = TempGetTransmittance( AltitudeKm2, abs(CosTheta2) );
+// 	return _CosTheta > 0.0	? saturate( T0 / T1 ) : saturate( T1 / T0 );
+
+CosThetaGround = 0.0;
+
+// 	return _CosTheta > CosThetaGround	? saturate( TempGetTransmittance( _AltitudeKm, _CosTheta ) / TempGetTransmittance( AltitudeKm2, CosTheta2 ) )
+// 										: saturate( TempGetTransmittance( AltitudeKm2, -CosTheta2 ) / TempGetTransmittance( _AltitudeKm, -_CosTheta ) );
+
+// 	return _CosTheta > CosThetaGround	? saturate( TempGetTransmittance( _AltitudeKm, _CosTheta-CosThetaGround ) / TempGetTransmittance( AltitudeKm2, CosTheta2-CosThetaGround ) )
+// 										: saturate( TempGetTransmittance( AltitudeKm2, -CosTheta2 ) / TempGetTransmittance( _AltitudeKm, -_CosTheta ) );
+
+	if ( _CosTheta > CosThetaGround )
+	{
+// 		_AltitudeKm = min( _AltitudeKm, AltitudeKm2 );
+// 		CosTheta2 = max( CosTheta2, _CosTheta );
+		return saturate( TempGetTransmittance( _AltitudeKm, _CosTheta ) / TempGetTransmittance( AltitudeKm2, CosTheta2 ) );
+	}
+	else
+	{
+//		AltitudeKm2 = min( AltitudeKm2, _AltitudeKm );
+		return saturate( TempGetTransmittance( AltitudeKm2, -CosTheta2 ) / TempGetTransmittance( _AltitudeKm, -_CosTheta ) );
+	}
+
+
+// 	float3	T0 = _CosTheta > 0.0 ? TempGetTransmittance( _AltitudeKm, _CosTheta ) : TempGetTransmittance( AltitudeKm2, -CosTheta2 );
+// 	float3	T1 = _CosTheta > 0.0 ? TempGetTransmittance( AltitudeKm2, CosTheta2 ) : TempGetTransmittance( _AltitudeKm, -_CosTheta );
+// 	T0.z = min( T0.z, 0.5 * T1.z );
+// 	return T0 / T1;
+}
+
+
+
+
 
 // Read Z from the ZBuffer
 float	ReadDepth( float2 _UV )
@@ -431,20 +509,25 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 	ComputeFinalColor( PositionWorld, ViewWorld, float2( HitDistanceKm, AerialPerspectiveHitDistanceKm ), _LightDirection, float4( Scattering, Transmittance ), GroundBlocking, StepOffset, Out.Scattering, Out.Extinction );
 
 //###
-HitDistanceKm *= 10.0;
+//HitDistanceKm *= 10.0;
 //HitDistanceKm = 10000.0;
-if ( ViewWorld.y > 0.0 )
-	HitDistanceKm = min( HitDistanceKm, SphereIntersectionExit( WORLD2KM * PositionWorld, ViewWorld, ATMOSPHERE_THICKNESS_KM ) );
-else
-	HitDistanceKm = min( HitDistanceKm, SphereIntersectionEnter( WORLD2KM * PositionWorld, ViewWorld, 0.0 ) );
+
+HitDistanceKm = min( HitDistanceKm, SphereIntersectionExit( WORLD2KM * PositionWorld, ViewWorld, ATMOSPHERE_THICKNESS_KM ) );
+// if ( ViewWorld.y < 0.0 )
+//  	HitDistanceKm = min( HitDistanceKm, SphereIntersectionEnter( WORLD2KM * PositionWorld, ViewWorld, 0.0 ) );
 
 //View.y = 0.01;	// Min positive value
 //View.y = -0.012;	// Max negative value
-Out.Scattering = GetTransmittance( 0.0, View.y, HitDistanceKm );
-//Out.Scattering += View.y < 0.0 ? float3( 0.5, 0, 0 ) : 0.0; 
-//Out.Scattering = 0.01 * HitDistance;
+Out.Scattering = TempGetTransmittance( WORLD2KM * PositionWorld.y, View.y, HitDistanceKm );
 
-//Out.Scattering = GetTransmittance( 0.0, -View.y );
+float	RadiusKm = GROUND_RADIUS_KM + WORLD2KM * PositionWorld.y;
+float	CosThetaGround = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (RadiusKm*RadiusKm) );
+//Out.Scattering += View.y >= CosThetaGround ? float3( 0.8, 0, 0 ) : 0.0; 
+
+//Out.Scattering = 0.005 * HitDistanceKm;
+
+//Out.Scattering = TempGetTransmittance( 0.0, -View.y );
+//Out.Scattering = _TexTransmittance.Sample( LinearClamp, UV );
 
 	return Out;
 }

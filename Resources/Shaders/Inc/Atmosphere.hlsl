@@ -68,7 +68,6 @@ void	ComputeSphericalData( float3 _PositionKm, out float _AltitudeKm, out float3
 // ====== Intersections ======
 
 // Computes the enter intersection of a ray and a sphere
-// (No check for validity!)
 float	SphereIntersectionEnter( float3 _PositionKm, float3 _View, float _SphereAltitudeKm )
 {
 	float	R = _SphereAltitudeKm + GROUND_RADIUS_KM;
@@ -78,7 +77,7 @@ float	SphereIntersectionEnter( float3 _PositionKm, float3 _View, float _SphereAl
 
 	float	Delta = b*b - c;
 
-	return -b - sqrt(Delta);
+	return Delta > 0.0 ? -b - sqrt(Delta) : INFINITY;
 }
 
 // Computes the exit intersection of a ray and a sphere
@@ -92,7 +91,7 @@ float	SphereIntersectionExit( float3 _PositionKm, float3 _View, float _SphereAlt
 
 	float	Delta = b*b - c;
 
-	return -b + sqrt(Delta);
+	return Delta > 0.0 ? -b + sqrt(Delta) : INFINITY;
 }
 
 // Computes both intersections of a ray and a sphere
@@ -190,7 +189,7 @@ float3	GetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm )
 	float	RadiusKm = GROUND_RADIUS_KM + _AltitudeKm;
 	float	RadiusKm2 = sqrt( RadiusKm*RadiusKm + _DistanceKm*_DistanceKm + 2.0 * RadiusKm * _CosTheta * _DistanceKm );	// sqrt[ (P0 + d.V)² ]
 	float	CosTheta2 = (RadiusKm * _CosTheta + _DistanceKm) / RadiusKm2;												// dot( P0 + d.V, V ) / RadiusKm2
-	float	AltitudeKm2 = max( 0.0, RadiusKm2 - GROUND_RADIUS_KM );
+	float	AltitudeKm2 = RadiusKm2 - GROUND_RADIUS_KM;
 
 	return _CosTheta > 0.0	? saturate( GetTransmittance( _AltitudeKm, _CosTheta ) / GetTransmittance( AltitudeKm2, CosTheta2 ) )
 							: saturate( GetTransmittance( AltitudeKm2, -CosTheta2 ) / GetTransmittance( _AltitudeKm, -_CosTheta ) );
