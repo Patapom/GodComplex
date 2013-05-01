@@ -6,10 +6,10 @@
 #include "Inc/Volumetric.hlsl"
 #include "Inc/Atmosphere.hlsl"
 
-static const float	TERRAIN_HEIGHT = 6.0;	// Original value is 140
+static const float	TERRAIN_HEIGHT = 3.0;	// Original value is 140
 static const float	TERRAIN_FACTOR = TERRAIN_HEIGHT / 140.0;
 
-static const float	ALBEDO_MULTIPLIER = 0.7;
+static const float	ALBEDO_MULTIPLIER = 2.0;
 
 //[
 cbuffer	cbObject	: register( b10 )
@@ -150,6 +150,8 @@ float	GetTerrainHeight( in float2 x, const int _OctavesCount=14 )
 // Transforms the standard terrain height into terraces whose amplitude decreases with altitude
 float	Map( in float3 p, const int _OctavesCount=14 )
 {
+p *= 1.2;
+
 	float	h = GetTerrainHeight( p.xz, _OctavesCount );	// Map to height it was originaly written for
 
 	float	ss = 0.03;
@@ -226,18 +228,34 @@ float3	ComputeTerrainColor( float3 _Position, float _Distance, float3 _Shadow, f
 
 	// Compute rock & grass albedo
 	float	r = Noise( 80.0 * TerrainPosition.xz );
-	Albedo = (r*0.25+0.75)*0.9 * lerp( float3(0.10,0.05,0.03), float3(0.13,0.10,0.08), saturate( GetTerrainHeight( float2(TerrainPosition.x, TerrainPosition.y*20.0 ) ) / 200.0 ) );
-	Albedo = lerp( Albedo, 0.17 * float3( 0.5, 0.23, 0.04)*(0.50+0.50*r), smoothstep( 0.70, 0.9, Normal.y ) );	// Add sediments on somewhat flat parts
-	Albedo = lerp( Albedo, 0.10 * float3( 0.2, 0.30, 0.00)*(0.25+0.75*r), smoothstep( 0.95, 1.0, Normal.y ) );	// Add grass on very flat parts
+
+// 	const float3	RockColors[4] = {
+// 		float3( 0.10, 0.05, 0.03 ),	// Striped rock - base color
+// 		float3( 0.13, 0.10, 0.08 ),	// Striped rock - stripe color
+// 		float3( 0.50, 0.23, 0.04 ),	// Sediment color
+// 		float3( 0.20, 0.30, 0.00 )	// Grass color
+// 	};
+	const float3	RockColors[4] = {
+		float3( 0.08, 0.10, 0.10 ),	// Striped rock - base color
+		float3( 0.20, 0.20, 0.20 ),	// Striped rock - stripe color
+		0.5*float3( 0.34, 0.30, 0.25 ),	// Sediment color
+		float3( 0.20, 0.30, 0.00 )	// Grass color
+	};
+
+	Albedo = (r*0.25+0.75)*0.9 * lerp( RockColors[0], RockColors[1], saturate( GetTerrainHeight( float2(TerrainPosition.x, TerrainPosition.y*20.0 ) ) / 200.0 ) );
+	Albedo = lerp( Albedo, 0.17 * RockColors[2] * (0.50+0.50*r), smoothstep( 0.70, 0.9, Normal.y ) );	// Add sediments on somewhat flat parts
+	Albedo = lerp( Albedo, 0.10 * RockColors[3] * (0.25+0.75*r), smoothstep( 0.95, 1.0, Normal.y ) );	// Add grass on very flat parts
   	Albedo *= 0.75;
 //return 50.0 * Albedo;
 
-#if 1
+#if 0
 	// Add snow
+const float	SNOW_MIN_ALTITUDE = 55;	// Snowy in altitude
+//const float	SNOW_MIN_ALTITUDE = 150;	// Snowy everywhere!
 //return fbm( 0.01*TerrainPosition.xz );
-	float	h = smoothstep( 55.0, 140.0, TerrainPosition.y + 25.0 * fbm( 0.01*TerrainPosition.xz ) );	// Very low frequency snow coverage depending on altitude
-	float	e = smoothstep( 1.0-0.5*h, 1.0-0.1*h, Normal.y );								// Depends on flatness with tolerance varying with "snowiness" => very snowy is more tolerant to variations in normal
-	float	o = 0.3 + 0.7 * smoothstep( 0.0, 0.1, Normal.x + h*h );							// Depends on wind orientation
+	float	h = smoothstep( SNOW_MIN_ALTITUDE, 140.0, TerrainPosition.y + 25.0 * fbm( 0.01*TerrainPosition.xz ) );	// Very low frequency snow coverage depending on altitude
+	float	e = smoothstep( 1.0-0.5*h, 1.0-0.1*h, Normal.y );		// Depends on flatness with tolerance varying with "snowiness" => very snowy is more tolerant to variations in normal
+	float	o = 0.3 + 0.7 * smoothstep( 0.0, 0.1, Normal.x + h*h );	// Depends on wind orientation
 	float	s = h * e * o;
 			s = smoothstep( 0.1, 0.15, s );
 	Albedo = lerp( Albedo, 0.4 * float3(0.6, 0.65, 0.7), s );
@@ -256,9 +274,9 @@ float3	ComputeTerrainColor( float3 _Position, float _Distance, float3 _Shadow, f
 
 	// Build final color
 	float3	brdf  = _Shadow * NdotL * _SunColor;
-			brdf += lerp( 0.8, 1.0, Normal.y ) * _AmbientSkyColor;
+//			brdf += lerp( 0.8, 1.0, Normal.y ) * _AmbientSkyColor;
 
-	return Albedo * brdf;
+	return INVPI * Albedo * brdf;
 }
 
 
@@ -275,9 +293,10 @@ PS_IN VS ( VS_IN _In )
 	Out.Position = WorldPosition.xyz;
 
 	// Compute colored shadow
-	float	Shadow = ShadowIntersect( WorldPosition, _LightDirection );	// Compute intersection with terrain for shadowing
+	float	Shadow = ShadowIntersect( WorldPosition.xyz, _LightDirection );	// Compute intersection with terrain for shadowing
 //	Out.Shadow = float3( Shadow, Shadow*Shadow*0.5 + 0.5*Shadow, Shadow*Shadow );
 	Out.Shadow = Shadow;
+//	Out.Shadow = 1.0;
 
 	// Compute Sun & Sky colors
 	float3	EarthPositionKm = WORLD2KM * WorldPosition.xyz - EARTH_CENTER_KM;

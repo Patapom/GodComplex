@@ -10,8 +10,8 @@ static const float	SCREEN_TARGET_RATIO = 0.5f;
 static const float	GROUND_RADIUS_KM = 6360.0f;
 static const float	ATMOSPHERE_THICKNESS_KM = 60.0f;
 
-static const float	BOX_BASE = 8.0f;	// 10km  <== Find better way to keep visual aspect!
-static const float	BOX_HEIGHT = 4.0f;	// 4km high
+static const float	BOX_BASE = 4.0f;	// 10km  <== Find better way to keep visual aspect!
+static const float	BOX_HEIGHT = 2.0f;	// 4km high
 
 static const float	TRANSMITTANCE_TAN_MAX = 1.5f;	// Close to PI/2 to maximize precision at grazing angles
 //#define USE_PRECISE_COS_THETA_MIN
@@ -171,13 +171,14 @@ EffectVolumetric::~EffectVolumetric()
 void	EffectVolumetric::Render( float _Time, float _DeltaTime )
 {
 // DEBUG
-float	t = 0.25f * _Time;
+float	t = 2*0.25f * _Time;
 //m_LightDirection.Set( 0, 1, -1 );
 //m_LightDirection.Set( 1, 2.0, -5 );
 //m_LightDirection.Set( cosf(_Time), 2.0f * sinf( 0.324f * _Time ), sinf( _Time ) );
 //m_LightDirection.Set( cosf(_Time), 1.0f, sinf( _Time ) );
 
 float	SunAngle = LERP( -0.01f * PI, 0.499f * PI, 0.5f * (1.0f + sinf( t )) );		// Oscillating between slightly below horizon to zenith
+//float	SunAngle = 0.1f * PI;
 
 //SunAngle = -0.015f * PI;	// Sexy Sunset
 //SunAngle = 0.15f * PI;	// Sexy Sunset
@@ -285,7 +286,7 @@ m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 
 		m_pRTTransmittanceMap->SetPS( 12 );
 
-		m_pCB_Object->m.Local2View.PRS( NjFloat3( 0, 0, 0 ), NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3( 100, 1, 100 ) );
+		m_pCB_Object->m.Local2View.PRS( NjFloat3( 0, 0, 0 ), NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3( 50, 1, 50 ) );
 		m_pCB_Object->m.dUV = m_RTHDR.GetdUV();
 		m_pCB_Object->UpdateData();
 
@@ -1649,7 +1650,7 @@ void	EffectVolumetric::PreComputeSkyTables()
 	Texture3D*	pStagingScattering = new Texture3D( m_Device, RES_3D_U, RES_MU, RES_R, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
 	Texture2D*	pStagingIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
 
-#if 1
+#if 0
 	BuildTransmittanceTable( TRANSMITTANCE_W, TRANSMITTANCE_H, *pStagingTransmittance );
 #else
 	pStagingTransmittance->Load( FILENAME_TRANSMITTANCE );
@@ -1698,12 +1699,13 @@ void	EffectVolumetric::BuildTransmittanceTable( int _Width, int _Height, Texture
 
 	m_pTableTransmittance = new NjFloat3[_Width*_Height];
 
-	float	HRefRayleigh = 8.0f;
-	float	HRefMie = 1.2f;
+	float		HRefRayleigh = 8.0f;
+	float		HRefMie = 1.2f;
 
-	float	Sigma_s_Mie = 0.004f;	// !!!May cause strong optical depths and very low values if increased!!
+	float		Sigma_s_Mie = 0.004f;	// !!!May cause strong optical depths and very low values if increased!!
 	NjFloat3	Sigma_t_Mie = (Sigma_s_Mie / 0.9f) * NjFloat3::One;	// Should this be a parameter as well?? People might set it to values > 1 and that's physically incorrect...
 	NjFloat3	Sigma_s_Rayleigh( 0.0058f, 0.0135f, 0.0331f );
+//	NjFloat3	Sigma_s_Rayleigh( 0, 0, 0 );
 								  
 NjFloat3	MaxopticalDepth = NjFloat3::Zero;
 int		MaxOpticalDepthX = -1;
@@ -1741,20 +1743,21 @@ int		MaxOpticalDepthY = -1;
 // else
 // 	CosTheta = LERP( -0.02f, -1.0f, -CosTheta );
 
-float	RadiusKm = GROUND_RADIUS_KM + 1e-2f + AltitudeKm;
-float	CosThetaGround = -sqrtf( 1.0f - GROUND_RADIUS_KM*GROUND_RADIUS_KM / (RadiusKm*RadiusKm) );	// -0.13639737868529368408722196006097 at 60km
+// float	RadiusKm = GROUND_RADIUS_KM + 1e-2f + AltitudeKm;
+// float	CosThetaGround = -sqrtf( 1.0f - GROUND_RADIUS_KM*GROUND_RADIUS_KM / (RadiusKm*RadiusKm) );	// -0.13639737868529368408722196006097 at 60km
 // if ( CosTheta > CosThetaGround )
 // 	CosTheta = LERP( CosThetaGround+0.01f, 1.0f, CosTheta / (1.0f-CosThetaGround) );
 // else
 // 	CosTheta = LERP( CosThetaGround+0.1001f, -1.0f, -CosTheta / (1.0f+CosThetaGround) );
 
+//CosTheta = 1.0f - 0.999f * (1.0f - CosTheta);
 
 			bool		groundHit = false;
 			NjFloat3	OpticalDepth = Sigma_s_Rayleigh * ComputeOpticalDepth( AltitudeKm, CosTheta, HRefRayleigh, groundHit ) + Sigma_t_Mie * ComputeOpticalDepth( AltitudeKm, CosTheta, HRefMie, groundHit );
-			if ( groundHit ) {
-				scanline->Set( 1e-4f, 1e-4f, 1e-4f );	// Special case...
-				continue;
-			}
+// 			if ( groundHit ) {
+// 				scanline->Set( 1e-4f, 1e-4f, 1e-4f );	// Special case...
+// 				continue;
+// 			}
 
 if ( OpticalDepth.z > MaxopticalDepth.z ) {
 	MaxopticalDepth = OpticalDepth;
@@ -1772,7 +1775,9 @@ if ( OpticalDepth.z > MaxopticalDepth.z ) {
 // 				OpticalDepth.z = 8.0f + (9.70f-8.0f) * SATURATE( (OpticalDepth.z - 8.0f) / (MAX_OPTICAL_DEPTH-8.0f) );
 // 			}
 
-			scanline->Set( expf( -OpticalDepth.x ), expf( -OpticalDepth.y ), expf( -OpticalDepth.z )  );
+//			scanline->Set( expf( -OpticalDepth.x ), expf( -OpticalDepth.y ), expf( -OpticalDepth.z ) );
+			*scanline = OpticalDepth;
+//			scanline->Set( sqrtf(OpticalDepth.x), sqrtf(OpticalDepth.y), sqrtf(OpticalDepth.z) );
 
 //scanline->Set( 1e-4f+expf( -OpticalDepth.x ), 1e-4f+expf( -OpticalDepth.y ), 1e-4f+expf( -OpticalDepth.z ) );	// Just to avoid any division by 0 in the shader...
 
@@ -1850,9 +1855,9 @@ float		EffectVolumetric::ComputeOpticalDepth( float _AltitudeKm, float _CosTheta
 	NjFloat4	PositionKm = NjFloat4( 0.0f, 1e-2f + _AltitudeKm, 0.0f, 0.0f );
 	NjFloat3	View = NjFloat3( sqrtf( 1.0f - _CosTheta*_CosTheta ), _CosTheta, 0.0f );
 	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, _bGroundHit );
-//### 	if ( _bGroundHit )
-// 		return 1e5f;	// Completely opaque due to hit with ground: no light can come this way...
-// 						// Be careful with large values in 16F!
+	if ( _bGroundHit )
+ 		return 1e5f;	// Completely opaque due to hit with ground: no light can come this way...
+ 						// Be careful with large values in 16F!
 
 	NjFloat3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
 

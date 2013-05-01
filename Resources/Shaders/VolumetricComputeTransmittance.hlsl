@@ -7,8 +7,12 @@
 //#define USE_OBJECT_ZBUFFER	// Define this to read ZMin/Max from the object's ZMin/Max buffer
 //#define USE_FRUSTUM_SPLAT		// Define this to sample the camera frustum splat texture that indicates us whether a shadow pixel is relevant for computation or not
 
-static const float	STEPS_COUNT = 32.0;
+static const float	STEPS_COUNT = 64.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
+
+static const float	SHADOW_MIN_DEPTH = 0.1;
+//static const float	SHADOW_MAX_DEPTH = 32.0 * BOX_HEIGHT;
+static const float	SHADOW_MAX_DEPTH = 64.0 * BOX_HEIGHT;
 
 //[
 cbuffer	cbSplat	: register( b10 )
@@ -85,19 +89,17 @@ PS_OUT	PS( VS_IN _In )
 		return Out;	// Empty interval, no trace needed...
 
 	// Ensure we trace a minimum distance
-	const float	MIN_DEPTH = 0.1;
-	if ( Depth < MIN_DEPTH )
+	if ( Depth < SHADOW_MIN_DEPTH )
 	{
-		Depth = MIN_DEPTH;
+		Depth = SHADOW_MIN_DEPTH;
 		float	CenterZ = 0.5 * (ZMinMax.x + ZMinMax.y);
 		ZMinMax = CenterZ + float2( -0.5, +0.5 ) * Depth;
 	}
 
 	// Ensure we trace a maximum distance
-	const float	MAX_DEPTH = 32.0 * BOX_HEIGHT;
-	if ( Depth > MAX_DEPTH )
+	if ( Depth > SHADOW_MAX_DEPTH )
 	{
-		Depth = MAX_DEPTH;
+		Depth = SHADOW_MAX_DEPTH;
 		ZMinMax.y = ZMinMax.x + Depth;
 	}
 

@@ -8,20 +8,22 @@
 #define	USE_FAST_COS	// Use Taylor series instead of actual cosine
 
 #define	ANIMATE
-#define	BOX_BASE	8.0		// 8km (!!) (need to lower that but keep clouds' aspect)
-#define	BOX_HEIGHT	4.0		// 4km high
+#define	BOX_BASE	4.0		// 8km (!!) (need to lower that but keep clouds' aspect)
+#define	BOX_HEIGHT	2.0		// 4km thick
 #define	PACK_R8				// Noise is packed in a R8 texture instead of R32F
 
-static const float	EXTINCTION_COEFF = 4.0;
-static const float	SCATTERING_COEFF = 4.0;
+static const float	EXTINCTION_COEFF = 8.0;
+static const float	SCATTERING_COEFF = 8.0;
 
 static const float	SUN_INTENSITY = 100.0;
 
-static const float	WORLD2KM = 0.5;						// 1 World unit equals 0.5km
+static const float	WORLD2KM = 1.0;						// 1 World unit equals 0.5km
 
 
-static const float	FREQUENCY_MULTIPLIER_LOW = 0.25;	// Noise low frequency multiplier
-static const float	FREQUENCY_MULTIPLIER_HIGH = 1.5;	// Noise high frequency multiplier
+// static const float	FREQUENCY_MULTIPLIER_LOW = 0.25;	// Noise low frequency multiplier
+// static const float	FREQUENCY_MULTIPLIER_HIGH = 1.5;	// Noise high frequency multiplier
+static const float	FREQUENCY_MULTIPLIER_LOW = 3*0.25;	// Noise low frequency multiplier
+static const float	FREQUENCY_MULTIPLIER_HIGH = 4*1.5;	// Noise high frequency multiplier
 
 
 cbuffer	cbShadow	: register( b11 )
@@ -158,7 +160,7 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 
 	float	y = saturate( (_Position.y - BOX_BASE) / BOX_HEIGHT );	// That gives us a value in [0 (bottom), 1 (top)]
 
-	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * float3( 0.01, 0.1, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
+	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * float3( 0.01, 0.01, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
 #ifdef	ANIMATE
 	UVW0 += _Time.x * float3( 0.005, 0, -0.0125 );
 #endif
@@ -169,7 +171,7 @@ Noise *= sqrt(y);		// Goes to 0 at bottom
 //Noise *= pow( y, 0.01 );	// Goes to 0 at bottom
 
 //	float3	UVW1 = float3( 0.04, 0.04, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
-	float3	UVW1 = FREQUENCY_MULTIPLIER_HIGH * float3( 0.02, 0.02, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
+	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH * 0.02, FREQUENCY_MULTIPLIER_HIGH * 0.02, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
 #ifdef	ANIMATE
 	UVW1 += _Time.x * float3( 0.0, -0.01, 0.0 );	// Good
 #endif
@@ -184,7 +186,7 @@ Noise *= sqrt(y);		// Goes to 0 at bottom
 #endif
 	
 //	Noise += 0.707 * (2.0 * (Noise2 - 0.02));	// Add detail
-	Noise += 0.707 * (1.0 * (Noise2 - 0.01));	// Add detail
+	Noise -= 0.707 * (1.0 * (Noise2 + 0.01));	// Add detail
 
 //	Noise *= 4.0;
 
@@ -197,8 +199,10 @@ Noise *= sqrt(y);		// Goes to 0 at bottom
 //	float3	HeightOffsets = float3( -0.005, 0.0, 0.1 );	// Bottom, Middle, Top offsets
 //	float3	HeightOffsets = float3( 0.025, 0.05, 0.10 );	// Bottom, Middle, Top offsets
 //	float3	HeightOffsets = float3( 0.0, +0.02, 0.1 );	// Bottom, Middle, Top offsets (Nice coverage!)
-	float3	HeightOffsets = -0.02 + float3( 0.0, +0.02, 0.1 );	// Bottom, Middle, Top offsets (Nice coverage!)
-	float	Offset = lerp( HeightOffsets.z, HeightOffsets.y, TopY ) + lerp( HeightOffsets.x, HeightOffsets.y, BottomY );
+ 	float3	HeightOffsets = -0.04 + float3( -0.01, +0.02, 0.1 );	// Bottom, Middle, Top offsets (Nice coverage!)
+ 	float	Offset = lerp( HeightOffsets.z, HeightOffsets.y, TopY ) + lerp( HeightOffsets.x, HeightOffsets.y, BottomY );
+
+//float	Offset = -0.02;//###
 
 	float	Contrast = 0.5;
 	float	Gamma = 0.5;
@@ -207,7 +211,6 @@ Noise *= sqrt(y);		// Goes to 0 at bottom
 // 	Noise *= 2.0;
 // 	float	Density = smoothstep( 0, 1, smoothstep( 0, 1, smoothstep( 0, 1, saturate( Noise + Offset ) ) ) );
 
-//	Density *= Density;
 	return Density;
 //	return (1.0 - saturate(y)) * Density;	// Apply bevel
 //	return sqrt(abs(y)) * Density;	// Apply bevel

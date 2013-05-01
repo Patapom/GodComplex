@@ -114,7 +114,8 @@ float4	PreComputeTransmittance( VS_IN _In ) : SV_TARGET0
 
 	float3	OpticalDepth = SIGMA_SCATTERING_RAYLEIGH * ComputeOpticalDepth( AltitudeKm, CosTheta, HREF_RAYLEIGH ) + SIGMA_EXTINCTION_MIE * ComputeOpticalDepth( AltitudeKm, CosTheta, HREF_MIE );
 
-	return float4( exp( -OpticalDepth ), 0.0 );
+//	return float4( exp( -OpticalDepth ), 0.0 );
+	return float4( min( 1e5, OpticalDepth ), 0.0 );		// We directly store optical depth otherwise we lose too much precision using a division!
 }
 
 //////////////////////////////////////////////////////////////////////////

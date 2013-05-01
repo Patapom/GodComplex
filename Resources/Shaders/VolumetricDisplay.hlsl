@@ -54,7 +54,10 @@ const float	TAN_MAX = 1.5;
 	float2	UV = float2( NormalizedCosTheta, NormalizedAltitude );	// For CosTheta=0.01  => U=0.73294567479959475196454899060789
 																	// For CosTheta=0.001 => U=0.7170674487513882415177428025293
 
-	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+//	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+	float3	Result = _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+	return Result;
+//	return Result * Result;
 }
 
 // Transmittance(=transparency) of atmosphere up to a given distance
@@ -88,17 +91,31 @@ CosThetaGround = 0.0;
 // 	return _CosTheta > CosThetaGround	? saturate( TempGetTransmittance( _AltitudeKm, _CosTheta-CosThetaGround ) / TempGetTransmittance( AltitudeKm2, CosTheta2-CosThetaGround ) )
 // 										: saturate( TempGetTransmittance( AltitudeKm2, -CosTheta2 ) / TempGetTransmittance( _AltitudeKm, -_CosTheta ) );
 
+// 	if ( _CosTheta > CosThetaGround )
+// 	{
+// // 		_AltitudeKm = min( _AltitudeKm, AltitudeKm2 );
+// // 		CosTheta2 = max( CosTheta2, _CosTheta );
+// 		return saturate( TempGetTransmittance( _AltitudeKm, _CosTheta ) / TempGetTransmittance( AltitudeKm2, CosTheta2 ) );
+// 	}
+// 	else
+// 	{
+// //		AltitudeKm2 = min( AltitudeKm2, _AltitudeKm );
+// 		return saturate( TempGetTransmittance( AltitudeKm2, -CosTheta2 ) / TempGetTransmittance( _AltitudeKm, -_CosTheta ) );
+// 	}
+
 	if ( _CosTheta > CosThetaGround )
 	{
-// 		_AltitudeKm = min( _AltitudeKm, AltitudeKm2 );
-// 		CosTheta2 = max( CosTheta2, _CosTheta );
-		return saturate( TempGetTransmittance( _AltitudeKm, _CosTheta ) / TempGetTransmittance( AltitudeKm2, CosTheta2 ) );
+		float3	T0 = TempGetTransmittance( _AltitudeKm, _CosTheta );
+		float3	T1 = TempGetTransmittance( AltitudeKm2, CosTheta2 );
+		return exp( -max( 0.0, T0 - T1 ) );
 	}
 	else
 	{
-//		AltitudeKm2 = min( AltitudeKm2, _AltitudeKm );
-		return saturate( TempGetTransmittance( AltitudeKm2, -CosTheta2 ) / TempGetTransmittance( _AltitudeKm, -_CosTheta ) );
+		float3	T0 = TempGetTransmittance( AltitudeKm2, -CosTheta2 );
+		float3	T1 = TempGetTransmittance( _AltitudeKm, -_CosTheta );
+		return exp( -max( 0.0, T0 - T1 ) );
 	}
+
 
 
 // 	float3	T0 = _CosTheta > 0.0 ? TempGetTransmittance( _AltitudeKm, _CosTheta ) : TempGetTransmittance( AltitudeKm2, -CosTheta2 );
@@ -178,7 +195,7 @@ void	ComputeFinalColor( float3 _PositionWorld, float3 _View, float2 _DistanceKm,
 	// Attenuate in-scattered light between camera and hit due to shadowing by the cloud
 	float	Shadowing = ComputeCloudShadowing( _PositionWorld, _View, _DistanceKm.x / WORLD2KM, _StepOffset );
 
-	const float	GODRAYS_STRENGTH = 1.0;
+ 	const float	GODRAYS_STRENGTH = 1.0;
 	Lin_camera2cloud_Rayleigh *= 1.0 - (GODRAYS_STRENGTH * (1.0 - Shadowing));
 	Lin_camera2cloud_Mie *= 1.0 - (GODRAYS_STRENGTH * (1.0 - Shadowing));
 
@@ -356,13 +373,13 @@ PS_OUT	PS( VS_IN _In )
 
 	// Sample min/max depths at position
 	float2	ZMinMax = _TexVolumeDepth.SampleLevel( LinearClamp, UV, 0.0 ).xy;
-//	Depth = max( 1e-3, Depth );
 
 	// Sample ZBuffer
 	float	Z = ReadDepth( UV );
 	ZMinMax.y = min( ZMinMax.y, Z );
 
 	float	Depth = ZMinMax.y - ZMinMax.x;
+//	Depth = max( 1e-3, Depth );
 
 //return ReturnTestValue( 0.1 * Z );
 //return ReturnTestValue( 0.1 * ZMinMax.y );
@@ -396,15 +413,15 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 
 //#define FIXED_STEP_SIZE	0.01
 #ifndef FIXED_STEP_SIZE
-//	float	StepsCount = ceil( Depth * 2.0 * BOX_HEIGHT );
-	float	StepsCount = ceil( 2.0 * FastScreenNoise( _In.__Position.xy ) + Depth * 2.0 * BOX_HEIGHT );	// Add noise to hide banding
-			StepsCount = min( STEPS_COUNT, StepsCount );
+	float	StepsCount = ceil( Depth * 32.0 * BOX_HEIGHT/8.0 );	
+//	float	StepsCount = ceil( 2.0 * FastScreenNoise( _In.__Position.xy ) + Depth * 32.0 * BOX_HEIGHT/8.0 );	// Add noise to hide banding
 //	float	StepsCount = STEPS_COUNT;
+ 			StepsCount = min( STEPS_COUNT, StepsCount );
 
 	float4	Step = float4( WorldPosEnd - WorldPosStart, ZMinMax.y - ZMinMax.x ) / StepsCount;
 
-	float	PosOffset = 0.5;	// Fixed offset
-//	float	PosOffset = FastNoise( float3( 2.0*_In.__Position.xy, 0.0 ) );	// Random offset
+//	float	PosOffset = 0.5;	// Fixed offset
+	float	PosOffset = 1.0 * FastNoise( float3( 2.0*_In.__Position.xy, 0.0 ) );	// Random offset
 	float4	Position = float4( WorldPosStart, 0.0 ) + PosOffset * Step;
 
 #else
@@ -455,7 +472,8 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 //		float	Shadowing = GetCloudTransmittance( Position.xyz );
 		float	Shadowing = GetCloudTransmittance( (Position + 0.5 * Step).xyz );
 
-		const float	ShadowStrength = 0.85;	// Shadow %
+//###		const float	ShadowStrength = 0.85;	// Shadow %
+		const float	ShadowStrength = 1.0;	// Shadow %
 		Shadowing = 1.0 - (ShadowStrength * (1.0 - Shadowing));
 		Shadowing *= smoothstep( 0.0, 1.0, smoothstep( 0.0, 0.03, abs(_LightDirection.y) ) );	// Full shadowing when the light is horizontal
 
@@ -501,8 +519,9 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 
 	float	GroundBlocking = Z < 0.99*_CameraData.w ? 0 : 1;
 
-//Scattering = 0;
-//Transmittance = 1;
+
+// Scattering = 0;
+// Transmittance = 1;
 
 
 	PS_OUT	Out;
@@ -518,16 +537,19 @@ HitDistanceKm = min( HitDistanceKm, SphereIntersectionExit( WORLD2KM * PositionW
 
 //View.y = 0.01;	// Min positive value
 //View.y = -0.012;	// Max negative value
-Out.Scattering = TempGetTransmittance( WORLD2KM * PositionWorld.y, View.y, HitDistanceKm );
+//Out.Scattering = TempGetTransmittance( WORLD2KM * PositionWorld.y, View.y, HitDistanceKm );
 
 float	RadiusKm = GROUND_RADIUS_KM + WORLD2KM * PositionWorld.y;
 float	CosThetaGround = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (RadiusKm*RadiusKm) );
 //Out.Scattering += View.y >= CosThetaGround ? float3( 0.8, 0, 0 ) : 0.0; 
 
-//Out.Scattering = 0.005 * HitDistanceKm;
+//Out.Scattering = 0.024 * HitDistanceKm;
 
 //Out.Scattering = TempGetTransmittance( 0.0, -View.y );
 //Out.Scattering = _TexTransmittance.Sample( LinearClamp, UV );
+
+// Out.Scattering = GroundBlocking;
+// Out.Extinction = 0;
 
 	return Out;
 }

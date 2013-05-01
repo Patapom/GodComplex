@@ -259,9 +259,14 @@ if ( UV.x < 0.2 && UV.y > 0.8 )
 	// Load scattering & extinction from sky and clouds
 	float3	Scattering = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 	float3	Extinction = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
-return Scattering;
+//return Scattering;
+//return Extinction;
 //return HDR( Scattering );
 //return HDR( Extinction );
+
+//Extinction = pow( Extinction, 5.0 );//###
+// return Extinction;
+
 
 	// Compute Sun's color
 	float	CameraAltitudeKm = WORLD2KM * _Camera2World[3].y;
@@ -276,9 +281,9 @@ return Scattering;
 	// Compose color
 	float3	FinalColor = (Terrain + DirectSunLight) * Extinction + Scattering;
 
-	// Add a nice bloom for the Sun
-	FinalColor += 0.02 * smoothstep( 0.9, 1.0, sqrt(CosGamma) ) * SunColor * smoothstep( 0.1, 0.3, _LightDirection.y );
-	FinalColor += 0.002 * smoothstep( 0.1, 1.0, sqrt(CosGamma) ) * SunColor * smoothstep( 0.1, 0.3, _LightDirection.y );
+//###	// Add a nice bloom for the Sun
+// 	FinalColor += 0.02 * smoothstep( 0.9, 1.0, sqrt(CosGamma) ) * SunColor * smoothstep( 0.1, 0.3, _LightDirection.y );
+// 	FinalColor += 0.002 * smoothstep( 0.1, 1.0, sqrt(CosGamma) ) * SunColor * smoothstep( 0.1, 0.3, _LightDirection.y );
 
 	return HDR( FinalColor );
 
