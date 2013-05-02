@@ -140,17 +140,25 @@ float	ReadDepth( float2 _UV )
 float	ComputeCloudShadowing( float3 _PositionWorld, float3 _View, float _Distance, float _StepOffset=0.5, uniform uint _StepsCount=64 )
 {
 //	uint	StepsCount = ceil( lerp( 16.0, float(_StepsCount), saturate( _Distance / 150.0 ) ) );
-	uint	StepsCount = ceil( 2.0 * _StepOffset + lerp( 16.0, float(_StepsCount), saturate( _Distance / 150.0 ) ) );	// Fantastic noise hides banding!
+//	uint	StepsCount = ceil( 2.0 * _StepOffset + lerp( 16.0, float(_StepsCount), saturate( _Distance / 150.0 ) ) );	// Fantastic noise hides banding!
+	uint	StepsCount = ceil( 2.0 * _StepOffset + lerp( 16.0, float(_StepsCount), saturate( _Distance / 50.0 ) ) );	// Fantastic noise hides banding!
 
+#if 1	// Linear steps
 	float3	Step = (_Distance / StepsCount) * _View;
 //	_PositionWorld += _StepOffset * Step;
 
 	float	SumIncomingLight = 0.0;
 	for ( uint StepIndex=0; StepIndex < StepsCount; StepIndex++ )
 	{
+#if 0	// Use only cloud transmittance
 		SumIncomingLight += GetFastCloudTransmittance( _PositionWorld );
+#else	// Use cloud transmittance + terrain shadow
+		SumIncomingLight += GetFastCloudTransmittance( _PositionWorld ) * GetTerrainShadow( _PositionWorld );
+#endif
 		_PositionWorld += Step;
 	}
+#endif
+
 	return saturate( SumIncomingLight / _StepsCount );
 }
 
@@ -195,7 +203,7 @@ void	ComputeFinalColor( float3 _PositionWorld, float3 _View, float2 _DistanceKm,
 	// Attenuate in-scattered light between camera and hit due to shadowing by the cloud
 	float	Shadowing = ComputeCloudShadowing( _PositionWorld, _View, _DistanceKm.x / WORLD2KM, _StepOffset );
 
- 	const float	GODRAYS_STRENGTH = 1.0;
+ 	const float	GODRAYS_STRENGTH = 0.9;
 	Lin_camera2cloud_Rayleigh *= 1.0 - (GODRAYS_STRENGTH * (1.0 - Shadowing));
 	Lin_camera2cloud_Mie *= 1.0 - (GODRAYS_STRENGTH * (1.0 - Shadowing));
 
@@ -472,8 +480,8 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 //		float	Shadowing = GetCloudTransmittance( Position.xyz );
 		float	Shadowing = GetCloudTransmittance( (Position + 0.5 * Step).xyz );
 
-//###		const float	ShadowStrength = 0.85;	// Shadow %
-		const float	ShadowStrength = 1.0;	// Shadow %
+		const float	ShadowStrength = 0.9;	// Shadow %
+//		const float	ShadowStrength = 1.0;	// Shadow %
 		Shadowing = 1.0 - (ShadowStrength * (1.0 - Shadowing));
 		Shadowing *= smoothstep( 0.0, 1.0, smoothstep( 0.0, 0.03, abs(_LightDirection.y) ) );	// Full shadowing when the light is horizontal
 

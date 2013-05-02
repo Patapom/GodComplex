@@ -8,7 +8,9 @@ class EffectVolumetric
 {
 private:	// CONSTANTS
 
-	static const int		SHADOW_MAP_SIZE = 256;
+	static const int		SHADOW_MAP_SIZE = 512;//256;
+	static const int		TERRAIN_SHADOW_MAP_SIZE = 512;
+
 	static const int		FRACTAL_TEXTURE_POT = 7;
 	static const int		FRACTAL_OCTAVES = 8;
 
@@ -40,11 +42,12 @@ public:		// NESTED TYPES
 		NjFloat3	dUV;
 	};
 
-	struct CBShadow 
+	struct CBShadow
 	{
 		NjFloat4	LightDirection;
 		NjFloat4x4	World2Shadow;
 		NjFloat4x4	Shadow2World;
+		NjFloat4x4	World2TerrainShadow;
 		NjFloat2	ZMinMax;
 	};
 
@@ -67,7 +70,8 @@ private:	// FIELDS
 	NjFloat4			m_Rotation;
 	NjFloat3			m_Scale;
 
-	NjFloat4x4			m_Box2World;
+	NjFloat4x4			m_Cloud2World;
+	NjFloat4x4			m_Terrain2World;
 
 	// Light infos
 	NjFloat3			m_LightDirection;
@@ -83,6 +87,8 @@ private:	// FIELDS
 	Primitive*			m_pPrimFrustum;
 #ifdef SHOW_TERRAIN
 	Primitive*			m_pPrimTerrain;
+	Texture2D*			m_pRTTerrainShadow;
+	Material*			m_pMatTerrainShadow;
 	Material*			m_pMatTerrain;
 #endif
 
@@ -160,6 +166,8 @@ protected:
 	NjFloat2	World2ShadowQuad( const NjFloat3& _PositionKm, float& Distance2PlaneKm );
 	NjFloat3	FindTangent( NjFloat4x4& _Camera2World, float _TanFovV );
 	void		ComputeFrustumIntersection( NjFloat3 _pCameraFrustumKm[5], float _PlaneHeight, NjFloat2& _QuadMin, NjFloat2& _QuadMax );
+
+	NjFloat4x4	ComputeTerrainShadowTransform();
 
 	Texture3D*	BuildFractalTexture( bool _bLoadFirst );
 };

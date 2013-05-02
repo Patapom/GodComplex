@@ -6,7 +6,7 @@
 #include "Inc/Volumetric.hlsl"
 #include "Inc/Atmosphere.hlsl"
 
-static const float	TERRAIN_HEIGHT = 3.0;	// Original value is 140
+//static const float	TERRAIN_HEIGHT = 5.0;	// Original value is 140
 static const float	TERRAIN_FACTOR = TERRAIN_HEIGHT / 140.0;
 
 static const float	ALBEDO_MULTIPLIER = 2.0;
@@ -15,7 +15,7 @@ static const float	ALBEDO_MULTIPLIER = 2.0;
 cbuffer	cbObject	: register( b10 )
 {
 	float4x4	_Local2World;
-	float4x4	_Unused;
+	float4x4	_ObjectWorld2Proj;
 	float2		_dUV;
 };
 //]
@@ -144,7 +144,7 @@ float	GetTerrainHeight( in float2 x, const int _OctavesCount=14 )
 		p = mul( Rot2, p );
 	}
 
-	return 140.0 * a;
+	return (0.5*140.0) * a;
 }
 
 // Transforms the standard terrain height into terraces whose amplitude decreases with altitude
@@ -166,18 +166,21 @@ p *= 1.2;
 
 float3	CalcNormal( in float3 _Position, float _Distance )
 {
-	float2	eps = float2( 0.0005 * _Distance, 0.0 );	// Epsilon grows with distance to avoid normal aliasing...
-
 #if 0
+	float2	eps = float2( 0.01 * _Distance, 0.0 );	// Epsilon grows with distance to avoid normal aliasing...
 	float3	Normal = float3(	Map( _Position + eps.xyy ) - Map( _Position - eps.xyy ),
 								Map( _Position + eps.yxy ) - Map( _Position - eps.yxy ),
 								Map( _Position + eps.yyx ) - Map( _Position - eps.yyx )
 							);
 #else
-	float3	Normal = float3(	Map( _Position + eps.xyy ) - Map( _Position - eps.xyy ),
-								20.0 * eps.x,
+	float2	eps = float2( 0.005 * _Distance, 0.0 );	// Epsilon grows with distance to avoid normal aliasing...
+	float3	Normal = -float3(	Map( _Position + eps.xyy ) - Map( _Position - eps.xyy ),
+								-10.0 * eps.x,
 								Map( _Position + eps.yyx ) - Map( _Position - eps.yyx )
 							);
+// 	float3	Dx = float3( 2.0 * eps.x, Map( _Position + eps.xyy ) - Map( _Position - eps.xyy ), 0.0 );
+// 	float3	Dz = float3( 0.0, Map( _Position + eps.yyx ) - Map( _Position - eps.yyx ), 2.0 * eps.x );
+// 	float3	Normal = cross( Dz, Dx );
 #endif
 
 	return normalize( Normal );
@@ -227,7 +230,7 @@ float3	ComputeTerrainColor( float3 _Position, float _Distance, float3 _Shadow, f
 	float3	Albedo;
 
 	// Compute rock & grass albedo
-	float	r = Noise( 80.0 * TerrainPosition.xz );
+	float	r = Noise( 200.0 * TerrainPosition.xz );
 
 // 	const float3	RockColors[4] = {
 // 		float3( 0.10, 0.05, 0.03 ),	// Striped rock - base color
@@ -270,7 +273,9 @@ const float	SNOW_MIN_ALTITUDE = 55;	// Snowy in altitude
 // //			brdf += 2.0 * float3( 0.20, 0.20, 0.20 ) * dif2;
 
 	// Compute shadowing by clouds
-	_SunColor *= GetFastCloudTransmittance( _Position );
+	float	CloudTransmittance = GetFastCloudTransmittance( _Position );
+	CloudTransmittance = lerp( 0.3, 1.0, CloudTransmittance );
+	_SunColor *= CloudTransmittance;
 
 	// Build final color
 	float3	brdf  = _Shadow * NdotL * _SunColor;
@@ -279,8 +284,7 @@ const float	SNOW_MIN_ALTITUDE = 55;	// Snowy in altitude
 	return INVPI * Albedo * brdf;
 }
 
-
-PS_IN VS ( VS_IN _In ) 
+PS_IN VS( VS_IN _In ) 
 { 
 	PS_IN	Out;
 
@@ -289,14 +293,15 @@ PS_IN VS ( VS_IN _In )
 	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
 			WorldPosition.y = TERRAIN_FACTOR * Map( WorldPosition.xyz, 5 );
 
-	Out.__Position = mul( WorldPosition, _World2Proj );
+//	Out.__Position = mul( WorldPosition, _World2Proj );
+	Out.__Position = mul( WorldPosition, _ObjectWorld2Proj );	// Use provided projection instead (because we also use this VS for the shadow map)
 	Out.Position = WorldPosition.xyz;
 
 	// Compute colored shadow
 	float	Shadow = ShadowIntersect( WorldPosition.xyz, _LightDirection );	// Compute intersection with terrain for shadowing
 //	Out.Shadow = float3( Shadow, Shadow*Shadow*0.5 + 0.5*Shadow, Shadow*Shadow );
-	Out.Shadow = Shadow;
-//	Out.Shadow = 1.0;
+//	Out.Shadow = Shadow;
+	Out.Shadow = 1.0;
 
 	// Compute Sun & Sky colors
 	float3	EarthPositionKm = WORLD2KM * WorldPosition.xyz - EARTH_CENTER_KM;
@@ -311,8 +316,25 @@ PS_IN VS ( VS_IN _In )
 	return Out;
 } 
 
+float	TempGetTerrainShadow( float3 _Position )
+{
+	float4	PositionProj = mul( float4( _Position, 1.0 ), _World2TerrainShadow );
+//			PositionProj /= PositionProj.w;
+	float2	UV = float2( 0.5 * (1.0 + PositionProj.x), 0.5 * (1.0 - PositionProj.y) );
+
+	float	Zproj = _TexTerrainShadow.SampleLevel( LinearClamp, UV, 0.0 ).x;
+
+return 0.001+Zproj > PositionProj.z ? 1.0 : 0.0;
+
+	return saturate( 1.0 * (0.001 + PositionProj.z - Zproj) );
+}
+
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
 	float	Distance2Camera = length( _In.Position - _Camera2World[3].xyz );
-	return float4( ComputeTerrainColor( _In.Position, Distance2Camera, _In.Shadow, _In.SunColor, _In.SkyColor ), 1.0 );
+
+	float	Shadow = _In.Shadow;
+//	float	Shadow = TempGetTerrainShadow( _In.Position );
+//return Shadow;
+	return float4( ComputeTerrainColor( _In.Position, Distance2Camera, Shadow, _In.SunColor, _In.SkyColor ), 1.0 );
 }

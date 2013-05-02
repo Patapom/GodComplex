@@ -16,7 +16,7 @@ Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFo
 	m_MipLevelsCount = Desc.MipLevels;
 
 	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
-		m_LastAssignedSlots[ShaderStageIndex] = -1;;
+		m_LastAssignedSlots[ShaderStageIndex] = -1;
 
 	m_pTexture = &_Texture;
 }
@@ -29,6 +29,9 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 {
 	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
 	ASSERT( _Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
+
+	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
+		m_LastAssignedSlots[ShaderStageIndex] = -1;
 
 	m_Width = _Width;
 	m_Height = _Height;
@@ -103,6 +106,9 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const IDepthSten
 {
 	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
 	ASSERT( _Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
+
+	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
+		m_LastAssignedSlots[ShaderStageIndex] = -1;
 
 	m_Width = _Width;
 	m_Height = _Height;

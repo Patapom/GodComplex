@@ -13,10 +13,13 @@ static const float	ATMOSPHERE_THICKNESS_KM = 60.0f;
 static const float	BOX_BASE = 4.0f;	// 10km  <== Find better way to keep visual aspect!
 static const float	BOX_HEIGHT = 2.0f;	// 4km high
 
+static const float	TERRAIN_HEIGHT = 10.0f;
+
 static const float	TRANSMITTANCE_TAN_MAX = 1.5f;	// Close to PI/2 to maximize precision at grazing angles
 //#define USE_PRECISE_COS_THETA_MIN
 
 
+static char	pBisou[10];
 
 EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera ) : m_Device( _Device ), m_RTHDR( _RTHDR ), m_ScreenQuad( _ScreenQuad ), m_Camera( _Camera ), m_ErrorCode( 0 ), m_pTableTransmittance( NULL )
 {
@@ -27,8 +30,15 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
  	CHECK_MATERIAL( m_pMatComputeTransmittance = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
  	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
  	CHECK_MATERIAL( m_pMatCombine = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMBINE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 5 );
+
 #ifdef SHOW_TERRAIN
-	CHECK_MATERIAL( m_pMatTerrain = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
+	sprintf_s( pBisou, 10, "%f", TERRAIN_HEIGHT );
+	D3D10_SHADER_MACRO	pTerrainMacros[2] = {
+		"TERRAIN_HEIGHT", pBisou,
+		NULL, NULL
+	};
+	CHECK_MATERIAL( m_pMatTerrainShadow = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, VertexFormatP3::DESCRIPTOR, "VS", NULL, NULL, pTerrainMacros ), 6 );
+	CHECK_MATERIAL( m_pMatTerrain = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS", pTerrainMacros ), 7 );
 #endif
 
 //	const char*	pCSO = LoadCSO( "./Resources/Shaders/CSO/VolumetricCombine.cso" );
@@ -107,6 +117,9 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 //	m_pTexFractal0 = BuildFractalTexture( true );
 	m_pTexFractal1 = BuildFractalTexture( false );
 
+#ifdef SHOW_TERRAIN
+	m_pRTTerrainShadow = new Texture2D( m_Device, TERRAIN_SHADOW_MAP_SIZE, TERRAIN_SHADOW_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
+#endif
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
@@ -143,6 +156,8 @@ EffectVolumetric::~EffectVolumetric()
 	delete m_pRTCameraFrustumSplat;
 
 #ifdef SHOW_TERRAIN
+	delete m_pRTTerrainShadow;
+	delete m_pMatTerrainShadow;
 	delete m_pMatTerrain;
 	delete m_pPrimTerrain;
 #endif
@@ -178,17 +193,17 @@ float	t = 2*0.25f * _Time;
 //m_LightDirection.Set( cosf(_Time), 1.0f, sinf( _Time ) );
 
 float	SunAngle = LERP( -0.01f * PI, 0.499f * PI, 0.5f * (1.0f + sinf( t )) );		// Oscillating between slightly below horizon to zenith
-//float	SunAngle = 0.1f * PI;
+//float	SunAngle = 0.021f * PI;
+//float	SunAngle = -0.0001f * PI;
 
+// SunAngle = _TV( 0.12f );
 //SunAngle = -0.015f * PI;	// Sexy Sunset
 //SunAngle = 0.15f * PI;	// Sexy Sunset
 
 float	SunPhi = 0.5923f * t;
-//m_LightDirection.Set( sinf( SunPhi ), sinf( SunAngle ), -cosf( SunPhi ) );
-m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
+m_LightDirection.Set( sinf( SunPhi ), sinf( SunAngle ), -cosf( SunPhi ) );
+//m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 // DEBUG
-
-	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF00FF00 ), L"Compute Shadow" );
 
 #ifdef _DEBUG
 	if ( gs_WindowInfos.pKeys[VK_NUMPAD1] )
@@ -206,18 +221,50 @@ m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 	if ( m_pTexFractal1 != NULL )
 		m_pTexFractal1->SetPS( 17 );
 
+
 	//////////////////////////////////////////////////////////////////////////
-	// 1] Compute transforms
+	// Compute transforms
+	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF00FF00 ), L"Compute Transforms" );
+
+	m_Terrain2World.PRS( NjFloat3( 0, 0, 0 ), NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3( 50, 1, 50 ) );
+
 	m_Position.Set( 0, BOX_BASE + 0.5f * BOX_HEIGHT, -100 );
 	m_Scale.Set( 200.0f, 0.5f * BOX_HEIGHT, 200.0f );
-
-	m_Box2World.PRS( m_Position, m_Rotation, m_Scale );
+	m_Cloud2World.PRS( m_Position, m_Rotation, m_Scale );
 
 	ComputeShadowTransform();
+
+	m_pCB_Shadow->m.World2TerrainShadow = ComputeTerrainShadowTransform();
 
 	m_pCB_Shadow->UpdateData();
 
 	PERF_END_EVENT();
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// 0] Terrain shadow map
+	m_pRTTerrainShadow->RemoveFromLastAssignedSlots();
+
+	USING_MATERIAL_START( *m_pMatTerrainShadow )
+
+		m_Device.ClearDepthStencil( *m_pRTTerrainShadow, 1, 0 );
+
+		m_Device.SetRenderTargets( TERRAIN_SHADOW_MAP_SIZE, TERRAIN_SHADOW_MAP_SIZE, 0, NULL, m_pRTTerrainShadow->GetDepthStencilView() );
+	 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+
+		m_pCB_Object->m.Local2View = m_Terrain2World;
+		m_pCB_Object->m.View2Proj = m_pCB_Shadow->m.World2TerrainShadow;
+		m_pCB_Object->m.dUV = m_pRTTerrainShadow->GetdUV();
+		m_pCB_Object->UpdateData();
+
+		m_pPrimTerrain->Render( M );
+
+	USING_MATERIAL_END
+
+#ifdef SHOW_TERRAIN
+	m_Device.RemoveRenderTargets();
+	m_pRTTerrainShadow->SetPS( 6, true );
+#endif
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Compute the transmittance function map
@@ -251,6 +298,8 @@ m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 		1.0f,	// MaxDepth
 	};
 
+	m_pRTTransmittanceMap->RemoveFromLastAssignedSlots();
+
 	ID3D11RenderTargetView*	ppViews[2] = {
 		m_pRTTransmittanceMap->GetTargetView( 0, 0, 1 ),
 		m_pRTTransmittanceMap->GetTargetView( 0, 1, 1 ),
@@ -274,6 +323,10 @@ m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 
 	PERF_END_EVENT();
 
+	m_Device.RemoveRenderTargets();
+	m_pRTTransmittanceMap->SetPS( 5, true );
+
+
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Show terrain
 #ifdef SHOW_TERRAIN
@@ -284,9 +337,8 @@ m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 		m_Device.SetRenderTarget( m_RTHDR, &m_Device.DefaultDepthStencil() );
 	 	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
 
-		m_pRTTransmittanceMap->SetPS( 12 );
-
-		m_pCB_Object->m.Local2View.PRS( NjFloat3( 0, 0, 0 ), NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3( 50, 1, 50 ) );
+		m_pCB_Object->m.Local2View = m_Terrain2World;
+		m_pCB_Object->m.View2Proj = m_Camera.GetCB().World2Proj;
 		m_pCB_Object->m.dUV = m_RTHDR.GetdUV();
 		m_pCB_Object->UpdateData();
 
@@ -310,7 +362,7 @@ m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 
 		m_Device.SetRenderTarget( *m_pRTRenderZ );
 
-		m_pCB_Object->m.Local2View = m_Box2World * m_Camera.GetCB().World2Camera;
+		m_pCB_Object->m.Local2View = m_Cloud2World * m_Camera.GetCB().World2Camera;
 		m_pCB_Object->m.View2Proj = m_Camera.GetCB().Camera2Proj;
 		m_pCB_Object->m.dUV = m_pRTRenderZ->GetdUV();
 		m_pCB_Object->UpdateData();
@@ -346,7 +398,6 @@ m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 
 		m_pRTRenderZ->SetPS( 10 );
 		m_Device.DefaultDepthStencil().SetPS( 11 );
-		m_pRTTransmittanceMap->SetPS( 12 );
 
 		m_pCB_Splat->m.dUV = m_pRTRender->GetdUV();
 		m_pCB_Splat->UpdateData();
@@ -372,9 +423,9 @@ m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
 // DEBUG
 m_pRTRender->SetPS( 10 );	// Cloud rendering, with scattering and extinction
 m_RTHDR.SetPS( 11 );		// Background scene
+
 //m_pRTTransmittanceZ->SetPS( 11 );
 //m_pRTRenderZ->SetPS( 11 );
-//m_pRTTransmittanceMap->SetPS( 12 );
 // DEBUG
 
 		m_ScreenQuad.Render( M );
@@ -447,7 +498,7 @@ for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
 	CornerLocal.y = 2.0f * ((CornerIndex >> 1) & 1) - 1.0f;
 	CornerLocal.z = 2.0f * ((CornerIndex >> 2) & 1) - 1.0f;
 
-	CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Box2World;
+	CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Cloud2World;
 
 // 	CornerShadow = NjFloat4( CornerWorld, 1 ) * m_pCB_Shadow->m.World2Shadow;
 	CornerShadow = NjFloat4( CornerWorld, 1 ) * World2ShadowNormalized;
@@ -519,7 +570,7 @@ void	EffectVolumetric::ComputeShadowTransform()
 		CornerLocal.y = 2.0f * ((CornerIndex >> 1) & 1) - 1.0f;
 		CornerLocal.z = 2.0f * ((CornerIndex >> 2) & 1) - 1.0f;
 
-		CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Box2World;
+		CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Cloud2World;
 
 		Center = Center + CornerWorld;
 
@@ -580,7 +631,7 @@ for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
 	CornerLocal.y = 2.0f * ((CornerIndex >> 1) & 1) - 1.0f;
 	CornerLocal.z = 2.0f * ((CornerIndex >> 2) & 1) - 1.0f;
 
-	CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Box2World;
+	CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Cloud2World;
 
  	CornerShadow = NjFloat4( CornerWorld, 1 ) * m_pCB_Shadow->m.World2Shadow;
 //	CornerShadow = NjFloat4( CornerWorld, 1 ) * m_World2ShadowNormalized;
@@ -652,7 +703,8 @@ void	EffectVolumetric::ComputeShadowTransform()
 	NjFloat4x4&	Camera2World = m_Camera.GetCB().Camera2World;
 	NjFloat3	CameraPositionKm = Camera2World.GetRow( 3 );
 
-	static const float	SHADOW_FAR_CLIP_DISTANCE = 250.0f;
+//###	static const float	SHADOW_FAR_CLIP_DISTANCE = 250.0f;
+	static const float	SHADOW_FAR_CLIP_DISTANCE = 50.0f;
 	static const float	SHADOW_SCALE = 1.1f;
 
 	//////////////////////////////////////////////////////////////////////////
@@ -664,7 +716,7 @@ void	EffectVolumetric::ComputeShadowTransform()
 // 		ClippedSunDirection = -ClippedSunDirection;	// We always require a vector facing down
 
 	const float	MIN_THRESHOLD = 1e-2f;
-	if ( ClippedSunDirection.y > 0.0 && ClippedSunDirection.y < MIN_THRESHOLD )
+	if ( ClippedSunDirection.y >= 0.0 && ClippedSunDirection.y < MIN_THRESHOLD )
 	{	// If the ray is too horizontal, the matrix becomes full of zeroes and is not inversible...
 		ClippedSunDirection.y = MIN_THRESHOLD;
 		ClippedSunDirection.Normalize();
@@ -692,7 +744,7 @@ void	EffectVolumetric::ComputeShadowTransform()
 	m_ShadowPlaneY = NjFloat3::UnitZ;
  	m_ShadowPlaneNormal = ClippedSunDirection;
 //	m_ShadowPlaneCenterKm = NjFloat3( CameraPositionKm.x, 0, CameraPositionKm.z ) + (BOX_BASE + (m_LightDirection.y > 0.0f ? 1 : 0) * MAX( 1e-3f, BOX_HEIGHT )) * NjFloat3::UnitY;	// Center on camera for a start...
-	m_ShadowPlaneCenterKm = NjFloat4( 0, m_LightDirection.y > 0 ? 1.0f : -1.0f, 0, 1 ) * m_Box2World;
+	m_ShadowPlaneCenterKm = NjFloat4( 0, m_LightDirection.y > 0 ? 1.0f : -1.0f, 0, 1 ) * m_Cloud2World;
 
 	float	ZSize = BOX_HEIGHT / abs(ClippedSunDirection.y);	// Since we're blocking the XY axes on the plane, Z changes with the light's vertical component
 																// Slanter rays will yield longer Z's
@@ -848,7 +900,7 @@ for ( int i=0; i < 5; i++ )
 		int			Y = (BoxCornerIndex >> 1) & 1;
 		int			X = BoxCornerIndex & 1;
 		NjFloat3	CornerLocal( 2*float(X)-1, 2*float(Y)-1, 2*float(Z)-1 );
-		NjFloat3	CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Box2World;
+		NjFloat3	CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Cloud2World;
 
 		float		Distance;
 		NjFloat2	CornerProj = World2ShadowQuad( CornerWorld, Distance );
@@ -990,6 +1042,91 @@ void	EffectVolumetric::ComputeFrustumIntersection( NjFloat3 _pCameraFrustumKm[5]
 }
 
 #endif
+
+
+//////////////////////////////////////////////////////////////////////////
+// Computes the projection matrix for the terrain shadow map
+NjFloat4x4	EffectVolumetric::ComputeTerrainShadowTransform()
+{
+	const float	FRUSTUM_FAR_CLIP = 60.0f;
+
+	NjFloat3	Z = -m_LightDirection;
+	NjFloat3	X = (NjFloat3::UnitY ^ Z).Normalize();
+	NjFloat3	Y = Z ^ X;
+
+	NjFloat4x4	Light2World;
+	Light2World.SetRow( 0, X, 0 );
+	Light2World.SetRow( 1, Y, 0 );
+	Light2World.SetRow( 2, Z, 0 );
+	Light2World.SetRow( 3, m_Terrain2World.GetRow( 3 ) );
+
+	NjFloat4x4	World2Light = Light2World.Inverse();
+
+	// Build frustum points
+	float		TanFovH = m_Camera.GetCB().Params.x;
+	float		TanFovV = m_Camera.GetCB().Params.y;
+	NjFloat4x4&	Camera2World = m_Camera.GetCB().Camera2World;
+
+	NjFloat3	pFrustumWorld[5] = {
+		NjFloat3::Zero,
+		FRUSTUM_FAR_CLIP * NjFloat3( -TanFovH, +TanFovV, 1 ),
+		FRUSTUM_FAR_CLIP * NjFloat3( -TanFovH, -TanFovV, 1 ),
+		FRUSTUM_FAR_CLIP * NjFloat3( +TanFovH, -TanFovV, 1 ),
+		FRUSTUM_FAR_CLIP * NjFloat3( +TanFovH, +TanFovV, 1 ),
+	};
+	for ( int i=0; i < 5; i++ )
+		pFrustumWorld[i] = NjFloat4( pFrustumWorld[i], 1 ) * Camera2World;
+
+	// Transform frustum and terrain into light space
+	NjFloat3	FrustumMin( 1e6f, 1e6f, 1e6f );
+	NjFloat3	FrustumMax( -1e6f, -1e6f, -1e6f );
+	for ( int i=0; i < 5; i++ )
+	{
+		NjFloat3	FrustumLight = NjFloat4( pFrustumWorld[i], 1 ) * World2Light;
+		FrustumMin = FrustumMin.Min( FrustumLight );
+		FrustumMax = FrustumMax.Max( FrustumLight );
+	}
+	NjFloat3	TerrainMin( 1e6f, 1e6f, 1e6f );
+	NjFloat3	TerrainMax( -1e6f, -1e6f, -1e6f );
+	for ( int i=0; i < 8; i++ )
+	{
+		float	X = 2.0f * (i&1) - 1.0f;
+		float	Y = float( (i>>1)&1 );
+		float	Z = 2.0f * ((i>>2)&1) - 1.0f;
+
+		NjFloat4	TerrainWorld = NjFloat4( X, 0, Z, 1 ) * m_Terrain2World;
+					TerrainWorld.y = TERRAIN_HEIGHT * Y;
+
+		NjFloat3	TerrainLight = TerrainWorld * World2Light;
+		TerrainMin = TerrainMin.Min( TerrainLight );
+		TerrainMax = TerrainMax.Max( TerrainLight );
+	}
+
+	// Clip frustum with terrain as it's useless to render parts that aren't even covered by the terrain...
+	FrustumMin = FrustumMin.Max( TerrainMin );
+	FrustumMax = FrustumMax.Min( TerrainMax );
+
+	NjFloat3	Center = 0.5f * (FrustumMin + FrustumMax);
+	NjFloat3	Scale = 0.5f * (FrustumMax - FrustumMin);
+	NjFloat4x4	Light2Proj;
+	Light2Proj.SetRow( 0, NjFloat4( 1.0f / Scale.x, 0, 0, 0 ) );
+	Light2Proj.SetRow( 1, NjFloat4( 0, 1.0f / Scale.y, 0, 0 ) );
+	Light2Proj.SetRow( 2, NjFloat4( 0, 0, 0.5f / Scale.z, 0 ) );
+	Light2Proj.SetRow( 3, NjFloat4( -Center.x / Scale.x, -Center.y / Scale.y, -0.5f * FrustumMin.z / Scale.z, 1 ) );
+
+	NjFloat4x4	World2Proj = World2Light * Light2Proj;
+
+// CHECK
+NjFloat4	FrustumShadow;
+for ( int i=0; i < 5; i++ )
+{
+	FrustumShadow = NjFloat4( pFrustumWorld[i], 1 ) * World2Proj;
+}
+// CHECK
+
+	return World2Proj;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Builds a fractal texture compositing several octaves of tiling Perlin noise

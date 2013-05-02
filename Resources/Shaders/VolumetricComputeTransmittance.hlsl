@@ -7,6 +7,10 @@
 //#define USE_OBJECT_ZBUFFER	// Define this to read ZMin/Max from the object's ZMin/Max buffer
 //#define USE_FRUSTUM_SPLAT		// Define this to sample the camera frustum splat texture that indicates us whether a shadow pixel is relevant for computation or not
 
+
+//#define	INCLUDE_TERRAIN_SHADOWING	// Define this to sample the terrain shadow map
+
+
 static const float	STEPS_COUNT = 64.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
 
@@ -22,7 +26,7 @@ cbuffer	cbSplat	: register( b10 )
 //]
 
 Texture2D		_TexDepth			: register(t10);
-Texture2D		_TexSplatFrustum	: register(t11);
+//Texture2D		_TexSplatFrustum	: register(t11);
 
 struct	VS_IN_FRUSTUM
 {
@@ -133,6 +137,12 @@ PS_OUT	PS( VS_IN _In )
 
 	Out.C0 = Out.C1 = 0.0;
 
+#ifdef INCLUDE_TERRAIN_SHADOWING
+	if ( GetTerrainShadow( Position ) < 0.5 )
+		return Out;
+#endif
+
+
 	float	Sigma_t = 0.0;
 	float	Transmittance = 1.0;
 	for ( float StepIndex=0; StepIndex < STEPS_COUNT; StepIndex++ )
@@ -154,6 +164,9 @@ PS_OUT	PS( VS_IN _In )
 
 //		float	StepTransmittance = exp( -Sigma_t * Step.w );
 		float	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );
+#ifdef INCLUDE_TERRAIN_SHADOWING
+//		StepTransmittance *= GetTerrainShadow( Position );
+#endif
 		Transmittance *= StepTransmittance;
 
 		// Accumulate cosine weights for the DCT

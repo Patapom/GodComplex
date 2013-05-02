@@ -31,6 +31,7 @@ cbuffer	cbShadow	: register( b11 )
 	float3		_LightDirection;
 	float4x4	_World2Shadow;
 	float4x4	_Shadow2World;
+	float4x4	_World2TerrainShadow;
 	float2		_ShadowZMinMax;
 };
 
@@ -40,9 +41,10 @@ cbuffer	cbVolume	: register( b12 )
 	float4		_VolumeParams;
 }
 
-Texture2DArray	_TexCloudTransmittance	: register(t12);
-Texture3D		_TexFractal0	: register(t16);
-Texture3D		_TexFractal1	: register(t17);
+Texture2DArray	_TexCloudTransmittance	: register(t5);
+Texture2D		_TexTerrainShadow		: register(t6);
+Texture3D		_TexFractal0			: register(t16);
+Texture3D		_TexFractal1			: register(t17);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -163,6 +165,8 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * float3( 0.01, 0.01, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
 #ifdef	ANIMATE
 	UVW0 += _Time.x * float3( 0.005, 0, -0.0125 );
+#else
+	UVW0 += float3( 0.005, 0, -0.13 );
 #endif
 //	float	Noise = _TexFractal0.SampleLevel( LinearWrap, 0.1 * UVW0, 4.0 ).x;
 	float	Noise = _TexNoise3D.SampleLevel( LinearWrap, UVW0, 0*_MipBias ).x;	// Use small 32^3 noise (no need mip bias on that low freq noise anyway or we may lose the defining shape)
@@ -300,6 +304,19 @@ float	GetFastCloudTransmittance( float3 _WorldPosition )
 return C0.x - C0.y + C0.z - C0.w;	// Skip smaller coefficients... No need to tap further.
 	float4	C1 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
 	return C0.x - C0.y + C0.z - C0.w + C1.x - C1.y;
+}
+
+float	GetTerrainShadow( float3 _Position )
+{
+	float4	PositionProj = mul( float4( _Position, 1.0 ), _World2TerrainShadow );
+//			PositionProj /= PositionProj.w;
+	float2	UV = float2( 0.5 * (1.0 + PositionProj.x), 0.5 * (1.0 - PositionProj.y) );
+
+	float	Zproj = _TexTerrainShadow.SampleLevel( LinearClamp, UV, 0.0 ).x;
+
+return 0.001+Zproj > PositionProj.z ? 1.0 : 0.0;
+
+	return saturate( -100.0 * (PositionProj.z - Zproj) );
 }
 
 #endif	// _VOLUMETRIC_INC_

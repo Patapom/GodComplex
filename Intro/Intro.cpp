@@ -315,14 +315,17 @@ bool	IntroDo( float _Time, float _DeltaTime )
 //	float	CameraHeight = 3.0f;	// Slightly elevated
 // 	float	CameraHeight = 1.5f;	// Ground level
 
- 	float	CameraHeight = LERP( 1.5f, 4.0f, 0.5f + 0.5f * sinf(t) );	// Ground level
+ 	float	CameraHeight = LERP( 1.5f, 3.0f, 0.5f + 0.5f * sinf(t) );	// Ground level
 
-	CameraHeight *= 0.5f;
+	CameraHeight *= 1.0f;
+
+//	NjFloat3	Target( 0.0f, 3.0f, -10.0f );		// Fixed target
+	NjFloat3	Target( 10.0f * sinf(t), 3.0f, -10.0f );		// Fixed target
 
 //	gs_pCamera->LookAt( NjFloat3( 0, CameraHeight, 6 ), NjFloat3( 0.0f, CameraHeight + 6.0f, -10.0f ), NjFloat3::UnitY );		// looking up
 //	gs_pCamera->LookAt( NjFloat3( 0, CameraHeight, 6 ), NjFloat3( 0.0f, CameraHeight + 1.5f, -10.0f ), NjFloat3::UnitY );		// slightly looking up
 //	gs_pCamera->LookAt( NjFloat3( 0, CameraHeight, 6 ), NjFloat3( 0.0f, CameraHeight + 1.0f, -10.0f ), NjFloat3::UnitY );		// looking forward
-	gs_pCamera->LookAt( NjFloat3( 0, CameraHeight, 6 ), NjFloat3( 0.0f, 3.0f, -10.0f ), NjFloat3::UnitY );		// fixed target
+	gs_pCamera->LookAt( NjFloat3( 0, CameraHeight, 6 ), Target, NjFloat3::UnitY );
 
 // 	NjFloat3	Center = NjFloat3( 0, CameraHeight, 6 );
 // 	float		ViewAngle = 0.5f * t;
