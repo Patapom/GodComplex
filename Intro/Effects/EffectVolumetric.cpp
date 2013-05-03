@@ -423,6 +423,7 @@ m_LightDirection.Set( sinf( SunPhi ), sinf( SunAngle ), -cosf( SunPhi ) );
 // DEBUG
 m_pRTRender->SetPS( 10 );	// Cloud rendering, with scattering and extinction
 m_RTHDR.SetPS( 11 );		// Background scene
+m_Device.DefaultDepthStencil().SetPS( 12 );
 
 //m_pRTTransmittanceZ->SetPS( 11 );
 //m_pRTRenderZ->SetPS( 11 );

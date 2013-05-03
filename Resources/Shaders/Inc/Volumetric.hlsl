@@ -162,7 +162,9 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 
 	float	y = saturate( (_Position.y - BOX_BASE) / BOX_HEIGHT );	// That gives us a value in [0 (bottom), 1 (top)]
 
-	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * float3( 0.01, 0.01, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
+//	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * float3( 0.01, 0.01, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
+	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * float3( 0.01, 0.0, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
+			UVW0.y = 0;//(0.0 + 1.0 * y) / 32.0;
 #ifdef	ANIMATE
 	UVW0 += _Time.x * float3( 0.005, 0, -0.0125 );
 #else
@@ -171,11 +173,15 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 //	float	Noise = _TexFractal0.SampleLevel( LinearWrap, 0.1 * UVW0, 4.0 ).x;
 	float	Noise = _TexNoise3D.SampleLevel( LinearWrap, UVW0, 0*_MipBias ).x;	// Use small 32^3 noise (no need mip bias on that low freq noise anyway or we may lose the defining shape)
 
-Noise *= sqrt(y);		// Goes to 0 at bottom
-//Noise *= pow( y, 0.01 );	// Goes to 0 at bottom
+
+
+//return Noise;
+
 
 //	float3	UVW1 = float3( 0.04, 0.04, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
 	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH * 0.02, FREQUENCY_MULTIPLIER_HIGH * 0.02, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
+//	float3	UVW1 = 0.1 * 1.0 / BOX_HEIGHT * _Position.xzy;	// Low frequency for the high frequency noise
+//	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH * 0.02 * _Position.xz, y );	// Low frequency for the high frequency noise
 #ifdef	ANIMATE
 	UVW1 += _Time.x * float3( 0.0, -0.01, 0.0 );	// Good
 #endif
@@ -192,33 +198,65 @@ Noise *= sqrt(y);		// Goes to 0 at bottom
 //	Noise += 0.707 * (2.0 * (Noise2 - 0.02));	// Add detail
 	Noise -= 0.707 * (1.0 * (Noise2 + 0.01));	// Add detail
 
-//	Noise *= 4.0;
 
-	y = 2.0 * y - 1.0;	// -1 at bottom, +1 at top
-	float	TopY = 1-saturate(y);
-			TopY *= TopY;
-	float	BottomY = 1-saturate(-y);
-			BottomY *= BottomY;
+#if 0
+//	Noise *= 10.0;
+
+// 	float	Contrast = 0.5;
+// 	float	Gamma = 0.5;
+	float	Contrast = 1.0;
+	float	Gamma = 0.25;
+	Noise = pow( saturate( 0.5 + Contrast * (Noise - 0.5) ), Gamma );
+#endif
+
+
+
+
+#if 1
+	float	y2 = 2.0 * y - 1.0;	// -1 at bottom, +1 at top
+	float	TopY = saturate(y2);
+//			TopY *= TopY;
+	float	BottomY = saturate(-y2);
+//			BottomY *= BottomY;
 
 //	float3	HeightOffsets = float3( -0.005, 0.0, 0.1 );	// Bottom, Middle, Top offsets
 //	float3	HeightOffsets = float3( 0.025, 0.05, 0.10 );	// Bottom, Middle, Top offsets
 //	float3	HeightOffsets = float3( 0.0, +0.02, 0.1 );	// Bottom, Middle, Top offsets (Nice coverage!)
- 	float3	HeightOffsets = -0.04 + float3( -0.01, +0.02, 0.1 );	// Bottom, Middle, Top offsets (Nice coverage!)
- 	float	Offset = lerp( HeightOffsets.z, HeightOffsets.y, TopY ) + lerp( HeightOffsets.x, HeightOffsets.y, BottomY );
+// 	float3	HeightOffsets = -0.035 + float3( +0.05, +0.02, 0.05 );	// Bottom, Middle, Top offsets (Nice coverage!)
+ 	float3	HeightOffsets = -0.0 + float3( -0.05, +0.1, -0.2 );	// Bottom, Middle, Top offsets (Nice coverage!)
+ 	float	Offset = lerp( 0.5*HeightOffsets.y, HeightOffsets.z, TopY ) + lerp( 0.5*HeightOffsets.y, HeightOffsets.x, BottomY );
+#endif
 
 //float	Offset = -0.02;//###
 
-	float	Contrast = 0.5;
+#if 1
+// 	float	Contrast = 0.5;
+// 	float	Gamma = 0.5;
+	float	Contrast = 1.0;
 	float	Gamma = 0.5;
-	float	Density = pow( saturate( Contrast * (Noise + Offset) ), Gamma );
+	Noise = pow( saturate( Contrast * (Noise + Offset) ), Gamma );
+#endif
+
+
+	
+//Noise = saturate( 50.0 * Noise );
+
+//Noise *= sqrt(y);		// Goes to 0 at bottom
+//Noise *= pow( y, 0.01 );	// Goes to 0 at bottom
+
+//Noise *= 1.0 - pow( abs( y * 2.0 - 1.0 ), 1.0 );
+Noise *= pow( 1.0 - abs( y * 2.0 - 1.0 ), 0.01 );
+
+
+
 
 // 	Noise *= 2.0;
 // 	float	Density = smoothstep( 0, 1, smoothstep( 0, 1, smoothstep( 0, 1, saturate( Noise + Offset ) ) ) );
 
-	return Density;
 //	return (1.0 - saturate(y)) * Density;	// Apply bevel
 //	return sqrt(abs(y)) * Density;	// Apply bevel
 
+	return Noise;
 #endif
 }
 

@@ -5,8 +5,10 @@
 #include "Inc/Volumetric.hlsl"
 #include "Inc/Atmosphere.hlsl"
 
-static const float	STEPS_COUNT = 32.0;
+static const float	STEPS_COUNT = 64.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
+
+static const float	GODRAYS_STEPS_COUNT = 32.0;
 
 
 static const float	AERIAL_PERSPECTIVE_FAKE_FACTOR = 1.0;	// To fake an increase in aerial perspective on the terrain
@@ -137,15 +139,16 @@ float	ReadDepth( float2 _UV )
 	return (Q * _CameraData.z) / (Q - Zproj);
 }
 
-float	ComputeCloudShadowing( float3 _PositionWorld, float3 _View, float _Distance, float _StepOffset=0.5, uniform uint _StepsCount=64 )
+float	ComputeCloudShadowing( float3 _PositionWorld, float3 _View, float _Distance, float _StepOffset=0.5, uniform uint _StepsCount=GODRAYS_STEPS_COUNT )
 {
 //	uint	StepsCount = ceil( lerp( 16.0, float(_StepsCount), saturate( _Distance / 150.0 ) ) );
 //	uint	StepsCount = ceil( 2.0 * _StepOffset + lerp( 16.0, float(_StepsCount), saturate( _Distance / 150.0 ) ) );	// Fantastic noise hides banding!
-	uint	StepsCount = ceil( 2.0 * _StepOffset + lerp( 16.0, float(_StepsCount), saturate( _Distance / 50.0 ) ) );	// Fantastic noise hides banding!
+//	uint	StepsCount = ceil( 2.0 * _StepOffset + lerp( 16.0, float(_StepsCount), saturate( _Distance / 50.0 ) ) );	// Fantastic noise hides banding!
+	uint	StepsCount = ceil( lerp( 16.0, float(_StepsCount), saturate( _Distance / 50.0 ) ) );	// Fantastic noise hides banding!
 
 #if 1	// Linear steps
 	float3	Step = (_Distance / StepsCount) * _View;
-//	_PositionWorld += _StepOffset * Step;
+	_PositionWorld += _StepOffset * Step;
 
 	float	SumIncomingLight = 0.0;
 	for ( uint StepIndex=0; StepIndex < StepsCount; StepIndex++ )
@@ -421,7 +424,7 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 
 //#define FIXED_STEP_SIZE	0.01
 #ifndef FIXED_STEP_SIZE
-	float	StepsCount = ceil( Depth * 32.0 * BOX_HEIGHT/8.0 );	
+	float	StepsCount = ceil( Depth * STEPS_COUNT * BOX_HEIGHT/8.0 );	
 //	float	StepsCount = ceil( 2.0 * FastScreenNoise( _In.__Position.xy ) + Depth * 32.0 * BOX_HEIGHT/8.0 );	// Add noise to hide banding
 //	float	StepsCount = STEPS_COUNT;
  			StepsCount = min( STEPS_COUNT, StepsCount );
@@ -429,7 +432,7 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 	float4	Step = float4( WorldPosEnd - WorldPosStart, ZMinMax.y - ZMinMax.x ) / StepsCount;
 
 //	float	PosOffset = 0.5;	// Fixed offset
-	float	PosOffset = 1.0 * FastNoise( float3( 2.0*_In.__Position.xy, 0.0 ) );	// Random offset
+	float	PosOffset = 0.25 * FastNoise( float3( 2.0*_In.__Position.xy, 0.0 ) );	// Random offset
 	float4	Position = float4( WorldPosStart, 0.0 ) + PosOffset * Step;
 
 #else
