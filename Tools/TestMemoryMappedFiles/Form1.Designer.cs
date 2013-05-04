@@ -380,7 +380,7 @@
 			this.floatTrackbarControlIsotropicScatteringTerrainFactor.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlIsotropicScatteringTerrainFactor.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlIsotropicScatteringTerrainFactor.Name = "floatTrackbarControlIsotropicScatteringTerrainFactor";
-			this.floatTrackbarControlIsotropicScatteringTerrainFactor.RangeMax = 1F;
+			this.floatTrackbarControlIsotropicScatteringTerrainFactor.RangeMax = 10F;
 			this.floatTrackbarControlIsotropicScatteringTerrainFactor.RangeMin = 0F;
 			this.floatTrackbarControlIsotropicScatteringTerrainFactor.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlIsotropicScatteringTerrainFactor.TabIndex = 0;
@@ -403,7 +403,7 @@
 			this.floatTrackbarControlIsotropicScatteringSunFactor.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlIsotropicScatteringSunFactor.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlIsotropicScatteringSunFactor.Name = "floatTrackbarControlIsotropicScatteringSunFactor";
-			this.floatTrackbarControlIsotropicScatteringSunFactor.RangeMax = 1F;
+			this.floatTrackbarControlIsotropicScatteringSunFactor.RangeMax = 10F;
 			this.floatTrackbarControlIsotropicScatteringSunFactor.RangeMin = 0F;
 			this.floatTrackbarControlIsotropicScatteringSunFactor.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlIsotropicScatteringSunFactor.TabIndex = 0;
@@ -426,7 +426,7 @@
 			this.floatTrackbarControlIsotropicScatteringSkyFactor.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlIsotropicScatteringSkyFactor.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlIsotropicScatteringSkyFactor.Name = "floatTrackbarControlIsotropicScatteringSkyFactor";
-			this.floatTrackbarControlIsotropicScatteringSkyFactor.RangeMax = 1F;
+			this.floatTrackbarControlIsotropicScatteringSkyFactor.RangeMax = 10F;
 			this.floatTrackbarControlIsotropicScatteringSkyFactor.RangeMin = 0F;
 			this.floatTrackbarControlIsotropicScatteringSkyFactor.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlIsotropicScatteringSkyFactor.TabIndex = 0;
@@ -449,7 +449,7 @@
 			this.floatTrackbarControlIsotropicScattering.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlIsotropicScattering.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlIsotropicScattering.Name = "floatTrackbarControlIsotropicScattering";
-			this.floatTrackbarControlIsotropicScattering.RangeMax = 1F;
+			this.floatTrackbarControlIsotropicScattering.RangeMax = 10F;
 			this.floatTrackbarControlIsotropicScattering.RangeMin = 0F;
 			this.floatTrackbarControlIsotropicScattering.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlIsotropicScattering.TabIndex = 0;
@@ -957,9 +957,9 @@
 			this.floatTrackbarControlNoiseShapingPower.RangeMin = -5F;
 			this.floatTrackbarControlNoiseShapingPower.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlNoiseShapingPower.TabIndex = 0;
-			this.floatTrackbarControlNoiseShapingPower.Value = -2F;
-			this.floatTrackbarControlNoiseShapingPower.VisibleRangeMax = 2F;
-			this.floatTrackbarControlNoiseShapingPower.VisibleRangeMin = -5F;
+			this.floatTrackbarControlNoiseShapingPower.Value = -1F;
+			this.floatTrackbarControlNoiseShapingPower.VisibleRangeMax = 1F;
+			this.floatTrackbarControlNoiseShapingPower.VisibleRangeMin = -2F;
 			this.floatTrackbarControlNoiseShapingPower.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlNoiseShapingPower_ValueChanged);
 			// 
 			// label26

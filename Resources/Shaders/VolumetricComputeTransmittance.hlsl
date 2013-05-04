@@ -15,7 +15,7 @@ static const float	STEPS_COUNT = 64.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
 
 static const float	SHADOW_MIN_DEPTH = 0.1;
-static const float	SHADOW_MAX_DEPTH = 64.0 * BOX_HEIGHT;
+static const float	SHADOW_MAX_DEPTH = 64.0 * 8;//BOX_HEIGHT;
 
 //[
 cbuffer	cbSplat	: register( b10 )
@@ -157,7 +157,7 @@ PS_OUT	PS( VS_IN _In )
 //Density *= 4.0;
 
 		float	PreviousSigma_t = Sigma_t;
-		Sigma_t = EXTINCTION_COEFF * Density;
+		Sigma_t = _CloudExtinctionScattering.x * Density;
 
 //		float	StepTransmittance = exp( -Sigma_t * Step.w );
 		float	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );

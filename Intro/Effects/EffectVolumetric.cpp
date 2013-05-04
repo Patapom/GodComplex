@@ -157,7 +157,7 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 
 		// // Noise Params
 				// 	// Low frequency noise
-		0.0075f,	// float	NoiseLoFrequency;		// Horizontal frequency
+		7.5f,		// float	NoiseLoFrequency;		// Horizontal frequency
 		1.0f,		// float	NoiseLoVerticalLooping;	// Vertical frequency in amount of noise pixels
 		1.0f,		// float	NoiseLoAnimSpeed;		// Animation speed
 				// 	// High frequency noise
@@ -250,7 +250,7 @@ float	t = 2*0.25f * _Time;
 
 		//////////////////////////////////////////////////////////////////////////
 		// Atmosphere Params
-		m_pCB_Atmosphere->m.LightDirection.Set( -sinf(Params.SunPhi)*sinf(Params.SunTheta), cosf(Params.SunTheta), -cosf(Params.SunPhi)*sinf(Params.SunTheta) );
+		m_pCB_Atmosphere->m.LightDirection.Set( sinf(Params.SunPhi)*sinf(Params.SunTheta), cosf(Params.SunTheta), -cosf(Params.SunPhi)*sinf(Params.SunTheta) );
 		m_pCB_Atmosphere->m.SunIntensity = Params.SunIntensity;
 
 		m_pCB_Atmosphere->m.AirParams.Set( Params.AirAmount, Params.AirReferenceAltitudeKm );
@@ -272,6 +272,7 @@ float	t = 2*0.25f * _Time;
 		m_pCB_Volume->m._CloudAltitudeThickness.Set( Params.CloudBaseAltitude, Params.CloudThickness );
 		m_pCB_Volume->m._CloudExtinctionScattering.Set( Params.CloudExtinction, Params.CloudScattering );
 		m_pCB_Volume->m._CloudPhases.Set( Params.CloudAnisotropyIso, Params.CloudAnisotropyForward );
+		m_pCB_Volume->m._CloudShadowStrength = Params.CloudShadowStrength;
 
 		// Isotropic lighting
 		m_pCB_Volume->m._CloudIsotropicScattering = Params.CloudIsotropicScattering;

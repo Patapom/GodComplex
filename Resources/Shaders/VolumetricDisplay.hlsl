@@ -113,9 +113,9 @@ void	ComputeFinalColor( float3 _PositionWorld, float3 _View, float2 _DistanceKm,
 	// Attenuate in-scattered light between camera and hit due to shadowing by the cloud
 	float	Shadowing = ComputeCloudShadowing( _PositionWorld, _View, _DistanceKm.x / WORLD2KM, _StepOffset );
 
- 	const float	GODRAYS_STRENGTH = 0.9;
-	Lin_camera2cloud_Rayleigh *= 1.0 - (GODRAYS_STRENGTH * (1.0 - Shadowing));
-	Lin_camera2cloud_Mie *= 1.0 - (GODRAYS_STRENGTH * (1.0 - Shadowing));
+ 	float	GodraysStrength = saturate( lerp( 1.0 - _GodraysStrength, 1.0, Shadowing ) );
+	Lin_camera2cloud_Rayleigh *= GodraysStrength;
+	Lin_camera2cloud_Mie *= GodraysStrength;
 
 	////////////////////////////////////////////////////////////
 	// Rebuild final camera2atmosphere scattering, accounting for cloud extinction
@@ -159,14 +159,12 @@ float	Ei( float z )
 // Compute an approximate isotropic diffusion through infinite slabs
 float3	ComputeIsotropicScattering( float3 _Position, float _Density, float3 _SunLight, float3 _SkyLightTop, float3 _SkyLightBottom )
 {
-	const float	_Sigma_scattering_Isotropic = 0.1;
-
 #if 0	// Ponder contributions with "insideness" of layer
-	float	y = saturate( 2.0 * ((_Position.y - BOX_BASE) / BOX_HEIGHT - 0.5) );
+	float	y = saturate( 2.0 * ((_Position.y - _CloudAltitudeThickness.x) / _CloudAltitudeThickness.y - 0.5) );
 			y *= y;
 			y = 1.0 - y;	// Max at center!
 #elif 0	// Ponder contribution by distance to top
-	float	y = saturate( (_Position.y - BOX_BASE) / BOX_HEIGHT );
+	float	y = saturate( (_Position.y - _CloudAltitudeThickness.x) / _CloudAltitudeThickness.y );
 			y *= y;
 #else
 	float	y = 1.0;	// Constant throughout the layer
@@ -174,25 +172,25 @@ float3	ComputeIsotropicScattering( float3 _Position, float _Density, float3 _Sun
 
 //y = 1.0;
 
-	float3	SkyRadianceTop = 1.0 * _SkyLightTop;
-	float3	SkyRadianceBottom = 1.0 * _SkyLightBottom;
+	float3	SkyRadianceTop = _CloudIsotropicFactors.x * _SkyLightTop;
+	float3	SkyRadianceBottom = _CloudIsotropicFactors.x * _SkyLightBottom;
 
-	float3	SunRadiance = 0.25 * _SunLight;
+	float3	SunRadiance = _CloudIsotropicFactors.y * _SunLight;
 
-	float3	GroundReflectance = 0.2 * INVPI * float3( 1.0, 0.8, 0.2 );
+	float3	GroundReflectance = _CloudIsotropicFactors.z * INVPI * float3( 1.0, 0.8, 0.2 );
 	float3	GroundRadiance = GroundReflectance * _SunLight;
 
 	float3	IsotropicLightTop = y * (SkyRadianceTop + SunRadiance);
 	float3	IsotropicLightBottom = 1 * (SkyRadianceBottom + SunRadiance) + GroundRadiance;
 
-	float	BoxTop = BOX_BASE + BOX_HEIGHT;
-	float	BoxBottom = BOX_BASE;
+	float	BoxTop = _CloudAltitudeThickness.x + _CloudAltitudeThickness.y;
+	float	BoxBottom = _CloudAltitudeThickness.x;
 	float	IsotropicSphereRadiusTopKm = BoxTop - _Position.y;
 	float	IsotropicSphereRadiusBottomKm = _Position.y - BoxBottom;
 
-	float	a = -_Sigma_scattering_Isotropic * IsotropicSphereRadiusTopKm;
+	float	a = -_CloudIsotropicScattering * IsotropicSphereRadiusTopKm;
 	float3  IsotropicScatteringTop = IsotropicLightTop * max( 0.0, exp( a ) - a * Ei( a ));
-			a = -_Sigma_scattering_Isotropic * IsotropicSphereRadiusBottomKm;
+			a = -_CloudIsotropicScattering * IsotropicSphereRadiusBottomKm;
 	float3  IsotropicScatteringBottom = IsotropicLightBottom * max( 0.0, exp( a ) - a * Ei( a ));
 
 	return  _Density * INVFOURPI * (IsotropicScatteringTop + IsotropicScatteringBottom);
@@ -307,7 +305,7 @@ PS_OUT	PS( VS_IN _In )
 
 //### Super important line to get a nice precision everywhere: we lack details at a distance (i.e. we don't trace the clouds fully) but who cares since we keep a nice precision?
 //ZMinMax.y = ZMinMax.x + min( 8.0, Depth );	// Don't trace more than 8 units in length
-ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than N times the box height's in length (less precision, prefer line above)
+ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't trace more than N times the box height's in length (less precision, prefer line above)
 
 	float	MipBias = 0.0;
 
@@ -332,8 +330,8 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 
 //#define FIXED_STEP_SIZE	0.01
 #ifndef FIXED_STEP_SIZE
-	float	StepsCount = ceil( Depth * STEPS_COUNT * BOX_HEIGHT/8.0 );	
-//	float	StepsCount = ceil( 2.0 * FastScreenNoise( _In.__Position.xy ) + Depth * 32.0 * BOX_HEIGHT/8.0 );	// Add noise to hide banding
+	float	StepsCount = ceil( Depth * STEPS_COUNT * _CloudAltitudeThickness.y/8.0 );	
+//	float	StepsCount = ceil( 2.0 * FastScreenNoise( _In.__Position.xy ) + Depth * 32.0 * _CloudAltitudeThickness.y/8.0 );	// Add noise to hide banding
 //	float	StepsCount = STEPS_COUNT;
  			StepsCount = min( STEPS_COUNT, StepsCount );
 
@@ -361,17 +359,17 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 	float3	LightDirection = mul( float4( _LightDirection, 0.0 ), _World2Camera ).xyz;	// Light in camera space
 			View = normalize( View );
 
-	const float	g_iso = 0.1;
-	const float	g_forward = 0.85;
+	const float	g_iso = _CloudPhases.x;
+	const float	g_forward = _CloudPhases.y;
 	float	CosTheta = dot( View, LightDirection );
 	float	Phase_iso = 1.0 / (4 * PI) * (1 - g_iso*g_iso) * pow( max(0.0, 1+g_iso*g_iso-g_iso*CosTheta ), -1.5 );
 	float	Phase_forward = 1.0 / (4 * PI) * (1 - g_forward*g_forward) * pow( max(0.0, 1+g_forward*g_forward-g_forward*CosTheta ), -1.5 );
 	float	Phase = lerp( Phase_iso, Phase_forward, 0.2 );
 
 	// Get Sun light & Sky lights
-	float3	SunLight = SUN_INTENSITY * GetTransmittanceWithShadow( BOX_BASE + BOX_HEIGHT, _LightDirection.y );
-	float3	SkyLightTop = SUN_INTENSITY * GetIrradiance( _TexIrradiance, (BOX_BASE + 1.0 * BOX_HEIGHT), _LightDirection.y );
-	float3	SkyLightBottom = SUN_INTENSITY * GetIrradiance( _TexIrradiance, (BOX_BASE + 0.0 * BOX_HEIGHT), _LightDirection.y );
+	float3	SunLight = SUN_INTENSITY * GetTransmittanceWithShadow( _CloudAltitudeThickness.x + _CloudAltitudeThickness.y, _LightDirection.y );
+	float3	SkyLightTop = SUN_INTENSITY * GetIrradiance( _TexIrradiance, (_CloudAltitudeThickness.x + 1.0 * _CloudAltitudeThickness.y), _LightDirection.y );
+	float3	SkyLightBottom = SUN_INTENSITY * GetIrradiance( _TexIrradiance, (_CloudAltitudeThickness.x + 0.0 * _CloudAltitudeThickness.y), _LightDirection.y );
 
 	// Start integration
 	float	Sigma_t = 0.0;
@@ -385,15 +383,13 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 
 		float	PreviousSigma_t = Sigma_t;
 		float	PreviousSigma_s = Sigma_s;
-		Sigma_t = EXTINCTION_COEFF * Density;
-		Sigma_s = SCATTERING_COEFF * Density;
+		Sigma_t = _CloudExtinctionScattering.x * Density;
+		Sigma_s = _CloudExtinctionScattering.y * Density;
 
-//		float	Shadowing = GetCloudTransmittance( Position.xyz );
-		float	Shadowing = GetCloudTransmittance( (Position + 0.5 * Step).xyz );
+		float	Shadowing = GetCloudTransmittance( Position.xyz );
+//		float	Shadowing = GetCloudTransmittance( (Position + 0.5 * Step).xyz );
 
-		const float	ShadowStrength = 0.9;	// Shadow %
-//		const float	ShadowStrength = 1.0;	// Shadow %
-		Shadowing = 1.0 - (ShadowStrength * (1.0 - Shadowing));
+		Shadowing = saturate( lerp( 1.0 - _CloudShadowStrength, 1.0, Shadowing ) );
 		Shadowing *= smoothstep( 0.0, 1.0, smoothstep( 0.0, 0.03, abs(_LightDirection.y) ) );	// Full shadowing when the light is horizontal
 
 		float3	PreviousLight = Light;

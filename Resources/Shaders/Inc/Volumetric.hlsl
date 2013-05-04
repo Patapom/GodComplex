@@ -10,11 +10,11 @@
 #define	ANIMATE
 #define	PACK_R8				// Noise is packed in a R8 texture instead of R32F
 
-#define	BOX_BASE	4.0		// 8km (!!) (need to lower that but keep clouds' aspect)
-#define	BOX_HEIGHT	2.0		// 4km thick
+// #define	BOX_BASE	4.0		// 8km (!!) (need to lower that but keep clouds' aspect)
+// #define	BOX_HEIGHT	2.0		// 4km thick
 
-static const float	EXTINCTION_COEFF = 8.0;
-static const float	SCATTERING_COEFF = 8.0;
+// static const float	EXTINCTION_COEFF = 8.0;
+// static const float	SCATTERING_COEFF = 8.0;
 
 static const float	SUN_INTENSITY = 100.0;
 
@@ -42,11 +42,11 @@ cbuffer	cbVolume	: register( b9 )
 	float2		_CloudExtinctionScattering;
 	float2		_CloudPhases;
 	float		_CloudShadowStrength;
-	// float	__PAD
 
 	// Isotropic lighting
 	float		_CloudIsotropicScattering;
 	float3		_CloudIsotropicFactors;		// X=Sky factor, Y=Sun factor, Z=Terrain reflectance factor
+	// float	__PAD
 
 	// Noise
 	float3		_CloudLoFreqParams;			// X=Frequency Multiplier, Y=Vertical Looping, Z=Animation speed
@@ -130,7 +130,8 @@ float4	fbm( float3 _UVW, float _AmplitudeFactor, float _FrequencyFactor )
 
 float	GetVolumeDensity( float3 _Position, float _MipBias )
 {
-//_Position.x += _Time.x;
+	float	y = saturate( (_Position.y - _CloudAltitudeThickness.x) / _CloudAltitudeThickness.y );	// That gives us a value in [0 (bottom), 1 (top)]
+
 
 #if 0
 	//====================================================
@@ -178,18 +179,18 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 #else
 	//====================================================
 	// Use a low frequency texture to define the base shape
-
-	float	y = saturate( (_Position.y - BOX_BASE) / BOX_HEIGHT );	// That gives us a value in [0 (bottom), 1 (top)]
+	float	FreqMultiplierLow = 0.001 * _CloudLoFreqParams.x;
 
 //	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * float3( 0.0075, 0.01, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
 //	UVW0 += _Time.x * float3( 0.005, 0, -0.0125 );
+
 #ifdef	ANIMATE
-	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * (_Position + _Time.x * float3( 0.66, 0, -1.66 ));	// Very low frequency for the 32^3 noise
+	float3	UVW0 = FreqMultiplierLow * (_Position + _CloudLoFreqParams.z * _Time.x * float3( 0.66, 0, -1.66 ));	// Very low frequency for the 32^3 noise
 #else
-	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * _Position;	// Very low frequency for the 32^3 noise
+	float3	UVW0 = FreqMultiplierLow * _Position;	// Very low frequency for the 32^3 noise
 			UVW0 += float3( 0.005, 0, -0.13 );
 #endif
-	UVW0.y = (0.0 + 1.0 * y) / 32.0;
+	UVW0.y = (0.0 + _CloudLoFreqParams.y * y) / 32.0;
 
 //	float	Noise = _TexFractal0.SampleLevel( LinearWrap, 0.1 * UVW0, 4.0 ).x;
 	float	Noise = _TexNoise3D.SampleLevel( LinearWrap, UVW0, 0*_MipBias ).x;	// Use small 32^3 noise (no need mip bias on that low freq noise anyway or we may lose the defining shape)
@@ -202,13 +203,13 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 	// Use a high frequency texture to add details
 	// This time, the high frequency texture is much larger in XZ than in Y (thin slab) so tiling is not visible
 
-//	float3	UVW1 = float3( 0.04, 0.04, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
-//	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH.xx, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
+//	float3	UVW1 = float3( 0.04, 0.04, 1.0 / _CloudAltitudeThickness.y ) * _Position.xzy;	// Low frequency for the high frequency noise
+//	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH.xx, 1.0 / _CloudAltitudeThickness.y ) * _Position.xzy;	// Low frequency for the high frequency noise
 //	UVW1 += _Time.x * float3( 0.0, -0.01, 0.0 );	// Good
 #ifdef	ANIMATE
-	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH.xx, 1.0 / BOX_HEIGHT ) * (_Position.xzy + _Time.x * float3( 0.0, -0.08, 0.0 ));	// Low frequency for the high frequency noise
+	float3	UVW1 = float3( _CloudHiFreqParams.xx, 1.0 / _CloudAltitudeThickness.y ) * (_Position.xzy + _CloudHiFreqParams.w * _Time.x * float3( 0.0, -0.08, 0.0 ));	// Low frequency for the high frequency noise
 #else
-	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH.xx, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
+	float3	UVW1 = float3( _CloudHiFreqParams.xx, 1.0 / _CloudAltitudeThickness.y ) * _Position.xzy;	// Low frequency for the high frequency noise
 #endif
 
 #ifdef	PACK_R8
@@ -221,7 +222,7 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 #endif
 	
 //	Noise += 0.707 * (2.0 * (Noise2 - 0.02));	// Add detail
-	Noise -= 0.707 * (Noise2 + 0.01);	// Add detail
+	Noise += _CloudHiFreqParams.z * (Noise2 + _CloudHiFreqParams.y);	// Add detail
 
 
 #if 0
@@ -248,31 +249,29 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 //	float3	HeightOffsets = float3( 0.025, 0.05, 0.10 );	// Bottom, Middle, Top offsets
 //	float3	HeightOffsets = float3( 0.0, +0.02, 0.1 );	// Bottom, Middle, Top offsets (Nice coverage!)
 // 	float3	HeightOffsets = -0.035 + float3( +0.05, +0.02, 0.05 );	// Bottom, Middle, Top offsets (Nice coverage!)
- 	float3	HeightOffsets = -0.0 + float3( -0.05, +0.1, -0.2 );	// Bottom, Middle, Top offsets (Nice coverage!)
- 	float	Offset = lerp( 0.5*HeightOffsets.y, HeightOffsets.z, TopY ) + lerp( 0.5*HeightOffsets.y, HeightOffsets.x, BottomY );
+//  	float3	HeightOffsets = -0.0 + float3( -0.05, +0.1, -0.2 );	// Bottom, Middle, Top offsets (Nice coverage!)
+//  	float	Offset = lerp( 0.5*HeightOffsets.y, HeightOffsets.z, TopY ) + lerp( 0.5*HeightOffsets.y, HeightOffsets.x, BottomY );
+
+// 	float	Offset = lerp( _CloudOffsets.y, _CloudOffsets.z, TopY ) + lerp( _CloudOffsets.y, _CloudOffsets.x, BottomY );
+ 	float	Offset = lerp( _CloudOffsets.y, _CloudOffsets.z, smoothstep( 0, 1, TopY ) ) + lerp( _CloudOffsets.y, _CloudOffsets.x, smoothstep( 0, 1, BottomY ) );
+
 #else
 	float		Offset = 0;
 #endif
 
 //float	Offset = -0.02;//###
 
+
 #if 1
-// 	float	Contrast = 0.5;
-// 	float	Gamma = 0.5;
-	float	Contrast = 1.0;
-	float	Gamma = 0.5;
-	Noise = pow( saturate( Contrast * (Noise + Offset) ), Gamma );
+	// Apply brightness/contrast/gamma
+	Noise = pow( saturate( _CloudContrastGamma.x * (Noise + Offset) ), _CloudContrastGamma.y );
 #endif
 
 
-	
-//Noise = saturate( 50.0 * Noise );
 
-//Noise *= sqrt(y);		// Goes to 0 at bottom
-//Noise *= pow( y, 0.01 );	// Goes to 0 at bottom
-
-//Noise *= 1.0 - pow( abs( y * 2.0 - 1.0 ), 1.0 );
-Noise *= pow( 1.0 - abs( y2 ), 0.01 );
+	// Final noise shaping to avoid plateaus at top or bottom
+//	Noise *= 1.0 - pow( abs( y * 2.0 - 1.0 ), 1.0 );
+	Noise *= pow( 1.0 - abs( y2 ), _CloudShapingPower );
 
 
 

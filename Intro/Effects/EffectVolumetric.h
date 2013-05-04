@@ -76,11 +76,11 @@ public:		// NESTED TYPES
 		NjFloat2	_CloudExtinctionScattering;
 		NjFloat2	_CloudPhases;
 		float		_CloudShadowStrength;
-		float		__PAD0;
 
 		// Isotropic lighting
 		float		_CloudIsotropicScattering;
 		NjFloat3	_CloudIsotropicFactors;		// X=Sky factor, Y=Sun factor, Z=Terrain reflectance factor
+		float		__PAD0;
 
 		// Noise
 		NjFloat3	_CloudLoFreqParams;			// X=Frequency Multiplier, Y=Vertical Looping, Z=Animation speed

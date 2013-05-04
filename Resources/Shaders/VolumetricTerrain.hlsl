@@ -265,7 +265,7 @@ float3	ComputeTerrainColor( float3 _Position, float _Distance, float3 _Shadow, f
 
 	// Compute shadowing by clouds
 	float	CloudTransmittance = GetFastCloudTransmittance( _Position );
-	CloudTransmittance = lerp( 0.1, 1.0, CloudTransmittance );
+	CloudTransmittance = lerp( 1.0 - _TerrainCloudShadowStrength, 1.0, CloudTransmittance );
 	_Shadow *= CloudTransmittance;
 
 	// Build final color
