@@ -8,14 +8,13 @@
 //#define USE_FRUSTUM_SPLAT		// Define this to sample the camera frustum splat texture that indicates us whether a shadow pixel is relevant for computation or not
 
 
-//#define	INCLUDE_TERRAIN_SHADOWING	// Define this to sample the terrain shadow map
+#define	INCLUDE_TERRAIN_SHADOWING	// Define this to sample the terrain shadow map
 
 
 static const float	STEPS_COUNT = 64.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
 
 static const float	SHADOW_MIN_DEPTH = 0.1;
-//static const float	SHADOW_MAX_DEPTH = 32.0 * BOX_HEIGHT;
 static const float	SHADOW_MAX_DEPTH = 64.0 * BOX_HEIGHT;
 
 //[
@@ -138,7 +137,7 @@ PS_OUT	PS( VS_IN _In )
 	Out.C0 = Out.C1 = 0.0;
 
 #ifdef INCLUDE_TERRAIN_SHADOWING
-	if ( GetTerrainShadow( Position ) < 0.5 )
+	if ( GetTerrainShadow( Position.xyz ) < 0.5 )
 		return Out;
 #endif
 
@@ -159,8 +158,6 @@ PS_OUT	PS( VS_IN _In )
 
 		float	PreviousSigma_t = Sigma_t;
 		Sigma_t = EXTINCTION_COEFF * Density;
-
-//Sigma_t *= 10.0;//###
 
 //		float	StepTransmittance = exp( -Sigma_t * Step.w );
 		float	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );
@@ -190,8 +187,6 @@ PS_OUT	PS( VS_IN _In )
 	Out.C1.xy *= 2.0 * dx;
 
 	Out.C1.zw = ZMinMax;	// We keep in/out distances for decoding...
-
-//Out.C0 = Out.C1 = Transmittance;
 
 	return Out;
 }

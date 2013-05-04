@@ -234,6 +234,9 @@
     <ClInclude Include="Intro\Effects\EffectVolumetric.h">
       <Filter>Intro\Effects</Filter>
     </ClInclude>
+    <ClInclude Include="Utility\MemoryMappedFile.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -356,6 +359,9 @@
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectVolumetric.cpp">
       <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\MemoryMappedFile.cpp">
+      <Filter>Utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

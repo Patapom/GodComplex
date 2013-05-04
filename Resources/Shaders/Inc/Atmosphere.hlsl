@@ -21,9 +21,7 @@ static const float3	SIGMA_SCATTERING_RAYLEIGH = 1.0 * float3( 0.0058, 0.0135, 0.
 
 // Mie Scattering + Extinction
 static const float	HREF_MIE = 1.2;
-//static const float	HREF_MIE = 0.5;
 static const float	SIGMA_SCATTERING_MIE = 0.004;
-//static const float	SIGMA_SCATTERING_MIE = 0.1;	// Foggy!
 static const float	SIGMA_EXTINCTION_MIE = SIGMA_SCATTERING_MIE / 0.9;
 static const float	MIE_ANISOTROPY = 0.76;
 
@@ -42,6 +40,17 @@ static const float	NORMALIZED_SIZE_U2 = 1.0 - 1.0 / RESOLUTION_COS_GAMMA;
 static const float	NORMALIZED_SIZE_V = 1.0 - 1.0 / RESOLUTION_COS_THETA;
 static const float	NORMALIZED_SIZE_W = 1.0 - 1.0 / RESOLUTION_ALTITUDE;
 
+cbuffer	cbAtmosphere	: register( b7 )
+{
+	float3		_LightDirection;
+	float		_SunIntensity;
+
+	float2		_AirParams;			// X=Scattering Factor, Y=Reference Altitude (km)
+	float		_AverageGroundReflectance;
+	float		_GodraysStrength;
+
+	float4		_FogParams;			// X=Scattering Coeff, Y=Extinction Coeff, Z=Reference Altitude (km), W=Anisotropy
+}
 
 Texture2D	_TexTransmittance : register(t7);
 Texture3D	_TexScattering : register(t8);

@@ -8,37 +8,57 @@
 #define	USE_FAST_COS	// Use Taylor series instead of actual cosine
 
 #define	ANIMATE
+#define	PACK_R8				// Noise is packed in a R8 texture instead of R32F
+
 #define	BOX_BASE	4.0		// 8km (!!) (need to lower that but keep clouds' aspect)
 #define	BOX_HEIGHT	2.0		// 4km thick
-#define	PACK_R8				// Noise is packed in a R8 texture instead of R32F
 
 static const float	EXTINCTION_COEFF = 8.0;
 static const float	SCATTERING_COEFF = 8.0;
 
 static const float	SUN_INTENSITY = 100.0;
 
-static const float	WORLD2KM = 1.0;						// 1 World unit equals 0.5km
+static const float	WORLD2KM = 1.0;						// 1 World unit equals 1.0km
 
 
 // static const float	FREQUENCY_MULTIPLIER_LOW = 0.25;	// Noise low frequency multiplier
 // static const float	FREQUENCY_MULTIPLIER_HIGH = 1.5;	// Noise high frequency multiplier
-static const float	FREQUENCY_MULTIPLIER_LOW = 3*0.25;	// Noise low frequency multiplier
-static const float	FREQUENCY_MULTIPLIER_HIGH = 4*1.5;	// Noise high frequency multiplier
+static const float	FREQUENCY_MULTIPLIER_LOW = 0.0075;	// Noise low frequency multiplier
+static const float	FREQUENCY_MULTIPLIER_HIGH = 0.12;	// Noise high frequency multiplier
 
 
-cbuffer	cbShadow	: register( b11 )
+cbuffer	cbShadow	: register( b8 )
 {
-	float3		_LightDirection;
 	float4x4	_World2Shadow;
 	float4x4	_Shadow2World;
 	float4x4	_World2TerrainShadow;
 	float2		_ShadowZMinMax;
 };
 
-
-cbuffer	cbVolume	: register( b12 )
+cbuffer	cbVolume	: register( b9 )
 {
-	float4		_VolumeParams;
+	// Location & Direct lighting
+	float2		_CloudAltitudeThickness;
+	float2		_CloudExtinctionScattering;
+	float2		_CloudPhases;
+	float		_CloudShadowStrength;
+	// float	__PAD
+
+	// Isotropic lighting
+	float		_CloudIsotropicScattering;
+	float3		_CloudIsotropicFactors;		// X=Sky factor, Y=Sun factor, Z=Terrain reflectance factor
+
+	// Noise
+	float3		_CloudLoFreqParams;			// X=Frequency Multiplier, Y=Vertical Looping, Z=Animation speed
+	// float	__PAD
+	float4		_CloudHiFreqParams;			// X=Frequency Multiplier, Y=Offset, Z=Factor, W=Animation Speed
+
+	float3		_CloudOffsets;				// X=Low Altitude Offset, Y=Mid Altitude Offset, Z=High Altitude Offset
+	// float	__PAD
+
+	float2		_CloudContrastGamma;		// X=Contrast Y=Gamma
+	float		_CloudShapingPower;
+	// float	__PAD
 }
 
 Texture2DArray	_TexCloudTransmittance	: register(t5);
@@ -157,19 +177,20 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 
 #else
 	//====================================================
-	// Use a low frequency texture perturbed by a scrolling high frequency texture
-	// This time, the high frequency texture is much larger in XZ then in Y (thin slab) so tiling is not visible
+	// Use a low frequency texture to define the base shape
 
 	float	y = saturate( (_Position.y - BOX_BASE) / BOX_HEIGHT );	// That gives us a value in [0 (bottom), 1 (top)]
 
-//	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * float3( 0.01, 0.01, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
-	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * float3( 0.01, 0.0, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
-			UVW0.y = 0;//(0.0 + 1.0 * y) / 32.0;
+//	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * float3( 0.0075, 0.01, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
+//	UVW0 += _Time.x * float3( 0.005, 0, -0.0125 );
 #ifdef	ANIMATE
-	UVW0 += _Time.x * float3( 0.005, 0, -0.0125 );
+	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * (_Position + _Time.x * float3( 0.66, 0, -1.66 ));	// Very low frequency for the 32^3 noise
 #else
-	UVW0 += float3( 0.005, 0, -0.13 );
+	float3	UVW0 = FREQUENCY_MULTIPLIER_LOW * _Position;	// Very low frequency for the 32^3 noise
+			UVW0 += float3( 0.005, 0, -0.13 );
 #endif
+	UVW0.y = (0.0 + 1.0 * y) / 32.0;
+
 //	float	Noise = _TexFractal0.SampleLevel( LinearWrap, 0.1 * UVW0, 4.0 ).x;
 	float	Noise = _TexNoise3D.SampleLevel( LinearWrap, UVW0, 0*_MipBias ).x;	// Use small 32^3 noise (no need mip bias on that low freq noise anyway or we may lose the defining shape)
 
@@ -177,13 +198,17 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 
 //return Noise;
 
+	//====================================================
+	// Use a high frequency texture to add details
+	// This time, the high frequency texture is much larger in XZ than in Y (thin slab) so tiling is not visible
 
 //	float3	UVW1 = float3( 0.04, 0.04, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
-	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH * 0.02, FREQUENCY_MULTIPLIER_HIGH * 0.02, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
-//	float3	UVW1 = 0.1 * 1.0 / BOX_HEIGHT * _Position.xzy;	// Low frequency for the high frequency noise
-//	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH * 0.02 * _Position.xz, y );	// Low frequency for the high frequency noise
+//	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH.xx, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
+//	UVW1 += _Time.x * float3( 0.0, -0.01, 0.0 );	// Good
 #ifdef	ANIMATE
-	UVW1 += _Time.x * float3( 0.0, -0.01, 0.0 );	// Good
+	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH.xx, 1.0 / BOX_HEIGHT ) * (_Position.xzy + _Time.x * float3( 0.0, -0.08, 0.0 ));	// Low frequency for the high frequency noise
+#else
+	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH.xx, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
 #endif
 
 #ifdef	PACK_R8
@@ -196,7 +221,7 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 #endif
 	
 //	Noise += 0.707 * (2.0 * (Noise2 - 0.02));	// Add detail
-	Noise -= 0.707 * (1.0 * (Noise2 + 0.01));	// Add detail
+	Noise -= 0.707 * (Noise2 + 0.01);	// Add detail
 
 
 #if 0
@@ -212,8 +237,8 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 
 
 
-#if 1
 	float	y2 = 2.0 * y - 1.0;	// -1 at bottom, +1 at top
+#if 1
 	float	TopY = saturate(y2);
 //			TopY *= TopY;
 	float	BottomY = saturate(-y2);
@@ -225,6 +250,8 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 // 	float3	HeightOffsets = -0.035 + float3( +0.05, +0.02, 0.05 );	// Bottom, Middle, Top offsets (Nice coverage!)
  	float3	HeightOffsets = -0.0 + float3( -0.05, +0.1, -0.2 );	// Bottom, Middle, Top offsets (Nice coverage!)
  	float	Offset = lerp( 0.5*HeightOffsets.y, HeightOffsets.z, TopY ) + lerp( 0.5*HeightOffsets.y, HeightOffsets.x, BottomY );
+#else
+	float		Offset = 0;
 #endif
 
 //float	Offset = -0.02;//###
@@ -245,7 +272,7 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 //Noise *= pow( y, 0.01 );	// Goes to 0 at bottom
 
 //Noise *= 1.0 - pow( abs( y * 2.0 - 1.0 ), 1.0 );
-Noise *= pow( 1.0 - abs( y * 2.0 - 1.0 ), 0.01 );
+Noise *= pow( 1.0 - abs( y2 ), 0.01 );
 
 
 

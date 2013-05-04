@@ -31,6 +31,7 @@
 #include "NuajAPI/API/ASMHelpers.h"
 #ifdef _DEBUG
 #include "Utility/Events.h"
+#include "Utility/MemoryMappedFile.h"
 #endif
 #include "Utility/Memory.h"
 #include "Utility/Random.h"

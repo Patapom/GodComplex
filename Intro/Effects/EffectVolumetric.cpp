@@ -10,16 +10,9 @@ static const float	SCREEN_TARGET_RATIO = 0.5f;
 static const float	GROUND_RADIUS_KM = 6360.0f;
 static const float	ATMOSPHERE_THICKNESS_KM = 60.0f;
 
-static const float	BOX_BASE = 4.0f;	// 10km  <== Find better way to keep visual aspect!
-static const float	BOX_HEIGHT = 2.0f;	// 4km high
-
-static const float	TERRAIN_HEIGHT = 10.0f;
-
 static const float	TRANSMITTANCE_TAN_MAX = 1.5f;	// Close to PI/2 to maximize precision at grazing angles
 //#define USE_PRECISE_COS_THETA_MIN
 
-
-static char	pBisou[10];
 
 EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera ) : m_Device( _Device ), m_RTHDR( _RTHDR ), m_ScreenQuad( _ScreenQuad ), m_Camera( _Camera ), m_ErrorCode( 0 ), m_pTableTransmittance( NULL )
 {
@@ -32,13 +25,8 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
  	CHECK_MATERIAL( m_pMatCombine = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMBINE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 5 );
 
 #ifdef SHOW_TERRAIN
-	sprintf_s( pBisou, 10, "%f", TERRAIN_HEIGHT );
-	D3D10_SHADER_MACRO	pTerrainMacros[2] = {
-		"TERRAIN_HEIGHT", pBisou,
-		NULL, NULL
-	};
-	CHECK_MATERIAL( m_pMatTerrainShadow = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, VertexFormatP3::DESCRIPTOR, "VS", NULL, NULL, pTerrainMacros ), 6 );
-	CHECK_MATERIAL( m_pMatTerrain = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS", pTerrainMacros ), 7 );
+	CHECK_MATERIAL( m_pMatTerrainShadow = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, VertexFormatP3::DESCRIPTOR, "VS", NULL, NULL ), 6 );
+	CHECK_MATERIAL( m_pMatTerrain = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 7 );
 #endif
 
 //	const char*	pCSO = LoadCSO( "./Resources/Shaders/CSO/VolumetricCombine.cso" );
@@ -125,10 +113,9 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 	// Create the constant buffers
 	m_pCB_Object = new CB<CBObject>( m_Device, 10 );
 	m_pCB_Splat = new CB<CBSplat>( m_Device, 10 );
-	m_pCB_Shadow = new CB<CBShadow>( m_Device, 11 );
-	m_pCB_Volume = new CB<CBVolume>( m_Device, 12 );
-
-	m_pCB_Volume->m.Params.Set( 0, 0, 0, 0 );
+	m_pCB_Atmosphere = new CB<CBAtmosphere>( m_Device, 7, true );
+	m_pCB_Shadow = new CB<CBShadow>( m_Device, 8, true );
+	m_pCB_Volume = new CB<CBVolume>( m_Device, 9, true );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Setup our volume & light
@@ -136,14 +123,76 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 	m_Rotation = NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY );
 	m_Scale = NjFloat3( 1.0f, 2.0f, 1.0f );
 
-	m_LightDirection = NjFloat3( 1, 1, 1 );
-	m_LightDirection.Normalize();
+#ifdef _DEBUG
+	m_pMMF = new MMF<ParametersBlock>( "BisouTest" );
+	ParametersBlock	Params = {
+		1, // WILL BE MARKED AS CHANGED!			// U32		Checksum;
+
+		// // Atmosphere Params
+		0.25f,		// float	SunTheta;
+		0.0f,		// float	SunPhi;
+		100.0f,		// float	SunIntensity;
+		1.0f,		// float	AirAmount;		// Simply a multiplier of the default value
+		0.004f,		// float	FogScattering;
+		0.004f,		// float	FogExtinction;
+		8.0f,		// float	AirReferenceAltitudeKm;
+		1.2f,		// float	FogReferenceAltitudeKm;
+		0.76f,		// float	FogAnisotropy;
+		0.1f,		// float	AverageGroundReflectance;
+		0.9f,		// float	GodraysStrength;
+
+		// // Volumetrics Params
+		4.0f,		// float	CloudBaseAltitude;
+		2.0f,		// float	CloudThickness;
+		8.0f,		// float	CloudExtinction;
+		8.0f,		// float	CloudScattering;
+		0.1f,		// float	CloudAnisotropyIso;
+		0.85f,		// float	CloudAnisotropyForward;
+		0.9f,		// float	CloudShadowStrength;
+				// 
+		0.1f,		// float	CloudIsotropicScattering;	// Sigma_s for isotropic lighting
+		1.0f,		// float	CloudIsoSkyRadianceFactor;
+		0.25f,		// float	CloudIsoSunRadianceFactor;
+		0.2f,		// float	CloudIsoTerrainReflectanceFactor;
+
+		// // Noise Params
+				// 	// Low frequency noise
+		0.0075f,	// float	NoiseLoFrequency;		// Horizontal frequency
+		1.0f,		// float	NoiseLoVerticalLooping;	// Vertical frequency in amount of noise pixels
+		1.0f,		// float	NoiseLoAnimSpeed;		// Animation speed
+				// 	// High frequency noise
+		0.12f,		// float	NoiseHiFrequency;
+		0.01f,		// float	NoiseHiOffset;			// Second noise is added to first noise using NoiseHiStrength * (HiFreqNoise + NoiseHiOffset)
+		-0.707f,	// float	NoiseHiStrength;
+		1.0f,		// float	NoiseHiAnimSpeed;
+				// 	// Combined noise params
+		-0.05f,		// float	NoiseOffsetBottom;		// The noise offset to add when at the bottom altitude in the cloud
+		0.1f,		// float	NoiseOffsetMiddle;		// The noise offset to add when at the middle altitude in the cloud
+		0.2f,		// float	NoiseOffsetTop;			// The noise offset to add when at the top altitude in the cloud
+		1.0f,		// float	NoiseContrast;			// Final noise value is Noise' = pow( Contrast*(Noise+Offset), Gamma )
+		0.5f,		// float	NoiseGamma;
+				// 	// Final shaping params
+		0.01f,		// float	NoiseShapingPower;		// Final noise value is shaped (multiplied) by pow( 1-abs(2*y-1), NoiseShapingPower ) to avoid flat plateaus at top or bottom
+
+		// // Terrain Params
+		10.0f,		// float	TerrainHeight;
+		2.0f,		// float	TerrainAlbedoMultiplier;
+		0.9f,		// float	TerrainCloudShadowStrength;
+
+	};
+	m_pMMF->GetMappedMemory() = Params;
+#endif
 }
 
 EffectVolumetric::~EffectVolumetric()
 {
+#ifdef _DEBUG
+	delete m_pMMF;
+#endif
+
 	delete m_pCB_Volume;
 	delete m_pCB_Shadow;
+	delete m_pCB_Atmosphere;
 	delete m_pCB_Splat;
 	delete m_pCB_Object;
 
@@ -192,26 +241,85 @@ float	t = 2*0.25f * _Time;
 //m_LightDirection.Set( cosf(_Time), 2.0f * sinf( 0.324f * _Time ), sinf( _Time ) );
 //m_LightDirection.Set( cosf(_Time), 1.0f, sinf( _Time ) );
 
-float	SunAngle = LERP( -0.01f * PI, 0.499f * PI, 0.5f * (1.0f + sinf( t )) );		// Oscillating between slightly below horizon to zenith
-//float	SunAngle = 0.021f * PI;
-//float	SunAngle = -0.0001f * PI;
 
-// SunAngle = _TV( 0.12f );
-//SunAngle = -0.015f * PI;	// Sexy Sunset
-//SunAngle = 0.15f * PI;	// Sexy Sunset
-
-float	SunPhi = 0.5923f * t;
-m_LightDirection.Set( sinf( SunPhi ), sinf( SunAngle ), -cosf( SunPhi ) );
-//m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
-// DEBUG
 
 #ifdef _DEBUG
-	if ( gs_WindowInfos.pKeys[VK_NUMPAD1] )
-		m_pCB_Volume->m.Params.x -= 0.5f * _DeltaTime;
-	if ( gs_WindowInfos.pKeys[VK_NUMPAD7] )
-		m_pCB_Volume->m.Params.x += 0.5f * _DeltaTime;
+	if ( m_pMMF->CheckForChange() )
+	{
+		ParametersBlock&	Params = m_pMMF->GetMappedMemory();
 
-	m_pCB_Volume->m.Params.y = gs_WindowInfos.pKeys[VK_RETURN];
+		//////////////////////////////////////////////////////////////////////////
+		// Atmosphere Params
+		m_pCB_Atmosphere->m.LightDirection.Set( -sinf(Params.SunPhi)*sinf(Params.SunTheta), cosf(Params.SunTheta), -cosf(Params.SunPhi)*sinf(Params.SunTheta) );
+		m_pCB_Atmosphere->m.SunIntensity = Params.SunIntensity;
+
+		m_pCB_Atmosphere->m.AirParams.Set( Params.AirAmount, Params.AirReferenceAltitudeKm );
+		m_pCB_Atmosphere->m.AverageGroundReflectance = Params.AverageGroundReflectance;
+		m_pCB_Atmosphere->m.GodraysStrength = Params.GodraysStrength;
+
+		m_pCB_Atmosphere->m.FogParams.Set( Params.FogScattering, Params.FogExtinction, Params.FogReferenceAltitudeKm, Params.FogAnisotropy );
+
+		m_pCB_Atmosphere->UpdateData();
+
+		// TODO: Rebuild tables if change in atmosphere params!
+
+
+		//////////////////////////////////////////////////////////////////////////
+		// Volumetric Params
+		m_Position.Set( 0, Params.CloudBaseAltitude + 0.5f * Params.CloudThickness, -100 );
+		m_Scale.Set( 200.0f, 0.5f * Params.CloudThickness, 200.0f );
+
+		m_pCB_Volume->m._CloudAltitudeThickness.Set( Params.CloudBaseAltitude, Params.CloudThickness );
+		m_pCB_Volume->m._CloudExtinctionScattering.Set( Params.CloudExtinction, Params.CloudScattering );
+		m_pCB_Volume->m._CloudPhases.Set( Params.CloudAnisotropyIso, Params.CloudAnisotropyForward );
+
+		// Isotropic lighting
+		m_pCB_Volume->m._CloudIsotropicScattering = Params.CloudIsotropicScattering;
+		m_pCB_Volume->m._CloudIsotropicFactors.Set( Params.CloudIsoSkyRadianceFactor, Params.CloudIsoSunRadianceFactor, Params.CloudIsoTerrainReflectanceFactor );
+
+		// Noise
+		m_pCB_Volume->m._CloudLoFreqParams.Set( Params.NoiseLoFrequency, Params.NoiseLoVerticalLooping, Params.NoiseLoAnimSpeed );
+		m_pCB_Volume->m._CloudHiFreqParams.Set( Params.NoiseHiFrequency, Params.NoiseHiOffset, Params.NoiseHiStrength, Params.NoiseHiAnimSpeed );
+
+		float	HalfMiddleOffset = Params.NoiseOffsetMiddle;
+		m_pCB_Volume->m._CloudOffsets.Set( Params.NoiseOffsetBottom - HalfMiddleOffset, HalfMiddleOffset, Params.NoiseOffsetTop - HalfMiddleOffset );
+
+		m_pCB_Volume->m._CloudContrastGamma.Set( Params.NoiseContrast, Params.NoiseGamma );
+		m_pCB_Volume->m._CloudShapingPower = Params.NoiseShapingPower;
+
+		m_pCB_Volume->UpdateData();
+
+
+		//////////////////////////////////////////////////////////////////////////
+		// Terrain Params
+		m_pCB_Object->m.TerrainHeight = Params.TerrainHeight;
+		m_pCB_Object->m.AlbedoMultiplier = Params.TerrainAlbedoMultiplier;
+		m_pCB_Object->m.CloudShadowStrength = Params.TerrainCloudShadowStrength;
+	}
+#endif
+
+// float	SunAngle = LERP( -0.01f * PI, 0.499f * PI, 0.5f * (1.0f + sinf( t )) );		// Oscillating between slightly below horizon to zenith
+// //float	SunAngle = 0.021f * PI;
+// //float	SunAngle = -0.0001f * PI;
+// 
+// // SunAngle = _TV( 0.12f );
+// //SunAngle = -0.015f * PI;	// Sexy Sunset
+// //SunAngle = 0.15f * PI;	// Sexy Sunset
+// 
+// float	SunPhi = 0.5923f * t;
+// m_LightDirection.Set( sinf( SunPhi ), sinf( SunAngle ), -cosf( SunPhi ) );
+// //m_LightDirection.Set( 0.0, sinf( SunAngle ), -cosf( SunAngle ) );
+
+// DEBUG
+
+
+#ifdef _DEBUG
+// 	if ( gs_WindowInfos.pKeys[VK_NUMPAD1] )
+// 		m_pCB_Volume->m.Params.x -= 0.5f * _DeltaTime;
+// 	if ( gs_WindowInfos.pKeys[VK_NUMPAD7] )
+// 		m_pCB_Volume->m.Params.x += 0.5f * _DeltaTime;
+// 
+// 	m_pCB_Volume->m.Params.y = gs_WindowInfos.pKeys[VK_RETURN];
 #endif
 
 	m_pCB_Volume->UpdateData();
@@ -228,8 +336,6 @@ m_LightDirection.Set( sinf( SunPhi ), sinf( SunAngle ), -cosf( SunPhi ) );
 
 	m_Terrain2World.PRS( NjFloat3( 0, 0, 0 ), NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3( 50, 1, 50 ) );
 
-	m_Position.Set( 0, BOX_BASE + 0.5f * BOX_HEIGHT, -100 );
-	m_Scale.Set( 200.0f, 0.5f * BOX_HEIGHT, 200.0f );
 	m_Cloud2World.PRS( m_Position, m_Rotation, m_Scale );
 
 	ComputeShadowTransform();
@@ -699,6 +805,8 @@ void	EffectVolumetric::ComputeShadowTransform()
 {
 	static const NjFloat3	PLANET_CENTER_KM = NjFloat3( 0, -GROUND_RADIUS_KM, 0 );
 
+	NjFloat3	LightDirection = m_pCB_Atmosphere->m.LightDirection;
+
 	float		TanFovH = m_Camera.GetCB().Params.x;
 	float		TanFovV = m_Camera.GetCB().Params.y;
 	NjFloat4x4&	Camera2World = m_Camera.GetCB().Camera2World;
@@ -710,9 +818,7 @@ void	EffectVolumetric::ComputeShadowTransform()
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compute shadow plane tangent space
-	m_LightDirection.Normalize();
-
-	NjFloat3	ClippedSunDirection = -m_LightDirection;
+	NjFloat3	ClippedSunDirection = -LightDirection;
 // 	if ( ClippedSunDirection.y > 0.0f )
 // 		ClippedSunDirection = -ClippedSunDirection;	// We always require a vector facing down
 
@@ -745,9 +851,9 @@ void	EffectVolumetric::ComputeShadowTransform()
 	m_ShadowPlaneY = NjFloat3::UnitZ;
  	m_ShadowPlaneNormal = ClippedSunDirection;
 //	m_ShadowPlaneCenterKm = NjFloat3( CameraPositionKm.x, 0, CameraPositionKm.z ) + (BOX_BASE + (m_LightDirection.y > 0.0f ? 1 : 0) * MAX( 1e-3f, BOX_HEIGHT )) * NjFloat3::UnitY;	// Center on camera for a start...
-	m_ShadowPlaneCenterKm = NjFloat4( 0, m_LightDirection.y > 0 ? 1.0f : -1.0f, 0, 1 ) * m_Cloud2World;
+	m_ShadowPlaneCenterKm = NjFloat4( 0, LightDirection.y > 0 ? 1.0f : -1.0f, 0, 1 ) * m_Cloud2World;
 
-	float	ZSize = BOX_HEIGHT / abs(ClippedSunDirection.y);	// Since we're blocking the XY axes on the plane, Z changes with the light's vertical component
+	float	ZSize = m_pCB_Volume->m._CloudAltitudeThickness.y / abs(ClippedSunDirection.y);	// Since we're blocking the XY axes on the plane, Z changes with the light's vertical component
 																// Slanter rays will yield longer Z's
 
 	//////////////////////////////////////////////////////////////////////////
@@ -849,7 +955,7 @@ for ( int i=0; i < 5; i++ )
 	NjFloat2	QuadMin( +1e6f, +1e6f );
 	NjFloat2	QuadMax( -1e6f, -1e6f );
 
-	if ( m_LightDirection.y > 0.0f )
+	if ( LightDirection.y > 0.0f )
 	{	// When the Sun is above the clouds, project the frustum's corners to plane and keep the bounding quad of these points
 
 		// Project frustum to shadow plane
@@ -887,8 +993,8 @@ for ( int i=0; i < 5; i++ )
 		// To do this, we unfortunately have to compute the intersection of the camera frustum with the cloud box
 		//	and compute our bounding quad from there...
 		//
-		ComputeFrustumIntersection( pCameraFrustumKm, BOX_BASE, QuadMin, QuadMax );
-		ComputeFrustumIntersection( pCameraFrustumKm, BOX_BASE + BOX_HEIGHT, QuadMin, QuadMax );
+		ComputeFrustumIntersection( pCameraFrustumKm, m_pCB_Volume->m._CloudAltitudeThickness.x, QuadMin, QuadMax );
+		ComputeFrustumIntersection( pCameraFrustumKm, m_pCB_Volume->m._CloudAltitudeThickness.x + m_pCB_Volume->m._CloudAltitudeThickness.y, QuadMin, QuadMax );
 	}
 
 	// Also compute the cloud box's bounding quad and clip our quad values with it since it's useless to have a quad larger
@@ -988,7 +1094,6 @@ NjFloat4	Test2 = NjFloat4( UVMin.x, UVMin.y, 0, 1 ) * UV2Light;			// Get back qu
 NjFloat4	Test3 = NjFloat4( UVMax.x, UVMax.y, 0, 1 ) * UV2Light;
 // CHECK
 
-	m_pCB_Shadow->m.LightDirection = NjFloat4( m_LightDirection, 0 );
 	m_pCB_Shadow->m.World2Shadow = m_World2Light * Light2UV;
 	m_pCB_Shadow->m.Shadow2World = UV2Light * Light2World;
 	m_pCB_Shadow->m.ZMinMax.Set( 0, ZSize );
@@ -1051,7 +1156,9 @@ NjFloat4x4	EffectVolumetric::ComputeTerrainShadowTransform()
 {
 	const float	FRUSTUM_FAR_CLIP = 60.0f;
 
-	NjFloat3	Z = -m_LightDirection;
+	NjFloat3	LightDirection = m_pCB_Atmosphere->m.LightDirection;
+
+	NjFloat3	Z = -LightDirection;
 	NjFloat3	X = (NjFloat3::UnitY ^ Z).Normalize();
 	NjFloat3	Y = Z ^ X;
 
@@ -1096,7 +1203,7 @@ NjFloat4x4	EffectVolumetric::ComputeTerrainShadowTransform()
 		float	Z = 2.0f * ((i>>2)&1) - 1.0f;
 
 		NjFloat4	TerrainWorld = NjFloat4( X, 0, Z, 1 ) * m_Terrain2World;
-					TerrainWorld.y = TERRAIN_HEIGHT * Y;
+					TerrainWorld.y = m_pCB_Object->m.TerrainHeight * Y;
 
 		NjFloat3	TerrainLight = TerrainWorld * World2Light;
 		TerrainMin = TerrainMin.Min( TerrainLight );
@@ -2182,4 +2289,9 @@ float	EffectVolumetric::ComputeNearestHit( const NjFloat3& _PositionKm, const Nj
 	// We hit the ground first
 	_IsGround = true;
 	return GroundHits.x;
+}
+
+void	EffectVolumetric::OnMemoryMappedFileChanged( MemoryMappedFile& _File )
+{
+
 }

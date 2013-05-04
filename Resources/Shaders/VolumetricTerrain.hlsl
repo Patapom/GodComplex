@@ -7,16 +7,20 @@
 #include "Inc/Atmosphere.hlsl"
 
 //static const float	TERRAIN_HEIGHT = 5.0;	// Original value is 140
-static const float	TERRAIN_FACTOR = TERRAIN_HEIGHT / 140.0;
-
-static const float	ALBEDO_MULTIPLIER = 2.0;
+// static const float	TERRAIN_FACTOR = TERRAIN_HEIGHT / 140.0;
+// 
+// static const float	ALBEDO_MULTIPLIER = 2.0;
 
 //[
 cbuffer	cbObject	: register( b10 )
 {
 	float4x4	_Local2World;
 	float4x4	_ObjectWorld2Proj;
-	float2		_dUV;
+	float3		_dUV;
+
+	float		_TerrainHeight;
+	float		_TerrainAlbedoMultiplier;
+	float		_TerrainCloudShadowStrength;
 };
 //]
 
@@ -173,7 +177,7 @@ float3	CalcNormal( in float3 _Position, float _Distance )
 								Map( _Position + eps.yyx ) - Map( _Position - eps.yyx )
 							);
 #else
-	float2	eps = float2( 0.005 * _Distance, 0.0 );	// Epsilon grows with distance to avoid normal aliasing...
+	float2	eps = float2( 0.002 * _Distance, 0.0 );	// Epsilon grows with distance to avoid normal aliasing...
 	float3	Normal = -float3(	Map( _Position + eps.xyy ) - Map( _Position - eps.xyy ),
 								-10.0 * eps.x,
 								Map( _Position + eps.yyx ) - Map( _Position - eps.yyx )
@@ -195,7 +199,7 @@ float	ShadowIntersect( float3 _Position, float3 _Light, uniform int _StepsCount=
 	for ( int j=0; j < _StepsCount; j++ )
 	{
 		float3	p = _Position + t * _Light;
-		float	h = TERRAIN_FACTOR * Map( p, 5 );	// Use only 5 steps for shadow
+		float	h = (_TerrainHeight/140.0) * Map( p, 5 );	// Use only 5 steps for shadow
 		float	Diff = p.y - h;
 
 		res -= max( 0.0, -0.1 * Diff / t );	// Soft shadows brought by division with distance and difference of heights...
@@ -210,21 +214,13 @@ float	ShadowIntersect( float3 _Position, float3 _Light, uniform int _StepsCount=
 
 float3	ComputeTerrainColor( float3 _Position, float _Distance, float3 _Shadow, float3 _SunColor, float3 _AmbientSkyColor )
 {
-//return _Shadow;
-//return 0.2 * GetTerrainHeight( TerrainPosition );
-//return 1.0 * Map( TerrainPosition );
-// TerrainPosition.y *= 140.0 / TERRAIN_HEIGHT;
-// return ShadowIntersect( TerrainPosition + _LightDirection * 20.0, _LightDirection );
-//return _SunColor;
-
 	float3	TerrainPosition = _Position;
-			TerrainPosition.y /= TERRAIN_FACTOR;	// Retrieve the terrain height expected by the original routine
+			TerrainPosition.y *= 140.0 / _TerrainHeight;	// Retrieve the terrain height expected by the original routine
 
 	float3	Normal = CalcNormal( TerrainPosition, _Distance );
 //return 4.0 * Normal;
 
 	float	NdotL = saturate( dot( _LightDirection, Normal ) );		// Sun dot
-//	float	dif2 = saturate( 0.2 + 0.8 * dot( light2, Normal ) );	// Ambient dot
 //return NdotL;
 
 	float3	Albedo;
@@ -251,37 +247,34 @@ float3	ComputeTerrainColor( float3 _Position, float _Distance, float3 _Shadow, f
   	Albedo *= 0.75;
 //return 50.0 * Albedo;
 
-#if 0
+#if 1
+	const float	SNOW_MIN_ALTITUDE = 50;	// Snowy in altitude
+
 	// Add snow
-const float	SNOW_MIN_ALTITUDE = 55;	// Snowy in altitude
-//const float	SNOW_MIN_ALTITUDE = 150;	// Snowy everywhere!
-//return fbm( 0.01*TerrainPosition.xz );
 	float	h = smoothstep( SNOW_MIN_ALTITUDE, 140.0, TerrainPosition.y + 25.0 * fbm( 0.01*TerrainPosition.xz ) );	// Very low frequency snow coverage depending on altitude
 	float	e = smoothstep( 1.0-0.5*h, 1.0-0.1*h, Normal.y );		// Depends on flatness with tolerance varying with "snowiness" => very snowy is more tolerant to variations in normal
 	float	o = 0.3 + 0.7 * smoothstep( 0.0, 0.1, Normal.x + h*h );	// Depends on wind orientation
 	float	s = h * e * o;
 			s = smoothstep( 0.1, 0.15, s );
-	Albedo = lerp( Albedo, 0.4 * float3(0.6, 0.65, 0.7), s );
+	Albedo = lerp( Albedo, 0.5 * float3(0.6, 0.65, 0.7), s );
 #endif
 
-	Albedo *= ALBEDO_MULTIPLIER;
+	Albedo *= _TerrainAlbedoMultiplier;
 
 //return 50.0 * Albedo;
 
-// 	float3	brdf  = 2.0 * float3( 0.17, 0.19, 0.20 ) * saturate( Normal.y ) * _AmbientSkyColor;
-// 			brdf += 6.0 * float3( 1.00, 0.95, 0.80 ) * _Shadow * NdotL * _SunColor;
-// //			brdf += 2.0 * float3( 0.20, 0.20, 0.20 ) * dif2;
-
 	// Compute shadowing by clouds
 	float	CloudTransmittance = GetFastCloudTransmittance( _Position );
-	CloudTransmittance = lerp( 0.3, 1.0, CloudTransmittance );
-	_SunColor *= CloudTransmittance;
+	CloudTransmittance = lerp( 0.1, 1.0, CloudTransmittance );
+	_Shadow *= CloudTransmittance;
 
 	// Build final color
-	float3	brdf  = _Shadow * NdotL * _SunColor;
-//			brdf += lerp( 0.8, 1.0, Normal.y ) * _AmbientSkyColor;
+	float3	Lighting  = _Shadow * NdotL * _SunColor;
 
-	return INVPI * Albedo * brdf;
+	float3	Ambient = lerp( 0.8 * dot( _AmbientSkyColor, float3( 0.3, 0.5, 0.2 ) ), _AmbientSkyColor, CloudTransmittance );	// Make the ambient sky color become gray when in cloud shadow
+			Lighting += lerp( 0.4, 1.0, Normal.y ) * Ambient;
+
+	return INVPI * Albedo * Lighting;
 }
 
 PS_IN VS( VS_IN _In ) 
@@ -291,17 +284,16 @@ PS_IN VS( VS_IN _In )
 	// Apply Terrain deformation
 	//
 	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
-			WorldPosition.y = TERRAIN_FACTOR * Map( WorldPosition.xyz, 5 );
+			WorldPosition.y = (_TerrainHeight/140.0) * Map( WorldPosition.xyz, 5 );
 
-//	Out.__Position = mul( WorldPosition, _World2Proj );
 	Out.__Position = mul( WorldPosition, _ObjectWorld2Proj );	// Use provided projection instead (because we also use this VS for the shadow map)
 	Out.Position = WorldPosition.xyz;
 
 	// Compute colored shadow
 	float	Shadow = ShadowIntersect( WorldPosition.xyz, _LightDirection );	// Compute intersection with terrain for shadowing
 //	Out.Shadow = float3( Shadow, Shadow*Shadow*0.5 + 0.5*Shadow, Shadow*Shadow );
-//	Out.Shadow = Shadow;
-	Out.Shadow = 1.0;
+	Out.Shadow = Shadow;
+//	Out.Shadow = 1.0;
 
 	// Compute Sun & Sky colors
 	float3	EarthPositionKm = WORLD2KM * WorldPosition.xyz - EARTH_CENTER_KM;

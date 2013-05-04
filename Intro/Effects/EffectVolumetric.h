@@ -4,7 +4,7 @@
 
 template<typename> class CB;
 
-class EffectVolumetric
+class EffectVolumetric : public MemoryMappedFile::IOnFileChanged
 {
 private:	// CONSTANTS
 
@@ -35,6 +35,12 @@ public:		// NESTED TYPES
 		NjFloat4x4	Local2View;
 		NjFloat4x4	View2Proj;
 		NjFloat3	dUV;
+
+		// Terrain Parameters
+		float		TerrainHeight;
+		float		AlbedoMultiplier;
+		float		CloudShadowStrength;
+		NjFloat2	__PAD;
 	};
 
 	struct CBSplat
@@ -42,9 +48,21 @@ public:		// NESTED TYPES
 		NjFloat3	dUV;
 	};
 
+	struct CBAtmosphere
+	{
+		NjFloat3	LightDirection;
+		float		SunIntensity;
+
+		NjFloat2	AirParams;		// X=Scattering Factor, Y=Reference Altitude (km)
+		float		AverageGroundReflectance;
+		float		GodraysStrength;
+
+		NjFloat4	FogParams;		// X=Scattering Coeff, Y=Extinction Coeff, Z=Reference Altitude (km), W=Anisotropy
+	};
+
 	struct CBShadow
 	{
-		NjFloat4	LightDirection;
+//		NjFloat4	LightDirection;
 		NjFloat4x4	World2Shadow;
 		NjFloat4x4	Shadow2World;
 		NjFloat4x4	World2TerrainShadow;
@@ -53,7 +71,28 @@ public:		// NESTED TYPES
 
 	struct CBVolume 
 	{
-		NjFloat4	Params;
+		// Location & Direct lighting
+		NjFloat2	_CloudAltitudeThickness;
+		NjFloat2	_CloudExtinctionScattering;
+		NjFloat2	_CloudPhases;
+		float		_CloudShadowStrength;
+		float		__PAD0;
+
+		// Isotropic lighting
+		float		_CloudIsotropicScattering;
+		NjFloat3	_CloudIsotropicFactors;		// X=Sky factor, Y=Sun factor, Z=Terrain reflectance factor
+
+		// Noise
+		NjFloat3	_CloudLoFreqParams;			// X=Frequency Multiplier, Y=Vertical Looping, Z=Animation speed
+		float		__PAD1;
+		NjFloat4	_CloudHiFreqParams;			// X=Frequency Multiplier, Y=Offset, Z=Factor, W=Animation Speed
+
+		NjFloat3	_CloudOffsets;				// X=Low Altitude Offset, Y=Mid Altitude Offset, Z=High Altitude Offset
+		float		__PAD2;
+
+		NjFloat2	_CloudContrastGamma;		// X=Contrast Y=Gamma
+		float		_CloudShapingPower;
+		float		__PAD3;
 	};
 
 private:	// FIELDS
@@ -74,7 +113,7 @@ private:	// FIELDS
 	NjFloat4x4			m_Terrain2World;
 
 	// Light infos
-	NjFloat3			m_LightDirection;
+//	NjFloat3			m_LightDirection;
 
 	// Internal Data
 	Material*			m_pMatDepthWrite;
@@ -109,6 +148,7 @@ private:	// FIELDS
 
 	CB<CBObject>*		m_pCB_Object;
 	CB<CBSplat>*		m_pCB_Splat;
+	CB<CBAtmosphere>*	m_pCB_Atmosphere;
 	CB<CBShadow>*		m_pCB_Shadow;
 	CB<CBVolume>*		m_pCB_Volume;
 
@@ -126,6 +166,72 @@ private:	// FIELDS
 
 	// Atmosphere Pre-Computation
 	NjFloat3*			m_pTableTransmittance;
+
+
+
+#ifdef _DEBUG
+	struct ParametersBlock
+	{
+		U32		Checksum;
+
+		// Atmosphere Params
+		float	SunTheta;
+		float	SunPhi;
+		float	SunIntensity;
+		float	AirAmount;		// Simply a multiplier of the default value
+		float	FogScattering;
+		float	FogExtinction;
+		float	AirReferenceAltitudeKm;
+		float	FogReferenceAltitudeKm;
+		float	FogAnisotropy;
+		float	AverageGroundReflectance;
+		float	GodraysStrength;
+
+		// Volumetrics Params
+		float	CloudBaseAltitude;
+		float	CloudThickness;
+		float	CloudExtinction;
+		float	CloudScattering;
+		float	CloudAnisotropyIso;
+		float	CloudAnisotropyForward;
+		float	CloudShadowStrength;
+
+		float	CloudIsotropicScattering;	// Sigma_s for isotropic lighting
+		float	CloudIsoSkyRadianceFactor;
+		float	CloudIsoSunRadianceFactor;
+		float	CloudIsoTerrainReflectanceFactor;
+
+		// Noise Params
+			// Low frequency noise
+		float	NoiseLoFrequency;		// Horizontal frequency
+		float	NoiseLoVerticalLooping;	// Vertical frequency in amount of noise pixels
+		float	NoiseLoAnimSpeed;		// Animation speed
+			// High frequency noise
+		float	NoiseHiFrequency;
+		float	NoiseHiOffset;			// Second noise is added to first noise using NoiseHiStrength * (HiFreqNoise + NoiseHiOffset)
+		float	NoiseHiStrength;
+		float	NoiseHiAnimSpeed;
+			// Combined noise params
+		float	NoiseOffsetBottom;		// The noise offset to add when at the bottom altitude in the cloud
+		float	NoiseOffsetMiddle;		// The noise offset to add when at the middle altitude in the cloud
+		float	NoiseOffsetTop;			// The noise offset to add when at the top altitude in the cloud
+		float	NoiseContrast;			// Final noise value is Noise' = pow( Contrast*(Noise+Offset), Gamma )
+		float	NoiseGamma;
+			// Final shaping params
+		float	NoiseShapingPower;		// Final noise value is shaped (multiplied) by pow( 1-abs(2*y-1), NoiseShapingPower ) to avoid flat plateaus at top or bottom
+
+		// Terrain Params
+		float	TerrainHeight;
+		float	TerrainAlbedoMultiplier;
+		float	TerrainCloudShadowStrength;
+	};
+
+	// Memory-Mapped File for tweaking
+	MMF<ParametersBlock>*	m_pMMF;
+
+#endif
+
+
 
 public:		// PROPERTIES
 
@@ -159,7 +265,6 @@ protected:
 	void		SphereIntersections( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm, NjFloat2& _Hits ) const;
 	float		ComputeNearestHit( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm, bool& _IsGround ) const;
 
-
 	// Shadow computation
 	void		ComputeShadowTransform();
 	NjFloat3	Project2ShadowPlane( const NjFloat3& _PositionKm, float& Distance2PlaneKm );
@@ -170,4 +275,7 @@ protected:
 	NjFloat4x4	ComputeTerrainShadowTransform();
 
 	Texture3D*	BuildFractalTexture( bool _bLoadFirst );
+
+	// MemoryMappedFile::IOnFileChanged Implementation
+	virtual void	OnMemoryMappedFileChanged( MemoryMappedFile& _File );
 };
