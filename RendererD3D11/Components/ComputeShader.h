@@ -100,6 +100,7 @@ public:	 // PROPERTIES
 public:	 // METHODS
 
 	ComputeShader( Device& _Device, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, ID3DInclude* _pIncludeOverride );
+	ComputeShader( Device& _Device, const char* _pShaderFileName, ID3DBlob* _pCS );
 	~ComputeShader();
 
 	void			SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer );
@@ -130,7 +131,7 @@ public:	// ID3DInclude Members
 
 private:
 
-	void			CompileShaders( const char* _pShaderCode );
+	void			CompileShaders( const char* _pShaderCode, ID3DBlob* _pCS=NULL );
 
 	const char*		CopyString( const char* _pShaderFileName ) const;
 #ifndef GODCOMPLEX
@@ -155,10 +156,17 @@ public:
 #endif
 
 
+public:
+	//////////////////////////////////////////////////////////////////////////
+	// Binary Blobs
+
+	// Helper to reload a compiled binary blob and build the shader from it
+	static ComputeShader*	CreateFromBinaryBlob( Device& _Device, const char* _pShaderFileName, const char* _pEntryPoint );
+
+
+private:
 	//////////////////////////////////////////////////////////////////////////
 	// Shader auto-reload on change mechanism
-private:
-
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
 	// The dictionary of watched materials
 	static DictionaryString<ComputeShader*>	ms_WatchedShaders;

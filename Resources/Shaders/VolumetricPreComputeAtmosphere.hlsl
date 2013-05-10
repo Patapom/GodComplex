@@ -19,6 +19,7 @@ cbuffer	cbObject	: register( b10 )
 {
 	float4		_dUVW;
 	bool		_bFirstPass;
+	float		_AverageGroundReflectance;
 };
 //]
 
@@ -80,6 +81,56 @@ void	GetLayerData( uint _SliceIndex, out float _AltitudeKm, out float4 _dhdH )
 	_AltitudeKm = RadiusKm - GROUND_RADIUS_KM;
 }
 
+void GetAnglesFrom4D( float2 _UV, float3 _dUV, float _AltitudeKm, float4 dhdH, out float _CosThetaView, out float _CosThetaSun, out float _CosGamma )
+{
+	_UV -= 0.5 * _dUV.xy;	// Remove the half pixel offset
+
+#ifdef INSCATTER_NON_LINEAR_VIEW
+
+#ifdef INSCATTER_NON_LINEAR_VIEW_POM
+
+	_CosThetaView = abs( 2.0 * _UV.y - 1.0 );
+	_CosThetaView *= (_UV.y < 0.5 ? -1.0 : +1.0) * _CosThetaView;	// Squared progression for more precision near horizon
+
+#else	// !POM?
+
+	float r = GROUND_RADIUS_KM + _AltitudeKm;
+	if ( _UV.y < 0.5 )
+	{	// Viewing toward the sky
+		float	d = 1.0 - 2.0 * _UV.y;
+				d = min( max( dhdH.z, d * dhdH.w ), dhdH.w * 0.999 );
+
+		_CosThetaView = (GROUND_RADIUS_KM * GROUND_RADIUS_KM - r * r - d * d) / (2.0 * r * d);
+		_CosThetaView = min( _CosThetaView, -sqrt( 1.0 - (GROUND_RADIUS_KM / r) * (GROUND_RADIUS_KM / r) ) - 0.001 );
+	}
+	else
+	{	// Viewing toward the ground
+		float	d = 2.0 * (_UV.y - 0.5);
+				d = min( max( dhdH.x, d * dhdH.y ), dhdH.y * 0.999 );
+
+		_CosThetaView = (ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - r * r - d * d) / (2.0 * r * d);
+	}
+#endif	// POM?
+
+#else
+	_CosThetaView = lerp( -1.0, 1.0, _UV.y );
+#endif
+
+#ifdef INSCATTER_NON_LINEAR_SUN
+	_CosThetaSun = fmod( _UV.x, MODULO_U ) / MODULO_U;
+
+	// paper formula
+	//_CosThetaSun = -(0.6 + log(1.0 - _CosThetaSun * (1.0 -  exp(-3.6)))) / 3.0;
+
+	// better formula
+	_CosThetaSun = tan( (2.0 * _CosThetaSun - 1.0 + 0.26) * 1.1 ) * 0.18692904279186995490534690217449;	// / tan( 1.26 * 1.1 );
+#else
+	_CosThetaSun = lerp( -0.2, 1.0, fmod( _UV.x, MODULO_U ) / MODULO_U );
+#endif
+
+	_CosGamma = lerp( -1.0, 1.0, floor( _UV.x / MODULO_U ) / (RESOLUTION_COS_THETA_SUN-1) );
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Pre-Computes the transmittance table for all possible altitudes and zenith angles
@@ -117,7 +168,7 @@ float4	PreComputeTransmittance( VS_IN _In ) : SV_TARGET0
 	float	CosTheta = -0.15 + tan( 1.5 * UV.x ) / tan(1.5) * (1.0 + 0.15);	// Grow tangentially to have more precision horizontally
 //	float	CosTheta = lerp( -0.15, 1.0, UV.x );							// Grow linearly
 
-	float3	OpticalDepth = SIGMA_SCATTERING_RAYLEIGH * ComputeOpticalDepth( AltitudeKm, CosTheta, HREF_RAYLEIGH ) + SIGMA_EXTINCTION_MIE * ComputeOpticalDepth( AltitudeKm, CosTheta, HREF_MIE );
+	float3	OpticalDepth = _AirParams.x * SIGMA_SCATTERING_RAYLEIGH * ComputeOpticalDepth( AltitudeKm, CosTheta, _AirParams.y ) + _FogParams.y * ComputeOpticalDepth( AltitudeKm, CosTheta, _FogParams.z );
 
 //	return float4( exp( -OpticalDepth ), 0.0 );
 	return float4( min( 1e5, OpticalDepth ), 0.0 );		// We directly store optical depth otherwise we lose too much precision using a division!
@@ -164,8 +215,8 @@ void	Integrand_Single( float _RadiusKm, float _CosThetaView, float _CosThetaSun,
 	float3	ViewTransmittanceSource2Point = GetTransmittance( StartAltitudeKm, _CosThetaView, _DistanceKm );	// Transmittance from view point to integration point at distance
 	float3	SunTransmittanceAtmosphere2Point = GetTransmittance( CurrentAltitudeKm, CurrentCosThetaSun );		// Transmittance from top of atmosphere to integration point at distance (Sun light attenuation)
     float3	Transmittance = SunTransmittanceAtmosphere2Point * ViewTransmittanceSource2Point;
-    _Rayleigh = exp( -CurrentAltitudeKm / HREF_RAYLEIGH ) * Transmittance;
-    _Mie = exp( -CurrentAltitudeKm / HREF_MIE ) * Transmittance;
+    _Rayleigh = exp( -CurrentAltitudeKm / _AirParams.y ) * Transmittance;
+    _Mie = exp( -CurrentAltitudeKm / _FogParams.z ) * Transmittance;
 }
 
 void	InScatter_Single( float _AltitudeKm, float _CosThetaView, float _CosThetaSun, float _CosGamma, out float3 _Rayleigh, out float3 _Mie, uniform uint _StepsCount=50 )
@@ -198,8 +249,8 @@ void	InScatter_Single( float _AltitudeKm, float _CosThetaView, float _CosThetaSu
 		DistanceKm += StepSizeKm;
 	}
 
-	_Rayleigh *= SIGMA_SCATTERING_RAYLEIGH * StepSizeKm;
-	_Mie *= SIGMA_SCATTERING_MIE * StepSizeKm;
+	_Rayleigh *= _AirParams.x * SIGMA_SCATTERING_RAYLEIGH * StepSizeKm;
+	_Mie *= _FogParams.x * StepSizeKm;
 }
 
 PS_OUT	PreComputeInScattering_Single( PS_IN _In )
@@ -256,7 +307,7 @@ float3	InScatter_Delta( float _AltitudeKm, float _CosThetaView, float _CosThetaS
 		if ( ctheta < cthetaground )
 		{	// Ground is visible in sampling direction w: compute transmittance between x and ground
 			Distance2Ground = -r * ctheta - sqrt( r * r * (ctheta * ctheta - 1.0 ) + GROUND_RADIUS_KM * GROUND_RADIUS_KM);
-			GroundReflectance = (AVERAGE_GROUND_REFLECTANCE / PI) * GetTransmittance( 0.0, -(r * ctheta + Distance2Ground) / GROUND_RADIUS_KM, Distance2Ground );
+			GroundReflectance = (_AverageGroundReflectance / PI) * GetTransmittance( 0.0, -(r * ctheta + Distance2Ground) / GROUND_RADIUS_KM, Distance2Ground );
 		}
 
 		for ( int PhiIndex=0; PhiIndex < 2 * _StepsCount; PhiIndex++ )
@@ -300,7 +351,7 @@ float3	InScatter_Delta( float _AltitudeKm, float _CosThetaView, float _CosThetaS
 			// Light coming from direction w and scattered in view direction
 			// = light arriving at x from direction w (dScattering) * SUM( scattering coefficient * phaseFunction )
 			// see Eq (7)
-			Scattering += dScattering * (SIGMA_SCATTERING_RAYLEIGH * exp( -_AltitudeKm / HREF_RAYLEIGH ) * PhaseRayleigh + SIGMA_SCATTERING_MIE * exp( -_AltitudeKm / HREF_MIE ) * PhaseMie) * dw;
+			Scattering += dScattering * (_AirParams.x * SIGMA_SCATTERING_RAYLEIGH * exp( -_AltitudeKm / _AirParams.y ) * PhaseRayleigh + _FogParams.x * exp( -_AltitudeKm / _FogParams.z ) * PhaseMie) * dw;
 		}
 	}
 

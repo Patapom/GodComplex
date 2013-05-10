@@ -70,7 +70,7 @@ public:	 // METHODS
 	void		RemoveFromLastAssignedSlots() const;
 
 	// Upload the texture as a UAV for a compute shader
-	void		SetCSUAV( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11UnorderedAccessView* _pView=NULL ) const;
+	void		SetCSUAV( int _SlotIndex, ID3D11UnorderedAccessView* _pView=NULL ) const;
 	void		RemoveFromLastAssignedSlotUAV() const;
 
 	// Used by the Device for the default backbuffer

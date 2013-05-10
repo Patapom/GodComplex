@@ -137,7 +137,7 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 		100.0f,		// float	SunIntensity;
 		1.0f,		// float	AirAmount;		// Simply a multiplier of the default value
 		0.004f,		// float	FogScattering;
-		0.004f,		// float	FogExtinction;
+shouldn't it be /0.9?		0.004f,		// float	FogExtinction;
 		8.0f,		// float	AirReferenceAltitudeKm;
 		1.2f,		// float	FogReferenceAltitudeKm;
 		0.76f,		// float	FogAnisotropy;
@@ -350,6 +350,10 @@ float	t = 2*0.25f * _Time;
 	if ( m_pTexFractal1 != NULL )
 		m_pTexFractal1->SetPS( 17 );
 
+
+	//////////////////////////////////////////////////////////////////////////
+	// Perform time-sliced update of the sky table if needed
+	UpdateSkyTables();
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compute transforms
@@ -1664,7 +1668,9 @@ Texture3D*	EffectVolumetric::BuildFractalTexture( bool _bBuildFirst )
 struct	CBPreCompute
 {
 	NjFloat4	dUVW;
-	bool		bFirstPass;	NjFloat3	__PAD1;
+	bool		bFirstPass;
+	float		AverageGroundReflectance;
+	NjFloat2	__PAD1;
 };
 
 void	EffectVolumetric::PreComputeSkyTables()
@@ -1707,6 +1713,7 @@ void	EffectVolumetric::PreComputeSkyTables()
 
 	CB<CBPreCompute>	CB( m_Device, 10 );
 	CB.m.bFirstPass = true;
+	CB.m.AverageGroundReflectance = 0.1f;
 
 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
 
@@ -1985,7 +1992,7 @@ namespace
 
 	static const int	THREADS_COUNT_X = 16;							// !!IMPORTANT ==> Must correspond to what's written in the shader!!
 	static const int	THREADS_COUNT_Y = 16;
-	static const int	THREADS_COUNT_Z = 16;
+	static const int	THREADS_COUNT_Z = 4;							// 4 as the product of all thread counts cannot exceed 1024!
 
 	enum STAGE_INDEX
 	{
@@ -2040,22 +2047,11 @@ void	EffectVolumetric::InitUpdateSkyTables()
 	m_pRTDeltaScattering = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );			// deltaJ (temp)
 
 	m_pCB_PreComputeSky = new CB<CBPreComputeCS>( m_Device, 10 );
-	// Clear pass indices (need to be done only once as each stage will reset it to 0 at its end)
+	// Clear pass indices (needs to be done only once as each stage will reset it to 0 at its end)
 	m_pCB_PreComputeSky->m._PassIndexX = 0;
 	m_pCB_PreComputeSky->m._PassIndexY = 0;
 	m_pCB_PreComputeSky->m._PassIndexZ = 0;
-
-
-	CHECK_MATERIAL( m_pCSComputeInScattering_Delta = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeInScattering_Delta" ), 14 );		// inscatterS
-
-	CHECK_MATERIAL( m_pCSComputeTransmittance = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"PreComputeTransmittance" ), 10 );
-	CHECK_MATERIAL( m_pCSComputeIrradiance_Single = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Single" ), 11 );		// irradiance1
-	CHECK_MATERIAL( m_pCSComputeIrradiance_Delta = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Delta" ), 12 );		// irradianceN
-	CHECK_MATERIAL( m_pCSComputeInScattering_Single = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",	"PreComputeInScattering_Single" ), 13 );	// inscatter1
-	CHECK_MATERIAL( m_pCSComputeInScattering_Multiple = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",	"PreComputeInScattering_Multiple" ), 15 );	// inscatterN
-	CHECK_MATERIAL( m_pCSMergeInitialScattering = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"MergeInitialScattering" ), 16 );			// copyInscatter1
-	CHECK_MATERIAL( m_pCSAccumulateIrradiance = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"AccumulateIrradiance" ), 17 );				// copyIrradiance
-	CHECK_MATERIAL( m_pCSAccumulateInScattering = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"AccumulateInScattering" ), 18 );			// copyInscatterN
+	m_pCB_PreComputeSky->m._AverageGroundReflectance = 0.1f;	// Default value given in the paper
 
 	// Build passes count for each stage
 	for ( int StageIndex=0; StageIndex < STAGES_COUNT; StageIndex++ )
@@ -2089,6 +2085,29 @@ void	EffectVolumetric::InitUpdateSkyTables()
 			m_pStagePassesCount[3*StageIndex+2] = 1;
 		}
 	}
+
+#if 0
+	// Build heavy compute shaders
+	CHECK_MATERIAL( m_pCSComputeTransmittance = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"PreComputeTransmittance" ), 10 );
+	CHECK_MATERIAL( m_pCSComputeIrradiance_Single = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Single" ), 11 );		// irradiance1
+	CHECK_MATERIAL( m_pCSComputeIrradiance_Delta = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Delta" ), 12 );		// irradianceN
+	CHECK_MATERIAL( m_pCSComputeInScattering_Single = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeInScattering_Single" ), 13 );	// inscatter1
+	CHECK_MATERIAL( m_pCSComputeInScattering_Delta = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeInScattering_Delta" ), 14 );		// inscatterS
+	CHECK_MATERIAL( m_pCSComputeInScattering_Multiple = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",	"PreComputeInScattering_Multiple" ), 15 );	// inscatterN
+	CHECK_MATERIAL( m_pCSMergeInitialScattering = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"MergeInitialScattering" ), 16 );			// copyInscatter1
+	CHECK_MATERIAL( m_pCSAccumulateIrradiance = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"AccumulateIrradiance" ), 17 );				// copyIrradiance
+	CHECK_MATERIAL( m_pCSAccumulateInScattering = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"AccumulateInScattering" ), 18 );			// copyInscatterN
+#else
+	CHECK_MATERIAL( m_pCSComputeTransmittance = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"PreComputeTransmittance" ), 10 );
+	CHECK_MATERIAL( m_pCSComputeIrradiance_Single = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Single" ), 11 );
+	CHECK_MATERIAL( m_pCSComputeIrradiance_Delta = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Delta" ), 12 );
+	CHECK_MATERIAL( m_pCSComputeInScattering_Single = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",	"PreComputeInScattering_Single" ), 13 );
+	CHECK_MATERIAL( m_pCSComputeInScattering_Delta = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",	"PreComputeInScattering_Delta" ), 14 );
+	CHECK_MATERIAL( m_pCSComputeInScattering_Multiple = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",	"PreComputeInScattering_Multiple" ), 15 );
+	CHECK_MATERIAL( m_pCSMergeInitialScattering = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"MergeInitialScattering" ), 16 );
+	CHECK_MATERIAL( m_pCSAccumulateIrradiance = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"AccumulateIrradiance" ), 17 );
+	CHECK_MATERIAL( m_pCSAccumulateInScattering = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"AccumulateInScattering" ), 18 );
+#endif
 }
 
 void	EffectVolumetric::ExitUpdateSkyTables()
@@ -2201,7 +2220,10 @@ void	EffectVolumetric::UpdateSkyTables()
 
 			USING_COMPUTESHADER_START( *m_pCSComputeTransmittance )
 	
-				m_ppRTTransmittance[1]->SetCSUAV( 10 );
+				m_ppRTTransmittance[1]->SetCSUAV( 0 );
+
+I think it would be better to allocate [1] targets with the D3D11_BIND_UNORDERED_ACCESS flag and COPY the resource once it's been computed,
+	rather than exchanging pointers. I'm not sure the device won't consider targets with the UAV and RT and SRV flags slower??
 
 				m_pCB_PreComputeSky->UpdateData();
 
@@ -2239,7 +2261,7 @@ void	EffectVolumetric::UpdateSkyTables()
 
 			USING_COMPUTESHADER_START( *m_pCSComputeIrradiance_Single )
 
-				m_pRTDeltaIrradiance->SetCSUAV( 10 );
+				m_pRTDeltaIrradiance->SetCSUAV( 0 );
 
 				m_pCB_PreComputeSky->UpdateData();
 
@@ -2276,8 +2298,8 @@ void	EffectVolumetric::UpdateSkyTables()
 
 			USING_COMPUTESHADER_START( *m_pCSComputeInScattering_Single )
 
-				m_pRTDeltaScatteringRayleigh->SetCSUAV( 10 );
-				m_pRTDeltaScatteringMie->SetCSUAV( 11 );
+				m_pRTDeltaScatteringRayleigh->SetCSUAV( 0 );
+				m_pRTDeltaScatteringMie->SetCSUAV( 1 );
 
 				m_pRTDeltaIrradiance->SetCS( 10 );	// Input from last stage
 
@@ -2330,7 +2352,7 @@ void	EffectVolumetric::UpdateSkyTables()
 
 			USING_COMPUTESHADER_START( *m_pCSComputeInScattering_Delta )
 
-				m_pRTDeltaScattering->SetCSUAV( 10 );
+				m_pRTDeltaScattering->SetCSUAV( 0 );
 
 				m_pRTDeltaScatteringRayleigh->SetCS( 11 );	// Input from last stage
 				if ( m_ScatteringOrder == 2 )
@@ -2368,7 +2390,7 @@ void	EffectVolumetric::UpdateSkyTables()
 
 			USING_COMPUTESHADER_START( *m_pCSComputeIrradiance_Delta )
 
-				m_pRTDeltaIrradiance->SetCSUAV( 10 );
+				m_pRTDeltaIrradiance->SetCSUAV( 0 );
 
 				m_pRTDeltaScattering->SetCS( 13 );	// Input from last stage
 
@@ -2403,7 +2425,7 @@ void	EffectVolumetric::UpdateSkyTables()
 
 			USING_COMPUTESHADER_START( *m_pCSComputeInScattering_Multiple )
 
-				m_pRTDeltaScatteringRayleigh->SetCSUAV( 10 );	// Warning: We're re-using Rayleigh slot.
+				m_pRTDeltaScatteringRayleigh->SetCSUAV( 0 );	// Warning: We're re-using Rayleigh slot.
 																// It doesn't matter for orders > 2 where we don't sample from Rayleigh+Mie separately anymore (only done in first pass)
 				m_pRTDeltaIrradiance->SetCS( 10 );
 
@@ -2427,7 +2449,7 @@ void	EffectVolumetric::UpdateSkyTables()
 				// Adds deltaE to irradiance texture E (line 10 in algorithm 4.1)
 				USING_COMPUTESHADER_START( *m_pCSAccumulateIrradiance )
 
-					m_ppRTIrradiance[1]->SetCSUAV( 10 );
+					m_ppRTIrradiance[1]->SetCSUAV( 0 );
 
 					m_pRTDeltaIrradiance->SetCS( 14 );	// StructuredBuffer<float4>
 
@@ -2441,7 +2463,7 @@ void	EffectVolumetric::UpdateSkyTables()
  				// Adds deltaS to inscatter texture S (line 11 in algorithm 4.1)
 				USING_COMPUTESHADER_START( *m_pCSAccumulateInScattering )
 
-					m_ppRTInScattering[1]->SetCSUAV( 10 );
+					m_ppRTInScattering[1]->SetCSUAV( 0 );
 
 					m_pRTDeltaIrradiance->SetCS( 14 );	// StructuredBuffer<float4>
 

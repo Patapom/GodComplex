@@ -139,7 +139,7 @@ float	PhaseFunctionRayleigh( float _CosPhaseAngle )
 
 float	PhaseFunctionMie( float _CosPhaseAngle )
 {
-	const float	g = MIE_ANISOTROPY;
+	float	g = _FogParams.w;
 	return 1.5 * 1.0 / (4.0 * PI) * (1.0 - g*g) * pow( max( 0.0, 1.0 + (g*g) - 2.0*g*_CosPhaseAngle ), -1.5 ) * (1.0 + _CosPhaseAngle * _CosPhaseAngle) / (2.0 + g*g);
 }
 
@@ -221,55 +221,6 @@ float3	GetIrradiance( float _AltitudeKm, float _CosThetaSun )
 #define	INSCATTER_NON_LINEAR_VIEW
 #define	INSCATTER_NON_LINEAR_VIEW_POM	// Use my "formula" instead of theirs
 #define	INSCATTER_NON_LINEAR_SUN
-// void GetAnglesFrom4D( float2 _UV, float3 _dUV, float _AltitudeKm, float4 dhdH, out float _CosThetaView, out float _CosThetaSun, out float _CosGamma )
-// {
-// 	_UV -= 0.5 * _dUV.xy;	// Remove the half pixel offset
-// 
-// #ifdef INSCATTER_NON_LINEAR_VIEW
-// 
-// #ifdef INSCATTER_NON_LINEAR_VIEW_POM
-// 
-// 	_CosThetaView = abs( 2.0 * _UV.y - 1.0 );
-// 	_CosThetaView *= (_UV.y < 0.5 ? -1.0 : +1.0) * _CosThetaView;	// Squared progression for more precision near horizon
-// 
-// #else	// !POM?
-// 
-// 	float r = GROUND_RADIUS_KM + _AltitudeKm;
-// 	if ( _UV.y < 0.5 )
-// 	{	// Viewing toward the sky
-// 		float	d = 1.0 - 2.0 * _UV.y;
-// 				d = min( max( dhdH.z, d * dhdH.w ), dhdH.w * 0.999 );
-// 
-// 		_CosThetaView = (GROUND_RADIUS_KM * GROUND_RADIUS_KM - r * r - d * d) / (2.0 * r * d);
-// 		_CosThetaView = min( _CosThetaView, -sqrt( 1.0 - (GROUND_RADIUS_KM / r) * (GROUND_RADIUS_KM / r) ) - 0.001 );
-// 	}
-// 	else
-// 	{	// Viewing toward the ground
-// 		float	d = 2.0 * (_UV.y - 0.5);
-// 				d = min( max( dhdH.x, d * dhdH.y ), dhdH.y * 0.999 );
-// 
-// 		_CosThetaView = (ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - r * r - d * d) / (2.0 * r * d);
-// 	}
-// #endif	// POM?
-// 
-// #else
-// 	_CosThetaView = lerp( -1.0, 1.0, _UV.y );
-// #endif
-// 
-// #ifdef INSCATTER_NON_LINEAR_SUN
-// 	_CosThetaSun = fmod( _UV.x, MODULO_U ) / MODULO_U;
-// 
-// 	// paper formula
-// 	//_CosThetaSun = -(0.6 + log(1.0 - _CosThetaSun * (1.0 -  exp(-3.6)))) / 3.0;
-// 
-// 	// better formula
-// 	_CosThetaSun = tan( (2.0 * _CosThetaSun - 1.0 + 0.26) * 1.1 ) * 0.18692904279186995490534690217449;	// / tan( 1.26 * 1.1 );
-// #else
-// 	_CosThetaSun = lerp( -0.2, 1.0, fmod( _UV.x, MODULO_U ) / MODULO_U );
-// #endif
-// 
-// 	_CosGamma = lerp( -1.0, 1.0, floor( _UV.x / MODULO_U ) / (RESOLUTION_COS_THETA_SUN-1) );
-// }
 
 // Samples the scattering table from 4 parameters
 float4	Sample4DScatteringTable( Texture3D _TexScattering, float _AltitudeKm, float _CosThetaView, float _CosThetaSun, float _CosGamma )

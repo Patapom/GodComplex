@@ -23,9 +23,11 @@
 									// Obviously, if you switch textures & render targets often this will give you complete crap results !
 
 
+#ifdef _DEBUG
 // Define this to save the binary blobs for each shader (only works in DEBUG mode)
 // NOTE: in RELEASE, the blobs are embedded as resources and read from so they need to have been saved to
 #define SAVE_SHADER_BLOB_TO		"./Resources/Shaders/Binary/"
+#endif	// _DEBUG
 
 #ifdef GODCOMPLEX
 #define USE_BINARY_BLOBS			// Define this to use pre-compiled binary blobs resources rather than text files
@@ -143,6 +145,7 @@ public:	 // PROPERTIES
 public:	 // METHODS
 
 	Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride );
+	Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, ID3DBlob* _pVS, ID3DBlob* _pHS, ID3DBlob* _pDS, ID3DBlob* _pGS, ID3DBlob* _pPS );
 	~Material();
 
 	void			SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer );
@@ -154,7 +157,7 @@ public:	 // METHODS
 
 	void			Use();
 
-	// Static shader compilation helper
+	// Static shader compilation helper (also used by ComputeShader)
 	static ID3DBlob*	CompileShader( const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget, ID3DInclude* _pInclude, bool _bComputeShader=false );
 
 
@@ -165,22 +168,21 @@ public:	// ID3DInclude Members
 
 private:
 
-	void			CompileShaders( const char* _pShaderCode );
+	void			CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS=NULL, ID3DBlob* _pHS=NULL, ID3DBlob* _pDS=NULL, ID3DBlob* _pGS=NULL, ID3DBlob* _pPS=NULL );
 
 	const char*		CopyString( const char* _pShaderFileName ) const;
 #ifndef GODCOMPLEX
 	const char*		GetShaderPath( const char* _pShaderFileName ) const;
 #endif
 
-
 	// Returns true if the shaders are safe to access (i.e. have been compiled and no other thread is accessing them)
 	// WARNING: Calling this will take ownership of the mutex if the function returns true ! You thus must call Unlock() later...
 	bool			Lock() const;
 	void			Unlock() const;
 
-#ifdef MATERIAL_COMPILE_THREADED
 	//////////////////////////////////////////////////////////////////////////
 	// Threaded compilation
+#ifdef MATERIAL_COMPILE_THREADED
 	HANDLE			m_hCompileThread;
 	HANDLE			m_hCompileMutex;
 
@@ -190,9 +192,23 @@ public:
 #endif
 
 
+
+public:
+	//////////////////////////////////////////////////////////////////////////
+	// Binary Blobs
+#ifdef SAVE_SHADER_BLOB_TO
+	// Helper to reload a compiled binary blob and build the material from it
+	static Material*	CreateFromBinaryBlob( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS );
+
+	static void			SaveBinaryBlob( const char* _pShaderFileName, const char* _pEntryPoint, ID3DBlob& _Blob );
+	static ID3DBlob*	LoadBinaryBlob( const char* _pShaderFileName, const char* _pEntryPoint );	// NOTE: It's the caller's responsibility to release the blob!
+#endif
+
+
+private:
 	//////////////////////////////////////////////////////////////////////////
 	// Shader auto-reload on change mechanism
-private:
+
 	// The dictionary of watched materials
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
 	static DictionaryString<Material*>	ms_WatchedShaders;

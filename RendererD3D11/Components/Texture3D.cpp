@@ -240,10 +240,8 @@ void	Texture3D::RemoveFromLastAssignedSlots() const
 }
 
 // UAV setting
-void	Texture3D::SetCSUAV( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11UnorderedAccessView* _pView ) const
+void	Texture3D::SetCSUAV( int _SlotIndex, ID3D11UnorderedAccessView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
-
 	_pView = _pView != NULL ? _pView : GetUAV( 0, 0, 0 );
 	UINT	InitialCount = -1;
 	m_Device.DXContext().CSSetUnorderedAccessViews( _SlotIndex, 1, &_pView, &InitialCount );

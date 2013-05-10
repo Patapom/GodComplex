@@ -88,6 +88,28 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, con
 #endif
 }
 
+ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, ID3DBlob* _pCS )
+	: Component( _Device )
+	, m_pCS( NULL )
+	, m_pShaderPath( NULL )
+	, m_pIncludeOverride( NULL )
+	, m_bHasErrors( false )
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
+	, m_LastShaderModificationTime( 0 )
+#endif
+#ifdef COMPUTE_SHADER_COMPILE_THREADED
+	, m_hCompileThread( 0 )
+#endif
+{
+#ifdef DIRECTX10
+	ASSERT( false, "You can't use Compute Shaders if you define DIRECTX10!" );
+#endif
+
+	ASSERT( _pCS != NULL, "You can't provide a NULL CS blob!" );
+
+	CompileShaders( NULL, _pCS );
+}
+
 ComputeShader::~ComputeShader()
 {
 #ifdef COMPUTE_SHADER_COMPILE_THREADED
@@ -109,15 +131,15 @@ ComputeShader::~ComputeShader()
 	if ( m_pMacros != NULL ) { delete[] m_pMacros; m_pMacros = NULL; }
 }
 
-void	ComputeShader::CompileShaders( const char* _pShaderCode )
+void	ComputeShader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pCS )
 {
 	// Release any pre-existing shader
 	if ( m_pCS != NULL )	m_pCS->Release();
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the compute shader
-	ASSERT( m_pEntryPointCS != NULL, "Invalid ComputeShader entry point!" );
-	ID3DBlob*   pShader = Material::CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointCS, "cs_5_0", this, true );
+	ASSERT( _pCS != NULL || m_pEntryPointCS != NULL, "Invalid ComputeShader entry point!" );
+	ID3DBlob*   pShader = _pCS == NULL ? Material::CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointCS, "cs_5_0", this, true ) : _pCS;
 	if ( pShader != NULL )
 	{
 		Check( m_Device.DXDevice().CreateComputeShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pCS ) );
@@ -655,3 +677,21 @@ time_t		ComputeShader::GetFileModTime( const char* _pFileName )
 }
 
 #endif	// #if defined(_DEBUG) || !defined(GODCOMPLEX)
+
+ComputeShader*	ComputeShader::CreateFromBinaryBlob( Device& _Device, const char* _pShaderFileName, const char* _pEntryPoint )
+{
+#ifndef SAVE_SHADER_BLOB_TO
+	ASSERT( false, "You can't use that in RELEASE or if binary blobs are not available!" );
+#else
+	ASSERT( _pEntryPoint != NULL, "You must provide a valid entry point!" );
+
+	ID3DBlob*	pCS = Material::LoadBinaryBlob( _pShaderFileName, _pEntryPoint );
+
+	ComputeShader*	pResult = new ComputeShader( _Device, _pShaderFileName, pCS );
+
+// No need: the blob was released by the constructor!
+//	pCS->Release();
+
+	return pResult;
+#endif
+}
