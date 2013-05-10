@@ -9,6 +9,11 @@ Texture2D		_TexDebug0	: register(t10);
 Texture2D		_TexDebug1	: register(t11);
 Texture2DArray	_TexDebug2	: register(t12);
 
+Texture2D		_TexIrradianceDelta : register(t13);			// deltaE
+Texture3D		_TexScatteringDelta_Rayleigh : register(t14);	// deltaSR
+Texture3D		_TexScatteringDelta_Mie : register(t15);		// deltaSM
+Texture3D		_TexScatteringDelta : register(t16);			// deltaJ
+
 //[
 cbuffer	cbObject	: register( b10 )
 {

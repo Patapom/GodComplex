@@ -8,41 +8,41 @@ EffectScene::EffectScene( Device& _Device, Scene& _Scene, Primitive& _ScreenQuad
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
-	CHECK_MATERIAL( m_pMatDepthPass = CreateMaterial( IDR_SHADER_SCENE_DEPTH_PASS, VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, NULL ), 1 );
-	CHECK_MATERIAL( m_pMatBuildLinearZ = CreateMaterial( IDR_SHADER_SCENE_BUILD_LINEARZ, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
-	CHECK_MATERIAL( m_pMatIndirectLighting = CreateMaterial( IDR_SHADER_SCENE_INDIRECT_LIGHTING, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
+	CHECK_MATERIAL( m_pMatDepthPass = CreateMaterial( IDR_SHADER_SCENE_DEPTH_PASS, "./Resources/Shaders/SceneDepthPass.hlsl", VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, NULL ), 1 );
+	CHECK_MATERIAL( m_pMatBuildLinearZ = CreateMaterial( IDR_SHADER_SCENE_BUILD_LINEARZ, "./Resources/Shaders/SceneBuildLinearZ.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
+	CHECK_MATERIAL( m_pMatIndirectLighting = CreateMaterial( IDR_SHADER_SCENE_INDIRECT_LIGHTING, "./Resources/Shaders/SceneIndirectLighting.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
 
 	// GBuffer
-	CHECK_MATERIAL( m_pMatFillGBuffer = CreateMaterial( IDR_SHADER_SCENE_FILL_GBUFFER, VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
+	CHECK_MATERIAL( m_pMatFillGBuffer = CreateMaterial( IDR_SHADER_SCENE_FILL_GBUFFER, "./Resources/Shaders/SceneFillGBuffer.hlsl", VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
 
 	D3D_SHADER_MACRO	pMacrosGBufferBackFaces[] = {
 		{ "RENDER_BACK_FACES", "1" },
 		{ NULL,	NULL }
 	};
-	CHECK_MATERIAL( m_pMatFillGBufferBackFaces = CreateMaterial( IDR_SHADER_SCENE_FILL_GBUFFER, VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS", pMacrosGBufferBackFaces ), 5 );
+	CHECK_MATERIAL( m_pMatFillGBufferBackFaces = CreateMaterial( IDR_SHADER_SCENE_FILL_GBUFFER, "./Resources/Shaders/SceneFillGBuffer.hlsl", VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS", pMacrosGBufferBackFaces ), 5 );
 
 	// Downsampling
-	CHECK_MATERIAL( m_pMatDownSample = CreateMaterial( IDR_SHADER_SCENE_DOWNSAMPLE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
+	CHECK_MATERIAL( m_pMatDownSample = CreateMaterial( IDR_SHADER_SCENE_DOWNSAMPLE, "./Resources/Shaders/SceneDownSample.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
 
 	// Lighting
 	D3D_SHADER_MACRO	pMacrosDirectional[] = {
 		{ "LIGHT_TYPE", "0" },
 		{ NULL,	NULL }
 	};
-	CHECK_MATERIAL( m_pMatShading_Directional_StencilPass = CreateMaterial( IDR_SHADER_SCENE_SHADING_STENCIL, VertexFormatP3T2::DESCRIPTOR, "VS", NULL, NULL, pMacrosDirectional ), 7 );
-	CHECK_MATERIAL( m_pMatShading_Directional = CreateMaterial( IDR_SHADER_SCENE_SHADING, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosDirectional ), 8 );
+	CHECK_MATERIAL( m_pMatShading_Directional_StencilPass = CreateMaterial( IDR_SHADER_SCENE_SHADING_STENCIL, "./Resources/Shaders/SceneShadingStencil.hlsl", VertexFormatP3T2::DESCRIPTOR, "VS", NULL, NULL, pMacrosDirectional ), 7 );
+	CHECK_MATERIAL( m_pMatShading_Directional = CreateMaterial( IDR_SHADER_SCENE_SHADING, "./Resources/Shaders/SceneShading.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosDirectional ), 8 );
 	D3D_SHADER_MACRO	pMacrosPoint[] = {
 		{ "LIGHT_TYPE", "1" },
 		{ NULL,	NULL }
 	};
-	CHECK_MATERIAL( m_pMatShading_Point_StencilPass = CreateMaterial( IDR_SHADER_SCENE_SHADING_STENCIL, VertexFormatP3T2::DESCRIPTOR, "VS", NULL, NULL, pMacrosPoint ), 9 );
-	CHECK_MATERIAL( m_pMatShading_Point = CreateMaterial( IDR_SHADER_SCENE_SHADING, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosPoint ), 10 );
+	CHECK_MATERIAL( m_pMatShading_Point_StencilPass = CreateMaterial( IDR_SHADER_SCENE_SHADING_STENCIL, "./Resources/Shaders/SceneShadingStencil.hlsl", VertexFormatP3T2::DESCRIPTOR, "VS", NULL, NULL, pMacrosPoint ), 9 );
+	CHECK_MATERIAL( m_pMatShading_Point = CreateMaterial( IDR_SHADER_SCENE_SHADING, "./Resources/Shaders/SceneShading.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosPoint ), 10 );
 	D3D_SHADER_MACRO	pMacrosSpot[] = {
 		{ "LIGHT_TYPE", "2" },
 		{ NULL,	NULL }
 	};
-	CHECK_MATERIAL( m_pMatShading_Spot_StencilPass = CreateMaterial( IDR_SHADER_SCENE_SHADING_STENCIL, VertexFormatP3T2::DESCRIPTOR, "VS", NULL, NULL, pMacrosSpot ), 11 );
-	CHECK_MATERIAL( m_pMatShading_Spot = CreateMaterial( IDR_SHADER_SCENE_SHADING, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosSpot ), 12 );
+	CHECK_MATERIAL( m_pMatShading_Spot_StencilPass = CreateMaterial( IDR_SHADER_SCENE_SHADING_STENCIL, "./Resources/Shaders/SceneShadingStencil.hlsl", VertexFormatP3T2::DESCRIPTOR, "VS", NULL, NULL, pMacrosSpot ), 11 );
+	CHECK_MATERIAL( m_pMatShading_Spot = CreateMaterial( IDR_SHADER_SCENE_SHADING, "./Resources/Shaders/SceneShading.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosSpot ), 12 );
 
 
 	//////////////////////////////////////////////////////////////////////////

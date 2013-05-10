@@ -24,6 +24,7 @@
 
 
 // Define this to save the binary blobs for each shader (only works in DEBUG mode)
+// NOTE: in RELEASE, the blobs are embedded as resources and read from so they need to have been saved to
 #define SAVE_SHADER_BLOB_TO		"./Resources/Shaders/Binary/"
 
 #ifdef GODCOMPLEX
@@ -203,5 +204,6 @@ public:
 	// Call this every time you need to rebuild shaders whose code has changed
 	static void		WatchShadersModifications();
 	void			WatchShaderModifications();
+	void			ForceRecompile();	// Called externally by the IncludesManager if an include file was changed
 };
 

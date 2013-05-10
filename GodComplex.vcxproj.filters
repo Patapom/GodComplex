@@ -237,6 +237,9 @@
     <ClInclude Include="Utility\MemoryMappedFile.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\StructuredBuffer.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -363,6 +366,9 @@
     <ClCompile Include="Utility\MemoryMappedFile.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\StructuredBuffer.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib">
@@ -479,6 +485,9 @@
       <Filter>Resources\Shaders\DEBUG\Includes</Filter>
     </None>
     <None Include="Resources\Shaders\VolumetricTerrain.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmosphereCS.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
     </None>
   </ItemGroup>

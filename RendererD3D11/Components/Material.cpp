@@ -902,6 +902,11 @@ void		Material::RebuildShader()
 	Unlock();
 }
 
+void		Material::ForceRecompile()
+{
+	m_LastShaderModificationTime--;	// So we're sure it will be recompiled on next watch!
+}
+
 time_t		Material::GetFileModTime( const char* _pFileName )
 {	
 	struct _stat statInfo;

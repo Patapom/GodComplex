@@ -5,13 +5,6 @@
 
 class MemoryMappedFile
 {
-public:
-
-	class	IOnFileChanged
-	{
-		virtual void	OnMemoryMappedFileChanged( MemoryMappedFile& _File ) = 0;
-	};
-
 private:
 
 	HANDLE			m_hFile;

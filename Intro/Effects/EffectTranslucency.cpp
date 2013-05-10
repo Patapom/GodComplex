@@ -23,11 +23,11 @@ EffectTranslucency::EffectTranslucency( Texture2D& _RTTarget ) : m_ErrorCode( 0 
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
-	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_TRANSLUCENCY_DISPLAY, VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
-	CHECK_MATERIAL( m_pMatBuildZBuffer = CreateMaterial( IDR_SHADER_TRANSLUCENCY_BUILD_ZBUFFER, VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
+	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_TRANSLUCENCY_DISPLAY, "./Resources/Shaders/TranslucencyDisplay.hlsl", VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
+	CHECK_MATERIAL( m_pMatBuildZBuffer = CreateMaterial( IDR_SHADER_TRANSLUCENCY_BUILD_ZBUFFER, "./Resources/Shaders/TranslucencyBuildZBuffer.hlsl", VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
 
 	D3D_SHADER_MACRO	pMacros[2] = { { "TARGET_SIZE", "128" }, { NULL, NULL } };
-	CHECK_MATERIAL( m_pMatDiffusion = CreateMaterial( IDR_SHADER_TRANSLUCENCY_DIFFUSION, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacros ), 3 );
+	CHECK_MATERIAL( m_pMatDiffusion = CreateMaterial( IDR_SHADER_TRANSLUCENCY_DIFFUSION, "./Resources/Shaders/TranslucencyDiffusion.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacros ), 3 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build some sphere primitives

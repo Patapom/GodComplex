@@ -29,8 +29,10 @@ private:	// FIELDS
 	// Cached resource views
 	mutable DictionaryU32			m_CachedShaderViews;
 	mutable DictionaryU32			m_CachedTargetViews;
+	mutable DictionaryU32			m_CachedUAVs;
 	mutable ID3D11DepthStencilView*	m_pCachedDepthStencilView;
 	mutable int						m_LastAssignedSlots[6];
+	mutable int						m_LastAssignedSlotsUAV;
 	D3D11_MAPPED_SUBRESOURCE		m_LockedResource;
 
 
@@ -54,6 +56,7 @@ public:	 // METHODS
 
 	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart=0, int _MipLevelsCount=0, int _ArrayStart=0, int _ArraySize=1 ) const;
 	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=0 ) const;
+	ID3D11UnorderedAccessView*	GetUAV(  int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=0 ) const;
 	ID3D11DepthStencilView*		GetDepthStencilView() const;
 
 	// Uploads the texture to the shader
@@ -63,7 +66,12 @@ public:	 // METHODS
 	void		SetDS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
 	void		SetGS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
 	void		SetPS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
+	void		SetCS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
 	void		RemoveFromLastAssignedSlots() const;
+
+	// Upload the texture as a UAV for a compute shader
+	void		SetCSUAV( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11UnorderedAccessView* _pView=NULL ) const;
+	void		RemoveFromLastAssignedSlotUAV() const;
 
 	// Used by the Device for the default backbuffer
 	Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFormatDescriptor& _Format );

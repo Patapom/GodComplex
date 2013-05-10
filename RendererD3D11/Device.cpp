@@ -2,6 +2,7 @@
 #include "Components/Component.h"
 #include "Components/Texture2D.h"
 #include "Components/Texture3D.h"
+#include "Components/StructuredBuffer.h"
 #include "Components/States.h"
 
 Device::Device()

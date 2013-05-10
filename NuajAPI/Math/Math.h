@@ -36,6 +36,7 @@ static const float			INV2PI = 0.15915494309189533576888376337251f;		// 1/(2PI)
 static const float			INV4PI = 0.07957747154594766788444188168626f;		// 1/(4PI)
 static const float			FLOAT32_MAX = 3.402823466e+38f;
 static const float			GOLDEN_RATIO = 1.6180339887498948482045868343656f;	// Phi = (1+sqrt(5)) / 2
+static const float			ALMOST_EPSILON = 1e-6f;
 
 #define MAX_FLOAT			3.40282e+038f
 #define NUAJRAD2DEG( a )	(57.295779513082320876798154814105f * (a))
@@ -47,6 +48,9 @@ template<class T> inline T	CLAMP( const T& x, const T& min, const T& max )	{ ret
 template<class T> inline T	LERP( const T& a, const T& b, float t )			{ return a * (1.0f - t) + b * t; }
 template<class T> inline T	SATURATE( const T& x )							{ return x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x); }
 static U8					FLOAT2BYTE( float f )							{ return U8( CLAMP( 255.0f * f, 0.0f, 255.0f ) ); }
+
+static bool					ALMOST( float a, float b )						{ return abs( a - b ) < ALMOST_EPSILON; }
+static bool					ALMOST( double a, double b )					{ return abs( a - b ) < ALMOST_EPSILON; }
 
 
 // Float2 used for point & vector operations
@@ -70,6 +74,7 @@ public:
 	NjFloat2	Max( const NjFloat2& b ) const	{ return NjFloat2( MAX( x, b.x ), MAX( y, b.y ) ); }
 	float		Min() const						{ return MIN( x, y ); }
 	float		Max() const						{ return MAX( x, y ); }
+	bool		Almost( const NjFloat2& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ); }
 
 	NjFloat2	operator-( const NjFloat2& v ) const	{ return NjFloat2( x-v.x, y-v.y ); }
 	NjFloat2	operator+( const NjFloat2& v ) const	{ return NjFloat2( x+v.x, y+v.y ); }
@@ -111,6 +116,7 @@ public:
 	NjFloat3	Max( const NjFloat3& b ) const	{ return NjFloat3( MAX( x, b.x ), MAX( y, b.y ), MAX( z, b.z ) ); }
 	float		Min() const						{ return MIN( MIN( x, y ), z ); }
 	float		Max() const						{ return MAX( MAX( x, y ), z ); }
+	bool		Almost( const NjFloat3& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ); }
 
 	NjFloat3	operator-( const NjFloat3& v ) const	{ return NjFloat3( x-v.x, y-v.y, z-v.z ); }
 	NjFloat3	operator+( const NjFloat3& v ) const	{ return NjFloat3( x+v.x, y+v.y, z+v.z ); }
@@ -156,6 +162,7 @@ public:
 	NjFloat4	Max( const NjFloat4& b ) const	{ return NjFloat4( MAX( x, b.x ), MAX( y, b.y ), MAX( z, b.z ), MAX( w, b.w ) ); }
 	float		Min() const						{ return MIN( MIN( MIN( x, y ), z), w ); }
 	float		Max() const						{ return MAX( MAX( MAX( x, y ), z), w ); }
+	bool		Almost( const NjFloat4& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ) && ALMOST( w, b.w ); }
 
 	NjFloat4	operator-()								{ return NjFloat4( -x, -y, -z, -w ); }
 				operator NjFloat3()						{ return NjFloat3( x, y, z ); }

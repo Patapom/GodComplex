@@ -13,17 +13,17 @@ static const float	ATMOSPHERE_RADIUS_KM = GROUND_RADIUS_KM + ATMOSPHERE_THICKNES
 
 static const float3	EARTH_CENTER_KM = float3( 0.0, -GROUND_RADIUS_KM, 0.0 );			// Far below us!
 
-static const float	AVERAGE_GROUND_REFLECTANCE = 0.1;
-
-// Rayleigh Scattering
-static const float	HREF_RAYLEIGH = 8.0;
-static const float3	SIGMA_SCATTERING_RAYLEIGH = 1.0 * float3( 0.0058, 0.0135, 0.0331 );		// For lambdas (680,550,440) nm
-
-// Mie Scattering + Extinction
-static const float	HREF_MIE = 1.2;
-static const float	SIGMA_SCATTERING_MIE = 0.004;
-static const float	SIGMA_EXTINCTION_MIE = SIGMA_SCATTERING_MIE / 0.9;
-static const float	MIE_ANISOTROPY = 0.76;
+// static const float	AVERAGE_GROUND_REFLECTANCE = 0.1;
+// 
+// // Rayleigh Scattering
+// static const float	HREF_RAYLEIGH = 8.0;
+static const float3	SIGMA_SCATTERING_RAYLEIGH = float3( 0.0058, 0.0135, 0.0331 );		// For lambdas (680,550,440) nm
+// 
+// // Mie Scattering + Extinction
+// static const float	HREF_MIE = 1.2;
+// static const float	SIGMA_SCATTERING_MIE = 0.004;
+// static const float	SIGMA_EXTINCTION_MIE = SIGMA_SCATTERING_MIE / 0.9;
+// static const float	MIE_ANISOTROPY = 0.76;
 
 
 // 4D table resolution
@@ -46,7 +46,6 @@ cbuffer	cbAtmosphere	: register( b7 )
 	float		_SunIntensity;
 
 	float2		_AirParams;			// X=Scattering Factor, Y=Reference Altitude (km)
-	float		_AverageGroundReflectance;
 	float		_GodraysStrength;
 
 	float4		_FogParams;			// X=Scattering Coeff, Y=Extinction Coeff, Z=Reference Altitude (km), W=Anisotropy
@@ -55,11 +54,6 @@ cbuffer	cbAtmosphere	: register( b7 )
 Texture2D	_TexTransmittance : register(t7);
 Texture3D	_TexScattering : register(t8);
 Texture2D	_TexIrradiance : register(t9);
-
-Texture2D	_TexIrradianceDelta : register(t13);			// deltaE
-Texture3D	_TexScatteringDelta_Rayleigh : register(t14);	// deltaSR
-Texture3D	_TexScatteringDelta_Mie : register(t15);		// deltaSM
-Texture3D	_TexScatteringDelta : register(t16);			// deltaJ
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -218,59 +212,64 @@ float3	GetIrradiance( Texture2D _TexIrradiance, float _AltitudeKm, float _CosThe
 	return _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 }
 
+float3	GetIrradiance( float _AltitudeKm, float _CosThetaSun )
+{
+	return GetIrradiance( _TexIrradiance, _AltitudeKm, _CosThetaSun );
+}
+
 // Gets the zenith/view angle (cos theta), zenith/Sun angle (cos theta Sun) and view/Sun angle (cos gamma) from a 2D parameter
 #define	INSCATTER_NON_LINEAR_VIEW
 #define	INSCATTER_NON_LINEAR_VIEW_POM	// Use my "formula" instead of theirs
 #define	INSCATTER_NON_LINEAR_SUN
-void GetAnglesFrom4D( float2 _UV, float3 _dUV, float _AltitudeKm, float4 dhdH, out float _CosThetaView, out float _CosThetaSun, out float _CosGamma )
-{
-	_UV -= 0.5 * _dUV.xy;	// Remove the half pixel offset
-
-#ifdef INSCATTER_NON_LINEAR_VIEW
-
-#ifdef INSCATTER_NON_LINEAR_VIEW_POM
-
-	_CosThetaView = abs( 2.0 * _UV.y - 1.0 );
-	_CosThetaView *= (_UV.y < 0.5 ? -1.0 : +1.0) * _CosThetaView;	// Squared progression for more precision near horizon
-
-#else
-
-	float r = GROUND_RADIUS_KM + _AltitudeKm;
-	if ( _UV.y < 0.5 )
-	{	// Viewing toward the sky
-		float	d = 1.0 - 2.0 * _UV.y;
-				d = min( max( dhdH.z, d * dhdH.w ), dhdH.w * 0.999 );
-
-		_CosThetaView = (GROUND_RADIUS_KM * GROUND_RADIUS_KM - r * r - d * d) / (2.0 * r * d);
-		_CosThetaView = min( _CosThetaView, -sqrt( 1.0 - (GROUND_RADIUS_KM / r) * (GROUND_RADIUS_KM / r) ) - 0.001 );
-	}
-	else
-	{	// Viewing toward the ground
-		float	d = 2.0 * (_UV.y - 0.5);
-				d = min( max( dhdH.x, d * dhdH.y ), dhdH.y * 0.999 );
-
-		_CosThetaView = (ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - r * r - d * d) / (2.0 * r * d);
-	}
-#endif	// POM?
-
-#else
-	_CosThetaView = lerp( -1.0, 1.0, _UV.y );
-#endif
-
-#ifdef INSCATTER_NON_LINEAR_SUN
-	_CosThetaSun = fmod( _UV.x, MODULO_U ) / MODULO_U;
-
-	// paper formula
-	//_CosThetaSun = -(0.6 + log(1.0 - _CosThetaSun * (1.0 -  exp(-3.6)))) / 3.0;
-
-	// better formula
-	_CosThetaSun = tan( (2.0 * _CosThetaSun - 1.0 + 0.26) * 1.1 ) * 0.18692904279186995490534690217449;	// / tan( 1.26 * 1.1 );
-#else
-	_CosThetaSun = lerp( -0.2, 1.0, fmod( _UV.x, MODULO_U ) / MODULO_U );
-#endif
-
-	_CosGamma = lerp( -1.0, 1.0, floor( _UV.x / MODULO_U ) / (RESOLUTION_COS_THETA_SUN-1) );
-}
+// void GetAnglesFrom4D( float2 _UV, float3 _dUV, float _AltitudeKm, float4 dhdH, out float _CosThetaView, out float _CosThetaSun, out float _CosGamma )
+// {
+// 	_UV -= 0.5 * _dUV.xy;	// Remove the half pixel offset
+// 
+// #ifdef INSCATTER_NON_LINEAR_VIEW
+// 
+// #ifdef INSCATTER_NON_LINEAR_VIEW_POM
+// 
+// 	_CosThetaView = abs( 2.0 * _UV.y - 1.0 );
+// 	_CosThetaView *= (_UV.y < 0.5 ? -1.0 : +1.0) * _CosThetaView;	// Squared progression for more precision near horizon
+// 
+// #else	// !POM?
+// 
+// 	float r = GROUND_RADIUS_KM + _AltitudeKm;
+// 	if ( _UV.y < 0.5 )
+// 	{	// Viewing toward the sky
+// 		float	d = 1.0 - 2.0 * _UV.y;
+// 				d = min( max( dhdH.z, d * dhdH.w ), dhdH.w * 0.999 );
+// 
+// 		_CosThetaView = (GROUND_RADIUS_KM * GROUND_RADIUS_KM - r * r - d * d) / (2.0 * r * d);
+// 		_CosThetaView = min( _CosThetaView, -sqrt( 1.0 - (GROUND_RADIUS_KM / r) * (GROUND_RADIUS_KM / r) ) - 0.001 );
+// 	}
+// 	else
+// 	{	// Viewing toward the ground
+// 		float	d = 2.0 * (_UV.y - 0.5);
+// 				d = min( max( dhdH.x, d * dhdH.y ), dhdH.y * 0.999 );
+// 
+// 		_CosThetaView = (ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - r * r - d * d) / (2.0 * r * d);
+// 	}
+// #endif	// POM?
+// 
+// #else
+// 	_CosThetaView = lerp( -1.0, 1.0, _UV.y );
+// #endif
+// 
+// #ifdef INSCATTER_NON_LINEAR_SUN
+// 	_CosThetaSun = fmod( _UV.x, MODULO_U ) / MODULO_U;
+// 
+// 	// paper formula
+// 	//_CosThetaSun = -(0.6 + log(1.0 - _CosThetaSun * (1.0 -  exp(-3.6)))) / 3.0;
+// 
+// 	// better formula
+// 	_CosThetaSun = tan( (2.0 * _CosThetaSun - 1.0 + 0.26) * 1.1 ) * 0.18692904279186995490534690217449;	// / tan( 1.26 * 1.1 );
+// #else
+// 	_CosThetaSun = lerp( -0.2, 1.0, fmod( _UV.x, MODULO_U ) / MODULO_U );
+// #endif
+// 
+// 	_CosGamma = lerp( -1.0, 1.0, floor( _UV.x / MODULO_U ) / (RESOLUTION_COS_THETA_SUN-1) );
+// }
 
 // Samples the scattering table from 4 parameters
 float4	Sample4DScatteringTable( Texture3D _TexScattering, float _AltitudeKm, float _CosThetaView, float _CosThetaSun, float _CosGamma )
@@ -288,9 +287,7 @@ float4	Sample4DScatteringTable( Texture3D _TexScattering, float _AltitudeKm, flo
  	float	uCosThetaView = 0.5 * (_CosThetaView < 0.0 ? 1.0 - sqrt( abs(_CosThetaView) ) : 1.0 + sqrt( saturate(_CosThetaView) ));
 			uCosThetaView = 0.5 / RESOLUTION_COS_THETA + uCosThetaView * NORMALIZED_SIZE_V;
 
-//	float	uCosThetaView = 0.5 / RESOLUTION_COS_THETA + 0.5 * (_CosThetaView + 1.0) * NORMALIZED_SIZE_V;
-
-#else	// POM?
+#else	// !POM?
 // Note that this code produces a warning about floating point precision because of the sqrt( H*H + delta )...
 	float	rmu = r * _CosThetaView;
 	float	delta = rmu * rmu - r * r + GROUND_RADIUS_KM * GROUND_RADIUS_KM;
