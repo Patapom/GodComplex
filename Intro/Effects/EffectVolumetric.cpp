@@ -36,6 +36,24 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 
 	//////////////////////////////////////////////////////////////////////////
 	// Pre-Compute multiple-scattering tables
+
+// I think it would be better to allocate [1] targets with the D3D11_BIND_UNORDERED_ACCESS flag and COPY the resource once it's been computed,
+// 	rather than exchanging pointers. I'm not sure the device won't consider targets with the UAV and RT and SRV flags slower??
+//
+// After testing: Performance doesn't seem to be affected at all...
+
+#define UAV	true
+//#define UAV	false
+
+	m_ppRTTransmittance[0] = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );				// transmittance (final)
+	m_ppRTTransmittance[1] = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );
+	m_ppRTIrradiance[0] = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );							// irradiance (final)
+	m_ppRTIrradiance[1] = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );
+	m_ppRTIrradiance[2] = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );
+	m_ppRTInScattering[0] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );	// inscatter (final)
+	m_ppRTInScattering[1] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );
+	m_ppRTInScattering[2] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );
+
 	PreComputeSkyTables();
 
 	InitUpdateSkyTables();
@@ -137,7 +155,7 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 		100.0f,		// float	SunIntensity;
 		1.0f,		// float	AirAmount;		// Simply a multiplier of the default value
 		0.004f,		// float	FogScattering;
-shouldn't it be /0.9?		0.004f,		// float	FogExtinction;
+		0.004f / 0.9f,		// float	FogExtinction;
 		8.0f,		// float	AirReferenceAltitudeKm;
 		1.2f,		// float	FogReferenceAltitudeKm;
 		0.76f,		// float	FogAnisotropy;
@@ -169,9 +187,9 @@ shouldn't it be /0.9?		0.004f,		// float	FogExtinction;
 		-0.707f,	// float	NoiseHiStrength;
 		1.0f,		// float	NoiseHiAnimSpeed;
 				// 	// Combined noise params
-		-0.05f,		// float	NoiseOffsetBottom;		// The noise offset to add when at the bottom altitude in the cloud
-		0.1f,		// float	NoiseOffsetMiddle;		// The noise offset to add when at the middle altitude in the cloud
-		0.2f,		// float	NoiseOffsetTop;			// The noise offset to add when at the top altitude in the cloud
+		-0.16f,		// float	NoiseOffsetBottom;		// The noise offset to add when at the bottom altitude in the cloud
+		0.01f,		// float	NoiseOffsetMiddle;		// The noise offset to add when at the middle altitude in the cloud
+		-0.16f,		// float	NoiseOffsetTop;			// The noise offset to add when at the top altitude in the cloud
 		1.0f,		// float	NoiseContrast;			// Final noise value is Noise' = pow( Contrast*(Noise+Offset), Gamma )
 		0.5f,		// float	NoiseGamma;
 				// 	// Final shaping params
@@ -373,31 +391,6 @@ float	t = 2*0.25f * _Time;
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// 0] Terrain shadow map
-	m_pRTTerrainShadow->RemoveFromLastAssignedSlots();
-
-	USING_MATERIAL_START( *m_pMatTerrainShadow )
-
-		m_Device.ClearDepthStencil( *m_pRTTerrainShadow, 1, 0 );
-
-		m_Device.SetRenderTargets( TERRAIN_SHADOW_MAP_SIZE, TERRAIN_SHADOW_MAP_SIZE, 0, NULL, m_pRTTerrainShadow->GetDepthStencilView() );
-	 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
-
-		m_pCB_Object->m.Local2View = m_Terrain2World;
-		m_pCB_Object->m.View2Proj = m_pCB_Shadow->m.World2TerrainShadow;
-		m_pCB_Object->m.dUV = m_pRTTerrainShadow->GetdUV();
-		m_pCB_Object->UpdateData();
-
-		m_pPrimTerrain->Render( M );
-
-	USING_MATERIAL_END
-
-#ifdef SHOW_TERRAIN
-	m_Device.RemoveRenderTargets();
-	m_pRTTerrainShadow->SetPS( 6, true );
-#endif
-
-	//////////////////////////////////////////////////////////////////////////
 	// 1] Compute the transmittance function map
 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
 
@@ -454,14 +447,45 @@ float	t = 2*0.25f * _Time;
 
 	PERF_END_EVENT();
 
+
+	//////////////////////////////////////////////////////////////////////////
+	// 2] Terrain shadow map
+#ifdef SHOW_TERRAIN
+	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFF8000 ), L"Compute Terrain Shadow" );
+
+	m_pRTTerrainShadow->RemoveFromLastAssignedSlots();
+
+	USING_MATERIAL_START( *m_pMatTerrainShadow )
+
+		m_Device.ClearDepthStencil( *m_pRTTerrainShadow, 1, 0 );
+
+		m_Device.SetRenderTargets( TERRAIN_SHADOW_MAP_SIZE, TERRAIN_SHADOW_MAP_SIZE, 0, NULL, m_pRTTerrainShadow->GetDepthStencilView() );
+	 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+
+		m_pCB_Object->m.Local2View = m_Terrain2World;
+		m_pCB_Object->m.View2Proj = m_pCB_Shadow->m.World2TerrainShadow;
+		m_pCB_Object->m.dUV = m_pRTTerrainShadow->GetdUV();
+		m_pCB_Object->UpdateData();
+
+		m_pPrimTerrain->Render( M );
+
+	USING_MATERIAL_END
+
+//#define	INCLUDE_TERRAIN_SHADOWING_IN_TFM	// The resolution is poor anyway, and that adds a dependency on this map for all DrawCalls...
+
 	m_Device.RemoveRenderTargets();
-	m_pRTTransmittanceMap->SetPS( 5, true );
+#ifdef INCLUDE_TERRAIN_SHADOWING_IN_TFM
+	m_pRTTerrainShadow->SetPS( 6, true );
+#endif
+
+	PERF_END_EVENT();
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// 2] Show terrain
-#ifdef SHOW_TERRAIN
- 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF000000 ), L"Render Terrain" );
+	// 3] Show terrain
+	m_pRTTransmittanceMap->SetPS( 5, true );	// Now we need the TFM!
+
+ 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFFFF00 ), L"Render Terrain" );
 
 	USING_MATERIAL_START( *m_pMatTerrain )
 
@@ -478,14 +502,16 @@ float	t = 2*0.25f * _Time;
 	USING_MATERIAL_END
 
 	PERF_END_EVENT();
+#else
+
+	m_pRTTransmittanceMap->SetPS( 5, true );	// Now we need the TFM!
+
 #endif
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// 3] Render the actual volume
-
-	// 3.1] Render front & back depths
-	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF800000 ), L"Render Volume Z" );
+	// 4] Render the cloud box's front & back
+	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF800000 ), L"Render Volume Front&Back" );
 
 	m_Device.ClearRenderTarget( *m_pRTRenderZ, NjFloat4( 0.0f, -1e4f, 0.0f, 0.0f ) );
 
@@ -512,13 +538,14 @@ float	t = 2*0.25f * _Time;
 
 	PERF_END_EVENT();
 
-	// 3.2] Render the actual volume
-	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFC00000 ), L"Render Volume" );
+
+	//////////////////////////////////////////////////////////////////////////
+	// 5] Render the actual volume
+	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFF0000 ), L"Render Volume" );
 
 	USING_MATERIAL_START( *m_pMatDisplay )
 
 		m_Device.ClearRenderTarget( *m_pRTRender, NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) );
-//		m_Device.SetRenderTarget( *m_pRTRender );
 
 		ID3D11RenderTargetView*	ppViews[] = {
 			m_pRTRender->GetTargetView( 0, 0, 1 ),
@@ -530,6 +557,13 @@ float	t = 2*0.25f * _Time;
 		m_pRTRenderZ->SetPS( 10 );
 		m_Device.DefaultDepthStencil().SetPS( 11 );
 
+
+#ifdef SHOW_TERRAIN
+#ifndef INCLUDE_TERRAIN_SHADOWING_IN_TFM
+	m_pRTTerrainShadow->SetPS( 6, true );	// We need it now for godrays
+#endif
+#endif
+
 		m_pCB_Splat->m.dUV = m_pRTRender->GetdUV();
 		m_pCB_Splat->UpdateData();
 
@@ -539,9 +573,10 @@ float	t = 2*0.25f * _Time;
 
 	PERF_END_EVENT();
 
+
 	//////////////////////////////////////////////////////////////////////////
-	// 4] Combine with screen
-	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFF0000 ), L"Render TFM Z" );
+	// 6] Combine with screen
+	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF0000FF ), L"Combine" );
 
 	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget(), NULL );
 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
@@ -1675,13 +1710,6 @@ struct	CBPreCompute
 
 void	EffectVolumetric::PreComputeSkyTables()
 {
-	m_ppRTTransmittance[0] = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );				// transmittance (final)
-	m_ppRTTransmittance[1] = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
-	m_ppRTIrradiance[0] = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );						// irradiance (final)
-	m_ppRTIrradiance[1] = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
-	m_ppRTInScattering[0] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );	// inscatter (final)
-	m_ppRTInScattering[1] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
-
 #ifdef BUILD_SKY_SCATTERING
 
 	Texture2D*	pRTDeltaIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );			// deltaE (temp)
@@ -1733,8 +1761,8 @@ void	EffectVolumetric::PreComputeSkyTables()
 
 	// Assign to slot 7
 	m_Device.RemoveRenderTargets();
-	m_pRTTransmittance->SetVS( 7, true );
-	m_pRTTransmittance->SetPS( 7, true );
+	m_ppRTTransmittance[0]->SetVS( 7, true );
+	m_ppRTTransmittance[0]->SetPS( 7, true );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Computes irradiance texture deltaE (line 2 in algorithm 4.1)
@@ -1955,8 +1983,10 @@ void	EffectVolumetric::PreComputeSkyTables()
 
 void	EffectVolumetric::FreeSkyTables()
 {
+	delete m_ppRTInScattering[2];
 	delete m_ppRTInScattering[1];
 	delete m_ppRTInScattering[0];
+	delete m_ppRTIrradiance[2];
 	delete m_ppRTIrradiance[1];
 	delete m_ppRTIrradiance[0];
 	delete m_ppRTTransmittance[1];
@@ -2028,23 +2058,49 @@ namespace
 	U32					m_pStageGroupsCountPerFrame[3*STAGES_COUNT] = {
 		1,	1,	1,	// #1 Transmittance table
 		1,	1,	1,	// #2 Irradiance table (single scattering)
-		1,	1,	1,	// #3 Scattering table (single scattering)
+//		4,	4,	1,	// #3 Scattering table (single scattering)
+		16,	8,	1,	// #3 Scattering table (single scattering)
 
 		// Multi-pass
-		1,	1,	1,	// #4 Delta-Scattering table (used to compute actual irradiance & multiple-scattering at current order)
+//		4,	4,	1,	// #4 Delta-Scattering table (used to compute actual irradiance & multiple-scattering at current order)
+		16,	8,	1,	// #4 Delta-Scattering table (used to compute actual irradiance & multiple-scattering at current order)
 		1,	1,	1,	// #5 Irradiance table (multiple scattering)
-		1,	1,	1,	// #6 Multiple Scattering table
+//		4,	4,	1,	// #6 Multiple Scattering table
+		16,	8,	1,	// #6 Multiple Scattering table
 	};
 
 	U32					m_pStagePassesCount[3*STAGES_COUNT];	// Filled automatically in InitUpdateSkyTables(), derived from the 2 tables above
+
+#define ENABLE_PROFILING
+#ifdef ENABLE_PROFILING
+	// Profiling
+	double				m_pStageTimingCurrent[STAGES_COUNT];
+	double				m_pStageTimingMin[STAGES_COUNT];
+	double				m_pStageTimingMax[STAGES_COUNT];
+	int					m_pStageTimingCount[STAGES_COUNT];
+	double				m_pStageTimingTotal[STAGES_COUNT];
+	double				m_pStageTimingAvg[STAGES_COUNT];
+
+	void	UpdateStageProfiling( int _StageIndex )
+	{
+		m_pStageTimingMin[_StageIndex] = MIN( m_pStageTimingMin[_StageIndex], m_pStageTimingCurrent[_StageIndex] );
+		m_pStageTimingMax[_StageIndex] = MAX( m_pStageTimingMax[_StageIndex], m_pStageTimingCurrent[_StageIndex] );
+		m_pStageTimingTotal[_StageIndex] += m_pStageTimingCurrent[_StageIndex];
+		m_pStageTimingCount[_StageIndex]++;
+	}
+	void	FinalizeStageProfiling( int _StageIndex )
+	{
+		m_pStageTimingAvg[_StageIndex] = m_pStageTimingTotal[_StageIndex] / MAX( 1, m_pStageTimingCount[_StageIndex] );
+	}
+#endif
 }
 
 void	EffectVolumetric::InitUpdateSkyTables()
 {
-	m_pRTDeltaIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );								// deltaE (temp)
-	m_pRTDeltaScatteringRayleigh = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );	// deltaSR (temp)
-	m_pRTDeltaScatteringMie = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );			// deltaSM (temp)
-	m_pRTDeltaScattering = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );			// deltaJ (temp)
+	m_pRTDeltaIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );							// deltaE (temp)
+	m_pRTDeltaScatteringRayleigh = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );	// deltaSR (temp)
+	m_pRTDeltaScatteringMie = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );		// deltaSM (temp)
+	m_pRTDeltaScattering = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );			// deltaJ (temp)
 
 	m_pCB_PreComputeSky = new CB<CBPreComputeCS>( m_Device, 10 );
 	// Clear pass indices (needs to be done only once as each stage will reset it to 0 at its end)
@@ -2059,7 +2115,8 @@ void	EffectVolumetric::InitUpdateSkyTables()
 		{
 			int	GroupsX = m_pStageGroupsCountPerFrame[3*StageIndex+0];
 			int	CoveredSizeX = GroupsX * THREADS_COUNT_X;
-			int	PassesCountX = m_pStageTargetSizes[3*StageIndex+0] / CoveredSizeX;
+			int	SizeX = m_pStageTargetSizes[3*StageIndex+0];
+			int	PassesCountX = SizeX / CoveredSizeX;
 			ASSERT( (m_pStageTargetSizes[3*StageIndex+0] % CoveredSizeX) == 0, "GroupsCountPerFrameX * THREADS_COUNT_X yields a non-integer amount of passes!" );
 			m_pStagePassesCount[3*StageIndex+0] = PassesCountX;
 		}
@@ -2067,8 +2124,9 @@ void	EffectVolumetric::InitUpdateSkyTables()
 		{
 			int	GroupsY = m_pStageGroupsCountPerFrame[3*StageIndex+1];
 			int	CoveredSizeY = GroupsY * THREADS_COUNT_Y;
-			int	PassesCountY = m_pStageTargetSizes[3*StageIndex+1] / CoveredSizeY;
-			ASSERT( (m_pStageTargetSizes[3*StageIndex+1] % CoveredSizeY) == 0, "GroupsCountPerFrameY * THREADS_COUNT_Y yields a non-integer amount of passes!" );
+			int	SizeY = m_pStageTargetSizes[3*StageIndex+1];
+			int	PassesCountY = SizeY / CoveredSizeY;
+			ASSERT( (SizeY % CoveredSizeY) == 0, "GroupsCountPerFrameY * THREADS_COUNT_Y yields a non-integer amount of passes!" );
 			m_pStagePassesCount[3*StageIndex+1] = PassesCountY;
 		}
 		
@@ -2076,8 +2134,9 @@ void	EffectVolumetric::InitUpdateSkyTables()
 		{	// 3D Target
 			int	GroupsZ = m_pStageGroupsCountPerFrame[3*StageIndex+2];
 			int	CoveredSizeZ = GroupsZ * THREADS_COUNT_Z;
-			int	PassesCountZ = m_pStageTargetSizes[3*StageIndex+2] / CoveredSizeZ;
-			ASSERT( (m_pStageTargetSizes[3*StageIndex+2] % CoveredSizeZ) == 0, "GroupsCountPerFrameZ * THREADS_COUNT_Z yields a non-integer amount of passes!" );
+			int	SizeZ = m_pStageTargetSizes[3*StageIndex+2];
+			int	PassesCountZ = SizeZ / CoveredSizeZ;
+			ASSERT( (SizeZ % CoveredSizeZ) == 0, "GroupsCountPerFrameZ * THREADS_COUNT_Z yields a non-integer amount of passes!" );
 			m_pStagePassesCount[3*StageIndex+2] = PassesCountZ;
 		}
 		else
@@ -2098,6 +2157,7 @@ void	EffectVolumetric::InitUpdateSkyTables()
 	CHECK_MATERIAL( m_pCSAccumulateIrradiance = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"AccumulateIrradiance" ), 17 );				// copyIrradiance
 	CHECK_MATERIAL( m_pCSAccumulateInScattering = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"AccumulateInScattering" ), 18 );			// copyInscatterN
 #else
+	// Reload from binary blobs
 	CHECK_MATERIAL( m_pCSComputeTransmittance = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"PreComputeTransmittance" ), 10 );
 	CHECK_MATERIAL( m_pCSComputeIrradiance_Single = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Single" ), 11 );
 	CHECK_MATERIAL( m_pCSComputeIrradiance_Delta = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Delta" ), 12 );
@@ -2142,10 +2202,22 @@ void	EffectVolumetric::InitStage( int _StageIndex )
 	m_pCB_PreComputeSky->m._GroupsCountX = m_pStageGroupsCountPerFrame[3*_StageIndex+0];
 	m_pCB_PreComputeSky->m._GroupsCountY = m_pStageGroupsCountPerFrame[3*_StageIndex+1];
 	m_pCB_PreComputeSky->m._GroupsCountZ = m_pStageGroupsCountPerFrame[3*_StageIndex+2];
+
+#ifdef ENABLE_PROFILING
+	m_pStageTimingMin[_StageIndex] = MAX_FLOAT;
+	m_pStageTimingMax[_StageIndex] = 0.0;
+	m_pStageTimingCount[_StageIndex] = 0;
+	m_pStageTimingTotal[_StageIndex] = 0.0;
+	m_pStageTimingAvg[_StageIndex] = 0.0;
+#endif
 }
 
 bool	EffectVolumetric::IncreaseStagePass( int _StageIndex )
 {
+#ifdef ENABLE_PROFILING
+	UpdateStageProfiling( _StageIndex );
+#endif
+
 	// Increase pass indices
 	U32	PassesCountX = m_pStagePassesCount[3*_StageIndex+0];
 	U32	PassesCountY = m_pStagePassesCount[3*_StageIndex+1];
@@ -2160,9 +2232,14 @@ bool	EffectVolumetric::IncreaseStagePass( int _StageIndex )
 		{	// Y slice is over, wrap Y and increase Z
 			m_pCB_PreComputeSky->m._PassIndexY = 0;
 			m_pCB_PreComputeSky->m._PassIndexZ++;
-			if ( m_pCB_PreComputeSky->m._PassIndexY >= PassesCountY )
+			if ( m_pCB_PreComputeSky->m._PassIndexZ >= PassesCountZ )
 			{	// Z box is over, wrap Z and return completed state
 				m_pCB_PreComputeSky->m._PassIndexZ = 0;
+
+#ifdef ENABLE_PROFILING
+				FinalizeStageProfiling( _StageIndex );
+#endif
+
 				return true;	// We're done!
 			}
 		}
@@ -2192,16 +2269,26 @@ bool	EffectVolumetric::IncreaseStagePass( int _StageIndex )
 //
 void	EffectVolumetric::UpdateSkyTables()
 {
+//return;
+
+
 	if ( !m_bSkyTableDirty && m_CurrentStage == COMPUTING_STOPPED )
 		return;
 
+	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+	// STARTING POINT
 	if ( m_CurrentStage == COMPUTING_STOPPED )
 	{	// Initiate update process
+		m_bSkyTableDirty = false;	// Clear immediately so we can still trigger a new update while updating... This new update will only start once this update is complete.
 		m_CurrentStage = COMPUTING_TRANSMITTANCE;
 		m_ScatteringOrder = 2;	// We start the loop at order 2 up to MAX_SCATTERING_ORDER
 		m_pCB_PreComputeSky->m._bFirstPass = true;
 		m_bStageStarting = true;
 	}
+	// STARTING POINT
+	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
 
 	int	CurrentStageIndex = int(m_CurrentStage);
 
@@ -2220,10 +2307,11 @@ void	EffectVolumetric::UpdateSkyTables()
 
 			USING_COMPUTESHADER_START( *m_pCSComputeTransmittance )
 	
-				m_ppRTTransmittance[1]->SetCSUAV( 0 );
+#ifdef ENABLE_PROFILING
+				TimeProfile	Profile( m_pStageTimingCurrent[CurrentStageIndex] );
+#endif
 
-I think it would be better to allocate [1] targets with the D3D11_BIND_UNORDERED_ACCESS flag and COPY the resource once it's been computed,
-	rather than exchanging pointers. I'm not sure the device won't consider targets with the UAV and RT and SRV flags slower??
+				m_ppRTTransmittance[1]->SetCSUAV( 0 );
 
 				m_pCB_PreComputeSky->UpdateData();
 
@@ -2260,6 +2348,10 @@ I think it would be better to allocate [1] targets with the D3D11_BIND_UNORDERED
 			}
 
 			USING_COMPUTESHADER_START( *m_pCSComputeIrradiance_Single )
+
+#ifdef ENABLE_PROFILING
+				TimeProfile	Profile( m_pStageTimingCurrent[CurrentStageIndex] );
+#endif
 
 				m_pRTDeltaIrradiance->SetCSUAV( 0 );
 
@@ -2298,8 +2390,12 @@ I think it would be better to allocate [1] targets with the D3D11_BIND_UNORDERED
 
 			USING_COMPUTESHADER_START( *m_pCSComputeInScattering_Single )
 
-				m_pRTDeltaScatteringRayleigh->SetCSUAV( 0 );
-				m_pRTDeltaScatteringMie->SetCSUAV( 1 );
+#ifdef ENABLE_PROFILING
+				TimeProfile	Profile( m_pStageTimingCurrent[CurrentStageIndex] );
+#endif
+
+				m_pRTDeltaScatteringRayleigh->SetCSUAV( 1 );
+				m_pRTDeltaScatteringMie->SetCSUAV( 2 );
 
 				m_pRTDeltaIrradiance->SetCS( 10 );	// Input from last stage
 
@@ -2317,21 +2413,26 @@ I think it would be better to allocate [1] targets with the D3D11_BIND_UNORDERED
 				// Will be assigned to slot 11 & 12 next stage
 				m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlotUAV();
 				m_pRTDeltaScatteringMie->RemoveFromLastAssignedSlotUAV();
+				m_pRTDeltaIrradiance->RemoveFromLastAssignedSlots();
 
 				// ==================================================
 				// Merges DeltaScatteringRayleigh & Mie into initial inscatter texture S (line 5 in algorithm 4.1)
 				USING_COMPUTESHADER_START( *m_pCSMergeInitialScattering )
 
-					m_Device.SetRenderTarget( *m_ppRTInScattering[0] );
+					m_ppRTInScattering[1]->SetCSUAV( 1 );
 
-					m_pRTDeltaScatteringRayleigh->SetCS( 14 );		// StructuredBuffer<float4>
-					m_pRTDeltaScatteringMie->SetCS( 15 );			// StructuredBuffer<float4>
+					m_pRTDeltaScatteringRayleigh->SetCS( 11 );
+					m_pRTDeltaScatteringMie->SetCS( 12 );
 
 					m_pCB_PreComputeSky->UpdateData();
 
-					M.Dispatch( m_pCB_PreComputeSky->m._GroupsCountX, m_pCB_PreComputeSky->m._GroupsCountY, m_pCB_PreComputeSky->m._GroupsCountZ );
+					M.Dispatch( RES_3D_U >> 4, RES_3D_COS_THETA_VIEW >> 4, RES_3D_ALTITUDE >> 4 );
 
 				USING_COMPUTE_SHADER_END
+
+				m_ppRTInScattering[1]->RemoveFromLastAssignedSlotUAV();
+				m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
+				m_pRTDeltaScatteringMie->RemoveFromLastAssignedSlots();
 			}
 		}
 		break;
@@ -2352,10 +2453,15 @@ I think it would be better to allocate [1] targets with the D3D11_BIND_UNORDERED
 
 			USING_COMPUTESHADER_START( *m_pCSComputeInScattering_Delta )
 
-				m_pRTDeltaScattering->SetCSUAV( 0 );
+#ifdef ENABLE_PROFILING
+				TimeProfile	Profile( m_pStageTimingCurrent[CurrentStageIndex] );
+#endif
 
+				m_pRTDeltaScattering->SetCSUAV( 1 );
+
+				m_pRTDeltaIrradiance->SetCS( 10 );			// Input from 2 stages ago
 				m_pRTDeltaScatteringRayleigh->SetCS( 11 );	// Input from last stage
-				if ( m_ScatteringOrder == 2 )
+//###Just to avoid the annoying warning each frame				if ( m_ScatteringOrder == 2 )
 					m_pRTDeltaScatteringMie->SetCS( 12 );	// We only need Mie for the first stage...
 
 				m_pCB_PreComputeSky->m._bFirstPass = m_ScatteringOrder == 2;
@@ -2370,8 +2476,10 @@ I think it would be better to allocate [1] targets with the D3D11_BIND_UNORDERED
 				m_CurrentStage = COMPUTING_IRRADIANCE_DELTA;
 				m_bStageStarting = true;
 
-				// Will be assigned to slot 13 next stage
-				m_pRTDeltaScattering->RemoveFromLastAssignedSlotUAV();
+				m_pRTDeltaScattering->RemoveFromLastAssignedSlotUAV();// Will be assigned to slot 13 next stage
+				m_pRTDeltaIrradiance->RemoveFromLastAssignedSlots();
+				m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
+				m_pRTDeltaScatteringMie->RemoveFromLastAssignedSlots();
 			}
 		}
 		break;
@@ -2390,9 +2498,15 @@ I think it would be better to allocate [1] targets with the D3D11_BIND_UNORDERED
 
 			USING_COMPUTESHADER_START( *m_pCSComputeIrradiance_Delta )
 
+#ifdef ENABLE_PROFILING
+				TimeProfile	Profile( m_pStageTimingCurrent[CurrentStageIndex] );
+#endif
+
 				m_pRTDeltaIrradiance->SetCSUAV( 0 );
 
-				m_pRTDeltaScattering->SetCS( 13 );	// Input from last stage
+				m_pRTDeltaScatteringRayleigh->SetCS( 11 );	// Input from last stage
+//###Just to avoid the annoying warning each frame				if ( m_ScatteringOrder == 2 )
+					m_pRTDeltaScatteringMie->SetCS( 12 );	// We only need Mie for the first stage...
 
 				m_pCB_PreComputeSky->m._bFirstPass = m_ScatteringOrder == 2;
 				m_pCB_PreComputeSky->UpdateData();
@@ -2406,10 +2520,12 @@ I think it would be better to allocate [1] targets with the D3D11_BIND_UNORDERED
 				m_CurrentStage = COMPUTING_SCATTERING_MULTIPLE;
 				m_bStageStarting = true;
 
-				// Will be assigned to slot 10 next stage
-				m_pRTDeltaIrradiance->RemoveFromLastAssignedSlotUAV();
+				m_pRTDeltaIrradiance->RemoveFromLastAssignedSlotUAV();	// Will be assigned to slot 10 for accumulation at the end of next stage
+				m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
+				m_pRTDeltaScatteringMie->RemoveFromLastAssignedSlots();
 			}
 		}
+		break;
 
 	//////////////////////////////////////////////////////////////////////////
 	// ==================================================
@@ -2425,9 +2541,14 @@ I think it would be better to allocate [1] targets with the D3D11_BIND_UNORDERED
 
 			USING_COMPUTESHADER_START( *m_pCSComputeInScattering_Multiple )
 
-				m_pRTDeltaScatteringRayleigh->SetCSUAV( 0 );	// Warning: We're re-using Rayleigh slot.
+#ifdef ENABLE_PROFILING
+				TimeProfile	Profile( m_pStageTimingCurrent[CurrentStageIndex] );
+#endif
+
+				m_pRTDeltaScatteringRayleigh->SetCSUAV( 1 );	// Warning: We're re-using Rayleigh slot.
 																// It doesn't matter for orders > 2 where we don't sample from Rayleigh+Mie separately anymore (only done in first pass)
-				m_pRTDeltaIrradiance->SetCS( 10 );
+
+				m_pRTDeltaScattering->SetCS( 13 );	// Input from 2 stages ago
 
 				m_pCB_PreComputeSky->m._bFirstPass = m_ScatteringOrder == 2;
 				m_pCB_PreComputeSky->UpdateData();
@@ -2442,6 +2563,9 @@ I think it would be better to allocate [1] targets with the D3D11_BIND_UNORDERED
 				m_bStageStarting = true;
 				m_ScatteringOrder++;							// Next scattering order!
 
+				m_pRTDeltaScattering->RemoveFromLastAssignedSlots();
+//				m_Device.RemoveShaderResources( 13, 1, SSF_COMPUTE_SHADER );	// Remove from input
+
 				// Will be assigned to slot 11 when we loop back to stage COMPUTING_SCATTERING_DELTA
 				m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlotUAV();
 
@@ -2449,29 +2573,53 @@ I think it would be better to allocate [1] targets with the D3D11_BIND_UNORDERED
 				// Adds deltaE to irradiance texture E (line 10 in algorithm 4.1)
 				USING_COMPUTESHADER_START( *m_pCSAccumulateIrradiance )
 
-					m_ppRTIrradiance[1]->SetCSUAV( 0 );
+					m_ppRTIrradiance[2]->SetCSUAV( 0 );
 
-					m_pRTDeltaIrradiance->SetCS( 14 );	// StructuredBuffer<float4>
+					m_ppRTIrradiance[1]->SetCS( 14 );	// Previous values as SRV
+
+					m_pRTDeltaIrradiance->SetCS( 10 );	// Input from last stage
 
 					m_pCB_PreComputeSky->UpdateData();
 
-					M.Dispatch( m_pCB_PreComputeSky->m._GroupsCountX, m_pCB_PreComputeSky->m._GroupsCountY, m_pCB_PreComputeSky->m._GroupsCountZ );
+					M.Dispatch( IRRADIANCE_W >> 4, IRRADIANCE_H >> 4, 1 );
 
 				USING_COMPUTE_SHADER_END
+
+				m_ppRTIrradiance[2]->RemoveFromLastAssignedSlotUAV();
+				m_ppRTIrradiance[1]->RemoveFromLastAssignedSlots();
+				m_pRTDeltaIrradiance->RemoveFromLastAssignedSlots();
+
+				{	// Swap double-buffered accumulators
+					Texture2D*	pTemp = m_ppRTIrradiance[1];
+					m_ppRTIrradiance[1] = m_ppRTIrradiance[2];
+					m_ppRTIrradiance[2] = pTemp;
+				}
 
 				// ==================================================
  				// Adds deltaS to inscatter texture S (line 11 in algorithm 4.1)
 				USING_COMPUTESHADER_START( *m_pCSAccumulateInScattering )
 
-					m_ppRTInScattering[1]->SetCSUAV( 0 );
+					m_ppRTInScattering[2]->SetCSUAV( 1 );
 
-					m_pRTDeltaIrradiance->SetCS( 14 );	// StructuredBuffer<float4>
+					m_ppRTInScattering[1]->SetCS( 15 );	// Previous values as SRV
+
+					m_pRTDeltaScatteringRayleigh->SetCS( 11 );
 
 					m_pCB_PreComputeSky->UpdateData();
 
-					M.Dispatch( m_pCB_PreComputeSky->m._GroupsCountX, m_pCB_PreComputeSky->m._GroupsCountY, m_pCB_PreComputeSky->m._GroupsCountZ );
+					M.Dispatch( RES_3D_U >> 4, RES_3D_COS_THETA_VIEW >> 4, RES_3D_ALTITUDE >> 4 );
 
 				USING_COMPUTE_SHADER_END
+
+				m_ppRTInScattering[2]->RemoveFromLastAssignedSlotUAV();
+				m_ppRTInScattering[1]->RemoveFromLastAssignedSlots();
+				m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
+
+				{	// Swap double-buffered accumulators
+					Texture3D*	pTemp = m_ppRTInScattering[1];
+					m_ppRTInScattering[1] = m_ppRTInScattering[2];
+					m_ppRTInScattering[2] = pTemp;
+				}
 
 
 				//////////////////////////////////////////////////////////////////////////
@@ -2479,10 +2627,13 @@ I think it would be better to allocate [1] targets with the D3D11_BIND_UNORDERED
 				// COMPLETION POINT
 				if ( m_ScatteringOrder > MAX_SCATTERING_ORDER )
 				{	// And we're done!
+					m_CurrentStage = COMPUTING_STOPPED;
+
+					// If we clear now, this will discard any change of parameter that could have happened during this update...
+					// Only changes from now on will trigger an update again...
+//					m_bSkyTableDirty = false;
 
 					// Assign final textures to slots 8 & 9
-					m_ppRTInScattering[1]->RemoveFromLastAssignedSlotUAV();
-					m_ppRTIrradiance[1]->RemoveFromLastAssignedSlotUAV();
 					m_ppRTInScattering[1]->Set( 8, true );
 					m_ppRTIrradiance[1]->Set( 9, true );
 

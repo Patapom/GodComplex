@@ -311,6 +311,7 @@ MinifyAll.cmd</Command>
     </ClInclude>
     <ClInclude Include="Utility\Memory.h" />
     <ClInclude Include="Utility\MemoryMappedFile.h" />
+    <ClInclude Include="Utility\Profiling.h" />
     <ClInclude Include="Utility\Random.h" />
     <ClInclude Include="Utility\Resources.h" />
     <ClInclude Include="Utility\tweakval.h" />
@@ -388,6 +389,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Utility\Camera.cpp" />
     <ClCompile Include="Utility\Memory.cpp" />
     <ClCompile Include="Utility\MemoryMappedFile.cpp" />
+    <ClCompile Include="Utility\Profiling.cpp" />
     <ClCompile Include="Utility\Random.cpp" />
     <ClCompile Include="Utility\Resources.cpp" />
     <ClCompile Include="Utility\tweakval.cpp" />

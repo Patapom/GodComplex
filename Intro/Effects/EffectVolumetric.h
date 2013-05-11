@@ -167,8 +167,8 @@ private:	// FIELDS
 
 	// Sky rendering
 	Texture2D*			m_ppRTTransmittance[2];
-	Texture2D*			m_ppRTIrradiance[2];
-	Texture3D*			m_ppRTInScattering[2];
+	Texture2D*			m_ppRTIrradiance[3];
+	Texture3D*			m_ppRTInScattering[3];
 
 	int					m_RenderWidth, m_RenderHeight;
 

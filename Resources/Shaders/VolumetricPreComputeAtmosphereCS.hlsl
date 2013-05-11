@@ -38,11 +38,19 @@ Texture3D	_TexScatteringDelta_Rayleigh : register(t11);	// deltaSR
 Texture3D	_TexScatteringDelta_Mie : register(t12);		// deltaSM
 Texture3D	_TexScatteringDelta : register(t13);			// deltaJ
 
-StructuredBuffer<float4>	_Input0 : register(t14);		// Possible inputs from previous stage
-StructuredBuffer<float4>	_Input1 : register(t15);
+Texture2D	_TexInput2D : register(t14);
+Texture3D	_TexInput3D : register(t15);
 
-RWStructuredBuffer<float4>	_Target0 : register(u0);		// What we're computing
-RWStructuredBuffer<float4>	_Target1 : register(u1);
+// StructuredBuffer<float4>	_Input0 : register(t14);		// Possible inputs from previous stage
+// StructuredBuffer<float4>	_Input1 : register(t15);
+// 
+// RWStructuredBuffer<float4>	_Target0 : register(u0);	// What we're computing
+// RWStructuredBuffer<float4>	_Target1 : register(u1);
+
+// What we're computing
+RWTexture2D<float4>	_Target2D : register(u0);
+RWTexture3D<float4>	_Target3D0 : register(u1);
+RWTexture3D<float4>	_Target3D1 : register(u2);
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -50,23 +58,23 @@ RWStructuredBuffer<float4>	_Target1 : register(u1);
 // Helpers
 
 // Computes the flattened texel informations
-uint2	GetTexelIndex2D( CS_IN _In, out uint _TexelIndex )
-{
-	uint	TexelX = (_GroupsCount.x * THREADS_COUNT_X) * _PassIndex.x + _In.ThreadID.x;
-	uint	TexelY = (_GroupsCount.y * THREADS_COUNT_Y) * _PassIndex.y + _In.ThreadID.y;
+// uint2	GetTexelIndex2D( CS_IN _In, out uint _TexelIndex )
+// {
+// 	uint	TexelX = (_GroupsCount.x * THREADS_COUNT_X) * _PassIndex.x + _In.ThreadID.x;
+// 	uint	TexelY = (_GroupsCount.y * THREADS_COUNT_Y) * _PassIndex.y + _In.ThreadID.y;
+// 
+// 	_TexelIndex = _TargetSize.x * TexelY + TexelX;
+// 
+// 	return uint2( TexelX, TexelY );
+// }
 
-	_TexelIndex = _TargetSize.x * TexelY + TexelX;
-
-	return uint2( TexelX, TexelY );
-}
-
-uint3	GetTexelIndex3D( CS_IN _In, out uint _TexelIndex )
+uint3	GetTexelInfos( CS_IN _In )
 {
 	uint	TexelX = (_GroupsCount.x * THREADS_COUNT_X) * _PassIndex.x + _In.ThreadID.x;
 	uint	TexelY = (_GroupsCount.y * THREADS_COUNT_Y) * _PassIndex.y + _In.ThreadID.y;
 	uint	TexelZ = (_GroupsCount.z * THREADS_COUNT_Z) * _PassIndex.z + _In.ThreadID.z;
 
-	_TexelIndex = _TargetSize.x * (_TargetSize.y * TexelZ + TexelY) + TexelX;
+//	_TexelIndex = _TargetSize.x * (_TargetSize.y * TexelZ + TexelY) + TexelX;
 
 	return uint3( TexelX, TexelY, TexelZ );
 }
@@ -186,8 +194,7 @@ float	ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, const float _Href
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, 1 )]
 void	PreComputeTransmittance( CS_IN _In )
 {
-	uint	TexelIndex;
-	uint2	Texel = GetTexelIndex2D( _In, TexelIndex );
+	uint2	Texel = GetTexelInfos( _In ).xy;
 	float2	UV = float2( Texel ) / _TargetSize.xy;
 
 	float	AltitudeKm = UV.y*UV.y * ATMOSPHERE_THICKNESS_KM;					// Grow quadratically to have more precision near the ground
@@ -196,8 +203,8 @@ void	PreComputeTransmittance( CS_IN _In )
 
 	float3	OpticalDepth = _AirParams.x * SIGMA_SCATTERING_RAYLEIGH * ComputeOpticalDepth( AltitudeKm, CosThetaView, _AirParams.y ) + _FogParams.y * ComputeOpticalDepth( AltitudeKm, CosThetaView, _FogParams.z );
 
-//	_Target0[TexelIndex] = float4( exp( -OpticalDepth ), 0.0 );
-	_Target0[TexelIndex] = float4( min( 1e5, OpticalDepth ), 0.0 );		// We directly store optical depth otherwise we lose too much precision using a division!
+//	_Target2D[Texel] = float4( exp( -OpticalDepth ), 0.0 );
+	_Target2D[Texel] = float4( min( 1e5, OpticalDepth ), 0.0 );		// We directly store optical depth otherwise we lose too much precision using a division!
 }
 
 
@@ -207,8 +214,7 @@ void	PreComputeTransmittance( CS_IN _In )
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, 1 )]
 void	PreComputeIrradiance_Single( CS_IN _In )
 {
-	uint	TexelIndex;
-	uint2	Texel = GetTexelIndex2D( _In, TexelIndex );
+	uint2	Texel = GetTexelInfos( _In ).xy;
 	float2	UV = float2( Texel ) / _TargetSize.xy;
 
 	float	AltitudeKm = UV.y * ATMOSPHERE_THICKNESS_KM;
@@ -216,7 +222,7 @@ void	PreComputeIrradiance_Single( CS_IN _In )
 
 	float	Reflectance = saturate( CosThetaSun );
 
-	_Target0[TexelIndex] = float4( GetTransmittance( AltitudeKm, CosThetaSun ) * Reflectance, 0.0 );	// Return Sun reflectance attenuated by atmosphere as seen from given altitude
+	_Target2D[Texel] = float4( GetTransmittance( AltitudeKm, CosThetaSun ) * Reflectance, 0.0 );	// Return Sun reflectance attenuated by atmosphere as seen from given altitude
 }
 
 
@@ -258,8 +264,7 @@ void	PreComputeInScattering_Single( CS_IN _In )
 {
 	const uint STEPS_COUNT = 50;
 
-	uint	TexelIndex;
-	uint3	Texel = GetTexelIndex3D( _In, TexelIndex );
+	uint3	Texel = GetTexelInfos( _In );
 	float2	UV = float2( Texel.xy ) / _TargetSize.xy;
 
 	float	AltitudeKm;
@@ -302,8 +307,8 @@ void	PreComputeInScattering_Single( CS_IN _In )
 	Rayleigh *= _AirParams.x * SIGMA_SCATTERING_RAYLEIGH * StepSizeKm;
 	Mie *= _FogParams.x * StepSizeKm;
 
-	_Target0[TexelIndex] = float4( Rayleigh, 0.0 );
-	_Target1[TexelIndex] = float4( Mie, 0.0 );
+	_Target3D0[Texel] = float4( Rayleigh, 0.0 );
+	_Target3D1[Texel] = float4( Mie, 0.0 );
 }
 
 
@@ -317,8 +322,7 @@ void	PreComputeInScattering_Delta( CS_IN _In )
 	const float	dPhi = PI / STEPS_COUNT;
 	const float	dTheta = PI / STEPS_COUNT;
 
-	uint	TexelIndex;
-	uint3	Texel = GetTexelIndex3D( _In, TexelIndex );
+	uint3	Texel = GetTexelInfos( _In );
 	float2	UV = float2( Texel.xy ) / _TargetSize.xy;
 
 	float	AltitudeKm;
@@ -410,7 +414,7 @@ void	PreComputeInScattering_Delta( CS_IN _In )
 		}
 	}
 
-	_Target0[TexelIndex] = float4( Scattering, 0.0 );	// output In-Scattering = J[T.alpha/PI.deltaE + deltaS] (line 7 in algorithm 4.1)
+	_Target3D0[Texel] = float4( Scattering, 0.0 );	// output In-Scattering = J[T.alpha/PI.deltaE + deltaS] (line 7 in algorithm 4.1)
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -423,8 +427,7 @@ void	PreComputeIrradiance_Delta( CS_IN _In )
 	const float	dPhi = PI / STEPS_COUNT;
 	const float	dTheta = PI / STEPS_COUNT;
 
-	uint	TexelIndex;
-	uint2	Texel = GetTexelIndex2D( _In, TexelIndex );
+	uint2	Texel = GetTexelInfos( _In ).xy;
 	float2	UV = float2( Texel ) / _TargetSize.xy;
 
 	float	AltitudeKm = UV.y * ATMOSPHERE_THICKNESS_KM;
@@ -459,13 +462,15 @@ void	PreComputeIrradiance_Delta( CS_IN _In )
 				InScattering = PhaseFunctionRayleigh( CosPhaseAngleSun ) * InScatteredRayleigh + PhaseFunctionMie( CosPhaseAngleSun ) * InScatteredMie;
 			}
 			else
+			{	// Next pass only uses the Rayleigh table containing both Rayleigh & Mie
 				InScattering = Sample4DScatteringTable( _TexScatteringDelta_Rayleigh, AltitudeKm, w.y, CosThetaSun, CosPhaseAngleSun ).xyz;
+			}
 
 			Result += InScattering * w.y * dw;	// InScattering * (w.n) * dw
 		}
 	}
 
-	_Target0[TexelIndex] = float4( Result, 0.0 );
+	_Target2D[Texel] = float4( Result, 0.0 );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -492,8 +497,7 @@ void	PreComputeInScattering_Multiple( CS_IN _In )
 {
 	const uint STEPS_COUNT = 50;
 
-	uint	TexelIndex;
-	uint3	Texel = GetTexelIndex3D( _In, TexelIndex );
+	uint3	Texel = GetTexelInfos( _In );
 	float2	UV = float2( Texel.xy ) / _TargetSize.xy;
 
 	float	AltitudeKm;
@@ -524,13 +528,11 @@ void	PreComputeInScattering_Multiple( CS_IN _In )
 		DistanceKm += StepSizeKm;
 	}
 
-	_Target0[TexelIndex] = float4( Result * StepSizeKm, 0.0 );
+	_Target3D0[Texel] = float4( Result * StepSizeKm, 0.0 );
 }
 
 //////////////////////////////////////////////////////////////////////////
 // Merges single-scattering tables for Rayleigh & Mie into the single initial scattering table
-//	_Input0 = _TexScatteringDelta_Rayleigh
-//	_Input1 = _TexScatteringDelta_Mie
 //
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, THREADS_COUNT_Z )]
 void	MergeInitialScattering( CS_IN _In )
@@ -541,15 +543,13 @@ void	MergeInitialScattering( CS_IN _In )
 // 
 // 	return float4( Rayleigh, Mie ); // Store only red component of single Mie scattering (cf. "Angular precision")
 
-	uint	TexelIndex;
-	uint3	Texel = GetTexelIndex3D( _In, TexelIndex );
+	uint3	Texel = GetTexelInfos( _In );
 
-	_Target0[TexelIndex] = float4( _Input0[TexelIndex].xyz, _Input1[TexelIndex].x );
+	_Target3D0[Texel] = float4( _TexScatteringDelta_Rayleigh[Texel].xyz, _TexScatteringDelta_Mie[Texel].x );
 }
 
 //////////////////////////////////////////////////////////////////////////
 // Accumulates delta in-scattering into the final scattering table
-//	_Input0 = _TexScatteringDelta_Rayleigh
 //
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, THREADS_COUNT_Z )]
 void	AccumulateInScattering( CS_IN _In )
@@ -570,8 +570,7 @@ void	AccumulateInScattering( CS_IN _In )
 // 
 // 	return float4( Rayleigh, 0.0 );
 
-	uint	TexelIndex;
-	uint3	Texel = GetTexelIndex3D( _In, TexelIndex );
+	uint3	Texel = GetTexelInfos( _In );
 	float2	UV = float2( Texel.xy ) / _TargetSize.xy;
 
  	// We need to divide in-scattering by the Rayleigh phase function so we need CosGamma
@@ -584,15 +583,15 @@ void	AccumulateInScattering( CS_IN _In )
 	GetAnglesFrom4D( UV, dhdH, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
 
 	// Get Rayleigh scattering
-	float3	Rayleigh = _Input0[TexelIndex].xyz;
+	float3	Rayleigh = _TexScatteringDelta_Rayleigh[Texel].xyz;
 			Rayleigh /= PhaseFunctionRayleigh( CosGamma );
 
-	_Target0[TexelIndex] = float4( Rayleigh, 0.0 );
+//	_Target3D0[Texel] += float4( Rayleigh, 0.0 );	// Can't read from multiple-components
+	_Target3D0[Texel] = _TexInput3D[Texel] + float4( Rayleigh, 0.0 );	// _TexInput3D is a SRV for a copy _Target3D0 so we can accumulate with previous values
 }
 
 //////////////////////////////////////////////////////////////////////////
 // Accumulates irradiance into the final irradiance table
-//	_Input0 = _TexIrradianceDelta
 //
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, 1 )]
 void	AccumulateIrradiance( CS_IN _In )
@@ -600,8 +599,8 @@ void	AccumulateIrradiance( CS_IN _In )
 // 	float2	UV = _In.__Position.xy * _dUVW.xy;
 // 	return _TexIrradianceDelta.SampleLevel( PointClamp, UV, 0.0 ).xyz;
 
-	uint	TexelIndex;
-	uint2	Texel = GetTexelIndex2D( _In, TexelIndex );
+	uint2	Texel = GetTexelInfos( _In ).xy;
 
-	_Target0[TexelIndex] += _Input0[TexelIndex];
+//	_Target2D[Texel] += _TexIrradianceDelta[Texel];	// Can't read from multiple-components
+	_Target2D[Texel] = _TexInput2D[Texel] + _TexIrradianceDelta[Texel];	// _TexInput2D is a SRV for a copy of _Target2D so we can accumulate with previous values
 }

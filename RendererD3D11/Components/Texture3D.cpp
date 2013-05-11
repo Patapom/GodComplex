@@ -223,7 +223,7 @@ void	Texture3D::SetCS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 
 void	Texture3D::RemoveFromLastAssignedSlots() const
 {
-	Device::SHADER_STAGE_FLAGS	pStageFlags[] = {
+	static Device::SHADER_STAGE_FLAGS	pStageFlags[] = {
 		Device::SSF_VERTEX_SHADER,
 		Device::SSF_HULL_SHADER,
 		Device::SSF_DOMAIN_SHADER,
@@ -254,6 +254,7 @@ void	Texture3D::RemoveFromLastAssignedSlotUAV() const
 	UINT	InitialCount = -1;
 	if ( m_LastAssignedSlotsUAV != -1 )
 		m_Device.DXContext().CSSetUnorderedAccessViews( m_LastAssignedSlotsUAV, 1, &pNULL, &InitialCount );
+	m_LastAssignedSlotsUAV = -1;
 }
 
 

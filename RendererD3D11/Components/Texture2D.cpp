@@ -359,6 +359,7 @@ void	Texture2D::RemoveFromLastAssignedSlotUAV() const
 	UINT	InitialCount = -1;
 	if ( m_LastAssignedSlotsUAV != -1 )
 		m_Device.DXContext().CSSetUnorderedAccessViews( m_LastAssignedSlotsUAV, 1, &pNULL, &InitialCount );
+	m_LastAssignedSlotsUAV = -1;
 }
 
 void	Texture2D::CopyFrom( Texture2D& _SourceTexture )

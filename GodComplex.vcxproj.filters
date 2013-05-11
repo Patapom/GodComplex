@@ -240,6 +240,9 @@
     <ClInclude Include="RendererD3D11\Components\StructuredBuffer.h">
       <Filter>RendererD3D11\Components</Filter>
     </ClInclude>
+    <ClInclude Include="Utility\Profiling.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -368,6 +371,9 @@
     </ClCompile>
     <ClCompile Include="RendererD3D11\Components\StructuredBuffer.cpp">
       <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\Profiling.cpp">
+      <Filter>Utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -71,8 +71,10 @@
 			this.label10 = new System.Windows.Forms.Label();
 			this.groupBoxTerrain = new System.Windows.Forms.GroupBox();
 			this.label20 = new System.Windows.Forms.Label();
+			this.label39 = new System.Windows.Forms.Label();
 			this.label21 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlTerrainShadowStrength = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlTerrainHeight = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlAlbedoMultiplier = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label18 = new System.Windows.Forms.Label();
 			this.groupBoxNoise = new System.Windows.Forms.GroupBox();
@@ -105,8 +107,6 @@
 			this.label22 = new System.Windows.Forms.Label();
 			this.label24 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlCloudLowFrequency = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlTerrainHeight = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.label39 = new System.Windows.Forms.Label();
 			this.groupBoxAtmosphere.SuspendLayout();
 			this.groupBoxClouds.SuspendLayout();
 			this.groupBoxIsotropicScattering.SuspendLayout();
@@ -643,6 +643,15 @@
 			this.label20.TabIndex = 2;
 			this.label20.Text = "Cloud Shadow";
 			// 
+			// label39
+			// 
+			this.label39.AutoSize = true;
+			this.label39.Location = new System.Drawing.Point(6, 32);
+			this.label39.Name = "label39";
+			this.label39.Size = new System.Drawing.Size(64, 13);
+			this.label39.TabIndex = 2;
+			this.label39.Text = "Max. Height";
+			// 
 			// label21
 			// 
 			this.label21.AutoSize = true;
@@ -665,6 +674,20 @@
 			this.floatTrackbarControlTerrainShadowStrength.Value = 0.8F;
 			this.floatTrackbarControlTerrainShadowStrength.VisibleRangeMax = 1F;
 			this.floatTrackbarControlTerrainShadowStrength.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTerrainShadowStrength_ValueChanged);
+			// 
+			// floatTrackbarControlTerrainHeight
+			// 
+			this.floatTrackbarControlTerrainHeight.Location = new System.Drawing.Point(88, 28);
+			this.floatTrackbarControlTerrainHeight.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlTerrainHeight.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlTerrainHeight.Name = "floatTrackbarControlTerrainHeight";
+			this.floatTrackbarControlTerrainHeight.RangeMax = 50F;
+			this.floatTrackbarControlTerrainHeight.RangeMin = 0F;
+			this.floatTrackbarControlTerrainHeight.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlTerrainHeight.TabIndex = 0;
+			this.floatTrackbarControlTerrainHeight.Value = 10F;
+			this.floatTrackbarControlTerrainHeight.VisibleRangeMax = 20F;
+			this.floatTrackbarControlTerrainHeight.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTerrainHeight_ValueChanged);
 			// 
 			// floatTrackbarControlAlbedoMultiplier
 			// 
@@ -796,7 +819,7 @@
 			this.floatTrackbarControlNoiseOffsetBottom.RangeMin = -1F;
 			this.floatTrackbarControlNoiseOffsetBottom.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlNoiseOffsetBottom.TabIndex = 0;
-			this.floatTrackbarControlNoiseOffsetBottom.Value = -0.05F;
+			this.floatTrackbarControlNoiseOffsetBottom.Value = -0.16F;
 			this.floatTrackbarControlNoiseOffsetBottom.VisibleRangeMax = 0.5F;
 			this.floatTrackbarControlNoiseOffsetBottom.VisibleRangeMin = -0.5F;
 			this.floatTrackbarControlNoiseOffsetBottom.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlNoiseOffsetBottom_ValueChanged);
@@ -895,7 +918,7 @@
 			this.floatTrackbarControlNoiseOffsetMiddle.RangeMin = -1F;
 			this.floatTrackbarControlNoiseOffsetMiddle.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlNoiseOffsetMiddle.TabIndex = 0;
-			this.floatTrackbarControlNoiseOffsetMiddle.Value = 0.1F;
+			this.floatTrackbarControlNoiseOffsetMiddle.Value = 0.01F;
 			this.floatTrackbarControlNoiseOffsetMiddle.VisibleRangeMax = 0.5F;
 			this.floatTrackbarControlNoiseOffsetMiddle.VisibleRangeMin = -0.5F;
 			this.floatTrackbarControlNoiseOffsetMiddle.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlNoiseOffsetMiddle_ValueChanged);
@@ -981,7 +1004,7 @@
 			this.floatTrackbarControlNoiseOffsetTop.RangeMin = -1F;
 			this.floatTrackbarControlNoiseOffsetTop.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlNoiseOffsetTop.TabIndex = 0;
-			this.floatTrackbarControlNoiseOffsetTop.Value = -0.2F;
+			this.floatTrackbarControlNoiseOffsetTop.Value = -0.16F;
 			this.floatTrackbarControlNoiseOffsetTop.VisibleRangeMax = 0.5F;
 			this.floatTrackbarControlNoiseOffsetTop.VisibleRangeMin = -0.5F;
 			this.floatTrackbarControlNoiseOffsetTop.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlNoiseOffsetTop_ValueChanged);
@@ -1062,29 +1085,6 @@
 			this.floatTrackbarControlCloudLowFrequency.TabIndex = 0;
 			this.floatTrackbarControlCloudLowFrequency.Value = 7.5F;
 			this.floatTrackbarControlCloudLowFrequency.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlCloudLowFrequency_ValueChanged);
-			// 
-			// floatTrackbarControlTerrainHeight
-			// 
-			this.floatTrackbarControlTerrainHeight.Location = new System.Drawing.Point(88, 28);
-			this.floatTrackbarControlTerrainHeight.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlTerrainHeight.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlTerrainHeight.Name = "floatTrackbarControlTerrainHeight";
-			this.floatTrackbarControlTerrainHeight.RangeMax = 50F;
-			this.floatTrackbarControlTerrainHeight.RangeMin = 0F;
-			this.floatTrackbarControlTerrainHeight.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlTerrainHeight.TabIndex = 0;
-			this.floatTrackbarControlTerrainHeight.Value = 10F;
-			this.floatTrackbarControlTerrainHeight.VisibleRangeMax = 20F;
-			this.floatTrackbarControlTerrainHeight.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTerrainHeight_ValueChanged);
-			// 
-			// label39
-			// 
-			this.label39.AutoSize = true;
-			this.label39.Location = new System.Drawing.Point(6, 32);
-			this.label39.Name = "label39";
-			this.label39.Size = new System.Drawing.Size(64, 13);
-			this.label39.TabIndex = 2;
-			this.label39.Text = "Max. Height";
 			// 
 			// Form1
 			// 

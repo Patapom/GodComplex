@@ -38,6 +38,7 @@
 #include "Utility/Resources.h"
 #include "Utility/Camera.h"
 #include "Utility/tweakval.h"
+#include "Utility/Profiling.h"
 #include "Utility/Video.h"
 
 // DirectX Renderer

@@ -52,6 +52,7 @@ float	ComputeCloudShadowing( float3 _PositionWorld, float3 _View, float _Distanc
 //	uint	StepsCount = ceil( 2.0 * _StepOffset + lerp( 16.0, float(_StepsCount), saturate( _Distance / 150.0 ) ) );	// Fantastic noise hides banding!
 //	uint	StepsCount = ceil( 2.0 * _StepOffset + lerp( 16.0, float(_StepsCount), saturate( _Distance / 50.0 ) ) );	// Fantastic noise hides banding!
 	uint	StepsCount = ceil( lerp( 16.0, float(_StepsCount), saturate( _Distance / 50.0 ) ) );	// Fantastic noise hides banding!
+//	uint	StepsCount = _StepsCount;
 
 #if 1	// Linear steps
 	float3	Step = (_Distance / StepsCount) * _View;
@@ -419,7 +420,6 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't 
 		Position += Step;
 	}
 
-
 	// Compute intersection with the bottom cloud plane or the ground
 	float	HitDistance = ZMinMax.y < 0.0 ? Z : ZMinMax.y;
 	float	HitDistanceKm = WORLD2KM * HitDistance;
@@ -428,7 +428,7 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't 
 //	HitDistanceKm = min( 30.0, HitDistanceKm );			// Beyond that, we're outside the clouds...
 
 	// Store Scattering & Exinction as 2 colors
-	float	StepOffset = FastScreenNoise( _In.__Position.xy );
+	float	StepOffset = 0.0 * FastScreenNoise( _In.__Position.xy );
 	float3	PositionWorld = _Camera2World[3].xyz;
 	float3	ViewWorld = mul( float4( View, 0.0 ), _Camera2World ).xyz;
 
