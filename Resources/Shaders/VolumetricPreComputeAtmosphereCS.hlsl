@@ -41,12 +41,6 @@ Texture3D	_TexScatteringDelta : register(t13);			// deltaJ
 Texture2D	_TexInput2D : register(t14);
 Texture3D	_TexInput3D : register(t15);
 
-// StructuredBuffer<float4>	_Input0 : register(t14);		// Possible inputs from previous stage
-// StructuredBuffer<float4>	_Input1 : register(t15);
-// 
-// RWStructuredBuffer<float4>	_Target0 : register(u0);	// What we're computing
-// RWStructuredBuffer<float4>	_Target1 : register(u1);
-
 // What we're computing
 RWTexture2D<float4>	_Target2D : register(u0);
 RWTexture3D<float4>	_Target3D0 : register(u1);
@@ -223,6 +217,10 @@ void	PreComputeIrradiance_Single( CS_IN _In )
 	float	Reflectance = saturate( CosThetaSun );
 
 	_Target2D[Texel] = float4( GetTransmittance( AltitudeKm, CosThetaSun ) * Reflectance, 0.0 );	// Return Sun reflectance attenuated by atmosphere as seen from given altitude
+
+
+//_Target2D[Texel] = float4( float2( Texel ) / _TargetSize.xy, 0, 0 );
+//_Target2D[Texel] = float4( _TargetSize.x / 128.0, _TargetSize.y / 32.0, 0, 0 );
 }
 
 
@@ -588,6 +586,9 @@ void	AccumulateInScattering( CS_IN _In )
 
 //	_Target3D0[Texel] += float4( Rayleigh, 0.0 );	// Can't read from multiple-components
 	_Target3D0[Texel] = _TexInput3D[Texel] + float4( Rayleigh, 0.0 );	// _TexInput3D is a SRV for a copy _Target3D0 so we can accumulate with previous values
+
+//_Target3D0[Texel] = float4( float3( Texel ) / _TargetSize.xyz, 0 );
+//_Target2D[Texel] = float4( _TargetSize.x / 128.0, _TargetSize.y / 32.0, 0, 0 );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -596,11 +597,8 @@ void	AccumulateInScattering( CS_IN _In )
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, 1 )]
 void	AccumulateIrradiance( CS_IN _In )
 {
-// 	float2	UV = _In.__Position.xy * _dUVW.xy;
-// 	return _TexIrradianceDelta.SampleLevel( PointClamp, UV, 0.0 ).xyz;
-
 	uint2	Texel = GetTexelInfos( _In ).xy;
 
-//	_Target2D[Texel] += _TexIrradianceDelta[Texel];	// Can't read from multiple-components
+//	_Target2D[Texel] += _TexIrradianceDelta[Texel];	// Can't read from multiple-components UAVs
 	_Target2D[Texel] = _TexInput2D[Texel] + _TexIrradianceDelta[Texel];	// _TexInput2D is a SRV for a copy of _Target2D so we can accumulate with previous values
 }

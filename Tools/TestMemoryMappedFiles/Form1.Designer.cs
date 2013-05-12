@@ -33,9 +33,9 @@
 			this.label7 = new System.Windows.Forms.Label();
 			this.label6 = new System.Windows.Forms.Label();
 			this.label5 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlGodraysStrength = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlGodraysStrength = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlFogAnisotropy = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -71,9 +71,11 @@
 			this.label10 = new System.Windows.Forms.Label();
 			this.groupBoxTerrain = new System.Windows.Forms.GroupBox();
 			this.label20 = new System.Windows.Forms.Label();
+			this.label40 = new System.Windows.Forms.Label();
 			this.label39 = new System.Windows.Forms.Label();
 			this.label21 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlTerrainShadowStrength = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlAltitudeOffset = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlTerrainHeight = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlAlbedoMultiplier = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label18 = new System.Windows.Forms.Label();
@@ -107,6 +109,10 @@
 			this.label22 = new System.Windows.Forms.Label();
 			this.label24 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlCloudLowFrequency = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.buttonLoadPreset = new System.Windows.Forms.Button();
+			this.buttonSavePreset = new System.Windows.Forms.Button();
+			this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
+			this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
 			this.groupBoxAtmosphere.SuspendLayout();
 			this.groupBoxClouds.SuspendLayout();
 			this.groupBoxIsotropicScattering.SuspendLayout();
@@ -120,9 +126,9 @@
 			this.groupBoxAtmosphere.Controls.Add(this.label7);
 			this.groupBoxAtmosphere.Controls.Add(this.label6);
 			this.groupBoxAtmosphere.Controls.Add(this.label5);
-			this.groupBoxAtmosphere.Controls.Add(this.floatTrackbarControlGodraysStrength);
 			this.groupBoxAtmosphere.Controls.Add(this.label4);
 			this.groupBoxAtmosphere.Controls.Add(this.label3);
+			this.groupBoxAtmosphere.Controls.Add(this.floatTrackbarControlGodraysStrength);
 			this.groupBoxAtmosphere.Controls.Add(this.label2);
 			this.groupBoxAtmosphere.Controls.Add(this.label1);
 			this.groupBoxAtmosphere.Controls.Add(this.floatTrackbarControlFogAnisotropy);
@@ -142,7 +148,7 @@
 			// label19
 			// 
 			this.label19.AutoSize = true;
-			this.label19.Location = new System.Drawing.Point(6, 215);
+			this.label19.Location = new System.Drawing.Point(6, 104);
 			this.label19.Name = "label19";
 			this.label19.Size = new System.Drawing.Size(65, 13);
 			this.label19.TabIndex = 2;
@@ -151,7 +157,7 @@
 			// label7
 			// 
 			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point(6, 188);
+			this.label7.Location = new System.Drawing.Point(6, 260);
 			this.label7.Name = "label7";
 			this.label7.Size = new System.Drawing.Size(77, 13);
 			this.label7.TabIndex = 2;
@@ -160,7 +166,7 @@
 			// label6
 			// 
 			this.label6.AutoSize = true;
-			this.label6.Location = new System.Drawing.Point(6, 162);
+			this.label6.Location = new System.Drawing.Point(6, 234);
 			this.label6.Name = "label6";
 			this.label6.Size = new System.Drawing.Size(83, 13);
 			this.label6.TabIndex = 2;
@@ -169,15 +175,33 @@
 			// label5
 			// 
 			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(6, 136);
+			this.label5.Location = new System.Drawing.Point(6, 208);
 			this.label5.Name = "label5";
 			this.label5.Size = new System.Drawing.Size(77, 13);
 			this.label5.TabIndex = 2;
 			this.label5.Text = "Air Ref Altitude";
 			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(6, 182);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(64, 13);
+			this.label4.TabIndex = 2;
+			this.label4.Text = "Fog Amount";
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point(6, 156);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(58, 13);
+			this.label3.TabIndex = 2;
+			this.label3.Text = "Air Amount";
+			// 
 			// floatTrackbarControlGodraysStrength
 			// 
-			this.floatTrackbarControlGodraysStrength.Location = new System.Drawing.Point(88, 211);
+			this.floatTrackbarControlGodraysStrength.Location = new System.Drawing.Point(88, 100);
 			this.floatTrackbarControlGodraysStrength.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlGodraysStrength.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlGodraysStrength.Name = "floatTrackbarControlGodraysStrength";
@@ -188,24 +212,6 @@
 			this.floatTrackbarControlGodraysStrength.Value = 1F;
 			this.floatTrackbarControlGodraysStrength.VisibleRangeMax = 1F;
 			this.floatTrackbarControlGodraysStrength.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGodraysStrength_ValueChanged);
-			// 
-			// label4
-			// 
-			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(6, 110);
-			this.label4.Name = "label4";
-			this.label4.Size = new System.Drawing.Size(64, 13);
-			this.label4.TabIndex = 2;
-			this.label4.Text = "Fog Amount";
-			// 
-			// label3
-			// 
-			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(6, 84);
-			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(58, 13);
-			this.label3.TabIndex = 2;
-			this.label3.Text = "Air Amount";
 			// 
 			// label2
 			// 
@@ -227,7 +233,7 @@
 			// 
 			// floatTrackbarControlFogAnisotropy
 			// 
-			this.floatTrackbarControlFogAnisotropy.Location = new System.Drawing.Point(88, 184);
+			this.floatTrackbarControlFogAnisotropy.Location = new System.Drawing.Point(88, 256);
 			this.floatTrackbarControlFogAnisotropy.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlFogAnisotropy.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlFogAnisotropy.Name = "floatTrackbarControlFogAnisotropy";
@@ -242,7 +248,7 @@
 			// 
 			// floatTrackbarControlFogRefAltitude
 			// 
-			this.floatTrackbarControlFogRefAltitude.Location = new System.Drawing.Point(88, 158);
+			this.floatTrackbarControlFogRefAltitude.Location = new System.Drawing.Point(88, 230);
 			this.floatTrackbarControlFogRefAltitude.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlFogRefAltitude.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlFogRefAltitude.Name = "floatTrackbarControlFogRefAltitude";
@@ -256,7 +262,7 @@
 			// 
 			// floatTrackbarControlAirRefAltitude
 			// 
-			this.floatTrackbarControlAirRefAltitude.Location = new System.Drawing.Point(88, 132);
+			this.floatTrackbarControlAirRefAltitude.Location = new System.Drawing.Point(88, 204);
 			this.floatTrackbarControlAirRefAltitude.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlAirRefAltitude.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlAirRefAltitude.Name = "floatTrackbarControlAirRefAltitude";
@@ -270,7 +276,7 @@
 			// 
 			// floatTrackbarControlFogAmount
 			// 
-			this.floatTrackbarControlFogAmount.Location = new System.Drawing.Point(88, 106);
+			this.floatTrackbarControlFogAmount.Location = new System.Drawing.Point(88, 178);
 			this.floatTrackbarControlFogAmount.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlFogAmount.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlFogAmount.Name = "floatTrackbarControlFogAmount";
@@ -283,7 +289,7 @@
 			// 
 			// floatTrackbarControlAirAmount
 			// 
-			this.floatTrackbarControlAirAmount.Location = new System.Drawing.Point(88, 80);
+			this.floatTrackbarControlAirAmount.Location = new System.Drawing.Point(88, 152);
 			this.floatTrackbarControlAirAmount.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlAirAmount.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlAirAmount.Name = "floatTrackbarControlAirAmount";
@@ -622,9 +628,11 @@
 			// groupBoxTerrain
 			// 
 			this.groupBoxTerrain.Controls.Add(this.label20);
+			this.groupBoxTerrain.Controls.Add(this.label40);
 			this.groupBoxTerrain.Controls.Add(this.label39);
 			this.groupBoxTerrain.Controls.Add(this.label21);
 			this.groupBoxTerrain.Controls.Add(this.floatTrackbarControlTerrainShadowStrength);
+			this.groupBoxTerrain.Controls.Add(this.floatTrackbarControlAltitudeOffset);
 			this.groupBoxTerrain.Controls.Add(this.floatTrackbarControlTerrainHeight);
 			this.groupBoxTerrain.Controls.Add(this.floatTrackbarControlAlbedoMultiplier);
 			this.groupBoxTerrain.Location = new System.Drawing.Point(334, 12);
@@ -642,6 +650,15 @@
 			this.label20.Size = new System.Drawing.Size(76, 13);
 			this.label20.TabIndex = 2;
 			this.label20.Text = "Cloud Shadow";
+			// 
+			// label40
+			// 
+			this.label40.AutoSize = true;
+			this.label40.Location = new System.Drawing.Point(6, 110);
+			this.label40.Name = "label40";
+			this.label40.Size = new System.Drawing.Size(73, 13);
+			this.label40.TabIndex = 2;
+			this.label40.Text = "Altitude Offset";
 			// 
 			// label39
 			// 
@@ -674,6 +691,21 @@
 			this.floatTrackbarControlTerrainShadowStrength.Value = 0.8F;
 			this.floatTrackbarControlTerrainShadowStrength.VisibleRangeMax = 1F;
 			this.floatTrackbarControlTerrainShadowStrength.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTerrainShadowStrength_ValueChanged);
+			// 
+			// floatTrackbarControlAltitudeOffset
+			// 
+			this.floatTrackbarControlAltitudeOffset.Location = new System.Drawing.Point(88, 106);
+			this.floatTrackbarControlAltitudeOffset.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlAltitudeOffset.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlAltitudeOffset.Name = "floatTrackbarControlAltitudeOffset";
+			this.floatTrackbarControlAltitudeOffset.RangeMax = 10F;
+			this.floatTrackbarControlAltitudeOffset.RangeMin = -10F;
+			this.floatTrackbarControlAltitudeOffset.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlAltitudeOffset.TabIndex = 0;
+			this.floatTrackbarControlAltitudeOffset.Value = 0F;
+			this.floatTrackbarControlAltitudeOffset.VisibleRangeMax = 2F;
+			this.floatTrackbarControlAltitudeOffset.VisibleRangeMin = -2F;
+			this.floatTrackbarControlAltitudeOffset.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAltitudeOffset_ValueChanged);
 			// 
 			// floatTrackbarControlTerrainHeight
 			// 
@@ -1086,11 +1118,44 @@
 			this.floatTrackbarControlCloudLowFrequency.Value = 7.5F;
 			this.floatTrackbarControlCloudLowFrequency.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlCloudLowFrequency_ValueChanged);
 			// 
+			// buttonLoadPreset
+			// 
+			this.buttonLoadPreset.Location = new System.Drawing.Point(663, 502);
+			this.buttonLoadPreset.Name = "buttonLoadPreset";
+			this.buttonLoadPreset.Size = new System.Drawing.Size(75, 23);
+			this.buttonLoadPreset.TabIndex = 5;
+			this.buttonLoadPreset.Text = "Load Preset";
+			this.buttonLoadPreset.UseVisualStyleBackColor = true;
+			this.buttonLoadPreset.Click += new System.EventHandler(this.buttonLoadPreset_Click);
+			// 
+			// buttonSavePreset
+			// 
+			this.buttonSavePreset.Location = new System.Drawing.Point(744, 502);
+			this.buttonSavePreset.Name = "buttonSavePreset";
+			this.buttonSavePreset.Size = new System.Drawing.Size(75, 23);
+			this.buttonSavePreset.TabIndex = 5;
+			this.buttonSavePreset.Text = "Save Preset";
+			this.buttonSavePreset.UseVisualStyleBackColor = true;
+			this.buttonSavePreset.Click += new System.EventHandler(this.buttonSavePreset_Click);
+			// 
+			// openFileDialog
+			// 
+			this.openFileDialog.DefaultExt = "*.xml";
+			this.openFileDialog.FileName = "VolumePreset.xml";
+			this.openFileDialog.Filter = "XML Files (*.xml)|*.xml|All Files|*.*";
+			// 
+			// saveFileDialog
+			// 
+			this.saveFileDialog.DefaultExt = "*.xml";
+			this.saveFileDialog.Filter = "XML Files (*.xml)|*.xml|All Files|*.*";
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(1004, 533);
+			this.ClientSize = new System.Drawing.Size(1004, 537);
+			this.Controls.Add(this.buttonSavePreset);
+			this.Controls.Add(this.buttonLoadPreset);
 			this.Controls.Add(this.groupBoxNoise);
 			this.Controls.Add(this.groupBoxTerrain);
 			this.Controls.Add(this.groupBoxClouds);
@@ -1197,6 +1262,12 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlCloudShadowStrength;
 		private System.Windows.Forms.Label label39;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTerrainHeight;
+		private System.Windows.Forms.Label label40;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAltitudeOffset;
+		private System.Windows.Forms.Button buttonLoadPreset;
+		private System.Windows.Forms.Button buttonSavePreset;
+		private System.Windows.Forms.OpenFileDialog openFileDialog;
+		private System.Windows.Forms.SaveFileDialog saveFileDialog;
 	}
 }
 

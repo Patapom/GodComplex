@@ -442,9 +442,9 @@ void WINAPI	EntryPoint()
 		ReloadChangedTweakableValues();
 
 		// Reload modified shaders
-// 		WatchIncludesModifications();
-// 		Material::WatchShadersModifications();
-// 		ComputeShader::WatchShadersModifications();
+		WatchIncludesModifications();
+		Material::WatchShadersModifications();
+		ComputeShader::WatchShadersModifications();
 #endif
 
 		// Run the intro

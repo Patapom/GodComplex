@@ -12,6 +12,8 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
+using System.IO;
+using System.Xml;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Reflection;
@@ -37,6 +39,7 @@ namespace TestMemoryMappedFiles
 			public float	FogAnisotropy;
 			public float	AverageGroundReflectance;
 			public float	GodraysStrength;
+			public float	AltitudeOffset;
 			// TODO: Add scattering/extinction ratio?
 
 			// Volumetrics Params
@@ -111,8 +114,12 @@ namespace TestMemoryMappedFiles
 			m_MMF.Dispose();
 		}
 
+		private bool	m_bInternalUpdate = false;
 		private void	UpdateMMF()
 		{
+			if ( m_bInternalUpdate )
+				return;
+
 			// Update checksum
 			FieldInfo[]	Fields = m_Instance.GetType().GetFields( BindingFlags.Public | BindingFlags.Instance );
 
@@ -131,6 +138,66 @@ namespace TestMemoryMappedFiles
 			// Write the new content...
 			m_View.Write( 0, ref m_Instance );
 			m_View.Flush();
+		}
+
+		public void		UpdateFromParams()
+		{
+			m_bInternalUpdate = true;
+
+			floatTrackbarControlSunTheta.Value = m_Instance.SunTheta / 0.01745329251994329576923690768489f;
+			floatTrackbarControlSunAzimuth.Value = m_Instance.SunPhi / 0.01745329251994329576923690768489f;
+//			floatTrackbarControlIntensity.Value = m_Instance.SunIntensity;
+			floatTrackbarControlAirAmount.Value = m_Instance.AirAmount;
+			floatTrackbarControlFogAmount.Value = m_Instance.FogScattering / 0.004f;
+//			floatTrackbarControlSunTheta.Value = m_Instance.FogExtinction;
+			floatTrackbarControlAirRefAltitude.Value = m_Instance.AirReferenceAltitudeKm;
+			floatTrackbarControlFogRefAltitude.Value = m_Instance.FogReferenceAltitudeKm;
+			floatTrackbarControlFogAnisotropy.Value = m_Instance.FogAnisotropy;
+//			floatTrackbarControlGroundReflectance.Value = m_Instance.AverageGroundReflectance;
+			floatTrackbarControlGodraysStrength.Value = m_Instance.GodraysStrength;
+			floatTrackbarControlAltitudeOffset.Value = m_Instance.AltitudeOffset;
+
+			// Volumetrics Params
+			floatTrackbarControlCloudAltitude.Value = m_Instance.CloudBaseAltitude;
+			floatTrackbarControlCloudThickness.Value = m_Instance.CloudThickness;
+			floatTrackbarControlCloudExtinction.Value = m_Instance.CloudExtinction;
+			floatTrackbarControlCloudScatteringRatio.Value = m_Instance.CloudScattering / m_Instance.CloudExtinction;
+			floatTrackbarControlCloudPhaseIso.Value = m_Instance.CloudAnisotropyIso;
+			floatTrackbarControlCloudPhaseForward.Value = m_Instance.CloudAnisotropyForward;
+			floatTrackbarControlCloudShadowStrength.Value = m_Instance.CloudShadowStrength;
+
+			floatTrackbarControlIsotropicScattering.Value = m_Instance.CloudIsotropicScattering;
+			floatTrackbarControlIsotropicScatteringSkyFactor.Value = m_Instance.CloudIsoSkyRadianceFactor;
+			floatTrackbarControlIsotropicScatteringSunFactor.Value = m_Instance.CloudIsoSunRadianceFactor;
+			floatTrackbarControlIsotropicScatteringTerrainFactor.Value = m_Instance.CloudIsoTerrainReflectanceFactor;
+
+			// Noise Params
+				// Low frequency noise
+			floatTrackbarControlCloudLowFrequency.Value = m_Instance.NoiseLoFrequency;
+			floatTrackbarControlCloudVerticalLooping.Value = m_Instance.NoiseLoVerticalLooping;
+			floatTrackbarControlCloudLowAnimSpeed.Value = m_Instance.NoiseLoAnimSpeed;
+				// High frequency noise
+			floatTrackbarControlCloudHiFrequency.Value = m_Instance.NoiseHiFrequency;
+			floatTrackbarControlCloudHiOffset.Value = m_Instance.NoiseHiOffset;
+			floatTrackbarControlCloudHiFactor.Value = m_Instance.NoiseHiStrength;
+			floatTrackbarControlCloudHiAnimSpeed.Value = m_Instance.NoiseHiAnimSpeed;
+				// Combined noise params
+			floatTrackbarControlNoiseOffsetBottom.Value = m_Instance.NoiseOffsetBottom;
+			floatTrackbarControlNoiseOffsetMiddle.Value = m_Instance.NoiseOffsetMiddle;
+			floatTrackbarControlNoiseOffsetTop.Value = m_Instance.NoiseOffsetTop;
+			floatTrackbarControlNoiseContrast.Value = m_Instance.NoiseContrast;
+			floatTrackbarControlNoiseGamma.Value = m_Instance.NoiseGamma;
+				// Final shaping params
+			floatTrackbarControlNoiseShapingPower.Value = (float) Math.Log10( m_Instance.NoiseShapingPower );
+				
+			// Terrain Params
+			floatTrackbarControlTerrainHeight.Value = m_Instance.TerrainHeight;
+			floatTrackbarControlAlbedoMultiplier.Value = m_Instance.TerrainAlbedoMultiplier;
+			floatTrackbarControlTerrainShadowStrength.Value = m_Instance.TerrainCloudShadowStrength;
+
+			// Refresh block
+			m_bInternalUpdate = false;
+			UpdateMMF();
 		}
 
 		/// <summary>
@@ -197,6 +264,12 @@ namespace TestMemoryMappedFiles
 		private void floatTrackbarControlGodraysStrength_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_Instance.GodraysStrength = _Sender.Value;
+			UpdateMMF();
+		}
+
+		private void floatTrackbarControlAltitudeOffset_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_Instance.AltitudeOffset = _Sender.Value;
 			UpdateMMF();
 		}
 
@@ -383,6 +456,93 @@ namespace TestMemoryMappedFiles
 		#endregion
 
 		#endregion
+
+		private void buttonLoadPreset_Click( object sender, EventArgs e )
+		{
+			if ( openFileDialog.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			try
+			{
+				XmlDocument	Doc = new XmlDocument();
+				Doc.Load( openFileDialog.FileName );
+
+				XmlElement	Root = Doc["Root"];
+				if ( Root == null )
+					throw new Exception( "Failed to find root element!" );
+
+				FieldInfo[]	Fields = typeof(ParametersBlock).GetFields( BindingFlags.Instance | BindingFlags.Public );
+				Dictionary<string,FieldInfo>	Name2Field = new Dictionary<string,FieldInfo>();
+				foreach ( FieldInfo Field in Fields )
+					Name2Field.Add( Field.Name, Field );
+
+				object	BoxedInstance = (object) m_Instance;	// Struct needs to be boxed to be referenced and not passed by value...
+
+				string	Warnings = "";
+				foreach ( XmlNode ChildNode in Root.ChildNodes )
+					if ( ChildNode is XmlElement )
+					{
+						XmlElement	FieldElement = ChildNode as XmlElement;
+						if ( !Name2Field.ContainsKey( FieldElement.Name ) )
+						{	// Unknown field...
+							Warnings += "	Unrecognized field \"" + FieldElement.Name + "\".\r\n";
+							continue;
+						}
+
+						FieldInfo	Field = Name2Field[FieldElement.Name];
+						string		Value = FieldElement.GetAttribute( "Value" );
+
+						if ( Field.FieldType == typeof(float) )
+							Field.SetValue( BoxedInstance, float.Parse( Value ) );
+						else if ( Field.FieldType == typeof(int) )
+							Field.SetValue( BoxedInstance, int.Parse( Value ) );
+						else if ( Field.FieldType == typeof(bool) )
+							Field.SetValue( BoxedInstance, bool.Parse( Value ) );
+						else
+						{
+							Warnings += "	Unsupported field type \"" + Field.FieldType + "\" for field \"" + Field.Name + "\" (Value = " + Value + ")\r\n";
+							continue;
+						}
+					}
+
+				// Unbox
+				m_Instance = (ParametersBlock) BoxedInstance;
+
+				// Update the sliders
+				UpdateFromParams();
+
+				if ( Warnings == "" )
+					MessageBox.Show( this, "Success!", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information );
+				else
+					MessageBox.Show( this, "Success with warnings:\r\n\r\n" + Warnings, "Info", MessageBoxButtons.OK, MessageBoxIcon.Warning );
+			}
+			catch ( Exception _e )
+			{
+				MessageBox.Show( this, "An error occurred while loading preset file: " + _e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
+		}
+
+		private void buttonSavePreset_Click( object sender, EventArgs e )
+		{
+			if ( saveFileDialog.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			XmlDocument	Doc = new XmlDocument();
+			XmlElement	Root = Doc.CreateElement( "Root" );
+			Doc.AppendChild( Root );
+
+			FieldInfo[]	Fields = typeof(ParametersBlock).GetFields( BindingFlags.Instance | BindingFlags.Public );
+			foreach ( FieldInfo Field in Fields )
+			{
+				XmlElement	FieldElement = Doc.CreateElement( Field.Name );
+				Root.AppendChild( FieldElement );
+				FieldElement.SetAttribute( "Value", Field.GetValue( m_Instance ).ToString() );
+			}
+
+			Doc.Save( saveFileDialog.FileName );
+
+			MessageBox.Show( this, "Success!", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information );
+		}
 
 		#endregion
 	}

@@ -77,6 +77,8 @@ void	ComputeFinalColor( float3 _PositionWorld, float3 _View, float2 _DistanceKm,
 {
 	float3	PositionKm = WORLD2KM * _PositionWorld;
 
+PositionKm.y -= _AltitudeOffsetKm;
+
 	////////////////////////////////////////////////////////////
 	// Compute sky radiance arriving at camera, not accounting for clouds
 	float3	StartPositionKm = PositionKm - EARTH_CENTER_KM;	// Start position from origin (i.e. center of the Earth)

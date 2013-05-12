@@ -57,7 +57,7 @@ public:		// NESTED TYPES
 
 		NjFloat2	AirParams;		// X=Scattering Factor, Y=Reference Altitude (km)
 		float		GodraysStrength;
-		float		__PAD;
+		float		AltitudeOffset;
 
 		NjFloat4	FogParams;		// X=Scattering Coeff, Y=Extinction Coeff, Z=Reference Altitude (km), W=Anisotropy
 	};
@@ -85,12 +85,14 @@ public:		// NESTED TYPES
 		float		__PAD0;
 
 		// Noise
-		NjFloat3	_CloudLoFreqParams;			// X=Frequency Multiplier, Y=Vertical Looping, Z=Animation speed
-		float		__PAD1;
-		NjFloat4	_CloudHiFreqParams;			// X=Frequency Multiplier, Y=Offset, Z=Factor, W=Animation Speed
+		NjFloat2	_CloudLoFreqParams;			// X=Frequency Multiplier, Y=Vertical Looping
+		NjFloat2	_CloudLoFreqPositionOffset;
+
+		NjFloat3	_CloudHiFreqParams;			// X=Frequency Multiplier, Y=Offset, Z=Factor
+		NjFloat2	_CloudHiFreqPositionOffset;
 
 		NjFloat3	_CloudOffsets;				// X=Low Altitude Offset, Y=Mid Altitude Offset, Z=High Altitude Offset
-		float		__PAD2;
+//		float		__PAD2;
 
 		NjFloat2	_CloudContrastGamma;		// X=Contrast Y=Gamma
 		float		_CloudShapingPower;
@@ -137,6 +139,10 @@ private:	// FIELDS
 
 	NjFloat4x4			m_Cloud2World;
 	NjFloat4x4			m_Terrain2World;
+
+	// Cloud animation infos
+	float				m_CloudAnimSpeedLoFreq;
+	float				m_CloudAnimSpeedHiFreq;
 
 	// Light infos
 //	NjFloat3			m_LightDirection;
@@ -213,6 +219,7 @@ private:	// FIELDS
 		float	FogAnisotropy;
 		float	AverageGroundReflectance;
 		float	GodraysStrength;
+		float	AltitudeOffset;
 
 		// Volumetrics Params
 		float	CloudBaseAltitude;
@@ -283,6 +290,7 @@ protected:
 	void		UpdateSkyTables();
 
 	void		InitStage( int _StageIndex );
+	void		InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ, int _GroupsCount[3] );
 	bool		IncreaseStagePass( int _StageIndex );	// Returns true if the stage is over
 
 

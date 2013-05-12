@@ -49,12 +49,14 @@ cbuffer	cbVolume	: register( b9 )
 	// float	__PAD
 
 	// Noise
-	float3		_CloudLoFreqParams;			// X=Frequency Multiplier, Y=Vertical Looping, Z=Animation speed
-	// float	__PAD
-	float4		_CloudHiFreqParams;			// X=Frequency Multiplier, Y=Offset, Z=Factor, W=Animation Speed
+	float2		_CloudLoFreqParams;			// X=Frequency Multiplier, Y=Vertical Looping
+	float2		_CloudLoFreqPositionOffset;
+
+	float3		_CloudHiFreqParams;			// X=Frequency Multiplier, Y=Offset, Z=Factor
+	float		_CloudHiFreqPositionOffsetX;
+	float		_CloudHiFreqPositionOffsetZ;
 
 	float3		_CloudOffsets;				// X=Low Altitude Offset, Y=Mid Altitude Offset, Z=High Altitude Offset
-	// float	__PAD
 
 	float2		_CloudContrastGamma;		// X=Contrast Y=Gamma
 	float		_CloudShapingPower;
@@ -185,7 +187,7 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 //	UVW0 += _Time.x * float3( 0.005, 0, -0.0125 );
 
 #ifdef	ANIMATE
-	float3	UVW0 = FreqMultiplierLow * (_Position + _CloudLoFreqParams.z * _Time.x * float3( 0.66, 0, -1.66 ));	// Very low frequency for the 32^3 noise
+	float3	UVW0 = FreqMultiplierLow * (_Position + float3( _CloudLoFreqPositionOffset.x, 0.0, _CloudLoFreqPositionOffset.y ));	// Very low frequency for the 32^3 noise
 #else
 	float3	UVW0 = FreqMultiplierLow * _Position;	// Very low frequency for the 32^3 noise
 			UVW0 += float3( 0.005, 0, -0.13 );
@@ -207,7 +209,7 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 //	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH.xx, 1.0 / _CloudAltitudeThickness.y ) * _Position.xzy;	// Low frequency for the high frequency noise
 //	UVW1 += _Time.x * float3( 0.0, -0.01, 0.0 );	// Good
 #ifdef	ANIMATE
-	float3	UVW1 = float3( _CloudHiFreqParams.xx, 1.0 / _CloudAltitudeThickness.y ) * (_Position.xzy + _CloudHiFreqParams.w * _Time.x * float3( 0.0, -0.08, 0.0 ));	// Low frequency for the high frequency noise
+	float3	UVW1 = float3( _CloudHiFreqParams.xx, 1.0 / _CloudAltitudeThickness.y ) * (_Position.xzy + float3( _CloudHiFreqPositionOffsetX, _CloudHiFreqPositionOffsetZ, 0.0 ));	// Low frequency for the high frequency noise
 #else
 	float3	UVW1 = float3( _CloudHiFreqParams.xx, 1.0 / _CloudAltitudeThickness.y ) * _Position.xzy;	// Low frequency for the high frequency noise
 #endif

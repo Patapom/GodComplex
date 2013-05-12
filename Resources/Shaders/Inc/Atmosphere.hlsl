@@ -47,6 +47,7 @@ cbuffer	cbAtmosphere	: register( b7 )
 
 	float2		_AirParams;			// X=Scattering Factor, Y=Reference Altitude (km)
 	float		_GodraysStrength;
+	float		_AltitudeOffsetKm;
 
 	float4		_FogParams;			// X=Scattering Coeff, Y=Extinction Coeff, Z=Reference Altitude (km), W=Anisotropy
 }
