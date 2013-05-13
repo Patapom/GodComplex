@@ -17,6 +17,7 @@ Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFo
 
 	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
 		m_LastAssignedSlots[ShaderStageIndex] = -1;
+	m_LastAssignedSlotsUAV = -1;
 
 	m_pTexture = &_Texture;
 }
@@ -32,6 +33,7 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 
 	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
 		m_LastAssignedSlots[ShaderStageIndex] = -1;
+	m_LastAssignedSlotsUAV = -1;
 
 	m_Width = _Width;
 	m_Height = _Height;
@@ -109,6 +111,7 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const IDepthSten
 
 	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
 		m_LastAssignedSlots[ShaderStageIndex] = -1;
+	m_LastAssignedSlotsUAV = -1;
 
 	m_Width = _Width;
 	m_Height = _Height;
@@ -143,6 +146,7 @@ Texture2D::~Texture2D()
 
 	m_CachedShaderViews.ForEach( ReleaseDirectXObject, NULL );
 	m_CachedTargetViews.ForEach( ReleaseDirectXObject, NULL );
+	m_CachedUAVs.ForEach( ReleaseDirectXObject, NULL );
 
 	if ( m_pCachedDepthStencilView != NULL )
 		m_pCachedDepthStencilView->Release();
@@ -210,6 +214,34 @@ ID3D11RenderTargetView*		Texture2D::GetTargetView( int _MipLevelIndex, int _Arra
 	return pView;
 }
 
+ID3D11UnorderedAccessView*	Texture2D::GetUAV( int _MipLevelIndex, int _ArrayStart, int _ArraySize ) const
+{
+	if ( _ArraySize == 0 )
+		_ArraySize = m_ArraySize - _ArrayStart;
+
+	// Check if we already have it
+//	U32	Hash = _ArraySize | ((_ArrayStart | (_MipLevelIndex << 12)) << 12);
+	U32	Hash = (_MipLevelIndex << 0) | (_ArrayStart << 4) | (_ArraySize << (4+12));	// Re-organized to have most likely changes (i.e. mip & array starts) first
+	ID3D11UnorderedAccessView*	pExistingView = (ID3D11UnorderedAccessView*) m_CachedUAVs.Get( Hash );
+	if ( pExistingView != NULL )
+		return pExistingView;
+
+	// Create a new one
+	D3D11_UNORDERED_ACCESS_VIEW_DESC	Desc;
+	Desc.Format = m_Format.DirectXFormat();
+	Desc.ViewDimension = m_ArraySize > 1 ? D3D11_UAV_DIMENSION_TEXTURE2DARRAY : D3D11_UAV_DIMENSION_TEXTURE2D;
+	Desc.Texture2DArray.MipSlice = _MipLevelIndex;
+	Desc.Texture2DArray.FirstArraySlice = _ArrayStart;
+	Desc.Texture2DArray.ArraySize = _ArraySize;
+
+	ID3D11UnorderedAccessView*	pView;
+	Check( m_Device.DXDevice().CreateUnorderedAccessView( m_pTexture, &Desc, &pView ) );
+
+	m_CachedUAVs.Add( Hash, pView );
+
+	return pView;
+}
+
 ID3D11DepthStencilView*		Texture2D::GetDepthStencilView() const
 {
 	if ( m_pCachedDepthStencilView == NULL )
@@ -236,11 +268,13 @@ void	Texture2D::Set( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResour
 	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &_pView );
+	m_Device.DXContext().CSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[0] = _SlotIndex;
 	m_LastAssignedSlots[1] = _SlotIndex;
 	m_LastAssignedSlots[2] = _SlotIndex;
 	m_LastAssignedSlots[3] = _SlotIndex;
 	m_LastAssignedSlots[4] = _SlotIndex;
+	m_LastAssignedSlots[5] = _SlotIndex;
 }
 
 void	Texture2D::SetVS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
@@ -283,6 +317,14 @@ void	Texture2D::SetPS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[4] = _SlotIndex;
 }
+void	Texture2D::SetCS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
+{
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+
+	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
+	m_Device.DXContext().CSSetShaderResources( _SlotIndex, 1, &_pView );
+	m_LastAssignedSlots[5] = _SlotIndex;
+}
 
 void	Texture2D::RemoveFromLastAssignedSlots() const
 {
@@ -300,6 +342,24 @@ void	Texture2D::RemoveFromLastAssignedSlots() const
 			m_Device.RemoveShaderResources( m_LastAssignedSlots[ShaderStageIndex], 1, pStageFlags[ShaderStageIndex] );
 			m_LastAssignedSlots[ShaderStageIndex] = -1;
 		}
+}
+
+// UAV setting
+void	Texture2D::SetCSUAV( int _SlotIndex, ID3D11UnorderedAccessView* _pView ) const
+{
+	_pView = _pView != NULL ? _pView : GetUAV( 0, 0, 0 );
+	UINT	InitialCount = -1;
+	m_Device.DXContext().CSSetUnorderedAccessViews( _SlotIndex, 1, &_pView, &InitialCount );
+	m_LastAssignedSlotsUAV = _SlotIndex;
+}
+
+void	Texture2D::RemoveFromLastAssignedSlotUAV() const
+{
+	ID3D11UnorderedAccessView*	pNULL = NULL;
+	UINT	InitialCount = -1;
+	if ( m_LastAssignedSlotsUAV != -1 )
+		m_Device.DXContext().CSSetUnorderedAccessViews( m_LastAssignedSlotsUAV, 1, &pNULL, &InitialCount );
+	m_LastAssignedSlotsUAV = -1;
 }
 
 void	Texture2D::CopyFrom( Texture2D& _SourceTexture )

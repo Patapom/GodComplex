@@ -57,7 +57,9 @@ public:		// METHODS
 
 	T*		Get( const char* _pKey ) const;					// retrieve entry
 	T&		Add( const char* _pKey );						// store entry
+	T&		AddUnique( const char* _pKey );					// store entry
 	void	Add( const char* _pKey, const T& _Value );		// store entry
+	void	AddUnique( const char* _pKey, const T& _Value );// store entry
 	void	Remove( const char* _pKey );					// remove entry
 	void	ForEach( VisitorDelegate _pDelegate, void* _pUserData );
 

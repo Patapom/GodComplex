@@ -23,7 +23,9 @@ private:	// FIELDS
 	// Cached resource views
 	mutable DictionaryU32			m_CachedShaderViews;
 	mutable DictionaryU32			m_CachedTargetViews;
-
+	mutable DictionaryU32			m_CachedUAVs;
+	mutable int						m_LastAssignedSlots[6];
+	mutable int						m_LastAssignedSlotsUAV;
 	D3D11_MAPPED_SUBRESOURCE		m_LockedResource;
 
 
@@ -44,6 +46,7 @@ public:	 // METHODS
 
 	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart, int _MipLevelsCount ) const;
 	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const;
+	ID3D11UnorderedAccessView*	GetUAV( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const;
 
 	// Uploads the texture to the shader
 	void		Set( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
@@ -52,6 +55,12 @@ public:	 // METHODS
 	void		SetDS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
 	void		SetGS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
 	void		SetPS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
+	void		SetCS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
+	void		RemoveFromLastAssignedSlots() const;
+
+	// Upload the texture as a UAV for a compute shader
+	void		SetCSUAV( int _SlotIndex, ID3D11UnorderedAccessView* _pView=NULL ) const;
+	void		RemoveFromLastAssignedSlotUAV() const;
 
 	// Texture access by the CPU
 	void		CopyFrom( Texture3D& _SourceTexture );

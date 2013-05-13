@@ -2,6 +2,7 @@
 #include "Components/Component.h"
 #include "Components/Texture2D.h"
 #include "Components/Texture3D.h"
+#include "Components/StructuredBuffer.h"
 #include "Components/States.h"
 
 Device::Device()
@@ -281,6 +282,7 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	m_pDeviceContext->DSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 	m_pDeviceContext->GSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 	m_pDeviceContext->PSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
+	m_pDeviceContext->CSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 }
 
 void	Device::Exit()

@@ -292,6 +292,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="RendererD3D11\Components\Material.h" />
     <ClInclude Include="RendererD3D11\Components\Primitive.h" />
     <ClInclude Include="RendererD3D11\Components\States.h" />
+    <ClInclude Include="RendererD3D11\Components\StructuredBuffer.h" />
     <ClInclude Include="RendererD3D11\Components\Texture2D.h" />
     <ClInclude Include="RendererD3D11\Components\Texture3D.h" />
     <ClInclude Include="RendererD3D11\Device.h" />
@@ -310,6 +311,7 @@ MinifyAll.cmd</Command>
     </ClInclude>
     <ClInclude Include="Utility\Memory.h" />
     <ClInclude Include="Utility\MemoryMappedFile.h" />
+    <ClInclude Include="Utility\Profiling.h" />
     <ClInclude Include="Utility\Random.h" />
     <ClInclude Include="Utility\Resources.h" />
     <ClInclude Include="Utility\tweakval.h" />
@@ -376,6 +378,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="RendererD3D11\Components\Material.cpp" />
     <ClCompile Include="RendererD3D11\Components\Primitive.cpp" />
     <ClCompile Include="RendererD3D11\Components\States.cpp" />
+    <ClCompile Include="RendererD3D11\Components\StructuredBuffer.cpp" />
     <ClCompile Include="RendererD3D11\Components\Texture2D.cpp" />
     <ClCompile Include="RendererD3D11\Components\Texture3D.cpp" />
     <ClCompile Include="RendererD3D11\Device.cpp" />
@@ -386,6 +389,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Utility\Camera.cpp" />
     <ClCompile Include="Utility\Memory.cpp" />
     <ClCompile Include="Utility\MemoryMappedFile.cpp" />
+    <ClCompile Include="Utility\Profiling.cpp" />
     <ClCompile Include="Utility\Random.cpp" />
     <ClCompile Include="Utility\Resources.cpp" />
     <ClCompile Include="Utility\tweakval.cpp" />
@@ -434,6 +438,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\VolumetricDepthWrite.hlsl" />
     <None Include="Resources\Shaders\VolumetricDisplay.hlsl" />
     <None Include="Resources\Shaders\VolumetricPreComputeAtmosphere.hlsl" />
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmosphereCS.hlsl" />
     <None Include="Resources\Shaders\VolumetricTerrain.hlsl" />
     <None Include="Tools\GodComplex.kkm" />
   </ItemGroup>

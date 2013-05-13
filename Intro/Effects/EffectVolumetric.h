@@ -2,9 +2,23 @@
 
 #define SHOW_TERRAIN
 
+#define	TRANSMITTANCE_W	256
+#define	TRANSMITTANCE_H	64
+#define	TRANSMITTANCE_TABLE_STEPS_COUNT	500	// Default amount of integration steps to perform to compute this table
+
+#define	IRRADIANCE_W	64
+#define	IRRADIANCE_H	16
+
+#define	RES_3D_ALTITUDE			32
+#define	RES_3D_COS_THETA_VIEW	128
+#define	RES_3D_COS_THETA_SUN	32
+#define	RES_3D_COS_GAMMA		8
+#define	RES_3D_U				(RES_3D_COS_THETA_SUN * RES_3D_COS_GAMMA)	// Full texture will be 256*128*32
+
+
 template<typename> class CB;
 
-class EffectVolumetric : public MemoryMappedFile::IOnFileChanged
+class EffectVolumetric
 {
 private:	// CONSTANTS
 
@@ -13,18 +27,6 @@ private:	// CONSTANTS
 
 	static const int		FRACTAL_TEXTURE_POT = 7;
 	static const int		FRACTAL_OCTAVES = 8;
-
-	static const int		TRANSMITTANCE_W = 256;
-	static const int		TRANSMITTANCE_H = 64;
-	static const int		TRANSMITTANCE_TABLE_STEPS_COUNT = 500;	// Default amount of integration steps to perform to compute this table
-
-	static const int		IRRADIANCE_W = 64;
-	static const int		IRRADIANCE_H = 16;
-
-	static const int		RES_R	 = 32;
-	static const int		RES_MU	 = 128;
-	static const int		RES_MU_S = 32;
-	static const int		RES_NU	 = 8;
 
 
 public:		// NESTED TYPES
@@ -54,8 +56,8 @@ public:		// NESTED TYPES
 		float		SunIntensity;
 
 		NjFloat2	AirParams;		// X=Scattering Factor, Y=Reference Altitude (km)
-		float		AverageGroundReflectance;
 		float		GodraysStrength;
+		float		AltitudeOffset;
 
 		NjFloat4	FogParams;		// X=Scattering Coeff, Y=Extinction Coeff, Z=Reference Altitude (km), W=Anisotropy
 	};
@@ -83,16 +85,42 @@ public:		// NESTED TYPES
 		float		__PAD0;
 
 		// Noise
-		NjFloat3	_CloudLoFreqParams;			// X=Frequency Multiplier, Y=Vertical Looping, Z=Animation speed
-		float		__PAD1;
-		NjFloat4	_CloudHiFreqParams;			// X=Frequency Multiplier, Y=Offset, Z=Factor, W=Animation Speed
+		NjFloat2	_CloudLoFreqParams;			// X=Frequency Multiplier, Y=Vertical Looping
+		NjFloat2	_CloudLoFreqPositionOffset;
+
+		NjFloat3	_CloudHiFreqParams;			// X=Frequency Multiplier, Y=Offset, Z=Factor
+		NjFloat2	_CloudHiFreqPositionOffset;
 
 		NjFloat3	_CloudOffsets;				// X=Low Altitude Offset, Y=Mid Altitude Offset, Z=High Altitude Offset
-		float		__PAD2;
+//		float		__PAD2;
 
 		NjFloat2	_CloudContrastGamma;		// X=Contrast Y=Gamma
 		float		_CloudShapingPower;
 		float		__PAD3;
+	};
+
+	struct	CBPreComputeCS
+	{
+		U32		_TargetSizeX;	// Final render target size (2D or 3D)
+		U32		_TargetSizeY;
+		U32		_TargetSizeZ;
+		U32		__PAD0;
+
+		U32		_GroupsCountX;	// Amount of render groups (2D or 3D) for a single pass
+		U32		_GroupsCountY;
+		U32		_GroupsCountZ;
+		U32		__PAD1;
+
+		U32		_PassIndexX;	// Index of the X,Y,Z pass (each pass computes THREAD_COUNT_X*THREAD_COUNT_Y*THREAD_COUNT_Z texels)
+		U32		_PassIndexY;
+		U32		_PassIndexZ;
+
+		U32		_bFirstPass;	// True if we're computing the first pass that reads single-scattering for Rayleigh & Mie from 2 separate tables
+		float	_AverageGroundReflectance;
+
+		void	SetTargetSize( U32 _X, U32 _Y, U32 _Z=1 )	{ _TargetSizeX = _X; _TargetSizeY = _Y; _TargetSizeZ = _Z; }
+		void	SetGroupsCount( U32 _X, U32 _Y, U32 _Z=1 )	{ _GroupsCountX = _X; _GroupsCountY = _Y; _GroupsCountZ = _Z; }
+		void	SetPassIndex( U32 _X, U32 _Y, U32 _Z=0 )	{ _PassIndexX = _X; _PassIndexY = _Y; _PassIndexZ = _Z; }
 	};
 
 private:	// FIELDS
@@ -111,6 +139,10 @@ private:	// FIELDS
 
 	NjFloat4x4			m_Cloud2World;
 	NjFloat4x4			m_Terrain2World;
+
+	// Cloud animation infos
+	float				m_CloudAnimSpeedLoFreq;
+	float				m_CloudAnimSpeedHiFreq;
 
 	// Light infos
 //	NjFloat3			m_LightDirection;
@@ -140,9 +172,9 @@ private:	// FIELDS
 	Texture2D*			m_pRTRender;
 
 	// Sky rendering
-	Texture2D*			m_pRTTransmittance;
-	Texture2D*			m_pRTIrradiance;
-	Texture3D*			m_pRTInScattering;
+	Texture2D*			m_ppRTTransmittance[2];
+	Texture2D*			m_ppRTIrradiance[3];
+	Texture3D*			m_ppRTInScattering[3];
 
 	int					m_RenderWidth, m_RenderHeight;
 
@@ -151,6 +183,7 @@ private:	// FIELDS
 	CB<CBAtmosphere>*	m_pCB_Atmosphere;
 	CB<CBShadow>*		m_pCB_Shadow;
 	CB<CBVolume>*		m_pCB_Volume;
+	CB<CBPreComputeCS>*	m_pCB_PreComputeSky;
 
 	NjFloat4x4			m_World2Light;
 	NjFloat4x4			m_Light2ShadowNormalized;	// Yields a normalized Z instead of world units like World2Shadow
@@ -186,6 +219,7 @@ private:	// FIELDS
 		float	FogAnisotropy;
 		float	AverageGroundReflectance;
 		float	GodraysStrength;
+		float	AltitudeOffset;
 
 		// Volumetrics Params
 		float	CloudBaseAltitude;
@@ -232,7 +266,6 @@ private:	// FIELDS
 #endif
 
 
-
 public:		// PROPERTIES
 
 	int			GetErrorCode() const	{ return m_ErrorCode; }
@@ -249,6 +282,17 @@ protected:
 	// Sky tables computation
 	void		PreComputeSkyTables();
 	void		FreeSkyTables();
+
+		// Time-sliced update
+	void		InitUpdateSkyTables();
+	void		ExitUpdateSkyTables();
+	void		TriggerSkyTablesUpdate();
+	void		UpdateSkyTables();
+
+	void		InitStage( int _StageIndex );
+	void		InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ, int _GroupsCount[3] );
+	bool		IncreaseStagePass( int _StageIndex );	// Returns true if the stage is over
+
 
 	// Tables Pre-computation
 	void		BuildTransmittanceTable( int _Width, int _Height, Texture2D& _StagingTexture );
@@ -275,7 +319,4 @@ protected:
 	NjFloat4x4	ComputeTerrainShadowTransform();
 
 	Texture3D*	BuildFractalTexture( bool _bLoadFirst );
-
-	// MemoryMappedFile::IOnFileChanged Implementation
-	virtual void	OnMemoryMappedFileChanged( MemoryMappedFile& _File );
 };

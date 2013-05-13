@@ -7,18 +7,17 @@ EffectDeferred::EffectDeferred() : m_ErrorCode( 0 )
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
-	CHECK_MATERIAL( m_pMatDepthPass = CreateMaterial( IDR_SHADER_DEFERRED_DEPTH_PASS, VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, NULL ), 1 );
-	CHECK_MATERIAL( m_pMatFillGBuffer = CreateMaterial( IDR_SHADER_DEFERRED_FILL_GBUFFER, VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
-	CHECK_MATERIAL( m_pMatShading_StencilPass = CreateMaterial( IDR_SHADER_DEFERRED_SHADING_STENCIL, VertexFormatP3::DESCRIPTOR, "VS", NULL, NULL ), 1 );
-	CHECK_MATERIAL( m_pMatShading = CreateMaterial( IDR_SHADER_DEFERRED_SHADING, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
+	CHECK_MATERIAL( m_pMatDepthPass = CreateMaterial( IDR_SHADER_DEFERRED_DEPTH_PASS, "./Resources/Shaders/DeferredDepthPass.hlsl", VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, NULL ), 1 );
+	CHECK_MATERIAL( m_pMatFillGBuffer = CreateMaterial( IDR_SHADER_DEFERRED_FILL_GBUFFER, "./Resources/Shaders/DeferredFillGBuffer.hlsl", VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
+	CHECK_MATERIAL( m_pMatShading_StencilPass = CreateMaterial( IDR_SHADER_DEFERRED_SHADING_STENCIL, "./Resources/Shaders/DeferredShadingStencil.hlsl", VertexFormatP3::DESCRIPTOR, "VS", NULL, NULL ), 1 );
+	CHECK_MATERIAL( m_pMatShading = CreateMaterial( IDR_SHADER_DEFERRED_SHADING, "./Resources/Shaders/DeferredShading.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the primitives
 	{
-		GeometryBuilder::MapperSpherical	Mapper;
 		m_pPrimSphere = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
-		GeometryBuilder::BuildSphere( 60, 30, *m_pPrimSphere, Mapper );
+		GeometryBuilder::BuildSphere( 60, 30, *m_pPrimSphere );
 	}
 
 	// Create the render targets

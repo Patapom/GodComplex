@@ -64,9 +64,24 @@ template<typename T> T&	DictionaryString<T>::Add( const char* _pKey )
 	return pNode->Value;
 }
 
+template<typename T> T&	DictionaryString<T>::AddUnique( const char* _pKey )
+{
+	T*	pExisting = Get( _pKey );
+	if ( pExisting != NULL )
+		return *pExisting;
+
+	return Add( _pKey );
+}
+
 template<typename T> void	DictionaryString<T>::Add( const char* _pKey, const T& _Value )
 {
 	T&	Value = Add( _pKey );
+		Value = _Value;
+}
+
+template<typename T> void	DictionaryString<T>::AddUnique( const char* _pKey, const T& _Value )
+{
+	T&	Value = AddUnique( _pKey );
 		Value = _Value;
 }
 

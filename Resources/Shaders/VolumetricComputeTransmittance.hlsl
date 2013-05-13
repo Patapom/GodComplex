@@ -8,7 +8,7 @@
 //#define USE_FRUSTUM_SPLAT		// Define this to sample the camera frustum splat texture that indicates us whether a shadow pixel is relevant for computation or not
 
 
-#define	INCLUDE_TERRAIN_SHADOWING	// Define this to sample the terrain shadow map
+//#define	INCLUDE_TERRAIN_SHADOWING	// Define this to sample the terrain shadow map
 
 
 static const float	STEPS_COUNT = 64.0;
