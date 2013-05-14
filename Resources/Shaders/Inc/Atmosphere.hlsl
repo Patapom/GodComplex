@@ -347,7 +347,7 @@ float3	ComputeSkyColor( float3 _PositionKm, float3 _View, float3 _Sun, float _Di
 	}
 	else
 	{	// We're looking up. Check if we can see the Sun...
-		L0 = smoothstep( 0.999, 0.9995, CosGamma );					// 1 if we're looking directly at the Sun (warning: bad for the eyes!)
+		L0 = smoothstep( 0.9997, 0.9999, CosGamma );					// 1 if we're looking directly at the Sun (warning: bad for the eyes!)
 		L0 *= GetTransmittance( StartAltitudeKm, CosThetaView );	// Attenuated through the atmosphere
 	}
 
