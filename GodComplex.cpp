@@ -99,6 +99,20 @@ static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 // 		}
 		gs_WindowInfos.pKeys[wParam&0xFF] = uMsg == WM_KEYDOWN;
 	}
+// 	if ( uMsg == WM_LBUTTONDOWN )
+// 		gs_WindowInfos.MouseButtons |= 1;
+// 	if ( uMsg == WM_MBUTTONDOWN )
+// 		gs_WindowInfos.MouseButtons |= 2;
+// 	if ( uMsg == WM_RBUTTONDOWN )
+// 		gs_WindowInfos.MouseButtons |= 4;
+// 	if ( uMsg == WM_LBUTTONUP )
+// 		gs_WindowInfos.MouseButtons &= ~1;
+// 	if ( uMsg == WM_MBUTTONUP )
+// 		gs_WindowInfos.MouseButtons &= ~2;
+// 	if ( uMsg == WM_RBUTTONUP )
+// 		gs_WindowInfos.MouseButtons &= ~4;
+// 	if ( uMsg == WM_MOUSEMOVE )
+// 		gs_WindowInfos.MouseX
 #endif
 
 	return DefWindowProc( hWnd, uMsg, wParam, lParam );
@@ -253,7 +267,7 @@ void	DrawTime( float t )
 	static int		frame=0;
 	static float	OldTime=0.0;
 	static int		fps=0;
-	char			str[64];
+	char			str[128];
 	int				s, m, c;
 
 	if ( t < 0.0f )
@@ -277,7 +291,7 @@ void	DrawTime( float t )
 		c = floorf( t * 100.0f ) % 100;
 		float	ms = 1000.0f / fps;
 
-		sprintf_s( str, 64, "%s %02d:%02d:%02d  [%d fps] [%4.4f ms]", pWindowClass, m, s, c, fps, ms );
+		sprintf_s( str, 128, "%s %02d:%02d:%02d  [%d fps] [%4.4f ms] (!DEBUG WIP VERSION!)", pWindowClass, m, s, c, fps, ms );
 		SetWindowText( gs_WindowInfos.hWnd, str );
 	}
 }
@@ -321,11 +335,14 @@ void	HandleEvents()
 
 	gs_WindowInfos.Events.Mouse.obuttons[0] = gs_WindowInfos.Events.Mouse.buttons[0];
 	gs_WindowInfos.Events.Mouse.obuttons[1] = gs_WindowInfos.Events.Mouse.buttons[1];
-	gs_WindowInfos.Events.Mouse.buttons[0] = GetAsyncKeyState(VK_LBUTTON);
-	gs_WindowInfos.Events.Mouse.buttons[1] = GetAsyncKeyState(VK_RBUTTON);
+	gs_WindowInfos.Events.Mouse.obuttons[2] = gs_WindowInfos.Events.Mouse.buttons[2];
+	gs_WindowInfos.Events.Mouse.buttons[0] = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+	gs_WindowInfos.Events.Mouse.buttons[1] = (GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0;
+	gs_WindowInfos.Events.Mouse.buttons[2] = (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0;
 
 	gs_WindowInfos.Events.Mouse.dbuttons[0] = gs_WindowInfos.Events.Mouse.buttons[0] - gs_WindowInfos.Events.Mouse.obuttons[0];
 	gs_WindowInfos.Events.Mouse.dbuttons[1] = gs_WindowInfos.Events.Mouse.buttons[1] - gs_WindowInfos.Events.Mouse.obuttons[1];
+	gs_WindowInfos.Events.Mouse.dbuttons[2] = gs_WindowInfos.Events.Mouse.buttons[2] - gs_WindowInfos.Events.Mouse.obuttons[2];
 }
 
 void	print( const char* _pText, ... )
@@ -429,11 +446,13 @@ void WINAPI	EntryPoint()
 			DispatchMessage( &msg );
 		}
 
-#ifdef _DEBUG
-		HandleEvents();
-
+#ifndef NDEBUG
 		// Show FPS
 		DrawTime( Time );
+#endif
+
+#ifdef SURE_DEBUG
+		HandleEvents();
 
 		// Check for hash collisions => We must never have too many of them !
 		ASSERT( DictionaryU32::ms_MaxCollisionsCount < 2, "Too many collisions in hash tables ! Either increase size or use different hashing scheme !" );

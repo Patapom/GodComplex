@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GodComplex", "GodComplex.vcxproj", "{B74F66F3-1660-4BF2-B317-1CEA8EE5E6BD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDevice", "TestDevice\TestDevice.vcxproj", "{5638BCEA-669A-4990-B42D-EA48D2186194}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug Workshop|Mixed Platforms = Debug Workshop|Mixed Platforms
@@ -49,30 +47,6 @@ Global
 		{B74F66F3-1660-4BF2-B317-1CEA8EE5E6BD}.Release|Win32.Build.0 = Release|Win32
 		{B74F66F3-1660-4BF2-B317-1CEA8EE5E6BD}.Release|x64.ActiveCfg = Release|Win32
 		{B74F66F3-1660-4BF2-B317-1CEA8EE5E6BD}.Release|x86.ActiveCfg = Release|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Debug Workshop|Mixed Platforms.ActiveCfg = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Debug Workshop|Mixed Platforms.Build.0 = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Debug Workshop|Win32.ActiveCfg = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Debug Workshop|Win32.Build.0 = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Debug Workshop|x64.ActiveCfg = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Debug Workshop|x86.ActiveCfg = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Debug|Mixed Platforms.Build.0 = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Debug|Win32.ActiveCfg = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Debug|Win32.Build.0 = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Debug|x64.ActiveCfg = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Debug|x86.ActiveCfg = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.DebugPackedShaders|Mixed Platforms.ActiveCfg = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.DebugPackedShaders|Mixed Platforms.Build.0 = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.DebugPackedShaders|Win32.ActiveCfg = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.DebugPackedShaders|Win32.Build.0 = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.DebugPackedShaders|x64.ActiveCfg = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.DebugPackedShaders|x86.ActiveCfg = Debug|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Release|Mixed Platforms.Build.0 = Release|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Release|Win32.ActiveCfg = Release|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Release|Win32.Build.0 = Release|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Release|x64.ActiveCfg = Release|Win32
-		{5638BCEA-669A-4990-B42D-EA48D2186194}.Release|x86.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

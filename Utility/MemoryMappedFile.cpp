@@ -7,11 +7,14 @@ MemoryMappedFile::MemoryMappedFile( int _Size, const char* _pFileName )
 
 	m_pMappedFile = MapViewOfFile( m_hFile, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0 );
 
+//#define NO_INITIAL_REFRESH
+#ifdef NO_INITIAL_REFRESH
 // Doing this with another application having the file open will result in no change on our side when calling CheckForChange()
 // But we generally want a change the first time we read the file, since it's usually there we initialize new values for our variables...
-//	m_Checksum = *((U32*) m_pMappedFile);	// First DWORD is the checksum
-
+	m_Checksum = *((U32*) m_pMappedFile);	// First DWORD is the checksum
+#else
 	m_Checksum = ~*((U32*) m_pMappedFile);	// So there will always be a change...
+#endif
 }
 
 MemoryMappedFile::~MemoryMappedFile()

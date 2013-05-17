@@ -3,6 +3,7 @@
 //
 #include "Inc/Global.hlsl"
 #include "Inc/Volumetric.hlsl"
+#include "Inc/Atmosphere.hlsl"
 
 //#define USE_OBJECT_ZBUFFER	// Define this to read ZMin/Max from the object's ZMin/Max buffer
 //#define USE_FRUSTUM_SPLAT		// Define this to sample the camera frustum splat texture that indicates us whether a shadow pixel is relevant for computation or not
@@ -138,6 +139,14 @@ PS_OUT	PS( VS_IN _In )
 
 #ifdef INCLUDE_TERRAIN_SHADOWING
 	if ( GetTerrainShadow( Position.xyz ) < 0.5 )
+		return Out;
+#endif
+
+#if 1
+	// Compute shadowing by Earth
+//	Out.C0 = float4( _LightDirection, 0 );
+	float	GroundHitDistanceKm = SphereIntersectionEnter( WORLD2KM * Position, _LightDirection, 0.0 );
+	if ( GroundHitDistanceKm > 0.0 && GroundHitDistanceKm < 1000.0 )
 		return Out;
 #endif
 

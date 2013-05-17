@@ -17,6 +17,7 @@ static const float	AERIAL_PERSPECTIVE_FAKE_FACTOR = 1.0;	// To fake an increase 
 cbuffer	cbSplat	: register( b10 )
 {
 	float3		_dUV;
+	bool		_bSampleTerrainShadow;
 };
 //]
 
@@ -61,11 +62,11 @@ float	ComputeCloudShadowing( float3 _PositionWorld, float3 _View, float _Distanc
 	float	SumIncomingLight = 0.0;
 	for ( uint StepIndex=0; StepIndex < StepsCount; StepIndex++ )
 	{
-#if 0	// Use only cloud transmittance
-		SumIncomingLight += GetFastCloudTransmittance( _PositionWorld );
-#else	// Use cloud transmittance + terrain shadow
-		SumIncomingLight += GetFastCloudTransmittance( _PositionWorld ) * GetTerrainShadow( _PositionWorld );
-#endif
+		if ( _bSampleTerrainShadow )
+			SumIncomingLight += GetFastCloudTransmittance( _PositionWorld ) * GetTerrainShadow( _PositionWorld );	// Use cloud transmittance + terrain shadow
+		else
+			SumIncomingLight += GetFastCloudTransmittance( _PositionWorld );	// Use only cloud transmittance
+
 		_PositionWorld += Step;
 	}
 #endif
@@ -432,14 +433,21 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't 
 	// Store Scattering & Exinction as 2 colors
 	float	StepOffset = 0.0 * FastScreenNoise( _In.__Position.xy );
 	float3	PositionWorld = _Camera2World[3].xyz;
+	float3	PositionWorldKm = WORLD2KM * PositionWorld;
 	float3	ViewWorld = mul( float4( View, 0.0 ), _Camera2World ).xyz;
 
 	float	GroundBlocking = Z < 0.99*_CameraData.w ? 0 : 1;
+	if ( GroundBlocking > 0.5 )
+	{	// Not blocked by terrain, check for other blockers
+		float	GroundHitDistanceKm = SphereIntersectionEnter( PositionWorldKm, ViewWorld, -0.5 );
+		if ( GroundHitDistanceKm > 0.0 && GroundHitDistanceKm < HitDistanceKm )
+			HitDistanceKm = GroundHitDistanceKm;
+		else
+			HitDistanceKm = min( 100.0, HitDistanceKm );	// Don't trace further than 50km no matter what...
+	}
 
-
-// Scattering = 0;
-// Transmittance = 1;
-
+	// Don't trace further than atmosphere (shouldn't be necessary since sampling any table at this distance should return the correct value)
+	HitDistanceKm = min( HitDistanceKm, SphereIntersectionExit( PositionWorldKm, ViewWorld, ATMOSPHERE_THICKNESS_KM ) );
 
 	PS_OUT	Out;
 	ComputeFinalColor( PositionWorld, ViewWorld, float2( HitDistanceKm, AerialPerspectiveHitDistanceKm ), _LightDirection, float4( Scattering, Transmittance ), GroundBlocking, StepOffset, Out.Scattering, Out.Extinction );
@@ -448,7 +456,6 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't 
 //HitDistanceKm *= 10.0;
 //HitDistanceKm = 10000.0;
 
-HitDistanceKm = min( HitDistanceKm, SphereIntersectionExit( WORLD2KM * PositionWorld, ViewWorld, ATMOSPHERE_THICKNESS_KM ) );
 // if ( ViewWorld.y < 0.0 )
 //  	HitDistanceKm = min( HitDistanceKm, SphereIntersectionEnter( WORLD2KM * PositionWorld, ViewWorld, 0.0 ) );
 

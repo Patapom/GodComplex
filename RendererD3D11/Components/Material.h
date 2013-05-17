@@ -204,6 +204,10 @@ public:
 	static ID3DBlob*	LoadBinaryBlob( const char* _pShaderFileName, const char* _pEntryPoint );	// NOTE: It's the caller's responsibility to release the blob!
 #endif
 
+	// After .FXBIN files are processed by the ConcatenateShader project (Tools.sln), they are packed together in
+	//	a single aggregate containing all the entry points for a given original HLSL file.
+	// Each binary blob (FXBIN file) can be retrieved using this helper method...
+	static ID3DBlob*	LoadBinaryBlobFromAggregate( const U8* _pAggregate, const char* _pEntryPoint );
 
 private:
 	//////////////////////////////////////////////////////////////////////////

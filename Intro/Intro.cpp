@@ -18,6 +18,7 @@
 
 
 static Camera*				gs_pCamera = NULL;
+static FPSCamera*			gs_pCameraManipulator = NULL;
 // Video*					gs_pVideo = NULL;
 
 // Main scene
@@ -75,6 +76,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	gs_pCamera = new Camera( gs_Device );	// NOTE: Camera reserves the CB slot #0 for itself !
 	gs_pCamera->SetPerspective( NUAJDEG2RAD( 50.0f ), float(RESX) / RESY, 0.01f, 1000.0f );
 
+	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3::Zero, NjFloat3::UnitZ );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create our scene
@@ -171,6 +173,7 @@ void	IntroExit()
 	delete gs_pScene;
 
 	// Release the camera
+	delete gs_pCameraManipulator;
 	delete gs_pCamera;
 
 	// Release the video capture object
@@ -296,7 +299,8 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update the camera settings and upload its data to the shaders
-
+#if 0
+	// Auto animate
 	float	t = 0.25f * _Time;
 	float	R = 6.0f;
 //t = 0;
@@ -330,6 +334,13 @@ bool	IntroDo( float _Time, float _DeltaTime )
 // 	NjFloat3	Center = NjFloat3( 0, CameraHeight, 6 );
 // 	float		ViewAngle = 0.5f * t;
 // 	gs_pCamera->LookAt( Center, Center + NjFloat3( sinf(ViewAngle), +0.1f, -cosf(ViewAngle) ), NjFloat3::UnitY );
+
+#else
+	// Use the manipulator
+	gs_pCameraManipulator->Update( _DeltaTime, 5.0f, 1.0f );
+
+#endif
+
 
 	gs_pCamera->Upload( 0 );
 

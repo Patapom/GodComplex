@@ -35,6 +35,7 @@
   <NoiseContrast Value="1" />
   <NoiseGamma Value="0.5" />
   <NoiseShapingPower Value="0.1" />
+  <TerrainEnabled Value="1" />
   <TerrainHeight Value="10" />
   <TerrainAlbedoMultiplier Value="2" />
   <TerrainCloudShadowStrength Value="0.8" />

@@ -40,7 +40,7 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 	m_Pointer2FileName.Add( NULL, m_pShaderPath );
 #endif
 
-#if defined(_DEBUG) && defined(WATCH_SHADER_MODIFICATIONS)
+#if defined(SURE_DEBUG) && defined(WATCH_SHADER_MODIFICATIONS)
 	if ( _pShaderFileName != NULL )
 	{
 		// Just ensure the file exists !
@@ -301,7 +301,7 @@ if ( *m_pEntryPointPS == 1 )
 	}
 }
 
-#if !defined(USE_BINARY_BLOBS) || defined(_DEBUG)
+#ifdef SURE_DEBUG
 
 // Embedded shader for debug & testing...
 // static char*	pTestShader =
@@ -389,46 +389,15 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 	return pCode;
 }
 
-#else	// #ifdef USE_BINARY_BLOBS
+#else	// #ifndef _DEBUG
 
 ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget, ID3DInclude* _pInclude, bool _bComputeShader )
 {
 	U8*	pBigBlob = (U8*) _pShaderCode;	// Actually a giant blob...
-
-	U16	BlobsCount = *((U16*) pBigBlob); pBigBlob+=2;	// Amount of blobs in the big blob
-	for ( U16 BlobIndex=0; BlobIndex < BlobsCount; BlobIndex++ )
-	{
-		int	Cmp = strcmp( (char*) pBigBlob, _pEntryPoint );
-		int	BlobEntryPointLength = strlen( (char*) pBigBlob );
-		pBigBlob += BlobEntryPointLength+1;	// Skip the entry point's name
-
-		if ( !Cmp )
-		{	// Found it !
-			U16	BlobStartOffset = *((U16*) pBigBlob); pBigBlob+=2;	// Retrieve the jump offset to reach the blob
-			pBigBlob += BlobStartOffset;							// Go to the blob descriptor
-
-			U16	BlobSize = *((U16*) pBigBlob); pBigBlob+=2;			// Retrieve the size of the blob
-
-			// Create a D3DBlob
-			ID3DBlob*	pResult = NULL;
-			D3DCreateBlob( BlobSize, &pResult );
-
-			// Copy our blob content
-			void*		pBlobContent = pResult->GetBufferPointer();
-			memcpy( pBlobContent, pBigBlob, BlobSize );
-
-			// Yoohoo!
-			return pResult;
-		}
-
-		// Not that blob either... Skip the jump offset...
-		pBigBlob += 2;
-	}
-
-	return NULL;
+	return LoadBinaryBlobFromAggregate( pBigBlob, _pEntryPoint );
 }
 
-#endif	// #ifndef USE_BINARY_BLOBS
+#endif	// #ifdef _DEBUG
 
 void	Material::Use()
 {
@@ -917,10 +886,11 @@ time_t		Material::GetFileModTime( const char* _pFileName )
 #endif	// #if defined(_DEBUG) || !defined(GODCOMPLEX)
 
 
+#ifdef SAVE_SHADER_BLOB_TO
+
 //////////////////////////////////////////////////////////////////////////
 // Load from pre-compiled binary blob (useful for heavy shaders that never change)
 //
-#ifdef SAVE_SHADER_BLOB_TO
 Material*	Material::CreateFromBinaryBlob( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS )
 {
 	ID3DBlob*	pVS = _pEntryPointVS != NULL ? LoadBinaryBlob( _pShaderFileName, _pEntryPointVS ) : NULL;
@@ -1040,3 +1010,38 @@ ID3DBlob*	Material::LoadBinaryBlob( const char* _pShaderFileName, const char* _p
 
 #endif	// #if defined(_DEBUG) && defined(SAVE_SHADER_BLOB_TO)
 
+
+ID3DBlob*	Material::LoadBinaryBlobFromAggregate( const U8* _pAggregate, const char* _pEntryPoint )
+{
+	U16	BlobsCount = *((U16*) _pAggregate); _pAggregate+=2;	// Amount of blobs in the big blob
+	for ( U16 BlobIndex=0; BlobIndex < BlobsCount; BlobIndex++ )
+	{
+		int	Cmp = strcmp( (char*) _pAggregate, _pEntryPoint );
+		int	BlobEntryPointLength = strlen( (char*) _pAggregate );
+		_pAggregate += BlobEntryPointLength+1;	// Skip the entry point's name
+
+		if ( !Cmp )
+		{	// Found it !
+			U16	BlobStartOffset = *((U16*) _pAggregate); _pAggregate+=2;	// Retrieve the jump offset to reach the blob
+			_pAggregate += BlobStartOffset;							// Go to the blob descriptor
+
+			U16	BlobSize = *((U16*) _pAggregate); _pAggregate+=2;			// Retrieve the size of the blob
+
+			// Create a D3DBlob
+			ID3DBlob*	pResult = NULL;
+			D3DCreateBlob( BlobSize, &pResult );
+
+			// Copy our blob content
+			void*		pBlobContent = pResult->GetBufferPointer();
+			memcpy( pBlobContent, _pAggregate, BlobSize );
+
+			// Yoohoo!
+			return pResult;
+		}
+
+		// Not that blob either... Skip the jump offset...
+		_pAggregate += 2;
+	}
+
+	return NULL;
+}

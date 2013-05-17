@@ -31,14 +31,15 @@
 #include "NuajAPI/API/ASMHelpers.h"
 #ifdef _DEBUG
 #include "Utility/Events.h"
-#include "Utility/MemoryMappedFile.h"
 #endif
 #include "Utility/Memory.h"
 #include "Utility/Random.h"
 #include "Utility/Resources.h"
 #include "Utility/Camera.h"
 #include "Utility/tweakval.h"
+#include "Utility/MemoryMappedFile.h"
 #include "Utility/Profiling.h"
+#include "Utility/FPSCamera.h"
 #include "Utility/Video.h"
 
 // DirectX Renderer

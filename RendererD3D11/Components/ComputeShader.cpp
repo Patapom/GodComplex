@@ -39,13 +39,13 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, con
 	m_Pointer2FileName.Add( NULL, m_pShaderPath );
 #endif
 
-#ifdef _DEBUG
+#if defined(SURE_DEBUG) && defined(WATCH_SHADER_MODIFICATIONS)
 	if ( _pShaderFileName != NULL )
 	{
 		// Just ensure the file exists !
 		FILE*	pFile;
 		fopen_s( &pFile, _pShaderFileName, "rb" );
-		ASSERT( pFile != NULL, "Shader file not found !" );
+		ASSERT( pFile != NULL, "Compute Shader file not found => You can ignore this assert but compute shader file will NOT be watched for modification!" );
 		fclose( pFile );
 
 		// Register as a watched shader

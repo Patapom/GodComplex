@@ -48,6 +48,7 @@ public:		// NESTED TYPES
 	struct CBSplat
 	{
 		NjFloat3	dUV;
+		int			bSampleTerrainShadow;
 	};
 
 	struct CBAtmosphere
@@ -133,6 +134,8 @@ private:	// FIELDS
 	Camera&				m_Camera;
 
 	// PRS of our volume box
+	float				m_CloudAltitude;
+	float				m_CloudThickness;
 	NjFloat3			m_Position;
 	NjFloat4			m_Rotation;
 	NjFloat3			m_Scale;
@@ -144,8 +147,8 @@ private:	// FIELDS
 	float				m_CloudAnimSpeedLoFreq;
 	float				m_CloudAnimSpeedHiFreq;
 
-	// Light infos
-//	NjFloat3			m_LightDirection;
+	// Terrain infos
+	bool				m_bShowTerrain;
 
 	// Internal Data
 	Material*			m_pMatDepthWrite;
@@ -255,6 +258,7 @@ private:	// FIELDS
 		float	NoiseShapingPower;		// Final noise value is shaped (multiplied) by pow( 1-abs(2*y-1), NoiseShapingPower ) to avoid flat plateaus at top or bottom
 
 		// Terrain Params
+		U32		TerrainEnabled;
 		float	TerrainHeight;
 		float	TerrainAlbedoMultiplier;
 		float	TerrainCloudShadowStrength;

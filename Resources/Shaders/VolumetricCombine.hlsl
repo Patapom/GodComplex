@@ -114,11 +114,11 @@ if ( UV.x < 0.2 && UV.y > 0.8 )
 {	// Show the transmittance map
 	UV.x /= 0.2;
 	UV.y = (UV.y - 0.8) / 0.2;
-	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
+//	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
 //	return 0.3333 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
-	return exp( -_TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
+//	return exp( -_TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
 	return _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
-	return _TexTerrainShadow.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+//	return _TexTerrainShadow.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 }
 #endif
 // DEBUG
@@ -156,7 +156,7 @@ if ( UV.x < 0.2 && UV.y > 0.8 )
 	float	CosGamma = dot( View, _LightDirection );
 
 	float3	SunColor = SUN_INTENSITY * GetTransmittance( CameraAltitudeKm, CosThetaView );	// Attenuated through the atmosphere
-	float3	DirectSunLight = smoothstep( 0.999, 0.9995, CosGamma );							// 1 if we're looking directly at the Sun (warning: bad for the eyes!)
+	float3	DirectSunLight = smoothstep( 0.9997, 0.9999, CosGamma );							// 1 if we're looking directly at the Sun (warning: bad for the eyes!)
 			DirectSunLight *= (1.0-TerrainAlpha.w) * SunColor;
 //return HDR( DirectSunLight );
 

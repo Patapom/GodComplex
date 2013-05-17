@@ -69,7 +69,11 @@ public:
 
 public:
 
+#ifdef _DEBUG
 	IncludesManager() : m_pDependencies(NULL) {}
+#else
+	IncludesManager() {}
+#endif
 	~IncludesManager();
 
 	STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
@@ -82,7 +86,7 @@ public:
 			{	// Found it !
 				*ppData = LoadResourceBinary( pPair->ResourceID, "SHADER", pBytes );	// We read the file WITHOUT the trailing '\0' character !
 
-#ifdef _DEBUG
+#ifdef SURE_DEBUG
 				if ( m_pCurrentShaderFileName != NULL )
 				{	// Add a dependency on that include
 					Dependencies&	D = m_pDependencies[FileIndex];
@@ -119,7 +123,7 @@ public:
 	void	RegisterMaterial( const char* _pShaderFileName, Material& _Material );
 	void	RegisterComputeShader( const char* _pShaderFileName, ComputeShader& _ComputeShader );
 
-#ifdef _DEBUG
+#ifdef SURE_DEBUG
 	// Call this to rebuild dependent shaders if the include file has changed
 	void	WatchIncludeModifications() const;
 
@@ -144,22 +148,6 @@ Material*		CreateMaterial( U16 _ShaderResourceID, const char* _pFileName, const 
 {
 	const char*	pFileName = _pFileName;
 
-#ifdef _DEBUG
-// 	// To support automatic reloading of shader changes, you need to register the shader file name here
-// 	ShaderResource	pShaderResources[] =
-// 	{
-// 		REGISTERED_SHADER_FILES
-// 	};
-// 
-// 	int	ShadersCount = sizeof(pShaderResources) / sizeof(ShaderResource);
-// 	for ( int ShaderIndex=0; ShaderIndex < ShadersCount; ShaderIndex++ )
-// 		if ( _ShaderResourceID == pShaderResources[ShaderIndex].ResourceID )
-// 		{
-// 			pFileName = pShaderResources[ShaderIndex].pShaderFileName;
-// 			break;
-// 		}
-#endif
-
 	U32		CodeSize = 0;
 	char*	pShaderCode = LoadResourceShader( _ShaderResourceID, CodeSize );
 	ASSERT( pShaderCode != NULL, "Failed to load shader resource !" );
@@ -177,22 +165,6 @@ ComputeShader*	CreateComputeShader( U16 _ShaderResourceID, const char* _pFileNam
 {
 	const char*	pFileName = _pFileName;
 
-#ifdef _DEBUG
-// 	// To support automatic reloading of shader changes, you need to register the shader file name here
-// 	ShaderResource	pShaderResources[] =
-// 	{
-// 		REGISTERED_SHADER_FILES
-// 	};
-// 
-// 	int	ShadersCount = sizeof(pShaderResources) / sizeof(ShaderResource);
-// 	for ( int ShaderIndex=0; ShaderIndex < ShadersCount; ShaderIndex++ )
-// 		if ( _ShaderResourceID == pShaderResources[ShaderIndex].ResourceID )
-// 		{
-// 			pFileName = pShaderResources[ShaderIndex].pShaderFileName;
-// 			break;
-// 		}
-#endif
-
 	U32		CodeSize = 0;
 	char*	pShaderCode = LoadResourceShader( _ShaderResourceID, CodeSize );
 	ASSERT( pShaderCode != NULL, "Failed to load shader resource !" );
@@ -206,6 +178,7 @@ ComputeShader*	CreateComputeShader( U16 _ShaderResourceID, const char* _pFileNam
 	return pResult;
 }
 
+#ifdef SURE_DEBUG
 void	WatchIncludesModifications()
 {
 	static int	LastTime = -1;
@@ -218,6 +191,7 @@ void	WatchIncludesModifications()
 
 	gs_IncludesManager.WatchIncludeModifications();
 }
+#endif
 
 // Totally experimental
 const char*		LoadCSO( const char* _pCSOPath )
@@ -292,7 +266,7 @@ IncludesManager::~IncludesManager()
 #endif
 }
 
-#ifdef _DEBUG
+#ifdef SURE_DEBUG
 
 #include <sys/stat.h>
 

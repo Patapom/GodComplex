@@ -5,6 +5,11 @@
 
 //#define BUILD_SKY_SCATTERING	// Build or load? (warning: the computation shader takes hell of a time to compile!) (but the computation itself takes less than a second! ^^)
 
+static const int	TERRAIN_SUBDIVISIONS_COUNT = 200;	// Don't push it over 254 or it will crash due to more than 65536 vertices!
+static const float	TERRAIN_SIZE = 100.0f;
+
+static const float	CLOUD_SIZE = 100.0f;
+
 static const float	SCREEN_TARGET_RATIO = 0.5f;
 
 static const float	GROUND_RADIUS_KM = 6360.0f;
@@ -147,6 +152,12 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 	m_CloudAnimSpeedLoFreq = 1.0f;
 	m_CloudAnimSpeedHiFreq = 1.0f;
 
+	{
+		float	SunPhi = 0.0f;
+		float	SunTheta = 0.25f * PI;
+		m_pCB_Atmosphere->m.LightDirection.Set( sinf(SunPhi)*sinf(SunTheta), cosf(SunTheta), -cosf(SunPhi)*sinf(SunTheta) );
+	}
+
 #ifdef _DEBUG
 	m_pMMF = new MMF<ParametersBlock>( "BisouTest" );
 	ParametersBlock	Params = {
@@ -200,6 +211,7 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 		0.01f,		// float	NoiseShapingPower;		// Final noise value is shaped (multiplied) by pow( 1-abs(2*y-1), NoiseShapingPower ) to avoid flat plateaus at top or bottom
 
 		// // Terrain Params
+		1,			// int		TerrainEnabled;
 		10.0f,		// float	TerrainHeight;
 		2.0f,		// float	TerrainAlbedoMultiplier;
 		0.9f,		// float	TerrainCloudShadowStrength;
@@ -320,8 +332,10 @@ float	t = 2*0.25f * _Time;
 
 		//////////////////////////////////////////////////////////////////////////
 		// Volumetric Params
-		m_Position.Set( 0, Params.CloudBaseAltitude + 0.5f * Params.CloudThickness, -100 );
-		m_Scale.Set( 200.0f, 0.5f * Params.CloudThickness, 200.0f );
+		m_CloudAltitude = Params.CloudBaseAltitude;
+		m_CloudThickness = Params.CloudThickness;
+// 		m_Position.Set( 0, Params.CloudBaseAltitude + 0.5f * Params.CloudThickness, -100 );
+ 		m_Scale.Set( 0.5f * CLOUD_SIZE, 0.5f * Params.CloudThickness, 0.5f * CLOUD_SIZE );
 
 		m_pCB_Volume->m._CloudAltitudeThickness.Set( Params.CloudBaseAltitude, Params.CloudThickness );
 		m_pCB_Volume->m._CloudExtinctionScattering.Set( Params.CloudExtinction, Params.CloudScattering );
@@ -350,6 +364,7 @@ float	t = 2*0.25f * _Time;
 
 		//////////////////////////////////////////////////////////////////////////
 		// Terrain Params
+		m_bShowTerrain = Params.TerrainEnabled == 1;
 		m_pCB_Object->m.TerrainHeight = Params.TerrainHeight;
 		m_pCB_Object->m.AlbedoMultiplier = Params.TerrainAlbedoMultiplier;
 		m_pCB_Object->m.CloudShadowStrength = Params.TerrainCloudShadowStrength;
@@ -396,7 +411,34 @@ float	t = 2*0.25f * _Time;
 	// Compute transforms
 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF00FF00 ), L"Compute Transforms" );
 
-	m_Terrain2World.PRS( NjFloat3( 0, 0, 0 ), NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3( 50, 1, 50 ) );
+	NjFloat3	TerrainPosition = NjFloat3::Zero;
+
+	// Snap terrain position to match camera position so it follows around without shitty altitude scrolling
+	{
+		NjFloat3	CameraPosition = m_Camera.GetCB().Camera2World.GetRow( 3 );
+		NjFloat3	CameraAt = m_Camera.GetCB().Camera2World.GetRow( 2 );
+
+		NjFloat3	TerrainCenter = CameraPosition + 0.45f * TERRAIN_SIZE * CameraAt;	// The center will be in front of us always
+
+		float	VertexSnap = TERRAIN_SIZE / TERRAIN_SUBDIVISIONS_COUNT;	// World length between 2 vertices
+		int		VertexX = floorf( TerrainCenter.x / VertexSnap );
+		int		VertexZ = floorf( TerrainCenter.z / VertexSnap );
+
+		TerrainPosition.x = VertexX * VertexSnap;
+		TerrainPosition.z = VertexZ * VertexSnap;
+	}
+
+	m_Terrain2World.PRS( TerrainPosition, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3( 0.5f * TERRAIN_SIZE, 1, 0.5f * TERRAIN_SIZE) );
+
+	// Set cloud slab center so it follows the camera around as well...
+	{
+		NjFloat3	CameraPosition = m_Camera.GetCB().Camera2World.GetRow( 3 );
+		NjFloat3	CameraAt = m_Camera.GetCB().Camera2World.GetRow( 2 );
+
+		NjFloat3	CloudCenter = CameraPosition + 0.45f * CLOUD_SIZE * CameraAt;	// The center will be in front of us always
+
+ 		m_Position.Set( CloudCenter.x, m_CloudAltitude + 0.5f * m_CloudThickness, CloudCenter.z );
+	}
 
 	m_Cloud2World.PRS( m_Position, m_Rotation, m_Scale );
 
@@ -463,6 +505,7 @@ float	t = 2*0.25f * _Time;
 
 	// Remove contention on that Transmittance Z we don't need for the next pass...
 	m_Device.RemoveShaderResources( 10 );
+	m_Device.RemoveRenderTargets();
 
 	PERF_END_EVENT();
 
@@ -470,62 +513,63 @@ float	t = 2*0.25f * _Time;
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Terrain shadow map
 #ifdef SHOW_TERRAIN
-	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFF8000 ), L"Compute Terrain Shadow" );
+	if ( m_bShowTerrain )
+	{
+		PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFF8000 ), L"Compute Terrain Shadow" );
 
-	m_pRTTerrainShadow->RemoveFromLastAssignedSlots();
+		m_pRTTerrainShadow->RemoveFromLastAssignedSlots();
 
-	USING_MATERIAL_START( *m_pMatTerrainShadow )
+		USING_MATERIAL_START( *m_pMatTerrainShadow )
 
-		m_Device.ClearDepthStencil( *m_pRTTerrainShadow, 1, 0 );
+			m_Device.ClearDepthStencil( *m_pRTTerrainShadow, 1, 0 );
 
-		m_Device.SetRenderTargets( TERRAIN_SHADOW_MAP_SIZE, TERRAIN_SHADOW_MAP_SIZE, 0, NULL, m_pRTTerrainShadow->GetDepthStencilView() );
-	 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+			m_Device.SetRenderTargets( TERRAIN_SHADOW_MAP_SIZE, TERRAIN_SHADOW_MAP_SIZE, 0, NULL, m_pRTTerrainShadow->GetDepthStencilView() );
+	 		m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
 
-		m_pCB_Object->m.Local2View = m_Terrain2World;
-		m_pCB_Object->m.View2Proj = m_pCB_Shadow->m.World2TerrainShadow;
-		m_pCB_Object->m.dUV = m_pRTTerrainShadow->GetdUV();
-		m_pCB_Object->UpdateData();
+			m_pCB_Object->m.Local2View = m_Terrain2World;
+			m_pCB_Object->m.View2Proj = m_pCB_Shadow->m.World2TerrainShadow;
+			m_pCB_Object->m.dUV = m_pRTTerrainShadow->GetdUV();
+			m_pCB_Object->UpdateData();
 
-		m_pPrimTerrain->Render( M );
+			m_pPrimTerrain->Render( M );
 
-	USING_MATERIAL_END
+		USING_MATERIAL_END
 
 //#define	INCLUDE_TERRAIN_SHADOWING_IN_TFM	// The resolution is poor anyway, and that adds a dependency on this map for all DrawCalls...
 
-	m_Device.RemoveRenderTargets();
+		m_Device.RemoveRenderTargets();
 #ifdef INCLUDE_TERRAIN_SHADOWING_IN_TFM
-	m_pRTTerrainShadow->SetPS( 6, true );
+		m_pRTTerrainShadow->SetPS( 6, true );
 #endif
 
-	PERF_END_EVENT();
+		PERF_END_EVENT();
 
+		//////////////////////////////////////////////////////////////////////////
+		// 3] Show terrain
+		m_pRTTransmittanceMap->SetPS( 5, true );	// Now we need the TFM!
 
-	//////////////////////////////////////////////////////////////////////////
-	// 3] Show terrain
-	m_pRTTransmittanceMap->SetPS( 5, true );	// Now we need the TFM!
+ 		PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFFFF00 ), L"Render Terrain" );
 
- 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFFFF00 ), L"Render Terrain" );
+		USING_MATERIAL_START( *m_pMatTerrain )
 
-	USING_MATERIAL_START( *m_pMatTerrain )
+			m_Device.SetRenderTarget( m_RTHDR, &m_Device.DefaultDepthStencil() );
+	 		m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
 
-		m_Device.SetRenderTarget( m_RTHDR, &m_Device.DefaultDepthStencil() );
-	 	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+			m_pCB_Object->m.Local2View = m_Terrain2World;
+			m_pCB_Object->m.View2Proj = m_Camera.GetCB().World2Proj;
+			m_pCB_Object->m.dUV = m_RTHDR.GetdUV();
+			m_pCB_Object->UpdateData();
 
-		m_pCB_Object->m.Local2View = m_Terrain2World;
-		m_pCB_Object->m.View2Proj = m_Camera.GetCB().World2Proj;
-		m_pCB_Object->m.dUV = m_RTHDR.GetdUV();
-		m_pCB_Object->UpdateData();
+			m_pPrimTerrain->Render( M );
 
-		m_pPrimTerrain->Render( M );
+		USING_MATERIAL_END
 
-	USING_MATERIAL_END
-
-	PERF_END_EVENT();
-#else
-
-	m_pRTTransmittanceMap->SetPS( 5, true );	// Now we need the TFM!
+		PERF_END_EVENT();
+	}
 
 #endif
+
+	m_pRTTransmittanceMap->SetPS( 5, true );	// Now we need the TFM!
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -579,11 +623,13 @@ float	t = 2*0.25f * _Time;
 
 #ifdef SHOW_TERRAIN
 #ifndef INCLUDE_TERRAIN_SHADOWING_IN_TFM
-	m_pRTTerrainShadow->SetPS( 6, true );	// We need it now for godrays
+	if ( m_bShowTerrain )
+		m_pRTTerrainShadow->SetPS( 6, true );	// We need it now for godrays
 #endif
 #endif
 
 		m_pCB_Splat->m.dUV = m_pRTRender->GetdUV();
+		m_pCB_Splat->m.bSampleTerrainShadow = m_bShowTerrain ? 1 : 0;
 		m_pCB_Splat->UpdateData();
 
 		m_ScreenQuad.Render( M );
@@ -892,7 +938,7 @@ void	EffectVolumetric::ComputeShadowTransform()
 	NjFloat3	CameraPositionKm = Camera2World.GetRow( 3 );
 
 //###	static const float	SHADOW_FAR_CLIP_DISTANCE = 250.0f;
-	static const float	SHADOW_FAR_CLIP_DISTANCE = 50.0f;
+	static const float	SHADOW_FAR_CLIP_DISTANCE = 70.0f;
 	static const float	SHADOW_SCALE = 1.1f;
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1238,6 +1284,8 @@ NjFloat4x4	EffectVolumetric::ComputeTerrainShadowTransform()
 	NjFloat3	LightDirection = m_pCB_Atmosphere->m.LightDirection;
 
 	NjFloat3	Z = -LightDirection;
+	if ( abs( Z.y ) > 1.0f - 1e-3f )
+		Z = NjFloat3( 1e-2f, Z.y > 0.0f ? 1.0f : -1.0f, 0 ).Normalize();
 	NjFloat3	X = (NjFloat3::UnitY ^ Z).Normalize();
 	NjFloat3	Y = Z ^ X;
 
@@ -2090,7 +2138,10 @@ namespace
 
 	U32					m_pStagePassesCount[3*STAGES_COUNT];	// Filled automatically in InitUpdateSkyTables(), derived from the 2 tables above
 
+#ifdef _DEBUG
 #define ENABLE_PROFILING
+#endif
+
 #ifdef ENABLE_PROFILING
 	// Profiling
 	double				m_pStageTimingCurrent[STAGES_COUNT];
@@ -2185,9 +2236,9 @@ void	EffectVolumetric::InitUpdateSkyTables()
 	CHECK_MATERIAL( m_pCSComputeInScattering_Multiple = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",	"PreComputeInScattering_Multiple" ), 15 );
 	CHECK_MATERIAL( m_pCSMergeInitialScattering = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"MergeInitialScattering" ), 16 );
 	CHECK_MATERIAL( m_pCSAccumulateIrradiance = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"AccumulateIrradiance" ), 17 );
-//###	CHECK_MATERIAL( m_pCSAccumulateInScattering = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"AccumulateInScattering" ), 18 );
+	CHECK_MATERIAL( m_pCSAccumulateInScattering = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"AccumulateInScattering" ), 18 );
 
-	CHECK_MATERIAL( m_pCSAccumulateInScattering = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"AccumulateInScattering" ), 18 );			// copyInscatterN
+//	CHECK_MATERIAL( m_pCSAccumulateInScattering = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"AccumulateInScattering" ), 18 );			// copyInscatterN
 #endif
 }
 

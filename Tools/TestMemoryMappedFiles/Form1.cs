@@ -76,6 +76,7 @@ namespace TestMemoryMappedFiles
 			public float	NoiseShapingPower;			// Final noise value is shaped (multiplied) by pow( 1-abs(2*y-1), NoiseShapingPower ) to avoid flat plateaus at top or bottom
 				
 			// Terrain Params
+			public int		TerrainEnabled;
 			public float	TerrainHeight;
 			public float	TerrainAlbedoMultiplier;
 			public float	TerrainCloudShadowStrength;
@@ -191,6 +192,7 @@ namespace TestMemoryMappedFiles
 			floatTrackbarControlNoiseShapingPower.Value = (float) Math.Log10( m_Instance.NoiseShapingPower );
 				
 			// Terrain Params
+			checkBoxTerrainEnabled.Checked = m_Instance.TerrainEnabled != 0;
 			floatTrackbarControlTerrainHeight.Value = m_Instance.TerrainHeight;
 			floatTrackbarControlAlbedoMultiplier.Value = m_Instance.TerrainAlbedoMultiplier;
 			floatTrackbarControlTerrainShadowStrength.Value = m_Instance.TerrainCloudShadowStrength;
@@ -212,6 +214,8 @@ namespace TestMemoryMappedFiles
 					Nuaj.Cirrus.Utility.FloatTrackbarControl	Slider = Field.GetValue( this ) as Nuaj.Cirrus.Utility.FloatTrackbarControl;
 					Slider.SimulateValueChange();	// This should trigger a change which will in turn write the slider's value into the struct's field...
 				}
+
+			m_Instance.TerrainEnabled = checkBoxTerrainEnabled.Checked ? 1 : 0;
 		}
 
 		#region EVENT HANDLERS
@@ -292,6 +296,12 @@ namespace TestMemoryMappedFiles
 		private void floatTrackbarControlTerrainShadowStrength_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_Instance.TerrainCloudShadowStrength = _Sender.Value;
+			UpdateMMF();
+		}
+
+		private void checkBoxTerrainEnabled_CheckedChanged( object sender, EventArgs e )
+		{
+			m_Instance.TerrainEnabled = checkBoxTerrainEnabled.Checked ? 1 : 0;
 			UpdateMMF();
 		}
 

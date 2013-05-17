@@ -45,6 +45,7 @@
 			this.floatTrackbarControlAirAmount = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlSunAzimuth = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlSunTheta = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label41 = new System.Windows.Forms.Label();
 			this.groupBoxClouds = new System.Windows.Forms.GroupBox();
 			this.label38 = new System.Windows.Forms.Label();
 			this.groupBoxIsotropicScattering = new System.Windows.Forms.GroupBox();
@@ -70,6 +71,7 @@
 			this.floatTrackbarControlCloudAltitude = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label10 = new System.Windows.Forms.Label();
 			this.groupBoxTerrain = new System.Windows.Forms.GroupBox();
+			this.checkBoxTerrainEnabled = new System.Windows.Forms.CheckBox();
 			this.label20 = new System.Windows.Forms.Label();
 			this.label40 = new System.Windows.Forms.Label();
 			this.label39 = new System.Windows.Forms.Label();
@@ -138,6 +140,7 @@
 			this.groupBoxAtmosphere.Controls.Add(this.floatTrackbarControlAirAmount);
 			this.groupBoxAtmosphere.Controls.Add(this.floatTrackbarControlSunAzimuth);
 			this.groupBoxAtmosphere.Controls.Add(this.floatTrackbarControlSunTheta);
+			this.groupBoxAtmosphere.Controls.Add(this.label41);
 			this.groupBoxAtmosphere.Location = new System.Drawing.Point(12, 12);
 			this.groupBoxAtmosphere.Name = "groupBoxAtmosphere";
 			this.groupBoxAtmosphere.Size = new System.Drawing.Size(308, 284);
@@ -330,6 +333,16 @@
 			this.floatTrackbarControlSunTheta.VisibleRangeMax = 120F;
 			this.floatTrackbarControlSunTheta.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSunTheta_ValueChanged);
 			// 
+			// label41
+			// 
+			this.label41.AutoSize = true;
+			this.label41.Font = new System.Drawing.Font("Microsoft Sans Serif", 6F, System.Drawing.FontStyle.Bold);
+			this.label41.Location = new System.Drawing.Point(11, 140);
+			this.label41.Name = "label41";
+			this.label41.Size = new System.Drawing.Size(286, 9);
+			this.label41.TabIndex = 2;
+			this.label41.Text = "WARNING: Changing parameters below will trigger table update!";
+			// 
 			// groupBoxClouds
 			// 
 			this.groupBoxClouds.Controls.Add(this.label38);
@@ -413,7 +426,7 @@
 			this.floatTrackbarControlIsotropicScatteringSunFactor.RangeMin = 0F;
 			this.floatTrackbarControlIsotropicScatteringSunFactor.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlIsotropicScatteringSunFactor.TabIndex = 0;
-			this.floatTrackbarControlIsotropicScatteringSunFactor.Value = 0.25F;
+			this.floatTrackbarControlIsotropicScatteringSunFactor.Value = 0.7F;
 			this.floatTrackbarControlIsotropicScatteringSunFactor.VisibleRangeMax = 1F;
 			this.floatTrackbarControlIsotropicScatteringSunFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIsotropicScatteringSunFactor_ValueChanged);
 			// 
@@ -459,8 +472,8 @@
 			this.floatTrackbarControlIsotropicScattering.RangeMin = 0F;
 			this.floatTrackbarControlIsotropicScattering.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlIsotropicScattering.TabIndex = 0;
-			this.floatTrackbarControlIsotropicScattering.Value = 0.1F;
-			this.floatTrackbarControlIsotropicScattering.VisibleRangeMax = 0.2F;
+			this.floatTrackbarControlIsotropicScattering.Value = 0.05F;
+			this.floatTrackbarControlIsotropicScattering.VisibleRangeMax = 0.1F;
 			this.floatTrackbarControlIsotropicScattering.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIsotropicScattering_ValueChanged);
 			// 
 			// label8
@@ -627,6 +640,7 @@
 			// 
 			// groupBoxTerrain
 			// 
+			this.groupBoxTerrain.Controls.Add(this.checkBoxTerrainEnabled);
 			this.groupBoxTerrain.Controls.Add(this.label20);
 			this.groupBoxTerrain.Controls.Add(this.label40);
 			this.groupBoxTerrain.Controls.Add(this.label39);
@@ -641,6 +655,19 @@
 			this.groupBoxTerrain.TabIndex = 1;
 			this.groupBoxTerrain.TabStop = false;
 			this.groupBoxTerrain.Text = "Terrain";
+			// 
+			// checkBoxTerrainEnabled
+			// 
+			this.checkBoxTerrainEnabled.AutoSize = true;
+			this.checkBoxTerrainEnabled.Checked = true;
+			this.checkBoxTerrainEnabled.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxTerrainEnabled.Location = new System.Drawing.Point(9, 132);
+			this.checkBoxTerrainEnabled.Name = "checkBoxTerrainEnabled";
+			this.checkBoxTerrainEnabled.Size = new System.Drawing.Size(89, 17);
+			this.checkBoxTerrainEnabled.TabIndex = 3;
+			this.checkBoxTerrainEnabled.Text = "Show Terrain";
+			this.checkBoxTerrainEnabled.UseVisualStyleBackColor = true;
+			this.checkBoxTerrainEnabled.CheckedChanged += new System.EventHandler(this.checkBoxTerrainEnabled_CheckedChanged);
 			// 
 			// label20
 			// 
@@ -872,7 +899,7 @@
 			this.floatTrackbarControlCloudHiAnimSpeed.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlCloudHiAnimSpeed.Name = "floatTrackbarControlCloudHiAnimSpeed";
 			this.floatTrackbarControlCloudHiAnimSpeed.RangeMax = 10F;
-			this.floatTrackbarControlCloudHiAnimSpeed.RangeMin = 0F;
+			this.floatTrackbarControlCloudHiAnimSpeed.RangeMin = -10F;
 			this.floatTrackbarControlCloudHiAnimSpeed.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlCloudHiAnimSpeed.TabIndex = 0;
 			this.floatTrackbarControlCloudHiAnimSpeed.Value = 1F;
@@ -894,8 +921,8 @@
 			this.floatTrackbarControlCloudHiFactor.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlCloudHiFactor.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlCloudHiFactor.Name = "floatTrackbarControlCloudHiFactor";
-			this.floatTrackbarControlCloudHiFactor.RangeMax = 2F;
-			this.floatTrackbarControlCloudHiFactor.RangeMin = -2F;
+			this.floatTrackbarControlCloudHiFactor.RangeMax = 10F;
+			this.floatTrackbarControlCloudHiFactor.RangeMin = -10F;
 			this.floatTrackbarControlCloudHiFactor.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlCloudHiFactor.TabIndex = 0;
 			this.floatTrackbarControlCloudHiFactor.Value = 0.707F;
@@ -962,7 +989,7 @@
 			this.floatTrackbarControlCloudLowAnimSpeed.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlCloudLowAnimSpeed.Name = "floatTrackbarControlCloudLowAnimSpeed";
 			this.floatTrackbarControlCloudLowAnimSpeed.RangeMax = 10F;
-			this.floatTrackbarControlCloudLowAnimSpeed.RangeMin = 0F;
+			this.floatTrackbarControlCloudLowAnimSpeed.RangeMin = -10F;
 			this.floatTrackbarControlCloudLowAnimSpeed.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlCloudLowAnimSpeed.TabIndex = 0;
 			this.floatTrackbarControlCloudLowAnimSpeed.Value = 1F;
@@ -1071,7 +1098,7 @@
 			this.floatTrackbarControlCloudHiFrequency.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlCloudHiFrequency.Name = "floatTrackbarControlCloudHiFrequency";
 			this.floatTrackbarControlCloudHiFrequency.RangeMax = 10F;
-			this.floatTrackbarControlCloudHiFrequency.RangeMin = 0F;
+			this.floatTrackbarControlCloudHiFrequency.RangeMin = -10F;
 			this.floatTrackbarControlCloudHiFrequency.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlCloudHiFrequency.TabIndex = 0;
 			this.floatTrackbarControlCloudHiFrequency.Value = 0.12F;
@@ -1112,7 +1139,7 @@
 			this.floatTrackbarControlCloudLowFrequency.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlCloudLowFrequency.Name = "floatTrackbarControlCloudLowFrequency";
 			this.floatTrackbarControlCloudLowFrequency.RangeMax = 20F;
-			this.floatTrackbarControlCloudLowFrequency.RangeMin = 0F;
+			this.floatTrackbarControlCloudLowFrequency.RangeMin = -20F;
 			this.floatTrackbarControlCloudLowFrequency.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlCloudLowFrequency.TabIndex = 0;
 			this.floatTrackbarControlCloudLowFrequency.Value = 7.5F;
@@ -1141,13 +1168,14 @@
 			// openFileDialog
 			// 
 			this.openFileDialog.DefaultExt = "*.xml";
-			this.openFileDialog.FileName = "VolumePreset.xml";
 			this.openFileDialog.Filter = "XML Files (*.xml)|*.xml|All Files|*.*";
+			this.openFileDialog.Title = "Choose a preset file...";
 			// 
 			// saveFileDialog
 			// 
 			this.saveFileDialog.DefaultExt = "*.xml";
 			this.saveFileDialog.Filter = "XML Files (*.xml)|*.xml|All Files|*.*";
+			this.saveFileDialog.Title = "Choose a preset file...";
 			// 
 			// Form1
 			// 
@@ -1268,6 +1296,8 @@
 		private System.Windows.Forms.Button buttonSavePreset;
 		private System.Windows.Forms.OpenFileDialog openFileDialog;
 		private System.Windows.Forms.SaveFileDialog saveFileDialog;
+		private System.Windows.Forms.Label label41;
+		private System.Windows.Forms.CheckBox checkBoxTerrainEnabled;
 	}
 }
 
