@@ -2,6 +2,8 @@
 #include "EffectScene.h"
 #include "Scene.h"
 
+#define RENDER_BOKEH
+
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
 EffectScene::EffectScene( Device& _Device, Scene& _Scene, Primitive& _ScreenQuad ) : m_Device( _Device ), m_Scene( _Scene ), m_ScreenQuad( _ScreenQuad ), m_ErrorCode( 0 )
@@ -10,7 +12,17 @@ EffectScene::EffectScene( Device& _Device, Scene& _Scene, Primitive& _ScreenQuad
 	// Create the materials
 	CHECK_MATERIAL( m_pMatDepthPass = CreateMaterial( IDR_SHADER_SCENE_DEPTH_PASS, "./Resources/Shaders/SceneDepthPass.hlsl", VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, NULL ), 1 );
 	CHECK_MATERIAL( m_pMatBuildLinearZ = CreateMaterial( IDR_SHADER_SCENE_BUILD_LINEARZ, "./Resources/Shaders/SceneBuildLinearZ.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
+
+#ifndef RENDER_BOKEH
 	CHECK_MATERIAL( m_pMatIndirectLighting = CreateMaterial( IDR_SHADER_SCENE_INDIRECT_LIGHTING, "./Resources/Shaders/SceneIndirectLighting.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
+#else
+	// Bokeh splatting
+	CHECK_MATERIAL( m_pMatIndirectLighting = CreateMaterial( IDR_SHADER_SCENE_FINALIZE, "./Resources/Shaders/SceneFinalize.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
+	CHECK_MATERIAL( m_pMatBokehSplat = CreateMaterial( IDR_SHADER_SCENE_BOKEH_SPLAT, "./Resources/Shaders/SceneBokehSplat.hlsl", VertexFormatP3::DESCRIPTOR, "VS", "GS", "PS" ), 4 );
+	CHECK_MATERIAL( m_pMatDownSampleBokeh0 = CreateMaterial( IDR_SHADER_SCENE_DOWNSAMPLE, "./Resources/Shaders/SceneDownSample.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS_Bokeh0" ), 5 );
+	CHECK_MATERIAL( m_pMatDownSampleBokeh1 = CreateMaterial( IDR_SHADER_SCENE_DOWNSAMPLE, "./Resources/Shaders/SceneDownSample.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS_Bokeh1" ), 6 );
+	CHECK_MATERIAL( m_pMatFinalize = CreateMaterial( IDR_SHADER_SCENE_FINALIZE, "./Resources/Shaders/SceneFinalize.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS_Finalize" ), 7 );
+#endif
 
 	// GBuffer
 	CHECK_MATERIAL( m_pMatFillGBuffer = CreateMaterial( IDR_SHADER_SCENE_FILL_GBUFFER, "./Resources/Shaders/SceneFillGBuffer.hlsl", VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
@@ -62,6 +74,14 @@ EffectScene::EffectScene( Device& _Device, Scene& _Scene, Primitive& _ScreenQuad
 
 	m_pRTAccumulatorDiffuseSpecular = new Texture2D( m_Device, W, H, 2, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
 
+#ifdef RENDER_BOKEH
+	{
+		TextureBuilder	TB( 125, 125 );
+		TB.LoadFromRAWFile( "./Resources/Images/Iris_Blades.raw" );
+		m_pTexBokeh = TB.CreateTexture( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA );
+	}
+#endif
+
 	//////////////////////////////////////////////////////////////////////////
 	// Create the primitives we will need to render the lights for deferred lighting
 	{
@@ -71,6 +91,9 @@ EffectScene::EffectScene( Device& _Device, Scene& _Scene, Primitive& _ScreenQuad
 
 		m_pPrimSphere = new Primitive( _Device, VertexFormatP3T2::DESCRIPTOR );
 		GeometryBuilder::BuildSphere( 32, 16, *m_pPrimSphere, NULL );
+
+		NjFloat3	Vertex = NjFloat3::Zero;
+		m_pPrimBokeh = new Primitive( _Device, 1, &Vertex, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatP3::DESCRIPTOR );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -86,6 +109,7 @@ EffectScene::~EffectScene()
 	delete m_pCB_RenderDownSampled;
 	delete m_pCB_Render;
 
+	delete m_pPrimBokeh;
 	delete m_pPrimSphere;
 	delete m_pPrimCylinder;
 
@@ -105,6 +129,15 @@ EffectScene::~EffectScene()
 	delete m_pMatShading_Point_StencilPass;
 	delete m_pMatShading_Directional;
 	delete m_pMatShading_Directional_StencilPass;
+
+#ifdef RENDER_BOKEH
+	delete m_pTexBokeh;
+
+	delete m_pMatFinalize;
+	delete m_pMatDownSampleBokeh1;
+	delete m_pMatDownSampleBokeh0;
+	delete m_pMatBokehSplat;
+#endif
 	delete m_pMatIndirectLighting;
 	delete m_pMatDownSample;
 	delete m_pMatFillGBufferBackFaces;
@@ -113,7 +146,7 @@ EffectScene::~EffectScene()
 	delete m_pMatDepthPass;
 }
 
-void	EffectScene::Render( float _Time, float _DeltaTime )
+void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D& _RTHDR )
 {
 	int		W = m_Device.DefaultRenderTarget().GetWidth();
 	int		H = m_Device.DefaultRenderTarget().GetHeight();
@@ -195,6 +228,8 @@ void	EffectScene::Render( float _Time, float _DeltaTime )
 
 		USING_MATERIAL_END
 	}
+
+	m_pRTZBuffer->RemoveFromLastAssignedSlots();
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -356,7 +391,11 @@ void	EffectScene::Render( float _Time, float _DeltaTime )
 	USING_MATERIAL_START( *m_pMatIndirectLighting )
 
 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
+#ifdef RENDER_BOKEH
+	m_Device.SetRenderTarget( _RTHDR );
+#else
 	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget() );
+#endif
 
 //	m_pRTZBufferFrontDownSampled->SetPS( 13 );
 
@@ -376,4 +415,87 @@ m_pRTGBufferBack->SetPS( 17 );
 	m_ScreenQuad.Render( M );
 
 	USING_MATERIAL_END
+
+
+#ifdef RENDER_BOKEH
+
+	//////////////////////////////////////////////////////////////////////////
+	// 6] Downsample twice into mips => Keep most intense pixels
+	{
+		int		W = _RTHDR.GetWidth();
+		int		H = _RTHDR.GetHeight();
+
+		USING_MATERIAL_START( *m_pMatDownSampleBokeh0 )
+
+		W >>= 1;
+		H >>= 1;
+		ID3D11RenderTargetView*	pView = _RTHDR.GetTargetView( 1 );
+		m_Device.SetRenderTarget( W, H, *pView );
+
+		_RTHDR.SetPS( 10, true, _RTHDR.GetShaderView( 0, 1 ) );
+
+		m_pCB_Render->m.dUV.Set( 1.0f / W, 1.0f / H, 0.0f );
+		m_pCB_Render->UpdateData();
+		m_ScreenQuad.Render( M );
+
+		USING_MATERIAL_END
+
+		USING_MATERIAL_START( *m_pMatDownSampleBokeh1 )
+
+		W >>= 1;
+		H >>= 1;
+		ID3D11RenderTargetView*	pView = _RTHDR.GetTargetView( 2 );
+		m_Device.SetRenderTarget( W, H, *pView );
+
+		_RTHDR.SetPS( 10, true, _RTHDR.GetShaderView( 1, 1 ) );
+
+		m_pCB_Render->m.dUV.Set( 1.0f / W, 1.0f / H, 0.0f );
+		m_pCB_Render->UpdateData();
+		m_ScreenQuad.Render( M );
+
+		USING_MATERIAL_END
+
+
+		//////////////////////////////////////////////////////////////////////////
+		// 7] Finalize
+		USING_MATERIAL_START( *m_pMatFinalize )
+
+		m_Device.SetRenderTarget( m_Device.DefaultRenderTarget() );
+
+		_RTHDR.Set( 16 );
+
+		m_pCB_Render->m.dUV = m_Device.DefaultRenderTarget().GetdUV();
+		m_pCB_Render->UpdateData();
+
+		m_ScreenQuad.Render( M );
+
+		USING_MATERIAL_END
+
+
+		//////////////////////////////////////////////////////////////////////////
+		// 8] Splat bokehs
+		m_Device.SetStates( NULL, NULL, m_Device.m_pBS_Additive );
+
+		USING_MATERIAL_START( *m_pMatBokehSplat )
+
+		m_Device.SetRenderTarget( m_Device.DefaultRenderTarget() );
+
+//		_RTHDR.SetVS( 10 );
+		m_pRTZBuffer->SetVS( 12 );
+		m_pTexBokeh->SetPS( 11 );
+
+		m_pCB_Render->m.dUV.Set( 1.0f / W, 1.0f / H, 0.0f );
+		m_pCB_Render->UpdateData();
+
+		m_pPrimBokeh->RenderInstanced( M, W*H );
+
+		USING_MATERIAL_END
+	}
+
+	_RTHDR.RemoveFromLastAssignedSlots();
+
+#endif
+
+	m_pRTZBuffer->RemoveFromLastAssignedSlots();
+	m_pRTAccumulatorDiffuseSpecular->RemoveFromLastAssignedSlots();
 }

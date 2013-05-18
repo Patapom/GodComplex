@@ -2,7 +2,7 @@
 // This shader applies indirect lighting and finalizes rendering
 //
 #include "Inc/Global.hlsl"
-#include "Inc/LayeredMaterials.fx"
+#include "Inc/LayeredMaterials.hlsl"
 
 cbuffer	cbRender	: register( b10 )
 {
@@ -390,7 +390,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 
 ///////////////////////////////////////////////////////////////////////////////////
 	float3	Reflection = 0.0;
-#if 0
+#if 1
 	// Proceed with intersection
 	float4	SceneReflection = 0.0;
 	float4	Intersection, DEBUG;
@@ -425,18 +425,18 @@ PipoNormal = float3( NormalScale * PipoNormal.xy, 1.0-NormalScale );
 	float3	EnvMapReflection = lerp( 0.2 * INVPI * SpecularAlbedo, 1.0, InfinityZ ) * SampleEnvMap( CameraReflect.x * _Camera2World[0].xyz + CameraReflect.y * _Camera2World[1].xyz + CameraReflect.z * _Camera2World[2].xyz, 0.0 );
 
 	Reflection = lerp( EnvMapReflection, SceneReflection.xyz, SceneReflection.w );
-Reflection = SceneReflection.xyz;
+//Reflection = SceneReflection.xyz;
 
 //return saturate( 2.0 * (0.5 - DEBUG.x) ) * 10.0 * Reflection;
 //return saturate( 2.0 * (0.5 - DEBUG.x) );
-return 10.0 * Reflection;
+//return 10.0 * Reflection;
 
 #endif
 
 
 ///////////////////////////////////////////////////////////////////////////////////
 // This piece of code is interesting as it generates all the necessary rays for the current view direction
-#if 1
+#if 0
 
 	DualMaterialParams		MatParams = ComputeDualWeightedMaterialParams( Mats );
 	HalfVectorSpaceParams	ViewParams = (HalfVectorSpaceParams) 0;

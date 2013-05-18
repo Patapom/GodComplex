@@ -298,29 +298,31 @@ void	DrawTime( float t )
 
 void	HandleEvents()
 {
-	gs_WindowInfos.Events.Keyboard.State[KEY_LEFT]     = GetAsyncKeyState( VK_LEFT );
-	gs_WindowInfos.Events.Keyboard.State[KEY_RIGHT]    = GetAsyncKeyState( VK_RIGHT );
-	gs_WindowInfos.Events.Keyboard.State[KEY_UP]       = GetAsyncKeyState( VK_UP );
-	gs_WindowInfos.Events.Keyboard.State[KEY_PGUP]     = GetAsyncKeyState( VK_PRIOR );
-	gs_WindowInfos.Events.Keyboard.State[KEY_PGDOWN]   = GetAsyncKeyState( VK_NEXT );
-	gs_WindowInfos.Events.Keyboard.State[KEY_DOWN]     = GetAsyncKeyState( VK_DOWN );
-	gs_WindowInfos.Events.Keyboard.State[KEY_SPACE]    = GetAsyncKeyState( VK_SPACE );
-	gs_WindowInfos.Events.Keyboard.State[KEY_RSHIFT]   = GetAsyncKeyState( VK_RSHIFT );
-	gs_WindowInfos.Events.Keyboard.State[KEY_RCONTROL] = GetAsyncKeyState( VK_RCONTROL );
-	gs_WindowInfos.Events.Keyboard.State[KEY_LSHIFT]   = GetAsyncKeyState( VK_LSHIFT );
-	gs_WindowInfos.Events.Keyboard.State[KEY_LCONTROL] = GetAsyncKeyState( VK_LCONTROL );
-	gs_WindowInfos.Events.Keyboard.State[KEY_1]        = GetAsyncKeyState( '1' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_2]        = GetAsyncKeyState( '2' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_3]        = GetAsyncKeyState( '3' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_4]        = GetAsyncKeyState( '4' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_5]        = GetAsyncKeyState( '5' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_6]        = GetAsyncKeyState( '6' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_7]        = GetAsyncKeyState( '7' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_8]        = GetAsyncKeyState( '8' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_9]        = GetAsyncKeyState( '9' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_0]        = GetAsyncKeyState( '0' );
+	BOOL	bHasFocus = GetFocus() == gs_WindowInfos.hWnd;
+
+	gs_WindowInfos.Events.Keyboard.State[KEY_LEFT]     = bHasFocus && GetAsyncKeyState( VK_LEFT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_RIGHT]    = bHasFocus && GetAsyncKeyState( VK_RIGHT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_UP]       = bHasFocus && GetAsyncKeyState( VK_UP );
+	gs_WindowInfos.Events.Keyboard.State[KEY_PGUP]     = bHasFocus && GetAsyncKeyState( VK_PRIOR );
+	gs_WindowInfos.Events.Keyboard.State[KEY_PGDOWN]   = bHasFocus && GetAsyncKeyState( VK_NEXT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_DOWN]     = bHasFocus && GetAsyncKeyState( VK_DOWN );
+	gs_WindowInfos.Events.Keyboard.State[KEY_SPACE]    = bHasFocus && GetAsyncKeyState( VK_SPACE );
+	gs_WindowInfos.Events.Keyboard.State[KEY_RSHIFT]   = bHasFocus && GetAsyncKeyState( VK_RSHIFT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_RCONTROL] = bHasFocus && GetAsyncKeyState( VK_RCONTROL );
+	gs_WindowInfos.Events.Keyboard.State[KEY_LSHIFT]   = bHasFocus && GetAsyncKeyState( VK_LSHIFT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_LCONTROL] = bHasFocus && GetAsyncKeyState( VK_LCONTROL );
+	gs_WindowInfos.Events.Keyboard.State[KEY_1]        = bHasFocus && GetAsyncKeyState( '1' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_2]        = bHasFocus && GetAsyncKeyState( '2' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_3]        = bHasFocus && GetAsyncKeyState( '3' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_4]        = bHasFocus && GetAsyncKeyState( '4' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_5]        = bHasFocus && GetAsyncKeyState( '5' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_6]        = bHasFocus && GetAsyncKeyState( '6' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_7]        = bHasFocus && GetAsyncKeyState( '7' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_8]        = bHasFocus && GetAsyncKeyState( '8' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_9]        = bHasFocus && GetAsyncKeyState( '9' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_0]        = bHasFocus && GetAsyncKeyState( '0' );
 	for( int i=KEY_A; i<=KEY_Z; i++ )
-		gs_WindowInfos.Events.Keyboard.State[i] = GetAsyncKeyState( 'A'+i-KEY_A );
+		gs_WindowInfos.Events.Keyboard.State[i] = bHasFocus && GetAsyncKeyState( 'A'+i-KEY_A );
 
 	// Handle mouse events
 	POINT	p;
@@ -336,9 +338,9 @@ void	HandleEvents()
 	gs_WindowInfos.Events.Mouse.obuttons[0] = gs_WindowInfos.Events.Mouse.buttons[0];
 	gs_WindowInfos.Events.Mouse.obuttons[1] = gs_WindowInfos.Events.Mouse.buttons[1];
 	gs_WindowInfos.Events.Mouse.obuttons[2] = gs_WindowInfos.Events.Mouse.buttons[2];
-	gs_WindowInfos.Events.Mouse.buttons[0] = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-	gs_WindowInfos.Events.Mouse.buttons[1] = (GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0;
-	gs_WindowInfos.Events.Mouse.buttons[2] = (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0;
+	gs_WindowInfos.Events.Mouse.buttons[0] = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0 && bHasFocus;
+	gs_WindowInfos.Events.Mouse.buttons[1] = (GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0 && bHasFocus;
+	gs_WindowInfos.Events.Mouse.buttons[2] = (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0 && bHasFocus;
 
 	gs_WindowInfos.Events.Mouse.dbuttons[0] = gs_WindowInfos.Events.Mouse.buttons[0] - gs_WindowInfos.Events.Mouse.obuttons[0];
 	gs_WindowInfos.Events.Mouse.dbuttons[1] = gs_WindowInfos.Events.Mouse.buttons[1] - gs_WindowInfos.Events.Mouse.obuttons[1];

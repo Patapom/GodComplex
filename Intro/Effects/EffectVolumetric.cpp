@@ -217,7 +217,11 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 		0.9f,		// float	TerrainCloudShadowStrength;
 
 	};
-	m_pMMF->GetMappedMemory() = Params;
+	EffectVolumetric::ParametersBlock&	MappedParams = m_pMMF->GetMappedMemory();
+
+	// Copy our default params only if the checksum is 0 (meaning the control panel isn't loaded and hasn't set any valu yet)
+	if ( MappedParams.Checksum == 0 )
+		MappedParams = Params;
 
 	m_CloudAnimSpeedLoFreq = Params.NoiseLoAnimSpeed;
 	m_CloudAnimSpeedHiFreq = Params.NoiseHiAnimSpeed;
@@ -2021,14 +2025,15 @@ void	EffectVolumetric::PreComputeSkyTables()
 	Texture3D*	pStagingScattering = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
 	Texture2D*	pStagingIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
 
-#if 0
-	BuildTransmittanceTable( TRANSMITTANCE_W, TRANSMITTANCE_H, *pStagingTransmittance );
-#else
-	pStagingTransmittance->Load( FILENAME_TRANSMITTANCE );
-#endif
-
-	pStagingIrradiance->Load( FILENAME_IRRADIANCE );
-	pStagingScattering->Load( FILENAME_SCATTERING );
+// This includes a dependency on disk files... Useless if we recompute them!
+// #if 0
+// 	BuildTransmittanceTable( TRANSMITTANCE_W, TRANSMITTANCE_H, *pStagingTransmittance );
+// #else
+// 	pStagingTransmittance->Load( FILENAME_TRANSMITTANCE );
+// #endif
+// 
+// 	pStagingIrradiance->Load( FILENAME_IRRADIANCE );
+// 	pStagingScattering->Load( FILENAME_SCATTERING );
 
 	m_ppRTTransmittance[0]->CopyFrom( *pStagingTransmittance );
 	m_ppRTInScattering[0]->CopyFrom( *pStagingScattering );

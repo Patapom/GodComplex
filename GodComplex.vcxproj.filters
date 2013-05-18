@@ -502,6 +502,12 @@
     <None Include="Resources\Shaders\VolumetricPreComputeAtmosphereCS.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
     </None>
+    <None Include="Resources\Shaders\SceneBokehSplat.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneFinalize.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

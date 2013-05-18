@@ -56,7 +56,7 @@ static EffectVolumetric*	gs_pEffectVolumetric = NULL;
 // {
 // }
 
-//#define TEST_SCENE
+#define TEST_SCENE
 
 void	PrepareScene();
 void	ReleaseScene();
@@ -86,7 +86,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create render targets & textures
 	{
-		gs_pRTHDR = new Texture2D( gs_Device, RESX, RESY, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
+		gs_pRTHDR = new Texture2D( gs_Device, RESX, RESY, 1, PixelFormatRGBA16F::DESCRIPTOR, 3, NULL );
 
 		Build2DTextures( _Delegate );
 		Build3DTextures( _Delegate );
@@ -125,11 +125,11 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 // 		gs_pEffectRoom->m_pTexVoronoi = gs_pEffectParticles->m_pTexVoronoi;
 // 
 //		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
-// 
-// 		CHECK_EFFECT( gs_pEffectScene = new EffectScene( gs_Device, *gs_pScene, *gs_pPrimQuad ), ERR_EFFECT_SCENE );
+
+		CHECK_EFFECT( gs_pEffectScene = new EffectScene( gs_Device, *gs_pScene, *gs_pPrimQuad ), ERR_EFFECT_SCENE );
 
 //		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
-		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_VOLUMETRIC );
+//		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_VOLUMETRIC );
 	}
 
 
@@ -261,7 +261,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	USING_MATERIAL_END
 
-#elif 0	// TEST FULL SCENE
+#elif 1	// TEST FULL SCENE
 
 	//////////////////////////////////////////////////////////////////////////
 	// Animate camera
@@ -278,10 +278,13 @@ bool	IntroDo( float _Time, float _DeltaTime )
 //	t = 32 + 11.0f/60;
 	t = 1.71f;
 
-	float	Radius = 4.0f;
-	gs_pCamera->LookAt( NjFloat3( Radius * sinf( 0.2f * t ), 2.0f + sinf( 1.0f * t ), Radius * cosf( 0.2f * t ) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
-	gs_pCamera->Upload( 0 );
+// 	float	Radius = 4.0f;
+// 	gs_pCamera->LookAt( NjFloat3( Radius * sinf( 0.2f * t ), 2.0f + sinf( 1.0f * t ), Radius * cosf( 0.2f * t ) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
 
+	// Use the manipulator
+	gs_pCameraManipulator->Update( _DeltaTime, 1.0f, 1.0f );
+
+	gs_pCamera->Upload( 0 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Animate the scene
@@ -292,10 +295,10 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Render the scene
-	gs_pEffectScene->Render( _Time, _DeltaTime );
+	gs_pEffectScene->Render( _Time, _DeltaTime, *gs_pRTHDR );
 
 
-#elif 1	// TEST VOLUMETRIC
+#elif 0	// TEST VOLUMETRIC
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update the camera settings and upload its data to the shaders
@@ -423,6 +426,7 @@ void	PrepareScene()
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create our complex material textures
+#if 0
 	{
 		const int	LayeredTexturesCount = 4;
 
@@ -500,6 +504,27 @@ void	PrepareScene()
 			*ppTargetTexture = TBLayer0.Concat( 6, pppContents, pArraySizes, PixelFormatRGBA8::DESCRIPTOR );
 		}
 	}
+#else
+	{
+		TextureBuilder	TBLayer( 512, 512 );
+		TBLayer.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Layer0.raw" );
+
+		int		pArraySizes[6];
+		void**	pppContents[6];
+		pppContents[0] = TBLayer.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[0] );
+		pppContents[1] = pppContents[0];	pArraySizes[1] = pArraySizes[0];
+		pppContents[2] = pppContents[0];	pArraySizes[2] = pArraySizes[0];
+		pppContents[3] = pppContents[0];	pArraySizes[3] = pArraySizes[0];
+		pppContents[4] = pppContents[0];	pArraySizes[4] = pArraySizes[0];
+		pppContents[5] = pppContents[0];	pArraySizes[5] = pArraySizes[0];
+				
+		Texture2D*	pTexPipo = TBLayer.Concat( 6, pppContents, pArraySizes, PixelFormatRGBA8::DESCRIPTOR );
+		gs_pSceneTexture0 = pTexPipo;
+		gs_pSceneTexture1 = pTexPipo;
+		gs_pSceneTexture2 = pTexPipo;
+		gs_pSceneTexture3 = pTexPipo;
+	}
+#endif
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the env map
@@ -604,9 +629,9 @@ void	ReleaseScene()
 	delete gs_pPrimTorus0;
 	delete gs_pPrimSphere0;
 
-	delete gs_pSceneTexture3;
-	delete gs_pSceneTexture2;
-	delete gs_pSceneTexture1;
+// 	delete gs_pSceneTexture3;
+// 	delete gs_pSceneTexture2;
+// 	delete gs_pSceneTexture1;
 	delete gs_pSceneTexture0;
 	delete gs_pTexEnvMap;
 }

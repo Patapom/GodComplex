@@ -27,7 +27,7 @@ EffectDeferred::EffectDeferred() : m_ErrorCode( 0 )
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
 	m_pCB_Render = new CB<CBRender>( gs_Device, 10 );
-	m_pCB_Render->m.DeltaTime.Set( 0, 1 );
+//	m_pCB_Render->m.DeltaTime.Set( 0, 1 );
 }
 
 EffectDeferred::~EffectDeferred()

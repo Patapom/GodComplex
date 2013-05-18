@@ -6,10 +6,8 @@
 #include "Inc/Volumetric.hlsl"
 #include "Inc/Atmosphere.hlsl"
 
-//static const float	TERRAIN_HEIGHT = 5.0;	// Original value is 140
-// static const float	TERRAIN_FACTOR = TERRAIN_HEIGHT / 140.0;
-// 
-// static const float	ALBEDO_MULTIPLIER = 2.0;
+//#define	FUNKY_TERRAIN	// FONKIIII!
+
 
 //[
 cbuffer	cbObject	: register( b10 )
@@ -154,9 +152,17 @@ float	GetTerrainHeight( in float2 x, const int _OctavesCount=14 )
 // Transforms the standard terrain height into terraces whose amplitude decreases with altitude
 float	Map( in float3 p, const int _OctavesCount=14 )
 {
-p *= 1.2;
+#ifdef FUNKY_TERRAIN
+//	p *= 1.2;
 
-	float	h = GetTerrainHeight( p.xz, _OctavesCount );	// Map to height it was originaly written for
+	float	h = GetTerrainHeight( p.xz, _OctavesCount );
+
+	h = -50.0 * log( 4e-2 + saturate( 0.8 - 50.0 * pow( saturate( 0.2 + h / 140.0 ), 10.0 ) ) );
+
+#else
+	p *= 1.2;
+
+	float	h = GetTerrainHeight( p.xz, _OctavesCount );
 
 	float	ss = 0.03;
 	float	hh = ss * h;
@@ -164,6 +170,8 @@ p *= 1.2;
 	float	ih = floor(hh);
 	fh = lerp( sqrt(fh), fh, smoothstep( 50.0, 140.0, h ) );	// Height in terraces varies with sqrt()
 	h = (ih+fh) / ss;
+
+#endif
 
 	return h;
 }
@@ -223,7 +231,11 @@ float3	ComputeTerrainColor( float3 _Position, float _Distance, float3 _Shadow, f
 	float	NdotL = saturate( dot( _LightDirection, Normal ) );		// Sun dot
 //return NdotL;
 
-	float3	Albedo;
+	float3	Albedo = 0.0;
+
+#if 1//def FUNKY_TERRAIN
+
+//#else
 
 	// Compute rock & grass albedo
 	float	r = Noise( 200.0 * TerrainPosition.xz );
@@ -257,6 +269,8 @@ float3	ComputeTerrainColor( float3 _Position, float _Distance, float3 _Shadow, f
 	float	s = h * e * o;
 			s = smoothstep( 0.1, 0.15, s );
 	Albedo = lerp( Albedo, 0.5 * float3(0.6, 0.65, 0.7), s );
+#endif
+
 #endif
 
 	Albedo *= _TerrainAlbedoMultiplier;
@@ -327,6 +341,5 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 
 	float	Shadow = _In.Shadow;
 //	float	Shadow = TempGetTerrainShadow( _In.Position );
-//return Shadow;
 	return float4( ComputeTerrainColor( _In.Position, Distance2Camera, Shadow, _In.SunColor, _In.SkyColor ), 1.0 );
 }

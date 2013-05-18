@@ -80,27 +80,27 @@ void	FPSCamera::Update( float _DeltaTime, float _TranslationSpeed, float _Rotati
 	NjFloat3	Delta = NjFloat3::Zero;
 	if ( gs_WindowInfos.pKeys['Q'] )
 	{	// Strafe left
-		Delta = -Speed * Right;
+		Delta = Delta - Speed * Right;
 	}
 	if ( gs_WindowInfos.pKeys['D'] )
 	{	// Strafe right
-		Delta = +Speed * Right;
+		Delta = Delta + Speed * Right;
 	}
 	if ( gs_WindowInfos.pKeys['Z'] )
 	{	// Forward
-		Delta = +Speed * At;
+		Delta = Delta + Speed * At;
 	}
 	if ( gs_WindowInfos.pKeys['S'] )
 	{	// Backward
-		Delta = -Speed * At;
+		Delta = Delta - Speed * At;
 	}
 	if ( gs_WindowInfos.pKeys[' '] )
 	{	// Up
-		Delta = +Speed * Up;
+		Delta = Delta + Speed * Up;
 	}
 	if ( gs_WindowInfos.Events.Keyboard.State[KEY_LCONTROL] )
 	{	// Down
-		Delta = -Speed * Up;
+		Delta = Delta - Speed * Up;
 	}
 
 	m_Position = m_Position + Delta;

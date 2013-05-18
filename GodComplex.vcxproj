@@ -261,7 +261,9 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Intro\Effects\EffectTranslucency.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Intro\Effects\EffectVolumetric.h" />
+    <ClInclude Include="Intro\Effects\EffectVolumetric.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Intro\Effects\Scene\MaterialBank.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClInclude>
@@ -349,7 +351,9 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Intro\Effects\EffectTranslucency.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Intro\Effects\EffectVolumetric.cpp" />
+    <ClCompile Include="Intro\Effects\EffectVolumetric.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Intro\Effects\Scene\MaterialBank.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClCompile>
@@ -428,7 +432,9 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\RoomRenderCubeMap.hlsl" />
     <None Include="Resources\Shaders\RoomTesselation.hlsl" />
     <None Include="Resources\Shaders\RoomTestCompute.hlsl" />
+    <None Include="Resources\Shaders\SceneBokehSplat.hlsl" />
     <None Include="Resources\Shaders\SceneBuildLinearZ.hlsl" />
+    <None Include="Resources\Shaders\SceneFinalize.hlsl" />
     <None Include="Resources\Shaders\SceneDepthPass.hlsl" />
     <None Include="Resources\Shaders\SceneDownSample.hlsl" />
     <None Include="Resources\Shaders\SceneFillGBuffer.hlsl" />
