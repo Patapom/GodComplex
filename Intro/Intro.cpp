@@ -56,7 +56,7 @@ static EffectVolumetric*	gs_pEffectVolumetric = NULL;
 // {
 // }
 
-#define TEST_SCENE
+//#define TEST_SCENE
 
 void	PrepareScene();
 void	ReleaseScene();
@@ -123,13 +123,14 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	{
 // 		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), ERR_EFFECT_ROOM );
 // 		gs_pEffectRoom->m_pTexVoronoi = gs_pEffectParticles->m_pTexVoronoi;
-// 
+ 
 //		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
 
-		CHECK_EFFECT( gs_pEffectScene = new EffectScene( gs_Device, *gs_pScene, *gs_pPrimQuad ), ERR_EFFECT_SCENE );
+//		CHECK_EFFECT( gs_pEffectScene = new EffectScene( gs_Device, *gs_pScene, *gs_pPrimQuad ), ERR_EFFECT_SCENE );
 
 //		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
-//		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_VOLUMETRIC );
+
+		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_VOLUMETRIC );
 	}
 
 
@@ -261,7 +262,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	USING_MATERIAL_END
 
-#elif 1	// TEST FULL SCENE
+#elif 0	// TEST FULL SCENE
 
 	//////////////////////////////////////////////////////////////////////////
 	// Animate camera
@@ -298,7 +299,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	gs_pEffectScene->Render( _Time, _DeltaTime, *gs_pRTHDR );
 
 
-#elif 0	// TEST VOLUMETRIC
+#elif 1	// TEST VOLUMETRIC
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update the camera settings and upload its data to the shaders
