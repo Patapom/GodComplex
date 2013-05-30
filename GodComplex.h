@@ -37,12 +37,16 @@
 #include "Utility/Resources.h"
 #include "Utility/Camera.h"
 #include "Utility/tweakval.h"
+#include "Utility/MemoryMappedFile.h"
+#include "Utility/Profiling.h"
+#include "Utility/FPSCamera.h"
 #include "Utility/Video.h"
 
 // DirectX Renderer
 #include "RendererD3D11/Device.h"
 #include "RendererD3D11/Components/Texture2D.h"
 #include "RendererD3D11/Components/Texture3D.h"
+#include "RendererD3D11/Components/StructuredBuffer.h"
 #include "RendererD3D11/Components/Material.h"
 #include "RendererD3D11/Components/ComputeShader.h"
 #include "RendererD3D11/Components/ConstantBuffer.h"

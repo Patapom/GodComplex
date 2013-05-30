@@ -18,6 +18,7 @@
 
 
 static Camera*				gs_pCamera = NULL;
+static FPSCamera*			gs_pCameraManipulator = NULL;
 // Video*					gs_pVideo = NULL;
 
 // Main scene
@@ -75,6 +76,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	gs_pCamera = new Camera( gs_Device );	// NOTE: Camera reserves the CB slot #0 for itself !
 	gs_pCamera->SetPerspective( NUAJDEG2RAD( 50.0f ), float(RESX) / RESY, 0.01f, 1000.0f );
 
+	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3::Zero, NjFloat3::UnitZ );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create our scene
@@ -84,7 +86,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create render targets & textures
 	{
-		gs_pRTHDR = new Texture2D( gs_Device, RESX, RESY, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
+		gs_pRTHDR = new Texture2D( gs_Device, RESX, RESY, 1, PixelFormatRGBA16F::DESCRIPTOR, 3, NULL );
 
 		Build2DTextures( _Delegate );
 		Build3DTextures( _Delegate );
@@ -106,7 +108,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create materials
 	{
-		CHECK_MATERIAL( gs_pMatPostFinal = CreateMaterial( IDR_SHADER_POST_FINAL, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), ERR_EFFECT_INTRO+1 );
+		CHECK_MATERIAL( gs_pMatPostFinal = CreateMaterial( IDR_SHADER_POST_FINAL, "./Resources/Shaders/PostFinal.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), ERR_EFFECT_INTRO+1 );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -121,12 +123,14 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	{
 // 		CHECK_EFFECT( gs_pEffectRoom = new EffectRoom( *gs_pRTHDR ), ERR_EFFECT_ROOM );
 // 		gs_pEffectRoom->m_pTexVoronoi = gs_pEffectParticles->m_pTexVoronoi;
-// 
+ 
 //		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
-// 
-// 		CHECK_EFFECT( gs_pEffectScene = new EffectScene( gs_Device, *gs_pScene, *gs_pPrimQuad ), ERR_EFFECT_SCENE );
 
-		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pPrimQuad ), ERR_EFFECT_VOLUMETRIC );
+//		CHECK_EFFECT( gs_pEffectScene = new EffectScene( gs_Device, *gs_pScene, *gs_pPrimQuad ), ERR_EFFECT_SCENE );
+
+//		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
+
+		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_VOLUMETRIC );
 	}
 
 
@@ -170,6 +174,7 @@ void	IntroExit()
 	delete gs_pScene;
 
 	// Release the camera
+	delete gs_pCameraManipulator;
 	delete gs_pCamera;
 
 	// Release the video capture object
@@ -274,10 +279,13 @@ bool	IntroDo( float _Time, float _DeltaTime )
 //	t = 32 + 11.0f/60;
 	t = 1.71f;
 
-	float	Radius = 4.0f;
-	gs_pCamera->LookAt( NjFloat3( Radius * sinf( 0.2f * t ), 2.0f + sinf( 1.0f * t ), Radius * cosf( 0.2f * t ) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
-	gs_pCamera->Upload( 0 );
+// 	float	Radius = 4.0f;
+// 	gs_pCamera->LookAt( NjFloat3( Radius * sinf( 0.2f * t ), 2.0f + sinf( 1.0f * t ), Radius * cosf( 0.2f * t ) ), NjFloat3( 0.0f, 1.0f, 0.0f ), NjFloat3::UnitY );
 
+	// Use the manipulator
+	gs_pCameraManipulator->Update( _DeltaTime, 1.0f, 1.0f );
+
+	gs_pCamera->Upload( 0 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Animate the scene
@@ -288,14 +296,15 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Render the scene
-	gs_pEffectScene->Render( _Time, _DeltaTime );
+	gs_pEffectScene->Render( _Time, _DeltaTime, *gs_pRTHDR );
 
 
 #elif 1	// TEST VOLUMETRIC
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update the camera settings and upload its data to the shaders
-
+#if 0
+	// Auto animate
 	float	t = 0.25f * _Time;
 	float	R = 6.0f;
 //t = 0;
@@ -307,18 +316,44 @@ bool	IntroDo( float _Time, float _DeltaTime )
 //	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(0.2f), _TV(4.0f) ), NjFloat3( 0.0f, 1.5f, 0.0f ), NjFloat3::UnitY );
 //	gs_pCamera->LookAt( NjFloat3( R*sinf(t), H, R*cosf(t) ), NjFloat3( 0.0f, 2.0f, 0.0f ), NjFloat3::UnitY );
 //	gs_pCamera->LookAt( NjFloat3( 0, 1, 6 ), NjFloat3( 0.0f, 1.0f, -10.0f ), NjFloat3::UnitY );		// Inside clouds
-	gs_pCamera->LookAt( NjFloat3( 0, -10, 6 ), NjFloat3( 0.0f, -2.0f, -10.0f ), NjFloat3::UnitY );	// Below
+//	gs_pCamera->LookAt( NjFloat3( 0, -10, 6 ), NjFloat3( 0.0f, -2.0f, -10.0f ), NjFloat3::UnitY );	// Below
 //	gs_pCamera->LookAt( NjFloat3( 0, -10, 6 ), NjFloat3( 0.0f, -2.0f, 6.1f ), NjFloat3::UnitY );	// Below looking up
+
+//	float	CameraHeight = 6.0f;	// Elevated
+//	float	CameraHeight = 3.0f;	// Slightly elevated
+// 	float	CameraHeight = 1.5f;	// Ground level
+
+ 	float	CameraHeight = LERP( 1.5f, 3.0f, 0.5f + 0.5f * sinf(t) );	// Ground level
+
+	CameraHeight *= 1.0f;
+
+//	NjFloat3	Target( 0.0f, 3.0f, -10.0f );		// Fixed target
+	NjFloat3	Target( 10.0f * sinf(t), 3.0f, -10.0f );		// Fixed target
+
+//	gs_pCamera->LookAt( NjFloat3( 0, CameraHeight, 6 ), NjFloat3( 0.0f, CameraHeight + 6.0f, -10.0f ), NjFloat3::UnitY );		// looking up
+//	gs_pCamera->LookAt( NjFloat3( 0, CameraHeight, 6 ), NjFloat3( 0.0f, CameraHeight + 1.5f, -10.0f ), NjFloat3::UnitY );		// slightly looking up
+//	gs_pCamera->LookAt( NjFloat3( 0, CameraHeight, 6 ), NjFloat3( 0.0f, CameraHeight + 1.0f, -10.0f ), NjFloat3::UnitY );		// looking forward
+	gs_pCamera->LookAt( NjFloat3( 0, CameraHeight, 6 ), Target, NjFloat3::UnitY );
+
+// 	NjFloat3	Center = NjFloat3( 0, CameraHeight, 6 );
+// 	float		ViewAngle = 0.5f * t;
+// 	gs_pCamera->LookAt( Center, Center + NjFloat3( sinf(ViewAngle), +0.1f, -cosf(ViewAngle) ), NjFloat3::UnitY );
+
+#else
+	// Use the manipulator
+	gs_pCameraManipulator->Update( _DeltaTime, 5.0f, 1.0f );
+
+#endif
+
 
 	gs_pCamera->Upload( 0 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Render the effects
-//	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
-// 	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.5f, 0.25f, 0.125f, 0.0f ) );
-// 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
+ 	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+ 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
 
-	gs_pEffectVolumetric->Render( _Time, _DeltaTime, *gs_pCamera );
+	gs_pEffectVolumetric->Render( _Time, _DeltaTime );
 
 
 #endif
@@ -392,6 +427,7 @@ void	PrepareScene()
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create our complex material textures
+#if 0
 	{
 		const int	LayeredTexturesCount = 4;
 
@@ -469,6 +505,27 @@ void	PrepareScene()
 			*ppTargetTexture = TBLayer0.Concat( 6, pppContents, pArraySizes, PixelFormatRGBA8::DESCRIPTOR );
 		}
 	}
+#else
+	{
+		TextureBuilder	TBLayer( 512, 512 );
+		TBLayer.LoadFromRAWFile( "./Resources/Images/LayeredMaterial0-Layer0.raw" );
+
+		int		pArraySizes[6];
+		void**	pppContents[6];
+		pppContents[0] = TBLayer.Convert( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB, pArraySizes[0] );
+		pppContents[1] = pppContents[0];	pArraySizes[1] = pArraySizes[0];
+		pppContents[2] = pppContents[0];	pArraySizes[2] = pArraySizes[0];
+		pppContents[3] = pppContents[0];	pArraySizes[3] = pArraySizes[0];
+		pppContents[4] = pppContents[0];	pArraySizes[4] = pArraySizes[0];
+		pppContents[5] = pppContents[0];	pArraySizes[5] = pArraySizes[0];
+				
+		Texture2D*	pTexPipo = TBLayer.Concat( 6, pppContents, pArraySizes, PixelFormatRGBA8::DESCRIPTOR );
+		gs_pSceneTexture0 = pTexPipo;
+		gs_pSceneTexture1 = pTexPipo;
+		gs_pSceneTexture2 = pTexPipo;
+		gs_pSceneTexture3 = pTexPipo;
+	}
+#endif
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the env map
@@ -573,9 +630,9 @@ void	ReleaseScene()
 	delete gs_pPrimTorus0;
 	delete gs_pPrimSphere0;
 
-	delete gs_pSceneTexture3;
-	delete gs_pSceneTexture2;
-	delete gs_pSceneTexture1;
+// 	delete gs_pSceneTexture3;
+// 	delete gs_pSceneTexture2;
+// 	delete gs_pSceneTexture1;
 	delete gs_pSceneTexture0;
 	delete gs_pTexEnvMap;
 }

@@ -2,6 +2,7 @@
 #include "Components/Component.h"
 #include "Components/Texture2D.h"
 #include "Components/Texture3D.h"
+#include "Components/StructuredBuffer.h"
 #include "Components/States.h"
 
 Device::Device()
@@ -281,6 +282,7 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	m_pDeviceContext->DSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 	m_pDeviceContext->GSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 	m_pDeviceContext->PSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
+	m_pDeviceContext->CSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 }
 
 void	Device::Exit()
@@ -321,6 +323,14 @@ void	Device::ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _St
 }
 
 void	Device::SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil, const D3D11_VIEWPORT* _pViewport )
+{
+	ID3D11RenderTargetView*	pTargetView = _Target.GetTargetView( 0, 0, 0 );
+	ID3D11DepthStencilView*	pDepthStencilView = _pDepthStencil != NULL ? _pDepthStencil->GetDepthStencilView() : NULL;
+
+	SetRenderTargets( _Target.GetWidth(), _Target.GetHeight(), 1, &pTargetView, pDepthStencilView, _pViewport );
+}
+
+void	Device::SetRenderTarget( const Texture3D& _Target, const Texture2D* _pDepthStencil, const D3D11_VIEWPORT* _pViewport )
 {
 	ID3D11RenderTargetView*	pTargetView = _Target.GetTargetView( 0, 0, 0 );
 	ID3D11DepthStencilView*	pDepthStencilView = _pDepthStencil != NULL ? _pDepthStencil->GetDepthStencilView() : NULL;
@@ -387,17 +397,23 @@ void	Device::SetStatesReferences( const NjFloat4& _BlendFactors, U32 _BlendSampl
 	m_StencilRef = _StencilRef;
 }
 
-void	Device::RemoveShaderResources( int _SlotIndex, int _SlotsCount )
+void	Device::RemoveShaderResources( int _SlotIndex, int _SlotsCount, U32 _ShaderStages )
 {
 	ID3D11ShaderResourceView*	ppNULL[128];
 	memset( ppNULL, NULL, _SlotsCount*sizeof(ID3D11ShaderResourceView*) );
 
-	m_pDeviceContext->VSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
-	m_pDeviceContext->HSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
-	m_pDeviceContext->DSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
-	m_pDeviceContext->GSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
-	m_pDeviceContext->PSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
-	m_pDeviceContext->CSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	if ( (_ShaderStages & SSF_VERTEX_SHADER) != 0 )
+		m_pDeviceContext->VSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	if ( (_ShaderStages & SSF_HULL_SHADER) != 0 )
+		m_pDeviceContext->HSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	if ( (_ShaderStages & SSF_DOMAIN_SHADER) != 0 )
+		m_pDeviceContext->DSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	if ( (_ShaderStages & SSF_GEOMETRY_SHADER) != 0 )
+		m_pDeviceContext->GSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	if ( (_ShaderStages & SSF_PIXEL_SHADER) != 0 )
+		m_pDeviceContext->PSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	if ( (_ShaderStages & SSF_COMPUTE_SHADER) != 0 )
+		m_pDeviceContext->CSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
 }
 
 void	Device::RegisterComponent( Component& _Component )

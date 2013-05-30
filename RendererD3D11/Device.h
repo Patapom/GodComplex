@@ -15,6 +15,20 @@ class Device
 {
 	static const int	SAMPLERS_COUNT = 7;
 
+public:		// NESTED TYPES
+
+	enum	SHADER_STAGE_FLAGS
+	{
+		SSF_VERTEX_SHADER	= (1 << 0),
+		SSF_HULL_SHADER		= (1 << 1),
+		SSF_DOMAIN_SHADER	= (1 << 2),
+		SSF_GEOMETRY_SHADER	= (1 << 3),
+		SSF_PIXEL_SHADER	= (1 << 4),
+		SSF_COMPUTE_SHADER	= (1 << 5),
+
+		SSF_ALL				= (1 << 6)-1
+	};
+
 private:	// FIELDS
 
 	ID3D11Device*			m_pDevice;
@@ -95,6 +109,7 @@ public:	 // METHODS
 	void	ClearRenderTarget( const Texture3D& _Target, const NjFloat4& _Color );
 	void	ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth=true, bool _bClearStencil=true );
 	void	SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
+	void	SetRenderTarget( const Texture3D& _Target, const Texture2D* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
 	void	SetRenderTarget( int _Width, int _Height, const ID3D11RenderTargetView& _Target, ID3D11DepthStencilView* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
 	void	SetRenderTargets( int _Width, int _Height, int _TargetsCount, ID3D11RenderTargetView* const * _ppTargets, ID3D11DepthStencilView* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
 	void	RemoveRenderTargets();
@@ -104,7 +119,7 @@ public:	 // METHODS
 	// Clears the shader resource registers
 	// Useful to cleanup textures that may otherwise be considered as required by shaders that don't really need them.
 	// Helps to clear up resource contention for draw calls
-	void	RemoveShaderResources( int _SlotIndex, int _SlotsCount=1 );
+	void	RemoveShaderResources( int _SlotIndex, int _SlotsCount=1, U32 _ShaderStages=SSF_ALL );
 
 private:
 

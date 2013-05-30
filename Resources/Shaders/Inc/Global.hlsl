@@ -19,6 +19,7 @@ static const float	HALFPI = 1.5707963267948966192313216916398;		// PI/2
 static const float	INVPI = 0.31830988618379067153776752674503;		// 1/PI
 static const float	INVHALFPI = 0.63661977236758134307553505349006;	// 1/(PI/2)
 static const float	INVTWOPI = 0.15915494309189533576888376337251;	// 1/2PI
+static const float	INVFOURPI = 0.07957747154594766788444188168626;	// 1/4PI
 
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.patapom.com/index.php/Colorimetry)
 
@@ -59,7 +60,7 @@ cbuffer	cbCamera	: register( b0 )
 
 cbuffer	cbGlobal	: register( b1 )
 {
-	float4		_Time;		// X=Time Y=DeltaTime Z=1/Time W=1/DeltaTime
+	float4		_Time;				// X=Time Y=DeltaTime Z=1/Time W=1/DeltaTime
 };
 //]
 

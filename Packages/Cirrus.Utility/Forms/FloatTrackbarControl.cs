@@ -226,6 +226,15 @@ namespace Nuaj.Cirrus.Utility
 		}
 
 		/// <summary>
+		/// Simulates a change of value
+		/// </summary>
+		public void				SimulateValueChange()
+		{
+			if ( ValueChanged != null )
+				ValueChanged( this, Value );
+		}
+
+		/// <summary>
 		/// Cancels the current drag
 		/// </summary>
 		public void				CancelDrag()

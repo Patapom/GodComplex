@@ -20,6 +20,8 @@ namespace PNG2RAW
 
 			string[]	FileNames = new string[]
 			{
+				"Iris_Blades",
+
 				// Material 0
 				"LayeredMaterial0-Layer0",
 				"LayeredMaterial0-Layer1",

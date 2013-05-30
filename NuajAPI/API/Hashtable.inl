@@ -6,7 +6,7 @@ template<typename T> DictionaryString<T>::DictionaryString( int _Size ) : m_Entr
 {
 	m_Size = _Size;
 	m_ppTable = new Node*[m_Size];
-	ASM_memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
 }
 template<typename T> DictionaryString<T>::~DictionaryString()
 {
@@ -64,9 +64,24 @@ template<typename T> T&	DictionaryString<T>::Add( const char* _pKey )
 	return pNode->Value;
 }
 
+template<typename T> T&	DictionaryString<T>::AddUnique( const char* _pKey )
+{
+	T*	pExisting = Get( _pKey );
+	if ( pExisting != NULL )
+		return *pExisting;
+
+	return Add( _pKey );
+}
+
 template<typename T> void	DictionaryString<T>::Add( const char* _pKey, const T& _Value )
 {
 	T&	Value = Add( _pKey );
+		Value = _Value;
+}
+
+template<typename T> void	DictionaryString<T>::AddUnique( const char* _pKey, const T& _Value )
+{
+	T&	Value = AddUnique( _pKey );
 		Value = _Value;
 }
 
@@ -148,7 +163,7 @@ template<typename T> Dictionary<T>::Dictionary( int _Size ) : m_EntriesCount( 0 
 {
 	m_Size = _Size;
 	m_ppTable = new Node*[m_Size];
-	ASM_memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
 }
 template<typename T> Dictionary<T>::~Dictionary()
 {

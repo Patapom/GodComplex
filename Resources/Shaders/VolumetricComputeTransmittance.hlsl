@@ -3,9 +3,20 @@
 //
 #include "Inc/Global.hlsl"
 #include "Inc/Volumetric.hlsl"
+#include "Inc/Atmosphere.hlsl"
 
-static const float	STEPS_COUNT = 32.0;
+//#define USE_OBJECT_ZBUFFER	// Define this to read ZMin/Max from the object's ZMin/Max buffer
+//#define USE_FRUSTUM_SPLAT		// Define this to sample the camera frustum splat texture that indicates us whether a shadow pixel is relevant for computation or not
+
+
+//#define	INCLUDE_TERRAIN_SHADOWING	// Define this to sample the terrain shadow map
+
+
+static const float	STEPS_COUNT = 64.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
+
+static const float	SHADOW_MIN_DEPTH = 0.1;
+static const float	SHADOW_MAX_DEPTH = 64.0 * 8;//BOX_HEIGHT;
 
 //[
 cbuffer	cbSplat	: register( b10 )
@@ -14,8 +25,13 @@ cbuffer	cbSplat	: register( b10 )
 };
 //]
 
-Texture2D		_TexDepth	: register(t10);
+Texture2D		_TexDepth			: register(t10);
+//Texture2D		_TexSplatFrustum	: register(t11);
 
+struct	VS_IN_FRUSTUM
+{
+	float3	Position	: POSITION;
+};
 
 struct	VS_IN
 {
@@ -28,6 +44,27 @@ struct	PS_OUT
 	float4	C1 : SV_TARGET1;
 };
 
+
+//////////////////////////////////////////////////////////////////////////
+// Simple splatting of the camera frustum
+VS_IN	VS_SplatFrustum( VS_IN_FRUSTUM _In )
+{
+	float4	WorldPosition = mul( float4( _In.Position, 1 ), _Camera2World );	// Transform into world space
+	float4	ShadowPosition = mul( WorldPosition, _World2Shadow );				// Then into shadow map space
+
+	VS_IN	Out;
+	Out.__Position = float4( 2.0 * ShadowPosition.x - 1.0, 1.0 - 2.0 * ShadowPosition.y, 0, 1 );
+	return Out;
+}
+
+float	PS_SplatFrustum( VS_IN _In ) : SV_TARGET0
+{
+	return 1;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Actual Transmittance Function Map computation
 VS_IN	VS( VS_IN _In )	{ return _In; }
 
 PS_OUT	PS( VS_IN _In )
@@ -36,37 +73,50 @@ PS_OUT	PS( VS_IN _In )
 	Out.C0 = float4( 2, 0, 0, 0 );	// These are the default DCT coefficients to obtain a transmittance of 1
 	Out.C1 = float4( 0, 0, 0, 1 );
 
-	float2	UV = _In.__Position.xy * _dUV.xy;
+//	float2	UV = _In.__Position.xy * _dUV.xy;
+	float2	UV = (_In.__Position.xy - 0.5) * _dUV.xy;
+
+#ifdef USE_FRUSTUM_SPLAT
+	// Read back splat frustum
+	clip( _TexSplatFrustum.SampleLevel( LinearClamp, UV, 0.0 ).x - 0.5 );
+#endif
 
 	// Sample min/max depths at position
+#ifdef USE_OBJECT_ZBUFFER
 	float2	ZMinMax = _TexDepth.SampleLevel( LinearClamp, UV, 0.0 ).xy;
+#else
+	float2	ZMinMax = _ShadowZMinMax;
+#endif
+
 	float	Depth = ZMinMax.y - ZMinMax.x;
 	if ( Depth <= 1e-3 )
 		return Out;	// Empty interval, no trace needed...
 
 	// Ensure we trace a minimum distance
-	const float	MinDepth = 0.1;
-	if ( Depth < MinDepth )
+	if ( Depth < SHADOW_MIN_DEPTH )
 	{
-		Depth = MinDepth;
+		Depth = SHADOW_MIN_DEPTH;
 		float	CenterZ = 0.5 * (ZMinMax.x + ZMinMax.y);
 		ZMinMax = CenterZ + float2( -0.5, +0.5 ) * Depth;
 	}
 
 	// Ensure we trace a maximum distance
-	const float	MaxDepth = 64.0;
-	if ( Depth > MaxDepth )
+	if ( Depth > SHADOW_MAX_DEPTH )
 	{
-		Depth = MaxDepth;
+		Depth = SHADOW_MAX_DEPTH;
 		ZMinMax.y = ZMinMax.x + Depth;
 	}
 
 	float	InvDepth = 1.0 / Depth;
 
 	// Retrieve start & end positions in world space
-	float2	ShadowPos = float2( 2.0 * UV.x - 1.0, 1.0 - 2.0 * UV.y );
-	float3	WorldPosStart = mul( float4( ShadowPos, ZMinMax.x, 1.0 ), _Shadow2World ).xyz;
-	float3	WorldPosEnd = mul( float4( ShadowPos, ZMinMax.y, 1.0 ), _Shadow2World ).xyz;
+// 	float2	ShadowPos = float2( 2.0 * UV.x - 1.0, 1.0 - 2.0 * UV.y );
+// 	float3	WorldPosStart = mul( float4( ShadowPos, ZMinMax.x, 1.0 ), _Shadow2World ).xyz;
+// 	float3	WorldPosEnd = mul( float4( ShadowPos, ZMinMax.y, 1.0 ), _Shadow2World ).xyz;
+
+		// Now using UVs instead of projected coordinates
+	float3	WorldPosStart = mul( float4( UV, ZMinMax.x, 1.0 ), _Shadow2World ).xyz;
+	float3	WorldPosEnd = mul( float4( UV, ZMinMax.y, 1.0 ), _Shadow2World ).xyz;
 
 // Out.C0 = float4( WorldPosStart, 0 );
 // Out.C1 = float4( WorldPosEnd, 0 );
@@ -87,6 +137,20 @@ PS_OUT	PS( VS_IN _In )
 
 	Out.C0 = Out.C1 = 0.0;
 
+#ifdef INCLUDE_TERRAIN_SHADOWING
+	if ( GetTerrainShadow( Position.xyz ) < 0.5 )
+		return Out;
+#endif
+
+#if 1
+	// Compute shadowing by Earth
+//	Out.C0 = float4( _LightDirection, 0 );
+	float	GroundHitDistanceKm = SphereIntersectionEnter( WORLD2KM * Position, _LightDirection, 0.0 );
+	if ( GroundHitDistanceKm > 0.0 && GroundHitDistanceKm < 1000.0 )
+		return Out;
+#endif
+
+
 	float	Sigma_t = 0.0;
 	float	Transmittance = 1.0;
 	for ( float StepIndex=0; StepIndex < STEPS_COUNT; StepIndex++ )
@@ -102,12 +166,13 @@ PS_OUT	PS( VS_IN _In )
 //Density *= 4.0;
 
 		float	PreviousSigma_t = Sigma_t;
-		Sigma_t = EXTINCTION_COEFF * Density;
-
-//Sigma_t *= 10.0;//###
+		Sigma_t = _CloudExtinctionScattering.x * Density;
 
 //		float	StepTransmittance = exp( -Sigma_t * Step.w );
 		float	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );
+#ifdef INCLUDE_TERRAIN_SHADOWING
+//		StepTransmittance *= GetTerrainShadow( Position );
+#endif
 		Transmittance *= StepTransmittance;
 
 		// Accumulate cosine weights for the DCT
@@ -131,8 +196,6 @@ PS_OUT	PS( VS_IN _In )
 	Out.C1.xy *= 2.0 * dx;
 
 	Out.C1.zw = ZMinMax;	// We keep in/out distances for decoding...
-
-//Out.C0 = Out.C1 = Transmittance;
 
 	return Out;
 }

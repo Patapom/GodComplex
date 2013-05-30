@@ -48,6 +48,10 @@ private:	// FIELDS
 	Material*			m_pMatShading_Spot_StencilPass;
 	Material*			m_pMatShading_Spot;
 	Material*			m_pMatIndirectLighting;
+	Material*			m_pMatBokehSplat;
+	Material*			m_pMatDownSampleBokeh0;
+	Material*			m_pMatDownSampleBokeh1;
+	Material*			m_pMatFinalize;
 
 	Texture2D*			m_pDepthStencilFront;
 	Texture2D*			m_pDepthStencilBack;
@@ -60,9 +64,12 @@ private:	// FIELDS
 
 	Texture2D*			m_pRTAccumulatorDiffuseSpecular;
 
+	Texture2D*			m_pTexBokeh;
+
 	Primitive*			m_pPrimCylinder;
 	Primitive*			m_pPrimSphere;
 	Primitive&			m_ScreenQuad;
+	Primitive*			m_pPrimBokeh;
 
 	CB<CBRender>*		m_pCB_Render;
 	CB<CBRender>*		m_pCB_RenderDownSampled;
@@ -77,6 +84,6 @@ public:		// METHODS
 	EffectScene( Device& _Device, Scene& _Scene, Primitive& _ScreenQuad );
 	~EffectScene();
 
-	void	Render( float _Time, float _DeltaTime );
+	void	Render( float _Time, float _DeltaTime, Texture2D& _RTHDR );
 
 };

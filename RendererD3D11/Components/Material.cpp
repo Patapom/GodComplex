@@ -40,7 +40,7 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 	m_Pointer2FileName.Add( NULL, m_pShaderPath );
 #endif
 
-#if defined(_DEBUG) && defined(WATCH_SHADER_MODIFICATIONS)
+#if defined(SURE_DEBUG) && defined(WATCH_SHADER_MODIFICATIONS)
 	if ( _pShaderFileName != NULL )
 	{
 		// Just ensure the file exists !
@@ -96,6 +96,34 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 #endif
 }
 
+Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, ID3DBlob* _pVS, ID3DBlob* _pHS, ID3DBlob* _pDS, ID3DBlob* _pGS, ID3DBlob* _pPS )
+	: Component( _Device )
+	, m_Format( _Format )
+	, m_pVertexLayout( NULL )
+	, m_pVS( NULL )
+	, m_pHS( NULL )
+	, m_pDS( NULL )
+	, m_pGS( NULL )
+	, m_pPS( NULL )
+	, m_pEntryPointVS( NULL )
+	, m_pEntryPointHS( NULL )
+	, m_pEntryPointDS( NULL )
+	, m_pEntryPointGS( NULL )
+	, m_pEntryPointPS( NULL )
+	, m_pShaderPath( NULL )
+	, m_pIncludeOverride( NULL )
+	, m_bHasErrors( false )
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
+	, m_LastShaderModificationTime( 0 )
+#endif
+#ifdef MATERIAL_COMPILE_THREADED
+	, m_hCompileThread( 0 )
+#endif
+{
+	ASSERT( _pVS != NULL, "You can't provide a NULL VS blob!" );
+	CompileShaders( NULL, _pVS, _pHS, _pDS, _pGS, _pPS );
+}
+
 Material::~Material()
 {
 #ifdef MATERIAL_COMPILE_THREADED
@@ -122,7 +150,7 @@ Material::~Material()
 	if ( m_pMacros != NULL ) { delete[] m_pMacros; m_pMacros = NULL; }
 }
 
-void	Material::CompileShaders( const char* _pShaderCode )
+void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlob* _pHS, ID3DBlob* _pDS, ID3DBlob* _pGS, ID3DBlob* _pPS )
 {
 	// Release any pre-existing shader
 	if ( m_pVertexLayout != NULL ) { m_pVertexLayout->Release(); m_pVertexLayout = NULL; }
@@ -135,7 +163,11 @@ void	Material::CompileShaders( const char* _pShaderCode )
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the compulsory vertex shader
 	ASSERT( m_pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
-	ID3DBlob*   pShader = CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_4_0", this );
+#ifdef DIRECTX10
+	ID3DBlob*   pShader = _pVS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_4_0", this ) : _pVS;
+#else
+	ID3DBlob*   pShader = _pVS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_5_0", this ) : _pVS;
+#endif
 	if ( pShader != NULL )
 	{
 		void*	pBuffer = pShader->GetBufferPointer();
@@ -164,7 +196,7 @@ void	Material::CompileShaders( const char* _pShaderCode )
 #ifdef DIRECTX10
 		ASSERT( false, "You can't use Hull Shaders if you define DIRECTX10!" );
 #endif
-		ID3DBlob*   pShader = CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointHS, "hs_5_0", this );
+		ID3DBlob*   pShader = _pHS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointHS, "hs_5_0", this ) : _pHS;
 		if ( pShader != NULL )
 		{
 			void*	pBuffer = pShader->GetBufferPointer();
@@ -189,7 +221,7 @@ void	Material::CompileShaders( const char* _pShaderCode )
 #ifdef DIRECTX10
 		ASSERT( false, "You can't use Domain Shaders if you define DIRECTX10!" );
 #endif
-		ID3DBlob*   pShader = CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointDS, "ds_5_0", this );
+		ID3DBlob*   pShader = _pDS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointDS, "ds_5_0", this ) : _pDS;
 		if ( pShader != NULL )
 		{
 			Check( m_Device.DXDevice().CreateDomainShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pDS ) );
@@ -209,7 +241,11 @@ void	Material::CompileShaders( const char* _pShaderCode )
 	// Compile the optional geometry shader
 	if ( !m_bHasErrors && m_pEntryPointGS != NULL )
 	{
-		ID3DBlob*   pShader = CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_4_0", this );
+#ifdef DIRECTX10
+		ID3DBlob*   pShader = _pGS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_4_0", this ) : _pGS;
+#else
+		ID3DBlob*   pShader = _pGS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_5_0", this ) : _pGS;
+#endif
 		if ( pShader != NULL )
 		{
 			Check( m_Device.DXDevice().CreateGeometryShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pGS ) );
@@ -244,7 +280,11 @@ if ( *m_pEntryPointPS == 1 )
 // TEST
 #endif
 
-		ID3DBlob*   pShader = CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_4_0", this );
+#ifdef DIRECTX10
+		ID3DBlob*   pShader = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_4_0", this ) : NULL;
+#else
+		ID3DBlob*   pShader = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_5_0", this ) : NULL;
+#endif
 		if ( pShader != NULL )
 		{
 			Check( m_Device.DXDevice().CreatePixelShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pPS ) );
@@ -261,7 +301,7 @@ if ( *m_pEntryPointPS == 1 )
 	}
 }
 
-#if !defined(USE_BINARY_BLOBS) || defined(_DEBUG)
+#ifdef SURE_DEBUG
 
 // Embedded shader for debug & testing...
 // static char*	pTestShader =
@@ -327,9 +367,14 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 
 	D3DCompile( pCodePointer, CodeSize, _pShaderFileName, _pMacros, _pInclude, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors );
 #if defined(_DEBUG) || defined(DEBUG_SHADER)
+#ifdef WARNING_AS_ERRORS
+	if ( pErrors != NULL )
+#else
 	if ( pCode == NULL && pErrors != NULL )
+#endif
 	{
-		MessageBoxA( NULL, (LPCSTR) pErrors->GetBufferPointer(), "Shader Compilation Error !", MB_OK | MB_ICONERROR );
+		const char*	pErrorText = (LPCSTR) pErrors->GetBufferPointer();
+		MessageBoxA( NULL, pErrorText, "Shader Compilation Error !", MB_OK | MB_ICONERROR );
 		ASSERT( pErrors == NULL, "Shader compilation error !" );
 	}
 	else
@@ -337,94 +382,22 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 #endif
 
 // Save the binary blob to disk
-#if defined(_DEBUG) && defined(SAVE_SHADER_BLOB_TO)
-{
-ASSERT( _pShaderFileName != NULL, "Can't save binary blob => Invalid shader file name!" );
-
-const char*	pFileName = strrchr( _pShaderFileName, '/' );
-if ( pFileName == NULL )
-	pFileName = strrchr( _pShaderFileName, '\\' );
-ASSERT( pFileName != NULL, "Can't retrieve last /!" );
-int		FileNameIndex = 1+pFileName - _pShaderFileName;
-const char*	pExtension = strrchr( _pShaderFileName, '.' );
-ASSERT( pExtension != NULL, "Can't retrieve extension!" );
-int		ExtensionIndex = pExtension - _pShaderFileName;
-char	pFileNameWithoutExtension[1024];
-memcpy( pFileNameWithoutExtension, pFileName+1, ExtensionIndex-FileNameIndex );
-pFileNameWithoutExtension[ExtensionIndex-FileNameIndex] = '\0';	// End the file name here
-
-char	pFinalShaderName[1024];
-sprintf( pFinalShaderName, "%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, _pEntryPoint );
-
-// Create the binary file
-FILE*	pFile;
-fopen_s( &pFile, pFinalShaderName, "wb" );
-ASSERT( pFile != NULL, "Can't create file!" );
-
-// Write the entry point's length
-int	Length = strlen( _pEntryPoint )+1;
-fwrite( &Length, sizeof(int), 1, pFile );
-
-// Write the entry point name
-fwrite( _pEntryPoint, 1, Length, pFile );
-
-// Write the blob's length
-Length = pCode->GetBufferSize();
-ASSERT( Length < 65536, "Shader length doesn't fit on 16 bits!" );
-fwrite( &Length, sizeof(int), 1, pFile );
-
-// Write the blob's content
-pCodePointer = pCode->GetBufferPointer();
-fwrite( pCodePointer, 1, Length, pFile );
-
-// We're done!
-fclose( pFile );
-}
+#ifdef SAVE_SHADER_BLOB_TO
+	SaveBinaryBlob( _pShaderFileName, _pEntryPoint, *pCode );
 #endif
 
 	return pCode;
 }
 
-#else	// #ifdef USE_BINARY_BLOBS
+#else	// #ifndef _DEBUG
 
 ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget, ID3DInclude* _pInclude, bool _bComputeShader )
 {
 	U8*	pBigBlob = (U8*) _pShaderCode;	// Actually a giant blob...
-
-	U16	BlobsCount = *((U16*) pBigBlob); pBigBlob+=2;	// Amount of blobs in the big blob
-	for ( U16 BlobIndex=0; BlobIndex < BlobsCount; BlobIndex++ )
-	{
-		int	Cmp = strcmp( (char*) pBigBlob, _pEntryPoint );
-		int	BlobEntryPointLength = strlen( (char*) pBigBlob );
-		pBigBlob += BlobEntryPointLength+1;	// Skip the entry point's name
-
-		if ( !Cmp )
-		{	// Found it !
-			U16	BlobStartOffset = *((U16*) pBigBlob); pBigBlob+=2;	// Retrieve the jump offset to reach the blob
-			pBigBlob += BlobStartOffset;							// Go to the blob descriptor
-
-			U16	BlobSize = *((U16*) pBigBlob); pBigBlob+=2;			// Retrieve the size of the blob
-
-			// Create a D3DBlob
-			ID3DBlob*	pResult = NULL;
-			D3DCreateBlob( BlobSize, &pResult );
-
-			// Copy our blob content
-			void*		pBlobContent = pResult->GetBufferPointer();
-			memcpy( pBlobContent, pBigBlob, BlobSize );
-
-			// Yoohoo!
-			return pResult;
-		}
-
-		// Not that blob either... Skip the jump offset...
-		pBigBlob += 2;
-	}
-
-	return NULL;
+	return LoadBinaryBlobFromAggregate( pBigBlob, _pEntryPoint );
 }
 
-#endif	// #ifndef USE_BINARY_BLOBS
+#endif	// #ifdef _DEBUG
 
 void	Material::Use()
 {
@@ -897,6 +870,11 @@ void		Material::RebuildShader()
 	Unlock();
 }
 
+void		Material::ForceRecompile()
+{
+	m_LastShaderModificationTime--;	// So we're sure it will be recompiled on next watch!
+}
+
 time_t		Material::GetFileModTime( const char* _pFileName )
 {	
 	struct _stat statInfo;
@@ -906,3 +884,164 @@ time_t		Material::GetFileModTime( const char* _pFileName )
 }
 
 #endif	// #if defined(_DEBUG) || !defined(GODCOMPLEX)
+
+
+#ifdef SAVE_SHADER_BLOB_TO
+
+//////////////////////////////////////////////////////////////////////////
+// Load from pre-compiled binary blob (useful for heavy shaders that never change)
+//
+Material*	Material::CreateFromBinaryBlob( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS )
+{
+	ID3DBlob*	pVS = _pEntryPointVS != NULL ? LoadBinaryBlob( _pShaderFileName, _pEntryPointVS ) : NULL;
+	ID3DBlob*	pHS = _pEntryPointHS != NULL ? LoadBinaryBlob( _pShaderFileName, _pEntryPointHS ) : NULL;
+	ID3DBlob*	pDS = _pEntryPointDS != NULL ? LoadBinaryBlob( _pShaderFileName, _pEntryPointDS ) : NULL;
+	ID3DBlob*	pGS = _pEntryPointGS != NULL ? LoadBinaryBlob( _pShaderFileName, _pEntryPointGS ) : NULL;
+	ID3DBlob*	pPS = _pEntryPointPS != NULL ? LoadBinaryBlob( _pShaderFileName, _pEntryPointPS ) : NULL;
+
+	Material*	pResult = new Material( _Device, _Format, _pShaderFileName, pVS, pHS, pDS, pGS, pPS );
+
+// No need: the blob was released by the constructor!
+// 	pPS->Release();
+// 	pGS->Release();
+// 	pDS->Release();
+// 	pHS->Release();
+// 	pVS->Release();
+
+	return pResult;
+}
+
+void		Material::SaveBinaryBlob( const char* _pShaderFileName, const char* _pEntryPoint, ID3DBlob& _Blob )
+{
+	ASSERT( _pShaderFileName != NULL, "Can't save binary blob => Invalid shader file name!" );
+	ASSERT( _pEntryPoint != NULL, "Can't save binary blob => Invalid entry point name!" );
+
+	const char*	pFileName = strrchr( _pShaderFileName, '/' );
+	if ( pFileName == NULL )
+		pFileName = strrchr( _pShaderFileName, '\\' );
+	ASSERT( pFileName != NULL, "Can't retrieve last /!" );
+	int		FileNameIndex = 1+pFileName - _pShaderFileName;
+	const char*	pExtension = strrchr( _pShaderFileName, '.' );
+	ASSERT( pExtension != NULL, "Can't retrieve extension!" );
+	int		ExtensionIndex = pExtension - _pShaderFileName;
+	char	pFileNameWithoutExtension[1024];
+	memcpy( pFileNameWithoutExtension, pFileName+1, ExtensionIndex-FileNameIndex );
+	pFileNameWithoutExtension[ExtensionIndex-FileNameIndex] = '\0';	// End the file name here
+
+	char	pFinalShaderName[1024];
+	sprintf( pFinalShaderName, "%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, _pEntryPoint );
+
+	// Create the binary file
+	FILE*	pFile;
+	fopen_s( &pFile, pFinalShaderName, "wb" );
+	ASSERT( pFile != NULL, "Can't create binary shader file!" );
+
+	// Write the entry point's length
+	int	Length = strlen( _pEntryPoint )+1;
+	fwrite( &Length, sizeof(int), 1, pFile );
+
+	// Write the entry point name
+	fwrite( _pEntryPoint, 1, Length, pFile );
+
+	// Write the blob's length
+	Length = _Blob.GetBufferSize();
+	ASSERT( Length < 65536, "Shader length doesn't fit on 16 bits!" );
+	fwrite( &Length, sizeof(int), 1, pFile );
+
+	// Write the blob's content
+	LPCVOID	pCodePointer = _Blob.GetBufferPointer();
+	fwrite( pCodePointer, 1, Length, pFile );
+
+	// We're done!
+	fclose( pFile );
+}
+
+ID3DBlob*	Material::LoadBinaryBlob( const char* _pShaderFileName, const char* _pEntryPoint )
+{
+	ASSERT( _pShaderFileName != NULL, "Can't load binary blob => Invalid shader file name!" );
+	ASSERT( _pEntryPoint != NULL, "Can't load binary blob => Invalid entry point name!" );
+
+	const char*	pFileName = strrchr( _pShaderFileName, '/' );
+	if ( pFileName == NULL )
+		pFileName = strrchr( _pShaderFileName, '\\' );
+	ASSERT( pFileName != NULL, "Can't retrieve last /!" );
+	int		FileNameIndex = 1+pFileName - _pShaderFileName;
+	const char*	pExtension = strrchr( _pShaderFileName, '.' );
+	ASSERT( pExtension != NULL, "Can't retrieve extension!" );
+	int		ExtensionIndex = pExtension - _pShaderFileName;
+	char	pFileNameWithoutExtension[1024];
+	memcpy( pFileNameWithoutExtension, pFileName+1, ExtensionIndex-FileNameIndex );
+	pFileNameWithoutExtension[ExtensionIndex-FileNameIndex] = '\0';	// End the file name here
+
+	char	pFinalShaderName[1024];
+	sprintf( pFinalShaderName, "%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, _pEntryPoint );
+
+	// Create the binary file
+	FILE*	pFile;
+	fopen_s( &pFile, pFinalShaderName, "rb" );
+	ASSERT( pFile != NULL, "Can't open binary shader file! (did you compile the shader at least once?)" );
+
+	// Write the entry point's length
+	int	Length;
+	fread_s( &Length, sizeof(int), sizeof(int), 1, pFile );
+
+	// Read the entry point name
+	char	pEntryPointCheck[1024];
+	fread_s( pEntryPointCheck, 1024, 1, Length, pFile );
+	ASSERT( !strcmp( _pEntryPoint, pEntryPointCheck ), "Entry point names mismatch!" );
+
+	// Read the blob's length
+	int	BlobSize;
+	fread_s( &BlobSize, sizeof(int), sizeof(int), 1, pFile );
+
+	// Create a D3DBlob
+	ID3DBlob*	pResult = NULL;
+	D3DCreateBlob( BlobSize, &pResult );
+
+	// Write the blob's content
+	LPVOID	pContent = pResult->GetBufferPointer();
+	fread_s( pContent, BlobSize, 1, BlobSize, pFile );
+
+	// We're done!
+	fclose( pFile );
+
+	return pResult;
+}
+
+#endif	// #if defined(_DEBUG) && defined(SAVE_SHADER_BLOB_TO)
+
+
+ID3DBlob*	Material::LoadBinaryBlobFromAggregate( const U8* _pAggregate, const char* _pEntryPoint )
+{
+	U16	BlobsCount = *((U16*) _pAggregate); _pAggregate+=2;	// Amount of blobs in the big blob
+	for ( U16 BlobIndex=0; BlobIndex < BlobsCount; BlobIndex++ )
+	{
+		int	Cmp = strcmp( (char*) _pAggregate, _pEntryPoint );
+		int	BlobEntryPointLength = strlen( (char*) _pAggregate );
+		_pAggregate += BlobEntryPointLength+1;	// Skip the entry point's name
+
+		if ( !Cmp )
+		{	// Found it !
+			U16	BlobStartOffset = *((U16*) _pAggregate); _pAggregate+=2;	// Retrieve the jump offset to reach the blob
+			_pAggregate += BlobStartOffset;							// Go to the blob descriptor
+
+			U16	BlobSize = *((U16*) _pAggregate); _pAggregate+=2;			// Retrieve the size of the blob
+
+			// Create a D3DBlob
+			ID3DBlob*	pResult = NULL;
+			D3DCreateBlob( BlobSize, &pResult );
+
+			// Copy our blob content
+			void*		pBlobContent = pResult->GetBufferPointer();
+			memcpy( pBlobContent, _pAggregate, BlobSize );
+
+			// Yoohoo!
+			return pResult;
+		}
+
+		// Not that blob either... Skip the jump offset...
+		_pAggregate += 2;
+	}
+
+	return NULL;
+}

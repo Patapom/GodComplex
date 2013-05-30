@@ -7,8 +7,8 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
- 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T3T3::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
- 	CHECK_MATERIAL( m_pMatDisplayEmissive = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, VertexFormatP3N3G3T3T3::DESCRIPTOR, "VS", NULL, "PS_Emissive" ), 2 );
+ 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, "./Resources/Shaders/RoomDisplay.hlsl", VertexFormatP3N3G3T3T3::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
+ 	CHECK_MATERIAL( m_pMatDisplayEmissive = CreateMaterial( IDR_SHADER_ROOM_DISPLAY, "./Resources/Shaders/RoomDisplay.hlsl", VertexFormatP3N3G3T3T3::DESCRIPTOR, "VS", NULL, "PS_Emissive" ), 2 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the room geometry & compute lightmaps
@@ -472,9 +472,9 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 	//////////////////////////////////////////////////////////////////////////
 	// Compute direct lighting
 	ComputeShader*	pCSComputeLightMapDirect;
-	CHECK_MATERIAL( pCSComputeLightMapDirect = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "CS_Direct" ), 5 );
+	CHECK_MATERIAL( pCSComputeLightMapDirect = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "./Resources/Shaders/RoomBuildLightMap.hlsl", "CS_Direct" ), 5 );
 	ComputeShader*	pCSComputeLightMapIndirect;
-	CHECK_MATERIAL( pCSComputeLightMapIndirect = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "CS_Indirect" ), 6 );
+	CHECK_MATERIAL( pCSComputeLightMapIndirect = CreateComputeShader( IDR_SHADER_ROOM_BUILD_LIGHTMAP, "./Resources/Shaders/RoomBuildLightMap.hlsl", "CS_Indirect" ), 6 );
 
 	struct	CBRender
 	{
@@ -501,7 +501,7 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 		CB_Render.m.RadianceWeight = 1.0f;
 		CB_Render.UpdateData();
 
-		pCSComputeLightMapDirect->Run( CB_Render.m.LightMapSizeX, CB_Render.m.LightMapSizeY, 1 );
+		pCSComputeLightMapDirect->Dispatch( CB_Render.m.LightMapSizeX, CB_Render.m.LightMapSizeY, 1 );
 
 // 		ppResults1[FaceIndex]->Read();	// CHECK
 
@@ -541,7 +541,7 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 				CB_Render.m.PassIndex = PassIndex;
 				CB_Render.UpdateData();
 
-				pCSComputeLightMapIndirect->Run( CB_Render.m.LightMapSizeX, CB_Render.m.LightMapSizeY, 1 );
+				pCSComputeLightMapIndirect->Dispatch( CB_Render.m.LightMapSizeX, CB_Render.m.LightMapSizeY, 1 );
 			}
 
 //			ppResults1[FaceIndex]->Read();	// CHECK

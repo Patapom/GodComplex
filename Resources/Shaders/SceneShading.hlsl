@@ -2,7 +2,7 @@
 // This shader performs the actual scene lighting
 //
 #include "Inc/Global.hlsl"
-#include "Inc/LayeredMaterials.fx"
+#include "Inc/LayeredMaterials.hlsl"
 
 cbuffer	cbRender	: register( b10 )
 {

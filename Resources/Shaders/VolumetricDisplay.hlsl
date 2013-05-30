@@ -3,19 +3,26 @@
 //
 #include "Inc/Global.hlsl"
 #include "Inc/Volumetric.hlsl"
+#include "Inc/Atmosphere.hlsl"
 
-static const float	STEPS_COUNT = 16.0;
+static const float	STEPS_COUNT = 64.0;
 static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
+
+static const float	GODRAYS_STEPS_COUNT = 32.0;
+
+
+static const float	AERIAL_PERSPECTIVE_FAKE_FACTOR = 1.0;	// To fake an increase in aerial perspective on the terrain
 
 //[
 cbuffer	cbSplat	: register( b10 )
 {
 	float3		_dUV;
+	bool		_bSampleTerrainShadow;
 };
 //]
 
-Texture2D		_TexDepth			: register(t10);
-Texture2DArray	_TexTransmittance	: register(t11);
+Texture2D		_TexVolumeDepth	: register(t10);
+Texture2D		_TexSceneDepth	: register(t11);
 
 
 struct	VS_IN
@@ -23,32 +30,107 @@ struct	VS_IN
 	float4	__Position	: SV_POSITION;
 };
 
-
-float	TempGetTransmittance( float3 _WorldPosition )
+struct	PS_OUT
 {
-	float3	ShadowPosition = mul( float4( _WorldPosition, 1.0 ), _World2Shadow ).xyz;
-	float2	UV = float2( 0.5 * (1.0 + ShadowPosition.x), 0.5 * (1.0 - ShadowPosition.y) );
-	float	Z = ShadowPosition.z;
+	float3	Scattering	: SV_TARGET0;
+	float3	Extinction	: SV_TARGET1;
+};
 
-	float4	C0 = _TexTransmittanceMap.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
-//return C0.x;
-	float4	C1 = _TexTransmittanceMap.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
 
-	float2	ZMinMax = C1.zw;
-	if ( Z < ZMinMax.x )
-		return 1.0;	// We're not even in the shadow yet!
 
-	float	x = saturate( (Z - ZMinMax.x) / (ZMinMax.y - ZMinMax.x) );
+// Read Z from the ZBuffer
+float	ReadDepth( float2 _UV )
+{
+	float	Zproj = _TexSceneDepth.SampleLevel( LinearClamp, _UV, 0.0 ).x;
 
-	const float4	CosTerm0 = PI * float4( 0, 1, 2, 3 );
-	const float2	CosTerm1 = PI * float2( 4, 5 );
+	float	Q = _CameraData.w / (_CameraData.w - _CameraData.z);	// Zf / (Zf-Zn)
+	return (Q * _CameraData.z) / (Q - Zproj);
+}
 
-	float4	Cos0 = cos( CosTerm0 * x );
-	float2	Cos1 = cos( CosTerm1 * x );
+float	ComputeCloudShadowing( float3 _PositionWorld, float3 _View, float _Distance, float _StepOffset=0.5, uniform uint _StepsCount=GODRAYS_STEPS_COUNT )
+{
+//	uint	StepsCount = ceil( lerp( 16.0, float(_StepsCount), saturate( _Distance / 150.0 ) ) );
+//	uint	StepsCount = ceil( 2.0 * _StepOffset + lerp( 16.0, float(_StepsCount), saturate( _Distance / 150.0 ) ) );	// Fantastic noise hides banding!
+//	uint	StepsCount = ceil( 2.0 * _StepOffset + lerp( 16.0, float(_StepsCount), saturate( _Distance / 50.0 ) ) );	// Fantastic noise hides banding!
+	uint	StepsCount = ceil( lerp( 16.0, float(_StepsCount), saturate( _Distance / 50.0 ) ) );	// Fantastic noise hides banding!
+//	uint	StepsCount = _StepsCount;
 
-	Cos0.x = 0.5;	// Patch for inverse DCT
+#if 1	// Linear steps
+	float3	Step = (_Distance / StepsCount) * _View;
+	_PositionWorld += _StepOffset * Step;
 
-	return saturate( dot( Cos0, C0 ) + dot( Cos1, C1.xy ) );
+	float	SumIncomingLight = 0.0;
+	for ( uint StepIndex=0; StepIndex < StepsCount; StepIndex++ )
+	{
+		if ( _bSampleTerrainShadow )
+			SumIncomingLight += GetFastCloudTransmittance( _PositionWorld ) * GetTerrainShadow( _PositionWorld );	// Use cloud transmittance + terrain shadow
+		else
+			SumIncomingLight += GetFastCloudTransmittance( _PositionWorld );	// Use only cloud transmittance
+
+		_PositionWorld += Step;
+	}
+#endif
+
+	return saturate( SumIncomingLight / _StepsCount );
+}
+
+void	ComputeFinalColor( float3 _PositionWorld, float3 _View, float2 _DistanceKm, float3 _Sun, float4 _CloudScatteringExtinction, float _GroundBlocking, float _StepOffset, out float3 _Scattering, out float3 _Extinction )
+{
+	float3	PositionKm = WORLD2KM * _PositionWorld;
+
+PositionKm.y -= _AltitudeOffsetKm;
+
+	////////////////////////////////////////////////////////////
+	// Compute sky radiance arriving at camera, not accounting for clouds
+	float3	StartPositionKm = PositionKm - EARTH_CENTER_KM;	// Start position from origin (i.e. center of the Earth)
+	float	StartRadiusKm = length( StartPositionKm );
+	float	StartAltitudeKm = StartRadiusKm - GROUND_RADIUS_KM;
+	float3	StartNormal = StartPositionKm / StartRadiusKm;
+	float	CosThetaView = dot( StartNormal, _View );
+	float	CosThetaSun = dot( StartNormal, _Sun );
+
+	float	CosGamma = dot( _View, _Sun );
+
+	float4	Lin = Sample4DScatteringTable( _TexScattering, StartAltitudeKm, CosThetaView, CosThetaSun, CosGamma );
+	float3	Lin_Rayleigh = Lin.xyz;
+	float3	Lin_Mie = GetMieFromRayleighAndMieRed( Lin );
+
+	////////////////////////////////////////////////////////////
+	// Account for cloud shadowing
+	float3	HitPositionKm = PositionKm + _DistanceKm.x * _View - EARTH_CENTER_KM;
+	float	HitRadiusKm = length( HitPositionKm );
+	float	HitAltitudeKm = HitRadiusKm - GROUND_RADIUS_KM;
+	float3	HitNormal = HitPositionKm / HitRadiusKm;
+	float	HitCosThetaView = dot( HitNormal, _View );
+	float	HitCosThetaSun = dot( HitNormal, _Sun );
+
+	// Compute sky radiance arriving at cloud/ground (i.e. above and inside cloud)
+	float4	Lin_hit2atmosphere = Sample4DScatteringTable( _TexScattering, HitAltitudeKm, HitCosThetaView, HitCosThetaSun, CosGamma );
+	float3	Lin_hit2atmosphere_Rayleigh = Lin_hit2atmosphere.xyz;
+	float3	Lin_hit2atmosphere_Mie = GetMieFromRayleighAndMieRed( Lin_hit2atmosphere );
+
+	// Compute sky radiance between camera and hit
+	float3	Transmittance = GetTransmittance( StartAltitudeKm, CosThetaView, _DistanceKm.y );
+	float3	Lin_camera2cloud_Rayleigh = max( 0.0, Lin_Rayleigh - Transmittance * Lin_hit2atmosphere_Rayleigh );
+	float3	Lin_camera2cloud_Mie = max( 0.0, Lin_Mie - Transmittance * Lin_hit2atmosphere_Mie );
+
+	// Attenuate in-scattered light between camera and hit due to shadowing by the cloud
+	float	Shadowing = ComputeCloudShadowing( _PositionWorld, _View, _DistanceKm.x / WORLD2KM, _StepOffset );
+
+ 	float	GodraysStrength = saturate( lerp( 1.0 - _GodraysStrength, 1.0, Shadowing ) );
+	Lin_camera2cloud_Rayleigh *= GodraysStrength;
+	Lin_camera2cloud_Mie *= GodraysStrength;
+
+	////////////////////////////////////////////////////////////
+	// Rebuild final camera2atmosphere scattering, accounting for cloud extinction
+	float	CloudExtinction = _GroundBlocking * _CloudScatteringExtinction.w;	// Completely mask remaining segment if we hit the ground
+
+	Lin_Rayleigh = Lin_camera2cloud_Rayleigh + CloudExtinction * Transmittance * Lin_hit2atmosphere_Rayleigh;
+	Lin_Mie = Lin_camera2cloud_Mie + CloudExtinction * Transmittance * Lin_hit2atmosphere_Mie;
+
+	// Finalize extinction & scattering
+	_Extinction = Transmittance * _CloudScatteringExtinction.w;	// Combine with cloud
+	_Scattering = SUN_INTENSITY * (PhaseFunctionRayleigh( CosGamma ) * Lin_Rayleigh + PhaseFunctionMie( CosGamma ) * Lin_Mie) + _CloudScatteringExtinction.xyz;
 }
 
 float	Eval( float a, float b, float c, float d, float x )
@@ -79,31 +161,44 @@ float	Ei( float z )
 
 // =============================================
 // Compute an approximate isotropic diffusion through infinite slabs
-float3	ComputeIsotropicScattering( float3 _Position, float _Density )
+float3	ComputeIsotropicScattering( float3 _Position, float _Density, float3 _SunLight, float3 _SkyLightTop, float3 _SkyLightBottom )
 {
-	const float	_Sigma_scattering_Isotropic = 0.01;
-
-	float	y = saturate( 2.0 * (_Position.y / BOX_HEIGHT - 0.5) );
+#if 0	// Ponder contributions with "insideness" of layer
+	float	y = saturate( 2.0 * ((_Position.y - _CloudAltitudeThickness.x) / _CloudAltitudeThickness.y - 0.5) );
 			y *= y;
 			y = 1.0 - y;	// Max at center!
-//			y *= y;
+#elif 0	// Ponder contribution by distance to top
+	float	y = saturate( (_Position.y - _CloudAltitudeThickness.x) / _CloudAltitudeThickness.y );
+			y *= y;
+#else
+	float	y = 1.0;	// Constant throughout the layer
+#endif
 
-	float3	SkyRadiance = 0.05 * float3( 0.6, 0.71, 0.75 );
-	float3	SunRadiance = 0.08 * float3( 1.0, 1.0, 1.0 );
-	float3	GroundRadiance = 0.02 * float3( 1.0, 0.8, 0.2 );
-	float3	IsotropicLightTop = y * (SkyRadiance + SunRadiance);
-	float3	IsotropicLightBottom = y * (SkyRadiance + SunRadiance) + GroundRadiance;
+//y = 1.0;
 
-	float	IsotropicSphereRadiusTopKm = BOX_HEIGHT - _Position.y;
-	float	IsotropicSphereRadiusBottomKm = _Position.y;
+	float3	SkyRadianceTop = _CloudIsotropicFactors.x * _SkyLightTop;
+	float3	SkyRadianceBottom = _CloudIsotropicFactors.x * _SkyLightBottom;
 
-	float	a = -_Sigma_scattering_Isotropic * IsotropicSphereRadiusTopKm;
+	float3	SunRadiance = _CloudIsotropicFactors.y * _SunLight;
+
+	float3	GroundReflectance = _CloudIsotropicFactors.z * INVPI * float3( 1.0, 0.8, 0.2 );
+	float3	GroundRadiance = GroundReflectance * _SunLight;
+
+	float3	IsotropicLightTop = y * (SkyRadianceTop + SunRadiance);
+	float3	IsotropicLightBottom = 1 * (SkyRadianceBottom + SunRadiance) + GroundRadiance;
+
+	float	BoxTop = _CloudAltitudeThickness.x + _CloudAltitudeThickness.y;
+	float	BoxBottom = _CloudAltitudeThickness.x;
+	float	IsotropicSphereRadiusTopKm = BoxTop - _Position.y;
+	float	IsotropicSphereRadiusBottomKm = _Position.y - BoxBottom;
+
+	float	a = -_CloudIsotropicScattering * IsotropicSphereRadiusTopKm;
 	float3  IsotropicScatteringTop = IsotropicLightTop * max( 0.0, exp( a ) - a * Ei( a ));
-			a = -_Sigma_scattering_Isotropic * IsotropicSphereRadiusBottomKm;
+			a = -_CloudIsotropicScattering * IsotropicSphereRadiusBottomKm;
 	float3  IsotropicScatteringBottom = IsotropicLightBottom * max( 0.0, exp( a ) - a * Ei( a ));
-	return  _Density * (IsotropicScatteringTop + IsotropicScatteringBottom);
-}
 
+	return  _Density * INVFOURPI * (IsotropicScatteringTop + IsotropicScatteringBottom);
+}
 
 #if 1
 // ============= FORWARD TRACE ============= 
@@ -116,7 +211,7 @@ float3	IntegrateScattering( float3 _Light0, float3 _Light1, float _Sigma_s0, flo
 // The only way to make it work as a 2D texture would be to fix the step distance...
 //
 // _Extinction = 0;
-// return _TexDepth.SampleLevel( LinearClamp, float2( _Sigma_s0, _Sigma_s1 ), 0.0 ).x;
+// return _TexVolumeDepth.SampleLevel( LinearClamp, float2( _Sigma_s0, _Sigma_s1 ), 0.0 ).x;
 
 
 	const float	SUB_STEPS_COUNT = 4.0;
@@ -186,24 +281,35 @@ _Extinction = IntegrateExtinction( _Sigma_t0, _Sigma_t1, _Step );
 
 VS_IN	VS( VS_IN _In )	{ return _In; }
 
-float4	PS( VS_IN _In ) : SV_TARGET0
+PS_OUT	ReturnTestValue( float3 _Value )
+{
+	PS_OUT	Out;
+	Out.Scattering = Out.Extinction = _Value;
+	return Out;
+}
+
+PS_OUT	PS( VS_IN _In )
 {
 	float2	UV = _In.__Position.xy * _dUV.xy;
 
-//return float4( UV, 0, 1 );
-
 	// Sample min/max depths at position
-	float2	ZMinMax = _TexDepth.SampleLevel( LinearClamp, UV, 0.0 ).xy;
+	float2	ZMinMax = _TexVolumeDepth.SampleLevel( LinearClamp, UV, 0.0 ).xy;
+
+	// Sample ZBuffer
+	float	Z = ReadDepth( UV );
+	ZMinMax.y = min( ZMinMax.y, Z );
+
 	float	Depth = ZMinMax.y - ZMinMax.x;
 //	Depth = max( 1e-3, Depth );
-	if ( Depth <= 1e-3 )
-		return float4( 0, 0, 0, 1 );	// Empty interval, no trace needed...
-//return Depth;
+
+//return ReturnTestValue( 0.1 * Z );
+//return ReturnTestValue( 0.1 * ZMinMax.y );
 
 #if 1
+
 //### Super important line to get a nice precision everywhere: we lack details at a distance (i.e. we don't trace the clouds fully) but who cares since we keep a nice precision?
 //ZMinMax.y = ZMinMax.x + min( 8.0, Depth );	// Don't trace more than 8 units in length
-ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than 16 units in length (less precision, prefer line above)
+ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't trace more than N times the box height's in length (less precision, prefer line above)
 
 	float	MipBias = 0.0;
 
@@ -218,35 +324,37 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 
 #else
 	float	MipBias = 0.01 * ZMinMax.x;
-
 #endif
-
 
 	// Retrieve start & end positions in world space
 	float3	View = float3( _CameraData.x * (2.0 * UV.x - 1.0), _CameraData.y * (1.0 - 2.0 * UV.y), 1.0 );
 	float3	WorldPosStart = mul( float4( ZMinMax.x * View, 1.0 ), _Camera2World ).xyz;
 	float3	WorldPosEnd = mul( float4( ZMinMax.y * View, 1.0 ), _Camera2World ).xyz;
-// return float4( 1.0 * WorldPosStart, 0 );
-//return float4( 1.0 * WorldPosEnd, 0 );
 
-//#define FIX_STEP_SIZE	0.01
-#ifndef FIX_STEP_SIZE
-	float	StepsCount = ceil( Depth * BOX_HEIGHT );
+
+//#define FIXED_STEP_SIZE	0.01
+#ifndef FIXED_STEP_SIZE
+	float	StepsCount = ceil( Depth * STEPS_COUNT * _CloudAltitudeThickness.y/8.0 );	
+//	float	StepsCount = ceil( 2.0 * FastScreenNoise( _In.__Position.xy ) + Depth * 32.0 * _CloudAltitudeThickness.y/8.0 );	// Add noise to hide banding
 //	float	StepsCount = STEPS_COUNT;
-			StepsCount = min( STEPS_COUNT, StepsCount );
+ 			StepsCount = min( STEPS_COUNT, StepsCount );
 
 	float4	Step = float4( WorldPosEnd - WorldPosStart, ZMinMax.y - ZMinMax.x ) / StepsCount;
-	float4	Position = float4( WorldPosStart, 0.0 ) + 0.5 * Step;
 
-#else	// Here, the steps have a fixed size and we simply determine their amount
-		// This strategy misses a lot of details and requires lots of steps!
-		// It was necessary to use a 2D pre-integration table with constant steps but unfortunately the
-		//	time we would have gained sampling a 2D texture instead of performing integration with ALU
-		//	is lost due to the fact we're using too many steps!
-	float	StepsCount = Depth / FIX_STEP_SIZE;
+//	float	PosOffset = 0.5;	// Fixed offset
+	float	PosOffset = 0.25 * FastNoise( float3( 2.0*_In.__Position.xy, 0.0 ) );	// Random offset
+	float4	Position = float4( WorldPosStart, 0.0 ) + PosOffset * Step;
+
+#else
+	// Here, the steps have a fixed size and we simply determine their amount
+	// This strategy misses a lot of details and requires lots of steps!
+	// It was necessary to use a 2D pre-integration table with constant steps but unfortunately the
+	//	time we would have gained sampling a 2D texture instead of performing integration with ALU
+	//	is lost due to the fact we're using too many steps!
+	float	StepsCount = Depth / FIXED_STEP_SIZE;
 			StepsCount = min( STEPS_COUNT, StepsCount );
 
-	float4	Step = FIX_STEP_SIZE * float4( View, 1.0 );
+	float4	Step = FIXED_STEP_SIZE * float4( View, 1.0 );
 	float4	Position = float4( WorldPosStart, 0.0 ) + 0.5 * Step;
 
 #endif
@@ -254,88 +362,111 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * BOX_HEIGHT, Depth );	// Don't trace more than
 	// Compute phase
 	float3	LightDirection = mul( float4( _LightDirection, 0.0 ), _World2Camera ).xyz;	// Light in camera space
 			View = normalize( View );
-	float	g = 0.25;
+
+	const float	g_iso = _CloudPhases.x;
+	const float	g_forward = _CloudPhases.y;
 	float	CosTheta = dot( View, LightDirection );
-	float	Phase = 1.0 / (4 * PI) * (1 - g*g) * pow( max(0.0, 1+g*g-g*CosTheta ), -1.5 );
+	float	Phase_iso = 1.0 / (4 * PI) * (1 - g_iso*g_iso) * pow( max(0.0, 1+g_iso*g_iso-g_iso*CosTheta ), -1.5 );
+	float	Phase_forward = 1.0 / (4 * PI) * (1 - g_forward*g_forward) * pow( max(0.0, 1+g_forward*g_forward-g_forward*CosTheta ), -1.5 );
+	float	Phase = lerp( Phase_iso, Phase_forward, 0.2 );
+
+	// Get Sun light & Sky lights
+	float3	SunLight = SUN_INTENSITY * GetTransmittanceWithShadow( _CloudAltitudeThickness.x + _CloudAltitudeThickness.y, _LightDirection.y );
+	float3	SkyLightTop = SUN_INTENSITY * GetIrradiance( _TexIrradiance, (_CloudAltitudeThickness.x + 1.0 * _CloudAltitudeThickness.y), _LightDirection.y );
+	float3	SkyLightBottom = SUN_INTENSITY * GetIrradiance( _TexIrradiance, (_CloudAltitudeThickness.x + 0.0 * _CloudAltitudeThickness.y), _LightDirection.y );
 
 	// Start integration
 	float	Sigma_t = 0.0;
 	float	Sigma_s = 0.0;
-	float3	Light = GetTransmittance( WorldPosStart.xyz );		// Start with light at start position
+	float3	Light = SunLight * GetCloudTransmittance( WorldPosStart.xyz );		// Start with light at start position
 	float3	Scattering = 0.0;
 	float	Transmittance = 1.0;
 	for ( float StepIndex=0.0; StepIndex < StepsCount; StepIndex++ )
 	{
-
-//MipBias = 0.01 * Position.w;
-
 		float	Density = GetVolumeDensity( Position.xyz, MipBias );
-
-//Density = 0.1;
 
 		float	PreviousSigma_t = Sigma_t;
 		float	PreviousSigma_s = Sigma_s;
-		Sigma_t = EXTINCTION_COEFF * Density;
-		Sigma_s = SCATTERING_COEFF * Density;
+		Sigma_t = _CloudExtinctionScattering.x * Density;
+		Sigma_s = _CloudExtinctionScattering.y * Density;
 
-		float	Shadowing = GetTransmittance( Position.xyz );
-//		float	Shadowing = GetTransmittance( (Position + 0.5 * Step).xyz );
+		float	Shadowing = GetCloudTransmittance( Position.xyz );
+//		float	Shadowing = GetCloudTransmittance( (Position + 0.5 * Step).xyz );
 
-const float	ShadowAttenuation = 1.0;
-Shadowing = 1.0 - (ShadowAttenuation * (1.0 - Shadowing));
+		Shadowing = saturate( lerp( 1.0 - _CloudShadowStrength, 1.0, Shadowing ) );
+		Shadowing *= smoothstep( 0.0, 1.0, smoothstep( 0.0, 0.03, abs(_LightDirection.y) ) );	// Full shadowing when the light is horizontal
 
 		float3	PreviousLight = Light;
-		Light = Shadowing;
+		Light = SunLight * Shadowing;
 
-if ( false)//_VolumeParams.y > 0.5 )
-{	// ======================== Old Strategy without sub-step integration ========================
-
-		// Compute extinction
-//		float	StepTransmittance = exp( -Sigma_t * Step.w );
-		float	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );
-// if ( _VolumeParams.y < 0.5 )
-// 	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );
-
+#if 1
+		// ======================== Old Strategy without sub-step integration ========================
+		float	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );	// Compute extinction
 		Transmittance *= StepTransmittance;
 
 		// Compute scattering
-		float3	StepScattering = Sigma_s * Light * Step.w;	// Constant sigma
-				StepScattering += ComputeIsotropicScattering( Position, Density );
+		float3	StepScattering  = Sigma_s * Phase * Light * Step.w;
+				StepScattering += ComputeIsotropicScattering( Position.xyz, Density, SunLight, SkyLightTop, SkyLightBottom ) * Step.w;
 		Scattering += Transmittance * StepScattering;
-}
-else
-{	// ======================== New Strategy WITH sub-step integration ========================
-	// More accurate but also a little more hungry, but always better than using more samples!
+
+#else
+		// ======================== New Strategy WITH sub-step integration ========================
+		// More accurate but also a little more hungry, but always better than using more samples!
 		float	StepTransmittance;
-		float3	StepScattering = IntegrateScattering( PreviousLight, Light, PreviousSigma_s, Sigma_s, PreviousSigma_t, Sigma_t, Step.w, StepTransmittance );
-				StepScattering += ComputeIsotropicScattering( Position, Density );
+		float3	StepScattering  = Phase * IntegrateScattering( PreviousLight, Light, PreviousSigma_s, Sigma_s, PreviousSigma_t, Sigma_t, Step.w, StepTransmittance );
+				StepScattering += ComputeIsotropicScattering( Position.xyz, Density, SunLight, SkyLightTop, SkyLightBottom ) * Step.w;
 		Scattering += Transmittance * StepScattering;
 		Transmittance *= StepTransmittance;
-}
-
-// Used to visualize transmittance function map
-//Scattering += 0.025 * float3( 1, 0, 0 ) * Shadowing * Step.w;
+#endif
 
 		// Advance in world and phase
 		Position += Step;
 	}
 
+	// Compute intersection with the bottom cloud plane or the ground
+	float	HitDistance = ZMinMax.y < 0.0 ? Z : ZMinMax.y;
+	float	HitDistanceKm = WORLD2KM * HitDistance;
+	float	AerialPerspectiveHitDistanceKm = AERIAL_PERSPECTIVE_FAKE_FACTOR * HitDistanceKm;	// Here we fake an increase of aerial perspective
 
-	Scattering *= lerp( 15.0, 15.0, _VolumeParams.y ) * Phase;
+//	HitDistanceKm = min( 30.0, HitDistanceKm );			// Beyond that, we're outside the clouds...
 
+	// Store Scattering & Exinction as 2 colors
+	float	StepOffset = 0.0 * FastScreenNoise( _In.__Position.xy );
+	float3	PositionWorld = _Camera2World[3].xyz;
+	float3	PositionWorldKm = WORLD2KM * PositionWorld;
+	float3	ViewWorld = mul( float4( View, 0.0 ), _Camera2World ).xyz;
 
-// Transmittance = 0.0;
-// Scattering = mul( float4( WorldPosEnd, 1.0 ), _World2Shadow ).xyz;
-// Scattering.xy = float2( 0.5 * (1.0 + Scattering.x), 0.5 * (1.0 - Scattering.y) );
-// Scattering.z *= 0.25;
-// 
-// Scattering = 0.9 * 0.25 * _TexTransmittanceMap.SampleLevel( LinearClamp, float3( Scattering.xy, 1 ), 0.0 ).w;
+	float	GroundBlocking = Z < 0.99*_CameraData.w ? 0 : 1;
+	if ( GroundBlocking > 0.5 )
+	{	// Not blocked by terrain, check for other blockers
+		float	GroundHitDistanceKm = SphereIntersectionEnter( PositionWorldKm, ViewWorld, -0.5 );
+		if ( GroundHitDistanceKm > 0.0 && GroundHitDistanceKm < HitDistanceKm )
+			HitDistanceKm = GroundHitDistanceKm;
+		else
+			HitDistanceKm = min( 100.0, HitDistanceKm );	// Don't trace further than 50km no matter what...
+	}
 
-//Scattering = 0.03 * StepsCount;
-//Scattering = Depth;
+	// Don't trace further than atmosphere (shouldn't be necessary since sampling any table at this distance should return the correct value)
+	HitDistanceKm = min( HitDistanceKm, SphereIntersectionExit( PositionWorldKm, ViewWorld, ATMOSPHERE_THICKNESS_KM ) );
 
-//return float4( Transmittance.xxx, 0 );
-//return float4( 1.0 * MipBias.xxx, Transmittance );
-	return float4( Scattering, Transmittance );
-	return Transmittance;
+	PS_OUT	Out;
+	ComputeFinalColor( PositionWorld, ViewWorld, float2( HitDistanceKm, AerialPerspectiveHitDistanceKm ), _LightDirection, float4( Scattering, Transmittance ), GroundBlocking, StepOffset, Out.Scattering, Out.Extinction );
+
+//###
+//HitDistanceKm *= 10.0;
+//HitDistanceKm = 10000.0;
+
+// if ( ViewWorld.y < 0.0 )
+//  	HitDistanceKm = min( HitDistanceKm, SphereIntersectionEnter( WORLD2KM * PositionWorld, ViewWorld, 0.0 ) );
+
+float	RadiusKm = GROUND_RADIUS_KM + WORLD2KM * PositionWorld.y;
+float	CosThetaGround = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (RadiusKm*RadiusKm) );
+//Out.Scattering += View.y >= CosThetaGround ? float3( 0.8, 0, 0 ) : 0.0; 
+
+//Out.Scattering = 0.024 * HitDistanceKm;
+
+// Out.Scattering = GroundBlocking;
+// Out.Extinction = 0;
+
+	return Out;
 }

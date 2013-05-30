@@ -23,6 +23,10 @@ private:	// FIELDS
 	// Cached resource views
 	mutable DictionaryU32			m_CachedShaderViews;
 	mutable DictionaryU32			m_CachedTargetViews;
+	mutable DictionaryU32			m_CachedUAVs;
+	mutable int						m_LastAssignedSlots[6];
+	mutable int						m_LastAssignedSlotsUAV;
+	D3D11_MAPPED_SUBRESOURCE		m_LockedResource;
 
 
 public:	 // PROPERTIES
@@ -32,14 +36,17 @@ public:	 // PROPERTIES
 	int	 GetDepth() const			{ return m_Depth; }
 	int	 GetMipLevelsCount() const	{ return m_MipLevelsCount; }
 
+	NjFloat4	GetdUVW() const		{ return NjFloat4( 1.0f / m_Width, 1.0f / m_Height, 1.0f / m_Depth, 0.0f ); }
+
 public:	 // METHODS
 
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !
-	Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent );
+	Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging=false, bool _bWriteable=false, bool _bUnOrderedAccess=false );
 	~Texture3D();
 
 	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart, int _MipLevelsCount ) const;
 	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const;
+	ID3D11UnorderedAccessView*	GetUAV( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const;
 
 	// Uploads the texture to the shader
 	void		Set( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
@@ -48,6 +55,23 @@ public:	 // METHODS
 	void		SetDS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
 	void		SetGS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
 	void		SetPS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
+	void		SetCS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL );
+	void		RemoveFromLastAssignedSlots() const;
+
+	// Upload the texture as a UAV for a compute shader
+	void		SetCSUAV( int _SlotIndex, ID3D11UnorderedAccessView* _pView=NULL ) const;
+	void		RemoveFromLastAssignedSlotUAV() const;
+
+	// Texture access by the CPU
+	void		CopyFrom( Texture3D& _SourceTexture );
+	D3D11_MAPPED_SUBRESOURCE&	Map( int _MipLevelIndex );
+	void		UnMap( int _MipLevelIndex );
+
+#ifdef _DEBUG
+	// I/O for staging textures
+	void		Save( const char* _pFileName );
+	void		Load( const char* _pFileName );
+#endif
 
 public:
 	static void	NextMipSize( int& _Width, int& _Height, int& _Depth );

@@ -2,7 +2,7 @@
 // This shader computes the lightmaps
 //
 #include "Inc/Global.hlsl"
-#include "Inc/RayTracing.fx"
+#include "Inc/RayTracing.hlsl"
 
 //[
 

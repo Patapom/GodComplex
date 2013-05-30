@@ -65,9 +65,9 @@ typedef struct
 {
 	int	dx, dy;			// Delta
 	int	x, y, ox, oy;	// Current/Old position
-	int	obuttons[2];	// Previous buttons
-	int	buttons[2];		// Current buttons
-	int	dbuttons[2];	// Delta buttons
+	int	obuttons[3];	// Previous buttons
+	int	buttons[3];		// Current buttons
+	int	dbuttons[3];	// Delta buttons
 } MSYS_INPUT_MOUSE;
 
 typedef struct

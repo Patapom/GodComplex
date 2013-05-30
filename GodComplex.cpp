@@ -99,6 +99,20 @@ static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 // 		}
 		gs_WindowInfos.pKeys[wParam&0xFF] = uMsg == WM_KEYDOWN;
 	}
+// 	if ( uMsg == WM_LBUTTONDOWN )
+// 		gs_WindowInfos.MouseButtons |= 1;
+// 	if ( uMsg == WM_MBUTTONDOWN )
+// 		gs_WindowInfos.MouseButtons |= 2;
+// 	if ( uMsg == WM_RBUTTONDOWN )
+// 		gs_WindowInfos.MouseButtons |= 4;
+// 	if ( uMsg == WM_LBUTTONUP )
+// 		gs_WindowInfos.MouseButtons &= ~1;
+// 	if ( uMsg == WM_MBUTTONUP )
+// 		gs_WindowInfos.MouseButtons &= ~2;
+// 	if ( uMsg == WM_RBUTTONUP )
+// 		gs_WindowInfos.MouseButtons &= ~4;
+// 	if ( uMsg == WM_MOUSEMOVE )
+// 		gs_WindowInfos.MouseX
 #endif
 
 	return DefWindowProc( hWnd, uMsg, wParam, lParam );
@@ -230,7 +244,8 @@ void	WindowExit()
 #endif
 
 	// Kill the DirectX device
-	ASSERT( gs_Device.ComponentsCount() == 0, "Some DirectX components remain on exit !	Did you forget some deletes ???" );	// This means you forgot to clean up some components ! It's okay since the device is going to clean them up for you, but it's better yet if you know what your doing and take care of your own garbage...
+	int	RemainingComponents = gs_Device.ComponentsCount();
+	ASSERT( RemainingComponents == 0, "Some DirectX components remain on exit !	Did you forget some deletes ???" );	// This means you forgot to clean up some components ! It's okay since the device is going to clean them up for you, but it's better yet if you know what your doing and take care of your own garbage...
 	gs_Device.Exit();
 
 	// Destroy the Windows contexts
@@ -252,7 +267,7 @@ void	DrawTime( float t )
 	static int		frame=0;
 	static float	OldTime=0.0;
 	static int		fps=0;
-	char			str[64];
+	char			str[128];
 	int				s, m, c;
 
 	if ( t < 0.0f )
@@ -274,36 +289,40 @@ void	DrawTime( float t )
 		m = floorf( t / 60.0f );
 		s = floorf( t - 60.0f * m );
 		c = floorf( t * 100.0f ) % 100;
-		sprintf_s( str, 64, "%s %02d:%02d:%02d  [%d fps]", pWindowClass, m, s, c, fps );
+		float	ms = 1000.0f / fps;
+
+		sprintf_s( str, 128, "%s %02d:%02d:%02d  [%d fps] [%4.4f ms] (!DEBUG WIP VERSION!)", pWindowClass, m, s, c, fps, ms );
 		SetWindowText( gs_WindowInfos.hWnd, str );
 	}
 }
 
 void	HandleEvents()
 {
-	gs_WindowInfos.Events.Keyboard.State[KEY_LEFT]     = GetAsyncKeyState( VK_LEFT );
-	gs_WindowInfos.Events.Keyboard.State[KEY_RIGHT]    = GetAsyncKeyState( VK_RIGHT );
-	gs_WindowInfos.Events.Keyboard.State[KEY_UP]       = GetAsyncKeyState( VK_UP );
-	gs_WindowInfos.Events.Keyboard.State[KEY_PGUP]     = GetAsyncKeyState( VK_PRIOR );
-	gs_WindowInfos.Events.Keyboard.State[KEY_PGDOWN]   = GetAsyncKeyState( VK_NEXT );
-	gs_WindowInfos.Events.Keyboard.State[KEY_DOWN]     = GetAsyncKeyState( VK_DOWN );
-	gs_WindowInfos.Events.Keyboard.State[KEY_SPACE]    = GetAsyncKeyState( VK_SPACE );
-	gs_WindowInfos.Events.Keyboard.State[KEY_RSHIFT]   = GetAsyncKeyState( VK_RSHIFT );
-	gs_WindowInfos.Events.Keyboard.State[KEY_RCONTROL] = GetAsyncKeyState( VK_RCONTROL );
-	gs_WindowInfos.Events.Keyboard.State[KEY_LSHIFT]   = GetAsyncKeyState( VK_LSHIFT );
-	gs_WindowInfos.Events.Keyboard.State[KEY_LCONTROL] = GetAsyncKeyState( VK_LCONTROL );
-	gs_WindowInfos.Events.Keyboard.State[KEY_1]        = GetAsyncKeyState( '1' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_2]        = GetAsyncKeyState( '2' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_3]        = GetAsyncKeyState( '3' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_4]        = GetAsyncKeyState( '4' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_5]        = GetAsyncKeyState( '5' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_6]        = GetAsyncKeyState( '6' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_7]        = GetAsyncKeyState( '7' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_8]        = GetAsyncKeyState( '8' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_9]        = GetAsyncKeyState( '9' );
-	gs_WindowInfos.Events.Keyboard.State[KEY_0]        = GetAsyncKeyState( '0' );
+	BOOL	bHasFocus = GetFocus() == gs_WindowInfos.hWnd;
+
+	gs_WindowInfos.Events.Keyboard.State[KEY_LEFT]     = bHasFocus && GetAsyncKeyState( VK_LEFT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_RIGHT]    = bHasFocus && GetAsyncKeyState( VK_RIGHT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_UP]       = bHasFocus && GetAsyncKeyState( VK_UP );
+	gs_WindowInfos.Events.Keyboard.State[KEY_PGUP]     = bHasFocus && GetAsyncKeyState( VK_PRIOR );
+	gs_WindowInfos.Events.Keyboard.State[KEY_PGDOWN]   = bHasFocus && GetAsyncKeyState( VK_NEXT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_DOWN]     = bHasFocus && GetAsyncKeyState( VK_DOWN );
+	gs_WindowInfos.Events.Keyboard.State[KEY_SPACE]    = bHasFocus && GetAsyncKeyState( VK_SPACE );
+	gs_WindowInfos.Events.Keyboard.State[KEY_RSHIFT]   = bHasFocus && GetAsyncKeyState( VK_RSHIFT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_RCONTROL] = bHasFocus && GetAsyncKeyState( VK_RCONTROL );
+	gs_WindowInfos.Events.Keyboard.State[KEY_LSHIFT]   = bHasFocus && GetAsyncKeyState( VK_LSHIFT );
+	gs_WindowInfos.Events.Keyboard.State[KEY_LCONTROL] = bHasFocus && GetAsyncKeyState( VK_LCONTROL );
+	gs_WindowInfos.Events.Keyboard.State[KEY_1]        = bHasFocus && GetAsyncKeyState( '1' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_2]        = bHasFocus && GetAsyncKeyState( '2' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_3]        = bHasFocus && GetAsyncKeyState( '3' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_4]        = bHasFocus && GetAsyncKeyState( '4' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_5]        = bHasFocus && GetAsyncKeyState( '5' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_6]        = bHasFocus && GetAsyncKeyState( '6' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_7]        = bHasFocus && GetAsyncKeyState( '7' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_8]        = bHasFocus && GetAsyncKeyState( '8' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_9]        = bHasFocus && GetAsyncKeyState( '9' );
+	gs_WindowInfos.Events.Keyboard.State[KEY_0]        = bHasFocus && GetAsyncKeyState( '0' );
 	for( int i=KEY_A; i<=KEY_Z; i++ )
-		gs_WindowInfos.Events.Keyboard.State[i] = GetAsyncKeyState( 'A'+i-KEY_A );
+		gs_WindowInfos.Events.Keyboard.State[i] = bHasFocus && GetAsyncKeyState( 'A'+i-KEY_A );
 
 	// Handle mouse events
 	POINT	p;
@@ -318,11 +337,14 @@ void	HandleEvents()
 
 	gs_WindowInfos.Events.Mouse.obuttons[0] = gs_WindowInfos.Events.Mouse.buttons[0];
 	gs_WindowInfos.Events.Mouse.obuttons[1] = gs_WindowInfos.Events.Mouse.buttons[1];
-	gs_WindowInfos.Events.Mouse.buttons[0] = GetAsyncKeyState(VK_LBUTTON);
-	gs_WindowInfos.Events.Mouse.buttons[1] = GetAsyncKeyState(VK_RBUTTON);
+	gs_WindowInfos.Events.Mouse.obuttons[2] = gs_WindowInfos.Events.Mouse.buttons[2];
+	gs_WindowInfos.Events.Mouse.buttons[0] = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0 && bHasFocus;
+	gs_WindowInfos.Events.Mouse.buttons[1] = (GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0 && bHasFocus;
+	gs_WindowInfos.Events.Mouse.buttons[2] = (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0 && bHasFocus;
 
 	gs_WindowInfos.Events.Mouse.dbuttons[0] = gs_WindowInfos.Events.Mouse.buttons[0] - gs_WindowInfos.Events.Mouse.obuttons[0];
 	gs_WindowInfos.Events.Mouse.dbuttons[1] = gs_WindowInfos.Events.Mouse.buttons[1] - gs_WindowInfos.Events.Mouse.obuttons[1];
+	gs_WindowInfos.Events.Mouse.dbuttons[2] = gs_WindowInfos.Events.Mouse.buttons[2] - gs_WindowInfos.Events.Mouse.obuttons[2];
 }
 
 void	print( const char* _pText, ... )
@@ -426,11 +448,13 @@ void WINAPI	EntryPoint()
 			DispatchMessage( &msg );
 		}
 
-#ifdef _DEBUG
-		HandleEvents();
-
+#ifndef NDEBUG
 		// Show FPS
 		DrawTime( Time );
+#endif
+
+#ifdef SURE_DEBUG
+		HandleEvents();
 
 		// Check for hash collisions => We must never have too many of them !
 		ASSERT( DictionaryU32::ms_MaxCollisionsCount < 2, "Too many collisions in hash tables ! Either increase size or use different hashing scheme !" );
@@ -439,7 +463,9 @@ void WINAPI	EntryPoint()
 		ReloadChangedTweakableValues();
 
 		// Reload modified shaders
+		WatchIncludesModifications();
 		Material::WatchShadersModifications();
+		ComputeShader::WatchShadersModifications();
 #endif
 
 		// Run the intro

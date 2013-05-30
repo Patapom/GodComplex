@@ -89,7 +89,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>GODCOMPLEX;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SURE_DEBUG;GODCOMPLEX;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MinimalRebuild>false</MinimalRebuild>
@@ -98,7 +98,7 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <CallingConvention>FastCall</CallingConvention>
-      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4996;4723</DisableSpecificWarnings>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
       <StringPooling>true</StringPooling>
@@ -107,7 +107,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d9.lib;d3d11.lib;d3dcompiler.lib;dxguid.lib;winmm.lib;d3d9.lib;Strmiids.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d9.lib;dsound.lib;d3d11.lib;d3dcompiler.lib;dxguid.lib;winmm.lib;d3d9.lib;Strmiids.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <EntryPointSymbol>
@@ -201,13 +201,12 @@ MinifyAll.cmd</Command>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>Disabled</Optimization>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>false</IntrinsicFunctions>
-      <PreprocessorDefinitions>GODCOMPLEX;DEBUG_SHADER;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GODCOMPLEX;WIN32;_CONSOLE</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <StringPooling>true</StringPooling>
       <StructMemberAlignment>1Byte</StructMemberAlignment>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -218,14 +217,14 @@ MinifyAll.cmd</Command>
       <CallingConvention>FastCall</CallingConvention>
       <DisableSpecificWarnings>4996;4723</DisableSpecificWarnings>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalOptions>/QIfist %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/QIfist </AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>dsound.lib;d3d11.lib;dxguid.lib;d3dcompiler.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d9.lib;dsound.lib;d3d11.lib;d3dcompiler.lib;dxguid.lib;winmm.lib;Strmiids.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
@@ -235,12 +234,12 @@ MinifyAll.cmd</Command>
       </EntryPointSymbol>
     </Link>
     <PostBuildEvent>
-      <Command>Tools/Compress.cmd "$(TargetDir)$(TargetName)"
+      <Command>REM Tools/Compress.cmd "$(TargetDir)$(TargetName)"
 </Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>cd Tools
-MinifyAll.cmd</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -249,10 +248,12 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Intro\Effects\EffectDeferred.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Intro\Effects\EffectParticles.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Intro\Effects\EffectRoom.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
@@ -260,7 +261,9 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Intro\Effects\EffectTranslucency.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Intro\Effects\EffectVolumetric.h" />
+    <ClInclude Include="Intro\Effects\EffectVolumetric.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Intro\Effects\Scene\MaterialBank.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClInclude>
@@ -292,6 +295,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="RendererD3D11\Components\Material.h" />
     <ClInclude Include="RendererD3D11\Components\Primitive.h" />
     <ClInclude Include="RendererD3D11\Components\States.h" />
+    <ClInclude Include="RendererD3D11\Components\StructuredBuffer.h" />
     <ClInclude Include="RendererD3D11\Components\Texture2D.h" />
     <ClInclude Include="RendererD3D11\Components\Texture3D.h" />
     <ClInclude Include="RendererD3D11\Device.h" />
@@ -308,7 +312,10 @@ MinifyAll.cmd</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Utility\FPSCamera.h" />
     <ClInclude Include="Utility\Memory.h" />
+    <ClInclude Include="Utility\MemoryMappedFile.h" />
+    <ClInclude Include="Utility\Profiling.h" />
     <ClInclude Include="Utility\Random.h" />
     <ClInclude Include="Utility\Resources.h" />
     <ClInclude Include="Utility\tweakval.h" />
@@ -331,10 +338,12 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Intro\Effects\EffectDeferred.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectParticles.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectRoom.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
@@ -342,7 +351,9 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Intro\Effects\EffectTranslucency.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Intro\Effects\EffectVolumetric.cpp" />
+    <ClCompile Include="Intro\Effects\EffectVolumetric.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Intro\Effects\Scene\MaterialBank.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClCompile>
@@ -357,6 +368,7 @@ MinifyAll.cmd</Command>
     </ClCompile>
     <ClCompile Include="Intro\IntroWorkshop.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="NuajAPI\API\Hashtable.cpp" />
     <ClCompile Include="NuajAPI\Math\Math.cpp" />
@@ -375,6 +387,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="RendererD3D11\Components\Material.cpp" />
     <ClCompile Include="RendererD3D11\Components\Primitive.cpp" />
     <ClCompile Include="RendererD3D11\Components\States.cpp" />
+    <ClCompile Include="RendererD3D11\Components\StructuredBuffer.cpp" />
     <ClCompile Include="RendererD3D11\Components\Texture2D.cpp" />
     <ClCompile Include="RendererD3D11\Components\Texture3D.cpp" />
     <ClCompile Include="RendererD3D11\Device.cpp" />
@@ -383,7 +396,10 @@ MinifyAll.cmd</Command>
     <ClCompile Include="RendererD3D11\Structures\VertexFormats.cpp" />
     <ClCompile Include="Sound\v2mplayer.cpp" />
     <ClCompile Include="Utility\Camera.cpp" />
+    <ClCompile Include="Utility\FPSCamera.cpp" />
     <ClCompile Include="Utility\Memory.cpp" />
+    <ClCompile Include="Utility\MemoryMappedFile.cpp" />
+    <ClCompile Include="Utility\Profiling.cpp" />
     <ClCompile Include="Utility\Random.cpp" />
     <ClCompile Include="Utility\Resources.cpp" />
     <ClCompile Include="Utility\tweakval.cpp" />
@@ -403,6 +419,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\DeferredFillGBuffer.hlsl" />
     <None Include="Resources\Shaders\DeferredShading.hlsl" />
     <None Include="Resources\Shaders\DeferredShadingStencil.hlsl" />
+    <None Include="Resources\Shaders\Inc\Atmosphere.hlsl" />
     <None Include="Resources\Shaders\Inc\Global.hlsl" />
     <None Include="Resources\Shaders\Inc\LayeredMaterials.hlsl" />
     <None Include="Resources\Shaders\Inc\RayTracing.hlsl" />
@@ -415,7 +432,9 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\RoomRenderCubeMap.hlsl" />
     <None Include="Resources\Shaders\RoomTesselation.hlsl" />
     <None Include="Resources\Shaders\RoomTestCompute.hlsl" />
+    <None Include="Resources\Shaders\SceneBokehSplat.hlsl" />
     <None Include="Resources\Shaders\SceneBuildLinearZ.hlsl" />
+    <None Include="Resources\Shaders\SceneFinalize.hlsl" />
     <None Include="Resources\Shaders\SceneDepthPass.hlsl" />
     <None Include="Resources\Shaders\SceneDownSample.hlsl" />
     <None Include="Resources\Shaders\SceneFillGBuffer.hlsl" />
@@ -430,6 +449,9 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\VolumetricComputeTransmittance.hlsl" />
     <None Include="Resources\Shaders\VolumetricDepthWrite.hlsl" />
     <None Include="Resources\Shaders\VolumetricDisplay.hlsl" />
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmosphere.hlsl" />
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmosphereCS.hlsl" />
+    <None Include="Resources\Shaders\VolumetricTerrain.hlsl" />
     <None Include="Tools\GodComplex.kkm" />
   </ItemGroup>
   <ItemGroup>

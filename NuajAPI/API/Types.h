@@ -28,7 +28,7 @@ typedef int NjResourceID;
 //////////////////////////////////////////////////////////////////////////
 //
 #ifndef GODCOMPLEX
-template<typename T> void		delete T*& _pBuffer )
+template<typename T> void		SafeDelete__( T*& _pBuffer )
 {
 	if ( _pBuffer == NULL )
 		return;
@@ -36,7 +36,7 @@ template<typename T> void		delete T*& _pBuffer )
 	_pBuffer = NULL;
 }
 
-template<typename T> void		delete[] T*& _pBuffer )
+template<typename T> void		SafeDeleteArray__( T*& _pBuffer )
 {
 	if ( _pBuffer == NULL )
 		return;

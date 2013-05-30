@@ -154,6 +154,13 @@ NjFloat4x4&	NjFloat4x4::PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat
 	return	*this;
 }
 
+NjFloat4x4	NjFloat4x4::BuildFromPRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S )
+{
+	NjFloat4x4	Result;
+	Result.PRS( P, R, S );
+	return Result;
+}
+
 NjFloat4x4&	NjFloat4x4::Rot( const NjFloat3& _Source, const NjFloat3& _Target )
 {
 	NjFloat3	Ortho = _Source ^ _Target;

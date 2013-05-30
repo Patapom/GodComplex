@@ -7,9 +7,9 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
-	CHECK_MATERIAL( m_pMatCompute = CreateMaterial( IDR_SHADER_PARTICLES_COMPUTE, VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
-	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_PARTICLES_DISPLAY, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PS" ), 2 );
-	CHECK_MATERIAL( m_pMatDebugVoronoi = CreateMaterial( IDR_SHADER_PARTICLES_DISPLAY, VertexFormatPt4::DESCRIPTOR, "VS_DEBUG", NULL, "PS_DEBUG" ), 3 );
+	CHECK_MATERIAL( m_pMatCompute = CreateMaterial( IDR_SHADER_PARTICLES_COMPUTE, "./Resources/Shaders/ParticlesCompute.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
+	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_PARTICLES_DISPLAY, "./Resources/Shaders/ParticlesDisplay.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PS" ), 2 );
+	CHECK_MATERIAL( m_pMatDebugVoronoi = CreateMaterial( IDR_SHADER_PARTICLES_DISPLAY, "./Resources/Shaders/ParticlesDisplay.hlsl", VertexFormatPt4::DESCRIPTOR, "VS_DEBUG", NULL, "PS_DEBUG" ), 3 );
 
 
 	//////////////////////////////////////////////////////////////////////////
