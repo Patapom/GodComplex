@@ -3,7 +3,7 @@
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
-const float	EffectVolumetric::SCREEN_TARGET_RATIO = 1.0f;
+const float	EffectVolumetric::SCREEN_TARGET_RATIO = 0.25f;
 
 EffectVolumetric::EffectVolumetric( Device& _Device, Primitive& _ScreenQuad ) : m_Device( _Device ), m_ScreenQuad( _ScreenQuad ), m_ErrorCode( 0 )
 {
@@ -83,17 +83,28 @@ EffectVolumetric::~EffectVolumetric()
 	delete m_pMatDepthWrite;
 }
 
+#ifdef _DEBUG
+#define PERF_BEGIN_EVENT( Color, Text )	D3DPERF_BeginEvent( Color, Text )
+#define PERF_END_EVENT()				D3DPERF_EndEvent()
+#define PERF_MARKER( Color, Text )		D3DPERF_SetMarker( Color, Text )
+#else
+#define PERF_BEGIN_EVENT( Color, Text )
+#define PERF_END_EVENT()
+#define PERF_MARKER( Color, Text )
+#endif
+
 void	EffectVolumetric::Render( float _Time, float _DeltaTime, Camera& _Camera )
 {
 // DEBUG
+float	t = 0;//.1f * _Time;
 //m_LightDirection.Set( 0, 1, -1 );
 //m_LightDirection.Set( 1, 2.0, -5 );
 //m_LightDirection.Set( cosf(_Time), 2.0f * sinf( 0.324f * _Time ), sinf( _Time ) );
-m_LightDirection.Set( cosf(_Time), 2.0f * sinf( 4.0f * 0.324f * _Time ), sinf( _Time ) );	// Fast vertical change
+m_LightDirection.Set( sinf(t), 2.0f * sinf( 0.4f + 4.0f * 0.324f * t ), -cosf( t ) );	// Fast vertical change
 //m_LightDirection.Set( cosf(_Time), 1.0f, sinf( _Time ) );
 // DEBUG
 
-	D3DPERF_BeginEvent( D3DCOLOR( 0xFF00FF00 ), L"Compute Shadow" );
+	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF00FF00 ), L"Compute Shadow" );
 
 #ifdef _DEBUG
 	if ( gs_WindowInfos.pKeys[VK_NUMPAD1] )
@@ -113,21 +124,21 @@ m_LightDirection.Set( cosf(_Time), 2.0f * sinf( 4.0f * 0.324f * _Time ), sinf( _
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Compute transforms
-m_Position.Set( 0, 1.0f, -20 );
-m_Scale.Set( 128.0f, 1.0f, 128.0f );
+m_Position.Set( 0, 2.0f, -20 );
+m_Scale.Set( 128.0f, 2.0f, 128.0f );
 	m_Box2World.PRS( m_Position, m_Rotation, m_Scale );
 
 	ComputeShadowTransform();
 
 	m_pCB_Shadow->UpdateData();
 
-	D3DPERF_EndEvent();
+	PERF_END_EVENT();
 
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Compute the transmittance function map
 
 	// 2.1] Render front & back depths
-	D3DPERF_BeginEvent( D3DCOLOR( 0xFF000000 ), L"Render TFM Z" );
+	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF000000 ), L"Render TFM Z" );
 
 	m_Device.ClearRenderTarget( *m_pRTTransmittanceZ, NjFloat4( 1e4f, -1e4f, 0.0f, 0.0f ) );
 
@@ -140,22 +151,22 @@ m_Scale.Set( 128.0f, 1.0f, 128.0f );
 		m_pCB_Object->m.dUV = m_pRTTransmittanceZ->GetdUV();
 		m_pCB_Object->UpdateData();
 
-		D3DPERF_SetMarker(  D3DCOLOR( 0x00FF00FF ), L"Render Front Faces" );
+		PERF_MARKER(  D3DCOLOR( 0x00FF00FF ), L"Render Front Faces" );
 
 	 	m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_RedOnly );
 		m_pPrimBox->Render( M );
 
-		D3DPERF_SetMarker(  D3DCOLOR( 0xFFFF00FF ), L"Render Back Faces" );
+		PERF_MARKER(  D3DCOLOR( 0xFFFF00FF ), L"Render Back Faces" );
 
 	 	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_GreenOnly );
 		m_pPrimBox->Render( M );
 
 	USING_MATERIAL_END
 
-	D3DPERF_EndEvent();
+	PERF_END_EVENT();
 
 	// 2.2] Compute transmittance map
-	D3DPERF_BeginEvent( D3DCOLOR( 0xFF400000 ), L"Render TFM" );
+	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF400000 ), L"Render TFM" );
 
 	m_Device.ClearRenderTarget( *m_pRTTransmittanceMap, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 
@@ -181,13 +192,13 @@ m_Scale.Set( 128.0f, 1.0f, 128.0f );
 	// Remove contention on Transmittance Z that we don't need next...
 	m_Device.RemoveShaderResources( 10 );
 
-	D3DPERF_EndEvent();
+	PERF_END_EVENT();
 
 	//////////////////////////////////////////////////////////////////////////
 	// 3] Render the actual volume
 
 	// 3.1] Render front & back depths
-	D3DPERF_BeginEvent( D3DCOLOR( 0xFF800000 ), L"Render Volume Z" );
+	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF800000 ), L"Render Volume Z" );
 
 	m_Device.ClearRenderTarget( *m_pRTRenderZ, NjFloat4( 0.0f, -1e4f, 0.0f, 0.0f ) );
 
@@ -200,22 +211,22 @@ m_Scale.Set( 128.0f, 1.0f, 128.0f );
 		m_pCB_Object->m.dUV = m_pRTRenderZ->GetdUV();
 		m_pCB_Object->UpdateData();
 
-		D3DPERF_SetMarker(  D3DCOLOR( 0x00FF00FF ), L"Render Front Faces" );
+		PERF_MARKER(  D3DCOLOR( 0x00FF00FF ), L"Render Front Faces" );
 
 	 	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_RedOnly );
 		m_pPrimBox->Render( M );
 
-		D3DPERF_SetMarker(  D3DCOLOR( 0xFFFF00FF ), L"Render Back Faces" );
+		PERF_MARKER(  D3DCOLOR( 0xFFFF00FF ), L"Render Back Faces" );
 
 	 	m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled_GreenOnly );
 		m_pPrimBox->Render( M );
 
 	USING_MATERIAL_END
 
-	D3DPERF_EndEvent();
+	PERF_END_EVENT();
 
 	// 3.2] Render the actual volume
-	D3DPERF_BeginEvent( D3DCOLOR( 0xFFC00000 ), L"Render Volume" );
+	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFC00000 ), L"Render Volume" );
 
 	m_Device.ClearRenderTarget( *m_pRTRender, NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) );
 	m_Device.SetRenderTarget( *m_pRTRender );
@@ -233,11 +244,11 @@ m_Scale.Set( 128.0f, 1.0f, 128.0f );
 
 	USING_MATERIAL_END
 
-	D3DPERF_EndEvent();
+	PERF_END_EVENT();
 
 	//////////////////////////////////////////////////////////////////////////
 	// 4] Combine with screen
-	D3DPERF_BeginEvent( D3DCOLOR( 0xFFFF0000 ), L"Render TFM Z" );
+	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFF0000 ), L"Render TFM Z" );
 
 	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget(), NULL );
 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
@@ -258,7 +269,7 @@ m_pRTTransmittanceMap->SetPS( 12 );
 
 	USING_MATERIAL_END
 
-	D3DPERF_EndEvent();
+	PERF_END_EVENT();
 }
 
 //#define	SPLAT_TO_BOX

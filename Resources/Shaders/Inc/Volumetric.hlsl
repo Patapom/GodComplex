@@ -9,7 +9,7 @@
 							// After testing, it takes more time to user Taylor series!! ^^
 
 #define	ANIMATE
-#define	BOX_HEIGHT	2.0
+#define	BOX_HEIGHT	4.0
 #define	PACK_R8	// Noise is packed in a R8 texture instead of R32F
 
 static const float	EXTINCTION_COEFF = 4.0;
@@ -126,6 +126,8 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 	// Use a low frequency texture perturbed by a scrolling high frequency texture
 	// This time, the high frequency texture is much larger in XZ then in Y (thin slab) so tiling is not visible
 
+	float	y = saturate( _Position.y / BOX_HEIGHT );	// That gives us a value in [0 (bottom), 1 (top)]
+
 	float3	UVW0 = 0.25 * float3( 0.01, 0.05, 0.01 ) * _Position;	// Very low frequency for the 32^3 noise
 #ifdef	ANIMATE	
 	UVW0 += 0.25 * float3( 0, 0, -0.05 * _Time.x );
@@ -133,7 +135,10 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 //	float	Noise = _TexFractal0.SampleLevel( LinearWrap, 0.1 * UVW0, 4.0 ).x;
 	float	Noise = _TexNoise3D.SampleLevel( LinearWrap, UVW0, 0*_MipBias ).x;	// Use small 32^3 noise (no need mip bias on that low freq noise anyway or we may lose the defining shape)
 
-	float3	UVW1 = 0.0 + float3( 0.04, 0.04, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
+Noise *= sqrt(y);	// Goes to 0 at bottom
+
+//	float3	UVW1 = 0.0 + float3( 0.04, 0.04, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
+	float3	UVW1 = 0.0 + float3( 0.02, 0.02, 1.0 / BOX_HEIGHT ) * _Position.xzy;	// Low frequency for the high frequency noise
 #ifdef	ANIMATE	
 	UVW1.y -= 0.01 * _Time.x;	// Good
 #endif
@@ -142,15 +147,17 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 	const float	Min = -0.15062222, Max = 0.16956991;
 	float	Temp = _TexFractal1.SampleLevel( LinearWrap, UVW1, _MipBias ).x;	// Packed in [0,1]
 			Temp = Min + (Max - Min) * Temp;	// Unpack in [Min,Max]
-	Noise += 0.707 * Temp;
+	float	Noise2 = Temp;
 #else
-	Noise += 0.707 * _TexFractal1.SampleLevel( LinearWrap, UVW1, _MipBias + _VolumeParams.x ).x;
+	float	Noise2 = _TexFractal1.SampleLevel( LinearWrap, UVW1, _MipBias + _VolumeParams.x ).x;
 #endif
+	
+//	Noise += 0.707 * Noise2;	// Add detail
+	Noise += 1.0 * Noise2;	// Add detail
 
 //	Noise *= 4.0;
 
-//	float	y = _Position.y - 1.0;			// Slab is in [0,2] so that gives us a value in [-1 (bottom), 1 (top)]
-	float	y = (_Position.y - 0.5 * BOX_HEIGHT) * 2.0 / BOX_HEIGHT;	// Slab is in [0,4] so that gives us a value in [-1 (bottom), 1 (top)]
+	y = 2.0 * y - 1.0;	// -1 at bottom, +1 at top
 
 	float	TopY = 1-saturate(y);
 			TopY *= TopY;
@@ -158,13 +165,21 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 			BottomY *= BottomY;
 
 //	float3	HeightOffsets = float3( -0.005, 0.0, 0.1 );	// Bottom, Middle, Top offsets
-	float3	HeightOffsets = float3( 0.025, 0.05, 0.10 );	// Bottom, Middle, Top offsets
-//	float3	HeightOffsets = float3( -0.05, 0.05, 0.15 );	// Bottom, Middle, Top offsets
+//	float3	HeightOffsets = float3( 0.025, 0.05, 0.10 );	// Bottom, Middle, Top offsets
+	float3	HeightOffsets = float3( -0.01, -0.0, 0.0 );	// Bottom, Middle, Top offsets
 	float	Offset = lerp( HeightOffsets.z, HeightOffsets.y, TopY ) + lerp( HeightOffsets.x, HeightOffsets.y, BottomY );
 
-	float	Density = saturate( Noise + Offset );
+	float	Contrast = 0.5;
+	float	Gamma = 0.5;
+	float	Density = pow( saturate( Contrast * (Noise + Offset) ), Gamma );
+
+// 	Noise *= 2.0;
+// 	float	Density = smoothstep( 0, 1, smoothstep( 0, 1, smoothstep( 0, 1, saturate( Noise + Offset ) ) ) );
+
 //	Density *= Density;
-	return (1.0 - saturate(y)) * Density;	// Apply bevel
+	return Density;
+//	return (1.0 - saturate(y)) * Density;	// Apply bevel
+//	return sqrt(abs(y)) * Density;	// Apply bevel
 
 #endif
 }

@@ -55,6 +55,8 @@ static EffectVolumetric*	gs_pEffectVolumetric = NULL;
 // {
 // }
 
+//#define TEST_SCENE
+
 void	PrepareScene();
 void	ReleaseScene();
 
@@ -130,7 +132,9 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize the scene last so it gives us the opportunity to fix shader errors first instead of waiting for the scene to be ready!
-//	PrepareScene();
+#ifdef TEST_SCENE
+	PrepareScene();
+#endif
 
 
 	return 0;
@@ -160,7 +164,9 @@ void	IntroExit()
 	delete gs_pRTHDR;
 
 	// Release the scene
+#ifdef TEST_SCENE
 	ReleaseScene();
+#endif
 	delete gs_pScene;
 
 	// Release the camera
@@ -325,7 +331,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 //////////////////////////////////////////////////////////////////////////
 // Build the scene with all the objects & primitives
-
+#ifdef TEST_SCENE
 void	PrepareScene()
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -573,3 +579,4 @@ void	ReleaseScene()
 	delete gs_pSceneTexture0;
 	delete gs_pTexEnvMap;
 }
+#endif

@@ -48,6 +48,9 @@ namespace ConcatenateShaders
 				{
 					using ( FileStream S = new FileInfo( ShaderFiles[FileIndex] ).OpenRead() )
 					{
+						if ( S.Length == 0 )
+							throw new Exception( "Shader file is empty!" );
+
 						using ( BinaryReader Reader = new BinaryReader( S ) )
 						{
 							int	EntryPointLength = Reader.ReadInt32();
@@ -72,7 +75,7 @@ namespace ConcatenateShaders
 				SumEntryPointsLength += 2*ShaderFiles.Count;	// Account for the jump offsets
 
 				// Concatenate into a single binary file
-				string	TargetFile = TargetDirectory + ShaderFile + ".fx";
+				string	TargetFile = TargetDirectory + ShaderFile + ".hlsl";
 				using ( FileStream S = new FileInfo( TargetFile ).Create() )
 				{
 					using ( BinaryWriter Writer = new BinaryWriter( S ) )
