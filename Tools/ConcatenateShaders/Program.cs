@@ -16,7 +16,9 @@ namespace ConcatenateShaders
 			if ( args.Length != 1 )
 				throw new Exception( "You must provide the path to the fxbin files as the only argument!" );
 
-			string		TargetDirectory = Path.GetFullPath( args[0] );
+			DirectoryInfo	TargetDirectory = new DirectoryInfo( Path.GetFullPath( args[0] ) );
+			if ( !TargetDirectory.Exists )
+				throw new Exception( "Specified target directory \"" + TargetDirectory.FullName + "\" does not exist!" );
 
 			// Build the shader files with common names
 			Dictionary<string,List<string>>	CommonFiles = new Dictionary<string,List<string>>();
@@ -31,6 +33,8 @@ namespace ConcatenateShaders
 					CommonFiles[FileNameWithoutExtension] = new List<string>();
 				CommonFiles[FileNameWithoutExtension].Add( File );
 			}
+			if ( CommonFiles.Count == 0 )
+				throw new Exception( "Didn't find any file matching \"" + (args[0] + "\\*.fxbin") + "\"!" );
 
 			// Concatenate all the blobs into a single compact shader file
 			foreach ( string ShaderFile in CommonFiles.Keys )
@@ -75,8 +79,8 @@ namespace ConcatenateShaders
 				SumEntryPointsLength += 2*ShaderFiles.Count;	// Account for the jump offsets
 
 				// Concatenate into a single binary file
-				string	TargetFile = TargetDirectory + ShaderFile + ".hlsl";
-				using ( FileStream S = new FileInfo( TargetFile ).Create() )
+				FileInfo	TargetFile = new FileInfo( Path.Combine( TargetDirectory.FullName, ShaderFile + ".hlsl" ) );
+				using ( FileStream S = TargetFile.Create() )
 				{
 					using ( BinaryWriter Writer = new BinaryWriter( S ) )
 					{
@@ -110,6 +114,8 @@ namespace ConcatenateShaders
 					}
 				}
 			}
+
+			System.Windows.Forms.MessageBox.Show( "Successfully concatenated " + CommonFiles.Count + " files!" );
 		}
 	}
 }

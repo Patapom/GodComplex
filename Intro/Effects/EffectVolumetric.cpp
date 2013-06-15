@@ -10,7 +10,7 @@ static const float	TERRAIN_SIZE = 100.0f;
 
 static const float	CLOUD_SIZE = 100.0f;
 
-static const float	SCREEN_TARGET_RATIO = 0.5f;
+static const float	SCREEN_TARGET_RATIO = 0.25f;
 
 static const float	GROUND_RADIUS_KM = 6360.0f;
 static const float	ATMOSPHERE_THICKNESS_KM = 60.0f;
@@ -26,12 +26,19 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
  	CHECK_MATERIAL( m_pMatDepthWrite = CreateMaterial( IDR_SHADER_VOLUMETRIC_DEPTH_WRITE, "./Resources/Shaders/VolumetricDepthWrite.hlsl", VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
  	CHECK_MATERIAL( m_pMatSplatCameraFrustum = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE, "./Resources/Shaders/VolumetricComputeTransmittance.hlsl", VertexFormatP3::DESCRIPTOR, "VS_SplatFrustum", NULL, "PS_SplatFrustum" ), 2 );
  	CHECK_MATERIAL( m_pMatComputeTransmittance = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE, "./Resources/Shaders/VolumetricComputeTransmittance.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
- 	CHECK_MATERIAL( m_pMatDisplay = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
- 	CHECK_MATERIAL( m_pMatCombine = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMBINE, "./Resources/Shaders/VolumetricCombine.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 5 );
+
+	D3D_SHADER_MACRO	pMacrosAboveClouds[] = {
+		{ "CAMERA_ABOVE_CLOUDS", "1" },
+		{ NULL,	NULL }
+	};
+	CHECK_MATERIAL( m_ppMatDisplay[0] = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
+	CHECK_MATERIAL( m_ppMatDisplay[1] = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosAboveClouds ), 5 );
+
+ 	CHECK_MATERIAL( m_pMatCombine = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMBINE, "./Resources/Shaders/VolumetricCombine.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
 
 #ifdef SHOW_TERRAIN
-	CHECK_MATERIAL( m_pMatTerrainShadow = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, "./Resources/Shaders/VolumetricTerrain.hlsl", VertexFormatP3::DESCRIPTOR, "VS", NULL, NULL ), 6 );
-	CHECK_MATERIAL( m_pMatTerrain = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, "./Resources/Shaders/VolumetricTerrain.hlsl", VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 7 );
+	CHECK_MATERIAL( m_pMatTerrainShadow = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, "./Resources/Shaders/VolumetricTerrain.hlsl", VertexFormatP3::DESCRIPTOR, "VS", NULL, NULL ), 7 );
+	CHECK_MATERIAL( m_pMatTerrain = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, "./Resources/Shaders/VolumetricTerrain.hlsl", VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 8 );
 #endif
 
 //	const char*	pCSO = LoadCSO( "./Resources/Shaders/CSO/VolumetricCombine.cso" );
@@ -266,13 +273,14 @@ EffectVolumetric::~EffectVolumetric()
 	FreeSkyTables();
 
  	delete m_pMatCombine;
- 	delete m_pMatDisplay;
+	delete m_ppMatDisplay[1];
+	delete m_ppMatDisplay[0];
  	delete m_pMatComputeTransmittance;
  	delete m_pMatSplatCameraFrustum;
 	delete m_pMatDepthWrite;
 }
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 #define PERF_BEGIN_EVENT( Color, Text )	D3DPERF_BeginEvent( Color, Text )
 #define PERF_END_EVENT()				D3DPERF_EndEvent()
 #define PERF_MARKER( Color, Text )		D3DPERF_SetMarker( Color, Text )
@@ -610,7 +618,8 @@ float	t = 2*0.25f * _Time;
 	// 5] Render the actual volume
 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFF0000 ), L"Render Volume" );
 
-	USING_MATERIAL_START( *m_pMatDisplay )
+	Material*	pMat = m_Camera.GetCB().Camera2World.GetRow(2).y > m_CloudAltitude+m_CloudThickness ? m_ppMatDisplay[1] : m_ppMatDisplay[0];
+	USING_MATERIAL_START( *pMat )
 
 		m_Device.ClearRenderTarget( *m_pRTRender, NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) );
 

@@ -163,9 +163,9 @@ if ( UV.x < 0.2 && UV.y > 0.8 )
 	// Compose color
 	float3	FinalColor = (Terrain + DirectSunLight) * Extinction + Scattering;
 
-	// Add a nice bloom for the Sun
-	FinalColor += 0.02 * smoothstep( 0.9, 1.0, sqrt(CosGamma) ) * SunColor * smoothstep( 0.1, 0.3, _LightDirection.y );
-	FinalColor += 0.002 * smoothstep( 0.1, 1.0, sqrt(CosGamma) ) * SunColor * smoothstep( 0.1, 0.3, _LightDirection.y );
+// 	// Add a nice bloom for the Sun
+// 	FinalColor += 0.02 * smoothstep( 0.9, 1.0, sqrt(CosGamma) ) * SunColor * smoothstep( 0.1, 0.3, _LightDirection.y );
+// 	FinalColor += 0.002 * smoothstep( 0.1, 1.0, sqrt(CosGamma) ) * SunColor * smoothstep( 0.1, 0.3, _LightDirection.y );
 
 	return HDR( FinalColor );
 }

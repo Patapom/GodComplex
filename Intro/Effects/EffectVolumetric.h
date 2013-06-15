@@ -26,7 +26,7 @@ private:	// CONSTANTS
 	static const int		TERRAIN_SHADOW_MAP_SIZE = 512;
 
 	static const int		FRACTAL_TEXTURE_POT = 7;
-	static const int		FRACTAL_OCTAVES = 8;
+	static const int		FRACTAL_OCTAVES = 14;
 
 
 public:		// NESTED TYPES
@@ -154,7 +154,7 @@ private:	// FIELDS
 	Material*			m_pMatDepthWrite;
 	Material*			m_pMatSplatCameraFrustum;
 	Material*			m_pMatComputeTransmittance;
-	Material*			m_pMatDisplay;
+	Material*			m_ppMatDisplay[2];
 	Material*			m_pMatCombine;
 
 	Primitive*			m_pPrimBox;
