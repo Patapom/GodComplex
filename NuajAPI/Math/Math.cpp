@@ -221,10 +221,13 @@ NjFloat4x4&	NjFloat4x4::PYR( float _Pitch, float _Yaw, float _Roll )
 
 //////////////////////////////////////////////////////////////////////////
 // Half floats encoding
+const float	NjHalf::SMALLEST = 6.1035156e-005f;	// The smallest encodable float
+
+
 #define F16_EXPONENT_BITS 0x1F
 #define F16_EXPONENT_SHIFT 10
 #define F16_EXPONENT_BIAS 15
-#define F16_MANTISSA_BITS 0x3ff
+#define F16_MANTISSA_BITS 0x03ff
 #define F16_MANTISSA_SHIFT (23 - F16_EXPONENT_SHIFT)
 #define F16_MAX_EXPONENT (F16_EXPONENT_BITS << F16_EXPONENT_SHIFT)
 
