@@ -61,7 +61,7 @@ static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	}
 
 	// Handle standard keys
-#ifdef _DEBUG
+#ifndef NDEBUG
 	if ( uMsg == WM_CHAR )
 	{
 		int conv = 0;
@@ -261,7 +261,7 @@ void	WindowExit()
 	}
 }
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 void	DrawTime( float t )
 {
 	static int		frame=0;
@@ -451,11 +451,10 @@ void WINAPI	EntryPoint()
 #ifndef NDEBUG
 		// Show FPS
 		DrawTime( Time );
+		HandleEvents();
 #endif
 
 #ifdef SURE_DEBUG
-		HandleEvents();
-
 		// Check for hash collisions => We must never have too many of them !
 		ASSERT( DictionaryU32::ms_MaxCollisionsCount < 2, "Too many collisions in hash tables ! Either increase size or use different hashing scheme !" );
 

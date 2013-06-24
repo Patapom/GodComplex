@@ -367,9 +367,9 @@ float	GetFastCloudTransmittance( float3 _WorldPosition )
 	float2	UV = ShadowPosition.xy;
 
 	float4	C0 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
-return C0.x - C0.y + C0.z - C0.w;	// Skip smaller coefficients... No need to tap further.
+return saturate( C0.x - C0.y + C0.z - C0.w );	// Skip smaller coefficients... No need to tap further.
 	float4	C1 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
-	return C0.x - C0.y + C0.z - C0.w + C1.x - C1.y;
+	return saturate( C0.x - C0.y + C0.z - C0.w + C1.x - C1.y );
 }
 
 float	GetTerrainShadow( float3 _Position )
