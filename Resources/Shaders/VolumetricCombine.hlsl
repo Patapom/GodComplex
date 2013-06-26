@@ -109,16 +109,26 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 	float2	UV = _In.__Position.xy * _dUV.xy;
 
 // DEBUG
-#if 0
-if ( UV.x < 0.2 && UV.y > 0.8 )
+#if 1
+if ( UV.x < 0.3 && UV.y > 0.7 )
 {	// Show the transmittance map
-	UV.x /= 0.2;
-	UV.y = (UV.y - 0.8) / 0.2;
-//	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
-//	return 0.3333 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
-//	return exp( -_TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
-	return _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
+	UV.x /= 0.3;
+	UV.y = (UV.y - 0.7) / 0.3;
+
+	if ( UV.x > 0.99 ) return float4( 0.5 * (1.0 + sin( _Time.x )), 0, 0, 0 );
+
+	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
+	return 100.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+//	return exp( -10.0 * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
+//	return _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 //	return _TexTerrainShadow.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+
+
+// float	AltitudeKm = UV.y * ATMOSPHERE_THICKNESS_KM;
+// float	CosThetaSun = lerp( -0.2, 1.0, UV.x );
+// float	Reflectance = saturate( CosThetaSun );
+// return float4( 1.0 * GetTransmittance( AltitudeKm, CosThetaSun ) * Reflectance, 0.0 );	// Return Sun reflectance attenuated by atmosphere as seen from given altitude
+
 }
 #endif
 // DEBUG

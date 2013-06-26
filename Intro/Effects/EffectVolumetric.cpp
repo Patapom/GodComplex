@@ -2099,7 +2099,8 @@ namespace
 //	bool				m_bSkyTableUpdating = false;
 
 	// Update Stages Description
-	static const int	MAX_SCATTERING_ORDER = 4;						// Render up to order 4, later order events don't matter that much
+//	static const int	MAX_SCATTERING_ORDER = 4;						// Render up to order 4, later order events don't matter that much
+static const int	MAX_SCATTERING_ORDER = 2;//###
 
 	static const int	THREADS_COUNT_X = 16;							// !!IMPORTANT ==> Must correspond to what's written in the shader!!
 	static const int	THREADS_COUNT_Y = 16;
@@ -2229,7 +2230,7 @@ void	EffectVolumetric::InitUpdateSkyTables()
 		}
 	}
 
-#if 0
+#if 1
 	// Build heavy compute shaders
 	CHECK_MATERIAL( m_pCSComputeTransmittance = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"PreComputeTransmittance" ), 10 );
 	CHECK_MATERIAL( m_pCSComputeIrradiance_Single = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Single" ), 11 );		// irradiance1
@@ -2751,6 +2752,27 @@ void	EffectVolumetric::UpdateSkyTables()
 					m_ppRTIrradiance[0]->RemoveFromLastAssignedSlots();
 					m_ppRTInScattering[1]->Set( 8, true );
 					m_ppRTIrradiance[1]->Set( 9, true );
+
+
+#if 1
+{
+	Texture3D*	pStagingScattering = new Texture3D( m_Device, m_ppRTInScattering[1]->GetWidth(), m_ppRTInScattering[1]->GetHeight(), m_ppRTInScattering[1]->GetDepth(), PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
+	pStagingScattering->CopyFrom( *m_ppRTInScattering[1] );
+	pStagingScattering->Save( FILENAME_SCATTERING );
+	delete pStagingScattering;
+
+	Texture2D*	pStagingIrradiance = new Texture2D( m_Device, m_ppRTIrradiance[1]->GetWidth(), m_ppRTIrradiance[1]->GetHeight(), 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
+	pStagingIrradiance->CopyFrom( *m_ppRTIrradiance[1] );
+	pStagingIrradiance->Save( FILENAME_IRRADIANCE );
+	delete pStagingIrradiance;
+
+	Texture2D*	pStagingTransmittance = new Texture2D( m_Device, m_ppRTTransmittance[0]->GetWidth(), m_ppRTTransmittance[0]->GetHeight(), 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
+	pStagingTransmittance->CopyFrom( *m_ppRTTransmittance[0] );
+	pStagingTransmittance->Save( FILENAME_TRANSMITTANCE );
+	delete pStagingTransmittance;
+}
+#endif
+
 
 					// Swap double-buffered slots
 					Texture3D*	pTemp0 = m_ppRTInScattering[0];

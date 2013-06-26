@@ -10,11 +10,6 @@
 #define	THREADS_COUNT_Y	16
 #define	THREADS_COUNT_Z	4	// 4 as the product of all thread counts cannot exceed 1024!
 
-#define	INSCATTER_NON_LINEAR_VIEW			// Use non-linear mapping of cos(Theta_view)
-//#define	INSCATTER_NON_LINEAR_VIEW_POM	// Use my "formula" instead of theirs
-#define	INSCATTER_NON_LINEAR_SUN			// Use non-linear mapping of cos(Theta_sun)
-
-
 cbuffer	cbCompute	: register( b10 )
 {
 	uint3	_TargetSize;	// Final render target size (2D or 3D)
@@ -52,16 +47,6 @@ RWTexture3D<float4>	_Target3D1 : register(u2);
 // Helpers
 
 // Computes the flattened texel informations
-// uint2	GetTexelIndex2D( CS_IN _In, out uint _TexelIndex )
-// {
-// 	uint	TexelX = (_GroupsCount.x * THREADS_COUNT_X) * _PassIndex.x + _In.ThreadID.x;
-// 	uint	TexelY = (_GroupsCount.y * THREADS_COUNT_Y) * _PassIndex.y + _In.ThreadID.y;
-// 
-// 	_TexelIndex = _TargetSize.x * TexelY + TexelX;
-// 
-// 	return uint2( TexelX, TexelY );
-// }
-
 uint3	GetTexelInfos( CS_IN _In )
 {
 	uint	TexelX = (_GroupsCount.x * THREADS_COUNT_X) * _PassIndex.x + _In.ThreadID.x;
@@ -108,8 +93,12 @@ void	GetAnglesFrom4D( float2 _UV, float4 _dhdH, float _AltitudeKm, out float _Co
 
 #ifdef INSCATTER_NON_LINEAR_VIEW_POM
 
-	_CosThetaView = abs( 2.0 * _UV.y - 1.0 );
-	_CosThetaView *= (_UV.y < 0.5 ? -1.0 : +1.0) * _CosThetaView;	// Squared progression for more precision near horizon
+// 	_CosThetaView = abs( 2.0 * _UV.y - 1.0 );
+// 	_CosThetaView *= (_UV.y < 0.5 ? -1.0 : +1.0) * _CosThetaView;	// Squared progression for more precision near horizon
+
+//###@@@
+_CosThetaView = 2.0 * _UV.y + (_UV.y < 0.5 ? 0.0 : -2.0);	// Goes from 0 to +1 in [0,0.5] and from -1 to 0 in [0.5,1]
+
 
 #else
 
@@ -182,7 +171,7 @@ float	ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, const float _Href
 		PreviousAltitudeKm = _AltitudeKm;
 	}
 
-	return Result * StepKm.w;
+	return Result * StepKm.w / TRANSMITTANCE_OPTICAL_DEPTH_FACTOR;
 }
 
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, 1 )]
@@ -217,10 +206,6 @@ void	PreComputeIrradiance_Single( CS_IN _In )
 	float	Reflectance = saturate( CosThetaSun );
 
 	_Target2D[Texel] = float4( GetTransmittance( AltitudeKm, CosThetaSun ) * Reflectance, 0.0 );	// Return Sun reflectance attenuated by atmosphere as seen from given altitude
-
-
-//_Target2D[Texel] = float4( float2( Texel ) / _TargetSize.xy, 0, 0 );
-//_Target2D[Texel] = float4( _TargetSize.x / 128.0, _TargetSize.y / 32.0, 0, 0 );
 }
 
 
@@ -469,6 +454,9 @@ void	PreComputeIrradiance_Delta( CS_IN _In )
 	}
 
 	_Target2D[Texel] = float4( Result, 0.0 );
+
+//@@@
+//_Target2D[Texel] = 0.0;	// Accumulate nothing! This should help us see only scattering accumulation...
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -527,6 +515,9 @@ void	PreComputeInScattering_Multiple( CS_IN _In )
 	}
 
 	_Target3D0[Texel] = float4( Result * StepSizeKm, 0.0 );
+ 
+// //@@@
+_Target3D0[Texel] = 0.0;	// Accumulate nothing! This should help us see only single scattering...
 }
 
 //////////////////////////////////////////////////////////////////////////
