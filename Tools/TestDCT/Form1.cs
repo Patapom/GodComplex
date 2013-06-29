@@ -151,6 +151,11 @@ namespace TestDCT
 
 				Density *= 1.0f - (x < 3.0f ? Smoothstep( 2.0f, 3.0f, x ) : Smoothstep( 4.0f, 3.0f, x ));
 
+
+Density = 0.0f;
+//Density = 0.1f;
+
+
 				float	ExtinctionCoeff = 8.0f * Density;
 				float	Transmittance = (float) Math.Exp( -ExtinctionCoeff * StepSize );
 				TotalTransmittance *= Transmittance;
@@ -164,10 +169,12 @@ namespace TestDCT
 
 			Vector4	CosTerm0 = (float) Math.PI * new Vector4( 0, 1, 2, 3 );
 			Vector4	CosTerm1 = (float) Math.PI * new Vector4( 4, 5, 6, 7 );
-			Vector4	Angle0 = 0.5f * dx * CosTerm0;
-			Vector4	Angle1 = 0.5f * dx * CosTerm1;
 			Vector4	dAngle0 = dx * CosTerm0;				// This is the increment in phase
 			Vector4	dAngle1 = dx * CosTerm1;
+// 			Vector4	Angle0 = 0.5f * dAngle0;
+// 			Vector4	Angle1 = 0.5f * dAngle1;
+			Vector4	Angle0 = 0.0f * dAngle0;
+			Vector4	Angle1 = 0.0f * dAngle1;
 
 			Vector4	DCTCoeffs0 = new Vector4( 0, 0, 0, 0 );
 			Vector4	DCTCoeffs1 = new Vector4( 0, 0, 0, 0 );

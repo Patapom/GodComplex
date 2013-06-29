@@ -4,9 +4,6 @@
 #include "ASMHelpers.h"
 #include "../Math/Math.h"
 
-// #undef memset
-// #include <string.h>
-
 // Source: http://blog.2of1.org/2011/07/11/simple-c-hashtable-code/
 //
 // simple hashtable

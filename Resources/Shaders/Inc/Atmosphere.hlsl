@@ -13,8 +13,6 @@ static const float	ATMOSPHERE_RADIUS_KM = GROUND_RADIUS_KM + ATMOSPHERE_THICKNES
 
 static const float3	EARTH_CENTER_KM = float3( 0.0, -GROUND_RADIUS_KM, 0.0 );			// Far below us!
 
-// static const float	AVERAGE_GROUND_REFLECTANCE = 0.1;
-// 
 // // Rayleigh Scattering
 // static const float	HREF_RAYLEIGH = 8.0;
 static const float3	SIGMA_SCATTERING_RAYLEIGH = float3( 0.0058, 0.0135, 0.0331 );		// For lambdas (680,550,440) nm
