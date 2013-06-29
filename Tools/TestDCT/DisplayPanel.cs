@@ -67,6 +67,7 @@ namespace TestDCT
 // 					}
 // 					T *= 1.0f;// / Form1.MAX_Z;
 
+                    // Tricky inverse DCT treats coeff 0 specially!
 					T = 0.5f * m_DCTCoefficients[0];
 					for ( int j=1; j < m_DCTCoefficients.Length; j++ )
 					{

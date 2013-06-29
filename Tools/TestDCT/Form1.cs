@@ -138,7 +138,7 @@ namespace TestDCT
 
 			Random	RNG = new Random( 1 );
 			float	StepSize = MAX_Z / CURVE_SIZE;
-			float	TotalTransmittance = 1.0f;
+			float	TotalTransmittance = 1.15f;
 			for ( int i=0; i < CURVE_SIZE; i++ )
 			{
 				float	x = MAX_Z * i / CURVE_SIZE;
@@ -155,10 +155,16 @@ namespace TestDCT
 Density = 0.0f;
 //Density = 0.1f;
 
-
 				float	ExtinctionCoeff = 8.0f * Density;
 				float	Transmittance = (float) Math.Exp( -ExtinctionCoeff * StepSize );
+
+//Transmittance = 1.0f;
+
 				TotalTransmittance *= Transmittance;
+
+//TotalTransmittance = Math.Max(0.0f, 1.0f - 1.5f * i / CURVE_SIZE);    // Linear transmittance
+
+
 
 				Curve[i] = new float[2] { i * MAX_Z / CURVE_SIZE, TotalTransmittance };
 			}
@@ -188,14 +194,14 @@ Density = 0.0f;
 //Transmittance = 0.5f * (1.0f + (float) Math.Cos( 2*Math.PI * i / CURVE_SIZE ));
 //Transmittance = (float) Math.Cos( 1*Math.PI * i / CURVE_SIZE );
 
-				DCTCoeffs0 += Transmittance * dx * Angle0.Cos();
-				DCTCoeffs1 += Transmittance * dx * Angle1.Cos();
+				DCTCoeffs0 += Transmittance * Angle0.Cos();
+				DCTCoeffs1 += Transmittance * Angle1.Cos();
 
 				Angle0 += dAngle0;
 				Angle1 += dAngle1;
 			}
-			DCTCoeffs0 *= 2.0f;
-			DCTCoeffs1 *= 2.0f;
+            DCTCoeffs0 *= 2.0f * dx;
+            DCTCoeffs1 *= 2.0f * dx;
 			displayPanelDCT.m_DCTCoefficients = new float[] { DCTCoeffs0.x, DCTCoeffs0.y, DCTCoeffs0.z, DCTCoeffs0.w, DCTCoeffs1.x, DCTCoeffs1.y, DCTCoeffs1.z, DCTCoeffs1.w };
 		}
 	}
