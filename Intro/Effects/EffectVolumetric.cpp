@@ -10,7 +10,7 @@ static const float	TERRAIN_SIZE = 100.0f;
 
 static const float	CLOUD_SIZE = 100.0f;
 
-static const float	SCREEN_TARGET_RATIO = 0.5f;
+static const float	SCREEN_TARGET_RATIO = 0.25f;
 
 static const float	GROUND_RADIUS_KM = 6360.0f;
 static const float	ATMOSPHERE_THICKNESS_KM = 60.0f;

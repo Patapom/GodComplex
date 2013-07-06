@@ -5,7 +5,7 @@
 #include "Inc/Global.hlsl"
 #include "Inc/Volumetric.hlsl"
 
-static const float	STEPS_COUNT = 128.0;		// Many steps
+static const float	STEPS_COUNT = 64.0;		// Many steps
 
 static const float	START_TRANSMITTANCE = 0.99;	// Start interval when transmittance goes below that level
 static const float	END_TRANSMITTANCE = 0.01;	// End interval when transmittance goes below that level
