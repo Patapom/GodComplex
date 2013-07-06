@@ -447,6 +447,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\TranslucencyDisplay.hlsl" />
     <None Include="Resources\Shaders\VolumetricCombine.hlsl" />
     <None Include="Resources\Shaders\VolumetricComputeTransmittance.hlsl" />
+    <None Include="Resources\Shaders\VolumetricDepthPrePass.hlsl" />
     <None Include="Resources\Shaders\VolumetricDepthWrite.hlsl" />
     <None Include="Resources\Shaders\VolumetricDisplay.hlsl" />
     <None Include="Resources\Shaders\VolumetricPreComputeAtmosphere.hlsl" />

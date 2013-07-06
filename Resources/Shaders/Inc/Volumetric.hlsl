@@ -5,26 +5,20 @@
 #ifndef _VOLUMETRIC_INC_
 #define _VOLUMETRIC_INC_
 
-#define	USE_FAST_COS	// Use Taylor series instead of actual cosine
+#define	USE_FAST_COS										// Use Taylor series instead of actual cosine
 
 #define	ANIMATE
-#define	PACK_R8				// Noise is packed in a R8 texture instead of R32F
-
-// #define	BOX_BASE	4.0		// 8km (!!) (need to lower that but keep clouds' aspect)
-// #define	BOX_HEIGHT	2.0		// 4km thick
-
-// static const float	EXTINCTION_COEFF = 8.0;
-// static const float	SCATTERING_COEFF = 8.0;
+#define	PACK_R8												// Noise is packed in a R8 texture instead of R32F
 
 static const float	SUN_INTENSITY = 100.0;
 
-static const float	WORLD2KM = 1.0;						// 1 World unit equals 1.0km
+static const float	WORLD2KM = 1.0;							// 1 World unit equals 1.0km
 
 
 // static const float	FREQUENCY_MULTIPLIER_LOW = 0.25;	// Noise low frequency multiplier
 // static const float	FREQUENCY_MULTIPLIER_HIGH = 1.5;	// Noise high frequency multiplier
-static const float	FREQUENCY_MULTIPLIER_LOW = 0.0075;	// Noise low frequency multiplier
-static const float	FREQUENCY_MULTIPLIER_HIGH = 0.12;	// Noise high frequency multiplier
+static const float	FREQUENCY_MULTIPLIER_LOW = 0.0075;		// Noise low frequency multiplier
+static const float	FREQUENCY_MULTIPLIER_HIGH = 0.12;		// Noise high frequency multiplier
 
 
 cbuffer	cbShadow	: register( b8 )

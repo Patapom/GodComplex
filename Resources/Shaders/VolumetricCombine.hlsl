@@ -1,4 +1,4 @@
-'//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 // This shader finally combines the volumetric rendering with the actual screen
 //
 #include "Inc/Global.hlsl"
@@ -109,7 +109,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 	float2	UV = _In.__Position.xy * _dUV.xy;
 
 // DEBUG
-#if 1
+#if 0
 if ( UV.x < 0.3 && UV.y > 0.7 )
 {	// Show the transmittance map
 	UV.x /= 0.3;
@@ -117,7 +117,7 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 
 	if ( UV.x > 0.99 ) return float4( 0.5 * (1.0 + sin( _Time.x )), 0, 0, 0 );
 
-	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
+//	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
 	return 100.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 //	return exp( -10.0 * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
 //	return _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
@@ -144,7 +144,7 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 //return HDR( Terrain );
 
 	// Load scattering & extinction from sky and clouds
-#if 0
+#if 1
 	float3	Scattering = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 	float3	Extinction = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
 #else

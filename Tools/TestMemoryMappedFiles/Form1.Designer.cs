@@ -403,8 +403,8 @@
 			this.floatTrackbarControlIsotropicScatteringTerrainFactor.RangeMin = 0F;
 			this.floatTrackbarControlIsotropicScatteringTerrainFactor.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlIsotropicScatteringTerrainFactor.TabIndex = 0;
-			this.floatTrackbarControlIsotropicScatteringTerrainFactor.Value = 0.2F;
-			this.floatTrackbarControlIsotropicScatteringTerrainFactor.VisibleRangeMax = 1F;
+			this.floatTrackbarControlIsotropicScatteringTerrainFactor.Value = 0.1F;
+			this.floatTrackbarControlIsotropicScatteringTerrainFactor.VisibleRangeMax = 0.5F;
 			this.floatTrackbarControlIsotropicScatteringTerrainFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIsotropicScatteringTerrainFactor_ValueChanged);
 			// 
 			// label17
@@ -426,8 +426,8 @@
 			this.floatTrackbarControlIsotropicScatteringSunFactor.RangeMin = 0F;
 			this.floatTrackbarControlIsotropicScatteringSunFactor.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlIsotropicScatteringSunFactor.TabIndex = 0;
-			this.floatTrackbarControlIsotropicScatteringSunFactor.Value = 0.7F;
-			this.floatTrackbarControlIsotropicScatteringSunFactor.VisibleRangeMax = 1F;
+			this.floatTrackbarControlIsotropicScatteringSunFactor.Value = 0.02F;
+			this.floatTrackbarControlIsotropicScatteringSunFactor.VisibleRangeMax = 0.1F;
 			this.floatTrackbarControlIsotropicScatteringSunFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIsotropicScatteringSunFactor_ValueChanged);
 			// 
 			// label16
@@ -449,7 +449,7 @@
 			this.floatTrackbarControlIsotropicScatteringSkyFactor.RangeMin = 0F;
 			this.floatTrackbarControlIsotropicScatteringSkyFactor.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlIsotropicScatteringSkyFactor.TabIndex = 0;
-			this.floatTrackbarControlIsotropicScatteringSkyFactor.Value = 1F;
+			this.floatTrackbarControlIsotropicScatteringSkyFactor.Value = 0.5F;
 			this.floatTrackbarControlIsotropicScatteringSkyFactor.VisibleRangeMax = 1F;
 			this.floatTrackbarControlIsotropicScatteringSkyFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIsotropicScatteringSkyFactor_ValueChanged);
 			// 

@@ -10,7 +10,7 @@ static const float	TERRAIN_SIZE = 100.0f;
 
 static const float	CLOUD_SIZE = 100.0f;
 
-static const float	SCREEN_TARGET_RATIO = 0.25f;
+static const float	SCREEN_TARGET_RATIO = 0.5f;
 
 static const float	GROUND_RADIUS_KM = 6360.0f;
 static const float	ATMOSPHERE_THICKNESS_KM = 60.0f;
@@ -27,18 +27,20 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
  	CHECK_MATERIAL( m_pMatSplatCameraFrustum = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE, "./Resources/Shaders/VolumetricComputeTransmittance.hlsl", VertexFormatP3::DESCRIPTOR, "VS_SplatFrustum", NULL, "PS_SplatFrustum" ), 2 );
  	CHECK_MATERIAL( m_pMatComputeTransmittance = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMPUTE_TRANSMITTANCE, "./Resources/Shaders/VolumetricComputeTransmittance.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
 
+ 	CHECK_MATERIAL( m_pMatDepthPrePass = CreateMaterial( IDR_SHADER_VOLUMETRIC_DEPTH_PREPASS, "./Resources/Shaders/VolumetricDepthPrePass.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
+
 	D3D_SHADER_MACRO	pMacrosAboveClouds[] = {
 		{ "CAMERA_ABOVE_CLOUDS", "1" },
 		{ NULL,	NULL }
 	};
-	CHECK_MATERIAL( m_ppMatDisplay[0] = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
-	CHECK_MATERIAL( m_ppMatDisplay[1] = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosAboveClouds ), 5 );
+	CHECK_MATERIAL( m_ppMatDisplay[0] = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 5 );
+	CHECK_MATERIAL( m_ppMatDisplay[1] = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosAboveClouds ), 6 );
 
- 	CHECK_MATERIAL( m_pMatCombine = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMBINE, "./Resources/Shaders/VolumetricCombine.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
+ 	CHECK_MATERIAL( m_pMatCombine = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMBINE, "./Resources/Shaders/VolumetricCombine.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 7 );
 
 #ifdef SHOW_TERRAIN
-	CHECK_MATERIAL( m_pMatTerrainShadow = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, "./Resources/Shaders/VolumetricTerrain.hlsl", VertexFormatP3::DESCRIPTOR, "VS", NULL, NULL ), 7 );
-	CHECK_MATERIAL( m_pMatTerrain = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, "./Resources/Shaders/VolumetricTerrain.hlsl", VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 8 );
+	CHECK_MATERIAL( m_pMatTerrainShadow = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, "./Resources/Shaders/VolumetricTerrain.hlsl", VertexFormatP3::DESCRIPTOR, "VS", NULL, NULL ), 8 );
+	CHECK_MATERIAL( m_pMatTerrain = CreateMaterial( IDR_SHADER_VOLUMETRIC_TERRAIN, "./Resources/Shaders/VolumetricTerrain.hlsl", VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 9 );
 #endif
 
 //	const char*	pCSO = LoadCSO( "./Resources/Shaders/CSO/VolumetricCombine.cso" );
@@ -124,7 +126,6 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 	//////////////////////////////////////////////////////////////////////////
 	// Build textures & render targets
 	m_pRTCameraFrustumSplat = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, PixelFormatR8::DESCRIPTOR, 1, NULL );
-	m_pRTTransmittanceZ = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, PixelFormatRG16F::DESCRIPTOR, 1, NULL );
 	m_pRTTransmittanceMap = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 2, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
 
 	int	W = m_Device.DefaultRenderTarget().GetWidth();
@@ -134,6 +135,10 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 
 	m_pRTRenderZ = new Texture2D( m_Device, m_RenderWidth, m_RenderHeight, 1, PixelFormatRG16F::DESCRIPTOR, 1, NULL );
 	m_pRTRender = new Texture2D( m_Device, m_RenderWidth, m_RenderHeight, 2, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );
+
+	int	DepthPassWidth = m_RenderWidth / 2;
+	int	DepthPassHeight	= m_RenderHeight / 2;
+	m_pRTVolumeDepth = new Texture2D( m_Device, DepthPassWidth, DepthPassHeight, 1, PixelFormatRG16F::DESCRIPTOR, 1, NULL );
 
 //	m_pTexFractal0 = BuildFractalTexture( true );
 	m_pTexFractal1 = BuildFractalTexture( false );
@@ -193,9 +198,9 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 		0.85f,		// float	CloudAnisotropyForward;
 		0.9f,		// float	CloudShadowStrength;
 				// 
-		0.1f,		// float	CloudIsotropicScattering;	// Sigma_s for isotropic lighting
-		1.0f,		// float	CloudIsoSkyRadianceFactor;
-		0.25f,		// float	CloudIsoSunRadianceFactor;
+		0.05f,		// float	CloudIsotropicScattering;	// Sigma_s for isotropic lighting
+		0.5f,		// float	CloudIsoSkyRadianceFactor;
+		0.02f,		// float	CloudIsoSunRadianceFactor;
 		0.2f,		// float	CloudIsoTerrainReflectanceFactor;
 
 		// // Noise Params
@@ -253,10 +258,10 @@ EffectVolumetric::~EffectVolumetric()
 
 	delete m_pTexFractal1;
 	delete m_pTexFractal0;
+	delete m_pRTVolumeDepth;
 	delete m_pRTRender;
 	delete m_pRTRenderZ;
 	delete m_pRTTransmittanceMap;
-	delete m_pRTTransmittanceZ;
 	delete m_pRTCameraFrustumSplat;
 
 #ifdef SHOW_TERRAIN
@@ -275,6 +280,7 @@ EffectVolumetric::~EffectVolumetric()
  	delete m_pMatCombine;
 	delete m_ppMatDisplay[1];
 	delete m_ppMatDisplay[0];
+	delete m_pMatDepthPrePass;
  	delete m_pMatComputeTransmittance;
  	delete m_pMatSplatCameraFrustum;
 	delete m_pMatDepthWrite;
@@ -505,7 +511,6 @@ float	t = 2*0.25f * _Time;
 
 	USING_MATERIAL_START( *m_pMatComputeTransmittance )
 
-		m_pRTTransmittanceZ->SetPS( 10 );
 //		m_pRTCameraFrustumSplat->SetPS( 11 );
 
 		m_pCB_Splat->m.dUV = m_pRTTransmittanceMap->GetdUV();
@@ -613,12 +618,36 @@ float	t = 2*0.25f * _Time;
 
 	PERF_END_EVENT();
 
+	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
 
 	//////////////////////////////////////////////////////////////////////////
-	// 5] Render the actual volume
+	// 5] Render the cloud's super low resolution depth path
+	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFC00000 ), L"Render Volume Depth Pass" );
+
+//	m_Device.ClearRenderTarget( *m_pRTVolumeDepth, NjFloat4( 0.0f, -1e4f, 0.0f, 0.0f ) );
+
+	USING_MATERIAL_START( *m_pMatDepthPrePass )
+
+		m_Device.SetRenderTarget( *m_pRTVolumeDepth );
+
+		m_pRTRenderZ->SetPS( 10 );
+
+		m_pCB_Splat->m.dUV = m_pRTVolumeDepth->GetdUV();
+		m_pCB_Splat->UpdateData();
+
+		m_ScreenQuad.Render( M );
+
+	USING_MATERIAL_END
+
+	PERF_END_EVENT();
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// 6] Render the actual volume
 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFF0000 ), L"Render Volume" );
 
-	Material*	pMat = m_Camera.GetCB().Camera2World.GetRow(2).y > m_CloudAltitude+m_CloudThickness ? m_ppMatDisplay[1] : m_ppMatDisplay[0];
+//	Material*	pMat = m_Camera.GetCB().Camera2World.GetRow(2).y > m_CloudAltitude+m_CloudThickness ? m_ppMatDisplay[1] : m_ppMatDisplay[0];
+	Material*	pMat = m_ppMatDisplay[0];
 	USING_MATERIAL_START( *pMat )
 
 		m_Device.ClearRenderTarget( *m_pRTRender, NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) );
@@ -628,10 +657,10 @@ float	t = 2*0.25f * _Time;
 			m_pRTRender->GetTargetView( 0, 1, 1 )
 		};
 		m_Device.SetRenderTargets( m_pRTRender->GetWidth(), m_pRTRender->GetHeight(), 2, ppViews );
-		m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
 
 		m_pRTRenderZ->SetPS( 10 );
 		m_Device.DefaultDepthStencil().SetPS( 11 );
+		m_pRTVolumeDepth->SetPS( 12 );
 
 
 #ifdef SHOW_TERRAIN
@@ -653,7 +682,7 @@ float	t = 2*0.25f * _Time;
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// 6] Combine with screen
+	// 7] Combine with screen
 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF0000FF ), L"Combine" );
 
 	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget(), NULL );
@@ -669,7 +698,6 @@ m_pRTRender->SetPS( 10 );	// Cloud rendering, with scattering and extinction
 m_RTHDR.SetPS( 11 );		// Background scene
 m_Device.DefaultDepthStencil().SetPS( 12 );
 
-//m_pRTTransmittanceZ->SetPS( 11 );
 //m_pRTRenderZ->SetPS( 11 );
 // DEBUG
 
@@ -2230,7 +2258,7 @@ void	EffectVolumetric::InitUpdateSkyTables()
 		}
 	}
 
-#if 1
+#if 0
 	// Build heavy compute shaders
 	CHECK_MATERIAL( m_pCSComputeTransmittance = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"PreComputeTransmittance" ), 10 );
 	CHECK_MATERIAL( m_pCSComputeIrradiance_Single = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Single" ), 11 );		// irradiance1
@@ -2252,8 +2280,6 @@ void	EffectVolumetric::InitUpdateSkyTables()
 	CHECK_MATERIAL( m_pCSMergeInitialScattering = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"MergeInitialScattering" ), 16 );
 	CHECK_MATERIAL( m_pCSAccumulateIrradiance = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"AccumulateIrradiance" ), 17 );
 	CHECK_MATERIAL( m_pCSAccumulateInScattering = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"AccumulateInScattering" ), 18 );
-
-//	CHECK_MATERIAL( m_pCSAccumulateInScattering = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"AccumulateInScattering" ), 18 );			// copyInscatterN
 #endif
 }
 

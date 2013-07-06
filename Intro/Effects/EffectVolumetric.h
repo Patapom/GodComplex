@@ -154,6 +154,7 @@ private:	// FIELDS
 	Material*			m_pMatDepthWrite;
 	Material*			m_pMatSplatCameraFrustum;
 	Material*			m_pMatComputeTransmittance;
+	Material*			m_pMatDepthPrePass;
 	Material*			m_ppMatDisplay[2];
 	Material*			m_pMatCombine;
 
@@ -169,8 +170,8 @@ private:	// FIELDS
 	Texture3D*			m_pTexFractal0;
 	Texture3D*			m_pTexFractal1;
 	Texture2D*			m_pRTCameraFrustumSplat;
-	Texture2D*			m_pRTTransmittanceZ;
 	Texture2D*			m_pRTTransmittanceMap;
+	Texture2D*			m_pRTVolumeDepth;
 	Texture2D*			m_pRTRenderZ;
 	Texture2D*			m_pRTRender;
 
@@ -227,7 +228,7 @@ private:	// FIELDS
 		// Volumetrics Params
 		float	CloudBaseAltitude;
 		float	CloudThickness;
-		float	CloudExtinction;
+		float	CloudExtinction;			// Standard cloud mean free path is between 10m and 30m so standard extinction is between 0.1m^-1 and 0.033m^-1 => 100km-1^ and 33km^-1. But we use very low values like 10 to avoid solid details to pop in & out...
 		float	CloudScattering;
 		float	CloudAnisotropyIso;
 		float	CloudAnisotropyForward;
