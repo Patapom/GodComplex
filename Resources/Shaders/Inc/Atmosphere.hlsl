@@ -7,13 +7,17 @@
 #ifndef _ATMOSPHERE_INC_
 #define _ATMOSPHERE_INC_
 
+#define	INSCATTER_NON_LINEAR_VIEW
+#define	INSCATTER_NON_LINEAR_VIEW_POM	// Use my "formula" instead of theirs
+#define	INSCATTER_NON_LINEAR_SUN
+
 static const float	ATMOSPHERE_THICKNESS_KM = 60.0;
 static const float	GROUND_RADIUS_KM = 6360.0;
 static const float	ATMOSPHERE_RADIUS_KM = GROUND_RADIUS_KM + ATMOSPHERE_THICKNESS_KM;
 
 static const float3	EARTH_CENTER_KM = float3( 0.0, -GROUND_RADIUS_KM, 0.0 );			// Far below us!
 
-static const float	TRANSMITTANCE_OPTICAL_DEPTH_FACTOR = 10.0;							// Optical depths are stored divided by this factor...
+static const float	TRANSMITTANCE_OPTICAL_DEPTH_FACTOR = 1.0;							// Optical depths are stored divided by this factor...
 
 // Rayleigh Scattering
 static const float3	SIGMA_SCATTERING_RAYLEIGH = float3( 0.0058, 0.0135, 0.0331 );		// For lambdas (680,550,440) nm
@@ -211,11 +215,6 @@ float3	GetIrradiance( float _AltitudeKm, float _CosThetaSun )
 	return GetIrradiance( _TexIrradiance, _AltitudeKm, _CosThetaSun );
 }
 
-// Gets the zenith/view angle (cos theta), zenith/Sun angle (cos theta Sun) and view/Sun angle (cos gamma) from a 2D parameter
-#define	INSCATTER_NON_LINEAR_VIEW
-#define	INSCATTER_NON_LINEAR_VIEW_POM	// Use my "formula" instead of theirs
-#define	INSCATTER_NON_LINEAR_SUN
-
 // Samples the scattering table from 4 parameters
 float4	Sample4DScatteringTable( Texture3D _TexScattering, float _AltitudeKm, float _CosThetaView, float _CosThetaSun, float _CosGamma )
 {
@@ -229,11 +228,11 @@ float4	Sample4DScatteringTable( Texture3D _TexScattering, float _AltitudeKm, flo
 
 #ifdef INSCATTER_NON_LINEAR_VIEW_POM
 
-//  	float	uCosThetaView = 0.5 * (_CosThetaView < 0.0 ? 1.0 - sqrt( abs(_CosThetaView) ) : 1.0 + sqrt( saturate(_CosThetaView) ));
-// 			uCosThetaView = 0.5 / RESOLUTION_COS_THETA + uCosThetaView * NORMALIZED_SIZE_V;
+ 	float	uCosThetaView = 0.5 * (_CosThetaView < 0.0 ? 1.0 - sqrt( abs(_CosThetaView) ) : 1.0 + sqrt( saturate(_CosThetaView) ));
+			uCosThetaView = 0.5 / RESOLUTION_COS_THETA + uCosThetaView * NORMALIZED_SIZE_V;
 
 //###@@@
-float	uCosThetaView = _CosThetaView < 0.0 ? 1.0 + 0.5 * _CosThetaView : 0.5 * _CosThetaView;
+//float	uCosThetaView = _CosThetaView < 0.0 ? 1.0 + 0.5 * _CosThetaView : 0.5 * _CosThetaView;
 
 #else	// !POM?
 // Note that this code produces a warning about floating point precision because of the sqrt( H*H + delta )...
@@ -271,9 +270,6 @@ float	uCosThetaView = _CosThetaView < 0.0 ? 1.0 + 0.5 * _CosThetaView : 0.5 * _C
 	t = t - uGamma;
 
 	float4	V0 = _TexScattering.SampleLevel( LinearClamp, float3( (uGamma + uCosThetaSun) / RESOLUTION_COS_GAMMA, uCosThetaView, uAltitude ), 0.0 );
-
-return V0;//@@@###
-
 	float4	V1 = _TexScattering.SampleLevel( LinearClamp, float3( (uGamma + uCosThetaSun + 1.0) / RESOLUTION_COS_GAMMA, uCosThetaView, uAltitude ), 0.0 );
 	return lerp( V0, V1, t );
 }

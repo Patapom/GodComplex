@@ -93,11 +93,11 @@ void	GetAnglesFrom4D( float2 _UV, float4 _dhdH, float _AltitudeKm, out float _Co
 
 #ifdef INSCATTER_NON_LINEAR_VIEW_POM
 
-// 	_CosThetaView = abs( 2.0 * _UV.y - 1.0 );
-// 	_CosThetaView *= (_UV.y < 0.5 ? -1.0 : +1.0) * _CosThetaView;	// Squared progression for more precision near horizon
+	_CosThetaView = abs( 2.0 * _UV.y - 1.0 );
+	_CosThetaView *= (_UV.y < 0.5 ? -1.0 : +1.0) * _CosThetaView;	// Squared progression for more precision near horizon
 
 //###@@@
-_CosThetaView = 2.0 * _UV.y + (_UV.y < 0.5 ? 0.0 : -2.0);	// Goes from 0 to +1 in [0,0.5] and from -1 to 0 in [0.5,1]
+//_CosThetaView = 2.0 * _UV.y + (_UV.y < 0.5 ? 0.0 : -2.0);	// Goes from 0 to +1 in [0,0.5] and from -1 to 0 in [0.5,1]
 
 
 #else

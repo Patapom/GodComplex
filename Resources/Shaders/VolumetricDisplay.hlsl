@@ -10,13 +10,11 @@ static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
 
 static const float	GODRAYS_STEPS_COUNT = 32.0;
 
-//[
 cbuffer	cbSplat	: register( b10 )
 {
 	float3		_dUV;
 	bool		_bSampleTerrainShadow;
 };
-//]
 
 Texture2D		_TexVolumeDepth	: register(t10);
 Texture2D		_TexSceneDepth	: register(t11);

@@ -2099,8 +2099,8 @@ namespace
 //	bool				m_bSkyTableUpdating = false;
 
 	// Update Stages Description
-//	static const int	MAX_SCATTERING_ORDER = 4;						// Render up to order 4, later order events don't matter that much
-static const int	MAX_SCATTERING_ORDER = 2;//###
+	static const int	MAX_SCATTERING_ORDER = 4;						// Render up to order 4, later order events don't matter that much
+//static const int	MAX_SCATTERING_ORDER = 2;//###
 
 	static const int	THREADS_COUNT_X = 16;							// !!IMPORTANT ==> Must correspond to what's written in the shader!!
 	static const int	THREADS_COUNT_Y = 16;
@@ -2230,7 +2230,7 @@ void	EffectVolumetric::InitUpdateSkyTables()
 		}
 	}
 
-#if 1
+#if 0
 	// Build heavy compute shaders
 	CHECK_MATERIAL( m_pCSComputeTransmittance = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"PreComputeTransmittance" ), 10 );
 	CHECK_MATERIAL( m_pCSComputeIrradiance_Single = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Single" ), 11 );		// irradiance1
