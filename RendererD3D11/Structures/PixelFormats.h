@@ -10,6 +10,7 @@ class IPixelFormatDescriptor : public IFormatDescriptor
 {
 public: // PROPERTIES
 
+	virtual int			Size() const = 0;
 	virtual void		Write( U8* _pPixel, const NjFloat4& _Color ) const = 0;
 	virtual NjFloat4	Read( const U8* _pPixel ) const = 0;
 };

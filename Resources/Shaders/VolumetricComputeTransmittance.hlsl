@@ -145,7 +145,7 @@ PS_OUT	PS( VS_IN _In )
 #if 1
 	// Compute shadowing by Earth
 //	Out.C0 = float4( _LightDirection, 0 );
-	float	GroundHitDistanceKm = SphereIntersectionEnter( WORLD2KM * Position, _LightDirection, 0.0 );
+	float	GroundHitDistanceKm = SphereIntersectionEnter( WORLD2KM * Position.xyz, _LightDirection, 0.0 );
 	if ( GroundHitDistanceKm > 0.0 && GroundHitDistanceKm < 1000.0 )
 		return Out;
 #endif

@@ -414,6 +414,12 @@ void	Texture2D::Save( const char* _pFileName )
 	fopen_s( &pFile, _pFileName, "wb" );
 	ASSERT( pFile != NULL, "Can't create file!" );
 
+	// Write the type and format
+	U8		Type = m_bIsCubeMap ? 0x01 : 0x00;					// 0 is for 2D, 1 for cube map
+	U8		Format = U32(m_Format.DirectXFormat()) & 0xFF;
+	fwrite( &Type, sizeof(U8), 1, pFile );
+	fwrite( &Format, sizeof(U8), 1, pFile );
+
 	// Write the dimensions
 	fwrite( &m_Width, sizeof(int), 1, pFile );
 	fwrite( &m_Height, sizeof(int), 1, pFile );
@@ -421,14 +427,23 @@ void	Texture2D::Save( const char* _pFileName )
 	fwrite( &m_MipLevelsCount, sizeof(int), 1, pFile );
 
 	// Write each slice
-	for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
+	int	W = m_Width;
+	int	H = m_Height;
+	int	S = m_Format.Size();
+
+	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
-		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+		int	MipLevelSize = W*H*S;
+
+		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
 		{
 			Map( MipLevelIndex, SliceIndex );
-			fwrite( m_LockedResource.pData, m_LockedResource.DepthPitch, 1, pFile );
+			fwrite( m_LockedResource.pData, MipLevelSize, 1, pFile );
 			UnMap( MipLevelIndex, SliceIndex );
 		}
+
+		W = MAX( 1, W >> 1 );
+		H = MAX( 1, H >> 1 );
 	}
 
 	// We're done!
@@ -440,6 +455,15 @@ void	Texture2D::Load( const char* _pFileName )
 	FILE*	pFile;
 	fopen_s( &pFile, _pFileName, "rb" );
 	ASSERT( pFile != NULL, "Can't load file!" );
+
+	// Read the type and format
+	U8		Type, Format;
+	fread_s( &Type, sizeof(U8), sizeof(U8), 1, pFile );
+	fread_s( &Format, sizeof(U8), sizeof(U8), 1, pFile );
+	DXGI_FORMAT	FileFormat = DXGI_FORMAT( Format );
+	ASSERT( FileFormat == m_Format.DirectXFormat(), "Incompatible format!" );
+	ASSERT( Type == 0x00 || Type == 0x01, "File is not a texture 2D or a cube map!" );
+	m_bIsCubeMap = Type == 0x01;
 
 	// Read the dimensions
 	int	W, H, A, M;
@@ -454,14 +478,20 @@ void	Texture2D::Load( const char* _pFileName )
 	ASSERT( M == m_MipLevelsCount, "Incompatible mip levels count!" );
 
 	// Read each slice
-	for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
+	int	S = m_Format.Size();
+	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
-		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+		int	MipLevelSize = W*H*S;
+
+		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
 		{
 			Map( MipLevelIndex, SliceIndex );
-			fread_s( m_LockedResource.pData, m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
+			fread_s( m_LockedResource.pData, MipLevelSize, MipLevelSize, 1, pFile );
 			UnMap( MipLevelIndex, SliceIndex );
 		}
+
+		W = MAX( 1, W >> 1 );
+		H = MAX( 1, H >> 1 );
 	}
 
 	// We're done!

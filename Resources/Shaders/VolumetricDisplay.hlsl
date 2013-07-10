@@ -5,8 +5,8 @@
 #include "Inc/Volumetric.hlsl"
 #include "Inc/Atmosphere.hlsl"
 
-static const float	STEPS_COUNT = 64.0;
-static const float	INV_STEPS_COUNT = 1.0 / (1.0+STEPS_COUNT);
+static const float	MIN_STEPS_COUNT = 8.0;
+static const float	MAX_STEPS_COUNT = 32.0;
 
 static const float	GODRAYS_STEPS_COUNT = 32.0;
 
@@ -18,6 +18,7 @@ cbuffer	cbSplat	: register( b10 )
 
 Texture2D		_TexVolumeDepth	: register(t10);
 Texture2D		_TexSceneDepth	: register(t11);
+Texture2D		_TexVolumeDepthPass	: register(t12);
 
 
 struct	VS_IN
@@ -384,8 +385,28 @@ PS_OUT	PS( VS_IN _In )
 {
 	float2	UV = _In.__Position.xy * _dUV.xy;
 
+#if 0
 	// Sample min/max depths at position
 	float2	ZMinMax = _TexVolumeDepth.SampleLevel( LinearClamp, UV, 0.0 ).xy;
+#else
+	// New strategy: sample the interval length at the four corners of the larger texel from the low resolution depth pass
+	//	and keep the min/max of the 4 values to ensure we don't miss any feature...
+	float3	dUV_Low = 2.0 * _dUV;
+
+	float2	Pixel_Low = floor( 0.5 * _In.__Position.xy );
+	float2	UV2 = (Pixel_Low + 0.5) * dUV_Low.xy;
+
+	float2	ZMinMax00 = _TexVolumeDepthPass.SampleLevel( PointClamp, UV2, 0.0 ).xy;	UV2 += dUV_Low.xz;
+	float2	ZMinMax01 = _TexVolumeDepthPass.SampleLevel( PointClamp, UV2, 0.0 ).xy;	UV2 += dUV_Low.zy;
+	float2	ZMinMax11 = _TexVolumeDepthPass.SampleLevel( PointClamp, UV2, 0.0 ).xy;	UV2 -= dUV_Low.xz;
+	float2	ZMinMax10 = _TexVolumeDepthPass.SampleLevel( PointClamp, UV2, 0.0 ).xy;	UV2 -= dUV_Low.zy;
+	float2	ZMinMax = float2(
+		min( min( min( ZMinMax00.x, ZMinMax01.x ), ZMinMax10.x ), ZMinMax11.x ),
+		max( max( max( ZMinMax00.y, ZMinMax01.y ), ZMinMax10.y ), ZMinMax11.y )
+		);
+
+#endif
+
 
 	// Sample ZBuffer
 	float	Z = ReadDepth( UV );
@@ -394,8 +415,11 @@ PS_OUT	PS( VS_IN _In )
 	float	Depth = ZMinMax.y - ZMinMax.x;
 //	Depth = max( 1e-3, Depth );
 
-//return ReturnTestValue( 0.1 * Z );
+//return ReturnTestValue( 0.04 * Z );
 //return ReturnTestValue( 0.1 * ZMinMax.y );
+
+//return ReturnTestValue( 0.1 * _TexVolumeDepthPass.SampleLevel( LinearClamp, UV, 0.0 ).x );
+// return ReturnTestValue( 0.01 * _TexVolumeDepthPass.SampleLevel( LinearClamp, UV, 0.0 ).y );
 
 #if 1
 
@@ -419,24 +443,28 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't 
 #endif
 
 	// Retrieve start & end positions in world space
-	float3	View = float3( _CameraData.x * (2.0 * UV.x - 1.0), _CameraData.y * (1.0 - 2.0 * UV.y), 1.0 );
-	float3	WorldPosStart = mul( float4( ZMinMax.x * View, 1.0 ), _Camera2World ).xyz;
-	float3	WorldPosEnd = mul( float4( ZMinMax.y * View, 1.0 ), _Camera2World ).xyz;
+	float3	ViewCamera = float3( _CameraData.x * (2.0 * UV.x - 1.0), _CameraData.y * (1.0 - 2.0 * UV.y), 1.0 );
+	float4	View = float4( mul( float4( ViewCamera, 0.0 ), _Camera2World ).xyz, 1.0 );
+	float4	WorldPosStart = float4( _Camera2World[3].xyz, 0.0 ) + ZMinMax.x * View;
+	float4	WorldPosEnd = float4( _Camera2World[3].xyz, 0.0 ) + ZMinMax.y * View;
 
 
 //#define FIXED_STEP_SIZE	0.01
 #ifndef FIXED_STEP_SIZE
-	float	StepsCount = ceil( Depth * STEPS_COUNT * _CloudAltitudeThickness.y/8.0 );	// Good for 64 steps
-//	float	StepsCount = ceil( Depth * STEPS_COUNT * _CloudAltitudeThickness.y/4.0 );	// Good for 32 steps
+	float	StepsCount = ceil( Depth * MAX_STEPS_COUNT * _CloudAltitudeThickness.y/8.0 );	// Good for 64 steps
+//	float	StepsCount = ceil( Depth * MAX_STEPS_COUNT * _CloudAltitudeThickness.y/4.0 );	// Good for 32 steps
 //	float	StepsCount = ceil( 2.0 * FastScreenNoise( _In.__Position.xy ) + Depth * 32.0 * _CloudAltitudeThickness.y/8.0 );	// Add noise to hide banding
-//	float	StepsCount = STEPS_COUNT;
- 			StepsCount = min( STEPS_COUNT, StepsCount );
+//	float	StepsCount = MAX_STEPS_COUNT;
+ 			StepsCount = min( MAX_STEPS_COUNT, StepsCount );
 
-	float4	Step = float4( WorldPosEnd - WorldPosStart, ZMinMax.y - ZMinMax.x ) / StepsCount;
+	if ( Depth > 0.0 )
+		StepsCount = max( MIN_STEPS_COUNT, StepsCount );
+
+	float4	Step = (WorldPosEnd - WorldPosStart) / StepsCount;
 
 //	float	PosOffset = 0.5;	// Fixed offset
 	float	PosOffset = 0.25 * FastNoise( float3( 2.0*_In.__Position.xy, 0.0 ) );	// Random offset
-	float4	Position = float4( WorldPosStart, 0.0 ) + PosOffset * Step;
+	float4	Position = WorldPosStart + PosOffset * Step;
 
 #else
 	// Here, the steps have a fixed size and we simply determine their amount
@@ -445,7 +473,7 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't 
 	//	time we would have gained sampling a 2D texture instead of performing integration with ALU
 	//	is lost due to the fact we're using too many steps!
 	float	StepsCount = Depth / FIXED_STEP_SIZE;
-			StepsCount = min( STEPS_COUNT, StepsCount );
+			StepsCount = min( MAX_STEPS_COUNT, StepsCount );
 
 	float4	Step = FIXED_STEP_SIZE * float4( View, 1.0 );
 	float4	Position = float4( WorldPosStart, 0.0 ) + 0.5 * Step;
@@ -453,12 +481,11 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't 
 #endif
 
 	// Compute phase
-	float3	LightDirection = mul( float4( _LightDirection, 0.0 ), _World2Camera ).xyz;	// Light in camera space
-			View = normalize( View );
+	View.xyz = normalize( View.xyz );
 
 	const float	g_iso = _CloudPhases.x;
 	const float	g_forward = _CloudPhases.y;
-	float	CosTheta = dot( View, LightDirection );
+	float	CosTheta = dot( View.xyz, _LightDirection );
 	float	Phase_iso = 1.0 / (4 * PI) * (1 - g_iso*g_iso) * pow( max(0.0, 1+g_iso*g_iso-g_iso*CosTheta ), -1.5 );
 	float	Phase_forward = 1.0 / (4 * PI) * (1 - g_forward*g_forward) * pow( max(0.0, 1+g_forward*g_forward-g_forward*CosTheta ), -1.5 );
 	float	Phase = lerp( Phase_iso, Phase_forward, 0.2 );
@@ -471,7 +498,7 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't 
 	// Start integration
 	float	Sigma_t = 0.0;
 	float	Sigma_s = 0.0;
-	float3	Light = SunLight * GetCloudTransmittance( WorldPosStart.xyz );		// Start with light at start position
+	float3	Light = 0;//SunLight * GetCloudTransmittance( WorldPosStart.xyz );		// Start with light at start position
 	float3	Scattering = 0.0;
 	float	Transmittance = 1.0;
 	for ( float StepIndex=0.0; StepIndex < StepsCount; StepIndex++ )
@@ -489,18 +516,26 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't 
 		Shadowing = saturate( lerp( 1.0 - _CloudShadowStrength, 1.0, Shadowing ) );
 		Shadowing *= smoothstep( 0.0, 1.0, smoothstep( 0.0, 0.03, abs(_LightDirection.y) ) );	// Full shadowing when the light is horizontal
 
-		float3	PreviousLight = Light;
-		Light = SunLight * Shadowing;
+//		Light = SunLight * Shadowing;
 
 #if 1
 		// ======================== Old Strategy without sub-step integration ========================
 		float	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );	// Compute extinction
 		Transmittance *= StepTransmittance;
 
+		float3	PreviousLight = Light;
+		Light = Sigma_s * Phase * SunLight * Shadowing;
+		Light += ComputeIsotropicScattering( Position.xyz, Sigma_s, SunLight, SkyLightTop, SkyLightBottom );
+
 		// Compute scattering
-		float3	StepScattering  = Sigma_s * Phase * Light * Step.w;
-				StepScattering += ComputeIsotropicScattering( Position.xyz, Density, SunLight, SkyLightTop, SkyLightBottom ) * Step.w;
-		Scattering += Transmittance * StepScattering;
+		Scattering += Transmittance * 0.5 * (PreviousLight + Light) * Step.w;
+//###		Scattering += Transmittance * 0.5 * (PreviousLight + Light) * (1.0 - StepTransmittance) / max( 1e-2, 0.5 * (PreviousSigma_t + Sigma_t));	// From Tessendorf. No noticeable chanes except a darkening of some regions
+
+
+		// Compute scattering
+// 		float3	StepScattering  = Sigma_s * Phase * Light * Step.w;
+// 				StepScattering += ComputeIsotropicScattering( Position.xyz, Density, SunLight, SkyLightTop, SkyLightBottom ) * Step.w;
+// 		Scattering += Transmittance * StepScattering;
 
 #else
 		// ======================== New Strategy WITH sub-step integration ========================
@@ -529,30 +564,29 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't 
 	float	StepOffset = 0.0 * FastScreenNoise( _In.__Position.xy );
 	float3	PositionWorld = _Camera2World[3].xyz;
 	float3	PositionWorldKm = WORLD2KM * PositionWorld;
-	float3	ViewWorld = mul( float4( View, 0.0 ), _Camera2World ).xyz;
 
 	float	GroundBlocking = Z < 0.99*_CameraData.w ? 0 : 1;
 	if ( GroundBlocking > 0.5 )
 	{	// Not blocked by terrain, check for other blockers
-		float	GroundHitDistanceKm = SphereIntersectionEnter( PositionWorldKm, ViewWorld, -0.5 );
+		float	GroundHitDistanceKm = SphereIntersectionEnter( PositionWorldKm, View.xyz, -0.5 );
 		if ( GroundHitDistanceKm > 0.0 && GroundHitDistanceKm < HitDistanceKm )
 			HitDistanceKm = GroundHitDistanceKm;
 		else
 			HitDistanceKm = min( 100.0, HitDistanceKm );	// Don't trace further than 100km no matter what...
 	}
 
-	HitDistanceKm = min( HitDistanceKm, SphereIntersectionExit( PositionWorldKm, ViewWorld, ATMOSPHERE_THICKNESS_KM ) );	// Don't trace further than atmosphere (shouldn't be necessary since sampling any table at this distance should return the correct value)
+	HitDistanceKm = min( HitDistanceKm, SphereIntersectionExit( PositionWorldKm, View.xyz, ATMOSPHERE_THICKNESS_KM ) );	// Don't trace further than atmosphere (shouldn't be necessary since sampling any table at this distance should return the correct value)
 
 	// Compute sky color & compose with cloud
 	PS_OUT	Out;
-	ComputeFinalColor( PositionWorld, ViewWorld, HitDistanceKm, _LightDirection, float4( Scattering, Transmittance ), GroundBlocking, StepOffset, Out.Scattering, Out.Extinction );
+	ComputeFinalColor( PositionWorld, View.xyz, HitDistanceKm, _LightDirection, float4( Scattering, Transmittance ), GroundBlocking, StepOffset, Out.Scattering, Out.Extinction );
 
 //###
 //HitDistanceKm *= 10.0;
 //HitDistanceKm = 10000.0;
 
-// if ( ViewWorld.y < 0.0 )
-//  	HitDistanceKm = min( HitDistanceKm, SphereIntersectionEnter( WORLD2KM * PositionWorld, ViewWorld, 0.0 ) );
+// if ( View.y < 0.0 )
+//  	HitDistanceKm = min( HitDistanceKm, SphereIntersectionEnter( WORLD2KM * PositionWorld, View.xyz, 0.0 ) );
 
 float	RadiusKm = GROUND_RADIUS_KM + WORLD2KM * PositionWorld.y;
 float	CosThetaGround = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (RadiusKm*RadiusKm) );

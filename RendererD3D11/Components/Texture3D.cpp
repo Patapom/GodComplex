@@ -154,7 +154,7 @@ ID3D11UnorderedAccessView*	Texture3D::GetUAV( int _MipLevelIndex, int _FirstWSli
 	return pView;
 }
 
-void	Texture3D::Set( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView )
+void	Texture3D::Set( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
@@ -172,7 +172,7 @@ void	Texture3D::Set( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResour
 	m_LastAssignedSlots[4] = _SlotIndex;
 	m_LastAssignedSlots[5] = _SlotIndex;
 }
-void	Texture3D::SetVS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView )
+void	Texture3D::SetVS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
@@ -180,7 +180,7 @@ void	Texture3D::SetVS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[0] = _SlotIndex;
 }
-void	Texture3D::SetHS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView )
+void	Texture3D::SetHS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
@@ -188,7 +188,7 @@ void	Texture3D::SetHS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 	m_Device.DXContext().HSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[1] = _SlotIndex;
 }
-void	Texture3D::SetDS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView )
+void	Texture3D::SetDS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
@@ -196,7 +196,7 @@ void	Texture3D::SetDS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[2] = _SlotIndex;
 }
-void	Texture3D::SetGS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView )
+void	Texture3D::SetGS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
@@ -204,7 +204,7 @@ void	Texture3D::SetGS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[3] = _SlotIndex;
 }
-void	Texture3D::SetPS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView )
+void	Texture3D::SetPS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
@@ -212,7 +212,7 @@ void	Texture3D::SetPS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[4] = _SlotIndex;
 }
-void	Texture3D::SetCS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView )
+void	Texture3D::SetCS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
@@ -306,6 +306,12 @@ void	Texture3D::Save( const char* _pFileName )
 	fopen_s( &pFile, _pFileName, "wb" );
 	ASSERT( pFile != NULL, "Can't create file!" );
 
+	// Write the type and format
+	U8		Type = 0x02;
+	U8		Format = U32(m_Format.DirectXFormat()) & 0xFF;
+	fwrite( &Type, sizeof(U8), 1, pFile );
+	fwrite( &Format, sizeof(U8), 1, pFile );
+
 	// Write the dimensions
 	fwrite( &m_Width, sizeof(int), 1, pFile );
 	fwrite( &m_Height, sizeof(int), 1, pFile );
@@ -313,11 +319,21 @@ void	Texture3D::Save( const char* _pFileName )
 	fwrite( &m_MipLevelsCount, sizeof(int), 1, pFile );
 
 	// Write each mip
+	int	W = m_Width;
+	int	H = m_Height;
+	int	D = m_Depth;
+	int	S = m_Format.Size();
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
+		int	MipLevelSize = W*H*D*S;
+
 		Map( MipLevelIndex );
-		fwrite( m_LockedResource.pData, m_LockedResource.DepthPitch * m_Depth, 1, pFile );
+		fwrite( m_LockedResource.pData, MipLevelSize, 1, pFile );
 		UnMap( MipLevelIndex );
+
+		W = MAX( 1, W >> 1 );
+		H = MAX( 1, H >> 1 );
+		D = MAX( 1, D >> 1 );
 	}
 
 	// We're done!
@@ -329,6 +345,14 @@ void	Texture3D::Load( const char* _pFileName )
 	FILE*	pFile;
 	fopen_s( &pFile, _pFileName, "rb" );
 	ASSERT( pFile != NULL, "Can't load file!" );
+
+	// Read the type and format
+	U8		Type, Format;
+	fread_s( &Type, sizeof(U8), sizeof(U8), 1, pFile );
+	fread_s( &Format, sizeof(U8), sizeof(U8), 1, pFile );
+	DXGI_FORMAT	FileFormat = DXGI_FORMAT( Format );
+	ASSERT( FileFormat == m_Format.DirectXFormat(), "Incompatible format!" );
+	ASSERT( Type == 0x02, "File is not a texture 3D!" );
 
 	// Read the dimensions
 	int	W, H, D, M;
@@ -343,11 +367,18 @@ void	Texture3D::Load( const char* _pFileName )
 	ASSERT( M == m_MipLevelsCount, "Incompatible mip levels count!" );
 
 	// Read each mip
+	int	S = m_Format.Size();
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
+		int	MipLevelSize = W*H*D*S;
+
 		Map( MipLevelIndex );
-		fread_s( m_LockedResource.pData, m_LockedResource.DepthPitch * m_Depth, m_LockedResource.DepthPitch * m_Depth, 1, pFile );
+		fread_s( m_LockedResource.pData, MipLevelSize, MipLevelSize, 1, pFile );
 		UnMap( MipLevelIndex );
+
+		W = MAX( 1, W >> 1 );
+		H = MAX( 1, H >> 1 );
+		D = MAX( 1, D >> 1 );
 	}
 
 	// We're done!

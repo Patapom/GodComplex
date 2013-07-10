@@ -190,6 +190,7 @@ template<typename T> T*	Dictionary<T>::Get( U32 _Key ) const
 	U32		idx = _Key % m_Size;
 	Node*	pNode = m_ppTable[idx];
 
+#ifdef _DEBUG
 	int		CollisionsCount = 0;
 	while ( pNode != NULL )
 	{
@@ -202,7 +203,16 @@ template<typename T> T*	Dictionary<T>::Get( U32 _Key ) const
 		pNode = pNode->pNext;
 		CollisionsCount++;
 	}
+#else
+	while ( pNode != NULL )
+	{
+		if ( _Key == pNode->Key )
+			return &pNode->Value;
  
+		pNode = pNode->pNext;
+	}
+#endif
+
 	return NULL;
 }
 

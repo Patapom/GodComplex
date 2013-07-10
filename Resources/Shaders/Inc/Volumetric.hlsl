@@ -5,26 +5,20 @@
 #ifndef _VOLUMETRIC_INC_
 #define _VOLUMETRIC_INC_
 
-#define	USE_FAST_COS	// Use Taylor series instead of actual cosine
+#define	USE_FAST_COS										// Use Taylor series instead of actual cosine
 
 #define	ANIMATE
-#define	PACK_R8				// Noise is packed in a R8 texture instead of R32F
-
-// #define	BOX_BASE	4.0		// 8km (!!) (need to lower that but keep clouds' aspect)
-// #define	BOX_HEIGHT	2.0		// 4km thick
-
-// static const float	EXTINCTION_COEFF = 8.0;
-// static const float	SCATTERING_COEFF = 8.0;
+#define	PACK_R8												// Noise is packed in a R8 texture instead of R32F
 
 static const float	SUN_INTENSITY = 100.0;
 
-static const float	WORLD2KM = 1.0;						// 1 World unit equals 1.0km
+static const float	WORLD2KM = 1.0;							// 1 World unit equals 1.0km
 
 
 // static const float	FREQUENCY_MULTIPLIER_LOW = 0.25;	// Noise low frequency multiplier
 // static const float	FREQUENCY_MULTIPLIER_HIGH = 1.5;	// Noise high frequency multiplier
-static const float	FREQUENCY_MULTIPLIER_LOW = 0.0075;	// Noise low frequency multiplier
-static const float	FREQUENCY_MULTIPLIER_HIGH = 0.12;	// Noise high frequency multiplier
+static const float	FREQUENCY_MULTIPLIER_LOW = 0.0075;		// Noise low frequency multiplier
+static const float	FREQUENCY_MULTIPLIER_HIGH = 0.12;		// Noise high frequency multiplier
 
 
 cbuffer	cbShadow	: register( b8 )
@@ -209,7 +203,13 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 //	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH.xx, 1.0 / _CloudAltitudeThickness.y ) * _Position.xzy;	// Low frequency for the high frequency noise
 //	UVW1 += _Time.x * float3( 0.0, -0.01, 0.0 );	// Good
 #ifdef	ANIMATE
-	float3	UVW1 = float3( _CloudHiFreqParams.xx, 1.0 / _CloudAltitudeThickness.y ) * (_Position.xzy + float3( _CloudHiFreqPositionOffsetX, _CloudHiFreqPositionOffsetZ, 0.0 ));	// Low frequency for the high frequency noise
+//###	float3	UVW1 = float3( _CloudHiFreqParams.xx, 1.0 / _CloudAltitudeThickness.y ) * (_Position.xzy + float3( _CloudHiFreqPositionOffsetX, _CloudHiFreqPositionOffsetZ, 0.0 ));	// Low frequency for the high frequency noise
+
+
+//### Now using uniform scaling
+	float3	UVW1 = float3( _CloudHiFreqParams.xxx ) * (_Position.xzy + float3( _CloudHiFreqPositionOffsetX, _CloudHiFreqPositionOffsetZ, 0.0 ));	// Low frequency for the high frequency noise
+
+
 #else
 	float3	UVW1 = float3( _CloudHiFreqParams.xx, 1.0 / _CloudAltitudeThickness.y ) * _Position.xzy;	// Low frequency for the high frequency noise
 #endif

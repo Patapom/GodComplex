@@ -10,6 +10,7 @@ using System.Windows.Forms;
 
 namespace Nuaj.Cirrus.Utility
 {
+	[DefaultEvent( "ValueChanged" )]
 	public partial class FloatTrackbarControl : Panel
 	{
 		#region CONSTANTS

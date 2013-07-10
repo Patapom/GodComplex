@@ -114,7 +114,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 
 
 // DEBUG
-#if 1
+#if 0
 if ( UV.x < 0.3 && UV.y > 0.7 )
 {	// Show the transmittance map
 	UV.x /= 0.3;
@@ -149,7 +149,7 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 //return HDR( Terrain );
 
 	// Load scattering & extinction from sky and clouds
-#if 0
+#if 1
 	float3	Scattering = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 	float3	Extinction = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
 #else
