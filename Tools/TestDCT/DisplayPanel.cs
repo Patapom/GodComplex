@@ -44,7 +44,7 @@ namespace TestDCT
 					PrevX = X;
 					PrevY = Y;
 					X = Width * m_Curve[i][0] / Form1.MAX_Z;
-					Y = Height * (1.0f - m_Curve[i][1]);
+					Y = Height * (1.0f - 0.95f * m_Curve[i][1]);
 
 					if ( i > 0 )
 						e.Graphics.DrawLine( Pens.Black, PrevX, PrevY, X, Y );
@@ -79,7 +79,7 @@ namespace TestDCT
 					PrevX = X;
 					PrevY = Y;
 					X = i;
-					Y = Height * (1.0f - T);
+					Y = Height * (1.0f - 0.95f * T);
 
 					if ( i > 0 )
 						e.Graphics.DrawLine( Pens.Black, PrevX, PrevY, X, Y );

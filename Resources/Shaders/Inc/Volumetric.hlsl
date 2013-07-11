@@ -203,7 +203,13 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 //	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH.xx, 1.0 / _CloudAltitudeThickness.y ) * _Position.xzy;	// Low frequency for the high frequency noise
 //	UVW1 += _Time.x * float3( 0.0, -0.01, 0.0 );	// Good
 #ifdef	ANIMATE
-	float3	UVW1 = float3( _CloudHiFreqParams.xx, 1.0 / _CloudAltitudeThickness.y ) * (_Position.xzy + float3( _CloudHiFreqPositionOffsetX, _CloudHiFreqPositionOffsetZ, 0.0 ));	// Low frequency for the high frequency noise
+//###	float3	UVW1 = float3( _CloudHiFreqParams.xx, 1.0 / _CloudAltitudeThickness.y ) * (_Position.xzy + float3( _CloudHiFreqPositionOffsetX, _CloudHiFreqPositionOffsetZ, 0.0 ));	// Low frequency for the high frequency noise
+
+
+//### Now using uniform scaling
+	float3	UVW1 = float3( _CloudHiFreqParams.xxx ) * (_Position.xzy + float3( _CloudHiFreqPositionOffsetX, _CloudHiFreqPositionOffsetZ, 0.0 ));	// Low frequency for the high frequency noise
+
+
 #else
 	float3	UVW1 = float3( _CloudHiFreqParams.xx, 1.0 / _CloudAltitudeThickness.y ) * _Position.xzy;	// Low frequency for the high frequency noise
 #endif
@@ -299,6 +305,7 @@ float	Erf( float z )
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Shadow Mapping
+#ifdef USE_FAST_COS
 float	FastCos( float _Angle )
 {
 	_Angle = fmod( _Angle + PI, TWOPI ) - PI;
@@ -311,12 +318,36 @@ float2	FastCos( float2 _Angle )
 	float2	x2 = _Angle * _Angle;
 	return 1.0 + x2 * (-0.5 + x2 * ((1.0/24.0) + x2 * (-(1.0/720.0) + x2 * (1.0/40320.0))));
 }
+float3	FastCos( float3 _Angle )
+{
+	_Angle = fmod( _Angle + PI, TWOPI ) - PI;
+	float3	x2 = _Angle * _Angle;
+	return 1.0 + x2 * (-0.5 + x2 * ((1.0/24.0) + x2 * (-(1.0/720.0) + x2 * (1.0/40320.0))));
+}
 float4	FastCos( float4 _Angle )
 {
 	_Angle = fmod( _Angle + PI, TWOPI ) - PI;
 	float4	x2 = _Angle * _Angle;
 	return 1.0 + x2 * (-0.5 + x2 * ((1.0/24.0) + x2 * (-(1.0/720.0) + x2 * (1.0/40320.0))));
 }
+#else
+float	FastCos( float _Angle )
+{
+	return cos( _Angle );
+}
+float2	FastCos( float2 _Angle )
+{
+	return cos( _Angle );
+}
+float3	FastCos( float3 _Angle )
+{
+	return cos( _Angle );
+}
+float4	FastCos( float4 _Angle )
+{
+	return cos( _Angle );
+}
+#endif
 
 float	GetCloudTransmittance( float3 _WorldPosition )
 {
@@ -336,19 +367,10 @@ float	GetCloudTransmittance( float3 _WorldPosition )
 	const float4	CosTerm0 = PI * float4( 0, 1, 2, 3 );
 	const float2	CosTerm1 = PI * float2( 4, 5 );
 
-#ifndef USE_FAST_COS
-	float4	Temp0 = cos( float4( CosTerm0.yzw, CosTerm1.x) * x );
-	float	Temp1 = cos( CosTerm1.y * x );
-// 	float4	Cos0 = float4( 0.5, Temp0.xyz );
-// 	float2	Cos1 = float2( Temp0.w, Temp1 );
-	float4	Cos0 = float4( 1.0, Temp0.xyz );
-	float2	Cos1 = float2( Temp0.w, Temp1 );
-#else
 	float4	Temp0 = FastCos( float4( CosTerm0.yzw, CosTerm1.x) * x );
 	float	Temp1 = FastCos( CosTerm1.y * x );
 	float4	Cos0 = float4( 0.5, Temp0.xyz );
 	float2	Cos1 = float2( Temp0.w, Temp1 );
-#endif
 
 	return saturate( dot( Cos0, C0 ) + dot( Cos1, C1.xy ) );
 }

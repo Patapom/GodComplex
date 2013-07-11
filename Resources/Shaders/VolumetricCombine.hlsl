@@ -108,6 +108,11 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 {
 	float2	UV = _In.__Position.xy * _dUV.xy;
 
+// return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
+// return 100.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+// return exp( -1.0 * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
+
+
 // DEBUG
 #if 0
 if ( UV.x < 0.3 && UV.y > 0.7 )
@@ -119,7 +124,7 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 
 //	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
 	return 100.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
-//	return exp( -10.0 * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
+	return exp( -1.0 * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
 //	return _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 //	return _TexTerrainShadow.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 

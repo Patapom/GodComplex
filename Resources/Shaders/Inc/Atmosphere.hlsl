@@ -11,7 +11,7 @@
 #define	INSCATTER_NON_LINEAR_VIEW_POM	// Use my "formula" instead of theirs
 #define	INSCATTER_NON_LINEAR_SUN
 
-static const float	TRANSMITTANCE_OPTICAL_DEPTH_FACTOR = 10.0;							// Optical depths are stored divided by this factor...
+static const float	TRANSMITTANCE_OPTICAL_DEPTH_FACTOR = 1.0;							// Optical depths are stored divided by this factor...
 
 static const float	ATMOSPHERE_THICKNESS_KM = 60.0;
 static const float	GROUND_RADIUS_KM = 6360.0;
@@ -272,9 +272,6 @@ float4	Sample4DScatteringTable( Texture3D _TexScattering, float _AltitudeKm, flo
 	t = t - uGamma;
 
 	float4	V0 = _TexScattering.SampleLevel( LinearClamp, float3( (uGamma + uCosThetaSun) / RESOLUTION_COS_GAMMA, uCosThetaView, uAltitude ), 0.0 );
-
-return V0;//@@@###
-
 	float4	V1 = _TexScattering.SampleLevel( LinearClamp, float3( (uGamma + uCosThetaSun + 1.0) / RESOLUTION_COS_GAMMA, uCosThetaView, uAltitude ), 0.0 );
 	return lerp( V0, V1, t );
 }

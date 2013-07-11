@@ -1589,6 +1589,16 @@ static const int TEXTURE_MIPS = 5;		// Max mips is the lowest dimension's mip
 		delete[] ppMipsU8[MipIndex];
 	delete[] ppMipsU8;
 
+
+#if 1
+	// Save as POM format
+	Texture3D*	pStagingNoise = new Texture3D( m_Device, TEXTURE_SIZE_XY, TEXTURE_SIZE_XY, TEXTURE_SIZE_Z, PixelFormatR8::DESCRIPTOR, TEXTURE_MIPS, NULL, true );
+	pStagingNoise->CopyFrom( *pResult );
+	pStagingNoise->Save( "./Noise180x180x16.pom" );
+	delete pStagingNoise;
+#endif
+
+
 #else
 	// Build actual R32F texture
 	Texture3D*	pResult = new Texture3D( m_Device, TEXTURE_SIZE_XY, TEXTURE_SIZE_XY, TEXTURE_SIZE_Z, PixelFormatR32F::DESCRIPTOR, TEXTURE_MIPS, (void**) ppMips );
@@ -1803,9 +1813,9 @@ Texture3D*	EffectVolumetric::BuildFractalTexture( bool _bBuildFirst )
 // 
 //#define RES_3D_U		(RES_3D_COS_THETA_SUN * RES_3D_COS_GAMMA)	// Full texture will be 256*128*32
 
-#define FILENAME_IRRADIANCE		"./TexIrradiance_64x16.bin"
-#define FILENAME_TRANSMITTANCE	"./TexTransmittance_256x64.bin"
-#define FILENAME_SCATTERING		"./TexScattering_256x128x32.bin"
+#define FILENAME_IRRADIANCE		"./TexIrradiance_64x16.pom"
+#define FILENAME_TRANSMITTANCE	"./TexTransmittance_256x64.pom"
+#define FILENAME_SCATTERING		"./TexScattering_256x128x32.pom"
 
 
 struct	CBPreCompute
@@ -2127,8 +2137,8 @@ namespace
 //	bool				m_bSkyTableUpdating = false;
 
 	// Update Stages Description
-//	static const int	MAX_SCATTERING_ORDER = 4;						// Render up to order 4, later order events don't matter that much
-static const int	MAX_SCATTERING_ORDER = 2;//###
+	static const int	MAX_SCATTERING_ORDER = 4;						// Render up to order 4, later order events don't matter that much
+//static const int	MAX_SCATTERING_ORDER = 2;//###
 
 	static const int	THREADS_COUNT_X = 16;							// !!IMPORTANT ==> Must correspond to what's written in the shader!!
 	static const int	THREADS_COUNT_Y = 16;
@@ -2258,7 +2268,7 @@ void	EffectVolumetric::InitUpdateSkyTables()
 		}
 	}
 
-#if 0
+#if 1
 	// Build heavy compute shaders
 	CHECK_MATERIAL( m_pCSComputeTransmittance = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"PreComputeTransmittance" ), 10 );
 	CHECK_MATERIAL( m_pCSComputeIrradiance_Single = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Single" ), 11 );		// irradiance1

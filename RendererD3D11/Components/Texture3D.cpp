@@ -306,6 +306,12 @@ void	Texture3D::Save( const char* _pFileName )
 	fopen_s( &pFile, _pFileName, "wb" );
 	ASSERT( pFile != NULL, "Can't create file!" );
 
+	// Write the type and format
+	U8		Type = 0x02;
+	U8		Format = U32(m_Format.DirectXFormat()) & 0xFF;
+	fwrite( &Type, sizeof(U8), 1, pFile );
+	fwrite( &Format, sizeof(U8), 1, pFile );
+
 	// Write the dimensions
 	fwrite( &m_Width, sizeof(int), 1, pFile );
 	fwrite( &m_Height, sizeof(int), 1, pFile );
@@ -329,6 +335,14 @@ void	Texture3D::Load( const char* _pFileName )
 	FILE*	pFile;
 	fopen_s( &pFile, _pFileName, "rb" );
 	ASSERT( pFile != NULL, "Can't load file!" );
+
+	// Read the type and format
+	U8		Type, Format;
+	fread_s( &Type, sizeof(U8), sizeof(U8), 1, pFile );
+	fread_s( &Format, sizeof(U8), sizeof(U8), 1, pFile );
+	DXGI_FORMAT	FileFormat = DXGI_FORMAT( Format );
+	ASSERT( FileFormat == m_Format.DirectXFormat(), "Incompatible format!" );
+	ASSERT( Type == 0x02, "File is not a texture 3D!" );
 
 	// Read the dimensions
 	int	W, H, D, M;
