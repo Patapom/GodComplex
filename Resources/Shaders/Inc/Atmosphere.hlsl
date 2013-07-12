@@ -7,6 +7,10 @@
 #ifndef _ATMOSPHERE_INC_
 #define _ATMOSPHERE_INC_
 
+static const float	SUN_INTENSITY = 100.0;
+
+static const float	WORLD2KM = 1.0;							// 1 World unit equals 1.0km
+
 #define	INSCATTER_NON_LINEAR_VIEW
 #define	INSCATTER_NON_LINEAR_VIEW_POM	// Use my "formula" instead of theirs
 #define	INSCATTER_NON_LINEAR_SUN

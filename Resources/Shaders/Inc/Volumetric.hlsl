@@ -10,10 +10,6 @@
 #define	ANIMATE
 #define	PACK_R8												// Noise is packed in a R8 texture instead of R32F
 
-static const float	SUN_INTENSITY = 100.0;
-
-static const float	WORLD2KM = 1.0;							// 1 World unit equals 1.0km
-
 
 // static const float	FREQUENCY_MULTIPLIER_LOW = 0.25;	// Noise low frequency multiplier
 // static const float	FREQUENCY_MULTIPLIER_HIGH = 1.5;	// Noise high frequency multiplier

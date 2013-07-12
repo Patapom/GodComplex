@@ -5,9 +5,10 @@
 #include "Inc/Volumetric.hlsl"
 #include "Inc/Atmosphere.hlsl"
 
-Texture2DArray	_TexDebug0	: register(t10);
-Texture2D		_TexDebug1	: register(t11);
-Texture2D		_TexDebug2	: register(t12);
+Texture2DArray	_TexAtmosphere				: register(t10);
+Texture2D		_TexSceneDepth				: register(t11);
+Texture2D		_TexDownsampledSceneDepth	: register(t12);
+Texture2D		_TexScene					: register(t13);
 
 //[
 cbuffer	cbObject	: register( b10 )
@@ -35,7 +36,7 @@ float3	HDR( float3 L, float _Exposure=0.5 )
 // Read Z from the ZBuffer
 float	ReadDepth( float2 _UV )
 {
-	float	Zproj = _TexDebug2.SampleLevel( LinearClamp, _UV, 0.0 ).x;
+	float	Zproj = _TexSceneDepth.SampleLevel( LinearClamp, _UV, 0.0 ).x;
 
 	float	Q = _CameraData.w / (_CameraData.w - _CameraData.z);	// Zf / (Zf-Zn)
 	return (Q * _CameraData.z) / (Q - Zproj);
@@ -55,10 +56,10 @@ void	UpSampleAtmosphere( float2 _UV, out float3 _Scattering, out float3 _Extinct
 
 	float3	Scattering[4], Extinction[4];
 	float4	CornerZ;
-	CornerZ.x = ReadDepth( UV );	Scattering[0] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[0] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.x += DowndUV.x;
-	CornerZ.y = ReadDepth( UV );	Scattering[1] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[1] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.y += DowndUV.y;
-	CornerZ.z = ReadDepth( UV );	Scattering[2] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[2] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.x -= DowndUV.x;
-	CornerZ.w = ReadDepth( UV );	Scattering[3] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[3] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.y -= DowndUV.y;
+	CornerZ.x = ReadDepth( UV );	Scattering[0] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[0] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.x += DowndUV.x;
+	CornerZ.y = ReadDepth( UV );	Scattering[1] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[1] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.y += DowndUV.y;
+	CornerZ.z = ReadDepth( UV );	Scattering[2] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[2] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.x -= DowndUV.x;
+	CornerZ.w = ReadDepth( UV );	Scattering[3] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[3] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.y -= DowndUV.y;
 
 	// Compute bias weights toward each sample based on Z discrepancies
 	const float		WeightFactor = 2.0;
@@ -113,6 +114,16 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 // return exp( -1.0 * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
 
 
+#if 0
+// Test downsampled depth buffer
+float3	Bisou = _TexDownsampledSceneDepth.SampleLevel( PointClamp, UV, 1.0 ).xyz;
+return 0.01 * Bisou.z;
+return Bisou.y > Bisou.x ? float3( 1, 0, 0 ) : float3( 0, 0, 0 );
+return Bisou.z < Bisou.x ? float3( 1, 0, 0 ) : float3( 0, 0, 0 );
+return 0.01 * (Bisou.z - Bisou.x);
+return 0.01 * (Bisou.x - Bisou.y);
+#endif
+
 // DEBUG
 #if 0
 if ( UV.x < 0.3 && UV.y > 0.7 )
@@ -143,15 +154,15 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 			View = mul( float4( View, 0.0 ), _Camera2World ).xyz;
 
 	// Load terrain background
-	float4	TerrainAlpha = _TexDebug1.SampleLevel( LinearClamp, UV, 0.0 );
+	float4	TerrainAlpha = _TexScene.SampleLevel( LinearClamp, UV, 0.0 );
 	float3	Terrain = TerrainAlpha.xyz;
 //return TerrainAlpha.w;
 //return HDR( Terrain );
 
 	// Load scattering & extinction from sky and clouds
 #if 1
-	float3	Scattering = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
-	float3	Extinction = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
+	float3	Scattering = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
+	float3	Extinction = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
 #else
 	float3	Scattering, Extinction;
 	UpSampleAtmosphere( UV, Scattering, Extinction );

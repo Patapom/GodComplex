@@ -5,23 +5,23 @@
 #include "Inc/Volumetric.hlsl"
 #include "Inc/Atmosphere.hlsl"
 
+#define RENDER_CLOUDS
+
 static const float	MIN_STEPS_COUNT = 8.0;
 static const float	MAX_STEPS_COUNT = 32.0;
 
 static const float	GODRAYS_STEPS_COUNT = 32.0;
 
-//[
 cbuffer	cbSplat	: register( b10 )
 {
 	float3		_dUV;
 	bool		_bSampleTerrainShadow;
 };
-//]
 
-Texture2D		_TexVolumeDepth	: register(t10);
-Texture2D		_TexSceneDepth	: register(t11);
-Texture2D		_TexVolumeDepthPass	: register(t12);
-
+Texture2D		_TexVolumeDepth				: register(t10);
+Texture2D		_TexSceneDepth				: register(t11);
+Texture2D		_TexDownsampledSceneDepth	: register(t12);
+Texture2D		_TexVolumeDepthPass			: register(t13);
 
 struct	VS_IN
 {
@@ -200,6 +200,7 @@ PositionKm.y -= _AltitudeOffsetKm;
 	float3	Lin_camera2hit_Mie = max( 0.0, Lin_Mie - Transmittance * Lin_hit2atmosphere_Mie );
 
 	// Attenuate in-scattered light between camera and hit due to shadowing by the cloud
+#ifdef RENDER_CLOUDS
 #ifdef COMPLEX_SHADOWING
 	float3	ShadowingRayleigh;
 	float3	ShadowingMie;
@@ -214,6 +215,7 @@ PositionKm.y -= _AltitudeOffsetKm;
  	float	GodraysStrength = saturate( lerp( 1.0 - _GodraysStrength, 1.0, Shadowing ) );
 	Lin_camera2hit_Rayleigh *= GodraysStrength;
 	Lin_camera2hit_Mie *= GodraysStrength;
+#endif
 #endif
 
 	////////////////////////////////////////////////////////////
@@ -258,29 +260,19 @@ float	Ei( float z )
 // Compute an approximate isotropic diffusion through infinite slabs
 float3	ComputeIsotropicScattering( float3 _Position, float _Density, float3 _SunLight, float3 _SkyLightTop, float3 _SkyLightBottom )
 {
-#if 0	// Ponder contributions with "insideness" of layer
-	float	y = saturate( 2.0 * ((_Position.y - _CloudAltitudeThickness.x) / _CloudAltitudeThickness.y - 0.5) );
-			y *= y;
-			y = 1.0 - y;	// Max at center!
-#elif 0	// Ponder contribution by distance to top
-	float	y = saturate( (_Position.y - _CloudAltitudeThickness.x) / _CloudAltitudeThickness.y );
-			y *= y;
-#else
-	float	y = 1.0;	// Constant throughout the layer
-#endif
-
-//y = 1.0;
+	float	y_bottom = (_Position.y - _CloudAltitudeThickness.x) / _CloudAltitudeThickness.y;
+	float	y_top = 1.0 - y_bottom;
 
 	float3	SkyRadianceTop = _CloudIsotropicFactors.x * _SkyLightTop;
 	float3	SkyRadianceBottom = _CloudIsotropicFactors.x * _SkyLightBottom;
 
-	float3	SunRadiance = _CloudIsotropicFactors.y * _SunLight;
+	float3	SunRadiance = lerp( y_top, y_bottom, smoothstep( -0.05, 0.0, _LightDirection.y ) ) * _CloudIsotropicFactors.y * _SunLight;
 
 	float3	GroundReflectance = _CloudIsotropicFactors.z * INVPI * float3( 1.0, 0.8, 0.2 );
-	float3	GroundRadiance = GroundReflectance * _SunLight;
+	float3	GroundRadiance = y_top * GroundReflectance * _SunLight;
 
-	float3	IsotropicLightTop = y * (SkyRadianceTop + SunRadiance);
-	float3	IsotropicLightBottom = 1 * (SkyRadianceBottom + SunRadiance) + GroundRadiance;
+	float3	IsotropicLightTop = SkyRadianceTop + SunRadiance;
+	float3	IsotropicLightBottom = SkyRadianceBottom + SunRadiance + GroundRadiance;
 
 	float	BoxTop = _CloudAltitudeThickness.x + _CloudAltitudeThickness.y;
 	float	BoxBottom = _CloudAltitudeThickness.x;
@@ -294,6 +286,7 @@ float3	ComputeIsotropicScattering( float3 _Position, float _Density, float3 _Sun
 
 	return  _Density * INVFOURPI * (IsotropicScatteringTop + IsotropicScatteringBottom);
 }
+
 
 #if 1
 // ============= FORWARD TRACE ============= 
@@ -390,7 +383,7 @@ PS_OUT	PS( VS_IN _In )
 #if 0
 	// Sample min/max depths at position
 	float2	ZMinMax = _TexVolumeDepth.SampleLevel( LinearClamp, UV, 0.0 ).xy;
-#else
+#elif 1
 	// New strategy: sample the interval length at the four corners of the larger texel from the low resolution depth pass
 	//	and keep the min/max of the 4 values to ensure we don't miss any feature...
 	float3	dUV_Low = 2.0 * _dUV;
@@ -406,12 +399,24 @@ PS_OUT	PS( VS_IN _In )
 		min( min( min( ZMinMax00.x, ZMinMax01.x ), ZMinMax10.x ), ZMinMax11.x ),
 		max( max( max( ZMinMax00.y, ZMinMax01.y ), ZMinMax10.y ), ZMinMax11.y )
 		);
-
+#else
+	// Even newer strategy using the downsampled depth buffer: sample the interval length at the four corners of the larger texel from the low resolution depth pass
+	//	and keep the min/max of the 4 values to ensure we don't miss any feature...
+	uint2	LowPixelIndex = uint2( _In.__Position.xy ) / 2;
+	float2	ZMinMax00 = _TexVolumeDepthPass[LowPixelIndex].xy;	LowPixelIndex.x++;
+	float2	ZMinMax01 = _TexVolumeDepthPass[LowPixelIndex].xy;	LowPixelIndex.y++;
+	float2	ZMinMax11 = _TexVolumeDepthPass[LowPixelIndex].xy;	LowPixelIndex.x--;
+	float2	ZMinMax10 = _TexVolumeDepthPass[LowPixelIndex].xy;	LowPixelIndex.y--;
+	float2	ZMinMax = float2(
+		min( min( min( ZMinMax00.x, ZMinMax01.x ), ZMinMax10.x ), ZMinMax11.x ) - 0.0,
+		max( max( max( ZMinMax00.y, ZMinMax01.y ), ZMinMax10.y ), ZMinMax11.y ) + 0.0
+		);
 #endif
 
 
 	// Sample ZBuffer
-	float	Z = ReadDepth( UV );
+//	float	Z = ReadDepth( UV );
+	float	Z = _TexDownsampledSceneDepth.mips[1][_In.__Position.xy].z;	// Use ZMax
 	ZMinMax.y = min( ZMinMax.y, Z );
 
 	float	Depth = ZMinMax.y - ZMinMax.x;
@@ -483,7 +488,8 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't 
 #endif
 
 	// Compute phase
-	View.xyz = normalize( View.xyz );
+	float	ViewLength = length( View.xyz );
+	View.xyz /= ViewLength;
 
 	const float	g_iso = _CloudPhases.x;
 	const float	g_forward = _CloudPhases.y;
@@ -503,6 +509,8 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't 
 	float3	Light = 0;//SunLight * GetCloudTransmittance( WorldPosStart.xyz );		// Start with light at start position
 	float3	Scattering = 0.0;
 	float	Transmittance = 1.0;
+
+#ifdef RENDER_CLOUDS
 	for ( float StepIndex=0.0; StepIndex < StepsCount; StepIndex++ )
 	{
 		float	Density = GetVolumeDensity( Position.xyz, MipBias );
@@ -579,6 +587,18 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't 
 
 	HitDistanceKm = min( HitDistanceKm, SphereIntersectionExit( PositionWorldKm, View.xyz, ATMOSPHERE_THICKNESS_KM ) );	// Don't trace further than atmosphere (shouldn't be necessary since sampling any table at this distance should return the correct value)
 
+#else
+	float	StepOffset = 0.0;
+	float3	PositionWorld = _Camera2World[3].xyz;
+	float3	PositionWorldKm = WORLD2KM * PositionWorld;
+	float	SceneZ = ReadDepth( UV );
+	float	GroundBlocking = step( 0.9*_CameraData.w, SceneZ );
+	float	GroundHitDistanceKm = WORLD2KM * ViewLength * SceneZ;
+
+	float	HitDistanceKm = min( GroundHitDistanceKm, SphereIntersectionExit( PositionWorldKm, View.xyz, ATMOSPHERE_THICKNESS_KM ) );
+
+#endif
+
 	// Compute sky color & compose with cloud
 	PS_OUT	Out;
 	ComputeFinalColor( PositionWorld, View.xyz, HitDistanceKm, _LightDirection, float4( Scattering, Transmittance ), GroundBlocking, StepOffset, Out.Scattering, Out.Extinction );
@@ -590,13 +610,13 @@ ZMinMax.y = ZMinMax.x + min( 8.0 * _CloudAltitudeThickness.y, Depth );	// Don't 
 // if ( View.y < 0.0 )
 //  	HitDistanceKm = min( HitDistanceKm, SphereIntersectionEnter( WORLD2KM * PositionWorld, View.xyz, 0.0 ) );
 
-float	RadiusKm = GROUND_RADIUS_KM + WORLD2KM * PositionWorld.y;
-float	CosThetaGround = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (RadiusKm*RadiusKm) );
+// float	RadiusKm = GROUND_RADIUS_KM + WORLD2KM * PositionWorld.y;
+// float	CosThetaGround = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (RadiusKm*RadiusKm) );
 //Out.Scattering += View.y >= CosThetaGround ? float3( 0.8, 0, 0 ) : 0.0; 
 
 //Out.Scattering = 0.024 * HitDistanceKm;
 
-// Out.Scattering = GroundBlocking;
+// Out.Scattering = 0.1 * GroundHitDistanceKm;
 // Out.Extinction = 0;
 
 	return Out;
