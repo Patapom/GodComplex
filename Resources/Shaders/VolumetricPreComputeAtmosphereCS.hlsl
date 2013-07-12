@@ -59,7 +59,7 @@ uint3	GetTexelInfos( CS_IN _In )
 }
 
 // Gets the altitude and scales for a 3D target rendering depending on the target slice
-void	GetSliceData( uint _SliceIndex, out float _AltitudeKm, out float4 _dhdH )
+void	GetSliceData( uint _SliceIndex, out float _AltitudeKm )
 {
     float RadiusKm = _SliceIndex / (RESOLUTION_ALTITUDE - 1.0);
 
@@ -70,15 +70,15 @@ void	GetSliceData( uint _SliceIndex, out float _AltitudeKm, out float4 _dhdH )
 	else if ( _SliceIndex == uint(RESOLUTION_ALTITUDE)-1 )
 		RadiusKm -= 0.001;	// Never completely top of atmosphere
 
-    float	dmin = ATMOSPHERE_RADIUS_KM - RadiusKm;
-    float	dminp = RadiusKm - GROUND_RADIUS_KM;
-    float	dh = sqrt( RadiusKm * RadiusKm - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
-    float	dH = dh + sqrt( ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
-
-	_dhdH = float4( dmin, dH, dminp, dh );
 	_AltitudeKm = RadiusKm - GROUND_RADIUS_KM;
-}
 
+// 	float	dmin = ATMOSPHERE_RADIUS_KM - RadiusKm;
+// 	float	dminp = RadiusKm - GROUND_RADIUS_KM;
+// 	float	dh = sqrt( RadiusKm * RadiusKm - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
+// 	float	dH = dh + sqrt( ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
+// 
+// 	_dhdH = float4( dmin, dH, dminp, dh );
+}
 
 // Gets the zenith/view angle (cos theta), zenith/Sun angle (cos theta Sun) and azimuth Sun angle (cos gamma) from a 2D parameter
 //
@@ -87,7 +87,7 @@ void	GetSliceData( uint _SliceIndex, out float _AltitudeKm, out float4 _dhdH )
 //	_dhdH.z = RadiusKm - GROUND_RADIUS_KM
 //	_dhdH.w = sqrt( RadiusKm * RadiusKm - GROUND_RADIUS_KM * GROUND_RADIUS_KM ) = dh
 //
-void	GetAnglesFrom4D( float2 _UV, float4 _dhdH, float _AltitudeKm, out float _CosThetaView, out float _CosThetaSun, out float _CosGamma )
+void	GetAnglesFrom4D( float2 _UV, float _AltitudeKm, out float _CosThetaView, out float _CosThetaSun, out float _CosGamma )
 {
 #ifdef INSCATTER_NON_LINEAR_VIEW
 
@@ -102,12 +102,75 @@ void	GetAnglesFrom4D( float2 _UV, float4 _dhdH, float _AltitudeKm, out float _Co
 
 #else
 
-	float	dmin = _dhdH.x;
-	float	dminp = _dhdH.z;
-	float	dH = _dhdH.y;
-	float	dh = _dhdH.w;
-
+	// The idea here is no more to encode cos(Theta_view) for the V coordinate but rather
+	//	a value that behaves more nicely.
+	//
+	// Bruneton et al. chose to encode a ratio of distances instead (cf. fig 3 of http://www-ljk.imag.fr/Publications/Basilic/com.lmc.publi.PUBLI_Article@11e7cdda2f7_f64b69/article.pdf).
+	//
+	// When the ray is not intersecting the ground, they chose to encode the ratio:
+	//	r = distance to atmosphere following view / distance to atmosphere following the horizon vector
+	// (the horizon vector is the vector starting from the viewpoint and tangent to the ground)
+	//
+	// When the ray is intersecting the ground, they chose to encode the ratio:
+	//	r = distance to ground following view / distance to the ground following the horizon vector
+	//
+	// First, we need to know if and where the view hits the ground.
+	// We pose:
+	//	P0 = (0, r)
+	//	V = (sin(theta), cos(theta))
+	//	P = P0 + d.V
+	//
+	// We solve: P² = Rg²
+	//
+	//	P0.P0 + 2*P0.V*d + V².d² = Rg²				(1)
+	//	[r²-Rg²] + 2*[r*cos(theta)]*d + d² = 0
+	//	Delta = r²*cos²(theta) - [r²-Rg²]
+	//
+	// We hit the ground if we look down (i.e. cos(theta) < 0) and if delta > 0
+	//
+	// ==== HITTING THE GROUND ====
+	// We want to encode distance to ground / distance to horizon
+	//
+	// We hit the ground at distance d = -r*cos(theta) - sqrt(Delta)
+	// The distance to the horizon is simply d_h = sqrt( r² - Rg² )
+	//
+	// So our V coordinate is V = d / d_h = (-r*cos(theta) - sqrt(r²*cos²(theta) - [r²-Rg²])) / sqrt( r² - Rg² )
+	//
+	//
+	// ==== HITTING THE ATMOSPHERE ====
+	// We want to encode distance to atmosphere / distance to atmosphere following horizon vector
+	//
+	// We rewrite equation (1) as before but with Rt instead of Rg
+	//	P0.P0 + 2*P0.V*d + V².d² = Rt²				(2)
+	//	[r²-Rt²] + 2*[r*cos(theta)]*d + d² = 0
+	//	Delta = r²*cos²(theta) - [r²-Rt²]
+	//
+	// We hit the atmosphere at distance d = -r*cos(theta) + sqrt(Delta)
+	//
+	// Next, the distance to the atmosphere d_H following the horizon vector is the largest distance to the atmosphere we can hit
+	//	from the current altitude and is obtained by replacing theta in equation (2) with theta_H, the angle at which
+	//	we're tangent to the horizon from the given altitude.
+	//
+	// First we find that cos( theta_H ) = -sqrt( 1 - Rg²/r² )
+	// Replacing in (2) gives:
+	//	[r²-Rt²] + 2*[r*cos(theta_H)]*d_H + d_H² = 0
+	//	Delta_H = r²*cos²(theta_H) - [r²-Rt²]
+	//	d_H = -r*cos(theta_H) + sqrt( r²*cos²(theta_H) - [r²-Rt²] )
+	//	d_H = r*sqrt( 1 - Rg²/r² ) + sqrt( r²*(1 - Rg²/r²) - [r²-Rt²] )
+	//	d_H = sqrt( r² - Rg² ) + sqrt( Rt² - Rg² )
+	//
+	// And finally, our V coordinate is V = d / d_H = (-r*cos(theta) + sqrt( r²*cos²(theta) - [r²-Rt²] )) / (sqrt( r² - Rg² ) + sqrt( Rt² - Rg² ))
+	//
+	// As a final step, to account for the discontinuity when we hit the ground, the V's are
+	//	reversed in a manner that transition from atmosphere to ground makes V -> 0
+	//	and transition from ground to atmosphere makes V -> 1, the CLAMP address mode prevents
+	//	the unwanted bilinear interpolation that would occur otherwise...
+	//
+	// And this explains all the mysterious bullshit terms and optimizations the authors wrote
+	//	and that was so difficult to grasp looking solely at the code...
+	//
 	float r = GROUND_RADIUS_KM + _AltitudeKm;
+
 	if ( _UV.y < 0.5 )
 	{	// Viewing toward the sky
 		float	d = 1.0 - 2.0 * _UV.y;
@@ -251,12 +314,11 @@ void	PreComputeInScattering_Single( CS_IN _In )
 	float2	UV = float2( Texel.xy ) / _TargetSize.xy;
 
 	float	AltitudeKm;
-	float4	dhdH;
-	GetSliceData( Texel.z, AltitudeKm, dhdH );
+	GetSliceData( Texel.z, AltitudeKm );
 
 	// Retrieve the 3 cosines for the current slice
 	float	CosThetaView, CosThetaSun, CosGamma;
-	GetAnglesFrom4D( UV, dhdH, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
+	GetAnglesFrom4D( UV, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
 
 	// Compute distance to atmosphere or ground, whichever comes first
 	float4	PositionKm = float4( 0.0, AltitudeKm, 0.0, 0.0 );
@@ -309,12 +371,11 @@ void	PreComputeInScattering_Delta( CS_IN _In )
 	float2	UV = float2( Texel.xy ) / _TargetSize.xy;
 
 	float	AltitudeKm;
-	float4	dhdH;
-	GetSliceData( Texel.z, AltitudeKm, dhdH );
+	GetSliceData( Texel.z, AltitudeKm );
 
 	// Retrieve the 3 cosines for the current slice
 	float	CosThetaView, CosThetaSun, CosGamma;
-	GetAnglesFrom4D( UV, dhdH, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
+	GetAnglesFrom4D( UV, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
 
 	// Clamp values
 	float	r = GROUND_RADIUS_KM + clamp( AltitudeKm, 0.0, ATMOSPHERE_THICKNESS_KM );
@@ -487,12 +548,11 @@ void	PreComputeInScattering_Multiple( CS_IN _In )
 	float2	UV = float2( Texel.xy ) / _TargetSize.xy;
 
 	float	AltitudeKm;
-	float4	dhdH;
-	GetSliceData( Texel.z, AltitudeKm, dhdH );
+	GetSliceData( Texel.z, AltitudeKm );
 
 	// Retrieve the 3 cosines for the current slice
 	float	CosThetaView, CosThetaSun, CosGamma;
-	GetAnglesFrom4D( UV, dhdH, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
+	GetAnglesFrom4D( UV, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
 
 	// Compute distance to atmosphere or ground, whichever comes first
 	float4	PositionKm = float4( 0.0, AltitudeKm, 0.0, 0.0 );
@@ -547,11 +607,10 @@ void	AccumulateInScattering( CS_IN _In )
 // 
 // 	// We need to divide in-scattering by the Rayleigh phase function so we need CosGamma
 // 	float	AltitudeKm;
-// 	float4	dhdH;
-// 	GetSliceData( _In.SliceIndex, AltitudeKm, dhdH );
+// 	GetSliceData( _In.SliceIndex, AltitudeKm );
 // 
 // 	float	CosThetaView, CosThetaSun, CosGamma;
-// 	GetAnglesFrom4D( UVW.xy, dhdH, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
+// 	GetAnglesFrom4D( UVW.xy, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
 // 
 // 	// Get rayleigh scattering
 // 	float3	Rayleigh = _TexScatteringDelta_Rayleigh.SampleLevel( PointClamp, UVW, 0.0 ).xyz;
@@ -564,12 +623,11 @@ void	AccumulateInScattering( CS_IN _In )
 
  	// We need to divide in-scattering by the Rayleigh phase function so we need CosGamma
 	float	AltitudeKm;
-	float4	dhdH;
-	GetSliceData( Texel.z, AltitudeKm, dhdH );
+	GetSliceData( Texel.z, AltitudeKm );
 
 	// Retrieve the 3 cosines for the current slice
 	float	CosThetaView, CosThetaSun, CosGamma;
-	GetAnglesFrom4D( UV, dhdH, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
+	GetAnglesFrom4D( UV, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
 
 	// Get Rayleigh scattering
 	float3	Rayleigh = _TexScatteringDelta_Rayleigh[Texel].xyz;

@@ -105,6 +105,64 @@ void	UpSampleAtmosphere( float2 _UV, out float3 _Scattering, out float3 _Extinct
 						uv.y );
 }
 
+float4	TestSample4DScatteringTable( float _AltitudeKm, float _CosThetaView, float _CosThetaSun, float _CosGamma )
+{
+	const float	H = sqrt( ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
+
+	float	r = GROUND_RADIUS_KM + _AltitudeKm;
+	float	h = sqrt( r * r - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
+
+	float	uAltitude = 0.5 / RESOLUTION_ALTITUDE + (h / H) * NORMALIZED_SIZE_W;
+
+#ifdef INSCATTER_NON_LINEAR_VIEW
+
+#ifdef INSCATTER_NON_LINEAR_VIEW_POM
+
+ 	float	uCosThetaView = 0.5 * (_CosThetaView < 0.0 ? 1.0 - sqrt( abs(_CosThetaView) ) : 1.0 + sqrt( saturate(_CosThetaView) ));
+			uCosThetaView = 0.5 / RESOLUTION_COS_THETA + uCosThetaView * NORMALIZED_SIZE_V;
+
+//###@@@
+//float	uCosThetaView = _CosThetaView < 0.0 ? 1.0 + 0.5 * _CosThetaView : 0.5 * _CosThetaView;
+
+#else	// !POM?
+
+
+	// Note that this code produces a warning about floating point precision because of the sqrt( H*H + delta )...
+	float	r_cosTheta = r * _CosThetaView;
+	float	Delta = r_cosTheta * r_cosTheta + GROUND_RADIUS_KM * GROUND_RADIUS_KM - r * r;
+
+#if 1
+	// This code is "optimized" below
+	float	uCosThetaView = 0.0;
+	if ( _CosThetaView < 0.0 && Delta > 0.0 )	// Hitting the ground
+	{
+		float	GroundHitDistanceKm = -r_cosTheta - sqrt( max( 0.0, Delta ) );
+		float	HorizonHitDistanceKm = h;
+		uCosThetaView = GroundHitDistanceKm / HorizonHitDistanceKm;										// That's our V coordinate. It equals 1 when we're about to stop hitting the ground (horizon hit) and Delta is becoming negative
+		uCosThetaView = (0.5 * NORMALIZED_SIZE_V) - uCosThetaView * (0.5 - 1.0 / RESOLUTION_COS_THETA);	// This results in mapping to 0.5-€ when viewing straight down, and to 0 when reaching the horizon
+	}
+	else
+	{
+		Delta = r_cosTheta * r_cosTheta + ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - r * r;
+		float	AtmosphereHitDistanceKm = -r_cosTheta + sqrt( max( 0.0, Delta ) );
+		float	HorizonHitDistanceKm = h + H;
+		uCosThetaView = AtmosphereHitDistanceKm / HorizonHitDistanceKm;											// That's our V coordinate. It equals 1 when we're about to start hitting the ground (horizon hit) and Delta is becoming positive
+		uCosThetaView = (1.0 - 0.5 * NORMALIZED_SIZE_V) + uCosThetaView * (0.5 - 1.0 / RESOLUTION_COS_THETA);	// This results in mapping to 0.5+€ when viewing straight up, and to 1 when reaching the horizon
+	}
+#else
+// 	//TODO: REWRITE!
+// 	float4	cst = (rmu < 0.0 && delta > 0.0) ? float4( 1.0, 0.0, 0.0, 0.5 * NORMALIZED_SIZE_V ) : float4( -1.0, H * H, H, 1.0 - 0.5 * NORMALIZED_SIZE_V );
+// 	float	uCosThetaView = cst.w + (rmu * cst.x + sqrt( delta + cst.y )) / (rho + cst.z) * (0.5 - 1.0 / RESOLUTION_COS_THETA);
+#endif
+
+	return uCosThetaView;
+#endif
+#endif
+
+	return 0.0;
+}
+
+
 float3	PS( VS_IN _In ) : SV_TARGET0
 {
 	float2	UV = _In.__Position.xy * _dUV.xy;
@@ -112,6 +170,17 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 // return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
 // return 100.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 // return exp( -1.0 * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
+
+// {
+// 	float	_AltitudeKm = ATMOSPHERE_THICKNESS_KM * frac( 0.25 * _Time.x );
+// 	float	r = GROUND_RADIUS_KM + _AltitudeKm;
+// 	const float	H = sqrt( ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
+// 	float	rho = sqrt( r * r - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
+// 	return rho / H;
+// 	return step( 1.0, rho / H );
+// }
+
+//return TestSample4DScatteringTable( 0.01, 2.0 * UV.x - 1.0, 2.0 * UV.y - 1.0, 1.0 );
 
 
 #if 0
@@ -125,7 +194,7 @@ return 0.01 * (Bisou.x - Bisou.y);
 #endif
 
 // DEBUG
-#if 0
+#if 1
 if ( UV.x < 0.3 && UV.y > 0.7 )
 {	// Show the transmittance map
 	UV.x /= 0.3;
@@ -133,9 +202,10 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 
 	if ( UV.x > 0.99 ) return float4( 0.5 * (1.0 + sin( _Time.x )), 0, 0, 0 );
 
-//	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
+	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
 	return 100.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
-	return exp( -1.0 * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
+	return exp( -TRANSMITTANCE_OPTICAL_DEPTH_FACTOR * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
+	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 //	return _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 //	return _TexTerrainShadow.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 
