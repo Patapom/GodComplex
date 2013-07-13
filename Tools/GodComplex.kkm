@@ -110,7 +110,7 @@ Functions by packed size:
     0.00/    1360: EffectVolumetric::InitUpdateSkyTables              EffectVolumetric.obj
     0.00/     736: EffectVolumetric::ExitUpdateSkyTables              EffectVolumetric.obj
     0.00/      32: EffectVolumetric::TriggerSkyTablesUpdate           EffectVolumetric.obj
-    0.00/     144: EffectVolumetric::InitStage                        EffectVolumetric.obj
+    0.00/     144: EffectVolumetric::InitMultiPassStage                        EffectVolumetric.obj
     0.00/     144: EffectVolumetric::InitSinglePassStage              EffectVolumetric.obj
     0.00/     272: EffectVolumetric::IncreaseStagePass                EffectVolumetric.obj
     0.00/    3232: EffectVolumetric::UpdateSkyTables                  EffectVolumetric.obj
@@ -691,10 +691,10 @@ Functions by packed size:
     0.00/      16: PixelFormatR16F::Desc::DirectXFormat               PixelFormats.obj
     0.00/      48: PixelFormatR16F::Desc::Write                       PixelFormats.obj
     0.00/      64: PixelFormatR16F::Desc::Read                        PixelFormats.obj
-    0.00/      32: PixelFormatR16_UINT::Desc::Desc                    PixelFormats.obj
-    0.00/      16: PixelFormatR16_UINT::Desc::DirectXFormat           PixelFormats.obj
-    0.00/      48: PixelFormatR16_UINT::Desc::Write                   PixelFormats.obj
-    0.00/      80: PixelFormatR16_UINT::Desc::Read                    PixelFormats.obj
+    0.00/      32: PixelFormatR16_UNORM::Desc::Desc                    PixelFormats.obj
+    0.00/      16: PixelFormatR16_UNORM::Desc::DirectXFormat           PixelFormats.obj
+    0.00/      48: PixelFormatR16_UNORM::Desc::Write                   PixelFormats.obj
+    0.00/      80: PixelFormatR16_UNORM::Desc::Read                    PixelFormats.obj
     0.00/      32: PixelFormatRG16F::Desc::Desc                       PixelFormats.obj
     0.00/      16: PixelFormatRG16F::Desc::DirectXFormat              PixelFormats.obj
     0.00/      80: PixelFormatRG16F::Desc::Write                      PixelFormats.obj
@@ -1563,7 +1563,7 @@ Functions by packed size:
     0.00/      16: `dynamic initializer for 'PixelFormatRGBA8::DESCRIPTOR'' PixelFormats.obj
     0.00/      16: `dynamic initializer for 'PixelFormatRGBA8_sRGB::DESCRIPTOR'' PixelFormats.obj
     0.00/      16: `dynamic initializer for 'PixelFormatR16F::DESCRIPTOR'' PixelFormats.obj
-    0.00/      16: `dynamic initializer for 'PixelFormatR16_UINT::DESCRIPTOR'' PixelFormats.obj
+    0.00/      16: `dynamic initializer for 'PixelFormatR16_UNORM::DESCRIPTOR'' PixelFormats.obj
     0.00/      16: `dynamic initializer for 'PixelFormatRG16F::DESCRIPTOR'' PixelFormats.obj
     0.00/      16: `dynamic initializer for 'PixelFormatRGBA16_UINT::DESCRIPTOR'' PixelFormats.obj
     0.00/      16: `dynamic initializer for 'PixelFormatRGBA16F::DESCRIPTOR'' PixelFormats.obj
@@ -2202,7 +2202,7 @@ Data by packed size:
     0.00/      16: PixelFormatRGBA8::Desc::`vftable'                  PixelFormats.obj
     0.00/      16: PixelFormatRGBA8_sRGB::Desc::`vftable'             PixelFormats.obj
     0.00/      16: PixelFormatR16F::Desc::`vftable'                   PixelFormats.obj
-    0.00/      16: PixelFormatR16_UINT::Desc::`vftable'               PixelFormats.obj
+    0.00/      16: PixelFormatR16_UNORM::Desc::`vftable'               PixelFormats.obj
     0.00/       4: __real@477fff00                                    PixelFormats.obj
     0.00/      16: PixelFormatRG16F::Desc::`vftable'                  PixelFormats.obj
     0.00/      16: PixelFormatRGBA16_UINT::Desc::`vftable'            PixelFormats.obj
@@ -3318,7 +3318,7 @@ Data by packed size:
     0.00/       4: PixelFormatRGBA8::DESCRIPTOR                       PixelFormats.obj
     0.00/       4: PixelFormatRG16F::DESCRIPTOR                       PixelFormats.obj
     0.00/       4: PixelFormatRGBA16F::DESCRIPTOR                     PixelFormats.obj
-    0.00/       4: PixelFormatR16_UINT::DESCRIPTOR                    PixelFormats.obj
+    0.00/       4: PixelFormatR16_UNORM::DESCRIPTOR                    PixelFormats.obj
     0.00/       4: PixelFormatR16F::DESCRIPTOR                        PixelFormats.obj
     0.00/       4: PixelFormatRGBA16_UINT::DESCRIPTOR                 PixelFormats.obj
     0.00/       4: PixelFormatRG32F::DESCRIPTOR                       PixelFormats.obj
@@ -3650,7 +3650,7 @@ Functions by object file and packed size:
     0.00/    1360: EffectVolumetric::InitUpdateSkyTables              EffectVolumetric.obj
     0.00/     736: EffectVolumetric::ExitUpdateSkyTables              EffectVolumetric.obj
     0.00/      32: EffectVolumetric::TriggerSkyTablesUpdate           EffectVolumetric.obj
-    0.00/     144: EffectVolumetric::InitStage                        EffectVolumetric.obj
+    0.00/     144: EffectVolumetric::InitMultiPassStage                        EffectVolumetric.obj
     0.00/     144: EffectVolumetric::InitSinglePassStage              EffectVolumetric.obj
     0.00/     272: EffectVolumetric::IncreaseStagePass                EffectVolumetric.obj
     0.00/    3232: EffectVolumetric::UpdateSkyTables                  EffectVolumetric.obj
@@ -4642,10 +4642,10 @@ Functions by object file and packed size:
     0.00/      16: PixelFormatR16F::Desc::DirectXFormat               PixelFormats.obj
     0.00/      48: PixelFormatR16F::Desc::Write                       PixelFormats.obj
     0.00/      64: PixelFormatR16F::Desc::Read                        PixelFormats.obj
-    0.00/      32: PixelFormatR16_UINT::Desc::Desc                    PixelFormats.obj
-    0.00/      16: PixelFormatR16_UINT::Desc::DirectXFormat           PixelFormats.obj
-    0.00/      48: PixelFormatR16_UINT::Desc::Write                   PixelFormats.obj
-    0.00/      80: PixelFormatR16_UINT::Desc::Read                    PixelFormats.obj
+    0.00/      32: PixelFormatR16_UNORM::Desc::Desc                    PixelFormats.obj
+    0.00/      16: PixelFormatR16_UNORM::Desc::DirectXFormat           PixelFormats.obj
+    0.00/      48: PixelFormatR16_UNORM::Desc::Write                   PixelFormats.obj
+    0.00/      80: PixelFormatR16_UNORM::Desc::Read                    PixelFormats.obj
     0.00/      32: PixelFormatRG16F::Desc::Desc                       PixelFormats.obj
     0.00/      16: PixelFormatRG16F::Desc::DirectXFormat              PixelFormats.obj
     0.00/      80: PixelFormatRG16F::Desc::Write                      PixelFormats.obj
@@ -4676,7 +4676,7 @@ Functions by object file and packed size:
     0.00/      16: `dynamic initializer for 'PixelFormatRGBA8::DESCRIPTOR'' PixelFormats.obj
     0.00/      16: `dynamic initializer for 'PixelFormatRGBA8_sRGB::DESCRIPTOR'' PixelFormats.obj
     0.00/      16: `dynamic initializer for 'PixelFormatR16F::DESCRIPTOR'' PixelFormats.obj
-    0.00/      16: `dynamic initializer for 'PixelFormatR16_UINT::DESCRIPTOR'' PixelFormats.obj
+    0.00/      16: `dynamic initializer for 'PixelFormatR16_UNORM::DESCRIPTOR'' PixelFormats.obj
     0.00/      16: `dynamic initializer for 'PixelFormatRG16F::DESCRIPTOR'' PixelFormats.obj
     0.00/      16: `dynamic initializer for 'PixelFormatRGBA16_UINT::DESCRIPTOR'' PixelFormats.obj
     0.00/      16: `dynamic initializer for 'PixelFormatRGBA16F::DESCRIPTOR'' PixelFormats.obj
@@ -5155,7 +5155,7 @@ Classes/Namespaces by packed size:
     0.00/     304: VertexFormatP3N3G3T2::Desc
     0.00/     224: PixelFormatRG16F::Desc
     0.00/     176: PixelFormatR16F::Desc
-    0.00/     192: PixelFormatR16_UINT::Desc
+    0.00/     192: PixelFormatR16_UNORM::Desc
     0.00/     320: PixelFormatRGBA16_UINT::Desc
     0.00/     304: PixelFormatRGBA16F::Desc
     0.00/     176: PixelFormatRG32F::Desc
@@ -5208,7 +5208,7 @@ Classes/Namespaces by packed size:
     0.00/       4: PixelFormatRGBA8
     0.00/       4: PixelFormatRG16F
     0.00/       4: PixelFormatRGBA16F
-    0.00/       4: PixelFormatR16_UINT
+    0.00/       4: PixelFormatR16_UNORM
     0.00/       4: PixelFormatR16F
     0.00/       4: PixelFormatRGBA16_UINT
     0.00/       4: PixelFormatRG32F
@@ -5229,7 +5229,7 @@ Classes/Namespaces by packed size:
     0.00/      16: `dynamic initializer for 'PixelFormatRGBA8
     0.00/      16: `dynamic initializer for 'PixelFormatRGBA8_sRGB
     0.00/      16: `dynamic initializer for 'PixelFormatR16F
-    0.00/      16: `dynamic initializer for 'PixelFormatR16_UINT
+    0.00/      16: `dynamic initializer for 'PixelFormatR16_UNORM
     0.00/      16: `dynamic initializer for 'PixelFormatRG16F
     0.00/      16: `dynamic initializer for 'PixelFormatRGBA16_UINT
     0.00/      16: `dynamic initializer for 'PixelFormatRGBA16F

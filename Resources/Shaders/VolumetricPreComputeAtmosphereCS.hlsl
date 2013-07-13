@@ -240,7 +240,7 @@ float	ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, const float _Href
 		PreviousAltitudeKm = _AltitudeKm;
 	}
 
-	return Result * StepKm.w / TRANSMITTANCE_OPTICAL_DEPTH_FACTOR;
+	return Result * StepKm.w;
 }
 
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, 1 )]
@@ -255,8 +255,7 @@ void	PreComputeTransmittance( CS_IN _In )
 
 	float3	OpticalDepth = _AirParams.x * SIGMA_SCATTERING_RAYLEIGH * ComputeOpticalDepth( AltitudeKm, CosThetaView, _AirParams.y ) + _FogParams.y * ComputeOpticalDepth( AltitudeKm, CosThetaView, _FogParams.z );
 
-//	_Target2D[Texel] = float4( exp( -OpticalDepth ), 0.0 );
-	_Target2D[Texel] = float4( min( 1e5, OpticalDepth ), 0.0 );		// We directly store optical depth otherwise we lose too much precision using a division!
+	_Target2D[Texel] = float4( exp( -OpticalDepth ), 0.0 );			// We directly store transmittance in a RGBA16_UNORM buffer for maximum precision
 }
 
 

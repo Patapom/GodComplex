@@ -33,6 +33,17 @@ float3	HDR( float3 L, float _Exposure=0.5 )
 	return L;
 }
 
+
+float3	HDR_sRGB( float3 L, float _Exposure=0.5 )
+{
+	L = L * _Exposure;
+	L.x = L.x < 1.413 ? pow( L.x * 0.38317, 1.0 / 2.2 ) : 1.0 - exp( -L.x );
+	L.y = L.y < 1.413 ? pow( L.y * 0.38317, 1.0 / 2.2 ) : 1.0 - exp( -L.y );
+	L.z = L.z < 1.413 ? pow( L.z * 0.38317, 1.0 / 2.2 ) : 1.0 - exp( -L.z );
+	return L;
+}
+
+
 // Read Z from the ZBuffer
 float	ReadDepth( float2 _UV )
 {
@@ -148,10 +159,10 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 // 	float	uAltitude = 0.5 / RESOLUTION_ALTITUDE + (h / H) * NORMALIZED_SIZE_W;
 // 	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, uAltitude ), 0.0 ).xyz;
 
-//	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
-//	return 100.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
-	return exp( -TRANSMITTANCE_OPTICAL_DEPTH_FACTOR * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
+	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
+	return 1.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+//	return exp( -_TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
 //	return _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 //	return _TexTerrainShadow.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 
@@ -184,7 +195,7 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 	UpSampleAtmosphere( UV, Scattering, Extinction );
 #endif
 //return Scattering;
-//return Extinction;
+//return abs(Extinction);
 //return HDR( Scattering );
 //return HDR( Extinction );
 
@@ -209,5 +220,5 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 // 	FinalColor += 0.02 * smoothstep( 0.9, 1.0, sqrt(CosGamma) ) * SunColor * smoothstep( 0.1, 0.3, _LightDirection.y );
 // 	FinalColor += 0.002 * smoothstep( 0.1, 1.0, sqrt(CosGamma) ) * SunColor * smoothstep( 0.1, 0.3, _LightDirection.y );
 
-	return HDR( FinalColor );
+	return HDR_sRGB( FinalColor );
 }

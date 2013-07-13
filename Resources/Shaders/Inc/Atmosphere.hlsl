@@ -15,8 +15,6 @@ static const float	WORLD2KM = 1.0;							// 1 World unit equals 1.0km
 //#define	INSCATTER_NON_LINEAR_VIEW_POM	// Use my "formula" instead of theirs
 #define	INSCATTER_NON_LINEAR_SUN
 
-static const float	TRANSMITTANCE_OPTICAL_DEPTH_FACTOR = 1.0;							// Optical depths are stored divided by this factor...
-
 static const float	ATMOSPHERE_THICKNESS_KM = 60.0;
 static const float	GROUND_RADIUS_KM = 6360.0;
 static const float	ATMOSPHERE_RADIUS_KM = GROUND_RADIUS_KM + ATMOSPHERE_THICKNESS_KM;
@@ -156,7 +154,7 @@ float3	GetMieFromRayleighAndMieRed( float4 _RayleighMieRed )
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 // Tables access
-float3	GetOpticalDepth( float _AltitudeKm, float _CosTheta )
+float3	GetTransmittance( float _AltitudeKm, float _CosTheta )
 {
 	float	NormalizedAltitude = sqrt( saturate( _AltitudeKm * (1.0 / ATMOSPHERE_THICKNESS_KM) ) );
 
@@ -175,12 +173,7 @@ const float	TAN_MAX = 1.5;
 	float2	UV = float2( NormalizedCosTheta, NormalizedAltitude );	// For CosTheta=0.01  => U=0.73294567479959475196454899060789
 																	// For CosTheta=0.001 => U=0.7170674487513882415177428025293
 
-	return TRANSMITTANCE_OPTICAL_DEPTH_FACTOR * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
-}
-
-float3	GetTransmittance( float _AltitudeKm, float _CosTheta )
-{
-	return exp( -GetOpticalDepth( _AltitudeKm, _CosTheta ) );	// We now store the optical depth instead of directly the transmittance
+	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 }
 
 float3	GetTransmittanceWithShadow( float _AltitudeKm, float _CosTheta )
@@ -202,8 +195,11 @@ float3	GetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm )
 	float	CosTheta2 = (RadiusKm * _CosTheta + _DistanceKm) / RadiusKm2;												// dot( P0 + d.V, V ) / RadiusKm2
 	float	AltitudeKm2 = RadiusKm2 - GROUND_RADIUS_KM;
 
-	return _CosTheta > 0.0	? exp( -max( 0.0, GetOpticalDepth( _AltitudeKm, _CosTheta ) - GetOpticalDepth( AltitudeKm2, CosTheta2 ) ) )
-							: exp( -max( 0.0, GetOpticalDepth( AltitudeKm2, -CosTheta2 ) - GetOpticalDepth( _AltitudeKm, -_CosTheta ) ) );
+	return _CosTheta > 0.0	? GetTransmittance( _AltitudeKm, _CosTheta ) / GetTransmittance( AltitudeKm2, CosTheta2 )
+							: GetTransmittance( AltitudeKm2, -CosTheta2 ) / GetTransmittance( _AltitudeKm, -_CosTheta );
+
+// 	return _CosTheta > 0.0	? exp( -max( 0.0, GetOpticalDepth( _AltitudeKm, _CosTheta ) - GetOpticalDepth( AltitudeKm2, CosTheta2 ) ) )
+// 							: exp( -max( 0.0, GetOpticalDepth( AltitudeKm2, -CosTheta2 ) - GetOpticalDepth( _AltitudeKm, -_CosTheta ) ) );
 }
 
 float3	GetIrradiance( Texture2D _TexIrradiance, float _AltitudeKm, float _CosThetaSun )

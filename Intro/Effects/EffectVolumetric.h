@@ -298,8 +298,9 @@ protected:
 	void		TriggerSkyTablesUpdate();
 	void		UpdateSkyTables();
 
-	void		InitStage( int _StageIndex );
-	void		InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ, int _GroupsCount[3] );
+	void		InitMultiPassStage( int _StageIndex, int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ );
+	void		InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ );
+	void		DispatchStage( ComputeShader& M );
 	bool		IncreaseStagePass( int _StageIndex );	// Returns true if the stage is over
 #endif
 
