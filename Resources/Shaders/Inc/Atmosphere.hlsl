@@ -223,9 +223,6 @@ float3	GetIrradiance( float _AltitudeKm, float _CosThetaSun )
 // Samples the scattering table from 4 parameters
 float4	Sample4DScatteringTable( Texture3D _TexScattering, float _AltitudeKm, float _CosThetaView, float _CosThetaSun, float _CosGamma )
 {
-
-float4	TestSample4DScatteringTable( float _AltitudeKm, float _CosThetaView, float _CosThetaSun, float _CosGamma )
-{
 	const float	H = sqrt( ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
 
 	float	r = GROUND_RADIUS_KM + _AltitudeKm;
@@ -305,9 +302,9 @@ float4	TestSample4DScatteringTable( float _AltitudeKm, float _CosThetaView, floa
 	// And finally, our V coordinate is V = d / d_H = (-r*cos(theta) + sqrt( r²*cos²(theta) - [r²-Rt²] )) / (sqrt( r² - Rg² ) + sqrt( Rt² - Rg² ))
 	//
 	// As a final step, to account for the discontinuity when we hit the ground, the V's are
-	//	reversed in a manner that transition from atmosphere to ground makes V -> 0
-	//	and transition from ground to atmosphere makes V -> 1, the CLAMP address mode prevents
-	//	the unwanted bilinear interpolation that would occur otherwise...
+	//	reversed in a manner that transition from atmosphere to ground makes V -> 1
+	//	and transition from ground to atmosphere makes V -> 0, the CLAMP address mode prevents
+	//	any unwanted bilinear interpolation that would occur otherwise...
 	//
 	// And this explains all the mysterious bullshit terms and optimizations the authors wrote
 	//	and that was so difficult to grasp looking solely at the code...
@@ -324,10 +321,10 @@ float4	TestSample4DScatteringTable( float _AltitudeKm, float _CosThetaView, floa
 	{
 		float	GroundHitDistanceKm = -r_cosTheta - sqrt( max( 0.0, Delta ) );
 		float	HorizonHitDistanceKm = h;
-		uCosThetaView = GroundHitDistanceKm / HorizonHitDistanceKm;										// That's our V coordinate. It equals 1 when we're about to stop hitting the ground (horizon hit) and Delta is becoming negative
-		uCosThetaView = (0.5 * NORMALIZED_SIZE_V) - uCosThetaView * (0.5 - 1.0 / RESOLUTION_COS_THETA);	// This results in mapping to 0.5-€ when viewing straight down, and to 0 when reaching the horizon
+		uCosThetaView = GroundHitDistanceKm / HorizonHitDistanceKm;												// That's our V coordinate. It equals 1 when we're about to stop hitting the ground (horizon hit) and Delta is becoming negative
+		uCosThetaView = (0.5 * NORMALIZED_SIZE_V) - uCosThetaView * (0.5 - 1.0 / RESOLUTION_COS_THETA);			// This results in mapping to 0.5-€ when viewing straight down, and to 0 when reaching the horizon
 	}
-	else
+	else										// Hitting the atmosphere
 	{
 		Delta = r_cosTheta * r_cosTheta + ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - r * r;
 		float	AtmosphereHitDistanceKm = -r_cosTheta + sqrt( max( 0.0, Delta ) );
