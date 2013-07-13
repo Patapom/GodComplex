@@ -33,7 +33,7 @@ float3	HDR( float3 L, float _Exposure=0.5 )
 	return L;
 }
 
-
+// If we're outputting to a non sRGB render target...
 float3	HDR_sRGB( float3 L, float _Exposure=0.5 )
 {
 	L = L * _Exposure;
@@ -159,10 +159,17 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 // 	float	uAltitude = 0.5 / RESOLUTION_ALTITUDE + (h / H) * NORMALIZED_SIZE_W;
 // 	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, uAltitude ), 0.0 ).xyz;
 
-	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
-	return 1.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
-	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
-//	return exp( -_TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
+
+// float	_CosThetaSun = lerp( -0.2, 1.0, UV.x );
+// float	Bisou = 0.5 / RESOLUTION_COS_THETA_SUN + (atan( max( _CosThetaSun, -0.1975 ) * tan( 1.26 * 1.1 ) ) / 1.1 + (1.0 - 0.26)) * 0.5 * NORMALIZED_SIZE_U1;
+// //float	Bisou = 0.5 / RESOLUTION_COS_THETA_SUN + max( 0.0, (1.0 - exp( -3.0 * _CosThetaSun - 0.6 )) / (1.0 - exp(-3.6)) ) * NORMALIZED_SIZE_U1;
+// return Bisou;
+
+
+
+//	return 1.0 * abs(_TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz);
+	return 100.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+ 	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 //	return _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 //	return _TexTerrainShadow.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 
@@ -220,5 +227,5 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 // 	FinalColor += 0.02 * smoothstep( 0.9, 1.0, sqrt(CosGamma) ) * SunColor * smoothstep( 0.1, 0.3, _LightDirection.y );
 // 	FinalColor += 0.002 * smoothstep( 0.1, 1.0, sqrt(CosGamma) ) * SunColor * smoothstep( 0.1, 0.3, _LightDirection.y );
 
-	return HDR_sRGB( FinalColor );
+	return HDR( FinalColor );
 }

@@ -125,14 +125,14 @@ float	OpticalDepth( float H, float r, float _CosThetaView, float d )
 // uses analytic formula instead of transmittance texture
 float3	AnalyticTransmittance( float r, float _CosThetaView, float _Distance )
 {
-//	const float3	betaR = _AirParams.x * float3( 0.0058, 0.0135, 0.0331 );
-	const float3	betaR = float3( 0.0058, 0.0135, 0.0331 );
-//	float	HrefR = _AirParams.y;
-	float	HrefR = 8.0;
-//	const float	betaM = _FogParams.y;
-	const float	betaM = 0.004 / 0.9;
-//	float	HrefM = _FogParams.z;
-	float	HrefM = 1.2;
+	const float3	betaR = _AirParams.x * SIGMA_SCATTERING_RAYLEIGH;
+//	const float3	betaR = float3( 0.0058, 0.0135, 0.0331 );
+	float	HrefR = _AirParams.y;
+//	float	HrefR = 8.0;
+	const float	betaM = _FogParams.y;
+//	const float	betaM = 0.004 / 0.9;
+	float	HrefM = _FogParams.z;
+//	float	HrefM = 1.2;
 
 	return exp( -betaR * OpticalDepth( HrefR, r, _CosThetaView, _Distance ) - betaM * OpticalDepth( HrefM, r, _CosThetaView, _Distance ) );
 }

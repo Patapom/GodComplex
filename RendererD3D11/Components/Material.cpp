@@ -891,7 +891,7 @@ time_t		Material::GetFileModTime( const char* _pFileName )
 //////////////////////////////////////////////////////////////////////////
 // Load from pre-compiled binary blob (useful for heavy shaders that never change)
 //
-Material*	Material::CreateFromBinaryBlob( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS )
+Material*	Material::CreateFromBinaryBlob( Device& _Device, const char* _pShaderFileName, const IVertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS )
 {
 	ID3DBlob*	pVS = _pEntryPointVS != NULL ? LoadBinaryBlob( _pShaderFileName, _pEntryPointVS ) : NULL;
 	ID3DBlob*	pHS = _pEntryPointHS != NULL ? LoadBinaryBlob( _pShaderFileName, _pEntryPointHS ) : NULL;

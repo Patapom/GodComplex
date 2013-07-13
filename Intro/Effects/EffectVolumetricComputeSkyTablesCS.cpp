@@ -6,6 +6,7 @@
 #define FILENAME_TRANSMITTANCE	"./TexTransmittance_256x64.pom"
 #define FILENAME_SCATTERING		"./TexScattering_256x128x32.pom"
 
+#define USE_PIXEL_SHADER_FOR_DELTA_IRRADIANCE
 
 struct	CBPreCompute
 {
@@ -29,7 +30,11 @@ namespace
 	ComputeShader*		m_pCSComputeIrradiance_Single = NULL;
 	ComputeShader*		m_pCSComputeInScattering_Single = NULL;
 	ComputeShader*		m_pCSComputeInScattering_Delta = NULL;
+#ifdef USE_PIXEL_SHADER_FOR_DELTA_IRRADIANCE
+	Material*			m_pMatComputeIrradiance_Delta = NULL;
+#else
 	ComputeShader*		m_pCSComputeIrradiance_Delta = NULL;
+#endif
 	ComputeShader*		m_pCSComputeInScattering_Multiple = NULL;
 	ComputeShader*		m_pCSMergeInitialScattering = NULL;
 	ComputeShader*		m_pCSAccumulateIrradiance = NULL;
@@ -38,8 +43,8 @@ namespace
 	bool				m_bSkyTableDirty = false;
 
 	// Update Stages Description
-//	static const int	MAX_SCATTERING_ORDER = 4;						// Render up to order 4, further order events don't matter that much
-static const int	MAX_SCATTERING_ORDER = 1;//###
+	static const int	MAX_SCATTERING_ORDER = 4;						// Render up to order 4, further order events don't matter that much
+//static const int	MAX_SCATTERING_ORDER = 2;//###
 
 	static const int	THREADS_COUNT_X = 16;							// !!IMPORTANT ==> Must correspond to what's written in the shader!!
 	static const int	THREADS_COUNT_Y = 16;
@@ -88,7 +93,8 @@ static const int	MAX_SCATTERING_ORDER = 1;//###
 		// Multi-pass
 //		4,	4,	1,	// #4 Delta-Scattering table (used to compute actual irradiance & multiple-scattering at current order)	<= This computes a 64x64x1 slice each frame (takes 8 frames to complete a single Z slice, 8x32 frames to update the entire table)
 		16,	8,	1,	// #4 Delta-Scattering table (used to compute actual irradiance & multiple-scattering at current order)	<= This computes a single Z slice of (16*16)x(16*8) = 256x128 each frame (maybe heavy but at least updates faster!)
-		1,	1,	1,	// #5 Irradiance table (multiple scattering)	<= This computes a 16x16 slice each frame (takes 4x1 frames to complete the entire table)
+//		1,	1,	1,	// #5 Irradiance table (multiple scattering)	<= This computes a 16x16 slice each frame (takes 4x1 frames to complete the entire table)
+		4,	1,	1,	// #5 Irradiance table (multiple scattering)	<= This computes a 64x16 slice each frame (takes 1 frames to complete the entire table)
 //		4,	4,	1,	// #6 Multiple Scattering table					<= This computes a 64x64x1 slice each frame (takes 8 frames to complete a single Z slice, 8x32 frames to update the entire table)
 		16,	8,	1,	// #6 Multiple Scattering table					<= This computes a single Z slice of (16*16)x(16*8) = 256x128 each frame (maybe heavy but at least updates faster!)
 	};
@@ -172,11 +178,17 @@ void	EffectVolumetric::InitSkyTables()
 		}
 	}
 
-#if 0
+#if 1
 	// Build heavy compute shaders
 	CHECK_MATERIAL( m_pCSComputeTransmittance = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"PreComputeTransmittance" ), 10 );
 	CHECK_MATERIAL( m_pCSComputeIrradiance_Single = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Single" ), 11 );		// irradiance1
-	CHECK_MATERIAL( m_pCSComputeIrradiance_Delta = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Delta" ), 12 );		// irradianceN
+
+#ifdef USE_PIXEL_SHADER_FOR_DELTA_IRRADIANCE
+	CHECK_MATERIAL( m_pMatComputeIrradiance_Delta = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PreComputeIrradiance_Delta" ), 12 );		// irradianceN*
+#else
+	CHECK_MATERIAL( m_pCSComputeIrradiance_Delta = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Delta" ), 12 );		// irradianceN*
+#endif
+
 	CHECK_MATERIAL( m_pCSComputeInScattering_Single = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeInScattering_Single" ), 13 );	// inscatter1
 	CHECK_MATERIAL( m_pCSComputeInScattering_Delta = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeInScattering_Delta" ), 14 );		// inscatterS
 	CHECK_MATERIAL( m_pCSComputeInScattering_Multiple = CreateComputeShader( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE_CS, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",	"PreComputeInScattering_Multiple" ), 15 );	// inscatterN
@@ -187,7 +199,11 @@ void	EffectVolumetric::InitSkyTables()
 	// Reload from binary blobs
 	CHECK_MATERIAL( m_pCSComputeTransmittance = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"PreComputeTransmittance" ), 10 );
 	CHECK_MATERIAL( m_pCSComputeIrradiance_Single = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Single" ), 11 );
+#ifdef USE_PIXEL_SHADER_FOR_DELTA_IRRADIANCE
+	CHECK_MATERIAL( m_pMatComputeIrradiance_Delta = Material::CreateFromBinaryBlob( m_Device, VertexFormatPt4::DESCRIPTOR, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl", "VS", NULL, NULL, NULL, "PreComputeIrradiance_Delta" ), 12 );
+#else
 	CHECK_MATERIAL( m_pCSComputeIrradiance_Delta = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Delta" ), 12 );
+#endif
 	CHECK_MATERIAL( m_pCSComputeInScattering_Single = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",	"PreComputeInScattering_Single" ), 13 );
 	CHECK_MATERIAL( m_pCSComputeInScattering_Delta = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",	"PreComputeInScattering_Delta" ), 14 );
 	CHECK_MATERIAL( m_pCSComputeInScattering_Multiple = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",	"PreComputeInScattering_Multiple" ), 15 );
@@ -206,7 +222,11 @@ void	EffectVolumetric::ExitUpdateSkyTables()
 	delete m_pCSComputeInScattering_Multiple;
 	delete m_pCSComputeInScattering_Delta;
 	delete m_pCSComputeInScattering_Single;
+#ifdef USE_PIXEL_SHADER_FOR_DELTA_IRRADIANCE
+	delete m_pMatComputeIrradiance_Delta;
+#else
 	delete m_pCSComputeIrradiance_Delta;
+#endif
 	delete m_pCSComputeIrradiance_Single;
 	delete m_pCSComputeTransmittance;
 
@@ -343,6 +363,10 @@ void	EffectVolumetric::UpdateSkyTables()
 	{
 	//////////////////////////////////////////////////////////////////////////
 	// Computes transmittance texture T (line 1 in algorithm 4.1)
+	// This integrates Air/Fog density along a ray until it exits the atmosphere or hits the ground
+	// We thus obtain the optical depth and store exp( -Optical Depth ), the transmittance of the
+	//	atmosphere along the ray...
+	//
 	case COMPUTING_TRANSMITTANCE:
 		{
 			if ( m_bStageStarting )
@@ -382,6 +406,14 @@ void	EffectVolumetric::UpdateSkyTables()
 
 	//////////////////////////////////////////////////////////////////////////
 	// Computes irradiance texture deltaE (line 2 in algorithm 4.1)
+	// Stores Transmittance( Theta_Sun ) * cos(Theta_Sun), the direct Sun light irradiance
+	//	arriving at a point of given altitude...
+	//
+	// This step is NOT stored in the final irradiance: only indirect irradiance
+	//	is computed, simply because Sun Intensity * Transmittance * cos(Theta_Sun) is something
+	//	you write as the diffuse lighting in your shader, and it's usually combined with a
+	//	shadow map which we don't include here so better leave the direct lighting for later...
+	//
 	case COMPUTING_IRRADIANCE_SINGLE:
 		{
 			if ( m_bStageStarting )
@@ -420,6 +452,15 @@ void	EffectVolumetric::UpdateSkyTables()
 	//////////////////////////////////////////////////////////////////////////
 	// Computes single scattering texture deltaS (line 3 in algorithm 4.1)
 	// Rayleigh and Mie separated in deltaSR + deltaSM
+	//
+	// Integrates along the view ray all incoming light from the Sun, attenuated through the atmosphere.
+	// Doesn't multiply integral by phase functions (done at the stage where the data are read back)
+	//
+	// Performs for each step until the ground/atmosphere:
+	//	Scattering_Rayleigh += air_scatt * air_density(altitude) * Transmittance( View => Hit ) * Transmittance( Hit => Atmosphere ) * StepSize
+	//	Scattering_Mie += fog_scatt * fog_density(altitude) * Transmittance( View => Hit ) * Transmittance( Hit => Atmosphere ) * StepSize
+	// ==================================================
+	//
 	case COMPUTING_SCATTERING_SINGLE:
 		{
 			if ( m_bStageStarting )
@@ -454,7 +495,8 @@ void	EffectVolumetric::UpdateSkyTables()
 				m_pRTDeltaIrradiance->RemoveFromLastAssignedSlots();
 
 				// ==================================================
-				// Merges DeltaScatteringRayleigh & Mie into initial inscatter texture S (line 5 in algorithm 4.1)
+				// Merges DeltaScattering Rayleigh & Mie into initial inscatter texture S (line 5 in algorithm 4.1)
+				// Simply stores float4( Rayleigh.xyz, Mie.x )
 				{
 					InitSinglePassStage( RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE );
 
@@ -531,6 +573,19 @@ void	EffectVolumetric::UpdateSkyTables()
 
 	// ==================================================
 	// Computes deltaJ (line 7 in algorithm 4.1)
+	//
+	// Integrates scattered light over the entire sphere of directions.
+	// Every time it uses the values from previous stage, sampling lower irradiance/scattering values each new pass
+	//
+	// Performs for each sphere direction w and solid angle dw
+	//	dScattering = (GroundScattering(w) + LightScattering(w)) dw
+	//	Scattering += dScattering * (air_scatt * air_density(altitude) * PhaseRayleigh + fog_scatt * fog_density(altitude) * PhaseMie)
+	//
+	// => GroundScattering(w) = (GroundReflectance/PI) * Transmittance(w) * Irradiance		or 0 if not hitting the ground
+	//
+	// => LightScattering(w) = Sample4DScatteringTable( w )
+	// ==================================================
+	//
 	case COMPUTING_SCATTERING_DELTA:
 		{
 			if ( m_bStageStarting )
@@ -574,6 +629,17 @@ void	EffectVolumetric::UpdateSkyTables()
 	//////////////////////////////////////////////////////////////////////////
 	// ==================================================
 	// Computes deltaE (line 8 in algorithm 4.1)
+	//
+	// Integrates scattered radiance into irradiance over the upper hemisphere of directions.
+	// Every time it uses the values from previous stage, sampling lower irradiance/scattering values each new pass
+	//
+	// Performs for each hemisphere direction w and solid angle dw
+	//	Irradiance += LightScattering(w) (w.y) dw
+	//
+	// => LightScattering(w) = Sample4DScatteringTable( w )
+	// => w.y = cos(theta) since we're computing the irradiance
+	// ==================================================
+	//
 	case COMPUTING_IRRADIANCE_DELTA:
 		{
 			if ( m_bStageStarting )
@@ -581,6 +647,8 @@ void	EffectVolumetric::UpdateSkyTables()
 				InitMultiPassStage( CurrentStageIndex, m_pRTDeltaIrradiance->GetWidth(), m_pRTDeltaIrradiance->GetHeight(), 1 );
 				m_bStageStarting = false;
 			}
+
+#ifndef USE_PIXEL_SHADER_FOR_DELTA_IRRADIANCE
 
 			USING_COMPUTESHADER_START( *m_pCSComputeIrradiance_Delta )
 
@@ -609,12 +677,46 @@ void	EffectVolumetric::UpdateSkyTables()
 				m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
 				m_pRTDeltaScatteringMie->RemoveFromLastAssignedSlots();
 			}
+#else
+
+			USING_MATERIAL_START( *m_pMatComputeIrradiance_Delta )
+
+#ifdef ENABLE_PROFILING
+				TimeProfile	Profile( m_pStageTimingCurrent[CurrentStageIndex] );
+#endif
+
+				m_Device.SetRenderTarget( *m_pRTDeltaIrradiance );
+	 			m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
+
+				m_pRTDeltaScatteringRayleigh->SetPS( 11 );	// Input from last stage
+//###Just to avoid the annoying warning each frame				if ( m_ScatteringOrder == 2 )
+					m_pRTDeltaScatteringMie->SetPS( 12 );	// We only need Mie for the first stage...
+
+				m_pCB_PreComputeSky->m._bFirstPass = m_ScatteringOrder == 2;
+
+				m_pCB_PreComputeSky->UpdateData();
+
+				m_ScreenQuad.Render( M );
+
+			USING_MATERIAL_END
+
+			m_CurrentStage = COMPUTING_SCATTERING_MULTIPLE;
+			m_bStageStarting = true;
+
+#endif
 		}
 		break;
 
 	//////////////////////////////////////////////////////////////////////////
 	// ==================================================
 	// Computes deltaS (line 9 in algorithm 4.1)
+	//
+	// Integrates along the view ray all incoming light from the Sun scattered by previous passes.
+	//
+	// Performs for each step until the ground/atmosphere:
+	//	Scattering += Transmittance( View => Hit ) * Sample4DScatteringTable( View ) * StepSize
+	// ==================================================
+	//
 	case COMPUTING_SCATTERING_MULTIPLE:
 		{
 			if ( m_bStageStarting )

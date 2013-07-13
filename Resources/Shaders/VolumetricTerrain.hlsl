@@ -283,7 +283,7 @@ float3	ComputeTerrainColor( float3 _Position, float _Distance, float3 _Shadow, f
 	_Shadow *= CloudTransmittance;
 
 	// Build final color
-	float3	Lighting  = _Shadow * NdotL * _SunColor;
+	float3	Lighting  = NdotL * _Shadow * _SunColor;
 
 	float3	Ambient = lerp( 0.8 * dot( _AmbientSkyColor, float3( 0.3, 0.5, 0.2 ) ), _AmbientSkyColor, CloudTransmittance );	// Make the ambient sky color become gray when in cloud shadow
 			Lighting += lerp( 0.4, 1.0, Normal.y ) * Ambient;
@@ -316,8 +316,8 @@ PS_IN VS( VS_IN _In )
 	float3	Normal = EarthPositionKm / RadiusKm;
 	float	CosThetaSun = dot( Normal, _LightDirection );
 
-	Out.SunColor = SUN_INTENSITY * GetTransmittance( AltitudeKm, CosThetaSun );					// Sun light attenuated by the atmosphere
-	Out.SkyColor = SUN_INTENSITY * GetIrradiance( _TexIrradiance, AltitudeKm, CosThetaSun );	// Lighting by multiple-scattered light
+	Out.SunColor = _SunIntensity * GetTransmittance( AltitudeKm, CosThetaSun );					// Sun light attenuated by the atmosphere
+	Out.SkyColor = _SunIntensity * GetIrradiance( _TexIrradiance, AltitudeKm, CosThetaSun );	// Lighting by multiple-scattered light
 
 	return Out;
 } 

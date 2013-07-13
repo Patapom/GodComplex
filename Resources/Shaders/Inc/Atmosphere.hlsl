@@ -12,7 +12,6 @@ static const float	SUN_INTENSITY = 100.0;
 static const float	WORLD2KM = 1.0;							// 1 World unit equals 1.0km
 
 #define	INSCATTER_NON_LINEAR_VIEW
-//#define	INSCATTER_NON_LINEAR_VIEW_POM	// Use my "formula" instead of theirs
 #define	INSCATTER_NON_LINEAR_SUN
 
 static const float	ATMOSPHERE_THICKNESS_KM = 60.0;
@@ -228,16 +227,6 @@ float4	Sample4DScatteringTable( Texture3D _TexScattering, float _AltitudeKm, flo
 
 #ifdef INSCATTER_NON_LINEAR_VIEW
 
-#ifdef INSCATTER_NON_LINEAR_VIEW_POM
-
- 	float	uCosThetaView = 0.5 * (_CosThetaView < 0.0 ? 1.0 - sqrt( abs(_CosThetaView) ) : 1.0 + sqrt( saturate(_CosThetaView) ));
-			uCosThetaView = 0.5 / RESOLUTION_COS_THETA + uCosThetaView * NORMALIZED_SIZE_V;
-
-//###@@@
-//float	uCosThetaView = _CosThetaView < 0.0 ? 1.0 + 0.5 * _CosThetaView : 0.5 * _CosThetaView;
-
-#else	// !POM?
-
 	// The idea here is no more to encode cos(Theta_view) for the V coordinate but rather
 	//	a value that behaves more nicely.
 	//
@@ -334,8 +323,6 @@ float4	Sample4DScatteringTable( Texture3D _TexScattering, float _AltitudeKm, flo
 // 	float	uCosThetaView = cst.w + (rmu * cst.x + sqrt( delta + cst.y )) / (rho + cst.z) * (0.5 - 1.0 / RESOLUTION_COS_THETA);
 #endif
 
-#endif
-
 #else
 	float	uCosThetaView = 0.5 / RESOLUTION_COS_THETA + 0.5 * (_CosThetaView + 1.0) * NORMALIZED_SIZE_V;
 #endif
@@ -353,6 +340,11 @@ float4	Sample4DScatteringTable( Texture3D _TexScattering, float _AltitudeKm, flo
 	float	t = 0.5 * (_CosGamma + 1.0) * (RESOLUTION_COS_GAMMA - 1.0);
 	float	uGamma = floor( t );
 	t = t - uGamma;
+
+//@@@###
+return _TexScattering.SampleLevel( LinearClamp, float3( uCosThetaSun / RESOLUTION_COS_GAMMA, uCosThetaView, uAltitude ), 0.0 );
+//return _TexScattering.SampleLevel( LinearClamp, float3( 0.0, uCosThetaView, uAltitude ), 0.0 );
+
 
 	float4	V0 = _TexScattering.SampleLevel( LinearClamp, float3( (uGamma + uCosThetaSun) / RESOLUTION_COS_GAMMA, uCosThetaView, uAltitude ), 0.0 );
 	float4	V1 = _TexScattering.SampleLevel( LinearClamp, float3( (uGamma + uCosThetaSun + 1.0) / RESOLUTION_COS_GAMMA, uCosThetaView, uAltitude ), 0.0 );

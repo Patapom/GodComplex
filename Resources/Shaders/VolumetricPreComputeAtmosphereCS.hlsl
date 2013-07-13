@@ -73,17 +73,6 @@ void	GetSliceData( uint3 _Texel, out float _AltitudeKm, out float _CosThetaView,
 	// Compute the view angles
 #ifdef INSCATTER_NON_LINEAR_VIEW
 
-#ifdef INSCATTER_NON_LINEAR_VIEW_POM
-
- 	_CosThetaView = abs( 2.0 * _UV.y - 1.0 );
- 	_CosThetaView *= (_UV.y < 0.5 ? -1.0 : +1.0) * _CosThetaView;	// Squared progression for more precision near horizon
-
-//###@@@
-//_CosThetaView = 2.0 * _UV.y + (_UV.y < 0.5 ? 0.0 : -2.0);	// Goes from 0 to +1 in [0,0.5] and from -1 to 0 in [0.5,1]
-
-
-#else
-
 	// The idea here is no more to encode cos(Theta_view) for the V coordinate but rather
 	//	a value that behaves more nicely.
 	//
@@ -192,7 +181,6 @@ void	GetSliceData( uint3 _Texel, out float _AltitudeKm, out float _CosThetaView,
 
 		_CosThetaView = (ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - r * r - d * d) / (2.0 * r * d);
 	}
-#endif	// POM?
 
 #else
 	_CosThetaView = lerp( -1.0, 1.0, _UV.y );
@@ -220,27 +208,28 @@ void	GetSliceData( uint3 _Texel, out float _AltitudeKm, out float _CosThetaView,
 float	ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, const float _Href, const uint STEPS_COUNT=500 )
 {
 	// Compute distance to atmosphere or ground, whichever comes first
-	float4	PositionKm = float4( 0.0, _AltitudeKm, 0.0, 0.0 );
+	float3	PositionKm = float3( 0.0, _AltitudeKm, 0.0 );
 	float3	View = float3( sqrt( 1.0 - _CosTheta*_CosTheta ), _CosTheta, 0.0 );
 	bool	bGroundHit;
-	float	TraceDistanceKm = ComputeNearestHit( PositionKm.xyz, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
+	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
 	if ( bGroundHit )
 		return 1e5;	// Completely opaque due to hit with ground: no light can come this way...
 					// Be careful with large values in 16F!
 
 	float	Result = 0.0;
-	float4	StepKm = (TraceDistanceKm / STEPS_COUNT) * float4( View, 1.0 );
+	float	StepSizeKm = TraceDistanceKm / STEPS_COUNT;
+	float3	StepKm = StepSizeKm * View;
 
 	float		PreviousAltitudeKm = _AltitudeKm;
 	for ( uint i=0; i < STEPS_COUNT; i++ )
 	{
 		PositionKm += StepKm;
-		_AltitudeKm = length( PositionKm.xyz - EARTH_CENTER_KM ) - GROUND_RADIUS_KM;
+		_AltitudeKm = length( PositionKm - EARTH_CENTER_KM ) - GROUND_RADIUS_KM;
 		Result += exp( (PreviousAltitudeKm + _AltitudeKm) * (-0.5 / _Href) );	// Gives the integral of a linear interpolation in altitude
 		PreviousAltitudeKm = _AltitudeKm;
 	}
 
-	return Result * StepKm.w;
+	return Result * StepSizeKm;
 }
 
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, 1 )]
@@ -260,7 +249,7 @@ void	PreComputeTransmittance( CS_IN _In )
 
 
 //////////////////////////////////////////////////////////////////////////
-// 1] Pre-Computes the ground irradiance table accounting for single scattering only
+// 1] Pre-Computes the ground irradiance table accounting for direct lighting only
 //
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, 1 )]
 void	PreComputeIrradiance_Single( CS_IN _In )
@@ -279,7 +268,7 @@ void	PreComputeIrradiance_Single( CS_IN _In )
 
 //////////////////////////////////////////////////////////////////////////
 // 2] Pre-Computes the single scattering table
-// Store separately Rayleigh and Mie contributions, WITHOUT the phase function factor (cf "Angular precision")
+// Store Rayleigh and Mie contributions separately, WITHOUT the phase function factor (cf "Angular precision" chapter)
 //
 void	Integrand_Single( float _RadiusKm, float _CosThetaView, float _CosThetaSun, float _CosGamma, float _DistanceKm, out float3 _Rayleigh, out float3 _Mie )
 {
@@ -289,8 +278,8 @@ void	Integrand_Single( float _RadiusKm, float _CosThetaView, float _CosThetaSun,
 	// CosGamma = V.L
 	//
 	float	CurrentRadiusKm = sqrt( _RadiusKm * _RadiusKm + _DistanceKm * _DistanceKm + 2.0 * _RadiusKm * _CosThetaView * _DistanceKm );	// sqrt[ (P0 + d.V)² ]
-//	float	CurrentCosThetaSun = (_RadiusKm * _CosThetaSun + _CosGamma * _DistanceKm) / CurrentRadiusKm;	//### How do they get that???
-	float	CurrentCosThetaSun = (_RadiusKm * _CosThetaSun + _DistanceKm) / CurrentRadiusKm;				//### I can't find any gamma in there! And that seems logical because only Cos(Theta_sun) is important to guide altitude!
+//	float	CurrentCosThetaSun = (_RadiusKm * _CosThetaSun + _CosGamma * _DistanceKm) / CurrentRadiusKm;	//### How do they get that??? I can't find any gamma in there! And that seems logical because only Cos(Theta_sun) is driving the altitude!
+	float	CurrentCosThetaSun = (_RadiusKm * _CosThetaSun + _DistanceKm) / CurrentRadiusKm;				// From the 3 sides of the triangle (_RadiusKm, CurrentRadiusKm and _DistanceKm) we can retrieve cos(Theta_Sun') = (CurrentRadiusKm² + _RadiusKm² - _DistanceKm²)/(2*_DistanceKm*CurrentRadiusKm)
 
 	CurrentRadiusKm = max( GROUND_RADIUS_KM, CurrentRadiusKm );
 	if ( CurrentCosThetaSun < -sqrt( 1.0 - GROUND_RADIUS_KM * GROUND_RADIUS_KM / (CurrentRadiusKm * CurrentRadiusKm) ) )
@@ -305,9 +294,9 @@ void	Integrand_Single( float _RadiusKm, float _CosThetaView, float _CosThetaSun,
 
 	float3	ViewTransmittance_Source2Point = GetTransmittance( StartAltitudeKm, _CosThetaView, _DistanceKm );	// Transmittance from view point to integration point at distance
 	float3	SunTransmittance_Atmosphere2Point = GetTransmittance( CurrentAltitudeKm, CurrentCosThetaSun );		// Transmittance from top of atmosphere to integration point at distance (Sun light attenuation)
-	float3	Transmittance = SunTransmittance_Atmosphere2Point * ViewTransmittance_Source2Point;
-	_Rayleigh = exp( -CurrentAltitudeKm / _AirParams.y ) * Transmittance;
-	_Mie = exp( -CurrentAltitudeKm / _FogParams.z ) * Transmittance;
+	float3	Transmittance = SunTransmittance_Atmosphere2Point * ViewTransmittance_Source2Point;					// Total transmittance is the product of the View => Hit & Hit => Atmosphere transmittances
+	_Rayleigh = exp( -CurrentAltitudeKm / _AirParams.y ) * Transmittance;										// Air density * Transmittance
+	_Mie = exp( -CurrentAltitudeKm / _FogParams.z ) * Transmittance;											// Fog density * Transmittance
 }
 
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, THREADS_COUNT_Z )]
@@ -322,10 +311,10 @@ void	PreComputeInScattering_Single( CS_IN _In )
 	GetSliceData( Texel, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
 
 	// Compute distance to atmosphere or ground, whichever comes first
-	float4	PositionKm = float4( 0.0, AltitudeKm, 0.0, 0.0 );
+	float3	PositionKm = float3( 0.0, AltitudeKm, 0.0 );
 	float3	View = float3( sqrt( 1.0 - CosThetaView*CosThetaView ), CosThetaView, 0.0 );
 	bool	bGroundHit;
-	float	TraceDistanceKm = ComputeNearestHit( PositionKm.xyz, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
+	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
 	float	StepSizeKm = TraceDistanceKm / STEPS_COUNT;
 
 	float3	PreviousRayleigh;
@@ -375,23 +364,25 @@ void	PreComputeInScattering_Delta( CS_IN _In )
 	GetSliceData( Texel, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
 
 	// Clamp values
-	float	r = GROUND_RADIUS_KM + clamp( AltitudeKm, 0.0, ATMOSPHERE_THICKNESS_KM );
+	float	r = GROUND_RADIUS_KM + clamp( AltitudeKm, 0.01, ATMOSPHERE_THICKNESS_KM );
 	CosThetaView = clamp( CosThetaView, -1.0, 1.0 );
 	CosThetaSun = clamp( CosThetaSun, -1.0, 1.0 );
 	float	var = sqrt( 1.0 - CosThetaView*CosThetaView ) * sqrt( 1.0 - CosThetaSun*CosThetaSun );
 	CosGamma = clamp( CosGamma, CosThetaSun * CosThetaView - var, CosThetaSun * CosThetaView + var );	//### WTF?? Clarify!!!
 
-	float	cthetaground = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (r*r) );	// Minimum cos(theta) before we hit the ground
+	float	cthetaground = -sqrt( 1.0 - (GROUND_RADIUS_KM/r)*(GROUND_RADIUS_KM/r) );	// Minimum cos(theta) before we hit the ground
 
 	float3	View = float3( sqrt( 1.0 - CosThetaView * CosThetaView ), CosThetaView, 0.0 );
 
 	// We simply deduce Phi, the azimuth between Sun & View from the SSS formula from http://en.wikipedia.org/wiki/Solution_of_triangles#Three_sides_given
-	// Phi = acos( (cos(gamma) - cos(ThetaV)*cos(ThetaS)) / (sin(ThetaV)*sin(ThetaS))
+	// Phi = acos( (cos(gamma) - cos(ThetaV)*cos(ThetaS)) / (sin(ThetaV)*sin(ThetaS) )
 	// Next, we need the X coordinate of the Sun vector which is simply:
 	// sx = cos(Phi)*sin(ThetaS) = (cos(gamma) - cos(ThetaV)*cos(ThetaS)) / sin(ThetaV)
 	//
-	float	sx = View.x == 0.0 ? 0.0 : (CosGamma - CosThetaSun * CosThetaView) / View.x;
-	float3	Sun = float3( sx, CosThetaSun, sqrt( max( 0.0, 1.0 - sx * sx - CosThetaSun * CosThetaSun ) ) );	// Z is deduced from other coordinates
+	float3	Sun;
+	Sun.x = View.x == 0.0 ? 0.0 : (CosGamma - CosThetaSun * CosThetaView) / View.x;
+	Sun.y = CosThetaSun;
+	Sun.z = sqrt( max( 0.0, 1.0 - Sun.x * Sun.x - Sun.y * Sun.y ) );	// Z is deduced from other coordinates
 
 	float3	Scattering = 0.0;
 
@@ -412,7 +403,7 @@ void	PreComputeInScattering_Delta( CS_IN _In )
 
 		for ( uint PhiIndex=0; PhiIndex < 2 * STEPS_COUNT; PhiIndex++ )
 		{
-			float	Phi = PhiIndex * dPhi;
+			float	Phi = (PhiIndex + 0.5) * dPhi;
 			float	sphi, cphi;
 			sincos( Phi, sphi, cphi );
 
@@ -460,6 +451,8 @@ void	PreComputeInScattering_Delta( CS_IN _In )
 
 //////////////////////////////////////////////////////////////////////////
 // 4] Pre-Computes the irradiance table accounting for multiple scattering
+
+#if 0	// Use the pixel shader version because this one is completely bugged for some reason!
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, 1 )]
 void	PreComputeIrradiance_Delta( CS_IN _In )
 {
@@ -469,10 +462,22 @@ void	PreComputeIrradiance_Delta( CS_IN _In )
 	const float	dTheta = PI / STEPS_COUNT;
 
 	uint2	Texel = GetTexelInfos( _In ).xy;
-	float2	UV = float2( Texel ) / _TargetSize.xy;
+//	float2	UV = float2( Texel ) / _TargetSize.xy;
+	float2	UV = float2( Texel ) / float2( 64.0, 16.0 );
 
 	float	AltitudeKm = UV.y * ATMOSPHERE_THICKNESS_KM;
 	float	CosThetaSun = lerp( -0.2, 1.0, UV.x );
+
+//@@@###
+CosThetaSun = -0.1;
+CosThetaSun = lerp( -0.2, 0.0, UV.x );
+CosThetaSun = -0.2 +  0.2 * saturate( UV.x );
+// 	uint3	GroupID			: SV_GroupID;			// Defines the group offset within a Dispatch call, per dimension of the dispatch call
+// 	uint3	ThreadID		: SV_DispatchThreadID;	// Defines the global thread offset within the Dispatch call, per dimension of the group
+// 	uint3	GroupThreadID	: SV_GroupThreadID;		// Defines the thread offset within the group, per dimension of the group
+// 	uint	GroupIndex		: SV_GroupIndex;		// Provides a flattened index for a given thread within a given group
+CosThetaSun = -0.2 +  0.2 * saturate( _In.ThreadID.x / 64.0 );
+CosThetaSun = lerp( -0.2, 1.0, saturate( _In.ThreadID.x / 64.0 ) );	// NEVER WORKS FOR FUCK SAKE!!!!
 
 	float3	Sun = float3( sqrt( 1.0 - saturate( CosThetaSun * CosThetaSun ) ), CosThetaSun, 0.0 );
 
@@ -480,7 +485,7 @@ void	PreComputeIrradiance_Delta( CS_IN _In )
 	float3	Result = 0.0;
 	for ( uint PhiIndex=0; PhiIndex < 2 * STEPS_COUNT; PhiIndex++ )
 	{
-		float	Phi = PhiIndex * dPhi;
+		float	Phi = (PhiIndex + 0.5) * dPhi;
 		float	sphi, cphi;
 		sincos( Phi, sphi, cphi );
 
@@ -506,16 +511,82 @@ void	PreComputeIrradiance_Delta( CS_IN _In )
 			{	// Next pass only uses the Rayleigh table containing both Rayleigh & Mie
 				InScattering = Sample4DScatteringTable( _TexScatteringDelta_Rayleigh, AltitudeKm, w.y, CosThetaSun, CosPhaseAngleSun ).xyz;
 			}
-
 			Result += InScattering * w.y * dw;	// InScattering * (w.n) * dw
 		}
 	}
 
 	_Target2D[Texel] = float4( Result, 0.0 );
 
-//@@@
-//_Target2D[Texel] = 0.0;	// Accumulate nothing! This should help us see only scattering accumulation...
+//@@@###
+//_Target2D[Texel] = float4( Texel.xy / float2( 64, 16 ), 0, 0 );
+//_Target2D[Texel] = float4( UV, 0, 0 );
+//_Target2D[Texel] = float4( CosThetaSun, 0, 0, 0 );
 }
+
+#else
+
+// Pixel shader version
+struct	VS_IN
+{
+	float4	__Position	: SV_POSITION;
+	uint	InstanceID	: SV_INSTANCEID;
+};
+VS_IN	VS( VS_IN _In )	{ return _In; }
+
+float3	PreComputeIrradiance_Delta( VS_IN _In ) : SV_TARGET0
+{
+const uint STEPS_COUNT = 32;
+
+	const float	dPhi = PI / STEPS_COUNT;
+	const float	dTheta = PI / STEPS_COUNT;
+
+	float3	_dUVW = 1.0 / _TargetSize;
+	float2	UV = (_In.__Position.xy - 0.5) * _dUVW.xy;
+
+	float	AltitudeKm = UV.y * ATMOSPHERE_THICKNESS_KM;
+	float	CosThetaSun = lerp( -0.2, 1.0, UV.x );
+
+	float3	Sun = float3( sqrt( 1.0 - saturate( CosThetaSun * CosThetaSun ) ), CosThetaSun, 0.0 );
+
+	// Integral over 2.PI around x with two nested loops over w directions (theta,phi) -- Eq (15)
+	float3	Result = 0.0;
+	for ( uint PhiIndex=0; PhiIndex < 2 * STEPS_COUNT; PhiIndex++ )
+	{
+		float	Phi = (PhiIndex + 0.5) * dPhi;
+		float	sphi, cphi;
+		sincos( Phi, sphi, cphi );
+
+		for ( uint ThetaIndex=0; ThetaIndex < STEPS_COUNT / 2; ThetaIndex++ )
+		{
+			float	Theta = (ThetaIndex + 0.5) * dTheta;
+			float	stheta, ctheta;
+			sincos( Theta, stheta, ctheta );
+
+			// Rebuild sampling direction & solid angle
+			float3	w = float3( cphi * stheta, ctheta, sphi * stheta );
+			float	dw = stheta * dTheta * dPhi;
+
+			float	CosPhaseAngleSun = dot( Sun, w );
+			float3	InScattering = 0.0;
+			if ( _bFirstPass )
+			{	// First iteration is special because Rayleigh and Mie were stored separately, without the phase functions factors; they must be reintroduced here
+				float3	InScatteredRayleigh = Sample4DScatteringTable( _TexScatteringDelta_Rayleigh, AltitudeKm, w.y, CosThetaSun, CosPhaseAngleSun ).xyz;
+				float3	InScatteredMie = Sample4DScatteringTable( _TexScatteringDelta_Mie, AltitudeKm, w.y, CosThetaSun, CosPhaseAngleSun ).xyz;
+				float	PhaseRayleigh = PhaseFunctionRayleigh( CosPhaseAngleSun );
+				float	PhaseMie = PhaseFunctionMie( CosPhaseAngleSun );
+				InScattering = InScatteredRayleigh * PhaseRayleigh + PhaseMie * InScatteredMie;
+			}
+			else
+				InScattering = Sample4DScatteringTable( _TexScatteringDelta_Rayleigh, AltitudeKm, w.y, CosThetaSun, CosPhaseAngleSun ).xyz;
+
+			Result += InScattering * w.y * dw;	// InScattering * (w.n) * dw
+		}
+	}
+
+	return Result;
+}
+
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 // Pre-Computes the multiple scattering table
@@ -527,13 +598,14 @@ float3	Integrand_Multiple( float _RadiusKm, float _CosThetaView, float _CosTheta
 	// CosGamma = V.L
 	//
 	float	CurrentRadiusKm = sqrt( _RadiusKm * _RadiusKm + _DistanceKm * _DistanceKm + 2.0 * _RadiusKm * _CosThetaView * _DistanceKm );	// sqrt[ (P0 + d.V)² ]
-//	float	CurrentCosThetaSun = (_RadiusKm * _CosThetaSun + _CosGamma * _DistanceKm) / CurrentRadiusKm;	//### How do they get that???
-	float	CurrentCosThetaSun = (_RadiusKm * _CosThetaSun + _DistanceKm) / CurrentRadiusKm;				//### I can't find any gamma in there! And that seems logical because only Cos(Theta_sun) is important to guide altitude!
+//	float	CurrentCosThetaSun = (_RadiusKm * _CosThetaSun + _CosGamma * _DistanceKm) / CurrentRadiusKm;	//### How do they get that??? I can't find any gamma in there! And that seems logical because only Cos(Theta_sun) is important to guide altitude!
+	float	CurrentCosThetaSun = (_RadiusKm * _CosThetaSun + _DistanceKm) / CurrentRadiusKm;				// From the 3 sides of the triangle (_RadiusKm, CurrentRadiusKm and _DistanceKm) we can retrieve cos(Theta_Sun') = (CurrentRadiusKm² + _RadiusKm² - _DistanceKm²)/(2*_DistanceKm*CurrentRadiusKm)
 	float	CurrentCosThetaView = (_RadiusKm * _CosThetaView + _DistanceKm) / CurrentRadiusKm;
 
+	float	StartAltitudeKm = _RadiusKm - GROUND_RADIUS_KM;
 	float	CurrentAltitudeKm = CurrentRadiusKm - GROUND_RADIUS_KM;
 
-	return  GetTransmittance( CurrentAltitudeKm, _CosThetaView, _DistanceKm ) * Sample4DScatteringTable( _TexScatteringDelta, CurrentAltitudeKm, CurrentCosThetaView, CurrentCosThetaSun, _CosGamma ).xyz;
+	return  GetTransmittance( StartAltitudeKm, _CosThetaView, _DistanceKm ) * Sample4DScatteringTable( _TexScatteringDelta, CurrentAltitudeKm, CurrentCosThetaView, CurrentCosThetaSun, _CosGamma ).xyz;
 }
 
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, THREADS_COUNT_Z )]
@@ -548,10 +620,10 @@ void	PreComputeInScattering_Multiple( CS_IN _In )
 	GetSliceData( Texel, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
 
 	// Compute distance to atmosphere or ground, whichever comes first
-	float4	PositionKm = float4( 0.0, AltitudeKm, 0.0, 0.0 );
+	float3	PositionKm = float3( 0.0, AltitudeKm, 0.0 );
 	float3	View = float3( sqrt( 1.0 - CosThetaView*CosThetaView ), CosThetaView, 0.0 );
 	bool	bGroundHit;
-	float	TraceDistanceKm = ComputeNearestHit( PositionKm.xyz, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
+	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
 	float	StepSizeKm = TraceDistanceKm / STEPS_COUNT;
 
 	float3	Result = 0.0;
@@ -568,9 +640,6 @@ void	PreComputeInScattering_Multiple( CS_IN _In )
 	}
 
 	_Target3D0[Texel] = float4( Result * StepSizeKm, 0.0 );
- 
-// //@@@
-_Target3D0[Texel] = 0.0;	// Accumulate nothing! This should help us see only single scattering...
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -580,7 +649,7 @@ _Target3D0[Texel] = 0.0;	// Accumulate nothing! This should help us see only sin
 void	MergeInitialScattering( CS_IN _In )
 {
 	uint3	Texel = GetTexelInfos( _In );
-	_Target3D0[Texel] = float4( _TexScatteringDelta_Rayleigh[Texel].xyz, _TexScatteringDelta_Mie[Texel].x );
+	_Target3D0[Texel] = float4( _TexScatteringDelta_Rayleigh[Texel].xyz, _TexScatteringDelta_Mie[Texel].x );	// Store only red component of single Mie scattering (cf. "Angular precision")
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -589,19 +658,6 @@ void	MergeInitialScattering( CS_IN _In )
 [numthreads( THREADS_COUNT_X, THREADS_COUNT_Y, THREADS_COUNT_Z )]
 void	AccumulateInScattering( CS_IN _In )
 {
-// 	float3	UVW = float3( _In.__Position.xy * _dUVW.xy, (_In.SliceIndex + 0.5) / RESOLUTION_ALTITUDE );
-// 
-// 	// We need to divide in-scattering by the Rayleigh phase function so we need CosGamma
-// 	// Retrieve the 3 cosines for the current slice
-//	float	AltitudeKm, CosThetaView, CosThetaSun, CosGamma;
-// 	GetSliceData( Texel, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
-// 
-// 	// Get rayleigh scattering
-// 	float3	Rayleigh = _TexScatteringDelta_Rayleigh.SampleLevel( PointClamp, UVW, 0.0 ).xyz;
-// 			Rayleigh /= PhaseFunctionRayleigh( CosGamma );
-// 
-// 	return float4( Rayleigh, 0.0 );
-
 	uint3	Texel = GetTexelInfos( _In );
 
  	// We need to divide in-scattering by the Rayleigh phase function so we need CosGamma
@@ -613,11 +669,12 @@ void	AccumulateInScattering( CS_IN _In )
 	float3	Rayleigh = _TexScatteringDelta_Rayleigh[Texel].xyz;
 			Rayleigh /= PhaseFunctionRayleigh( CosGamma );
 
-//	_Target3D0[Texel] += float4( Rayleigh, 0.0 );	// Can't read from multiple-components
-	_Target3D0[Texel] = _TexInput3D[Texel] + float4( Rayleigh, 0.0 );	// _TexInput3D is a SRV for a copy _Target3D0 so we can accumulate with previous values
+	_Target3D0[Texel] = _TexInput3D[Texel] + float4( Rayleigh, 0.0 );	// _TexInput3D is a SRV for a copy of previous stage _Target3D0 so we can accumulate with previous values
 
-//_Target3D0[Texel] = float4( float3( Texel ) / _TargetSize.xyz, 0 );
-//_Target2D[Texel] = float4( _TargetSize.x / 128.0, _TargetSize.y / 32.0, 0, 0 );
+//@@@###
+//_Target3D0[Texel] = float4( Texel / float3( RESOLUTION_U, RESOLUTION_COS_THETA, RESOLUTION_ALTITUDE ), 0 );
+//_Target3D0[Texel] = _TexInput3D[Texel];					// Shows only single-scattering contribution
+//_Target3D0[Texel] = _TexScatteringDelta_Rayleigh[Texel];	// Shows only higher-order scattering contribution
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -628,6 +685,8 @@ void	AccumulateIrradiance( CS_IN _In )
 {
 	uint2	Texel = GetTexelInfos( _In ).xy;
 
-//	_Target2D[Texel] += _TexIrradianceDelta[Texel];	// Can't read from multiple-components UAVs
-	_Target2D[Texel] = _TexInput2D[Texel] + _TexIrradianceDelta[Texel];	// _TexInput2D is a SRV for a copy of _Target2D so we can accumulate with previous values
+	_Target2D[Texel] = _TexInput2D[Texel] + _TexIrradianceDelta[Texel];	// _TexInput2D is a SRV for a copy of previous stage _Target2D so we can accumulate with previous values
+
+//@@@###
+//_Target2D[Texel] = _TexIrradianceDelta[Texel];	// Only show higher-order scattering contribution
 }
