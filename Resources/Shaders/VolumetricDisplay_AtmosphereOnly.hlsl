@@ -190,13 +190,16 @@ void	ComputeSkyColor2( float3 _PositionWorldKm, float3 _View, float _DistanceKm,
 
 	if ( _DistanceKm > 0.0 )
 	{	// Looking at the ground
+CosThetaView = min( -0.01, CosThetaView );	// Force view downward to tap into the "ground part" of the 4D table
+
 		float3	x0 = x + _DistanceKm * _View;
 		float	r0 = length(x0);
 		float	CosThetaView0 = dot( x0, _View ) / r0;
 		float	CosThetaSun0 = dot( x0, _Sun ) / r0;
 
 		// Avoids imprecision problems in transmittance computations based on textures
-		_Extinction = AnalyticTransmittance( r, CosThetaView, _DistanceKm );
+//		_Extinction = AnalyticTransmittance( r, CosThetaView, _DistanceKm );
+		_Extinction = GetTransmittance( r-GROUND_RADIUS_KM, CosThetaView, _DistanceKm );
 		if ( r0 > GROUND_RADIUS_KM + 0.01 )
 		{
 			// Computes S[L]-T(x,x0)S[L] at x0
@@ -261,7 +264,7 @@ PS_OUT	PS( VS_IN _In )
 
 	// Sample ZBuffer
 //	float	SceneZ = ReadDepth( UV );
-	float	SceneZ = _TexDownsampledSceneDepth.mips[1][_In.__Position.xy].x;	// Use average Z
+	float	SceneZ = _TexDownsampledSceneDepth.mips[1][_In.__Position.xy].z;	// Use max Z
 	float	GroundBlocking = step( 0.9*_CameraData.w, SceneZ );					// 0 if we hit anything
 
 	float3	ViewCamera = float3( _CameraData.x * (2.0 * UV.x - 1.0), _CameraData.y * (1.0 - 2.0 * UV.y), 1.0 );
@@ -275,7 +278,10 @@ PS_OUT	PS( VS_IN _In )
 
 //	float	HitDistanceKm = min( GroundHitDistanceKm, SphereIntersectionExit( PositionWorldKm, View, ATMOSPHERE_THICKNESS_KM ) );
 //	float	HitDistanceKm = GroundHitDistanceKm;
-	float	HitDistanceKm = lerp( GroundHitDistanceKm, SphereIntersectionExit( PositionWorldKm, View, ATMOSPHERE_THICKNESS_KM ), GroundBlocking );
+// 	float	HitDistanceKm = lerp( GroundHitDistanceKm, SphereIntersectionExit( PositionWorldKm, View, ATMOSPHERE_THICKNESS_KM ), GroundBlocking );
+
+	float	HitDistanceKm = lerp( GroundHitDistanceKm, -1.0, GroundBlocking );	// Negative distance means no funky computation...
+
 
 	// Compute sky color & compose with cloud
 	PS_OUT	Out;
