@@ -5,9 +5,10 @@
 #include "Inc/Volumetric.hlsl"
 #include "Inc/Atmosphere.hlsl"
 
-Texture2DArray	_TexDebug0	: register(t10);
-Texture2D		_TexDebug1	: register(t11);
-Texture2D		_TexDebug2	: register(t12);
+Texture2DArray	_TexAtmosphere				: register(t10);
+Texture2D		_TexSceneDepth				: register(t11);
+Texture2D		_TexDownsampledSceneDepth	: register(t12);
+Texture2D		_TexScene					: register(t13);
 
 //[
 cbuffer	cbObject	: register( b10 )
@@ -32,10 +33,21 @@ float3	HDR( float3 L, float _Exposure=0.5 )
 	return L;
 }
 
+// If we're outputting to a non sRGB render target...
+float3	HDR_sRGB( float3 L, float _Exposure=0.5 )
+{
+	L = L * _Exposure;
+	L.x = L.x < 1.413 ? pow( L.x * 0.38317, 1.0 / 2.2 ) : 1.0 - exp( -L.x );
+	L.y = L.y < 1.413 ? pow( L.y * 0.38317, 1.0 / 2.2 ) : 1.0 - exp( -L.y );
+	L.z = L.z < 1.413 ? pow( L.z * 0.38317, 1.0 / 2.2 ) : 1.0 - exp( -L.z );
+	return L;
+}
+
+
 // Read Z from the ZBuffer
 float	ReadDepth( float2 _UV )
 {
-	float	Zproj = _TexDebug2.SampleLevel( LinearClamp, _UV, 0.0 ).x;
+	float	Zproj = _TexSceneDepth.SampleLevel( LinearClamp, _UV, 0.0 ).x;
 
 	float	Q = _CameraData.w / (_CameraData.w - _CameraData.z);	// Zf / (Zf-Zn)
 	return (Q * _CameraData.z) / (Q - Zproj);
@@ -55,10 +67,10 @@ void	UpSampleAtmosphere( float2 _UV, out float3 _Scattering, out float3 _Extinct
 
 	float3	Scattering[4], Extinction[4];
 	float4	CornerZ;
-	CornerZ.x = ReadDepth( UV );	Scattering[0] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[0] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.x += DowndUV.x;
-	CornerZ.y = ReadDepth( UV );	Scattering[1] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[1] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.y += DowndUV.y;
-	CornerZ.z = ReadDepth( UV );	Scattering[2] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[2] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.x -= DowndUV.x;
-	CornerZ.w = ReadDepth( UV );	Scattering[3] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[3] = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.y -= DowndUV.y;
+	CornerZ.x = ReadDepth( UV );	Scattering[0] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[0] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.x += DowndUV.x;
+	CornerZ.y = ReadDepth( UV );	Scattering[1] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[1] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.y += DowndUV.y;
+	CornerZ.z = ReadDepth( UV );	Scattering[2] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[2] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.x -= DowndUV.x;
+	CornerZ.w = ReadDepth( UV );	Scattering[3] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;	Extinction[3] = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;	UV.y -= DowndUV.y;
 
 	// Compute bias weights toward each sample based on Z discrepancies
 	const float		WeightFactor = 2.0;
@@ -112,9 +124,28 @@ float3	PS( VS_IN _In ) : SV_TARGET0
 // return 100.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 // return exp( -1.0 * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
 
+// {
+// 	float	_AltitudeKm = ATMOSPHERE_THICKNESS_KM * frac( 0.25 * _Time.x );
+// 	float	r = GROUND_RADIUS_KM + _AltitudeKm;
+// 	const float	H = sqrt( ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
+// 	float	rho = sqrt( r * r - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
+// 	return rho / H;
+// 	return step( 1.0, rho / H );
+// }
+
+
+#if 0
+// Test downsampled depth buffer
+float3	Bisou = _TexDownsampledSceneDepth.SampleLevel( PointClamp, UV, 1.0 ).xyz;
+return 0.01 * Bisou.z;
+return Bisou.y > Bisou.x ? float3( 1, 0, 0 ) : float3( 0, 0, 0 );
+return Bisou.z < Bisou.x ? float3( 1, 0, 0 ) : float3( 0, 0, 0 );
+return 0.01 * (Bisou.z - Bisou.x);
+return 0.01 * (Bisou.x - Bisou.y);
+#endif
 
 // DEBUG
-#if 0
+#if 1
 if ( UV.x < 0.3 && UV.y > 0.7 )
 {	// Show the transmittance map
 	UV.x /= 0.3;
@@ -122,9 +153,23 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 
 	if ( UV.x > 0.99 ) return float4( 0.5 * (1.0 + sin( _Time.x )), 0, 0, 0 );
 
-//	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz;
+// 	float	r = GROUND_RADIUS_KM + WORLD2KM * _Camera2World[3].y;
+// 	float	h = sqrt( r * r - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
+// 	const float	H = sqrt( ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
+// 	float	uAltitude = 0.5 / RESOLUTION_ALTITUDE + (h / H) * NORMALIZED_SIZE_W;
+// 	return 1.0 * _TexScattering.SampleLevel( LinearClamp, float3( UV, uAltitude ), 0.0 ).xyz;
+
+
+// float	_CosThetaSun = lerp( -0.2, 1.0, UV.x );
+// float	Bisou = 0.5 / RESOLUTION_COS_THETA_SUN + (atan( max( _CosThetaSun, -0.1975 ) * tan( 1.26 * 1.1 ) ) / 1.1 + (1.0 - 0.26)) * 0.5 * NORMALIZED_SIZE_U1;
+// //float	Bisou = 0.5 / RESOLUTION_COS_THETA_SUN + max( 0.0, (1.0 - exp( -3.0 * _CosThetaSun - 0.6 )) / (1.0 - exp(-3.6)) ) * NORMALIZED_SIZE_U1;
+// return Bisou;
+
+
+
+//	return 1.0 * abs(_TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz);
 	return 100.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
-	return exp( -1.0 * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz );
+ 	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 //	return _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 //	return _TexTerrainShadow.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 
@@ -143,21 +188,21 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 			View = mul( float4( View, 0.0 ), _Camera2World ).xyz;
 
 	// Load terrain background
-	float4	TerrainAlpha = _TexDebug1.SampleLevel( LinearClamp, UV, 0.0 );
+	float4	TerrainAlpha = _TexScene.SampleLevel( LinearClamp, UV, 0.0 );
 	float3	Terrain = TerrainAlpha.xyz;
 //return TerrainAlpha.w;
 //return HDR( Terrain );
 
 	// Load scattering & extinction from sky and clouds
 #if 1
-	float3	Scattering = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
-	float3	Extinction = _TexDebug0.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
+	float3	Scattering = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
+	float3	Extinction = _TexAtmosphere.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
 #else
 	float3	Scattering, Extinction;
 	UpSampleAtmosphere( UV, Scattering, Extinction );
 #endif
 //return Scattering;
-//return Extinction;
+//return abs(Extinction);
 //return HDR( Scattering );
 //return HDR( Extinction );
 

@@ -17,6 +17,7 @@ cbuffer	cbSplat	: register( b10 )
 };
 
 Texture2D		_TexVolumeDepth	: register(t10);
+Texture2D		_TexDownsampledSceneDepth	: register(t12);
 
 
 struct	VS_IN
@@ -32,7 +33,11 @@ float2	PS( VS_IN _In ) : SV_TARGET0
 
 	// Sample min/max depths at position
 	float2	ZMinMax = _TexVolumeDepth.SampleLevel( LinearClamp, UV, 0.0 ).xy;
+	float	SceneZ = _TexDownsampledSceneDepth.mips[2][_In.__Position.xy].z;	// Use ZMax
+	ZMinMax.y = min( ZMinMax.y, SceneZ );	// Limit trace to scene Z
 	float	Depth = ZMinMax.y - ZMinMax.x;
+	if ( Depth < 0.0 )
+		return ZMinMax;
 
 	// Retrieve start & end positions in world space
 	float3	ViewCamera = float3( _CameraData.x * (2.0 * UV.x - 1.0), _CameraData.y * (1.0 - 2.0 * UV.y), 1.0 );
@@ -46,7 +51,7 @@ float2	PS( VS_IN _In ) : SV_TARGET0
 	float4	Position = WorldPosStart;
 
 	// Start integration
-	ZMinMax = ZMinMax.yy;	// Make the interval empty at first, start boundary should be written as soon as we enter the volume...
+	ZMinMax.x = 1.1*ZMinMax.y;	// Make the interval empty at first, start boundary should be written as soon as we enter the volume...
 	float	Sigma_t = 0.0;
 	float	Transmittance = 1.0;
 	for ( float StepIndex=0.0; StepIndex < StepsCount; StepIndex++ )

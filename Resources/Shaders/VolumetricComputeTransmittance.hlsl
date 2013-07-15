@@ -153,10 +153,17 @@ PS_OUT	PS( VS_IN _In )
 
 	float	Sigma_t = 0.0;
 	float	Transmittance = 1.0;
+	float4	CurrentCosEval0 = 1.0;
+	float	CurrentCosEval1 = 1.0;
 	for ( float StepIndex=0; StepIndex < STEPS_COUNT; StepIndex++ )
 	{
-		float	Density = GetVolumeDensity( Position.xyz, 0.0 );
+		// Advance in world and phase
+		Position += Step;
+		Angle0 += dAngle0;
+		Angle1 += dAngle1;
 
+		// Sample cloud density
+		float	Density = GetVolumeDensity( Position.xyz, 0.0 );
 
 // Hardcode empty density outside the box
 // if ( abs(Position.x) > 1.0 || abs(Position.z) > 1.0 || abs(Position.y-2.0) > 2.0 )
@@ -168,6 +175,7 @@ PS_OUT	PS( VS_IN _In )
 		float	PreviousSigma_t = Sigma_t;
 		Sigma_t = _CloudExtinctionScattering.x * Density;
 
+		// Modulate transmittance
 //		float	StepTransmittance = exp( -Sigma_t * Step.w );
 		float	StepTransmittance = IntegrateExtinction( PreviousSigma_t, Sigma_t, Step.w );
 #ifdef INCLUDE_TERRAIN_SHADOWING
@@ -176,20 +184,16 @@ PS_OUT	PS( VS_IN _In )
 		Transmittance *= StepTransmittance;
 
 		// Accumulate cosine weights for the DCT
-#ifndef USE_FAST_COS
-		Out.C0 += Transmittance * cos( Angle0 );
-		Out.C1.xy += Transmittance * cos( Angle1 );
-#else
-		float4	Temp0 = FastCos( float4( Angle0.yzw, Angle1.x ) );
-		float	Temp1 = FastCos( Angle1.y );
-		Out.C0 += Transmittance * float4( 1, Temp0.xyz );
-		Out.C1.xy += Transmittance * float2( Temp0.w, Temp1 );
-#endif
+		float4	PreviousCosEval0 = CurrentCosEval0;
+		float	PreviousCosEval1 = CurrentCosEval1;
+		CurrentCosEval0 = FastCos( float4( Angle0.yzw, Angle1.x ) );
+		CurrentCosEval1 = FastCos( Angle1.y );
 
-		// Advance in world and phase
-		Position += Step;
-		Angle0 += dAngle0;
-		Angle1 += dAngle1;
+		float4	AvgCosEval0 = 0.5 * (PreviousCosEval0 + CurrentCosEval0);
+		float	AvgCosEval1 = 0.5 * (PreviousCosEval1 + CurrentCosEval1);
+
+		Out.C0 += Transmittance * float4( 1, AvgCosEval0.xyz );
+		Out.C1.xy += Transmittance * float2( AvgCosEval0.w, AvgCosEval1 );
 	}
 
 	Out.C0 *= 2.0 * dx;

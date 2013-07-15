@@ -2,6 +2,8 @@
 
 #define SHOW_TERRAIN
 
+#define BUILD_SKY_TABLES_USING_CS			// Use the Compute Shader version
+
 #define	TRANSMITTANCE_W	256
 #define	TRANSMITTANCE_H	64
 #define	TRANSMITTANCE_TABLE_STEPS_COUNT	500	// Default amount of integration steps to perform to compute this table
@@ -151,6 +153,7 @@ private:	// FIELDS
 	bool				m_bShowTerrain;
 
 	// Internal Data
+	ComputeShader*		m_pMatDownsampleDepth;
 	Material*			m_pMatDepthWrite;
 	Material*			m_pMatSplatCameraFrustum;
 	Material*			m_pMatComputeTransmittance;
@@ -167,6 +170,7 @@ private:	// FIELDS
 	Material*			m_pMatTerrain;
 #endif
 
+	Texture2D*			m_pRTDownsampledDepth;
 	Texture3D*			m_pTexFractal0;
 	Texture3D*			m_pTexFractal1;
 	Texture2D*			m_pRTCameraFrustumSplat;
@@ -285,18 +289,20 @@ public:		// METHODS
 protected:
 
 	// Sky tables computation
-	void		PreComputeSkyTables();
+	void		InitSkyTables();
 	void		FreeSkyTables();
 
+#ifdef BUILD_SKY_TABLES_USING_CS
 		// Time-sliced update
-	void		InitUpdateSkyTables();
 	void		ExitUpdateSkyTables();
 	void		TriggerSkyTablesUpdate();
 	void		UpdateSkyTables();
 
-	void		InitStage( int _StageIndex );
-	void		InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ, int _GroupsCount[3] );
+	void		InitMultiPassStage( int _StageIndex, int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ );
+	void		InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ );
+	void		DispatchStage( ComputeShader& M );
 	bool		IncreaseStagePass( int _StageIndex );	// Returns true if the stage is over
+#endif
 
 
 	// Tables Pre-computation

@@ -198,7 +198,7 @@ public:
 	// Binary Blobs
 #ifdef SAVE_SHADER_BLOB_TO
 	// Helper to reload a compiled binary blob and build the material from it
-	static Material*	CreateFromBinaryBlob( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS );
+	static Material*	CreateFromBinaryBlob( Device& _Device, const char* _pShaderFileName, const IVertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS );
 
 	static void			SaveBinaryBlob( const char* _pShaderFileName, const char* _pEntryPoint, ID3DBlob& _Blob );
 	static ID3DBlob*	LoadBinaryBlob( const char* _pShaderFileName, const char* _pEntryPoint );	// NOTE: It's the caller's responsibility to release the blob!

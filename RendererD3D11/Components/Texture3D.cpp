@@ -319,21 +319,11 @@ void	Texture3D::Save( const char* _pFileName )
 	fwrite( &m_MipLevelsCount, sizeof(int), 1, pFile );
 
 	// Write each mip
-	int	W = m_Width;
-	int	H = m_Height;
-	int	D = m_Depth;
-	int	S = m_Format.Size();
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
-		int	MipLevelSize = W*H*D*S;
-
 		Map( MipLevelIndex );
-		fwrite( m_LockedResource.pData, MipLevelSize, 1, pFile );
+		fwrite( m_LockedResource.pData, m_LockedResource.DepthPitch * m_Depth, 1, pFile );
 		UnMap( MipLevelIndex );
-
-		W = MAX( 1, W >> 1 );
-		H = MAX( 1, H >> 1 );
-		D = MAX( 1, D >> 1 );
 	}
 
 	// We're done!
@@ -367,18 +357,11 @@ void	Texture3D::Load( const char* _pFileName )
 	ASSERT( M == m_MipLevelsCount, "Incompatible mip levels count!" );
 
 	// Read each mip
-	int	S = m_Format.Size();
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
-		int	MipLevelSize = W*H*D*S;
-
 		Map( MipLevelIndex );
-		fread_s( m_LockedResource.pData, MipLevelSize, MipLevelSize, 1, pFile );
+		fread_s( m_LockedResource.pData, m_LockedResource.DepthPitch * m_Depth, m_LockedResource.DepthPitch * m_Depth, 1, pFile );
 		UnMap( MipLevelIndex );
-
-		W = MAX( 1, W >> 1 );
-		H = MAX( 1, H >> 1 );
-		D = MAX( 1, D >> 1 );
 	}
 
 	// We're done!

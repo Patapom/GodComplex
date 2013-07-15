@@ -394,7 +394,7 @@ const uint _StepsCount=32;
 	float3	Result = 0.0;
 	for ( uint PhiIndex=0; PhiIndex < 2 * _StepsCount; PhiIndex++ )
 	{
-		float	Phi = (float(PhiIndex) + 0.5) * dPhi;
+		float	Phi = (PhiIndex + 0.5) * dPhi;
 		float	sphi, cphi;
 		sincos( Phi, sphi, cphi );
 

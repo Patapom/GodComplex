@@ -427,23 +427,14 @@ void	Texture2D::Save( const char* _pFileName )
 	fwrite( &m_MipLevelsCount, sizeof(int), 1, pFile );
 
 	// Write each slice
-	int	W = m_Width;
-	int	H = m_Height;
-	int	S = m_Format.Size();
-
-	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+	for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
 	{
-		int	MipLevelSize = W*H*S;
-
-		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
+		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 		{
 			Map( MipLevelIndex, SliceIndex );
-			fwrite( m_LockedResource.pData, MipLevelSize, 1, pFile );
+			fwrite( m_LockedResource.pData, m_LockedResource.DepthPitch, 1, pFile );
 			UnMap( MipLevelIndex, SliceIndex );
 		}
-
-		W = MAX( 1, W >> 1 );
-		H = MAX( 1, H >> 1 );
 	}
 
 	// We're done!
@@ -478,20 +469,14 @@ void	Texture2D::Load( const char* _pFileName )
 	ASSERT( M == m_MipLevelsCount, "Incompatible mip levels count!" );
 
 	// Read each slice
-	int	S = m_Format.Size();
-	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+	for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
 	{
-		int	MipLevelSize = W*H*S;
-
-		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
+		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 		{
 			Map( MipLevelIndex, SliceIndex );
-			fread_s( m_LockedResource.pData, MipLevelSize, MipLevelSize, 1, pFile );
+			fread_s( m_LockedResource.pData, m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
 			UnMap( MipLevelIndex, SliceIndex );
 		}
-
-		W = MAX( 1, W >> 1 );
-		H = MAX( 1, H >> 1 );
 	}
 
 	// We're done!
