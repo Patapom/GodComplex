@@ -397,6 +397,16 @@ void	Device::SetStatesReferences( const NjFloat4& _BlendFactors, U32 _BlendSampl
 	m_StencilRef = _StencilRef;
 }
 
+void	Device::SetScissorRect( const D3D11_RECT* _pScissor )
+{
+	D3D11_RECT	Full = {
+		0, 0,
+		DefaultRenderTarget().GetWidth(),
+		DefaultRenderTarget().GetHeight()
+	};
+	m_pDeviceContext->RSSetScissorRects( 1, _pScissor != NULL ? _pScissor : &Full );
+}
+
 void	Device::RemoveShaderResources( int _SlotIndex, int _SlotsCount, U32 _ShaderStages )
 {
 	static bool							ViewsInitialized = false;

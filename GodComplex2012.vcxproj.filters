@@ -381,6 +381,15 @@
     <ClCompile Include="RendererD3D11\Components\StructuredBuffer.cpp">
       <Filter>RendererD3D11\Components</Filter>
     </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTables.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesCS.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesPS.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib">
@@ -496,24 +505,43 @@
     <None Include="Resources\Shaders\Inc\Volumetric.hlsl">
       <Filter>Resources\Shaders\DEBUG\Includes</Filter>
     </None>
+    <None Include="Resources\Shaders\VolumetricCombine.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricComputeTransmittance.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDepthPrePass.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDepthWrite.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDisplay.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDisplay_AtmosphereOnly.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDownsampleDepth.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmosphere.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmosphereCS.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricTerrain.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmospherePS.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">
       <Filter>Resources</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="Resources\Shaders\VolumetricCombine.hlsl">
-      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\Shaders\VolumetricComputeTransmittance.hlsl">
-      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\Shaders\VolumetricDepthWrite.hlsl">
-      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\Shaders\VolumetricDisplay.hlsl">
-      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

@@ -162,7 +162,7 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the compulsory vertex shader
-	ASSERT( m_pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
+	ASSERT( _pVS != NULL || m_pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
 #ifdef DIRECTX10
 	ID3DBlob*   pShader = _pVS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_4_0", this ) : _pVS;
 #else
@@ -191,7 +191,7 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional hull shader
-	if ( !m_bHasErrors && m_pEntryPointHS != NULL )
+	if ( !m_bHasErrors && (m_pEntryPointHS != NULL || _pHS != NULL) )
 	{
 #ifdef DIRECTX10
 		ASSERT( false, "You can't use Hull Shaders if you define DIRECTX10!" );
@@ -216,7 +216,7 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional domain shader
-	if ( !m_bHasErrors && m_pEntryPointDS != NULL )
+	if ( !m_bHasErrors && (m_pEntryPointDS != NULL || _pDS != NULL) )
 	{
 #ifdef DIRECTX10
 		ASSERT( false, "You can't use Domain Shaders if you define DIRECTX10!" );
@@ -239,7 +239,7 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional geometry shader
-	if ( !m_bHasErrors && m_pEntryPointGS != NULL )
+	if ( !m_bHasErrors && (m_pEntryPointGS != NULL || _pGS != NULL) )
 	{
 #ifdef DIRECTX10
 		ID3DBlob*   pShader = _pGS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_4_0", this ) : _pGS;
@@ -263,13 +263,13 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional pixel shader
-	if ( !m_bHasErrors && m_pEntryPointPS != NULL )
+	if ( !m_bHasErrors && (m_pEntryPointPS != NULL || _pPS != NULL) )
 	{
 
 #ifdef _DEBUG
 // CSO TEST
 // We use a special pre-compiled CSO read from file here
-if ( *m_pEntryPointPS == 1 )
+if ( m_pEntryPointPS != NULL && *m_pEntryPointPS == 1 )
 {
 	U32	BufferSize = *((U32*) (m_pEntryPointPS+1));
 	U8*	pBufferPointer = (U8*) m_pEntryPointPS+5;
@@ -281,9 +281,9 @@ if ( *m_pEntryPointPS == 1 )
 #endif
 
 #ifdef DIRECTX10
-		ID3DBlob*   pShader = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_4_0", this ) : NULL;
+		ID3DBlob*   pShader = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_4_0", this ) : _pPS;
 #else
-		ID3DBlob*   pShader = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_5_0", this ) : NULL;
+		ID3DBlob*   pShader = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_5_0", this ) : _pPS;
 #endif
 		if ( pShader != NULL )
 		{

@@ -364,6 +364,11 @@ void	Texture2D::RemoveFromLastAssignedSlotUAV() const
 
 void	Texture2D::CopyFrom( Texture2D& _SourceTexture )
 {
+	ASSERT( _SourceTexture.m_Width == m_Width && _SourceTexture.m_Height == m_Height, "Size mismatch!" );
+	ASSERT( _SourceTexture.m_ArraySize == m_ArraySize, "Array size mismatch!" );
+	ASSERT( _SourceTexture.m_MipLevelsCount == m_MipLevelsCount, "Mips count mismatch!" );
+	ASSERT( _SourceTexture.m_Format.DirectXFormat() == m_Format.DirectXFormat(), "Format mismatch!" );
+
 	m_Device.DXContext().CopyResource( m_pTexture, _SourceTexture.m_pTexture );
 }
 
@@ -427,11 +432,13 @@ void	Texture2D::Save( const char* _pFileName )
 	fwrite( &m_MipLevelsCount, sizeof(int), 1, pFile );
 
 	// Write each slice
-	for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
+	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
-		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
 		{
 			Map( MipLevelIndex, SliceIndex );
+			fwrite( &m_LockedResource.RowPitch, sizeof(int), 1, pFile );
+			fwrite( &m_LockedResource.DepthPitch, sizeof(int), 1, pFile );
 			fwrite( m_LockedResource.pData, m_LockedResource.DepthPitch, 1, pFile );
 			UnMap( MipLevelIndex, SliceIndex );
 		}
@@ -469,11 +476,16 @@ void	Texture2D::Load( const char* _pFileName )
 	ASSERT( M == m_MipLevelsCount, "Incompatible mip levels count!" );
 
 	// Read each slice
-	for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
+	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
-		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
 		{
 			Map( MipLevelIndex, SliceIndex );
+			int	RowPitch, DepthPitch;
+			fread_s( &RowPitch, sizeof(int), sizeof(int), 1, pFile );
+			fread_s( &DepthPitch, sizeof(int), sizeof(int), 1, pFile );
+			ASSERT( RowPitch == m_LockedResource.RowPitch, "Incompatible row pitch!" );
+			ASSERT( DepthPitch == m_LockedResource.DepthPitch, "Incompatible depth pitch!" );
 			fread_s( m_LockedResource.pData, m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
 			UnMap( MipLevelIndex, SliceIndex );
 		}

@@ -1844,7 +1844,7 @@ Texture3D*	EffectVolumetric::BuildFractalTexture( bool _bBuildFirst )
 #ifdef BUILD_SKY_TABLES_USING_CS
 #include "EffectVolumetricComputeSkyTablesCS.cpp"
 #else
-#include "EffectVolumetricComputeSkyTables.cpp"
+#include "EffectVolumetricComputeSkyTablesPS.cpp"
 #endif
 
 void	EffectVolumetric::FreeSkyTables()

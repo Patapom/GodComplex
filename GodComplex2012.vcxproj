@@ -93,7 +93,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>GODCOMPLEX;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SURE_DEBUG;GODCOMPLEX;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MinimalRebuild>false</MinimalRebuild>
@@ -347,6 +347,24 @@ MinifyAll.cmd</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectVolumetric.cpp" />
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTables.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesCS.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesPS.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Intro\Effects\Scene\MaterialBank.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClCompile>
@@ -401,6 +419,21 @@ MinifyAll.cmd</Command>
     <Library Include="Sound\libv2.lib" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\Shaders\VolumetricDisplay_AtmosphereOnly.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDownsampleDepth.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmosphere.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmosphereCS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Resources\Shaders\VolumetricTerrain.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <None Include="LogExeSizes.txt" />
     <None Include="Notes.txt" />
     <None Include="NuajAPI\API\Hashtable.inl" />
@@ -442,35 +475,34 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\TestDisplay.hlsl" />
     <None Include="Resources\Shaders\TranslucencyDiffusion.hlsl" />
     <None Include="Resources\Shaders\TranslucencyDisplay.hlsl" />
-    <FxCompile Include="Resources\Shaders\VolumetricCombine.hlsl">
-      <FileType>Document</FileType>
+    <None Include="Resources\Shaders\VolumetricCombine.hlsl">
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PS</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)\Resources\Shaders\CSO\%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Resources\Shaders\VolumetricComputeTransmittance.hlsl">
-      <FileType>Document</FileType>
+    </None>
+    <None Include="Resources\Shaders\VolumetricComputeTransmittance.hlsl">
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PS</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)\Resources\Shaders\CSO\%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Resources\Shaders\VolumetricDepthWrite.hlsl">
+    </None>
+    <None Include="Resources\Shaders\VolumetricDepthPrePass.hlsl">
       <FileType>Document</FileType>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDepthWrite.hlsl">
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PS</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)\Resources\Shaders\CSO\%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Resources\Shaders\VolumetricDisplay.hlsl">
-      <FileType>Document</FileType>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDisplay.hlsl">
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PS</EntryPointName>
       <DisableOptimizations Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</DisableOptimizations>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)\Resources\Shaders\CSO\%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
+    </None>
     <None Include="Tools\GodComplex.kkm" />
   </ItemGroup>
   <ItemGroup>
@@ -485,6 +517,13 @@ MinifyAll.cmd</Command>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">Resources\Shaders\Binary</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">_DEBUG;CODE_WORKSHOP</PreprocessorDefinitions>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmospherePS.hlsl">
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AccumulateIrradiance</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

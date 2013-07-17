@@ -2,7 +2,7 @@
 
 #define SHOW_TERRAIN
 
-#define BUILD_SKY_TABLES_USING_CS			// Use the Compute Shader version
+//#define BUILD_SKY_TABLES_USING_CS			// Use the Compute Shader version
 
 #define	TRANSMITTANCE_W	256
 #define	TRANSMITTANCE_H	64
@@ -292,7 +292,6 @@ protected:
 	void		InitSkyTables();
 	void		FreeSkyTables();
 
-#ifdef BUILD_SKY_TABLES_USING_CS
 		// Time-sliced update
 	void		ExitUpdateSkyTables();
 	void		TriggerSkyTablesUpdate();
@@ -300,8 +299,11 @@ protected:
 
 	void		InitMultiPassStage( int _StageIndex, int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ );
 	void		InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ );
-	void		DispatchStage( ComputeShader& M );
 	bool		IncreaseStagePass( int _StageIndex );	// Returns true if the stage is over
+#ifdef BUILD_SKY_TABLES_USING_CS
+	void		DispatchStage( ComputeShader& M );
+#else
+	void		DispatchStage( Material& M );
 #endif
 
 

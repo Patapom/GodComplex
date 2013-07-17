@@ -116,6 +116,7 @@ public:	 // METHODS
 	void	RemoveRenderTargets();
 	void	SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _pDepthStencilState, BlendState* _pBlendState );
 	void	SetStatesReferences( const NjFloat4& _BlendMasks, U32 _BlendSampleMask, U8 _StencilRef );
+	void	SetScissorRect( const D3D11_RECT* _pScissor=NULL );
 
 	// Clears the shader resource registers
 	// Useful to cleanup textures that may otherwise be considered as required by shaders that don't really need them.
