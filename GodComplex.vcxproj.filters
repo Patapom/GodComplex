@@ -387,6 +387,9 @@
     <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesCS.cpp">
       <Filter>Intro\Effects</Filter>
     </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesPS.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib">
@@ -521,6 +524,9 @@
       <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
     </None>
     <None Include="Resources\Shaders\VolumetricDisplay_AtmosphereOnly.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmospherePS.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
     </None>
   </ItemGroup>

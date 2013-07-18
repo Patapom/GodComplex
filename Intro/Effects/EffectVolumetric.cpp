@@ -69,6 +69,11 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 	m_ppRTInScattering[1] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );
 	m_ppRTInScattering[2] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );
 
+	// Setup to their target slots, even though they're not computed yet... That's just to avoid annoying warnings in the console.
+	m_ppRTTransmittance[0]->Set( 7, true );
+	m_ppRTInScattering[0]->Set( 8, true );
+	m_ppRTIrradiance[0]->Set( 9, true );
+
 	InitSkyTables();
 
 

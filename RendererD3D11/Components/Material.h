@@ -155,6 +155,7 @@ public:	 // METHODS
 	bool			SetTexture( const char* _pTextureName, ID3D11ShaderResourceView* _pData );
 #endif
 
+	// Must call this before using the material
 	void			Use();
 
 	// Static shader compilation helper (also used by ComputeShader)

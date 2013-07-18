@@ -132,5 +132,6 @@ public:
 	static bool	Check( HRESULT _Result );
 
 	friend class Component;
+	friend class Material;
 };
 
