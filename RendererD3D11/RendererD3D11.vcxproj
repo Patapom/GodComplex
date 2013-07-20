@@ -88,10 +88,12 @@
     <ClInclude Include="..\NuajAPI\API\Types.h" />
     <ClInclude Include="..\NuajAPI\Math\Math.h" />
     <ClInclude Include="Components\Component.h" />
+    <ClInclude Include="Components\ComputeShader.h" />
     <ClInclude Include="Components\ConstantBuffer.h" />
     <ClInclude Include="Components\Material.h" />
     <ClInclude Include="Components\Primitive.h" />
     <ClInclude Include="Components\States.h" />
+    <ClInclude Include="Components\StructuredBuffer.h" />
     <ClInclude Include="Components\Texture2D.h" />
     <ClInclude Include="Components\Texture3D.h" />
     <ClInclude Include="Device.h" />
@@ -105,10 +107,12 @@
   <ItemGroup>
     <ClCompile Include="..\NuajAPI\Math\Math.cpp" />
     <ClCompile Include="Components\Component.cpp" />
+    <ClCompile Include="Components\ComputeShader.cpp" />
     <ClCompile Include="Components\ConstantBuffer.cpp" />
     <ClCompile Include="Components\Material.cpp" />
     <ClCompile Include="Components\Primitive.cpp" />
     <ClCompile Include="Components\States.cpp" />
+    <ClCompile Include="Components\StructuredBuffer.cpp" />
     <ClCompile Include="Components\Texture2D.cpp" />
     <ClCompile Include="Components\Texture3D.cpp" />
     <ClCompile Include="Device.cpp" />

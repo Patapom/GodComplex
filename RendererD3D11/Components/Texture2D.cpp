@@ -437,8 +437,11 @@ void	Texture2D::Save( const char* _pFileName )
 		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
 		{
 			Map( MipLevelIndex, SliceIndex );
-			fwrite( &m_LockedResource.RowPitch, sizeof(int), 1, pFile );
-			fwrite( &m_LockedResource.DepthPitch, sizeof(int), 1, pFile );
+			if ( SliceIndex == 0 )
+			{	// Only save once!
+				fwrite( &m_LockedResource.RowPitch, sizeof(int), 1, pFile );
+				fwrite( &m_LockedResource.DepthPitch, sizeof(int), 1, pFile );
+			}
 			fwrite( m_LockedResource.pData, m_LockedResource.DepthPitch, 1, pFile );
 			UnMap( MipLevelIndex, SliceIndex );
 		}
@@ -478,12 +481,13 @@ void	Texture2D::Load( const char* _pFileName )
 	// Read each slice
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
+		int	RowPitch, DepthPitch;
+		fread_s( &RowPitch, sizeof(int), sizeof(int), 1, pFile );
+		fread_s( &DepthPitch, sizeof(int), sizeof(int), 1, pFile );
+
 		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
 		{
 			Map( MipLevelIndex, SliceIndex );
-			int	RowPitch, DepthPitch;
-			fread_s( &RowPitch, sizeof(int), sizeof(int), 1, pFile );
-			fread_s( &DepthPitch, sizeof(int), sizeof(int), 1, pFile );
 			ASSERT( RowPitch == m_LockedResource.RowPitch, "Incompatible row pitch!" );
 			ASSERT( DepthPitch == m_LockedResource.DepthPitch, "Incompatible depth pitch!" );
 			fread_s( m_LockedResource.pData, m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );

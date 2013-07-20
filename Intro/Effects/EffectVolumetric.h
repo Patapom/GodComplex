@@ -59,10 +59,11 @@ public:		// NESTED TYPES
 		float		SunIntensity;
 
 		NjFloat2	AirParams;		// X=Scattering Factor, Y=Reference Altitude (km)
-		float		GodraysStrength;
-		float		AltitudeOffset;
+		float		GodraysStrengthRayleigh;
+		float		GodraysStrengthMie;
 
 		NjFloat4	FogParams;		// X=Scattering Coeff, Y=Extinction Coeff, Z=Reference Altitude (km), W=Anisotropy
+		float		AltitudeOffset;
 	};
 
 	struct CBShadow
@@ -226,7 +227,8 @@ private:	// FIELDS
 		float	FogReferenceAltitudeKm;
 		float	FogAnisotropy;
 		float	AverageGroundReflectance;
-		float	GodraysStrength;
+		float	GodraysStrengthRayleigh;
+		float	GodraysStrengthMie;
 		float	AltitudeOffset;
 
 		// Volumetrics Params

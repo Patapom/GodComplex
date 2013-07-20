@@ -220,9 +220,9 @@ void	EffectVolumetric::InitSkyTables()
 
 //###
 // 	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Single = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,	"VS", "GS", "PreComputeInScattering_Single" ), 13 );	// inscatter1
-	CHECK_MATERIAL( m_pMatPSTMergeInitialScattering = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "MergeInitialScattering" ), 16 );			// copyInscatter1
-	CHECK_MATERIAL( m_pMatPSTAccumulateIrradiance = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", "GS", "AccumulateIrradiance" ), 17 );				// copyIrradiance
-	CHECK_MATERIAL( m_pMatPSTAccumulateInScattering = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "AccumulateInScattering" ), 18 );			// copyInscatterN
+// 	CHECK_MATERIAL( m_pMatPSTMergeInitialScattering = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "MergeInitialScattering" ), 16 );			// copyInscatter1
+// 	CHECK_MATERIAL( m_pMatPSTAccumulateIrradiance = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", "GS", "AccumulateIrradiance" ), 17 );				// copyIrradiance
+// 	CHECK_MATERIAL( m_pMatPSTAccumulateInScattering = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "AccumulateInScattering" ), 18 );			// copyInscatterN
 
 }
 

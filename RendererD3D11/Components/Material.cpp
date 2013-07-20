@@ -301,7 +301,7 @@ if ( m_pEntryPointPS != NULL && *m_pEntryPointPS == 1 )
 	}
 }
 
-#ifdef SURE_DEBUG
+#if defined(SURE_DEBUG) || !defined(GODCOMPLEX)
 
 // Embedded shader for debug & testing...
 // static char*	pTestShader =
@@ -389,7 +389,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 	return pCode;
 }
 
-#else	// #ifndef _DEBUG
+#else	// #if !defined(_DEBUG) && defined(GODCOMPLEX)
 
 ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget, ID3DInclude* _pInclude, bool _bComputeShader )
 {
@@ -930,7 +930,7 @@ void		Material::SaveBinaryBlob( const char* _pShaderFileName, const char* _pEntr
 	pFileNameWithoutExtension[ExtensionIndex-FileNameIndex] = '\0';	// End the file name here
 
 	char	pFinalShaderName[1024];
-	sprintf( pFinalShaderName, "%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, _pEntryPoint );
+	sprintf_s( pFinalShaderName, 1024, "%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, _pEntryPoint );
 
 	// Create the binary file
 	FILE*	pFile;
@@ -975,7 +975,7 @@ ID3DBlob*	Material::LoadBinaryBlob( const char* _pShaderFileName, const char* _p
 	pFileNameWithoutExtension[ExtensionIndex-FileNameIndex] = '\0';	// End the file name here
 
 	char	pFinalShaderName[1024];
-	sprintf( pFinalShaderName, "%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, _pEntryPoint );
+	sprintf_s( pFinalShaderName, 1024, "%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, _pEntryPoint );
 
 	// Create the binary file
 	FILE*	pFile;

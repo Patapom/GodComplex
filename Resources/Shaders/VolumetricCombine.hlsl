@@ -145,7 +145,7 @@ return 0.01 * (Bisou.x - Bisou.y);
 #endif
 
 // DEBUG
-#if 1
+#if 0
 if ( UV.x < 0.3 && UV.y > 0.7 )
 {	// Show the transmittance map
 	UV.x /= 0.3;

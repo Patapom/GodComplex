@@ -1,6 +1,8 @@
 #pragma once
 
+#ifdef GODCOMPLEX
 #define SUPPORT_GEO_BUILDERS
+#endif
 
 #include "Component.h"
 #include "../Structures/VertexFormats.h"
