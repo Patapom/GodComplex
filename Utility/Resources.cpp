@@ -153,7 +153,7 @@ Material*		CreateMaterial( U16 _ShaderResourceID, const char* _pFileName, const 
 	ASSERT( pShaderCode != NULL, "Failed to load shader resource !" );
 
 	gs_IncludesManager.SetCurrentlyCompilingShader( pFileName );
-	Material*	pResult = new Material( gs_Device, _Format, pFileName, pShaderCode, _pMacros, _pEntryPointVS, _pEntryPointHS, _pEntryPointDS, _pEntryPointGS, _pEntryPointPS, &gs_IncludesManager );
+	Material*	pResult = new Material( gs_Device, pFileName, _Format, pShaderCode, _pMacros, _pEntryPointVS, _pEntryPointHS, _pEntryPointDS, _pEntryPointGS, _pEntryPointPS, &gs_IncludesManager );
 	gs_IncludesManager.RegisterMaterial( pFileName, *pResult );
 
 	delete pShaderCode;	// We musn't forget to delete this temporary buffer !

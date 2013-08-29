@@ -151,7 +151,9 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 	UV.x /= 0.3;
 	UV.y = (UV.y - 0.7) / 0.3;
 
-	if ( UV.x > 0.99 ) return float4( 0.5 * (1.0 + sin( _Time.x )), 0, 0, 0 );
+	float3	UVW = float3( UV, 0.5 * (1.0 + sin( _Time.x )) );
+
+	if ( UV.x > 0.99 ) return float4( UVW.z, 0, 0, 0 );
 
 // 	float	r = GROUND_RADIUS_KM + WORLD2KM * _Camera2World[3].y;
 // 	float	h = sqrt( r * r - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
@@ -167,9 +169,13 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 
 
 
-	return 1.0 * abs(_TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz);
+//	return 1.0 * abs(_TexScattering.SampleLevel( LinearClamp, UVW, 0.0 ).xyz);
 // 	return 20.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 // 	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+
+// UVW.z = 0.9;
+
+ 	return 1.0 * _TexTransmittance_Limited.SampleLevel( LinearClamp, UVW, 0.0 ).xyz;
 //	return _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 //	return _TexTerrainShadow.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 

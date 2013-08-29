@@ -223,19 +223,13 @@ void	GetSliceData( uint3 _Texel, out float _AltitudeKm, out float _CosThetaView,
 //////////////////////////////////////////////////////////////////////////
 // 0] Pre-Computes the transmittance table for all possible altitudes and zenith angles
 //
-float	ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, const float _Href, uniform uint STEPS_COUNT=500 )
+float	ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, float _DistanceKm, const float _Href, uniform uint STEPS_COUNT=500 )
 {
-	// Compute distance to atmosphere or ground, whichever comes first
 	float3	PositionKm = float3( 0.0, _AltitudeKm, 0.0 );
 	float3	View = float3( sqrt( 1.0 - _CosTheta*_CosTheta ), _CosTheta, 0.0 );
-	bool	bGroundHit;
-	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
-	if ( bGroundHit )
-		return 1e5;	// Completely opaque due to hit with ground: no light can come this way...
-					// Be careful with large values in 16F!
 
 	float	Result = 0.0;
-	float	StepSizeKm = TraceDistanceKm / STEPS_COUNT;
+	float	StepSizeKm = _DistanceKm / STEPS_COUNT;
 	float3	StepKm = StepSizeKm * View;
 
 	float		PreviousAltitudeKm = _AltitudeKm;
@@ -243,7 +237,12 @@ float	ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, const float _Href
 	{
 		PositionKm += StepKm;
 		_AltitudeKm = length( PositionKm - EARTH_CENTER_KM ) - GROUND_RADIUS_KM;
-		Result += exp( (PreviousAltitudeKm + _AltitudeKm) * (-0.5 / _Href) );	// Gives the integral of a linear interpolation in altitude
+		if ( _AltitudeKm < 0.0 )
+		{	// Last step!
+			_AltitudeKm = 0.0;
+			i = STEPS_COUNT;
+		}
+		Result += exp( (PreviousAltitudeKm + _AltitudeKm) * (-0.5 / _Href) );// Gives the integral of a linear interpolation in altitude
 		PreviousAltitudeKm = _AltitudeKm;
 	}
 
@@ -259,7 +258,38 @@ float4	PreComputeTransmittance( PS_IN _In ) : SV_TARGET0
 	float	CosTheta = -0.15 + tan( 1.5 * UV.x ) / tan(1.5) * (1.0 + 0.15);	// Grow tangentially to have more precision horizontally
 //	float	CosTheta = lerp( -0.15, 1.0, UV.x );							// Grow linearly
 
-	float3	OpticalDepth = _AirParams.x * SIGMA_SCATTERING_RAYLEIGH * ComputeOpticalDepth( AltitudeKm, CosTheta, _AirParams.y ) + _FogParams.y * ComputeOpticalDepth( AltitudeKm, CosTheta, _FogParams.z );
+	// Compute distance to atmosphere or ground, whichever comes first
+	float3	PositionKm = float3( 0.0, AltitudeKm, 0.0 );
+	float3	View = float3( sqrt( 1.0 - CosTheta*CosTheta ), CosTheta, 0.0 );
+	bool	bGroundHit;
+	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
+	if ( bGroundHit )
+		return 0.0;	// Completely opaque due to hit with ground: no light can come this way...
+
+	// Integrate Rayleigh & Mie optical depth to the top of atmosphere
+	float3	OpticalDepth = _AirParams.x * SIGMA_SCATTERING_RAYLEIGH * ComputeOpticalDepth( AltitudeKm, CosTheta, TraceDistanceKm, _AirParams.y ) + _FogParams.y * ComputeOpticalDepth( AltitudeKm, CosTheta, TraceDistanceKm, _FogParams.z );
+
+	return float4( exp( -OpticalDepth ), 0.0 );
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// 0.5] Pre-Computes the LIMITED transmittance table for all possible altitudes and zenith angles and cut distances in [0,100]
+//
+float4	PreComputeTransmittance_Limited( PS_IN _In ) : SV_TARGET0
+{
+	uint3	Texel = GetTexelInfos( _In );
+	float3	UVW = float3( Texel ) / _TargetSize;
+
+	float	CosTheta = -0.15 + tan( 1.5 * UVW.x ) / tan(1.5) * (1.0 + 0.15);	// Grow tangentially to have more precision horizontally
+//	float	CosTheta = lerp( -0.15, 1.0, UV.x );								// Grow linearly
+	float	DistanceKm = 0.01 + UVW.y*UVW.y * TRANSMITTANCE_LIMIT_DISTANCE_KM;	// Grow quadratically to have more precision near the camera
+	float	AltitudeKm = UVW.z*UVW.z * ATMOSPHERE_THICKNESS_KM;					// Grow quadratically to have more precision near the ground
+
+	// Integrate Rayleigh & Mie optical depth until the specified distance (will stop if ground is hit)
+	float3	OpticalDepth = _AirParams.x * SIGMA_SCATTERING_RAYLEIGH * ComputeOpticalDepth( AltitudeKm, CosTheta, DistanceKm, _AirParams.y ) + _FogParams.y * ComputeOpticalDepth( AltitudeKm, CosTheta, DistanceKm, _FogParams.z );
+
+//return float4( UVW, 0.0 );
 
 	return float4( exp( -OpticalDepth ), 0.0 );
 }
@@ -272,7 +302,7 @@ float4	PreComputeIrradiance_Single( PS_IN _In ) : SV_TARGET0
 	uint2	Texel = GetTexelInfos( _In ).xy;
 	float2	UV = float2( Texel ) / _TargetSize.xy;
 
-	float	AltitudeKm = UV.y * ATMOSPHERE_THICKNESS_KM;
+	float	AltitudeKm = UV.y * CAMERA_RADIUS_KM;
 	float	CosThetaSun = lerp( -0.2, 1.0, UV.x );
 
 	float	Reflectance = saturate( CosThetaSun );
@@ -437,7 +467,7 @@ float3	PreComputeInScattering_Delta( PS_IN _In ) : SV_TARGET0
 				float3	GroundNormal = (float3( 0.0, r, 0.0 ) + Distance2Ground * w) / GROUND_RADIUS_KM;
 				float3	GroundIrradiance = GetIrradiance( _TexIrradianceDelta, 0.0, dot( GroundNormal, Sun ) );
 
-				dScattering += GroundReflectance * GroundIrradiance;	// = T.alpha/PI.deltaE
+				dScattering += GroundReflectance * GroundIrradiance;	// = (Rho/PI).deltaE
 			}
 
 			// Second term = inscattered light, = deltaS
@@ -478,7 +508,7 @@ const uint STEPS_COUNT=32;
 
 	float2	UV = (_In.__Position.xy - 0.5) / _TargetSize.xy;
 
-	float	AltitudeKm = UV.y * ATMOSPHERE_THICKNESS_KM;
+	float	AltitudeKm = UV.y * CAMERA_RADIUS_KM;
 	float	CosThetaSun = lerp( -0.2, 1.0, UV.x );
 
 	float3	Sun = float3( sqrt( 1.0 - saturate( CosThetaSun * CosThetaSun ) ), CosThetaSun, 0.0 );

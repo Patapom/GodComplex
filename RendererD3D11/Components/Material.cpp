@@ -9,7 +9,7 @@
 #include "D3D11Shader.h"
 
 
-Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride )
+Material::Material( Device& _Device, const char* _pShaderFileName, const IVertexFormatDescriptor& _Format, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride )
 	: Component( _Device )
 	, m_Format( _Format )
 	, m_pVertexLayout( NULL )
@@ -96,7 +96,7 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 #endif
 }
 
-Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, ID3DBlob* _pVS, ID3DBlob* _pHS, ID3DBlob* _pDS, ID3DBlob* _pGS, ID3DBlob* _pPS )
+Material::Material( Device& _Device, const char* _pShaderFileName, const IVertexFormatDescriptor& _Format, ID3DBlob* _pVS, ID3DBlob* _pHS, ID3DBlob* _pDS, ID3DBlob* _pGS, ID3DBlob* _pPS )
 	: Component( _Device )
 	, m_Format( _Format )
 	, m_pVertexLayout( NULL )
@@ -900,7 +900,7 @@ Material*	Material::CreateFromBinaryBlob( Device& _Device, const char* _pShaderF
 	ID3DBlob*	pGS = _pEntryPointGS != NULL ? LoadBinaryBlob( _pShaderFileName, _pEntryPointGS ) : NULL;
 	ID3DBlob*	pPS = _pEntryPointPS != NULL ? LoadBinaryBlob( _pShaderFileName, _pEntryPointPS ) : NULL;
 
-	Material*	pResult = new Material( _Device, _Format, _pShaderFileName, pVS, pHS, pDS, pGS, pPS );
+	Material*	pResult = new Material( _Device, _pShaderFileName, _Format, pVS, pHS, pDS, pGS, pPS );
 
 // No need: the blob was released by the constructor!
 // 	pPS->Release();

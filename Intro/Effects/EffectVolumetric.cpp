@@ -62,6 +62,8 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 
 	m_ppRTTransmittance[0] = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA16_UNORM::DESCRIPTOR, 1, NULL, false, false, UAV );			// transmittance (final)
 	m_ppRTTransmittance[1] = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA16_UNORM::DESCRIPTOR, 1, NULL, false, false, UAV );
+	m_ppRTTransmittanceLimited[0] = new Texture3D( m_Device, TRANSMITTANCE_LIMITED_W, TRANSMITTANCE_LIMITED_H, TRANSMITTANCE_LIMITED_D, PixelFormatRGBA16_UNORM::DESCRIPTOR, 1, NULL, false, false, UAV );	// transmittance with limited distance (final)
+	m_ppRTTransmittanceLimited[1] = new Texture3D( m_Device, TRANSMITTANCE_LIMITED_W, TRANSMITTANCE_LIMITED_H, TRANSMITTANCE_LIMITED_D, PixelFormatRGBA16_UNORM::DESCRIPTOR, 1, NULL, false, false, UAV );
 	m_ppRTIrradiance[0] = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );							// irradiance (final)
 	m_ppRTIrradiance[1] = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );
 	m_ppRTIrradiance[2] = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );
@@ -70,7 +72,8 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 	m_ppRTInScattering[2] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );
 
 	// Setup to their target slots, even though they're not computed yet... That's just to avoid annoying warnings in the console.
-	m_ppRTTransmittance[0]->Set( 7, true );
+	m_ppRTTransmittance[0]->Set( 6, true );
+	m_ppRTTransmittanceLimited[0]->Set( 7, true );
 	m_ppRTInScattering[0]->Set( 8, true );
 	m_ppRTIrradiance[0]->Set( 9, true );
 
@@ -565,14 +568,14 @@ float	t = 2*0.25f * _Time;
 
 		m_Device.RemoveRenderTargets();
 #ifdef INCLUDE_TERRAIN_SHADOWING_IN_TFM
-		m_pRTTerrainShadow->SetPS( 6, true );
+		m_pRTTerrainShadow->SetPS( 5, true );
 #endif
 
 		PERF_END_EVENT();
 
 		//////////////////////////////////////////////////////////////////////////
 		// 3] Show terrain
-		m_pRTTransmittanceMap->SetPS( 5, true );	// Now we need the TFM!
+		m_pRTTransmittanceMap->SetPS( 4, true );	// Now we need the TFM!
 
  		PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFFFF00 ), L"Render Terrain" );
 
@@ -597,7 +600,7 @@ float	t = 2*0.25f * _Time;
 
 #endif
 
-	m_pRTTransmittanceMap->SetPS( 5, true );	// Now we need the TFM!
+	m_pRTTransmittanceMap->SetPS( 4, true );	// Now we need the TFM!
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -702,7 +705,7 @@ float	t = 2*0.25f * _Time;
 #ifdef SHOW_TERRAIN
 #ifndef INCLUDE_TERRAIN_SHADOWING_IN_TFM
 	if ( m_bShowTerrain )
-		m_pRTTerrainShadow->SetPS( 6, true );	// We need it now for godrays
+		m_pRTTerrainShadow->SetPS( 5, true );	// We need it now for godrays
 #endif
 #endif
 
