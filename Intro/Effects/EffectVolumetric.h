@@ -4,12 +4,16 @@
 
 //#define BUILD_SKY_TABLES_USING_CS			// Use the Compute Shader version
 
-#define	TRANSMITTANCE_W	256
-#define	TRANSMITTANCE_H	64
+#define	TRANSMITTANCE_W			256			// cos(theta)
+#define	TRANSMITTANCE_H			64			// Altitude
 #define	TRANSMITTANCE_TABLE_STEPS_COUNT	500	// Default amount of integration steps to perform to compute this table
 
-#define	IRRADIANCE_W	64
-#define	IRRADIANCE_H	16
+#define	TRANSMITTANCE_LIMITED_W	256			// cos(Theta)
+#define	TRANSMITTANCE_LIMITED_H	64			// Distance
+#define	TRANSMITTANCE_LIMITED_D	64			// Altitude (about 1 slice per kilometer)
+
+#define	IRRADIANCE_W			64
+#define	IRRADIANCE_H			16
 
 #define	RES_3D_ALTITUDE			32
 #define	RES_3D_COS_THETA_VIEW	128
@@ -182,6 +186,7 @@ private:	// FIELDS
 
 	// Sky rendering
 	Texture2D*			m_ppRTTransmittance[2];
+	Texture3D*			m_ppRTTransmittanceLimited[2];
 	Texture2D*			m_ppRTIrradiance[3];
 	Texture3D*			m_ppRTInScattering[3];
 

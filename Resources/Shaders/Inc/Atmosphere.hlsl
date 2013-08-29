@@ -14,9 +14,12 @@ static const float	WORLD2KM = 1.0;							// 1 World unit equals 1.0km
 #define	INSCATTER_NON_LINEAR_VIEW
 #define	INSCATTER_NON_LINEAR_SUN
 
+static const float	MAX_CAMERA_ALTITUDE = 4.0;				// I chose to limit the camera's altitude to 4000m, we don't care about going to outer space!
 static const float	ATMOSPHERE_THICKNESS_KM = 60.0;
 static const float	GROUND_RADIUS_KM = 6360.0;
 static const float	ATMOSPHERE_RADIUS_KM = GROUND_RADIUS_KM + ATMOSPHERE_THICKNESS_KM;
+static const float	CAMERA_RADIUS_KM = GROUND_RADIUS_KM + MAX_CAMERA_ALTITUDE;
+static const float	TRANSMITTANCE_LIMIT_DISTANCE_KM = 100.0;// The limited transmittance table encodes limit distances up to that constant
 
 static const float3	EARTH_CENTER_KM = float3( 0.0, -GROUND_RADIUS_KM, 0.0 );			// Far below us!
 
@@ -50,7 +53,8 @@ cbuffer	cbAtmosphere	: register( b7 )
 	float		_AltitudeOffsetKm;
 }
 
-Texture2D	_TexTransmittance : register(t7);
+Texture2D	_TexTransmittance : register(t6);
+Texture3D	_TexTransmittance_Limited : register(t7);
 Texture3D	_TexScattering : register(t8);
 Texture2D	_TexIrradiance : register(t9);
 
@@ -184,26 +188,35 @@ float3	GetTransmittanceWithShadow( float _AltitudeKm, float _CosTheta )
 
 // Transmittance(=transparency) of atmosphere up to a given distance
 // We assume the segment is not intersecting ground
+// float3	GetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm )
+// {
+// 	// P0 = [0, _RadiusKm]
+// 	// V  = [SinTheta, CosTheta]
+// 	//
+// 	float	RadiusKm = GROUND_RADIUS_KM + _AltitudeKm;
+// 	float	RadiusKm2 = sqrt( RadiusKm*RadiusKm + _DistanceKm*_DistanceKm + 2.0 * RadiusKm * _CosTheta * _DistanceKm );	// sqrt[ (P0 + d.V)² ]
+// 	float	CosTheta2 = (RadiusKm * _CosTheta + _DistanceKm) / RadiusKm2;												// dot( P0 + d.V, V ) / RadiusKm2
+// 	float	AltitudeKm2 = RadiusKm2 - GROUND_RADIUS_KM;
+// 
+// 	return _CosTheta > 0.0	? GetTransmittance( _AltitudeKm, _CosTheta ) / GetTransmittance( AltitudeKm2, CosTheta2 )
+// 							: GetTransmittance( AltitudeKm2, -CosTheta2 ) / GetTransmittance( _AltitudeKm, -_CosTheta );
+// 
+// // 	return _CosTheta > 0.0	? exp( -max( 0.0, GetOpticalDepth( _AltitudeKm, _CosTheta ) - GetOpticalDepth( AltitudeKm2, CosTheta2 ) ) )
+// // 							: exp( -max( 0.0, GetOpticalDepth( AltitudeKm2, -CosTheta2 ) - GetOpticalDepth( _AltitudeKm, -_CosTheta ) ) );
+// }
 float3	GetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm )
 {
-	// P0 = [0, _RadiusKm]
-	// V  = [SinTheta, CosTheta]
-	//
-	float	RadiusKm = GROUND_RADIUS_KM + _AltitudeKm;
-	float	RadiusKm2 = sqrt( RadiusKm*RadiusKm + _DistanceKm*_DistanceKm + 2.0 * RadiusKm * _CosTheta * _DistanceKm );	// sqrt[ (P0 + d.V)² ]
-	float	CosTheta2 = (RadiusKm * _CosTheta + _DistanceKm) / RadiusKm2;												// dot( P0 + d.V, V ) / RadiusKm2
-	float	AltitudeKm2 = RadiusKm2 - GROUND_RADIUS_KM;
+	float3	UVW;
+ 	UVW.x = atan( (_CosTheta + 0.15) * tan(1.5) / (1.0 + 0.15) ) / 1.5;
+	UVW.y = sqrt( (_DistanceKm - 0.01) / TRANSMITTANCE_LIMIT_DISTANCE_KM );
+	UVW.z = sqrt( _AltitudeKm / ATMOSPHERE_THICKNESS_KM );
 
-	return _CosTheta > 0.0	? GetTransmittance( _AltitudeKm, _CosTheta ) / GetTransmittance( AltitudeKm2, CosTheta2 )
-							: GetTransmittance( AltitudeKm2, -CosTheta2 ) / GetTransmittance( _AltitudeKm, -_CosTheta );
-
-// 	return _CosTheta > 0.0	? exp( -max( 0.0, GetOpticalDepth( _AltitudeKm, _CosTheta ) - GetOpticalDepth( AltitudeKm2, CosTheta2 ) ) )
-// 							: exp( -max( 0.0, GetOpticalDepth( AltitudeKm2, -CosTheta2 ) - GetOpticalDepth( _AltitudeKm, -_CosTheta ) ) );
+	return _TexTransmittance_Limited.SampleLevel( LinearClamp, UVW, 0.0 ).xyz;
 }
 
 float3	GetIrradiance( Texture2D _TexIrradiance, float _AltitudeKm, float _CosThetaSun )
 {
-	float	NormalizedAltitude = _AltitudeKm / ATMOSPHERE_THICKNESS_KM;
+	float	NormalizedAltitude = _AltitudeKm / CAMERA_RADIUS_KM;
 	float	NormalizedCosThetaSun = (_CosThetaSun + 0.2) / (1.0 + 0.2);
 	float2	UV = float2( NormalizedCosThetaSun, NormalizedAltitude );
 
@@ -220,7 +233,7 @@ float4	Sample4DScatteringTable( Texture3D _TexScattering, float _AltitudeKm, flo
 {
 	const float	H = sqrt( ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
 
-	float	r = GROUND_RADIUS_KM + _AltitudeKm;
+	float	r = GROUND_RADIUS_KM +  max( 0.01, _AltitudeKm );
 	float	h = sqrt( r * r - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
 
 	float	uAltitude = 0.5 / RESOLUTION_ALTITUDE + (h / H) * NORMALIZED_SIZE_W;

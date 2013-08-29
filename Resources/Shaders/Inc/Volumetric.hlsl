@@ -53,8 +53,8 @@ cbuffer	cbVolume	: register( b9 )
 	// float	__PAD
 }
 
-Texture2DArray	_TexCloudTransmittance	: register(t5);
-Texture2D		_TexTerrainShadow		: register(t6);
+Texture2DArray	_TexCloudTransmittance	: register(t4);
+Texture2D		_TexTerrainShadow		: register(t5);
 Texture3D		_TexFractal0			: register(t16);
 Texture3D		_TexFractal1			: register(t17);
 

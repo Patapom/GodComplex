@@ -6,7 +6,7 @@
 #include "Inc/Atmosphere.hlsl"
 
 static const float	MIN_STEPS_COUNT = 8.0;
-static const float	MAX_STEPS_COUNT = 64.0;
+static const float	MAX_STEPS_COUNT = 256.0;
 
 static const float	GODRAYS_STEPS_COUNT = 32.0;
 
@@ -142,7 +142,7 @@ void	ComputeFinalColor( float3 _PositionWorld, float3 _View, float _DistanceKm, 
 {
 	float3	PositionKm = WORLD2KM * _PositionWorld;
 
-PositionKm.y -= _AltitudeOffsetKm;
+//PositionKm.y -= _AltitudeOffsetKm;
 
 	////////////////////////////////////////////////////////////
 	// Compute sky radiance arriving at camera, not accounting for clouds
