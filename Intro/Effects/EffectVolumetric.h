@@ -2,6 +2,8 @@
 
 #define SHOW_TERRAIN
 
+//#define BUILD_SKY_TABLES_USING_CS			// Use the Compute Shader version
+
 #define	TRANSMITTANCE_W	256
 #define	TRANSMITTANCE_H	64
 #define	TRANSMITTANCE_TABLE_STEPS_COUNT	500	// Default amount of integration steps to perform to compute this table
@@ -26,7 +28,7 @@ private:	// CONSTANTS
 	static const int		TERRAIN_SHADOW_MAP_SIZE = 512;
 
 	static const int		FRACTAL_TEXTURE_POT = 7;
-	static const int		FRACTAL_OCTAVES = 8;
+	static const int		FRACTAL_OCTAVES = 14;
 
 
 public:		// NESTED TYPES
@@ -57,10 +59,11 @@ public:		// NESTED TYPES
 		float		SunIntensity;
 
 		NjFloat2	AirParams;		// X=Scattering Factor, Y=Reference Altitude (km)
-		float		GodraysStrength;
-		float		AltitudeOffset;
+		float		GodraysStrengthRayleigh;
+		float		GodraysStrengthMie;
 
 		NjFloat4	FogParams;		// X=Scattering Coeff, Y=Extinction Coeff, Z=Reference Altitude (km), W=Anisotropy
+		float		AltitudeOffset;
 	};
 
 	struct CBShadow
@@ -151,10 +154,12 @@ private:	// FIELDS
 	bool				m_bShowTerrain;
 
 	// Internal Data
+	ComputeShader*		m_pMatDownsampleDepth;
 	Material*			m_pMatDepthWrite;
 	Material*			m_pMatSplatCameraFrustum;
 	Material*			m_pMatComputeTransmittance;
-	Material*			m_pMatDisplay;
+	Material*			m_pMatDepthPrePass;
+	Material*			m_ppMatDisplay[2];
 	Material*			m_pMatCombine;
 
 	Primitive*			m_pPrimBox;
@@ -166,11 +171,12 @@ private:	// FIELDS
 	Material*			m_pMatTerrain;
 #endif
 
+	Texture2D*			m_pRTDownsampledDepth;
 	Texture3D*			m_pTexFractal0;
 	Texture3D*			m_pTexFractal1;
 	Texture2D*			m_pRTCameraFrustumSplat;
-	Texture2D*			m_pRTTransmittanceZ;
 	Texture2D*			m_pRTTransmittanceMap;
+	Texture2D*			m_pRTVolumeDepth;
 	Texture2D*			m_pRTRenderZ;
 	Texture2D*			m_pRTRender;
 
@@ -221,13 +227,14 @@ private:	// FIELDS
 		float	FogReferenceAltitudeKm;
 		float	FogAnisotropy;
 		float	AverageGroundReflectance;
-		float	GodraysStrength;
+		float	GodraysStrengthRayleigh;
+		float	GodraysStrengthMie;
 		float	AltitudeOffset;
 
 		// Volumetrics Params
 		float	CloudBaseAltitude;
 		float	CloudThickness;
-		float	CloudExtinction;
+		float	CloudExtinction;			// Standard cloud mean free path is between 10m and 30m so standard extinction is between 0.1m^-1 and 0.033m^-1 => 100km-1^ and 33km^-1. But we use very low values like 10 to avoid solid details to pop in & out...
 		float	CloudScattering;
 		float	CloudAnisotropyIso;
 		float	CloudAnisotropyForward;
@@ -284,18 +291,22 @@ public:		// METHODS
 protected:
 
 	// Sky tables computation
-	void		PreComputeSkyTables();
+	void		InitSkyTables();
 	void		FreeSkyTables();
 
 		// Time-sliced update
-	void		InitUpdateSkyTables();
 	void		ExitUpdateSkyTables();
 	void		TriggerSkyTablesUpdate();
 	void		UpdateSkyTables();
 
-	void		InitStage( int _StageIndex );
-	void		InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ, int _GroupsCount[3] );
+	void		InitMultiPassStage( int _StageIndex, int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ );
+	void		InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ );
 	bool		IncreaseStagePass( int _StageIndex );	// Returns true if the stage is over
+#ifdef BUILD_SKY_TABLES_USING_CS
+	void		DispatchStage( ComputeShader& M );
+#else
+	void		DispatchStage( Material& M );
+#endif
 
 
 	// Tables Pre-computation

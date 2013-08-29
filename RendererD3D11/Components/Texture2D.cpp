@@ -364,6 +364,11 @@ void	Texture2D::RemoveFromLastAssignedSlotUAV() const
 
 void	Texture2D::CopyFrom( Texture2D& _SourceTexture )
 {
+	ASSERT( _SourceTexture.m_Width == m_Width && _SourceTexture.m_Height == m_Height, "Size mismatch!" );
+	ASSERT( _SourceTexture.m_ArraySize == m_ArraySize, "Array size mismatch!" );
+	ASSERT( _SourceTexture.m_MipLevelsCount == m_MipLevelsCount, "Mips count mismatch!" );
+	ASSERT( _SourceTexture.m_Format.DirectXFormat() == m_Format.DirectXFormat(), "Format mismatch!" );
+
 	m_Device.DXContext().CopyResource( m_pTexture, _SourceTexture.m_pTexture );
 }
 
@@ -414,6 +419,12 @@ void	Texture2D::Save( const char* _pFileName )
 	fopen_s( &pFile, _pFileName, "wb" );
 	ASSERT( pFile != NULL, "Can't create file!" );
 
+	// Write the type and format
+	U8		Type = m_bIsCubeMap ? 0x01 : 0x00;					// 0 is for 2D, 1 for cube map
+	U8		Format = U32(m_Format.DirectXFormat()) & 0xFF;
+	fwrite( &Type, sizeof(U8), 1, pFile );
+	fwrite( &Format, sizeof(U8), 1, pFile );
+
 	// Write the dimensions
 	fwrite( &m_Width, sizeof(int), 1, pFile );
 	fwrite( &m_Height, sizeof(int), 1, pFile );
@@ -421,11 +432,16 @@ void	Texture2D::Save( const char* _pFileName )
 	fwrite( &m_MipLevelsCount, sizeof(int), 1, pFile );
 
 	// Write each slice
-	for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
+	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
-		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
 		{
 			Map( MipLevelIndex, SliceIndex );
+			if ( SliceIndex == 0 )
+			{	// Only save once!
+				fwrite( &m_LockedResource.RowPitch, sizeof(int), 1, pFile );
+				fwrite( &m_LockedResource.DepthPitch, sizeof(int), 1, pFile );
+			}
 			fwrite( m_LockedResource.pData, m_LockedResource.DepthPitch, 1, pFile );
 			UnMap( MipLevelIndex, SliceIndex );
 		}
@@ -441,6 +457,15 @@ void	Texture2D::Load( const char* _pFileName )
 	fopen_s( &pFile, _pFileName, "rb" );
 	ASSERT( pFile != NULL, "Can't load file!" );
 
+	// Read the type and format
+	U8		Type, Format;
+	fread_s( &Type, sizeof(U8), sizeof(U8), 1, pFile );
+	fread_s( &Format, sizeof(U8), sizeof(U8), 1, pFile );
+	DXGI_FORMAT	FileFormat = DXGI_FORMAT( Format );
+	ASSERT( FileFormat == m_Format.DirectXFormat(), "Incompatible format!" );
+	ASSERT( Type == 0x00 || Type == 0x01, "File is not a texture 2D or a cube map!" );
+	m_bIsCubeMap = Type == 0x01;
+
 	// Read the dimensions
 	int	W, H, A, M;
 	fread_s( &W, sizeof(int), sizeof(int), 1, pFile );
@@ -454,11 +479,17 @@ void	Texture2D::Load( const char* _pFileName )
 	ASSERT( M == m_MipLevelsCount, "Incompatible mip levels count!" );
 
 	// Read each slice
-	for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
+	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
-		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+		int	RowPitch, DepthPitch;
+		fread_s( &RowPitch, sizeof(int), sizeof(int), 1, pFile );
+		fread_s( &DepthPitch, sizeof(int), sizeof(int), 1, pFile );
+
+		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
 		{
 			Map( MipLevelIndex, SliceIndex );
+			ASSERT( RowPitch == m_LockedResource.RowPitch, "Incompatible row pitch!" );
+			ASSERT( DepthPitch == m_LockedResource.DepthPitch, "Incompatible depth pitch!" );
 			fread_s( m_LockedResource.pData, m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
 			UnMap( MipLevelIndex, SliceIndex );
 		}

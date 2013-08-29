@@ -7,23 +7,21 @@
 #ifndef _ATMOSPHERE_INC_
 #define _ATMOSPHERE_INC_
 
+static const float	SUN_INTENSITY = 100.0;
+
+static const float	WORLD2KM = 1.0;							// 1 World unit equals 1.0km
+
+#define	INSCATTER_NON_LINEAR_VIEW
+#define	INSCATTER_NON_LINEAR_SUN
+
 static const float	ATMOSPHERE_THICKNESS_KM = 60.0;
 static const float	GROUND_RADIUS_KM = 6360.0;
 static const float	ATMOSPHERE_RADIUS_KM = GROUND_RADIUS_KM + ATMOSPHERE_THICKNESS_KM;
 
 static const float3	EARTH_CENTER_KM = float3( 0.0, -GROUND_RADIUS_KM, 0.0 );			// Far below us!
 
-// static const float	AVERAGE_GROUND_REFLECTANCE = 0.1;
-// 
-// // Rayleigh Scattering
-// static const float	HREF_RAYLEIGH = 8.0;
+// Rayleigh Scattering
 static const float3	SIGMA_SCATTERING_RAYLEIGH = float3( 0.0058, 0.0135, 0.0331 );		// For lambdas (680,550,440) nm
-// 
-// // Mie Scattering + Extinction
-// static const float	HREF_MIE = 1.2;
-// static const float	SIGMA_SCATTERING_MIE = 0.004;
-// static const float	SIGMA_EXTINCTION_MIE = SIGMA_SCATTERING_MIE / 0.9;
-// static const float	MIE_ANISOTROPY = 0.76;
 
 
 // 4D table resolution
@@ -46,10 +44,10 @@ cbuffer	cbAtmosphere	: register( b7 )
 	float		_SunIntensity;
 
 	float2		_AirParams;			// X=Scattering Factor, Y=Reference Altitude (km)
-	float		_GodraysStrength;
-	float		_AltitudeOffsetKm;
+	float2		_GodraysStrength;	// X=Rayleigh, Y=Mie
 
 	float4		_FogParams;			// X=Scattering Coeff, Y=Extinction Coeff, Z=Reference Altitude (km), W=Anisotropy
+	float		_AltitudeOffsetKm;
 }
 
 Texture2D	_TexTransmittance : register(t7);
@@ -155,16 +153,18 @@ float3	GetMieFromRayleighAndMieRed( float4 _RayleighMieRed )
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 // Tables access
-float3	GetOpticalDepth( float _AltitudeKm, float _CosTheta )
+float3	GetTransmittance( float _AltitudeKm, float _CosTheta )
 {
 	float	NormalizedAltitude = sqrt( saturate( _AltitudeKm * (1.0 / ATMOSPHERE_THICKNESS_KM) ) );
 
 const float	TAN_MAX = 1.5;
 
 #if 0
+	// Table was packed using the minimum possible angle at this altitude
 	float	RadiusKm = GROUND_RADIUS_KM + _AltitudeKm;
 	float	CosThetaMin = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (RadiusKm*RadiusKm) );
 #else
+	// Table uses a fixed minimum angle
 	float	CosThetaMin = -0.15;
 #endif
  	float	NormalizedCosTheta = atan( (_CosTheta - CosThetaMin) / (1.0 - CosThetaMin) * tan(TAN_MAX) ) / TAN_MAX;
@@ -175,18 +175,12 @@ const float	TAN_MAX = 1.5;
 	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 }
 
-float3	GetTransmittance( float _AltitudeKm, float _CosTheta )
-{
-	return exp( -GetOpticalDepth( _AltitudeKm, _CosTheta ) );	// We now store the optical depth instead of directly the transmittance
-}
-
 float3	GetTransmittanceWithShadow( float _AltitudeKm, float _CosTheta )
 {
 	float	RadiusKm = GROUND_RADIUS_KM + _AltitudeKm;
 	float	CosThetaGround = -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM / (RadiusKm*RadiusKm)) );
 	return _CosTheta < CosThetaGround ? 0.0 : GetTransmittance( _AltitudeKm, _CosTheta );
 }
-
 
 // Transmittance(=transparency) of atmosphere up to a given distance
 // We assume the segment is not intersecting ground
@@ -200,15 +194,18 @@ float3	GetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm )
 	float	CosTheta2 = (RadiusKm * _CosTheta + _DistanceKm) / RadiusKm2;												// dot( P0 + d.V, V ) / RadiusKm2
 	float	AltitudeKm2 = RadiusKm2 - GROUND_RADIUS_KM;
 
-	return _CosTheta > 0.0	? exp( -max( 0.0, GetOpticalDepth( _AltitudeKm, _CosTheta ) - GetOpticalDepth( AltitudeKm2, CosTheta2 ) ) )
-							: exp( -max( 0.0, GetOpticalDepth( AltitudeKm2, -CosTheta2 ) - GetOpticalDepth( _AltitudeKm, -_CosTheta ) ) );
+	return _CosTheta > 0.0	? GetTransmittance( _AltitudeKm, _CosTheta ) / GetTransmittance( AltitudeKm2, CosTheta2 )
+							: GetTransmittance( AltitudeKm2, -CosTheta2 ) / GetTransmittance( _AltitudeKm, -_CosTheta );
+
+// 	return _CosTheta > 0.0	? exp( -max( 0.0, GetOpticalDepth( _AltitudeKm, _CosTheta ) - GetOpticalDepth( AltitudeKm2, CosTheta2 ) ) )
+// 							: exp( -max( 0.0, GetOpticalDepth( AltitudeKm2, -CosTheta2 ) - GetOpticalDepth( _AltitudeKm, -_CosTheta ) ) );
 }
 
 float3	GetIrradiance( Texture2D _TexIrradiance, float _AltitudeKm, float _CosThetaSun )
 {
-    float	NormalizedAltitude = _AltitudeKm / ATMOSPHERE_THICKNESS_KM;
-    float	NormalizedCosThetaSun = (_CosThetaSun + 0.2) / (1.0 + 0.2);
-    float2	UV = float2( NormalizedCosThetaSun, NormalizedAltitude );
+	float	NormalizedAltitude = _AltitudeKm / ATMOSPHERE_THICKNESS_KM;
+	float	NormalizedCosThetaSun = (_CosThetaSun + 0.2) / (1.0 + 0.2);
+	float2	UV = float2( NormalizedCosThetaSun, NormalizedAltitude );
 
 	return _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 }
@@ -218,42 +215,112 @@ float3	GetIrradiance( float _AltitudeKm, float _CosThetaSun )
 	return GetIrradiance( _TexIrradiance, _AltitudeKm, _CosThetaSun );
 }
 
-// Gets the zenith/view angle (cos theta), zenith/Sun angle (cos theta Sun) and view/Sun angle (cos gamma) from a 2D parameter
-#define	INSCATTER_NON_LINEAR_VIEW
-#define	INSCATTER_NON_LINEAR_VIEW_POM	// Use my "formula" instead of theirs
-#define	INSCATTER_NON_LINEAR_SUN
-
 // Samples the scattering table from 4 parameters
 float4	Sample4DScatteringTable( Texture3D _TexScattering, float _AltitudeKm, float _CosThetaView, float _CosThetaSun, float _CosGamma )
 {
-	float	r = GROUND_RADIUS_KM + _AltitudeKm;
-	float	H = sqrt( ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
-	float	rho = sqrt( r * r - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
+	const float	H = sqrt( ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
 
-	float	uAltitude = 0.5 / RESOLUTION_ALTITUDE + (rho / H) * NORMALIZED_SIZE_W;
+	float	r = GROUND_RADIUS_KM + _AltitudeKm;
+	float	h = sqrt( r * r - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
+
+	float	uAltitude = 0.5 / RESOLUTION_ALTITUDE + (h / H) * NORMALIZED_SIZE_W;
 
 #ifdef INSCATTER_NON_LINEAR_VIEW
 
-#ifdef INSCATTER_NON_LINEAR_VIEW_POM
+	// The idea here is no more to encode cos(Theta_view) for the V coordinate but rather
+	//	a value that behaves more nicely.
+	//
+	// Bruneton et al. chose to encode a ratio of distances instead (cf. fig 3 of http://www-ljk.imag.fr/Publications/Basilic/com.lmc.publi.PUBLI_Article@11e7cdda2f7_f64b69/article.pdf).
+	//
+	// When the ray is not intersecting the ground, they chose to encode the ratio:
+	//	r = distance to atmosphere following view / distance to atmosphere following the horizon vector
+	// (the horizon vector is the vector starting from the viewpoint and tangent to the ground)
+	//
+	// When the ray is intersecting the ground, they chose to encode the ratio:
+	//	r = distance to ground following view / distance to the ground following the horizon vector
+	//
+	// First, we need to know if and where the view hits the ground.
+	// We pose:
+	//	P0 = (0, r)
+	//	V = (sin(theta), cos(theta))
+	//	P = P0 + d.V
+	//
+	// We solve: P² = Rg²
+	//
+	//	P0.P0 + 2*P0.V*d + V².d² = Rg²				(1)
+	//	[r²-Rg²] + 2*[r*cos(theta)]*d + d² = 0
+	//	Delta = r²*cos²(theta) - [r²-Rg²]
+	//
+	// We hit the ground if we look down (i.e. cos(theta) < 0) and if delta > 0
+	//
+	// ==== HITTING THE GROUND ====
+	// We want to encode distance to ground / distance to horizon
+	//
+	// We hit the ground at distance d = -r*cos(theta) - sqrt(Delta)
+	// The distance to the horizon is simply d_h = sqrt( r² - Rg² )
+	//
+	// So our V coordinate is V = d / d_h = (-r*cos(theta) - sqrt(r²*cos²(theta) - [r²-Rg²])) / sqrt( r² - Rg² )
+	//
+	//
+	// ==== HITTING THE ATMOSPHERE ====
+	// We want to encode distance to atmosphere / distance to atmosphere following horizon vector
+	//
+	// We rewrite equation (1) as before but with Rt instead of Rg
+	//	P0.P0 + 2*P0.V*d + V².d² = Rt²				(2)
+	//	[r²-Rt²] + 2*[r*cos(theta)]*d + d² = 0
+	//	Delta = r²*cos²(theta) - [r²-Rt²]
+	//
+	// We hit the atmosphere at distance d = -r*cos(theta) + sqrt(Delta)
+	//
+	// Next, the distance to the atmosphere d_H following the horizon vector is the largest distance to the atmosphere we can hit
+	//	from the current altitude and is obtained by replacing theta in equation (2) with theta_H, the angle at which
+	//	we're tangent to the horizon from the given altitude.
+	//
+	// First we find that cos( theta_H ) = -sqrt( 1 - Rg²/r² )
+	// Replacing in (2) gives:
+	//	[r²-Rt²] + 2*[r*cos(theta_H)]*d_H + d_H² = 0
+	//	Delta_H = r²*cos²(theta_H) - [r²-Rt²]
+	//	d_H = -r*cos(theta_H) + sqrt( r²*cos²(theta_H) - [r²-Rt²] )
+	//	d_H = r*sqrt( 1 - Rg²/r² ) + sqrt( r²*(1 - Rg²/r²) - [r²-Rt²] )
+	//	d_H = sqrt( r² - Rg² ) + sqrt( Rt² - Rg² )
+	//
+	// And finally, our V coordinate is V = d / d_H = (-r*cos(theta) + sqrt( r²*cos²(theta) - [r²-Rt²] )) / (sqrt( r² - Rg² ) + sqrt( Rt² - Rg² ))
+	//
+	// As a final step, to account for the discontinuity when we hit the ground, the V's are
+	//	reversed in a manner that transition from atmosphere to ground makes V -> 1
+	//	and transition from ground to atmosphere makes V -> 0, the CLAMP address mode prevents
+	//	any unwanted bilinear interpolation that would occur otherwise...
+	//
+	// And this explains all the mysterious bullshit terms and optimizations the authors wrote
+	//	and that was so difficult to grasp looking solely at the code...
+	//
 
- 	float	uCosThetaView = 0.5 * (_CosThetaView < 0.0 ? 1.0 - sqrt( abs(_CosThetaView) ) : 1.0 + sqrt( saturate(_CosThetaView) ));
-			uCosThetaView = 0.5 / RESOLUTION_COS_THETA + uCosThetaView * NORMALIZED_SIZE_V;
+	// Note that this code produces a warning about floating point precision because of the sqrt( H*H + delta )...
+	float	r_cosTheta = r * _CosThetaView;
+	float	Delta = r_cosTheta * r_cosTheta + GROUND_RADIUS_KM * GROUND_RADIUS_KM - r * r;
 
-#else	// !POM?
-// Note that this code produces a warning about floating point precision because of the sqrt( H*H + delta )...
-	float	rmu = r * _CosThetaView;
-	float	delta = rmu * rmu - r * r + GROUND_RADIUS_KM * GROUND_RADIUS_KM;
-
-// This code is "optimized" below
-// 	float	uCosThetaView = 0.0;
-// 	if ( rmu < 0.0 && delta > 0.0 )
-// 		uCosThetaView = (0.5 * NORMALIZED_SIZE_V) + (rmu + sqrt( max( 0.0, delta ) )) / (rho) * (0.5 - 1.0 / RESOLUTION_COS_THETA);
-// 	else
-//		uCosThetaView = (1.0 - 0.5 * NORMALIZED_SIZE_V) + (-rmu + sqrt( max( 0.0, H*H + delta ) )) / (H + rho) * (0.5 - 1.0 / RESOLUTION_COS_THETA);
-//
-	float4	cst = (rmu < 0.0 && delta > 0.0) ? float4( 1.0, 0.0, 0.0, 0.5 * NORMALIZED_SIZE_V ) : float4( -1.0, H * H, H, 1.0 - 0.5 * NORMALIZED_SIZE_V );
-	float	uCosThetaView = cst.w + (rmu * cst.x + sqrt( delta + cst.y )) / (rho + cst.z) * (0.5 - 1.0 / RESOLUTION_COS_THETA);
-
+#if 1
+	// This code is "optimized" below
+	float	uCosThetaView = 0.0;
+	if ( _CosThetaView < 0.0 && Delta > 0.0 )	// Hitting the ground
+	{
+		float	GroundHitDistanceKm = -r_cosTheta - sqrt( max( 0.0, Delta ) );
+		float	HorizonHitDistanceKm = h;
+		uCosThetaView = GroundHitDistanceKm / HorizonHitDistanceKm;												// That's our V coordinate. It equals 1 when we're about to stop hitting the ground (horizon hit) and Delta is becoming negative
+		uCosThetaView = (0.5 * NORMALIZED_SIZE_V) - uCosThetaView * (0.5 - 1.0 / RESOLUTION_COS_THETA);			// This results in mapping to 0.5-€ when viewing straight down, and to 0 when reaching the horizon
+	}
+	else										// Hitting the atmosphere
+	{
+		Delta = r_cosTheta * r_cosTheta + ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - r * r;
+		float	AtmosphereHitDistanceKm = -r_cosTheta + sqrt( max( 0.0, Delta ) );
+		float	HorizonHitDistanceKm = h + H;
+		uCosThetaView = AtmosphereHitDistanceKm / HorizonHitDistanceKm;											// That's our V coordinate. It equals 1 when we're about to start hitting the ground (horizon hit) and Delta is becoming positive
+		uCosThetaView = (1.0 - 0.5 * NORMALIZED_SIZE_V) + uCosThetaView * (0.5 - 1.0 / RESOLUTION_COS_THETA);	// This results in mapping to 0.5+€ when viewing straight up, and to 1 when reaching the horizon
+	}
+#else
+// 	//TODO: REWRITE!
+// 	float4	cst = (rmu < 0.0 && delta > 0.0) ? float4( 1.0, 0.0, 0.0, 0.5 * NORMALIZED_SIZE_V ) : float4( -1.0, H * H, H, 1.0 - 0.5 * NORMALIZED_SIZE_V );
+// 	float	uCosThetaView = cst.w + (rmu * cst.x + sqrt( delta + cst.y )) / (rho + cst.z) * (0.5 - 1.0 / RESOLUTION_COS_THETA);
 #endif
 
 #else
@@ -273,6 +340,11 @@ float4	Sample4DScatteringTable( Texture3D _TexScattering, float _AltitudeKm, flo
 	float	t = 0.5 * (_CosGamma + 1.0) * (RESOLUTION_COS_GAMMA - 1.0);
 	float	uGamma = floor( t );
 	t = t - uGamma;
+
+//@@@###
+//return _TexScattering.SampleLevel( LinearClamp, float3( uCosThetaSun / RESOLUTION_COS_GAMMA, uCosThetaView, uAltitude ), 0.0 );
+//return _TexScattering.SampleLevel( LinearClamp, float3( 0.0, uCosThetaView, uAltitude ), 0.0 );
+
 
 	float4	V0 = _TexScattering.SampleLevel( LinearClamp, float3( (uGamma + uCosThetaSun) / RESOLUTION_COS_GAMMA, uCosThetaView, uAltitude ), 0.0 );
 	float4	V1 = _TexScattering.SampleLevel( LinearClamp, float3( (uGamma + uCosThetaSun + 1.0) / RESOLUTION_COS_GAMMA, uCosThetaView, uAltitude ), 0.0 );

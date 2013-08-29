@@ -98,6 +98,14 @@ int	Build3DTextures( IntroProgressDelegate& _Delegate )
 	for ( int MipLevel=0; MipLevel <= NOISE3D_SHIFT; MipLevel++ )
 		delete[] ppNoise[MipLevel];
 
+#if 1
+	// Save as POM format
+	Texture3D*	pStagingNoise = new Texture3D( gs_Device, NOISE3D_SIZE, NOISE3D_SIZE, NOISE3D_SIZE, PixelFormatRGBA16F::DESCRIPTOR, 0, NULL, true );
+	pStagingNoise->CopyFrom( *gs_pTexNoise3D );
+	pStagingNoise->Save( "./Noise32x32x32.pom" );
+	delete pStagingNoise;
+#endif
+
 	return 0;
 }
 

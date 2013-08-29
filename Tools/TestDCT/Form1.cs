@@ -15,6 +15,7 @@ namespace TestDCT
 	{
 		public const float		MAX_Z = 6.0f;
 		public const int		CURVE_SIZE = 200;
+		public const int		SAMPLING_SIZE = 32;
 
 		#region NESTED TYPES
 
@@ -174,44 +175,75 @@ namespace TestDCT
 
 				Density *= 1.0f - (x < 3.0f ? Smoothstep( 2.0f, 3.0f, x ) : Smoothstep( 4.0f, 3.0f, x ));
 
+
+//Density = 0.0f;
+//Density = 0.1f;
+
 				float	ExtinctionCoeff = 8.0f * Density;
 				float	Transmittance = (float) Math.Exp( -ExtinctionCoeff * StepSize );
+
+//Transmittance = 1.0f;
+
 				TotalTransmittance *= Transmittance;
+
+//TotalTransmittance = Math.Max(0.0f, 1.0f - 1.5f * i / CURVE_SIZE);    // Linear transmittance
+
+
 
 				Curve[i] = new float[2] { i * MAX_Z / CURVE_SIZE, TotalTransmittance };
 			}
 			displayPanelCurve.m_Curve = Curve;
 
 			// Apply DCT compression
-			float	dx = 1.0f / CURVE_SIZE;					// Normalized Z step size
+			float	dx = 1.0f / SAMPLING_SIZE;					// Normalized Z step size
 
 			Vector4	CosTerm0 = (float) Math.PI * new Vector4( 0, 1, 2, 3 );
 			Vector4	CosTerm1 = (float) Math.PI * new Vector4( 4, 5, 6, 7 );
-			Vector4	Angle0 = 0.5f * dx * CosTerm0;
-			Vector4	Angle1 = 0.5f * dx * CosTerm1;
 			Vector4	dAngle0 = dx * CosTerm0;				// This is the increment in phase
 			Vector4	dAngle1 = dx * CosTerm1;
+// 			Vector4	Angle0 = 0.5f * dAngle0;
+// 			Vector4	Angle1 = 0.5f * dAngle1;
+			Vector4	Angle0 = 0.0f * dAngle0;
+			Vector4	Angle1 = 0.0f * dAngle1;
 
 			Vector4	DCTCoeffs0 = new Vector4( 0, 0, 0, 0 );
 			Vector4	DCTCoeffs1 = new Vector4( 0, 0, 0, 0 );
 
-			for ( int i=0; i < CURVE_SIZE; i++ )
+			Vector4	CurrentAngle0 = new Vector4( 1, 1, 1, 1 );
+			Vector4	CurrentAngle1 = new Vector4( 1, 1, 1, 1 );
+			float	PreviousTransmittance = 1.0f;
+			for ( int i=0; i < SAMPLING_SIZE; i++ )
 			{
-				float	Transmittance = Curve[i][1];
-
-//Transmittance = 1.0f - (float) i / CURVE_SIZE;
-//Transmittance = 0.25f;
-//Transmittance = 0.5f * (1.0f + (float) Math.Cos( 2*Math.PI * i / CURVE_SIZE ));
-//Transmittance = (float) Math.Cos( 1*Math.PI * i / CURVE_SIZE );
-
-				DCTCoeffs0 += Transmittance * dx * Angle0.Cos();
-				DCTCoeffs1 += Transmittance * dx * Angle1.Cos();
-
 				Angle0 += dAngle0;
 				Angle1 += dAngle1;
+
+				int	CurveIndex = Math.Min( CURVE_SIZE-1, CURVE_SIZE * (1+i) / (SAMPLING_SIZE+1) );
+//				int	CurveIndex = (int) (CURVE_SIZE * (0.0f+i) / (SAMPLING_SIZE+0.0f));
+				float	Transmittance = Curve[CurveIndex][1];
+
+				// Use average of transmittance
+// 				float	TransmittanceToEncode = 0.5f * (PreviousTransmittance + Transmittance);
+// 				PreviousTransmittance = Transmittance;
+				float	TransmittanceToEncode = Transmittance;
+
+// 				// Square integration (very bad with not enough steps!)
+//				DCTCoeffs0 += TransmittanceToEncode * Angle0.Cos();
+//				DCTCoeffs1 += TransmittanceToEncode * Angle1.Cos();
+
+				// Better trapezoidal integration
+				Vector4	PreviousAngle0 = CurrentAngle0;
+				Vector4	PreviousAngle1 = CurrentAngle1;
+				CurrentAngle0 = Angle0.Cos();
+				CurrentAngle1 = Angle1.Cos();
+
+				Vector4	AverageAngle0 = 0.5f * (PreviousAngle0 + CurrentAngle0);
+				Vector4	AverageAngle1 = 0.5f * (PreviousAngle1 + CurrentAngle1);
+
+				DCTCoeffs0 += TransmittanceToEncode * AverageAngle0;
+				DCTCoeffs1 += TransmittanceToEncode * AverageAngle1;
 			}
-			DCTCoeffs0 *= 2.0f;
-			DCTCoeffs1 *= 2.0f;
+            DCTCoeffs0 *= 2.0f * dx;
+            DCTCoeffs1 *= 2.0f * dx;
 			displayPanelDCT.m_DCTCoefficients = new float[] { DCTCoeffs0.x, DCTCoeffs0.y, DCTCoeffs0.z, DCTCoeffs0.w, DCTCoeffs1.x, DCTCoeffs1.y, DCTCoeffs1.z, DCTCoeffs1.w };
 		}
 	}

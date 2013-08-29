@@ -19,14 +19,15 @@ public:		// NESTED TYPES
 
 	enum	SHADER_STAGE_FLAGS
 	{
-		SSF_VERTEX_SHADER	= (1 << 0),
-		SSF_HULL_SHADER		= (1 << 1),
-		SSF_DOMAIN_SHADER	= (1 << 2),
-		SSF_GEOMETRY_SHADER	= (1 << 3),
-		SSF_PIXEL_SHADER	= (1 << 4),
-		SSF_COMPUTE_SHADER	= (1 << 5),
+		SSF_VERTEX_SHADER		= (1 << 0),
+		SSF_HULL_SHADER			= (1 << 1),
+		SSF_DOMAIN_SHADER		= (1 << 2),
+		SSF_GEOMETRY_SHADER		= (1 << 3),
+		SSF_PIXEL_SHADER		= (1 << 4),
+		SSF_COMPUTE_SHADER		= (1 << 5),
+		SSF_COMPUTE_SHADER_UAV	= (1 << 6),		// WARNING: SSF_ALL doesn't include UAVs!
 
-		SSF_ALL				= (1 << 6)-1
+		SSF_ALL					= (1 << 6)-1	// WARNING: SSF_ALL doesn't include UAVs!
 	};
 
 private:	// FIELDS
@@ -115,6 +116,7 @@ public:	 // METHODS
 	void	RemoveRenderTargets();
 	void	SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _pDepthStencilState, BlendState* _pBlendState );
 	void	SetStatesReferences( const NjFloat4& _BlendMasks, U32 _BlendSampleMask, U8 _StencilRef );
+	void	SetScissorRect( const D3D11_RECT* _pScissor=NULL );
 
 	// Clears the shader resource registers
 	// Useful to cleanup textures that may otherwise be considered as required by shaders that don't really need them.
@@ -130,5 +132,6 @@ public:
 	static bool	Check( HRESULT _Result );
 
 	friend class Component;
+	friend class Material;
 };
 

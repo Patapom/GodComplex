@@ -63,6 +63,36 @@ void	ReleaseScene();
 
 int	IntroInit( IntroProgressDelegate& _Delegate )
 {
+
+/*	NjHalf		Test( 1.0f / 65535 );
+	Test.raw = 0x0001;	// This gives wrong values when exponent is 0!
+	Test.raw = 0x0400;	// Smallest exponent, no mantissa
+	Test.raw = 0x0401;	// Smallest exponent, smallest non null mantissa		(6.1094761e-005)
+	Test.raw = 0x0402;	// Smallest exponent, larger mantissa without LSbit		(6.1154366e-005)
+	Test.raw = 0x0404;	// Smallest exponent, larger mantissa without 2 LSbits	(6.1273575e-005)
+	float		Smallest = Test;
+
+	int	i;
+	for ( i=0; i < 100; i++ )
+	{
+	//	1/65535.0 = 1.5259021896696422e-005;
+
+		float	f = _frand();
+//		f = MAX( f, 1.5259021896696422e-005f );
+//		f = MAX( f, 2*3.0518043793392843518730449378195e-5f );
+//		U32		Bisou = U32( f * 65535.0f );
+//		if ( Bisou & 1 )
+//			break;
+
+		U32	Bisou = U32( f * 65535 );
+			Bisou &= ~0xF;
+		float	f2 = Bisou / 65535.0f;
+		U32	Bisou2 = U32( f2 * 65535 );
+		if ( Bisou2 & 1 )
+			break;
+	}
+*/
+
 	//////////////////////////////////////////////////////////////////////////
 	// Attempt to create the video capture object
 // 	gs_pVideo = new Video( gs_Device, gs_WindowInfos.hWnd );

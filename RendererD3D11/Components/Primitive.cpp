@@ -50,6 +50,8 @@ void	Primitive::Render( Material& _Material )
 }
 void	Primitive::Render( Material& _Material, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset )
 {
+	ASSERT( m_Device.CurrentMaterial() == &_Material, "Attempting to render with a material that is not the currently used material!" );
+
 	ID3D11InputLayout*	pLayout = _Material.GetVertexLayout();
 	if ( pLayout == NULL )
 		return;	// Material is not initialied yet...
@@ -80,6 +82,8 @@ void	Primitive::RenderInstanced( Material& _Material, int _InstancesCount )
 }
 void	Primitive::RenderInstanced( Material& _Material, int _InstancesCount, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset )
 {
+	ASSERT( m_Device.CurrentMaterial() == &_Material, "Attempting to render with a material that is not the currently used material!" );
+
 	ID3D11InputLayout*	pLayout = _Material.GetVertexLayout();
 	if ( pLayout == NULL )
 		return;	// Material is not initialied yet...

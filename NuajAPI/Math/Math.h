@@ -227,6 +227,9 @@ NjFloat4   operator*( const NjFloat4& a, const NjFloat4x4& b );
 class   NjHalf
 {
 public:
+	static const U16	SMALLEST_UINT = 0x0400;
+	static const float	SMALLEST;// = 6.1035156e-005f;	// The smallest encodable float
+
 	U16 raw;
 
 	NjHalf()	{ raw=0; }

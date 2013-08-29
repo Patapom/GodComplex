@@ -4,5 +4,9 @@
     <ShowAllFiles>false</ShowAllFiles>
     <LocalDebuggerCommand Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(TargetPath)</LocalDebuggerCommand>
     <DebuggerFlavor Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommand Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">
+    </LocalDebuggerCommand>
+    <DebuggerFlavor Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerWorkingDirectory Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
 </Project>

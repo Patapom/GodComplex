@@ -38,7 +38,8 @@ namespace TestMemoryMappedFiles
 			public float	FogReferenceAltitudeKm;
 			public float	FogAnisotropy;
 			public float	AverageGroundReflectance;
-			public float	GodraysStrength;
+			public float	GodraysStrength_Rayleigh;
+			public float	GodraysStrength_Mie;
 			public float	AltitudeOffset;
 			// TODO: Add scattering/extinction ratio?
 
@@ -155,7 +156,8 @@ namespace TestMemoryMappedFiles
 			floatTrackbarControlFogRefAltitude.Value = m_Instance.FogReferenceAltitudeKm;
 			floatTrackbarControlFogAnisotropy.Value = m_Instance.FogAnisotropy;
 //			floatTrackbarControlGroundReflectance.Value = m_Instance.AverageGroundReflectance;
-			floatTrackbarControlGodraysStrength.Value = m_Instance.GodraysStrength;
+			floatTrackbarControlGodraysStrength_Rayleigh.Value = m_Instance.GodraysStrength_Rayleigh;
+			floatTrackbarControlGodraysStrength_Mie.Value = m_Instance.GodraysStrength_Mie;
 			floatTrackbarControlAltitudeOffset.Value = m_Instance.AltitudeOffset;
 
 			// Volumetrics Params
@@ -267,7 +269,13 @@ namespace TestMemoryMappedFiles
 
 		private void floatTrackbarControlGodraysStrength_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_Instance.GodraysStrength = _Sender.Value;
+			m_Instance.GodraysStrength_Mie = _Sender.Value;
+			UpdateMMF();
+		}
+
+		private void floatTrackbarControlGodraysStrength_Mie_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_Instance.GodraysStrength_Rayleigh = _Sender.Value;
 			UpdateMMF();
 		}
 

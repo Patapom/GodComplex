@@ -354,6 +354,20 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Intro\Effects\EffectVolumetric.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTables.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesCS.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesPS.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Intro\Effects\Scene\MaterialBank.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
     </ClCompile>
@@ -447,10 +461,14 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\TranslucencyDisplay.hlsl" />
     <None Include="Resources\Shaders\VolumetricCombine.hlsl" />
     <None Include="Resources\Shaders\VolumetricComputeTransmittance.hlsl" />
+    <None Include="Resources\Shaders\VolumetricDepthPrePass.hlsl" />
     <None Include="Resources\Shaders\VolumetricDepthWrite.hlsl" />
     <None Include="Resources\Shaders\VolumetricDisplay.hlsl" />
+    <None Include="Resources\Shaders\VolumetricDisplay_AtmosphereOnly.hlsl" />
+    <None Include="Resources\Shaders\VolumetricDownsampleDepth.hlsl" />
     <None Include="Resources\Shaders\VolumetricPreComputeAtmosphere.hlsl" />
     <None Include="Resources\Shaders\VolumetricPreComputeAtmosphereCS.hlsl" />
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmospherePS.hlsl" />
     <None Include="Resources\Shaders\VolumetricTerrain.hlsl" />
     <None Include="Tools\GodComplex.kkm" />
   </ItemGroup>

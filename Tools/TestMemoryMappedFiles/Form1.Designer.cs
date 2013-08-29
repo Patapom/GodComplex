@@ -35,7 +35,7 @@
 			this.label5 = new System.Windows.Forms.Label();
 			this.label4 = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlGodraysStrength = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlGodraysStrength_Rayleigh = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlFogAnisotropy = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -115,6 +115,8 @@
 			this.buttonSavePreset = new System.Windows.Forms.Button();
 			this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
+			this.floatTrackbarControlGodraysStrength_Mie = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label42 = new System.Windows.Forms.Label();
 			this.groupBoxAtmosphere.SuspendLayout();
 			this.groupBoxClouds.SuspendLayout();
 			this.groupBoxIsotropicScattering.SuspendLayout();
@@ -130,7 +132,8 @@
 			this.groupBoxAtmosphere.Controls.Add(this.label5);
 			this.groupBoxAtmosphere.Controls.Add(this.label4);
 			this.groupBoxAtmosphere.Controls.Add(this.label3);
-			this.groupBoxAtmosphere.Controls.Add(this.floatTrackbarControlGodraysStrength);
+			this.groupBoxAtmosphere.Controls.Add(this.floatTrackbarControlGodraysStrength_Mie);
+			this.groupBoxAtmosphere.Controls.Add(this.floatTrackbarControlGodraysStrength_Rayleigh);
 			this.groupBoxAtmosphere.Controls.Add(this.label2);
 			this.groupBoxAtmosphere.Controls.Add(this.label1);
 			this.groupBoxAtmosphere.Controls.Add(this.floatTrackbarControlFogAnisotropy);
@@ -141,6 +144,7 @@
 			this.groupBoxAtmosphere.Controls.Add(this.floatTrackbarControlSunAzimuth);
 			this.groupBoxAtmosphere.Controls.Add(this.floatTrackbarControlSunTheta);
 			this.groupBoxAtmosphere.Controls.Add(this.label41);
+			this.groupBoxAtmosphere.Controls.Add(this.label42);
 			this.groupBoxAtmosphere.Location = new System.Drawing.Point(12, 12);
 			this.groupBoxAtmosphere.Name = "groupBoxAtmosphere";
 			this.groupBoxAtmosphere.Size = new System.Drawing.Size(308, 284);
@@ -153,9 +157,9 @@
 			this.label19.AutoSize = true;
 			this.label19.Location = new System.Drawing.Point(6, 104);
 			this.label19.Name = "label19";
-			this.label19.Size = new System.Drawing.Size(65, 13);
+			this.label19.Size = new System.Drawing.Size(66, 13);
 			this.label19.TabIndex = 2;
-			this.label19.Text = "Godrays Str.";
+			this.label19.Text = "Godrays Mie";
 			// 
 			// label7
 			// 
@@ -202,19 +206,18 @@
 			this.label3.TabIndex = 2;
 			this.label3.Text = "Air Amount";
 			// 
-			// floatTrackbarControlGodraysStrength
+			// floatTrackbarControlGodraysStrength_Rayleigh
 			// 
-			this.floatTrackbarControlGodraysStrength.Location = new System.Drawing.Point(88, 100);
-			this.floatTrackbarControlGodraysStrength.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlGodraysStrength.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlGodraysStrength.Name = "floatTrackbarControlGodraysStrength";
-			this.floatTrackbarControlGodraysStrength.RangeMax = 2F;
-			this.floatTrackbarControlGodraysStrength.RangeMin = 0F;
-			this.floatTrackbarControlGodraysStrength.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlGodraysStrength.TabIndex = 0;
-			this.floatTrackbarControlGodraysStrength.Value = 1F;
-			this.floatTrackbarControlGodraysStrength.VisibleRangeMax = 1F;
-			this.floatTrackbarControlGodraysStrength.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGodraysStrength_ValueChanged);
+			this.floatTrackbarControlGodraysStrength_Rayleigh.Location = new System.Drawing.Point(88, 100);
+			this.floatTrackbarControlGodraysStrength_Rayleigh.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlGodraysStrength_Rayleigh.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlGodraysStrength_Rayleigh.Name = "floatTrackbarControlGodraysStrength_Rayleigh";
+			this.floatTrackbarControlGodraysStrength_Rayleigh.RangeMax = 100F;
+			this.floatTrackbarControlGodraysStrength_Rayleigh.RangeMin = 0F;
+			this.floatTrackbarControlGodraysStrength_Rayleigh.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlGodraysStrength_Rayleigh.TabIndex = 0;
+			this.floatTrackbarControlGodraysStrength_Rayleigh.Value = 10F;
+			this.floatTrackbarControlGodraysStrength_Rayleigh.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGodraysStrength_ValueChanged);
 			// 
 			// label2
 			// 
@@ -403,8 +406,8 @@
 			this.floatTrackbarControlIsotropicScatteringTerrainFactor.RangeMin = 0F;
 			this.floatTrackbarControlIsotropicScatteringTerrainFactor.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlIsotropicScatteringTerrainFactor.TabIndex = 0;
-			this.floatTrackbarControlIsotropicScatteringTerrainFactor.Value = 0.2F;
-			this.floatTrackbarControlIsotropicScatteringTerrainFactor.VisibleRangeMax = 1F;
+			this.floatTrackbarControlIsotropicScatteringTerrainFactor.Value = 0.1F;
+			this.floatTrackbarControlIsotropicScatteringTerrainFactor.VisibleRangeMax = 0.5F;
 			this.floatTrackbarControlIsotropicScatteringTerrainFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIsotropicScatteringTerrainFactor_ValueChanged);
 			// 
 			// label17
@@ -426,8 +429,8 @@
 			this.floatTrackbarControlIsotropicScatteringSunFactor.RangeMin = 0F;
 			this.floatTrackbarControlIsotropicScatteringSunFactor.Size = new System.Drawing.Size(214, 20);
 			this.floatTrackbarControlIsotropicScatteringSunFactor.TabIndex = 0;
-			this.floatTrackbarControlIsotropicScatteringSunFactor.Value = 0.7F;
-			this.floatTrackbarControlIsotropicScatteringSunFactor.VisibleRangeMax = 1F;
+			this.floatTrackbarControlIsotropicScatteringSunFactor.Value = 0.1F;
+			this.floatTrackbarControlIsotropicScatteringSunFactor.VisibleRangeMax = 0.1F;
 			this.floatTrackbarControlIsotropicScatteringSunFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIsotropicScatteringSunFactor_ValueChanged);
 			// 
 			// label16
@@ -1177,6 +1180,29 @@
 			this.saveFileDialog.Filter = "XML Files (*.xml)|*.xml|All Files|*.*";
 			this.saveFileDialog.Title = "Choose a preset file...";
 			// 
+			// floatTrackbarControlGodraysStrength_Mie
+			// 
+			this.floatTrackbarControlGodraysStrength_Mie.Location = new System.Drawing.Point(88, 77);
+			this.floatTrackbarControlGodraysStrength_Mie.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlGodraysStrength_Mie.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlGodraysStrength_Mie.Name = "floatTrackbarControlGodraysStrength_Mie";
+			this.floatTrackbarControlGodraysStrength_Mie.RangeMax = 100F;
+			this.floatTrackbarControlGodraysStrength_Mie.RangeMin = 0F;
+			this.floatTrackbarControlGodraysStrength_Mie.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlGodraysStrength_Mie.TabIndex = 0;
+			this.floatTrackbarControlGodraysStrength_Mie.Value = 1F;
+			this.floatTrackbarControlGodraysStrength_Mie.VisibleRangeMax = 1F;
+			this.floatTrackbarControlGodraysStrength_Mie.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGodraysStrength_Mie_ValueChanged);
+			// 
+			// label42
+			// 
+			this.label42.AutoSize = true;
+			this.label42.Location = new System.Drawing.Point(6, 81);
+			this.label42.Name = "label42";
+			this.label42.Size = new System.Drawing.Size(90, 13);
+			this.label42.TabIndex = 2;
+			this.label42.Text = "Godrays Rayleigh";
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1243,7 +1269,7 @@
 		private System.Windows.Forms.Label label19;
 		private System.Windows.Forms.Label label20;
 		private System.Windows.Forms.Label label21;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGodraysStrength;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGodraysStrength_Rayleigh;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTerrainShadowStrength;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAlbedoMultiplier;
 		private System.Windows.Forms.GroupBox groupBoxIsotropicScattering;
@@ -1298,6 +1324,8 @@
 		private System.Windows.Forms.SaveFileDialog saveFileDialog;
 		private System.Windows.Forms.Label label41;
 		private System.Windows.Forms.CheckBox checkBoxTerrainEnabled;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGodraysStrength_Mie;
+		private System.Windows.Forms.Label label42;
 	}
 }
 

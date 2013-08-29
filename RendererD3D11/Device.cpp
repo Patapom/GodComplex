@@ -274,7 +274,7 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	Desc.BorderColor[1] = 0.0f;
 	Desc.BorderColor[2] = 0.0f;
 	Desc.BorderColor[3] = 0.0f;
-	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[6] );	// Linear Border
+	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[6] );	// Linear Black Border
 
 	// Upload them once and for all
 	m_pDeviceContext->VSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
@@ -397,10 +397,25 @@ void	Device::SetStatesReferences( const NjFloat4& _BlendFactors, U32 _BlendSampl
 	m_StencilRef = _StencilRef;
 }
 
+void	Device::SetScissorRect( const D3D11_RECT* _pScissor )
+{
+	D3D11_RECT	Full = {
+		0, 0,
+		DefaultRenderTarget().GetWidth(),
+		DefaultRenderTarget().GetHeight()
+	};
+	m_pDeviceContext->RSSetScissorRects( 1, _pScissor != NULL ? _pScissor : &Full );
+}
+
 void	Device::RemoveShaderResources( int _SlotIndex, int _SlotsCount, U32 _ShaderStages )
 {
-	ID3D11ShaderResourceView*	ppNULL[128];
-	memset( ppNULL, NULL, _SlotsCount*sizeof(ID3D11ShaderResourceView*) );
+	static bool							ViewsInitialized = false;
+	static ID3D11ShaderResourceView*	ppNULL[128];
+	if ( !ViewsInitialized )
+	{
+		memset( ppNULL, NULL, _SlotsCount*sizeof(ID3D11ShaderResourceView*) );
+		ViewsInitialized = true;
+	}
 
 	if ( (_ShaderStages & SSF_VERTEX_SHADER) != 0 )
 		m_pDeviceContext->VSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
@@ -414,6 +429,11 @@ void	Device::RemoveShaderResources( int _SlotIndex, int _SlotsCount, U32 _Shader
 		m_pDeviceContext->PSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
 	if ( (_ShaderStages & SSF_COMPUTE_SHADER) != 0 )
 		m_pDeviceContext->CSSetShaderResources( _SlotIndex, _SlotsCount, ppNULL );
+	if ( (_ShaderStages & SSF_COMPUTE_SHADER_UAV) != 0 )
+	{
+		U32	UAVInitCount = -1;
+		m_pDeviceContext->CSSetUnorderedAccessViews( _SlotIndex, _SlotsCount, (ID3D11UnorderedAccessView**) ppNULL, &UAVInitCount );
+	}
 }
 
 void	Device::RegisterComponent( Component& _Component )

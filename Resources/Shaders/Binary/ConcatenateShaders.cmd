@@ -1,0 +1,1 @@
+ConcatenateShaders.exe "."
