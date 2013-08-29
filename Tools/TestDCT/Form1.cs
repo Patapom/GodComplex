@@ -127,9 +127,32 @@ namespace TestDCT
 			return t * t * (3.0f - 2.0f * t);
 		}
 
+		void	TestEigenVectors()
+		{
+//			WMath.Vector	Axis = new WMath.Vector( 1, 1, 1 );
+			WMath.Vector	Axis = new WMath.Vector( 1, 0, 0 );
+							Axis.Normalize();
+			WMath.Matrix3x3	Rot = (WMath.Matrix3x3) new WMath.Quat( new WMath.AngleAxis( 0.5f * (float) Math.PI, Axis ));
+							Rot.Transpose();
+
+			WMath.Vector	Eigen = Rot.EigenValues();
+
+			WMath.Matrix3x3	M0 = Rot - Eigen.x * WMath.Matrix3x3.IDENTITY;
+			WMath.Matrix3x3	M1 = Rot - Eigen.y * WMath.Matrix3x3.IDENTITY;
+			WMath.Matrix3x3	M2 = Rot - Eigen.z * WMath.Matrix3x3.IDENTITY;
+
+			WMath.Vector	X = M0.GetRow0();
+			WMath.Vector	Y = M0.GetRow1();
+			WMath.Vector	Z = M0.GetRow2();
+		}
+
 		public Form1()
 		{
 			InitializeComponent();
+
+
+			TestEigenVectors();
+
 
 			Color	C = Color.SkyBlue;
 
