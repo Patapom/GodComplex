@@ -327,12 +327,10 @@ void	Texture3D::Save( const char* _pFileName )
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
 		Map( MipLevelIndex );
+		fwrite( &m_LockedResource.RowPitch, sizeof(int), 1, pFile );
+		fwrite( &m_LockedResource.DepthPitch, sizeof(int), 1, pFile );
 		for ( int SliceIndex=0; SliceIndex < Depth; SliceIndex++ )
-		{
-			fwrite( &m_LockedResource.RowPitch, sizeof(int), 1, pFile );
-			fwrite( &m_LockedResource.DepthPitch, sizeof(int), 1, pFile );
 			fwrite( ((U8*) m_LockedResource.pData) + SliceIndex * m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
-		}
 		UnMap( MipLevelIndex );
 
 		Depth = MAX( 1, Depth >> 1 );
@@ -373,15 +371,15 @@ void	Texture3D::Load( const char* _pFileName )
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
 		Map( MipLevelIndex );
+		int	RowPitch, DepthPitch;
+		fread_s( &RowPitch, sizeof(int), sizeof(int), 1, pFile );
+		fread_s( &DepthPitch, sizeof(int), sizeof(int), 1, pFile );
+		ASSERT( RowPitch == m_LockedResource.RowPitch, "Incompatible row pitch!" );
+		ASSERT( DepthPitch == m_LockedResource.DepthPitch, "Incompatible depth pitch!" );
+
 		for ( int SliceIndex=0; SliceIndex < Depth; SliceIndex++ )
-		{
-			int	RowPitch, DepthPitch;
-			fread_s( &RowPitch, sizeof(int), sizeof(int), 1, pFile );
-			fread_s( &DepthPitch, sizeof(int), sizeof(int), 1, pFile );
-			ASSERT( RowPitch == m_LockedResource.RowPitch, "Incompatible row pitch!" );
-			ASSERT( DepthPitch == m_LockedResource.DepthPitch, "Incompatible depth pitch!" );
 			fread_s( ((U8*) m_LockedResource.pData) + SliceIndex * m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
-		}
+
 		UnMap( MipLevelIndex );
 
 		Depth = MAX( 1, Depth >> 1 );

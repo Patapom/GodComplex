@@ -145,7 +145,7 @@ return 0.01 * (Bisou.x - Bisou.y);
 #endif
 
 // DEBUG
-#if 1
+#if 0
 if ( UV.x < 0.3 && UV.y > 0.7 )
 {	// Show the transmittance map
 	UV.x /= 0.3;
@@ -167,9 +167,9 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 
 
 
-//	return 1.0 * abs(_TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz);
-	return 20.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
- 	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+	return 1.0 * abs(_TexScattering.SampleLevel( LinearClamp, float3( UV, 0.5 * (1.0 + sin( _Time.x )) ), 0.0 ).xyz);
+// 	return 20.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+// 	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 //	return _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 //	return _TexTerrainShadow.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 

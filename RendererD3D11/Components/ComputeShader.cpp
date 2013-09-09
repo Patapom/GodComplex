@@ -682,6 +682,7 @@ ComputeShader*	ComputeShader::CreateFromBinaryBlob( Device& _Device, const char*
 {
 #ifndef SAVE_SHADER_BLOB_TO
 	ASSERT( false, "You can't use that in RELEASE or if binary blobs are not available!" );
+	return NULL;
 #else
 	ASSERT( _pEntryPoint != NULL, "You must provide a valid entry point!" );
 

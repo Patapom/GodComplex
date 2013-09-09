@@ -356,9 +356,17 @@ MinifyAll.cmd</Command>
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTables.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesCS.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesPS.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Intro\Effects\Scene\MaterialBank.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
@@ -460,6 +468,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\VolumetricDownsampleDepth.hlsl" />
     <None Include="Resources\Shaders\VolumetricPreComputeAtmosphere.hlsl" />
     <None Include="Resources\Shaders\VolumetricPreComputeAtmosphereCS.hlsl" />
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmospherePS.hlsl" />
     <None Include="Resources\Shaders\VolumetricTerrain.hlsl" />
     <None Include="Tools\GodComplex.kkm" />
   </ItemGroup>

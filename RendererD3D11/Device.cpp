@@ -274,7 +274,7 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	Desc.BorderColor[1] = 0.0f;
 	Desc.BorderColor[2] = 0.0f;
 	Desc.BorderColor[3] = 0.0f;
-	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[6] );	// Linear Border
+	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[6] );	// Linear Black Border
 
 	// Upload them once and for all
 	m_pDeviceContext->VSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );

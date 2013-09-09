@@ -15,7 +15,7 @@ cbuffer	cbCompute	: register( b10 )
 	uint3	_GroupsCount;	// Amount of render groups (2D or 3D) for a single pass
 	uint3	_PassIndex;		// Index of the X,Y,Z pass (each pass computes THREAD_COUNT_X*THREAD_COUNT_Y*THREAD_COUNT_Z texels)
 
-	bool	_bFirstPass;				// True if we're computing the first pass that reads single-scattering for Rayleigh & Mie from 2 separate tables
+	bool	_bFirstPass;	// True if we're computing the first pass that reads single-scattering for Rayleigh & Mie from 2 separate tables
 	float	_AverageGroundReflectance;
 };
 
@@ -49,7 +49,7 @@ VS_IN	VS( VS_IN _In )	{ return _In; }
 void	GS( triangle VS_IN _In[3], inout TriangleStream<PS_IN> _Stream )
 {
 	PS_IN	Out;
-	Out.SliceIndex = _In[0].InstanceID;
+	Out.SliceIndex = (_GroupsCount.z * THREADS_COUNT_Z) * _PassIndex.z + _In[0].InstanceID;
 	Out.__Position = _In[0].__Position;
 	_Stream.Append( Out );
 	Out.__Position = _In[1].__Position;
@@ -69,7 +69,7 @@ uint3	GetTexelInfos( PS_IN _In )
 
 	uint	TexelX = (_GroupsCount.x * THREADS_COUNT_X) * _PassIndex.x + PixelPosition.x;
 	uint	TexelY = (_GroupsCount.y * THREADS_COUNT_Y) * _PassIndex.y + PixelPosition.y;
-	uint	TexelZ = (_GroupsCount.z * THREADS_COUNT_Z) * _PassIndex.z + _In.SliceIndex;
+	uint	TexelZ = _In.SliceIndex;
 	return uint3( TexelX, TexelY, TexelZ );
 }
 
@@ -226,30 +226,31 @@ void	GetSliceData( uint3 _Texel, out float _AltitudeKm, out float _CosThetaView,
 float	ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, const float _Href, uniform uint STEPS_COUNT=500 )
 {
 	// Compute distance to atmosphere or ground, whichever comes first
-	float4	PositionKm = float4( 0.0, _AltitudeKm, 0.0, 0.0 );
+	float3	PositionKm = float3( 0.0, _AltitudeKm, 0.0 );
 	float3	View = float3( sqrt( 1.0 - _CosTheta*_CosTheta ), _CosTheta, 0.0 );
 	bool	bGroundHit;
-	float	TraceDistanceKm = ComputeNearestHit( PositionKm.xyz, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
+	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
 	if ( bGroundHit )
 		return 1e5;	// Completely opaque due to hit with ground: no light can come this way...
 					// Be careful with large values in 16F!
 
 	float	Result = 0.0;
-	float4	StepKm = (TraceDistanceKm / STEPS_COUNT) * float4( View, 1.0 );
+	float	StepSizeKm = TraceDistanceKm / STEPS_COUNT;
+	float3	StepKm = StepSizeKm * View;
 
 	float		PreviousAltitudeKm = _AltitudeKm;
 	for ( uint i=0; i < STEPS_COUNT; i++ )
 	{
 		PositionKm += StepKm;
-		_AltitudeKm = length( PositionKm.xyz - EARTH_CENTER_KM ) - GROUND_RADIUS_KM;
+		_AltitudeKm = length( PositionKm - EARTH_CENTER_KM ) - GROUND_RADIUS_KM;
 		Result += exp( (PreviousAltitudeKm + _AltitudeKm) * (-0.5 / _Href) );	// Gives the integral of a linear interpolation in altitude
 		PreviousAltitudeKm = _AltitudeKm;
 	}
 
-	return Result * StepKm.w;
+	return StepSizeKm * Result;
 }
 
-float4	PreComputeTransmittance( VS_IN _In ) : SV_TARGET0
+float4	PreComputeTransmittance( PS_IN _In ) : SV_TARGET0
 {
 	uint3	Texel = GetTexelInfos( _In );
 	float2	UV = float2( Texel.xy ) / _TargetSize.xy;
@@ -266,7 +267,7 @@ float4	PreComputeTransmittance( VS_IN _In ) : SV_TARGET0
 //////////////////////////////////////////////////////////////////////////
 // 1] Pre-Computes the ground irradiance table accounting for direct lighting only
 //
-float4	PreComputeIrradiance_Single( VS_IN _In ) : SV_TARGET0
+float4	PreComputeIrradiance_Single( PS_IN _In ) : SV_TARGET0
 {
 	uint2	Texel = GetTexelInfos( _In ).xy;
 	float2	UV = float2( Texel ) / _TargetSize.xy;
@@ -324,15 +325,16 @@ PS_OUT	PreComputeInScattering_Single( PS_IN _In )
 	GetSliceData( Texel, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
 
 	// Compute distance to atmosphere or ground, whichever comes first
-	float4	PositionKm = float4( 0.0, AltitudeKm, 0.0, 0.0 );
+	float	RadiusKm = GROUND_RADIUS_KM + AltitudeKm;
+	float3	PositionKm = float3( 0.0, AltitudeKm, 0.0 );
 	float3	View = float3( sqrt( 1.0 - CosThetaView*CosThetaView ), CosThetaView, 0.0 );
 	bool	bGroundHit;
-	float	TraceDistanceKm = ComputeNearestHit( PositionKm.xyz, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
+	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
 	float	StepSizeKm = TraceDistanceKm / STEPS_COUNT;
 
 	float3	PreviousRayleigh;
 	float3	PreviousMie;
-	Integrand_Single( GROUND_RADIUS_KM + AltitudeKm, CosThetaView, CosThetaSun, CosGamma, 0.0, PreviousRayleigh, PreviousMie );
+	Integrand_Single( RadiusKm, CosThetaView, CosThetaSun, CosGamma, 0.0, PreviousRayleigh, PreviousMie );
 
 	float3	_Rayleigh = 0.0;
 	float3	_Mie = 0.0;
@@ -342,7 +344,7 @@ PS_OUT	PreComputeInScattering_Single( PS_IN _In )
 	for ( uint i=0; i < STEPS_COUNT; i++ )
 	{
 		float3	CurrentRayleigh, CurrentMie;
-		Integrand_Single( GROUND_RADIUS_KM + AltitudeKm, CosThetaView, CosThetaSun, CosGamma, DistanceKm, CurrentRayleigh, CurrentMie );
+		Integrand_Single( RadiusKm, CosThetaView, CosThetaSun, CosGamma, DistanceKm, CurrentRayleigh, CurrentMie );
 
 		_Rayleigh += 0.5 * (PreviousRayleigh + CurrentRayleigh);
 		_Mie += 0.5 * (PreviousMie + CurrentMie);
@@ -355,7 +357,7 @@ PS_OUT	PreComputeInScattering_Single( PS_IN _In )
 	_Rayleigh *= _AirParams.x * SIGMA_SCATTERING_RAYLEIGH * StepSizeKm;
 	_Mie *= _FogParams.x * StepSizeKm;
 
-    // Store separately Rayleigh and Mie contributions, WITHOUT the phase function factor (cf "Angular precision")
+    // Store Rayleigh and Mie contributions separately, WITHOUT the phase function factor (cf "Angular precision")
 	PS_OUT	Out;
 	Out.Color0 = _Rayleigh;
 	Out.Color1 = _Mie;
@@ -467,7 +469,7 @@ float3	PreComputeInScattering_Delta( PS_IN _In ) : SV_TARGET0
 
 //////////////////////////////////////////////////////////////////////////
 // Pre-Computes the irradiance table accounting for multiple scattering
-float3	PreComputeIrradiance_Delta( VS_IN _In ) : SV_TARGET0
+float3	PreComputeIrradiance_Delta( PS_IN _In ) : SV_TARGET0
 {
 const uint STEPS_COUNT=32;
 
@@ -550,10 +552,10 @@ float3	PreComputeInScattering_Multiple( PS_IN _In ) : SV_TARGET0
 	GetSliceData( Texel, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
 
 	// Compute distance to atmosphere or ground, whichever comes first
-	float4	PositionKm = float4( 0.0, AltitudeKm, 0.0, 0.0 );
+	float3	PositionKm = float3( 0.0, AltitudeKm, 0.0 );
 	float3	View = float3( sqrt( 1.0 - CosThetaView*CosThetaView ), CosThetaView, 0.0 );
 	bool	bGroundHit;
-	float	TraceDistanceKm = ComputeNearestHit( PositionKm.xyz, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
+	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
 	float	StepSizeKm = TraceDistanceKm / STEPS_COUNT;
 
 	float3	Result = 0.0;
@@ -603,7 +605,7 @@ float4	AccumulateInScattering( PS_IN _In ) : SV_TARGET0
 
 //////////////////////////////////////////////////////////////////////////
 // Accumulates irradiance into the final irradiance table
-float3	AccumulateIrradiance( VS_IN _In ) : SV_TARGET0
+float3	AccumulateIrradiance( PS_IN _In ) : SV_TARGET0
 {
 	uint3	Texel = GetTexelInfos( _In );
 	return _TexIrradianceDelta[Texel.xy].xyz;

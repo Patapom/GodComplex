@@ -32,10 +32,10 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 		{ "CAMERA_ABOVE_CLOUDS", "1" },
 		{ NULL,	NULL }
 	};
-// 	CHECK_MATERIAL( m_ppMatDisplay[0] = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
-// 	CHECK_MATERIAL( m_ppMatDisplay[1] = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosAboveClouds ), 7 );
-	CHECK_MATERIAL( m_ppMatDisplay[0] = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay_AtmosphereOnly.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 6 );//### DEBUG ATMOSPHERE TABLES!
-	CHECK_MATERIAL( m_ppMatDisplay[1] = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay_AtmosphereOnly.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosAboveClouds ), 7 );
+	CHECK_MATERIAL( m_ppMatDisplay[0] = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
+	CHECK_MATERIAL( m_ppMatDisplay[1] = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosAboveClouds ), 7 );
+// 	CHECK_MATERIAL( m_ppMatDisplay[0] = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay_AtmosphereOnly.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 6 );//### DEBUG ATMOSPHERE TABLES!
+// 	CHECK_MATERIAL( m_ppMatDisplay[1] = CreateMaterial( IDR_SHADER_VOLUMETRIC_DISPLAY, "./Resources/Shaders/VolumetricDisplay_AtmosphereOnly.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS", pMacrosAboveClouds ), 7 );
 
  	CHECK_MATERIAL( m_pMatCombine = CreateMaterial( IDR_SHADER_VOLUMETRIC_COMBINE, "./Resources/Shaders/VolumetricCombine.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 8 );
 
@@ -68,6 +68,11 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 	m_ppRTInScattering[0] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );	// inscatter (final)
 	m_ppRTInScattering[1] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );
 	m_ppRTInScattering[2] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );
+
+	// Setup to their target slots, even though they're not computed yet... That's just to avoid annoying warnings in the console.
+	m_ppRTTransmittance[0]->Set( 7, true );
+	m_ppRTInScattering[0]->Set( 8, true );
+	m_ppRTIrradiance[0]->Set( 9, true );
 
 	InitSkyTables();
 
@@ -187,7 +192,8 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 		1.2f,		// float	FogReferenceAltitudeKm;
 		0.76f,		// float	FogAnisotropy;
 		0.1f,		// float	AverageGroundReflectance;
-		0.9f,		// float	GodraysStrength;
+		1.0f,		// float	GodraysStrength Rayleigh;
+		4.0f,		// float	GodraysStrength Mie;
 		-1.0f,		// float	AltitudeOffset;
 
 		// // Volumetrics Params
@@ -310,7 +316,7 @@ float	t = 2*0.25f * _Time;
 
 
 	// Animate cloud position
-	m_pCB_Volume->m._CloudLoFreqPositionOffset = m_pCB_Volume->m._CloudLoFreqPositionOffset + (_DeltaTime * m_CloudAnimSpeedLoFreq) * NjFloat2( 0.66f, -1.66f );
+	m_pCB_Volume->m._CloudLoFreqPositionOffset = m_pCB_Volume->m._CloudLoFreqPositionOffset + (_DeltaTime * m_CloudAnimSpeedLoFreq) * NjFloat2( 0.22f, -0.55f );
 	m_pCB_Volume->m._CloudHiFreqPositionOffset = m_pCB_Volume->m._CloudHiFreqPositionOffset + (_DeltaTime * m_CloudAnimSpeedHiFreq) * NjFloat2( 0.0f, -0.08f );
 
 
@@ -338,7 +344,8 @@ float	t = 2*0.25f * _Time;
 		m_pCB_Atmosphere->m.SunIntensity = Params.SunIntensity;
 
 		m_pCB_Atmosphere->m.AirParams.Set( Params.AirAmount, Params.AirReferenceAltitudeKm );
-		m_pCB_Atmosphere->m.GodraysStrength = Params.GodraysStrength;
+		m_pCB_Atmosphere->m.GodraysStrengthRayleigh = Params.GodraysStrengthRayleigh;
+		m_pCB_Atmosphere->m.GodraysStrengthMie = Params.GodraysStrengthMie;
 		m_pCB_Atmosphere->m.AltitudeOffset = Params.AltitudeOffset;
 
 		m_pCB_Atmosphere->m.FogParams.Set( Params.FogScattering, Params.FogExtinction, Params.FogReferenceAltitudeKm, Params.FogAnisotropy );
@@ -427,6 +434,10 @@ float	t = 2*0.25f * _Time;
 	//////////////////////////////////////////////////////////////////////////
 	// Perform time-sliced update of the sky table if needed
 	UpdateSkyTables();
+
+
+return;//###
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compute transforms

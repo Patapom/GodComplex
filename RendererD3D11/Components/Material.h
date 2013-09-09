@@ -26,7 +26,13 @@
 #ifdef _DEBUG
 // Define this to save the binary blobs for each shader (only works in DEBUG mode)
 // NOTE: in RELEASE, the blobs are embedded as resources and read from so they need to have been saved to
+
+#ifdef GODCOMPLEX
 #define SAVE_SHADER_BLOB_TO		"./Resources/Shaders/Binary/"
+#else
+#define SAVE_SHADER_BLOB_TO		"./Shaders/Binary/"
+#endif
+
 #endif	// _DEBUG
 
 #ifdef GODCOMPLEX
@@ -155,6 +161,7 @@ public:	 // METHODS
 	bool			SetTexture( const char* _pTextureName, ID3D11ShaderResourceView* _pData );
 #endif
 
+	// Must call this before using the material
 	void			Use();
 
 	// Static shader compilation helper (also used by ComputeShader)

@@ -44,10 +44,10 @@ cbuffer	cbAtmosphere	: register( b7 )
 	float		_SunIntensity;
 
 	float2		_AirParams;			// X=Scattering Factor, Y=Reference Altitude (km)
-	float		_GodraysStrength;
-	float		_AltitudeOffsetKm;
+	float2		_GodraysStrength;	// X=Rayleigh, Y=Mie
 
 	float4		_FogParams;			// X=Scattering Coeff, Y=Extinction Coeff, Z=Reference Altitude (km), W=Anisotropy
+	float		_AltitudeOffsetKm;
 }
 
 Texture2D	_TexTransmittance : register(t7);
@@ -342,7 +342,7 @@ float4	Sample4DScatteringTable( Texture3D _TexScattering, float _AltitudeKm, flo
 	t = t - uGamma;
 
 //@@@###
-return _TexScattering.SampleLevel( LinearClamp, float3( uCosThetaSun / RESOLUTION_COS_GAMMA, uCosThetaView, uAltitude ), 0.0 );
+//return _TexScattering.SampleLevel( LinearClamp, float3( uCosThetaSun / RESOLUTION_COS_GAMMA, uCosThetaView, uAltitude ), 0.0 );
 //return _TexScattering.SampleLevel( LinearClamp, float3( 0.0, uCosThetaView, uAltitude ), 0.0 );
 
 
