@@ -207,7 +207,7 @@ float	ShadowIntersect( float3 _Position, float3 _Light, uniform int _StepsCount=
 	for ( int j=0; j < _StepsCount; j++ )
 	{
 		float3	p = _Position + t * _Light;
-		float	h = (_TerrainHeight/140.0) * Map( p, 5 );	// Use only 5 steps for shadow
+		float	h = _AltitudeOffsetKm + (_TerrainHeight/140.0) * Map( p, 5 );	// Use only 5 steps for shadow
 		float	Diff = p.y - h;
 
 		res -= max( 0.0, -0.1 * Diff / t );	// Soft shadows brought by division with distance and difference of heights...
@@ -298,7 +298,7 @@ PS_IN VS( VS_IN _In )
 	// Apply Terrain deformation
 	//
 	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
-			WorldPosition.y = (_TerrainHeight/140.0) * Map( WorldPosition.xyz, 5 );
+			WorldPosition.y = _AltitudeOffsetKm + (_TerrainHeight/140.0) * Map( WorldPosition.xyz, 5 );
 
 	Out.__Position = mul( WorldPosition, _ObjectWorld2Proj );	// Use provided projection instead (because we also use this VS for the shadow map)
 	Out.Position = WorldPosition.xyz;

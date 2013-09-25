@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Materials">
+      <UniqueIdentifier>{b4ed74b1-8b9d-4162-ab51-ab5d18b26e83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Animations">
+      <UniqueIdentifier>{e78dbb92-7aa1-4814-a792-5b9715bfd9c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Nodes">
+      <UniqueIdentifier>{530ceba1-a790-4b84-85a5-5d00474e49d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BaseObjects">
+      <UniqueIdentifier>{d365d8f0-3e03-4027-89f1-f3b97ec75ef2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Nodes\Layers">
+      <UniqueIdentifier>{408279bb-44c0-48e7-b063-12e295b54490}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="app.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AnimationTrack.cpp">
+      <Filter>Animations</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseObject.cpp">
+      <Filter>BaseObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectProperty.cpp">
+      <Filter>BaseObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="HardwareMaterials.cpp">
+      <Filter>Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="Materials.cpp">
+      <Filter>Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="Textures.cpp">
+      <Filter>Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="NodeMesh.cpp">
+      <Filter>Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="Nodes.cpp">
+      <Filter>Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="NodeSkeleton.cpp">
+      <Filter>Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="Helpers.cpp" />
+    <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="LayerElements.cpp">
+      <Filter>Nodes\Layers</Filter>
+    </ClCompile>
+    <ClCompile Include="Layers.cpp">
+      <Filter>Nodes\Layers</Filter>
+    </ClCompile>
+    <ClCompile Include="Stdafx.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AnimationTrack.h">
+      <Filter>Animations</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseObject.h">
+      <Filter>BaseObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectProperty.h">
+      <Filter>BaseObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="HardwareMaterials.h">
+      <Filter>Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Materials.h">
+      <Filter>Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Textures.h">
+      <Filter>Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="NodeMesh.h">
+      <Filter>Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Nodes.h">
+      <Filter>Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="NodeSkeleton.h">
+      <Filter>Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Helpers.h" />
+    <ClInclude Include="Scene.h" />
+    <ClInclude Include="LayerElements.h">
+      <Filter>Nodes\Layers</Filter>
+    </ClInclude>
+    <ClInclude Include="Layers.h">
+      <Filter>Nodes\Layers</Filter>
+    </ClInclude>
+    <ClInclude Include="Stdafx.h" />
+  </ItemGroup>
+</Project>

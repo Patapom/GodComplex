@@ -27,6 +27,7 @@ namespace
 	RasterizerState*	m_pRS_CullNoneWithScissoring;
 
 	Material*			m_pMatPSTComputeTransmittance = NULL;		// PST stands for precompute sky table
+	Material*			m_pMatPSTComputeTransmittance_Limited = NULL;
 	Material*			m_pMatPSTComputeIrradiance_Single = NULL;
 	Material*			m_pMatPSTComputeIrradiance_Delta = NULL;
 	Material*			m_pMatPSTComputeInScattering_Single = NULL;
@@ -53,13 +54,14 @@ namespace
 
 		// INITIAL COMPUTATION
 		COMPUTING_TRANSMITTANCE = 0,
-		COMPUTING_IRRADIANCE_SINGLE = 1,
-		COMPUTING_SCATTERING_SINGLE = 2,
+		COMPUTING_TRANSMITTANCE_LIMITED = 1,
+		COMPUTING_IRRADIANCE_SINGLE = 2,
+		COMPUTING_SCATTERING_SINGLE = 3,
 
 		// Multi-Pass
-		COMPUTING_SCATTERING_DELTA = 3,
-		COMPUTING_IRRADIANCE_DELTA = 4,
-		COMPUTING_SCATTERING_MULTIPLE = 5,
+		COMPUTING_SCATTERING_DELTA = 4,
+		COMPUTING_IRRADIANCE_DELTA = 5,
+		COMPUTING_SCATTERING_MULTIPLE = 6,
 
 		STAGES_COUNT,
 	};
@@ -69,31 +71,34 @@ namespace
 	int					m_ScatteringOrder = 2;
 
 	U32					m_pStageTargetSizes[3*STAGES_COUNT] = {
-		TRANSMITTANCE_W,	TRANSMITTANCE_H,		1,					// #1 Transmittance table
-		IRRADIANCE_W,		IRRADIANCE_H,			1,					// #2 Irradiance table (single scattering)
-		RES_3D_U,			RES_3D_COS_THETA_VIEW,	RES_3D_ALTITUDE,	// #3 Scattering table (single scattering)
+		TRANSMITTANCE_W,			TRANSMITTANCE_H,			1,							// #1 Transmittance table
+		TRANSMITTANCE_LIMITED_W,	TRANSMITTANCE_LIMITED_H,	TRANSMITTANCE_LIMITED_D,	// #2 Limited Transmittance table
+		IRRADIANCE_W,				IRRADIANCE_H,				1,							// #3 Irradiance table (single scattering)
+		RES_3D_U,					RES_3D_COS_THETA_VIEW,		RES_3D_ALTITUDE,			// #4 Scattering table (single scattering)
 
 		// Multi-pass
-		RES_3D_U,			RES_3D_COS_THETA_VIEW,	RES_3D_ALTITUDE,	// #4 Delta-Scattering table (used to compute actual irradiance & multiple-scattering at current order)
-		IRRADIANCE_W,		IRRADIANCE_H,			1,					// #5 Irradiance table (multiple scattering)
-		RES_3D_U,			RES_3D_COS_THETA_VIEW,	RES_3D_ALTITUDE,	// #6 Multiple Scattering table
+		RES_3D_U,					RES_3D_COS_THETA_VIEW,		RES_3D_ALTITUDE,			// #5 Delta-Scattering table (used to compute actual irradiance & multiple-scattering at current order)
+		IRRADIANCE_W,				IRRADIANCE_H,				1,							// #6 Irradiance table (multiple scattering)
+		RES_3D_U,					RES_3D_COS_THETA_VIEW,		RES_3D_ALTITUDE,			// #7 Multiple Scattering table
 	};
 
 	U32					m_pStageGroupsCountPerFrame[3*STAGES_COUNT] = {
 //		1,	1,	1,	// #1 Transmittance table						<= This computes a 16x16 slice each frame (takes 16x4 frames to complete the entire table)
 		16,	4,	1,	// #1 Transmittance table						<= This computes a 256x64 slice each frame (takes 1 frames to complete the entire table)
-//		1,	1,	1,	// #2 Irradiance table (single scattering)		<= This computes a 16x16 slice each frame (takes 4x1 frames to complete the entire table)
-		4,	1,	1,	// #2 Irradiance table (single scattering)		<= This computes a 64x16 slice each frame (takes 1 frames to complete the entire table)
-//		4,	4,	1,	// #3 Scattering table (single scattering)		<= This computes a 64x64x1 slice each frame (takes 8 frames to complete a single Z slice, 8x32 frames to update the entire table)
-		16,	8,	1,	// #3 Scattering table (single scattering)		<= This computes a single Z slice of (16*16)x(16*8) = 256x128 each frame (maybe heavy but at least updates faster!)
+//		1,	1,	1,	// #2 Limited Transmittance table				<= This computes a 16x16 slice each frame (takes 16x4x16 frames to complete the entire table)
+		16,	4,	1,	// #2 Limited Transmittance table				<= This computes a 256x64 slice each frame (takes 16 frames to complete the entire table)
+//		1,	1,	1,	// #3 Irradiance table (single scattering)		<= This computes a 16x16 slice each frame (takes 4x1 frames to complete the entire table)
+		4,	1,	1,	// #3 Irradiance table (single scattering)		<= This computes a 64x16 slice each frame (takes 1 frames to complete the entire table)
+//		4,	4,	1,	// #4 Scattering table (single scattering)		<= This computes a 64x64x1 slice each frame (takes 8 frames to complete a single Z slice, 8x32 frames to update the entire table)
+		16,	8,	1,	// #4 Scattering table (single scattering)		<= This computes a single Z slice of (16*16)x(16*8) = 256x128 each frame (maybe heavy but at least updates faster!)
 
 		// Multi-pass
-//		4,	4,	1,	// #4 Delta-Scattering table (used to compute actual irradiance & multiple-scattering at current order)	<= This computes a 64x64x1 slice each frame (takes 8 frames to complete a single Z slice, 8x32 frames to update the entire table)
-		16,	8,	1,	// #4 Delta-Scattering table (used to compute actual irradiance & multiple-scattering at current order)	<= This computes a single Z slice of (16*16)x(16*8) = 256x128 each frame (maybe heavy but at least updates faster!)
-//		1,	1,	1,	// #5 Irradiance table (multiple scattering)	<= This computes a 16x16 slice each frame (takes 4x1 frames to complete the entire table)
-		4,	1,	1,	// #5 Irradiance table (multiple scattering)	<= This computes a 64x16 slice each frame (takes 1 frames to complete the entire table)
-//		4,	4,	1,	// #6 Multiple Scattering table					<= This computes a 64x64x1 slice each frame (takes 8 frames to complete a single Z slice, 8x32 frames to update the entire table)
-		16,	8,	1,	// #6 Multiple Scattering table					<= This computes a single Z slice of (16*16)x(16*8) = 256x128 each frame (maybe heavy but at least updates faster!)
+//		4,	4,	1,	// #5 Delta-Scattering table (used to compute actual irradiance & multiple-scattering at current order)	<= This computes a 64x64x1 slice each frame (takes 8 frames to complete a single Z slice, 8x32 frames to update the entire table)
+		16,	8,	1,	// #5 Delta-Scattering table (used to compute actual irradiance & multiple-scattering at current order)	<= This computes a single Z slice of (16*16)x(16*8) = 256x128 each frame (maybe heavy but at least updates faster!)
+//		1,	1,	1,	// #6 Irradiance table (multiple scattering)	<= This computes a 16x16 slice each frame (takes 4x1 frames to complete the entire table)
+		4,	1,	1,	// #6 Irradiance table (multiple scattering)	<= This computes a 64x16 slice each frame (takes 1 frames to complete the entire table)
+//		4,	4,	1,	// #7 Multiple Scattering table					<= This computes a 64x64x1 slice each frame (takes 8 frames to complete a single Z slice, 8x32 frames to update the entire table)
+		16,	8,	1,	// #7 Multiple Scattering table					<= This computes a single Z slice of (16*16)x(16*8) = 256x128 each frame (maybe heavy but at least updates faster!)
 	};
 
 	U32					m_pStagePassesCount[3*STAGES_COUNT];	// Filled automatically in InitUpdateSkyTables(), derived from the 2 tables above
@@ -196,26 +201,27 @@ void	EffectVolumetric::InitSkyTables()
 #if 1
 	// Build heavy shaders
 	CHECK_MATERIAL( m_pMatPSTComputeTransmittance = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", "GS", "PreComputeTransmittance" ), 10 );
-	CHECK_MATERIAL( m_pMatPSTComputeIrradiance_Single = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "PreComputeIrradiance_Single" ), 11 );		// irradiance1
-	CHECK_MATERIAL( m_pMatPSTComputeIrradiance_Delta = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "PreComputeIrradiance_Delta" ), 12 );		// irradianceN*
-	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Single = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,	"VS", "GS", "PreComputeInScattering_Single" ), 13 );	// inscatter1
-	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Delta = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "PreComputeInScattering_Delta" ), 14 );		// inscatterS
-	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Multiple = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,	"VS", "GS", "PreComputeInScattering_Multiple" ), 15 );	// inscatterN
-	CHECK_MATERIAL( m_pMatPSTMergeInitialScattering = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "MergeInitialScattering" ), 16 );			// copyInscatter1
-	CHECK_MATERIAL( m_pMatPSTAccumulateIrradiance = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", "GS", "AccumulateIrradiance" ), 17 );				// copyIrradiance
-	CHECK_MATERIAL( m_pMatPSTAccumulateInScattering = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "AccumulateInScattering" ), 18 );			// copyInscatterN
+	CHECK_MATERIAL( m_pMatPSTComputeTransmittance_Limited = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,	"VS", "GS", "PreComputeTransmittance_Limited" ), 11 );
+	CHECK_MATERIAL( m_pMatPSTComputeIrradiance_Single = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "PreComputeIrradiance_Single" ), 12 );		// irradiance1
+	CHECK_MATERIAL( m_pMatPSTComputeIrradiance_Delta = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "PreComputeIrradiance_Delta" ), 13 );		// irradianceN*
+	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Single = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,	"VS", "GS", "PreComputeInScattering_Single" ), 14 );	// inscatter1
+	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Delta = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "PreComputeInScattering_Delta" ), 15 );		// inscatterS
+	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Multiple = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,	"VS", "GS", "PreComputeInScattering_Multiple" ), 16 );	// inscatterN
+	CHECK_MATERIAL( m_pMatPSTMergeInitialScattering = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "MergeInitialScattering" ), 17 );			// copyInscatter1
+	CHECK_MATERIAL( m_pMatPSTAccumulateIrradiance = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", "GS", "AccumulateIrradiance" ), 18 );				// copyIrradiance
+	CHECK_MATERIAL( m_pMatPSTAccumulateInScattering = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "AccumulateInScattering" ), 19 );			// copyInscatterN
 #else
 	// Reload from binary blobs
 	CHECK_MATERIAL( m_pMatPSTComputeTransmittance = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,					"VS", NULL, NULL, "GS",	"PreComputeTransmittance" ), 10 );
-	CHECK_MATERIAL( m_pMatPSTComputeIrradiance_Single = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"PreComputeIrradiance_Single" ), 11 );
-//	CHECK_MATERIAL( m_pMatPSTComputeIrradiance_Delta = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PreComputeIrradiance_Delta" ), 12 );		// irradianceN*
-	CHECK_MATERIAL( m_pMatPSTComputeIrradiance_Delta = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"PreComputeIrradiance_Delta" ), 12 );
-	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Single = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeInScattering_Single" ), 13 );
-	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Delta = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeInScattering_Delta" ), 14 );
-	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Multiple = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeInScattering_Multiple" ), 15 );
-	CHECK_MATERIAL( m_pMatPSTMergeInitialScattering = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"MergeInitialScattering" ), 16 );
-	CHECK_MATERIAL( m_pMatPSTAccumulateIrradiance = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,					"VS", NULL, NULL, "GS",	"AccumulateIrradiance" ), 17 );
-	CHECK_MATERIAL( m_pMatPSTAccumulateInScattering = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"AccumulateInScattering" ), 18 );
+	CHECK_MATERIAL( m_pMatPSTComputeTransmittance_Limited = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeTransmittance_Limited" ), 11 );
+	CHECK_MATERIAL( m_pMatPSTComputeIrradiance_Single = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"PreComputeIrradiance_Single" ), 12 );
+	CHECK_MATERIAL( m_pMatPSTComputeIrradiance_Delta = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"PreComputeIrradiance_Delta" ), 13 );
+	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Single = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeInScattering_Single" ), 14 );
+	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Delta = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeInScattering_Delta" ), 15 );
+	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Multiple = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeInScattering_Multiple" ), 16 );
+	CHECK_MATERIAL( m_pMatPSTMergeInitialScattering = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"MergeInitialScattering" ), 17 );
+	CHECK_MATERIAL( m_pMatPSTAccumulateIrradiance = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,					"VS", NULL, NULL, "GS",	"AccumulateIrradiance" ), 18 );
+	CHECK_MATERIAL( m_pMatPSTAccumulateInScattering = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"AccumulateInScattering" ), 19 );
 #endif
 
 //###
@@ -223,6 +229,8 @@ void	EffectVolumetric::InitSkyTables()
 // 	CHECK_MATERIAL( m_pMatPSTMergeInitialScattering = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "MergeInitialScattering" ), 16 );			// copyInscatter1
 // 	CHECK_MATERIAL( m_pMatPSTAccumulateIrradiance = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", "GS", "AccumulateIrradiance" ), 17 );				// copyIrradiance
 // 	CHECK_MATERIAL( m_pMatPSTAccumulateInScattering = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "AccumulateInScattering" ), 18 );			// copyInscatterN
+
+//	CHECK_MATERIAL( m_pMatPSTComputeTransmittance_Limited = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,	"VS", "GS", "PreComputeTransmittance_Limited" ), 11 );
 
 }
 
@@ -237,6 +245,7 @@ void	EffectVolumetric::ExitUpdateSkyTables()
 	delete m_pMatPSTComputeInScattering_Single;
 	delete m_pMatPSTComputeIrradiance_Delta;
 	delete m_pMatPSTComputeIrradiance_Single;
+	delete m_pMatPSTComputeTransmittance_Limited;
 	delete m_pMatPSTComputeTransmittance;
 
 	delete m_pRS_CullNoneWithScissoring;
@@ -391,8 +400,7 @@ void	EffectVolumetric::UpdateSkyTables()
 	//////////////////////////////////////////////////////////////////////////
 	// Computes transmittance texture T (line 1 in algorithm 4.1)
 	// This integrates Air/Fog density along a ray until it exits the atmosphere or hits the ground
-	// We thus obtain the optical depth and store exp( -Optical Depth ), the transmittance of the
-	//	atmosphere along the ray...
+	// We thus obtain the optical depth and store exp( -Optical Depth ), the transmittance of the atmosphere along the ray...
 	//
 	case COMPUTING_TRANSMITTANCE:
 		{
@@ -416,17 +424,59 @@ void	EffectVolumetric::UpdateSkyTables()
 
 			if ( IncreaseStagePass( CurrentStageIndex ) )
 			{	// Stage is over!
-				m_CurrentStage = COMPUTING_IRRADIANCE_SINGLE;
+				m_CurrentStage = COMPUTING_TRANSMITTANCE_LIMITED;
 				m_bStageStarting = true;
 
-				// Assign to slot 7
+				// Assign to slot 6
 				m_Device.RemoveRenderTargets();
-				m_ppRTTransmittance[1]->Set( 7, true );
+				m_ppRTTransmittance[1]->Set( 6, true );
 
 				// This is our new default texture
 				Texture2D*	pTemp = m_ppRTTransmittance[0];
 				m_ppRTTransmittance[0] = m_ppRTTransmittance[1];
 				m_ppRTTransmittance[1] = pTemp;
+			}
+		}
+		break;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Computes LIMITIED transmittance texture T (line 1 in algorithm 4.1)
+	// This integrates Air/Fog density along a ray until it reaches a specified distance
+	// We thus obtain the optical depth and store exp( -Optical Depth ), the transmittance of the atmosphere along the ray...
+	//
+	case COMPUTING_TRANSMITTANCE_LIMITED:
+		{
+			if ( m_bStageStarting )
+			{	// First step into that stage...
+				InitMultiPassStage( CurrentStageIndex, m_ppRTTransmittanceLimited[0]->GetWidth(), m_ppRTTransmittanceLimited[0]->GetHeight(), m_ppRTTransmittanceLimited[0]->GetDepth() );
+				m_bStageStarting = false;
+			}
+
+			USING_MATERIAL_START( *m_pMatPSTComputeTransmittance_Limited )
+	
+#ifdef ENABLE_PROFILING
+				TimeProfile	Profile( m_pStageTimingCurrent[CurrentStageIndex] );
+#endif
+
+				m_Device.SetRenderTarget( *m_ppRTTransmittanceLimited[1] );
+
+				DispatchStage( M );
+
+			USING_MATERIAL_END
+
+			if ( IncreaseStagePass( CurrentStageIndex ) )
+			{	// Stage is over!
+				m_CurrentStage = COMPUTING_IRRADIANCE_SINGLE;
+				m_bStageStarting = true;
+
+				// Assign to slot 7
+				m_Device.RemoveRenderTargets();
+				m_ppRTTransmittanceLimited[1]->Set( 7, true );
+
+				// This is our new default texture
+				Texture3D*	pTemp = m_ppRTTransmittanceLimited[0];
+				m_ppRTTransmittanceLimited[0] = m_ppRTTransmittanceLimited[1];
+				m_ppRTTransmittanceLimited[1] = pTemp;
 			}
 		}
 		break;
