@@ -28,8 +28,8 @@ namespace FBXImporter
 		String^				m_Name;
 		String^				m_Description;
 		String^				m_ImportName;
-		FTimeSpan^		m_LocalTimeSpan;
-		FTimeSpan^		m_ReferenceTimeSpan;
+		FTimeSpan^			m_LocalTimeSpan;
+		FTimeSpan^			m_ReferenceTimeSpan;
 
 		FbxAnimStack*		m_pAnimStack;
 
