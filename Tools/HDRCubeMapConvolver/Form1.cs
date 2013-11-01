@@ -82,10 +82,22 @@ namespace TestGradientPNG
 		///		roughness parameter of the model.
 		/// 
 		/// The typical reflection lobe is given by the following equation:
-		///		f(theta) = exp( -tan(theta)^2 / roughness )
+		///		f(theta) = exp( -tan(theta)² / roughness² )
 		///	
 		/// Fooplot link for different plots with different roughnesses:
-		///		http://fooplot.com/#W3sidHlwZSI6MSwiZXEiOiJleHAoLXRhbihhYnModGhldGEtcGkvMikpXjIvMC4wMSkiLCJjb2xvciI6IiMwMDgwY2MiLCJ0aGV0YW1pbiI6IjAiLCJ0aGV0YW1heCI6InBpIiwidGhldGFzdGVwIjoiLjAxIn0seyJ0eXBlIjoxLCJlcSI6ImV4cCgtdGFuKGFicyh0aGV0YS1waS8yKSleMi8wLjEpIiwiY29sb3IiOiIjMDA4MGNjIiwidGhldGFtaW4iOiIwIiwidGhldGFtYXgiOiJwaSIsInRoZXRhc3RlcCI6Ii4wMSJ9LHsidHlwZSI6MSwiZXEiOiJleHAoLXRhbihhYnModGhldGEtcGkvMikpXjIvMC41KSIsImNvbG9yIjoiIzAwODBjYyIsInRoZXRhbWluIjoiMCIsInRoZXRhbWF4IjoiMnBpIiwidGhldGFzdGVwIjoiLjAxIn0seyJ0eXBlIjoxLCJlcSI6ImV4cCgtdGFuKGFicyh0aGV0YS1waS8yKSleMi8xLjApIiwiY29sb3IiOiIjMDA4MGNjIiwidGhldGFtaW4iOiIwIiwidGhldGFtYXgiOiIycGkiLCJ0aGV0YXN0ZXAiOiIuMDEifSx7InR5cGUiOjEwMDAsIndpbmRvdyI6WyItMC43NSIsIjAuNzUiLCIwIiwiMS41Il19XQ--
+		///		W3sidHlwZSI6MSwiZXEiOiJleHAoLXRhbihhYnModGhldGEtcGkvMikpXjIvMC4wMSkiLCJjb2xvciI6IiMwMDgwY2MiLCJ0aGV0YW1pbiI6IjAiLCJ0aGV0YW1heCI6InBpIiwidGhldGFzdGVwIjoiLjAxIn0seyJ0eXBlIjoxLCJlcSI6ImV4cCgtdGFuKGFicyh0aGV0YS1waS8yKSleMi8wLjEpIiwiY29sb3IiOiIjMDA4MGNjIiwidGhldGFtaW4iOiIwIiwidGhldGFtYXgiOiJwaSIsInRoZXRhc3RlcCI6Ii4wMSJ9LHsidHlwZSI6MSwiZXEiOiJleHAoLXRhbihhYnModGhldGEtcGkvMikpXjIvMC40KSIsImNvbG9yIjoiIzAwODBjYyIsInRoZXRhbWluIjoiMCIsInRoZXRhbWF4IjoiMnBpIiwidGhldGFzdGVwIjoiLjAxIn0seyJ0eXBlIjoxLCJlcSI6ImV4cCgtdGFuKGFicyh0aGV0YS1waS8yKSleMi8xLjApIiwiY29sb3IiOiIjMDA4MGNjIiwidGhldGFtaW4iOiIwIiwidGhldGFtYXgiOiIycGkiLCJ0aGV0YXN0ZXAiOiIuMDEifSx7InR5cGUiOjEsImVxIjoiZXhwKC10YW4oYWJzKHRoZXRhLXBpLzIpKV4yLzIuNykiLCJjb2xvciI6IiMwMDgwY2MiLCJ0aGV0YW1pbiI6IjAiLCJ0aGV0YW1heCI6IjJwaSIsInRoZXRhc3RlcCI6Ii4wMSJ9LHsidHlwZSI6MSwiZXEiOiJleHAoLXRhbihhYnModGhldGEtcGkvMikpXjIvMS44KSIsImNvbG9yIjoiIzAwODBjYyIsInRoZXRhbWluIjoiMCIsInRoZXRhbWF4IjoiMnBpIiwidGhldGFzdGVwIjoiLjAxIn0seyJ0eXBlIjoxLCJlcSI6ImNvcygodGhldGEtcGkvMikpIiwiY29sb3IiOiIjRkYwMDY2IiwidGhldGFtaW4iOiIwIiwidGhldGFtYXgiOiJwaSIsInRoZXRhc3RlcCI6Ii4wMSJ9LHsidHlwZSI6MTAwMCwid2luZG93IjpbIi0wLjc1IiwiMC43NSIsIjAiLCIxLjA1Il19XQ
+		///	
+		/// 
+		/// 
+		/// 
+		/// A roughness of 1 is trying to simulate a cosine lobe as for a standard diffuse lambert reflection
+		/// Every new mip encompasses twice more pixels than the previous mip but we consider it like growing the radius of the lobe instead.
+		/// 
+		/// The idea is to retrieve the roughness depending on the width of the exponential which will be given by the mip level.
+		/// For example, with a cube map of size 64:
+		///		At mip level 0 the lobe is a straight line and roughness is then 0 (a perfect reflector).
+		///		At mip level 1, a pixel has a size of 2 which translates into an angle of PI/2 * 2/64 = PI/64
+		///			=> We 
 		/// </summary>
 		/// <param name="_CubeFaces"></param>
 		/// <returns></returns>
