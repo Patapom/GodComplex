@@ -225,6 +225,10 @@ namespace TestGradientPNG
 		/// <param name="_CubeFaces"></param>
 		/// <returns></returns>
 		/// 
+		private const float	EPS = 0.2f;				// The epsilon at which we perform the computations
+		private const float	MAX_ALPHA = 1.18f;		// The maximum angle reached at the last mip corresponding to the maximum roughness of 1.5
+		private const float	SAMPLES_FACTOR = 0.1f;	// A global factor to avoid using too many samples for the convolution
+
 		private int				m_CubeSize;
 		private Vector4D[][,]	m_CubeFaces;
 		private Vector4D[][][,]	ConvolveCubeMap( int _CubeSize, Vector4D[][,] _CubeFaces )
@@ -235,6 +239,22 @@ namespace TestGradientPNG
 			// Compute necessary mip levels
 			int	MipLevels = 1 + (int) Math.Floor( Math.Log( m_CubeSize ) / Math.Log( 2 ) );	// This would be the total amount of mips for the entire chain
 				MipLevels -= 2;																// But as stated above, we limit ourselves down to the lowest mip of 4x4 pixels
+
+			// Compute the total amount of pixels from one side to the other side of the cube
+			//	if we split the hemicube with a plane.
+			// This roughly corresponds to the amount of pixels we would span if we had an aperture angle of PI/2 (total angle of PI)
+			// That will help us determine the amount of samples to take based on actual aperture angle...
+			//
+			//			 Full
+			//		  ___________
+			//		 |           |
+			//  Half |           | Half
+			//		 |...........|
+			//
+			int	TotalPixels = m_CubeSize / 2	// Half a cube size on the left
+							+ m_CubeSize		// A full cube size on the top
+							+ m_CubeSize / 2;	// Half a cube size on the right
+
 
 			// Build all the mips from mip 0
 			Vector4D[][][,]	Result = new Vector4D[MipLevels][][,];
@@ -251,6 +271,54 @@ namespace TestGradientPNG
 				Vector4D[][,]	MipCubeFaces = new Vector4D[6][,];
 				Result[MipIndex] = MipCubeFaces;
 
+				// Compute expected lobe angle
+				float	Alpha = MAX_ALPHA * MipIndex / (MipLevels-1);
+
+				// Compute equivalent roughness
+				float	m = (float) (Math.Tan(Alpha) / Math.Sqrt( -Math.Log( EPS / Math.Cos(Alpha) ) ));
+
+				// Compute amount of samples along alpha & phi depending on original cube size
+				int		SamplesCountTheta = (int) Math.Floor( SAMPLES_FACTOR * 2.0 * Alpha * TotalPixels / Math.PI );	// A simple ratio based on the total pixels if we had a PI/2 aperture...
+
+//SamplesCountTheta = 3 * MipIndex;
+
+				float	dTheta = Alpha / SamplesCountTheta;
+				int		SamplesCountPhi = (int) Math.Floor( 2.0 * Math.PI / dTheta );	// Approximately the same spacing in Phi
+
+				// Build samples
+				Vector4D[]	Samples = new Vector4D[SamplesCountPhi * SamplesCountTheta];
+				int			SamplesCount = 0;
+				float		Normalizer = 1.0f / SamplesCountPhi * SamplesCountTheta;
+
+				Random		RNG = new Random( 1 );
+				for ( int ThetaIndex=0; ThetaIndex < SamplesCountTheta; ThetaIndex++ )
+				{
+					for ( int PhiIndex=0; PhiIndex < SamplesCountPhi; PhiIndex++ )
+					{
+						float	Theta = (float) Math.Sqrt( -m*m * Math.Log( (ThetaIndex + RNG.NextDouble()) / SamplesCountTheta ) );	// According to ward's monte-carlo sampling method (stratified version)
+						float	Phi = (float) (PhiIndex + RNG.NextDouble()) * dTheta;
+
+						float	CosTheta = (float) Math.Cos( Theta );
+						float	SinTheta = (float) Math.Sin( Theta );
+
+						float	CosPhi = (float) Math.Cos( Phi );
+						float	SinPhi = (float) Math.Sin( Phi );
+
+						float	Reflectance = (float) Math.Exp( -Math.Pow( Math.Tan( Theta ) / m, 2.0 ) );	// Gaussian lobe reflectance in that direction, normalized against amount of samples taken
+//Reflectance = 1;
+								Reflectance *= Normalizer;
+
+						Samples[SamplesCount++] = new Vector4D(
+								SinTheta * CosPhi,
+								SinTheta * SinPhi,
+								CosTheta,
+								Reflectance
+							);
+					}
+				}
+
+
+				// Perform convolution
 				for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 				{
 					Vector4D[,]	CubeFace = new Vector4D[MipCubeSize,MipCubeSize];
@@ -259,13 +327,13 @@ namespace TestGradientPNG
 					switch ( FaceIndex )
 					{
 						case 0:	// +X
-							X.Set( 0, 0, 1 );
-							Y.Set( 0, 1, 0 );
+							X.Set( 0, 0, -1 );
+							Y.Set( 0, -1, 0 );
 							Z.Set( 1, 0, 0 );
 							break;
 						case 1:	// -X
-							X.Set( 0, 0, -1 );
-							Y.Set( 0, 1, 0 );
+							X.Set( 0, 0, 1 );
+							Y.Set( 0, -1, 0 );
 							Z.Set( -1, 0, 0 );
 							break;
 						case 2:	// +Y
@@ -274,22 +342,25 @@ namespace TestGradientPNG
 							Z.Set( 0, 1, 0 );
 							break;
 						case 3:	// -Y
-							X.Set( -1, 0, 0 );
-							Y.Set( 0, 0, 1 );
+							X.Set( 1, 0, 0 );
+							Y.Set( 0, 0, -1 );
 							Z.Set( 0, -1, 0 );
 							break;
 						case 4:	// +Z
 							X.Set( 1, 0, 0 );
-							Y.Set( 0, 1, 0 );
+							Y.Set( 0, -1, 0 );
 							Z.Set( 0, 0, 1 );
 							break;
 						case 5:	// -Z
 							X.Set( -1, 0, 0 );
-							Y.Set( 0, 1, 0 );
+							Y.Set( 0, -1, 0 );
 							Z.Set( 0, 0, -1 );
 							break;
 					}
 
+					Vector	Up = new Vector( 0, 1, 0 );
+					Vector	T, B;
+					float	Length;
 					for ( int y=0; y < MipCubeSize; y++ )
 					{
 						V = 2.0f * (1+y) / (MipCubeSize+1) - 1.0f;
@@ -298,12 +369,45 @@ namespace TestGradientPNG
 							U = 2.0f * (1+x) / (MipCubeSize+1) - 1.0f;
 
 							Direction = Z + U * X + V * Y;
+							Direction.Normalize();
 
-//							Direction.Normalize();
+// Simple direction test...
+// CubeFace[x,y] = new Vector4D( Direction.x, Direction.y, Direction.z, 1 );
+// CubeFace[x,y] = PointSampleCubeMap( Direction );
+// continue;
 
-							Vector4D	C = PointSampleCubeMap( Direction );
+							// Establish a tangent space
+							T = Direction ^ Up;
+							Length = T.Magnitude();
+							if ( Length > 1e-6f )
+							{
+								T /= Length;
+								B = T ^ Direction;
+							}
+							else
+							{	// Degenerate case
+								T = new Vector( 1, 0, 0 );
+								B = new Vector( 0, 0, 1 );
+							}
 
-							CubeFace[x,y] = C;
+							// Accumulate samples
+							Vector4D	Accum = new Vector4D();
+							for ( int SampleIndex=0; SampleIndex < SamplesCount; SampleIndex++ )
+							{
+								Vector4D	Sample = Samples[SampleIndex];
+
+//Sample.Set( 0, 0, 1, 1.0f/SamplesCount );
+
+								Vector		SamplingDirection = Sample.x * T + Sample.y * B + Sample.z * Direction;	//X = 0.7170359 Y = -0.530138135 Z = -0.45256263
+
+								Vector4D	C = PointSampleCubeMap( SamplingDirection );
+								Accum.x += Sample.w * C.x;
+								Accum.y += Sample.w * C.y;
+								Accum.z += Sample.w * C.z;
+							}
+
+							CubeFace[x,y] = Accum;	// Here's our final result!
+
 						}
 					}
 				}
@@ -327,7 +431,7 @@ namespace TestGradientPNG
 			{
 				if ( X >= Z )
 				{	// X face
-					I = 1.0f / X;
+					I = -1.0f / X;
 					U = Xs * _Direction.z * I;
 					V = _Direction.y * I;
 					Face = Xs > 0 ? m_CubeFaces[0] : m_CubeFaces[1];
@@ -336,7 +440,7 @@ namespace TestGradientPNG
 				{	// Z face
 					I = 1.0f / Z;
 					U = Zs * _Direction.x * I;
-					V = _Direction.y * I;
+					V = -_Direction.y * I;
 					Face = Zs > 0 ? m_CubeFaces[4] : m_CubeFaces[5];
 				}
 			}
@@ -345,15 +449,15 @@ namespace TestGradientPNG
 				if ( Y >= Z )
 				{	// Y face
 					I = 1.0f / Y;
-					U = Ys * _Direction.x * I;
-					V = _Direction.z * I;
+					U = _Direction.x * I;
+					V = Ys * _Direction.z * I;
 					Face = Ys > 0 ? m_CubeFaces[2] : m_CubeFaces[3];
 				}
 				else
 				{	// Z face
 					I = 1.0f / Z;
 					U = Zs * _Direction.x * I;
-					V = _Direction.y * I;
+					V = -_Direction.y * I;
 					Face = Zs > 0 ? m_CubeFaces[4] : m_CubeFaces[5];
 				}
 			}
