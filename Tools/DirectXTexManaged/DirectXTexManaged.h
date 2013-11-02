@@ -39,11 +39,12 @@ namespace DirectXTexManaged {
 
 			for ( int MipIndex=0; MipIndex < _CubeFaces->Length; MipIndex++ )
 			{
-				cli::array< cli::array<WMath::Vector4D^,2>^>^	CubeFaces = _CubeFaces[0];	// First mip
+				int	CubeSize = _CubeSize >> MipIndex;
+				cli::array< cli::array<WMath::Vector4D^,2>^>^	CubeFaces = _CubeFaces[MipIndex];
 				for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 				{
 					cli::array<WMath::Vector4D^,2>^	CubeFace = CubeFaces[FaceIndex];
-					const DirectX::Image*	pImage = DXT->GetImage( 0, FaceIndex, 0 );
+					const DirectX::Image*	pImage = DXT->GetImage( MipIndex, FaceIndex, 0 );
 
 // 					float	R, G, B;
 // 					switch ( FaceIndex )
@@ -56,10 +57,10 @@ namespace DirectXTexManaged {
 // 					case 5: R = 1; G = 0; B = 1; break;
 // 					}
 
-					for ( int Y=0; Y < _CubeSize; Y++ )
+					for ( int Y=0; Y < CubeSize; Y++ )
 					{
 						float*	pScanline = (float*) (pImage->pixels + Y * pImage->rowPitch);
-						for ( int X=0; X < _CubeSize; X++ )
+						for ( int X=0; X < CubeSize; X++ )
 						{
 							float	R = CubeFace[X,Y]->x;
 							float	G = CubeFace[X,Y]->y;

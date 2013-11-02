@@ -70,7 +70,7 @@ namespace TestGradientPNG
 				CubeFaces[5] = ReadCubeFace( HDRValues, CubeSize, 3, 1 );	// -Z
 			}
 
-			Vector4D[][][,]	CubeFacesMips = ConvolveCubeMap( CubeFaces );
+			Vector4D[][][,]	CubeFacesMips = ConvolveCubeMap( CubeSize, CubeFaces );
 
 			DirectXTexManaged.CubeMapCreator.CreateCubeMapFile( "Test.dds", CubeSize, CubeFacesMips );
 		}
@@ -225,21 +225,147 @@ namespace TestGradientPNG
 		/// <param name="_CubeFaces"></param>
 		/// <returns></returns>
 		/// 
+		private int				m_CubeSize;
 		private Vector4D[][,]	m_CubeFaces;
-		private Vector4D[][][,]	ConvolveCubeMap( Vector4D[][,] _CubeFaces )
+		private Vector4D[][][,]	ConvolveCubeMap( int _CubeSize, Vector4D[][,] _CubeFaces )
 		{
+			m_CubeSize = _CubeSize;
 			m_CubeFaces = _CubeFaces;
 
-			Vector4D[][][,]	Result = new Vector4D[1][][,] { _CubeFaces };
+			// Compute necessary mip levels
+			int	MipLevels = 1 + (int) Math.Floor( Math.Log( m_CubeSize ) / Math.Log( 2 ) );	// This would be the total amount of mips for the entire chain
+				MipLevels -= 2;																// But as stated above, we limit ourselves down to the lowest mip of 4x4 pixels
 
+			// Build all the mips from mip 0
+			Vector4D[][][,]	Result = new Vector4D[MipLevels][][,];
+			Result[0] = _CubeFaces;	// Mip 0 is already available
 
+			Vector	X = new Vector();
+			Vector	Y = new Vector();
+			Vector	Z = new Vector();
+			Vector	Direction = new Vector();
+			float	U, V;
+			for ( int MipIndex=1; MipIndex < MipLevels; MipIndex++ )
+			{
+				int				MipCubeSize = m_CubeSize >> MipIndex;
+				Vector4D[][,]	MipCubeFaces = new Vector4D[6][,];
+				Result[MipIndex] = MipCubeFaces;
+
+				for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
+				{
+					Vector4D[,]	CubeFace = new Vector4D[MipCubeSize,MipCubeSize];
+					MipCubeFaces[FaceIndex] = CubeFace;
+
+					switch ( FaceIndex )
+					{
+						case 0:	// +X
+							X.Set( 0, 0, 1 );
+							Y.Set( 0, 1, 0 );
+							Z.Set( 1, 0, 0 );
+							break;
+						case 1:	// -X
+							X.Set( 0, 0, -1 );
+							Y.Set( 0, 1, 0 );
+							Z.Set( -1, 0, 0 );
+							break;
+						case 2:	// +Y
+							X.Set( 1, 0, 0 );
+							Y.Set( 0, 0, 1 );
+							Z.Set( 0, 1, 0 );
+							break;
+						case 3:	// -Y
+							X.Set( -1, 0, 0 );
+							Y.Set( 0, 0, 1 );
+							Z.Set( 0, -1, 0 );
+							break;
+						case 4:	// +Z
+							X.Set( 1, 0, 0 );
+							Y.Set( 0, 1, 0 );
+							Z.Set( 0, 0, 1 );
+							break;
+						case 5:	// -Z
+							X.Set( -1, 0, 0 );
+							Y.Set( 0, 1, 0 );
+							Z.Set( 0, 0, -1 );
+							break;
+					}
+
+					for ( int y=0; y < MipCubeSize; y++ )
+					{
+						V = 2.0f * (1+y) / (MipCubeSize+1) - 1.0f;
+						for ( int x=0; x < MipCubeSize; x++ )
+						{
+							U = 2.0f * (1+x) / (MipCubeSize+1) - 1.0f;
+
+							Direction = Z + U * X + V * Y;
+
+//							Direction.Normalize();
+
+							Vector4D	C = PointSampleCubeMap( Direction );
+
+							CubeFace[x,y] = C;
+						}
+					}
+				}
+			}
 
 			return Result;
 		}
 
 		private Vector4D	PointSampleCubeMap( Vector _Direction )
 		{
+			int			Xs = Math.Sign( _Direction.x );
+			int			Ys = Math.Sign( _Direction.y );
+			int			Zs = Math.Sign( _Direction.z );
+			float		X = Math.Abs( _Direction.x );
+			float		Y = Math.Abs( _Direction.y );
+			float		Z = Math.Abs( _Direction.z );
+			float		I;
+			float		U, V;
+			Vector4D[,]	Face;
+			if ( X >= Y )
+			{
+				if ( X >= Z )
+				{	// X face
+					I = 1.0f / X;
+					U = Xs * _Direction.z * I;
+					V = _Direction.y * I;
+					Face = Xs > 0 ? m_CubeFaces[0] : m_CubeFaces[1];
+				}
+				else
+				{	// Z face
+					I = 1.0f / Z;
+					U = Zs * _Direction.x * I;
+					V = _Direction.y * I;
+					Face = Zs > 0 ? m_CubeFaces[4] : m_CubeFaces[5];
+				}
+			}
+			else
+			{
+				if ( Y >= Z )
+				{	// Y face
+					I = 1.0f / Y;
+					U = Ys * _Direction.x * I;
+					V = _Direction.z * I;
+					Face = Ys > 0 ? m_CubeFaces[2] : m_CubeFaces[3];
+				}
+				else
+				{	// Z face
+					I = 1.0f / Z;
+					U = Zs * _Direction.x * I;
+					V = _Direction.y * I;
+					Face = Zs > 0 ? m_CubeFaces[4] : m_CubeFaces[5];
+				}
+			}
 
+			// Sample the face
+			int	Ui = (int) Math.Floor( m_CubeSize * 0.5f*(1.0f+U) );
+				Ui = Math.Min( m_CubeSize-1, Ui );
+			int	Vi = (int) Math.Floor( m_CubeSize * 0.5f*(1.0f+V) );
+				Vi = Math.Min( m_CubeSize-1, Vi );
+
+			Vector4D	Result = Face[Ui,Vi];
+			return Result;
 		}
 
 		private Vector4D[,]	ReadCubeFace( Vector4D[,] _Source, int _CubeSize, int _X, int _Y )
