@@ -76,33 +76,155 @@ namespace TestGradientPNG
 		}
 
 		/// <summary>
-		/// This is the heart of that tool
-		/// The goal is to compute mip levels for the cube map where each new mip will match the corresponding glossiness of an exponential lobe
+		/// This function is the heart of that tool
+		/// 
+		/// The goal is to compute mip levels for the cube map where each new mip will match the corresponding roughness of an exponential lobe
 		///		like those used in standard normal distribution models (Ward, Beckmann, etc.) so that we can use a specific mip according to the
 		///		roughness parameter of the model.
 		/// 
-		/// The typical reflection lobe is given by the following equation:
-		///		f(theta) = exp( -tan(theta)² / roughness² )
+		/// Ignoring normalization factors, the typical reflection lobe is given by the following equation:
+		///		f(theta) = exp( -tan(theta)² / m² )	     => m is the roughness
 		///	
-		/// Fooplot link for different plots with different roughnesses:
-		///		W3sidHlwZSI6MSwiZXEiOiJleHAoLXRhbihhYnModGhldGEtcGkvMikpXjIvMC4wMSkiLCJjb2xvciI6IiMwMDgwY2MiLCJ0aGV0YW1pbiI6IjAiLCJ0aGV0YW1heCI6InBpIiwidGhldGFzdGVwIjoiLjAxIn0seyJ0eXBlIjoxLCJlcSI6ImV4cCgtdGFuKGFicyh0aGV0YS1waS8yKSleMi8wLjEpIiwiY29sb3IiOiIjMDA4MGNjIiwidGhldGFtaW4iOiIwIiwidGhldGFtYXgiOiJwaSIsInRoZXRhc3RlcCI6Ii4wMSJ9LHsidHlwZSI6MSwiZXEiOiJleHAoLXRhbihhYnModGhldGEtcGkvMikpXjIvMC40KSIsImNvbG9yIjoiIzAwODBjYyIsInRoZXRhbWluIjoiMCIsInRoZXRhbWF4IjoiMnBpIiwidGhldGFzdGVwIjoiLjAxIn0seyJ0eXBlIjoxLCJlcSI6ImV4cCgtdGFuKGFicyh0aGV0YS1waS8yKSleMi8xLjApIiwiY29sb3IiOiIjMDA4MGNjIiwidGhldGFtaW4iOiIwIiwidGhldGFtYXgiOiIycGkiLCJ0aGV0YXN0ZXAiOiIuMDEifSx7InR5cGUiOjEsImVxIjoiZXhwKC10YW4oYWJzKHRoZXRhLXBpLzIpKV4yLzIuNykiLCJjb2xvciI6IiMwMDgwY2MiLCJ0aGV0YW1pbiI6IjAiLCJ0aGV0YW1heCI6IjJwaSIsInRoZXRhc3RlcCI6Ii4wMSJ9LHsidHlwZSI6MSwiZXEiOiJleHAoLXRhbihhYnModGhldGEtcGkvMikpXjIvMS44KSIsImNvbG9yIjoiIzAwODBjYyIsInRoZXRhbWluIjoiMCIsInRoZXRhbWF4IjoiMnBpIiwidGhldGFzdGVwIjoiLjAxIn0seyJ0eXBlIjoxLCJlcSI6ImNvcygodGhldGEtcGkvMikpIiwiY29sb3IiOiIjRkYwMDY2IiwidGhldGFtaW4iOiIwIiwidGhldGFtYXgiOiJwaSIsInRoZXRhc3RlcCI6Ii4wMSJ9LHsidHlwZSI6MTAwMCwid2luZG93IjpbIi0wLjc1IiwiMC43NSIsIjAiLCIxLjA1Il19XQ
+		/// Fooplot link for different plots with different roughnesses (reference cosine lobe in red) (black lines are the tangents found from roughness):
+		///	http://fooplot.com/#W3sidHlwZSI6MSwiZXEiOiJleHAoLSh0YW4oYWJzKHRoZXRhLXBpLzIpKS8wLjAyKV4yKSIsImNvbG9yIjoiIzAwODBDQyIsInRoZXRhbWluIjoiMCIsInRoZXRhbWF4IjoicGkiLCJ0aGV0YXN0ZXAiOiIuMDEifSx7InR5cGUiOjAsImVxIjoieC90YW4oMC4wMTI3KSIsImNvbG9yIjoiIzAwMDAwMCJ9LHsidHlwZSI6MSwiZXEiOiJleHAoLSh0YW4oYWJzKHRoZXRhLXBpLzIpKS8wLjEpXjIpIiwiY29sb3IiOiIjRkFCMzE5IiwidGhldGFtaW4iOiIwIiwidGhldGFtYXgiOiJwaSIsInRoZXRhc3RlcCI6Ii4wMSJ9LHsidHlwZSI6MCwiZXEiOiJ4L3RhbigwLjEzKSIsImNvbG9yIjoiIzAwMDAwMCJ9LHsidHlwZSI6MSwiZXEiOiJleHAoLSh0YW4oYWJzKHRoZXRhLXBpLzIpKS8wLjIpXjIpIiwiY29sb3IiOiIjMDBDQzQxIiwidGhldGFtaW4iOiIwIiwidGhldGFtYXgiOiIycGkiLCJ0aGV0YXN0ZXAiOiIuMDEifSx7InR5cGUiOjAsImVxIjoieC90YW4oMC4yNSkiLCJjb2xvciI6IiMwMDAwMDAifSx7InR5cGUiOjEsImVxIjoiZXhwKC0odGFuKGFicyh0aGV0YS1waS8yKSkvMC41KV4yKSIsImNvbG9yIjoiIzAwODBjYyIsInRoZXRhbWluIjoiMCIsInRoZXRhbWF4IjoiMnBpIiwidGhldGFzdGVwIjoiLjAxIn0seyJ0eXBlIjowLCJlcSI6IngvdGFuKDAuNTkpIiwiY29sb3IiOiIjMDAwMDAwIn0seyJ0eXBlIjoxLCJlcSI6ImV4cCgtKHRhbihhYnModGhldGEtcGkvMikpLzEuMCleMikiLCJjb2xvciI6IiMwMDgwY2MiLCJ0aGV0YW1pbiI6IjAiLCJ0aGV0YW1heCI6IjJwaSIsInRoZXRhc3RlcCI6Ii4wMSJ9LHsidHlwZSI6MCwiZXEiOiJ4L3RhbigwLjk3KSIsImNvbG9yIjoiIzAwMDAwMCJ9LHsidHlwZSI6MSwiZXEiOiJleHAoLSh0YW4oYWJzKHRoZXRhLXBpLzIpKS8xLjUpXjIpIiwiY29sb3IiOiIjMDA4MGNjIiwidGhldGFtaW4iOiIwIiwidGhldGFtYXgiOiIycGkiLCJ0aGV0YXN0ZXAiOiIuMDEifSx7InR5cGUiOjAsImVxIjoieC90YW4oMS4xOCkiLCJjb2xvciI6IiMwMDAwMDAifSx7InR5cGUiOjEsImVxIjoiY29zKCh0aGV0YS1waS8yKSkiLCJjb2xvciI6IiNGRjAwNjYiLCJ0aGV0YW1pbiI6IjAiLCJ0aGV0YW1heCI6InBpIiwidGhldGFzdGVwIjoiLjAxIn0seyJ0eXBlIjoxMDAwLCJ3aW5kb3ciOlsiLTAuNzQ5OTk5OTk5OTk5OTk5OCIsIjAuNzQ5OTk5OTk5OTk5OTk5OCIsIjEuMTEwMjIzMDI0NjI1MTU2NWUtMTYiLCIxLjEiXX1d
+		/// 
+		/// 
+		///  Problem:
+		/// ----------
+		///  Given a solid angle omega, find the corresponding roughness of the gaussian lobe model that generates a lobe that roughly spans omega steradians
+		/// 
+		/// > Assuming the lobe is rotationaly symetric about its main direction, we can reduce the solid angle to a single aperture angle "alpha"
+		/// 
+		/// > In polar coordinates, a point p is on the lobe if:
+		/// 
+		///		Xp = r.sin(theta)
+		///		Yp = r.cos(theta)
+		///		r = exp( -(tan(theta)/m)² )
+		/// 
+		/// > We can draw:
+		/// 
+		///		 ^
+		///		 |...  alpha
+		///		 |    ... 
+		///		 |        ./
+		///		 |___     /
+		///		 |   \   /
+		///		 |    \ /
+		///		 |    |/
+		///		 |    |
+		///		 |   /
+		///		 |  / 
+		///		 | * p_epsilon
+		///		 |/_____________
+		/// 
+		/// According to the problem we posed, we give an aperture angle of alpha and want to find the "tangent lobe".
+		/// There is no exact way to do that since the tangent at theta=PI/2 is always 0, but we can fix conditions for the p coordinate.
+		/// For example, at a given epsilon we want p to match a point p_epsilon on our tangent line:
+		/// 
+		///		Xp_epsilon = eps.tan(alpha)
+		///		Yp_epsilon = eps
+		///		
+		/// In polar coordinates:
+		///		Xp_epsilon = r_epsilon * sin(alpha)
+		///		Yp_epsilon = r_epsilon * cos(alpha)
+		///		
+		/// =>	r_epsilon = Yp_epsilon / cos(alpha)
+		/// =>	r_epsilon = eps / cos(alpha)
+		/// 
+		/// So we pose p = p_epsilon and the following equalities arise:
+		/// 
+		///		Xp = Xp_epsilon
+		///		Yp = Yp_epsilon
+		///		theta = alpha
+		///		r = r_epsilon
+		/// 
+		/// Or:
+		///		exp( -(tan(alpha)/m)² ).sin(alpha) = eps.tan(alpha)
+		///		exp( -(tan(alpha)/m)² ).cos(alpha) = eps
+		///		exp( -(tan(alpha)/m)² ) = eps / cos(alpha)
+		/// 
+		/// We have 3 identical equations:
+		/// 
+		///		exp( -(tan(alpha)/m)² ) = eps / cos(alpha)
 		///	
+		/// =>	(tan(alpha)/m)² = -ln( eps / cos(alpha) )
+		///	=>	tan(alpha)/m = sqrt( -ln( eps / cos(alpha) ) )
+		///	
+		/// Finally:
+		/// 
+		///		.-----------------------------------------------------.
+		///		|	m = tan(alpha) / sqrt( -ln( eps / cos(alpha) ) )  |
+		///		.-----------------------------------------------------.
 		/// 
 		/// 
+		/// Fooplot link for different epsilons:
+		/// http://www.fooplot.com/#W3sidHlwZSI6MCwiZXEiOiJ0YW4oeCkvc3FydCgtbG4oMC4wMDEvY29zKHgpKSkiLCJjb2xvciI6IiNGRjAwMDAifSx7InR5cGUiOjAsImVxIjoidGFuKHgpL3NxcnQoLWxuKDAuMDEvY29zKHgpKSkiLCJjb2xvciI6IiMwQkQxMzkifSx7InR5cGUiOjAsImVxIjoidGFuKHgpL3NxcnQoLWxuKDAuMDUvY29zKHgpKSkiLCJjb2xvciI6IiNGQ0NBMDAifSx7InR5cGUiOjAsImVxIjoidGFuKHgpL3NxcnQoLWxuKDAuMS9jb3MoeCkpKSIsImNvbG9yIjoiIzAwMDlGRiJ9LHsidHlwZSI6MTAwMCwid2luZG93IjpbIjAiLCIxLjU3IiwiMCIsIjgiXX1d
 		/// 
-		/// A roughness of 1 is trying to simulate a cosine lobe as for a standard diffuse lambert reflection
-		/// Every new mip encompasses twice more pixels than the previous mip but we consider it like growing the radius of the lobe instead.
+		/// We can see from the graph that the lower the epsilon, the lower the roughness and the tighter the lobe.
 		/// 
-		/// The idea is to retrieve the roughness depending on the width of the exponential which will be given by the mip level.
-		/// For example, with a cube map of size 64:
-		///		At mip level 0 the lobe is a straight line and roughness is then 0 (a perfect reflector).
-		///		At mip level 1, a pixel has a size of 2 which translates into an angle of PI/2 * 2/64 = PI/64
-		///			=> We 
+		/// 
+		/// ---------------------------------------------------------------
+		/// Now, for the second part of the problem: in the shader, we're given the roughness m and we're required to find the proper
+		///	 aperture angle alpha so we can deduce the mip level to fetch from the cube map.
+		/// 
+		/// Unfortunately, there's no analytical solution for the roots of equation exp( -(tan(alpha)/m)² ).cos(alpha) - eps = 0
+		/// 
+		/// What we can do though is to fix an epsilon of say eps = 0.2 and find the roots manually for different roughnesses, store them in
+		///  an array and try to fit a function through those points...
+		/// 
+		/// So, for epsilon = 0.2 we get:
+		/// 
+		///		m		0.0100	0.10	0.20	0.30	0.40	0.50	0.60	0.70	0.80	0.90	1.00	1.10	1.20	1.30	1.40	1.50
+		///		alpha	0.0127	0.13	0.25	0.37	0.48	0.59	0.69	0.77	0.85	0.92	0.97	1.03	1.07	1.11	1.15	1.18 ~= 67° for the most diffuse lobe
+		/// 
+		/// Fooplot link with the equations used for finding the roots:
+		/// http://www.fooplot.com/#W3sidHlwZSI6MCwiZXEiOiJleHAoLSh0YW4oeCkvMC41KV4yKS9jb3MoeCktMC4yIiwiY29sb3IiOiIjRkYwMDAwIn0seyJ0eXBlIjowLCJlcSI6ImV4cCgtKHRhbih4KS8wLjAxKV4yKS9jb3MoeCktMC4yIiwiY29sb3IiOiIjMjZEMTA0In0seyJ0eXBlIjowLCJlcSI6ImV4cCgtKHRhbih4KS8xLjQpXjIpL2Nvcyh4KS0wLjIiLCJjb2xvciI6IiMwMDQ4RkYifSx7InR5cGUiOjEwMDAsIndpbmRvdyI6WyIwIiwiMS40IiwiLTAuMyIsIjEiXX1d
+		/// 
+		/// Using an online least square fitter (http://www.akiti.ca/LinLeastSqPoly4.html) we find the excellent matching result:
+		/// 
+		///		alpha = -0.003801480606631629 + 1.3782584461528633 * m - 0.3967194013427133 * m^2
+		/// 
+		/// Fooplot link for the point list and its the linear and quadratic fits:
+		/// http://www.fooplot.com/#W3sidHlwZSI6MywiZXEiOltbIjAuMDEwMCIsIiAwLjAxMjciXSxbIjAuMTAiLCIgMC4xMyJdLFsiMC4yMCIsIiAwLjI1Il0sWyIwLjMwIiwiIDAuMzciXSxbIjAuNDAiLCIgMC40OCJdLFsiMC41MCIsIiAwLjU5Il0sWyIwLjYwIiwiIDAuNjkiXSxbIjAuNzAiLCIgMC43NyJdLFsiMC44MCIsIiAwLjg1Il0sWyIwLjkwIiwiIDAuOTIiXSxbIjEuMDAiLCIgMC45NyJdLFsiMS4xMCIsIiAxLjAzIl0sWyIxLjIwIiwiIDEuMDciXSxbIjEuMzAiLCIgMS4xMSJdLFsiMS40MCIsIiAxLjE1XHQiXSxbIjEuNTAiLCIgMS4xOFx0XHRcdFx0XHRcdFx0XHRcdFx0XHRcdFx0Il1dLCJjb2xvciI6IiMwMDAwMDAifSx7InR5cGUiOjAsImVxIjoiMC4xMzY2OTg0Mjk2OTYzNyswLjc4MTQ3NTg2Mzg1MTYzKngiLCJjb2xvciI6IiMwMDAwMDAifSx7InR5cGUiOjAsImVxIjoiLTAuMzk2NzE5NDAxMzQyNzEzMyp4XjIrMS4zNzgyNTg0NDYxNTI4NjMzKngtMC4wMDM4MDE0ODA2MDY2MzE2MjkiLCJjb2xvciI6IiMwMDAwMDAifSx7InR5cGUiOjEwMDAsIndpbmRvdyI6WyIwIiwiMS42IiwiMCIsIjEuNCJdfV0-
+		/// 
+		/// 
+		/// ---------------------------------------------------------------
+		/// Normally, with each new mip level, the tangent of the aperture angle is doubled.
+		/// 
+		/// At mip #0, tan( alpha ) = 0.5 / CubeSize so we cover a single pixel
+		/// At mip #1, tan( alpha ) = 2 * 0.5 / CubeSize
+		/// At mip #2, tan( alpha ) = 4 * 0.5 / CubeSize
+		/// At mip #3, tan( alpha ) = 8 * 0.5 / CubeSize
+		/// ...
+		/// At mip #N, tan( alpha ) = CubeSize / CubeSize => alpha = PI/4, we cover Omega = 2PI * (1 - cos(alpha)) = PI * (2 - sqrt(2)) ~= 1.84 steradians (from http://en.wikipedia.org/wiki/Solid_angle#Cone.2C_spherical_cap.2C_hemisphere)
+		/// 
+		/// In our case, we want to be able to cover up to alpha = 67°, corresponding to the maximum roughness of m = 1.5
+		/// If you look at an example of a diffuse cube map http://www.3dvia.com/studio/wp-content/uploads/2009/11/hangar_diffuse.png you can see it still needs a little resolution
+		///	 and so we can't assume it will be the highest mip level...
+		/// 
+		/// By fixing the "diffuse mip" so it's a cube map of 4x4, for example, we can have N-2 mips where the angle will vary from 0 to 67°
+		/// 
+		/// Take the example of a 64x64 cube map (N=7):
+		///		Mip #0 = 64x64	-> alpha = 0°	(m=0.01)
+		///		Mip #1 = 32x32	-> alpha = 15°	(m=0.20)
+		///		Mip #2 = 16x16	-> alpha = 33°	(m=0.50)
+		///		Mip #3 =  8x8	-> alpha = 48°	(m=0.80)
+		///		Mip #4 =  4x4	-> alpha = 67°	(m=1.50)
+		///	  -------------------------------------------
+		///		Mip #5 =  2x2	-> alpha = 67°
+		///		Mip #6 =  1x1	-> alpha = 67°
+		/// 
+		/// Using the above formula for finding alpha from roughness, we can easily get the mip level index:
+		/// 
+		///		Mip = (-0.003801480606631629 + 1.3782584461528633 * m - 0.3967194013427133 * m^2) * (N-3) / 1.18
+		/// 
+		/// 
+		/// This is the conclusion of this long explanation: we can deduces alpha and roughness from each other and we have a nice simple way of computing the mip levels of the cube map.
+		/// 
 		/// </summary>
 		/// <param name="_CubeFaces"></param>
 		/// <returns></returns>
 		/// 
-
 		private Vector4D[][,]	m_CubeFaces;
 		private Vector4D[][][,]	ConvolveCubeMap( Vector4D[][,] _CubeFaces )
 		{
@@ -115,7 +237,10 @@ namespace TestGradientPNG
 			return Result;
 		}
 
-		private Vector4D	SampleCubeMap(  )
+		private Vector4D	PointSampleCubeMap( Vector _Direction )
+		{
+
+		}
 
 		private Vector4D[,]	ReadCubeFace( Vector4D[,] _Source, int _CubeSize, int _X, int _Y )
 		{
