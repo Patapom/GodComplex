@@ -280,7 +280,7 @@ namespace TestGradientPNG
 				// Compute amount of samples along alpha & phi depending on original cube size
 				int		SamplesCountTheta = (int) Math.Floor( SAMPLES_FACTOR * 2.0 * Alpha * TotalPixels / Math.PI );	// A simple ratio based on the total pixels if we had a PI/2 aperture...
 
-//SamplesCountTheta = 3 * MipIndex;
+SamplesCountTheta = 3 * MipIndex;
 
 				float	dTheta = Alpha / SamplesCountTheta;
 				int		SamplesCountPhi = (int) Math.Floor( 2.0 * Math.PI / dTheta );	// Approximately the same spacing in Phi
@@ -407,6 +407,15 @@ namespace TestGradientPNG
 							}
 
 							CubeFace[x,y] = Accum;	// Here's our final result!
+
+
+// 							// Maya seems to cut HDR values!!
+// 							// Let's save exponent in alpha
+// 							float	Max = Math.Max( Math.Max( Accum.x, Accum.y ), Accum.z );
+// 							float	LogVal = (float) Math.Log( Max ) / 3.9120230054281460586187507879106f;	// Assume a max of 50
+// 							Accum /= Max;
+// 							Accum.w = LogVal;
+//							CubeFace[x,y] = Accum;	// Here's our final result!
 
 						}
 					}
