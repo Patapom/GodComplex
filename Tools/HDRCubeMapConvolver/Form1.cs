@@ -79,8 +79,8 @@ namespace TestGradientPNG
 		/// This function is the heart of that tool
 		/// 
 		/// The goal is to compute mip levels for the cube map where each new mip will match the corresponding roughness of an exponential lobe
-		///		like those used in standard normal distribution models (Ward, Beckmann, etc.) so that we can use a specific mip according to the
-		///		roughness parameter of the model.
+		///	 like those used in standard normal distribution models (Ward, Beckmann, etc.) so that we can use a specific mip according to the
+		///	 roughness parameter of the model.
 		/// 
 		/// Ignoring normalization factors, the typical reflection lobe is given by the following equation:
 		///		f(theta) = exp( -tan(theta)² / m² )	     => m is the roughness
@@ -119,7 +119,7 @@ namespace TestGradientPNG
 		/// 
 		/// According to the problem we posed, we give an aperture angle of alpha and want to find the "tangent lobe".
 		/// There is no exact way to do that since the tangent at theta=PI/2 is always 0, but we can fix conditions for the p coordinate.
-		/// For example, at a given epsilon we want p to match a point p_epsilon on our tangent line:
+		/// For example, at a given distance "epsilon" from the y=0 line, we want p to match a point p_epsilon on our tangent line:
 		/// 
 		///		Xp_epsilon = eps.tan(alpha)
 		///		Yp_epsilon = eps
@@ -180,7 +180,7 @@ namespace TestGradientPNG
 		/// Fooplot link with the equations used for finding the roots:
 		/// http://www.fooplot.com/#W3sidHlwZSI6MCwiZXEiOiJleHAoLSh0YW4oeCkvMC41KV4yKS9jb3MoeCktMC4yIiwiY29sb3IiOiIjRkYwMDAwIn0seyJ0eXBlIjowLCJlcSI6ImV4cCgtKHRhbih4KS8wLjAxKV4yKS9jb3MoeCktMC4yIiwiY29sb3IiOiIjMjZEMTA0In0seyJ0eXBlIjowLCJlcSI6ImV4cCgtKHRhbih4KS8xLjQpXjIpL2Nvcyh4KS0wLjIiLCJjb2xvciI6IiMwMDQ4RkYifSx7InR5cGUiOjEwMDAsIndpbmRvdyI6WyIwIiwiMS40IiwiLTAuMyIsIjEiXX1d
 		/// 
-		/// Using an online least square fitter (http://www.akiti.ca/LinLeastSqPoly4.html) we find the excellent matching result:
+		/// Using my online least square fitter (http://patapom.com/topics/Misc/leastsquares/index.html) we find the excellent matching result:
 		/// 
 		///		alpha = -0.003801480606631629 + 1.3782584461528633 * m - 0.3967194013427133 * m^2
 		/// 
@@ -200,7 +200,7 @@ namespace TestGradientPNG
 		/// 
 		/// In our case, we want to be able to cover up to alpha = 67°, corresponding to the maximum roughness of m = 1.5
 		/// If you look at an example of a diffuse cube map http://www.3dvia.com/studio/wp-content/uploads/2009/11/hangar_diffuse.png you can see it still needs a little resolution
-		///	 and so we can't assume it will be the highest mip level...
+		///	 and so we can't assume it will be the highest mip level of size 1x1...
 		/// 
 		/// By fixing the "diffuse mip" so it's a cube map of 4x4, for example, we can have N-2 mips where the angle will vary from 0 to 67°
 		/// 
@@ -214,7 +214,7 @@ namespace TestGradientPNG
 		///		Mip #5 =  2x2	-> alpha = 67°
 		///		Mip #6 =  1x1	-> alpha = 67°
 		/// 
-		/// Using the above formula for finding alpha from roughness, we can easily get the mip level index:
+		/// Using the above formula for finding alpha from roughness, we can now easily get the mip level index:
 		/// 
 		///		Mip = (-0.003801480606631629 + 1.3782584461528633 * m - 0.3967194013427133 * m^2) * (N-3) / 1.18
 		/// 
@@ -240,9 +240,8 @@ namespace TestGradientPNG
 			int	MipLevels = 1 + (int) Math.Floor( Math.Log( m_CubeSize ) / Math.Log( 2 ) );	// This would be the total amount of mips for the entire chain
 				MipLevels -= 2;																// But as stated above, we limit ourselves down to the lowest mip of 4x4 pixels
 
-			// Compute the total amount of pixels from one side to the other side of the cube
-			//	if we split the hemicube with a plane.
-			// This roughly corresponds to the amount of pixels we would span if we had an aperture angle of PI/2 (total angle of PI)
+			// Compute the total amount of pixels from one side to the other side of the cube if we split the hemicube with a plane.
+			// This roughly corresponds to the amount of pixels we would span if we had an aperture angle of PI
 			// That will help us determine the amount of samples to take based on actual aperture angle...
 			//
 			//			 Full
@@ -272,7 +271,8 @@ namespace TestGradientPNG
 				Result[MipIndex] = MipCubeFaces;
 
 				// Compute expected lobe angle
-				float	Alpha = MAX_ALPHA * MipIndex / (MipLevels-1);
+				float	MipNorm = ((float) MipIndex) / (MipLevels-1);
+				float	Alpha = MAX_ALPHA * MipNorm * MipNorm;
 
 				// Compute equivalent roughness
 				float	m = (float) (Math.Tan(Alpha) / Math.Sqrt( -Math.Log( EPS / Math.Cos(Alpha) ) ));
@@ -280,7 +280,7 @@ namespace TestGradientPNG
 				// Compute amount of samples along alpha & phi depending on original cube size
 				int		SamplesCountTheta = (int) Math.Floor( SAMPLES_FACTOR * 2.0 * Alpha * TotalPixels / Math.PI );	// A simple ratio based on the total pixels if we had a PI/2 aperture...
 
-SamplesCountTheta = 3 * MipIndex;
+//SamplesCountTheta = 3 * MipIndex;
 
 				float	dTheta = Alpha / SamplesCountTheta;
 				int		SamplesCountPhi = (int) Math.Floor( 2.0 * Math.PI / dTheta );	// Approximately the same spacing in Phi
@@ -288,14 +288,16 @@ SamplesCountTheta = 3 * MipIndex;
 				// Build samples
 				Vector4D[]	Samples = new Vector4D[SamplesCountPhi * SamplesCountTheta];
 				int			SamplesCount = 0;
-				float		Normalizer = 1.0f / SamplesCountPhi * SamplesCountTheta;
+				float		Normalizer = 1.0f / (SamplesCountPhi * SamplesCountTheta);	// First, normalize by amount of samples
+							Normalizer *= 1.0f / (float) (4.0 * Math.PI * m * m);		// Next, normalize for Ward
 
 				Random		RNG = new Random( 1 );
+				float		SumReflectance = 0.0f;
 				for ( int ThetaIndex=0; ThetaIndex < SamplesCountTheta; ThetaIndex++ )
 				{
 					for ( int PhiIndex=0; PhiIndex < SamplesCountPhi; PhiIndex++ )
 					{
-						float	Theta = (float) Math.Sqrt( -m*m * Math.Log( (ThetaIndex + RNG.NextDouble()) / SamplesCountTheta ) );	// According to ward's monte-carlo sampling method (stratified version)
+						float	Theta = (float) Math.Sqrt( -m*m * Math.Log( Math.Max( 0.001, (ThetaIndex + RNG.NextDouble()) / SamplesCountTheta ) ) );	// According to ward's monte-carlo sampling method (stratified version)
 						float	Phi = (float) (PhiIndex + RNG.NextDouble()) * dTheta;
 
 						float	CosTheta = (float) Math.Cos( Theta );
@@ -305,8 +307,8 @@ SamplesCountTheta = 3 * MipIndex;
 						float	SinPhi = (float) Math.Sin( Phi );
 
 						float	Reflectance = (float) Math.Exp( -Math.Pow( Math.Tan( Theta ) / m, 2.0 ) );	// Gaussian lobe reflectance in that direction, normalized against amount of samples taken
-//Reflectance = 1;
-								Reflectance *= Normalizer;
+						SumReflectance += Reflectance;
+//						Reflectance *= Normalizer;
 
 						Samples[SamplesCount++] = new Vector4D(
 								SinTheta * CosPhi,
@@ -315,6 +317,13 @@ SamplesCountTheta = 3 * MipIndex;
 								Reflectance
 							);
 					}
+				}
+
+				// Normalize samples' reflectance
+				Normalizer = 1.0f / SumReflectance;
+				for ( int SampleIndex=0; SampleIndex < SamplesCount; SampleIndex++ )
+				{
+					Samples[SampleIndex].w *= Normalizer;
 				}
 
 
@@ -372,8 +381,8 @@ SamplesCountTheta = 3 * MipIndex;
 							Direction.Normalize();
 
 // Simple direction test...
-// CubeFace[x,y] = new Vector4D( Direction.x, Direction.y, Direction.z, 1 );
-// CubeFace[x,y] = PointSampleCubeMap( Direction );
+//CubeFace[x,y] = EncodeHDR( 10.0f * new Vector4D( Direction.x, Direction.y, Direction.z, 1 ) );
+// CubeFace[x,y] = EncodeHDR( PointSampleCubeMap( Direction ) );
 // continue;
 
 							// Establish a tangent space
@@ -408,21 +417,45 @@ SamplesCountTheta = 3 * MipIndex;
 
 							CubeFace[x,y] = Accum;	// Here's our final result!
 
-
-// 							// Maya seems to cut HDR values!!
-// 							// Let's save exponent in alpha
-// 							float	Max = Math.Max( Math.Max( Accum.x, Accum.y ), Accum.z );
-// 							float	LogVal = (float) Math.Log( Max ) / 3.9120230054281460586187507879106f;	// Assume a max of 50
-// 							Accum /= Max;
-// 							Accum.w = LogVal;
-//							CubeFace[x,y] = Accum;	// Here's our final result!
+							// Maya seems to cut HDR values!!
+							CubeFace[x,y] = EncodeHDR( Accum );	// Here's our final result!
 
 						}
 					}
 				}
 			}
 
+			// Encode first mip into HDR
+			for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
+			{
+				Vector4D[,]	CubeFace = _CubeFaces[FaceIndex];
+				for ( int y=0; y < _CubeSize; y++ )
+				{
+					for ( int x=0; x < _CubeSize; x++ )
+					{
+						CubeFace[x,y] = EncodeHDR( CubeFace[x,y] );
+					}
+				}
+			}
+
 			return Result;
+		}
+
+		// Maya seems to cut HDR values!!
+		// Let's save exponent in alpha
+		private Vector4D	EncodeHDR( Vector4D _value )
+		{
+			float	Max = Math.Max( Math.Max( _value.x, _value.y ), _value.z );
+			if ( Max < 1.0f )
+			{	// LDR values stay the same...
+				_value.w = 0.0f;
+				return _value;
+			}
+
+			float	LogVal = (float) Math.Log( Max ) / 3.9120230054281460586187507879106f;	// Assume a max of 50
+			_value /= Max;
+			_value.w = LogVal;
+			return _value;
 		}
 
 		private Vector4D	PointSampleCubeMap( Vector _Direction )

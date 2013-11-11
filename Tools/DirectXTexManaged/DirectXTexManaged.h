@@ -19,19 +19,6 @@ namespace DirectXTexManaged {
 		{
 			int	MipsCount = _CubeFaces->Length;
 
-
-
-// 			{
-// 				DirectX::ScratchImage	Scratch;
-// 				DirectX::TexMetadata	Meta;
-// 				DirectX::LoadFromDDSFile( L"Test.dds", 0, &Meta, Scratch );
-// 			}
-
-
-
-
-
-
 			// Create the image and fill it with our data
 			DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
 
@@ -65,11 +52,12 @@ namespace DirectXTexManaged {
 							float	R = CubeFace[X,Y]->x;
 							float	G = CubeFace[X,Y]->y;
 							float	B = CubeFace[X,Y]->z;
+							float	A = CubeFace[X,Y]->w;
 
 							*pScanline++ = R;
 							*pScanline++ = G;
 							*pScanline++ = B;
-							*pScanline++ = 1;
+							*pScanline++ = A;
 						}
 					}
 				}

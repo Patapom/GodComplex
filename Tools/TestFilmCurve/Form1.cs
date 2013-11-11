@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using System.Drawing;
 using System.Drawing.Imaging;
 
 namespace TestGradientPNG
@@ -17,6 +17,29 @@ namespace TestGradientPNG
 			InitializeComponent();
 
 			
+			using ( Bitmap B = new Bitmap( 512, 512, PixelFormat.Format32bppArgb ) )
+			{
+				BitmapData	LockedBitmap = B.LockBits( new Rectangle( 0, 0, 512, 512 ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
+
+				for ( int Y=0; Y < 512; Y++ )
+				{
+					byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + Y * LockedBitmap.Stride;
+					for ( int X=0; X < 512; X++ )
+					{
+						double	Angle = Math.Atan2( Y - 255, X - 255 );
+//						byte	C = (byte) (255.0 * ((Angle + Math.PI) % (0.5 * Math.PI)) / (0.5 * Math.PI));
+						byte	C = (byte) (255.0 * ((Angle + Math.PI) % Math.PI) / Math.PI);
+						*pScanline++ = C;
+						*pScanline++ = C;
+						*pScanline++ = C;
+						*pScanline++ = (byte) ((X-255)*(X-255) + (Y-255)*(Y-255) < 255*255 ? 255 : 0);
+					}
+				}
+
+				B.UnlockBits( LockedBitmap );
+
+				B.Save( "\\Anisotropy.png", ImageFormat.Png ); 
+			}
 		}
 
 		private void floatTrackbarControlScaleX_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )

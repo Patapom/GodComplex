@@ -100,6 +100,9 @@
     <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\Includes\CBLight2.fx">
       <Link>Arkane Maya Shaders\Includes\CBLight2.fx</Link>
     </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\Includes\Fresnel.fx">
+      <Link>Arkane Maya Shaders\Includes\Fresnel.fx</Link>
+    </Content>
     <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\Includes\Global.fx">
       <Link>Arkane Maya Shaders\Includes\Global.fx</Link>
     </Content>
