@@ -440,7 +440,7 @@ void	EffectVolumetric::UpdateSkyTables()
 		break;
 
 	//////////////////////////////////////////////////////////////////////////
-	// Computes LIMITIED transmittance texture T (line 1 in algorithm 4.1)
+	// Computes LIMITED transmittance texture T (line 1 in algorithm 4.1)
 	// This integrates Air/Fog density along a ray until it reaches a specified distance
 	// We thus obtain the optical depth and store exp( -Optical Depth ), the transmittance of the atmosphere along the ray...
 	//
