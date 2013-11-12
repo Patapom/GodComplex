@@ -8,7 +8,7 @@
     <ProjectGuid>{D0CC5DC0-D81A-4976-9042-8A3B5427148B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Nuaj.Helpers.FBX</RootNamespace>
+    <RootNamespace>FBX</RootNamespace>
     <AssemblyName>FBXSceneLoader</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileUpgradeFlags>
@@ -119,11 +119,28 @@
     <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="SharpDX">
+      <HintPath>..\SharpDX.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PrimitiveBuilder.cs" />
+    <Compile Include="SceneObjects\LoaderTempTextureCube.cs" />
+    <Compile Include="SceneObjects\LoaderTempTexture.cs" />
+    <Compile Include="SceneObjects\LoaderTempMaterial.cs" />
+    <Compile Include="SceneObjects\LoaderTempMesh.cs" />
+    <Compile Include="SceneObjects\LoaderTempTransform.cs" />
+    <Compile Include="SceneObjects\LoaderTempSceneObject.cs" />
+    <Compile Include="Scene\Materials\Texture2D.cs" />
+    <Compile Include="Scene\Materials\MaterialParameters.cs" />
+    <Compile Include="Scene\Nodes\Mesh.cs" />
+    <Compile Include="Scene\Nodes\Light.cs" />
+    <Compile Include="Scene\Nodes\Camera.cs" />
+    <Compile Include="Scene\Nodes\Node.cs" />
+    <Compile Include="Scene\Scene.cs" />
     <Compile Include="SceneLoader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
