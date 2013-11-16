@@ -53,6 +53,13 @@ float	ReadDepth( float2 _UV )
 	return (Q * _CameraData.z) / (Q - Zproj);
 }
 
+
+Texture2D	_TexIrradianceDelta : register(t64);			// deltaE (formerly t10)
+Texture3D	_TexScatteringDelta_Rayleigh : register(t65);	// deltaSR (formerly t11)
+Texture3D	_TexScatteringDelta_Mie : register(t66);		// deltaSM (formerly t12)
+Texture3D	_TexScatteringDelta : register(t67);			// deltaJ (formerly t13)
+
+
 void	UpSampleAtmosphere( float2 _UV, out float3 _Scattering, out float3 _Extinction )
 {
 	float3	DowndUV = 2.0 * _dUV;	// Size of a pixel in the downsampled map (downsample factor = 0.5)
@@ -145,15 +152,15 @@ return 0.01 * (Bisou.x - Bisou.y);
 #endif
 
 // DEBUG
-#if 0
-if ( UV.x < 0.3 && UV.y > 0.7 )
+#if 1
+//if ( UV.x < 0.3 && UV.y > 0.7 )
 {	// Show the transmittance map
-	UV.x /= 0.3;
-	UV.y = (UV.y - 0.7) / 0.3;
+// 	UV.x /= 0.3;
+// 	UV.y = (UV.y - 0.7) / 0.3;
 
-	float3	UVW = float3( UV, 0.5 * (1.0 + sin( _Time.x )) );
+	float3	UVW = float3( UV, 0.0 + 0.5 * (1.0 + sin( _Time.x )) );
 
-	if ( UV.x > 0.99 ) return float4( UVW.z, 0, 0, 0 );
+	if ( UV.x > 0.998 ) return float3( UVW.z, 0, 0 );
 
 // 	float	r = GROUND_RADIUS_KM + WORLD2KM * _Camera2World[3].y;
 // 	float	h = sqrt( r * r - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
@@ -169,13 +176,68 @@ if ( UV.x < 0.3 && UV.y > 0.7 )
 
 
 
-//	return 1.0 * abs(_TexScattering.SampleLevel( LinearClamp, UVW, 0.0 ).xyz);
-// 	return 20.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
-// 	return _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+
+
+
+
+	/*
+float	CosThetaView = 1.0 - 2.0 * UVW.y;
+//float	CosThetaView = -0.0005;
+float	AltitudeKm = UVW.z * ATMOSPHERE_THICKNESS_KM;
+
+const float	H = sqrt( ATMOSPHERE_RADIUS_KM*ATMOSPHERE_RADIUS_KM - GROUND_RADIUS_KM*GROUND_RADIUS_KM );
+float	r = GROUND_RADIUS_KM + max( 0.001, AltitudeKm );
+float	h = sqrt( r*r - GROUND_RADIUS_KM*GROUND_RADIUS_KM );
+
+//return 0.9 * float( h ) / 3.50;
+
+
+float	r_cosTheta = r * CosThetaView;
+float	Delta = r_cosTheta * r_cosTheta + GROUND_RADIUS_KM*GROUND_RADIUS_KM - r * r;
+float	uCosThetaView = 0.0;
+if ( CosThetaView <= 0.0 && Delta >= 0.0 )	// Hitting the ground
+{
+	// uCosThetaView = d / d_h = (-r*cos(theta) - sqrt(r²*cos²(theta) - [r²-Rg²])) / sqrt( r² - Rg² )
+	//
+	float	GroundHitDistanceKm = -r_cosTheta - sqrt( Delta );
+	float	HorizonHitDistanceKm = h;
+	uCosThetaView = GroundHitDistanceKm / HorizonHitDistanceKm;												// That's our V coordinate. It equals 1 when we're about to stop hitting the ground (horizon hit) and Delta is becoming negative
+//	uCosThetaView = (0.5 * NORMALIZED_SIZE_V) - uCosThetaView * (0.5 - 1.0 / RESOLUTION_COS_THETA);			// This results in mapping to 0.5-€ when viewing straight down, and to 0 when reaching the horizon
+	uCosThetaView = lerp( 0.5 - 0.5 / RESOLUTION_COS_THETA, 0.5 / RESOLUTION_COS_THETA, uCosThetaView );	// This results in mapping to 0.5-€ when viewing straight down, and to 0 when reaching the horizon
+}
+else										// Hitting the atmosphere
+{
+	// uCosThetaView = d / d_H = (-r*cos(theta) + sqrt( r²*cos²(theta) - [r²-Rt²] )) / (sqrt( r² - Rg² ) + sqrt( Rt² - Rg² ))
+	//
+	Delta = r_cosTheta * r_cosTheta + ATMOSPHERE_RADIUS_KM*ATMOSPHERE_RADIUS_KM - r * r;
+	float	AtmosphereHitDistanceKm = -r_cosTheta + sqrt( Delta );
+	float	HorizonHitDistanceKm = h + H;
+	uCosThetaView = AtmosphereHitDistanceKm / HorizonHitDistanceKm;											// That's our V coordinate. It equals 1 when we're about to start hitting the ground (horizon hit) and Delta is becoming positive
+//	uCosThetaView = (1.0 - 0.5 * NORMALIZED_SIZE_V) + uCosThetaView * (0.5 - 1.0 / RESOLUTION_COS_THETA);	// This results in mapping to 0.5+€ when viewing straight up, and to 1 when reaching the horizon
+	uCosThetaView = lerp( 0.5 + 0.5 / RESOLUTION_COS_THETA, 1.0 - 0.5 / RESOLUTION_COS_THETA, uCosThetaView );	// This results in mapping to 0.5+€ when viewing straight down, and to 1 when reaching the horizon
+}
+
+//return 0.9 * sqrt( pow( 6360.001, 2 ) - pow( 6360, 2 ) ) / 3.5;
+//return 0.9 * sqrt( pow( 636.0001, 2 ) - pow( 636, 2 ) ) / 0.35;
+return uCosThetaView;
+
+*/
+
+
+
+
+
+
+// 	return 1.0 * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+// 	return 1.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+// 	return 1.0 * _TexIrradianceDelta.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
+//	return 10.0 * _TexScatteringDelta_Mie.SampleLevel( LinearClamp, UVW, 0.0 ).xyz;
+	return 10.0 * abs(_TexScatteringDelta_Rayleigh.SampleLevel( LinearClamp, UVW, 0.0 ).xyz);
+	return 1.0 * abs(_TexScattering.SampleLevel( LinearClamp, UVW, 0.0 ).xyz);
 
 // UVW.z = 0.9;
 
- 	return 1.0 * _TexTransmittance_Limited.SampleLevel( LinearClamp, UVW, 0.0 ).xyz;
+ 	return 1.0 * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 //	return _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 ).xyz;
 //	return _TexTerrainShadow.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 

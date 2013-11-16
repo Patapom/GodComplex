@@ -125,6 +125,7 @@ public:		// NESTED TYPES
 
 		U32		_bFirstPass;	// True if we're computing the first pass that reads single-scattering for Rayleigh & Mie from 2 separate tables
 		float	_AverageGroundReflectance;
+		U32		_StepsCount;	// Amount of steps for integration (optional, for complex shaders only)
 
 		void	SetTargetSize( U32 _X, U32 _Y, U32 _Z=1 )	{ _TargetSizeX = _X; _TargetSizeY = _Y; _TargetSizeZ = _Z; }
 		void	SetGroupsCount( U32 _X, U32 _Y, U32 _Z=1 )	{ _GroupsCountX = _X; _GroupsCountY = _Y; _GroupsCountZ = _Z; }
@@ -188,7 +189,7 @@ private:	// FIELDS
 	Texture2D*			m_ppRTTransmittance[2];
 	Texture3D*			m_ppRTTransmittanceLimited[2];
 	Texture2D*			m_ppRTIrradiance[3];
-	Texture3D*			m_ppRTInScattering[3];
+	Texture3D*			m_ppRTScattering[3];
 
 	int					m_RenderWidth, m_RenderHeight;
 
@@ -304,8 +305,8 @@ protected:
 	void		TriggerSkyTablesUpdate();
 	void		UpdateSkyTables();
 
-	void		InitMultiPassStage( int _StageIndex, int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ );
-	void		InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ );
+	void		InitMultiPassStage( int _StageIndex, int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ, int _StepsCount );
+	void		InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ, int _StepsCount );
 	bool		IncreaseStagePass( int _StageIndex );	// Returns true if the stage is over
 #ifdef BUILD_SKY_TABLES_USING_CS
 	void		DispatchStage( ComputeShader& M );

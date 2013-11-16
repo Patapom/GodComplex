@@ -119,9 +119,9 @@ void	EffectVolumetric::InitSkyTables()
 	// Merges DeltaScatteringRayleigh & Mie into initial inscatter texture S (line 5 in algorithm 4.1)
 	USING_MATERIAL_START( *pMatMergeInitialScattering )
 
-		m_Device.SetRenderTarget( *m_ppRTInScattering[0] );
+		m_Device.SetRenderTarget( *m_ppRTScattering[0] );
 
-		CB.m.dUVW = m_ppRTInScattering[0]->GetdUVW();
+		CB.m.dUVW = m_ppRTScattering[0]->GetdUVW();
 		CB.UpdateData();
 
 		m_ScreenQuad.RenderInstanced( M, RES_3D_ALTITUDE );
@@ -206,9 +206,9 @@ void	EffectVolumetric::InitSkyTables()
  		// Adds deltaS into inscatter texture S (line 11 in algorithm 4.1)
 		USING_MATERIAL_START( *pMatAccumulateInScattering )
 
-			m_Device.SetRenderTarget( *m_ppRTInScattering[0] );
+			m_Device.SetRenderTarget( *m_ppRTScattering[0] );
 
-			CB.m.dUVW = m_ppRTInScattering[0]->GetdUVW();
+			CB.m.dUVW = m_ppRTScattering[0]->GetdUVW();
 			CB.UpdateData();
 
 			m_ScreenQuad.RenderInstanced( M, RES_3D_ALTITUDE );
@@ -220,8 +220,8 @@ void	EffectVolumetric::InitSkyTables()
 
 	// Assign final textures to slots 8 & 9
 	m_Device.RemoveRenderTargets();
-	m_ppRTInScattering[0]->SetVS( 8, true );
-	m_ppRTInScattering[0]->SetPS( 8, true );
+	m_ppRTScattering[0]->SetVS( 8, true );
+	m_ppRTScattering[0]->SetPS( 8, true );
 	m_ppRTIrradiance[0]->SetVS( 9, true );
 	m_ppRTIrradiance[0]->SetPS( 9, true );
 
@@ -246,7 +246,7 @@ void	EffectVolumetric::InitSkyTables()
 	Texture2D*	pStagingTransmittance = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true );
 	Texture2D*	pStagingIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true );
 
-	pStagingScattering->CopyFrom( *m_ppRTInScattering[0] );
+	pStagingScattering->CopyFrom( *m_ppRTScattering[0] );
 	pStagingTransmittance->CopyFrom( *m_ppRTTransmittance[0] );
 	pStagingIrradiance->CopyFrom( *m_ppRTIrradiance[0] );
 
@@ -275,7 +275,7 @@ void	EffectVolumetric::InitSkyTables()
 // 	pStagingScattering->Load( FILENAME_SCATTERING );
 
 	m_ppRTTransmittance[0]->CopyFrom( *pStagingTransmittance );
-	m_ppRTInScattering[0]->CopyFrom( *pStagingScattering );
+	m_ppRTScattering[0]->CopyFrom( *pStagingScattering );
 	m_ppRTIrradiance[0]->CopyFrom( *pStagingIrradiance );
 
 	delete pStagingIrradiance;
@@ -284,8 +284,8 @@ void	EffectVolumetric::InitSkyTables()
 
 	m_ppRTTransmittance[0]->SetVS( 7, true );
 	m_ppRTTransmittance[0]->SetPS( 7, true );
-	m_ppRTInScattering[0]->SetVS( 8, true );
-	m_ppRTInScattering[0]->SetPS( 8, true );
+	m_ppRTScattering[0]->SetVS( 8, true );
+	m_ppRTScattering[0]->SetPS( 8, true );
 	m_ppRTIrradiance[0]->SetVS( 9, true );
 	m_ppRTIrradiance[0]->SetPS( 9, true );
 

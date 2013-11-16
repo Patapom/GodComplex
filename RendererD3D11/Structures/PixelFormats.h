@@ -216,6 +216,7 @@ public:
 
 };
 
+
 struct PixelFormatRG32F : public PixelFormat
 {
 public:
