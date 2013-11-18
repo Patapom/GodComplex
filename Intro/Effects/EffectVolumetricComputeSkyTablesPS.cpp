@@ -6,14 +6,6 @@
 #define FILENAME_TRANSMITTANCE	"./TexTransmittance_256x64.pom"
 #define FILENAME_SCATTERING		"./TexScattering_256x128x32.pom"
 
-struct	CBPreCompute
-{
-	NjFloat4	dUVW;
-	bool		bFirstPass;
-	float		AverageGroundReflectance;
-	NjFloat2	__PAD1;
-};
-
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //
@@ -41,8 +33,8 @@ namespace
 	bool				m_bSkyTableDirty = false;
 
 	// Update Stages Description
-	static const int	MAX_SCATTERING_ORDER = 4;						// Render up to order 4, further order events don't matter that much
-//static const int	MAX_SCATTERING_ORDER = 2;//###
+//	static const int	MAX_SCATTERING_ORDER = 4;						// Render up to order 4, further order events don't matter that much
+static const int	MAX_SCATTERING_ORDER = 1;//###
 
 	static const int	THREADS_COUNT_X = 16;							// !!IMPORTANT ==> Must correspond to what's written in the shader!!
 	static const int	THREADS_COUNT_Y = 16;
@@ -54,7 +46,7 @@ namespace
 
 		// INITIAL COMPUTATION
 		COMPUTING_TRANSMITTANCE = 0,
-		COMPUTING_TRANSMITTANCE_LIMITED = 1,
+//		COMPUTING_TRANSMITTANCE_LIMITED = 1,
 		COMPUTING_IRRADIANCE_SINGLE = 2,
 		COMPUTING_SCATTERING_SINGLE = 3,
 
@@ -132,10 +124,10 @@ namespace
 
 void	EffectVolumetric::InitSkyTables()
 {
-	m_pRTDeltaIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );							// deltaE (temp)
-	m_pRTDeltaScatteringRayleigh = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );	// deltaSR (temp)
-	m_pRTDeltaScatteringMie = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );		// deltaSM (temp)
-	m_pRTDeltaScattering = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, false, false, UAV );			// deltaJ (temp)
+	m_pRTDeltaIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );							// deltaE (temp)
+	m_pRTDeltaScatteringRayleigh = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );	// deltaSR (temp)
+	m_pRTDeltaScatteringMie = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );		// deltaSM (temp)
+	m_pRTDeltaScattering = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );			// deltaJ (temp)
 
 	// Create the rasterizer state that enables scissoring
 	{
@@ -263,9 +255,11 @@ void	EffectVolumetric::TriggerSkyTablesUpdate()
 	m_bSkyTableDirty = true;	// Should start the update process as soon as updating is done...
 }
 
-void	EffectVolumetric::InitMultiPassStage( int _StageIndex, int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ )
+void	EffectVolumetric::InitMultiPassStage( int _StageIndex, int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ, int _StepsCount )
 {
 	ASSERT( m_pCB_PreComputeSky->m._PassIndexX == 0 && m_pCB_PreComputeSky->m._PassIndexY == 0 && m_pCB_PreComputeSky->m._PassIndexZ == 0, "Pass index should always equal 0 at the beginning of a new stage!" );
+
+	m_pCB_PreComputeSky->m._StepsCount = _StepsCount;
 
 	m_pCB_PreComputeSky->m.SetTargetSize( _TargetSizeX, _TargetSizeY, _TargetSizeZ );
 
@@ -290,8 +284,10 @@ float	PassesCountZ = float( _TargetSizeZ > 1 ? (_TargetSizeZ >> 2) : 1 ) / Group
 #endif
 }
 
-void	EffectVolumetric::InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ )
+void	EffectVolumetric::InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ, int _StepsCount )
 {
+	m_pCB_PreComputeSky->m._StepsCount = _StepsCount;
+
 	m_pCB_PreComputeSky->m.SetTargetSize( _TargetSizeX, _TargetSizeY, _TargetSizeZ );
 	m_pCB_PreComputeSky->m.SetGroupsCount( _TargetSizeX >> 4, _TargetSizeY >> 4, _TargetSizeZ > 1 ? _TargetSizeZ >> 2 : 1 );
 }
@@ -388,6 +384,13 @@ void	EffectVolumetric::UpdateSkyTables()
 		m_ScatteringOrder = 2;		// We start the loop at order 2 so we loop up to MAX_SCATTERING_ORDER
 		m_pCB_PreComputeSky->m._bFirstPass = true;
 		m_bStageStarting = true;
+
+		// Remove targets from any assigned SRV slots so we can start writing in them again
+		// They could still be bound to SRVs for debug purpose
+		m_pRTDeltaIrradiance->RemoveFromLastAssignedSlots();
+		m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
+		m_pRTDeltaScatteringMie->RemoveFromLastAssignedSlots();
+		m_pRTDeltaScattering->RemoveFromLastAssignedSlots();
 	}
 	// STARTING POINT
 	//////////////////////////////////////////////////////////////////////////
@@ -406,7 +409,8 @@ void	EffectVolumetric::UpdateSkyTables()
 		{
 			if ( m_bStageStarting )
 			{	// First step into that stage...
-				InitMultiPassStage( CurrentStageIndex, m_ppRTTransmittance[0]->GetWidth(), m_ppRTTransmittance[0]->GetHeight(), 1 );
+				const int	STEPS_COUNT = 500;
+				InitMultiPassStage( CurrentStageIndex, m_ppRTTransmittance[0]->GetWidth(), m_ppRTTransmittance[0]->GetHeight(), 1, STEPS_COUNT );
 				m_bStageStarting = false;
 			}
 
@@ -424,7 +428,8 @@ void	EffectVolumetric::UpdateSkyTables()
 
 			if ( IncreaseStagePass( CurrentStageIndex ) )
 			{	// Stage is over!
-				m_CurrentStage = COMPUTING_TRANSMITTANCE_LIMITED;
+//				m_CurrentStage = COMPUTING_TRANSMITTANCE_LIMITED;
+				m_CurrentStage = COMPUTING_IRRADIANCE_SINGLE;
 				m_bStageStarting = true;
 
 				// Assign to slot 6
@@ -439,47 +444,47 @@ void	EffectVolumetric::UpdateSkyTables()
 		}
 		break;
 
-	//////////////////////////////////////////////////////////////////////////
-	// Computes LIMITED transmittance texture T (line 1 in algorithm 4.1)
-	// This integrates Air/Fog density along a ray until it reaches a specified distance
-	// We thus obtain the optical depth and store exp( -Optical Depth ), the transmittance of the atmosphere along the ray...
-	//
-	case COMPUTING_TRANSMITTANCE_LIMITED:
-		{
-			if ( m_bStageStarting )
-			{	// First step into that stage...
-				InitMultiPassStage( CurrentStageIndex, m_ppRTTransmittanceLimited[0]->GetWidth(), m_ppRTTransmittanceLimited[0]->GetHeight(), m_ppRTTransmittanceLimited[0]->GetDepth() );
-				m_bStageStarting = false;
-			}
-
-			USING_MATERIAL_START( *m_pMatPSTComputeTransmittance_Limited )
-	
-#ifdef ENABLE_PROFILING
-				TimeProfile	Profile( m_pStageTimingCurrent[CurrentStageIndex] );
-#endif
-
-				m_Device.SetRenderTarget( *m_ppRTTransmittanceLimited[1] );
-
-				DispatchStage( M );
-
-			USING_MATERIAL_END
-
-			if ( IncreaseStagePass( CurrentStageIndex ) )
-			{	// Stage is over!
-				m_CurrentStage = COMPUTING_IRRADIANCE_SINGLE;
-				m_bStageStarting = true;
-
-				// Assign to slot 7
-				m_Device.RemoveRenderTargets();
-				m_ppRTTransmittanceLimited[1]->Set( 7, true );
-
-				// This is our new default texture
-				Texture3D*	pTemp = m_ppRTTransmittanceLimited[0];
-				m_ppRTTransmittanceLimited[0] = m_ppRTTransmittanceLimited[1];
-				m_ppRTTransmittanceLimited[1] = pTemp;
-			}
-		}
-		break;
+// 	//////////////////////////////////////////////////////////////////////////
+// 	// Computes LIMITED transmittance texture T (line 1 in algorithm 4.1)
+// 	// This integrates Air/Fog density along a ray until it reaches a specified distance
+// 	// We thus obtain the optical depth and store exp( -Optical Depth ), the transmittance of the atmosphere along the ray...
+// 	//
+// 	case COMPUTING_TRANSMITTANCE_LIMITED:
+// 		{
+// 			if ( m_bStageStarting )
+// 			{	// First step into that stage...
+// 				InitMultiPassStage( CurrentStageIndex, m_ppRTTransmittanceLimited[0]->GetWidth(), m_ppRTTransmittanceLimited[0]->GetHeight(), m_ppRTTransmittanceLimited[0]->GetDepth() );
+// 				m_bStageStarting = false;
+// 			}
+// 
+// 			USING_MATERIAL_START( *m_pMatPSTComputeTransmittance_Limited )
+// 	
+// #ifdef ENABLE_PROFILING
+// 				TimeProfile	Profile( m_pStageTimingCurrent[CurrentStageIndex] );
+// #endif
+// 
+// 				m_Device.SetRenderTarget( *m_ppRTTransmittanceLimited[1] );
+// 
+// 				DispatchStage( M );
+// 
+// 			USING_MATERIAL_END
+// 
+// 			if ( IncreaseStagePass( CurrentStageIndex ) )
+// 			{	// Stage is over!
+// 				m_CurrentStage = COMPUTING_IRRADIANCE_SINGLE;
+// 				m_bStageStarting = true;
+// 
+// 				// Assign to slot 7
+// 				m_Device.RemoveRenderTargets();
+// 				m_ppRTTransmittanceLimited[1]->Set( 7, true );
+// 
+// 				// This is our new default texture
+// 				Texture3D*	pTemp = m_ppRTTransmittanceLimited[0];
+// 				m_ppRTTransmittanceLimited[0] = m_ppRTTransmittanceLimited[1];
+// 				m_ppRTTransmittanceLimited[1] = pTemp;
+// 			}
+// 		}
+// 		break;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Computes irradiance texture deltaE (line 2 in algorithm 4.1)
@@ -495,8 +500,11 @@ void	EffectVolumetric::UpdateSkyTables()
 		{
 			if ( m_bStageStarting )
 			{	// First step into that stage...
-				InitMultiPassStage( CurrentStageIndex, m_pRTDeltaIrradiance->GetWidth(), m_pRTDeltaIrradiance->GetHeight(), 1 );
+				const int	STEPS_COUNT = 0;
+				InitMultiPassStage( CurrentStageIndex, m_pRTDeltaIrradiance->GetWidth(), m_pRTDeltaIrradiance->GetHeight(), 1, STEPS_COUNT );
 				m_bStageStarting = false;
+
+				m_pRTDeltaIrradiance->RemoveFromLastAssignedSlots();
 			}
 
 			USING_MATERIAL_START( *m_pMatPSTComputeIrradiance_Single )
@@ -542,8 +550,12 @@ void	EffectVolumetric::UpdateSkyTables()
 		{
 			if ( m_bStageStarting )
 			{	// First step into that stage...
-				InitMultiPassStage( CurrentStageIndex, m_pRTDeltaScatteringRayleigh->GetWidth(), m_pRTDeltaScatteringRayleigh->GetHeight(), m_pRTDeltaScatteringRayleigh->GetDepth() );
+				const int	STEPS_COUNT = 50;
+				InitMultiPassStage( CurrentStageIndex, m_pRTDeltaScatteringRayleigh->GetWidth(), m_pRTDeltaScatteringRayleigh->GetHeight(), m_pRTDeltaScatteringRayleigh->GetDepth(), STEPS_COUNT );
 				m_bStageStarting = false;
+
+				m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
+				m_pRTDeltaScatteringMie->RemoveFromLastAssignedSlots();
 			}
 
 			USING_MATERIAL_START( *m_pMatPSTComputeInScattering_Single )
@@ -558,7 +570,7 @@ void	EffectVolumetric::UpdateSkyTables()
 				};
 				m_Device.SetRenderTargets( m_pRTDeltaScatteringRayleigh->GetWidth(), m_pRTDeltaScatteringRayleigh->GetHeight(), 2, ppTargets );
 
-				m_pRTDeltaIrradiance->SetPS( 10 );	// Input from last stage
+				m_pRTDeltaIrradiance->SetPS( 64 );	// Input from last stage
 
 				DispatchStage( M );
 
@@ -571,28 +583,28 @@ void	EffectVolumetric::UpdateSkyTables()
 
 				// Will be assigned to slot 11 & 12 next stage
 				m_Device.RemoveRenderTargets();
-				m_pRTDeltaIrradiance->RemoveFromLastAssignedSlots();
 
 				// ==================================================
 				// Merges DeltaScattering Rayleigh & Mie into initial inscatter texture S (line 5 in algorithm 4.1)
 				// Simply stores float4( Rayleigh.xyz, Mie.x )
 				{
-					InitSinglePassStage( RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE );
+					InitSinglePassStage( RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, 0 );
 
 					USING_MATERIAL_START( *m_pMatPSTMergeInitialScattering )
 
-						m_Device.SetRenderTarget( *m_ppRTInScattering[1] );
+						m_Device.SetRenderTarget( *m_ppRTScattering[1] );
 
-						m_pRTDeltaScatteringRayleigh->SetPS( 11 );
-						m_pRTDeltaScatteringMie->SetPS( 12 );
+						m_pRTDeltaScatteringRayleigh->SetPS( 65 );
+						m_pRTDeltaScatteringMie->SetPS( 66 );
 
 						DispatchStage( M );
 
 					USING_MATERIAL_END
 
 					m_Device.RemoveRenderTargets();
-					m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
-					m_pRTDeltaScatteringMie->RemoveFromLastAssignedSlots();
+
+// 					m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
+// 					m_pRTDeltaScatteringMie->RemoveFromLastAssignedSlots();
 				}
 
 				// Special case when we want to stop at order 1 scattering (debug)
@@ -605,14 +617,15 @@ void	EffectVolumetric::UpdateSkyTables()
 					// ==================================================
 					// Adds deltaE to irradiance texture E (line 10 in algorithm 4.1)
 					{
-						InitSinglePassStage( IRRADIANCE_W, IRRADIANCE_H, 1 );
+						InitSinglePassStage( IRRADIANCE_W, IRRADIANCE_H, 1, 0 );
 
 						USING_MATERIAL_START( *m_pMatPSTAccumulateIrradiance )
 
-							m_Device.SetRenderTarget( *m_ppRTIrradiance[2] );
+//							m_Device.SetRenderTarget( *m_ppRTIrradiance[2] );
+							m_Device.SetRenderTarget( *m_ppRTIrradiance[1] );
 
-							m_ppRTIrradiance[1]->SetPS( 14 );	// Previous values as SRV (cleared to 0 at the time)
-							m_pRTDeltaIrradiance->SetPS( 10 );	// Input from last stage
+//							m_ppRTIrradiance[1]->SetPS( 68 );	// Previous values as SRV (cleared to 0 at the moment)
+							m_pRTDeltaIrradiance->SetPS( 64 );	// Input from last stage
 
 							DispatchStage( M );
 
@@ -620,25 +633,25 @@ void	EffectVolumetric::UpdateSkyTables()
 
 						m_Device.RemoveRenderTargets();
 						m_ppRTIrradiance[1]->RemoveFromLastAssignedSlots();
-						m_pRTDeltaIrradiance->RemoveFromLastAssignedSlots();
+//						m_pRTDeltaIrradiance->RemoveFromLastAssignedSlots();
 
-						{	// Swap double-buffered accumulators
-							Texture2D*	pTemp = m_ppRTIrradiance[1];
-							m_ppRTIrradiance[1] = m_ppRTIrradiance[2];
-							m_ppRTIrradiance[2] = pTemp;
-						}
+// 						{	// Swap double-buffered accumulators
+// 							Texture2D*	pTemp = m_ppRTIrradiance[1];
+// 							m_ppRTIrradiance[1] = m_ppRTIrradiance[2];
+// 							m_ppRTIrradiance[2] = pTemp;
+// 						}
 					}
 
 					// Assign final textures to slots 8 & 9
-					m_ppRTInScattering[0]->RemoveFromLastAssignedSlots();
+					m_ppRTScattering[0]->RemoveFromLastAssignedSlots();
 					m_ppRTIrradiance[0]->RemoveFromLastAssignedSlots();
-					m_ppRTInScattering[1]->Set( 8, true );
+					m_ppRTScattering[1]->Set( 8, true );
 					m_ppRTIrradiance[1]->Set( 9, true );
 
 					// Swap double-buffered slots
-					Texture3D*	pTemp0 = m_ppRTInScattering[0];
-					m_ppRTInScattering[0] = m_ppRTInScattering[1];
-					m_ppRTInScattering[1] = pTemp0;
+					Texture3D*	pTemp0 = m_ppRTScattering[0];
+					m_ppRTScattering[0] = m_ppRTScattering[1];
+					m_ppRTScattering[1] = pTemp0;
 
 					Texture2D*	pTemp1 = m_ppRTIrradiance[0];
 					m_ppRTIrradiance[0] = m_ppRTIrradiance[1];
@@ -670,8 +683,11 @@ void	EffectVolumetric::UpdateSkyTables()
 		{
 			if ( m_bStageStarting )
 			{	// First step into that stage...
-				InitMultiPassStage( CurrentStageIndex, m_pRTDeltaScattering->GetWidth(), m_pRTDeltaScattering->GetHeight(), m_pRTDeltaScattering->GetDepth() );
+				const int	STEPS_COUNT = 16;
+				InitMultiPassStage( CurrentStageIndex, m_pRTDeltaScattering->GetWidth(), m_pRTDeltaScattering->GetHeight(), m_pRTDeltaScattering->GetDepth(), STEPS_COUNT );
 				m_bStageStarting = false;
+
+				m_pRTDeltaScattering->RemoveFromLastAssignedSlots();
 			}
 
 			USING_MATERIAL_START( *m_pMatPSTComputeInScattering_Delta )
@@ -682,10 +698,10 @@ void	EffectVolumetric::UpdateSkyTables()
 
 				m_Device.SetRenderTarget( *m_pRTDeltaScattering );
 
-				m_pRTDeltaIrradiance->SetPS( 10 );			// Input from 2 stages ago
-				m_pRTDeltaScatteringRayleigh->SetPS( 11 );	// Input from last stage
+				m_pRTDeltaIrradiance->SetPS( 64 );			// Input from 2 stages ago
+				m_pRTDeltaScatteringRayleigh->SetPS( 65 );	// Input from last stage
 //###Just to avoid the annoying warning each frame				if ( m_ScatteringOrder == 2 )
-					m_pRTDeltaScatteringMie->SetPS( 12 );	// We only need Mie for the first stage...
+					m_pRTDeltaScatteringMie->SetPS( 66 );	// We only need Mie for the first stage...
 
 				m_pCB_PreComputeSky->m._bFirstPass = m_ScatteringOrder == 2;
 
@@ -699,9 +715,9 @@ void	EffectVolumetric::UpdateSkyTables()
 				m_bStageStarting = true;
 
 				m_Device.RemoveRenderTargets();		// Will be assigned to slot 13 next stage
-				m_pRTDeltaIrradiance->RemoveFromLastAssignedSlots();
-				m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
-				m_pRTDeltaScatteringMie->RemoveFromLastAssignedSlots();
+//				m_pRTDeltaIrradiance->RemoveFromLastAssignedSlots();
+// 				m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
+// 				m_pRTDeltaScatteringMie->RemoveFromLastAssignedSlots();
 			}
 		}
 		break;
@@ -724,8 +740,11 @@ void	EffectVolumetric::UpdateSkyTables()
 		{
 			if ( m_bStageStarting )
 			{	// First step into that stage...
-				InitMultiPassStage( CurrentStageIndex, m_pRTDeltaIrradiance->GetWidth(), m_pRTDeltaIrradiance->GetHeight(), 1 );
+				const int	STEPS_COUNT = 32;
+				InitMultiPassStage( CurrentStageIndex, m_pRTDeltaIrradiance->GetWidth(), m_pRTDeltaIrradiance->GetHeight(), 1, 32 );
 				m_bStageStarting = false;
+
+				m_pRTDeltaIrradiance->RemoveFromLastAssignedSlots();
 			}
 
 			USING_MATERIAL_START( *m_pMatPSTComputeIrradiance_Delta )
@@ -736,9 +755,9 @@ void	EffectVolumetric::UpdateSkyTables()
 
 				m_Device.SetRenderTarget( *m_pRTDeltaIrradiance );
 
-				m_pRTDeltaScatteringRayleigh->SetPS( 11 );	// Input from last stage
+				m_pRTDeltaScatteringRayleigh->SetPS( 65 );	// Input from last stage
 //###Just to avoid the annoying warning each frame				if ( m_ScatteringOrder == 2 )
-					m_pRTDeltaScatteringMie->SetPS( 12 );	// We only need Mie for the first stage...
+					m_pRTDeltaScatteringMie->SetPS( 66 );	// We only need Mie for the first stage...
 
 				m_pCB_PreComputeSky->m._bFirstPass = m_ScatteringOrder == 2;
 
@@ -752,8 +771,8 @@ void	EffectVolumetric::UpdateSkyTables()
 				m_bStageStarting = true;
 
 				m_Device.RemoveRenderTargets();	// Will be assigned to slot 10 for accumulation at the end of next stage
-				m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
-				m_pRTDeltaScatteringMie->RemoveFromLastAssignedSlots();
+// 				m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
+// 				m_pRTDeltaScatteringMie->RemoveFromLastAssignedSlots();
 			}
 		}
 		break;
@@ -772,8 +791,11 @@ void	EffectVolumetric::UpdateSkyTables()
 		{
 			if ( m_bStageStarting )
 			{	// First step into that stage...
-				InitMultiPassStage( CurrentStageIndex, m_pRTDeltaScatteringRayleigh->GetWidth(), m_pRTDeltaScatteringRayleigh->GetHeight(), m_pRTDeltaScatteringRayleigh->GetDepth() );
+				const int	STEPS_COUNT = 50;
+				InitMultiPassStage( CurrentStageIndex, m_pRTDeltaScatteringRayleigh->GetWidth(), m_pRTDeltaScatteringRayleigh->GetHeight(), m_pRTDeltaScatteringRayleigh->GetDepth(), STEPS_COUNT );
 				m_bStageStarting = false;
+
+				m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
 			}
 
 			USING_MATERIAL_START( *m_pMatPSTComputeInScattering_Multiple )
@@ -785,7 +807,7 @@ void	EffectVolumetric::UpdateSkyTables()
 				m_Device.SetRenderTarget( *m_pRTDeltaScatteringRayleigh );	// Warning: We're re-using Rayleigh slot.
 																			// It doesn't matter for orders > 2 where we don't sample from Rayleigh+Mie separately anymore (only done in first pass)
 
-				m_pRTDeltaScattering->SetPS( 13 );	// Input from 2 stages ago
+				m_pRTDeltaScattering->SetPS( 67 );	// Input from 2 stages ago
 
 				m_pCB_PreComputeSky->m._bFirstPass = m_ScatteringOrder == 2;
 
@@ -807,16 +829,15 @@ void	EffectVolumetric::UpdateSkyTables()
 				// ==================================================
 				// Adds deltaE to irradiance texture E (line 10 in algorithm 4.1)
 				{
-					InitSinglePassStage( IRRADIANCE_W, IRRADIANCE_H, 1 );
+					InitSinglePassStage( IRRADIANCE_W, IRRADIANCE_H, 1, 0 );
 
 					USING_MATERIAL_START( *m_pMatPSTAccumulateIrradiance )
 
 //						m_Device.SetRenderTarget( *m_ppRTIrradiance[2] );
 						m_Device.SetRenderTarget( *m_ppRTIrradiance[1] );
 
-//						m_ppRTIrradiance[1]->SetPS( 14 );	// Previous values as SRV
-
-						m_pRTDeltaIrradiance->SetPS( 10 );	// Input from last stage
+//						m_ppRTIrradiance[1]->SetPS( 68 );	// Previous values as SRV
+						m_pRTDeltaIrradiance->SetPS( 64 );	// Input from last stage
 
 						DispatchStage( M );
 
@@ -824,7 +845,7 @@ void	EffectVolumetric::UpdateSkyTables()
 
 					m_Device.RemoveRenderTargets();
 					m_ppRTIrradiance[1]->RemoveFromLastAssignedSlots();
-					m_pRTDeltaIrradiance->RemoveFromLastAssignedSlots();
+//					m_pRTDeltaIrradiance->RemoveFromLastAssignedSlots();
 
 // 					{	// Swap double-buffered accumulators
 // 						Texture2D*	pTemp = m_ppRTIrradiance[1];
@@ -836,29 +857,28 @@ void	EffectVolumetric::UpdateSkyTables()
 				// ==================================================
 				// Adds deltaS to inscatter texture S (line 11 in algorithm 4.1)
 				{
-					InitSinglePassStage( RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE );
+					InitSinglePassStage( RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, 0 );
 
 					USING_MATERIAL_START( *m_pMatPSTAccumulateInScattering )
 
-//						m_Device.SetRenderTarget( *m_ppRTInScattering[2] );
-						m_Device.SetRenderTarget( *m_ppRTInScattering[1] );
+//						m_Device.SetRenderTarget( *m_ppRTScattering[2] );
+						m_Device.SetRenderTarget( *m_ppRTScattering[1] );
 
-//						m_ppRTInScattering[1]->SetPS( 15 );	// Previous values as SRV
-
-						m_pRTDeltaScatteringRayleigh->SetPS( 11 );
+//						m_ppRTScattering[1]->SetPS( 69 );	// Previous values as SRV
+						m_pRTDeltaScatteringRayleigh->SetPS( 65 );
 
 						DispatchStage( M );
 
 					USING_MATERIAL_END
 
 					m_Device.RemoveRenderTargets();
-					m_ppRTInScattering[1]->RemoveFromLastAssignedSlots();
-					m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
+					m_ppRTScattering[1]->RemoveFromLastAssignedSlots();
+//					m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
 
 // 					{	// Swap triple-buffered accumulators
-// 						Texture3D*	pTemp = m_ppRTInScattering[1];
-// 						m_ppRTInScattering[1] = m_ppRTInScattering[2];
-// 						m_ppRTInScattering[2] = pTemp;
+// 						Texture3D*	pTemp = m_ppRTScattering[1];
+// 						m_ppRTScattering[1] = m_ppRTScattering[2];
+// 						m_ppRTScattering[2] = pTemp;
 // 					}
 				}
 
@@ -875,16 +895,16 @@ void	EffectVolumetric::UpdateSkyTables()
 //					m_bSkyTableDirty = false;
 
 					// Assign final textures to slots 8 & 9
-					m_ppRTInScattering[0]->RemoveFromLastAssignedSlots();
+					m_ppRTScattering[0]->RemoveFromLastAssignedSlots();
 					m_ppRTIrradiance[0]->RemoveFromLastAssignedSlots();
-					m_ppRTInScattering[1]->Set( 8, true );
+					m_ppRTScattering[1]->Set( 8, true );
 					m_ppRTIrradiance[1]->Set( 9, true );
 
 
 #if 1
 {
-	Texture3D*	pStagingScattering = new Texture3D( m_Device, m_ppRTInScattering[1]->GetWidth(), m_ppRTInScattering[1]->GetHeight(), m_ppRTInScattering[1]->GetDepth(), PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
-	pStagingScattering->CopyFrom( *m_ppRTInScattering[1] );
+	Texture3D*	pStagingScattering = new Texture3D( m_Device, m_ppRTScattering[1]->GetWidth(), m_ppRTScattering[1]->GetHeight(), m_ppRTScattering[1]->GetDepth(), PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
+	pStagingScattering->CopyFrom( *m_ppRTScattering[1] );
 	pStagingScattering->Save( FILENAME_SCATTERING );
 	delete pStagingScattering;
 
@@ -902,9 +922,9 @@ void	EffectVolumetric::UpdateSkyTables()
 
 
 					// Swap double-buffered slots
-					Texture3D*	pTemp0 = m_ppRTInScattering[0];
-					m_ppRTInScattering[0] = m_ppRTInScattering[1];
-					m_ppRTInScattering[1] = pTemp0;
+					Texture3D*	pTemp0 = m_ppRTScattering[0];
+					m_ppRTScattering[0] = m_ppRTScattering[1];
+					m_ppRTScattering[1] = pTemp0;
 
 					Texture2D*	pTemp1 = m_ppRTIrradiance[0];
 					m_ppRTIrradiance[0] = m_ppRTIrradiance[1];

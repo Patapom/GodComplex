@@ -2,6 +2,15 @@
 // This shader pre-computes the various tables required by the atmospheric rendering
 // It's an implementation of http://www-ljk.imag.fr/Publications/Basilic/com.lmc.publi.PUBLI_Article@11e7cdda2f7_f64b69/article.pdf
 //
+// Known bugs (regression avoidance):
+//	_ Yellow lines near horizon
+//		=> The transmittance (or all tables) are stored in FP16 (even RGB16_UNORM has not enough precision!)
+//		=> Or the GetTransmittance( Distance ) function divides by a clamped max( 0.00eps, Transmittance ) that clips certain channels
+//
+//	_ Jerky black bands near the V=0.5 band, depending on altitude
+//		=> Comes from the ComputeNearestHit() that returns a 0 distance at sharp angles (straight up or down)
+//
+//
 #include "Inc/Global.hlsl"
 #include "Inc/Atmosphere.hlsl"
 
@@ -17,12 +26,13 @@ cbuffer	cbCompute	: register( b10 )
 
 	bool	_bFirstPass;	// True if we're computing the first pass that reads single-scattering for Rayleigh & Mie from 2 separate tables
 	float	_AverageGroundReflectance;
+	uint	_StepsCount;
 };
 
-Texture2D	_TexIrradianceDelta : register(t10);			// deltaE
-Texture3D	_TexScatteringDelta_Rayleigh : register(t11);	// deltaSR
-Texture3D	_TexScatteringDelta_Mie : register(t12);		// deltaSM
-Texture3D	_TexScatteringDelta : register(t13);			// deltaJ
+Texture2D	_TexIrradianceDelta : register(t64);			// deltaE (formerly t10)
+Texture3D	_TexScatteringDelta_Rayleigh : register(t65);	// deltaSR (formerly t11)
+Texture3D	_TexScatteringDelta_Mie : register(t66);		// deltaSM (formerly t12)
+Texture3D	_TexScatteringDelta : register(t67);			// deltaJ (formerly t13)
 
 
 struct	VS_IN
@@ -82,7 +92,7 @@ void	GetSliceData( uint3 _Texel, out float _AltitudeKm, out float _CosThetaView,
     RadiusKm = RadiusKm * RadiusKm;
     RadiusKm = sqrt( lerp( GROUND_RADIUS_KM * GROUND_RADIUS_KM, ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM, RadiusKm ) );	// Radius grows quadratically to have more precision near the ground
 	if ( _Texel.z == 0 )
-		RadiusKm += 0.01;	// Never completely ground
+		RadiusKm += 0.001;	// Never completely ground
 	else if ( _Texel.z == uint(RESOLUTION_ALTITUDE)-1 )
 		RadiusKm -= 0.001;	// Never completely top of atmosphere
 
@@ -180,31 +190,48 @@ void	GetSliceData( uint3 _Texel, out float _AltitudeKm, out float _CosThetaView,
 	//
 	float r = RadiusKm;
 
-	if ( _Texel.y < uint( RESOLUTION_COS_THETA) / 2 )
+// 	dhdH.w = sqrt(r * r - Rg * Rg);	// Distance to horizon!
+//     float y = _Texel.y;
+//     if ( y < float(RESOLUTION_COS_THETA) / 2.0 )
+// 	{
+//         float	d = 1.0 - y / (float(RES_MU) / 2.0 - 1.0);
+// 				d = min( max( groundDistance, d * dhdH.w ), dhdH.w * 0.999);
+// 
+//         mu = (Rg * Rg - r * r - d * d) / (2.0 * r * d);
+//         mu = min(mu, -sqrt(1.0 - (Rg / r) * (Rg / r)) - 0.001);
+//     } else {
+//         float d = (y - float(RES_MU) / 2.0) / (float(RES_MU) / 2.0 - 1.0);
+//         d = min(max(dhdH.x, d * dhdH.y), dhdH.y * 0.999);
+//         mu = (Rt * Rt - r * r - d * d) / (2.0 * r * d);
+//     }
+
+	if ( _Texel.y <  RESOLUTION_COS_THETA / 2 )
 	{	// Viewing toward the ground
-		float	d_ground = r - GROUND_RADIUS_KM;										// Distance to the ground (the minimum distance we can see viewing straight down)
-		float	d_horizon = 0.999 * sqrt( r*r - GROUND_RADIUS_KM*GROUND_RADIUS_KM );	// Distance to the horizon (the maximum distance we can see viewing down)
-		float	d = 1.0 - 2.0 * _Texel.y / RESOLUTION_COS_THETA;						// 1 at texel 0, ~0 at RESOLUTION/2-1
-				d = lerp( d_ground, d_horizon, d );										// d_horizon at texel 0, ~d_ground at RESOLUTION/2-1
+		float	d_ground = r - GROUND_RADIUS_KM;								// Distance to the ground (the minimum distance we can see viewing straight down)
+		float	d_horizon = sqrt( r*r - GROUND_RADIUS_KM*GROUND_RADIUS_KM );	// Distance to the horizon (the maximum distance we can see viewing down)
+		float	d = 1.0 - _Texel.y / (RESOLUTION_COS_THETA / 2.0 - 1.0);		// 1 at texel 0, 0 at RESOLUTION/2-1
+ 				d = clamp( d*d_horizon, d_ground, 0.999 * d_horizon );			// d_horizon at texel 0, 0 at RESOLUTION/2-1
 
 		_CosThetaView = (GROUND_RADIUS_KM * GROUND_RADIUS_KM - r * r - d * d) / (2.0 * r * d);
 		_CosThetaView = min( _CosThetaView, -sqrt( 1.0 - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (r*r) ) - 0.001 );	// Make sure we're always slightly below the horizon angle Theta_H
 	}
 	else
 	{	// Viewing toward the sky
-		float	d_atmosphere = ATMOSPHERE_RADIUS_KM - r;								// Distance to the atmosphere (the minimum distance we can see viewing straight up)
-		float	d_horizon = 0.999 * (sqrt( r*r - GROUND_RADIUS_KM*GROUND_RADIUS_KM ) + sqrt( ATMOSPHERE_RADIUS_KM*ATMOSPHERE_RADIUS_KM - GROUND_RADIUS_KM*GROUND_RADIUS_KM ));	// Distance to the horizon (the maximum distance we can see viewing up)
-		float	d = 2.0 * _Texel.y / (RESOLUTION_COS_THETA-1) - 1.0;					// 1 at texel RESOLUTION-1, ~0 at RESOLUTION/2
-				d = lerp( d_atmosphere, d_horizon, d );									// d_horizon at texel RESOLUTION-1, ~d_atmosphere at RESOLUTION/2
+ 		float	d_atmosphere = ATMOSPHERE_RADIUS_KM - r;										// Distance to the atmosphere (the minimum distance we can see viewing straight up)
+ 		float	d_horizon = sqrt( r*r - GROUND_RADIUS_KM*GROUND_RADIUS_KM ) + sqrt( ATMOSPHERE_RADIUS_KM*ATMOSPHERE_RADIUS_KM - GROUND_RADIUS_KM*GROUND_RADIUS_KM );	// Distance to the horizon (the maximum distance we can see viewing up)
+ 		float	d = (_Texel.y - RESOLUTION_COS_THETA/2.0) / (RESOLUTION_COS_THETA/2.0 - 1.0);	// 1 at texel RESOLUTION-1, 0 at RESOLUTION/2
+ 				d = clamp( d*d_horizon, d_atmosphere, 0.999 * d_horizon );						// d_horizon at texel RESOLUTION-1, max( ~d_ground at RESOLUTION/2-1
 
 		_CosThetaView = (ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - r * r - d * d) / (2.0 * r * d);
+		_CosThetaView = max( 0.0, _CosThetaView );
 	}
 
 #else
-	_CosThetaView = lerp( -1.0, 1.0, _UV.y );
+	_CosThetaView = lerp( -1.0, 1.0, float( _Texel.y ) / RESOLUTION_COS_THETA );
 #endif
 
-	_CosThetaSun = frac( _Texel.x / RESOLUTION_COS_THETA_SUN );
+//	_CosThetaSun = frac( float( _Texel.x+0.5 ) / RESOLUTION_COS_THETA_SUN );// * float(RESOLUTION_COS_THETA_SUN)/(RESOLUTION_COS_THETA_SUN-1);
+	_CosThetaSun = fmod( float( _Texel.x ), RESOLUTION_COS_THETA_SUN ) / (RESOLUTION_COS_THETA_SUN-1);
 
 #ifdef INSCATTER_NON_LINEAR_SUN
 	// paper formula
@@ -223,26 +250,26 @@ void	GetSliceData( uint3 _Texel, out float _AltitudeKm, out float _CosThetaView,
 //////////////////////////////////////////////////////////////////////////
 // 0] Pre-Computes the transmittance table for all possible altitudes and zenith angles
 //
-float	ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, float _DistanceKm, const float _Href, uniform uint STEPS_COUNT=500 )
+float	ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, float _DistanceKm, const float _Href, uniform uint _StepsCount )
 {
 	float3	PositionKm = float3( 0.0, _AltitudeKm, 0.0 );
 	float3	View = float3( sqrt( 1.0 - _CosTheta*_CosTheta ), _CosTheta, 0.0 );
 
 	float	Result = 0.0;
-	float	StepSizeKm = _DistanceKm / STEPS_COUNT;
+	float	StepSizeKm = _DistanceKm / _StepsCount;
 	float3	StepKm = StepSizeKm * View;
 
 	float		PreviousAltitudeKm = _AltitudeKm;
-	for ( uint i=0; i < STEPS_COUNT; i++ )
+	for ( uint i=0; i < _StepsCount; i++ )
 	{
 		PositionKm += StepKm;
 		_AltitudeKm = length( PositionKm - EARTH_CENTER_KM ) - GROUND_RADIUS_KM;
-		if ( _AltitudeKm < 0.0 )
-		{	// Last step!
-			_AltitudeKm = 0.0;
-			i = STEPS_COUNT;
-		}
-		Result += exp( (PreviousAltitudeKm + _AltitudeKm) * (-0.5 / _Href) );// Gives the integral of a linear interpolation in altitude
+// 		if ( _AltitudeKm < 0.0 )
+// 		{	// Last step!
+// 			_AltitudeKm = 0.0;
+// 			i = _StepsCount;
+// 		}
+		Result += exp( max( 0.0, PreviousAltitudeKm + _AltitudeKm ) * (-0.5 / _Href) );// Gives the integral of a linear interpolation in altitude
 		PreviousAltitudeKm = _AltitudeKm;
 	}
 
@@ -251,6 +278,8 @@ float	ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, float _DistanceKm
 
 float4	PreComputeTransmittance( PS_IN _In ) : SV_TARGET0
 {
+	uint	STEPS_COUNT = _StepsCount;	// Default is 500
+
 	uint3	Texel = GetTexelInfos( _In );
 	float2	UV = float2( Texel.xy ) / _TargetSize.xy;
 
@@ -261,13 +290,16 @@ float4	PreComputeTransmittance( PS_IN _In ) : SV_TARGET0
 	// Compute distance to atmosphere or ground, whichever comes first
 	float3	PositionKm = float3( 0.0, AltitudeKm, 0.0 );
 	float3	View = float3( sqrt( 1.0 - CosTheta*CosTheta ), CosTheta, 0.0 );
-	bool	bGroundHit;
-	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
-	if ( bGroundHit )
-		return 0.0;	// Completely opaque due to hit with ground: no light can come this way...
+// 	bool	bGroundHit;
+// 	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
+// 	if ( bGroundHit )
+// 		return 0.0;	// Completely opaque due to hit with ground: no light can come this way...
+
+	float	TraceDistanceKm = SphereIntersectionExit( PositionKm, View, ATMOSPHERE_THICKNESS_KM );
 
 	// Integrate Rayleigh & Mie optical depth to the top of atmosphere
-	float3	OpticalDepth = _AirParams.x * SIGMA_SCATTERING_RAYLEIGH * ComputeOpticalDepth( AltitudeKm, CosTheta, TraceDistanceKm, _AirParams.y ) + _FogParams.y * ComputeOpticalDepth( AltitudeKm, CosTheta, TraceDistanceKm, _FogParams.z );
+	float3	OpticalDepth = _AirParams.x * SIGMA_SCATTERING_RAYLEIGH * ComputeOpticalDepth( AltitudeKm, CosTheta, TraceDistanceKm, _AirParams.y, STEPS_COUNT )
+						 + _FogParams.y * ComputeOpticalDepth( AltitudeKm, CosTheta, TraceDistanceKm, _FogParams.z, STEPS_COUNT );
 
 	return float4( exp( -OpticalDepth ), 0.0 );
 }
@@ -278,6 +310,8 @@ float4	PreComputeTransmittance( PS_IN _In ) : SV_TARGET0
 //
 float4	PreComputeTransmittance_Limited( PS_IN _In ) : SV_TARGET0
 {
+	uint	STEPS_COUNT = _StepsCount;	// Default is 500
+
 	uint3	Texel = GetTexelInfos( _In );
 	float3	UVW = float3( Texel ) / _TargetSize;
 
@@ -287,7 +321,8 @@ float4	PreComputeTransmittance_Limited( PS_IN _In ) : SV_TARGET0
 	float	AltitudeKm = UVW.z*UVW.z * ATMOSPHERE_THICKNESS_KM;					// Grow quadratically to have more precision near the ground
 
 	// Integrate Rayleigh & Mie optical depth until the specified distance (will stop if ground is hit)
-	float3	OpticalDepth = _AirParams.x * SIGMA_SCATTERING_RAYLEIGH * ComputeOpticalDepth( AltitudeKm, CosTheta, DistanceKm, _AirParams.y ) + _FogParams.y * ComputeOpticalDepth( AltitudeKm, CosTheta, DistanceKm, _FogParams.z );
+	float3	OpticalDepth = _AirParams.x * SIGMA_SCATTERING_RAYLEIGH * ComputeOpticalDepth( AltitudeKm, CosTheta, DistanceKm, _AirParams.y, STEPS_COUNT )
+						 + _FogParams.y * ComputeOpticalDepth( AltitudeKm, CosTheta, DistanceKm, _FogParams.z, STEPS_COUNT );
 
 //return float4( UVW, 0.0 );
 
@@ -323,11 +358,12 @@ void	Integrand_Single( float _RadiusKm, float _CosThetaView, float _CosThetaSun,
 	// CosGamma = V.L
 	//
 	float	CurrentRadiusKm = sqrt( _RadiusKm * _RadiusKm + _DistanceKm * _DistanceKm + 2.0 * _RadiusKm * _CosThetaView * _DistanceKm );	// sqrt[ (P0 + d.V)² ]
-//	float	CurrentCosThetaSun = (_RadiusKm * _CosThetaSun + _CosGamma * _DistanceKm) / CurrentRadiusKm;	//### How do they get that??? I can't find any gamma in there! And that seems logical because only Cos(Theta_sun) is driving the altitude!
-	float	CurrentCosThetaSun = (_RadiusKm * _CosThetaSun + _DistanceKm) / CurrentRadiusKm;				// From the 3 sides of the triangle (_RadiusKm, CurrentRadiusKm and _DistanceKm) we can retrieve cos(Theta_Sun') = (CurrentRadiusKm² + _RadiusKm² - _DistanceKm²)/(2*_DistanceKm*CurrentRadiusKm)
+	float	CurrentCosThetaSun = (_RadiusKm * _CosThetaSun + _CosGamma * _DistanceKm) / CurrentRadiusKm;	//### How do they get that??? I can't find any gamma in there! And that seems logical because only Cos(Theta_sun) is driving the altitude!
+//	float	CurrentCosThetaSun = (_RadiusKm * _CosThetaSun + _DistanceKm) / CurrentRadiusKm;				// From the 3 sides of the triangle (_RadiusKm, CurrentRadiusKm and _DistanceKm) we can retrieve cos(Theta_Sun') = (CurrentRadiusKm² + _RadiusKm² - _DistanceKm²)/(2*_DistanceKm*CurrentRadiusKm)
 
     CurrentRadiusKm = max( GROUND_RADIUS_KM, CurrentRadiusKm );
-    if ( CurrentCosThetaSun < -sqrt( 1.0 - GROUND_RADIUS_KM * GROUND_RADIUS_KM / (CurrentRadiusKm * CurrentRadiusKm) ) )
+	static const float	REJECT_RADIUS_KM = GROUND_RADIUS_KM - 0.0;	// Allow 1km below the ground
+    if ( CurrentCosThetaSun < -sqrt( 1.0 - REJECT_RADIUS_KM * REJECT_RADIUS_KM / (CurrentRadiusKm * CurrentRadiusKm) ) )
 	{	// We're hitting the ground in that direction, ignore contribution...
 		_Rayleigh = 0.0;
 		_Mie = 0.0;
@@ -339,14 +375,18 @@ void	Integrand_Single( float _RadiusKm, float _CosThetaView, float _CosThetaSun,
 
 	float3	ViewTransmittance_Source2Point = GetTransmittance( StartAltitudeKm, _CosThetaView, _DistanceKm );	// Transmittance from view point to integration point at distance
 	float3	SunTransmittance_Atmosphere2Point = GetTransmittance( CurrentAltitudeKm, CurrentCosThetaSun );		// Transmittance from top of atmosphere to integration point at distance (Sun light attenuation)
-    float3	Transmittance = SunTransmittance_Atmosphere2Point * ViewTransmittance_Source2Point;					// Total transmittance is the product of the View => Hit & Hit => Atmosphere transmittances
+	float3	Transmittance = SunTransmittance_Atmosphere2Point * ViewTransmittance_Source2Point;					// Total transmittance is the product of the View => Hit & Hit => Atmosphere transmittances
 	_Rayleigh = exp( -CurrentAltitudeKm / _AirParams.y ) * Transmittance;										// Air density * Transmittance
 	_Mie = exp( -CurrentAltitudeKm / _FogParams.z ) * Transmittance;											// Fog density * Transmittance
+
+//###
+_Rayleigh = 0.1;// * Transmittance;										// Air density * Transmittance
+
 }
 
 PS_OUT	PreComputeInScattering_Single( PS_IN _In )
 {
-	const uint STEPS_COUNT = 50;
+	uint	STEPS_COUNT = 1;// _StepsCount;	// Default is 50
 
 	uint3	Texel = GetTexelInfos( _In );
 
@@ -354,12 +394,54 @@ PS_OUT	PreComputeInScattering_Single( PS_IN _In )
 	float	AltitudeKm, CosThetaView, CosThetaSun, CosGamma;
 	GetSliceData( Texel, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
 
+/*
+
+AltitudeKm = 0.0;
+
+const float	H = sqrt( ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
+float	r = GROUND_RADIUS_KM +  max( 0.001, AltitudeKm );
+float	h = sqrt( r * r - GROUND_RADIUS_KM * GROUND_RADIUS_KM );
+float	r_cosTheta = r * CosThetaView;
+float	Delta = r_cosTheta * r_cosTheta + GROUND_RADIUS_KM * GROUND_RADIUS_KM - r * r;
+float	uCosThetaView = 0.0;
+if ( CosThetaView <= 0.0 && Delta >= 0.0 )	// Hitting the ground
+{
+	// uCosThetaView = d / d_h = (-r*cos(theta) - sqrt(r²*cos²(theta) - [r²-Rg²])) / sqrt( r² - Rg² )
+	//
+	float	GroundHitDistanceKm = -r_cosTheta - sqrt( Delta );
+	float	HorizonHitDistanceKm = h;
+	uCosThetaView = GroundHitDistanceKm / HorizonHitDistanceKm;												// That's our V coordinate. It equals 1 when we're about to stop hitting the ground (horizon hit) and Delta is becoming negative
+//	uCosThetaView = (0.5 * NORMALIZED_SIZE_V) - uCosThetaView * (0.5 - 1.0 / RESOLUTION_COS_THETA);			// This results in mapping to 0.5-€ when viewing straight down, and to 0 when reaching the horizon
+	uCosThetaView = lerp( 0.5 - 0.5 / RESOLUTION_COS_THETA, 0.5 / RESOLUTION_COS_THETA, uCosThetaView );	// This results in mapping to 0.5-€ when viewing straight down, and to 0 when reaching the horizon
+}
+else										// Hitting the atmosphere
+{
+	// uCosThetaView = d / d_H = (-r*cos(theta) + sqrt( r²*cos²(theta) - [r²-Rt²] )) / (sqrt( r² - Rg² ) + sqrt( Rt² - Rg² ))
+	//
+	Delta = r_cosTheta * r_cosTheta + ATMOSPHERE_RADIUS_KM * ATMOSPHERE_RADIUS_KM - r * r;
+	float	AtmosphereHitDistanceKm = -r_cosTheta + sqrt( Delta );
+	float	HorizonHitDistanceKm = h + H;
+	uCosThetaView = AtmosphereHitDistanceKm / HorizonHitDistanceKm;											// That's our V coordinate. It equals 1 when we're about to start hitting the ground (horizon hit) and Delta is becoming positive
+//	uCosThetaView = (1.0 - 0.5 * NORMALIZED_SIZE_V) + uCosThetaView * (0.5 - 1.0 / RESOLUTION_COS_THETA);	// This results in mapping to 0.5+€ when viewing straight up, and to 1 when reaching the horizon
+	uCosThetaView = lerp( 0.5 + 0.5 / RESOLUTION_COS_THETA, 1.0 - 0.5 / RESOLUTION_COS_THETA, uCosThetaView );	// This results in mapping to 0.5+€ when viewing straight down, and to 1 when reaching the horizon
+}
+*/
+
+// PS_OUT	OutD;
+// //OutD.Color0 = uCosThetaView;
+// OutD.Color0 = CosThetaView;
+// OutD.Color1 = 0;
+// return OutD;
+
+
+
 	// Compute distance to atmosphere or ground, whichever comes first
 	float	RadiusKm = GROUND_RADIUS_KM + AltitudeKm;
 	float3	PositionKm = float3( 0.0, AltitudeKm, 0.0 );
 	float3	View = float3( sqrt( 1.0 - CosThetaView*CosThetaView ), CosThetaView, 0.0 );
 	bool	bGroundHit;
 	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, bGroundHit );
+//	float	TraceDistanceKm = SphereIntersectionExit( PositionKm, View, ATMOSPHERE_THICKNESS_KM );
 	float	StepSizeKm = TraceDistanceKm / STEPS_COUNT;
 
 	float3	PreviousRayleigh;
@@ -369,28 +451,41 @@ PS_OUT	PreComputeInScattering_Single( PS_IN _In )
 	float3	_Rayleigh = 0.0;
 	float3	_Mie = 0.0;
 
-	// Begin accumulation
-	float	DistanceKm = StepSizeKm;
-	for ( uint i=0; i < STEPS_COUNT; i++ )
-	{
-		float3	CurrentRayleigh, CurrentMie;
-		Integrand_Single( RadiusKm, CosThetaView, CosThetaSun, CosGamma, DistanceKm, CurrentRayleigh, CurrentMie );
+// 	// Begin accumulation
+// 	float	DistanceKm = StepSizeKm;
+// 	for ( uint i=0; i < STEPS_COUNT; i++ )
+// 	{
+// 		float3	CurrentRayleigh, CurrentMie;
+// 		Integrand_Single( RadiusKm, CosThetaView, CosThetaSun, CosGamma, DistanceKm, CurrentRayleigh, CurrentMie );
+// 
+// 		_Rayleigh += 0.5 * (PreviousRayleigh + CurrentRayleigh);
+// 		_Mie += 0.5 * (PreviousMie + CurrentMie);
+// 
+// 		PreviousRayleigh = CurrentRayleigh;
+// 		PreviousMie = CurrentMie;
+// 		DistanceKm += StepSizeKm;
+// 	}
 
-		_Rayleigh += 0.5 * (PreviousRayleigh + CurrentRayleigh);
-		_Mie += 0.5 * (PreviousMie + CurrentMie);
 
-		PreviousRayleigh = CurrentRayleigh;
-		PreviousMie = CurrentMie;
-		DistanceKm += StepSizeKm;
-	}
+_Rayleigh = PreviousRayleigh;
+_Mie = PreviousMie;
 
 	_Rayleigh *= _AirParams.x * SIGMA_SCATTERING_RAYLEIGH * StepSizeKm;
 	_Mie *= _FogParams.x * StepSizeKm;
+
+
+_Rayleigh = CosThetaView >= 0.0 ? float3( 0, 0, 0.01 * SphereIntersectionExit( PositionKm, View, ATMOSPHERE_THICKNESS_KM ) )
+	: 0;//float3( 0.01 * max( 0, SphereIntersectionEnter( PositionKm, View, 0.0 ) ), 0, 0 );
+
+_Rayleigh = CosThetaView;
 
     // Store Rayleigh and Mie contributions separately, WITHOUT the phase function factor (cf "Angular precision")
 	PS_OUT	Out;
 	Out.Color0 = _Rayleigh;
 	Out.Color1 = _Mie;
+
+// Out.Color0 = float3( 1, 0, 0 );
+// Out.Color1 = 0.0;
 
 	return Out;
 }
@@ -399,7 +494,7 @@ PS_OUT	PreComputeInScattering_Single( PS_IN _In )
 // Pre-Computes the delta scattering table
 float3	PreComputeInScattering_Delta( PS_IN _In ) : SV_TARGET0
 {
-	const uint	STEPS_COUNT = 16;
+	uint	STEPS_COUNT = _StepsCount;	// Default is 16
 
 	const float	dPhi = PI / STEPS_COUNT;
 	const float	dTheta = PI / STEPS_COUNT;
@@ -501,7 +596,7 @@ float3	PreComputeInScattering_Delta( PS_IN _In ) : SV_TARGET0
 // Pre-Computes the irradiance table accounting for multiple scattering
 float3	PreComputeIrradiance_Delta( PS_IN _In ) : SV_TARGET0
 {
-const uint STEPS_COUNT=32;
+	uint	STEPS_COUNT = _StepsCount;	// Default is 32
 
 	const float	dPhi = PI / STEPS_COUNT;
 	const float	dTheta = PI / STEPS_COUNT;
@@ -573,7 +668,7 @@ float3	Integrand_Multiple( float _RadiusKm, float _CosThetaView, float _CosTheta
 
 float3	PreComputeInScattering_Multiple( PS_IN _In ) : SV_TARGET0
 {
-	const uint STEPS_COUNT = 50;
+	uint	STEPS_COUNT = _StepsCount;	// Default is 50
 
 	uint3	Texel = GetTexelInfos( _In );
 
