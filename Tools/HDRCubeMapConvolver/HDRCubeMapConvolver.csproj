@@ -108,6 +108,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <None Include="..\..\..\..\..\program files\autodesk\maya2014\presets\hlsl11\arkane\Default_CBObject.cb">
+      <Link>Arkane Maya Shaders\Default_CBObject.cb</Link>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -128,9 +131,54 @@
       <Name>SharpMath</Name>
     </ProjectReference>
     <ProjectReference Include="..\DirectXTexManaged\DirectXTexManaged.vcxproj">
-      <Project>{17C01446-DAC5-4F86-9ACE-E535C5B37679}</Project>
-      <Name>DirectXTexManaged</Name>
+      <Project>{17c01446-dac5-4f86-9ace-e535c5b37679}</Project>
+      <Name>DirectXTexManaged %28Visual Studio 2010%29</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Content Include="..\..\..\..\..\program files\autodesk\maya2014\presets\hlsl11\arkane\Default.fx">
+      <Link>Arkane Maya Shaders\Default.fx</Link>
+    </Content>
+    <Content Include="..\..\..\..\..\program files\autodesk\maya2014\presets\hlsl11\arkane\includes\CBLight0.fx">
+      <Link>Arkane Maya Shaders\Includes\CBLight0.fx</Link>
+    </Content>
+    <Content Include="..\..\..\..\..\program files\autodesk\maya2014\presets\hlsl11\arkane\includes\CBLight1.fx">
+      <Link>Arkane Maya Shaders\Includes\CBLight1.fx</Link>
+    </Content>
+    <Content Include="..\..\..\..\..\program files\autodesk\maya2014\presets\hlsl11\arkane\includes\CBLight2.fx">
+      <Link>Arkane Maya Shaders\Includes\CBLight2.fx</Link>
+    </Content>
+    <Content Include="..\..\..\..\..\program files\autodesk\maya2014\presets\hlsl11\arkane\includes\Fresnel.fx">
+      <Link>Arkane Maya Shaders\Includes\Fresnel.fx</Link>
+    </Content>
+    <Content Include="..\..\..\..\..\program files\autodesk\maya2014\presets\hlsl11\arkane\includes\Global.fx">
+      <Link>Arkane Maya Shaders\Includes\Global.fx</Link>
+    </Content>
+    <Content Include="..\..\..\..\..\program files\autodesk\maya2014\presets\hlsl11\arkane\includes\Lighting.fx">
+      <Link>Arkane Maya Shaders\Includes\Lighting.fx</Link>
+    </Content>
+    <Content Include="..\..\..\..\..\program files\autodesk\maya2014\presets\hlsl11\arkane\includes\MayaLights.fx">
+      <Link>Arkane Maya Shaders\Includes\MayaLights.fx</Link>
+    </Content>
+    <Content Include="..\..\..\..\..\program files\autodesk\maya2014\presets\hlsl11\arkane\includes\Skin.fx">
+      <Link>Arkane Maya Shaders\Includes\Skin.fx</Link>
+    </Content>
+    <Content Include="..\..\..\..\..\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\Includes\Translucency.fx">
+      <Link>Arkane Maya Shaders\Includes\Translucency.fx</Link>
+    </Content>
+    <Content Include="..\..\..\..\..\program files\autodesk\maya2014\presets\hlsl11\arkane\includes\Ward.fx">
+      <Link>Arkane Maya Shaders\Includes\Ward.fx</Link>
+    </Content>
+    <Content Include="..\..\..\..\..\program files\autodesk\maya2014\presets\hlsl11\examples\AutodeskUberShader.fx">
+      <Link>Arkane Maya Shaders\Maya Examples\AutodeskUberShader.fx</Link>
+    </Content>
+    <Content Include="..\..\..\..\..\program files\autodesk\maya2014\presets\hlsl11\examples\PhongDX10.fx">
+      <Link>Arkane Maya Shaders\Maya Examples\PhongDX10.fx</Link>
+    </Content>
+    <Content Include="..\..\..\..\..\program files\autodesk\maya2014\presets\hlsl11\examples\PhongShadow.fx">
+      <Link>Arkane Maya Shaders\Maya Examples\PhongShadow.fx</Link>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

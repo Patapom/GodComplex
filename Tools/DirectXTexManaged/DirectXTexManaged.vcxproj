@@ -70,8 +70,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>D:\Workspaces\GodComplex\Packages\DirectXTex\DirectXTex\Bin\Desktop_DXSDK\x64\Debug;$(LibraryPath)</LibraryPath>
-    <IncludePath>D:\Workspaces\GodComplex\Packages\DirectXTex\DirectXTex;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
+    <LibraryPath>$(SolutionDir)\Packages\DirectXTex\DirectXTex\Bin\Desktop_DXSDK\x64\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)\Packages\DirectXTex\DirectXTex;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -155,9 +155,6 @@
     <ResourceCompile Include="app.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Packages\DirectXTex\DirectXTex\DirectXTex_Desktop_2010.vcxproj">
-      <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\Packages\SharpMath\SharpMath.csproj">
       <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
     </ProjectReference>
