@@ -440,107 +440,107 @@ PS_OUT	PreComputeInScattering_Single( PS_IN _In )
 
 //////////////////////////////////////////////////////////////////////////
 // Pre-Computes the delta scattering table
-float3	PreComputeInScattering_Delta( PS_IN _In ) : SV_TARGET0
-{
-	uint	STEPS_COUNT = _StepsCount;	// Default is 16
-
-	const float	dPhi = PI / STEPS_COUNT;
-	const float	dTheta = PI / STEPS_COUNT;
-
-	uint3	Texel = GetTexelInfos( _In );
-
-	// Retrieve the 3 cosines for the current slice
-	float	AltitudeKm, CosThetaView, CosThetaSun, CosGamma;
-	GetSliceData( Texel, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
-
-	// Clamp values
-	float	r = GROUND_RADIUS_KM + clamp( AltitudeKm, 0.0, ATMOSPHERE_THICKNESS_KM );
-	CosThetaView = clamp( CosThetaView, -1.0, 1.0 );
-	CosThetaSun = clamp( CosThetaSun, -1.0, 1.0 );
-
-	float	var = sqrt( 1.0 - CosThetaView*CosThetaView ) * sqrt( 1.0 - CosThetaSun*CosThetaSun );
-	CosGamma = clamp( CosGamma, CosThetaSun * CosThetaView - var, CosThetaSun * CosThetaView + var );	//### WTF?? Clarify!!!
-
-	float	cthetaground = -sqrt( 1.0 - (GROUND_RADIUS_KM / r) * (GROUND_RADIUS_KM / r) );	// Minimum cos(theta) before we hit the ground
-
-	float3	View = float3( sqrt( 1.0 - CosThetaView * CosThetaView ), CosThetaView, 0.0 );
-
-	// We simply deduce Phi, the azimuth between Sun & View from the SSS formula from http://en.wikipedia.org/wiki/Solution_of_triangles#Three_sides_given
-	// Phi = acos( (cos(gamma) - cos(ThetaV)*cos(ThetaS)) / (sin(ThetaV)*sin(ThetaS) )
-	// Next, we need the X coordinate of the Sun vector which is simply:
-	//	sx = cos(Phi)*sin(ThetaS) = (cos(gamma) - cos(ThetaV)*cos(ThetaS)) / sin(ThetaV)
-	//
-	float3	Sun;
-	Sun.x = View.x == 0.0 ? 0.0 : (CosGamma - CosThetaSun * CosThetaView) / View.x;
-	Sun.y = CosThetaSun;
-	Sun.z = sqrt( max( 0.0, 1.0 - Sun.x * Sun.x - Sun.y * Sun.y ) );	// Z is deduced from other coordinates
-
-	float3	Scattering = 0.0;
-
-	// Integral over 4.PI around x with two nested loops over w directions (theta,phi) -- Eq (7)
-	for ( uint ThetaIndex=0; ThetaIndex < STEPS_COUNT; ThetaIndex++ )
+	float3	PreComputeInScattering_Delta( PS_IN _In ) : SV_TARGET0
 	{
-		float	Theta = (ThetaIndex + 0.5) * dTheta;
-		float	stheta, ctheta;
-		sincos( Theta, stheta, ctheta );
+		uint	STEPS_COUNT = _StepsCount;	// Default is 16
 
-		float3	GroundReflectance = 0.0;
-		float	Distance2Ground = -1.0;		// -1 = A hint that ground is not visible in that direction
-		if ( ctheta < cthetaground )
-		{	// Ground is visible in sampling direction w: compute transmittance between x and ground
-			Distance2Ground = -r * ctheta - sqrt( r * r * (ctheta * ctheta - 1.0 ) + GROUND_RADIUS_KM * GROUND_RADIUS_KM);
-			GroundReflectance = (_AverageGroundReflectance / PI) * GetTransmittance( 0.0, -(r * ctheta + Distance2Ground) / GROUND_RADIUS_KM, Distance2Ground );
-		}
+		const float	dPhi = PI / STEPS_COUNT;
+		const float	dTheta = PI / STEPS_COUNT;
 
-		for ( uint PhiIndex=0; PhiIndex < 2 * STEPS_COUNT; PhiIndex++ )
+		uint3	Texel = GetTexelInfos( _In );
+
+		// Retrieve the 3 cosines for the current slice
+		float	AltitudeKm, CosThetaView, CosThetaSun, CosGamma;
+		GetSliceData( Texel, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
+
+		// Clamp values
+		float	r = GROUND_RADIUS_KM + clamp( AltitudeKm, 0.0, ATMOSPHERE_THICKNESS_KM );
+		CosThetaView = clamp( CosThetaView, -1.0, 1.0 );
+		CosThetaSun = clamp( CosThetaSun, -1.0, 1.0 );
+
+		float	var = sqrt( 1.0 - CosThetaView*CosThetaView ) * sqrt( 1.0 - CosThetaSun*CosThetaSun );
+		CosGamma = clamp( CosGamma, CosThetaSun * CosThetaView - var, CosThetaSun * CosThetaView + var );	//### WTF?? Clarify!!!
+
+		float	cthetaground = -sqrt( 1.0 - (GROUND_RADIUS_KM / r) * (GROUND_RADIUS_KM / r) );	// Minimum cos(theta) before we hit the ground
+
+		float3	View = float3( sqrt( 1.0 - CosThetaView * CosThetaView ), CosThetaView, 0.0 );
+
+		// We simply deduce Phi, the azimuth between Sun & View from the SSS formula from http://en.wikipedia.org/wiki/Solution_of_triangles#Three_sides_given
+		// Phi = acos( (cos(gamma) - cos(ThetaV)*cos(ThetaS)) / (sin(ThetaV)*sin(ThetaS) )
+		// Next, we need the X coordinate of the Sun vector which is simply:
+		//	sx = cos(Phi)*sin(ThetaS) = (cos(gamma) - cos(ThetaV)*cos(ThetaS)) / sin(ThetaV)
+		//
+		float3	Sun;
+		Sun.x = View.x == 0.0 ? 0.0 : (CosGamma - CosThetaSun * CosThetaView) / View.x;
+		Sun.y = CosThetaSun;
+		Sun.z = sqrt( max( 0.0, 1.0 - Sun.x * Sun.x - Sun.y * Sun.y ) );	// Z is deduced from other coordinates
+
+		float3	Scattering = 0.0;
+
+		// Integral over 4.PI around x with two nested loops over w directions (theta,phi) -- Eq (7)
+		for ( uint ThetaIndex=0; ThetaIndex < STEPS_COUNT; ThetaIndex++ )
 		{
-			float	Phi = (PhiIndex + 0.5) * dPhi;
-			float	sphi, cphi;
-			sincos( Phi, sphi, cphi );
+			float	Theta = (ThetaIndex + 0.5) * dTheta;
+			float	stheta, ctheta;
+			sincos( Theta, stheta, ctheta );
 
-			// Rebuild sampling direction & solid angle
-			float3	w = float3( cphi * stheta, ctheta, sphi * stheta );
-			float	dw = stheta * dTheta * dPhi;
-
-			float3	dScattering = 0.0;
-
-			// First term = light reflected from the ground and attenuated before reaching x
-			if ( Distance2Ground > 0.0 )
-			{	// Compute irradiance received at ground in direction w (if ground visible) =deltaE
-				float3	GroundNormal = (float3( 0.0, r, 0.0 ) + Distance2Ground * w) / GROUND_RADIUS_KM;
-				float3	GroundIrradiance = GetIrradiance( _TexIrradianceDelta, 0.0, dot( GroundNormal, Sun ) );
-
-				dScattering += GroundReflectance * GroundIrradiance;	// = (Rho/PI).deltaE
+			float3	GroundReflectance = 0.0;
+			float	Distance2Ground = -1.0;		// -1 = A hint that ground is not visible in that direction
+			if ( ctheta < cthetaground )
+			{	// Ground is visible in sampling direction w: compute transmittance between x and ground
+				Distance2Ground = -r * ctheta - sqrt( r * r * (ctheta * ctheta - 1.0 ) + GROUND_RADIUS_KM * GROUND_RADIUS_KM);
+				GroundReflectance = (_AverageGroundReflectance / PI) * GetTransmittance( 0.0, -(r * ctheta + Distance2Ground) / GROUND_RADIUS_KM, Distance2Ground );
 			}
 
-			// Second term = inscattered light, = deltaS
-			float	CosPhaseAngleSun = dot( Sun, w );
-			if ( _bFirstPass )
-			{	// First iteration is special because Rayleigh and Mie were stored separately, without the phase functions factors; they must be reintroduced here
-				float3	InScatteredRayleigh = Sample4DScatteringTable( _TexScatteringDelta_Rayleigh, AltitudeKm, w.y, CosThetaSun, CosPhaseAngleSun ).xyz;
-				float3	InScatteredMie = Sample4DScatteringTable( _TexScatteringDelta_Mie, AltitudeKm, w.y, CosThetaSun, CosPhaseAngleSun ).xyz;
-				float	PhaseRayleigh = PhaseFunctionRayleigh( CosPhaseAngleSun );
-				float	PhaseMie = PhaseFunctionMie( CosPhaseAngleSun );
-				dScattering += PhaseRayleigh * InScatteredRayleigh + PhaseMie * InScatteredMie;
+			for ( uint PhiIndex=0; PhiIndex < 2 * STEPS_COUNT; PhiIndex++ )
+			{
+				float	Phi = (PhiIndex + 0.5) * dPhi;
+				float	sphi, cphi;
+				sincos( Phi, sphi, cphi );
+
+				// Rebuild sampling direction & solid angle
+				float3	w = float3( cphi * stheta, ctheta, sphi * stheta );
+				float	dw = stheta * dTheta * dPhi;
+
+				float3	dScattering = 0.0;
+
+				// First term = light reflected from the ground and attenuated before reaching x
+				if ( Distance2Ground > 0.0 )
+				{	// Compute irradiance received at ground in direction w (if ground visible) =deltaE
+					float3	GroundNormal = (float3( 0.0, r, 0.0 ) + Distance2Ground * w) / GROUND_RADIUS_KM;
+					float3	GroundIrradiance = GetIrradiance( _TexIrradianceDelta, 0.0, dot( GroundNormal, Sun ) );
+
+					dScattering += GroundReflectance * GroundIrradiance;	// = (Rho/PI).deltaE
+				}
+
+				// Second term = inscattered light, = deltaS
+				float	CosPhaseAngleSun = dot( Sun, w );
+				if ( _bFirstPass )
+				{	// First iteration is special because Rayleigh and Mie were stored separately, without the phase functions factors; they must be reintroduced here
+					float3	InScatteredRayleigh = Sample4DScatteringTable( _TexScatteringDelta_Rayleigh, AltitudeKm, w.y, CosThetaSun, CosPhaseAngleSun ).xyz;
+					float3	InScatteredMie = Sample4DScatteringTable( _TexScatteringDelta_Mie, AltitudeKm, w.y, CosThetaSun, CosPhaseAngleSun ).xyz;
+					float	PhaseRayleigh = PhaseFunctionRayleigh( CosPhaseAngleSun );
+					float	PhaseMie = PhaseFunctionMie( CosPhaseAngleSun );
+					dScattering += PhaseRayleigh * InScatteredRayleigh + PhaseMie * InScatteredMie;
+				}
+				else	// Next pass only use the Rayleigh table
+					dScattering += Sample4DScatteringTable( _TexScatteringDelta_Rayleigh, AltitudeKm, w.y, CosThetaSun, CosPhaseAngleSun ).xyz;
+
+				float	CosPhaseAngleView = dot( View, w );
+				float	PhaseRayleigh = PhaseFunctionRayleigh( CosPhaseAngleView );
+				float	PhaseMie = PhaseFunctionMie( CosPhaseAngleView );
+
+				// Light coming from direction w and scattered in view direction
+				// = light arriving at x from direction w (dScattering) * SUM( scattering coefficient * phaseFunction )
+				// see Eq (7)
+				Scattering += dScattering * dw * (
+								_AirParams.x * SIGMA_SCATTERING_RAYLEIGH * exp( -AltitudeKm / _AirParams.y ) * PhaseRayleigh
+							+	_FogParams.x * exp( -AltitudeKm / _FogParams.z ) * PhaseMie);
 			}
-			else	// Next pass only use the Rayleigh table
-				dScattering += Sample4DScatteringTable( _TexScatteringDelta_Rayleigh, AltitudeKm, w.y, CosThetaSun, CosPhaseAngleSun ).xyz;
-
-			float	CosPhaseAngleView = dot( View, w );
-			float	PhaseRayleigh = PhaseFunctionRayleigh( CosPhaseAngleView );
-			float	PhaseMie = PhaseFunctionMie( CosPhaseAngleView );
-
-			// Light coming from direction w and scattered in view direction
-			// = light arriving at x from direction w (dScattering) * SUM( scattering coefficient * phaseFunction )
-			// see Eq (7)
-			Scattering += dScattering * dw * (
-							_AirParams.x * SIGMA_SCATTERING_RAYLEIGH * exp( -AltitudeKm / _AirParams.y ) * PhaseRayleigh
-						+	_FogParams.x * exp( -AltitudeKm / _FogParams.z ) * PhaseMie);
 		}
-	}
 	
-	return Scattering;	// output In-Scattering = J[T.alpha/PI.deltaE + deltaS] (line 7 in algorithm 4.1)
-}
+		return Scattering;	// output In-Scattering = J[T.alpha/PI.deltaE + deltaS] (line 7 in algorithm 4.1)
+	}
 
 //////////////////////////////////////////////////////////////////////////
 // Pre-Computes the irradiance table accounting for multiple scattering
@@ -646,7 +646,9 @@ float3	PreComputeInScattering_Multiple( PS_IN _In ) : SV_TARGET0
 		DistanceKm += StepSizeKm;
 	}
 
-	return Result * StepSizeKm;
+	Result *= StepSizeKm;
+
+	return Result;
 }
 
 //////////////////////////////////////////////////////////////////////////
