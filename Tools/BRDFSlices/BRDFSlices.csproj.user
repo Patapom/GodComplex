@@ -6,4 +6,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <StartArguments>"D:\Docs\Computer Graphics\Rendering, Radiosity, Photon Maps\BRDFs &amp; Reflection Models\MERL\MERL Database of BRDF\people.csail.mit.edu\wojciech\BRDFDatabase\brdfs\blue-acrylic.binary"</StartArguments>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <StartArguments>"D:\Docs\Computer Graphics\Rendering, Radiosity, Photon Maps\BRDFs &amp; Reflection Models\MERL\MERL Database of BRDF\people.csail.mit.edu\wojciech\BRDFDatabase\brdfs\blue-acrylic.binary"</StartArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <StartArguments>"TestBRDF/aluminium.binary" "TestBRDF/aluminium.cos" 6</StartArguments>
+  </PropertyGroup>
 </Project>

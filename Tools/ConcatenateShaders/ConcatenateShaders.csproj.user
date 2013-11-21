@@ -8,4 +8,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <StartArguments>D:\Workspaces\GodComplex\Resources\Shaders\Binary\</StartArguments>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <StartArguments>D:\Workspaces\GodComplex\Resources\Shaders\Binary\</StartArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <StartArguments>D:\Workspaces\GodComplex\Resources\Shaders\Binary\</StartArguments>
+  </PropertyGroup>
 </Project>

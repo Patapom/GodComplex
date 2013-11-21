@@ -56,7 +56,7 @@ namespace FBXImporter
 		{
 			FbxAnimLayer*	get()
 			{
-				int	AnimLayersCount = m_pAnimStack->GetMemberCount<FbxAnimLayer>();
+				int	AnimLayersCount = m_pAnimStack != NULL ? m_pAnimStack->GetMemberCount<FbxAnimLayer>() : 0;
 				return AnimLayersCount > 0 ? m_pAnimStack->GetMember<FbxAnimLayer>( 0 ) : NULL;
 			}
 		}

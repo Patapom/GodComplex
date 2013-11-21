@@ -349,7 +349,7 @@ namespace FBX.SceneLoader
 			if ( !_FileName.Exists )
 				throw new Exception( "Scene file \"" + _FileName + "\" does not exist!" );
 			if ( _Scene == null )
-				throw new Exception( "Invalid Cirrus Scene to load into!" );
+				throw new Exception( "Invalid Scene to load into!" );
 
 			m_Scene = _Scene;
 			m_TempMesh2FinalMesh.Clear();

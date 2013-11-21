@@ -213,7 +213,8 @@ namespace FBXImporter
 			//////////////////////////////////////////////////////////////////////////
 			// Resolve materials
 			m_Materials = gcnew List<Material^>();
-			for ( int MaterialIndex=0; MaterialIndex < _pNode->GetMaterialCount(); MaterialIndex++ )
+			int	MaterialsCount = _pNode->GetMaterialCount();
+			for ( int MaterialIndex=0; MaterialIndex < MaterialsCount; MaterialIndex++ )
 				m_Materials->Add( ResolveMaterial( _pNode->GetMaterial( MaterialIndex ) ) );
 		}
 
