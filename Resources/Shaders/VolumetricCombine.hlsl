@@ -59,7 +59,6 @@ Texture3D	_TexScatteringDelta_Rayleigh : register(t65);	// deltaSR (formerly t11
 Texture3D	_TexScatteringDelta_Mie : register(t66);		// deltaSM (formerly t12)
 Texture3D	_TexScatteringDelta : register(t67);			// deltaJ (formerly t13)
 
-
 void	UpSampleAtmosphere( float2 _UV, out float3 _Scattering, out float3 _Extinction )
 {
 	float3	DowndUV = 2.0 * _dUV;	// Size of a pixel in the downsampled map (downsample factor = 0.5)
@@ -180,7 +179,7 @@ return 0.01 * (Bisou.x - Bisou.y);
 
 
 
-	/*
+/*
 float	CosThetaView = 1.0 - 2.0 * UVW.y;
 //float	CosThetaView = -0.0005;
 float	AltitudeKm = UVW.z * ATMOSPHERE_THICKNESS_KM;
@@ -219,21 +218,31 @@ else										// Hitting the atmosphere
 
 //return 0.9 * sqrt( pow( 6360.001, 2 ) - pow( 6360, 2 ) ) / 3.5;
 //return 0.9 * sqrt( pow( 636.0001, 2 ) - pow( 636, 2 ) ) / 0.35;
+
 return uCosThetaView;
 
-*/
+//*/
 
 
 
-
+// 	// Retrieve the 3 cosines for the current slice
+// 	uint3	Texel = uint3( UV * float2( 256, 128 ), 32 * 0.5 * (1.0 + sin( _Time.x )) );
+// 	float	AltitudeKm, CosThetaView, CosThetaSun, CosGamma;
+// 	GetSliceData( Texel, AltitudeKm, CosThetaView, CosThetaSun, CosGamma );
+// 
+// return AltitudeKm / 60.0;
+// return 0.5 + 0.5 * CosGamma;
+// return CosThetaView * (CosThetaView > 0.0 ? float3( 1, 0, 0 ) : float3( 0, 0, -1 ));
+// // return abs(CosThetaSun
 
 
 // 	return 1.0 * _TexTransmittance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 // 	return 1.0 * _TexIrradiance.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 // 	return 1.0 * _TexIrradianceDelta.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
-//	return 10.0 * _TexScatteringDelta_Mie.SampleLevel( LinearClamp, UVW, 0.0 ).xyz;
-	return 10.0 * abs(_TexScatteringDelta_Rayleigh.SampleLevel( LinearClamp, UVW, 0.0 ).xyz);
-	return 1.0 * abs(_TexScattering.SampleLevel( LinearClamp, UVW, 0.0 ).xyz);
+//	return 2.0 * _TexScatteringDelta_Mie.SampleLevel( LinearClamp, UVW, 0.0 ).xyz;
+//	return 10.0 * abs(_TexScatteringDelta_Rayleigh.SampleLevel( LinearClamp, UVW, 0.0 ).xyz);
+//	return 1000.0 * abs(_TexScatteringDelta.SampleLevel( LinearClamp, UVW, 0.0 ).xyz);
+	return 1.0 * _TexScattering.SampleLevel( LinearClamp, UVW, 0.0 ).xyz;
 
 // UVW.z = 0.9;
 

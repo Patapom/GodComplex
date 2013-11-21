@@ -356,7 +356,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 		Flags1 |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
 		Flags1 |= D3DCOMPILE_ENABLE_STRICTNESS;
-		Flags1 |= D3DCOMPILE_IEEE_STRICTNESS;
+//		Flags1 |= D3DCOMPILE_IEEE_STRICTNESS;		// D3D9 compatibility, clamps precision to usual float32 but may prevent internal optimizations by the video card. Better leave it disabled!
 		Flags1 |= D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;	// MOST IMPORTANT FLAG !
 
 	U32 Flags2 = 0;
