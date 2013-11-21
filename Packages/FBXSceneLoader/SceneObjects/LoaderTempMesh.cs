@@ -494,7 +494,7 @@ namespace FBX.SceneLoader.Objects
 		protected int								m_UVSetsCount = 0;
 
 		// Generated data
-		protected List<Primitive>			m_Primitives = new List<Primitive>();
+		protected List<Primitive>					m_Primitives = new List<Primitive>();
 
 		#endregion
 
@@ -899,7 +899,7 @@ namespace FBX.SceneLoader.Objects
 			//
 			m_LayerElementPosition = new FBXImporter.LayerElement( "Position", FBXImporter.LayerElement.ELEMENT_TYPE.POSITION, FBXImporter.LayerElement.MAPPING_TYPE.BY_CONTROL_POINT, 0 );
 			m_LayerElementPosition.SetArrayOfData( m_Vertices );
-			m_LayerElements.Add( m_LayerElementPosition );
+			m_LayerElements.Insert( 0, m_LayerElementPosition );	// Make it first layer!
 
 			m_LayerElementNormal = null;
 			m_LayerElementTangent = null;
@@ -1171,7 +1171,7 @@ namespace FBX.SceneLoader.Objects
 		public void		PerformConsolidation()
 		{
 			if ( !IsMaster )
-				return;
+				return;	// The master mesh holds the consolidation data, we only need to retrieve them later...
 
 			//////////////////////////////////////////////////////////////////////////
 			// Build the list of layer elements, ours and external ones

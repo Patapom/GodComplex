@@ -80,7 +80,7 @@ namespace FBX.SceneLoader
 							Content = T;
 							for ( int i=0; i < _SourcePrimitive.VerticesCount; i++ )
 							{
-								T[i] = SceneLoader.ConvertPoint( Stream.Stream[i] as WMath.Point );
+								T[i] = SceneLoader.ConvertVector( Stream.Stream[i] as WMath.Vector );
 							}
 						}
 						break;
@@ -92,7 +92,7 @@ namespace FBX.SceneLoader
 							Content = T;
 							for ( int i=0; i < _SourcePrimitive.VerticesCount; i++ )
 							{
-								T[i] = SceneLoader.ConvertPoint( Stream.Stream[i] as WMath.Point );
+								T[i] = SceneLoader.ConvertVector( Stream.Stream[i] as WMath.Vector );
 							}
 						}
 						break;
@@ -104,7 +104,7 @@ namespace FBX.SceneLoader
 							Content = T;
 							for ( int i=0; i < _SourcePrimitive.VerticesCount; i++ )
 							{
-								T[i] = SceneLoader.ConvertPoint( Stream.Stream[i] as WMath.Point );
+								T[i] = SceneLoader.ConvertVector( Stream.Stream[i] as WMath.Vector );
 							}
 						}
 						break;

@@ -460,7 +460,7 @@ namespace FBX.SceneLoader
 					MatParams.CreateParameter( "EmissiveFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.EmissiveFactor;
 					CreateTextureParameter( Material, "EmissiveColor", MatParams, "EmissiveTexture" );
 
-					float	fOpacity = (float) (double) SpecificMaterial.FindProperty( "Opacity" ).Value;
+					float	fOpacity = (float) SpecificMaterial.FindProperty( "Opacity" ).Value;
 					MatParams.CreateParameter( "Opacity", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = fOpacity;
 //					MatParams.IsOpaque = fOpacity >= 1.0f;
 
@@ -498,7 +498,8 @@ namespace FBX.SceneLoader
 					MatParams.CreateParameter( "EmissiveFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.EmissiveFactor;
 					CreateTextureParameter( Material, "EmissiveColor", MatParams, "EmissiveTexture" );
 
-					float	fOpacity = (float) (double) SpecificMaterial.FindProperty( "Opacity" ).Value;
+					FBXImporter.ObjectProperty	OpacityProp = SpecificMaterial.FindProperty( "Opacity" );
+					float	fOpacity = OpacityProp != null ? (float) OpacityProp.Value : 1.0f;
 					MatParams.CreateParameter( "Opacity", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = fOpacity;
 //					MatParams.IsOpaque = fOpacity >= 1.0f;
 
