@@ -51,7 +51,6 @@ namespace FBX.SceneLoader
 
 			// Build the primitive's vertex streams
 			int[]	StreamIndices = new int[8];
-			int		UVStreamIndex = 0;
 			foreach ( LoaderTempMesh.Primitive.VertexStream Stream in m_SourcePrimitive.VertexStreams )
 			{
 				Scene.Nodes.Mesh.Primitive.VertexStream.USAGE		Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.UNKNOWN;
