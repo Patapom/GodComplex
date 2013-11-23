@@ -228,6 +228,8 @@ bool	LayerElement::Compare( LayerElement^ _Other )
 	cli::array<Object^>^	Array0 = ToArray();
 	cli::array<Object^>^	Array1 = _Other->ToArray();
 
+	if ( Array0 == nullptr && Array1 == nullptr )
+		return	true;	// Same empty array (happens if some infos were mapped BY_EDGE)
 	if ( Array0->Length != Array1->Length )
 		return	false;	// Not the same amount of elements...
 	if ( Array0->Length == 0 )

@@ -403,6 +403,28 @@ namespace FBX.SceneLoader.Objects
 				return	_Vertex;
 			}
 
+			/// <summary>
+			/// Builds a slave primitive from a master consolidated primitive
+			/// </summary>
+			/// <param name="_Master"></param>
+			public void		BuildFromMaster( Primitive _Master )
+			{
+				throw new Exception( "TODO! Share consolidated vertices from referenced streams!" );
+// 				// We build every stream based on the first vertex's infos (assuming all vertices have the same infos in the same order, if not, that's a mistake anyway)
+// 				ConsolidatedVertex V0 = _Master.m_Vertices[0];
+// 
+// 				// Retrieve the vertex streams
+// 				List<VertexStream>	Streams = new List<VertexStream>();
+// 				foreach ( ConsolidatedVertex.VertexInfo Info in V0.m_Infos )
+// 					Streams.Add( new VertexStream( Info.m_SourceLayerElement, Info.m_Type, Info.m_Index, m_Vertices.Count ) );
+// 
+// 				foreach ( ConsolidatedVertex MasterVertex in _Master.m_Vertices )
+// 				{
+// // 					m_Ref
+// // 					_Master.
+// 				}
+			}
+
 			#endregion
 
 			#endregion
@@ -1382,6 +1404,22 @@ namespace FBX.SceneLoader.Objects
 			}
 
 			return	true;
+		}
+
+		/// <summary>
+		/// Rebuilds the slave mesh from its consolidated master mesh
+		/// </summary>
+		public void					RebuildFromMasterMesh()
+		{
+			if ( IsMaster )
+				return;	// This is a master mesh!
+
+			for ( int PrimitiveIndex=0; PrimitiveIndex < m_Primitives.Count; PrimitiveIndex++ )
+			{
+				Primitive	Pm = m_MasterMesh.m_Primitives[PrimitiveIndex];
+				Primitive	Ps = m_Primitives[PrimitiveIndex];
+				Ps.BuildFromMaster( Pm );
+			}
 		}
 
 		#endregion

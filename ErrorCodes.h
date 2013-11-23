@@ -30,6 +30,7 @@
 #define ERR_EFFECT_ROOM					3000
 #define ERR_EFFECT_SCENE				4000
 #define ERR_EFFECT_VOLUMETRIC			5000
+#define ERR_EFFECT_GLOBALILLUM			6000
 
 
 // Code Workshop

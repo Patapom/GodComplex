@@ -85,6 +85,14 @@ namespace FBX.Scene
 			get { return m_Cameras.ToArray(); }
 		}
 
+		/// <summary>
+		/// Gets the scene's material parameters as an array
+		/// </summary>
+		public MaterialParameters[]	MaterialParameters
+		{
+			get { return m_MaterialParameters.ToArray(); }
+		}
+
 		#endregion
 
 		#region METHODS

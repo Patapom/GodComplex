@@ -33,35 +33,6 @@ namespace FBX.SceneLoader
 	{
 		#region NESTED TYPES
 
-// 		/// <summary>
-// 		/// This should be implemented by geometry providers that wish to create a primitive using a render technique
-// 		/// </summary>
-// 		public interface	IVertexFieldProvider
-// 		{
-// 			/// <summary>
-// 			/// Gets the field at the given index. The index corresponds to the field enumeration in the corresponding IVertexSignature
-// 			/// </summary>
-// 			/// <typeparam name="T">The required field type</typeparam>
-// 			/// <param name="_VertexIndex">The index of the vertex to get the field of</param>
-// 			/// <param name="_FieldIndex">The index of the field to get</param>
-// 			/// <returns></returns>
-// 			object	GetField( int _VertexIndex, int _FieldIndex );
-// 		}
-// 
-// 		/// <summary>
-// 		/// This should be implemented by geometry providers that wish to create a primitive using a render technique
-// 		/// </summary>
-// 		public interface	IIndexProvider
-// 		{
-// 			/// <summary>
-// 			/// Gets the index at the given index.
-// 			/// </summary>
-// 			/// <param name="_TriangleIndex">The index of the triangle whose vertex index we need</param>
-// 			/// <param name="_TriangleVertexIndex">The index of the vertex index to get in [0,2]</param>
-// 			/// <returns></returns>
-// 			int		GetIndex( int _TriangleIndex, int _TriangleVertexIndex );
-// 		}
-
 		// The list of suported texture formats
 		//
 		public enum		TEXTURE_CONVERSION_TYPES
@@ -126,7 +97,7 @@ namespace FBX.SceneLoader
 		protected bool						m_bConsolidateSplitByColor = true;
 
 			// UV Compacting
-		protected bool						m_bCompactIdenticalMeshes = true;
+		protected bool						m_bCompactIdenticalMeshes = false;	//TODO! Finish instancing and shared vertices!
 		protected int						m_MinUVsCount = 1;
 
 		// Textures
@@ -371,7 +342,7 @@ namespace FBX.SceneLoader
 				PostProcessNodes( m_Scene.RootNode );
 
 				// Build actual optimized and consolidated meshes
-				BuildCirrusMeshes();
+				BuildConsolidatedMeshes();
 
 				// Propagate state once so Local2World matrices are up to date
 				m_Scene.RootNode.PropagateState();
@@ -693,7 +664,7 @@ namespace FBX.SceneLoader
 		/// Optimizes the existing meshes and build the primitives necessary for runtime display
 		/// This will attempt to compact identical meshes and also consolidate mesh primitives
 		/// </summary>
-		protected void	BuildCirrusMeshes()
+		protected void	BuildConsolidatedMeshes()
 		{
 			// 1] Retrieve all existing meshes and compact identical instances
 			List<LoaderTempMesh>	CompactedMeshes = new List<LoaderTempMesh>();
@@ -703,7 +674,7 @@ namespace FBX.SceneLoader
 				if ( m_bCompactIdenticalMeshes )
 					foreach ( LoaderTempMesh MasterMesh in CompactedMeshes )
 						if ( M.MergeWithMasterMesh( MasterMesh ) )
-							break;	// We found this mesh's master !
+							break;	// We found this mesh's master!
 
 				CompactedMeshes.Add( M );
 			}
@@ -716,7 +687,12 @@ namespace FBX.SceneLoader
 
 //			WMath.Global.PopEpsilon();
 
-			// 3] Convert the mesh into a clean Cirrus mesh
+			// 3] Rebuild slave meshes from consolidated meshes
+			foreach ( LoaderTempMesh M in CompactedMeshes )
+				M.RebuildFromMasterMesh();
+
+
+			// 4] Convert the mesh into a clean consolidated mesh
 			PrimitiveBuilder	Builder = new PrimitiveBuilder();
 			foreach ( LoaderTempMesh M in CompactedMeshes )
 			{
@@ -737,7 +713,7 @@ namespace FBX.SceneLoader
 					if ( P.Material == null )
 						throw new Exception( "Primitive \"" + P.Name + "\" has no assigned material!" );
 
- 					Scene.Materials.MaterialParameters		MatParams = m_Material2Parameters[P.Material];
+ 					Scene.Materials.MaterialParameters	MatParams = m_Material2Parameters[P.Material];
 
 // 					if ( !m_Material2Technique.ContainsKey( P.Material ) )
 // 						continue;	// Un-supported...
