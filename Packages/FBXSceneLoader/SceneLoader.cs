@@ -33,35 +33,6 @@ namespace FBX.SceneLoader
 	{
 		#region NESTED TYPES
 
-// 		/// <summary>
-// 		/// This should be implemented by geometry providers that wish to create a primitive using a render technique
-// 		/// </summary>
-// 		public interface	IVertexFieldProvider
-// 		{
-// 			/// <summary>
-// 			/// Gets the field at the given index. The index corresponds to the field enumeration in the corresponding IVertexSignature
-// 			/// </summary>
-// 			/// <typeparam name="T">The required field type</typeparam>
-// 			/// <param name="_VertexIndex">The index of the vertex to get the field of</param>
-// 			/// <param name="_FieldIndex">The index of the field to get</param>
-// 			/// <returns></returns>
-// 			object	GetField( int _VertexIndex, int _FieldIndex );
-// 		}
-// 
-// 		/// <summary>
-// 		/// This should be implemented by geometry providers that wish to create a primitive using a render technique
-// 		/// </summary>
-// 		public interface	IIndexProvider
-// 		{
-// 			/// <summary>
-// 			/// Gets the index at the given index.
-// 			/// </summary>
-// 			/// <param name="_TriangleIndex">The index of the triangle whose vertex index we need</param>
-// 			/// <param name="_TriangleVertexIndex">The index of the vertex index to get in [0,2]</param>
-// 			/// <returns></returns>
-// 			int		GetIndex( int _TriangleIndex, int _TriangleVertexIndex );
-// 		}
-
 		// The list of suported texture formats
 		//
 		public enum		TEXTURE_CONVERSION_TYPES
