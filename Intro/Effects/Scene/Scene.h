@@ -174,19 +174,19 @@ private:	// FIELDS
 
 public:		// PROPERTIES
 
-	MaterialBank&	GetMaterialBank()	{ return *m_pMaterials; }
+	MaterialBank&		GetMaterialBank()	{ return *m_pMaterials; }
 
-	int				GetDirectionalLightsCount() const			{ return m_LightsCountDirectional; }
-	int				GetEnabledDirectionalLightsCount() const	{ return m_EnabledLightsCountDirectional; }
-	const Light*	GetDirectionalLights() const				{ return m_pLightsDirectional; }
-	int				GetPointLightsCount() const					{ return m_LightsCountPoint; }
-	int				GetEnabledPointLightsCount() const			{ return m_EnabledLightsCountPoint; }
-	const Light*	GetPointLights() const						{ return m_pLightsPoint; }
-	int				GetSpotLightsCount() const					{ return m_LightsCountSpot; }
-	int				GetEnabledSpotLightsCount() const			{ return m_EnabledLightsCountSpot; }
-	const Light*	GetSpotLights() const						{ return m_pLightsSpot; }
+	int					GetDirectionalLightsCount() const			{ return m_LightsCountDirectional; }
+	int					GetEnabledDirectionalLightsCount() const	{ return m_EnabledLightsCountDirectional; }
+	const Light*		GetDirectionalLights() const				{ return m_pLightsDirectional; }
+	int					GetPointLightsCount() const					{ return m_LightsCountPoint; }
+	int					GetEnabledPointLightsCount() const			{ return m_EnabledLightsCountPoint; }
+	const Light*		GetPointLights() const						{ return m_pLightsPoint; }
+	int					GetSpotLightsCount() const					{ return m_LightsCountSpot; }
+	int					GetEnabledSpotLightsCount() const			{ return m_EnabledLightsCountSpot; }
+	const Light*		GetSpotLights() const						{ return m_pLightsSpot; }
 
-	const Texture2D*	GetEnvMap() const						{ return m_pTexEnvMap; }
+	const Texture2D*	GetEnvMap() const							{ return m_pTexEnvMap; }
 
 public:		// METHODS
 

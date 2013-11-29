@@ -54,6 +54,16 @@ namespace FBXTestConverter
 			using ( FileStream S = Target.OpenWrite() )
 				using ( BinaryWriter W = new BinaryWriter( S ) )
 					SaveGCX( W, Scene );
+
+			// Write infos
+			List<string>	Infos = new List<string>();
+			Infos.Add( "Textures:" );
+			foreach ( FBX.Scene.Materials.Texture2D Texture in Scene.Textures )
+			{
+				Infos.Add( "ID #" + Texture.ID + " URL=" + Texture.URL );
+			}
+
+			listBoxInfos.Items.AddRange( Infos.ToArray() );
 		}
 
 		private void	SaveGCX( BinaryWriter _W, FBX.Scene.Scene _Scene )
@@ -265,10 +275,10 @@ namespace FBXTestConverter
 			if ( _Texture == null )
 				return (ushort) 0xFFFF;
 
-			if ( _Texture.Value.URL == "Bisou" )
-				return 0;
+// 			if ( _Texture.Value.URL.IndexOf( "pata_diff_colo.tga" ) != -1 )
+// 				return 0;
 
-			return (ushort) 0xFFFF;
+			return (ushort) _Texture.Value.ID;
 		}
 	}
 }

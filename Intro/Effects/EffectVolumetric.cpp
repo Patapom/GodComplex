@@ -60,16 +60,16 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 #define UAV	true
 //#define UAV	false
 
-	m_ppRTTransmittance[0] = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );			// transmittance (final)
-	m_ppRTTransmittance[1] = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );
-	m_ppRTTransmittanceLimited[0] = new Texture3D( m_Device, TRANSMITTANCE_LIMITED_W, TRANSMITTANCE_LIMITED_H, TRANSMITTANCE_LIMITED_D, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );	// transmittance with limited distance (final)
-	m_ppRTTransmittanceLimited[1] = new Texture3D( m_Device, TRANSMITTANCE_LIMITED_W, TRANSMITTANCE_LIMITED_H, TRANSMITTANCE_LIMITED_D, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );
-	m_ppRTIrradiance[0] = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );							// irradiance (final)
-	m_ppRTIrradiance[1] = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );
-	m_ppRTIrradiance[2] = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );
-	m_ppRTScattering[0] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );	// inscatter (final)
-	m_ppRTScattering[1] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );
-	m_ppRTScattering[2] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );
+	m_ppRTTransmittance[0] = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, UAV );			// transmittance (final)
+	m_ppRTTransmittance[1] = new Texture2D( m_Device, TRANSMITTANCE_W, TRANSMITTANCE_H, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, UAV );
+	m_ppRTTransmittanceLimited[0] = new Texture3D( m_Device, TRANSMITTANCE_LIMITED_W, TRANSMITTANCE_LIMITED_H, TRANSMITTANCE_LIMITED_D, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, UAV );	// transmittance with limited distance (final)
+	m_ppRTTransmittanceLimited[1] = new Texture3D( m_Device, TRANSMITTANCE_LIMITED_W, TRANSMITTANCE_LIMITED_H, TRANSMITTANCE_LIMITED_D, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, UAV );
+	m_ppRTIrradiance[0] = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, UAV );					// irradiance (final)
+	m_ppRTIrradiance[1] = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, UAV );
+	m_ppRTIrradiance[2] = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, UAV );
+	m_ppRTScattering[0] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, UAV );	// inscatter (final)
+	m_ppRTScattering[1] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, UAV );
+	m_ppRTScattering[2] = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, UAV );
 
 	// Setup to their target slots, even though they're not computed yet... That's just to avoid annoying warnings in the console.
 	m_ppRTTransmittance[0]->Set( 6, true );
@@ -140,7 +140,7 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 	m_RenderWidth = int( ceilf( W * SCREEN_TARGET_RATIO ) );
 	m_RenderHeight = int( ceilf( H * SCREEN_TARGET_RATIO ) );
 
-	m_pRTDownsampledDepth = new Texture2D( m_Device, W >> 1, H >> 1, 1, PixelFormatRGBA16F::DESCRIPTOR, 3, NULL, false, false, true );
+	m_pRTDownsampledDepth = new Texture2D( m_Device, W >> 1, H >> 1, 1, PixelFormatRGBA16F::DESCRIPTOR, 3, NULL, false, true );
 
 	m_pRTRenderZ = new Texture2D( m_Device, m_RenderWidth, m_RenderHeight, 1, PixelFormatRG16F::DESCRIPTOR, 1, NULL );
 	m_pRTRender = new Texture2D( m_Device, m_RenderWidth, m_RenderHeight, 2, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );

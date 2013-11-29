@@ -2,7 +2,7 @@
 
 template<typename> class CB;
 
-class EffectGlobalIllum : public Scene::ISceneTagger
+class EffectGlobalIllum : public Scene::ISceneTagger, public Scene::ISceneRenderer
 {
 private:	// CONSTANTS
 
@@ -11,17 +11,17 @@ protected:	// NESTED TYPES
 	struct CBObject
 	{
 		NjFloat4x4	Local2World;	// Local=>World transform to rotate the object
-
-		NjFloat4	LightColor0;
-		NjFloat4	LightColor1;
-		NjFloat4	LightColor2;
-		NjFloat4	LightColor3;
  	};
 
-	struct MaterialDescriptor 
+	struct MaterialDescriptor
 	{
-		int			LightSourceIndex;	// -1 For standard reflective materials
-		NjFloat3	Color;				// Either the diffuse albedo or the emissive power depending on the emissive flag
+		struct CBMaterial
+		{
+			NjFloat3	DiffuseColor;
+//			NjFloat3	SpecularColor;
+		};
+		CB<CBMaterial>*	m_pCBMaterial;
+		Texture2D*		m_pTexDiffuseAlbedo;
 	};
 
 private:	// FIELDS
@@ -30,17 +30,15 @@ private:	// FIELDS
 	Device&				m_Device;
 	Texture2D&			m_RTTarget;
 
-	Material*			m_pMatDisplay;			// Displays the room
-	Material*			m_pMatDisplayEmissive;	// Displays the lights
+	Material*			m_pMatRender;			// Displays the room
+//	Material*			m_pMatDisplayEmissive;	// Displays the lights
 
 	// Primitives
 	Scene				m_Scene;
-	Primitive*			m_pPrimRoom;
-	Primitive*			m_pPrimRoomLights;
+	bool				m_bDeleteSceneTags;
 
 	// Textures
-	Texture2D*			m_pTexWalls;			// The fat texture for the walls
-	Texture2D*			m_pTexLightMaps;		// The array texture that will contain the room's light map
+	Texture2D*			m_pTexWalls;
 
 public:
 
@@ -51,6 +49,7 @@ public:
 	// Params
 public:
 	
+
 public:		// PROPERTIES
 
 	int			GetErrorCode() const	{ return m_ErrorCode; }
@@ -62,13 +61,16 @@ public:		// METHODS
 	~EffectGlobalIllum();
 
 	void		Render( float _Time, float _DeltaTime );
-	void		InitScene();
 
 
 	// ISceneTagger Implementation
 	virtual void*	TagMaterial( const Scene::Material& _Material ) const override;
+	virtual void*	TagTexture( const Scene::Material::Texture& _Texture ) const override;
 	virtual void*	TagNode( const Scene::Node& _Node ) const override;
 	virtual void*	TagPrimitive( const Scene::Mesh& _Mesh, const Scene::Mesh::Primitive& _Primitive ) const override;
+
+	// ISceneRenderer Implementation
+	virtual void	RenderMesh( const Scene::Mesh& _Mesh ) const override;
 
 protected:
 

@@ -30,7 +30,7 @@ private:	// FIELDS
 
 public:	 // METHODS
 
-	Primitive( Device& _Device, int _VerticesCount, void* _pVertices, int _IndicesCount, U16* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format );
+	Primitive( Device& _Device, int _VerticesCount, const void* _pVertices, int _IndicesCount, const U32* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format );
 	Primitive( Device& _Device, const IVertexFormatDescriptor& _Format );	// Used by geometry builders
 	Primitive( Device& _Device, int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format );	// Used to build dynamic buffers
 	~Primitive();
@@ -44,14 +44,14 @@ public:	 // METHODS
 
 #ifdef SUPPORT_GEO_BUILDERS
 	// IGeometryWriter implementation
-	virtual void	CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, void*& _pVertices, void*& _pIndices, int& _VertexStride, int& _IndexStride );
-	virtual void	WriteVertex( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV );
-	virtual void	WriteIndex( void* _pIndex, int _Index );
+	virtual void	CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, void*& _pVertices, void*& _pIndices );
+	virtual void	AppendVertex( void*& _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV );
+	virtual void	AppendIndex( void*& _pIndex, int _Index );
 	virtual void	Finalize( void* _pVertices, void* _pIndices );
 #endif
 
 private:
 
-	void			Build( void* _pVertices, U16* _pIndices, bool _bDynamic );
+	void			Build( const void* _pVertices, const U32* _pIndices, bool _bDynamic );
 };
 

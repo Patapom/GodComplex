@@ -92,6 +92,14 @@ namespace FBX.Scene
 			get { return m_MaterialParameters.ToArray(); }
 		}
 
+		/// <summary>
+		/// Gets the scene's textures as an array
+		/// </summary>
+		public Texture2D[]		Textures
+		{
+			get { return m_Textures.ToArray(); }
+		}
+
 		#endregion
 
 		#region METHODS

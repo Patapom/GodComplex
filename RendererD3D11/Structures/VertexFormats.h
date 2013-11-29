@@ -8,7 +8,7 @@ public:	 // PROPERTIES
 	virtual int			Size() const = 0;
 	virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const = 0;
 	virtual int			GetInputElementsCount() const = 0;
-	virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV ) const = 0;
+	virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) const = 0;
 
 	bool		operator==( const IVertexFormatDescriptor& _Other ) const
 	{
@@ -38,6 +38,7 @@ public:	 // PROPERTIES
 	}
 };
 
+// SV_POSITION
 struct VertexFormatPt4
 {
 public:
@@ -51,7 +52,7 @@ public:
 		virtual int			Size() const							{ return sizeof(VertexFormatPt4); }
 		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return ms_pInputElements; }
 		virtual int			GetInputElementsCount() const			{ return 1; }
-		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV ) const;
+		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) const;
 	} DESCRIPTOR;
 
 public:
@@ -60,6 +61,7 @@ public:
 
 };
 
+// Position
 struct VertexFormatP3
 {
 public:
@@ -73,7 +75,7 @@ public:
 		virtual int			Size() const							{ return sizeof(VertexFormatP3); }
 		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return ms_pInputElements; }
 		virtual int			GetInputElementsCount() const			{ return 1; }
-		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV ) const;
+		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) const;
 	} DESCRIPTOR;
 
 public:
@@ -82,6 +84,8 @@ public:
 
 };
 
+// Position
+// UV
 struct VertexFormatP3T2
 {
 public:
@@ -95,7 +99,7 @@ public:
 		virtual int			Size() const							{ return sizeof(VertexFormatP3T2); }
 		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return ms_pInputElements; }
 		virtual int			GetInputElementsCount() const			{ return 2; }
-		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV ) const;
+		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) const;
 	} DESCRIPTOR;
 
 public:
@@ -105,6 +109,10 @@ public:
 
 };
 
+// Position
+// Normal
+// Tangent
+// UV
 struct VertexFormatP3N3G3T2
 {
 public:
@@ -118,7 +126,7 @@ public:
 		virtual int			Size() const							{ return sizeof(VertexFormatP3N3G3T2); }
 		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return ms_pInputElements; }
 		virtual int			GetInputElementsCount() const			{ return 4; }
-		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV ) const;
+		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) const;
 	} DESCRIPTOR;
 
 public:
@@ -130,6 +138,11 @@ public:
 
 };
 
+// Position
+// Normal
+// Tangent
+// UV0
+// UV1
 struct VertexFormatP3N3G3T2T2
 {
 public:
@@ -143,7 +156,7 @@ public:
 		virtual int			Size() const							{ return sizeof(VertexFormatP3N3G3T2T2); }
 		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return ms_pInputElements; }
 		virtual int			GetInputElementsCount() const			{ return 5; }
-		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV ) const;
+		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) const;
 	} DESCRIPTOR;
 
 public:
@@ -156,6 +169,11 @@ public:
 
 };
 
+// Position
+// Normal
+// Tangent
+// UV0
+// UV1
 struct VertexFormatP3N3G3T3T3
 {
 public:
@@ -169,7 +187,7 @@ public:
 		virtual int			Size() const							{ return sizeof(VertexFormatP3N3G3T3T3); }
 		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return ms_pInputElements; }
 		virtual int			GetInputElementsCount() const			{ return 5; }
-		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV ) const;
+		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) const;
 	} DESCRIPTOR;
 
 public:
@@ -179,5 +197,36 @@ public:
 	NjFloat3	Tangent;
 	NjFloat3	UV;
 	NjFloat3	UV2;
+
+};
+
+// Position
+// Normal
+// Tangent
+// BiTangent
+// UV
+struct VertexFormatP3N3G3B3T2
+{
+public:
+
+	static class Desc : public IVertexFormatDescriptor
+	{
+		static D3D11_INPUT_ELEMENT_DESC	ms_pInputElements[5];
+
+	public:
+
+		virtual int			Size() const							{ return sizeof(VertexFormatP3N3G3B3T2); }
+		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return ms_pInputElements; }
+		virtual int			GetInputElementsCount() const			{ return 4; }
+		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) const;
+	} DESCRIPTOR;
+
+public:
+
+	NjFloat3	Position;
+	NjFloat3	Normal;
+	NjFloat3	Tangent;
+	NjFloat3	BiTangent;
+	NjFloat2	UV;
 
 };

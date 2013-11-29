@@ -35,6 +35,7 @@ public:	 // PROPERTIES
 	int	 GetHeight() const			{ return m_Height; }
 	int	 GetDepth() const			{ return m_Depth; }
 	int	 GetMipLevelsCount() const	{ return m_MipLevelsCount; }
+	const IFormatDescriptor&	GetFormatDescriptor() const	{ return m_Format; }
 
 	NjFloat4	GetdUVW() const		{ return NjFloat4( 1.0f / m_Width, 1.0f / m_Height, 1.0f / m_Depth, 0.0f ); }
 

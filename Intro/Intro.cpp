@@ -41,7 +41,7 @@ static CB<CBTest>*			gs_pCB_Test = NULL;
 // Effects
 static EffectTranslucency*	gs_pEffectTranslucency = NULL;
 static EffectRoom*			gs_pEffectRoom = NULL;
-//static EffectScene*			gs_pEffectScene = NULL;
+//static EffectScene*		gs_pEffectScene = NULL;
 static EffectVolumetric*	gs_pEffectVolumetric = NULL;
 static EffectGlobalIllum*	gs_pEffectGI = NULL;
 
@@ -163,7 +163,6 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 //		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_VOLUMETRIC );
 
 		CHECK_EFFECT( gs_pEffectGI = new EffectGlobalIllum( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_GLOBALILLUM );
-		gs_pEffectGI->InitScene();
 	}
 
 

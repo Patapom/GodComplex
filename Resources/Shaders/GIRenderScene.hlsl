@@ -42,5 +42,5 @@ PS_IN	VS( VS_IN _In )
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
-	return 0.5;
+	return float4( _In.Normal, 1 );
 }
