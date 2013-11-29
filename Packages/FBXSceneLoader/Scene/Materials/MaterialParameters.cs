@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using SharpDX;
+using WMath;
 
 namespace FBX.Scene.Materials
 {
@@ -51,14 +51,14 @@ namespace FBX.Scene.Materials
 			public abstract PARAMETER_TYPE	Type		{ get; }
 
 			// Fast casts
-			public ParameterBool		AsBool		{ get { return this as ParameterBool; } }
-			public ParameterInt			AsInt		{ get { return this as ParameterInt; } }
-			public ParameterFloat		AsFloat		{ get { return this as ParameterFloat; } }
-			public ParameterFloat2		AsFloat2	{ get { return this as ParameterFloat2; } }
-			public ParameterFloat3		AsFloat3	{ get { return this as ParameterFloat3; } }
-			public ParameterFloat4		AsFloat4	{ get { return this as ParameterFloat4; } }
-			public ParameterMatrix4		AsMatrix4	{ get { return this as ParameterMatrix4; } }
-			public ParameterTexture2D	AsTexture2D	{ get { return this as ParameterTexture2D; } }
+			public ParameterBool			AsBool		{ get { return this as ParameterBool; } }
+			public ParameterInt				AsInt		{ get { return this as ParameterInt; } }
+			public ParameterFloat			AsFloat		{ get { return this as ParameterFloat; } }
+			public ParameterFloat2			AsFloat2	{ get { return this as ParameterFloat2; } }
+			public ParameterFloat3			AsFloat3	{ get { return this as ParameterFloat3; } }
+			public ParameterFloat4			AsFloat4	{ get { return this as ParameterFloat4; } }
+			public ParameterMatrix4			AsMatrix4	{ get { return this as ParameterMatrix4; } }
+			public ParameterTexture2D		AsTexture2D	{ get { return this as ParameterTexture2D; } }
 
 			#endregion
 
@@ -244,14 +244,14 @@ namespace FBX.Scene.Materials
 		{
 			#region FIELDS
 
-			protected Vector2		m_Value = Vector2.Zero;
+			protected Vector2D		m_Value = Vector2D.Zero;
 
 			#endregion
 
 			#region PROPERTIES
 
 			public override PARAMETER_TYPE	Type	{ get { return PARAMETER_TYPE.FLOAT2; } }
-			public Vector2					Value	{ get { return m_Value; } set { m_Value = value; } }
+			public Vector2D					Value	{ get { return m_Value; } set { m_Value = value; } }
 
 			#endregion
 
@@ -299,14 +299,14 @@ namespace FBX.Scene.Materials
 		{
 			#region FIELDS
 
-			protected Vector3		m_Value = Vector3.Zero;
+			protected Vector		m_Value = Vector.Zero;
 
 			#endregion
 
 			#region PROPERTIES
 
 			public override PARAMETER_TYPE	Type	{ get { return PARAMETER_TYPE.FLOAT3; } }
-			public Vector3			Value	{ get { return m_Value; } set { m_Value = value; } }
+			public Vector					Value	{ get { return m_Value; } set { m_Value = value; } }
 
 			#endregion
 
@@ -356,14 +356,14 @@ namespace FBX.Scene.Materials
 		{
 			#region FIELDS
 
-			protected Vector4		m_Value = Vector4.Zero;
+			protected Vector4D		m_Value = Vector4D.Zero;
 
 			#endregion
 
 			#region PROPERTIES
 
 			public override PARAMETER_TYPE	Type	{ get { return PARAMETER_TYPE.FLOAT4; } }
-			public Vector4			Value	{ get { return m_Value; } set { m_Value = value; } }
+			public Vector4D					Value	{ get { return m_Value; } set { m_Value = value; } }
 
 			#endregion
 
@@ -415,14 +415,14 @@ namespace FBX.Scene.Materials
 		{
 			#region FIELDS
 
-			protected Matrix		m_Value = Matrix.Identity;
+			protected Matrix4x4		m_Value = Matrix4x4.Identity;
 
 			#endregion
 
 			#region PROPERTIES
 
 			public override PARAMETER_TYPE	Type	{ get { return PARAMETER_TYPE.MATRIX4; } }
-			public Matrix			Value	{ get { return m_Value; } set { m_Value = value; } }
+			public Matrix4x4				Value	{ get { return m_Value; } set { m_Value = value; } }
 
 			#endregion
 
@@ -439,42 +439,42 @@ namespace FBX.Scene.Materials
 
 			public override void	Load( System.IO.BinaryReader _Reader )
 			{
-				m_Value.M11 = _Reader.ReadSingle();
-				m_Value.M12 = _Reader.ReadSingle();
-				m_Value.M13 = _Reader.ReadSingle();
-				m_Value.M14 = _Reader.ReadSingle();
-				m_Value.M21 = _Reader.ReadSingle();
-				m_Value.M22 = _Reader.ReadSingle();
-				m_Value.M23 = _Reader.ReadSingle();
-				m_Value.M24 = _Reader.ReadSingle();
-				m_Value.M31 = _Reader.ReadSingle();
-				m_Value.M32 = _Reader.ReadSingle();
-				m_Value.M33 = _Reader.ReadSingle();
-				m_Value.M34 = _Reader.ReadSingle();
-				m_Value.M41 = _Reader.ReadSingle();
-				m_Value.M42 = _Reader.ReadSingle();
-				m_Value.M43 = _Reader.ReadSingle();
-				m_Value.M44 = _Reader.ReadSingle();
+				m_Value.m[0,0] = _Reader.ReadSingle();
+				m_Value.m[0,1] = _Reader.ReadSingle();
+				m_Value.m[0,2] = _Reader.ReadSingle();
+				m_Value.m[0,3] = _Reader.ReadSingle();
+				m_Value.m[1,0] = _Reader.ReadSingle();
+				m_Value.m[1,1] = _Reader.ReadSingle();
+				m_Value.m[1,2] = _Reader.ReadSingle();
+				m_Value.m[1,3] = _Reader.ReadSingle();
+				m_Value.m[2,0] = _Reader.ReadSingle();
+				m_Value.m[2,1] = _Reader.ReadSingle();
+				m_Value.m[2,2] = _Reader.ReadSingle();
+				m_Value.m[2,3] = _Reader.ReadSingle();
+				m_Value.m[3,0] = _Reader.ReadSingle();
+				m_Value.m[3,1] = _Reader.ReadSingle();
+				m_Value.m[3,2] = _Reader.ReadSingle();
+				m_Value.m[3,3] = _Reader.ReadSingle();
 			}
 
 			public override void	Save( System.IO.BinaryWriter _Writer )
 			{
-				_Writer.Write( m_Value.M11 );
-				_Writer.Write( m_Value.M12 );
-				_Writer.Write( m_Value.M13 );
-				_Writer.Write( m_Value.M14 );
-				_Writer.Write( m_Value.M21 );
-				_Writer.Write( m_Value.M22 );
-				_Writer.Write( m_Value.M23 );
-				_Writer.Write( m_Value.M24 );
-				_Writer.Write( m_Value.M31 );
-				_Writer.Write( m_Value.M32 );
-				_Writer.Write( m_Value.M33 );
-				_Writer.Write( m_Value.M34 );
-				_Writer.Write( m_Value.M41 );
-				_Writer.Write( m_Value.M42 );
-				_Writer.Write( m_Value.M43 );
-				_Writer.Write( m_Value.M44 );
+				_Writer.Write( m_Value.m[0,0] );
+				_Writer.Write( m_Value.m[0,1] );
+				_Writer.Write( m_Value.m[0,2] );
+				_Writer.Write( m_Value.m[0,3] );
+				_Writer.Write( m_Value.m[1,0] );
+				_Writer.Write( m_Value.m[1,1] );
+				_Writer.Write( m_Value.m[1,2] );
+				_Writer.Write( m_Value.m[1,3] );
+				_Writer.Write( m_Value.m[2,0] );
+				_Writer.Write( m_Value.m[2,1] );
+				_Writer.Write( m_Value.m[2,2] );
+				_Writer.Write( m_Value.m[2,3] );
+				_Writer.Write( m_Value.m[3,0] );
+				_Writer.Write( m_Value.m[3,1] );
+				_Writer.Write( m_Value.m[3,2] );
+				_Writer.Write( m_Value.m[3,3] );
 			}
 
 			public override bool	Equals( object _Other )

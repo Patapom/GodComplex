@@ -69,6 +69,16 @@ namespace FBXImporter
 		}
 
 
+		// Fast cast
+		property bool				AsBool		{ bool				get()	{ return (bool) m_Value; } }
+		property int				AsInt		{ int				get()	{ return (int) m_Value; } }
+		property float				AsFloat		{ float				get()	{ return (float) m_Value; } }
+		property WMath::Vector^		AsVector3	{ WMath::Vector^	get()	{ return (WMath::Vector^) m_Value; } }
+		property WMath::Vector4D^	AsVector4	{ WMath::Vector4D^	get()	{ return (WMath::Vector4D^) m_Value; } }
+		property WMath::Point^		AsPoint		{ WMath::Point^		get()	{ return (WMath::Point^) AsVector3; } }
+		property System::String^	AsString	{ System::String^	get()	{ return (System::String^) m_Value; } }
+
+
 	public:		// METHODS
 
 		ObjectProperty( BaseObject^ _Owner, FbxProperty& _Property );

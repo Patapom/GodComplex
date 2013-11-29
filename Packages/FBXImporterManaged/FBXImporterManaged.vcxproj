@@ -127,7 +127,7 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(FBX_SDK)\include;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include;C:\Program Files\NVIDIA Corporation\Cg\include\Cg;C:\Program Files\3DSMax7\maxsdk\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(FBX_SDK)\lib\vs2010\x64;C:\Program Files\NVIDIA Corporation\Cg\lib;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Lib;C:\Program Files\3DSMax7\maxsdk\lib;$(LibraryPath)</LibraryPath>
-    <OutDir>..\..\Runtime\</OutDir>
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug (SDK v2011.3.1)|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -151,7 +151,7 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(FBX_SDK)\include;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include;C:\Program Files\NVIDIA Corporation\Cg\include\Cg;C:\Program Files\3DSMax7\maxsdk\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(FBX_SDK)\lib\vs2010;C:\Program Files\NVIDIA Corporation\Cg\lib;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Lib;C:\Program Files\3DSMax7\maxsdk\lib;$(LibraryPath)</LibraryPath>
-    <OutDir>..\..\Runtime\</OutDir>
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release (SDK v2011.3.1)|Win32'">
     <LinkIncremental>false</LinkIncremental>

@@ -121,13 +121,13 @@ NodeMesh::NodeMesh( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : Node
 	// Retrieve the PRS values
 	//
 	ObjectProperty^	PropP = FindProperty( "GeometricTranslation" );
-	WMath::Point^	Trans = PropP != nullptr ? (WMath::Point^) (WMath::Vector^) PropP->Value : gcnew WMath::Point( 0.0f, 0.0f, 0.0f );
+	WMath::Point^	Trans = PropP != nullptr ? PropP->AsPoint : gcnew WMath::Point( 0.0f, 0.0f, 0.0f );
 
 	ObjectProperty^	PropR = FindProperty( "GeometricRotation" );
-	WMath::Vector^	RotXYZ = (float) Math::PI / 180.0f * (PropR != nullptr ? (WMath::Vector^) PropR->Value : gcnew WMath::Vector( 0.0f, 0.0f, 0.0f ));
+	WMath::Vector^	RotXYZ = (float) Math::PI / 180.0f * (PropR != nullptr ? PropR->AsVector3 : gcnew WMath::Vector( 0.0f, 0.0f, 0.0f ));
 
 	ObjectProperty^	PropS = FindProperty( "GeometricScaling" );
-	WMath::Vector^	Scale = PropS != nullptr ? (WMath::Vector^) PropS->Value : gcnew WMath::Vector( 1.0f, 1.0f, 1.0f );
+	WMath::Vector^	Scale = PropS != nullptr ? PropS->AsVector3 : gcnew WMath::Vector( 1.0f, 1.0f, 1.0f );
 
 
 	//////////////////////////////////////////////////////////////////////////

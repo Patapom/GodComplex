@@ -35,12 +35,12 @@ namespace WMath
 			if ( System.Math.Abs( fSine ) > float.Epsilon )
 				Axis = Temp.qv / fSine;
 			else 
-				Axis.Zero();
+				Axis.MakeZero();
 		}
 
 
 		// Access methods
-		public void					Zero()													{ Angle = 0.0f; Axis.Zero(); }
+		public void					Zero()													{ Angle = 0.0f; Axis.MakeZero(); }
 		public void					Set( float _fAngle, float _x, float _y, float _z )		{ Angle = _fAngle; Axis.Set( _x, _y, _z ); }
 		public void					Set( float _fAngle, Vector _Axis )						{ Angle = _fAngle; Axis.Set( _Axis ); }
 		public int					GetRevNum()												{ return (int) System.Math.Floor( 0.5f * Angle / System.Math.PI ); }

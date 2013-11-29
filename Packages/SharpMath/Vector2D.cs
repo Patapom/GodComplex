@@ -29,6 +29,11 @@ namespace WMath
 			set { y = value; }
 		}
 
+		public static Vector2D		Zero	{ get { return new Vector2D( 0, 0 ); } }
+		public static Vector2D		One		{ get { return new Vector2D( 1, 1 ); } }
+		public static Vector2D		UnitX	{ get { return new Vector2D( 1, 0 ); } }
+		public static Vector2D		UnitY	{ get { return new Vector2D( 0, 1 ); } }
+
 		#endregion
 
 		#region METHODS
@@ -43,7 +48,7 @@ namespace WMath
 		public						Vector2D( float[] _f )							{ x = _f[0]; y = _f[1]; }
 
 		// Access methods
-		public void					Zero()											{ x = y = 0.0f; }
+		public void					MakeZero()										{ x = y = 0.0f; }
 		public void					Set( Vector2D _Source )							{ x = _Source.x; y = _Source.y; }
 		public void					Set( Vector _Source )							{ x = _Source.x; y = _Source.y; }
 		public void					Set( Vector4D _Source )							{ x = _Source.x; y = _Source.y; }

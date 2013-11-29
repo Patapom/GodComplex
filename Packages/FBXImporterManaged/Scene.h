@@ -92,10 +92,6 @@ namespace FBXImporter
 
 	protected:	// FIELDS
 
-		FbxManager*			m_pSDKManager;			// Manager pointer
-		FbxScene*			m_pScene;				// Scene pointer
-		FbxIOSettings*		m_pIOSettings;
-
 		// Scene infos
 		Take^				m_CurrentTake;
 		List<Take^>^		m_Takes;
@@ -148,22 +144,6 @@ namespace FBXImporter
 
 		Scene()
 		{
-			// The first thing to do is to create the FBX SDK manager which is the object allocator for almost all the classes in the SDK.
-			m_pSDKManager = FbxManager::Create();
-			if ( !m_pSDKManager )
-				throw gcnew Exception( "Unable to create the FBX SDK manager!" );
-
-
-			// Create an IOSettings object
-			m_pIOSettings = FbxIOSettings::Create( m_pSDKManager, IOSROOT );
-			m_pSDKManager->SetIOSettings( m_pIOSettings );
-
-			// Load plugins from the executable directory
-			FbxString lPath = FbxGetApplicationDirectory();
-			FbxString lExtension = "dll";
-			m_pSDKManager->LoadPluginsDirectory( lPath.Buffer(), lExtension.Buffer() );
-
-
 			// Initialize lists
 			m_Takes = gcnew List<Take^>();
 			m_Materials = gcnew List<Material^>();
@@ -173,16 +153,6 @@ namespace FBXImporter
 
 		~Scene()
 		{
-			// Destroy any existing scene
-			if ( m_pScene != nullptr )
-				m_pScene->Destroy( true );
-
-			// Delete the FBX SDK manager. All the objects that have been allocated 
-			// using the FBX SDK manager and that haven't been explicitly destroyed 
-			// are automatically destroyed at the same time.
-			if ( m_pSDKManager )
-				m_pSDKManager->Destroy();
-			m_pSDKManager = NULL;
 		}
 
 		//////////////////////////////////////////////////////////////////////////
@@ -190,6 +160,21 @@ namespace FBXImporter
 		//
 		void		Load( System::String^ _FileName )
 		{
+			// The first thing to do is to create the FBX SDK manager which is the object allocator for almost all the classes in the SDK.
+			FbxManager*		pSDKManager = FbxManager::Create();
+			if ( !pSDKManager )
+				throw gcnew Exception( "Unable to create the FBX SDK manager!" );
+
+			// Create an IOSettings object
+			FbxIOSettings*	pIOSettings = FbxIOSettings::Create( pSDKManager, IOSROOT );
+			pSDKManager->SetIOSettings( pIOSettings );
+
+			// Load plugins from the executable directory
+			FbxString lPath = FbxGetApplicationDirectory();
+			FbxString lExtension = "dll";
+			pSDKManager->LoadPluginsDirectory( lPath.Buffer(), lExtension.Buffer() );
+
+
 			// Clear lists & pointers
 			m_CurrentTake = nullptr;
 			m_Takes->Clear();
@@ -204,21 +189,16 @@ namespace FBXImporter
 			int lSDKMajor,  lSDKMinor,  lSDKRevision;
 			FbxManager::GetFileFormatVersion( lSDKMajor, lSDKMinor, lSDKRevision );
 
-			// Create an importer.
-			FbxImporter* pImporter = FbxImporter::Create( m_pSDKManager,"" );
-			
+			// Create the entity that will hold the scene.
+			FbxScene*	pScene = FbxScene::Create( pSDKManager, "" );
+
+			// Create an importer
+			FbxImporter*	pImporter = FbxImporter::Create( pSDKManager,"" );
 			try
 			{
-				// Destroy any existing scene
-				if ( m_pScene != nullptr )
-					m_pScene->Destroy( true );
-
-				// Create the entity that will hold the scene.
-				m_pScene = FbxScene::Create( m_pSDKManager, "" );
-
 				// Initialize the importer by providing a filename.
-				const char*	pFileName = Helpers::FromString( _FileName );
-				const bool	bImportStatus = pImporter->Initialize( pFileName, -1, m_pIOSettings );
+				const char*		pFileName = Helpers::FromString( _FileName );
+				const bool		bImportStatus = pImporter->Initialize( pFileName, -1, pIOSettings );
 
 				int lFileMajor, lFileMinor, lFileRevision;
 				pImporter->GetFileVersion( lFileMajor, lFileMinor, lFileRevision );
@@ -254,23 +234,23 @@ namespace FBXImporter
 					}
 
 					// Set the import states. By default, the import states are always set to true. The code below shows how to change these states.
-					m_pIOSettings->SetBoolProp(IMP_FBX_MATERIAL,        true);
-					m_pIOSettings->SetBoolProp(IMP_FBX_TEXTURE,         true);
-					m_pIOSettings->SetBoolProp(IMP_FBX_LINK,            true);
-					m_pIOSettings->SetBoolProp(IMP_FBX_SHAPE,           true);
-					m_pIOSettings->SetBoolProp(IMP_FBX_GOBO,            true);
-					m_pIOSettings->SetBoolProp(IMP_FBX_ANIMATION,       true);
-					m_pIOSettings->SetBoolProp(IMP_FBX_GLOBAL_SETTINGS, true);
+					pIOSettings->SetBoolProp(IMP_FBX_MATERIAL,        true);
+					pIOSettings->SetBoolProp(IMP_FBX_TEXTURE,         true);
+					pIOSettings->SetBoolProp(IMP_FBX_LINK,            true);
+					pIOSettings->SetBoolProp(IMP_FBX_SHAPE,           true);
+					pIOSettings->SetBoolProp(IMP_FBX_GOBO,            true);
+					pIOSettings->SetBoolProp(IMP_FBX_ANIMATION,       true);
+					pIOSettings->SetBoolProp(IMP_FBX_GLOBAL_SETTINGS, true);
 				}
 
 				// Import the scene.
-				bool	bStatus = pImporter->Import( m_pScene );
+				bool	bStatus = pImporter->Import( pScene );
 				if ( !bStatus )
 					throw gcnew Exception( "Failed to import \"" + _FileName + "\" ! Last Error : " + Helpers::GetString( pImporter->GetLastErrorString() ) );
 			}
 			catch ( Exception^ )
 			{
-				m_pScene->Destroy( true );
+				pScene->Destroy( true );
 				throw;
 			}
 			finally
@@ -281,13 +261,23 @@ namespace FBXImporter
 
 			try
 			{
-				ReadSceneData();
+				ReadSceneData( pScene );
 			}
 			catch ( Exception^ _e )
 			{
-				m_pScene->Destroy( true );
 				throw gcnew Exception( "An error occurred while importing scene data!", _e );
 			}
+			finally
+			{
+				pScene->Destroy( true );
+			}
+
+			// Delete the FBX SDK manager. All the objects that have been allocated 
+			// using the FBX SDK manager and that haven't been explicitly destroyed 
+			// are automatically destroyed at the same time.
+			if ( pSDKManager )
+				pSDKManager->Destroy();
+			pSDKManager = NULL;
 		}
 
 		// Finds a node by name
@@ -320,8 +310,8 @@ namespace FBXImporter
 
 	protected:
 
-		void	ReadSceneData();
-		Node^	CreateNodesHierarchy( Node^ _Parent, FbxNode* _pNode );
+		void			ReadSceneData( FbxScene* _pScene );
+		Node^			CreateNodesHierarchy( Node^ _Parent, FbxNode* _pNode );
 
 	internal:
 

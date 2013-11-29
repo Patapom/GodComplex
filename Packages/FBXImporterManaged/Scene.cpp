@@ -7,11 +7,11 @@ using namespace FBXImporter;
 
 // Read the relevant scene data
 //
-void	Scene::ReadSceneData()
+void	Scene::ReadSceneData( FbxScene* _pScene )
 {
 	// ======================================
 	// 1] Read scene global settings
-	FbxGlobalSettings&	Settings = m_pScene->GetGlobalSettings();
+	FbxGlobalSettings&	Settings = _pScene->GetGlobalSettings();
 
 	FbxAxisSystem	AxisSystem = Settings.GetAxisSystem();
 	int				Sign = 0;
@@ -35,12 +35,12 @@ void	Scene::ReadSceneData()
 	// 2] Read back the anim stacks
 	for ( int TakeIndex=0; TakeIndex < m_Takes->Count; TakeIndex++ )
 	{
-		m_Takes[TakeIndex]->BuildAnimStack( m_pScene );
+		m_Takes[TakeIndex]->BuildAnimStack( _pScene );
 	}
 
 	// ======================================
 	// 3] Read back the nodes' hierarchy
-	FbxNode*	pRootNode = m_pScene->GetRootNode();
+	FbxNode*	pRootNode = _pScene->GetRootNode();
 
 	m_Nodes->Clear();
 	m_RootNode = CreateNodesHierarchy( nullptr, pRootNode );

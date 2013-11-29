@@ -77,9 +77,14 @@ ObjectProperty::ObjectProperty( BaseObject^ _Owner, FbxProperty& _Property ) : m
 		throw gcnew Exception( "Found unsupported layer textures on property \"" + _Owner->Name + "." + Name + "\" !\r\nOnly single textures are supported in this version." );
 
 	List<Texture^>^	Textures = gcnew List<Texture^>();
-	for ( int TextureIndex=0; TextureIndex < _Property.GetSrcObjectCount<FbxTexture>(); TextureIndex++ )
+// 	for ( int TextureIndex=0; TextureIndex < _Property.GetSrcObjectCount<FbxTexture>(); TextureIndex++ )
+// 	{
+// 		FbxTexture*	pTexture = FbxCast<FbxTexture>( _Property.GetSrcObject<FbxTexture>( TextureIndex ) );
+// 		Textures->Add( gcnew Texture( _Owner->ParentScene, pTexture ) );
+// 	}
+	for ( int TextureIndex=0; TextureIndex < _Property.GetSrcObjectCount<FbxFileTexture>(); TextureIndex++ )
 	{
-		FbxTexture*	pTexture = FbxCast<FbxTexture>( _Property.GetSrcObject<FbxTexture>( TextureIndex ) );
+		FbxFileTexture*	pTexture = FbxCast<FbxFileTexture>( _Property.GetSrcObject<FbxFileTexture>( TextureIndex ) );
 		Textures->Add( gcnew Texture( _Owner->ParentScene, pTexture ) );
 	}
 

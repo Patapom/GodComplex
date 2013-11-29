@@ -4,9 +4,6 @@ using System.Text;
 using System.IO;
 
 using WMath;
-using SharpDX;
-// using FBX.Scene.Nodes;
-// using FBX.Scene.Materials;
 using FBX.SceneLoader.Objects;
 
 namespace FBX.SceneLoader
@@ -394,16 +391,16 @@ namespace FBX.SceneLoader
 								MatParams.CreateParameter( Entry.Name, Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = (float) Entry.Value;
 								break;
 							case "Float2":
-								MatParams.CreateParameter( Entry.Name, Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT2 ).AsFloat2.Value = ConvertVector( Entry.Value as Vector2D );
+								MatParams.CreateParameter( Entry.Name, Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT2 ).AsFloat2.Value = Entry.Value as Vector2D;
 								break;
 							case "Float3":
-								MatParams.CreateParameter( Entry.Name, Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = ConvertVector( Entry.Value as Vector );
+								MatParams.CreateParameter( Entry.Name, Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = Entry.Value as Vector;
 								break;
 							case "Float4":
-								MatParams.CreateParameter( Entry.Name, Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT4 ).AsFloat4.Value = ConvertVector( Entry.Value as Vector4D );
+								MatParams.CreateParameter( Entry.Name, Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT4 ).AsFloat4.Value = Entry.Value as Vector4D;
 								break;
 							case "Matrix":
-								MatParams.CreateParameter( Entry.Name, Scene.Materials.MaterialParameters.PARAMETER_TYPE.MATRIX4 ).AsMatrix4.Value = ConvertMatrix( Entry.Value as Matrix4x4 );
+								MatParams.CreateParameter( Entry.Name, Scene.Materials.MaterialParameters.PARAMETER_TYPE.MATRIX4 ).AsMatrix4.Value = Entry.Value as Matrix4x4;
 								break;
 							case "Texture":
 								CreateTextureParameter( Material, Entry.Name, MatParams, Entry.Name );
@@ -418,16 +415,16 @@ namespace FBX.SceneLoader
 					MatParams = m_Scene.CreateMaterialParameters( Material.Name, "Phong" );
 
 					// Lambert parameters
-					MatParams.CreateParameter( "AmbientColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = ConvertPoint( SpecificMaterial.AmbientColor );
+					MatParams.CreateParameter( "AmbientColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.AmbientColor;
 					CreateTextureParameter( Material, "AmbientColor", MatParams, "AmbientTexture" );
 					MatParams.CreateParameter( "AmbientFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.AmbientFactor;
 
-					MatParams.CreateParameter( "DiffuseColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = ConvertPoint( SpecificMaterial.DiffuseColor );
+					MatParams.CreateParameter( "DiffuseColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.DiffuseColor;
 					MatParams.CreateParameter( "DiffuseFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.DiffuseFactor;
 					bool	bHasDiffuseTexture = CreateTextureParameter( Material, "DiffuseColor", MatParams, "DiffuseTexture", "TransparentColor" );
 					MatParams.CreateParameter( "HasDiffuseTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasDiffuseTexture;
 
-					MatParams.CreateParameter( "EmissiveColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = ConvertPoint( SpecificMaterial.EmissiveColor );
+					MatParams.CreateParameter( "EmissiveColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.EmissiveColor;
 					MatParams.CreateParameter( "EmissiveFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.EmissiveFactor;
 					CreateTextureParameter( Material, "EmissiveColor", MatParams, "EmissiveTexture" );
 
@@ -439,12 +436,12 @@ namespace FBX.SceneLoader
 					MatParams.CreateParameter( "HasNormalTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasNormalTexture;
 
 					// Phong parameters
-					MatParams.CreateParameter( "ReflectionColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = ConvertPoint( SpecificMaterial.ReflectionColor );
+					MatParams.CreateParameter( "ReflectionColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.ReflectionColor;
 					CreateTextureParameter( Material, "ReflectionColor", MatParams, "ReflectionTexture" );
 					MatParams.CreateParameter( "ReflectionFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.ReflectionFactor;
 
 					MatParams.CreateParameter( "Shininess", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.Shininess;
-					MatParams.CreateParameter( "SpecularColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = ConvertPoint( SpecificMaterial.SpecularColor );
+					MatParams.CreateParameter( "SpecularColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.SpecularColor;
 					MatParams.CreateParameter( "SpecularFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.SpecularFactor;
 					bool	bHasSpecularTexture = CreateTextureParameter( Material, "SpecularFactor", MatParams, "SpecularTexture" );
 					MatParams.CreateParameter( "HasSpecularTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasSpecularTexture;
@@ -456,16 +453,16 @@ namespace FBX.SceneLoader
 					MatParams = m_Scene.CreateMaterialParameters( Material.Name, "Lambert" );
 
 					// Lambert parameters
-					MatParams.CreateParameter( "AmbientColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = ConvertPoint( SpecificMaterial.AmbientColor );
+					MatParams.CreateParameter( "AmbientColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.AmbientColor;
 					CreateTextureParameter( Material, "AmbientColor", MatParams, "AmbientTexture" );
 					MatParams.CreateParameter( "AmbientFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.AmbientFactor;
 
-					MatParams.CreateParameter( "DiffuseColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = ConvertPoint( SpecificMaterial.DiffuseColor );
+					MatParams.CreateParameter( "DiffuseColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.DiffuseColor;
 					MatParams.CreateParameter( "DiffuseFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.DiffuseFactor;
 					bool	bHasDiffuseTexture = CreateTextureParameter( Material, "DiffuseColor", MatParams, "DiffuseTexture", "TransparentColor" );
 					MatParams.CreateParameter( "HasDiffuseTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasDiffuseTexture;
 
-					MatParams.CreateParameter( "EmissiveColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = ConvertPoint( SpecificMaterial.EmissiveColor );
+					MatParams.CreateParameter( "EmissiveColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.EmissiveColor;
 					MatParams.CreateParameter( "EmissiveFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.EmissiveFactor;
 					CreateTextureParameter( Material, "EmissiveColor", MatParams, "EmissiveTexture" );
 
@@ -514,7 +511,7 @@ namespace FBX.SceneLoader
 					LocalTransform.SetRow2( new Vector( 0.0f, 1.0f, 0.0f ) );
 				}
 
-				NewNode = m_Scene.CreateNode( _FBXNode.Name, _ParentNode, ConvertMatrix( LocalTransform, m_ScaleFactor ) );
+				NewNode = m_Scene.CreateNode( _FBXNode.Name, _ParentNode, LocalTransform );
 			}
 
 			// Recurse through children
@@ -591,7 +588,7 @@ namespace FBX.SceneLoader
 			TempMesh.BuildPrimitives();
 
 			// Create the cirrus mesh and tie it to our temporary mesh
-			FBX.Scene.Nodes.Mesh	Mesh = m_Scene.CreateMesh( _FBXMesh.Name, _Parent, ConvertMatrix( _FBXMesh.LocalTransform, m_ScaleFactor ) );
+			FBX.Scene.Nodes.Mesh	Mesh = m_Scene.CreateMesh( _FBXMesh.Name, _Parent, _FBXMesh.LocalTransform );
 			m_TempMesh2FinalMesh[TempMesh] = Mesh;
 
 			// Add some properties
@@ -614,14 +611,14 @@ namespace FBX.SceneLoader
 		protected Scene.Nodes.Camera	CreateCamera( FBXImporter.NodeCamera _FBXCamera, Scene.Nodes.Node _Parent )
 		{
 			// Create the cirrus mesh and tie it to our temporary mesh
-			Scene.Nodes.Camera	Camera = m_Scene.CreateCamera( _FBXCamera.Name, _Parent, ConvertMatrix( _FBXCamera.LocalTransform, m_ScaleFactor ) );
+			Scene.Nodes.Camera	Camera = m_Scene.CreateCamera( _FBXCamera.Name, _Parent, _FBXCamera.LocalTransform );
 
 			// Add some properties
 			Camera.Visible = _FBXCamera.Visible;
 			Camera.Type = (Scene.Nodes.Camera.PROJECTION_TYPE) _FBXCamera.ProjectionType;
-			Camera.Target = m_ScaleFactor * new SharpDX.Vector3( _FBXCamera.Target.x, _FBXCamera.Target.y, _FBXCamera.Target.z );
+			Camera.Target = m_ScaleFactor * (Vector) _FBXCamera.Target;
 			Camera.FOV = _FBXCamera.FOVY;
-			Camera.AspectRatio = (float) (Math.Tan( 0.5f * _FBXCamera.FOVX ) / Math.Tan( 0.5f * _FBXCamera.FOVY ));
+			Camera.AspectRatio = _FBXCamera.AspectRatio;
 			Camera.ClipNear = _FBXCamera.NearClipPlane * m_ScaleFactor;
 			Camera.ClipFar = _FBXCamera.FarClipPlane * m_ScaleFactor;
 			Camera.Roll = _FBXCamera.Roll;
@@ -638,13 +635,13 @@ namespace FBX.SceneLoader
 		protected Scene.Nodes.Light	CreateLight( FBXImporter.NodeLight _FBXLight, Scene.Nodes.Node _Parent )
 		{
 			// Create the cirrus mesh and tie it to our temporary mesh
-			Scene.Nodes.Light	Light = m_Scene.CreateLight( _FBXLight.Name, _Parent, ConvertMatrix( _FBXLight.LocalTransform, m_ScaleFactor ) );
+			Scene.Nodes.Light	Light = m_Scene.CreateLight( _FBXLight.Name, _Parent, _FBXLight.LocalTransform );
 
 			// Add some properties
 			Light.Visible = _FBXLight.Visible;
 			Light.Type = (Scene.Nodes.Light.LIGHT_TYPE) _FBXLight.LightType;
 			Light.CastShadow = _FBXLight.CastShadows;
-			Light.Color = new SharpDX.Vector3( _FBXLight.Color.x, _FBXLight.Color.y, _FBXLight.Color.z );
+			Light.Color = _FBXLight.Color;
 			Light.Intensity = _FBXLight.Intensity;
 			Light.EnableNearAttenuation = _FBXLight.EnableNearAttenuation;
 			Light.NearAttenuationStart = _FBXLight.NearAttenuationStart * m_ScaleFactor;
@@ -699,12 +696,10 @@ namespace FBX.SceneLoader
 				Scene.Nodes.Mesh	TargetMesh = m_TempMesh2FinalMesh[M];
 
 				// Setup basic mesh infos
-                TargetMesh.BBox = new SharpDX.BoundingBox(new SharpDX.Vector3(M.BoundingBox.m_Min.x, M.BoundingBox.m_Min.y, M.BoundingBox.m_Min.z),
-                                                          new SharpDX.Vector3(M.BoundingBox.m_Max.x, M.BoundingBox.m_Max.y, M.BoundingBox.m_Max.z));
+                TargetMesh.BBox = M.BoundingBox;
 
 				// I know it's a bit of a lousy approximation for the b-sphere but we can always refine it later...
-                TargetMesh.BSphere = new SharpDX.BoundingSphere( new SharpDX.Vector3(M.BoundingBox.Center.x, M.BoundingBox.Center.y, M.BoundingBox.Center.z),
-																 0.5f * M.BoundingBox.Dim.Magnitude() );
+                TargetMesh.BSphere = new BoundingSphere( M.BoundingBox.Center, 0.5f * M.BoundingBox.Dim.Magnitude() );
 
 				// Build primitives
 				int	PrimitiveIndex = 0;
@@ -726,45 +721,45 @@ namespace FBX.SceneLoader
 
 		#region Conversion Helpers
 
-		public static SharpDX.Vector3	ConvertPoint( Point _Value )
-		{
-            return new SharpDX.Vector3(_Value.x, _Value.y, _Value.z);
-		}
-
-        public static SharpDX.Vector2 ConvertVector( Vector2D _Value )
-		{
-            return new SharpDX.Vector2(_Value.x, _Value.y);
-		}
-
-        public static SharpDX.Vector3 ConvertVector( Vector _Value )
-		{
-            return new SharpDX.Vector3(_Value.x, _Value.y, _Value.z);
-		}
-
-        public static SharpDX.Vector4 ConvertVector( Vector4D _Value )
-		{
-            return new SharpDX.Vector4(_Value.x, _Value.y, _Value.z, _Value.w);
-		}
-
-        public static SharpDX.Matrix		ConvertMatrix( Matrix4x4 _Value )
-		{
-			return ConvertMatrix( _Value, 1.0f );
-		}
-
-        public static SharpDX.Matrix		ConvertMatrix( Matrix4x4 _Value, float _PositionScaleFactor )
-		{
-            SharpDX.Matrix Result = new SharpDX.Matrix();
-			Vector4D	Row = _Value.GetRow0();
-			Result.Row1 = new SharpDX.Vector4( Row.x, Row.y, Row.z, Row.w );
-			Row = _Value.GetRow1();
-			Result.Row2 = new SharpDX.Vector4( Row.x, Row.y, Row.z, Row.w );
-			Row = _Value.GetRow2();
-			Result.Row3 = new SharpDX.Vector4( Row.x, Row.y, Row.z, Row.w );
-			Point4D	Trans = _Value.GetTrans();
-			Result.Row4 = new SharpDX.Vector4( _PositionScaleFactor * Trans.x, _PositionScaleFactor * Trans.y, _PositionScaleFactor * Trans.z, Trans.w );
-
-			return Result;
-		}
+// 		public static SharpDX.Vector3	ConvertPoint( Point _Value )
+// 		{
+//			return new SharpDX.Vector3(_Value.x, _Value.y, _Value.z);
+// 		}
+// 
+//		public static SharpDX.Vector2 ConvertVector( Vector2D _Value )
+// 		{
+//			return new SharpDX.Vector2(_Value.x, _Value.y);
+// 		}
+// 
+//		public static SharpDX.Vector3 ConvertVector( Vector _Value )
+// 		{
+//			return new SharpDX.Vector3(_Value.x, _Value.y, _Value.z);
+// 		}
+// 
+//		public static SharpDX.Vector4 ConvertVector( Vector4D _Value )
+// 		{
+//			return new SharpDX.Vector4(_Value.x, _Value.y, _Value.z, _Value.w);
+// 		}
+// 
+//		public static SharpDX.Matrix		ConvertMatrix( Matrix4x4 _Value )
+// 		{
+// 			return ConvertMatrix( _Value, 1.0f );
+// 		}
+// 
+//		public static SharpDX.Matrix		ConvertMatrix( Matrix4x4 _Value, float _PositionScaleFactor )
+// 		{
+//			SharpDX.Matrix Result = new SharpDX.Matrix();
+// 			Vector4D	Row = _Value.GetRow0();
+// 			Result.Row1 = new SharpDX.Vector4( Row.x, Row.y, Row.z, Row.w );
+// 			Row = _Value.GetRow1();
+// 			Result.Row2 = new SharpDX.Vector4( Row.x, Row.y, Row.z, Row.w );
+// 			Row = _Value.GetRow2();
+// 			Result.Row3 = new SharpDX.Vector4( Row.x, Row.y, Row.z, Row.w );
+// 			Point4D	Trans = _Value.GetTrans();
+// 			Result.Row4 = new SharpDX.Vector4( _PositionScaleFactor * Trans.x, _PositionScaleFactor * Trans.y, _PositionScaleFactor * Trans.z, Trans.w );
+// 
+// 			return Result;
+// 		}
 
 		/// <summary>
 		/// Creates a texture parameter from a material property that contains a texture (e.g. DiffuseColor, SpecularColor, etc.)

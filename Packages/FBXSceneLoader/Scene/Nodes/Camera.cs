@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using SharpDX;
+using WMath;
 
 namespace FBX.Scene.Nodes
 {
@@ -25,7 +25,7 @@ namespace FBX.Scene.Nodes
 		#region FIELDS
 
 		protected PROJECTION_TYPE		m_Type = PROJECTION_TYPE.PERSPECTIVE;
-		protected Vector3				m_Target = Vector3.Zero;
+		protected Vector				m_Target = Vector.Zero;
 		protected float					m_FOV = 0.0f;
 		protected float					m_AspectRatio = 0.0f;
 		protected float					m_ClipNear = 0.0f;
@@ -53,7 +53,7 @@ namespace FBX.Scene.Nodes
 		/// <summary>
 		/// Gets or sets the camera target
 		/// </summary>
-		public Vector3				Target
+		public Vector				Target
 		{
 			get { return m_Target; }
 			set { m_Target = value; }
@@ -117,7 +117,7 @@ namespace FBX.Scene.Nodes
 
 		#region METHODS
 
-		internal Camera( Scene _Owner, int _ID, string _Name, Node _Parent, Matrix _Local2Parent ) : base( _Owner, _ID, _Name, _Parent, _Local2Parent )
+		internal Camera( Scene _Owner, int _ID, string _Name, Node _Parent, Matrix4x4 _Local2Parent ) : base( _Owner, _ID, _Name, _Parent, _Local2Parent )
 		{
 		}
 

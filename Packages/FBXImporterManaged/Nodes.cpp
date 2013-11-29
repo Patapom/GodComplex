@@ -18,16 +18,17 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Retrieve the pre & post rotations
-// 	ObjectProperty^	PreRotProp = FindProperty( "PreRotation" );
-// 	WMath::Vector^	PreRotEuler = (float) Math::PI / 180.0f * (PreRotProp != nullptr ? (WMath::Vector^) PreRotProp->Value : gcnew WMath::Vector( 0, 0, 0 ));
-	WMath::Vector^	PreRotEuler = Helpers::ToVector3( _pNode->PreRotation.Get() );
+ 	ObjectProperty^	PreRotProp = FindProperty( "PreRotation" );
+ 	WMath::Vector^	PreRotEuler = (float) Math::PI / 180.0f * (PreRotProp != nullptr ? PreRotProp->AsVector3 : gcnew WMath::Vector( 0, 0, 0 ));
+//	WMath::Vector^	PreRotEuler = Helpers::ToVector3( _pNode->PreRotation.Get() );
+//	WMath::Vector^	PreRotEuler = Helpers::ToVector3( _pNode->PreRotation.Get() );
 
 	m_PreRotation = gcnew WMath::Matrix4x4();
 	m_PreRotation->MakePYR( PreRotEuler->x, PreRotEuler->y, PreRotEuler->z );
 
-// 	ObjectProperty^	PostRotProp = FindProperty( "PreRotation" );
-// 	WMath::Vector^	PostRotEuler = (float) Math::PI / 180.0f * (PostRotProp != nullptr ? (WMath::Vector^) PostRotProp->Value : gcnew WMath::Vector( 0, 0, 0 ));
-	WMath::Vector^	PostRotEuler = Helpers::ToVector3( _pNode->PostRotation.Get() );
+ 	ObjectProperty^	PostRotProp = FindProperty( "PreRotation" );
+ 	WMath::Vector^	PostRotEuler = (float) Math::PI / 180.0f * (PostRotProp != nullptr ? PostRotProp->AsVector3 : gcnew WMath::Vector( 0, 0, 0 ));
+//	WMath::Vector^	PostRotEuler = Helpers::ToVector3( _pNode->PostRotation.Get() );
 
 	m_PostRotation = gcnew WMath::Matrix4x4();
 	m_PostRotation->MakePYR( PostRotEuler->x, PostRotEuler->y, PostRotEuler->z );
@@ -38,9 +39,9 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 	m_LocalTransform = gcnew WMath::Matrix4x4();
 	m_LocalTransform->MakeIdentity();
 
-	WMath::Point^	Position = Helpers::ToPoint3( _pNode->LclTranslation.Get() );
-	WMath::Vector^	Rotation = (float) Math::PI / 180.0f * Helpers::ToVector3( _pNode->LclRotation.Get() );
-	WMath::Vector^	Scale    = Helpers::ToVector3( _pNode->LclScaling.Get() );
+	WMath::Point^	Position = FindProperty( "Lcl Translation" )->AsPoint;// Helpers::ToPoint3( _pNode->LclTranslation.Get() );
+	WMath::Vector^	Rotation = (float) Math::PI / 180.0f * FindProperty( "Lcl Rotation" )->AsVector3;	//Helpers::ToVector3( _pNode->LclRotation.Get() );
+	WMath::Vector^	Scale    = FindProperty( "Lcl Scaling" )->AsVector3;	//Helpers::ToVector3( _pNode->LclScaling.Get() );
 
 	// WORKING CODE
 	m_LocalTransform->MakePYR( Rotation->x, Rotation->y, Rotation->z );

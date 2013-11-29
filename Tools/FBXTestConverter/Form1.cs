@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Windows.Forms;
+using WMath;
 
 namespace FBXTestConverter
 {
@@ -38,7 +39,7 @@ namespace FBXTestConverter
 		{
 			InitializeComponent();
 
-			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest0.fbx" ) );
+			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1.fbx" ) );
 		}
 
 		public void	LoadScene( FileInfo _File )
@@ -86,11 +87,11 @@ namespace FBXTestConverter
 			_W.Write( (byte) NodeType );
 
 				// Write Local2Parent matrix
-			SharpDX.Matrix	Local2Parent = _Node.Local2Parent;
-			_W.Write( Local2Parent.M11 );	_W.Write( Local2Parent.M12 );	_W.Write( Local2Parent.M13 );	_W.Write( Local2Parent.M14 );
-			_W.Write( Local2Parent.M21 );	_W.Write( Local2Parent.M22 );	_W.Write( Local2Parent.M23 );	_W.Write( Local2Parent.M24 );
-			_W.Write( Local2Parent.M31 );	_W.Write( Local2Parent.M32 );	_W.Write( Local2Parent.M33 );	_W.Write( Local2Parent.M34 );
-			_W.Write( Local2Parent.M41 );	_W.Write( Local2Parent.M42 );	_W.Write( Local2Parent.M43 );	_W.Write( Local2Parent.M44 );
+			Matrix4x4	Local2Parent = _Node.Local2Parent;
+			_W.Write( Local2Parent.m[0,0] );	_W.Write( Local2Parent.m[0,1] );	_W.Write( Local2Parent.m[0,2] );	_W.Write( Local2Parent.m[0,3] );
+			_W.Write( Local2Parent.m[1,0] );	_W.Write( Local2Parent.m[1,1] );	_W.Write( Local2Parent.m[1,2] );	_W.Write( Local2Parent.m[1,3] );
+			_W.Write( Local2Parent.m[2,0] );	_W.Write( Local2Parent.m[2,1] );	_W.Write( Local2Parent.m[2,2] );	_W.Write( Local2Parent.m[2,3] );
+			_W.Write( Local2Parent.m[3,0] );	_W.Write( Local2Parent.m[3,1] );	_W.Write( Local2Parent.m[3,2] );	_W.Write( Local2Parent.m[3,3] );
 
 
 			// =============================
@@ -237,8 +238,8 @@ namespace FBXTestConverter
 							case FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TANGENT:
 							case FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.BITANGENT:
 								{
-									SharpDX.Vector3[]	Stream = Streams[UsageIndex][0].Content as SharpDX.Vector3[];
-									SharpDX.Vector3		Vertex = Stream[VertexIndex];
+									Vector[]	Stream = Streams[UsageIndex][0].Content as Vector[];
+									Vector		Vertex = Stream[VertexIndex];
 									_W.Write( Vertex.X );
 									_W.Write( Vertex.Y );
 									_W.Write( Vertex.Z );
@@ -247,8 +248,8 @@ namespace FBXTestConverter
 
 							case FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TEXCOORDS:
 								{
-									SharpDX.Vector2[]	Stream = Streams[UsageIndex][0].Content as SharpDX.Vector2[];
-									SharpDX.Vector2		Vertex = Stream[VertexIndex];
+									Vector2D[]	Stream = Streams[UsageIndex][0].Content as Vector2D[];
+									Vector2D		Vertex = Stream[VertexIndex];
 									_W.Write( Vertex.X );
 									_W.Write( Vertex.Y );
 								}
