@@ -332,7 +332,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	gs_pEffectScene->Render( _Time, _DeltaTime, *gs_pRTHDR );
 
 
-#elif 1	// TEST VOLUMETRIC
+#elif 0	// TEST VOLUMETRIC
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update the camera settings and upload its data to the shaders
@@ -391,7 +391,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 #elif 1	// TEST GLOBAL ILLUM
 
-	gs_pCameraManipulator->Update( _DeltaTime, 0.1f, 1.0f );
+	gs_pCameraManipulator->Update( _DeltaTime, 1.0f, 1.0f );
 	gs_pCamera->Upload( 0 );
 
  	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );

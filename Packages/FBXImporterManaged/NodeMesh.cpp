@@ -20,7 +20,7 @@ NodeMesh::NodeMesh( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : Node
 	//////////////////////////////////////////////////////////////////////////
 	// Build the array of vertices
 
-	// Doesn't work this stuff ! It splits all triangles and creates 3*TrianglesCount vertices, what a lousy piece of shit !
+	// Doesn't work this stuff! It splits all triangles and creates 3*TrianglesCount vertices, what a lousy piece of shit !
 // int	VertexCountBefore = pMesh->GetControlPointsCount();
 // //			pMesh->SplitPoints( FbxLayerElement::eDIFFUSE_TEXTURES );
 // 			pMesh->SplitPoints( FbxLayerElement::eSMOOTHING );

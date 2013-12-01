@@ -297,7 +297,7 @@ namespace FBX.Scene.Nodes
 			/// <summary>
 			/// Gets the parameters to render the primitive
 			/// </summary>
-			public MaterialParameters	Parameters			{ get { return m_Parameters; } }
+			public MaterialParameters	MaterialParms		{ get { return m_Parameters; } }
 
 			/// <summary>
 			/// Gets the amount of vertices in the primitive

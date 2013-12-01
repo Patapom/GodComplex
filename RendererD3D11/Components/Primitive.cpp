@@ -66,7 +66,7 @@ void	Primitive::Render( Material& _Material, int _StartVertex, int _VerticesCoun
 	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &m_Stride, &Offset );
 	if ( m_pIB != NULL )
 	{
-		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R16_UINT, 0 );
+		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R32_UINT, 0 );
 		m_Device.DXContext().DrawIndexed( _IndicesCount, _StartIndex, _BaseVertexOffset );
 	}
 	else
@@ -95,7 +95,7 @@ void	Primitive::RenderInstanced( Material& _Material, int _InstancesCount, int _
 	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &m_Stride, &Offset );
 	if ( m_pIB != NULL )
 	{
-		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R16_UINT, 0 );
+		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R32_UINT, 0 );
 		m_Device.DXContext().DrawIndexedInstanced( _IndicesCount, _InstancesCount, _StartIndex, _BaseVertexOffset, 0 );
 	}
 	else

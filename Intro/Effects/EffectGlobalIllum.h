@@ -13,15 +13,13 @@ protected:	// NESTED TYPES
 		NjFloat4x4	Local2World;	// Local=>World transform to rotate the object
  	};
 
-	struct MaterialDescriptor
+	struct CBMaterial
 	{
-		struct CBMaterial
-		{
-			NjFloat3	DiffuseColor;
-//			NjFloat3	SpecularColor;
-		};
-		CB<CBMaterial>*	m_pCBMaterial;
-		Texture2D*		m_pTexDiffuseAlbedo;
+		NjFloat3	DiffuseColor;
+		bool		HasDiffuseTexture;
+		NjFloat3	SpecularColor;
+		bool		HasSpecularTexture;
+		float		SpecularExponent;
 	};
 
 private:	// FIELDS
@@ -31,7 +29,6 @@ private:	// FIELDS
 	Texture2D&			m_RTTarget;
 
 	Material*			m_pMatRender;			// Displays the room
-//	Material*			m_pMatDisplayEmissive;	// Displays the lights
 
 	// Primitives
 	Scene				m_Scene;
@@ -44,6 +41,7 @@ public:
 
 	// Constant buffers
  	CB<CBObject>*		m_pCB_Object;
+ 	CB<CBMaterial>*		m_pCB_Material;
 
 
 	// Params

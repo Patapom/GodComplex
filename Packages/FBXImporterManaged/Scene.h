@@ -261,7 +261,7 @@ namespace FBXImporter
 
 			try
 			{
-				ReadSceneData( pScene );
+				ProcessSceneData( pScene );
 			}
 			catch ( Exception^ _e )
 			{
@@ -310,7 +310,7 @@ namespace FBXImporter
 
 	protected:
 
-		void			ReadSceneData( FbxScene* _pScene );
+		void			ProcessSceneData( FbxScene* _pScene );
 		Node^			CreateNodesHierarchy( Node^ _Parent, FbxNode* _pNode );
 
 	internal:

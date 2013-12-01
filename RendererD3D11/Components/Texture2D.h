@@ -101,7 +101,7 @@ public:
 private:
 	// _bStaging, true if this is a staging texture (i.e. CPU accessible as read/write)
 	// _bUnOrderedAccess, true if the texture can also be used as a UAV (Random access read/write from a compute shader)
-	// _RowPitch, if not 0 then the row pitch will be kept constant at every mip level
+	// _pMipDescriptors, if not NULL then the row pitch & depth pitch will be read from this array for each mip level
 	//
 	void		Init( const void* const* _ppContent, bool _bStaging=false, bool _bUnOrderedAccess=false, TextureFilePOM::MipDescriptor* _pMipDescriptors=NULL );
 };

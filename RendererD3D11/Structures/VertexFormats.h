@@ -217,7 +217,7 @@ public:
 
 		virtual int			Size() const							{ return sizeof(VertexFormatP3N3G3B3T2); }
 		virtual D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return ms_pInputElements; }
-		virtual int			GetInputElementsCount() const			{ return 4; }
+		virtual int			GetInputElementsCount() const			{ return 5; }
 		virtual void		Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) const;
 	} DESCRIPTOR;
 

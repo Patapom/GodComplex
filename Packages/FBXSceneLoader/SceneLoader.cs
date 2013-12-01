@@ -721,46 +721,6 @@ namespace FBX.SceneLoader
 
 		#region Conversion Helpers
 
-// 		public static SharpDX.Vector3	ConvertPoint( Point _Value )
-// 		{
-//			return new SharpDX.Vector3(_Value.x, _Value.y, _Value.z);
-// 		}
-// 
-//		public static SharpDX.Vector2 ConvertVector( Vector2D _Value )
-// 		{
-//			return new SharpDX.Vector2(_Value.x, _Value.y);
-// 		}
-// 
-//		public static SharpDX.Vector3 ConvertVector( Vector _Value )
-// 		{
-//			return new SharpDX.Vector3(_Value.x, _Value.y, _Value.z);
-// 		}
-// 
-//		public static SharpDX.Vector4 ConvertVector( Vector4D _Value )
-// 		{
-//			return new SharpDX.Vector4(_Value.x, _Value.y, _Value.z, _Value.w);
-// 		}
-// 
-//		public static SharpDX.Matrix		ConvertMatrix( Matrix4x4 _Value )
-// 		{
-// 			return ConvertMatrix( _Value, 1.0f );
-// 		}
-// 
-//		public static SharpDX.Matrix		ConvertMatrix( Matrix4x4 _Value, float _PositionScaleFactor )
-// 		{
-//			SharpDX.Matrix Result = new SharpDX.Matrix();
-// 			Vector4D	Row = _Value.GetRow0();
-// 			Result.Row1 = new SharpDX.Vector4( Row.x, Row.y, Row.z, Row.w );
-// 			Row = _Value.GetRow1();
-// 			Result.Row2 = new SharpDX.Vector4( Row.x, Row.y, Row.z, Row.w );
-// 			Row = _Value.GetRow2();
-// 			Result.Row3 = new SharpDX.Vector4( Row.x, Row.y, Row.z, Row.w );
-// 			Point4D	Trans = _Value.GetTrans();
-// 			Result.Row4 = new SharpDX.Vector4( _PositionScaleFactor * Trans.x, _PositionScaleFactor * Trans.y, _PositionScaleFactor * Trans.z, Trans.w );
-// 
-// 			return Result;
-// 		}
-
 		/// <summary>
 		/// Creates a texture parameter from a material property that contains a texture (e.g. DiffuseColor, SpecularColor, etc.)
 		/// </summary>

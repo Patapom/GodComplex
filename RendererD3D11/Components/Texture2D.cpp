@@ -419,7 +419,6 @@ int	Texture2D::CalcSubResource( int _MipLevelIndex, int _ArrayIndex )
 #ifdef _DEBUG
 
 #include "..\..\Utility\TextureFilePOM.h"
-#include <stdio.h>
 
 // I/O for staging textures
 void	Texture2D::Save( const char* _pFileName )

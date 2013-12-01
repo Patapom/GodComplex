@@ -7,7 +7,7 @@ using namespace FBXImporter;
 
 // Read the relevant scene data
 //
-void	Scene::ReadSceneData( FbxScene* _pScene )
+void	Scene::ProcessSceneData( FbxScene* _pScene )
 {
 	// ======================================
 	// 1] Read scene global settings

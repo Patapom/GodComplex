@@ -2,6 +2,7 @@
 
 #include "Component.h"
 #include "../Structures/PixelFormats.h"
+#include "../../Utility/TextureFilePOM.h"
 
 class Texture3D : public Component
 {
@@ -42,7 +43,7 @@ public:	 // PROPERTIES
 public:	 // METHODS
 
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !
-	Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging=false, bool _bWriteable=false, bool _bUnOrderedAccess=false );
+	Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging=false, bool _bUnOrderedAccess=false );
 	~Texture3D();
 
 	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart, int _MipLevelsCount ) const;
@@ -72,10 +73,20 @@ public:	 // METHODS
 	// I/O for staging textures
 	void		Save( const char* _pFileName );
 	void		Load( const char* _pFileName );
+
+	// Creates an immutable texture from a POM file
+	Texture3D( Device& _Device, const TextureFilePOM& _POM, bool _bUnOrderedAccess=false );
 #endif
 
 public:
 	static void	NextMipSize( int& _Width, int& _Height, int& _Depth );
 	static int	ComputeMipLevelsCount( int _Width, int _Height, int _Depth, int _MipLevelsCount );
+
+private:
+	// _bStaging, true if this is a staging texture (i.e. CPU accessible as read/write)
+	// _bUnOrderedAccess, true if the texture can also be used as a UAV (Random access read/write from a compute shader)
+	// _pMipDescriptors, if not NULL then the row pitch & depth pitch will be read from this array for each mip level
+	//
+	void		Init( const void* const* _ppContent, bool _bStaging=false, bool _bUnOrderedAccess=false, TextureFilePOM::MipDescriptor* _pMipDescriptors=NULL );
 };
 
