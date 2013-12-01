@@ -67,7 +67,7 @@ namespace FBXImporter
 				// eVisibility = 13,
 
 
-				FbxLayerElement*		pElement = _pLayer->GetLayerElementOfType( ElementType );
+				FbxLayerElement*	pElement = _pLayer->GetLayerElementOfType( ElementType );
 				if ( pElement == NULL )
 					continue;	// Non-existing element...
 

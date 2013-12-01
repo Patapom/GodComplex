@@ -17,6 +17,14 @@ NodeMesh::NodeMesh( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : Node
 	m_PolygonsCount = pMesh->GetPolygonCount();
 
 
+// Doesn't work at all! Makes all faces with a SMG=0...
+//
+// 	// Convert Maya soft/hard edge info into smoothing group info
+// 	FbxGeometryConverter	GeoConv( _ParentScene->m_pTempSDKManager );
+// //	GeoConv.ComputeEdgeSmoothingFromNormals( pMesh );
+// 	GeoConv.ComputePolygonSmoothingFromEdgeSmoothing( pMesh );
+
+
 	//////////////////////////////////////////////////////////////////////////
 	// Build the array of vertices
 
@@ -35,22 +43,24 @@ NodeMesh::NodeMesh( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : Node
 	int	VerticesCount = pMesh->GetControlPointsCount();
 	m_Vertices = gcnew cli::array<WMath::Point^>( VerticesCount );
 
-	switch ( m_ParentScene->UpAxis )
-	{
-	case Scene::UP_AXIS::X:
-		throw gcnew Exception( "X as Up Axis is not supported!" );
-		break;
-
-	case Scene::UP_AXIS::Y:
-		for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ )
-			m_Vertices[VertexIndex] = gcnew WMath::Point( (float) pControlPoints[VertexIndex][0], (float) pControlPoints[VertexIndex][2], -(float) pControlPoints[VertexIndex][1] );
-		break;
-
-	case Scene::UP_AXIS::Z:
-		for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ )
-			m_Vertices[VertexIndex] = gcnew WMath::Point( (float) pControlPoints[VertexIndex][0], (float) pControlPoints[VertexIndex][1], (float) pControlPoints[VertexIndex][2] );
-		break;
-	}
+// 	switch ( m_ParentScene->UpAxis )
+// 	{
+// 	case Scene::UP_AXIS::X:
+// 		throw gcnew Exception( "X as Up Axis is not supported!" );
+// 		break;
+// 
+// 	case Scene::UP_AXIS::Y:
+// 		for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ )
+// 			m_Vertices[VertexIndex] = gcnew WMath::Point( (float) pControlPoints[VertexIndex][0], (float) pControlPoints[VertexIndex][1], (float) pControlPoints[VertexIndex][2] );
+// 		break;
+// 
+// 	case Scene::UP_AXIS::Z:
+// 		for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ )
+// 			m_Vertices[VertexIndex] = gcnew WMath::Point( (float) pControlPoints[VertexIndex][0], (float) pControlPoints[VertexIndex][2], -(float) pControlPoints[VertexIndex][1] );
+// 		break;
+// 	}
+	for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ )
+		m_Vertices[VertexIndex] = gcnew WMath::Point( (float) pControlPoints[VertexIndex][0], (float) pControlPoints[VertexIndex][1], (float) pControlPoints[VertexIndex][2] );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -145,22 +155,22 @@ NodeMesh::NodeMesh( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : Node
 		case Scene::UP_AXIS::Y:
 		{
 			WMath::Matrix3x3^	RotPYR = gcnew WMath::Matrix3x3();
-								RotPYR->FromEuler( gcnew WMath::Vector( RotXYZ->x, RotXYZ->z, -RotXYZ->y ) );
+								RotPYR->FromEuler( RotXYZ );
 
 			m_Pivot->SetRotation( RotPYR );
-			m_Pivot->Scale( gcnew WMath::Vector( Scale->x, Scale->z, Scale->y ) );
-			m_Pivot->SetTrans( gcnew WMath::Point( Trans->x, Trans->z, -Trans->y ) );
+			m_Pivot->Scale( Scale );
+			m_Pivot->SetTrans( Trans );
 			break;
 		}
 
 		case Scene::UP_AXIS::Z:
 		{
 			WMath::Matrix3x3^	RotPYR = gcnew WMath::Matrix3x3();
-								RotPYR->FromEuler( RotXYZ );
+								RotPYR->FromEuler( gcnew WMath::Vector( RotXYZ->x, RotXYZ->z, -RotXYZ->y ) );
 
 			m_Pivot->SetRotation( RotPYR );
-			m_Pivot->Scale( Scale );
-			m_Pivot->SetTrans( Trans );
+			m_Pivot->Scale( gcnew WMath::Vector( Scale->x, Scale->z, Scale->y ) );
+			m_Pivot->SetTrans( gcnew WMath::Point( Trans->x, Trans->z, -Trans->y ) );
 			break;
 		}
 	}

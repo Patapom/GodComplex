@@ -117,6 +117,7 @@ void	EffectGlobalIllum::RenderMesh( const Scene::Mesh& _Mesh ) const
 {
 	// Upload the object's CB
 	memcpy( &m_pCB_Object->m.Local2World, &_Mesh.m_Local2World, sizeof(NjFloat4x4) );
+//m_pCB_Object->m.Local2World = NjFloat4x4::Identity;
 	m_pCB_Object->UpdateData();
 
 	for ( int PrimitiveIndex=0; PrimitiveIndex < _Mesh.m_PrimitivesCount; PrimitiveIndex++ )

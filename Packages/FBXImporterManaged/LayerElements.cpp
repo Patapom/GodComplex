@@ -153,24 +153,29 @@ Object^	LayerElement::GetElementAt( FbxLayerElement* _pLayerElement, int _Index 
 		pElementVector4 = static_cast<FbxLayerElementTemplate<FbxVector4>*>( _pLayerElement );
 		GET_ELEMENT( pElementVector4, _Index, Helpers::ToVector4 )
 
-		switch ( UpAxis )
 		{
-		case Scene::UP_AXIS::X:
-			throw gcnew Exception( "X as Up Axis is not supported!" );
-			break;
-		case Scene::UP_AXIS::Y:
-			{
-				WMath::Vector4D^	Temp = dynamic_cast<WMath::Vector4D^>( Result );
-				Result = gcnew WMath::Vector( Temp->x, Temp->z, -Temp->y );
-			}
-			break;
-		case Scene::UP_AXIS::Z:
-			{
-				WMath::Vector4D^	Temp = dynamic_cast<WMath::Vector4D^>( Result );
-				Result = gcnew WMath::Vector( Temp->x, Temp->y, Temp->z );
-			}
-			break;
+			WMath::Vector4D^	Temp = dynamic_cast<WMath::Vector4D^>( Result );
+			Result = (WMath::Vector^) Temp;
 		}
+
+// 		switch ( UpAxis )
+// 		{
+// 		case Scene::UP_AXIS::X:
+// 			throw gcnew Exception( "X as Up Axis is not supported!" );
+// 			break;
+// 		case Scene::UP_AXIS::Y:
+// 			{
+// 				WMath::Vector4D^	Temp = dynamic_cast<WMath::Vector4D^>( Result );
+// 				Result = gcnew WMath::Vector( Temp->x, Temp->y, Temp->z );
+// 			}
+// 			break;
+// 		case Scene::UP_AXIS::Z:
+// 			{
+// 				WMath::Vector4D^	Temp = dynamic_cast<WMath::Vector4D^>( Result );
+// 				Result = gcnew WMath::Vector( Temp->x, Temp->z, -Temp->y );
+// 			}
+// 			break;
+// 		}
 
 		break;
 

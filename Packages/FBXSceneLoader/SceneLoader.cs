@@ -505,10 +505,19 @@ namespace FBX.SceneLoader
 			{	// Create a default node that is just here to respect the hierarchy for PRS evaluation
 				Matrix4x4	LocalTransform = _FBXNode.LocalTransform;
 				if ( _ParentNode == null )
-				{	// Tweak the root node's transform to match DirectX representation
-					LocalTransform.SetRow0( new Vector( 1.0f, 0.0f, 0.0f ) );
-					LocalTransform.SetRow1( new Vector( 0.0f, 0.0f, -1.0f ) );
-					LocalTransform.SetRow2( new Vector( 0.0f, 1.0f, 0.0f ) );
+				{
+					if ( _FBXNode.ParentScene.UpAxis == FBXImporter.Scene.UP_AXIS.Y )
+					{	// Nothing to change here...
+						LocalTransform.SetRow0( new Vector( 1.0f, 0.0f, 0.0f ) );
+						LocalTransform.SetRow1( new Vector( 0.0f, 1.0f, 0.0f ) );
+						LocalTransform.SetRow2( new Vector( 0.0f, 0.0f, 1.0f ) );
+					}
+					else
+					{	// Tweak the root node's transform to match DirectX representation
+ 						LocalTransform.SetRow0( new Vector( 1.0f, 0.0f, 0.0f ) );
+ 						LocalTransform.SetRow1( new Vector( 0.0f, 0.0f, -1.0f ) );
+ 						LocalTransform.SetRow2( new Vector( 0.0f, 1.0f, 0.0f ) );
+					}
 				}
 
 				NewNode = m_Scene.CreateNode( _FBXNode.Name, _ParentNode, LocalTransform );

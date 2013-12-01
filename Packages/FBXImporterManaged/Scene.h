@@ -107,6 +107,11 @@ namespace FBXImporter
 		Node^				m_RootNode;
 
 
+	internal:
+		// Temporary, valid during "Load()"
+		FbxManager*			m_pTempSDKManager;
+
+
 	public:		// PROPERTIES
 
 		property cli::array<Take^>^			Takes
@@ -143,6 +148,7 @@ namespace FBXImporter
 	public:		// METHODS
 
 		Scene()
+			: m_pTempSDKManager( NULL )
 		{
 			// Initialize lists
 			m_Takes = gcnew List<Take^>();
@@ -161,18 +167,18 @@ namespace FBXImporter
 		void		Load( System::String^ _FileName )
 		{
 			// The first thing to do is to create the FBX SDK manager which is the object allocator for almost all the classes in the SDK.
-			FbxManager*		pSDKManager = FbxManager::Create();
-			if ( !pSDKManager )
+			m_pTempSDKManager = FbxManager::Create();
+			if ( !m_pTempSDKManager )
 				throw gcnew Exception( "Unable to create the FBX SDK manager!" );
 
 			// Create an IOSettings object
-			FbxIOSettings*	pIOSettings = FbxIOSettings::Create( pSDKManager, IOSROOT );
-			pSDKManager->SetIOSettings( pIOSettings );
+			FbxIOSettings*	pIOSettings = FbxIOSettings::Create( m_pTempSDKManager, IOSROOT );
+			m_pTempSDKManager->SetIOSettings( pIOSettings );
 
 			// Load plugins from the executable directory
 			FbxString lPath = FbxGetApplicationDirectory();
 			FbxString lExtension = "dll";
-			pSDKManager->LoadPluginsDirectory( lPath.Buffer(), lExtension.Buffer() );
+			m_pTempSDKManager->LoadPluginsDirectory( lPath.Buffer(), lExtension.Buffer() );
 
 
 			// Clear lists & pointers
@@ -190,10 +196,10 @@ namespace FBXImporter
 			FbxManager::GetFileFormatVersion( lSDKMajor, lSDKMinor, lSDKRevision );
 
 			// Create the entity that will hold the scene.
-			FbxScene*	pScene = FbxScene::Create( pSDKManager, "" );
+			FbxScene*	pScene = FbxScene::Create( m_pTempSDKManager, "" );
 
 			// Create an importer
-			FbxImporter*	pImporter = FbxImporter::Create( pSDKManager,"" );
+			FbxImporter*	pImporter = FbxImporter::Create( m_pTempSDKManager,"" );
 			try
 			{
 				// Initialize the importer by providing a filename.
@@ -275,9 +281,9 @@ namespace FBXImporter
 			// Delete the FBX SDK manager. All the objects that have been allocated 
 			// using the FBX SDK manager and that haven't been explicitly destroyed 
 			// are automatically destroyed at the same time.
-			if ( pSDKManager )
-				pSDKManager->Destroy();
-			pSDKManager = NULL;
+			if ( m_pTempSDKManager )
+				m_pTempSDKManager->Destroy();
+			m_pTempSDKManager = NULL;
 		}
 
 		// Finds a node by name

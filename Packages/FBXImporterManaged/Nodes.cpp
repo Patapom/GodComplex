@@ -43,6 +43,12 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 	WMath::Vector^		Rotation = (float) Math::PI / 180.0f * FindProperty( "Lcl Rotation" )->AsVector3;
 	WMath::Vector^		Scale    = FindProperty( "Lcl Scaling" )->AsVector3;
 
+
+
+//Rotation->MakeZero();
+
+
+
 	WMath::Matrix4x4^	Pitch = WMath::Matrix4x4::ROT_X( Rotation->x );
 	WMath::Matrix4x4^	Yaw = WMath::Matrix4x4::ROT_Y( Rotation->y );
 	WMath::Matrix4x4^	Roll = WMath::Matrix4x4::ROT_Z( Rotation->z );
@@ -51,26 +57,32 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 	{
 	case 0:	// eEulerXYZ
 		m_LocalTransform = Pitch * Yaw * Roll;
+//		m_LocalTransform = Roll * Yaw * Pitch;
 		break;
 
 	case 1:	// eEulerXZY
 		m_LocalTransform = Pitch * Roll * Yaw;
+//		m_LocalTransform = Yaw * Roll * Pitch;
 		break;
 
 	case 2:	// eEulerYZX
 		m_LocalTransform = Yaw * Roll * Pitch;
+//		m_LocalTransform = Pitch * Roll * Yaw;
 		break;
 
 	case 3:	// eEulerYXZ
 		m_LocalTransform = Yaw * Pitch * Roll;
+//		m_LocalTransform = Roll * Pitch * Yaw;
 		break;
 
 	case 4:	// eEulerZXY
 		m_LocalTransform = Roll * Pitch * Yaw;
+//		m_LocalTransform = Yaw * Pitch * Roll;
 		break;
 
 	case 5:	// eEulerZYX
 		m_LocalTransform = Roll * Yaw * Pitch;
+//		m_LocalTransform = Pitch * Yaw * Roll;
 		break;
 
 	default:
@@ -106,10 +118,7 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 
 	case Scene::UP_AXIS::Z:
 		{
-// 			WMath::Matrix4x4^	RotX = gcnew WMath::Matrix4x4();
-// 								RotX->MakeRotX( -0.5f * (float) Math::PI );
-// 
-// 			m_LocalTransform *= RotX;
+			m_LocalTransform *= WMath::Matrix4x4::ROT_X( -0.5f * (float) Math::PI );
 			break;
 		}
 	}

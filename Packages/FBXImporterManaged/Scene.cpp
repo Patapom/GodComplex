@@ -28,9 +28,9 @@ void	Scene::ProcessSceneData( FbxScene* _pScene )
 		break;
 	}
 
-// 	if ( m_UpAxis != UP_AXIS::Z )
-// 		throw gcnew Exception( "Only Z-Up is supported for now!" );
-//  
+ 	if ( m_UpAxis == UP_AXIS::X )
+ 		throw gcnew Exception( "X-Up is not supported right now!" );
+
 	// ======================================
 	// 2] Read back the anim stacks
 	for ( int TakeIndex=0; TakeIndex < m_Takes->Count; TakeIndex++ )
