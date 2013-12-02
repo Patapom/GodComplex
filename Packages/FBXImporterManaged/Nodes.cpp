@@ -134,7 +134,7 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 */
 
  	m_AnimP = m_AnimR = m_AnimS = nullptr;
-	FbxAnimLayer*	pAnimLayer = _ParentScene->CurrentTake->AnimLayer;
+	FbxAnimLayer*	pAnimLayer = _ParentScene->CurrentTake != nullptr ? _ParentScene->CurrentTake->AnimLayer : NULL;
 	if ( pAnimLayer != NULL )
 	{
 		ObjectProperty^	Prop = FindProperty( "Lcl Translation" );

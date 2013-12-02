@@ -92,6 +92,15 @@
     <Filter Include="Resources\Shaders\DEBUG\EffectVolumetric">
       <UniqueIdentifier>{b121d7c4-8b68-4d49-b700-72f13635b10d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\Scenes">
+      <UniqueIdentifier>{c5f2e7cf-2e26-49b3-856d-9a0695314a4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{18000ebb-22e1-4262-89f3-dc51809cca32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\EffectGlobalIllum">
+      <UniqueIdentifier>{57c485d7-9d7a-4368-bb16-7e6fa4884255}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\Events.h">
@@ -246,6 +255,12 @@
     <ClInclude Include="Utility\FPSCamera.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectGlobalIllum.h">
+      <Filter>Intro\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\Scene.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -390,6 +405,12 @@
     <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesPS.cpp">
       <Filter>Intro\Effects</Filter>
     </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectGlobalIllum.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene\Scene.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib">
@@ -528,6 +549,9 @@
     </None>
     <None Include="Resources\Shaders\VolumetricPreComputeAtmospherePS.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderScene.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -418,6 +418,16 @@ namespace FBX.Scene.Nodes
 					Stream.Save( _Writer );
 			}
 
+			public VertexStream[]	FindStreamsByUsage( VertexStream.USAGE _Usage )
+			{
+				List<VertexStream>	Result = new List<VertexStream>();
+				foreach ( VertexStream VS in m_Streams )
+					if ( VS.Usage == _Usage )
+						Result.Add( VS );
+
+				return Result.ToArray();
+			}
+
 			#endregion
 		}
 

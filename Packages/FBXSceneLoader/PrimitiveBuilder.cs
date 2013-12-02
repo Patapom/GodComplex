@@ -51,7 +51,6 @@ namespace FBX.SceneLoader
 
 			// Build the primitive's vertex streams
 			int[]	StreamIndices = new int[8];
-			int		UVStreamIndex = 0;
 			foreach ( LoaderTempMesh.Primitive.VertexStream Stream in m_SourcePrimitive.VertexStreams )
 			{
 				Scene.Nodes.Mesh.Primitive.VertexStream.USAGE		Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.UNKNOWN;
@@ -80,7 +79,7 @@ namespace FBX.SceneLoader
 							Content = T;
 							for ( int i=0; i < _SourcePrimitive.VerticesCount; i++ )
 							{
-								T[i] = SceneLoader.ConvertPoint( Stream.Stream[i] as WMath.Point );
+								T[i] = SceneLoader.ConvertVector( Stream.Stream[i] as WMath.Vector );
 							}
 						}
 						break;
@@ -92,7 +91,7 @@ namespace FBX.SceneLoader
 							Content = T;
 							for ( int i=0; i < _SourcePrimitive.VerticesCount; i++ )
 							{
-								T[i] = SceneLoader.ConvertPoint( Stream.Stream[i] as WMath.Point );
+								T[i] = SceneLoader.ConvertVector( Stream.Stream[i] as WMath.Vector );
 							}
 						}
 						break;
@@ -104,13 +103,13 @@ namespace FBX.SceneLoader
 							Content = T;
 							for ( int i=0; i < _SourcePrimitive.VerticesCount; i++ )
 							{
-								T[i] = SceneLoader.ConvertPoint( Stream.Stream[i] as WMath.Point );
+								T[i] = SceneLoader.ConvertVector( Stream.Stream[i] as WMath.Vector );
 							}
 						}
 						break;
 					case LoaderTempMesh.VERTEX_INFO_TYPE.TEXCOORD1D:
 						{
-							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.POSITION;
+							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TEXCOORDS;
 							FieldType = Scene.Nodes.Mesh.Primitive.VertexStream.FIELD_TYPE.FLOAT;
 							float[]	T = new float[_SourcePrimitive.VerticesCount];
 							Content = T;
@@ -122,7 +121,7 @@ namespace FBX.SceneLoader
 						break;
 					case LoaderTempMesh.VERTEX_INFO_TYPE.TEXCOORD2D:
 						{
-							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.POSITION;
+							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TEXCOORDS;
 							FieldType = Scene.Nodes.Mesh.Primitive.VertexStream.FIELD_TYPE.FLOAT2;
 							Vector2[]	T = new Vector2[_SourcePrimitive.VerticesCount];
 							Content = T;
@@ -135,7 +134,7 @@ namespace FBX.SceneLoader
 						break;
 					case LoaderTempMesh.VERTEX_INFO_TYPE.TEXCOORD3D:
 						{
-							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.POSITION;
+							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TEXCOORDS;
 							FieldType = Scene.Nodes.Mesh.Primitive.VertexStream.FIELD_TYPE.FLOAT3;
 							Vector3[]	T = new Vector3[_SourcePrimitive.VerticesCount];
 							Content = T;
@@ -148,7 +147,7 @@ namespace FBX.SceneLoader
 						break;
 					case LoaderTempMesh.VERTEX_INFO_TYPE.COLOR_HDR:
 						{
-							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.POSITION;
+							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.COLOR_HDR;
 							FieldType = Scene.Nodes.Mesh.Primitive.VertexStream.FIELD_TYPE.FLOAT4;
 							Vector4[]	T = new Vector4[_SourcePrimitive.VerticesCount];
 							Content = T;

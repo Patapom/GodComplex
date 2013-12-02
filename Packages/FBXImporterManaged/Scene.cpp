@@ -28,9 +28,9 @@ void	Scene::ReadSceneData()
 		break;
 	}
 
-	if ( m_UpAxis != UP_AXIS::Z )
-		throw gcnew Exception( "Only Z-Up is supported for now!" );
- 
+// 	if ( m_UpAxis != UP_AXIS::Z )
+// 		throw gcnew Exception( "Only Z-Up is supported for now!" );
+//  
 	// ======================================
 	// 2] Read back the anim stacks
 	for ( int TakeIndex=0; TakeIndex < m_Takes->Count; TakeIndex++ )
@@ -93,7 +93,8 @@ Node^	Scene::CreateNodesHierarchy( Node^ _Parent, FbxNode* _pNode )
 	m_Nodes->Add( Result );
 
 	// Create child nodes
-	for ( int ChildIndex=0; ChildIndex < _pNode->GetChildCount(); ChildIndex++ )
+	int	ChildrenCount = _pNode->GetChildCount();
+	for ( int ChildIndex=0; ChildIndex < ChildrenCount; ChildIndex++ )
 	{
 		Node^	Child = CreateNodesHierarchy( Result, _pNode->GetChild( ChildIndex ) );
 		if ( Child != nullptr )

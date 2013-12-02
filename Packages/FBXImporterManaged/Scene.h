@@ -56,7 +56,7 @@ namespace FBXImporter
 		{
 			FbxAnimLayer*	get()
 			{
-				int	AnimLayersCount = m_pAnimStack->GetMemberCount<FbxAnimLayer>();
+				int	AnimLayersCount = m_pAnimStack != NULL ? m_pAnimStack->GetMemberCount<FbxAnimLayer>() : 0;
 				return AnimLayersCount > 0 ? m_pAnimStack->GetMember<FbxAnimLayer>( 0 ) : NULL;
 			}
 		}
@@ -353,11 +353,20 @@ namespace FBXImporter
 				{	// Standard materials
 					FbxClassId	ClassID = _pMaterial->GetClassId();
 					if ( ClassID.Is( FbxSurfaceLambert::ClassId ) )
-						NewMaterial = gcnew MaterialLambert( this, dynamic_cast<FbxSurfaceLambert*>( _pMaterial ) );
+					{
+						FbxSurfaceLambert*	pMat = (FbxSurfaceLambert*) _pMaterial;
+						NewMaterial = gcnew MaterialLambert( this, pMat );
+					}
 					else if ( ClassID.Is( FbxSurfacePhong::ClassId ) )
-						NewMaterial = gcnew MaterialPhong( this, dynamic_cast<FbxSurfacePhong*>( _pMaterial ) );
+					{
+						FbxSurfacePhong*	pMat = (FbxSurfacePhong*) _pMaterial;
+						NewMaterial = gcnew MaterialPhong( this, pMat );
+					}
 					else
-						NewMaterial = gcnew Material( this, dynamic_cast<FbxSurfaceMaterial*>( _pMaterial ) );
+					{
+						FbxSurfaceMaterial*	pMat = (FbxSurfaceMaterial*) _pMaterial;
+						NewMaterial = gcnew Material( this, pMat );
+					}
 // 					else
 // 						throw gcnew Exception( "Unsupported material class ID: " + Helpers::GetString( _pMaterial->GetClassId().GetName() ) + " for material \"" + Helpers::GetString( _pMaterial->GetName() ) + "\"!" );
 				}

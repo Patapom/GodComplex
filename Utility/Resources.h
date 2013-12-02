@@ -26,7 +26,7 @@ class ComputeShader;
 const U8*		LoadResourceBinary( U16 _ResourceID, const char* _pResourceType, U32* _pResourceSize=NULL );
 
 // Loads a text shader resource in memory
-// IMPORTANT NOTE: You MUST destroy the returned pointed once you're done with it !
+// IMPORTANT NOTE: You MUST destroy the returned pointer once you're done with it !
 char*			LoadResourceShader( U16 _ResourceID, U32& _CodeSize );
 
 // Create a full-fledged material given the shader resource ID and the vertex format

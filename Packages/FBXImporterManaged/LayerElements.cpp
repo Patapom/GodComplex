@@ -150,7 +150,7 @@ Object^	LayerElement::GetElementAt( FbxLayerElement* _pLayerElement, int _Index 
 	case	ELEMENT_TYPE::NORMAL:
 	case	ELEMENT_TYPE::TANGENT:
 	case	ELEMENT_TYPE::BINORMAL:
-		pElementVector4 = dynamic_cast<FbxLayerElementTemplate<FbxVector4>*>( _pLayerElement );
+		pElementVector4 = static_cast<FbxLayerElementTemplate<FbxVector4>*>( _pLayerElement );
 		GET_ELEMENT( pElementVector4, _Index, Helpers::ToVector4 )
 
 		switch ( UpAxis )
@@ -159,39 +159,48 @@ Object^	LayerElement::GetElementAt( FbxLayerElement* _pLayerElement, int _Index 
 			throw gcnew Exception( "X as Up Axis is not supported!" );
 			break;
 		case Scene::UP_AXIS::Y:
-			WMath::Vector^	Temp = dynamic_cast<WMath::Vector^>( Result );
-			Result = gcnew WMath::Vector( Temp->x, Temp->z, -Temp->y );
+			{
+				WMath::Vector4D^	Temp = dynamic_cast<WMath::Vector4D^>( Result );
+				Result = gcnew WMath::Vector( Temp->x, Temp->z, -Temp->y );
+			}
+			break;
+		case Scene::UP_AXIS::Z:
+			{
+				WMath::Vector4D^	Temp = dynamic_cast<WMath::Vector4D^>( Result );
+				Result = gcnew WMath::Vector( Temp->x, Temp->y, Temp->z );
+			}
 			break;
 		}
 
 		break;
 
 	case	ELEMENT_TYPE::UV:
-		pElementVector2 = dynamic_cast<FbxLayerElementTemplate<FbxVector2>*>( _pLayerElement );
+		pElementVector2 = static_cast<FbxLayerElementTemplate<FbxVector2>*>( _pLayerElement );
 		GET_ELEMENT( pElementVector2, _Index, Helpers::ToVector2 )
 		break;
 
 	// INTs
 	case	ELEMENT_TYPE::SMOOTHING:
-		pElementInt = dynamic_cast<FbxLayerElementTemplate<int>*>( _pLayerElement );
+		pElementInt = static_cast<FbxLayerElementTemplate<int>*>( _pLayerElement );
 		GET_ELEMENT( pElementInt, _Index, int )
 		break;
 
 	// VECTOR4D's
 	case	ELEMENT_TYPE::VERTEX_COLOR:
-		pElementColor = dynamic_cast<FbxLayerElementTemplate<FbxColor>*>( _pLayerElement );
+		pElementColor = static_cast<FbxLayerElementTemplate<FbxColor>*>( _pLayerElement );
 		GET_ELEMENT( pElementColor, _Index, Helpers::ToVector4 )
 		break;
 
 	// MATERIALs
 	case	ELEMENT_TYPE::MATERIAL:
-		pElementMaterial = dynamic_cast<FbxLayerElementMaterial*>( _pLayerElement );
+		pElementMaterial = static_cast<FbxLayerElementMaterial*>( _pLayerElement );
 
 		// For materials, direct mapping is obsolete, only material indices are supported
 		if ( ReferenceType == REFERENCE_TYPE::DIRECT )
 			throw gcnew Exception( "Materials mapped with DIRECT mode are not supported anymore! Are you using the latest FBX exporter version ?" );
 
-		return	m_Owner->Owner->ResolveMaterial( pElementMaterial->GetIndexArray().GetAt( _Index ) );
+		int	MaterialIndex = pElementMaterial->GetIndexArray().GetAt( _Index );
+		return	m_Owner->Owner->ResolveMaterial( MaterialIndex );
 	}
 
 	if ( Result == nullptr )
@@ -219,6 +228,8 @@ bool	LayerElement::Compare( LayerElement^ _Other )
 	cli::array<Object^>^	Array0 = ToArray();
 	cli::array<Object^>^	Array1 = _Other->ToArray();
 
+	if ( Array0 == nullptr && Array1 == nullptr )
+		return	true;	// Same empty array (happens if some infos were mapped BY_EDGE)
 	if ( Array0->Length != Array1->Length )
 		return	false;	// Not the same amount of elements...
 	if ( Array0->Length == 0 )

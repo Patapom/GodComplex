@@ -32,7 +32,8 @@ NodeMesh::NodeMesh( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : Node
 	if ( pControlPoints == NULL )
 		throw gcnew Exception( "List of control points for mesh \"" + Name + "\" is not initialized!" );
 
-	m_Vertices = gcnew cli::array<WMath::Point^>( pMesh->GetControlPointsCount() );
+	int	VerticesCount = pMesh->GetControlPointsCount();
+	m_Vertices = gcnew cli::array<WMath::Point^>( VerticesCount );
 
 	switch ( m_ParentScene->UpAxis )
 	{
@@ -41,12 +42,12 @@ NodeMesh::NodeMesh( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : Node
 		break;
 
 	case Scene::UP_AXIS::Y:
-		for ( int VertexIndex=0; VertexIndex < pMesh->GetControlPointsCount(); VertexIndex++ )
+		for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ )
 			m_Vertices[VertexIndex] = gcnew WMath::Point( (float) pControlPoints[VertexIndex][0], (float) pControlPoints[VertexIndex][2], -(float) pControlPoints[VertexIndex][1] );
 		break;
 
 	case Scene::UP_AXIS::Z:
-		for ( int VertexIndex=0; VertexIndex < pMesh->GetControlPointsCount(); VertexIndex++ )
+		for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ )
 			m_Vertices[VertexIndex] = gcnew WMath::Point( (float) pControlPoints[VertexIndex][0], (float) pControlPoints[VertexIndex][1], (float) pControlPoints[VertexIndex][2] );
 		break;
 	}
@@ -58,7 +59,8 @@ NodeMesh::NodeMesh( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : Node
 	List<int>^			PolygonVertexOffsets = gcnew List<int>();
 
 	int	PolygonVertexOffset = 0;
-	for ( int PolygonIndex=0; PolygonIndex < pMesh->GetPolygonCount(); PolygonIndex++ )
+	int	PolygonsCount = pMesh->GetPolygonCount();
+	for ( int PolygonIndex=0; PolygonIndex < PolygonsCount; PolygonIndex++ )
 	{
 		// We convert polygons into triangles assuming they are CONVEX !
 		// (I don't intend to support concave polygon splitting any time soon!)
