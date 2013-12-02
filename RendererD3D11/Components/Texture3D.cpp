@@ -1,58 +1,14 @@
 #include "Texture3D.h"
 
-Texture3D::Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging, bool _bWriteable, bool _bUnOrderedAccess ) : Component( _Device )
+Texture3D::Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging, bool _bUnOrderedAccess )
+	: Component( _Device )
+	, m_Width( _Width )
+	, m_Height( _Height )
+	, m_Depth( _Depth )
 	, m_Format( _Format )
+	, m_MipLevelsCount( _MipLevelsCount )
 {
-	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
-	ASSERT( _Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
-	ASSERT( _Depth <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
-
-	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
-		m_LastAssignedSlots[ShaderStageIndex] = -1;
-	m_LastAssignedSlotsUAV = -1;
-
-	m_Width = _Width;
-	m_Height = _Height;
-	m_Depth = _Depth;
-
-	m_MipLevelsCount = ComputeMipLevelsCount( _Width, _Height, _Depth, _MipLevelsCount );
-
-	D3D11_TEXTURE3D_DESC	Desc;
-	Desc.Width = _Width;
-	Desc.Height = _Height;
-	Desc.Depth = _Depth;
-	Desc.MipLevels = m_MipLevelsCount;
-	Desc.Format = _Format.DirectXFormat();
-	Desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG( 0 );
-
-	if ( _bStaging )
-	{
-		Desc.Usage = D3D11_USAGE_STAGING;
-		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | (_bWriteable ? D3D11_CPU_ACCESS_WRITE : 0);
-		Desc.BindFlags = 0;
-	}
-	else
-	{
-		Desc.Usage = _ppContent != NULL ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
-		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
-		Desc.BindFlags = _ppContent != NULL ? D3D11_BIND_SHADER_RESOURCE : (D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | (_bUnOrderedAccess ? D3D11_BIND_UNORDERED_ACCESS: 0));
-	}
-
-	if ( _ppContent != NULL )
-	{
-		D3D11_SUBRESOURCE_DATA  pInitialData[MAX_TEXTURE_POT];
-		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
-		{
-			pInitialData[MipLevelIndex].pSysMem = _ppContent[MipLevelIndex];
-			pInitialData[MipLevelIndex].SysMemPitch = _Width * _Format.Size();
-			pInitialData[MipLevelIndex].SysMemSlicePitch = _Width * _Height * _Format.Size();
-			NextMipSize( _Width, _Height, _Depth );
-		}
-
-		Check( m_Device.DXDevice().CreateTexture3D( &Desc, pInitialData, &m_pTexture ) );
-	}
-	else
-		Check( m_Device.DXDevice().CreateTexture3D( &Desc, NULL, &m_pTexture ) );
+	Init( _ppContent, _bStaging, _bUnOrderedAccess );
 }
 
 static void		ReleaseDirectXObject( void*& _pValue, void* _pUserData )
@@ -71,6 +27,62 @@ Texture3D::~Texture3D()
 
 	m_pTexture->Release();
 	m_pTexture = NULL;
+}
+
+void	Texture3D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOrderedAccess, TextureFilePOM::MipDescriptor* _pMipDescriptors )
+{
+	ASSERT( m_Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
+	ASSERT( m_Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
+	ASSERT( m_Depth <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
+
+	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
+		m_LastAssignedSlots[ShaderStageIndex] = -1;
+	m_LastAssignedSlotsUAV = -1;
+
+	m_MipLevelsCount = ComputeMipLevelsCount( m_Width, m_Height, m_Depth, m_MipLevelsCount );
+
+	D3D11_TEXTURE3D_DESC	Desc;
+	Desc.Width = m_Width;
+	Desc.Height = m_Height;
+	Desc.Depth = m_Depth;
+	Desc.MipLevels = m_MipLevelsCount;
+	Desc.Format = m_Format.DirectXFormat();
+	Desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG( 0 );
+
+	if ( _bStaging )
+	{
+		Desc.Usage = D3D11_USAGE_STAGING;
+		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+		Desc.BindFlags = 0;
+	}
+	else
+	{
+		Desc.Usage = _ppContent != NULL ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
+		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
+		Desc.BindFlags = _ppContent != NULL ? D3D11_BIND_SHADER_RESOURCE : (D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | (_bUnOrderedAccess ? D3D11_BIND_UNORDERED_ACCESS: 0));
+	}
+
+	if ( _ppContent != NULL )
+	{
+		D3D11_SUBRESOURCE_DATA  pInitialData[MAX_TEXTURE_POT];
+		int	Width = m_Width;
+		int	Height = m_Height;
+		int	Depth = m_Depth;
+		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+		{
+			int	RowPitch = _pMipDescriptors != NULL ? _pMipDescriptors[MipLevelIndex].RowPitch : Width * m_Format.Size();
+			int	DepthPitch = _pMipDescriptors != NULL ? _pMipDescriptors[MipLevelIndex].DepthPitch : Height * RowPitch;
+
+			pInitialData[MipLevelIndex].pSysMem = _ppContent[MipLevelIndex];
+			pInitialData[MipLevelIndex].SysMemPitch = RowPitch;
+			pInitialData[MipLevelIndex].SysMemSlicePitch = DepthPitch;
+			NextMipSize( Width, Height, Depth );
+		}
+
+		Check( m_Device.DXDevice().CreateTexture3D( &Desc, pInitialData, &m_pTexture ) );
+	}
+	else
+		Check( m_Device.DXDevice().CreateTexture3D( &Desc, NULL, &m_pTexture ) );
 }
 
 ID3D11ShaderResourceView*	Texture3D::GetShaderView( int _MipLevelStart, int _MipLevelsCount ) const
@@ -301,92 +313,143 @@ int	 Texture3D::ComputeMipLevelsCount( int _Width, int _Height, int _Depth, int 
 
 #ifdef _DEBUG
 
-#include <stdio.h>
+#include "..\..\Utility\TextureFilePOM.h"
 
 // I/O for staging textures
 void	Texture3D::Save( const char* _pFileName )
 {
-	FILE*	pFile;
-	fopen_s( &pFile, _pFileName, "wb" );
-	ASSERT( pFile != NULL, "Can't create file!" );
+	TextureFilePOM	POM;
+	POM.AllocateContent( *this );
 
-	// Write the type and format
-	U8		Type = 0x02;
-	U8		Format = U32(m_Format.DirectXFormat()) & 0xFF;
-	fwrite( &Type, sizeof(U8), 1, pFile );
-	fwrite( &Format, sizeof(U8), 1, pFile );
-
-	// Write the dimensions
-	fwrite( &m_Width, sizeof(int), 1, pFile );
-	fwrite( &m_Height, sizeof(int), 1, pFile );
-	fwrite( &m_Depth, sizeof(int), 1, pFile );
-	fwrite( &m_MipLevelsCount, sizeof(int), 1, pFile );
-
-	// Write each mip
-	int	Depth = m_Depth;
+	// Fill up content
+ 	int	Depth = m_Depth;
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
 		Map( MipLevelIndex );
-		fwrite( &m_LockedResource.RowPitch, sizeof(int), 1, pFile );
-		fwrite( &m_LockedResource.DepthPitch, sizeof(int), 1, pFile );
-		for ( int SliceIndex=0; SliceIndex < Depth; SliceIndex++ )
-			fwrite( ((U8*) m_LockedResource.pData) + SliceIndex * m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
+
+		POM.m_ppContent[MipLevelIndex] = new void*[Depth*m_LockedResource.DepthPitch];
+
+		POM.m_pMipsDescriptors[MipLevelIndex].RowPitch = m_LockedResource.RowPitch;
+		POM.m_pMipsDescriptors[MipLevelIndex].DepthPitch = m_LockedResource.DepthPitch;
+
+		memcpy_s( POM.m_ppContent[MipLevelIndex], Depth * m_LockedResource.DepthPitch, m_LockedResource.pData, Depth * m_LockedResource.DepthPitch );
 		UnMap( MipLevelIndex );
 
-		Depth = MAX( 1, Depth >> 1 );
+ 		Depth = MAX( 1, Depth >> 1 );
 	}
 
-	// We're done!
-	fclose( pFile );
+	POM.Save( _pFileName );
+
+// 	FILE*	pFile;
+// 	fopen_s( &pFile, _pFileName, "wb" );
+// 	ASSERT( pFile != NULL, "Can't create file!" );
+// 
+// 	// Write the type and format
+// 	U8		Type = 0x02;
+// 	U8		Format = U32(m_Format.DirectXFormat()) & 0xFF;
+// 	fwrite( &Type, sizeof(U8), 1, pFile );
+// 	fwrite( &Format, sizeof(U8), 1, pFile );
+// 
+// 	// Write the dimensions
+// 	fwrite( &m_Width, sizeof(int), 1, pFile );
+// 	fwrite( &m_Height, sizeof(int), 1, pFile );
+// 	fwrite( &m_Depth, sizeof(int), 1, pFile );
+// 	fwrite( &m_MipLevelsCount, sizeof(int), 1, pFile );
+// 
+// 	// Write each mip
+// 	int	Depth = m_Depth;
+// 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+// 	{
+// 		Map( MipLevelIndex );
+// 		fwrite( &m_LockedResource.RowPitch, sizeof(int), 1, pFile );
+// 		fwrite( &m_LockedResource.DepthPitch, sizeof(int), 1, pFile );
+// 		for ( int SliceIndex=0; SliceIndex < Depth; SliceIndex++ )
+// 			fwrite( ((U8*) m_LockedResource.pData) + SliceIndex * m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
+// 		UnMap( MipLevelIndex );
+// 
+// 		Depth = MAX( 1, Depth >> 1 );
+// 	}
+// 
+// 	// We're done!
+// 	fclose( pFile );
 }
 
 void	Texture3D::Load( const char* _pFileName )
 {
-	FILE*	pFile;
-	fopen_s( &pFile, _pFileName, "rb" );
-	ASSERT( pFile != NULL, "Can't load file!" );
+	TextureFilePOM	POM;
+	POM.Load( _pFileName );
 
-	// Read the type and format
-	U8		Type, Format;
-	fread_s( &Type, sizeof(U8), sizeof(U8), 1, pFile );
-	fread_s( &Format, sizeof(U8), sizeof(U8), 1, pFile );
-	DXGI_FORMAT	FileFormat = DXGI_FORMAT( Format );
-	ASSERT( FileFormat == m_Format.DirectXFormat(), "Incompatible format!" );
-	ASSERT( Type == 0x02, "File is not a texture 3D!" );
-
-	// Read the dimensions
-	int	W, H, D, M;
-	fread_s( &W, sizeof(int), sizeof(int), 1, pFile );
-	fread_s( &H, sizeof(int), sizeof(int), 1, pFile );
-	fread_s( &D, sizeof(int), sizeof(int), 1, pFile );
-	fread_s( &M, sizeof(int), sizeof(int), 1, pFile );
-
-	ASSERT( W == m_Width, "Incompatible width!" );
-	ASSERT( H == m_Height, "Incompatible height!" );
-	ASSERT( D == m_Depth, "Incompatible depth!" );
-	ASSERT( M == m_MipLevelsCount, "Incompatible mip levels count!" );
-
-	// Read each mip
-	int	Depth = m_Depth;
+	// Read up content
+ 	int	Depth = m_Depth;
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
 		Map( MipLevelIndex );
-		int	RowPitch, DepthPitch;
-		fread_s( &RowPitch, sizeof(int), sizeof(int), 1, pFile );
-		fread_s( &DepthPitch, sizeof(int), sizeof(int), 1, pFile );
-		ASSERT( RowPitch == m_LockedResource.RowPitch, "Incompatible row pitch!" );
-		ASSERT( DepthPitch == m_LockedResource.DepthPitch, "Incompatible depth pitch!" );
 
-		for ( int SliceIndex=0; SliceIndex < Depth; SliceIndex++ )
-			fread_s( ((U8*) m_LockedResource.pData) + SliceIndex * m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
+		ASSERT( POM.m_pMipsDescriptors[MipLevelIndex].RowPitch == m_LockedResource.RowPitch, "Incompatible row pitch!" );
+		ASSERT( POM.m_pMipsDescriptors[MipLevelIndex].DepthPitch == m_LockedResource.DepthPitch, "Incompatible depth pitch!" );
 
+		memcpy_s( m_LockedResource.pData, Depth * m_LockedResource.DepthPitch, POM.m_ppContent[MipLevelIndex], Depth * m_LockedResource.DepthPitch );
 		UnMap( MipLevelIndex );
 
 		Depth = MAX( 1, Depth >> 1 );
 	}
 
-	// We're done!
-	fclose( pFile );
+// 	FILE*	pFile;
+// 	fopen_s( &pFile, _pFileName, "rb" );
+// 	ASSERT( pFile != NULL, "Can't load file!" );
+// 
+// 	// Read the type and format
+// 	U8		Type, Format;
+// 	fread_s( &Type, sizeof(U8), sizeof(U8), 1, pFile );
+// 	fread_s( &Format, sizeof(U8), sizeof(U8), 1, pFile );
+// 	DXGI_FORMAT	FileFormat = DXGI_FORMAT( Format );
+// 	ASSERT( FileFormat == m_Format.DirectXFormat(), "Incompatible format!" );
+// 	ASSERT( Type == 0x02, "File is not a texture 3D!" );
+// 
+// 	// Read the dimensions
+// 	int	W, H, D, M;
+// 	fread_s( &W, sizeof(int), sizeof(int), 1, pFile );
+// 	fread_s( &H, sizeof(int), sizeof(int), 1, pFile );
+// 	fread_s( &D, sizeof(int), sizeof(int), 1, pFile );
+// 	fread_s( &M, sizeof(int), sizeof(int), 1, pFile );
+// 
+// 	ASSERT( W == m_Width, "Incompatible width!" );
+// 	ASSERT( H == m_Height, "Incompatible height!" );
+// 	ASSERT( D == m_Depth, "Incompatible depth!" );
+// 	ASSERT( M == m_MipLevelsCount, "Incompatible mip levels count!" );
+// 
+// 	// Read each mip
+// 	int	Depth = m_Depth;
+// 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+// 	{
+// 		Map( MipLevelIndex );
+// 		int	RowPitch, DepthPitch;
+// 		fread_s( &RowPitch, sizeof(int), sizeof(int), 1, pFile );
+// 		fread_s( &DepthPitch, sizeof(int), sizeof(int), 1, pFile );
+// 		ASSERT( RowPitch == m_LockedResource.RowPitch, "Incompatible row pitch!" );
+// 		ASSERT( DepthPitch == m_LockedResource.DepthPitch, "Incompatible depth pitch!" );
+// 
+// 		for ( int SliceIndex=0; SliceIndex < Depth; SliceIndex++ )
+// 			fread_s( ((U8*) m_LockedResource.pData) + SliceIndex * m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
+// 
+// 		UnMap( MipLevelIndex );
+// 
+// 		Depth = MAX( 1, Depth >> 1 );
+// 	}
+// 
+// 	// We're done!
+// 	fclose( pFile );
+}
+
+Texture3D::Texture3D( Device& _Device, const TextureFilePOM& _POM, bool _bUnOrderedAccess )
+	: Component( _Device )
+	, m_Width( _POM.m_Width )
+	, m_Height( _POM.m_Height )
+	, m_Depth( _POM.m_ArraySizeOrDepth )
+	, m_Format( *_POM.m_pPixelFormat )
+	, m_MipLevelsCount( _POM.m_MipsCount )
+{
+	Init( _POM.m_ppContent, false, _bUnOrderedAccess, _POM.m_pMipsDescriptors );
 }
 
 #endif

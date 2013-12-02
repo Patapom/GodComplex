@@ -370,6 +370,17 @@ namespace WMath
 			return	null;//(_Source - m_Min) / (m_Max - m_Min);
 		}
 
+		public Point[]			GetCorners()
+		{
+			Point[]	Result = new Point[8];
+			for ( int i=0; i < 8; i++ )
+			{
+				Result[i] = m_Min + new Vector( (i&1) * DimX, ((i>>1)&1) * DimY, ((i>>2)&1) * DimZ );
+			}
+
+			return Result;
+		}
+
 		// Arithmetic operators
 		public static BoundingBox	operator+( BoundingBox _Op0, Vector _Op1 )							{ return new BoundingBox( _Op0.m_Min + _Op1, _Op0.m_Max + _Op1 ); }
 		public static BoundingBox	operator*( BoundingBox _Op0, float _Op1 )							{ return new BoundingBox( _Op0.m_Min * _Op1, _Op0.m_Max * _Op1 ); }

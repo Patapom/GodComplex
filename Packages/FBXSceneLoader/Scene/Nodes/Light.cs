@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using SharpDX;
+using WMath;
 
 namespace FBX.Scene.Nodes
 {
@@ -33,7 +33,7 @@ namespace FBX.Scene.Nodes
 		#region FIELDS
 
 		protected LIGHT_TYPE			m_Type = LIGHT_TYPE.POINT;
-		protected Vector3				m_Color = Vector3.Zero;
+		protected Vector				m_Color = Vector.Zero;
 		protected float					m_Intensity = 0.0f;
 		protected bool					m_bCastShadow = false;
 		protected bool					m_bEnableNearAttenuation = false;
@@ -50,7 +50,7 @@ namespace FBX.Scene.Nodes
 		protected Node					m_TargetNode = null;
 		protected int					m_TempTargetNodeID = -1;	// De-serialized target node ID waiting for rebinding as reference
 
-		protected Vector3				m_CachedDirection = Vector3.UnitY;
+		protected Vector				m_CachedDirection = Vector.UnitY;
 
 		protected static float			ms_GlobalIntensityMultiplier = 1.0f;
 
@@ -72,7 +72,7 @@ namespace FBX.Scene.Nodes
 		/// <summary>
 		/// Gets the light direction
 		/// </summary>
-		public Vector3				Direction
+		public Vector				Direction
 		{
 			get { return m_CachedDirection; }
 		}
@@ -80,7 +80,7 @@ namespace FBX.Scene.Nodes
 		/// <summary>
 		/// Gets or sets the light color
 		/// </summary>
-		public Vector3				Color
+		public Vector				Color
 		{
 			get { return m_Color; }
 			set { m_Color = value; }
@@ -222,7 +222,7 @@ namespace FBX.Scene.Nodes
 
 		#region METHODS
 
-		internal Light( Scene _Owner, int _ID, string _Name, Node _Parent, Matrix _Local2Parent ) : base( _Owner, _ID, _Name, _Parent, _Local2Parent )
+		internal Light( Scene _Owner, int _ID, string _Name, Node _Parent, Matrix4x4 _Local2Parent ) : base( _Owner, _ID, _Name, _Parent, _Local2Parent )
 		{
 		}
 

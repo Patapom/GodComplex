@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using SharpDX;
+using WMath;
 
 namespace FBX.Scene.Nodes
 {
@@ -33,7 +33,7 @@ namespace FBX.Scene.Nodes
 		protected int				m_ID = -1;
 		protected Node				m_Parent = null;
 		protected string			m_Name = null;
-		protected Matrix			m_Local2Parent = Matrix.Identity;
+		protected Matrix4x4			m_Local2Parent = Matrix4x4.Identity;
 		protected bool				m_bVisible = true;
 
 		protected List<Node>		m_Children = new List<Node>();
@@ -43,13 +43,13 @@ namespace FBX.Scene.Nodes
 		protected bool				m_bPropagatedVisibility = true;
 
 		protected bool				m_bFirstLocal2WorldAssignment = true;
-		protected Matrix			m_Local2World = Matrix.Identity;
-		protected Matrix			m_PreviousLocal2World = Matrix.Identity;	// The object transform matrix from the previous frame
+		protected Matrix4x4			m_Local2World = Matrix4x4.Identity;
+		protected Matrix4x4			m_PreviousLocal2World = Matrix4x4.Identity;	// The object transform matrix from the previous frame
 
 		protected bool				m_bDeltaMotionDirty = true;
-		protected Vector3			m_DeltaPosition = Vector3.Zero;
-		protected Quaternion		m_DeltaRotation = Quaternion.Identity;
-		protected Vector3			m_DeltaPivot = Vector3.Zero;
+		protected Vector			m_DeltaPosition = Vector.Zero;
+		protected Quat				m_DeltaRotation = Quat.Identity;
+		protected Vector			m_DeltaPivot = Vector.Zero;
 
 		#endregion
 
@@ -60,12 +60,12 @@ namespace FBX.Scene.Nodes
 		public int					ID				{ get { return m_ID; } }
 		public virtual Node			Parent			{ get { return m_Parent; } }
 		public virtual string		Name			{ get { return m_Name; } }
-		public virtual Matrix		Local2Parent	{ get { return m_Local2Parent; } set { m_Local2Parent = value; PropagateDirtyState(); } }
-		public virtual Matrix		Local2World		{ get { return m_Local2World; } set { m_Local2World = value; } }
+		public virtual Matrix4x4	Local2Parent	{ get { return m_Local2Parent; } set { m_Local2Parent = value; PropagateDirtyState(); } }
+		public virtual Matrix4x4	Local2World		{ get { return m_Local2World; } set { m_Local2World = value; } }
 		public virtual bool			Visible			{ get { return m_bVisible && m_bPropagatedVisibility; } set { m_bVisible = value; PropagateDirtyState(); } }
 		public virtual Node[]		Children		{ get { return m_Children.ToArray(); } }
 
-		public virtual Matrix		PreviousLocal2World	{ get { return m_PreviousLocal2World; } set { m_PreviousLocal2World = value; } }
+		public virtual Matrix4x4	PreviousLocal2World	{ get { return m_PreviousLocal2World; } set { m_PreviousLocal2World = value; } }
 
 		/// <summary>
 		/// Internal event one can subscribe to to be notified a node was updated
@@ -84,7 +84,7 @@ namespace FBX.Scene.Nodes
 		/// <param name="_Name"></param>
 		/// <param name="_Parent"></param>
 		/// <param name="_Local2Parent"></param>
-		internal Node( Scene _Owner, int _ID, string _Name, Node _Parent, Matrix _Local2Parent )
+		internal Node( Scene _Owner, int _ID, string _Name, Node _Parent, Matrix4x4 _Local2Parent )
 		{
 			m_Owner = _Owner;
 			m_ID = _ID;
@@ -117,22 +117,22 @@ namespace FBX.Scene.Nodes
 				m_Parent.AddChild( this );
 
 			// Read the matrix
-			m_Local2Parent.M11 = _Reader.ReadSingle();
-			m_Local2Parent.M12 = _Reader.ReadSingle();
-			m_Local2Parent.M13 = _Reader.ReadSingle();
-			m_Local2Parent.M14 = _Reader.ReadSingle();
-			m_Local2Parent.M21 = _Reader.ReadSingle();
-			m_Local2Parent.M22 = _Reader.ReadSingle();
-			m_Local2Parent.M23 = _Reader.ReadSingle();
-			m_Local2Parent.M24 = _Reader.ReadSingle();
-			m_Local2Parent.M31 = _Reader.ReadSingle();
-			m_Local2Parent.M32 = _Reader.ReadSingle();
-			m_Local2Parent.M33 = _Reader.ReadSingle();
-			m_Local2Parent.M34 = _Reader.ReadSingle();
-			m_Local2Parent.M41 = _Reader.ReadSingle();
-			m_Local2Parent.M42 = _Reader.ReadSingle();
-			m_Local2Parent.M43 = _Reader.ReadSingle();
-			m_Local2Parent.M44 = _Reader.ReadSingle();
+			m_Local2Parent.m[0,0] = _Reader.ReadSingle();
+			m_Local2Parent.m[0,1] = _Reader.ReadSingle();
+			m_Local2Parent.m[0,2] = _Reader.ReadSingle();
+			m_Local2Parent.m[0,3] = _Reader.ReadSingle();
+			m_Local2Parent.m[1,0] = _Reader.ReadSingle();
+			m_Local2Parent.m[1,1] = _Reader.ReadSingle();
+			m_Local2Parent.m[1,2] = _Reader.ReadSingle();
+			m_Local2Parent.m[1,3] = _Reader.ReadSingle();
+			m_Local2Parent.m[2,0] = _Reader.ReadSingle();
+			m_Local2Parent.m[2,1] = _Reader.ReadSingle();
+			m_Local2Parent.m[2,2] = _Reader.ReadSingle();
+			m_Local2Parent.m[2,3] = _Reader.ReadSingle();
+			m_Local2Parent.m[3,0] = _Reader.ReadSingle();
+			m_Local2Parent.m[3,1] = _Reader.ReadSingle();
+			m_Local2Parent.m[3,2] = _Reader.ReadSingle();
+			m_Local2Parent.m[3,3] = _Reader.ReadSingle();
 
 			// Read specific data
 			LoadSpecific( _Reader );
@@ -242,7 +242,7 @@ namespace FBX.Scene.Nodes
 		/// <param name="_DeltaPosition">Returns the difference in position from last frame</param>
 		/// <param name="_DeltaRotation">Returns the difference in rotation from last frame</param>
 		/// <param name="_Pivot">Returns the pivot position the object rotated about</param>
-		public void		ComputeDeltaPositionRotation( out Vector3 _DeltaPosition, out Quaternion _DeltaRotation, out Vector3 _Pivot )
+		public void		ComputeDeltaPositionRotation( out Vector _DeltaPosition, out Quat _DeltaRotation, out Vector _Pivot )
 		{
 			if ( m_bDeltaMotionDirty )
 				Scene.ComputeObjectDeltaPositionRotation( ref m_PreviousLocal2World, ref m_Local2World, out m_DeltaPosition, out m_DeltaRotation, out m_DeltaPivot );
@@ -261,22 +261,22 @@ namespace FBX.Scene.Nodes
 			_Writer.Write( m_Name );
 
 			// Write the matrix
-			_Writer.Write( m_Local2Parent.M11 );
-			_Writer.Write( m_Local2Parent.M12 );
-			_Writer.Write( m_Local2Parent.M13 );
-			_Writer.Write( m_Local2Parent.M14 );
-			_Writer.Write( m_Local2Parent.M21 );
-			_Writer.Write( m_Local2Parent.M22 );
-			_Writer.Write( m_Local2Parent.M23 );
-			_Writer.Write( m_Local2Parent.M24 );
-			_Writer.Write( m_Local2Parent.M31 );
-			_Writer.Write( m_Local2Parent.M32 );
-			_Writer.Write( m_Local2Parent.M33 );
-			_Writer.Write( m_Local2Parent.M34 );
-			_Writer.Write( m_Local2Parent.M41 );
-			_Writer.Write( m_Local2Parent.M42 );
-			_Writer.Write( m_Local2Parent.M43 );
-			_Writer.Write( m_Local2Parent.M44 );
+			_Writer.Write( m_Local2Parent.m[0,0] );
+			_Writer.Write( m_Local2Parent.m[0,1] );
+			_Writer.Write( m_Local2Parent.m[0,2] );
+			_Writer.Write( m_Local2Parent.m[0,3] );
+			_Writer.Write( m_Local2Parent.m[1,0] );
+			_Writer.Write( m_Local2Parent.m[1,1] );
+			_Writer.Write( m_Local2Parent.m[1,2] );
+			_Writer.Write( m_Local2Parent.m[1,3] );
+			_Writer.Write( m_Local2Parent.m[2,0] );
+			_Writer.Write( m_Local2Parent.m[2,1] );
+			_Writer.Write( m_Local2Parent.m[2,2] );
+			_Writer.Write( m_Local2Parent.m[2,3] );
+			_Writer.Write( m_Local2Parent.m[3,0] );
+			_Writer.Write( m_Local2Parent.m[3,1] );
+			_Writer.Write( m_Local2Parent.m[3,2] );
+			_Writer.Write( m_Local2Parent.m[3,3] );
 
 			// Write specific data
 			SaveSpecific( _Writer );

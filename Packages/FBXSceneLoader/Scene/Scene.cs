@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
-//using WMath;
-using SharpDX;
+using WMath;
 using FBX.Scene.Nodes;
 using FBX.Scene.Materials;
 
@@ -93,6 +92,14 @@ namespace FBX.Scene
 			get { return m_MaterialParameters.ToArray(); }
 		}
 
+		/// <summary>
+		/// Gets the scene's textures as an array
+		/// </summary>
+		public Texture2D[]		Textures
+		{
+			get { return m_Textures.ToArray(); }
+		}
+
 		#endregion
 
 		#region METHODS
@@ -114,7 +121,7 @@ namespace FBX.Scene
 		/// <param name="_Parent"></param>
 		/// <param name="_Local2Parent"></param>
 		/// <returns></returns>
-		public Node			CreateNode( string _Name, Node _Parent, Matrix _Local2Parent )
+		public Node			CreateNode( string _Name, Node _Parent, Matrix4x4 _Local2Parent )
 		{
 			Node	Result = new Node( this, m_NodeIDCounter++, _Name, _Parent, _Local2Parent );
 			m_ID2Node[Result.ID] = Result;
@@ -137,7 +144,7 @@ namespace FBX.Scene
 		/// <param name="_Parent"></param>
 		/// <param name="_Local2Parent"></param>
 		/// <returns></returns>
-		public Mesh			CreateMesh( string _Name, Node _Parent, Matrix _Local2Parent )
+		public Mesh			CreateMesh( string _Name, Node _Parent, Matrix4x4 _Local2Parent )
 		{
 			Mesh	Result = new Mesh( this, m_NodeIDCounter++, _Name, _Parent, _Local2Parent );
 			m_ID2Node[Result.ID] = Result;
@@ -153,7 +160,7 @@ namespace FBX.Scene
 		/// <param name="_Parent"></param>
 		/// <param name="_Local2Parent"></param>
 		/// <returns></returns>
-		public Camera		CreateCamera( string _Name, Node _Parent, Matrix _Local2Parent )
+		public Camera		CreateCamera( string _Name, Node _Parent, Matrix4x4 _Local2Parent )
 		{
 			Camera	Result = new Camera( this, m_NodeIDCounter++, _Name, _Parent, _Local2Parent );
 			m_ID2Node[Result.ID] = Result;
@@ -169,7 +176,7 @@ namespace FBX.Scene
 		/// <param name="_Parent"></param>
 		/// <param name="_Local2Parent"></param>
 		/// <returns></returns>
-		public Light		CreateLight( string _Name, Node _Parent, Matrix _Local2Parent )
+		public Light		CreateLight( string _Name, Node _Parent, Matrix4x4 _Local2Parent )
 		{
 			Light	Result = new Light( this, m_NodeIDCounter++, _Name, _Parent, _Local2Parent );
 			m_ID2Node[Result.ID] = Result;
@@ -496,38 +503,39 @@ namespace FBX.Scene
 		/// <param name="_DeltaPosition">Returns the difference in position from last frame</param>
 		/// <param name="_DeltaRotation">Returns the difference in rotation from last frame</param>
 		/// <param name="_Pivot">Returns the pivot position the object rotated about</param>
-		public static void	ComputeObjectDeltaPositionRotation( ref Matrix _Previous, ref Matrix _Current, out Vector3 _DeltaPosition, out Quaternion _DeltaRotation, out Vector3 _Pivot )
+		public static void	ComputeObjectDeltaPositionRotation( ref Matrix4x4 _Previous, ref Matrix4x4 _Current, out Vector _DeltaPosition, out Quat _DeltaRotation, out Vector _Pivot )
 		{
 			// Compute the rotation the matrix sustained
-			Quaternion	PreviousRotation = QuatFromMatrix( _Previous );
-			Quaternion	CurrentRotation = QuatFromMatrix( _Current );
+			Quat	PreviousRotation = QuatFromMatrix( _Previous );
+			Quat	CurrentRotation = QuatFromMatrix( _Current );
 			_DeltaRotation = QuatMultiply( QuatInvert( PreviousRotation ), CurrentRotation );
 
-			Vector3	PreviousPosition = (Vector3) _Previous.Row4;
-			Vector3	CurrentPosition = (Vector3) _Current.Row4;
+			Vector	PreviousPosition = (Vector) _Previous.GetRow3();
+			Vector	CurrentPosition = (Vector) _Current.GetRow3();
 
 			// Retrieve the pivot point about which that rotation occurred
 			_Pivot = CurrentPosition;
 
-			float	RotationAngle = _DeltaRotation.Angle;
+			AngleAxis	AA = new AngleAxis( _DeltaRotation );
+			float	RotationAngle = AA.Angle;
 			if ( Math.Abs( RotationAngle ) > 1e-4f )
 			{
-				Vector3	RotationAxis = _DeltaRotation.Axis;
-				Vector3	Previous2Current = CurrentPosition - PreviousPosition;
+				Vector	RotationAxis = AA.Axis;
+				Vector	Previous2Current = CurrentPosition - PreviousPosition;
 				float	L = Previous2Current.Length();
 				if ( L > 1e-4f )
 				{
 					Previous2Current /= L;
-					Vector3	N = Vector3.Cross( Previous2Current, RotationAxis );
+					Vector	N = Previous2Current.Cross( RotationAxis );
 					N.Normalize();
 
-					Vector3	MiddlePoint = 0.5f * (PreviousPosition + CurrentPosition);
+					Vector	MiddlePoint = 0.5f * (PreviousPosition + CurrentPosition);
 					float	Distance2Pivot = 0.5f * L / (float) Math.Tan( 0.5f * RotationAngle );
 					_Pivot = MiddlePoint + N * Distance2Pivot;
 				}
 
 				// Rotate previous position about pivot, this should yield us current position
-				Vector3	RotatedPreviousPosition = RotateAbout( PreviousPosition, _Pivot, _DeltaRotation );
+				Vector	RotatedPreviousPosition = RotateAbout( PreviousPosition, _Pivot, _DeltaRotation );
 
 //				// Update previous position so the remaining position gap is filled by delta translation
 //				PreviousPosition = RotatedPreviousPosition;
@@ -537,55 +545,55 @@ namespace FBX.Scene
 			_DeltaPosition = CurrentPosition - PreviousPosition;	// Easy !
 		}
 
-		static Quaternion	QuatFromMatrix( Matrix M )
+		static Quat	QuatFromMatrix( Matrix4x4 M )
 		{
-			Quaternion	q = new Quaternion();
+			Quat	q = new Quat();
 
-			float	s = (float) System.Math.Sqrt( M.M11 + M.M22 + M.M33 + 1.0f );
-			q.W = s * 0.5f;
+			float	s = (float) System.Math.Sqrt( M.m[0,0] + M.m[1,1] + M.m[2,2] + 1.0f );
+			q.qs = s * 0.5f;
 			s = 0.5f / s;
-			q.X = (M.M32 - M.M23) * s;
-			q.Y = (M.M13 - M.M31) * s;
-			q.Z = (M.M21 - M.M12) * s;
+			q.qv.x = (M.m[2,1] - M.m[1,2]) * s;
+			q.qv.y = (M.m[0,1] - M.m[2,0]) * s;
+			q.qv.z = (M.m[1,0] - M.m[0,1]) * s;
 
 			return	q;
 		}
 
-		static Quaternion	QuatInvert( Quaternion q )
+		static Quat	QuatInvert( Quat q )
 		{
-			float	fNorm = q.LengthSquared();
+			float	fNorm = q.SquareMagnitude();
 			if ( fNorm < float.Epsilon )
 				return q;
 
 			float	fINorm = -1.0f / fNorm;
-			q.X *=  fINorm;
-			q.Y *=  fINorm;
-			q.Z *=  fINorm;
-			q.W *= -fINorm;
+			q.qv.x *=  fINorm;
+			q.qv.y *=  fINorm;
+			q.qv.z *=  fINorm;
+			q.qs *= -fINorm;
 
 			return q;
 		}
 
-		static Vector3	RotateAbout( Vector3 _Point, Vector3 _Pivot, Quaternion _Rotation )
+		static Vector	RotateAbout( Vector _Point, Vector _Pivot, Quat _Rotation )
 		{
-			Quaternion	Q = new Quaternion( _Point - _Pivot, 0.0f );
-			Quaternion	RotConjugate = _Rotation;
-			RotConjugate.Conjugate();
-			Quaternion	Pr = QuatMultiply( QuatMultiply( _Rotation, Q ), RotConjugate );
-			Vector3		Protated = new Vector3( Pr.X, Pr.Y, Pr.Z );
+			Quat	Q = new Quat( 0.0f, _Point - _Pivot );
+			Quat	RotConjugate = _Rotation;
+					RotConjugate.Conjugate();
+			Quat	Pr = QuatMultiply( QuatMultiply( _Rotation, Q ), RotConjugate );
+			Vector	Protated = Pr.qv;
 			return _Pivot + Protated;
 		}
 
-		static Quaternion	QuatMultiply( Quaternion q0, Quaternion q1 )
+		static Quat		QuatMultiply( Quat q0, Quat q1 )
 		{
-			Quaternion	q;
-			Vector3	V0 = new Vector3( q0.X, q0.Y, q0.Z );
-			Vector3	V1 = new Vector3( q1.X, q1.Y, q1.Z );
-			q.W = q0.W * q1.W - Vector3.Dot( V0, V1 );
-			Vector3	V = q0.W * V1 + V0 * q1.W + Vector3.Cross( V0, V1 );
-			q.X = V.X;
-			q.Y = V.Y;
-			q.Z = V.Z;
+			Quat	q = new Quat();
+			Vector	V0 = new Vector( q0.qv.x, q0.qv.y, q0.qv.z );
+			Vector	V1 = new Vector( q1.qv.x, q1.qv.y, q1.qv.z );
+			q.qs = q0.qs * q1.qs - V0.Dot( V1 );
+			Vector	V = q0.qs * V1 + V0 * q1.qs + V0.Cross( V1 );
+			q.qv.x = V.X;
+			q.qv.y = V.Y;
+			q.qv.z = V.Z;
 
 			return q;
 		}

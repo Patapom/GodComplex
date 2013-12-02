@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define SAVE_RAW
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,7 +19,7 @@ namespace PNG2RAW
 // 
 //			Convert( args[0], args[1] );
 
-
+#if SAVE_RAW
 			string[]	FileNames = new string[]
 			{
 				"Iris_Blades",
@@ -56,8 +58,10 @@ namespace PNG2RAW
 				string	Source = FileName + ".png";
 				Convert( Source, FileName + ".raw" );
 			}
-
-//			ConvertPOM( Source, FileName + ".pom" );
+#else
+			// Convert to POM format (i.e. DirectX format actually)
+			ConvertPOM( new FileInfo( "../../../Resources/Scenes/GITest1/pata_diff_color_small.png" ), new FileInfo( "../../../Resources/Scenes/GITest1/pata_diff_colo.pom" ), true );
+#endif
 		}
 
 		static unsafe void	Convert( string _Source, string _Target )
@@ -88,9 +92,9 @@ namespace PNG2RAW
 			}
 		}
 
-		static unsafe void	ConvertPOM( string _Source, string _Target, bool _sRGB )
+		static unsafe void	ConvertPOM( FileInfo _Source, FileInfo _Target, bool _sRGB )
 		{
-			using ( Bitmap B = Image.FromFile( _Source ) as Bitmap )
+			using ( Bitmap B = Image.FromFile( _Source.FullName ) as Bitmap )
 			{
 				BitmapData	LockedBitmap = B.LockBits( new Rectangle( 0, 0, B.Width, B.Height ), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb );
 
@@ -111,12 +115,12 @@ namespace PNG2RAW
 
 				B.UnlockBits( LockedBitmap );
 
-				using ( FileStream S = new FileInfo( _Target ).Create() )
+				using ( FileStream S = new FileInfo( _Target.FullName ).Create() )
 					using ( BinaryWriter W = new BinaryWriter( S ) )
 					{
 						// Write type & format
 						W.Write( (byte) 0 );	// 2D
-						W.Write( (byte) 28 + (_sRGB ? 1 : 0) );		// DXGI_FORMAT_R8G8B8A8_UNORM=28, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB=29
+						W.Write( (byte) (28 + (_sRGB ? 1 : 0)) );		// DXGI_FORMAT_R8G8B8A8_UNORM=28, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB=29
 
 						// Write dimensions
 						W.Write( (Int32) B.Width );

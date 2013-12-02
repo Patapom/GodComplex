@@ -124,10 +124,10 @@ namespace
 
 void	EffectVolumetric::InitSkyTables()
 {
-	m_pRTDeltaIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );							// deltaE (temp)
-	m_pRTDeltaScatteringRayleigh = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );	// deltaSR (temp)
-	m_pRTDeltaScatteringMie = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );		// deltaSM (temp)
-	m_pRTDeltaScattering = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, false, UAV );			// deltaJ (temp)
+	m_pRTDeltaIrradiance = new Texture2D( m_Device, IRRADIANCE_W, IRRADIANCE_H, 1, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, UAV );								// deltaE (temp)
+	m_pRTDeltaScatteringRayleigh = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, UAV );	// deltaSR (temp)
+	m_pRTDeltaScatteringMie = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, UAV );			// deltaSM (temp)
+	m_pRTDeltaScattering = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, false, UAV );			// deltaJ (temp)
 
 	// Create the rasterizer state that enables scissoring
 	{

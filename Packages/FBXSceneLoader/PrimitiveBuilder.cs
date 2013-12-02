@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
-using SharpDX;
+using WMath;
 using FBX.SceneLoader.Objects;
-// using FBX.Scene.Nodes;
-// using FBX.Scene.Materials;
 
 namespace FBX.SceneLoader
 {
@@ -63,11 +61,11 @@ namespace FBX.SceneLoader
 						{
 							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.POSITION;
 							FieldType = Scene.Nodes.Mesh.Primitive.VertexStream.FIELD_TYPE.FLOAT3;
-							Vector3[]	T = new Vector3[_SourcePrimitive.VerticesCount];
+							Vector[]	T = new Vector[_SourcePrimitive.VerticesCount];
 							Content = T;
 							for ( int i=0; i < _SourcePrimitive.VerticesCount; i++ )
 							{
-								T[i] = SceneLoader.ConvertPoint( Stream.Stream[i] as WMath.Point );
+								T[i] = (Vector) (Stream.Stream[i] as WMath.Point);
 							}
 						}
  						break;
@@ -75,11 +73,11 @@ namespace FBX.SceneLoader
 						{
 							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.NORMAL;
 							FieldType = Scene.Nodes.Mesh.Primitive.VertexStream.FIELD_TYPE.FLOAT3;
-							Vector3[]	T = new Vector3[_SourcePrimitive.VerticesCount];
+							Vector[]	T = new Vector[_SourcePrimitive.VerticesCount];
 							Content = T;
 							for ( int i=0; i < _SourcePrimitive.VerticesCount; i++ )
 							{
-								T[i] = SceneLoader.ConvertVector( Stream.Stream[i] as WMath.Vector );
+								T[i] = Stream.Stream[i] as WMath.Vector;
 							}
 						}
 						break;
@@ -87,11 +85,11 @@ namespace FBX.SceneLoader
 						{
 							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TANGENT;
 							FieldType = Scene.Nodes.Mesh.Primitive.VertexStream.FIELD_TYPE.FLOAT3;
-							Vector3[]	T = new Vector3[_SourcePrimitive.VerticesCount];
+							Vector[]	T = new Vector[_SourcePrimitive.VerticesCount];
 							Content = T;
 							for ( int i=0; i < _SourcePrimitive.VerticesCount; i++ )
 							{
-								T[i] = SceneLoader.ConvertVector( Stream.Stream[i] as WMath.Vector );
+								T[i] = Stream.Stream[i] as WMath.Vector;
 							}
 						}
 						break;
@@ -99,11 +97,11 @@ namespace FBX.SceneLoader
 						{
 							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.BITANGENT;
 							FieldType = Scene.Nodes.Mesh.Primitive.VertexStream.FIELD_TYPE.FLOAT3;
-							Vector3[]	T = new Vector3[_SourcePrimitive.VerticesCount];
+							Vector[]	T = new Vector[_SourcePrimitive.VerticesCount];
 							Content = T;
 							for ( int i=0; i < _SourcePrimitive.VerticesCount; i++ )
 							{
-								T[i] = SceneLoader.ConvertVector( Stream.Stream[i] as WMath.Vector );
+								T[i] = Stream.Stream[i] as WMath.Vector;
 							}
 						}
 						break;
@@ -123,11 +121,11 @@ namespace FBX.SceneLoader
 						{
 							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TEXCOORDS;
 							FieldType = Scene.Nodes.Mesh.Primitive.VertexStream.FIELD_TYPE.FLOAT2;
-							Vector2[]	T = new Vector2[_SourcePrimitive.VerticesCount];
+							Vector2D[]	T = new Vector2D[_SourcePrimitive.VerticesCount];
 							Content = T;
 							for ( int i=0; i < _SourcePrimitive.VerticesCount; i++ )
 							{
-								T[i] = SceneLoader.ConvertVector( Stream.Stream[i] as WMath.Vector2D );
+								T[i] =  Stream.Stream[i] as WMath.Vector2D;
 								T[i].Y = 1.0f - T[i].Y;	// Here we must complement the V coordinate as MAX has the bad habit of inverting the Y axis of images!
 							}
 						}
@@ -136,11 +134,11 @@ namespace FBX.SceneLoader
 						{
 							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TEXCOORDS;
 							FieldType = Scene.Nodes.Mesh.Primitive.VertexStream.FIELD_TYPE.FLOAT3;
-							Vector3[]	T = new Vector3[_SourcePrimitive.VerticesCount];
+							Vector[]	T = new Vector[_SourcePrimitive.VerticesCount];
 							Content = T;
 							for ( int i=0; i < _SourcePrimitive.VerticesCount; i++ )
 							{
-								T[i] = SceneLoader.ConvertVector( Stream.Stream[i] as WMath.Vector );
+								T[i] = Stream.Stream[i] as WMath.Vector;
 								T[i].Y = 1.0f - T[i].Y;	// Here we must complement the V coordinate as MAX has the bad habit of inverting the Y axis of images!
 							}
 						}
@@ -149,11 +147,11 @@ namespace FBX.SceneLoader
 						{
 							Usage = Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.COLOR_HDR;
 							FieldType = Scene.Nodes.Mesh.Primitive.VertexStream.FIELD_TYPE.FLOAT4;
-							Vector4[]	T = new Vector4[_SourcePrimitive.VerticesCount];
+							Vector4D[]	T = new Vector4D[_SourcePrimitive.VerticesCount];
 							Content = T;
 							for ( int i=0; i < _SourcePrimitive.VerticesCount; i++ )
 							{
-								T[i] = SceneLoader.ConvertVector( Stream.Stream[i] as WMath.Vector4D );
+								T[i] = Stream.Stream[i] as WMath.Vector4D;
 							}
 						}
  						break;

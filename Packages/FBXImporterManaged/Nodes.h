@@ -23,10 +23,7 @@ namespace FBXImporter
 	//
 	public ref class		Node abstract : public BaseObject
 	{
-
 	protected:	// FIELDS
-
-//		FbxNode*			m_pNode;			// The FBX node we're wrapping
 
 		bool				m_bVisible;
 
@@ -183,8 +180,6 @@ namespace FBXImporter
 	{
 	protected:	// FIELDS
 
-		FbxNodeAttribute*	m_pAttribute;
-
 		List<Material^>^	m_Materials;
 
 	public:		// PROPERTIES
@@ -193,7 +188,7 @@ namespace FBXImporter
 		//
 		property WMath::Vector^	Color
 		{
-			WMath::Vector^			get()	{ return Helpers::ToVector3( m_pAttribute->Color.Get() ); }
+			WMath::Vector^			get()	{ return FindProperty( "Color" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets the list of materials associated to that node" )]
@@ -208,7 +203,8 @@ namespace FBXImporter
 
 		NodeWithAttribute( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : Node( _ParentScene, _Parent, _pNode )
 		{
-			m_pAttribute = _pNode->GetNodeAttribute();
+			FbxNodeAttribute*	pAttribute = _pNode->GetNodeAttribute();
+			AppendProperties( pAttribute );
 
 			//////////////////////////////////////////////////////////////////////////
 			// Resolve materials
@@ -250,17 +246,13 @@ namespace FBXImporter
 			CUBIC,
 		};
 
-	protected:	// FIELDS
-
-		FbxLight*	m_pLight;	// The node attribute cast to a light
-
 	public:		// PROPERTIES
 
 		property LIGHT_TYPE	LightType
 		{
 			LIGHT_TYPE	get()
 			{
-				switch ( m_pLight->LightType.Get() )
+				switch ( FindProperty( "LightType" )->AsInt )
 				{
 				case FbxLight::ePoint:
 					return	LIGHT_TYPE::POINT;
@@ -272,7 +264,7 @@ namespace FBXImporter
 					return	LIGHT_TYPE::SPOT;
 
 				case FbxLight::eArea:
-					return	m_pLight->AreaLightShape.Get() == FbxLight::eRectangle ? LIGHT_TYPE::AREA_RECTANGLE : LIGHT_TYPE::AREA_SPHERE;
+					return	FindProperty( "AreaLightShape" )->AsInt == FbxLight::eRectangle ? LIGHT_TYPE::AREA_RECTANGLE : LIGHT_TYPE::AREA_SPHERE;
 				}
 
 				return	LIGHT_TYPE::POINT;
@@ -283,28 +275,28 @@ namespace FBXImporter
 		//
 		property WMath::Vector^	Color
 		{
-			WMath::Vector^	get()	{ return Helpers::ToVector3( m_pLight->Color.Get() ); }
+			WMath::Vector^	get()	{ return FindProperty( "Color" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets the light intensity" )]
 		//
 		property float			Intensity
 		{
-			float			get()	{ return (float) m_pLight->Intensity.Get() * 0.01f; }
+			float			get()	{ return 0.01f * FindProperty( "Intensity" )->AsFloat; }
 		}
 
 		[DescriptionAttribute( "Gets the Hotspot angle in radians" )]
 		// 
 		property float			HotSpot
 		{
-			float			get()	{ return (float) (Math::PI * m_pLight->InnerAngle.Get() / 180.0f); }
+			float			get()	{ return (float) (Math::PI * FindProperty( "InnerAngle" )->AsFloat / 180.0f); }
 		}
 
 		[DescriptionAttribute( "Gets the Cone angle in radians" )]
 		// 
 		property float			ConeAngle
 		{
-			float			get()	{ return (float) (Math::PI * m_pLight->OuterAngle.Get() / 180.0f); }
+			float			get()	{ return (float) (Math::PI * FindProperty( "OuterAngle" )->AsFloat / 180.0f); }
 		}
 
 		[DescriptionAttribute( "Gets the decay type (e.g. linear, quadratic, cubic)" )]
@@ -313,7 +305,7 @@ namespace FBXImporter
 		{
 			DECAY_TYPE	get()
 			{
-				switch ( m_pLight->DecayType.Get() )
+				switch ( FindProperty( "DecayType" )->AsInt )
 				{
 				case	FbxLight::eLinear:
 					return	DECAY_TYPE::LINEAR;
@@ -333,63 +325,63 @@ namespace FBXImporter
 		// 
 		property float			DecayStart
 		{
-			float	get()	{ return (float) m_pLight->DecayStart.Get(); }
+			float	get()	{ return FindProperty( "DecayStart" )->AsFloat; }
 		}
 
 		[DescriptionAttribute( "Tells if the light casts shadows" )]
 		// 
 		property bool			CastShadows
 		{
-			bool	get()	{ return m_pLight->CastShadows.Get(); }
+			bool	get()	{ return FindProperty( "CastShadows" )->AsBool; }
 		}
 
 		[DescriptionAttribute( "Gets the fog value" )]
 		// 
 		property float			Fog
 		{
-			float			get()	{ return (float) m_pLight->Fog.Get(); }
+			float			get()	{ return FindProperty( "Fog" )->AsFloat; }
 		}
 
 		[DescriptionAttribute( "Tells if the light has near attenuation" )]
 		// 
 		property bool			EnableNearAttenuation
 		{
-			bool	get()	{ return m_pLight->EnableNearAttenuation.Get(); }
+			bool	get()	{ return FindProperty( "EnableNearAttenuation" )->AsBool; }
 		}
 
 		[DescriptionAttribute( "Gets the near attenuation start" )]
 		// 
 		property float			NearAttenuationStart
 		{
-			float			get()	{ return (float) m_pLight->NearAttenuationStart.Get(); }
+			float			get()	{ return FindProperty( "NearAttenuationStart" )->AsFloat; }
 		}
 
 		[DescriptionAttribute( "Gets the near attenuation end" )]
 		// 
 		property float			NearAttenuationEnd
 		{
-			float			get()	{ return (float) m_pLight->NearAttenuationEnd.Get(); }
+			float			get()	{ return FindProperty( "NearAttenuationEnd" )->AsFloat; }
 		}
 
 		[DescriptionAttribute( "Tells if the light has far attenuation" )]
 		// 
 		property bool			EnableFarAttenuation
 		{
-			bool	get()	{ return m_pLight->EnableFarAttenuation.Get(); }
+			bool	get()	{ return FindProperty( "EnableFarAttenuation" )->AsBool; }
 		}
 
 		[DescriptionAttribute( "Gets the far attenuation start" )]
 		// 
 		property float			FarAttenuationStart
 		{
-			float			get()	{ return (float) m_pLight->FarAttenuationStart.Get(); }
+			float			get()	{ return FindProperty( "FarAttenuationStart" )->AsFloat; }
 		}
 
 		[DescriptionAttribute( "Gets the far attenuation end" )]
 		// 
 		property float			FarAttenuationEnd
 		{
-			float			get()	{ return (float) m_pLight->FarAttenuationEnd.Get(); }
+			float			get()	{ return FindProperty( "FarAttenuationEnd" )->AsFloat; }
 		}
 
 
@@ -397,7 +389,7 @@ namespace FBXImporter
 
 		NodeLight( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : NodeWithAttribute( _ParentScene, _Parent, _pNode )
 		{
-			m_pLight = _pNode->GetLight();
+
 		}
 	};
 
@@ -414,10 +406,6 @@ namespace FBXImporter
 			ORTHOGRAPHIC,
 		};
 
-	protected:	// FIELDS
-
-		FbxCamera*	m_pCamera;	// The node attribute cast to a camera
-
 	public:		// PROPERTIES
 
 		[DescriptionAttribute( "Gets the camera projection type (i.e. perspective or orthographic)" )]
@@ -426,7 +414,7 @@ namespace FBXImporter
 		{
 			PROJECTION_TYPE	get()
 			{
-				FbxCamera::EProjectionType	ProjType = m_pCamera->ProjectionType.Get();
+				FbxCamera::EProjectionType	ProjType = static_cast<FbxCamera::EProjectionType>( FindProperty( "CameraProjectionType" )->AsInt );
 				return	ProjType == FbxCamera::ePerspective ? PROJECTION_TYPE::PERSPECTIVE : PROJECTION_TYPE::ORTHOGRAPHIC;
 			}
 		}
@@ -435,56 +423,63 @@ namespace FBXImporter
 		// 
 		property WMath::Vector^		UpVector
 		{
-			WMath::Vector^	get()	{ return Helpers::ToVector3( m_pCamera->UpVector.Get() ); }
+			WMath::Vector^	get()	{ return FindProperty( "UpVector" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets the target position" )]
 		// 
 		property WMath::Point^		Target
 		{
-			WMath::Point^	get()	{ return Helpers::ToPoint3( m_pCamera->InterestPosition.Get() ); }
+			WMath::Point^	get()	{ return FindProperty( "InterestPosition" )->AsPoint; }
 		}
 
 		[DescriptionAttribute( "Gets the horizontal field of view in radians" )]
 		// 
 		property float				FOVX
 		{
-			float			get()	{ return (float) (Math::PI * m_pCamera->FieldOfViewX.Get() / 180.0f); }
+			float			get()	{ return (float) (Math::PI * FindProperty( "FieldOfViewX" )->AsFloat / 180.0f); }
 		}
 
 		[DescriptionAttribute( "Gets the vertical field of view in radians" )]
 		// 
 		property float				FOVY
 		{
-			float			get()	{ return (float) (Math::PI * m_pCamera->FieldOfViewX.Get() / 180.0f); }
+			float			get()	{ return (float) (Math::PI * FindProperty( "FieldOfViewY" )->AsFloat / 180.0f); }
+		}
+
+		[DescriptionAttribute( "Gets the aspect ratio" )]
+		// 
+		property float				AspectRatio
+		{
+			float			get()	{ return FindProperty( "AspectWidth" )->AsFloat / FindProperty( "AspectHeight" )->AsFloat; }
 		}
 
 		[DescriptionAttribute( "Gets the focal length" )]
 		// 
 		property float				FocalLength
 		{
-			float			get()	{ return (float) m_pCamera->FocalLength.Get(); }
+			float			get()	{ return FindProperty( "FocalLength" )->AsFloat; }
 		}
 
 		[DescriptionAttribute( "Gets the camera roll in radians" )]
 		// 
 		property float				Roll
 		{
-			float			get()	{ return (float) (Math::PI * m_pCamera->Roll.Get() / 180.0f); }
+			float			get()	{ return (float) (Math::PI * FindProperty( "Roll" )->AsFloat / 180.0f); }
 		}
 
 		[DescriptionAttribute( "Gets the near clip distance" )]
 		// 
 		property float				NearClipPlane
 		{
-			float			get()	{ return (float) m_pCamera->NearPlane.Get(); }
+			float			get()	{ return FindProperty( "NearPlane" )->AsFloat; }
 		}
 
 		[DescriptionAttribute( "Gets the far clip distance" )]
 		// 
 		property float				FarClipPlane
 		{
-			float			get()	{ return (float) m_pCamera->FarPlane.Get(); }
+			float			get()	{ return FindProperty( "FarPlane" )->AsFloat; }
 		}
 
 
@@ -492,7 +487,6 @@ namespace FBXImporter
 
 		NodeCamera( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : NodeWithAttribute( _ParentScene, _Parent, _pNode )
 		{
-			m_pCamera = _pNode->GetCamera();
 		}
 	};
 }

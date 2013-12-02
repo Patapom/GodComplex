@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using SharpDX;
+using WMath;
 using FBX.Scene.Materials;
 
 namespace FBX.Scene.Nodes
@@ -106,7 +106,7 @@ namespace FBX.Scene.Nodes
 							break;
 						case FIELD_TYPE.FLOAT2:
 							{
-								Vector2[]	T = new Vector2[ArraySize];
+								Vector2D[]	T = new Vector2D[ArraySize];
 								m_Content = T;
 								for ( int i=0; i < ArraySize; i++ )
 								{
@@ -117,7 +117,7 @@ namespace FBX.Scene.Nodes
 							break;
 						case FIELD_TYPE.FLOAT3:
 							{
-								Vector3[]	T = new Vector3[ArraySize];
+								Vector[]	T = new Vector[ArraySize];
 								m_Content = T;
 								for ( int i=0; i < ArraySize; i++ )
 								{
@@ -129,7 +129,7 @@ namespace FBX.Scene.Nodes
 							break;
 						case FIELD_TYPE.FLOAT4:
 							{
-								Vector4[]	T = new Vector4[ArraySize];
+								Vector4D[]	T = new Vector4D[ArraySize];
 								m_Content = T;
 								for ( int i=0; i < ArraySize; i++ )
 								{
@@ -175,7 +175,7 @@ namespace FBX.Scene.Nodes
 							break;
 						case FIELD_TYPE.FLOAT2:
 							{
-								Vector2[]	T = m_Content as Vector2[];
+								Vector2D[]	T = m_Content as Vector2D[];
 								for ( int i=0; i < ArraySize; i++ )
 								{
 									_Writer.Write( T[i].X );
@@ -185,7 +185,7 @@ namespace FBX.Scene.Nodes
 							break;
 						case FIELD_TYPE.FLOAT3:
 							{
-								Vector3[]	T = m_Content as Vector3[];
+								Vector[]	T = m_Content as Vector[];
 								for ( int i=0; i < ArraySize; i++ )
 								{
 									_Writer.Write( T[i].X );
@@ -196,7 +196,7 @@ namespace FBX.Scene.Nodes
 							break;
 						case FIELD_TYPE.FLOAT4:
 							{
-								Vector4[]	T = m_Content as Vector4[];
+								Vector4D[]	T = m_Content as Vector4D[];
 								for ( int i=0; i < ArraySize; i++ )
 								{
 									_Writer.Write( T[i].X );
@@ -297,7 +297,7 @@ namespace FBX.Scene.Nodes
 			/// <summary>
 			/// Gets the parameters to render the primitive
 			/// </summary>
-			public MaterialParameters	Parameters			{ get { return m_Parameters; } }
+			public MaterialParameters	MaterialParms		{ get { return m_Parameters; } }
 
 			/// <summary>
 			/// Gets the amount of vertices in the primitive
@@ -503,13 +503,13 @@ namespace FBX.Scene.Nodes
 			{
 				if ( m_bWorldBBoxDirty )
 				{	// Update world BBox
-					m_WorldBBox = new BoundingBox( +float.MaxValue * Vector3.One, -float.MaxValue * Vector3.One );
+					m_WorldBBox = new BoundingBox( +float.MaxValue * Point.One, -float.MaxValue * Point.One );
 
-					foreach ( Vector3 Corner in m_BoundingBox.GetCorners() )
+					foreach ( Point Corner in m_BoundingBox.GetCorners() )
 					{
-						Vector3	WorldCorner = Vector3.TransformCoordinate( Corner, m_Local2World );
-						m_WorldBBox.Minimum = Vector3.Min( m_WorldBBox.Minimum, WorldCorner );
-						m_WorldBBox.Maximum = Vector3.Max( m_WorldBBox.Maximum, WorldCorner );
+						Point	WorldCorner = Corner * m_Local2World;
+						m_WorldBBox.m_Min.Min( WorldCorner );
+						m_WorldBBox.m_Max.Max( WorldCorner );
 					}
 
 					m_bWorldBBoxDirty = false;
@@ -535,7 +535,7 @@ namespace FBX.Scene.Nodes
 
 		#region METHODS
 
-		internal Mesh( Scene _Owner, int _ID, string _Name, Node _Parent, Matrix _Local2Parent ) : base( _Owner, _ID, _Name, _Parent, _Local2Parent )
+		internal Mesh( Scene _Owner, int _ID, string _Name, Node _Parent, Matrix4x4 _Local2Parent ) : base( _Owner, _ID, _Name, _Parent, _Local2Parent )
 		{
 		}
 
@@ -571,12 +571,12 @@ namespace FBX.Scene.Nodes
 		protected override void		LoadSpecific( System.IO.BinaryReader _Reader )
 		{
 			// Read bounding-box
-			m_BoundingBox.Minimum.X = _Reader.ReadSingle();
-			m_BoundingBox.Minimum.Y = _Reader.ReadSingle();
-			m_BoundingBox.Minimum.Z = _Reader.ReadSingle();
-			m_BoundingBox.Maximum.X = _Reader.ReadSingle();
-			m_BoundingBox.Maximum.Y = _Reader.ReadSingle();
-			m_BoundingBox.Maximum.Z = _Reader.ReadSingle();
+			m_BoundingBox.m_Min.X = _Reader.ReadSingle();
+			m_BoundingBox.m_Min.Y = _Reader.ReadSingle();
+			m_BoundingBox.m_Min.Z = _Reader.ReadSingle();
+			m_BoundingBox.m_Max.X = _Reader.ReadSingle();
+			m_BoundingBox.m_Max.Y = _Reader.ReadSingle();
+			m_BoundingBox.m_Max.Z = _Reader.ReadSingle();
 
 			// Read bounding-sphere
 			m_BoundingSphere.Center.X = _Reader.ReadSingle();
@@ -601,12 +601,12 @@ namespace FBX.Scene.Nodes
 		protected override void		SaveSpecific( System.IO.BinaryWriter _Writer )
 		{
 			// Write bounding-box
-			_Writer.Write( m_BoundingBox.Minimum.X );
-			_Writer.Write( m_BoundingBox.Minimum.Y );
-			_Writer.Write( m_BoundingBox.Minimum.Z );
-			_Writer.Write( m_BoundingBox.Maximum.X );
-			_Writer.Write( m_BoundingBox.Maximum.Y );
-			_Writer.Write( m_BoundingBox.Maximum.Z );
+			_Writer.Write( m_BoundingBox.m_Min.X );
+			_Writer.Write( m_BoundingBox.m_Min.Y );
+			_Writer.Write( m_BoundingBox.m_Min.Z );
+			_Writer.Write( m_BoundingBox.m_Max.X );
+			_Writer.Write( m_BoundingBox.m_Max.Y );
+			_Writer.Write( m_BoundingBox.m_Max.Z );
 
 			// Write bounding-sphere
 			_Writer.Write( m_BoundingSphere.Center.X );

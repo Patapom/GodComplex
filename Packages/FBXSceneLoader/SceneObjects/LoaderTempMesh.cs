@@ -257,6 +257,7 @@ namespace FBX.SceneLoader.Objects
 			protected List<ConsolidatedVertex>	m_Vertices = new List<ConsolidatedVertex>();
 
 			protected VertexStream[]			m_Streams = null;
+			protected ConsolidatedFace[]		m_FacesAsArray = null;
 
 			#endregion
 
@@ -285,7 +286,12 @@ namespace FBX.SceneLoader.Objects
 
 			public ConsolidatedFace[]	Faces
 			{
-				get { return m_Faces.ToArray(); }
+				get
+				{
+					if ( m_FacesAsArray == null )
+						m_FacesAsArray = m_Faces.ToArray();
+					return m_FacesAsArray;
+				}
 			}
 
 			public VertexStream[]		VertexStreams

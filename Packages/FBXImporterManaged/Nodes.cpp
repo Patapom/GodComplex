@@ -18,16 +18,17 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Retrieve the pre & post rotations
-// 	ObjectProperty^	PreRotProp = FindProperty( "PreRotation" );
-// 	WMath::Vector^	PreRotEuler = (float) Math::PI / 180.0f * (PreRotProp != nullptr ? (WMath::Vector^) PreRotProp->Value : gcnew WMath::Vector( 0, 0, 0 ));
-	WMath::Vector^	PreRotEuler = Helpers::ToVector3( _pNode->PreRotation.Get() );
+ 	ObjectProperty^	PreRotProp = FindProperty( "PreRotation" );
+ 	WMath::Vector^	PreRotEuler = (float) Math::PI / 180.0f * (PreRotProp != nullptr ? PreRotProp->AsVector3 : gcnew WMath::Vector( 0, 0, 0 ));
+//	WMath::Vector^	PreRotEuler = Helpers::ToVector3( _pNode->PreRotation.Get() );
+//	WMath::Vector^	PreRotEuler = Helpers::ToVector3( _pNode->PreRotation.Get() );
 
 	m_PreRotation = gcnew WMath::Matrix4x4();
 	m_PreRotation->MakePYR( PreRotEuler->x, PreRotEuler->y, PreRotEuler->z );
 
-// 	ObjectProperty^	PostRotProp = FindProperty( "PreRotation" );
-// 	WMath::Vector^	PostRotEuler = (float) Math::PI / 180.0f * (PostRotProp != nullptr ? (WMath::Vector^) PostRotProp->Value : gcnew WMath::Vector( 0, 0, 0 ));
-	WMath::Vector^	PostRotEuler = Helpers::ToVector3( _pNode->PostRotation.Get() );
+ 	ObjectProperty^	PostRotProp = FindProperty( "PreRotation" );
+ 	WMath::Vector^	PostRotEuler = (float) Math::PI / 180.0f * (PostRotProp != nullptr ? PostRotProp->AsVector3 : gcnew WMath::Vector( 0, 0, 0 ));
+//	WMath::Vector^	PostRotEuler = Helpers::ToVector3( _pNode->PostRotation.Get() );
 
 	m_PostRotation = gcnew WMath::Matrix4x4();
 	m_PostRotation->MakePYR( PostRotEuler->x, PostRotEuler->y, PostRotEuler->z );
@@ -38,12 +39,58 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 	m_LocalTransform = gcnew WMath::Matrix4x4();
 	m_LocalTransform->MakeIdentity();
 
-	WMath::Point^	Position = Helpers::ToPoint3( _pNode->LclTranslation.Get() );
-	WMath::Vector^	Rotation = (float) Math::PI / 180.0f * Helpers::ToVector3( _pNode->LclRotation.Get() );
-	WMath::Vector^	Scale    = Helpers::ToVector3( _pNode->LclScaling.Get() );
+	WMath::Point^		Position = FindProperty( "Lcl Translation" )->AsPoint;
+	WMath::Vector^		Rotation = (float) Math::PI / 180.0f * FindProperty( "Lcl Rotation" )->AsVector3;
+	WMath::Vector^		Scale    = FindProperty( "Lcl Scaling" )->AsVector3;
+
+
+
+//Rotation->MakeZero();
+
+
+
+	WMath::Matrix4x4^	Pitch = WMath::Matrix4x4::ROT_X( Rotation->x );
+	WMath::Matrix4x4^	Yaw = WMath::Matrix4x4::ROT_Y( Rotation->y );
+	WMath::Matrix4x4^	Roll = WMath::Matrix4x4::ROT_Z( Rotation->z );
+
+	switch ( FindProperty( "RotationOrder" )->AsInt )
+	{
+	case 0:	// eEulerXYZ
+		m_LocalTransform = Pitch * Yaw * Roll;
+//		m_LocalTransform = Roll * Yaw * Pitch;
+		break;
+
+	case 1:	// eEulerXZY
+		m_LocalTransform = Pitch * Roll * Yaw;
+//		m_LocalTransform = Yaw * Roll * Pitch;
+		break;
+
+	case 2:	// eEulerYZX
+		m_LocalTransform = Yaw * Roll * Pitch;
+//		m_LocalTransform = Pitch * Roll * Yaw;
+		break;
+
+	case 3:	// eEulerYXZ
+		m_LocalTransform = Yaw * Pitch * Roll;
+//		m_LocalTransform = Roll * Pitch * Yaw;
+		break;
+
+	case 4:	// eEulerZXY
+		m_LocalTransform = Roll * Pitch * Yaw;
+//		m_LocalTransform = Yaw * Pitch * Roll;
+		break;
+
+	case 5:	// eEulerZYX
+		m_LocalTransform = Roll * Yaw * Pitch;
+//		m_LocalTransform = Pitch * Yaw * Roll;
+		break;
+
+	default:
+		throw gcnew Exception( "Unsupported rotation order!" );
+	}
 
 	// WORKING CODE
-	m_LocalTransform->MakePYR( Rotation->x, Rotation->y, Rotation->z );
+//	m_LocalTransform->MakePYR( Rotation->x, Rotation->y, Rotation->z );
 	m_LocalTransform->Scale( Scale );
 	m_LocalTransform->SetTrans( Position );
 	// WORKING CODE
@@ -71,10 +118,7 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 
 	case Scene::UP_AXIS::Z:
 		{
-// 			WMath::Matrix4x4^	RotX = gcnew WMath::Matrix4x4();
-// 								RotX->MakeRotX( -0.5f * (float) Math::PI );
-// 
-// 			m_LocalTransform *= RotX;
+			m_LocalTransform *= WMath::Matrix4x4::ROT_X( -0.5f * (float) Math::PI );
 			break;
 		}
 	}

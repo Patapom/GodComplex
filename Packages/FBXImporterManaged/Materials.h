@@ -44,58 +44,54 @@ namespace FBXImporter
 	//
 	public ref class		MaterialLambert : public Material
 	{
-	protected:	// FIELDS
-
-		FbxSurfaceLambert*		m_pLambert;
-
 	public:		// PROPERTIES
 
 		[DescriptionAttribute( "Gets emissive color" )]
 		//
-		property WMath::Point^		EmissiveColor
+		property WMath::Vector^		EmissiveColor
 		{
-			WMath::Point^		get()	{ return Helpers::ToPoint3( m_pLambert->Emissive.Get() ); }
+			WMath::Vector^		get()	{ return FindProperty( "EmissiveColor" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets emissive factor" )]
 		//
 		property float				EmissiveFactor
 		{
-			float				get()	{ return (float) m_pLambert->EmissiveFactor.Get(); }
+			float				get()	{ return FindProperty( "EmissiveFactor" )->AsFloat; }
 		}
 
 		[DescriptionAttribute( "Gets ambient color" )]
 		//
-		property WMath::Point^		AmbientColor
+		property WMath::Vector^		AmbientColor
 		{
-			WMath::Point^		get()	{ return Helpers::ToPoint3( m_pLambert->Ambient.Get() ); }
+			WMath::Vector^		get()	{ return FindProperty( "AmbientColor" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets ambient factor" )]
 		//
 		property float				AmbientFactor
 		{
-			float				get()	{ return (float) m_pLambert->AmbientFactor.Get(); }
+			float				get()	{ return FindProperty( "AmbientFactor" )->AsFloat; }
 		}
 
 		[DescriptionAttribute( "Gets diffuse color" )]
 		//
-		property WMath::Point^		DiffuseColor
+		property WMath::Vector^		DiffuseColor
 		{
-			WMath::Point^		get()	{ return Helpers::ToPoint3( m_pLambert->Diffuse.Get() ); }
+			WMath::Vector^		get()	{ return FindProperty( "DiffuseColor" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets diffuse factor" )]
 		//
 		property float				DiffuseFactor
 		{
-			float				get()	{ return (float) m_pLambert->DiffuseFactor.Get(); }
+			float				get()	{ return FindProperty( "DiffuseFactor" )->AsFloat; }
 		}
 
 
 	public:		// METHODS
 
-		MaterialLambert( Scene^ _ParentScene, FbxSurfaceLambert* _pMaterial ) : Material( _ParentScene, _pMaterial ), m_pLambert( _pMaterial )
+		MaterialLambert( Scene^ _ParentScene, FbxSurfaceLambert* _pMaterial ) : Material( _ParentScene, _pMaterial )
 		{
 		}
 	};
@@ -104,51 +100,47 @@ namespace FBXImporter
 	//
 	public ref class		MaterialPhong : public MaterialLambert
 	{
-	protected:	// FIELDS
-
-		FbxSurfacePhong*		m_pPhong;
-
 	public:		// PROPERTIES
 
 		[DescriptionAttribute( "Gets specular color" )]
 		//
-		property WMath::Point^		SpecularColor
+		property WMath::Vector^		SpecularColor
 		{
-			WMath::Point^		get()	{ return Helpers::ToPoint3( m_pPhong->Specular.Get() ); }
+			WMath::Vector^		get()	{ return FindProperty( "SpecularColor" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets specular factor" )]
 		//
 		property float				SpecularFactor
 		{
-			float				get()	{ return (float) m_pPhong->SpecularFactor.Get(); }
+			float				get()	{ return FindProperty( "SpecularFactor" )->AsFloat; }
 		}
 
 		[DescriptionAttribute( "Gets reflection color" )]
 		//
-		property WMath::Point^		ReflectionColor
+		property WMath::Vector^		ReflectionColor
 		{
-			WMath::Point^		get()	{ return Helpers::ToPoint3( m_pPhong->Reflection.Get() ); }
+			WMath::Vector^		get()	{ return FindProperty( "ReflectionColor" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets reflection factor" )]
 		//
 		property float				ReflectionFactor
 		{
-			float				get()	{ return (float) m_pPhong->ReflectionFactor.Get(); }
+			float				get()	{ return FindProperty( "ReflectionFactor" )->AsFloat; }
 		}
 
 		[DescriptionAttribute( "Gets specular shininess (i.e. specular power)" )]
 		//
 		property float				Shininess
 		{
-			float				get()	{ return (float) m_pPhong->Shininess.Get(); }
+			float				get()	{ return FindProperty( "Shininess" )->AsFloat; }
 		}
 
 
 	public:		// METHODS
 
-		MaterialPhong( Scene^ _ParentScene, FbxSurfacePhong* _pMaterial ) : MaterialLambert( _ParentScene, _pMaterial ), m_pPhong( _pMaterial )
+		MaterialPhong( Scene^ _ParentScene, FbxSurfacePhong* _pMaterial ) : MaterialLambert( _ParentScene, _pMaterial )
 		{
 		}
 	};

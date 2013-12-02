@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Windows.Forms;
+using WMath;
 
 namespace FBXTestConverter
 {
@@ -18,6 +19,9 @@ namespace FBXTestConverter
 			MESH,
 			LIGHT,
 			CAMERA,
+
+			// Special cases
+			PROBE,
 		}
 
 		private enum	LIGHT_TYPE
@@ -38,7 +42,8 @@ namespace FBXTestConverter
 		{
 			InitializeComponent();
 
-			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest0.fbx" ) );
+			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1.fbx" ) );
+//			LoadScene( new FileInfo( @"..\..\Resources\Scenes\CubeTest.fbx" ) );
 		}
 
 		public void	LoadScene( FileInfo _File )
@@ -53,6 +58,39 @@ namespace FBXTestConverter
 			using ( FileStream S = Target.OpenWrite() )
 				using ( BinaryWriter W = new BinaryWriter( S ) )
 					SaveGCX( W, Scene );
+
+			// Write infos
+			List<string>	Infos = new List<string>();
+			Infos.Add( "Textures:" );
+			foreach ( FBX.Scene.Materials.Texture2D Texture in Scene.Textures )
+				Infos.Add( "ID #" + Texture.ID + " URL=" + Texture.URL );
+			Infos.Add( "" );
+
+			Infos.Add( "=============================" );
+			Infos.Add( "Materials:" );
+			foreach ( FBX.Scene.Materials.MaterialParameters Mat in Scene.MaterialParameters )
+				Infos.Add( "ID #" + Mat.ID + " => " + Mat.Name + " (shader=" + Mat.ShaderURL + ")" );
+			Infos.Add( "" );
+
+			Infos.Add( "=============================" );
+			Infos.Add( "Meshes:" );
+			foreach ( FBX.Scene.Nodes.Mesh Mesh in Scene.Meshes )
+				Infos.Add( "ID #" + Mesh.ID + " => " + Mesh.Name + " (primsCount=" + Mesh.PrimitivesCount + ")" );
+			Infos.Add( "" );
+
+			Infos.Add( "=============================" );
+			Infos.Add( "Lights:" );
+			foreach ( FBX.Scene.Nodes.Light Light in Scene.Lights )
+				Infos.Add( "ID #" + Light.ID + " => " + Light.Name + " (type=" + Light.Type + ")" );
+			Infos.Add( "" );
+
+			Infos.Add( "=============================" );
+			Infos.Add( "Cameras:" );
+			foreach ( FBX.Scene.Nodes.Camera Camera in Scene.Cameras )
+				Infos.Add( "ID #" + Camera.ID + " => " + Camera.Name + " (FOV=" + (Camera.FOV * 180.0f / Math.PI) + ")" );
+			Infos.Add( "" );
+
+			listBoxInfos.Items.AddRange( Infos.ToArray() );
 		}
 
 		private void	SaveGCX( BinaryWriter _W, FBX.Scene.Scene _Scene )
@@ -83,14 +121,20 @@ namespace FBXTestConverter
 				NodeType = NODE_TYPE.CAMERA;
 			else if ( _Node is FBX.Scene.Nodes.Light )
 				NodeType = NODE_TYPE.LIGHT;
+			else
+			{
+				// Isolate locators as probes
+				if ( _Node.Name.ToLower().IndexOf( "locator" ) != -1 )
+					NodeType = NODE_TYPE.PROBE;
+			}
 			_W.Write( (byte) NodeType );
 
 				// Write Local2Parent matrix
-			SharpDX.Matrix	Local2Parent = _Node.Local2Parent;
-			_W.Write( Local2Parent.M11 );	_W.Write( Local2Parent.M12 );	_W.Write( Local2Parent.M13 );	_W.Write( Local2Parent.M14 );
-			_W.Write( Local2Parent.M21 );	_W.Write( Local2Parent.M22 );	_W.Write( Local2Parent.M23 );	_W.Write( Local2Parent.M24 );
-			_W.Write( Local2Parent.M31 );	_W.Write( Local2Parent.M32 );	_W.Write( Local2Parent.M33 );	_W.Write( Local2Parent.M34 );
-			_W.Write( Local2Parent.M41 );	_W.Write( Local2Parent.M42 );	_W.Write( Local2Parent.M43 );	_W.Write( Local2Parent.M44 );
+			Matrix4x4	Local2Parent = _Node.Local2Parent;
+			_W.Write( Local2Parent.m[0,0] );	_W.Write( Local2Parent.m[0,1] );	_W.Write( Local2Parent.m[0,2] );	_W.Write( Local2Parent.m[0,3] );
+			_W.Write( Local2Parent.m[1,0] );	_W.Write( Local2Parent.m[1,1] );	_W.Write( Local2Parent.m[1,2] );	_W.Write( Local2Parent.m[1,3] );
+			_W.Write( Local2Parent.m[2,0] );	_W.Write( Local2Parent.m[2,1] );	_W.Write( Local2Parent.m[2,2] );	_W.Write( Local2Parent.m[2,3] );
+			_W.Write( Local2Parent.m[3,0] );	_W.Write( Local2Parent.m[3,1] );	_W.Write( Local2Parent.m[3,2] );	_W.Write( Local2Parent.m[3,3] );
 
 
 			// =============================
@@ -182,14 +226,14 @@ namespace FBXTestConverter
 			foreach ( FBX.Scene.Nodes.Mesh.Primitive Primitive in _Mesh.Primitives )
 			{
 				// Write material ID
-				_W.Write( (ushort) Primitive.Parameters.ID );
+				_W.Write( (ushort) Primitive.MaterialParms.ID );
 
 				_W.Write( (UInt32) Primitive.FacesCount );
 				UInt32	VerticesCount = (UInt32) Primitive.VerticesCount;
 				_W.Write( VerticesCount );
 
 				// Write faces
-				if ( Primitive.FacesCount < 65536 )
+				if ( Primitive.VerticesCount <= 65536 )
 				{
 					foreach ( FBX.Scene.Nodes.Mesh.Primitive.Face Face in Primitive.Faces )
 					{
@@ -237,8 +281,8 @@ namespace FBXTestConverter
 							case FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TANGENT:
 							case FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.BITANGENT:
 								{
-									SharpDX.Vector3[]	Stream = Streams[UsageIndex][0].Content as SharpDX.Vector3[];
-									SharpDX.Vector3		Vertex = Stream[VertexIndex];
+									Vector[]	Stream = Streams[UsageIndex][0].Content as Vector[];
+									Vector		Vertex = Stream[VertexIndex];
 									_W.Write( Vertex.X );
 									_W.Write( Vertex.Y );
 									_W.Write( Vertex.Z );
@@ -247,8 +291,8 @@ namespace FBXTestConverter
 
 							case FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TEXCOORDS:
 								{
-									SharpDX.Vector2[]	Stream = Streams[UsageIndex][0].Content as SharpDX.Vector2[];
-									SharpDX.Vector2		Vertex = Stream[VertexIndex];
+									Vector2D[]	Stream = Streams[UsageIndex][0].Content as Vector2D[];
+									Vector2D	Vertex = Stream[VertexIndex];
 									_W.Write( Vertex.X );
 									_W.Write( Vertex.Y );
 								}
@@ -264,10 +308,10 @@ namespace FBXTestConverter
 			if ( _Texture == null )
 				return (ushort) 0xFFFF;
 
-			if ( _Texture.Value.URL == "Bisou" )
-				return 0;
+// 			if ( _Texture.Value.URL.IndexOf( "pata_diff_colo.tga" ) != -1 )
+// 				return 0;
 
-			return (ushort) 0xFFFF;
+			return (ushort) _Texture.Value.ID;
 		}
 	}
 }

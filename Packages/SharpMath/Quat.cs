@@ -36,6 +36,8 @@ namespace WMath
 												COMPONENTS.I
 											  };							// This array gives the index of the next component of the complex part of the quaternion (borrowed from 3DS-MAX sources)
 
+		public static readonly Quat	Identity = new Quat( 0, 0, 0, 0 );
+
 		#endregion
 
 		#region METHODS
@@ -53,7 +55,7 @@ namespace WMath
 		}
 
 		// Access methods
-		public void					Zero()													{ qs = 0.0f; qv.Zero(); }
+		public void					Zero()													{ qs = 0.0f; qv.MakeZero(); }
 		public void					Set( float _s, float _i, float _j, float _k )			{ qs = _s; qv.x = _i; qv.y = _j; qv.z = _k; }
 		public void					Set( float _s, Vector _v )								{ qs = _s; qv.Set( _v ); }
 		public void					Set( Quat _q )											{ qs = _q.qs; qv.Set( _q.qv ); }
@@ -107,6 +109,12 @@ namespace WMath
 		public float				Magnitude()												{ return (float) System.Math.Sqrt( SquareMagnitude() ); }
 
 		// Helpers
+		public void					Conjugate()
+		{
+			qv.x = -qv.x;
+			qv.y = -qv.y;
+			qv.z = -qv.z;
+		}
 		public void					Normalize()
 		{
 			float	fNorm = Magnitude();
@@ -129,7 +137,7 @@ namespace WMath
 			qv.z *=  fINorm;
 			qs   *= -fINorm;
 		}
-		public void					MakeIdentity()											{ qs = 0.0f; qv.Zero(); }
+		public void					MakeIdentity()											{ qs = 0.0f; qv.MakeZero(); }
 		public void					MakeOrtho( Vector _Axis )								{ Set( this * new Quat( 0.0f, _Axis ) ); }
 		public void					MakeClosest( Quat _q )									{ if ( (this | _q) < 0.0f ) Set( -this ); }
 		public void					MakeSLERP( Quat _q0, Quat _q1, float _t )

@@ -10,16 +10,16 @@ namespace WMath
 	{
 		#region CONSTANTS
 
-/*		public static readonly Matrix4x4		ZERO = new Matrix4x4( new float[,] {	{ 0.0f, 0.0f, 0.0f, 0.0f },
+		public static readonly Matrix4x4		Zero = new Matrix4x4( new float[,] {	{ 0.0f, 0.0f, 0.0f, 0.0f },
 																						{ 0.0f, 0.0f, 0.0f, 0.0f },
 																						{ 0.0f, 0.0f, 0.0f, 0.0f },
 																						{ 0.0f, 0.0f, 0.0f, 0.0f } } );
 
-		public static readonly Matrix4x4		IDENTITY = new Matrix4x4( new float[,] {{ 1.0f, 0.0f, 0.0f, 0.0f },
+		public static readonly Matrix4x4		Identity = new Matrix4x4( new float[,] {{ 1.0f, 0.0f, 0.0f, 0.0f },
 																						{ 0.0f, 1.0f, 0.0f, 0.0f },
 																						{ 0.0f, 0.0f, 1.0f, 0.0f },
 																						{ 0.0f, 0.0f, 0.0f, 1.0f } } );
-*/
+
 		#endregion
 
 		#region NESTED TYPES
@@ -92,6 +92,7 @@ namespace WMath
 		public Vector4D				GetRow0()										{ return new Vector4D( m[0, 0], m[0, 1], m[0, 2], m[0, 3] ); }
 		public Vector4D				GetRow1()										{ return new Vector4D( m[1, 0], m[1, 1], m[1, 2], m[1, 3] ); }
 		public Vector4D				GetRow2()										{ return new Vector4D( m[2, 0], m[2, 1], m[2, 2], m[2, 3] ); }
+		public Vector4D				GetRow3()										{ return new Vector4D( m[3, 0], m[3, 1], m[3, 2], m[3, 3] ); }
 		public Point4D				GetTrans()										{ return new Point4D ( m[3, 0], m[3, 1], m[3, 2], m[3, 3] ); }
 		public void					SetRow( int _dwRowIndex, Vector4D _Row )		{ m[_dwRowIndex, 0] = _Row.x; m[_dwRowIndex, 1] = _Row.y; m[_dwRowIndex, 2] = _Row.z; m[_dwRowIndex, 3] = _Row.w; }
 		public void					SetRow0( Vector4D _Row )						{ m[0, 0] = _Row.x; m[0, 1] = _Row.y; m[0, 2] = _Row.z; m[0, 3] = _Row.w; }

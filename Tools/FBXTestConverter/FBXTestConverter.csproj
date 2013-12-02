@@ -65,10 +65,6 @@
     <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="SharpDX, Version=2.0.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Packages\SharpDX.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -115,6 +111,10 @@
     <ProjectReference Include="..\..\Packages\FBXSceneLoader\FBXSceneLoader.csproj">
       <Project>{D0CC5DC0-D81A-4976-9042-8A3B5427148B}</Project>
       <Name>FBXSceneLoader</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Packages\SharpMath\SharpMath.csproj">
+      <Project>{DD026A89-C5FE-4150-BC85-A660E427826A}</Project>
+      <Name>SharpMath</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

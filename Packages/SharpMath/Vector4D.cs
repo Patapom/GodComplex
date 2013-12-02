@@ -41,6 +41,13 @@ namespace WMath
 			set { w = value; }
 		}
 
+		public static Vector4D		Zero	{ get { return new Vector4D( 0, 0, 0, 0 ); } }
+		public static Vector4D		One		{ get { return new Vector4D( 1, 1, 1, 1 ); } }
+		public static Vector4D		UnitX	{ get { return new Vector4D( 1, 0, 0, 0 ); } }
+		public static Vector4D		UnitY	{ get { return new Vector4D( 0, 1, 0, 0 ); } }
+		public static Vector4D		UnitZ	{ get { return new Vector4D( 0, 0, 1, 0 ); } }
+		public static Vector4D		UnitW	{ get { return new Vector4D( 0, 0, 0, 1 ); } }
+
 		#endregion
 
 		#region METHODS
@@ -55,7 +62,7 @@ namespace WMath
 		public						Vector4D( float[] _f )								{ Set( _f ); }
 
 		// Access methods
-		public void					Zero()											{ x = y = z = w = 0.0f; }
+		public void					MakeZero()										{ x = y = z = w = 0.0f; }
 		public void					Set( Vector2D _Source )							{ x = _Source.x; y = _Source.y; z = w = 0.0f; }
 		public void					Set( Vector _Source )							{ x = _Source.x; y = _Source.y; z = _Source.z; w = 0.0f; }
 		public void					Set( Vector4D _Source )							{ x = _Source.x; y = _Source.y; z = _Source.z; w = _Source.w; }

@@ -41,6 +41,7 @@
 #include "Utility/Profiling.h"
 #include "Utility/FPSCamera.h"
 #include "Utility/Video.h"
+#include "Utility/TextureFilePOM.h"
 
 // DirectX Renderer
 #include "RendererD3D11/Device.h"
