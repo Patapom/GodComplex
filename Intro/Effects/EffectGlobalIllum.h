@@ -24,14 +24,21 @@ protected:	// NESTED TYPES
 		float		SpecularExponent;
 	};
 
+	struct CBSplat
+	{
+		NjFloat3	dUV;
+	};
+
 private:	// FIELDS
 
 	int					m_ErrorCode;
 	Device&				m_Device;
 	Texture2D&			m_RTTarget;
+	Primitive&			m_ScreenQuad;
 
 	Material*			m_pMatRender;			// Displays the room
 	Material*			m_pMatRenderCubeMap;	// Renders the room into a cubemap
+	Material*			m_pMatPostProcess;		// Post-processes the result
 
 	// Primitives
 	Scene				m_Scene;
@@ -43,7 +50,7 @@ private:	// FIELDS
 	// Constant buffers
  	CB<CBObject>*		m_pCB_Object;
  	CB<CBMaterial>*		m_pCB_Material;
-
+	CB<CBSplat>*		m_pCB_Splat;
 
 
 

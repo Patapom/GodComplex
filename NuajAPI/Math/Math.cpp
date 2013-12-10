@@ -81,6 +81,18 @@ float	   NjFloat4x4::CoFactor( int x, int y ) const
 			* (((x + y) & 1) == 1 ? -1.0f : +1.0f);
 }
 
+NjFloat4x4&	NjFloat4x4::Normalize()
+{
+	NjFloat3&	X = *((NjFloat3*) &m[4*0]);
+				X.Normalize();
+	NjFloat3&	Y = *((NjFloat3*) &m[4*1]);
+				Y.Normalize();
+	NjFloat3&	Z = *((NjFloat3*) &m[4*2]);
+				Z.Normalize();
+
+	return *this;
+}
+
 NjFloat4   operator*( const NjFloat4& a, const NjFloat4x4& b )
 {
 	NjFloat4	R;

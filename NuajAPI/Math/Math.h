@@ -200,6 +200,7 @@ public:
 	NjFloat4x4			Inverse() const;
 	float				Determinant() const;
 	float				CoFactor( int x, int y ) const;
+	NjFloat4x4&			Normalize();
 
 //	NjFloat4			operator*( const NjFloat4& b ) const;
 	NjFloat4x4			operator*( const NjFloat4x4& b ) const;

@@ -3,12 +3,13 @@
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
-EffectGlobalIllum::EffectGlobalIllum( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera ) : m_ErrorCode( 0 ), m_Device( _Device ), m_RTTarget( _RTHDR )
+EffectGlobalIllum::EffectGlobalIllum( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera ) : m_ErrorCode( 0 ), m_Device( _Device ), m_RTTarget( _RTHDR ), m_ScreenQuad( _ScreenQuad )
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
  	CHECK_MATERIAL( m_pMatRender = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
  	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
+ 	CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the textures
@@ -21,6 +22,7 @@ EffectGlobalIllum::EffectGlobalIllum( Device& _Device, Texture2D& _RTHDR, Primit
 	// Create the constant buffers
  	m_pCB_Object = new CB<CBObject>( gs_Device, 10 );
  	m_pCB_Material = new CB<CBMaterial>( gs_Device, 11 );
+	m_pCB_Splat = new CB<CBSplat>( gs_Device, 10 );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -38,11 +40,13 @@ EffectGlobalIllum::~EffectGlobalIllum()
 	m_bDeleteSceneTags = true;
 	m_Scene.ClearTags( *this );
 
+	delete m_pCB_Splat;
 	delete m_pCB_Material;
 	delete m_pCB_Object;
 
 	delete m_pTexWalls;
 
+	delete m_pMatPostProcess;
 	delete m_pMatRenderCubeMap;
 	delete m_pMatRender;
 }
@@ -50,17 +54,39 @@ EffectGlobalIllum::~EffectGlobalIllum()
 
 void	EffectGlobalIllum::Render( float _Time, float _DeltaTime )
 {
-	m_Device.ClearRenderTarget( m_Device.DefaultRenderTarget(), NjFloat4::Zero );
-	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget(), &m_Device.DefaultDepthStencil() );
+	//////////////////////////////////////////////////////////////////////////
+	// 1] Render the scene
+// 	m_Device.ClearRenderTarget( m_RTTarget, NjFloat4::Zero );
+
+ 	m_Device.SetRenderTarget( m_RTTarget, &m_Device.DefaultDepthStencil() );
 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
 
 	m_Scene.Render( *this );
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// 2] Post-process the result
+	USING_MATERIAL_START( *m_pMatPostProcess )
+
+	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
+	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget() );
+
+	m_RTTarget.SetPS( 10 );
+
+	m_pCB_Splat->m.dUV = m_Device.DefaultRenderTarget().GetdUV();
+	m_pCB_Splat->UpdateData();
+
+	m_ScreenQuad.Render( M );
+
+	USING_MATERIAL_END
+
+	m_RTTarget.RemoveFromLastAssignedSlots();
 }
 
 
+	Texture2D*	ppRTCubeMap[2];
 void	EffectGlobalIllum::PreComputeProbes()
 {
-	Texture2D*	ppRTCubeMap[2];
 	ppRTCubeMap[0] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );	// Will contain albedo
 	ppRTCubeMap[1] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );	// Will contain normal + distance
 	Texture2D*	pRTCubeMapDepth = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
@@ -68,15 +94,15 @@ void	EffectGlobalIllum::PreComputeProbes()
 	// Here are the transform to render the 6 faces of a cube map
 	NjFloat4x4	SideTransforms[6] =
 	{
-		NjFloat4x4::RotY( +0.5f * PI ),	// +X (look right)
-		NjFloat4x4::RotY( -0.5f * PI ),	// -X (look left)
-		NjFloat4x4::RotX( -0.5f * PI ),	// +Y (look up)
-		NjFloat4x4::RotX( +0.5f * PI ),	// -Y (look down)
+		NjFloat4x4::RotY( -0.5f * PI ),	// +X (look right)
+		NjFloat4x4::RotY( +0.5f * PI ),	// -X (look left)
+		NjFloat4x4::RotX( +0.5f * PI ),	// +Y (look up)
+		NjFloat4x4::RotX( -0.5f * PI ),	// -Y (look down)
 		NjFloat4x4::RotY( +0.0f * PI ),	// +Z (look front) (default)
 		NjFloat4x4::RotY( +1.0f * PI ),	// -Z (look back)
 	};
 
-	NjFloat4x4	Camera2Proj = NjFloat4x4::ProjectionPerspective( 0.5f * PI, 1.0f, 0.1f, 10000.0f );
+	NjFloat4x4	Camera2Proj = NjFloat4x4::ProjectionPerspective( 0.5f * PI, 1.0f, 0.1f, 1000.0f );
 
 	struct	CBCubeMapCamera
 	{
@@ -92,13 +118,16 @@ void	EffectGlobalIllum::PreComputeProbes()
 		m_Device.ClearRenderTarget( *ppRTCubeMap[0], NjFloat4::Zero );
 		m_Device.ClearRenderTarget( *ppRTCubeMap[1], NjFloat4( 0, 0, 0, 1e6f ) );	// We clear distance to infinity here
 
-		NjFloat4x4&	ProbeTransform = pProbe->m_Local2World;
+		NjFloat4x4	ProbeLocal2World = pProbe->m_Local2World;
+		ProbeLocal2World.Normalize();
+
+		NjFloat4x4	ProbeWorld2Local = ProbeLocal2World.Inverse();
 
 		// Render the 6 faces
 		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
 		{
 			// Update cube map face camera transform
-			NjFloat4x4	CubeFaceTransform = SideTransforms[CubeFaceIndex] * ProbeTransform;
+			NjFloat4x4	CubeFaceTransform = ProbeWorld2Local * SideTransforms[CubeFaceIndex];
 
 			pCBCubeMapCamera->m.World2Proj = CubeFaceTransform * Camera2Proj;
 			pCBCubeMapCamera->UpdateData();
@@ -115,18 +144,24 @@ void	EffectGlobalIllum::PreComputeProbes()
 
 			// Render scene
 			Scene::Node*	pMesh = NULL;
-			while( pMesh = m_Scene.ForEach( Scene::Node::MESH, pMesh ) )
+			while ( pMesh = m_Scene.ForEach( Scene::Node::MESH, pMesh ) )
 			{
 				RenderMesh( (Scene::Mesh&) *pMesh, m_pMatRenderCubeMap );
 			}
 		}
 	}
 
+#if 1
+m_Device.RemoveRenderTargets();
+ppRTCubeMap[0]->SetPS( 64 );
+ppRTCubeMap[1]->SetPS( 65 );
+#endif
+
 	delete pCBCubeMapCamera;
 
 	delete pRTCubeMapDepth;
-	delete ppRTCubeMap[1];
-	delete ppRTCubeMap[0];
+// 	delete ppRTCubeMap[1];
+// 	delete ppRTCubeMap[0];
 }
 
 

@@ -24,6 +24,10 @@ cbuffer	cbMaterial	: register( b11 )
 Texture2D<float4>	_TexDiffuseAlbedo : register( t10 );
 Texture2D<float4>	_TexSpecularAlbedo : register( t11 );
 
+// DEBUG!
+TextureCube<float4>	_TexCubemapProbe0 : register( t64 );
+TextureCube<float4>	_TexCubemapProbe1 : register( t65 );
+
 
 struct	VS_IN
 {

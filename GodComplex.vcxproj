@@ -445,6 +445,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\DeferredFillGBuffer.hlsl" />
     <None Include="Resources\Shaders\DeferredShading.hlsl" />
     <None Include="Resources\Shaders\DeferredShadingStencil.hlsl" />
+    <None Include="Resources\Shaders\GIPostProcess.hlsl" />
     <None Include="Resources\Shaders\GIRenderCubeMap.hlsl" />
     <None Include="Resources\Shaders\GIRenderScene.hlsl" />
     <None Include="Resources\Shaders\Inc\Atmosphere.hlsl" />
