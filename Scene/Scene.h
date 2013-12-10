@@ -202,8 +202,10 @@ public:		// NESTED TYPES
 	class	ISceneRenderer
 	{
 	public:
-		// Tags a material with a special user pointer
-		virtual void	RenderMesh( const Scene::Mesh& _Mesh ) const abstract;
+		// Renders a mesh
+		//	_Mesh, the mesh to render
+		//	_pMaterialOverride, an optional material used to override the mesh's default material
+		virtual void	RenderMesh( const Scene::Mesh& _Mesh, ::Material* _pMaterialOverride ) const abstract;
 	};
 
 
@@ -227,12 +229,18 @@ public:		// METHODS
 	void			Render( const ISceneRenderer& _SceneRenderer ) const;
 	void			ClearTags( const ISceneTagger& _SceneTagClearer );
 
+	// Iterates over all the nodes of specific type
+	//	_pPrevious, should be NULL for the first call to trigger a new search
+	Node*			ForEach( Node::TYPE _Type, Node* _pPrevious );
+
+
 private:
 
 	void			Render( const Node* _pNode, const ISceneRenderer& _SceneRenderer ) const;
 
 	// Helpers
 	Node*			CreateNode( Node* _pParent, const U8*& _pData, const ISceneTagger& _SceneTagger );
+	Node*			FindNextNodeOfType( Node::TYPE _Type, Node* _pPrevious );
 	static U32		ReadU16( const U8*& _pData, bool _IsID=false );
 	static U32		ReadU32( const U8*& _pData );
 	static float	ReadF32( const U8*& _pData );

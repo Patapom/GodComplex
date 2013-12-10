@@ -19,12 +19,13 @@ void	Camera::SetPerspective( float _FOV, float _AspectRatio, float _Near, float 
 
 	m_pCB->m.Params.Set( W, H, _Near, _Far );
 
-	float	Q =  _Far / (_Far - _Near);
+	m_pCB->m.Camera2Proj = NjFloat4x4::ProjectionPerspective( _FOV, _AspectRatio, _Near, _Far );
 
-	m_pCB->m.Camera2Proj.SetRow( 0, NjFloat4( 1.0f / W, 0.0f, 0.0f, 0.0f ) );
-	m_pCB->m.Camera2Proj.SetRow( 1, NjFloat4( 0.0f, 1.0f / H, 0.0f, 0.0f ) );
-	m_pCB->m.Camera2Proj.SetRow( 2, NjFloat4( 0.0f, 0.0f, Q, 1.0f ) );
-	m_pCB->m.Camera2Proj.SetRow( 3, NjFloat4( 0.0f, 0.0f, -_Near * Q, 0.0f ) );
+// 	float	Q =  _Far / (_Far - _Near);
+// 	m_pCB->m.Camera2Proj.SetRow( 0, NjFloat4( 1.0f / W, 0.0f, 0.0f, 0.0f ) );
+// 	m_pCB->m.Camera2Proj.SetRow( 1, NjFloat4( 0.0f, 1.0f / H, 0.0f, 0.0f ) );
+// 	m_pCB->m.Camera2Proj.SetRow( 2, NjFloat4( 0.0f, 0.0f, Q, 1.0f ) );
+// 	m_pCB->m.Camera2Proj.SetRow( 3, NjFloat4( 0.0f, 0.0f, -_Near * Q, 0.0f ) );
 
 	m_pCB->m.Proj2Camera = m_pCB->m.Camera2Proj.Inverse();
 

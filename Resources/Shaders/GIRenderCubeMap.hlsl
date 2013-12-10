@@ -1,7 +1,17 @@
 //////////////////////////////////////////////////////////////////////////
-// This shader displays the Global Illumination test room
+// This shader renders a cube map at a specified position
+// Each face of the cubemap will be composed of 2 render targets:
+//	RT0 = Albedo (RGB) + Empty (A)
+//	RT1 = Normal (RGB) + Distance (Z)
 //
 #include "Inc/Global.hlsl"
+
+//[
+cbuffer	cbCubeMapCamera	: register( b9 )
+{
+	float4x4	_CubeMapWorld2Proj;
+};
+//]
 
 //[
 cbuffer	cbObject	: register( b10 )
@@ -37,10 +47,17 @@ struct	VS_IN
 struct	PS_IN
 {
 	float4	__Position	: SV_POSITION;
+	float3	Position	: POSITION;
 	float3	Normal		: NORMAL;
 	float3	Tangent		: TANGENT;
 	float3	BiTangent	: BITANGENT;
 	float3	UV			: TEXCOORD0;
+};
+
+struct	PS_OUT
+{
+	float3	DiffuseAlbedo	: SV_TARGET0;
+	float4	NormalDistance	: SV_TARGET1;
 };
 
 PS_IN	VS( VS_IN _In )
@@ -48,7 +65,8 @@ PS_IN	VS( VS_IN _In )
 	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
 
 	PS_IN	Out;
-	Out.__Position = mul( WorldPosition, _World2Proj );
+	Out.__Position = mul( WorldPosition, _CubeMapWorld2Proj );
+	Out.Position = WorldPosition.xyz;
 	Out.Normal = mul( float4( _In.Normal, 0.0 ), _Local2World );
 	Out.Tangent = mul( float4( _In.Tangent, 0.0 ), _Local2World );
 	Out.BiTangent = mul( float4( _In.BiTangent, 0.0 ), _Local2World );
@@ -57,13 +75,14 @@ PS_IN	VS( VS_IN _In )
 	return Out;
 }
 
-float4	PS( PS_IN _In ) : SV_TARGET0
+PS_OUT	PS( PS_IN _In )
 {
-//	clip( 0.5 - _HasDiffuseTexture );
+	PS_OUT	Out;
+	Out.DiffuseAlbedo = _DiffuseAlbedo;
 	if ( _HasDiffuseTexture )
-//		return float4( 1, 0, 0, 1 );
-		return float4( _TexDiffuseAlbedo.Sample( LinearWrap, _In.UV ).xyz, 1.0 );
+		Out.DiffuseAlbedo = _TexDiffuseAlbedo.Sample( LinearWrap, _In.UV ).xyz;
 
-	return float4( _DiffuseAlbedo, 1 );
-	return float4( normalize( _In.Normal ), 1 );
+	Out.NormalDistance = float4( normalize( _In.Normal ), length( _In.Position - _Camera2World[3].xyz ) );
+	
+	return Out;
 }

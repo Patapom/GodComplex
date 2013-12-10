@@ -39,12 +39,12 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 		m_ArraySize = 6;
 		m_bIsCubeMap = true;
 	}
-	ASSERT( _ArraySize > 0, "Invalid array size !" );
+	ASSERT( m_ArraySize > 0, "Invalid array size !" );
 
 	Init( _ppContent, _bStaging, _bUnOrderedAccess );
 }
 
-Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format )
+Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format, int _ArraySize )
 	: Component( _Device )
 	, m_Format( _Format )
 	, m_bIsDepthStencil( true )
@@ -60,13 +60,13 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const IDepthSten
 
 	m_Width = _Width;
 	m_Height = _Height;
-	m_ArraySize = 1;
+	m_ArraySize = _ArraySize;
 	m_MipLevelsCount = 1;
 
 	D3D11_TEXTURE2D_DESC	Desc;
-	Desc.Width = _Width;
-	Desc.Height = _Height;
-	Desc.ArraySize = 1;
+	Desc.Width = m_Width;
+	Desc.Height = m_Height;
+	Desc.ArraySize = m_ArraySize;
 	Desc.MipLevels = 1;
 	Desc.Format = _Format.DirectXFormat();
 	Desc.SampleDesc.Count = 1;
