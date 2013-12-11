@@ -24,6 +24,10 @@ cbuffer	cbMaterial	: register( b11 )
 Texture2D<float4>	_TexDiffuseAlbedo : register( t10 );
 Texture2D<float4>	_TexSpecularAlbedo : register( t11 );
 
+// DEBUG!
+TextureCube<float4>	_TexCubemapProbe0 : register( t64 );
+TextureCube<float4>	_TexCubemapProbe1 : register( t65 );
+
 
 struct	VS_IN
 {
@@ -64,5 +68,6 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 //		return float4( 1, 0, 0, 1 );
 		return float4( _TexDiffuseAlbedo.Sample( LinearWrap, _In.UV ).xyz, 1.0 );
 
+	return float4( _DiffuseAlbedo, 1 );
 	return float4( normalize( _In.Normal ), 1 );
 }

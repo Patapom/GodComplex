@@ -6,6 +6,8 @@ class EffectGlobalIllum : public Scene::ISceneTagger, public Scene::ISceneRender
 {
 private:	// CONSTANTS
 
+	static const U32		CUBE_MAP_SIZE = 128;
+
 protected:	// NESTED TYPES
 
 	struct CBObject
@@ -22,13 +24,21 @@ protected:	// NESTED TYPES
 		float		SpecularExponent;
 	};
 
+	struct CBSplat
+	{
+		NjFloat3	dUV;
+	};
+
 private:	// FIELDS
 
 	int					m_ErrorCode;
 	Device&				m_Device;
 	Texture2D&			m_RTTarget;
+	Primitive&			m_ScreenQuad;
 
 	Material*			m_pMatRender;			// Displays the room
+	Material*			m_pMatRenderCubeMap;	// Renders the room into a cubemap
+	Material*			m_pMatPostProcess;		// Post-processes the result
 
 	// Primitives
 	Scene				m_Scene;
@@ -37,11 +47,11 @@ private:	// FIELDS
 	// Textures
 	Texture2D*			m_pTexWalls;
 
-public:
-
 	// Constant buffers
  	CB<CBObject>*		m_pCB_Object;
  	CB<CBMaterial>*		m_pCB_Material;
+	CB<CBSplat>*		m_pCB_Splat;
+
 
 
 	// Params
@@ -68,8 +78,10 @@ public:		// METHODS
 	virtual void*	TagPrimitive( const Scene::Mesh& _Mesh, const Scene::Mesh::Primitive& _Primitive ) const override;
 
 	// ISceneRenderer Implementation
-	virtual void	RenderMesh( const Scene::Mesh& _Mesh ) const override;
+	virtual void	RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride ) const override;
 
-protected:
+private:
+
+	void			PreComputeProbes();
 
 };

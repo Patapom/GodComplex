@@ -559,6 +559,12 @@
     <None Include="Resources\Shaders\GIRenderScene.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
     </None>
+    <None Include="Resources\Shaders\GIRenderCubeMap.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIPostProcess.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

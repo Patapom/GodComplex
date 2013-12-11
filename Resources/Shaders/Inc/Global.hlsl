@@ -22,7 +22,7 @@ static const float	INVHALFPI = 0.63661977236758134307553505349006;	// 1/(PI/2)
 static const float	INVTWOPI = 0.15915494309189533576888376337251;	// 1/2PI
 static const float	INVFOURPI = 0.07957747154594766788444188168626;	// 1/4PI
 
-static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.patapom.com/index.php/Colorimetry)
+static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.nuaj.net/index.php?title=Colorimetry)
 
 static const float	INFINITY = 1e6;
 
@@ -101,11 +101,11 @@ float3	Distort( float3 _Position, float3 _Normal, float4 _NoiseOffset )
 // Rotates a vector about an axis
 // float3	RotateVector( float3 v, float3 _Axis, float _Angle )
 // {
-//     _Axis = normalize( _Axis );
-//     float3	n = _Axis * dot( _Axis, v );
-// 	float2	SC;
-// 	sincos( _Angle, SC.x, SC.y );
-//     return n + SC.y * (v - n) + SC.x * cross( _Axis, v );
+//		_Axis = normalize( _Axis );
+//		float3	n = _Axis * dot( _Axis, v );
+// 		float2	SC;
+// 		sincos( _Angle, SC.x, SC.y );
+//		return n + SC.y * (v - n) + SC.x * cross( _Axis, v );
 // }
 
 float3	RotateVector( float3 _Vector, float3 _Axis, float _Angle )

@@ -107,6 +107,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	// Create our camera
 	gs_pCamera = new Camera( gs_Device );	// NOTE: Camera reserves the CB slot #0 for itself !
 	gs_pCamera->SetPerspective( NUAJDEG2RAD( 50.0f ), float(RESX) / RESY, 0.01f, 1000.0f );
+	gs_pCamera->Upload( 0 );
 
 	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3::Zero, NjFloat3::UnitZ );
 

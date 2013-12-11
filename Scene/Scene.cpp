@@ -62,12 +62,58 @@ void	Scene::Render( const Node* _pNode, const ISceneRenderer& _SceneRenderer ) c
 	ASSERT( _pNode != NULL, "Invalid node!" );
 
 	if ( _pNode->m_Type == Node::MESH )
-		_SceneRenderer.RenderMesh( (const Mesh&) *_pNode );
+		_SceneRenderer.RenderMesh( (const Mesh&) *_pNode, NULL );
 
 	// Render children
 	for ( int ChildIndex=0; ChildIndex < _pNode->m_ChildrenCount; ChildIndex++ )
 		Render( _pNode->m_ppChildren[ChildIndex], _SceneRenderer );
 }
+
+
+Scene::Node*	Scene::ForEach( Node::TYPE _Type, Node* _pPrevious )
+{
+	if ( _pPrevious == NULL )
+		_pPrevious = m_pROOT;
+	
+	// Search in children first
+	for ( int ChildIndex=0; ChildIndex < _pPrevious->m_ChildrenCount; ChildIndex++ )
+	{
+		Scene::Node*	pMatch = _pPrevious->m_ppChildren[ChildIndex];
+		if ( pMatch->m_Type == _Type )
+			return pMatch;
+	}
+
+	// If we couldn't find any match in the children, go back to parent to find this node among its siblings and continue to the next sibling
+	return FindNextNodeOfType( _Type, _pPrevious );
+}
+
+Scene::Node*	Scene::FindNextNodeOfType( Node::TYPE _Type, Node* _pPrevious )
+{
+	if ( _pPrevious == NULL || _pPrevious->m_pParent == NULL )
+		return NULL;	// We're back to the root, we're done!
+
+	Node*	pParent = _pPrevious->m_pParent;
+	for ( int SiblingIndex=0; SiblingIndex < pParent->m_ChildrenCount; SiblingIndex++ )
+	{
+		Node*	pSibling = pParent->m_ppChildren[SiblingIndex];
+		if ( pSibling == _pPrevious && SiblingIndex < pParent->m_ChildrenCount-1 )
+		{	// We found the previous node in its parent's children (i.e. among its siblings)
+			//	and we know there's at least one more sibling after it so conduct search in there
+			Node*	pNextSearch = pParent->m_ppChildren[SiblingIndex+1];
+
+			if ( pNextSearch->m_Type == _Type )
+				return pNextSearch;	// The next sibling is itself of the requested type
+
+			// Search into its children...
+			return ForEach( _Type, pNextSearch );
+		}
+	}
+
+	// We're done processing the siblings, recurse through the parent again
+	return FindNextNodeOfType( _Type, pParent );
+}
+
+
 
 Scene::Node*	Scene::CreateNode( Node* _pParent, const U8*& _pData, const ISceneTagger& _SceneTagger )
 {

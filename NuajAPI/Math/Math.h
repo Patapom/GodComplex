@@ -200,21 +200,24 @@ public:
 	NjFloat4x4			Inverse() const;
 	float				Determinant() const;
 	float				CoFactor( int x, int y ) const;
+	NjFloat4x4&			Normalize();
 
 //	NjFloat4			operator*( const NjFloat4& b ) const;
 	NjFloat4x4			operator*( const NjFloat4x4& b ) const;
 	float&				operator()( int _Row, int _Column );
 
-	NjFloat4x4&			FromAngleAxis( float _Angle, const NjFloat3& _Axis )	{ return FromQuat( NjFloat4::QuatFromAngleAxis( _Angle, _Axis ) ); }
-	NjFloat4x4&			FromQuat( const NjFloat4& _Quat );
-	NjFloat4x4&			PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S=NjFloat3::One );
-	static NjFloat4x4	BuildFromPRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S=NjFloat3::One );
+	NjFloat4x4&			PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S=NjFloat3::One );		// Builds a transform matrix from Position, Rotation (a quat) and Scale
 
-	NjFloat4x4&			Rot( const NjFloat3& _Source, const NjFloat3& _Target );	// Generate the rotation matrix that rotates the _Source vector into the _Target vector
-	NjFloat4x4&			RotX( float _Angle );
-	NjFloat4x4&			RotY( float _Angle );
-	NjFloat4x4&			RotZ( float _Angle );
-	NjFloat4x4&			PYR( float _Pitch, float _Yaw, float _Roll );
+	static NjFloat4x4	BuildFromPRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S=NjFloat3::One );
+	static NjFloat4x4	BuildFromAngleAxis( float _Angle, const NjFloat3& _Axis )	{ return BuildFromQuat( NjFloat4::QuatFromAngleAxis( _Angle, _Axis ) ); }
+	static NjFloat4x4	BuildFromQuat( const NjFloat4& _Quat );
+	static NjFloat4x4	ProjectionPerspective( float _FOVY, float _AspectRatio, float _Near, float _Far );	// Builds a perspective projection matrix
+
+	static NjFloat4x4	Rot( const NjFloat3& _Source, const NjFloat3& _Target );	// Generate the rotation matrix that rotates the _Source vector into the _Target vector
+	static NjFloat4x4	RotX( float _Angle );
+	static NjFloat4x4	RotY( float _Angle );
+	static NjFloat4x4	RotZ( float _Angle );
+	static NjFloat4x4	PYR( float _Pitch, float _Yaw, float _Roll );
 
 	static const NjFloat4x4	Zero;
 	static const NjFloat4x4	Identity;
