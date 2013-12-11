@@ -55,6 +55,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FFTWLib", "Packages\FFTWLib
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBXTestConverter", "Tools\FBXTestConverter\FBXTestConverter.csproj", "{90664263-E456-4E2E-A22F-DA2349B42C28}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cooker", "Tools\Cooker\Cooker.csproj", "{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug (SDK v2011.3.1)|Any CPU = Debug (SDK v2011.3.1)|Any CPU
@@ -120,7 +122,6 @@ Global
 		{DD026A89-C5FE-4150-BC85-A660E427826A}.Release|Mixed Platforms.Build.0 = Release|x64
 		{DD026A89-C5FE-4150-BC85-A660E427826A}.Release|Win32.ActiveCfg = Release|x64
 		{DD026A89-C5FE-4150-BC85-A660E427826A}.Release|x64.ActiveCfg = Release|x64
-		{DD026A89-C5FE-4150-BC85-A660E427826A}.Release|x64.Build.0 = Release|x64
 		{DD026A89-C5FE-4150-BC85-A660E427826A}.Release|x86.ActiveCfg = Release|x86
 		{DD026A89-C5FE-4150-BC85-A660E427826A}.Release|x86.Build.0 = Release|x86
 		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug (SDK v2011.3.1)|Any CPU.ActiveCfg = Debug|x64
@@ -786,7 +787,6 @@ Global
 		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Release|Win32.ActiveCfg = Release|Win32
 		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Release|Win32.Build.0 = Release|Win32
 		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Release|x64.ActiveCfg = Release|x64
-		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Release|x64.Build.0 = Release|x64
 		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Release|x86.ActiveCfg = Release|x64
 		{882F79F3-62E7-4523-B0BA-8FA1144D565B}.Debug (SDK v2011.3.1)|Any CPU.ActiveCfg = Debug|x86
 		{882F79F3-62E7-4523-B0BA-8FA1144D565B}.Debug (SDK v2011.3.1)|Mixed Platforms.ActiveCfg = Debug|x86
@@ -858,7 +858,6 @@ Global
 		{04040D82-8A53-498E-86A6-305724AB523E}.Release|Mixed Platforms.Build.0 = Release|x86
 		{04040D82-8A53-498E-86A6-305724AB523E}.Release|Win32.ActiveCfg = Release|x86
 		{04040D82-8A53-498E-86A6-305724AB523E}.Release|x64.ActiveCfg = Release|x64
-		{04040D82-8A53-498E-86A6-305724AB523E}.Release|x64.Build.0 = Release|x64
 		{04040D82-8A53-498E-86A6-305724AB523E}.Release|x86.ActiveCfg = Release|x86
 		{04040D82-8A53-498E-86A6-305724AB523E}.Release|x86.Build.0 = Release|x86
 		{17C01446-DAC5-4F86-9ACE-E535C5B37679}.Debug (SDK v2011.3.1)|Any CPU.ActiveCfg = Debug|Win32
@@ -896,7 +895,6 @@ Global
 		{17C01446-DAC5-4F86-9ACE-E535C5B37679}.Release|Win32.ActiveCfg = Release|Win32
 		{17C01446-DAC5-4F86-9ACE-E535C5B37679}.Release|Win32.Build.0 = Release|Win32
 		{17C01446-DAC5-4F86-9ACE-E535C5B37679}.Release|x64.ActiveCfg = Release|x64
-		{17C01446-DAC5-4F86-9ACE-E535C5B37679}.Release|x64.Build.0 = Release|x64
 		{17C01446-DAC5-4F86-9ACE-E535C5B37679}.Release|x86.ActiveCfg = Release|Win32
 		{1495E781-2449-49A1-A54B-61FB1081ACF3}.Debug (SDK v2011.3.1)|Any CPU.ActiveCfg = Debug|Any CPU
 		{1495E781-2449-49A1-A54B-61FB1081ACF3}.Debug (SDK v2011.3.1)|Any CPU.Build.0 = Debug|Any CPU
@@ -1031,6 +1029,42 @@ Global
 		{90664263-E456-4E2E-A22F-DA2349B42C28}.Release|x64.ActiveCfg = Release|x64
 		{90664263-E456-4E2E-A22F-DA2349B42C28}.Release|x86.ActiveCfg = Release|x86
 		{90664263-E456-4E2E-A22F-DA2349B42C28}.Release|x86.Build.0 = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Debug (SDK v2011.3.1)|Any CPU.ActiveCfg = Debug|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Debug (SDK v2011.3.1)|Mixed Platforms.ActiveCfg = Debug|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Debug (SDK v2011.3.1)|Mixed Platforms.Build.0 = Debug|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Debug (SDK v2011.3.1)|Win32.ActiveCfg = Debug|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Debug (SDK v2011.3.1)|x64.ActiveCfg = Debug|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Debug (SDK v2011.3.1)|x86.ActiveCfg = Debug|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Debug (SDK v2011.3.1)|x86.Build.0 = Debug|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Debug|Win32.ActiveCfg = Debug|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Debug|x64.ActiveCfg = Debug|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Debug|x86.ActiveCfg = Debug|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Debug|x86.Build.0 = Debug|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Profile|Any CPU.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Profile|Mixed Platforms.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Profile|Mixed Platforms.Build.0 = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Profile|Win32.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Profile|x64.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Profile|x86.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Profile|x86.Build.0 = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release (SDK v2011.3.1)|Any CPU.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release (SDK v2011.3.1)|Mixed Platforms.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release (SDK v2011.3.1)|Mixed Platforms.Build.0 = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release (SDK v2011.3.1)|Win32.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release (SDK v2011.3.1)|x64.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release (SDK v2011.3.1)|x86.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release (SDK v2011.3.1)|x86.Build.0 = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release|Any CPU.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release|Mixed Platforms.Build.0 = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release|Win32.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release|x64.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release|x64.Build.0 = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release|x86.ActiveCfg = Release|x86
+		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
