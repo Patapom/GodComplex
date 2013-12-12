@@ -87,9 +87,16 @@ void	EffectGlobalIllum::Render( float _Time, float _DeltaTime )
 	Texture2D*	ppRTCubeMap[2];
 void	EffectGlobalIllum::PreComputeProbes()
 {
-	ppRTCubeMap[0] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );	// Will contain albedo
-	ppRTCubeMap[1] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );	// Will contain normal + distance
+	const float		Z_INFINITY = 1e6f;
+	const float		Z_INFINITY_TEST = 0.99f * Z_INFINITY;
+
+	ppRTCubeMap[0] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain albedo
+	ppRTCubeMap[1] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain normal + distance
 	Texture2D*	pRTCubeMapDepth = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
+
+	Texture2D*	ppRTCubeMapStaging[2];
+	ppRTCubeMapStaging[0] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );	// Will contain albedo
+	ppRTCubeMapStaging[1] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );	// Will contain normal + distance
 
 	// Here are the transform to render the 6 faces of a cube map
 	NjFloat4x4	SideTransforms[6] =
@@ -114,9 +121,12 @@ void	EffectGlobalIllum::PreComputeProbes()
 	Scene::Node*	pProbe = NULL;
 	while ( pProbe = m_Scene.ForEach( Scene::Node::PROBE, pProbe ) )
 	{
+		//////////////////////////////////////////////////////////////////////////
+		// 1] Render Albedo + Normal + Z
+
 		// Clear cube map
 		m_Device.ClearRenderTarget( *ppRTCubeMap[0], NjFloat4::Zero );
-		m_Device.ClearRenderTarget( *ppRTCubeMap[1], NjFloat4( 0, 0, 0, 1e6f ) );	// We clear distance to infinity here
+		m_Device.ClearRenderTarget( *ppRTCubeMap[1], NjFloat4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
 
 		NjFloat4x4	ProbeLocal2World = pProbe->m_Local2World;
 		ProbeLocal2World.Normalize();
@@ -127,9 +137,9 @@ void	EffectGlobalIllum::PreComputeProbes()
 		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
 		{
 			// Update cube map face camera transform
-			NjFloat4x4	CubeFaceTransform = ProbeWorld2Local * SideTransforms[CubeFaceIndex];
+			NjFloat4x4	ProbeWorld2Camera = ProbeWorld2Local * SideTransforms[CubeFaceIndex];
 
-			pCBCubeMapCamera->m.World2Proj = CubeFaceTransform * Camera2Proj;
+			pCBCubeMapCamera->m.World2Proj = ProbeWorld2Camera * Camera2Proj;
 			pCBCubeMapCamera->UpdateData();
 
 			// Render the scene into the specific cube map faces
@@ -149,6 +159,107 @@ void	EffectGlobalIllum::PreComputeProbes()
 				RenderMesh( (Scene::Mesh&) *pMesh, m_pMatRenderCubeMap );
 			}
 		}
+
+		//////////////////////////////////////////////////////////////////////////
+		// 2] Read back cube map and create diffuse reflected SH coefficients
+		ppRTCubeMapStaging[0]->CopyFrom( *ppRTCubeMap[0] );
+		ppRTCubeMapStaging[1]->CopyFrom( *ppRTCubeMap[1] );
+
+		double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
+		double	SumSolidAngle = 0.0;
+
+		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
+		{
+			NjFloat4x4	Camera2ProbeWorld = SideTransforms[CubeFaceIndex] * ProbeLocal2World;
+
+			// Update cube map face camera transform
+			NjFloat4x4	ProbeWorld2Camera = ProbeWorld2Local * SideTransforms[CubeFaceIndex];
+ProbeWorld2Camera.Inverse();	// CHECK!
+
+
+			D3D11_MAPPED_SUBRESOURCE&	MappedFaceAlbedo = ppRTCubeMapStaging[0]->Map( 0, CubeFaceIndex );
+			D3D11_MAPPED_SUBRESOURCE&	MappedFaceGeometry = ppRTCubeMapStaging[1]->Map( 0, CubeFaceIndex );
+
+			NjFloat3	View;
+			double		pSH[3*9];
+			memset( pSH, 0, 3*9*sizeof(double) );
+
+			for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
+			{
+				NjFloat4*	pScanlineAlbedo = (NjFloat4*) ((U8*) MappedFaceAlbedo.pData + Y * MappedFaceAlbedo.RowPitch);
+				NjFloat4*	pScanlineGeometry = (NjFloat4*) ((U8*) MappedFaceGeometry.pData + Y * MappedFaceGeometry.RowPitch);
+
+				View.y = 1.0f - 2.0f * Y / (CUBE_MAP_SIZE-1);
+				for ( int X=0; X < CUBE_MAP_SIZE; X++ )
+				{
+					NjFloat4	Albedo = *pScanlineAlbedo++;
+					NjFloat4	Geometry = *pScanlineGeometry++;
+
+					// Rebuild view direction
+					View.x = 2.0f * X / (CUBE_MAP_SIZE-1) - 1.0f;
+					View.z = 1.0f;
+
+					// Retrieve the cube map texel's solid angle (from http://people.cs.kuleuven.be/~philip.dutre/GI/TotalCompendium.pdf)
+					// dw = cos(Theta).dA / r²
+					// cos(Theta) = Adjacent/Hypothenuse = 1/r
+					//
+					float	SqDistance2Texel = View.LengthSq();
+					float	Distance2Texel = sqrtf( SqDistance2Texel );
+
+					double	SolidAngle = dA / (Distance2Texel * SqDistance2Texel);
+					SumSolidAngle += SolidAngle;	// CHECK! => Should amount to 4PI at the end of the iteration...
+
+					// Retrieve world position
+					// Is this useful?
+//					View *= Camera2ProbeWorld;	// View vector in world space
+
+
+					// Check if we hit an obstacle, in which case we should accumulate indirect lighting
+					if ( Geometry.w > Z_INFINITY_TEST )
+						continue;	// No obstacle means direct lighting from ambient sky term, which is accounted for somewhere else...
+
+					// Build SH cosine lobe in the direction of the surface normal
+					NjFloat3	Normal( Geometry.x, Geometry.y, Geometry.z );
+					float		pCosineLobe[9];
+					BuildSHCosineLobe( Normal, pCosineLobe );
+
+					// Accumulate lobe, weighted by solid angle and albedo
+					double	R = SolidAngle * Albedo.x;
+					double	G = SolidAngle * Albedo.y;
+					double	B = SolidAngle * Albedo.z;
+					pSH[3*0+0] += pCosineLobe[0] * R;
+					pSH[3*0+1] += pCosineLobe[0] * G;
+					pSH[3*0+2] += pCosineLobe[0] * B;
+					pSH[3*1+0] += pCosineLobe[1] * R;
+					pSH[3*1+1] += pCosineLobe[1] * G;
+					pSH[3*1+2] += pCosineLobe[1] * B;
+					pSH[3*2+0] += pCosineLobe[2] * R;
+					pSH[3*2+1] += pCosineLobe[2] * G;
+					pSH[3*2+2] += pCosineLobe[2] * B;
+					pSH[3*3+0] += pCosineLobe[3] * R;
+					pSH[3*3+1] += pCosineLobe[3] * G;
+					pSH[3*3+2] += pCosineLobe[3] * B;
+					pSH[3*4+0] += pCosineLobe[4] * R;
+					pSH[3*4+1] += pCosineLobe[4] * G;
+					pSH[3*4+2] += pCosineLobe[4] * B;
+					pSH[3*5+0] += pCosineLobe[5] * R;
+					pSH[3*5+1] += pCosineLobe[5] * G;
+					pSH[3*5+2] += pCosineLobe[5] * B;
+					pSH[3*6+0] += pCosineLobe[6] * R;
+					pSH[3*6+1] += pCosineLobe[6] * G;
+					pSH[3*6+2] += pCosineLobe[6] * B;
+					pSH[3*7+0] += pCosineLobe[7] * R;
+					pSH[3*7+1] += pCosineLobe[7] * G;
+					pSH[3*7+2] += pCosineLobe[7] * B;
+					pSH[3*8+0] += pCosineLobe[8] * R;
+					pSH[3*8+1] += pCosineLobe[8] * G;
+					pSH[3*8+2] += pCosineLobe[8] * B;
+				}
+			}
+
+			ppRTCubeMapStaging[0]->UnMap( 0, CubeFaceIndex );
+			ppRTCubeMapStaging[1]->UnMap( 0, CubeFaceIndex );
+		}
 	}
 
 #if 1
@@ -159,9 +270,50 @@ ppRTCubeMap[1]->SetPS( 65 );
 
 	delete pCBCubeMapCamera;
 
+	delete ppRTCubeMapStaging[1];
+	delete ppRTCubeMapStaging[0];
+
 	delete pRTCubeMapDepth;
 // 	delete ppRTCubeMap[1];
 // 	delete ppRTCubeMap[0];
+}
+
+
+// Builds a spherical harmonics cosine lobe
+// (from "Stupid SH Tricks")
+//
+void	EffectGlobalIllum::BuildSHCosineLobe( const NjFloat3& _Direction, float _Coeffs[9] )
+{
+	const NjFloat3 ZHCoeffs = NjFloat3(
+		0.88622692545275801364908374167057f,	// sqrt(PI) / 2
+		1.0233267079464884884795516248893f,		// sqrt(PI / 3)
+		0.49541591220075137666812859564002f		// sqrt(5PI) / 8
+		);
+	ZHRotate( _Direction, ZHCoeffs, _Coeffs );
+}
+
+// Rotates ZH coefficients in the specified direction (from "Stupid SH Tricks")
+// Rotating ZH comes to evaluating scaled SH in the given direction.
+// The scaling factors for each band are equal to the ZH coefficients multiplied by sqrt( 4PI / (2l+1) )
+//
+void	EffectGlobalIllum::ZHRotate( const NjFloat3& _Direction, const NjFloat3& _ZHCoeffs, float _Coeffs[9] )
+{
+	float	cl0 = 3.5449077018110320545963349666823f * _ZHCoeffs.x;	// sqrt(4PI)
+	float	cl1 = 2.0466534158929769769591032497785f * _ZHCoeffs.y;	// sqrt(4PI/3)
+	float	cl2 = 1.5853309190424044053380115060481f * _ZHCoeffs.z;	// sqrt(4PI/5)
+
+	float	f0 = cl0 * 0.28209479177387814347403972578039f;	// 0.5 / sqrt(PI);
+	float	f1 = cl1 * 0.48860251190291992158638462283835f;	// 0.5 * sqrt(3.0/PI);
+	float	f2 = cl2 * 1.0925484305920790705433857058027f;	// 0.5 * sqrt(15.0/PI);
+	_Coeffs[0] = f0;
+	_Coeffs[1] = -f1 * _Direction.x;
+	_Coeffs[2] = f1 * _Direction.y;
+	_Coeffs[3] = -f1 * _Direction.z;
+	_Coeffs[4] = f2 * _Direction.x * _Direction.z;
+	_Coeffs[5] = -f2 * _Direction.x * _Direction.y;
+	_Coeffs[6] = f2 * 0.28209479177387814347403972578039f * (3.0f * _Direction.y*_Direction.y - 1.0f);
+	_Coeffs[7] = -f2 * _Direction.z * _Direction.y;
+	_Coeffs[8] = f2 * 0.5f * (_Direction.z*_Direction.z - _Direction.x*_Direction.x);
 }
 
 

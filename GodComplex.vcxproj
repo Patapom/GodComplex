@@ -452,6 +452,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\Inc\Global.hlsl" />
     <None Include="Resources\Shaders\Inc\LayeredMaterials.hlsl" />
     <None Include="Resources\Shaders\Inc\RayTracing.hlsl" />
+    <None Include="Resources\Shaders\Inc\SH.hlsl" />
     <None Include="Resources\Shaders\Inc\Volumetric.hlsl" />
     <None Include="Resources\Shaders\ParticlesCompute.hlsl" />
     <None Include="Resources\Shaders\ParticlesDisplay.hlsl" />

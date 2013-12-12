@@ -83,5 +83,6 @@ public:		// METHODS
 private:
 
 	void			PreComputeProbes();
-
+	void			BuildSHCosineLobe( const NjFloat3& _Direction, float _Coeffs[9] );
+	void			ZHRotate( const NjFloat3& _Direction, const NjFloat3& _ZHCoeffs, float _Coeffs[9] );
 };
