@@ -57,6 +57,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBXTestConverter", "Tools\F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cooker", "Tools\Cooker\Cooker.csproj", "{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShaderInterpreter", "Tools\ShaderInterpreter\ShaderInterpreter.csproj", "{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug (SDK v2011.3.1)|Any CPU = Debug (SDK v2011.3.1)|Any CPU
@@ -1065,6 +1067,42 @@ Global
 		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release|x64.Build.0 = Release|x86
 		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release|x86.ActiveCfg = Release|x86
 		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE}.Release|x86.Build.0 = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug (SDK v2011.3.1)|Any CPU.ActiveCfg = Debug|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug (SDK v2011.3.1)|Mixed Platforms.ActiveCfg = Debug|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug (SDK v2011.3.1)|Mixed Platforms.Build.0 = Debug|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug (SDK v2011.3.1)|Win32.ActiveCfg = Debug|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug (SDK v2011.3.1)|x64.ActiveCfg = Debug|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug (SDK v2011.3.1)|x86.ActiveCfg = Debug|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug (SDK v2011.3.1)|x86.Build.0 = Debug|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug|Win32.ActiveCfg = Debug|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug|x64.ActiveCfg = Debug|x64
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug|x64.Build.0 = Debug|x64
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug|x86.ActiveCfg = Debug|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Debug|x86.Build.0 = Debug|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Profile|Any CPU.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Profile|Mixed Platforms.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Profile|Mixed Platforms.Build.0 = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Profile|Win32.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Profile|x64.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Profile|x86.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Profile|x86.Build.0 = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release (SDK v2011.3.1)|Any CPU.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release (SDK v2011.3.1)|Mixed Platforms.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release (SDK v2011.3.1)|Mixed Platforms.Build.0 = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release (SDK v2011.3.1)|Win32.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release (SDK v2011.3.1)|x64.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release (SDK v2011.3.1)|x86.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release (SDK v2011.3.1)|x86.Build.0 = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release|Any CPU.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release|Mixed Platforms.Build.0 = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release|Win32.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release|x64.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release|x86.ActiveCfg = Release|x86
+		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
