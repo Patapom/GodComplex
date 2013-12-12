@@ -68,6 +68,7 @@
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
     <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -122,17 +123,13 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Packages\Cirrus.Utility\Utility.csproj">
-      <Project>{9A67863F-D886-41A5-A8D1-04BA1379B097}</Project>
-      <Name>Utility</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Packages\SharpMath\SharpMath.csproj">
       <Project>{DD026A89-C5FE-4150-BC85-A660E427826A}</Project>
       <Name>SharpMath</Name>
     </ProjectReference>
     <ProjectReference Include="..\DirectXTexManaged\DirectXTexManaged.vcxproj">
-      <Project>{17c01446-dac5-4f86-9ace-e535c5b37679}</Project>
-      <Name>DirectXTexManaged %28Visual Studio 2010%29</Name>
+      <Project>{17C01446-DAC5-4F86-9ACE-E535C5B37679}</Project>
+      <Name>DirectXTexManaged</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

@@ -137,3 +137,9 @@
 /Resources/Scenes/CubeTest/.mayaSwatches/*.swatches
 
 /Packages/FBXImporterManaged/Release (SDK v2011.3.1)/*.cache
+/Tools/Cooker/bin
+/Tools/Cooker/obj
+/Packages/SharpMath/bin
+/Tools/HDRCubeMapConvolver/HDRCubeMapConvolver
+
+/Tools/HDRCubeMapConvolver/HDRCubeMapConvolver.7z
