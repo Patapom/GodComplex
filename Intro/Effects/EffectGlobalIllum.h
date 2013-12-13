@@ -29,6 +29,26 @@ protected:	// NESTED TYPES
 		NjFloat3	dUV;
 	};
 
+	// The probe structure
+	struct	ProbeStruct
+	{
+		Scene::Probe*	pSceneProbe;
+
+		NjFloat4		pSHBounce[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced light
+		NjFloat3		pSHLight[9];			// The radiance field surrounding the probe
+
+		int				NeighborsCount;			// The amount of neighboor probes
+		struct	// NeighborLink
+		{
+			float			SolidAngle;			// The solid angle covered by the neighbor
+			float			Distance;			// The distance to the neighbor
+			float			pSHLink[9];			// The "link SH" the neighbor's SH needs to be convolved with to act as a local light source for this probe
+			ProbeStruct*	pNeighbor;			// The neighbor probe
+		}				pNeighborLinks[32];		// The array of 32 max neighbor probes
+
+		NjFloat3		pSHBouncedLight[9];		// The resulting bounced irradiance (bounce * light)
+	};
+
 private:	// FIELDS
 
 	int					m_ErrorCode;
@@ -52,6 +72,10 @@ private:	// FIELDS
  	CB<CBMaterial>*		m_pCB_Material;
 	CB<CBSplat>*		m_pCB_Splat;
 
+
+	// Probes
+	int					m_ProbesCount;
+	ProbeStruct*		m_pProbes;
 
 
 	// Params

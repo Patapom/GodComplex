@@ -37,6 +37,8 @@ EffectGlobalIllum::EffectGlobalIllum( Device& _Device, Texture2D& _RTHDR, Primit
 
 EffectGlobalIllum::~EffectGlobalIllum()
 {
+	delete[] m_pProbes;
+
 	m_bDeleteSceneTags = true;
 	m_Scene.ClearTags( *this );
 
@@ -98,6 +100,28 @@ void	EffectGlobalIllum::PreComputeProbes()
 	ppRTCubeMapStaging[0] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );	// Will contain albedo
 	ppRTCubeMapStaging[1] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );	// Will contain normal + distance
 
+
+	//////////////////////////////////////////////////////////////////////////
+	// Allocate probes
+	m_ProbesCount = 0;
+	Scene::Node*	pSceneProbe = NULL;
+	while ( pSceneProbe = m_Scene.ForEach( Scene::Node::PROBE, pSceneProbe ) )
+	{
+		m_ProbesCount++;
+	}
+	m_pProbes = new ProbeStruct[m_ProbesCount];
+
+	pSceneProbe = NULL;
+	m_ProbesCount = 0;
+	while ( pSceneProbe = m_Scene.ForEach( Scene::Node::PROBE, pSceneProbe ) )
+	{
+		m_pProbes[m_ProbesCount++].pSceneProbe = (Scene::Probe*) pSceneProbe;
+	}
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Render every probe as a cube map & process
+
 	// Here are the transform to render the 6 faces of a cube map
 	NjFloat4x4	SideTransforms[6] =
 	{
@@ -117,10 +141,10 @@ void	EffectGlobalIllum::PreComputeProbes()
 	};
 	CB<CBCubeMapCamera>*	pCBCubeMapCamera = new CB<CBCubeMapCamera>( m_Device, 9, true );
 
-	// Render every probe as a cube map & process
-	Scene::Node*	pProbe = NULL;
-	while ( pProbe = m_Scene.ForEach( Scene::Node::PROBE, pProbe ) )
+	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
+		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
+
 		//////////////////////////////////////////////////////////////////////////
 		// 1] Render Albedo + Normal + Z
 
@@ -128,7 +152,7 @@ void	EffectGlobalIllum::PreComputeProbes()
 		m_Device.ClearRenderTarget( *ppRTCubeMap[0], NjFloat4::Zero );
 		m_Device.ClearRenderTarget( *ppRTCubeMap[1], NjFloat4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
 
-		NjFloat4x4	ProbeLocal2World = pProbe->m_Local2World;
+		NjFloat4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
 		ProbeLocal2World.Normalize();
 
 		NjFloat4x4	ProbeWorld2Local = ProbeLocal2World.Inverse();
