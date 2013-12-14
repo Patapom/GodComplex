@@ -250,6 +250,7 @@ MinifyAll.cmd</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectGlobalIllum.h" />
     <ClInclude Include="Intro\Effects\EffectParticles.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -266,12 +267,15 @@ MinifyAll.cmd</Command>
     </ClInclude>
     <ClInclude Include="Intro\Effects\Scene\MaterialBank.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Intro\Effects\Scene\EffectScene.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Intro\Effects\Scene\Scene.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Intro\Intro.h" />
     <ClInclude Include="GodComplex.h" />
@@ -305,6 +309,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="RendererD3D11\Structures\PixelFormats.h" />
     <ClInclude Include="RendererD3D11\Structures\VertexFormats.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Scene\Scene.h" />
     <ClInclude Include="Sound\libv2.h" />
     <ClInclude Include="Sound\v2mplayer.h" />
     <ClInclude Include="Utility\Camera.h" />
@@ -318,6 +323,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Utility\Profiling.h" />
     <ClInclude Include="Utility\Random.h" />
     <ClInclude Include="Utility\Resources.h" />
+    <ClInclude Include="Utility\TextureFilePOM.h" />
     <ClInclude Include="Utility\tweakval.h" />
     <ClInclude Include="Utility\Video.h" />
   </ItemGroup>
@@ -340,6 +346,7 @@ MinifyAll.cmd</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectGlobalIllum.cpp" />
     <ClCompile Include="Intro\Effects\EffectParticles.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -356,18 +363,29 @@ MinifyAll.cmd</Command>
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTables.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesCS.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesPS.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Intro\Effects\Scene\MaterialBank.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Intro\Effects\Scene\EffectScene.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Intro\Effects\Scene\Scene.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Intro\Intro.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Workshop|Win32'">true</ExcludedFromBuild>
@@ -400,6 +418,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="RendererD3D11\Structures\DepthStencilFormats.cpp" />
     <ClCompile Include="RendererD3D11\Structures\PixelFormats.cpp" />
     <ClCompile Include="RendererD3D11\Structures\VertexFormats.cpp" />
+    <ClCompile Include="Scene\Scene.cpp" />
     <ClCompile Include="Sound\v2mplayer.cpp" />
     <ClCompile Include="Utility\Camera.cpp" />
     <ClCompile Include="Utility\FPSCamera.cpp" />
@@ -408,6 +427,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Utility\Profiling.cpp" />
     <ClCompile Include="Utility\Random.cpp" />
     <ClCompile Include="Utility\Resources.cpp" />
+    <ClCompile Include="Utility\TextureFilePOM.cpp" />
     <ClCompile Include="Utility\tweakval.cpp" />
     <ClCompile Include="Utility\Video.cpp" />
   </ItemGroup>
@@ -425,10 +445,14 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\DeferredFillGBuffer.hlsl" />
     <None Include="Resources\Shaders\DeferredShading.hlsl" />
     <None Include="Resources\Shaders\DeferredShadingStencil.hlsl" />
+    <None Include="Resources\Shaders\GIPostProcess.hlsl" />
+    <None Include="Resources\Shaders\GIRenderCubeMap.hlsl" />
+    <None Include="Resources\Shaders\GIRenderScene.hlsl" />
     <None Include="Resources\Shaders\Inc\Atmosphere.hlsl" />
     <None Include="Resources\Shaders\Inc\Global.hlsl" />
     <None Include="Resources\Shaders\Inc\LayeredMaterials.hlsl" />
     <None Include="Resources\Shaders\Inc\RayTracing.hlsl" />
+    <None Include="Resources\Shaders\Inc\SH.hlsl" />
     <None Include="Resources\Shaders\Inc\Volumetric.hlsl" />
     <None Include="Resources\Shaders\ParticlesCompute.hlsl" />
     <None Include="Resources\Shaders\ParticlesDisplay.hlsl" />
@@ -460,6 +484,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\VolumetricDownsampleDepth.hlsl" />
     <None Include="Resources\Shaders\VolumetricPreComputeAtmosphere.hlsl" />
     <None Include="Resources\Shaders\VolumetricPreComputeAtmosphereCS.hlsl" />
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmospherePS.hlsl" />
     <None Include="Resources\Shaders\VolumetricTerrain.hlsl" />
     <None Include="Tools\GodComplex.kkm" />
   </ItemGroup>

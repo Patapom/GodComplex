@@ -502,7 +502,7 @@ void	EffectVolumetric::UpdateSkyTables()
 
 					USING_COMPUTESHADER_START( *m_pCSMergeInitialScattering )
 
-						m_ppRTInScattering[1]->SetCSUAV( 1 );
+						m_ppRTScattering[1]->SetCSUAV( 1 );
 
 						m_pRTDeltaScatteringRayleigh->SetCS( 11 );
 						m_pRTDeltaScatteringMie->SetCS( 12 );
@@ -511,7 +511,7 @@ void	EffectVolumetric::UpdateSkyTables()
 
 					USING_COMPUTE_SHADER_END
 
-					m_ppRTInScattering[1]->RemoveFromLastAssignedSlotUAV();
+					m_ppRTScattering[1]->RemoveFromLastAssignedSlotUAV();
 					m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
 					m_pRTDeltaScatteringMie->RemoveFromLastAssignedSlots();
 				}
@@ -550,15 +550,15 @@ void	EffectVolumetric::UpdateSkyTables()
 					}
 
 					// Assign final textures to slots 8 & 9
-					m_ppRTInScattering[0]->RemoveFromLastAssignedSlots();
+					m_ppRTScattering[0]->RemoveFromLastAssignedSlots();
 					m_ppRTIrradiance[0]->RemoveFromLastAssignedSlots();
-					m_ppRTInScattering[1]->Set( 8, true );
+					m_ppRTScattering[1]->Set( 8, true );
 					m_ppRTIrradiance[1]->Set( 9, true );
 
 					// Swap double-buffered slots
-					Texture3D*	pTemp0 = m_ppRTInScattering[0];
-					m_ppRTInScattering[0] = m_ppRTInScattering[1];
-					m_ppRTInScattering[1] = pTemp0;
+					Texture3D*	pTemp0 = m_ppRTScattering[0];
+					m_ppRTScattering[0] = m_ppRTScattering[1];
+					m_ppRTScattering[1] = pTemp0;
 
 					Texture2D*	pTemp1 = m_ppRTIrradiance[0];
 					m_ppRTIrradiance[0] = m_ppRTIrradiance[1];
@@ -789,9 +789,9 @@ void	EffectVolumetric::UpdateSkyTables()
 
 					USING_COMPUTESHADER_START( *m_pCSAccumulateInScattering )
 
-						m_ppRTInScattering[2]->SetCSUAV( 1 );
+						m_ppRTScattering[2]->SetCSUAV( 1 );
 
-						m_ppRTInScattering[1]->SetCS( 15 );	// Previous values as SRV
+						m_ppRTScattering[1]->SetCS( 15 );	// Previous values as SRV
 
 						m_pRTDeltaScatteringRayleigh->SetCS( 11 );
 
@@ -799,14 +799,14 @@ void	EffectVolumetric::UpdateSkyTables()
 
 					USING_COMPUTE_SHADER_END
 
-					m_ppRTInScattering[2]->RemoveFromLastAssignedSlotUAV();
-					m_ppRTInScattering[1]->RemoveFromLastAssignedSlots();
+					m_ppRTScattering[2]->RemoveFromLastAssignedSlotUAV();
+					m_ppRTScattering[1]->RemoveFromLastAssignedSlots();
 					m_pRTDeltaScatteringRayleigh->RemoveFromLastAssignedSlots();
 
 					{	// Swap triple-buffered accumulators
-						Texture3D*	pTemp = m_ppRTInScattering[1];
-						m_ppRTInScattering[1] = m_ppRTInScattering[2];
-						m_ppRTInScattering[2] = pTemp;
+						Texture3D*	pTemp = m_ppRTScattering[1];
+						m_ppRTScattering[1] = m_ppRTScattering[2];
+						m_ppRTScattering[2] = pTemp;
 					}
 				}
 //*/
@@ -823,16 +823,16 @@ void	EffectVolumetric::UpdateSkyTables()
 //					m_bSkyTableDirty = false;
 
 					// Assign final textures to slots 8 & 9
-					m_ppRTInScattering[0]->RemoveFromLastAssignedSlots();
+					m_ppRTScattering[0]->RemoveFromLastAssignedSlots();
 					m_ppRTIrradiance[0]->RemoveFromLastAssignedSlots();
-					m_ppRTInScattering[1]->Set( 8, true );
+					m_ppRTScattering[1]->Set( 8, true );
 					m_ppRTIrradiance[1]->Set( 9, true );
 
 
 #if 1
 {
-	Texture3D*	pStagingScattering = new Texture3D( m_Device, m_ppRTInScattering[1]->GetWidth(), m_ppRTInScattering[1]->GetHeight(), m_ppRTInScattering[1]->GetDepth(), PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
-	pStagingScattering->CopyFrom( *m_ppRTInScattering[1] );
+	Texture3D*	pStagingScattering = new Texture3D( m_Device, m_ppRTScattering[1]->GetWidth(), m_ppRTScattering[1]->GetHeight(), m_ppRTScattering[1]->GetDepth(), PixelFormatRGBA16F::DESCRIPTOR, 1, NULL, true, true );
+	pStagingScattering->CopyFrom( *m_ppRTScattering[1] );
 	pStagingScattering->Save( FILENAME_SCATTERING );
 	delete pStagingScattering;
 
@@ -850,9 +850,9 @@ void	EffectVolumetric::UpdateSkyTables()
 
 
 					// Swap double-buffered slots
-					Texture3D*	pTemp0 = m_ppRTInScattering[0];
-					m_ppRTInScattering[0] = m_ppRTInScattering[1];
-					m_ppRTInScattering[1] = pTemp0;
+					Texture3D*	pTemp0 = m_ppRTScattering[0];
+					m_ppRTScattering[0] = m_ppRTScattering[1];
+					m_ppRTScattering[1] = pTemp0;
 
 					Texture2D*	pTemp1 = m_ppRTIrradiance[0];
 					m_ppRTIrradiance[0] = m_ppRTIrradiance[1];

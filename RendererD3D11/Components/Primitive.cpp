@@ -1,6 +1,6 @@
 #include "Primitive.h"
 
-Primitive::Primitive( Device& _Device, int _VerticesCount, void* _pVertices, int _IndicesCount, U16* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format ) : Component( _Device )
+Primitive::Primitive( Device& _Device, int _VerticesCount, const void* _pVertices, int _IndicesCount, const U32* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format ) : Component( _Device )
 	, m_VerticesCount( _VerticesCount )
 	, m_IndicesCount( _IndicesCount )
 	, m_Format( _Format )
@@ -50,6 +50,8 @@ void	Primitive::Render( Material& _Material )
 }
 void	Primitive::Render( Material& _Material, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset )
 {
+	ASSERT( m_Device.CurrentMaterial() == &_Material, "Attempting to render with a material that is not the currently used material!" );
+
 	ID3D11InputLayout*	pLayout = _Material.GetVertexLayout();
 	if ( pLayout == NULL )
 		return;	// Material is not initialied yet...
@@ -64,7 +66,7 @@ void	Primitive::Render( Material& _Material, int _StartVertex, int _VerticesCoun
 	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &m_Stride, &Offset );
 	if ( m_pIB != NULL )
 	{
-		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R16_UINT, 0 );
+		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R32_UINT, 0 );
 		m_Device.DXContext().DrawIndexed( _IndicesCount, _StartIndex, _BaseVertexOffset );
 	}
 	else
@@ -80,6 +82,8 @@ void	Primitive::RenderInstanced( Material& _Material, int _InstancesCount )
 }
 void	Primitive::RenderInstanced( Material& _Material, int _InstancesCount, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset )
 {
+	ASSERT( m_Device.CurrentMaterial() == &_Material, "Attempting to render with a material that is not the currently used material!" );
+
 	ID3D11InputLayout*	pLayout = _Material.GetVertexLayout();
 	if ( pLayout == NULL )
 		return;	// Material is not initialied yet...
@@ -91,7 +95,7 @@ void	Primitive::RenderInstanced( Material& _Material, int _InstancesCount, int _
 	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &m_Stride, &Offset );
 	if ( m_pIB != NULL )
 	{
-		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R16_UINT, 0 );
+		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R32_UINT, 0 );
 		m_Device.DXContext().DrawIndexedInstanced( _IndicesCount, _InstancesCount, _StartIndex, _BaseVertexOffset, 0 );
 	}
 	else
@@ -101,9 +105,9 @@ void	Primitive::RenderInstanced( Material& _Material, int _InstancesCount, int _
 	}
 }
 
-void	Primitive::Build( void* _pVertices, U16* _pIndices, bool _bDynamic )
+void	Primitive::Build( const void* _pVertices, const U32* _pIndices, bool _bDynamic )
 {
-	ASSERT( m_VerticesCount <= 65536, "Time to upgrade to U32 indices !" );
+//	ASSERT( m_VerticesCount <= 65536, "Time to upgrade to U32 indices!" );
 
 	{   // Create the vertex buffer
 		D3D11_BUFFER_DESC   Desc;
@@ -130,7 +134,8 @@ void	Primitive::Build( void* _pVertices, U16* _pIndices, bool _bDynamic )
 	if ( _pIndices != NULL )
 	{   // Create the index buffer
 		D3D11_BUFFER_DESC   Desc;
-		Desc.ByteWidth = m_IndicesCount * sizeof(U16);		 // For now, we only support U16 primitives
+//		Desc.ByteWidth = m_IndicesCount * sizeof(U16);		 // For now, we only support U16 primitives
+		Desc.ByteWidth = m_IndicesCount * sizeof(U32);
 		Desc.Usage = _bDynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_IMMUTABLE;
 		Desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 		Desc.CPUAccessFlags = _bDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
@@ -197,7 +202,7 @@ void	Primitive::UpdateDynamic( void* _pVertices, U16* _pIndices, int _VerticesCo
 #ifdef SUPPORT_GEO_BUILDERS
 
 // IGeometryWriter Implementation
-void	Primitive::CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, void*& _pVertices, void*& _pIndices, int& _VertexStride, int& _IndexStride )
+void	Primitive::CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, void*& _pVertices, void*& _pIndices )
 {
 	ASSERT( _VerticesCount <= 65536, "Too many vertices !" );	// Time to start accounting for large meshes d00d !
 
@@ -205,27 +210,26 @@ void	Primitive::CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIM
 	m_IndicesCount = _IndicesCount;
 	m_Topology = _Topology;
 
-	_VertexStride = m_Format.Size();
-	_pVertices = new U8[_VertexStride * m_VerticesCount];
-
-	_IndexStride = sizeof(U16);
-	_pIndices = new U16[m_IndicesCount];
+	_pVertices = new U8[m_VerticesCount * m_Format.Size()];
+	_pIndices = new U32[m_IndicesCount];
 }
 
-void	Primitive::WriteVertex( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV )
+void	Primitive::AppendVertex( void*& _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV )
 {
-	m_Format.Write( _pVertex, _Position, _Normal, _Tangent, _UV );
+	m_Format.Write( _pVertex, _Position, _Normal, _Tangent, _BiTangent, _UV );
+	_pVertex = (void*) ((U8*) _pVertex + m_Format.Size());
 }
 
-void	Primitive::WriteIndex( void* _pIndex, int _Index )
+void	Primitive::AppendIndex( void*& _pIndex, int _Index )
 {
 	ASSERT( _Index < m_VerticesCount, "Index out of range !" );
-	*((U16*) _pIndex) = _Index;
+	*((U32*) _pIndex) = _Index;
+	_pIndex = (void*) ((U8*) _pIndex + sizeof(U32));
 }
 
 void	Primitive::Finalize( void* _pVertices, void* _pIndices )
 {
-	Build( _pVertices, (U16*) _pIndices, false );
+	Build( _pVertices, (U32*) _pIndices, false );
 
 	delete[] _pVertices;
 	delete[] _pIndices;

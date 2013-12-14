@@ -320,7 +320,7 @@ namespace SphericalHarmonics
 			{
 				if ( _Coefficients[CoefficientIndex] == null )
 					_Coefficients[CoefficientIndex] = new Vector();
-				_Coefficients[CoefficientIndex].Zero();
+				_Coefficients[CoefficientIndex].MakeZero();
 			}
 
 			WMath.Vector	Value = new WMath.Vector();

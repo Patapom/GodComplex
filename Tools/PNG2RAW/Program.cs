@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define SAVE_RAW
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,7 +19,7 @@ namespace PNG2RAW
 // 
 //			Convert( args[0], args[1] );
 
-
+#if SAVE_RAW
 			string[]	FileNames = new string[]
 			{
 				"Iris_Blades",
@@ -54,9 +56,12 @@ namespace PNG2RAW
 			foreach ( string FileName in FileNames )
 			{
 				string	Source = FileName + ".png";
-				string	Target = FileName + ".raw";
-				Convert( Source, Target );
+				Convert( Source, FileName + ".raw" );
 			}
+#else
+			// Convert to POM format (i.e. DirectX format actually)
+			ConvertPOM( new FileInfo( "../../../Resources/Scenes/GITest1/pata_diff_color_small.png" ), new FileInfo( "../../../Resources/Scenes/GITest1/pata_diff_colo.pom" ), true );
+#endif
 		}
 
 		static unsafe void	Convert( string _Source, string _Target )
@@ -84,6 +89,52 @@ namespace PNG2RAW
 
 				using ( FileStream S = new FileInfo( _Target ).Create() )
 					S.Write( RAWImage, 0, RAWImage.Length );
+			}
+		}
+
+		static unsafe void	ConvertPOM( FileInfo _Source, FileInfo _Target, bool _sRGB )
+		{
+			using ( Bitmap B = Image.FromFile( _Source.FullName ) as Bitmap )
+			{
+				BitmapData	LockedBitmap = B.LockBits( new Rectangle( 0, 0, B.Width, B.Height ), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb );
+
+				byte[]		RAWImage = new byte[4*B.Width*B.Height];
+				int			ByteIndex = 0;
+				for ( int Y=0; Y < B.Height; Y++ )
+				{
+					byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + Y * LockedBitmap.Stride;
+					for ( int X=0; X < B.Width; X++ )
+					{
+						RAWImage[ByteIndex+2] = *pScanline++;
+						RAWImage[ByteIndex+1] = *pScanline++;
+						RAWImage[ByteIndex+0] = *pScanline++;
+						RAWImage[ByteIndex+3] = *pScanline++;
+						ByteIndex += 4;
+					}
+				}
+
+				B.UnlockBits( LockedBitmap );
+
+				using ( FileStream S = new FileInfo( _Target.FullName ).Create() )
+					using ( BinaryWriter W = new BinaryWriter( S ) )
+					{
+						// Write type & format
+						W.Write( (byte) 0 );	// 2D
+						W.Write( (byte) (28 + (_sRGB ? 1 : 0)) );		// DXGI_FORMAT_R8G8B8A8_UNORM=28, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB=29
+
+						// Write dimensions
+						W.Write( (Int32) B.Width );
+						W.Write( (Int32) B.Height );
+						W.Write( (Int32) 1 );			// ArraySize = 1
+						W.Write( (Int32) 1 );			// MipLevel = 1
+
+						// Write row & depth pitch
+						W.Write( (Int32) (B.Width * 4) );
+						W.Write( (Int32) (B.Width * B.Height * 4) );
+
+						// Write content
+						S.Write( RAWImage, 0, RAWImage.Length );
+					}
 			}
 		}
 	}

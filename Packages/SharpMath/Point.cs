@@ -35,6 +35,12 @@ namespace WMath
 			set { z = value; }
 		}
 
+		public static Point		Zero	{ get { return new Point( 0, 0, 0 ); } }
+		public static Point		One		{ get { return new Point( 1, 1, 1 ); } }
+		public static Point		UnitX	{ get { return new Point( 1, 0, 0 ); } }
+		public static Point		UnitY	{ get { return new Point( 0, 1, 0 ); } }
+		public static Point		UnitZ	{ get { return new Point( 0, 0, 1 ); } }
+
 		#endregion
 
 		#region METHODS
@@ -49,7 +55,7 @@ namespace WMath
 		public						Point( float[] _f )								{ Set( _f ); }
 
 		// Access methods
-		public void					Zero()											{ x = y = z = 0.0f; }
+		public void					MakeZero()											{ x = y = z = 0.0f; }
 		public void					Set( Point2D _Source )							{ x = _Source.x; y = _Source.y; z = 0.0f; }
 		public void					Set( Point _Source )							{ x = _Source.x; y = _Source.y; z = _Source.z; }
 		public void					Set( Point4D _Source )							{ x = _Source.x; y = _Source.y; z = _Source.z; }

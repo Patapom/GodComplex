@@ -90,22 +90,3 @@ public:		// METHODS
 	void	SetInput( int _SlotIndex )		{ m_pBuffer->SetInput( _SlotIndex ); }
 	void	SetOutput( int _SlotIndex )		{ m_pBuffer->SetOutput( _SlotIndex ); }
 };
-
-
-// template<typename T> class	SB : protected StructuredBuffer
-// {
-// public:
-// 	SB( Device& _Device, int _ElementsCount, bool _bWriteable ) : StructuredBuffer( _Device, sizeof(T), _ElementsCount, _bWriteable ) {}
-// 
-// 	// Read/Write for CPU interchange
-// 	void			Read( T* _pData, int _ElementsCount=-1 ) const	{ StructuredBuffer::Read( _pData, _ElementsCount ); }
-// 	void			Write( T* _pData, int _ElementsCount=-1 )		{ StructuredBuffer::Write( _pData, _ElementsCount ); }
-// 
-// 	// Clear of the unordered access view
-// 	void			Clear( U32 _pValue[4] )							{ StructuredBuffer::Clear( _pValue ); }
-// 	void			Clear( const NjFloat4& _Value )					{ StructuredBuffer::Clear( _pValue ); }
-// 
-// 	// Uploads the buffer to the shader
-// 	void			SetInput( int _SlotIndex )						{ StructuredBuffer::SetInput( _SlotIndex ); }
-// 	void			SetOutput( int _SlotIndex )						{ StructuredBuffer::SetOutput( _SlotIndex ); }
-// };

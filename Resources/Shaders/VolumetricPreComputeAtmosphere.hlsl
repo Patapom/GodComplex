@@ -14,14 +14,12 @@ Texture3D		_TexScatteringDelta_Rayleigh : register(t14);	// deltaSR
 Texture3D		_TexScatteringDelta_Mie : register(t15);		// deltaSM
 Texture3D		_TexScatteringDelta : register(t16);			// deltaJ
 
-//[
 cbuffer	cbObject	: register( b10 )
 {
 	float4		_dUVW;
 	bool		_bFirstPass;
 	float		_AverageGroundReflectance;
 };
-//]
 
 struct	VS_IN
 {

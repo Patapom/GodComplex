@@ -9,7 +9,7 @@
 #include "D3D11Shader.h"
 
 
-Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride )
+Material::Material( Device& _Device, const char* _pShaderFileName, const IVertexFormatDescriptor& _Format, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride )
 	: Component( _Device )
 	, m_Format( _Format )
 	, m_pVertexLayout( NULL )
@@ -96,7 +96,7 @@ Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, con
 #endif
 }
 
-Material::Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, ID3DBlob* _pVS, ID3DBlob* _pHS, ID3DBlob* _pDS, ID3DBlob* _pGS, ID3DBlob* _pPS )
+Material::Material( Device& _Device, const char* _pShaderFileName, const IVertexFormatDescriptor& _Format, ID3DBlob* _pVS, ID3DBlob* _pHS, ID3DBlob* _pDS, ID3DBlob* _pGS, ID3DBlob* _pPS )
 	: Component( _Device )
 	, m_Format( _Format )
 	, m_pVertexLayout( NULL )
@@ -162,7 +162,7 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the compulsory vertex shader
-	ASSERT( m_pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
+	ASSERT( _pVS != NULL || m_pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
 #ifdef DIRECTX10
 	ID3DBlob*   pShader = _pVS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_4_0", this ) : _pVS;
 #else
@@ -191,7 +191,7 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional hull shader
-	if ( !m_bHasErrors && m_pEntryPointHS != NULL )
+	if ( !m_bHasErrors && (m_pEntryPointHS != NULL || _pHS != NULL) )
 	{
 #ifdef DIRECTX10
 		ASSERT( false, "You can't use Hull Shaders if you define DIRECTX10!" );
@@ -216,7 +216,7 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional domain shader
-	if ( !m_bHasErrors && m_pEntryPointDS != NULL )
+	if ( !m_bHasErrors && (m_pEntryPointDS != NULL || _pDS != NULL) )
 	{
 #ifdef DIRECTX10
 		ASSERT( false, "You can't use Domain Shaders if you define DIRECTX10!" );
@@ -239,7 +239,7 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional geometry shader
-	if ( !m_bHasErrors && m_pEntryPointGS != NULL )
+	if ( !m_bHasErrors && (m_pEntryPointGS != NULL || _pGS != NULL) )
 	{
 #ifdef DIRECTX10
 		ID3DBlob*   pShader = _pGS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_4_0", this ) : _pGS;
@@ -263,13 +263,13 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional pixel shader
-	if ( !m_bHasErrors && m_pEntryPointPS != NULL )
+	if ( !m_bHasErrors && (m_pEntryPointPS != NULL || _pPS != NULL) )
 	{
 
 #ifdef _DEBUG
 // CSO TEST
 // We use a special pre-compiled CSO read from file here
-if ( *m_pEntryPointPS == 1 )
+if ( m_pEntryPointPS != NULL && *m_pEntryPointPS == 1 )
 {
 	U32	BufferSize = *((U32*) (m_pEntryPointPS+1));
 	U8*	pBufferPointer = (U8*) m_pEntryPointPS+5;
@@ -281,9 +281,9 @@ if ( *m_pEntryPointPS == 1 )
 #endif
 
 #ifdef DIRECTX10
-		ID3DBlob*   pShader = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_4_0", this ) : NULL;
+		ID3DBlob*   pShader = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_4_0", this ) : _pPS;
 #else
-		ID3DBlob*   pShader = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_5_0", this ) : NULL;
+		ID3DBlob*   pShader = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_5_0", this ) : _pPS;
 #endif
 		if ( pShader != NULL )
 		{
@@ -301,7 +301,7 @@ if ( *m_pEntryPointPS == 1 )
 	}
 }
 
-#ifdef SURE_DEBUG
+#if defined(SURE_DEBUG) || !defined(GODCOMPLEX)
 
 // Embedded shader for debug & testing...
 // static char*	pTestShader =
@@ -345,19 +345,19 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 
 	U32 Flags1 = 0;
 #if defined(_DEBUG) && !defined(SAVE_SHADER_BLOB_TO)
-		Flags1 |= D3D10_SHADER_DEBUG;
-		Flags1 |= D3D10_SHADER_SKIP_OPTIMIZATION;
-//		Flags1 |= D3D10_SHADER_WARNINGS_ARE_ERRORS;
-		Flags1 |= D3D10_SHADER_PREFER_FLOW_CONTROL;
+		Flags1 |= D3DCOMPILE_DEBUG;
+		Flags1 |= D3DCOMPILE_SKIP_OPTIMIZATION;
+//		Flags1 |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
+		Flags1 |= D3DCOMPILE_PREFER_FLOW_CONTROL;
 #else
 	if ( _bComputeShader )
-		Flags1 |= D3D10_SHADER_OPTIMIZATION_LEVEL1;		// Seems to "optimize" (i.e. strip) the important condition line that checks for threadID before writing to concurrent targets => This leads to "race condition" errors
+		Flags1 |= D3DCOMPILE_OPTIMIZATION_LEVEL1;	// Seems to "optimize" (i.e. strip) the important condition line that checks for threadID before writing to concurrent targets => This leads to "race condition" errors
 	else
-		Flags1 |= D3D10_SHADER_OPTIMIZATION_LEVEL3;
+		Flags1 |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
-		Flags1 |= D3D10_SHADER_ENABLE_STRICTNESS;
-		Flags1 |= D3D10_SHADER_IEEE_STRICTNESS;
-		Flags1 |= D3D10_SHADER_PACK_MATRIX_ROW_MAJOR;	// MOST IMPORTANT FLAG !
+		Flags1 |= D3DCOMPILE_ENABLE_STRICTNESS;
+//		Flags1 |= D3DCOMPILE_IEEE_STRICTNESS;		// D3D9 compatibility, clamps precision to usual float32 but may prevent internal optimizations by the video card. Better leave it disabled!
+		Flags1 |= D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;	// MOST IMPORTANT FLAG !
 
 	U32 Flags2 = 0;
 
@@ -374,11 +374,11 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 #endif
 	{
 		const char*	pErrorText = (LPCSTR) pErrors->GetBufferPointer();
-		MessageBoxA( NULL, pErrorText, "Shader Compilation Error !", MB_OK | MB_ICONERROR );
-		ASSERT( pErrors == NULL, "Shader compilation error !" );
+		MessageBoxA( NULL, pErrorText, "Shader Compilation Error!", MB_OK | MB_ICONERROR );
+		ASSERT( pErrors == NULL, "Shader compilation error!" );
 	}
 	else
-		ASSERT( pCode != NULL, "Shader compilation failed => No error provided but didn't output any shader either !" );
+		ASSERT( pCode != NULL, "Shader compilation failed => No error provided but didn't output any shader either!" );
 #endif
 
 // Save the binary blob to disk
@@ -389,7 +389,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 	return pCode;
 }
 
-#else	// #ifndef _DEBUG
+#else	// #if !defined(_DEBUG) && defined(GODCOMPLEX)
 
 ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget, ID3DInclude* _pInclude, bool _bComputeShader )
 {
@@ -404,15 +404,16 @@ void	Material::Use()
 	if ( !Lock() )
 		return;	// Someone else is locking it !
 
-	if ( m_pVertexLayout != NULL )
-	{
-		m_Device.DXContext().IASetInputLayout( m_pVertexLayout );
-		m_Device.DXContext().VSSetShader( m_pVS, NULL, 0 );
-		m_Device.DXContext().HSSetShader( m_pHS, NULL, 0 );
-		m_Device.DXContext().DSSetShader( m_pDS, NULL, 0 );
-		m_Device.DXContext().GSSetShader( m_pGS, NULL, 0 );
-		m_Device.DXContext().PSSetShader( m_pPS, NULL, 0 );
-	}
+	ASSERT( m_pVertexLayout != NULL, "Can't use a material with an invalid vertex layout!" );
+
+	m_Device.DXContext().IASetInputLayout( m_pVertexLayout );
+	m_Device.DXContext().VSSetShader( m_pVS, NULL, 0 );
+	m_Device.DXContext().HSSetShader( m_pHS, NULL, 0 );
+	m_Device.DXContext().DSSetShader( m_pDS, NULL, 0 );
+	m_Device.DXContext().GSSetShader( m_pGS, NULL, 0 );
+	m_Device.DXContext().PSSetShader( m_pPS, NULL, 0 );
+
+	m_Device.m_pCurrentMaterial = this;
 
 	Unlock();
 }
@@ -899,7 +900,7 @@ Material*	Material::CreateFromBinaryBlob( Device& _Device, const char* _pShaderF
 	ID3DBlob*	pGS = _pEntryPointGS != NULL ? LoadBinaryBlob( _pShaderFileName, _pEntryPointGS ) : NULL;
 	ID3DBlob*	pPS = _pEntryPointPS != NULL ? LoadBinaryBlob( _pShaderFileName, _pEntryPointPS ) : NULL;
 
-	Material*	pResult = new Material( _Device, _Format, _pShaderFileName, pVS, pHS, pDS, pGS, pPS );
+	Material*	pResult = new Material( _Device, _pShaderFileName, _Format, pVS, pHS, pDS, pGS, pPS );
 
 // No need: the blob was released by the constructor!
 // 	pPS->Release();
@@ -929,7 +930,7 @@ void		Material::SaveBinaryBlob( const char* _pShaderFileName, const char* _pEntr
 	pFileNameWithoutExtension[ExtensionIndex-FileNameIndex] = '\0';	// End the file name here
 
 	char	pFinalShaderName[1024];
-	sprintf( pFinalShaderName, "%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, _pEntryPoint );
+	sprintf_s( pFinalShaderName, 1024, "%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, _pEntryPoint );
 
 	// Create the binary file
 	FILE*	pFile;
@@ -974,7 +975,7 @@ ID3DBlob*	Material::LoadBinaryBlob( const char* _pShaderFileName, const char* _p
 	pFileNameWithoutExtension[ExtensionIndex-FileNameIndex] = '\0';	// End the file name here
 
 	char	pFinalShaderName[1024];
-	sprintf( pFinalShaderName, "%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, _pEntryPoint );
+	sprintf_s( pFinalShaderName, 1024, "%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, _pEntryPoint );
 
 	// Create the binary file
 	FILE*	pFile;

@@ -186,8 +186,8 @@ namespace TestDCT
 			Vector4	DCTCoeffs0 = new Vector4( 0, 0, 0, 0 );
 			Vector4	DCTCoeffs1 = new Vector4( 0, 0, 0, 0 );
 
-			Vector4	CurrentAngle0 = new Vector4( 1, 1, 1, 1 );
-			Vector4	CurrentAngle1 = new Vector4( 1, 1, 1, 1 );
+			Vector4	CurrentCosAngle0 = new Vector4( 1, 1, 1, 1 );
+			Vector4	CurrentCosAngle1 = new Vector4( 1, 1, 1, 1 );
 			float	PreviousTransmittance = 1.0f;
 			for ( int i=0; i < SAMPLING_SIZE; i++ )
 			{
@@ -200,24 +200,37 @@ namespace TestDCT
 
 				// Use average of transmittance
 // 				float	TransmittanceToEncode = 0.5f * (PreviousTransmittance + Transmittance);
-// 				PreviousTransmittance = Transmittance;
+ 				PreviousTransmittance = Transmittance;
 				float	TransmittanceToEncode = Transmittance;
 
 // 				// Square integration (very bad with not enough steps!)
 //				DCTCoeffs0 += TransmittanceToEncode * Angle0.Cos();
 //				DCTCoeffs1 += TransmittanceToEncode * Angle1.Cos();
 
-				// Better trapezoidal integration
-				Vector4	PreviousAngle0 = CurrentAngle0;
-				Vector4	PreviousAngle1 = CurrentAngle1;
-				CurrentAngle0 = Angle0.Cos();
-				CurrentAngle1 = Angle1.Cos();
+/*				// Better trapezoidal integration
+				Vector4	PreviousCosAngle0 = CurrentCosAngle0;
+				Vector4	PreviousCosAngle1 = CurrentCosAngle1;
+				CurrentCosAngle0 = Angle0.Cos();
+				CurrentCosAngle1 = Angle1.Cos();
 
-				Vector4	AverageAngle0 = 0.5f * (PreviousAngle0 + CurrentAngle0);
-				Vector4	AverageAngle1 = 0.5f * (PreviousAngle1 + CurrentAngle1);
+				Vector4	AverageCosAngle0 = 0.5f * (PreviousCosAngle0 + CurrentCosAngle0);
+				Vector4	AverageCosAngle1 = 0.5f * (PreviousCosAngle1 + CurrentCosAngle1);
 
-				DCTCoeffs0 += TransmittanceToEncode * AverageAngle0;
-				DCTCoeffs1 += TransmittanceToEncode * AverageAngle1;
+				DCTCoeffs0 += TransmittanceToEncode * AverageCosAngle0;
+				DCTCoeffs1 += TransmittanceToEncode * AverageCosAngle1;
+//*/
+//*				// Better trapezoidal integration
+				Vector4	PreviousCosAngle0 = CurrentCosAngle0;
+				Vector4	PreviousCosAngle1 = CurrentCosAngle1;
+				CurrentCosAngle0 = TransmittanceToEncode * Angle0.Cos();	// Include transmittance term in the integral! Tiny bit better!
+				CurrentCosAngle1 = TransmittanceToEncode * Angle1.Cos();
+
+				Vector4	AverageCosAngle0 = 0.5f * (PreviousCosAngle0 + CurrentCosAngle0);
+				Vector4	AverageCosAngle1 = 0.5f * (PreviousCosAngle1 + CurrentCosAngle1);
+
+				DCTCoeffs0 += AverageCosAngle0;
+				DCTCoeffs1 += AverageCosAngle1;
+//*/
 			}
             DCTCoeffs0 *= 2.0f * dx;
             DCTCoeffs1 *= 2.0f * dx;

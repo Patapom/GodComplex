@@ -8,10 +8,11 @@
 #include "Effects/EffectTranslucency.h"
 #include "Effects/EffectRoom.h"
 #include "Effects/EffectVolumetric.h"
+#include "Effects/EffectGlobalIllum.h"
 
-#include "Effects/Scene/MaterialBank.h"
-#include "Effects/Scene/Scene.h"
-#include "Effects/Scene/EffectScene.h"
+// #include "Effects/Scene/MaterialBank.h"
+// #include "Effects/Scene/Scene.h"
+// #include "Effects/Scene/EffectScene.h"
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) return ErrorCode;
 #define CHECK_EFFECT( pEffect, ErrorCode )			{ int EffectError = (pEffect)->GetErrorCode(); if ( EffectError != 0 ) return ErrorCode + EffectError; }
@@ -40,8 +41,9 @@ static CB<CBTest>*			gs_pCB_Test = NULL;
 // Effects
 static EffectTranslucency*	gs_pEffectTranslucency = NULL;
 static EffectRoom*			gs_pEffectRoom = NULL;
-static EffectScene*			gs_pEffectScene = NULL;
+//static EffectScene*		gs_pEffectScene = NULL;
 static EffectVolumetric*	gs_pEffectVolumetric = NULL;
+static EffectGlobalIllum*	gs_pEffectGI = NULL;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -105,12 +107,13 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	// Create our camera
 	gs_pCamera = new Camera( gs_Device );	// NOTE: Camera reserves the CB slot #0 for itself !
 	gs_pCamera->SetPerspective( NUAJDEG2RAD( 50.0f ), float(RESX) / RESY, 0.01f, 1000.0f );
+	gs_pCamera->Upload( 0 );
 
 	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3::Zero, NjFloat3::UnitZ );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create our scene
-	gs_pScene = new Scene( gs_Device );
+//	gs_pScene = new Scene( gs_Device );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -158,9 +161,9 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 
 //		CHECK_EFFECT( gs_pEffectScene = new EffectScene( gs_Device, *gs_pScene, *gs_pPrimQuad ), ERR_EFFECT_SCENE );
 
-//		CHECK_EFFECT( gs_pEffectTranslucency = new EffectTranslucency( *gs_pRTHDR ), ERR_EFFECT_TRANSLUCENCY );
+//		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_VOLUMETRIC );
 
-		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_VOLUMETRIC );
+		CHECK_EFFECT( gs_pEffectGI = new EffectGlobalIllum( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_GLOBALILLUM );
 	}
 
 
@@ -177,8 +180,9 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 void	IntroExit()
 {
 	// Release effects
+	delete gs_pEffectGI;
 	delete gs_pEffectVolumetric;
-	delete gs_pEffectScene;
+//	delete gs_pEffectScene;
 	delete gs_pEffectTranslucency;
 	delete gs_pEffectRoom;
 
@@ -329,7 +333,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	gs_pEffectScene->Render( _Time, _DeltaTime, *gs_pRTHDR );
 
 
-#elif 1	// TEST VOLUMETRIC
+#elif 0	// TEST VOLUMETRIC
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update the camera settings and upload its data to the shaders
@@ -385,6 +389,16 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	gs_pEffectVolumetric->Render( _Time, _DeltaTime );
 
+
+#elif 1	// TEST GLOBAL ILLUM
+
+	gs_pCameraManipulator->Update( _DeltaTime, 1.0f, 1.0f );
+	gs_pCamera->Upload( 0 );
+
+ 	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+ 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
+
+	gs_pEffectGI->Render( _Time, _DeltaTime );
 
 #endif
 

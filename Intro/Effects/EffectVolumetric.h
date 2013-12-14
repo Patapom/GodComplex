@@ -2,14 +2,18 @@
 
 #define SHOW_TERRAIN
 
-#define BUILD_SKY_TABLES_USING_CS			// Use the Compute Shader version
+//#define BUILD_SKY_TABLES_USING_CS			// Use the Compute Shader version
 
-#define	TRANSMITTANCE_W	256
-#define	TRANSMITTANCE_H	64
+#define	TRANSMITTANCE_W			256			// cos(theta)
+#define	TRANSMITTANCE_H			64			// Altitude
 #define	TRANSMITTANCE_TABLE_STEPS_COUNT	500	// Default amount of integration steps to perform to compute this table
 
-#define	IRRADIANCE_W	64
-#define	IRRADIANCE_H	16
+#define	TRANSMITTANCE_LIMITED_W	256			// cos(Theta)
+#define	TRANSMITTANCE_LIMITED_H	64			// Distance
+#define	TRANSMITTANCE_LIMITED_D	64			// Altitude (about 1 slice per kilometer)
+
+#define	IRRADIANCE_W			64
+#define	IRRADIANCE_H			16
 
 #define	RES_3D_ALTITUDE			32
 #define	RES_3D_COS_THETA_VIEW	128
@@ -59,10 +63,11 @@ public:		// NESTED TYPES
 		float		SunIntensity;
 
 		NjFloat2	AirParams;		// X=Scattering Factor, Y=Reference Altitude (km)
-		float		GodraysStrength;
-		float		AltitudeOffset;
+		float		GodraysStrengthRayleigh;
+		float		GodraysStrengthMie;
 
 		NjFloat4	FogParams;		// X=Scattering Coeff, Y=Extinction Coeff, Z=Reference Altitude (km), W=Anisotropy
+		float		AltitudeOffset;
 	};
 
 	struct CBShadow
@@ -120,6 +125,7 @@ public:		// NESTED TYPES
 
 		U32		_bFirstPass;	// True if we're computing the first pass that reads single-scattering for Rayleigh & Mie from 2 separate tables
 		float	_AverageGroundReflectance;
+		U32		_StepsCount;	// Amount of steps for integration (optional, for complex shaders only)
 
 		void	SetTargetSize( U32 _X, U32 _Y, U32 _Z=1 )	{ _TargetSizeX = _X; _TargetSizeY = _Y; _TargetSizeZ = _Z; }
 		void	SetGroupsCount( U32 _X, U32 _Y, U32 _Z=1 )	{ _GroupsCountX = _X; _GroupsCountY = _Y; _GroupsCountZ = _Z; }
@@ -181,8 +187,9 @@ private:	// FIELDS
 
 	// Sky rendering
 	Texture2D*			m_ppRTTransmittance[2];
+	Texture3D*			m_ppRTTransmittanceLimited[2];
 	Texture2D*			m_ppRTIrradiance[3];
-	Texture3D*			m_ppRTInScattering[3];
+	Texture3D*			m_ppRTScattering[3];
 
 	int					m_RenderWidth, m_RenderHeight;
 
@@ -226,7 +233,8 @@ private:	// FIELDS
 		float	FogReferenceAltitudeKm;
 		float	FogAnisotropy;
 		float	AverageGroundReflectance;
-		float	GodraysStrength;
+		float	GodraysStrengthRayleigh;
+		float	GodraysStrengthMie;
 		float	AltitudeOffset;
 
 		// Volumetrics Params
@@ -292,16 +300,18 @@ protected:
 	void		InitSkyTables();
 	void		FreeSkyTables();
 
-#ifdef BUILD_SKY_TABLES_USING_CS
 		// Time-sliced update
 	void		ExitUpdateSkyTables();
 	void		TriggerSkyTablesUpdate();
 	void		UpdateSkyTables();
 
-	void		InitMultiPassStage( int _StageIndex, int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ );
-	void		InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ );
-	void		DispatchStage( ComputeShader& M );
+	void		InitMultiPassStage( int _StageIndex, int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ, int _StepsCount );
+	void		InitSinglePassStage( int _TargetSizeX, int _TargetSizeY, int _TargetSizeZ, int _StepsCount );
 	bool		IncreaseStagePass( int _StageIndex );	// Returns true if the stage is over
+#ifdef BUILD_SKY_TABLES_USING_CS
+	void		DispatchStage( ComputeShader& M );
+#else
+	void		DispatchStage( Material& M );
 #endif
 
 

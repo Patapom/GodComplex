@@ -14,10 +14,11 @@ namespace HDR2RAW
 		static void Main( string[] args )
 		{
 // 			FileInfo	SourceFile = new FileInfo( "ennis_1024x512.hdr" );
- 			FileInfo	SourceFile = new FileInfo( "doge2_1024x512.hdr" );
+// 			FileInfo	SourceFile = new FileInfo( "doge2_1024x512.hdr" );
 // 			FileInfo	SourceFile = new FileInfo( "grace-new_1024x512.hdr" );
 // 			FileInfo	SourceFile = new FileInfo( "pisa_1024x512.hdr" );
 //			FileInfo	SourceFile = new FileInfo( "uffizi-large_1024x512.hdr" );
+ 			FileInfo	SourceFile = new FileInfo( "kitchen_cross.hdr" );
 
 			FileInfo	TargetFile = new FileInfo( Path.GetFileNameWithoutExtension( SourceFile.FullName ) + ".float" );
 
@@ -36,6 +37,8 @@ namespace HDR2RAW
 				{
 					int	Width = HDRValues.GetLength( 0 );
 					int	Height = HDRValues.GetLength( 1 );
+W.Write( Width );
+W.Write( Height );
 					for ( int Y=0; Y < Height; Y++ )
 						for ( int X=0; X < Width; X++ )
 						{

@@ -25,7 +25,7 @@ namespace WMath
 		public						Plane( Vector _n, float _d )								{ n = _n; d = _d; }
 
 		// Access methods
-		public Plane				Zero()														{ n.Zero(); d = 0.0f; return this; }
+		public Plane				Zero()														{ n.MakeZero(); d = 0.0f; return this; }
 		public Plane				Set( float _nx, float _ny, float _nz, float _d )			{ n.Set( _nx, _ny, _nz ); d = _d; return this; }
 		public Plane				Set( Point _p, Vector _n )									{ n = _n; d = -((Vector) _p ) | n; return this; }
 		public Plane				Set( Point _p0, Point _p1, Point _p2 )		
@@ -65,7 +65,7 @@ namespace WMath
 			// Let's have fun!
 			Point	I;
 
-			_Ray.Pos.Zero();
+			_Ray.Pos.MakeZero();
 			_Ray.Aim = n;
 			if ( (I = _p.Intersect( _Ray )) == null )
 				return	false;

@@ -26,7 +26,13 @@
 #ifdef _DEBUG
 // Define this to save the binary blobs for each shader (only works in DEBUG mode)
 // NOTE: in RELEASE, the blobs are embedded as resources and read from so they need to have been saved to
+
+#ifdef GODCOMPLEX
 #define SAVE_SHADER_BLOB_TO		"./Resources/Shaders/Binary/"
+#else
+#define SAVE_SHADER_BLOB_TO		"./Shaders/Binary/"
+#endif
+
 #endif	// _DEBUG
 
 #ifdef GODCOMPLEX
@@ -144,8 +150,8 @@ public:	 // PROPERTIES
 
 public:	 // METHODS
 
-	Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride );
-	Material( Device& _Device, const IVertexFormatDescriptor& _Format, const char* _pShaderFileName, ID3DBlob* _pVS, ID3DBlob* _pHS, ID3DBlob* _pDS, ID3DBlob* _pGS, ID3DBlob* _pPS );
+	Material( Device& _Device, const char* _pShaderFileName, const IVertexFormatDescriptor& _Format, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride );
+	Material( Device& _Device, const char* _pShaderFileName, const IVertexFormatDescriptor& _Format, ID3DBlob* _pVS, ID3DBlob* _pHS, ID3DBlob* _pDS, ID3DBlob* _pGS, ID3DBlob* _pPS );
 	~Material();
 
 	void			SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer );
@@ -155,6 +161,7 @@ public:	 // METHODS
 	bool			SetTexture( const char* _pTextureName, ID3D11ShaderResourceView* _pData );
 #endif
 
+	// Must call this before using the material
 	void			Use();
 
 	// Static shader compilation helper (also used by ComputeShader)

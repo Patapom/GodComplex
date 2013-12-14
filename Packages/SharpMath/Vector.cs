@@ -40,6 +40,12 @@ namespace WMath
 			get { return new Vector( this ).Normalize(); }
 		}
 
+		public static Vector		Zero	{ get { return new Vector( 0, 0, 0 ); } }
+		public static Vector		One		{ get { return new Vector( 1, 1, 1 ); } }
+		public static Vector		UnitX	{ get { return new Vector( 1, 0, 0 ); } }
+		public static Vector		UnitY	{ get { return new Vector( 0, 1, 0 ); } }
+		public static Vector		UnitZ	{ get { return new Vector( 0, 0, 1 ); } }
+
 		#endregion
 
 		#region METHODS
@@ -54,7 +60,7 @@ namespace WMath
 		public						Vector( float[] _f )							{ Set( _f ); }
 
 		// Access methods
-		public void					Zero()											{ x = y = z = 0.0f; }
+		public void					MakeZero()										{ x = y = z = 0.0f; }
 		public void					Set( Vector2D _Source )							{ x = _Source.x; y = _Source.y; }
 		public void					Set( Vector _Source )							{ x = _Source.x; y = _Source.y; z = _Source.z; }
 		public void					Set( Vector4D _Source )							{ x = _Source.x; y = _Source.y; z = _Source.z; }
@@ -62,17 +68,21 @@ namespace WMath
 		public void					Set( float _x, float _y, float _z )				{ x = _x; y = _y; z = _z; }
 		public void					Set( float[] _f )								{ x = _f[0]; y = _f[1]; z = _f[2]; }
 		public void					Add( float _x, float _y, float _z )				{ x += _x; y += _y; z += _z; }
+		public float				Dot( Vector _Op )								{ return this | _Op; }
+		public Vector				Cross( Vector _Op )								{ return this ^ _Op; }
 		public float				Min()											{ return System.Math.Min( x, System.Math.Min( y, z ) ); }
 		public void					Min( Vector _Op )								{ x = System.Math.Min( x, _Op.x ); y = System.Math.Min( y, _Op.y ); z = System.Math.Min( z, _Op.z ); }
 		public float				Max()											{ return System.Math.Max( x, System.Math.Max( y, z ) ); }
 		public void					Max( Vector _Op )								{ x = System.Math.Max( x, _Op.x ); y = System.Math.Max( y, _Op.y ); z = System.Math.Max( z, _Op.z ); }
 		public float				Sum()											{ return x + y + z; }
 		public float				Product()										{ return x * y * z; }
-		public float				SquareMagnitude()								{ return x * x + y * y + z * z; }
-		public float				Magnitude()										{ return (float) System.Math.Sqrt( x * x + y * y + z * z ); }
-		public Vector				Normalize()										{ if ( Magnitude() < 1e-12 ) return this; float fINorm = 1.0f / Magnitude(); x *= fINorm; y *= fINorm; z *= fINorm; return this; }
-		public bool					IsNormalized()									{ return System.Math.Abs( SquareMagnitude() - 1.0f ) < float.Epsilon*float.Epsilon; }
-		public bool					IsTooSmall()									{ return SquareMagnitude() < float.Epsilon*float.Epsilon; }
+		public float				LengthSquare()									{ return x * x + y * y + z * z; }
+		public float				Length()										{ return (float) System.Math.Sqrt( x * x + y * y + z * z ); }
+		public float				SquareMagnitude()								{ return LengthSquare(); }
+		public float				Magnitude()										{ return Length(); }
+		public Vector				Normalize()										{ if ( Length() < 1e-12 ) return this; float fINorm = 1.0f / Length(); x *= fINorm; y *= fINorm; z *= fINorm; return this; }
+		public bool					IsNormalized()									{ return System.Math.Abs( LengthSquare() - 1.0f ) < float.Epsilon*float.Epsilon; }
+		public bool					IsTooSmall()									{ return LengthSquare() < float.Epsilon*float.Epsilon; }
 
 		public void					Clamp( float _fMin, float _fMax )				{ x = System.Math.Max( _fMin, System.Math.Min( _fMax, x ) ); y = System.Math.Max( _fMin, System.Math.Min( _fMax, y ) ); z = System.Math.Max( _fMin, System.Math.Min( _fMax, z ) ); }
 

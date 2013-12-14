@@ -3,7 +3,7 @@
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
-void	TweakSphereExternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tangent, NjFloat2& _UV, void* _pUserData )
+void	TweakSphereExternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tangent, const NjFloat3& _BiTangent, NjFloat2& _UV, void* _pUserData )
 {
 	Noise&	N = *((Noise*) _pUserData);
 
@@ -11,7 +11,7 @@ void	TweakSphereExternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tan
 	_Position = 0.8f * _Position;	// Scale a little
 }
 
-void	TweakTorusInternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tangent, NjFloat2& _UV, void* _pUserData )
+void	TweakTorusInternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tangent, const NjFloat3& _BiTangent, NjFloat2& _UV, void* _pUserData )
 {
 	Noise&	N = *((Noise*) _pUserData);
 

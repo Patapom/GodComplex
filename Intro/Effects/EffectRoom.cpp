@@ -265,7 +265,7 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 	// Generate the primitives
 	{
 		VertexFormatP3N3G3T3T3	pVertices[4*6];
-		U16						pIndices[6*6];
+		U32						pIndices[6*6];
 		for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 		{
 			NjFloat2	Size = pSizes[FaceIndex];
@@ -320,7 +320,7 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 
 	{	// Lights
 		VertexFormatP3N3G3T3T3	pVertices[4*4];
-		U16						pIndices[4*6];
+		U32						pIndices[4*6];
 
 		NjFloat2				LightSize( 1.0f, 8.0f );	// Neons are 1x8 m²
 		float					FirstLightPosX = -0.5f * ROOM_SIZE + (ROOM_SIZE - 7 * LightSize.x) / 2.0f;
