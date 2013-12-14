@@ -18,19 +18,19 @@ namespace ShaderInterpreter.ShaderMath
 			#endregion
 
 			public float2()							{}
-			public float2( float _x )				{ x = y = _x; }
-			public float2( float _x, float _y )		{ x = _x; y = _y; }
+			public float2( double _x )				{ x = y = (float) _x; }
+			public float2( double _x, double _y )	{ x = (float) _x; y = (float) _y; }
 
-			public static float2	operator+( float a, float2 b )	{ return new float2( a + b.x, a + b.y ); }
-			public static float2	operator+( float2 a, float b )	{ return new float2( a.x + b, a.y + b ); }
+			public static float2	operator+( double a, float2 b )	{ return new float2( a + b.x, a + b.y ); }
+			public static float2	operator+( float2 a, double b )	{ return new float2( a.x + b, a.y + b ); }
 			public static float2	operator+( float2 a, float2 b )	{ return new float2( a.x + b.x, a.y + b.y ); }
-			public static float2	operator-( float a, float2 b )	{ return new float2( a - b.x, a - b.y ); }
-			public static float2	operator-( float2 a, float b )	{ return new float2( a.x - b, a.y - b ); }
+			public static float2	operator-( double a, float2 b )	{ return new float2( a - b.x, a - b.y ); }
+			public static float2	operator-( float2 a, double b )	{ return new float2( a.x - b, a.y - b ); }
 			public static float2	operator-( float2 a, float2 b )	{ return new float2( a.x - b.x, a.y - b.y ); }
-			public static float2	operator*( float a, float2 b )	{ return new float2( a * b.x, a * b.y ); }
-			public static float2	operator*( float2 a, float b )	{ return new float2( a.x * b, a.y * b ); }
+			public static float2	operator*( double a, float2 b )	{ return new float2( a * b.x, a * b.y ); }
+			public static float2	operator*( float2 a, double b )	{ return new float2( a.x * b, a.y * b ); }
 			public static float2	operator*( float2 a, float2 b )	{ return new float2( a.x * b.x, a.y * b.y ); }
-			public static float2	operator/( float2 a, float b )	{ return new float2( a.x / b, a.y / b ); }
+			public static float2	operator/( float2 a, double b )	{ return new float2( a.x / b, a.y / b ); }
 		}
 
 		public class	float3
@@ -48,23 +48,23 @@ namespace ShaderInterpreter.ShaderMath
 			#endregion
 
 			public float3()										{}
-			public float3( float _x )							{ x = y = z = _x; }
-			public float3( float _x, float _y, float _z )		{ x = _x; y = _y; z = _z; }
-			public float3( float2 _xy, float _z )				{ x = _xy.x; y = _xy.y; z = _z; }
-			public float3( float _x, float2 _yz )				{ x = _x; y = _yz.x; z = _yz.y; }
+			public float3( double _x )							{ x = y = z = (float) _x; }
+			public float3( double _x, double _y, double _z )	{ x = (float) _x; y = (float) _y; z = (float) _z; }
+			public float3( float2 _xy, double _z )				{ x = _xy.x; y = _xy.y; z = (float) _z; }
+			public float3( double _x, float2 _yz )				{ x = (float) _x; y = _yz.x; z = _yz.y; }
 
 			public static implicit operator float2( float3 a )		{ return new float2( a.x, a.y ); }
 
-			public static float3	operator+( float a, float3 b )	{ return new float3( a + b.x, a + b.y, a + b.z ); }
-			public static float3	operator+( float3 a, float b )	{ return new float3( a.x + b, a.y + b, a.z + b ); }
+			public static float3	operator+( double a, float3 b )	{ return new float3( a + b.x, a + b.y, a + b.z ); }
+			public static float3	operator+( float3 a, double b )	{ return new float3( a.x + b, a.y + b, a.z + b ); }
 			public static float3	operator+( float3 a, float3 b )	{ return new float3( a.x + b.x, a.y + b.y, a.z + b.z ); }
-			public static float3	operator-( float a, float3 b )	{ return new float3( a - b.x, a - b.y, a - b.z ); }
-			public static float3	operator-( float3 a, float b )	{ return new float3( a.x - b, a.y - b, a.z - b ); }
+			public static float3	operator-( double a, float3 b )	{ return new float3( a - b.x, a - b.y, a - b.z ); }
+			public static float3	operator-( float3 a, double b )	{ return new float3( a.x - b, a.y - b, a.z - b ); }
 			public static float3	operator-( float3 a, float3 b )	{ return new float3( a.x - b.x, a.y - b.y, a.z - b.z ); }
-			public static float3	operator*( float a, float3 b )	{ return new float3( a * b.x, a * b.y, a * b.z ); }
-			public static float3	operator*( float3 a, float b )	{ return new float3( a.x * b, a.y * b, a.z * b ); }
+			public static float3	operator*( double a, float3 b )	{ return new float3( a * b.x, a * b.y, a * b.z ); }
+			public static float3	operator*( float3 a, double b )	{ return new float3( a.x * b, a.y * b, a.z * b ); }
 			public static float3	operator*( float3 a, float3 b )	{ return new float3( a.x * b.x, a.y * b.y, a.z * b.z ); }
-			public static float3	operator/( float3 a, float b )	{ return new float3( a.x / b, a.y / b, a.z / b ); }
+			public static float3	operator/( float3 a, double b )	{ return new float3( a.x / b, a.y / b, a.z / b ); }
 		}
 
 		public class	float4
@@ -83,27 +83,27 @@ namespace ShaderInterpreter.ShaderMath
 			#endregion
 
 			public float4()												{}
-			public float4( float _x )									{ x = y = z = w = _x; }
-			public float4( float _x, float _y, float _z, float _w )		{ x = _x; y = _y; z = _z; w = _w; }
-			public float4( float2 _xy, float _z, float _w )				{ x = _xy.x; y = _xy.y; z = _z; w = _w; }
-			public float4( float _x, float2 _yz, float _w )				{ x = _x; y = _yz.x; z = _yz.y; w = _w; }
-			public float4( float _x, float _y, float2 _zw )				{ x = _x; y = _y; z = _zw.x; w = _zw.y; }
+			public float4( double _x )									{ x = y = z = w = (float) _x; }
+			public float4( double _x, double _y, double _z, double _w )	{ x = (float) _x; y = (float) _y; z = (float) _z; w = (float) _w; }
+			public float4( float2 _xy, double _z, double _w )			{ x = _xy.x; y = _xy.y; z = (float) _z; w = (float) _w; }
+			public float4( double _x, float2 _yz, double _w )			{ x = (float) _x; y = _yz.x; z = _yz.y; w = (float) _w; }
+			public float4( double _x, double _y, float2 _zw )			{ x = (float) _x; y = (float) _y; z = _zw.x; w = _zw.y; }
 			public float4( float2 _xy, float2 _zw )						{ x = _xy.x; y = _xy.y; z = _zw.x; w = _zw.y; }
-			public float4( float3 _xyz, float _w )						{ x = _xyz.x; y = _xyz.y; z = _xyz.z; w = _w; }
+			public float4( float3 _xyz, double _w )						{ x = _xyz.x; y = _xyz.y; z = _xyz.z; w = (float) _w; }
 
 			public static implicit operator float2( float4 a )		{ return new float2( a.x, a.y ); }
 			public static implicit operator float3( float4 a )		{ return new float3( a.x, a.y, a.z ); }
 
-			public static float4	operator+( float a, float4 b )	{ return new float4( a + b.x, a + b.y, a + b.z, a + b.w ); }
-			public static float4	operator+( float4 a, float b )	{ return new float4( a.x + b, a.y + b, a.z + b, a.w + b ); }
+			public static float4	operator+( double a, float4 b )	{ return new float4( a + b.x, a + b.y, a + b.z, a + b.w ); }
+			public static float4	operator+( float4 a, double b )	{ return new float4( a.x + b, a.y + b, a.z + b, a.w + b ); }
 			public static float4	operator+( float4 a, float4 b )	{ return new float4( a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w ); }
-			public static float4	operator-( float a, float4 b )	{ return new float4( a - b.x, a - b.y, a - b.z, a - b.w ); }
-			public static float4	operator-( float4 a, float b )	{ return new float4( a.x - b, a.y - b, a.z - b, a.w - b ); }
+			public static float4	operator-( double a, float4 b )	{ return new float4( a - b.x, a - b.y, a - b.z, a - b.w ); }
+			public static float4	operator-( float4 a, double b )	{ return new float4( a.x - b, a.y - b, a.z - b, a.w - b ); }
 			public static float4	operator-( float4 a, float4 b )	{ return new float4( a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w ); }
-			public static float4	operator*( float a, float4 b )	{ return new float4( a * b.x, a * b.y, a * b.z, a * b.w ); }
-			public static float4	operator*( float4 a, float b )	{ return new float4( a.x * b, a.y * b, a.z * b, a.w * b ); }
+			public static float4	operator*( double a, float4 b )	{ return new float4( a * b.x, a * b.y, a * b.z, a * b.w ); }
+			public static float4	operator*( float4 a, double b )	{ return new float4( a.x * b, a.y * b, a.z * b, a.w * b ); }
 			public static float4	operator*( float4 a, float4 b )	{ return new float4( a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w ); }
-			public static float4	operator/( float4 a, float b )	{ return new float4( a.x / b, a.y / b, a.z / b, a.w / b ); }
+			public static float4	operator/( float4 a, double b )	{ return new float4( a.x / b, a.y / b, a.z / b, a.w / b ); }
 		}
 
 		public class	float4x4
@@ -151,18 +151,28 @@ namespace ShaderInterpreter.ShaderMath
 				);
 		}
 
-		public float2	_float2( float _x )									{ return new float2( _x ); }
-		public float2	_float2( float _x, float _y )						{ return new float2( _x, _y ); }
- 		public float3	_float3( float _x )									{ return new float3( _x ); }
-		public float3	_float3( float _x, float _y, float _z )				{ return new float3( _x, _y, _z ); }
-		public float3	_float3( float2 _xy, float _z )						{ return new float3( _xy, _z ); }
-		public float3	_float3( float _x, float2 _yz )						{ return new float3( _x, _yz ); }
-		public float4	_float4( float _x )									{ return new float4( _x ); }
-		public float4	_float4( float _x, float _y, float _z, float _w )	{ return new float4( _x, _y, _z, _w ); }
-		public float4	_float4( float2 _xy, float _z, float _w )			{ return new float4( _xy, _z, _w ); }
-		public float4	_float4( float _x, float2 _yz, float _w )			{ return new float4( _x, _yz, _w ); }
-		public float4	_float4( float _x, float _y, float2 _zw )			{ return new float4( _x, _y, _zw ); }
-		public float4	_float4( float2 _xy, float2 _zw )					{ return new float4( _xy, _zw ); }
-		public float4	_float4( float3 _xyz, float _w )					{ return new float4( _xyz, _w ); }
+		public float4	mul( float4x4 a, float4 b )
+		{
+			return new float4(
+				b.x * a.m[0,0] + b.y * a.m[0,1] + b.z * a.m[0,2] + b.w * a.m[0,3],
+				b.x * a.m[1,0] + b.y * a.m[1,1] + b.z * a.m[1,2] + b.w * a.m[1,3],
+				b.x * a.m[2,0] + b.y * a.m[2,1] + b.z * a.m[2,2] + b.w * a.m[2,3],
+				b.x * a.m[3,0] + b.y * a.m[3,1] + b.z * a.m[3,2] + b.w * a.m[3,3]
+				);
+		}
+
+		public float2	_float2( double _x )									{ return new float2( _x ); }
+		public float2	_float2( double _x, double _y )							{ return new float2( _x, _y ); }
+ 		public float3	_float3( double _x )									{ return new float3( _x ); }
+		public float3	_float3( double _x, double _y, double _z )				{ return new float3( _x, _y, _z ); }
+		public float3	_float3( float2 _xy, double _z )						{ return new float3( _xy, _z ); }
+		public float3	_float3( double _x, float2 _yz )						{ return new float3( _x, _yz ); }
+		public float4	_float4( double _x )									{ return new float4( _x ); }
+		public float4	_float4( double _x, double _y, double _z, double _w )	{ return new float4( _x, _y, _z, _w ); }
+		public float4	_float4( float2 _xy, double _z, double _w )				{ return new float4( _xy, _z, _w ); }
+		public float4	_float4( double _x, float2 _yz, double _w )				{ return new float4( _x, _yz, _w ); }
+		public float4	_float4( double _x, double _y, float2 _zw )				{ return new float4( _x, _y, _zw ); }
+		public float4	_float4( float2 _xy, float2 _zw )						{ return new float4( _xy, _zw ); }
+		public float4	_float4( float3 _xyz, double _w )						{ return new float4( _xyz, _w ); }
 	}
 }

@@ -27,13 +27,6 @@ static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illumin
 static const float	INFINITY = 1e6;
 
 
-#define TEX( Texture, Sampler, UV )					Texture.Sample( Sampler, UV )
-
-// On old ATIs, the SampleLevel() function doesn't work so you should use the other implementation (although I'm pretty sure it will fuck everything up if you start sampling textures within conditional branches)
-#define TEXLOD( Texture, Sampler, UV, MipLevel )	Texture.SampleLevel( Sampler, UV, MipLevel )
-// #define TEXLOD( Texture, Sampler, UV, MipLevel )	Texture.Sample( Sampler, UV )
-
-
 ////////////////////////////////////////////////////////////////////////////////////////
 // Samplers
 SamplerState LinearClamp	: register( s0 );
@@ -73,13 +66,13 @@ Texture3D	_TexNoise3D	: register(t0);
 // Distort position with noise
 // float3	Distort( float3 _Position, float3 _Normal, float4 _NoiseOffset )
 // {
-// 	float	Noise = _NoiseOffset.w * (-1.0 + TEXLOD( _TexNoise3D, LinearWrap, 0.2 * (_Position + _NoiseOffset.xyz), 0.0 ).x);
+// 	float	Noise = _NoiseOffset.w * (-1.0 + _TexNoise3D.SampleLevel( LinearWrap, 0.2 * (_Position + _NoiseOffset.xyz), 0.0 ).x);
 // 	return	_Position + Noise * _Normal;
 // }
 
 float3	Distort( float3 _Position, float3 _Normal, float4 _NoiseOffset )
 {
-	return _Position + _NoiseOffset.w * TEXLOD( _TexNoise3D, LinearWrap, 0.2 * (_Position + _NoiseOffset.xyz), 0.0 ).xyz;
+	return _Position + _NoiseOffset.w * _TexNoise3D.SampleLevel( LinearWrap, 0.2 * (_Position + _NoiseOffset.xyz), 0.0 ).xyz;
 }
 
 
