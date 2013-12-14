@@ -145,3 +145,14 @@
 /Tools/HDRCubeMapConvolver/HDRCubeMapConvolver.7z
 /Tools/ShaderInterpreter/obj
 /Tools/ShaderInterpreter/bin
+/Packages/SharpMath/Workshop.Math.dll
+/Packages/SharpMath/Workshop.Math.pdb
+/Packages/SphericalHarmonicsLibrary/ZonalHarmonicsFittingTest/obj/Debug/ZonalHarmonicsFittingTest.pdb
+
+/GodComplex.suo
+/Tools.suo
+/Tools.v11.suo
+
+/GodComplex2012.v11.suo
+/Packages/FBXSceneLoader/fbx_whitepaper_nov2007.pdf
+/Resources/Shaders/VolumetricPreComputeAtmospherePS - Before Distance Modifs.hlsl
