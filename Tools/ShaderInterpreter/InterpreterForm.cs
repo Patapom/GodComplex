@@ -21,7 +21,7 @@ namespace ShaderInterpreter
 			InitializeComponent();
 
 			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\ShaderInterpreter" );
-			m_ApplicationPath = Application.ExecutablePath;
+			m_ApplicationPath = Path.GetDirectoryName( Application.ExecutablePath );
 		}
 
 		#region Helpers
@@ -57,7 +57,9 @@ namespace ShaderInterpreter
 
 		private void convertShaderToolStripMenuItem_Click( object sender, EventArgs e )
 		{
-			openFileDialogShader.FileName = GetRegKey( "LastShaderFilename", m_ApplicationPath );
+			string	OldFileName = GetRegKey( "LastShaderFilename", m_ApplicationPath );
+			openFileDialogShader.InitialDirectory = Path.GetDirectoryName( OldFileName );
+			openFileDialogShader.FileName = Path.GetFileName( OldFileName );
 			if ( openFileDialogShader.ShowDialog( this ) != DialogResult.OK )
 				return;
 			SetRegKey( "LastShaderFilename", openFileDialogShader.FileName );
@@ -75,14 +77,22 @@ namespace ShaderInterpreter
 				// Perform conversion
 				CSharpCode = Converter.ConvertShader( ShaderFile, ShaderCode, "VS", "PS" );
 			}
+			catch ( Converter.ConverterException _e )
+			{
+				SourceErrorForm	F = new SourceErrorForm( "An error occurred while converting shader \"" + openFileDialogShader.FileName + "\" to C# class!\n\n", _e );
+				F.ShowDialog( this );
+				return;
+			}
 			catch ( Exception _e )
 			{
-				MessageBox( "An error occurred while converting shader to C# class!\r\n\r\n" + _e.Message );
+				MessageBox( "An error occurred while converting shader to C# class!\n\n" + _e.Message );
 				return;
 			}
 
 			// Save the result
-			saveFileDialogShader.FileName = GetRegKey( "LastCSharpFilename", m_ApplicationPath );
+			OldFileName = GetRegKey( "LastCSharpFilename", m_ApplicationPath );
+			saveFileDialogShader.InitialDirectory = Path.GetDirectoryName( OldFileName );
+			saveFileDialogShader.FileName = Path.GetFileName( OldFileName );
 			if ( saveFileDialogShader.ShowDialog( this ) != DialogResult.OK )
 				return;
 			SetRegKey( "LastCSharpFilename", saveFileDialogShader.FileName );
