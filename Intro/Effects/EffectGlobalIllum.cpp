@@ -198,6 +198,14 @@ void	EffectGlobalIllum::PreComputeProbes()
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
+		// Clear the temporary counters of every other probe to check if it can be our neighbor
+		for ( int NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ )
+		{
+			m_pProbes[NeighborProbeIndex].__TempNeighborCounter = 0;
+			m_pProbes[NeighborProbeIndex].__TempSumSolidAngle = 0.0;
+		}
+
+
 		//////////////////////////////////////////////////////////////////////////
 		// 1] Render Albedo + Normal + Z + Neighborhood
 
@@ -250,42 +258,26 @@ void	EffectGlobalIllum::PreComputeProbes()
 			//	so we can create a linked list of neighbor probes, of their visibilities and solid angle
 			//
 			m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
-//m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
 			m_Device.SetRenderTarget( CUBE_MAP_SIZE, CUBE_MAP_SIZE, *ppRTCubeMap[2]->GetTargetView( 0, CubeFaceIndex, 1 ), pRTCubeMapDepth->GetDepthStencilView() );
 
 			m_pCB_Probe->m.CurrentProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
 
 			USING_MATERIAL_START( *m_pMatRenderNeighborProbe )
 
-//###DEBUG
-// NjFloat3	PipoProbes[6] = {
-// 
-// // 	NjFloat3( 1, 0, 0 ),
-// // 	NjFloat3( -1, 0, 0 ),
-// // 	NjFloat3( 0, 1, 0 ),
-// // 	NjFloat3( 0, -1, 0 ),
-// // 	NjFloat3( 0, 0, 1 ),
-// // 	NjFloat3( 0, 0, -1 ),
-// 
-// 	NjFloat3( 0, 1, 0 ),
-// 	NjFloat3( 1, -1, 0 ),
-// 	NjFloat3( 1, 0, 1 ),
-// 	NjFloat3( -1, 0, 1 ),
-// 	NjFloat3( -2, 1, 1 ),
-// 	NjFloat3( 1, 1, -3 ),
-// 
-// 			};
-// 
-// for ( int PipoProbeIndex=0; PipoProbeIndex < 6; PipoProbeIndex++ )
-// {
-// 	const float	Distance = 0.1f;
-// 	m_pCB_Probe->m.NeighborProbeID = 1 + PipoProbeIndex;
-// 	m_pCB_Probe->m.NeighborProbePosition = m_pCB_Probe->m.CurrentProbePosition + Distance * PipoProbes[PipoProbeIndex];
-// 	m_pCB_Probe->UpdateData();
-// 
-// 	m_ScreenQuad.Render( M );
-// }
+#if 0
+			for ( int NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ )
+				if ( NeighborProbeIndex != ProbeIndex )
+				{
+					ProbeStruct&	NeighborProbe = m_pProbes[NeighborProbeIndex];
 
+					m_pCB_Probe->m.NeighborProbeID = 1 + NeighborProbeIndex;
+					m_pCB_Probe->m.NeighborProbePosition = NeighborProbe.pSceneProbe->m_Local2World.GetRow( 4 );
+					m_pCB_Probe->UpdateData();
+
+					m_ScreenQuad.Render( M );
+				}
+#else
+//###DEBUG
 const int	ThetaCount = 5;
 const int	PhiCount = 5;
 int		PipoProbeIndex = 0;
@@ -304,14 +296,6 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 		const float	Distance = 0.5f;
 		m_pCB_Probe->m.NeighborProbeID = 1 + PipoProbeIndex++;
 
-// switch ( PhiIndex )
-// {
-// case 0:	m_pCB_Probe->m.NeighborProbeID = 1 + 4; break;	// +Z
-// case 1:	m_pCB_Probe->m.NeighborProbeID = 1 + 0; break;	// +X
-// case 2:	m_pCB_Probe->m.NeighborProbeID = 1 + 5; break;	// -Z
-// case 3:	m_pCB_Probe->m.NeighborProbeID = 1 + 1; break;	// -X
-// }
-
 		m_pCB_Probe->m.NeighborProbePosition = m_pCB_Probe->m.CurrentProbePosition + Distance * ProbeDirection;
 		m_pCB_Probe->UpdateData();
 
@@ -319,16 +303,7 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 	}
 }
 //###DEBUG
-
-// NjFloat3	ProbeDirection;
-// 			ProbeDirection.x = (CubeFaceIndex == 0 ? +1.0f : (CubeFaceIndex == 1 ? -1.0f : 0.0001f));
-// 			ProbeDirection.y = (CubeFaceIndex == 2 ? +1.0f : (CubeFaceIndex == 3 ? -1.0f : 0.0f));
-// 			ProbeDirection.z = (CubeFaceIndex == 4 ? +1.0f : (CubeFaceIndex == 5 ? -1.0f : 0.0f));
-// m_pCB_Probe->m.NeighborProbePosition = m_pCB_Probe->m.CurrentProbePosition + 0.1f * ProbeDirection;
-// m_pCB_Probe->m.NeighborProbeID = 1 + CubeFaceIndex;
-// m_pCB_Probe->UpdateData();
-// m_ScreenQuad.Render( M );
-
+#endif
 			USING_MATERIAL_END
 		}
 
@@ -348,40 +323,31 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 
 		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
 		{
-//			NjFloat4x4	Camera2ProbeWorld = SideTransforms[CubeFaceIndex] * ProbeLocal2World;
-
-			NjFloat4x4	ProbeCamera2World;
-			ProbeCamera2World.SetRow( 0, SideRight[CubeFaceIndex], 0 );
-			ProbeCamera2World.SetRow( 1, SideRight[CubeFaceIndex] ^ SideAt[CubeFaceIndex], 0 );
-			ProbeCamera2World.SetRow( 2, SideAt[CubeFaceIndex], 0 );
-			ProbeCamera2World.SetRow( 3, NjFloat3::Zero, 1 );
-
-			NjFloat4x4	ProbeWorld2Camera = ProbeCamera2World.Inverse();
-
-// 			// Update cube map face camera transform
-// 			NjFloat4x4	ProbeWorld2Camera = ProbeWorld2Local * SideTransforms[CubeFaceIndex];
-// ProbeWorld2Camera.Inverse();	// CHECK!
-
-
 			D3D11_MAPPED_SUBRESOURCE&	MappedFaceAlbedo = ppRTCubeMapStaging[0]->Map( 0, CubeFaceIndex );
 			D3D11_MAPPED_SUBRESOURCE&	MappedFaceGeometry = ppRTCubeMapStaging[1]->Map( 0, CubeFaceIndex );
 			D3D11_MAPPED_SUBRESOURCE&	MappedFaceNeighborhood = ppRTCubeMapStaging[2]->Map( 0, CubeFaceIndex );
 
-			NjFloat3	View;
+			// Update cube map face camera transform
+			NjFloat4x4	Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
+
+			pCBCubeMapCamera->m.Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
+
+			NjFloat3	View( 0, 0, 1 );
 			for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
 			{
 				NjFloat4*	pScanlineAlbedo = (NjFloat4*) ((U8*) MappedFaceAlbedo.pData + Y * MappedFaceAlbedo.RowPitch);
 				NjFloat4*	pScanlineGeometry = (NjFloat4*) ((U8*) MappedFaceGeometry.pData + Y * MappedFaceGeometry.RowPitch);
+				U32*		pScanlineNeighboorhood = (U32*) ((U8*) MappedFaceNeighborhood.pData + Y * MappedFaceNeighborhood.RowPitch);
 
 				View.y = 1.0f - 2.0f * Y / (CUBE_MAP_SIZE-1);
 				for ( int X=0; X < CUBE_MAP_SIZE; X++ )
 				{
 					NjFloat4	Albedo = *pScanlineAlbedo++;
 					NjFloat4	Geometry = *pScanlineGeometry++;
+					U32			NeighborID = *pScanlineNeighboorhood++;
 
 					// Rebuild view direction
 					View.x = 2.0f * X / (CUBE_MAP_SIZE-1) - 1.0f;
-					View.z = 1.0f;
 
 					// Retrieve the cube map texel's solid angle (from http://people.cs.kuleuven.be/~philip.dutre/GI/TotalCompendium.pdf)
 					// dw = cos(Theta).dA / r²
@@ -393,10 +359,19 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 					double	SolidAngle = dA / (Distance2Texel * SqDistance2Texel);
 					SumSolidAngle += SolidAngle;	// CHECK! => Should amount to 4PI at the end of the iteration...
 
+					// Account for neighbor
+					if ( NeighborID > 0 )
+					{
+						ASSERT( NeighborID <= U32(m_ProbesCount), "Probe ID out of range!" );
+						m_pProbes[NeighborID-1].__TempNeighborCounter++;
+						m_pProbes[NeighborID-1].__TempSumSolidAngle += SolidAngle;
+					}
+
 					// Check if we hit an obstacle, in which case we should accumulate direct ambient lighting
 					if ( Geometry.w > Z_INFINITY_TEST )
 					{	// No obstacle means direct lighting from the ambient sky...
-						NjFloat3	ViewWorld = NjFloat4( View, 0.0f ) * ProbeCamera2World;	// View vector in world space
+						NjFloat3	ViewWorld = NjFloat4( View, 0.0f ) * Camera2World;	// View vector in world space
+						ViewWorld.Normalize();
 
 						// Accumulate SH coefficients in that direction, weighted by the solid angle
  						double	pSHCoeffs[9];
@@ -448,11 +423,67 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 
 			ppRTCubeMapStaging[0]->UnMap( 0, CubeFaceIndex );
 			ppRTCubeMapStaging[1]->UnMap( 0, CubeFaceIndex );
+			ppRTCubeMapStaging[2]->UnMap( 0, CubeFaceIndex );
 		}
 
-		// Compact indirect (RGB) + direct (A) into a single vector4 of SH
+		//////////////////////////////////////////////////////////////////////////
+		// 3] Compact indirect (RGB) + direct (A) into a single vector4 of SH
 		for ( int i=0; i < 9; i++ )
 			Probe.pSHBounce[i].Set( float( pSHBounce[3*i+0] ), float( pSHBounce[3*i+1] ), float( pSHBounce[3*i+2] ), float( pSHAmbient[i] ) );
+
+		//////////////////////////////////////////////////////////////////////////
+		// 4] Sort largest contributing neighbors
+		for ( int NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ )
+			if ( NeighborProbeIndex != ProbeIndex )
+			{
+				ProbeStruct&	NeighborProbe = m_pProbes[NeighborProbeIndex];
+				if ( NeighborProbe.__TempNeighborCounter == 0 )
+					continue;	// Not a neighbor...
+				if ( NeighborProbe.__TempSumSolidAngle < 8.0 * PI / 180 )	// Reject under 8 ster-degrees
+					continue;	// Too low to contribute...
+
+				// Sort insert the probe in our list of neighbors
+				int ExistingNeighborIndex = 0;
+				for ( ; ExistingNeighborIndex < Probe.NeighborsCount; ExistingNeighborIndex++ )
+				{
+					if ( Probe.pNeighborLinks[ExistingNeighborIndex].SolidAngle < NeighborProbe.__TempSumSolidAngle )
+						break;	// We found the insertion point!
+				}
+
+				if ( ExistingNeighborIndex >= MAX_NEIGHBOR_PROBES )
+					continue;	// This neighbor is not influent enough to insert anywhere and our list is full anyway....
+
+				// Shift existing entries
+				int		MoveSize = (MAX_NEIGHBOR_PROBES-1-ExistingNeighborIndex) * sizeof(ProbeStruct::NeighborLink);
+				memcpy_s( &Probe.pNeighborLinks[ExistingNeighborIndex+1], MoveSize, &Probe.pNeighborLinks[ExistingNeighborIndex], MoveSize );
+
+				// Insert the neighbor
+				Probe.pNeighborLinks[ExistingNeighborIndex].pNeighbor = &NeighborProbe;
+				Probe.pNeighborLinks[ExistingNeighborIndex].SolidAngle = NeighborProbe.__TempSumSolidAngle;
+
+				// Safe increment the amount of neighbors
+				Probe.NeighborsCount = MIN( int(MAX_NEIGHBOR_PROBES), Probe.NeighborsCount+1 );
+			}
+
+		//////////////////////////////////////////////////////////////////////////
+		// 5] Process neighbor links
+		NjFloat3	ProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
+		for ( int NeighborProbeIndex=0; NeighborProbeIndex < Probe.NeighborsCount; NeighborProbeIndex++ )
+		{
+			ProbeStruct::NeighborLink&	NeighborProbeLink = Probe.pNeighborLinks[NeighborProbeIndex];
+			NjFloat3					NeighborPosition = NeighborProbeLink.pNeighbor->pSceneProbe->m_Local2World.GetRow( 3 );
+
+			// Compute distance
+			NjFloat3	ToNeighbor = NeighborPosition - ProbePosition;
+			NeighborProbeLink.Distance = ToNeighbor.Length();
+			ToNeighbor = ToNeighbor / NeighborProbeLink.Distance;
+
+			// Retrieve an approximate cone angle for the perceived solid angle of that probe
+			//	ConeSolidAngle = 2PI * (1 - cos(a)) where a is the half cone angle
+			//
+			float	ConeHalfAngle = float( acos( 1.0 - NeighborProbeLink.SolidAngle / TWOPI ) );
+			BuildSHSmoothCone( ToNeighbor, ConeHalfAngle, NeighborProbeLink.pSHLink );
+		}
 	}
 
 
@@ -509,6 +540,40 @@ void	EffectGlobalIllum::BuildSHCosineLobe( const NjFloat3& _Direction, double _C
 		0.88622692545275801364908374167057f,	// sqrt(PI) / 2
 		1.0233267079464884884795516248893f,		// sqrt(PI / 3)
 		0.49541591220075137666812859564002f		// sqrt(5PI) / 8
+		);
+	ZHRotate( _Direction, ZHCoeffs, _Coeffs );
+}
+
+// Builds a spherical harmonics cone lobe (same as for a spherical light source subtending a cone of half angle a)
+// (from "Stupid SH Tricks")
+//
+void	EffectGlobalIllum::BuildSHCone( const NjFloat3& _Direction, float _HalfAngle, double _Coeffs[9] )
+{
+	double	a = _HalfAngle;
+	double	c = cos( a );
+	double	s = sin( a );
+	NjFloat3 ZHCoeffs = NjFloat3(
+			float( 1.7724538509055160272981674833411 * (1 - c)),				// sqrt(PI) (1 - cos(a))
+			float( 1.5349900619197327327193274373339 * (s * s)),				// 0.5 sqrt(3PI) sin(a)^2
+			float( 1.9816636488030055066725143825601 * (c * (1 - c) * (1 + c)))	// 0.5 sqrt(5PI) cos(a) (1-cos(a)) (cos(a)+1)
+		);
+	ZHRotate( _Direction, ZHCoeffs, _Coeffs );
+}
+
+// Builds a spherical harmonics smooth cone lobe
+// The light source intensity is 1 at theta=0 and 0 at theta=half angle
+// (from "Stupid SH Tricks")
+//
+void	EffectGlobalIllum::BuildSHSmoothCone( const NjFloat3& _Direction, float _HalfAngle, double _Coeffs[9] )
+{
+	double	a = _HalfAngle;
+	float	One_a3 = 1.0f / float(a*a*a);
+	double	c = cos( a );
+	double	s = sin( a );
+	NjFloat3 ZHCoeffs = One_a3 * NjFloat3(
+			float( 1.7724538509055160272981674833411 * (a * (6.0*(1+c) + a*a) - 12*s) ),					// sqrt(PI) (a^3 + 6a - 12*sin(a) + 6*cos(a)*a) / a^3
+			float( 0.76749503095986636635966371866695 * (a * (a*a + 3*c*c) - 3*c*s) ),						// 0.25 sqrt(3PI) (a^3 - 3*cos(a)*sin(a) + 3*cos(a)^2*a) / a^3
+			float( 0.44036969973400122370500319612446 * (-6.0*a -2*c*c*s -9.0*c*a + 14.0*s + 3*c*c*c*a))	// 1/9 sqrt(5PI) (-6a - 2*cos(a)^2*sin(a) - 9*cos(a)*a + 14*sin(a) + 3*cos(a)^3*a) / a^3
 		);
 	ZHRotate( _Direction, ZHCoeffs, _Coeffs );
 }

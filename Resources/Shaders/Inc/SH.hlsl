@@ -58,7 +58,7 @@ void BuildSHCone( const in float3 _Direction, float _HalfAngle, out float _Coeff
 // The light source intensity is 1 at theta=0 and 0 at theta=half angle
 // (from "Stupid SH Tricks")
 //
-void BuildSHCone( const in float3 _Direction, float _HalfAngle, out float _Coeffs[9] )
+void BuildSHSmoothCone( const in float3 _Direction, float _HalfAngle, out float _Coeffs[9] )
 {
 	float	a = _HalfAngle;
 	float	One_a3 = 1.0 / (a*a*a);

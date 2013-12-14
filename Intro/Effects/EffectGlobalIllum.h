@@ -7,6 +7,7 @@ class EffectGlobalIllum : public Scene::ISceneTagger, public Scene::ISceneRender
 private:	// CONSTANTS
 
 	static const U32		CUBE_MAP_SIZE = 128;
+	static const U32		MAX_NEIGHBOR_PROBES = 32;
 
 protected:	// NESTED TYPES
 
@@ -45,16 +46,21 @@ protected:	// NESTED TYPES
 		NjFloat3		pSHLight[9];			// The radiance field surrounding the probe
 
 		int				NeighborsCount;			// The amount of neighbor probes
-		struct	// NeighborLink
+		struct	NeighborLink
 		{
-			float			SolidAngle;			// The solid angle covered by the neighbor
+			double			SolidAngle;			// The solid angle covered by the neighbor
 			float			Distance;			// The distance to the neighbor
-			float			pSHLink[9];			// The "link SH" the neighbor's SH needs to be convolved with to act as a local light source for this probe
+			double			pSHLink[9];			// The "link SH" the neighbor's SH needs to be convolved with to act as a local light source for this probe
 			ProbeStruct*	pNeighbor;			// The neighbor probe
-		}				pNeighborLinks[32];		// The array of 32 max neighbor probes
+		}				pNeighborLinks[MAX_NEIGHBOR_PROBES];		// The array of 32 max neighbor probes
 
 		NjFloat3		pSHBouncedLight[9];		// The resulting bounced irradiance (bounce * light)
+
+		// Temporary counters for a specific probe to count its neighbors
+		int				__TempNeighborCounter;
+		double			__TempSumSolidAngle;
 	};
+
 
 private:	// FIELDS
 
@@ -117,6 +123,8 @@ private:
 
 	void			BuildSHCoeffs( const NjFloat3& _Direction, double _Coeffs[9] );
 	void			BuildSHCosineLobe( const NjFloat3& _Direction, double _Coeffs[9] );
+	void			BuildSHCone( const NjFloat3& _Direction, float _HalfAngle, double _Coeffs[9] );
+	void			BuildSHSmoothCone( const NjFloat3& _Direction, float _HalfAngle, double _Coeffs[9] );
 	void			ZHRotate( const NjFloat3& _Direction, const NjFloat3& _ZHCoeffs, double _Coeffs[9] );
 
 	void			PreComputeProbes();
