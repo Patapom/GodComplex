@@ -57,7 +57,7 @@ float4	ComputeBackground( float2 _UV )
 
 float4	PS( VS_IN _In ) : SV_TARGET0
 {
-	float4	SourceHDR = TEX( _TexHDR, LinearWrap, _In.Position.xy * INV_SCREEN_SIZE );
+	float4	SourceHDR = _TexHDR.Sample( LinearWrap, _In.Position.xy * INV_SCREEN_SIZE );
 
 	float2	UV = 2.0 * float2( ASPECT_RATIO * _In.Position.x, _In.Position.y ) * INV_SCREEN_SIZE;
 //	float4	Background = TEXLOD( _TexNoise, LinearWrap, UV, _LOD );

@@ -53,6 +53,7 @@ EffectGlobalIllum::~EffectGlobalIllum()
 	delete m_pTexWalls;
 
 	delete m_pMatPostProcess;
+	delete m_pMatRenderNeighborProbe;
 	delete m_pMatRenderCubeMap;
 	delete m_pMatRender;
 
@@ -131,29 +132,68 @@ void	EffectGlobalIllum::PreComputeProbes()
 		m_ProbesCount++;
 	}
 
-
 	//////////////////////////////////////////////////////////////////////////
-	// Render every probe as a cube map & process
-
+	// Prepare the cube map face transforms
 	// Here are the transform to render the 6 faces of a cube map
-	NjFloat4x4	SideTransforms[6] =
+	// Remember the +Z face is not oriented the same way as our Z vector: http://msdn.microsoft.com/en-us/library/windows/desktop/bb204881(v=vs.85).aspx
+	//
+	//
+	//		^ +Y
+	//		|   +Z  (our actual +Z faces the other way!)
+	//		|  /
+	//		| /
+	//		|/
+	//		o------> +X
+	//
+	//
+	NjFloat3	SideAt[6] = 
 	{
-		NjFloat4x4::RotY( -0.5f * PI ),	// +X (look right)
-		NjFloat4x4::RotY( +0.5f * PI ),	// -X (look left)
-		NjFloat4x4::RotX( +0.5f * PI ),	// +Y (look up)
-		NjFloat4x4::RotX( -0.5f * PI ),	// -Y (look down)
-		NjFloat4x4::RotY( +0.0f * PI ),	// +Z (look front) (default)
-		NjFloat4x4::RotY( +1.0f * PI ),	// -Z (look back)
+		NjFloat3(  1, 0, 0 ),
+		NjFloat3( -1, 0, 0 ),
+		NjFloat3( 0,  1, 0 ),
+		NjFloat3( 0, -1, 0 ),
+		NjFloat3( 0, 0,  1 ),
+		NjFloat3( 0, 0, -1 ),
+	};
+	NjFloat3	SideRight[6] = 
+	{
+		NjFloat3( 0, 0, -1 ),
+		NjFloat3( 0, 0,  1 ),
+		NjFloat3(  1, 0, 0 ),
+		NjFloat3(  1, 0, 0 ),
+		NjFloat3(  1, 0, 0 ),
+		NjFloat3( -1, 0, 0 ),
 	};
 
-	NjFloat4x4	Camera2Proj = NjFloat4x4::ProjectionPerspective( 0.5f * PI, 1.0f, 0.1f, 1000.0f );
+	NjFloat4x4	SideWorld2Proj[6];
+	NjFloat4x4	Side2Local[6];
+	NjFloat4x4	Camera2Proj = NjFloat4x4::ProjectionPerspective( 0.5f * PI, 1.0f, 0.01f, 1000.0f );
+	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
+	{
+		NjFloat4x4	Camera2Local;
+		Camera2Local.SetRow( 0, SideRight[CubeFaceIndex], 0 );
+		Camera2Local.SetRow( 1, SideAt[CubeFaceIndex] ^ SideRight[CubeFaceIndex], 0 );
+		Camera2Local.SetRow( 2, SideAt[CubeFaceIndex], 0 );
+		Camera2Local.SetRow( 3, NjFloat3::Zero, 1 );
 
+		Side2Local[CubeFaceIndex] = Camera2Local;
+
+		NjFloat4x4	Local2Camera = Camera2Local.Inverse();
+		NjFloat4x4	Local2Proj = Local2Camera * Camera2Proj;
+		SideWorld2Proj[CubeFaceIndex] = Local2Proj;
+	}
+
+	// Create the special CB for cube map projections
 	struct	CBCubeMapCamera
 	{
+		NjFloat4x4	Camera2World;
 		NjFloat4x4	World2Proj;
 	};
 	CB<CBCubeMapCamera>*	pCBCubeMapCamera = new CB<CBCubeMapCamera>( m_Device, 9, true );
 
+	//////////////////////////////////////////////////////////////////////////
+	// Render every probe as a cube map & process
+	//
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
@@ -175,12 +215,15 @@ void	EffectGlobalIllum::PreComputeProbes()
 		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
 		{
 			// Update cube map face camera transform
-			NjFloat4x4	ProbeWorld2Camera = ProbeWorld2Local * SideTransforms[CubeFaceIndex];
+			NjFloat4x4	World2Proj = ProbeWorld2Local * SideWorld2Proj[CubeFaceIndex];
 
-			pCBCubeMapCamera->m.World2Proj = ProbeWorld2Camera * Camera2Proj;
+			pCBCubeMapCamera->m.Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
+			pCBCubeMapCamera->m.World2Proj = World2Proj;
 			pCBCubeMapCamera->UpdateData();
 
 			// Render the scene into the specific cube map faces
+			m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+
 			ID3D11RenderTargetView*	ppViews[2] = {
 				ppRTCubeMap[0]->GetTargetView( 0, CubeFaceIndex, 1 ),
 				ppRTCubeMap[1]->GetTargetView( 0, CubeFaceIndex, 1 )
@@ -206,8 +249,8 @@ void	EffectGlobalIllum::PreComputeProbes()
 			// Reading back the cube map will indicate the solid angle perceived by each probe to each of its neighbors
 			//	so we can create a linked list of neighbor probes, of their visibilities and solid angle
 			//
-//			m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
-m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
+			m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+//m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
 			m_Device.SetRenderTarget( CUBE_MAP_SIZE, CUBE_MAP_SIZE, *ppRTCubeMap[2]->GetTargetView( 0, CubeFaceIndex, 1 ), pRTCubeMapDepth->GetDepthStencilView() );
 
 			m_pCB_Probe->m.CurrentProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
@@ -217,20 +260,21 @@ m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m
 //###DEBUG
 // NjFloat3	PipoProbes[6] = {
 // 
-// 	NjFloat3( 1, 0, 0 ),
-// 	NjFloat3( -1, 0, 0 ),
-// 	NjFloat3( 0, 1, 0 ),
-// 	NjFloat3( 0, -1, 0 ),
-// 	NjFloat3( 0, 0, 1 ),
-// 	NjFloat3( 0, 0, -1 ),
-// 
+// // 	NjFloat3( 1, 0, 0 ),
+// // 	NjFloat3( -1, 0, 0 ),
 // // 	NjFloat3( 0, 1, 0 ),
-// // 	NjFloat3( 1, -1, 0 ),
-// // 	NjFloat3( 1, 0, 1 ),
-// // 	NjFloat3( -1, 0, 1 ),
-// // 	NjFloat3( -2, 1, 1 ),
-// // 	NjFloat3( 1, 1, -3 ),
-// };
+// // 	NjFloat3( 0, -1, 0 ),
+// // 	NjFloat3( 0, 0, 1 ),
+// // 	NjFloat3( 0, 0, -1 ),
+// 
+// 	NjFloat3( 0, 1, 0 ),
+// 	NjFloat3( 1, -1, 0 ),
+// 	NjFloat3( 1, 0, 1 ),
+// 	NjFloat3( -1, 0, 1 ),
+// 	NjFloat3( -2, 1, 1 ),
+// 	NjFloat3( 1, 1, -3 ),
+// 
+// 			};
 // 
 // for ( int PipoProbeIndex=0; PipoProbeIndex < 6; PipoProbeIndex++ )
 // {
@@ -241,11 +285,49 @@ m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m
 // 
 // 	m_ScreenQuad.Render( M );
 // }
+
+const int	ThetaCount = 5;
+const int	PhiCount = 5;
+int		PipoProbeIndex = 0;
+for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
+{
+	float	Theta = PI * (ThetaIndex+0.5f) / ThetaCount;
+	for ( int PhiIndex=0; PhiIndex < PhiCount; PhiIndex++ )
+	{
+		float	Phi = TWOPI * (PhiIndex+0.0f) / PhiCount;
+
+		NjFloat3	ProbeDirection;
+		ProbeDirection.x = sinf(Phi)*sinf(Theta);
+		ProbeDirection.y = cosf(Theta);
+		ProbeDirection.z = cos(Phi)*sinf(Theta);
+
+		const float	Distance = 0.5f;
+		m_pCB_Probe->m.NeighborProbeID = 1 + PipoProbeIndex++;
+
+// switch ( PhiIndex )
+// {
+// case 0:	m_pCB_Probe->m.NeighborProbeID = 1 + 4; break;	// +Z
+// case 1:	m_pCB_Probe->m.NeighborProbeID = 1 + 0; break;	// +X
+// case 2:	m_pCB_Probe->m.NeighborProbeID = 1 + 5; break;	// -Z
+// case 3:	m_pCB_Probe->m.NeighborProbeID = 1 + 1; break;	// -X
+// }
+
+		m_pCB_Probe->m.NeighborProbePosition = m_pCB_Probe->m.CurrentProbePosition + Distance * ProbeDirection;
+		m_pCB_Probe->UpdateData();
+
+		m_ScreenQuad.Render( M );
+	}
+}
 //###DEBUG
 
-m_pCB_Probe->m.NeighborProbeID = 1 + CubeFaceIndex;
-m_pCB_Probe->UpdateData();
-m_ScreenQuad.Render( M );
+// NjFloat3	ProbeDirection;
+// 			ProbeDirection.x = (CubeFaceIndex == 0 ? +1.0f : (CubeFaceIndex == 1 ? -1.0f : 0.0001f));
+// 			ProbeDirection.y = (CubeFaceIndex == 2 ? +1.0f : (CubeFaceIndex == 3 ? -1.0f : 0.0f));
+// 			ProbeDirection.z = (CubeFaceIndex == 4 ? +1.0f : (CubeFaceIndex == 5 ? -1.0f : 0.0f));
+// m_pCB_Probe->m.NeighborProbePosition = m_pCB_Probe->m.CurrentProbePosition + 0.1f * ProbeDirection;
+// m_pCB_Probe->m.NeighborProbeID = 1 + CubeFaceIndex;
+// m_pCB_Probe->UpdateData();
+// m_ScreenQuad.Render( M );
 
 			USING_MATERIAL_END
 		}
@@ -266,7 +348,15 @@ m_ScreenQuad.Render( M );
 
 		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
 		{
-			NjFloat4x4	Camera2ProbeWorld = SideTransforms[CubeFaceIndex] * ProbeLocal2World;
+//			NjFloat4x4	Camera2ProbeWorld = SideTransforms[CubeFaceIndex] * ProbeLocal2World;
+
+			NjFloat4x4	ProbeCamera2World;
+			ProbeCamera2World.SetRow( 0, SideRight[CubeFaceIndex], 0 );
+			ProbeCamera2World.SetRow( 1, SideRight[CubeFaceIndex] ^ SideAt[CubeFaceIndex], 0 );
+			ProbeCamera2World.SetRow( 2, SideAt[CubeFaceIndex], 0 );
+			ProbeCamera2World.SetRow( 3, NjFloat3::Zero, 1 );
+
+			NjFloat4x4	ProbeWorld2Camera = ProbeCamera2World.Inverse();
 
 // 			// Update cube map face camera transform
 // 			NjFloat4x4	ProbeWorld2Camera = ProbeWorld2Local * SideTransforms[CubeFaceIndex];
@@ -306,7 +396,7 @@ m_ScreenQuad.Render( M );
 					// Check if we hit an obstacle, in which case we should accumulate direct ambient lighting
 					if ( Geometry.w > Z_INFINITY_TEST )
 					{	// No obstacle means direct lighting from the ambient sky...
-						NjFloat3	ViewWorld = NjFloat4( View, 0.0f ) * Camera2ProbeWorld;	// View vector in world space
+						NjFloat3	ViewWorld = NjFloat4( View, 0.0f ) * ProbeCamera2World;	// View vector in world space
 
 						// Accumulate SH coefficients in that direction, weighted by the solid angle
  						double	pSHCoeffs[9];

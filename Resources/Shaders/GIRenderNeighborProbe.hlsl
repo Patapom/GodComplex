@@ -8,6 +8,7 @@
 //[
 cbuffer	cbCubeMapCamera	: register( b9 )
 {
+	float4x4	_CubeMap2World;
 	float4x4	_CubeMapWorld2Proj;
 };
 //]
@@ -26,7 +27,13 @@ struct	VS_IN
 	float4	__Position	: SV_POSITION;
 };
 
-VS_IN	VS( VS_IN _In )
+struct	PS_IN
+{
+	float4	__Position	: SV_POSITION;
+	float3	UVW			: TEXCOORD0;
+};
+
+PS_IN	VS( VS_IN _In )
 {
 	float3	PlaneNormal = _CurrentProbePosition - _NeighborProbePosition;
 	float	Distance2Neighbor = length( PlaneNormal );
@@ -46,17 +53,26 @@ VS_IN	VS( VS_IN _In )
 		PlaneBiTangent = float3( 0, 0, 1 );
 	}
 
-	float4	WorldPosition = float4( _NeighborProbePosition + 5.0 * Distance2Neighbor * (_In.__Position.x * PlaneTangent + _In.__Position.y * PlaneBiTangent), 1.0 );
+	float4	WorldPosition = float4( _NeighborProbePosition + 2.0 * Distance2Neighbor * (_In.__Position.x * PlaneTangent + _In.__Position.y * PlaneBiTangent), 1.0 );
 
-	VS_IN	Out;
+	PS_IN	Out;
 	Out.__Position = mul( WorldPosition, _CubeMapWorld2Proj );
+	Out.UVW = float3( 0.5 * float2( 1.0 + _In.__Position.x, 1.0 - _In.__Position.y ), 0 );
+//Out.UVW = PlaneNormal;
+//Out.UVW = WorldPosition;
 
 	return Out;
 }
 
 //VS_IN	VS( VS_IN _In )	{ return _In; }
 
-uint	PS( VS_IN _In ) : SV_TARGET0
+uint	PS( PS_IN _In ) : SV_TARGET0
 {
+
+//return 65535;
+// return uint( 255.0 * length( _In.UVW - _CurrentProbePosition ) );
+//return uint( 255.0 * 0.5 * (1.0 + _In.UVW.x) ) | (uint( 255.0 * 0.5 * (1.0 + _In.UVW.y) ) << 8) | (uint( 255.0 * 0.5 * (1.0 + _In.UVW.z) ) << 16);
+//return uint( 255.0 * _In.UVW.x ) | (uint( 255.0 * _In.UVW.y ) << 8) | (uint( 255.0 * _In.UVW.z ) << 16);
+
 	return _NeighborProbeID;
 }
