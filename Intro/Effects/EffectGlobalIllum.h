@@ -24,6 +24,13 @@ protected:	// NESTED TYPES
 		float		SpecularExponent;
 	};
 
+	struct CBProbe
+	{
+		NjFloat3	CurrentProbePosition;
+		U32			NeighborProbeID;
+		NjFloat3	NeighborProbePosition;
+ 	};
+
 	struct CBSplat
 	{
 		NjFloat3	dUV;
@@ -37,7 +44,7 @@ protected:	// NESTED TYPES
 		NjFloat4		pSHBounce[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced light
 		NjFloat3		pSHLight[9];			// The radiance field surrounding the probe
 
-		int				NeighborsCount;			// The amount of neighboor probes
+		int				NeighborsCount;			// The amount of neighbor probes
 		struct	// NeighborLink
 		{
 			float			SolidAngle;			// The solid angle covered by the neighbor
@@ -56,9 +63,10 @@ private:	// FIELDS
 	Texture2D&			m_RTTarget;
 	Primitive&			m_ScreenQuad;
 
-	Material*			m_pMatRender;			// Displays the room
-	Material*			m_pMatRenderCubeMap;	// Renders the room into a cubemap
-	Material*			m_pMatPostProcess;		// Post-processes the result
+	Material*			m_pMatRender;				// Displays the room
+	Material*			m_pMatRenderCubeMap;		// Renders the room into a cubemap
+	Material*			m_pMatRenderNeighborProbe;	// Renders the neighbor probes as planes to form a 3D voronoï cell
+	Material*			m_pMatPostProcess;			// Post-processes the result
 
 	// Primitives
 	Scene				m_Scene;
@@ -70,6 +78,7 @@ private:	// FIELDS
 	// Constant buffers
  	CB<CBObject>*		m_pCB_Object;
  	CB<CBMaterial>*		m_pCB_Material;
+ 	CB<CBProbe>*		m_pCB_Probe;
 	CB<CBSplat>*		m_pCB_Splat;
 
 
@@ -106,7 +115,9 @@ public:		// METHODS
 
 private:
 
+	void			BuildSHCoeffs( const NjFloat3& _Direction, double _Coeffs[9] );
+	void			BuildSHCosineLobe( const NjFloat3& _Direction, double _Coeffs[9] );
+	void			ZHRotate( const NjFloat3& _Direction, const NjFloat3& _ZHCoeffs, double _Coeffs[9] );
+
 	void			PreComputeProbes();
-	void			BuildSHCosineLobe( const NjFloat3& _Direction, float _Coeffs[9] );
-	void			ZHRotate( const NjFloat3& _Direction, const NjFloat3& _ZHCoeffs, float _Coeffs[9] );
 };

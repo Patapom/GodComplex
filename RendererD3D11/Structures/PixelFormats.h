@@ -216,6 +216,26 @@ public:
 
 };
 
+struct PixelFormatR32_UINT : public PixelFormat
+{
+public:
+
+	static class Desc : public IPixelFormatDescriptor
+	{
+	public:
+
+		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_R32_UINT; }
+		virtual int			Size() const					{ return sizeof(PixelFormatR32_UINT); }
+		virtual void		Write( U8* _pPixel, const NjFloat4& _Color ) const	{ PixelFormatR32_UINT& P = (PixelFormatR32_UINT&)( *_pPixel ); P.R = U32( _Color.x ); }
+		virtual NjFloat4	Read( const U8* _pPixel ) const						{ const PixelFormatR32_UINT& P = (const PixelFormatR32_UINT&)( *_pPixel ); return NjFloat4( float( P.R ), 0, 0, 0 ); }
+	} DESCRIPTOR;
+
+public:
+
+	U32		R;
+
+};
+
 
 struct PixelFormatRG32F : public PixelFormat
 {

@@ -264,6 +264,9 @@
     <ClInclude Include="Utility\TextureFilePOM.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Utility\SH.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -417,6 +420,9 @@
     <ClCompile Include="Utility\TextureFilePOM.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
+    <ClCompile Include="Utility\SH.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib">
@@ -567,6 +573,9 @@
     </None>
     <None Include="Resources\Shaders\Inc\SH.hlsl">
       <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderNeighborProbe.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
