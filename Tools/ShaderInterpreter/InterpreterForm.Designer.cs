@@ -30,6 +30,7 @@ namespace ShaderInterpreter
 		/// </summary>
 		private void InitializeComponent()
 		{
+			this.components = new System.ComponentModel.Container();
 			this.menuStrip = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -37,6 +38,7 @@ namespace ShaderInterpreter
 			this.openFileDialogShader = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogShader = new System.Windows.Forms.SaveFileDialog();
 			this.button1 = new System.Windows.Forms.Button();
+			this.outputPanel1 = new ShaderInterpreter.OutputPanel(this.components);
 			this.menuStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -93,11 +95,19 @@ namespace ShaderInterpreter
 			this.button1.Text = "button1";
 			this.button1.UseVisualStyleBackColor = true;
 			// 
+			// outputPanel1
+			// 
+			this.outputPanel1.Location = new System.Drawing.Point(12, 27);
+			this.outputPanel1.Name = "outputPanel1";
+			this.outputPanel1.Size = new System.Drawing.Size(677, 546);
+			this.outputPanel1.TabIndex = 3;
+			// 
 			// InterpreterForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1027, 753);
+			this.Controls.Add(this.outputPanel1);
 			this.Controls.Add(this.button1);
 			this.Controls.Add(this.menuStrip);
 			this.MainMenuStrip = this.menuStrip;
@@ -120,6 +130,7 @@ namespace ShaderInterpreter
 		private System.Windows.Forms.OpenFileDialog openFileDialogShader;
 		private System.Windows.Forms.SaveFileDialog saveFileDialogShader;
 		private System.Windows.Forms.Button button1;
+		private OutputPanel outputPanel1;
 	}
 }
 

@@ -59,7 +59,7 @@ cbuffer	cbGlobal	: register( b1 )
 //]
 
 
-Texture3D	_TexNoise3D	: register(t0);
+Texture3D<float4>	_TexNoise3D	: register(t0);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////

@@ -53,16 +53,16 @@ namespace ShaderInterpreter
 			Invalidate();
 		}
 
-// 		protected override void OnSizeChanged( EventArgs e )
-// 		{
-// 			if ( m_Bitmap != null )
-// 				m_Bitmap.Dispose();
-// 
-// 			m_Bitmap = new Bitmap( Width, Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb );
-// 			UpdateBitmap();
-// 
-// 			base.OnSizeChanged( e );
-// 		}
+		protected override void OnSizeChanged( EventArgs e )
+		{
+			if ( m_Bitmap != null )
+				m_Bitmap.Dispose();
+
+			m_Bitmap = new Bitmap( Width, Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb );
+			UpdateBitmap();
+
+			base.OnSizeChanged( e );
+		}
 
 		protected override void OnPaintBackground( PaintEventArgs e )
 		{

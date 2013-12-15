@@ -22,6 +22,8 @@ namespace ShaderInterpreter
 
 			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\ShaderInterpreter" );
 			m_ApplicationPath = Path.GetDirectoryName( Application.ExecutablePath );
+
+convertShaderToolStripMenuItem_Click( null, EventArgs.Empty );
 		}
 
 		#region Helpers
@@ -57,12 +59,15 @@ namespace ShaderInterpreter
 
 		private void convertShaderToolStripMenuItem_Click( object sender, EventArgs e )
 		{
-			string	OldFileName = GetRegKey( "LastShaderFilename", m_ApplicationPath );
+ 			string	OldFileName = GetRegKey( "LastShaderFilename", m_ApplicationPath );
 			openFileDialogShader.InitialDirectory = Path.GetDirectoryName( OldFileName );
 			openFileDialogShader.FileName = Path.GetFileName( OldFileName );
-			if ( openFileDialogShader.ShowDialog( this ) != DialogResult.OK )
-				return;
-			SetRegKey( "LastShaderFilename", openFileDialogShader.FileName );
+// 			if ( openFileDialogShader.ShowDialog( this ) != DialogResult.OK )
+// 				return;
+// 			SetRegKey( "LastShaderFilename", openFileDialogShader.FileName );
+
+openFileDialogShader.FileName = @"E:\[Workspaces]\GodComplex\Resources\Shaders\GIRenderCubeMap.hlsl";
+
 
 			// Perform conversion
 			string	CSharpCode = null;
@@ -75,7 +80,7 @@ namespace ShaderInterpreter
 					ShaderCode = S.ReadToEnd();
 
 				// Perform conversion
-				CSharpCode = Converter.ConvertShader( ShaderFile, ShaderCode, "VS", "PS" );
+				CSharpCode = Converter.ConvertShader( ShaderFile, ShaderCode, "Test", "VS", "PS" );
 			}
 			catch ( Converter.ConverterException _e )
 			{

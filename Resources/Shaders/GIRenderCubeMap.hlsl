@@ -27,7 +27,9 @@ cbuffer	cbMaterial	: register( b11 )
 	float3		_DiffuseAlbedo;
 	bool		_HasDiffuseTexture;
 	float3		_SpecularAlbedo;
+
 	bool		_HasSpecularTexture;
+	//test no public!
 	float		_SpecularExponent;
 };
 //]

@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 
-using ShaderInterpreter.ShaderMath;
+using ShaderInterpreter.Math;
 
 namespace ShaderInterpreter
 {
-	public class	Interpreter : ShaderSyntaxSupport
+	public class	Interpreter : Shader
 	{
 // 		cbuffer	cbCubeMapCamera	//: register( b9 )
 //		{

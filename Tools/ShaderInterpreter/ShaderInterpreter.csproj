@@ -79,6 +79,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Converter.cs" />
+    <Compile Include="ShaderSyntaxSupport\Shader.cs" />
+    <Compile Include="ShaderSyntaxSupport\ShaderTextures.cs" />
+    <Compile Include="ShaderSyntaxSupport\ShaderMathInteger.cs" />
+    <Compile Include="ShaderSyntaxSupport\ShaderMathFloat.cs" />
     <None Include="CSharpShaders\Test0.cs" />
     <Compile Include="OutputPanel.cs">
       <SubType>Component</SubType>
@@ -86,8 +90,8 @@
     <Compile Include="OutputPanel.Designer.cs">
       <DependentUpon>OutputPanel.cs</DependentUpon>
     </Compile>
-    <Compile Include="ShaderSyntaxSupport.cs" />
-    <Compile Include="Interpreter.cs" />
+    <Compile Include="ShaderSyntaxSupport\ShaderClasses.cs" />
+    <None Include="Interpreter.cs" />
     <Compile Include="InterpreterForm.cs">
       <SubType>Form</SubType>
     </Compile>
