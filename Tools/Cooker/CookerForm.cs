@@ -121,7 +121,6 @@ namespace Cooker
 		private bool	m_Cooking = false;
 		private bool	m_Abort = false;
 		private bool	m_ForceSuccess = false;
-		private bool	m_FirstWriteToTextBox = true;
 		private void buttonCook_Click(object sender, EventArgs e)
 		{
 			if ( m_Cooking )
@@ -229,7 +228,6 @@ namespace Cooker
 
 			// Restore cooking states
 			m_Cooking = m_Abort = m_ForceSuccess = false;
-			m_FirstWriteToTextBox = true;
 		}
 
 		private void processCook_OutputDataReceived( object sender, System.Diagnostics.DataReceivedEventArgs e )

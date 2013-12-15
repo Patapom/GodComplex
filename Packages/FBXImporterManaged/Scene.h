@@ -212,10 +212,9 @@ namespace FBXImporter
 				if ( !bImportStatus )
 				{
 					System::String^	Report = "Call to FbxImporter::Initialize() failed.\n" +
-											 "Error returned: " + Helpers::GetString( pImporter->GetLastErrorString() ) + "\n\n";
+											 "Error returned: " + Helpers::GetString( pImporter->GetStatus().GetErrorString() ) + "\n\n";
 
-					if ( pImporter->GetLastErrorID() == FbxIO::eFileVersionNotSupportedYet ||
-						 pImporter->GetLastErrorID() == FbxIO::eFileVersionNotSupportedAnymore )
+					if ( pImporter->GetStatus().GetCode() == FbxStatus::eInvalidFileVersion )
 					{
 						Report += "FBX version number for this FBX SDK is " + lSDKMajor + "." + lSDKMinor + "." + lSDKRevision + "\n";
 						Report += "FBX version number for file \"" + _FileName + "\" is " + lFileMajor + "." + lFileMinor + "." + lFileRevision + "\n\n";
@@ -252,7 +251,7 @@ namespace FBXImporter
 				// Import the scene.
 				bool	bStatus = pImporter->Import( pScene );
 				if ( !bStatus )
-					throw gcnew Exception( "Failed to import \"" + _FileName + "\" ! Last Error : " + Helpers::GetString( pImporter->GetLastErrorString() ) );
+					throw gcnew Exception( "Failed to import \"" + _FileName + "\" ! Last Error : " + Helpers::GetString( pImporter->GetStatus().GetErrorString() ) );
 			}
 			catch ( Exception^ )
 			{

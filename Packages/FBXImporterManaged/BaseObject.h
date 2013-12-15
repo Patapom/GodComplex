@@ -132,7 +132,7 @@ namespace FBXImporter
 			{
 				ObjectProperty^	Prop = gcnew ObjectProperty( this, Property );
 				m_Properties->Add( Prop );
-				if ( Property.GetFlag( FbxPropertyAttr::eUser ) )
+				if ( Property.GetFlag( FbxPropertyAttr::eUserDefined ) )
 					m_UserProperties->Add( Prop );
 
 				Property = _pObject->GetNextProperty( Property );
