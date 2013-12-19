@@ -231,7 +231,7 @@ public:		// METHODS
 
 	// Iterates over all the nodes of specific type
 	//	_pPrevious, should be NULL for the first call to trigger a new search
-	Node*			ForEach( Node::TYPE _Type, Node* _pPrevious );
+	Node*			ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChild=0 );
 
 
 private:
@@ -240,7 +240,6 @@ private:
 
 	// Helpers
 	Node*			CreateNode( Node* _pParent, const U8*& _pData, const ISceneTagger& _SceneTagger );
-	Node*			FindNextNodeOfType( Node::TYPE _Type, Node* _pPrevious );
 	static U32		ReadU16( const U8*& _pData, bool _IsID=false );
 	static U32		ReadU32( const U8*& _pData );
 	static float	ReadF32( const U8*& _pData );

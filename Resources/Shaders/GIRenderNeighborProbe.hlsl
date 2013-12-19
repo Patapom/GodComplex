@@ -53,7 +53,7 @@ PS_IN	VS( VS_IN _In )
 		PlaneBiTangent = float3( 0, 0, 1 );
 	}
 
-	float4	WorldPosition = float4( _NeighborProbePosition + 2.0 * Distance2Neighbor * (_In.__Position.x * PlaneTangent + _In.__Position.y * PlaneBiTangent), 1.0 );
+	float4	WorldPosition = float4( _NeighborProbePosition + 1.0 * Distance2Neighbor * (_In.__Position.x * PlaneTangent + _In.__Position.y * PlaneBiTangent), 1.0 );
 
 	PS_IN	Out;
 	Out.__Position = mul( WorldPosition, _CubeMapWorld2Proj );

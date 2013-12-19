@@ -70,49 +70,43 @@ void	Scene::Render( const Node* _pNode, const ISceneRenderer& _SceneRenderer ) c
 }
 
 
-Scene::Node*	Scene::ForEach( Node::TYPE _Type, Node* _pPrevious )
+Scene::Node*	Scene::ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChild )
 {
 	if ( _pPrevious == NULL )
 		_pPrevious = m_pROOT;
 	
 	// Search in children first
-	for ( int ChildIndex=0; ChildIndex < _pPrevious->m_ChildrenCount; ChildIndex++ )
+	for ( int ChildIndex=_StartAtChild; ChildIndex < _pPrevious->m_ChildrenCount; ChildIndex++ )
 	{
-		Scene::Node*	pMatch = _pPrevious->m_ppChildren[ChildIndex];
-		if ( pMatch->m_Type == _Type )
-			return pMatch;
+		Scene::Node*	pChild = _pPrevious->m_ppChildren[ChildIndex];
+		if ( pChild->m_Type == _Type )
+			return pChild;
+
+		// Look in the child's children...
+		Scene::Node*	pMatch = ForEach( _Type, pChild );
+		if ( pMatch != NULL )
+			return pMatch;	// Found a match in one of the children
 	}
 
 	// If we couldn't find any match in the children, go back to parent to find this node among its siblings and continue to the next sibling
-	return FindNextNodeOfType( _Type, _pPrevious );
-}
-
-Scene::Node*	Scene::FindNextNodeOfType( Node::TYPE _Type, Node* _pPrevious )
-{
-	if ( _pPrevious == NULL || _pPrevious->m_pParent == NULL )
-		return NULL;	// We're back to the root, we're done!
-
+//	return FindNextNodeOfType( _Type, _pPrevious );
 	Node*	pParent = _pPrevious->m_pParent;
-	for ( int SiblingIndex=0; SiblingIndex < pParent->m_ChildrenCount; SiblingIndex++ )
+	while ( pParent != NULL )
 	{
-		Node*	pSibling = pParent->m_ppChildren[SiblingIndex];
-		if ( pSibling == _pPrevious && SiblingIndex < pParent->m_ChildrenCount-1 )
-		{	// We found the previous node in its parent's children (i.e. among its siblings)
-			//	and we know there's at least one more sibling after it so conduct search in there
-			Node*	pNextSearch = pParent->m_ppChildren[SiblingIndex+1];
-
-			if ( pNextSearch->m_Type == _Type )
-				return pNextSearch;	// The next sibling is itself of the requested type
-
-			// Search into its children...
-			return ForEach( _Type, pNextSearch );
+		for ( int SiblingIndex=0; SiblingIndex < pParent->m_ChildrenCount; SiblingIndex++ )
+		{
+			Node*	pSibling = pParent->m_ppChildren[SiblingIndex];
+			if ( pSibling == _pPrevious )
+				return ForEach( _Type, pParent, SiblingIndex+1 );	// We found the previous node in its parent's children (i.e. among its siblings), continue search from there...
 		}
+
+		// Keep climbing...
+		_pPrevious = pParent;
+		pParent = pParent->m_pParent;
 	}
 
-	// We're done processing the siblings, recurse through the parent again
-	return FindNextNodeOfType( _Type, pParent );
+	return NULL;
 }
-
 
 
 Scene::Node*	Scene::CreateNode( Node* _pParent, const U8*& _pData, const ISceneTagger& _SceneTagger )

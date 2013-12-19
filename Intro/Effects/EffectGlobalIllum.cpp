@@ -195,6 +195,7 @@ void	EffectGlobalIllum::PreComputeProbes()
 	// Render every probe as a cube map & process
 	//
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+//for ( int ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
@@ -264,14 +265,14 @@ void	EffectGlobalIllum::PreComputeProbes()
 
 			USING_MATERIAL_START( *m_pMatRenderNeighborProbe )
 
-#if 0
+#if 1
 			for ( int NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ )
 				if ( NeighborProbeIndex != ProbeIndex )
 				{
 					ProbeStruct&	NeighborProbe = m_pProbes[NeighborProbeIndex];
 
 					m_pCB_Probe->m.NeighborProbeID = 1 + NeighborProbeIndex;
-					m_pCB_Probe->m.NeighborProbePosition = NeighborProbe.pSceneProbe->m_Local2World.GetRow( 4 );
+					m_pCB_Probe->m.NeighborProbePosition = NeighborProbe.pSceneProbe->m_Local2World.GetRow( 3 );
 					m_pCB_Probe->UpdateData();
 
 					m_ScreenQuad.Render( M );
