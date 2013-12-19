@@ -41,11 +41,6 @@ EffectGlobalIllum::EffectGlobalIllum( Device& _Device, Texture2D& _RTHDR, Primit
 	//////////////////////////////////////////////////////////////////////////
 	// Start precomputation
 	PreComputeProbes();
-
-	// Setup scene data
-	m_pCB_Scene->m.LightsCount = MAX_LIGHTS;
-	m_pCB_Scene->m.ProbesCount = m_ProbesCount;
-	m_pCB_Scene->UpdateData();
 }
 Texture2D*	ppRTCubeMap[3];
 
@@ -81,10 +76,15 @@ delete ppRTCubeMap[0];
 
 void	EffectGlobalIllum::Render( float _Time, float _DeltaTime )
 {
+	// Setup scene data
+	m_pCB_Scene->m.LightsCount = MAX_LIGHTS;
+	m_pCB_Scene->m.ProbesCount = m_ProbesCount;
+	m_pCB_Scene->UpdateData();
+
 	//////////////////////////////////////////////////////////////////////////
 	// Animate lights, encode them into SH and inject them into each probe
-	m_pSB_Lights->m[0].Color.Set( 10, 10, 10 );
-	m_pSB_Lights->m[0].Position.Set( 0.0f, 0.3f, 2.0f * sinf( 0.1f * _Time ) );	// Move along the corridor
+	m_pSB_Lights->m[0].Color.Set( 100, 100, 100 );
+	m_pSB_Lights->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * _Time ) );	// Move along the corridor
 	m_pSB_Lights->m[0].Radius = 0.1f;
 	m_pSB_Lights->Write();
 	m_pSB_Lights->SetInput( 8, true );

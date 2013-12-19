@@ -8,6 +8,26 @@
 #ifndef _SH_INC_
 #define _SH_INC_
 
+// Evaluates the irradiance perceived in the provided direction
+// Analytic method from http://www1.cs.columbia.edu/~ravir/papers/envmap/envmap.pdf
+//
+float3	EvaluateSHIrradiance( float3 _Direction, float3 SH[9] )
+{
+	const float	c1 = 0.429043;
+	const float	c2 = 0.511664;
+	const float	c3 = 0.743125;
+	const float	c4 = 0.886227;
+	const float	c5 = 0.247708;
+
+	float3	XYZ = float3( -_Direction.z, -_Direction.x, _Direction.y );
+	return	max( 0.0,
+		    c1*SH[8]*(XYZ.x*XYZ.x - XYZ.y*XYZ.y)
+		  + SH[6]*(c3*XYZ.z*XYZ.z - c5)
+		  + c4*SH[0]
+		  + 2.0*c1*(SH[4]*XYZ.x*XYZ.y + SH[7]*XYZ.x*XYZ.z + SH[5]*XYZ.y*XYZ.z)
+		  + 2.0*c2*(SH[3]*XYZ.x + SH[1]*XYZ.y + SH[2]*XYZ.z) );
+}
+
 // Rotates ZH coefficients in the specified direction (from "Stupid SH Tricks")
 // Rotating ZH comes to evaluating scaled SH in the given direction.
 // The scaling factors for each band are equal to the ZH coefficients multiplied by sqrt( 4PI / (2l+1) )

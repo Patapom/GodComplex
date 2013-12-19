@@ -130,6 +130,11 @@ void	StructuredBuffer::SetInput( int _SlotIndex )
 
 	// We can now safely assign it as an input
 	ID3D11ShaderResourceView*	pView = GetShaderView();
+	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &pView );
+	m_Device.DXContext().HSSetShaderResources( _SlotIndex, 1, &pView );
+	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &pView );
+	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &pView );
+	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &pView );
 	m_Device.DXContext().CSSetShaderResources( _SlotIndex, 1, &pView );
 }
 

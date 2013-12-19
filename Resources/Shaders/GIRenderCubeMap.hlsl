@@ -93,6 +93,8 @@ PS_OUT	PS( PS_IN _In )
 	if ( _HasDiffuseTexture )
 		Out.DiffuseAlbedo = _TexDiffuseAlbedo.Sample( LinearWrap, _In.UV ).xyz;
 
+	Out.DiffuseAlbedo *= INVPI;
+
 	Out.NormalDistance = float4( normalize( _In.Normal ), length( _In.Position - _CubeMap2World[3].xyz ) );	// Store distance
 //	Out.NormalDistance = float4( normalize( _In.Normal ), dot( _In.Position - _CubeMap2World[3].xyz, _CubeMap2World[2].xyz ) );	// Store Z
 	
