@@ -4,14 +4,22 @@
 #include "Inc/Global.hlsl"
 
 //[
-cbuffer	cbObject	: register( b10 )
+cbuffer	cbScene	: register( b10 )
+{
+	uint		_LightsCount;
+	uint		_ProbesCount;
+};
+//]
+
+//[
+cbuffer	cbObject	: register( b11 )
 {
 	float4x4	_Local2World;
 };
 //]
 
 //[
-cbuffer	cbMaterial	: register( b11 )
+cbuffer	cbMaterial	: register( b12 )
 {
 	float3		_DiffuseAlbedo;
 	bool		_HasDiffuseTexture;
@@ -21,12 +29,31 @@ cbuffer	cbMaterial	: register( b11 )
 };
 //]
 
+
 Texture2D<float4>	_TexDiffuseAlbedo : register( t10 );
 Texture2D<float4>	_TexSpecularAlbedo : register( t11 );
 
 // DEBUG!
 TextureCube<float4>	_TexCubemapProbe0 : register( t64 );
 TextureCube<float4>	_TexCubemapProbe1 : register( t65 );
+
+
+// Structured Buffers with our lights & probes
+struct	LightStruct
+{
+	float3		Position;
+	float3		Color;
+	float		Radius;	// Light radius to compute the solid angle for the probe injection
+};
+StructuredBuffer<LightStruct>	_SBLights : register( t8 );
+
+struct	ProbeStruct
+{
+	float3		Position;
+	float3		SH[9];
+};
+StructuredBuffer<ProbeStruct>	_SBProbes : register( t9 );
+
 
 
 struct	VS_IN

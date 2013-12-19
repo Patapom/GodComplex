@@ -15,14 +15,22 @@ cbuffer	cbCubeMapCamera	: register( b9 )
 //]
 
 //[
-cbuffer	cbObject	: register( b10 )
+cbuffer	cbScene	: register( b10 )
+{
+	uint		_LightsCount;
+	uint		_ProbesCount;
+};
+//]
+
+//[
+cbuffer	cbObject	: register( b11 )
 {
 	float4x4	_Local2World;
 };
 //]
 
 //[
-cbuffer	cbMaterial	: register( b11 )
+cbuffer	cbMaterial	: register( b12 )
 {
 	float3		_DiffuseAlbedo;
 	bool		_HasDiffuseTexture;

@@ -21,11 +21,17 @@ EffectGlobalIllum::EffectGlobalIllum( Device& _Device, Texture2D& _RTHDR, Primit
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
- 	m_pCB_Object = new CB<CBObject>( gs_Device, 10 );
- 	m_pCB_Material = new CB<CBMaterial>( gs_Device, 11 );
-	m_pCB_Probe = new CB<CBProbe>( gs_Device, 10 );
-	m_pCB_Splat = new CB<CBSplat>( gs_Device, 10 );
+	m_pCB_Scene = new CB<CBScene>( _Device, 10 );
+ 	m_pCB_Object = new CB<CBObject>( _Device, 11 );
+ 	m_pCB_Material = new CB<CBMaterial>( _Device, 12 );
+	m_pCB_Probe = new CB<CBProbe>( _Device, 10 );
+	m_pCB_Splat = new CB<CBSplat>( _Device, 10 );
 
+
+	//////////////////////////////////////////////////////////////////////////
+	// Create the lights & probes structured buffers
+	m_pSB_Lights = new SB<LightStruct>( m_Device, MAX_LIGHTS, true );
+	m_pSB_RuntimeProbes = NULL;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the scene
@@ -35,6 +41,11 @@ EffectGlobalIllum::EffectGlobalIllum( Device& _Device, Texture2D& _RTHDR, Primit
 	//////////////////////////////////////////////////////////////////////////
 	// Start precomputation
 	PreComputeProbes();
+
+	// Setup scene data
+	m_pCB_Scene->m.LightsCount = MAX_LIGHTS;
+	m_pCB_Scene->m.ProbesCount = m_ProbesCount;
+	m_pCB_Scene->UpdateData();
 }
 Texture2D*	ppRTCubeMap[3];
 
@@ -45,10 +56,14 @@ EffectGlobalIllum::~EffectGlobalIllum()
 	m_bDeleteSceneTags = true;
 	m_Scene.ClearTags( *this );
 
+	delete m_pSB_RuntimeProbes;
+	delete m_pSB_Lights;
+
 	delete m_pCB_Splat;
 	delete m_pCB_Probe;
 	delete m_pCB_Material;
 	delete m_pCB_Object;
+	delete m_pCB_Scene;
 
 	delete m_pTexWalls;
 
@@ -66,6 +81,61 @@ delete ppRTCubeMap[0];
 
 void	EffectGlobalIllum::Render( float _Time, float _DeltaTime )
 {
+	//////////////////////////////////////////////////////////////////////////
+	// Animate lights, encode them into SH and inject them into each probe
+	m_pSB_Lights->m[0].Color.Set( 10, 10, 10 );
+	m_pSB_Lights->m[0].Position.Set( 0.0f, 0.3f, 2.0f * sinf( 0.1f * _Time ) );	// Move along the corridor
+	m_pSB_Lights->m[0].Radius = 0.1f;
+	m_pSB_Lights->Write();
+	m_pSB_Lights->SetInput( 8, true );
+
+	NjFloat3	pSHAmbient[9];
+	memset( pSHAmbient, 0, 9*sizeof(NjFloat3) );	// No ambient at the moment...
+
+	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+	{
+		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
+
+		// Encode all lights into probe
+		memset( Probe.pSHLight, 0, 9*sizeof(NjFloat3) );
+		double	pSHLight[9];
+
+		for ( int LightIndex=0; LightIndex < MAX_LIGHTS; LightIndex++ )
+		{
+			const LightStruct&	Light = m_pSB_Lights->m[LightIndex];
+
+			// Approximate a SH cone
+			NjFloat3	Probe2Light = Light.Position - Probe.pSceneProbe->m_Local2World.GetRow(3);
+			float		DistanceProbe2Light = Probe2Light.Length();
+			float		InvDistance = 1.0f / DistanceProbe2Light;
+			Probe2Light = Probe2Light * InvDistance;
+
+			float		HalfAngle = asinf( MIN( 1.0f, Light.Radius / DistanceProbe2Light ) );
+
+			BuildSHSmoothCone( Probe2Light, HalfAngle, pSHLight );
+
+			// Accumulate to probe
+			float		LightFactor = InvDistance * InvDistance;
+			for ( int i=0; i < 9; i++ )
+			{
+				float	SH = float( pSHLight[i] );
+				Probe.pSHLight[i].x += LightFactor * Light.Color.x * SH;
+				Probe.pSHLight[i].y += LightFactor * Light.Color.y * SH;
+				Probe.pSHLight[i].z += LightFactor * Light.Color.z * SH;
+			}
+		}
+
+		// Apply the product of the accumulated light SH and the probe's environment response to get the light bounce
+		Probe.ComputeLightBounce( pSHAmbient );
+
+		// Write the result to the probe structured buffer
+		memcpy( m_pSB_RuntimeProbes->m[ProbeIndex].pSH, Probe.pSHBouncedLight, 9*sizeof(NjFloat3) );
+	}
+
+	m_pSB_RuntimeProbes->Write();
+	m_pSB_RuntimeProbes->SetInput( 9, true );
+
+
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Render the scene
 // 	m_Device.ClearRenderTarget( m_RTTarget, NjFloat4::Zero );
@@ -93,6 +163,24 @@ void	EffectGlobalIllum::Render( float _Time, float _DeltaTime )
 	USING_MATERIAL_END
 
 	m_RTTarget.RemoveFromLastAssignedSlots();
+}
+
+
+void	EffectGlobalIllum::ProbeStruct::ComputeLightBounce( const NjFloat3 _pSHAmbient[9] )
+{
+
+	// 1] Accumulate neighbor lighting by considering them as point light sources of their own
+// TODO!
+
+	// 2] Perform the product of direct accumulated light with indirect environment bounce (XYZ part of of SHBounce)
+	// This will give us the bounced indirect lighting
+	SH::Product3( pSHLight, pSHBounce, pSHBouncedLight );
+
+	// 3] Perform the product of direct ambient light with direct environment mask (W part of SHBounce) and accumulate with indirect lighting
+	NjFloat3	pSHOccludedAmbientLight[9];
+	SH::Product3( _pSHAmbient, pSHOcclusion, pSHOccludedAmbientLight );
+	for ( int i=0; i < 9; i++ )
+		pSHBouncedLight[i] = pSHBouncedLight[i] + pSHOccludedAmbientLight[i];
 }
 
 
@@ -131,6 +219,13 @@ void	EffectGlobalIllum::PreComputeProbes()
 
 		m_ProbesCount++;
 	}
+
+	// Also allocate runtime probes structured buffer
+	m_pSB_RuntimeProbes = new SB<RuntimeProbe>( m_Device, m_ProbesCount, true );
+	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+		m_pSB_RuntimeProbes->m[ProbeIndex].Position = m_pProbes[ProbeIndex].pSceneProbe->m_Local2World.GetRow( 3 );
+
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Prepare the cube map face transforms
@@ -430,7 +525,10 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 		//////////////////////////////////////////////////////////////////////////
 		// 3] Compact indirect (RGB) + direct (A) into a single vector4 of SH
 		for ( int i=0; i < 9; i++ )
-			Probe.pSHBounce[i].Set( float( pSHBounce[3*i+0] ), float( pSHBounce[3*i+1] ), float( pSHBounce[3*i+2] ), float( pSHAmbient[i] ) );
+		{
+			Probe.pSHBounce[i].Set( float( pSHBounce[3*i+0] ), float( pSHBounce[3*i+1] ), float( pSHBounce[3*i+2] ) );
+			Probe.pSHOcclusion[i] = float( pSHAmbient[i] );
+		}
 
 		//////////////////////////////////////////////////////////////////////////
 		// 4] Sort largest contributing neighbors

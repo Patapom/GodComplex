@@ -46,7 +46,10 @@ public:
 
 	// Advanced
 	static void			ZHRotate( const NjFloat3& _Direction, const NjFloat3& _ZHCoeffs, double _Coeffs[9] );
-	static void			Product3( double a[9], double b[9], double r[9] );
+	static void			Product3( const double a[9], const double b[9], double r[9] );
+	static void			Product3( const float a[9], const float b[9], float r[9] );
+	static void			Product3( const NjFloat3 a[9], const float b[9], NjFloat3 r[9] );
+	static void			Product3( const NjFloat3 a[9], const NjFloat3 b[9], NjFloat3 r[9] );
 
 	// Helpers
 	static void			CartesianToSpherical( const NjFloat3& _Direction, double& _θ, double& _ϕ );

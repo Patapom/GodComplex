@@ -87,6 +87,10 @@ public:		// METHODS
 	void	Write( int _ElementsCount=-1 )	{ m_pBuffer->Write( m, _ElementsCount ); }
 	void	Clear( U32 _pValue[4] )			{ m_pBuffer->Clear( _pValue ); }
 	void	Clear( const NjFloat4& _Value )	{ m_pBuffer->Clear( _Value ); }
-	void	SetInput( int _SlotIndex )		{ m_pBuffer->SetInput( _SlotIndex ); }
+	void	SetInput( int _SlotIndex, bool _bIKnowWhatImDoing=false )
+	{
+		ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
+		m_pBuffer->SetInput( _SlotIndex );
+	}
 	void	SetOutput( int _SlotIndex )		{ m_pBuffer->SetOutput( _SlotIndex ); }
 };

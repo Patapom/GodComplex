@@ -83,7 +83,7 @@ if ( false )
 	return float4( (ProbeID & 0xFF) / 255.0, ((ProbeID >> 8) & 0xFF) / 255.0, ((ProbeID >> 16) & 0xFF) / 255.0, 0 );
 }
 
-//if ( false )
+if ( false )
 {
 	float3	AbsView = abs( View );
 	float	MaxComponent = max( max( AbsView.x, AbsView.y ), AbsView.z );
@@ -134,9 +134,9 @@ if ( false )
 // DEBUG NEIGHBOR PROBES IDS
 
 
-return _TexCubemapProbe0.Sample( LinearClamp, View );
-//return _TexCubemapProbe1.Sample( LinearClamp, View );
-return 0.1 * _TexCubemapProbe1.Sample( LinearClamp, View ).w;
+// return _TexCubemapProbe0.Sample( LinearClamp, View );
+// //return _TexCubemapProbe1.Sample( LinearClamp, View );
+// return 0.1 * _TexCubemapProbe1.Sample( LinearClamp, View ).w;
 
 	return _TexSourceImage.SampleLevel( LinearClamp, UV, 0.0 );
 	return float4( _In.__Position.xy * _dUV.xy, 0, 0 );
