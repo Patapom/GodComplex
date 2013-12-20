@@ -73,7 +73,10 @@ void	Scene::Render( const Node* _pNode, const ISceneRenderer& _SceneRenderer ) c
 Scene::Node*	Scene::ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChild )
 {
 	if ( _pPrevious == NULL )
+	{
 		_pPrevious = m_pROOT;
+		m_pROOT->SetChildIndex();	// Setup child indices to accelerate search
+	}
 	
 	// Search in children first
 	for ( int ChildIndex=_StartAtChild; ChildIndex < _pPrevious->m_ChildrenCount; ChildIndex++ )
@@ -89,16 +92,19 @@ Scene::Node*	Scene::ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChi
 	}
 
 	// If we couldn't find any match in the children, go back to parent to find this node among its siblings and continue to the next sibling
-//	return FindNextNodeOfType( _Type, _pPrevious );
 	Node*	pParent = _pPrevious->m_pParent;
 	while ( pParent != NULL )
 	{
-		for ( int SiblingIndex=0; SiblingIndex < pParent->m_ChildrenCount; SiblingIndex++ )
-		{
-			Node*	pSibling = pParent->m_ppChildren[SiblingIndex];
-			if ( pSibling == _pPrevious )
-				return ForEach( _Type, pParent, SiblingIndex+1 );	// We found the previous node in its parent's children (i.e. among its siblings), continue search from there...
-		}
+		int		SiblingIndex = _pPrevious->m_ChildIndex;
+		if ( SiblingIndex < pParent->m_ChildrenCount-1 )
+ 			return ForEach( _Type, pParent, SiblingIndex+1 );	// We found the previous node in its parent's children (i.e. among its siblings), continue search from there...
+
+// 		for ( int SiblingIndex=0; SiblingIndex < pParent->m_ChildrenCount; SiblingIndex++ )
+// 		{
+// 			Node*	pSibling = pParent->m_ppChildren[SiblingIndex];
+// 			if ( pSibling == _pPrevious )
+// 				return ForEach( _Type, pParent, SiblingIndex+1 );	// We found the previous node in its parent's children (i.e. among its siblings), continue search from there...
+// 		}
 
 		// Keep climbing...
 		_pPrevious = pParent;
@@ -197,6 +203,7 @@ Scene::Node::Node( Scene& _Owner, Node* _pParent )
 	, m_ChildrenCount( 0 )
 	, m_ppChildren( NULL )
 	, m_pTag( NULL )
+	, m_ChildIndex( -1 )
 {
 }
 
@@ -251,6 +258,20 @@ void	Scene::Node::Exit( const ISceneTagger& _SceneTagClearer )
 	for ( int ChildIndex=0; ChildIndex < m_ChildrenCount; ChildIndex++ )
 		m_ppChildren[ChildIndex]->Exit( _SceneTagClearer );
 }
+
+void	Scene::Node::SetChildIndex()
+{
+	if ( m_pParent == NULL )
+		m_ChildIndex = 0;	// Root...
+
+	for ( int ChildIndex=0; ChildIndex < m_ChildrenCount; ChildIndex++ )
+	{
+		Node&	Child = *m_ppChildren[ChildIndex];
+		Child.m_ChildIndex = ChildIndex;
+		Child.SetChildIndex();
+	}
+}
+
 
 // ==== Light ====
 Scene::Light::Light( Scene& _Owner, Node* _pParent )

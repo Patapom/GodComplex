@@ -53,17 +53,19 @@ protected:	// NESTED TYPES
 		NjFloat3		pSHBounce[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced light
 		float			pSHOcclusion[9];		// The pre-computed SH taht gives back how much of the environment is perceived in a given direction
 		NjFloat3		pSHLight[9];			// The radiance field surrounding the probe
+		float			ProbeInfluenceDistance;	// The distance above which the probe stops being used
 
 		int				NeighborsCount;			// The amount of neighbor probes
 		struct	NeighborLink
 		{
 			double			SolidAngle;			// The solid angle covered by the neighbor
 			float			Distance;			// The distance to the neighbor
-			double			pSHLink[9];			// The "link SH" the neighbor's SH needs to be convolved with to act as a local light source for this probe
+			float			pSHLink[9];			// The "link SH" the neighbor's SH needs to be convolved with to act as a local light source for this probe
 			ProbeStruct*	pNeighbor;			// The neighbor probe
 		}				pNeighborLinks[MAX_NEIGHBOR_PROBES];		// The array of 32 max neighbor probes
 
-		NjFloat3		pSHBouncedLight[9];		// The resulting bounced irradiance (bounce * light)
+		NjFloat3		pSHBouncedLight0[9];	// The resulting bounced irradiance (bounce * light) for current frame
+		NjFloat3		pSHBouncedLight1[9];	// The resulting bounced irradiance (bounce * light) from last frame
 
 		// Temporary counters for a specific probe to count its neighbors
 		int				__TempNeighborCounter;
@@ -71,6 +73,7 @@ protected:	// NESTED TYPES
 
 		// Computes the product of SHLight and SHBounce to get the SH coefficients for the bounced light
 		void			ComputeLightBounce( const NjFloat3 _pSHAmbient[9] );
+		void			SwapBuffers();
 	};
 
 
@@ -113,7 +116,9 @@ private:	// FIELDS
 	struct RuntimeProbe 
 	{
 		NjFloat3	Position;
-		NjFloat3	pSH[9];
+		float		ProbeInfluenceDistance;
+		NjFloat3	pSHBounce[9];
+		NjFloat3	pSHLight[9];
 	};
 	SB<RuntimeProbe>*	m_pSB_RuntimeProbes;
 

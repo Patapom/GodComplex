@@ -35,6 +35,10 @@ public:		// NESTED TYPES
 		void*				m_pTag;	// Custom user tag filled with anything the user needs to render the node
 
 	private:
+		int					m_ChildIndex;		// Set at the beginning of a ForEach loop
+		void				SetChildIndex();
+
+	private:
 		Node( Scene& _Owner, Node* _pParent );
 		~Node();
 

@@ -51,7 +51,9 @@ StructuredBuffer<LightStruct>	_SBLights : register( t8 );
 struct	ProbeStruct
 {
 	float3		Position;
-	float3		SH[9];
+	float		InfluenceDistance;
+	float3		SHBounce[9];
+	float3		SHLight[9];
 };
 StructuredBuffer<ProbeStruct>	_SBProbes : register( t9 );
 
@@ -98,20 +100,28 @@ PS_IN	VS( VS_IN _In )
 	Out.BiTangent = mul( float4( _In.BiTangent, 0.0 ), _Local2World ).xyz;
 	Out.UV = _In.UV;
 
+#if 0	// BOUNCED LIGHT
+
 	// Iterate over all the probes and do a weighted sum based on their distance to the vertex's position
 	float	SumWeights = 0.0;
 	float3	SH[9];
 	for ( int i=0; i < 9; i++ )
 		SH[i] = 0.0;
 	for ( int ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ )
+//	for ( int ProbeIndex=5; ProbeIndex < 6; ProbeIndex++ )
 	{
 		ProbeStruct	Probe = _SBProbes[ProbeIndex];
 
 		float	Distance2Probe = length( Probe.Position - Out.Position );
-		float	ProbeWeight = 1.0 / (1.0 + Distance2Probe );
+//		float	ProbeWeight = 1.0 / (1.0 + 1.0 * Distance2Probe );
+
+		const float	WEIGHT_AT_DISTANCE = 0.1;
+		const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (Probe.InfluenceDistance * Probe.InfluenceDistance);
+		float	ProbeWeight = exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
 
 		for ( int i=0; i < 9; i++ )
-			SH[i] += ProbeWeight * Probe.SH[i];
+			SH[i] += ProbeWeight * Probe.SHBounce[i];
+//SH[0] = ProbeWeight;
 
 		SumWeights += ProbeWeight;
 	}
@@ -128,11 +138,67 @@ PS_IN	VS( VS_IN _In )
 	Out.SH7 = Norm * SH[7];
 	Out.SH8 = Norm * SH[8];
 
+//Out.SH0 = 1.0 / (1.0 + 100.0 * length( _SBProbes[0].Position - Out.Position ));
+//Out.SH0 = 1.0 / (1.0 + 100.0 * length( _SBProbes[0].Position - Out.Position ));
+
+#else	// COMPUTE THE BOUNCE OURSELVES
+
+	// Iterate over all the probes and do a weighted sum based on their distance to the vertex's position
+	float	SumWeights = 0.0;
+	float4	SHBounce[9];
+	float4	SHLight[9];
+	for ( int i=0; i < 9; i++ )
+	{
+		SHBounce[i] = 0.0;
+		SHLight[i] = 0.0;
+	}
+	for ( int ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ )
+//	for ( int ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
+	{
+		ProbeStruct	Probe = _SBProbes[ProbeIndex];
+
+		float	Distance2Probe = length( Probe.Position - Out.Position );
+		float	InfluenceDistance = 2.0 * Probe.InfluenceDistance;
+
+		const float	WEIGHT_AT_DISTANCE = 0.1;
+		const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (InfluenceDistance * InfluenceDistance);
+		float	ProbeWeight = exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
+
+		for ( int i=0; i < 9; i++ )
+		{
+			SHBounce[i] += ProbeWeight * float4( Probe.SHBounce[i], 0 );
+			SHLight[i] += ProbeWeight * float4( Probe.SHLight[i], 0 );
+		}
+
+		SumWeights += ProbeWeight;
+	}
+
+	// Product
+	float4	SH[9];
+	SHProduct( SHBounce, SHLight, SH );
+
+	// Normalize & store
+	float	Norm = 1.0 / SumWeights;
+	Out.SH0 = Norm * SH[0].xyz;
+	Out.SH1 = Norm * SH[1].xyz;
+	Out.SH2 = Norm * SH[2].xyz;
+	Out.SH3 = Norm * SH[3].xyz;
+	Out.SH4 = Norm * SH[4].xyz;
+	Out.SH5 = Norm * SH[5].xyz;
+	Out.SH6 = Norm * SH[6].xyz;
+	Out.SH7 = Norm * SH[7].xyz;
+	Out.SH8 = Norm * SH[8].xyz;
+
+#endif
+
 	return Out;
 }
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
+//return float4( _In.SH0, 0 );
+
+
 //	clip( 0.5 - _HasDiffuseTexture );
 	float3	DiffuseAlbedo = _DiffuseAlbedo;
 	if ( _HasDiffuseTexture )
@@ -172,6 +238,11 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	// Compute indirect lighting
 	float3	SHIndirect[9] = { _In.SH0, _In.SH1, _In.SH2, _In.SH3, _In.SH4, _In.SH5, _In.SH6, _In.SH7, _In.SH8 };
 	float3	Indirect = EvaluateSHIrradiance( Normal, SHIndirect );
+
+AccumDiffuse *= 1.0;
+Indirect *= 1.0;
+
+//Indirect *= _In.__Position.x < 1280.0/2.0 ? 1.0 : 0.0;
 
 	return float4( Indirect + AccumDiffuse, 0 );
 }
