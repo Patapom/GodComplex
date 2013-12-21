@@ -3,6 +3,7 @@
 #include "Component.h"
 #include "../Structures/PixelFormats.h"
 #include "../Structures/DepthStencilFormats.h"
+#include "../../Utility/TextureFilePOM.h"
 
 class Texture2D : public Component
 {
@@ -42,6 +43,8 @@ public:	 // PROPERTIES
 	int			GetHeight() const			{ return m_Height; }
 	int			GetArraySize() const		{ return m_ArraySize; }
 	int			GetMipLevelsCount() const	{ return m_MipLevelsCount; }
+	bool		IsCubeMap() const			{ return m_bIsCubeMap; }
+	const IFormatDescriptor&	GetFormatDescriptor() const	{ return m_Format; }
 
 	NjFloat3	GetdUV() const				{ return NjFloat3( 1.0f / m_Width, 1.0f / m_Height, 0.0f ); }
 
@@ -49,9 +52,9 @@ public:	 // PROPERTIES
 public:	 // METHODS
 
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !
-	Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging=false, bool _bWriteable=false, bool _bUnOrderedAccess=false );
+	Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging=false, bool _bUnOrderedAccess=false );
 	// This is for creating a depth stencil buffer
-	Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format );
+	Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format, int _ArraySize=1 );
 	~Texture2D();
 
 	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart=0, int _MipLevelsCount=0, int _ArrayStart=0, int _ArraySize=1 ) const;
@@ -85,11 +88,21 @@ public:	 // METHODS
 	// I/O for staging textures
 	void		Save( const char* _pFileName );
 	void		Load( const char* _pFileName );
+
+	// Creates an immutable texture from a POM file
+	Texture2D( Device& _Device, const TextureFilePOM& _POM, bool _bUnOrderedAccess=false );
 #endif
 
 public:
 	static void	NextMipSize( int& _Width, int& _Height );
 	static int	ComputeMipLevelsCount( int _Width, int _Height, int _MipLevelsCount );
 	int			CalcSubResource( int _MipLevelIndex, int _ArrayIndex );
+
+private:
+	// _bStaging, true if this is a staging texture (i.e. CPU accessible as read/write)
+	// _bUnOrderedAccess, true if the texture can also be used as a UAV (Random access read/write from a compute shader)
+	// _pMipDescriptors, if not NULL then the row pitch & depth pitch will be read from this array for each mip level
+	//
+	void		Init( const void* const* _ppContent, bool _bStaging=false, bool _bUnOrderedAccess=false, TextureFilePOM::MipDescriptor* _pMipDescriptors=NULL );
 };
 

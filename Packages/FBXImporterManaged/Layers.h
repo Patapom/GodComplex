@@ -47,9 +47,31 @@ namespace FBXImporter
 			for ( int LayerElementType=int(FbxLayerElement::eNormal); LayerElementType < FbxLayerElement::eTypeCount; LayerElementType++ )
 			{
 				FbxLayerElement::EType	ElementType = FbxLayerElement::EType( LayerElementType );
+
+				// eUnknown = 0,
+				// 
+				// //Non-Texture layer element types
+				// //Note: Make sure to update static index below if you change this enum!
+				// eNormal = 1,
+				// eBiNormal = 2,
+				// eTangent = 3,
+				// eMaterial = 4,
+				// ePolygonGroup = 5,
+				// eUV = 6,
+				// eVertexColor = 7,
+				// eSmoothing = 8,
+				// eVertexCrease = 9,
+				// eEdgeCrease = 10,
+				// eHole = 11,
+				// eUserData = 12,
+				// eVisibility = 13,
+
+
 				FbxLayerElement*	pElement = _pLayer->GetLayerElementOfType( ElementType );
 				if ( pElement == NULL )
 					continue;	// Non-existing element...
+
+				const char*	pLayerElementName = pElement->GetName();
 
 				LayerElement^	LE = gcnew LayerElement( this, pElement, ElementType );
 				m_Elements->Add( LE );

@@ -75,13 +75,13 @@ public:		// NESTED TYPES
 	class	IGeometryWriter
 	{
 	public:
-		virtual void	CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, void*& _pVertices, void*& _pIndices, int& _VertexStride, int& _IndexStride ) = 0;
-		virtual void	WriteVertex( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV ) = 0;
-		virtual void	WriteIndex( void* _pIndex, int _Index ) = 0;
+		virtual void	CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, void*& _pVertices, void*& _pIndices ) = 0;
+		virtual void	AppendVertex( void*& _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) = 0;
+		virtual void	AppendIndex( void*& _pIndex, int _Index ) = 0;
 		virtual void	Finalize( void* _pVertices, void* _pIndices ) = 0;
 	};
 
-	typedef void	(*TweakVertexDelegate)( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tangent, NjFloat2& _UV, void* _pUserData );
+	typedef void	(*TweakVertexDelegate)( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tangent, const NjFloat3& _BiTangent, NjFloat2& _UV, void* _pUserData );
 
 public:		// METHODS
 
@@ -102,5 +102,5 @@ public:		// METHODS
 
 private:
 
-	static void		WriteVertex( IGeometryWriter& _Writer, void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
+	static void		AppendVertex( IGeometryWriter& _Writer, void*& _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
 };

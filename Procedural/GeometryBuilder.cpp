@@ -1,7 +1,7 @@
 #include "../GodComplex.h"
 
-#define VWRITE( pVertex, P, N, T, UV )	WriteVertex( _Writer, pVertex, P, N, T, UV, _TweakVertex, _pUserData );	pVertex+=VStride;	VerticesCount--
-#define IWRITE( pIndex, i )				_Writer.WriteIndex( pIndex, i );	pIndex+=IStride;	IndicesCount--
+#define VWRITE( pVertex, P, N, T, B, UV )	AppendVertex( _Writer, pVertex, P, N, T, B, UV, _TweakVertex, _pUserData );	VerticesCount--
+#define IWRITE( pIndex, i )					_Writer.AppendIndex( pIndex, i );	IndicesCount--
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -17,18 +17,16 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 	// Create the buffers
 	void*	pVerticesArray = NULL;
 	void*	pIndicesArray = NULL;
-	int		VStride, IStride;
-
-	_Writer.CreateBuffers( VerticesCount, IndicesCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, pVerticesArray, pIndicesArray, VStride, IStride );
+	_Writer.CreateBuffers( VerticesCount, IndicesCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, pVerticesArray, pIndicesArray );
 	ASSERT( pVerticesArray != NULL, "Invalid vertex buffer !" );
 	ASSERT( pIndicesArray != NULL, "Invalid index buffer !" );
 
-	U8*		pVertex = (U8*) pVerticesArray;
-	U8*		pIndex = (U8*) pIndicesArray;
+	void*		pVertex = pVerticesArray;
+	void*		pIndex = pIndicesArray;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build vertices
-	NjFloat3	Position, Normal, Tangent;
+	NjFloat3	Position, Normal, Tangent, BiTangent;
 	NjFloat2	UV;
 
 	// Top band
@@ -47,6 +45,8 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 //			Position.Normalize();
 			Normal = Position;	Normal.Normalize();
 
+			BiTangent = Normal ^ Tangent;
+
 			// Ask for UVs
 			if ( _pMapper )
 				_pMapper->Map( Position, Normal, Tangent, UV, i == BandLength );
@@ -56,7 +56,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			Position.x = Position.z = 0.0f;
 
 			// Write vertex
-			VWRITE( pVertex, NjFloat3::UnitY, NjFloat3::UnitY, Tangent, UV );
+			VWRITE( pVertex, NjFloat3::UnitY, NjFloat3::UnitY, Tangent, BiTangent, UV );
 		}
 	}
 
@@ -78,6 +78,8 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			Tangent.y = 0.0f;
 			Tangent.z = -sinf( Phi );
 
+			BiTangent = Normal ^ Tangent;
+
 			// Ask for UVs
 			if (_pMapper )
 				_pMapper->Map( Position, Normal, Tangent, UV, i == BandLength );
@@ -85,7 +87,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 				UV.Set( 2.0f * float(i) / BandLength, float(j) / _ThetaSubdivisions );
 
 			// Write vertex
-			VWRITE( pVertex, Position, Normal, Tangent, UV );
+			VWRITE( pVertex, Position, Normal, Tangent, BiTangent, UV );
 		}
 	}
 
@@ -105,6 +107,8 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 //			Position.Normalize();
 			Normal = Position;	Normal.Normalize();
 
+			BiTangent = Normal ^ Tangent;
+
 			// Ask for UVs
 			if ( _pMapper )
 				_pMapper->Map( Position, Normal, Tangent, UV, i == BandLength );
@@ -114,7 +118,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			Position.x = Position.z = 0.0f;
 
 			// Write vertex
-			VWRITE( pVertex, -NjFloat3::UnitY, -NjFloat3::UnitY, Tangent, UV );
+			VWRITE( pVertex, -NjFloat3::UnitY, -NjFloat3::UnitY, Tangent, BiTangent, UV );
 		}
 	}
 	ASSERT( VerticesCount == 0, "Wrong contruction!" );
@@ -161,18 +165,16 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 	// Create the buffers
 	void*	pVerticesArray = NULL;
 	void*	pIndicesArray = NULL;
-	int		VStride, IStride;
-
-	_Writer.CreateBuffers( VerticesCount, IndicesCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, pVerticesArray, pIndicesArray, VStride, IStride );
+	_Writer.CreateBuffers( VerticesCount, IndicesCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, pVerticesArray, pIndicesArray );
 	ASSERT( pVerticesArray != NULL, "Invalid vertex buffer !" );
 	ASSERT( pIndicesArray != NULL, "Invalid index buffer !" );
 
-	U8*		pVertex = (U8*) pVerticesArray;
-	U8*		pIndex = (U8*) pIndicesArray;
+	void*		pVertex = pVerticesArray;
+	void*		pIndex = pIndicesArray;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build vertices
-	NjFloat3	Position, Normal, Tangent;
+	NjFloat3	Position, Normal, Tangent, BiTangent;
 	NjFloat2	UV;
 
 	// Top vertices
@@ -191,6 +193,8 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Position.z = 0.001f * Tangent.x;
 			Normal = NjFloat3::UnitY;
 
+			BiTangent = Normal ^ Tangent;
+
 			// Ask for UVs
 			if ( _pMapper )
 				_pMapper->Map( Position, Normal, Tangent, UV, i == _RadialSubdivisions );
@@ -200,7 +204,7 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Position.x = Position.z = 0.0f;
 
 			// Write vertex
-			VWRITE( pVertex, NjFloat3::UnitY, NjFloat3::UnitY, Tangent, UV );
+			VWRITE( pVertex, NjFloat3::UnitY, NjFloat3::UnitY, Tangent, BiTangent, UV );
 		}
 	}
 
@@ -224,6 +228,8 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Tangent.y = 0.0f;
 			Tangent.z = -sinf( Phi );
 
+			BiTangent = Normal ^ Tangent;
+
 			// Ask for UVs
 			if ( _pMapper )
 				_pMapper->Map( Position, Normal, Tangent, UV, i == _RadialSubdivisions );
@@ -231,7 +237,7 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 				UV.Set( 2.0f * float(i) / _RadialSubdivisions, float(j) / _VerticalSubdivisions );
 
 			// Write vertex
-			VWRITE( pVertex, Position, Normal, Tangent, UV );
+			VWRITE( pVertex, Position, Normal, Tangent, BiTangent, UV );
 		}
 	}
 
@@ -251,6 +257,8 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Position.z = 0.001f * Tangent.x;
 			Normal = -NjFloat3::UnitY;
 
+			BiTangent = Normal ^ Tangent;
+
 			// Ask for UVs
 			if ( _pMapper )
 				_pMapper->Map( Position, Normal, Tangent, UV, i == _RadialSubdivisions );
@@ -260,7 +268,7 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Position.x = Position.z = 0.0f;
 
 			// Write vertex
-			VWRITE( pVertex, -NjFloat3::UnitY, -NjFloat3::UnitY, Tangent, UV );
+			VWRITE( pVertex, -NjFloat3::UnitY, -NjFloat3::UnitY, Tangent, BiTangent, UV );
 		}
 	}
 	ASSERT( VerticesCount == 0, "Wrong contruction!" );
@@ -304,18 +312,16 @@ void	GeometryBuilder::BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, 
 	// Create the buffers
 	void*	pVerticesArray = NULL;
 	void*	pIndicesArray = NULL;
-	int		VStride, IStride;
-
-	_Writer.CreateBuffers( VerticesCount, IndicesCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, pVerticesArray, pIndicesArray, VStride, IStride );
+	_Writer.CreateBuffers( VerticesCount, IndicesCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, pVerticesArray, pIndicesArray );
 	ASSERT( pVerticesArray != NULL, "Invalid vertex buffer !" );
 	ASSERT( pIndicesArray != NULL, "Invalid index buffer !" );
 
-	U8*		pVertex = (U8*) pVerticesArray;
-	U8*		pIndex = (U8*) pIndicesArray;
+	void*		pVertex = pVerticesArray;
+	void*		pIndex = pIndicesArray;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build vertices
-	NjFloat3	Position, Normal, Tangent;
+	NjFloat3	Position, Normal, Tangent, BiTangent;
 	NjFloat2	UV;
 
 	for ( int j=0; j < BandsCount; j++ )
@@ -336,12 +342,14 @@ void	GeometryBuilder::BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, 
 			Normal = cosf(Theta) * X + sinf(Theta) * NjFloat3::UnitZ;
 			Position = Center + _SmallRadius * Normal;
 
+			BiTangent = Normal ^ Tangent;
+
 			if ( _pMapper )
 				_pMapper->Map( Position, Normal, Tangent, UV, i == BandLength );
 			else
 				UV.Set( 4.0f * float(j) / BandsCount, float(j) / BandLength );
 
-			VWRITE( pVertex, Position, Normal, Tangent, UV );
+			VWRITE( pVertex, Position, Normal, Tangent, BiTangent, UV );
 		}
 	}
 	ASSERT( VerticesCount == 0, "Wrong contruction!" );
@@ -384,14 +392,12 @@ void	GeometryBuilder::BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const 
 	// Create the buffers
 	void*	pVerticesArray = NULL;
 	void*	pIndicesArray = NULL;
-	int		VStride, IStride;
-
-	_Writer.CreateBuffers( VerticesCount, IndicesCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, pVerticesArray, pIndicesArray, VStride, IStride );
+	_Writer.CreateBuffers( VerticesCount, IndicesCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, pVerticesArray, pIndicesArray );
 	ASSERT( pVerticesArray != NULL, "Invalid vertex buffer !" );
 	ASSERT( pIndicesArray != NULL, "Invalid index buffer !" );
 
-	U8*		pVertex = (U8*) pVerticesArray;
-	U8*		pIndex = (U8*) pIndicesArray;
+	void*		pVertex = pVerticesArray;
+	void*		pIndex = pIndicesArray;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build vertices
@@ -415,7 +421,7 @@ void	GeometryBuilder::BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const 
 			else
 				UV.Set( float(i) / _SubdivisionsX, float(j) / _SubdivisionsY );
 
-			VWRITE( pVertex, Position, Normal, Tangent, UV );
+			VWRITE( pVertex, Position, Normal, Tangent, BiTangent, UV );
 		}
 	}
 	ASSERT( VerticesCount == 0, "Wrong contruction!" );
@@ -461,14 +467,12 @@ void	GeometryBuilder::BuildCube( int _SubdivisionsX, int _SubdivisionsY, int _Su
 	// Create the buffers
 	void*	pVerticesArray = NULL;
 	void*	pIndicesArray = NULL;
-	int		VStride, IStride;
-
-	_Writer.CreateBuffers( VerticesCount, IndicesCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, pVerticesArray, pIndicesArray, VStride, IStride );
+	_Writer.CreateBuffers( VerticesCount, IndicesCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, pVerticesArray, pIndicesArray );
 	ASSERT( pVerticesArray != NULL, "Invalid vertex buffer !" );
 	ASSERT( pIndicesArray != NULL, "Invalid index buffer !" );
 
-	U8*		pVertex = (U8*) pVerticesArray;
-	U8*		pIndex = (U8*) pIndicesArray;
+	void*	pVertex = pVerticesArray;
+	void*	pIndex = pIndicesArray;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build vertices
@@ -517,7 +521,7 @@ void	GeometryBuilder::BuildCube( int _SubdivisionsX, int _SubdivisionsY, int _Su
 				else
 					UV.Set( 0.5f * (1.0f + x), 0.5f * (1.0f + y) );
 
-				VWRITE( pVertex, Position, Normal, X, UV );
+				VWRITE( pVertex, Position, Normal, X, Y, UV );
 			}
 		}
 	}
@@ -569,12 +573,11 @@ void	GeometryBuilder::BuildCube( int _SubdivisionsX, int _SubdivisionsY, int _Su
 	_Writer.Finalize( pVerticesArray, pIndicesArray );
 }
 
-
-void	GeometryBuilder::WriteVertex( IGeometryWriter& _Writer, void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat2& _UV, TweakVertexDelegate _TweakVertex, void* _pUserData )
+void	GeometryBuilder::AppendVertex( IGeometryWriter& _Writer, void*& _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV, TweakVertexDelegate _TweakVertex, void* _pUserData )
 {
 	if ( _TweakVertex == NULL )
 	{
-		_Writer.WriteVertex( _pVertex, _Position, _Normal, _Tangent, _UV );
+		_Writer.AppendVertex( _pVertex, _Position, _Normal, _Tangent, _BiTangent, _UV );
 		return;
 	}
 
@@ -582,9 +585,10 @@ void	GeometryBuilder::WriteVertex( IGeometryWriter& _Writer, void* _pVertex, con
 	NjFloat3	P = _Position;
 	NjFloat3	N = _Normal;
 	NjFloat3	T = _Tangent;
+	NjFloat3	B = _BiTangent;
 	NjFloat2	UV = _UV;
-	(*_TweakVertex)( P, N, T, UV, _pUserData );
-	_Writer.WriteVertex( _pVertex, P, N, T, UV );
+	(*_TweakVertex)( P, N, T, B, UV, _pUserData );
+	_Writer.AppendVertex( _pVertex, P, N, T, B, UV );
 }
 
 

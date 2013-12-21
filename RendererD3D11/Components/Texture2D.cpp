@@ -22,92 +22,37 @@ Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFo
 	m_pTexture = &_Texture;
 }
 
-Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging, bool _bWriteable, bool _bUnOrderedAccess )
+Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging, bool _bUnOrderedAccess )
 	: Component( _Device )
+	, m_Width( _Width )
+	, m_Height( _Height )
+	, m_ArraySize( _ArraySize )
 	, m_Format( _Format )
+	, m_MipLevelsCount( _MipLevelsCount )
 	, m_bIsDepthStencil( false )
+	, m_bIsCubeMap( false )
 	, m_pCachedDepthStencilView( NULL )
 {
-	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
-	ASSERT( _Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
-
-	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
-		m_LastAssignedSlots[ShaderStageIndex] = -1;
-	m_LastAssignedSlotsUAV = -1;
-
-	m_Width = _Width;
-	m_Height = _Height;
-	if ( _ArraySize == -6 )
-	{	// Special cube map case !
-		ASSERT( _Width == _Height, "When creating a cube map, width & height must match !" );
+	if ( m_ArraySize == -6 )
+	{	// Special cube map case!
+		ASSERT( m_Width == m_Height, "When creating a cube map, width & height must match!" );
 		m_ArraySize = 6;
 		m_bIsCubeMap = true;
 	}
-	else
-	{
-		ASSERT( _ArraySize > 0, "Invalid array size !" );
-		m_ArraySize = _ArraySize;
-		m_bIsCubeMap = false;
-	}
+	ASSERT( m_ArraySize > 0, "Invalid array size!" );
 
-	m_MipLevelsCount = ComputeMipLevelsCount( _Width, _Height, _MipLevelsCount );
-
-	D3D11_TEXTURE2D_DESC	Desc;
-	Desc.Width = _Width;
-	Desc.Height = _Height;
-	Desc.ArraySize = m_ArraySize;
-	Desc.MipLevels = m_MipLevelsCount;
-	Desc.Format = _Format.DirectXFormat();
-	Desc.SampleDesc.Count = 1;
-	Desc.SampleDesc.Quality = 0;
-	if ( _bStaging )
-	{
-		Desc.Usage = D3D11_USAGE_STAGING;
-		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | (_bWriteable ? D3D11_CPU_ACCESS_WRITE : 0);
-		Desc.BindFlags = 0;
-		Desc.MiscFlags = 0;
-	}
-	else
-	{
-		Desc.Usage = _ppContent != NULL ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
-		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
-		Desc.BindFlags = _ppContent != NULL ? D3D11_BIND_SHADER_RESOURCE : (D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | (_bUnOrderedAccess ? D3D11_BIND_UNORDERED_ACCESS: 0));
-		Desc.MiscFlags = m_bIsCubeMap ? D3D11_RESOURCE_MISC_TEXTURECUBE : 0;
-	}
-
-	if ( _ppContent != NULL )
-	{
-		D3D11_SUBRESOURCE_DATA*	pInitialData = new D3D11_SUBRESOURCE_DATA[m_MipLevelsCount*m_ArraySize];
-
-		for ( int ArrayIndex=0; ArrayIndex < m_ArraySize; ArrayIndex++ )
-		{
-			_Width = m_Width;
-			_Height = m_Height;
-			for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
-			{
-				pInitialData[ArrayIndex*m_MipLevelsCount+MipLevelIndex].pSysMem = _ppContent[ArrayIndex*m_MipLevelsCount+MipLevelIndex];
-				pInitialData[ArrayIndex*m_MipLevelsCount+MipLevelIndex].SysMemPitch = _Width * _Format.Size();
-				pInitialData[ArrayIndex*m_MipLevelsCount+MipLevelIndex].SysMemSlicePitch = _Width * _Height * _Format.Size();
-				NextMipSize( _Width, _Height );
-			}
-		}
-
-		Check( m_Device.DXDevice().CreateTexture2D( &Desc, pInitialData, &m_pTexture ) );
-
-		delete[] pInitialData;
-	}
-	else
-		Check( m_Device.DXDevice().CreateTexture2D( &Desc, NULL, &m_pTexture ) );
+	Init( _ppContent, _bStaging, _bUnOrderedAccess );
 }
 
-Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format )
+Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format, int _ArraySize )
 	: Component( _Device )
 	, m_Format( _Format )
 	, m_bIsDepthStencil( true )
+	, m_bIsCubeMap( false )
 	, m_pCachedDepthStencilView( NULL )
 {
-	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
-	ASSERT( _Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
+	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
+	ASSERT( _Height <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
 
 	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
 		m_LastAssignedSlots[ShaderStageIndex] = -1;
@@ -115,13 +60,13 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const IDepthSten
 
 	m_Width = _Width;
 	m_Height = _Height;
-	m_ArraySize = 1;
+	m_ArraySize = _ArraySize;
 	m_MipLevelsCount = 1;
 
 	D3D11_TEXTURE2D_DESC	Desc;
-	Desc.Width = _Width;
-	Desc.Height = _Height;
-	Desc.ArraySize = 1;
+	Desc.Width = m_Width;
+	Desc.Height = m_Height;
+	Desc.ArraySize = m_ArraySize;
 	Desc.MipLevels = 1;
 	Desc.Format = _Format.DirectXFormat();
 	Desc.SampleDesc.Count = 1;
@@ -142,7 +87,7 @@ static void		ReleaseDirectXObject( void*& _pValue, void* _pUserData )
 
 Texture2D::~Texture2D()
 {
-	ASSERT( m_pTexture != NULL, "Invalid texture to destroy !" );
+	ASSERT( m_pTexture != NULL, "Invalid texture to destroy!" );
 
 	m_CachedShaderViews.ForEach( ReleaseDirectXObject, NULL );
 	m_CachedTargetViews.ForEach( ReleaseDirectXObject, NULL );
@@ -153,6 +98,69 @@ Texture2D::~Texture2D()
 
 	m_pTexture->Release();
 	m_pTexture = NULL;
+}
+
+void	Texture2D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOrderedAccess, TextureFilePOM::MipDescriptor* _pMipDescriptors )
+{
+	ASSERT( m_Width <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
+	ASSERT( m_Height <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
+
+	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
+		m_LastAssignedSlots[ShaderStageIndex] = -1;
+	m_LastAssignedSlotsUAV = -1;
+
+	m_MipLevelsCount = ComputeMipLevelsCount( m_Width, m_Height, m_MipLevelsCount );
+
+	D3D11_TEXTURE2D_DESC	Desc;
+	Desc.Width = m_Width;
+	Desc.Height = m_Height;
+	Desc.ArraySize = m_ArraySize;
+	Desc.MipLevels = m_MipLevelsCount;
+	Desc.Format = m_Format.DirectXFormat();
+	Desc.SampleDesc.Count = 1;
+	Desc.SampleDesc.Quality = 0;
+	if ( _bStaging )
+	{
+		Desc.Usage = D3D11_USAGE_STAGING;
+//		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | (_bWriteable ? D3D11_CPU_ACCESS_WRITE : 0);
+		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+		Desc.BindFlags = 0;
+		Desc.MiscFlags = 0;
+	}
+	else
+	{
+		Desc.Usage = _ppContent != NULL ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
+		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
+		Desc.BindFlags = _ppContent != NULL ? D3D11_BIND_SHADER_RESOURCE : (D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | (_bUnOrderedAccess ? D3D11_BIND_UNORDERED_ACCESS: 0));
+		Desc.MiscFlags = m_bIsCubeMap ? D3D11_RESOURCE_MISC_TEXTURECUBE : 0;
+	}
+
+	if ( _ppContent != NULL )
+	{
+		D3D11_SUBRESOURCE_DATA*	pInitialData = new D3D11_SUBRESOURCE_DATA[m_MipLevelsCount*m_ArraySize];
+
+		for ( int ArrayIndex=0; ArrayIndex < m_ArraySize; ArrayIndex++ )
+		{
+			int	Width = m_Width;
+			int	Height = m_Height;
+			for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+			{
+				int	RowPitch = _pMipDescriptors != NULL ? _pMipDescriptors[MipLevelIndex].RowPitch : Width * m_Format.Size();
+				int	DepthPitch = _pMipDescriptors != NULL ? _pMipDescriptors[MipLevelIndex].DepthPitch : Height * RowPitch;
+
+				pInitialData[ArrayIndex*m_MipLevelsCount+MipLevelIndex].pSysMem = _ppContent[ArrayIndex*m_MipLevelsCount+MipLevelIndex];
+				pInitialData[ArrayIndex*m_MipLevelsCount+MipLevelIndex].SysMemPitch = RowPitch;
+				pInitialData[ArrayIndex*m_MipLevelsCount+MipLevelIndex].SysMemSlicePitch = DepthPitch;
+				NextMipSize( Width, Height );
+			}
+		}
+
+		Check( m_Device.DXDevice().CreateTexture2D( &Desc, pInitialData, &m_pTexture ) );
+
+		delete[] pInitialData;
+	}
+	else
+		Check( m_Device.DXDevice().CreateTexture2D( &Desc, NULL, &m_pTexture ) );
 }
 
 ID3D11ShaderResourceView*	Texture2D::GetShaderView( int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize ) const
@@ -260,7 +268,7 @@ ID3D11DepthStencilView*		Texture2D::GetDepthStencilView() const
 
 void	Texture2D::Set( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -279,7 +287,7 @@ void	Texture2D::Set( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResour
 
 void	Texture2D::SetVS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -287,7 +295,7 @@ void	Texture2D::SetVS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 }
 void	Texture2D::SetHS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().HSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -295,7 +303,7 @@ void	Texture2D::SetHS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 }
 void	Texture2D::SetDS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -303,7 +311,7 @@ void	Texture2D::SetDS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 }
 void	Texture2D::SetGS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -311,7 +319,7 @@ void	Texture2D::SetGS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 }
 void	Texture2D::SetPS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -319,7 +327,7 @@ void	Texture2D::SetPS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 }
 void	Texture2D::SetCS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().CSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -410,93 +418,154 @@ int	Texture2D::CalcSubResource( int _MipLevelIndex, int _ArrayIndex )
 
 #ifdef _DEBUG
 
-#include <stdio.h>
+#include "..\..\Utility\TextureFilePOM.h"
 
 // I/O for staging textures
 void	Texture2D::Save( const char* _pFileName )
 {
-	FILE*	pFile;
-	fopen_s( &pFile, _pFileName, "wb" );
-	ASSERT( pFile != NULL, "Can't create file!" );
+	TextureFilePOM	POM;
+	POM.AllocateContent( *this );
 
-	// Write the type and format
-	U8		Type = m_bIsCubeMap ? 0x01 : 0x00;					// 0 is for 2D, 1 for cube map
-	U8		Format = U32(m_Format.DirectXFormat()) & 0xFF;
-	fwrite( &Type, sizeof(U8), 1, pFile );
-	fwrite( &Format, sizeof(U8), 1, pFile );
-
-	// Write the dimensions
-	fwrite( &m_Width, sizeof(int), 1, pFile );
-	fwrite( &m_Height, sizeof(int), 1, pFile );
-	fwrite( &m_ArraySize, sizeof(int), 1, pFile );
-	fwrite( &m_MipLevelsCount, sizeof(int), 1, pFile );
-
-	// Write each slice
+	// Fill up content
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
 		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
 		{
 			Map( MipLevelIndex, SliceIndex );
+
 			if ( SliceIndex == 0 )
-			{	// Only save once!
-				fwrite( &m_LockedResource.RowPitch, sizeof(int), 1, pFile );
-				fwrite( &m_LockedResource.DepthPitch, sizeof(int), 1, pFile );
+			{	// Allocate only once
+				POM.m_ppContent[MipLevelIndex+m_MipLevelsCount*SliceIndex] = new void*[m_LockedResource.DepthPitch];
+
+				POM.m_pMipsDescriptors[MipLevelIndex].RowPitch = m_LockedResource.RowPitch;
+				POM.m_pMipsDescriptors[MipLevelIndex].DepthPitch = m_LockedResource.DepthPitch;
 			}
-			fwrite( m_LockedResource.pData, m_LockedResource.DepthPitch, 1, pFile );
+
+			memcpy_s( POM.m_ppContent[MipLevelIndex+m_MipLevelsCount*SliceIndex], m_LockedResource.DepthPitch, m_LockedResource.pData, m_LockedResource.DepthPitch );
 			UnMap( MipLevelIndex, SliceIndex );
 		}
 	}
 
-	// We're done!
-	fclose( pFile );
+	POM.Save( _pFileName );
+
+// 	FILE*	pFile;
+// 	fopen_s( &pFile, _pFileName, "wb" );
+// 	ASSERT( pFile != NULL, "Can't create file!" );
+// 
+// 	// Write the type and format
+// 	U8		Type = m_bIsCubeMap ? 0x01 : 0x00;					// 0 is for 2D, 1 for cube map
+// 	U8		Format = U32(m_Format.DirectXFormat()) & 0xFF;
+// 	fwrite( &Type, sizeof(U8), 1, pFile );
+// 	fwrite( &Format, sizeof(U8), 1, pFile );
+// 
+// 	// Write the dimensions
+// 	fwrite( &m_Width, sizeof(int), 1, pFile );
+// 	fwrite( &m_Height, sizeof(int), 1, pFile );
+// 	fwrite( &m_ArraySize, sizeof(int), 1, pFile );
+// 	fwrite( &m_MipLevelsCount, sizeof(int), 1, pFile );
+// 
+// 	// Write each slice
+// 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+// 	{
+// 		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
+// 		{
+// 			Map( MipLevelIndex, SliceIndex );
+// 			if ( SliceIndex == 0 )
+// 			{	// Only save once!
+// 				fwrite( &m_LockedResource.RowPitch, sizeof(int), 1, pFile );
+// 				fwrite( &m_LockedResource.DepthPitch, sizeof(int), 1, pFile );
+// 			}
+// 			fwrite( m_LockedResource.pData, m_LockedResource.DepthPitch, 1, pFile );
+// 			UnMap( MipLevelIndex, SliceIndex );
+// 		}
+// 	}
+// 
+// 	// We're done!
+// 	fclose( pFile );
 }
 
 void	Texture2D::Load( const char* _pFileName )
 {
-	FILE*	pFile;
-	fopen_s( &pFile, _pFileName, "rb" );
-	ASSERT( pFile != NULL, "Can't load file!" );
+	TextureFilePOM	POM;
+	POM.Load( _pFileName );
 
-	// Read the type and format
-	U8		Type, Format;
-	fread_s( &Type, sizeof(U8), sizeof(U8), 1, pFile );
-	fread_s( &Format, sizeof(U8), sizeof(U8), 1, pFile );
-	DXGI_FORMAT	FileFormat = DXGI_FORMAT( Format );
-	ASSERT( FileFormat == m_Format.DirectXFormat(), "Incompatible format!" );
-	ASSERT( Type == 0x00 || Type == 0x01, "File is not a texture 2D or a cube map!" );
-	m_bIsCubeMap = Type == 0x01;
-
-	// Read the dimensions
-	int	W, H, A, M;
-	fread_s( &W, sizeof(int), sizeof(int), 1, pFile );
-	fread_s( &H, sizeof(int), sizeof(int), 1, pFile );
-	fread_s( &A, sizeof(int), sizeof(int), 1, pFile );
-	fread_s( &M, sizeof(int), sizeof(int), 1, pFile );
-
-	ASSERT( W == m_Width, "Incompatible width!" );
-	ASSERT( H == m_Height, "Incompatible height!" );
-	ASSERT( A == m_ArraySize, "Incompatible array size!" );
-	ASSERT( M == m_MipLevelsCount, "Incompatible mip levels count!" );
-
-	// Read each slice
+	// Read up content
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 	{
-		int	RowPitch, DepthPitch;
-		fread_s( &RowPitch, sizeof(int), sizeof(int), 1, pFile );
-		fread_s( &DepthPitch, sizeof(int), sizeof(int), 1, pFile );
-
 		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
 		{
 			Map( MipLevelIndex, SliceIndex );
-			ASSERT( RowPitch == m_LockedResource.RowPitch, "Incompatible row pitch!" );
-			ASSERT( DepthPitch == m_LockedResource.DepthPitch, "Incompatible depth pitch!" );
-			fread_s( m_LockedResource.pData, m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
+
+			if ( SliceIndex == 0 )
+			{	// Test only once
+				ASSERT( POM.m_pMipsDescriptors[MipLevelIndex].RowPitch == m_LockedResource.RowPitch, "Incompatible row pitch!" );
+				ASSERT( POM.m_pMipsDescriptors[MipLevelIndex].DepthPitch == m_LockedResource.DepthPitch, "Incompatible depth pitch!" );
+			}
+
+			memcpy_s( m_LockedResource.pData, m_LockedResource.DepthPitch, POM.m_ppContent[MipLevelIndex+m_MipLevelsCount*SliceIndex], m_LockedResource.DepthPitch );
 			UnMap( MipLevelIndex, SliceIndex );
 		}
 	}
 
-	// We're done!
-	fclose( pFile );
+// 	FILE*	pFile;
+// 	fopen_s( &pFile, _pFileName, "rb" );
+// 	ASSERT( pFile != NULL, "Can't load file!" );
+// 
+// 	// Read the type and format
+// 	U8		Type, Format;
+// 	fread_s( &Type, sizeof(U8), sizeof(U8), 1, pFile );
+// 	fread_s( &Format, sizeof(U8), sizeof(U8), 1, pFile );
+// 	DXGI_FORMAT	FileFormat = DXGI_FORMAT( Format );
+// 	ASSERT( FileFormat == m_Format.DirectXFormat(), "Incompatible format!" );
+// 	ASSERT( Type == 0x00 || Type == 0x01, "File is not a texture 2D or a cube map!" );
+// 	m_bIsCubeMap = Type == 0x01;
+// 
+// 	// Read the dimensions
+// 	int	W, H, A, M;
+// 	fread_s( &W, sizeof(int), sizeof(int), 1, pFile );
+// 	fread_s( &H, sizeof(int), sizeof(int), 1, pFile );
+// 	fread_s( &A, sizeof(int), sizeof(int), 1, pFile );
+// 	fread_s( &M, sizeof(int), sizeof(int), 1, pFile );
+// 
+// 	ASSERT( W == m_Width, "Incompatible width!" );
+// 	ASSERT( H == m_Height, "Incompatible height!" );
+// 	ASSERT( A == m_ArraySize, "Incompatible array size!" );
+// 	ASSERT( M == m_MipLevelsCount, "Incompatible mip levels count!" );
+// 
+// 	// Read each slice
+// 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
+// 	{
+// 		int	RowPitch, DepthPitch;
+// 		fread_s( &RowPitch, sizeof(int), sizeof(int), 1, pFile );
+// 		fread_s( &DepthPitch, sizeof(int), sizeof(int), 1, pFile );
+// 
+// 		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
+// 		{
+// 			Map( MipLevelIndex, SliceIndex );
+// 			ASSERT( RowPitch == m_LockedResource.RowPitch, "Incompatible row pitch!" );
+// 			ASSERT( DepthPitch == m_LockedResource.DepthPitch, "Incompatible depth pitch!" );
+// 			fread_s( m_LockedResource.pData, m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
+// 			UnMap( MipLevelIndex, SliceIndex );
+// 		}
+// 	}
+// 
+// 	// We're done!
+// 	fclose( pFile );
+}
+
+Texture2D::Texture2D( Device& _Device, const TextureFilePOM& _POM, bool _bUnOrderedAccess )
+	: Component( _Device )
+	, m_Width( _POM.m_Width )
+	, m_Height( _POM.m_Height )
+	, m_ArraySize( _POM.m_ArraySizeOrDepth )
+	, m_Format( *_POM.m_pPixelFormat )
+	, m_MipLevelsCount( _POM.m_MipsCount )
+	, m_bIsDepthStencil( false )
+	, m_bIsCubeMap( _POM.m_Type == TextureFilePOM::TEX_CUBE )
+	, m_pCachedDepthStencilView( NULL )
+
+{
+	Init( _POM.m_ppContent, false, _bUnOrderedAccess, _POM.m_pMipsDescriptors );
 }
 
 #endif

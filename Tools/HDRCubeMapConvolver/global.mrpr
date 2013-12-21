@@ -1,0 +1,428 @@
+renderparm useSkinning { option 0 }
+renderparm megaTextured { option 1 } //DEPRECATED
+renderparm isZPrePass { option 0 }
+renderparm isShadow { option 0 }
+renderparm perforated { option 0 }
+renderparm twoSidedLighting { option 0 }
+renderparm matrices { Buffer float4 }
+renderparm mtxOffset { Uniform uint4 0 }
+
+// use these two parm to override values in shaders, example : if ($alwaysOne) @sv_target = tsNormal * .5 + .5;
+renderparm alwaysOne { Uniform uint 1 }
+renderparm alwaysZero { Uniform uint 0 }
+
+renderparm piss/enable { option 0 }
+renderparm piss/singleBumpMap { option 0 }
+renderparm piss/curvatureAdjust { Uniform float 1.0 }
+renderparm piss/skinlut { Texture2D float4 textures/piss/diffusion_lut.bimage }
+renderparm piss/redBumpMap { Texture2D float2 _default }
+renderparm piss/greenBumpMap { Texture2D float2 _default }
+renderparm piss/blueBumpMap { Texture2D float2 _default }
+renderparm piss/specBumpMap { Texture2D float2 _default }
+
+renderparm piss/wsRedBumpMap { Texture2D float3 _default }
+renderparm piss/wsGreenBumpMap { Texture2D float3 _default }
+renderparm piss/wsBlueBumpMap { Texture2D float3 _default }
+renderparm piss/wsSpecBumpMap { Texture2D float3 _default }
+renderparm wsBumpMap { Texture2D float3 _default }
+
+renderParm defaultSamp { Sampler  
+	MinFilter		Linear
+	MagFilter		Linear
+	MipFilter		Point
+	AddressU		Wrap
+	AddressV		Wrap
+}
+renderparm pointSampler { Sampler 
+	MinFilter		Point
+	MagFilter		Point
+	MipFilter		Point
+	AddressU		Clamp
+	AddressV		Clamp
+}
+
+renderparm numthreadx { option 1 }
+renderparm numthready { option 1 }
+renderparm numthreadz { option 1 }
+
+renderparm hasBumpMap { option 0 }
+renderparm hasSpecularMap { option 0 }
+renderparm hasCoverMap { option 0 }
+
+// editor only stuff
+renderparm showDiffuseOnly { option 0 }
+renderparm useModulateColor { option 0 }
+renderparm useMultiInstancing { option 0 }
+
+// system semantic
+renderparm sv_coverage { semantic bool sys in(f)  out(f) }
+renderparm sv_depth { semantic float sys out(f) }
+renderparm sv_dispatchThreadID { semantic uint3 sys in(c) }
+renderparm sv_quadDomainLocation { semantic float2 sys in(d) }
+renderparm sv_isolineDomainLocation { semantic float2 sys in(d) }
+renderparm sv_triangleDomainLocation { semantic float3 sys in(d) }
+renderparm sv_groupID { semantic uint3 sys in(c) }
+renderparm sv_groupIndex { semantic uint sys in(c) }
+renderparm sv_groupThreadID { semantic uint3 sys in(c) }
+renderparm sv_GSInstanceID { semantic uint sys in(g) }
+
+renderparm sv_insideTessFactor { semantic float sys in(d) out(hcst) } // should be float[2]
+//renderparm sv_triangleInsideTessFactor { semantic float sys in(d) out(hcst) } // should be float
+
+renderparm sv_isFrontFace { semantic bool sys in(f) }
+renderparm sv_outputControlPointID { semantic uint sys in(hpp) }
+renderparm sv_position { semantic float4 in(f) sys out(g|d|v) }
+renderparm sv_renderTargetArrayIndex { semantic uint sys out(g) }
+renderparm sv_sampleIndex { semantic uint sys in(f) }
+renderparm sv_target { semantic float4 sys out(f) }
+renderparm sv_target1 { semantic float4 sys out(f) }
+renderparm sv_target2 { semantic float4 sys out(f) }
+renderparm sv_target3 { semantic float4 sys out(f) }
+renderparm sv_target4 { semantic float4 sys out(f) }
+renderparm sv_target5 { semantic float4 sys out(f) }
+renderparm sv_target6 { semantic float4 sys out(f) }
+renderparm sv_target7 { semantic float4 sys out(f) }
+renderparm sv_TessFactor { semantic float out(hcst) sys in(d) } // should be float[3]
+renderparm sv_TessFactor1 { semantic float out(hcst) sys in(d) } // should be float[3]
+renderparm sv_TessFactor2 { semantic float out(hcst) sys in(d) } // should be float[3]
+renderparm sv_TessFactor3 { semantic float out(hcst) sys in(d) } // should be float[3]
+renderparm sv_viewportArrayIndex { semantic uint sys out(g) }
+renderparm sv_instanceID { semantic uint sys in(v) }
+renderparm sv_primitiveID { semantic uint sys in(g|f) }
+renderparm sv_vertexID { semantic uint sys in(v) }
+
+// vertexs
+renderparm vertex_position { semantic float3 sys in(v) }
+renderparm vertex_texcoord { semantic float2 sys in(v) }
+renderparm vertex_texcoord1 { semantic float2 sys in(v) }
+renderparm vertex_boneweight { semantic uint2 sys in(v) }
+renderparm vertex_color { semantic float4 sys in(v) }
+renderparm vertex_tangent { semantic float4 sys in(v) }
+renderparm vertex_normal { semantic float4 sys in(v) }
+
+// legacy between vertex and fragment
+renderparm legacy_texcoord { semantic float4 }
+renderparm legacy_texcoord1 { semantic float4 }
+renderparm legacy_texcoord2 { semantic float4 }
+renderparm legacy_texcoord3 { semantic float4 }
+renderparm legacy_texcoord4 { semantic float4 }
+renderparm legacy_texcoord5 { semantic float4 }
+renderparm legacy_texcoord6 { semantic float4 }
+renderparm legacy_texcoord7 { semantic float4 }
+renderparm legacy_texcoord8 { semantic float4 }
+renderparm legacy_texcoord9 { semantic float4 }
+renderparm legacy_color { semantic float4 }
+
+renderparm osPosition { Semantic float3 }
+renderparm wsPosition { Semantic float3 }
+renderparm vsPosition { Semantic float3 }
+renderparm psPosition { Semantic float3 }
+
+renderparm osNormal { Semantic float3 }
+renderparm wsNormal { Semantic float3 }
+renderparm vsNormal { Semantic float3 }
+
+renderparm localViewDir { Semantic float3 }
+
+// use on several code resource i will need to rewrite later, look for newstylefallback in cpps
+renderProg newstylefallback {
+	newstyle
+		
+	hlsl_vp_main {
+		@sv_position.x = dot( float4( $vertex_position.xyz, 1 ), $mvpMatrixX );
+		@sv_position.y = dot( float4( $vertex_position.xyz, 1 ), $mvpMatrixY );
+		@sv_position.z = dot( float4( $vertex_position.xyz, 1 ), $mvpMatrixZ );
+		@sv_position.w = dot( float4( $vertex_position.xyz, 1 ), $mvpMatrixW );
+	}
+		
+	hlsl_fp_main {
+		@sv_target = float4(1,0,1,1);
+	}
+}
+renderparm defaultSamp { Sampler _default }
+// replace the global.inc automatic append, except we can use renderparm now in it
+renderprog global {
+	newstyle
+	hlsl_prefix {
+		`pragma warning( disable : 3571 ) // disable the pow with neg value warning
+
+		`define BRANCH [branch]
+		`define anyEqual( x, y )			any( (x) == (y) )
+		`define anyNotEqual( x, y )			any( (x) != (y) )
+		`define anyNotEqualZero( x )		any( (x) )
+		`define greaterThanEqual( x, y )	( (x) >= (y) )
+		`define SineCosine( x, s, c )		sincos( x, s, c );
+		
+		`define SV_TRIANGLEDOMAINLOCATION SV_DOMAINLOCATION
+		`define SV_QUADDOMAINLOCATION SV_DOMAINLOCATION
+
+		// ARKANE_BEGIN: bmayaux (2013-05-28) Added a bunch of very useful constants
+		static const float	PI = 3.1415926535897932384626433832795;			// ...
+		static const float	TWOPI = 6.283185307179586476925286766559;		// 2PI
+		static const float	FOURPI = 12.566370614359172953850573533118;		// 4PI
+		static const float	HALFPI = 1.5707963267948966192313216916398;		// PI/2
+		static const float	INVPI = 0.31830988618379067153776752674503;		// 1/PI
+		static const float	INVHALFPI = 0.63661977236758134307553505349006;	// 1/(PI/2)
+		static const float	INVTWOPI = 0.15915494309189533576888376337251;	// 1/2PI
+		static const float	INVFOURPI = 0.07957747154594766788444188168626;	// 1/4PI
+
+		static const float	E = 2.7182818284590452353602874713527;			// exp(1)
+		static const float	LN2 = 0.69314718055994530941723212145818;		// ln(2)
+		static const float	INVLN2 = 1.4426950408889634073599246810019;		// 1/ln(2)
+
+		static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.patapom.com/index.php/Colorimetry)
+
+		static const float	INFINITY = 1e6;
+		// ARKANE_END: bmayaux (2013-05-28)
+
+
+
+		static float PAGE_SIZE = 128;
+		static float PAGE_BORDER = 4;
+		static float PAGE_SIZE_LOG2 = 7;
+		static float PAYLOAD_SIZE = PAGE_SIZE - 2 * PAGE_BORDER;
+		static float PAYLOAD_SIZE_LOG2 = 6.907;
+		
+		float4 swizzleColor( float4 color ) { 
+			return color; 
+		}
+		float2 screenPosToTexcoord( float2 pos, float4 bias_scale ) { 
+			return ( pos * bias_scale.zw + bias_scale.xy ); 
+		}
+		/*
+		float3 VmtrVirtualToPhysical( float2 texcoord ) {
+			return texcoord.xyy;
+		}*/
+		// UGLY WORKAROUND TO LET A LOT OF PROG COMPILE QUICKLY
+		float4 tex2D( Texture2D<float4> tex, float2 uv) { return tex.Sample( $defaultSamp, uv); }
+		
+		// RGB <-> Ycocg matrix
+		static const float4 matrixRGB1toCoCg1YX = float4(  0.50,  0.0, -0.50, 0.50196078 );	// Co
+		static const float4 matrixRGB1toCoCg1YY = float4( -0.25,  0.5, -0.25, 0.50196078 );	// Cg
+		static const float4 matrixRGB1toCoCg1YZ = float4(  0.0,   0.0,  0.0,  1.0 );			// 1.0
+		static const float4 matrixRGB1toCoCg1YW = float4(  0.25,  0.5,  0.25, 0.0 );			// Y
+                                                  
+		static const float4 matrixCoCg1YtoRGB1X = float4(  1.0, -1.0,  0.0,        1.0 );
+		static const float4 matrixCoCg1YtoRGB1Y = float4(  0.0,  1.0, -0.50196078, 1.0 ); // -0.5 * 256.0 / 255.0
+		static const float4 matrixCoCg1YtoRGB1Z = float4( -1.0, -1.0,  1.00392156, 1.0 ); // +1.0 * 256.0 / 255.0
+		
+		// uses texel space coordinates, not normalized coordinates
+		float ComputeLOD( float2 virtCoords ) {
+			float2 dx = ddx( virtCoords.xy );
+			float2 dy = ddy( virtCoords.xy );
+
+			float px = dot( dx, dx );
+			float py = dot( dy, dy );
+
+			float maxLod = 0.5 * log2( max( px, py ) );  // log2(sqrt()) = 0.5*log2()
+			return maxLod;
+		}
+		
+		// uses texel space coordinates, not normalized coordinates
+		float ComputeAnisoLOD( float2 virtCoords, float maxAnisoLog2 ) {
+			float2 dx = ddx( virtCoords.xy );
+			float2 dy = ddy( virtCoords.xy );
+
+			float px = dot( dx, dx );
+			float py = dot( dy, dy );
+
+			float maxLod = 0.5 * log2( max( px, py ) );  // log2(sqrt()) = 0.5*log2()
+			float minLod = 0.5 * log2( min( px, py ) );
+
+			return maxLod - min( maxAnisoLog2, maxLod - minLod );
+		}
+		
+		float4 ComputeVirtualLOD( float4 filterParms, float4 feedbackFloat, float4 virtMapping, float2 virtCoords ) {
+			// Used for the land generation tool path.
+			float drawBias = filterParms.x;
+			float maxAnisoLog2 = filterParms.z;
+			float widthInPages = feedbackFloat.y;
+
+			// take just the fractional part of the original texture coordinate to give texture wrapping
+			// scale and bias it by the source to virtual texture mapping
+			float4 virtualTexCoord;
+			virtualTexCoord.zw = 0;
+			virtualTexCoord.xy = frac( virtCoords );
+			virtualTexCoord.xy = virtualTexCoord.xy * virtMapping.xy + virtMapping.zw;
+
+			// look up the proper LOD in the dedicated LOD texture, based on the original, non-wrapped,
+			// non-paged texture coordinates to avoid discontinuities. Still need to multiply by virtualMapping.xy
+			// to account for the dimensions of the original texture.
+			virtualTexCoord.w = ComputeAnisoLOD( virtCoords * virtMapping.xy * widthInPages * PAYLOAD_SIZE, maxAnisoLog2 );
+
+			// adjust for the LOD bias already applied in the virtToPhysPage sampler (log2TexelSizeRatio)
+			virtualTexCoord.w -= PAYLOAD_SIZE_LOG2 + drawBias;
+
+			return virtualTexCoord;
+		}
+		
+		`if ( defined( ATI ) && !defined( ATI_CLAMPED_ANISO ) )
+		// use the virtual texture coordinate instead of the physical texture coordinate for the anisotropic texture lookup
+		`define USE_VIRTUAL_ANISO_FOOTPRINT
+		`endif
+		
+		// bias the page table lookup anticipating an anisotropic texture lookup
+		// this is expensive but may be a nice quality improvement for high end PCs
+		//`define USE_ANISO_PAGE_TABLE_LOOKUP
+		float4 PageTableBiasForAniso( float2 virtCoords ) {
+			const float minAnisoBias = -2;	// -log2( maxAniso )
+
+			// calculate a bias for the page table lookup based on the size of the anisotropic footprint
+			float2 dx = ddx( virtCoords.xy );
+			float2 dy = ddy( virtCoords.xy );
+
+			float px = dot( dx, dx );
+			float py = dot( dy, dy );
+
+			float maxLod = 0.5 * log2( max( px, py ) );  // log2(sqrt()) = 0.5*log2()
+			float minLod = 0.5 * log2( min( px, py ) );
+
+			float anisoBias = max( minLod - maxLod, minAnisoBias );
+
+			return float4( virtCoords.x, virtCoords.y, 0, anisoBias );
+		}	
+		
+		float3 CoCgScYToRGB( float4 CoCgScY ) {
+			float3	rgb;
+			CoCgScY.z = ( CoCgScY.z * 31.875 ) + 1.0;			//z = z * 255.0/8.0 + 1.0
+			CoCgScY.z = 1.0 / CoCgScY.z;
+			CoCgScY.xy *= CoCgScY.z;
+			rgb.x = dot( CoCgScY, matrixCoCg1YtoRGB1X );
+			rgb.y = dot( CoCgScY, matrixCoCg1YtoRGB1Y );
+			rgb.z = dot( CoCgScY, matrixCoCg1YtoRGB1Z );
+			return rgb;
+		}
+
+		float4 CoCgScYToRGB1( float4 CoCgScY ) {
+			float4 rgba;
+			rgba.xyz = CoCgScYToRGB( CoCgScY );
+			rgba.w = 1;
+			return rgba;
+		}
+		
+		float3 ScaleSpecular( float3 unscaled, float factor ) {
+			return ( unscaled * 8.0 )  / ( factor * 255.0 + 8.0 );
+		}
+		
+		float4 CalculateFeedback( float2 texCoords, float4 feedbackParms, float4 filterParms ) {
+			float4 feedback;
+
+			float bias = filterParms.y;
+			float maxAnisoLog2 = filterParms.z;
+			float widthInPages = feedbackParms.y;
+
+			// xy is the integral page coordinates
+			feedback.xy = texCoords * widthInPages;
+
+			// compute the desired LOD for anisotropic filtering
+			float desiredLod = ComputeAnisoLOD( feedback.xy * PAYLOAD_SIZE, maxAnisoLog2 ) + bias;
+
+			// z is the lod level, never adjust below 0
+			feedback.z = max( 0.0, desiredLod );
+
+			// w holds the virtual texture index
+			feedback.w = feedbackParms.x;
+
+			return feedback;
+		}
+		
+		/*
+			pageX		= ( data[0] & 0xFF ) + ( data[2] & 0x0F ) << 8 );
+			pageY		= ( data[1] & 0xFF ) + ( data[2] & 0xF0 ) << 4 );
+			pageLOD		= ( data[3] & 0x0F );
+			pageSource	= ( data[3] & 0xF0 ) >> 4;
+		*/
+		float4 PackFeedback( float4 feedback ) {
+		`ifdef FEEDBACK_FORMAT_FLOAT32
+			return feedback;
+		`else
+			feedback = floor( feedback ) / 256.0;
+			float2 xy_low = frac( feedback.xy + 0.5 / 256.0 );
+			float2 xy_high = floor( feedback.xy ) / 256.0;
+
+			float4 color;
+			color.xy = xy_low;
+			color.z = xy_high.y * 16.0 + xy_high.x;
+			color.w = feedback.w * 16.0 + feedback.z;
+			return color;
+		`endif
+		}
+
+		/*
+		float ComputeSoftParticleScale( Texture2D<float> _texture, SamplerState _sampler, float2 _texcoord, float _interpolatedZOverW, float _softness ) {
+			// This instruction handles the 1.0 - depth calc automatically when using an inverted depth buffer
+			float depth = _texture.Sample( _sampler, _texcoord );
+			// Approximate a linear depth difference
+			float r1 = 1.0 / ( 1.0 - depth );
+			float r2 = 1.0 / ( 1.0 - _interpolatedZOverW );
+			return saturate( ( r1 - r2 ) * _softness );
+		}*/
+		
+		float ComputeSoftParticleScale( Texture2D<float> _depthBuffer, uint2 _screenPos, float _interpolatedZOverW, float _softness ) {
+			// This instruction handles the 1.0 - depth calc automatically when using an inverted depth buffer
+			float depth = _depthBuffer[ _screenPos ];
+			// Approximate a linear depth difference
+			float r1 = 1.0 / ( 1.0 - depth );
+			float r2 = 1.0 / ( 1.0 - _interpolatedZOverW );
+			return saturate( ( r1 - r2 ) * _softness );
+		}
+
+		float4 ComputeAnimCrossFadeColor( Texture2D<float4> _texture, SamplerState _sampler, float2 _tc0, float2 _tc1, float _frameFrac ) {
+			// For strip animations, we need to cross-fade
+			float4 result0 = _texture.Sample( _sampler, _tc0 ) * ( 1.0 - _frameFrac );
+			float4 result1 = _texture.Sample( _sampler, _tc1 ) * ( _frameFrac );	// when frameFrac is 0, no contribution
+			return ( result0 + result1 );
+		}
+
+		float4 ComputeDistortionMV( float2 distortVec, float blur ) {
+			float4 final;
+			final.xy = distortVec.xy*blur.xx;
+			final.zw = distortVec.xy;
+//			final.xy = saturate( distortVec * 0.5 + 0.5 );
+//			final.z = blur * 0.5 + 0.5;
+//			final.w = 1.0;
+			return final;
+		}
+	}
+}
+renderParm vertexStScaleBias	{ Vec { 1, 1, 0, 0 } }
+renderParm vertexXYZScale		{ Vec { 1, 1, 1, 1 } }
+renderParm vertexXYZBias		{ Vec { 0, 0, 0, 0 } }
+renderParm	globalShadows	{ Tex	_globalShadowsImage }
+renderParm	directLighting	{ Tex	_directLighting }
+
+renderParm	sobelThreshold	{ Vec 1.2 }
+renderParm	sobelOpacity	{ Vec 1.0 }
+renderParm	sobelScanFrequency	{ Vec 200.0 }
+renderParm	sobelScanSpeed		{ Vec 1.0 }
+renderParm	sobelScanContrast	{ Vec 1.0 }
+renderParm  sobelObjectDistance	{ Vec 1.0 }
+renderParm	sobelEchoScanAlpha	{ Vec 1.0 }
+renderParm	feedbackColorMap	{ TexMultisample2D	_frontColor }
+renderParm	targetDepth				{ Tex2D	_viewDepth }
+renderParm	targetDepthMS			{ TexMultisample2D	_viewDepth }
+renderParm	showDepthOfField	{ Vec 0 bool }		// Show the output from the depth of field calc
+renderParm	depthOfField2		{ Vec 0 }			// Store off intermediate calculations here for post-process
+
+renderParm	distanceScatter		{ Vec 0 bool }		// At a distance scatter the light to make things softer
+
+renderParm	pulseEffect			{ Vec 0.0 }
+
+// Radial blur
+renderParm 	radialBlurEnable	{ Vec 0 bool }
+renderParm	radialBlurCenter	{ Vec { 0.5, 0.5, 0.0, 0.0 } }
+renderParm	radialBlurScale		{ Vec { 0.08, 0.5 } }
+renderParm	radialBlurMaxScale	{ Vec 0.5 }
+
+renderParm	colorGradingLerp	{ Vec 0.0 }
+
+// DEPRECATED: REMOVE FROM ENV DEF
+// Screen Overlay
+renderParm	screenOverlay		{ Tex _default }
+renderParm	showOverlay			{ Vec 1 bool }									// Some tools want to completely override the overlay
+
+renderParm binkY		{ Tex	_default }
+renderParm binkCr		{ Tex	_default }
+renderParm binkCb		{ Tex	_default }
+
+

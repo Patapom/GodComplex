@@ -72,12 +72,12 @@ protected:	// FIELDS
 
 public:		// PROPERTIES
 
-	int				GetWidth() const	{ return m_Width; }
-	int				GetHeight() const	{ return m_Height; }
-	int				GetWidth( int _MipLevel ) const	{ return m_pMipSizes[(_MipLevel<<1)+0]; }
+	int				GetWidth() const					{ return m_Width; }
+	int				GetHeight() const					{ return m_Height; }
+	int				GetWidth( int _MipLevel ) const		{ return m_pMipSizes[(_MipLevel<<1)+0]; }
 	int				GetHeight( int _MipLevel ) const	{ return m_pMipSizes[(_MipLevel<<1)+1]; }
 
-	Pixel**			GetMips()			{ return m_ppBufferGeneric; }
+	Pixel**			GetMips()							{ return m_ppBufferGeneric; }
 	const void**	GetLastConvertedMips() const;
 
 
@@ -113,7 +113,7 @@ public:		// METHODS
 
 
 #ifdef _DEBUG
-	// We allow loading RAW textures from disk in debug mode
+	// We allow loading RAW/POM textures from disk in debug mode
 	void			LoadFromRAWFile( const char* _pPath, bool _bAsHeight=false );
 	void			LoadFromFloatFile( const char* _pPath );
 #endif

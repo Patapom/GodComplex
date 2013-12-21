@@ -60,17 +60,6 @@ namespace FBXImporter
 	protected:	// FIELDS
 
 		String^					m_Name;				// Texture name
-
-		WRAP_MODE				m_WrapModeU;
-		WRAP_MODE				m_WrapModeV;
-		BLEND_MODE				m_BlendMode;
-		MAPPING_TYPE			m_MappingType;
-		TEXTURE_USAGE			m_TextureUsage;
-		WMath::Vector^			m_Translation;
-		WMath::Vector^			m_Rotation;
-		WMath::Vector^			m_Scale;
-		bool					m_bUseMipMap;
-		String^					m_UVSet;
 		String^					m_RelativeFileName;
 		String^					m_AbsoluteFileName;
 
@@ -81,70 +70,70 @@ namespace FBXImporter
 		//
 		property WRAP_MODE		WrapModeU
 		{
-			WRAP_MODE	get()	{ return m_WrapModeU; }
+			WRAP_MODE	get()	{ return static_cast<WRAP_MODE>( FindProperty( "WrapModeU" )->AsInt ); }
 		}
 
 		[DescriptionAttribute( "Gets texture sampler wrap mode on V" )]
 		//
 		property WRAP_MODE		WrapModeV
 		{
-			WRAP_MODE	get()	{ return m_WrapModeV; }
+			WRAP_MODE	get()	{ return static_cast<WRAP_MODE>( FindProperty( "WrapModeV" )->AsInt ); }
 		}
 
 		[DescriptionAttribute( "Gets texture blend mode" )]
 		//
 		property BLEND_MODE		BlendMode
 		{
-			BLEND_MODE	get()	{ return m_BlendMode; }
+			BLEND_MODE	get()	{ return static_cast<BLEND_MODE>( FindProperty( "CurrentTextureBlendMode" )->AsInt ); }
 		}
 
 		[DescriptionAttribute( "Gets the type of mapping of this texture (e.g. Planar, Box, etc.)" )]
 		//
 		property MAPPING_TYPE	MappingType
 		{
-			MAPPING_TYPE	get()	{ return m_MappingType; }
+			MAPPING_TYPE	get()	{ return static_cast<MAPPING_TYPE>( FindProperty( "CurrentMappingType" )->AsInt ); }
 		}
 
 		[DescriptionAttribute( "Gets the texture usage (e.g. Shadow Map, Light Map, etc.)" )]
 		//
 		property TEXTURE_USAGE	TextureUsage
 		{
-			TEXTURE_USAGE	get()	{ return m_TextureUsage; }
+			TEXTURE_USAGE	get()	{ return static_cast<TEXTURE_USAGE>( FindProperty( "TextureTypeUse" )->AsInt ); }
 		}
 
 		[DescriptionAttribute( "Gets the texture translation" )]
 		//
 		property WMath::Vector^	Translation
 		{
-			WMath::Vector^	get()	{ return m_Translation; }
+			WMath::Vector^	get()	{ return FindProperty( "Translation" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets the texture rotation" )]
 		//
 		property WMath::Vector^	Rotation
 		{
-			WMath::Vector^	get()	{ return m_Rotation; }
+			WMath::Vector^	get()	{ return FindProperty( "Rotation" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets the texture scale" )]
 		//
 		property WMath::Vector^	Scale
 		{
-			WMath::Vector^	get()	{ return m_Scale; }
+			WMath::Vector^	get()	{ return FindProperty( "Scaling" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Tells if the texture should be using mip-mapping" )]
 		//
 		property bool			UseMipMap
 		{
-			bool			get()	{ return m_bUseMipMap; }
+			bool			get()	{ return FindProperty( "UseMipMap" )->AsBool; }
 		}
 
 		[DescriptionAttribute( "Gets the name of the UV set" )]
 		//
 		property String^		UVSet
 		{
-			String^			get()	{ return m_UVSet; }
+			String^			get()	{ return FindProperty( "UVSet" )->AsString; }
 		}
 
 		[DescriptionAttribute( "Gets the texture's relative filename (i.e. relative to the exported FBX file's location)" )]
@@ -164,22 +153,11 @@ namespace FBXImporter
 
 	public:		// METHODS
 
-		Texture( Scene^ _ParentScene, FbxTexture* _pTexture ) : BaseObject( _ParentScene, _pTexture )
+		Texture( Scene^ _ParentScene, FbxFileTexture* _pTexture ) : BaseObject( _ParentScene, _pTexture )
 		{
 			m_Name = Helpers::GetString( _pTexture->GetName() );
-
-			m_WrapModeU = static_cast<WRAP_MODE>( _pTexture->WrapModeU.Get() );
-			m_WrapModeV = static_cast<WRAP_MODE>( _pTexture->WrapModeV.Get() );
-			m_BlendMode = static_cast<BLEND_MODE>( _pTexture->CurrentTextureBlendMode.Get() );
-			m_MappingType = static_cast<MAPPING_TYPE>( _pTexture->GetMappingType() );
-			m_TextureUsage = static_cast<TEXTURE_USAGE>( _pTexture->GetTextureUse() );
-			m_Translation = Helpers::ToVector3( _pTexture->Translation.Get() );
-			m_Rotation = Helpers::ToVector3( _pTexture->Rotation.Get() );
-			m_Scale = Helpers::ToVector3( _pTexture->Scaling.Get() );
-//			m_bUseMipMap = _pTexture->UseMipMap.Get();
-			m_UVSet = Helpers::GetString( _pTexture->UVSet.Get() );
-//			m_RelativeFileName = Helpers::GetString( _pTexture->GetRelativeFileName() );
-//			m_AbsoluteFileName = Helpers::GetString( _pTexture->GetFileName() );
+			m_RelativeFileName = Helpers::GetString( _pTexture->GetRelativeFileName() );
+			m_AbsoluteFileName = Helpers::GetString( _pTexture->GetFileName() );
 		}
 	};
 }

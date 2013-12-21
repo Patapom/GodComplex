@@ -36,11 +36,13 @@
 #include "Utility/Random.h"
 #include "Utility/Resources.h"
 #include "Utility/Camera.h"
+#include "Utility/SH.h"
 #include "Utility/tweakval.h"
 #include "Utility/MemoryMappedFile.h"
 #include "Utility/Profiling.h"
 #include "Utility/FPSCamera.h"
 #include "Utility/Video.h"
+#include "Utility/TextureFilePOM.h"
 
 // DirectX Renderer
 #include "RendererD3D11/Device.h"
@@ -68,6 +70,8 @@
 #include "Procedural/GeometryBuilder.h"
 #include "Procedural/RayTracer.h"
 
+// Scene loading
+#include "Scene/Scene.h"
 
 
 extern const NjFloat4	LUMINANCE;	// D65 Illuminant with observer at 2°

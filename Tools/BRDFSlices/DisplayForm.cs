@@ -654,7 +654,7 @@ namespace BRDFSlices
 			double	IntersectionSqLength = IntersectionThetaH*IntersectionThetaH + IntersectionThetaD*IntersectionThetaD;
 
 			double	ScaleFactor = Math.Sqrt( IntersectionSqLength / OriginalSqLength );
-			if ( ScaleFactor > 1.0 )
+			if ( ScaleFactor > 1.0 || bError )
 				throw new Exception( "Crap!" );
 
 //			ScaleFactor = Math.Min( 1.0, ScaleFactor * 1.1 );

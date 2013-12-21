@@ -109,8 +109,6 @@ namespace FBXImporter
 
 		String^					m_Name;
 
-// 		FbxLayerElement*		m_pElement;
-
 		ELEMENT_TYPE			m_ElementType;
 		MAPPING_TYPE			m_MappingMode;
 		REFERENCE_TYPE			m_ReferenceMode;

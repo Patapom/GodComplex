@@ -10,6 +10,7 @@
 	{ "Inc/LayeredMaterials.hlsl",	"./Resources/Shaders/Inc/LayeredMaterials.hlsl",	IDR_SHADER_INCLUDE_LAYERED_MATERIALS },	\
 	{ "Inc/Volumetric.hlsl",		"./Resources/Shaders/Inc/Volumetric.hlsl",			IDR_SHADER_INCLUDE_VOLUMETRIC },		\
 	{ "Inc/Atmosphere.hlsl",		"./Resources/Shaders/Inc/Atmosphere.hlsl",			IDR_SHADER_INCLUDE_ATMOSPHERE },		\
+	{ "Inc/SH.hlsl",				"./Resources/Shaders/Inc/SH.hlsl",					IDR_SHADER_INCLUDE_SH },				\
 
 
 #include "..\GodComplex.h"
@@ -26,7 +27,7 @@ class ComputeShader;
 const U8*		LoadResourceBinary( U16 _ResourceID, const char* _pResourceType, U32* _pResourceSize=NULL );
 
 // Loads a text shader resource in memory
-// IMPORTANT NOTE: You MUST destroy the returned pointed once you're done with it !
+// IMPORTANT NOTE: You MUST destroy the returned pointer once you're done with it !
 char*			LoadResourceShader( U16 _ResourceID, U32& _CodeSize );
 
 // Create a full-fledged material given the shader resource ID and the vertex format

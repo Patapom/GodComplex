@@ -202,6 +202,7 @@
     <Compile Include="Complex.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="BoundingSphere.cs" />
     <Compile Include="QuasiRandom.cs" />
     <Compile Include="Random.cs" />
     <Compile Include="Utility.cs" />

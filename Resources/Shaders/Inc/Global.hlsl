@@ -22,16 +22,9 @@ static const float	INVHALFPI = 0.63661977236758134307553505349006;	// 1/(PI/2)
 static const float	INVTWOPI = 0.15915494309189533576888376337251;	// 1/2PI
 static const float	INVFOURPI = 0.07957747154594766788444188168626;	// 1/4PI
 
-static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.patapom.com/index.php/Colorimetry)
+static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.nuaj.net/index.php?title=Colorimetry)
 
 static const float	INFINITY = 1e6;
-
-
-#define TEX( Texture, Sampler, UV )					Texture.Sample( Sampler, UV )
-
-// On old ATIs, the SampleLevel() function doesn't work so you should use the other implementation (although I'm pretty sure it will fuck everything up if you start sampling textures within conditional branches)
-#define TEXLOD( Texture, Sampler, UV, MipLevel )	Texture.SampleLevel( Sampler, UV, MipLevel )
-// #define TEXLOD( Texture, Sampler, UV, MipLevel )	Texture.Sample( Sampler, UV )
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -66,20 +59,20 @@ cbuffer	cbGlobal	: register( b1 )
 //]
 
 
-Texture3D	_TexNoise3D	: register(t0);
+Texture3D<float4>	_TexNoise3D	: register(t0);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Distort position with noise
 // float3	Distort( float3 _Position, float3 _Normal, float4 _NoiseOffset )
 // {
-// 	float	Noise = _NoiseOffset.w * (-1.0 + TEXLOD( _TexNoise3D, LinearWrap, 0.2 * (_Position + _NoiseOffset.xyz), 0.0 ).x);
+// 	float	Noise = _NoiseOffset.w * (-1.0 + _TexNoise3D.SampleLevel( LinearWrap, 0.2 * (_Position + _NoiseOffset.xyz), 0.0 ).x);
 // 	return	_Position + Noise * _Normal;
 // }
 
 float3	Distort( float3 _Position, float3 _Normal, float4 _NoiseOffset )
 {
-	return _Position + _NoiseOffset.w * TEXLOD( _TexNoise3D, LinearWrap, 0.2 * (_Position + _NoiseOffset.xyz), 0.0 ).xyz;
+	return _Position + _NoiseOffset.w * _TexNoise3D.SampleLevel( LinearWrap, 0.2 * (_Position + _NoiseOffset.xyz), 0.0 ).xyz;
 }
 
 
@@ -101,11 +94,11 @@ float3	Distort( float3 _Position, float3 _Normal, float4 _NoiseOffset )
 // Rotates a vector about an axis
 // float3	RotateVector( float3 v, float3 _Axis, float _Angle )
 // {
-//     _Axis = normalize( _Axis );
-//     float3	n = _Axis * dot( _Axis, v );
-// 	float2	SC;
-// 	sincos( _Angle, SC.x, SC.y );
-//     return n + SC.y * (v - n) + SC.x * cross( _Axis, v );
+//		_Axis = normalize( _Axis );
+//		float3	n = _Axis * dot( _Axis, v );
+// 		float2	SC;
+// 		sincos( _Angle, SC.x, SC.y );
+//		return n + SC.y * (v - n) + SC.x * cross( _Axis, v );
 // }
 
 float3	RotateVector( float3 _Vector, float3 _Axis, float _Angle )
