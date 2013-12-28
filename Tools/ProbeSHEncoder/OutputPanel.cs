@@ -14,6 +14,30 @@ namespace ProbeSHEncoder
 	{
 		private const double			FOV = 0.5 * Math.PI;
 
+		public enum		VIZ_TYPE
+		{
+			ALBEDO,
+			DISTANCE,
+			NORMAL,
+			SET_INDEX,
+			SET_ALBEDO,
+			SET_DISTANCE,
+			SET_NORMAL,
+		}
+		private VIZ_TYPE		m_Viz = VIZ_TYPE.ALBEDO;
+		public VIZ_TYPE			Viz
+		{
+			get { return m_Viz; }
+			set
+			{
+				if ( value == m_Viz )
+					return;
+
+				m_Viz = value;
+				UpdateBitmap();
+			}
+		}
+
 		protected Bitmap		m_Bitmap = null;
 		public EncoderForm		m_Owner = null;
 
@@ -49,11 +73,7 @@ namespace ProbeSHEncoder
 			InitializeComponent();
 		}
 
-		public void		UpdateBitmap()
-		{
-			UpdateBitmap( null );
-		}
-		public unsafe void		UpdateBitmap( SampleCubeMapPixel _Sampler )
+		public unsafe void		UpdateBitmap()
 		{
 			if ( m_Bitmap == null )
 				return;
@@ -71,6 +91,18 @@ namespace ProbeSHEncoder
 			{
 				BitmapData	LockedBitmap = m_Bitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
 
+				CubeMapSampler	S = CubeMapSamplerAlbedo;
+				switch ( m_Viz )
+				{
+					case VIZ_TYPE.ALBEDO:		S = CubeMapSamplerAlbedo; break;
+					case VIZ_TYPE.DISTANCE:		S = CubeMapSamplerDistance; break;
+					case VIZ_TYPE.NORMAL:		S = CubeMapSamplerNormal; break;
+					case VIZ_TYPE.SET_INDEX:	S = CubeMapSamplerSetIndex; break;
+					case VIZ_TYPE.SET_ALBEDO:	S = CubeMapSamplerSetAlbedo; break;
+					case VIZ_TYPE.SET_DISTANCE:	S = CubeMapSamplerSetDistance; break;
+					case VIZ_TYPE.SET_NORMAL:	S = CubeMapSamplerSetNormal; break;
+				}
+
 				WMath.Vector	View;
 				byte			R, G, B, A = 0xFF;
 				for ( int Y=0; Y < H; Y++ )
@@ -83,23 +115,12 @@ namespace ProbeSHEncoder
 						View = x * m_Right + y * m_Up + m_At;
 						View.Normalize();
 
-						if ( _Sampler == null )
-							SampleCubeMap( View, ( EncoderForm.Pixel _Pixel ) => {
+						SampleCubeMap( View, S, out R, out G, out B );
 
-	// 							byte	C = (byte) Math.Min( 255, 255 * 0.1f * _Pixel.Distance );
-	// 							R = G = B = C;
-
-								R = (byte) Math.Min( 255, 255 * _Pixel.Albedo.x );
-								G = (byte) Math.Min( 255, 255 * _Pixel.Albedo.y );
-								B = (byte) Math.Min( 255, 255 * _Pixel.Albedo.z );
-
-								*pScanline++ = B;
-								*pScanline++ = G;
-								*pScanline++ = R;
-								*pScanline++ = A;
-							} );
-						else
-							SampleCubeMap( View, _Sampler );
+						*pScanline++ = B;
+						*pScanline++ = G;
+						*pScanline++ = R;
+						*pScanline++ = A;
 					}
 				}
 
@@ -109,6 +130,86 @@ namespace ProbeSHEncoder
 
 			Invalidate();
 		}
+
+		#region Samplers
+
+		private void	CubeMapSamplerAlbedo( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		{
+			_R = (byte) Math.Min( 255, 255 * _Pixel.Albedo.x );
+			_G = (byte) Math.Min( 255, 255 * _Pixel.Albedo.y );
+			_B = (byte) Math.Min( 255, 255 * _Pixel.Albedo.z );
+		}
+
+		private void	CubeMapSamplerDistance( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		{
+			byte	C = (byte) Math.Min( 255, 255 * 0.1f * _Pixel.Distance );
+			_R = _G = _B = C;
+		}
+
+		private void	CubeMapSamplerNormal( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		{
+			_R = (byte) Math.Min( 255, 127 * (1.0f + _Pixel.Normal.x) );
+			_G = (byte) Math.Min( 255, 127 * (1.0f + _Pixel.Normal.y) );
+			_B = (byte) Math.Min( 255, 127 * (1.0f + _Pixel.Normal.z) );
+		}
+
+		private void	CubeMapSamplerSetIndex( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		{
+			EncoderForm.Set	S = _Pixel.ParentSet;
+			byte	C = 0;
+			if ( S != null )
+			{
+				C = (byte) (255 * (1 + S.SetIndex) / m_Owner.m_Sets.Length);
+			}
+			_R = _G = _B = C;
+		}
+
+		private void	CubeMapSamplerSetAlbedo( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		{
+			EncoderForm.Set	S = _Pixel.ParentSet;
+			if ( S == null )
+			{
+				_R = _G = _B = 0;
+				return;
+			}
+
+			_R = (byte) Math.Min( 255, 255 * S.Albedo.x );
+			_G = (byte) Math.Min( 255, 255 * S.Albedo.y );
+			_B = (byte) Math.Min( 255, 255 * S.Albedo.z );
+		}
+
+		private void	CubeMapSamplerSetDistance( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		{
+			EncoderForm.Set	S = _Pixel.ParentSet;
+			if ( S == null )
+			{
+				_R = 63;
+				_G = 0;
+				_B = 63;
+				return;
+			}
+
+			float	Distance2SetCenter = (_Pixel.Position - S.Position).Length();
+
+			byte	C = (byte) Math.Min( 255, 255 * 0.1f * Distance2SetCenter );
+			_R = _G = _B = C;
+		}
+
+		private void	CubeMapSamplerSetNormal( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		{
+			EncoderForm.Set	S = _Pixel.ParentSet;
+			if ( S == null )
+			{
+				_R = _G = _B = 0;
+				return;
+			}
+
+			_R = (byte) Math.Min( 255, 127 * (1.0f + S.Normal.x) );
+			_G = (byte) Math.Min( 255, 127 * (1.0f + S.Normal.y) );
+			_B = (byte) Math.Min( 255, 127 * (1.0f + S.Normal.z) );
+		}
+
+		#endregion
 
 		protected override void OnSizeChanged( EventArgs e )
 		{
@@ -139,11 +240,11 @@ namespace ProbeSHEncoder
 
 		#region Cube Map Sampling
 
-		public delegate void	SampleCubeMapPixel( EncoderForm.Pixel _Pixel );
+		public delegate void	CubeMapSampler( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B );
 		private WMath.Vector	AbsView = new WMath.Vector();
 		private WMath.Vector	fXYZ = new WMath.Vector();
 		private WMath.Vector2D	fXY = new WMath.Vector2D();
-		public void		SampleCubeMap( WMath.Vector _View, SampleCubeMapPixel _Sampler )
+		public void		SampleCubeMap( WMath.Vector _View, CubeMapSampler _Sampler, out byte _R, out byte _G, out byte _B )
 		{
 			AbsView.Set( Math.Abs( _View.x ), Math.Abs( _View.y ), Math.Abs( _View.z ) );
 			float	MaxComponent = Math.Max( Math.Max( AbsView.x, AbsView.y ), AbsView.z );
@@ -205,7 +306,7 @@ namespace ProbeSHEncoder
 
 			EncoderForm.Pixel[,]	CubeMapFace = m_Owner.m_CubeMap[FaceIndex];
 
-			_Sampler( CubeMapFace[X,Y] );
+			_Sampler( CubeMapFace[X,Y], out _R, out _G, out _B );
 		}
 
 		#endregion

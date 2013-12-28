@@ -17,7 +17,10 @@ namespace ProbeSHEncoder
 		public const float	Z_INFINITY = 1e6f;
 		public const float	Z_INFINITY_TEST = 0.99f * Z_INFINITY;
 
-		public class	Pixel 
+		/// <summary>
+		/// This represents all the informations about the pixels viewed by a probe (i.e. cube map)
+		/// </summary>
+		public class	Pixel
 		{
 			public WMath.Point	Position;	// World position
 			public WMath.Vector	Normal;		// World normal
@@ -29,7 +32,7 @@ namespace ProbeSHEncoder
 			public bool			Infinity;	// True if not a scene pixel (i.e. sky pixel)
 			public WMath.Vector	View;		// View vector pointing to that pixel
 
-			public int			SetIndex = -1;
+			public Set			ParentSet = null;
 
 			public void			SetAlbedo( WMath.Vector _Albedo )
 			{
@@ -66,20 +69,41 @@ namespace ProbeSHEncoder
 			/// </summary>
 			/// <param name="_Other"></param>
 			/// <returns></returns>
-			public float	ComputeMetric( Pixel _Other, float _ColorDistanceWeight )
+			public float	ComputeMetric( Pixel _Other, float _PositionDistanceWeight, float _NormalDistanceWeight, float _ColorDistanceWeight )
 			{
 				float	EuclidianDistance = (_Other.Position - Position).Length();
-				float	ColorDistance = Math.Min( Math.Abs(_Other.AlbedoHSL.x - AlbedoHSL.x) / 6.0f, Math.Abs(AlbedoHSL.x - _Other.AlbedoHSL.x) / 6.0f );
-						ColorDistance *= _ColorDistanceWeight;	// Used to give the color as much weight as general euclidian distances...
+						EuclidianDistance *= _PositionDistanceWeight;
 
-				return EuclidianDistance + ColorDistance;
+				float	NormalDistance = 0.5f * (1.0f - (_Other.Normal | Normal));
+						NormalDistance *= _NormalDistanceWeight;	// Used to give the normal as much weight as general euclidian distances...
+
+				float	ColorDistance = Math.Min( Math.Abs(_Other.AlbedoHSL.x - AlbedoHSL.x) / 6.0f, Math.Abs(AlbedoHSL.x - _Other.AlbedoHSL.x) / 6.0f );
+						ColorDistance *= _ColorDistanceWeight;		// Used to give the color as much weight as general euclidian distances...
+
+				return EuclidianDistance + NormalDistance + ColorDistance;
 			}
+		}
+
+		/// <summary>
+		/// A set is a special pixel with a centroid, a normal and an average albedo
+		/// It also serves as accumulator for all pixels registering to the set
+		/// </summary>
+		public class	Set : Pixel
+		{
+			public WMath.Vector	AccumCentroid = WMath.Vector.Zero;
+			public WMath.Vector	AccumNormal = WMath.Vector.Zero;
+			public int			SetCardinality = 0;
+
+			public int			LastSetCardinality = 0;
+			public int			SetIndex = -1;	// Warning: Only available once the computation is over and all sets have been resolved!
 		}
 
 		public WMath.Matrix4x4[]	m_Side2World = new WMath.Matrix4x4[6];
 
 		public Pixel[][,]			m_CubeMap = new Pixel[6][,];
 		public double				m_MeanHarmonicDistance = 0.0;
+
+		public Set[]				m_Sets = new Set[0];
 
 		public List<Pixel>			m_ScenePixels = new List<Pixel>();
 
@@ -266,12 +290,12 @@ namespace ProbeSHEncoder
 			const float	CHANGES_RATIO_THRESHOLD = 0.01f;	// We can exit the loop if less than 1% of the scene pixels changed of set during the last 2 loop iterations
 
 			// Determine K centroids by splitting the sphere
-			Pixel[]	Centroids = new Pixel[K];
-			for ( int CentroidIndex=0; CentroidIndex < K; CentroidIndex++ )
+			List<Set>	Sets = new List<Set>();
+			for ( int SetIndex=0; SetIndex < K; SetIndex++ )
 			{
 				// We first choose a "random" direction (actually, we're splitting the sphere into 8 equal parts) (an octahedron)
-				float	Phi = 2.0f * (float) Math.PI * (CentroidIndex & 3) / 4.0f;
-				float	Theta = (float) Math.PI * (0.5f + (CentroidIndex >> 3) ) / 2.0f;
+				float	Phi = 2.0f * (float) Math.PI * (SetIndex & 3) / 4.0f;
+				float	Theta = (float) Math.PI * (0.5f + (SetIndex >> 3) ) / 2.0f;
 
 				WMath.Vector	TargetDirection = new WMath.Vector( 
 						(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
@@ -280,35 +304,38 @@ namespace ProbeSHEncoder
 
 				// Now we collect all the points that are the closest to the direction and keep the ones that have the most weight
 				WMath.Vector	CentroidPosition = WMath.Vector.Zero;
+				WMath.Vector	CentroidNormal = WMath.Vector.Zero;
 				WMath.Vector	CentroidAlbedo = WMath.Vector.Zero;
 				float			SumWeights = 0.0f;
 				float			SumWeightColors = 0.0f;
 				foreach ( Pixel P in m_ScenePixels )
 				{
 					float	WeightDirection = Math.Max( 0.0f, TargetDirection | P.View );
-					float	WeightColor = 1.0f + 1.0f * P.AlbedoHSL.y;	// Favor the most saturated colors
+					float	WeightColor = 0.0f + 1.0f * P.AlbedoHSL.y;	// Favor the most saturated colors
 					float	Weight = WeightDirection * WeightColor;
 
 					CentroidPosition += Weight * (WMath.Vector) P.Position;
+					CentroidNormal += Weight * P.Normal;
 					CentroidAlbedo += WeightColor * P.Albedo;
 					SumWeights += Weight;
 					SumWeightColors += WeightColor;
 				}
 
 				CentroidPosition /= SumWeights;
+				CentroidNormal /= SumWeights;
 				CentroidAlbedo /= SumWeightColors;
 				float	EnsureDot = CentroidPosition.Normalized | TargetDirection;	// Should still point close to the original target direction...
 
-				Centroids[CentroidIndex] = new Pixel() { Position = (WMath.Point) CentroidPosition };
-				Centroids[CentroidIndex].SetAlbedo( CentroidAlbedo );
-				Centroids[CentroidIndex].View = WMath.Vector.Zero;	// Reset view vectors that we'll use as centroid accumulators
-				Centroids[CentroidIndex].SetIndex = 0;				// And we'll use this to count the amount of pixels related to this set
-				Centroids[CentroidIndex].Infinity = true;			// We use this flag to check if the set is valid
+				Set	S = new Set() { Position = (WMath.Point) CentroidPosition, Normal = CentroidNormal };
+					S.SetAlbedo( CentroidAlbedo );
+				Sets.Add( S );
 			}
 
 			// Iterate over the scene pixels to determine which set they prefer
 			float	PreviousChangesRatio = 1.0f;
-			float	ColorDistanceWeight = (float) m_MeanHarmonicDistance;
+			float	SpatialDistanceWeight = floatTrackbarControlPosition.Value;
+			float	NormalDistanceWeight = floatTrackbarControlNormal.Value;// * (float) m_MeanHarmonicDistance;
+			float	ColorDistanceWeight = floatTrackbarControlAlbedo.Value;// * (float) m_MeanHarmonicDistance;
 			while ( true )
 			{
 				// Iterate over all pixels and see where their loyalty lies, depending on their "distance" to each set
@@ -316,48 +343,55 @@ namespace ProbeSHEncoder
 				foreach ( Pixel P in m_ScenePixels )
 				{
 					float	BestSetDistance = 1e6f;
-					int		BestSetIndex = -1;
-					for ( int CentroidIndex=0; CentroidIndex < K; CentroidIndex++ )
-						if ( Centroids[CentroidIndex].Infinity )
-						{
-							float	SetDistance = P.ComputeMetric( Centroids[CentroidIndex], ColorDistanceWeight );
-							if ( SetDistance >= BestSetDistance )
-								continue;
+					Set		BestSet = null;
+					foreach ( Set S in Sets )
+					{
+						float	SetDistance = S.ComputeMetric( P, SpatialDistanceWeight, NormalDistanceWeight, ColorDistanceWeight );
+						if ( SetDistance >= BestSetDistance )
+							continue;	// Not the best candidate set
 
-							BestSetDistance = SetDistance;
-							BestSetIndex = CentroidIndex;
-						}
+						BestSetDistance = SetDistance;
+						BestSet = S;
+					}
 
-					if ( BestSetIndex == -1 )
+					if ( BestSet == null )
 						throw new Exception( "WTF?! Means no more sets are available!" );
 
 					// Accumulate centroid position
-					Centroids[BestSetIndex].View += (WMath.Vector) P.Position;
-					Centroids[BestSetIndex].SetIndex++;	// One more pixel in this set!
+					BestSet.AccumCentroid += (WMath.Vector) P.Position;
+					BestSet.AccumNormal += P.Normal;
+					BestSet.SetCardinality++;	// One more pixel in this set!
 
 					// Check if there's any change in the set
-					if ( BestSetIndex == P.SetIndex )
+					if ( P.ParentSet == BestSet )
 						continue;
 
 					// Update set!
-					P.SetIndex = BestSetIndex;
+					P.ParentSet = BestSet;
 					ChangesCount++;
 				}
 
 				// Update new centroid positions
-				for ( int CentroidIndex=0; CentroidIndex < K; CentroidIndex++ )
-					if ( Centroids[CentroidIndex].Infinity )
-					{
-						if ( Centroids[CentroidIndex].SetIndex > 0 )
-							Centroids[CentroidIndex].Position = (WMath.Point) (Centroids[CentroidIndex].View / Centroids[CentroidIndex].SetIndex);
-						else
-						{	// This set is empty, we should mark it as disabled...
-							Centroids[CentroidIndex].Infinity = false;
-						}
+				m_Sets = Sets.ToArray();
+				for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
+				{
+					Set	S = m_Sets[SetIndex];
 
-						Centroids[CentroidIndex].View.MakeZero();	// Reset view vectors that we'll use as centroid accumulators
-						Centroids[CentroidIndex].SetIndex = 0;		// And we'll use this to count the amount of pixels related to this set
+					if ( S.SetCardinality == 0 )
+					{	// This set is empty, meaning it's not useful anymore...
+						Sets.Remove( S );
+						continue;
 					}
+
+					S.Position = (WMath.Point) (S.AccumCentroid / S.SetCardinality);
+					S.Normal = S.AccumNormal / S.SetCardinality;
+
+					// Reset accumulators
+					S.AccumCentroid.MakeZero();
+					S.AccumNormal.MakeZero();
+					S.LastSetCardinality = S.SetCardinality;
+					S.SetCardinality = 0;
+				}
 
 				// Check if we can leave because not many changes were made
 				float	ChangesRatio = (float) ChangesCount / m_ScenePixels.Count;
@@ -366,6 +400,65 @@ namespace ProbeSHEncoder
 
 				PreviousChangesRatio = ChangesRatio;
 			}
+
+			// Finish by filling final set indices
+			for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
+				m_Sets[SetIndex].SetIndex = SetIndex;
+
+
+			// Referesh UI
+			textBoxResults.Text = m_Sets.Length + " sets generated:\r\n\r\n";
+			for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
+			{
+				Set	S = m_Sets[SetIndex];
+				textBoxResults.Text += SetIndex + ") " + S.LastSetCardinality + " pixels (" + (100.0f * S.LastSetCardinality / m_ScenePixels.Count).ToString( "G4" ) + "%)\r\n"
+									+ "Albedo = (" + S.Albedo.x.ToString( "G4" ) + ", " + S.Albedo.y.ToString( "G4" ) + ", " + S.Albedo.z.ToString( "G4" ) + ")\r\n\r\n";
+			}
+
+			radioButtonSetIndex.Checked = true;
+			outputPanel1.UpdateBitmap();
+		}
+
+		private void radioButtonAlbedo_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.ALBEDO;
+		}
+
+		private void radioButtonDistance_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.DISTANCE;
+		}
+
+		private void radioButtonNormal_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.NORMAL;
+		}
+
+		private void radioButtonSetIndex_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.SET_INDEX;
+		}
+
+		private void radioButtonSetColor_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.SET_ALBEDO;
+		}
+
+		private void radioButtonSetNormal_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.SET_NORMAL;
+		}
+
+		private void radioButtonSetDistance_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.SET_DISTANCE;
 		}
 	}
 }
