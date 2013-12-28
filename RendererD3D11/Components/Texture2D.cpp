@@ -434,54 +434,19 @@ void	Texture2D::Save( const char* _pFileName )
 			Map( MipLevelIndex, SliceIndex );
 
 			if ( SliceIndex == 0 )
-			{	// Allocate only once
-				POM.m_ppContent[MipLevelIndex+m_MipLevelsCount*SliceIndex] = new void*[m_LockedResource.DepthPitch];
-
+			{	// Save mip infos only once
 				POM.m_pMipsDescriptors[MipLevelIndex].RowPitch = m_LockedResource.RowPitch;
 				POM.m_pMipsDescriptors[MipLevelIndex].DepthPitch = m_LockedResource.DepthPitch;
 			}
 
+			POM.m_ppContent[MipLevelIndex+m_MipLevelsCount*SliceIndex] = new void*[m_LockedResource.DepthPitch];
 			memcpy_s( POM.m_ppContent[MipLevelIndex+m_MipLevelsCount*SliceIndex], m_LockedResource.DepthPitch, m_LockedResource.pData, m_LockedResource.DepthPitch );
+
 			UnMap( MipLevelIndex, SliceIndex );
 		}
 	}
 
 	POM.Save( _pFileName );
-
-// 	FILE*	pFile;
-// 	fopen_s( &pFile, _pFileName, "wb" );
-// 	ASSERT( pFile != NULL, "Can't create file!" );
-// 
-// 	// Write the type and format
-// 	U8		Type = m_bIsCubeMap ? 0x01 : 0x00;					// 0 is for 2D, 1 for cube map
-// 	U8		Format = U32(m_Format.DirectXFormat()) & 0xFF;
-// 	fwrite( &Type, sizeof(U8), 1, pFile );
-// 	fwrite( &Format, sizeof(U8), 1, pFile );
-// 
-// 	// Write the dimensions
-// 	fwrite( &m_Width, sizeof(int), 1, pFile );
-// 	fwrite( &m_Height, sizeof(int), 1, pFile );
-// 	fwrite( &m_ArraySize, sizeof(int), 1, pFile );
-// 	fwrite( &m_MipLevelsCount, sizeof(int), 1, pFile );
-// 
-// 	// Write each slice
-// 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
-// 	{
-// 		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
-// 		{
-// 			Map( MipLevelIndex, SliceIndex );
-// 			if ( SliceIndex == 0 )
-// 			{	// Only save once!
-// 				fwrite( &m_LockedResource.RowPitch, sizeof(int), 1, pFile );
-// 				fwrite( &m_LockedResource.DepthPitch, sizeof(int), 1, pFile );
-// 			}
-// 			fwrite( m_LockedResource.pData, m_LockedResource.DepthPitch, 1, pFile );
-// 			UnMap( MipLevelIndex, SliceIndex );
-// 		}
-// 	}
-// 
-// 	// We're done!
-// 	fclose( pFile );
 }
 
 void	Texture2D::Load( const char* _pFileName )

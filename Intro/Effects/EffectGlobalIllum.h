@@ -1,3 +1,5 @@
+// This was a daring attempt at performing GI using "reflection probes"
+
 #pragma once
 
 template<typename> class CB;

@@ -99,7 +99,7 @@ namespace WMath
 		public void					SetRow1( Vector4D _Row )						{ m[1, 0] = _Row.x; m[1, 1] = _Row.y; m[1, 2] = _Row.z; m[1, 3] = _Row.w; }
 		public void					SetRow2( Vector4D _Row )						{ m[2, 0] = _Row.x; m[2, 1] = _Row.y; m[2, 2] = _Row.z; m[2, 3] = _Row.w; }
 		public void					SetTrans( Point4D _Trans )						{ m[3, 0] = _Trans.x; m[3, 1] = _Trans.y; m[3, 2] = _Trans.z; m[3, 3] = _Trans.w; }
-		public void					SetRow( int _dwRowIndex, Vector _Row )			{ m[_dwRowIndex, 0] = _Row.x; m[_dwRowIndex, 1] = _Row.y; m[_dwRowIndex, 2] = _Row.z; }
+		public void					SetRow( int _dwRowIndex, Vector _Row, float _W ){ m[_dwRowIndex, 0] = _Row.x; m[_dwRowIndex, 1] = _Row.y; m[_dwRowIndex, 2] = _Row.z; m[_dwRowIndex,3] = _W; }
 		public void					SetRow0( Vector _Row )							{ m[0, 0] = _Row.x; m[0, 1] = _Row.y; m[0, 2] = _Row.z; }
 		public void					SetRow1( Vector _Row )							{ m[1, 0] = _Row.x; m[1, 1] = _Row.y; m[1, 2] = _Row.z; }
 		public void					SetRow2( Vector _Row )							{ m[2, 0] = _Row.x; m[2, 1] = _Row.y; m[2, 2] = _Row.z; }
@@ -283,7 +283,7 @@ namespace WMath
 			}
 
 				// The complementary axis is the safest to be recomputed
-			SetRow( MinDivergenceRowIndex, ((Vector) GetRow( ms_RotIndex[MinDivergenceRowIndex+1] ) ^ (Vector) GetRow( ms_RotIndex[MinDivergenceRowIndex+2] )).Normalize() );
+			SetRow( MinDivergenceRowIndex, ((Vector) GetRow( ms_RotIndex[MinDivergenceRowIndex+1] ) ^ (Vector) GetRow( ms_RotIndex[MinDivergenceRowIndex+2] )).Normalize(), 0.0f );
 
 			// Find the minimal divergence in the remaining 2 axes
 			float	fDivergence0 = System.Math.Abs( GetRow( ms_RotIndex[MinDivergenceRowIndex+0] ) | GetRow( ms_RotIndex[MinDivergenceRowIndex+1] ) );
@@ -296,14 +296,14 @@ namespace WMath
 				MinSecondDivergenceRowIndex = ms_RotIndex[MinDivergenceRowIndex + 1];
 
 				// The complementary axis is the safest to be recomputed
-			SetRow( MinSecondDivergenceRowIndex, ((Vector) GetRow( ms_RotIndex[MinSecondDivergenceRowIndex+1] ) ^ (Vector) GetRow( ms_RotIndex[MinSecondDivergenceRowIndex+2] )).Normalize() );
+			SetRow( MinSecondDivergenceRowIndex, ((Vector) GetRow( ms_RotIndex[MinSecondDivergenceRowIndex+1] ) ^ (Vector) GetRow( ms_RotIndex[MinSecondDivergenceRowIndex+2] )).Normalize(), 0.0f );
 
 			// Compute the final, remaining axis
 			int	MinDivergenceIndex = System.Math.Min( MinDivergenceRowIndex, MinSecondDivergenceRowIndex );
 			int	MaxDivergenceIndex = System.Math.Max( MinDivergenceRowIndex, MinSecondDivergenceRowIndex );
 			int	RemainingAxisIndex = MinDivergenceIndex == 1 ? 0 : (MaxDivergenceIndex == 1 ? 2 : 1);
 
-			SetRow( RemainingAxisIndex, (Vector) GetRow( MinDivergenceRowIndex ) ^ (Vector) GetRow( MinSecondDivergenceRowIndex ) );
+			SetRow( RemainingAxisIndex, (Vector) GetRow( MinDivergenceRowIndex ) ^ (Vector) GetRow( MinSecondDivergenceRowIndex ), 0.0f );
 		}
 
 		/// <summary>

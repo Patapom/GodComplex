@@ -159,3 +159,7 @@
 
 /Tools/BRDFSlices.pdb
 /Tools/Cirrus.Utility.pdb
+/Tools/ProbeSHEncoder/bin
+/Tools/ProbeSHEncoder/obj
+/Tools/NormalDistributionLobeViewer/obj
+/Tools/NormalDistributionLobeViewer/bin

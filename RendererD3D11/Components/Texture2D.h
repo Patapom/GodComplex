@@ -9,10 +9,10 @@ class Texture2D : public Component
 {
 protected:	// CONSTANTS
 
-	static const int	MAX_TEXTURE_SIZE = 8192;	// Should be enough !
+	static const int	MAX_TEXTURE_SIZE = 8192;	// Should be enough!
 	static const int	MAX_TEXTURE_POT = 13;
 
-	static const int	HASHTABLE_SIZE = 1 << 13;	// 8Kb per hashtable, 2 hashtable per texture => 16Kb overhead
+	static const int	HASHTABLE_SIZE = 1 << 13;	// 8Kb per hashtable, 3 hashtable per texture => 24Kb overhead
 
 private:	// FIELDS
 
