@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define ABS_NORMAL
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -35,6 +37,34 @@ namespace ProbeSHEncoder
 
 				m_Viz = value;
 				UpdateBitmap();
+			}
+		}
+		private int				m_IsolatedSetIndex = 0;
+		public int				IsolatedSetIndex
+		{
+			get { return m_IsolatedSetIndex; }
+			set
+			{
+				if ( value == m_IsolatedSetIndex )
+					return;
+
+				m_IsolatedSetIndex = value;
+				if ( m_Viz > VIZ_TYPE.NORMAL )
+					UpdateBitmap();
+			}
+		}
+		private bool			m_IsolateSet = false;
+		public bool				IsolateSet
+		{
+			get { return m_IsolateSet; }
+			set
+			{
+				if ( value == m_IsolateSet )
+					return;
+
+				m_IsolateSet = value;
+				if ( m_Viz > VIZ_TYPE.NORMAL )
+					UpdateBitmap();
 			}
 		}
 
@@ -94,13 +124,13 @@ namespace ProbeSHEncoder
 				CubeMapSampler	S = CubeMapSamplerAlbedo;
 				switch ( m_Viz )
 				{
-					case VIZ_TYPE.ALBEDO:		S = CubeMapSamplerAlbedo; break;
-					case VIZ_TYPE.DISTANCE:		S = CubeMapSamplerDistance; break;
-					case VIZ_TYPE.NORMAL:		S = CubeMapSamplerNormal; break;
-					case VIZ_TYPE.SET_INDEX:	S = CubeMapSamplerSetIndex; break;
-					case VIZ_TYPE.SET_ALBEDO:	S = CubeMapSamplerSetAlbedo; break;
-					case VIZ_TYPE.SET_DISTANCE:	S = CubeMapSamplerSetDistance; break;
-					case VIZ_TYPE.SET_NORMAL:	S = CubeMapSamplerSetNormal; break;
+					case VIZ_TYPE.ALBEDO:			S = CubeMapSamplerAlbedo; break;
+					case VIZ_TYPE.DISTANCE:			S = CubeMapSamplerDistance; break;
+					case VIZ_TYPE.NORMAL:			S = CubeMapSamplerNormal; break;
+					case VIZ_TYPE.SET_INDEX:		S = CubeMapSamplerSetIndex; break;
+					case VIZ_TYPE.SET_ALBEDO:		S = CubeMapSamplerSetAlbedo; break;
+					case VIZ_TYPE.SET_DISTANCE:		S = CubeMapSamplerSetDistance; break;
+					case VIZ_TYPE.SET_NORMAL:		S = CubeMapSamplerSetNormal; break;
 				}
 
 				WMath.Vector	View;
@@ -148,16 +178,22 @@ namespace ProbeSHEncoder
 
 		private void	CubeMapSamplerNormal( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
+#if ABS_NORMAL
+			_R = (byte) Math.Min( 255, 255 * Math.Abs( _Pixel.Normal.x) );
+			_G = (byte) Math.Min( 255, 255 * Math.Abs( _Pixel.Normal.y) );
+			_B = (byte) Math.Min( 255, 255 * Math.Abs( _Pixel.Normal.z) );
+#else
 			_R = (byte) Math.Min( 255, 127 * (1.0f + _Pixel.Normal.x) );
 			_G = (byte) Math.Min( 255, 127 * (1.0f + _Pixel.Normal.y) );
 			_B = (byte) Math.Min( 255, 127 * (1.0f + _Pixel.Normal.z) );
+#endif
 		}
 
 		private void	CubeMapSamplerSetIndex( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			EncoderForm.Set	S = _Pixel.ParentSet;
 			byte	C = 0;
-			if ( S != null )
+			if ( S != null && (!m_IsolateSet || S.SetIndex == m_IsolatedSetIndex) )
 			{
 				C = (byte) (255 * (1 + S.SetIndex) / m_Owner.m_Sets.Length);
 			}
@@ -167,7 +203,7 @@ namespace ProbeSHEncoder
 		private void	CubeMapSamplerSetAlbedo( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			EncoderForm.Set	S = _Pixel.ParentSet;
-			if ( S == null )
+			if ( S == null || (m_IsolateSet && S.SetIndex != m_IsolatedSetIndex) )
 			{
 				_R = _G = _B = 0;
 				return;
@@ -181,7 +217,7 @@ namespace ProbeSHEncoder
 		private void	CubeMapSamplerSetDistance( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			EncoderForm.Set	S = _Pixel.ParentSet;
-			if ( S == null )
+			if ( S == null || (m_IsolateSet && S.SetIndex != m_IsolatedSetIndex) )
 			{
 				_R = 63;
 				_G = 0;
@@ -198,15 +234,21 @@ namespace ProbeSHEncoder
 		private void	CubeMapSamplerSetNormal( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			EncoderForm.Set	S = _Pixel.ParentSet;
-			if ( S == null )
+			if ( S == null || (m_IsolateSet && S.SetIndex != m_IsolatedSetIndex) )
 			{
 				_R = _G = _B = 0;
 				return;
 			}
 
+#if ABS_NORMAL
+			_R = (byte) Math.Min( 255, 255 * Math.Abs( S.Normal.x) );
+			_G = (byte) Math.Min( 255, 255 * Math.Abs( S.Normal.y) );
+			_B = (byte) Math.Min( 255, 255 * Math.Abs( S.Normal.z) );
+#else
 			_R = (byte) Math.Min( 255, 127 * (1.0f + S.Normal.x) );
 			_G = (byte) Math.Min( 255, 127 * (1.0f + S.Normal.y) );
 			_B = (byte) Math.Min( 255, 127 * (1.0f + S.Normal.z) );
+#endif
 		}
 
 		#endregion

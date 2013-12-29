@@ -31,7 +31,7 @@ namespace ProbeSHEncoder
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			WMath.Vector vector4 = new WMath.Vector();
+			WMath.Vector vector1 = new WMath.Vector();
 			this.menuStrip = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -51,9 +51,11 @@ namespace ProbeSHEncoder
 			this.label1 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlNormal = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
-			this.outputPanel1 = new ProbeSHEncoder.OutputPanel( this.components );
 			this.floatTrackbarControlPosition = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
+			this.integerTrackbarControlSetIsolation = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.outputPanel1 = new ProbeSHEncoder.OutputPanel( this.components );
+			this.checkBoxSetIsolation = new System.Windows.Forms.CheckBox();
 			this.menuStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -114,7 +116,7 @@ namespace ProbeSHEncoder
 			// 
 			this.radioButtonAlbedo.AutoSize = true;
 			this.radioButtonAlbedo.Checked = true;
-			this.radioButtonAlbedo.Location = new System.Drawing.Point( 722, 174 );
+			this.radioButtonAlbedo.Location = new System.Drawing.Point( 712, 218 );
 			this.radioButtonAlbedo.Name = "radioButtonAlbedo";
 			this.radioButtonAlbedo.Size = new System.Drawing.Size( 58, 17 );
 			this.radioButtonAlbedo.TabIndex = 4;
@@ -126,7 +128,7 @@ namespace ProbeSHEncoder
 			// radioButtonDistance
 			// 
 			this.radioButtonDistance.AutoSize = true;
-			this.radioButtonDistance.Location = new System.Drawing.Point( 722, 197 );
+			this.radioButtonDistance.Location = new System.Drawing.Point( 712, 241 );
 			this.radioButtonDistance.Name = "radioButtonDistance";
 			this.radioButtonDistance.Size = new System.Drawing.Size( 67, 17 );
 			this.radioButtonDistance.TabIndex = 4;
@@ -137,7 +139,7 @@ namespace ProbeSHEncoder
 			// radioButtonSetIndex
 			// 
 			this.radioButtonSetIndex.AutoSize = true;
-			this.radioButtonSetIndex.Location = new System.Drawing.Point( 722, 243 );
+			this.radioButtonSetIndex.Location = new System.Drawing.Point( 712, 287 );
 			this.radioButtonSetIndex.Name = "radioButtonSetIndex";
 			this.radioButtonSetIndex.Size = new System.Drawing.Size( 70, 17 );
 			this.radioButtonSetIndex.TabIndex = 4;
@@ -148,7 +150,7 @@ namespace ProbeSHEncoder
 			// radioButtonSetColor
 			// 
 			this.radioButtonSetColor.AutoSize = true;
-			this.radioButtonSetColor.Location = new System.Drawing.Point( 722, 266 );
+			this.radioButtonSetColor.Location = new System.Drawing.Point( 712, 310 );
 			this.radioButtonSetColor.Name = "radioButtonSetColor";
 			this.radioButtonSetColor.Size = new System.Drawing.Size( 77, 17 );
 			this.radioButtonSetColor.TabIndex = 4;
@@ -159,7 +161,7 @@ namespace ProbeSHEncoder
 			// radioButtonNormal
 			// 
 			this.radioButtonNormal.AutoSize = true;
-			this.radioButtonNormal.Location = new System.Drawing.Point( 722, 220 );
+			this.radioButtonNormal.Location = new System.Drawing.Point( 712, 264 );
 			this.radioButtonNormal.Name = "radioButtonNormal";
 			this.radioButtonNormal.Size = new System.Drawing.Size( 58, 17 );
 			this.radioButtonNormal.TabIndex = 4;
@@ -170,7 +172,7 @@ namespace ProbeSHEncoder
 			// radioButtonSetDistance
 			// 
 			this.radioButtonSetDistance.AutoSize = true;
-			this.radioButtonSetDistance.Location = new System.Drawing.Point( 722, 289 );
+			this.radioButtonSetDistance.Location = new System.Drawing.Point( 712, 333 );
 			this.radioButtonSetDistance.Name = "radioButtonSetDistance";
 			this.radioButtonSetDistance.Size = new System.Drawing.Size( 86, 17 );
 			this.radioButtonSetDistance.TabIndex = 4;
@@ -181,7 +183,7 @@ namespace ProbeSHEncoder
 			// radioButtonSetNormal
 			// 
 			this.radioButtonSetNormal.AutoSize = true;
-			this.radioButtonSetNormal.Location = new System.Drawing.Point( 722, 312 );
+			this.radioButtonSetNormal.Location = new System.Drawing.Point( 712, 356 );
 			this.radioButtonSetNormal.Name = "radioButtonSetNormal";
 			this.radioButtonSetNormal.Size = new System.Drawing.Size( 77, 17 );
 			this.radioButtonSetNormal.TabIndex = 4;
@@ -195,12 +197,13 @@ namespace ProbeSHEncoder
 			this.textBoxResults.Multiline = true;
 			this.textBoxResults.Name = "textBoxResults";
 			this.textBoxResults.ReadOnly = true;
-			this.textBoxResults.Size = new System.Drawing.Size( 188, 387 );
+			this.textBoxResults.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+			this.textBoxResults.Size = new System.Drawing.Size( 188, 332 );
 			this.textBoxResults.TabIndex = 5;
 			// 
 			// floatTrackbarControlAlbedo
 			// 
-			this.floatTrackbarControlAlbedo.Location = new System.Drawing.Point( 712, 524 );
+			this.floatTrackbarControlAlbedo.Location = new System.Drawing.Point( 711, 554 );
 			this.floatTrackbarControlAlbedo.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlAlbedo.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlAlbedo.Name = "floatTrackbarControlAlbedo";
@@ -214,7 +217,7 @@ namespace ProbeSHEncoder
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point( 709, 508 );
+			this.label1.Location = new System.Drawing.Point( 708, 538 );
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size( 150, 13 );
 			this.label1.TabIndex = 7;
@@ -222,7 +225,7 @@ namespace ProbeSHEncoder
 			// 
 			// floatTrackbarControlNormal
 			// 
-			this.floatTrackbarControlNormal.Location = new System.Drawing.Point( 712, 569 );
+			this.floatTrackbarControlNormal.Location = new System.Drawing.Point( 711, 515 );
 			this.floatTrackbarControlNormal.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlNormal.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlNormal.Name = "floatTrackbarControlNormal";
@@ -236,23 +239,11 @@ namespace ProbeSHEncoder
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point( 709, 553 );
+			this.label2.Location = new System.Drawing.Point( 708, 499 );
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size( 150, 13 );
 			this.label2.TabIndex = 7;
 			this.label2.Text = "Normal Separation Importance";
-			// 
-			// outputPanel1
-			// 
-			vector4.X = 0F;
-			vector4.Y = 0F;
-			vector4.Z = 1F;
-			this.outputPanel1.At = vector4;
-			this.outputPanel1.Location = new System.Drawing.Point( 12, 27 );
-			this.outputPanel1.Name = "outputPanel1";
-			this.outputPanel1.Size = new System.Drawing.Size( 677, 546 );
-			this.outputPanel1.TabIndex = 3;
-			this.outputPanel1.Viz = ProbeSHEncoder.OutputPanel.VIZ_TYPE.ALBEDO;
 			// 
 			// floatTrackbarControlPosition
 			// 
@@ -276,11 +267,51 @@ namespace ProbeSHEncoder
 			this.label3.TabIndex = 7;
 			this.label3.Text = "Spatial Separation Importance";
 			// 
+			// integerTrackbarControlSetIsolation
+			// 
+			this.integerTrackbarControlSetIsolation.Location = new System.Drawing.Point( 733, 402 );
+			this.integerTrackbarControlSetIsolation.MaximumSize = new System.Drawing.Size( 10000, 20 );
+			this.integerTrackbarControlSetIsolation.MinimumSize = new System.Drawing.Size( 70, 20 );
+			this.integerTrackbarControlSetIsolation.Name = "integerTrackbarControlSetIsolation";
+			this.integerTrackbarControlSetIsolation.RangeMax = 100;
+			this.integerTrackbarControlSetIsolation.RangeMin = 0;
+			this.integerTrackbarControlSetIsolation.Size = new System.Drawing.Size( 125, 20 );
+			this.integerTrackbarControlSetIsolation.TabIndex = 8;
+			this.integerTrackbarControlSetIsolation.Value = 0;
+			this.integerTrackbarControlSetIsolation.VisibleRangeMax = 10;
+			this.integerTrackbarControlSetIsolation.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler( this.integerTrackbarControlSetIsolation_ValueChanged );
+			// 
+			// outputPanel1
+			// 
+			vector1.X = 0F;
+			vector1.Y = 0F;
+			vector1.Z = 1F;
+			this.outputPanel1.At = vector1;
+			this.outputPanel1.IsolatedSetIndex = 0;
+			this.outputPanel1.Location = new System.Drawing.Point( 12, 27 );
+			this.outputPanel1.Name = "outputPanel1";
+			this.outputPanel1.Size = new System.Drawing.Size( 677, 546 );
+			this.outputPanel1.TabIndex = 3;
+			this.outputPanel1.Viz = ProbeSHEncoder.OutputPanel.VIZ_TYPE.ALBEDO;
+			// 
+			// checkBoxSetIsolation
+			// 
+			this.checkBoxSetIsolation.AutoSize = true;
+			this.checkBoxSetIsolation.Location = new System.Drawing.Point( 712, 380 );
+			this.checkBoxSetIsolation.Name = "checkBoxSetIsolation";
+			this.checkBoxSetIsolation.Size = new System.Drawing.Size( 76, 17 );
+			this.checkBoxSetIsolation.TabIndex = 9;
+			this.checkBoxSetIsolation.Text = "Isolate Set";
+			this.checkBoxSetIsolation.UseVisualStyleBackColor = true;
+			this.checkBoxSetIsolation.CheckedChanged += new System.EventHandler( this.checkBoxSetIsolation_CheckedChanged );
+			// 
 			// EncoderForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF( 6F, 13F );
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size( 1027, 610 );
+			this.Controls.Add( this.checkBoxSetIsolation );
+			this.Controls.Add( this.integerTrackbarControlSetIsolation );
 			this.Controls.Add( this.label2 );
 			this.Controls.Add( this.label3 );
 			this.Controls.Add( this.label1 );
@@ -333,6 +364,8 @@ namespace ProbeSHEncoder
 		private System.Windows.Forms.Label label2;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPosition;
 		private System.Windows.Forms.Label label3;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlSetIsolation;
+		private System.Windows.Forms.CheckBox checkBoxSetIsolation;
 	}
 }
 

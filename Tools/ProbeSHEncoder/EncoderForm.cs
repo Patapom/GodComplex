@@ -20,6 +20,7 @@ namespace ProbeSHEncoder
 		/// <summary>
 		/// This represents all the informations about the pixels viewed by a probe (i.e. cube map)
 		/// </summary>
+		[System.Diagnostics.DebuggerDisplay( "H={AlbedoHSL.x} S={AlbedoHSL.y} L={Albedo.z} P=({Position.x}, {Position.y}, {Position.z})" )]
 		public class	Pixel
 		{
 			public WMath.Point	Position;	// World position
@@ -48,7 +49,7 @@ namespace ProbeSHEncoder
 				float	H = 0;
 				if ( Delta > 0 )
 				{
-					S /=  1.0f - Math.Abs( 2.0f * L - 1.0f );
+					S /= L < 0.5f ? 2.0f * L : 2.0f * (1.0f - L);
 					if ( Max == _Albedo.x )
 						H = (_Albedo.y - _Albedo.z) / Delta;
 					else if ( Max == _Albedo.y )
@@ -60,6 +61,10 @@ namespace ProbeSHEncoder
 
 					H = (H + 6) % 6.0f;
 				}
+
+// DEBUG => Should stop on saturated colors like the red/blue side walls
+// if ( S > 0.5f )
+// 	S += 1e-6f;
 
 				AlbedoHSL = new WMath.Vector( H, S, L );
 			}
@@ -77,7 +82,9 @@ namespace ProbeSHEncoder
 				float	NormalDistance = 0.5f * (1.0f - (_Other.Normal | Normal));
 						NormalDistance *= _NormalDistanceWeight;	// Used to give the normal as much weight as general euclidian distances...
 
-				float	ColorDistance = Math.Min( Math.Abs(_Other.AlbedoHSL.x - AlbedoHSL.x) / 6.0f, Math.Abs(AlbedoHSL.x - _Other.AlbedoHSL.x) / 6.0f );
+				float	ColorDistance0 = Math.Abs( AlbedoHSL.x - _Other.AlbedoHSL.x );
+				float	ColorDistance1 = 6.0f - ColorDistance0;
+				float	ColorDistance = Math.Min( ColorDistance0, ColorDistance1 ) / 6.0f;
 						ColorDistance *= _ColorDistanceWeight;		// Used to give the color as much weight as general euclidian distances...
 
 				return EuclidianDistance + NormalDistance + ColorDistance;
@@ -295,7 +302,7 @@ namespace ProbeSHEncoder
 			{
 				// We first choose a "random" direction (actually, we're splitting the sphere into 8 equal parts) (an octahedron)
 				float	Phi = 2.0f * (float) Math.PI * (SetIndex & 3) / 4.0f;
-				float	Theta = (float) Math.PI * (0.5f + (SetIndex >> 3) ) / 2.0f;
+				float	Theta = (float) Math.PI * (0.5f + (SetIndex >> 2) ) / 2.0f;
 
 				WMath.Vector	TargetDirection = new WMath.Vector( 
 						(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
@@ -311,19 +318,23 @@ namespace ProbeSHEncoder
 				foreach ( Pixel P in m_ScenePixels )
 				{
 					float	WeightDirection = Math.Max( 0.0f, TargetDirection | P.View );
-					float	WeightColor = 0.0f + 1.0f * P.AlbedoHSL.y;	// Favor the most saturated colors
+					float	WeightColor = 0.1f + 0.9f * P.AlbedoHSL.y;	// Favor the most saturated colors
 					float	Weight = WeightDirection * WeightColor;
+
+// DEBUG => Should stop on saturated colors, see how they shift the weight
+if ( WeightColor > 0.5f )
+	WeightColor += 1e-8f;
 
 					CentroidPosition += Weight * (WMath.Vector) P.Position;
 					CentroidNormal += Weight * P.Normal;
-					CentroidAlbedo += WeightColor * P.Albedo;
+					CentroidAlbedo += Weight * P.Albedo;
 					SumWeights += Weight;
 					SumWeightColors += WeightColor;
 				}
 
 				CentroidPosition /= SumWeights;
 				CentroidNormal /= SumWeights;
-				CentroidAlbedo /= SumWeightColors;
+				CentroidAlbedo /= SumWeights;
 				float	EnsureDot = CentroidPosition.Normalized | TargetDirection;	// Should still point close to the original target direction...
 
 				Set	S = new Set() { Position = (WMath.Point) CentroidPosition, Normal = CentroidNormal };
@@ -334,8 +345,8 @@ namespace ProbeSHEncoder
 			// Iterate over the scene pixels to determine which set they prefer
 			float	PreviousChangesRatio = 1.0f;
 			float	SpatialDistanceWeight = floatTrackbarControlPosition.Value;
-			float	NormalDistanceWeight = floatTrackbarControlNormal.Value;// * (float) m_MeanHarmonicDistance;
-			float	ColorDistanceWeight = floatTrackbarControlAlbedo.Value;// * (float) m_MeanHarmonicDistance;
+			float	NormalDistanceWeight = floatTrackbarControlNormal.Value * (float) m_MeanHarmonicDistance;
+			float	ColorDistanceWeight = floatTrackbarControlAlbedo.Value * (float) m_MeanHarmonicDistance;
 			while ( true )
 			{
 				// Iterate over all pixels and see where their loyalty lies, depending on their "distance" to each set
@@ -415,7 +426,9 @@ namespace ProbeSHEncoder
 									+ "Albedo = (" + S.Albedo.x.ToString( "G4" ) + ", " + S.Albedo.y.ToString( "G4" ) + ", " + S.Albedo.z.ToString( "G4" ) + ")\r\n\r\n";
 			}
 
-			radioButtonSetIndex.Checked = true;
+			integerTrackbarControlSetIsolation.RangeMax = integerTrackbarControlSetIsolation.VisibleRangeMax = m_Sets.Length-1;
+
+//			radioButtonSetIndex.Checked = true;
 			outputPanel1.UpdateBitmap();
 		}
 
@@ -459,6 +472,16 @@ namespace ProbeSHEncoder
 		{
 			if ( (sender as RadioButton).Checked )
 				outputPanel1.Viz = OutputPanel.VIZ_TYPE.SET_DISTANCE;
+		}
+
+		private void integerTrackbarControlSetIsolation_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			outputPanel1.IsolatedSetIndex = _Sender.Value;
+		}
+
+		private void checkBoxSetIsolation_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanel1.IsolateSet = checkBoxSetIsolation.Checked;
 		}
 	}
 }
