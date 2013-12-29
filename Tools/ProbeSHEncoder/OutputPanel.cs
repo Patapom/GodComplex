@@ -195,7 +195,7 @@ namespace ProbeSHEncoder
 			byte	C = 0;
 			if ( S != null && (!m_IsolateSet || S.SetIndex == m_IsolatedSetIndex) )
 			{
-				C = (byte) (255 * (1 + S.SetIndex) / m_Owner.m_Sets.Length);
+				C = m_IsolateSet ? (byte) 255 : (byte) (255 * (1 + S.SetIndex) / m_Owner.m_Sets.Length);
 			}
 			_R = _G = _B = C;
 		}
@@ -225,9 +225,9 @@ namespace ProbeSHEncoder
 				return;
 			}
 
-			float	Distance2SetCenter = (_Pixel.Position - S.Position).Length();
+			float	Distance2SetCenter = 1.0f - 0.2f * (_Pixel.Position - S.Position).Length();
 
-			byte	C = (byte) Math.Min( 255, 255 * 0.1f * Distance2SetCenter );
+			byte	C = (byte) Math.Min( 255, 255 * Distance2SetCenter );
 			_R = _G = _B = C;
 		}
 

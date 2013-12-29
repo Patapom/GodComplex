@@ -108,6 +108,7 @@ namespace ProbeSHEncoder
 		public WMath.Matrix4x4[]	m_Side2World = new WMath.Matrix4x4[6];
 
 		public Pixel[][,]			m_CubeMap = new Pixel[6][,];
+		public double				m_MeanDistance = 0.0;
 		public double				m_MeanHarmonicDistance = 0.0;
 
 		public Set[]				m_Sets = new Set[0];
@@ -128,6 +129,8 @@ namespace ProbeSHEncoder
 
 			PrepareCubeMapFaceTransforms();
 			LoadCubeMap();
+
+			outputPanel1.At = -WMath.Vector.UnitZ;
 		}
 
 		private void	PrepareCubeMapFaceTransforms()
@@ -212,6 +215,7 @@ namespace ProbeSHEncoder
 							}
 
 				// Fill up position & normal
+				m_MeanDistance = 0.0;
 				m_MeanHarmonicDistance = 0.0;
 				using ( MemoryStream S = new MemoryStream( POM1.m_Content[CubeFaceIndex] ) )
 					using ( BinaryReader R = new BinaryReader( S ) )
@@ -249,11 +253,13 @@ namespace ProbeSHEncoder
 								if ( !m_CubeMap[CubeFaceIndex][X,Y].Infinity )
 								{	// Account for a new scene pixel (i.e. not infinity)
 									m_ScenePixels.Add( Pix );
+									m_MeanDistance += Distance;
 									m_MeanHarmonicDistance += 1.0 / Distance;
 								}
 							}
 			}
 
+			m_MeanDistance /= (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6);
 			m_MeanHarmonicDistance = (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6) / m_MeanHarmonicDistance;
 
 			// Redraw cube map...
@@ -293,21 +299,39 @@ namespace ProbeSHEncoder
 
 		private void buttonCompute_Click( object sender, EventArgs e )
 		{
-			const int	K = 8;
+//			const int	K = 32;
+			int	K = integerTrackbarControlK.Value;
+
 			const float	CHANGES_RATIO_THRESHOLD = 0.01f;	// We can exit the loop if less than 1% of the scene pixels changed of set during the last 2 loop iterations
+
+			// Build a sequence of quasi-random vectors on a sphere using Hammersley distribution
+			WMath.Hammersley	QRNG = new WMath.Hammersley();
+			double[,]			HammersleySequence = QRNG.BuildSequence( K, 2 );
+			WMath.Vector[]		InitialSetDirections = QRNG.MapSequenceToSphere( HammersleySequence, false );
+
+			// Determine a cosine power to focus on points in the initial spherical zone
+//			float	CosinePower = K - 1;	// A single point covers the entire sphere, we're assuming the lobe grows linearly with k...
+
+			// cos(a)^n ~= exp( -n.a²/2 ) <= Check Toksvig
+			// We expect exp( -n.a²/2 ) = epsilon for an angle a = 2/K (4PI/k sr / 2PI to account for full lobe)
+			// We get n = -2.ln(epsilon)/(2/K)² = -K.ln(epsilon)/2
+			const float	epsilon = 0.01f;
+			float	CosinePower = -0.5f * K * (float) Math.Log( epsilon );
 
 			// Determine K centroids by splitting the sphere
 			List<Set>	Sets = new List<Set>();
 			for ( int SetIndex=0; SetIndex < K; SetIndex++ )
 			{
-				// We first choose a "random" direction (actually, we're splitting the sphere into 8 equal parts) (an octahedron)
-				float	Phi = 2.0f * (float) Math.PI * (SetIndex & 3) / 4.0f;
-				float	Theta = (float) Math.PI * (0.5f + (SetIndex >> 2) ) / 2.0f;
+// 				// We first choose a "random" direction (actually, we're splitting the sphere into 8 equal parts) (an octahedron)
+// 				float	Phi = 2.0f * (float) Math.PI * (SetIndex & 3) / 4.0f;
+// 				float	Theta = (float) Math.PI * (0.5f + (SetIndex >> 2) ) / 2.0f;
+// 
+// 				WMath.Vector	TargetDirection = new WMath.Vector( 
+// 						(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
+// 						(float) Math.Cos( Theta ),
+// 						(float) (Math.Sin( Phi ) * Math.Sin( Theta )) );
 
-				WMath.Vector	TargetDirection = new WMath.Vector( 
-						(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
-						(float) Math.Cos( Theta ),
-						(float) (Math.Sin( Phi ) * Math.Sin( Theta )) );
+				WMath.Vector	TargetDirection = InitialSetDirections[SetIndex];
 
 				// Now we collect all the points that are the closest to the direction and keep the ones that have the most weight
 				WMath.Vector	CentroidPosition = WMath.Vector.Zero;
@@ -318,6 +342,9 @@ namespace ProbeSHEncoder
 				foreach ( Pixel P in m_ScenePixels )
 				{
 					float	WeightDirection = Math.Max( 0.0f, TargetDirection | P.View );
+
+					WeightDirection = (float) Math.Pow( WeightDirection, CosinePower );
+
 					float	WeightColor = 0.1f + 0.9f * P.AlbedoHSL.y;	// Favor the most saturated colors
 					float	Weight = WeightDirection * WeightColor;
 
@@ -383,14 +410,21 @@ if ( WeightColor > 0.5f )
 				}
 
 				// Update new centroid positions
+				int		RemoveSetCardinalityThreshold = (int) (floatTrackbarControlLambda.Value * m_ScenePixels.Count / Sets.Count);
 				m_Sets = Sets.ToArray();
 				for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
 				{
 					Set	S = m_Sets[SetIndex];
 
-					if ( S.SetCardinality == 0 )
-					{	// This set is empty, meaning it's not useful anymore...
+//					if ( S.SetCardinality == 0 )	// Empty set
+//					if ( S.SetCardinality < RemoveSetCardinalityThreshold )	// Simple cardinality threshold
+
+//					float	CardinalityFactor = Math.Min( 1.0f, 0.25f * (float) m_MeanHarmonicDistance / ((WMath.Vector) S.Position).Length() );
+					float	CardinalityFactor = Math.Min( 1.0f, 1.0f * (float) m_MeanDistance / ((WMath.Vector) S.Position).Length() );
+					if ( (int) (S.SetCardinality * CardinalityFactor) < RemoveSetCardinalityThreshold )	// Cardinality threshold with reduction with distance
+					{	// This set is not valuable enough, meaning we can discard it...
 						Sets.Remove( S );
+						ChangesCount = m_ScenePixels.Count;	// This should force another loop!
 						continue;
 					}
 
@@ -426,7 +460,8 @@ if ( WeightColor > 0.5f )
 									+ "Albedo = (" + S.Albedo.x.ToString( "G4" ) + ", " + S.Albedo.y.ToString( "G4" ) + ", " + S.Albedo.z.ToString( "G4" ) + ")\r\n\r\n";
 			}
 
-			integerTrackbarControlSetIsolation.RangeMax = integerTrackbarControlSetIsolation.VisibleRangeMax = m_Sets.Length-1;
+			integerTrackbarControlSetIsolation.RangeMax = m_Sets.Length-1;
+			integerTrackbarControlSetIsolation.VisibleRangeMax = integerTrackbarControlSetIsolation.RangeMax;
 
 //			radioButtonSetIndex.Checked = true;
 			outputPanel1.UpdateBitmap();

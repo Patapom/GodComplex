@@ -31,7 +31,7 @@ namespace ProbeSHEncoder
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			WMath.Vector vector1 = new WMath.Vector();
+			WMath.Vector vector2 = new WMath.Vector();
 			this.menuStrip = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -54,8 +54,12 @@ namespace ProbeSHEncoder
 			this.floatTrackbarControlPosition = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlSetIsolation = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.outputPanel1 = new ProbeSHEncoder.OutputPanel( this.components );
 			this.checkBoxSetIsolation = new System.Windows.Forms.CheckBox();
+			this.integerTrackbarControlK = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label4 = new System.Windows.Forms.Label();
+			this.outputPanel1 = new ProbeSHEncoder.OutputPanel( this.components );
+			this.floatTrackbarControlLambda = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label5 = new System.Windows.Forms.Label();
 			this.menuStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -104,7 +108,7 @@ namespace ProbeSHEncoder
 			// 
 			// buttonCompute
 			// 
-			this.buttonCompute.Location = new System.Drawing.Point( 712, 57 );
+			this.buttonCompute.Location = new System.Drawing.Point( 711, 83 );
 			this.buttonCompute.Name = "buttonCompute";
 			this.buttonCompute.Size = new System.Drawing.Size( 97, 66 );
 			this.buttonCompute.TabIndex = 2;
@@ -193,12 +197,12 @@ namespace ProbeSHEncoder
 			// 
 			// textBoxResults
 			// 
-			this.textBoxResults.Location = new System.Drawing.Point( 827, 57 );
+			this.textBoxResults.Location = new System.Drawing.Point( 827, 83 );
 			this.textBoxResults.Multiline = true;
 			this.textBoxResults.Name = "textBoxResults";
 			this.textBoxResults.ReadOnly = true;
 			this.textBoxResults.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-			this.textBoxResults.Size = new System.Drawing.Size( 188, 332 );
+			this.textBoxResults.Size = new System.Drawing.Size( 188, 306 );
 			this.textBoxResults.TabIndex = 5;
 			// 
 			// floatTrackbarControlAlbedo
@@ -281,19 +285,6 @@ namespace ProbeSHEncoder
 			this.integerTrackbarControlSetIsolation.VisibleRangeMax = 10;
 			this.integerTrackbarControlSetIsolation.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler( this.integerTrackbarControlSetIsolation_ValueChanged );
 			// 
-			// outputPanel1
-			// 
-			vector1.X = 0F;
-			vector1.Y = 0F;
-			vector1.Z = 1F;
-			this.outputPanel1.At = vector1;
-			this.outputPanel1.IsolatedSetIndex = 0;
-			this.outputPanel1.Location = new System.Drawing.Point( 12, 27 );
-			this.outputPanel1.Name = "outputPanel1";
-			this.outputPanel1.Size = new System.Drawing.Size( 677, 546 );
-			this.outputPanel1.TabIndex = 3;
-			this.outputPanel1.Viz = ProbeSHEncoder.OutputPanel.VIZ_TYPE.ALBEDO;
-			// 
 			// checkBoxSetIsolation
 			// 
 			this.checkBoxSetIsolation.AutoSize = true;
@@ -305,15 +296,78 @@ namespace ProbeSHEncoder
 			this.checkBoxSetIsolation.UseVisualStyleBackColor = true;
 			this.checkBoxSetIsolation.CheckedChanged += new System.EventHandler( this.checkBoxSetIsolation_CheckedChanged );
 			// 
+			// integerTrackbarControlK
+			// 
+			this.integerTrackbarControlK.Location = new System.Drawing.Point( 757, 31 );
+			this.integerTrackbarControlK.MaximumSize = new System.Drawing.Size( 10000, 20 );
+			this.integerTrackbarControlK.MinimumSize = new System.Drawing.Size( 70, 20 );
+			this.integerTrackbarControlK.Name = "integerTrackbarControlK";
+			this.integerTrackbarControlK.RangeMax = 128;
+			this.integerTrackbarControlK.RangeMin = 1;
+			this.integerTrackbarControlK.Size = new System.Drawing.Size( 257, 20 );
+			this.integerTrackbarControlK.TabIndex = 8;
+			this.integerTrackbarControlK.Value = 32;
+			this.integerTrackbarControlK.VisibleRangeMax = 64;
+			this.integerTrackbarControlK.VisibleRangeMin = 1;
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point( 708, 34 );
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size( 14, 13 );
+			this.label4.TabIndex = 7;
+			this.label4.Text = "K";
+			// 
+			// outputPanel1
+			// 
+			vector2.X = 0F;
+			vector2.Y = 0F;
+			vector2.Z = 1F;
+			this.outputPanel1.At = vector2;
+			this.outputPanel1.IsolatedSetIndex = 0;
+			this.outputPanel1.IsolateSet = false;
+			this.outputPanel1.Location = new System.Drawing.Point( 12, 27 );
+			this.outputPanel1.Name = "outputPanel1";
+			this.outputPanel1.Size = new System.Drawing.Size( 677, 546 );
+			this.outputPanel1.TabIndex = 3;
+			this.outputPanel1.Viz = ProbeSHEncoder.OutputPanel.VIZ_TYPE.ALBEDO;
+			// 
+			// floatTrackbarControlLambda
+			// 
+			this.floatTrackbarControlLambda.Location = new System.Drawing.Point( 757, 57 );
+			this.floatTrackbarControlLambda.MaximumSize = new System.Drawing.Size( 10000, 20 );
+			this.floatTrackbarControlLambda.MinimumSize = new System.Drawing.Size( 70, 20 );
+			this.floatTrackbarControlLambda.Name = "floatTrackbarControlLambda";
+			this.floatTrackbarControlLambda.RangeMax = 1F;
+			this.floatTrackbarControlLambda.RangeMin = 0F;
+			this.floatTrackbarControlLambda.Size = new System.Drawing.Size( 258, 20 );
+			this.floatTrackbarControlLambda.TabIndex = 6;
+			this.floatTrackbarControlLambda.Value = 0.5F;
+			this.floatTrackbarControlLambda.VisibleRangeMax = 1F;
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point( 709, 60 );
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size( 45, 13 );
+			this.label5.TabIndex = 7;
+			this.label5.Text = "Lambda";
+			// 
 			// EncoderForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF( 6F, 13F );
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size( 1027, 610 );
 			this.Controls.Add( this.checkBoxSetIsolation );
+			this.Controls.Add( this.integerTrackbarControlK );
 			this.Controls.Add( this.integerTrackbarControlSetIsolation );
 			this.Controls.Add( this.label2 );
+			this.Controls.Add( this.label4 );
+			this.Controls.Add( this.label5 );
 			this.Controls.Add( this.label3 );
+			this.Controls.Add( this.floatTrackbarControlLambda );
 			this.Controls.Add( this.label1 );
 			this.Controls.Add( this.floatTrackbarControlPosition );
 			this.Controls.Add( this.floatTrackbarControlNormal );
@@ -366,6 +420,10 @@ namespace ProbeSHEncoder
 		private System.Windows.Forms.Label label3;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlSetIsolation;
 		private System.Windows.Forms.CheckBox checkBoxSetIsolation;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlK;
+		private System.Windows.Forms.Label label4;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLambda;
+		private System.Windows.Forms.Label label5;
 	}
 }
 
