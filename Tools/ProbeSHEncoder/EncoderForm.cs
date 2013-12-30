@@ -1,4 +1,34 @@
-﻿using System;
+﻿//////////////////////////////////////////////////////////////////////////
+// The purpose of this little application is to analyze the rendering from a cube map probe to perform a grouping
+//	of the pixels based on their position, normal and albedo to create a limited amount of sets that we'll be able
+//	to replace by simple "disc surface elements" that can be lit with dynamic lights.
+// 
+// These pixels belonging to each set will be be considered having the same albedo and will light the probe with
+//	precomputed spherical harmonic coefficients each pondered by the solid angle covered by the pixel in the direction
+//	specific to the pixel.
+// 
+//////////////////////////////////////////////////////////////////////////
+// 
+// I'm testing several methods to create the sets:
+//	(1) k-means clustering (http://en.wikipedia.org/wiki/K-means_clustering), that consists in creating initial sets
+//		using an educated guess and aggregating pixels to each set depending on a metric.
+//		The pixel gets assigned to the set whose metric is the lowest. I'm currently using a
+//		metric mixing spatial distance, hue distance (for albedo similarity) and normal discrepancies measurement.
+//
+//		I believe it could give interesting results with a little effort but I'm lazy and I think it's still a bit
+//		dodgy because it doesn't handle pixels vicinity and tends to fragment sets.
+// 
+//	(2) Filling method, it's an experimental method of mine that consists in browsing the pixels of the cube map and
+//		perform a fill operation by joining adjacent pixels if and only if they're sufficiently close enough in terms
+//		of distance, normal and color.
+//		Each set created this way has its own list of pixels removed from the global list of free pixels, pixels whose
+//		solid angle is too low are discarded.
+//		The algorithm continues until all pixels have been discarded or added to a set, then the algorithm enters a second
+//		phase of optimization where sets are merged together if sufficiently close, or discarded if not significant enough.
+// 
+//////////////////////////////////////////////////////////////////////////
+// 
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,9 +43,15 @@ namespace ProbeSHEncoder
 {
 	public partial class EncoderForm : Form
 	{
+		#region CONSTANTS
+
 		public const int	CUBE_MAP_SIZE = 128;
 		public const float	Z_INFINITY = 1e6f;
 		public const float	Z_INFINITY_TEST = 0.99f * Z_INFINITY;
+
+		#endregion
+
+		#region NESTED TYPES
 
 		/// <summary>
 		/// This represents all the informations about the pixels viewed by a probe (i.e. cube map)
@@ -105,6 +141,10 @@ namespace ProbeSHEncoder
 			public int			SetIndex = -1;	// Warning: Only available once the computation is over and all sets have been resolved!
 		}
 
+		#endregion
+
+		#region FIELDS
+
 		public WMath.Matrix4x4[]	m_Side2World = new WMath.Matrix4x4[6];
 
 		public Pixel[][,]			m_CubeMap = new Pixel[6][,];
@@ -117,6 +157,8 @@ namespace ProbeSHEncoder
 
 		private RegistryKey			m_AppKey;
 		private string				m_ApplicationPath;
+
+		#endregion
 
 		public EncoderForm()
 		{
@@ -297,6 +339,8 @@ namespace ProbeSHEncoder
 
 		#endregion
 
+		#region Computes k-Means Sets
+
 		private void buttonCompute_Click( object sender, EventArgs e )
 		{
 //			const int	K = 32;
@@ -417,11 +461,10 @@ if ( WeightColor > 0.5f )
 					Set	S = m_Sets[SetIndex];
 
 //					if ( S.SetCardinality == 0 )	// Empty set
-//					if ( S.SetCardinality < RemoveSetCardinalityThreshold )	// Simple cardinality threshold
-
+					if ( S.SetCardinality < RemoveSetCardinalityThreshold )	// Simple cardinality threshold
 //					float	CardinalityFactor = Math.Min( 1.0f, 0.25f * (float) m_MeanHarmonicDistance / ((WMath.Vector) S.Position).Length() );
-					float	CardinalityFactor = Math.Min( 1.0f, 1.0f * (float) m_MeanDistance / ((WMath.Vector) S.Position).Length() );
-					if ( (int) (S.SetCardinality * CardinalityFactor) < RemoveSetCardinalityThreshold )	// Cardinality threshold with reduction with distance
+// 					float	CardinalityFactor = Math.Min( 1.0f, 1.0f * (float) m_MeanDistance / ((WMath.Vector) S.Position).Length() );
+// 					if ( (int) (S.SetCardinality * CardinalityFactor) < RemoveSetCardinalityThreshold )	// Cardinality threshold with reduction with distance
 					{	// This set is not valuable enough, meaning we can discard it...
 						Sets.Remove( S );
 						ChangesCount = m_ScenePixels.Count;	// This should force another loop!
@@ -451,7 +494,7 @@ if ( WeightColor > 0.5f )
 				m_Sets[SetIndex].SetIndex = SetIndex;
 
 
-			// Referesh UI
+			// Refresh UI
 			textBoxResults.Text = m_Sets.Length + " sets generated:\r\n\r\n";
 			for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
 			{
@@ -466,6 +509,209 @@ if ( WeightColor > 0.5f )
 //			radioButtonSetIndex.Checked = true;
 			outputPanel1.UpdateBitmap();
 		}
+
+		#endregion
+
+		#region Computes Sets by Filling Method
+
+		private void buttonComputeFilling_Click( object sender, EventArgs e )
+		{
+			// 1] Clear the sets for each pixel
+			foreach ( Pixel P in m_ScenePixels )
+				P.ParentSet = null;
+
+			//////////////////////////////////////////////////////////////////////////
+			// 2] Iterate on the list of free pixels that belong to no set and create iterative sets
+			List<Set>	Sets = new List<Set>();
+			for ( int PixelIndex=0; PixelIndex < m_ScenePixels.Count; PixelIndex++ )
+			{
+				Pixel	P0 = m_ScenePixels[PixelIndex];
+				if ( P0.ParentSet == null )
+				{
+					// Create a new set for this pixel
+					Set	S = new Set() { Position = P0.Position, Normal = P0.Normal, Distance = P0.Distance };
+						S.SetAlbedo( P0.Albedo );
+
+					// Create a wavefront list of pixels that we will use to flood fill adjacent pixels based on a criterion
+
+
+				}
+			}
+		}
+
+		const int	CUBE_MAP_FACE_SIZE = CUBE_MAP_SIZE * CUBE_MAP_SIZE;
+
+		// Contains the new cube face index when stepping outside of a cube face by the left/right/top/bottom
+		int[]	GoLeft = new int[6] {
+			4,	// Step to +Z
+			5,	// Step to -Z
+			1,	// Step to -X
+			1,	// Step to -X
+			1,	// Step to -X
+			0,	// Step to +X
+		};
+		int[]	GoRight = new int[6] {
+			5,	// Step to -Z
+			4,	// Step to +Z
+			0,	// Step to +X
+			0,	// Step to +X
+			0,	// Step to +X
+			1,	// Step to -X
+		};
+		int[]	GoDown = new int[6] {
+			2,	// Step to +Y
+			2,	// Step to +Y
+			4,	// Step to +Z
+			5,	// Step to -Z
+			2,	// Step to +Y
+			2,	// Step to +Y
+		};
+		int[]	GoUp = new int[6] {
+			3,	// Step to -Y
+			3,	// Step to -Y
+			5,	// Step to -Z
+			4,	// Step to +Z
+			3,	// Step to -Y
+			3,	// Step to -Y
+		};
+
+		// Contains the matrices that indicate how the (X,Y) pixel coordinates should be transformed to step from one face to the other
+		// Transforms arrays are simple matrices:
+		//	Tx Xx Xy
+		//	Ty Yx Yy
+		//
+		// Which are used like this:
+		//	X' = Tx * CUBE_MAP_SIZE + Xx * X + Xy * Y
+		//	Y' = Ty * CUBE_MAP_SIZE + Yx * X + Yy * Y
+		//
+		int[][]	GoLeftTransforms = new int[6][] {
+			// Going left from +X sends us to +Z
+			new int[6] {	1,  1,  0,		// X' = C + X	(C is the CUBE_MAP_SIZE)
+							0,  0,  1 },	// Y' = Y
+			// Going left from -X sends us to -Z
+			new int[6] {	1,  1,  0,		// X' = C + X
+							0,  0,  1 },	// Y' = Y
+			// Going left from +Y sends us to -X
+			new int[6] {	1,  0, -1,		// X' = C - Y
+							0, -1,  0 },	// Y' = -X
+			// Going left from -Y sends us to -X
+			new int[6] {	0,  0,  1,		// X' = Y
+							1,  1,  0 },	// Y' = C + X
+			// Going left from +Z sends us to -X
+			new int[6] {	1,  1,  0,		// X' = C + X
+							0,  0,  1 },	// Y' = Y
+			// Going left from -Z sends us to +X
+			new int[6] {	1,  1,  0,		// X' = C + X
+							0,  0,  1 },	// Y' = Y
+		};
+		int[][]	GoRightTransforms = new int[6][] {
+			// Going right from +X sends us to -Z
+			new int[6] {	-1,  1,  0,		// X' = -C + X	(C is the CUBE_MAP_SIZE)
+							0,  0,  1 },	// Y' = Y
+			// Going right from -X sends us to +Z
+			new int[6] {	-1,  1,  0,		// X' = -C + X
+							0,  0,  1 },	// Y' = Y
+			// Going right from +Y sends us to +X
+			new int[6] {	0,  0,  1,		// X' = Y
+							-1, 1,  0 },	// Y' = -C + X
+			// Going right from -Y sends us to +X
+			new int[6] {	1,  0,  -1,		// X' = C - Y
+							1,  1,  0 },	// Y' = C + X
+			// Going right from +Z sends us to +X
+			new int[6] {	-1,  1,  0,		// X' = -C + X
+							0,  0,  1 },	// Y' = Y
+			// Going right from -Z sends us to -X
+			new int[6] {	-1,  1,  0,		// X' = -C + X
+							0,  0,  1 },	// Y' = Y
+		};
+		int[][]	GoDownTransforms = new int[6][] {
+			// Going down from +X sends us to +Y
+			new int[6] {	1,  0,  1,		// X' = C + Y	(C is the CUBE_MAP_SIZE)
+							0,  1,  0 },	// Y' = X
+			// Going down from -X sends us to +Y
+			new int[6] {	0,  0, -1,		// X' = -Y
+							1, -1,  0 },	// Y' = C - X
+			// Going down from +Y sends us to +Z
+			new int[6] {	0,  1,  0,		// X' = X
+							0,  0, -1 },	// Y' = -Y
+			// Going down from -Y sends us to -Z
+			new int[6] {	1, -1,  0,		// X' = C - X
+							1,  0,  1 },	// Y' = C + Y
+			// Going down from +Z sends us to +Y
+			new int[6] {	0,  1,  0,		// X' = X
+							0,  0, -1 },	// Y' = -Y
+			// Going down from -Z sends us to +Y
+			new int[6] {	1, -1,  0,		// X' = C - X
+							1,  0,  1 },	// Y' = C + Y
+		};
+		int[][]	GoUpTransforms = new int[6][] {
+			// Going up from +X sends us to -Y
+			new int[6] {	2,  0, -1,		// X' = 2C - Y	(C is the CUBE_MAP_SIZE)
+							1, -1,  0 },	// Y' = C - X
+			// Going up from -X sends us to -Y
+			new int[6] {	-1,  0,  1,		// X' = -C + Y
+							0,  1,  0 },	// Y' = X
+			// Going up from +Y sends us to -Z
+			new int[6] {	1, -1,  0,		// X' = C - X
+							-1, 0,  1 },	// Y' = -C + Y
+			// Going up from -Y sends us to +Z
+			new int[6] {	0,  1,  0,		// X' = X
+							2,  0, -1 },	// Y' = 2C - Y
+			// Going up from +Z sends us to -Y
+			new int[6] {	0,  1,  0,		// X' = X
+							2,  0, -1 },	// Y' = 2C - Y
+			// Going up from -Z sends us to -Y
+			new int[6] {	1, -1,  0,		// X' = C - X
+							-1, 0,  1 },	// Y' = -C + Y
+		};
+
+		private Pixel	FindAdjacentPixel( int _PixelIndex, int _Dx, int _Dy )
+		{
+			int	CubeFaceIndex = _PixelIndex / CUBE_MAP_FACE_SIZE;
+			int	CubeFacePixelIndex = _PixelIndex - CubeFaceIndex * CUBE_MAP_FACE_SIZE;
+			int	Y = _PixelIndex / CUBE_MAP_SIZE;
+			int	X = _PixelIndex - Y * CUBE_MAP_SIZE;
+
+			X += _Dx;
+			if ( X < 0 )
+			{	// Stepped out through left side
+				TransformXY( GoLeftTransforms[CubeFaceIndex], ref X, ref Y );
+				CubeFaceIndex = GoLeft[CubeFaceIndex];
+			}
+			if ( X > CUBE_MAP_SIZE-1 )
+			{	// Stepped out through right side
+				TransformXY( GoRightTransforms[CubeFaceIndex], ref X, ref Y );
+				CubeFaceIndex = GoRight[CubeFaceIndex];
+			}
+
+			Y += _Dy;
+			if ( Y < 0 )
+			{	// Stepped out through bottom side
+				TransformXY( GoDownTransforms[CubeFaceIndex], ref X, ref Y );
+				CubeFaceIndex = GoDown[CubeFaceIndex];
+			}
+			if ( Y > CUBE_MAP_SIZE-1 )
+			{	// Stepped out through top side
+				TransformXY( GoUpTransforms[CubeFaceIndex], ref X, ref Y );
+				CubeFaceIndex = GoUp[CubeFaceIndex];
+			}
+
+			int	FinalPixelIndex = CUBE_MAP_FACE_SIZE * CubeFaceIndex + CUBE_MAP_SIZE * Y + X;
+
+			return m_ScenePixels[FinalPixelIndex];
+		}
+
+		private void	TransformXY( int[] _Transform, ref int _X, ref int _Y )
+		{
+			int	TempX = _Transform[0] * CUBE_MAP_SIZE + _Transform[1] * _X + _Transform[2] * _Y;
+			int	TempY = _Transform[3] * CUBE_MAP_SIZE + _Transform[4] * _X + _Transform[5] * _Y;
+			_X = TempX;
+			_Y = TempY;
+		}
+
+		#endregion
+
+		#region EVENT HANDLERS
 
 		private void radioButtonAlbedo_CheckedChanged( object sender, EventArgs e )
 		{
@@ -518,5 +764,7 @@ if ( WeightColor > 0.5f )
 		{
 			outputPanel1.IsolateSet = checkBoxSetIsolation.Checked;
 		}
+
+		#endregion
 	}
 }
