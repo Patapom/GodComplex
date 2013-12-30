@@ -14,7 +14,7 @@ namespace ProbeSHEncoder
 {
 	public partial class OutputPanel : Panel
 	{
-		private const double			FOV = 0.5 * Math.PI;
+		private const double			FOV = 0.7 * Math.PI;
 
 		public enum		VIZ_TYPE
 		{
@@ -63,6 +63,20 @@ namespace ProbeSHEncoder
 					return;
 
 				m_IsolateSet = value;
+				if ( m_Viz > VIZ_TYPE.NORMAL )
+					UpdateBitmap();
+			}
+		}
+		private bool			m_ShowSetAverage = false;
+		public bool				ShowSetAverage
+		{
+			get { return m_ShowSetAverage; }
+			set
+			{
+				if ( value == m_ShowSetAverage )
+					return;
+
+				m_ShowSetAverage = value;
 				if ( m_Viz > VIZ_TYPE.NORMAL )
 					UpdateBitmap();
 			}
@@ -193,7 +207,7 @@ namespace ProbeSHEncoder
 		{
 			EncoderForm.Set	S = _Pixel.ParentSet;
 			byte	C = 0;
-			if ( S != null && (!m_IsolateSet || S.SetIndex == m_IsolatedSetIndex) )
+			if ( S != null && S.SetIndex != -1 && (!m_IsolateSet || S.SetIndex == m_IsolatedSetIndex) )
 			{
 				C = m_IsolateSet ? (byte) 255 : (byte) (255 * (1 + S.SetIndex) / m_Owner.m_Sets.Length);
 			}
@@ -203,7 +217,7 @@ namespace ProbeSHEncoder
 		private void	CubeMapSamplerSetAlbedo( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			EncoderForm.Set	S = _Pixel.ParentSet;
-			if ( S == null || (m_IsolateSet && S.SetIndex != m_IsolatedSetIndex) )
+			if ( S == null || S.SetIndex == -1 || (m_IsolateSet && S.SetIndex != m_IsolatedSetIndex) )
 			{
 				_R = _G = _B = 0;
 				return;
@@ -217,7 +231,7 @@ namespace ProbeSHEncoder
 		private void	CubeMapSamplerSetDistance( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			EncoderForm.Set	S = _Pixel.ParentSet;
-			if ( S == null || (m_IsolateSet && S.SetIndex != m_IsolatedSetIndex) )
+			if ( S == null || S.SetIndex == -1 || (m_IsolateSet && S.SetIndex != m_IsolatedSetIndex) )
 			{
 				_R = 63;
 				_G = 0;
@@ -234,7 +248,7 @@ namespace ProbeSHEncoder
 		private void	CubeMapSamplerSetNormal( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			EncoderForm.Set	S = _Pixel.ParentSet;
-			if ( S == null || (m_IsolateSet && S.SetIndex != m_IsolatedSetIndex) )
+			if ( S == null || S.SetIndex == -1 || (m_IsolateSet && S.SetIndex != m_IsolatedSetIndex) )
 			{
 				_R = _G = _B = 0;
 				return;

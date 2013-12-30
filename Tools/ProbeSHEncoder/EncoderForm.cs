@@ -159,7 +159,7 @@ namespace ProbeSHEncoder
 		/// A set is a special pixel with a centroid, a normal and an average albedo
 		/// It also serves as accumulator for all pixels registering to the set
 		/// </summary>
-		[System.Diagnostics.DebuggerDisplay( "C={SetCardinality} H={AlbedoHSL.x} S={AlbedoHSL.y} L={Albedo.z} P=({Position.x}, {Position.y}, {Position.z})" )]
+		[System.Diagnostics.DebuggerDisplay( "C={SetCardinality} I={Importance} H={AlbedoHSL.x} S={AlbedoHSL.y} L={Albedo.z} P=({Position.x}, {Position.y}, {Position.z})" )]
 		public class	Set : Pixel
 		{
 			public WMath.Vector	AccumCentroid = WMath.Vector.Zero;
@@ -283,6 +283,12 @@ namespace ProbeSHEncoder
 								float	Green = R.ReadSingle();
 								float	Blue = R.ReadSingle();
 								float	Alpha = R.ReadSingle();
+
+								// Work with better precision
+								Red *= (float) Math.PI;
+								Green *= (float) Math.PI;
+								Blue *= (float) Math.PI;
+
 								m_CubeMap[CubeFaceIndex][X,Y].SetAlbedo( new WMath.Vector( Red, Green, Blue ) );
 							}
 
@@ -555,10 +561,15 @@ int	DEBUG_PixelIndex = 0;
 				P.ParentSet = null;
 
 
-			// Setup the reference importance threshold for pixels' acceptance
+			// Setup the reference thresholds for pixels' acceptance
 //			Pixel.IMPORTANCE_THRESOLD = (float) ((4.0f * Math.PI / CUBE_MAP_FACE_SIZE) / (m_MeanDistance * m_MeanDistance));	// Compute an average solid angle threshold based on average pixels' distance
-			Pixel.IMPORTANCE_THRESOLD = (float) (1.0f / (m_MeanHarmonicDistance * m_MeanHarmonicDistance));	// Simply use the mean harmonic distance as a good approximation of important pixels
+			Pixel.IMPORTANCE_THRESOLD = (float) (1.0f * floatTrackbarControlLambda.Value / (m_MeanHarmonicDistance * m_MeanHarmonicDistance));	// Simply use the mean harmonic distance as a good approximation of important pixels
 																											// Pixels that are further or not facing the probe will have less importance...
+
+			DISTANCE_THRESHOLD = 0.02f * floatTrackbarControlPosition.Value;									// 2cm
+			ANGULAR_THRESHOLD = (float) Math.Cos( 45.0 * floatTrackbarControlNormal.Value * Math.PI / 180 );	// 45° (we're very generous here!)
+			ALBEDO_HUE_THRESHOLD = 0.04f * floatTrackbarControlAlbedo.Value;									// Close colors!
+			ALBEDO_RGB_THRESHOLD = 0.32f * floatTrackbarControlAlbedo.Value;									// Close colors!
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -618,6 +629,9 @@ if ( PixelIndex == 0x2680 )
 					S.Normal = AverageNormal;
 					S.SetAlbedo( AverageAlbedo );
 
+					// Also finalize importance
+					S.Importance /= SetPixels.Count;
+
 					// Store amount of pixels in the set for statistics
 					S.SetCardinality = S.LastSetCardinality = SetPixels.Count;
 					SumCardinality += S.SetCardinality;
@@ -630,7 +644,31 @@ if ( PixelIndex == 0x2680 )
 			// Sort and cull unimportant sets
 			Sets.Sort( this );
 			if ( Sets.Count > integerTrackbarControlK.Value )
+			{	// Cull sets above our chosen value
+				for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
+					Sets[SetIndex].SetIndex = -1;	// Invalid index for invalid sets!
+
 				Sets.RemoveRange( integerTrackbarControlK.Value, Sets.Count - integerTrackbarControlK.Value );
+			}
+
+			// Remove sets that contain less than 0.25% of our pixels (arbitrary!)
+			m_Sets = Sets.ToArray();
+			int	DiscardThreshold = (int) (0.004f * m_ScenePixels.Count);
+			foreach ( Set S in m_Sets )
+				if ( S.SetCardinality < DiscardThreshold )
+				{
+					S.SetIndex = -1;	// Now invalid!
+					Sets.Remove( S );
+				}
+
+			// Remove sets that are not important enough
+			m_Sets = Sets.ToArray();
+			foreach ( Set S in m_Sets )
+				if ( S.Importance < Pixel.IMPORTANCE_THRESOLD )
+				{
+					S.SetIndex = -1;	// Now invalid!
+					Sets.Remove( S );
+				}
 
 			m_Sets = Sets.ToArray();
 
@@ -658,14 +696,15 @@ if ( PixelIndex == 0x2680 )
 
 		#region Flood Fill Algorithm
 
-		const float		DISTANCE_THRESHOLD = 0.02f;										// 2cm
-		readonly float	ANGULAR_THRESHOLD = (float) Math.Cos( 0.5 * Math.PI / 180 );	// 0.5°
-		readonly float	ALBEDO_HUE_THRESHOLD = 0.02f;									// Close colors!
+		float		DISTANCE_THRESHOLD = 0.02f;										// 2cm
+		float		ANGULAR_THRESHOLD = (float) Math.Cos( 0.5 * Math.PI / 180 );	// 0.5°
+		float		ALBEDO_HUE_THRESHOLD = 0.04f;									// Close colors!
+		float		ALBEDO_RGB_THRESHOLD = 0.16f;									// Close colors!
 
 		int			RecursionLevel = 0;
 
 		/// <summary>
-		/// This should be a faster version (and much less recursive!) of the original flood fill
+		/// This should be a faster version (and much less recursive!) than the original flood fill
 		/// The idea here is to process an entire scanline first (going left and right and collecting valid scanline pixels along the way)
 		///  then for each of these pixels we move up/down and fill the top/bottom scanlines from these new seeds...
 		/// </summary>
@@ -753,11 +792,21 @@ if ( PixelIndex == 0x2680 )
 				if ( DistanceDiff < DISTANCE_THRESHOLD )
 				{
 					// Next, let's check the hue discrepancy
-					float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
-					float	HueDiff1 = 6.0f - HueDiff0;
-					float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
-							HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change hue quite fast
-					if ( HueDiff < ALBEDO_HUE_THRESHOLD )
+// 					float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
+// 					float	HueDiff1 = 6.0f - HueDiff0;
+// 					float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
+// //							HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
+// 							HueDiff *= Math.Max( _PreviousPixel.AlbedoHSL.y, _P.AlbedoHSL.y );	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
+// 					if ( HueDiff < ALBEDO_HUE_THRESHOLD )
+// 					{
+// 						Accepted = true;	// Winner!
+// 					}
+
+
+					// Next, let's check color discrepancy
+					// I'm using the simplest metric here...
+					float	ColorDiff = (_PreviousPixel.Albedo - _P.Albedo).Length();
+					if ( ColorDiff < ALBEDO_RGB_THRESHOLD )
 					{
 						Accepted = true;	// Winner!
 					}
@@ -778,6 +827,14 @@ if ( PixelIndex == 0x2680 )
 			return Accepted;
 		}
 
+		/// <summary>
+		/// The very recursive version that is quite annoying to debug!
+		/// </summary>
+		/// <param name="_S"></param>
+		/// <param name="_PreviousPixel"></param>
+		/// <param name="_P"></param>
+		/// <param name="_SetPixels"></param>
+		/// <param name="_SetRejectedPixels"></param>
 		private void	FloodFill_Recursive( Set _S, Pixel _PreviousPixel, Pixel _P, List<Pixel> _SetPixels, List<Pixel> _SetRejectedPixels )
 		{
 			if ( !_P.IsFloodFillAcceptable() )
@@ -1085,6 +1142,11 @@ if ( DEBUG_PixelIndex == 0x700 && _SetPixels.Count == 2056 )
 		private void checkBoxSetIsolation_CheckedChanged( object sender, EventArgs e )
 		{
 			outputPanel1.IsolateSet = checkBoxSetIsolation.Checked;
+		}
+
+		private void checkBoxSetAverage_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanel1.ShowSetAverage = checkBoxSetAverage.Checked;
 		}
 
 		#endregion
