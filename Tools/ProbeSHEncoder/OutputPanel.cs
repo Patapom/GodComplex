@@ -225,7 +225,7 @@ namespace ProbeSHEncoder
 				return;
 			}
 
-			float	Distance2SetCenter = 1.0f - 0.2f * (_Pixel.Position - S.Position).Length();
+			float	Distance2SetCenter = 0.2f * (_Pixel.Position - S.Position).Length();
 
 			byte	C = (byte) Math.Min( 255, 255 * Distance2SetCenter );
 			_R = _G = _B = C;

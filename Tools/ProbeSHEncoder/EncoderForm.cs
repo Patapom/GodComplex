@@ -41,7 +41,7 @@ using Microsoft.Win32;
 
 namespace ProbeSHEncoder
 {
-	public partial class EncoderForm : Form
+	public partial class EncoderForm : Form, IComparer<EncoderForm.Set>
 	{
 		#region CONSTANTS
 
@@ -60,6 +60,9 @@ namespace ProbeSHEncoder
 		public class	Pixel
 		{
 			public int			PixelIndex;			// Index of the pixel in the scene pixels (can help us locate the cube map face + position of the pixel when finding adjacent pixels)
+			public int			FaceIndex;
+			public int			FaceX;
+			public int			FaceY;
 
 			public WMath.Point	Position;			// World position
 			public WMath.Vector	Normal;				// World normal
@@ -67,12 +70,14 @@ namespace ProbeSHEncoder
 			public WMath.Vector	AlbedoHSL;			// Material albedo in HSL format
 			public float		F0;					// Material Fresnel coefficient
 			public double		SolidAngle;			// Solid angle covered by the pixel
-			public double		SceneSolidAngle;	// Solid angle covered by the scene object = -dot( View, Normal ) / Distance²
+			public double		Importance;			// A measure of "importance" of the scene pixel = -dot( View, Normal ) / Distance²
 			public float		Distance;			// Distance to hit point
 			public bool			Infinity;			// True if not a scene pixel (i.e. sky pixel)
 			public WMath.Vector	View;				// View vector pointing to that pixel
 
 			public Set			ParentSet = null;
+
+			public static float	IMPORTANCE_THRESOLD = 0.0f;
 
 			public void			SetAlbedo( WMath.Vector _Albedo )
 			{
@@ -128,12 +133,33 @@ namespace ProbeSHEncoder
 
 				return EuclidianDistance + NormalDistance + ColorDistance;
 			}
+
+			/// <summary>
+			/// Tells if the pixel is acceptable on its own.
+			/// The test checks if the pixel:
+			///		_ doesn't already belong to a set
+			///		_ is a scene pixel (i.e. not at infinity)
+			///		_ has enough importance
+			/// </summary>
+			/// <returns></returns>
+			public bool		IsFloodFillAcceptable()
+			{
+				if ( ParentSet != null )
+					return false;	// We don't accept pixels that are already part of a set!
+				if ( Infinity )
+					return false;	// We only accept scene pixels!
+				if ( Importance < IMPORTANCE_THRESOLD )
+					return false;	// Not important enough!
+
+				return true;
+			}
 		}
 
 		/// <summary>
 		/// A set is a special pixel with a centroid, a normal and an average albedo
 		/// It also serves as accumulator for all pixels registering to the set
 		/// </summary>
+		[System.Diagnostics.DebuggerDisplay( "C={SetCardinality} H={AlbedoHSL.x} S={AlbedoHSL.y} L={Albedo.z} P=({Position.x}, {Position.y}, {Position.z})" )]
 		public class	Set : Pixel
 		{
 			public WMath.Vector	AccumCentroid = WMath.Vector.Zero;
@@ -156,7 +182,8 @@ namespace ProbeSHEncoder
 
 		public Set[]				m_Sets = new Set[0];
 
-		public List<Pixel>			m_ScenePixels = new List<Pixel>();
+		public List<Pixel>			m_ProbePixels = new List<Pixel>();	// List of all pixels in the probe
+		public List<Pixel>			m_ScenePixels = new List<Pixel>();	// List of pixels that participate to the scene (i.e. not at infinity)
 
 		private RegistryKey			m_AppKey;
 		private string				m_ApplicationPath;
@@ -244,7 +271,7 @@ namespace ProbeSHEncoder
 				m_CubeMap[CubeFaceIndex] = new Pixel[CUBE_MAP_SIZE,CUBE_MAP_SIZE];
 				for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
 					for ( int X=0; X < CUBE_MAP_SIZE; X++ )
-						m_CubeMap[CubeFaceIndex][X,Y] = new Pixel() { PixelIndex = X + CUBE_MAP_SIZE * (Y + CUBE_MAP_SIZE * CubeFaceIndex) };
+						m_CubeMap[CubeFaceIndex][X,Y] = new Pixel() { PixelIndex = X + CUBE_MAP_SIZE * (Y + CUBE_MAP_SIZE * CubeFaceIndex), FaceIndex = CubeFaceIndex, FaceX = X, FaceY = Y };
 
 				// Fill up albedo
 				using ( MemoryStream S = new MemoryStream( POM0.m_Content[CubeFaceIndex] ) )
@@ -292,10 +319,11 @@ namespace ProbeSHEncoder
 								Pix.View = wsView;
 								Pix.Normal = new WMath.Vector( Nx, Ny, Nz );
 								Pix.SolidAngle = SolidAngle;
-								Pix.SceneSolidAngle = -(wsView | Pix.Normal) / (Distance * Distance);
+								Pix.Importance = -(wsView | Pix.Normal) / (Distance * Distance);
 								Pix.Distance = Distance;
 								Pix.Infinity = Distance > Z_INFINITY_TEST;
 
+								m_ProbePixels.Add( Pix );
 								if ( !m_CubeMap[CubeFaceIndex][X,Y].Infinity )
 								{	// Account for a new scene pixel (i.e. not infinity)
 									m_ScenePixels.Add( Pix );
@@ -518,36 +546,53 @@ if ( WeightColor > 0.5f )
 
 		#region Computes Sets by Flood Fill Method
 
+int	DEBUG_PixelIndex = 0;
+
 		private void buttonComputeFilling_Click( object sender, EventArgs e )
 		{
 			// 1] Clear the sets for each pixel
-			foreach ( Pixel P in m_ScenePixels )
+			foreach ( Pixel P in m_ProbePixels )
 				P.ParentSet = null;
 
-			// Compute an average solid angle threshold based on average pixels' distance
-			SOLID_ANGLE_THRESOLD = (float) ((4.0f * Math.PI / CUBE_MAP_FACE_SIZE) / (m_MeanDistance * m_MeanDistance));
+
+			// Setup the reference importance threshold for pixels' acceptance
+//			Pixel.IMPORTANCE_THRESOLD = (float) ((4.0f * Math.PI / CUBE_MAP_FACE_SIZE) / (m_MeanDistance * m_MeanDistance));	// Compute an average solid angle threshold based on average pixels' distance
+			Pixel.IMPORTANCE_THRESOLD = (float) (1.0f / (m_MeanHarmonicDistance * m_MeanHarmonicDistance));	// Simply use the mean harmonic distance as a good approximation of important pixels
+																											// Pixels that are further or not facing the probe will have less importance...
 
 
 			//////////////////////////////////////////////////////////////////////////
 			// 2] Iterate on the list of free pixels that belong to no set and create iterative sets
 			List<Set>	Sets = new List<Set>();
-			for ( int PixelIndex=0; PixelIndex < m_ScenePixels.Count; PixelIndex++ )
+			int			SumCardinality = 0;
+			for ( int PixelIndex=0; PixelIndex < m_ProbePixels.Count; PixelIndex++ )
 			{
-				Pixel	P0 = m_ScenePixels[PixelIndex];
-				if ( P0.Infinity )
-					continue;	// Not a valid pixel...
+DEBUG_PixelIndex = PixelIndex;
 
-				if ( P0.ParentSet == null )
+				Pixel	P0 = m_ProbePixels[PixelIndex];
+				if ( P0.IsFloodFillAcceptable() )
 				{
 					// Create a new set for this pixel
 					Set	S = new Set() { Position = P0.Position, Normal = P0.Normal, Distance = P0.Distance };
 						S.SetAlbedo( P0.Albedo );
 					Sets.Add( S );
 
+
+if ( PixelIndex == 0x2680 )
+	P0.Albedo.x += 1e-6f;
+
 					// Flood fill adjacent pixels based on a criterion
 					List<Pixel>	SetPixels = new List<Pixel>();
 					List<Pixel>	SetRejectedPixels = new List<Pixel>();
-					FloodFill( S, S, P0, SetPixels, SetRejectedPixels );
+					try
+					{
+						FloodFill( S, S, P0, SetPixels, SetRejectedPixels );
+					}
+					catch ( Exception )
+					{
+						// Oops! Stack overflow!
+						continue;
+					}
 
 					// Remove rejected pixels from the set (we only temporarily marked them to avoid processing them twice)
 					foreach ( Pixel P in SetRejectedPixels )
@@ -575,10 +620,17 @@ if ( WeightColor > 0.5f )
 
 					// Store amount of pixels in the set for statistics
 					S.SetCardinality = S.LastSetCardinality = SetPixels.Count;
+					SumCardinality += S.SetCardinality;
 // DEBUG
 //break;
 				}
 			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// Sort and cull unimportant sets
+			Sets.Sort( this );
+			if ( Sets.Count > integerTrackbarControlK.Value )
+				Sets.RemoveRange( integerTrackbarControlK.Value, Sets.Count - integerTrackbarControlK.Value );
 
 			m_Sets = Sets.ToArray();
 
@@ -586,7 +638,9 @@ if ( WeightColor > 0.5f )
 			for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
 				m_Sets[SetIndex].SetIndex = SetIndex;
 
+			//////////////////////////////////////////////////////////////////////////
 			// Refresh UI
+			// 
 			textBoxResults.Text = m_Sets.Length + " sets generated:\r\n\r\n";
 			for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
 			{
@@ -607,35 +661,150 @@ if ( WeightColor > 0.5f )
 		const float		DISTANCE_THRESHOLD = 0.02f;										// 2cm
 		readonly float	ANGULAR_THRESHOLD = (float) Math.Cos( 0.5 * Math.PI / 180 );	// 0.5°
 		readonly float	ALBEDO_HUE_THRESHOLD = 0.02f;									// Close colors!
-		float			SOLID_ANGLE_THRESOLD;											// Computed before first call to FloodFill()
 
+		int			RecursionLevel = 0;
+
+		/// <summary>
+		/// This should be a faster version (and much less recursive!) of the original flood fill
+		/// The idea here is to process an entire scanline first (going left and right and collecting valid scanline pixels along the way)
+		///  then for each of these pixels we move up/down and fill the top/bottom scanlines from these new seeds...
+		/// </summary>
+		/// <param name="_S"></param>
+		/// <param name="_PreviousPixel"></param>
+		/// <param name="_P"></param>
+		/// <param name="_SetPixels"></param>
+		/// <param name="_SetRejectedPixels"></param>
 		private void	FloodFill( Set _S, Pixel _PreviousPixel, Pixel _P, List<Pixel> _SetPixels, List<Pixel> _SetRejectedPixels )
 		{
-			if ( _P.ParentSet != null )
-				return;	// This pixel is alerady part of some set (possibly this set)
-			if ( _P.Infinity )
-				return;	// We only account for scene pixels!
+			if ( !CheckAndAcceptPixel( _S, _PreviousPixel, _P, _SetPixels, _SetRejectedPixels ) )
+				return;
+
+// if ( DEBUG_PixelIndex == 0x2680 )
+// 	Console.WriteLine( "R=" + RecursionLevel + " - S=" + _SetPixels.Count );
+// 
+// if ( DEBUG_PixelIndex == 0x700 && _SetPixels.Count == 2056 )
+// 	Console.WriteLine( "GOTCHA!" );
+
+			//////////////////////////////////////////////////////////////////////////
+//TODO => Use an iterative pool instead of so many lists! (every time we create a new list of many items, even if it contains a single pixel)			// Check the entire scanline
+			List<Pixel>	ScanlinePixels = new List<Pixel>( 4 * CUBE_MAP_SIZE );	// We know the maximum size of a scanline!
+			ScanlinePixels.Add( _P );	// This pixel is implicitly on the scanline
+
+			// Start going right
+			Pixel	Previous = _P;
+			Pixel	Current = FindAdjacentPixel( Previous, 1, 0 );
+			while ( CheckAndAcceptPixel( _S, Previous, Current, _SetPixels, _SetRejectedPixels ) )
+			{
+				ScanlinePixels.Add( Current );
+				Previous = Current;
+				Current = FindAdjacentPixel( Current, 1, 0 );
+			}
+
+			// Start going left
+			Previous = _P;
+			Current = FindAdjacentPixel( Previous, -1, 0 );
+			while ( CheckAndAcceptPixel( _S, Previous, Current, _SetPixels, _SetRejectedPixels ) )
+			{
+				ScanlinePixels.Add( Current );
+				Previous = Current;
+				Current = FindAdjacentPixel( Current, -1, 0 );
+			}
+
+			RecursionLevel++;
+// 			if ( RecursionLevel > CUBE_MAP_SIZE )
+// 				throw new Exception();
+
+			//////////////////////////////////////////////////////////////////////////
+			// Recurse to each pixel of the top scanline
+			foreach ( Pixel P in ScanlinePixels )
+			{
+				Pixel	Top = FindAdjacentPixel( P, 0, 1 );
+				FloodFill( _S, P, Top, _SetPixels, _SetRejectedPixels );
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// Recurse to each pixel of the bottom scanline
+			foreach ( Pixel P in ScanlinePixels )
+			{
+				Pixel	Bottom = FindAdjacentPixel( P, 0, -1 );
+				FloodFill( _S, P, Bottom, _SetPixels, _SetRejectedPixels );
+			}
+
+			RecursionLevel--;
+		}
+
+		private bool	CheckAndAcceptPixel( Set _S, Pixel _PreviousPixel, Pixel _P, List<Pixel> _SetPixels, List<Pixel> _SetRejectedPixels )
+		{
+			if ( !_P.IsFloodFillAcceptable() )
+				return false;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Check some criterions for a match
 			bool	Accepted = false;
 
-			// First, let's check the solid angle
-			if ( _P.SceneSolidAngle > SOLID_ANGLE_THRESOLD )	// Shouldn't even be in the list...
+			// First, let's check the angular discrepancy
+			float	Dot = _PreviousPixel.Normal | _P.Normal;
+			if ( Dot > ANGULAR_THRESHOLD )
 			{
 				// Next, let's check the distance discrepancy
-				float	DistanceDiff = Math.Abs( _PreviousPixel.Distance - _P.Distance );	// We should weight by slope! dot(view,Normal) or something...
+				float	DistanceDiff = Math.Abs( _PreviousPixel.Distance - _P.Distance );
+				float	ToleranceFactor = -(_P.Normal | _P.View);						// Weight by the surface's slope to be more tolerant for slant surfaces
+						DistanceDiff *= ToleranceFactor;
 				if ( DistanceDiff < DISTANCE_THRESHOLD )
 				{
 					// Next, let's check the hue discrepancy
-					float	HueDiff = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
+					float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
+					float	HueDiff1 = 6.0f - HueDiff0;
+					float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
 							HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change hue quite fast
 					if ( HueDiff < ALBEDO_HUE_THRESHOLD )
 					{
-						// Next, let's check the angular discrepancy
-						float	Dot = _PreviousPixel.Normal | _P.Normal;
-						if ( Dot > ANGULAR_THRESHOLD )
-							Accepted = true;	// Winner!
+						Accepted = true;	// Winner!
+					}
+				}
+			}
+
+			// Mark the pixel as member of this set, even if it's temporary (rejected pixels get removed in the end)
+			_P.ParentSet = _S;
+
+			if ( Accepted )
+			{
+				_SetPixels.Add( _P );			// We got a new member for the set!
+				_S.Importance += _P.Importance;	// Accumulate average importance
+			}
+			else
+				_SetRejectedPixels.Add( _P );	// Sorry buddy, we'll add you to the rejects...
+
+			return Accepted;
+		}
+
+		private void	FloodFill_Recursive( Set _S, Pixel _PreviousPixel, Pixel _P, List<Pixel> _SetPixels, List<Pixel> _SetRejectedPixels )
+		{
+			if ( !_P.IsFloodFillAcceptable() )
+				return;
+
+			//////////////////////////////////////////////////////////////////////////
+			// Check some criterions for a match
+			bool	Accepted = false;
+
+			// First, let's check the angular discrepancy
+			float	Dot = _PreviousPixel.Normal | _P.Normal;
+			if ( Dot > ANGULAR_THRESHOLD )
+			{
+				// Next, let's check the distance discrepancy
+				float	DistanceDiff = Math.Abs( _PreviousPixel.Distance - _P.Distance );
+				float	ToleranceFactor = -(_P.Normal | _P.View);						// Weight by the surface's slope to be more tolerant for slant surfaces
+						DistanceDiff *= ToleranceFactor;
+				if ( DistanceDiff < DISTANCE_THRESHOLD )
+				{
+					// Next, let's check the hue discrepancy
+					float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
+					float	HueDiff1 = 6.0f - HueDiff0;
+					float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
+							HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change hue quite fast
+					if ( HueDiff < ALBEDO_HUE_THRESHOLD )
+					{
+						Accepted = true;	// Winner!
 					}
 				}
 			}
@@ -655,8 +824,18 @@ if ( WeightColor > 0.5f )
 			_SetPixels.Add( _P );
 
 
+if ( DEBUG_PixelIndex == 0x700 )
+	Console.WriteLine( "R=" + RecursionLevel + " - S=" + _SetPixels.Count );
+
+if ( DEBUG_PixelIndex == 0x700 && _SetPixels.Count == 2056 )
+	Console.WriteLine( "GOTCHA!" );
+
 			//////////////////////////////////////////////////////////////////////////
 			// Recurse to 4 neighbors
+			RecursionLevel++;
+			if ( RecursionLevel > 10000 )
+				throw new Exception();
+
 			Pixel	L = FindAdjacentPixel( _P, -1, 0 );
 			FloodFill( _S, _P, L, _SetPixels, _SetRejectedPixels );
 
@@ -668,6 +847,8 @@ if ( WeightColor > 0.5f )
 
 			Pixel	U = FindAdjacentPixel( _P, 0, 1 );
 			FloodFill( _S, _P, U, _SetPixels, _SetRejectedPixels );
+
+			RecursionLevel--;
 		}
 
 		const int	CUBE_MAP_FACE_SIZE = CUBE_MAP_SIZE * CUBE_MAP_SIZE;
@@ -715,94 +896,101 @@ if ( WeightColor > 0.5f )
 		//	X' = Tx * CUBE_MAP_SIZE + Xx * X + Xy * Y
 		//	Y' = Ty * CUBE_MAP_SIZE + Yx * X + Yy * Y
 		//
+		const int C = CUBE_MAP_SIZE;
+		const int C2 = 2*C;
+		const int C_ = CUBE_MAP_SIZE-1;
 		int[][]	GoLeftTransforms = new int[6][] {
 			// Going left from +X sends us to +Z
-			new int[6] {	1,  1,  0,		// X' = C + X	(C is the CUBE_MAP_SIZE)
+			new int[6] {	C,  1,  0,		// X' = C + X	(C is the CUBE_MAP_SIZE)
 							0,  0,  1 },	// Y' = Y
 			// Going left from -X sends us to -Z
-			new int[6] {	1,  1,  0,		// X' = C + X
+			new int[6] {	C,  1,  0,		// X' = C + X
 							0,  0,  1 },	// Y' = Y
 			// Going left from +Y sends us to -X
-			new int[6] {	1,  0, -1,		// X' = C - Y
+			new int[6] {	C_,  0, -1,		// X' = C - Y
 							0, -1,  0 },	// Y' = -X
 			// Going left from -Y sends us to -X
 			new int[6] {	0,  0,  1,		// X' = Y
-							1,  1,  0 },	// Y' = C + X
+							C,  1,  0 },	// Y' = C + X
 			// Going left from +Z sends us to -X
-			new int[6] {	1,  1,  0,		// X' = C + X
+			new int[6] {	C,  1,  0,		// X' = C + X
 							0,  0,  1 },	// Y' = Y
 			// Going left from -Z sends us to +X
-			new int[6] {	1,  1,  0,		// X' = C + X
+			new int[6] {	C,  1,  0,		// X' = C + X
 							0,  0,  1 },	// Y' = Y
 		};
 		int[][]	GoRightTransforms = new int[6][] {
 			// Going right from +X sends us to -Z
-			new int[6] {	-1,  1,  0,		// X' = -C + X	(C is the CUBE_MAP_SIZE)
+			new int[6] {	-C,  1,  0,		// X' = -C + X	(C is the CUBE_MAP_SIZE)
 							0,  0,  1 },	// Y' = Y
 			// Going right from -X sends us to +Z
-			new int[6] {	-1,  1,  0,		// X' = -C + X
+			new int[6] {	-C,  1,  0,		// X' = -C + X
 							0,  0,  1 },	// Y' = Y
 			// Going right from +Y sends us to +X
 			new int[6] {	0,  0,  1,		// X' = Y
-							-1, 1,  0 },	// Y' = -C + X
+							-C, 1,  0 },	// Y' = -C + X
 			// Going right from -Y sends us to +X
-			new int[6] {	1,  0,  -1,		// X' = C - Y
-							1,  1,  0 },	// Y' = C + X
+			new int[6] {	C_, 0,  -1,		// X' = C - Y
+							C,  1,  0 },	// Y' = C + X
 			// Going right from +Z sends us to +X
-			new int[6] {	-1,  1,  0,		// X' = -C + X
+			new int[6] {	-C,  1,  0,		// X' = -C + X
 							0,  0,  1 },	// Y' = Y
 			// Going right from -Z sends us to -X
-			new int[6] {	-1,  1,  0,		// X' = -C + X
+			new int[6] {	-C,  1,  0,		// X' = -C + X
 							0,  0,  1 },	// Y' = Y
 		};
 		int[][]	GoDownTransforms = new int[6][] {
 			// Going down from +X sends us to +Y
-			new int[6] {	1,  0,  1,		// X' = C + Y	(C is the CUBE_MAP_SIZE)
+			new int[6] {	C,  0,  1,		// X' = C + Y	(C is the CUBE_MAP_SIZE)
 							0,  1,  0 },	// Y' = X
 			// Going down from -X sends us to +Y
 			new int[6] {	0,  0, -1,		// X' = -Y
-							1, -1,  0 },	// Y' = C - X
+							C_, -1,  0 },	// Y' = C - X
 			// Going down from +Y sends us to +Z
 			new int[6] {	0,  1,  0,		// X' = X
 							0,  0, -1 },	// Y' = -Y
 			// Going down from -Y sends us to -Z
-			new int[6] {	1, -1,  0,		// X' = C - X
-							1,  0,  1 },	// Y' = C + Y
+			new int[6] {	C_, -1,  0,		// X' = C - X
+							C,  0,  1 },	// Y' = C + Y
 			// Going down from +Z sends us to +Y
 			new int[6] {	0,  1,  0,		// X' = X
 							0,  0, -1 },	// Y' = -Y
 			// Going down from -Z sends us to +Y
-			new int[6] {	1, -1,  0,		// X' = C - X
-							1,  0,  1 },	// Y' = C + Y
+			new int[6] {	C_, -1,  0,		// X' = C - X
+							C,  0,  1 },	// Y' = C + Y
 		};
 		int[][]	GoUpTransforms = new int[6][] {
 			// Going up from +X sends us to -Y
-			new int[6] {	2,  0, -1,		// X' = 2C - Y	(C is the CUBE_MAP_SIZE)
-							1, -1,  0 },	// Y' = C - X
+			new int[6] {	C2,  0, -1,		// X' = 2C - Y	(C is the CUBE_MAP_SIZE)
+							C_, -1,  0 },	// Y' = C - X
 			// Going up from -X sends us to -Y
-			new int[6] {	-1,  0,  1,		// X' = -C + Y
+			new int[6] {	-C,  0,  1,		// X' = -C + Y
 							0,  1,  0 },	// Y' = X
 			// Going up from +Y sends us to -Z
-			new int[6] {	1, -1,  0,		// X' = C - X
-							-1, 0,  1 },	// Y' = -C + Y
+			new int[6] {	C_, -1,  0,		// X' = C - X
+							-C, 0,  1 },	// Y' = -C + Y
 			// Going up from -Y sends us to +Z
 			new int[6] {	0,  1,  0,		// X' = X
-							2,  0, -1 },	// Y' = 2C - Y
+							C2,  0, -1 },	// Y' = 2C - Y
 			// Going up from +Z sends us to -Y
 			new int[6] {	0,  1,  0,		// X' = X
-							2,  0, -1 },	// Y' = 2C - Y
+							C2,  0, -1 },	// Y' = 2C - Y
 			// Going up from -Z sends us to -Y
-			new int[6] {	1, -1,  0,		// X' = C - X
-							-1, 0,  1 },	// Y' = -C + Y
+			new int[6] {	C_, -1,  0,		// X' = C - X
+							-C, 0,  1 },	// Y' = -C + Y
 		};
 
 		private Pixel	FindAdjacentPixel( Pixel _P, int _Dx, int _Dy )
 		{
-			int	PixelIndex = _P.PixelIndex;
-			int	CubeFaceIndex = PixelIndex / CUBE_MAP_FACE_SIZE;
-			int	CubeFacePixelIndex = PixelIndex - CubeFaceIndex * CUBE_MAP_FACE_SIZE;
-			int	Y = PixelIndex / CUBE_MAP_SIZE;
-			int	X = PixelIndex - Y * CUBE_MAP_SIZE;
+// 			int	PixelIndex = _P.PixelIndex;
+// 			int	CubeFaceIndex = PixelIndex / CUBE_MAP_FACE_SIZE;
+// 			int	CubeFacePixelIndex = PixelIndex - CubeFaceIndex * CUBE_MAP_FACE_SIZE;
+// 			int	Y = CubeFacePixelIndex / CUBE_MAP_SIZE;
+// 			int	X = CubeFacePixelIndex - Y * CUBE_MAP_SIZE;
+
+			int	CubeFaceIndex = _P.FaceIndex;
+			int	X = _P.FaceX;
+			int	Y = _P.FaceY;
 
 			X += _Dx;
 			if ( X < 0 )
@@ -810,7 +998,7 @@ if ( WeightColor > 0.5f )
 				TransformXY( GoLeftTransforms[CubeFaceIndex], ref X, ref Y );
 				CubeFaceIndex = GoLeft[CubeFaceIndex];
 			}
-			if ( X > CUBE_MAP_SIZE-1 )
+			if ( X >= CUBE_MAP_SIZE )
 			{	// Stepped out through right side
 				TransformXY( GoRightTransforms[CubeFaceIndex], ref X, ref Y );
 				CubeFaceIndex = GoRight[CubeFaceIndex];
@@ -822,7 +1010,7 @@ if ( WeightColor > 0.5f )
 				TransformXY( GoDownTransforms[CubeFaceIndex], ref X, ref Y );
 				CubeFaceIndex = GoDown[CubeFaceIndex];
 			}
-			if ( Y > CUBE_MAP_SIZE-1 )
+			if ( Y >= CUBE_MAP_SIZE )
 			{	// Stepped out through top side
 				TransformXY( GoUpTransforms[CubeFaceIndex], ref X, ref Y );
 				CubeFaceIndex = GoUp[CubeFaceIndex];
@@ -830,13 +1018,13 @@ if ( WeightColor > 0.5f )
 
 			int	FinalPixelIndex = CUBE_MAP_FACE_SIZE * CubeFaceIndex + CUBE_MAP_SIZE * Y + X;
 
-			return m_ScenePixels[FinalPixelIndex];
+			return m_ProbePixels[FinalPixelIndex];
 		}
 
 		private void	TransformXY( int[] _Transform, ref int _X, ref int _Y )
 		{
-			int	TempX = _Transform[0] * CUBE_MAP_SIZE + _Transform[1] * _X + _Transform[2] * _Y;
-			int	TempY = _Transform[3] * CUBE_MAP_SIZE + _Transform[4] * _X + _Transform[5] * _Y;
+			int	TempX = _Transform[0] + _Transform[1] * _X + _Transform[2] * _Y;
+			int	TempY = _Transform[3] + _Transform[4] * _X + _Transform[5] * _Y;
 			_X = TempX;
 			_Y = TempY;
 		}
@@ -897,6 +1085,20 @@ if ( WeightColor > 0.5f )
 		private void checkBoxSetIsolation_CheckedChanged( object sender, EventArgs e )
 		{
 			outputPanel1.IsolateSet = checkBoxSetIsolation.Checked;
+		}
+
+		#endregion
+
+		#region IComparer<Set> Members
+
+		public int Compare( EncoderForm.Set x, EncoderForm.Set y )
+		{
+			if ( x.SetCardinality < y.SetCardinality )
+				return +1;
+			if ( x.SetCardinality > y.SetCardinality )
+				return -1;
+
+			return 0;
 		}
 
 		#endregion
