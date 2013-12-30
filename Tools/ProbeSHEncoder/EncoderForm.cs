@@ -162,12 +162,68 @@ namespace ProbeSHEncoder
 		[System.Diagnostics.DebuggerDisplay( "C={SetCardinality} I={Importance} H={AlbedoHSL.x} S={AlbedoHSL.y} L={Albedo.z} P=({Position.x}, {Position.y}, {Position.z})" )]
 		public class	Set : Pixel
 		{
-			public WMath.Vector	AccumCentroid = WMath.Vector.Zero;
-			public WMath.Vector	AccumNormal = WMath.Vector.Zero;
-			public int			SetCardinality = 0;
+			public WMath.Vector		AccumCentroid = WMath.Vector.Zero;
+			public WMath.Vector		AccumNormal = WMath.Vector.Zero;
+			public int				SetCardinality = 0;
 
-			public int			LastSetCardinality = 0;
-			public int			SetIndex = -1;	// Warning: Only available once the computation is over and all sets have been resolved!
+			public int				LastSetCardinality = 0;
+			public int				SetIndex = -1;	// Warning: Only available once the computation is over and all sets have been resolved!
+
+			// The generated SH coefficients for this set
+			public WMath.Vector[]	SH = new WMath.Vector[9];
+
+			/// <summary>
+			/// Performs the SH encoding of all the pixels belonging to the set
+			/// It simply amounts to summing the directional SH contribution of every pixels in the set, assuming they
+			///  all receive the energy received by the set's substitute center
+			/// </summary>
+			/// <param name="_Pixels"></param>
+			public void			EncodeSH( List<Pixel> _Pixels )
+			{
+				double		f0 = 0.5 / Math.Sqrt(Math.PI);
+				double		f1 = Math.Sqrt(3.0) * f0;
+				double		f2 = Math.Sqrt(15.0) * f0;
+				double		f3 = Math.Sqrt(5.0) * 0.5 * f0;
+
+				double		AlbedoR = Albedo.x / Math.PI;
+				double		AlbedoG = Albedo.y / Math.PI;
+				double		AlbedoB = Albedo.z / Math.PI;
+
+				double[]	SHR = new double[9];
+				double[]	SHG = new double[9];
+				double[]	SHB = new double[9];
+				double[]	SHCoeffs = new double[9];
+
+				foreach ( Pixel P in _Pixels )
+				{
+					// Build SH coeffs for that pixel
+					SHCoeffs[0] = f0;
+					SHCoeffs[1] = -f1 * P.View.x;
+					SHCoeffs[2] = f1 * P.View.y;
+					SHCoeffs[3] = -f1 * P.View.z;
+					SHCoeffs[4] = f2 * P.View.x * P.View.z;
+					SHCoeffs[5] = -f2 * P.View.x * P.View.y;
+					SHCoeffs[6] = f3 * (3.0 * P.View.y*P.View.y - 1.0);
+					SHCoeffs[7] = -f2 * P.View.z * P.View.y;
+					SHCoeffs[8] = f2 * 0.5 * (P.View.z*P.View.z - P.View.x*P.View.x);
+
+					// Compute weight factor based on set's normal and pixel's normal but also based on pixel's normal and view direction
+					double	Factor  = P.SolidAngle									// Solid angle for SH weight, obvious
+									* Math.Max( 0.0, (P.Normal | this.Normal) )		// This weight is to account for the fact that the point is well aligned with the set's plane the lighting was computed for
+									* Math.Max( 0.0, -(P.View | P.Normal) );		// This weight is to account for the fact that the point is well aligned with the view vector
+																					//	(for example, for a perfectly flat wall this weight will have the effect that points further from the probe's perpendicular will have less importance)
+
+					for ( int i=0; i < 9; i++ )
+					{
+						SHR[i] += SHCoeffs[i] * Factor * AlbedoR;
+						SHG[i] += SHCoeffs[i] * Factor * AlbedoG;
+						SHB[i] += SHCoeffs[i] * Factor * AlbedoB;
+					}
+				}
+
+				for ( int i=0; i < 9; i++ )
+					SH[i] = new WMath.Vector( (float) SHR[i], (float) SHG[i], (float) SHB[i] );
+			}
 		}
 
 		#endregion
@@ -635,6 +691,9 @@ if ( PixelIndex == 0x2680 )
 					// Store amount of pixels in the set for statistics
 					S.SetCardinality = S.LastSetCardinality = SetPixels.Count;
 					SumCardinality += S.SetCardinality;
+
+					// FInally, encode SH
+					S.EncodeSH( SetPixels );
 // DEBUG
 //break;
 				}
@@ -1090,6 +1149,20 @@ if ( DEBUG_PixelIndex == 0x700 && _SetPixels.Count == 2056 )
 
 		#endregion
 
+		#region IComparer<Set> Members
+
+		public int Compare( EncoderForm.Set x, EncoderForm.Set y )
+		{
+			if ( x.SetCardinality < y.SetCardinality )
+				return +1;
+			if ( x.SetCardinality > y.SetCardinality )
+				return -1;
+
+			return 0;
+		}
+
+		#endregion
+
 		#region EVENT HANDLERS
 
 		private void radioButtonAlbedo_CheckedChanged( object sender, EventArgs e )
@@ -1149,18 +1222,53 @@ if ( DEBUG_PixelIndex == 0x700 && _SetPixels.Count == 2056 )
 			outputPanel1.ShowSetAverage = checkBoxSetAverage.Checked;
 		}
 
-		#endregion
-
-		#region IComparer<Set> Members
-
-		public int Compare( EncoderForm.Set x, EncoderForm.Set y )
+		private void saveResultsToolStripMenuItem_Click( object sender, EventArgs e )
 		{
-			if ( x.SetCardinality < y.SetCardinality )
-				return +1;
-			if ( x.SetCardinality > y.SetCardinality )
-				return -1;
+			if ( m_Sets == null || m_Sets.Length == 0 )
+			{
+				MessageBox( "Invalid or empty sets! Start a computation first!" );
+				return;
+			}
 
-			return 0;
+			string	OldFileName = GetRegKey( "LastProbeSetFilename", m_ApplicationPath );
+			saveFileDialog.InitialDirectory = Path.GetDirectoryName( OldFileName );
+			saveFileDialog.FileName = Path.GetFileName( OldFileName );
+			if ( saveFileDialog.ShowDialog( this ) != DialogResult.OK )
+				return;
+			SetRegKey( "LastProbeSetFilename", saveFileDialog.FileName );
+
+			FileInfo	F = new FileInfo( saveFileDialog.FileName );
+			using ( FileStream Stream = F.Create() )
+				using ( BinaryWriter W = new BinaryWriter( Stream ) )
+				{
+					// Write the amount of sets
+					W.Write( (UInt32) m_Sets.Length );
+
+					foreach ( Set S in m_Sets )
+					{
+						// Write position, normal, albedo
+						W.Write( S.Position.x );
+						W.Write( S.Position.y );
+						W.Write( S.Position.z );
+
+						W.Write( S.Normal.x );
+						W.Write( S.Normal.y );
+						W.Write( S.Normal.z );
+
+							// Not used, just for information purpose
+						W.Write( (float) (S.Albedo.x / Math.PI) );
+						W.Write( (float) (S.Albedo.y / Math.PI) );
+						W.Write( (float) (S.Albedo.z / Math.PI) );
+
+						// Write SH coefficients
+						for ( int i=0; i < 9; i++ )
+						{
+							W.Write( S.SH[i].x );
+							W.Write( S.SH[i].y );
+							W.Write( S.SH[i].z );
+						}
+					}
+				}
 		}
 
 		#endregion

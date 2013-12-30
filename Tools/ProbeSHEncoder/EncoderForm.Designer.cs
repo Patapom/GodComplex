@@ -36,8 +36,8 @@ namespace ProbeSHEncoder
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.convertShaderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.openFileDialogShader = new System.Windows.Forms.OpenFileDialog();
-			this.saveFileDialogShader = new System.Windows.Forms.SaveFileDialog();
+			this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
+			this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
 			this.buttonCompute = new System.Windows.Forms.Button();
 			this.radioButtonAlbedo = new System.Windows.Forms.RadioButton();
 			this.radioButtonDistance = new System.Windows.Forms.RadioButton();
@@ -62,6 +62,7 @@ namespace ProbeSHEncoder
 			this.buttonComputeFilling = new System.Windows.Forms.Button();
 			this.checkBoxSetAverage = new System.Windows.Forms.CheckBox();
 			this.outputPanel1 = new ProbeSHEncoder.OutputPanel(this.components);
+			this.saveResultsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -78,6 +79,8 @@ namespace ProbeSHEncoder
 			// 
 			// fileToolStripMenuItem
 			// 
+			this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.saveResultsToolStripMenuItem});
 			this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
 			this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
 			this.fileToolStripMenuItem.Text = "File";
@@ -96,17 +99,17 @@ namespace ProbeSHEncoder
 			this.convertShaderToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
 			this.convertShaderToolStripMenuItem.Text = "Convert Shader...";
 			// 
-			// openFileDialogShader
+			// openFileDialog
 			// 
-			this.openFileDialogShader.DefaultExt = "hlsl";
-			this.openFileDialogShader.Filter = "HLSL Shader File (*.hlsl)|*.hlsl|All Files (*.*)|*.*";
-			this.openFileDialogShader.Title = "Choose a shader file to convert...";
+			this.openFileDialog.DefaultExt = "hlsl";
+			this.openFileDialog.Filter = "HLSL Shader File (*.hlsl)|*.hlsl|All Files (*.*)|*.*";
+			this.openFileDialog.Title = "Choose a shader file to convert...";
 			// 
-			// saveFileDialogShader
+			// saveFileDialog
 			// 
-			this.saveFileDialogShader.DefaultExt = "cs";
-			this.saveFileDialogShader.Filter = "C# Source File (*.cs)|*.cs|All Files (*.*)|*.*";
-			this.saveFileDialogShader.Title = "Choose a target C# file to save the converted shader to...";
+			this.saveFileDialog.DefaultExt = "probesets";
+			this.saveFileDialog.Filter = "Probe Sets File (*.probeset)|*.probeset|All Files (*.*)|*.*";
+			this.saveFileDialog.Title = "Choose a target file to save the encoded probe to...";
 			// 
 			// buttonCompute
 			// 
@@ -380,6 +383,13 @@ namespace ProbeSHEncoder
 			this.outputPanel1.TabIndex = 3;
 			this.outputPanel1.Viz = ProbeSHEncoder.OutputPanel.VIZ_TYPE.ALBEDO;
 			// 
+			// saveResultsToolStripMenuItem
+			// 
+			this.saveResultsToolStripMenuItem.Name = "saveResultsToolStripMenuItem";
+			this.saveResultsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.saveResultsToolStripMenuItem.Text = "Save Results";
+			this.saveResultsToolStripMenuItem.Click += new System.EventHandler(this.saveResultsToolStripMenuItem_Click);
+			// 
 			// EncoderForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -427,8 +437,8 @@ namespace ProbeSHEncoder
 		private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem convertShaderToolStripMenuItem;
-		private System.Windows.Forms.OpenFileDialog openFileDialogShader;
-		private System.Windows.Forms.SaveFileDialog saveFileDialogShader;
+		private System.Windows.Forms.OpenFileDialog openFileDialog;
+		private System.Windows.Forms.SaveFileDialog saveFileDialog;
 		private System.Windows.Forms.Button buttonCompute;
 		private OutputPanel outputPanel1;
 		private System.Windows.Forms.RadioButton radioButtonAlbedo;
@@ -453,6 +463,7 @@ namespace ProbeSHEncoder
 		private System.Windows.Forms.Label label5;
 		private System.Windows.Forms.Button buttonComputeFilling;
 		private System.Windows.Forms.CheckBox checkBoxSetAverage;
+		private System.Windows.Forms.ToolStripMenuItem saveResultsToolStripMenuItem;
 	}
 }
 
