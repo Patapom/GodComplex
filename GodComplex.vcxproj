@@ -457,6 +457,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\GIRenderCubeMap.hlsl" />
     <None Include="Resources\Shaders\GIRenderNeighborProbe.hlsl" />
     <None Include="Resources\Shaders\GIRenderScene.hlsl" />
+    <None Include="Resources\Shaders\GIRenderScene2.hlsl" />
     <None Include="Resources\Shaders\Inc\Atmosphere.hlsl" />
     <None Include="Resources\Shaders\Inc\Global.hlsl" />
     <None Include="Resources\Shaders\Inc\LayeredMaterials.hlsl" />

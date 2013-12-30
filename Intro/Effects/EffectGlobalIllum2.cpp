@@ -7,7 +7,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
- 	CHECK_MATERIAL( m_pMatRender = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
+ 	CHECK_MATERIAL( m_pMatRender = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
  	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
  	CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
  	CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
@@ -42,7 +42,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 	// Start precomputation
 	PreComputeProbes();
 }
-Texture2D*	ppRTCubeMap[3];
+Texture2D*	ppRTCubeMap[2];
 
 EffectGlobalIllum2::~EffectGlobalIllum2()
 {
@@ -68,7 +68,6 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pMatRender;
 
 //###
-delete ppRTCubeMap[2];
 delete ppRTCubeMap[1];
 delete ppRTCubeMap[0];
 }
@@ -98,59 +97,54 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 // 	for ( int i=0; i < 9; i++ )
 // 		pSHAmbient[i] = 5.0f * NjFloat3( 0.7, 0.9, 1.0 ) * float(pTestAmbient[i]);
 
-
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
-		// Encode all lights into probe
-		memset( Probe.pSHLight, 0, 9*sizeof(NjFloat3) );
-		double	pSHLight[9];
+		// Clear light accumulation for the probe
+		Probe.ClearLightBounce( pSHAmbient );
 
-		for ( int LightIndex=0; LightIndex < MAX_LIGHTS; LightIndex++ )
+		// Iterate on each set and compute energy level
+		for ( U32 SetIndex=0; SetIndex < Probe.SetsCount; SetIndex++ )
 		{
-			const LightStruct&	Light = m_pSB_Lights->m[LightIndex];
+			ProbeStruct::SetInfos&	Set = Probe.pSetInfos[SetIndex];
 
-			// Approximate a SH cone
-			NjFloat3	Probe2Light = Light.Position - Probe.pSceneProbe->m_Local2World.GetRow(3);
-			float		DistanceProbe2Light = Probe2Light.Length();
-//			float		InvDistance = 1.0f / DistanceProbe2Light;
-float		InvDistance = 1.0f / MAX( 0.5f, DistanceProbe2Light );
-			Probe2Light = Probe2Light * InvDistance;
-
-			float		HalfAngle = asinf( MIN( 1.0f, Light.Radius / DistanceProbe2Light ) );
-
-			BuildSHSmoothCone( Probe2Light, HalfAngle, pSHLight );
-
-			// Accumulate to probe
-			float		LightFactor = InvDistance * InvDistance;
-			for ( int i=0; i < 9; i++ )
+			// Compute irradiance from every light
+			NjFloat3	SetIrradiance = NjFloat3::Zero;
+			for ( int LightIndex=0; LightIndex < MAX_LIGHTS; LightIndex++ )
 			{
-				float	SH = float( pSHLight[i] );
-				Probe.pSHLight[i].x += LightFactor * Light.Color.x * SH;
-				Probe.pSHLight[i].y += LightFactor * Light.Color.y * SH;
-				Probe.pSHLight[i].z += LightFactor * Light.Color.z * SH;
-			}
-		}
+				const LightStruct&	Light = m_pSB_Lights->m[LightIndex];
 
-		// Apply the product of the accumulated light SH and the probe's environment response to get the light bounce
-		Probe.ComputeLightBounce( pSHAmbient );
+				// Compute light vector
+				NjFloat3	Set2Light = Light.Position - Set.Position;
+				float		DistanceProbe2Light = Set2Light.Length();
+				float		InvDistance = 1.0f / DistanceProbe2Light;
+				Set2Light = Set2Light * InvDistance;
+
+				float		NdotL = MAX( 0.0f, Set2Light | Set.Normal );
+				NjFloat3	LightIrradiance = Light.Color * NdotL * InvDistance * InvDistance;	// I=E.(N.L)/r²
+
+				SetIrradiance = SetIrradiance + LightIrradiance;
+			}
+
+			// Transform this into SH
+			NjFloat3	pSetSH[9];
+			for ( int i=0; i < 9; i++ )
+				pSetSH[i] = SetIrradiance * Set.pSHBounce[i];	// Simply irradiance * (Rho/PI) encoded as SH
+
+			// Accumulate to total SH for the probe
+			Probe.AccumulateLightBounce( pSetSH );
+		}
 	}
 
-	// Swap bounced light buffers & write to the runtime structured buffer
+	// Write to the runtime structured buffer
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 		RuntimeProbe&	Runtime = m_pSB_RuntimeProbes->m[ProbeIndex];
 
-		Probe.SwapBuffers();
-
 		// Write the result to the probe structured buffer
-//		memcpy( Runtime.pSHBounce, Probe.pSHBouncedLight0, 9*sizeof(NjFloat3) );
-
-memcpy( Runtime.pSHBounce, Probe.pSHBounce, 9*sizeof(NjFloat3) );
-memcpy( Runtime.pSHLight, Probe.pSHLight, 9*sizeof(NjFloat3) );
-
+		memcpy( Runtime.pSHBounce, Probe.pSHBouncedLight, 9*sizeof(NjFloat3) );
 	}
 
 	m_pSB_RuntimeProbes->Write();
@@ -187,49 +181,22 @@ memcpy( Runtime.pSHLight, Probe.pSHLight, 9*sizeof(NjFloat3) );
 }
 
 
-void	EffectGlobalIllum2::ProbeStruct::ComputeLightBounce( const NjFloat3 _pSHAmbient[9] )
+void	EffectGlobalIllum2::ProbeStruct::ClearLightBounce( const NjFloat3 _pSHAmbient[9] )
 {
-	// 1] Accumulate neighbor lighting by considering them as point light sources of their own
-	NjFloat3	pSHNeighborsLight[9];
-	for ( int i=0; i < 9; i++ )
-		pSHNeighborsLight[0].Set( 0, 0, 0 );
-
-	for ( int NeighborIndex=0; NeighborIndex < NeighborsCount; NeighborIndex++ )
-	{
-		NeighborLink&	Link = pNeighborLinks[NeighborIndex];
-
-		// The neighbor's contribution to our probe is simply its previous frame's SH bounced light multiplied by what we perceive of it
-		NjFloat3	pSHNeighborLight[9];
-		SH::Product3( Link.pNeighbor->pSHBouncedLight1, Link.pSHLink, pSHNeighborLight );
-
-		// That we accumulate for each neighbor
-		for ( int i=0; i < 9; i++ )
-			pSHNeighborsLight[i] = pSHNeighborsLight[i] + pSHNeighborLight[i];
-//pSHNeighborsLight[i] = pSHNeighborsLight[i] + 10.0f * pSHNeighborLight[i];
-	}
-
-	// 2] Perform the product of direct accumulated light with indirect environment bounce
-	// This will give us the bounced indirect lighting
-	NjFloat3	pSHBouncedLight[9];
-	SH::Product3( pSHLight, pSHBounce, pSHBouncedLight );
-
-	// 3] Perform the product of direct ambient light with direct environment mask and accumulate with indirect lighting
+	// 1] Perform the product of direct ambient light with direct environment mask and accumulate with indirect lighting
 	NjFloat3	pSHOccludedAmbientLight[9];
 	SH::Product3( _pSHAmbient, pSHOcclusion, pSHOccludedAmbientLight );
 
-	// 4] Generate this frame's total lighting
+	// 2] Initialize bounced light with ambient SH + static lighting SH
 	for ( int i=0; i < 9; i++ )
-		pSHBouncedLight1[i] = pSHNeighborsLight[i] + pSHBouncedLight[i] + pSHOccludedAmbientLight[i];
+		pSHBouncedLight[i] = pSHBounceStatic[i] + pSHOccludedAmbientLight[i];
 }
 
-void	EffectGlobalIllum2::ProbeStruct::SwapBuffers()
+void	EffectGlobalIllum2::ProbeStruct::AccumulateLightBounce( const NjFloat3 _pSHSet[9] )
 {
+	// Simply accumulate dynamic set lighting to bounced light
 	for ( int i=0; i < 9; i++ )
-	{
-		NjFloat3	Temp = pSHBouncedLight0[i];
-		pSHBouncedLight0[i] = pSHBouncedLight1[i];
-		pSHBouncedLight1[i] = Temp;
-	}
+		pSHBouncedLight[i] = pSHBouncedLight[i] + _pSHSet[i];
 }
 
 void	EffectGlobalIllum2::PreComputeProbes()
@@ -239,13 +206,11 @@ void	EffectGlobalIllum2::PreComputeProbes()
 
 	ppRTCubeMap[0] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain albedo
 	ppRTCubeMap[1] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain normal + distance
-	ppRTCubeMap[2] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, 6, PixelFormatR32_UINT::DESCRIPTOR, 1, NULL );	// Will contain probe ID (WARNING ==> NOT a cubemap!)
 	Texture2D*	pRTCubeMapDepth = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
 
-	Texture2D*	ppRTCubeMapStaging[3];
+	Texture2D*	ppRTCubeMapStaging[2];
 	ppRTCubeMapStaging[0] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );		// Will contain albedo
 	ppRTCubeMapStaging[1] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );		// Will contain normal + distance
-	ppRTCubeMapStaging[2] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, 6, PixelFormatR32_UINT::DESCRIPTOR, 1, NULL, true );		// Will contain probe ID (WARNING ==> NOT a cubemap!)
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -263,8 +228,6 @@ void	EffectGlobalIllum2::PreComputeProbes()
 	while ( pSceneProbe = m_Scene.ForEach( Scene::Node::PROBE, pSceneProbe ) )
 	{
 		m_pProbes[m_ProbesCount].pSceneProbe = (Scene::Probe*) pSceneProbe;
-		m_pProbes[m_ProbesCount].NeighborsCount = 0;	// No neighbor at the moment
-
 		m_ProbesCount++;
 	}
 
@@ -342,21 +305,13 @@ void	EffectGlobalIllum2::PreComputeProbes()
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
-		// Clear the temporary counters of every other probe to check if it can be our neighbor
-		for ( int NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ )
-		{
-			m_pProbes[NeighborProbeIndex].__TempNeighborCounter = 0;
-			m_pProbes[NeighborProbeIndex].__TempSumSolidAngle = 0.0;
-		}
-
 
 		//////////////////////////////////////////////////////////////////////////
-		// 1] Render Albedo + Normal + Z + Neighborhood
+		// 1] Render Albedo + Normal + Distance
 
 		// Clear cube map
 		m_Device.ClearRenderTarget( *ppRTCubeMap[0], NjFloat4::Zero );
 		m_Device.ClearRenderTarget( *ppRTCubeMap[1], NjFloat4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
-		m_Device.ClearRenderTarget( *ppRTCubeMap[2], NjFloat4::Zero );					// 0 is the invalid ID
 
 		NjFloat4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
 		ProbeLocal2World.Normalize();
@@ -391,86 +346,25 @@ void	EffectGlobalIllum2::PreComputeProbes()
 			{
 				RenderMesh( (Scene::Mesh&) *pMesh, m_pMatRenderCubeMap );
 			}
-
-			// Render neighborhood for each probe
-			// The idea here is simply to build a 3D voronoi cell by splatting the planes passing through all other probes
-			//	with their normal set to the direction from the other probe to the current probe.
-			// Splatting a new plane and accounting for the depth buffer will let visible pixels from the plane show up
-			//	and write the ID of the probe.
-			//
-			// Reading back the cube map will indicate the solid angle perceived by each probe to each of its neighbors
-			//	so we can create a linked list of neighbor probes, of their visibilities and solid angle
-			//
-			m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
-			m_Device.SetRenderTarget( CUBE_MAP_SIZE, CUBE_MAP_SIZE, *ppRTCubeMap[2]->GetTargetView( 0, CubeFaceIndex, 1 ), pRTCubeMapDepth->GetDepthStencilView() );
-
-			m_pCB_Probe->m.CurrentProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
-
-			USING_MATERIAL_START( *m_pMatRenderNeighborProbe )
-
-#if 1
-			for ( int NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ )
-				if ( NeighborProbeIndex != ProbeIndex )
-				{
-					ProbeStruct&	NeighborProbe = m_pProbes[NeighborProbeIndex];
-
-					m_pCB_Probe->m.NeighborProbeID = 1 + NeighborProbeIndex;
-					m_pCB_Probe->m.NeighborProbePosition = NeighborProbe.pSceneProbe->m_Local2World.GetRow( 3 );
-					m_pCB_Probe->UpdateData();
-
-					m_ScreenQuad.Render( M );
-				}
-#else
-//###DEBUG
-const int	ThetaCount = 5;
-const int	PhiCount = 5;
-int		PipoProbeIndex = 0;
-for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
-{
-	float	Theta = PI * (ThetaIndex+0.5f) / ThetaCount;
-	for ( int PhiIndex=0; PhiIndex < PhiCount; PhiIndex++ )
-	{
-		float	Phi = TWOPI * (PhiIndex+0.0f) / PhiCount;
-
-		NjFloat3	ProbeDirection;
-		ProbeDirection.x = sinf(Phi)*sinf(Theta);
-		ProbeDirection.y = cosf(Theta);
-		ProbeDirection.z = cos(Phi)*sinf(Theta);
-
-		const float	Distance = 0.5f;
-		m_pCB_Probe->m.NeighborProbeID = 1 + PipoProbeIndex++;
-
-		m_pCB_Probe->m.NeighborProbePosition = m_pCB_Probe->m.CurrentProbePosition + Distance * ProbeDirection;
-		m_pCB_Probe->UpdateData();
-
-		m_ScreenQuad.Render( M );
-	}
-}
-//###DEBUG
-#endif
-			USING_MATERIAL_END
 		}
+
 
 		//////////////////////////////////////////////////////////////////////////
 		// 2] Read back cube map and create the SH coefficients
 		ppRTCubeMapStaging[0]->CopyFrom( *ppRTCubeMap[0] );
 		ppRTCubeMapStaging[1]->CopyFrom( *ppRTCubeMap[1] );
-		ppRTCubeMapStaging[2]->CopyFrom( *ppRTCubeMap[2] );
 
 
 		double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
 		double	SumSolidAngle = 0.0;
 
-		double	pSHBounce[3*9];
-		double	pSHAmbient[9];
-		memset( pSHBounce, 0, 3*9*sizeof(double) );
-		memset( pSHAmbient, 0, 9*sizeof(double) );
+		double	pSHOcclusion[9];
+		memset( pSHOcclusion, 0, 9*sizeof(double) );
 
 		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
 		{
 			D3D11_MAPPED_SUBRESOURCE&	MappedFaceAlbedo = ppRTCubeMapStaging[0]->Map( 0, CubeFaceIndex );
 			D3D11_MAPPED_SUBRESOURCE&	MappedFaceGeometry = ppRTCubeMapStaging[1]->Map( 0, CubeFaceIndex );
-			D3D11_MAPPED_SUBRESOURCE&	MappedFaceNeighborhood = ppRTCubeMapStaging[2]->Map( 0, CubeFaceIndex );
 
 			// Update cube map face camera transform
 			NjFloat4x4	Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
@@ -482,14 +376,12 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 			{
 				NjFloat4*	pScanlineAlbedo = (NjFloat4*) ((U8*) MappedFaceAlbedo.pData + Y * MappedFaceAlbedo.RowPitch);
 				NjFloat4*	pScanlineGeometry = (NjFloat4*) ((U8*) MappedFaceGeometry.pData + Y * MappedFaceGeometry.RowPitch);
-				U32*		pScanlineNeighboorhood = (U32*) ((U8*) MappedFaceNeighborhood.pData + Y * MappedFaceNeighborhood.RowPitch);
 
 				View.y = 1.0f - 2.0f * (0.5f + Y) / CUBE_MAP_SIZE;
 				for ( int X=0; X < CUBE_MAP_SIZE; X++ )
 				{
 					NjFloat4	Albedo = *pScanlineAlbedo++;
 					NjFloat4	Geometry = *pScanlineGeometry++;
-					U32			NeighborID = *pScanlineNeighboorhood++;
 
 					// Rebuild view direction
 					View.x = 2.0f * (0.5f + X) / CUBE_MAP_SIZE - 1.0f;
@@ -504,14 +396,6 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 					double	SolidAngle = dA / (Distance2Texel * SqDistance2Texel);
 					SumSolidAngle += SolidAngle;	// CHECK! => Should amount to 4PI at the end of the iteration...
 
-					// Account for neighbor
-					if ( NeighborID > 0 )
-					{
-						ASSERT( NeighborID <= U32(m_ProbesCount), "Probe ID out of range!" );
-						m_pProbes[NeighborID-1].__TempNeighborCounter++;
-						m_pProbes[NeighborID-1].__TempSumSolidAngle += SolidAngle;
-					}
-
 					// Check if we hit an obstacle, in which case we should accumulate direct ambient lighting
 					if ( Geometry.w > Z_INFINITY_TEST )
 					{	// No obstacle means direct lighting from the ambient sky...
@@ -522,155 +406,86 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
  						double	pSHCoeffs[9];
  						BuildSHCoeffs( ViewWorld, pSHCoeffs );
 						for ( int i=0; i < 9; i++ )
-							pSHAmbient[i] += SolidAngle * pSHCoeffs[i];
+							pSHOcclusion[i] += SolidAngle * pSHCoeffs[i];
 
 						continue;
 					}
-
-					// Build SH cosine lobe in the direction of the surface normal
-					NjFloat3	Normal( Geometry.x, Geometry.y, Geometry.z );
-					double		pCosineLobe[9];
-					BuildSHCosineLobe( Normal, pCosineLobe );
-
-					// Accumulate lobe, weighted by solid angle and albedo
-					double	R = SolidAngle * Albedo.x;
-					double	G = SolidAngle * Albedo.y;
-					double	B = SolidAngle * Albedo.z;
-					pSHBounce[3*0+0] += pCosineLobe[0] * R;
-					pSHBounce[3*0+1] += pCosineLobe[0] * G;
-					pSHBounce[3*0+2] += pCosineLobe[0] * B;
-					pSHBounce[3*1+0] += pCosineLobe[1] * R;
-					pSHBounce[3*1+1] += pCosineLobe[1] * G;
-					pSHBounce[3*1+2] += pCosineLobe[1] * B;
-					pSHBounce[3*2+0] += pCosineLobe[2] * R;
-					pSHBounce[3*2+1] += pCosineLobe[2] * G;
-					pSHBounce[3*2+2] += pCosineLobe[2] * B;
-					pSHBounce[3*3+0] += pCosineLobe[3] * R;
-					pSHBounce[3*3+1] += pCosineLobe[3] * G;
-					pSHBounce[3*3+2] += pCosineLobe[3] * B;
-					pSHBounce[3*4+0] += pCosineLobe[4] * R;
-					pSHBounce[3*4+1] += pCosineLobe[4] * G;
-					pSHBounce[3*4+2] += pCosineLobe[4] * B;
-					pSHBounce[3*5+0] += pCosineLobe[5] * R;
-					pSHBounce[3*5+1] += pCosineLobe[5] * G;
-					pSHBounce[3*5+2] += pCosineLobe[5] * B;
-					pSHBounce[3*6+0] += pCosineLobe[6] * R;
-					pSHBounce[3*6+1] += pCosineLobe[6] * G;
-					pSHBounce[3*6+2] += pCosineLobe[6] * B;
-					pSHBounce[3*7+0] += pCosineLobe[7] * R;
-					pSHBounce[3*7+1] += pCosineLobe[7] * G;
-					pSHBounce[3*7+2] += pCosineLobe[7] * B;
-					pSHBounce[3*8+0] += pCosineLobe[8] * R;
-					pSHBounce[3*8+1] += pCosineLobe[8] * G;
-					pSHBounce[3*8+2] += pCosineLobe[8] * B;
 				}
 			}
 
 			ppRTCubeMapStaging[0]->UnMap( 0, CubeFaceIndex );
 			ppRTCubeMapStaging[1]->UnMap( 0, CubeFaceIndex );
-			ppRTCubeMapStaging[2]->UnMap( 0, CubeFaceIndex );
 		}
 
 		//////////////////////////////////////////////////////////////////////////
-		// 3] Store indirect and direct ambient
+		// 3] Store direct ambient and indirect reflection of static lights on static geometry
 		double	Normalizer = 1.0 / SumSolidAngle;
 		for ( int i=0; i < 9; i++ )
 		{
-			Probe.pSHBounce[i].Set( float( Normalizer * pSHBounce[3*i+0] ), float( Normalizer * pSHBounce[3*i+1] ), float( Normalizer * pSHBounce[3*i+2] ) );
-			Probe.pSHOcclusion[i] = float( Normalizer * pSHAmbient[i] );
+			Probe.pSHOcclusion[i] = float( Normalizer * pSHOcclusion[i] );
+
+// TODO! At the moment we don't compute static SH coeffs
+Probe.pSHBounceStatic[i] = NjFloat3::Zero;
 		}
-
-		//////////////////////////////////////////////////////////////////////////
-		// 4] Sort largest contributing neighbors
-		for ( int NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ )
-			if ( NeighborProbeIndex != ProbeIndex )
-			{
-				ProbeStruct&	NeighborProbe = m_pProbes[NeighborProbeIndex];
-				if ( NeighborProbe.__TempNeighborCounter == 0 )
-					continue;	// Not a neighbor...
-				if ( NeighborProbe.__TempSumSolidAngle < 8.0 * PI / 180 )	// Reject under 8 ster-degrees
-					continue;	// Too low to contribute...
-
-				// Sort insert the probe in our list of neighbors
-				int ExistingNeighborIndex = 0;
-				for ( ; ExistingNeighborIndex < Probe.NeighborsCount; ExistingNeighborIndex++ )
-				{
-					if ( Probe.pNeighborLinks[ExistingNeighborIndex].SolidAngle < NeighborProbe.__TempSumSolidAngle )
-						break;	// We found the insertion point!
-				}
-
-				if ( ExistingNeighborIndex >= MAX_NEIGHBOR_PROBES )
-					continue;	// This neighbor is not influent enough to insert anywhere and our list is full anyway....
-
-				// Shift existing entries
-				int		MoveSize = (MAX_NEIGHBOR_PROBES-1-ExistingNeighborIndex) * sizeof(ProbeStruct::NeighborLink);
-				memcpy_s( &Probe.pNeighborLinks[ExistingNeighborIndex+1], MoveSize, &Probe.pNeighborLinks[ExistingNeighborIndex], MoveSize );
-
-				// Insert the neighbor
-				Probe.pNeighborLinks[ExistingNeighborIndex].pNeighbor = &NeighborProbe;
-				Probe.pNeighborLinks[ExistingNeighborIndex].SolidAngle = NeighborProbe.__TempSumSolidAngle;
-
-				// Safe increment the amount of neighbors
-				Probe.NeighborsCount = MIN( int(MAX_NEIGHBOR_PROBES), Probe.NeighborsCount+1 );
-			}
-
-		//////////////////////////////////////////////////////////////////////////
-		// 5] Process neighbor links
-		Probe.ProbeInfluenceDistance = Probe.NeighborsCount > 0 ? 0.0f : 10.0f;
-
-		NjFloat3	ProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
-		for ( int NeighborProbeIndex=0; NeighborProbeIndex < Probe.NeighborsCount; NeighborProbeIndex++ )
-		{
-			ProbeStruct::NeighborLink&	NeighborProbeLink = Probe.pNeighborLinks[NeighborProbeIndex];
-			NjFloat3					NeighborPosition = NeighborProbeLink.pNeighbor->pSceneProbe->m_Local2World.GetRow( 3 );
-
-			// Compute distance
-			NjFloat3	ToNeighbor = NeighborPosition - ProbePosition;
-			NeighborProbeLink.Distance = ToNeighbor.Length();
-			ToNeighbor = ToNeighbor / NeighborProbeLink.Distance;
-
-			// Update probe distance to account for the maximum neighbor distance so we make sure we contribute and reach all neighbors
-			Probe.ProbeInfluenceDistance = MAX( Probe.ProbeInfluenceDistance, NeighborProbeLink.Distance );
-
-			// Retrieve an approximate cone angle for the perceived solid angle of that probe
-			//	ConeSolidAngle = 2PI * (1 - cos(a)) where a is the half cone angle
-			//
-			float	ConeHalfAngle = float( acos( 1.0 - NeighborProbeLink.SolidAngle / TWOPI ) );
-			double	pSHCone[9];
-			BuildSHSmoothCone( ToNeighbor, ConeHalfAngle, pSHCone );
-			for ( int i=0; i < 9; i++ )
-				NeighborProbeLink.pSHLink[i] = float( pSHCone[i] );
-		}
-
 
 #if 1
 // Save to disk
-// const char*	ppFileNames[2*6] = {
-// 	"ProbeX+_Albedo.pom",
-// 	"ProbeX-_Albedo.pom",
-// 	"ProbeY+_Albedo.pom",
-// 	"ProbeY-_Albedo.pom",
-// 	"ProbeZ+_Albedo.pom",
-// 	"ProbeZ-_Albedo.pom",
-// 
-// 	"ProbeX+_Geometry.pom",
-// 	"ProbeX-_Geometry.pom",
-// 	"ProbeY+_Geometry.pom",
-// 	"ProbeY-_Geometry.pom",
-// 	"ProbeZ+_Geometry.pom",
-// 	"ProbeZ-_Geometry.pom",
-// };
-
 ppRTCubeMapStaging[0]->Save( "Probe_Albedo.pom" );
 ppRTCubeMapStaging[1]->Save( "Probe_Geometry.pom" );
+#endif
 
+
+		//////////////////////////////////////////////////////////////////////////
+		// 4] Compute solid sets for that probe
+		// This part is really important as it will attempt to isolate the important geometric zones near the probe to
+		//	approximate them using simple planar impostors that will be lit instead of the entire probe's pixels
+		// Each solid set is then lit by dynamic lights in real-time and all pixels belonging to the set add their SH
+		//	contribution to the total SH of the probe, this allows us to perform dynamic light bounce on the scene cheaply!
+		//
+#if 1
+		{
+			FILE*	pFile = NULL;
+			fopen_s( &pFile, "Test.probeset", "rb" );
+			ASSERT( pFile != NULL, "Can't find probeset test file!" );
+
+			// Read the amount of sets
+			fread_s( &Probe.SetsCount, sizeof(Probe.SetsCount), sizeof(U32), 1, pFile );
+			Probe.SetsCount = MIN( MAX_PROBE_SETS, Probe.SetsCount );	// Don't read more than we can chew!
+
+			for ( U32 SetIndex=0; SetIndex < Probe.SetsCount; SetIndex++ )
+			{
+				ProbeStruct::SetInfos&	S = Probe.pSetInfos[SetIndex];
+
+				// Read position, normal, albedo
+				fread_s( &S.Position.x, sizeof(S.Position.x), sizeof(float), 1, pFile );
+				fread_s( &S.Position.y, sizeof(S.Position.y), sizeof(float), 1, pFile );
+				fread_s( &S.Position.z, sizeof(S.Position.z), sizeof(float), 1, pFile );
+
+				fread_s( &S.Normal.x, sizeof(S.Normal.x), sizeof(float), 1, pFile );
+				fread_s( &S.Normal.y, sizeof(S.Normal.y), sizeof(float), 1, pFile );
+				fread_s( &S.Normal.z, sizeof(S.Normal.z), sizeof(float), 1, pFile );
+
+				fread_s( &S.Albedo.x, sizeof(S.Albedo.x), sizeof(float), 1, pFile );
+				fread_s( &S.Albedo.y, sizeof(S.Albedo.y), sizeof(float), 1, pFile );
+				fread_s( &S.Albedo.z, sizeof(S.Albedo.z), sizeof(float), 1, pFile );
+
+				// Read SH coefficients
+				for ( int i=0; i < 9; i++ )
+				{
+					fread_s( &S.pSHBounce[i].x, sizeof(S.pSHBounce[i].x), sizeof(float), 1, pFile );
+					fread_s( &S.pSHBounce[i].y, sizeof(S.pSHBounce[i].y), sizeof(float), 1, pFile );
+					fread_s( &S.pSHBounce[i].z, sizeof(S.pSHBounce[i].z), sizeof(float), 1, pFile );
+				}
+			}
+
+			fclose( pFile );
+		}
+
+#else
+	TODO! At the moment, only read back the only pre-computed set from disk
 #endif
 
 	}
-
-	// Update runtime probe influence distances
-	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
-		m_pSB_RuntimeProbes->m[ProbeIndex].ProbeInfluenceDistance = m_pProbes[ProbeIndex].ProbeInfluenceDistance;
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -679,18 +494,15 @@ ppRTCubeMapStaging[1]->Save( "Probe_Geometry.pom" );
 m_Device.RemoveRenderTargets();
 ppRTCubeMap[0]->SetPS( 64 );
 ppRTCubeMap[1]->SetPS( 65 );
-ppRTCubeMap[2]->SetPS( 66 );
 #endif
 
 	delete pCBCubeMapCamera;
 
-	delete ppRTCubeMapStaging[2];
 	delete ppRTCubeMapStaging[1];
 	delete ppRTCubeMapStaging[0];
 
 	delete pRTCubeMapDepth;
 //###
-// 	delete ppRTCubeMap[2];
 // 	delete ppRTCubeMap[1];
 // 	delete ppRTCubeMap[0];
 }

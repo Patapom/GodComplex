@@ -1,7 +1,7 @@
 #pragma once
 #include "Renderer.h"
 
-#define DIRECTX10		// Define this to use DX10, otherwise DX11 will be used
+//#define DIRECTX10		// Define this to use DX10, otherwise DX11 will be used
 #define TRY_DIRECTX10_1	// Define this to attempt using DX10.1
 
 class Component;

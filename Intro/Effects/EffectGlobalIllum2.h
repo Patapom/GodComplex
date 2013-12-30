@@ -10,6 +10,7 @@ private:	// CONSTANTS
 	static const U32		MAX_NEIGHBOR_PROBES = 32;
 
 	static const U32		MAX_LIGHTS = 1;
+	static const U32		MAX_PROBE_SETS = 16;
 
 protected:	// NESTED TYPES
 
@@ -50,30 +51,26 @@ protected:	// NESTED TYPES
 	{
 		Scene::Probe*	pSceneProbe;
 
-		NjFloat3		pSHBounce[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced light
-		float			pSHOcclusion[9];		// The pre-computed SH taht gives back how much of the environment is perceived in a given direction
-		NjFloat3		pSHLight[9];			// The radiance field surrounding the probe
-		float			ProbeInfluenceDistance;	// The distance above which the probe stops being used
+		float			pSHOcclusion[9];		// The pre-computed SH that gives back how much of the environment is perceived in a given direction
+		NjFloat3		pSHBounceStatic[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced static lighting on static geometry
 
-		int				NeighborsCount;			// The amount of neighbor probes
-		struct	NeighborLink
+		U32				SetsCount;				// The amount of dynamic sets for that probe
+		struct SetInfos
 		{
-			double			SolidAngle;			// The solid angle covered by the neighbor
-			float			Distance;			// The distance to the neighbor
-			float			pSHLink[9];			// The "link SH" the neighbor's SH needs to be convolved with to act as a local light source for this probe
-			ProbeStruct*	pNeighbor;			// The neighbor probe
-		}				pNeighborLinks[MAX_NEIGHBOR_PROBES];		// The array of 32 max neighbor probes
+			NjFloat3		Position;			// The position of the dynamic set
+			NjFloat3		Normal;				// The normal of the dynamic set's plane
+			NjFloat3		Albedo;				// The albedo of the dynamic set (not currently used, for info purpose)
+			NjFloat3		pSHBounce[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced dynamic lighting on static geometry, for each dynamic set
 
-		NjFloat3		pSHBouncedLight0[9];	// The resulting bounced irradiance (bounce * light) for current frame
-		NjFloat3		pSHBouncedLight1[9];	// The resulting bounced irradiance (bounce * light) from last frame
+		}				pSetInfos[MAX_PROBE_SETS];
 
-		// Temporary counters for a specific probe to count its neighbors
-		int				__TempNeighborCounter;
-		double			__TempSumSolidAngle;
+		NjFloat3		pSHBouncedLight[9];		// The resulting bounced irradiance bounce * light(static+dynamic) for current frame
+
+		// Clears the light bounce accumulator
+		void			ClearLightBounce( const NjFloat3 _pSHAmbient[9] );
 
 		// Computes the product of SHLight and SHBounce to get the SH coefficients for the bounced light
-		void			ComputeLightBounce( const NjFloat3 _pSHAmbient[9] );
-		void			SwapBuffers();
+		void			AccumulateLightBounce( const NjFloat3 _pSHSet[9] );
 	};
 
 
@@ -116,9 +113,7 @@ private:	// FIELDS
 	struct RuntimeProbe 
 	{
 		NjFloat3	Position;
-		float		ProbeInfluenceDistance;
 		NjFloat3	pSHBounce[9];
-		NjFloat3	pSHLight[9];
 	};
 	SB<RuntimeProbe>*	m_pSB_RuntimeProbes;
 
