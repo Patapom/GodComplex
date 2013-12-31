@@ -23,6 +23,13 @@ D3D11_INPUT_ELEMENT_DESC	VertexFormatP3::Desc::ms_pInputElements[] =
 	{ POSITION, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 };
 
+VertexFormatP3N3::Desc		VertexFormatP3N3::DESCRIPTOR;
+D3D11_INPUT_ELEMENT_DESC	VertexFormatP3N3::Desc::ms_pInputElements[] =
+{
+	{ POSITION, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ NORMAL, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+};
+
 VertexFormatP3T2::Desc		VertexFormatP3T2::DESCRIPTOR;
 D3D11_INPUT_ELEMENT_DESC	VertexFormatP3T2::Desc::ms_pInputElements[] =
 {
@@ -79,6 +86,13 @@ void	VertexFormatP3::Desc::Write( void* _pVertex, const NjFloat3& _Position, con
 {
 	VertexFormatP3&	V = *((VertexFormatP3*) _pVertex);
 	V.P = _Position;
+}
+
+void	VertexFormatP3N3::Desc::Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) const
+{
+	VertexFormatP3N3&	V = *((VertexFormatP3N3*) _pVertex);
+	V.P = _Position;
+	V.N = _Normal;
 }
 
 void	VertexFormatP3T2::Desc::Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) const

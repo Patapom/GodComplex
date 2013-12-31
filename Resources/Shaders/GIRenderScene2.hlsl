@@ -185,8 +185,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	float3	Indirect = DiffuseAlbedo * EvaluateSHIrradiance( Normal, SHIndirect );
 //	float3	Indirect = DiffuseAlbedo * EvaluateSH( Normal, SHIndirect );
 
-AccumDiffuse *= 0.0;
-Indirect *= 0.1;
+AccumDiffuse *= 1.0;
+Indirect *= 1.0;
 
 //Indirect *= _In.__Position.x < 1280.0/2.0 ? 1.0 : 0.0;
 

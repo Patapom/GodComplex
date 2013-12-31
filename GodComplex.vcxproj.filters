@@ -586,6 +586,9 @@
     <None Include="Resources\Shaders\GIRenderScene2.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
     </None>
+    <None Include="Resources\Shaders\GIRenderLights.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

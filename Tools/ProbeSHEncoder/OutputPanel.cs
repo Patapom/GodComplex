@@ -25,6 +25,7 @@ namespace ProbeSHEncoder
 			SET_ALBEDO,
 			SET_DISTANCE,
 			SET_NORMAL,
+			SH,
 		}
 		private VIZ_TYPE		m_Viz = VIZ_TYPE.ALBEDO;
 		public VIZ_TYPE			Viz
@@ -49,8 +50,10 @@ namespace ProbeSHEncoder
 					return;
 
 				m_IsolatedSetIndex = value;
-				if ( m_Viz > VIZ_TYPE.NORMAL )
-					UpdateBitmap();
+				if ( m_Viz < VIZ_TYPE.NORMAL )
+					return;
+				UpdateBitmap();
+				Refresh();
 			}
 		}
 		private bool			m_IsolateSet = false;
@@ -63,8 +66,10 @@ namespace ProbeSHEncoder
 					return;
 
 				m_IsolateSet = value;
-				if ( m_Viz > VIZ_TYPE.NORMAL )
-					UpdateBitmap();
+				if ( m_Viz < VIZ_TYPE.NORMAL )
+					return;
+				UpdateBitmap();
+				Refresh();
 			}
 		}
 		private bool			m_ShowSetAverage = false;
@@ -77,8 +82,27 @@ namespace ProbeSHEncoder
 					return;
 
 				m_ShowSetAverage = value;
-				if ( m_Viz > VIZ_TYPE.NORMAL )
-					UpdateBitmap();
+				if ( m_Viz < VIZ_TYPE.NORMAL )
+					return;
+				UpdateBitmap();
+				Refresh();
+			}
+		}
+
+		private WMath.Vector[]	m_SH = new WMath.Vector[9];
+		public WMath.Vector[]	SH
+		{
+			get { return m_SH; }
+			set
+			{
+				if ( value == null || value == m_SH )
+					return;
+
+				m_SH = value;
+				if ( m_Viz != VIZ_TYPE.SH )
+					return;
+				UpdateBitmap();
+				Refresh();
 			}
 		}
 
@@ -112,6 +136,9 @@ namespace ProbeSHEncoder
 
 		public OutputPanel( IContainer container )
 		{
+			for ( int i=0; i < 9; i++ )
+				m_SH[i] = WMath.Vector.Zero;
+
 			container.Add( this );
 
 			InitializeComponent();
@@ -145,6 +172,7 @@ namespace ProbeSHEncoder
 					case VIZ_TYPE.SET_ALBEDO:		S = CubeMapSamplerSetAlbedo; break;
 					case VIZ_TYPE.SET_DISTANCE:		S = CubeMapSamplerSetDistance; break;
 					case VIZ_TYPE.SET_NORMAL:		S = CubeMapSamplerSetNormal; break;
+					case VIZ_TYPE.SH:				S = CubeMapSamplerSH; break;
 				}
 
 				WMath.Vector	View;
@@ -265,6 +293,49 @@ namespace ProbeSHEncoder
 #endif
 		}
 
+		const float	f0 = 0.28209479177387814347403972578039f;		// 0.5 / sqrt(PI);
+		const float	f1 = 0.48860251190291992158638462283835f;		// 0.5 * sqrt(3.0/PI);
+		const float	f2 = 1.0925484305920790705433857058027f;		// 0.5 * sqrt(15.0/PI);
+		float[]	SHCoeffs = new float[9];
+		private void	CubeMapSamplerSH( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		{
+			WMath.Vector	Dir = _Pixel.View;
+
+			// Estimate SH in pixel's direction
+			SHCoeffs[0] = f0;
+			SHCoeffs[1] = -f1 * Dir.x;
+			SHCoeffs[2] = f1 * Dir.y;
+			SHCoeffs[3] = -f1 * Dir.z;
+			SHCoeffs[4] = f2 * Dir.x * Dir.z;
+			SHCoeffs[5] = -f2 * Dir.x * Dir.y;
+			SHCoeffs[6] = f2 * 0.28867513459481288225457439025097f * (3.0f * Dir.y*Dir.y - 1.0f);
+			SHCoeffs[7] = -f2 * Dir.z * Dir.y;
+			SHCoeffs[8] = f2 * 0.5f * (Dir.z*Dir.z - Dir.x*Dir.x);
+
+			// Dot the SH together
+			WMath.Vector	Color = WMath.Vector.Zero;
+			if ( m_IsolateSet )
+			{
+				for ( int i=0; i < 9; i++ )
+					Color += SHCoeffs[i] * m_Owner.m_Sets[m_IsolatedSetIndex].SH[i];
+//				Color *= 100.0f;
+				Color *= 0.5f / m_Owner.m_Sets[m_IsolatedSetIndex].SH[0].Max();
+			}
+			else
+			{
+				for ( int i=0; i < 9; i++ )
+					Color += SHCoeffs[i] * m_SH[i];
+//				Color *= 50.0f;
+				Color *= 1.0f / m_Owner.m_Sets[m_IsolatedSetIndex].SH[0].Max();
+			}
+
+			if ( Color.x < 0.0f || Color.y < 0.0f || Color.z < 0.0f )
+				Color.Set( 1, 0, 1 );
+
+			_R = (byte) Math.Min( 255, 255 * Color.x );
+			_G = (byte) Math.Min( 255, 255 * Color.y );
+			_B = (byte) Math.Min( 255, 255 * Color.z );
+		}
 		#endregion
 
 		protected override void OnSizeChanged( EventArgs e )

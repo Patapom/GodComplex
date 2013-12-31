@@ -1,4 +1,7 @@
-﻿//////////////////////////////////////////////////////////////////////////
+﻿// tangent space along largest/smallest axes
+// approx par simples smoothed cones si trop instable...
+
+//////////////////////////////////////////////////////////////////////////
 // The purpose of this little application is to analyze the rendering from a cube map probe to perform a grouping
 //	of the pixels based on their position, normal and albedo to create a limited amount of sets that we'll be able
 //	to replace by simple "disc surface elements" that can be lit with dynamic lights.
@@ -221,8 +224,9 @@ namespace ProbeSHEncoder
 					}
 				}
 
+				double	Normalizer = 1.0 / (4.0 * Math.PI);
 				for ( int i=0; i < 9; i++ )
-					SH[i] = new WMath.Vector( (float) SHR[i], (float) SHG[i], (float) SHB[i] );
+					SH[i] = new WMath.Vector( (float) (Normalizer * SHR[i]), (float) (Normalizer * SHG[i]), (float) (Normalizer * SHB[i]) );
 			}
 		}
 
@@ -699,6 +703,7 @@ if ( PixelIndex == 0x2680 )
 				}
 			}
 
+
 			//////////////////////////////////////////////////////////////////////////
 			// Sort and cull unimportant sets
 			Sets.Sort( this );
@@ -734,6 +739,18 @@ if ( PixelIndex == 0x2680 )
 			// Finish by filling final set indices
 			for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
 				m_Sets[SetIndex].SetIndex = SetIndex;
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// Sum all SH for UI display
+			WMath.Vector[]	SHSum = new WMath.Vector[9];
+			for ( int i=0; i < 9; i++ )
+			{
+				SHSum[i] = WMath.Vector.Zero;
+				foreach ( Set S in m_Sets )
+					SHSum[i] += S.SH[i];
+			}
+			outputPanel1.SH = SHSum;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Refresh UI
@@ -1215,6 +1232,12 @@ if ( DEBUG_PixelIndex == 0x700 && _SetPixels.Count == 2056 )
 		private void checkBoxSetIsolation_CheckedChanged( object sender, EventArgs e )
 		{
 			outputPanel1.IsolateSet = checkBoxSetIsolation.Checked;
+		}
+
+		private void radioButtonSH_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.SH;
 		}
 
 		private void checkBoxSetAverage_CheckedChanged( object sender, EventArgs e )

@@ -82,6 +82,7 @@ private:	// FIELDS
 	Primitive&			m_ScreenQuad;
 
 	Material*			m_pMatRender;				// Displays the room
+	Material*			m_pMatRenderLights;			// Displays the lights as small emissive balls
 	Material*			m_pMatRenderCubeMap;		// Renders the room into a cubemap
 	Material*			m_pMatRenderNeighborProbe;	// Renders the neighbor probes as planes to form a 3D voronoï cell
 	Material*			m_pMatPostProcess;			// Post-processes the result
@@ -89,6 +90,7 @@ private:	// FIELDS
 	// Primitives
 	Scene				m_Scene;
 	bool				m_bDeleteSceneTags;
+	Primitive*			m_pPrimSphere;
 
 	// Textures
 	Texture2D*			m_pTexWalls;

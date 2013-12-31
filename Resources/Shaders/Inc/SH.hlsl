@@ -8,10 +8,46 @@
 #ifndef _SH_INC_
 #define _SH_INC_
 
+
+// Evaluates the SH coefficients in the requested direction
+//
+float3	EvaluateSH( float3 _Direction, float3 _SH[9] )
+{
+// 	float	f0 = 0.28209479177387814347403972578039;		// 0.5 / sqrt(PI);
+// 	float	f1 = 1.7320508075688772935274463415059 * f0;	// sqrt(3) * f0
+// 	float	f2 = 3.8729833462074168851792653997824 * f0;	// sqrt(15.0) * f0
+	float	f0 = 0.28209479177387814347403972578039;		// 0.5 / sqrt(PI);
+	float	f1 = 0.48860251190291992158638462283835;		// 0.5 * sqrt(3.0/PI);
+	float	f2 = 1.0925484305920790705433857058027;			// 0.5 * sqrt(15.0/PI);
+
+	float	EvalSH0 = f0;
+	float4	EvalSH1234, EvalSH5678;
+	EvalSH1234.x = -f1 * _Direction.x;
+	EvalSH1234.y = f1 * _Direction.y;
+	EvalSH1234.z = -f1 * _Direction.z;
+	EvalSH1234.w = f2 * _Direction.x * _Direction.z;
+	EvalSH5678.x = -f2 * _Direction.x * _Direction.y;
+	EvalSH5678.y = f2 * 0.28867513459481288225457439025097 * (3.0 * _Direction.y*_Direction.y - 1.0);
+	EvalSH5678.z = -f2 * _Direction.z * _Direction.y;
+	EvalSH5678.w = f2 * 0.5 * (_Direction.z*_Direction.z - _Direction.x*_Direction.x);
+
+	// Dot the SH together
+	return max( 0.0,
+		   EvalSH0		* _SH[0]
+		 + EvalSH1234.x * _SH[1]
+		 + EvalSH1234.y * _SH[2]
+		 + EvalSH1234.z * _SH[3]
+		 + EvalSH1234.w * _SH[4]
+		 + EvalSH5678.x * _SH[5]
+		 + EvalSH5678.y * _SH[6]
+		 + EvalSH5678.z * _SH[7]
+		 + EvalSH5678.w * _SH[8] );
+}
+
 // Evaluates the irradiance perceived in the provided direction
 // Analytic method from http://www1.cs.columbia.edu/~ravir/papers/envmap/envmap.pdf
 //
-float3	EvaluateSHIrradiance( float3 _Direction, float3 SH[9] )
+float3	EvaluateSHIrradiance( float3 _Direction, float3 _SH[9] )
 {
 	const float	c1 = 0.429043;
 	const float	c2 = 0.511664;
@@ -21,11 +57,11 @@ float3	EvaluateSHIrradiance( float3 _Direction, float3 SH[9] )
 
 	float3	XYZ = float3( -_Direction.z, -_Direction.x, _Direction.y );
 	return	max( 0.0,
-		    c1*SH[8]*(XYZ.x*XYZ.x - XYZ.y*XYZ.y)
-		  + SH[6]*(c3*XYZ.z*XYZ.z - c5)
-		  + c4*SH[0]
-		  + 2.0*c1*(SH[4]*XYZ.x*XYZ.y + SH[7]*XYZ.x*XYZ.z + SH[5]*XYZ.y*XYZ.z)
-		  + 2.0*c2*(SH[3]*XYZ.x + SH[1]*XYZ.y + SH[2]*XYZ.z) );
+		    c1*_SH[8]*(XYZ.x*XYZ.x - XYZ.y*XYZ.y)
+		  + _SH[6]*(c3*XYZ.z*XYZ.z - c5)
+		  + c4*_SH[0]
+		  + 2.0*c1*(_SH[4]*XYZ.x*XYZ.y + _SH[7]*XYZ.x*XYZ.z + _SH[5]*XYZ.y*XYZ.z)
+		  + 2.0*c2*(_SH[3]*XYZ.x + _SH[1]*XYZ.y + _SH[2]*XYZ.z) );
 }
 
 // Rotates ZH coefficients in the specified direction (from "Stupid SH Tricks")

@@ -32,6 +32,15 @@ namespace ProbeSHEncoder
 		{
 			this.components = new System.ComponentModel.Container();
 			WMath.Vector vector1 = new WMath.Vector();
+			WMath.Vector vector2 = new WMath.Vector();
+			WMath.Vector vector3 = new WMath.Vector();
+			WMath.Vector vector4 = new WMath.Vector();
+			WMath.Vector vector5 = new WMath.Vector();
+			WMath.Vector vector6 = new WMath.Vector();
+			WMath.Vector vector7 = new WMath.Vector();
+			WMath.Vector vector8 = new WMath.Vector();
+			WMath.Vector vector9 = new WMath.Vector();
+			WMath.Vector vector10 = new WMath.Vector();
 			this.menuStrip = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -61,8 +70,9 @@ namespace ProbeSHEncoder
 			this.label5 = new System.Windows.Forms.Label();
 			this.buttonComputeFilling = new System.Windows.Forms.Button();
 			this.checkBoxSetAverage = new System.Windows.Forms.CheckBox();
-			this.outputPanel1 = new ProbeSHEncoder.OutputPanel(this.components);
 			this.saveResultsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.outputPanel1 = new ProbeSHEncoder.OutputPanel(this.components);
+			this.radioButtonSH = new System.Windows.Forms.RadioButton();
 			this.menuStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -278,7 +288,7 @@ namespace ProbeSHEncoder
 			// 
 			// integerTrackbarControlSetIsolation
 			// 
-			this.integerTrackbarControlSetIsolation.Location = new System.Drawing.Point(733, 402);
+			this.integerTrackbarControlSetIsolation.Location = new System.Drawing.Point(732, 424);
 			this.integerTrackbarControlSetIsolation.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlSetIsolation.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlSetIsolation.Name = "integerTrackbarControlSetIsolation";
@@ -293,7 +303,7 @@ namespace ProbeSHEncoder
 			// checkBoxSetIsolation
 			// 
 			this.checkBoxSetIsolation.AutoSize = true;
-			this.checkBoxSetIsolation.Location = new System.Drawing.Point(712, 380);
+			this.checkBoxSetIsolation.Location = new System.Drawing.Point(711, 402);
 			this.checkBoxSetIsolation.Name = "checkBoxSetIsolation";
 			this.checkBoxSetIsolation.Size = new System.Drawing.Size(76, 17);
 			this.checkBoxSetIsolation.TabIndex = 9;
@@ -359,7 +369,7 @@ namespace ProbeSHEncoder
 			// checkBoxSetAverage
 			// 
 			this.checkBoxSetAverage.AutoSize = true;
-			this.checkBoxSetAverage.Location = new System.Drawing.Point(711, 428);
+			this.checkBoxSetAverage.Location = new System.Drawing.Point(421, 581);
 			this.checkBoxSetAverage.Name = "checkBoxSetAverage";
 			this.checkBoxSetAverage.Size = new System.Drawing.Size(115, 17);
 			this.checkBoxSetAverage.TabIndex = 9;
@@ -367,6 +377,13 @@ namespace ProbeSHEncoder
 			this.checkBoxSetAverage.UseVisualStyleBackColor = true;
 			this.checkBoxSetAverage.Visible = false;
 			this.checkBoxSetAverage.CheckedChanged += new System.EventHandler(this.checkBoxSetAverage_CheckedChanged);
+			// 
+			// saveResultsToolStripMenuItem
+			// 
+			this.saveResultsToolStripMenuItem.Name = "saveResultsToolStripMenuItem";
+			this.saveResultsToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
+			this.saveResultsToolStripMenuItem.Text = "Save Results";
+			this.saveResultsToolStripMenuItem.Click += new System.EventHandler(this.saveResultsToolStripMenuItem_Click);
 			// 
 			// outputPanel1
 			// 
@@ -378,17 +395,58 @@ namespace ProbeSHEncoder
 			this.outputPanel1.IsolateSet = false;
 			this.outputPanel1.Location = new System.Drawing.Point(12, 27);
 			this.outputPanel1.Name = "outputPanel1";
+			vector2.X = 0F;
+			vector2.Y = 0F;
+			vector2.Z = 0F;
+			vector3.X = 0F;
+			vector3.Y = 0F;
+			vector3.Z = 0F;
+			vector4.X = 0F;
+			vector4.Y = 0F;
+			vector4.Z = 0F;
+			vector5.X = 0F;
+			vector5.Y = 0F;
+			vector5.Z = 0F;
+			vector6.X = 0F;
+			vector6.Y = 0F;
+			vector6.Z = 0F;
+			vector7.X = 0F;
+			vector7.Y = 0F;
+			vector7.Z = 0F;
+			vector8.X = 0F;
+			vector8.Y = 0F;
+			vector8.Z = 0F;
+			vector9.X = 0F;
+			vector9.Y = 0F;
+			vector9.Z = 0F;
+			vector10.X = 0F;
+			vector10.Y = 0F;
+			vector10.Z = 0F;
+			this.outputPanel1.SH = new WMath.Vector[] {
+        vector2,
+        vector3,
+        vector4,
+        vector5,
+        vector6,
+        vector7,
+        vector8,
+        vector9,
+        vector10};
 			this.outputPanel1.ShowSetAverage = false;
 			this.outputPanel1.Size = new System.Drawing.Size(677, 546);
 			this.outputPanel1.TabIndex = 3;
 			this.outputPanel1.Viz = ProbeSHEncoder.OutputPanel.VIZ_TYPE.ALBEDO;
 			// 
-			// saveResultsToolStripMenuItem
+			// radioButtonSH
 			// 
-			this.saveResultsToolStripMenuItem.Name = "saveResultsToolStripMenuItem";
-			this.saveResultsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-			this.saveResultsToolStripMenuItem.Text = "Save Results";
-			this.saveResultsToolStripMenuItem.Click += new System.EventHandler(this.saveResultsToolStripMenuItem_Click);
+			this.radioButtonSH.AutoSize = true;
+			this.radioButtonSH.Location = new System.Drawing.Point(712, 379);
+			this.radioButtonSH.Name = "radioButtonSH";
+			this.radioButtonSH.Size = new System.Drawing.Size(73, 17);
+			this.radioButtonSH.TabIndex = 4;
+			this.radioButtonSH.Text = "Result SH";
+			this.radioButtonSH.UseVisualStyleBackColor = true;
+			this.radioButtonSH.CheckedChanged += new System.EventHandler(this.radioButtonSH_CheckedChanged);
 			// 
 			// EncoderForm
 			// 
@@ -409,6 +467,7 @@ namespace ProbeSHEncoder
 			this.Controls.Add(this.floatTrackbarControlNormal);
 			this.Controls.Add(this.floatTrackbarControlAlbedo);
 			this.Controls.Add(this.textBoxResults);
+			this.Controls.Add(this.radioButtonSH);
 			this.Controls.Add(this.radioButtonSetNormal);
 			this.Controls.Add(this.radioButtonSetDistance);
 			this.Controls.Add(this.radioButtonSetColor);
@@ -464,6 +523,7 @@ namespace ProbeSHEncoder
 		private System.Windows.Forms.Button buttonComputeFilling;
 		private System.Windows.Forms.CheckBox checkBoxSetAverage;
 		private System.Windows.Forms.ToolStripMenuItem saveResultsToolStripMenuItem;
+		private System.Windows.Forms.RadioButton radioButtonSH;
 	}
 }
 

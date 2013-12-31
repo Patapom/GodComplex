@@ -8,6 +8,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
  	CHECK_MATERIAL( m_pMatRender = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
+ 	CHECK_MATERIAL( m_pMatRenderLights = CreateMaterial( IDR_SHADER_GI_RENDER_LIGHTS, "./Resources/Shaders/GIRenderLights.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
  	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
  	CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
  	CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
@@ -33,10 +34,18 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 	m_pSB_Lights = new SB<LightStruct>( m_Device, MAX_LIGHTS, true );
 	m_pSB_RuntimeProbes = NULL;
 
+
 	//////////////////////////////////////////////////////////////////////////
 	// Create the scene
 	m_bDeleteSceneTags = false;
 	m_Scene.Load( IDR_SCENE_GI, *this );
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Create our sphere primitive for displaying lights & probes
+	m_pPrimSphere = new Primitive( _Device, VertexFormatP3N3::DESCRIPTOR );
+	GeometryBuilder::BuildSphere( 40, 10, *m_pPrimSphere );
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Start precomputation
@@ -47,6 +56,8 @@ Texture2D*	ppRTCubeMap[2];
 EffectGlobalIllum2::~EffectGlobalIllum2()
 {
 	delete[] m_pProbes;
+
+	delete m_pPrimSphere;
 
 	m_bDeleteSceneTags = true;
 	m_Scene.ClearTags( *this );
@@ -65,6 +76,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pMatPostProcess;
 	delete m_pMatRenderNeighborProbe;
 	delete m_pMatRenderCubeMap;
+	delete m_pMatRenderLights;
 	delete m_pMatRender;
 
 //###
@@ -84,7 +96,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	// Animate lights, encode them into SH and inject them into each probe
 	m_pSB_Lights->m[0].Color.Set( 100, 100, 100 );
 //	m_pSB_Lights->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * _Time ) );	// Move along the corridor
-	m_pSB_Lights->m[0].Position.Set( 0.5f * sinf( 0.3f * _Time ), 0.5f + 0.1f * cosf( 1.0f * _Time ), 4.0f * sinf( 0.1f * _Time ) );	// Move along the corridor
+	m_pSB_Lights->m[0].Position.Set( 0.75f * sinf( 1.0f * _Time ), 0.5f + 0.3f * cosf( 1.0f * _Time ), 4.0f * sinf( 0.3f * _Time ) );	// Move along the corridor
 	m_pSB_Lights->m[0].Radius = 0.1f;
 	m_pSB_Lights->Write();
 	m_pSB_Lights->SetInput( 8, true );
@@ -160,9 +172,17 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 	m_Scene.Render( *this );
 
+	//////////////////////////////////////////////////////////////////////////
+	// 2] Render the lights
+	USING_MATERIAL_START( *m_pMatRenderLights )
+
+	m_pPrimSphere->RenderInstanced( M, MAX_LIGHTS );
+
+	USING_MATERIAL_END
+
 
 	//////////////////////////////////////////////////////////////////////////
-	// 2] Post-process the result
+	// 3] Post-process the result
 	USING_MATERIAL_START( *m_pMatPostProcess )
 
 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
