@@ -13,6 +13,11 @@ private:	// CONSTANTS
 	static const U32		MAX_PROBE_SETS = 16;
 
 protected:	// NESTED TYPES
+	
+	struct CBGeneral
+	{
+		bool		ShowIndirect;
+ 	};
 
 	struct CBScene
 	{
@@ -98,6 +103,7 @@ private:	// FIELDS
 	Texture2D*			m_pTexWalls;
 
 	// Constant buffers
+ 	CB<CBGeneral>*		m_pCB_General;
  	CB<CBScene>*		m_pCB_Scene;
  	CB<CBObject>*		m_pCB_Object;
  	CB<CBMaterial>*		m_pCB_Material;

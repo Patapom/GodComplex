@@ -22,6 +22,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
+	m_pCB_General = new CB<CBGeneral>( _Device, 9, true );
 	m_pCB_Scene = new CB<CBScene>( _Device, 10 );
  	m_pCB_Object = new CB<CBObject>( _Device, 11 );
  	m_pCB_Material = new CB<CBMaterial>( _Device, 12 );
@@ -70,6 +71,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pCB_Material;
 	delete m_pCB_Object;
 	delete m_pCB_Scene;
+	delete m_pCB_General;
 
 	delete m_pTexWalls;
 
@@ -84,9 +86,16 @@ delete ppRTCubeMap[1];
 delete ppRTCubeMap[0];
 }
 
+bool	bPreviousAnimateKey = false;
+bool	bAnimateLight = true;
+float	AnimateLightTime = 0.0f;
 
 void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 {
+	// Setup general data
+	m_pCB_General->m.ShowIndirect = gs_WindowInfos.pKeys[VK_RETURN] == 0;
+	m_pCB_General->UpdateData();
+
 	// Setup scene data
 	m_pCB_Scene->m.LightsCount = MAX_LIGHTS;
 	m_pCB_Scene->m.ProbesCount = m_ProbesCount;
@@ -94,9 +103,18 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Animate lights, encode them into SH and inject them into each probe
+
+	bool	bAnimateKey = gs_WindowInfos.pKeys[VK_F1] != 0;
+	if ( (!bPreviousAnimateKey && bAnimateKey) )
+		bAnimateLight ^= true;
+	bPreviousAnimateKey = bAnimateKey;
+
+	if ( bAnimateLight )
+		AnimateLightTime += _DeltaTime;
+
 	m_pSB_Lights->m[0].Color.Set( 100, 100, 100 );
-//	m_pSB_Lights->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * _Time ) );	// Move along the corridor
-	m_pSB_Lights->m[0].Position.Set( 0.75f * sinf( 1.0f * _Time ), 0.5f + 0.3f * cosf( 1.0f * _Time ), 4.0f * sinf( 0.3f * _Time ) );	// Move along the corridor
+//	m_pSB_Lights->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * AnimateLightTime ) );	// Move along the corridor
+	m_pSB_Lights->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime ), 4.0f * sinf( 0.3f * AnimateLightTime ) );	// Move along the corridor
 	m_pSB_Lights->m[0].Radius = 0.1f;
 	m_pSB_Lights->Write();
 	m_pSB_Lights->SetInput( 8, true );

@@ -109,7 +109,11 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	gs_pCamera->SetPerspective( NUAJDEG2RAD( 50.0f ), float(RESX) / RESY, 0.01f, 1000.0f );
 	gs_pCamera->Upload( 0 );
 
-	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3::Zero, NjFloat3::UnitZ );
+//	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3::Zero, NjFloat3::UnitZ );
+
+	// Global illum test
+	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3( 0, 1, 6 ), -NjFloat3::UnitZ );
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create our scene

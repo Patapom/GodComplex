@@ -6,6 +6,13 @@
 #include "Inc/SH.hlsl"
 
 //[
+cbuffer	cbGeneral	: register( b9 )
+{
+	bool		_ShowIndirect;
+};
+//]
+
+//[
 cbuffer	cbScene	: register( b10 )
 {
 	uint		_LightsCount;
@@ -110,14 +117,20 @@ PS_IN	VS( VS_IN _In )
 	{
 		ProbeStruct	Probe = _SBProbes[ProbeIndex];
 
-		float	Distance2Probe = length( Probe.Position - Out.Position );
+		float3	ToProbe = Probe.Position - Out.Position;
+		float	Distance2Probe = length( ToProbe );
+				ToProbe /= Distance2Probe;
 
+		// Weight by distance
 // 		const float	MEAN_HARMONIC_DISTANCE = 4.0;
 // 		const float	WEIGHT_AT_DISTANCE = 0.01;
 // 		const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (MEAN_HARMONIC_DISTANCE * MEAN_HARMONIC_DISTANCE);
 // 		float	ProbeWeight = exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
 
 		float	ProbeWeight = pow( max( 0.01, Distance2Probe ), -3.0 );
+
+		// Also weight by orientation to avoid probes facing away from us
+		ProbeWeight *= saturate( lerp( -0.98, 1.0, 0.5 * (1.0 + dot( Out.Normal, ToProbe )) ) );
 
 // if ( ProbeIndex == 5 )
 // {
@@ -193,7 +206,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 //	float3	Indirect = DiffuseAlbedo * EvaluateSH( Normal, SHIndirect );
 
 AccumDiffuse *= 1.0;
-Indirect *= 1.0;
+Indirect *= _ShowIndirect ? 1.0 : 0.0;
 
 //Indirect *= _In.__Position.x < 1280.0/2.0 ? 1.0 : 0.0;
 
