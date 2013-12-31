@@ -450,8 +450,11 @@ Probe.pSHBounceStatic[i] = NjFloat3::Zero;
 
 #if 1
 // Save to disk
-ppRTCubeMapStaging[0]->Save( "Probe_Albedo.pom" );
-ppRTCubeMapStaging[1]->Save( "Probe_Geometry.pom" );
+char	pTemp[1024];
+sprintf_s( pTemp, "Probe_Albedo%02d.pom", ProbeIndex );
+ppRTCubeMapStaging[0]->Save( pTemp );
+sprintf_s( pTemp, "Probe_Geometry%02d.pom", ProbeIndex );
+ppRTCubeMapStaging[1]->Save( pTemp );
 #endif
 
 

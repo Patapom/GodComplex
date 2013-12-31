@@ -236,7 +236,7 @@ namespace ProbeSHEncoder
 
 		public WMath.Matrix4x4[]	m_Side2World = new WMath.Matrix4x4[6];
 
-		public Pixel[][,]			m_CubeMap = new Pixel[6][,];
+		public Pixel[][,]			m_CubeMap = null;
 		public double				m_MeanDistance = 0.0;
 		public double				m_MeanHarmonicDistance = 0.0;
 
@@ -260,9 +260,22 @@ namespace ProbeSHEncoder
 			m_ApplicationPath = Path.GetDirectoryName( Application.ExecutablePath );
 
 			PrepareCubeMapFaceTransforms();
-			LoadCubeMap();
 
 			outputPanel1.At = -WMath.Vector.UnitZ;
+		}
+
+		protected override void OnLoad( EventArgs e )
+		{
+			base.OnLoad( e );
+
+			try
+			{
+				LoadCubeMap( new FileInfo( "../../Probe_Albedo.pom" ), new FileInfo( "../../Probe_Geometry.pom" ) );
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "Failed to load default probe!\n\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
 		}
 
 		private void	PrepareCubeMapFaceTransforms()
@@ -312,98 +325,114 @@ namespace ProbeSHEncoder
 			}
 		}
 
-		private void	LoadCubeMap()
+		private void	LoadCubeMap( FileInfo _POMAlbedo, FileInfo _POMGeometry )
 		{
-			// Load and convert POM files into a useable cube map
-			Nuaj.Cirrus.Utility.TextureFilePOM	POM0 = new Nuaj.Cirrus.Utility.TextureFilePOM();
-			Nuaj.Cirrus.Utility.TextureFilePOM	POM1 = new Nuaj.Cirrus.Utility.TextureFilePOM();
-			POM0.Load( new FileInfo( "../../Probe_Albedo.pom" ) );
-			POM1.Load( new FileInfo( "../../Probe_Geometry.pom" ) );
-
-			if ( POM0.m_Width != POM1.m_Width || POM0.m_Height != POM1.m_Height || POM0.m_ArraySizeOrDepth != POM1.m_ArraySizeOrDepth || POM0.m_Width != CUBE_MAP_SIZE || POM0.m_Height != CUBE_MAP_SIZE || POM0.m_ArraySizeOrDepth != 6 )
-				throw new Exception( "Unexpected cube map size!" );
-
-			double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
-			double	SumSolidAngle = 0.0;
-
-			for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
+			try
 			{
-				m_CubeMap[CubeFaceIndex] = new Pixel[CUBE_MAP_SIZE,CUBE_MAP_SIZE];
-				for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
-					for ( int X=0; X < CUBE_MAP_SIZE; X++ )
-						m_CubeMap[CubeFaceIndex][X,Y] = new Pixel() { PixelIndex = X + CUBE_MAP_SIZE * (Y + CUBE_MAP_SIZE * CubeFaceIndex), FaceIndex = CubeFaceIndex, FaceX = X, FaceY = Y };
+				buttonCompute.Enabled = false;
 
-				// Fill up albedo
-				using ( MemoryStream S = new MemoryStream( POM0.m_Content[CubeFaceIndex] ) )
-					using ( BinaryReader R = new BinaryReader( S ) )
-						for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
-							for ( int X=0; X < CUBE_MAP_SIZE; X++ )
-							{
-								float	Red = R.ReadSingle();
-								float	Green = R.ReadSingle();
-								float	Blue = R.ReadSingle();
-								float	Alpha = R.ReadSingle();
+				m_CubeMap = new Pixel[6][,];
+				m_ProbePixels.Clear();
+				m_ScenePixels.Clear();
 
-								// Work with better precision
-								Red *= (float) Math.PI;
-								Green *= (float) Math.PI;
-								Blue *= (float) Math.PI;
+				// Load and convert POM files into a useable cube map
+				Nuaj.Cirrus.Utility.TextureFilePOM	POM0 = new Nuaj.Cirrus.Utility.TextureFilePOM();
+				Nuaj.Cirrus.Utility.TextureFilePOM	POM1 = new Nuaj.Cirrus.Utility.TextureFilePOM();
+				POM0.Load( _POMAlbedo );
+				POM1.Load( _POMGeometry );
 
-								m_CubeMap[CubeFaceIndex][X,Y].SetAlbedo( new WMath.Vector( Red, Green, Blue ) );
-							}
+				if ( POM0.m_Width != POM1.m_Width || POM0.m_Height != POM1.m_Height || POM0.m_ArraySizeOrDepth != POM1.m_ArraySizeOrDepth || POM0.m_Width != CUBE_MAP_SIZE || POM0.m_Height != CUBE_MAP_SIZE || POM0.m_ArraySizeOrDepth != 6 )
+					throw new Exception( "Unexpected cube map size!" );
 
-				// Fill up position & normal
-				m_MeanDistance = 0.0;
-				m_MeanHarmonicDistance = 0.0;
-				using ( MemoryStream S = new MemoryStream( POM1.m_Content[CubeFaceIndex] ) )
-					using ( BinaryReader R = new BinaryReader( S ) )
-						for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
-							for ( int X=0; X < CUBE_MAP_SIZE; X++ )
-							{
-								Pixel			Pix = m_CubeMap[CubeFaceIndex][X,Y];
+				double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
+				double	SumSolidAngle = 0.0;
 
-								WMath.Vector	csView = new WMath.Vector( 2.0f * (0.5f + X) / CUBE_MAP_SIZE - 1.0f, 1.0f - 2.0f * (0.5f + Y) / CUBE_MAP_SIZE, 1.0f );
-								float			Distance2Texel = csView.Length();
-												csView /= Distance2Texel;
-								WMath.Vector	wsView = csView * m_Side2World[CubeFaceIndex];
+				for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
+				{
+					m_CubeMap[CubeFaceIndex] = new Pixel[CUBE_MAP_SIZE,CUBE_MAP_SIZE];
+					for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
+						for ( int X=0; X < CUBE_MAP_SIZE; X++ )
+							m_CubeMap[CubeFaceIndex][X,Y] = new Pixel() { PixelIndex = X + CUBE_MAP_SIZE * (Y + CUBE_MAP_SIZE * CubeFaceIndex), FaceIndex = CubeFaceIndex, FaceX = X, FaceY = Y };
 
-								// Retrieve the cube map texel's solid angle (from http://people.cs.kuleuven.be/~philip.dutre/GI/TotalCompendium.pdf)
-								// dw = cos(Theta).dA / r²
-								// cos(Theta) = Adjacent/Hypothenuse = 1/r
-								//
-								double	SolidAngle = dA / (Distance2Texel * Distance2Texel * Distance2Texel);
-								SumSolidAngle += SolidAngle;
+					// Fill up albedo
+					using ( MemoryStream S = new MemoryStream( POM0.m_Content[CubeFaceIndex] ) )
+						using ( BinaryReader R = new BinaryReader( S ) )
+							for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
+								for ( int X=0; X < CUBE_MAP_SIZE; X++ )
+								{
+									float	Red = R.ReadSingle();
+									float	Green = R.ReadSingle();
+									float	Blue = R.ReadSingle();
+									float	Alpha = R.ReadSingle();
 
-								float	Nx = R.ReadSingle();
-								float	Ny = R.ReadSingle();
-								float	Nz = R.ReadSingle();
-								float	Distance = R.ReadSingle();
+									// Work with better precision
+									Red *= (float) Math.PI;
+									Green *= (float) Math.PI;
+									Blue *= (float) Math.PI;
 
-								WMath.Point		wsPosition = new WMath.Point( Distance * wsView.x, Distance * wsView.y, Distance * wsView.z );
-
-								Pix.Position = wsPosition;
-								Pix.View = wsView;
-								Pix.Normal = new WMath.Vector( Nx, Ny, Nz );
-								Pix.SolidAngle = SolidAngle;
-								Pix.Importance = -(wsView | Pix.Normal) / (Distance * Distance);
-								Pix.Distance = Distance;
-								Pix.Infinity = Distance > Z_INFINITY_TEST;
-
-								m_ProbePixels.Add( Pix );
-								if ( !m_CubeMap[CubeFaceIndex][X,Y].Infinity )
-								{	// Account for a new scene pixel (i.e. not infinity)
-									m_ScenePixels.Add( Pix );
-									m_MeanDistance += Distance;
-									m_MeanHarmonicDistance += 1.0 / Distance;
+									m_CubeMap[CubeFaceIndex][X,Y].SetAlbedo( new WMath.Vector( Red, Green, Blue ) );
 								}
-							}
+
+					// Fill up position & normal
+					m_MeanDistance = 0.0;
+					m_MeanHarmonicDistance = 0.0;
+					using ( MemoryStream S = new MemoryStream( POM1.m_Content[CubeFaceIndex] ) )
+						using ( BinaryReader R = new BinaryReader( S ) )
+							for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
+								for ( int X=0; X < CUBE_MAP_SIZE; X++ )
+								{
+									Pixel			Pix = m_CubeMap[CubeFaceIndex][X,Y];
+
+									WMath.Vector	csView = new WMath.Vector( 2.0f * (0.5f + X) / CUBE_MAP_SIZE - 1.0f, 1.0f - 2.0f * (0.5f + Y) / CUBE_MAP_SIZE, 1.0f );
+									float			Distance2Texel = csView.Length();
+													csView /= Distance2Texel;
+									WMath.Vector	wsView = csView * m_Side2World[CubeFaceIndex];
+
+									// Retrieve the cube map texel's solid angle (from http://people.cs.kuleuven.be/~philip.dutre/GI/TotalCompendium.pdf)
+									// dw = cos(Theta).dA / r²
+									// cos(Theta) = Adjacent/Hypothenuse = 1/r
+									//
+									double	SolidAngle = dA / (Distance2Texel * Distance2Texel * Distance2Texel);
+									SumSolidAngle += SolidAngle;
+
+									float	Nx = R.ReadSingle();
+									float	Ny = R.ReadSingle();
+									float	Nz = R.ReadSingle();
+									float	Distance = R.ReadSingle();
+
+									WMath.Point		wsPosition = new WMath.Point( Distance * wsView.x, Distance * wsView.y, Distance * wsView.z );
+
+									Pix.Position = wsPosition;
+									Pix.View = wsView;
+									Pix.Normal = new WMath.Vector( Nx, Ny, Nz );
+									Pix.SolidAngle = SolidAngle;
+									Pix.Importance = -(wsView | Pix.Normal) / (Distance * Distance);
+									Pix.Distance = Distance;
+									Pix.Infinity = Distance > Z_INFINITY_TEST;
+
+									m_ProbePixels.Add( Pix );
+									if ( !m_CubeMap[CubeFaceIndex][X,Y].Infinity )
+									{	// Account for a new scene pixel (i.e. not infinity)
+										m_ScenePixels.Add( Pix );
+										m_MeanDistance += Distance;
+										m_MeanHarmonicDistance += 1.0 / Distance;
+									}
+								}
+				}
+
+				m_MeanDistance /= (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6);
+				m_MeanHarmonicDistance = (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6) / m_MeanHarmonicDistance;
+
+				// Redraw cube map...
+				outputPanel1.UpdateBitmap();
+
+				buttonCompute.Enabled = true;
 			}
-
-			m_MeanDistance /= (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6);
-			m_MeanHarmonicDistance = (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6) / m_MeanHarmonicDistance;
-
-			// Redraw cube map...
-			outputPanel1.UpdateBitmap();
+			catch ( Exception _e )
+			{
+				m_CubeMap = null;
+				throw _e;
+			}
 		}
 
 		#region Helpers
@@ -1243,6 +1272,44 @@ if ( DEBUG_PixelIndex == 0x700 && _SetPixels.Count == 2056 )
 		private void checkBoxSetAverage_CheckedChanged( object sender, EventArgs e )
 		{
 			outputPanel1.ShowSetAverage = checkBoxSetAverage.Checked;
+		}
+
+		private void loadProbeToolStripMenuItem_Click( object sender, EventArgs e )
+		{
+			string	OldFileName = GetRegKey( "LastProbeFilename", m_ApplicationPath );
+			openFileDialog.InitialDirectory = Path.GetDirectoryName( OldFileName );
+			openFileDialog.FileName = Path.GetFileName( OldFileName );
+			if ( openFileDialog.ShowDialog( this ) != DialogResult.OK )
+				return;
+			SetRegKey( "LastProbeFilename", openFileDialog.FileName );
+
+
+			// Attempt to load the probe
+			try
+			{
+				string	ProbeAlbedoFileNameString = openFileDialog.FileName;
+				string	ProbeGeometryFileNameString = openFileDialog.FileName;
+				if ( ProbeAlbedoFileNameString.IndexOf( "Albedo" ) != -1 )
+					ProbeGeometryFileNameString = ProbeAlbedoFileNameString.Replace( "Albedo", "Geometry" );
+				else if ( ProbeAlbedoFileNameString.IndexOf( "Geometry" ) != -1 )
+					ProbeAlbedoFileNameString = ProbeAlbedoFileNameString.Replace( "Geometry", "Albedo" );
+				else
+					throw new Exception( "Expected either an albedo or geometry probe POM file!" );
+
+				FileInfo	ProbeAlbedoFileName = new FileInfo( ProbeAlbedoFileNameString );
+				if ( !ProbeAlbedoFileName.Exists )
+					throw new Exception( "Probe file for albedo not found!" );
+
+				FileInfo	ProbeGeometryFileName = new FileInfo( ProbeGeometryFileNameString );
+				if ( !ProbeGeometryFileName.Exists )
+					throw new Exception( "Probe file for geometry not found!" );
+
+				LoadCubeMap( ProbeAlbedoFileName, ProbeGeometryFileName );
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "Failed to load probe!\n\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
 		}
 
 		private void saveResultsToolStripMenuItem_Click( object sender, EventArgs e )

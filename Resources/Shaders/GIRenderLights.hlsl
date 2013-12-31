@@ -52,7 +52,9 @@ PS_IN	VS( VS_IN _In )
 
 	PS_IN	Out;
 	Out.__Position = mul( WorldPosition, _World2Proj );
-	Out.Color = Light.Color;
+//	Out.Color = Light.Color * pow( lerp( 0.1, 1.0, dot( _In.Normal, normalize( _Camera2World[3].xyz - WorldPosition.xyz ) ) ), 8.0 );
+//	Out.Color = Light.Color * lerp( 0.005, 1.0, pow( dot( _In.Normal, _Camera2World[2].xyz ), 8.0 ) );
+	Out.Color = Light.Color / max( 1.0, max( max( Light.Color.x, Light.Color.y ), Light.Color.z ) ) * lerp( 0.5, 1.2, pow( saturate( dot( _In.Normal, normalize( _Camera2World[3].xyz - WorldPosition.xyz ) ) ), 0.8 ) );
 
 	return Out;
 }
