@@ -59,6 +59,8 @@ protected:	// NESTED TYPES
 		{
 			NjFloat3		Position;			// The position of the dynamic set
 			NjFloat3		Normal;				// The normal of the dynamic set's plane
+			NjFloat3		Tangent;			// The longest principal axis of the set's points cluster (scaled by the length of the axis)
+			NjFloat3		BiTangent;			// The shortest principal axis of the set's points cluster (scaled by the length of the axis)
 			NjFloat3		Albedo;				// The albedo of the dynamic set (not currently used, for info purpose)
 			NjFloat3		pSHBounce[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced dynamic lighting on static geometry, for each dynamic set
 

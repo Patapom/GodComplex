@@ -121,20 +121,34 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		{
 			ProbeStruct::SetInfos&	Set = Probe.pSetInfos[SetIndex];
 
+			// Transform set's position/normal by probe's LOCAL=>WORLD
+			NjFloat3	wsSetPosition = NjFloat3( Probe.pSceneProbe->m_Local2World.GetRow(3) ) + Set.Position;
+			NjFloat3	wsSetNormal = Set.Normal;
+			NjFloat3	wsSetTangent = Set.Tangent;
+			NjFloat3	wsSetBiTangent = Set.BiTangent;
+// TODO: Handle non-identity matrices! Let's go fast for now...
+// ARGH! That also means possibly rotating the SH!
+// Let's just force the probes to be axis-aligned, shall we??? :) (lazy man talking) (no, seriously, it makes sense after all)
+
+
 			// Compute irradiance from every light
 			NjFloat3	SetIrradiance = NjFloat3::Zero;
 			for ( int LightIndex=0; LightIndex < MAX_LIGHTS; LightIndex++ )
 			{
 				const LightStruct&	Light = m_pSB_Lights->m[LightIndex];
 
+#if 1
 				// Compute light vector
-				NjFloat3	Set2Light = Light.Position - Set.Position;
+				NjFloat3	Set2Light = Light.Position - wsSetPosition;
 				float		DistanceProbe2Light = Set2Light.Length();
 				float		InvDistance = 1.0f / DistanceProbe2Light;
 				Set2Light = Set2Light * InvDistance;
 
-				float		NdotL = MAX( 0.0f, Set2Light | Set.Normal );
+				float		NdotL = MAX( 0.0f, Set2Light | wsSetNormal );
 				NjFloat3	LightIrradiance = Light.Color * NdotL * InvDistance * InvDistance;	// I=E.(N.L)/r²
+#else
+				// Use several samples on the set's plane to avoid too sharp results!
+#endif
 
 				SetIrradiance = SetIrradiance + LightIrradiance;
 			}
@@ -336,6 +350,8 @@ void	EffectGlobalIllum2::PreComputeProbes()
 		NjFloat4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
 		ProbeLocal2World.Normalize();
 
+		ASSERT( ProbeLocal2World.GetRow(0).LengthSq() > 0.999f && ProbeLocal2World.GetRow(1).LengthSq() > 0.999f && ProbeLocal2World.GetRow(2).LengthSq() > 0.999f, "Not identity! If not identity then transform probe set positions/normals/etc. by probe matrix!" );
+
 		NjFloat4x4	ProbeWorld2Local = ProbeLocal2World.Inverse();
 
 		// Render the 6 faces
@@ -468,7 +484,16 @@ ppRTCubeMapStaging[1]->Save( pTemp );
 #if 1
 		{
 			FILE*	pFile = NULL;
+
+#if 1
+			// Read numbered probe
+			char	pTemp[1024];
+			sprintf_s( pTemp, "Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\Test%02d.probeset", ProbeIndex );
+			fopen_s( &pFile, pTemp, "rb" );
+#else
+			// Read default probe
 			fopen_s( &pFile, "Test.probeset", "rb" );
+#endif
 			ASSERT( pFile != NULL, "Can't find probeset test file!" );
 
 			// Read the amount of sets
@@ -487,6 +512,14 @@ ppRTCubeMapStaging[1]->Save( pTemp );
 				fread_s( &S.Normal.x, sizeof(S.Normal.x), sizeof(float), 1, pFile );
 				fread_s( &S.Normal.y, sizeof(S.Normal.y), sizeof(float), 1, pFile );
 				fread_s( &S.Normal.z, sizeof(S.Normal.z), sizeof(float), 1, pFile );
+
+				fread_s( &S.Tangent.x, sizeof(S.Tangent.x), sizeof(float), 1, pFile );
+				fread_s( &S.Tangent.y, sizeof(S.Tangent.y), sizeof(float), 1, pFile );
+				fread_s( &S.Tangent.z, sizeof(S.Tangent.z), sizeof(float), 1, pFile );
+
+				fread_s( &S.BiTangent.x, sizeof(S.BiTangent.x), sizeof(float), 1, pFile );
+				fread_s( &S.BiTangent.y, sizeof(S.BiTangent.y), sizeof(float), 1, pFile );
+				fread_s( &S.BiTangent.z, sizeof(S.BiTangent.z), sizeof(float), 1, pFile );
 
 				fread_s( &S.Albedo.x, sizeof(S.Albedo.x), sizeof(float), 1, pFile );
 				fread_s( &S.Albedo.y, sizeof(S.Albedo.y), sizeof(float), 1, pFile );

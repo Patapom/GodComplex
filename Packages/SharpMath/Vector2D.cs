@@ -60,11 +60,13 @@ namespace WMath
 		public void					Max( Vector2D _Op )								{ x = System.Math.Max( x, _Op.x ); y = System.Math.Max( y, _Op.y ); }
 		public float				Sum()											{ return x + y; }
 		public float				Product()										{ return x * y; }
-		public float				SquareMagnitude()								{ return x * x + y * y; }
-		public float				Magnitude()										{ return (float) System.Math.Sqrt( x * x + y * y ); }
-		public Vector2D				Normalize()										{ float fINorm = 1.0f / Magnitude(); x *= fINorm; y *= fINorm; return this; }
-		public bool					IsNormalized()									{ return System.Math.Abs( SquareMagnitude() - 1.0f ) < float.Epsilon*float.Epsilon; }
-		public bool					IsTooSmall()									{ return SquareMagnitude() < float.Epsilon*float.Epsilon; }
+		public float				LengthSquare									{ get { return x * x + y * y; } }
+		public float				Length											{ get { return (float) System.Math.Sqrt( x * x + y * y ); } }
+		public float				SquareMagnitude()								{ return LengthSquare; }
+		public float				Magnitude()										{ return Length; }
+		public Vector2D				Normalize()										{ float fINorm = 1.0f / Length; x *= fINorm; y *= fINorm; return this; }
+		public bool					IsNormalized()									{ return System.Math.Abs( LengthSquare - 1.0f ) < float.Epsilon*float.Epsilon; }
+		public bool					IsTooSmall()									{ return LengthSquare < float.Epsilon*float.Epsilon; }
 
 		public override string		ToString()
 		{

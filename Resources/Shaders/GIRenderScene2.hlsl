@@ -112,11 +112,18 @@ PS_IN	VS( VS_IN _In )
 
 		float	Distance2Probe = length( Probe.Position - Out.Position );
 
-// 		const float	WEIGHT_AT_DISTANCE = 0.1;
-// 		const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (Probe.InfluenceDistance * Probe.InfluenceDistance);
+// 		const float	MEAN_HARMONIC_DISTANCE = 4.0;
+// 		const float	WEIGHT_AT_DISTANCE = 0.01;
+// 		const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (MEAN_HARMONIC_DISTANCE * MEAN_HARMONIC_DISTANCE);
 // 		float	ProbeWeight = exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
 
-		float	ProbeWeight = 1.0 / Distance2Probe;
+		float	ProbeWeight = pow( max( 0.01, Distance2Probe ), -3.0 );
+
+// if ( ProbeIndex == 5 )
+// {
+// 	Out.SH0 = ProbeWeight;
+// 	break;
+// }
 
 		for ( int i=0; i < 9; i++ )
 			SH[i] += ProbeWeight * Probe.SHBounce[i];

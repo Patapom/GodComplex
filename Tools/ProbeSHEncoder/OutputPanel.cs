@@ -267,7 +267,7 @@ namespace ProbeSHEncoder
 				return;
 			}
 
-			float	Distance2SetCenter = 0.2f * (_Pixel.Position - S.Position).Length();
+			float	Distance2SetCenter = 0.2f * (_Pixel.Position - S.Position).Length;
 
 			byte	C = (byte) Math.Min( 255, 255 * Distance2SetCenter );
 			_R = _G = _B = C;
@@ -326,7 +326,7 @@ namespace ProbeSHEncoder
 				for ( int i=0; i < 9; i++ )
 					Color += SHCoeffs[i] * m_SH[i];
 //				Color *= 50.0f;
-				Color *= 1.0f / m_Owner.m_Sets[m_IsolatedSetIndex].SH[0].Max();
+				Color *= 1.0f / m_SH[0].Max();
 			}
 
 			if ( Color.x < 0.0f || Color.y < 0.0f || Color.z < 0.0f )

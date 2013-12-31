@@ -123,7 +123,7 @@ namespace ProbeSHEncoder
 			/// <returns></returns>
 			public float	ComputeMetric( Pixel _Other, float _PositionDistanceWeight, float _NormalDistanceWeight, float _ColorDistanceWeight )
 			{
-				float	EuclidianDistance = (_Other.Position - Position).Length();
+				float	EuclidianDistance = (_Other.Position - Position).Length;
 						EuclidianDistance *= _PositionDistanceWeight;
 
 				float	NormalDistance = 0.5f * (1.0f - (_Other.Normal | Normal));
@@ -165,23 +165,26 @@ namespace ProbeSHEncoder
 		[System.Diagnostics.DebuggerDisplay( "C={SetCardinality} I={Importance} H={AlbedoHSL.x} S={AlbedoHSL.y} L={Albedo.z} P=({Position.x}, {Position.y}, {Position.z})" )]
 		public class	Set : Pixel
 		{
-			public WMath.Vector		AccumCentroid = WMath.Vector.Zero;
-			public WMath.Vector		AccumNormal = WMath.Vector.Zero;
-			public int				SetCardinality = 0;
+			public List<Pixel>		SetPixels = new List<Pixel>();	// The list of pixels belonging to this set
+			public int				SetIndex = -1;					// Warning: Only available once the computation is over and all sets have been resolved!
 
-			public int				LastSetCardinality = 0;
-			public int				SetIndex = -1;	// Warning: Only available once the computation is over and all sets have been resolved!
+			// Tangent space generated from principal directions of the points set
+			public WMath.Vector		Tangent = WMath.Vector.Zero;
+			public WMath.Vector		BiTangent = WMath.Vector.Zero;
 
 			// The generated SH coefficients for this set
 			public WMath.Vector[]	SH = new WMath.Vector[9];
+
+// Used by k-means method to determine average set centroid/normal
+public WMath.Vector		AccumCentroid = WMath.Vector.Zero;
+public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 
 			/// <summary>
 			/// Performs the SH encoding of all the pixels belonging to the set
 			/// It simply amounts to summing the directional SH contribution of every pixels in the set, assuming they
 			///  all receive the energy received by the set's substitute center
 			/// </summary>
-			/// <param name="_Pixels"></param>
-			public void			EncodeSH( List<Pixel> _Pixels )
+			public void			EncodeSH()
 			{
 				double		f0 = 0.5 / Math.Sqrt(Math.PI);
 				double		f1 = Math.Sqrt(3.0) * f0;
@@ -197,7 +200,7 @@ namespace ProbeSHEncoder
 				double[]	SHB = new double[9];
 				double[]	SHCoeffs = new double[9];
 
-				foreach ( Pixel P in _Pixels )
+				foreach ( Pixel P in SetPixels )
 				{
 					// Build SH coeffs for that pixel
 					SHCoeffs[0] = f0;
@@ -227,6 +230,74 @@ namespace ProbeSHEncoder
 				double	Normalizer = 1.0 / (4.0 * Math.PI);
 				for ( int i=0; i < 9; i++ )
 					SH[i] = new WMath.Vector( (float) (Normalizer * SHR[i]), (float) (Normalizer * SHG[i]), (float) (Normalizer * SHB[i]) );
+			}
+
+			/// <summary>
+			/// This is a very simplistic approach to determine the principal axes of the set:
+			///  1) Create a dummy tangent space for the set's plane
+			///  2) Rotate an axis from 0 to 180° in that arbitrary tangent space
+			///		2.1) Compute the max distance of each point of the set to this axis (i.e. bounding rect extent in that direction)
+			///		2.2) Keep the angle where we find the largest distance as our minor principal axis
+			///		2.3) Keep the angle where we find the smallest distance as our major principal axis
+			/// </summary>
+			public void			FindPrincipalAxes()
+			{
+				// Create an arbitrary tangent space
+				WMath.Vector	Y = Normal;;
+				WMath.Vector	X = WMath.Vector.UnitY ^ Y;
+				WMath.Vector	Z;
+				if ( X.Length < 1e-6 )
+				{	// Invalid basis!
+					X = WMath.Vector.UnitX;
+					Z = WMath.Vector.UnitZ;
+				}
+				else
+				{
+					X.Normalize();
+					Z = X ^ Y;
+				}
+
+				// Perform a rotation of a line from 0 to 180°
+				float	MaxDistance = 0.0f;
+				float	MaxDistanceAngle = 0.0f;
+				float	MinDistance = 1e6f;
+				float	MinDistanceAngle = 0.0f;
+				for ( int Angle=0; Angle < 180; Angle+=2 )
+				{
+					float			fAngle = (float) Math.PI * Angle / 180.0f;
+					WMath.Vector	OrthoDir = (float) -Math.Sin( fAngle ) * X + (float) Math.Cos( fAngle ) * Z;	// This is actually the orthogonal direction to the line we're rotating
+
+					// Compute the max of distances from each point to this line
+					float	Distance = 0.0f;
+					foreach ( Pixel P in SetPixels )
+					{
+						WMath.Vector	Center2Pixel = P.Position - Position;
+						float			Dot = Math.Abs( Center2Pixel | OrthoDir );	// Gives the distance to the closest point on the rotating line
+						Distance = Math.Max( Distance, Dot );
+					}
+
+					// Check for new best candidates
+					if ( Distance > MaxDistance )
+					{	// New best candidate for minor axis!
+						MaxDistance = Distance;
+						MaxDistanceAngle = fAngle;
+					}
+					if ( Distance < MinDistance )
+					{	// New best candidate for major axis!
+						MinDistance = Distance;
+						MinDistanceAngle = fAngle;
+					}
+				}
+
+				// Finalize axes
+				BiTangent = (float) Math.Cos( MaxDistanceAngle ) * X + (float) Math.Sin( MaxDistanceAngle ) * Z;	// Our minor axis
+				Tangent = (float) Math.Cos( MinDistanceAngle ) * X + (float) Math.Sin( MinDistanceAngle ) * Z;		// Our major axis
+
+				float	Diff = Tangent | BiTangent;	// We'd prefer a diff of 0, meaning the found axes are orthogonal...
+
+				// Scale minor/major axes by these distances
+				Tangent *= MaxDistance;
+				BiTangent *= MinDistance;
 			}
 		}
 
@@ -384,7 +455,7 @@ namespace ProbeSHEncoder
 									Pixel			Pix = m_CubeMap[CubeFaceIndex][X,Y];
 
 									WMath.Vector	csView = new WMath.Vector( 2.0f * (0.5f + X) / CUBE_MAP_SIZE - 1.0f, 1.0f - 2.0f * (0.5f + Y) / CUBE_MAP_SIZE, 1.0f );
-									float			Distance2Texel = csView.Length();
+									float			Distance2Texel = csView.Length;
 													csView /= Distance2Texel;
 									WMath.Vector	wsView = csView * m_Side2World[CubeFaceIndex];
 
@@ -569,7 +640,7 @@ if ( WeightColor > 0.5f )
 					// Accumulate centroid position
 					BestSet.AccumCentroid += (WMath.Vector) P.Position;
 					BestSet.AccumNormal += P.Normal;
-					BestSet.SetCardinality++;	// One more pixel in this set!
+					BestSet.SetPixels.Add( P );	// One more pixel in this set!
 
 					// Check if there's any change in the set
 					if ( P.ParentSet == BestSet )
@@ -587,31 +658,33 @@ if ( WeightColor > 0.5f )
 				{
 					Set	S = m_Sets[SetIndex];
 
-//					if ( S.SetCardinality == 0 )	// Empty set
-					if ( S.SetCardinality < RemoveSetCardinalityThreshold )	// Simple cardinality threshold
+//					if ( S.SetPixels.Count == 0 )	// Empty set
+					if ( S.SetPixels.Count < RemoveSetCardinalityThreshold )	// Simple cardinality threshold
 //					float	CardinalityFactor = Math.Min( 1.0f, 0.25f * (float) m_MeanHarmonicDistance / ((WMath.Vector) S.Position).Length() );
 // 					float	CardinalityFactor = Math.Min( 1.0f, 1.0f * (float) m_MeanDistance / ((WMath.Vector) S.Position).Length() );
-// 					if ( (int) (S.SetCardinality * CardinalityFactor) < RemoveSetCardinalityThreshold )	// Cardinality threshold with reduction with distance
+// 					if ( (int) (S.SetPixels.Count * CardinalityFactor) < RemoveSetCardinalityThreshold )	// Cardinality threshold with reduction with distance
 					{	// This set is not valuable enough, meaning we can discard it...
 						Sets.Remove( S );
 						ChangesCount = m_ScenePixels.Count;	// This should force another loop!
 						continue;
 					}
 
-					S.Position = (WMath.Point) (S.AccumCentroid / S.SetCardinality);
-					S.Normal = S.AccumNormal / S.SetCardinality;
+					S.Position = (WMath.Point) (S.AccumCentroid / S.SetPixels.Count);
+					S.Normal = S.AccumNormal / S.SetPixels.Count;
 
 					// Reset accumulators
 					S.AccumCentroid.MakeZero();
 					S.AccumNormal.MakeZero();
-					S.LastSetCardinality = S.SetCardinality;
-					S.SetCardinality = 0;
 				}
 
 				// Check if we can leave because not many changes were made
 				float	ChangesRatio = (float) ChangesCount / m_ScenePixels.Count;
 				if ( PreviousChangesRatio < CHANGES_RATIO_THRESHOLD && ChangesRatio < CHANGES_RATIO_THRESHOLD )
 					break;	// Done!
+
+				// Reset pixels for each set
+				foreach ( Set S in m_Sets )
+					S.SetPixels.Clear();
 
 				PreviousChangesRatio = ChangesRatio;
 			}
@@ -626,7 +699,7 @@ if ( WeightColor > 0.5f )
 			for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
 			{
 				Set	S = m_Sets[SetIndex];
-				textBoxResults.Text += SetIndex + ") " + S.LastSetCardinality + " pixels (" + (100.0f * S.LastSetCardinality / m_ScenePixels.Count).ToString( "G4" ) + "%)\r\n"
+				textBoxResults.Text += SetIndex + ") " + S.SetPixels.Count + " pixels (" + (100.0f * S.SetPixels.Count / m_ScenePixels.Count).ToString( "G4" ) + "%)\r\n"
 									+ "Albedo = (" + S.Albedo.x.ToString( "G4" ) + ", " + S.Albedo.y.ToString( "G4" ) + ", " + S.Albedo.z.ToString( "G4" ) + ")\r\n\r\n";
 			}
 
@@ -664,7 +737,6 @@ int	DEBUG_PixelIndex = 0;
 			//////////////////////////////////////////////////////////////////////////
 			// 2] Iterate on the list of free pixels that belong to no set and create iterative sets
 			List<Set>	Sets = new List<Set>();
-			int			SumCardinality = 0;
 			for ( int PixelIndex=0; PixelIndex < m_ProbePixels.Count; PixelIndex++ )
 			{
 DEBUG_PixelIndex = PixelIndex;
@@ -678,15 +750,15 @@ DEBUG_PixelIndex = PixelIndex;
 					Sets.Add( S );
 
 
-if ( PixelIndex == 0x2680 )
-	P0.Albedo.x += 1e-6f;
+// if ( PixelIndex == 0x2680 )
+// 	P0.Albedo.x += 1e-6f;
 
 					// Flood fill adjacent pixels based on a criterion
-					List<Pixel>	SetPixels = new List<Pixel>();
-					List<Pixel>	SetRejectedPixels = new List<Pixel>();
+ 					List<Pixel>	SetRejectedPixels = new List<Pixel>();
 					try
 					{
-						FloodFill( S, S, P0, SetPixels, SetRejectedPixels );
+						S.SetPixels.Clear();
+						FloodFill( S, S, P0, SetRejectedPixels );
 					}
 					catch ( Exception )
 					{
@@ -694,39 +766,12 @@ if ( PixelIndex == 0x2680 )
 						continue;
 					}
 
-					// Remove rejected pixels from the set (we only temporarily marked them to avoid processing them twice)
+					// Remove rejected pixels from the set (we only temporarily marked them to avoid them being processed twice by the flood filler)
 					foreach ( Pixel P in SetRejectedPixels )
 						P.ParentSet = null;	// Ready for another round!
 
-					// Post-process the pixels to find the one closest to the probe as our new centroid
-					Pixel			BestPixel = P0;
-					WMath.Vector	AverageNormal = WMath.Vector.Zero;
-					WMath.Vector	AverageAlbedo = WMath.Vector.Zero;
-					foreach ( Pixel P in SetPixels )
-					{
-						if ( P.Distance < BestPixel.Distance )
-							BestPixel = P;
-
-						AverageNormal += P.Normal;
-						AverageAlbedo += P.Albedo;
-					}
-
-					AverageNormal /= SetPixels.Count;
-					AverageAlbedo /= SetPixels.Count;
-
-					S.Position = BestPixel.Position;	// Our new winner!
-					S.Normal = AverageNormal;
-					S.SetAlbedo( AverageAlbedo );
-
-					// Also finalize importance
-					S.Importance /= SetPixels.Count;
-
-					// Store amount of pixels in the set for statistics
-					S.SetCardinality = S.LastSetCardinality = SetPixels.Count;
-					SumCardinality += S.SetCardinality;
-
-					// FInally, encode SH
-					S.EncodeSH( SetPixels );
+					// Finalize importance
+					S.Importance /= S.SetPixels.Count;
 // DEBUG
 //break;
 				}
@@ -748,7 +793,7 @@ if ( PixelIndex == 0x2680 )
 			m_Sets = Sets.ToArray();
 			int	DiscardThreshold = (int) (0.004f * m_ScenePixels.Count);
 			foreach ( Set S in m_Sets )
-				if ( S.SetCardinality < DiscardThreshold )
+				if ( S.SetPixels.Count < DiscardThreshold )
 				{
 					S.SetIndex = -1;	// Now invalid!
 					Sets.Remove( S );
@@ -765,9 +810,42 @@ if ( PixelIndex == 0x2680 )
 
 			m_Sets = Sets.ToArray();
 
-			// Finish by filling final set indices
+
+			//////////////////////////////////////////////////////////////////////////
+			// Compute informations on each set
+			int		SumCardinality = 0;
 			for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
-				m_Sets[SetIndex].SetIndex = SetIndex;
+			{
+				Set	S = m_Sets[SetIndex];
+				S.SetIndex = SetIndex;
+
+				// Post-process the pixels to find the one closest to the probe as our new centroid
+				Pixel			BestPixel = S.SetPixels[0];
+				WMath.Vector	AverageNormal = WMath.Vector.Zero;
+				WMath.Vector	AverageAlbedo = WMath.Vector.Zero;
+				foreach ( Pixel P in S.SetPixels )
+				{
+					if ( P.Distance < BestPixel.Distance )
+						BestPixel = P;
+
+					AverageNormal += P.Normal;
+					AverageAlbedo += P.Albedo;
+				}
+
+				AverageNormal /= S.SetPixels.Count;
+				AverageAlbedo /= S.SetPixels.Count;
+
+				S.Position = BestPixel.Position;	// Our new winner!
+				S.Normal = AverageNormal;
+				S.SetAlbedo( AverageAlbedo );
+
+				// Count pixels in the set for statistics
+				SumCardinality += S.SetPixels.Count;
+
+				// Finally, encode SH & find principal axes
+				S.EncodeSH();
+				S.FindPrincipalAxes();
+			}
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -788,7 +866,7 @@ if ( PixelIndex == 0x2680 )
 			for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
 			{
 				Set	S = m_Sets[SetIndex];
-				textBoxResults.Text += SetIndex + ") " + S.LastSetCardinality + " pixels (" + (100.0f * S.LastSetCardinality / m_ScenePixels.Count).ToString( "G4" ) + "%)\r\n"
+				textBoxResults.Text += SetIndex + ") " + S.SetPixels.Count + " pixels (" + (100.0f * S.SetPixels.Count / m_ScenePixels.Count).ToString( "G4" ) + "%)\r\n"
 									+ "Albedo = (" + S.Albedo.x.ToString( "G4" ) + ", " + S.Albedo.y.ToString( "G4" ) + ", " + S.Albedo.z.ToString( "G4" ) + ")\r\n\r\n";
 			}
 
@@ -818,9 +896,9 @@ if ( PixelIndex == 0x2680 )
 		/// <param name="_P"></param>
 		/// <param name="_SetPixels"></param>
 		/// <param name="_SetRejectedPixels"></param>
-		private void	FloodFill( Set _S, Pixel _PreviousPixel, Pixel _P, List<Pixel> _SetPixels, List<Pixel> _SetRejectedPixels )
+		private void	FloodFill( Set _S, Pixel _PreviousPixel, Pixel _P, List<Pixel> _SetRejectedPixels )
 		{
-			if ( !CheckAndAcceptPixel( _S, _PreviousPixel, _P, _SetPixels, _SetRejectedPixels ) )
+			if ( !CheckAndAcceptPixel( _S, _PreviousPixel, _P, _SetRejectedPixels ) )
 				return;
 
 // if ( DEBUG_PixelIndex == 0x2680 )
@@ -837,7 +915,7 @@ if ( PixelIndex == 0x2680 )
 			// Start going right
 			Pixel	Previous = _P;
 			Pixel	Current = FindAdjacentPixel( Previous, 1, 0 );
-			while ( CheckAndAcceptPixel( _S, Previous, Current, _SetPixels, _SetRejectedPixels ) )
+			while ( CheckAndAcceptPixel( _S, Previous, Current, _SetRejectedPixels ) )
 			{
 				ScanlinePixels.Add( Current );
 				Previous = Current;
@@ -847,7 +925,7 @@ if ( PixelIndex == 0x2680 )
 			// Start going left
 			Previous = _P;
 			Current = FindAdjacentPixel( Previous, -1, 0 );
-			while ( CheckAndAcceptPixel( _S, Previous, Current, _SetPixels, _SetRejectedPixels ) )
+			while ( CheckAndAcceptPixel( _S, Previous, Current, _SetRejectedPixels ) )
 			{
 				ScanlinePixels.Add( Current );
 				Previous = Current;
@@ -863,7 +941,7 @@ if ( PixelIndex == 0x2680 )
 			foreach ( Pixel P in ScanlinePixels )
 			{
 				Pixel	Top = FindAdjacentPixel( P, 0, 1 );
-				FloodFill( _S, P, Top, _SetPixels, _SetRejectedPixels );
+				FloodFill( _S, P, Top, _SetRejectedPixels );
 			}
 
 			//////////////////////////////////////////////////////////////////////////
@@ -871,13 +949,13 @@ if ( PixelIndex == 0x2680 )
 			foreach ( Pixel P in ScanlinePixels )
 			{
 				Pixel	Bottom = FindAdjacentPixel( P, 0, -1 );
-				FloodFill( _S, P, Bottom, _SetPixels, _SetRejectedPixels );
+				FloodFill( _S, P, Bottom, _SetRejectedPixels );
 			}
 
 			RecursionLevel--;
 		}
 
-		private bool	CheckAndAcceptPixel( Set _S, Pixel _PreviousPixel, Pixel _P, List<Pixel> _SetPixels, List<Pixel> _SetRejectedPixels )
+		private bool	CheckAndAcceptPixel( Set _S, Pixel _PreviousPixel, Pixel _P, List<Pixel> _SetRejectedPixels )
 		{
 			if ( !_P.IsFloodFillAcceptable() )
 				return false;
@@ -910,7 +988,7 @@ if ( PixelIndex == 0x2680 )
 
 					// Next, let's check color discrepancy
 					// I'm using the simplest metric here...
-					float	ColorDiff = (_PreviousPixel.Albedo - _P.Albedo).Length();
+					float	ColorDiff = (_PreviousPixel.Albedo - _P.Albedo).Length;
 					if ( ColorDiff < ALBEDO_RGB_THRESHOLD )
 					{
 						Accepted = true;	// Winner!
@@ -923,7 +1001,7 @@ if ( PixelIndex == 0x2680 )
 
 			if ( Accepted )
 			{
-				_SetPixels.Add( _P );			// We got a new member for the set!
+				_S.SetPixels.Add( _P );			// We got a new member for the set!
 				_S.Importance += _P.Importance;	// Accumulate average importance
 			}
 			else
@@ -940,7 +1018,7 @@ if ( PixelIndex == 0x2680 )
 		/// <param name="_P"></param>
 		/// <param name="_SetPixels"></param>
 		/// <param name="_SetRejectedPixels"></param>
-		private void	FloodFill_Recursive( Set _S, Pixel _PreviousPixel, Pixel _P, List<Pixel> _SetPixels, List<Pixel> _SetRejectedPixels )
+		private void	FloodFill_Recursive( Set _S, Pixel _PreviousPixel, Pixel _P, List<Pixel> _SetRejectedPixels )
 		{
 			if ( !_P.IsFloodFillAcceptable() )
 				return;
@@ -983,13 +1061,13 @@ if ( PixelIndex == 0x2680 )
 
 			//////////////////////////////////////////////////////////////////////////
 			// We got a new member for the set!
-			_SetPixels.Add( _P );
+			_S.SetPixels.Add( _P );
 
 
 if ( DEBUG_PixelIndex == 0x700 )
-	Console.WriteLine( "R=" + RecursionLevel + " - S=" + _SetPixels.Count );
+	Console.WriteLine( "R=" + RecursionLevel + " - S=" + _S.SetPixels.Count );
 
-if ( DEBUG_PixelIndex == 0x700 && _SetPixels.Count == 2056 )
+if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 	Console.WriteLine( "GOTCHA!" );
 
 			//////////////////////////////////////////////////////////////////////////
@@ -999,16 +1077,16 @@ if ( DEBUG_PixelIndex == 0x700 && _SetPixels.Count == 2056 )
 				throw new Exception();
 
 			Pixel	L = FindAdjacentPixel( _P, -1, 0 );
-			FloodFill( _S, _P, L, _SetPixels, _SetRejectedPixels );
+			FloodFill( _S, _P, L, _SetRejectedPixels );
 
 			Pixel	R = FindAdjacentPixel( _P, 1, 0 );
-			FloodFill( _S, _P, R, _SetPixels, _SetRejectedPixels );
+			FloodFill( _S, _P, R, _SetRejectedPixels );
 
 			Pixel	D = FindAdjacentPixel( _P, 0, -1 );
-			FloodFill( _S, _P, D, _SetPixels, _SetRejectedPixels );
+			FloodFill( _S, _P, D, _SetRejectedPixels );
 
 			Pixel	U = FindAdjacentPixel( _P, 0, 1 );
-			FloodFill( _S, _P, U, _SetPixels, _SetRejectedPixels );
+			FloodFill( _S, _P, U, _SetRejectedPixels );
 
 			RecursionLevel--;
 		}
@@ -1199,9 +1277,9 @@ if ( DEBUG_PixelIndex == 0x700 && _SetPixels.Count == 2056 )
 
 		public int Compare( EncoderForm.Set x, EncoderForm.Set y )
 		{
-			if ( x.SetCardinality < y.SetCardinality )
+			if ( x.SetPixels.Count < y.SetPixels.Count )
 				return +1;
-			if ( x.SetCardinality > y.SetCardinality )
+			if ( x.SetPixels.Count > y.SetPixels.Count )
 				return -1;
 
 			return 0;
@@ -1344,6 +1422,14 @@ if ( DEBUG_PixelIndex == 0x700 && _SetPixels.Count == 2056 )
 						W.Write( S.Normal.x );
 						W.Write( S.Normal.y );
 						W.Write( S.Normal.z );
+
+						W.Write( S.Tangent.x );
+						W.Write( S.Tangent.y );
+						W.Write( S.Tangent.z );
+
+						W.Write( S.BiTangent.x );
+						W.Write( S.BiTangent.y );
+						W.Write( S.BiTangent.z );
 
 							// Not used, just for information purpose
 						W.Write( (float) (S.Albedo.x / Math.PI) );
