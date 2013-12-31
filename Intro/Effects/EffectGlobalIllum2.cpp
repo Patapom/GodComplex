@@ -137,39 +137,34 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		// Iterate on each set and compute energy level
 		for ( U32 SetIndex=0; SetIndex < Probe.SetsCount; SetIndex++ )
 		{
-			ProbeStruct::SetInfos&	Set = Probe.pSetInfos[SetIndex];
+			const ProbeStruct::SetInfos&	Set = Probe.pSetInfos[SetIndex];
 
-			// Transform set's position/normal by probe's LOCAL=>WORLD
-			NjFloat3	wsSetPosition = NjFloat3( Probe.pSceneProbe->m_Local2World.GetRow(3) ) + Set.Position;
-			NjFloat3	wsSetNormal = Set.Normal;
-			NjFloat3	wsSetTangent = Set.Tangent;
-			NjFloat3	wsSetBiTangent = Set.BiTangent;
-// TODO: Handle non-identity matrices! Let's go fast for now...
-// ARGH! That also means possibly rotating the SH!
-// Let's just force the probes to be axis-aligned, shall we??? :) (lazy man talking) (no, seriously, it makes sense after all)
-
-
-			// Compute irradiance from every light
+			// Compute irradiance for every sample
 			NjFloat3	SetIrradiance = NjFloat3::Zero;
-			for ( int LightIndex=0; LightIndex < MAX_LIGHTS; LightIndex++ )
+			for ( U32 SampleIndex=0; SampleIndex < Set.SamplesCount; SampleIndex++ )
 			{
-				const LightStruct&	Light = m_pSB_Lights->m[LightIndex];
+				const ProbeStruct::SetInfos::Sample&	Sample = Set.pSamples[SampleIndex];
 
-#if 1
-				// Compute light vector
-				NjFloat3	Set2Light = Light.Position - wsSetPosition;
-				float		DistanceProbe2Light = Set2Light.Length();
-				float		InvDistance = 1.0f / DistanceProbe2Light;
-				Set2Light = Set2Light * InvDistance;
+				// Compute irradiance from every light
+				for ( int LightIndex=0; LightIndex < MAX_LIGHTS; LightIndex++ )
+				{
+					const LightStruct&	Light = m_pSB_Lights->m[LightIndex];
 
-				float		NdotL = MAX( 0.0f, Set2Light | wsSetNormal );
-				NjFloat3	LightIrradiance = Light.Color * NdotL * InvDistance * InvDistance;	// I=E.(N.L)/r²
-#else
-				// Use several samples on the set's plane to avoid too sharp results!
-#endif
+					// Compute light vector
+					NjFloat3	Set2Light = Light.Position - Sample.Position;
+					float		DistanceProbe2Light = Set2Light.Length();
+					float		InvDistance = 1.0f / DistanceProbe2Light;
+					Set2Light = Set2Light * InvDistance;
 
-				SetIrradiance = SetIrradiance + LightIrradiance;
+					float		NdotL = MAX( 0.0f, Set2Light | Sample.Normal );
+					NjFloat3	LightIrradiance = Light.Color * NdotL * InvDistance * InvDistance;	// I=E.(N.L)/r²
+
+					SetIrradiance = SetIrradiance + LightIrradiance;
+				}
 			}
+
+			// Average lighting
+			SetIrradiance = SetIrradiance / float(Set.SamplesCount);
 
 			// Transform this into SH
 			NjFloat3	pSetSH[9];
@@ -514,6 +509,20 @@ ppRTCubeMapStaging[1]->Save( pTemp );
 #endif
 			ASSERT( pFile != NULL, "Can't find probeset test file!" );
 
+			// Read the boundary infos
+			fread_s( &Probe.MeanDistance, sizeof(Probe.MeanDistance), sizeof(float), 1, pFile );
+			fread_s( &Probe.MeanHarmonicDistance, sizeof(Probe.MeanHarmonicDistance), sizeof(float), 1, pFile );
+			fread_s( &Probe.MinDistance, sizeof(Probe.MinDistance), sizeof(float), 1, pFile );
+			fread_s( &Probe.MaxDistance, sizeof(Probe.MaxDistance), sizeof(float), 1, pFile );
+
+			fread_s( &Probe.BBoxMin.x, sizeof(Probe.BBoxMin.x), sizeof(float), 1, pFile );
+			fread_s( &Probe.BBoxMin.y, sizeof(Probe.BBoxMin.y), sizeof(float), 1, pFile );
+			fread_s( &Probe.BBoxMin.z, sizeof(Probe.BBoxMin.z), sizeof(float), 1, pFile );
+			fread_s( &Probe.BBoxMax.x, sizeof(Probe.BBoxMax.x), sizeof(float), 1, pFile );
+			fread_s( &Probe.BBoxMax.y, sizeof(Probe.BBoxMax.y), sizeof(float), 1, pFile );
+			fread_s( &Probe.BBoxMax.z, sizeof(Probe.BBoxMax.z), sizeof(float), 1, pFile );
+
+
 			// Read the amount of sets
 			fread_s( &Probe.SetsCount, sizeof(Probe.SetsCount), sizeof(U32), 1, pFile );
 			Probe.SetsCount = MIN( MAX_PROBE_SETS, Probe.SetsCount );	// Don't read more than we can chew!
@@ -550,6 +559,45 @@ ppRTCubeMapStaging[1]->Save( pTemp );
 					fread_s( &S.pSHBounce[i].y, sizeof(S.pSHBounce[i].y), sizeof(float), 1, pFile );
 					fread_s( &S.pSHBounce[i].z, sizeof(S.pSHBounce[i].z), sizeof(float), 1, pFile );
 				}
+
+				// Read the samples
+				fread_s( &S.SamplesCount, sizeof(S.SamplesCount), sizeof(U32), 1, pFile );
+				ASSERT( S.SamplesCount < MAX_SET_SAMPLES, "Too many samples for that set!" );
+				for ( U32 SampleIndex=0; SampleIndex < S.SamplesCount; SampleIndex++ )
+				{
+					ProbeStruct::SetInfos::Sample&	Sample = S.pSamples[SampleIndex];
+
+					// Read position
+					fread_s( &Sample.Position.x, sizeof(Sample.Position.x), sizeof(float), 1, pFile );
+					fread_s( &Sample.Position.y, sizeof(Sample.Position.y), sizeof(float), 1, pFile );
+					fread_s( &Sample.Position.z, sizeof(Sample.Position.z), sizeof(float), 1, pFile );
+
+					// Read normal
+					fread_s( &Sample.Normal.x, sizeof(Sample.Normal.x), sizeof(float), 1, pFile );
+					fread_s( &Sample.Normal.y, sizeof(Sample.Normal.y), sizeof(float), 1, pFile );
+					fread_s( &Sample.Normal.z, sizeof(Sample.Normal.z), sizeof(float), 1, pFile );
+
+					// Read disk radius
+					fread_s( &Sample.Radius, sizeof(Sample.Radius), sizeof(float), 1, pFile );
+
+
+				// Transform set's position/normal by probe's LOCAL=>WORLD
+				Sample.Position = NjFloat3( Probe.pSceneProbe->m_Local2World.GetRow(3) ) + Sample.Position;
+//				NjFloat3	wsSetNormal = Sample.Normal;
+// TODO: Handle non-identity matrices! Let's go fast for now...
+// ARGH! That also means possibly rotating the SH!
+// Let's just force the probes to be axis-aligned, shall we??? :) (lazy man talking) (no, seriously, it makes sense after all)
+
+				}
+
+				// Transform set's position/normal by probe's LOCAL=>WORLD
+				S.Position = NjFloat3( Probe.pSceneProbe->m_Local2World.GetRow(3) ) + S.Position;
+// 				NjFloat3	wsSetNormal = Set.Normal;
+// 				NjFloat3	wsSetTangent = Set.Tangent;
+// 				NjFloat3	wsSetBiTangent = Set.BiTangent;
+// TODO: Handle non-identity matrices! Let's go fast for now...
+// ARGH! That also means possibly rotating the SH!
+// Let's just force the probes to be axis-aligned, shall we??? :) (lazy man talking) (no, seriously, it makes sense after all)
 			}
 
 			fclose( pFile );

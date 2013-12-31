@@ -508,6 +508,12 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 				double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
 				double	SumSolidAngle = 0.0;
 
+				m_MeanDistance = 0.0;
+				m_MeanHarmonicDistance = 0.0;
+				m_MinDistance = 1e6;
+				m_MaxDistance = 0.0;
+				m_BBox = WMath.BoundingBox.Empty;
+
 				for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
 				{
 					m_CubeMap[CubeFaceIndex] = new Pixel[CUBE_MAP_SIZE,CUBE_MAP_SIZE];
@@ -535,12 +541,6 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 								}
 
 					// Fill up position & normal
-					m_MeanDistance = 0.0;
-					m_MeanHarmonicDistance = 0.0;
-					m_MinDistance = 1e6;
-					m_MaxDistance = 0.0;
-					m_BBox = WMath.BoundingBox.Empty;
-
 					using ( MemoryStream S = new MemoryStream( POM1.m_Content[CubeFaceIndex] ) )
 						using ( BinaryReader R = new BinaryReader( S ) )
 							for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
@@ -700,7 +700,7 @@ if ( WeightColor > 0.5f )
 				}
 
 				CentroidPosition /= SumWeights;
-				CentroidNormal /= SumWeights;
+				CentroidNormal.Normalize();
 				CentroidAlbedo /= SumWeights;
 				float	EnsureDot = CentroidPosition.Normalized | TargetDirection;	// Should still point close to the original target direction...
 
@@ -823,7 +823,7 @@ int	DEBUG_PixelIndex = 0;
 
 			// Setup the reference thresholds for pixels' acceptance
 //			Pixel.IMPORTANCE_THRESOLD = (float) ((4.0f * Math.PI / CUBE_MAP_FACE_SIZE) / (m_MeanDistance * m_MeanDistance));	// Compute an average solid angle threshold based on average pixels' distance
-			Pixel.IMPORTANCE_THRESOLD = (float) (1.0f * floatTrackbarControlLambda.Value / (m_MeanHarmonicDistance * m_MeanHarmonicDistance));	// Simply use the mean harmonic distance as a good approximation of important pixels
+			Pixel.IMPORTANCE_THRESOLD = (float) (0.01f * floatTrackbarControlLambda.Value / (m_MeanHarmonicDistance * m_MeanHarmonicDistance));	// Simply use the mean harmonic distance as a good approximation of important pixels
 																											// Pixels that are further or not facing the probe will have less importance...
 
 			DISTANCE_THRESHOLD = 0.02f * floatTrackbarControlPosition.Value;									// 2cm

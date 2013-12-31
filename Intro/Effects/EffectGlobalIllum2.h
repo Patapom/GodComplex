@@ -11,6 +11,7 @@ private:	// CONSTANTS
 
 	static const U32		MAX_LIGHTS = 1;
 	static const U32		MAX_PROBE_SETS = 16;
+	static const U32		MAX_SET_SAMPLES = 64;	// Accept a maximum of 64 samples per set
 
 protected:	// NESTED TYPES
 	
@@ -59,6 +60,13 @@ protected:	// NESTED TYPES
 		float			pSHOcclusion[9];		// The pre-computed SH that gives back how much of the environment is perceived in a given direction
 		NjFloat3		pSHBounceStatic[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced static lighting on static geometry
 
+		float			MeanDistance;			// Mean distance of all scene pixels
+		float			MeanHarmonicDistance;	// Mean harmonic distance (1/sum(1/distance)) of all scene pixels
+		float			MinDistance;			// Distance to closest scene pixel
+		float			MaxDistance;			// Distance to farthest scene pixel
+		NjFloat3		BBoxMin;				// Dimensions of the bounding box (axis-aligned) of the scene pixels
+		NjFloat3		BBoxMax;
+
 		U32				SetsCount;				// The amount of dynamic sets for that probe
 		struct SetInfos
 		{
@@ -68,6 +76,14 @@ protected:	// NESTED TYPES
 			NjFloat3		BiTangent;			// The shortest principal axis of the set's points cluster (scaled by the length of the axis)
 			NjFloat3		Albedo;				// The albedo of the dynamic set (not currently used, for info purpose)
 			NjFloat3		pSHBounce[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced dynamic lighting on static geometry, for each dynamic set
+
+			U32				SamplesCount;		// The amount of samples for that probe
+			struct	Sample
+			{
+				NjFloat3		Position;
+				NjFloat3		Normal;
+				NjFloat3		Radius;
+			}				pSamples[MAX_SET_SAMPLES];
 
 		}				pSetInfos[MAX_PROBE_SETS];
 
