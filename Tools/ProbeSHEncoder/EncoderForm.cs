@@ -79,6 +79,7 @@ namespace ProbeSHEncoder
 			public WMath.Vector	View;				// View vector pointing to that pixel
 
 			public Set			ParentSet = null;
+			public int			ParentSetSampleIndex = -1;	// Index of the nearest sample this pixel is part of
 
 			public static float	IMPORTANCE_THRESOLD = 0.0f;
 
@@ -163,7 +164,7 @@ namespace ProbeSHEncoder
 		/// It also serves as accumulator for all pixels registering to the set
 		/// </summary>
 		[System.Diagnostics.DebuggerDisplay( "C={SetCardinality} I={Importance} H={AlbedoHSL.x} S={AlbedoHSL.y} L={Albedo.z} P=({Position.x}, {Position.y}, {Position.z})" )]
-		public class	Set : Pixel
+		public class	Set : Pixel, IComparer<Pixel>
 		{
 			public List<Pixel>		SetPixels = new List<Pixel>();	// The list of pixels belonging to this set
 			public int				SetIndex = -1;					// Warning: Only available once the computation is over and all sets have been resolved!
@@ -174,6 +175,15 @@ namespace ProbeSHEncoder
 
 			// The generated SH coefficients for this set
 			public WMath.Vector[]	SH = new WMath.Vector[9];
+
+			// The generated samples
+			public struct Sample 
+			{
+				public WMath.Point	Position;
+				public WMath.Vector	Normal;
+				public float		Radius;		// Radius of the disc encompassing all the pixels forming that sample
+			}
+			public Sample[]			Samples = new Sample[0];
 
 // Used by k-means method to determine average set centroid/normal
 public WMath.Vector		AccumCentroid = WMath.Vector.Zero;
@@ -299,6 +309,83 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 				Tangent *= MaxDistance;
 				BiTangent *= MinDistance;
 			}
+
+			/// <summary>
+			/// Generates N samples among the set's pixels where lighting will be sampled
+			/// </summary>
+			private Pixel	__ReferencePixel;
+			public void			GenerateSamples( int _SamplesCount )
+			{
+				Samples = new Sample[_SamplesCount];
+				if ( _SamplesCount > SetPixels.Count )
+					throw new Exception( "More samples than pixels in the set! This is useless!" );
+
+				int	PixelGroupSize = Math.Max( 1, SetPixels.Count / _SamplesCount );
+				for ( int SampleIndex=0; SampleIndex < _SamplesCount; SampleIndex++ )
+				{
+					Pixel	P = SetPixels[SampleIndex * PixelGroupSize];	// Arbitrary!
+// TODO: Choose well spaced pixels to cover the maximum area for this set!
+
+					// Find the nearest pixels around that pixel
+					List<Pixel>	NearestPixels = new List<Pixel>();
+					NearestPixels.AddRange( SetPixels );
+					__ReferencePixel = P;
+					NearestPixels.Sort( this );	// Our comparer will sort by dot product of the view vector with the reference pixel's view vector, "efficiently" grouping pixels as disks
+					NearestPixels.RemoveRange( PixelGroupSize, NearestPixels.Count-PixelGroupSize );	// Remove all pixels outside of the group
+
+					// Compute an average normal & the disc radius (i.e. farthest pixel from reference)
+					float			Radius = 0.0f;
+					WMath.Vector	AverageNormal = WMath.Vector.Zero;
+					foreach ( Pixel P2 in NearestPixels )
+					{
+						AverageNormal += P2.Normal;
+
+						float	Distance = (P2.Position - P.Position).Length;
+						Radius = Math.Max( Radius, Distance );
+					}
+					AverageNormal /= NearestPixels.Count;
+
+					// Store sample
+					Samples[SampleIndex].Position = P.Position;
+					Samples[SampleIndex].Normal = AverageNormal.Normalized;
+					Samples[SampleIndex].Radius = Radius;
+				}
+
+				// Associate pixels to their closest sample
+				foreach ( Pixel P in SetPixels )
+				{
+					float	ClosestDistance = 1e6f;
+					int		ClosestSampleIndex = -1;
+					for ( int SampleIndex=0; SampleIndex < Samples.Length; SampleIndex++ )
+					{
+						float	Distance2Sample = (P.Position - Samples[SampleIndex].Position).LengthSquare;
+						if ( Distance2Sample >= ClosestDistance )
+							continue;
+
+						ClosestDistance = Distance2Sample;
+						ClosestSampleIndex = SampleIndex;
+					}
+
+					P.ParentSetSampleIndex = ClosestSampleIndex;
+				}
+			}
+
+			#region IComparer<Pixel> Members
+
+			/// <summary>
+			/// Compare best orientation toward reference pixel, this way we group pixels in a disk around our reference pixel
+			/// </summary>
+			/// <param name="x"></param>
+			/// <param name="y"></param>
+			/// <returns></returns>
+			public int Compare( Pixel x, Pixel y )
+			{
+				float	DotX = x.View | __ReferencePixel.View;
+				float	DotY = y.View | __ReferencePixel.View;
+				return DotX > DotY ? -1 : (DotX < DotY ? 1 : 0);
+			}
+
+			#endregion
 		}
 
 		#endregion
@@ -310,6 +397,9 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 		public Pixel[][,]			m_CubeMap = null;
 		public double				m_MeanDistance = 0.0;
 		public double				m_MeanHarmonicDistance = 0.0;
+		public double				m_MinDistance = 0.0;
+		public double				m_MaxDistance = 0.0;
+		public WMath.BoundingBox	m_BBox = new WMath.BoundingBox();
 
 		public Set[]				m_Sets = new Set[0];
 
@@ -447,6 +537,10 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 					// Fill up position & normal
 					m_MeanDistance = 0.0;
 					m_MeanHarmonicDistance = 0.0;
+					m_MinDistance = 1e6;
+					m_MaxDistance = 0.0;
+					m_BBox = WMath.BoundingBox.Empty;
+
 					using ( MemoryStream S = new MemoryStream( POM1.m_Content[CubeFaceIndex] ) )
 						using ( BinaryReader R = new BinaryReader( S ) )
 							for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
@@ -482,12 +576,16 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 									Pix.Infinity = Distance > Z_INFINITY_TEST;
 
 									m_ProbePixels.Add( Pix );
-									if ( !m_CubeMap[CubeFaceIndex][X,Y].Infinity )
-									{	// Account for a new scene pixel (i.e. not infinity)
-										m_ScenePixels.Add( Pix );
-										m_MeanDistance += Distance;
-										m_MeanHarmonicDistance += 1.0 / Distance;
-									}
+									if ( m_CubeMap[CubeFaceIndex][X,Y].Infinity )
+										continue;
+
+									// Account for a new scene pixel (i.e. not infinity)
+									m_ScenePixels.Add( Pix );
+									m_MeanDistance += Distance;
+									m_MeanHarmonicDistance += 1.0 / Distance;
+									m_MinDistance = Math.Min( m_MinDistance, Distance );
+									m_MaxDistance = Math.Max( m_MaxDistance, Distance );
+									m_BBox.Grow( wsPosition );
 								}
 				}
 
@@ -842,9 +940,32 @@ DEBUG_PixelIndex = PixelIndex;
 				// Count pixels in the set for statistics
 				SumCardinality += S.SetPixels.Count;
 
-				// Finally, encode SH & find principal axes
+				// Finally, encode SH & find principal axes & samples
 				S.EncodeSH();
 				S.FindPrincipalAxes();
+			}
+
+			// Generate set samples
+			int		TotalSamplesCount = integerTrackbarControlLightSamples.Value;
+			if ( TotalSamplesCount < m_Sets.Length )
+			{	// Force samples count to match sets count!
+				MessageBox( "The amount of samples for the probe was chosen to be " + TotalSamplesCount + " which is inferior to the amount of sets, this would mean some sets wouldn't even get sampled so the actual amount of samples is at least set to the amount of sets (" + m_Sets.Length + ")", MessageBoxButtons.OK, MessageBoxIcon.Warning );
+				TotalSamplesCount = m_Sets.Length;
+			}
+
+			for ( int SetIndex=m_Sets.Length-1; SetIndex >= 0; SetIndex-- )	// We start from the smallest sets to ensure they get some samples
+			{
+				Set	S = m_Sets[SetIndex];
+
+				int	SamplesCount = TotalSamplesCount * S.SetPixels.Count / SumCardinality;
+					SamplesCount = Math.Max( 1, SamplesCount );					// Ensure we have at least 1 sample no matter what!
+					SamplesCount = Math.Min( SamplesCount, S.SetPixels.Count );	// Can't have more samples than pixels!
+
+				S.GenerateSamples( SamplesCount );
+
+				// Reduce the amount of available samples and the count of remaining pixels so the remaining sets share the remaining samples...
+				TotalSamplesCount -= SamplesCount;
+				SumCardinality -= S.SetPixels.Count;
 			}
 
 
@@ -858,6 +979,7 @@ DEBUG_PixelIndex = PixelIndex;
 					SHSum[i] += S.SH[i];
 			}
 			outputPanel1.SH = SHSum;
+
 
 			//////////////////////////////////////////////////////////////////////////
 			// Refresh UI
@@ -1347,6 +1469,12 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 				outputPanel1.Viz = OutputPanel.VIZ_TYPE.SH;
 		}
 
+		private void radioButtonSetSamples_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.SET_SAMPLES;
+		}
+
 		private void checkBoxSetAverage_CheckedChanged( object sender, EventArgs e )
 		{
 			outputPanel1.ShowSetAverage = checkBoxSetAverage.Checked;
@@ -1409,6 +1537,20 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 			using ( FileStream Stream = F.Create() )
 				using ( BinaryWriter W = new BinaryWriter( Stream ) )
 				{
+					// Write the mean, harmonic mean, min, max distances
+					W.Write( (float) m_MeanDistance );
+					W.Write( (float) m_MeanHarmonicDistance );
+					W.Write( (float) m_MinDistance );
+					W.Write( (float) m_MaxDistance );
+
+					// Write the BBox
+					W.Write( m_BBox.m_Min.x );
+					W.Write( m_BBox.m_Min.y );
+					W.Write( m_BBox.m_Min.z );
+					W.Write( m_BBox.m_Max.x );
+					W.Write( m_BBox.m_Max.y );
+					W.Write( m_BBox.m_Max.z );
+
 					// Write the amount of sets
 					W.Write( (UInt32) m_Sets.Length );
 
@@ -1442,6 +1584,26 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 							W.Write( S.SH[i].x );
 							W.Write( S.SH[i].y );
 							W.Write( S.SH[i].z );
+						}
+
+						// Write amount of samples
+						W.Write( (UInt32) S.Samples.Length );
+
+						// Write each sample
+						foreach ( Set.Sample Sample in S.Samples )
+						{
+							// Write position
+							W.Write( Sample.Position.x );
+							W.Write( Sample.Position.y );
+							W.Write( Sample.Position.z );
+
+							// Write normal
+							W.Write( Sample.Normal.x );
+							W.Write( Sample.Normal.y );
+							W.Write( Sample.Normal.z );
+
+							// Write radius
+							W.Write( Sample.Radius );
 						}
 					}
 				}

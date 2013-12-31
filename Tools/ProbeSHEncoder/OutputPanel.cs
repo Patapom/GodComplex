@@ -25,6 +25,7 @@ namespace ProbeSHEncoder
 			SET_ALBEDO,
 			SET_DISTANCE,
 			SET_NORMAL,
+			SET_SAMPLES,
 			SH,
 		}
 		private VIZ_TYPE		m_Viz = VIZ_TYPE.ALBEDO;
@@ -172,6 +173,7 @@ namespace ProbeSHEncoder
 					case VIZ_TYPE.SET_ALBEDO:		S = CubeMapSamplerSetAlbedo; break;
 					case VIZ_TYPE.SET_DISTANCE:		S = CubeMapSamplerSetDistance; break;
 					case VIZ_TYPE.SET_NORMAL:		S = CubeMapSamplerSetNormal; break;
+					case VIZ_TYPE.SET_SAMPLES:		S = CubeMapSamplerSetSamples; break;
 					case VIZ_TYPE.SH:				S = CubeMapSamplerSH; break;
 				}
 
@@ -336,6 +338,26 @@ namespace ProbeSHEncoder
 			_G = (byte) Math.Min( 255, 255 * Color.y );
 			_B = (byte) Math.Min( 255, 255 * Color.z );
 		}
+
+		private void	CubeMapSamplerSetSamples( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		{
+			EncoderForm.Set	S = _Pixel.ParentSet;
+			if ( S == null || S.SetIndex == -1 || (m_IsolateSet && S.SetIndex != m_IsolatedSetIndex) )
+			{
+				_R = 0;
+				_G = 0;
+				_B = 0;
+				return;
+			}
+
+// 			float	Distance2SetCenter = 0.2f * (_Pixel.Position - S.Position).Length;
+// 			byte	C = (byte) Math.Min( 255, 255 * Distance2SetCenter );
+
+			byte	C = (byte) (255 * (1+_Pixel.ParentSetSampleIndex) / S.Samples.Length);
+
+			_R = _G = _B = C;
+		}
+
 		#endregion
 
 		protected override void OnSizeChanged( EventArgs e )

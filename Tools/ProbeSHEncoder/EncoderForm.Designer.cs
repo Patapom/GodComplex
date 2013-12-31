@@ -31,18 +31,20 @@ namespace ProbeSHEncoder
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			WMath.Vector vector11 = new WMath.Vector();
-			WMath.Vector vector12 = new WMath.Vector();
-			WMath.Vector vector13 = new WMath.Vector();
-			WMath.Vector vector14 = new WMath.Vector();
-			WMath.Vector vector15 = new WMath.Vector();
-			WMath.Vector vector16 = new WMath.Vector();
-			WMath.Vector vector17 = new WMath.Vector();
-			WMath.Vector vector18 = new WMath.Vector();
-			WMath.Vector vector19 = new WMath.Vector();
-			WMath.Vector vector20 = new WMath.Vector();
+			WMath.Vector vector1 = new WMath.Vector();
+			WMath.Vector vector2 = new WMath.Vector();
+			WMath.Vector vector3 = new WMath.Vector();
+			WMath.Vector vector4 = new WMath.Vector();
+			WMath.Vector vector5 = new WMath.Vector();
+			WMath.Vector vector6 = new WMath.Vector();
+			WMath.Vector vector7 = new WMath.Vector();
+			WMath.Vector vector8 = new WMath.Vector();
+			WMath.Vector vector9 = new WMath.Vector();
+			WMath.Vector vector10 = new WMath.Vector();
 			this.menuStrip = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.loadProbeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.saveResultsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.convertShaderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
@@ -70,10 +72,11 @@ namespace ProbeSHEncoder
 			this.label5 = new System.Windows.Forms.Label();
 			this.buttonComputeFilling = new System.Windows.Forms.Button();
 			this.checkBoxSetAverage = new System.Windows.Forms.CheckBox();
-			this.saveResultsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.radioButtonSH = new System.Windows.Forms.RadioButton();
 			this.outputPanel1 = new ProbeSHEncoder.OutputPanel(this.components);
-			this.loadProbeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.label6 = new System.Windows.Forms.Label();
+			this.integerTrackbarControlLightSamples = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.radioButtonSetSamples = new System.Windows.Forms.RadioButton();
 			this.menuStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -96,6 +99,20 @@ namespace ProbeSHEncoder
 			this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
 			this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
 			this.fileToolStripMenuItem.Text = "File";
+			// 
+			// loadProbeToolStripMenuItem
+			// 
+			this.loadProbeToolStripMenuItem.Name = "loadProbeToolStripMenuItem";
+			this.loadProbeToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
+			this.loadProbeToolStripMenuItem.Text = "Load Probe";
+			this.loadProbeToolStripMenuItem.Click += new System.EventHandler(this.loadProbeToolStripMenuItem_Click);
+			// 
+			// saveResultsToolStripMenuItem
+			// 
+			this.saveResultsToolStripMenuItem.Name = "saveResultsToolStripMenuItem";
+			this.saveResultsToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
+			this.saveResultsToolStripMenuItem.Text = "Save Results";
+			this.saveResultsToolStripMenuItem.Click += new System.EventHandler(this.saveResultsToolStripMenuItem_Click);
 			// 
 			// toolsToolStripMenuItem
 			// 
@@ -125,7 +142,7 @@ namespace ProbeSHEncoder
 			// 
 			// buttonCompute
 			// 
-			this.buttonCompute.Location = new System.Drawing.Point(711, 83);
+			this.buttonCompute.Location = new System.Drawing.Point(711, 130);
 			this.buttonCompute.Name = "buttonCompute";
 			this.buttonCompute.Size = new System.Drawing.Size(97, 38);
 			this.buttonCompute.TabIndex = 2;
@@ -214,17 +231,17 @@ namespace ProbeSHEncoder
 			// 
 			// textBoxResults
 			// 
-			this.textBoxResults.Location = new System.Drawing.Point(827, 83);
+			this.textBoxResults.Location = new System.Drawing.Point(827, 130);
 			this.textBoxResults.Multiline = true;
 			this.textBoxResults.Name = "textBoxResults";
 			this.textBoxResults.ReadOnly = true;
 			this.textBoxResults.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-			this.textBoxResults.Size = new System.Drawing.Size(188, 306);
+			this.textBoxResults.Size = new System.Drawing.Size(188, 259);
 			this.textBoxResults.TabIndex = 5;
 			// 
 			// floatTrackbarControlAlbedo
 			// 
-			this.floatTrackbarControlAlbedo.Location = new System.Drawing.Point(711, 554);
+			this.floatTrackbarControlAlbedo.Location = new System.Drawing.Point(711, 578);
 			this.floatTrackbarControlAlbedo.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlAlbedo.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlAlbedo.Name = "floatTrackbarControlAlbedo";
@@ -238,7 +255,7 @@ namespace ProbeSHEncoder
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(708, 538);
+			this.label1.Location = new System.Drawing.Point(708, 562);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(150, 13);
 			this.label1.TabIndex = 7;
@@ -246,7 +263,7 @@ namespace ProbeSHEncoder
 			// 
 			// floatTrackbarControlNormal
 			// 
-			this.floatTrackbarControlNormal.Location = new System.Drawing.Point(711, 515);
+			this.floatTrackbarControlNormal.Location = new System.Drawing.Point(711, 539);
 			this.floatTrackbarControlNormal.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlNormal.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlNormal.Name = "floatTrackbarControlNormal";
@@ -260,7 +277,7 @@ namespace ProbeSHEncoder
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(708, 499);
+			this.label2.Location = new System.Drawing.Point(708, 523);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(150, 13);
 			this.label2.TabIndex = 7;
@@ -268,7 +285,7 @@ namespace ProbeSHEncoder
 			// 
 			// floatTrackbarControlPosition
 			// 
-			this.floatTrackbarControlPosition.Location = new System.Drawing.Point(712, 476);
+			this.floatTrackbarControlPosition.Location = new System.Drawing.Point(712, 500);
 			this.floatTrackbarControlPosition.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlPosition.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlPosition.Name = "floatTrackbarControlPosition";
@@ -282,7 +299,7 @@ namespace ProbeSHEncoder
 			// label3
 			// 
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(709, 460);
+			this.label3.Location = new System.Drawing.Point(709, 484);
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(149, 13);
 			this.label3.TabIndex = 7;
@@ -290,7 +307,7 @@ namespace ProbeSHEncoder
 			// 
 			// integerTrackbarControlSetIsolation
 			// 
-			this.integerTrackbarControlSetIsolation.Location = new System.Drawing.Point(732, 424);
+			this.integerTrackbarControlSetIsolation.Location = new System.Drawing.Point(732, 447);
 			this.integerTrackbarControlSetIsolation.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlSetIsolation.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlSetIsolation.Name = "integerTrackbarControlSetIsolation";
@@ -305,7 +322,7 @@ namespace ProbeSHEncoder
 			// checkBoxSetIsolation
 			// 
 			this.checkBoxSetIsolation.AutoSize = true;
-			this.checkBoxSetIsolation.Location = new System.Drawing.Point(711, 402);
+			this.checkBoxSetIsolation.Location = new System.Drawing.Point(711, 425);
 			this.checkBoxSetIsolation.Name = "checkBoxSetIsolation";
 			this.checkBoxSetIsolation.Size = new System.Drawing.Size(76, 17);
 			this.checkBoxSetIsolation.TabIndex = 9;
@@ -360,7 +377,7 @@ namespace ProbeSHEncoder
 			// 
 			// buttonComputeFilling
 			// 
-			this.buttonComputeFilling.Location = new System.Drawing.Point(711, 127);
+			this.buttonComputeFilling.Location = new System.Drawing.Point(711, 174);
 			this.buttonComputeFilling.Name = "buttonComputeFilling";
 			this.buttonComputeFilling.Size = new System.Drawing.Size(97, 38);
 			this.buttonComputeFilling.TabIndex = 2;
@@ -380,13 +397,6 @@ namespace ProbeSHEncoder
 			this.checkBoxSetAverage.Visible = false;
 			this.checkBoxSetAverage.CheckedChanged += new System.EventHandler(this.checkBoxSetAverage_CheckedChanged);
 			// 
-			// saveResultsToolStripMenuItem
-			// 
-			this.saveResultsToolStripMenuItem.Name = "saveResultsToolStripMenuItem";
-			this.saveResultsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-			this.saveResultsToolStripMenuItem.Text = "Save Results";
-			this.saveResultsToolStripMenuItem.Click += new System.EventHandler(this.saveResultsToolStripMenuItem_Click);
-			// 
 			// radioButtonSH
 			// 
 			this.radioButtonSH.AutoSize = true;
@@ -400,62 +410,88 @@ namespace ProbeSHEncoder
 			// 
 			// outputPanel1
 			// 
-			vector11.X = 0F;
-			vector11.Y = 0F;
-			vector11.Z = 1F;
-			this.outputPanel1.At = vector11;
+			vector1.X = 0F;
+			vector1.Y = 0F;
+			vector1.Z = 1F;
+			this.outputPanel1.At = vector1;
 			this.outputPanel1.IsolatedSetIndex = 0;
 			this.outputPanel1.IsolateSet = false;
 			this.outputPanel1.Location = new System.Drawing.Point(12, 27);
 			this.outputPanel1.Name = "outputPanel1";
-			vector12.X = 0F;
-			vector12.Y = 0F;
-			vector12.Z = 0F;
-			vector13.X = 0F;
-			vector13.Y = 0F;
-			vector13.Z = 0F;
-			vector14.X = 0F;
-			vector14.Y = 0F;
-			vector14.Z = 0F;
-			vector15.X = 0F;
-			vector15.Y = 0F;
-			vector15.Z = 0F;
-			vector16.X = 0F;
-			vector16.Y = 0F;
-			vector16.Z = 0F;
-			vector17.X = 0F;
-			vector17.Y = 0F;
-			vector17.Z = 0F;
-			vector18.X = 0F;
-			vector18.Y = 0F;
-			vector18.Z = 0F;
-			vector19.X = 0F;
-			vector19.Y = 0F;
-			vector19.Z = 0F;
-			vector20.X = 0F;
-			vector20.Y = 0F;
-			vector20.Z = 0F;
+			vector2.X = 0F;
+			vector2.Y = 0F;
+			vector2.Z = 0F;
+			vector3.X = 0F;
+			vector3.Y = 0F;
+			vector3.Z = 0F;
+			vector4.X = 0F;
+			vector4.Y = 0F;
+			vector4.Z = 0F;
+			vector5.X = 0F;
+			vector5.Y = 0F;
+			vector5.Z = 0F;
+			vector6.X = 0F;
+			vector6.Y = 0F;
+			vector6.Z = 0F;
+			vector7.X = 0F;
+			vector7.Y = 0F;
+			vector7.Z = 0F;
+			vector8.X = 0F;
+			vector8.Y = 0F;
+			vector8.Z = 0F;
+			vector9.X = 0F;
+			vector9.Y = 0F;
+			vector9.Z = 0F;
+			vector10.X = 0F;
+			vector10.Y = 0F;
+			vector10.Z = 0F;
 			this.outputPanel1.SH = new WMath.Vector[] {
-        vector12,
-        vector13,
-        vector14,
-        vector15,
-        vector16,
-        vector17,
-        vector18,
-        vector19,
-        vector20};
+        vector2,
+        vector3,
+        vector4,
+        vector5,
+        vector6,
+        vector7,
+        vector8,
+        vector9,
+        vector10};
 			this.outputPanel1.ShowSetAverage = false;
 			this.outputPanel1.Size = new System.Drawing.Size(677, 546);
 			this.outputPanel1.TabIndex = 3;
 			this.outputPanel1.Viz = ProbeSHEncoder.OutputPanel.VIZ_TYPE.ALBEDO;
 			// 
-			// loadProbeToolStripMenuItem
+			// label6
 			// 
-			this.loadProbeToolStripMenuItem.Name = "loadProbeToolStripMenuItem";
-			this.loadProbeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-			this.loadProbeToolStripMenuItem.Text = "Load Probe";
-			this.loadProbeToolStripMenuItem.Click += new System.EventHandler(this.loadProbeToolStripMenuItem_Click);
+			this.label6.Location = new System.Drawing.Point(695, 80);
+			this.label6.Name = "label6";
+			this.label6.Size = new System.Drawing.Size(75, 31);
+			this.label6.TabIndex = 7;
+			this.label6.Text = "Amount of light samples";
+			// 
+			// integerTrackbarControlLightSamples
+			// 
+			this.integerTrackbarControlLightSamples.Location = new System.Drawing.Point(757, 83);
+			this.integerTrackbarControlLightSamples.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlLightSamples.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlLightSamples.Name = "integerTrackbarControlLightSamples";
+			this.integerTrackbarControlLightSamples.RangeMax = 256;
+			this.integerTrackbarControlLightSamples.RangeMin = 1;
+			this.integerTrackbarControlLightSamples.Size = new System.Drawing.Size(257, 20);
+			this.integerTrackbarControlLightSamples.TabIndex = 8;
+			this.integerTrackbarControlLightSamples.Value = 64;
+			this.integerTrackbarControlLightSamples.VisibleRangeMax = 128;
+			this.integerTrackbarControlLightSamples.VisibleRangeMin = 1;
+			// 
+			// radioButtonSetSamples
+			// 
+			this.radioButtonSetSamples.AutoSize = true;
+			this.radioButtonSetSamples.Location = new System.Drawing.Point(712, 402);
+			this.radioButtonSetSamples.Name = "radioButtonSetSamples";
+			this.radioButtonSetSamples.Size = new System.Drawing.Size(84, 17);
+			this.radioButtonSetSamples.TabIndex = 4;
+			this.radioButtonSetSamples.Text = "Set Samples";
+			this.radioButtonSetSamples.UseVisualStyleBackColor = true;
+			this.radioButtonSetSamples.CheckedChanged += new System.EventHandler(this.radioButtonSetSamples_CheckedChanged);
 			// 
 			// EncoderForm
 			// 
@@ -464,8 +500,10 @@ namespace ProbeSHEncoder
 			this.ClientSize = new System.Drawing.Size(1027, 610);
 			this.Controls.Add(this.checkBoxSetAverage);
 			this.Controls.Add(this.checkBoxSetIsolation);
+			this.Controls.Add(this.integerTrackbarControlLightSamples);
 			this.Controls.Add(this.integerTrackbarControlK);
 			this.Controls.Add(this.integerTrackbarControlSetIsolation);
+			this.Controls.Add(this.label6);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.label4);
 			this.Controls.Add(this.label5);
@@ -476,6 +514,7 @@ namespace ProbeSHEncoder
 			this.Controls.Add(this.floatTrackbarControlNormal);
 			this.Controls.Add(this.floatTrackbarControlAlbedo);
 			this.Controls.Add(this.textBoxResults);
+			this.Controls.Add(this.radioButtonSetSamples);
 			this.Controls.Add(this.radioButtonSH);
 			this.Controls.Add(this.radioButtonSetNormal);
 			this.Controls.Add(this.radioButtonSetDistance);
@@ -534,6 +573,9 @@ namespace ProbeSHEncoder
 		private System.Windows.Forms.ToolStripMenuItem saveResultsToolStripMenuItem;
 		private System.Windows.Forms.RadioButton radioButtonSH;
 		private System.Windows.Forms.ToolStripMenuItem loadProbeToolStripMenuItem;
+		private System.Windows.Forms.Label label6;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlLightSamples;
+		private System.Windows.Forms.RadioButton radioButtonSetSamples;
 	}
 }
 
