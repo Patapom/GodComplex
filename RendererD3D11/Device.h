@@ -14,7 +14,7 @@ class BlendState;
 
 class Device
 {
-	static const int	SAMPLERS_COUNT = 7;
+	static const int	SAMPLERS_COUNT = 8;
 
 public:		// NESTED TYPES
 

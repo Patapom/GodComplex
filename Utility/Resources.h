@@ -11,6 +11,7 @@
 	{ "Inc/Volumetric.hlsl",		"./Resources/Shaders/Inc/Volumetric.hlsl",			IDR_SHADER_INCLUDE_VOLUMETRIC },		\
 	{ "Inc/Atmosphere.hlsl",		"./Resources/Shaders/Inc/Atmosphere.hlsl",			IDR_SHADER_INCLUDE_ATMOSPHERE },		\
 	{ "Inc/SH.hlsl",				"./Resources/Shaders/Inc/SH.hlsl",					IDR_SHADER_INCLUDE_SH },				\
+	{ "Inc/ShadowMap.hlsl",			"./Resources/Shaders/Inc/ShadowMap.hlsl",			IDR_SHADER_INCLUDE_SHADOW_MAP },		\
 
 
 #include "..\GodComplex.h"

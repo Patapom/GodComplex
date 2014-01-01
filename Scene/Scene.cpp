@@ -322,12 +322,19 @@ Scene::Mesh::~Mesh()
 
 void	Scene::Mesh::InitSpecific( const U8*& _pData, const ISceneTagger& _SceneTagger )
 {
+	m_BBoxMin = 1e8f * NjFloat3::One;
+	m_BBoxMax = -1e8f * NjFloat3::One;
+
 	m_PrimitivesCount = ReadU16( _pData );
 	m_pPrimitives = new Primitive[m_PrimitivesCount];
 	for ( int PrimitiveIndex=0; PrimitiveIndex < m_PrimitivesCount; PrimitiveIndex++ )
 	{
 		Primitive&	P = m_pPrimitives[PrimitiveIndex];
 		P.Init( m_Owner, _pData );
+
+		// Expand our own BBox
+		m_BBoxMin = m_BBoxMin.Min( P.m_BBoxMin );
+		m_BBoxMax = m_BBoxMax.Max( P.m_BBoxMax );
 
 		// Tag the primitive
 		P.m_pTag = _SceneTagger.TagPrimitive( *this, P );
@@ -362,6 +369,14 @@ void	Scene::Mesh::Primitive::Init( Scene& _Owner, const U8*& _pData )
 
 	m_FacesCount = ReadU32( _pData );
 	m_VerticesCount = ReadU32( _pData );
+
+	// Read BBox in local space
+	m_BBoxMin.x = ReadF32( _pData );
+	m_BBoxMin.y = ReadF32( _pData );
+	m_BBoxMin.z = ReadF32( _pData );
+	m_BBoxMax.x = ReadF32( _pData );
+	m_BBoxMax.y = ReadF32( _pData );
+	m_BBoxMax.z = ReadF32( _pData );
 
 	// Read indices
 	m_pFaces = new U32[3*m_FacesCount];

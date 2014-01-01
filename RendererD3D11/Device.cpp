@@ -284,6 +284,13 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	Desc.BorderColor[3] = 0.0f;
 	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[6] );	// Linear Black Border
 
+	// Shadow sampler with comparison
+	Desc.AddressU = Desc.AddressV = Desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	Desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+	Desc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[7] );
+
+
 	// Upload them once and for all
 	m_pDeviceContext->VSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 	m_pDeviceContext->HSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );

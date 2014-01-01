@@ -13,6 +13,9 @@ private:	// CONSTANTS
 	static const U32		MAX_PROBE_SETS = 16;
 	static const U32		MAX_SET_SAMPLES = 64;	// Accept a maximum of 64 samples per set
 
+	static const U32		SHADOW_MAP_SIZE = 1024;
+
+
 protected:	// NESTED TYPES
 	
 	struct CBGeneral
@@ -51,6 +54,16 @@ protected:	// NESTED TYPES
 	{
 		NjFloat3	dUV;
 	};
+
+	struct CBShadowMap
+	{
+		NjFloat4x4	Light2World;
+		NjFloat4x4	World2Light;
+		NjFloat3	BoundsMin;
+		float		__PAD0;
+		NjFloat3	BoundsMax;
+ 	};
+
 
 	// The probe structure
 	struct	ProbeStruct
@@ -108,6 +121,8 @@ private:	// FIELDS
 	Material*			m_pMatRenderLights;			// Displays the lights as small emissive balls
 	Material*			m_pMatRenderCubeMap;		// Renders the room into a cubemap
 	Material*			m_pMatRenderNeighborProbe;	// Renders the neighbor probes as planes to form a 3D voronoï cell
+	Material*			m_pCSComputeShadowMapBounds;// Computes the shadow map bounds
+	Material*			m_pMatRenderShadowMap;		// Renders the directional shadowmap
 	Material*			m_pMatPostProcess;			// Post-processes the result
 
 	// Primitives
@@ -117,6 +132,7 @@ private:	// FIELDS
 
 	// Textures
 	Texture2D*			m_pTexWalls;
+	Texture2D*			m_pRTShadowMap;
 
 	// Constant buffers
  	CB<CBGeneral>*		m_pCB_General;
@@ -125,6 +141,7 @@ private:	// FIELDS
  	CB<CBMaterial>*		m_pCB_Material;
  	CB<CBProbe>*		m_pCB_Probe;
 	CB<CBSplat>*		m_pCB_Splat;
+ 	CB<CBShadowMap>*	m_pCB_ShadowMap;
 
 	// Light buffer
 	struct	LightStruct
@@ -176,6 +193,7 @@ public:		// METHODS
 
 private:
 
+	void			RenderShadowMap( const NjFloat3& _SunDirection );
 	void			BuildSHCoeffs( const NjFloat3& _Direction, double _Coeffs[9] );
 	void			BuildSHCosineLobe( const NjFloat3& _Direction, double _Coeffs[9] );
 	void			BuildSHCone( const NjFloat3& _Direction, float _HalfAngle, double _Coeffs[9] );

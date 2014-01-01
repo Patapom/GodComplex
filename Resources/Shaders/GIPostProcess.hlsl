@@ -2,6 +2,7 @@
 // This shader post-processes the Global Illumination test room
 //
 #include "Inc/Global.hlsl"
+#include "Inc/ShadowMap.hlsl"
 
 //[
 cbuffer	cbObject	: register( b10 )
@@ -132,6 +133,15 @@ if ( false )
 	return 0.2 * ProbeID;
 }
 // DEBUG NEIGHBOR PROBES IDS
+
+if ( false )
+{
+	if ( UV.x < 0.3 && UV.y < 0.3 )
+	{
+		UV /= 0.3;
+		return _ShadowMap.SampleLevel( LinearClamp, UV, 0.0 ).x;
+	}
+}
 
 
 // return _TexCubemapProbe0.Sample( LinearClamp, View );

@@ -4,6 +4,7 @@
 //
 #include "Inc/Global.hlsl"
 #include "Inc/SH.hlsl"
+#include "Inc/ShadowMap.hlsl"
 
 //[
 cbuffer	cbGeneral	: register( b9 )
@@ -174,6 +175,16 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 //	return float4( DiffuseAlbedo, 1 );
 //	return float4( normalize( _In.Normal ), 1 );
 
+
+// Debug shadow map
+//float4	ShadowMapPos = World2ShadowMapProj( _In.Position );
+//return (ShadowMapPos.w - _ShadowBoundMin.z) / (_ShadowBoundMax.z - _ShadowBoundMin.z);
+//return ShadowMapPos.z / _ShadowBoundMax.z;
+//return ShadowMapPos.z / ShadowMapPos.w;
+//return 1.0 * _ShadowMap.SampleLevel( LinearClamp, 0.5 * (1.0 + ShadowMapPos.xy), 0.0 ).x;
+//return float4( ShadowMapPos.xy, 0, 0 );
+
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Compute direct lighting
 	float3	View = normalize( _In.Position - _Camera2World[3].xyz );
@@ -185,12 +196,24 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	{
 		LightStruct	LightSource = _SBLights[LightIndex];
 
-		float3	Light = LightSource.Position - _In.Position;
-		float	Distance2Light = length( Light );
-		float	InvDistance2Light = 1.0 / Distance2Light;
-		Light *= InvDistance2Light;
+		float3	Irradiance;
+		float3	Light;
+		if ( LightSource.Radius >= 0.0 )
+		{	// Compute a standard point light
+			Light = LightSource.Position - _In.Position;
+			float	Distance2Light = length( Light );
+			float	InvDistance2Light = 1.0 / Distance2Light;
+			Light *= InvDistance2Light;
 
-		float3	Irradiance = LightSource.Color * InvDistance2Light * InvDistance2Light;
+			Irradiance = LightSource.Color * InvDistance2Light * InvDistance2Light;
+		}
+		else
+		{	// Compute a sneaky directional with shadow map
+			Light = LightSource.Position;	// We're directly given the direction here
+			Irradiance = LightSource.Color;	// Simple!
+
+			Irradiance *= ComputeShadow( _In.Position, 0.0 );
+		}
 
 		float	NdotL = saturate( dot( Normal, Light ) );
 		AccumDiffuse += Irradiance * NdotL;

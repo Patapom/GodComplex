@@ -49,6 +49,9 @@ PS_IN	VS( VS_IN _In )
 	LightStruct	Light = _SBLights[_In.InstanceID];
 
 	float4	WorldPosition = float4( Light.Position + Light.Radius * _In.Position, 1.0 );
+	if ( Light.Radius < 0.0 )
+//		WorldPosition.xyz = 1.5 * saturate( dot( _In.Position, Light.Position ) ) * Light.Position;
+		WorldPosition.xyz = _In.Position * lerp( 0.001, 0.1, saturate( dot( _In.Position, Light.Position ) ) );
 
 	PS_IN	Out;
 	Out.__Position = mul( WorldPosition, _World2Proj );

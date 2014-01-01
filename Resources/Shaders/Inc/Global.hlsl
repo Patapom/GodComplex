@@ -35,6 +35,9 @@ SamplerState LinearWrap		: register( s2 );
 SamplerState PointWrap		: register( s3 );
 SamplerState LinearMirror	: register( s4 );
 SamplerState PointMirror	: register( s5 );
+SamplerState LinearBorder	: register( s6 );	// Black border
+
+SamplerComparisonState ShadowSampler	: register( s7 );	// Sampler with comparison
 
 
 ////////////////////////////////////////////////////////////////////////////////////////

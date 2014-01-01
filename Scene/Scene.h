@@ -101,6 +101,9 @@ public:		// NESTED TYPES
 		public:
 			::Scene::Material*	m_pMaterial;
 
+			NjFloat3		m_BBoxMin;
+			NjFloat3		m_BBoxMax;
+
 			U32				m_FacesCount;
 			U32*			m_pFaces;
 
@@ -127,6 +130,9 @@ public:		// NESTED TYPES
 
 		int					m_PrimitivesCount;
 		Primitive*			m_pPrimitives;
+
+		NjFloat3			m_BBoxMin;
+		NjFloat3			m_BBoxMax;
 
 	private:
 

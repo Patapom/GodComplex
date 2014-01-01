@@ -202,6 +202,8 @@ public:
 	float				CoFactor( int x, int y ) const;
 	NjFloat4x4&			Normalize();
 
+	NjFloat4x4&			Scale( const NjFloat3& _Scale );
+
 //	NjFloat4			operator*( const NjFloat4& b ) const;
 	NjFloat4x4			operator*( const NjFloat4x4& b ) const;
 	float&				operator()( int _Row, int _Column );

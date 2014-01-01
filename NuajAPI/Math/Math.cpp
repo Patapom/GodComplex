@@ -93,6 +93,15 @@ NjFloat4x4&	NjFloat4x4::Normalize()
 	return *this;
 }
 
+NjFloat4x4&	NjFloat4x4::Scale( const NjFloat3& _Scale )
+{
+	m[4*0+0] *= _Scale.x;	m[4*0+1] *= _Scale.x;	m[4*0+2] *= _Scale.x; 	m[4*0+3] *= _Scale.x;
+	m[4*1+0] *= _Scale.y;	m[4*1+1] *= _Scale.y;	m[4*1+2] *= _Scale.y; 	m[4*1+3] *= _Scale.y;
+	m[4*2+0] *= _Scale.z;	m[4*2+1] *= _Scale.z;	m[4*2+2] *= _Scale.z; 	m[4*2+3] *= _Scale.z;
+
+	return *this;
+}
+
 NjFloat4   operator*( const NjFloat4& a, const NjFloat4x4& b )
 {
 	NjFloat4	R;

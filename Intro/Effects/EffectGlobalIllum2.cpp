@@ -8,10 +8,13 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
  	CHECK_MATERIAL( m_pMatRender = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
- 	CHECK_MATERIAL( m_pMatRenderLights = CreateMaterial( IDR_SHADER_GI_RENDER_LIGHTS, "./Resources/Shaders/GIRenderLights.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
- 	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
- 	CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
+ 	CHECK_MATERIAL( m_pMatRenderLights = CreateMaterial( IDR_SHADER_GI_RENDER_LIGHTS, "./Resources/Shaders/GIRenderLights.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
+ 	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
+ 	CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
+ 	CHECK_MATERIAL( m_pMatRenderShadowMap = CreateMaterial( IDR_SHADER_GI_RENDER_SHADOW_MAP, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL ), 5 );
  	CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
+
+m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the textures
@@ -19,6 +22,10 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 		TextureFilePOM	POM( "./Resources/Scenes/GITest1/pata_diff_colo.pom" );
 		m_pTexWalls = new Texture2D( _Device, POM );
 	}
+
+	// Create the shadow map
+	m_pRTShadowMap = new Texture2D( _Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
@@ -28,6 +35,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
  	m_pCB_Material = new CB<CBMaterial>( _Device, 12 );
 	m_pCB_Probe = new CB<CBProbe>( _Device, 10 );
 	m_pCB_Splat = new CB<CBSplat>( _Device, 10 );
+	m_pCB_ShadowMap = new CB<CBShadowMap>( _Device, 2, true );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -66,6 +74,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pSB_RuntimeProbes;
 	delete m_pSB_Lights;
 
+	delete m_pCB_ShadowMap;
 	delete m_pCB_Splat;
 	delete m_pCB_Probe;
 	delete m_pCB_Material;
@@ -73,9 +82,12 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pCB_Scene;
 	delete m_pCB_General;
 
+	delete m_pRTShadowMap;
 	delete m_pTexWalls;
 
 	delete m_pMatPostProcess;
+	delete m_pCSComputeShadowMapBounds;
+	delete m_pMatRenderShadowMap;
 	delete m_pMatRenderNeighborProbe;
 	delete m_pMatRenderCubeMap;
 	delete m_pMatRenderLights;
@@ -86,9 +98,15 @@ delete ppRTCubeMap[1];
 delete ppRTCubeMap[0];
 }
 
-bool	bPreviousAnimateKey = false;
-bool	bAnimateLight = true;
-float	AnimateLightTime = 0.0f;
+// F1 => toggle point light animation
+bool	bPreviousAnimateKey0 = false;
+bool	bAnimateLight0 = true;
+float	AnimateLightTime0 = 0.0f;
+
+// F2 => toggle sun light animation
+bool	bPreviousAnimateKey1 = false;
+bool	bAnimateLight1 = true;
+float	AnimateLightTime1 = 0.0f;
 
 void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 {
@@ -101,31 +119,66 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pCB_Scene->m.ProbesCount = m_ProbesCount;
 	m_pCB_Scene->UpdateData();
 
+
 	//////////////////////////////////////////////////////////////////////////
-	// Animate lights, encode them into SH and inject them into each probe
+	// Animate lights
 
+		// Point light
 	bool	bAnimateKey = gs_WindowInfos.pKeys[VK_F1] != 0;
-	if ( (!bPreviousAnimateKey && bAnimateKey) )
-		bAnimateLight ^= true;
-	bPreviousAnimateKey = bAnimateKey;
+	if ( (!bPreviousAnimateKey0 && bAnimateKey) )
+		bAnimateLight0 ^= true;
+	bPreviousAnimateKey0 = bAnimateKey;
 
-	if ( bAnimateLight )
-		AnimateLightTime += _DeltaTime;
+	if ( bAnimateLight0 )
+		AnimateLightTime0 += _DeltaTime;
 
 	m_pSB_Lights->m[0].Color.Set( 100, 100, 100 );
-//	m_pSB_Lights->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * AnimateLightTime ) );	// Move along the corridor
-	m_pSB_Lights->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime ), 4.0f * sinf( 0.3f * AnimateLightTime ) );	// Move along the corridor
+//	m_pSB_Lights->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * AnimateLightTime0 ) );	// Move along the corridor
+	m_pSB_Lights->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime0 ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime0 ), 4.0f * sinf( 0.3f * AnimateLightTime0 ) );	// Move along the corridor
 	m_pSB_Lights->m[0].Radius = 0.1f;
+
+
+	if ( MAX_LIGHTS > 1 )
+	{	// Sun light
+		bAnimateKey = gs_WindowInfos.pKeys[VK_F2] != 0;
+		if ( (!bPreviousAnimateKey1 && bAnimateKey) )
+			bAnimateLight1 ^= true;
+		bPreviousAnimateKey1 = bAnimateKey;
+
+		if ( bAnimateLight1 )
+			AnimateLightTime1 += _DeltaTime;
+
+		float		SunTheta = 60.0f * PI / 180.0f;
+		float		SunPhi = 0.2f * AnimateLightTime1;
+		NjFloat3	SunDirection( sinf(SunTheta) * sinf(SunPhi), cosf(SunTheta), sinf(SunTheta) * cosf(SunPhi) );
+
+		m_pSB_Lights->m[1].Color.Set( 1000, 1000, 1000 );
+		m_pSB_Lights->m[1].Position = SunDirection;
+		m_pSB_Lights->m[1].Radius = -1.0f;	// This is the marker for a directional light!
+
+		// Render directional shadow map for Sun simulation
+		RenderShadowMap( SunDirection );
+	}
+	else
+	{	// Set something otherwise DX pisses me off with warnings...
+		m_pCB_ShadowMap->UpdateData();
+		m_pRTShadowMap->Set( 2, true );
+	}
+
 	m_pSB_Lights->Write();
 	m_pSB_Lights->SetInput( 8, true );
 
+
+	//////////////////////////////////////////////////////////////////////////
+	// Update dynamic probes
 	NjFloat3	pSHAmbient[9];
 	memset( pSHAmbient, 0, 9*sizeof(NjFloat3) );	// No ambient at the moment...
 
-// 	double		pTestAmbient[9];
-// 	BuildSHCosineLobe( NjFloat3( -1, 1, 0 ).Normalize(), pTestAmbient );
-// 	for ( int i=0; i < 9; i++ )
-// 		pSHAmbient[i] = 5.0f * NjFloat3( 0.7, 0.9, 1.0 ) * float(pTestAmbient[i]);
+// Ugly "sky"
+// double		pTestAmbient[9];
+// BuildSHCosineLobe( NjFloat3( -1, 1, 0 ).Normalize(), pTestAmbient );
+// for ( int i=0; i < 9; i++ )
+// 	pSHAmbient[i] = 100.0f * NjFloat3( 0.7, 0.9, 1.0 ) * float(pTestAmbient[i]);
 
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
@@ -604,7 +657,7 @@ ppRTCubeMapStaging[1]->Save( pTemp );
 		}
 
 #else
-	TODO! At the moment, only read back the only pre-computed set from disk
+	TODO! At the moment we only read back the only pre-computed set from disk
 #endif
 
 	}
@@ -628,6 +681,122 @@ ppRTCubeMap[1]->SetPS( 65 );
 // 	delete ppRTCubeMap[1];
 // 	delete ppRTCubeMap[0];
 }
+
+//////////////////////////////////////////////////////////////////////////
+// Computes the shadow map infos and render the shadow map itself
+//
+void	EffectGlobalIllum2::RenderShadowMap( const NjFloat3& _SunDirection )
+{
+	//////////////////////////////////////////////////////////////////////////
+	// Build a nice transform
+	NjFloat3	X = (NjFloat3::UnitY ^_SunDirection).Normalize();	// Assuming the Sun is never vertical here!
+	NjFloat3	Y = _SunDirection ^ X;
+
+	m_pCB_ShadowMap->m.Light2World.SetRow( 0, X );
+	m_pCB_ShadowMap->m.Light2World.SetRow( 1, Y );
+	m_pCB_ShadowMap->m.Light2World.SetRow( 2, -_SunDirection );
+	m_pCB_ShadowMap->m.Light2World.SetRow( 3, NjFloat3::Zero, 1 );	// Temporary
+
+	m_pCB_ShadowMap->m.World2Light = m_pCB_ShadowMap->m.Light2World.Inverse();
+
+	// Find appropriate bounds
+	NjFloat3		BBoxMin = 1e6f * NjFloat3::One;
+	NjFloat3		BBoxMax = -1e6f * NjFloat3::One;
+	Scene::Node*	pMesh = NULL;
+	while ( (pMesh = m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
+	{
+		NjFloat4x4	Mesh2Light = pMesh->m_Local2World * m_pCB_ShadowMap->m.World2Light;
+
+		// Transform the 8 corners of the mesh's BBox into light space and grow the light's bbox
+		const NjFloat3&	MeshBBoxMin = ((Scene::Mesh&) *pMesh).m_BBoxMin;
+		const NjFloat3&	MeshBBoxMax = ((Scene::Mesh&) *pMesh).m_BBoxMax;
+		for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
+		{
+			NjFloat3	D;
+			D.x = float(CornerIndex & 1);
+			D.y = float((CornerIndex >> 1) & 1);
+			D.z = float((CornerIndex >> 2) & 1);
+
+			NjFloat3	CornerLocal = MeshBBoxMin + D * (MeshBBoxMax - MeshBBoxMin);
+			NjFloat3	CornerLight = NjFloat4( CornerLocal, 1 ) * Mesh2Light;
+
+			BBoxMin = BBoxMin.Min( CornerLight );
+			BBoxMax = BBoxMax.Max( CornerLight );
+		}
+	}
+
+	// Recenter & scale transform accordingly
+	NjFloat3	Center = NjFloat4( 0.5f * (BBoxMin + BBoxMax), 1.0f ) * m_pCB_ShadowMap->m.Light2World;	// Center in world space
+	NjFloat3	Delta = BBoxMax - BBoxMin;
+				Center = Center + 0.5f * Delta.z * _SunDirection;	// Center is now stuck to the bounds' Zmin
+	m_pCB_ShadowMap->m.Light2World.SetRow( 3, Center, 1 );
+
+	m_pCB_ShadowMap->m.Light2World.Scale( NjFloat3( 0.5f * Delta.x, 0.5f * Delta.y, Delta.z ) );
+
+
+	// Finalize constant buffer
+	m_pCB_ShadowMap->m.World2Light = m_pCB_ShadowMap->m.Light2World.Inverse();
+	m_pCB_ShadowMap->m.BoundsMin = BBoxMin;
+	m_pCB_ShadowMap->m.BoundsMax = BBoxMax;
+
+	m_pCB_ShadowMap->UpdateData();
+
+
+
+//CHECK => All corners should be in [(-1,-1,0),(+1,+1,1)]
+// BBoxMin = 1e6f * NjFloat3::One;
+// BBoxMax = -1e6f * NjFloat3::One;
+// pMesh = NULL;
+// while ( (pMesh = m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
+// {
+// 	NjFloat4x4	Mesh2Light = pMesh->m_Local2World * m_pCB_ShadowMap->m.World2Light;
+// 
+// 	// Transform the 8 corners of the mesh's BBox into light space and grow the light's bbox
+// 	const NjFloat3&	MeshBBoxMin = ((Scene::Mesh&) *pMesh).m_BBoxMin;
+// 	const NjFloat3&	MeshBBoxMax = ((Scene::Mesh&) *pMesh).m_BBoxMax;
+// 	for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
+// 	{
+// 		NjFloat3	D;
+// 		D.x = float(CornerIndex & 1);
+// 		D.y = float((CornerIndex >> 1) & 1);
+// 		D.z = float((CornerIndex >> 2) & 1);
+// 
+// 		NjFloat3	CornerLocal = MeshBBoxMin + D * (MeshBBoxMax - MeshBBoxMin);
+// 		NjFloat3	CornerLight = NjFloat4( CornerLocal, 1 ) * Mesh2Light;
+// 
+// 		BBoxMin = BBoxMin.Min( CornerLight );
+// 		BBoxMax = BBoxMax.Max( CornerLight );
+// 	}
+// }
+//CHECK
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Perform actual rendering
+	USING_MATERIAL_START( *m_pMatRenderShadowMap )
+
+	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+
+	m_pRTShadowMap->RemoveFromLastAssignedSlots();
+	m_Device.ClearDepthStencil( *m_pRTShadowMap, 1.0f, 0, true, false );
+	m_Device.SetRenderTargets( m_pRTShadowMap->GetWidth(), m_pRTShadowMap->GetHeight(), 0, NULL, m_pRTShadowMap->GetDepthStencilView() );
+
+	Scene::Node*	pMesh = NULL;
+	while ( (pMesh = m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
+	{
+		RenderMesh( (Scene::Mesh&) *pMesh, &M );
+	}
+
+	USING_MATERIAL_END
+
+	// Assign the shadow map to shaders
+	m_Device.RemoveRenderTargets();
+	m_pRTShadowMap->Set( 2, true );
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Spherical Harmonics Helpers
 
 // Builds the 9 SH coefficient for the specified direction
 // (We're already accounting for the fact we're Y-up here)
@@ -722,6 +891,9 @@ void	EffectGlobalIllum2::ZHRotate( const NjFloat3& _Direction, const NjFloat3& _
 	_Coeffs[8] = f2 * 0.5f * (_Direction.z*_Direction.z - _Direction.x*_Direction.x);
 }
 
+//////////////////////////////////////////////////////////////////////////
+// Scene Rendering
+//
 void*	EffectGlobalIllum2::TagMaterial( const Scene::Material& _Material ) const
 {
 	if ( m_bDeleteSceneTags )
