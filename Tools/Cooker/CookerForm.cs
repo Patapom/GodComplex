@@ -219,7 +219,15 @@ namespace Cooker
 			{
 				if ( !P.HasExited )
 					P.Kill();
-				P.Dispose();
+
+				// Unhook from outputs
+				if ( P.StartInfo.RedirectStandardOutput && !P.StartInfo.UseShellExecute )
+				{
+					P.CancelErrorRead();
+					P.CancelOutputRead();
+				}
+
+// 				P.Dispose();
 			}
 
 			// Restore input panel and cook button
