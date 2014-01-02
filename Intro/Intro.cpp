@@ -8,7 +8,7 @@
 #include "Effects/EffectTranslucency.h"
 #include "Effects/EffectRoom.h"
 #include "Effects/EffectVolumetric.h"
-#include "Effects/EffectGlobalIllum.h"
+#include "Effects/EffectGlobalIllum2.h"
 
 // #include "Effects/Scene/MaterialBank.h"
 // #include "Effects/Scene/Scene.h"
@@ -43,7 +43,7 @@ static EffectTranslucency*	gs_pEffectTranslucency = NULL;
 static EffectRoom*			gs_pEffectRoom = NULL;
 //static EffectScene*		gs_pEffectScene = NULL;
 static EffectVolumetric*	gs_pEffectVolumetric = NULL;
-static EffectGlobalIllum*	gs_pEffectGI = NULL;
+static EffectGlobalIllum2*	gs_pEffectGI = NULL;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -109,7 +109,11 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	gs_pCamera->SetPerspective( NUAJDEG2RAD( 50.0f ), float(RESX) / RESY, 0.01f, 1000.0f );
 	gs_pCamera->Upload( 0 );
 
-	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3::Zero, NjFloat3::UnitZ );
+//	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3::Zero, NjFloat3::UnitZ );
+
+	// Global illum test
+	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3( 0, 1, 6 ), -NjFloat3::UnitZ );
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create our scene
@@ -163,7 +167,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 
 //		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_VOLUMETRIC );
 
-		CHECK_EFFECT( gs_pEffectGI = new EffectGlobalIllum( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_GLOBALILLUM );
+		CHECK_EFFECT( gs_pEffectGI = new EffectGlobalIllum2( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_GLOBALILLUM );
 	}
 
 

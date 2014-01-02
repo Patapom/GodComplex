@@ -103,7 +103,7 @@ void	SH::BuildSHCoeffs( const NjFloat3& _Direction, double _Coeffs[9] )
 /// <param name="a"></param>
 /// <param name="b"></param>
 /// <returns>c = a * b</returns>
-void	SH::Product3( double a[9], double b[9], double c[9] )
+void	SH::Product3( const double a[9], const double b[9], double c[9] )
 {
 	double		ta, tb, t;
 
@@ -220,6 +220,198 @@ void	SH::Product3( double a[9], double b[9], double c[9] )
 	// entry count=13
 	// multiply count=120
 	// addition count=74
+}
+
+void	SH::Product3( const float a[9], const float b[9], float c[9] )
+{
+	float		ta, tb, t;
+
+	const float	C0 = 0.282094792935999980f;
+	const float	C1 = -0.126156626101000010f;
+	const float	C2 = 0.218509686119999990f;
+	const float	C3 = 0.252313259986999990f;
+	const float	C4 = 0.180223751576000010f;
+	const float	C5 = 0.156078347226000000f;
+	const float	C6 = 0.090111875786499998f;
+
+	// [0,0]: 0,
+	c[0] = C0*a[0]*b[0];
+
+	// [1,1]: 0,6,8,
+	ta = C0*a[0]+C1*a[6]-C2*a[8];
+	tb = C0*b[0]+C1*b[6]-C2*b[8];
+	c[1] = ta*b[1]+tb*a[1];
+	t = a[1]*b[1];
+	c[0] += C0*t;
+	c[6] = C1*t;
+	c[8] = -C2*t;
+
+	// [1,2]: 5,
+	ta = C2*a[5];
+	tb = C2*b[5];
+	c[1] += ta*b[2]+tb*a[2];
+	c[2] = ta*b[1]+tb*a[1];
+	t = a[1]*b[2]+a[2]*b[1];
+	c[5] = C2*t;
+
+	// [1,3]: 4,
+	ta = C2*a[4];
+	tb = C2*b[4];
+	c[1] += ta*b[3]+tb*a[3];
+	c[3] = ta*b[1]+tb*a[1];
+	t = a[1]*b[3]+a[3]*b[1];
+	c[4] = C2*t;
+
+	// [2,2]: 0,6,
+	ta = C0*a[0]+C3*a[6];
+	tb = C0*b[0]+C3*b[6];
+	c[2] += ta*b[2]+tb*a[2];
+	t = a[2]*b[2];
+	c[0] += C0*t;
+	c[6] += C3*t;
+
+	// [2,3]: 7,
+	ta = C2*a[7];
+	tb = C2*b[7];
+	c[2] += ta*b[3]+tb*a[3];
+	c[3] += ta*b[2]+tb*a[2];
+	t = a[2]*b[3]+a[3]*b[2];
+	c[7] = C2*t;
+
+	// [3,3]: 0,6,8,
+	ta = C0*a[0]+C1*a[6]+C2*a[8];
+	tb = C0*b[0]+C1*b[6]+C2*b[8];
+	c[3] += ta*b[3]+tb*a[3];
+	t = a[3]*b[3];
+	c[0] += C0*t;
+	c[6] += C1*t;
+	c[8] += C2*t;
+
+	// [4,4]: 0,6,
+	ta = C0*a[0]-C4*a[6];
+	tb = C0*b[0]-C4*b[6];
+	c[4] += ta*b[4]+tb*a[4];
+	t = a[4]*b[4];
+	c[0] += C0*t;
+	c[6] -= C4*t;
+
+	// [4,5]: 7,
+	ta = C5*a[7];
+	tb = C5*b[7];
+	c[4] += ta*b[5]+tb*a[5];
+	c[5] += ta*b[4]+tb*a[4];
+	t = a[4]*b[5]+a[5]*b[4];
+	c[7] += C5*t;
+
+	// [5,5]: 0,6,8,
+	ta = C0*a[0]+C6*a[6]-C5*a[8];
+	tb = C0*b[0]+C6*b[6]-C5*b[8];
+	c[5] += ta*b[5]+tb*a[5];
+	t = a[5]*b[5];
+	c[0] += C0*t;
+	c[6] += C6*t;
+	c[8] -= C5*t;
+
+	// [6,6]: 0,6,
+	ta = C0*a[0];
+	tb = C0*b[0];
+	c[6] += ta*b[6]+tb*a[6];
+	t = a[6]*b[6];
+	c[0] += C0*t;
+	c[6] += C4*t;
+
+	// [7,7]: 0,6,8,
+	ta = C0*a[0]+C6*a[6]+C5*a[8];
+	tb = C0*b[0]+C6*b[6]+C5*b[8];
+	c[7] += ta*b[7]+tb*a[7];
+	t = a[7]*b[7];
+	c[0] += C0*t;
+	c[6] += C6*t;
+	c[8] += C5*t;
+
+	// [8,8]: 0,6,
+	ta = C0*a[0]-C4*a[6];
+	tb = C0*b[0]-C4*b[6];
+	c[8] += ta*b[8]+tb*a[8];
+	t = a[8]*b[8];
+	c[0] += C0*t;
+	c[6] -= C4*t;
+	// entry count=13
+	// multiply count=120
+	// addition count=74
+}
+
+void	SH::Product3( const NjFloat3 a[9], const float b[9], NjFloat3 r[9] )
+{
+	float	ta[9], tr[9];
+
+	// Process X
+	for ( int i=0; i < 9; i++ )
+	{
+		ta[i] = a[i].x;
+		tr[i] = -1e-6f;
+	}
+	Product3( ta, b, tr );
+	for ( int i=0; i < 9; i++ )
+		r[i].x = tr[i];
+
+	// Process Y
+	for ( int i=0; i < 9; i++ )
+	{
+		ta[i] = a[i].y;
+		tr[i] = -1e-6f;
+	}
+	Product3( ta, b, tr );
+	for ( int i=0; i < 9; i++ )
+		r[i].y = tr[i];
+
+	// Process Z
+	for ( int i=0; i < 9; i++ )
+	{
+		ta[i] = a[i].z;
+		tr[i] = -1e-6f;
+	}
+	Product3( ta, b, tr );
+	for ( int i=0; i < 9; i++ )
+		r[i].z = tr[i];
+}
+
+void	SH::Product3( const NjFloat3 a[9], const NjFloat3 b[9], NjFloat3 r[9] )
+{
+	float	ta[9], tb[9], tr[9];
+
+	// Process X
+	for ( int i=0; i < 9; i++ )
+	{
+		ta[i] = a[i].x;
+		tb[i] = b[i].x;
+		tr[i] = -1e-6f;
+	}
+	Product3( ta, tb, tr );
+	for ( int i=0; i < 9; i++ )
+		r[i].x = tr[i];
+
+	// Process Y
+	for ( int i=0; i < 9; i++ )
+	{
+		ta[i] = a[i].y;
+		tb[i] = b[i].y;
+		tr[i] = -1e-6f;
+	}
+	Product3( ta, tb, tr );
+	for ( int i=0; i < 9; i++ )
+		r[i].y = tr[i];
+
+	// Process Z
+	for ( int i=0; i < 9; i++ )
+	{
+		ta[i] = a[i].z;
+		tb[i] = b[i].z;
+		tr[i] = -1e-6f;
+	}
+	Product3( ta, tb, tr );
+	for ( int i=0; i < 9; i++ )
+		r[i].z = tr[i];
 }
 
 /// <summary>

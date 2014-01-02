@@ -42,7 +42,8 @@ namespace FBXTestConverter
 		{
 			InitializeComponent();
 
-			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1.fbx" ) );
+//			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1.fbx" ) );
+			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1_10Probes.fbx" ) );
 //			LoadScene( new FileInfo( @"..\..\Resources\Scenes\CubeTest.fbx" ) );
 		}
 
@@ -232,6 +233,36 @@ namespace FBXTestConverter
 				UInt32	VerticesCount = (UInt32) Primitive.VerticesCount;
 				_W.Write( VerticesCount );
 
+				// Retrieve streams
+				FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE[]	Usages = {
+					FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.POSITION,
+					FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.NORMAL,
+					FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TANGENT,
+					FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.BITANGENT,
+					FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TEXCOORDS,
+				};
+				FBX.Scene.Nodes.Mesh.Primitive.VertexStream[][]		Streams = new FBX.Scene.Nodes.Mesh.Primitive.VertexStream[Usages.Length][];
+				for ( int UsageIndex=0; UsageIndex < Usages.Length; UsageIndex++ )
+				{
+					Streams[UsageIndex] = Primitive.FindStreamsByUsage( Usages[UsageIndex] );
+					if ( Streams[UsageIndex].Length == 0 )
+						throw new Exception( "No stream for usage " + Usages[UsageIndex] + "! Can't complete target vertex format!" );
+				}
+
+				// Write local space bounding box
+				WMath.BoundingBox	BBox = WMath.BoundingBox.Empty;
+				WMath.Vector[]		VertexPositions = Streams[0][0].Content as WMath.Vector[];
+				foreach ( WMath.Vector VertexPosition in VertexPositions )
+					BBox.Grow( (WMath.Point) VertexPosition );
+
+				_W.Write( BBox.m_Min.x );
+				_W.Write( BBox.m_Min.y );
+				_W.Write( BBox.m_Min.z );
+				_W.Write( BBox.m_Max.x );
+				_W.Write( BBox.m_Max.y );
+				_W.Write( BBox.m_Max.z );
+
+
 				// Write faces
 				if ( Primitive.VerticesCount <= 65536 )
 				{
@@ -252,22 +283,7 @@ namespace FBXTestConverter
 					}
 				}
 
-				// Retrieve & write streams
-				FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE[]	Usages = {
-					FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.POSITION,
-					FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.NORMAL,
-					FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TANGENT,
-					FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.BITANGENT,
-					FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TEXCOORDS,
-				};
-				FBX.Scene.Nodes.Mesh.Primitive.VertexStream[][]		Streams = new FBX.Scene.Nodes.Mesh.Primitive.VertexStream[Usages.Length][];
-				for ( int UsageIndex=0; UsageIndex < Usages.Length; UsageIndex++ )
-				{
-					Streams[UsageIndex] = Primitive.FindStreamsByUsage( Usages[UsageIndex] );
-					if ( Streams[UsageIndex].Length == 0 )
-						throw new Exception( "No stream for usage " + Usages[UsageIndex] + "! Can't complete target vertex format!" );
-				}
-
+				// Wwrite streams
 				_W.Write( (byte) VERTEX_FORMAT.P3N3G3B3T2 );
 				for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ )
 				{

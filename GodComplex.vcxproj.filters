@@ -267,6 +267,9 @@
     <ClInclude Include="Utility\SH.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectGlobalIllum2.h">
+      <Filter>Intro\Effects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -423,6 +426,9 @@
     <ClCompile Include="Utility\SH.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectGlobalIllum2.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Sound\libv2.lib">
@@ -576,6 +582,18 @@
     </None>
     <None Include="Resources\Shaders\GIRenderNeighborProbe.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderScene2.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderLights.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderShadowMap.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\ShadowMap.hlsl">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

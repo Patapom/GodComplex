@@ -60,22 +60,26 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	SwapChainDesc.Flags = 0;
 
 #ifdef DIRECTX10
+#	ifdef TRY_DIRECTX10_1
+	D3D_FEATURE_LEVEL	FeatureLevel = D3D_FEATURE_LEVEL_10_1;	// Support D3D10.1 only...
+#	else
 	D3D_FEATURE_LEVEL	FeatureLevel = D3D_FEATURE_LEVEL_10_0;	// Support D3D10 only...
+#	endif
 #else
 	D3D_FEATURE_LEVEL	FeatureLevel = D3D_FEATURE_LEVEL_11_0;	// Support D3D11...
 #endif
 	D3D_FEATURE_LEVEL	ObtainedFeatureLevel;
 
 
+#ifdef _DEBUG
+	UINT	DebugFlags = D3D11_CREATE_DEVICE_DEBUG;
+#else
+	UINT	DebugFlags = 0;
+#endif
 
  	if ( !Check(
 		D3D11CreateDeviceAndSwapChain( NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
-
-#ifdef _DEBUG
-			D3D11_CREATE_DEVICE_DEBUG,
-#else
-			0,
-#endif
+			DebugFlags,
 			&FeatureLevel, 1,
 			D3D11_SDK_VERSION,
 			&SwapChainDesc, &m_pSwapChain,
@@ -279,6 +283,13 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	Desc.BorderColor[2] = 0.0f;
 	Desc.BorderColor[3] = 0.0f;
 	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[6] );	// Linear Black Border
+
+	// Shadow sampler with comparison
+	Desc.AddressU = Desc.AddressV = Desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	Desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+	Desc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+	m_pDevice->CreateSamplerState( &Desc, &m_ppSamplers[7] );
+
 
 	// Upload them once and for all
 	m_pDeviceContext->VSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );

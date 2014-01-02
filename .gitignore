@@ -159,3 +159,12 @@
 
 /Tools/BRDFSlices.pdb
 /Tools/Cirrus.Utility.pdb
+/Tools/ProbeSHEncoder/bin
+/Tools/ProbeSHEncoder/obj
+/Tools/NormalDistributionLobeViewer/obj
+/Tools/NormalDistributionLobeViewer/bin
+/Packages/FBXImporterManaged/Release (SDK v2011.3.1)
+/Packages/FBXImporterManaged/Debug (SDK v2011.3.1)
+/Packages/FBXImporterManaged/Release
+
+/Resources/Scenes/GITest1/.mayaSwatches/*.swatches

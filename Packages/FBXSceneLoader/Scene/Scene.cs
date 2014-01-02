@@ -522,7 +522,7 @@ namespace FBX.Scene
 			{
 				Vector	RotationAxis = AA.Axis;
 				Vector	Previous2Current = CurrentPosition - PreviousPosition;
-				float	L = Previous2Current.Length();
+				float	L = Previous2Current.Length;
 				if ( L > 1e-4f )
 				{
 					Previous2Current /= L;

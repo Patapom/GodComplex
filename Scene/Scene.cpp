@@ -70,49 +70,49 @@ void	Scene::Render( const Node* _pNode, const ISceneRenderer& _SceneRenderer ) c
 }
 
 
-Scene::Node*	Scene::ForEach( Node::TYPE _Type, Node* _pPrevious )
+Scene::Node*	Scene::ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChild )
 {
 	if ( _pPrevious == NULL )
+	{
 		_pPrevious = m_pROOT;
+		m_pROOT->SetChildIndex();	// Setup child indices to accelerate search
+	}
 	
 	// Search in children first
-	for ( int ChildIndex=0; ChildIndex < _pPrevious->m_ChildrenCount; ChildIndex++ )
+	for ( int ChildIndex=_StartAtChild; ChildIndex < _pPrevious->m_ChildrenCount; ChildIndex++ )
 	{
-		Scene::Node*	pMatch = _pPrevious->m_ppChildren[ChildIndex];
-		if ( pMatch->m_Type == _Type )
-			return pMatch;
+		Scene::Node*	pChild = _pPrevious->m_ppChildren[ChildIndex];
+		if ( pChild->m_Type == _Type )
+			return pChild;
+
+		// Look in the child's children...
+		Scene::Node*	pMatch = ForEach( _Type, pChild );
+		if ( pMatch != NULL )
+			return pMatch;	// Found a match in one of the children
 	}
 
 	// If we couldn't find any match in the children, go back to parent to find this node among its siblings and continue to the next sibling
-	return FindNextNodeOfType( _Type, _pPrevious );
-}
-
-Scene::Node*	Scene::FindNextNodeOfType( Node::TYPE _Type, Node* _pPrevious )
-{
-	if ( _pPrevious == NULL || _pPrevious->m_pParent == NULL )
-		return NULL;	// We're back to the root, we're done!
-
 	Node*	pParent = _pPrevious->m_pParent;
-	for ( int SiblingIndex=0; SiblingIndex < pParent->m_ChildrenCount; SiblingIndex++ )
+	while ( pParent != NULL )
 	{
-		Node*	pSibling = pParent->m_ppChildren[SiblingIndex];
-		if ( pSibling == _pPrevious && SiblingIndex < pParent->m_ChildrenCount-1 )
-		{	// We found the previous node in its parent's children (i.e. among its siblings)
-			//	and we know there's at least one more sibling after it so conduct search in there
-			Node*	pNextSearch = pParent->m_ppChildren[SiblingIndex+1];
+		int		SiblingIndex = _pPrevious->m_ChildIndex;
+		if ( SiblingIndex < pParent->m_ChildrenCount-1 )
+ 			return ForEach( _Type, pParent, SiblingIndex+1 );	// We found the previous node in its parent's children (i.e. among its siblings), continue search from there...
 
-			if ( pNextSearch->m_Type == _Type )
-				return pNextSearch;	// The next sibling is itself of the requested type
+// 		for ( int SiblingIndex=0; SiblingIndex < pParent->m_ChildrenCount; SiblingIndex++ )
+// 		{
+// 			Node*	pSibling = pParent->m_ppChildren[SiblingIndex];
+// 			if ( pSibling == _pPrevious )
+// 				return ForEach( _Type, pParent, SiblingIndex+1 );	// We found the previous node in its parent's children (i.e. among its siblings), continue search from there...
+// 		}
 
-			// Search into its children...
-			return ForEach( _Type, pNextSearch );
-		}
+		// Keep climbing...
+		_pPrevious = pParent;
+		pParent = pParent->m_pParent;
 	}
 
-	// We're done processing the siblings, recurse through the parent again
-	return FindNextNodeOfType( _Type, pParent );
+	return NULL;
 }
-
 
 
 Scene::Node*	Scene::CreateNode( Node* _pParent, const U8*& _pData, const ISceneTagger& _SceneTagger )
@@ -203,6 +203,7 @@ Scene::Node::Node( Scene& _Owner, Node* _pParent )
 	, m_ChildrenCount( 0 )
 	, m_ppChildren( NULL )
 	, m_pTag( NULL )
+	, m_ChildIndex( -1 )
 {
 }
 
@@ -258,6 +259,20 @@ void	Scene::Node::Exit( const ISceneTagger& _SceneTagClearer )
 		m_ppChildren[ChildIndex]->Exit( _SceneTagClearer );
 }
 
+void	Scene::Node::SetChildIndex()
+{
+	if ( m_pParent == NULL )
+		m_ChildIndex = 0;	// Root...
+
+	for ( int ChildIndex=0; ChildIndex < m_ChildrenCount; ChildIndex++ )
+	{
+		Node&	Child = *m_ppChildren[ChildIndex];
+		Child.m_ChildIndex = ChildIndex;
+		Child.SetChildIndex();
+	}
+}
+
+
 // ==== Light ====
 Scene::Light::Light( Scene& _Owner, Node* _pParent )
 	: Node( _Owner, _pParent )
@@ -307,12 +322,19 @@ Scene::Mesh::~Mesh()
 
 void	Scene::Mesh::InitSpecific( const U8*& _pData, const ISceneTagger& _SceneTagger )
 {
+	m_BBoxMin = 1e8f * NjFloat3::One;
+	m_BBoxMax = -1e8f * NjFloat3::One;
+
 	m_PrimitivesCount = ReadU16( _pData );
 	m_pPrimitives = new Primitive[m_PrimitivesCount];
 	for ( int PrimitiveIndex=0; PrimitiveIndex < m_PrimitivesCount; PrimitiveIndex++ )
 	{
 		Primitive&	P = m_pPrimitives[PrimitiveIndex];
 		P.Init( m_Owner, _pData );
+
+		// Expand our own BBox
+		m_BBoxMin = m_BBoxMin.Min( P.m_BBoxMin );
+		m_BBoxMax = m_BBoxMax.Max( P.m_BBoxMax );
 
 		// Tag the primitive
 		P.m_pTag = _SceneTagger.TagPrimitive( *this, P );
@@ -347,6 +369,14 @@ void	Scene::Mesh::Primitive::Init( Scene& _Owner, const U8*& _pData )
 
 	m_FacesCount = ReadU32( _pData );
 	m_VerticesCount = ReadU32( _pData );
+
+	// Read BBox in local space
+	m_BBoxMin.x = ReadF32( _pData );
+	m_BBoxMin.y = ReadF32( _pData );
+	m_BBoxMin.z = ReadF32( _pData );
+	m_BBoxMax.x = ReadF32( _pData );
+	m_BBoxMax.y = ReadF32( _pData );
+	m_BBoxMax.z = ReadF32( _pData );
 
 	// Read indices
 	m_pFaces = new U32[3*m_FacesCount];

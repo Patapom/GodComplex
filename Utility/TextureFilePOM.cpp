@@ -59,10 +59,10 @@ void	TextureFilePOM::Load( const char* _pFileName )
 	ASSERT( m_pPixelFormat != NULL, "Unsupported pixel format!" );
 
 	// Read the dimensions
-	fread_s( &m_Width, sizeof(int), sizeof(int), 1, pFile );
-	fread_s( &m_Height, sizeof(int), sizeof(int), 1, pFile );
-	fread_s( &m_ArraySizeOrDepth, sizeof(int), sizeof(int), 1, pFile );
-	fread_s( &m_MipsCount, sizeof(int), sizeof(int), 1, pFile );
+	fread_s( &m_Width, sizeof(U32), sizeof(U32), 1, pFile );
+	fread_s( &m_Height, sizeof(U32), sizeof(U32), 1, pFile );
+	fread_s( &m_ArraySizeOrDepth, sizeof(U32), sizeof(U32), 1, pFile );
+	fread_s( &m_MipsCount, sizeof(U32), sizeof(U32), 1, pFile );
 
 	int	ContentBuffersCount = m_Type == TEX_3D ? m_MipsCount : m_MipsCount*m_ArraySizeOrDepth;
 	m_ppContent = new void*[ContentBuffersCount];
@@ -72,14 +72,16 @@ void	TextureFilePOM::Load( const char* _pFileName )
 	int	Depth = m_ArraySizeOrDepth;
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipsCount; MipLevelIndex++ )
 	{
-		fread_s( &m_pMipsDescriptors[MipLevelIndex].RowPitch, sizeof(int), sizeof(int), 1, pFile );
-		fread_s( &m_pMipsDescriptors[MipLevelIndex].DepthPitch, sizeof(int), sizeof(int), 1, pFile );
+		fread_s( &m_pMipsDescriptors[MipLevelIndex].RowPitch, sizeof(U32), sizeof(U32), 1, pFile );
+		fread_s( &m_pMipsDescriptors[MipLevelIndex].DepthPitch, sizeof(U32), sizeof(U32), 1, pFile );
 
 		if ( m_Type != TEX_3D )
 		{
-			m_ppContent[MipLevelIndex] = new void*[m_pMipsDescriptors[MipLevelIndex].DepthPitch];
 			for ( int SliceIndex=0; SliceIndex < m_ArraySizeOrDepth; SliceIndex++ )
+			{
+				m_ppContent[MipLevelIndex+m_MipsCount*SliceIndex] = new void*[m_pMipsDescriptors[MipLevelIndex].DepthPitch];
 				fread_s( m_ppContent[MipLevelIndex+m_MipsCount*SliceIndex], m_pMipsDescriptors[MipLevelIndex].DepthPitch, m_pMipsDescriptors[MipLevelIndex].DepthPitch, 1, pFile );
+			}
 		}
 		else
 		{
@@ -106,17 +108,17 @@ void	TextureFilePOM::Save( const char* _pFileName )
 	fwrite( &Format, sizeof(U8), 1, pFile );
 
 	// Write the dimensions
-	fwrite( &m_Width, sizeof(int), 1, pFile );
-	fwrite( &m_Height, sizeof(int), 1, pFile );
-	fwrite( &m_ArraySizeOrDepth, sizeof(int), 1, pFile );
-	fwrite( &m_MipsCount, sizeof(int), 1, pFile );
+	fwrite( &m_Width, sizeof(U32), 1, pFile );
+	fwrite( &m_Height, sizeof(U32), 1, pFile );
+	fwrite( &m_ArraySizeOrDepth, sizeof(U32), 1, pFile );
+	fwrite( &m_MipsCount, sizeof(U32), 1, pFile );
 
 	// Write each mip
 	int	Depth = m_ArraySizeOrDepth;
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipsCount; MipLevelIndex++ )
 	{
-		fwrite( &m_pMipsDescriptors[MipLevelIndex].RowPitch, sizeof(int), 1, pFile );
-		fwrite( &m_pMipsDescriptors[MipLevelIndex].DepthPitch, sizeof(int), 1, pFile );
+		fwrite( &m_pMipsDescriptors[MipLevelIndex].RowPitch, sizeof(U32), 1, pFile );
+		fwrite( &m_pMipsDescriptors[MipLevelIndex].DepthPitch, sizeof(U32), 1, pFile );
 
 		if ( m_Type != TEX_3D )
 		{
@@ -170,8 +172,17 @@ void	TextureFilePOM::AllocateContent( Texture3D& _Texture )
 
 void	TextureFilePOM::ReleasContent()
 {
-	for ( int MipLevelIndex=0; MipLevelIndex < m_MipsCount; MipLevelIndex++ )
-		delete[] m_ppContent[MipLevelIndex];
+	if ( m_Type != TEX_3D )
+	{	// Release each slice in each mip
+		for ( int MipLevelIndex=0; MipLevelIndex < m_MipsCount; MipLevelIndex++ )
+			for ( int SliceIndex=0; SliceIndex < m_ArraySizeOrDepth; SliceIndex++ )
+				delete[] m_ppContent[MipLevelIndex+m_MipsCount*SliceIndex];
+	}
+	else
+	{	// Release each mip
+		for ( int MipLevelIndex=0; MipLevelIndex < m_MipsCount; MipLevelIndex++ )
+			delete[] m_ppContent[MipLevelIndex];
+	}
 	delete[] m_ppContent;
 	m_ppContent = NULL;
 

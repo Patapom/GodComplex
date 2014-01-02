@@ -76,13 +76,13 @@ namespace WMath
 		public void					Max( Vector _Op )								{ x = System.Math.Max( x, _Op.x ); y = System.Math.Max( y, _Op.y ); z = System.Math.Max( z, _Op.z ); }
 		public float				Sum()											{ return x + y + z; }
 		public float				Product()										{ return x * y * z; }
-		public float				LengthSquare()									{ return x * x + y * y + z * z; }
-		public float				Length()										{ return (float) System.Math.Sqrt( x * x + y * y + z * z ); }
-		public float				SquareMagnitude()								{ return LengthSquare(); }
-		public float				Magnitude()										{ return Length(); }
-		public Vector				Normalize()										{ if ( Length() < 1e-12 ) return this; float fINorm = 1.0f / Length(); x *= fINorm; y *= fINorm; z *= fINorm; return this; }
-		public bool					IsNormalized()									{ return System.Math.Abs( LengthSquare() - 1.0f ) < float.Epsilon*float.Epsilon; }
-		public bool					IsTooSmall()									{ return LengthSquare() < float.Epsilon*float.Epsilon; }
+		public float				LengthSquare									{ get { return x * x + y * y + z * z; } }
+		public float				Length											{ get { return (float) System.Math.Sqrt( x * x + y * y + z * z ); } }
+		public float				SquareMagnitude()								{ return LengthSquare; }
+		public float				Magnitude()										{ return Length; }
+		public Vector				Normalize()										{ if ( Length < 1e-12 ) return this; float fINorm = 1.0f / Length; x *= fINorm; y *= fINorm; z *= fINorm; return this; }
+		public bool					IsNormalized()									{ return System.Math.Abs( LengthSquare - 1.0f ) < float.Epsilon*float.Epsilon; }
+		public bool					IsTooSmall()									{ return LengthSquare < float.Epsilon*float.Epsilon; }
 
 		public void					Clamp( float _fMin, float _fMax )				{ x = System.Math.Max( _fMin, System.Math.Min( _fMax, x ) ); y = System.Math.Max( _fMin, System.Math.Min( _fMax, y ) ); z = System.Math.Max( _fMin, System.Math.Min( _fMax, z ) ); }
 

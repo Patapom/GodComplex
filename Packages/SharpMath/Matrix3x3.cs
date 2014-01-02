@@ -8,6 +8,13 @@ namespace WMath
     [System.Diagnostics.DebuggerDisplay("m = ({m[0,0]}, {m[0,1]}, {m[0,2]}) | ({m[1,0]}, {m[1,1]}, {m[1,2]}) | ({m[2,0]}, {m[2,1]}, {m[2,2]})")]
     public class Matrix3x3
 	{
+		#region CONSTANTS
+
+		public static readonly Matrix3x3	ZERO = new Matrix3x3( new float[,] { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } } );
+		public static readonly Matrix3x3	IDENTITY = new Matrix3x3( new float[,] { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } } );
+
+		#endregion
+
 		#region NESTED TYPES
 
 		public enum INIT_TYPES		
@@ -320,29 +327,29 @@ namespace WMath
 			set { m[_i, _j] = value; }
 		}
 
-		public float				this[int _CoeffIndex]
+		public float				this[COEFFS _CoeffIndex]
 		{
 			get
 			{
 				switch ( _CoeffIndex )
 				{
-					case	(int) COEFFS.A:
+					case	COEFFS.A:
 						return	m[0, 0];
-					case	(int) COEFFS.B:
+					case	COEFFS.B:
 						return	m[0, 1];
-					case	(int) COEFFS.C:
+					case	COEFFS.C:
 						return	m[0, 2];
-					case	(int) COEFFS.D:
+					case	COEFFS.D:
 						return	m[1, 0];
-					case	(int) COEFFS.E:
+					case	COEFFS.E:
 						return	m[1, 1];
-					case	(int) COEFFS.F:
+					case	COEFFS.F:
 						return	m[1, 2];
-					case	(int) COEFFS.G:
+					case	COEFFS.G:
 						return	m[2, 0];
-					case	(int) COEFFS.H:
+					case	COEFFS.H:
 						return	m[2, 1];
-					case	(int) COEFFS.I:
+					case	COEFFS.I:
 						return	m[2, 2];
 					default:
 						throw new MatrixException( "Coefficient index out of range!" );
@@ -353,31 +360,31 @@ namespace WMath
 			{
 				switch ( _CoeffIndex )
 				{
-					case	(int) COEFFS.A:
+					case	COEFFS.A:
 						m[0, 0] = value;
 						break;
-					case	(int) COEFFS.B:
+					case	COEFFS.B:
 						m[0, 1] = value;
 						break;
-					case	(int) COEFFS.C:
+					case	COEFFS.C:
 						m[0, 2] = value;
 						break;
-					case	(int) COEFFS.D:
+					case	COEFFS.D:
 						m[1, 0] = value;
 						break;
-					case	(int) COEFFS.E:
+					case	COEFFS.E:
 						m[1, 1] = value;
 						break;
-					case	(int) COEFFS.F:
+					case	COEFFS.F:
 						m[1, 2] = value;
 						break;
-					case	(int) COEFFS.G:
+					case	COEFFS.G:
 						m[2, 0] = value;
 						break;
-					case	(int) COEFFS.H:
+					case	COEFFS.H:
 						m[2, 1] = value;
 						break;
-					case	(int) COEFFS.I:
+					case	COEFFS.I:
 						m[2, 2] = value;
 						break;
 					default:
@@ -482,6 +489,35 @@ namespace WMath
 			return	Ret;
 		}
 
+		public Vector	EigenValues()
+		{
+			// We compute det(M-lambda.I)=0
+			// With:
+			//
+			//		| A B C |
+			//	M=	| D E F |
+			//		| G H I |
+			//
+			// det(M-lambda.I)	= det(M)
+			//					+ (GC+HF+DB - AI-EI-AE).lambda
+			//					+ (A + E + I).lambda^2
+			//					+ lambda^3
+			//
+			// That we solve for lambda...
+			//
+			Matrix3x3	M = this;
+			double	a = Determinant();
+			double	b = M[COEFFS.G]*M[COEFFS.C] + M[COEFFS.H]*M[COEFFS.F] + M[COEFFS.D]*M[COEFFS.B] - M[COEFFS.A]*M[COEFFS.I] - M[COEFFS.E]*M[COEFFS.I] - M[COEFFS.A]*M[COEFFS.E];
+			double	c = M[COEFFS.A] + M[COEFFS.E] + M[COEFFS.I];
+
+			double[]	Roots = UtilityFunctions.SolveCubic( a, b, c, 1 );
+
+			double	Check0 = a + (Roots[0] * (b + Roots[0] * (c + Roots[0])));
+			double	Check1 = a + (Roots[1] * (b + Roots[1] * (c + Roots[1])));
+			double	Check2 = a + (Roots[2] * (b + Roots[2] * (c + Roots[2])));
+
+			return new Vector( (float) Roots[0], (float) Roots[1], (float) Roots[2] );
+		}
 
 		#endregion
 	}

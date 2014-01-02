@@ -9,7 +9,7 @@ EffectGlobalIllum::EffectGlobalIllum( Device& _Device, Texture2D& _RTHDR, Primit
 	// Create the materials
  	CHECK_MATERIAL( m_pMatRender = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
  	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 2 );
- 	CHECK_MATERIAL( m_pMatRenderNeighborProbe= CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
+ 	CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
  	CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
 
 	//////////////////////////////////////////////////////////////////////////
@@ -21,11 +21,17 @@ EffectGlobalIllum::EffectGlobalIllum( Device& _Device, Texture2D& _RTHDR, Primit
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
- 	m_pCB_Object = new CB<CBObject>( gs_Device, 10 );
- 	m_pCB_Material = new CB<CBMaterial>( gs_Device, 11 );
-	m_pCB_Probe = new CB<CBProbe>( gs_Device, 10 );
-	m_pCB_Splat = new CB<CBSplat>( gs_Device, 10 );
+	m_pCB_Scene = new CB<CBScene>( _Device, 10 );
+ 	m_pCB_Object = new CB<CBObject>( _Device, 11 );
+ 	m_pCB_Material = new CB<CBMaterial>( _Device, 12 );
+	m_pCB_Probe = new CB<CBProbe>( _Device, 10 );
+	m_pCB_Splat = new CB<CBSplat>( _Device, 10 );
 
+
+	//////////////////////////////////////////////////////////////////////////
+	// Create the lights & probes structured buffers
+	m_pSB_Lights = new SB<LightStruct>( m_Device, MAX_LIGHTS, true );
+	m_pSB_RuntimeProbes = NULL;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the scene
@@ -45,10 +51,14 @@ EffectGlobalIllum::~EffectGlobalIllum()
 	m_bDeleteSceneTags = true;
 	m_Scene.ClearTags( *this );
 
+	delete m_pSB_RuntimeProbes;
+	delete m_pSB_Lights;
+
 	delete m_pCB_Splat;
 	delete m_pCB_Probe;
 	delete m_pCB_Material;
 	delete m_pCB_Object;
+	delete m_pCB_Scene;
 
 	delete m_pTexWalls;
 
@@ -66,6 +76,87 @@ delete ppRTCubeMap[0];
 
 void	EffectGlobalIllum::Render( float _Time, float _DeltaTime )
 {
+	// Setup scene data
+	m_pCB_Scene->m.LightsCount = MAX_LIGHTS;
+	m_pCB_Scene->m.ProbesCount = m_ProbesCount;
+	m_pCB_Scene->UpdateData();
+
+	//////////////////////////////////////////////////////////////////////////
+	// Animate lights, encode them into SH and inject them into each probe
+	m_pSB_Lights->m[0].Color.Set( 100, 100, 100 );
+//	m_pSB_Lights->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * _Time ) );	// Move along the corridor
+	m_pSB_Lights->m[0].Position.Set( 0.5f * sinf( 0.3f * _Time ), 0.5f + 0.1f * cosf( 1.0f * _Time ), 4.0f * sinf( 0.1f * _Time ) );	// Move along the corridor
+	m_pSB_Lights->m[0].Radius = 0.1f;
+	m_pSB_Lights->Write();
+	m_pSB_Lights->SetInput( 8, true );
+
+	NjFloat3	pSHAmbient[9];
+	memset( pSHAmbient, 0, 9*sizeof(NjFloat3) );	// No ambient at the moment...
+
+// 	double		pTestAmbient[9];
+// 	BuildSHCosineLobe( NjFloat3( -1, 1, 0 ).Normalize(), pTestAmbient );
+// 	for ( int i=0; i < 9; i++ )
+// 		pSHAmbient[i] = 5.0f * NjFloat3( 0.7, 0.9, 1.0 ) * float(pTestAmbient[i]);
+
+
+	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+	{
+		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
+
+		// Encode all lights into probe
+		memset( Probe.pSHLight, 0, 9*sizeof(NjFloat3) );
+		double	pSHLight[9];
+
+		for ( int LightIndex=0; LightIndex < MAX_LIGHTS; LightIndex++ )
+		{
+			const LightStruct&	Light = m_pSB_Lights->m[LightIndex];
+
+			// Approximate a SH cone
+			NjFloat3	Probe2Light = Light.Position - Probe.pSceneProbe->m_Local2World.GetRow(3);
+			float		DistanceProbe2Light = Probe2Light.Length();
+//			float		InvDistance = 1.0f / DistanceProbe2Light;
+float		InvDistance = 1.0f / MAX( 0.5f, DistanceProbe2Light );
+			Probe2Light = Probe2Light * InvDistance;
+
+			float		HalfAngle = asinf( MIN( 1.0f, Light.Radius / DistanceProbe2Light ) );
+
+			BuildSHSmoothCone( Probe2Light, HalfAngle, pSHLight );
+
+			// Accumulate to probe
+			float		LightFactor = InvDistance * InvDistance;
+			for ( int i=0; i < 9; i++ )
+			{
+				float	SH = float( pSHLight[i] );
+				Probe.pSHLight[i].x += LightFactor * Light.Color.x * SH;
+				Probe.pSHLight[i].y += LightFactor * Light.Color.y * SH;
+				Probe.pSHLight[i].z += LightFactor * Light.Color.z * SH;
+			}
+		}
+
+		// Apply the product of the accumulated light SH and the probe's environment response to get the light bounce
+		Probe.ComputeLightBounce( pSHAmbient );
+	}
+
+	// Swap bounced light buffers & write to the runtime structured buffer
+	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+	{
+		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
+		RuntimeProbe&	Runtime = m_pSB_RuntimeProbes->m[ProbeIndex];
+
+		Probe.SwapBuffers();
+
+		// Write the result to the probe structured buffer
+//		memcpy( Runtime.pSHBounce, Probe.pSHBouncedLight0, 9*sizeof(NjFloat3) );
+
+memcpy( Runtime.pSHBounce, Probe.pSHBounce, 9*sizeof(NjFloat3) );
+memcpy( Runtime.pSHLight, Probe.pSHLight, 9*sizeof(NjFloat3) );
+
+	}
+
+	m_pSB_RuntimeProbes->Write();
+	m_pSB_RuntimeProbes->SetInput( 9, true );
+
+
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Render the scene
 // 	m_Device.ClearRenderTarget( m_RTTarget, NjFloat4::Zero );
@@ -95,6 +186,51 @@ void	EffectGlobalIllum::Render( float _Time, float _DeltaTime )
 	m_RTTarget.RemoveFromLastAssignedSlots();
 }
 
+
+void	EffectGlobalIllum::ProbeStruct::ComputeLightBounce( const NjFloat3 _pSHAmbient[9] )
+{
+	// 1] Accumulate neighbor lighting by considering them as point light sources of their own
+	NjFloat3	pSHNeighborsLight[9];
+	for ( int i=0; i < 9; i++ )
+		pSHNeighborsLight[0].Set( 0, 0, 0 );
+
+	for ( int NeighborIndex=0; NeighborIndex < NeighborsCount; NeighborIndex++ )
+	{
+		NeighborLink&	Link = pNeighborLinks[NeighborIndex];
+
+		// The neighbor's contribution to our probe is simply its previous frame's SH bounced light multiplied by what we perceive of it
+		NjFloat3	pSHNeighborLight[9];
+		SH::Product3( Link.pNeighbor->pSHBouncedLight1, Link.pSHLink, pSHNeighborLight );
+
+		// That we accumulate for each neighbor
+		for ( int i=0; i < 9; i++ )
+			pSHNeighborsLight[i] = pSHNeighborsLight[i] + pSHNeighborLight[i];
+//pSHNeighborsLight[i] = pSHNeighborsLight[i] + 10.0f * pSHNeighborLight[i];
+	}
+
+	// 2] Perform the product of direct accumulated light with indirect environment bounce
+	// This will give us the bounced indirect lighting
+	NjFloat3	pSHBouncedLight[9];
+	SH::Product3( pSHLight, pSHBounce, pSHBouncedLight );
+
+	// 3] Perform the product of direct ambient light with direct environment mask and accumulate with indirect lighting
+	NjFloat3	pSHOccludedAmbientLight[9];
+	SH::Product3( _pSHAmbient, pSHOcclusion, pSHOccludedAmbientLight );
+
+	// 4] Generate this frame's total lighting
+	for ( int i=0; i < 9; i++ )
+		pSHBouncedLight1[i] = pSHNeighborsLight[i] + pSHBouncedLight[i] + pSHOccludedAmbientLight[i];
+}
+
+void	EffectGlobalIllum::ProbeStruct::SwapBuffers()
+{
+	for ( int i=0; i < 9; i++ )
+	{
+		NjFloat3	Temp = pSHBouncedLight0[i];
+		pSHBouncedLight0[i] = pSHBouncedLight1[i];
+		pSHBouncedLight1[i] = Temp;
+	}
+}
 
 void	EffectGlobalIllum::PreComputeProbes()
 {
@@ -131,6 +267,13 @@ void	EffectGlobalIllum::PreComputeProbes()
 
 		m_ProbesCount++;
 	}
+
+	// Also allocate runtime probes structured buffer
+	m_pSB_RuntimeProbes = new SB<RuntimeProbe>( m_Device, m_ProbesCount, true );
+	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+		m_pSB_RuntimeProbes->m[ProbeIndex].Position = m_pProbes[ProbeIndex].pSceneProbe->m_Local2World.GetRow( 3 );
+
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Prepare the cube map face transforms
@@ -195,6 +338,7 @@ void	EffectGlobalIllum::PreComputeProbes()
 	// Render every probe as a cube map & process
 	//
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+//for ( int ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
@@ -264,14 +408,14 @@ void	EffectGlobalIllum::PreComputeProbes()
 
 			USING_MATERIAL_START( *m_pMatRenderNeighborProbe )
 
-#if 0
+#if 1
 			for ( int NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ )
 				if ( NeighborProbeIndex != ProbeIndex )
 				{
 					ProbeStruct&	NeighborProbe = m_pProbes[NeighborProbeIndex];
 
 					m_pCB_Probe->m.NeighborProbeID = 1 + NeighborProbeIndex;
-					m_pCB_Probe->m.NeighborProbePosition = NeighborProbe.pSceneProbe->m_Local2World.GetRow( 4 );
+					m_pCB_Probe->m.NeighborProbePosition = NeighborProbe.pSceneProbe->m_Local2World.GetRow( 3 );
 					m_pCB_Probe->UpdateData();
 
 					m_ScreenQuad.Render( M );
@@ -316,8 +460,8 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 		double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
 		double	SumSolidAngle = 0.0;
 
-		double		pSHBounce[3*9];
-		double		pSHAmbient[9];
+		double	pSHBounce[3*9];
+		double	pSHAmbient[9];
 		memset( pSHBounce, 0, 3*9*sizeof(double) );
 		memset( pSHAmbient, 0, 9*sizeof(double) );
 
@@ -339,7 +483,7 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 				NjFloat4*	pScanlineGeometry = (NjFloat4*) ((U8*) MappedFaceGeometry.pData + Y * MappedFaceGeometry.RowPitch);
 				U32*		pScanlineNeighboorhood = (U32*) ((U8*) MappedFaceNeighborhood.pData + Y * MappedFaceNeighborhood.RowPitch);
 
-				View.y = 1.0f - 2.0f * Y / (CUBE_MAP_SIZE-1);
+				View.y = 1.0f - 2.0f * (0.5f + Y) / CUBE_MAP_SIZE;
 				for ( int X=0; X < CUBE_MAP_SIZE; X++ )
 				{
 					NjFloat4	Albedo = *pScanlineAlbedo++;
@@ -347,7 +491,7 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 					U32			NeighborID = *pScanlineNeighboorhood++;
 
 					// Rebuild view direction
-					View.x = 2.0f * X / (CUBE_MAP_SIZE-1) - 1.0f;
+					View.x = 2.0f * (0.5f + X) / CUBE_MAP_SIZE - 1.0f;
 
 					// Retrieve the cube map texel's solid angle (from http://people.cs.kuleuven.be/~philip.dutre/GI/TotalCompendium.pdf)
 					// dw = cos(Theta).dA / r²
@@ -427,9 +571,13 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 		}
 
 		//////////////////////////////////////////////////////////////////////////
-		// 3] Compact indirect (RGB) + direct (A) into a single vector4 of SH
+		// 3] Store indirect and direct ambient
+		double	Normalizer = 1.0 / SumSolidAngle;
 		for ( int i=0; i < 9; i++ )
-			Probe.pSHBounce[i].Set( float( pSHBounce[3*i+0] ), float( pSHBounce[3*i+1] ), float( pSHBounce[3*i+2] ), float( pSHAmbient[i] ) );
+		{
+			Probe.pSHBounce[i].Set( float( Normalizer * pSHBounce[3*i+0] ), float( Normalizer * pSHBounce[3*i+1] ), float( Normalizer * pSHBounce[3*i+2] ) );
+			Probe.pSHOcclusion[i] = float( Normalizer * pSHAmbient[i] );
+		}
 
 		//////////////////////////////////////////////////////////////////////////
 		// 4] Sort largest contributing neighbors
@@ -467,6 +615,8 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 
 		//////////////////////////////////////////////////////////////////////////
 		// 5] Process neighbor links
+		Probe.ProbeInfluenceDistance = Probe.NeighborsCount > 0 ? 0.0f : 10.0f;
+
 		NjFloat3	ProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
 		for ( int NeighborProbeIndex=0; NeighborProbeIndex < Probe.NeighborsCount; NeighborProbeIndex++ )
 		{
@@ -478,13 +628,23 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 			NeighborProbeLink.Distance = ToNeighbor.Length();
 			ToNeighbor = ToNeighbor / NeighborProbeLink.Distance;
 
+			// Update probe distance to account for the maximum neighbor distance so we make sure we contribute and reach all neighbors
+			Probe.ProbeInfluenceDistance = MAX( Probe.ProbeInfluenceDistance, NeighborProbeLink.Distance );
+
 			// Retrieve an approximate cone angle for the perceived solid angle of that probe
 			//	ConeSolidAngle = 2PI * (1 - cos(a)) where a is the half cone angle
 			//
 			float	ConeHalfAngle = float( acos( 1.0 - NeighborProbeLink.SolidAngle / TWOPI ) );
-			BuildSHSmoothCone( ToNeighbor, ConeHalfAngle, NeighborProbeLink.pSHLink );
+			double	pSHCone[9];
+			BuildSHSmoothCone( ToNeighbor, ConeHalfAngle, pSHCone );
+			for ( int i=0; i < 9; i++ )
+				NeighborProbeLink.pSHLink[i] = float( pSHCone[i] );
 		}
 	}
+
+	// Update runtime probe influence distances
+	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+		m_pSB_RuntimeProbes->m[ProbeIndex].ProbeInfluenceDistance = m_pProbes[ProbeIndex].ProbeInfluenceDistance;
 
 
 	//////////////////////////////////////////////////////////////////////////

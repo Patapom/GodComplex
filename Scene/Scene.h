@@ -35,6 +35,10 @@ public:		// NESTED TYPES
 		void*				m_pTag;	// Custom user tag filled with anything the user needs to render the node
 
 	private:
+		int					m_ChildIndex;		// Set at the beginning of a ForEach loop
+		void				SetChildIndex();
+
+	private:
 		Node( Scene& _Owner, Node* _pParent );
 		~Node();
 
@@ -97,6 +101,9 @@ public:		// NESTED TYPES
 		public:
 			::Scene::Material*	m_pMaterial;
 
+			NjFloat3		m_BBoxMin;
+			NjFloat3		m_BBoxMax;
+
 			U32				m_FacesCount;
 			U32*			m_pFaces;
 
@@ -123,6 +130,9 @@ public:		// NESTED TYPES
 
 		int					m_PrimitivesCount;
 		Primitive*			m_pPrimitives;
+
+		NjFloat3			m_BBoxMin;
+		NjFloat3			m_BBoxMax;
 
 	private:
 
@@ -231,7 +241,7 @@ public:		// METHODS
 
 	// Iterates over all the nodes of specific type
 	//	_pPrevious, should be NULL for the first call to trigger a new search
-	Node*			ForEach( Node::TYPE _Type, Node* _pPrevious );
+	Node*			ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChild=0 );
 
 
 private:
@@ -240,7 +250,6 @@ private:
 
 	// Helpers
 	Node*			CreateNode( Node* _pParent, const U8*& _pData, const ISceneTagger& _SceneTagger );
-	Node*			FindNextNodeOfType( Node::TYPE _Type, Node* _pPrevious );
 	static U32		ReadU16( const U8*& _pData, bool _IsID=false );
 	static U32		ReadU32( const U8*& _pData );
 	static float	ReadF32( const U8*& _pData );

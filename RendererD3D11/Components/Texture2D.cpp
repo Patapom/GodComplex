@@ -34,12 +34,12 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 	, m_pCachedDepthStencilView( NULL )
 {
 	if ( m_ArraySize == -6 )
-	{	// Special cube map case !
-		ASSERT( m_Width == m_Height, "When creating a cube map, width & height must match !" );
+	{	// Special cube map case!
+		ASSERT( m_Width == m_Height, "When creating a cube map, width & height must match!" );
 		m_ArraySize = 6;
 		m_bIsCubeMap = true;
 	}
-	ASSERT( m_ArraySize > 0, "Invalid array size !" );
+	ASSERT( m_ArraySize > 0, "Invalid array size!" );
 
 	Init( _ppContent, _bStaging, _bUnOrderedAccess );
 }
@@ -51,8 +51,8 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const IDepthSten
 	, m_bIsCubeMap( false )
 	, m_pCachedDepthStencilView( NULL )
 {
-	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
-	ASSERT( _Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
+	ASSERT( _Width <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
+	ASSERT( _Height <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
 
 	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
 		m_LastAssignedSlots[ShaderStageIndex] = -1;
@@ -87,7 +87,7 @@ static void		ReleaseDirectXObject( void*& _pValue, void* _pUserData )
 
 Texture2D::~Texture2D()
 {
-	ASSERT( m_pTexture != NULL, "Invalid texture to destroy !" );
+	ASSERT( m_pTexture != NULL, "Invalid texture to destroy!" );
 
 	m_CachedShaderViews.ForEach( ReleaseDirectXObject, NULL );
 	m_CachedTargetViews.ForEach( ReleaseDirectXObject, NULL );
@@ -268,7 +268,7 @@ ID3D11DepthStencilView*		Texture2D::GetDepthStencilView() const
 
 void	Texture2D::Set( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -287,7 +287,7 @@ void	Texture2D::Set( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResour
 
 void	Texture2D::SetVS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -295,7 +295,7 @@ void	Texture2D::SetVS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 }
 void	Texture2D::SetHS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().HSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -303,7 +303,7 @@ void	Texture2D::SetHS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 }
 void	Texture2D::SetDS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -311,7 +311,7 @@ void	Texture2D::SetDS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 }
 void	Texture2D::SetGS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -319,7 +319,7 @@ void	Texture2D::SetGS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 }
 void	Texture2D::SetPS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -327,7 +327,7 @@ void	Texture2D::SetPS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 }
 void	Texture2D::SetCS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
 {
-	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
+	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0, 0, 0 );
 	m_Device.DXContext().CSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -434,54 +434,19 @@ void	Texture2D::Save( const char* _pFileName )
 			Map( MipLevelIndex, SliceIndex );
 
 			if ( SliceIndex == 0 )
-			{	// Allocate only once
-				POM.m_ppContent[MipLevelIndex+m_MipLevelsCount*SliceIndex] = new void*[m_LockedResource.DepthPitch];
-
+			{	// Save mip infos only once
 				POM.m_pMipsDescriptors[MipLevelIndex].RowPitch = m_LockedResource.RowPitch;
 				POM.m_pMipsDescriptors[MipLevelIndex].DepthPitch = m_LockedResource.DepthPitch;
 			}
 
+			POM.m_ppContent[MipLevelIndex+m_MipLevelsCount*SliceIndex] = new void*[m_LockedResource.DepthPitch];
 			memcpy_s( POM.m_ppContent[MipLevelIndex+m_MipLevelsCount*SliceIndex], m_LockedResource.DepthPitch, m_LockedResource.pData, m_LockedResource.DepthPitch );
+
 			UnMap( MipLevelIndex, SliceIndex );
 		}
 	}
 
 	POM.Save( _pFileName );
-
-// 	FILE*	pFile;
-// 	fopen_s( &pFile, _pFileName, "wb" );
-// 	ASSERT( pFile != NULL, "Can't create file!" );
-// 
-// 	// Write the type and format
-// 	U8		Type = m_bIsCubeMap ? 0x01 : 0x00;					// 0 is for 2D, 1 for cube map
-// 	U8		Format = U32(m_Format.DirectXFormat()) & 0xFF;
-// 	fwrite( &Type, sizeof(U8), 1, pFile );
-// 	fwrite( &Format, sizeof(U8), 1, pFile );
-// 
-// 	// Write the dimensions
-// 	fwrite( &m_Width, sizeof(int), 1, pFile );
-// 	fwrite( &m_Height, sizeof(int), 1, pFile );
-// 	fwrite( &m_ArraySize, sizeof(int), 1, pFile );
-// 	fwrite( &m_MipLevelsCount, sizeof(int), 1, pFile );
-// 
-// 	// Write each slice
-// 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
-// 	{
-// 		for ( int SliceIndex=0; SliceIndex < m_ArraySize; SliceIndex++ )
-// 		{
-// 			Map( MipLevelIndex, SliceIndex );
-// 			if ( SliceIndex == 0 )
-// 			{	// Only save once!
-// 				fwrite( &m_LockedResource.RowPitch, sizeof(int), 1, pFile );
-// 				fwrite( &m_LockedResource.DepthPitch, sizeof(int), 1, pFile );
-// 			}
-// 			fwrite( m_LockedResource.pData, m_LockedResource.DepthPitch, 1, pFile );
-// 			UnMap( MipLevelIndex, SliceIndex );
-// 		}
-// 	}
-// 
-// 	// We're done!
-// 	fclose( pFile );
 }
 
 void	Texture2D::Load( const char* _pFileName )

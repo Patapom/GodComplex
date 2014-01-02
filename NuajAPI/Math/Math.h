@@ -194,13 +194,15 @@ public:
 
 	float	m[16];
 
-	NjFloat4			GetRow( int _RowIndex ) const								{ return NjFloat4( m[4*_RowIndex+0], m[4*_RowIndex+1], m[4*_RowIndex+2], m[4*_RowIndex+3] ); }
-	NjFloat4x4&			SetRow( int _RowIndex, const NjFloat4& _Row )				{ m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _Row.w; return *this; }
-	NjFloat4x4&			SetRow( int _RowIndex, const NjFloat3& _Row, float _w=0 )	{ m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _w; return *this; }
+	NjFloat4			GetRow( int _RowIndex ) const								{ ASSERT( _RowIndex < 4, "Row index out of range!" ); return NjFloat4( m[4*_RowIndex+0], m[4*_RowIndex+1], m[4*_RowIndex+2], m[4*_RowIndex+3] ); }
+	NjFloat4x4&			SetRow( int _RowIndex, const NjFloat4& _Row )				{ ASSERT( _RowIndex < 4, "Row index out of range!" ); m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _Row.w; return *this; }
+	NjFloat4x4&			SetRow( int _RowIndex, const NjFloat3& _Row, float _w=0 )	{ ASSERT( _RowIndex < 4, "Row index out of range!" ); m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _w; return *this; }
 	NjFloat4x4			Inverse() const;
 	float				Determinant() const;
 	float				CoFactor( int x, int y ) const;
 	NjFloat4x4&			Normalize();
+
+	NjFloat4x4&			Scale( const NjFloat3& _Scale );
 
 //	NjFloat4			operator*( const NjFloat4& b ) const;
 	NjFloat4x4			operator*( const NjFloat4x4& b ) const;

@@ -227,6 +227,35 @@ namespace WMath
 
 		// Cast operators
 		public static explicit		operator AngleAxis( Quat _Source )						{ return new AngleAxis( _Source ); }
+		public static explicit		operator Matrix3x3( Quat _Source )
+		{
+			Matrix3x3	Ret = new Matrix3x3();
+
+			float	xs, ys, zs, wx, wy, wz, xx, xy, xz, yy, yz, zz;
+
+			Quat	q = new Quat( _Source );
+			q.Normalize();		// A cast to a matrix only works with normalized quaternions!
+
+			xs = 2.0f * q.qv.x;	ys = 2.0f * q.qv.y;	zs = 2.0f * q.qv.z;
+
+			wx = q.qs * xs;		wy = q.qs * ys;		wz = q.qs * zs;
+			xx = q.qv.x * xs;	xy = q.qv.x * ys;	xz = q.qv.x * zs;
+			yy = q.qv.y * ys;	yz = q.qv.y * zs;	zz = q.qv.z * zs;
+
+			Ret[Matrix3x3.COEFFS.A] = 1.0f -	yy - zz;
+			Ret[Matrix3x3.COEFFS.D] =			xy - wz;
+			Ret[Matrix3x3.COEFFS.G] =			xz + wy;
+
+			Ret[Matrix3x3.COEFFS.B] =			xy + wz;
+			Ret[Matrix3x3.COEFFS.E] = 1.0f -	xx - zz;
+			Ret[Matrix3x3.COEFFS.H] =			yz - wx;
+
+			Ret[Matrix3x3.COEFFS.C] =			xz - wy;
+			Ret[Matrix3x3.COEFFS.F] =			yz + wx;
+			Ret[Matrix3x3.COEFFS.I] = 1.0f -	xx - yy;
+
+			return	Ret;
+		}
 		public static explicit		operator Matrix4x4( Quat _Source )
 		{
 			Matrix4x4	Ret = (new Matrix4x4()).MakeIdentity();

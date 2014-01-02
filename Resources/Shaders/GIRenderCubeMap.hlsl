@@ -15,14 +15,22 @@ cbuffer	cbCubeMapCamera	: register( b9 )
 //]
 
 //[
-cbuffer	cbObject	: register( b10 )
+cbuffer	cbScene	: register( b10 )
+{
+	uint		_LightsCount;
+	uint		_ProbesCount;
+};
+//]
+
+//[
+cbuffer	cbObject	: register( b11 )
 {
 	float4x4	_Local2World;
 };
 //]
 
 //[
-cbuffer	cbMaterial	: register( b11 )
+cbuffer	cbMaterial	: register( b12 )
 {
 	float3		_DiffuseAlbedo;
 	bool		_HasDiffuseTexture;
@@ -84,6 +92,8 @@ PS_OUT	PS( PS_IN _In )
 	Out.DiffuseAlbedo = _DiffuseAlbedo;
 	if ( _HasDiffuseTexture )
 		Out.DiffuseAlbedo = _TexDiffuseAlbedo.Sample( LinearWrap, _In.UV ).xyz;
+
+	Out.DiffuseAlbedo *= INVPI;
 
 	Out.NormalDistance = float4( normalize( _In.Normal ), length( _In.Position - _CubeMap2World[3].xyz ) );	// Store distance
 //	Out.NormalDistance = float4( normalize( _In.Normal ), dot( _In.Position - _CubeMap2World[3].xyz, _CubeMap2World[2].xyz ) );	// Store Z
