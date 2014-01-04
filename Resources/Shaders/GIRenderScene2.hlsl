@@ -116,7 +116,7 @@ PS_IN	VS( VS_IN _In )
 	for ( int i=0; i < 9; i++ )
 		SH[i] = 0.0;
 	for ( uint ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ )
-//for ( uint ProbeIndex=9; ProbeIndex < 10; ProbeIndex++ )
+//for ( uint ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
 	{
 		ProbeStruct	Probe = _SBProbes[ProbeIndex];
 
@@ -135,10 +135,14 @@ PS_IN	VS( VS_IN _In )
 		// Also weight by orientation to avoid probes facing away from us
 		ProbeWeight *= saturate( lerp( -0.98, 1.0, 0.5 * (1.0 + dot( Out.Normal, ToProbe )) ) );
 
-// if ( ProbeIndex == 5 )
+
+//ProbeWeight = 1;
+
+// if ( ProbeIndex == 1 )
 // {
 // 	Out.SH0 = ProbeWeight;
-// 	break;
+// //	Out.SH0 = Probe.Radius;
+// 	return Out;
 // }
 
 		for ( int i=0; i < 9; i++ )
@@ -149,6 +153,7 @@ PS_IN	VS( VS_IN _In )
 
 	// Normalize & store
 	float	Norm = 1.0 / SumWeights;
+
 	Out.SH0 = Norm * SH[0];
 	Out.SH1 = Norm * SH[1];
 	Out.SH2 = Norm * SH[2];

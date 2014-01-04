@@ -94,6 +94,9 @@ float	ComputeShadowCS( float3 _WorldPosition, float3 _WorldNormal, float _Radius
 		Y = float3( 0, 0, 1 );
 	}
 
+	X *= _Radius;
+	Y *= _Radius;
+
 	// Fetch multiple samples
 	const uint		SHADOW_SAMPLES_COUNT = 16;
 	const float2	SamplesOffset[SHADOW_SAMPLES_COUNT] = {	// Samples generated using my little Hammersley sequence generator available in the Tools/TestFilmCurve project
@@ -129,7 +132,8 @@ float	ComputeShadowCS( float3 _WorldPosition, float3 _WorldNormal, float _Radius
 
 		float	ShadowZproj = _ShadowMap.SampleLevel( LinearClamp, UV, 0.0 );
 
-		Shadow += Zproj - ShadowZproj > 1e-3 ? 1.0 : 0.0;
+//		Shadow += ShadowZproj - Zproj > 1e-3 ? 1.0 : 0.0;
+Shadow += saturate( 10.0 * (ShadowZproj - Zproj) );
 	}
 
 	return Shadow * (1.0 / SHADOW_SAMPLES_COUNT);
@@ -230,13 +234,15 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 		for ( int i=0; i < 9; i++ )
 		{
 			float3	SHCoeff = OccludedAmbientSH[i] + Probe.SHStatic[i];
+//float3	SHCoeff = OccludedAmbientSH[i];
+//float3	SHCoeff = Probe.SHStatic[i];
 			for ( uint j=0; j < Probe.SetsCount; j++ )
 				SHCoeff += gsSetSH[9*j+i];
 
 			// Store result and we're done!
 			_Output[Probe.Index].SH[i] = SHCoeff;
 //_Output[Probe.Index].SH[i] = 0.5 * (gsSamplingPointIrradiance[63]);
-//_Output[Probe.Index].SH[i] = 0.5 * (gsSetSH[9*3+i]);
+//_Output[Probe.Index].SH[i] = 0.5 * (gsSetSH[9*0+i]);
 //_Output[Probe.Index].SH[i] = 0.5 * (Probe.Sets[3].SamplingPointsCount / 64.0);
 		}
 	}

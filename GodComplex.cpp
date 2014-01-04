@@ -47,9 +47,19 @@ static DEVMODE	ScreenSettings =
 #endif
 };
 
+static bool	gs_bInitKeys = true;
+static U8	gs_pKeysPrevious[256];
 
 static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
+	if ( gs_bInitKeys )
+	{	// Initialize key states to unpressed
+		memset( gs_pKeysPrevious, 0, 256*sizeof(U8) );
+		memset( gs_WindowInfos.pKeys, 0, 256*sizeof(U8) );
+		memset( gs_WindowInfos.pKeysToggle, 0, 256*sizeof(U8) );
+		gs_bInitKeys = false;
+	}
+
 	// Ignore screen savers
 	if ( uMsg == WM_SYSCOMMAND && (wParam == SC_SCREENSAVE || wParam == SC_MONITORPOWER) )
 		return 0;
@@ -92,12 +102,11 @@ static LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	}
 	if ( uMsg == WM_KEYDOWN || uMsg == WM_KEYUP )
 	{
-// 		switch ( wParam )
-// 		{
-// 		case VK_NUMPAD0:
-// 			break;
-// 		}
-		gs_WindowInfos.pKeys[wParam&0xFF] = uMsg == WM_KEYDOWN;
+		int		KeyIndex = wParam & 0xFF;
+		bool	KeyState = uMsg == WM_KEYDOWN;
+		if ( !gs_pKeysPrevious[KeyIndex] && KeyState )
+			gs_WindowInfos.pKeysToggle[KeyIndex] ^= true;	// Toggle key
+		gs_WindowInfos.pKeys[KeyIndex] = KeyState;
 	}
 // 	if ( uMsg == WM_LBUTTONDOWN )
 // 		gs_WindowInfos.MouseButtons |= 1;

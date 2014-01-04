@@ -112,14 +112,11 @@ delete ppRTCubeMap[0];
 }
 
 // F1 => toggle point light animation
-bool	bPreviousAnimateKey0 = false;
-bool	bAnimateLight0 = true;
 float	AnimateLightTime0 = 0.0f;
 
 // F2 => toggle sun light animation
-bool	bPreviousAnimateKey1 = false;
-bool	bAnimateLight1 = true;
 float	AnimateLightTime1 = 0.0f;
+float	UserSunTheta = 60.0f;
 
 void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 {
@@ -137,15 +134,14 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	// Animate lights
 
 		// Point light
-	bool	bAnimateKey = gs_WindowInfos.pKeys[VK_F1] != 0;
-	if ( (!bPreviousAnimateKey0 && bAnimateKey) )
-		bAnimateLight0 ^= true;
-	bPreviousAnimateKey0 = bAnimateKey;
-
-	if ( bAnimateLight0 )
+	if ( !gs_WindowInfos.pKeysToggle[VK_F1] )
 		AnimateLightTime0 += _DeltaTime;
 
-	m_pSB_Lights->m[0].Color.Set( 100, 100, 100 );
+	if ( !gs_WindowInfos.pKeysToggle[VK_F3] )
+		m_pSB_Lights->m[0].Color.Set( 100, 100, 100 );
+	else
+		m_pSB_Lights->m[0].Color.Set( 0, 0, 0 );
+
 //	m_pSB_Lights->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * AnimateLightTime0 ) );	// Move along the corridor
 	m_pSB_Lights->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime0 ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime0 ), 4.0f * sinf( 0.3f * AnimateLightTime0 ) );	// Move along the corridor
 	m_pSB_Lights->m[0].Radius = 0.1f;
@@ -153,19 +149,23 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 	if ( MAX_LIGHTS > 1 )
 	{	// Sun light
-		bAnimateKey = gs_WindowInfos.pKeys[VK_F2] != 0;
-		if ( (!bPreviousAnimateKey1 && bAnimateKey) )
-			bAnimateLight1 ^= true;
-		bPreviousAnimateKey1 = bAnimateKey;
-
-		if ( bAnimateLight1 )
+		if ( !gs_WindowInfos.pKeysToggle[VK_F2] )
 			AnimateLightTime1 += _DeltaTime;
 
-		float		SunTheta = 60.0f * PI / 180.0f;
+		if ( gs_WindowInfos.pKeys[VK_SUBTRACT] )
+			UserSunTheta -= 4.0f * _DeltaTime;
+		if ( gs_WindowInfos.pKeys[VK_ADD] )
+			UserSunTheta += 4.0f * _DeltaTime;
+
+		float		SunTheta = UserSunTheta * PI / 180.0f;
 		float		SunPhi = 0.2f * AnimateLightTime1;
 		NjFloat3	SunDirection( sinf(SunTheta) * sinf(SunPhi), cosf(SunTheta), sinf(SunTheta) * cosf(SunPhi) );
 
-		m_pSB_Lights->m[1].Color.Set( 1000, 1000, 1000 );
+		if ( gs_WindowInfos.pKeysToggle[VK_F4] )
+			m_pSB_Lights->m[1].Color.Set( 1000, 1000, 1000 );
+		else
+			m_pSB_Lights->m[1].Color.Set( 0, 0, 0 );
+
 		m_pSB_Lights->m[1].Position = SunDirection;
 		m_pSB_Lights->m[1].Radius = -1.0f;	// This is the marker for a directional light!
 
@@ -420,6 +420,7 @@ void	EffectGlobalIllum2::PreComputeProbes()
 		m_pSB_RuntimeProbes->m[ProbeIndex].Position = m_pProbes[ProbeIndex].pSceneProbe->m_Local2World.GetRow( 3 );
 		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = 1.0f;
 	}
+	m_pSB_RuntimeProbes->Write();
 
 
 

@@ -9,7 +9,7 @@ private:	// CONSTANTS
 	static const U32		CUBE_MAP_SIZE = 128;
 	static const U32		MAX_NEIGHBOR_PROBES = 32;
 
-	static const U32		MAX_LIGHTS = 1;
+	static const U32		MAX_LIGHTS = 2;
 	static const U32		MAX_PROBE_SETS = 16;
 	static const U32		MAX_SET_SAMPLES = 64;				// Accept a maximum of 64 samples per set
 
