@@ -216,19 +216,21 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		ProbeUpdateInfos.SamplingPointsStart = SamplingPointIndex;
 
 		// Fill the set update infos
+		int	SetSamplingPointIndex = 0;
 		for ( U32 SetIndex=0; SetIndex < Probe.SetsCount; SetIndex++ )
 		{
 			ProbeStruct::SetInfos				Set = Probe.pSetInfos[SetIndex];
 			RuntimeProbeUpdateInfos::SetInfos&	SetUpdateInfos = ProbeUpdateInfos.Sets[SetIndex];
 
 			memcpy_s( SetUpdateInfos.SH, sizeof(SetUpdateInfos.SH), Set.pSHBounce, 9*sizeof(NjFloat3) );
-			SetUpdateInfos.SamplingPointIndex = SamplingPointIndex;
+			SetUpdateInfos.SamplingPointIndex = SetSamplingPointIndex;
 			SetUpdateInfos.SamplingPointsCount = Set.SamplesCount;
 
 			// Copy sampling points
-			memcpy_s( &m_pSB_RuntimeSamplingPointInfos->m[SamplingPointIndex], sizeof(m_pSB_RuntimeSamplingPointInfos->m[SamplingPointIndex]), Set.pSamples, Set.SamplesCount*sizeof(ProbeStruct::SetInfos::Sample) );
+			memcpy_s( &m_pSB_RuntimeSamplingPointInfos->m[SamplingPointIndex], Set.SamplesCount*sizeof(RuntimeSamplingPointInfos), Set.pSamples, Set.SamplesCount*sizeof(ProbeStruct::SetInfos::Sample) );
 
 			SamplingPointIndex += Set.SamplesCount;
+			SetSamplingPointIndex += Set.SamplesCount;
 		}
 
 		ProbeUpdateInfos.SamplingPointsCount = SamplingPointIndex - ProbeUpdateInfos.SamplingPointsStart;	// Total amount of sampling points for the probe
@@ -243,6 +245,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	// Do the update!
 	USING_COMPUTESHADER_START( *m_pCSUpdateProbe )
 
+	m_pSB_RuntimeProbes->RemoveFromLastAssignedSlots();
 	m_pSB_RuntimeProbes->SetOutput( 0 );
 
 	// Prepare constant buffer for update
@@ -253,6 +256,8 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	M.Dispatch( ProbeUpdatesCount, 1, 1 );
 
 	USING_COMPUTE_SHADER_END
+
+	m_pSB_RuntimeProbes->SetInput( 9, true );
 
 #else
 	// Software update (no shadows!)
@@ -411,7 +416,10 @@ void	EffectGlobalIllum2::PreComputeProbes()
 	// Also allocate runtime probes structured buffer
 	m_pSB_RuntimeProbes = new SB<RuntimeProbe>( m_Device, m_ProbesCount, true );
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+	{
 		m_pSB_RuntimeProbes->m[ProbeIndex].Position = m_pProbes[ProbeIndex].pSceneProbe->m_Local2World.GetRow( 3 );
+		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = 1.0f;
+	}
 
 
 

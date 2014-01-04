@@ -116,6 +116,7 @@ PS_IN	VS( VS_IN _In )
 	for ( int i=0; i < 9; i++ )
 		SH[i] = 0.0;
 	for ( uint ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ )
+//for ( uint ProbeIndex=9; ProbeIndex < 10; ProbeIndex++ )
 	{
 		ProbeStruct	Probe = _SBProbes[ProbeIndex];
 
@@ -228,6 +229,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	float3	SHIndirect[9] = { _In.SH0, _In.SH1, _In.SH2, _In.SH3, _In.SH4, _In.SH5, _In.SH6, _In.SH7, _In.SH8 };
 	float3	Indirect = DiffuseAlbedo * EvaluateSHIrradiance( Normal, SHIndirect );
 //	float3	Indirect = DiffuseAlbedo * EvaluateSH( Normal, SHIndirect );
+
+//return float4( _In.SH0, 0 );
 
 AccumDiffuse *= 1.0;
 Indirect *= _ShowIndirect ? 1.0 : 0.0;

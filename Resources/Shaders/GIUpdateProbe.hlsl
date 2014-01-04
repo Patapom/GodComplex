@@ -44,7 +44,7 @@ struct	SetInfos
 };
 struct ProbeInfos
 {
-	uint		ProbeIndex;					// The index of the probe we're updating
+	uint		Index;						// The index of the probe we're updating
 	uint		SetsCount;					// Amount of sets for that probe
 	uint		SamplingPointsStart;		// Index of the first sampling point for the probe
 	uint		SamplingPointsCount;		// Amount of sampling points for the probe
@@ -63,13 +63,13 @@ struct ProbeSamplingPoint
 StructuredBuffer<ProbeSamplingPoint>	_SBProbeSamplingPoints : register( t11 );
 
 // Result structure
-struct ProbeSH
+struct ProbeStruct
 {
 	float3	Position;
 	float	Radius;
 	float3	SH[9];
 };
-RWStructuredBuffer<ProbeSH>	_Output : register( u0 );
+RWStructuredBuffer<ProbeStruct>	_Output : register( u0 );
 
 
 groupshared float3	gsSamplingPointIrradiance[THREADS_X];
@@ -207,6 +207,7 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 		float3	SetIrradiance = 0.0;
 		for ( SamplingPointIndex=StartIndex; SamplingPointIndex < EndIndex; SamplingPointIndex++ )
 			SetIrradiance += gsSamplingPointIrradiance[SamplingPointIndex];
+		SetIrradiance /= Set.SamplingPointsCount;
 
 		// Compute SH irradiance
 		for ( int i=0; i < 9; i++ )
@@ -233,7 +234,10 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 				SHCoeff += gsSetSH[9*j+i];
 
 			// Store result and we're done!
-			_Output[Probe.ProbeIndex].SH[i] = SHCoeff;
+			_Output[Probe.Index].SH[i] = SHCoeff;
+//_Output[Probe.Index].SH[i] = 0.5 * (gsSamplingPointIrradiance[63]);
+//_Output[Probe.Index].SH[i] = 0.5 * (gsSetSH[9*3+i]);
+//_Output[Probe.Index].SH[i] = 0.5 * (Probe.Sets[3].SamplingPointsCount / 64.0);
 		}
 	}
 }

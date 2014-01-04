@@ -9,6 +9,9 @@ StructuredBuffer*	StructuredBuffer::ms_ppOutputs[D3D11_PS_CS_UAV_REGISTER_COUNT]
 StructuredBuffer::StructuredBuffer( Device& _Device, int _ElementSize, int _ElementsCount, bool _bWriteable ) : Component( _Device )
 {
 	ASSERT( (_ElementSize&3)==0, "Element size must be a multiple of 4!" );
+
+	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
+		m_LastAssignedSlots[ShaderStageIndex] = -1;
 	for ( int i=0; i < D3D11_PS_CS_UAV_REGISTER_COUNT; i++ )
 		m_pAssignedToOutputSlot[i] = -1;
 	m_ElementSize = _ElementSize;
@@ -136,6 +139,13 @@ void	StructuredBuffer::SetInput( int _SlotIndex )
 	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &pView );
 	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &pView );
 	m_Device.DXContext().CSSetShaderResources( _SlotIndex, 1, &pView );
+
+	m_LastAssignedSlots[0] = _SlotIndex;
+	m_LastAssignedSlots[1] = _SlotIndex;
+	m_LastAssignedSlots[2] = _SlotIndex;
+	m_LastAssignedSlots[3] = _SlotIndex;
+	m_LastAssignedSlots[4] = _SlotIndex;
+	m_LastAssignedSlots[5] = _SlotIndex;
 }
 
 void	StructuredBuffer::SetOutput( int _SlotIndex )
@@ -155,4 +165,22 @@ void	StructuredBuffer::SetOutput( int _SlotIndex )
 	// Store ourselves as the new current output
 	ms_ppOutputs[_SlotIndex] = this;					// We are the new output!
 	m_pAssignedToOutputSlot[_SlotIndex] = _SlotIndex;	// And we're assigned to that slot
+}
+
+void	StructuredBuffer::RemoveFromLastAssignedSlots() const
+{
+	Device::SHADER_STAGE_FLAGS	pStageFlags[] = {
+		Device::SSF_VERTEX_SHADER,
+		Device::SSF_HULL_SHADER,
+		Device::SSF_DOMAIN_SHADER,
+		Device::SSF_GEOMETRY_SHADER,
+		Device::SSF_PIXEL_SHADER,
+		Device::SSF_COMPUTE_SHADER,
+	};
+	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
+		if ( m_LastAssignedSlots[ShaderStageIndex] != -1 )
+		{
+			m_Device.RemoveShaderResources( m_LastAssignedSlots[ShaderStageIndex], 1, pStageFlags[ShaderStageIndex] );
+			m_LastAssignedSlots[ShaderStageIndex] = -1;
+		}
 }

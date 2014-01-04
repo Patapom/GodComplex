@@ -635,7 +635,12 @@ void		ComputeShader::RebuildShader()
 	// Reload file
 	FILE*	pFile = NULL;
 	fopen_s( &pFile, m_pShaderFileName, "rb" );
-	ASSERT( pFile != NULL, "Failed to open shader file !" );
+//	ASSERT( pFile != NULL, "Failed to open shader file !" );
+	if ( pFile == NULL )
+	{	// Failed! Unlock but don't update time stamp so we try again next time...
+		Unlock();
+		return;
+	}
 
 	fseek( pFile, 0, SEEK_END );
 	size_t	FileSize = ftell( pFile );
