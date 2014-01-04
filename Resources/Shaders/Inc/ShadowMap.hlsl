@@ -66,6 +66,8 @@ float	ComputeShadow( float3 _WorldPosition, float _Radius )
 	float2	UV = 0.5 * float2( 1.0 + ShadowPosition.x, 1.0 - ShadowPosition.y );
 	float	Zproj = ShadowPosition.z / ShadowPosition.w;
 
+Zproj -= 1e-3;	// Small bias to avoid noise
+
 	return _ShadowMap.SampleCmp( ShadowSampler, UV, Zproj );
 }
 

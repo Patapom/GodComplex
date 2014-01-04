@@ -61,6 +61,7 @@ StructuredBuffer<LightStruct>	_SBLights : register( t8 );
 struct	ProbeStruct
 {
 	float3		Position;
+	float		Radius;
 	float3		SHBounce[9];
 };
 StructuredBuffer<ProbeStruct>	_SBProbes : register( t9 );

@@ -595,6 +595,9 @@
     <None Include="Resources\Shaders\Inc\ShadowMap.hlsl">
       <Filter>Resources\Shaders\DEBUG\Includes</Filter>
     </None>
+    <None Include="Resources\Shaders\GIUpdateProbe.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">
