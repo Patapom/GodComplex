@@ -163,7 +163,7 @@ namespace Cooker
 				}
 
 				P.StartInfo.FileName = ApplicationFileName.FullName;
-				P.StartInfo.Arguments = textBoxCommandLine.Text + "+com_production 1 +ark_useStdOut 1 +buildgame " + PlatformArg + " " + MapRelativeFileName;
+				P.StartInfo.Arguments = textBoxCommandLine.Text + "+com_production 1 +ark_useStdOut 1 +buildgame -fast " + PlatformArg + " " + MapRelativeFileName;
 				P.StartInfo.WorkingDirectory = WorkingDirectory.FullName;
 				P.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;	// Start minimized
 
