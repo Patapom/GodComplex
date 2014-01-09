@@ -33,10 +33,11 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 	, m_bIsCubeMap( false )
 	, m_pCachedDepthStencilView( NULL )
 {
-	if ( m_ArraySize == -6 )
+	if ( m_ArraySize < 0 )
 	{	// Special cube map case!
 		ASSERT( m_Width == m_Height, "When creating a cube map, width & height must match!" );
-		m_ArraySize = 6;
+		m_ArraySize = -_ArraySize;
+		ASSERT( (m_ArraySize % 6) == 0, "Cube map array size must be multiples of 6!" );
 		m_bIsCubeMap = true;
 	}
 	ASSERT( m_ArraySize > 0, "Invalid array size!" );

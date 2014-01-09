@@ -2,8 +2,9 @@
 // This compute shader updates the dynamic probes
 //
 #include "Inc/Global.hlsl"
-#include "Inc/ShadowMap.hlsl"
+#include "Inc/GI.hlsl"
 #include "Inc/SH.hlsl"
+#include "Inc/ShadowMap.hlsl"
 
 #define	THREADS_X	64		// The maximum amount of sampling points per probe (Must match the MAX_SET_SAMPLES define declared in the header file!)
 #define	THREADS_Y	1
@@ -11,29 +12,10 @@
 
 #define	MAX_PROBE_SETS	16	// Must match the MAX_PROBE_SETS define declared in the header file!
 
-//[
-cbuffer	cbScene	: register( b10 )
-{
-	uint		_LightsCount;
-	uint		_ProbesCount;
-};
-//]
-
-//[
 cbuffer	cbUpdateProbes : register(b11)
 {
 	float3	_AmbientSH[9];					// Ambient sky
 };
-//]
-
-// Structured Buffers with our lights & probes
-struct	LightStruct
-{
-	float3		Position;
-	float3		Color;
-	float		Radius;	// Light radius to compute the solid angle for the probe injection
-};
-StructuredBuffer<LightStruct>	_SBLights : register( t8 );
 
 // Input probe structure
 struct	SetInfos
@@ -63,19 +45,11 @@ struct ProbeSamplingPoint
 StructuredBuffer<ProbeSamplingPoint>	_SBProbeSamplingPoints : register( t11 );
 
 // Result structure
-struct ProbeStruct
-{
-	float3	Position;
-	float	Radius;
-	float3	SH[9];
-};
 RWStructuredBuffer<ProbeStruct>	_Output : register( u0 );
 
 
 groupshared float3	gsSamplingPointIrradiance[THREADS_X];
 groupshared float3	gsSetSH[9*MAX_PROBE_SETS];
-
-
 
 
 // Computes the shadow value for the given posiion, accounting for a radius around the position for soft shadowing
@@ -163,34 +137,42 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 
 		// Iterate on lights
 // TODO: Light list per probe!! Don't process all lights every time!
-		float3	Irradiance = 0.0;
-		for ( uint LightIndex=0; LightIndex < _LightsCount; LightIndex++ )
+		float3	SumIrradiance = 0.0;
+		for ( uint LightIndex=0; LightIndex < _DynamicLightsCount; LightIndex++ )
 		{
-			LightStruct	LightSource = _SBLights[LightIndex];
+			LightStruct	LightSource = _SBLightsDynamic[LightIndex];
 
+			float3	Irradiance;
 			float3	Light;
-			float3	LightIrradiance;
-			if ( LightSource.Radius >= 0.0 )
+			if ( LightSource.Type == 0 || LightSource.Type == 2 )
 			{	// Compute a standard point light
 				Light = LightSource.Position - SamplingPoint.Position;
 				float	Distance2Light = length( Light );
 				float	InvDistance2Light = 1.0 / Distance2Light;
 				Light *= InvDistance2Light;
 
-				LightIrradiance = LightSource.Color * InvDistance2Light * InvDistance2Light;
-			}
-			else
-			{	// Compute a sneaky directional with shadow map
-				Light = LightSource.Position;			// We're directly given the direction here
-				LightIrradiance = LightSource.Color;	// Simple!
+				Irradiance = LightSource.Color * InvDistance2Light * InvDistance2Light;
 
-				LightIrradiance *= ComputeShadowCS( SamplingPoint.Position, SamplingPoint.Normal, SamplingPoint.Radius );
+				if ( LightSource.Type == 2 )
+				{	// Account for spots' angular falloff
+					float	LdotD = -dot( Light, LightSource.Direction );
+					Irradiance *= smoothstep( LightSource.Parms.w, LightSource.Parms.z, LdotD );
+				}
+			}
+			else if ( LightSource.Type == 1 )
+			{	// Compute a sneaky directional with shadow map
+				Light = LightSource.Direction;
+				Irradiance = LightSource.Color;	// Simple!
+
+#if USE_SHADOW_MAP
+				Irradiance *= ComputeShadowCS( SamplingPoint.Position, SamplingPoint.Normal, SamplingPoint.Radius );
+#endif
 			}
 
 			float	NdotL = saturate( dot( SamplingPoint.Normal, Light ) );
-			Irradiance += LightIrradiance * NdotL;
+			SumIrradiance += Irradiance * NdotL;
 		}
-		gsSamplingPointIrradiance[SamplingPointIndex] = Irradiance;
+		gsSamplingPointIrradiance[SamplingPointIndex] = SumIrradiance;
 	}
 
 	// Ensure all threads have finished computing their sampling point irradiance
@@ -198,7 +180,7 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// 2] Process the sampling point
+	// 2] Process the sampling points
 	uint	SetIndex = _GroupThreadID.x;
 	if ( _GroupThreadID.x < Probe.SetsCount )
 	{
@@ -234,13 +216,12 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 		for ( int i=0; i < 9; i++ )
 		{
 			float3	SHCoeff = OccludedAmbientSH[i] + Probe.SHStatic[i];
-//float3	SHCoeff = OccludedAmbientSH[i];
-//float3	SHCoeff = Probe.SHStatic[i];
 			for ( uint j=0; j < Probe.SetsCount; j++ )
 				SHCoeff += gsSetSH[9*j+i];
 
 			// Store result and we're done!
 			_Output[Probe.Index].SH[i] = SHCoeff;
+
 //_Output[Probe.Index].SH[i] = 0.5 * (gsSamplingPointIrradiance[63]);
 //_Output[Probe.Index].SH[i] = 0.5 * (gsSetSH[9*0+i]);
 //_Output[Probe.Index].SH[i] = 0.5 * (Probe.Sets[3].SamplingPointsCount / 64.0);

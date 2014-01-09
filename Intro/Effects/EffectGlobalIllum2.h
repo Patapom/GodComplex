@@ -9,7 +9,7 @@ private:	// CONSTANTS
 	static const U32		CUBE_MAP_SIZE = 128;
 	static const U32		MAX_NEIGHBOR_PROBES = 32;
 
-	static const U32		MAX_LIGHTS = 2;
+	static const U32		MAX_LIGHTS = 64;
 	static const U32		MAX_PROBE_SETS = 16;
 	static const U32		MAX_SET_SAMPLES = 64;				// Accept a maximum of 64 samples per set
 
@@ -20,6 +20,8 @@ private:	// CONSTANTS
 
 protected:	// NESTED TYPES
 	
+#pragma pack( push, 4 )
+
 	struct CBGeneral
 	{
 		bool		ShowIndirect;
@@ -27,7 +29,8 @@ protected:	// NESTED TYPES
 
 	struct CBScene
 	{
-		U32			LightsCount;
+		U32			StaticLightsCount;
+		U32			DynamicLightsCount;
 		U32			ProbesCount;
  	};
 
@@ -38,10 +41,15 @@ protected:	// NESTED TYPES
 
 	struct CBMaterial
 	{
+		U32			ID;
 		NjFloat3	DiffuseColor;
+
 		bool		HasDiffuseTexture;
 		NjFloat3	SpecularColor;
+
 		bool		HasSpecularTexture;
+		NjFloat3	EmissiveColor;
+
 		float		SpecularExponent;
 	};
 
@@ -71,6 +79,51 @@ protected:	// NESTED TYPES
 		NjFloat4	AmbientSH[9];				// Ambient sky (padded!)
  	};
 
+	// Structured Buffers
+	// Light buffer
+	struct	LightStruct
+	{
+		Scene::Light::LIGHT_TYPE	Type;
+		NjFloat3	Position;
+		NjFloat3	Direction;
+		NjFloat3	Color;
+		NjFloat4	Parms;						// X=Falloff radius, Y=Cutoff radius, Z=Cos(Falloff angle), W=Cos(Cutoff angle)
+	};
+
+	// Runtime probes buffer
+	struct RuntimeProbe 
+	{
+		NjFloat3	Position;
+		float		Radius;
+		NjFloat3	pSH[9];
+	};
+
+	// Probes update buffers
+	struct RuntimeProbeUpdateInfos
+	{
+		U32			ProbeIndex;						// The index of the probe we're updating
+		U32			SetsCount;						// Amount of sets for that probe
+		U32			SamplingPointsStart;			// Index of the first sampling point for the probe
+		U32			SamplingPointsCount;			// Amount of sampling points for the probe
+		NjFloat3	SHStatic[9];					// Precomputed static SH (static geometry + static lights)
+		float		SHOcclusion[9];					// Directional ambient occlusion for the probe
+
+		struct	SetInfos
+		{
+			NjFloat3	SH[9];						// SH for the set
+			U32			SamplingPointIndex;			// Index of the first sampling point
+			U32			SamplingPointsCount;		// Amount of sampling points
+		}	Sets[MAX_PROBE_SETS];
+	};
+
+	struct RuntimeSamplingPointInfos
+	{
+		NjFloat3	Position;						// World position of the sampling point
+		NjFloat3	Normal;							// World normal of the sampling point
+		float		Radius;							// Radius of the sampling point's disc approximation
+	};
+
+#pragma pack( pop )
 
 	// The probe structure
 	struct	ProbeStruct
@@ -126,6 +179,7 @@ private:	// FIELDS
 	Primitive&			m_ScreenQuad;
 
 	Material*			m_pMatRender;				// Displays the room
+	Material*			m_pMatRenderEmissive;		// Displays the room's emissive objects (area lights)
 	Material*			m_pMatRenderLights;			// Displays the lights as small emissive balls
 	Material*			m_pMatRenderCubeMap;		// Renders the room into a cubemap
 	Material*			m_pMatRenderNeighborProbe;	// Renders the neighbor probes as planes to form a 3D voronoï cell
@@ -153,53 +207,15 @@ private:	// FIELDS
  	CB<CBShadowMap>*	m_pCB_ShadowMap;
  	CB<CBUpdateProbes>*	m_pCB_UpdateProbes;
 
-	// Light buffer
-	struct	LightStruct
-	{
-		NjFloat3	Position;
-		NjFloat3	Color;
-		float		Radius;	// Light radius to compute the solid angle for the probe injection
-	};
-	SB<LightStruct>*	m_pSB_Lights;
-
-	// Runtime probes buffer
-	struct RuntimeProbe 
-	{
-		NjFloat3	Position;
-		float		Radius;
-		NjFloat3	pSHBounce[9];
-	};
+	// Runtime scene lights & probes
+	SB<LightStruct>*	m_pSB_LightsStatic;
+	SB<LightStruct>*	m_pSB_LightsDynamic;
 	SB<RuntimeProbe>*	m_pSB_RuntimeProbes;
 
-
-	// Probes
+	// Probes Update
 	int					m_ProbesCount;
 	ProbeStruct*		m_pProbes;
-
-	struct RuntimeProbeUpdateInfos
-	{
-		U32			ProbeIndex;						// The index of the probe we're updating
-		U32			SetsCount;						// Amount of sets for that probe
-		U32			SamplingPointsStart;			// Index of the first sampling point for the probe
-		U32			SamplingPointsCount;			// Amount of sampling points for the probe
-		NjFloat3	SHStatic[9];					// Precomputed static SH (static geometry + static lights)
-		float		SHOcclusion[9];					// Directional ambient occlusion for the probe
-
-		struct	SetInfos
-		{
-			NjFloat3	SH[9];						// SH for the set
-			U32			SamplingPointIndex;			// Index of the first sampling point
-			U32			SamplingPointsCount;		// Amount of sampling points
-		}	Sets[MAX_PROBE_SETS];
-	};
 	SB<RuntimeProbeUpdateInfos>*	m_pSB_RuntimeProbeUpdateInfos;
-
-	struct RuntimeSamplingPointInfos
-	{
-		NjFloat3	Position;						// World position of the sampling point
-		NjFloat3	Normal;							// World normal of the sampling point
-		float		Radius;							// Radius of the sampling point's disc approximation
-	};
 	SB<RuntimeSamplingPointInfos>*	m_pSB_RuntimeSamplingPointInfos;
 
 	// Params

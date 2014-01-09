@@ -2,33 +2,7 @@
 // This shader renders lights as luminous balls
 //
 #include "Inc/Global.hlsl"
-
-//[
-cbuffer	cbScene	: register( b10 )
-{
-	uint		_LightsCount;
-	uint		_ProbesCount;
-};
-//]
-
-// Structured Buffers with our lights & probes
-struct	LightStruct
-{
-	float3		Position;
-	float3		Color;
-	float		Radius;	// Light radius to compute the solid angle for the probe injection
-};
-StructuredBuffer<LightStruct>	_SBLights : register( t8 );
-
-struct	ProbeStruct
-{
-	float3		Position;
-	float		InfluenceDistance;
-	float3		SHBounce[9];
-	float3		SHLight[9];
-};
-StructuredBuffer<ProbeStruct>	_SBProbes : register( t9 );
-
+#include "Inc/GI.hlsl"
 
 struct	VS_IN
 {
@@ -46,10 +20,10 @@ struct	PS_IN
 
 PS_IN	VS( VS_IN _In )
 {
-	LightStruct	Light = _SBLights[_In.InstanceID];
+	LightStruct	Light = _SBLightsDynamic[_In.InstanceID];
 
-	float4	WorldPosition = float4( Light.Position + Light.Radius * _In.Position, 1.0 );
-	if ( Light.Radius < 0.0 )
+	float4	WorldPosition = float4( Light.Position + Light.Parms.y * _In.Position, 1.0 );
+	if ( Light.Parms.y < 0.0 )
 //		WorldPosition.xyz = 1.5 * saturate( dot( _In.Position, Light.Position ) ) * Light.Position;
 		WorldPosition.xyz = _In.Position * lerp( 0.001, 0.1, saturate( dot( _In.Position, Light.Position ) ) );
 

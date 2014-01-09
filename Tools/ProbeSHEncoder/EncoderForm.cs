@@ -604,6 +604,83 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 			}
 		}
 
+		private void SaveSets( FileInfo _FileName )
+		{
+			using ( FileStream Stream = _FileName.Create() )
+				using ( BinaryWriter W = new BinaryWriter( Stream ) )
+				{
+					// Write the mean, harmonic mean, min, max distances
+					W.Write( (float) m_MeanDistance );
+					W.Write( (float) m_MeanHarmonicDistance );
+					W.Write( (float) m_MinDistance );
+					W.Write( (float) m_MaxDistance );
+
+					// Write the BBox
+					W.Write( m_BBox.m_Min.x );
+					W.Write( m_BBox.m_Min.y );
+					W.Write( m_BBox.m_Min.z );
+					W.Write( m_BBox.m_Max.x );
+					W.Write( m_BBox.m_Max.y );
+					W.Write( m_BBox.m_Max.z );
+
+					// Write the amount of sets
+					W.Write( (UInt32) m_Sets.Length );
+
+					foreach ( Set S in m_Sets )
+					{
+						// Write position, normal, albedo
+						W.Write( S.Position.x );
+						W.Write( S.Position.y );
+						W.Write( S.Position.z );
+
+						W.Write( S.Normal.x );
+						W.Write( S.Normal.y );
+						W.Write( S.Normal.z );
+
+						W.Write( S.Tangent.x );
+						W.Write( S.Tangent.y );
+						W.Write( S.Tangent.z );
+
+						W.Write( S.BiTangent.x );
+						W.Write( S.BiTangent.y );
+						W.Write( S.BiTangent.z );
+
+							// Not used, just for information purpose
+						W.Write( (float) (S.Albedo.x / Math.PI) );
+						W.Write( (float) (S.Albedo.y / Math.PI) );
+						W.Write( (float) (S.Albedo.z / Math.PI) );
+
+						// Write SH coefficients
+						for ( int i=0; i < 9; i++ )
+						{
+							W.Write( S.SH[i].x );
+							W.Write( S.SH[i].y );
+							W.Write( S.SH[i].z );
+						}
+
+						// Write amount of samples
+						W.Write( (UInt32) S.Samples.Length );
+
+						// Write each sample
+						foreach ( Set.Sample Sample in S.Samples )
+						{
+							// Write position
+							W.Write( Sample.Position.x );
+							W.Write( Sample.Position.y );
+							W.Write( Sample.Position.z );
+
+							// Write normal
+							W.Write( Sample.Normal.x );
+							W.Write( Sample.Normal.y );
+							W.Write( Sample.Normal.z );
+
+							// Write radius
+							W.Write( Sample.Radius );
+						}
+					}
+				}
+		}
+
 		#region Helpers
 
 		private string	GetRegKey( string _Key, string _Default )
@@ -1534,79 +1611,97 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 			SetRegKey( "LastProbeSetFilename", saveFileDialog.FileName );
 
 			FileInfo	F = new FileInfo( saveFileDialog.FileName );
-			using ( FileStream Stream = F.Create() )
-				using ( BinaryWriter W = new BinaryWriter( Stream ) )
+			SaveSets( F );
+		}
+
+		private void batchEncodeToolStripMenuItem_Click( object sender, EventArgs e )
+		{
+			// Ask where to load
+			string	OldFolder = GetRegKey( "LastProbesFolderSource", Path.GetDirectoryName( m_ApplicationPath ) );
+			folderBrowserDialog.SelectedPath = OldFolder;
+			if ( folderBrowserDialog.ShowDialog( this ) != DialogResult.OK )
+				return;
+			SetRegKey( "LastProbesFolderSource", folderBrowserDialog.SelectedPath );
+
+			DirectoryInfo	SourceDir = new DirectoryInfo( folderBrowserDialog.SelectedPath );
+
+			// Ask where to save
+			OldFolder = GetRegKey( "LastProbesFolderTarget", Path.GetDirectoryName( m_ApplicationPath ) );
+			folderBrowserDialog.SelectedPath = OldFolder;
+			if ( folderBrowserDialog.ShowDialog( this ) != DialogResult.OK )
+				return;
+			SetRegKey( "LastProbesFolderTarget", folderBrowserDialog.SelectedPath );
+
+			DirectoryInfo	TargetDir = new DirectoryInfo( folderBrowserDialog.SelectedPath );
+
+			// Batch process!
+			progressBarBatchConvert.Value = 0;
+			progressBarBatchConvert.Visible = true;
+
+			string			Errors = null;
+			int				ProcessedProbesCount = 0;
+			List<FileInfo>	PomFiles = new List<FileInfo>( SourceDir.GetFiles( "*.pom" ) );
+			int				OriginalFilesCount = PomFiles.Count;
+			while ( PomFiles.Count > 0 )
+			{
+				try
 				{
-					// Write the mean, harmonic mean, min, max distances
-					W.Write( (float) m_MeanDistance );
-					W.Write( (float) m_MeanHarmonicDistance );
-					W.Write( (float) m_MinDistance );
-					W.Write( (float) m_MaxDistance );
-
-					// Write the BBox
-					W.Write( m_BBox.m_Min.x );
-					W.Write( m_BBox.m_Min.y );
-					W.Write( m_BBox.m_Min.z );
-					W.Write( m_BBox.m_Max.x );
-					W.Write( m_BBox.m_Max.y );
-					W.Write( m_BBox.m_Max.z );
-
-					// Write the amount of sets
-					W.Write( (UInt32) m_Sets.Length );
-
-					foreach ( Set S in m_Sets )
-					{
-						// Write position, normal, albedo
-						W.Write( S.Position.x );
-						W.Write( S.Position.y );
-						W.Write( S.Position.z );
-
-						W.Write( S.Normal.x );
-						W.Write( S.Normal.y );
-						W.Write( S.Normal.z );
-
-						W.Write( S.Tangent.x );
-						W.Write( S.Tangent.y );
-						W.Write( S.Tangent.z );
-
-						W.Write( S.BiTangent.x );
-						W.Write( S.BiTangent.y );
-						W.Write( S.BiTangent.z );
-
-							// Not used, just for information purpose
-						W.Write( (float) (S.Albedo.x / Math.PI) );
-						W.Write( (float) (S.Albedo.y / Math.PI) );
-						W.Write( (float) (S.Albedo.z / Math.PI) );
-
-						// Write SH coefficients
-						for ( int i=0; i < 9; i++ )
-						{
-							W.Write( S.SH[i].x );
-							W.Write( S.SH[i].y );
-							W.Write( S.SH[i].z );
-						}
-
-						// Write amount of samples
-						W.Write( (UInt32) S.Samples.Length );
-
-						// Write each sample
-						foreach ( Set.Sample Sample in S.Samples )
-						{
-							// Write position
-							W.Write( Sample.Position.x );
-							W.Write( Sample.Position.y );
-							W.Write( Sample.Position.z );
-
-							// Write normal
-							W.Write( Sample.Normal.x );
-							W.Write( Sample.Normal.y );
-							W.Write( Sample.Normal.z );
-
-							// Write radius
-							W.Write( Sample.Radius );
-						}
+					string	ProbeAlbedoFileNameString = PomFiles[0].FullName;
+					string	ProbeGeometryFileNameString = PomFiles[0].FullName;
+					if ( ProbeAlbedoFileNameString.IndexOf( "_Albedo" ) != -1 )
+						ProbeGeometryFileNameString = ProbeAlbedoFileNameString.Replace( "_Albedo", "_Geometry" );
+					else if ( ProbeAlbedoFileNameString.IndexOf( "_Geometry" ) != -1 )
+						ProbeAlbedoFileNameString = ProbeAlbedoFileNameString.Replace( "_Geometry", "_Albedo" );
+					else
+					{	// Not a probe file...
+						PomFiles.Remove( PomFiles[0] );
+						continue;
 					}
+
+					FileInfo	ProbeAlbedoFileName = new FileInfo( ProbeAlbedoFileNameString );
+					if ( !ProbeAlbedoFileName.Exists )
+						throw new Exception( "Probe file \"" + ProbeAlbedoFileName.Name + "\" for albedo not found!" );
+
+					FileInfo	ProbeGeometryFileName = new FileInfo( ProbeGeometryFileNameString );
+					if ( !ProbeGeometryFileName.Exists )
+						throw new Exception( "Probe file \"" + ProbeGeometryFileName.Name + "\"  for geometry not found!" );
+
+					int	OldCount = PomFiles.Count;
+					FileInfo[]	Temp = PomFiles.ToArray();
+					foreach ( FileInfo F in Temp )
+						if ( F.FullName == ProbeAlbedoFileName.FullName || F.FullName == ProbeGeometryFileName.FullName )
+							PomFiles.Remove( F );
+
+					if ( PomFiles.Count != OldCount-2 )
+						throw new Exception( "Argh!" );
+
+					LoadCubeMap( ProbeAlbedoFileName, ProbeGeometryFileName );
+
+					// Create probe sets
+					buttonComputeFilling_Click( null, EventArgs.Empty );
+
+					// Save result
+					string		TargetFileName = Path.GetFileNameWithoutExtension( ProbeAlbedoFileName.FullName ).Replace( "_Albedo", "" ) + ".probeset";
+					FileInfo	TargetFile = new FileInfo( Path.Combine( TargetDir.FullName, TargetFileName ) );
+					SaveSets( TargetFile );
+
+					ProcessedProbesCount++;
+					progressBarBatchConvert.Value = progressBarBatchConvert.Maximum * (OriginalFilesCount - PomFiles.Count) / OriginalFilesCount;
+					progressBarBatchConvert.Refresh();
 				}
+				catch ( Exception _e )
+				{
+					Errors += _e.Message + "\r\n";
+				}
+			}
+
+			progressBarBatchConvert.Value = progressBarBatchConvert.Maximum;
+			if ( Errors == null )
+				MessageBox( "Success! " + ProcessedProbesCount + " probes were processed...", MessageBoxButtons.OK, MessageBoxIcon.Information );
+			else
+				MessageBox( ProcessedProbesCount + " probes were processed but errors were found:\r\n\r\n" + Errors, MessageBoxButtons.OK, MessageBoxIcon.Warning );
+
+			progressBarBatchConvert.Visible = false;
 		}
 
 		#endregion
