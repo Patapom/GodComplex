@@ -21,6 +21,8 @@ namespace ProbeSHEncoder
 			ALBEDO,
 			DISTANCE,
 			NORMAL,
+			STATIC_LIT,
+			EMISSIVE_MAT_ID,
 			SET_INDEX,
 			SET_ALBEDO,
 			SET_DISTANCE,
@@ -51,7 +53,7 @@ namespace ProbeSHEncoder
 					return;
 
 				m_IsolatedSetIndex = value;
-				if ( m_Viz < VIZ_TYPE.NORMAL )
+				if ( m_Viz < VIZ_TYPE.SET_INDEX )
 					return;
 				UpdateBitmap();
 				Refresh();
@@ -67,7 +69,7 @@ namespace ProbeSHEncoder
 					return;
 
 				m_IsolateSet = value;
-				if ( m_Viz < VIZ_TYPE.NORMAL )
+				if ( m_Viz < VIZ_TYPE.SET_INDEX )
 					return;
 				UpdateBitmap();
 				Refresh();
@@ -83,23 +85,68 @@ namespace ProbeSHEncoder
 					return;
 
 				m_ShowSetAverage = value;
-				if ( m_Viz < VIZ_TYPE.NORMAL )
+				if ( m_Viz < VIZ_TYPE.SET_INDEX )
 					return;
 				UpdateBitmap();
 				Refresh();
 			}
 		}
 
-		private WMath.Vector[]	m_SH = new WMath.Vector[9];
-		public WMath.Vector[]	SH
+		private bool			m_bShowSHStatic = false;
+		public bool				ShowSHStatic
 		{
-			get { return m_SH; }
+			get { return m_bShowSHStatic; }
 			set
 			{
-				if ( value == null || value == m_SH )
+				if ( value == m_bShowSHStatic )
 					return;
 
-				m_SH = value;
+				m_bShowSHStatic = value;
+				if ( m_Viz == VIZ_TYPE.SH )
+					UpdateBitmap();
+			}
+		}
+		private WMath.Vector[]	m_SHStatic = new WMath.Vector[9];
+		public WMath.Vector[]	SHStatic
+		{
+			get { return m_SHStatic; }
+			set
+			{
+				if ( value == null || value == m_SHDynamic )
+					return;
+
+				m_SHStatic = value;
+				if ( m_Viz != VIZ_TYPE.SH )
+					return;
+				UpdateBitmap();
+				Refresh();
+			}
+		}
+
+		private bool			m_bShowSHDynamic = true;
+		public bool				ShowSHDynamic
+		{
+			get { return m_bShowSHDynamic; }
+			set
+			{
+				if ( value == m_bShowSHDynamic )
+					return;
+
+				m_bShowSHDynamic = value;
+				if ( m_Viz == VIZ_TYPE.SH )
+					UpdateBitmap();
+			}
+		}
+		private WMath.Vector[]	m_SHDynamic = new WMath.Vector[9];
+		public WMath.Vector[]	SHDynamic
+		{
+			get { return m_SHDynamic; }
+			set
+			{
+				if ( value == null || value == m_SHDynamic )
+					return;
+
+				m_SHDynamic = value;
 				if ( m_Viz != VIZ_TYPE.SH )
 					return;
 				UpdateBitmap();
@@ -138,7 +185,10 @@ namespace ProbeSHEncoder
 		public OutputPanel( IContainer container )
 		{
 			for ( int i=0; i < 9; i++ )
-				m_SH[i] = WMath.Vector.Zero;
+			{
+				m_SHDynamic[i] = WMath.Vector.Zero;
+				m_SHStatic[i] = WMath.Vector.Zero;
+			}
 
 			container.Add( this );
 
@@ -169,6 +219,8 @@ namespace ProbeSHEncoder
 					case VIZ_TYPE.ALBEDO:			S = CubeMapSamplerAlbedo; break;
 					case VIZ_TYPE.DISTANCE:			S = CubeMapSamplerDistance; break;
 					case VIZ_TYPE.NORMAL:			S = CubeMapSamplerNormal; break;
+					case VIZ_TYPE.STATIC_LIT:		S = CubeMapSamplerStaticLit; break;
+					case VIZ_TYPE.EMISSIVE_MAT_ID:	S = CubeMapSamplerEmissiveMatID; break;
 					case VIZ_TYPE.SET_INDEX:		S = CubeMapSamplerSetIndex; break;
 					case VIZ_TYPE.SET_ALBEDO:		S = CubeMapSamplerSetAlbedo; break;
 					case VIZ_TYPE.SET_DISTANCE:		S = CubeMapSamplerSetDistance; break;
@@ -233,6 +285,19 @@ namespace ProbeSHEncoder
 #endif
 		}
 
+		private void	CubeMapSamplerStaticLit( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		{
+			_R = (byte) Math.Min( 255, 255 * _Pixel.StaticLitColor.x );
+			_G = (byte) Math.Min( 255, 255 * _Pixel.StaticLitColor.y );
+			_B = (byte) Math.Min( 255, 255 * _Pixel.StaticLitColor.z );
+		}
+
+		private void	CubeMapSamplerEmissiveMatID( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		{
+			byte	C = (byte) Math.Min( 255, 255 * (1+_Pixel.EmissiveMatID) / 4 );
+			_R = _G = _B = C;
+		}
+
 		private void	CubeMapSamplerSetIndex( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			EncoderForm.Set	S = _Pixel.ParentSet;
@@ -295,40 +360,44 @@ namespace ProbeSHEncoder
 #endif
 		}
 
-		const float	f0 = 0.28209479177387814347403972578039f;		// 0.5 / sqrt(PI);
-		const float	f1 = 0.48860251190291992158638462283835f;		// 0.5 * sqrt(3.0/PI);
-		const float	f2 = 1.0925484305920790705433857058027f;		// 0.5 * sqrt(15.0/PI);
-		float[]	SHCoeffs = new float[9];
+// 		const float	f0 = 0.28209479177387814347403972578039f;		// 0.5 / sqrt(PI);
+// 		const float	f1 = 0.48860251190291992158638462283835f;		// 0.5 * sqrt(3.0/PI);
+// 		const float	f2 = 1.0925484305920790705433857058027f;		// 0.5 * sqrt(15.0/PI);
+// 		float[]	SHCoeffs = new float[9];
 		private void	CubeMapSamplerSH( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			WMath.Vector	Dir = _Pixel.View;
 
-			// Estimate SH in pixel's direction
-			SHCoeffs[0] = f0;
-			SHCoeffs[1] = -f1 * Dir.x;
-			SHCoeffs[2] = f1 * Dir.y;
-			SHCoeffs[3] = -f1 * Dir.z;
-			SHCoeffs[4] = f2 * Dir.x * Dir.z;
-			SHCoeffs[5] = -f2 * Dir.x * Dir.y;
-			SHCoeffs[6] = f2 * 0.28867513459481288225457439025097f * (3.0f * Dir.y*Dir.y - 1.0f);
-			SHCoeffs[7] = -f2 * Dir.z * Dir.y;
-			SHCoeffs[8] = f2 * 0.5f * (Dir.z*Dir.z - Dir.x*Dir.x);
+// 			// Estimate SH in pixel's direction
+// 			SHCoeffs[0] = f0;
+// 			SHCoeffs[1] = -f1 * Dir.x;
+// 			SHCoeffs[2] = f1 * Dir.y;
+// 			SHCoeffs[3] = -f1 * Dir.z;
+// 			SHCoeffs[4] = f2 * Dir.x * Dir.z;
+// 			SHCoeffs[5] = -f2 * Dir.x * Dir.y;
+// 			SHCoeffs[6] = f2 * 0.28867513459481288225457439025097f * (3.0f * Dir.y*Dir.y - 1.0f);
+// 			SHCoeffs[7] = -f2 * Dir.z * Dir.y;
+// 			SHCoeffs[8] = f2 * 0.5f * (Dir.z*Dir.z - Dir.x*Dir.x);
 
 			// Dot the SH together
 			WMath.Vector	Color = WMath.Vector.Zero;
 			if ( m_IsolateSet )
 			{
 				for ( int i=0; i < 9; i++ )
-					Color += SHCoeffs[i] * m_Owner.m_Sets[m_IsolatedSetIndex].SH[i];
+					Color += (float) _Pixel.SHCoeffs[i] * m_Owner.m_Sets[m_IsolatedSetIndex].SH[i];
 //				Color *= 100.0f;
 				Color *= 0.5f / m_Owner.m_Sets[m_IsolatedSetIndex].SH[0].Max();
 			}
 			else
 			{
 				for ( int i=0; i < 9; i++ )
-					Color += SHCoeffs[i] * m_SH[i];
+					Color += (float) _Pixel.SHCoeffs[i] * ((m_bShowSHStatic ? 1.0f : 0.0f) * m_SHStatic[i] + (m_bShowSHDynamic ? 1.0f : 0.0f) * m_SHDynamic[i]);
 //				Color *= 50.0f;
-				Color *= 1.0f / m_SH[0].Max();
+
+				if ( m_bShowSHDynamic )
+					Color *= 1.0f / m_SHDynamic[0].Max();
+				else
+					Color *= 1.0f / m_SHStatic[0].Max();
 			}
 
 			if ( Color.x < 0.0f || Color.y < 0.0f || Color.z < 0.0f )

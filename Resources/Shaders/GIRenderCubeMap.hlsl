@@ -91,6 +91,8 @@ PS_OUT	PS( PS_IN _In )
 	}
 	AccumDiffuse *= Out.DiffuseAlbedo;
 
+//AccumDiffuse = _StaticLightsCount;
+
 	Out.StaticLitEmmissive = float4( AccumDiffuse, asfloat( uint( any( abs( _EmissiveColor ) > 1e-4 ) ? _MaterialID : 0xFFFFFFFFUL ) ) );
 
 	return Out;

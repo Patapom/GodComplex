@@ -13,13 +13,14 @@
 //////////////////////////////////////////////////////////////////////////
 // 
 // I'm testing several methods to create the sets:
+// 
 //	(1) k-means clustering (http://en.wikipedia.org/wiki/K-means_clustering), that consists in creating initial sets
 //		using an educated guess and aggregating pixels to each set depending on a metric.
 //		The pixel gets assigned to the set whose metric is the lowest. I'm currently using a
 //		metric mixing spatial distance, hue distance (for albedo similarity) and normal discrepancies measurement.
 //
 //		I believe it could give interesting results with a little effort but I'm lazy and I think it's still a bit
-//		dodgy because it doesn't handle pixels vicinity and tends to fragment sets.
+//		dodgy because it doesn't handle pixels vicinity and tends to fragment sets a lot.
 // 
 //	(2) Filling method, it's an experimental method of mine that consists in browsing the pixels of the cube map and
 //		perform a fill operation by joining adjacent pixels if and only if they're sufficiently close enough in terms
@@ -62,6 +63,11 @@ namespace ProbeSHEncoder
 		[System.Diagnostics.DebuggerDisplay( "H={AlbedoHSL.x} S={AlbedoHSL.y} L={Albedo.z} P=({Position.x}, {Position.y}, {Position.z})" )]
 		public class	Pixel
 		{
+			static readonly double		f0 = 0.5 / Math.Sqrt(Math.PI);
+			static readonly double		f1 = Math.Sqrt(3.0) * f0;
+			static readonly double		f2 = Math.Sqrt(15.0) * f0;
+			static readonly double		f3 = Math.Sqrt(5.0) * 0.5 * f0;
+
 			public int			PixelIndex;			// Index of the pixel in the scene pixels (can help us locate the cube map face + position of the pixel when finding adjacent pixels)
 			public int			FaceIndex;
 			public int			FaceX;
@@ -72,16 +78,35 @@ namespace ProbeSHEncoder
 			public WMath.Vector	Albedo;				// Material albedo
 			public WMath.Vector	AlbedoHSL;			// Material albedo in HSL format
 			public float		F0;					// Material Fresnel coefficient
+			public WMath.Vector	StaticLitColor;		// Color of the statically lit environment
+			public int			EmissiveMatID;		// ID of the emissive material or -1 if not emissive
 			public double		SolidAngle;			// Solid angle covered by the pixel
 			public double		Importance;			// A measure of "importance" of the scene pixel = -dot( View, Normal ) / Distance²
 			public float		Distance;			// Distance to hit point
 			public bool			Infinity;			// True if not a scene pixel (i.e. sky pixel)
 			public WMath.Vector	View;				// View vector pointing to that pixel
 
+			public double[]		SHCoeffs = new double[9];
+
 			public Set			ParentSet = null;
 			public int			ParentSetSampleIndex = -1;	// Index of the nearest sample this pixel is part of
 
 			public static float	IMPORTANCE_THRESOLD = 0.0f;
+
+			public void			InitSH()
+			{
+
+				// Build SH coeffs for that pixel
+				SHCoeffs[0] = f0;
+				SHCoeffs[1] = -f1 * View.x;
+				SHCoeffs[2] = f1 * View.y;
+				SHCoeffs[3] = -f1 * View.z;
+				SHCoeffs[4] = f2 * View.x * View.z;
+				SHCoeffs[5] = -f2 * View.x * View.y;
+				SHCoeffs[6] = f3 * (3.0 * View.y*View.y - 1.0);
+				SHCoeffs[7] = -f2 * View.z * View.y;
+				SHCoeffs[8] = f2 * 0.5 * (View.z*View.z - View.x*View.x);
+			}
 
 			public void			SetAlbedo( WMath.Vector _Albedo )
 			{
@@ -196,11 +221,6 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 			/// </summary>
 			public void			EncodeSH()
 			{
-				double		f0 = 0.5 / Math.Sqrt(Math.PI);
-				double		f1 = Math.Sqrt(3.0) * f0;
-				double		f2 = Math.Sqrt(15.0) * f0;
-				double		f3 = Math.Sqrt(5.0) * 0.5 * f0;
-
 				double		AlbedoR = Albedo.x / Math.PI;
 				double		AlbedoG = Albedo.y / Math.PI;
 				double		AlbedoB = Albedo.z / Math.PI;
@@ -212,17 +232,6 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 
 				foreach ( Pixel P in SetPixels )
 				{
-					// Build SH coeffs for that pixel
-					SHCoeffs[0] = f0;
-					SHCoeffs[1] = -f1 * P.View.x;
-					SHCoeffs[2] = f1 * P.View.y;
-					SHCoeffs[3] = -f1 * P.View.z;
-					SHCoeffs[4] = f2 * P.View.x * P.View.z;
-					SHCoeffs[5] = -f2 * P.View.x * P.View.y;
-					SHCoeffs[6] = f3 * (3.0 * P.View.y*P.View.y - 1.0);
-					SHCoeffs[7] = -f2 * P.View.z * P.View.y;
-					SHCoeffs[8] = f2 * 0.5 * (P.View.z*P.View.z - P.View.x*P.View.x);
-
 					// Compute weight factor based on set's normal and pixel's normal but also based on pixel's normal and view direction
 					double	Factor  = P.SolidAngle									// Solid angle for SH weight, obvious
 									* Math.Max( 0.0, (P.Normal | this.Normal) )		// This weight is to account for the fact that the point is well aligned with the set's plane the lighting was computed for
@@ -231,9 +240,9 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 
 					for ( int i=0; i < 9; i++ )
 					{
-						SHR[i] += SHCoeffs[i] * Factor * AlbedoR;
-						SHG[i] += SHCoeffs[i] * Factor * AlbedoG;
-						SHB[i] += SHCoeffs[i] * Factor * AlbedoB;
+						SHR[i] += P.SHCoeffs[i] * Factor * AlbedoR;
+						SHG[i] += P.SHCoeffs[i] * Factor * AlbedoG;
+						SHB[i] += P.SHCoeffs[i] * Factor * AlbedoB;
 					}
 				}
 
@@ -253,7 +262,7 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 			public void			FindPrincipalAxes()
 			{
 				// Create an arbitrary tangent space
-				WMath.Vector	Y = Normal;;
+				WMath.Vector	Y = Normal;
 				WMath.Vector	X = WMath.Vector.UnitY ^ Y;
 				WMath.Vector	Z;
 				if ( X.Length < 1e-6 )
@@ -429,14 +438,14 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 		{
 			base.OnLoad( e );
 
-			try
-			{
-				LoadCubeMap( new FileInfo( "../../Probe_Albedo.pom" ), new FileInfo( "../../Probe_Geometry.pom" ) );
-			}
-			catch ( Exception _e )
-			{
-				MessageBox( "Failed to load default probe!\n\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
-			}
+// 			try
+// 			{
+// 				LoadCubeMap( new FileInfo( "../../Probe_Albedo.pom" ), new FileInfo( "../../Probe_Geometry.pom" ) );
+// 			}
+// 			catch ( Exception _e )
+// 			{
+// 				MessageBox( "Failed to load default probe!\n\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+// 			}
 		}
 
 		private void	PrepareCubeMapFaceTransforms()
@@ -486,7 +495,7 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 			}
 		}
 
-		private void	LoadCubeMap( FileInfo _POMAlbedo, FileInfo _POMGeometry )
+		private void	LoadCubeMap( FileInfo _POMCubeMap )
 		{
 			try
 			{
@@ -497,12 +506,9 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 				m_ScenePixels.Clear();
 
 				// Load and convert POM files into a useable cube map
-				Nuaj.Cirrus.Utility.TextureFilePOM	POM0 = new Nuaj.Cirrus.Utility.TextureFilePOM();
-				Nuaj.Cirrus.Utility.TextureFilePOM	POM1 = new Nuaj.Cirrus.Utility.TextureFilePOM();
-				POM0.Load( _POMAlbedo );
-				POM1.Load( _POMGeometry );
-
-				if ( POM0.m_Width != POM1.m_Width || POM0.m_Height != POM1.m_Height || POM0.m_ArraySizeOrDepth != POM1.m_ArraySizeOrDepth || POM0.m_Width != CUBE_MAP_SIZE || POM0.m_Height != CUBE_MAP_SIZE || POM0.m_ArraySizeOrDepth != 6 )
+				Nuaj.Cirrus.Utility.TextureFilePOM	POM = new Nuaj.Cirrus.Utility.TextureFilePOM();
+				POM.Load( _POMCubeMap );
+				if ( POM.m_Width != CUBE_MAP_SIZE || POM.m_Height != CUBE_MAP_SIZE || POM.m_ArraySizeOrDepth != 3*6 )
 					throw new Exception( "Unexpected cube map size!" );
 
 				double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
@@ -522,7 +528,7 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 							m_CubeMap[CubeFaceIndex][X,Y] = new Pixel() { PixelIndex = X + CUBE_MAP_SIZE * (Y + CUBE_MAP_SIZE * CubeFaceIndex), FaceIndex = CubeFaceIndex, FaceX = X, FaceY = Y };
 
 					// Fill up albedo
-					using ( MemoryStream S = new MemoryStream( POM0.m_Content[CubeFaceIndex] ) )
+					using ( MemoryStream S = new MemoryStream( POM.m_Content[CubeFaceIndex] ) )
 						using ( BinaryReader R = new BinaryReader( S ) )
 							for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
 								for ( int X=0; X < CUBE_MAP_SIZE; X++ )
@@ -541,7 +547,7 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 								}
 
 					// Fill up position & normal
-					using ( MemoryStream S = new MemoryStream( POM1.m_Content[CubeFaceIndex] ) )
+					using ( MemoryStream S = new MemoryStream( POM.m_Content[6+CubeFaceIndex] ) )
 						using ( BinaryReader R = new BinaryReader( S ) )
 							for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
 								for ( int X=0; X < CUBE_MAP_SIZE; X++ )
@@ -575,6 +581,8 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 									Pix.Distance = Distance;
 									Pix.Infinity = Distance > Z_INFINITY_TEST;
 
+									Pix.InitSH();
+
 									m_ProbePixels.Add( Pix );
 									if ( m_CubeMap[CubeFaceIndex][X,Y].Infinity )
 										continue;
@@ -586,6 +594,23 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 									m_MinDistance = Math.Min( m_MinDistance, Distance );
 									m_MaxDistance = Math.Max( m_MaxDistance, Distance );
 									m_BBox.Grow( wsPosition );
+								}
+
+					// Fill up static lit environment and emissive IDs
+					using ( MemoryStream S = new MemoryStream( POM.m_Content[12+CubeFaceIndex] ) )
+						using ( BinaryReader R = new BinaryReader( S ) )
+							for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
+								for ( int X=0; X < CUBE_MAP_SIZE; X++ )
+								{
+									Pixel	Pix = m_CubeMap[CubeFaceIndex][X,Y];
+
+									float	Red = R.ReadSingle();
+									float	Green = R.ReadSingle();
+									float	Blue = R.ReadSingle();
+									int		ID = (int) R.ReadUInt32();
+
+									Pix.StaticLitColor = new WMath.Vector( Red, Green, Blue );
+									Pix.EmissiveMatID = ID;
 								}
 				}
 
@@ -604,7 +629,7 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 			}
 		}
 
-		private void SaveSets( FileInfo _FileName )
+		private void	SaveSets( FileInfo _FileName )
 		{
 			using ( FileStream Stream = _FileName.Create() )
 				using ( BinaryWriter W = new BinaryWriter( Stream ) )
@@ -893,10 +918,9 @@ int	DEBUG_PixelIndex = 0;
 
 		private void buttonComputeFilling_Click( object sender, EventArgs e )
 		{
-			// 1] Clear the sets for each pixel
+			// Clear the sets for each pixel
 			foreach ( Pixel P in m_ProbePixels )
 				P.ParentSet = null;
-
 
 			// Setup the reference thresholds for pixels' acceptance
 //			Pixel.IMPORTANCE_THRESOLD = (float) ((4.0f * Math.PI / CUBE_MAP_FACE_SIZE) / (m_MeanDistance * m_MeanDistance));	// Compute an average solid angle threshold based on average pixels' distance
@@ -907,6 +931,29 @@ int	DEBUG_PixelIndex = 0;
 			ANGULAR_THRESHOLD = (float) Math.Cos( 45.0 * floatTrackbarControlNormal.Value * Math.PI / 180 );	// 45° (we're very generous here!)
 			ALBEDO_HUE_THRESHOLD = 0.04f * floatTrackbarControlAlbedo.Value;									// Close colors!
 			ALBEDO_RGB_THRESHOLD = 0.32f * floatTrackbarControlAlbedo.Value;									// Close colors!
+
+			//////////////////////////////////////////////////////////////////////////
+			// 1] Compute static lighting SH
+			double[]	SHR = new double[9];
+			double[]	SHG = new double[9];
+			double[]	SHB = new double[9];
+
+			for ( int PixelIndex=0; PixelIndex < m_ProbePixels.Count; PixelIndex++ )
+			{
+				Pixel	P = m_ProbePixels[PixelIndex];
+				for ( int i=0; i < 9; i++ )
+				{
+					SHR[i] += P.SHCoeffs[i] * P.SolidAngle * P.StaticLitColor.x;
+					SHG[i] += P.SHCoeffs[i] * P.SolidAngle * P.StaticLitColor.y;
+					SHB[i] += P.SHCoeffs[i] * P.SolidAngle * P.StaticLitColor.z;
+				}
+			}
+
+			double	Normalizer = 1.0 / (4.0 * Math.PI);
+
+			WMath.Vector[]	StaticSH = new WMath.Vector[9];
+			for ( int i=0; i < 9; i++ )
+				StaticSH[i] = new WMath.Vector( (float) (Normalizer * SHR[i]), (float) (Normalizer * SHG[i]), (float) (Normalizer * SHB[i]) );
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -1019,7 +1066,9 @@ DEBUG_PixelIndex = PixelIndex;
 
 				// Finally, encode SH & find principal axes & samples
 				S.EncodeSH();
-				S.FindPrincipalAxes();
+
+// Find a faster way!
+//				S.FindPrincipalAxes();
 			}
 
 			// Generate set samples
@@ -1055,7 +1104,7 @@ DEBUG_PixelIndex = PixelIndex;
 				foreach ( Set S in m_Sets )
 					SHSum[i] += S.SH[i];
 			}
-			outputPanel1.SH = SHSum;
+			outputPanel1.SHDynamic = SHSum;
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -1506,6 +1555,18 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 				outputPanel1.Viz = OutputPanel.VIZ_TYPE.NORMAL;
 		}
 
+		private void radioButtonStaticLit_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.STATIC_LIT;
+		}
+
+		private void radioButtonEmissiveMatID_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.EMISSIVE_MAT_ID;
+		}
+
 		private void radioButtonSetIndex_CheckedChanged( object sender, EventArgs e )
 		{
 			if ( (sender as RadioButton).Checked )
@@ -1546,15 +1607,25 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 				outputPanel1.Viz = OutputPanel.VIZ_TYPE.SH;
 		}
 
+		private void checkBoxSHStatic_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanel1.ShowSHStatic = (sender as CheckBox).Checked;
+		}
+
+		private void checkBoxSHDynamic_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanel1.ShowSHDynamic = (sender as CheckBox).Checked;
+		}
+
+		private void checkBoxSHEmissive_CheckedChanged( object sender, EventArgs e )
+		{
+//TODO			outputPanel1.ShowSHEmissive = (sender as CheckBox).Checked;
+		}
+
 		private void radioButtonSetSamples_CheckedChanged( object sender, EventArgs e )
 		{
 			if ( (sender as RadioButton).Checked )
 				outputPanel1.Viz = OutputPanel.VIZ_TYPE.SET_SAMPLES;
-		}
-
-		private void checkBoxSetAverage_CheckedChanged( object sender, EventArgs e )
-		{
-			outputPanel1.ShowSetAverage = checkBoxSetAverage.Checked;
 		}
 
 		private void loadProbeToolStripMenuItem_Click( object sender, EventArgs e )
@@ -1570,24 +1641,7 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 			// Attempt to load the probe
 			try
 			{
-				string	ProbeAlbedoFileNameString = openFileDialog.FileName;
-				string	ProbeGeometryFileNameString = openFileDialog.FileName;
-				if ( ProbeAlbedoFileNameString.IndexOf( "Albedo" ) != -1 )
-					ProbeGeometryFileNameString = ProbeAlbedoFileNameString.Replace( "Albedo", "Geometry" );
-				else if ( ProbeAlbedoFileNameString.IndexOf( "Geometry" ) != -1 )
-					ProbeAlbedoFileNameString = ProbeAlbedoFileNameString.Replace( "Geometry", "Albedo" );
-				else
-					throw new Exception( "Expected either an albedo or geometry probe POM file!" );
-
-				FileInfo	ProbeAlbedoFileName = new FileInfo( ProbeAlbedoFileNameString );
-				if ( !ProbeAlbedoFileName.Exists )
-					throw new Exception( "Probe file for albedo not found!" );
-
-				FileInfo	ProbeGeometryFileName = new FileInfo( ProbeGeometryFileNameString );
-				if ( !ProbeGeometryFileName.Exists )
-					throw new Exception( "Probe file for geometry not found!" );
-
-				LoadCubeMap( ProbeAlbedoFileName, ProbeGeometryFileName );
+				LoadCubeMap( new FileInfo( openFileDialog.FileName ) );
 			}
 			catch ( Exception _e )
 			{
@@ -1646,42 +1700,17 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 			{
 				try
 				{
-					string	ProbeAlbedoFileNameString = PomFiles[0].FullName;
-					string	ProbeGeometryFileNameString = PomFiles[0].FullName;
-					if ( ProbeAlbedoFileNameString.IndexOf( "_Albedo" ) != -1 )
-						ProbeGeometryFileNameString = ProbeAlbedoFileNameString.Replace( "_Albedo", "_Geometry" );
-					else if ( ProbeAlbedoFileNameString.IndexOf( "_Geometry" ) != -1 )
-						ProbeAlbedoFileNameString = ProbeAlbedoFileNameString.Replace( "_Geometry", "_Albedo" );
-					else
-					{	// Not a probe file...
-						PomFiles.Remove( PomFiles[0] );
-						continue;
-					}
+					FileInfo	F = PomFiles[0];
 
-					FileInfo	ProbeAlbedoFileName = new FileInfo( ProbeAlbedoFileNameString );
-					if ( !ProbeAlbedoFileName.Exists )
-						throw new Exception( "Probe file \"" + ProbeAlbedoFileName.Name + "\" for albedo not found!" );
+					PomFiles.Remove( F );
 
-					FileInfo	ProbeGeometryFileName = new FileInfo( ProbeGeometryFileNameString );
-					if ( !ProbeGeometryFileName.Exists )
-						throw new Exception( "Probe file \"" + ProbeGeometryFileName.Name + "\"  for geometry not found!" );
-
-					int	OldCount = PomFiles.Count;
-					FileInfo[]	Temp = PomFiles.ToArray();
-					foreach ( FileInfo F in Temp )
-						if ( F.FullName == ProbeAlbedoFileName.FullName || F.FullName == ProbeGeometryFileName.FullName )
-							PomFiles.Remove( F );
-
-					if ( PomFiles.Count != OldCount-2 )
-						throw new Exception( "Argh!" );
-
-					LoadCubeMap( ProbeAlbedoFileName, ProbeGeometryFileName );
+					LoadCubeMap( F );
 
 					// Create probe sets
 					buttonComputeFilling_Click( null, EventArgs.Empty );
 
 					// Save result
-					string		TargetFileName = Path.GetFileNameWithoutExtension( ProbeAlbedoFileName.FullName ).Replace( "_Albedo", "" ) + ".probeset";
+					string		TargetFileName = Path.GetFileNameWithoutExtension( F.FullName ).Replace( "_Albedo", "" ) + ".probeset";
 					FileInfo	TargetFile = new FileInfo( Path.Combine( TargetDir.FullName, TargetFileName ) );
 					SaveSets( TargetFile );
 

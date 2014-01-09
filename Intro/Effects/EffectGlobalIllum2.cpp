@@ -51,7 +51,6 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	m_pCB_Scene->m.DynamicLightsCount = 0;
 	m_pCB_Scene->m.StaticLightsCount = 0;
 	m_pCB_Scene->m.ProbesCount = 0;
-	m_pCB_Scene->UpdateData();	// Update once so it's ready when we pre-compute probes
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -72,6 +71,9 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	// Upload static lights once and for all
 	m_pSB_LightsStatic->Write( m_pCB_Scene->m.StaticLightsCount );
 	m_pSB_LightsStatic->SetInput( 7, true );
+
+	// Update once so it's ready when we pre-compute probes
+	m_pCB_Scene->UpdateData();
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -121,6 +123,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pMatRenderNeighborProbe;
 	delete m_pMatRenderCubeMap;
 	delete m_pMatRenderLights;
+	delete m_pMatRenderEmissive;
 	delete m_pMatRender;
 
 //###
@@ -513,7 +516,6 @@ void	EffectGlobalIllum2::PreComputeProbes()
 //for ( int ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
-
 
 		//////////////////////////////////////////////////////////////////////////
 		// 1] Render Albedo + Normal + Distance
