@@ -148,6 +148,7 @@ protected:	// NESTED TYPES
 			NjFloat3		Tangent;			// The longest principal axis of the set's points cluster (scaled by the length of the axis)
 			NjFloat3		BiTangent;			// The shortest principal axis of the set's points cluster (scaled by the length of the axis)
 			NjFloat3		Albedo;				// The albedo of the dynamic set (not currently used, for info purpose)
+			int				EmissiveMatID;		// The optional ID of an emissive material (default is -1, not emissive)
 			NjFloat3		pSHBounce[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced dynamic lighting on static geometry, for each dynamic set
 
 			U32				SamplesCount;		// The amount of samples for that probe

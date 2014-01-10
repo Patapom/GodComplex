@@ -92,6 +92,7 @@ namespace ProbeSHEncoder
 			}
 		}
 
+		// Static SH
 		private bool			m_bShowSHStatic = false;
 		public bool				ShowSHStatic
 		{
@@ -123,6 +124,7 @@ namespace ProbeSHEncoder
 			}
 		}
 
+		// Dynamic SH
 		private bool			m_bShowSHDynamic = true;
 		public bool				ShowSHDynamic
 		{
@@ -147,6 +149,38 @@ namespace ProbeSHEncoder
 					return;
 
 				m_SHDynamic = value;
+				if ( m_Viz != VIZ_TYPE.SH )
+					return;
+				UpdateBitmap();
+				Refresh();
+			}
+		}
+
+		// Emissive SH
+		private bool			m_bShowSHEmissive = false;
+		public bool				ShowSHEmissive
+		{
+			get { return m_bShowSHEmissive; }
+			set
+			{
+				if ( value == m_bShowSHEmissive )
+					return;
+
+				m_bShowSHEmissive = value;
+				if ( m_Viz == VIZ_TYPE.SH )
+					UpdateBitmap();
+			}
+		}
+		private WMath.Vector[]	m_SHEmissive = new WMath.Vector[9];
+		public WMath.Vector[]	SHEmissive
+		{
+			get { return m_SHEmissive; }
+			set
+			{
+				if ( value == null || value == m_SHEmissive )
+					return;
+
+				m_SHEmissive = value;
 				if ( m_Viz != VIZ_TYPE.SH )
 					return;
 				UpdateBitmap();
@@ -188,6 +222,7 @@ namespace ProbeSHEncoder
 			{
 				m_SHDynamic[i] = WMath.Vector.Zero;
 				m_SHStatic[i] = WMath.Vector.Zero;
+				m_SHEmissive[i] = WMath.Vector.Zero;
 			}
 
 			container.Add( this );
@@ -360,44 +395,61 @@ namespace ProbeSHEncoder
 #endif
 		}
 
-// 		const float	f0 = 0.28209479177387814347403972578039f;		// 0.5 / sqrt(PI);
-// 		const float	f1 = 0.48860251190291992158638462283835f;		// 0.5 * sqrt(3.0/PI);
-// 		const float	f2 = 1.0925484305920790705433857058027f;		// 0.5 * sqrt(15.0/PI);
-// 		float[]	SHCoeffs = new float[9];
 		private void	CubeMapSamplerSH( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			WMath.Vector	Dir = _Pixel.View;
-
-// 			// Estimate SH in pixel's direction
-// 			SHCoeffs[0] = f0;
-// 			SHCoeffs[1] = -f1 * Dir.x;
-// 			SHCoeffs[2] = f1 * Dir.y;
-// 			SHCoeffs[3] = -f1 * Dir.z;
-// 			SHCoeffs[4] = f2 * Dir.x * Dir.z;
-// 			SHCoeffs[5] = -f2 * Dir.x * Dir.y;
-// 			SHCoeffs[6] = f2 * 0.28867513459481288225457439025097f * (3.0f * Dir.y*Dir.y - 1.0f);
-// 			SHCoeffs[7] = -f2 * Dir.z * Dir.y;
-// 			SHCoeffs[8] = f2 * 0.5f * (Dir.z*Dir.z - Dir.x*Dir.x);
 
 			// Dot the SH together
 			WMath.Vector	Color = WMath.Vector.Zero;
 			if ( m_IsolateSet )
 			{
-				for ( int i=0; i < 9; i++ )
-					Color += (float) _Pixel.SHCoeffs[i] * m_Owner.m_Sets[m_IsolatedSetIndex].SH[i];
+				float	Factor = 1.0f;
+				if ( m_bShowSHDynamic )
+				{
+					for ( int i=0; i < 9; i++ )
+						Color += (float) _Pixel.SHCoeffs[i] * m_Owner.m_Sets[m_IsolatedSetIndex].SH[i];
+
+					Factor = m_Owner.m_Sets[m_IsolatedSetIndex].SH[0].Max();
+				}
+
+				if ( m_bShowSHEmissive )
+				{
+					int		EmissiveSetIndex = Math.Min( m_IsolatedSetIndex, m_Owner.m_EmissiveSets.Length-1 );
+					if ( EmissiveSetIndex >= 0 )
+						for ( int i=0; i < 9; i++ )
+							Color += (float) _Pixel.SHCoeffs[i] * m_Owner.m_EmissiveSets[EmissiveSetIndex].SH[i];
+
+					Factor = m_Owner.m_EmissiveSets[EmissiveSetIndex].SH[0].Max();
+				}
+
 //				Color *= 100.0f;
-				Color *= 0.5f / m_Owner.m_Sets[m_IsolatedSetIndex].SH[0].Max();
+				Color *= 0.5f / Factor;
 			}
 			else
 			{
-				for ( int i=0; i < 9; i++ )
-					Color += (float) _Pixel.SHCoeffs[i] * ((m_bShowSHStatic ? 1.0f : 0.0f) * m_SHStatic[i] + (m_bShowSHDynamic ? 1.0f : 0.0f) * m_SHDynamic[i]);
+				float	Factor = 1.0f;
+				if ( m_bShowSHStatic )
+				{
+					for ( int i=0; i < 9; i++ )
+						Color += (float) _Pixel.SHCoeffs[i] * m_SHStatic[i];
+					Factor = Math.Min( Factor, m_SHStatic[0].Max() );
+				}
+				if ( m_bShowSHDynamic )
+				{
+					for ( int i=0; i < 9; i++ )
+						Color += (float) _Pixel.SHCoeffs[i] * m_SHDynamic[i];
+					Factor = Math.Min( Factor, m_SHDynamic[0].Max() );
+				}
+				if ( m_bShowSHEmissive )
+				{
+					for ( int i=0; i < 9; i++ )
+						Color += (float) _Pixel.SHCoeffs[i] * m_SHEmissive[i];
+					Factor = Math.Min( Factor, m_SHEmissive[0].Max() );
+				}
+
 //				Color *= 50.0f;
 
-				if ( m_bShowSHDynamic )
-					Color *= 1.0f / m_SHDynamic[0].Max();
-				else
-					Color *= 1.0f / m_SHStatic[0].Max();
+				Color *= 1.0f / Factor;
 			}
 
 			if ( Color.x < 0.0f || Color.y < 0.0f || Color.z < 0.0f )

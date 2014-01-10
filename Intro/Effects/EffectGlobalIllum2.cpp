@@ -649,6 +649,8 @@ void	EffectGlobalIllum2::PreComputeProbes()
 			fread_s( &S.Albedo.y, sizeof(S.Albedo.y), sizeof(float), 1, pFile );
 			fread_s( &S.Albedo.z, sizeof(S.Albedo.z), sizeof(float), 1, pFile );
 
+			fread_s( &S.EmissiveMatID, sizeof(S.EmissiveMatID), sizeof(U32), 1, pFile );
+
 			// Read SH coefficients
 			for ( int i=0; i < 9; i++ )
 			{

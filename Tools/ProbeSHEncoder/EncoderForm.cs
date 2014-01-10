@@ -80,6 +80,7 @@ namespace ProbeSHEncoder
 			public float		F0;					// Material Fresnel coefficient
 			public WMath.Vector	StaticLitColor;		// Color of the statically lit environment
 			public int			EmissiveMatID;		// ID of the emissive material or -1 if not emissive
+			public bool			IsEmissive	{ get { return EmissiveMatID != -1; } }
 			public double		SolidAngle;			// Solid angle covered by the pixel
 			public double		Importance;			// A measure of "importance" of the scene pixel = -dot( View, Normal ) / Distance²
 			public float		Distance;			// Distance to hit point
@@ -410,7 +411,10 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 		public double				m_MaxDistance = 0.0;
 		public WMath.BoundingBox	m_BBox = new WMath.BoundingBox();
 
+		public WMath.Vector[]		m_StaticSH = new WMath.Vector[9];
+
 		public Set[]				m_Sets = new Set[0];
+		public Set[]				m_EmissiveSets = new Set[0];
 
 		public List<Pixel>			m_ProbePixels = new List<Pixel>();	// List of all pixels in the probe
 		public List<Pixel>			m_ScenePixels = new List<Pixel>();	// List of pixels that participate to the scene (i.e. not at infinity)
@@ -648,6 +652,14 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 					W.Write( m_BBox.m_Max.y );
 					W.Write( m_BBox.m_Max.z );
 
+					// Write static SH
+					for ( int i=0; i < 9; i++ )
+					{
+						W.Write( m_StaticSH[i].x );
+						W.Write( m_StaticSH[i].y );
+						W.Write( m_StaticSH[i].z );
+					}
+
 					// Write the amount of sets
 					W.Write( (UInt32) m_Sets.Length );
 
@@ -701,6 +713,40 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 
 							// Write radius
 							W.Write( Sample.Radius );
+						}
+					}
+
+					// Write the amount of emissive sets
+					W.Write( (UInt32) m_EmissiveSets.Length );
+
+					foreach ( Set S in m_EmissiveSets )
+					{
+						// Write position, normal, albedo
+						W.Write( S.Position.x );
+						W.Write( S.Position.y );
+						W.Write( S.Position.z );
+
+						W.Write( S.Normal.x );
+						W.Write( S.Normal.y );
+						W.Write( S.Normal.z );
+
+						W.Write( S.Tangent.x );
+						W.Write( S.Tangent.y );
+						W.Write( S.Tangent.z );
+
+						W.Write( S.BiTangent.x );
+						W.Write( S.BiTangent.y );
+						W.Write( S.BiTangent.z );
+
+						// Write emissive mat
+						W.Write( S.EmissiveMatID );
+
+						// Write SH coefficients
+						for ( int i=0; i < 9; i++ )
+						{
+							W.Write( S.SH[i].x );
+							W.Write( S.SH[i].y );
+							W.Write( S.SH[i].z );
 						}
 					}
 				}
@@ -951,9 +997,10 @@ int	DEBUG_PixelIndex = 0;
 
 			double	Normalizer = 1.0 / (4.0 * Math.PI);
 
-			WMath.Vector[]	StaticSH = new WMath.Vector[9];
 			for ( int i=0; i < 9; i++ )
-				StaticSH[i] = new WMath.Vector( (float) (Normalizer * SHR[i]), (float) (Normalizer * SHG[i]), (float) (Normalizer * SHB[i]) );
+				m_StaticSH[i] = new WMath.Vector( (float) (Normalizer * SHR[i]), (float) (Normalizer * SHG[i]), (float) (Normalizer * SHB[i]) );
+
+			outputPanel1.SHStatic = m_StaticSH;
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -967,7 +1014,7 @@ DEBUG_PixelIndex = PixelIndex;
 				if ( P0.IsFloodFillAcceptable() )
 				{
 					// Create a new set for this pixel
-					Set	S = new Set() { Position = P0.Position, Normal = P0.Normal, Distance = P0.Distance };
+					Set	S = new Set() { Position = P0.Position, Normal = P0.Normal, Distance = P0.Distance, EmissiveMatID = P0.EmissiveMatID };
 						S.SetAlbedo( P0.Albedo );
 					Sets.Add( S );
 
@@ -980,6 +1027,8 @@ DEBUG_PixelIndex = PixelIndex;
 					try
 					{
 						S.SetPixels.Clear();
+
+						m_ScanlinePixelIndex = 0;	// VEEERY important line where we reset the pixel index of the pool of flood fill pixels!
 						FloodFill( S, S, P0, SetRejectedPixels );
 					}
 					catch ( Exception )
@@ -999,23 +1048,70 @@ DEBUG_PixelIndex = PixelIndex;
 				}
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			// Try and merge sets together
+
+				// Merge separate emissive sets that have the same mat ID together
+			List<Set>	EmissiveSets = new List<Set>();
+
+			m_Sets = Sets.ToArray();
+			for ( int SetIndex0=0; SetIndex0 < m_Sets.Length-1; SetIndex0++ )
+			{
+				Set	S0 = m_Sets[SetIndex0];
+				if ( S0.IsEmissive )
+				{
+					// Remove it from regular sets and inscribe it as an emissive set
+					EmissiveSets.Add( S0 );
+					Sets.Remove( S0 );
+
+					// Merge with any other set with same Mat ID
+					for ( int SetIndex1=SetIndex0+1; SetIndex1 < m_Sets.Length; SetIndex1++ )
+					{
+						Set	S1 = m_Sets[SetIndex1];
+						if ( !S1.IsEmissive || S1.EmissiveMatID != S0.EmissiveMatID )
+							continue;
+
+						// Merge!
+						S0.Importance *= S0.SetPixels.Count;
+						S1.Importance *= S1.SetPixels.Count;
+						S0.SetPixels.AddRange( S1.SetPixels );
+						S0.Importance = (S0.Importance + S1.Importance) / S0.SetPixels.Count;
+
+						// Remove the merged set
+						Sets.Remove( S1 );
+					}
+				}
+			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// Sort and cull unimportant sets
+
+			// Sort and cull sets above our designated maximum
 			Sets.Sort( this );
 			if ( Sets.Count > integerTrackbarControlK.Value )
 			{	// Cull sets above our chosen value
-				for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
+				for ( int SetIndex=integerTrackbarControlK.Value; SetIndex < Sets.Count; SetIndex++ )
 					Sets[SetIndex].SetIndex = -1;	// Invalid index for invalid sets!
 
 				Sets.RemoveRange( integerTrackbarControlK.Value, Sets.Count - integerTrackbarControlK.Value );
 			}
 
+			// Do the same for emissive sets
+			EmissiveSets.Sort( this );
+			if ( EmissiveSets.Count > integerTrackbarControlK.Value )
+			{	// Cull sets above our chosen value
+				for ( int SetIndex=integerTrackbarControlK.Value; SetIndex < EmissiveSets.Count; SetIndex++ )
+					EmissiveSets[SetIndex].SetIndex = -1;	// Invalid index for invalid sets!
+
+				EmissiveSets.RemoveRange( integerTrackbarControlK.Value, EmissiveSets.Count - integerTrackbarControlK.Value );
+			}
+			m_EmissiveSets = EmissiveSets.ToArray();	// Store as our final emissive sets
+
 			// Remove sets that contain less than 0.25% of our pixels (arbitrary!)
 			m_Sets = Sets.ToArray();
 			int	DiscardThreshold = (int) (0.004f * m_ScenePixels.Count);
 			foreach ( Set S in m_Sets )
-				if ( S.SetPixels.Count < DiscardThreshold )
+				if ( !S.IsEmissive && S.SetPixels.Count < DiscardThreshold )
 				{
 					S.SetIndex = -1;	// Now invalid!
 					Sets.Remove( S );
@@ -1024,7 +1120,7 @@ DEBUG_PixelIndex = PixelIndex;
 			// Remove sets that are not important enough
 			m_Sets = Sets.ToArray();
 			foreach ( Set S in m_Sets )
-				if ( S.Importance < Pixel.IMPORTANCE_THRESOLD )
+				if ( !S.IsEmissive && S.Importance < Pixel.IMPORTANCE_THRESOLD )
 				{
 					S.SetIndex = -1;	// Now invalid!
 					Sets.Remove( S );
@@ -1064,14 +1160,35 @@ DEBUG_PixelIndex = PixelIndex;
 				// Count pixels in the set for statistics
 				SumCardinality += S.SetPixels.Count;
 
-				// Finally, encode SH & find principal axes & samples
+				// Finally, encode SH & find principal axes
 				S.EncodeSH();
 
 // Find a faster way!
 //				S.FindPrincipalAxes();
 			}
 
-			// Generate set samples
+			// Do the same for emissive sets
+			for ( int SetIndex=0; SetIndex < m_EmissiveSets.Length; SetIndex++ )
+			{
+				Set	S = m_EmissiveSets[SetIndex];
+				S.SetIndex = SetIndex;
+
+				// Post-process the pixels to find the one closest to the probe as our new centroid
+				Pixel			BestPixel = S.SetPixels[0];
+				foreach ( Pixel P in S.SetPixels )
+				{
+					if ( P.Distance < BestPixel.Distance )
+						BestPixel = P;
+				}
+
+				S.Position = BestPixel.Position;	// Our new winner!
+
+				// Finally, encode SH & find principal axes & samples
+				S.EncodeSH();
+			}
+
+
+			// Generate samples for regular sets
 			int		TotalSamplesCount = integerTrackbarControlLightSamples.Value;
 			if ( TotalSamplesCount < m_Sets.Length )
 			{	// Force samples count to match sets count!
@@ -1082,6 +1199,8 @@ DEBUG_PixelIndex = PixelIndex;
 			for ( int SetIndex=m_Sets.Length-1; SetIndex >= 0; SetIndex-- )	// We start from the smallest sets to ensure they get some samples
 			{
 				Set	S = m_Sets[SetIndex];
+				if ( S.IsEmissive )
+					throw new Exception( "Shouldn't be any emissive set left in the list of regular sets??!" );
 
 				int	SamplesCount = TotalSamplesCount * S.SetPixels.Count / SumCardinality;
 					SamplesCount = Math.Max( 1, SamplesCount );					// Ensure we have at least 1 sample no matter what!
@@ -1106,11 +1225,20 @@ DEBUG_PixelIndex = PixelIndex;
 			}
 			outputPanel1.SHDynamic = SHSum;
 
+			for ( int i=0; i < 9; i++ )
+			{
+				SHSum[i] = WMath.Vector.Zero;
+				foreach ( Set S in m_EmissiveSets )
+					SHSum[i] += S.SH[i];
+			}
+			outputPanel1.SHEmissive = SHSum;
+
 
 			//////////////////////////////////////////////////////////////////////////
 			// Refresh UI
 			// 
-			textBoxResults.Text = m_Sets.Length + " sets generated:\r\n\r\n";
+			textBoxResults.Text = m_EmissiveSets.Length + " emissive sets generated\r\n";
+			textBoxResults.Text += m_Sets.Length + " sets generated:\r\n\r\n";
 			for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
 			{
 				Set	S = m_Sets[SetIndex];
@@ -1134,6 +1262,9 @@ DEBUG_PixelIndex = PixelIndex;
 
 		int			RecursionLevel = 0;
 
+		private int		m_ScanlinePixelIndex = 0;
+		private Pixel[]	m_ScanlinePixelsPool = new Pixel[6 * CUBE_MAP_SIZE * CUBE_MAP_SIZE];
+
 		/// <summary>
 		/// This should be a faster version (and much less recursive!) than the original flood fill
 		/// The idea here is to process an entire scanline first (going left and right and collecting valid scanline pixels along the way)
@@ -1156,16 +1287,17 @@ DEBUG_PixelIndex = PixelIndex;
 // 	Console.WriteLine( "GOTCHA!" );
 
 			//////////////////////////////////////////////////////////////////////////
-//TODO => Use an iterative pool instead of so many lists! (every time we create a new list of many items, even if it contains a single pixel)			// Check the entire scanline
-			List<Pixel>	ScanlinePixels = new List<Pixel>( 4 * CUBE_MAP_SIZE );	// We know the maximum size of a scanline!
-			ScanlinePixels.Add( _P );	// This pixel is implicitly on the scanline
+			// Check the entire scanline
+			int	ScanlineStartIndex = m_ScanlinePixelIndex;
+
+			m_ScanlinePixelsPool[m_ScanlinePixelIndex++] = _P;	// This pixel is implicitly on the scanline
 
 			// Start going right
 			Pixel	Previous = _P;
 			Pixel	Current = FindAdjacentPixel( Previous, 1, 0 );
 			while ( CheckAndAcceptPixel( _S, Previous, Current, _SetRejectedPixels ) )
 			{
-				ScanlinePixels.Add( Current );
+				m_ScanlinePixelsPool[m_ScanlinePixelIndex++] = Current;
 				Previous = Current;
 				Current = FindAdjacentPixel( Current, 1, 0 );
 			}
@@ -1175,27 +1307,29 @@ DEBUG_PixelIndex = PixelIndex;
 			Current = FindAdjacentPixel( Previous, -1, 0 );
 			while ( CheckAndAcceptPixel( _S, Previous, Current, _SetRejectedPixels ) )
 			{
-				ScanlinePixels.Add( Current );
+				m_ScanlinePixelsPool[m_ScanlinePixelIndex++] = Current;
 				Previous = Current;
 				Current = FindAdjacentPixel( Current, -1, 0 );
 			}
 
 			RecursionLevel++;
-// 			if ( RecursionLevel > CUBE_MAP_SIZE )
-// 				throw new Exception();
+
+			int	ScanlineEndIndex = m_ScanlinePixelIndex;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Recurse to each pixel of the top scanline
-			foreach ( Pixel P in ScanlinePixels )
+			for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ )
 			{
+				Pixel	P = m_ScanlinePixelsPool[ScanlinePixelIndex];
 				Pixel	Top = FindAdjacentPixel( P, 0, 1 );
 				FloodFill( _S, P, Top, _SetRejectedPixels );
 			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// Recurse to each pixel of the bottom scanline
-			foreach ( Pixel P in ScanlinePixels )
+			for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ )
 			{
+				Pixel	P = m_ScanlinePixelsPool[ScanlinePixelIndex];
 				Pixel	Bottom = FindAdjacentPixel( P, 0, -1 );
 				FloodFill( _S, P, Bottom, _SetRejectedPixels );
 			}
@@ -1212,34 +1346,43 @@ DEBUG_PixelIndex = PixelIndex;
 			// Check some criterions for a match
 			bool	Accepted = false;
 
-			// First, let's check the angular discrepancy
-			float	Dot = _PreviousPixel.Normal | _P.Normal;
-			if ( Dot > ANGULAR_THRESHOLD )
+			// Emissive pixels get grouped together
+			if ( _PreviousPixel.IsEmissive )
 			{
-				// Next, let's check the distance discrepancy
-				float	DistanceDiff = Math.Abs( _PreviousPixel.Distance - _P.Distance );
-				float	ToleranceFactor = -(_P.Normal | _P.View);						// Weight by the surface's slope to be more tolerant for slant surfaces
-						DistanceDiff *= ToleranceFactor;
-				if ( DistanceDiff < DISTANCE_THRESHOLD )
+				if ( _PreviousPixel.EmissiveMatID != _P.EmissiveMatID )
+					Accepted = false;
+			}
+			else
+			{
+				// First, let's check the angular discrepancy
+				float	Dot = _PreviousPixel.Normal | _P.Normal;
+				if ( Dot > ANGULAR_THRESHOLD )
 				{
-					// Next, let's check the hue discrepancy
-// 					float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
-// 					float	HueDiff1 = 6.0f - HueDiff0;
-// 					float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
-// //							HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
-// 							HueDiff *= Math.Max( _PreviousPixel.AlbedoHSL.y, _P.AlbedoHSL.y );	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
-// 					if ( HueDiff < ALBEDO_HUE_THRESHOLD )
-// 					{
-// 						Accepted = true;	// Winner!
-// 					}
-
-
-					// Next, let's check color discrepancy
-					// I'm using the simplest metric here...
-					float	ColorDiff = (_PreviousPixel.Albedo - _P.Albedo).Length;
-					if ( ColorDiff < ALBEDO_RGB_THRESHOLD )
+					// Next, let's check the distance discrepancy
+					float	DistanceDiff = Math.Abs( _PreviousPixel.Distance - _P.Distance );
+					float	ToleranceFactor = -(_P.Normal | _P.View);						// Weight by the surface's slope to be more tolerant for slant surfaces
+							DistanceDiff *= ToleranceFactor;
+					if ( DistanceDiff < DISTANCE_THRESHOLD )
 					{
-						Accepted = true;	// Winner!
+						// Next, let's check the hue discrepancy
+// 						float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
+// 						float	HueDiff1 = 6.0f - HueDiff0;
+// 						float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
+// //								HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
+// 								HueDiff *= Math.Max( _PreviousPixel.AlbedoHSL.y, _P.AlbedoHSL.y );	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
+// 						if ( HueDiff < ALBEDO_HUE_THRESHOLD )
+// 						{
+// 							Accepted = true;	// Winner!
+// 						}
+
+
+						// Next, let's check color discrepancy
+						// I'm using the simplest metric here...
+						float	ColorDiff = (_PreviousPixel.Albedo - _P.Albedo).Length;
+						if ( ColorDiff < ALBEDO_RGB_THRESHOLD )
+						{
+							Accepted = true;	// Winner!
+						}
 					}
 				}
 			}
@@ -1258,86 +1401,90 @@ DEBUG_PixelIndex = PixelIndex;
 			return Accepted;
 		}
 
-		/// <summary>
-		/// The very recursive version that is quite annoying to debug!
-		/// </summary>
-		/// <param name="_S"></param>
-		/// <param name="_PreviousPixel"></param>
-		/// <param name="_P"></param>
-		/// <param name="_SetPixels"></param>
-		/// <param name="_SetRejectedPixels"></param>
-		private void	FloodFill_Recursive( Set _S, Pixel _PreviousPixel, Pixel _P, List<Pixel> _SetRejectedPixels )
-		{
-			if ( !_P.IsFloodFillAcceptable() )
-				return;
-
-			//////////////////////////////////////////////////////////////////////////
-			// Check some criterions for a match
-			bool	Accepted = false;
-
-			// First, let's check the angular discrepancy
-			float	Dot = _PreviousPixel.Normal | _P.Normal;
-			if ( Dot > ANGULAR_THRESHOLD )
-			{
-				// Next, let's check the distance discrepancy
-				float	DistanceDiff = Math.Abs( _PreviousPixel.Distance - _P.Distance );
-				float	ToleranceFactor = -(_P.Normal | _P.View);						// Weight by the surface's slope to be more tolerant for slant surfaces
-						DistanceDiff *= ToleranceFactor;
-				if ( DistanceDiff < DISTANCE_THRESHOLD )
+/*
+				/// <summary>
+				/// The very recursive version that is quite annoying to debug!
+				/// </summary>
+				/// <param name="_S"></param>
+				/// <param name="_PreviousPixel"></param>
+				/// <param name="_P"></param>
+				/// <param name="_SetPixels"></param>
+				/// <param name="_SetRejectedPixels"></param>
+				private void	FloodFill_Recursive( Set _S, Pixel _PreviousPixel, Pixel _P, List<Pixel> _SetRejectedPixels )
 				{
-					// Next, let's check the hue discrepancy
-					float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
-					float	HueDiff1 = 6.0f - HueDiff0;
-					float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
-							HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change hue quite fast
-					if ( HueDiff < ALBEDO_HUE_THRESHOLD )
+					if ( !_P.IsFloodFillAcceptable() )
+						return;
+
+					//////////////////////////////////////////////////////////////////////////
+					// Check some criterions for a match
+					bool	Accepted = false;
+
+					// First, let's check the angular discrepancy
+					float	Dot = _PreviousPixel.Normal | _P.Normal;
+					if ( Dot > ANGULAR_THRESHOLD )
 					{
-						Accepted = true;	// Winner!
+						// Next, let's check the distance discrepancy
+						float	DistanceDiff = Math.Abs( _PreviousPixel.Distance - _P.Distance );
+						float	ToleranceFactor = -(_P.Normal | _P.View);						// Weight by the surface's slope to be more tolerant for slant surfaces
+								DistanceDiff *= ToleranceFactor;
+						if ( DistanceDiff < DISTANCE_THRESHOLD )
+						{
+							// Next, let's check the hue discrepancy
+							float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
+							float	HueDiff1 = 6.0f - HueDiff0;
+							float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
+									HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change hue quite fast
+							if ( HueDiff < ALBEDO_HUE_THRESHOLD )
+							{
+								Accepted = true;	// Winner!
+							}
+						}
 					}
+
+					// Mark the pixel as member of this set, even if it's temporary (rejected pixels get removed in the end)
+					_P.ParentSet = _S;
+
+					if ( !Accepted )
+					{	// Sorry buddy, we'll add you to the rejects...
+						_SetRejectedPixels.Add( _P );
+						return;
+					}
+
+
+					//////////////////////////////////////////////////////////////////////////
+					// We got a new member for the set!
+					_S.SetPixels.Add( _P );
+
+
+		if ( DEBUG_PixelIndex == 0x700 )
+			Console.WriteLine( "R=" + RecursionLevel + " - S=" + _S.SetPixels.Count );
+
+		if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
+			Console.WriteLine( "GOTCHA!" );
+
+					//////////////////////////////////////////////////////////////////////////
+					// Recurse to 4 neighbors
+					RecursionLevel++;
+					if ( RecursionLevel > 10000 )
+						throw new Exception();
+
+					Pixel	L = FindAdjacentPixel( _P, -1, 0 );
+					FloodFill( _S, _P, L, _SetRejectedPixels );
+
+					Pixel	R = FindAdjacentPixel( _P, 1, 0 );
+					FloodFill( _S, _P, R, _SetRejectedPixels );
+
+					Pixel	D = FindAdjacentPixel( _P, 0, -1 );
+					FloodFill( _S, _P, D, _SetRejectedPixels );
+
+					Pixel	U = FindAdjacentPixel( _P, 0, 1 );
+					FloodFill( _S, _P, U, _SetRejectedPixels );
+
+					RecursionLevel--;
 				}
-			}
+*/
 
-			// Mark the pixel as member of this set, even if it's temporary (rejected pixels get removed in the end)
-			_P.ParentSet = _S;
-
-			if ( !Accepted )
-			{	// Sorry buddy, we'll add you to the rejects...
-				_SetRejectedPixels.Add( _P );
-				return;
-			}
-
-
-			//////////////////////////////////////////////////////////////////////////
-			// We got a new member for the set!
-			_S.SetPixels.Add( _P );
-
-
-if ( DEBUG_PixelIndex == 0x700 )
-	Console.WriteLine( "R=" + RecursionLevel + " - S=" + _S.SetPixels.Count );
-
-if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
-	Console.WriteLine( "GOTCHA!" );
-
-			//////////////////////////////////////////////////////////////////////////
-			// Recurse to 4 neighbors
-			RecursionLevel++;
-			if ( RecursionLevel > 10000 )
-				throw new Exception();
-
-			Pixel	L = FindAdjacentPixel( _P, -1, 0 );
-			FloodFill( _S, _P, L, _SetRejectedPixels );
-
-			Pixel	R = FindAdjacentPixel( _P, 1, 0 );
-			FloodFill( _S, _P, R, _SetRejectedPixels );
-
-			Pixel	D = FindAdjacentPixel( _P, 0, -1 );
-			FloodFill( _S, _P, D, _SetRejectedPixels );
-
-			Pixel	U = FindAdjacentPixel( _P, 0, 1 );
-			FloodFill( _S, _P, U, _SetRejectedPixels );
-
-			RecursionLevel--;
-		}
+		#region Adjacency Walker
 
 		const int	CUBE_MAP_FACE_SIZE = CUBE_MAP_SIZE * CUBE_MAP_SIZE;
 
@@ -1470,12 +1617,6 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 
 		private Pixel	FindAdjacentPixel( Pixel _P, int _Dx, int _Dy )
 		{
-// 			int	PixelIndex = _P.PixelIndex;
-// 			int	CubeFaceIndex = PixelIndex / CUBE_MAP_FACE_SIZE;
-// 			int	CubeFacePixelIndex = PixelIndex - CubeFaceIndex * CUBE_MAP_FACE_SIZE;
-// 			int	Y = CubeFacePixelIndex / CUBE_MAP_SIZE;
-// 			int	X = CubeFacePixelIndex - Y * CUBE_MAP_SIZE;
-
 			int	CubeFaceIndex = _P.FaceIndex;
 			int	X = _P.FaceX;
 			int	Y = _P.FaceY;
@@ -1516,6 +1657,8 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 			_X = TempX;
 			_Y = TempY;
 		}
+
+		#endregion
 
 		#endregion
 
@@ -1619,7 +1762,7 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 
 		private void checkBoxSHEmissive_CheckedChanged( object sender, EventArgs e )
 		{
-//TODO			outputPanel1.ShowSHEmissive = (sender as CheckBox).Checked;
+			outputPanel1.ShowSHEmissive = (sender as CheckBox).Checked;
 		}
 
 		private void radioButtonSetSamples_CheckedChanged( object sender, EventArgs e )
