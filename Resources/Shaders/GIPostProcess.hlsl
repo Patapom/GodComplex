@@ -144,8 +144,15 @@ if ( false )
 }
 
 
-return _TexCubemapProbe0.Sample( LinearClamp, float4( View, 2.0 ) );
-return asint( _TexCubemapProbe0.Sample( LinearClamp, float4( View, 2.0 ) ).w );
+// Test dot products
+// float3 TestNormal = _TexCubemapProbe0.Sample( LinearClamp, float4( View, 1.0 ) ).xyz;
+// if ( dot( TestNormal, View ) > 0.0 )
+// 	return float4( 1, 0, 0, 1 );
+// return -dot( TestNormal, View );
+
+
+//return _TexCubemapProbe0.Sample( LinearClamp, float4( View, 1.0 ) );
+// return asint( _TexCubemapProbe0.Sample( LinearClamp, float4( View, 2.0 ) ).w );
 // //return _TexCubemapProbe1.Sample( LinearClamp, View );
 // return 0.1 * _TexCubemapProbe1.Sample( LinearClamp, View ).w;
 

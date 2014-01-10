@@ -31,25 +31,34 @@ namespace ProbeSHEncoder
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			WMath.Vector vector1 = new WMath.Vector();
-			WMath.Vector vector2 = new WMath.Vector();
-			WMath.Vector vector3 = new WMath.Vector();
-			WMath.Vector vector4 = new WMath.Vector();
-			WMath.Vector vector5 = new WMath.Vector();
-			WMath.Vector vector6 = new WMath.Vector();
-			WMath.Vector vector7 = new WMath.Vector();
-			WMath.Vector vector8 = new WMath.Vector();
-			WMath.Vector vector9 = new WMath.Vector();
-			WMath.Vector vector10 = new WMath.Vector();
-			WMath.Vector vector11 = new WMath.Vector();
-			WMath.Vector vector12 = new WMath.Vector();
-			WMath.Vector vector13 = new WMath.Vector();
-			WMath.Vector vector14 = new WMath.Vector();
-			WMath.Vector vector15 = new WMath.Vector();
-			WMath.Vector vector16 = new WMath.Vector();
-			WMath.Vector vector17 = new WMath.Vector();
-			WMath.Vector vector18 = new WMath.Vector();
-			WMath.Vector vector19 = new WMath.Vector();
+			WMath.Vector vector29 = new WMath.Vector();
+			WMath.Vector vector30 = new WMath.Vector();
+			WMath.Vector vector31 = new WMath.Vector();
+			WMath.Vector vector32 = new WMath.Vector();
+			WMath.Vector vector33 = new WMath.Vector();
+			WMath.Vector vector34 = new WMath.Vector();
+			WMath.Vector vector35 = new WMath.Vector();
+			WMath.Vector vector36 = new WMath.Vector();
+			WMath.Vector vector37 = new WMath.Vector();
+			WMath.Vector vector38 = new WMath.Vector();
+			WMath.Vector vector39 = new WMath.Vector();
+			WMath.Vector vector40 = new WMath.Vector();
+			WMath.Vector vector41 = new WMath.Vector();
+			WMath.Vector vector42 = new WMath.Vector();
+			WMath.Vector vector43 = new WMath.Vector();
+			WMath.Vector vector44 = new WMath.Vector();
+			WMath.Vector vector45 = new WMath.Vector();
+			WMath.Vector vector46 = new WMath.Vector();
+			WMath.Vector vector47 = new WMath.Vector();
+			WMath.Vector vector48 = new WMath.Vector();
+			WMath.Vector vector49 = new WMath.Vector();
+			WMath.Vector vector50 = new WMath.Vector();
+			WMath.Vector vector51 = new WMath.Vector();
+			WMath.Vector vector52 = new WMath.Vector();
+			WMath.Vector vector53 = new WMath.Vector();
+			WMath.Vector vector54 = new WMath.Vector();
+			WMath.Vector vector55 = new WMath.Vector();
+			WMath.Vector vector56 = new WMath.Vector();
 			this.menuStrip = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.loadProbeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -90,10 +99,10 @@ namespace ProbeSHEncoder
 			this.progressBarBatchConvert = new System.Windows.Forms.ProgressBar();
 			this.radioButtonStaticLit = new System.Windows.Forms.RadioButton();
 			this.radioButtonEmissiveMatID = new System.Windows.Forms.RadioButton();
-			this.outputPanel1 = new ProbeSHEncoder.OutputPanel(this.components);
 			this.checkBoxSHStatic = new System.Windows.Forms.CheckBox();
 			this.checkBoxSHDynamic = new System.Windows.Forms.CheckBox();
 			this.checkBoxSHEmissive = new System.Windows.Forms.CheckBox();
+			this.outputPanel1 = new ProbeSHEncoder.OutputPanel(this.components);
 			this.menuStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -117,32 +126,35 @@ namespace ProbeSHEncoder
             this.batchEncodeToolStripMenuItem});
 			this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
 			this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
-			this.fileToolStripMenuItem.Text = "File";
+			this.fileToolStripMenuItem.Text = "&File";
 			// 
 			// loadProbeToolStripMenuItem
 			// 
 			this.loadProbeToolStripMenuItem.Name = "loadProbeToolStripMenuItem";
-			this.loadProbeToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
-			this.loadProbeToolStripMenuItem.Text = "Load Probe";
+			this.loadProbeToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
+			this.loadProbeToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
+			this.loadProbeToolStripMenuItem.Text = "&Load Probe";
 			this.loadProbeToolStripMenuItem.Click += new System.EventHandler(this.loadProbeToolStripMenuItem_Click);
 			// 
 			// saveResultsToolStripMenuItem
 			// 
 			this.saveResultsToolStripMenuItem.Name = "saveResultsToolStripMenuItem";
-			this.saveResultsToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
-			this.saveResultsToolStripMenuItem.Text = "Save Results";
+			this.saveResultsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
+			this.saveResultsToolStripMenuItem.Size = new System.Drawing.Size(187, 22);
+			this.saveResultsToolStripMenuItem.Text = "&Save Results";
 			this.saveResultsToolStripMenuItem.Click += new System.EventHandler(this.saveResultsToolStripMenuItem_Click);
 			// 
 			// toolStripMenuItem1
 			// 
 			this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-			this.toolStripMenuItem1.Size = new System.Drawing.Size(143, 6);
+			this.toolStripMenuItem1.Size = new System.Drawing.Size(174, 6);
 			// 
 			// batchEncodeToolStripMenuItem
 			// 
 			this.batchEncodeToolStripMenuItem.Name = "batchEncodeToolStripMenuItem";
-			this.batchEncodeToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
-			this.batchEncodeToolStripMenuItem.Text = "Batch Encode";
+			this.batchEncodeToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.B)));
+			this.batchEncodeToolStripMenuItem.Size = new System.Drawing.Size(187, 22);
+			this.batchEncodeToolStripMenuItem.Text = "&Batch Encode";
 			this.batchEncodeToolStripMenuItem.Click += new System.EventHandler(this.batchEncodeToolStripMenuItem_Click);
 			// 
 			// toolsToolStripMenuItem
@@ -494,97 +506,6 @@ namespace ProbeSHEncoder
 			this.radioButtonEmissiveMatID.UseVisualStyleBackColor = true;
 			this.radioButtonEmissiveMatID.CheckedChanged += new System.EventHandler(this.radioButtonEmissiveMatID_CheckedChanged);
 			// 
-			// outputPanel1
-			// 
-			vector1.X = 0F;
-			vector1.Y = 0F;
-			vector1.Z = 1F;
-			this.outputPanel1.At = vector1;
-			this.outputPanel1.IsolatedSetIndex = 0;
-			this.outputPanel1.IsolateSet = false;
-			this.outputPanel1.Location = new System.Drawing.Point(12, 27);
-			this.outputPanel1.Name = "outputPanel1";
-			vector2.X = 0F;
-			vector2.Y = 0F;
-			vector2.Z = 0F;
-			vector3.X = 0F;
-			vector3.Y = 0F;
-			vector3.Z = 0F;
-			vector4.X = 0F;
-			vector4.Y = 0F;
-			vector4.Z = 0F;
-			vector5.X = 0F;
-			vector5.Y = 0F;
-			vector5.Z = 0F;
-			vector6.X = 0F;
-			vector6.Y = 0F;
-			vector6.Z = 0F;
-			vector7.X = 0F;
-			vector7.Y = 0F;
-			vector7.Z = 0F;
-			vector8.X = 0F;
-			vector8.Y = 0F;
-			vector8.Z = 0F;
-			vector9.X = 0F;
-			vector9.Y = 0F;
-			vector9.Z = 0F;
-			vector10.X = 0F;
-			vector10.Y = 0F;
-			vector10.Z = 0F;
-			this.outputPanel1.SHDynamic = new WMath.Vector[] {
-        vector2,
-        vector3,
-        vector4,
-        vector5,
-        vector6,
-        vector7,
-        vector8,
-        vector9,
-        vector10};
-			this.outputPanel1.ShowSetAverage = false;
-			this.outputPanel1.ShowSHDynamic = true;
-			this.outputPanel1.ShowSHStatic = false;
-			vector11.X = 0F;
-			vector11.Y = 0F;
-			vector11.Z = 0F;
-			vector12.X = 0F;
-			vector12.Y = 0F;
-			vector12.Z = 0F;
-			vector13.X = 0F;
-			vector13.Y = 0F;
-			vector13.Z = 0F;
-			vector14.X = 0F;
-			vector14.Y = 0F;
-			vector14.Z = 0F;
-			vector15.X = 0F;
-			vector15.Y = 0F;
-			vector15.Z = 0F;
-			vector16.X = 0F;
-			vector16.Y = 0F;
-			vector16.Z = 0F;
-			vector17.X = 0F;
-			vector17.Y = 0F;
-			vector17.Z = 0F;
-			vector18.X = 0F;
-			vector18.Y = 0F;
-			vector18.Z = 0F;
-			vector19.X = 0F;
-			vector19.Y = 0F;
-			vector19.Z = 0F;
-			this.outputPanel1.SHStatic = new WMath.Vector[] {
-        vector11,
-        vector12,
-        vector13,
-        vector14,
-        vector15,
-        vector16,
-        vector17,
-        vector18,
-        vector19};
-			this.outputPanel1.Size = new System.Drawing.Size(677, 546);
-			this.outputPanel1.TabIndex = 3;
-			this.outputPanel1.Viz = ProbeSHEncoder.OutputPanel.VIZ_TYPE.ALBEDO;
-			// 
 			// checkBoxSHStatic
 			// 
 			this.checkBoxSHStatic.AutoSize = true;
@@ -619,6 +540,135 @@ namespace ProbeSHEncoder
 			this.checkBoxSHEmissive.Text = "Emissive";
 			this.checkBoxSHEmissive.UseVisualStyleBackColor = true;
 			this.checkBoxSHEmissive.CheckedChanged += new System.EventHandler(this.checkBoxSHEmissive_CheckedChanged);
+			// 
+			// outputPanel1
+			// 
+			vector29.X = 0F;
+			vector29.Y = 0F;
+			vector29.Z = 1F;
+			this.outputPanel1.At = vector29;
+			this.outputPanel1.IsolatedSetIndex = 0;
+			this.outputPanel1.IsolateSet = false;
+			this.outputPanel1.Location = new System.Drawing.Point(12, 27);
+			this.outputPanel1.Name = "outputPanel1";
+			vector30.X = 0F;
+			vector30.Y = 0F;
+			vector30.Z = 0F;
+			vector31.X = 0F;
+			vector31.Y = 0F;
+			vector31.Z = 0F;
+			vector32.X = 0F;
+			vector32.Y = 0F;
+			vector32.Z = 0F;
+			vector33.X = 0F;
+			vector33.Y = 0F;
+			vector33.Z = 0F;
+			vector34.X = 0F;
+			vector34.Y = 0F;
+			vector34.Z = 0F;
+			vector35.X = 0F;
+			vector35.Y = 0F;
+			vector35.Z = 0F;
+			vector36.X = 0F;
+			vector36.Y = 0F;
+			vector36.Z = 0F;
+			vector37.X = 0F;
+			vector37.Y = 0F;
+			vector37.Z = 0F;
+			vector38.X = 0F;
+			vector38.Y = 0F;
+			vector38.Z = 0F;
+			this.outputPanel1.SHDynamic = new WMath.Vector[] {
+        vector30,
+        vector31,
+        vector32,
+        vector33,
+        vector34,
+        vector35,
+        vector36,
+        vector37,
+        vector38};
+			vector39.X = 0F;
+			vector39.Y = 0F;
+			vector39.Z = 0F;
+			vector40.X = 0F;
+			vector40.Y = 0F;
+			vector40.Z = 0F;
+			vector41.X = 0F;
+			vector41.Y = 0F;
+			vector41.Z = 0F;
+			vector42.X = 0F;
+			vector42.Y = 0F;
+			vector42.Z = 0F;
+			vector43.X = 0F;
+			vector43.Y = 0F;
+			vector43.Z = 0F;
+			vector44.X = 0F;
+			vector44.Y = 0F;
+			vector44.Z = 0F;
+			vector45.X = 0F;
+			vector45.Y = 0F;
+			vector45.Z = 0F;
+			vector46.X = 0F;
+			vector46.Y = 0F;
+			vector46.Z = 0F;
+			vector47.X = 0F;
+			vector47.Y = 0F;
+			vector47.Z = 0F;
+			this.outputPanel1.SHEmissive = new WMath.Vector[] {
+        vector39,
+        vector40,
+        vector41,
+        vector42,
+        vector43,
+        vector44,
+        vector45,
+        vector46,
+        vector47};
+			this.outputPanel1.ShowSetAverage = false;
+			this.outputPanel1.ShowSHDynamic = true;
+			this.outputPanel1.ShowSHEmissive = false;
+			this.outputPanel1.ShowSHStatic = false;
+			vector48.X = 0F;
+			vector48.Y = 0F;
+			vector48.Z = 0F;
+			vector49.X = 0F;
+			vector49.Y = 0F;
+			vector49.Z = 0F;
+			vector50.X = 0F;
+			vector50.Y = 0F;
+			vector50.Z = 0F;
+			vector51.X = 0F;
+			vector51.Y = 0F;
+			vector51.Z = 0F;
+			vector52.X = 0F;
+			vector52.Y = 0F;
+			vector52.Z = 0F;
+			vector53.X = 0F;
+			vector53.Y = 0F;
+			vector53.Z = 0F;
+			vector54.X = 0F;
+			vector54.Y = 0F;
+			vector54.Z = 0F;
+			vector55.X = 0F;
+			vector55.Y = 0F;
+			vector55.Z = 0F;
+			vector56.X = 0F;
+			vector56.Y = 0F;
+			vector56.Z = 0F;
+			this.outputPanel1.SHStatic = new WMath.Vector[] {
+        vector48,
+        vector49,
+        vector50,
+        vector51,
+        vector52,
+        vector53,
+        vector54,
+        vector55,
+        vector56};
+			this.outputPanel1.Size = new System.Drawing.Size(677, 546);
+			this.outputPanel1.TabIndex = 3;
+			this.outputPanel1.Viz = ProbeSHEncoder.OutputPanel.VIZ_TYPE.ALBEDO;
 			// 
 			// EncoderForm
 			// 

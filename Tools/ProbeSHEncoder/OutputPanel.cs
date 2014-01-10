@@ -113,7 +113,7 @@ namespace ProbeSHEncoder
 			get { return m_SHStatic; }
 			set
 			{
-				if ( value == null || value == m_SHDynamic )
+				if ( value == null || value == m_SHStatic )
 					return;
 
 				m_SHStatic = value;
@@ -427,24 +427,24 @@ namespace ProbeSHEncoder
 			}
 			else
 			{
-				float	Factor = 1.0f;
+				float	Factor = 0.0f;
 				if ( m_bShowSHStatic )
 				{
 					for ( int i=0; i < 9; i++ )
 						Color += (float) _Pixel.SHCoeffs[i] * m_SHStatic[i];
-					Factor = Math.Min( Factor, m_SHStatic[0].Max() );
+					Factor = Math.Max( Factor, m_SHStatic[0].Max() );
 				}
 				if ( m_bShowSHDynamic )
 				{
 					for ( int i=0; i < 9; i++ )
 						Color += (float) _Pixel.SHCoeffs[i] * m_SHDynamic[i];
-					Factor = Math.Min( Factor, m_SHDynamic[0].Max() );
+					Factor = Math.Max( Factor, m_SHDynamic[0].Max() );
 				}
 				if ( m_bShowSHEmissive )
 				{
 					for ( int i=0; i < 9; i++ )
 						Color += (float) _Pixel.SHCoeffs[i] * m_SHEmissive[i];
-					Factor = Math.Min( Factor, m_SHEmissive[0].Max() );
+					Factor = Math.Max( Factor, m_SHEmissive[0].Max() );
 				}
 
 //				Color *= 50.0f;

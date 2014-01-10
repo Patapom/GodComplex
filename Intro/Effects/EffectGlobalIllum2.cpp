@@ -356,7 +356,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 // 	m_Device.ClearRenderTarget( m_RTTarget, NjFloat4::Zero );
 
  	m_Device.SetRenderTarget( m_RTTarget, &m_Device.DefaultDepthStencil() );
-	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
 
 	m_Scene.Render( *this );
 
@@ -518,7 +518,7 @@ void	EffectGlobalIllum2::PreComputeProbes()
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
 		//////////////////////////////////////////////////////////////////////////
-		// 1] Render Albedo + Normal + Distance
+		// 1] Render Albedo + Normal + Distance + Static lit + Emissive Mat ID
 
 		// Clear cube map
 		m_Device.ClearRenderTarget( ppRTCubeMap[0]->GetTargetView( 0, 0, 6 ), NjFloat4::Zero );
@@ -549,7 +549,7 @@ void	EffectGlobalIllum2::PreComputeProbes()
 			pCBCubeMapCamera->UpdateData();
 
 			// Render the scene into the specific cube map faces
-			m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+			m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
 
 			ID3D11RenderTargetView*	ppViews[3] = {
 				ppRTCubeMap[0]->GetTargetView( 0, CubeFaceIndex, 1 ),
@@ -649,7 +649,7 @@ void	EffectGlobalIllum2::PreComputeProbes()
 			fread_s( &S.Albedo.y, sizeof(S.Albedo.y), sizeof(float), 1, pFile );
 			fread_s( &S.Albedo.z, sizeof(S.Albedo.z), sizeof(float), 1, pFile );
 
-			fread_s( &S.EmissiveMatID, sizeof(S.EmissiveMatID), sizeof(U32), 1, pFile );
+//			fread_s( &S.EmissiveMatID, sizeof(S.EmissiveMatID), sizeof(U32), 1, pFile );
 
 			// Read SH coefficients
 			for ( int i=0; i < 9; i++ )
