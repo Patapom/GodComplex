@@ -1,10 +1,10 @@
 #include "../../../GodComplex.h"
-#include "Scene.h"
+#include "EffectScene.h"
 #include "MaterialBank.h"
 
 //////////////////////////////////////////////////////////////////////////
-// Scene
-Scene::Scene( Device& _Device )
+// EffectScene
+EffectScene::EffectScene( Device& _Device )
 	: m_Device					( _Device )
 	, m_ObjectsCount			( 0 )
 	, m_ppObjects				( NULL )
@@ -18,21 +18,21 @@ Scene::Scene( Device& _Device )
 	m_pMaterials = new MaterialBank( _Device );
 }
 
-Scene::~Scene()
+EffectScene::~EffectScene()
 {
 	DestroyLights();
 	DestroyObjects();
 	delete m_pMaterials;
 }
 
-void	Scene::Update( float _Time, float _DeltaTime )
+void	EffectScene::Update( float _Time, float _DeltaTime )
 {
 	for ( int ObjectIndex=0; ObjectIndex < m_ObjectsCount; ObjectIndex++ )
 		if ( m_ppObjects[ObjectIndex] != NULL )
 			m_ppObjects[ObjectIndex]->Update( _Time, _DeltaTime );
 }
 
-void	Scene::Render( Material& _Material, bool _bDepthPass ) const
+void	EffectScene::Render( Material& _Material, bool _bDepthPass ) const
 {
 	// Upload our materials
 	m_pMaterials->UpdateMaterialsBuffer();
@@ -42,7 +42,7 @@ void	Scene::Render( Material& _Material, bool _bDepthPass ) const
 			m_ppObjects[ObjectIndex]->Render( _Material, _bDepthPass );
 }
 
-void	Scene::AllocateObjects( int _ObjectsCount )
+void	EffectScene::AllocateObjects( int _ObjectsCount )
 {
 	DestroyObjects();
 
@@ -52,7 +52,7 @@ void	Scene::AllocateObjects( int _ObjectsCount )
 		m_ppObjects[ObjectIndex] = NULL;
 }
 
-void	Scene::DestroyObjects()
+void	EffectScene::DestroyObjects()
 {
 	if ( m_ppObjects == NULL )
 		return;
@@ -66,7 +66,7 @@ void	Scene::DestroyObjects()
 	m_ObjectsCount = 0;
 }
 
-Scene::Object&	Scene::CreateObjectAt( int _ObjectIndex, const char* _pName )
+EffectScene::Object&	EffectScene::CreateObjectAt( int _ObjectIndex, const char* _pName )
 {
 	ASSERT( _ObjectIndex < m_ObjectsCount, "Object index out of range!" );
 
@@ -81,13 +81,13 @@ Scene::Object&	Scene::CreateObjectAt( int _ObjectIndex, const char* _pName )
 	return *pNewObject;
 }
 
-Scene::Object&		Scene::GetObjectAt( int _ObjectIndex )
+EffectScene::Object&		EffectScene::GetObjectAt( int _ObjectIndex )
 {
 	ASSERT( _ObjectIndex < m_ObjectsCount, "Object index out of range!" );
 	return *m_ppObjects[_ObjectIndex];
 }
 
-void	Scene::AllocateLights( int _DirectionalsCount, int _PointsCount, int _SpotsCount )
+void	EffectScene::AllocateLights( int _DirectionalsCount, int _PointsCount, int _SpotsCount )
 {
 	DestroyLights();
 
@@ -101,7 +101,7 @@ void	Scene::AllocateLights( int _DirectionalsCount, int _PointsCount, int _Spots
 	m_pLightsSpot = new Light[_SpotsCount];
 }
 
-void	Scene::DestroyLights()
+void	EffectScene::DestroyLights()
 {
 	if ( m_pLightsDirectional != NULL )
 		delete[] m_pLightsDirectional;
@@ -119,43 +119,43 @@ void	Scene::DestroyLights()
 	m_LightsCountSpot = 0;
 }
 
-Scene::Light&	Scene::GetDirectionalLightAt( int _LightIndex )
+EffectScene::Light&	EffectScene::GetDirectionalLightAt( int _LightIndex )
 {
 	ASSERT( _LightIndex < m_LightsCountDirectional, "Directional light index out of range!" );
 	return m_pLightsDirectional[_LightIndex];
 }
-Scene::Light&	Scene::GetPointLightAt( int _LightIndex )
+EffectScene::Light&	EffectScene::GetPointLightAt( int _LightIndex )
 {
 	ASSERT( _LightIndex < m_LightsCountPoint, "Point light index out of range!" );
 	return m_pLightsPoint[_LightIndex];
 }
-Scene::Light&	Scene::GetSpotLightAt( int _LightIndex )
+EffectScene::Light&	EffectScene::GetSpotLightAt( int _LightIndex )
 {
 	ASSERT( _LightIndex < m_LightsCountSpot, "Spot light index out of range!" );
 	return m_pLightsSpot[_LightIndex];
 }
 
-void	Scene::SetDirectionalLightEnabled( int _LightIndex, bool _bEnabled )
+void	EffectScene::SetDirectionalLightEnabled( int _LightIndex, bool _bEnabled )
 {
-	Scene::Light&	L = GetDirectionalLightAt( _LightIndex );
+	EffectScene::Light&	L = GetDirectionalLightAt( _LightIndex );
 	if ( _bEnabled && !L.m_bEnabled )
 		m_EnabledLightsCountDirectional++;
 	else if ( !_bEnabled && L.m_bEnabled )
 		m_EnabledLightsCountDirectional--;
 	L.m_bEnabled = _bEnabled;
 }
-void	Scene::SetPointLightEnabled( int _LightIndex, bool _bEnabled )
+void	EffectScene::SetPointLightEnabled( int _LightIndex, bool _bEnabled )
 {
-	Scene::Light&	L = GetDirectionalLightAt( _LightIndex );
+	EffectScene::Light&	L = GetDirectionalLightAt( _LightIndex );
 	if ( _bEnabled && !L.m_bEnabled )
 		m_EnabledLightsCountPoint++;
 	else if ( !_bEnabled && L.m_bEnabled )
 		m_EnabledLightsCountPoint--;
 	L.m_bEnabled = _bEnabled;
 }
-void	Scene::SetSpotLightEnabled( int _LightIndex, bool _bEnabled )
+void	EffectScene::SetSpotLightEnabled( int _LightIndex, bool _bEnabled )
 {
-	Scene::Light&	L = GetDirectionalLightAt( _LightIndex );
+	EffectScene::Light&	L = GetDirectionalLightAt( _LightIndex );
 	if ( _bEnabled && !L.m_bEnabled )
 		m_EnabledLightsCountSpot++;
 	else if ( !_bEnabled && L.m_bEnabled )
@@ -163,7 +163,7 @@ void	Scene::SetSpotLightEnabled( int _LightIndex, bool _bEnabled )
 	L.m_bEnabled = _bEnabled;
 }
 
-void	Scene::SetEnvMap( Texture2D& _EnvMap )
+void	EffectScene::SetEnvMap( Texture2D& _EnvMap )
 {
 	m_pTexEnvMap = &_EnvMap;
 }
@@ -171,7 +171,7 @@ void	Scene::SetEnvMap( Texture2D& _EnvMap )
 
 //////////////////////////////////////////////////////////////////////////
 // Object
-Scene::Object::Object( Scene& _Owner, const char* _pName )
+EffectScene::Object::Object( EffectScene& _Owner, const char* _pName )
 	: m_Owner( _Owner )
 	, m_pName( _pName )
 	, m_PrimitivesCount( 0 )
@@ -184,13 +184,13 @@ Scene::Object::Object( Scene& _Owner, const char* _pName )
 	m_Rotation = NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY );
 	m_pCB_Object = new CB<CBObject>( m_Owner.m_Device, 10 );
 }
-Scene::Object::~Object()
+EffectScene::Object::~Object()
 {
 	delete m_pCB_Object;
 	DestroyPrimitives();
 }
 
-void	Scene::Object::SetPRS( const NjFloat3& _Position, const NjFloat4& _Rotation, const NjFloat3& _Scale )
+void	EffectScene::Object::SetPRS( const NjFloat3& _Position, const NjFloat4& _Rotation, const NjFloat3& _Scale )
 {
 	m_Position = _Position;
 	m_Rotation = _Rotation;
@@ -198,7 +198,7 @@ void	Scene::Object::SetPRS( const NjFloat3& _Position, const NjFloat4& _Rotation
 	m_bPRSDirty = true;
 }
 
-void	Scene::Object::Update( float _Time, float _DeltaTime )
+void	EffectScene::Object::Update( float _Time, float _DeltaTime )
 {
 	if ( !m_bPRSDirty )
 		return;	// Already up to date!
@@ -208,7 +208,7 @@ void	Scene::Object::Update( float _Time, float _DeltaTime )
 	m_bPRSDirty = false;
 }
 
-void	Scene::Object::Render( Material& _Material, bool _bDepthPass ) const
+void	EffectScene::Object::Render( Material& _Material, bool _bDepthPass ) const
 {
 	// Update our transform
 	m_pCB_Object->UpdateData();
@@ -217,7 +217,7 @@ void	Scene::Object::Render( Material& _Material, bool _bDepthPass ) const
 		m_ppPrimitives[PrimitiveIndex]->Render( _Material, _bDepthPass );
 }
 
-void	Scene::Object::AllocatePrimitives( int _PrimitivesCount )
+void	EffectScene::Object::AllocatePrimitives( int _PrimitivesCount )
 {
 	DestroyPrimitives();
 
@@ -227,7 +227,7 @@ void	Scene::Object::AllocatePrimitives( int _PrimitivesCount )
 		m_ppPrimitives[PrimitiveIndex] = new Primitive( *this );
 }
 
-void	Scene::Object::DestroyPrimitives()
+void	EffectScene::Object::DestroyPrimitives()
 {
 	if ( m_ppPrimitives == NULL )
 		return;
@@ -240,7 +240,7 @@ void	Scene::Object::DestroyPrimitives()
 	m_ppPrimitives = NULL;
 }
 
-Scene::Object::Primitive&	Scene::Object::GetPrimitiveAt( int _PrimitiveIndex )
+EffectScene::Object::Primitive&	EffectScene::Object::GetPrimitiveAt( int _PrimitiveIndex )
 {
 	ASSERT( _PrimitiveIndex < m_PrimitivesCount, "Primitive index out of range!" );
 	return *m_ppPrimitives[_PrimitiveIndex];
@@ -249,16 +249,16 @@ Scene::Object::Primitive&	Scene::Object::GetPrimitiveAt( int _PrimitiveIndex )
 
 //////////////////////////////////////////////////////////////////////////
 // Primitive
-Scene::Object::Primitive::Primitive( Object& _Owner ) : m_Owner( _Owner )
+EffectScene::Object::Primitive::Primitive( Object& _Owner ) : m_Owner( _Owner )
 {
 	m_pCB_Primitive = new CB<CBPrimitive>( m_Owner.m_Owner.m_Device, 11 );
 }
-Scene::Object::Primitive::~Primitive()
+EffectScene::Object::Primitive::~Primitive()
 {
 	delete m_pCB_Primitive;
 }
 
-void	Scene::Object::Primitive::Render( Material& _Material, bool _bDepthPass ) const
+void	EffectScene::Object::Primitive::Render( Material& _Material, bool _bDepthPass ) const
 {
 	ASSERT( m_pPrimitive != NULL, "Primitive was not set!" );
 
@@ -273,12 +273,12 @@ void	Scene::Object::Primitive::Render( Material& _Material, bool _bDepthPass ) c
 	m_pPrimitive->Render( _Material );
 }
 
-void	Scene::Object::Primitive::SetRenderPrimitive( ::Primitive& _Primitive )
+void	EffectScene::Object::Primitive::SetRenderPrimitive( ::Primitive& _Primitive )
 {
 	m_pPrimitive = &_Primitive;
 }
 
-// void	Scene::Object::Primitive::SetMaterial( MaterialParameters& _Material )
+// void	EffectScene::Object::Primitive::SetMaterial( MaterialParameters& _Material )
 // {
 // 	m_pCB_Primitive->m.MatIDs[0] = _Material.MatIDs[0];
 // 	m_pCB_Primitive->m.MatIDs[1] = _Material.MatIDs[1];
@@ -292,7 +292,7 @@ void	Scene::Object::Primitive::SetRenderPrimitive( ::Primitive& _Primitive )
 // 	m_pTextures = _Material.pTextures;
 // }
 
-void	Scene::Object::Primitive::SetLayerMaterials( Texture2D& _LayeredTextures, int _Mat0, int _Mat1, int _Mat2, int _Mat3 )
+void	EffectScene::Object::Primitive::SetLayerMaterials( Texture2D& _LayeredTextures, int _Mat0, int _Mat1, int _Mat2, int _Mat3 )
 {
 	const MaterialBank::Material::DynamicParameters*	ppMats[4] =
 	{
@@ -330,10 +330,10 @@ void	Scene::Object::Primitive::SetLayerMaterials( Texture2D& _LayeredTextures, i
 
 //////////////////////////////////////////////////////////////////////////
 // Light
-Scene::Light::Light() : m_bEnabled( true )
+EffectScene::Light::Light() : m_bEnabled( true )
 {
 }
-void	Scene::Light::SetDirectional( const NjFloat3& _Irradiance, const NjFloat3& _Position, const NjFloat3& _Direction, float _RadiusHotSpot, float _RadiusFalloff, float _Length )
+void	EffectScene::Light::SetDirectional( const NjFloat3& _Irradiance, const NjFloat3& _Position, const NjFloat3& _Direction, float _RadiusHotSpot, float _RadiusFalloff, float _Length )
 {
 	m_Radiance = _Irradiance;
 	m_Position = _Position;
@@ -344,14 +344,14 @@ void	Scene::Light::SetDirectional( const NjFloat3& _Irradiance, const NjFloat3& 
 	m_Data.m_Length = _Length;
 }
 
-void	Scene::Light::SetPoint( const NjFloat3& _Radiance, const NjFloat3& _Position, float _Radius )
+void	EffectScene::Light::SetPoint( const NjFloat3& _Radiance, const NjFloat3& _Position, float _Radius )
 {
 	m_Radiance = _Radiance;
 	m_Position = _Position;
 	m_Data.m_Radius = _Radius;
 }
 
-void	Scene::Light::SetSpot( const NjFloat3& _Radiance, const NjFloat3& _Position, const NjFloat3& _Direction, float _AngleHotSpot, float _AngleFalloff, float _Length )
+void	EffectScene::Light::SetSpot( const NjFloat3& _Radiance, const NjFloat3& _Position, const NjFloat3& _Direction, float _AngleHotSpot, float _AngleFalloff, float _Length )
 {
 	m_Radiance = _Radiance;
 	m_Position = _Position;

@@ -220,7 +220,7 @@ public:		// NESTED TYPES
 	};
 
 
-private:	// FIELDS
+public:		// FIELDS
 
 	Node*				m_pROOT;
 

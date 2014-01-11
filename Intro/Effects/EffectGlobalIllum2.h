@@ -11,6 +11,7 @@ private:	// CONSTANTS
 
 	static const U32		MAX_LIGHTS = 64;
 	static const U32		MAX_PROBE_SETS = 16;
+	static const U32		MAX_PROBE_EMISSIVE_SETS = 16;
 	static const U32		MAX_SET_SAMPLES = 64;				// Accept a maximum of 64 samples per set
 
 	static const U32		MAX_PROBE_UPDATES_PER_FRAME = 16;	// Update a maximum of 16 probes per frame
@@ -24,7 +25,7 @@ protected:	// NESTED TYPES
 
 	struct CBGeneral
 	{
-		bool		ShowIndirect;
+		U32			ShowIndirect;
  	};
 
 	struct CBScene
@@ -42,12 +43,12 @@ protected:	// NESTED TYPES
 	struct CBMaterial
 	{
 		U32			ID;
-		NjFloat3	DiffuseColor;
+		NjFloat3	DiffuseAlbedo;
 
-		bool		HasDiffuseTexture;
-		NjFloat3	SpecularColor;
+		U32			HasDiffuseTexture;
+		NjFloat3	SpecularAlbedo;
 
-		bool		HasSpecularTexture;
+		U32			HasSpecularTexture;
 		NjFloat3	EmissiveColor;
 
 		float		SpecularExponent;
@@ -90,7 +91,7 @@ protected:	// NESTED TYPES
 		NjFloat4	Parms;						// X=Falloff radius, Y=Cutoff radius, Z=Cos(Falloff angle), W=Cos(Cutoff angle)
 	};
 
-	// Runtime probes buffer
+	// Runtime probes buffer that we'll use to light objects
 	struct RuntimeProbe 
 	{
 		NjFloat3	Position;
@@ -101,19 +102,28 @@ protected:	// NESTED TYPES
 	// Probes update buffers
 	struct RuntimeProbeUpdateInfos
 	{
-		U32			ProbeIndex;						// The index of the probe we're updating
-		U32			SetsCount;						// Amount of sets for that probe
+		U32			Index;							// The index of the probe we're updating
+		U32			SetsStart;						// Index of the first set for the probe
+		U32			SetsCount;						// Amount of sets for the probe
+		U32			EmissiveSetsStart;				// Index of the first emissive set for the probe
+		U32			EmissiveSetsCount;				// Amount of emissive sets for the probe
 		U32			SamplingPointsStart;			// Index of the first sampling point for the probe
 		U32			SamplingPointsCount;			// Amount of sampling points for the probe
 		NjFloat3	SHStatic[9];					// Precomputed static SH (static geometry + static lights)
 		float		SHOcclusion[9];					// Directional ambient occlusion for the probe
+	};
 
-		struct	SetInfos
-		{
-			NjFloat3	SH[9];						// SH for the set
-			U32			SamplingPointIndex;			// Index of the first sampling point
-			U32			SamplingPointsCount;		// Amount of sampling points
-		}	Sets[MAX_PROBE_SETS];
+	struct	RuntimeProbeUpdateSetInfos
+	{
+		U32			SamplingPointsStart;			// Index of the first sampling point
+		U32			SamplingPointsCount;			// Amount of sampling points
+		NjFloat3	SH[9];							// SH for the set
+	};
+
+	struct	RuntimeProbeUpdateEmissiveSetInfos
+	{
+		NjFloat3	EmissiveColor;					// Color of the emissive material
+		float		SH[9];							// SH for the set
 	};
 
 	struct RuntimeSamplingPointInfos
@@ -125,7 +135,7 @@ protected:	// NESTED TYPES
 
 #pragma pack( pop )
 
-	// The probe structure
+	// The static probe structure that we read from disk and stream/keep in memory when probes need updating
 	struct	ProbeStruct
 	{
 		Scene::Probe*	pSceneProbe;
@@ -148,7 +158,6 @@ protected:	// NESTED TYPES
 			NjFloat3		Tangent;			// The longest principal axis of the set's points cluster (scaled by the length of the axis)
 			NjFloat3		BiTangent;			// The shortest principal axis of the set's points cluster (scaled by the length of the axis)
 			NjFloat3		Albedo;				// The albedo of the dynamic set (not currently used, for info purpose)
-			int				EmissiveMatID;		// The optional ID of an emissive material (default is -1, not emissive)
 			NjFloat3		pSHBounce[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced dynamic lighting on static geometry, for each dynamic set
 
 			U32				SamplesCount;		// The amount of samples for that probe
@@ -161,7 +170,19 @@ protected:	// NESTED TYPES
 
 		}				pSetInfos[MAX_PROBE_SETS];
 
-		NjFloat3		pSHBouncedLight[9];		// The resulting bounced irradiance bounce * light(static+dynamic) for current frame
+		U32				EmissiveSetsCount;		// The amount of emissive sets for that probe
+		struct EmissiveSetInfos
+		{
+			NjFloat3		Position;			// The position of the emissive set
+			NjFloat3		Normal;				// The normal of the emissive set's plane
+			NjFloat3		Tangent;			// The longest principal axis of the set's points cluster (scaled by the length of the axis)
+			NjFloat3		BiTangent;			// The shortest principal axis of the set's points cluster (scaled by the length of the axis)
+			Scene::Material*	pEmissiveMaterial;	// Direct pointer to the material
+
+			float			pSHEmissive[9];		// The pre-computed SH that gives back how much the probe emits light
+		}				pEmissiveSetInfos[MAX_PROBE_EMISSIVE_SETS];
+
+		NjFloat3		pSHBouncedLight[9];		// The resulting bounced irradiance * light(static+dynamic) + emissive for current frame
 
 		// Clears the light bounce accumulator
 		void			ClearLightBounce( const NjFloat3 _pSHAmbient[9] );
@@ -169,7 +190,6 @@ protected:	// NESTED TYPES
 		// Computes the product of SHLight and SHBounce to get the SH coefficients for the bounced light
 		void			AccumulateLightBounce( const NjFloat3 _pSHSet[9] );
 	};
-
 
 
 private:	// FIELDS
@@ -216,8 +236,10 @@ private:	// FIELDS
 	// Probes Update
 	int					m_ProbesCount;
 	ProbeStruct*		m_pProbes;
-	SB<RuntimeProbeUpdateInfos>*	m_pSB_RuntimeProbeUpdateInfos;
-	SB<RuntimeSamplingPointInfos>*	m_pSB_RuntimeSamplingPointInfos;
+	SB<RuntimeProbeUpdateInfos>*			m_pSB_RuntimeProbeUpdateInfos;
+	SB<RuntimeProbeUpdateSetInfos>*			m_pSB_RuntimeProbeSetInfos;
+	SB<RuntimeProbeUpdateEmissiveSetInfos>*	m_pSB_RuntimeProbeEmissiveSetInfos;
+	SB<RuntimeSamplingPointInfos>*			m_pSB_RuntimeSamplingPointInfos;
 
 	// Params
 public:

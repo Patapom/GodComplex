@@ -257,7 +257,7 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 					SH[i] = new WMath.Vector( (float) (Normalizer * SHR[i]), (float) (Normalizer * SHG[i]), (float) (Normalizer * SHB[i]) );
 
 				// Apply filtering
-				FilterLanczos( FILTER_WINDOW_SIZE );
+				SphericalHarmonics.SHFunctions.FilterLanczos( SH, FILTER_WINDOW_SIZE );
 			}
 
 			/// <summary>
@@ -277,47 +277,10 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 					SH[i] = (float) (Normalizer * SHCoeffs[i]) * WMath.Vector.One;
 
 				// Apply filtering
-//				FilterLanczos( FILTER_WINDOW_SIZE );
-//				FilterGaussian( FILTER_WINDOW_SIZE );	// Smoothes A LOT but according to the source of filters code, it's better if using HDR light sources
-				FilterHanning( FILTER_WINDOW_SIZE );
+//				SphericalHarmonics.SHFunctions.FilterLanczos( FILTER_WINDOW_SIZE );
+//				SphericalHarmonics.SHFunctions.FilterGaussian( FILTER_WINDOW_SIZE );	// Smoothes A LOT but according to the source of filters code, it's better if using HDR light sources
+				SphericalHarmonics.SHFunctions.FilterHanning( SH, FILTER_WINDOW_SIZE );
 			}
-
-
-			// Filtering stolen from http://csc.lsu.edu/~kooima/sht/sh.hpp
-			// Apply a Hanning window of width w.
-			public void	FilterHanning(int w)
-			{
-				for (int l = 0; l < 3; l++)
-					if ( l > w )
-						Filter( l, 0 );
-					else
-						Filter( l, (float) ((Math.Cos(Math.PI * l / w) + 1.0) * 0.5) );
-			}
-
-			// Apply a Lanczos window of width w.
-			public void	FilterLanczos(int w)
-			{
-				for (int l = 0; l < 3; l++)
-					if (l == 0)
-						Filter( l, 1 );
-					else
-						Filter( l, (float) (Math.Sin(Math.PI * l / w) / (Math.PI * l / w)) );
-			}
-
-			// Apply a Gaussian window of width w.
-			public void	FilterGaussian(int w)
-			{
-				for ( int l = 0; l < 3; l++ )
-					Filter( l, (float) Math.Exp( -(Math.PI * l / w) * (Math.PI * l / w) / 2.0 ) );
-			}
-
-			// Modulate all coefficients of degree l by scalar a.
-			private void	Filter( int l, float a )
-			{
-				for ( int m=-l; m <= l; m++ )
-					SH[l*(l+1)+m] *= a;
-			}
-
 
 			/// <summary>
 			/// This is a very simplistic approach to determine the principal axes of the set:
@@ -480,6 +443,8 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 
 		public WMath.Vector[]		m_StaticSH = new WMath.Vector[9];
 
+		public float[]				m_OcclusionSH = new float[9];
+
 		public Set[]				m_Sets = new Set[0];
 		public Set[]				m_EmissiveSets = new Set[0];
 
@@ -573,10 +538,6 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 				buttonCompute.Enabled = false;
 				buttonComputeFilling.Enabled = false;
 
-				m_CubeMap = new Pixel[6][,];
-				m_ProbePixels.Clear();
-				m_ScenePixels.Clear();
-
 				// Load and convert POM files into a useable cube map
 				Nuaj.Cirrus.Utility.TextureFilePOM	POM = new Nuaj.Cirrus.Utility.TextureFilePOM();
 				POM.Load( _POMCubeMap );
@@ -584,6 +545,10 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 					return false;	// Not a cube map
 				if ( POM.m_Width != CUBE_MAP_SIZE || POM.m_Height != CUBE_MAP_SIZE || POM.m_ArraySizeOrDepth != 3*6 )
 					throw new Exception( "Unexpected cube map size!" );
+
+				m_CubeMap = new Pixel[6][,];
+				m_ProbePixels.Clear();
+				m_ScenePixels.Clear();
 
 				double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
 				double	SumSolidAngle = 0.0;
@@ -651,8 +616,6 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 													csView /= Distance2Texel;
 									WMath.Vector	wsView = csView * m_Side2World[CubeFaceIndex];
 
-//wsView.z = -wsView.z;
-
 									// Retrieve the cube map texel's solid angle (from http://people.cs.kuleuven.be/~philip.dutre/GI/TotalCompendium.pdf)
 									// dw = cos(Theta).dA / r²
 									// cos(Theta) = Adjacent/Hypothenuse = 1/r
@@ -717,6 +680,7 @@ if ( (float) NegativeImportancePixelsCount / (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6)
 			{
 				buttonCompute.Enabled = true;
 				buttonComputeFilling.Enabled = true;
+				buttonComputeFilling.Focus();
 			}
 
 			return true;
@@ -748,6 +712,10 @@ if ( (float) NegativeImportancePixelsCount / (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6)
 						W.Write( m_StaticSH[i].y );
 						W.Write( m_StaticSH[i].z );
 					}
+
+					// Write occlusion SH
+					for ( int i=0; i < 9; i++ )
+						W.Write( m_OcclusionSH[i] );
 
 					// Write the amount of sets
 					W.Write( (UInt32) m_Sets.Length );
@@ -863,7 +831,7 @@ if ( (float) NegativeImportancePixelsCount / (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6)
 		}
 		private void	MessageBox( string _Text, MessageBoxButtons _Buttons, MessageBoxIcon _Icon )
 		{
-			System.Windows.Forms.MessageBox.Show( this, _Text, "Shader Interpreter", _Buttons, _Icon );
+			System.Windows.Forms.MessageBox.Show( this, _Text, "SH Encoder", _Buttons, _Icon );
 		}
 
 		#endregion
@@ -1064,10 +1032,11 @@ int	DEBUG_PixelIndex = 0;
 			ALBEDO_RGB_THRESHOLD = 0.32f * floatTrackbarControlAlbedo.Value;									// Close colors!
 
 			//////////////////////////////////////////////////////////////////////////
-			// 1] Compute static lighting SH
+			// 1] Compute occlusion & static lighting SH
 			double[]	SHR = new double[9];
 			double[]	SHG = new double[9];
 			double[]	SHB = new double[9];
+			double[]	SHOcclusion = new double[9];
 
 			for ( int PixelIndex=0; PixelIndex < m_ProbePixels.Count; PixelIndex++ )
 			{
@@ -1078,14 +1047,31 @@ int	DEBUG_PixelIndex = 0;
 					SHG[i] += P.SHCoeffs[i] * P.SolidAngle * P.StaticLitColor.y;
 					SHB[i] += P.SHCoeffs[i] * P.SolidAngle * P.StaticLitColor.z;
 				}
+
+				if ( !P.Infinity )
+					continue;
+
+				// No obstacle means direct lighting from the ambient sky...
+				// Accumulate SH coefficients in that direction, weighted by the solid angle
+				for ( int i=0; i < 9; i++ )
+					SHOcclusion[i] += P.SolidAngle * P.SHCoeffs[i];
 			}
 
 			double	Normalizer = 1.0 / (4.0 * Math.PI);
 
 			for ( int i=0; i < 9; i++ )
+			{
 				m_StaticSH[i] = new WMath.Vector( (float) (Normalizer * SHR[i]), (float) (Normalizer * SHG[i]), (float) (Normalizer * SHB[i]) );
+				m_OcclusionSH[i] = (float) (Normalizer * SHOcclusion[i]);
+			}
 
+			// Apply filtering
+			SphericalHarmonics.SHFunctions.FilterLanczos( m_StaticSH, 3 );		// Lanczos should be okay for static lighting
+			SphericalHarmonics.SHFunctions.FilterHanning( m_OcclusionSH, 3 );
+
+			// Send to output panel for visual debugging
 			outputPanel1.SHStatic = m_StaticSH;
+			outputPanel1.SHOcclusion = m_OcclusionSH;
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -1416,6 +1402,10 @@ DEBUG_PixelIndex = PixelIndex;
 			{
 				Pixel	P = m_ScanlinePixelsPool[ScanlinePixelIndex];
 				Pixel	Top = FindAdjacentPixel( P, 0, 1 );
+
+// if ( Top.IsEmissive )
+// 	Top.PixelIndex = -1;
+
 				FloodFill( _S, P, Top, _SetRejectedPixels );
 			}
 
@@ -1441,7 +1431,7 @@ DEBUG_PixelIndex = PixelIndex;
 			bool	Accepted = false;
 
 			// Emissive pixels get grouped together
-			if ( _PreviousPixel.IsEmissive )
+			if ( _PreviousPixel.IsEmissive || _P.IsEmissive )
 			{
 				Accepted = _PreviousPixel.EmissiveMatID == _P.EmissiveMatID;
 			}
@@ -1856,6 +1846,11 @@ DEBUG_PixelIndex = PixelIndex;
 		private void checkBoxSHEmissive_CheckedChanged( object sender, EventArgs e )
 		{
 			outputPanel1.ShowSHEmissive = (sender as CheckBox).Checked;
+		}
+
+		private void checkBoxSHOcclusion_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanel1.ShowSHOcclusion = (sender as CheckBox).Checked;
 		}
 
 		private void radioButtonSetSamples_CheckedChanged( object sender, EventArgs e )

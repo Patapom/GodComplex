@@ -103,6 +103,7 @@ namespace ProbeSHEncoder
 			this.checkBoxSHDynamic = new System.Windows.Forms.CheckBox();
 			this.checkBoxSHEmissive = new System.Windows.Forms.CheckBox();
 			this.outputPanel1 = new ProbeSHEncoder.OutputPanel(this.components);
+			this.checkBoxSHOcclusion = new System.Windows.Forms.CheckBox();
 			this.menuStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -132,7 +133,7 @@ namespace ProbeSHEncoder
 			// 
 			this.loadProbeToolStripMenuItem.Name = "loadProbeToolStripMenuItem";
 			this.loadProbeToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-			this.loadProbeToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
+			this.loadProbeToolStripMenuItem.Size = new System.Drawing.Size(187, 22);
 			this.loadProbeToolStripMenuItem.Text = "&Load Probe";
 			this.loadProbeToolStripMenuItem.Click += new System.EventHandler(this.loadProbeToolStripMenuItem_Click);
 			// 
@@ -147,7 +148,7 @@ namespace ProbeSHEncoder
 			// toolStripMenuItem1
 			// 
 			this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-			this.toolStripMenuItem1.Size = new System.Drawing.Size(174, 6);
+			this.toolStripMenuItem1.Size = new System.Drawing.Size(184, 6);
 			// 
 			// batchEncodeToolStripMenuItem
 			// 
@@ -670,12 +671,24 @@ namespace ProbeSHEncoder
 			this.outputPanel1.TabIndex = 3;
 			this.outputPanel1.Viz = ProbeSHEncoder.OutputPanel.VIZ_TYPE.ALBEDO;
 			// 
+			// checkBoxSHOcclusion
+			// 
+			this.checkBoxSHOcclusion.AutoSize = true;
+			this.checkBoxSHOcclusion.Location = new System.Drawing.Point(922, 448);
+			this.checkBoxSHOcclusion.Name = "checkBoxSHOcclusion";
+			this.checkBoxSHOcclusion.Size = new System.Drawing.Size(73, 17);
+			this.checkBoxSHOcclusion.TabIndex = 9;
+			this.checkBoxSHOcclusion.Text = "Occlusion";
+			this.checkBoxSHOcclusion.UseVisualStyleBackColor = true;
+			this.checkBoxSHOcclusion.CheckedChanged += new System.EventHandler(this.checkBoxSHOcclusion_CheckedChanged);
+			// 
 			// EncoderForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1027, 692);
 			this.Controls.Add(this.progressBarBatchConvert);
+			this.Controls.Add(this.checkBoxSHOcclusion);
 			this.Controls.Add(this.checkBoxSHEmissive);
 			this.Controls.Add(this.checkBoxSHDynamic);
 			this.Controls.Add(this.checkBoxSHStatic);
@@ -766,6 +779,7 @@ namespace ProbeSHEncoder
 		private System.Windows.Forms.CheckBox checkBoxSHStatic;
 		private System.Windows.Forms.CheckBox checkBoxSHDynamic;
 		private System.Windows.Forms.CheckBox checkBoxSHEmissive;
+		private System.Windows.Forms.CheckBox checkBoxSHOcclusion;
 	}
 }
 

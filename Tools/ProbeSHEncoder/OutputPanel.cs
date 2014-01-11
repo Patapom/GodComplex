@@ -188,6 +188,38 @@ namespace ProbeSHEncoder
 			}
 		}
 
+		// Occlusion SH
+		private bool			m_bShowSHOcclusion = false;
+		public bool				ShowSHOcclusion
+		{
+			get { return m_bShowSHOcclusion; }
+			set
+			{
+				if ( value == m_bShowSHOcclusion )
+					return;
+
+				m_bShowSHOcclusion = value;
+				if ( m_Viz == VIZ_TYPE.SH )
+					UpdateBitmap();
+			}
+		}
+		private float[]	m_SHOcclusion = new float[9];
+		public float[]	SHOcclusion
+		{
+			get { return m_SHOcclusion; }
+			set
+			{
+				if ( value == null || value == m_SHOcclusion )
+					return;
+
+				m_SHOcclusion = value;
+				if ( m_Viz != VIZ_TYPE.SH )
+					return;
+				UpdateBitmap();
+				Refresh();
+			}
+		}
+
 		protected Bitmap		m_Bitmap = null;
 		public EncoderForm		m_Owner = null;
 
@@ -445,6 +477,12 @@ namespace ProbeSHEncoder
 					for ( int i=0; i < 9; i++ )
 						Color += (float) _Pixel.SHCoeffs[i] * m_SHEmissive[i];
 					Factor = Math.Max( Factor, m_SHEmissive[0].Max() );
+				}
+				if ( m_bShowSHOcclusion )
+				{
+					for ( int i=0; i < 9; i++ )
+						Color += (float) _Pixel.SHCoeffs[i] * m_SHOcclusion[i] * WMath.Vector.One;
+					Factor = Math.Max( Factor, m_SHOcclusion[0] );
 				}
 
 //				Color *= 50.0f;

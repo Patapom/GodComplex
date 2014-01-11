@@ -60,6 +60,8 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	m_pSB_RuntimeProbes = NULL;
 
 	m_pSB_RuntimeProbeUpdateInfos = new SB<RuntimeProbeUpdateInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME, true );
+	m_pSB_RuntimeProbeSetInfos = new SB<RuntimeProbeUpdateSetInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME*MAX_PROBE_SETS, true );
+	m_pSB_RuntimeProbeEmissiveSetInfos = new SB<RuntimeProbeUpdateEmissiveSetInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME*MAX_PROBE_EMISSIVE_SETS, true );
 	m_pSB_RuntimeSamplingPointInfos = new SB<RuntimeSamplingPointInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME * MAX_SET_SAMPLES, true );
 
 
@@ -86,7 +88,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	// Start precomputation
 	PreComputeProbes();
 }
-Texture2D*	ppRTCubeMap[2];
+Texture2D*	pRTCubeMap;
 
 EffectGlobalIllum2::~EffectGlobalIllum2()
 {
@@ -98,6 +100,8 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	m_Scene.ClearTags( *this );
 
 	delete m_pSB_RuntimeSamplingPointInfos;
+	delete m_pSB_RuntimeProbeEmissiveSetInfos;
+	delete m_pSB_RuntimeProbeSetInfos;
 	delete m_pSB_RuntimeProbeUpdateInfos;
 	delete m_pSB_RuntimeProbes;
 	delete m_pSB_LightsDynamic;
@@ -127,8 +131,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pMatRender;
 
 //###
-delete ppRTCubeMap[1];
-delete ppRTCubeMap[0];
+delete pRTCubeMap;
 }
 
 // F5 => toggle point light animation
@@ -137,6 +140,9 @@ float	AnimateLightTime0 = 0.0f;
 // F6 => toggle sun light animation
 float	AnimateLightTime1 = 0.0f;
 float	UserSunTheta = 60.0f;
+
+// F7 => toggle neon area light animation
+float	AnimateLightTime2 = 0.0f;
 
 #define RENDER_SUN	1
 
@@ -156,10 +162,11 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	// Animate lights
 
 		// Point light
-	if ( !gs_WindowInfos.pKeysToggle[VK_F5] )
+	bool	ShowLight0 = !gs_WindowInfos.pKeysToggle[VK_F1];
+	if ( ShowLight0 && !gs_WindowInfos.pKeysToggle[VK_F5] )
 		AnimateLightTime0 += _DeltaTime;
 
-	if ( !gs_WindowInfos.pKeysToggle[VK_F1] )
+	if ( ShowLight0 )
 		m_pSB_LightsDynamic->m[0].Color.Set( 100, 100, 100 );
 	else
 		m_pSB_LightsDynamic->m[0].Color.Set( 0, 0, 0 );
@@ -172,7 +179,8 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 #if RENDER_SUN	// Show Sun light
 	{
-		if ( !gs_WindowInfos.pKeysToggle[VK_F6] )
+		bool	ShowLight1 = gs_WindowInfos.pKeysToggle[VK_F2] != 0;
+		if ( ShowLight1 && !gs_WindowInfos.pKeysToggle[VK_F6] )
 			AnimateLightTime1 += _DeltaTime;
 
 		if ( gs_WindowInfos.pKeys[VK_SUBTRACT] )
@@ -184,7 +192,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		float		SunPhi = 0.2f * AnimateLightTime1;
 		NjFloat3	SunDirection( sinf(SunTheta) * sinf(SunPhi), cosf(SunTheta), sinf(SunTheta) * cosf(SunPhi) );
 
-		if ( gs_WindowInfos.pKeysToggle[VK_F2] )
+		if ( ShowLight1 )
 			m_pSB_LightsDynamic->m[1].Color.Set( 1000, 990, 950 );
 		else
 			m_pSB_LightsDynamic->m[1].Color.Set( 0, 0, 0 );
@@ -208,6 +216,23 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pSB_LightsDynamic->SetInput( 8, true );
 
 
+	// Update emissive materials
+	bool	ShowLight2 = gs_WindowInfos.pKeysToggle[VK_F3] != 0;
+
+	if ( ShowLight2 && !gs_WindowInfos.pKeysToggle[VK_F7] )
+		AnimateLightTime2 += _DeltaTime;
+
+	if ( ShowLight2 )
+	{
+//		float	Intensity = 10.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.5f * _frand()) ) );
+		float	Intensity = 4.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.0f * _frand()) ) );
+		m_Scene.m_ppMaterials[2]->m_EmissiveColor.Set( Intensity * 100, Intensity * 90, Intensity * 70 );
+	}
+	else
+		m_Scene.m_ppMaterials[2]->m_EmissiveColor.Set( 0, 0, 0 );
+
+
+
 	//////////////////////////////////////////////////////////////////////////
 	// Update dynamic probes
 	NjFloat3	pSHAmbient[9];
@@ -225,7 +250,9 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 //TODO: Handle a stack of probes to update
 
 	// Prepare the buffer of probe update infos and sampling point infos
-	int		SamplingPointIndex = 0;
+	int		TotalSamplingPointsCount = 0;
+	int		TotalSetsCount = 0;
+	int		TotalEmissiveSetsCount = 0;
 	for ( U32 ProbeUpdateIndex=0; ProbeUpdateIndex < ProbeUpdatesCount; ProbeUpdateIndex++ )
 	{
 		int				ProbeIndex = ProbeUpdateIndex;	// Simple at the moment, when we have the update stack we'll have to fetch the index from it...
@@ -234,39 +261,63 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		// Fill the probe update infos
 		RuntimeProbeUpdateInfos&	ProbeUpdateInfos = m_pSB_RuntimeProbeUpdateInfos->m[ProbeUpdateIndex];
 
-		ProbeUpdateInfos.ProbeIndex = ProbeIndex;
+		ProbeUpdateInfos.Index = ProbeIndex;
+		ProbeUpdateInfos.SetsStart = TotalSetsCount;
 		ProbeUpdateInfos.SetsCount = Probe.SetsCount;
+		ProbeUpdateInfos.EmissiveSetsStart = TotalEmissiveSetsCount;
+		ProbeUpdateInfos.EmissiveSetsCount = Probe.EmissiveSetsCount;
 		memcpy_s( ProbeUpdateInfos.SHStatic, sizeof(ProbeUpdateInfos.SHStatic), Probe.pSHBounceStatic, 9*sizeof(NjFloat3) );
 		memcpy_s( ProbeUpdateInfos.SHOcclusion, sizeof(ProbeUpdateInfos.SHOcclusion), Probe.pSHOcclusion, 9*sizeof(float) );
 
-		ProbeUpdateInfos.SamplingPointsStart = SamplingPointIndex;
+		ProbeUpdateInfos.SamplingPointsStart = TotalSamplingPointsCount;
 
 		// Fill the set update infos
-		int	SetSamplingPointIndex = 0;
+		int	SetSamplingPointsCount = 0;
 		for ( U32 SetIndex=0; SetIndex < Probe.SetsCount; SetIndex++ )
 		{
-			ProbeStruct::SetInfos				Set = Probe.pSetInfos[SetIndex];
-			RuntimeProbeUpdateInfos::SetInfos&	SetUpdateInfos = ProbeUpdateInfos.Sets[SetIndex];
+			ProbeStruct::SetInfos		Set = Probe.pSetInfos[SetIndex];
+			RuntimeProbeUpdateSetInfos&	SetUpdateInfos = m_pSB_RuntimeProbeSetInfos->m[TotalSetsCount+SetIndex];
 
-			memcpy_s( SetUpdateInfos.SH, sizeof(SetUpdateInfos.SH), Set.pSHBounce, 9*sizeof(NjFloat3) );
-			SetUpdateInfos.SamplingPointIndex = SetSamplingPointIndex;
+			SetUpdateInfos.SamplingPointsStart = SetSamplingPointsCount;
 			SetUpdateInfos.SamplingPointsCount = Set.SamplesCount;
+			memcpy_s( SetUpdateInfos.SH, sizeof(SetUpdateInfos.SH), Set.pSHBounce, 9*sizeof(NjFloat3) );
 
-			// Copy sampling points
-			memcpy_s( &m_pSB_RuntimeSamplingPointInfos->m[SamplingPointIndex], Set.SamplesCount*sizeof(RuntimeSamplingPointInfos), Set.pSamples, Set.SamplesCount*sizeof(ProbeStruct::SetInfos::Sample) );
+			// Copy sampling points (fortunately it's the same static & runtime structures)
+			memcpy_s( &m_pSB_RuntimeSamplingPointInfos->m[TotalSamplingPointsCount], Set.SamplesCount*sizeof(RuntimeSamplingPointInfos), Set.pSamples, Set.SamplesCount*sizeof(ProbeStruct::SetInfos::Sample) );
 
-			SamplingPointIndex += Set.SamplesCount;
-			SetSamplingPointIndex += Set.SamplesCount;
+			TotalSamplingPointsCount += Set.SamplesCount;
+			SetSamplingPointsCount += Set.SamplesCount;
 		}
 
-		ProbeUpdateInfos.SamplingPointsCount = SamplingPointIndex - ProbeUpdateInfos.SamplingPointsStart;	// Total amount of sampling points for the probe
+		// Fill the emissive set update infos
+		for ( U32 EmissiveSetIndex=0; EmissiveSetIndex < Probe.EmissiveSetsCount; EmissiveSetIndex++ )
+		{
+			ProbeStruct::EmissiveSetInfos		EmissiveSet = Probe.pEmissiveSetInfos[EmissiveSetIndex];
+			RuntimeProbeUpdateEmissiveSetInfos&	EmissiveSetUpdateInfos = m_pSB_RuntimeProbeEmissiveSetInfos->m[TotalEmissiveSetsCount+EmissiveSetIndex];
+
+			ASSERT( EmissiveSet.pEmissiveMaterial != NULL, "Invalid emissive material!" );
+			EmissiveSetUpdateInfos.EmissiveColor = EmissiveSet.pEmissiveMaterial->m_EmissiveColor;
+
+			memcpy_s( EmissiveSetUpdateInfos.SH, sizeof(EmissiveSetUpdateInfos.SH), EmissiveSet.pSHEmissive, 9*sizeof(float) );
+		}
+
+		TotalSetsCount += Probe.SetsCount;
+		TotalEmissiveSetsCount += Probe.EmissiveSetsCount;
+
+		ProbeUpdateInfos.SamplingPointsCount = TotalSamplingPointsCount - ProbeUpdateInfos.SamplingPointsStart;	// Total amount of sampling points for the probe
 	}
 
 	m_pSB_RuntimeProbeUpdateInfos->Write( ProbeUpdatesCount );
 	m_pSB_RuntimeProbeUpdateInfos->SetInput( 10 );
 
-	m_pSB_RuntimeSamplingPointInfos->Write( SamplingPointIndex );
-	m_pSB_RuntimeSamplingPointInfos->SetInput( 11 );
+	m_pSB_RuntimeProbeSetInfos->Write( TotalSetsCount );
+	m_pSB_RuntimeProbeSetInfos->SetInput( 11 );
+
+	m_pSB_RuntimeProbeEmissiveSetInfos->Write( TotalEmissiveSetsCount );
+	m_pSB_RuntimeProbeEmissiveSetInfos->SetInput( 12 );
+
+	m_pSB_RuntimeSamplingPointInfos->Write( TotalSamplingPointsCount );
+	m_pSB_RuntimeSamplingPointInfos->SetInput( 13 );
 
 	// Do the update!
 	USING_COMPUTESHADER_START( *m_pCSUpdateProbe )
@@ -412,13 +463,11 @@ void	EffectGlobalIllum2::PreComputeProbes()
 	const float		Z_INFINITY = 1e6f;
 	const float		Z_INFINITY_TEST = 0.99f * Z_INFINITY;
 
-	ppRTCubeMap[0] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 3, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain albedo (cube 0) + (normal + distance) (cube 1) + (static lighting + emissive surface index) (cube 2)
-//	ppRTCubeMap[1] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain normal + distance
+	pRTCubeMap = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 3, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain albedo (cube 0) + (normal + distance) (cube 1) + (static lighting + emissive surface index) (cube 2)
 	Texture2D*	pRTCubeMapDepth = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
 
-	Texture2D*	ppRTCubeMapStaging[2];
-	ppRTCubeMapStaging[0] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 3, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );		// Will contain albedo
-//	ppRTCubeMapStaging[1] = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );		// Will contain normal + distance
+	Texture2D*	pRTCubeMapStaging;
+	pRTCubeMapStaging = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 3, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );		// Will contain albedo
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -521,15 +570,12 @@ void	EffectGlobalIllum2::PreComputeProbes()
 		// 1] Render Albedo + Normal + Distance + Static lit + Emissive Mat ID
 
 		// Clear cube map
-		m_Device.ClearRenderTarget( ppRTCubeMap[0]->GetTargetView( 0, 0, 6 ), NjFloat4::Zero );
-		m_Device.ClearRenderTarget( ppRTCubeMap[0]->GetTargetView( 0, 6, 6 ), NjFloat4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
+		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 0, 6 ), NjFloat4::Zero );
+		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6, 6 ), NjFloat4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
 
 		NjFloat4	Bisou = NjFloat4::Zero;
 		((U32&) Bisou.w) = 0xFFFFFFFFUL;
-		m_Device.ClearRenderTarget( ppRTCubeMap[0]->GetTargetView( 0, 12, 6 ), Bisou );
-
-// 		m_Device.ClearRenderTarget( *ppRTCubeMap[0], NjFloat4::Zero );
-// 		m_Device.ClearRenderTarget( *ppRTCubeMap[1], NjFloat4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
+		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 12, 6 ), Bisou );
 
 		NjFloat4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
 		ProbeLocal2World.Normalize();
@@ -552,11 +598,9 @@ void	EffectGlobalIllum2::PreComputeProbes()
 			m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
 
 			ID3D11RenderTargetView*	ppViews[3] = {
-				ppRTCubeMap[0]->GetTargetView( 0, CubeFaceIndex, 1 ),
-				ppRTCubeMap[0]->GetTargetView( 0, 6+CubeFaceIndex, 1 ),
-				ppRTCubeMap[0]->GetTargetView( 0, 12+CubeFaceIndex, 1 )
-// 				ppRTCubeMap[0]->GetTargetView( 0, CubeFaceIndex, 1 ),
-// 				ppRTCubeMap[1]->GetTargetView( 0, CubeFaceIndex, 1 )
+				pRTCubeMap->GetTargetView( 0, CubeFaceIndex, 1 ),
+				pRTCubeMap->GetTargetView( 0, 6+CubeFaceIndex, 1 ),
+				pRTCubeMap->GetTargetView( 0, 12+CubeFaceIndex, 1 )
 			};
 			m_Device.SetRenderTargets( CUBE_MAP_SIZE, CUBE_MAP_SIZE, 3, ppViews, pRTCubeMapDepth->GetDepthStencilView() );
 
@@ -576,22 +620,15 @@ void	EffectGlobalIllum2::PreComputeProbes()
 
 		//////////////////////////////////////////////////////////////////////////
 		// 2] Read back cube map and create the SH coefficients
-		ppRTCubeMapStaging[0]->CopyFrom( *ppRTCubeMap[0] );
-//		ppRTCubeMapStaging[1]->CopyFrom( *ppRTCubeMap[1] );
+		pRTCubeMapStaging->CopyFrom( *pRTCubeMap );
 
 #if 1	// Define this to load probe sets from disk
 
 		char	pTemp[1024];
 
-#if 1
-		// Save to disk
+#if 1	// Save to disk
 		sprintf_s( pTemp, "Probe%02d.pom", ProbeIndex );
-		ppRTCubeMapStaging[0]->Save( pTemp );
-
-//		sprintf_s( pTemp, "Probe_Albedo%02d.pom", ProbeIndex );
-//		ppRTCubeMapStaging[0]->Save( pTemp );
-//		sprintf_s( pTemp, "Probe_Geometry%02d.pom", ProbeIndex );
-//		ppRTCubeMapStaging[1]->Save( pTemp );
+		pRTCubeMapStaging->Save( pTemp );
 #endif
 
 		FILE*	pFile = NULL;
@@ -619,14 +656,28 @@ void	EffectGlobalIllum2::PreComputeProbes()
 		fread_s( &Probe.BBoxMax.y, sizeof(Probe.BBoxMax.y), sizeof(float), 1, pFile );
 		fread_s( &Probe.BBoxMax.z, sizeof(Probe.BBoxMax.z), sizeof(float), 1, pFile );
 
-
-		// Read the amount of sets
-		fread_s( &Probe.SetsCount, sizeof(Probe.SetsCount), sizeof(U32), 1, pFile );
-		Probe.SetsCount = MIN( MAX_PROBE_SETS, Probe.SetsCount );	// Don't read more than we can chew!
-
-		for ( U32 SetIndex=0; SetIndex < Probe.SetsCount; SetIndex++ )
+		// Read static SH
+		for ( int i=0; i < 9; i++ )
 		{
-			ProbeStruct::SetInfos&	S = Probe.pSetInfos[SetIndex];
+			fread_s( &Probe.pSHBounceStatic[i].x, sizeof(Probe.pSHBounceStatic[i].x), sizeof(float), 1, pFile );
+			fread_s( &Probe.pSHBounceStatic[i].y, sizeof(Probe.pSHBounceStatic[i].y), sizeof(float), 1, pFile );
+			fread_s( &Probe.pSHBounceStatic[i].z, sizeof(Probe.pSHBounceStatic[i].z), sizeof(float), 1, pFile );
+		}
+
+		// Read occlusion SH
+		for ( int i=0; i < 9; i++ )
+			fread_s( &Probe.pSHOcclusion[i], sizeof(Probe.pSHOcclusion[i]), sizeof(float), 1, pFile );
+
+		// Read the amount of dynamic sets
+		U32	SetsCount = 0;
+		fread_s( &SetsCount, sizeof(SetsCount), sizeof(U32), 1, pFile );
+		Probe.SetsCount = MIN( MAX_PROBE_SETS, SetsCount );	// Don't read more than we can chew!
+
+		// Read the sets
+		ProbeStruct::SetInfos	DummySet;
+		for ( U32 SetIndex=0; SetIndex < SetsCount; SetIndex++ )
+		{
+			ProbeStruct::SetInfos&	S = SetIndex < Probe.SetsCount ? Probe.pSetInfos[SetIndex] : DummySet;	// We load into a useless set if out of range...
 
 			// Read position, normal, albedo
 			fread_s( &S.Position.x, sizeof(S.Position.x), sizeof(float), 1, pFile );
@@ -648,8 +699,6 @@ void	EffectGlobalIllum2::PreComputeProbes()
 			fread_s( &S.Albedo.x, sizeof(S.Albedo.x), sizeof(float), 1, pFile );
 			fread_s( &S.Albedo.y, sizeof(S.Albedo.y), sizeof(float), 1, pFile );
 			fread_s( &S.Albedo.z, sizeof(S.Albedo.z), sizeof(float), 1, pFile );
-
-//			fread_s( &S.EmissiveMatID, sizeof(S.EmissiveMatID), sizeof(U32), 1, pFile );
 
 			// Read SH coefficients
 			for ( int i=0; i < 9; i++ )
@@ -699,6 +748,45 @@ void	EffectGlobalIllum2::PreComputeProbes()
 // Let's just force the probes to be axis-aligned, shall we??? :) (lazy man talking) (no, seriously, it makes sense after all)
 		}
 
+		// Read the amount of emissive sets
+		U32	EmissiveSetsCount;
+		fread_s( &EmissiveSetsCount, sizeof(EmissiveSetsCount), sizeof(U32), 1, pFile );
+		Probe.EmissiveSetsCount = MIN( MAX_PROBE_EMISSIVE_SETS, EmissiveSetsCount );	// Don't read more than we can chew!
+
+		// Read the sets
+		ProbeStruct::EmissiveSetInfos	DummyEmissiveSet;
+		for ( U32 SetIndex=0; SetIndex < EmissiveSetsCount; SetIndex++ )
+		{
+			ProbeStruct::EmissiveSetInfos&	S = SetIndex < Probe.EmissiveSetsCount ? Probe.pEmissiveSetInfos[SetIndex] : DummyEmissiveSet;	// We load into a useless set if out of range...
+
+			// Read position, normal
+			fread_s( &S.Position.x, sizeof(S.Position.x), sizeof(float), 1, pFile );
+			fread_s( &S.Position.y, sizeof(S.Position.y), sizeof(float), 1, pFile );
+			fread_s( &S.Position.z, sizeof(S.Position.z), sizeof(float), 1, pFile );
+
+			fread_s( &S.Normal.x, sizeof(S.Normal.x), sizeof(float), 1, pFile );
+			fread_s( &S.Normal.y, sizeof(S.Normal.y), sizeof(float), 1, pFile );
+			fread_s( &S.Normal.z, sizeof(S.Normal.z), sizeof(float), 1, pFile );
+
+			fread_s( &S.Tangent.x, sizeof(S.Tangent.x), sizeof(float), 1, pFile );
+			fread_s( &S.Tangent.y, sizeof(S.Tangent.y), sizeof(float), 1, pFile );
+			fread_s( &S.Tangent.z, sizeof(S.Tangent.z), sizeof(float), 1, pFile );
+
+			fread_s( &S.BiTangent.x, sizeof(S.BiTangent.x), sizeof(float), 1, pFile );
+			fread_s( &S.BiTangent.y, sizeof(S.BiTangent.y), sizeof(float), 1, pFile );
+			fread_s( &S.BiTangent.z, sizeof(S.BiTangent.z), sizeof(float), 1, pFile );
+
+			// Read emissive material ID
+			U32	EmissiveMatID;
+			fread_s( &EmissiveMatID, sizeof(EmissiveMatID), sizeof(U32), 1, pFile );
+			ASSERT( EmissiveMatID < U32(m_Scene.m_MaterialsCount), "Material ID out of range!" );
+			S.pEmissiveMaterial = m_Scene.m_ppMaterials[EmissiveMatID];
+
+			// Read SH coefficients
+			for ( int i=0; i < 9; i++ )
+				fread_s( &S.pSHEmissive[i], sizeof(S.pSHEmissive[i]), sizeof(float), 1, pFile );
+		}
+
 		fclose( pFile );
 
 #else
@@ -710,10 +798,8 @@ void	EffectGlobalIllum2::PreComputeProbes()
 
 		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
 		{
-			D3D11_MAPPED_SUBRESOURCE&	MappedFaceAlbedo = ppRTCubeMapStaging[0]->Map( 0, CubeFaceIndex );
-			D3D11_MAPPED_SUBRESOURCE&	MappedFaceGeometry = ppRTCubeMapStaging[0]->Map( 0, 6+CubeFaceIndex );
-// 			D3D11_MAPPED_SUBRESOURCE&	MappedFaceAlbedo = ppRTCubeMapStaging[0]->Map( 0, CubeFaceIndex );
-// 			D3D11_MAPPED_SUBRESOURCE&	MappedFaceGeometry = ppRTCubeMapStaging[1]->Map( 0, CubeFaceIndex );
+			D3D11_MAPPED_SUBRESOURCE&	MappedFaceAlbedo = pRTCubeMapStaging->Map( 0, CubeFaceIndex );
+			D3D11_MAPPED_SUBRESOURCE&	MappedFaceGeometry = pRTCubeMapStaging->Map( 0, 6+CubeFaceIndex );
 
 			// Update cube map face camera transform
 			NjFloat4x4	Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
@@ -762,10 +848,8 @@ void	EffectGlobalIllum2::PreComputeProbes()
 				}
 			}
 
-// 			ppRTCubeMapStaging[0]->UnMap( 0, CubeFaceIndex );
-// 			ppRTCubeMapStaging[1]->UnMap( 0, CubeFaceIndex );
-			ppRTCubeMapStaging[0]->UnMap( 0, CubeFaceIndex );
-			ppRTCubeMapStaging[0]->UnMap( 0, 6+CubeFaceIndex );
+			pRTCubeMapStaging->UnMap( 0, CubeFaceIndex );
+			pRTCubeMapStaging->UnMap( 0, 6+CubeFaceIndex );
 		}
 
 		//////////////////////////////////////////////////////////////////////////
@@ -798,19 +882,17 @@ TODO! At the moment we only read back the only pre-computed set from disk
 	// Release
 #if 1
 m_Device.RemoveRenderTargets();
-ppRTCubeMap[0]->SetPS( 64 );
-//ppRTCubeMap[1]->SetPS( 65 );
+pRTCubeMap->SetPS( 64 );
 #endif
 
 	delete pCBCubeMapCamera;
 
-//	delete ppRTCubeMapStaging[1];
-	delete ppRTCubeMapStaging[0];
+	delete pRTCubeMapStaging;
 
 	delete pRTCubeMapDepth;
-//###
-// 	delete ppRTCubeMap[1];
-// 	delete ppRTCubeMap[0];
+
+//### Keep it for debugging!
+// 	delete pRTCubeMap;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1113,7 +1195,6 @@ void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMater
 {
 	// Upload the object's CB
 	memcpy( &m_pCB_Object->m.Local2World, &_Mesh.m_Local2World, sizeof(NjFloat4x4) );
-//m_pCB_Object->m.Local2World = NjFloat4x4::Identity;
 	m_pCB_Object->UpdateData();
 
 	for ( int PrimitiveIndex=0; PrimitiveIndex < _Mesh.m_PrimitivesCount; PrimitiveIndex++ )
@@ -1138,13 +1219,15 @@ void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMater
 
 		// Upload the primitive's material CB
 		m_pCB_Material->m.ID = SceneMaterial.m_ID;
-		m_pCB_Material->m.DiffuseColor = SceneMaterial.m_DiffuseAlbedo;
+		m_pCB_Material->m.DiffuseAlbedo = SceneMaterial.m_DiffuseAlbedo;
 		m_pCB_Material->m.HasDiffuseTexture = pTexDiffuseAlbedo != NULL;
-		m_pCB_Material->m.SpecularColor = SceneMaterial.m_SpecularAlbedo;
+		m_pCB_Material->m.SpecularAlbedo = SceneMaterial.m_SpecularAlbedo;
 		m_pCB_Material->m.HasSpecularTexture = pTexSpecularAlbedo != NULL;
-		m_pCB_Material->m.SpecularExponent = SceneMaterial.m_SpecularExponent.x;
 		m_pCB_Material->m.EmissiveColor = SceneMaterial.m_EmissiveColor;
+		m_pCB_Material->m.SpecularExponent = SceneMaterial.m_SpecularExponent.x;
 		m_pCB_Material->UpdateData();
+
+		int		Test = sizeof(CBMaterial);
 
 		// Render
 		pMat->Use();
