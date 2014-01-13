@@ -9,8 +9,9 @@ private:	// CONSTANTS
 	static const U32		CUBE_MAP_SIZE = 128;
 	static const U32		MAX_NEIGHBOR_PROBES = 32;
 
-	static const U32		MAX_LIGHTS = 2;
+	static const U32		MAX_LIGHTS = 64;
 	static const U32		MAX_PROBE_SETS = 16;
+	static const U32		MAX_PROBE_EMISSIVE_SETS = 16;
 	static const U32		MAX_SET_SAMPLES = 64;				// Accept a maximum of 64 samples per set
 
 	static const U32		MAX_PROBE_UPDATES_PER_FRAME = 16;	// Update a maximum of 16 probes per frame
@@ -20,14 +21,17 @@ private:	// CONSTANTS
 
 protected:	// NESTED TYPES
 	
+#pragma pack( push, 4 )
+
 	struct CBGeneral
 	{
-		bool		ShowIndirect;
+		U32			ShowIndirect;
  	};
 
 	struct CBScene
 	{
-		U32			LightsCount;
+		U32			StaticLightsCount;
+		U32			DynamicLightsCount;
 		U32			ProbesCount;
  	};
 
@@ -38,10 +42,15 @@ protected:	// NESTED TYPES
 
 	struct CBMaterial
 	{
-		NjFloat3	DiffuseColor;
-		bool		HasDiffuseTexture;
-		NjFloat3	SpecularColor;
-		bool		HasSpecularTexture;
+		U32			ID;
+		NjFloat3	DiffuseAlbedo;
+
+		U32			HasDiffuseTexture;
+		NjFloat3	SpecularAlbedo;
+
+		U32			HasSpecularTexture;
+		NjFloat3	EmissiveColor;
+
 		float		SpecularExponent;
 	};
 
@@ -71,8 +80,62 @@ protected:	// NESTED TYPES
 		NjFloat4	AmbientSH[9];				// Ambient sky (padded!)
  	};
 
+	// Structured Buffers
+	// Light buffer
+	struct	LightStruct
+	{
+		Scene::Light::LIGHT_TYPE	Type;
+		NjFloat3	Position;
+		NjFloat3	Direction;
+		NjFloat3	Color;
+		NjFloat4	Parms;						// X=Falloff radius, Y=Cutoff radius, Z=Cos(Falloff angle), W=Cos(Cutoff angle)
+	};
 
-	// The probe structure
+	// Runtime probes buffer that we'll use to light objects
+	struct RuntimeProbe 
+	{
+		NjFloat3	Position;
+		float		Radius;
+		NjFloat3	pSH[9];
+	};
+
+	// Probes update buffers
+	struct RuntimeProbeUpdateInfos
+	{
+		U32			Index;							// The index of the probe we're updating
+		U32			SetsStart;						// Index of the first set for the probe
+		U32			SetsCount;						// Amount of sets for the probe
+		U32			EmissiveSetsStart;				// Index of the first emissive set for the probe
+		U32			EmissiveSetsCount;				// Amount of emissive sets for the probe
+		U32			SamplingPointsStart;			// Index of the first sampling point for the probe
+		U32			SamplingPointsCount;			// Amount of sampling points for the probe
+		NjFloat3	SHStatic[9];					// Precomputed static SH (static geometry + static lights)
+		float		SHOcclusion[9];					// Directional ambient occlusion for the probe
+	};
+
+	struct	RuntimeProbeUpdateSetInfos
+	{
+		U32			SamplingPointsStart;			// Index of the first sampling point
+		U32			SamplingPointsCount;			// Amount of sampling points
+		NjFloat3	SH[9];							// SH for the set
+	};
+
+	struct	RuntimeProbeUpdateEmissiveSetInfos
+	{
+		NjFloat3	EmissiveColor;					// Color of the emissive material
+		float		SH[9];							// SH for the set
+	};
+
+	struct RuntimeSamplingPointInfos
+	{
+		NjFloat3	Position;						// World position of the sampling point
+		NjFloat3	Normal;							// World normal of the sampling point
+		float		Radius;							// Radius of the sampling point's disc approximation
+	};
+
+#pragma pack( pop )
+
+	// The static probe structure that we read from disk and stream/keep in memory when probes need updating
 	struct	ProbeStruct
 	{
 		Scene::Probe*	pSceneProbe;
@@ -107,7 +170,19 @@ protected:	// NESTED TYPES
 
 		}				pSetInfos[MAX_PROBE_SETS];
 
-		NjFloat3		pSHBouncedLight[9];		// The resulting bounced irradiance bounce * light(static+dynamic) for current frame
+		U32				EmissiveSetsCount;		// The amount of emissive sets for that probe
+		struct EmissiveSetInfos
+		{
+			NjFloat3		Position;			// The position of the emissive set
+			NjFloat3		Normal;				// The normal of the emissive set's plane
+			NjFloat3		Tangent;			// The longest principal axis of the set's points cluster (scaled by the length of the axis)
+			NjFloat3		BiTangent;			// The shortest principal axis of the set's points cluster (scaled by the length of the axis)
+			Scene::Material*	pEmissiveMaterial;	// Direct pointer to the material
+
+			float			pSHEmissive[9];		// The pre-computed SH that gives back how much the probe emits light
+		}				pEmissiveSetInfos[MAX_PROBE_EMISSIVE_SETS];
+
+		NjFloat3		pSHBouncedLight[9];		// The resulting bounced irradiance * light(static+dynamic) + emissive for current frame
 
 		// Clears the light bounce accumulator
 		void			ClearLightBounce( const NjFloat3 _pSHAmbient[9] );
@@ -115,7 +190,6 @@ protected:	// NESTED TYPES
 		// Computes the product of SHLight and SHBounce to get the SH coefficients for the bounced light
 		void			AccumulateLightBounce( const NjFloat3 _pSHSet[9] );
 	};
-
 
 
 private:	// FIELDS
@@ -126,6 +200,7 @@ private:	// FIELDS
 	Primitive&			m_ScreenQuad;
 
 	Material*			m_pMatRender;				// Displays the room
+	Material*			m_pMatRenderEmissive;		// Displays the room's emissive objects (area lights)
 	Material*			m_pMatRenderLights;			// Displays the lights as small emissive balls
 	Material*			m_pMatRenderCubeMap;		// Renders the room into a cubemap
 	Material*			m_pMatRenderNeighborProbe;	// Renders the neighbor probes as planes to form a 3D voronoï cell
@@ -153,54 +228,18 @@ private:	// FIELDS
  	CB<CBShadowMap>*	m_pCB_ShadowMap;
  	CB<CBUpdateProbes>*	m_pCB_UpdateProbes;
 
-	// Light buffer
-	struct	LightStruct
-	{
-		NjFloat3	Position;
-		NjFloat3	Color;
-		float		Radius;	// Light radius to compute the solid angle for the probe injection
-	};
-	SB<LightStruct>*	m_pSB_Lights;
-
-	// Runtime probes buffer
-	struct RuntimeProbe 
-	{
-		NjFloat3	Position;
-		float		Radius;
-		NjFloat3	pSHBounce[9];
-	};
+	// Runtime scene lights & probes
+	SB<LightStruct>*	m_pSB_LightsStatic;
+	SB<LightStruct>*	m_pSB_LightsDynamic;
 	SB<RuntimeProbe>*	m_pSB_RuntimeProbes;
 
-
-	// Probes
+	// Probes Update
 	int					m_ProbesCount;
 	ProbeStruct*		m_pProbes;
-
-	struct RuntimeProbeUpdateInfos
-	{
-		U32			ProbeIndex;						// The index of the probe we're updating
-		U32			SetsCount;						// Amount of sets for that probe
-		U32			SamplingPointsStart;			// Index of the first sampling point for the probe
-		U32			SamplingPointsCount;			// Amount of sampling points for the probe
-		NjFloat3	SHStatic[9];					// Precomputed static SH (static geometry + static lights)
-		float		SHOcclusion[9];					// Directional ambient occlusion for the probe
-
-		struct	SetInfos
-		{
-			NjFloat3	SH[9];						// SH for the set
-			U32			SamplingPointIndex;			// Index of the first sampling point
-			U32			SamplingPointsCount;		// Amount of sampling points
-		}	Sets[MAX_PROBE_SETS];
-	};
-	SB<RuntimeProbeUpdateInfos>*	m_pSB_RuntimeProbeUpdateInfos;
-
-	struct RuntimeSamplingPointInfos
-	{
-		NjFloat3	Position;						// World position of the sampling point
-		NjFloat3	Normal;							// World normal of the sampling point
-		float		Radius;							// Radius of the sampling point's disc approximation
-	};
-	SB<RuntimeSamplingPointInfos>*	m_pSB_RuntimeSamplingPointInfos;
+	SB<RuntimeProbeUpdateInfos>*			m_pSB_RuntimeProbeUpdateInfos;
+	SB<RuntimeProbeUpdateSetInfos>*			m_pSB_RuntimeProbeSetInfos;
+	SB<RuntimeProbeUpdateEmissiveSetInfos>*	m_pSB_RuntimeProbeEmissiveSetInfos;
+	SB<RuntimeSamplingPointInfos>*			m_pSB_RuntimeSamplingPointInfos;
 
 	// Params
 public:

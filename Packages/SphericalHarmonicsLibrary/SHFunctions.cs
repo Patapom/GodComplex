@@ -980,6 +980,74 @@ namespace SphericalHarmonics
 			return	ConvolvedCoeffs;
 		}
 
+		// Filtering stolen from http://csc.lsu.edu/~kooima/sht/sh.hpp
+		// Apply a Hanning window of width w (usually the SH order).
+		public static void	FilterHanning( WMath.Vector[] _SH, int w )
+		{
+			for (int l = 0; l < 3; l++)
+				if ( l > w )
+					Filter( _SH, l, 0 );
+				else
+					Filter( _SH, l, (float) ((Math.Cos(Math.PI * l / w) + 1.0) * 0.5) );
+		}
+
+		// Apply a Lanczos window of width w (usually the SH order).
+		public static void	FilterLanczos( WMath.Vector[] _SH, int w )
+		{
+			for (int l = 0; l < 3; l++)
+				if ( l == 0 )
+					Filter( _SH, l, 1 );
+				else
+					Filter( _SH, l, (float) (Math.Sin(Math.PI * l / w) / (Math.PI * l / w)) );
+		}
+
+		// Apply a Gaussian window of width w (usually the SH order).
+		public static void	FilterGaussian( WMath.Vector[] _SH, int w )
+		{
+			for ( int l = 0; l < 3; l++ )
+				Filter( _SH, l, (float) Math.Exp( -(Math.PI * l / w) * (Math.PI * l / w) / 2.0 ) );
+		}
+
+		// Modulate all coefficients of degree l by scalar a.
+		private static void	Filter( WMath.Vector[] _SH, int l, float a )
+		{
+			for ( int m=-l; m <= l; m++ )
+				_SH[l*(l+1)+m] *= a;
+		}
+
+		// Apply a Hanning window of width w (usually the SH order).
+		public static void	FilterHanning( float[] _SH, int w )
+		{
+			for (int l = 0; l < 3; l++)
+				if ( l > w )
+					Filter( _SH, l, 0 );
+				else
+					Filter( _SH, l, (float) ((Math.Cos(Math.PI * l / w) + 1.0) * 0.5) );
+		}
+
+		// Apply a Lanczos window of width w (usually the SH order).
+		public static void	FilterLanczos( float[] _SH, int w )
+		{
+			for (int l = 0; l < 3; l++)
+				if ( l == 0 )
+					Filter( _SH, l, 1 );
+				else
+					Filter( _SH, l, (float) (Math.Sin(Math.PI * l / w) / (Math.PI * l / w)) );
+		}
+
+		// Apply a Gaussian window of width w (usually the SH order).
+		public static void	FilterGaussian( float[] _SH, int w )
+		{
+			for ( int l = 0; l < 3; l++ )
+				Filter( _SH, l, (float) Math.Exp( -(Math.PI * l / w) * (Math.PI * l / w) / 2.0 ) );
+		}
+		// Modulate all coefficients of degree l by scalar a.
+		private static void	Filter( float[] _SH, int l, float a )
+		{
+			for ( int m=-l; m <= l; m++ )
+				_SH[l*(l+1)+m] *= a;
+		}
+
 		#endregion
 
 		#region ZH Helpers

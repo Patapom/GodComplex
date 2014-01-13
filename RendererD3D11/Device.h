@@ -109,6 +109,7 @@ public:	 // METHODS
 	// Helpers
 	void	ClearRenderTarget( const Texture2D& _Target, const NjFloat4& _Color );
 	void	ClearRenderTarget( const Texture3D& _Target, const NjFloat4& _Color );
+	void	ClearRenderTarget( ID3D11RenderTargetView* _pTargetView, const NjFloat4& _Color );
 	void	ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth=true, bool _bClearStencil=true );
 	void	SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
 	void	SetRenderTarget( const Texture3D& _Target, const Texture2D* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );

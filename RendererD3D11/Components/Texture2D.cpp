@@ -33,10 +33,11 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, 
 	, m_bIsCubeMap( false )
 	, m_pCachedDepthStencilView( NULL )
 {
-	if ( m_ArraySize == -6 )
+	if ( m_ArraySize < 0 )
 	{	// Special cube map case!
 		ASSERT( m_Width == m_Height, "When creating a cube map, width & height must match!" );
-		m_ArraySize = 6;
+		m_ArraySize = -_ArraySize;
+		ASSERT( (m_ArraySize % 6) == 0, "Cube map array size must be multiples of 6!" );
 		m_bIsCubeMap = true;
 	}
 	ASSERT( m_ArraySize > 0, "Invalid array size!" );
@@ -180,11 +181,21 @@ ID3D11ShaderResourceView*	Texture2D::GetShaderView( int _MipLevelStart, int _Mip
 	// Create a new one
 	D3D11_SHADER_RESOURCE_VIEW_DESC	Desc;
 	Desc.Format = m_bIsDepthStencil ? ((IDepthStencilFormatDescriptor&) m_Format).ReadableDirectXFormat() : m_Format.DirectXFormat();
-	Desc.ViewDimension = m_ArraySize > 1 ? (m_bIsCubeMap ? D3D10_1_SRV_DIMENSION_TEXTURECUBE : D3D11_SRV_DIMENSION_TEXTURE2DARRAY) : D3D11_SRV_DIMENSION_TEXTURE2D;
-	Desc.Texture2DArray.MostDetailedMip = _MipLevelStart;
-	Desc.Texture2DArray.MipLevels = _MipLevelsCount;
-	Desc.Texture2DArray.FirstArraySlice = _ArrayStart;
-	Desc.Texture2DArray.ArraySize = _ArraySize;
+	Desc.ViewDimension = m_ArraySize > 1 ? (m_bIsCubeMap ? (m_ArraySize > 6 ? D3D10_1_SRV_DIMENSION_TEXTURECUBEARRAY : D3D10_1_SRV_DIMENSION_TEXTURECUBE) : D3D11_SRV_DIMENSION_TEXTURE2DARRAY) : D3D11_SRV_DIMENSION_TEXTURE2D;
+	if ( m_bIsCubeMap )
+	{
+		Desc.TextureCubeArray.MostDetailedMip = _MipLevelStart;
+		Desc.TextureCubeArray.MipLevels = _MipLevelsCount;
+		Desc.TextureCubeArray.First2DArrayFace = _ArrayStart;
+		Desc.TextureCubeArray.NumCubes = _ArraySize / 6;
+	}
+	else
+	{
+		Desc.Texture2DArray.MostDetailedMip = _MipLevelStart;
+		Desc.Texture2DArray.MipLevels = _MipLevelsCount;
+		Desc.Texture2DArray.FirstArraySlice = _ArrayStart;
+		Desc.Texture2DArray.ArraySize = _ArraySize;
+	}
 
 	ID3D11ShaderResourceView*	pView;
 	Check( m_Device.DXDevice().CreateShaderResourceView( m_pTexture, &Desc, &pView ) );

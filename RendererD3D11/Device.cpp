@@ -324,12 +324,17 @@ void	Device::Exit()
 
 void	Device::ClearRenderTarget( const Texture2D& _Target, const NjFloat4& _Color )
 {
-	m_pDeviceContext->ClearRenderTargetView( _Target.GetTargetView( 0, 0, 0 ), &_Color.x );
+	ClearRenderTarget( _Target.GetTargetView( 0, 0, 0 ), _Color );
 }
 
 void	Device::ClearRenderTarget( const Texture3D& _Target, const NjFloat4& _Color )
 {
-	m_pDeviceContext->ClearRenderTargetView( _Target.GetTargetView( 0, 0, 0 ), &_Color.x );
+	ClearRenderTarget( _Target.GetTargetView( 0, 0, 0 ), _Color );
+}
+
+void	Device::ClearRenderTarget( ID3D11RenderTargetView* _pTargetView, const NjFloat4& _Color )
+{
+	m_pDeviceContext->ClearRenderTargetView( _pTargetView, &_Color.x );
 }
 
 void	Device::ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth, bool _bClearStencil )

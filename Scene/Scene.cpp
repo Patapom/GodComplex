@@ -69,7 +69,6 @@ void	Scene::Render( const Node* _pNode, const ISceneRenderer& _SceneRenderer ) c
 		Render( _pNode->m_ppChildren[ChildIndex], _SceneRenderer );
 }
 
-
 Scene::Node*	Scene::ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChild )
 {
 	if ( _pPrevious == NULL )
@@ -443,6 +442,10 @@ void	Scene::Material::Init( const U8*& _pData, const ISceneTagger& _SceneTagger 
 	m_SpecularExponent.x = ReadF32( _pData );
 	m_SpecularExponent.y = ReadF32( _pData );
 	m_SpecularExponent.z = ReadF32( _pData );
+
+	m_EmissiveColor.x = ReadF32( _pData );
+	m_EmissiveColor.y = ReadF32( _pData );
+	m_EmissiveColor.z = ReadF32( _pData );
 
 	ReadEndMaterialMarker( _pData );
 

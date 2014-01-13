@@ -200,6 +200,12 @@ namespace FBXTestConverter
 			_W.Write( P != null ? P.AsFloat3.Value.Y : 0.0f );
 			_W.Write( P != null ? P.AsFloat3.Value.Z : 0.0f );
 
+			// Write emissive
+			P = _Material.Find( "EmissiveColor" );
+			_W.Write( P != null ? P.AsFloat3.Value.X : 0.0f );
+			_W.Write( P != null ? P.AsFloat3.Value.Y : 0.0f );
+			_W.Write( P != null ? P.AsFloat3.Value.Z : 0.0f );
+
 			// Write end marker
 			_W.Write( (ushort) 0x1234 );
 		}

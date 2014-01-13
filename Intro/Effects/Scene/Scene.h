@@ -7,7 +7,7 @@
 template<typename> class CB;
 class	MaterialBank;
 
-class Scene
+class EffectScene
 {
 private:	// CONSTANTS
 
@@ -76,7 +76,7 @@ public:		// NESTED TYPES
 
 	protected:		// FIELDS
 
-		Scene&			m_Owner;
+		EffectScene&	m_Owner;
 		const char*		m_pName;
 
 		bool			m_bPRSDirty;
@@ -92,7 +92,7 @@ public:		// NESTED TYPES
 
 	public:		// METHODS
 
-		Object( Scene& _Owner, const char* _pName );
+		Object( EffectScene& _Owner, const char* _pName );
 		~Object();
 
 		void		SetPRS( const NjFloat3& _Position, const NjFloat4& _Rotation, const NjFloat3& _Scale=NjFloat3::One );
@@ -190,8 +190,8 @@ public:		// PROPERTIES
 
 public:		// METHODS
 
-	Scene( Device& _Device );
-	~Scene();
+	EffectScene( Device& _Device );
+	~EffectScene();
 
 	void		Update( float _Time, float _DeltaTime );
 	void		Render( Material& _Material, bool _bDepthPass=false ) const;
@@ -216,4 +216,4 @@ public:		// METHODS
 };
 
 
-// typedef	Scene::Object::Primitive::MaterialParameters	PrimitiveMaterial;
+// typedef	EffectScene::Object::Primitive::MaterialParameters	PrimitiveMaterial;

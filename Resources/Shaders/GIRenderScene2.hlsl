@@ -5,6 +5,7 @@
 #include "Inc/Global.hlsl"
 #include "Inc/SH.hlsl"
 #include "Inc/ShadowMap.hlsl"
+#include "Inc/GI.hlsl"
 
 //[
 cbuffer	cbGeneral	: register( b9 )
@@ -13,59 +14,9 @@ cbuffer	cbGeneral	: register( b9 )
 };
 //]
 
-//[
-cbuffer	cbScene	: register( b10 )
-{
-	uint		_LightsCount;
-	uint		_ProbesCount;
-};
-//]
-
-//[
-cbuffer	cbObject	: register( b11 )
-{
-	float4x4	_Local2World;
-};
-//]
-
-//[
-cbuffer	cbMaterial	: register( b12 )
-{
-	float3		_DiffuseAlbedo;
-	bool		_HasDiffuseTexture;
-	float3		_SpecularAlbedo;
-	bool		_HasSpecularTexture;
-	float		_SpecularExponent;
-};
-//]
-
-
-Texture2D<float4>	_TexDiffuseAlbedo : register( t10 );
-Texture2D<float4>	_TexSpecularAlbedo : register( t11 );
-
 // DEBUG!
 TextureCube<float4>	_TexCubemapProbe0 : register( t64 );
 TextureCube<float4>	_TexCubemapProbe1 : register( t65 );
-
-
-// Structured Buffers with our lights & probes
-struct	LightStruct
-{
-	float3		Position;
-	float3		Color;
-	float		Radius;	// Light radius to compute the solid angle for the probe injection
-};
-StructuredBuffer<LightStruct>	_SBLights : register( t8 );
-
-// This tiny probe struct is only 120 bytes long!! \o/ ^^
-struct	ProbeStruct
-{
-	float3		Position;
-	float		Radius;
-	float3		SHBounce[9];
-};
-StructuredBuffer<ProbeStruct>	_SBProbes : register( t9 );
-
 
 
 struct	VS_IN
@@ -146,7 +97,7 @@ PS_IN	VS( VS_IN _In )
 // }
 
 		for ( int i=0; i < 9; i++ )
-			SH[i] += ProbeWeight * Probe.SHBounce[i];
+			SH[i] += ProbeWeight * Probe.SH[i];
 
 		SumWeights += ProbeWeight;
 	}
@@ -171,6 +122,12 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 {
 //return float4( _In.SH0, 0 );
 
+#if EMISSIVE
+
+//return float4( 1, 0, 0, 1 );
+	return float4( _EmissiveColor, 1 );
+
+#else
 
 //	clip( 0.5 - _HasDiffuseTexture );
 	float3	DiffuseAlbedo = _DiffuseAlbedo;
@@ -195,36 +152,24 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Compute direct lighting
 	float3	View = normalize( _In.Position - _Camera2World[3].xyz );
-	float3	Normal = _In.Normal;
 
 	float3	AccumDiffuse = 0.0;
 	float3	AccumSpecular = 0.0;
-	for ( int LightIndex=0; LightIndex < _LightsCount; LightIndex++ )
+
+	// Process static lights
+	for ( int LightIndex=0; LightIndex < _StaticLightsCount; LightIndex++ )
 	{
-		LightStruct	LightSource = _SBLights[LightIndex];
-
-		float3	Irradiance;
-		float3	Light;
-		if ( LightSource.Radius >= 0.0 )
-		{	// Compute a standard point light
-			Light = LightSource.Position - _In.Position;
-			float	Distance2Light = length( Light );
-			float	InvDistance2Light = 1.0 / Distance2Light;
-			Light *= InvDistance2Light;
-
-			Irradiance = LightSource.Color * InvDistance2Light * InvDistance2Light;
-		}
-		else
-		{	// Compute a sneaky directional with shadow map
-			Light = LightSource.Position;	// We're directly given the direction here
-			Irradiance = LightSource.Color;	// Simple!
-
-			Irradiance *= ComputeShadow( _In.Position, 0.0 );
-		}
-
-		float	NdotL = saturate( dot( Normal, Light ) );
-		AccumDiffuse += Irradiance * NdotL;
+		LightStruct	LightSource = _SBLightsStatic[LightIndex];
+		AccumDiffuse += AccumulateLight( _In.Position, _In.Normal, LightSource );
 	}
+
+	// Process dynamic lights
+	for ( int LightIndex=0; LightIndex < _DynamicLightsCount; LightIndex++ )
+	{
+		LightStruct	LightSource = _SBLightsDynamic[LightIndex];
+		AccumDiffuse += AccumulateLight( _In.Position, _In.Normal, LightSource );
+	}
+
 	AccumDiffuse *= DiffuseAlbedo;
 
 //return float4( _SBLights[0].Position, 0 );
@@ -232,8 +177,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Compute indirect lighting
 	float3	SHIndirect[9] = { _In.SH0, _In.SH1, _In.SH2, _In.SH3, _In.SH4, _In.SH5, _In.SH6, _In.SH7, _In.SH8 };
-	float3	Indirect = DiffuseAlbedo * EvaluateSHIrradiance( Normal, SHIndirect );
-//	float3	Indirect = DiffuseAlbedo * EvaluateSH( Normal, SHIndirect );
+	float3	Indirect = DiffuseAlbedo * EvaluateSHIrradiance( _In.Normal, SHIndirect );
+//	float3	Indirect = DiffuseAlbedo * EvaluateSH( _In.Normal, SHIndirect );
 
 //return float4( _In.SH0, 0 );
 
@@ -242,5 +187,7 @@ Indirect *= _ShowIndirect ? 1.0 : 0.0;
 
 //Indirect *= _In.__Position.x < 1280.0/2.0 ? 1.0 : 0.0;
 
-	return float4( Indirect + AccumDiffuse, 0 );
+	return float4( Indirect + AccumDiffuse, 1 );
+
+#endif
 }

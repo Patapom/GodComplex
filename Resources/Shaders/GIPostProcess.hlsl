@@ -22,7 +22,7 @@ VS_IN	VS( VS_IN _In )	{ return _In; }
 Texture2D<float4>	_TexSourceImage : register( t10 );
 
 // DEBUG!
-TextureCube<float4>		_TexCubemapProbe0 : register( t64 );
+TextureCubeArray<float4>_TexCubemapProbe0 : register( t64 );
 TextureCube<float4>		_TexCubemapProbe1 : register( t65 );
 Texture2DArray<uint>	_TexCubemapProbe2 : register( t66 );
 
@@ -144,7 +144,15 @@ if ( false )
 }
 
 
-// return _TexCubemapProbe0.Sample( LinearClamp, View );
+// Test dot products
+// float3 TestNormal = _TexCubemapProbe0.Sample( LinearClamp, float4( View, 1.0 ) ).xyz;
+// if ( dot( TestNormal, View ) > 0.0 )
+// 	return float4( 1, 0, 0, 1 );
+// return -dot( TestNormal, View );
+
+
+//return _TexCubemapProbe0.Sample( LinearClamp, float4( View, 1.0 ) );
+// return asint( _TexCubemapProbe0.Sample( LinearClamp, float4( View, 2.0 ) ).w );
 // //return _TexCubemapProbe1.Sample( LinearClamp, View );
 // return 0.1 * _TexCubemapProbe1.Sample( LinearClamp, View ).w;
 

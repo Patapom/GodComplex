@@ -47,7 +47,7 @@ protected:	// NESTED TYPES
 		NjFloat3	dUV;
 	};
 
-	// The probe structure
+	// The probe structure, computed or read from disk
 	struct	ProbeStruct
 	{
 		Scene::Probe*	pSceneProbe;

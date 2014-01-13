@@ -13,13 +13,14 @@
 //////////////////////////////////////////////////////////////////////////
 // 
 // I'm testing several methods to create the sets:
+// 
 //	(1) k-means clustering (http://en.wikipedia.org/wiki/K-means_clustering), that consists in creating initial sets
 //		using an educated guess and aggregating pixels to each set depending on a metric.
 //		The pixel gets assigned to the set whose metric is the lowest. I'm currently using a
 //		metric mixing spatial distance, hue distance (for albedo similarity) and normal discrepancies measurement.
 //
 //		I believe it could give interesting results with a little effort but I'm lazy and I think it's still a bit
-//		dodgy because it doesn't handle pixels vicinity and tends to fragment sets.
+//		dodgy because it doesn't handle pixels vicinity and tends to fragment sets a lot.
 // 
 //	(2) Filling method, it's an experimental method of mine that consists in browsing the pixels of the cube map and
 //		perform a fill operation by joining adjacent pixels if and only if they're sufficiently close enough in terms
@@ -62,6 +63,11 @@ namespace ProbeSHEncoder
 		[System.Diagnostics.DebuggerDisplay( "H={AlbedoHSL.x} S={AlbedoHSL.y} L={Albedo.z} P=({Position.x}, {Position.y}, {Position.z})" )]
 		public class	Pixel
 		{
+			static readonly double		f0 = 0.5 / Math.Sqrt(Math.PI);
+			static readonly double		f1 = Math.Sqrt(3.0) * f0;
+			static readonly double		f2 = Math.Sqrt(15.0) * f0;
+			static readonly double		f3 = Math.Sqrt(5.0) * 0.5 * f0;
+
 			public int			PixelIndex;			// Index of the pixel in the scene pixels (can help us locate the cube map face + position of the pixel when finding adjacent pixels)
 			public int			FaceIndex;
 			public int			FaceX;
@@ -72,16 +78,36 @@ namespace ProbeSHEncoder
 			public WMath.Vector	Albedo;				// Material albedo
 			public WMath.Vector	AlbedoHSL;			// Material albedo in HSL format
 			public float		F0;					// Material Fresnel coefficient
+			public WMath.Vector	StaticLitColor;		// Color of the statically lit environment
+			public int			EmissiveMatID = -1;	// ID of the emissive material or -1 if not emissive
+			public bool			IsEmissive	{ get { return EmissiveMatID != -1; } }
 			public double		SolidAngle;			// Solid angle covered by the pixel
 			public double		Importance;			// A measure of "importance" of the scene pixel = -dot( View, Normal ) / Distance²
 			public float		Distance;			// Distance to hit point
 			public bool			Infinity;			// True if not a scene pixel (i.e. sky pixel)
 			public WMath.Vector	View;				// View vector pointing to that pixel
 
+			public double[]		SHCoeffs = new double[9];
+
 			public Set			ParentSet = null;
 			public int			ParentSetSampleIndex = -1;	// Index of the nearest sample this pixel is part of
 
 			public static float	IMPORTANCE_THRESOLD = 0.0f;
+
+			public void			InitSH()
+			{
+
+				// Build SH coeffs for that pixel
+				SHCoeffs[0] = f0;
+				SHCoeffs[1] = -f1 * View.x;
+				SHCoeffs[2] = f1 * View.y;
+				SHCoeffs[3] = -f1 * View.z;
+				SHCoeffs[4] = f2 * View.x * View.z;
+				SHCoeffs[5] = -f2 * View.x * View.y;
+				SHCoeffs[6] = f3 * (3.0 * View.y*View.y - 1.0);
+				SHCoeffs[7] = -f2 * View.z * View.y;
+				SHCoeffs[8] = f2 * 0.5 * (View.z*View.z - View.x*View.x);
+			}
 
 			public void			SetAlbedo( WMath.Vector _Albedo )
 			{
@@ -150,6 +176,8 @@ namespace ProbeSHEncoder
 			{
 				if ( ParentSet != null )
 					return false;	// We don't accept pixels that are already part of a set!
+				if ( IsEmissive )
+					return true;	// Accept all emissive pixels no matter what!
 				if ( Infinity )
 					return false;	// We only accept scene pixels!
 				if ( Importance < IMPORTANCE_THRESOLD )
@@ -163,7 +191,7 @@ namespace ProbeSHEncoder
 		/// A set is a special pixel with a centroid, a normal and an average albedo
 		/// It also serves as accumulator for all pixels registering to the set
 		/// </summary>
-		[System.Diagnostics.DebuggerDisplay( "C={SetCardinality} I={Importance} H={AlbedoHSL.x} S={AlbedoHSL.y} L={Albedo.z} P=({Position.x}, {Position.y}, {Position.z})" )]
+		[System.Diagnostics.DebuggerDisplay( "C={SetPixels.Count} I={Importance} H={AlbedoHSL.x} S={AlbedoHSL.y} L={Albedo.z} P=({Position.x}, {Position.y}, {Position.z})" )]
 		public class	Set : Pixel, IComparer<Pixel>
 		{
 			public List<Pixel>		SetPixels = new List<Pixel>();	// The list of pixels belonging to this set
@@ -189,6 +217,10 @@ namespace ProbeSHEncoder
 public WMath.Vector		AccumCentroid = WMath.Vector.Zero;
 public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 
+
+static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
+
+
 			/// <summary>
 			/// Performs the SH encoding of all the pixels belonging to the set
 			/// It simply amounts to summing the directional SH contribution of every pixels in the set, assuming they
@@ -196,11 +228,6 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 			/// </summary>
 			public void			EncodeSH()
 			{
-				double		f0 = 0.5 / Math.Sqrt(Math.PI);
-				double		f1 = Math.Sqrt(3.0) * f0;
-				double		f2 = Math.Sqrt(15.0) * f0;
-				double		f3 = Math.Sqrt(5.0) * 0.5 * f0;
-
 				double		AlbedoR = Albedo.x / Math.PI;
 				double		AlbedoG = Albedo.y / Math.PI;
 				double		AlbedoB = Albedo.z / Math.PI;
@@ -208,21 +235,9 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 				double[]	SHR = new double[9];
 				double[]	SHG = new double[9];
 				double[]	SHB = new double[9];
-				double[]	SHCoeffs = new double[9];
 
 				foreach ( Pixel P in SetPixels )
 				{
-					// Build SH coeffs for that pixel
-					SHCoeffs[0] = f0;
-					SHCoeffs[1] = -f1 * P.View.x;
-					SHCoeffs[2] = f1 * P.View.y;
-					SHCoeffs[3] = -f1 * P.View.z;
-					SHCoeffs[4] = f2 * P.View.x * P.View.z;
-					SHCoeffs[5] = -f2 * P.View.x * P.View.y;
-					SHCoeffs[6] = f3 * (3.0 * P.View.y*P.View.y - 1.0);
-					SHCoeffs[7] = -f2 * P.View.z * P.View.y;
-					SHCoeffs[8] = f2 * 0.5 * (P.View.z*P.View.z - P.View.x*P.View.x);
-
 					// Compute weight factor based on set's normal and pixel's normal but also based on pixel's normal and view direction
 					double	Factor  = P.SolidAngle									// Solid angle for SH weight, obvious
 									* Math.Max( 0.0, (P.Normal | this.Normal) )		// This weight is to account for the fact that the point is well aligned with the set's plane the lighting was computed for
@@ -231,15 +246,40 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 
 					for ( int i=0; i < 9; i++ )
 					{
-						SHR[i] += SHCoeffs[i] * Factor * AlbedoR;
-						SHG[i] += SHCoeffs[i] * Factor * AlbedoG;
-						SHB[i] += SHCoeffs[i] * Factor * AlbedoB;
+						SHR[i] += P.SHCoeffs[i] * Factor * AlbedoR;
+						SHG[i] += P.SHCoeffs[i] * Factor * AlbedoG;
+						SHB[i] += P.SHCoeffs[i] * Factor * AlbedoB;
 					}
 				}
 
 				double	Normalizer = 1.0 / (4.0 * Math.PI);
 				for ( int i=0; i < 9; i++ )
 					SH[i] = new WMath.Vector( (float) (Normalizer * SHR[i]), (float) (Normalizer * SHG[i]), (float) (Normalizer * SHB[i]) );
+
+				// Apply filtering
+				SphericalHarmonics.SHFunctions.FilterLanczos( SH, FILTER_WINDOW_SIZE );
+			}
+
+			/// <summary>
+			/// Performs the emissive SH encoding of all the pixels belonging to the set
+			/// It simply amounts to summing the directional SH contribution of every pixels in the set
+			/// </summary>
+			public void			EncodeEmissiveSH()
+			{
+				double[]	SHCoeffs = new double[9];
+
+				foreach ( Pixel P in SetPixels )
+					for ( int i=0; i < 9; i++ )
+						SHCoeffs[i] += P.SHCoeffs[i] * P.SolidAngle;
+
+				double	Normalizer = 1.0 / (4.0 * Math.PI);
+				for ( int i=0; i < 9; i++ )
+					SH[i] = (float) (Normalizer * SHCoeffs[i]) * WMath.Vector.One;
+
+				// Apply filtering
+//				SphericalHarmonics.SHFunctions.FilterLanczos( FILTER_WINDOW_SIZE );
+//				SphericalHarmonics.SHFunctions.FilterGaussian( FILTER_WINDOW_SIZE );	// Smoothes A LOT but according to the source of filters code, it's better if using HDR light sources
+				SphericalHarmonics.SHFunctions.FilterHanning( SH, FILTER_WINDOW_SIZE );
 			}
 
 			/// <summary>
@@ -253,7 +293,7 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 			public void			FindPrincipalAxes()
 			{
 				// Create an arbitrary tangent space
-				WMath.Vector	Y = Normal;;
+				WMath.Vector	Y = Normal;
 				WMath.Vector	X = WMath.Vector.UnitY ^ Y;
 				WMath.Vector	Z;
 				if ( X.Length < 1e-6 )
@@ -401,7 +441,12 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 		public double				m_MaxDistance = 0.0;
 		public WMath.BoundingBox	m_BBox = new WMath.BoundingBox();
 
+		public WMath.Vector[]		m_StaticSH = new WMath.Vector[9];
+
+		public float[]				m_OcclusionSH = new float[9];
+
 		public Set[]				m_Sets = new Set[0];
+		public Set[]				m_EmissiveSets = new Set[0];
 
 		public List<Pixel>			m_ProbePixels = new List<Pixel>();	// List of all pixels in the probe
 		public List<Pixel>			m_ScenePixels = new List<Pixel>();	// List of pixels that participate to the scene (i.e. not at infinity)
@@ -429,14 +474,14 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 		{
 			base.OnLoad( e );
 
-			try
-			{
-				LoadCubeMap( new FileInfo( "../../Probe_Albedo.pom" ), new FileInfo( "../../Probe_Geometry.pom" ) );
-			}
-			catch ( Exception _e )
-			{
-				MessageBox( "Failed to load default probe!\n\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
-			}
+// 			try
+// 			{
+// 				LoadCubeMap( new FileInfo( "../../Probe_Albedo.pom" ), new FileInfo( "../../Probe_Geometry.pom" ) );
+// 			}
+// 			catch ( Exception _e )
+// 			{
+// 				MessageBox( "Failed to load default probe!\n\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+// 			}
 		}
 
 		private void	PrepareCubeMapFaceTransforms()
@@ -486,24 +531,24 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 			}
 		}
 
-		private void	LoadCubeMap( FileInfo _POMAlbedo, FileInfo _POMGeometry )
+		private bool	LoadCubeMap( FileInfo _POMCubeMap )
 		{
 			try
 			{
 				buttonCompute.Enabled = false;
+				buttonComputeFilling.Enabled = false;
+
+				// Load and convert POM files into a useable cube map
+				Nuaj.Cirrus.Utility.TextureFilePOM	POM = new Nuaj.Cirrus.Utility.TextureFilePOM();
+				POM.Load( _POMCubeMap );
+				if ( POM.m_ArraySizeOrDepth < 6 )
+					return false;	// Not a cube map
+				if ( POM.m_Width != CUBE_MAP_SIZE || POM.m_Height != CUBE_MAP_SIZE || POM.m_ArraySizeOrDepth != 3*6 )
+					throw new Exception( "Unexpected cube map size!" );
 
 				m_CubeMap = new Pixel[6][,];
 				m_ProbePixels.Clear();
 				m_ScenePixels.Clear();
-
-				// Load and convert POM files into a useable cube map
-				Nuaj.Cirrus.Utility.TextureFilePOM	POM0 = new Nuaj.Cirrus.Utility.TextureFilePOM();
-				Nuaj.Cirrus.Utility.TextureFilePOM	POM1 = new Nuaj.Cirrus.Utility.TextureFilePOM();
-				POM0.Load( _POMAlbedo );
-				POM1.Load( _POMGeometry );
-
-				if ( POM0.m_Width != POM1.m_Width || POM0.m_Height != POM1.m_Height || POM0.m_ArraySizeOrDepth != POM1.m_ArraySizeOrDepth || POM0.m_Width != CUBE_MAP_SIZE || POM0.m_Height != CUBE_MAP_SIZE || POM0.m_ArraySizeOrDepth != 6 )
-					throw new Exception( "Unexpected cube map size!" );
 
 				double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
 				double	SumSolidAngle = 0.0;
@@ -514,6 +559,7 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 				m_MaxDistance = 0.0;
 				m_BBox = WMath.BoundingBox.Empty;
 
+				int		NegativeImportancePixelsCount = 0;
 				for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
 				{
 					m_CubeMap[CubeFaceIndex] = new Pixel[CUBE_MAP_SIZE,CUBE_MAP_SIZE];
@@ -522,7 +568,7 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 							m_CubeMap[CubeFaceIndex][X,Y] = new Pixel() { PixelIndex = X + CUBE_MAP_SIZE * (Y + CUBE_MAP_SIZE * CubeFaceIndex), FaceIndex = CubeFaceIndex, FaceX = X, FaceY = Y };
 
 					// Fill up albedo
-					using ( MemoryStream S = new MemoryStream( POM0.m_Content[CubeFaceIndex] ) )
+					using ( MemoryStream S = new MemoryStream( POM.m_Content[CubeFaceIndex] ) )
 						using ( BinaryReader R = new BinaryReader( S ) )
 							for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
 								for ( int X=0; X < CUBE_MAP_SIZE; X++ )
@@ -540,8 +586,25 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 									m_CubeMap[CubeFaceIndex][X,Y].SetAlbedo( new WMath.Vector( Red, Green, Blue ) );
 								}
 
+					// Fill up static lit environment and emissive IDs
+					using ( MemoryStream S = new MemoryStream( POM.m_Content[12+CubeFaceIndex] ) )
+						using ( BinaryReader R = new BinaryReader( S ) )
+							for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
+								for ( int X=0; X < CUBE_MAP_SIZE; X++ )
+								{
+									Pixel	Pix = m_CubeMap[CubeFaceIndex][X,Y];
+
+									float	Red = R.ReadSingle();
+									float	Green = R.ReadSingle();
+									float	Blue = R.ReadSingle();
+									int		ID = (int) R.ReadUInt32();
+
+									Pix.StaticLitColor = new WMath.Vector( Red, Green, Blue );
+									Pix.EmissiveMatID = ID;
+								}
+
 					// Fill up position & normal
-					using ( MemoryStream S = new MemoryStream( POM1.m_Content[CubeFaceIndex] ) )
+					using ( MemoryStream S = new MemoryStream( POM.m_Content[6+CubeFaceIndex] ) )
 						using ( BinaryReader R = new BinaryReader( S ) )
 							for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
 								for ( int X=0; X < CUBE_MAP_SIZE; X++ )
@@ -569,11 +632,21 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 
 									Pix.Position = wsPosition;
 									Pix.View = wsView;
-									Pix.Normal = new WMath.Vector( Nx, Ny, Nz );
+									Pix.Normal = new WMath.Vector( Nx, Ny, Nz ).Normalized;
 									Pix.SolidAngle = SolidAngle;
 									Pix.Importance = -(wsView | Pix.Normal) / (Distance * Distance);
+									if ( Pix.Importance < 0.0 )
+									{
+Pix.Normal = -Pix.Normal;
+Pix.Importance = -(wsView | Pix.Normal) / (Distance * Distance);
+//Pix.Importance = -Pix.Importance;
+NegativeImportancePixelsCount++;
+//										throw new Exception( "WTH?? Negative importance here!" );
+									}
 									Pix.Distance = Distance;
 									Pix.Infinity = Distance > Z_INFINITY_TEST;
+
+									Pix.InitSH();
 
 									m_ProbePixels.Add( Pix );
 									if ( m_CubeMap[CubeFaceIndex][X,Y].Infinity )
@@ -589,19 +662,147 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 								}
 				}
 
+if ( (float) NegativeImportancePixelsCount / (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6) > 0.1f )
+	throw new Exception( "More than 10% invalid pixels with inverted normals in that probe!" );
+
 				m_MeanDistance /= (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6);
 				m_MeanHarmonicDistance = (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6) / m_MeanHarmonicDistance;
 
 				// Redraw cube map...
 				outputPanel1.UpdateBitmap();
-
-				buttonCompute.Enabled = true;
 			}
 			catch ( Exception _e )
 			{
 				m_CubeMap = null;
-				throw _e;
+				throw new Exception( "Error while loading cube map \"" + _POMCubeMap.Name + "\": " + _e.Message );
 			}
+			finally
+			{
+				buttonCompute.Enabled = true;
+				buttonComputeFilling.Enabled = true;
+				buttonComputeFilling.Focus();
+			}
+
+			return true;
+		}
+
+		private void	SaveSets( FileInfo _FileName )
+		{
+			using ( FileStream Stream = _FileName.Create() )
+				using ( BinaryWriter W = new BinaryWriter( Stream ) )
+				{
+					// Write the mean, harmonic mean, min, max distances
+					W.Write( (float) m_MeanDistance );
+					W.Write( (float) m_MeanHarmonicDistance );
+					W.Write( (float) m_MinDistance );
+					W.Write( (float) m_MaxDistance );
+
+					// Write the BBox
+					W.Write( m_BBox.m_Min.x );
+					W.Write( m_BBox.m_Min.y );
+					W.Write( m_BBox.m_Min.z );
+					W.Write( m_BBox.m_Max.x );
+					W.Write( m_BBox.m_Max.y );
+					W.Write( m_BBox.m_Max.z );
+
+					// Write static SH
+					for ( int i=0; i < 9; i++ )
+					{
+						W.Write( m_StaticSH[i].x );
+						W.Write( m_StaticSH[i].y );
+						W.Write( m_StaticSH[i].z );
+					}
+
+					// Write occlusion SH
+					for ( int i=0; i < 9; i++ )
+						W.Write( m_OcclusionSH[i] );
+
+					// Write the amount of sets
+					W.Write( (UInt32) m_Sets.Length );
+
+					foreach ( Set S in m_Sets )
+					{
+						// Write position, normal, albedo
+						W.Write( S.Position.x );
+						W.Write( S.Position.y );
+						W.Write( S.Position.z );
+
+						W.Write( S.Normal.x );
+						W.Write( S.Normal.y );
+						W.Write( S.Normal.z );
+
+						W.Write( S.Tangent.x );
+						W.Write( S.Tangent.y );
+						W.Write( S.Tangent.z );
+
+						W.Write( S.BiTangent.x );
+						W.Write( S.BiTangent.y );
+						W.Write( S.BiTangent.z );
+
+							// Not used, just for information purpose
+						W.Write( (float) (S.Albedo.x / Math.PI) );
+						W.Write( (float) (S.Albedo.y / Math.PI) );
+						W.Write( (float) (S.Albedo.z / Math.PI) );
+
+						// Write SH coefficients
+						for ( int i=0; i < 9; i++ )
+						{
+							W.Write( S.SH[i].x );
+							W.Write( S.SH[i].y );
+							W.Write( S.SH[i].z );
+						}
+
+						// Write amount of samples
+						W.Write( (UInt32) S.Samples.Length );
+
+						// Write each sample
+						foreach ( Set.Sample Sample in S.Samples )
+						{
+							// Write position
+							W.Write( Sample.Position.x );
+							W.Write( Sample.Position.y );
+							W.Write( Sample.Position.z );
+
+							// Write normal
+							W.Write( Sample.Normal.x );
+							W.Write( Sample.Normal.y );
+							W.Write( Sample.Normal.z );
+
+							// Write radius
+							W.Write( Sample.Radius );
+						}
+					}
+
+					// Write the amount of emissive sets
+					W.Write( (UInt32) m_EmissiveSets.Length );
+
+					foreach ( Set S in m_EmissiveSets )
+					{
+						// Write position, normal, albedo
+						W.Write( S.Position.x );
+						W.Write( S.Position.y );
+						W.Write( S.Position.z );
+
+						W.Write( S.Normal.x );
+						W.Write( S.Normal.y );
+						W.Write( S.Normal.z );
+
+						W.Write( S.Tangent.x );
+						W.Write( S.Tangent.y );
+						W.Write( S.Tangent.z );
+
+						W.Write( S.BiTangent.x );
+						W.Write( S.BiTangent.y );
+						W.Write( S.BiTangent.z );
+
+						// Write emissive mat
+						W.Write( S.EmissiveMatID );
+
+						// Write SH coefficients (we only write luminance here, we don't have any color info)
+						for ( int i=0; i < 9; i++ )
+							W.Write( S.SH[i].x );
+					}
+				}
 		}
 
 		#region Helpers
@@ -630,7 +831,7 @@ public WMath.Vector		AccumNormal = WMath.Vector.Zero;
 		}
 		private void	MessageBox( string _Text, MessageBoxButtons _Buttons, MessageBoxIcon _Icon )
 		{
-			System.Windows.Forms.MessageBox.Show( this, _Text, "Shader Interpreter", _Buttons, _Icon );
+			System.Windows.Forms.MessageBox.Show( this, _Text, "SH Encoder", _Buttons, _Icon );
 		}
 
 		#endregion
@@ -816,10 +1017,9 @@ int	DEBUG_PixelIndex = 0;
 
 		private void buttonComputeFilling_Click( object sender, EventArgs e )
 		{
-			// 1] Clear the sets for each pixel
+			// Clear the sets for each pixel
 			foreach ( Pixel P in m_ProbePixels )
 				P.ParentSet = null;
-
 
 			// Setup the reference thresholds for pixels' acceptance
 //			Pixel.IMPORTANCE_THRESOLD = (float) ((4.0f * Math.PI / CUBE_MAP_FACE_SIZE) / (m_MeanDistance * m_MeanDistance));	// Compute an average solid angle threshold based on average pixels' distance
@@ -830,6 +1030,48 @@ int	DEBUG_PixelIndex = 0;
 			ANGULAR_THRESHOLD = (float) Math.Cos( 45.0 * floatTrackbarControlNormal.Value * Math.PI / 180 );	// 45° (we're very generous here!)
 			ALBEDO_HUE_THRESHOLD = 0.04f * floatTrackbarControlAlbedo.Value;									// Close colors!
 			ALBEDO_RGB_THRESHOLD = 0.32f * floatTrackbarControlAlbedo.Value;									// Close colors!
+
+			//////////////////////////////////////////////////////////////////////////
+			// 1] Compute occlusion & static lighting SH
+			double[]	SHR = new double[9];
+			double[]	SHG = new double[9];
+			double[]	SHB = new double[9];
+			double[]	SHOcclusion = new double[9];
+
+			for ( int PixelIndex=0; PixelIndex < m_ProbePixels.Count; PixelIndex++ )
+			{
+				Pixel	P = m_ProbePixels[PixelIndex];
+				for ( int i=0; i < 9; i++ )
+				{
+					SHR[i] += P.SHCoeffs[i] * P.SolidAngle * P.StaticLitColor.x;
+					SHG[i] += P.SHCoeffs[i] * P.SolidAngle * P.StaticLitColor.y;
+					SHB[i] += P.SHCoeffs[i] * P.SolidAngle * P.StaticLitColor.z;
+				}
+
+				if ( !P.Infinity )
+					continue;
+
+				// No obstacle means direct lighting from the ambient sky...
+				// Accumulate SH coefficients in that direction, weighted by the solid angle
+				for ( int i=0; i < 9; i++ )
+					SHOcclusion[i] += P.SolidAngle * P.SHCoeffs[i];
+			}
+
+			double	Normalizer = 1.0 / (4.0 * Math.PI);
+
+			for ( int i=0; i < 9; i++ )
+			{
+				m_StaticSH[i] = new WMath.Vector( (float) (Normalizer * SHR[i]), (float) (Normalizer * SHG[i]), (float) (Normalizer * SHB[i]) );
+				m_OcclusionSH[i] = (float) (Normalizer * SHOcclusion[i]);
+			}
+
+			// Apply filtering
+			SphericalHarmonics.SHFunctions.FilterLanczos( m_StaticSH, 3 );		// Lanczos should be okay for static lighting
+			SphericalHarmonics.SHFunctions.FilterHanning( m_OcclusionSH, 3 );
+
+			// Send to output panel for visual debugging
+			outputPanel1.SHStatic = m_StaticSH;
+			outputPanel1.SHOcclusion = m_OcclusionSH;
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -843,7 +1085,7 @@ DEBUG_PixelIndex = PixelIndex;
 				if ( P0.IsFloodFillAcceptable() )
 				{
 					// Create a new set for this pixel
-					Set	S = new Set() { Position = P0.Position, Normal = P0.Normal, Distance = P0.Distance };
+					Set	S = new Set() { Position = P0.Position, Normal = P0.Normal, Distance = P0.Distance, EmissiveMatID = P0.EmissiveMatID };
 						S.SetAlbedo( P0.Albedo );
 					Sets.Add( S );
 
@@ -851,12 +1093,21 @@ DEBUG_PixelIndex = PixelIndex;
 // if ( PixelIndex == 0x2680 )
 // 	P0.Albedo.x += 1e-6f;
 
+// if ( P0.IsEmissive )
+//  	P0.Albedo.x += 1e-6f;
+
+
 					// Flood fill adjacent pixels based on a criterion
  					List<Pixel>	SetRejectedPixels = new List<Pixel>();
 					try
 					{
 						S.SetPixels.Clear();
+
+						m_ScanlinePixelIndex = 0;	// VEEERY important line where we reset the pixel index of the pool of flood filled pixels!
 						FloodFill( S, S, P0, SetRejectedPixels );
+
+						if ( m_ScanlinePixelIndex == 0 )
+							throw new Exception( "Can't have empty sets!" );
 					}
 					catch ( Exception )
 					{
@@ -875,19 +1126,67 @@ DEBUG_PixelIndex = PixelIndex;
 				}
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			// Try and merge sets together
+
+				// Merge separate emissive sets that have the same mat ID together
+			List<Set>	EmissiveSets = new List<Set>();
+
+			m_Sets = Sets.ToArray();
+			for ( int SetIndex0=0; SetIndex0 < m_Sets.Length-1; SetIndex0++ )
+			{
+				Set	S0 = m_Sets[SetIndex0];
+				if ( S0.IsEmissive && S0.ParentSet == null )
+				{
+					// Remove it from regular sets and inscribe it as an emissive set
+					EmissiveSets.Add( S0 );
+					Sets.Remove( S0 );
+
+					// Merge with any other set with same Mat ID
+					for ( int SetIndex1=SetIndex0+1; SetIndex1 < m_Sets.Length; SetIndex1++ )
+					{
+						Set	S1 = m_Sets[SetIndex1];
+						if ( !S1.IsEmissive || S1.EmissiveMatID != S0.EmissiveMatID )
+							continue;
+
+						// Merge!
+						S0.Importance *= S0.SetPixels.Count;
+						S1.Importance *= S1.SetPixels.Count;
+						S0.SetPixels.AddRange( S1.SetPixels );
+						S0.Importance = (S0.Importance + S1.Importance) / S0.SetPixels.Count;
+
+						// Remove the merged set
+						Sets.Remove( S1 );
+						S1.ParentSet = S0;	// Mark S0 as its parent so it doesn't get processed again
+					}
+				}
+			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// Sort and cull unimportant sets
+
+			// Sort and cull sets above our designated maximum
 			Sets.Sort( this );
 			if ( Sets.Count > integerTrackbarControlK.Value )
 			{	// Cull sets above our chosen value
-				for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
+				for ( int SetIndex=integerTrackbarControlK.Value; SetIndex < Sets.Count; SetIndex++ )
 					Sets[SetIndex].SetIndex = -1;	// Invalid index for invalid sets!
 
 				Sets.RemoveRange( integerTrackbarControlK.Value, Sets.Count - integerTrackbarControlK.Value );
 			}
 
-			// Remove sets that contain less than 0.25% of our pixels (arbitrary!)
+			// Do the same for emissive sets
+			EmissiveSets.Sort( this );
+			if ( EmissiveSets.Count > integerTrackbarControlK.Value )
+			{	// Cull sets above our chosen value
+				for ( int SetIndex=integerTrackbarControlK.Value; SetIndex < EmissiveSets.Count; SetIndex++ )
+					EmissiveSets[SetIndex].SetIndex = -1;	// Invalid index for invalid sets!
+
+				EmissiveSets.RemoveRange( integerTrackbarControlK.Value, EmissiveSets.Count - integerTrackbarControlK.Value );
+			}
+			m_EmissiveSets = EmissiveSets.ToArray();	// Store as our final emissive sets
+
+			// Remove sets that contain less than 0.4% of our pixels (arbitrary!)
 			m_Sets = Sets.ToArray();
 			int	DiscardThreshold = (int) (0.004f * m_ScenePixels.Count);
 			foreach ( Set S in m_Sets )
@@ -940,12 +1239,35 @@ DEBUG_PixelIndex = PixelIndex;
 				// Count pixels in the set for statistics
 				SumCardinality += S.SetPixels.Count;
 
-				// Finally, encode SH & find principal axes & samples
+				// Finally, encode SH & find principal axes
 				S.EncodeSH();
-				S.FindPrincipalAxes();
+
+// Find a faster way!
+//				S.FindPrincipalAxes();
 			}
 
-			// Generate set samples
+			// Do the same for emissive sets
+			for ( int SetIndex=0; SetIndex < m_EmissiveSets.Length; SetIndex++ )
+			{
+				Set	S = m_EmissiveSets[SetIndex];
+				S.SetIndex = SetIndex;
+
+				// Post-process the pixels to find the one closest to the probe as our new centroid
+				Pixel			BestPixel = S.SetPixels[0];
+				foreach ( Pixel P in S.SetPixels )
+				{
+					if ( P.Distance < BestPixel.Distance )
+						BestPixel = P;
+				}
+
+				S.Position = BestPixel.Position;	// Our new winner!
+
+				// Finally, encode SH & find principal axes & samples
+				S.EncodeEmissiveSH();
+			}
+
+
+			// Generate samples for regular sets
 			int		TotalSamplesCount = integerTrackbarControlLightSamples.Value;
 			if ( TotalSamplesCount < m_Sets.Length )
 			{	// Force samples count to match sets count!
@@ -956,6 +1278,8 @@ DEBUG_PixelIndex = PixelIndex;
 			for ( int SetIndex=m_Sets.Length-1; SetIndex >= 0; SetIndex-- )	// We start from the smallest sets to ensure they get some samples
 			{
 				Set	S = m_Sets[SetIndex];
+				if ( S.IsEmissive )
+					throw new Exception( "Shouldn't be any emissive set left in the list of regular sets??!" );
 
 				int	SamplesCount = TotalSamplesCount * S.SetPixels.Count / SumCardinality;
 					SamplesCount = Math.Max( 1, SamplesCount );					// Ensure we have at least 1 sample no matter what!
@@ -978,13 +1302,23 @@ DEBUG_PixelIndex = PixelIndex;
 				foreach ( Set S in m_Sets )
 					SHSum[i] += S.SH[i];
 			}
-			outputPanel1.SH = SHSum;
+			outputPanel1.SHDynamic = SHSum;
+
+			SHSum = new WMath.Vector[9];
+			for ( int i=0; i < 9; i++ )
+			{
+				SHSum[i] = WMath.Vector.Zero;
+				foreach ( Set S in m_EmissiveSets )
+					SHSum[i] += S.SH[i];
+			}
+			outputPanel1.SHEmissive = SHSum;
 
 
 			//////////////////////////////////////////////////////////////////////////
 			// Refresh UI
 			// 
-			textBoxResults.Text = m_Sets.Length + " sets generated:\r\n\r\n";
+			textBoxResults.Text = m_EmissiveSets.Length + " emissive sets generated\r\n";
+			textBoxResults.Text += m_Sets.Length + " sets generated:\r\n\r\n";
 			for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
 			{
 				Set	S = m_Sets[SetIndex];
@@ -1008,6 +1342,9 @@ DEBUG_PixelIndex = PixelIndex;
 
 		int			RecursionLevel = 0;
 
+		private int		m_ScanlinePixelIndex = 0;
+		private Pixel[]	m_ScanlinePixelsPool = new Pixel[6 * CUBE_MAP_SIZE * CUBE_MAP_SIZE];
+
 		/// <summary>
 		/// This should be a faster version (and much less recursive!) than the original flood fill
 		/// The idea here is to process an entire scanline first (going left and right and collecting valid scanline pixels along the way)
@@ -1030,16 +1367,17 @@ DEBUG_PixelIndex = PixelIndex;
 // 	Console.WriteLine( "GOTCHA!" );
 
 			//////////////////////////////////////////////////////////////////////////
-//TODO => Use an iterative pool instead of so many lists! (every time we create a new list of many items, even if it contains a single pixel)			// Check the entire scanline
-			List<Pixel>	ScanlinePixels = new List<Pixel>( 4 * CUBE_MAP_SIZE );	// We know the maximum size of a scanline!
-			ScanlinePixels.Add( _P );	// This pixel is implicitly on the scanline
+			// Check the entire scanline
+			int	ScanlineStartIndex = m_ScanlinePixelIndex;
+
+			m_ScanlinePixelsPool[m_ScanlinePixelIndex++] = _P;	// This pixel is implicitly on the scanline
 
 			// Start going right
 			Pixel	Previous = _P;
 			Pixel	Current = FindAdjacentPixel( Previous, 1, 0 );
 			while ( CheckAndAcceptPixel( _S, Previous, Current, _SetRejectedPixels ) )
 			{
-				ScanlinePixels.Add( Current );
+				m_ScanlinePixelsPool[m_ScanlinePixelIndex++] = Current;
 				Previous = Current;
 				Current = FindAdjacentPixel( Current, 1, 0 );
 			}
@@ -1049,27 +1387,33 @@ DEBUG_PixelIndex = PixelIndex;
 			Current = FindAdjacentPixel( Previous, -1, 0 );
 			while ( CheckAndAcceptPixel( _S, Previous, Current, _SetRejectedPixels ) )
 			{
-				ScanlinePixels.Add( Current );
+				m_ScanlinePixelsPool[m_ScanlinePixelIndex++] = Current;
 				Previous = Current;
 				Current = FindAdjacentPixel( Current, -1, 0 );
 			}
 
 			RecursionLevel++;
-// 			if ( RecursionLevel > CUBE_MAP_SIZE )
-// 				throw new Exception();
+
+			int	ScanlineEndIndex = m_ScanlinePixelIndex;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Recurse to each pixel of the top scanline
-			foreach ( Pixel P in ScanlinePixels )
+			for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ )
 			{
+				Pixel	P = m_ScanlinePixelsPool[ScanlinePixelIndex];
 				Pixel	Top = FindAdjacentPixel( P, 0, 1 );
+
+// if ( Top.IsEmissive )
+// 	Top.PixelIndex = -1;
+
 				FloodFill( _S, P, Top, _SetRejectedPixels );
 			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// Recurse to each pixel of the bottom scanline
-			foreach ( Pixel P in ScanlinePixels )
+			for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ )
 			{
+				Pixel	P = m_ScanlinePixelsPool[ScanlinePixelIndex];
 				Pixel	Bottom = FindAdjacentPixel( P, 0, -1 );
 				FloodFill( _S, P, Bottom, _SetRejectedPixels );
 			}
@@ -1086,34 +1430,42 @@ DEBUG_PixelIndex = PixelIndex;
 			// Check some criterions for a match
 			bool	Accepted = false;
 
-			// First, let's check the angular discrepancy
-			float	Dot = _PreviousPixel.Normal | _P.Normal;
-			if ( Dot > ANGULAR_THRESHOLD )
+			// Emissive pixels get grouped together
+			if ( _PreviousPixel.IsEmissive || _P.IsEmissive )
 			{
-				// Next, let's check the distance discrepancy
-				float	DistanceDiff = Math.Abs( _PreviousPixel.Distance - _P.Distance );
-				float	ToleranceFactor = -(_P.Normal | _P.View);						// Weight by the surface's slope to be more tolerant for slant surfaces
-						DistanceDiff *= ToleranceFactor;
-				if ( DistanceDiff < DISTANCE_THRESHOLD )
+				Accepted = _PreviousPixel.EmissiveMatID == _P.EmissiveMatID;
+			}
+			else
+			{
+				// First, let's check the angular discrepancy
+				float	Dot = _PreviousPixel.Normal | _P.Normal;
+				if ( Dot > ANGULAR_THRESHOLD )
 				{
-					// Next, let's check the hue discrepancy
-// 					float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
-// 					float	HueDiff1 = 6.0f - HueDiff0;
-// 					float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
-// //							HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
-// 							HueDiff *= Math.Max( _PreviousPixel.AlbedoHSL.y, _P.AlbedoHSL.y );	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
-// 					if ( HueDiff < ALBEDO_HUE_THRESHOLD )
-// 					{
-// 						Accepted = true;	// Winner!
-// 					}
-
-
-					// Next, let's check color discrepancy
-					// I'm using the simplest metric here...
-					float	ColorDiff = (_PreviousPixel.Albedo - _P.Albedo).Length;
-					if ( ColorDiff < ALBEDO_RGB_THRESHOLD )
+					// Next, let's check the distance discrepancy
+					float	DistanceDiff = Math.Abs( _PreviousPixel.Distance - _P.Distance );
+					float	ToleranceFactor = -(_P.Normal | _P.View);						// Weight by the surface's slope to be more tolerant for slant surfaces
+							DistanceDiff *= ToleranceFactor;
+					if ( DistanceDiff < DISTANCE_THRESHOLD )
 					{
-						Accepted = true;	// Winner!
+						// Next, let's check the hue discrepancy
+// 						float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
+// 						float	HueDiff1 = 6.0f - HueDiff0;
+// 						float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
+// //								HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
+// 								HueDiff *= Math.Max( _PreviousPixel.AlbedoHSL.y, _P.AlbedoHSL.y );	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
+// 						if ( HueDiff < ALBEDO_HUE_THRESHOLD )
+// 						{
+// 							Accepted = true;	// Winner!
+// 						}
+
+
+						// Next, let's check color discrepancy
+						// I'm using the simplest metric here...
+						float	ColorDiff = (_PreviousPixel.Albedo - _P.Albedo).Length;
+						if ( ColorDiff < ALBEDO_RGB_THRESHOLD )
+						{
+							Accepted = true;	// Winner!
+						}
 					}
 				}
 			}
@@ -1132,86 +1484,90 @@ DEBUG_PixelIndex = PixelIndex;
 			return Accepted;
 		}
 
-		/// <summary>
-		/// The very recursive version that is quite annoying to debug!
-		/// </summary>
-		/// <param name="_S"></param>
-		/// <param name="_PreviousPixel"></param>
-		/// <param name="_P"></param>
-		/// <param name="_SetPixels"></param>
-		/// <param name="_SetRejectedPixels"></param>
-		private void	FloodFill_Recursive( Set _S, Pixel _PreviousPixel, Pixel _P, List<Pixel> _SetRejectedPixels )
-		{
-			if ( !_P.IsFloodFillAcceptable() )
-				return;
-
-			//////////////////////////////////////////////////////////////////////////
-			// Check some criterions for a match
-			bool	Accepted = false;
-
-			// First, let's check the angular discrepancy
-			float	Dot = _PreviousPixel.Normal | _P.Normal;
-			if ( Dot > ANGULAR_THRESHOLD )
-			{
-				// Next, let's check the distance discrepancy
-				float	DistanceDiff = Math.Abs( _PreviousPixel.Distance - _P.Distance );
-				float	ToleranceFactor = -(_P.Normal | _P.View);						// Weight by the surface's slope to be more tolerant for slant surfaces
-						DistanceDiff *= ToleranceFactor;
-				if ( DistanceDiff < DISTANCE_THRESHOLD )
+/*
+				/// <summary>
+				/// The very recursive version that is quite annoying to debug!
+				/// </summary>
+				/// <param name="_S"></param>
+				/// <param name="_PreviousPixel"></param>
+				/// <param name="_P"></param>
+				/// <param name="_SetPixels"></param>
+				/// <param name="_SetRejectedPixels"></param>
+				private void	FloodFill_Recursive( Set _S, Pixel _PreviousPixel, Pixel _P, List<Pixel> _SetRejectedPixels )
 				{
-					// Next, let's check the hue discrepancy
-					float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
-					float	HueDiff1 = 6.0f - HueDiff0;
-					float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
-							HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change hue quite fast
-					if ( HueDiff < ALBEDO_HUE_THRESHOLD )
+					if ( !_P.IsFloodFillAcceptable() )
+						return;
+
+					//////////////////////////////////////////////////////////////////////////
+					// Check some criterions for a match
+					bool	Accepted = false;
+
+					// First, let's check the angular discrepancy
+					float	Dot = _PreviousPixel.Normal | _P.Normal;
+					if ( Dot > ANGULAR_THRESHOLD )
 					{
-						Accepted = true;	// Winner!
+						// Next, let's check the distance discrepancy
+						float	DistanceDiff = Math.Abs( _PreviousPixel.Distance - _P.Distance );
+						float	ToleranceFactor = -(_P.Normal | _P.View);						// Weight by the surface's slope to be more tolerant for slant surfaces
+								DistanceDiff *= ToleranceFactor;
+						if ( DistanceDiff < DISTANCE_THRESHOLD )
+						{
+							// Next, let's check the hue discrepancy
+							float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
+							float	HueDiff1 = 6.0f - HueDiff0;
+							float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
+									HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change hue quite fast
+							if ( HueDiff < ALBEDO_HUE_THRESHOLD )
+							{
+								Accepted = true;	// Winner!
+							}
+						}
 					}
+
+					// Mark the pixel as member of this set, even if it's temporary (rejected pixels get removed in the end)
+					_P.ParentSet = _S;
+
+					if ( !Accepted )
+					{	// Sorry buddy, we'll add you to the rejects...
+						_SetRejectedPixels.Add( _P );
+						return;
+					}
+
+
+					//////////////////////////////////////////////////////////////////////////
+					// We got a new member for the set!
+					_S.SetPixels.Add( _P );
+
+
+		if ( DEBUG_PixelIndex == 0x700 )
+			Console.WriteLine( "R=" + RecursionLevel + " - S=" + _S.SetPixels.Count );
+
+		if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
+			Console.WriteLine( "GOTCHA!" );
+
+					//////////////////////////////////////////////////////////////////////////
+					// Recurse to 4 neighbors
+					RecursionLevel++;
+					if ( RecursionLevel > 10000 )
+						throw new Exception();
+
+					Pixel	L = FindAdjacentPixel( _P, -1, 0 );
+					FloodFill( _S, _P, L, _SetRejectedPixels );
+
+					Pixel	R = FindAdjacentPixel( _P, 1, 0 );
+					FloodFill( _S, _P, R, _SetRejectedPixels );
+
+					Pixel	D = FindAdjacentPixel( _P, 0, -1 );
+					FloodFill( _S, _P, D, _SetRejectedPixels );
+
+					Pixel	U = FindAdjacentPixel( _P, 0, 1 );
+					FloodFill( _S, _P, U, _SetRejectedPixels );
+
+					RecursionLevel--;
 				}
-			}
+*/
 
-			// Mark the pixel as member of this set, even if it's temporary (rejected pixels get removed in the end)
-			_P.ParentSet = _S;
-
-			if ( !Accepted )
-			{	// Sorry buddy, we'll add you to the rejects...
-				_SetRejectedPixels.Add( _P );
-				return;
-			}
-
-
-			//////////////////////////////////////////////////////////////////////////
-			// We got a new member for the set!
-			_S.SetPixels.Add( _P );
-
-
-if ( DEBUG_PixelIndex == 0x700 )
-	Console.WriteLine( "R=" + RecursionLevel + " - S=" + _S.SetPixels.Count );
-
-if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
-	Console.WriteLine( "GOTCHA!" );
-
-			//////////////////////////////////////////////////////////////////////////
-			// Recurse to 4 neighbors
-			RecursionLevel++;
-			if ( RecursionLevel > 10000 )
-				throw new Exception();
-
-			Pixel	L = FindAdjacentPixel( _P, -1, 0 );
-			FloodFill( _S, _P, L, _SetRejectedPixels );
-
-			Pixel	R = FindAdjacentPixel( _P, 1, 0 );
-			FloodFill( _S, _P, R, _SetRejectedPixels );
-
-			Pixel	D = FindAdjacentPixel( _P, 0, -1 );
-			FloodFill( _S, _P, D, _SetRejectedPixels );
-
-			Pixel	U = FindAdjacentPixel( _P, 0, 1 );
-			FloodFill( _S, _P, U, _SetRejectedPixels );
-
-			RecursionLevel--;
-		}
+		#region Adjacency Walker
 
 		const int	CUBE_MAP_FACE_SIZE = CUBE_MAP_SIZE * CUBE_MAP_SIZE;
 
@@ -1344,12 +1700,6 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 
 		private Pixel	FindAdjacentPixel( Pixel _P, int _Dx, int _Dy )
 		{
-// 			int	PixelIndex = _P.PixelIndex;
-// 			int	CubeFaceIndex = PixelIndex / CUBE_MAP_FACE_SIZE;
-// 			int	CubeFacePixelIndex = PixelIndex - CubeFaceIndex * CUBE_MAP_FACE_SIZE;
-// 			int	Y = CubeFacePixelIndex / CUBE_MAP_SIZE;
-// 			int	X = CubeFacePixelIndex - Y * CUBE_MAP_SIZE;
-
 			int	CubeFaceIndex = _P.FaceIndex;
 			int	X = _P.FaceX;
 			int	Y = _P.FaceY;
@@ -1395,6 +1745,8 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 
 		#endregion
 
+		#endregion
+
 		#region IComparer<Set> Members
 
 		public int Compare( EncoderForm.Set x, EncoderForm.Set y )
@@ -1427,6 +1779,18 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 		{
 			if ( (sender as RadioButton).Checked )
 				outputPanel1.Viz = OutputPanel.VIZ_TYPE.NORMAL;
+		}
+
+		private void radioButtonStaticLit_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.STATIC_LIT;
+		}
+
+		private void radioButtonEmissiveMatID_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.EMISSIVE_MAT_ID;
 		}
 
 		private void radioButtonSetIndex_CheckedChanged( object sender, EventArgs e )
@@ -1469,15 +1833,30 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 				outputPanel1.Viz = OutputPanel.VIZ_TYPE.SH;
 		}
 
+		private void checkBoxSHStatic_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanel1.ShowSHStatic = (sender as CheckBox).Checked;
+		}
+
+		private void checkBoxSHDynamic_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanel1.ShowSHDynamic = (sender as CheckBox).Checked;
+		}
+
+		private void checkBoxSHEmissive_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanel1.ShowSHEmissive = (sender as CheckBox).Checked;
+		}
+
+		private void checkBoxSHOcclusion_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanel1.ShowSHOcclusion = (sender as CheckBox).Checked;
+		}
+
 		private void radioButtonSetSamples_CheckedChanged( object sender, EventArgs e )
 		{
 			if ( (sender as RadioButton).Checked )
 				outputPanel1.Viz = OutputPanel.VIZ_TYPE.SET_SAMPLES;
-		}
-
-		private void checkBoxSetAverage_CheckedChanged( object sender, EventArgs e )
-		{
-			outputPanel1.ShowSetAverage = checkBoxSetAverage.Checked;
 		}
 
 		private void loadProbeToolStripMenuItem_Click( object sender, EventArgs e )
@@ -1493,24 +1872,7 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 			// Attempt to load the probe
 			try
 			{
-				string	ProbeAlbedoFileNameString = openFileDialog.FileName;
-				string	ProbeGeometryFileNameString = openFileDialog.FileName;
-				if ( ProbeAlbedoFileNameString.IndexOf( "Albedo" ) != -1 )
-					ProbeGeometryFileNameString = ProbeAlbedoFileNameString.Replace( "Albedo", "Geometry" );
-				else if ( ProbeAlbedoFileNameString.IndexOf( "Geometry" ) != -1 )
-					ProbeAlbedoFileNameString = ProbeAlbedoFileNameString.Replace( "Geometry", "Albedo" );
-				else
-					throw new Exception( "Expected either an albedo or geometry probe POM file!" );
-
-				FileInfo	ProbeAlbedoFileName = new FileInfo( ProbeAlbedoFileNameString );
-				if ( !ProbeAlbedoFileName.Exists )
-					throw new Exception( "Probe file for albedo not found!" );
-
-				FileInfo	ProbeGeometryFileName = new FileInfo( ProbeGeometryFileNameString );
-				if ( !ProbeGeometryFileName.Exists )
-					throw new Exception( "Probe file for geometry not found!" );
-
-				LoadCubeMap( ProbeAlbedoFileName, ProbeGeometryFileName );
+				LoadCubeMap( new FileInfo( openFileDialog.FileName ) );
 			}
 			catch ( Exception _e )
 			{
@@ -1534,79 +1896,73 @@ if ( DEBUG_PixelIndex == 0x700 && _S.SetPixels.Count == 2056 )
 			SetRegKey( "LastProbeSetFilename", saveFileDialog.FileName );
 
 			FileInfo	F = new FileInfo( saveFileDialog.FileName );
-			using ( FileStream Stream = F.Create() )
-				using ( BinaryWriter W = new BinaryWriter( Stream ) )
+			SaveSets( F );
+		}
+
+		private void batchEncodeToolStripMenuItem_Click( object sender, EventArgs e )
+		{
+			// Ask where to load
+			string	OldFolder = GetRegKey( "LastProbesFolderSource", Path.GetDirectoryName( m_ApplicationPath ) );
+			folderBrowserDialog.SelectedPath = OldFolder;
+			if ( folderBrowserDialog.ShowDialog( this ) != DialogResult.OK )
+				return;
+			SetRegKey( "LastProbesFolderSource", folderBrowserDialog.SelectedPath );
+
+			DirectoryInfo	SourceDir = new DirectoryInfo( folderBrowserDialog.SelectedPath );
+
+			// Ask where to save
+			OldFolder = GetRegKey( "LastProbesFolderTarget", Path.GetDirectoryName( m_ApplicationPath ) );
+			folderBrowserDialog.SelectedPath = OldFolder;
+			if ( folderBrowserDialog.ShowDialog( this ) != DialogResult.OK )
+				return;
+			SetRegKey( "LastProbesFolderTarget", folderBrowserDialog.SelectedPath );
+
+			DirectoryInfo	TargetDir = new DirectoryInfo( folderBrowserDialog.SelectedPath );
+
+			// Batch process!
+			progressBarBatchConvert.Value = 0;
+			progressBarBatchConvert.Visible = true;
+
+			string			Errors = null;
+			int				ProcessedProbesCount = 0;
+			List<FileInfo>	PomFiles = new List<FileInfo>( SourceDir.GetFiles( "*.pom" ) );
+			int				OriginalFilesCount = PomFiles.Count;
+			while ( PomFiles.Count > 0 )
+			{
+				try
 				{
-					// Write the mean, harmonic mean, min, max distances
-					W.Write( (float) m_MeanDistance );
-					W.Write( (float) m_MeanHarmonicDistance );
-					W.Write( (float) m_MinDistance );
-					W.Write( (float) m_MaxDistance );
+					FileInfo	F = PomFiles[0];
 
-					// Write the BBox
-					W.Write( m_BBox.m_Min.x );
-					W.Write( m_BBox.m_Min.y );
-					W.Write( m_BBox.m_Min.z );
-					W.Write( m_BBox.m_Max.x );
-					W.Write( m_BBox.m_Max.y );
-					W.Write( m_BBox.m_Max.z );
+					PomFiles.Remove( F );
 
-					// Write the amount of sets
-					W.Write( (UInt32) m_Sets.Length );
+					if ( !LoadCubeMap( F ) )
+						continue;
 
-					foreach ( Set S in m_Sets )
-					{
-						// Write position, normal, albedo
-						W.Write( S.Position.x );
-						W.Write( S.Position.y );
-						W.Write( S.Position.z );
+					// Create probe sets
+					buttonComputeFilling_Click( null, EventArgs.Empty );
 
-						W.Write( S.Normal.x );
-						W.Write( S.Normal.y );
-						W.Write( S.Normal.z );
+					// Save result
+					string		TargetFileName = Path.GetFileNameWithoutExtension( F.FullName ).Replace( "_Albedo", "" ) + ".probeset";
+					FileInfo	TargetFile = new FileInfo( Path.Combine( TargetDir.FullName, TargetFileName ) );
+					SaveSets( TargetFile );
 
-						W.Write( S.Tangent.x );
-						W.Write( S.Tangent.y );
-						W.Write( S.Tangent.z );
-
-						W.Write( S.BiTangent.x );
-						W.Write( S.BiTangent.y );
-						W.Write( S.BiTangent.z );
-
-							// Not used, just for information purpose
-						W.Write( (float) (S.Albedo.x / Math.PI) );
-						W.Write( (float) (S.Albedo.y / Math.PI) );
-						W.Write( (float) (S.Albedo.z / Math.PI) );
-
-						// Write SH coefficients
-						for ( int i=0; i < 9; i++ )
-						{
-							W.Write( S.SH[i].x );
-							W.Write( S.SH[i].y );
-							W.Write( S.SH[i].z );
-						}
-
-						// Write amount of samples
-						W.Write( (UInt32) S.Samples.Length );
-
-						// Write each sample
-						foreach ( Set.Sample Sample in S.Samples )
-						{
-							// Write position
-							W.Write( Sample.Position.x );
-							W.Write( Sample.Position.y );
-							W.Write( Sample.Position.z );
-
-							// Write normal
-							W.Write( Sample.Normal.x );
-							W.Write( Sample.Normal.y );
-							W.Write( Sample.Normal.z );
-
-							// Write radius
-							W.Write( Sample.Radius );
-						}
-					}
+					ProcessedProbesCount++;
+					progressBarBatchConvert.Value = progressBarBatchConvert.Maximum * (OriginalFilesCount - PomFiles.Count) / OriginalFilesCount;
+					progressBarBatchConvert.Refresh();
 				}
+				catch ( Exception _e )
+				{
+					Errors += _e.Message + "\r\n";
+				}
+			}
+
+			progressBarBatchConvert.Value = progressBarBatchConvert.Maximum;
+			if ( Errors == null )
+				MessageBox( "Success! " + ProcessedProbesCount + " probes were processed...", MessageBoxButtons.OK, MessageBoxIcon.Information );
+			else
+				MessageBox( ProcessedProbesCount + " probes were processed but errors were found:\r\n\r\n" + Errors, MessageBoxButtons.OK, MessageBoxIcon.Warning );
+
+			progressBarBatchConvert.Visible = false;
 		}
 
 		#endregion

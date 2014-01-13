@@ -462,6 +462,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\GIRenderShadowMap.hlsl" />
     <None Include="Resources\Shaders\GIUpdateProbe.hlsl" />
     <None Include="Resources\Shaders\Inc\Atmosphere.hlsl" />
+    <None Include="Resources\Shaders\Inc\GI.hlsl" />
     <None Include="Resources\Shaders\Inc\Global.hlsl" />
     <None Include="Resources\Shaders\Inc\LayeredMaterials.hlsl" />
     <None Include="Resources\Shaders\Inc\RayTracing.hlsl" />
