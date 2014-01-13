@@ -17,7 +17,8 @@ protected:	// FIELDS
 	ID3D11ShaderResourceView*	m_pShaderView;
 	ID3D11UnorderedAccessView*  m_pUnorderedAccessView;
 
-	// Structure to keep track of current outputs
+	// Structure to keep track of current inputs/outputs
+	mutable int					m_LastAssignedSlots[6];
 	int							m_pAssignedToOutputSlot[D3D11_PS_CS_UAV_REGISTER_COUNT];
 	static StructuredBuffer*	ms_ppOutputs[D3D11_PS_CS_UAV_REGISTER_COUNT];
 
@@ -47,6 +48,9 @@ public:		// METHODS
 	// Uploads the buffer to the shader
 	void			SetInput( int _SlotIndex );
 	void			SetOutput( int _SlotIndex );
+
+	// Removes the structured buffer from any last assigned SRV slots
+	void			RemoveFromLastAssignedSlots() const;
 };
 
 
@@ -83,14 +87,15 @@ public:		// METHODS
 		m_pBuffer = new StructuredBuffer( _Device, sizeof(T), _ElementsCount, _bWriteable );
 	}
 
-	void	Read( int _ElementsCount=-1 )	{ m_pBuffer->Read( m, _ElementsCount ); }
-	void	Write( int _ElementsCount=-1 )	{ m_pBuffer->Write( m, _ElementsCount ); }
-	void	Clear( U32 _pValue[4] )			{ m_pBuffer->Clear( _pValue ); }
-	void	Clear( const NjFloat4& _Value )	{ m_pBuffer->Clear( _Value ); }
+	void	Read( int _ElementsCount=-1 )		{ m_pBuffer->Read( m, _ElementsCount ); }
+	void	Write( int _ElementsCount=-1 )		{ m_pBuffer->Write( m, _ElementsCount ); }
+	void	Clear( U32 _pValue[4] )				{ m_pBuffer->Clear( _pValue ); }
+	void	Clear( const NjFloat4& _Value )		{ m_pBuffer->Clear( _Value ); }
 	void	SetInput( int _SlotIndex, bool _bIKnowWhatImDoing=false )
 	{
 		ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 		m_pBuffer->SetInput( _SlotIndex );
 	}
-	void	SetOutput( int _SlotIndex )		{ m_pBuffer->SetOutput( _SlotIndex ); }
+	void	SetOutput( int _SlotIndex )			{ m_pBuffer->SetOutput( _SlotIndex ); }
+	void	RemoveFromLastAssignedSlots() const	{ m_pBuffer->RemoveFromLastAssignedSlots(); }
 };

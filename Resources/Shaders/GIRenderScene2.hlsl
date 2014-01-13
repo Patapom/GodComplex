@@ -61,6 +61,7 @@ StructuredBuffer<LightStruct>	_SBLights : register( t8 );
 struct	ProbeStruct
 {
 	float3		Position;
+	float		Radius;
 	float3		SHBounce[9];
 };
 StructuredBuffer<ProbeStruct>	_SBProbes : register( t9 );
@@ -115,6 +116,7 @@ PS_IN	VS( VS_IN _In )
 	for ( int i=0; i < 9; i++ )
 		SH[i] = 0.0;
 	for ( uint ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ )
+//for ( uint ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
 	{
 		ProbeStruct	Probe = _SBProbes[ProbeIndex];
 
@@ -133,10 +135,14 @@ PS_IN	VS( VS_IN _In )
 		// Also weight by orientation to avoid probes facing away from us
 		ProbeWeight *= saturate( lerp( -0.98, 1.0, 0.5 * (1.0 + dot( Out.Normal, ToProbe )) ) );
 
-// if ( ProbeIndex == 5 )
+
+//ProbeWeight = 1;
+
+// if ( ProbeIndex == 1 )
 // {
 // 	Out.SH0 = ProbeWeight;
-// 	break;
+// //	Out.SH0 = Probe.Radius;
+// 	return Out;
 // }
 
 		for ( int i=0; i < 9; i++ )
@@ -147,6 +153,7 @@ PS_IN	VS( VS_IN _In )
 
 	// Normalize & store
 	float	Norm = 1.0 / SumWeights;
+
 	Out.SH0 = Norm * SH[0];
 	Out.SH1 = Norm * SH[1];
 	Out.SH2 = Norm * SH[2];
@@ -227,6 +234,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	float3	SHIndirect[9] = { _In.SH0, _In.SH1, _In.SH2, _In.SH3, _In.SH4, _In.SH5, _In.SH6, _In.SH7, _In.SH8 };
 	float3	Indirect = DiffuseAlbedo * EvaluateSHIrradiance( Normal, SHIndirect );
 //	float3	Indirect = DiffuseAlbedo * EvaluateSH( Normal, SHIndirect );
+
+//return float4( _In.SH0, 0 );
 
 AccumDiffuse *= 1.0;
 Indirect *= _ShowIndirect ? 1.0 : 0.0;

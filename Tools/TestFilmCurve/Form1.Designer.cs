@@ -32,7 +32,6 @@
 			this.floatTrackbarControlScaleX = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlScaleY = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlWhitePoint = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.panelGraph = new TestGradientPNG.OutputPanel(this.components);
 			this.floatTrackbarControlA = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlB = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label1 = new System.Windows.Forms.Label();
@@ -46,6 +45,8 @@
 			this.label6 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlF = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label7 = new System.Windows.Forms.Label();
+			this.panelGraph = new TestGradientPNG.OutputPanel(this.components);
+			this.outputPanelHammersley1 = new TestGradientPNG.OutputPanelHammersley(this.components);
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlScaleX
@@ -81,16 +82,6 @@
 			this.floatTrackbarControlWhitePoint.Value = 10F;
 			this.floatTrackbarControlWhitePoint.VisibleRangeMax = 20F;
 			this.floatTrackbarControlWhitePoint.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlWhitePoint_ValueChanged);
-			// 
-			// panelGraph
-			// 
-			this.panelGraph.Location = new System.Drawing.Point(12, 12);
-			this.panelGraph.Name = "panelGraph";
-			this.panelGraph.ScaleX = 1F;
-			this.panelGraph.ScaleY = 1F;
-			this.panelGraph.Size = new System.Drawing.Size(400, 400);
-			this.panelGraph.TabIndex = 0;
-			this.panelGraph.WhitePoint = 10F;
 			// 
 			// floatTrackbarControlA
 			// 
@@ -227,11 +218,35 @@
 			this.label7.TabIndex = 2;
 			this.label7.Text = "F";
 			// 
+			// panelGraph
+			// 
+			this.panelGraph.A = 0.15F;
+			this.panelGraph.B = 0.5F;
+			this.panelGraph.C = 0.1F;
+			this.panelGraph.D = 0.2F;
+			this.panelGraph.E = 0.02F;
+			this.panelGraph.F = 0.3F;
+			this.panelGraph.Location = new System.Drawing.Point(12, 12);
+			this.panelGraph.Name = "panelGraph";
+			this.panelGraph.ScaleX = 1F;
+			this.panelGraph.ScaleY = 1F;
+			this.panelGraph.Size = new System.Drawing.Size(400, 400);
+			this.panelGraph.TabIndex = 0;
+			this.panelGraph.WhitePoint = 10F;
+			// 
+			// outputPanelHammersley1
+			// 
+			this.outputPanelHammersley1.Location = new System.Drawing.Point(464, 339);
+			this.outputPanelHammersley1.Name = "outputPanelHammersley1";
+			this.outputPanelHammersley1.Size = new System.Drawing.Size(275, 273);
+			this.outputPanelHammersley1.TabIndex = 3;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(771, 638);
+			this.Controls.Add(this.outputPanelHammersley1);
 			this.Controls.Add(this.label7);
 			this.Controls.Add(this.label6);
 			this.Controls.Add(this.label5);
@@ -276,6 +291,7 @@
 		private System.Windows.Forms.Label label6;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlF;
 		private System.Windows.Forms.Label label7;
+		private OutputPanelHammersley outputPanelHammersley1;
 	}
 }
 

@@ -14,7 +14,11 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
  	CHECK_MATERIAL( m_pMatRenderShadowMap = CreateMaterial( IDR_SHADER_GI_RENDER_SHADOW_MAP, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL ), 5 );
  	CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
 
+	// Compute Shaders
+ 	CHECK_MATERIAL( m_pCSUpdateProbe = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 20 );
+
 m_pCSComputeShadowMapBounds = NULL;	// TODO!
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the textures
@@ -36,12 +40,16 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	m_pCB_Probe = new CB<CBProbe>( _Device, 10 );
 	m_pCB_Splat = new CB<CBSplat>( _Device, 10 );
 	m_pCB_ShadowMap = new CB<CBShadowMap>( _Device, 2, true );
+	m_pCB_UpdateProbes = new CB<CBUpdateProbes>( _Device, 11 );
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the lights & probes structured buffers
 	m_pSB_Lights = new SB<LightStruct>( m_Device, MAX_LIGHTS, true );
 	m_pSB_RuntimeProbes = NULL;
+
+	m_pSB_RuntimeProbeUpdateInfos = new SB<RuntimeProbeUpdateInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME, true );
+	m_pSB_RuntimeSamplingPointInfos = new SB<RuntimeSamplingPointInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME * MAX_SET_SAMPLES, true );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -71,9 +79,12 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	m_bDeleteSceneTags = true;
 	m_Scene.ClearTags( *this );
 
+	delete m_pSB_RuntimeSamplingPointInfos;
+	delete m_pSB_RuntimeProbeUpdateInfos;
 	delete m_pSB_RuntimeProbes;
 	delete m_pSB_Lights;
 
+	delete m_pCB_UpdateProbes;
 	delete m_pCB_ShadowMap;
 	delete m_pCB_Splat;
 	delete m_pCB_Probe;
@@ -84,6 +95,8 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 
 	delete m_pRTShadowMap;
 	delete m_pTexWalls;
+
+	delete m_pCSUpdateProbe;
 
 	delete m_pMatPostProcess;
 	delete m_pCSComputeShadowMapBounds;
@@ -99,14 +112,11 @@ delete ppRTCubeMap[0];
 }
 
 // F1 => toggle point light animation
-bool	bPreviousAnimateKey0 = false;
-bool	bAnimateLight0 = true;
 float	AnimateLightTime0 = 0.0f;
 
 // F2 => toggle sun light animation
-bool	bPreviousAnimateKey1 = false;
-bool	bAnimateLight1 = true;
 float	AnimateLightTime1 = 0.0f;
+float	UserSunTheta = 60.0f;
 
 void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 {
@@ -124,15 +134,14 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	// Animate lights
 
 		// Point light
-	bool	bAnimateKey = gs_WindowInfos.pKeys[VK_F1] != 0;
-	if ( (!bPreviousAnimateKey0 && bAnimateKey) )
-		bAnimateLight0 ^= true;
-	bPreviousAnimateKey0 = bAnimateKey;
-
-	if ( bAnimateLight0 )
+	if ( !gs_WindowInfos.pKeysToggle[VK_F1] )
 		AnimateLightTime0 += _DeltaTime;
 
-	m_pSB_Lights->m[0].Color.Set( 100, 100, 100 );
+	if ( !gs_WindowInfos.pKeysToggle[VK_F3] )
+		m_pSB_Lights->m[0].Color.Set( 100, 100, 100 );
+	else
+		m_pSB_Lights->m[0].Color.Set( 0, 0, 0 );
+
 //	m_pSB_Lights->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * AnimateLightTime0 ) );	// Move along the corridor
 	m_pSB_Lights->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime0 ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime0 ), 4.0f * sinf( 0.3f * AnimateLightTime0 ) );	// Move along the corridor
 	m_pSB_Lights->m[0].Radius = 0.1f;
@@ -140,19 +149,23 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 	if ( MAX_LIGHTS > 1 )
 	{	// Sun light
-		bAnimateKey = gs_WindowInfos.pKeys[VK_F2] != 0;
-		if ( (!bPreviousAnimateKey1 && bAnimateKey) )
-			bAnimateLight1 ^= true;
-		bPreviousAnimateKey1 = bAnimateKey;
-
-		if ( bAnimateLight1 )
+		if ( !gs_WindowInfos.pKeysToggle[VK_F2] )
 			AnimateLightTime1 += _DeltaTime;
 
-		float		SunTheta = 60.0f * PI / 180.0f;
+		if ( gs_WindowInfos.pKeys[VK_SUBTRACT] )
+			UserSunTheta -= 4.0f * _DeltaTime;
+		if ( gs_WindowInfos.pKeys[VK_ADD] )
+			UserSunTheta += 4.0f * _DeltaTime;
+
+		float		SunTheta = UserSunTheta * PI / 180.0f;
 		float		SunPhi = 0.2f * AnimateLightTime1;
 		NjFloat3	SunDirection( sinf(SunTheta) * sinf(SunPhi), cosf(SunTheta), sinf(SunTheta) * cosf(SunPhi) );
 
-		m_pSB_Lights->m[1].Color.Set( 1000, 1000, 1000 );
+		if ( gs_WindowInfos.pKeysToggle[VK_F4] )
+			m_pSB_Lights->m[1].Color.Set( 1000, 1000, 1000 );
+		else
+			m_pSB_Lights->m[1].Color.Set( 0, 0, 0 );
+
 		m_pSB_Lights->m[1].Position = SunDirection;
 		m_pSB_Lights->m[1].Radius = -1.0f;	// This is the marker for a directional light!
 
@@ -180,6 +193,74 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 // for ( int i=0; i < 9; i++ )
 // 	pSHAmbient[i] = 100.0f * NjFloat3( 0.7, 0.9, 1.0 ) * float(pTestAmbient[i]);
 
+#if 1
+	// Hardware update
+	U32		ProbeUpdatesCount = MIN( MAX_PROBE_UPDATES_PER_FRAME, U32(m_ProbesCount) );
+//TODO: Handle a stack of probes to update
+
+	// Prepare the buffer of probe update infos and sampling point infos
+	int		SamplingPointIndex = 0;
+	for ( U32 ProbeUpdateIndex=0; ProbeUpdateIndex < ProbeUpdatesCount; ProbeUpdateIndex++ )
+	{
+		int				ProbeIndex = ProbeUpdateIndex;	// Simple at the moment, when we have the update stack we'll have to fetch the index from it...
+		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
+
+		// Fill the probe update infos
+		RuntimeProbeUpdateInfos&	ProbeUpdateInfos = m_pSB_RuntimeProbeUpdateInfos->m[ProbeUpdateIndex];
+
+		ProbeUpdateInfos.ProbeIndex = ProbeIndex;
+		ProbeUpdateInfos.SetsCount = Probe.SetsCount;
+		memcpy_s( ProbeUpdateInfos.SHStatic, sizeof(ProbeUpdateInfos.SHStatic), Probe.pSHBounceStatic, 9*sizeof(NjFloat3) );
+		memcpy_s( ProbeUpdateInfos.SHOcclusion, sizeof(ProbeUpdateInfos.SHOcclusion), Probe.pSHOcclusion, 9*sizeof(float) );
+
+		ProbeUpdateInfos.SamplingPointsStart = SamplingPointIndex;
+
+		// Fill the set update infos
+		int	SetSamplingPointIndex = 0;
+		for ( U32 SetIndex=0; SetIndex < Probe.SetsCount; SetIndex++ )
+		{
+			ProbeStruct::SetInfos				Set = Probe.pSetInfos[SetIndex];
+			RuntimeProbeUpdateInfos::SetInfos&	SetUpdateInfos = ProbeUpdateInfos.Sets[SetIndex];
+
+			memcpy_s( SetUpdateInfos.SH, sizeof(SetUpdateInfos.SH), Set.pSHBounce, 9*sizeof(NjFloat3) );
+			SetUpdateInfos.SamplingPointIndex = SetSamplingPointIndex;
+			SetUpdateInfos.SamplingPointsCount = Set.SamplesCount;
+
+			// Copy sampling points
+			memcpy_s( &m_pSB_RuntimeSamplingPointInfos->m[SamplingPointIndex], Set.SamplesCount*sizeof(RuntimeSamplingPointInfos), Set.pSamples, Set.SamplesCount*sizeof(ProbeStruct::SetInfos::Sample) );
+
+			SamplingPointIndex += Set.SamplesCount;
+			SetSamplingPointIndex += Set.SamplesCount;
+		}
+
+		ProbeUpdateInfos.SamplingPointsCount = SamplingPointIndex - ProbeUpdateInfos.SamplingPointsStart;	// Total amount of sampling points for the probe
+	}
+
+	m_pSB_RuntimeProbeUpdateInfos->Write( ProbeUpdatesCount );
+	m_pSB_RuntimeProbeUpdateInfos->SetInput( 10 );
+
+	m_pSB_RuntimeSamplingPointInfos->Write( SamplingPointIndex );
+	m_pSB_RuntimeSamplingPointInfos->SetInput( 11 );
+
+	// Do the update!
+	USING_COMPUTESHADER_START( *m_pCSUpdateProbe )
+
+	m_pSB_RuntimeProbes->RemoveFromLastAssignedSlots();
+	m_pSB_RuntimeProbes->SetOutput( 0 );
+
+	// Prepare constant buffer for update
+	for ( int i=0; i < 9; i++ )
+		m_pCB_UpdateProbes->m.AmbientSH[i] = NjFloat4( pSHAmbient[i], 0 );	// Update one by one because of float3 padding
+	m_pCB_UpdateProbes->UpdateData();
+
+	M.Dispatch( ProbeUpdatesCount, 1, 1 );
+
+	USING_COMPUTE_SHADER_END
+
+	m_pSB_RuntimeProbes->SetInput( 9, true );
+
+#else
+	// Software update (no shadows!)
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
@@ -242,6 +323,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pSB_RuntimeProbes->Write();
 	m_pSB_RuntimeProbes->SetInput( 9, true );
 
+#endif
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Render the scene
@@ -334,7 +416,11 @@ void	EffectGlobalIllum2::PreComputeProbes()
 	// Also allocate runtime probes structured buffer
 	m_pSB_RuntimeProbes = new SB<RuntimeProbe>( m_Device, m_ProbesCount, true );
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+	{
 		m_pSB_RuntimeProbes->m[ProbeIndex].Position = m_pProbes[ProbeIndex].pSceneProbe->m_Local2World.GetRow( 3 );
+		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = 1.0f;
+	}
+	m_pSB_RuntimeProbes->Write();
 
 
 

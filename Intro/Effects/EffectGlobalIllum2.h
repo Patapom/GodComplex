@@ -9,9 +9,11 @@ private:	// CONSTANTS
 	static const U32		CUBE_MAP_SIZE = 128;
 	static const U32		MAX_NEIGHBOR_PROBES = 32;
 
-	static const U32		MAX_LIGHTS = 1;
+	static const U32		MAX_LIGHTS = 2;
 	static const U32		MAX_PROBE_SETS = 16;
-	static const U32		MAX_SET_SAMPLES = 64;	// Accept a maximum of 64 samples per set
+	static const U32		MAX_SET_SAMPLES = 64;				// Accept a maximum of 64 samples per set
+
+	static const U32		MAX_PROBE_UPDATES_PER_FRAME = 16;	// Update a maximum of 16 probes per frame
 
 	static const U32		SHADOW_MAP_SIZE = 1024;
 
@@ -64,6 +66,11 @@ protected:	// NESTED TYPES
 		NjFloat3	BoundsMax;
  	};
 
+	struct CBUpdateProbes
+	{
+		NjFloat4	AmbientSH[9];				// Ambient sky (padded!)
+ 	};
+
 
 	// The probe structure
 	struct	ProbeStruct
@@ -95,7 +102,7 @@ protected:	// NESTED TYPES
 			{
 				NjFloat3		Position;
 				NjFloat3		Normal;
-				NjFloat3		Radius;
+				float			Radius;
 			}				pSamples[MAX_SET_SAMPLES];
 
 		}				pSetInfos[MAX_PROBE_SETS];
@@ -108,6 +115,7 @@ protected:	// NESTED TYPES
 		// Computes the product of SHLight and SHBounce to get the SH coefficients for the bounced light
 		void			AccumulateLightBounce( const NjFloat3 _pSHSet[9] );
 	};
+
 
 
 private:	// FIELDS
@@ -124,6 +132,7 @@ private:	// FIELDS
 	Material*			m_pCSComputeShadowMapBounds;// Computes the shadow map bounds
 	Material*			m_pMatRenderShadowMap;		// Renders the directional shadowmap
 	Material*			m_pMatPostProcess;			// Post-processes the result
+	ComputeShader*		m_pCSUpdateProbe;			// Dynamically update probes
 
 	// Primitives
 	Scene				m_Scene;
@@ -142,6 +151,7 @@ private:	// FIELDS
  	CB<CBProbe>*		m_pCB_Probe;
 	CB<CBSplat>*		m_pCB_Splat;
  	CB<CBShadowMap>*	m_pCB_ShadowMap;
+ 	CB<CBUpdateProbes>*	m_pCB_UpdateProbes;
 
 	// Light buffer
 	struct	LightStruct
@@ -156,14 +166,41 @@ private:	// FIELDS
 	struct RuntimeProbe 
 	{
 		NjFloat3	Position;
+		float		Radius;
 		NjFloat3	pSHBounce[9];
 	};
 	SB<RuntimeProbe>*	m_pSB_RuntimeProbes;
+
 
 	// Probes
 	int					m_ProbesCount;
 	ProbeStruct*		m_pProbes;
 
+	struct RuntimeProbeUpdateInfos
+	{
+		U32			ProbeIndex;						// The index of the probe we're updating
+		U32			SetsCount;						// Amount of sets for that probe
+		U32			SamplingPointsStart;			// Index of the first sampling point for the probe
+		U32			SamplingPointsCount;			// Amount of sampling points for the probe
+		NjFloat3	SHStatic[9];					// Precomputed static SH (static geometry + static lights)
+		float		SHOcclusion[9];					// Directional ambient occlusion for the probe
+
+		struct	SetInfos
+		{
+			NjFloat3	SH[9];						// SH for the set
+			U32			SamplingPointIndex;			// Index of the first sampling point
+			U32			SamplingPointsCount;		// Amount of sampling points
+		}	Sets[MAX_PROBE_SETS];
+	};
+	SB<RuntimeProbeUpdateInfos>*	m_pSB_RuntimeProbeUpdateInfos;
+
+	struct RuntimeSamplingPointInfos
+	{
+		NjFloat3	Position;						// World position of the sampling point
+		NjFloat3	Normal;							// World normal of the sampling point
+		float		Radius;							// Radius of the sampling point's disc approximation
+	};
+	SB<RuntimeSamplingPointInfos>*	m_pSB_RuntimeSamplingPointInfos;
 
 	// Params
 public:

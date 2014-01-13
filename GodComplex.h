@@ -92,6 +92,7 @@ struct WININFO
 	//---------------
 	MSYS_EVENTINFO	Events;
 	U8				pKeys[256];
+	U8				pKeysToggle[256];
 #endif
 
 };
