@@ -1853,6 +1853,11 @@ DEBUG_PixelIndex = PixelIndex;
 			outputPanel1.ShowSHOcclusion = (sender as CheckBox).Checked;
 		}
 
+		private void checkBoxSHNormalized_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanel1.NormalizeSH = (sender as CheckBox).Checked;
+		}
+
 		private void radioButtonSetSamples_CheckedChanged( object sender, EventArgs e )
 		{
 			if ( (sender as RadioButton).Checked )

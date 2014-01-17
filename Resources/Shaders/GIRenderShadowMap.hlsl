@@ -6,13 +6,10 @@
 #include "Inc/Global.hlsl"
 #include "Inc/ShadowMap.hlsl"
 
-//[
 cbuffer	cbObject	: register( b11 )
 {
 	float4x4	_Local2World;
 };
-//]
-
 
 struct	VS_IN
 {

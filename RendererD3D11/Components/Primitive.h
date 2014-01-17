@@ -28,6 +28,13 @@ private:	// FIELDS
 	U32								m_Stride;
 
 
+public:	 // PROPERTIES
+
+	int				GetVerticesCount() const	{ return m_VerticesCount; }
+	int				GetIndicesCount() const		{ return m_IndicesCount; }
+	int				GetFacesCount() const		{ return m_FacesCount; }
+
+
 public:	 // METHODS
 
 	Primitive( Device& _Device, int _VerticesCount, const void* _pVertices, int _IndicesCount, const U32* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format );

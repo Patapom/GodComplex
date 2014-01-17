@@ -1,6 +1,12 @@
 ﻿#include "../../GodComplex.h"
 #include "EffectGlobalIllum2.h"
 
+
+// Scene selection (also think about chaning the scene in the .RC!)
+#define SCENE_PATH	".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_1Probe\\"
+//#define SCENE_PATH	".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
+
+
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
 #define MAKE_MACROS( a )	Macros( const char* m[] = { a } )
@@ -68,6 +74,8 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	//////////////////////////////////////////////////////////////////////////
 	// Create the scene
 	m_bDeleteSceneTags = false;
+	m_TotalFacesCount = 0;
+	m_TotalPrimitivesCount = 0;
 	m_Scene.Load( IDR_SCENE_GI, *this );
 
 	// Upload static lights once and for all
@@ -87,6 +95,38 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	//////////////////////////////////////////////////////////////////////////
 	// Start precomputation
 	PreComputeProbes();
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build the ambient sky SH using the CIE overcast sky model
+	//
+	const int	MAX_THETA = 40;
+	double		dPhidTheta = (PI / MAX_THETA) * (2*PI / (2*MAX_THETA));
+
+	double		SumSHCoeffs[9];
+	memset( SumSHCoeffs, 0, 9*sizeof(double) );
+
+	double		SHCoeffs[9];
+	for ( int ThetaIndex=0; ThetaIndex < MAX_THETA; ThetaIndex++ )
+	{
+		float	Theta = PI * (0.5f+ThetaIndex) / MAX_THETA;
+		for ( int PhiIndex=0; PhiIndex < 2*MAX_THETA; PhiIndex++ )
+		{
+			float		Phi = PI * PhiIndex / MAX_THETA;
+			NjFloat3	Direction( sinf(Phi) * sinf(Theta), cosf(Theta), cosf(Phi)*sinf(Theta) );
+			BuildSHCoeffs( Direction, SHCoeffs );
+
+			double		SkyIntensity = SKY_INTENSITY * (1.0f + 2.0f * MAX( -0.5f, cosf(Theta) )) / 3.0f;
+			double		SolidAngle = sinf(Theta) * dPhidTheta;
+
+			for ( int i=0; i < 9; i++ )
+				SumSHCoeffs[i] += SkyIntensity* SHCoeffs[i] * SolidAngle;
+		}
+	}
+
+	for ( int i=0; i < 9; i++ )
+		m_pSHAmbientSky[i] = float( SumSHCoeffs[i] ) * NjFloat3::One;
+
 }
 Texture2D*	pRTCubeMap;
 
@@ -193,7 +233,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		NjFloat3	SunDirection( sinf(SunTheta) * sinf(SunPhi), cosf(SunTheta), sinf(SunTheta) * cosf(SunPhi) );
 
 		if ( ShowLight1 )
-			m_pSB_LightsDynamic->m[1].Color.Set( 1000, 990, 950 );
+			m_pSB_LightsDynamic->m[1].Color = SUN_INTENSITY * NjFloat3( 1.0f, 0.990f, 0.950f );
 		else
 			m_pSB_LightsDynamic->m[1].Color.Set( 0, 0, 0 );
 
@@ -217,26 +257,31 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 
 	// Update emissive materials
-	bool	ShowLight2 = gs_WindowInfos.pKeysToggle[VK_F3] != 0;
-
-	if ( ShowLight2 && !gs_WindowInfos.pKeysToggle[VK_F7] )
-		AnimateLightTime2 += _DeltaTime;
-
-	if ( ShowLight2 )
+	if ( m_Scene.m_MaterialsCount > 2 )
 	{
-//		float	Intensity = 10.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.5f * _frand()) ) );
-		float	Intensity = 4.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.0f * _frand()) ) );
-		m_Scene.m_ppMaterials[2]->m_EmissiveColor.Set( Intensity * 100, Intensity * 90, Intensity * 70 );
-	}
-	else
-		m_Scene.m_ppMaterials[2]->m_EmissiveColor.Set( 0, 0, 0 );
+		bool	ShowLight2 = gs_WindowInfos.pKeysToggle[VK_F3] != 0;
 
+		if ( ShowLight2 && !gs_WindowInfos.pKeysToggle[VK_F7] )
+			AnimateLightTime2 += _DeltaTime;
+
+		if ( ShowLight2 )
+		{
+//			float	Intensity = 10.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.5f * _frand()) ) );
+			float	Intensity = 4.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.0f * _frand()) ) );
+			m_Scene.m_ppMaterials[2]->m_EmissiveColor.Set( Intensity * 100, Intensity * 90, Intensity * 70 );
+		}
+		else
+			m_Scene.m_ppMaterials[2]->m_EmissiveColor.Set( 0, 0, 0 );
+	}
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update dynamic probes
 	NjFloat3	pSHAmbient[9];
-	memset( pSHAmbient, 0, 9*sizeof(NjFloat3) );	// No ambient at the moment...
+	if ( gs_WindowInfos.pKeysToggle[VK_F4] )
+		memcpy_s( pSHAmbient, sizeof(pSHAmbient), m_pSHAmbientSky, sizeof(m_pSHAmbientSky) );
+	else
+		memset( pSHAmbient, 0, 9*sizeof(NjFloat3) );
 
 // Ugly "sky"
 // double		pTestAmbient[9];
@@ -627,21 +672,21 @@ void	EffectGlobalIllum2::PreComputeProbes()
 		char	pTemp[1024];
 
 #if 1	// Save to disk
-		sprintf_s( pTemp, "Probe%02d.pom", ProbeIndex );
+		sprintf_s( pTemp, SCENE_PATH "Probe%02d.pom", ProbeIndex );
 		pRTCubeMapStaging->Save( pTemp );
 #endif
 
 		FILE*	pFile = NULL;
 
-#if 1
 		// Read numbered probe
-		sprintf_s( pTemp, "Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\Probe%02d.probeset", ProbeIndex );
+		sprintf_s( pTemp, SCENE_PATH "Probe%02d.probeset", ProbeIndex );
 		fopen_s( &pFile, pTemp, "rb" );
-#else
-		// Read default probe
-		fopen_s( &pFile, "Test.probeset", "rb" );
-#endif
-		ASSERT( pFile != NULL, "Can't find probeset test file!" );
+		if ( pFile == NULL )
+		{	// Not ready yet (happens when first computation!)
+			Probe.SetsCount = Probe.EmissiveSetsCount = 0;
+			continue;
+		}
+//		ASSERT( pFile != NULL, "Can't find probeset test file!" );
 
 		// Read the boundary infos
 		fread_s( &Probe.MeanDistance, sizeof(Probe.MeanDistance), sizeof(float), 1, pFile );
@@ -700,6 +745,15 @@ void	EffectGlobalIllum2::PreComputeProbes()
 			fread_s( &S.Albedo.y, sizeof(S.Albedo.y), sizeof(float), 1, pFile );
 			fread_s( &S.Albedo.z, sizeof(S.Albedo.z), sizeof(float), 1, pFile );
 
+			// Transform set's position/normal by probe's LOCAL=>WORLD
+			S.Position = NjFloat3( Probe.pSceneProbe->m_Local2World.GetRow(3) ) + S.Position;
+// 			NjFloat3	wsSetNormal = Set.Normal;
+// 			NjFloat3	wsSetTangent = Set.Tangent;
+// 			NjFloat3	wsSetBiTangent = Set.BiTangent;
+// TODO: Handle non-identity matrices! Let's go fast for now...
+// ARGH! That also means possibly rotating the SH!
+// Let's just force the probes to be axis-aligned, shall we??? :) (lazy man talking) (no, seriously, it makes sense after all)
+
 			// Read SH coefficients
 			for ( int i=0; i < 9; i++ )
 			{
@@ -737,15 +791,6 @@ void	EffectGlobalIllum2::PreComputeProbes()
 // Let's just force the probes to be axis-aligned, shall we??? :) (lazy man talking) (no, seriously, it makes sense after all)
 
 			}
-
-			// Transform set's position/normal by probe's LOCAL=>WORLD
-			S.Position = NjFloat3( Probe.pSceneProbe->m_Local2World.GetRow(3) ) + S.Position;
-// 			NjFloat3	wsSetNormal = Set.Normal;
-// 			NjFloat3	wsSetTangent = Set.Tangent;
-// 			NjFloat3	wsSetBiTangent = Set.BiTangent;
-// TODO: Handle non-identity matrices! Let's go fast for now...
-// ARGH! That also means possibly rotating the SH!
-// Let's just force the probes to be axis-aligned, shall we??? :) (lazy man talking) (no, seriously, it makes sense after all)
 		}
 
 		// Read the amount of emissive sets
@@ -1107,7 +1152,7 @@ void	EffectGlobalIllum2::ZHRotate( const NjFloat3& _Direction, const NjFloat3& _
 //////////////////////////////////////////////////////////////////////////
 // Scene Rendering
 //
-void*	EffectGlobalIllum2::TagMaterial( const Scene::Material& _Material ) const
+void*	EffectGlobalIllum2::TagMaterial( const Scene& _Owner, const Scene::Material& _Material )
 {
 	if ( m_bDeleteSceneTags )
 	{
@@ -1130,7 +1175,7 @@ void*	EffectGlobalIllum2::TagMaterial( const Scene::Material& _Material ) const
 	}
 	return NULL;
 }
-void*	EffectGlobalIllum2::TagTexture( const Scene::Material::Texture& _Texture ) const
+void*	EffectGlobalIllum2::TagTexture( const Scene& _Owner, const Scene::Material::Texture& _Texture )
 {
 	if ( m_bDeleteSceneTags )
 	{
@@ -1147,7 +1192,7 @@ void*	EffectGlobalIllum2::TagTexture( const Scene::Material::Texture& _Texture )
 	return NULL;
 }
 
-void*	EffectGlobalIllum2::TagNode( const Scene::Node& _Node ) const
+void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, const Scene::Node& _Node )
 {
 	if ( m_bDeleteSceneTags )
 	{
@@ -1169,7 +1214,7 @@ void*	EffectGlobalIllum2::TagNode( const Scene::Node& _Node ) const
 	return NULL;
 }
 
-void*	EffectGlobalIllum2::TagPrimitive( const Scene::Mesh& _Mesh, const Scene::Mesh::Primitive& _Primitive ) const
+void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, const Scene::Mesh& _Mesh, const Scene::Mesh::Primitive& _Primitive )
 {
 	if ( m_bDeleteSceneTags )
 	{	// Delete the primitive
@@ -1188,10 +1233,15 @@ void*	EffectGlobalIllum2::TagPrimitive( const Scene::Mesh& _Mesh, const Scene::M
 
 	Primitive*	pPrim = new Primitive( m_Device, _Primitive.m_VerticesCount, _Primitive.m_pVertices, 3*_Primitive.m_FacesCount, _Primitive.m_pFaces, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, *pVertexFormat );
 
+	// Tag the primitive with the face offset
+	pPrim->m_pTag = (void*) m_TotalFacesCount;
+	m_pPrimitiveFaceOffset[m_TotalPrimitivesCount++] = m_TotalFacesCount;	// Store face offset for each primitive
+	m_TotalFacesCount += pPrim->GetFacesCount();							// Increase total amount of faces
+
 	return pPrim;
 }
 
-void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride ) const
+void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride )
 {
 	// Upload the object's CB
 	memcpy( &m_pCB_Object->m.Local2World, &_Mesh.m_Local2World, sizeof(NjFloat4x4) );
@@ -1225,6 +1275,7 @@ void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMater
 		m_pCB_Material->m.HasSpecularTexture = pTexSpecularAlbedo != NULL;
 		m_pCB_Material->m.EmissiveColor = SceneMaterial.m_EmissiveColor;
 		m_pCB_Material->m.SpecularExponent = SceneMaterial.m_SpecularExponent.x;
+		m_pCB_Material->m.FaceOffset = U32(pPrim->m_pTag);
 		m_pCB_Material->UpdateData();
 
 		int		Test = sizeof(CBMaterial);

@@ -42,12 +42,12 @@ public:		// NESTED TYPES
 		Node( Scene& _Owner, Node* _pParent );
 		~Node();
 
-		void			Init( const U8*& _pData, const ISceneTagger& _SceneTagger );
-		void			Exit( const ISceneTagger& _SceneTagClearer );
+		void			Init( const U8*& _pData, ISceneTagger& _SceneTagger );
+		void			Exit( ISceneTagger& _SceneTagClearer );
 
 		// Override this in your inherited classes to init/exit specific details of the node
-		virtual void	InitSpecific( const U8*& _pData, const ISceneTagger& _SceneTagger )	{}
-		virtual void	ExitSpecific( const ISceneTagger& _SceneTagClearer )				{}
+		virtual void	InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger )	{}
+		virtual void	ExitSpecific( ISceneTagger& _SceneTagClearer )			{}
 
 		friend class Scene;
 	};
@@ -71,7 +71,7 @@ public:		// NESTED TYPES
 		Light( Scene& _Owner, Node* _pParent );
 		~Light();
 
-		virtual void	InitSpecific( const U8*& _pData, const ISceneTagger& _SceneTagger ) override;
+		virtual void	InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger ) override;
 
 		friend class Scene;
 	};
@@ -87,7 +87,7 @@ public:		// NESTED TYPES
 		Camera( Scene& _Owner, Node* _pParent );
 		~Camera();
 
-		virtual void	InitSpecific( const U8*& _pData, const ISceneTagger& _SceneTagger ) override;
+		virtual void	InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger ) override;
 
 		friend class Scene;
 	};
@@ -139,8 +139,8 @@ public:		// NESTED TYPES
 		Mesh( Scene& _Owner, Node* _pParent );
 		~Mesh();
 
-		virtual void	InitSpecific( const U8*& _pData, const ISceneTagger& _SceneTagger ) override;
-		virtual void	ExitSpecific( const ISceneTagger& _SceneTagClearer ) override;
+		virtual void	InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger ) override;
+		virtual void	ExitSpecific( ISceneTagger& _SceneTagClearer ) override;
 
 		friend class Scene;
 	};
@@ -170,6 +170,8 @@ public:		// NESTED TYPES
 
 	public:	// FIELDS
 
+		Scene&				m_Owner;
+
 		U32					m_ID;
 		NjFloat3			m_Ambient;
 		NjFloat3			m_DiffuseAlbedo;
@@ -183,10 +185,10 @@ public:		// NESTED TYPES
 
 	private:
 
-		Material();
+		Material( Scene& _Owner );
 
-		void	Init( const U8*& _pData, const ISceneTagger& _SceneTagger );
-		void	Exit( const ISceneTagger& _SceneTagClearer );
+		void	Init( const U8*& _pData, ISceneTagger& _SceneTagger );
+		void	Exit( ISceneTagger& _SceneTagClearer );
 
 		friend class Scene;
 	};
@@ -197,16 +199,16 @@ public:		// NESTED TYPES
 	{
 	public:
 		// Tags a material with a special user pointer
-		virtual void*	TagMaterial( const Scene::Material& _Material ) const abstract;
+		virtual void*	TagMaterial( const Scene& _Scene, const Scene::Material& _Material ) abstract;
 
 		// Tags a texture with a special user pointer
-		virtual void*	TagTexture( const Scene::Material::Texture& _Texture ) const abstract;
+		virtual void*	TagTexture( const Scene& _Scene, const Scene::Material::Texture& _Texture ) abstract;
 
 		// Tags a node with a special user pointer
-		virtual void*	TagNode( const Scene::Node& _Node ) const abstract;
+		virtual void*	TagNode( const Scene& _Scene, const Scene::Node& _Node ) abstract;
 
 		// Tags a primitive with a special user pointer
-		virtual void*	TagPrimitive( const Scene::Mesh& _Mesh, const Scene::Mesh::Primitive& _Primitive ) const abstract;
+		virtual void*	TagPrimitive( const Scene& _Scene, const Scene::Mesh& _Mesh, const Scene::Mesh::Primitive& _Primitive ) abstract;
 	};
 
 	// Interface passed to the scene loading method to tag abstract scene objects with actual rendering data
@@ -216,7 +218,7 @@ public:		// NESTED TYPES
 		// Renders a mesh
 		//	_Mesh, the mesh to render
 		//	_pMaterialOverride, an optional material used to override the mesh's default material
-		virtual void	RenderMesh( const Scene::Mesh& _Mesh, ::Material* _pMaterialOverride ) const abstract;
+		virtual void	RenderMesh( const Scene::Mesh& _Mesh, ::Material* _pMaterialOverride ) abstract;
 	};
 
 
@@ -236,9 +238,9 @@ public:		// METHODS
 	~Scene();	// WARNING: Call "ClearTags" to dispose of your tags prior destruction!
 
 
-	void			Load( U16 _SceneResourceID, const ISceneTagger& _SceneTagger );
-	void			Render( const ISceneRenderer& _SceneRenderer ) const;
-	void			ClearTags( const ISceneTagger& _SceneTagClearer );
+	void			Load( U16 _SceneResourceID, ISceneTagger& _SceneTagger );
+	void			Render( ISceneRenderer& _SceneRenderer ) const;
+	void			ClearTags( ISceneTagger& _SceneTagClearer );
 
 	// Iterates over all the nodes of specific type
 	//	_pPrevious, should be NULL for the first call to trigger a new search
@@ -247,10 +249,10 @@ public:		// METHODS
 
 private:
 
-	void			Render( const Node* _pNode, const ISceneRenderer& _SceneRenderer ) const;
+	void			Render( const Node* _pNode, ISceneRenderer& _SceneRenderer ) const;
 
 	// Helpers
-	Node*			CreateNode( Node* _pParent, const U8*& _pData, const ISceneTagger& _SceneTagger );
+	Node*			CreateNode( Node* _pParent, const U8*& _pData, ISceneTagger& _SceneTagger );
 	static U32		ReadU16( const U8*& _pData, bool _IsID=false );
 	static U32		ReadU32( const U8*& _pData );
 	static float	ReadF32( const U8*& _pData );

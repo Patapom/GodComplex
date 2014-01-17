@@ -25,7 +25,7 @@ struct	VS_IN
 	float3	Normal		: NORMAL;
 	float3	Tangent		: TANGENT;
 	float3	BiTangent	: BITANGENT;
-	float3	UV			: TEXCOORD0;
+	float2	UV			: TEXCOORD0;
 };
 
 struct	PS_IN
@@ -35,7 +35,7 @@ struct	PS_IN
 	float3	Normal		: NORMAL;
 	float3	Tangent		: TANGENT;
 	float3	BiTangent	: BITANGENT;
-	float3	UV			: TEXCOORD0;
+	float2	UV			: TEXCOORD0;
 
 	float3	SH0			: SH0;
 	float3	SH1			: SH1;
@@ -153,6 +153,10 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	// Compute direct lighting
 	float3	View = normalize( _In.Position - _Camera2World[3].xyz );
 
+	float3	Normal = normalize( _In.Normal );
+	float3	Tangent = normalize( _In.Tangent );
+	float3	BiTangent = normalize( _In.BiTangent );
+
 	float3	AccumDiffuse = 0.0;
 	float3	AccumSpecular = 0.0;
 
@@ -160,14 +164,14 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	for ( int LightIndex=0; LightIndex < _StaticLightsCount; LightIndex++ )
 	{
 		LightStruct	LightSource = _SBLightsStatic[LightIndex];
-		AccumDiffuse += AccumulateLight( _In.Position, _In.Normal, LightSource );
+		AccumDiffuse += AccumulateLight( _In.Position, _In.Normal, Normal, LightSource );
 	}
 
 	// Process dynamic lights
 	for ( int LightIndex=0; LightIndex < _DynamicLightsCount; LightIndex++ )
 	{
 		LightStruct	LightSource = _SBLightsDynamic[LightIndex];
-		AccumDiffuse += AccumulateLight( _In.Position, _In.Normal, LightSource );
+		AccumDiffuse += AccumulateLight( _In.Position, _In.Normal, Normal, LightSource );
 	}
 
 	AccumDiffuse *= DiffuseAlbedo;
