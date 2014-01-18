@@ -22,6 +22,7 @@ namespace ProbeSHEncoder
 			DISTANCE,
 			NORMAL,
 			STATIC_LIT,
+			FACE_INDEX,
 			EMISSIVE_MAT_ID,
 			SET_INDEX,
 			SET_ALBEDO,
@@ -304,6 +305,7 @@ namespace ProbeSHEncoder
 					case VIZ_TYPE.DISTANCE:			S = CubeMapSamplerDistance; break;
 					case VIZ_TYPE.NORMAL:			S = CubeMapSamplerNormal; break;
 					case VIZ_TYPE.STATIC_LIT:		S = CubeMapSamplerStaticLit; break;
+					case VIZ_TYPE.FACE_INDEX:		S = CubeMapSamplerFaceIndex; break;
 					case VIZ_TYPE.EMISSIVE_MAT_ID:	S = CubeMapSamplerEmissiveMatID; break;
 					case VIZ_TYPE.SET_INDEX:		S = CubeMapSamplerSetIndex; break;
 					case VIZ_TYPE.SET_ALBEDO:		S = CubeMapSamplerSetAlbedo; break;
@@ -374,6 +376,12 @@ namespace ProbeSHEncoder
 			_R = (byte) Math.Min( 255, 255 * _Pixel.StaticLitColor.x );
 			_G = (byte) Math.Min( 255, 255 * _Pixel.StaticLitColor.y );
 			_B = (byte) Math.Min( 255, 255 * _Pixel.StaticLitColor.z );
+		}
+
+		private void	CubeMapSamplerFaceIndex( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		{
+			byte	C = (byte) (_Pixel.FaceIndex & 0xFF);
+			_R = _G = _B = C;
 		}
 
 		private void	CubeMapSamplerEmissiveMatID( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )

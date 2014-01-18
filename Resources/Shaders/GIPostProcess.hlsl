@@ -151,7 +151,7 @@ if ( false )
 
 //return _TexCubemapProbe.Sample( LinearClamp, float4( View, 2.0 ) );
 //return asuint( _TexCubemapProbe.Sample( PointClamp, float4( View, 2.0 ) ).w );
-//return asuint( _TexCubemapProbe.Sample( PointClamp, float4( View, 0.0 ) ).w ) / 200000.0;
+//return (asuint( _TexCubemapProbe.Sample( PointClamp, float4( View, 0.0 ) ).w ) & 0xFF) / 255.0;
 
 	return _TexSourceImage.SampleLevel( LinearClamp, UV, 0.0 );
 	return float4( _In.__Position.xy * _dUV.xy, 0, 0 );

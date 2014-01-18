@@ -103,8 +103,9 @@ namespace ProbeSHEncoder
 			this.checkBoxSHDynamic = new System.Windows.Forms.CheckBox();
 			this.checkBoxSHEmissive = new System.Windows.Forms.CheckBox();
 			this.checkBoxSHOcclusion = new System.Windows.Forms.CheckBox();
-			this.outputPanel1 = new ProbeSHEncoder.OutputPanel(this.components);
 			this.checkBoxSHNormalized = new System.Windows.Forms.CheckBox();
+			this.outputPanel1 = new ProbeSHEncoder.OutputPanel(this.components);
+			this.radioButtonFaceIndex = new System.Windows.Forms.RadioButton();
 			this.menuStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -222,7 +223,7 @@ namespace ProbeSHEncoder
 			// radioButtonSetIndex
 			// 
 			this.radioButtonSetIndex.AutoSize = true;
-			this.radioButtonSetIndex.Location = new System.Drawing.Point(711, 333);
+			this.radioButtonSetIndex.Location = new System.Drawing.Point(712, 356);
 			this.radioButtonSetIndex.Name = "radioButtonSetIndex";
 			this.radioButtonSetIndex.Size = new System.Drawing.Size(70, 17);
 			this.radioButtonSetIndex.TabIndex = 4;
@@ -233,7 +234,7 @@ namespace ProbeSHEncoder
 			// radioButtonSetColor
 			// 
 			this.radioButtonSetColor.AutoSize = true;
-			this.radioButtonSetColor.Location = new System.Drawing.Point(711, 356);
+			this.radioButtonSetColor.Location = new System.Drawing.Point(712, 379);
 			this.radioButtonSetColor.Name = "radioButtonSetColor";
 			this.radioButtonSetColor.Size = new System.Drawing.Size(77, 17);
 			this.radioButtonSetColor.TabIndex = 4;
@@ -255,7 +256,7 @@ namespace ProbeSHEncoder
 			// radioButtonSetDistance
 			// 
 			this.radioButtonSetDistance.AutoSize = true;
-			this.radioButtonSetDistance.Location = new System.Drawing.Point(711, 379);
+			this.radioButtonSetDistance.Location = new System.Drawing.Point(712, 402);
 			this.radioButtonSetDistance.Name = "radioButtonSetDistance";
 			this.radioButtonSetDistance.Size = new System.Drawing.Size(86, 17);
 			this.radioButtonSetDistance.TabIndex = 4;
@@ -266,7 +267,7 @@ namespace ProbeSHEncoder
 			// radioButtonSetNormal
 			// 
 			this.radioButtonSetNormal.AutoSize = true;
-			this.radioButtonSetNormal.Location = new System.Drawing.Point(711, 402);
+			this.radioButtonSetNormal.Location = new System.Drawing.Point(712, 425);
 			this.radioButtonSetNormal.Name = "radioButtonSetNormal";
 			this.radioButtonSetNormal.Size = new System.Drawing.Size(77, 17);
 			this.radioButtonSetNormal.TabIndex = 4;
@@ -352,7 +353,7 @@ namespace ProbeSHEncoder
 			// 
 			// integerTrackbarControlSetIsolation
 			// 
-			this.integerTrackbarControlSetIsolation.Location = new System.Drawing.Point(731, 494);
+			this.integerTrackbarControlSetIsolation.Location = new System.Drawing.Point(732, 517);
 			this.integerTrackbarControlSetIsolation.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlSetIsolation.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlSetIsolation.Name = "integerTrackbarControlSetIsolation";
@@ -367,7 +368,7 @@ namespace ProbeSHEncoder
 			// checkBoxSetIsolation
 			// 
 			this.checkBoxSetIsolation.AutoSize = true;
-			this.checkBoxSetIsolation.Location = new System.Drawing.Point(711, 471);
+			this.checkBoxSetIsolation.Location = new System.Drawing.Point(712, 494);
 			this.checkBoxSetIsolation.Name = "checkBoxSetIsolation";
 			this.checkBoxSetIsolation.Size = new System.Drawing.Size(76, 17);
 			this.checkBoxSetIsolation.TabIndex = 9;
@@ -433,7 +434,7 @@ namespace ProbeSHEncoder
 			// radioButtonSHStatic
 			// 
 			this.radioButtonSHStatic.AutoSize = true;
-			this.radioButtonSHStatic.Location = new System.Drawing.Point(711, 425);
+			this.radioButtonSHStatic.Location = new System.Drawing.Point(712, 448);
 			this.radioButtonSHStatic.Name = "radioButtonSHStatic";
 			this.radioButtonSHStatic.Size = new System.Drawing.Size(73, 17);
 			this.radioButtonSHStatic.TabIndex = 4;
@@ -466,7 +467,7 @@ namespace ProbeSHEncoder
 			// radioButtonSetSamples
 			// 
 			this.radioButtonSetSamples.AutoSize = true;
-			this.radioButtonSetSamples.Location = new System.Drawing.Point(711, 448);
+			this.radioButtonSetSamples.Location = new System.Drawing.Point(712, 471);
 			this.radioButtonSetSamples.Name = "radioButtonSetSamples";
 			this.radioButtonSetSamples.Size = new System.Drawing.Size(84, 17);
 			this.radioButtonSetSamples.TabIndex = 4;
@@ -500,7 +501,7 @@ namespace ProbeSHEncoder
 			// radioButtonEmissiveMatID
 			// 
 			this.radioButtonEmissiveMatID.AutoSize = true;
-			this.radioButtonEmissiveMatID.Location = new System.Drawing.Point(711, 310);
+			this.radioButtonEmissiveMatID.Location = new System.Drawing.Point(712, 333);
 			this.radioButtonEmissiveMatID.Name = "radioButtonEmissiveMatID";
 			this.radioButtonEmissiveMatID.Size = new System.Drawing.Size(101, 17);
 			this.radioButtonEmissiveMatID.TabIndex = 4;
@@ -511,7 +512,7 @@ namespace ProbeSHEncoder
 			// checkBoxSHStatic
 			// 
 			this.checkBoxSHStatic.AutoSize = true;
-			this.checkBoxSHStatic.Location = new System.Drawing.Point(790, 425);
+			this.checkBoxSHStatic.Location = new System.Drawing.Point(791, 448);
 			this.checkBoxSHStatic.Name = "checkBoxSHStatic";
 			this.checkBoxSHStatic.Size = new System.Drawing.Size(53, 17);
 			this.checkBoxSHStatic.TabIndex = 9;
@@ -524,7 +525,7 @@ namespace ProbeSHEncoder
 			this.checkBoxSHDynamic.AutoSize = true;
 			this.checkBoxSHDynamic.Checked = true;
 			this.checkBoxSHDynamic.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxSHDynamic.Location = new System.Drawing.Point(849, 425);
+			this.checkBoxSHDynamic.Location = new System.Drawing.Point(850, 448);
 			this.checkBoxSHDynamic.Name = "checkBoxSHDynamic";
 			this.checkBoxSHDynamic.Size = new System.Drawing.Size(67, 17);
 			this.checkBoxSHDynamic.TabIndex = 9;
@@ -535,7 +536,7 @@ namespace ProbeSHEncoder
 			// checkBoxSHEmissive
 			// 
 			this.checkBoxSHEmissive.AutoSize = true;
-			this.checkBoxSHEmissive.Location = new System.Drawing.Point(922, 425);
+			this.checkBoxSHEmissive.Location = new System.Drawing.Point(923, 448);
 			this.checkBoxSHEmissive.Name = "checkBoxSHEmissive";
 			this.checkBoxSHEmissive.Size = new System.Drawing.Size(67, 17);
 			this.checkBoxSHEmissive.TabIndex = 9;
@@ -546,13 +547,24 @@ namespace ProbeSHEncoder
 			// checkBoxSHOcclusion
 			// 
 			this.checkBoxSHOcclusion.AutoSize = true;
-			this.checkBoxSHOcclusion.Location = new System.Drawing.Point(922, 448);
+			this.checkBoxSHOcclusion.Location = new System.Drawing.Point(923, 471);
 			this.checkBoxSHOcclusion.Name = "checkBoxSHOcclusion";
 			this.checkBoxSHOcclusion.Size = new System.Drawing.Size(73, 17);
 			this.checkBoxSHOcclusion.TabIndex = 9;
 			this.checkBoxSHOcclusion.Text = "Occlusion";
 			this.checkBoxSHOcclusion.UseVisualStyleBackColor = true;
 			this.checkBoxSHOcclusion.CheckedChanged += new System.EventHandler(this.checkBoxSHOcclusion_CheckedChanged);
+			// 
+			// checkBoxSHNormalized
+			// 
+			this.checkBoxSHNormalized.AutoSize = true;
+			this.checkBoxSHNormalized.Location = new System.Drawing.Point(850, 471);
+			this.checkBoxSHNormalized.Name = "checkBoxSHNormalized";
+			this.checkBoxSHNormalized.Size = new System.Drawing.Size(78, 17);
+			this.checkBoxSHNormalized.TabIndex = 9;
+			this.checkBoxSHNormalized.Text = "Normalized";
+			this.checkBoxSHNormalized.UseVisualStyleBackColor = true;
+			this.checkBoxSHNormalized.CheckedChanged += new System.EventHandler(this.checkBoxSHNormalized_CheckedChanged);
 			// 
 			// outputPanel1
 			// 
@@ -564,6 +576,7 @@ namespace ProbeSHEncoder
 			this.outputPanel1.IsolateSet = false;
 			this.outputPanel1.Location = new System.Drawing.Point(12, 27);
 			this.outputPanel1.Name = "outputPanel1";
+			this.outputPanel1.NormalizeSH = false;
 			vector2.X = 0F;
 			vector2.Y = 0F;
 			vector2.Z = 0F;
@@ -694,16 +707,16 @@ namespace ProbeSHEncoder
 			this.outputPanel1.TabIndex = 3;
 			this.outputPanel1.Viz = ProbeSHEncoder.OutputPanel.VIZ_TYPE.ALBEDO;
 			// 
-			// checkBoxSHNormalized
+			// radioButtonFaceIndex
 			// 
-			this.checkBoxSHNormalized.AutoSize = true;
-			this.checkBoxSHNormalized.Location = new System.Drawing.Point(849, 448);
-			this.checkBoxSHNormalized.Name = "checkBoxSHNormalized";
-			this.checkBoxSHNormalized.Size = new System.Drawing.Size(78, 17);
-			this.checkBoxSHNormalized.TabIndex = 9;
-			this.checkBoxSHNormalized.Text = "Normalized";
-			this.checkBoxSHNormalized.UseVisualStyleBackColor = true;
-			this.checkBoxSHNormalized.CheckedChanged += new System.EventHandler(this.checkBoxSHNormalized_CheckedChanged);
+			this.radioButtonFaceIndex.AutoSize = true;
+			this.radioButtonFaceIndex.Location = new System.Drawing.Point(712, 310);
+			this.radioButtonFaceIndex.Name = "radioButtonFaceIndex";
+			this.radioButtonFaceIndex.Size = new System.Drawing.Size(78, 17);
+			this.radioButtonFaceIndex.TabIndex = 4;
+			this.radioButtonFaceIndex.Text = "Face Index";
+			this.radioButtonFaceIndex.UseVisualStyleBackColor = true;
+			this.radioButtonFaceIndex.CheckedChanged += new System.EventHandler(this.radioButtonFaceIndex_CheckedChanged);
 			// 
 			// EncoderForm
 			// 
@@ -738,6 +751,7 @@ namespace ProbeSHEncoder
 			this.Controls.Add(this.radioButtonSetColor);
 			this.Controls.Add(this.radioButtonSetIndex);
 			this.Controls.Add(this.radioButtonEmissiveMatID);
+			this.Controls.Add(this.radioButtonFaceIndex);
 			this.Controls.Add(this.radioButtonStaticLit);
 			this.Controls.Add(this.radioButtonNormal);
 			this.Controls.Add(this.radioButtonDistance);
@@ -805,6 +819,7 @@ namespace ProbeSHEncoder
 		private System.Windows.Forms.CheckBox checkBoxSHEmissive;
 		private System.Windows.Forms.CheckBox checkBoxSHOcclusion;
 		private System.Windows.Forms.CheckBox checkBoxSHNormalized;
+		private System.Windows.Forms.RadioButton radioButtonFaceIndex;
 	}
 }
 

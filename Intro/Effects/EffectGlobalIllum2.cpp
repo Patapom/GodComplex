@@ -533,16 +533,6 @@ void	EffectGlobalIllum2::PreComputeProbes()
 		m_ProbesCount++;
 	}
 
-	// Also allocate runtime probes structured buffer
-	m_pSB_RuntimeProbes = new SB<RuntimeProbe>( m_Device, m_ProbesCount, true );
-	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
-	{
-		m_pSB_RuntimeProbes->m[ProbeIndex].Position = m_pProbes[ProbeIndex].pSceneProbe->m_Local2World.GetRow( 3 );
-		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = 1.0f;
-	}
-	m_pSB_RuntimeProbes->Write();
-
-
 
 	//////////////////////////////////////////////////////////////////////////
 	// Prepare the cube map face transforms
@@ -938,6 +928,17 @@ pRTCubeMap->SetPS( 64 );
 
 //### Keep it for debugging!
 // 	delete pRTCubeMap;
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Allocate runtime probes structured buffer
+	m_pSB_RuntimeProbes = new SB<RuntimeProbe>( m_Device, m_ProbesCount, true );
+	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+	{
+		m_pSB_RuntimeProbes->m[ProbeIndex].Position = m_pProbes[ProbeIndex].pSceneProbe->m_Local2World.GetRow( 3 );
+		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = m_pProbes[ProbeIndex].MaxDistance;
+	}
+	m_pSB_RuntimeProbes->Write();
 }
 
 //////////////////////////////////////////////////////////////////////////

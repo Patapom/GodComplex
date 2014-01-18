@@ -200,8 +200,15 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 			{	// Compute a standard point light
 				Light = LightSource.Position - SamplingPoint.Position;
 				float	Distance2Light = length( Light );
-				float	InvDistance2Light = 1.0 / Distance2Light;
-				Light *= InvDistance2Light;
+// 				float	InvDistance2Light = 1.0 / Distance2Light;
+// 				Light *= InvDistance2Light;
+//
+//// Try and avoid highlights when lights get too close to the sampling point
+//InvDistance2Light = min( 1.0, InvDistance2Light );
+
+				Light /= Distance2Light;
+				float	InvDistance2Light = 1.0 / max( 0.5, Distance2Light );	// Try and avoid highlights when lights get too close to the sampling point
+
 
 				Irradiance = LightSource.Color * InvDistance2Light * InvDistance2Light;
 
