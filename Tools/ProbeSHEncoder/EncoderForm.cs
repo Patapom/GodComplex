@@ -69,9 +69,9 @@ namespace ProbeSHEncoder
 			static readonly double		f3 = Math.Sqrt(5.0) * 0.5 * f0;
 
 			public int			PixelIndex;			// Index of the pixel in the scene pixels (can help us locate the cube map face + position of the pixel when finding adjacent pixels)
-			public int			FaceIndex;
-			public int			FaceX;
-			public int			FaceY;
+			public int			CubeFaceIndex;
+			public int			CubeFaceX;
+			public int			CubeFaceY;
 
 			public WMath.Point	Position;			// World position
 			public WMath.Vector	Normal;				// World normal
@@ -79,6 +79,7 @@ namespace ProbeSHEncoder
 			public WMath.Vector	AlbedoHSL;			// Material albedo in HSL format
 			public float		F0;					// Material Fresnel coefficient
 			public WMath.Vector	StaticLitColor;		// Color of the statically lit environment
+			public UInt32		FaceIndex;			// Absolute scene face index
 			public int			EmissiveMatID = -1;	// ID of the emissive material or -1 if not emissive
 			public bool			IsEmissive	{ get { return EmissiveMatID != -1; } }
 			public double		SolidAngle;			// Solid angle covered by the pixel
@@ -441,12 +442,17 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 		public double				m_MaxDistance = 0.0;
 		public WMath.BoundingBox	m_BBox = new WMath.BoundingBox();
 
+		// Static and occlusion SH
 		public WMath.Vector[]		m_StaticSH = new WMath.Vector[9];
-
 		public float[]				m_OcclusionSH = new float[9];
 
+		// Dynamic & Emissive sets
 		public Set[]				m_Sets = new Set[0];
 		public Set[]				m_EmissiveSets = new Set[0];
+
+		// List of influence weights per face index
+		public UInt32				m_MaxFaceIndex = 0;
+		public Dictionary<UInt32,double>		m_ProbeInfluencePerFace = new Dictionary<UInt32,double>();
 
 		public List<Pixel>			m_ProbePixels = new List<Pixel>();	// List of all pixels in the probe
 		public List<Pixel>			m_ScenePixels = new List<Pixel>();	// List of pixels that participate to the scene (i.e. not at infinity)
@@ -565,7 +571,7 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 					m_CubeMap[CubeFaceIndex] = new Pixel[CUBE_MAP_SIZE,CUBE_MAP_SIZE];
 					for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
 						for ( int X=0; X < CUBE_MAP_SIZE; X++ )
-							m_CubeMap[CubeFaceIndex][X,Y] = new Pixel() { PixelIndex = X + CUBE_MAP_SIZE * (Y + CUBE_MAP_SIZE * CubeFaceIndex), FaceIndex = CubeFaceIndex, FaceX = X, FaceY = Y };
+							m_CubeMap[CubeFaceIndex][X,Y] = new Pixel() { PixelIndex = X + CUBE_MAP_SIZE * (Y + CUBE_MAP_SIZE * CubeFaceIndex), CubeFaceIndex = CubeFaceIndex, CubeFaceX = X, CubeFaceY = Y };
 
 					// Fill up albedo
 					using ( MemoryStream S = new MemoryStream( POM.m_Content[CubeFaceIndex] ) )
@@ -573,17 +579,20 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 							for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
 								for ( int X=0; X < CUBE_MAP_SIZE; X++ )
 								{
+									Pixel	Pix = m_CubeMap[CubeFaceIndex][X,Y];
+
 									float	Red = R.ReadSingle();
 									float	Green = R.ReadSingle();
 									float	Blue = R.ReadSingle();
-									float	Alpha = R.ReadSingle();
+									
+									Pix.FaceIndex = R.ReadUInt32();
 
 									// Work with better precision
 									Red *= (float) Math.PI;
 									Green *= (float) Math.PI;
 									Blue *= (float) Math.PI;
 
-									m_CubeMap[CubeFaceIndex][X,Y].SetAlbedo( new WMath.Vector( Red, Green, Blue ) );
+									Pix.SetAlbedo( new WMath.Vector( Red, Green, Blue ) );
 								}
 
 					// Fill up static lit environment and emissive IDs
@@ -801,6 +810,17 @@ if ( (float) NegativeImportancePixelsCount / (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6)
 						// Write SH coefficients (we only write luminance here, we don't have any color info)
 						for ( int i=0; i < 9; i++ )
 							W.Write( S.SH[i].x );
+					}
+				}
+
+			// Save probe influence for each scene face
+			FileInfo	InfluenceFileName = new FileInfo( Path.Combine( Path.GetDirectoryName( _FileName.FullName ), Path.GetFileNameWithoutExtension( _FileName.FullName ) + ".FaceInfluence" ) );
+			using ( FileStream S = InfluenceFileName.Create() )
+				using ( BinaryWriter W = new BinaryWriter( S ) )
+				{
+					for ( UInt32 FaceIndex=0; FaceIndex < m_MaxFaceIndex; FaceIndex++ )
+					{
+						W.Write( (float) (m_ProbeInfluencePerFace.ContainsKey( FaceIndex ) ? m_ProbeInfluencePerFace[FaceIndex] : 0.0) );
 					}
 				}
 		}
@@ -1075,7 +1095,25 @@ int	DEBUG_PixelIndex = 0;
 
 
 			//////////////////////////////////////////////////////////////////////////
-			// 2] Iterate on the list of free pixels that belong to no set and create iterative sets
+			// 2] Compute the influence of the probe on each scene face
+			m_MaxFaceIndex = 0;
+			m_ProbeInfluencePerFace.Clear();
+			for ( int PixelIndex=0; PixelIndex < m_ProbePixels.Count; PixelIndex++ )
+			{
+				Pixel	P = m_ProbePixels[PixelIndex];
+				if ( P.Infinity )
+					continue;
+
+				if ( !m_ProbeInfluencePerFace.ContainsKey( P.FaceIndex ) )
+					m_ProbeInfluencePerFace[P.FaceIndex] = 0.0f;
+
+				m_ProbeInfluencePerFace[P.FaceIndex] += P.SolidAngle;
+				m_MaxFaceIndex = Math.Max( m_MaxFaceIndex, P.FaceIndex );
+			}
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// 3] Iterate on the list of free pixels that belong to no set and create iterative sets
 			List<Set>	Sets = new List<Set>();
 			for ( int PixelIndex=0; PixelIndex < m_ProbePixels.Count; PixelIndex++ )
 			{
@@ -1700,9 +1738,9 @@ DEBUG_PixelIndex = PixelIndex;
 
 		private Pixel	FindAdjacentPixel( Pixel _P, int _Dx, int _Dy )
 		{
-			int	CubeFaceIndex = _P.FaceIndex;
-			int	X = _P.FaceX;
-			int	Y = _P.FaceY;
+			int	CubeFaceIndex = _P.CubeFaceIndex;
+			int	X = _P.CubeFaceX;
+			int	Y = _P.CubeFaceY;
 
 			X += _Dx;
 			if ( X < 0 )
@@ -1787,6 +1825,12 @@ DEBUG_PixelIndex = PixelIndex;
 				outputPanel1.Viz = OutputPanel.VIZ_TYPE.STATIC_LIT;
 		}
 
+		private void radioButtonFaceIndex_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.FACE_INDEX;
+		}
+
 		private void radioButtonEmissiveMatID_CheckedChanged( object sender, EventArgs e )
 		{
 			if ( (sender as RadioButton).Checked )
@@ -1851,6 +1895,11 @@ DEBUG_PixelIndex = PixelIndex;
 		private void checkBoxSHOcclusion_CheckedChanged( object sender, EventArgs e )
 		{
 			outputPanel1.ShowSHOcclusion = (sender as CheckBox).Checked;
+		}
+
+		private void checkBoxSHNormalized_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanel1.NormalizeSH = (sender as CheckBox).Checked;
 		}
 
 		private void radioButtonSetSamples_CheckedChanged( object sender, EventArgs e )

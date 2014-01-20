@@ -22,6 +22,7 @@ namespace ProbeSHEncoder
 			DISTANCE,
 			NORMAL,
 			STATIC_LIT,
+			FACE_INDEX,
 			EMISSIVE_MAT_ID,
 			SET_INDEX,
 			SET_ALBEDO,
@@ -220,6 +221,23 @@ namespace ProbeSHEncoder
 			}
 		}
 
+		private bool			m_bNormalizeSH = false;
+		public bool				NormalizeSH
+		{
+			get { return m_bNormalizeSH; }
+			set
+			{
+				if ( value == m_bNormalizeSH )
+					return;
+
+				m_bNormalizeSH = value;
+				if ( m_Viz != VIZ_TYPE.SH )
+					return;
+				UpdateBitmap();
+				Refresh();
+			}
+		}
+
 		protected Bitmap		m_Bitmap = null;
 		public EncoderForm		m_Owner = null;
 
@@ -287,6 +305,7 @@ namespace ProbeSHEncoder
 					case VIZ_TYPE.DISTANCE:			S = CubeMapSamplerDistance; break;
 					case VIZ_TYPE.NORMAL:			S = CubeMapSamplerNormal; break;
 					case VIZ_TYPE.STATIC_LIT:		S = CubeMapSamplerStaticLit; break;
+					case VIZ_TYPE.FACE_INDEX:		S = CubeMapSamplerFaceIndex; break;
 					case VIZ_TYPE.EMISSIVE_MAT_ID:	S = CubeMapSamplerEmissiveMatID; break;
 					case VIZ_TYPE.SET_INDEX:		S = CubeMapSamplerSetIndex; break;
 					case VIZ_TYPE.SET_ALBEDO:		S = CubeMapSamplerSetAlbedo; break;
@@ -357,6 +376,12 @@ namespace ProbeSHEncoder
 			_R = (byte) Math.Min( 255, 255 * _Pixel.StaticLitColor.x );
 			_G = (byte) Math.Min( 255, 255 * _Pixel.StaticLitColor.y );
 			_B = (byte) Math.Min( 255, 255 * _Pixel.StaticLitColor.z );
+		}
+
+		private void	CubeMapSamplerFaceIndex( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		{
+			byte	C = (byte) (_Pixel.FaceIndex & 0xFF);
+			_R = _G = _B = C;
 		}
 
 		private void	CubeMapSamplerEmissiveMatID( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
@@ -441,7 +466,7 @@ namespace ProbeSHEncoder
 					for ( int i=0; i < 9; i++ )
 						Color += (float) _Pixel.SHCoeffs[i] * m_Owner.m_Sets[m_IsolatedSetIndex].SH[i];
 
-					Factor = m_Owner.m_Sets[m_IsolatedSetIndex].SH[0].Max();
+					Factor = m_bNormalizeSH ? 2.0f * m_Owner.m_Sets[m_IsolatedSetIndex].SH[0].Max() : 1.0f;
 				}
 
 				if ( m_bShowSHEmissive )
@@ -451,11 +476,11 @@ namespace ProbeSHEncoder
 						for ( int i=0; i < 9; i++ )
 							Color += (float) _Pixel.SHCoeffs[i] * m_Owner.m_EmissiveSets[EmissiveSetIndex].SH[i];
 
-					Factor = m_Owner.m_EmissiveSets[EmissiveSetIndex].SH[0].Max();
+					Factor = m_bNormalizeSH ? 2.0f * m_Owner.m_EmissiveSets[EmissiveSetIndex].SH[0].Max() : 1.0f;
 				}
 
 //				Color *= 100.0f;
-				Color *= 0.5f / Factor;
+				Color *= 1.0f / Factor;
 			}
 			else
 			{
@@ -487,7 +512,7 @@ namespace ProbeSHEncoder
 
 //				Color *= 50.0f;
 
-				Color *= 1.0f / Factor;
+				Color *= m_bNormalizeSH ? 1.0f / Factor : 1.0f;
 			}
 
 			if ( Color.x < 0.0f || Color.y < 0.0f || Color.z < 0.0f )

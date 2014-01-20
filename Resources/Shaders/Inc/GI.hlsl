@@ -58,6 +58,7 @@ cbuffer	cbMaterial	: register( b12 )
 	float3		_EmissiveColor;
 
 	float		_SpecularExponent;
+	uint		_FaceOffset;	// The offset to apply to the object's face index
 };
 
 // Optional textures associated to the material
@@ -66,7 +67,7 @@ Texture2D<float4>	_TexSpecularAlbedo : register( t11 );
 
 
 // Computes light's irradiance
-float3	AccumulateLight( float3 _WorldPosition, float3 _WorldNormal, LightStruct _LightSource )
+float3	AccumulateLight( float3 _WorldPosition, float3 _WorldNormal, float3 _WorldVertexNormal, LightStruct _LightSource )
 {
 	float3	Irradiance;
 	float3	Light;
@@ -91,7 +92,7 @@ float3	AccumulateLight( float3 _WorldPosition, float3 _WorldNormal, LightStruct 
 		Irradiance = _LightSource.Color;	// Simple!
 
 #if USE_SHADOW_MAP
-		Irradiance *= ComputeShadow( _WorldPosition, 0.0 );
+		Irradiance *= ComputeShadow( _WorldPosition, _WorldVertexNormal, 0.0 );
 #endif
 	}
 

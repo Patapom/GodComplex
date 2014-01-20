@@ -1,10 +1,15 @@
 #pragma once
 
+#define SUN_INTENSITY	1000.0f
+#define SKY_INTENSITY	(0.1f*SUN_INTENSITY)
+
 template<typename> class CB;
 
 class EffectGlobalIllum2 : public Scene::ISceneTagger, public Scene::ISceneRenderer
 {
 private:	// CONSTANTS
+
+	static const U32		MAX_SCENE_PRIMITIVES = 1024;		// We handle a maximum of 1024 scene primitives. That's not because the tech is limited but simply because I don't have a dynamic list class! ^^
 
 	static const U32		CUBE_MAP_SIZE = 128;
 	static const U32		MAX_NEIGHBOR_PROBES = 32;
@@ -52,6 +57,7 @@ protected:	// NESTED TYPES
 		NjFloat3	EmissiveColor;
 
 		float		SpecularExponent;
+		U32			FaceOffset;		// The offset to apply to the object's face index to obtain an absolute face index
 	};
 
 	struct CBProbe
@@ -214,6 +220,10 @@ private:	// FIELDS
 	bool				m_bDeleteSceneTags;
 	Primitive*			m_pPrimSphere;
 
+	U32					m_TotalFacesCount;
+	U32					m_TotalPrimitivesCount;
+	U32					m_pPrimitiveFaceOffset[MAX_SCENE_PRIMITIVES];
+
 	// Textures
 	Texture2D*			m_pTexWalls;
 	Texture2D*			m_pRTShadowMap;
@@ -241,9 +251,10 @@ private:	// FIELDS
 	SB<RuntimeProbeUpdateEmissiveSetInfos>*	m_pSB_RuntimeProbeEmissiveSetInfos;
 	SB<RuntimeSamplingPointInfos>*			m_pSB_RuntimeSamplingPointInfos;
 
-	// Params
-public:
-	
+
+	// Ambient SH computed from CIE overcast sky model
+	NjFloat3			m_pSHAmbientSky[9];
+
 
 public:		// PROPERTIES
 
@@ -259,13 +270,13 @@ public:		// METHODS
 
 
 	// ISceneTagger Implementation
-	virtual void*	TagMaterial( const Scene::Material& _Material ) const override;
-	virtual void*	TagTexture( const Scene::Material::Texture& _Texture ) const override;
-	virtual void*	TagNode( const Scene::Node& _Node ) const override;
-	virtual void*	TagPrimitive( const Scene::Mesh& _Mesh, const Scene::Mesh::Primitive& _Primitive ) const override;
+	virtual void*	TagMaterial( const Scene& _Owner, const Scene::Material& _Material ) override;
+	virtual void*	TagTexture( const Scene& _Owner, const Scene::Material::Texture& _Texture ) override;
+	virtual void*	TagNode( const Scene& _Owner, const Scene::Node& _Node ) override;
+	virtual void*	TagPrimitive( const Scene& _Owner, const Scene::Mesh& _Mesh, const Scene::Mesh::Primitive& _Primitive ) override;
 
 	// ISceneRenderer Implementation
-	virtual void	RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride ) const override;
+	virtual void	RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride ) override;
 
 private:
 

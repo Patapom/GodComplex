@@ -59,14 +59,14 @@ float	ComputeBlockerDistance( float3 _WorldPosition )
 }
 
 // Computes the shadow value for the given posiion, accounting for a radius around the position for soft shadowing
-float	ComputeShadow( float3 _WorldPosition, float _Radius )
+float	ComputeShadow( float3 _WorldPosition, float3 _WorldVertexNormal, float _Radius )
 {
-	float4	ShadowPosition = World2ShadowMapProj( _WorldPosition );
+	float4	ShadowPosition = World2ShadowMapProj( _WorldPosition + 0.01 * _WorldVertexNormal );
 
 	float2	UV = 0.5 * float2( 1.0 + ShadowPosition.x, 1.0 - ShadowPosition.y );
 	float	Zproj = ShadowPosition.z / ShadowPosition.w;
 
-Zproj -= 1e-2;	// Small bias to avoid noise
+//Zproj -= 0.002;	// Small bias to avoid noise
 
 	return _ShadowMap.SampleCmp( ShadowSampler, UV, Zproj );
 }

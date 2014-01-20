@@ -7,17 +7,10 @@
 #include "Inc/ShadowMap.hlsl"
 #include "Inc/GI.hlsl"
 
-//[
 cbuffer	cbGeneral	: register( b9 )
 {
 	bool		_ShowIndirect;
 };
-//]
-
-// DEBUG!
-TextureCube<float4>	_TexCubemapProbe0 : register( t64 );
-TextureCube<float4>	_TexCubemapProbe1 : register( t65 );
-
 
 struct	VS_IN
 {
@@ -25,7 +18,7 @@ struct	VS_IN
 	float3	Normal		: NORMAL;
 	float3	Tangent		: TANGENT;
 	float3	BiTangent	: BITANGENT;
-	float3	UV			: TEXCOORD0;
+	float2	UV			: TEXCOORD0;
 };
 
 struct	PS_IN
@@ -35,7 +28,7 @@ struct	PS_IN
 	float3	Normal		: NORMAL;
 	float3	Tangent		: TANGENT;
 	float3	BiTangent	: BITANGENT;
-	float3	UV			: TEXCOORD0;
+	float2	UV			: TEXCOORD0;
 
 	float3	SH0			: SH0;
 	float3	SH1			: SH1;
@@ -60,6 +53,7 @@ PS_IN	VS( VS_IN _In )
 	Out.BiTangent = mul( float4( _In.BiTangent, 0.0 ), _Local2World ).xyz;
 	Out.UV = _In.UV;
 
+	float3	Normal = normalize( Out.Normal );
 
 	// Iterate over all the probes and do a weighted sum based on their distance to the vertex's position
 	float	SumWeights = 0.0;
@@ -81,10 +75,15 @@ PS_IN	VS( VS_IN _In )
 // 		const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (MEAN_HARMONIC_DISTANCE * MEAN_HARMONIC_DISTANCE);
 // 		float	ProbeWeight = exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
 
-		float	ProbeWeight = pow( max( 0.01, Distance2Probe ), -3.0 );
+//		float	ProbeWeight = pow( max( 0.01, Distance2Probe ), -3.0 );
+
+		// Weight based on probe's max distance
+ 		const float	WEIGHT_AT_DISTANCE = 0.01;
+ 		const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (Probe.Radius * Probe.Radius);
+		float	ProbeWeight = 2.0 * exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
 
 		// Also weight by orientation to avoid probes facing away from us
-		ProbeWeight *= saturate( lerp( -0.98, 1.0, 0.5 * (1.0 + dot( Out.Normal, ToProbe )) ) );
+		ProbeWeight *= saturate( lerp( -0.1, 1.0, 0.5 * (1.0 + dot( Normal, ToProbe )) ) );
 
 
 //ProbeWeight = 1;
@@ -92,7 +91,7 @@ PS_IN	VS( VS_IN _In )
 // if ( ProbeIndex == 1 )
 // {
 // 	Out.SH0 = ProbeWeight;
-// //	Out.SH0 = Probe.Radius;
+// 	Out.SH1 = Probe.Radius;
 // 	return Out;
 // }
 
@@ -103,7 +102,9 @@ PS_IN	VS( VS_IN _In )
 	}
 
 	// Normalize & store
-	float	Norm = 1.0 / SumWeights;
+//	float	Norm = 1.0 / SumWeights;
+	float	Norm = 1.0 / max( 1.0, SumWeights );	// This max allows single, low influence probes to decrease with distance anyway
+													// But it correctly averages influences when many probes have strong weight
 
 	Out.SH0 = Norm * SH[0];
 	Out.SH1 = Norm * SH[1];
@@ -120,7 +121,8 @@ PS_IN	VS( VS_IN _In )
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
-//return float4( _In.SH0, 0 );
+// return float4( _In.SH0, 0 );
+// return float4( 0.01 * _In.SH1, 0 );
 
 #if EMISSIVE
 
@@ -153,6 +155,10 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	// Compute direct lighting
 	float3	View = normalize( _In.Position - _Camera2World[3].xyz );
 
+	float3	Normal = normalize( _In.Normal );
+	float3	Tangent = normalize( _In.Tangent );
+	float3	BiTangent = normalize( _In.BiTangent );
+
 	float3	AccumDiffuse = 0.0;
 	float3	AccumSpecular = 0.0;
 
@@ -160,14 +166,14 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	for ( int LightIndex=0; LightIndex < _StaticLightsCount; LightIndex++ )
 	{
 		LightStruct	LightSource = _SBLightsStatic[LightIndex];
-		AccumDiffuse += AccumulateLight( _In.Position, _In.Normal, LightSource );
+		AccumDiffuse += AccumulateLight( _In.Position, _In.Normal, Normal, LightSource );
 	}
 
 	// Process dynamic lights
 	for ( int LightIndex=0; LightIndex < _DynamicLightsCount; LightIndex++ )
 	{
 		LightStruct	LightSource = _SBLightsDynamic[LightIndex];
-		AccumDiffuse += AccumulateLight( _In.Position, _In.Normal, LightSource );
+		AccumDiffuse += AccumulateLight( _In.Position, _In.Normal, Normal, LightSource );
 	}
 
 	AccumDiffuse *= DiffuseAlbedo;

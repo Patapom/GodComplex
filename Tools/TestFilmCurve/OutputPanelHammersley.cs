@@ -13,7 +13,7 @@ namespace TestGradientPNG
 	{
 		protected Bitmap	m_Bitmap = null;
 
-		protected const int			SAMPLES_COUNT = 16;
+		protected const int			SAMPLES_COUNT = 32;
 		protected WMath.Vector2D[]	m_Samples = new WMath.Vector2D[SAMPLES_COUNT];
 
 		public OutputPanelHammersley( IContainer container )
@@ -32,6 +32,16 @@ namespace TestGradientPNG
 
 				m_Samples[SampleIndex] = new WMath.Vector2D( Radius * (float) Math.Cos( Angle ), Radius * (float) Math.Sin( Angle ) );
 			}
+
+			string	Format = "const uint		SHADOW_SAMPLES_COUNT = " + SAMPLES_COUNT + ";\r\n"
+						   + "const float2	SamplesOffset[SHADOW_SAMPLES_COUNT] = {\r\n";
+
+			for ( int SampleIndex=0; SampleIndex < SAMPLES_COUNT; SampleIndex++ )
+			{
+				Format += "	float2( " + m_Samples[SampleIndex].x + ", " + m_Samples[SampleIndex].y + " ),\r\n";
+			}
+
+			Format += "};\r\n\r\n";
 
 			OnSizeChanged( EventArgs.Empty );
 		}

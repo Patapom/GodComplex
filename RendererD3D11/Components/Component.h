@@ -9,6 +9,10 @@ protected:  // FIELDS
 	Component*	m_pPrevious;
 	Component*	m_pNext;
 
+public:
+
+	void*		m_pTag;		// User tag
+
 public:		// METHODS
 
 	Component( Device& _Device );
