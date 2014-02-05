@@ -168,3 +168,5 @@
 /Packages/FBXImporterManaged/Release
 
 /Resources/Scenes/GITest1/.mayaSwatches/*.swatches
+/Tools/TestFresnel/obj
+/Tools/TestFresnel/bin
