@@ -60,35 +60,6 @@ Texture3D		_TexFractal1			: register(t17);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// Fast analytical Perlin noise
-float Hash( float n )
-{
-	return frac( sin(n) * 43758.5453 );
-}
-
-float FastNoise( float3 x )
-{
-	float3	p = floor(x);
-	float3	f = frac(x);
-
-	f = smoothstep( 0.0, 1.0, f );
-
-	float	n = p.x + 57.0 * p.y + 113.0 * p.z;
-
-	return lerp(	lerp(	lerp( Hash( n +   0.0 ), Hash( n +   1.0 ), f.x ),
-							lerp( Hash( n +  57.0 ), Hash( n +  58.0 ), f.x ), f.y ),
-					lerp(	lerp( Hash( n + 113.0 ), Hash( n + 114.0 ), f.x ),
-							lerp( Hash( n + 170.0 ), Hash( n + 171.0 ), f.x ), f.y ), f.z );
-}
-
-// Fast analytical noise for screen-space perturbation
-float	FastScreenNoise( float2 _XY )
-{
-	return Hash( 1.579849 * _XY.x - 2.60165409 * _XY.y )
-		 * Hash( -1.3468489 * _XY.y + 2.31765 * _XY.x );
-}
-
-////////////////////////////////////////////////////////////////////////////////////////
 // Volume density
 float4	fbm( float3 _UVW, float _AmplitudeFactor, float _FrequencyFactor )
 {

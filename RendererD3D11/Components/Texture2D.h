@@ -16,16 +16,16 @@ protected:	// CONSTANTS
 
 private:	// FIELDS
 
-	int					m_Width;
-	int					m_Height;
-	int					m_ArraySize;
-	int					m_MipLevelsCount;
+	int								m_Width;
+	int								m_Height;
+	int								m_ArraySize;
+	int								m_MipLevelsCount;
 
-	const IFormatDescriptor&	m_Format;
-	bool				m_bIsDepthStencil;
-	bool				m_bIsCubeMap;
+	const IFormatDescriptor&		m_Format;
+	bool							m_bIsDepthStencil;
+	bool							m_bIsCubeMap;
 
-	ID3D11Texture2D*	m_pTexture;
+	ID3D11Texture2D*				m_pTexture;
 
 	// Cached resource views
 	mutable DictionaryU32			m_CachedShaderViews;

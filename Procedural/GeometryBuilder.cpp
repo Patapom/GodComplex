@@ -535,7 +535,7 @@ void	GeometryBuilder::BuildCube( int _SubdivisionsX, int _SubdivisionsY, int _Su
 		int		Sx = pSizesX[FaceIndex];
 		int		Sy = pSizesY[FaceIndex];
 
- 		if ( FaceIndex > 0 )
+		if ( FaceIndex > 0 )
 		{	// Write a first degenerate vertex for that face to make a clean junction with previous face...
  			IWRITE( pIndex, FaceOffset+0 );
 		}
@@ -556,7 +556,7 @@ void	GeometryBuilder::BuildCube( int _SubdivisionsX, int _SubdivisionsY, int _Su
 
 			// Write 2 last degenerate indices so we smoothly transition to next band
 			IWRITE( pIndex, NextBandOffset+Sx-1 );
-			IWRITE( pIndex, NextBandOffset+Sx );
+			IWRITE( pIndex, NextBandOffset );
 		}
 
 		FaceOffset += Sx*Sy;

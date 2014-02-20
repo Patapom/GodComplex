@@ -5,10 +5,11 @@
 
 #include "ConstantBuffers.h"
 
-#include "Effects/EffectTranslucency.h"
-#include "Effects/EffectRoom.h"
-#include "Effects/EffectVolumetric.h"
-#include "Effects/EffectGlobalIllum2.h"
+// #include "Effects/EffectTranslucency.h"
+// #include "Effects/EffectRoom.h"
+// #include "Effects/EffectVolumetric.h"
+//#include "Effects/EffectGlobalIllum2.h"
+#include "Effects/EffectDOF.h"
 
 // #include "Effects/Scene/MaterialBank.h"
 // #include "Effects/Scene/Scene.h"
@@ -39,11 +40,12 @@ static CB<CBGlobal>*		gs_pCB_Global = NULL;
 static CB<CBTest>*			gs_pCB_Test = NULL;
 
 // Effects
-static EffectTranslucency*	gs_pEffectTranslucency = NULL;
-static EffectRoom*			gs_pEffectRoom = NULL;
+//static EffectTranslucency*	gs_pEffectTranslucency = NULL;
+//static EffectRoom*			gs_pEffectRoom = NULL;
 //static EffectScene*		gs_pEffectScene = NULL;
-static EffectVolumetric*	gs_pEffectVolumetric = NULL;
-static EffectGlobalIllum2*	gs_pEffectGI = NULL;
+//static EffectVolumetric*	gs_pEffectVolumetric = NULL;
+//static EffectGlobalIllum2*	gs_pEffectGI = NULL;
+static EffectDOF*			gs_pEffectDOF = NULL;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -167,7 +169,9 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 
 //		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_VOLUMETRIC );
 
-		CHECK_EFFECT( gs_pEffectGI = new EffectGlobalIllum2( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_GLOBALILLUM );
+//		CHECK_EFFECT( gs_pEffectGI = new EffectGlobalIllum2( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_GLOBALILLUM );
+
+		CHECK_EFFECT( gs_pEffectDOF = new EffectDOF( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_DOF );
 	}
 
 
@@ -184,11 +188,12 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 void	IntroExit()
 {
 	// Release effects
-	delete gs_pEffectGI;
-	delete gs_pEffectVolumetric;
+	delete gs_pEffectDOF;
+// 	delete gs_pEffectGI;
+// 	delete gs_pEffectVolumetric;
 //	delete gs_pEffectScene;
-	delete gs_pEffectTranslucency;
-	delete gs_pEffectRoom;
+// 	delete gs_pEffectTranslucency;
+// 	delete gs_pEffectRoom;
 
 	// Release constant buffers
 	delete gs_pCB_Test;
@@ -336,7 +341,6 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	// Render the scene
 	gs_pEffectScene->Render( _Time, _DeltaTime, *gs_pRTHDR );
 
-
 #elif 0	// TEST VOLUMETRIC
 
 	//////////////////////////////////////////////////////////////////////////
@@ -394,7 +398,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	gs_pEffectVolumetric->Render( _Time, _DeltaTime );
 
 
-#elif 1	// TEST GLOBAL ILLUM
+#elif 0	// TEST GLOBAL ILLUM
 
 	gs_pCameraManipulator->Update( _DeltaTime, 1.0f, 1.0f );
 	gs_pCamera->Upload( 0 );
@@ -403,6 +407,17 @@ bool	IntroDo( float _Time, float _DeltaTime )
  	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
 
 	gs_pEffectGI->Render( _Time, _DeltaTime );
+
+
+#elif 1	// TEST DEPTH OF FIELD
+
+	gs_pCameraManipulator->Update( _DeltaTime, 1.0f, 1.0f );
+	gs_pCamera->Upload( 0 );
+
+ 	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+ 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
+
+	gs_pEffectDOF->Render( _Time, _DeltaTime );
 
 #endif
 

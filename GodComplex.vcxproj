@@ -250,6 +250,7 @@ MinifyAll.cmd</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectDOF.h" />
     <ClInclude Include="Intro\Effects\EffectGlobalIllum.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClInclude>
@@ -350,6 +351,7 @@ MinifyAll.cmd</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectDOF.cpp" />
     <ClCompile Include="Intro\Effects\EffectGlobalIllum.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
@@ -453,6 +455,11 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\DeferredFillGBuffer.hlsl" />
     <None Include="Resources\Shaders\DeferredShading.hlsl" />
     <None Include="Resources\Shaders\DeferredShadingStencil.hlsl" />
+    <None Include="Resources\Shaders\DOFCompute.hlsl" />
+    <None Include="Resources\Shaders\DOFComputeFuzziness.hlsl" />
+    <None Include="Resources\Shaders\DOFDownsample.hlsl" />
+    <None Include="Resources\Shaders\DOFRenderCube.hlsl" />
+    <None Include="Resources\Shaders\DOFRenderScene.hlsl" />
     <None Include="Resources\Shaders\GIPostProcess.hlsl" />
     <None Include="Resources\Shaders\GIRenderCubeMap.hlsl" />
     <None Include="Resources\Shaders\GIRenderLights.hlsl" />

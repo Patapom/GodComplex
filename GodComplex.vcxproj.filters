@@ -101,6 +101,9 @@
     <Filter Include="Resources\Shaders\DEBUG\EffectGlobalIllum">
       <UniqueIdentifier>{57c485d7-9d7a-4368-bb16-7e6fa4884255}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\DOF">
+      <UniqueIdentifier>{a26e2882-98ff-4d2e-bd83-119f880aaa7a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\Events.h">
@@ -270,6 +273,9 @@
     <ClInclude Include="Intro\Effects\EffectGlobalIllum2.h">
       <Filter>Intro\Effects</Filter>
     </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectDOF.h">
+      <Filter>Intro\Effects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -427,6 +433,9 @@
       <Filter>Utility</Filter>
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectGlobalIllum2.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectDOF.cpp">
       <Filter>Intro\Effects</Filter>
     </ClCompile>
   </ItemGroup>
@@ -600,6 +609,21 @@
     </None>
     <None Include="Resources\Shaders\Inc\GI.hlsl">
       <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
+    <None Include="Resources\Shaders\DOFRenderScene.hlsl">
+      <Filter>Resources\Shaders\DEBUG\DOF</Filter>
+    </None>
+    <None Include="Resources\Shaders\DOFRenderCube.hlsl">
+      <Filter>Resources\Shaders\DEBUG\DOF</Filter>
+    </None>
+    <None Include="Resources\Shaders\DOFDownsample.hlsl">
+      <Filter>Resources\Shaders\DEBUG\DOF</Filter>
+    </None>
+    <None Include="Resources\Shaders\DOFComputeFuzziness.hlsl">
+      <Filter>Resources\Shaders\DEBUG\DOF</Filter>
+    </None>
+    <None Include="Resources\Shaders\DOFCompute.hlsl">
+      <Filter>Resources\Shaders\DEBUG\DOF</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

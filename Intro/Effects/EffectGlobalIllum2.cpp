@@ -1150,6 +1150,7 @@ void	EffectGlobalIllum2::ZHRotate( const NjFloat3& _Direction, const NjFloat3& _
 	_Coeffs[8] = f2 * 0.5f * (_Direction.z*_Direction.z - _Direction.x*_Direction.x);
 }
 
+
 //////////////////////////////////////////////////////////////////////////
 // Scene Rendering
 //
