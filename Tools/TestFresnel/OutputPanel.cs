@@ -30,13 +30,24 @@ namespace TestFresnel
 			}
 		}
 
-		public float			m_IOR = 1.0f;
+		protected float			m_IOR = 1.0f;
 		public float			IOR
 		{
 			get { return m_IOR; }
 			set
 			{
 				m_IOR = value;
+				UpdateBitmap();
+			}
+		}
+
+		protected Color			m_SpecularTint = Color.White;
+		public Color			SpecularTint
+		{
+			get { return m_SpecularTint; }
+			set
+			{
+				m_SpecularTint = value;
 				UpdateBitmap();
 			}
 		}
@@ -72,25 +83,30 @@ namespace TestFresnel
 					case FRESNEL_TYPE.PRECISE:	Eval = Fresnel_Precise; PreparePrecise(); break;
 				}
 
-
 				DrawLine( G, 0, 1, 1, 1, Pens.Red );
 
 				float	x = 0.0f;
-				float	y = Eval( 1.0f );
+				float	yr, yg, yb;
+				Eval( 1.0f, out yr, out yg, out yb );
 				for ( int X=10; X <= Width; X++ )
 				{
 					float	px = x;
-					float	py = y;
+					float	pyr = yr;
+					float	pyg = yg;
+					float	pyb = yb;
 					x = (float) (X-10.0f) / (Width - 10);
 
 					float	CosTheta = (float) Math.Cos( x * 0.5 * Math.PI );	// Cos(theta)
 
-					y = Eval( CosTheta );
+					Eval( CosTheta, out yr, out yg, out yb );
 
-					DrawLine( G, px, py, x, y );
+					DrawLine( G, px, pyr, x, yr, Pens.Red );
+					DrawLine( G, px, pyg, x, yg, Pens.LimeGreen );
+					DrawLine( G, px, pyb, x, yb, Pens.Blue );
 				}
 
-				float	F0 = Eval( 1.0f );
+				Eval( 1.0f, out yr, out yg, out yb );
+				float	F0 = Math.Max( Math.Max( yr, yg ), yb );
 				G.DrawString( "F0 = " + F0, Font, Brushes.Black, 12.0f, Height - 30 - (Height-20) * F0 );
 			}
 
@@ -110,27 +126,34 @@ namespace TestFresnel
 			G.DrawLine( _Pen, X0, Y0, X1, Y1 );
 		}
 
-		protected delegate float		FresnelEval( float x );
+		protected delegate void		FresnelEval( float x, out float yr, out float yg, out float yb );
 
 		// F0 = ((n2 - n1) / (n2 + n1))²
 		// Assuming n1=1 (air)
 		// We look for n2 so:
 		//	n2 = (1+a)/(1-a) with a = sqrt(F0)
-		protected float		F0;
+		protected float		F0r;
+		protected float		F0g;
+		protected float		F0b;
 		protected void		PrepareSchlick()
 		{
 // 			var	IOR = (1+Math.sqrt(this.fresnelF0)) / (1-Math.sqrt(this.fresnelF0));
 // 			if ( !isFinite( IOR ) )
 // 				IOR = 1e30;	// Simply use a huge number instead...
-			F0 = (float) Math.Pow( (m_IOR - 1.0) / (m_IOR + 1.0), 2.0 );
+			float	F0 = (float) Math.Pow( (m_IOR - 1.0) / (m_IOR + 1.0), 2.0 );
+			F0r = F0 * m_SpecularTint.R / 255.0f;
+			F0g = F0 * m_SpecularTint.G / 255.0f;
+			F0b = F0 * m_SpecularTint.B / 255.0f;
 		}
-		protected float		Fresnel_Schlick( float _CosTheta )
+		protected void		Fresnel_Schlick( float _CosTheta, out float yr, out float yg, out float yb )
 		{
 			float	One_Minus_CosTheta = 1.0f - _CosTheta;
 			float	One_Minus_CosTheta_Pow5 = One_Minus_CosTheta * One_Minus_CosTheta;
 					One_Minus_CosTheta_Pow5 *= One_Minus_CosTheta_Pow5 * One_Minus_CosTheta;
 
-			return F0 + (1.0f - F0) * One_Minus_CosTheta_Pow5;
+			yr = F0r + (1.0f - F0r) * One_Minus_CosTheta_Pow5;
+			yg = F0g + (1.0f - F0g) * One_Minus_CosTheta_Pow5;
+			yb = F0b + (1.0f - F0b) * One_Minus_CosTheta_Pow5;
 		}
 
 		/// <summary>
@@ -147,15 +170,38 @@ namespace TestFresnel
 		/// </summary>
 		protected void		PreparePrecise()
 		{
+			float	F0 = (float) Math.Pow( (m_IOR - 1.0) / (m_IOR + 1.0), 2.0 );
+			F0r = F0 * m_SpecularTint.R / 255.0f;
+			F0g = F0 * m_SpecularTint.G / 255.0f;
+			F0b = F0 * m_SpecularTint.B / 255.0f;
 
+			F0r = (float) ((1.0+Math.Sqrt( F0r )) / (1.0-Math.Sqrt( F0r )));
+			F0g = (float) ((1.0+Math.Sqrt( F0g )) / (1.0-Math.Sqrt( F0g )));
+			F0b = (float) ((1.0+Math.Sqrt( F0b )) / (1.0-Math.Sqrt( F0b )));
 		}
-		protected float		Fresnel_Precise( float _CosTheta )
+		protected void		Fresnel_Precise( float _CosTheta, out float yr, out float yg, out float yb )
 		{
 			float	c = _CosTheta;
-			double	g = Math.Sqrt( m_IOR*m_IOR - 1.0 + c*c );
-			double	F = 0.5 * Math.Pow( (g-c) / (g+c), 2.0 ) * (1.0 + Math.Pow( (c*(g+c) - 1) / (c*(g-c) + 1), 2.0 ));
+// 			double	g = Math.Sqrt( m_IOR*m_IOR - 1.0 + c*c );
+// 			float	F = (float) (0.5 * Math.Pow( (g-c) / (g+c), 2.0 ) * (1.0 + Math.Pow( (c*(g+c) - 1) / (c*(g-c) + 1), 2.0 )) );
 
-			return (float) F;
+
+			double	g = Math.Sqrt( F0r*F0r - 1.0 + c*c );
+			yr = (float) (0.5 * Math.Pow( (g-c) / (g+c), 2.0 ) * (1.0 + Math.Pow( (c*(g+c) - 1) / (c*(g-c) + 1), 2.0 )) );
+			g = Math.Sqrt( F0g*F0g - 1.0 + c*c );
+			yg = (float) (0.5 * Math.Pow( (g-c) / (g+c), 2.0 ) * (1.0 + Math.Pow( (c*(g+c) - 1) / (c*(g-c) + 1), 2.0 )) );
+			g = Math.Sqrt( F0b*F0b - 1.0 + c*c );
+			yb = (float) (0.5 * Math.Pow( (g-c) / (g+c), 2.0 ) * (1.0 + Math.Pow( (c*(g+c) - 1) / (c*(g-c) + 1), 2.0 )) );
+
+// 			yr = F * F0r;
+// 			yg = F * F0g;
+// 			yb = F * F0b;
+// 			yr = F0r + (1.0f - F0r) * F;
+// 			yg = F0g + (1.0f - F0g) * F;
+// 			yb = F0b + (1.0f - F0b) * F;
+// 			yr = F0r * (1-F) + F;
+// 			yg = F0g * (1-F) + F;
+// 			yb = F0b * (1-F) + F;
 		}
 
 		protected override void OnSizeChanged( EventArgs e )

@@ -30,5 +30,14 @@ namespace TestFresnel
 		{
 			outputPanel1.IOR = _Sender.Value;
 		}
+
+		private void panelColor_Click( object sender, EventArgs e )
+		{
+			if ( colorDialog1.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			outputPanel1.SpecularTint = colorDialog1.Color;
+			panelColor.BackColor = colorDialog1.Color;
+		}
 	}
 }

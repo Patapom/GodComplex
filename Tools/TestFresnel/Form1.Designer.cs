@@ -29,21 +29,14 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.outputPanel1 = new TestFresnel.OutputPanel(this.components);
 			this.radioButtonSchlick = new System.Windows.Forms.RadioButton();
 			this.radioButtonPrecise = new System.Windows.Forms.RadioButton();
 			this.floatTrackbarControl1 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label1 = new System.Windows.Forms.Label();
+			this.panelColor = new System.Windows.Forms.Panel();
+			this.colorDialog1 = new System.Windows.Forms.ColorDialog();
+			this.outputPanel1 = new TestFresnel.OutputPanel(this.components);
 			this.SuspendLayout();
-			// 
-			// outputPanel1
-			// 
-			this.outputPanel1.FresnelType = TestFresnel.OutputPanel.FRESNEL_TYPE.SCHLICK;
-			this.outputPanel1.IOR = 1F;
-			this.outputPanel1.Location = new System.Drawing.Point(12, 12);
-			this.outputPanel1.Name = "outputPanel1";
-			this.outputPanel1.Size = new System.Drawing.Size(582, 516);
-			this.outputPanel1.TabIndex = 0;
 			// 
 			// radioButtonSchlick
 			// 
@@ -92,11 +85,36 @@
 			this.label1.TabIndex = 3;
 			this.label1.Text = "IOR";
 			// 
+			// panelColor
+			// 
+			this.panelColor.BackColor = System.Drawing.Color.White;
+			this.panelColor.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelColor.Location = new System.Drawing.Point(685, 138);
+			this.panelColor.Name = "panelColor";
+			this.panelColor.Size = new System.Drawing.Size(48, 35);
+			this.panelColor.TabIndex = 4;
+			this.panelColor.Click += new System.EventHandler(this.panelColor_Click);
+			// 
+			// colorDialog1
+			// 
+			this.colorDialog1.FullOpen = true;
+			// 
+			// outputPanel1
+			// 
+			this.outputPanel1.FresnelType = TestFresnel.OutputPanel.FRESNEL_TYPE.SCHLICK;
+			this.outputPanel1.IOR = 1F;
+			this.outputPanel1.Location = new System.Drawing.Point(12, 12);
+			this.outputPanel1.Name = "outputPanel1";
+			this.outputPanel1.Size = new System.Drawing.Size(582, 516);
+			this.outputPanel1.SpecularTint = System.Drawing.Color.White;
+			this.outputPanel1.TabIndex = 0;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(845, 578);
+			this.Controls.Add(this.panelColor);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.floatTrackbarControl1);
 			this.Controls.Add(this.radioButtonPrecise);
@@ -116,6 +134,8 @@
 		private System.Windows.Forms.RadioButton radioButtonPrecise;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl1;
 		private System.Windows.Forms.Label label1;
+		private System.Windows.Forms.Panel panelColor;
+		private System.Windows.Forms.ColorDialog colorDialog1;
 	}
 }
 

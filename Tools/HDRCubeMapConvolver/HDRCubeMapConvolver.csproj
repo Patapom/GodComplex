@@ -112,6 +112,18 @@
       <DesignTime>True</DesignTime>
     </Compile>
     <None Include="app.config" />
+    <None Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\arkDefault_CBObject.cb">
+      <Link>arkDefault\arkDefault_CBObject.cb</Link>
+    </None>
+    <None Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\Includes\arkDebugBRDFAlbedo.mrpr">
+      <Link>arkDefault\Includes\arkDebugBRDFAlbedo.mrpr</Link>
+    </None>
+    <None Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\arkDefault_CBObject.cb">
+      <Link>MarmosetTest\arkDefault_CBObject.cb</Link>
+    </None>
+    <None Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\Includes\arkDebugBRDFAlbedo.mrpr">
+      <Link>MarmosetTest\Includes\arkDebugBRDFAlbedo.mrpr</Link>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -140,7 +152,92 @@
       <Name>DirectXTexManaged</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\arkDefault.fx">
+      <Link>arkDefault\arkDefault.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\Includes\CBLight0.fx">
+      <Link>arkDefault\Includes\CBLight0.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\Includes\CBLight1.fx">
+      <Link>arkDefault\Includes\CBLight1.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\Includes\CBLight2.fx">
+      <Link>arkDefault\Includes\CBLight2.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\Includes\CBLight3.fx">
+      <Link>arkDefault\Includes\CBLight3.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\Includes\Fresnel.fx">
+      <Link>arkDefault\Includes\Fresnel.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\Includes\Global.fx">
+      <Link>arkDefault\Includes\Global.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\Includes\Lighting.fx">
+      <Link>arkDefault\Includes\Lighting.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\Includes\Marmoset.fx">
+      <Link>arkDefault\Includes\Marmoset.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\Includes\SH.fx">
+      <Link>arkDefault\Includes\SH.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\Includes\Shadow.fx">
+      <Link>arkDefault\Includes\Shadow.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\Includes\Skin.fx">
+      <Link>arkDefault\Includes\Skin.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\Includes\Translucency.fx">
+      <Link>arkDefault\Includes\Translucency.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\arkDefault\Includes\Ward.fx">
+      <Link>arkDefault\Includes\Ward.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\arkDefault.fx">
+      <Link>MarmosetTest\arkDefault.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\Includes\CBLight0.fx">
+      <Link>MarmosetTest\Includes\CBLight0.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\Includes\CBLight1.fx">
+      <Link>MarmosetTest\Includes\CBLight1.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\Includes\CBLight2.fx">
+      <Link>MarmosetTest\Includes\CBLight2.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\Includes\CBLight3.fx">
+      <Link>MarmosetTest\Includes\CBLight3.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\Includes\Fresnel.fx">
+      <Link>MarmosetTest\Includes\Fresnel.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\Includes\Global.fx">
+      <Link>MarmosetTest\Includes\Global.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\Includes\Lighting.fx">
+      <Link>MarmosetTest\Includes\Lighting.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\Includes\Marmoset.fx">
+      <Link>MarmosetTest\Includes\Marmoset.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\Includes\SH.fx">
+      <Link>MarmosetTest\Includes\SH.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\Includes\Shadow.fx">
+      <Link>MarmosetTest\Includes\Shadow.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\Includes\Skin.fx">
+      <Link>MarmosetTest\Includes\Skin.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\Includes\Translucency.fx">
+      <Link>MarmosetTest\Includes\Translucency.fx</Link>
+    </Content>
+    <Content Include="E:\Program Files\Autodesk\Maya2014\presets\HLSL11\Arkane\MarmosetTest\Includes\Ward.fx">
+      <Link>MarmosetTest\Includes\Ward.fx</Link>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
