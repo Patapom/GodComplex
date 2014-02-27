@@ -124,6 +124,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MaterialsDatabase\MaterialsDatabase.cs" />
     <Compile Include="PrimitiveBuilder.cs" />
     <Compile Include="SceneObjects\LoaderTempTextureCube.cs" />
     <Compile Include="SceneObjects\LoaderTempTexture.cs" />

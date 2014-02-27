@@ -42,7 +42,9 @@ namespace FBXTestConverter
 		{
 			InitializeComponent();
 
-			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1.fbx" ) );
+			LoadScene( new FileInfo( @"..\..\..\Arkane\City.fbx" ) );
+
+//			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1.fbx" ) );
 //			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1_10Probes.fbx" ) );
 //			LoadScene( new FileInfo( @"..\..\Resources\Scenes\CubeTest.fbx" ) );
 		}
@@ -51,8 +53,11 @@ namespace FBXTestConverter
 		{
 			FBX.SceneLoader.SceneLoader	Loader = new FBX.SceneLoader.SceneLoader();
 
+			FBX.SceneLoader.MaterialsDatabase	Materials = new FBX.SceneLoader.MaterialsDatabase();
+			Materials.BuildFromM2( new DirectoryInfo( @"D:\Workspaces\Arkane\m2" ) );
+
 			FBX.Scene.Scene	Scene = new FBX.Scene.Scene();
-			Loader.Load( _File, Scene );
+			Loader.Load( _File, Scene, 1.0f, Materials );
 
 			// Start writing
 			FileInfo	Target = new FileInfo( Path.Combine( Path.GetDirectoryName( _File.FullName ), Path.GetFileNameWithoutExtension( _File.FullName ) + ".gcx" ) );

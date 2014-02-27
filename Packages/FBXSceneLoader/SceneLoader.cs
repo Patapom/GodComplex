@@ -297,7 +297,7 @@ namespace FBX.SceneLoader
 		/// <param name="_Scene">The cirrus scene into which we should store the data</param>
 		public void	Load( FileInfo _FileName, FBX.Scene.Scene _Scene )
 		{
-			Load( _FileName, _Scene, 1.0f );
+			Load( _FileName, _Scene, 1.0f, null );
 		}
 
 		/// <summary>
@@ -310,7 +310,8 @@ namespace FBX.SceneLoader
 		/// will want to use a scale factor of 0.01.
 		/// FBX offers the possibility of scaling but does a shitty job at it as it doesn't even rescale other dimensions like near/far clips or ranges for lights
 		///  and camera, which plain sucks.</param>
-		public void	Load( FileInfo _FileName, FBX.Scene.Scene _Scene, float _ScaleFactor )
+		/// <param name="_Materials">An optional materials database containing informations about materials required by the scene</param>
+		public void	Load( FileInfo _FileName, FBX.Scene.Scene _Scene, float _ScaleFactor, MaterialsDatabase _Materials )
 		{
 			if ( _FileName == null )
 				throw new Exception( "Invalid file name!" );
