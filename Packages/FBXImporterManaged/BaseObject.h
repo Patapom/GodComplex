@@ -23,15 +23,11 @@ namespace FBXImporter
 	protected:	// FIELDS
 
 		Scene^					m_ParentScene;		// Our parent scene
-//		FbxObject*				m_pObject;			// The FBX object we're wrapping
 
 		String^					m_Name;				// Node name
 
 		List<ObjectProperty^>^	m_Properties;
 		List<ObjectProperty^>^	m_UserProperties;
-
-// 		cli::array<ObjectProperty^>^	m_Properties;
-// 		cli::array<ObjectProperty^>^	m_UserProperties;
 
 
 	public:		// PROPERTIES
@@ -63,9 +59,9 @@ namespace FBXImporter
 
 	public:		// METHODS
 
-		BaseObject( Scene^ _ParentScene, FbxObject* _pObject ) : m_ParentScene( _ParentScene )//, m_pObject( _pObject )
+		BaseObject( Scene^ _ParentScene, FbxObject* _pObject ) : m_ParentScene( _ParentScene )
 		{
-			m_Name = Helpers::GetString( _pObject->GetName() );
+			m_Name = _pObject != NULL ? Helpers::GetString( _pObject->GetName() ) : Helpers::GetString( "" );
 			m_Properties = gcnew List<ObjectProperty^>();
 			m_UserProperties = gcnew List<ObjectProperty^>();
 
@@ -127,6 +123,9 @@ namespace FBXImporter
 		// Decode and append object properties to this node's properties
 		void			AppendProperties( FbxObject* _pObject )
 		{
+			if ( _pObject == NULL )
+				return;
+
 			FbxProperty	Property = _pObject->GetFirstProperty();
 			while ( Property.IsValid() )
 			{

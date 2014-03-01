@@ -474,6 +474,11 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 			PrepareCubeMapFaceTransforms();
 
 			outputPanel1.At = -WMath.Vector.UnitZ;
+
+			// Restore settings
+			floatTrackbarControlPosition.Value = GetRegKeyFloat( "DistanceSeparationImportance", floatTrackbarControlPosition.Value );
+			floatTrackbarControlNormal.Value = GetRegKeyFloat( "NormalSeparationImportance", floatTrackbarControlNormal.Value );
+			floatTrackbarControlAlbedo.Value = GetRegKeyFloat( "AlbedoSeparationImportance", floatTrackbarControlAlbedo.Value );
 		}
 
 		protected override void OnLoad( EventArgs e )
@@ -663,6 +668,8 @@ NegativeImportancePixelsCount++;
 
 									// Account for a new scene pixel (i.e. not infinity)
 									m_ScenePixels.Add( Pix );
+
+									// Update dimensions
 									m_MeanDistance += Distance;
 									m_MeanHarmonicDistance += 1.0 / Distance;
 									m_MinDistance = Math.Min( m_MinDistance, Distance );
@@ -835,6 +842,14 @@ if ( (float) NegativeImportancePixelsCount / (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6)
 		private void	SetRegKey( string _Key, string _Value )
 		{
 			m_AppKey.SetValue( _Key, _Value );
+		}
+
+		private float	GetRegKeyFloat( string _Key, float _Default )
+		{
+			string	Value = GetRegKey( _Key, _Default.ToString() );
+			float	Result;
+			float.TryParse( Value, out Result );
+			return Result;
 		}
 
 		private void	MessageBox( string _Text )
@@ -1248,6 +1263,11 @@ DEBUG_PixelIndex = PixelIndex;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Compute informations on each set
+			m_MeanDistance = 0.0;
+			m_MeanHarmonicDistance = 0.0;
+			m_MinDistance = 1e6;
+			m_MaxDistance = 0.0;
+
 			int		SumCardinality = 0;
 			for ( int SetIndex=0; SetIndex < m_Sets.Length; SetIndex++ )
 			{
@@ -1265,6 +1285,12 @@ DEBUG_PixelIndex = PixelIndex;
 
 					AverageNormal += P.Normal;
 					AverageAlbedo += P.Albedo;
+
+					// Update min/max/avg
+					m_MeanDistance += P.Distance;
+					m_MinDistance = Math.Min( m_MinDistance, P.Distance );
+					m_MaxDistance = Math.Max( m_MaxDistance, P.Distance );
+					m_MeanHarmonicDistance += 1.0 / P.Distance;
 				}
 
 				AverageNormal /= S.SetPixels.Count;
@@ -1283,6 +1309,9 @@ DEBUG_PixelIndex = PixelIndex;
 // Find a faster way!
 //				S.FindPrincipalAxes();
 			}
+
+			m_MeanHarmonicDistance = SumCardinality / m_MeanHarmonicDistance;
+			m_MeanDistance /= SumCardinality;
 
 			// Do the same for emissive sets
 			for ( int SetIndex=0; SetIndex < m_EmissiveSets.Length; SetIndex++ )
@@ -1906,6 +1935,28 @@ DEBUG_PixelIndex = PixelIndex;
 		{
 			if ( (sender as RadioButton).Checked )
 				outputPanel1.Viz = OutputPanel.VIZ_TYPE.SET_SAMPLES;
+		}
+
+		private void buttonReset_Click( object sender, EventArgs e )
+		{
+			floatTrackbarControlPosition.Value = 1.0f;
+			floatTrackbarControlNormal.Value = 1.0f;
+			floatTrackbarControlAlbedo.Value = 1.0f;
+		}
+
+		private void floatTrackbarControlPosition_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			SetRegKey( "DistanceSeparationImportance", _Sender.Value.ToString() );
+		}
+
+		private void floatTrackbarControlNormal_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			SetRegKey( "NormalSeparationImportance", _Sender.Value.ToString() );
+		}
+
+		private void floatTrackbarControlAlbedo_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			SetRegKey( "AlbedoSeparationImportance", _Sender.Value.ToString() );
 		}
 
 		private void loadProbeToolStripMenuItem_Click( object sender, EventArgs e )

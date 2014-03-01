@@ -2,9 +2,10 @@
 #include "EffectGlobalIllum2.h"
 
 
-// Scene selection (also think about chaning the scene in the .RC!)
-#define SCENE_PATH	".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_1Probe\\"
+// Scene selection (also think about changing the scene in the .RC!)
+//#define SCENE_PATH	".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_1Probe\\"
 //#define SCENE_PATH	".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
+#define SCENE_PATH	"\\Workspaces\\Arkane\\Probes\\City\\"
 
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
@@ -21,9 +22,10 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 	D3D_SHADER_MACRO	pMacros2[] = { { "EMISSIVE", "1" }, { NULL, NULL } };
 	CHECK_MATERIAL( m_pMatRenderEmissive = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros2 ), 2 );
  	CHECK_MATERIAL( m_pMatRenderLights = CreateMaterial( IDR_SHADER_GI_RENDER_LIGHTS, "./Resources/Shaders/GIRenderLights.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
- 	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
- 	CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 5 );
- 	CHECK_MATERIAL( m_pMatRenderShadowMap = CreateMaterial( IDR_SHADER_GI_RENDER_SHADOW_MAP, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL ), 6 );
+ 	CHECK_MATERIAL( m_pMatRenderDebugProbes = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
+ 	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 5 );
+ 	CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
+ 	CHECK_MATERIAL( m_pMatRenderShadowMap = CreateMaterial( IDR_SHADER_GI_RENDER_SHADOW_MAP, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL ), 7 );
  	CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
 
 	// Compute Shaders
@@ -35,8 +37,134 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	//////////////////////////////////////////////////////////////////////////
 	// Create the textures
 	{
-		TextureFilePOM	POM( "./Resources/Scenes/GITest1/pata_diff_colo.pom" );
-		m_pTexWalls = new Texture2D( _Device, POM );
+// 		const char*	ppTextureFileNames[] = {
+// 			"./Resources/Scenes/GITest1/pata_diff_colo.pom",
+// 		};
+
+		const char*	ppTextureFileNames[] = {
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\moss_02_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_stone_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_stone_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_wall_clean_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_wall_clean_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\glass_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_03_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_03_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_03_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_02_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_02_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\wood_05_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\white_stone_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\white_stone_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\white_stone_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\door_blocker_iron_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\door_blocker_iron_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\door_blocker_iron_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_02_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_02_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_02_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_doordeco_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_doordeco_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_doordeco_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_02_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_02_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_02_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\concrete_02_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_02_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_02_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_02_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_ceiling_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_ceiling_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_ceiling_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_painting_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_painting_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_painting_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_light_wall_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_light_wall_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_light_wall_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_pillar_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_pillar_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_pillar_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_flat_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_flat_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_flat_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_stairs_02_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_stairs_02_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_stairs_02_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shopbookcase_02_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shopbookcase_02_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shopbookcase_02_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shopcounter_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shopcounter_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shopcounter_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\over_desk_lamp_02_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\over_desk_lamp_02_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\over_desk_lamp_02_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_box_kit_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_box_kit_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_box_kit_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\modular_stairs_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\modular_stairs_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\modular_stairs_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\metal_crate_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\metal_crate_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\metal_crate_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_metal_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_metal_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_metal_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_wood_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_wood_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_wood_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\window_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\streetlamp_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\streetlamp_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\streetlamp_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_s.pom",
+		};
+
+		m_TexturesCount = sizeof(ppTextureFileNames) / sizeof(const char*);
+		m_ppTextures = new Texture2D*[m_TexturesCount];
+
+		for ( int TextureIndex=0; TextureIndex < m_TexturesCount; TextureIndex++ )
+		{
+			const char*	pTextureFileName = ppTextureFileNames[TextureIndex];
+			TextureFilePOM	POM( pTextureFileName );
+			m_ppTextures[TextureIndex] = new Texture2D( _Device, POM );
+		}
 	}
 
 	// Create the shadow map
@@ -119,8 +247,12 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 			double		SkyIntensity = SKY_INTENSITY * (1.0f + 2.0f * MAX( -0.5f, cosf(Theta) )) / 3.0f;
 			double		SolidAngle = sinf(Theta) * dPhidTheta;
 
-			for ( int i=0; i < 9; i++ )
-				SumSHCoeffs[i] += SkyIntensity* SHCoeffs[i] * SolidAngle;
+			for ( int l=0; l < 3; l++ )
+			{
+				float	FilteredIntensity = (float) (SkyIntensity * expf( -(PI * l / 3.0f) * (PI * l / 3.0f) / 2.0f ) );
+				for ( int m=-l; m <= l; m++ )
+					SumSHCoeffs[l*(l+1)+m] += FilteredIntensity * SHCoeffs[l*(l+1)+m] * SolidAngle;
+			}
 		}
 	}
 
@@ -157,7 +289,10 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pCB_General;
 
 	delete m_pRTShadowMap;
-	delete m_pTexWalls;
+
+	for ( int TextureIndex=0; TextureIndex < m_TexturesCount; TextureIndex++ )
+		delete m_ppTextures[TextureIndex];
+	delete[] m_ppTextures;
 
 	delete m_pCSUpdateProbe;
 
@@ -166,6 +301,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pMatRenderShadowMap;
 	delete m_pMatRenderNeighborProbe;
 	delete m_pMatRenderCubeMap;
+	delete m_pMatRenderDebugProbes;
 	delete m_pMatRenderLights;
 	delete m_pMatRenderEmissive;
 	delete m_pMatRender;
@@ -212,9 +348,49 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		m_pSB_LightsDynamic->m[0].Color.Set( 0, 0, 0 );
 
 	m_pSB_LightsDynamic->m[0].Type = Scene::Light::POINT;
+	m_pSB_LightsDynamic->m[0].Parms.Set( 0.1f, 0.1f, 0, 0 );
+
+#if 0	// CORRIDOR ANIMATION (simple)
 //	m_pSB_LightsDynamic->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * AnimateLightTime0 ) );	// Move along the corridor
 	m_pSB_LightsDynamic->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime0 ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime0 ), 4.0f * sinf( 0.3f * AnimateLightTime0 ) );	// Move along the corridor
-	m_pSB_LightsDynamic->m[0].Parms.Set( 0.1f, 0.1f, 0, 0 );
+#else	// SHOP ANIMATION (follow curve)
+
+	static bool	bPathPreComputed = false;
+	static NjFloat3	pPath[] = {
+		0.01f * NjFloat3( 470.669f, 25.833f, -573.035f ),	// Street exterior
+		0.01f * NjFloat3( 470.669f, 25.833f, 1263.286f ),	// Shop interior
+		0.01f * NjFloat3( 876.358f, 25.833f, 1263.286f ),	// Shop interior
+		0.01f * NjFloat3( 918.254f, 25.833f, 3848.391f ),	// Shop yard
+	};
+	static float	pPathSegmentsLength[4];
+	static float	TotalPathLength = 0.0f;
+
+	int		PathNodesCount = sizeof(pPath) / sizeof(NjFloat3);
+	if ( !bPathPreComputed )
+	{	// Precompute path lengths
+		pPathSegmentsLength[0] = 0.0f;
+		for ( int PathNodeIndex=1; PathNodeIndex < PathNodesCount; PathNodeIndex++ )
+		{
+			TotalPathLength += (pPath[PathNodeIndex] - pPath[PathNodeIndex-1]).Length();
+			pPathSegmentsLength[PathNodeIndex] = TotalPathLength;
+		}
+		bPathPreComputed = true;
+	}
+
+	const float	TotalPathTime = 20.0f;	// Total time to walk the path
+	float	PathTime = TotalPathTime - abs( fmodf( AnimateLightTime0, 2.0f * TotalPathTime ) - TotalPathTime );
+	float	PathLength = PathTime * TotalPathLength / TotalPathTime;
+	for ( int PathNodeIndex=0; PathNodeIndex < PathNodesCount-1; PathNodeIndex++ )
+	{
+		if ( PathLength >= pPathSegmentsLength[PathNodeIndex] && PathLength <= pPathSegmentsLength[PathNodeIndex+1] )
+		{
+			float	t = (PathLength - pPathSegmentsLength[PathNodeIndex]) / (pPathSegmentsLength[PathNodeIndex+1] - pPathSegmentsLength[PathNodeIndex]);
+			m_pSB_LightsDynamic->m[0].Position = pPath[PathNodeIndex] + t * (pPath[PathNodeIndex+1] - pPath[PathNodeIndex]);
+			break;
+		}
+	}
+
+#endif
 
 
 #if RENDER_SUN	// Show Sun light
@@ -456,6 +632,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 	m_Scene.Render( *this );
 
+
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Render the lights
 	USING_MATERIAL_START( *m_pMatRenderLights )
@@ -463,6 +640,18 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pPrimSphere->RenderInstanced( M, 1 );	// Only show point light, no sun light
 
 	USING_MATERIAL_END
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// 3] Render the debug probes
+	if ( gs_WindowInfos.pKeysToggle[VK_F12] )
+	{
+		USING_MATERIAL_START( *m_pMatRenderDebugProbes )
+
+		m_pPrimSphere->RenderInstanced( M, m_ProbesCount );
+
+		USING_MATERIAL_END
+	}
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -657,16 +846,16 @@ void	EffectGlobalIllum2::PreComputeProbes()
 		// 2] Read back cube map and create the SH coefficients
 		pRTCubeMapStaging->CopyFrom( *pRTCubeMap );
 
-#if 1	// Define this to load probe sets from disk
 
+
+#if 1	// Define this to load probe sets from disk
+		FILE*	pFile = NULL;
 		char	pTemp[1024];
 
 #if 1	// Save to disk
 		sprintf_s( pTemp, SCENE_PATH "Probe%02d.pom", ProbeIndex );
 		pRTCubeMapStaging->Save( pTemp );
 #endif
-
-		FILE*	pFile = NULL;
 
 		// Read numbered probe
 		sprintf_s( pTemp, SCENE_PATH "Probe%02d.probeset", ProbeIndex );
@@ -907,7 +1096,7 @@ Probe.pSHBounceStatic[i] = NjFloat3::Zero;
 		//
 
 
-TODO! At the moment we only read back the only pre-computed set from disk
+//TODO! At the moment we only read back the only pre-computed set from disk
 
 #endif
 	}
@@ -935,8 +1124,10 @@ pRTCubeMap->SetPS( 64 );
 	m_pSB_RuntimeProbes = new SB<RuntimeProbe>( m_Device, m_ProbesCount, true );
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
-		m_pSB_RuntimeProbes->m[ProbeIndex].Position = m_pProbes[ProbeIndex].pSceneProbe->m_Local2World.GetRow( 3 );
-		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = m_pProbes[ProbeIndex].MaxDistance;
+		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
+		m_pSB_RuntimeProbes->m[ProbeIndex].Position = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
+		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.MaxDistance;
+//		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.MeanDistance;
 	}
 	m_pSB_RuntimeProbes->Write();
 }
@@ -1161,21 +1352,26 @@ void*	EffectGlobalIllum2::TagMaterial( const Scene& _Owner, const Scene::Materia
 		return NULL;
 	}
 
-	switch ( _Material.m_ID )
-	{
-	case 0:
-	case 1:
-	case 2:
+// 	switch ( _Material.m_ID )
+// 	{
+// 	case 0:
+// 	case 1:
+// 	case 2:
+// 
+// 		if ( _Material.m_EmissiveColor.Max() > 1e-4f )
+// 			return m_pMatRenderEmissive;	// Special emissive materials!
+// 
+// 		return m_pMatRender;
+// 
+// 	default:
+// 		ASSERT( false, "Unsupported material!" );
+// 	}
 
-		if ( _Material.m_EmissiveColor.Max() > 1e-4f )
-			return m_pMatRenderEmissive;	// Special emissive materials!
+	
+	if ( _Material.m_EmissiveColor.Max() > 1e-4f )
+		return m_pMatRenderEmissive;	// Special emissive materials!
 
-		return m_pMatRender;
-
-	default:
-		ASSERT( false, "Unsupported material!" );
-	}
-	return NULL;
+	return m_pMatRender;
 }
 void*	EffectGlobalIllum2::TagTexture( const Scene& _Owner, const Scene::Material::Texture& _Texture )
 {
@@ -1184,14 +1380,13 @@ void*	EffectGlobalIllum2::TagTexture( const Scene& _Owner, const Scene::Material
 		return NULL;
 	}
 
-	switch ( _Texture.m_ID )
-	{
-	case 0:		return m_pTexWalls;
-	case ~0:	return NULL;	// Invalid textures are not mapped
-	default:
-		ASSERT( false, "Unsupported texture!" );
-	}
-	return NULL;
+	if ( _Texture.m_ID == ~0 )
+		return NULL;	// Invalid textures are not mapped
+
+//return m_ppTextures[0];
+
+	ASSERT( int(_Texture.m_ID) < m_TexturesCount, "Unsupported texture!" );
+	return m_ppTextures[_Texture.m_ID];
 }
 
 void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, const Scene::Node& _Node )
@@ -1265,9 +1460,18 @@ void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMater
 		Texture2D*	pTexDiffuseAlbedo = (Texture2D*) SceneMaterial.m_TexDiffuseAlbedo.m_pTag;
 		if ( pTexDiffuseAlbedo != NULL )
 			pTexDiffuseAlbedo->SetPS( 10 );
+		else
+			m_ppTextures[0]->SetPS( 10 );
+		Texture2D*	pTexNormal = (Texture2D*) SceneMaterial.m_TexNormal.m_pTag;
+		if ( pTexNormal != NULL )
+			pTexNormal->SetPS( 11 );
+		else
+			m_ppTextures[0]->SetPS( 11 );
 		Texture2D*	pTexSpecularAlbedo = (Texture2D*) SceneMaterial.m_TexSpecularAlbedo.m_pTag;
 		if ( pTexSpecularAlbedo != NULL )
-			pTexSpecularAlbedo->SetPS( 11 );
+			pTexSpecularAlbedo->SetPS( 12 );
+		else
+			m_ppTextures[0]->SetPS( 12 );
 
 		// Upload the primitive's material CB
 		m_pCB_Material->m.ID = SceneMaterial.m_ID;
@@ -1278,6 +1482,7 @@ void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMater
 		m_pCB_Material->m.EmissiveColor = SceneMaterial.m_EmissiveColor;
 		m_pCB_Material->m.SpecularExponent = SceneMaterial.m_SpecularExponent.x;
 		m_pCB_Material->m.FaceOffset = U32(pPrim->m_pTag);
+		m_pCB_Material->m.HasNormalTexture = pTexNormal != NULL;
 		m_pCB_Material->UpdateData();
 
 		int		Test = sizeof(CBMaterial);

@@ -58,6 +58,7 @@ protected:	// NESTED TYPES
 
 		float		SpecularExponent;
 		U32			FaceOffset;		// The offset to apply to the object's face index to obtain an absolute face index
+		U32			HasNormalTexture;
 	};
 
 	struct CBProbe
@@ -213,6 +214,8 @@ private:	// FIELDS
 	Material*			m_pCSComputeShadowMapBounds;// Computes the shadow map bounds
 	Material*			m_pMatRenderShadowMap;		// Renders the directional shadowmap
 	Material*			m_pMatPostProcess;			// Post-processes the result
+	Material*			m_pMatRenderDebugProbes;	// Displays the probes as small spheres
+	
 	ComputeShader*		m_pCSUpdateProbe;			// Dynamically update probes
 
 	// Primitives
@@ -225,7 +228,8 @@ private:	// FIELDS
 	U32					m_pPrimitiveFaceOffset[MAX_SCENE_PRIMITIVES];
 
 	// Textures
-	Texture2D*			m_pTexWalls;
+	int					m_TexturesCount;
+	Texture2D**			m_ppTextures;
 	Texture2D*			m_pRTShadowMap;
 
 	// Constant buffers

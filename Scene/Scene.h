@@ -179,6 +179,7 @@ public:		// NESTED TYPES
 		NjFloat3			m_SpecularAlbedo;
 		Texture				m_TexSpecularAlbedo;
 		NjFloat3			m_SpecularExponent;
+		Texture				m_TexNormal;
 		NjFloat3			m_EmissiveColor;
 
 		void*				m_pTag;	// Custom user tag filled with anything the user needs to render the node

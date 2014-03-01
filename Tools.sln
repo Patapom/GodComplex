@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestFerrofluids", "Tools\Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConcatenateShaders", "Tools\ConcatenateShaders\ConcatenateShaders.csproj", "{B741A6E5-1850-49B7-9129-29AF1EA44686}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PNG2RAW", "Tools\PNG2RAW\PNG2RAW.csproj", "{10594C0B-7AF5-44A6-901A-4695457E2FD9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PNG2POM", "Tools\PNG2RAW\PNG2POM.csproj", "{10594C0B-7AF5-44A6-901A-4695457E2FD9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BRDFLafortuneFitting", "Tools\BRDFLafortuneFitting\BRDFLafortuneFitting.csproj", "{5800906F-18A5-454B-B393-DD76AED7CE8B}"
 EndProject

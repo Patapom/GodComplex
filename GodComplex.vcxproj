@@ -250,7 +250,9 @@ MinifyAll.cmd</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Intro\Effects\EffectDOF.h" />
+    <ClInclude Include="Intro\Effects\EffectDOF.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Intro\Effects\EffectGlobalIllum.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClInclude>
@@ -351,7 +353,9 @@ MinifyAll.cmd</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Intro\Effects\EffectDOF.cpp" />
+    <ClCompile Include="Intro\Effects\EffectDOF.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Intro\Effects\EffectGlobalIllum.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
@@ -462,6 +466,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\DOFRenderScene.hlsl" />
     <None Include="Resources\Shaders\GIPostProcess.hlsl" />
     <None Include="Resources\Shaders\GIRenderCubeMap.hlsl" />
+    <None Include="Resources\Shaders\GIRenderDebugProbes.hlsl" />
     <None Include="Resources\Shaders\GIRenderLights.hlsl" />
     <None Include="Resources\Shaders\GIRenderNeighborProbe.hlsl" />
     <None Include="Resources\Shaders\GIRenderScene.hlsl" />

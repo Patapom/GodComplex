@@ -35,6 +35,10 @@ namespace FBX.SceneLoader
 			public FileInfo			SourceM2File	{ get { return m_SourceM2File; } }
 			public string			Name			{ get { return m_Name; } }
 
+			public string			TextureDiffuse	{ get { return m_TextureDiffuse; } }
+			public string			TextureNormal	{ get { return m_TextureNormal; } }
+			public string			TextureSpecular	{ get { return m_TextureSpecular; } }
+
 			#endregion
 
 			#region METHODS
@@ -59,9 +63,13 @@ namespace FBX.SceneLoader
 		protected List<Material>				m_Materials = new List<Material>();
 		protected Dictionary<string,Material>	m_MaterialName2Material = new Dictionary<string,Material>();
 
+		protected List<Material>				m_QueriedMaterials = new List<Material>();
+
 		#endregion
 
 		#region PROPERTIES
+
+		public Material[]			QueriedMaterials	{ get { return m_QueriedMaterials.ToArray(); } }
 
 		#endregion
 
@@ -78,6 +86,12 @@ namespace FBX.SceneLoader
 		{
 			m_Materials.Clear();
 			m_MaterialName2Material.Clear();
+			ClearQueriedMaterialsList();
+		}
+
+		public void ClearQueriedMaterialsList()
+		{
+			m_QueriedMaterials.Clear();
 		}
 
 		/// <summary>
@@ -124,7 +138,29 @@ namespace FBX.SceneLoader
 		/// <returns></returns>
 		public Material	FindByName( string _Name )
 		{
-			return null;
+			int			BestMaterialScore = 0;
+			Material	BestMaterial = null;
+
+			foreach ( Material M in m_Materials )
+			{
+				if ( M.Name.Length <= BestMaterialScore )
+					continue;	// It's a less specific material so we don't give a shit...
+				if ( _Name.IndexOf( M.Name, StringComparison.CurrentCultureIgnoreCase ) == -1 )
+					continue;
+
+				// Found a better material!
+				BestMaterial = M;
+				BestMaterialScore = M.Name.Length;
+			}
+
+			if ( BestMaterial == null )
+				return null;
+
+			// Store the material as "queried"
+			if ( !m_QueriedMaterials.Contains( BestMaterial) )
+				m_QueriedMaterials.Add( BestMaterial );
+
+			return BestMaterial;
 		}
 
 		/// <summary>
@@ -188,9 +224,9 @@ namespace FBX.SceneLoader
 				// Parse the declaration for parameters and texture names
 				try
 				{
-					string	DiffuseTextureName = ParseParameter( MaterialDeclaration, "diffuseMap" );
-					string	NormalTextureName = ParseParameter( MaterialDeclaration, "bumpmap" );
-					string	SpecularTextureName = ParseParameter( MaterialDeclaration, "specularMap" );
+					string	DiffuseTextureName = ParseParameter( MaterialDeclaration, "diffuseMap", ".tga" );
+					string	NormalTextureName = ParseParameter( MaterialDeclaration, "bumpmap", ".tga" );
+					string	SpecularTextureName = ParseParameter( MaterialDeclaration, "specularMap", ".tga" );
 
 					// Create the new material
 					Material	M = new Material( _M2File, MaterialName, DiffuseTextureName, NormalTextureName, SpecularTextureName );
@@ -234,7 +270,7 @@ namespace FBX.SceneLoader
 			return -1;
 		}
 
-		private static string	ParseParameter( string _Text, string _Pattern )
+		private static string	ParseParameter( string _Text, string _Pattern, string _ApendExtensionIfMissing )
 		{
 			int	ParameterIndex = MatchWholeWord( _Text, _Pattern );
 			if ( ParameterIndex == -1 )
@@ -242,7 +278,7 @@ namespace FBX.SceneLoader
 
 			ParameterIndex += _Pattern.Length;
 
-			int	EOLIndex = _Text.IndexOf( '\n', ParameterIndex );
+			int	EOLIndex = FindEOL( _Text, ParameterIndex );
 			if ( EOLIndex == -1 )
 				throw new Exception( "End of line not found while looking for parameter" );
 
@@ -250,7 +286,35 @@ namespace FBX.SceneLoader
 			string	ParameterValue = _Text.Substring( ParameterIndex, EOLIndex-ParameterIndex );
 			ParameterValue = ParameterValue.Trim();
 
+			if ( ParameterValue.Length == 0 )
+				return null;
+			if ( ParameterValue[0] == '#' )
+				return null;	// This is the marker for a placeholder for a texture name, not a real name...
+
+			try
+			{
+// 				if ( ParameterValue.IndexOf( "moss_02" ) != -1 )
+// 				{
+// 					string	Check = Path.Combine( ParameterValue, _ApendExtensionIfMissing );
+// 				}
+				if ( Path.GetFileNameWithoutExtension( ParameterValue ) == Path.GetFileName( ParameterValue ) )
+					ParameterValue += _ApendExtensionIfMissing;
+			}
+			catch ( Exception )
+			{	// Certainly not a valid path...
+			}
+
 			return ParameterValue;
+		}
+
+		private static int	FindEOL( string _Text, int _StartIndex )
+		{
+			int	EOLIndex = _Text.IndexOf( '\n', _StartIndex );
+
+			// Strange lines happen in M2 files where there's only a single \r character!
+			int	CRIndex = _Text.IndexOf( '\r', _StartIndex );
+
+			return Math.Min( CRIndex, EOLIndex );
 		}
 
 		/// <summary>
@@ -276,7 +340,10 @@ namespace FBX.SceneLoader
 					continue;	// No use to compare...
 
 				if ( string.Compare( _Text, _Index, _Pattern, 0, L, true ) == 0 )
+				{
+					string	DEBUG = _Text.Substring( _Index );
 					return _Index;
+				}
 			}
 
 			return -1;
