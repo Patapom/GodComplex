@@ -70,6 +70,7 @@ PS_IN	VS( VS_IN _In )
 				ToProbe /= Distance2Probe;
 
 		float	ProbeRadius = 2.0 * Probe.Radius;
+//		float	ProbeRadius = 1.0 * Probe.Radius;
 
 		// Weight by distance
 // 		const float	MEAN_HARMONIC_DISTANCE = 4.0;
@@ -80,9 +81,10 @@ PS_IN	VS( VS_IN _In )
 //		float	ProbeWeight = pow( max( 0.01, Distance2Probe ), -3.0 );
 
 		// Weight based on probe's max distance
- 		const float	WEIGHT_AT_DISTANCE = 0.05;
+		const float	WEIGHT_AT_DISTANCE = 0.05;
  		const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (ProbeRadius * ProbeRadius);
-		float	ProbeWeight = 2.0 * exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
+//###		float	ProbeWeight = 2.0 * exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
+		float	ProbeWeight = 10.0 * exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
 
 		// Also weight by orientation to avoid probes facing away from us
 		ProbeWeight *= saturate( lerp( -0.1, 1.0, 0.5 * (1.0 + dot( Normal, ToProbe )) ) );

@@ -2,6 +2,9 @@
 #include "EffectGlobalIllum2.h"
 
 
+#define	LOAD_PROBES	// Define this to load probes instead of computing them
+
+
 // Scene selection (also think about changing the scene in the .RC!)
 //#define SCENE_PATH	".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_1Probe\\"
 //#define SCENE_PATH	".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
@@ -739,12 +742,13 @@ void	EffectGlobalIllum2::PreComputeProbes()
 	}
 
 
-#if 0	// Define this to load probe sets from disk
+#if defined(LOAD_PROBES)	// Define this to load probe sets from disk
 
 	FILE*	pFile = NULL;
 	char	pTemp[1024];
 
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+//for ( int ProbeIndex=16; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 

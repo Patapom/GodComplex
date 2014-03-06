@@ -1,7 +1,7 @@
 #pragma once
 
 #define SUN_INTENSITY	1000.0f
-#define SKY_INTENSITY	(0.1f*SUN_INTENSITY)
+#define SKY_INTENSITY	(0.025f*SUN_INTENSITY)
 
 template<typename> class CB;
 
@@ -19,7 +19,7 @@ private:	// CONSTANTS
 	static const U32		MAX_PROBE_EMISSIVE_SETS = 16;
 	static const U32		MAX_SET_SAMPLES = 64;				// Accept a maximum of 64 samples per set
 
-	static const U32		MAX_PROBE_UPDATES_PER_FRAME = 16;	// Update a maximum of 16 probes per frame
+	static const U32		MAX_PROBE_UPDATES_PER_FRAME = 32;	// Update a maximum of 32 probes per frame
 
 	static const U32		SHADOW_MAP_SIZE = 1024;
 

@@ -6,12 +6,16 @@
 #include "Inc/SH.hlsl"
 #include "Inc/ShadowMap.hlsl"
 
-#define	THREADS_X	64		// The maximum amount of sampling points per probe (Must match the MAX_SET_SAMPLES define declared in the header file!)
+#define	THREADS_X	64						// The maximum amount of sampling points per probe (Must match the MAX_SET_SAMPLES define declared in the header file!)
 #define	THREADS_Y	1
 #define	THREADS_Z	1
 
-#define	MAX_PROBE_SETS			16	// Must match the MAX_PROBE_SETS define declared in the header file!
-#define	MAX_PROBE_EMISSIVE_SETS	16	// Must match the MAX_PROBE_EMISSIVE_SETS define declared in the header file!
+#define	MAX_PROBE_SETS			16			// Must match the MAX_PROBE_SETS define declared in the header file!
+#define	MAX_PROBE_EMISSIVE_SETS	16			// Must match the MAX_PROBE_EMISSIVE_SETS define declared in the header file!
+
+#define IRRADIANCE_BOOST_POINT_SPOT		100.0		// Artificial boost of irradiance (and consequently, bounce light)
+#define IRRADIANCE_BOOST_DIRECTIONAL	10.0		// Artificial boost of irradiance (and consequently, bounce light)
+
 
 cbuffer	cbUpdateProbes : register(b10)
 {
@@ -217,12 +221,17 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 					float	LdotD = -dot( Light, LightSource.Direction );
 					Irradiance *= smoothstep( LightSource.Parms.w, LightSource.Parms.z, LdotD );
 				}
+
+
+				Irradiance *= IRRADIANCE_BOOST_POINT_SPOT;
 			}
 			else if ( LightSource.Type == 1 )
 			{	// Compute a sneaky directional with shadow map
 				Light = LightSource.Direction;
 				Irradiance = LightSource.Color;	// Simple!
 				Irradiance *= ComputeShadowCS( SamplingPoint.Position, SamplingPoint.Normal, SamplingPoint.Radius );
+
+				Irradiance *= IRRADIANCE_BOOST_DIRECTIONAL;
 			}
 
 			float	NdotL = saturate( dot( SamplingPoint.Normal, Light ) );
@@ -288,11 +297,21 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 		// 3.2] Then accumulate static + ambient + dynamic + emissive SH
 		for ( int i=0; i < 9; i++ )
 		{
+#if 1
 			float3	SHCoeff = OccludedAmbientSH[i] + Probe.SHStatic[i];
 			for ( uint j=0; j < Probe.SetsCount; j++ )
 				SHCoeff += gsSetSH[9*j+i];
 			for ( uint j=0; j < Probe.EmissiveSetsCount; j++ )
 				SHCoeff += gsEmissiveSetSH[9*j+i];
+#else
+			// Debug sets' SH
+			float3	SHCoeff = 0.0;
+			for ( uint j=0; j < Probe.SetsCount; j++ )
+			{
+				ProbeUpdateSetInfos	Set = _SBProbeUpdateSetInfos[Probe.SetsStart + j];
+				SHCoeff += 100.0 * Set.SH[i];
+			}
+#endif
 
 			// Store result and we're done!
 			_Output[Probe.Index].SH[i] = SHCoeff;
