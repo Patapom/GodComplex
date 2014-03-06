@@ -143,6 +143,7 @@ namespace ProbeSHEncoder
 			// 
 			// saveResultsToolStripMenuItem
 			// 
+			this.saveResultsToolStripMenuItem.Enabled = false;
 			this.saveResultsToolStripMenuItem.Name = "saveResultsToolStripMenuItem";
 			this.saveResultsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
 			this.saveResultsToolStripMenuItem.Size = new System.Drawing.Size(187, 22);
@@ -190,6 +191,7 @@ namespace ProbeSHEncoder
 			// 
 			// buttonCompute
 			// 
+			this.buttonCompute.Enabled = false;
 			this.buttonCompute.Location = new System.Drawing.Point(776, 109);
 			this.buttonCompute.Name = "buttonCompute";
 			this.buttonCompute.Size = new System.Drawing.Size(97, 38);
@@ -430,6 +432,7 @@ namespace ProbeSHEncoder
 			// 
 			// buttonComputeFilling
 			// 
+			this.buttonComputeFilling.Enabled = false;
 			this.buttonComputeFilling.Location = new System.Drawing.Point(711, 151);
 			this.buttonComputeFilling.Name = "buttonComputeFilling";
 			this.buttonComputeFilling.Size = new System.Drawing.Size(97, 38);
@@ -617,6 +620,7 @@ namespace ProbeSHEncoder
 			this.outputPanel1.Location = new System.Drawing.Point(12, 27);
 			this.outputPanel1.Name = "outputPanel1";
 			this.outputPanel1.NormalizeSH = false;
+			this.outputPanel1.Probe = null;
 			vector2.X = 0F;
 			vector2.Y = 0F;
 			vector2.Z = 0F;

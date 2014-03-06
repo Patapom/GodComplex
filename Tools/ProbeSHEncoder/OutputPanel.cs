@@ -240,7 +240,17 @@ namespace ProbeSHEncoder
 		}
 
 		protected Bitmap		m_Bitmap = null;
-		public EncoderForm		m_Owner = null;
+		protected Probe			m_Probe = null;
+		public Probe			Probe
+		{
+			get { return m_Probe; }
+			set
+			{
+				m_Probe = value;
+				if ( m_Probe != null )
+					UpdateBitmap();
+			}
+		}
 
 		private WMath.Vector	m_RefUp = new WMath.Vector( 0, 1, 0 );
 		private WMath.Vector	m_At = new WMath.Vector( 0, 0, 1 );
@@ -295,7 +305,7 @@ namespace ProbeSHEncoder
 			}
 
 			// Fill pixel per pixel
-			if ( m_Owner != null && m_Owner.m_CubeMap != null )
+			if ( m_Probe != null && m_Probe.m_CubeMap != null )
 			{
 				BitmapData	LockedBitmap = m_Bitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
 
@@ -347,20 +357,20 @@ namespace ProbeSHEncoder
 
 		#region Samplers
 
-		private void	CubeMapSamplerAlbedo( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		private void	CubeMapSamplerAlbedo( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			_R = (byte) Math.Min( 255, 255 * _Pixel.Albedo.x );
 			_G = (byte) Math.Min( 255, 255 * _Pixel.Albedo.y );
 			_B = (byte) Math.Min( 255, 255 * _Pixel.Albedo.z );
 		}
 
-		private void	CubeMapSamplerDistance( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		private void	CubeMapSamplerDistance( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			byte	C = (byte) Math.Min( 255, 255 * 0.1f * _Pixel.Distance );
 			_R = _G = _B = C;
 		}
 
-		private void	CubeMapSamplerNormal( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		private void	CubeMapSamplerNormal( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 #if ABS_NORMAL
 			_R = (byte) Math.Min( 255, 255 * Math.Abs( _Pixel.Normal.x) );
@@ -373,45 +383,45 @@ namespace ProbeSHEncoder
 #endif
 		}
 
-		private void	CubeMapSamplerStaticLit( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		private void	CubeMapSamplerStaticLit( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			_R = (byte) Math.Min( 255, 255 * _Pixel.StaticLitColor.x );
 			_G = (byte) Math.Min( 255, 255 * _Pixel.StaticLitColor.y );
 			_B = (byte) Math.Min( 255, 255 * _Pixel.StaticLitColor.z );
 		}
 
-		private void	CubeMapSamplerFaceIndex( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		private void	CubeMapSamplerFaceIndex( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			byte	C = (byte) (_Pixel.FaceIndex & 0xFF);
 			_R = _G = _B = C;
 		}
 
-		private void	CubeMapSamplerEmissiveMatID( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		private void	CubeMapSamplerEmissiveMatID( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			byte	C = (byte) Math.Min( 255, 255 * (1+_Pixel.EmissiveMatID) / 4 );
 			_R = _G = _B = C;
 		}
 
-		private void	CubeMapSamplerNeighborProbeID( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		private void	CubeMapSamplerNeighborProbeID( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			byte	C = (byte) Math.Min( 255, 255 * (1+_Pixel.NeighborProbeID) / 4 );
 			_R = _G = _B = C;
 		}
 
-		private void	CubeMapSamplerSetIndex( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		private void	CubeMapSamplerSetIndex( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
-			EncoderForm.Set	S = _Pixel.ParentSet;
+			Probe.Set	S = _Pixel.ParentSet;
 			byte	C = 0;
 			if ( S != null && S.SetIndex != -1 && (!m_IsolateSet || S.SetIndex == m_IsolatedSetIndex) )
 			{
-				C = m_IsolateSet ? (byte) 255 : (byte) (255 * (1 + S.SetIndex) / m_Owner.m_Sets.Length);
+				C = m_IsolateSet ? (byte) 255 : (byte) (255 * (1 + S.SetIndex) / m_Probe.m_Sets.Length);
 			}
 			_R = _G = _B = C;
 		}
 
-		private void	CubeMapSamplerSetAlbedo( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		private void	CubeMapSamplerSetAlbedo( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
-			EncoderForm.Set	S = _Pixel.ParentSet;
+			Probe.Set	S = _Pixel.ParentSet;
 			if ( S == null || S.SetIndex == -1 || (m_IsolateSet && S.SetIndex != m_IsolatedSetIndex) )
 			{
 				_R = _G = _B = 0;
@@ -423,9 +433,9 @@ namespace ProbeSHEncoder
 			_B = (byte) Math.Min( 255, 255 * S.Albedo.z );
 		}
 
-		private void	CubeMapSamplerSetDistance( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		private void	CubeMapSamplerSetDistance( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
-			EncoderForm.Set	S = _Pixel.ParentSet;
+			Probe.Set	S = _Pixel.ParentSet;
 			if ( S == null || S.SetIndex == -1 || (m_IsolateSet && S.SetIndex != m_IsolatedSetIndex) )
 			{
 				_R = 63;
@@ -440,9 +450,9 @@ namespace ProbeSHEncoder
 			_R = _G = _B = C;
 		}
 
-		private void	CubeMapSamplerSetNormal( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		private void	CubeMapSamplerSetNormal( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
-			EncoderForm.Set	S = _Pixel.ParentSet;
+			Probe.Set	S = _Pixel.ParentSet;
 			if ( S == null || S.SetIndex == -1 || (m_IsolateSet && S.SetIndex != m_IsolatedSetIndex) )
 			{
 				_R = _G = _B = 0;
@@ -460,7 +470,7 @@ namespace ProbeSHEncoder
 #endif
 		}
 
-		private void	CubeMapSamplerSH( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		private void	CubeMapSamplerSH( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			WMath.Vector	Dir = _Pixel.View;
 
@@ -472,19 +482,19 @@ namespace ProbeSHEncoder
 				if ( m_bShowSHDynamic )
 				{
 					for ( int i=0; i < 9; i++ )
-						Color += (float) _Pixel.SHCoeffs[i] * m_Owner.m_Sets[m_IsolatedSetIndex].SH[i];
+						Color += (float) _Pixel.SHCoeffs[i] * m_Probe.m_Sets[m_IsolatedSetIndex].SH[i];
 
-					Factor = m_bNormalizeSH ? 2.0f * m_Owner.m_Sets[m_IsolatedSetIndex].SH[0].Max() : 1.0f;
+					Factor = m_bNormalizeSH ? 2.0f * m_Probe.m_Sets[m_IsolatedSetIndex].SH[0].Max() : 1.0f;
 				}
 
 				if ( m_bShowSHEmissive )
 				{
-					int		EmissiveSetIndex = Math.Min( m_IsolatedSetIndex, m_Owner.m_EmissiveSets.Length-1 );
+					int		EmissiveSetIndex = Math.Min( m_IsolatedSetIndex, m_Probe.m_EmissiveSets.Length-1 );
 					if ( EmissiveSetIndex >= 0 )
 						for ( int i=0; i < 9; i++ )
-							Color += (float) _Pixel.SHCoeffs[i] * m_Owner.m_EmissiveSets[EmissiveSetIndex].SH[i];
+							Color += (float) _Pixel.SHCoeffs[i] * m_Probe.m_EmissiveSets[EmissiveSetIndex].SH[i];
 
-					Factor = m_bNormalizeSH ? 2.0f * m_Owner.m_EmissiveSets[EmissiveSetIndex].SH[0].Max() : 1.0f;
+					Factor = m_bNormalizeSH ? 2.0f * m_Probe.m_EmissiveSets[EmissiveSetIndex].SH[0].Max() : 1.0f;
 				}
 
 //				Color *= 100.0f;
@@ -531,9 +541,9 @@ namespace ProbeSHEncoder
 			_B = (byte) Math.Min( 255, 255 * Color.z );
 		}
 
-		private void	CubeMapSamplerSetSamples( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		private void	CubeMapSamplerSetSamples( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
-			EncoderForm.Set	S = _Pixel.ParentSet;
+			Probe.Set	S = _Pixel.ParentSet;
 			if ( S == null || S.SetIndex == -1 || (m_IsolateSet && S.SetIndex != m_IsolatedSetIndex) )
 			{
 				_R = 0;
@@ -581,7 +591,7 @@ namespace ProbeSHEncoder
 
 		#region Cube Map Sampling
 
-		public delegate void	CubeMapSampler( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B );
+		public delegate void	CubeMapSampler( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B );
 		private WMath.Vector	AbsView = new WMath.Vector();
 		private WMath.Vector	fXYZ = new WMath.Vector();
 		private WMath.Vector2D	fXY = new WMath.Vector2D();
@@ -634,18 +644,18 @@ namespace ProbeSHEncoder
 
 			fXY.y = -fXY.y;
 
-			int		X = (int) (EncoderForm.CUBE_MAP_SIZE * 0.5 * (1.0 + fXY.x));
-			int		Y = (int) (EncoderForm.CUBE_MAP_SIZE * 0.5 * (1.0 + fXY.y));
+			int		X = (int) (Probe.CUBE_MAP_SIZE * 0.5 * (1.0 + fXY.x));
+			int		Y = (int) (Probe.CUBE_MAP_SIZE * 0.5 * (1.0 + fXY.y));
 
-// 			if ( X < 0 || X > EncoderForm.CUBE_MAP_SIZE-1 )
+// 			if ( X < 0 || X > Probe.CUBE_MAP_SIZE-1 )
 // 				throw new Exception();
-// 			if ( Y < 0 || Y > EncoderForm.CUBE_MAP_SIZE-1 )
+// 			if ( Y < 0 || Y > Probe.CUBE_MAP_SIZE-1 )
 // 				throw new Exception();
 
-			X = Math.Min( EncoderForm.CUBE_MAP_SIZE-1, X );
-			Y = Math.Min( EncoderForm.CUBE_MAP_SIZE-1, Y );
+			X = Math.Min( Probe.CUBE_MAP_SIZE-1, X );
+			Y = Math.Min( Probe.CUBE_MAP_SIZE-1, Y );
 
-			EncoderForm.Pixel[,]	CubeMapFace = m_Owner.m_CubeMap[FaceIndex];
+			Probe.Pixel[,]	CubeMapFace = m_Probe.m_CubeMap[FaceIndex];
 
 			_Sampler( CubeMapFace[X,Y], out _R, out _G, out _B );
 		}
