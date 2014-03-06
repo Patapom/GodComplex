@@ -24,6 +24,7 @@ namespace ProbeSHEncoder
 			STATIC_LIT,
 			FACE_INDEX,
 			EMISSIVE_MAT_ID,
+			NEIGHBOR_PROBE_ID,
 			SET_INDEX,
 			SET_ALBEDO,
 			SET_DISTANCE,
@@ -301,18 +302,19 @@ namespace ProbeSHEncoder
 				CubeMapSampler	S = CubeMapSamplerAlbedo;
 				switch ( m_Viz )
 				{
-					case VIZ_TYPE.ALBEDO:			S = CubeMapSamplerAlbedo; break;
-					case VIZ_TYPE.DISTANCE:			S = CubeMapSamplerDistance; break;
-					case VIZ_TYPE.NORMAL:			S = CubeMapSamplerNormal; break;
-					case VIZ_TYPE.STATIC_LIT:		S = CubeMapSamplerStaticLit; break;
-					case VIZ_TYPE.FACE_INDEX:		S = CubeMapSamplerFaceIndex; break;
-					case VIZ_TYPE.EMISSIVE_MAT_ID:	S = CubeMapSamplerEmissiveMatID; break;
-					case VIZ_TYPE.SET_INDEX:		S = CubeMapSamplerSetIndex; break;
-					case VIZ_TYPE.SET_ALBEDO:		S = CubeMapSamplerSetAlbedo; break;
-					case VIZ_TYPE.SET_DISTANCE:		S = CubeMapSamplerSetDistance; break;
-					case VIZ_TYPE.SET_NORMAL:		S = CubeMapSamplerSetNormal; break;
-					case VIZ_TYPE.SET_SAMPLES:		S = CubeMapSamplerSetSamples; break;
-					case VIZ_TYPE.SH:				S = CubeMapSamplerSH; break;
+					case VIZ_TYPE.ALBEDO:				S = CubeMapSamplerAlbedo; break;
+					case VIZ_TYPE.DISTANCE:				S = CubeMapSamplerDistance; break;
+					case VIZ_TYPE.NORMAL:				S = CubeMapSamplerNormal; break;
+					case VIZ_TYPE.STATIC_LIT:			S = CubeMapSamplerStaticLit; break;
+					case VIZ_TYPE.FACE_INDEX:			S = CubeMapSamplerFaceIndex; break;
+					case VIZ_TYPE.EMISSIVE_MAT_ID:		S = CubeMapSamplerEmissiveMatID; break;
+					case VIZ_TYPE.NEIGHBOR_PROBE_ID:	S = CubeMapSamplerNeighborProbeID; break;
+					case VIZ_TYPE.SET_INDEX:			S = CubeMapSamplerSetIndex; break;
+					case VIZ_TYPE.SET_ALBEDO:			S = CubeMapSamplerSetAlbedo; break;
+					case VIZ_TYPE.SET_DISTANCE:			S = CubeMapSamplerSetDistance; break;
+					case VIZ_TYPE.SET_NORMAL:			S = CubeMapSamplerSetNormal; break;
+					case VIZ_TYPE.SET_SAMPLES:			S = CubeMapSamplerSetSamples; break;
+					case VIZ_TYPE.SH:					S = CubeMapSamplerSH; break;
 				}
 
 				WMath.Vector	View;
@@ -387,6 +389,12 @@ namespace ProbeSHEncoder
 		private void	CubeMapSamplerEmissiveMatID( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
 			byte	C = (byte) Math.Min( 255, 255 * (1+_Pixel.EmissiveMatID) / 4 );
+			_R = _G = _B = C;
+		}
+
+		private void	CubeMapSamplerNeighborProbeID( EncoderForm.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
+		{
+			byte	C = (byte) Math.Min( 255, 255 * (1+_Pixel.NeighborProbeID) / 4 );
 			_R = _G = _B = C;
 		}
 

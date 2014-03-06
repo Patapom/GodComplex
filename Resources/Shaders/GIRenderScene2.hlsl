@@ -7,7 +7,7 @@
 #include "Inc/ShadowMap.hlsl"
 #include "Inc/GI.hlsl"
 
-cbuffer	cbGeneral	: register( b9 )
+cbuffer	cbGeneral	: register( b8 )
 {
 	bool		_ShowIndirect;
 };

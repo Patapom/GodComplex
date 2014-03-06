@@ -32,7 +32,7 @@ struct	ProbeStruct
 StructuredBuffer<ProbeStruct>	_SBProbes : register( t9 );
 
 // Scene descriptor
-cbuffer	cbScene	: register( b10 )
+cbuffer	cbScene	: register( b9 )
 {
 	uint		_StaticLightsCount;
 	uint		_DynamicLightsCount;
@@ -40,13 +40,13 @@ cbuffer	cbScene	: register( b10 )
 };
 
 // Object descriptor
-cbuffer	cbObject	: register( b11 )
+cbuffer	cbObject	: register( b10 )
 {
 	float4x4	_Local2World;
 };
 
 // Material descriptor
-cbuffer	cbMaterial	: register( b12 )
+cbuffer	cbMaterial	: register( b11 )
 {
 	uint		_MaterialID;
 	float3		_DiffuseAlbedo;

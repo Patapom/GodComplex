@@ -13,7 +13,7 @@
 #define	MAX_PROBE_SETS			16	// Must match the MAX_PROBE_SETS define declared in the header file!
 #define	MAX_PROBE_EMISSIVE_SETS	16	// Must match the MAX_PROBE_EMISSIVE_SETS define declared in the header file!
 
-cbuffer	cbUpdateProbes : register(b11)
+cbuffer	cbUpdateProbes : register(b10)
 {
 	float3	_AmbientSH[9];					// Ambient sky
 };

@@ -6,7 +6,7 @@
 #include "Inc/Global.hlsl"
 #include "Inc/ShadowMap.hlsl"
 
-cbuffer	cbObject	: register( b11 )
+cbuffer	cbObject	: register( b10 )
 {
 	float4x4	_Local2World;
 };

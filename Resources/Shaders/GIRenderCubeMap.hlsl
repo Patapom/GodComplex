@@ -8,7 +8,7 @@
 #include "Inc/Global.hlsl"
 #include "Inc/GI.hlsl"
 
-cbuffer	cbCubeMapCamera	: register( b9 )
+cbuffer	cbCubeMapCamera	: register( b8 )
 {
 	float4x4	_CubeMap2World;
 	float4x4	_CubeMapWorld2Proj;

@@ -59,6 +59,7 @@ protected:	// NESTED TYPES
 		float		SpecularExponent;
 		U32			FaceOffset;		// The offset to apply to the object's face index to obtain an absolute face index
 		U32			HasNormalTexture;
+		float		__PAD0;
 	};
 
 	struct CBProbe
@@ -66,11 +67,13 @@ protected:	// NESTED TYPES
 		NjFloat3	CurrentProbePosition;
 		U32			NeighborProbeID;
 		NjFloat3	NeighborProbePosition;
+		float		__PAD0;
  	};
 
 	struct CBSplat
 	{
 		NjFloat3	dUV;
+		float		__PAD0;
 	};
 
 	struct CBShadowMap
@@ -80,6 +83,7 @@ protected:	// NESTED TYPES
 		NjFloat3	BoundsMin;
 		float		__PAD0;
 		NjFloat3	BoundsMax;
+		float		__PAD1;
  	};
 
 	struct CBUpdateProbes
@@ -222,6 +226,9 @@ private:	// FIELDS
 	Scene				m_Scene;
 	bool				m_bDeleteSceneTags;
 	Primitive*			m_pPrimSphere;
+
+	int					m_MeshesCount;
+	Scene::Mesh**		m_ppCachedMeshes;
 
 	U32					m_TotalFacesCount;
 	U32					m_TotalPrimitivesCount;

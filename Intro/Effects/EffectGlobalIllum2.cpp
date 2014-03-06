@@ -42,11 +42,30 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 // 		};
 
 		const char*	ppTextureFileNames[] = {
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_wall_clean_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_wall_clean_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\concrete_02_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_s.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\moss_02_d.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_stone_01_d.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_stone_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_wall_clean_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_wall_clean_01_s.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\glass_01_d.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_01_d.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_01_n.pom",
@@ -74,10 +93,12 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_doordeco_01_d.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_doordeco_01_n.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_doordeco_01_s.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_d.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_n.pom",
+			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_s.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_02_d.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_02_n.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_02_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\concrete_02_d.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_01_d.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_01_n.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_01_s.pom",
@@ -114,12 +135,6 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\over_desk_lamp_02_d.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\over_desk_lamp_02_n.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\over_desk_lamp_02_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_s.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_box_kit_01_d.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_box_kit_01_n.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_box_kit_01_s.pom",
@@ -139,21 +154,6 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\streetlamp_01_d.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\streetlamp_01_n.pom",
 			"D:\\Workspaces\\Arkane\\TexturesPOM\\streetlamp_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_s.pom",
 		};
 
 		m_TexturesCount = sizeof(ppTextureFileNames) / sizeof(const char*);
@@ -173,14 +173,14 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
-	m_pCB_General = new CB<CBGeneral>( _Device, 9, true );
-	m_pCB_Scene = new CB<CBScene>( _Device, 10 );
- 	m_pCB_Object = new CB<CBObject>( _Device, 11 );
- 	m_pCB_Material = new CB<CBMaterial>( _Device, 12 );
+	m_pCB_General = new CB<CBGeneral>( _Device, 8, true );
+	m_pCB_Scene = new CB<CBScene>( _Device, 9, true );
+ 	m_pCB_Object = new CB<CBObject>( _Device, 10 );
+ 	m_pCB_Material = new CB<CBMaterial>( _Device, 11 );
 	m_pCB_Probe = new CB<CBProbe>( _Device, 10 );
 	m_pCB_Splat = new CB<CBSplat>( _Device, 10 );
 	m_pCB_ShadowMap = new CB<CBShadowMap>( _Device, 2, true );
-	m_pCB_UpdateProbes = new CB<CBUpdateProbes>( _Device, 11 );
+	m_pCB_UpdateProbes = new CB<CBUpdateProbes>( _Device, 10 );
 
 	m_pCB_Scene->m.DynamicLightsCount = 0;
 	m_pCB_Scene->m.StaticLightsCount = 0;
@@ -212,6 +212,21 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 	// Update once so it's ready when we pre-compute probes
 	m_pCB_Scene->UpdateData();
+
+	// Cache meshes since my ForEach function is slow as hell!! ^^
+	m_MeshesCount = 0;
+	Scene::Mesh*	pMesh = NULL;
+	while ( (pMesh = (Scene::Mesh*) m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
+	{
+		m_MeshesCount++;
+	}
+	m_ppCachedMeshes = new Scene::Mesh*[m_MeshesCount];
+	m_MeshesCount = 0;
+	pMesh = NULL;
+	while ( (pMesh = (Scene::Mesh*) m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
+	{
+		m_ppCachedMeshes[m_MeshesCount++] = pMesh;
+	}
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -267,6 +282,9 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete[] m_pProbes;
 
 	delete m_pPrimSphere;
+
+	delete[] m_ppCachedMeshes;
+	m_MeshesCount = 0;
 
 	m_bDeleteSceneTags = true;
 	m_Scene.ClearTags( *this );
@@ -697,11 +715,9 @@ void	EffectGlobalIllum2::PreComputeProbes()
 	const float		Z_INFINITY = 1e6f;
 	const float		Z_INFINITY_TEST = 0.99f * Z_INFINITY;
 
-	pRTCubeMap = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 3, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain albedo (cube 0) + (normal + distance) (cube 1) + (static lighting + emissive surface index) (cube 2)
+				pRTCubeMap = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 4, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain albedo (cube 0) + (normal + distance) (cube 1) + (static lighting + emissive surface index) (cube 2) + Probe IDs (cube 3)
 	Texture2D*	pRTCubeMapDepth = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
-
-	Texture2D*	pRTCubeMapStaging;
-	pRTCubeMapStaging = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 3, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );		// Will contain albedo
+	Texture2D*	pRTCubeMapStaging = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 4, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -723,139 +739,14 @@ void	EffectGlobalIllum2::PreComputeProbes()
 	}
 
 
-	//////////////////////////////////////////////////////////////////////////
-	// Prepare the cube map face transforms
-	// Here are the transform to render the 6 faces of a cube map
-	// Remember the +Z face is not oriented the same way as our Z vector: http://msdn.microsoft.com/en-us/library/windows/desktop/bb204881(v=vs.85).aspx
-	//
-	//
-	//		^ +Y
-	//		|   +Z  (our actual +Z faces the other way!)
-	//		|  /
-	//		| /
-	//		|/
-	//		o------> +X
-	//
-	//
-	NjFloat3	SideAt[6] = 
-	{
-		NjFloat3(  1, 0, 0 ),
-		NjFloat3( -1, 0, 0 ),
-		NjFloat3( 0,  1, 0 ),
-		NjFloat3( 0, -1, 0 ),
-		NjFloat3( 0, 0,  1 ),
-		NjFloat3( 0, 0, -1 ),
-	};
-	NjFloat3	SideRight[6] = 
-	{
-		NjFloat3( 0, 0, -1 ),
-		NjFloat3( 0, 0,  1 ),
-		NjFloat3(  1, 0, 0 ),
-		NjFloat3(  1, 0, 0 ),
-		NjFloat3(  1, 0, 0 ),
-		NjFloat3( -1, 0, 0 ),
-	};
+#if 0	// Define this to load probe sets from disk
 
-	NjFloat4x4	SideWorld2Proj[6];
-	NjFloat4x4	Side2Local[6];
-	NjFloat4x4	Camera2Proj = NjFloat4x4::ProjectionPerspective( 0.5f * PI, 1.0f, 0.01f, 1000.0f );
-	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
-	{
-		NjFloat4x4	Camera2Local;
-		Camera2Local.SetRow( 0, SideRight[CubeFaceIndex], 0 );
-		Camera2Local.SetRow( 1, SideAt[CubeFaceIndex] ^ SideRight[CubeFaceIndex], 0 );
-		Camera2Local.SetRow( 2, SideAt[CubeFaceIndex], 0 );
-		Camera2Local.SetRow( 3, NjFloat3::Zero, 1 );
+	FILE*	pFile = NULL;
+	char	pTemp[1024];
 
-		Side2Local[CubeFaceIndex] = Camera2Local;
-
-		NjFloat4x4	Local2Camera = Camera2Local.Inverse();
-		NjFloat4x4	Local2Proj = Local2Camera * Camera2Proj;
-		SideWorld2Proj[CubeFaceIndex] = Local2Proj;
-	}
-
-	// Create the special CB for cube map projections
-	struct	CBCubeMapCamera
-	{
-		NjFloat4x4	Camera2World;
-		NjFloat4x4	World2Proj;
-	};
-	CB<CBCubeMapCamera>*	pCBCubeMapCamera = new CB<CBCubeMapCamera>( m_Device, 9, true );
-
-	//////////////////////////////////////////////////////////////////////////
-	// Render every probe as a cube map & process
-	//
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
-//for ( int ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
-
-		//////////////////////////////////////////////////////////////////////////
-		// 1] Render Albedo + Normal + Distance + Static lit + Emissive Mat ID
-
-		// Clear cube map
-		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 0, 6 ), NjFloat4::Zero );
-		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6, 6 ), NjFloat4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
-
-		NjFloat4	Bisou = NjFloat4::Zero;
-		((U32&) Bisou.w) = 0xFFFFFFFFUL;
-		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 12, 6 ), Bisou );
-
-		NjFloat4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
-		ProbeLocal2World.Normalize();
-
-		ASSERT( ProbeLocal2World.GetRow(0).LengthSq() > 0.999f && ProbeLocal2World.GetRow(1).LengthSq() > 0.999f && ProbeLocal2World.GetRow(2).LengthSq() > 0.999f, "Not identity! If not identity then transform probe set positions/normals/etc. by probe matrix!" );
-
-		NjFloat4x4	ProbeWorld2Local = ProbeLocal2World.Inverse();
-
-		// Render the 6 faces
-		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
-		{
-			// Update cube map face camera transform
-			NjFloat4x4	World2Proj = ProbeWorld2Local * SideWorld2Proj[CubeFaceIndex];
-
-			pCBCubeMapCamera->m.Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
-			pCBCubeMapCamera->m.World2Proj = World2Proj;
-			pCBCubeMapCamera->UpdateData();
-
-			// Render the scene into the specific cube map faces
-			m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
-
-			ID3D11RenderTargetView*	ppViews[3] = {
-				pRTCubeMap->GetTargetView( 0, CubeFaceIndex, 1 ),
-				pRTCubeMap->GetTargetView( 0, 6+CubeFaceIndex, 1 ),
-				pRTCubeMap->GetTargetView( 0, 12+CubeFaceIndex, 1 )
-			};
-			m_Device.SetRenderTargets( CUBE_MAP_SIZE, CUBE_MAP_SIZE, 3, ppViews, pRTCubeMapDepth->GetDepthStencilView() );
-
-			// Clear depth
-			m_Device.ClearDepthStencil( *pRTCubeMapDepth, 1.0f, 0, true, false );
-
-			// Render scene
-			Scene::Mesh*	pMesh = NULL;
-			while ( pMesh = (Scene::Mesh*) m_Scene.ForEach( Scene::Node::MESH, pMesh ) )
-			{
-//				if ( pMesh->m_pPrimitives[0].m_pMaterial->m_EmissiveColor.Max() > 1e-4f )
-
-				RenderMesh( *pMesh, m_pMatRenderCubeMap );
-			}
-		}
-
-
-		//////////////////////////////////////////////////////////////////////////
-		// 2] Read back cube map and create the SH coefficients
-		pRTCubeMapStaging->CopyFrom( *pRTCubeMap );
-
-
-
-#if 1	// Define this to load probe sets from disk
-		FILE*	pFile = NULL;
-		char	pTemp[1024];
-
-#if 1	// Save to disk
-		sprintf_s( pTemp, SCENE_PATH "Probe%02d.pom", ProbeIndex );
-		pRTCubeMapStaging->Save( pTemp );
-#endif
 
 		// Read numbered probe
 		sprintf_s( pTemp, SCENE_PATH "Probe%02d.probeset", ProbeIndex );
@@ -1012,8 +903,170 @@ void	EffectGlobalIllum2::PreComputeProbes()
 		}
 
 		fclose( pFile );
+	}
 
-#else
+#else	// Compute probes instead
+
+	//////////////////////////////////////////////////////////////////////////
+	// Prepare the cube map face transforms
+	// Here are the transform to render the 6 faces of a cube map
+	// Remember the +Z face is not oriented the same way as our Z vector: http://msdn.microsoft.com/en-us/library/windows/desktop/bb204881(v=vs.85).aspx
+	//
+	//
+	//		^ +Y
+	//		|   +Z  (our actual +Z faces the other way!)
+	//		|  /
+	//		| /
+	//		|/
+	//		o------> +X
+	//
+	//
+	NjFloat3	SideAt[6] = 
+	{
+		NjFloat3(  1, 0, 0 ),
+		NjFloat3( -1, 0, 0 ),
+		NjFloat3( 0,  1, 0 ),
+		NjFloat3( 0, -1, 0 ),
+		NjFloat3( 0, 0,  1 ),
+		NjFloat3( 0, 0, -1 ),
+	};
+	NjFloat3	SideRight[6] = 
+	{
+		NjFloat3( 0, 0, -1 ),
+		NjFloat3( 0, 0,  1 ),
+		NjFloat3(  1, 0, 0 ),
+		NjFloat3(  1, 0, 0 ),
+		NjFloat3(  1, 0, 0 ),
+		NjFloat3( -1, 0, 0 ),
+	};
+
+	NjFloat4x4	SideWorld2Proj[6];
+	NjFloat4x4	Side2Local[6];
+	NjFloat4x4	Camera2Proj = NjFloat4x4::ProjectionPerspective( 0.5f * PI, 1.0f, 0.01f, 1000.0f );
+	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
+	{
+		NjFloat4x4	Camera2Local;
+		Camera2Local.SetRow( 0, SideRight[CubeFaceIndex], 0 );
+		Camera2Local.SetRow( 1, SideAt[CubeFaceIndex] ^ SideRight[CubeFaceIndex], 0 );
+		Camera2Local.SetRow( 2, SideAt[CubeFaceIndex], 0 );
+		Camera2Local.SetRow( 3, NjFloat3::Zero, 1 );
+
+		Side2Local[CubeFaceIndex] = Camera2Local;
+
+		NjFloat4x4	Local2Camera = Camera2Local.Inverse();
+		NjFloat4x4	Local2Proj = Local2Camera * Camera2Proj;
+		SideWorld2Proj[CubeFaceIndex] = Local2Proj;
+	}
+
+	// Create the special CB for cube map projections
+	struct	CBCubeMapCamera
+	{
+		NjFloat4x4	Camera2World;
+		NjFloat4x4	World2Proj;
+	};
+	CB<CBCubeMapCamera>*	pCBCubeMapCamera = new CB<CBCubeMapCamera>( m_Device, 8, true );
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Render every probe as a cube map & process
+	//
+	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+//for ( int ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
+	{
+		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
+
+		//////////////////////////////////////////////////////////////////////////
+		// 1] Render Albedo + Normal + Distance + Static lit + Emissive Mat ID
+
+		// Clear cube map
+		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6*0, 6 ), NjFloat4::Zero );
+		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6*1, 6 ), NjFloat4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
+
+		NjFloat4	Bisou = NjFloat4::Zero;
+		((U32&) Bisou.w) = 0xFFFFFFFFUL;
+		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6*2, 6 ), Bisou );	// Clear emissive surface ID to -1 (invalid) and static color to 0
+		((U32&) Bisou.x) = 0xFFFFFFFFUL;
+		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6*3, 6 ), Bisou );	// Clear probe ID to -1 (invalid)
+
+		NjFloat4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
+		ProbeLocal2World.Normalize();
+
+		ASSERT( ProbeLocal2World.GetRow(0).LengthSq() > 0.999f && ProbeLocal2World.GetRow(1).LengthSq() > 0.999f && ProbeLocal2World.GetRow(2).LengthSq() > 0.999f, "Not identity! If not identity then transform probe set positions/normals/etc. by probe matrix!" );
+
+		NjFloat4x4	ProbeWorld2Local = ProbeLocal2World.Inverse();
+
+		// Render the 6 faces
+		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
+		{
+			// Update cube map face camera transform
+			NjFloat4x4	World2Proj = ProbeWorld2Local * SideWorld2Proj[CubeFaceIndex];
+
+			pCBCubeMapCamera->m.Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
+			pCBCubeMapCamera->m.World2Proj = World2Proj;
+			pCBCubeMapCamera->UpdateData();
+
+			// Render the scene into the specific cube map faces
+			m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+
+			ID3D11RenderTargetView*	ppViews[3] = {
+				pRTCubeMap->GetTargetView( 0, 6*0+CubeFaceIndex, 1 ),
+				pRTCubeMap->GetTargetView( 0, 6*1+CubeFaceIndex, 1 ),
+				pRTCubeMap->GetTargetView( 0, 6*2+CubeFaceIndex, 1 )
+			};
+			m_Device.SetRenderTargets( CUBE_MAP_SIZE, CUBE_MAP_SIZE, 3, ppViews, pRTCubeMapDepth->GetDepthStencilView() );
+
+			// Clear depth
+			m_Device.ClearDepthStencil( *pRTCubeMapDepth, 1.0f, 0, true, false );
+
+			// Render scene
+			for ( int MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
+				RenderMesh( *m_ppCachedMeshes[MeshIndex], m_pMatRenderCubeMap );
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// 2]  Render neighborhood for each probe
+			// The idea here is simply to build a 3D voronoi cell by splatting the planes passing through all other probes
+			//	with their normal set to the direction from the other probe to the current probe.
+			// Splatting a new plane and accounting for the depth buffer will let visible pixels from the plane show up
+			//	and write the ID of the probe.
+			//
+			// Reading back the cube map will indicate the solid angle perceived by each probe to each of its neighbors
+			//	so we can create a linked list of neighbor probes, of their visibilities and solid angle
+			//
+			m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+			m_Device.SetRenderTarget( CUBE_MAP_SIZE, CUBE_MAP_SIZE, *pRTCubeMap->GetTargetView( 0, 6*3+CubeFaceIndex, 1 ), pRTCubeMapDepth->GetDepthStencilView() );
+
+			m_pCB_Probe->m.CurrentProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
+
+			USING_MATERIAL_START( *m_pMatRenderNeighborProbe )
+
+			for ( int NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ )
+				if ( NeighborProbeIndex != ProbeIndex )
+				{
+					ProbeStruct&	NeighborProbe = m_pProbes[NeighborProbeIndex];
+
+					m_pCB_Probe->m.NeighborProbeID = NeighborProbeIndex;
+					m_pCB_Probe->m.NeighborProbePosition = NeighborProbe.pSceneProbe->m_Local2World.GetRow( 3 );
+					m_pCB_Probe->UpdateData();
+
+					m_ScreenQuad.Render( M );
+				}
+
+			USING_MATERIAL_END
+		}
+
+
+		//////////////////////////////////////////////////////////////////////////
+		// 3] Read back cube map and create the SH coefficients
+		pRTCubeMapStaging->CopyFrom( *pRTCubeMap );
+
+#if 1	// Save to disk
+		char	pTemp[1024];
+		sprintf_s( pTemp, SCENE_PATH "Probe%02d.pom", ProbeIndex );
+		pRTCubeMapStaging->Save( pTemp );
+#endif
+
+
 		double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
 		double	SumSolidAngle = 0.0;
 
@@ -1072,8 +1125,8 @@ void	EffectGlobalIllum2::PreComputeProbes()
 				}
 			}
 
-			pRTCubeMapStaging->UnMap( 0, CubeFaceIndex );
-			pRTCubeMapStaging->UnMap( 0, 6+CubeFaceIndex );
+			pRTCubeMapStaging->UnMap( 0, 6*0+CubeFaceIndex );
+			pRTCubeMapStaging->UnMap( 0, 6*1+CubeFaceIndex );
 		}
 
 		//////////////////////////////////////////////////////////////////////////
@@ -1098,8 +1151,11 @@ Probe.pSHBounceStatic[i] = NjFloat3::Zero;
 
 //TODO! At the moment we only read back the only pre-computed set from disk
 
-#endif
 	}
+
+	delete pCBCubeMapCamera;
+
+#endif
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1108,8 +1164,6 @@ Probe.pSHBounceStatic[i] = NjFloat3::Zero;
 m_Device.RemoveRenderTargets();
 pRTCubeMap->SetPS( 64 );
 #endif
-
-	delete pCBCubeMapCamera;
 
 	delete pRTCubeMapStaging;
 
@@ -1152,9 +1206,9 @@ void	EffectGlobalIllum2::RenderShadowMap( const NjFloat3& _SunDirection )
 	// Find appropriate bounds
 	NjFloat3		BBoxMin = 1e6f * NjFloat3::One;
 	NjFloat3		BBoxMax = -1e6f * NjFloat3::One;
-	Scene::Node*	pMesh = NULL;
-	while ( (pMesh = m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
+	for ( int MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
 	{
+		Scene::Mesh*	pMesh = m_ppCachedMeshes[MeshIndex];
 		NjFloat4x4	Mesh2Light = pMesh->m_Local2World * m_pCB_ShadowMap->m.World2Light;
 
 		// Transform the 8 corners of the mesh's BBox into light space and grow the light's bbox
@@ -1232,10 +1286,8 @@ void	EffectGlobalIllum2::RenderShadowMap( const NjFloat3& _SunDirection )
 	m_Device.SetRenderTargets( m_pRTShadowMap->GetWidth(), m_pRTShadowMap->GetHeight(), 0, NULL, m_pRTShadowMap->GetDepthStencilView() );
 
 	Scene::Node*	pMesh = NULL;
-	while ( (pMesh = m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
-	{
-		RenderMesh( (Scene::Mesh&) *pMesh, &M );
-	}
+	for ( int MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
+		RenderMesh( *m_ppCachedMeshes[MeshIndex], &M );
 
 	USING_MATERIAL_END
 

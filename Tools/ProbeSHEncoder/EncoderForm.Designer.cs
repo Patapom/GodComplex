@@ -31,34 +31,34 @@ namespace ProbeSHEncoder
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			WMath.Vector vector85 = new WMath.Vector();
-			WMath.Vector vector86 = new WMath.Vector();
-			WMath.Vector vector87 = new WMath.Vector();
-			WMath.Vector vector88 = new WMath.Vector();
-			WMath.Vector vector89 = new WMath.Vector();
-			WMath.Vector vector90 = new WMath.Vector();
-			WMath.Vector vector91 = new WMath.Vector();
-			WMath.Vector vector92 = new WMath.Vector();
-			WMath.Vector vector93 = new WMath.Vector();
-			WMath.Vector vector94 = new WMath.Vector();
-			WMath.Vector vector95 = new WMath.Vector();
-			WMath.Vector vector96 = new WMath.Vector();
-			WMath.Vector vector97 = new WMath.Vector();
-			WMath.Vector vector98 = new WMath.Vector();
-			WMath.Vector vector99 = new WMath.Vector();
-			WMath.Vector vector100 = new WMath.Vector();
-			WMath.Vector vector101 = new WMath.Vector();
-			WMath.Vector vector102 = new WMath.Vector();
-			WMath.Vector vector103 = new WMath.Vector();
-			WMath.Vector vector104 = new WMath.Vector();
-			WMath.Vector vector105 = new WMath.Vector();
-			WMath.Vector vector106 = new WMath.Vector();
-			WMath.Vector vector107 = new WMath.Vector();
-			WMath.Vector vector108 = new WMath.Vector();
-			WMath.Vector vector109 = new WMath.Vector();
-			WMath.Vector vector110 = new WMath.Vector();
-			WMath.Vector vector111 = new WMath.Vector();
-			WMath.Vector vector112 = new WMath.Vector();
+			WMath.Vector vector1 = new WMath.Vector();
+			WMath.Vector vector2 = new WMath.Vector();
+			WMath.Vector vector3 = new WMath.Vector();
+			WMath.Vector vector4 = new WMath.Vector();
+			WMath.Vector vector5 = new WMath.Vector();
+			WMath.Vector vector6 = new WMath.Vector();
+			WMath.Vector vector7 = new WMath.Vector();
+			WMath.Vector vector8 = new WMath.Vector();
+			WMath.Vector vector9 = new WMath.Vector();
+			WMath.Vector vector10 = new WMath.Vector();
+			WMath.Vector vector11 = new WMath.Vector();
+			WMath.Vector vector12 = new WMath.Vector();
+			WMath.Vector vector13 = new WMath.Vector();
+			WMath.Vector vector14 = new WMath.Vector();
+			WMath.Vector vector15 = new WMath.Vector();
+			WMath.Vector vector16 = new WMath.Vector();
+			WMath.Vector vector17 = new WMath.Vector();
+			WMath.Vector vector18 = new WMath.Vector();
+			WMath.Vector vector19 = new WMath.Vector();
+			WMath.Vector vector20 = new WMath.Vector();
+			WMath.Vector vector21 = new WMath.Vector();
+			WMath.Vector vector22 = new WMath.Vector();
+			WMath.Vector vector23 = new WMath.Vector();
+			WMath.Vector vector24 = new WMath.Vector();
+			WMath.Vector vector25 = new WMath.Vector();
+			WMath.Vector vector26 = new WMath.Vector();
+			WMath.Vector vector27 = new WMath.Vector();
+			WMath.Vector vector28 = new WMath.Vector();
 			this.menuStrip = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.loadProbeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -105,8 +105,9 @@ namespace ProbeSHEncoder
 			this.checkBoxSHOcclusion = new System.Windows.Forms.CheckBox();
 			this.checkBoxSHNormalized = new System.Windows.Forms.CheckBox();
 			this.radioButtonFaceIndex = new System.Windows.Forms.RadioButton();
-			this.outputPanel1 = new ProbeSHEncoder.OutputPanel(this.components);
 			this.buttonReset = new System.Windows.Forms.Button();
+			this.radioButtonNeighborProbeID = new System.Windows.Forms.RadioButton();
+			this.outputPanel1 = new ProbeSHEncoder.OutputPanel(this.components);
 			this.menuStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -189,7 +190,7 @@ namespace ProbeSHEncoder
 			// 
 			// buttonCompute
 			// 
-			this.buttonCompute.Location = new System.Drawing.Point(711, 130);
+			this.buttonCompute.Location = new System.Drawing.Point(776, 109);
 			this.buttonCompute.Name = "buttonCompute";
 			this.buttonCompute.Size = new System.Drawing.Size(97, 38);
 			this.buttonCompute.TabIndex = 2;
@@ -202,7 +203,7 @@ namespace ProbeSHEncoder
 			// 
 			this.radioButtonAlbedo.AutoSize = true;
 			this.radioButtonAlbedo.Checked = true;
-			this.radioButtonAlbedo.Location = new System.Drawing.Point(712, 218);
+			this.radioButtonAlbedo.Location = new System.Drawing.Point(712, 195);
 			this.radioButtonAlbedo.Name = "radioButtonAlbedo";
 			this.radioButtonAlbedo.Size = new System.Drawing.Size(58, 17);
 			this.radioButtonAlbedo.TabIndex = 4;
@@ -214,7 +215,7 @@ namespace ProbeSHEncoder
 			// radioButtonDistance
 			// 
 			this.radioButtonDistance.AutoSize = true;
-			this.radioButtonDistance.Location = new System.Drawing.Point(712, 241);
+			this.radioButtonDistance.Location = new System.Drawing.Point(712, 218);
 			this.radioButtonDistance.Name = "radioButtonDistance";
 			this.radioButtonDistance.Size = new System.Drawing.Size(67, 17);
 			this.radioButtonDistance.TabIndex = 4;
@@ -247,7 +248,7 @@ namespace ProbeSHEncoder
 			// radioButtonNormal
 			// 
 			this.radioButtonNormal.AutoSize = true;
-			this.radioButtonNormal.Location = new System.Drawing.Point(712, 264);
+			this.radioButtonNormal.Location = new System.Drawing.Point(712, 241);
 			this.radioButtonNormal.Name = "radioButtonNormal";
 			this.radioButtonNormal.Size = new System.Drawing.Size(58, 17);
 			this.radioButtonNormal.TabIndex = 4;
@@ -394,6 +395,7 @@ namespace ProbeSHEncoder
 			this.integerTrackbarControlK.Value = 32;
 			this.integerTrackbarControlK.VisibleRangeMax = 64;
 			this.integerTrackbarControlK.VisibleRangeMin = 1;
+			this.integerTrackbarControlK.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlK_ValueChanged);
 			// 
 			// label4
 			// 
@@ -428,7 +430,7 @@ namespace ProbeSHEncoder
 			// 
 			// buttonComputeFilling
 			// 
-			this.buttonComputeFilling.Location = new System.Drawing.Point(711, 174);
+			this.buttonComputeFilling.Location = new System.Drawing.Point(711, 151);
 			this.buttonComputeFilling.Name = "buttonComputeFilling";
 			this.buttonComputeFilling.Size = new System.Drawing.Size(97, 38);
 			this.buttonComputeFilling.TabIndex = 2;
@@ -495,7 +497,7 @@ namespace ProbeSHEncoder
 			// radioButtonStaticLit
 			// 
 			this.radioButtonStaticLit.AutoSize = true;
-			this.radioButtonStaticLit.Location = new System.Drawing.Point(712, 287);
+			this.radioButtonStaticLit.Location = new System.Drawing.Point(712, 264);
 			this.radioButtonStaticLit.Name = "radioButtonStaticLit";
 			this.radioButtonStaticLit.Size = new System.Drawing.Size(66, 17);
 			this.radioButtonStaticLit.TabIndex = 4;
@@ -506,7 +508,7 @@ namespace ProbeSHEncoder
 			// radioButtonEmissiveMatID
 			// 
 			this.radioButtonEmissiveMatID.AutoSize = true;
-			this.radioButtonEmissiveMatID.Location = new System.Drawing.Point(712, 333);
+			this.radioButtonEmissiveMatID.Location = new System.Drawing.Point(712, 310);
 			this.radioButtonEmissiveMatID.Name = "radioButtonEmissiveMatID";
 			this.radioButtonEmissiveMatID.Size = new System.Drawing.Size(101, 17);
 			this.radioButtonEmissiveMatID.TabIndex = 4;
@@ -574,7 +576,7 @@ namespace ProbeSHEncoder
 			// radioButtonFaceIndex
 			// 
 			this.radioButtonFaceIndex.AutoSize = true;
-			this.radioButtonFaceIndex.Location = new System.Drawing.Point(712, 310);
+			this.radioButtonFaceIndex.Location = new System.Drawing.Point(712, 287);
 			this.radioButtonFaceIndex.Name = "radioButtonFaceIndex";
 			this.radioButtonFaceIndex.Size = new System.Drawing.Size(78, 17);
 			this.radioButtonFaceIndex.TabIndex = 4;
@@ -582,91 +584,113 @@ namespace ProbeSHEncoder
 			this.radioButtonFaceIndex.UseVisualStyleBackColor = true;
 			this.radioButtonFaceIndex.CheckedChanged += new System.EventHandler(this.radioButtonFaceIndex_CheckedChanged);
 			// 
+			// buttonReset
+			// 
+			this.buttonReset.Location = new System.Drawing.Point(948, 557);
+			this.buttonReset.Name = "buttonReset";
+			this.buttonReset.Size = new System.Drawing.Size(66, 24);
+			this.buttonReset.TabIndex = 2;
+			this.buttonReset.Text = "Reset";
+			this.buttonReset.UseVisualStyleBackColor = true;
+			this.buttonReset.Visible = false;
+			this.buttonReset.Click += new System.EventHandler(this.buttonReset_Click);
+			// 
+			// radioButtonNeighborProbeID
+			// 
+			this.radioButtonNeighborProbeID.AutoSize = true;
+			this.radioButtonNeighborProbeID.Location = new System.Drawing.Point(712, 333);
+			this.radioButtonNeighborProbeID.Name = "radioButtonNeighborProbeID";
+			this.radioButtonNeighborProbeID.Size = new System.Drawing.Size(113, 17);
+			this.radioButtonNeighborProbeID.TabIndex = 4;
+			this.radioButtonNeighborProbeID.Text = "Neighbor Probe ID";
+			this.radioButtonNeighborProbeID.UseVisualStyleBackColor = true;
+			this.radioButtonNeighborProbeID.CheckedChanged += new System.EventHandler(this.radioButtonNeighborProbeID_CheckedChanged);
+			// 
 			// outputPanel1
 			// 
-			vector85.X = 0F;
-			vector85.Y = 0F;
-			vector85.Z = 1F;
-			this.outputPanel1.At = vector85;
+			vector1.X = 0F;
+			vector1.Y = 0F;
+			vector1.Z = 1F;
+			this.outputPanel1.At = vector1;
 			this.outputPanel1.IsolatedSetIndex = 0;
 			this.outputPanel1.IsolateSet = false;
 			this.outputPanel1.Location = new System.Drawing.Point(12, 27);
 			this.outputPanel1.Name = "outputPanel1";
 			this.outputPanel1.NormalizeSH = false;
-			vector86.X = 0F;
-			vector86.Y = 0F;
-			vector86.Z = 0F;
-			vector87.X = 0F;
-			vector87.Y = 0F;
-			vector87.Z = 0F;
-			vector88.X = 0F;
-			vector88.Y = 0F;
-			vector88.Z = 0F;
-			vector89.X = 0F;
-			vector89.Y = 0F;
-			vector89.Z = 0F;
-			vector90.X = 0F;
-			vector90.Y = 0F;
-			vector90.Z = 0F;
-			vector91.X = 0F;
-			vector91.Y = 0F;
-			vector91.Z = 0F;
-			vector92.X = 0F;
-			vector92.Y = 0F;
-			vector92.Z = 0F;
-			vector93.X = 0F;
-			vector93.Y = 0F;
-			vector93.Z = 0F;
-			vector94.X = 0F;
-			vector94.Y = 0F;
-			vector94.Z = 0F;
+			vector2.X = 0F;
+			vector2.Y = 0F;
+			vector2.Z = 0F;
+			vector3.X = 0F;
+			vector3.Y = 0F;
+			vector3.Z = 0F;
+			vector4.X = 0F;
+			vector4.Y = 0F;
+			vector4.Z = 0F;
+			vector5.X = 0F;
+			vector5.Y = 0F;
+			vector5.Z = 0F;
+			vector6.X = 0F;
+			vector6.Y = 0F;
+			vector6.Z = 0F;
+			vector7.X = 0F;
+			vector7.Y = 0F;
+			vector7.Z = 0F;
+			vector8.X = 0F;
+			vector8.Y = 0F;
+			vector8.Z = 0F;
+			vector9.X = 0F;
+			vector9.Y = 0F;
+			vector9.Z = 0F;
+			vector10.X = 0F;
+			vector10.Y = 0F;
+			vector10.Z = 0F;
 			this.outputPanel1.SHDynamic = new WMath.Vector[] {
-        vector86,
-        vector87,
-        vector88,
-        vector89,
-        vector90,
-        vector91,
-        vector92,
-        vector93,
-        vector94};
-			vector95.X = 0F;
-			vector95.Y = 0F;
-			vector95.Z = 0F;
-			vector96.X = 0F;
-			vector96.Y = 0F;
-			vector96.Z = 0F;
-			vector97.X = 0F;
-			vector97.Y = 0F;
-			vector97.Z = 0F;
-			vector98.X = 0F;
-			vector98.Y = 0F;
-			vector98.Z = 0F;
-			vector99.X = 0F;
-			vector99.Y = 0F;
-			vector99.Z = 0F;
-			vector100.X = 0F;
-			vector100.Y = 0F;
-			vector100.Z = 0F;
-			vector101.X = 0F;
-			vector101.Y = 0F;
-			vector101.Z = 0F;
-			vector102.X = 0F;
-			vector102.Y = 0F;
-			vector102.Z = 0F;
-			vector103.X = 0F;
-			vector103.Y = 0F;
-			vector103.Z = 0F;
+        vector2,
+        vector3,
+        vector4,
+        vector5,
+        vector6,
+        vector7,
+        vector8,
+        vector9,
+        vector10};
+			vector11.X = 0F;
+			vector11.Y = 0F;
+			vector11.Z = 0F;
+			vector12.X = 0F;
+			vector12.Y = 0F;
+			vector12.Z = 0F;
+			vector13.X = 0F;
+			vector13.Y = 0F;
+			vector13.Z = 0F;
+			vector14.X = 0F;
+			vector14.Y = 0F;
+			vector14.Z = 0F;
+			vector15.X = 0F;
+			vector15.Y = 0F;
+			vector15.Z = 0F;
+			vector16.X = 0F;
+			vector16.Y = 0F;
+			vector16.Z = 0F;
+			vector17.X = 0F;
+			vector17.Y = 0F;
+			vector17.Z = 0F;
+			vector18.X = 0F;
+			vector18.Y = 0F;
+			vector18.Z = 0F;
+			vector19.X = 0F;
+			vector19.Y = 0F;
+			vector19.Z = 0F;
 			this.outputPanel1.SHEmissive = new WMath.Vector[] {
-        vector95,
-        vector96,
-        vector97,
-        vector98,
-        vector99,
-        vector100,
-        vector101,
-        vector102,
-        vector103};
+        vector11,
+        vector12,
+        vector13,
+        vector14,
+        vector15,
+        vector16,
+        vector17,
+        vector18,
+        vector19};
 			this.outputPanel1.SHOcclusion = new float[] {
         0F,
         0F,
@@ -682,57 +706,46 @@ namespace ProbeSHEncoder
 			this.outputPanel1.ShowSHEmissive = false;
 			this.outputPanel1.ShowSHOcclusion = false;
 			this.outputPanel1.ShowSHStatic = false;
-			vector104.X = 0F;
-			vector104.Y = 0F;
-			vector104.Z = 0F;
-			vector105.X = 0F;
-			vector105.Y = 0F;
-			vector105.Z = 0F;
-			vector106.X = 0F;
-			vector106.Y = 0F;
-			vector106.Z = 0F;
-			vector107.X = 0F;
-			vector107.Y = 0F;
-			vector107.Z = 0F;
-			vector108.X = 0F;
-			vector108.Y = 0F;
-			vector108.Z = 0F;
-			vector109.X = 0F;
-			vector109.Y = 0F;
-			vector109.Z = 0F;
-			vector110.X = 0F;
-			vector110.Y = 0F;
-			vector110.Z = 0F;
-			vector111.X = 0F;
-			vector111.Y = 0F;
-			vector111.Z = 0F;
-			vector112.X = 0F;
-			vector112.Y = 0F;
-			vector112.Z = 0F;
+			vector20.X = 0F;
+			vector20.Y = 0F;
+			vector20.Z = 0F;
+			vector21.X = 0F;
+			vector21.Y = 0F;
+			vector21.Z = 0F;
+			vector22.X = 0F;
+			vector22.Y = 0F;
+			vector22.Z = 0F;
+			vector23.X = 0F;
+			vector23.Y = 0F;
+			vector23.Z = 0F;
+			vector24.X = 0F;
+			vector24.Y = 0F;
+			vector24.Z = 0F;
+			vector25.X = 0F;
+			vector25.Y = 0F;
+			vector25.Z = 0F;
+			vector26.X = 0F;
+			vector26.Y = 0F;
+			vector26.Z = 0F;
+			vector27.X = 0F;
+			vector27.Y = 0F;
+			vector27.Z = 0F;
+			vector28.X = 0F;
+			vector28.Y = 0F;
+			vector28.Z = 0F;
 			this.outputPanel1.SHStatic = new WMath.Vector[] {
-        vector104,
-        vector105,
-        vector106,
-        vector107,
-        vector108,
-        vector109,
-        vector110,
-        vector111,
-        vector112};
+        vector20,
+        vector21,
+        vector22,
+        vector23,
+        vector24,
+        vector25,
+        vector26,
+        vector27,
+        vector28};
 			this.outputPanel1.Size = new System.Drawing.Size(677, 546);
 			this.outputPanel1.TabIndex = 3;
 			this.outputPanel1.Viz = ProbeSHEncoder.OutputPanel.VIZ_TYPE.ALBEDO;
-			// 
-			// buttonReset
-			// 
-			this.buttonReset.Location = new System.Drawing.Point(948, 557);
-			this.buttonReset.Name = "buttonReset";
-			this.buttonReset.Size = new System.Drawing.Size(66, 24);
-			this.buttonReset.TabIndex = 2;
-			this.buttonReset.Text = "Reset";
-			this.buttonReset.UseVisualStyleBackColor = true;
-			this.buttonReset.Visible = false;
-			this.buttonReset.Click += new System.EventHandler(this.buttonReset_Click);
 			// 
 			// EncoderForm
 			// 
@@ -766,6 +779,7 @@ namespace ProbeSHEncoder
 			this.Controls.Add(this.radioButtonSetDistance);
 			this.Controls.Add(this.radioButtonSetColor);
 			this.Controls.Add(this.radioButtonSetIndex);
+			this.Controls.Add(this.radioButtonNeighborProbeID);
 			this.Controls.Add(this.radioButtonEmissiveMatID);
 			this.Controls.Add(this.radioButtonFaceIndex);
 			this.Controls.Add(this.radioButtonStaticLit);
@@ -838,6 +852,7 @@ namespace ProbeSHEncoder
 		private System.Windows.Forms.CheckBox checkBoxSHNormalized;
 		private System.Windows.Forms.RadioButton radioButtonFaceIndex;
 		private System.Windows.Forms.Button buttonReset;
+		private System.Windows.Forms.RadioButton radioButtonNeighborProbeID;
 	}
 }
 

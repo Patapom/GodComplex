@@ -73,20 +73,21 @@ namespace ProbeSHEncoder
 			public int			CubeFaceX;
 			public int			CubeFaceY;
 
-			public WMath.Point	Position;			// World position
-			public WMath.Vector	Normal;				// World normal
-			public WMath.Vector	Albedo;				// Material albedo
-			public WMath.Vector	AlbedoHSL;			// Material albedo in HSL format
-			public float		F0;					// Material Fresnel coefficient
-			public WMath.Vector	StaticLitColor;		// Color of the statically lit environment
-			public UInt32		FaceIndex;			// Absolute scene face index
-			public int			EmissiveMatID = -1;	// ID of the emissive material or -1 if not emissive
+			public WMath.Point	Position;				// World position
+			public WMath.Vector	Normal;					// World normal
+			public WMath.Vector	Albedo;					// Material albedo
+			public WMath.Vector	AlbedoHSL;				// Material albedo in HSL format
+			public float		F0;						// Material Fresnel coefficient
+			public WMath.Vector	StaticLitColor;			// Color of the statically lit environment
+			public UInt32		FaceIndex;				// Absolute scene face index
+			public int			EmissiveMatID = -1;		// ID of the emissive material or -1 if not emissive
 			public bool			IsEmissive	{ get { return EmissiveMatID != -1; } }
-			public double		SolidAngle;			// Solid angle covered by the pixel
-			public double		Importance;			// A measure of "importance" of the scene pixel = -dot( View, Normal ) / Distance²
-			public float		Distance;			// Distance to hit point
-			public bool			Infinity;			// True if not a scene pixel (i.e. sky pixel)
-			public WMath.Vector	View;				// View vector pointing to that pixel
+			public int			NeighborProbeID = -1;	// ID of the nearest neighbor probe
+			public double		SolidAngle;				// Solid angle covered by the pixel
+			public double		Importance;				// A measure of "importance" of the scene pixel = -dot( View, Normal ) / Distance²
+			public float		Distance;				// Distance to hit point
+			public bool			Infinity;				// True if not a scene pixel (i.e. sky pixel)
+			public WMath.Vector	View;					// View vector pointing to that pixel
 
 			public double[]		SHCoeffs = new double[9];
 
@@ -479,6 +480,8 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 			floatTrackbarControlPosition.Value = GetRegKeyFloat( "DistanceSeparationImportance", floatTrackbarControlPosition.Value );
 			floatTrackbarControlNormal.Value = GetRegKeyFloat( "NormalSeparationImportance", floatTrackbarControlNormal.Value );
 			floatTrackbarControlAlbedo.Value = GetRegKeyFloat( "AlbedoSeparationImportance", floatTrackbarControlAlbedo.Value );
+
+			integerTrackbarControlK.Value = GetRegKeyInt( "SetsCount", integerTrackbarControlK.Value );
 		}
 
 		protected override void OnLoad( EventArgs e )
@@ -554,7 +557,7 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 				POM.Load( _POMCubeMap );
 				if ( POM.m_ArraySizeOrDepth < 6 )
 					return false;	// Not a cube map
-				if ( POM.m_Width != CUBE_MAP_SIZE || POM.m_Height != CUBE_MAP_SIZE || POM.m_ArraySizeOrDepth != 3*6 )
+				if ( POM.m_Width != CUBE_MAP_SIZE || POM.m_Height != CUBE_MAP_SIZE || POM.m_ArraySizeOrDepth != 4*6 )
 					throw new Exception( "Unexpected cube map size!" );
 
 				m_CubeMap = new Pixel[6][,];
@@ -601,7 +604,7 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 								}
 
 					// Fill up static lit environment and emissive IDs
-					using ( MemoryStream S = new MemoryStream( POM.m_Content[12+CubeFaceIndex] ) )
+					using ( MemoryStream S = new MemoryStream( POM.m_Content[6*2+CubeFaceIndex] ) )
 						using ( BinaryReader R = new BinaryReader( S ) )
 							for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
 								for ( int X=0; X < CUBE_MAP_SIZE; X++ )
@@ -618,7 +621,7 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 								}
 
 					// Fill up position & normal
-					using ( MemoryStream S = new MemoryStream( POM.m_Content[6+CubeFaceIndex] ) )
+					using ( MemoryStream S = new MemoryStream( POM.m_Content[6*1+CubeFaceIndex] ) )
 						using ( BinaryReader R = new BinaryReader( S ) )
 							for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
 								for ( int X=0; X < CUBE_MAP_SIZE; X++ )
@@ -675,6 +678,22 @@ NegativeImportancePixelsCount++;
 									m_MinDistance = Math.Min( m_MinDistance, Distance );
 									m_MaxDistance = Math.Max( m_MaxDistance, Distance );
 									m_BBox.Grow( wsPosition );
+								}
+
+					// Fill up neighbor probes ID
+					using ( MemoryStream S = new MemoryStream( POM.m_Content[6*3+CubeFaceIndex] ) )
+						using ( BinaryReader R = new BinaryReader( S ) )
+							for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
+								for ( int X=0; X < CUBE_MAP_SIZE; X++ )
+								{
+									Pixel	Pix = m_CubeMap[CubeFaceIndex][X,Y];
+
+									int		ID = (int) R.ReadUInt32();
+									float	Green = R.ReadSingle();
+									float	Blue = R.ReadSingle();
+									float	Alpha = R.ReadSingle();
+
+									Pix.NeighborProbeID = ID;
 								}
 				}
 
@@ -849,6 +868,14 @@ if ( (float) NegativeImportancePixelsCount / (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6)
 			string	Value = GetRegKey( _Key, _Default.ToString() );
 			float	Result;
 			float.TryParse( Value, out Result );
+			return Result;
+		}
+
+		private int		GetRegKeyInt( string _Key, float _Default )
+		{
+			string	Value = GetRegKey( _Key, _Default.ToString() );
+			int		Result;
+			int.TryParse( Value, out Result );
 			return Result;
 		}
 
@@ -1866,6 +1893,12 @@ DEBUG_PixelIndex = PixelIndex;
 				outputPanel1.Viz = OutputPanel.VIZ_TYPE.EMISSIVE_MAT_ID;
 		}
 
+		private void radioButtonNeighborProbeID_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				outputPanel1.Viz = OutputPanel.VIZ_TYPE.NEIGHBOR_PROBE_ID;
+		}
+
 		private void radioButtonSetIndex_CheckedChanged( object sender, EventArgs e )
 		{
 			if ( (sender as RadioButton).Checked )
@@ -1957,6 +1990,11 @@ DEBUG_PixelIndex = PixelIndex;
 		private void floatTrackbarControlAlbedo_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			SetRegKey( "AlbedoSeparationImportance", _Sender.Value.ToString() );
+		}
+
+		private void integerTrackbarControlK_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			SetRegKey( "SetsCount", _Sender.Value.ToString() );
 		}
 
 		private void loadProbeToolStripMenuItem_Click( object sender, EventArgs e )
