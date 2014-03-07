@@ -6,8 +6,8 @@
 //	of the pixels based on their position, normal and albedo to create a limited amount of sets that we'll be able
 //	to replace by simple "disc surface elements" that can be lit with dynamic lights.
 // 
-// These pixels belonging to each set will be be considered having the same albedo and will light the probe with
-//	precomputed spherical harmonic coefficients each pondered by the solid angle covered by the pixel in the direction
+// The pixels belonging to each set will be considered having the same albedo and will light the probe with
+//	precomputed spherical harmonic coefficients, each pondered by the solid angle covered by the pixel from the direction
 //	specific to the pixel.
 // 
 //////////////////////////////////////////////////////////////////////////
@@ -97,6 +97,8 @@ namespace ProbeSHEncoder
 			floatTrackbarControlAlbedo.Value = GetRegKeyFloat( "AlbedoSeparationImportance", floatTrackbarControlAlbedo.Value );
 
 			integerTrackbarControlK.Value = GetRegKeyInt( "SetsCount", integerTrackbarControlK.Value );
+			integerTrackbarControlLightSamples.Value = GetRegKeyInt( "LightSamplesCount", integerTrackbarControlLightSamples.Value );
+			floatTrackbarControlLambda.Value = GetRegKeyFloat( "Lambda", floatTrackbarControlLambda.Value );
 		}
 
 		private void	LoadCubeMap( FileInfo _POMCubeMap )
@@ -309,6 +311,16 @@ namespace ProbeSHEncoder
 			SetRegKey( "SetsCount", _Sender.Value.ToString() );
 		}
 
+		private void floatTrackbarControlLambda_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			SetRegKey( "Lambda", _Sender.Value.ToString() );
+		}
+
+		private void integerTrackbarControlLightSamples_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			SetRegKey( "LightSamplesCount", _Sender.Value.ToString() );
+		}
+
 		private void loadProbeToolStripMenuItem_Click( object sender, EventArgs e )
 		{
 			string	OldFileName = GetRegKey( "LastProbeFilename", m_ApplicationPath );
@@ -392,6 +404,7 @@ namespace ProbeSHEncoder
 					ProcessedProbesCount++;
 					progressBarBatchConvert.Value = progressBarBatchConvert.Maximum * (OriginalFilesCount - PomFiles.Count) / OriginalFilesCount;
 					progressBarBatchConvert.Refresh();
+					outputPanel1.Refresh();
 				}
 				catch ( Exception _e )
 				{

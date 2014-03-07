@@ -13,13 +13,20 @@
 #define	MAX_PROBE_SETS			16			// Must match the MAX_PROBE_SETS define declared in the header file!
 #define	MAX_PROBE_EMISSIVE_SETS	16			// Must match the MAX_PROBE_EMISSIVE_SETS define declared in the header file!
 
-#define IRRADIANCE_BOOST_POINT_SPOT		100.0		// Artificial boost of irradiance (and consequently, bounce light)
-#define IRRADIANCE_BOOST_DIRECTIONAL	10.0		// Artificial boost of irradiance (and consequently, bounce light)
+// #define IRRADIANCE_BOOST_POINT_SPOT		100.0		// Artificial boost of irradiance (and consequently, bounce light)
+// #define IRRADIANCE_BOOST_DIRECTIONAL	10.0		// Artificial boost of irradiance (and consequently, bounce light)
 
 
 cbuffer	cbUpdateProbes : register(b10)
 {
 	float3	_AmbientSH[9];					// Ambient sky
+
+	float	_SunBoost;
+	float	_SkyBoost;
+	float	_DynamicLightsBoost;
+	float	_StaticLightingBoost;
+
+	float	_EmissiveBoost;
 };
 
 // Input probe structures
@@ -223,7 +230,7 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 				}
 
 
-				Irradiance *= IRRADIANCE_BOOST_POINT_SPOT;
+				Irradiance *= _DynamicLightsBoost;
 			}
 			else if ( LightSource.Type == 1 )
 			{	// Compute a sneaky directional with shadow map
@@ -231,7 +238,7 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 				Irradiance = LightSource.Color;	// Simple!
 				Irradiance *= ComputeShadowCS( SamplingPoint.Position, SamplingPoint.Normal, SamplingPoint.Radius );
 
-				Irradiance *= IRRADIANCE_BOOST_DIRECTIONAL;
+				Irradiance *= _SunBoost;
 			}
 
 			float	NdotL = saturate( dot( SamplingPoint.Normal, Light ) );
@@ -298,11 +305,11 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 		for ( int i=0; i < 9; i++ )
 		{
 #if 1
-			float3	SHCoeff = OccludedAmbientSH[i] + Probe.SHStatic[i];
+			float3	SHCoeff = _SkyBoost * OccludedAmbientSH[i] + _StaticLightingBoost * Probe.SHStatic[i];
 			for ( uint j=0; j < Probe.SetsCount; j++ )
 				SHCoeff += gsSetSH[9*j+i];
 			for ( uint j=0; j < Probe.EmissiveSetsCount; j++ )
-				SHCoeff += gsEmissiveSetSH[9*j+i];
+				SHCoeff += _EmissiveBoost * gsEmissiveSetSH[9*j+i];
 #else
 			// Debug sets' SH
 			float3	SHCoeff = 0.0;

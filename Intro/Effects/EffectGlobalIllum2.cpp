@@ -45,118 +45,118 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 // 		};
 
 		const char*	ppTextureFileNames[] = {
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_wall_clean_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_wall_clean_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\concrete_02_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\moss_02_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_stone_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_stone_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\glass_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_03_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_03_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_03_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_02_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_02_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\wood_05_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\white_stone_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\white_stone_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\white_stone_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\door_blocker_iron_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\door_blocker_iron_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\door_blocker_iron_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_02_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_02_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_02_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_doordeco_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_doordeco_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_doordeco_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_02_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_02_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_02_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_02_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_02_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_02_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_ceiling_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_ceiling_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_ceiling_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_painting_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_painting_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_painting_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_light_wall_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_light_wall_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_light_wall_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_pillar_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_pillar_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_pillar_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_flat_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_flat_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_flat_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_stairs_02_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_stairs_02_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_stairs_02_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shopbookcase_02_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shopbookcase_02_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shopbookcase_02_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shopcounter_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shopcounter_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shopcounter_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\over_desk_lamp_02_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\over_desk_lamp_02_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\over_desk_lamp_02_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_box_kit_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_box_kit_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_box_kit_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\modular_stairs_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\modular_stairs_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\modular_stairs_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\metal_crate_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\metal_crate_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\metal_crate_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_metal_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_metal_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_metal_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_wood_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_wood_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_wood_01_s.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\window_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\streetlamp_01_d.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\streetlamp_01_n.pom",
-			"D:\\Workspaces\\Arkane\\TexturesPOM\\streetlamp_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\macadam_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\wooden_cobble_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\crate_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\tarp_02_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_wall_clean_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_wall_clean_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\concrete_02_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\moss_02_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_stone_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_stone_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\glass_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_03_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_03_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_03_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_02_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_small_details_02_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\wood_05_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\white_stone_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\white_stone_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\white_stone_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\door_blocker_iron_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\door_blocker_iron_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\door_blocker_iron_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_02_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_02_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_sign_02_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_doordeco_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_doordeco_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_doordeco_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_02_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_02_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_details_02_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_02_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_02_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_workshopwall_02_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_ceiling_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_ceiling_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_ceiling_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_painting_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_painting_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_painting_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_light_wall_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_light_wall_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_light_wall_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_pillar_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_pillar_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_pillar_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_flat_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_flat_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_flat_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_stairs_02_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_stairs_02_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_stairs_02_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shopbookcase_02_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shopbookcase_02_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shopbookcase_02_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shopcounter_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shopcounter_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shopcounter_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\over_desk_lamp_02_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\over_desk_lamp_02_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\over_desk_lamp_02_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_box_kit_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_box_kit_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_box_kit_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\modular_stairs_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\modular_stairs_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\modular_stairs_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\metal_crate_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\metal_crate_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\metal_crate_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_metal_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_metal_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_metal_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_wood_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_wood_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\safe_shop_wood_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\window_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\streetlamp_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\streetlamp_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\streetlamp_01_s.pom",
 		};
 
 		m_TexturesCount = sizeof(ppTextureFileNames) / sizeof(const char*);
@@ -249,10 +249,11 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	const int	MAX_THETA = 40;
 	double		dPhidTheta = (PI / MAX_THETA) * (2*PI / (2*MAX_THETA));
 
-	double		SumSHCoeffs[9];
-	memset( SumSHCoeffs, 0, 9*sizeof(double) );
+	double		SumSHCoeffs[3*9];
+	memset( SumSHCoeffs, 0, 3*9*sizeof(double) );
 
 	double		SHCoeffs[9];
+	double		SumSolidAngle = 0.0;
 	for ( int ThetaIndex=0; ThetaIndex < MAX_THETA; ThetaIndex++ )
 	{
 		float	Theta = PI * (0.5f+ThetaIndex) / MAX_THETA;
@@ -262,21 +263,81 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 			NjFloat3	Direction( sinf(Phi) * sinf(Theta), cosf(Theta), cosf(Phi)*sinf(Theta) );
 			BuildSHCoeffs( Direction, SHCoeffs );
 
-			double		SkyIntensity = SKY_INTENSITY * (1.0f + 2.0f * MAX( -0.5f, cosf(Theta) )) / 3.0f;
+//			NjFloat3	SkyColor = SKY_INTENSITY * (1.0f + 2.0f * MAX( -0.5f, cosf(Theta) )) / 3.0f * NjFloat3::One;
+			NjFloat3	SkyColor = SKY_INTENSITY * NjFloat3( 0.64f, 0.79f, 1.0f );	// Simple uniform blue color
+
 			double		SolidAngle = sinf(Theta) * dPhidTheta;
+			SumSolidAngle += SolidAngle;
 
 			for ( int l=0; l < 3; l++ )
 			{
-				float	FilteredIntensity = (float) (SkyIntensity * expf( -(PI * l / 3.0f) * (PI * l / 3.0f) / 2.0f ) );
+				NjFloat3	FilteredIntensity = SkyColor * expf( -(PI * l / 3.0f) * (PI * l / 3.0f) / 2.0f );
 				for ( int m=-l; m <= l; m++ )
-					SumSHCoeffs[l*(l+1)+m] += FilteredIntensity * SHCoeffs[l*(l+1)+m] * SolidAngle;
+				{
+					int		CoeffIndex = l*(l+1)+m;
+					double	SHCoeff = SHCoeffs[CoeffIndex] * SolidAngle;
+					SumSHCoeffs[3*CoeffIndex+0] += FilteredIntensity.x * SHCoeff;
+					SumSHCoeffs[3*CoeffIndex+1] += FilteredIntensity.y * SHCoeff;
+					SumSHCoeffs[3*CoeffIndex+2] += FilteredIntensity.z * SHCoeff;
+				}
 			}
 		}
 	}
 
 	for ( int i=0; i < 9; i++ )
-		m_pSHAmbientSky[i] = float( SumSHCoeffs[i] ) * NjFloat3::One;
+		m_pSHAmbientSky[i] = NjFloat3( float( INV4PI * SumSHCoeffs[3*i+0] ), float( INV4PI * SumSHCoeffs[3*i+1] ), float( INV4PI * SumSHCoeffs[3*i+2] ) );
 
+
+	//////////////////////////////////////////////////////////////////////////
+	// Initialize the memory mapped file for remote control (control panel is available through the Tools/ControlPanelGlobalIllumination project)
+	//
+#ifdef _DEBUG
+	m_pMMF = new MMF<ParametersBlock>( "GlobalIllumination" );
+	ParametersBlock	Params = {
+		1, // WILL BE MARKED AS CHANGED!			// U32		Checksum;
+
+		// Atmosphere Params
+		false,				// U32		EnableSun;
+		DEG2RAD( 60.0f ),	// float	SunTheta;
+		0.0f,				// float	SunPhi;
+		SUN_INTENSITY,		// float	SunIntensity;
+		// 
+		false,				// U32		EnableSky;
+		SKY_INTENSITY,		// float	SkyIntensity;
+		0.64f, 0.79f, 1.0f,	// float	SkyColorR, G, B;
+		// 
+		// Dynamic lights params
+		true,				// U32		EnablePointLight;
+		true,				// U32		AnimatePointLight;
+		100.0f,				// float	PointLightIntensity;
+		1.0f, 1.0f, 1.0f,	// float	PointLightColorR, G, B;
+		// 
+		// Static lighting params
+		true,				// U32		EnableStaticLighting;
+		// 
+		// Emissive params
+		false,				// U32		EnableEmissiveMaterials;
+		4.0f,				// float	EmissiveIntensity;
+		1.0f, 0.95f, 0.5f,	// float	EmissiveColorR, G, B;
+		// 
+		// Bounce params
+		10.0f,				// float	BounceFactorSun;
+		1.0f,				// float	BounceFactorSky;
+		100.0f,				// float	BounceFactorPoint;
+		1.0f,				// float	BounceFactorStaticLights;
+		1.0f,				// float	BounceFactorEmissive;
+		//
+		// Misc
+		false,				// U32		ShowDebugProbes;
+		1.0f,				// float	DebugProbesIntensity;
+	};
+	ParametersBlock&	MappedParams = m_pMMF->GetMappedMemory();
+
+	// Copy our default params only if the checksum is 0 (meaning the control panel isn't loaded and hasn't set any value yet)
+	if ( MappedParams.Checksum == 0 )
+		MappedParams = Params;
+
+#endif
 }
 Texture2D*	pRTCubeMap;
 
@@ -332,14 +393,13 @@ delete pRTCubeMap;
 }
 
 // F5 => toggle point light animation
-float	AnimateLightTime0 = 0.0f;
+float		AnimateLightTime0 = 0.0f;
 
 // F6 => toggle sun light animation
-float	AnimateLightTime1 = 0.0f;
-float	UserSunTheta = 60.0f;
+//float		AnimateLightTime1 = 0.0f;
 
 // F7 => toggle neon area light animation
-float	AnimateLightTime2 = 0.0f;
+//float	AnimateLightTime2 = 0.0f;
 
 #define RENDER_SUN	1
 
@@ -356,22 +416,32 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 
 	//////////////////////////////////////////////////////////////////////////
+	// Update from memory mapped file
+#ifdef _DEBUG
+	if ( m_pMMF->CheckForChange() )
+		m_CachedCopy = m_pMMF->GetMappedMemory();
+#endif
+
+
+	//////////////////////////////////////////////////////////////////////////
 	// Animate lights
 
 		// Point light
-	bool	ShowLight0 = !gs_WindowInfos.pKeysToggle[VK_F1];
-	if ( ShowLight0 && !gs_WindowInfos.pKeysToggle[VK_F5] )
+//	bool	ShowLight0 = !gs_WindowInfos.pKeysToggle[VK_F1];
+	bool	ShowLight0 = m_CachedCopy.EnablePointLight != 0;
+//	if ( ShowLight0 && !gs_WindowInfos.pKeysToggle[VK_F5] )
+	if ( ShowLight0 && m_CachedCopy.AnimatePointLight )
 		AnimateLightTime0 += _DeltaTime;
 
 	if ( ShowLight0 )
-		m_pSB_LightsDynamic->m[0].Color.Set( 100, 100, 100 );
+		m_pSB_LightsDynamic->m[0].Color = m_CachedCopy.PointLightIntensity * NjFloat3( m_CachedCopy.PointLightColorR, m_CachedCopy.PointLightColorG, m_CachedCopy.PointLightColorB );
 	else
 		m_pSB_LightsDynamic->m[0].Color.Set( 0, 0, 0 );
 
 	m_pSB_LightsDynamic->m[0].Type = Scene::Light::POINT;
 	m_pSB_LightsDynamic->m[0].Parms.Set( 0.1f, 0.1f, 0, 0 );
 
-#if 0	// CORRIDOR ANIMATION (simple)
+#if 0	// CORRIDOR ANIMATION (simple straight line)
 //	m_pSB_LightsDynamic->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * AnimateLightTime0 ) );	// Move along the corridor
 	m_pSB_LightsDynamic->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime0 ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime0 ), 4.0f * sinf( 0.3f * AnimateLightTime0 ) );	// Move along the corridor
 #else	// SHOP ANIMATION (follow curve)
@@ -416,21 +486,25 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 #if RENDER_SUN	// Show Sun light
 	{
-		bool	ShowLight1 = gs_WindowInfos.pKeysToggle[VK_F2] != 0;
-		if ( ShowLight1 && !gs_WindowInfos.pKeysToggle[VK_F6] )
-			AnimateLightTime1 += _DeltaTime;
+//		bool	ShowLight1 = gs_WindowInfos.pKeysToggle[VK_F2] != 0;
+		bool	ShowLight1 = m_CachedCopy.EnableSun != 0;
+// 		if ( ShowLight1 && !gs_WindowInfos.pKeysToggle[VK_F6] )
+// 			AnimateLightTime1 += _DeltaTime;
+// 
+// 		if ( gs_WindowInfos.pKeys[VK_SUBTRACT] )
+// 			UserSunTheta -= 4.0f * _DeltaTime;
+// 		if ( gs_WindowInfos.pKeys[VK_ADD] )
+// 			UserSunTheta += 4.0f * _DeltaTime;
+// 
+// 		float		SunTheta = UserSunTheta * PI / 180.0f;
+// 		float		SunPhi = 0.2f * AnimateLightTime1;
 
-		if ( gs_WindowInfos.pKeys[VK_SUBTRACT] )
-			UserSunTheta -= 4.0f * _DeltaTime;
-		if ( gs_WindowInfos.pKeys[VK_ADD] )
-			UserSunTheta += 4.0f * _DeltaTime;
-
-		float		SunTheta = UserSunTheta * PI / 180.0f;
-		float		SunPhi = 0.2f * AnimateLightTime1;
+		float		SunTheta = m_CachedCopy.SunTheta;
+		float		SunPhi = m_CachedCopy.SunPhi;
 		NjFloat3	SunDirection( sinf(SunTheta) * sinf(SunPhi), cosf(SunTheta), sinf(SunTheta) * cosf(SunPhi) );
 
 		if ( ShowLight1 )
-			m_pSB_LightsDynamic->m[1].Color = SUN_INTENSITY * NjFloat3( 1.0f, 0.990f, 0.950f );
+			m_pSB_LightsDynamic->m[1].Color = m_CachedCopy.SunIntensity * NjFloat3( 1.0f, 0.990f, 0.950f );
 		else
 			m_pSB_LightsDynamic->m[1].Color.Set( 0, 0, 0 );
 
@@ -456,35 +530,53 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	// Update emissive materials
 	if ( m_Scene.m_MaterialsCount > 2 )
 	{
-		bool	ShowLight2 = gs_WindowInfos.pKeysToggle[VK_F3] != 0;
+//		bool	ShowLight2 = gs_WindowInfos.pKeysToggle[VK_F3] != 0;
+		bool	ShowLight2 = m_CachedCopy.EnableEmissiveMaterials != 0;
 
-		if ( ShowLight2 && !gs_WindowInfos.pKeysToggle[VK_F7] )
-			AnimateLightTime2 += _DeltaTime;
+// 		if ( ShowLight2 && !gs_WindowInfos.pKeysToggle[VK_F7] )
+// 			AnimateLightTime2 += _DeltaTime;
 
 		if ( ShowLight2 )
 		{
-//			float	Intensity = 10.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.5f * _frand()) ) );
-			float	Intensity = 4.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.0f * _frand()) ) );
-			m_Scene.m_ppMaterials[2]->m_EmissiveColor.Set( Intensity * 100, Intensity * 90, Intensity * 70 );
+// //			float	Intensity = 10.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.5f * _frand()) ) );
+// 			float	Intensity = 4.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.0f * _frand()) ) );
+			float	Intensity = m_CachedCopy.EmissiveIntensity;
+			m_Scene.m_ppMaterials[2]->m_EmissiveColor = Intensity * NjFloat3( m_CachedCopy.EmissiveColorR, m_CachedCopy.EmissiveColorG, m_CachedCopy.EmissiveColorB );
 		}
 		else
 			m_Scene.m_ppMaterials[2]->m_EmissiveColor.Set( 0, 0, 0 );
 	}
 
 
+
 	//////////////////////////////////////////////////////////////////////////
 	// Update dynamic probes
-	NjFloat3	pSHAmbient[9];
-	if ( gs_WindowInfos.pKeysToggle[VK_F4] )
-		memcpy_s( pSHAmbient, sizeof(pSHAmbient), m_pSHAmbientSky, sizeof(m_pSHAmbientSky) );
-	else
-		memset( pSHAmbient, 0, 9*sizeof(NjFloat3) );
 
-// Ugly "sky"
-// double		pTestAmbient[9];
-// BuildSHCosineLobe( NjFloat3( -1, 1, 0 ).Normalize(), pTestAmbient );
-// for ( int i=0; i < 9; i++ )
-// 	pSHAmbient[i] = 100.0f * NjFloat3( 0.7, 0.9, 1.0 ) * float(pTestAmbient[i]);
+	// Prepare constant buffer for update
+	NjFloat3	pSHAmbient[9];
+	memset( pSHAmbient, 0, 9*sizeof(NjFloat3) );
+
+//	if ( gs_WindowInfos.pKeysToggle[VK_F4] )
+	if ( m_CachedCopy.EnableSky )
+	{
+//		memcpy_s( pSHAmbient, sizeof(pSHAmbient), m_pSHAmbientSky, sizeof(m_pSHAmbientSky) );
+
+		// Simple ambient sky term
+		float	SH0 = 0.28209479177387814347403972578039f;	// DC coeff for SH is 1/(2*sqrt(PI))
+		pSHAmbient[0] = SH0 * m_CachedCopy.SkyIntensity * NjFloat3( m_CachedCopy.SkyColorR, m_CachedCopy.SkyColorG, m_CachedCopy.SkyColorB );
+	}
+
+	for ( int i=0; i < 9; i++ )
+		m_pCB_UpdateProbes->m.AmbientSH[i] = NjFloat4( pSHAmbient[i], 0 );	// Update one by one because of float3 padding
+
+	m_pCB_UpdateProbes->m.AmbientSH[8].w = m_CachedCopy.BounceFactorSun;
+	m_pCB_UpdateProbes->m.SkyBoost = m_CachedCopy.BounceFactorSky;
+	m_pCB_UpdateProbes->m.DynamicLightsBoost = m_CachedCopy.BounceFactorPoint;
+	m_pCB_UpdateProbes->m.StaticLightingBoost = m_CachedCopy.EnableStaticLighting != 0 ? m_CachedCopy.BounceFactorStaticLights : 0.0f;
+	m_pCB_UpdateProbes->m.EmissiveBoost = m_CachedCopy.BounceFactorEmissive;
+
+	m_pCB_UpdateProbes->UpdateData();
+
 
 #if 1
 	// Hardware update
@@ -549,6 +641,9 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		ProbeUpdateInfos.SamplingPointsCount = TotalSamplingPointsCount - ProbeUpdateInfos.SamplingPointsStart;	// Total amount of sampling points for the probe
 	}
 
+	// Do the update!
+	USING_COMPUTESHADER_START( *m_pCSUpdateProbe )
+
 	m_pSB_RuntimeProbeUpdateInfos->Write( ProbeUpdatesCount );
 	m_pSB_RuntimeProbeUpdateInfos->SetInput( 10 );
 
@@ -561,16 +656,8 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pSB_RuntimeSamplingPointInfos->Write( TotalSamplingPointsCount );
 	m_pSB_RuntimeSamplingPointInfos->SetInput( 13 );
 
-	// Do the update!
-	USING_COMPUTESHADER_START( *m_pCSUpdateProbe )
-
 	m_pSB_RuntimeProbes->RemoveFromLastAssignedSlots();
 	m_pSB_RuntimeProbes->SetOutput( 0 );
-
-	// Prepare constant buffer for update
-	for ( int i=0; i < 9; i++ )
-		m_pCB_UpdateProbes->m.AmbientSH[i] = NjFloat4( pSHAmbient[i], 0 );	// Update one by one because of float3 padding
-	m_pCB_UpdateProbes->UpdateData();
 
 	M.Dispatch( ProbeUpdatesCount, 1, 1 );
 
@@ -665,7 +752,8 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// 3] Render the debug probes
-	if ( gs_WindowInfos.pKeysToggle[VK_F12] )
+//	if ( gs_WindowInfos.pKeysToggle[VK_F12] )
+	if ( m_CachedCopy.ShowDebugProbes != 0 )
 	{
 		USING_MATERIAL_START( *m_pMatRenderDebugProbes )
 
@@ -1458,8 +1546,8 @@ void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, const Scene::Node& _Node
 		LightStruct&	TargetLight = m_pSB_LightsStatic->m[m_pCB_Scene->m.StaticLightsCount++];
 
 		TargetLight.Type = SourceLight.m_LightType;
-		TargetLight.Position = SourceLight.m_Local2Parent.GetRow( 3 );
-		TargetLight.Direction = -SourceLight.m_Local2Parent.GetRow( 2 ).Normalize();
+		TargetLight.Position = SourceLight.m_Local2World.GetRow( 3 );
+		TargetLight.Direction = -SourceLight.m_Local2World.GetRow( 2 ).Normalize();
 		TargetLight.Color = SourceLight.m_Intensity * SourceLight.m_Color;
 		TargetLight.Parms.Set( 10.0f, 11.0f, cosf( SourceLight.m_HotSpot ), cosf( SourceLight.m_Falloff ) );
 	}

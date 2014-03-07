@@ -518,15 +518,21 @@ namespace FBX.SceneLoader
 
 
 				// Phong parameters
-				MatParams.CreateParameter( "ReflectionColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.FindProperty( "ReflectionColor" ).AsVector3;
-				CreateTextureParameter( Mat, "ReflectionColor", MatParams, "ReflectionTexture" );
-				MatParams.CreateParameter( "ReflectionFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.FindProperty( "ReflectionFactor" ).AsFloat;
+				try
+				{
+					MatParams.CreateParameter( "ReflectionColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.FindProperty( "ReflectionColor" ).AsVector3;
+					CreateTextureParameter( Mat, "ReflectionColor", MatParams, "ReflectionTexture" );
+					MatParams.CreateParameter( "ReflectionFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.FindProperty( "ReflectionFactor" ).AsFloat;
 
-				MatParams.CreateParameter( "Shininess", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.FindProperty( "Shininess" ).AsFloat;
-				MatParams.CreateParameter( "SpecularColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.FindProperty( "SpecularColor" ).AsVector3;
-				MatParams.CreateParameter( "SpecularFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.FindProperty( "SpecularFactor" ).AsFloat;
-				bool	bHasSpecularTexture = CreateTextureParameter( Mat, "SpecularColor", MatParams, "SpecularTexture" );
-				MatParams.CreateParameter( "HasSpecularTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasSpecularTexture;
+					MatParams.CreateParameter( "Shininess", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.FindProperty( "Shininess" ).AsFloat;
+					MatParams.CreateParameter( "SpecularColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.FindProperty( "SpecularColor" ).AsVector3;
+					MatParams.CreateParameter( "SpecularFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.FindProperty( "SpecularFactor" ).AsFloat;
+					bool	bHasSpecularTexture = CreateTextureParameter( Mat, "SpecularColor", MatParams, "SpecularTexture" );
+					MatParams.CreateParameter( "HasSpecularTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasSpecularTexture;
+				}
+				catch ( Exception )
+				{	
+				}
 
 				// Register the material
 				m_Material2Parameters[Mat] = MatParams;

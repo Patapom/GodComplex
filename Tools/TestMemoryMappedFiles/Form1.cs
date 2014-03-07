@@ -18,7 +18,7 @@ using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Reflection;
 
-namespace TestMemoryMappedFiles
+namespace ControlPanelClouds
 {
 	public partial class Form1 : Form
 	{

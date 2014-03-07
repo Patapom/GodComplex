@@ -1,6 +1,6 @@
 #pragma once
 
-#define SUN_INTENSITY	1000.0f
+#define SUN_INTENSITY	200.0f
 #define SKY_INTENSITY	(0.025f*SUN_INTENSITY)
 
 template<typename> class CB;
@@ -89,6 +89,13 @@ protected:	// NESTED TYPES
 	struct CBUpdateProbes
 	{
 		NjFloat4	AmbientSH[9];				// Ambient sky (padded!)
+//		float		SunBoost;	// Merged into the last float4
+
+		float		SkyBoost;
+		float		DynamicLightsBoost;
+		float		StaticLightingBoost;
+
+		float		EmissiveBoost;
  	};
 
 	// Structured Buffers
@@ -265,6 +272,60 @@ private:	// FIELDS
 
 	// Ambient SH computed from CIE overcast sky model
 	NjFloat3			m_pSHAmbientSky[9];
+
+
+#ifdef _DEBUG
+	struct ParametersBlock
+	{
+		U32		Checksum;
+
+		// Atmosphere Params
+		U32		EnableSun;
+		float	SunTheta;
+		float	SunPhi;
+		float	SunIntensity;
+
+		U32		EnableSky;
+		float	SkyIntensity;
+		float	SkyColorR;
+		float	SkyColorG;
+		float	SkyColorB;
+
+		// Dynamic lights params
+		U32		EnablePointLight;
+		U32		AnimatePointLight;
+		float	PointLightIntensity;
+		float	PointLightColorR;
+		float	PointLightColorG;
+		float	PointLightColorB;
+
+		// Static lighting params
+		U32		EnableStaticLighting;
+
+		// Emissive params
+		U32		EnableEmissiveMaterials;
+		float	EmissiveIntensity;
+		float	EmissiveColorR;
+		float	EmissiveColorG;
+		float	EmissiveColorB;
+
+		// Bounce params
+		float	BounceFactorSun;
+		float	BounceFactorSky;
+		float	BounceFactorPoint;
+		float	BounceFactorStaticLights;
+		float	BounceFactorEmissive;
+
+		// Misc
+		U32		ShowDebugProbes;
+		float	DebugProbesIntensity;
+	};
+
+	// Memory-Mapped File for tweaking
+	MMF<ParametersBlock>*	m_pMMF;
+	ParametersBlock			m_CachedCopy;	// Latest cached copy of the update parms
+
+#endif
 
 
 public:		// PROPERTIES

@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle( "ControlPanelClouds" )]
+[assembly: AssemblyTitle( "ControlPanelGlobalIllumination" )]
 [assembly: AssemblyDescription( "" )]
 [assembly: AssemblyConfiguration( "" )]
 [assembly: AssemblyCompany( "" )]
-[assembly: AssemblyProduct( "ControlPanelClouds" )]
-[assembly: AssemblyCopyright( "Copyright ©  2013" )]
+[assembly: AssemblyProduct( "ControlPanelGlobalIllumination" )]
+[assembly: AssemblyCopyright( "Copyright ©  2014" )]
 [assembly: AssemblyTrademark( "" )]
 [assembly: AssemblyCulture( "" )]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible( false )]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid( "568ad5b8-542a-4a57-b5ef-0c0f26432d3a" )]
+[assembly: Guid( "654645b4-dab3-4f4d-9345-1863140058e4" )]
 
 // Version information for an assembly consists of the following four values:
 //

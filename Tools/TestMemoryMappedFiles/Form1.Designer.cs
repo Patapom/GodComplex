@@ -1,4 +1,4 @@
-﻿namespace TestMemoryMappedFiles
+﻿namespace ControlPanelClouds
 {
 	partial class Form1
 	{

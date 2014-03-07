@@ -391,6 +391,17 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 			#endregion
 		}
 
+		/// <summary>
+		/// Contains information on a neighbor probe
+		/// </summary>
+		public class	NeighborProbe
+		{
+			public int				m_ProbeID = -1;
+			public float			m_Distance = 0.0f;		// Distance to the neighbor probe
+			public float			m_SolidAngle = 0.0f;	// Solid angle covered by the probe as perceived by our probe
+			public float[]			m_SH = new float[9];	// SH coefficients used to isolate the probe's contribution to our probe
+		}
+
 		#endregion
 
 		#region FIELDS
@@ -421,6 +432,8 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 
 		public List<Pixel>			m_ProbePixels = new List<Pixel>();	// List of all pixels in the probe
 		public List<Pixel>			m_ScenePixels = new List<Pixel>();	// List of pixels that participate to the scene (i.e. not at infinity)
+
+
 
 		#endregion
 
