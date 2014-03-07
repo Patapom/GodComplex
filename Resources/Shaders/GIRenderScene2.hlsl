@@ -132,7 +132,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 #if EMISSIVE
 
 //return float4( 1, 0, 0, 1 );
-	return float4( _EmissiveColor, 1 );
+	return float4( 0.1 * _EmissiveColor, 1 );
 
 #else
 

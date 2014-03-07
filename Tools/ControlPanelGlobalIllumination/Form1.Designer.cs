@@ -100,7 +100,7 @@
 			this.groupBoxAtmosphere.Location = new System.Drawing.Point(12, 12);
 			this.groupBoxAtmosphere.Name = "groupBoxAtmosphere";
 			this.groupBoxAtmosphere.Size = new System.Drawing.Size(308, 267);
-			this.groupBoxAtmosphere.TabIndex = 1;
+			this.groupBoxAtmosphere.TabIndex = 0;
 			this.groupBoxAtmosphere.TabStop = false;
 			this.groupBoxAtmosphere.Text = "Atmosphere";
 			// 
@@ -165,7 +165,7 @@
 			this.floatTrackbarControlSunIntensity.RangeMax = 1000F;
 			this.floatTrackbarControlSunIntensity.RangeMin = 0F;
 			this.floatTrackbarControlSunIntensity.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlSunIntensity.TabIndex = 0;
+			this.floatTrackbarControlSunIntensity.TabIndex = 2;
 			this.floatTrackbarControlSunIntensity.Value = 30F;
 			this.floatTrackbarControlSunIntensity.VisibleRangeMax = 100F;
 			this.floatTrackbarControlSunIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSunIntensity_ValueChanged);
@@ -197,7 +197,7 @@
 			this.floatTrackbarControlSkyIntensity.RangeMax = 1000F;
 			this.floatTrackbarControlSkyIntensity.RangeMin = 0F;
 			this.floatTrackbarControlSkyIntensity.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlSkyIntensity.TabIndex = 0;
+			this.floatTrackbarControlSkyIntensity.TabIndex = 3;
 			this.floatTrackbarControlSkyIntensity.Value = 3F;
 			this.floatTrackbarControlSkyIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSkyIntensity_ValueChanged);
 			// 
@@ -210,7 +210,7 @@
 			this.floatTrackbarControlSunAzimuth.RangeMax = 180F;
 			this.floatTrackbarControlSunAzimuth.RangeMin = -180F;
 			this.floatTrackbarControlSunAzimuth.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlSunAzimuth.TabIndex = 0;
+			this.floatTrackbarControlSunAzimuth.TabIndex = 1;
 			this.floatTrackbarControlSunAzimuth.Value = 0F;
 			this.floatTrackbarControlSunAzimuth.VisibleRangeMax = 180F;
 			this.floatTrackbarControlSunAzimuth.VisibleRangeMin = -180F;
@@ -268,7 +268,7 @@
 			this.floatTrackbarControlPointLightBounceFactor.RangeMax = 1000F;
 			this.floatTrackbarControlPointLightBounceFactor.RangeMin = 0F;
 			this.floatTrackbarControlPointLightBounceFactor.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlPointLightBounceFactor.TabIndex = 0;
+			this.floatTrackbarControlPointLightBounceFactor.TabIndex = 2;
 			this.floatTrackbarControlPointLightBounceFactor.Value = 100F;
 			this.floatTrackbarControlPointLightBounceFactor.VisibleRangeMax = 100F;
 			this.floatTrackbarControlPointLightBounceFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlPointLightBounceFactor_ValueChanged);
@@ -318,7 +318,7 @@
 			this.floatTrackbarControlEmissiveLightsBounceFactor.RangeMax = 1000F;
 			this.floatTrackbarControlEmissiveLightsBounceFactor.RangeMin = 0F;
 			this.floatTrackbarControlEmissiveLightsBounceFactor.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlEmissiveLightsBounceFactor.TabIndex = 0;
+			this.floatTrackbarControlEmissiveLightsBounceFactor.TabIndex = 4;
 			this.floatTrackbarControlEmissiveLightsBounceFactor.Value = 100F;
 			this.floatTrackbarControlEmissiveLightsBounceFactor.VisibleRangeMax = 100F;
 			this.floatTrackbarControlEmissiveLightsBounceFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlEmissiveLightsBounceFactor_ValueChanged);
@@ -332,7 +332,7 @@
 			this.floatTrackbarControlStaticLightsBounceFactor.RangeMax = 1000F;
 			this.floatTrackbarControlStaticLightsBounceFactor.RangeMin = 0F;
 			this.floatTrackbarControlStaticLightsBounceFactor.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlStaticLightsBounceFactor.TabIndex = 0;
+			this.floatTrackbarControlStaticLightsBounceFactor.TabIndex = 3;
 			this.floatTrackbarControlStaticLightsBounceFactor.Value = 100F;
 			this.floatTrackbarControlStaticLightsBounceFactor.VisibleRangeMax = 100F;
 			this.floatTrackbarControlStaticLightsBounceFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlStaticLightsBounceFactor_ValueChanged);
@@ -346,7 +346,7 @@
 			this.floatTrackbarControlSkyBounceFactor.RangeMax = 1000F;
 			this.floatTrackbarControlSkyBounceFactor.RangeMin = 0F;
 			this.floatTrackbarControlSkyBounceFactor.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlSkyBounceFactor.TabIndex = 0;
+			this.floatTrackbarControlSkyBounceFactor.TabIndex = 1;
 			this.floatTrackbarControlSkyBounceFactor.Value = 100F;
 			this.floatTrackbarControlSkyBounceFactor.VisibleRangeMax = 100F;
 			this.floatTrackbarControlSkyBounceFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSkyBounceFactor_ValueChanged);
@@ -385,7 +385,7 @@
 			this.groupBoxTerrain.Location = new System.Drawing.Point(334, 12);
 			this.groupBoxTerrain.Name = "groupBoxTerrain";
 			this.groupBoxTerrain.Size = new System.Drawing.Size(308, 117);
-			this.groupBoxTerrain.TabIndex = 1;
+			this.groupBoxTerrain.TabIndex = 2;
 			this.groupBoxTerrain.TabStop = false;
 			this.groupBoxTerrain.Text = "Dynamic Lights";
 			// 
@@ -396,7 +396,7 @@
 			this.panelLightColor.Location = new System.Drawing.Point(88, 80);
 			this.panelLightColor.Name = "panelLightColor";
 			this.panelLightColor.Size = new System.Drawing.Size(34, 24);
-			this.panelLightColor.TabIndex = 4;
+			this.panelLightColor.TabIndex = 2;
 			this.panelLightColor.Click += new System.EventHandler(this.panelLightColor_Click);
 			// 
 			// checkBoxEnableDynamicPointLight
@@ -408,7 +408,7 @@
 			this.checkBoxEnableDynamicPointLight.Location = new System.Drawing.Point(9, 25);
 			this.checkBoxEnableDynamicPointLight.Name = "checkBoxEnableDynamicPointLight";
 			this.checkBoxEnableDynamicPointLight.Size = new System.Drawing.Size(182, 17);
-			this.checkBoxEnableDynamicPointLight.TabIndex = 3;
+			this.checkBoxEnableDynamicPointLight.TabIndex = 0;
 			this.checkBoxEnableDynamicPointLight.Text = "Enable Dynamic Point Light";
 			this.checkBoxEnableDynamicPointLight.UseVisualStyleBackColor = true;
 			this.checkBoxEnableDynamicPointLight.CheckedChanged += new System.EventHandler(this.checkBoxEnableDynamicPointLight_CheckedChanged);
@@ -442,7 +442,7 @@
 			this.floatTrackbarControlPointLightIntensity.RangeMax = 100F;
 			this.floatTrackbarControlPointLightIntensity.RangeMin = 0F;
 			this.floatTrackbarControlPointLightIntensity.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlPointLightIntensity.TabIndex = 0;
+			this.floatTrackbarControlPointLightIntensity.TabIndex = 1;
 			this.floatTrackbarControlPointLightIntensity.Value = 10F;
 			this.floatTrackbarControlPointLightIntensity.VisibleRangeMax = 20F;
 			this.floatTrackbarControlPointLightIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlPointLightIntensity_ValueChanged);
@@ -462,7 +462,7 @@
 			this.buttonLoadPreset.Location = new System.Drawing.Point(146, 139);
 			this.buttonLoadPreset.Name = "buttonLoadPreset";
 			this.buttonLoadPreset.Size = new System.Drawing.Size(75, 23);
-			this.buttonLoadPreset.TabIndex = 5;
+			this.buttonLoadPreset.TabIndex = 1;
 			this.buttonLoadPreset.Text = "Load Preset";
 			this.buttonLoadPreset.UseVisualStyleBackColor = true;
 			this.buttonLoadPreset.Click += new System.EventHandler(this.buttonLoadPreset_Click);
@@ -473,7 +473,7 @@
 			this.buttonSavePreset.Location = new System.Drawing.Point(227, 139);
 			this.buttonSavePreset.Name = "buttonSavePreset";
 			this.buttonSavePreset.Size = new System.Drawing.Size(75, 23);
-			this.buttonSavePreset.TabIndex = 5;
+			this.buttonSavePreset.TabIndex = 2;
 			this.buttonSavePreset.Text = "Save Preset";
 			this.buttonSavePreset.UseVisualStyleBackColor = true;
 			this.buttonSavePreset.Click += new System.EventHandler(this.buttonSavePreset_Click);
@@ -507,7 +507,7 @@
 			this.groupBox1.Location = new System.Drawing.Point(334, 135);
 			this.groupBox1.Name = "groupBox1";
 			this.groupBox1.Size = new System.Drawing.Size(308, 144);
-			this.groupBox1.TabIndex = 1;
+			this.groupBox1.TabIndex = 3;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Static Lighting && Emissive Surfaces";
 			// 
@@ -520,7 +520,7 @@
 			this.floatTrackbarControlEmissiveIntensity.RangeMax = 100F;
 			this.floatTrackbarControlEmissiveIntensity.RangeMin = 0F;
 			this.floatTrackbarControlEmissiveIntensity.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlEmissiveIntensity.TabIndex = 0;
+			this.floatTrackbarControlEmissiveIntensity.TabIndex = 2;
 			this.floatTrackbarControlEmissiveIntensity.Value = 10F;
 			this.floatTrackbarControlEmissiveIntensity.VisibleRangeMax = 20F;
 			this.floatTrackbarControlEmissiveIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlEmissiveIntensity_ValueChanged);
@@ -532,7 +532,7 @@
 			this.panelEmissiveColor.Location = new System.Drawing.Point(88, 109);
 			this.panelEmissiveColor.Name = "panelEmissiveColor";
 			this.panelEmissiveColor.Size = new System.Drawing.Size(34, 24);
-			this.panelEmissiveColor.TabIndex = 4;
+			this.panelEmissiveColor.TabIndex = 3;
 			this.panelEmissiveColor.Click += new System.EventHandler(this.panelEmissiveColor_Click);
 			// 
 			// checkBoxEmissiveRandomAnimation
@@ -555,7 +555,7 @@
 			this.checkBoxEnableStaticLighting.Location = new System.Drawing.Point(9, 29);
 			this.checkBoxEnableStaticLighting.Name = "checkBoxEnableStaticLighting";
 			this.checkBoxEnableStaticLighting.Size = new System.Drawing.Size(151, 17);
-			this.checkBoxEnableStaticLighting.TabIndex = 3;
+			this.checkBoxEnableStaticLighting.TabIndex = 0;
 			this.checkBoxEnableStaticLighting.Text = "Enable Static Lighting";
 			this.checkBoxEnableStaticLighting.UseVisualStyleBackColor = true;
 			this.checkBoxEnableStaticLighting.CheckedChanged += new System.EventHandler(this.checkBoxEnableStaticLighting_CheckedChanged);
@@ -567,7 +567,7 @@
 			this.checkBoxEnableEmissive.Location = new System.Drawing.Point(9, 60);
 			this.checkBoxEnableEmissive.Name = "checkBoxEnableEmissive";
 			this.checkBoxEnableEmissive.Size = new System.Drawing.Size(186, 17);
-			this.checkBoxEnableEmissive.TabIndex = 3;
+			this.checkBoxEnableEmissive.TabIndex = 1;
 			this.checkBoxEnableEmissive.Text = "Enable Emissive Area Lights";
 			this.checkBoxEnableEmissive.UseVisualStyleBackColor = true;
 			this.checkBoxEnableEmissive.CheckedChanged += new System.EventHandler(this.checkBoxEnableEmissive_CheckedChanged);
@@ -626,7 +626,7 @@
 			this.groupBox2.Location = new System.Drawing.Point(334, 287);
 			this.groupBox2.Name = "groupBox2";
 			this.groupBox2.Size = new System.Drawing.Size(308, 168);
-			this.groupBox2.TabIndex = 6;
+			this.groupBox2.TabIndex = 4;
 			this.groupBox2.TabStop = false;
 			this.groupBox2.Text = "groupBox2";
 			// 

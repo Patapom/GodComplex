@@ -53,9 +53,9 @@ PS_IN	VS( VS_IN _In )
 
 	PS_IN	Out;
 	Out.__Position = mul( WorldPosition, _CubeMapWorld2Proj );
-	Out.UVW = float3( 0.5 * float2( 1.0 + _In.__Position.x, 1.0 - _In.__Position.y ), 0 );
-// Out.UVW = PlaneNormal;
-//Out.UVW = WorldPosition;
+//	Out.UVW = float3( 0.5 * float2( 1.0 + _In.__Position.x, 1.0 - _In.__Position.y ), 0 );
+//	Out.UVW = PlaneNormal;
+	Out.UVW = WorldPosition;
 
 	return Out;
 }
@@ -64,7 +64,8 @@ PS_IN	VS( VS_IN _In )
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
-	return asfloat( _NeighborProbeID );
+	float	Distance2Plane = length( _In.UVW - _CurrentProbePosition );
+	return float4( asfloat( _NeighborProbeID ), Distance2Plane, 0, 0 );
 
 //return float4( _In.UVW, 0 );
 // return uint( 255.0 * length( _In.UVW - _CurrentProbePosition ) );

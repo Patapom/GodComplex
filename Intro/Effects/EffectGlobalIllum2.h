@@ -237,6 +237,9 @@ private:	// FIELDS
 	int					m_MeshesCount;
 	Scene::Mesh**		m_ppCachedMeshes;
 
+	int					m_EmissiveMaterialsCount;
+	Scene::Material*	m_ppEmissiveMaterials[100];
+
 	U32					m_TotalFacesCount;
 	U32					m_TotalPrimitivesCount;
 	U32					m_pPrimitiveFaceOffset[MAX_SCENE_PRIMITIVES];
@@ -342,10 +345,10 @@ public:		// METHODS
 
 
 	// ISceneTagger Implementation
-	virtual void*	TagMaterial( const Scene& _Owner, const Scene::Material& _Material ) override;
-	virtual void*	TagTexture( const Scene& _Owner, const Scene::Material::Texture& _Texture ) override;
-	virtual void*	TagNode( const Scene& _Owner, const Scene::Node& _Node ) override;
-	virtual void*	TagPrimitive( const Scene& _Owner, const Scene::Mesh& _Mesh, const Scene::Mesh::Primitive& _Primitive ) override;
+	virtual void*	TagMaterial( const Scene& _Owner, Scene::Material& _Material ) override;
+	virtual void*	TagTexture( const Scene& _Owner, Scene::Material::Texture& _Texture ) override;
+	virtual void*	TagNode( const Scene& _Owner, Scene::Node& _Node ) override;
+	virtual void*	TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh, Scene::Mesh::Primitive& _Primitive ) override;
 
 	// ISceneRenderer Implementation
 	virtual void	RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride ) override;

@@ -555,6 +555,8 @@ namespace ProbeSHEncoder
 // 			float	Distance2SetCenter = 0.2f * (_Pixel.Position - S.Position).Length;
 // 			byte	C = (byte) Math.Min( 255, 255 * Distance2SetCenter );
 
+S.Samples.Length = 0 sur Probe 17!??
+
 			byte	C = (byte) (255 * (1+_Pixel.ParentSetSampleIndex) / S.Samples.Length);
 
 			_R = _G = _B = C;

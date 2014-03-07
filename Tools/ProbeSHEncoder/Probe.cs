@@ -6,7 +6,7 @@ using System.IO;
 
 namespace ProbeSHEncoder
 {
-	public class	Probe : IComparer<Probe.Set>
+	public class	Probe : IComparer<Probe.Set>, IComparer<Probe.NeighborProbe>
 	{
 		#region CONSTANTS
 
@@ -44,6 +44,7 @@ namespace ProbeSHEncoder
 			public int			EmissiveMatID = -1;		// ID of the emissive material or -1 if not emissive
 			public bool			IsEmissive	{ get { return EmissiveMatID != -1; } }
 			public int			NeighborProbeID = -1;	// ID of the nearest neighbor probe
+			public float		NeighborProbeDistance;	// Distance to the neighbor probe plane
 			public double		SolidAngle;				// Solid angle covered by the pixel
 			public double		Importance;				// A measure of "importance" of the scene pixel = -dot( View, Normal ) / Distance²
 			public float		Distance;				// Distance to hit point
@@ -59,7 +60,6 @@ namespace ProbeSHEncoder
 
 			public void			InitSH()
 			{
-
 				// Build SH coeffs for that pixel
 				SHCoeffs[0] = f0;
 				SHCoeffs[1] = -f1 * View.x;
@@ -394,12 +394,16 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 		/// <summary>
 		/// Contains information on a neighbor probe
 		/// </summary>
+		[System.Diagnostics.DebuggerDisplay( "ID={ProbeID} Dist={Distance} Omega={SolidAngle} Dir=({Direction.x}, {Direction.y}, {Direction.z})" )]
 		public class	NeighborProbe
 		{
-			public int				m_ProbeID = -1;
-			public float			m_Distance = 0.0f;		// Distance to the neighbor probe
-			public float			m_SolidAngle = 0.0f;	// Solid angle covered by the probe as perceived by our probe
-			public float[]			m_SH = new float[9];	// SH coefficients used to isolate the probe's contribution to our probe
+			public int				ProbeID = -1;
+			public float			Distance = 0.0f;				// Distance to the neighbor probe
+			public double			SolidAngle = 0.0f;				// Solid angle covered by the neighbor probe, as perceived by our probe
+			public WMath.Vector		Direction = WMath.Vector.Zero;	// Direction to the probe
+			public double[]			SH = new double[9];				// SH coefficients used to isolate the probe's contribution to our probe
+
+			public int				PixelsCount;
 		}
 
 		#endregion
@@ -408,7 +412,11 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 
 		public WMath.Matrix4x4[]	m_Side2World = new WMath.Matrix4x4[6];
 
-		public Pixel[][,]			m_CubeMap = null;
+		public Pixel[][,]			m_CubeMap = null;					// Original cube map
+		public List<Pixel>			m_ProbePixels = new List<Pixel>();	// List of all pixels in the probe
+		public List<Pixel>			m_ScenePixels = new List<Pixel>();	// List of pixels that participate to the scene (i.e. not at infinity)
+
+		// Generated geometric informations
 		public double				m_MeanDistance = 0.0;
 		public double				m_MeanHarmonicDistance = 0.0;
 		public double				m_MinDistance = 0.0;
@@ -426,14 +434,14 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 		public WMath.Vector[]		m_SHSumDynamic = new WMath.Vector[9];
 		public WMath.Vector[]		m_SHSumEmissive = new WMath.Vector[9];
 
+		// List of neighbor probes
+		public float				m_NearestNeighborProbeDistance = 0.0f;
+		public float				m_FarthestNeighborProbeDistance = 0.0f;
+		public List<NeighborProbe>	m_NeighborProbes = new List<NeighborProbe>();
+
 		// List of influence weights per face index
 		public UInt32				m_MaxFaceIndex = 0;
 		public Dictionary<UInt32,double>		m_ProbeInfluencePerFace = new Dictionary<UInt32,double>();
-
-		public List<Pixel>			m_ProbePixels = new List<Pixel>();	// List of all pixels in the probe
-		public List<Pixel>			m_ScenePixels = new List<Pixel>();	// List of pixels that participate to the scene (i.e. not at infinity)
-
-
 
 		#endregion
 
@@ -583,11 +591,12 @@ NegativeImportancePixelsCount++;
 								Pixel	Pix = m_CubeMap[CubeFaceIndex][X,Y];
 
 								int		ID = (int) R.ReadUInt32();
-								float	Green = R.ReadSingle();
+								float	NeighborProbeDistance = R.ReadSingle();
 								float	Blue = R.ReadSingle();
 								float	Alpha = R.ReadSingle();
 
 								Pix.NeighborProbeID = ID;
+								Pix.NeighborProbeDistance = NeighborProbeDistance;
 							}
 			}
 
@@ -629,7 +638,7 @@ throw new Exception( "More than 10% invalid pixels with inverted normals in that
 					for ( int i=0; i < 9; i++ )
 						W.Write( m_OcclusionSH[i] );
 
-					// Write the amount of sets
+					// Write the result sets
 					W.Write( (UInt32) m_Sets.Length );
 
 					foreach ( Set S in m_Sets )
@@ -656,7 +665,7 @@ throw new Exception( "More than 10% invalid pixels with inverted normals in that
 						W.Write( (float) (S.Albedo.y / Math.PI) );
 						W.Write( (float) (S.Albedo.z / Math.PI) );
 
-						// Write SH coefficients
+						// Write SH coefficients (albedo is already factored in)
 						for ( int i=0; i < 9; i++ )
 						{
 							W.Write( S.SH[i].x );
@@ -685,7 +694,7 @@ throw new Exception( "More than 10% invalid pixels with inverted normals in that
 						}
 					}
 
-					// Write the amount of emissive sets
+					// Write the emissive sets
 					W.Write( (UInt32) m_EmissiveSets.Length );
 
 					foreach ( Set S in m_EmissiveSets )
@@ -710,9 +719,31 @@ throw new Exception( "More than 10% invalid pixels with inverted normals in that
 						// Write emissive mat
 						W.Write( S.EmissiveMatID );
 
-						// Write SH coefficients (we only write luminance here, we don't have any color info)
+						// Write SH coefficients (we only write luminance here, we don't have the color info that is provided at runtime)
 						for ( int i=0; i < 9; i++ )
 							W.Write( S.SH[i].x );
+					}
+
+					// Write the neighbor probes
+					W.Write( (UInt32) m_NeighborProbes.Count );
+
+					// Write nearest/farthest probe distance
+					W.Write( m_NearestNeighborProbeDistance );
+					W.Write( m_FarthestNeighborProbeDistance );
+
+					foreach ( NeighborProbe NP in m_NeighborProbes )
+					{
+						// Write probe ID, distance, solid angle, direction
+						W.Write( (UInt32) NP.ProbeID );
+						W.Write( NP.Distance );
+						W.Write( (float) NP.SolidAngle );
+						W.Write( NP.Direction.x );
+						W.Write( NP.Direction.y );
+						W.Write( NP.Direction.z );
+
+						// Write SH coefficients (only luminance here since they're used for the product with the neighbor probe's SH)
+						for ( int i=0; i < 9; i++ )
+							W.Write( (float) NP.SH[i] );
 					}
 				}
 
@@ -726,53 +757,6 @@ throw new Exception( "More than 10% invalid pixels with inverted normals in that
 						W.Write( (float) (m_ProbeInfluencePerFace.ContainsKey( FaceIndex ) ? m_ProbeInfluencePerFace[FaceIndex] : 0.0) );
 					}
 				}
-		}
-
-		private void	PrepareCubeMapFaceTransforms()
-		{
-			//////////////////////////////////////////////////////////////////////////
-			// Prepare the cube map face transforms
-			// Here are the transform to render the 6 faces of a cube map
-			// Remember the +Z face is not oriented the same way as our Z vector: http://msdn.microsoft.com/en-us/library/windows/desktop/bb204881(v=vs.85).aspx
-			//
-			//
-			//		^ +Y
-			//		|   +Z  (our actual +Z faces the other way!)
-			//		|  /
-			//		| /
-			//		|/
-			//		o------> +X
-			//
-			//
-			WMath.Vector[]	SideAt = new WMath.Vector[6]
-			{
-				new WMath.Vector(  1, 0, 0 ),
-				new WMath.Vector( -1, 0, 0 ),
-				new WMath.Vector( 0,  1, 0 ),
-				new WMath.Vector( 0, -1, 0 ),
-				new WMath.Vector( 0, 0,  1 ),
-				new WMath.Vector( 0, 0, -1 ),
-			};
-			WMath.Vector[]	SideRight = new WMath.Vector[6]
-			{
-				new WMath.Vector( 0, 0, -1 ),
-				new WMath.Vector( 0, 0,  1 ),
-				new WMath.Vector(  1, 0, 0 ),
-				new WMath.Vector(  1, 0, 0 ),
-				new WMath.Vector(  1, 0, 0 ),
-				new WMath.Vector( -1, 0, 0 ),
-			};
-
-			for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
-			{
-				WMath.Matrix4x4	Camera2Local = new WMath.Matrix4x4();
-				Camera2Local.SetRow( 0, SideRight[CubeFaceIndex], 0 );
-				Camera2Local.SetRow( 1, SideAt[CubeFaceIndex] ^ SideRight[CubeFaceIndex], 0 );
-				Camera2Local.SetRow( 2, SideAt[CubeFaceIndex], 0 );
-				Camera2Local.SetRow( 3, WMath.Vector.Zero, 1 );
-
-				m_Side2World[CubeFaceIndex] = Camera2Local;	// We don't care about the local=>world transform of the probe, we assume it's the identity matrix
-			}
 		}
 
 		#region Computes k-Means Sets
@@ -1009,7 +993,59 @@ int	DEBUG_PixelIndex = 0;
 
 
 			//////////////////////////////////////////////////////////////////////////
-			// 3] Iterate on the list of free pixels that belong to no set and create iterative sets
+			// 3] Build the neighbor probes network
+			m_NeighborProbes.Clear();
+
+			Dictionary<int,NeighborProbe>	NeighborProbeID2Probe = new Dictionary<int,NeighborProbe>();
+			for ( int PixelIndex=0; PixelIndex < m_ProbePixels.Count; PixelIndex++ )
+			{
+				Pixel	P = m_ProbePixels[PixelIndex];
+				if ( P.NeighborProbeID == -1 )
+					continue;
+
+				NeighborProbe	NP = null;
+				if ( !NeighborProbeID2Probe.ContainsKey( P.NeighborProbeID ) )
+				{
+					NP = new NeighborProbe();
+					NP.ProbeID = P.NeighborProbeID;
+					NeighborProbeID2Probe[P.NeighborProbeID] = NP;
+					m_NeighborProbes.Add( NP );
+				}
+				else
+					NP = NeighborProbeID2Probe[P.NeighborProbeID];
+
+				// Accumulate direction, solid angle & distance
+				NP.SolidAngle += P.SolidAngle;
+				NP.Distance += P.NeighborProbeDistance;
+				NP.Direction += P.View;
+
+				// Accumulate SH
+				for ( int i=0; i < 9; i++ )
+					NP.SH[i] += P.SolidAngle * P.SHCoeffs[i];
+
+				NP.PixelsCount++;
+			}
+
+			// Normalize everything
+			m_NearestNeighborProbeDistance = float.MaxValue;
+			m_FarthestNeighborProbeDistance = 0.0f;
+			foreach ( NeighborProbe NP in m_NeighborProbes )
+			{
+				NP.Distance /= NP.PixelsCount;
+				NP.Direction.Normalize();
+				for ( int i=0; i < 9; i++ )
+					NP.SH[i] /= 4.0 * Math.PI;
+
+				m_NearestNeighborProbeDistance = Math.Min( m_NearestNeighborProbeDistance, NP.Distance );
+				m_FarthestNeighborProbeDistance = Math.Max( m_FarthestNeighborProbeDistance, NP.Distance );
+			}
+
+			// Sort from most important to least important
+			m_NeighborProbes.Sort( this );
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// 4] Iterate on the list of free pixels that belong to no set and create iterative sets
 			List<Set>	Sets = new List<Set>();
 			for ( int PixelIndex=0; PixelIndex < m_ProbePixels.Count; PixelIndex++ )
 			{
@@ -1682,6 +1718,67 @@ DEBUG_PixelIndex = PixelIndex;
 		}
 
 		#endregion
+
+		#region IComparer<NeighborProbe> Members
+
+		public int Compare( Probe.NeighborProbe x, Probe.NeighborProbe y )
+		{
+			if ( x.SolidAngle < y.SolidAngle )
+				return +1;
+			if ( x.SolidAngle > y.SolidAngle )
+				return -1;
+
+			return 0;
+		}
+
+		#endregion
+
+		private void	PrepareCubeMapFaceTransforms()
+		{
+			//////////////////////////////////////////////////////////////////////////
+			// Prepare the cube map face transforms
+			// Here are the transform to render the 6 faces of a cube map
+			// Remember the +Z face is not oriented the same way as our Z vector: http://msdn.microsoft.com/en-us/library/windows/desktop/bb204881(v=vs.85).aspx
+			//
+			//
+			//		^ +Y
+			//		|   +Z  (our actual +Z faces the other way!)
+			//		|  /
+			//		| /
+			//		|/
+			//		o------> +X
+			//
+			//
+			WMath.Vector[]	SideAt = new WMath.Vector[6]
+			{
+				new WMath.Vector(  1, 0, 0 ),
+				new WMath.Vector( -1, 0, 0 ),
+				new WMath.Vector( 0,  1, 0 ),
+				new WMath.Vector( 0, -1, 0 ),
+				new WMath.Vector( 0, 0,  1 ),
+				new WMath.Vector( 0, 0, -1 ),
+			};
+			WMath.Vector[]	SideRight = new WMath.Vector[6]
+			{
+				new WMath.Vector( 0, 0, -1 ),
+				new WMath.Vector( 0, 0,  1 ),
+				new WMath.Vector(  1, 0, 0 ),
+				new WMath.Vector(  1, 0, 0 ),
+				new WMath.Vector(  1, 0, 0 ),
+				new WMath.Vector( -1, 0, 0 ),
+			};
+
+			for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
+			{
+				WMath.Matrix4x4	Camera2Local = new WMath.Matrix4x4();
+				Camera2Local.SetRow( 0, SideRight[CubeFaceIndex], 0 );
+				Camera2Local.SetRow( 1, SideAt[CubeFaceIndex] ^ SideRight[CubeFaceIndex], 0 );
+				Camera2Local.SetRow( 2, SideAt[CubeFaceIndex], 0 );
+				Camera2Local.SetRow( 3, WMath.Vector.Zero, 1 );
+
+				m_Side2World[CubeFaceIndex] = Camera2Local;	// We don't care about the local=>world transform of the probe, we assume it's the identity matrix
+			}
+		}
 
 		#endregion
 	}

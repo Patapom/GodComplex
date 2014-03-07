@@ -66,6 +66,9 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 "D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_d.pom",
 "D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_n.pom",
 "D:\\Workspaces\\Arkane\\TexturesPOM\\sand_01_s.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_d.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_n.pom",
+"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_s.pom",
 "D:\\Workspaces\\Arkane\\TexturesPOM\\moss_02_d.pom",
 "D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_stone_01_d.pom",
 "D:\\Workspaces\\Arkane\\TexturesPOM\\rich_medium_stone_01_n.pom",
@@ -126,9 +129,6 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 "D:\\Workspaces\\Arkane\\TexturesPOM\\shop_stairs_02_d.pom",
 "D:\\Workspaces\\Arkane\\TexturesPOM\\shop_stairs_02_n.pom",
 "D:\\Workspaces\\Arkane\\TexturesPOM\\shop_stairs_02_s.pom",
-"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_d.pom",
-"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_n.pom",
-"D:\\Workspaces\\Arkane\\TexturesPOM\\shop_poster_01_s.pom",
 "D:\\Workspaces\\Arkane\\TexturesPOM\\shopbookcase_02_d.pom",
 "D:\\Workspaces\\Arkane\\TexturesPOM\\shopbookcase_02_n.pom",
 "D:\\Workspaces\\Arkane\\TexturesPOM\\shopbookcase_02_s.pom",
@@ -207,6 +207,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	m_bDeleteSceneTags = false;
 	m_TotalFacesCount = 0;
 	m_TotalPrimitivesCount = 0;
+	m_EmissiveMaterialsCount = 0;
 	m_Scene.Load( IDR_SCENE_GI, *this );
 
 	// Upload static lights once and for all
@@ -528,7 +529,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 
 	// Update emissive materials
-	if ( m_Scene.m_MaterialsCount > 2 )
+	if ( m_EmissiveMaterialsCount > 0 )
 	{
 //		bool	ShowLight2 = gs_WindowInfos.pKeysToggle[VK_F3] != 0;
 		bool	ShowLight2 = m_CachedCopy.EnableEmissiveMaterials != 0;
@@ -536,21 +537,24 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 // 		if ( ShowLight2 && !gs_WindowInfos.pKeysToggle[VK_F7] )
 // 			AnimateLightTime2 += _DeltaTime;
 
+		NjFloat3	EmissiveColor = NjFloat3::Zero;
 		if ( ShowLight2 )
 		{
 // //			float	Intensity = 10.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.5f * _frand()) ) );
 // 			float	Intensity = 4.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.0f * _frand()) ) );
 			float	Intensity = m_CachedCopy.EmissiveIntensity;
-			m_Scene.m_ppMaterials[2]->m_EmissiveColor = Intensity * NjFloat3( m_CachedCopy.EmissiveColorR, m_CachedCopy.EmissiveColorG, m_CachedCopy.EmissiveColorB );
+			EmissiveColor = Intensity * NjFloat3( m_CachedCopy.EmissiveColorR, m_CachedCopy.EmissiveColorG, m_CachedCopy.EmissiveColorB );
 		}
-		else
-			m_Scene.m_ppMaterials[2]->m_EmissiveColor.Set( 0, 0, 0 );
+
+		for ( int EmissiveMaterialIndex=0; EmissiveMaterialIndex < m_EmissiveMaterialsCount; EmissiveMaterialIndex++ )
+			m_ppEmissiveMaterials[EmissiveMaterialIndex]->m_EmissiveColor = EmissiveColor;
 	}
 
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update dynamic probes
+	ASSERT( m_ProbesCount <= MAX_PROBE_UPDATES_PER_FRAME, "Increase max probes update per frame! Or write the time-sliced updater you promised!" );
 
 	// Prepare constant buffer for update
 	NjFloat3	pSHAmbient[9];
@@ -1489,7 +1493,7 @@ void	EffectGlobalIllum2::ZHRotate( const NjFloat3& _Direction, const NjFloat3& _
 //////////////////////////////////////////////////////////////////////////
 // Scene Rendering
 //
-void*	EffectGlobalIllum2::TagMaterial( const Scene& _Owner, const Scene::Material& _Material )
+void*	EffectGlobalIllum2::TagMaterial( const Scene& _Owner, Scene::Material& _Material )
 {
 	if ( m_bDeleteSceneTags )
 	{
@@ -1513,11 +1517,15 @@ void*	EffectGlobalIllum2::TagMaterial( const Scene& _Owner, const Scene::Materia
 
 	
 	if ( _Material.m_EmissiveColor.Max() > 1e-4f )
-		return m_pMatRenderEmissive;	// Special emissive materials!
+	{
+		ASSERT( m_EmissiveMaterialsCount < 100, "Too many emissive materials!" );
+		m_ppEmissiveMaterials[m_EmissiveMaterialsCount++] = &_Material;
+		return m_pMatRenderEmissive;	// Special rendering for emissive materials!
+	}
 
 	return m_pMatRender;
 }
-void*	EffectGlobalIllum2::TagTexture( const Scene& _Owner, const Scene::Material::Texture& _Texture )
+void*	EffectGlobalIllum2::TagTexture( const Scene& _Owner, Scene::Material::Texture& _Texture )
 {
 	if ( m_bDeleteSceneTags )
 	{
@@ -1533,7 +1541,7 @@ void*	EffectGlobalIllum2::TagTexture( const Scene& _Owner, const Scene::Material
 	return m_ppTextures[_Texture.m_ID];
 }
 
-void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, const Scene::Node& _Node )
+void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, Scene::Node& _Node )
 {
 	if ( m_bDeleteSceneTags )
 	{
@@ -1555,7 +1563,7 @@ void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, const Scene::Node& _Node
 	return NULL;
 }
 
-void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, const Scene::Mesh& _Mesh, const Scene::Mesh::Primitive& _Primitive )
+void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh, Scene::Mesh::Primitive& _Primitive )
 {
 	if ( m_bDeleteSceneTags )
 	{	// Delete the primitive

@@ -405,6 +405,7 @@ namespace ProbeSHEncoder
 					progressBarBatchConvert.Value = progressBarBatchConvert.Maximum * (OriginalFilesCount - PomFiles.Count) / OriginalFilesCount;
 					progressBarBatchConvert.Refresh();
 					outputPanel1.Refresh();
+					textBoxResults.Refresh();
 				}
 				catch ( Exception _e )
 				{
@@ -449,19 +450,21 @@ namespace ProbeSHEncoder
 
 		private void buttonComputeFilling_Click( object sender, EventArgs e )
 		{
-			m_Probe.ComputeFloodFill(
-				integerTrackbarControlK.Value,
-				integerTrackbarControlLightSamples.Value,
-				floatTrackbarControlPosition.Value,
-				floatTrackbarControlNormal.Value,
-				floatTrackbarControlAlbedo.Value,
-				floatTrackbarControlLambda.Value );
-
-			// Send to output panel for visual debugging
-			outputPanel1.SHStatic = m_Probe.m_StaticSH;
-			outputPanel1.SHOcclusion = m_Probe.m_OcclusionSH;
-			outputPanel1.SHDynamic = m_Probe.m_SHSumDynamic;
-			outputPanel1.SHEmissive = m_Probe.m_SHSumEmissive;
+			try
+			{
+				m_Probe.ComputeFloodFill(
+					integerTrackbarControlK.Value,
+					integerTrackbarControlLightSamples.Value,
+					floatTrackbarControlPosition.Value,
+					floatTrackbarControlNormal.Value,
+					floatTrackbarControlAlbedo.Value,
+					floatTrackbarControlLambda.Value );
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred while encoding probe: " + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+				return;
+			}
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -479,8 +482,17 @@ namespace ProbeSHEncoder
 			integerTrackbarControlSetIsolation.RangeMax = m_Probe.m_Sets.Length-1;
 			integerTrackbarControlSetIsolation.VisibleRangeMax = integerTrackbarControlSetIsolation.RangeMax;
 
+			// Send to output panel for visual debugging
+			outputPanel1.SHStatic = m_Probe.m_StaticSH;
+			outputPanel1.SHOcclusion = m_Probe.m_OcclusionSH;
+			outputPanel1.SHDynamic = m_Probe.m_SHSumDynamic;
+			outputPanel1.SHEmissive = m_Probe.m_SHSumEmissive;
+
 //			radioButtonSetIndex.Checked = true;
 			outputPanel1.UpdateBitmap();
+
+			// We can now save the results
+			saveResultsToolStripMenuItem.Enabled = true;
 		}
 
 		#endregion
