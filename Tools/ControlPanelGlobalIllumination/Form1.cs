@@ -64,7 +64,11 @@ namespace ControlPanelGlobalIllumination
 			public float	BounceFactorStaticLights;
 			public float	BounceFactorEmissive;
 
-			// Misc
+			// Neighors
+			public int		EnableNeighborsRedistribution;
+			public float	NeighborProbesContributionBoost;
+
+			// Debug
 			public int		ShowDebugProbes;
 			public int		ShowDebugProbesNetwork;
 			public float	DebugProbesIntensity;
@@ -159,6 +163,10 @@ namespace ControlPanelGlobalIllumination
 			floatTrackbarControlPointLightBounceFactor.Value = m_Instance.BounceFactorPoint;
 			floatTrackbarControlStaticLightsBounceFactor.Value = m_Instance.BounceFactorStaticLights;
 			floatTrackbarControlEmissiveLightsBounceFactor.Value = m_Instance.BounceFactorEmissive;
+
+			// Neighborhood
+			checkBoxEnableRedistribution.Checked = m_Instance.EnableNeighborsRedistribution != 0;
+			floatTrackbarControlNeighborProbesContribution.Value = m_Instance.NeighborProbesContributionBoost;
 
 			// Refresh block
 			m_bInternalUpdate = false;
@@ -448,6 +456,18 @@ namespace ControlPanelGlobalIllumination
 		}
 
 		#endregion
+
+		private void checkBoxEnableRedistribution_CheckedChanged( object sender, EventArgs e )
+		{
+			m_Instance.EnableNeighborsRedistribution = (sender as CheckBox).Checked ? 1 : 0;
+			UpdateMMF();
+		}
+
+		private void floatTrackbarControlNeighborProbesContribution_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_Instance.NeighborProbesContributionBoost = _Sender.Value;
+			UpdateMMF();
+		}
 
 		private void checkBoxShowDebugProbes_CheckedChanged( object sender, EventArgs e )
 		{

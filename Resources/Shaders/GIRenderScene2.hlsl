@@ -9,6 +9,7 @@
 
 cbuffer	cbGeneral	: register( b8 )
 {
+	float3		_Ambient;		// Default ambient if no indirect is being used
 	bool		_ShowIndirect;
 };
 
@@ -197,21 +198,15 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	float3	Indirect = DiffuseAlbedo * EvaluateSHIrradiance( _In.Normal, SHIndirect );
 //	float3	Indirect = DiffuseAlbedo * EvaluateSH( _In.Normal, SHIndirect );
 
-//return 0.1 * length( _In.Position - _In.SH2 );
-//return float4( 0.01 * _In.SH1, 0 );
-//return float4( _In.SH0, 0 );
 
-AccumDiffuse *= 1.0;
-Indirect *= _ShowIndirect ? 1.0 : 0.0;
+	AccumDiffuse *= 1.0;
+//	Indirect *= _ShowIndirect ? 1.0 : 0.0;
 
-//Indirect *= _In.__Position.x < 1280.0/2.0 ? 1.0 : 0.0;
+	if ( !_ShowIndirect )
+	{	// Dummy dull uniform ambient sky
+		Indirect = _Ambient;
+	}
 
-// return float4( VertexNormal, 1 );
-//return float4( VertexBiTangent, 1 );
-// return ComputeShadowPCF( _In.Position, VertexNormal, VertexTangent, 0.1 );//0.2 * (1.0 + sin( _Time.x )) );
-
-//	return float4( Normal, 1 );
-//	return float4( _In.UV.xy, 0, 1 );
 	return float4( Indirect + AccumDiffuse, 1 );
 
 #endif

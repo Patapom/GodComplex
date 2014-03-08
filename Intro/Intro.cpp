@@ -114,7 +114,8 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 //	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3::Zero, NjFloat3::UnitZ );
 
 	// Global illum test
-	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3( 0, 1, 6 ), -NjFloat3::UnitZ );
+//	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3( 0, 1, 6 ), -NjFloat3::UnitZ );	// Corridor
+	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3( -12.890693f, 6.1750569f, -7.4139323f ), NjFloat3( -6.5200315f, 3.7125835f, -5.5834103f ) );	// City scene
 
 
 	//////////////////////////////////////////////////////////////////////////

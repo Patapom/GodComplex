@@ -325,11 +325,15 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 		1.0f, 0.95f, 0.5f,	// float	EmissiveColorR, G, B;
 		// 
 		// Bounce params
-		10.0f,				// float	BounceFactorSun;
-		1.0f,				// float	BounceFactorSky;
+		100.0f,				// float	BounceFactorSun;
+		100.0f,				// float	BounceFactorSky;
 		100.0f,				// float	BounceFactorPoint;
-		1.0f,				// float	BounceFactorStaticLights;
-		1.0f,				// float	BounceFactorEmissive;
+		100.0f,				// float	BounceFactorStaticLights;
+		100.0f,				// float	BounceFactorEmissive;
+		//
+		// Neighborhood
+		true,				// U32		EnableNeighborsRedistribution;
+		1.0f,				// float	NeighborProbesContributionBoost;
 		//
 		// Misc
 		false,				// U32		ShowDebugProbes;
@@ -415,6 +419,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 {
 	// Setup general data
 	m_pCB_General->m.ShowIndirect = gs_WindowInfos.pKeys[VK_RETURN] == 0;
+	m_pCB_General->m.Ambient = !m_pCB_General->m.ShowIndirect && m_CachedCopy.EnableSky ? 0.05f * NjFloat3( 0.64f, 0.79f, 1.0f ) : NjFloat3::Zero;
 	m_pCB_General->UpdateData();
 
 	// Setup scene data
@@ -587,6 +592,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pCB_UpdateProbes->m.DynamicLightsBoost = m_CachedCopy.BounceFactorPoint;
 	m_pCB_UpdateProbes->m.StaticLightingBoost = m_CachedCopy.EnableStaticLighting != 0 ? m_CachedCopy.BounceFactorStaticLights : 0.0f;
 	m_pCB_UpdateProbes->m.EmissiveBoost = m_CachedCopy.BounceFactorEmissive;
+	m_pCB_UpdateProbes->m.NeighborProbesContributionBoost = m_CachedCopy.EnableNeighborsRedistribution ? m_CachedCopy.NeighborProbesContributionBoost : 0.0f;
 
 	m_pCB_UpdateProbes->UpdateData();
 

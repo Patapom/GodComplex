@@ -77,6 +77,9 @@
 			this.groupBox2 = new System.Windows.Forms.GroupBox();
 			this.label8 = new System.Windows.Forms.Label();
 			this.checkBoxShowNetwork = new System.Windows.Forms.CheckBox();
+			this.floatTrackbarControlNeighborProbesContribution = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label9 = new System.Windows.Forms.Label();
+			this.checkBoxEnableRedistribution = new System.Windows.Forms.CheckBox();
 			this.groupBoxAtmosphere.SuspendLayout();
 			this.groupBoxClouds.SuspendLayout();
 			this.groupBoxTerrain.SuspendLayout();
@@ -100,7 +103,7 @@
 			this.groupBoxAtmosphere.Controls.Add(this.label42);
 			this.groupBoxAtmosphere.Location = new System.Drawing.Point(12, 12);
 			this.groupBoxAtmosphere.Name = "groupBoxAtmosphere";
-			this.groupBoxAtmosphere.Size = new System.Drawing.Size(308, 267);
+			this.groupBoxAtmosphere.Size = new System.Drawing.Size(308, 236);
 			this.groupBoxAtmosphere.TabIndex = 0;
 			this.groupBoxAtmosphere.TabStop = false;
 			this.groupBoxAtmosphere.Text = "Atmosphere";
@@ -253,7 +256,7 @@
 			this.groupBoxClouds.Controls.Add(this.floatTrackbarControlSkyBounceFactor);
 			this.groupBoxClouds.Controls.Add(this.floatTrackbarControlSunBounceFactor);
 			this.groupBoxClouds.Controls.Add(this.label10);
-			this.groupBoxClouds.Location = new System.Drawing.Point(12, 285);
+			this.groupBoxClouds.Location = new System.Drawing.Point(12, 254);
 			this.groupBoxClouds.Name = "groupBoxClouds";
 			this.groupBoxClouds.Size = new System.Drawing.Size(308, 171);
 			this.groupBoxClouds.TabIndex = 1;
@@ -460,7 +463,7 @@
 			// buttonLoadPreset
 			// 
 			this.buttonLoadPreset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonLoadPreset.Location = new System.Drawing.Point(146, 139);
+			this.buttonLoadPreset.Location = new System.Drawing.Point(11, 431);
 			this.buttonLoadPreset.Name = "buttonLoadPreset";
 			this.buttonLoadPreset.Size = new System.Drawing.Size(75, 23);
 			this.buttonLoadPreset.TabIndex = 1;
@@ -471,7 +474,7 @@
 			// buttonSavePreset
 			// 
 			this.buttonSavePreset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonSavePreset.Location = new System.Drawing.Point(227, 139);
+			this.buttonSavePreset.Location = new System.Drawing.Point(92, 431);
 			this.buttonSavePreset.Name = "buttonSavePreset";
 			this.buttonSavePreset.Size = new System.Drawing.Size(75, 23);
 			this.buttonSavePreset.TabIndex = 2;
@@ -595,7 +598,7 @@
 			// 
 			this.checkBoxShowDebugProbes.AutoSize = true;
 			this.checkBoxShowDebugProbes.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.checkBoxShowDebugProbes.Location = new System.Drawing.Point(9, 29);
+			this.checkBoxShowDebugProbes.Location = new System.Drawing.Point(9, 85);
 			this.checkBoxShowDebugProbes.Name = "checkBoxShowDebugProbes";
 			this.checkBoxShowDebugProbes.Size = new System.Drawing.Size(141, 17);
 			this.checkBoxShowDebugProbes.TabIndex = 3;
@@ -605,7 +608,7 @@
 			// 
 			// floatTrackbarControlDebugProbeIntensity
 			// 
-			this.floatTrackbarControlDebugProbeIntensity.Location = new System.Drawing.Point(88, 54);
+			this.floatTrackbarControlDebugProbeIntensity.Location = new System.Drawing.Point(88, 108);
 			this.floatTrackbarControlDebugProbeIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlDebugProbeIntensity.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlDebugProbeIntensity.Name = "floatTrackbarControlDebugProbeIntensity";
@@ -619,23 +622,24 @@
 			// 
 			// groupBox2
 			// 
+			this.groupBox2.Controls.Add(this.floatTrackbarControlNeighborProbesContribution);
 			this.groupBox2.Controls.Add(this.checkBoxShowNetwork);
 			this.groupBox2.Controls.Add(this.checkBoxShowDebugProbes);
-			this.groupBox2.Controls.Add(this.buttonSavePreset);
 			this.groupBox2.Controls.Add(this.floatTrackbarControlDebugProbeIntensity);
-			this.groupBox2.Controls.Add(this.buttonLoadPreset);
+			this.groupBox2.Controls.Add(this.checkBoxEnableRedistribution);
+			this.groupBox2.Controls.Add(this.label9);
 			this.groupBox2.Controls.Add(this.label8);
 			this.groupBox2.Location = new System.Drawing.Point(334, 287);
 			this.groupBox2.Name = "groupBox2";
 			this.groupBox2.Size = new System.Drawing.Size(308, 168);
 			this.groupBox2.TabIndex = 4;
 			this.groupBox2.TabStop = false;
-			this.groupBox2.Text = "groupBox2";
+			this.groupBox2.Text = "Misc.";
 			// 
 			// label8
 			// 
 			this.label8.AutoSize = true;
-			this.label8.Location = new System.Drawing.Point(6, 56);
+			this.label8.Location = new System.Drawing.Point(6, 110);
 			this.label8.Name = "label8";
 			this.label8.Size = new System.Drawing.Size(79, 13);
 			this.label8.TabIndex = 2;
@@ -645,13 +649,50 @@
 			// 
 			this.checkBoxShowNetwork.AutoSize = true;
 			this.checkBoxShowNetwork.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.checkBoxShowNetwork.Location = new System.Drawing.Point(9, 83);
+			this.checkBoxShowNetwork.Location = new System.Drawing.Point(9, 134);
 			this.checkBoxShowNetwork.Name = "checkBoxShowNetwork";
 			this.checkBoxShowNetwork.Size = new System.Drawing.Size(192, 17);
 			this.checkBoxShowNetwork.TabIndex = 3;
 			this.checkBoxShowNetwork.Text = "Show Debug Probes Network";
 			this.checkBoxShowNetwork.UseVisualStyleBackColor = true;
 			this.checkBoxShowNetwork.CheckedChanged += new System.EventHandler(this.checkBoxShowNetwork_CheckedChanged);
+			// 
+			// floatTrackbarControlNeighborProbesContribution
+			// 
+			this.floatTrackbarControlNeighborProbesContribution.Location = new System.Drawing.Point(88, 49);
+			this.floatTrackbarControlNeighborProbesContribution.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlNeighborProbesContribution.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlNeighborProbesContribution.Name = "floatTrackbarControlNeighborProbesContribution";
+			this.floatTrackbarControlNeighborProbesContribution.RangeMax = 1000F;
+			this.floatTrackbarControlNeighborProbesContribution.RangeMin = 0F;
+			this.floatTrackbarControlNeighborProbesContribution.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlNeighborProbesContribution.TabIndex = 0;
+			this.floatTrackbarControlNeighborProbesContribution.Value = 10F;
+			this.floatTrackbarControlNeighborProbesContribution.VisibleRangeMax = 20F;
+			this.floatTrackbarControlNeighborProbesContribution.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlNeighborProbesContribution_ValueChanged);
+			// 
+			// label9
+			// 
+			this.label9.AutoSize = true;
+			this.label9.Location = new System.Drawing.Point(6, 51);
+			this.label9.Name = "label9";
+			this.label9.Size = new System.Drawing.Size(86, 13);
+			this.label9.TabIndex = 2;
+			this.label9.Text = "Neighbor Redist.";
+			// 
+			// checkBoxEnableRedistribution
+			// 
+			this.checkBoxEnableRedistribution.AutoSize = true;
+			this.checkBoxEnableRedistribution.Checked = true;
+			this.checkBoxEnableRedistribution.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxEnableRedistribution.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.checkBoxEnableRedistribution.Location = new System.Drawing.Point(9, 24);
+			this.checkBoxEnableRedistribution.Name = "checkBoxEnableRedistribution";
+			this.checkBoxEnableRedistribution.Size = new System.Drawing.Size(292, 17);
+			this.checkBoxEnableRedistribution.TabIndex = 1;
+			this.checkBoxEnableRedistribution.Text = "Enable Energy Redistribution among Neighbors";
+			this.checkBoxEnableRedistribution.UseVisualStyleBackColor = true;
+			this.checkBoxEnableRedistribution.CheckedChanged += new System.EventHandler(this.checkBoxEnableRedistribution_CheckedChanged);
 			// 
 			// Form1
 			// 
@@ -661,8 +702,10 @@
 			this.Controls.Add(this.groupBox2);
 			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.groupBoxTerrain);
+			this.Controls.Add(this.buttonSavePreset);
 			this.Controls.Add(this.groupBoxClouds);
 			this.Controls.Add(this.groupBoxAtmosphere);
+			this.Controls.Add(this.buttonLoadPreset);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
 			this.MaximizeBox = false;
 			this.MinimizeBox = false;
@@ -735,6 +778,9 @@
 		private System.Windows.Forms.GroupBox groupBox2;
 		private System.Windows.Forms.Label label8;
 		private System.Windows.Forms.CheckBox checkBoxShowNetwork;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlNeighborProbesContribution;
+		private System.Windows.Forms.Label label9;
+		private System.Windows.Forms.CheckBox checkBoxEnableRedistribution;
 	}
 }
 

@@ -31,6 +31,7 @@ protected:	// NESTED TYPES
 
 	struct CBGeneral
 	{
+		NjFloat3	Ambient;
 		U32			ShowIndirect;
  	};
 
@@ -93,6 +94,7 @@ protected:	// NESTED TYPES
 		float		StaticLightingBoost;
 
 		float		EmissiveBoost;
+		float		NeighborProbesContributionBoost;
  	};
 
 	// Structured Buffers
@@ -354,6 +356,10 @@ private:	// FIELDS
 		float	BounceFactorPoint;
 		float	BounceFactorStaticLights;
 		float	BounceFactorEmissive;
+
+		// Neighborhood
+		U32		EnableNeighborsRedistribution;
+		float	NeighborProbesContributionBoost;
 
 		// Misc
 		U32		ShowDebugProbes;
