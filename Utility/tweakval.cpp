@@ -156,7 +156,7 @@ int _TweakValue( const char *file, size_t counter, int origVal )
 	return tv->val.i;
 }
 
-void	FilesVisitor( TweakableSourceFile& _File, void* _pUserData )
+void	FilesVisitor( int _EntryIndex, TweakableSourceFile& _File, void* _pUserData )
 {
 	time_t	LastModificationTime = GetFileModTime( _File.pFilename );
 	if ( LastModificationTime <= _File.LastModificationTime )

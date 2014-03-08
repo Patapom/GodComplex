@@ -11,7 +11,7 @@ Texture3D::Texture3D( Device& _Device, int _Width, int _Height, int _Depth, cons
 	Init( _ppContent, _bStaging, _bUnOrderedAccess );
 }
 
-static void		ReleaseDirectXObject( void*& _pValue, void* _pUserData )
+static void		ReleaseDirectXObject( int _EntryIndex, void*& _pValue, void* _pUserData )
 {
 	IUnknown*	pObject = (IUnknown*) _pValue;
 	pObject->Release();

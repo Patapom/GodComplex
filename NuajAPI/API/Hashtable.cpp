@@ -103,12 +103,13 @@ void	DictionaryU32::Remove( U32 _Key )
 
 void	DictionaryU32::ForEach( VisitorDelegate _pDelegate, void* _pUserData )
 {
+	int	EntryIndex = 0;
 	for ( int i=0; i < m_Size; i++ )
 	{
 		Node*	pNode = m_ppTable[i];
 		while ( pNode != NULL )
 		{
-			(*_pDelegate)( pNode->pValue, _pUserData );
+			(*_pDelegate)( EntryIndex++, pNode->pValue, _pUserData );
 			pNode = pNode->pNext;
 		}
 	}

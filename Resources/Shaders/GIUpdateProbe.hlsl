@@ -41,6 +41,10 @@ struct ProbeUpdateInfos
 	uint		SamplingPointsCount;		// Amount of sampling points for the probe
 	float3		SHStatic[9];				// Precomputed static SH (static geometry + static lights)
 	float		SHOcclusion[9];				// Directional ambient occlusion for the probe
+
+	// Neighbor probes informations
+//	uint4		NeighborProbeIDs;			// The IDs of the 4 most significant neighbor probes
+	float4		SHConvolution[9];			// The SH coefficients to convolve the neighbor's SH with to obtain their contribution to this probe
 };
 StructuredBuffer<ProbeUpdateInfos>	_SBProbeUpdateInfos : register( t10 );
 

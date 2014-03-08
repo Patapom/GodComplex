@@ -76,6 +76,7 @@
 			this.floatTrackbarControlDebugProbeIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.groupBox2 = new System.Windows.Forms.GroupBox();
 			this.label8 = new System.Windows.Forms.Label();
+			this.checkBoxShowNetwork = new System.Windows.Forms.CheckBox();
 			this.groupBoxAtmosphere.SuspendLayout();
 			this.groupBoxClouds.SuspendLayout();
 			this.groupBoxTerrain.SuspendLayout();
@@ -618,6 +619,7 @@
 			// 
 			// groupBox2
 			// 
+			this.groupBox2.Controls.Add(this.checkBoxShowNetwork);
 			this.groupBox2.Controls.Add(this.checkBoxShowDebugProbes);
 			this.groupBox2.Controls.Add(this.buttonSavePreset);
 			this.groupBox2.Controls.Add(this.floatTrackbarControlDebugProbeIntensity);
@@ -638,6 +640,18 @@
 			this.label8.Size = new System.Drawing.Size(79, 13);
 			this.label8.TabIndex = 2;
 			this.label8.Text = "Intensity Factor";
+			// 
+			// checkBoxShowNetwork
+			// 
+			this.checkBoxShowNetwork.AutoSize = true;
+			this.checkBoxShowNetwork.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.checkBoxShowNetwork.Location = new System.Drawing.Point(9, 83);
+			this.checkBoxShowNetwork.Name = "checkBoxShowNetwork";
+			this.checkBoxShowNetwork.Size = new System.Drawing.Size(192, 17);
+			this.checkBoxShowNetwork.TabIndex = 3;
+			this.checkBoxShowNetwork.Text = "Show Debug Probes Network";
+			this.checkBoxShowNetwork.UseVisualStyleBackColor = true;
+			this.checkBoxShowNetwork.CheckedChanged += new System.EventHandler(this.checkBoxShowNetwork_CheckedChanged);
 			// 
 			// Form1
 			// 
@@ -720,6 +734,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDebugProbeIntensity;
 		private System.Windows.Forms.GroupBox groupBox2;
 		private System.Windows.Forms.Label label8;
+		private System.Windows.Forms.CheckBox checkBoxShowNetwork;
 	}
 }
 

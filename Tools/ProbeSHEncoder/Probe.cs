@@ -1269,6 +1269,9 @@ DEBUG_PixelIndex = PixelIndex;
 					SamplesCount = Math.Max( 1, SamplesCount );					// Ensure we have at least 1 sample no matter what!
 					SamplesCount = Math.Min( SamplesCount, S.SetPixels.Count );	// Can't have more samples than pixels!
 
+				if ( SamplesCount == 0 )
+					throw new Exception( "We have a set with NO light sample!" );
+
 				S.GenerateSamples( SamplesCount );
 
 				// Reduce the amount of available samples and the count of remaining pixels so the remaining sets share the remaining samples...

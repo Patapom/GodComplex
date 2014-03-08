@@ -66,6 +66,7 @@ namespace ControlPanelGlobalIllumination
 
 			// Misc
 			public int		ShowDebugProbes;
+			public int		ShowDebugProbesNetwork;
 			public float	DebugProbesIntensity;
 
 			public void	SetChecksum( int _Checksum )	{ Checksum = _Checksum; }
@@ -457,6 +458,12 @@ namespace ControlPanelGlobalIllumination
 		private void floatTrackbarControlDebugProbeIntensity_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_Instance.DebugProbesIntensity = _Sender.Value;
+			UpdateMMF();
+		}
+
+		private void checkBoxShowNetwork_CheckedChanged( object sender, EventArgs e )
+		{
+			m_Instance.ShowDebugProbesNetwork = (sender as CheckBox).Checked ? 1 : 0;
 			UpdateMMF();
 		}
 

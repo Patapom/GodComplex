@@ -11,6 +11,7 @@ static const char*	BITANGENT = "BITANGENT";
 // static const char*	CURVATURE = "CURVATURE";
 static const char*	TEXCOORD = "TEXCOORD";	// In the shader, this semantic is written as TEXCOORD0, TEXCOORD1, etc.
 
+
 VertexFormatPt4::Desc		VertexFormatPt4::DESCRIPTOR;
 D3D11_INPUT_ELEMENT_DESC	VertexFormatPt4::Desc::ms_pInputElements[] =
 {

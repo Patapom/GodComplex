@@ -771,7 +771,7 @@ const char*	Material::GetShaderPath( const char* _pShaderFileName ) const
 
 DictionaryString<Material*>	Material::ms_WatchedShaders;
 
-static void	WatchShader( Material*& _Value, void* _pUserData )	{ _Value->WatchShaderModifications(); }
+static void	WatchShader( int _EntryIndex, Material*& _Value, void* _pUserData )	{ _Value->WatchShaderModifications(); }
 
 void		Material::WatchShadersModifications()
 {

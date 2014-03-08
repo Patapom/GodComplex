@@ -16,6 +16,7 @@ private:	// CONSTANTS
 
 	static const U32		MAX_LIGHTS = 64;
 	static const U32		MAX_PROBE_SETS = 16;
+	static const U32		MAX_PROBE_NEIGHBORS = 4;			// Only keep the 4 most significant neighbors
 	static const U32		MAX_PROBE_EMISSIVE_SETS = 16;
 	static const U32		MAX_SET_SAMPLES = 64;				// Accept a maximum of 64 samples per set
 
@@ -59,7 +60,6 @@ protected:	// NESTED TYPES
 		float		SpecularExponent;
 		U32			FaceOffset;		// The offset to apply to the object's face index to obtain an absolute face index
 		U32			HasNormalTexture;
-		float		__PAD0;
 	};
 
 	struct CBProbe
@@ -67,13 +67,11 @@ protected:	// NESTED TYPES
 		NjFloat3	CurrentProbePosition;
 		U32			NeighborProbeID;
 		NjFloat3	NeighborProbePosition;
-		float		__PAD0;
  	};
 
 	struct CBSplat
 	{
 		NjFloat3	dUV;
-		float		__PAD0;
 	};
 
 	struct CBShadowMap
@@ -83,7 +81,6 @@ protected:	// NESTED TYPES
 		NjFloat3	BoundsMin;
 		float		__PAD0;
 		NjFloat3	BoundsMax;
-		float		__PAD1;
  	};
 
 	struct CBUpdateProbes
@@ -115,6 +112,9 @@ protected:	// NESTED TYPES
 		NjFloat3	Position;
 		float		Radius;
 		NjFloat3	pSH[9];
+
+		// Neighbor probes
+		U16			NeighborProbeIDs[4];			// IDs of the 4 most significant neighbors
 	};
 
 	// Probes update buffers
@@ -129,6 +129,10 @@ protected:	// NESTED TYPES
 		U32			SamplingPointsCount;			// Amount of sampling points for the probe
 		NjFloat3	SHStatic[9];					// Precomputed static SH (static geometry + static lights)
 		float		SHOcclusion[9];					// Directional ambient occlusion for the probe
+
+		// Neighbor probes
+//		U32			NeighborProbeIDs[4];			// The IDs of the 4 most significant neighbor probes
+		NjFloat4	NeighborProbeSH[9];				// The SH coefficients to convolve the neighbor's SH with to obtain their contribution to this probe
 	};
 
 	struct	RuntimeProbeUpdateSetInfos
@@ -151,16 +155,27 @@ protected:	// NESTED TYPES
 		float		Radius;							// Radius of the sampling point's disc approximation
 	};
 
+public:
+	struct RuntimeProbeNetworkInfos
+	{
+		U32			ProbeIDs[2];					// The IDs of the 2 connected probes
+		NjFloat2	NeighborsSolidAngles;			// Their perception of each other's solid angle
+	};
+protected:
+
 #pragma pack( pop )
+
 
 	// The static probe structure that we read from disk and stream/keep in memory when probes need updating
 	struct	ProbeStruct
 	{
 		Scene::Probe*	pSceneProbe;
 
+		// Static SH infos
 		float			pSHOcclusion[9];		// The pre-computed SH that gives back how much of the environment is perceived in a given direction
 		NjFloat3		pSHBounceStatic[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced static lighting on static geometry
 
+		// Geometric infos
 		float			MeanDistance;			// Mean distance of all scene pixels
 		float			MeanHarmonicDistance;	// Mean harmonic distance (1/sum(1/distance)) of all scene pixels
 		float			MinDistance;			// Distance to closest scene pixel
@@ -168,6 +183,7 @@ protected:	// NESTED TYPES
 		NjFloat3		BBoxMin;				// Dimensions of the bounding box (axis-aligned) of the scene pixels
 		NjFloat3		BBoxMax;
 
+		// Generic reflective sets infos
 		U32				SetsCount;				// The amount of dynamic sets for that probe
 		struct SetInfos
 		{
@@ -188,6 +204,7 @@ protected:	// NESTED TYPES
 
 		}				pSetInfos[MAX_PROBE_SETS];
 
+		// Emissive sets infos
 		U32				EmissiveSetsCount;		// The amount of emissive sets for that probe
 		struct EmissiveSetInfos
 		{
@@ -200,6 +217,20 @@ protected:	// NESTED TYPES
 			float			pSHEmissive[9];		// The pre-computed SH that gives back how much the probe emits light
 		}				pEmissiveSetInfos[MAX_PROBE_EMISSIVE_SETS];
 
+		// Neighbor probes infos
+		float			NearestProbeDistance;
+		float			FarthestProbeDistance;
+		struct NeighborProbeInfos
+		{
+			U32				ProbeID;			// ID of the neighbor probe
+			float			Distance;			// Average distance to the probe
+			float			SolidAngle;			// Perceived solid angle covered by the probe
+			NjFloat3		Direction;			// Average direction to the probe
+			float			SH[9];				// Convolution SH to use to isolate the contribution of the probe's SH this probe should perceive
+		}				pNeighborProbeInfos[MAX_PROBE_NEIGHBORS];
+
+
+		// ===== Software Computation Section =====
 		NjFloat3		pSHBouncedLight[9];		// The resulting bounced irradiance * light(static+dynamic) + emissive for current frame
 
 		// Clears the light bounce accumulator
@@ -226,6 +257,7 @@ private:	// FIELDS
 	Material*			m_pMatRenderShadowMap;		// Renders the directional shadowmap
 	Material*			m_pMatPostProcess;			// Post-processes the result
 	Material*			m_pMatRenderDebugProbes;	// Displays the probes as small spheres
+	Material*			m_pMatRenderDebugProbesNetwork;	// Displays the probes network
 	
 	ComputeShader*		m_pCSUpdateProbe;			// Dynamically update probes
 
@@ -233,6 +265,7 @@ private:	// FIELDS
 	Scene				m_Scene;
 	bool				m_bDeleteSceneTags;
 	Primitive*			m_pPrimSphere;
+	Primitive*			m_pPrimPoint;
 
 	int					m_MeshesCount;
 	Scene::Mesh**		m_ppCachedMeshes;
@@ -271,6 +304,9 @@ private:	// FIELDS
 	SB<RuntimeProbeUpdateSetInfos>*			m_pSB_RuntimeProbeSetInfos;
 	SB<RuntimeProbeUpdateEmissiveSetInfos>*	m_pSB_RuntimeProbeEmissiveSetInfos;
 	SB<RuntimeSamplingPointInfos>*			m_pSB_RuntimeSamplingPointInfos;
+
+	// Probes network debug
+	SB<RuntimeProbeNetworkInfos>*			m_pSB_RuntimeProbeNetworkInfos;
 
 
 	// Ambient SH computed from CIE overcast sky model
@@ -321,6 +357,7 @@ private:	// FIELDS
 
 		// Misc
 		U32		ShowDebugProbes;
+		U32		ShowDebugProbesNetwork;
 		float	DebugProbesIntensity;
 	};
 

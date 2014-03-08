@@ -13,8 +13,6 @@
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
-#define MAKE_MACROS( a )	Macros( const char* m[] = { a } )
-
 EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera ) : m_ErrorCode( 0 ), m_Device( _Device ), m_RTTarget( _RTHDR ), m_ScreenQuad( _ScreenQuad )
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -26,9 +24,10 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 	CHECK_MATERIAL( m_pMatRenderEmissive = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros2 ), 2 );
  	CHECK_MATERIAL( m_pMatRenderLights = CreateMaterial( IDR_SHADER_GI_RENDER_LIGHTS, "./Resources/Shaders/GIRenderLights.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
  	CHECK_MATERIAL( m_pMatRenderDebugProbes = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
- 	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 5 );
- 	CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
- 	CHECK_MATERIAL( m_pMatRenderShadowMap = CreateMaterial( IDR_SHADER_GI_RENDER_SHADOW_MAP, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL ), 7 );
+ 	CHECK_MATERIAL( m_pMatRenderDebugProbesNetwork = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3::DESCRIPTOR, "VS_Network", "GS_Network", "PS_Network" ), 5 );
+ 	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
+ 	CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 7 );
+ 	CHECK_MATERIAL( m_pMatRenderShadowMap = CreateMaterial( IDR_SHADER_GI_RENDER_SHADOW_MAP, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL ), 8 );
  	CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
 
 	// Compute Shaders
@@ -195,12 +194,12 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	m_pSB_LightsStatic = new SB<LightStruct>( m_Device, MAX_LIGHTS, true );
 	m_pSB_LightsDynamic = new SB<LightStruct>( m_Device, MAX_LIGHTS, true );
 	m_pSB_RuntimeProbes = NULL;
+	m_pSB_RuntimeProbeNetworkInfos = NULL;
 
 	m_pSB_RuntimeProbeUpdateInfos = new SB<RuntimeProbeUpdateInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME, true );
 	m_pSB_RuntimeProbeSetInfos = new SB<RuntimeProbeUpdateSetInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME*MAX_PROBE_SETS, true );
 	m_pSB_RuntimeProbeEmissiveSetInfos = new SB<RuntimeProbeUpdateEmissiveSetInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME*MAX_PROBE_EMISSIVE_SETS, true );
 	m_pSB_RuntimeSamplingPointInfos = new SB<RuntimeSamplingPointInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME * MAX_SET_SAMPLES, true );
-
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the scene
@@ -238,6 +237,10 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	m_pPrimSphere = new Primitive( _Device, VertexFormatP3N3::DESCRIPTOR );
 	GeometryBuilder::BuildSphere( 40, 10, *m_pPrimSphere );
 
+	// Create the dummy point primitive for the debug drawing of the probes network
+	NjFloat3	Point;
+	m_pPrimPoint = new Primitive( _Device, 1, &Point, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatP3::DESCRIPTOR );
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Start precomputation
@@ -264,8 +267,8 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 			NjFloat3	Direction( sinf(Phi) * sinf(Theta), cosf(Theta), cosf(Phi)*sinf(Theta) );
 			BuildSHCoeffs( Direction, SHCoeffs );
 
-//			NjFloat3	SkyColor = SKY_INTENSITY * (1.0f + 2.0f * MAX( -0.5f, cosf(Theta) )) / 3.0f * NjFloat3::One;
-			NjFloat3	SkyColor = SKY_INTENSITY * NjFloat3( 0.64f, 0.79f, 1.0f );	// Simple uniform blue color
+			NjFloat3	SkyColor = SKY_INTENSITY * (1.0f + 2.0f * MAX( -0.5f, cosf(Theta) )) / 3.0f * NjFloat3::One;
+//			NjFloat3	SkyColor = SKY_INTENSITY * NjFloat3( 0.64f, 0.79f, 1.0f );	// Simple uniform blue color
 
 			double		SolidAngle = sinf(Theta) * dPhidTheta;
 			SumSolidAngle += SolidAngle;
@@ -330,6 +333,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 		//
 		// Misc
 		false,				// U32		ShowDebugProbes;
+		false,				// U32		ShowDebugProbes;
 		1.0f,				// float	DebugProbesIntensity;
 	};
 	ParametersBlock&	MappedParams = m_pMMF->GetMappedMemory();
@@ -346,6 +350,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 {
 	delete[] m_pProbes;
 
+	delete m_pPrimPoint;
 	delete m_pPrimSphere;
 
 	delete[] m_ppCachedMeshes;
@@ -358,6 +363,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pSB_RuntimeProbeEmissiveSetInfos;
 	delete m_pSB_RuntimeProbeSetInfos;
 	delete m_pSB_RuntimeProbeUpdateInfos;
+	delete m_pSB_RuntimeProbeNetworkInfos;
 	delete m_pSB_RuntimeProbes;
 	delete m_pSB_LightsDynamic;
 	delete m_pSB_LightsStatic;
@@ -384,6 +390,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pMatRenderShadowMap;
 	delete m_pMatRenderNeighborProbe;
 	delete m_pMatRenderCubeMap;
+	delete m_pMatRenderDebugProbesNetwork;
 	delete m_pMatRenderDebugProbes;
 	delete m_pMatRenderLights;
 	delete m_pMatRenderEmissive;
@@ -443,8 +450,10 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pSB_LightsDynamic->m[0].Parms.Set( 0.1f, 0.1f, 0, 0 );
 
 #if 0	// CORRIDOR ANIMATION (simple straight line)
+
 //	m_pSB_LightsDynamic->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * AnimateLightTime0 ) );	// Move along the corridor
 	m_pSB_LightsDynamic->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime0 ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime0 ), 4.0f * sinf( 0.3f * AnimateLightTime0 ) );	// Move along the corridor
+
 #else	// SHOP ANIMATION (follow curve)
 
 	static bool	bPathPreComputed = false;
@@ -518,7 +527,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	}
 #else
 
-	// Set shadow map to something otherwise DX pisses me off with warnings...
+	// Set shadow map to something, otherwise DX pisses me off with warnings...
 	m_pCB_ShadowMap->UpdateData();
 	m_pRTShadowMap->Set( 2, true );
 
@@ -582,8 +591,8 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pCB_UpdateProbes->UpdateData();
 
 
-#if 1
-	// Hardware update
+#if 1	// Hardware update
+
 	U32		ProbeUpdatesCount = MIN( MAX_PROBE_UPDATES_PER_FRAME, U32(m_ProbesCount) );
 //TODO: Handle a stack of probes to update
 
@@ -606,6 +615,19 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		ProbeUpdateInfos.EmissiveSetsCount = Probe.EmissiveSetsCount;
 		memcpy_s( ProbeUpdateInfos.SHStatic, sizeof(ProbeUpdateInfos.SHStatic), Probe.pSHBounceStatic, 9*sizeof(NjFloat3) );
 		memcpy_s( ProbeUpdateInfos.SHOcclusion, sizeof(ProbeUpdateInfos.SHOcclusion), Probe.pSHOcclusion, 9*sizeof(float) );
+
+// No need to duplicate from the runtime probe infos...
+// 		ProbeUpdateInfos.NeighborProbeIDs[0] = Probe.pNeighborProbeInfos[0].ProbeID;
+// 		ProbeUpdateInfos.NeighborProbeIDs[1] = Probe.pNeighborProbeInfos[1].ProbeID;
+// 		ProbeUpdateInfos.NeighborProbeIDs[2] = Probe.pNeighborProbeInfos[2].ProbeID;
+// 		ProbeUpdateInfos.NeighborProbeIDs[3] = Probe.pNeighborProbeInfos[3].ProbeID;
+		for( int i=0; i < 9; i++ )
+		{
+			ProbeUpdateInfos.NeighborProbeSH[i].x = Probe.pNeighborProbeInfos[0].SH[i];
+			ProbeUpdateInfos.NeighborProbeSH[i].y = Probe.pNeighborProbeInfos[1].SH[i];
+			ProbeUpdateInfos.NeighborProbeSH[i].z = Probe.pNeighborProbeInfos[2].SH[i];
+			ProbeUpdateInfos.NeighborProbeSH[i].w = Probe.pNeighborProbeInfos[3].SH[i];
+		}
 
 		ProbeUpdateInfos.SamplingPointsStart = TotalSamplingPointsCount;
 
@@ -735,6 +757,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 #endif
 
+
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Render the scene
 // 	m_Device.ClearRenderTarget( m_RTTarget, NjFloat4::Zero );
@@ -762,6 +785,15 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		USING_MATERIAL_START( *m_pMatRenderDebugProbes )
 
 		m_pPrimSphere->RenderInstanced( M, m_ProbesCount );
+
+		USING_MATERIAL_END
+	}
+
+	if ( m_CachedCopy.ShowDebugProbesNetwork != 0 )
+	{
+		USING_MATERIAL_START( *m_pMatRenderDebugProbesNetwork )
+
+		m_pPrimPoint->RenderInstanced( M, m_pSB_RuntimeProbeNetworkInfos->GetElementsCount() );
 
 		USING_MATERIAL_END
 	}
@@ -804,6 +836,8 @@ void	EffectGlobalIllum2::ProbeStruct::AccumulateLightBounce( const NjFloat3 _pSH
 	for ( int i=0; i < 9; i++ )
 		pSHBouncedLight[i] = pSHBouncedLight[i] + _pSHSet[i];
 }
+
+static void	CopyProbeNetworkConnection( int _EntryIndex, EffectGlobalIllum2::RuntimeProbeNetworkInfos& _Value, void* _pUserData );
 
 void	EffectGlobalIllum2::PreComputeProbes()
 {
@@ -997,6 +1031,26 @@ void	EffectGlobalIllum2::PreComputeProbes()
 			for ( int i=0; i < 9; i++ )
 				fread_s( &S.pSHEmissive[i], sizeof(S.pSHEmissive[i]), sizeof(float), 1, pFile );
 		}
+
+		// Read the amount of neighbor probes & distance infos
+		U32	NeighborProbesCount;
+		fread_s( &NeighborProbesCount, sizeof(NeighborProbesCount), sizeof(U32), 1, pFile );
+		NeighborProbesCount = MIN( MAX_PROBE_NEIGHBORS, NeighborProbesCount );
+
+		fread_s( &Probe.NearestProbeDistance, sizeof(Probe.NearestProbeDistance), sizeof(float), 1, pFile );
+		fread_s( &Probe.FarthestProbeDistance, sizeof(Probe.FarthestProbeDistance), sizeof(float), 1, pFile );
+
+		for ( U32 NeighborProbeIndex=0; NeighborProbeIndex < NeighborProbesCount; NeighborProbeIndex++ )
+		{
+			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID), sizeof(U32), 1, pFile );
+			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].Distance, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].Distance), sizeof(float), 1, pFile );
+			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].SolidAngle, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].SolidAngle), sizeof(float), 1, pFile );
+			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].Direction.x, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].Direction), sizeof(NjFloat3), 1, pFile );
+			for ( int i=0; i < 9; i++ )
+				fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].SH[i], sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].SH[i]), sizeof(float), 1, pFile );
+		}
+		for ( U32 NeighborProbeIndex=NeighborProbesCount; NeighborProbeIndex < MAX_PROBE_NEIGHBORS; NeighborProbeIndex++ )
+			Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID = ~0;	// Invalid ID
 
 		fclose( pFile );
 	}
@@ -1270,16 +1324,84 @@ pRTCubeMap->SetPS( 64 );
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// Allocate runtime probes structured buffer
+	// Allocate runtime probes structured buffer & copy static infos
 	m_pSB_RuntimeProbes = new SB<RuntimeProbe>( m_Device, m_ProbesCount, true );
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
+
 		m_pSB_RuntimeProbes->m[ProbeIndex].Position = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
 		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.MaxDistance;
 //		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.MeanDistance;
+
+// 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[0] = Probe.pNeighborProbeInfos[0].ProbeID;
+// 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[1] = Probe.pNeighborProbeInfos[1].ProbeID;
+// 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[2] = Probe.pNeighborProbeInfos[2].ProbeID;
+// 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[3] = Probe.pNeighborProbeInfos[3].ProbeID;
+
+		ASSERT( Probe.pNeighborProbeInfos[0].ProbeID == ~0 || Probe.pNeighborProbeInfos[0].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
+		ASSERT( Probe.pNeighborProbeInfos[1].ProbeID == ~0 || Probe.pNeighborProbeInfos[1].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
+		ASSERT( Probe.pNeighborProbeInfos[2].ProbeID == ~0 || Probe.pNeighborProbeInfos[2].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
+		ASSERT( Probe.pNeighborProbeInfos[3].ProbeID == ~0 || Probe.pNeighborProbeInfos[3].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
+		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[0] = Probe.pNeighborProbeInfos[0].ProbeID;
+		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[1] = Probe.pNeighborProbeInfos[1].ProbeID;
+		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[2] = Probe.pNeighborProbeInfos[2].ProbeID;
+		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[3] = Probe.pNeighborProbeInfos[3].ProbeID;
 	}
 	m_pSB_RuntimeProbes->Write();
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build the probes network debug mesh
+	Dictionary<RuntimeProbeNetworkInfos>	Connections;
+	for ( U32 ProbeIndex=0; ProbeIndex < U32(m_ProbesCount); ProbeIndex++ )
+	{
+		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
+
+		for ( int NeighborProbeIndex=0; NeighborProbeIndex < MAX_PROBE_NEIGHBORS; NeighborProbeIndex++ )
+		{
+			ProbeStruct::NeighborProbeInfos&	NeighborInfos = Probe.pNeighborProbeInfos[NeighborProbeIndex];
+			if ( NeighborInfos.ProbeID == ~0 )
+				continue;
+			
+			U32	Key = ProbeIndex < NeighborInfos.ProbeID ? ((ProbeIndex & 0xFFFF) | ((NeighborInfos.ProbeID & 0xFFFF) << 16)) : ((NeighborInfos.ProbeID & 0xFFFF) | ((ProbeIndex & 0xFFFF) << 16));
+
+			RuntimeProbeNetworkInfos*	pConnection = Connections.Get( Key );
+			if ( pConnection != NULL )
+				continue;	// Already eastablished!
+			
+			pConnection = &Connections.Add( Key );
+			pConnection->ProbeIDs[0] = ProbeIndex;
+			pConnection->ProbeIDs[1] = NeighborInfos.ProbeID;
+			pConnection->NeighborsSolidAngles.x = NeighborInfos.SolidAngle;
+			pConnection->NeighborsSolidAngles.y = NeighborInfos.SolidAngle;	// By default, consider solid angles to be equal: both probes perceive the same amount of each other
+
+			// Find us in the neighbor probe's neighborhood
+			ProbeStruct&	NeighborProbe = m_pProbes[NeighborInfos.ProbeID];
+			for ( int NeighborNeighborProbeIndex=0; NeighborNeighborProbeIndex < MAX_PROBE_NEIGHBORS; NeighborNeighborProbeIndex++ )
+				if ( NeighborProbe.pNeighborProbeInfos[NeighborNeighborProbeIndex].ProbeID == ProbeIndex )
+				{	// Found us!
+					// Now we can get the exact solid angle!
+					pConnection->NeighborsSolidAngles.y = NeighborProbe.pNeighborProbeInfos[NeighborNeighborProbeIndex].SolidAngle;
+					break;
+				}
+		}
+	}
+
+	int	ProbeConnectionsCount = Connections.GetEntriesCount();
+
+	// Create the structured buffer from the flattened dictionary
+	m_pSB_RuntimeProbeNetworkInfos = new SB<RuntimeProbeNetworkInfos>( m_Device, ProbeConnectionsCount, true );
+	Connections.ForEach( CopyProbeNetworkConnection, m_pSB_RuntimeProbeNetworkInfos->m );
+
+	m_pSB_RuntimeProbeNetworkInfos->Write();
+	m_pSB_RuntimeProbeNetworkInfos->SetInput( 16 );
+}
+
+static void	CopyProbeNetworkConnection( int _EntryIndex, EffectGlobalIllum2::RuntimeProbeNetworkInfos& _Value, void* _pUserData )
+{
+	EffectGlobalIllum2::RuntimeProbeNetworkInfos*	_pTarget = (EffectGlobalIllum2::RuntimeProbeNetworkInfos*) _pUserData;
+	memcpy_s( &_pTarget[_EntryIndex], sizeof(EffectGlobalIllum2::RuntimeProbeNetworkInfos), &_Value, sizeof(EffectGlobalIllum2::RuntimeProbeNetworkInfos) );
 }
 
 //////////////////////////////////////////////////////////////////////////

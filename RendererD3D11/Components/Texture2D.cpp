@@ -80,7 +80,7 @@ Texture2D::Texture2D( Device& _Device, int _Width, int _Height, const IDepthSten
 	Check( m_Device.DXDevice().CreateTexture2D( &Desc, NULL, &m_pTexture ) );
 }
 
-static void		ReleaseDirectXObject( void*& _pValue, void* _pUserData )
+static void		ReleaseDirectXObject( int _EntryIndex, void*& _pValue, void* _pUserData )
 {
 	IUnknown*	pObject = (IUnknown*) _pValue;
 	pObject->Release();
