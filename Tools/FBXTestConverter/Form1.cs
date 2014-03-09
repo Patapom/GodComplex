@@ -75,7 +75,7 @@ namespace FBXTestConverter
 			Infos.Add( "" );
 			foreach ( FBX.Scene.Materials.Texture2D Texture in Scene.Textures )
 //				Infos.Add( "ID #" + Texture.ID.ToString( "D3" ) + " URL=" + Path.GetFileNameWithoutExtension( Texture.URL ) );
-				Infos.Add( "\"" + @"D:\\Workspaces\\Arkane\\TexturesPOM\\" + Path.GetFileNameWithoutExtension( Texture.URL ) + ".pom\"," );
+				Infos.Add( "\"" + @"..\\Arkane\\TexturesPOM\\" + Path.GetFileNameWithoutExtension( Texture.URL ) + ".pom\"," );
 			Infos.Add( "" );
 
 			Infos.Add( "=============================" );
