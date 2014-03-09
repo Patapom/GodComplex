@@ -33,6 +33,7 @@ protected:	// NESTED TYPES
 	{
 		NjFloat3	Ambient;
 		U32			ShowIndirect;
+		U32			ShowOnlyIndirect;
  	};
 
 	struct CBScene

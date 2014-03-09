@@ -11,6 +11,7 @@ cbuffer	cbGeneral	: register( b8 )
 {
 	float3		_Ambient;		// Default ambient if no indirect is being used
 	bool		_ShowIndirect;
+	bool		_ShowOnlyIndirect;
 };
 
 struct	VS_IN
@@ -199,7 +200,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 //	float3	Indirect = DiffuseAlbedo * EvaluateSH( _In.Normal, SHIndirect );
 
 
-	AccumDiffuse *= 1.0;
+	AccumDiffuse *= _ShowOnlyIndirect ? 1.0 : 0.0;
 //	Indirect *= _ShowIndirect ? 1.0 : 0.0;
 
 	if ( !_ShowIndirect )
