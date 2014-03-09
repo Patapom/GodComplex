@@ -2,8 +2,8 @@
 #include "EffectGlobalIllum2.h"
 
 
-#define	LOAD_PROBES	// Define this to load probes instead of computing them
-
+#define	LOAD_PROBES			// Define this to load probes instead of computing them
+#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene
 
 // Scene selection (also think about changing the scene in the .RC!)
 //#define SCENE_PATH	".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_1Probe\\"
@@ -17,36 +17,25 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
-#if 0
-	D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { NULL, NULL } };
- 	CHECK_MATERIAL( m_pMatRender = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros ), 1 );
+	{
+ScopedForceMaterialsLoadFromBinary		bisou;
 
-	D3D_SHADER_MACRO	pMacros2[] = { { "EMISSIVE", "1" }, { NULL, NULL } };
-	CHECK_MATERIAL( m_pMatRenderEmissive = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros2 ), 2 );
- 	CHECK_MATERIAL( m_pMatRenderLights = CreateMaterial( IDR_SHADER_GI_RENDER_LIGHTS, "./Resources/Shaders/GIRenderLights.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
- 	CHECK_MATERIAL( m_pMatRenderDebugProbes = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
- 	CHECK_MATERIAL( m_pMatRenderDebugProbesNetwork = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3::DESCRIPTOR, "VS_Network", "GS_Network", "PS_Network" ), 5 );
- 	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
- 	CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 7 );
- 	CHECK_MATERIAL( m_pMatRenderShadowMap = CreateMaterial( IDR_SHADER_GI_RENDER_SHADOW_MAP, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL ), 8 );
- 	CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
+		D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { NULL, NULL } };
+ 		CHECK_MATERIAL( m_pMatRender = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros ), 1 );
 
-	// Compute Shaders
- 	CHECK_MATERIAL( m_pCSUpdateProbe = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 20 );
-#else
- 	CHECK_MATERIAL( m_pMatRender = Material::CreateFromBinaryBlob( _Device, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL, NULL, "PS" ), 1 );
-	CHECK_MATERIAL( m_pMatRenderEmissive = Material::CreateFromBinaryBlob( _Device, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL, NULL, "PS" ), 2 );
- 	CHECK_MATERIAL( m_pMatRenderLights = Material::CreateFromBinaryBlob( _Device, "./Resources/Shaders/GIRenderLights.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, NULL, NULL, "PS" ), 3 );
- 	CHECK_MATERIAL( m_pMatRenderDebugProbes = Material::CreateFromBinaryBlob( _Device, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, NULL, NULL, "PS" ), 4 );
- 	CHECK_MATERIAL( m_pMatRenderDebugProbesNetwork = Material::CreateFromBinaryBlob( _Device, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3::DESCRIPTOR, "VS_Network", NULL, NULL, "GS_Network", "PS_Network" ), 5 );
- 	CHECK_MATERIAL( m_pMatRenderCubeMap = Material::CreateFromBinaryBlob( _Device, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL, NULL, "PS" ), 6 );
- 	CHECK_MATERIAL( m_pMatRenderNeighborProbe = Material::CreateFromBinaryBlob( _Device, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, NULL, NULL, "PS" ), 7 );
- 	CHECK_MATERIAL( m_pMatRenderShadowMap = Material::CreateFromBinaryBlob( _Device, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL, NULL, NULL ), 8 );
- 	CHECK_MATERIAL( m_pMatPostProcess = Material::CreateFromBinaryBlob( _Device, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, NULL, NULL, "PS" ), 10 );
+		D3D_SHADER_MACRO	pMacros2[] = { { "EMISSIVE", "1" }, { NULL, NULL } };
+		CHECK_MATERIAL( m_pMatRenderEmissive = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros2 ), 2 );
+ 		CHECK_MATERIAL( m_pMatRenderLights = CreateMaterial( IDR_SHADER_GI_RENDER_LIGHTS, "./Resources/Shaders/GIRenderLights.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
+ 		CHECK_MATERIAL( m_pMatRenderDebugProbes = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
+ 		CHECK_MATERIAL( m_pMatRenderDebugProbesNetwork = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3::DESCRIPTOR, "VS_Network", "GS_Network", "PS_Network" ), 5 );
+ 		CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
+ 		CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 7 );
+ 		CHECK_MATERIAL( m_pMatRenderShadowMap = CreateMaterial( IDR_SHADER_GI_RENDER_SHADOW_MAP, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL ), 8 );
+ 		CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
 
-	// Compute Shaders
- 	CHECK_MATERIAL( m_pCSUpdateProbe = ComputeShader::CreateFromBinaryBlob( _Device, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 20 );
-#endif
+		// Compute Shaders
+ 		CHECK_MATERIAL( m_pCSUpdateProbe = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 20 );
+	}
 
 m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
@@ -57,6 +46,8 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 // 		const char*	ppTextureFileNames[] = {
 // 			"./Resources/Scenes/GITest1/pata_diff_colo.pom",
 // 		};
+
+#ifndef	USE_WHITE_TEXTURES
 
 		const char*	ppTextureFileNames[] = {
 "..\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_d.pom",
@@ -182,6 +173,15 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 			TextureFilePOM	POM( pTextureFileName );
 			m_ppTextures[TextureIndex] = new Texture2D( _Device, POM );
 		}
+
+#else	//#ifndef	USE_WHITE_TEXTURES
+		m_TexturesCount = 1;
+		m_ppTextures = new Texture2D*[m_TexturesCount];
+
+		TextureBuilder	White( 1, 1 );
+		White.Clear( Pixel( NjFloat4( 1, 1, 1, 1 ) ) );
+		m_ppTextures[0] = White.CreateTexture( PixelFormatRGBA8_sRGB::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB );
+#endif
 	}
 
 	// Create the shadow map
@@ -602,7 +602,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	for ( int i=0; i < 9; i++ )
 		m_pCB_UpdateProbes->m.AmbientSH[i] = NjFloat4( pSHAmbient[i], 0 );	// Update one by one because of float3 padding
 
-	m_pCB_UpdateProbes->m.AmbientSH[8].w = m_CachedCopy.BounceFactorSun;
+	m_pCB_UpdateProbes->m.AmbientSH[8].w = m_CachedCopy.BounceFactorSun;	// Last padding hides one of our variables in its W component...
 	m_pCB_UpdateProbes->m.SkyBoost = m_CachedCopy.BounceFactorSky;
 	m_pCB_UpdateProbes->m.DynamicLightsBoost = m_CachedCopy.BounceFactorPoint;
 	m_pCB_UpdateProbes->m.StaticLightingBoost = m_CachedCopy.EnableStaticLighting != 0 ? m_CachedCopy.BounceFactorStaticLights : 0.0f;
@@ -862,14 +862,6 @@ static void	CopyProbeNetworkConnection( int _EntryIndex, EffectGlobalIllum2::Run
 
 void	EffectGlobalIllum2::PreComputeProbes()
 {
-	const float		Z_INFINITY = 1e6f;
-	const float		Z_INFINITY_TEST = 0.99f * Z_INFINITY;
-
-				pRTCubeMap = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 4, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain albedo (cube 0) + (normal + distance) (cube 1) + (static lighting + emissive surface index) (cube 2) + Probe IDs (cube 3)
-	Texture2D*	pRTCubeMapDepth = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
-	Texture2D*	pRTCubeMapStaging = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 4, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );
-
-
 	//////////////////////////////////////////////////////////////////////////
 	// Allocate probes
 	m_ProbesCount = 0;
@@ -1077,6 +1069,14 @@ void	EffectGlobalIllum2::PreComputeProbes()
 	}
 
 #else	// Compute probes instead
+
+	const float		Z_INFINITY = 1e6f;
+	const float		Z_INFINITY_TEST = 0.99f * Z_INFINITY;
+
+				pRTCubeMap = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 4, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain albedo (cube 0) + (normal + distance) (cube 1) + (static lighting + emissive surface index) (cube 2) + Probe IDs (cube 3)
+	Texture2D*	pRTCubeMapDepth = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
+	Texture2D*	pRTCubeMapStaging = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 4, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Prepare the cube map face transforms
@@ -1326,9 +1326,6 @@ Probe.pSHBounceStatic[i] = NjFloat3::Zero;
 
 	delete pCBCubeMapCamera;
 
-#endif
-
-
 	//////////////////////////////////////////////////////////////////////////
 	// Release
 #if 1
@@ -1342,6 +1339,9 @@ pRTCubeMap->SetPS( 64 );
 
 //### Keep it for debugging!
 // 	delete pRTCubeMap;
+
+
+#endif
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1680,8 +1680,12 @@ void*	EffectGlobalIllum2::TagTexture( const Scene& _Owner, Scene::Material::Text
 
 //return m_ppTextures[0];
 
+#ifndef	USE_WHITE_TEXTURES
 	ASSERT( int(_Texture.m_ID) < m_TexturesCount, "Unsupported texture!" );
 	return m_ppTextures[_Texture.m_ID];
+#else
+	return m_ppTextures[0];
+#endif
 }
 
 void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, Scene::Node& _Node )

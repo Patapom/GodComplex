@@ -130,6 +130,11 @@ private:	// FIELDS
 #endif
 
 
+public:
+	static bool				ms_LoadFromBinary;	// A flag you can set to force loading from binary files without having to write a specific code for that
+												// Use the helper class ScopedForceMaterialsLoadFromBinary below
+
+
 public:	 // PROPERTIES
 
 	bool				HasErrors() const	{ return m_bHasErrors; }
@@ -234,3 +239,9 @@ public:
 	void			ForceRecompile();	// Called externally by the IncludesManager if an include file was changed
 };
 
+class	ScopedForceMaterialsLoadFromBinary
+{
+public:
+	ScopedForceMaterialsLoadFromBinary()	{ Material::ms_LoadFromBinary = true; }
+	~ScopedForceMaterialsLoadFromBinary()	{ Material::ms_LoadFromBinary = false; }
+};

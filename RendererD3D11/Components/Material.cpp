@@ -8,6 +8,7 @@
 #include "D3Dcompiler.h"
 #include "D3D11Shader.h"
 
+bool	Material::ms_LoadFromBinary = false;
 
 Material::Material( Device& _Device, const char* _pShaderFileName, const IVertexFormatDescriptor& _Format, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride )
 	: Component( _Device )
@@ -326,6 +327,10 @@ if ( m_pEntryPointPS != NULL && *m_pEntryPointPS == 1 )
 
 ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget, ID3DInclude* _pInclude, bool _bComputeShader )
 {
+	// Check if we're forced to load from binary...
+	if ( ms_LoadFromBinary )
+		return LoadBinaryBlob( _pShaderFileName, _pEntryPoint );
+
 	ID3DBlob*   pCodeText;
 	ID3DBlob*   pCode;
 	ID3DBlob*   pErrors;
@@ -977,12 +982,12 @@ ID3DBlob*	Material::LoadBinaryBlob( const char* _pShaderFileName, const char* _p
 	char	pFinalShaderName[1024];
 	sprintf_s( pFinalShaderName, 1024, "%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, _pEntryPoint );
 
-	// Create the binary file
+	// Load the binary file
 	FILE*	pFile;
 	fopen_s( &pFile, pFinalShaderName, "rb" );
 	ASSERT( pFile != NULL, "Can't open binary shader file! (did you compile the shader at least once?)" );
 
-	// Write the entry point's length
+	// Read the entry point's length
 	int	Length;
 	fread_s( &Length, sizeof(int), sizeof(int), 1, pFile );
 
@@ -999,7 +1004,7 @@ ID3DBlob*	Material::LoadBinaryBlob( const char* _pShaderFileName, const char* _p
 	ID3DBlob*	pResult = NULL;
 	D3DCreateBlob( BlobSize, &pResult );
 
-	// Write the blob's content
+	// Read the blob's content
 	LPVOID	pContent = pResult->GetBufferPointer();
 	fread_s( pContent, BlobSize, 1, BlobSize, pFile );
 
