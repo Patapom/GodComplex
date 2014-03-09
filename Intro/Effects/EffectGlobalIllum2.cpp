@@ -18,10 +18,13 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
 	{
-ScopedForceMaterialsLoadFromBinary		bisou;
-
+//ScopedForceMaterialsLoadFromBinary		bisou;
 		D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { NULL, NULL } };
  		CHECK_MATERIAL( m_pMatRender = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros ), 1 );
+
+	}
+	{
+ScopedForceMaterialsLoadFromBinary		bisou;
 
 		D3D_SHADER_MACRO	pMacros2[] = { { "EMISSIVE", "1" }, { NULL, NULL } };
 		CHECK_MATERIAL( m_pMatRenderEmissive = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros2 ), 2 );
@@ -178,9 +181,11 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 		m_TexturesCount = 1;
 		m_ppTextures = new Texture2D*[m_TexturesCount];
 
+		const float	Albedo = 0.5f;
+
 		TextureBuilder	White( 1, 1 );
-		White.Clear( Pixel( NjFloat4( 1, 1, 1, 1 ) ) );
-		m_ppTextures[0] = White.CreateTexture( PixelFormatRGBA8_sRGB::DESCRIPTOR, TextureBuilder::CONV_RGBA_sRGB );
+		White.Clear( Pixel( NjFloat4( Albedo, Albedo, Albedo, 1 ) ) );
+		m_ppTextures[0] = White.CreateTexture( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA );
 #endif
 	}
 
