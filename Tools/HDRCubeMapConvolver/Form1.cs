@@ -259,7 +259,7 @@ namespace TestGradientPNG
 
 						//
 						Vector4D	Color = m_CubeFaces[CubeFaceIndex][X,Y];
-						float		Scale = (float) Math.Exp( 3.9120230054281460586187507879106 * Color.w );
+						float		Scale = (float) Math.Exp( 3.9120230054281460586187507879106 * Color.w );		// HDR unpacking
 
 						Scale *= SolidAngle;
 
@@ -493,8 +493,7 @@ namespace TestGradientPNG
 		///		Mip = (-0.5040552688878546 * m^2 + 1.3331290497744692 * m + 0.0003474660443456835) * (N-3)		(3)
 		/// 
 		/// 
-		/// In practice, increasing the aperture angle linearly doesn't give enough precision for low roughnesses so we prefer a qudratic increase
-		///  to give more precision to low roughness/angles, so eq. (3) becomes:
+		/// In practice, increasing the aperture angle linearly doesn't give enough precision for low roughnesses so we prefer a quadratic increase instead, so eq. (3) becomes:
 		/// 
 		///		.---------------------------------------------------------------------------------------------------------------.
 		///		|	Mip = sqrt( (-0.5040552688878546 * m^2 + 1.3331290497744692 * m + 0.0003474660443456835) / 0.834 ) * (N-3)	|	(4)
