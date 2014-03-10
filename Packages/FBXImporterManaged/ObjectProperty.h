@@ -61,6 +61,7 @@ namespace FBXImporter
 		property cli::array<Texture^>^	Textures
 		{
 			cli::array<Texture^>^	get()	{ return m_Textures; }
+			void	set( cli::array<Texture^>^ value )	{ m_Textures = value; }
 		}
 
 		property cli::array<AnimationTrack^>^	AnimTracks

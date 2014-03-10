@@ -139,12 +139,13 @@ template<typename T> U32	DictionaryString<T>::Hash( U32 _Key )
 
 template<typename T> void	DictionaryString<T>::ForEach( VisitorDelegate _pDelegate, void* _pUserData )
 {
+	int	EntryIndex = 0;
 	for ( int i=0; i < m_Size; i++ )
 	{
 		Node*	pNode = m_ppTable[i];
 		while ( pNode != NULL )
 		{
-			(*_pDelegate)( pNode->Value, _pUserData );
+			(*_pDelegate)( EntryIndex++, pNode->Value, _pUserData );
 			pNode = pNode->pNext;
 		}
 	}
@@ -267,12 +268,13 @@ template<typename T> void	Dictionary<T>::Remove( U32 _Key )
 
 template<typename T> void	Dictionary<T>::ForEach( VisitorDelegate _pDelegate, void* _pUserData )
 {
+	int	EntryIndex = 0;
 	for ( int i=0; i < m_Size; i++ )
 	{
 		Node*	pNode = m_ppTable[i];
 		while ( pNode != NULL )
 		{
-			(*_pDelegate)( pNode->Value, _pUserData );
+			(*_pDelegate)( EntryIndex++, pNode->Value, _pUserData );
 			pNode = pNode->pNext;
 		}
 	}

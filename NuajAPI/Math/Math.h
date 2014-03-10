@@ -39,8 +39,8 @@ static const float			GOLDEN_RATIO = 1.6180339887498948482045868343656f;	// Phi =
 static const float			ALMOST_EPSILON = 1e-6f;
 
 #define MAX_FLOAT			3.40282e+038f
-#define NUAJRAD2DEG( a )	(57.295779513082320876798154814105f * (a))
-#define NUAJDEG2RAD( a )	(0.01745329251994329576923690768489f * (a))
+#define RAD2DEG( a )		(57.295779513082320876798154814105f * (a))
+#define DEG2RAD( a )		(0.01745329251994329576923690768489f * (a))
 #define NUAJBYTE2FLOAT( b )	((b) / 255.0f)
 template<class T> inline T	MIN( const T& a, const T& b )					{ return a < b ? a : b;  }
 template<class T> inline T	MAX( const T& a, const T& b )					{ return a > b ? a : b;  }

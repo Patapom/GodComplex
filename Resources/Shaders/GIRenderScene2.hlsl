@@ -7,9 +7,11 @@
 #include "Inc/ShadowMap.hlsl"
 #include "Inc/GI.hlsl"
 
-cbuffer	cbGeneral	: register( b9 )
+cbuffer	cbGeneral	: register( b8 )
 {
+	float3		_Ambient;		// Default ambient if no indirect is being used
 	bool		_ShowIndirect;
+	bool		_ShowOnlyIndirect;
 };
 
 struct	VS_IN
@@ -50,7 +52,7 @@ PS_IN	VS( VS_IN _In )
 	Out.Position = WorldPosition.xyz;
 	Out.Normal = mul( float4( _In.Normal, 0.0 ), _Local2World ).xyz;
 	Out.Tangent = mul( float4( _In.Tangent, 0.0 ), _Local2World ).xyz;
-	Out.BiTangent = mul( float4( _In.BiTangent, 0.0 ), _Local2World ).xyz;
+	Out.BiTangent = mul( float4( -_In.BiTangent, 0.0 ), _Local2World ).xyz;
 	Out.UV = _In.UV;
 
 	float3	Normal = normalize( Out.Normal );
@@ -69,6 +71,9 @@ PS_IN	VS( VS_IN _In )
 		float	Distance2Probe = length( ToProbe );
 				ToProbe /= Distance2Probe;
 
+		float	ProbeRadius = 2.0 * Probe.Radius;
+//		float	ProbeRadius = 1.0 * Probe.Radius;
+
 		// Weight by distance
 // 		const float	MEAN_HARMONIC_DISTANCE = 4.0;
 // 		const float	WEIGHT_AT_DISTANCE = 0.01;
@@ -78,9 +83,10 @@ PS_IN	VS( VS_IN _In )
 //		float	ProbeWeight = pow( max( 0.01, Distance2Probe ), -3.0 );
 
 		// Weight based on probe's max distance
- 		const float	WEIGHT_AT_DISTANCE = 0.01;
- 		const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (Probe.Radius * Probe.Radius);
-		float	ProbeWeight = 2.0 * exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
+		const float	WEIGHT_AT_DISTANCE = 0.05;
+ 		const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (ProbeRadius * ProbeRadius);
+//###		float	ProbeWeight = 2.0 * exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
+		float	ProbeWeight = 10.0 * exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
 
 		// Also weight by orientation to avoid probes facing away from us
 		ProbeWeight *= saturate( lerp( -0.1, 1.0, 0.5 * (1.0 + dot( Normal, ToProbe )) ) );
@@ -88,10 +94,11 @@ PS_IN	VS( VS_IN _In )
 
 //ProbeWeight = 1;
 
-// if ( ProbeIndex == 1 )
+// if ( ProbeIndex == 17 )
 // {
 // 	Out.SH0 = ProbeWeight;
 // 	Out.SH1 = Probe.Radius;
+// 	Out.SH2 = Probe.Position;
 // 	return Out;
 // }
 
@@ -127,7 +134,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 #if EMISSIVE
 
 //return float4( 1, 0, 0, 1 );
-	return float4( _EmissiveColor, 1 );
+	return float4( 0.1 * _EmissiveColor, 1 );
 
 #else
 
@@ -150,30 +157,36 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 //return 1.0 * _ShadowMap.SampleLevel( LinearClamp, 0.5 * (1.0 + ShadowMapPos.xy), 0.0 ).x;
 //return float4( ShadowMapPos.xy, 0, 0 );
 
+	float3	tsNormal = _HasNormalTexture ? 2.0 * (_TexNormal.Sample( LinearWrap, _In.UV.xy ).xyz - 0.5) : float3( 0, 0, 1 );
+
+//tsNormal = float3( 0, 0, 1 );
+
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Compute direct lighting
 	float3	View = normalize( _In.Position - _Camera2World[3].xyz );
 
-	float3	Normal = normalize( _In.Normal );
-	float3	Tangent = normalize( _In.Tangent );
-	float3	BiTangent = normalize( _In.BiTangent );
+	float3	VertexNormal = normalize( _In.Normal );
+	float3	VertexTangent = normalize( _In.Tangent );
+	float3	VertexBiTangent = normalize( _In.BiTangent );
+
+	float3	Normal = normalize( tsNormal.x * VertexTangent + tsNormal.y * VertexBiTangent + tsNormal.z * VertexNormal );
 
 	float3	AccumDiffuse = 0.0;
 	float3	AccumSpecular = 0.0;
 
 	// Process static lights
-	for ( int LightIndex=0; LightIndex < _StaticLightsCount; LightIndex++ )
+	for ( uint LightIndex=0; LightIndex < _StaticLightsCount; LightIndex++ )
 	{
 		LightStruct	LightSource = _SBLightsStatic[LightIndex];
-		AccumDiffuse += AccumulateLight( _In.Position, _In.Normal, Normal, LightSource );
+		AccumDiffuse += AccumulateLight( _In.Position, Normal, VertexNormal, VertexTangent, LightSource );
 	}
 
 	// Process dynamic lights
-	for ( int LightIndex=0; LightIndex < _DynamicLightsCount; LightIndex++ )
+	for ( uint LightIndex=0; LightIndex < _DynamicLightsCount; LightIndex++ )
 	{
 		LightStruct	LightSource = _SBLightsDynamic[LightIndex];
-		AccumDiffuse += AccumulateLight( _In.Position, _In.Normal, Normal, LightSource );
+		AccumDiffuse += AccumulateLight( _In.Position, Normal, VertexNormal, VertexTangent, LightSource );
 	}
 
 	AccumDiffuse *= DiffuseAlbedo;
@@ -186,12 +199,14 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	float3	Indirect = DiffuseAlbedo * EvaluateSHIrradiance( _In.Normal, SHIndirect );
 //	float3	Indirect = DiffuseAlbedo * EvaluateSH( _In.Normal, SHIndirect );
 
-//return float4( _In.SH0, 0 );
 
-AccumDiffuse *= 1.0;
-Indirect *= _ShowIndirect ? 1.0 : 0.0;
+	AccumDiffuse *= _ShowOnlyIndirect ? 1.0 : 0.0;
+//	Indirect *= _ShowIndirect ? 1.0 : 0.0;
 
-//Indirect *= _In.__Position.x < 1280.0/2.0 ? 1.0 : 0.0;
+	if ( !_ShowIndirect )
+	{	// Dummy dull uniform ambient sky
+		Indirect = _Ambient;
+	}
 
 	return float4( Indirect + AccumDiffuse, 1 );
 

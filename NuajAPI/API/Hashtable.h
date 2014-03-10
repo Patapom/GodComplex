@@ -20,7 +20,7 @@
 // 
 // the hashtable uses basic linked-lists for handling collisions
 // 
-#define HT_DEFAULT_SIZE	8192//1 << 13	// Default size if 8Kb
+#define HT_DEFAULT_SIZE	8192//(1 << 13)	// Default size if 8Kb
 #define HT_MAX_KEYLEN	1024
 
 #ifdef _DEBUG
@@ -39,7 +39,7 @@ protected:	// NESTED TYPES
 
 public:
 
-	typedef void	(*VisitorDelegate)( T& _Value, void* _pUserData );
+	typedef void	(*VisitorDelegate)( int _EntryIndex, T& _Value, void* _pUserData );
 
 protected:	// FIELDS
 
@@ -82,7 +82,7 @@ protected:	// NESTED TYPES
 
 public:
 
-	typedef void	(*VisitorDelegate)( T& _Value, void* _pUserData );
+	typedef void	(*VisitorDelegate)( int _EntryIndex, T& _Value, void* _pUserData );
 
 
 protected:	// FIELDS
@@ -100,6 +100,8 @@ public:		// METHODS
 
 	Dictionary( int _Size=HT_DEFAULT_SIZE );
 	~Dictionary();
+
+	int		GetEntriesCount() const		{return m_EntriesCount; }	// Amount of entries in the dictionary
 
 	T*		Get( U32 _Key ) const;				// retrieve entry
 	T&		Add( U32 _Key );					// store entry
@@ -122,7 +124,7 @@ protected:	// NESTED TYPES
  
 public:
 
-	typedef void	(*VisitorDelegate)( void*& _pValue, void* _pUserData );
+	typedef void	(*VisitorDelegate)( int _EntryIndex, void*& _pValue, void* _pUserData );
 
 protected:	// FIELDS
 

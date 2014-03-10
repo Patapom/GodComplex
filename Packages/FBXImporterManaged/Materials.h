@@ -21,31 +21,6 @@ namespace FBXImporter
 
 	public:		// PROPERTIES
 
-	public:		// METHODS
-
-		Material( Scene^ _ParentScene, FbxSurfaceMaterial* _pMaterial ) : BaseObject( _ParentScene, _pMaterial )
-		{
-		}
-	};
-
-	// Default material
-	//
-	public ref class		MaterialDefault : public Material
-	{
-	public:
-
-		MaterialDefault( Scene^ _ParentScene, String^ _Name ) : Material( _ParentScene, NULL )
-		{
-			m_Name = _Name;
-		}
-	};
-
-	// Standard Lambert material
-	//
-	public ref class		MaterialLambert : public Material
-	{
-	public:		// PROPERTIES
-
 		[DescriptionAttribute( "Gets emissive color" )]
 		//
 		property WMath::Vector^		EmissiveColor
@@ -89,19 +64,6 @@ namespace FBXImporter
 		}
 
 
-	public:		// METHODS
-
-		MaterialLambert( Scene^ _ParentScene, FbxSurfaceLambert* _pMaterial ) : Material( _ParentScene, _pMaterial )
-		{
-		}
-	};
-
-	// Standard Lambert material
-	//
-	public ref class		MaterialPhong : public MaterialLambert
-	{
-	public:		// PROPERTIES
-
 		[DescriptionAttribute( "Gets specular color" )]
 		//
 		property WMath::Vector^		SpecularColor
@@ -137,7 +99,40 @@ namespace FBXImporter
 			float				get()	{ return FindProperty( "Shininess" )->AsFloat; }
 		}
 
+	public:		// METHODS
 
+		Material( Scene^ _ParentScene, FbxSurfaceMaterial* _pMaterial ) : BaseObject( _ParentScene, _pMaterial )
+		{
+		}
+	};
+
+	// Default material
+	//
+	public ref class		MaterialDefault : public Material
+	{
+	public:
+
+		MaterialDefault( Scene^ _ParentScene, String^ _Name ) : Material( _ParentScene, NULL )
+		{
+			m_Name = _Name;
+		}
+	};
+
+	// Standard Lambert material
+	//
+	public ref class		MaterialLambert : public Material
+	{
+	public:		// METHODS
+
+		MaterialLambert( Scene^ _ParentScene, FbxSurfaceLambert* _pMaterial ) : Material( _ParentScene, _pMaterial )
+		{
+		}
+	};
+
+	// Standard Lambert material
+	//
+	public ref class		MaterialPhong : public MaterialLambert
+	{
 	public:		// METHODS
 
 		MaterialPhong( Scene^ _ParentScene, FbxSurfacePhong* _pMaterial ) : MaterialLambert( _ParentScene, _pMaterial )

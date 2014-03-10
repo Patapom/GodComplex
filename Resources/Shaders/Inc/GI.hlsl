@@ -23,16 +23,21 @@ StructuredBuffer<LightStruct>	_SBLightsDynamic : register( t8 );
 
 // Structured Buffer with our probes
 // This tiny probe struct is only 120 bytes long!! \o/ ^^
+// UPDATE [2014-03-08]: 128 now, with neighborhood information. Oooh 128! Nice one!
 struct	ProbeStruct
 {
 	float3		Position;
 	float		Radius;
 	float3		SH[9];
+
+	// IDs of our 4 most significant neighbor probes
+	uint2		NeighborIDs;
 };
 StructuredBuffer<ProbeStruct>	_SBProbes : register( t9 );
 
+
 // Scene descriptor
-cbuffer	cbScene	: register( b10 )
+cbuffer	cbScene	: register( b9 )
 {
 	uint		_StaticLightsCount;
 	uint		_DynamicLightsCount;
@@ -40,13 +45,13 @@ cbuffer	cbScene	: register( b10 )
 };
 
 // Object descriptor
-cbuffer	cbObject	: register( b11 )
+cbuffer	cbObject	: register( b10 )
 {
 	float4x4	_Local2World;
 };
 
 // Material descriptor
-cbuffer	cbMaterial	: register( b12 )
+cbuffer	cbMaterial	: register( b11 )
 {
 	uint		_MaterialID;
 	float3		_DiffuseAlbedo;
@@ -59,15 +64,17 @@ cbuffer	cbMaterial	: register( b12 )
 
 	float		_SpecularExponent;
 	uint		_FaceOffset;	// The offset to apply to the object's face index
+	bool		_HasNormalTexture;
 };
 
 // Optional textures associated to the material
 Texture2D<float4>	_TexDiffuseAlbedo : register( t10 );
-Texture2D<float4>	_TexSpecularAlbedo : register( t11 );
+Texture2D<float4>	_TexNormal : register( t11 );
+Texture2D<float4>	_TexSpecularAlbedo : register( t12 );
 
 
 // Computes light's irradiance
-float3	AccumulateLight( float3 _WorldPosition, float3 _WorldNormal, float3 _WorldVertexNormal, LightStruct _LightSource )
+float3	AccumulateLight( float3 _WorldPosition, float3 _WorldNormal, float3 _WorldVertexNormal, float3 _WorldVertexTangent, LightStruct _LightSource )
 {
 	float3	Irradiance;
 	float3	Light;
@@ -92,7 +99,7 @@ float3	AccumulateLight( float3 _WorldPosition, float3 _WorldNormal, float3 _Worl
 		Irradiance = _LightSource.Color;	// Simple!
 
 #if USE_SHADOW_MAP
-		Irradiance *= ComputeShadow( _WorldPosition, _WorldVertexNormal, 0.0 );
+		Irradiance *= ComputeShadowPCF( _WorldPosition, _WorldVertexNormal, _WorldVertexTangent, 0.1 );
 #endif
 	}
 

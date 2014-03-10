@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TestMemoryMappedFiles.Properties {
+namespace ControlPanelClouds.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

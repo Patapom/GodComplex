@@ -27,7 +27,7 @@ void	DrawUtils::SetupSurface( TextureBuilder& _TB )
 
 void	DrawUtils::SetupTransform( float _PivotX, float _PivotY, float _Angle )
 {
-	_Angle = NUAJDEG2RAD( _Angle );
+	_Angle = DEG2RAD( _Angle );
 	float	c = cosf(_Angle), s =sinf(_Angle);
 
 	m_C.Set( _PivotX, _PivotY );
@@ -216,7 +216,7 @@ void	DrawUtils::DrawScratch( const NjFloat2& _Position, const NjFloat2& _Directi
 	m_ContextSCRATCH.U = 0.0f;
 	m_ContextSCRATCH.StepU = _Length / (StepsCount * StepsCount * _StepSize);
 
-	float		StepAngle = NUAJDEG2RAD( _CurveAngle ) * _StepSize;
+	float		StepAngle = DEG2RAD( _CurveAngle ) * _StepSize;
 	NjFloat2	RotX( cosf( StepAngle ), -sinf( StepAngle ) );
 	NjFloat2	RotY( -RotX.y, RotX.x );
 

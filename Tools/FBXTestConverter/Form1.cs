@@ -42,7 +42,9 @@ namespace FBXTestConverter
 		{
 			InitializeComponent();
 
-			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1.fbx" ) );
+			LoadScene( new FileInfo( @"..\..\..\Arkane\City.fbx" ) );
+
+//			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1.fbx" ) );
 //			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1_10Probes.fbx" ) );
 //			LoadScene( new FileInfo( @"..\..\Resources\Scenes\CubeTest.fbx" ) );
 		}
@@ -51,8 +53,11 @@ namespace FBXTestConverter
 		{
 			FBX.SceneLoader.SceneLoader	Loader = new FBX.SceneLoader.SceneLoader();
 
+			FBX.SceneLoader.MaterialsDatabase	Materials = new FBX.SceneLoader.MaterialsDatabase();
+			Materials.BuildFromM2( new DirectoryInfo( @"D:\Workspaces\Arkane\m2" ) );
+
 			FBX.Scene.Scene	Scene = new FBX.Scene.Scene();
-			Loader.Load( _File, Scene );
+			Loader.Load( _File, Scene, 1.0f, Materials );
 
 			// Start writing
 			FileInfo	Target = new FileInfo( Path.Combine( Path.GetDirectoryName( _File.FullName ), Path.GetFileNameWithoutExtension( _File.FullName ) + ".gcx" ) );
@@ -64,7 +69,13 @@ namespace FBXTestConverter
 			List<string>	Infos = new List<string>();
 			Infos.Add( "Textures:" );
 			foreach ( FBX.Scene.Materials.Texture2D Texture in Scene.Textures )
-				Infos.Add( "ID #" + Texture.ID + " URL=" + Texture.URL );
+				Infos.Add( "ID #" + Texture.ID.ToString( "D3" ) + " URL=" + Texture.URL );
+			Infos.Add( "" );
+			Infos.Add( "Texture Flat Names:" );
+			Infos.Add( "" );
+			foreach ( FBX.Scene.Materials.Texture2D Texture in Scene.Textures )
+//				Infos.Add( "ID #" + Texture.ID.ToString( "D3" ) + " URL=" + Path.GetFileNameWithoutExtension( Texture.URL ) );
+				Infos.Add( "\"" + @"..\\Arkane\\TexturesPOM\\" + Path.GetFileNameWithoutExtension( Texture.URL ) + ".pom\"," );
 			Infos.Add( "" );
 
 			Infos.Add( "=============================" );
@@ -91,7 +102,34 @@ namespace FBXTestConverter
 				Infos.Add( "ID #" + Camera.ID + " => " + Camera.Name + " (FOV=" + (Camera.FOV * 180.0f / Math.PI) + ")" );
 			Infos.Add( "" );
 
-			listBoxInfos.Items.AddRange( Infos.ToArray() );
+			if ( Materials != null )
+			{
+				FBX.SceneLoader.MaterialsDatabase.Material[]	QueriedMaterials = Materials.QueriedMaterials;
+
+				List<string>	QueriedTextures = new List<string>();
+
+				Infos.Add( "=============================" );
+				Infos.Add( "Queried database materials:" );
+				foreach ( FBX.SceneLoader.MaterialsDatabase.Material M in QueriedMaterials )
+				{
+					Infos.Add( M.Name );
+
+					if ( M.TextureDiffuse != null )
+						QueriedTextures.Add( "xcopy \"" + M.TextureDiffuse.Replace( '/', '\\' ) + "\" \"..\\POMTextures\\\" /Y/U/S" );
+					if ( M.TextureNormal != null )
+						QueriedTextures.Add( "xcopy \"" + M.TextureNormal.Replace( '/', '\\' ) + "\" \"..\\POMTextures\\\" /Y/U/S" );
+					if ( M.TextureSpecular != null )
+						QueriedTextures.Add( "xcopy \"" + M.TextureSpecular.Replace( '/', '\\' ) + "\" \"..\\POMTextures\\\" /Y/U/S" );
+				}
+				Infos.Add( "" );
+
+				Infos.Add( "=============================" );
+				Infos.Add( "Queried textures:" );
+				Infos.AddRange( QueriedTextures );
+
+			}
+
+			textBoxReport.Lines = Infos.ToArray();
 		}
 
 		private void	SaveGCX( BinaryWriter _W, FBX.Scene.Scene _Scene )
@@ -199,6 +237,9 @@ namespace FBXTestConverter
 			_W.Write( P != null ? P.AsFloat3.Value.X : 0.0f );
 			_W.Write( P != null ? P.AsFloat3.Value.Y : 0.0f );
 			_W.Write( P != null ? P.AsFloat3.Value.Z : 0.0f );
+
+			P = _Material.Find( "NormalTexture" );
+			_W.Write( (ushort) MapMaterial( P != null ? P.AsTexture2D : null ) );
 
 			// Write emissive
 			P = _Material.Find( "EmissiveColor" );

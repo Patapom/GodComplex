@@ -8,6 +8,7 @@ StructuredBuffer*	StructuredBuffer::ms_ppOutputs[D3D11_PS_CS_UAV_REGISTER_COUNT]
 
 StructuredBuffer::StructuredBuffer( Device& _Device, int _ElementSize, int _ElementsCount, bool _bWriteable ) : Component( _Device )
 {
+	ASSERT( _ElementSize > 0, "Buffer must have at least one element!" );
 	ASSERT( (_ElementSize&3)==0, "Element size must be a multiple of 4!" );
 
 	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )

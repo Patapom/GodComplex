@@ -60,11 +60,47 @@ namespace PNG2RAW
 			}
 #else
 			// Convert to POM format (i.e. DirectX format actually)
-			ConvertPOM( new FileInfo( "../../../Resources/Scenes/GITest1/pata_diff_color_small.png" ), new FileInfo( "../../../Resources/Scenes/GITest1/pata_diff_colo.pom" ), true );
+			ConvertPOM( new FileInfo( "Resources/Scenes/GITest1/pata_diff_color_small.png" ), new FileInfo( "Resources/Scenes/GITest1/pata_diff_colo.pom" ), true );
+
+			ConvertPOM( new DirectoryInfo( "../Arkane/Textures" ), new DirectoryInfo( "../Arkane/TexturesPOM" ), "_d;_s" );
+
 #endif
 		}
 
-		static unsafe void	Convert( string _Source, string _Target )
+		static void			ConvertPOM( DirectoryInfo _SourceDir, DirectoryInfo _TargetDir, string _sRGBPattern )
+		{
+			string[]	sRGBPatterns = _sRGBPattern != null ? _sRGBPattern.Split( ';' ) : new string[0];
+			FileInfo[]	Files = _SourceDir.GetFiles( "*.png" );
+			int			FileIndex = 1;
+			foreach ( FileInfo File in Files )
+			{
+				bool	issRGB = false;
+				foreach ( string sRGBPattern in sRGBPatterns )
+				{
+					if ( Path.GetFileNameWithoutExtension( File.FullName ).EndsWith( sRGBPattern, StringComparison.CurrentCultureIgnoreCase ) )
+					{
+						issRGB = true;
+						break;
+					}
+				}
+
+				FileInfo	TargetFile = new FileInfo( Path.Combine( _TargetDir.FullName, Path.GetFileNameWithoutExtension( File.FullName ) + ".pom" ) );
+
+				try
+				{
+					ConvertPOM( File, TargetFile, issRGB );
+					Console.WriteLine( "Converted \"" + File.FullName + "\" => \"" + TargetFile.FullName + "\"... (" + (100 * FileIndex / Files.Length) + "%)" );
+				}
+				catch ( Exception _e )
+				{
+					Console.WriteLine( "An error occurred while converting \"" + File.FullName + "\" => \"" + TargetFile.FullName + "\": " + _e.Message );
+				}
+
+				FileIndex++;
+			}
+		}
+
+		static unsafe void	ConvertRAW( string _Source, string _Target )
 		{
 			using ( Bitmap B = Image.FromFile( _Source ) as Bitmap )
 			{

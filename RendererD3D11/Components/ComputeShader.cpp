@@ -572,7 +572,7 @@ const char*	ComputeShader::GetShaderPath( const char* _pShaderFileName ) const
 
 DictionaryString<ComputeShader*>	ComputeShader::ms_WatchedShaders;
 
-static void	WatchShader( ComputeShader*& _Value, void* _pUserData )	{ _Value->WatchShaderModifications(); }
+static void	WatchShader( int _EntryIndex, ComputeShader*& _Value, void* _pUserData )	{ _Value->WatchShaderModifications(); }
 
 void		ComputeShader::WatchShadersModifications()
 {

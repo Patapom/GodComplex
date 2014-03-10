@@ -60,6 +60,7 @@ namespace FBX.SceneLoader
 		protected FBX.Scene.Scene				m_Scene = null;
 //		protected Cirrus.MaterialMap			m_MaterialMap = null;
 		protected float							m_ScaleFactor = 1.0f;
+		protected MaterialsDatabase				m_MaterialsDatabase = null;
 
 		// The list of material mapping from FBX materials to Cirrus render technique able to handle the materials
 //		protected Dictionary<FBXImporter.Material,Cirrus.ITechniqueSupportsObjects>	m_Material2Technique = new Dictionary<FBXImporter.Material,Cirrus.ITechniqueSupportsObjects>();
@@ -297,7 +298,7 @@ namespace FBX.SceneLoader
 		/// <param name="_Scene">The cirrus scene into which we should store the data</param>
 		public void	Load( FileInfo _FileName, FBX.Scene.Scene _Scene )
 		{
-			Load( _FileName, _Scene, 1.0f );
+			Load( _FileName, _Scene, 1.0f, null );
 		}
 
 		/// <summary>
@@ -310,7 +311,8 @@ namespace FBX.SceneLoader
 		/// will want to use a scale factor of 0.01.
 		/// FBX offers the possibility of scaling but does a shitty job at it as it doesn't even rescale other dimensions like near/far clips or ranges for lights
 		///  and camera, which plain sucks.</param>
-		public void	Load( FileInfo _FileName, FBX.Scene.Scene _Scene, float _ScaleFactor )
+		/// <param name="_Materials">An optional materials database containing informations about materials required by the scene</param>
+		public void	Load( FileInfo _FileName, FBX.Scene.Scene _Scene, float _ScaleFactor, MaterialsDatabase _Materials )
 		{
 			if ( _FileName == null )
 				throw new Exception( "Invalid file name!" );
@@ -322,6 +324,7 @@ namespace FBX.SceneLoader
 			m_Scene = _Scene;
 			m_TempMesh2FinalMesh.Clear();
 			m_ScaleFactor = _ScaleFactor;
+			m_MaterialsDatabase = _Materials;
 
 			FBXImporter.Scene	FBXScene = null;
 			try
@@ -362,22 +365,60 @@ namespace FBX.SceneLoader
 		{
 			m_Material2Parameters.Clear();
 
-			foreach ( FBXImporter.Material Material in _Materials )
+			foreach ( FBXImporter.Material Mat in _Materials )
 			{
 				Scene.Materials.MaterialParameters	MatParams = null;
 
 // DEBUG
-// if ( Material.Name == "sp_00_svod" )
+// if ( Mat.Name == "sp_00_svod" )
 // 	MatParams = null;
 // DEBUG
 
-				if ( Material is FBXImporter.MaterialHardwareShader )
+				if ( m_MaterialsDatabase != null )
+				{	// Handle the special case of scenes that were exported as OBJ format and whos material informations lie in the diffuse color "texture"
+					FBXImporter.ObjectProperty	DiffuseColorProperty = Mat.FindProperty( "DiffuseColor" );
+					if ( DiffuseColorProperty.Textures.Length > 0 )
+					{
+						string	PseudoTextureName = DiffuseColorProperty.Textures[0].AbsoluteFileName;	// Actually a material name!
+						MaterialsDatabase.Material	MatOverride = m_MaterialsDatabase.FindByName( PseudoTextureName );
+						if ( MatOverride != null )
+						{	// Replace this material's textures by the actual material's textures (does it make sense? ^^)
+							if ( MatOverride.TextureDiffuse != null )
+							{
+								FBXImporter.ObjectProperty	TextureProperty = Mat.FindProperty( "DiffuseColor" );
+								if ( TextureProperty != null )
+								{
+									TextureProperty.Textures = new FBXImporter.Texture[] { new FBXImporter.Texture( Mat.ParentScene , MatOverride.TextureDiffuse, MatOverride.TextureDiffuse, MatOverride.TextureDiffuse ) };
+								}
+							}
+							if ( MatOverride.TextureNormal != null )
+							{
+								FBXImporter.ObjectProperty	TextureProperty = Mat.FindProperty( "NormalMap" );
+								if ( TextureProperty != null )
+								{
+									TextureProperty.Textures = new FBXImporter.Texture[] { new FBXImporter.Texture( Mat.ParentScene , MatOverride.TextureNormal, MatOverride.TextureNormal, MatOverride.TextureNormal ) };
+								}
+							}
+							if ( MatOverride.TextureSpecular != null )
+							{
+								FBXImporter.ObjectProperty	TextureProperty = Mat.FindProperty( "SpecularColor" );
+								if ( TextureProperty != null )
+								{
+									TextureProperty.Textures = new FBXImporter.Texture[] { new FBXImporter.Texture( Mat.ParentScene , MatOverride.TextureSpecular, MatOverride.TextureSpecular, MatOverride.TextureSpecular ) };
+								}
+							}
+						}
+					}
+				}
+
+				// Specialize the material
+				if ( Mat is FBXImporter.MaterialHardwareShader )
 				{
-					FBXImporter.MaterialHardwareShader	SpecificMaterial = Material as FBXImporter.MaterialHardwareShader;
+					FBXImporter.MaterialHardwareShader	HardwareMaterial = Mat as FBXImporter.MaterialHardwareShader;
 
-					MatParams = m_Scene.CreateMaterialParameters( Material.Name, SpecificMaterial.RelativeURL );
+					MatParams = m_Scene.CreateMaterialParameters( Mat.Name, HardwareMaterial.RelativeURL );
 
-					foreach ( FBXImporter.MaterialHardwareShader.TableEntry Entry in SpecificMaterial.ShaderEntries )
+					foreach ( FBXImporter.MaterialHardwareShader.TableEntry Entry in HardwareMaterial.ShaderEntries )
 					{
 						switch ( Entry.TypeName )
 						{
@@ -403,87 +444,98 @@ namespace FBX.SceneLoader
 								MatParams.CreateParameter( Entry.Name, Scene.Materials.MaterialParameters.PARAMETER_TYPE.MATRIX4 ).AsMatrix4.Value = Entry.Value as Matrix4x4;
 								break;
 							case "Texture":
-								CreateTextureParameter( Material, Entry.Name, MatParams, Entry.Name );
+								CreateTextureParameter( Mat, Entry.Name, MatParams, Entry.Name );
 								break;
 						}
 					}
+
+					m_Material2Parameters[Mat] = MatParams;
+					continue;
 				}
-				else if ( Material is FBXImporter.MaterialPhong )
+
+				FBXImporter.Material	SpecificMaterial= null;
+
+				if ( Mat is FBXImporter.MaterialPhong )
 				{
-					FBXImporter.MaterialPhong	SpecificMaterial = Material as FBXImporter.MaterialPhong;
-
-					MatParams = m_Scene.CreateMaterialParameters( Material.Name, "Phong" );
-
-					// Lambert parameters
-					MatParams.CreateParameter( "AmbientColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.AmbientColor;
-					CreateTextureParameter( Material, "AmbientColor", MatParams, "AmbientTexture" );
-					MatParams.CreateParameter( "AmbientFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.AmbientFactor;
-
-					MatParams.CreateParameter( "DiffuseColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.DiffuseColor;
-					MatParams.CreateParameter( "DiffuseFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.DiffuseFactor;
-					bool	bHasDiffuseTexture = CreateTextureParameter( Material, "DiffuseColor", MatParams, "DiffuseTexture", "TransparentColor" );
-					MatParams.CreateParameter( "HasDiffuseTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasDiffuseTexture;
-
-					MatParams.CreateParameter( "EmissiveColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.EmissiveColor;
-					MatParams.CreateParameter( "EmissiveFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.EmissiveFactor;
-					CreateTextureParameter( Material, "EmissiveColor", MatParams, "EmissiveTexture" );
-
-					float	fOpacity = (float) SpecificMaterial.FindProperty( "Opacity" ).Value;
-					MatParams.CreateParameter( "Opacity", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = fOpacity;
-//					MatParams.IsOpaque = fOpacity >= 1.0f;
-
-					bool	bHasNormalTexture = CreateTextureParameter( Material, "Bump", MatParams, "NormalTexture" );
-					MatParams.CreateParameter( "HasNormalTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasNormalTexture;
-
-					// Phong parameters
-					MatParams.CreateParameter( "ReflectionColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.ReflectionColor;
-					CreateTextureParameter( Material, "ReflectionColor", MatParams, "ReflectionTexture" );
-					MatParams.CreateParameter( "ReflectionFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.ReflectionFactor;
-
-					MatParams.CreateParameter( "Shininess", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.Shininess;
-					MatParams.CreateParameter( "SpecularColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.SpecularColor;
-					MatParams.CreateParameter( "SpecularFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.SpecularFactor;
-					bool	bHasSpecularTexture = CreateTextureParameter( Material, "SpecularFactor", MatParams, "SpecularTexture" );
-					MatParams.CreateParameter( "HasSpecularTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasSpecularTexture;
+					SpecificMaterial = Mat as FBXImporter.MaterialPhong;
+					MatParams = m_Scene.CreateMaterialParameters( Mat.Name, "Phong" );
 				}
-				else if ( Material is FBXImporter.MaterialLambert )
+				else if ( Mat is FBXImporter.MaterialLambert )
 				{
-					FBXImporter.MaterialLambert	SpecificMaterial = Material as FBXImporter.MaterialLambert;
-
-					MatParams = m_Scene.CreateMaterialParameters( Material.Name, "Lambert" );
-
-					// Lambert parameters
-					MatParams.CreateParameter( "AmbientColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.AmbientColor;
-					CreateTextureParameter( Material, "AmbientColor", MatParams, "AmbientTexture" );
-					MatParams.CreateParameter( "AmbientFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.AmbientFactor;
-
-					MatParams.CreateParameter( "DiffuseColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.DiffuseColor;
-					MatParams.CreateParameter( "DiffuseFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.DiffuseFactor;
-					bool	bHasDiffuseTexture = CreateTextureParameter( Material, "DiffuseColor", MatParams, "DiffuseTexture", "TransparentColor" );
-					MatParams.CreateParameter( "HasDiffuseTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasDiffuseTexture;
-
-					MatParams.CreateParameter( "EmissiveColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.EmissiveColor;
-					MatParams.CreateParameter( "EmissiveFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.EmissiveFactor;
-					CreateTextureParameter( Material, "EmissiveColor", MatParams, "EmissiveTexture" );
-
-					FBXImporter.ObjectProperty	OpacityProp = SpecificMaterial.FindProperty( "Opacity" );
-					float	fOpacity = OpacityProp != null ? (float) OpacityProp.Value : 1.0f;
-					MatParams.CreateParameter( "Opacity", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = fOpacity;
-//					MatParams.IsOpaque = fOpacity >= 1.0f;
-
-					bool	bHasNormalTexture = CreateTextureParameter( Material, "Bump", MatParams, "NormalTexture" );
-					MatParams.CreateParameter( "HasNormalTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasNormalTexture;
+					SpecificMaterial = Mat as FBXImporter.MaterialLambert;
+					MatParams = m_Scene.CreateMaterialParameters( Mat.Name, "Lambert" );
 				}
 				else
 					continue;	// Unrecognized hence unsupported material type...
 
-// 				Cirrus.ITechniqueSupportsObjects	RT = m_MaterialMap.MapToTechnique( MatParams );
-// 				if ( RT == null )
-// 					continue;	// Failed to find a suitable technique for that material...
+// 				// Lambert parameters
+// 				MatParams.CreateParameter( "AmbientColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.AmbientColor;
+// 				CreateTextureParameter( Mat, "AmbientColor", MatParams, "AmbientTexture" );
+// 				MatParams.CreateParameter( "AmbientFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.AmbientFactor;
 // 
-// 				// Register that material mapping
-// 				m_Material2Technique[Material] = RT;
-				m_Material2Parameters[Material] = MatParams;
+// 				MatParams.CreateParameter( "DiffuseColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.DiffuseColor;
+// 				MatParams.CreateParameter( "DiffuseFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.DiffuseFactor;
+// 				bool	bHasDiffuseTexture = CreateTextureParameter( Mat, "DiffuseColor", MatParams, "DiffuseTexture", "TransparentColor" );
+// 				MatParams.CreateParameter( "HasDiffuseTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasDiffuseTexture;
+// 
+// 				MatParams.CreateParameter( "EmissiveColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.EmissiveColor;
+// 				MatParams.CreateParameter( "EmissiveFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.EmissiveFactor;
+// 				CreateTextureParameter( Mat, "EmissiveColor", MatParams, "EmissiveTexture" );
+// 
+// 				FBXImporter.ObjectProperty	OpacityProp = SpecificMaterial.FindProperty( "Opacity" );
+// 				float	fOpacity = OpacityProp != null ? (float) OpacityProp.Value : 1.0f;
+// 				MatParams.CreateParameter( "Opacity", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = fOpacity;
+// //				MatParams.IsOpaque = fOpacity >= 1.0f;
+// 
+// 				bool	bHasNormalTexture = CreateTextureParameter( Mat, "Bump", MatParams, "NormalTexture" );
+// 				MatParams.CreateParameter( "HasNormalTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasNormalTexture;
+
+
+				// Lambert parameters
+				MatParams.CreateParameter( "AmbientColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.FindProperty( "AmbientColor" ).AsVector3;
+				CreateTextureParameter( Mat, "AmbientColor", MatParams, "AmbientTexture" );
+				MatParams.CreateParameter( "AmbientFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.FindProperty( "AmbientFactor" ).AsFloat;
+
+				MatParams.CreateParameter( "DiffuseColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.FindProperty( "DiffuseColor" ).AsVector3;
+				MatParams.CreateParameter( "DiffuseFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.FindProperty( "DiffuseFactor" ).AsFloat;
+				bool	bHasDiffuseTexture = CreateTextureParameter( Mat, "DiffuseColor", MatParams, "DiffuseTexture", "TransparentColor" );
+				MatParams.CreateParameter( "HasDiffuseTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasDiffuseTexture;
+
+				MatParams.CreateParameter( "EmissiveColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.FindProperty( "EmissiveColor" ).AsVector3;
+				MatParams.CreateParameter( "EmissiveFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.FindProperty( "EmissiveFactor" ).AsFloat;
+				bool	bHasEmissiveTexture = CreateTextureParameter( Mat, "EmissiveColor", MatParams, "EmissiveTexture" );
+
+				float	fOpacity = SpecificMaterial.FindProperty( "Opacity" ).AsFloat;
+				MatParams.CreateParameter( "Opacity", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = fOpacity;
+//					MatParams.IsOpaque = fOpacity >= 1.0f;
+
+				bool	bHasNormalTexture = false;
+				if ( Mat.FindProperty( "Bump" ).Textures.Length > 0 )
+					bHasNormalTexture = CreateTextureParameter( Mat, "Bump", MatParams, "NormalTexture" );
+				else if ( Mat.FindProperty( "NormalMap" ).Textures.Length > 0 )
+					bHasNormalTexture = CreateTextureParameter( Mat, "NormalMap", MatParams, "NormalTexture" );
+				MatParams.CreateParameter( "HasNormalTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasNormalTexture;
+
+
+				// Phong parameters
+				try
+				{
+					MatParams.CreateParameter( "ReflectionColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.FindProperty( "ReflectionColor" ).AsVector3;
+					CreateTextureParameter( Mat, "ReflectionColor", MatParams, "ReflectionTexture" );
+					MatParams.CreateParameter( "ReflectionFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.FindProperty( "ReflectionFactor" ).AsFloat;
+
+					MatParams.CreateParameter( "Shininess", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.FindProperty( "Shininess" ).AsFloat;
+					MatParams.CreateParameter( "SpecularColor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT3 ).AsFloat3.Value = SpecificMaterial.FindProperty( "SpecularColor" ).AsVector3;
+					MatParams.CreateParameter( "SpecularFactor", Scene.Materials.MaterialParameters.PARAMETER_TYPE.FLOAT ).AsFloat.Value = SpecificMaterial.FindProperty( "SpecularFactor" ).AsFloat;
+					bool	bHasSpecularTexture = CreateTextureParameter( Mat, "SpecularColor", MatParams, "SpecularTexture" );
+					MatParams.CreateParameter( "HasSpecularTexture", Scene.Materials.MaterialParameters.PARAMETER_TYPE.BOOL ).AsBool.Value = bHasSpecularTexture;
+				}
+				catch ( Exception )
+				{	
+				}
+
+				// Register the material
+				m_Material2Parameters[Mat] = MatParams;
 			}
 		}
 

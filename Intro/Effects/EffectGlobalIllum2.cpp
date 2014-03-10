@@ -2,32 +2,43 @@
 #include "EffectGlobalIllum2.h"
 
 
-// Scene selection (also think about chaning the scene in the .RC!)
-#define SCENE_PATH	".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_1Probe\\"
+#define	LOAD_PROBES			// Define this to load probes instead of computing them
+#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene
+
+// Scene selection (also think about changing the scene in the .RC!)
+//#define SCENE_PATH	".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_1Probe\\"
 //#define SCENE_PATH	".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
+#define SCENE_PATH	"..\\Arkane\\Probes\\City\\"
 
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
-
-#define MAKE_MACROS( a )	Macros( const char* m[] = { a } )
 
 EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera ) : m_ErrorCode( 0 ), m_Device( _Device ), m_RTTarget( _RTHDR ), m_ScreenQuad( _ScreenQuad )
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
-	D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { NULL, NULL } };
- 	CHECK_MATERIAL( m_pMatRender = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros ), 1 );
+	{
+//ScopedForceMaterialsLoadFromBinary		bisou;
+		D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { NULL, NULL } };
+ 		CHECK_MATERIAL( m_pMatRender = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros ), 1 );
 
-	D3D_SHADER_MACRO	pMacros2[] = { { "EMISSIVE", "1" }, { NULL, NULL } };
-	CHECK_MATERIAL( m_pMatRenderEmissive = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros2 ), 2 );
- 	CHECK_MATERIAL( m_pMatRenderLights = CreateMaterial( IDR_SHADER_GI_RENDER_LIGHTS, "./Resources/Shaders/GIRenderLights.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
- 	CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
- 	CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 5 );
- 	CHECK_MATERIAL( m_pMatRenderShadowMap = CreateMaterial( IDR_SHADER_GI_RENDER_SHADOW_MAP, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL ), 6 );
- 	CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
+	}
+	{
+ScopedForceMaterialsLoadFromBinary		bisou;
 
-	// Compute Shaders
- 	CHECK_MATERIAL( m_pCSUpdateProbe = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 20 );
+		D3D_SHADER_MACRO	pMacros2[] = { { "EMISSIVE", "1" }, { NULL, NULL } };
+		CHECK_MATERIAL( m_pMatRenderEmissive = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros2 ), 2 );
+ 		CHECK_MATERIAL( m_pMatRenderLights = CreateMaterial( IDR_SHADER_GI_RENDER_LIGHTS, "./Resources/Shaders/GIRenderLights.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
+ 		CHECK_MATERIAL( m_pMatRenderDebugProbes = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
+ 		CHECK_MATERIAL( m_pMatRenderDebugProbesNetwork = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3::DESCRIPTOR, "VS_Network", "GS_Network", "PS_Network" ), 5 );
+ 		CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
+ 		CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 7 );
+ 		CHECK_MATERIAL( m_pMatRenderShadowMap = CreateMaterial( IDR_SHADER_GI_RENDER_SHADOW_MAP, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL ), 8 );
+ 		CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
+
+		// Compute Shaders
+ 		CHECK_MATERIAL( m_pCSUpdateProbe = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 20 );
+	}
 
 m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
@@ -35,8 +46,147 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	//////////////////////////////////////////////////////////////////////////
 	// Create the textures
 	{
-		TextureFilePOM	POM( "./Resources/Scenes/GITest1/pata_diff_colo.pom" );
-		m_pTexWalls = new Texture2D( _Device, POM );
+// 		const char*	ppTextureFileNames[] = {
+// 			"./Resources/Scenes/GITest1/pata_diff_colo.pom",
+// 		};
+
+#ifndef	USE_WHITE_TEXTURES
+
+		const char*	ppTextureFileNames[] = {
+"..\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_d.pom",
+"..\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_n.pom",
+"..\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_s.pom",
+"..\\Arkane\\TexturesPOM\\macadam_01_d.pom",
+"..\\Arkane\\TexturesPOM\\macadam_01_n.pom",
+"..\\Arkane\\TexturesPOM\\macadam_01_s.pom",
+"..\\Arkane\\TexturesPOM\\wooden_cobble_01_d.pom",
+"..\\Arkane\\TexturesPOM\\wooden_cobble_01_n.pom",
+"..\\Arkane\\TexturesPOM\\wooden_cobble_01_s.pom",
+"..\\Arkane\\TexturesPOM\\crate_01_d.pom",
+"..\\Arkane\\TexturesPOM\\crate_01_n.pom",
+"..\\Arkane\\TexturesPOM\\crate_01_s.pom",
+"..\\Arkane\\TexturesPOM\\tarp_02_d.pom",
+"..\\Arkane\\TexturesPOM\\tarp_02_n.pom",
+"..\\Arkane\\TexturesPOM\\tarp_02_s.pom",
+"..\\Arkane\\TexturesPOM\\rich_small_wall_clean_01_d.pom",
+"..\\Arkane\\TexturesPOM\\rich_small_wall_clean_01_s.pom",
+"..\\Arkane\\TexturesPOM\\concrete_02_d.pom",
+"..\\Arkane\\TexturesPOM\\sand_01_d.pom",
+"..\\Arkane\\TexturesPOM\\sand_01_n.pom",
+"..\\Arkane\\TexturesPOM\\sand_01_s.pom",
+"..\\Arkane\\TexturesPOM\\shop_poster_01_d.pom",
+"..\\Arkane\\TexturesPOM\\shop_poster_01_n.pom",
+"..\\Arkane\\TexturesPOM\\shop_poster_01_s.pom",
+"..\\Arkane\\TexturesPOM\\moss_02_d.pom",
+"..\\Arkane\\TexturesPOM\\rich_medium_stone_01_d.pom",
+"..\\Arkane\\TexturesPOM\\rich_medium_stone_01_n.pom",
+"..\\Arkane\\TexturesPOM\\glass_01_d.pom",
+"..\\Arkane\\TexturesPOM\\rich_medium_details_01_d.pom",
+"..\\Arkane\\TexturesPOM\\rich_medium_details_01_n.pom",
+"..\\Arkane\\TexturesPOM\\rich_medium_details_01_s.pom",
+"..\\Arkane\\TexturesPOM\\rich_small_details_03_d.pom",
+"..\\Arkane\\TexturesPOM\\rich_small_details_03_n.pom",
+"..\\Arkane\\TexturesPOM\\rich_small_details_03_s.pom",
+"..\\Arkane\\TexturesPOM\\rich_small_details_01_d.pom",
+"..\\Arkane\\TexturesPOM\\rich_small_details_01_s.pom",
+"..\\Arkane\\TexturesPOM\\rich_small_details_02_d.pom",
+"..\\Arkane\\TexturesPOM\\rich_small_details_02_s.pom",
+"..\\Arkane\\TexturesPOM\\wood_05_d.pom",
+"..\\Arkane\\TexturesPOM\\white_stone_01_d.pom",
+"..\\Arkane\\TexturesPOM\\white_stone_01_n.pom",
+"..\\Arkane\\TexturesPOM\\white_stone_01_s.pom",
+"..\\Arkane\\TexturesPOM\\door_blocker_iron_01_d.pom",
+"..\\Arkane\\TexturesPOM\\door_blocker_iron_01_n.pom",
+"..\\Arkane\\TexturesPOM\\door_blocker_iron_01_s.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_sign_01_d.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_sign_01_n.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_sign_01_s.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_sign_02_d.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_sign_02_n.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_sign_02_s.pom",
+"..\\Arkane\\TexturesPOM\\shop_doordeco_01_d.pom",
+"..\\Arkane\\TexturesPOM\\shop_doordeco_01_n.pom",
+"..\\Arkane\\TexturesPOM\\shop_doordeco_01_s.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_d.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_n.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_door_frame_01_s.pom",
+"..\\Arkane\\TexturesPOM\\rich_medium_details_02_d.pom",
+"..\\Arkane\\TexturesPOM\\rich_medium_details_02_n.pom",
+"..\\Arkane\\TexturesPOM\\rich_medium_details_02_s.pom",
+"..\\Arkane\\TexturesPOM\\shop_workshopwall_01_d.pom",
+"..\\Arkane\\TexturesPOM\\shop_workshopwall_01_n.pom",
+"..\\Arkane\\TexturesPOM\\shop_workshopwall_01_s.pom",
+"..\\Arkane\\TexturesPOM\\shop_workshopwall_02_d.pom",
+"..\\Arkane\\TexturesPOM\\shop_workshopwall_02_n.pom",
+"..\\Arkane\\TexturesPOM\\shop_workshopwall_02_s.pom",
+"..\\Arkane\\TexturesPOM\\shop_ceiling_01_d.pom",
+"..\\Arkane\\TexturesPOM\\shop_ceiling_01_n.pom",
+"..\\Arkane\\TexturesPOM\\shop_ceiling_01_s.pom",
+"..\\Arkane\\TexturesPOM\\shop_painting_01_d.pom",
+"..\\Arkane\\TexturesPOM\\shop_painting_01_n.pom",
+"..\\Arkane\\TexturesPOM\\shop_painting_01_s.pom",
+"..\\Arkane\\TexturesPOM\\shop_light_wall_01_d.pom",
+"..\\Arkane\\TexturesPOM\\shop_light_wall_01_n.pom",
+"..\\Arkane\\TexturesPOM\\shop_light_wall_01_s.pom",
+"..\\Arkane\\TexturesPOM\\shop_pillar_01_d.pom",
+"..\\Arkane\\TexturesPOM\\shop_pillar_01_n.pom",
+"..\\Arkane\\TexturesPOM\\shop_pillar_01_s.pom",
+"..\\Arkane\\TexturesPOM\\shop_flat_01_d.pom",
+"..\\Arkane\\TexturesPOM\\shop_flat_01_n.pom",
+"..\\Arkane\\TexturesPOM\\shop_flat_01_s.pom",
+"..\\Arkane\\TexturesPOM\\shop_stairs_02_d.pom",
+"..\\Arkane\\TexturesPOM\\shop_stairs_02_n.pom",
+"..\\Arkane\\TexturesPOM\\shop_stairs_02_s.pom",
+"..\\Arkane\\TexturesPOM\\shopbookcase_02_d.pom",
+"..\\Arkane\\TexturesPOM\\shopbookcase_02_n.pom",
+"..\\Arkane\\TexturesPOM\\shopbookcase_02_s.pom",
+"..\\Arkane\\TexturesPOM\\shopcounter_01_d.pom",
+"..\\Arkane\\TexturesPOM\\shopcounter_01_n.pom",
+"..\\Arkane\\TexturesPOM\\shopcounter_01_s.pom",
+"..\\Arkane\\TexturesPOM\\over_desk_lamp_02_d.pom",
+"..\\Arkane\\TexturesPOM\\over_desk_lamp_02_n.pom",
+"..\\Arkane\\TexturesPOM\\over_desk_lamp_02_s.pom",
+"..\\Arkane\\TexturesPOM\\shop_box_kit_01_d.pom",
+"..\\Arkane\\TexturesPOM\\shop_box_kit_01_n.pom",
+"..\\Arkane\\TexturesPOM\\shop_box_kit_01_s.pom",
+"..\\Arkane\\TexturesPOM\\modular_stairs_01_d.pom",
+"..\\Arkane\\TexturesPOM\\modular_stairs_01_n.pom",
+"..\\Arkane\\TexturesPOM\\modular_stairs_01_s.pom",
+"..\\Arkane\\TexturesPOM\\metal_crate_01_d.pom",
+"..\\Arkane\\TexturesPOM\\metal_crate_01_n.pom",
+"..\\Arkane\\TexturesPOM\\metal_crate_01_s.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_metal_01_d.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_metal_01_n.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_metal_01_s.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_wood_01_d.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_wood_01_n.pom",
+"..\\Arkane\\TexturesPOM\\safe_shop_wood_01_s.pom",
+"..\\Arkane\\TexturesPOM\\window_d.pom",
+"..\\Arkane\\TexturesPOM\\streetlamp_01_d.pom",
+"..\\Arkane\\TexturesPOM\\streetlamp_01_n.pom",
+"..\\Arkane\\TexturesPOM\\streetlamp_01_s.pom",
+		};
+
+		m_TexturesCount = sizeof(ppTextureFileNames) / sizeof(const char*);
+		m_ppTextures = new Texture2D*[m_TexturesCount];
+
+		for ( int TextureIndex=0; TextureIndex < m_TexturesCount; TextureIndex++ )
+		{
+			const char*	pTextureFileName = ppTextureFileNames[TextureIndex];
+			TextureFilePOM	POM( pTextureFileName );
+			m_ppTextures[TextureIndex] = new Texture2D( _Device, POM );
+		}
+
+#else	//#ifndef	USE_WHITE_TEXTURES
+		m_TexturesCount = 1;
+		m_ppTextures = new Texture2D*[m_TexturesCount];
+
+		const float	Albedo = 0.5f;
+
+		TextureBuilder	White( 1, 1 );
+		White.Clear( Pixel( NjFloat4( Albedo, Albedo, Albedo, 1 ) ) );
+		m_ppTextures[0] = White.CreateTexture( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA );
+#endif
 	}
 
 	// Create the shadow map
@@ -45,14 +195,14 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create the constant buffers
-	m_pCB_General = new CB<CBGeneral>( _Device, 9, true );
-	m_pCB_Scene = new CB<CBScene>( _Device, 10 );
- 	m_pCB_Object = new CB<CBObject>( _Device, 11 );
- 	m_pCB_Material = new CB<CBMaterial>( _Device, 12 );
+	m_pCB_General = new CB<CBGeneral>( _Device, 8, true );
+	m_pCB_Scene = new CB<CBScene>( _Device, 9, true );
+ 	m_pCB_Object = new CB<CBObject>( _Device, 10 );
+ 	m_pCB_Material = new CB<CBMaterial>( _Device, 11 );
 	m_pCB_Probe = new CB<CBProbe>( _Device, 10 );
 	m_pCB_Splat = new CB<CBSplat>( _Device, 10 );
 	m_pCB_ShadowMap = new CB<CBShadowMap>( _Device, 2, true );
-	m_pCB_UpdateProbes = new CB<CBUpdateProbes>( _Device, 11 );
+	m_pCB_UpdateProbes = new CB<CBUpdateProbes>( _Device, 10 );
 
 	m_pCB_Scene->m.DynamicLightsCount = 0;
 	m_pCB_Scene->m.StaticLightsCount = 0;
@@ -64,18 +214,19 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	m_pSB_LightsStatic = new SB<LightStruct>( m_Device, MAX_LIGHTS, true );
 	m_pSB_LightsDynamic = new SB<LightStruct>( m_Device, MAX_LIGHTS, true );
 	m_pSB_RuntimeProbes = NULL;
+	m_pSB_RuntimeProbeNetworkInfos = NULL;
 
 	m_pSB_RuntimeProbeUpdateInfos = new SB<RuntimeProbeUpdateInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME, true );
 	m_pSB_RuntimeProbeSetInfos = new SB<RuntimeProbeUpdateSetInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME*MAX_PROBE_SETS, true );
 	m_pSB_RuntimeProbeEmissiveSetInfos = new SB<RuntimeProbeUpdateEmissiveSetInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME*MAX_PROBE_EMISSIVE_SETS, true );
 	m_pSB_RuntimeSamplingPointInfos = new SB<RuntimeSamplingPointInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME * MAX_SET_SAMPLES, true );
 
-
 	//////////////////////////////////////////////////////////////////////////
 	// Create the scene
 	m_bDeleteSceneTags = false;
 	m_TotalFacesCount = 0;
 	m_TotalPrimitivesCount = 0;
+	m_EmissiveMaterialsCount = 0;
 	m_Scene.Load( IDR_SCENE_GI, *this );
 
 	// Upload static lights once and for all
@@ -85,11 +236,30 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	// Update once so it's ready when we pre-compute probes
 	m_pCB_Scene->UpdateData();
 
+	// Cache meshes since my ForEach function is slow as hell!! ^^
+	m_MeshesCount = 0;
+	Scene::Mesh*	pMesh = NULL;
+	while ( (pMesh = (Scene::Mesh*) m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
+	{
+		m_MeshesCount++;
+	}
+	m_ppCachedMeshes = new Scene::Mesh*[m_MeshesCount];
+	m_MeshesCount = 0;
+	pMesh = NULL;
+	while ( (pMesh = (Scene::Mesh*) m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
+	{
+		m_ppCachedMeshes[m_MeshesCount++] = pMesh;
+	}
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create our sphere primitive for displaying lights & probes
 	m_pPrimSphere = new Primitive( _Device, VertexFormatP3N3::DESCRIPTOR );
 	GeometryBuilder::BuildSphere( 40, 10, *m_pPrimSphere );
+
+	// Create the dummy point primitive for the debug drawing of the probes network
+	NjFloat3	Point;
+	m_pPrimPoint = new Primitive( _Device, 1, &Point, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatP3::DESCRIPTOR );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -103,10 +273,11 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	const int	MAX_THETA = 40;
 	double		dPhidTheta = (PI / MAX_THETA) * (2*PI / (2*MAX_THETA));
 
-	double		SumSHCoeffs[9];
-	memset( SumSHCoeffs, 0, 9*sizeof(double) );
+	double		SumSHCoeffs[3*9];
+	memset( SumSHCoeffs, 0, 3*9*sizeof(double) );
 
 	double		SHCoeffs[9];
+	double		SumSolidAngle = 0.0;
 	for ( int ThetaIndex=0; ThetaIndex < MAX_THETA; ThetaIndex++ )
 	{
 		float	Theta = PI * (0.5f+ThetaIndex) / MAX_THETA;
@@ -116,17 +287,86 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 			NjFloat3	Direction( sinf(Phi) * sinf(Theta), cosf(Theta), cosf(Phi)*sinf(Theta) );
 			BuildSHCoeffs( Direction, SHCoeffs );
 
-			double		SkyIntensity = SKY_INTENSITY * (1.0f + 2.0f * MAX( -0.5f, cosf(Theta) )) / 3.0f;
-			double		SolidAngle = sinf(Theta) * dPhidTheta;
+			NjFloat3	SkyColor = SKY_INTENSITY * (1.0f + 2.0f * MAX( -0.5f, cosf(Theta) )) / 3.0f * NjFloat3::One;
+//			NjFloat3	SkyColor = SKY_INTENSITY * NjFloat3( 0.64f, 0.79f, 1.0f );	// Simple uniform blue color
 
-			for ( int i=0; i < 9; i++ )
-				SumSHCoeffs[i] += SkyIntensity* SHCoeffs[i] * SolidAngle;
+			double		SolidAngle = sinf(Theta) * dPhidTheta;
+			SumSolidAngle += SolidAngle;
+
+			for ( int l=0; l < 3; l++ )
+			{
+				NjFloat3	FilteredIntensity = SkyColor * expf( -(PI * l / 3.0f) * (PI * l / 3.0f) / 2.0f );
+				for ( int m=-l; m <= l; m++ )
+				{
+					int		CoeffIndex = l*(l+1)+m;
+					double	SHCoeff = SHCoeffs[CoeffIndex] * SolidAngle;
+					SumSHCoeffs[3*CoeffIndex+0] += FilteredIntensity.x * SHCoeff;
+					SumSHCoeffs[3*CoeffIndex+1] += FilteredIntensity.y * SHCoeff;
+					SumSHCoeffs[3*CoeffIndex+2] += FilteredIntensity.z * SHCoeff;
+				}
+			}
 		}
 	}
 
 	for ( int i=0; i < 9; i++ )
-		m_pSHAmbientSky[i] = float( SumSHCoeffs[i] ) * NjFloat3::One;
+		m_pSHAmbientSky[i] = NjFloat3( float( INV4PI * SumSHCoeffs[3*i+0] ), float( INV4PI * SumSHCoeffs[3*i+1] ), float( INV4PI * SumSHCoeffs[3*i+2] ) );
 
+
+	//////////////////////////////////////////////////////////////////////////
+	// Initialize the memory mapped file for remote control (control panel is available through the Tools/ControlPanelGlobalIllumination project)
+	//
+#ifdef _DEBUG
+	m_pMMF = new MMF<ParametersBlock>( "GlobalIllumination" );
+	ParametersBlock	Params = {
+		1, // WILL BE MARKED AS CHANGED!			// U32		Checksum;
+
+		// Atmosphere Params
+		false,				// U32		EnableSun;
+		DEG2RAD( 60.0f ),	// float	SunTheta;
+		0.0f,				// float	SunPhi;
+		SUN_INTENSITY,		// float	SunIntensity;
+		// 
+		false,				// U32		EnableSky;
+		SKY_INTENSITY,		// float	SkyIntensity;
+		0.64f, 0.79f, 1.0f,	// float	SkyColorR, G, B;
+		// 
+		// Dynamic lights params
+		true,				// U32		EnablePointLight;
+		true,				// U32		AnimatePointLight;
+		100.0f,				// float	PointLightIntensity;
+		1.0f, 1.0f, 1.0f,	// float	PointLightColorR, G, B;
+		// 
+		// Static lighting params
+		true,				// U32		EnableStaticLighting;
+		// 
+		// Emissive params
+		false,				// U32		EnableEmissiveMaterials;
+		4.0f,				// float	EmissiveIntensity;
+		1.0f, 0.95f, 0.5f,	// float	EmissiveColorR, G, B;
+		// 
+		// Bounce params
+		100.0f,				// float	BounceFactorSun;
+		100.0f,				// float	BounceFactorSky;
+		100.0f,				// float	BounceFactorPoint;
+		100.0f,				// float	BounceFactorStaticLights;
+		100.0f,				// float	BounceFactorEmissive;
+		//
+		// Neighborhood
+		true,				// U32		EnableNeighborsRedistribution;
+		1.0f,				// float	NeighborProbesContributionBoost;
+		//
+		// Misc
+		false,				// U32		ShowDebugProbes;
+		false,				// U32		ShowDebugProbes;
+		1.0f,				// float	DebugProbesIntensity;
+	};
+	ParametersBlock&	MappedParams = m_pMMF->GetMappedMemory();
+
+	// Copy our default params only if the checksum is 0 (meaning the control panel isn't loaded and hasn't set any value yet)
+	if ( MappedParams.Checksum == 0 )
+		MappedParams = Params;
+
+#endif
 }
 Texture2D*	pRTCubeMap;
 
@@ -134,7 +374,11 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 {
 	delete[] m_pProbes;
 
+	delete m_pPrimPoint;
 	delete m_pPrimSphere;
+
+	delete[] m_ppCachedMeshes;
+	m_MeshesCount = 0;
 
 	m_bDeleteSceneTags = true;
 	m_Scene.ClearTags( *this );
@@ -143,6 +387,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pSB_RuntimeProbeEmissiveSetInfos;
 	delete m_pSB_RuntimeProbeSetInfos;
 	delete m_pSB_RuntimeProbeUpdateInfos;
+	delete m_pSB_RuntimeProbeNetworkInfos;
 	delete m_pSB_RuntimeProbes;
 	delete m_pSB_LightsDynamic;
 	delete m_pSB_LightsStatic;
@@ -157,7 +402,10 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pCB_General;
 
 	delete m_pRTShadowMap;
-	delete m_pTexWalls;
+
+	for ( int TextureIndex=0; TextureIndex < m_TexturesCount; TextureIndex++ )
+		delete m_ppTextures[TextureIndex];
+	delete[] m_ppTextures;
 
 	delete m_pCSUpdateProbe;
 
@@ -166,6 +414,8 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pMatRenderShadowMap;
 	delete m_pMatRenderNeighborProbe;
 	delete m_pMatRenderCubeMap;
+	delete m_pMatRenderDebugProbesNetwork;
+	delete m_pMatRenderDebugProbes;
 	delete m_pMatRenderLights;
 	delete m_pMatRenderEmissive;
 	delete m_pMatRender;
@@ -175,14 +425,13 @@ delete pRTCubeMap;
 }
 
 // F5 => toggle point light animation
-float	AnimateLightTime0 = 0.0f;
+float		AnimateLightTime0 = 0.0f;
 
 // F6 => toggle sun light animation
-float	AnimateLightTime1 = 0.0f;
-float	UserSunTheta = 60.0f;
+//float		AnimateLightTime1 = 0.0f;
 
 // F7 => toggle neon area light animation
-float	AnimateLightTime2 = 0.0f;
+//float	AnimateLightTime2 = 0.0f;
 
 #define RENDER_SUN	1
 
@@ -190,6 +439,8 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 {
 	// Setup general data
 	m_pCB_General->m.ShowIndirect = gs_WindowInfos.pKeys[VK_RETURN] == 0;
+	m_pCB_General->m.ShowOnlyIndirect = gs_WindowInfos.pKeys[VK_BACK] == 0;
+	m_pCB_General->m.Ambient = !m_pCB_General->m.ShowIndirect && m_CachedCopy.EnableSky ? 0.05f * NjFloat3( 0.64f, 0.79f, 1.0f ) : NjFloat3::Zero;
 	m_pCB_General->UpdateData();
 
 	// Setup scene data
@@ -199,41 +450,97 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 
 	//////////////////////////////////////////////////////////////////////////
+	// Update from memory mapped file
+#ifdef _DEBUG
+	if ( m_pMMF->CheckForChange() )
+		m_CachedCopy = m_pMMF->GetMappedMemory();
+#endif
+
+
+	//////////////////////////////////////////////////////////////////////////
 	// Animate lights
 
 		// Point light
-	bool	ShowLight0 = !gs_WindowInfos.pKeysToggle[VK_F1];
-	if ( ShowLight0 && !gs_WindowInfos.pKeysToggle[VK_F5] )
+//	bool	ShowLight0 = !gs_WindowInfos.pKeysToggle[VK_F1];
+	bool	ShowLight0 = m_CachedCopy.EnablePointLight != 0;
+//	if ( ShowLight0 && !gs_WindowInfos.pKeysToggle[VK_F5] )
+	if ( ShowLight0 && m_CachedCopy.AnimatePointLight )
 		AnimateLightTime0 += _DeltaTime;
 
 	if ( ShowLight0 )
-		m_pSB_LightsDynamic->m[0].Color.Set( 100, 100, 100 );
+		m_pSB_LightsDynamic->m[0].Color = m_CachedCopy.PointLightIntensity * NjFloat3( m_CachedCopy.PointLightColorR, m_CachedCopy.PointLightColorG, m_CachedCopy.PointLightColorB );
 	else
 		m_pSB_LightsDynamic->m[0].Color.Set( 0, 0, 0 );
 
 	m_pSB_LightsDynamic->m[0].Type = Scene::Light::POINT;
+	m_pSB_LightsDynamic->m[0].Parms.Set( 0.1f, 0.1f, 0, 0 );
+
+#if 0	// CORRIDOR ANIMATION (simple straight line)
+
 //	m_pSB_LightsDynamic->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * AnimateLightTime0 ) );	// Move along the corridor
 	m_pSB_LightsDynamic->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime0 ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime0 ), 4.0f * sinf( 0.3f * AnimateLightTime0 ) );	// Move along the corridor
-	m_pSB_LightsDynamic->m[0].Parms.Set( 0.1f, 0.1f, 0, 0 );
+
+#else	// SHOP ANIMATION (follow curve)
+
+	static bool	bPathPreComputed = false;
+	static NjFloat3	pPath[] = {
+		0.01f * NjFloat3( 470.669f, 25.833f, -573.035f ),	// Street exterior
+		0.01f * NjFloat3( 470.669f, 25.833f, 1263.286f ),	// Shop interior
+		0.01f * NjFloat3( 876.358f, 25.833f, 1263.286f ),	// Shop interior
+		0.01f * NjFloat3( 918.254f, 25.833f, 3848.391f ),	// Shop yard
+	};
+	static float	pPathSegmentsLength[4];
+	static float	TotalPathLength = 0.0f;
+
+	int		PathNodesCount = sizeof(pPath) / sizeof(NjFloat3);
+	if ( !bPathPreComputed )
+	{	// Precompute path lengths
+		pPathSegmentsLength[0] = 0.0f;
+		for ( int PathNodeIndex=1; PathNodeIndex < PathNodesCount; PathNodeIndex++ )
+		{
+			TotalPathLength += (pPath[PathNodeIndex] - pPath[PathNodeIndex-1]).Length();
+			pPathSegmentsLength[PathNodeIndex] = TotalPathLength;
+		}
+		bPathPreComputed = true;
+	}
+
+	const float	TotalPathTime = 20.0f;	// Total time to walk the path
+	float	PathTime = TotalPathTime - abs( fmodf( AnimateLightTime0, 2.0f * TotalPathTime ) - TotalPathTime );
+	float	PathLength = PathTime * TotalPathLength / TotalPathTime;
+	for ( int PathNodeIndex=0; PathNodeIndex < PathNodesCount-1; PathNodeIndex++ )
+	{
+		if ( PathLength >= pPathSegmentsLength[PathNodeIndex] && PathLength <= pPathSegmentsLength[PathNodeIndex+1] )
+		{
+			float	t = (PathLength - pPathSegmentsLength[PathNodeIndex]) / (pPathSegmentsLength[PathNodeIndex+1] - pPathSegmentsLength[PathNodeIndex]);
+			m_pSB_LightsDynamic->m[0].Position = pPath[PathNodeIndex] + t * (pPath[PathNodeIndex+1] - pPath[PathNodeIndex]);
+			break;
+		}
+	}
+
+#endif
 
 
 #if RENDER_SUN	// Show Sun light
 	{
-		bool	ShowLight1 = gs_WindowInfos.pKeysToggle[VK_F2] != 0;
-		if ( ShowLight1 && !gs_WindowInfos.pKeysToggle[VK_F6] )
-			AnimateLightTime1 += _DeltaTime;
+//		bool	ShowLight1 = gs_WindowInfos.pKeysToggle[VK_F2] != 0;
+		bool	ShowLight1 = m_CachedCopy.EnableSun != 0;
+// 		if ( ShowLight1 && !gs_WindowInfos.pKeysToggle[VK_F6] )
+// 			AnimateLightTime1 += _DeltaTime;
+// 
+// 		if ( gs_WindowInfos.pKeys[VK_SUBTRACT] )
+// 			UserSunTheta -= 4.0f * _DeltaTime;
+// 		if ( gs_WindowInfos.pKeys[VK_ADD] )
+// 			UserSunTheta += 4.0f * _DeltaTime;
+// 
+// 		float		SunTheta = UserSunTheta * PI / 180.0f;
+// 		float		SunPhi = 0.2f * AnimateLightTime1;
 
-		if ( gs_WindowInfos.pKeys[VK_SUBTRACT] )
-			UserSunTheta -= 4.0f * _DeltaTime;
-		if ( gs_WindowInfos.pKeys[VK_ADD] )
-			UserSunTheta += 4.0f * _DeltaTime;
-
-		float		SunTheta = UserSunTheta * PI / 180.0f;
-		float		SunPhi = 0.2f * AnimateLightTime1;
+		float		SunTheta = m_CachedCopy.SunTheta;
+		float		SunPhi = m_CachedCopy.SunPhi;
 		NjFloat3	SunDirection( sinf(SunTheta) * sinf(SunPhi), cosf(SunTheta), sinf(SunTheta) * cosf(SunPhi) );
 
 		if ( ShowLight1 )
-			m_pSB_LightsDynamic->m[1].Color = SUN_INTENSITY * NjFloat3( 1.0f, 0.990f, 0.950f );
+			m_pSB_LightsDynamic->m[1].Color = m_CachedCopy.SunIntensity * NjFloat3( 1.0f, 0.990f, 0.950f );
 		else
 			m_pSB_LightsDynamic->m[1].Color.Set( 0, 0, 0 );
 
@@ -246,7 +553,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	}
 #else
 
-	// Set shadow map to something otherwise DX pisses me off with warnings...
+	// Set shadow map to something, otherwise DX pisses me off with warnings...
 	m_pCB_ShadowMap->UpdateData();
 	m_pRTShadowMap->Set( 2, true );
 
@@ -257,40 +564,62 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 
 	// Update emissive materials
-	if ( m_Scene.m_MaterialsCount > 2 )
+	if ( m_EmissiveMaterialsCount > 0 )
 	{
-		bool	ShowLight2 = gs_WindowInfos.pKeysToggle[VK_F3] != 0;
+//		bool	ShowLight2 = gs_WindowInfos.pKeysToggle[VK_F3] != 0;
+		bool	ShowLight2 = m_CachedCopy.EnableEmissiveMaterials != 0;
 
-		if ( ShowLight2 && !gs_WindowInfos.pKeysToggle[VK_F7] )
-			AnimateLightTime2 += _DeltaTime;
+// 		if ( ShowLight2 && !gs_WindowInfos.pKeysToggle[VK_F7] )
+// 			AnimateLightTime2 += _DeltaTime;
 
+		NjFloat3	EmissiveColor = NjFloat3::Zero;
 		if ( ShowLight2 )
 		{
-//			float	Intensity = 10.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.5f * _frand()) ) );
-			float	Intensity = 4.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.0f * _frand()) ) );
-			m_Scene.m_ppMaterials[2]->m_EmissiveColor.Set( Intensity * 100, Intensity * 90, Intensity * 70 );
+// //			float	Intensity = 10.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.5f * _frand()) ) );
+// 			float	Intensity = 4.0f * MAX( 0.0f, sinf( 4.0f * (AnimateLightTime2 + 0.0f * _frand()) ) );
+			float	Intensity = m_CachedCopy.EmissiveIntensity;
+			EmissiveColor = Intensity * NjFloat3( m_CachedCopy.EmissiveColorR, m_CachedCopy.EmissiveColorG, m_CachedCopy.EmissiveColorB );
 		}
-		else
-			m_Scene.m_ppMaterials[2]->m_EmissiveColor.Set( 0, 0, 0 );
+
+		for ( int EmissiveMaterialIndex=0; EmissiveMaterialIndex < m_EmissiveMaterialsCount; EmissiveMaterialIndex++ )
+			m_ppEmissiveMaterials[EmissiveMaterialIndex]->m_EmissiveColor = EmissiveColor;
 	}
+
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update dynamic probes
+	ASSERT( m_ProbesCount <= MAX_PROBE_UPDATES_PER_FRAME, "Increase max probes update per frame! Or write the time-sliced updater you promised!" );
+
+	// Prepare constant buffer for update
 	NjFloat3	pSHAmbient[9];
-	if ( gs_WindowInfos.pKeysToggle[VK_F4] )
-		memcpy_s( pSHAmbient, sizeof(pSHAmbient), m_pSHAmbientSky, sizeof(m_pSHAmbientSky) );
-	else
-		memset( pSHAmbient, 0, 9*sizeof(NjFloat3) );
+	memset( pSHAmbient, 0, 9*sizeof(NjFloat3) );
 
-// Ugly "sky"
-// double		pTestAmbient[9];
-// BuildSHCosineLobe( NjFloat3( -1, 1, 0 ).Normalize(), pTestAmbient );
-// for ( int i=0; i < 9; i++ )
-// 	pSHAmbient[i] = 100.0f * NjFloat3( 0.7, 0.9, 1.0 ) * float(pTestAmbient[i]);
+//	if ( gs_WindowInfos.pKeysToggle[VK_F4] )
+	if ( m_CachedCopy.EnableSky )
+	{
+//		memcpy_s( pSHAmbient, sizeof(pSHAmbient), m_pSHAmbientSky, sizeof(m_pSHAmbientSky) );
 
-#if 1
-	// Hardware update
+		// Simple ambient sky term
+		float	SH0 = 0.28209479177387814347403972578039f;	// DC coeff for SH is 1/(2*sqrt(PI))
+		pSHAmbient[0] = SH0 * m_CachedCopy.SkyIntensity * NjFloat3( m_CachedCopy.SkyColorR, m_CachedCopy.SkyColorG, m_CachedCopy.SkyColorB );
+	}
+
+	for ( int i=0; i < 9; i++ )
+		m_pCB_UpdateProbes->m.AmbientSH[i] = NjFloat4( pSHAmbient[i], 0 );	// Update one by one because of float3 padding
+
+	m_pCB_UpdateProbes->m.AmbientSH[8].w = m_CachedCopy.BounceFactorSun;	// Last padding hides one of our variables in its W component...
+	m_pCB_UpdateProbes->m.SkyBoost = m_CachedCopy.BounceFactorSky;
+	m_pCB_UpdateProbes->m.DynamicLightsBoost = m_CachedCopy.BounceFactorPoint;
+	m_pCB_UpdateProbes->m.StaticLightingBoost = m_CachedCopy.EnableStaticLighting != 0 ? m_CachedCopy.BounceFactorStaticLights : 0.0f;
+	m_pCB_UpdateProbes->m.EmissiveBoost = m_CachedCopy.BounceFactorEmissive;
+	m_pCB_UpdateProbes->m.NeighborProbesContributionBoost = m_CachedCopy.EnableNeighborsRedistribution ? m_CachedCopy.NeighborProbesContributionBoost : 0.0f;
+
+	m_pCB_UpdateProbes->UpdateData();
+
+
+#if 1	// Hardware update
+
 	U32		ProbeUpdatesCount = MIN( MAX_PROBE_UPDATES_PER_FRAME, U32(m_ProbesCount) );
 //TODO: Handle a stack of probes to update
 
@@ -313,6 +642,19 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		ProbeUpdateInfos.EmissiveSetsCount = Probe.EmissiveSetsCount;
 		memcpy_s( ProbeUpdateInfos.SHStatic, sizeof(ProbeUpdateInfos.SHStatic), Probe.pSHBounceStatic, 9*sizeof(NjFloat3) );
 		memcpy_s( ProbeUpdateInfos.SHOcclusion, sizeof(ProbeUpdateInfos.SHOcclusion), Probe.pSHOcclusion, 9*sizeof(float) );
+
+// No need to duplicate from the runtime probe infos...
+// 		ProbeUpdateInfos.NeighborProbeIDs[0] = Probe.pNeighborProbeInfos[0].ProbeID;
+// 		ProbeUpdateInfos.NeighborProbeIDs[1] = Probe.pNeighborProbeInfos[1].ProbeID;
+// 		ProbeUpdateInfos.NeighborProbeIDs[2] = Probe.pNeighborProbeInfos[2].ProbeID;
+// 		ProbeUpdateInfos.NeighborProbeIDs[3] = Probe.pNeighborProbeInfos[3].ProbeID;
+		for( int i=0; i < 9; i++ )
+		{
+			ProbeUpdateInfos.NeighborProbeSH[i].x = Probe.pNeighborProbeInfos[0].SH[i];
+			ProbeUpdateInfos.NeighborProbeSH[i].y = Probe.pNeighborProbeInfos[1].SH[i];
+			ProbeUpdateInfos.NeighborProbeSH[i].z = Probe.pNeighborProbeInfos[2].SH[i];
+			ProbeUpdateInfos.NeighborProbeSH[i].w = Probe.pNeighborProbeInfos[3].SH[i];
+		}
 
 		ProbeUpdateInfos.SamplingPointsStart = TotalSamplingPointsCount;
 
@@ -352,6 +694,9 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		ProbeUpdateInfos.SamplingPointsCount = TotalSamplingPointsCount - ProbeUpdateInfos.SamplingPointsStart;	// Total amount of sampling points for the probe
 	}
 
+	// Do the update!
+	USING_COMPUTESHADER_START( *m_pCSUpdateProbe )
+
 	m_pSB_RuntimeProbeUpdateInfos->Write( ProbeUpdatesCount );
 	m_pSB_RuntimeProbeUpdateInfos->SetInput( 10 );
 
@@ -364,16 +709,8 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pSB_RuntimeSamplingPointInfos->Write( TotalSamplingPointsCount );
 	m_pSB_RuntimeSamplingPointInfos->SetInput( 13 );
 
-	// Do the update!
-	USING_COMPUTESHADER_START( *m_pCSUpdateProbe )
-
 	m_pSB_RuntimeProbes->RemoveFromLastAssignedSlots();
 	m_pSB_RuntimeProbes->SetOutput( 0 );
-
-	// Prepare constant buffer for update
-	for ( int i=0; i < 9; i++ )
-		m_pCB_UpdateProbes->m.AmbientSH[i] = NjFloat4( pSHAmbient[i], 0 );	// Update one by one because of float3 padding
-	m_pCB_UpdateProbes->UpdateData();
 
 	M.Dispatch( ProbeUpdatesCount, 1, 1 );
 
@@ -447,6 +784,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 #endif
 
+
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Render the scene
 // 	m_Device.ClearRenderTarget( m_RTTarget, NjFloat4::Zero );
@@ -456,6 +794,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 	m_Scene.Render( *this );
 
+
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Render the lights
 	USING_MATERIAL_START( *m_pMatRenderLights )
@@ -463,6 +802,28 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pPrimSphere->RenderInstanced( M, 1 );	// Only show point light, no sun light
 
 	USING_MATERIAL_END
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// 3] Render the debug probes
+//	if ( gs_WindowInfos.pKeysToggle[VK_F12] )
+	if ( m_CachedCopy.ShowDebugProbes != 0 )
+	{
+		USING_MATERIAL_START( *m_pMatRenderDebugProbes )
+
+		m_pPrimSphere->RenderInstanced( M, m_ProbesCount );
+
+		USING_MATERIAL_END
+	}
+
+	if ( m_CachedCopy.ShowDebugProbesNetwork != 0 )
+	{
+		USING_MATERIAL_START( *m_pMatRenderDebugProbesNetwork )
+
+		m_pPrimPoint->RenderInstanced( M, m_pSB_RuntimeProbeNetworkInfos->GetElementsCount() );
+
+		USING_MATERIAL_END
+	}
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -503,18 +864,10 @@ void	EffectGlobalIllum2::ProbeStruct::AccumulateLightBounce( const NjFloat3 _pSH
 		pSHBouncedLight[i] = pSHBouncedLight[i] + _pSHSet[i];
 }
 
+static void	CopyProbeNetworkConnection( int _EntryIndex, EffectGlobalIllum2::RuntimeProbeNetworkInfos& _Value, void* _pUserData );
+
 void	EffectGlobalIllum2::PreComputeProbes()
 {
-	const float		Z_INFINITY = 1e6f;
-	const float		Z_INFINITY_TEST = 0.99f * Z_INFINITY;
-
-	pRTCubeMap = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 3, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain albedo (cube 0) + (normal + distance) (cube 1) + (static lighting + emissive surface index) (cube 2)
-	Texture2D*	pRTCubeMapDepth = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
-
-	Texture2D*	pRTCubeMapStaging;
-	pRTCubeMapStaging = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 3, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );		// Will contain albedo
-
-
 	//////////////////////////////////////////////////////////////////////////
 	// Allocate probes
 	m_ProbesCount = 0;
@@ -534,139 +887,15 @@ void	EffectGlobalIllum2::PreComputeProbes()
 	}
 
 
-	//////////////////////////////////////////////////////////////////////////
-	// Prepare the cube map face transforms
-	// Here are the transform to render the 6 faces of a cube map
-	// Remember the +Z face is not oriented the same way as our Z vector: http://msdn.microsoft.com/en-us/library/windows/desktop/bb204881(v=vs.85).aspx
-	//
-	//
-	//		^ +Y
-	//		|   +Z  (our actual +Z faces the other way!)
-	//		|  /
-	//		| /
-	//		|/
-	//		o------> +X
-	//
-	//
-	NjFloat3	SideAt[6] = 
-	{
-		NjFloat3(  1, 0, 0 ),
-		NjFloat3( -1, 0, 0 ),
-		NjFloat3( 0,  1, 0 ),
-		NjFloat3( 0, -1, 0 ),
-		NjFloat3( 0, 0,  1 ),
-		NjFloat3( 0, 0, -1 ),
-	};
-	NjFloat3	SideRight[6] = 
-	{
-		NjFloat3( 0, 0, -1 ),
-		NjFloat3( 0, 0,  1 ),
-		NjFloat3(  1, 0, 0 ),
-		NjFloat3(  1, 0, 0 ),
-		NjFloat3(  1, 0, 0 ),
-		NjFloat3( -1, 0, 0 ),
-	};
+#if defined(LOAD_PROBES)	// Define this to load probe sets from disk
 
-	NjFloat4x4	SideWorld2Proj[6];
-	NjFloat4x4	Side2Local[6];
-	NjFloat4x4	Camera2Proj = NjFloat4x4::ProjectionPerspective( 0.5f * PI, 1.0f, 0.01f, 1000.0f );
-	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
-	{
-		NjFloat4x4	Camera2Local;
-		Camera2Local.SetRow( 0, SideRight[CubeFaceIndex], 0 );
-		Camera2Local.SetRow( 1, SideAt[CubeFaceIndex] ^ SideRight[CubeFaceIndex], 0 );
-		Camera2Local.SetRow( 2, SideAt[CubeFaceIndex], 0 );
-		Camera2Local.SetRow( 3, NjFloat3::Zero, 1 );
+	FILE*	pFile = NULL;
+	char	pTemp[1024];
 
-		Side2Local[CubeFaceIndex] = Camera2Local;
-
-		NjFloat4x4	Local2Camera = Camera2Local.Inverse();
-		NjFloat4x4	Local2Proj = Local2Camera * Camera2Proj;
-		SideWorld2Proj[CubeFaceIndex] = Local2Proj;
-	}
-
-	// Create the special CB for cube map projections
-	struct	CBCubeMapCamera
-	{
-		NjFloat4x4	Camera2World;
-		NjFloat4x4	World2Proj;
-	};
-	CB<CBCubeMapCamera>*	pCBCubeMapCamera = new CB<CBCubeMapCamera>( m_Device, 9, true );
-
-	//////////////////////////////////////////////////////////////////////////
-	// Render every probe as a cube map & process
-	//
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
-//for ( int ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
+//for ( int ProbeIndex=16; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
-
-		//////////////////////////////////////////////////////////////////////////
-		// 1] Render Albedo + Normal + Distance + Static lit + Emissive Mat ID
-
-		// Clear cube map
-		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 0, 6 ), NjFloat4::Zero );
-		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6, 6 ), NjFloat4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
-
-		NjFloat4	Bisou = NjFloat4::Zero;
-		((U32&) Bisou.w) = 0xFFFFFFFFUL;
-		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 12, 6 ), Bisou );
-
-		NjFloat4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
-		ProbeLocal2World.Normalize();
-
-		ASSERT( ProbeLocal2World.GetRow(0).LengthSq() > 0.999f && ProbeLocal2World.GetRow(1).LengthSq() > 0.999f && ProbeLocal2World.GetRow(2).LengthSq() > 0.999f, "Not identity! If not identity then transform probe set positions/normals/etc. by probe matrix!" );
-
-		NjFloat4x4	ProbeWorld2Local = ProbeLocal2World.Inverse();
-
-		// Render the 6 faces
-		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
-		{
-			// Update cube map face camera transform
-			NjFloat4x4	World2Proj = ProbeWorld2Local * SideWorld2Proj[CubeFaceIndex];
-
-			pCBCubeMapCamera->m.Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
-			pCBCubeMapCamera->m.World2Proj = World2Proj;
-			pCBCubeMapCamera->UpdateData();
-
-			// Render the scene into the specific cube map faces
-			m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
-
-			ID3D11RenderTargetView*	ppViews[3] = {
-				pRTCubeMap->GetTargetView( 0, CubeFaceIndex, 1 ),
-				pRTCubeMap->GetTargetView( 0, 6+CubeFaceIndex, 1 ),
-				pRTCubeMap->GetTargetView( 0, 12+CubeFaceIndex, 1 )
-			};
-			m_Device.SetRenderTargets( CUBE_MAP_SIZE, CUBE_MAP_SIZE, 3, ppViews, pRTCubeMapDepth->GetDepthStencilView() );
-
-			// Clear depth
-			m_Device.ClearDepthStencil( *pRTCubeMapDepth, 1.0f, 0, true, false );
-
-			// Render scene
-			Scene::Mesh*	pMesh = NULL;
-			while ( pMesh = (Scene::Mesh*) m_Scene.ForEach( Scene::Node::MESH, pMesh ) )
-			{
-//				if ( pMesh->m_pPrimitives[0].m_pMaterial->m_EmissiveColor.Max() > 1e-4f )
-
-				RenderMesh( *pMesh, m_pMatRenderCubeMap );
-			}
-		}
-
-
-		//////////////////////////////////////////////////////////////////////////
-		// 2] Read back cube map and create the SH coefficients
-		pRTCubeMapStaging->CopyFrom( *pRTCubeMap );
-
-#if 1	// Define this to load probe sets from disk
-
-		char	pTemp[1024];
-
-#if 1	// Save to disk
-		sprintf_s( pTemp, SCENE_PATH "Probe%02d.pom", ProbeIndex );
-		pRTCubeMapStaging->Save( pTemp );
-#endif
-
-		FILE*	pFile = NULL;
 
 		// Read numbered probe
 		sprintf_s( pTemp, SCENE_PATH "Probe%02d.probeset", ProbeIndex );
@@ -822,9 +1051,199 @@ void	EffectGlobalIllum2::PreComputeProbes()
 				fread_s( &S.pSHEmissive[i], sizeof(S.pSHEmissive[i]), sizeof(float), 1, pFile );
 		}
 
-		fclose( pFile );
+		// Read the amount of neighbor probes & distance infos
+		U32	NeighborProbesCount;
+		fread_s( &NeighborProbesCount, sizeof(NeighborProbesCount), sizeof(U32), 1, pFile );
+		NeighborProbesCount = MIN( MAX_PROBE_NEIGHBORS, NeighborProbesCount );
 
-#else
+		fread_s( &Probe.NearestProbeDistance, sizeof(Probe.NearestProbeDistance), sizeof(float), 1, pFile );
+		fread_s( &Probe.FarthestProbeDistance, sizeof(Probe.FarthestProbeDistance), sizeof(float), 1, pFile );
+
+		for ( U32 NeighborProbeIndex=0; NeighborProbeIndex < NeighborProbesCount; NeighborProbeIndex++ )
+		{
+			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID), sizeof(U32), 1, pFile );
+			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].Distance, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].Distance), sizeof(float), 1, pFile );
+			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].SolidAngle, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].SolidAngle), sizeof(float), 1, pFile );
+			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].Direction.x, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].Direction), sizeof(NjFloat3), 1, pFile );
+			for ( int i=0; i < 9; i++ )
+				fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].SH[i], sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].SH[i]), sizeof(float), 1, pFile );
+		}
+		for ( U32 NeighborProbeIndex=NeighborProbesCount; NeighborProbeIndex < MAX_PROBE_NEIGHBORS; NeighborProbeIndex++ )
+			Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID = ~0;	// Invalid ID
+
+		fclose( pFile );
+	}
+
+#else	// Compute probes instead
+
+	const float		Z_INFINITY = 1e6f;
+	const float		Z_INFINITY_TEST = 0.99f * Z_INFINITY;
+
+				pRTCubeMap = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 4, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain albedo (cube 0) + (normal + distance) (cube 1) + (static lighting + emissive surface index) (cube 2) + Probe IDs (cube 3)
+	Texture2D*	pRTCubeMapDepth = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
+	Texture2D*	pRTCubeMapStaging = new Texture2D( m_Device, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 4, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Prepare the cube map face transforms
+	// Here are the transform to render the 6 faces of a cube map
+	// Remember the +Z face is not oriented the same way as our Z vector: http://msdn.microsoft.com/en-us/library/windows/desktop/bb204881(v=vs.85).aspx
+	//
+	//
+	//		^ +Y
+	//		|   +Z  (our actual +Z faces the other way!)
+	//		|  /
+	//		| /
+	//		|/
+	//		o------> +X
+	//
+	//
+	NjFloat3	SideAt[6] = 
+	{
+		NjFloat3(  1, 0, 0 ),
+		NjFloat3( -1, 0, 0 ),
+		NjFloat3( 0,  1, 0 ),
+		NjFloat3( 0, -1, 0 ),
+		NjFloat3( 0, 0,  1 ),
+		NjFloat3( 0, 0, -1 ),
+	};
+	NjFloat3	SideRight[6] = 
+	{
+		NjFloat3( 0, 0, -1 ),
+		NjFloat3( 0, 0,  1 ),
+		NjFloat3(  1, 0, 0 ),
+		NjFloat3(  1, 0, 0 ),
+		NjFloat3(  1, 0, 0 ),
+		NjFloat3( -1, 0, 0 ),
+	};
+
+	NjFloat4x4	SideWorld2Proj[6];
+	NjFloat4x4	Side2Local[6];
+	NjFloat4x4	Camera2Proj = NjFloat4x4::ProjectionPerspective( 0.5f * PI, 1.0f, 0.01f, 1000.0f );
+	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
+	{
+		NjFloat4x4	Camera2Local;
+		Camera2Local.SetRow( 0, SideRight[CubeFaceIndex], 0 );
+		Camera2Local.SetRow( 1, SideAt[CubeFaceIndex] ^ SideRight[CubeFaceIndex], 0 );
+		Camera2Local.SetRow( 2, SideAt[CubeFaceIndex], 0 );
+		Camera2Local.SetRow( 3, NjFloat3::Zero, 1 );
+
+		Side2Local[CubeFaceIndex] = Camera2Local;
+
+		NjFloat4x4	Local2Camera = Camera2Local.Inverse();
+		NjFloat4x4	Local2Proj = Local2Camera * Camera2Proj;
+		SideWorld2Proj[CubeFaceIndex] = Local2Proj;
+	}
+
+	// Create the special CB for cube map projections
+	struct	CBCubeMapCamera
+	{
+		NjFloat4x4	Camera2World;
+		NjFloat4x4	World2Proj;
+	};
+	CB<CBCubeMapCamera>*	pCBCubeMapCamera = new CB<CBCubeMapCamera>( m_Device, 8, true );
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Render every probe as a cube map & process
+	//
+	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+//for ( int ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
+	{
+		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
+
+		//////////////////////////////////////////////////////////////////////////
+		// 1] Render Albedo + Normal + Distance + Static lit + Emissive Mat ID
+
+		// Clear cube map
+		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6*0, 6 ), NjFloat4::Zero );
+		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6*1, 6 ), NjFloat4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
+
+		NjFloat4	Bisou = NjFloat4::Zero;
+		((U32&) Bisou.w) = 0xFFFFFFFFUL;
+		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6*2, 6 ), Bisou );	// Clear emissive surface ID to -1 (invalid) and static color to 0
+		((U32&) Bisou.x) = 0xFFFFFFFFUL;
+		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6*3, 6 ), Bisou );	// Clear probe ID to -1 (invalid)
+
+		NjFloat4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
+		ProbeLocal2World.Normalize();
+
+		ASSERT( ProbeLocal2World.GetRow(0).LengthSq() > 0.999f && ProbeLocal2World.GetRow(1).LengthSq() > 0.999f && ProbeLocal2World.GetRow(2).LengthSq() > 0.999f, "Not identity! If not identity then transform probe set positions/normals/etc. by probe matrix!" );
+
+		NjFloat4x4	ProbeWorld2Local = ProbeLocal2World.Inverse();
+
+		// Render the 6 faces
+		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
+		{
+			// Update cube map face camera transform
+			NjFloat4x4	World2Proj = ProbeWorld2Local * SideWorld2Proj[CubeFaceIndex];
+
+			pCBCubeMapCamera->m.Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
+			pCBCubeMapCamera->m.World2Proj = World2Proj;
+			pCBCubeMapCamera->UpdateData();
+
+			// Render the scene into the specific cube map faces
+			m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+
+			ID3D11RenderTargetView*	ppViews[3] = {
+				pRTCubeMap->GetTargetView( 0, 6*0+CubeFaceIndex, 1 ),
+				pRTCubeMap->GetTargetView( 0, 6*1+CubeFaceIndex, 1 ),
+				pRTCubeMap->GetTargetView( 0, 6*2+CubeFaceIndex, 1 )
+			};
+			m_Device.SetRenderTargets( CUBE_MAP_SIZE, CUBE_MAP_SIZE, 3, ppViews, pRTCubeMapDepth->GetDepthStencilView() );
+
+			// Clear depth
+			m_Device.ClearDepthStencil( *pRTCubeMapDepth, 1.0f, 0, true, false );
+
+			// Render scene
+			for ( int MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
+				RenderMesh( *m_ppCachedMeshes[MeshIndex], m_pMatRenderCubeMap );
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// 2]  Render neighborhood for each probe
+			// The idea here is simply to build a 3D voronoi cell by splatting the planes passing through all other probes
+			//	with their normal set to the direction from the other probe to the current probe.
+			// Splatting a new plane and accounting for the depth buffer will let visible pixels from the plane show up
+			//	and write the ID of the probe.
+			//
+			// Reading back the cube map will indicate the solid angle perceived by each probe to each of its neighbors
+			//	so we can create a linked list of neighbor probes, of their visibilities and solid angle
+			//
+			m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+			m_Device.SetRenderTarget( CUBE_MAP_SIZE, CUBE_MAP_SIZE, *pRTCubeMap->GetTargetView( 0, 6*3+CubeFaceIndex, 1 ), pRTCubeMapDepth->GetDepthStencilView() );
+
+			m_pCB_Probe->m.CurrentProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
+
+			USING_MATERIAL_START( *m_pMatRenderNeighborProbe )
+
+			for ( int NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ )
+				if ( NeighborProbeIndex != ProbeIndex )
+				{
+					ProbeStruct&	NeighborProbe = m_pProbes[NeighborProbeIndex];
+
+					m_pCB_Probe->m.NeighborProbeID = NeighborProbeIndex;
+					m_pCB_Probe->m.NeighborProbePosition = NeighborProbe.pSceneProbe->m_Local2World.GetRow( 3 );
+					m_pCB_Probe->UpdateData();
+
+					m_ScreenQuad.Render( M );
+				}
+
+			USING_MATERIAL_END
+		}
+
+
+		//////////////////////////////////////////////////////////////////////////
+		// 3] Read back cube map and create the SH coefficients
+		pRTCubeMapStaging->CopyFrom( *pRTCubeMap );
+
+#if 1	// Save to disk
+		char	pTemp[1024];
+		sprintf_s( pTemp, SCENE_PATH "Probe%02d.pom", ProbeIndex );
+		pRTCubeMapStaging->Save( pTemp );
+#endif
+
+
 		double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
 		double	SumSolidAngle = 0.0;
 
@@ -883,8 +1302,8 @@ void	EffectGlobalIllum2::PreComputeProbes()
 				}
 			}
 
-			pRTCubeMapStaging->UnMap( 0, CubeFaceIndex );
-			pRTCubeMapStaging->UnMap( 0, 6+CubeFaceIndex );
+			pRTCubeMapStaging->UnMap( 0, 6*0+CubeFaceIndex );
+			pRTCubeMapStaging->UnMap( 0, 6*1+CubeFaceIndex );
 		}
 
 		//////////////////////////////////////////////////////////////////////////
@@ -907,11 +1326,11 @@ Probe.pSHBounceStatic[i] = NjFloat3::Zero;
 		//
 
 
-TODO! At the moment we only read back the only pre-computed set from disk
+//TODO! At the moment we only read back the only pre-computed set from disk
 
-#endif
 	}
 
+	delete pCBCubeMapCamera;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Release
@@ -919,8 +1338,6 @@ TODO! At the moment we only read back the only pre-computed set from disk
 m_Device.RemoveRenderTargets();
 pRTCubeMap->SetPS( 64 );
 #endif
-
-	delete pCBCubeMapCamera;
 
 	delete pRTCubeMapStaging;
 
@@ -930,15 +1347,88 @@ pRTCubeMap->SetPS( 64 );
 // 	delete pRTCubeMap;
 
 
+#endif
+
+
 	//////////////////////////////////////////////////////////////////////////
-	// Allocate runtime probes structured buffer
+	// Allocate runtime probes structured buffer & copy static infos
 	m_pSB_RuntimeProbes = new SB<RuntimeProbe>( m_Device, m_ProbesCount, true );
 	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
-		m_pSB_RuntimeProbes->m[ProbeIndex].Position = m_pProbes[ProbeIndex].pSceneProbe->m_Local2World.GetRow( 3 );
-		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = m_pProbes[ProbeIndex].MaxDistance;
+		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
+
+		m_pSB_RuntimeProbes->m[ProbeIndex].Position = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
+		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.MaxDistance;
+//		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.MeanDistance;
+
+// 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[0] = Probe.pNeighborProbeInfos[0].ProbeID;
+// 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[1] = Probe.pNeighborProbeInfos[1].ProbeID;
+// 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[2] = Probe.pNeighborProbeInfos[2].ProbeID;
+// 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[3] = Probe.pNeighborProbeInfos[3].ProbeID;
+
+		ASSERT( Probe.pNeighborProbeInfos[0].ProbeID == ~0 || Probe.pNeighborProbeInfos[0].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
+		ASSERT( Probe.pNeighborProbeInfos[1].ProbeID == ~0 || Probe.pNeighborProbeInfos[1].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
+		ASSERT( Probe.pNeighborProbeInfos[2].ProbeID == ~0 || Probe.pNeighborProbeInfos[2].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
+		ASSERT( Probe.pNeighborProbeInfos[3].ProbeID == ~0 || Probe.pNeighborProbeInfos[3].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
+		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[0] = Probe.pNeighborProbeInfos[0].ProbeID;
+		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[1] = Probe.pNeighborProbeInfos[1].ProbeID;
+		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[2] = Probe.pNeighborProbeInfos[2].ProbeID;
+		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[3] = Probe.pNeighborProbeInfos[3].ProbeID;
 	}
 	m_pSB_RuntimeProbes->Write();
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build the probes network debug mesh
+	Dictionary<RuntimeProbeNetworkInfos>	Connections;
+	for ( U32 ProbeIndex=0; ProbeIndex < U32(m_ProbesCount); ProbeIndex++ )
+	{
+		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
+
+		for ( int NeighborProbeIndex=0; NeighborProbeIndex < MAX_PROBE_NEIGHBORS; NeighborProbeIndex++ )
+		{
+			ProbeStruct::NeighborProbeInfos&	NeighborInfos = Probe.pNeighborProbeInfos[NeighborProbeIndex];
+			if ( NeighborInfos.ProbeID == ~0 )
+				continue;
+			
+			U32	Key = ProbeIndex < NeighborInfos.ProbeID ? ((ProbeIndex & 0xFFFF) | ((NeighborInfos.ProbeID & 0xFFFF) << 16)) : ((NeighborInfos.ProbeID & 0xFFFF) | ((ProbeIndex & 0xFFFF) << 16));
+
+			RuntimeProbeNetworkInfos*	pConnection = Connections.Get( Key );
+			if ( pConnection != NULL )
+				continue;	// Already eastablished!
+			
+			pConnection = &Connections.Add( Key );
+			pConnection->ProbeIDs[0] = ProbeIndex;
+			pConnection->ProbeIDs[1] = NeighborInfos.ProbeID;
+			pConnection->NeighborsSolidAngles.x = NeighborInfos.SolidAngle;
+			pConnection->NeighborsSolidAngles.y = NeighborInfos.SolidAngle;	// By default, consider solid angles to be equal: both probes perceive the same amount of each other
+
+			// Find us in the neighbor probe's neighborhood
+			ProbeStruct&	NeighborProbe = m_pProbes[NeighborInfos.ProbeID];
+			for ( int NeighborNeighborProbeIndex=0; NeighborNeighborProbeIndex < MAX_PROBE_NEIGHBORS; NeighborNeighborProbeIndex++ )
+				if ( NeighborProbe.pNeighborProbeInfos[NeighborNeighborProbeIndex].ProbeID == ProbeIndex )
+				{	// Found us!
+					// Now we can get the exact solid angle!
+					pConnection->NeighborsSolidAngles.y = NeighborProbe.pNeighborProbeInfos[NeighborNeighborProbeIndex].SolidAngle;
+					break;
+				}
+		}
+	}
+
+	int	ProbeConnectionsCount = Connections.GetEntriesCount();
+
+	// Create the structured buffer from the flattened dictionary
+	m_pSB_RuntimeProbeNetworkInfos = new SB<RuntimeProbeNetworkInfos>( m_Device, ProbeConnectionsCount, true );
+	Connections.ForEach( CopyProbeNetworkConnection, m_pSB_RuntimeProbeNetworkInfos->m );
+
+	m_pSB_RuntimeProbeNetworkInfos->Write();
+	m_pSB_RuntimeProbeNetworkInfos->SetInput( 16 );
+}
+
+static void	CopyProbeNetworkConnection( int _EntryIndex, EffectGlobalIllum2::RuntimeProbeNetworkInfos& _Value, void* _pUserData )
+{
+	EffectGlobalIllum2::RuntimeProbeNetworkInfos*	_pTarget = (EffectGlobalIllum2::RuntimeProbeNetworkInfos*) _pUserData;
+	memcpy_s( &_pTarget[_EntryIndex], sizeof(EffectGlobalIllum2::RuntimeProbeNetworkInfos), &_Value, sizeof(EffectGlobalIllum2::RuntimeProbeNetworkInfos) );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -961,9 +1451,9 @@ void	EffectGlobalIllum2::RenderShadowMap( const NjFloat3& _SunDirection )
 	// Find appropriate bounds
 	NjFloat3		BBoxMin = 1e6f * NjFloat3::One;
 	NjFloat3		BBoxMax = -1e6f * NjFloat3::One;
-	Scene::Node*	pMesh = NULL;
-	while ( (pMesh = m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
+	for ( int MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
 	{
+		Scene::Mesh*	pMesh = m_ppCachedMeshes[MeshIndex];
 		NjFloat4x4	Mesh2Light = pMesh->m_Local2World * m_pCB_ShadowMap->m.World2Light;
 
 		// Transform the 8 corners of the mesh's BBox into light space and grow the light's bbox
@@ -1041,10 +1531,8 @@ void	EffectGlobalIllum2::RenderShadowMap( const NjFloat3& _SunDirection )
 	m_Device.SetRenderTargets( m_pRTShadowMap->GetWidth(), m_pRTShadowMap->GetHeight(), 0, NULL, m_pRTShadowMap->GetDepthStencilView() );
 
 	Scene::Node*	pMesh = NULL;
-	while ( (pMesh = m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
-	{
-		RenderMesh( (Scene::Mesh&) *pMesh, &M );
-	}
+	for ( int MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
+		RenderMesh( *m_ppCachedMeshes[MeshIndex], &M );
 
 	USING_MATERIAL_END
 
@@ -1154,47 +1642,59 @@ void	EffectGlobalIllum2::ZHRotate( const NjFloat3& _Direction, const NjFloat3& _
 //////////////////////////////////////////////////////////////////////////
 // Scene Rendering
 //
-void*	EffectGlobalIllum2::TagMaterial( const Scene& _Owner, const Scene::Material& _Material )
+void*	EffectGlobalIllum2::TagMaterial( const Scene& _Owner, Scene::Material& _Material )
 {
 	if ( m_bDeleteSceneTags )
 	{
 		return NULL;
 	}
 
-	switch ( _Material.m_ID )
+// 	switch ( _Material.m_ID )
+// 	{
+// 	case 0:
+// 	case 1:
+// 	case 2:
+// 
+// 		if ( _Material.m_EmissiveColor.Max() > 1e-4f )
+// 			return m_pMatRenderEmissive;	// Special emissive materials!
+// 
+// 		return m_pMatRender;
+// 
+// 	default:
+// 		ASSERT( false, "Unsupported material!" );
+// 	}
+
+	
+	if ( _Material.m_EmissiveColor.Max() > 1e-4f )
 	{
-	case 0:
-	case 1:
-	case 2:
-
-		if ( _Material.m_EmissiveColor.Max() > 1e-4f )
-			return m_pMatRenderEmissive;	// Special emissive materials!
-
-		return m_pMatRender;
-
-	default:
-		ASSERT( false, "Unsupported material!" );
+		ASSERT( m_EmissiveMaterialsCount < 100, "Too many emissive materials!" );
+		m_ppEmissiveMaterials[m_EmissiveMaterialsCount++] = &_Material;
+		return m_pMatRenderEmissive;	// Special rendering for emissive materials!
 	}
-	return NULL;
+
+	return m_pMatRender;
 }
-void*	EffectGlobalIllum2::TagTexture( const Scene& _Owner, const Scene::Material::Texture& _Texture )
+void*	EffectGlobalIllum2::TagTexture( const Scene& _Owner, Scene::Material::Texture& _Texture )
 {
 	if ( m_bDeleteSceneTags )
 	{
 		return NULL;
 	}
 
-	switch ( _Texture.m_ID )
-	{
-	case 0:		return m_pTexWalls;
-	case ~0:	return NULL;	// Invalid textures are not mapped
-	default:
-		ASSERT( false, "Unsupported texture!" );
-	}
-	return NULL;
+	if ( _Texture.m_ID == ~0 )
+		return NULL;	// Invalid textures are not mapped
+
+//return m_ppTextures[0];
+
+#ifndef	USE_WHITE_TEXTURES
+	ASSERT( int(_Texture.m_ID) < m_TexturesCount, "Unsupported texture!" );
+	return m_ppTextures[_Texture.m_ID];
+#else
+	return m_ppTextures[0];
+#endif
 }
 
-void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, const Scene::Node& _Node )
+void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, Scene::Node& _Node )
 {
 	if ( m_bDeleteSceneTags )
 	{
@@ -1207,8 +1707,8 @@ void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, const Scene::Node& _Node
 		LightStruct&	TargetLight = m_pSB_LightsStatic->m[m_pCB_Scene->m.StaticLightsCount++];
 
 		TargetLight.Type = SourceLight.m_LightType;
-		TargetLight.Position = SourceLight.m_Local2Parent.GetRow( 3 );
-		TargetLight.Direction = -SourceLight.m_Local2Parent.GetRow( 2 ).Normalize();
+		TargetLight.Position = SourceLight.m_Local2World.GetRow( 3 );
+		TargetLight.Direction = -SourceLight.m_Local2World.GetRow( 2 ).Normalize();
 		TargetLight.Color = SourceLight.m_Intensity * SourceLight.m_Color;
 		TargetLight.Parms.Set( 10.0f, 11.0f, cosf( SourceLight.m_HotSpot ), cosf( SourceLight.m_Falloff ) );
 	}
@@ -1216,7 +1716,7 @@ void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, const Scene::Node& _Node
 	return NULL;
 }
 
-void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, const Scene::Mesh& _Mesh, const Scene::Mesh::Primitive& _Primitive )
+void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh, Scene::Mesh::Primitive& _Primitive )
 {
 	if ( m_bDeleteSceneTags )
 	{	// Delete the primitive
@@ -1265,9 +1765,18 @@ void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMater
 		Texture2D*	pTexDiffuseAlbedo = (Texture2D*) SceneMaterial.m_TexDiffuseAlbedo.m_pTag;
 		if ( pTexDiffuseAlbedo != NULL )
 			pTexDiffuseAlbedo->SetPS( 10 );
+		else
+			m_ppTextures[0]->SetPS( 10 );
+		Texture2D*	pTexNormal = (Texture2D*) SceneMaterial.m_TexNormal.m_pTag;
+		if ( pTexNormal != NULL )
+			pTexNormal->SetPS( 11 );
+		else
+			m_ppTextures[0]->SetPS( 11 );
 		Texture2D*	pTexSpecularAlbedo = (Texture2D*) SceneMaterial.m_TexSpecularAlbedo.m_pTag;
 		if ( pTexSpecularAlbedo != NULL )
-			pTexSpecularAlbedo->SetPS( 11 );
+			pTexSpecularAlbedo->SetPS( 12 );
+		else
+			m_ppTextures[0]->SetPS( 12 );
 
 		// Upload the primitive's material CB
 		m_pCB_Material->m.ID = SceneMaterial.m_ID;
@@ -1278,6 +1787,7 @@ void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMater
 		m_pCB_Material->m.EmissiveColor = SceneMaterial.m_EmissiveColor;
 		m_pCB_Material->m.SpecularExponent = SceneMaterial.m_SpecularExponent.x;
 		m_pCB_Material->m.FaceOffset = U32(pPrim->m_pTag);
+		m_pCB_Material->m.HasNormalTexture = pTexNormal != NULL;
 		m_pCB_Material->UpdateData();
 
 		int		Test = sizeof(CBMaterial);

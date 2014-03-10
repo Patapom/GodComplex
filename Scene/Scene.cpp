@@ -444,6 +444,9 @@ void	Scene::Material::Init( const U8*& _pData, ISceneTagger& _SceneTagger )
 	m_SpecularExponent.y = ReadF32( _pData );
 	m_SpecularExponent.z = ReadF32( _pData );
 
+	m_TexNormal.m_ID = ReadU16( _pData, true );
+	m_TexNormal.m_pTag = _SceneTagger.TagTexture( m_Owner, m_TexNormal );
+
 	m_EmissiveColor.x = ReadF32( _pData );
 	m_EmissiveColor.y = ReadF32( _pData );
 	m_EmissiveColor.z = ReadF32( _pData );
@@ -457,6 +460,7 @@ void	Scene::Material::Init( const U8*& _pData, ISceneTagger& _SceneTagger )
 void	Scene::Material::Exit( ISceneTagger& _SceneTagClearer )
 {
 	m_TexDiffuseAlbedo.m_pTag = _SceneTagClearer.TagTexture( m_Owner, m_TexDiffuseAlbedo );
+	m_TexNormal.m_pTag = _SceneTagClearer.TagTexture( m_Owner, m_TexNormal );
 	m_TexSpecularAlbedo.m_pTag = _SceneTagClearer.TagTexture( m_Owner, m_TexSpecularAlbedo );
 
 	m_pTag = _SceneTagClearer.TagMaterial( m_Owner, *this );

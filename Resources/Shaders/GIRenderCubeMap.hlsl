@@ -8,7 +8,7 @@
 #include "Inc/Global.hlsl"
 #include "Inc/GI.hlsl"
 
-cbuffer	cbCubeMapCamera	: register( b9 )
+cbuffer	cbCubeMapCamera	: register( b8 )
 {
 	float4x4	_CubeMap2World;
 	float4x4	_CubeMapWorld2Proj;
@@ -88,10 +88,10 @@ PS_OUT	PS( PS_IN _In, uint	_FaceIndex : SV_PRIMITIVEID )
 	float3	View = normalize( _In.Position - _Camera2World[3].xyz );
 
 	float3	AccumDiffuse = 0.0;
-	for ( int LightIndex=0; LightIndex < _StaticLightsCount; LightIndex++ )
+	for ( uint LightIndex=0; LightIndex < _StaticLightsCount; LightIndex++ )
 	{
 		LightStruct	LightSource = _SBLightsStatic[LightIndex];
-		AccumDiffuse += AccumulateLight( _In.Position, Normal, Normal, LightSource );
+		AccumDiffuse += AccumulateLight( _In.Position, Normal, Normal, Tangent, LightSource );
 	}
 	AccumDiffuse *= Out.DiffuseAlbedo;
 

@@ -2,13 +2,14 @@
 //
 #pragma once
 
-// A pixel is a color + a height + a roughness + a material ID
-// From a bunch of pixels we can thus deduce the diffuse, specular, ambient occlusion, height and normal maps
+// A pixel is a color + a height + a roughness + a metallic index + a material ID
+// From a bunch of pixels we can thus deduce the diffuse, specular tint, gloss, ambient occlusion, height and normal maps
 struct	Pixel
 {
  	NjFloat4	RGBA;
 	float		Height;
 	float		Roughness;
+	float		Metallic;
 	int			MatID;
 
 	Pixel()
@@ -16,14 +17,16 @@ struct	Pixel
 		RGBA = NjFloat4::Zero;
 		Height = 0.0f;
 		Roughness = 0.0f;
+		Metallic = 0.0f;
 		MatID = 0;
 	}
 
-	Pixel( const NjFloat4& _RGBA, float _Height=0.0f, float _Roughness=0.0f, int _MatID=0 )
+	Pixel( const NjFloat4& _RGBA, float _Height=0.0f, float _Roughness=0.0f, float _Metallic=0.0f, int _MatID=0 )
 	{
 		RGBA = _RGBA;
 		Height = _Height;
 		Roughness = _Roughness;
+		Metallic = _Metallic;
 		MatID = _MatID;
 	}
 
@@ -36,6 +39,7 @@ struct	Pixel
 		RGBA = RGBA * r + _Target.RGBA * t;
 		Height = Height * r + _Target.Height * t;
 		Roughness = Roughness * r + _Target.Roughness * t;
+		Metallic = Metallic * r + _Target.Metallic * t;
 		if ( t > 0.5f )
 			MatID = _Target.MatID;
 	}
