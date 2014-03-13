@@ -354,6 +354,13 @@ namespace ProbeSHEncoder
 			FileInfo	F = new FileInfo( saveFileDialog.FileName );
 			m_Probe.SaveSets( F );
 		}
+		
+		[System.Diagnostics.DebuggerDisplay( "ProbeID={ProbeID} Importance={Importance}" )]
+		class BestProbe
+		{
+			public int		ProbeID = -1;
+			public double	Importance = 0.0;
+		};
 
 		private void batchEncodeToolStripMenuItem_Click( object sender, EventArgs e )
 		{
@@ -379,6 +386,9 @@ namespace ProbeSHEncoder
 			progressBarBatchConvert.Value = 0;
 			progressBarBatchConvert.Visible = true;
 
+			uint	MaxFaceIndex = 0;
+			Dictionary<UInt32,BestProbe>	BestProbeInfluencePerFace = new Dictionary<UInt32,BestProbe>();
+
 			string			Errors = null;
 			int				ProcessedProbesCount = 0;
 			List<FileInfo>	PomFiles = new List<FileInfo>( SourceDir.GetFiles( "*.pom" ) );
@@ -401,6 +411,27 @@ namespace ProbeSHEncoder
 					FileInfo	TargetFile = new FileInfo( Path.Combine( TargetDir.FullName, TargetFileName ) );
 					m_Probe.SaveSets( TargetFile );
 
+					// Process probe influences and keep the best ones for each face
+					MaxFaceIndex = Math.Max( MaxFaceIndex, m_Probe.m_MaxFaceIndex );
+					foreach ( uint FaceIndex in m_Probe.m_ProbeInfluencePerFace.Keys )
+					{
+						double	ProbeImportance = m_Probe.m_ProbeInfluencePerFace[FaceIndex];
+						if ( !BestProbeInfluencePerFace.ContainsKey( FaceIndex ) )
+						{	// Use this probe
+							BestProbeInfluencePerFace[FaceIndex] = new BestProbe() { Importance=ProbeImportance, ProbeID=m_Probe.m_ProbeID };
+							continue;
+						}
+
+						double	ExistingImportance = BestProbeInfluencePerFace[FaceIndex].Importance;
+						if ( ExistingImportance >= ProbeImportance )
+							continue;
+
+						// We have a better probe
+						BestProbeInfluencePerFace[FaceIndex].ProbeID = m_Probe.m_ProbeID;
+						BestProbeInfluencePerFace[FaceIndex].Importance = ProbeImportance;
+					}
+
+					// Update UI
 					ProcessedProbesCount++;
 					progressBarBatchConvert.Value = progressBarBatchConvert.Maximum * (OriginalFilesCount - PomFiles.Count) / OriginalFilesCount;
 					progressBarBatchConvert.Refresh();
@@ -413,6 +444,26 @@ namespace ProbeSHEncoder
 				}
 			}
 
+			// Save the final probe influences
+			FileInfo	TargetInfluenceFile = new FileInfo( Path.Combine( TargetDir.FullName, "ProbeInfluence.pim" ) );
+			using ( FileStream S = TargetInfluenceFile.Create() )
+				using( BinaryWriter Writer = new BinaryWriter( S ) )
+					for ( uint FaceIndex=0; FaceIndex < MaxFaceIndex; FaceIndex++ )
+					{
+						if ( BestProbeInfluencePerFace.ContainsKey( FaceIndex ) )
+						{
+							BestProbe	Influence = BestProbeInfluencePerFace[FaceIndex];
+							Writer.Write( Influence.ProbeID );
+							Writer.Write( Influence.Importance );
+						}
+						else
+						{
+							Writer.Write( (int) -1 );
+							Writer.Write( 0.0 );
+						}
+					}
+
+			// Notify
 			progressBarBatchConvert.Value = progressBarBatchConvert.Maximum;
 			if ( Errors == null )
 				MessageBox( "Success! " + ProcessedProbesCount + " probes were processed...", MessageBoxButtons.OK, MessageBoxIcon.Information );
@@ -493,6 +544,52 @@ namespace ProbeSHEncoder
 
 			// We can now save the results
 			saveResultsToolStripMenuItem.Enabled = true;
+		}
+
+		private void encodeFaceProbesToolStripMenuItem_Click( object sender, EventArgs e )
+		{
+			// Ask for the influence file to load from
+			string	OldFileName = GetRegKey( "LastProbeInfluenceFileName", GetRegKey( "LastProbesFolderTarget", Path.GetDirectoryName( m_ApplicationPath ) ) );
+			openFileDialogProbeInfluence.FileName = OldFileName;
+			if ( openFileDialogProbeInfluence.ShowDialog( this ) != DialogResult.OK )
+				return;
+			SetRegKey( "LastProbeInfluenceFileName", openFileDialogProbeInfluence.FileName );
+
+			FileInfo	SourceInfluenceFile = new FileInfo( openFileDialogProbeInfluence.FileName );
+
+			// Ask for the scene file to apply to
+			string	OldSceneFile = GetRegKey( "LastSceneFileName", GetRegKey( "LastProbesFolderSource", Path.GetDirectoryName( m_ApplicationPath ) ) );
+			openFileDialogScene.FileName = OldSceneFile;
+			if ( openFileDialogScene.ShowDialog( this ) != DialogResult.OK )
+				return;
+			SetRegKey( "LastSceneFileName", openFileDialogScene.FileName );
+
+			FileInfo	SceneFile = new FileInfo( openFileDialogScene.FileName );
+
+
+			try
+			{
+				// Read the scene file
+				GCXFormat.Scene	GCX = null;
+				using ( FileStream S = SceneFile.OpenRead() )
+					using( BinaryReader R = new BinaryReader( S ) )
+						GCX = new GCXFormat.Scene( R );
+
+
+				//////////////////////////////////////////////////////////////////////////
+				// 1] We first need to establish the list of absolute face indices from the scene file
+
+
+
+				//////////////////////////////////////////////////////////////////////////
+				// 2] 
+
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred while probe influences in scene file: " + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+				return;
+			}
 		}
 
 		#endregion

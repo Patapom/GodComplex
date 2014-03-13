@@ -1,4 +1,28 @@
-﻿using System;
+﻿//////////////////////////////////////////////////////////////////////////
+// This project is used to create DX cube maps from standard HDR environments
+// Cross, probe and cylindrical encoding is supported
+//
+// The mip maps of the cube map are carefully computed so they approximately match
+//	the gaussian lobes of the Ward specular model we're using in the engine and
+//	the Maya shader.
+//
+// A SH convolution is also computed from the mip 0 cube map so we can have
+//	a nice irradiance map. The SH coefficients are written as a text file
+//	easily includable in a HLSL shader.
+//
+// The cube map is written in the DDS format so it can be loaded by Maya.
+// Strangely enough, the DirectXTex utility I'm using generates a DDS that
+//	even DX Tex Viewer can't read! But trust me: even though Maya pretends
+//	it can't read it, only the swatches are concerned. A DX11 Maya shader
+//	will read the texture just fine! The target DDS is perfectly valid.
+// (funny how DirectX tools can't even read what other DirectX tools generate!)
+//
+// Unfortunately at the time I don't write cubemaps to the POM format, but DDS
+//	and POM are pretty similar so it's a piece of cake to write such a converter.
+//
+//////////////////////////////////////////////////////////////////////////
+//
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -439,7 +463,7 @@ namespace TestGradientPNG
 		///	 store them in an array and try to fit a function through those points...
 		/// 
 		/// So, for epsilon = 0.2 and measuring from the following graph showing roughness as Y:
-		///		http://www.fooplot.com/#W3sidHlwZSI6MCwiZXEiOiJ0YW4oeCkvc3FydCgtbG4oMC4yL2Nvcyh4KSkpIiwiY29sb3IiOiIjMDAwOUZGIn0seyJ0eXBlIjoxMDAwLCJ3aW5kb3ciOlsiLTAuMDQwNDQzOTk2MTg4MjIxMDYiLCIwLjg3NDMzNTYxODY3NTM0NjQiLCItMC4yNTE5NzAzMjkyODQ2Njc1NiIsIjEuMDkwNzA3NzQwNzgzNjkxNCJdLCJzaXplIjpbMTEwMCw3MDBdfV0-
+		///		http://www.fooplot.com/#W3sidHlwZSI6MywiZXEiOltbIjAuMDEwMCIsIiAwLjAxMjciXSxbIjAuMTAiLCIgMC4xMjciXSxbIjAuMjAiLCIgMC4yNDciXSxbIjAuMzAiLCIgMC4zNTciXSxbIjAuNDAiLCIgMC40NTYiXSxbIjAuNTAiLCIgMC41NDMiXSxbIjAuNjAiLCIgMC42MTgiXSxbIjAuNzAiLCIgMC42ODQiXSxbIjAuODAiLCIgMC43NCJdLFsiMC45MCIsIiAwLjc5Il0sWyIxLjAwIiwiIDAuODM0Il1dLCJjb2xvciI6IiMwMDAwMDAifSx7InR5cGUiOjAsImVxIjoiLTAuNTA0MDU1MjY4ODg3ODU0Nip4XjIrMS4zMzMxMjkwNDk3NzQ0NjkyKngrMC4wMDAzNDc0NjYwNDQzNDU2ODM1IiwiY29sb3IiOiIjMDAwMDAwIn0seyJ0eXBlIjoxMDAwLCJ3aW5kb3ciOlsiMCIsIjEuMSIsIjAiLCIxLjIiXX1d
 		/// We get:
 		/// 
 		///		m		0.0100	0.10	0.20	0.30	0.40	0.50	0.60	0.70	0.80	0.90	1.00
@@ -472,14 +496,14 @@ namespace TestGradientPNG
 		/// At mip #N, tan( alpha ) = CubeSize / CubeSize => alpha = PI/4, we cover Omega = 4PI/6
 		/// 
 		/// 
-		/// In our case, we want to be able to cover up to a lobe with aperture half angle = 48°, corresponding to the maximum roughness of m=1
+		/// In our case, we want to be able to cover up to a lobe with aperture half angle ~= 48°, corresponding to the maximum roughness of m=1
 		/// If you look at an example of a completely diffuse cube map http://www.3dvia.com/studio/wp-content/uploads/2009/11/hangar_diffuse.png you can see
 		///  it still needs a little resolution and we can't simply assume it will be the highest mip level of size 1x1...
 		/// 
 		/// By fixing the "diffuse mip" so it's kept in the cube map mip of size 4x4, for example, we can have N-2 mips where the angle will vary from 0 to 48°
 		/// 
 		/// Take the example of a 64x64 cube map (N=7):
-		///		Mip #0 = 64x64	-> alpha = 0°	(m=0.01)	Remember from eq. (1) that m = tan(alpha) / sqrt( -ln( eps / cos(alpha) ) )
+		///		Mip #0 = 64x64	-> alpha = 0°	(m=0.0)		Remember from eq. (1) that m = tan(alpha) / sqrt( -ln( eps / cos(alpha) ) )
 		///		Mip #1 = 32x32	-> alpha = 12°	(m=0.168)
 		///		Mip #2 = 16x16	-> alpha = 24°	(m=0.361)
 		///		Mip #3 =  8x8	-> alpha = 36°	(m=0.614)
