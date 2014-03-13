@@ -125,6 +125,8 @@ namespace GCXFormat
 			public Matrix4x4	m_Local2Parent = null;
 			public Node[]		m_Children = new Node[0];
 
+			public object		m_Tag = null;	// User tag
+
 			public Node( Scene _Owner, BinaryReader _R )
 			{
 				m_Owner = _Owner;
@@ -377,7 +379,8 @@ namespace GCXFormat
 				public Vertex[]		m_Vertices = null;
 
 				// Temporary data, not saved
-				public int			m_VertexOffset = 0;	// Absolute offset to add to this primitive's vertices to obtain absolute unique vertex index
+				public int			m_FaceOffset = 0;	// Absolute offset to add to this primitive's faces to obtain an absolute unique face index
+				public int			m_VertexOffset = 0;	// Absolute offset to add to this primitive's vertices to obtain an absolute unique vertex index
 
 				public Primitive( Mesh _Owner, BinaryReader _R )
 				{
@@ -428,7 +431,9 @@ namespace GCXFormat
 					// Store absolute vertex offset
 					m_VertexOffset = _Owner.m_Owner.m_TotalVerticesCount;
 					_Owner.m_Owner.m_TotalVerticesCount += m_Vertices.Length;	// Increase global vertices counter
-					_Owner.m_Owner.m_TotalFacecesCount += m_Faces.Length;		// Increase global faces counter
+
+					m_FaceOffset = _Owner.m_Owner.m_TotalFacesCount;
+					_Owner.m_Owner.m_TotalFacesCount += m_Faces.Length;		// Increase global faces counter
 				}
 
 				public Primitive( Mesh _Owner, FBX.Scene.Nodes.Mesh.Primitive _Primitive )
@@ -554,6 +559,100 @@ namespace GCXFormat
 					foreach ( Vertex V in m_Vertices )
 						V.Save( _W );
 				}
+
+				#region HELPERS
+
+				public class	Edge
+				{
+					public int	V0, V1;
+					public int	LeftFace, RightFace;
+
+					public override int GetHashCode()
+					{
+						return V0 ^ V1;
+					}
+
+					public int	GetOtherFaceIndex( int _FaceIndex )
+					{
+						if ( _FaceIndex == LeftFace )
+							return	RightFace;
+						else if ( _FaceIndex == RightFace )
+							return LeftFace;
+						else
+							throw new Exception( "The edge doesn't belong to the provided face!" );
+					}
+				}
+
+				public class	WingedEdgeTriangle
+				{
+					public int		m_Index;
+					public Edge[]	m_Edges;
+					public object	m_Tag;
+				}
+
+				public WingedEdgeTriangle[]	m_WingedEdgeFaces = new WingedEdgeTriangle[0];
+//				public Edge[]		m_WingedEdges = new Edge[0];
+
+				/// <summary>
+				/// Builds a winged-edges mesh from the primitive
+				/// </summary>
+				public void		BuildWingedEdgesMesh()
+				{
+					m_WingedEdgeFaces = new WingedEdgeTriangle[m_Faces.Length];
+
+					Dictionary<Edge,Edge>	Hash2Edge = new Dictionary<Edge,Edge>();
+					for ( int FaceIndex=0; FaceIndex < m_Faces.Length; FaceIndex++ )
+					{
+						Face	F = m_Faces[FaceIndex];
+						Edge	E0 = new Edge() { V0=F.V0, V1=F.V1, LeftFace=FaceIndex, RightFace=-1 };
+						Edge	E1 = new Edge() { V0=F.V1, V1=F.V2, LeftFace=FaceIndex, RightFace=-1 };
+						Edge	E2 = new Edge() { V0=F.V2, V1=F.V0, LeftFace=FaceIndex, RightFace=-1 };
+						
+						if ( !Hash2Edge.ContainsKey( E0 ) )
+							Hash2Edge.Add( E0, E0 );
+						else
+						{	// Re-use the edge from an existing face
+							E0 = Hash2Edge[E0];
+							if ( E0.V0 == F.V0 )
+								throw new Exception( "Existing edge has the same winding as this face! We should be its adjacent face and it should be winded the other way!" );
+							if ( E0.RightFace != -1 )
+								throw new Exception( "Existing edge already has a right face! We should be the one to be on the right, that means this edge is shared by more than 2 faces?!" );
+							E0.RightFace = FaceIndex;
+						}
+
+						if ( !Hash2Edge.ContainsKey( E1 ) )
+							Hash2Edge.Add( E1, E1 );
+						else
+						{	// Re-use the edge from an existing face
+							E1 = Hash2Edge[E1];
+							if ( E1.V0 == F.V0 )
+								throw new Exception( "Existing edge has the same winding as this face! We should be its adjacent face and it should be winded the other way!" );
+							if ( E1.RightFace != -1 )
+								throw new Exception( "Existing edge already has a right face! We should be the one to be on the right, that means this edge is shared by more than 2 faces?!" );
+							E1.RightFace = FaceIndex;
+						}
+
+						if ( !Hash2Edge.ContainsKey( E2 ) )
+							Hash2Edge.Add( E2, E2 );
+						else
+						{	// Re-use the edge from an existing face
+							E2 = Hash2Edge[E2];
+							if ( E2.V0 == F.V0 )
+								throw new Exception( "Existing edge has the same winding as this face! We should be its adjacent face and it should be winded the other way!" );
+							if ( E2.RightFace != -1 )
+								throw new Exception( "Existing edge already has a right face! We should be the one to be on the right, that means this edge is shared by more than 2 faces?!" );
+							E2.RightFace = FaceIndex;
+						}
+
+						// We finally have our list of edges
+						m_WingedEdgeFaces[FaceIndex].m_Index = FaceIndex;
+						m_WingedEdgeFaces[FaceIndex].m_Edges = new Edge[3] {
+							E0, E1, E2
+						};
+					}
+				}
+
+				#endregion
 			}
 
 			public Primitive[]	m_Primitives = new Primitive[0];
@@ -595,11 +694,11 @@ namespace GCXFormat
 
 		// Nodes hierarchy
 		public Node				m_RootNode = null;
-		private List<Node>		m_Nodes = new List<Node>();	// Collapsed list
+		public List<Node>		m_Nodes = new List<Node>();	// Collapsed list
 
 		// Statistics
 		public int				m_TotalVerticesCount = 0;
-		public int				m_TotalFacecesCount = 0;
+		public int				m_TotalFacesCount = 0;
 
 		#endregion
 
