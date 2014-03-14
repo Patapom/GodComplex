@@ -574,7 +574,8 @@ namespace ProbeSHEncoder
 		{
 			// Ask for the influence file to load from
 			string	OldFileName = GetRegKey( "LastProbeInfluenceFileName", GetRegKey( "LastProbesFolderTarget", Path.GetDirectoryName( m_ApplicationPath ) ) );
-			openFileDialogProbeInfluence.FileName = OldFileName;
+			openFileDialogProbeInfluence.InitialDirectory = Path.GetDirectoryName( OldFileName );
+			openFileDialogProbeInfluence.FileName = Path.GetFileName( OldFileName );
 			if ( openFileDialogProbeInfluence.ShowDialog( this ) != DialogResult.OK )
 				return;
 			SetRegKey( "LastProbeInfluenceFileName", openFileDialogProbeInfluence.FileName );
@@ -583,7 +584,8 @@ namespace ProbeSHEncoder
 
 			// Ask for the scene file to apply to
 			string	OldSceneFile = GetRegKey( "LastSceneFileName", GetRegKey( "LastProbesFolderSource", Path.GetDirectoryName( m_ApplicationPath ) ) );
-			openFileDialogScene.FileName = OldSceneFile;
+			openFileDialogScene.InitialDirectory = Path.GetDirectoryName( OldSceneFile );
+			openFileDialogScene.FileName = Path.GetFileName( OldSceneFile );
 			if ( openFileDialogScene.ShowDialog( this ) != DialogResult.OK )
 				return;
 			SetRegKey( "LastSceneFileName", openFileDialogScene.FileName );

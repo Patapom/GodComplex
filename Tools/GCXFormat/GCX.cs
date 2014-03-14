@@ -36,6 +36,9 @@ namespace GCXFormat
 				m_SpecularExponent = new Vector( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
 				m_NormalTextureID = _R.ReadUInt16();
 				m_EmissiveColor = new Vector( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+
+				if ( _R.ReadUInt16() != 0x1234 )
+					throw new Exception( "Failed to find material end marker!" );
 			}
 
 			public Material( FBX.Scene.Materials.MaterialParameters _SourceMaterial, MaterialMapperDelegate _Mapper )
@@ -122,16 +125,17 @@ namespace GCXFormat
 			public Scene		m_Owner = null;
 			public Node			m_Parent = null;
 			public TYPE			m_Type = TYPE.GENERIC;
-			public Matrix4x4	m_Local2Parent = null;
+			public Matrix4x4	m_Local2Parent = Matrix4x4.Identity;
 			public Node[]		m_Children = new Node[0];
 
 			public object		m_Tag = null;	// User tag
 
-			public Node( Scene _Owner, BinaryReader _R )
+			public Node( Scene _Owner, Node _Parent, BinaryReader _R )
 			{
 				m_Owner = _Owner;
 				m_Owner.m_Nodes.Add( this );
 
+				m_Parent = _Parent;
 
 				// =============================
 				// Load standard infos
@@ -164,10 +168,15 @@ namespace GCXFormat
 					Node	Child = null;
 					switch ( ChildType )
 					{
-						case TYPE.GENERIC:	Child = new Node( _Owner, _R ); break;
-						case TYPE.LIGHT:	Child = new Light( _Owner, _R ); break;
-						case TYPE.CAMERA:	Child = new Camera( _Owner, _R ); break;
-						case TYPE.MESH:		Child = new Mesh( _Owner, _R ); break;
+						case TYPE.GENERIC:
+						case TYPE.PROBE:
+							Child = new Node( _Owner, this, _R );
+							break;
+
+						case TYPE.LIGHT:	Child = new Light( _Owner, this, _R ); break;
+						case TYPE.CAMERA:	Child = new Camera( _Owner, this, _R ); break;
+						case TYPE.MESH:		Child = new Mesh( _Owner, this, _R ); break;
+						default: throw new Exception( "Unsupported node type!" );
 					}
 					m_Children[ChildIndex] = Child;
 				}
@@ -255,12 +264,12 @@ namespace GCXFormat
 			}
 
 			public LIGHT_TYPE	m_LightType;
-			public Vector	m_Color = null;
-			public float	m_Intensity = 0.0f;
-			public float	m_HotSpot = 0.0f;
-			public float	m_ConeAngle = 0.0f;
+			public Vector		m_Color = null;
+			public float		m_Intensity = 0.0f;
+			public float		m_HotSpot = 0.0f;
+			public float		m_ConeAngle = 0.0f;
 
-			public Light( Scene _Owner, BinaryReader _R ) : base( _Owner, _R )
+			public Light( Scene _Owner, Node _Parent, BinaryReader _R ) : base( _Owner, _Parent, _R )
 			{
 			}
 
@@ -300,7 +309,7 @@ namespace GCXFormat
 		{
 			public float	m_FOV = 0.0f;
 
-			public Camera( Scene _Owner, BinaryReader _R ) : base( _Owner, _R )
+			public Camera( Scene _Owner, Node _Parent, BinaryReader _R ) : base( _Owner, _Parent, _R )
 			{
 			}
 
@@ -330,11 +339,13 @@ namespace GCXFormat
 
 			public class	Primitive
 			{
+				[System.Diagnostics.DebuggerDisplay( "[{V0}, {V1}, {V2]]" )]
 				public struct	Face
 				{
 					public int		V0, V1, V2;
 				}
 
+				[System.Diagnostics.DebuggerDisplay( "P={P} N={N} G={G] B={B} T={T}" )]
 				public struct	Vertex
 				{
 					public Vector	P;	// Position
@@ -407,6 +418,9 @@ namespace GCXFormat
 							m_Faces[FaceIndex].V0 = (int) _R.ReadUInt16();
 							m_Faces[FaceIndex].V1 = (int) _R.ReadUInt16();
 							m_Faces[FaceIndex].V2 = (int) _R.ReadUInt16();
+							if ( m_Faces[FaceIndex].V0 >= m_Vertices.Length ) throw new Exception( "Vertex index out of range for face #" + FaceIndex + "!" );
+							if ( m_Faces[FaceIndex].V1 >= m_Vertices.Length ) throw new Exception( "Vertex index out of range for face #" + FaceIndex + "!" );
+							if ( m_Faces[FaceIndex].V2 >= m_Vertices.Length ) throw new Exception( "Vertex index out of range for face #" + FaceIndex + "!" );
 						}
 					}
 					else
@@ -416,6 +430,9 @@ namespace GCXFormat
 							m_Faces[FaceIndex].V0 = (int) _R.ReadUInt32();
 							m_Faces[FaceIndex].V1 = (int) _R.ReadUInt32();
 							m_Faces[FaceIndex].V2 = (int) _R.ReadUInt32();
+							if ( m_Faces[FaceIndex].V0 >= m_Vertices.Length ) throw new Exception( "Vertex index out of range for face #" + FaceIndex + "!" );
+							if ( m_Faces[FaceIndex].V1 >= m_Vertices.Length ) throw new Exception( "Vertex index out of range for face #" + FaceIndex + "!" );
+							if ( m_Faces[FaceIndex].V2 >= m_Vertices.Length ) throw new Exception( "Vertex index out of range for face #" + FaceIndex + "!" );
 						}
 					}
 
@@ -657,7 +674,7 @@ namespace GCXFormat
 
 			public Primitive[]	m_Primitives = new Primitive[0];
 
-			public Mesh( Scene _Owner, BinaryReader _R ) : base( _Owner, _R )
+			public Mesh( Scene _Owner, Node _Parent, BinaryReader _R ) : base( _Owner, _Parent, _R )
 			{
 			}
 
@@ -716,7 +733,9 @@ namespace GCXFormat
 				m_Materials.Add( new Material( _R ) );
 
 			// Read nodes
-			m_RootNode = new Node( this, _R );
+			Node.TYPE	RootNodeType = (Node.TYPE) _R.ReadByte();	// Consume type, but we know it's a simple generic node...
+
+			m_RootNode = new Node( this, null, _R );
 		}
 
 		public Scene( FBX.Scene.Scene _Scene )
