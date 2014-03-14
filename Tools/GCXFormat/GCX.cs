@@ -579,6 +579,7 @@ namespace GCXFormat
 
 				#region HELPERS
 
+				[System.Diagnostics.DebuggerDisplay( "[{V0}, {V1}] L={LeftFace} R={RightFace}" )]
 				public class	Edge
 				{
 					public int	V0, V1;
@@ -587,6 +588,16 @@ namespace GCXFormat
 					public override int GetHashCode()
 					{
 						return V0 ^ V1;
+					}
+
+					// An edge is equal regardless of its orientation
+					public override bool Equals( object obj )
+					{
+						Edge	other = obj as Edge;
+						if ( other == null )
+							return false;
+
+						return (other.V0 == V0 && other.V1 == V1) || (other.V0 == V1 && other.V1 == V0);
 					}
 
 					public int	GetOtherFaceIndex( int _FaceIndex )
@@ -608,7 +619,6 @@ namespace GCXFormat
 				}
 
 				public WingedEdgeTriangle[]	m_WingedEdgeFaces = new WingedEdgeTriangle[0];
-//				public Edge[]		m_WingedEdges = new Edge[0];
 
 				/// <summary>
 				/// Builds a winged-edges mesh from the primitive
@@ -642,7 +652,7 @@ namespace GCXFormat
 						else
 						{	// Re-use the edge from an existing face
 							E1 = Hash2Edge[E1];
-							if ( E1.V0 == F.V0 )
+							if ( E1.V0 == F.V1 )
 								throw new Exception( "Existing edge has the same winding as this face! We should be its adjacent face and it should be winded the other way!" );
 							if ( E1.RightFace != -1 )
 								throw new Exception( "Existing edge already has a right face! We should be the one to be on the right, that means this edge is shared by more than 2 faces?!" );
@@ -654,7 +664,7 @@ namespace GCXFormat
 						else
 						{	// Re-use the edge from an existing face
 							E2 = Hash2Edge[E2];
-							if ( E2.V0 == F.V0 )
+							if ( E2.V0 == F.V2 )
 								throw new Exception( "Existing edge has the same winding as this face! We should be its adjacent face and it should be winded the other way!" );
 							if ( E2.RightFace != -1 )
 								throw new Exception( "Existing edge already has a right face! We should be the one to be on the right, that means this edge is shared by more than 2 faces?!" );
@@ -662,10 +672,11 @@ namespace GCXFormat
 						}
 
 						// We finally have our list of edges
-						m_WingedEdgeFaces[FaceIndex].m_Index = FaceIndex;
-						m_WingedEdgeFaces[FaceIndex].m_Edges = new Edge[3] {
-							E0, E1, E2
+						WingedEdgeTriangle	Triangle = new WingedEdgeTriangle() {
+							m_Index = FaceIndex,
+							m_Edges  = new Edge[3] { E0, E1, E2 }
 						};
+						m_WingedEdgeFaces[FaceIndex] = Triangle;
 					}
 				}
 

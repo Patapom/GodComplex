@@ -10,6 +10,7 @@ static const char*	BITANGENT = "BITANGENT";
 // static const char*	VIEW = "VIEW";
 // static const char*	CURVATURE = "CURVATURE";
 static const char*	TEXCOORD = "TEXCOORD";	// In the shader, this semantic is written as TEXCOORD0, TEXCOORD1, etc.
+static const char*	INFO = "INFO";
 
 
 VertexFormatPt4::Desc		VertexFormatPt4::DESCRIPTOR;
@@ -77,6 +78,18 @@ D3D11_INPUT_ELEMENT_DESC	VertexFormatP3N3G3B3T2::Desc::ms_pInputElements[] =
 	{ TEXCOORD, 0, DXGI_FORMAT_R32G32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 };
 
+VertexFormatU16::Desc	VertexFormatU16::DESCRIPTOR;
+D3D11_INPUT_ELEMENT_DESC	VertexFormatU16::Desc::ms_pInputElements[] =
+{
+	{ INFO, 0, DXGI_FORMAT_R16_UINT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+};
+
+VertexFormatU32::Desc	VertexFormatU32::DESCRIPTOR;
+D3D11_INPUT_ELEMENT_DESC	VertexFormatU32::Desc::ms_pInputElements[] =
+{
+	{ INFO, 0, DXGI_FORMAT_R32_UINT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+};
+
 void	VertexFormatPt4::Desc::Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) const
 {
 	VertexFormatPt4&	V = *((VertexFormatPt4*) _pVertex);
@@ -140,4 +153,16 @@ void	VertexFormatP3N3G3B3T2::Desc::Write( void* _pVertex, const NjFloat3& _Posit
 	V.Tangent = _Tangent;
 	V.BiTangent = _BiTangent;
 	V.UV = _UV;
+}
+
+void	VertexFormatU16::Desc::Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) const
+{
+	VertexFormatU16&	V = *((VertexFormatU16*) _pVertex);
+	V.Value = U16( _Position.x );
+}
+
+void	VertexFormatU32::Desc::Write( void* _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) const
+{
+	VertexFormatU16&	V = *((VertexFormatU16*) _pVertex);
+	V.Value = U32( _Position.x );
 }

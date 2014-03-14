@@ -264,21 +264,31 @@ private:	// FIELDS
 	
 	ComputeShader*		m_pCSUpdateProbe;			// Dynamically update probes
 
-	// Primitives
+	// Scene & Primitives
 	Scene				m_Scene;
 	bool				m_bDeleteSceneTags;
 	Primitive*			m_pPrimSphere;
 	Primitive*			m_pPrimPoint;
 
+		// Cached list of meshes
 	int					m_MeshesCount;
 	Scene::Mesh**		m_ppCachedMeshes;
 
+		// Cached list of materials
 	int					m_EmissiveMaterialsCount;
 	Scene::Material*	m_ppEmissiveMaterials[100];
 
+		// Face offsets to add to each primitive's face indices to obtain an absolute unique face index
+	U32					m_TotalVerticesCount;
 	U32					m_TotalFacesCount;
 	U32					m_TotalPrimitivesCount;
 	U32					m_pPrimitiveFaceOffset[MAX_SCENE_PRIMITIVES];
+	U32					m_pPrimitiveVertexOffset[MAX_SCENE_PRIMITIVES];
+
+		// Optional vertex stream containing probe IDs for each vertex
+	U32					m_VertexStreamProbeIDsLength;
+	U16*				m_pVertexStreamProbeIDs;
+	Primitive*			m_pPrimProbeIDs;
 
 	// Textures
 	int					m_TexturesCount;

@@ -3,23 +3,38 @@
 
 
 #define	LOAD_PROBES			// Define this to load probes instead of computing them
-#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene
+//#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene
 
 // Scene selection (also think about changing the scene in the .RC!)
-//#define SCENE_PATH	".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_1Probe\\"
-//#define SCENE_PATH	".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
-#define SCENE_PATH	"..\\Arkane\\Probes\\City\\"
+//#define SCENE_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_1Probe\\"
+//#define SCENE_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
+#define SCENE_PATH					"..\\Arkane\\Probes\\City\\"
 
+//#define USE_PER_VERTEX_PROBE_ID		"..\\Arkane\\City_ProbeID.vertexStream.U16"
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
-EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera ) : m_ErrorCode( 0 ), m_Device( _Device ), m_RTTarget( _RTHDR ), m_ScreenQuad( _ScreenQuad )
+EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera )
+	: m_ErrorCode( 0 )
+	, m_Device( _Device )
+	, m_RTTarget( _RTHDR )
+	, m_ScreenQuad( _ScreenQuad )
+	, m_pVertexStreamProbeIDs( NULL )
+	, m_pPrimProbeIDs( NULL )
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
+#ifdef USE_PER_VERTEX_PROBE_ID
+	IVertexFormatDescriptor&	SceneVertexFormat =	VertexFormatP3N3G3B3T2::DESCRIPTOR;
+#endif
+
 	{
 //ScopedForceMaterialsLoadFromBinary		bisou;
+#ifdef USE_PER_VERTEX_PROBE_ID
+		D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { "PER_VERTEX_PROBE_ID", "1" }, { NULL, NULL } };
+#else
 		D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { NULL, NULL } };
+#endif
  		CHECK_MATERIAL( m_pMatRender = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros ), 1 );
 
 	}
@@ -34,7 +49,7 @@ ScopedForceMaterialsLoadFromBinary		bisou;
  		CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
  		CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 7 );
  		CHECK_MATERIAL( m_pMatRenderShadowMap = CreateMaterial( IDR_SHADER_GI_RENDER_SHADOW_MAP, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL ), 8 );
- 		CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
+ 		CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 9 );
 
 		// Compute Shaders
  		CHECK_MATERIAL( m_pCSUpdateProbe = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 20 );
@@ -221,10 +236,33 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	m_pSB_RuntimeProbeEmissiveSetInfos = new SB<RuntimeProbeUpdateEmissiveSetInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME*MAX_PROBE_EMISSIVE_SETS, true );
 	m_pSB_RuntimeSamplingPointInfos = new SB<RuntimeSamplingPointInfos>( m_Device, MAX_PROBE_UPDATES_PER_FRAME * MAX_SET_SAMPLES, true );
 
+
+#ifdef USE_PER_VERTEX_PROBE_ID
+	//////////////////////////////////////////////////////////////////////////
+	// Load the vertex stream containing U16-packed probe IDs for each vertex
+	FILE*	pFile = NULL;
+	fopen_s( &pFile, USE_PER_VERTEX_PROBE_ID, "rb" );
+	ASSERT( pFile != NULL, "Vertex stream for probe IDs file not found!" );
+	fseek( pFile, 0, SEEK_END );
+	int	FileSize = int(ftell( pFile ));
+	fseek( pFile, 0, SEEK_SET );
+
+	m_VertexStreamProbeIDsLength = FileSize / sizeof(U16);
+	m_pVertexStreamProbeIDs = new U16[m_VertexStreamProbeIDsLength];
+	fread_s( m_pVertexStreamProbeIDs, FileSize, sizeof(U16), m_VertexStreamProbeIDsLength, pFile );
+
+	fclose( pFile );
+
+	m_pPrimProbeIDs = new Primitive( _Device, m_VertexStreamProbeIDsLength, m_pVertexStreamProbeIDs, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, VertexFormatU16::DESCRIPTOR );
+
+#endif
+
+
 	//////////////////////////////////////////////////////////////////////////
 	// Create the scene
 	m_bDeleteSceneTags = false;
 	m_TotalFacesCount = 0;
+	m_TotalVerticesCount = 0;
 	m_TotalPrimitivesCount = 0;
 	m_EmissiveMaterialsCount = 0;
 	m_Scene.Load( IDR_SCENE_GI, *this );
@@ -235,6 +273,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 	// Update once so it's ready when we pre-compute probes
 	m_pCB_Scene->UpdateData();
+
 
 	// Cache meshes since my ForEach function is slow as hell!! ^^
 	m_MeshesCount = 0;
@@ -376,6 +415,9 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 
 	delete m_pPrimPoint;
 	delete m_pPrimSphere;
+
+	delete m_pPrimProbeIDs;
+	delete[] m_pVertexStreamProbeIDs;
 
 	delete[] m_ppCachedMeshes;
 	m_MeshesCount = 0;
@@ -584,7 +626,6 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		for ( int EmissiveMaterialIndex=0; EmissiveMaterialIndex < m_EmissiveMaterialsCount; EmissiveMaterialIndex++ )
 			m_ppEmissiveMaterials[EmissiveMaterialIndex]->m_EmissiveColor = EmissiveColor;
 	}
-
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1735,10 +1776,18 @@ void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh,
 
 	Primitive*	pPrim = new Primitive( m_Device, _Primitive.m_VerticesCount, _Primitive.m_pVertices, 3*_Primitive.m_FacesCount, _Primitive.m_pFaces, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, *pVertexFormat );
 
+#ifdef USE_PER_VERTEX_PROBE_ID
+	// Bind it additional buffer infos
+	pPrim->BindVertexStream( 1, *m_pPrimProbeIDs, m_TotalVerticesCount );	// We access a small portion of the buffer
+#endif
+
 	// Tag the primitive with the face offset
 	pPrim->m_pTag = (void*) m_TotalFacesCount;
-	m_pPrimitiveFaceOffset[m_TotalPrimitivesCount++] = m_TotalFacesCount;	// Store face offset for each primitive
+	m_pPrimitiveFaceOffset[m_TotalPrimitivesCount] = m_TotalFacesCount;		// Store face offset for each primitive
+	m_pPrimitiveVertexOffset[m_TotalPrimitivesCount] = m_TotalVerticesCount;// Sotre vertex offset also
+	m_TotalVerticesCount += pPrim->GetVerticesCount();						// Increase total amount of vertices
 	m_TotalFacesCount += pPrim->GetFacesCount();							// Increase total amount of faces
+	m_TotalPrimitivesCount++;
 
 	return pPrim;
 }

@@ -7,6 +7,7 @@ Primitive::Primitive( Device& _Device, int _VerticesCount, const void* _pVertice
 	, m_Topology( _Topology )
 	, m_pVB( NULL )
 	, m_pIB( NULL )
+	, m_BoundVertexStreamsCount( 0 )
 {
 	m_Stride = _Format.Size();
 	Build( _pVertices, _pIndices, false );
@@ -19,6 +20,7 @@ Primitive::Primitive( Device& _Device, const IVertexFormatDescriptor& _Format ) 
 	, m_Topology( D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED )
 	, m_pVB( NULL )
 	, m_pIB( NULL )
+	, m_BoundVertexStreamsCount( 0 )
 {
 	m_Stride = _Format.Size();
 	// Deferred construction...
@@ -31,6 +33,7 @@ Primitive::Primitive( Device& _Device, int _VerticesCount, int _IndicesCount, D3
 	, m_Topology( _Topology )
 	, m_pVB( NULL )
 	, m_pIB( NULL )
+	, m_BoundVertexStreamsCount( 0 )
 {
 	m_Stride = _Format.Size();
 	Build( NULL, NULL, true );
@@ -63,7 +66,9 @@ void	Primitive::Render( Material& _Material, int _StartVertex, int _VerticesCoun
 	m_Device.DXContext().IASetPrimitiveTopology( m_Topology );
 
 	U32 Offset = 0;
-	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &m_Stride, &Offset );
+//	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &m_Stride, &Offset );
+	m_Device.DXContext().IASetVertexBuffers( 0, m_BoundVertexStreamsCount, m_ppVertexBuffers, m_pStrides, m_pOffsets );
+
 	if ( m_pIB != NULL )
 	{
 		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R32_UINT, 0 );
@@ -92,7 +97,9 @@ void	Primitive::RenderInstanced( Material& _Material, int _InstancesCount, int _
 	m_Device.DXContext().IASetPrimitiveTopology( m_Topology );
 
 	U32 Offset = 0;
-	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &m_Stride, &Offset );
+//	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &m_Stride, &Offset );
+	m_Device.DXContext().IASetVertexBuffers( 0, m_BoundVertexStreamsCount, m_ppVertexBuffers, m_pStrides, m_pOffsets );
+
 	if ( m_pIB != NULL )
 	{
 		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R32_UINT, 0 );
@@ -129,6 +136,12 @@ void	Primitive::Build( const void* _pVertices, const U32* _pIndices, bool _bDyna
 		}
 		else
 			Check( m_Device.DXDevice().CreateBuffer( &Desc, NULL, &m_pVB ) );
+
+		// Initialize as if we had only one bound vertex stream
+		m_BoundVertexStreamsCount = 1;
+		m_ppVertexBuffers[0] = m_pVB;
+		m_pStrides[0] = m_Stride;
+		m_pOffsets[0] = 0;
 	}
 
 	if ( _pIndices != NULL )
@@ -197,6 +210,20 @@ void	Primitive::UpdateDynamic( void* _pVertices, U16* _pIndices, int _VerticesCo
 		memcpy( SubResource.pData, _pVertices, (_IndicesCount != -1 ? _IndicesCount : m_IndicesCount) * sizeof(U16) );
 		m_Device.DXContext().Unmap( m_pIB, 0 );
 	}
+}
+
+void	Primitive::BindVertexStream( U32 _StreamIndex, Primitive& _BoundPrimitive, int _Offset )
+{
+	ASSERT( _StreamIndex < MAX_BOUND_VERTEX_STREAMS, "Stream index out of range!" );
+	ASSERT( _StreamIndex <= m_BoundVertexStreamsCount, "Stream index out of range! You must bind streams sequentially!" );
+	m_BoundVertexStreamsCount = MAX( m_BoundVertexStreamsCount, _StreamIndex+1 );
+
+#ifdef _DEBUG
+	m_ppBoundPrimitive[_StreamIndex] = &_BoundPrimitive;
+#endif
+	m_ppVertexBuffers[_StreamIndex] = _BoundPrimitive.m_pVB;
+	m_pStrides[_StreamIndex] = _BoundPrimitive.m_Stride;
+	m_pOffsets[_StreamIndex] = _Offset;
 }
 
 #ifdef SUPPORT_GEO_BUILDERS

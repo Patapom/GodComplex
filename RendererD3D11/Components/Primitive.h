@@ -15,6 +15,10 @@ class Primitive : public Component, public GeometryBuilder::IGeometryWriter
 class Primitive : public Component
 #endif
 {
+private:	// NESTED TYPES
+
+	static const int		MAX_BOUND_VERTEX_STREAMS = 8;
+
 private:	// FIELDS
 
 	const IVertexFormatDescriptor&	m_Format;
@@ -26,6 +30,15 @@ private:	// FIELDS
 	int								m_IndicesCount;
 	int								m_FacesCount;
 	U32								m_Stride;
+
+	// Render parameters
+	U32								m_BoundVertexStreamsCount;
+	U32								m_pStrides[MAX_BOUND_VERTEX_STREAMS];
+	U32								m_pOffsets[MAX_BOUND_VERTEX_STREAMS];
+	ID3D11Buffer*					m_ppVertexBuffers[MAX_BOUND_VERTEX_STREAMS];
+#ifdef _DEBUG
+	Primitive*						m_ppBoundPrimitive[MAX_BOUND_VERTEX_STREAMS];	// The primitive that contains the vertex stream to bind to our primitive
+#endif
 
 
 public:	 // PROPERTIES
@@ -48,6 +61,19 @@ public:	 // METHODS
 	void			RenderInstanced( Material& _Material, int _InstancesCount, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset );
 
 	void			UpdateDynamic( void* _pVertices, U16* _pIndices, int _VerticesCount=-1, int _IndicesCount=-1 );
+
+	// Binds additional vertex streams from another primitive
+	// This allows, for example, to add a separate vertex buffer to this primitive's VB
+	// Example:
+	//	struct VS_IN {
+	//		float3	Position : POSITION;	// Comes from this primitive
+	//		uint	SomeOtherInfo : INFO;	// Comes from a 2nd vertex buffer
+	//	};
+	//
+	// Just create a primitive with the P3 vertex format, and bind it a primitive 
+	//
+	void			BindVertexStream( U32 _StreamIndex, Primitive& _BoundPrimitive, int _Offset=0 );
+
 
 #ifdef SUPPORT_GEO_BUILDERS
 	// IGeometryWriter implementation
