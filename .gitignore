@@ -172,3 +172,5 @@
 /Tools/TestFresnel/bin
 bin
 obj
+
+/Resources/Scenes/Sponza/.mayaSwatches/*.swatches

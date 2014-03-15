@@ -68,6 +68,9 @@ namespace ControlPanelGlobalIllumination
 			public int		EnableNeighborsRedistribution;
 			public float	NeighborProbesContributionBoost;
 
+			// Probes Update
+			public int		MaxProbeUpdatesPerFrame;
+
 			// Debug
 			public int		ShowDebugProbes;
 			public int		ShowDebugProbesNetwork;
@@ -168,6 +171,13 @@ namespace ControlPanelGlobalIllumination
 			checkBoxEnableRedistribution.Checked = m_Instance.EnableNeighborsRedistribution != 0;
 			floatTrackbarControlNeighborProbesContribution.Value = m_Instance.NeighborProbesContributionBoost;
 
+			// Probes update
+			integerTrackbarControlMaxProbeUpdatesPerFrame.Value = m_Instance.MaxProbeUpdatesPerFrame;
+
+			// Debug
+			checkBoxShowDebugProbes.Checked = m_Instance.ShowDebugProbes != 0;
+			checkBoxShowNetwork.Checked = m_Instance.ShowDebugProbesNetwork != 0;
+
 			// Refresh block
 			m_bInternalUpdate = false;
 			UpdateMMF();
@@ -183,6 +193,11 @@ namespace ControlPanelGlobalIllumination
 				if ( Field.FieldType == typeof(Nuaj.Cirrus.Utility.FloatTrackbarControl) )
 				{
 					Nuaj.Cirrus.Utility.FloatTrackbarControl	Slider = Field.GetValue( this ) as Nuaj.Cirrus.Utility.FloatTrackbarControl;
+					Slider.SimulateValueChange();	// This should trigger a change which will in turn write the slider's value into the struct's field...
+				}
+				else if ( Field.FieldType == typeof(Nuaj.Cirrus.Utility.IntegerTrackbarControl) )
+				{
+					Nuaj.Cirrus.Utility.IntegerTrackbarControl	Slider = Field.GetValue( this ) as Nuaj.Cirrus.Utility.IntegerTrackbarControl;
 					Slider.SimulateValueChange();	// This should trigger a change which will in turn write the slider's value into the struct's field...
 				}
 				else if ( Field.FieldType == typeof(CheckBox) )
@@ -484,6 +499,12 @@ namespace ControlPanelGlobalIllumination
 		private void checkBoxShowNetwork_CheckedChanged( object sender, EventArgs e )
 		{
 			m_Instance.ShowDebugProbesNetwork = (sender as CheckBox).Checked ? 1 : 0;
+			UpdateMMF();
+		}
+
+		private void integerTrackbarControlMaxProbeUpdatesPerFrame_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			m_Instance.MaxProbeUpdatesPerFrame = _Sender.Value;
 			UpdateMMF();
 		}
 

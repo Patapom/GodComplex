@@ -12,6 +12,7 @@ cbuffer	cbGeneral	: register( b8 )
 	float3		_Ambient;		// Default ambient if no indirect is being used
 	bool		_ShowIndirect;
 	bool		_ShowOnlyIndirect;
+	bool		_ShowWhiteDiffuse;
 };
 
 struct	PS_IN
@@ -170,6 +171,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	float3	DiffuseAlbedo = _DiffuseAlbedo;
 	if ( _HasDiffuseTexture )
 		DiffuseAlbedo = _TexDiffuseAlbedo.Sample( LinearWrap, _In.UV.xy ).xyz;
+	if ( _ShowWhiteDiffuse )
+		DiffuseAlbedo = 0.25;
 
 	DiffuseAlbedo *= INVPI;
 

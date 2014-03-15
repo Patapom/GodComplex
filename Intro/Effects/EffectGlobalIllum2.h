@@ -31,9 +31,10 @@ protected:	// NESTED TYPES
 
 	struct CBGeneral
 	{
-		float3	Ambient;
+		float3		Ambient;
 		U32			ShowIndirect;
 		U32			ShowOnlyIndirect;
+		U32			ShowWhiteDiffuse;
  	};
 
 	struct CBScene
@@ -51,13 +52,13 @@ protected:	// NESTED TYPES
 	struct CBMaterial
 	{
 		U32			ID;
-		float3	DiffuseAlbedo;
+		float3		DiffuseAlbedo;
 
 		U32			HasDiffuseTexture;
-		float3	SpecularAlbedo;
+		float3		SpecularAlbedo;
 
 		U32			HasSpecularTexture;
-		float3	EmissiveColor;
+		float3		EmissiveColor;
 
 		float		SpecularExponent;
 		U32			FaceOffset;		// The offset to apply to the object's face index to obtain an absolute face index
@@ -66,9 +67,9 @@ protected:	// NESTED TYPES
 
 	struct CBProbe
 	{
-		float3	CurrentProbePosition;
+		float3		CurrentProbePosition;
 		U32			NeighborProbeID;
-		float3	NeighborProbePosition;
+		float3		NeighborProbePosition;
  	};
 
 	struct CBSplat
@@ -80,14 +81,14 @@ protected:	// NESTED TYPES
 	{
 		float4x4	Light2World;
 		float4x4	World2Light;
-		float3	BoundsMin;
+		float3		BoundsMin;
 		float		__PAD0;
-		float3	BoundsMax;
+		float3		BoundsMax;
  	};
 
 	struct CBUpdateProbes
 	{
-		float4	AmbientSH[9];				// Ambient sky (padded!)
+		float4		AmbientSH[9];				// Ambient sky (padded!)
 //		float		SunBoost;	// Merged into the last float4
 
 		float		SkyBoost;
@@ -103,18 +104,18 @@ protected:	// NESTED TYPES
 	struct	LightStruct
 	{
 		Scene::Light::LIGHT_TYPE	Type;
-		float3	Position;
-		float3	Direction;
-		float3	Color;
-		float4	Parms;						// X=Falloff radius, Y=Cutoff radius, Z=Cos(Falloff angle), W=Cos(Cutoff angle)
+		float3		Position;
+		float3		Direction;
+		float3		Color;
+		float4		Parms;						// X=Falloff radius, Y=Cutoff radius, Z=Cos(Falloff angle), W=Cos(Cutoff angle)
 	};
 
 	// Runtime probes buffer that we'll use to light objects
 	struct RuntimeProbe 
 	{
-		float3	Position;
+		float3		Position;
 		float		Radius;
-		float3	pSH[9];
+		float3		pSH[9];
 
 		// Neighbor probes
 		U16			NeighborProbeIDs[4];			// IDs of the 4 most significant neighbors
@@ -130,31 +131,31 @@ protected:	// NESTED TYPES
 		U32			EmissiveSetsCount;				// Amount of emissive sets for the probe
 		U32			SamplingPointsStart;			// Index of the first sampling point for the probe
 		U32			SamplingPointsCount;			// Amount of sampling points for the probe
-		float3	SHStatic[9];					// Precomputed static SH (static geometry + static lights)
+		float3		SHStatic[9];					// Precomputed static SH (static geometry + static lights)
 		float		SHOcclusion[9];					// Directional ambient occlusion for the probe
 
 		// Neighbor probes
 //		U32			NeighborProbeIDs[4];			// The IDs of the 4 most significant neighbor probes
-		float4	NeighborProbeSH[9];				// The SH coefficients to convolve the neighbor's SH with to obtain their contribution to this probe
+		float4		NeighborProbeSH[9];				// The SH coefficients to convolve the neighbor's SH with to obtain their contribution to this probe
 	};
 
 	struct	RuntimeProbeUpdateSetInfos
 	{
 		U32			SamplingPointsStart;			// Index of the first sampling point
 		U32			SamplingPointsCount;			// Amount of sampling points
-		float3	SH[9];							// SH for the set
+		float3		SH[9];							// SH for the set
 	};
 
 	struct	RuntimeProbeUpdateEmissiveSetInfos
 	{
-		float3	EmissiveColor;					// Color of the emissive material
+		float3		EmissiveColor;					// Color of the emissive material
 		float		SH[9];							// SH for the set
 	};
 
 	struct RuntimeSamplingPointInfos
 	{
-		float3	Position;						// World position of the sampling point
-		float3	Normal;							// World normal of the sampling point
+		float3		Position;						// World position of the sampling point
+		float3		Normal;							// World normal of the sampling point
 		float		Radius;							// Radius of the sampling point's disc approximation
 	};
 
@@ -162,7 +163,7 @@ public:
 	struct RuntimeProbeNetworkInfos
 	{
 		U32			ProbeIDs[2];					// The IDs of the 2 connected probes
-		float2	NeighborsSolidAngles;			// Their perception of each other's solid angle
+		float2		NeighborsSolidAngles;			// Their perception of each other's solid angle
 	};
 protected:
 
@@ -176,32 +177,32 @@ protected:
 
 		// Static SH infos
 		float			pSHOcclusion[9];		// The pre-computed SH that gives back how much of the environment is perceived in a given direction
-		float3		pSHBounceStatic[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced static lighting on static geometry
+		float3			pSHBounceStatic[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced static lighting on static geometry
 
 		// Geometric infos
 		float			MeanDistance;			// Mean distance of all scene pixels
 		float			MeanHarmonicDistance;	// Mean harmonic distance (1/sum(1/distance)) of all scene pixels
 		float			MinDistance;			// Distance to closest scene pixel
 		float			MaxDistance;			// Distance to farthest scene pixel
-		float3		BBoxMin;				// Dimensions of the bounding box (axis-aligned) of the scene pixels
-		float3		BBoxMax;
+		float3			BBoxMin;				// Dimensions of the bounding box (axis-aligned) of the scene pixels
+		float3			BBoxMax;
 
 		// Generic reflective sets infos
 		U32				SetsCount;				// The amount of dynamic sets for that probe
 		struct SetInfos
 		{
-			float3		Position;			// The position of the dynamic set
-			float3		Normal;				// The normal of the dynamic set's plane
-			float3		Tangent;			// The longest principal axis of the set's points cluster (scaled by the length of the axis)
-			float3		BiTangent;			// The shortest principal axis of the set's points cluster (scaled by the length of the axis)
-			float3		Albedo;				// The albedo of the dynamic set (not currently used, for info purpose)
-			float3		pSHBounce[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced dynamic lighting on static geometry, for each dynamic set
+			float3			Position;			// The position of the dynamic set
+			float3			Normal;				// The normal of the dynamic set's plane
+			float3			Tangent;			// The longest principal axis of the set's points cluster (scaled by the length of the axis)
+			float3			BiTangent;			// The shortest principal axis of the set's points cluster (scaled by the length of the axis)
+			float3			Albedo;				// The albedo of the dynamic set (not currently used, for info purpose)
+			float3			pSHBounce[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced dynamic lighting on static geometry, for each dynamic set
 
 			U32				SamplesCount;		// The amount of samples for that probe
 			struct	Sample
 			{
-				float3		Position;
-				float3		Normal;
+				float3			Position;
+				float3			Normal;
 				float			Radius;
 			}				pSamples[MAX_SET_SAMPLES];
 
@@ -211,10 +212,10 @@ protected:
 		U32				EmissiveSetsCount;		// The amount of emissive sets for that probe
 		struct EmissiveSetInfos
 		{
-			float3		Position;			// The position of the emissive set
-			float3		Normal;				// The normal of the emissive set's plane
-			float3		Tangent;			// The longest principal axis of the set's points cluster (scaled by the length of the axis)
-			float3		BiTangent;			// The shortest principal axis of the set's points cluster (scaled by the length of the axis)
+			float3			Position;			// The position of the emissive set
+			float3			Normal;				// The normal of the emissive set's plane
+			float3			Tangent;			// The longest principal axis of the set's points cluster (scaled by the length of the axis)
+			float3			BiTangent;			// The shortest principal axis of the set's points cluster (scaled by the length of the axis)
 			Scene::Material*	pEmissiveMaterial;	// Direct pointer to the material
 
 			float			pSHEmissive[9];		// The pre-computed SH that gives back how much the probe emits light
@@ -228,7 +229,7 @@ protected:
 			U32				ProbeID;			// ID of the neighbor probe
 			float			Distance;			// Average distance to the probe
 			float			SolidAngle;			// Perceived solid angle covered by the probe
-			float3		Direction;			// Average direction to the probe
+			float3			Direction;			// Average direction to the probe
 			float			SH[9];				// Convolution SH to use to isolate the contribution of the probe's SH this probe should perceive
 		}				pNeighborProbeInfos[MAX_PROBE_NEIGHBORS];
 
@@ -327,6 +328,11 @@ private:	// FIELDS
 	float3			m_pSHAmbientSky[9];
 
 
+	// Queue of probe indices to update each frame
+	// TODO! I'm only storing the index of the sequence of probes I'll update each frame
+	int				m_ProbeUpdateIndex;
+
+
 #ifdef _DEBUG
 	struct ParametersBlock
 	{
@@ -372,6 +378,9 @@ private:	// FIELDS
 		// Neighborhood
 		U32		EnableNeighborsRedistribution;
 		float	NeighborProbesContributionBoost;
+
+		// Probes Update
+		U32		MaxProbeUpdatesPerFrame;
 
 		// Misc
 		U32		ShowDebugProbes;

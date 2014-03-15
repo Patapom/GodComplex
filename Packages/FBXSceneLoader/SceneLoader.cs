@@ -292,7 +292,7 @@ namespace FBX.SceneLoader
 		}
 
 		/// <summary>
-		/// Loads a FBX file into a Cirrus scene (which may already contain meshes and materials, don't care)
+		/// Loads a FBX file into a temp scene representation (which may already contain meshes and materials, don't care)
 		/// </summary>
 		/// <param name="_FileName">The name of the FBX file to load</param>
 		/// <param name="_Scene">The cirrus scene into which we should store the data</param>
@@ -302,7 +302,7 @@ namespace FBX.SceneLoader
 		}
 
 		/// <summary>
-		/// Loads a FBX file into a Cirrus scene (which may already contain meshes and materials, don't care)
+		/// Converts a FBX file into a temp scene representation (which may already contain meshes and materials, don't care)
 		/// </summary>
 		/// <param name="_FileName">The name of the FBX file to load</param>
 		/// <param name="_Scene">The cirrus scene into which we should store the data</param>

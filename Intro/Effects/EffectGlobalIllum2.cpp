@@ -3,14 +3,16 @@
 
 
 #define	LOAD_PROBES			// Define this to load probes instead of computing them
-#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene
+//#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene
 
 // Scene selection (also think about changing the scene in the .RC!)
 //#define SCENE_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_1Probe\\"
 //#define SCENE_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
 #define SCENE_PATH					"..\\Arkane\\Probes\\City\\"
 
+#ifdef LOAD_PROBES	// Can't use that until it's been baked!
 #define USE_PER_VERTEX_PROBE_ID		"..\\Arkane\\City_ProbeID.vertexStream.U16"
+#endif
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
@@ -21,6 +23,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 	, m_ScreenQuad( _ScreenQuad )
 	, m_pVertexStreamProbeIDs( NULL )
 	, m_pPrimProbeIDs( NULL )
+	, m_ProbeUpdateIndex( 0 )
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
@@ -402,6 +405,9 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 		true,				// U32		EnableNeighborsRedistribution;
 		1.0f,				// float	NeighborProbesContributionBoost;
 		//
+		// Probes update
+		16,					// U32		MaxProbeUpdatesPerFrame;
+		//
 		// Misc
 		false,				// U32		ShowDebugProbes;
 		false,				// U32		ShowDebugProbes;
@@ -490,6 +496,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	// Setup general data
 	m_pCB_General->m.ShowIndirect = gs_WindowInfos.pKeys[VK_RETURN] == 0;
 	m_pCB_General->m.ShowOnlyIndirect = gs_WindowInfos.pKeys[VK_BACK] == 0;
+	m_pCB_General->m.ShowWhiteDiffuse = gs_WindowInfos.pKeys[VK_DELETE] != 0;
 	m_pCB_General->m.Ambient = !m_pCB_General->m.ShowIndirect && m_CachedCopy.EnableSky ? 0.25f * float3( 0.64f, 0.79f, 1.0f ) : float3::Zero;
 	m_pCB_General->UpdateData();
 
@@ -638,7 +645,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update dynamic probes
-	ASSERT( m_ProbesCount <= MAX_PROBE_UPDATES_PER_FRAME, "Increase max probes update per frame! Or write the time-sliced updater you promised!" );
+//	ASSERT( m_ProbesCount <= MAX_PROBE_UPDATES_PER_FRAME, "Increase max probes update per frame! Or write the time-sliced updater you promised!" );
 
 	// Prepare constant buffer for update
 	float3	pSHAmbient[9];
@@ -669,7 +676,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 #if 1	// Hardware update
 
-	U32		ProbeUpdatesCount = MIN( MAX_PROBE_UPDATES_PER_FRAME, U32(m_ProbesCount) );
+	U32		ProbeUpdatesCount = MIN( m_CachedCopy.MaxProbeUpdatesPerFrame, U32(m_ProbesCount) );
 //TODO: Handle a stack of probes to update
 
 	// Prepare the buffer of probe update infos and sampling point infos
@@ -678,7 +685,11 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	int		TotalEmissiveSetsCount = 0;
 	for ( U32 ProbeUpdateIndex=0; ProbeUpdateIndex < ProbeUpdatesCount; ProbeUpdateIndex++ )
 	{
-		int				ProbeIndex = ProbeUpdateIndex;	// Simple at the moment, when we have the update stack we'll have to fetch the index from it...
+//		int		ProbeIndex = ProbeUpdateIndex;	// Simple at the moment, when we have the update stack we'll have to fetch the index from it...
+
+		// Still simple: we update N probes each frame in sequence, next frame we'll update the next N ones...
+		int		ProbeIndex = (m_ProbeUpdateIndex + ProbeUpdateIndex) % m_ProbesCount;
+
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
 		// Fill the probe update infos
@@ -766,6 +777,10 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	USING_COMPUTE_SHADER_END
 
 	m_pSB_RuntimeProbes->SetInput( 9, true );
+
+	// Advance probe update index
+	if ( m_ProbesCount > 0 )
+		m_ProbeUpdateIndex = (m_ProbeUpdateIndex + ProbeUpdatesCount) % m_ProbesCount;
 
 #else
 	// Software update (no shadows!)
