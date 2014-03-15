@@ -27,8 +27,8 @@ namespace FBXTestConverter
 		{
 			InitializeComponent();
 
-			LoadScene( new FileInfo( @"..\Arkane\City.fbx" ) );
-//			LoadScene( new FileInfo( @".\Resources\Scenes\Sponza\Sponza.fbx" ) );
+//			LoadScene( new FileInfo( @"..\Arkane\City.fbx" ) );
+			LoadScene( new FileInfo( @".\Resources\Scenes\Sponza\Sponza.fbx" ) );
 
 //			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1.fbx" ) );
 //			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1_10Probes.fbx" ) );
@@ -69,9 +69,11 @@ namespace FBXTestConverter
 			// This way I can simply copy this "code friendly" list and paste it in my C++ code (e.g. const char* ppID2TextureName[] = { PasteHere }; )
 			Infos.Add( "Texture Flat Names:" );
 			Infos.Add( "" );
+			string	DirectoryHeader = Path.GetDirectoryName( _File.ToString() );
+			DirectoryHeader = DirectoryHeader.Replace( "\\", "\\\\" );	// Double antislashes
 			foreach ( FBX.Scene.Materials.Texture2D Texture in Scene.Textures )
 //				Infos.Add( "ID #" + Texture.ID.ToString( "D3" ) + " URL=" + Path.GetFileNameWithoutExtension( Texture.URL ) );
-				Infos.Add( "\"" + @"..\\Arkane\\TexturesPOM\\" + Path.GetFileNameWithoutExtension( Texture.URL ) + ".pom\"," );
+				Infos.Add( "\"" + DirectoryHeader + @"\\TexturesPOM\\" + Path.GetFileNameWithoutExtension( Texture.URL ) + ".pom\"," );
 			Infos.Add( "" );
 
 

@@ -34,6 +34,8 @@ void	TextureFilePOM::Load( const char* _pFileName )
 	FILE*	pFile;
 	fopen_s( &pFile, _pFileName, "rb" );
 	ASSERT( pFile != NULL, "Can't load POM file!" );
+	if ( pFile == NULL )
+		return;
 
 	// Read the type and format
 	U8		Format;

@@ -1,6 +1,7 @@
 ﻿#include "../../GodComplex.h"
 #include "EffectGlobalIllum2.h"
 
+#define SCENE_SPONZA		// Sponza Atrium
 
 #define	LOAD_PROBES			// Define this to load probes instead of computing them
 //#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene
@@ -75,6 +76,45 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 #ifndef	USE_WHITE_TEXTURES
 
 		const char*	ppTextureFileNames[] = {
+
+#ifdef SCENE_SPONZA
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_thorn_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_thorn_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_thorn_ddn.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\vase_plant.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\vase_plant.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\vase_round.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\vase_round_ddn.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\background.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\background_ddn.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\spnza_bricks_a_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_arch_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_ceiling_a_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_column_a_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_column_a_ddn.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_floor_a_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_column_c_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_column_c_ddn.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_details_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_column_b_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_column_b_ddn.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_flagpole_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_fabric_green_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_fabric_blue_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_fabric_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_curtain_blue_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_curtain_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_curtain_green_diff.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\chain_texture.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\chain_texture.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\chain_texture_ddn.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\vase_hanging.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\vase_dif.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\vase_ddn.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\lion.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\lion_ddn.pom",
+".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_roof_diff.pom",
+#else
 "..\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_d.pom",
 "..\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_n.pom",
 "..\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_s.pom",
@@ -187,6 +227,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 "..\\Arkane\\TexturesPOM\\streetlamp_01_d.pom",
 "..\\Arkane\\TexturesPOM\\streetlamp_01_n.pom",
 "..\\Arkane\\TexturesPOM\\streetlamp_01_s.pom",
+#endif
 		};
 
 		m_TexturesCount = sizeof(ppTextureFileNames) / sizeof(const char*);
