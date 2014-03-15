@@ -221,7 +221,7 @@ void	Primitive::UpdateDynamic( void* _pVertices, U16* _pIndices, int _VerticesCo
 	}
 }
 
-void	Primitive::BindVertexStream( U32 _StreamIndex, Primitive& _BoundPrimitive, int _Offset )
+void	Primitive::BindVertexStream( U32 _StreamIndex, Primitive& _BoundPrimitive, int _StartIndex )
 {
 	ASSERT( _StreamIndex < MAX_BOUND_VERTEX_STREAMS, "Stream index out of range!" );
 	ASSERT( _StreamIndex <= m_BoundVertexStreamsCount, "Stream index out of range! You must bind streams sequentially!" );
@@ -232,7 +232,7 @@ void	Primitive::BindVertexStream( U32 _StreamIndex, Primitive& _BoundPrimitive, 
 #endif
 	m_ppVertexBuffers[_StreamIndex] = _BoundPrimitive.m_pVB;
 	m_pStrides[_StreamIndex] = _BoundPrimitive.m_Stride;
-	m_pOffsets[_StreamIndex] = _Offset;
+	m_pOffsets[_StreamIndex] = _StartIndex * _BoundPrimitive.m_Format.Size();	// The offset is in BYTES!
 
 	// Aggregate vertex format into our composite format
 	// This format will be used at runtime to compare with rendering material format instead of the simple original format the primitive was constructed with...

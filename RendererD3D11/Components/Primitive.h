@@ -73,7 +73,9 @@ public:	 // METHODS
 	//
 	// Just create a primitive with the P3 vertex format, and bind it a primitive 
 	//
-	void			BindVertexStream( U32 _StreamIndex, Primitive& _BoundPrimitive, int _Offset=0 );
+	//	_StartIndex, the index of the start vertex
+	//
+	void			BindVertexStream( U32 _StreamIndex, Primitive& _BoundPrimitive, int _StartIndex=0 );
 
 
 #ifdef SUPPORT_GEO_BUILDERS

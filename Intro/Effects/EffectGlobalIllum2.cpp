@@ -207,7 +207,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 		m_ppTextures[0] = White.CreateTexture( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA );
 
 		TextureBuilder	NormalZ( 1, 1 );
-		NormalZ.Clear( Pixel( float4( 0, 0, 1, 1 ) ) );
+		NormalZ.Clear( Pixel( float4( 0.5f, 0.5f, 1, 1 ) ) );
 		m_ppTextures[1] = NormalZ.CreateTexture( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA );
 #endif
 	}
@@ -490,7 +490,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	// Setup general data
 	m_pCB_General->m.ShowIndirect = gs_WindowInfos.pKeys[VK_RETURN] == 0;
 	m_pCB_General->m.ShowOnlyIndirect = gs_WindowInfos.pKeys[VK_BACK] == 0;
-	m_pCB_General->m.Ambient = !m_pCB_General->m.ShowIndirect && m_CachedCopy.EnableSky ? 0.05f * float3( 0.64f, 0.79f, 1.0f ) : float3::Zero;
+	m_pCB_General->m.Ambient = !m_pCB_General->m.ShowIndirect && m_CachedCopy.EnableSky ? 0.25f * float3( 0.64f, 0.79f, 1.0f ) : float3::Zero;
 	m_pCB_General->UpdateData();
 
 	// Setup scene data
@@ -530,7 +530,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 //	m_pSB_LightsDynamic->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * AnimateLightTime0 ) );	// Move along the corridor
 	m_pSB_LightsDynamic->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime0 ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime0 ), 4.0f * sinf( 0.3f * AnimateLightTime0 ) );	// Move along the corridor
 
-#else	// SHOP ANIMATION (follow curve)
+#else	// CITY ANIMATION (follow curve)
 
 	static bool	bPathPreComputed = false;
 	static float3	pPath[] = {

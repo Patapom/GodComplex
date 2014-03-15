@@ -183,6 +183,11 @@ void	CompositeVertexFormatDescriptor::AggregateVertexFormat( const IVertexFormat
 
 		// Actually, DON'T! Additional vertex streams must start at their respective offset...
 //		m_pInputElements[m_ElementsCount].AlignedByteOffset += AlignedByteOffset;	// Patch offset
+
+		// Patch input slot as it's implied this aggregate vertex stream will come from an additional vertex buffer
+		m_pInputElements[m_ElementsCount].InputSlot = m_AggregatedVertexFormatsCount;
+
+//		D3D11_APPEND_ALIGNED_ELEMENT
 	}
 
 	m_Size += _VertexFormat.Size();
