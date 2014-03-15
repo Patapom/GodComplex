@@ -168,7 +168,7 @@ _Radius *= 1.0;
 	for ( uint SampleIndex=0; SampleIndex < SHADOW_SAMPLES_COUNT; SampleIndex++ )
 	{
 		float2	SampleOffset = SamplesOffset[SampleIndex];
-		float3	SamplePosition = _WorldPosition + SampleOffset.x * X + SampleOffset.y * Y + 0.01 * _WorldNormal;
+		float3	SamplePosition = _WorldPosition + SampleOffset.x * X + SampleOffset.y * Y + SHADOW_NORMAL_OFFSET * _WorldNormal;
 		float4	ShadowPosition = World2ShadowMapProj( SamplePosition );
 
 		float2	UV = 0.5 * float2( 1.0 + ShadowPosition.x, 1.0 - ShadowPosition.y );

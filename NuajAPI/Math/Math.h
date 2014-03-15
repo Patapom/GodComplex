@@ -54,182 +54,182 @@ static bool					ALMOST( double a, double b )					{ return abs( a - b ) < ALMOST_
 
 
 // Float2 used for point & vector operations
-class   NjFloat2
+class   float2
 {
 public:
 
 	float	x, y;
 
-	NjFloat2() : x( 0 ), y( 0 )  {}
-	NjFloat2( float _x, float _y ) : x( _x ), y( _y )  {}
+	float2() : x( 0 ), y( 0 )  {}
+	float2( float _x, float _y ) : x( _x ), y( _y )  {}
 
 	void		Set( float _x, float _y ) { x = _x; y = _y; }
 
 	float		LengthSq() const	{ return x*x + y*y; }
 	float		Length() const		{ return sqrtf( x*x + y*y ); }
-	NjFloat2&	Normalize()			{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; return *this; }
+	float2&		Normalize()			{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; return *this; }
 
-	NjFloat2	Lerp( const NjFloat2& b, float t ) const	{ float r = 1.0f - t; return NjFloat2( x * r + b.x * t, y * r + b.y * t ); }
-	NjFloat2	Min( const NjFloat2& b ) const	{ return NjFloat2( MIN( x, b.x ), MIN( y, b.y ) ); }
-	NjFloat2	Max( const NjFloat2& b ) const	{ return NjFloat2( MAX( x, b.x ), MAX( y, b.y ) ); }
+	float2		Lerp( const float2& b, float t ) const	{ float r = 1.0f - t; return float2( x * r + b.x * t, y * r + b.y * t ); }
+	float2		Min( const float2& b ) const	{ return float2( MIN( x, b.x ), MIN( y, b.y ) ); }
+	float2		Max( const float2& b ) const	{ return float2( MAX( x, b.x ), MAX( y, b.y ) ); }
 	float		Min() const						{ return MIN( x, y ); }
 	float		Max() const						{ return MAX( x, y ); }
-	bool		Almost( const NjFloat2& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ); }
+	bool		Almost( const float2& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ); }
 
-	NjFloat2	operator-( const NjFloat2& v ) const	{ return NjFloat2( x-v.x, y-v.y ); }
-	NjFloat2	operator+( const NjFloat2& v ) const	{ return NjFloat2( x+v.x, y+v.y ); }
-	NjFloat2	operator*( const NjFloat2& v ) const	{ return NjFloat2( x*v.x, y*v.y ); }
-	NjFloat2	operator*( float v ) const				{ return NjFloat2( x * v, y * v ); }
-	NjFloat2	operator/( float v ) const				{ return NjFloat2( x / v, y / v ); }
-	NjFloat2	operator/( const NjFloat2& v ) const	{ return NjFloat2( x / v.x, y / v.y ); }
-	float		operator|( const NjFloat2& v ) const	{ return x*v.x + y*v.y; }
-	float		operator^( const NjFloat2& v ) const	{ return x*v.y - y*v.x; }	// Returns the Z component of the orthogonal vector
+	float2		operator-( const float2& v ) const	{ return float2( x-v.x, y-v.y ); }
+	float2		operator+( const float2& v ) const	{ return float2( x+v.x, y+v.y ); }
+	float2		operator*( const float2& v ) const	{ return float2( x*v.x, y*v.y ); }
+	float2		operator*( float v ) const				{ return float2( x * v, y * v ); }
+	float2		operator/( float v ) const				{ return float2( x / v, y / v ); }
+	float2		operator/( const float2& v ) const	{ return float2( x / v.x, y / v.y ); }
+	float		operator|( const float2& v ) const	{ return x*v.x + y*v.y; }
+	float		operator^( const float2& v ) const	{ return x*v.y - y*v.x; }	// Returns the Z component of the orthogonal vector
 
-	static const NjFloat2	Zero;
-	static const NjFloat2	One;
-	static const NjFloat2	UnitX;
-	static const NjFloat2	UnitY;
+	static const float2	Zero;
+	static const float2	One;
+	static const float2	UnitX;
+	static const float2	UnitY;
 };
 
-static NjFloat2   operator*( float a, const NjFloat2& b )	{ return NjFloat2( a*b.x, a*b.y ); }
+static float2   operator*( float a, const float2& b )	{ return float2( a*b.x, a*b.y ); }
 
 
 // Float3 used for point & vector operations
-class   NjFloat3
+class   float3
 {
 public:
 
 	float	x, y, z;
 
-	NjFloat3() : x( 0 ), y( 0 ), z( 0 )	{}
-	NjFloat3( float _x, float _y, float _z ) : x( _x ), y( _y ), z( _z )	{}
-	NjFloat3( const NjFloat2& _xy, float _z ) : x( _xy.x ), y( _xy.y ), z( _z )	{}
+	float3() : x( 0 ), y( 0 ), z( 0 )	{}
+	float3( float _x, float _y, float _z ) : x( _x ), y( _y ), z( _z )	{}
+	float3( const float2& _xy, float _z ) : x( _xy.x ), y( _xy.y ), z( _z )	{}
 
 	void		Set( float _x, float _y, float _z ) { x = _x; y = _y; z = _z; }
 
 	float		LengthSq() const	{ return x*x + y*y + z*z; }
 	float		Length() const		{ return sqrtf( x*x + y*y + z*z ); }
-	NjFloat3&   Normalize()			{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; z *= InvL; return *this; }
+	float3&		Normalize()			{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; z *= InvL; return *this; }
 
-	NjFloat3	Lerp( const NjFloat3& b, float t ) const	{ float r = 1.0f - t; return NjFloat3( x * r + b.x * t, y * r + b.y * t, z * r + b.z * t ); }
-	NjFloat3	Min( const NjFloat3& b ) const	{ return NjFloat3( MIN( x, b.x ), MIN( y, b.y ), MIN( z, b.z ) ); }
-	NjFloat3	Max( const NjFloat3& b ) const	{ return NjFloat3( MAX( x, b.x ), MAX( y, b.y ), MAX( z, b.z ) ); }
+	float3		Lerp( const float3& b, float t ) const	{ float r = 1.0f - t; return float3( x * r + b.x * t, y * r + b.y * t, z * r + b.z * t ); }
+	float3		Min( const float3& b ) const	{ return float3( MIN( x, b.x ), MIN( y, b.y ), MIN( z, b.z ) ); }
+	float3		Max( const float3& b ) const	{ return float3( MAX( x, b.x ), MAX( y, b.y ), MAX( z, b.z ) ); }
 	float		Min() const						{ return MIN( MIN( x, y ), z ); }
 	float		Max() const						{ return MAX( MAX( x, y ), z ); }
-	bool		Almost( const NjFloat3& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ); }
+	bool		Almost( const float3& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ); }
 
-	NjFloat3	operator-( const NjFloat3& v ) const	{ return NjFloat3( x-v.x, y-v.y, z-v.z ); }
-	NjFloat3	operator+( const NjFloat3& v ) const	{ return NjFloat3( x+v.x, y+v.y, z+v.z ); }
-	NjFloat3	operator*( const NjFloat3& v ) const	{ return NjFloat3( x*v.x, y*v.y, z*v.z ); }
-	NjFloat3	operator*( float v ) const				{ return NjFloat3( x * v, y * v, z * v ); }
-	NjFloat3	operator/( float v ) const				{ return NjFloat3( x / v, y / v, z / v ); }
-	NjFloat3	operator/( const NjFloat3& v ) const	{ return NjFloat3( x / v.x, y / v.y, z / v.z ); }
-	float		operator|( const NjFloat3& v ) const	{ return x*v.x + y*v.y + z*v.z; }
-	NjFloat3	operator-() const						{ return NjFloat3( -x, -y, -z ); }
-				operator NjFloat2() const				{ return NjFloat2( x, y ); }
-	NjFloat3	operator^( const NjFloat3& v ) const	{ return NjFloat3( y * v.z - v.y * z, z * v.x - v.z * x, x * v.y - v.x * y ); }
+	float3		operator-( const float3& v ) const	{ return float3( x-v.x, y-v.y, z-v.z ); }
+	float3		operator+( const float3& v ) const	{ return float3( x+v.x, y+v.y, z+v.z ); }
+	float3		operator*( const float3& v ) const	{ return float3( x*v.x, y*v.y, z*v.z ); }
+	float3		operator*( float v ) const				{ return float3( x * v, y * v, z * v ); }
+	float3		operator/( float v ) const				{ return float3( x / v, y / v, z / v ); }
+	float3		operator/( const float3& v ) const	{ return float3( x / v.x, y / v.y, z / v.z ); }
+	float		operator|( const float3& v ) const	{ return x*v.x + y*v.y + z*v.z; }
+	float3		operator-() const						{ return float3( -x, -y, -z ); }
+				operator float2() const				{ return float2( x, y ); }
+	float3		operator^( const float3& v ) const	{ return float3( y * v.z - v.y * z, z * v.x - v.z * x, x * v.y - v.x * y ); }
 
-	static const NjFloat3	Zero;
-	static const NjFloat3	One;
-	static const NjFloat3	UnitX;
-	static const NjFloat3	UnitY;
-	static const NjFloat3	UnitZ;
+	static const float3	Zero;
+	static const float3	One;
+	static const float3	UnitX;
+	static const float3	UnitY;
+	static const float3	UnitZ;
 };
 
-static NjFloat3   operator*( float a, const NjFloat3& b ) { return NjFloat3( a*b.x, a*b.y, a*b.z ); }
+static float3   operator*( float a, const float3& b ) { return float3( a*b.x, a*b.y, a*b.z ); }
 
 
 // Float4 used for point & vector operations
-class   NjFloat4
+class   float4
 {
 public:
 
 	float	x, y, z, w;
 
-	NjFloat4() : x( 0 ), y( 0 ), z( 0 ), w( 0 )  {}
-	NjFloat4( float _x, float _y, float _z, float _w ) : x( _x ), y( _y ), z( _z ), w( _w )   {}
-	NjFloat4( const NjFloat2& _xy, float _z, float _w ) : x( _xy.x ), y( _xy.y ), z( _z ), w( _w ) {}
-	NjFloat4( const NjFloat3& _xyz, float _w ) : x( _xyz.x ), y( _xyz.y ), z( _xyz.z ), w( _w ) {}
+	float4() : x( 0 ), y( 0 ), z( 0 ), w( 0 )  {}
+	float4( float _x, float _y, float _z, float _w ) : x( _x ), y( _y ), z( _z ), w( _w )   {}
+	float4( const float2& _xy, float _z, float _w ) : x( _xy.x ), y( _xy.y ), z( _z ), w( _w ) {}
+	float4( const float3& _xyz, float _w ) : x( _xyz.x ), y( _xyz.y ), z( _xyz.z ), w( _w ) {}
 
 	void		Set( float _x, float _y, float _z, float _w ) { x = _x; y = _y; z = _z; w = _w; }
 
 	float		LengthSq() const	{ return x*x + y*y + z*z + w*w; }
 	float		Length() const		{ return sqrtf( x*x + y*y + z*z + w*w ); }
-	NjFloat4&   Normalize()			{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; z *= InvL; w *= InvL; return *this; }
+	float4&		Normalize()			{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; z *= InvL; w *= InvL; return *this; }
 
-	NjFloat4	Lerp( const NjFloat4& b, float t ) const	{ float r = 1.0f - t; return NjFloat4( x * r + b.x * t, y * r + b.y * t, z * r + b.z * t, w * r + b.w * t ); }
-	NjFloat4	Min( const NjFloat4& b ) const	{ return NjFloat4( MIN( x, b.x ), MIN( y, b.y ), MIN( z, b.z ), MIN( w, b.w ) ); }
-	NjFloat4	Max( const NjFloat4& b ) const	{ return NjFloat4( MAX( x, b.x ), MAX( y, b.y ), MAX( z, b.z ), MAX( w, b.w ) ); }
+	float4		Lerp( const float4& b, float t ) const	{ float r = 1.0f - t; return float4( x * r + b.x * t, y * r + b.y * t, z * r + b.z * t, w * r + b.w * t ); }
+	float4		Min( const float4& b ) const	{ return float4( MIN( x, b.x ), MIN( y, b.y ), MIN( z, b.z ), MIN( w, b.w ) ); }
+	float4		Max( const float4& b ) const	{ return float4( MAX( x, b.x ), MAX( y, b.y ), MAX( z, b.z ), MAX( w, b.w ) ); }
 	float		Min() const						{ return MIN( MIN( MIN( x, y ), z), w ); }
 	float		Max() const						{ return MAX( MAX( MAX( x, y ), z), w ); }
-	bool		Almost( const NjFloat4& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ) && ALMOST( w, b.w ); }
+	bool		Almost( const float4& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ) && ALMOST( w, b.w ); }
 
-	NjFloat4	operator-()								{ return NjFloat4( -x, -y, -z, -w ); }
-				operator NjFloat3()						{ return NjFloat3( x, y, z ); }
-	NjFloat4	operator-( const NjFloat4& v ) const	{ return NjFloat4( x-v.x, y-v.y, z-v.z, w-v.w ); }
-	NjFloat4	operator+( const NjFloat4& v ) const	{ return NjFloat4( x+v.x, y+v.y, z+v.z, w+v.w ); }
-	NjFloat4	operator*( const NjFloat4& v ) const	{ return NjFloat4( x*v.x, y*v.y, z*v.z, w*v.w ); }
-	NjFloat4	operator*( float v ) const				{ return NjFloat4( x * v, y * v, z * v, w * v ); }
-	NjFloat4	operator/( float v ) const				{ return NjFloat4( x / v, y / v, z / v, w / v ); }
-	NjFloat4	operator/( const NjFloat4& v ) const	{ return NjFloat4( x / v.x, y / v.y, z / v.z, w / v.w ); }
-	float		operator|( const NjFloat4& v ) const	{ return x*v.x + y*v.y + z*v.z + w*v.w; }
+	float4		operator-()								{ return float4( -x, -y, -z, -w ); }
+				operator float3()						{ return float3( x, y, z ); }
+	float4		operator-( const float4& v ) const	{ return float4( x-v.x, y-v.y, z-v.z, w-v.w ); }
+	float4		operator+( const float4& v ) const	{ return float4( x+v.x, y+v.y, z+v.z, w+v.w ); }
+	float4		operator*( const float4& v ) const	{ return float4( x*v.x, y*v.y, z*v.z, w*v.w ); }
+	float4		operator*( float v ) const				{ return float4( x * v, y * v, z * v, w * v ); }
+	float4		operator/( float v ) const				{ return float4( x / v, y / v, z / v, w / v ); }
+	float4		operator/( const float4& v ) const	{ return float4( x / v.x, y / v.y, z / v.z, w / v.w ); }
+	float		operator|( const float4& v ) const	{ return x*v.x + y*v.y + z*v.z + w*v.w; }
 
-	static NjFloat4	QuatFromAngleAxis( float _Angle, const NjFloat3& _Axis );
+	static float4	QuatFromAngleAxis( float _Angle, const float3& _Axis );
 
-	static const NjFloat4	Zero;
-	static const NjFloat4	One;
-	static const NjFloat4	UnitX;
-	static const NjFloat4	UnitY;
-	static const NjFloat4	UnitZ;
-	static const NjFloat4	UnitW;
+	static const float4	Zero;
+	static const float4	One;
+	static const float4	UnitX;
+	static const float4	UnitY;
+	static const float4	UnitZ;
+	static const float4	UnitW;
 };
 
-static NjFloat4   operator*( float a, const NjFloat4& b ) { return NjFloat4( a*b.x, a*b.y, a*b.z, a*b.w ); }
+static float4   operator*( float a, const float4& b ) { return float4( a*b.x, a*b.y, a*b.z, a*b.w ); }
 
 
 // Float4x4 used for matrix operations
-class   NjFloat4x4
+class   float4x4
 {
 public:
 
 	float	m[16];
 
-	NjFloat4			GetRow( int _RowIndex ) const								{ ASSERT( _RowIndex < 4, "Row index out of range!" ); return NjFloat4( m[4*_RowIndex+0], m[4*_RowIndex+1], m[4*_RowIndex+2], m[4*_RowIndex+3] ); }
-	NjFloat4x4&			SetRow( int _RowIndex, const NjFloat4& _Row )				{ ASSERT( _RowIndex < 4, "Row index out of range!" ); m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _Row.w; return *this; }
-	NjFloat4x4&			SetRow( int _RowIndex, const NjFloat3& _Row, float _w=0 )	{ ASSERT( _RowIndex < 4, "Row index out of range!" ); m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _w; return *this; }
-	NjFloat4x4			Inverse() const;
+	float4				GetRow( int _RowIndex ) const								{ ASSERT( _RowIndex < 4, "Row index out of range!" ); return float4( m[4*_RowIndex+0], m[4*_RowIndex+1], m[4*_RowIndex+2], m[4*_RowIndex+3] ); }
+	float4x4&			SetRow( int _RowIndex, const float4& _Row )				{ ASSERT( _RowIndex < 4, "Row index out of range!" ); m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _Row.w; return *this; }
+	float4x4&			SetRow( int _RowIndex, const float3& _Row, float _w=0 )	{ ASSERT( _RowIndex < 4, "Row index out of range!" ); m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _w; return *this; }
+	float4x4			Inverse() const;
 	float				Determinant() const;
 	float				CoFactor( int x, int y ) const;
-	NjFloat4x4&			Normalize();
+	float4x4&			Normalize();
 
-	NjFloat4x4&			Scale( const NjFloat3& _Scale );
+	float4x4&			Scale( const float3& _Scale );
 
 //	NjFloat4			operator*( const NjFloat4& b ) const;
-	NjFloat4x4			operator*( const NjFloat4x4& b ) const;
+	float4x4			operator*( const float4x4& b ) const;
 	float&				operator()( int _Row, int _Column );
 
-	NjFloat4x4&			PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S=NjFloat3::One );		// Builds a transform matrix from Position, Rotation (a quat) and Scale
+	float4x4&			PRS( const float3& P, const float4& R, const float3& S=float3::One );		// Builds a transform matrix from Position, Rotation (a quat) and Scale
 
-	static NjFloat4x4	BuildFromPRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S=NjFloat3::One );
-	static NjFloat4x4	BuildFromAngleAxis( float _Angle, const NjFloat3& _Axis )	{ return BuildFromQuat( NjFloat4::QuatFromAngleAxis( _Angle, _Axis ) ); }
-	static NjFloat4x4	BuildFromQuat( const NjFloat4& _Quat );
-	static NjFloat4x4	ProjectionPerspective( float _FOVY, float _AspectRatio, float _Near, float _Far );	// Builds a perspective projection matrix
+	static float4x4		BuildFromPRS( const float3& P, const float4& R, const float3& S=float3::One );
+	static float4x4		BuildFromAngleAxis( float _Angle, const float3& _Axis )	{ return BuildFromQuat( float4::QuatFromAngleAxis( _Angle, _Axis ) ); }
+	static float4x4		BuildFromQuat( const float4& _Quat );
+	static float4x4		ProjectionPerspective( float _FOVY, float _AspectRatio, float _Near, float _Far );	// Builds a perspective projection matrix
 
-	static NjFloat4x4	Rot( const NjFloat3& _Source, const NjFloat3& _Target );	// Generate the rotation matrix that rotates the _Source vector into the _Target vector
-	static NjFloat4x4	RotX( float _Angle );
-	static NjFloat4x4	RotY( float _Angle );
-	static NjFloat4x4	RotZ( float _Angle );
-	static NjFloat4x4	PYR( float _Pitch, float _Yaw, float _Roll );
+	static float4x4		Rot( const float3& _Source, const float3& _Target );	// Generate the rotation matrix that rotates the _Source vector into the _Target vector
+	static float4x4		RotX( float _Angle );
+	static float4x4		RotY( float _Angle );
+	static float4x4		RotZ( float _Angle );
+	static float4x4		PYR( float _Pitch, float _Yaw, float _Roll );
 
-	static const NjFloat4x4	Zero;
-	static const NjFloat4x4	Identity;
+	static const float4x4	Zero;
+	static const float4x4	Identity;
 };
 
-NjFloat4   operator*( const NjFloat4& a, const NjFloat4x4& b );
+float4   operator*( const float4& a, const float4x4& b );
 
 
 // Float16
-class   NjHalf
+class   half
 {
 public:
 	static const U16	SMALLEST_UINT = 0x0400;
@@ -237,21 +237,21 @@ public:
 
 	U16 raw;
 
-	NjHalf()	{ raw=0; }
-	NjHalf( float value );
+	half()	{ raw=0; }
+	half( float value );
 	operator float() const;
 };
 
-class   NjHalf4
+class   half4
 {
 public:
-	NjHalf  x, y, z, w;
+	half  x, y, z, w;
 
-	NjHalf4() : x( 0.0f ), y( 0.0f ), z( 0.0f ), w( 0.0f )	{}
-	NjHalf4( float _x, float _y, float _z, float _w ) : x( _x ), y( _y ), z( _z ), w( _w )	{}
-	NjHalf4( const NjFloat4& v ) : x( v.x ), y( v.y ), z( v.z ), w( v.w )	{}
+	half4() : x( 0.0f ), y( 0.0f ), z( 0.0f ), w( 0.0f )	{}
+	half4( float _x, float _y, float _z, float _w ) : x( _x ), y( _y ), z( _z ), w( _w )	{}
+	half4( const float4& v ) : x( v.x ), y( v.y ), z( v.z ), w( v.w )	{}
 
-	operator NjFloat4()	{ return NjFloat4( x, y, z, w ); }
+	operator float4()	{ return float4( x, y, z, w ); }
 };
 
 #endif  // _NUAJ_MATH_H_

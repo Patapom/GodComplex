@@ -490,6 +490,7 @@ namespace GCXFormat
 						m_Faces[FaceIndex].V0 = F.V0;
 						m_Faces[FaceIndex].V1 = F.V1;
 						m_Faces[FaceIndex].V2 = F.V2;
+						FaceIndex++;
 					}
 
 					// Build vertices

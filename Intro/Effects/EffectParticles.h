@@ -12,9 +12,9 @@ public:		// NESTED TYPES
 
 	struct CBRender
 	{
-		NjFloat3	dUV;
+		float3	dUV;
 		float		__PAD;
-		NjFloat2	DeltaTime;
+		float2	DeltaTime;
 	};
 
 private:	// FIELDS
@@ -53,5 +53,5 @@ public:		// METHODS
 
 protected:
 	
-	void	BuildVoronoiTexture( TextureBuilder& _TB, NjFloat2* _pCellCenters, VertexFormatPt4* _pVertices );
+	void	BuildVoronoiTexture( TextureBuilder& _TB, float2* _pCellCenters, VertexFormatPt4* _pVertices );
 };

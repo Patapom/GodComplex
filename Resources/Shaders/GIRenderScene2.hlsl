@@ -14,15 +14,6 @@ cbuffer	cbGeneral	: register( b8 )
 	bool		_ShowOnlyIndirect;
 };
 
-struct	VS_IN
-{
-	float3	Position	: POSITION;
-	float3	Normal		: NORMAL;
-	float3	Tangent		: TANGENT;
-	float3	BiTangent	: BITANGENT;
-	float2	UV			: TEXCOORD0;
-};
-
 struct	PS_IN
 {
 	float4	__Position	: SV_POSITION;
@@ -43,7 +34,7 @@ struct	PS_IN
 	float3	SH8			: SH8;
 };
 
-PS_IN	VS( VS_IN _In )
+PS_IN	VS( SCENE_VS_IN _In )
 {
 	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
 
@@ -62,6 +53,16 @@ PS_IN	VS( VS_IN _In )
 	float3	SH[9];
 	for ( int i=0; i < 9; i++ )
 		SH[i] = 0.0;
+
+#ifdef PER_VERTEX_PROBE_ID	// Only use the entry point probe and neighbors
+
+	if ( _In.ProbeID != 0xFFFFFFFF )
+	{
+		SH[0] = 0.01 * _In.ProbeID;
+	}
+
+#else	// SUM ALL THE SCENE'S PROBES!!
+
 	for ( uint ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ )
 //for ( uint ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
 	{
@@ -108,6 +109,8 @@ PS_IN	VS( VS_IN _In )
 		SumWeights += ProbeWeight;
 	}
 
+#endif
+
 	// Normalize & store
 //	float	Norm = 1.0 / SumWeights;
 	float	Norm = 1.0 / max( 1.0, SumWeights );	// This max allows single, low influence probes to decrease with distance anyway
@@ -128,7 +131,7 @@ PS_IN	VS( VS_IN _In )
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
-// return float4( _In.SH0, 0 );
+return float4( _In.SH0, 0 );
 // return float4( 0.01 * _In.SH1, 0 );
 
 #if EMISSIVE

@@ -12,10 +12,10 @@
 
 struct	CBPreCompute
 {
-	NjFloat4	dUVW;
+	float4	dUVW;
 	bool		bFirstPass;
 	float		AverageGroundReflectance;
-	NjFloat2	__PAD1;
+	float2	__PAD1;
 };
 
 void	EffectVolumetric::InitSkyTables()
@@ -62,7 +62,7 @@ void	EffectVolumetric::InitSkyTables()
 
 		m_Device.SetRenderTarget( *m_pRTTransmittance );
 
-		CB.m.dUVW = NjFloat4( m_pRTTransmittance->GetdUV(), 0.0f );
+		CB.m.dUVW = float4( m_pRTTransmittance->GetdUV(), 0.0f );
 		CB.UpdateData();
 
 		m_ScreenQuad.Render( M );
@@ -80,7 +80,7 @@ void	EffectVolumetric::InitSkyTables()
 
 		m_Device.SetRenderTarget( *pRTDeltaIrradiance );
 
-		CB.m.dUVW = NjFloat4( pRTDeltaIrradiance->GetdUV(), 0.0f );
+		CB.m.dUVW = float4( pRTDeltaIrradiance->GetdUV(), 0.0f );
 		CB.UpdateData();
 
 		m_ScreenQuad.Render( M );
@@ -93,7 +93,7 @@ void	EffectVolumetric::InitSkyTables()
 
 	// ==================================================
  	// Clear irradiance texture E (line 4 in algorithm 4.1)
-	m_Device.ClearRenderTarget( *m_ppRTIrradiance[0], NjFloat4::Zero );
+	m_Device.ClearRenderTarget( *m_ppRTIrradiance[0], float4::Zero );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Computes single scattering texture deltaS (line 3 in algorithm 4.1)
@@ -156,7 +156,7 @@ void	EffectVolumetric::InitSkyTables()
 
 			m_Device.SetRenderTarget( *pRTDeltaIrradiance );
 
-			CB.m.dUVW = NjFloat4( pRTDeltaIrradiance->GetdUV(), 0.0 );
+			CB.m.dUVW = float4( pRTDeltaIrradiance->GetdUV(), 0.0 );
 			CB.m.bFirstPass = Order == 2;
 			CB.UpdateData();
 
@@ -195,7 +195,7 @@ void	EffectVolumetric::InitSkyTables()
 
 			m_Device.SetRenderTarget( *m_ppRTIrradiance[0] );
 
-			CB.m.dUVW = NjFloat4( m_ppRTIrradiance[0]->GetdUV(), 0 );
+			CB.m.dUVW = float4( m_ppRTIrradiance[0]->GetdUV(), 0 );
 			CB.UpdateData();
 
 			m_ScreenQuad.Render( M );

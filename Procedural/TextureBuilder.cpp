@@ -48,7 +48,7 @@ namespace Fillers
 // 		pStruct->pSource->SampleClamp( _UV.x * pStruct->W, _UV.y * pStruct->H, 0, _Pixel );
 // 	}
 
-	void	CopyFiller( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+	void	CopyFiller( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 	{
 		__FillerSampleStruct*	pStruct = (__FillerSampleStruct*) _pData;
 		pStruct->pSource->SampleClamp( _UV.x * pStruct->W, _UV.y * pStruct->H, pStruct->MipLevel, _Pixel );
@@ -105,7 +105,7 @@ void	TextureBuilder::Clear( const Pixel& _Pixel )
 void	TextureBuilder::Fill( FillDelegate _Filler, void* _pData )
 {
 	// Fill the mip level 0
-	NjFloat2	UV;
+	float2	UV;
 	for ( int Y=0; Y < m_Height; Y++ )
 	{
 		Pixel*	pScanline = m_ppBufferGeneric[0] + m_Width * Y;
@@ -158,8 +158,8 @@ void	TextureBuilder::SampleWrap( float _X, float _Y, int _MipLevel, Pixel& _Pixe
 	Pixel&	V10 = m_ppBufferGeneric[_MipLevel][W*Y1+X0];
 	Pixel&	V11 = m_ppBufferGeneric[_MipLevel][W*Y1+X1];
 
-	NjFloat4	V0 = rx * V00.RGBA + x * V01.RGBA;
-	NjFloat4	V1 = rx * V10.RGBA + x * V11.RGBA;
+	float4	V0 = rx * V00.RGBA + x * V01.RGBA;
+	float4	V1 = rx * V10.RGBA + x * V11.RGBA;
 	float		H0 = rx * V00.Height + x * V01.Height;
 	float		H1 = rx * V10.Height + x * V11.Height;
 	float		R0 = rx * V00.Roughness + x * V01.Roughness;
@@ -198,8 +198,8 @@ void	TextureBuilder::SampleClamp( float _X, float _Y, int _MipLevel, Pixel& _Pix
 	Pixel&	V10 = m_ppBufferGeneric[_MipLevel][W*Y1+X0];
 	Pixel&	V11 = m_ppBufferGeneric[_MipLevel][W*Y1+X1];
 
-	NjFloat4	V0 = rx * V00.RGBA + x * V01.RGBA;
-	NjFloat4	V1 = rx * V10.RGBA + x * V11.RGBA;
+	float4	V0 = rx * V00.RGBA + x * V01.RGBA;
+	float4	V1 = rx * V10.RGBA + x * V11.RGBA;
 	float		H0 = rx * V00.Height + x * V01.Height;
 	float		H1 = rx * V10.Height + x * V11.Height;
 	float		R0 = rx * V00.Roughness + x * V01.Roughness;
@@ -263,12 +263,12 @@ void	TextureBuilder::GenerateMips( bool _bTreatRGBAsNormal, bool _bNormalizeNorm
 
 				if ( _bTreatRGBAsNormal )
 				{
-					NjFloat3	N00 = NjFloat3(V00.RGBA);
-					NjFloat3	N01 = NjFloat3(V01.RGBA);
-					NjFloat3	N10 = NjFloat3(V10.RGBA);
-					NjFloat3	N11 = NjFloat3(V11.RGBA);
+					float3	N00 = float3(V00.RGBA);
+					float3	N01 = float3(V01.RGBA);
+					float3	N10 = float3(V10.RGBA);
+					float3	N11 = float3(V11.RGBA);
 
-					NjFloat3	N = 0.25f * (N00 + N01 + N10 + N11);
+					float3	N = 0.25f * (N00 + N01 + N10 + N11);
 					if ( _bNormalizeNormals )
 						N.Normalize();
 					pScanline->RGBA.x = N.x;
@@ -439,7 +439,7 @@ void**	TextureBuilder::Convert( const IPixelFormatDescriptor& _Format, const Con
 			// Copy
 			for ( int Y=0; Y < Height; Y++ )
 			{
-				NjFloat4	Temp;
+				float4	Temp;
 				Pixel*		pScanlineSource0 = &pSource0[Width*Y];
 				Pixel*		pScanlineSource1 = &pSource1[Width*Y];
 				Pixel*		pScanlineSource2 = &pSource2[Width*Y];

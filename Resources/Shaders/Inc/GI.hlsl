@@ -5,9 +5,26 @@
 #ifndef _GI_INC_
 #define _GI_INC_
 
+#define	SHADOW_NORMAL_OFFSET	0.1	// City scene seems to require that amount of offseting to have "correct" shadows
+
 #if USE_SHADOW_MAP
 #include "Inc/ShadowMap.hlsl"
 #endif
+
+// Scene vertex format
+struct	SCENE_VS_IN
+{
+	float3	Position	: POSITION;
+	float3	Normal		: NORMAL;
+	float3	Tangent		: TANGENT;
+	float3	BiTangent	: BITANGENT;
+	float2	UV			: TEXCOORD0;
+
+#ifdef PER_VERTEX_PROBE_ID
+	uint	ProbeID		: INFO;
+#endif
+};
+
 
 // Structured Buffer with our lights
 struct	LightStruct
@@ -99,7 +116,7 @@ float3	AccumulateLight( float3 _WorldPosition, float3 _WorldNormal, float3 _Worl
 		Irradiance = _LightSource.Color;	// Simple!
 
 #if USE_SHADOW_MAP
-		Irradiance *= ComputeShadowPCF( _WorldPosition, _WorldVertexNormal, _WorldVertexTangent, 0.1 );
+		Irradiance *= ComputeShadowPCF( _WorldPosition, _WorldVertexNormal, _WorldVertexTangent, 0.1, SHADOW_NORMAL_OFFSET );
 #endif
 	}
 

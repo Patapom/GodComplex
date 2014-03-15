@@ -12,7 +12,7 @@ static Texture2D*	gs_pTexTestNoise = NULL;
 float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[], void* _pData )	{ return sqrtf( _pDistances[1] ) - sqrtf( _pDistances[0] ); }	// Use F2 - F1
 //float	CombineDistances( float _pDistances[], int _pCellX[], int _pCellY[], int _pCellZ[], void* _pData )	{ return _pDistances[1] - sqrt(_pDistances[0]); }	// Use F2² - F1 => Alligator scales ! ^^
 
-float	FBMDelegate( const NjFloat2& _UV, void* _pData )
+float	FBMDelegate( const float2& _UV, void* _pData )
 {
 	Noise&	N = *((Noise*) _pData);
 //	return 2.0f * abs( N.Perlin( 0.003f * _UV ) );
@@ -21,7 +21,7 @@ float	FBMDelegate( const NjFloat2& _UV, void* _pData )
 //	return abs(N.Wavelet( _UV ));
 }
 
-float	RMFDelegate( const NjFloat2& _UV, void* _pData )
+float	RMFDelegate( const float2& _UV, void* _pData )
 {
 	Noise&	N = *((Noise*) _pData);
 
@@ -33,7 +33,7 @@ float	RMFDelegate( const NjFloat2& _UV, void* _pData )
 //	return 3.0f * N.Wavelet( _UV );
 }
 
-void	FillNoise( int x, int y, const NjFloat2& _UV, NjFloat4& _Color, void* _pData )
+void	FillNoise( int x, int y, const float2& _UV, float4& _Color, void* _pData )
 {
  	Noise&	N = *((Noise*) _pData);
 
@@ -53,7 +53,7 @@ void	FillRectangle( const DrawUtils::DrawInfos& i, Pixel& P )
 	float		Alpha = i.Coverage;
 	float		Distance = 1.0f - 2.0f * abs(i.Distance);
 
-	Pixel	P2( NjFloat4( Distance, 0, 0, 0 ) );	// Draw distance to border in red
+	Pixel	P2( float4( Distance, 0, 0, 0 ) );	// Draw distance to border in red
 	if ( Distance < 0.0f )
 		Alpha = 0.0f;
 
@@ -62,24 +62,24 @@ void	FillRectangle( const DrawUtils::DrawInfos& i, Pixel& P )
 
 void	FillEllipse( const DrawUtils::DrawInfos& i, Pixel& P )
 {
-	Pixel	C( i.Distance < 1.0f ? NjFloat4( 0, 0, i.Distance, i.Distance * i.Coverage ) : NjFloat4( 0, 1, 1, 0.5 ) );
+	Pixel	C( i.Distance < 1.0f ? float4( 0, 0, i.Distance, i.Distance * i.Coverage ) : float4( 0, 1, 1, 0.5 ) );
 	P.Blend( C, C.RGBA.w );
 }
 
 void	FillLine( const DrawUtils::DrawInfos& i, Pixel& P )
 {
 	float	D = MAX( 0.0f, 1.0f - i.Distance );
-	P.Blend( Pixel( NjFloat4( 0, D, 0, 0 ) ), D * i.Coverage );
+	P.Blend( Pixel( float4( 0, D, 0, 0 ) ), D * i.Coverage );
 }
 
 void	FillScratch( const DrawUtils::DrawInfos& i, Pixel& P, float _Distance, float _U )
 {
  	Noise&	N = *((Noise*) i.pData);
 
- 	float		Value = 1.0f * N.Perlin( 0.001f * NjFloat2( float(i.x) / i.w, float(i.y) / i.h ) );
+ 	float		Value = 1.0f * N.Perlin( 0.001f * float2( float(i.x) / i.w, float(i.y) / i.h ) );
  				Value += abs( 4.0f * N.Perlin( 0.005f * (Value + _U) ) );
 
-	NjFloat4	Color( Value, Value, Value, i.Coverage * (1.0f - abs(i.Distance)) );
+	float4	Color( Value, Value, Value, i.Coverage * (1.0f - abs(i.Distance)) );
 	P.Blend( Pixel( Color ), Color.w );
 }
 
@@ -87,11 +87,11 @@ void	FillSplotch( const DrawUtils::DrawInfos& i, Pixel& P )
 {
  	Noise&	N = *((Noise*) i.pData);
 
-	NjFloat2	UV = i.UV;
+	float2	UV = i.UV;
 	UV.x -= 0.5f;
 	UV.y -= 0.5f;
 
-	float	Scale = 1.0f + 1.0f * N.Perlin( NjFloat2( 0.005f * i.x / i.w, 0.005f * i.y / i.h ) );
+	float	Scale = 1.0f + 1.0f * N.Perlin( float2( 0.005f * i.x / i.w, 0.005f * i.y / i.h ) );
 	UV.x *= Scale;
 	UV.y *= Scale;
 
@@ -100,7 +100,7 @@ void	FillSplotch( const DrawUtils::DrawInfos& i, Pixel& P )
 	float	C = 1.2f * (1.0f - 2.0f * Distance2Center);
 			C = SATURATE( C );
 	float	A = C * C * i.Coverage;
-	NjFloat4	Color( C, C, C, A );
+	float4	Color( C, C, C, A );
 
 	P.Blend( Pixel( Color ), Color.w );
 }
@@ -155,10 +155,10 @@ return 0;
 		// Draw scratches
 		for ( int i=0; i < 10; i++ )
 		{
-			NjFloat2	Pos;
+			float2	Pos;
 			Pos.x = _frand( 0.0f, 512.0f );
 			Pos.y = _frand( 0.0f, 512.0f );
-			NjFloat2	Dir;
+			float2	Dir;
 			Dir.x = _frand( -1.0f, +1.0f );
 			Dir.y = _frand( -1.0f, +1.0f );
 
@@ -178,11 +178,11 @@ return 0;
 			float	DeltaAngle = _frand( 0.0f, 40.0f );		// Splotches rotate with time
 					DeltaAngle /= Count;
 
-			NjFloat2	Pos;
+			float2	Pos;
 			Pos.x = _frand( -512.0f, 512.0f );
 			Pos.y = _frand( -512.0f, 512.0f );
 
-			NjFloat2	Size;
+			float2	Size;
 			Size.x = _frand( 40.0f, 50.0f );
 			Size.y = _frand( 40.0f, 50.0f );
 			float	DeltaSize = _frand( 0.0f, 30.0f );	// Splotches get bigger or smaller with time
@@ -197,7 +197,7 @@ return 0;
 
 				Angle += DeltaAngle;
 				float	AngleRad = DEG2RAD( Angle );
-				Pos = Pos + Step * NjFloat2( cosf(AngleRad), sinf(AngleRad) );
+				Pos = Pos + Step * float2( cosf(AngleRad), sinf(AngleRad) );
 				Size.x += DeltaSize;
 			}
 		}

@@ -3,7 +3,7 @@
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
-void	TweakSphereExternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tangent, const NjFloat3& _BiTangent, NjFloat2& _UV, void* _pUserData )
+void	TweakSphereExternal( float3& _Position, float3& _Normal, float3& _Tangent, const float3& _BiTangent, float2& _UV, void* _pUserData )
 {
 	Noise&	N = *((Noise*) _pUserData);
 
@@ -11,7 +11,7 @@ void	TweakSphereExternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tan
 	_Position = 0.8f * _Position;	// Scale a little
 }
 
-void	TweakTorusInternal( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tangent, const NjFloat3& _BiTangent, NjFloat2& _UV, void* _pUserData )
+void	TweakTorusInternal( float3& _Position, float3& _Normal, float3& _Tangent, const float3& _BiTangent, float2& _UV, void* _pUserData )
 {
 	Noise&	N = *((Noise*) _pUserData);
 
@@ -79,27 +79,27 @@ EffectTranslucency::~EffectTranslucency()
 
 void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 {
-	NjFloat3	TorusPosition = NjFloat3(
+	float3	TorusPosition = float3(
 		0.8f * sinf( _TV(0.95f) * _Time ) * sinf( _TV(0.7f) * _Time ),
 		0.8f * sinf( _TV(0.83f) * _Time ) * sinf( _TV(-0.19f) * _Time ),
 		0.2f * cosf( _TV(0.5f) * _Time ) * sinf( _TV(-0.17f) * _Time ) );							// Oscillate within the quiche
 
-	NjFloat4	TorusRotation = NjFloat4::QuatFromAngleAxis( _TV(1.35f) * _Time, NjFloat3::UnitY );	// Rotate, too
+	float4	TorusRotation = float4::QuatFromAngleAxis( _TV(1.35f) * _Time, float3::UnitY );	// Rotate, too
 
 	m_EmissivePower = SATURATE( -4.0f * sinf( _TV(0.5f) * _Time ) );
 
-	NjFloat4	SphereNoise = NjFloat4( _Time * 0.2f * NjFloat3( 1.0f, -0.5f, 0.9f ), 0.2f );
-	NjFloat4	TorusNoise = NjFloat4( _Time * 0.2f * NjFloat3( 1.0f, -0.5f, 0.9f ), 0.0f );
+	float4	SphereNoise = float4( _Time * 0.2f * float3( 1.0f, -0.5f, 0.9f ), 0.2f );
+	float4	TorusNoise = float4( _Time * 0.2f * float3( 1.0f, -0.5f, 0.9f ), 0.0f );
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Render the internal & external objects into the RGBA ZBuffer
-	gs_Device.ClearRenderTarget( *m_pRTZBuffer, NjFloat4( 2.0f, 0.0f, 2.0f, 0.0f ) );
+	gs_Device.ClearRenderTarget( *m_pRTZBuffer, float4( 2.0f, 0.0f, 2.0f, 0.0f ) );
 	gs_Device.SetRenderTarget( *m_pRTZBuffer, m_pDepthStencil );
 
 	{	USING_MATERIAL_START( *m_pMatBuildZBuffer )
 
 		// === Render external object ===
-		m_pCB_Object->m.Local2World.PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3::One );
+		m_pCB_Object->m.Local2World.PRS( float3::Zero, float4::QuatFromAngleAxis( 0.0f, float3::UnitY ), float3::One );
 		m_pCB_Object->m.NoiseOffset = SphereNoise;
 		m_pCB_Object->UpdateData();
 
@@ -114,7 +114,7 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 		m_pPrimSphereExternal->Render( *m_pMatBuildZBuffer );
 
 		// === Render rotating internal object ===
-		m_pCB_Object->m.Local2World.PRS( TorusPosition, TorusRotation, NjFloat3::One );
+		m_pCB_Object->m.Local2World.PRS( TorusPosition, TorusRotation, float3::One );
 		m_pCB_Object->m.NoiseOffset = TorusNoise;
 		m_pCB_Object->UpdateData();
 
@@ -143,7 +143,7 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 	{	USING_MATERIAL_START( *m_pMatDiffusion )
 
 		// Clear original irradiance map
-		gs_Device.ClearRenderTarget( *m_ppRTDiffusion[0], NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+		gs_Device.ClearRenderTarget( *m_ppRTDiffusion[0], float4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 
 		// Setup our global diffusion parameters
 		float	BBoxSize = _TV(0.002f);	// Size of the BBox containing our objects, in meter
@@ -151,18 +151,18 @@ void	EffectTranslucency::Render( float _Time, float _DeltaTime )
 		m_pCB_Diffusion->m.BBoxSize = BBoxSize;
 		m_pCB_Diffusion->m.SliceThickness = BBoxSize / DIFFUSION_PASSES_COUNT;	// Size of a single slice
 		m_pCB_Diffusion->m.TexelSize = BBoxSize / DIFFUSION_SIZE;				// Size of a single texel
-		m_pCB_Diffusion->m.ExtinctionCoeff = _TV(1000.0f) * NjFloat3( 0.8f, 0.85f, 1.0f );
-		m_pCB_Diffusion->m.Albedo = _TV(0.8f) * NjFloat3::One;
+		m_pCB_Diffusion->m.ExtinctionCoeff = _TV(1000.0f) * float3( 0.8f, 0.85f, 1.0f );
+		m_pCB_Diffusion->m.Albedo = _TV(0.8f) * float3::One;
 
-		NjFloat3	ScatteringAnisotropy = _TV(0.0f) * NjFloat3::One;
+		float3	ScatteringAnisotropy = _TV(0.0f) * float3::One;
 		float		PhaseFactor = _TV(4.6f);
 		m_pCB_Diffusion->m.Phase0 = PhaseFactor * ComputePhase( ScatteringAnisotropy, 0, 1, m_pCB_Diffusion->m.TexelSize, m_pCB_Diffusion->m.SliceThickness );
 		m_pCB_Diffusion->m.Phase1 = PhaseFactor * ComputePhase( ScatteringAnisotropy, 1, 8, m_pCB_Diffusion->m.TexelSize, m_pCB_Diffusion->m.SliceThickness );
 		m_pCB_Diffusion->m.Phase2 = PhaseFactor * ComputePhase( ScatteringAnisotropy, 2, 12, m_pCB_Diffusion->m.TexelSize, m_pCB_Diffusion->m.SliceThickness );
 
 //		m_pCB_Diffusion->m.ExternalLight = _TV(2.0f) * NjFloat3( 1.0f, 1.0f, 1.0f );
-		m_pCB_Diffusion->m.ExternalLight = _TV(1.4f) * (1.4f - m_EmissivePower) * NjFloat3( 1.0f, 1.0f, 1.0f );
-		m_pCB_Diffusion->m.InternalEmissive = _TV(10.0f) * m_EmissivePower * NjFloat3( 1.0f, 0.8f, 0.2f );
+		m_pCB_Diffusion->m.ExternalLight = _TV(1.4f) * (1.4f - m_EmissivePower) * float3( 1.0f, 1.0f, 1.0f );
+		m_pCB_Diffusion->m.InternalEmissive = _TV(10.0f) * m_EmissivePower * float3( 1.0f, 0.8f, 0.2f );
 
 		m_pCB_Diffusion->UpdateData();
 
@@ -202,16 +202,16 @@ gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), NULL );
 		m_ppRTDiffusion[0]->SetPS( 10 );
 
 		// Render the sphere
-		m_pCB_Object->m.Local2World.PRS( NjFloat3( 0, 1, 0 ), NjFloat4::QuatFromAngleAxis( _TV(0.0f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
-		m_pCB_Object->m.EmissiveColor = NjFloat4::Zero;
+		m_pCB_Object->m.Local2World.PRS( float3( 0, 1, 0 ), float4::QuatFromAngleAxis( _TV(0.0f) * _Time, float3::UnitY ), float3::One );
+		m_pCB_Object->m.EmissiveColor = float4::Zero;
 		m_pCB_Object->m.NoiseOffset = SphereNoise;
 		m_pCB_Object->UpdateData();
 
 		m_pPrimSphereExternal->Render( *m_pMatDisplay );
 
 		// Render the torus
-		m_pCB_Object->m.Local2World.PRS( NjFloat3( 0, 1, 0 ) + TorusPosition, TorusRotation, NjFloat3::One );
-		m_pCB_Object->m.EmissiveColor = NjFloat4( 0.0f * NjFloat3::One + m_pCB_Diffusion->m.InternalEmissive, 1.0f );
+		m_pCB_Object->m.Local2World.PRS( float3( 0, 1, 0 ) + TorusPosition, TorusRotation, float3::One );
+		m_pCB_Object->m.EmissiveColor = float4( 0.0f * float3::One + m_pCB_Diffusion->m.InternalEmissive, 1.0f );
 		m_pCB_Object->m.NoiseOffset = TorusNoise;
 		m_pCB_Object->UpdateData();
 
@@ -221,7 +221,7 @@ gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), NULL );
 	}
 }
 
-NjFloat3	EffectTranslucency::ComputePhase( const NjFloat3& _Anisotropy, int _PixelDistance, int _SamplesCount, float _TexelSize, float _SliceThickness )
+float3	EffectTranslucency::ComputePhase( const float3& _Anisotropy, int _PixelDistance, int _SamplesCount, float _TexelSize, float _SliceThickness )
 {
 	// Imagine receiving light from a point above you offset by a distance d
 	//
@@ -240,7 +240,7 @@ NjFloat3	EffectTranslucency::ComputePhase( const NjFloat3& _Anisotropy, int _Pix
 	float		Theta = atanf( _PixelDistance * _TexelSize / _SliceThickness );
 	float		CosTheta = cosf( Theta );
 
-	NjFloat3	P;
+	float3	P;
 	P.x = (1.0f - _Anisotropy.x*_Anisotropy.x) * powf( 1.0f + _Anisotropy.x*_Anisotropy.x - 2.0f*_Anisotropy.x*CosTheta, -1.5f );
 	P.y = (1.0f - _Anisotropy.y*_Anisotropy.y) * powf( 1.0f + _Anisotropy.y*_Anisotropy.y - 2.0f*_Anisotropy.y*CosTheta, -1.5f );
 	P.z = (1.0f - _Anisotropy.z*_Anisotropy.z) * powf( 1.0f + _Anisotropy.z*_Anisotropy.z - 2.0f*_Anisotropy.z*CosTheta, -1.5f );

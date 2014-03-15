@@ -86,13 +86,13 @@ EffectScene::EffectScene( Device& _Device, Scene& _Scene, Primitive& _ScreenQuad
 	// Create the primitives we will need to render the lights for deferred lighting
 	{
 		m_pPrimCylinder = new Primitive( _Device, VertexFormatP3T2::DESCRIPTOR );
-		GeometryBuilder::MapperCylindrical	Mapper( 1, -0.5f, NjFloat3::UnitY );	// V will be 0 at the top and 1 at the bottom
+		GeometryBuilder::MapperCylindrical	Mapper( 1, -0.5f, float3::UnitY );	// V will be 0 at the top and 1 at the bottom
 		GeometryBuilder::BuildCylinder( 32, 1, true, *m_pPrimCylinder, &Mapper );
 
 		m_pPrimSphere = new Primitive( _Device, VertexFormatP3T2::DESCRIPTOR );
 		GeometryBuilder::BuildSphere( 32, 16, *m_pPrimSphere, NULL );
 
-		NjFloat3	Vertex = NjFloat3::Zero;
+		float3	Vertex = float3::Zero;
 		m_pPrimBokeh = new Primitive( _Device, 1, &Vertex, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatP3::DESCRIPTOR );
 	}
 
@@ -265,7 +265,7 @@ void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D& _RTHDR )
 
 	//////////////////////////////////////////////////////////////////////////
 	// 4] Apply shading using my Pom materials! ^^
-	m_Device.ClearRenderTarget( *m_pRTAccumulatorDiffuseSpecular, NjFloat4::Zero );
+	m_Device.ClearRenderTarget( *m_pRTAccumulatorDiffuseSpecular, float4::Zero );
 
 	ID3D11RenderTargetView*	ppRenderTargets[2] =
 	{

@@ -12,7 +12,7 @@ public:		// NESTED TYPES
 	class	MapperBase
 	{
 	public:
-		virtual void	Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const = 0;
+		virtual void	Map( const float3& _Position, const float3& _Normal, const float3& _Tangent, float2& _UV, bool _bIsBandEndVertex ) const = 0;
 	};
 
 	// Spherical mapping
@@ -22,11 +22,11 @@ public:		// NESTED TYPES
 
 		float		m_WrapU;
 		float		m_WrapV;
-		NjFloat3	m_Center, m_X, m_Y, m_Z;
+		float3	m_Center, m_X, m_Y, m_Z;
 
 	public:
-		MapperSpherical( float _WrapU=2.0f, float _WrapV=1.0f, const NjFloat3& _Center=NjFloat3::Zero, const NjFloat3& _X=NjFloat3::UnitX, const NjFloat3& _Y=NjFloat3::UnitY );
-		virtual void	Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const;
+		MapperSpherical( float _WrapU=2.0f, float _WrapV=1.0f, const float3& _Center=float3::Zero, const float3& _X=float3::UnitX, const float3& _Y=float3::UnitY );
+		virtual void	Map( const float3& _Position, const float3& _Normal, const float3& _Tangent, float2& _UV, bool _bIsBandEndVertex ) const;
 	};
 
 	// Cylindrical mapping
@@ -36,11 +36,11 @@ public:		// NESTED TYPES
 
 		float		m_WrapU;
 		float		m_WrapV;
-		NjFloat3	m_Center, m_X, m_Y, m_Z;
+		float3	m_Center, m_X, m_Y, m_Z;
 
 	public:
-		MapperCylindrical( float _WrapU=2.0f, float _WrapV=1.0f, const NjFloat3& _Center=NjFloat3::Zero, const NjFloat3& _X=NjFloat3::UnitX, const NjFloat3& _Z=NjFloat3::UnitZ );
-		virtual void	Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const;
+		MapperCylindrical( float _WrapU=2.0f, float _WrapV=1.0f, const float3& _Center=float3::Zero, const float3& _X=float3::UnitX, const float3& _Z=float3::UnitZ );
+		virtual void	Map( const float3& _Position, const float3& _Normal, const float3& _Tangent, float2& _UV, bool _bIsBandEndVertex ) const;
 	};
 
 	// Planar mapping
@@ -50,11 +50,11 @@ public:		// NESTED TYPES
 
 		float		m_WrapU;
 		float		m_WrapV;
-		NjFloat3	m_Center, m_Tangent, m_BiTangent;
+		float3	m_Center, m_Tangent, m_BiTangent;
 
 	public:
-		MapperPlanar( float _WrapU=1.0f, float _WrapV=1.0f, const NjFloat3& _Center=NjFloat3::Zero, const NjFloat3& _Tangent=NjFloat3::UnitZ, const NjFloat3& _BiTangent=NjFloat3::UnitX );
-		virtual void	Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const;
+		MapperPlanar( float _WrapU=1.0f, float _WrapV=1.0f, const float3& _Center=float3::Zero, const float3& _Tangent=float3::UnitZ, const float3& _BiTangent=float3::UnitX );
+		virtual void	Map( const float3& _Position, const float3& _Normal, const float3& _Tangent, float2& _UV, bool _bIsBandEndVertex ) const;
 	};
 
 	// Cube mapping
@@ -64,24 +64,24 @@ public:		// NESTED TYPES
 
 		float		m_WrapU;
 		float		m_WrapV;
-		NjFloat3	m_Center, m_X, m_Y, m_Z;
-		NjFloat4x4	m_World2CubeMap;
+		float3	m_Center, m_X, m_Y, m_Z;
+		float4x4	m_World2CubeMap;
 
 	public:
-		MapperCube( float _WrapU=1.0f, float _WrapV=1.0f, const NjFloat3& _Center=NjFloat3::Zero, const NjFloat3& _X=NjFloat3::UnitX, const NjFloat3& _Y=NjFloat3::UnitY, const NjFloat3& _Z=NjFloat3::UnitZ );
-		virtual void	Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const;
+		MapperCube( float _WrapU=1.0f, float _WrapV=1.0f, const float3& _Center=float3::Zero, const float3& _X=float3::UnitX, const float3& _Y=float3::UnitY, const float3& _Z=float3::UnitZ );
+		virtual void	Map( const float3& _Position, const float3& _Normal, const float3& _Tangent, float2& _UV, bool _bIsBandEndVertex ) const;
 	};
 
 	class	IGeometryWriter
 	{
 	public:
 		virtual void	CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, void*& _pVertices, void*& _pIndices ) = 0;
-		virtual void	AppendVertex( void*& _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV ) = 0;
+		virtual void	AppendVertex( void*& _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV ) = 0;
 		virtual void	AppendIndex( void*& _pIndex, int _Index ) = 0;
 		virtual void	Finalize( void* _pVertices, void* _pIndices ) = 0;
 	};
 
-	typedef void	(*TweakVertexDelegate)( NjFloat3& _Position, NjFloat3& _Normal, NjFloat3& _Tangent, const NjFloat3& _BiTangent, NjFloat2& _UV, void* _pUserData );
+	typedef void	(*TweakVertexDelegate)( float3& _Position, float3& _Normal, float3& _Tangent, const float3& _BiTangent, float2& _UV, void* _pUserData );
 
 public:		// METHODS
 
@@ -95,12 +95,12 @@ public:		// METHODS
 	static void		BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, float _LargeRadius, float _SmallRadius, IGeometryWriter& _Writer, const MapperBase* _pMapper=NULL, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
 
 	// Builds a subdivided plane centered in 0
-	static void		BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const NjFloat3& _X, const NjFloat3& _Y, IGeometryWriter& _Writer, const MapperBase* _pMapper=NULL, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
+	static void		BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const float3& _X, const float3& _Y, IGeometryWriter& _Writer, const MapperBase* _pMapper=NULL, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
 
 	// Builds a subdivided cube centered in 0 of size 2 (extents go from (-1,-1,-1) to (+1,+1,+1))
 	static void		BuildCube( int _SubdivisionsX, int _SubdivisionsY, int _SubdivisionsZ, IGeometryWriter& _Writer, const MapperBase* _pMapper=NULL, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
 
 private:
 
-	static void		AppendVertex( IGeometryWriter& _Writer, void*& _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
+	static void		AppendVertex( IGeometryWriter& _Writer, void*& _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV, TweakVertexDelegate _TweakVertex=NULL, void* _pUserData=NULL );
 };

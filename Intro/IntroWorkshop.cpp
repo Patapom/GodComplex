@@ -60,12 +60,12 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create primitives
 	{
-		NjFloat4	pVertices[4] =
+		float4	pVertices[4] =
 		{
-			NjFloat4( -1.0f, +1.0f, 0.0f, 1.0f ),
-			NjFloat4( -1.0f, -1.0f, 0.0f, 1.0f ),
-			NjFloat4( +1.0f, +1.0f, 0.0f, 1.0f ),
-			NjFloat4( +1.0f, -1.0f, 0.0f, 1.0f ),
+			float4( -1.0f, +1.0f, 0.0f, 1.0f ),
+			float4( -1.0f, -1.0f, 0.0f, 1.0f ),
+			float4( +1.0f, +1.0f, 0.0f, 1.0f ),
+			float4( +1.0f, -1.0f, 0.0f, 1.0f ),
 		};
 		gs_pPrimQuad = new Primitive( gs_Device, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, VertexFormatPt4::DESCRIPTOR );
 	}
@@ -126,13 +126,13 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	// Render particles only
 
 	// TODO: Animate camera...
-	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(1.5f), _TV(2.0f) ), NjFloat3( 0.0f, 1.5f, 0.0f ), NjFloat3::UnitY );
+	gs_pCamera->LookAt( float3( _TV(0.0f), _TV(1.5f), _TV(2.0f) ), float3( 0.0f, 1.5f, 0.0f ), float3::UnitY );
 	gs_pCamera->Upload( 0 );
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Render some shit to the HDR buffer
-	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
+	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), float4( 0.5f, 0.5f, 0.5f, 1.0f ) );
 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
 
 // 	gs_pEffectParticles->Render( _Time, _DeltaTime );

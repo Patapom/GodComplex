@@ -46,7 +46,7 @@ public:	 // PROPERTIES
 	bool		IsCubeMap() const			{ return m_bIsCubeMap; }
 	const IFormatDescriptor&	GetFormatDescriptor() const	{ return m_Format; }
 
-	NjFloat3	GetdUV() const				{ return NjFloat3( 1.0f / m_Width, 1.0f / m_Height, 0.0f ); }
+	float3	GetdUV() const				{ return float3( 1.0f / m_Width, 1.0f / m_Height, 0.0f ); }
 
 
 public:	 // METHODS

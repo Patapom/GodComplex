@@ -529,7 +529,7 @@ void	EffectVolumetric::UpdateSkyTables()
 
 				// ==================================================
  				// Clear irradiance texture E (line 4 in algorithm 4.1)
-				m_Device.ClearRenderTarget( *m_ppRTIrradiance[1], NjFloat4::Zero );
+				m_Device.ClearRenderTarget( *m_ppRTIrradiance[1], float4::Zero );
 			}
 		}
 		break;

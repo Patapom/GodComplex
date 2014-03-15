@@ -36,8 +36,9 @@ private:	// FIELDS
 	U32								m_pStrides[MAX_BOUND_VERTEX_STREAMS];
 	U32								m_pOffsets[MAX_BOUND_VERTEX_STREAMS];
 	ID3D11Buffer*					m_ppVertexBuffers[MAX_BOUND_VERTEX_STREAMS];
+	CompositeVertexFormatDescriptor	m_CompositeFormat;	// This format is used only if we have more than a single vertex stream for the primitive
 #ifdef _DEBUG
-	Primitive*						m_ppBoundPrimitive[MAX_BOUND_VERTEX_STREAMS];	// The primitive that contains the vertex stream to bind to our primitive
+	Primitive*						m_ppBoundPrimitives[MAX_BOUND_VERTEX_STREAMS];	// The primitive that contains the vertex stream to bind to our primitive
 #endif
 
 
@@ -78,7 +79,7 @@ public:	 // METHODS
 #ifdef SUPPORT_GEO_BUILDERS
 	// IGeometryWriter implementation
 	virtual void	CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, void*& _pVertices, void*& _pIndices );
-	virtual void	AppendVertex( void*& _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV );
+	virtual void	AppendVertex( void*& _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV );
 	virtual void	AppendIndex( void*& _pIndex, int _Index );
 	virtual void	Finalize( void* _pVertices, void* _pIndices );
 #endif

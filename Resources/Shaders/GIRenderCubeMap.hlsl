@@ -14,15 +14,6 @@ cbuffer	cbCubeMapCamera	: register( b8 )
 	float4x4	_CubeMapWorld2Proj;
 };
 
-struct	VS_IN
-{
-	float3	Position	: POSITION;
-	float3	Normal		: NORMAL;
-	float3	Tangent		: TANGENT;
-	float3	BiTangent	: BITANGENT;
-	float2	UV			: TEXCOORD0;
-};
-
 struct	PS_IN
 {
 	float4	__Position	: SV_POSITION;
@@ -40,7 +31,7 @@ struct	PS_OUT
 	float4	StaticLitEmmissive	: SV_TARGET2;
 };
 
-PS_IN	VS( VS_IN _In )
+PS_IN	VS( SCENE_VS_IN _In )
 {
 	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
 

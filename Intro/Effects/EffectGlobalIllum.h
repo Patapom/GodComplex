@@ -23,28 +23,28 @@ protected:	// NESTED TYPES
 
 	struct CBObject
 	{
-		NjFloat4x4	Local2World;	// Local=>World transform to rotate the object
+		float4x4	Local2World;	// Local=>World transform to rotate the object
  	};
 
 	struct CBMaterial
 	{
-		NjFloat3	DiffuseColor;
+		float3	DiffuseColor;
 		bool		HasDiffuseTexture;
-		NjFloat3	SpecularColor;
+		float3	SpecularColor;
 		bool		HasSpecularTexture;
 		float		SpecularExponent;
 	};
 
 	struct CBProbe
 	{
-		NjFloat3	CurrentProbePosition;
+		float3	CurrentProbePosition;
 		U32			NeighborProbeID;
-		NjFloat3	NeighborProbePosition;
+		float3	NeighborProbePosition;
  	};
 
 	struct CBSplat
 	{
-		NjFloat3	dUV;
+		float3	dUV;
 	};
 
 	// The probe structure, computed or read from disk
@@ -52,9 +52,9 @@ protected:	// NESTED TYPES
 	{
 		Scene::Probe*	pSceneProbe;
 
-		NjFloat3		pSHBounce[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced light
+		float3		pSHBounce[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced light
 		float			pSHOcclusion[9];		// The pre-computed SH taht gives back how much of the environment is perceived in a given direction
-		NjFloat3		pSHLight[9];			// The radiance field surrounding the probe
+		float3		pSHLight[9];			// The radiance field surrounding the probe
 		float			ProbeInfluenceDistance;	// The distance above which the probe stops being used
 
 		int				NeighborsCount;			// The amount of neighbor probes
@@ -66,15 +66,15 @@ protected:	// NESTED TYPES
 			ProbeStruct*	pNeighbor;			// The neighbor probe
 		}				pNeighborLinks[MAX_NEIGHBOR_PROBES];		// The array of 32 max neighbor probes
 
-		NjFloat3		pSHBouncedLight0[9];	// The resulting bounced irradiance (bounce * light) for current frame
-		NjFloat3		pSHBouncedLight1[9];	// The resulting bounced irradiance (bounce * light) from last frame
+		float3		pSHBouncedLight0[9];	// The resulting bounced irradiance (bounce * light) for current frame
+		float3		pSHBouncedLight1[9];	// The resulting bounced irradiance (bounce * light) from last frame
 
 		// Temporary counters for a specific probe to count its neighbors
 		int				__TempNeighborCounter;
 		double			__TempSumSolidAngle;
 
 		// Computes the product of SHLight and SHBounce to get the SH coefficients for the bounced light
-		void			ComputeLightBounce( const NjFloat3 _pSHAmbient[9] );
+		void			ComputeLightBounce( const float3 _pSHAmbient[9] );
 		void			SwapBuffers();
 	};
 
@@ -108,8 +108,8 @@ private:	// FIELDS
 	// Light buffer
 	struct	LightStruct
 	{
-		NjFloat3	Position;
-		NjFloat3	Color;
+		float3	Position;
+		float3	Color;
 		float		Radius;	// Light radius to compute the solid angle for the probe injection
 	};
 	SB<LightStruct>*	m_pSB_Lights;
@@ -117,10 +117,10 @@ private:	// FIELDS
 	// Runtime probes buffer
 	struct RuntimeProbe 
 	{
-		NjFloat3	Position;
+		float3	Position;
 		float		ProbeInfluenceDistance;
-		NjFloat3	pSHBounce[9];
-		NjFloat3	pSHLight[9];
+		float3	pSHBounce[9];
+		float3	pSHLight[9];
 	};
 	SB<RuntimeProbe>*	m_pSB_RuntimeProbes;
 
@@ -157,11 +157,11 @@ public:		// METHODS
 
 private:
 
-	void			BuildSHCoeffs( const NjFloat3& _Direction, double _Coeffs[9] );
-	void			BuildSHCosineLobe( const NjFloat3& _Direction, double _Coeffs[9] );
-	void			BuildSHCone( const NjFloat3& _Direction, float _HalfAngle, double _Coeffs[9] );
-	void			BuildSHSmoothCone( const NjFloat3& _Direction, float _HalfAngle, double _Coeffs[9] );
-	void			ZHRotate( const NjFloat3& _Direction, const NjFloat3& _ZHCoeffs, double _Coeffs[9] );
+	void			BuildSHCoeffs( const float3& _Direction, double _Coeffs[9] );
+	void			BuildSHCosineLobe( const float3& _Direction, double _Coeffs[9] );
+	void			BuildSHCone( const float3& _Direction, float _HalfAngle, double _Coeffs[9] );
+	void			BuildSHSmoothCone( const float3& _Direction, float _HalfAngle, double _Coeffs[9] );
+	void			ZHRotate( const float3& _Direction, const float3& _ZHCoeffs, double _Coeffs[9] );
 
 	void			PreComputeProbes();
 };

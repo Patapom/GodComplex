@@ -5,21 +5,21 @@ class	FPSCamera
 public:
 
 	Camera&		m_Camera;
-	NjFloat3	m_Position;
-	NjFloat3	m_Target;
-	NjFloat3	m_Up;
+	float3	m_Position;
+	float3	m_Target;
+	float3	m_Up;
 
 	// Button down state
 	int			m_ButtonDownMouseX;
 	int			m_ButtonDownMouseY;
-	NjFloat3	m_ButtonDownPosition;
-	NjFloat3	m_ButtonDownTarget;
+	float3	m_ButtonDownPosition;
+	float3	m_ButtonDownTarget;
 
 public:
 
-	FPSCamera( Camera& _Camera, const NjFloat3& _Position, const NjFloat3& _Target, const NjFloat3& _Up=NjFloat3::UnitY );
+	FPSCamera( Camera& _Camera, const float3& _Position, const float3& _Target, const float3& _Up=float3::UnitY );
 
-	void	Init( const NjFloat3& _Position, const NjFloat3& _Target, const NjFloat3& _Up=NjFloat3::UnitY );
+	void	Init( const float3& _Position, const float3& _Target, const float3& _Up=float3::UnitY );
 
 	// Updates the camera transform
 	//	_TranslationSpeed, the speed at which we travel with the keys (in world units per second)

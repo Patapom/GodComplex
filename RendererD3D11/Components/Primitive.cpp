@@ -60,7 +60,9 @@ void	Primitive::Render( Material& _Material, int _StartVertex, int _VerticesCoun
 		return;	// Material is not initialied yet...
 
 	// Ensure material & primitive use the same vertex format
-	ASSERT( m_Format == _Material.GetFormat(), "Material and Primitive must use the same vertex format !" );
+	const IVertexFormatDescriptor&	PrimitiveFormat = m_BoundVertexStreamsCount == 1 ? m_Format : m_CompositeFormat;
+//	ASSERT( PrimitiveFormat == _Material.GetFormat(), "Material and Primitive must use the same vertex format !" );
+	ASSERT( _Material.GetFormat().IsSubset( PrimitiveFormat ), "Material and Primitive must use a compatible vertex format!" );
 
 	m_Device.DXContext().IASetInputLayout( pLayout );
 	m_Device.DXContext().IASetPrimitiveTopology( m_Topology );
@@ -92,6 +94,11 @@ void	Primitive::RenderInstanced( Material& _Material, int _InstancesCount, int _
 	ID3D11InputLayout*	pLayout = _Material.GetVertexLayout();
 	if ( pLayout == NULL )
 		return;	// Material is not initialied yet...
+
+	// Ensure material & primitive use the same vertex format
+	const IVertexFormatDescriptor&	PrimitiveFormat = m_BoundVertexStreamsCount == 1 ? m_Format : m_CompositeFormat;
+//	ASSERT( PrimitiveFormat == _Material.GetFormat(), "Material and Primitive must use the same vertex format !" );
+	ASSERT( _Material.GetFormat().IsSubset( PrimitiveFormat ), "Material and Primitive must use a compatible vertex format!" );
 
 	m_Device.DXContext().IASetInputLayout( pLayout );
 	m_Device.DXContext().IASetPrimitiveTopology( m_Topology );
@@ -138,10 +145,12 @@ void	Primitive::Build( const void* _pVertices, const U32* _pIndices, bool _bDyna
 			Check( m_Device.DXDevice().CreateBuffer( &Desc, NULL, &m_pVB ) );
 
 		// Initialize as if we had only one bound vertex stream
+		m_ppBoundPrimitives[0] = this;	// We're the first and only bound primitive at the time
 		m_BoundVertexStreamsCount = 1;
 		m_ppVertexBuffers[0] = m_pVB;
 		m_pStrides[0] = m_Stride;
 		m_pOffsets[0] = 0;
+		m_CompositeFormat.AggregateVertexFormat( m_Format );
 	}
 
 	if ( _pIndices != NULL )
@@ -219,11 +228,15 @@ void	Primitive::BindVertexStream( U32 _StreamIndex, Primitive& _BoundPrimitive, 
 	m_BoundVertexStreamsCount = MAX( m_BoundVertexStreamsCount, _StreamIndex+1 );
 
 #ifdef _DEBUG
-	m_ppBoundPrimitive[_StreamIndex] = &_BoundPrimitive;
+	m_ppBoundPrimitives[_StreamIndex] = &_BoundPrimitive;
 #endif
 	m_ppVertexBuffers[_StreamIndex] = _BoundPrimitive.m_pVB;
 	m_pStrides[_StreamIndex] = _BoundPrimitive.m_Stride;
 	m_pOffsets[_StreamIndex] = _Offset;
+
+	// Aggregate vertex format into our composite format
+	// This format will be used at runtime to compare with rendering material format instead of the simple original format the primitive was constructed with...
+	m_CompositeFormat.AggregateVertexFormat( _BoundPrimitive.m_Format );
 }
 
 #ifdef SUPPORT_GEO_BUILDERS
@@ -241,7 +254,7 @@ void	Primitive::CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIM
 	_pIndices = new U32[m_IndicesCount];
 }
 
-void	Primitive::AppendVertex( void*& _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV )
+void	Primitive::AppendVertex( void*& _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV )
 {
 	m_Format.Write( _pVertex, _Position, _Normal, _Tangent, _BiTangent, _UV );
 	_pVertex = (void*) ((U8*) _pVertex + m_Format.Size());

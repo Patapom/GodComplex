@@ -29,8 +29,8 @@ public:		// NESTED TYPES
 		Node*				m_pParent;
 		int					m_ChildrenCount;
 		Node**				m_ppChildren;
-		NjFloat4x4			m_Local2Parent;
-		NjFloat4x4			m_Local2World;
+		float4x4			m_Local2Parent;
+		float4x4			m_Local2World;
 
 		void*				m_pTag;	// Custom user tag filled with anything the user needs to render the node
 
@@ -61,7 +61,7 @@ public:		// NESTED TYPES
 			DIRECTIONAL,
 			SPOT,
 		}					m_LightType;
-		NjFloat3			m_Color;
+		float3			m_Color;
 		float				m_Intensity;
 		float				m_HotSpot;	// For spots only
 		float				m_Falloff;	// For spots only
@@ -101,8 +101,8 @@ public:		// NESTED TYPES
 		public:
 			::Scene::Material*	m_pMaterial;
 
-			NjFloat3		m_BBoxMin;
-			NjFloat3		m_BBoxMax;
+			float3		m_BBoxMin;
+			float3		m_BBoxMax;
 
 			U32				m_FacesCount;
 			U32*			m_pFaces;
@@ -131,8 +131,8 @@ public:		// NESTED TYPES
 		int					m_PrimitivesCount;
 		Primitive*			m_pPrimitives;
 
-		NjFloat3			m_BBoxMin;
-		NjFloat3			m_BBoxMax;
+		float3			m_BBoxMin;
+		float3			m_BBoxMax;
 
 	private:
 
@@ -173,14 +173,14 @@ public:		// NESTED TYPES
 		Scene&				m_Owner;
 
 		U32					m_ID;
-		NjFloat3			m_Ambient;
-		NjFloat3			m_DiffuseAlbedo;
+		float3			m_Ambient;
+		float3			m_DiffuseAlbedo;
 		Texture				m_TexDiffuseAlbedo;
-		NjFloat3			m_SpecularAlbedo;
+		float3			m_SpecularAlbedo;
 		Texture				m_TexSpecularAlbedo;
-		NjFloat3			m_SpecularExponent;
+		float3			m_SpecularExponent;
 		Texture				m_TexNormal;
-		NjFloat3			m_EmissiveColor;
+		float3			m_EmissiveColor;
 
 		void*				m_pTag;	// Custom user tag filled with anything the user needs to render the node
 

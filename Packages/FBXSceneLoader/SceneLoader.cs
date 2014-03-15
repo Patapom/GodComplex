@@ -648,7 +648,7 @@ namespace FBX.SceneLoader
 			// Build un-optimized primitives
 			TempMesh.BuildPrimitives();
 
-			// Create the cirrus mesh and tie it to our temporary mesh
+			// Create the final scene mesh and tie it to our temporary mesh
 			FBX.Scene.Nodes.Mesh	Mesh = m_Scene.CreateMesh( _FBXMesh.Name, _Parent, _FBXMesh.LocalTransform );
 			m_TempMesh2FinalMesh[TempMesh] = Mesh;
 

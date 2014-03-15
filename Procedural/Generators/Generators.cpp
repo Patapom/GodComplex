@@ -10,7 +10,7 @@ struct __NormalStruct
 	float			HeightFactor;
 	bool			bNormalize;
 };
-void	FillNormal( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+void	FillNormal( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__NormalStruct&	Params = *((__NormalStruct*) _pData);
 
@@ -23,10 +23,10 @@ void	FillNormal( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pDat
 	Pixel		Top;	Params.pSource->SampleWrap( X, Y - 1, 0, Top );
 	Pixel		Bottom; Params.pSource->SampleWrap( X, Y + 1, 0, Bottom );
 
-	NjFloat3	Dx( 1.0f, 0.0f, Params.HeightFactor * (Right.Height - Left.Height) );
-	NjFloat3	Dy( 0.0f, -1.0f, Params.HeightFactor * (Bottom.Height - Top.Height) );
+	float3	Dx( 1.0f, 0.0f, Params.HeightFactor * (Right.Height - Left.Height) );
+	float3	Dy( 0.0f, -1.0f, Params.HeightFactor * (Bottom.Height - Top.Height) );
 
-	NjFloat3	Normal = Dy ^ Dx;
+	float3	Normal = Dy ^ Dx;
 	if ( Params.bNormalize )
 		Normal.Normalize();
 
@@ -59,7 +59,7 @@ struct __AOStruct
 	int				SamplesCount;
 	bool			bWriteOnlyAlpha;
 };
-void	FillAO( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+void	FillAO( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__AOStruct&	Params = *((__AOStruct*) _pData);
 
@@ -67,10 +67,10 @@ void	FillAO( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
 	for ( int DirectionIndex=0; DirectionIndex < Params.DirectionsCount; DirectionIndex++ )
 	{
 		float		Angle = TWOPI * DirectionIndex / Params.DirectionsCount;
-		NjFloat2	Direction( cosf( Angle ), sinf( Angle ) );
+		float2	Direction( cosf( Angle ), sinf( Angle ) );
 
 //		NjFloat2	Position( float(_X), float(_Y) );	// For some reason, this doesn't compile !!
-		NjFloat2	Position;
+		float2	Position;
 		Position.x = float(_X);
 		Position.y = float(_Y);
 
@@ -122,7 +122,7 @@ struct __DirtynessStruct
 	float			PullBackForce;
 	float			AverageIntensity;
 };
-void	FillDirtyness( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+void	FillDirtyness( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__DirtynessStruct&	Params = *((__DirtynessStruct*) _pData);
 
@@ -133,7 +133,7 @@ void	FillDirtyness( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _p
 
 //	NjFloat4	F = C[0] + C[2] - C[1];	// Some sort of average
 //	NjFloat4	F = 0.333f * (C[0] + C[2] + C[1]);
-	NjFloat4	F = P[1].RGBA;
+	float4	F = P[1].RGBA;
 	float		fOffset = Params.DirtAmplitude * Params.pNoise->Perlin( Params.DirtNoiseFrequency * _UV ) + F.w;
 
 	F.x += fOffset;
@@ -180,7 +180,7 @@ struct __MarbleStruct
 	float	HeightFactor;
 	float*	pBuffer;
 };
-void	FillMarble( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+void	FillMarble( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__MarbleStruct&	Params = *((__MarbleStruct*) _pData);
 

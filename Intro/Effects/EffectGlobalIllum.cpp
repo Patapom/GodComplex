@@ -90,8 +90,8 @@ void	EffectGlobalIllum::Render( float _Time, float _DeltaTime )
 	m_pSB_Lights->Write();
 	m_pSB_Lights->SetInput( 8, true );
 
-	NjFloat3	pSHAmbient[9];
-	memset( pSHAmbient, 0, 9*sizeof(NjFloat3) );	// No ambient at the moment...
+	float3	pSHAmbient[9];
+	memset( pSHAmbient, 0, 9*sizeof(float3) );	// No ambient at the moment...
 
 // 	double		pTestAmbient[9];
 // 	BuildSHCosineLobe( NjFloat3( -1, 1, 0 ).Normalize(), pTestAmbient );
@@ -104,7 +104,7 @@ void	EffectGlobalIllum::Render( float _Time, float _DeltaTime )
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
 		// Encode all lights into probe
-		memset( Probe.pSHLight, 0, 9*sizeof(NjFloat3) );
+		memset( Probe.pSHLight, 0, 9*sizeof(float3) );
 		double	pSHLight[9];
 
 		for ( int LightIndex=0; LightIndex < MAX_LIGHTS; LightIndex++ )
@@ -112,7 +112,7 @@ void	EffectGlobalIllum::Render( float _Time, float _DeltaTime )
 			const LightStruct&	Light = m_pSB_Lights->m[LightIndex];
 
 			// Approximate a SH cone
-			NjFloat3	Probe2Light = Light.Position - Probe.pSceneProbe->m_Local2World.GetRow(3);
+			float3	Probe2Light = Light.Position - Probe.pSceneProbe->m_Local2World.GetRow(3);
 			float		DistanceProbe2Light = Probe2Light.Length();
 //			float		InvDistance = 1.0f / DistanceProbe2Light;
 float		InvDistance = 1.0f / MAX( 0.5f, DistanceProbe2Light );
@@ -148,8 +148,8 @@ float		InvDistance = 1.0f / MAX( 0.5f, DistanceProbe2Light );
 		// Write the result to the probe structured buffer
 //		memcpy( Runtime.pSHBounce, Probe.pSHBouncedLight0, 9*sizeof(NjFloat3) );
 
-memcpy( Runtime.pSHBounce, Probe.pSHBounce, 9*sizeof(NjFloat3) );
-memcpy( Runtime.pSHLight, Probe.pSHLight, 9*sizeof(NjFloat3) );
+memcpy( Runtime.pSHBounce, Probe.pSHBounce, 9*sizeof(float3) );
+memcpy( Runtime.pSHLight, Probe.pSHLight, 9*sizeof(float3) );
 
 	}
 
@@ -187,10 +187,10 @@ memcpy( Runtime.pSHLight, Probe.pSHLight, 9*sizeof(NjFloat3) );
 }
 
 
-void	EffectGlobalIllum::ProbeStruct::ComputeLightBounce( const NjFloat3 _pSHAmbient[9] )
+void	EffectGlobalIllum::ProbeStruct::ComputeLightBounce( const float3 _pSHAmbient[9] )
 {
 	// 1] Accumulate neighbor lighting by considering them as point light sources of their own
-	NjFloat3	pSHNeighborsLight[9];
+	float3	pSHNeighborsLight[9];
 	for ( int i=0; i < 9; i++ )
 		pSHNeighborsLight[0].Set( 0, 0, 0 );
 
@@ -199,7 +199,7 @@ void	EffectGlobalIllum::ProbeStruct::ComputeLightBounce( const NjFloat3 _pSHAmbi
 		NeighborLink&	Link = pNeighborLinks[NeighborIndex];
 
 		// The neighbor's contribution to our probe is simply its previous frame's SH bounced light multiplied by what we perceive of it
-		NjFloat3	pSHNeighborLight[9];
+		float3	pSHNeighborLight[9];
 		SH::Product3( Link.pNeighbor->pSHBouncedLight1, Link.pSHLink, pSHNeighborLight );
 
 		// That we accumulate for each neighbor
@@ -210,11 +210,11 @@ void	EffectGlobalIllum::ProbeStruct::ComputeLightBounce( const NjFloat3 _pSHAmbi
 
 	// 2] Perform the product of direct accumulated light with indirect environment bounce
 	// This will give us the bounced indirect lighting
-	NjFloat3	pSHBouncedLight[9];
+	float3	pSHBouncedLight[9];
 	SH::Product3( pSHLight, pSHBounce, pSHBouncedLight );
 
 	// 3] Perform the product of direct ambient light with direct environment mask and accumulate with indirect lighting
-	NjFloat3	pSHOccludedAmbientLight[9];
+	float3	pSHOccludedAmbientLight[9];
 	SH::Product3( _pSHAmbient, pSHOcclusion, pSHOccludedAmbientLight );
 
 	// 4] Generate this frame's total lighting
@@ -226,7 +226,7 @@ void	EffectGlobalIllum::ProbeStruct::SwapBuffers()
 {
 	for ( int i=0; i < 9; i++ )
 	{
-		NjFloat3	Temp = pSHBouncedLight0[i];
+		float3	Temp = pSHBouncedLight0[i];
 		pSHBouncedLight0[i] = pSHBouncedLight1[i];
 		pSHBouncedLight1[i] = Temp;
 	}
@@ -289,48 +289,48 @@ void	EffectGlobalIllum::PreComputeProbes()
 	//		o------> +X
 	//
 	//
-	NjFloat3	SideAt[6] = 
+	float3	SideAt[6] = 
 	{
-		NjFloat3(  1, 0, 0 ),
-		NjFloat3( -1, 0, 0 ),
-		NjFloat3( 0,  1, 0 ),
-		NjFloat3( 0, -1, 0 ),
-		NjFloat3( 0, 0,  1 ),
-		NjFloat3( 0, 0, -1 ),
+		float3(  1, 0, 0 ),
+		float3( -1, 0, 0 ),
+		float3( 0,  1, 0 ),
+		float3( 0, -1, 0 ),
+		float3( 0, 0,  1 ),
+		float3( 0, 0, -1 ),
 	};
-	NjFloat3	SideRight[6] = 
+	float3	SideRight[6] = 
 	{
-		NjFloat3( 0, 0, -1 ),
-		NjFloat3( 0, 0,  1 ),
-		NjFloat3(  1, 0, 0 ),
-		NjFloat3(  1, 0, 0 ),
-		NjFloat3(  1, 0, 0 ),
-		NjFloat3( -1, 0, 0 ),
+		float3( 0, 0, -1 ),
+		float3( 0, 0,  1 ),
+		float3(  1, 0, 0 ),
+		float3(  1, 0, 0 ),
+		float3(  1, 0, 0 ),
+		float3( -1, 0, 0 ),
 	};
 
-	NjFloat4x4	SideWorld2Proj[6];
-	NjFloat4x4	Side2Local[6];
-	NjFloat4x4	Camera2Proj = NjFloat4x4::ProjectionPerspective( 0.5f * PI, 1.0f, 0.01f, 1000.0f );
+	float4x4	SideWorld2Proj[6];
+	float4x4	Side2Local[6];
+	float4x4	Camera2Proj = float4x4::ProjectionPerspective( 0.5f * PI, 1.0f, 0.01f, 1000.0f );
 	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
 	{
-		NjFloat4x4	Camera2Local;
+		float4x4	Camera2Local;
 		Camera2Local.SetRow( 0, SideRight[CubeFaceIndex], 0 );
 		Camera2Local.SetRow( 1, SideAt[CubeFaceIndex] ^ SideRight[CubeFaceIndex], 0 );
 		Camera2Local.SetRow( 2, SideAt[CubeFaceIndex], 0 );
-		Camera2Local.SetRow( 3, NjFloat3::Zero, 1 );
+		Camera2Local.SetRow( 3, float3::Zero, 1 );
 
 		Side2Local[CubeFaceIndex] = Camera2Local;
 
-		NjFloat4x4	Local2Camera = Camera2Local.Inverse();
-		NjFloat4x4	Local2Proj = Local2Camera * Camera2Proj;
+		float4x4	Local2Camera = Camera2Local.Inverse();
+		float4x4	Local2Proj = Local2Camera * Camera2Proj;
 		SideWorld2Proj[CubeFaceIndex] = Local2Proj;
 	}
 
 	// Create the special CB for cube map projections
 	struct	CBCubeMapCamera
 	{
-		NjFloat4x4	Camera2World;
-		NjFloat4x4	World2Proj;
+		float4x4	Camera2World;
+		float4x4	World2Proj;
 	};
 	CB<CBCubeMapCamera>*	pCBCubeMapCamera = new CB<CBCubeMapCamera>( m_Device, 9, true );
 
@@ -354,20 +354,20 @@ void	EffectGlobalIllum::PreComputeProbes()
 		// 1] Render Albedo + Normal + Z + Neighborhood
 
 		// Clear cube map
-		m_Device.ClearRenderTarget( *ppRTCubeMap[0], NjFloat4::Zero );
-		m_Device.ClearRenderTarget( *ppRTCubeMap[1], NjFloat4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
-		m_Device.ClearRenderTarget( *ppRTCubeMap[2], NjFloat4::Zero );					// 0 is the invalid ID
+		m_Device.ClearRenderTarget( *ppRTCubeMap[0], float4::Zero );
+		m_Device.ClearRenderTarget( *ppRTCubeMap[1], float4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
+		m_Device.ClearRenderTarget( *ppRTCubeMap[2], float4::Zero );					// 0 is the invalid ID
 
-		NjFloat4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
+		float4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
 		ProbeLocal2World.Normalize();
 
-		NjFloat4x4	ProbeWorld2Local = ProbeLocal2World.Inverse();
+		float4x4	ProbeWorld2Local = ProbeLocal2World.Inverse();
 
 		// Render the 6 faces
 		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
 		{
 			// Update cube map face camera transform
-			NjFloat4x4	World2Proj = ProbeWorld2Local * SideWorld2Proj[CubeFaceIndex];
+			float4x4	World2Proj = ProbeWorld2Local * SideWorld2Proj[CubeFaceIndex];
 
 			pCBCubeMapCamera->m.Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
 			pCBCubeMapCamera->m.World2Proj = World2Proj;
@@ -432,7 +432,7 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 	{
 		float	Phi = TWOPI * (PhiIndex+0.0f) / PhiCount;
 
-		NjFloat3	ProbeDirection;
+		float3	ProbeDirection;
 		ProbeDirection.x = sinf(Phi)*sinf(Theta);
 		ProbeDirection.y = cosf(Theta);
 		ProbeDirection.z = cos(Phi)*sinf(Theta);
@@ -472,22 +472,22 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 			D3D11_MAPPED_SUBRESOURCE&	MappedFaceNeighborhood = ppRTCubeMapStaging[2]->Map( 0, CubeFaceIndex );
 
 			// Update cube map face camera transform
-			NjFloat4x4	Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
+			float4x4	Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
 
 			pCBCubeMapCamera->m.Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
 
-			NjFloat3	View( 0, 0, 1 );
+			float3	View( 0, 0, 1 );
 			for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
 			{
-				NjFloat4*	pScanlineAlbedo = (NjFloat4*) ((U8*) MappedFaceAlbedo.pData + Y * MappedFaceAlbedo.RowPitch);
-				NjFloat4*	pScanlineGeometry = (NjFloat4*) ((U8*) MappedFaceGeometry.pData + Y * MappedFaceGeometry.RowPitch);
+				float4*	pScanlineAlbedo = (float4*) ((U8*) MappedFaceAlbedo.pData + Y * MappedFaceAlbedo.RowPitch);
+				float4*	pScanlineGeometry = (float4*) ((U8*) MappedFaceGeometry.pData + Y * MappedFaceGeometry.RowPitch);
 				U32*		pScanlineNeighboorhood = (U32*) ((U8*) MappedFaceNeighborhood.pData + Y * MappedFaceNeighborhood.RowPitch);
 
 				View.y = 1.0f - 2.0f * (0.5f + Y) / CUBE_MAP_SIZE;
 				for ( int X=0; X < CUBE_MAP_SIZE; X++ )
 				{
-					NjFloat4	Albedo = *pScanlineAlbedo++;
-					NjFloat4	Geometry = *pScanlineGeometry++;
+					float4	Albedo = *pScanlineAlbedo++;
+					float4	Geometry = *pScanlineGeometry++;
 					U32			NeighborID = *pScanlineNeighboorhood++;
 
 					// Rebuild view direction
@@ -514,7 +514,7 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 					// Check if we hit an obstacle, in which case we should accumulate direct ambient lighting
 					if ( Geometry.w > Z_INFINITY_TEST )
 					{	// No obstacle means direct lighting from the ambient sky...
-						NjFloat3	ViewWorld = NjFloat4( View, 0.0f ) * Camera2World;	// View vector in world space
+						float3	ViewWorld = float4( View, 0.0f ) * Camera2World;	// View vector in world space
 						ViewWorld.Normalize();
 
 						// Accumulate SH coefficients in that direction, weighted by the solid angle
@@ -527,7 +527,7 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 					}
 
 					// Build SH cosine lobe in the direction of the surface normal
-					NjFloat3	Normal( Geometry.x, Geometry.y, Geometry.z );
+					float3	Normal( Geometry.x, Geometry.y, Geometry.z );
 					double		pCosineLobe[9];
 					BuildSHCosineLobe( Normal, pCosineLobe );
 
@@ -617,14 +617,14 @@ for ( int ThetaIndex=0; ThetaIndex < ThetaCount; ThetaIndex++ )
 		// 5] Process neighbor links
 		Probe.ProbeInfluenceDistance = Probe.NeighborsCount > 0 ? 0.0f : 10.0f;
 
-		NjFloat3	ProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
+		float3	ProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
 		for ( int NeighborProbeIndex=0; NeighborProbeIndex < Probe.NeighborsCount; NeighborProbeIndex++ )
 		{
 			ProbeStruct::NeighborLink&	NeighborProbeLink = Probe.pNeighborLinks[NeighborProbeIndex];
-			NjFloat3					NeighborPosition = NeighborProbeLink.pNeighbor->pSceneProbe->m_Local2World.GetRow( 3 );
+			float3					NeighborPosition = NeighborProbeLink.pNeighbor->pSceneProbe->m_Local2World.GetRow( 3 );
 
 			// Compute distance
-			NjFloat3	ToNeighbor = NeighborPosition - ProbePosition;
+			float3	ToNeighbor = NeighborPosition - ProbePosition;
 			NeighborProbeLink.Distance = ToNeighbor.Length();
 			ToNeighbor = ToNeighbor / NeighborProbeLink.Distance;
 
@@ -672,7 +672,7 @@ ppRTCubeMap[2]->SetPS( 66 );
 // Builds the 9 SH coefficient for the specified direction
 // (We're already accounting for the fact we're Y-up here)
 //
-void	EffectGlobalIllum::BuildSHCoeffs( const NjFloat3& _Direction, double _Coeffs[9] )
+void	EffectGlobalIllum::BuildSHCoeffs( const float3& _Direction, double _Coeffs[9] )
 {
 	const double	f0 = 0.5 / sqrt(PI);
 	const double	f1 = sqrt(3.0) * f0;
@@ -694,9 +694,9 @@ void	EffectGlobalIllum::BuildSHCoeffs( const NjFloat3& _Direction, double _Coeff
 // (from "Stupid SH Tricks")
 // (We're already accounting for the fact we're Y-up here)
 //
-void	EffectGlobalIllum::BuildSHCosineLobe( const NjFloat3& _Direction, double _Coeffs[9] )
+void	EffectGlobalIllum::BuildSHCosineLobe( const float3& _Direction, double _Coeffs[9] )
 {
-	const NjFloat3 ZHCoeffs = NjFloat3(
+	const float3 ZHCoeffs = float3(
 		0.88622692545275801364908374167057f,	// sqrt(PI) / 2
 		1.0233267079464884884795516248893f,		// sqrt(PI / 3)
 		0.49541591220075137666812859564002f		// sqrt(5PI) / 8
@@ -707,12 +707,12 @@ void	EffectGlobalIllum::BuildSHCosineLobe( const NjFloat3& _Direction, double _C
 // Builds a spherical harmonics cone lobe (same as for a spherical light source subtending a cone of half angle a)
 // (from "Stupid SH Tricks")
 //
-void	EffectGlobalIllum::BuildSHCone( const NjFloat3& _Direction, float _HalfAngle, double _Coeffs[9] )
+void	EffectGlobalIllum::BuildSHCone( const float3& _Direction, float _HalfAngle, double _Coeffs[9] )
 {
 	double	a = _HalfAngle;
 	double	c = cos( a );
 	double	s = sin( a );
-	NjFloat3 ZHCoeffs = NjFloat3(
+	float3 ZHCoeffs = float3(
 			float( 1.7724538509055160272981674833411 * (1 - c)),				// sqrt(PI) (1 - cos(a))
 			float( 1.5349900619197327327193274373339 * (s * s)),				// 0.5 sqrt(3PI) sin(a)^2
 			float( 1.9816636488030055066725143825601 * (c * (1 - c) * (1 + c)))	// 0.5 sqrt(5PI) cos(a) (1-cos(a)) (cos(a)+1)
@@ -724,13 +724,13 @@ void	EffectGlobalIllum::BuildSHCone( const NjFloat3& _Direction, float _HalfAngl
 // The light source intensity is 1 at theta=0 and 0 at theta=half angle
 // (from "Stupid SH Tricks")
 //
-void	EffectGlobalIllum::BuildSHSmoothCone( const NjFloat3& _Direction, float _HalfAngle, double _Coeffs[9] )
+void	EffectGlobalIllum::BuildSHSmoothCone( const float3& _Direction, float _HalfAngle, double _Coeffs[9] )
 {
 	double	a = _HalfAngle;
 	float	One_a3 = 1.0f / float(a*a*a);
 	double	c = cos( a );
 	double	s = sin( a );
-	NjFloat3 ZHCoeffs = One_a3 * NjFloat3(
+	float3 ZHCoeffs = One_a3 * float3(
 			float( 1.7724538509055160272981674833411 * (a * (6.0*(1+c) + a*a) - 12*s) ),					// sqrt(PI) (a^3 + 6a - 12*sin(a) + 6*cos(a)*a) / a^3
 			float( 0.76749503095986636635966371866695 * (a * (a*a + 3*c*c) - 3*c*s) ),						// 0.25 sqrt(3PI) (a^3 - 3*cos(a)*sin(a) + 3*cos(a)^2*a) / a^3
 			float( 0.44036969973400122370500319612446 * (-6.0*a -2*c*c*s -9.0*c*a + 14.0*s + 3*c*c*c*a))	// 1/9 sqrt(5PI) (-6a - 2*cos(a)^2*sin(a) - 9*cos(a)*a + 14*sin(a) + 3*cos(a)^3*a) / a^3
@@ -742,7 +742,7 @@ void	EffectGlobalIllum::BuildSHSmoothCone( const NjFloat3& _Direction, float _Ha
 // Rotating ZH comes to evaluating scaled SH in the given direction.
 // The scaling factors for each band are equal to the ZH coefficients multiplied by sqrt( 4PI / (2l+1) )
 //
-void	EffectGlobalIllum::ZHRotate( const NjFloat3& _Direction, const NjFloat3& _ZHCoeffs, double _Coeffs[9] )
+void	EffectGlobalIllum::ZHRotate( const float3& _Direction, const float3& _ZHCoeffs, double _Coeffs[9] )
 {
 	double	cl0 = 3.5449077018110320545963349666823 * _ZHCoeffs.x;	// sqrt(4PI)
 	double	cl1 = 2.0466534158929769769591032497785 * _ZHCoeffs.y;	// sqrt(4PI/3)
@@ -828,7 +828,7 @@ void*	EffectGlobalIllum::TagPrimitive( const Scene::Mesh& _Mesh, const Scene::Me
 void	EffectGlobalIllum::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride ) const
 {
 	// Upload the object's CB
-	memcpy( &m_pCB_Object->m.Local2World, &_Mesh.m_Local2World, sizeof(NjFloat4x4) );
+	memcpy( &m_pCB_Object->m.Local2World, &_Mesh.m_Local2World, sizeof(float4x4) );
 //m_pCB_Object->m.Local2World = NjFloat4x4::Identity;
 	m_pCB_Object->UpdateData();
 

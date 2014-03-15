@@ -74,7 +74,7 @@ double	SH::ComputeSHWindowedCos( int l, int m, double _θ, double _ϕ, int _Orde
 //
 // NOTE ==> The '_Direction' vector must be normalized!!
 //
-double	SH::ComputeSHCoeff( int l, int m, const NjFloat3& _Direction )
+double	SH::ComputeSHCoeff( int l, int m, const float3& _Direction )
 {
 	// Convert from cartesian to polar coords
 	double	θ = 0.0;
@@ -84,7 +84,7 @@ double	SH::ComputeSHCoeff( int l, int m, const NjFloat3& _Direction )
 	return	ComputeSHCoeff( l, m, θ, ϕ );
 }
 
-void	SH::BuildSHCoeffs( const NjFloat3& _Direction, double _Coeffs[9] )
+void	SH::BuildSHCoeffs( const float3& _Direction, double _Coeffs[9] )
 {
 	// Convert from cartesian to polar coords
 	double	θ, ϕ;
@@ -341,7 +341,7 @@ void	SH::Product3( const float a[9], const float b[9], float c[9] )
 	// addition count=74
 }
 
-void	SH::Product3( const NjFloat3 a[9], const float b[9], NjFloat3 r[9] )
+void	SH::Product3( const float3 a[9], const float b[9], float3 r[9] )
 {
 	float	ta[9], tr[9];
 
@@ -376,7 +376,7 @@ void	SH::Product3( const NjFloat3 a[9], const float b[9], NjFloat3 r[9] )
 		r[i].z = tr[i];
 }
 
-void	SH::Product3( const NjFloat3 a[9], const NjFloat3 b[9], NjFloat3 r[9] )
+void	SH::Product3( const float3 a[9], const float3 b[9], float3 r[9] )
 {
 	float	ta[9], tb[9], tr[9];
 
@@ -420,7 +420,7 @@ void	SH::Product3( const NjFloat3 a[9], const NjFloat3 b[9], NjFloat3 r[9] )
 /// <param name="_Direction">The cartesian unit vector to convert</param>
 /// <param name="_θ">The polar elevation</param>
 /// <param name="_ϕ">The azimuth</param>
-void		SH::CartesianToSpherical( const NjFloat3& _Direction, double& _θ, double& _ϕ )
+void		SH::CartesianToSpherical( const float3& _Direction, double& _θ, double& _ϕ )
 {
 	_θ = acos( MAX( -1.0f, MIN( +1.0f, _Direction.z ) ) );
 	_ϕ = atan2( _Direction.y, _Direction.x );
@@ -432,9 +432,9 @@ void		SH::CartesianToSpherical( const NjFloat3& _Direction, double& _θ, double&
 /// <param name="_θ">The polar elevation</param>
 /// <param name="_ϕ">The azimuth</param>
 /// <returns>The unit vector in cartesian coordinates</returns>
-NjFloat3	SH::SphericalToCartesian( double _θ, double _ϕ )
+float3	SH::SphericalToCartesian( double _θ, double _ϕ )
 {
-	NjFloat3	Result;
+	float3	Result;
 	SphericalToCartesian( _θ, _ϕ, Result );
 	return	Result;
 }
@@ -445,7 +445,7 @@ NjFloat3	SH::SphericalToCartesian( double _θ, double _ϕ )
 /// <param name="_θ">The polar elevation</param>
 /// <param name="_ϕ">The azimuth</param>
 /// <param name="_Direction">The unit vector in cartesian coordinates</param>
-void		SH::SphericalToCartesian( double _θ, double _ϕ, NjFloat3& _Direction )
+void		SH::SphericalToCartesian( double _θ, double _ϕ, float3& _Direction )
 {
 	_Direction.x = (float) (sin( _θ ) * cos( _ϕ ));
 	_Direction.z = (float) cos( _θ );
@@ -453,9 +453,9 @@ void		SH::SphericalToCartesian( double _θ, double _ϕ, NjFloat3& _Direction )
 }
 
 // Converts a GodComplex Y-up vector into a vector usable by the SH library
-NjFloat3	SH::Yup2Zup( const NjFloat3& _Yup )
+float3	SH::Yup2Zup( const float3& _Yup )
 {
-	NjFloat3	Result;
+	float3	Result;
 	Result.x = _Yup.z;
 	Result.y = _Yup.x;
 	Result.z = _Yup.y;

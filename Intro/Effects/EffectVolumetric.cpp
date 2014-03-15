@@ -126,7 +126,7 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 #ifdef SHOW_TERRAIN
 	{
 		m_pPrimTerrain = new Primitive( m_Device, VertexFormatP3::DESCRIPTOR );
-		GeometryBuilder::BuildPlane( 200, 200, NjFloat3::UnitX, -NjFloat3::UnitZ, *m_pPrimTerrain );
+		GeometryBuilder::BuildPlane( 200, 200, float3::UnitX, -float3::UnitZ, *m_pPrimTerrain );
 	}
 #endif
 
@@ -166,9 +166,9 @@ EffectVolumetric::EffectVolumetric( Device& _Device, Texture2D& _RTHDR, Primitiv
 
 	//////////////////////////////////////////////////////////////////////////
 	// Setup our volume & light
-	m_Position = NjFloat3( 0.0f, 2.0f, 0.0f );
-	m_Rotation = NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY );
-	m_Scale = NjFloat3( 1.0f, 2.0f, 1.0f );
+	m_Position = float3( 0.0f, 2.0f, 0.0f );
+	m_Rotation = float4::QuatFromAngleAxis( 0.0f, float3::UnitY );
+	m_Scale = float3( 1.0f, 2.0f, 1.0f );
 
 	m_CloudAnimSpeedLoFreq = 1.0f;
 	m_CloudAnimSpeedHiFreq = 1.0f;
@@ -319,8 +319,8 @@ float	t = 2*0.25f * _Time;
 
 
 	// Animate cloud position
-	m_pCB_Volume->m._CloudLoFreqPositionOffset = m_pCB_Volume->m._CloudLoFreqPositionOffset + (_DeltaTime * m_CloudAnimSpeedLoFreq) * NjFloat2( 0.22f, -0.55f );
-	m_pCB_Volume->m._CloudHiFreqPositionOffset = m_pCB_Volume->m._CloudHiFreqPositionOffset + (_DeltaTime * m_CloudAnimSpeedHiFreq) * NjFloat2( 0.0f, -0.08f );
+	m_pCB_Volume->m._CloudLoFreqPositionOffset = m_pCB_Volume->m._CloudLoFreqPositionOffset + (_DeltaTime * m_CloudAnimSpeedLoFreq) * float2( 0.22f, -0.55f );
+	m_pCB_Volume->m._CloudHiFreqPositionOffset = m_pCB_Volume->m._CloudHiFreqPositionOffset + (_DeltaTime * m_CloudAnimSpeedHiFreq) * float2( 0.0f, -0.08f );
 
 
 #ifdef _DEBUG
@@ -447,14 +447,14 @@ float	t = 2*0.25f * _Time;
 	// Compute transforms
 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF00FF00 ), L"Compute Transforms" );
 
-	NjFloat3	TerrainPosition = NjFloat3::Zero;
+	float3	TerrainPosition = float3::Zero;
 
 	// Snap terrain position to match camera position so it follows around without shitty altitude scrolling
 	{
-		NjFloat3	CameraPosition = m_Camera.GetCB().Camera2World.GetRow( 3 );
-		NjFloat3	CameraAt = m_Camera.GetCB().Camera2World.GetRow( 2 );
+		float3	CameraPosition = m_Camera.GetCB().Camera2World.GetRow( 3 );
+		float3	CameraAt = m_Camera.GetCB().Camera2World.GetRow( 2 );
 
-		NjFloat3	TerrainCenter = CameraPosition + 0.45f * TERRAIN_SIZE * CameraAt;	// The center will be in front of us always
+		float3	TerrainCenter = CameraPosition + 0.45f * TERRAIN_SIZE * CameraAt;	// The center will be in front of us always
 
 		float	VertexSnap = TERRAIN_SIZE / TERRAIN_SUBDIVISIONS_COUNT;	// World length between 2 vertices
 		int		VertexX = floorf( TerrainCenter.x / VertexSnap );
@@ -464,14 +464,14 @@ float	t = 2*0.25f * _Time;
 		TerrainPosition.z = VertexZ * VertexSnap;
 	}
 
-	m_Terrain2World.PRS( TerrainPosition, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), NjFloat3( 0.5f * TERRAIN_SIZE, 1, 0.5f * TERRAIN_SIZE) );
+	m_Terrain2World.PRS( TerrainPosition, float4::QuatFromAngleAxis( 0.0f, float3::UnitY ), float3( 0.5f * TERRAIN_SIZE, 1, 0.5f * TERRAIN_SIZE) );
 
 	// Set cloud slab center so it follows the camera around as well...
 	{
-		NjFloat3	CameraPosition = m_Camera.GetCB().Camera2World.GetRow( 3 );
-		NjFloat3	CameraAt = m_Camera.GetCB().Camera2World.GetRow( 2 );
+		float3	CameraPosition = m_Camera.GetCB().Camera2World.GetRow( 3 );
+		float3	CameraAt = m_Camera.GetCB().Camera2World.GetRow( 2 );
 
-		NjFloat3	CloudCenter = CameraPosition + 0.45f * CLOUD_SIZE * CameraAt;	// The center will be in front of us always
+		float3	CloudCenter = CameraPosition + 0.45f * CLOUD_SIZE * CameraAt;	// The center will be in front of us always
 
  		m_Position.Set( CloudCenter.x, m_CloudAltitude + 0.5f * m_CloudThickness, CloudCenter.z );
 	}
@@ -507,7 +507,7 @@ float	t = 2*0.25f * _Time;
 	// 1.2] Compute transmittance map
 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF400000 ), L"Render TFM" );
 
-	m_Device.ClearRenderTarget( *m_pRTTransmittanceMap, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+	m_Device.ClearRenderTarget( *m_pRTTransmittanceMap, float4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 
 	D3D11_VIEWPORT	Viewport = {
 		0.0f,
@@ -635,7 +635,7 @@ float	t = 2*0.25f * _Time;
 	// 5] Render the cloud box's front & back
 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFF800000 ), L"Render Volume Front&Back" );
 
-	m_Device.ClearRenderTarget( *m_pRTRenderZ, NjFloat4( 0.0f, -1e4f, 0.0f, 0.0f ) );
+	m_Device.ClearRenderTarget( *m_pRTRenderZ, float4( 0.0f, -1e4f, 0.0f, 0.0f ) );
 
 	USING_MATERIAL_START( *m_pMatDepthWrite )
 
@@ -693,7 +693,7 @@ float	t = 2*0.25f * _Time;
 	Material*	pMat = m_ppMatDisplay[0];
 	USING_MATERIAL_START( *pMat )
 
-		m_Device.ClearRenderTarget( *m_pRTRender, NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) );
+		m_Device.ClearRenderTarget( *m_pRTRender, float4( 0.0f, 0.0f, 0.0f, 1.0f ) );
 
 		ID3D11RenderTargetView*	ppViews[] = {
 			m_pRTRender->GetTargetView( 0, 0, 1 ),
@@ -771,15 +771,15 @@ void	EffectVolumetric::ComputeShadowTransform()
 
 	bool		Above = m_LightDirection.y > 0.0f;
 
-	NjFloat3	X = NjFloat3::UnitX;
-	NjFloat3	Y = NjFloat3::UnitZ;
+	float3	X = float3::UnitX;
+	float3	Y = float3::UnitZ;
 
-	NjFloat3	Center = m_Position + NjFloat3( 0, (Above ? +1 : -1) * m_Scale.y, 0 );
+	float3	Center = m_Position + float3( 0, (Above ? +1 : -1) * m_Scale.y, 0 );
 
-	NjFloat3	SizeLight = NjFloat3( 2.0f * m_Scale.x, 2.0f * m_Scale.z, 2.0f * m_Scale.y / fabs(m_LightDirection.y) );
+	float3	SizeLight = float3( 2.0f * m_Scale.x, 2.0f * m_Scale.z, 2.0f * m_Scale.y / fabs(m_LightDirection.y) );
 
 	// Build LIGHT => WORLD transform & inverse
-	NjFloat4x4	Light2World;
+	float4x4	Light2World;
 	Light2World.SetRow( 0, X, 0 );
 	Light2World.SetRow( 1, Y, 0 );
 	Light2World.SetRow( 2, -m_LightDirection, 0 );
@@ -788,42 +788,42 @@ void	EffectVolumetric::ComputeShadowTransform()
 	m_World2Light = Light2World.Inverse();
 
 	// Build projection transforms
-	NjFloat4x4	Shadow2Light;
-	Shadow2Light.SetRow( 0, NjFloat4( 0.5f * SizeLight.x, 0, 0, 0 ) );
-	Shadow2Light.SetRow( 1, NjFloat4( 0, 0.5f * SizeLight.y, 0, 0 ) );
-	Shadow2Light.SetRow( 2, NjFloat4( 0, 0, 1, 0 ) );
-	Shadow2Light.SetRow( 3, NjFloat4( 0, 0, 0, 1 ) );
+	float4x4	Shadow2Light;
+	Shadow2Light.SetRow( 0, float4( 0.5f * SizeLight.x, 0, 0, 0 ) );
+	Shadow2Light.SetRow( 1, float4( 0, 0.5f * SizeLight.y, 0, 0 ) );
+	Shadow2Light.SetRow( 2, float4( 0, 0, 1, 0 ) );
+	Shadow2Light.SetRow( 3, float4( 0, 0, 0, 1 ) );
 
-	NjFloat4x4	Light2Shadow = Shadow2Light.Inverse();
+	float4x4	Light2Shadow = Shadow2Light.Inverse();
 
-	m_pCB_Shadow->m.LightDirection = NjFloat4( m_LightDirection, 0 );
+	m_pCB_Shadow->m.LightDirection = float4( m_LightDirection, 0 );
 	m_pCB_Shadow->m.World2Shadow = m_World2Light * Light2Shadow;
 	m_pCB_Shadow->m.Shadow2World = Shadow2Light * Light2World;
 	m_pCB_Shadow->m.ZMax.Set( SizeLight.z, 1.0f / SizeLight.z );
 
 
 	// Create an alternate projection matrix that doesn't keep the World Z but instead projects it in [0,1]
-	Shadow2Light.SetRow( 2, NjFloat4( 0, 0, SizeLight.z, 0 ) );
-	Shadow2Light.SetRow( 3, NjFloat4( 0, 0, 0, 1 ) );
+	Shadow2Light.SetRow( 2, float4( 0, 0, SizeLight.z, 0 ) );
+	Shadow2Light.SetRow( 3, float4( 0, 0, 0, 1 ) );
 
 	m_Light2ShadowNormalized = Shadow2Light.Inverse();
 
 // CHECK
-NjFloat3	CheckMin( FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX ), CheckMax( -FLOAT32_MAX, -FLOAT32_MAX, -FLOAT32_MAX );
-NjFloat3	CornerLocal, CornerWorld, CornerShadow;
-NjFloat4x4	World2ShadowNormalized = m_World2Light * m_Light2ShadowNormalized;
+float3	CheckMin( FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX ), CheckMax( -FLOAT32_MAX, -FLOAT32_MAX, -FLOAT32_MAX );
+float3	CornerLocal, CornerWorld, CornerShadow;
+float4x4	World2ShadowNormalized = m_World2Light * m_Light2ShadowNormalized;
 for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
 {
 	CornerLocal.x = 2.0f * (CornerIndex & 1) - 1.0f;
 	CornerLocal.y = 2.0f * ((CornerIndex >> 1) & 1) - 1.0f;
 	CornerLocal.z = 2.0f * ((CornerIndex >> 2) & 1) - 1.0f;
 
-	CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Cloud2World;
+	CornerWorld = float4( CornerLocal, 1 ) * m_Cloud2World;
 
 // 	CornerShadow = NjFloat4( CornerWorld, 1 ) * m_pCB_Shadow->m.World2Shadow;
-	CornerShadow = NjFloat4( CornerWorld, 1 ) * World2ShadowNormalized;
+	CornerShadow = float4( CornerWorld, 1 ) * World2ShadowNormalized;
 
-	NjFloat4	CornerWorldAgain = NjFloat4( CornerShadow, 1 ) * m_pCB_Shadow->m.Shadow2World;
+	float4	CornerWorldAgain = float4( CornerShadow, 1 ) * m_pCB_Shadow->m.Shadow2World;
 
 	CheckMin = CheckMin.Min( CornerShadow );
 	CheckMax = CheckMax.Max( CornerShadow );
@@ -831,11 +831,11 @@ for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
 // CHECK
 
 // CHECK
-NjFloat3	Test0 = NjFloat4( 0.0f, 0.0f, 0.5f * SizeLight.z, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
-NjFloat3	Test1 = NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
-NjFloat3	DeltaTest0 = Test1 - Test0;
-NjFloat3	Test2 = NjFloat4( 0.0f, 0.0f, SizeLight.z, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
-NjFloat3	DeltaTest1 = Test2 - Test0;
+float3	Test0 = float4( 0.0f, 0.0f, 0.5f * SizeLight.z, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
+float3	Test1 = float4( 0.0f, 0.0f, 0.0f, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
+float3	DeltaTest0 = Test1 - Test0;
+float3	Test2 = float4( 0.0f, 0.0f, SizeLight.z, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
+float3	DeltaTest1 = Test2 - Test0;
 // CHECK
 }
 
@@ -847,7 +847,7 @@ void	EffectVolumetric::ComputeShadowTransform()
 	// Build basis for directional light
 	m_LightDirection.Normalize();
 
-	NjFloat3	X, Y;
+	float3	X, Y;
 #if 0
 	// Use a ground vector
 	if ( fabs( m_LightDirection.x - 1.0f ) < 1e-3f )
@@ -864,33 +864,33 @@ void	EffectVolumetric::ComputeShadowTransform()
 #elif 1
 	// Force both X,Y vectors to the ground
 	float	fFactor = (m_LightDirection.y > 0.0f ? 1.0f : -1.0f);
-	X = fFactor * NjFloat3::UnitX;
-	Y = NjFloat3::UnitZ;
+	X = fFactor * float3::UnitX;
+	Y = float3::UnitZ;
 #else
 	if ( fabs( m_LightDirection.y - 1.0f ) < 1e-3f )
 	{	// Special case
-		X = NjFloat3::UnitX;
-		Y = NjFloat3::UnitZ;
+		X = float3::UnitX;
+		Y = float3::UnitZ;
 	}
 	else
 	{
-		X = m_LightDirection ^ NjFloat3::UnitY;
+		X = m_LightDirection ^ float3::UnitY;
 		X.Normalize();
 		Y = X ^ m_LightDirection;
 	}
 #endif
 
 	// Project the box's corners to the light plane
-	NjFloat3	Center = NjFloat3::Zero;
-	NjFloat3	CornerLocal, CornerWorld, CornerLight;
-	NjFloat3	Min( FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX ), Max( -FLOAT32_MAX, -FLOAT32_MAX, -FLOAT32_MAX );
+	float3	Center = float3::Zero;
+	float3	CornerLocal, CornerWorld, CornerLight;
+	float3	Min( FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX ), Max( -FLOAT32_MAX, -FLOAT32_MAX, -FLOAT32_MAX );
 	for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
 	{
 		CornerLocal.x = 2.0f * (CornerIndex & 1) - 1.0f;
 		CornerLocal.y = 2.0f * ((CornerIndex >> 1) & 1) - 1.0f;
 		CornerLocal.z = 2.0f * ((CornerIndex >> 2) & 1) - 1.0f;
 
-		CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Cloud2World;
+		CornerWorld = float4( CornerLocal, 1 ) * m_Cloud2World;
 
 		Center = Center + CornerWorld;
 
@@ -903,14 +903,14 @@ void	EffectVolumetric::ComputeShadowTransform()
 	}
 	Center = Center / 8.0f;
 
-	NjFloat3	SizeLight = Max - Min;
+	float3	SizeLight = Max - Min;
 
 	// Offset center to Z start of box
 	float	CenterZ = Center | m_LightDirection;	// How much the center is already in light direction?
 	Center = Center + (Max.z-CenterZ) * m_LightDirection;
 
 	// Build LIGHT => WORLD transform & inverse
-	NjFloat4x4	Light2World;
+	float4x4	Light2World;
 	Light2World.SetRow( 0, X, 0 );
 	Light2World.SetRow( 1, Y, 0 );
 	Light2World.SetRow( 2, -m_LightDirection, 0 );
@@ -919,44 +919,44 @@ void	EffectVolumetric::ComputeShadowTransform()
 	m_World2Light = Light2World.Inverse();
 
 	// Build projection transforms
-	NjFloat4x4	Shadow2Light;
-	Shadow2Light.SetRow( 0, NjFloat4( 0.5f * SizeLight.x, 0, 0, 0 ) );
-	Shadow2Light.SetRow( 1, NjFloat4( 0, 0.5f * SizeLight.y, 0, 0 ) );
-	Shadow2Light.SetRow( 2, NjFloat4( 0, 0, 1, 0 ) );
+	float4x4	Shadow2Light;
+	Shadow2Light.SetRow( 0, float4( 0.5f * SizeLight.x, 0, 0, 0 ) );
+	Shadow2Light.SetRow( 1, float4( 0, 0.5f * SizeLight.y, 0, 0 ) );
+	Shadow2Light.SetRow( 2, float4( 0, 0, 1, 0 ) );
 //	Shadow2Light.SetRow( 3, NjFloat4( 0, 0, -0.5f * SizeLight.z, 1 ) );
-	Shadow2Light.SetRow( 3, NjFloat4( 0, 0, 0, 1 ) );
+	Shadow2Light.SetRow( 3, float4( 0, 0, 0, 1 ) );
 
-	NjFloat4x4	Light2Shadow = Shadow2Light.Inverse();
+	float4x4	Light2Shadow = Shadow2Light.Inverse();
 
-	m_pCB_Shadow->m.LightDirection = NjFloat4( m_LightDirection, 0 );
+	m_pCB_Shadow->m.LightDirection = float4( m_LightDirection, 0 );
 	m_pCB_Shadow->m.World2Shadow = m_World2Light * Light2Shadow;
 	m_pCB_Shadow->m.Shadow2World = Shadow2Light * Light2World;
 	m_pCB_Shadow->m.ZMax.Set( SizeLight.z, 1.0f / SizeLight.z );
 
 
 	// Create an alternate projection matrix that doesn't keep the World Z but instead projects it in [0,1]
-	Shadow2Light.SetRow( 2, NjFloat4( 0, 0, SizeLight.z, 0 ) );
+	Shadow2Light.SetRow( 2, float4( 0, 0, SizeLight.z, 0 ) );
 //	Shadow2Light.SetRow( 3, NjFloat4( 0, 0, -0.5f * SizeLight.z, 1 ) );
-	Shadow2Light.SetRow( 3, NjFloat4( 0, 0, 0, 1 ) );
+	Shadow2Light.SetRow( 3, float4( 0, 0, 0, 1 ) );
 
 	m_Light2ShadowNormalized = Shadow2Light.Inverse();
 
 
 // CHECK
-NjFloat3	CheckMin( FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX ), CheckMax( -FLOAT32_MAX, -FLOAT32_MAX, -FLOAT32_MAX );
-NjFloat3	CornerShadow;
+float3	CheckMin( FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX ), CheckMax( -FLOAT32_MAX, -FLOAT32_MAX, -FLOAT32_MAX );
+float3	CornerShadow;
 for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
 {
 	CornerLocal.x = 2.0f * (CornerIndex & 1) - 1.0f;
 	CornerLocal.y = 2.0f * ((CornerIndex >> 1) & 1) - 1.0f;
 	CornerLocal.z = 2.0f * ((CornerIndex >> 2) & 1) - 1.0f;
 
-	CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Cloud2World;
+	CornerWorld = float4( CornerLocal, 1 ) * m_Cloud2World;
 
- 	CornerShadow = NjFloat4( CornerWorld, 1 ) * m_pCB_Shadow->m.World2Shadow;
+ 	CornerShadow = float4( CornerWorld, 1 ) * m_pCB_Shadow->m.World2Shadow;
 //	CornerShadow = NjFloat4( CornerWorld, 1 ) * m_World2ShadowNormalized;
 
-	NjFloat4	CornerWorldAgain = NjFloat4( CornerShadow, 1 ) * m_pCB_Shadow->m.Shadow2World;
+	float4	CornerWorldAgain = float4( CornerShadow, 1 ) * m_pCB_Shadow->m.Shadow2World;
 
 	CheckMin = CheckMin.Min( CornerShadow );
 	CheckMax = CheckMax.Max( CornerShadow );
@@ -964,18 +964,18 @@ for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
 // CHECK
 
 // CHECK
-NjFloat3	Test0 = NjFloat4( 0.0f, 0.0f, 0.5f * SizeLight.z, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
-NjFloat3	Test1 = NjFloat4( 0.0f, 0.0f, 0.0f, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
-NjFloat3	DeltaTest0 = Test1 - Test0;
-NjFloat3	Test2 = NjFloat4( 0.0f, 0.0f, SizeLight.z, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
-NjFloat3	DeltaTest1 = Test2 - Test0;
+float3	Test0 = float4( 0.0f, 0.0f, 0.5f * SizeLight.z, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
+float3	Test1 = float4( 0.0f, 0.0f, 0.0f, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
+float3	DeltaTest0 = Test1 - Test0;
+float3	Test2 = float4( 0.0f, 0.0f, SizeLight.z, 1.0f ) * m_pCB_Shadow->m.Shadow2World;
+float3	DeltaTest1 = Test2 - Test0;
 // CHECK
 }
 
 #else
 
 // Projects a world position in kilometers into the shadow plane
-NjFloat3	EffectVolumetric::Project2ShadowPlane( const NjFloat3& _PositionKm, float& _Distance2PlaneKm )
+float3	EffectVolumetric::Project2ShadowPlane( const float3& _PositionKm, float& _Distance2PlaneKm )
 {
 // 	NjFloat3	Center2PositionKm = _PositionKm - m_ShadowPlaneCenterKm;
 // 	_Distance2PlaneKm = Center2PositionKm | m_ShadowPlaneNormal;
@@ -988,11 +988,11 @@ NjFloat3	EffectVolumetric::Project2ShadowPlane( const NjFloat3& _PositionKm, flo
 }
 
 // Projects a world position in kilometers into the shadow quad
-NjFloat2	EffectVolumetric::World2ShadowQuad( const NjFloat3& _PositionKm, float& _Distance2PlaneKm )
+float2	EffectVolumetric::World2ShadowQuad( const float3& _PositionKm, float& _Distance2PlaneKm )
 {
-	NjFloat3	ProjectedPositionKm = Project2ShadowPlane( _PositionKm, _Distance2PlaneKm );
-	NjFloat3	Center2ProjPositionKm = ProjectedPositionKm - m_ShadowPlaneCenterKm;
-	return NjFloat2( Center2ProjPositionKm | m_ShadowPlaneX, Center2ProjPositionKm | m_ShadowPlaneY );
+	float3	ProjectedPositionKm = Project2ShadowPlane( _PositionKm, _Distance2PlaneKm );
+	float3	Center2ProjPositionKm = ProjectedPositionKm - m_ShadowPlaneCenterKm;
+	return float2( Center2ProjPositionKm | m_ShadowPlaneX, Center2ProjPositionKm | m_ShadowPlaneY );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1016,14 +1016,14 @@ NjFloat2	EffectVolumetric::World2ShadowQuad( const NjFloat3& _PositionKm, float&
 //
 void	EffectVolumetric::ComputeShadowTransform()
 {
-	static const NjFloat3	PLANET_CENTER_KM = NjFloat3( 0, -GROUND_RADIUS_KM, 0 );
+	static const float3	PLANET_CENTER_KM = float3( 0, -GROUND_RADIUS_KM, 0 );
 
-	NjFloat3	LightDirection = m_pCB_Atmosphere->m.LightDirection;
+	float3	LightDirection = m_pCB_Atmosphere->m.LightDirection;
 
 	float		TanFovH = m_Camera.GetCB().Params.x;
 	float		TanFovV = m_Camera.GetCB().Params.y;
-	NjFloat4x4&	Camera2World = m_Camera.GetCB().Camera2World;
-	NjFloat3	CameraPositionKm = Camera2World.GetRow( 3 );
+	float4x4&	Camera2World = m_Camera.GetCB().Camera2World;
+	float3	CameraPositionKm = Camera2World.GetRow( 3 );
 
 //###	static const float	SHADOW_FAR_CLIP_DISTANCE = 250.0f;
 	static const float	SHADOW_FAR_CLIP_DISTANCE = 70.0f;
@@ -1031,7 +1031,7 @@ void	EffectVolumetric::ComputeShadowTransform()
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compute shadow plane tangent space
-	NjFloat3	ClippedSunDirection = -LightDirection;
+	float3	ClippedSunDirection = -LightDirection;
 // 	if ( ClippedSunDirection.y > 0.0f )
 // 		ClippedSunDirection = -ClippedSunDirection;	// We always require a vector facing down
 
@@ -1060,27 +1060,27 @@ void	EffectVolumetric::ComputeShadowTransform()
 
 	// Force both X,Y vectors to the ground, normal is light's direction alwaus pointing toward the ground
 	float	fFactor = 1;//(m_LightDirection.y > 0.0f ? 1.0f : -1.0f);
-	m_ShadowPlaneX = fFactor * NjFloat3::UnitX;
-	m_ShadowPlaneY = NjFloat3::UnitZ;
+	m_ShadowPlaneX = fFactor * float3::UnitX;
+	m_ShadowPlaneY = float3::UnitZ;
  	m_ShadowPlaneNormal = ClippedSunDirection;
 //	m_ShadowPlaneCenterKm = NjFloat3( CameraPositionKm.x, 0, CameraPositionKm.z ) + (BOX_BASE + (m_LightDirection.y > 0.0f ? 1 : 0) * MAX( 1e-3f, BOX_HEIGHT )) * NjFloat3::UnitY;	// Center on camera for a start...
-	m_ShadowPlaneCenterKm = NjFloat4( 0, LightDirection.y > 0 ? 1.0f : -1.0f, 0, 1 ) * m_Cloud2World;
+	m_ShadowPlaneCenterKm = float4( 0, LightDirection.y > 0 ? 1.0f : -1.0f, 0, 1 ) * m_Cloud2World;
 
 	float	ZSize = m_pCB_Volume->m._CloudAltitudeThickness.y / abs(ClippedSunDirection.y);	// Since we're blocking the XY axes on the plane, Z changes with the light's vertical component
 																// Slanter rays will yield longer Z's
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build camera frustum
-	NjFloat3  pCameraFrustumKm[5];
-	pCameraFrustumKm[0] = NjFloat3::Zero;
-	pCameraFrustumKm[1] = SHADOW_FAR_CLIP_DISTANCE * NjFloat3( -TanFovH, -TanFovV, 1.0f );
-	pCameraFrustumKm[2] = SHADOW_FAR_CLIP_DISTANCE * NjFloat3( +TanFovH, -TanFovV, 1.0f );
-	pCameraFrustumKm[3] = SHADOW_FAR_CLIP_DISTANCE * NjFloat3( +TanFovH, +TanFovV, 1.0f );
-	pCameraFrustumKm[4] = SHADOW_FAR_CLIP_DISTANCE * NjFloat3( -TanFovH, +TanFovV, 1.0f );
+	float3  pCameraFrustumKm[5];
+	pCameraFrustumKm[0] = float3::Zero;
+	pCameraFrustumKm[1] = SHADOW_FAR_CLIP_DISTANCE * float3( -TanFovH, -TanFovV, 1.0f );
+	pCameraFrustumKm[2] = SHADOW_FAR_CLIP_DISTANCE * float3( +TanFovH, -TanFovV, 1.0f );
+	pCameraFrustumKm[3] = SHADOW_FAR_CLIP_DISTANCE * float3( +TanFovH, +TanFovV, 1.0f );
+	pCameraFrustumKm[4] = SHADOW_FAR_CLIP_DISTANCE * float3( -TanFovH, +TanFovV, 1.0f );
 
 	// Transform into WORLD space
 	for ( int i=0; i < 5; i++ )
-		pCameraFrustumKm[i] = NjFloat4( pCameraFrustumKm[i], 1.0f ) * Camera2World;
+		pCameraFrustumKm[i] = float4( pCameraFrustumKm[i], 1.0f ) * Camera2World;
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1136,45 +1136,45 @@ void	EffectVolumetric::ComputeShadowTransform()
 	//	|  X'z   Y'z     0   |
 	//	| -C.X' -C.Y' -Cy/Zy |
 	//
-	NjFloat3	ScaledZ = m_ShadowPlaneNormal / m_ShadowPlaneNormal.y;
+	float3	ScaledZ = m_ShadowPlaneNormal / m_ShadowPlaneNormal.y;
 
 	float		ZdotX = ScaledZ | m_ShadowPlaneX;
-	NjFloat3	NewX = m_ShadowPlaneX - NjFloat3( 0, ZdotX, 0 );
+	float3	NewX = m_ShadowPlaneX - float3( 0, ZdotX, 0 );
 
 	float		ZdotY = ScaledZ | m_ShadowPlaneY;
-	NjFloat3	NewY = m_ShadowPlaneY - NjFloat3( 0, ZdotY, 0 );
+	float3	NewY = m_ShadowPlaneY - float3( 0, ZdotY, 0 );
 
-	NjFloat3	NewZ( 0, 1/m_ShadowPlaneNormal.y, 0 );
+	float3	NewZ( 0, 1/m_ShadowPlaneNormal.y, 0 );
 
-	NjFloat3	Translation = NjFloat3( -m_ShadowPlaneCenterKm | NewX, -m_ShadowPlaneCenterKm | NewY, -m_ShadowPlaneCenterKm | NewZ );
+	float3	Translation = float3( -m_ShadowPlaneCenterKm | NewX, -m_ShadowPlaneCenterKm | NewY, -m_ShadowPlaneCenterKm | NewZ );
 
-	m_World2Light.SetRow( 0, NjFloat4( NewX.x, NewY.x, NewZ.x, 0 ) );
-	m_World2Light.SetRow( 1, NjFloat4( NewX.y, NewY.y, NewZ.y, 0 ) );
-	m_World2Light.SetRow( 2, NjFloat4( NewX.z, NewY.z, NewZ.z, 0 ) );
-	m_World2Light.SetRow( 3, NjFloat4( Translation.x, Translation.y, Translation.z, 1 ) );
+	m_World2Light.SetRow( 0, float4( NewX.x, NewY.x, NewZ.x, 0 ) );
+	m_World2Light.SetRow( 1, float4( NewX.y, NewY.y, NewZ.y, 0 ) );
+	m_World2Light.SetRow( 2, float4( NewX.z, NewY.z, NewZ.z, 0 ) );
+	m_World2Light.SetRow( 3, float4( Translation.x, Translation.y, Translation.z, 1 ) );
 
-	NjFloat4x4	Light2World = m_World2Light.Inverse();
+	float4x4	Light2World = m_World2Light.Inverse();
 
 // CHECK: We reproject the frustum and verify the values
-NjFloat4	pCheckProjected[5];
+float4	pCheckProjected[5];
 for ( int i=0; i < 5; i++ )
-	pCheckProjected[i] = NjFloat4( pCameraFrustumKm[i], 1 ) * m_World2Light;
+	pCheckProjected[i] = float4( pCameraFrustumKm[i], 1 ) * m_World2Light;
 // CHECK
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compute bounding quad
 	// Simply use a coarse quad and don't give a fuck (advantage is that it's always axis aligned despite camera orientation)
-	NjFloat2	QuadMin( +1e6f, +1e6f );
-	NjFloat2	QuadMax( -1e6f, -1e6f );
+	float2	QuadMin( +1e6f, +1e6f );
+	float2	QuadMax( -1e6f, -1e6f );
 
 	if ( LightDirection.y > 0.0f )
 	{	// When the Sun is above the clouds, project the frustum's corners to plane and keep the bounding quad of these points
 
 		// Project frustum to shadow plane
 		float		pDistances2Plane[5];
-		NjFloat2	pFrustumProjKm[5];
-		NjFloat2	Center = NjFloat2::Zero;
+		float2	pFrustumProjKm[5];
+		float2	Center = float2::Zero;
 		for ( int i=0; i < 5; i++ )
 		{
 			pFrustumProjKm[i] = World2ShadowQuad( pCameraFrustumKm[i], pDistances2Plane[i] );
@@ -1212,18 +1212,18 @@ for ( int i=0; i < 5; i++ )
 
 	// Also compute the cloud box's bounding quad and clip our quad values with it since it's useless to have a quad larger
 	//	than what the cloud is covering anyway...
-	NjFloat2	CloudQuadMin( +1e6f, +1e6f );
-	NjFloat2	CloudQuadMax( -1e6f, -1e6f );
+	float2	CloudQuadMin( +1e6f, +1e6f );
+	float2	CloudQuadMax( -1e6f, -1e6f );
 	for ( int BoxCornerIndex=0; BoxCornerIndex < 8; BoxCornerIndex++ )
 	{
 		int			Z = BoxCornerIndex >> 2;
 		int			Y = (BoxCornerIndex >> 1) & 1;
 		int			X = BoxCornerIndex & 1;
-		NjFloat3	CornerLocal( 2*float(X)-1, 2*float(Y)-1, 2*float(Z)-1 );
-		NjFloat3	CornerWorld = NjFloat4( CornerLocal, 1 ) * m_Cloud2World;
+		float3	CornerLocal( 2*float(X)-1, 2*float(Y)-1, 2*float(Z)-1 );
+		float3	CornerWorld = float4( CornerLocal, 1 ) * m_Cloud2World;
 
 		float		Distance;
-		NjFloat2	CornerProj = World2ShadowQuad( CornerWorld, Distance );
+		float2	CornerProj = World2ShadowQuad( CornerWorld, Distance );
 
 		CloudQuadMin = CloudQuadMin.Min( CornerProj );
 		CloudQuadMax = CloudQuadMax.Max( CornerProj );
@@ -1232,15 +1232,15 @@ for ( int i=0; i < 5; i++ )
 	QuadMin = QuadMin.Max( CloudQuadMin );
 	QuadMax = QuadMax.Min( CloudQuadMax );
 
-	NjFloat2	QuadSize = QuadMax - QuadMin;
+	float2	QuadSize = QuadMax - QuadMin;
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Determine the rendering viewport based on quad's size
 
 // Statistics of min/max sizes
-static NjFloat2		s_QuadSizeMin = NjFloat2( +1e6f, +1e6f );
-static NjFloat2		s_QuadSizeMax = NjFloat2( -1e6f, -1e6f );
+static float2		s_QuadSizeMin = float2( +1e6f, +1e6f );
+static float2		s_QuadSizeMax = float2( -1e6f, -1e6f );
 s_QuadSizeMin = s_QuadSizeMin.Min( QuadSize );
 s_QuadSizeMax = s_QuadSizeMax.Max( QuadSize );
 
@@ -1261,12 +1261,12 @@ s_QuadSizeMax = s_QuadSizeMax.Max( QuadSize );
 //	ASSERT( TexelRatioX >= 1.0f, "Increase quad size max to avoid texel squeeze!" );	// We can't avoid that with slant rays...
 //	ASSERT( TexelRatioY >= 1.0f, "Increase quad size max to avoid texel squeeze!" );	// We can't avoid that with slant rays...
 
-	NjFloat2	World2TexelScale( (SHADOW_MAP_SIZE-1) / WorldSizeX, (SHADOW_MAP_SIZE-1) / WorldSizeY );	// Actual scale to convert from world to shadow texels
+	float2	World2TexelScale( (SHADOW_MAP_SIZE-1) / WorldSizeX, (SHADOW_MAP_SIZE-1) / WorldSizeY );	// Actual scale to convert from world to shadow texels
 
 	// Normalized size in texels
-	NjFloat2	QuadMinTexel = World2TexelScale * QuadMin;
-	NjFloat2	QuadMaxTexel = World2TexelScale * QuadMax;
-	NjFloat2	QuadSizeTexel = QuadMaxTexel - QuadMinTexel;
+	float2	QuadMinTexel = World2TexelScale * QuadMin;
+	float2	QuadMaxTexel = World2TexelScale * QuadMax;
+	float2	QuadSizeTexel = QuadMaxTexel - QuadMinTexel;
 
 	// Compute viewport size in texels
 	int	ViewMinX = int( floorf( QuadMinTexel.x ) );
@@ -1277,9 +1277,9 @@ s_QuadSizeMax = s_QuadSizeMax.Max( QuadSize );
 	m_ViewportWidth = ViewMaxX - ViewMinX;
 	m_ViewportHeight = ViewMaxY - ViewMinY;
 
-	NjFloat2	UVMin( (QuadMinTexel.x - ViewMinX) / SHADOW_MAP_SIZE, (QuadMinTexel.y - ViewMinY) / SHADOW_MAP_SIZE );
-	NjFloat2	UVMax( (QuadMaxTexel.x - ViewMinX) / SHADOW_MAP_SIZE, (QuadMaxTexel.y - ViewMinY) / SHADOW_MAP_SIZE );
-	NjFloat2	UVSize = UVMax - UVMin;
+	float2	UVMin( (QuadMinTexel.x - ViewMinX) / SHADOW_MAP_SIZE, (QuadMinTexel.y - ViewMinY) / SHADOW_MAP_SIZE );
+	float2	UVMax( (QuadMaxTexel.x - ViewMinX) / SHADOW_MAP_SIZE, (QuadMaxTexel.y - ViewMinY) / SHADOW_MAP_SIZE );
+	float2	UVSize = UVMax - UVMin;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the matrix to transform UVs into Light coordinates
@@ -1288,23 +1288,23 @@ s_QuadSizeMax = s_QuadSizeMax.Max( QuadSize );
 	//
 	//	QuadPos = [QuadMin - (QuadMax-QuadMin) / (UVmax-UVmin) * UVmin] + [(QuadMax-QuadMin) / (UVmax-UVmin)] * UV
 	//
-	NjFloat2	Scale( QuadSize.x / UVSize.x, QuadSize.y / UVSize.y );
-	NjFloat2	Offset = QuadMin - Scale * UVMin;
+	float2	Scale( QuadSize.x / UVSize.x, QuadSize.y / UVSize.y );
+	float2	Offset = QuadMin - Scale * UVMin;
 
-	NjFloat4x4	UV2Light;
-	UV2Light.SetRow( 0, NjFloat4( Scale.x, 0, 0, 0 ) );
-	UV2Light.SetRow( 1, NjFloat4( 0, Scale.y, 0, 0 ) );
-	UV2Light.SetRow( 2, NjFloat4( 0, 0, 1, 0 ) );
-	UV2Light.SetRow( 3, NjFloat4( Offset.x, Offset.y, 0, 1 ) );
+	float4x4	UV2Light;
+	UV2Light.SetRow( 0, float4( Scale.x, 0, 0, 0 ) );
+	UV2Light.SetRow( 1, float4( 0, Scale.y, 0, 0 ) );
+	UV2Light.SetRow( 2, float4( 0, 0, 1, 0 ) );
+	UV2Light.SetRow( 3, float4( Offset.x, Offset.y, 0, 1 ) );
 
-	NjFloat4x4	Light2UV = UV2Light.Inverse();
+	float4x4	Light2UV = UV2Light.Inverse();
 
 
 // CHECK
-NjFloat4	Test0 = NjFloat4( QuadMin.x, QuadMin.y, 0, 1 ) * Light2UV;	// Get back UV min/max
-NjFloat4	Test1 = NjFloat4( QuadMax.x, QuadMax.y, 0, 1 ) * Light2UV;
-NjFloat4	Test2 = NjFloat4( UVMin.x, UVMin.y, 0, 1 ) * UV2Light;			// Get back quad min/max
-NjFloat4	Test3 = NjFloat4( UVMax.x, UVMax.y, 0, 1 ) * UV2Light;
+float4	Test0 = float4( QuadMin.x, QuadMin.y, 0, 1 ) * Light2UV;	// Get back UV min/max
+float4	Test1 = float4( QuadMax.x, QuadMax.y, 0, 1 ) * Light2UV;
+float4	Test2 = float4( UVMin.x, UVMin.y, 0, 1 ) * UV2Light;			// Get back quad min/max
+float4	Test3 = float4( UVMax.x, UVMax.y, 0, 1 ) * UV2Light;
 // CHECK
 
 	m_pCB_Shadow->m.World2Shadow = m_World2Light * Light2UV;
@@ -1313,9 +1313,9 @@ NjFloat4	Test3 = NjFloat4( UVMax.x, UVMax.y, 0, 1 ) * UV2Light;
 
 
 // CHECK: We reproject the frustum and verify the UVs...
-NjFloat4	pCheckUVs[5];
+float4	pCheckUVs[5];
 for ( int i=0; i < 5; i++ )
-	pCheckUVs[i] = NjFloat4( pCameraFrustumKm[i], 1 ) * m_pCB_Shadow->m.World2Shadow;
+	pCheckUVs[i] = float4( pCameraFrustumKm[i], 1 ) * m_pCB_Shadow->m.World2Shadow;
 // CHECK
 
 
@@ -1326,7 +1326,7 @@ for ( int i=0; i < 5; i++ )
 }
 
 // Computes the intersection of the 5 points camera frustum in WORLD space with a plane and returns the bounding quad of the intersected points
-void	EffectVolumetric::ComputeFrustumIntersection( NjFloat3 _pCameraFrustumKm[5], float _PlaneHeight, NjFloat2& _QuadMin, NjFloat2& _QuadMax )
+void	EffectVolumetric::ComputeFrustumIntersection( float3 _pCameraFrustumKm[5], float _PlaneHeight, float2& _QuadMin, float2& _QuadMax )
 {
 	int		pEdges[2*8] = {
 		0, 1,
@@ -1340,19 +1340,19 @@ void	EffectVolumetric::ComputeFrustumIntersection( NjFloat3 _pCameraFrustumKm[5]
 	};
 	for ( int EdgeIndex=0; EdgeIndex < 8; EdgeIndex++ )
 	{
-		NjFloat3&	V0 = _pCameraFrustumKm[pEdges[2*EdgeIndex+0]];
-		NjFloat3&	V1 = _pCameraFrustumKm[pEdges[2*EdgeIndex+1]];
-		NjFloat3	V = V1 - V0;
+		float3&	V0 = _pCameraFrustumKm[pEdges[2*EdgeIndex+0]];
+		float3&	V1 = _pCameraFrustumKm[pEdges[2*EdgeIndex+1]];
+		float3	V = V1 - V0;
 		float		VerticalDistance = _PlaneHeight - V0.y;
 		float		Distance2Intersection = VerticalDistance / V.y;	// Time until we reach the plane following V
 		if ( Distance2Intersection < 0.0f || Distance2Intersection > 1.0f )
 			continue;	// No intersection...
 
-		NjFloat3	Intersection = V0 + Distance2Intersection * V;
+		float3	Intersection = V0 + Distance2Intersection * V;
 
 		// Project to shadow plane
 		float		Distance2ShadowPlane;
-		NjFloat2	Projection = World2ShadowQuad( Intersection, Distance2ShadowPlane );
+		float2	Projection = World2ShadowQuad( Intersection, Distance2ShadowPlane );
 
 		// Update bounding-quad
 		_QuadMin = _QuadMin.Min( Projection );
@@ -1365,62 +1365,62 @@ void	EffectVolumetric::ComputeFrustumIntersection( NjFloat3 _pCameraFrustumKm[5]
 
 //////////////////////////////////////////////////////////////////////////
 // Computes the projection matrix for the terrain shadow map
-NjFloat4x4	EffectVolumetric::ComputeTerrainShadowTransform()
+float4x4	EffectVolumetric::ComputeTerrainShadowTransform()
 {
 	const float	FRUSTUM_FAR_CLIP = 60.0f;
 
-	NjFloat3	LightDirection = m_pCB_Atmosphere->m.LightDirection;
+	float3	LightDirection = m_pCB_Atmosphere->m.LightDirection;
 
-	NjFloat3	Z = -LightDirection;
+	float3	Z = -LightDirection;
 	if ( abs( Z.y ) > 1.0f - 1e-3f )
-		Z = NjFloat3( 1e-2f, Z.y > 0.0f ? 1.0f : -1.0f, 0 ).Normalize();
-	NjFloat3	X = (NjFloat3::UnitY ^ Z).Normalize();
-	NjFloat3	Y = Z ^ X;
+		Z = float3( 1e-2f, Z.y > 0.0f ? 1.0f : -1.0f, 0 ).Normalize();
+	float3	X = (float3::UnitY ^ Z).Normalize();
+	float3	Y = Z ^ X;
 
-	NjFloat4x4	Light2World;
+	float4x4	Light2World;
 	Light2World.SetRow( 0, X, 0 );
 	Light2World.SetRow( 1, Y, 0 );
 	Light2World.SetRow( 2, Z, 0 );
 	Light2World.SetRow( 3, m_Terrain2World.GetRow( 3 ) );
 
-	NjFloat4x4	World2Light = Light2World.Inverse();
+	float4x4	World2Light = Light2World.Inverse();
 
 	// Build frustum points
 	float		TanFovH = m_Camera.GetCB().Params.x;
 	float		TanFovV = m_Camera.GetCB().Params.y;
-	NjFloat4x4&	Camera2World = m_Camera.GetCB().Camera2World;
+	float4x4&	Camera2World = m_Camera.GetCB().Camera2World;
 
-	NjFloat3	pFrustumWorld[5] = {
-		NjFloat3::Zero,
-		FRUSTUM_FAR_CLIP * NjFloat3( -TanFovH, +TanFovV, 1 ),
-		FRUSTUM_FAR_CLIP * NjFloat3( -TanFovH, -TanFovV, 1 ),
-		FRUSTUM_FAR_CLIP * NjFloat3( +TanFovH, -TanFovV, 1 ),
-		FRUSTUM_FAR_CLIP * NjFloat3( +TanFovH, +TanFovV, 1 ),
+	float3	pFrustumWorld[5] = {
+		float3::Zero,
+		FRUSTUM_FAR_CLIP * float3( -TanFovH, +TanFovV, 1 ),
+		FRUSTUM_FAR_CLIP * float3( -TanFovH, -TanFovV, 1 ),
+		FRUSTUM_FAR_CLIP * float3( +TanFovH, -TanFovV, 1 ),
+		FRUSTUM_FAR_CLIP * float3( +TanFovH, +TanFovV, 1 ),
 	};
 	for ( int i=0; i < 5; i++ )
-		pFrustumWorld[i] = NjFloat4( pFrustumWorld[i], 1 ) * Camera2World;
+		pFrustumWorld[i] = float4( pFrustumWorld[i], 1 ) * Camera2World;
 
 	// Transform frustum and terrain into light space
-	NjFloat3	FrustumMin( 1e6f, 1e6f, 1e6f );
-	NjFloat3	FrustumMax( -1e6f, -1e6f, -1e6f );
+	float3	FrustumMin( 1e6f, 1e6f, 1e6f );
+	float3	FrustumMax( -1e6f, -1e6f, -1e6f );
 	for ( int i=0; i < 5; i++ )
 	{
-		NjFloat3	FrustumLight = NjFloat4( pFrustumWorld[i], 1 ) * World2Light;
+		float3	FrustumLight = float4( pFrustumWorld[i], 1 ) * World2Light;
 		FrustumMin = FrustumMin.Min( FrustumLight );
 		FrustumMax = FrustumMax.Max( FrustumLight );
 	}
-	NjFloat3	TerrainMin( 1e6f, 1e6f, 1e6f );
-	NjFloat3	TerrainMax( -1e6f, -1e6f, -1e6f );
+	float3	TerrainMin( 1e6f, 1e6f, 1e6f );
+	float3	TerrainMax( -1e6f, -1e6f, -1e6f );
 	for ( int i=0; i < 8; i++ )
 	{
 		float	X = 2.0f * (i&1) - 1.0f;
 		float	Y = float( (i>>1)&1 );
 		float	Z = 2.0f * ((i>>2)&1) - 1.0f;
 
-		NjFloat4	TerrainWorld = NjFloat4( X, 0, Z, 1 ) * m_Terrain2World;
+		float4	TerrainWorld = float4( X, 0, Z, 1 ) * m_Terrain2World;
 					TerrainWorld.y = m_pCB_Object->m.TerrainHeight * Y;
 
-		NjFloat3	TerrainLight = TerrainWorld * World2Light;
+		float3	TerrainLight = TerrainWorld * World2Light;
 		TerrainMin = TerrainMin.Min( TerrainLight );
 		TerrainMax = TerrainMax.Max( TerrainLight );
 	}
@@ -1429,21 +1429,21 @@ NjFloat4x4	EffectVolumetric::ComputeTerrainShadowTransform()
 	FrustumMin = FrustumMin.Max( TerrainMin );
 	FrustumMax = FrustumMax.Min( TerrainMax );
 
-	NjFloat3	Center = 0.5f * (FrustumMin + FrustumMax);
-	NjFloat3	Scale = 0.5f * (FrustumMax - FrustumMin);
-	NjFloat4x4	Light2Proj;
-	Light2Proj.SetRow( 0, NjFloat4( 1.0f / Scale.x, 0, 0, 0 ) );
-	Light2Proj.SetRow( 1, NjFloat4( 0, 1.0f / Scale.y, 0, 0 ) );
-	Light2Proj.SetRow( 2, NjFloat4( 0, 0, 0.5f / Scale.z, 0 ) );
-	Light2Proj.SetRow( 3, NjFloat4( -Center.x / Scale.x, -Center.y / Scale.y, -0.5f * FrustumMin.z / Scale.z, 1 ) );
+	float3	Center = 0.5f * (FrustumMin + FrustumMax);
+	float3	Scale = 0.5f * (FrustumMax - FrustumMin);
+	float4x4	Light2Proj;
+	Light2Proj.SetRow( 0, float4( 1.0f / Scale.x, 0, 0, 0 ) );
+	Light2Proj.SetRow( 1, float4( 0, 1.0f / Scale.y, 0, 0 ) );
+	Light2Proj.SetRow( 2, float4( 0, 0, 0.5f / Scale.z, 0 ) );
+	Light2Proj.SetRow( 3, float4( -Center.x / Scale.x, -Center.y / Scale.y, -0.5f * FrustumMin.z / Scale.z, 1 ) );
 
-	NjFloat4x4	World2Proj = World2Light * Light2Proj;
+	float4x4	World2Proj = World2Light * Light2Proj;
 
 // CHECK
-NjFloat4	FrustumShadow;
+float4	FrustumShadow;
 for ( int i=0; i < 5; i++ )
 {
-	FrustumShadow = NjFloat4( pFrustumWorld[i], 1 ) * World2Proj;
+	FrustumShadow = float4( pFrustumWorld[i], 1 ) * World2Proj;
 }
 // CHECK
 
@@ -1889,20 +1889,20 @@ void	EffectVolumetric::BuildTransmittanceTable( int _Width, int _Height, Texture
 		delete[] m_pTableTransmittance;
 	}
 
-	m_pTableTransmittance = new NjFloat3[_Width*_Height];
+	m_pTableTransmittance = new float3[_Width*_Height];
 
 	float		HRefRayleigh = 8.0f;
 	float		HRefMie = 1.2f;
 
 	float		Sigma_s_Mie = 0.004f;	// !!!May cause strong optical depths and very low values if increased!!
-	NjFloat3	Sigma_t_Mie = (Sigma_s_Mie / 0.9f) * NjFloat3::One;	// Should this be a parameter as well?? People might set it to values > 1 and that's physically incorrect...
-	NjFloat3	Sigma_s_Rayleigh( 0.0058f, 0.0135f, 0.0331f );
+	float3	Sigma_t_Mie = (Sigma_s_Mie / 0.9f) * float3::One;	// Should this be a parameter as well?? People might set it to values > 1 and that's physically incorrect...
+	float3	Sigma_s_Rayleigh( 0.0058f, 0.0135f, 0.0331f );
 //	NjFloat3	Sigma_s_Rayleigh( 0, 0, 0 );
 								  
-NjFloat3	MaxopticalDepth = NjFloat3::Zero;
+float3	MaxopticalDepth = float3::Zero;
 int		MaxOpticalDepthX = -1;
 int		MaxOpticalDepthY = -1;
-	NjFloat2	UV;
+	float2	UV;
 	for ( int Y=0; Y < _Height; Y++ ) {
 		UV.y = Y / (_Height-1.0f);
 		float	AltitudeKm = UV.y*UV.y * ATMOSPHERE_THICKNESS_KM;					// Grow quadratically to have more precision near the ground
@@ -1914,7 +1914,7 @@ int		MaxOpticalDepthY = -1;
 		float	CosThetaMin = -0.15f;
 #endif
 
-		NjFloat3*	scanline = m_pTableTransmittance + _Width * Y;
+		float3*	scanline = m_pTableTransmittance + _Width * Y;
 
 		for ( int X=0; X < _Width; X++, scanline++ ) {	// CosTheta changes sign at X=0xB8 (UV.x = 71%) ==> 0xB7=-0.00226515974 & 0xB8=+0.00191573682
 			UV.x = float(X) / _Width;
@@ -1945,7 +1945,7 @@ int		MaxOpticalDepthY = -1;
 //CosTheta = 1.0f - 0.999f * (1.0f - CosTheta);
 
 			bool		groundHit = false;
-			NjFloat3	OpticalDepth = Sigma_s_Rayleigh * ComputeOpticalDepth( AltitudeKm, CosTheta, HRefRayleigh, groundHit ) + Sigma_t_Mie * ComputeOpticalDepth( AltitudeKm, CosTheta, HRefMie, groundHit );
+			float3	OpticalDepth = Sigma_s_Rayleigh * ComputeOpticalDepth( AltitudeKm, CosTheta, HRefRayleigh, groundHit ) + Sigma_t_Mie * ComputeOpticalDepth( AltitudeKm, CosTheta, HRefMie, groundHit );
 // 			if ( groundHit ) {
 // 				scanline->Set( 1e-4f, 1e-4f, 1e-4f );	// Special case...
 // 				continue;
@@ -2002,7 +2002,7 @@ if ( OpticalDepth.z > MaxopticalDepth.z ) {
 #ifdef _DEBUG
 const float	WORLD2KM = 0.5f;
 const float	CameraAltitudeKm = WORLD2KM * 1.5f;
-NjFloat3	PositionWorldKm( 0, CameraAltitudeKm, 0 );
+float3	PositionWorldKm( 0, CameraAltitudeKm, 0 );
 
 //float		ViewAngle = NUAJDEG2RAD(90.0f + 1.0f);	// Slightly downward
 //float		ViewAngle = NUAJDEG2RAD(90.0f + 0.5f);	// Slightly downward
@@ -2010,7 +2010,7 @@ NjFloat3	PositionWorldKm( 0, CameraAltitudeKm, 0 );
 float		CameraRadiusKm = GROUND_RADIUS_KM+CameraAltitudeKm;
 float		ViewAngle = acosf( -sqrtf( 1-GROUND_RADIUS_KM*GROUND_RADIUS_KM/(CameraRadiusKm*CameraRadiusKm) ) );
 
-NjFloat3	View = NjFloat3( sinf(ViewAngle), cosf(ViewAngle), 0 );
+float3	View = float3( sinf(ViewAngle), cosf(ViewAngle), 0 );
 
 float		HitDistanceKm = 200.0f;
 
@@ -2019,7 +2019,7 @@ float		HitDistanceKm = 200.0f;
 if ( View.y < 0.0f )
 	HitDistanceKm = MIN( HitDistanceKm, SphereIntersectionEnter( PositionWorldKm, View, 0.0f ) );					// Limit to the ground
 
-NjFloat3	Test0 = GetTransmittance( PositionWorldKm.y, View.y, HitDistanceKm );
+float3	Test0 = GetTransmittance( PositionWorldKm.y, View.y, HitDistanceKm );
 #endif
 
 
@@ -2028,13 +2028,13 @@ NjFloat3	Test0 = GetTransmittance( PositionWorldKm.y, View.y, HitDistanceKm );
 	// Build an actual RGBA16F texture from this table
 	{
 		D3D11_MAPPED_SUBRESOURCE	LockedResource = _StagingTexture.Map( 0, 0 );
-		NjHalf4*	pTarget = (NjHalf4*) LockedResource.pData;
+		half4*	pTarget = (half4*) LockedResource.pData;
 		for ( int Y=0; Y < _Height; Y++ ) {
-			NjFloat3*	pScanlineSource = m_pTableTransmittance + _Width*Y;
-			NjHalf4*	pScanlineTarget = pTarget + _Width*Y;
+			float3*	pScanlineSource = m_pTableTransmittance + _Width*Y;
+			half4*	pScanlineTarget = pTarget + _Width*Y;
 			for ( int X=0; X < _Width; X++, pScanlineSource++, pScanlineTarget++ ) {
 
-				*pScanlineTarget = NjFloat4( *pScanlineSource, 0 );
+				*pScanlineTarget = float4( *pScanlineSource, 0 );
 			}
 		}
 		_StagingTexture.UnMap( 0, 0 );
@@ -2044,24 +2044,24 @@ NjFloat3	Test0 = GetTransmittance( PositionWorldKm.y, View.y, HitDistanceKm );
 float	EffectVolumetric::ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, const float _Href, bool& _bGroundHit, int _StepsCount ) const
 {
 	// Compute distance to atmosphere or ground, whichever comes first
-	NjFloat4	PositionKm = NjFloat4( 0.0f, 1e-2f + _AltitudeKm, 0.0f, 0.0f );
-	NjFloat3	View = NjFloat3( sqrtf( 1.0f - _CosTheta*_CosTheta ), _CosTheta, 0.0f );
+	float4	PositionKm = float4( 0.0f, 1e-2f + _AltitudeKm, 0.0f, 0.0f );
+	float3	View = float3( sqrtf( 1.0f - _CosTheta*_CosTheta ), _CosTheta, 0.0f );
 	float	TraceDistanceKm = ComputeNearestHit( PositionKm, View, ATMOSPHERE_THICKNESS_KM, _bGroundHit );
 	if ( _bGroundHit )
  		return 1e5f;	// Completely opaque due to hit with ground: no light can come this way...
  						// Be careful with large values in 16F!
 
-	NjFloat3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
+	float3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
 
 	float	Result = 0.0;
-	NjFloat4	StepKm = (TraceDistanceKm / _StepsCount) * NjFloat4( View, 1.0 );
+	float4	StepKm = (TraceDistanceKm / _StepsCount) * float4( View, 1.0 );
 
 	// Integrate until the hit
 	float	PreviousAltitudeKm = _AltitudeKm;
 	for ( int i=0; i < _StepsCount; i++ )
 	{
 		PositionKm = PositionKm + StepKm;
-		_AltitudeKm = (NjFloat3(PositionKm) - EarthCenterKm).Length() - GROUND_RADIUS_KM;
+		_AltitudeKm = (float3(PositionKm) - EarthCenterKm).Length() - GROUND_RADIUS_KM;
 		Result += expf( (PreviousAltitudeKm + _AltitudeKm) * (-0.5f / _Href) );	// Gives the integral of a linear interpolation in altitude
 		PreviousAltitudeKm = _AltitudeKm;
 	}
@@ -2069,7 +2069,7 @@ float	EffectVolumetric::ComputeOpticalDepth( float _AltitudeKm, float _CosTheta,
 	return Result * StepKm.w;
 }
 
-NjFloat3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta ) const
+float3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta ) const
 {
 	float	NormalizedAltitude = sqrtf( max( 0.0f, _AltitudeKm ) * (1.0f / ATMOSPHERE_THICKNESS_KM) );
 
@@ -2081,13 +2081,13 @@ NjFloat3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta 
 #endif
  	float	NormalizedCosTheta = atan( (_CosTheta - CosThetaMin) / (1.0f - CosThetaMin) * tan(TRANSMITTANCE_TAN_MAX) ) / TRANSMITTANCE_TAN_MAX;
 
-	NjFloat2	UV( NormalizedCosTheta, NormalizedAltitude );
+	float2	UV( NormalizedCosTheta, NormalizedAltitude );
 
-	NjFloat3	Result = SampleTransmittance( UV );
+	float3	Result = SampleTransmittance( UV );
 	return Result;
 }
 
-NjFloat3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm ) const
+float3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm ) const
 {
 	// P0 = [0, _RadiusKm]
 	// V  = [SinTheta, CosTheta]
@@ -2102,7 +2102,7 @@ NjFloat3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta,
 
 	float	CosThetaGround = -sqrtf( 1.0f - (GROUND_RADIUS_KM*GROUND_RADIUS_KM) / (RadiusKm*RadiusKm) );
 
-	NjFloat3	T0, T1;
+	float3	T0, T1;
 	if ( _CosTheta > CosThetaGround )
 	{
 		T0 = GetTransmittance( _AltitudeKm, _CosTheta );
@@ -2114,7 +2114,7 @@ NjFloat3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta,
 		T1 = GetTransmittance( _AltitudeKm, -_CosTheta );
 	}
 
-	NjFloat3	Result = T0 / T1;
+	float3	Result = T0 / T1;
 
 //CHECK No really 16-bits precision computation...
 // NjHalf4		T0Half = NjHalf4( NjFloat4( T0, 0 ) );
@@ -2125,7 +2125,7 @@ NjFloat3	EffectVolumetric::GetTransmittance( float _AltitudeKm, float _CosTheta,
 	return Result;
 }
 
-NjFloat3	EffectVolumetric::SampleTransmittance( const NjFloat2 _UV ) const {
+float3	EffectVolumetric::SampleTransmittance( const float2 _UV ) const {
 
 	float	X = _UV.x * (TRANSMITTANCE_W-1);
 	float	Y = _UV.y * TRANSMITTANCE_H;
@@ -2139,13 +2139,13 @@ NjFloat3	EffectVolumetric::SampleTransmittance( const NjFloat2 _UV ) const {
 	int		Y1 = MIN( TRANSMITTANCE_H-1, Y0+1 );
 
 	// Bilerp values
-	const NjFloat3&	V00 = m_pTableTransmittance[TRANSMITTANCE_W*Y0+X0];
-	const NjFloat3&	V01 = m_pTableTransmittance[TRANSMITTANCE_W*Y0+X1];
-	const NjFloat3&	V10 = m_pTableTransmittance[TRANSMITTANCE_W*Y1+X0];
-	const NjFloat3&	V11 = m_pTableTransmittance[TRANSMITTANCE_W*Y1+X1];
-	NjFloat3	V0 = V00 + x * (V01 - V00);
-	NjFloat3	V1 = V10 + x * (V11 - V10);
-	NjFloat3	V = V0 + y * (V1 - V0);
+	const float3&	V00 = m_pTableTransmittance[TRANSMITTANCE_W*Y0+X0];
+	const float3&	V01 = m_pTableTransmittance[TRANSMITTANCE_W*Y0+X1];
+	const float3&	V10 = m_pTableTransmittance[TRANSMITTANCE_W*Y1+X0];
+	const float3&	V11 = m_pTableTransmittance[TRANSMITTANCE_W*Y1+X1];
+	float3	V0 = V00 + x * (V01 - V00);
+	float3	V1 = V10 + x * (V11 - V10);
+	float3	V = V0 + y * (V1 - V0);
 	return V;
 }
 
@@ -2153,10 +2153,10 @@ NjFloat3	EffectVolumetric::SampleTransmittance( const NjFloat2 _UV ) const {
 ////////////////////////////////////////////////////////////////////////////////////////
 // Planetary Helpers
 //
-void	EffectVolumetric::ComputeSphericalData( const NjFloat3& _PositionKm, float& _AltitudeKm, NjFloat3& _Normal ) const
+void	EffectVolumetric::ComputeSphericalData( const float3& _PositionKm, float& _AltitudeKm, float3& _Normal ) const
 {
-	NjFloat3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
-	NjFloat3	Center2Position = _PositionKm - EarthCenterKm;
+	float3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
+	float3	Center2Position = _PositionKm - EarthCenterKm;
 	float	Radius2PositionKm = Center2Position.Length();
 	_AltitudeKm = Radius2PositionKm - GROUND_RADIUS_KM;
 	_Normal = Center2Position / Radius2PositionKm;
@@ -2165,11 +2165,11 @@ void	EffectVolumetric::ComputeSphericalData( const NjFloat3& _PositionKm, float&
 // ====== Intersections ======
 
 // Computes the enter intersection of a ray and a sphere
-float	EffectVolumetric::SphereIntersectionEnter( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm ) const
+float	EffectVolumetric::SphereIntersectionEnter( const float3& _PositionKm, const float3& _View, float _SphereAltitudeKm ) const
 {
-	NjFloat3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
+	float3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
 	float		R = _SphereAltitudeKm + GROUND_RADIUS_KM;
-	NjFloat3	D = _PositionKm - EarthCenterKm;
+	float3	D = _PositionKm - EarthCenterKm;
 	float		c = (D | D) - R*R;
 	float		b = D | _View;
 
@@ -2184,11 +2184,11 @@ float	EffectVolumetric::SphereIntersectionEnter( const NjFloat3& _PositionKm, co
 
 // Computes the exit intersection of a ray and a sphere
 // (No check for validity!)
-float	EffectVolumetric::SphereIntersectionExit( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm ) const
+float	EffectVolumetric::SphereIntersectionExit( const float3& _PositionKm, const float3& _View, float _SphereAltitudeKm ) const
 {
-	NjFloat3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
+	float3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
 	float		R = _SphereAltitudeKm + GROUND_RADIUS_KM;
-	NjFloat3	D = _PositionKm - EarthCenterKm;
+	float3	D = _PositionKm - EarthCenterKm;
 	float		c = (D | D) - R*R;
 	float		b = D | _View;
 
@@ -2203,11 +2203,11 @@ float	EffectVolumetric::SphereIntersectionExit( const NjFloat3& _PositionKm, con
 
 // Computes both intersections of a ray and a sphere
 // Returns INFINITY if no hit is found
-void	EffectVolumetric::SphereIntersections( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm, NjFloat2& _Hits ) const
+void	EffectVolumetric::SphereIntersections( const float3& _PositionKm, const float3& _View, float _SphereAltitudeKm, float2& _Hits ) const
 {
-	NjFloat3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
+	float3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
 	float	R = _SphereAltitudeKm + GROUND_RADIUS_KM;
-	NjFloat3	D = _PositionKm - EarthCenterKm;
+	float3	D = _PositionKm - EarthCenterKm;
 	float	c = (D | D) - R*R;
 	float	b = D | _View;
 
@@ -2223,9 +2223,9 @@ void	EffectVolumetric::SphereIntersections( const NjFloat3& _PositionKm, const N
 }
 
 // Computes the nearest hit between provided sphere and ground sphere
-float	EffectVolumetric::ComputeNearestHit( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm, bool& _IsGround ) const
+float	EffectVolumetric::ComputeNearestHit( const float3& _PositionKm, const float3& _View, float _SphereAltitudeKm, bool& _IsGround ) const
 {
-	NjFloat2	GroundHits;
+	float2	GroundHits;
 	SphereIntersections( _PositionKm, _View, 0.0, GroundHits );
 	float	SphereHit = SphereIntersectionExit( _PositionKm, _View, _SphereAltitudeKm );
 

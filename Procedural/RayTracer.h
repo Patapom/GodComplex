@@ -19,26 +19,26 @@ public:		// NESTED TYPES
 	//
 	struct	Quad
 	{
-		NjFloat3	Center;			// Center of the quad in WORLD space
-		NjFloat3	Normal;			// Normal to the quad in WORLD space
-		NjFloat3	Tangent;		// Tangent to the quad in WORLD space
-		NjFloat2	Size;			// Size of the quad in WORLD space
+		float3	Center;			// Center of the quad in WORLD space
+		float3	Normal;			// Normal to the quad in WORLD space
+		float3	Tangent;		// Tangent to the quad in WORLD space
+		float2	Size;			// Size of the quad in WORLD space
 		int			MaterialID;		// Material ID associated to the quad
 	};
 
 	struct	Ray
 	{
-		NjFloat3	Position;		// Ray position
-		NjFloat3	Direction;		// Ray direction
+		float3	Position;		// Ray position
+		float3	Direction;		// Ray direction
 		float		HitDistance;	// Distance to the hit
-		NjFloat2	HitUV;			// UV of the hit within the hit quad
+		float2	HitUV;			// UV of the hit within the hit quad
 		Quad*		pHitQuad;		// Pointer to the quad that was hit
 	};
 
 	struct	Quad_Internal : public Quad
 	{
-		NjFloat3	BiTangent;
-		NjFloat4	SizeAndInvSize;	// XY=0.5*Size ZW=1/(0.5*Size)
+		float3	BiTangent;
+		float4	SizeAndInvSize;	// XY=0.5*Size ZW=1/(0.5*Size)
 	};
 
 

@@ -74,7 +74,7 @@
 #include "Scene/Scene.h"
 
 
-extern const NjFloat4	LUMINANCE;	// D65 Illuminant with observer at 2°
+extern const float4	LUMINANCE;	// D65 Illuminant with observer at 2°
 
 //////////////////////////////////////////////////////////////////////////
 // Main info about the system

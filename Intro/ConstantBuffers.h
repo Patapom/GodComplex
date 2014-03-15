@@ -5,7 +5,7 @@
 
 struct CBGlobal 
 {
-	NjFloat4	Time;	// X=Time Y=DeltaTime ZW = 1/XY
+	float4	Time;	// X=Time Y=DeltaTime ZW = 1/XY
 };
 
 struct CBTest

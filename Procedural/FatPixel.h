@@ -6,7 +6,7 @@
 // From a bunch of pixels we can thus deduce the diffuse, specular tint, gloss, ambient occlusion, height and normal maps
 struct	Pixel
 {
- 	NjFloat4	RGBA;
+ 	float4	RGBA;
 	float		Height;
 	float		Roughness;
 	float		Metallic;
@@ -14,14 +14,14 @@ struct	Pixel
 
 	Pixel()
 	{
-		RGBA = NjFloat4::Zero;
+		RGBA = float4::Zero;
 		Height = 0.0f;
 		Roughness = 0.0f;
 		Metallic = 0.0f;
 		MatID = 0;
 	}
 
-	Pixel( const NjFloat4& _RGBA, float _Height=0.0f, float _Roughness=0.0f, float _Metallic=0.0f, int _MatID=0 )
+	Pixel( const float4& _RGBA, float _Height=0.0f, float _Roughness=0.0f, float _Metallic=0.0f, int _MatID=0 )
 	{
 		RGBA = _RGBA;
 		Height = _Height;

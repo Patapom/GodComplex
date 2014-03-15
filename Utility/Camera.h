@@ -28,13 +28,13 @@ private:	// NESTED TYPES
 
 	struct	CBData
 	{
-		NjFloat4	Params;				// X=AspectRatio*tan(FOV/2)  Y=tan(FOV/2)  Z=Near  W=Far
-		NjFloat4x4	Camera2World;
-		NjFloat4x4	World2Camera;
-		NjFloat4x4	Camera2Proj;
-		NjFloat4x4	Proj2Camera;
-		NjFloat4x4	World2Proj;
-		NjFloat4x4	Proj2World;
+		float4	Params;				// X=AspectRatio*tan(FOV/2)  Y=tan(FOV/2)  Z=Near  W=Far
+		float4x4	Camera2World;
+		float4x4	World2Camera;
+		float4x4	Camera2Proj;
+		float4x4	Proj2Camera;
+		float4x4	World2Proj;
+		float4x4	Proj2World;
 	};
 
 private:	// FIELDS
@@ -42,8 +42,8 @@ private:	// FIELDS
 	Device&			m_Device;
 	CB<CBData>*		m_pCB;
 
-	NjFloat3		m_Position;
-	NjFloat3		m_Target;
+	float3		m_Position;
+	float3		m_Target;
 
 public:		// PROPERTIES
  
@@ -58,6 +58,6 @@ public:		// METHODS
 	void	Upload( int _SlotIndex );
 
 	void	SetPerspective( float _FOV, float _AspectRatio, float _Near, float _Far );
-	void	LookAt( const NjFloat3& _Position, const NjFloat3& _Target, const NjFloat3& _Up );
+	void	LookAt( const float3& _Position, const float3& _Target, const float3& _Up );
 	void	UpdateCompositions();
 };

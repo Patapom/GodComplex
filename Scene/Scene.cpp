@@ -228,7 +228,7 @@ void	Scene::Node::Init( const U8*& _pData, ISceneTagger& _SceneTagger )
 	m_Local2Parent.m[4*3+3] = ReadF32( _pData );
 
 	// Retrieve LOCAL => WORLD
-	const NjFloat4x4&	Parent2World = m_pParent != NULL ? m_pParent->m_Local2World : NjFloat4x4::Identity;
+	const float4x4&	Parent2World = m_pParent != NULL ? m_pParent->m_Local2World : float4x4::Identity;
 	m_Local2World = m_Local2Parent * Parent2World;
 
 	InitSpecific( _pData, _SceneTagger );
@@ -321,8 +321,8 @@ Scene::Mesh::~Mesh()
 
 void	Scene::Mesh::InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger )
 {
-	m_BBoxMin = 1e8f * NjFloat3::One;
-	m_BBoxMax = -1e8f * NjFloat3::One;
+	m_BBoxMin = 1e8f * float3::One;
+	m_BBoxMax = -1e8f * float3::One;
 
 	m_PrimitivesCount = ReadU16( _pData );
 	m_pPrimitives = new Primitive[m_PrimitivesCount];

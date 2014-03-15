@@ -620,7 +620,7 @@ namespace ProbeSHEncoder
 							FaceInfluences[FaceIndex] = new ProbeInfluence() { ProbeID = ProbeInfluence.INVALID_PROBEID, Importance = 0.0 };
 					}
 
-				UInt16[]	VertexStreamProbeID = new UInt16[GCX.m_TotalVerticesCount];	// The final vertex stream we're building
+				UInt32[]	VertexStreamProbeID = new UInt32[GCX.m_TotalVerticesCount];	// The final vertex stream we're building
 
 
 				// Establish data for progress measurement
@@ -763,7 +763,7 @@ namespace ProbeSHEncoder
 
 						// Finally, we can splat probe IDs into the giant vertex stream
 						for ( int VertexIndex=0; VertexIndex < P.m_Vertices.Length; VertexIndex++ )
-							VertexStreamProbeID[P.m_VertexOffset+VertexIndex] = (UInt16) (BestProbePerVertex[VertexIndex] != null ? BestProbePerVertex[VertexIndex].ProbeID : 0xFFFF);	// TODO <= warn if we still have invalid vertices!
+							VertexStreamProbeID[P.m_VertexOffset+VertexIndex] = (UInt32) (BestProbePerVertex[VertexIndex] != null ? BestProbePerVertex[VertexIndex].ProbeID : 0xFFFFFFFF);	// TODO <= warn if we still have invalid vertices!
 					}
 
 					MeshIndex++;

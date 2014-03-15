@@ -54,7 +54,7 @@ namespace FBXTestConverter
 				using ( BinaryWriter W = new BinaryWriter( S ) )
 				{
 					GCXFormat.Scene	GCX = new GCXFormat.Scene( Scene );
-					Scene.Save( W );
+					GCX.Save( W );
 				}
 
 			// Write infos
