@@ -4,7 +4,7 @@
 //#define SCENE_CORRIDOR		// Simple corridor
 #define SCENE_SPONZA		// Sponza Atrium
 
-//#define	LOAD_PROBES			// Define this to load probes instead of computing them
+#define	LOAD_PROBES			// Define this to load probes instead of computing them
 #define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
 
 // Scene selection (also think about changing the scene in the .RC!)
@@ -345,35 +345,45 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 
 	// Cache meshes & probes since my ForEach function is slow as hell!! ^^
-	m_MeshesCount = 0;
-	Scene::Mesh*	pMesh = NULL;
-	while ( (pMesh = (Scene::Mesh*) m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
 	{
-		m_MeshesCount++;
-	}
-	m_ppCachedMeshes = new Scene::Mesh*[m_MeshesCount];
-	m_MeshesCount = 0;
-	pMesh = NULL;
-	while ( (pMesh = (Scene::Mesh*) m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
-	{
-		m_ppCachedMeshes[m_MeshesCount++] = pMesh;
-	}
+		m_MeshesCount = 0;
+		m_ProbesCount = 0;
 
-	// Allocate probes
-	m_ProbesCount = 0;
-	Scene::Node*	pSceneProbe = NULL;
-	while ( pSceneProbe = m_Scene.ForEach( Scene::Node::PROBE, pSceneProbe ) )
-	{
-		m_ProbesCount++;
-	}
-	m_pProbes = new ProbeStruct[m_ProbesCount];
+		class	VisitorCountNodes : public Scene::IVisitor
+		{
+			EffectGlobalIllum2&	m_Owner;
+		public:
+			VisitorCountNodes( EffectGlobalIllum2& _Owner ) : m_Owner( _Owner ) {}
+			void	HandleNode( Scene::Node& _Node ) override
+			{
+				if ( _Node.m_Type == Scene::Node::MESH )
+					m_Owner.m_MeshesCount++;
+				else if ( _Node.m_Type == Scene::Node::PROBE )
+					m_Owner.m_ProbesCount++;
+			}
+		}	Visitor0( *this );
+		m_Scene.ForEach( Visitor0 );
 
-	pSceneProbe = NULL;
-	m_ProbesCount = 0;
-	while ( pSceneProbe = m_Scene.ForEach( Scene::Node::PROBE, pSceneProbe ) )
-	{
-		m_pProbes[m_ProbesCount].pSceneProbe = (Scene::Probe*) pSceneProbe;
-		m_ProbesCount++;
+		m_ppCachedMeshes = new Scene::Mesh*[m_MeshesCount];
+		m_pProbes = new ProbeStruct[m_ProbesCount];
+
+		m_MeshesCount = 0;
+		m_ProbesCount = 0;
+
+		class	VisitorStoreNodes : public Scene::IVisitor
+		{
+			EffectGlobalIllum2&	m_Owner;
+		public:
+			VisitorStoreNodes( EffectGlobalIllum2& _Owner ) : m_Owner( _Owner ) {}
+			void	HandleNode( Scene::Node& _Node ) override
+			{
+				if ( _Node.m_Type == Scene::Node::MESH )
+					m_Owner.m_ppCachedMeshes[m_Owner.m_MeshesCount++] = (Scene::Mesh*) &_Node;
+				else if ( _Node.m_Type == Scene::Node::PROBE )
+					m_Owner.m_pProbes[m_Owner.m_ProbesCount++].pSceneProbe = (Scene::Probe*) &_Node;
+			}
+		}	Visitor1( *this );
+		m_Scene.ForEach( Visitor1 );
 	}
 
 
@@ -608,15 +618,21 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	// PATH ANIMATION (follow curve)
 	static bool	bPathPreComputed = false;
 #ifdef SCENE_SPONZA
-	const bool	PING_PONG = true;
-	const int	PATH_NODES_COUNT = 4;
+	const float	TOTAL_PATH_TIME = 40.0f;	// Total time to walk the path
+	const bool	PING_PONG = false;
+	const int	PATH_NODES_COUNT = 5;
+	const float	Y = 180.0f;	// Ground floor
+//	const float	Y = 550.0f;	// First floor
+
 	static float3	pPath[] = {
-		0.01f * float3( 470.669f, 25.833f, -573.035f ),	// Street exterior
-		0.01f * float3( 470.669f, 25.833f, 1263.286f ),	// Shop interior
-		0.01f * float3( 876.358f, 25.833f, 1263.286f ),	// Shop interior
-		0.01f * float3( 918.254f, 25.833f, 3848.391f ),	// Shop yard
+		0.01f * float3( -1229.0f, Y, -462.0f ),
+		0.01f * float3( -1229.0f, Y, 392.0f ),
+		0.01f * float3( 1075.0f, Y, 392.0f ),
+		0.01f * float3( 1075.0f, Y, -462.0f ),
+		0.01f * float3( -1229.0f, Y, -462.0f ),
 	};
 #else
+	const float	TOTAL_PATH_TIME = 20.0f;	// Total time to walk the path
 	const bool	PING_PONG = true;
 	const int	PATH_NODES_COUNT = 4;
 	static float3	pPath[] = {
@@ -640,9 +656,8 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		bPathPreComputed = true;
 	}
 
-	const float	TotalPathTime = 20.0f;	// Total time to walk the path
-	float	PathTime = PING_PONG ? TotalPathTime - abs( fmodf( AnimateLightTime0, 2.0f * TotalPathTime ) - TotalPathTime ) : fmodf( AnimateLightTime0, TotalPathTime );
-	float	PathLength = PathTime * TotalPathLength / TotalPathTime;
+	float	PathTime = PING_PONG ? TOTAL_PATH_TIME - abs( fmodf( AnimateLightTime0, 2.0f * TOTAL_PATH_TIME ) - TOTAL_PATH_TIME ) : fmodf( AnimateLightTime0, TOTAL_PATH_TIME );
+	float	PathLength = PathTime * TotalPathLength / TOTAL_PATH_TIME;
 	for ( int PathNodeIndex=0; PathNodeIndex < PATH_NODES_COUNT-1; PathNodeIndex++ )
 	{
 		if ( PathLength >= pPathSegmentsLength[PathNodeIndex] && PathLength <= pPathSegmentsLength[PathNodeIndex+1] )
