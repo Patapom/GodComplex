@@ -84,6 +84,9 @@ Scene::Node*	Scene::ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChi
 		if ( pChild->m_Type == _Type )
 			return pChild;
 
+		if ( pChild->m_ChildrenCount == 0 )
+			continue;
+
 		// Look in the child's children...
 		Scene::Node*	pMatch = ForEach( _Type, pChild );
 		if ( pMatch != NULL )

@@ -78,6 +78,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir)\Packages\DirectXTex\DirectXTex;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include;C:\Program Files\NVIDIA Corporation\Cg\include\Cg;C:\Program Files\3DSMax7\maxsdk\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\Packages\DirectXTex\DirectXTex\Bin\Desktop_DXSDK\Win32\Release;C:\Program Files\NVIDIA Corporation\Cg\lib;C:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Lib;C:\Program Files\3DSMax7\maxsdk\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>

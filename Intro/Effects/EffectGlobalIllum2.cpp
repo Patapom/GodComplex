@@ -1,19 +1,33 @@
 ﻿#include "../../GodComplex.h"
 #include "EffectGlobalIllum2.h"
 
+//#define SCENE_CORRIDOR		// Simple corridor
 #define SCENE_SPONZA		// Sponza Atrium
 
-#define	LOAD_PROBES			// Define this to load probes instead of computing them
-#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene
+//#define	LOAD_PROBES			// Define this to load probes instead of computing them
+#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
 
 // Scene selection (also think about changing the scene in the .RC!)
-//#define SCENE_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_1Probe\\"
-//#define SCENE_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
-#define SCENE_PATH					"..\\Arkane\\Probes\\City\\"
-
+#ifdef SCENE_CORRIDOR
+#define SCENE_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
 #ifdef LOAD_PROBES	// Can't use that until it's been baked!
-#define USE_PER_VERTEX_PROBE_ID		"..\\Arkane\\City_ProbeID.vertexStream.U16"
+#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\GITest1_ProbeID.vertexStream.U16"
 #endif
+
+#elif defined(SCENE_SPONZA)
+#define SCENE_PATH				".\\Resources\\Scenes\\Sponza\\Probes\\"
+#ifdef LOAD_PROBES	// Can't use that until it's been baked!
+#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\Sponza\\Sponza_ProbeID.vertexStream.U16"
+#endif
+
+#else
+#define SCENE_PATH				"..\\Arkane\\Probes\\City\\"
+#ifdef LOAD_PROBES	// Can't use that until it's been baked!
+#define USE_PER_VERTEX_PROBE_ID	"..\\Arkane\\City_ProbeID.vertexStream.U16"
+#endif
+
+#endif
+
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
@@ -31,6 +45,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 	m_SceneVertexFormatDesc.AggregateVertexFormat( VertexFormatP3N3G3B3T2::DESCRIPTOR );
 
 	{
+// Main scene rendering is quite heavy so we prefer to reload it from binary instead
 //ScopedForceMaterialsLoadFromBinary		bisou;
 
 #ifdef USE_PER_VERTEX_PROBE_ID
@@ -58,7 +73,8 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
  		CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 7 );
 	}
 	{
-//ScopedForceMaterialsLoadFromBinary		bisou;
+// This one is REALLY heavy! So build it once and reload it from binary forever again
+ScopedForceMaterialsLoadFromBinary		bisou;
 		// Compute Shaders
  		CHECK_MATERIAL( m_pCSUpdateProbe = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 20 );
 	}
@@ -69,15 +85,14 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	//////////////////////////////////////////////////////////////////////////
 	// Create the textures
 	{
-// 		const char*	ppTextureFileNames[] = {
-// 			"./Resources/Scenes/GITest1/pata_diff_colo.pom",
-// 		};
-
 #ifndef	USE_WHITE_TEXTURES
 
 		const char*	ppTextureFileNames[] = {
 
-#ifdef SCENE_SPONZA
+#ifdef SCENE_CORRIDOR
+		"./Resources/Scenes/GITest1/pata_diff_colo.pom",
+
+#elif defined(SCENE_SPONZA)
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_thorn_diff.pom",
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_thorn_diff.pom",
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_thorn_ddn.pom",
@@ -583,28 +598,41 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pSB_LightsDynamic->m[0].Type = Scene::Light::POINT;
 	m_pSB_LightsDynamic->m[0].Parms.Set( 0.1f, 0.1f, 0, 0 );
 
-#if 0	// CORRIDOR ANIMATION (simple straight line)
+#ifdef SCENE_CORRIDOR
+	// CORRIDOR ANIMATION (simple straight line)
 
 //	m_pSB_LightsDynamic->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * AnimateLightTime0 ) );	// Move along the corridor
 	m_pSB_LightsDynamic->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime0 ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime0 ), 4.0f * sinf( 0.3f * AnimateLightTime0 ) );	// Move along the corridor
 
-#else	// CITY ANIMATION (follow curve)
-
+#else
+	// PATH ANIMATION (follow curve)
 	static bool	bPathPreComputed = false;
+#ifdef SCENE_SPONZA
+	const bool	PING_PONG = true;
+	const int	PATH_NODES_COUNT = 4;
 	static float3	pPath[] = {
 		0.01f * float3( 470.669f, 25.833f, -573.035f ),	// Street exterior
 		0.01f * float3( 470.669f, 25.833f, 1263.286f ),	// Shop interior
 		0.01f * float3( 876.358f, 25.833f, 1263.286f ),	// Shop interior
 		0.01f * float3( 918.254f, 25.833f, 3848.391f ),	// Shop yard
 	};
-	static float	pPathSegmentsLength[4];
+#else
+	const bool	PING_PONG = true;
+	const int	PATH_NODES_COUNT = 4;
+	static float3	pPath[] = {
+		0.01f * float3( 470.669f, 25.833f, -573.035f ),	// Street exterior
+		0.01f * float3( 470.669f, 25.833f, 1263.286f ),	// Shop interior
+		0.01f * float3( 876.358f, 25.833f, 1263.286f ),	// Shop interior
+		0.01f * float3( 918.254f, 25.833f, 3848.391f ),	// Shop yard
+	};
+#endif
+	static float	pPathSegmentsLength[PATH_NODES_COUNT];
 	static float	TotalPathLength = 0.0f;
 
-	int		PathNodesCount = sizeof(pPath) / sizeof(float3);
 	if ( !bPathPreComputed )
 	{	// Precompute path lengths
 		pPathSegmentsLength[0] = 0.0f;
-		for ( int PathNodeIndex=1; PathNodeIndex < PathNodesCount; PathNodeIndex++ )
+		for ( int PathNodeIndex=1; PathNodeIndex < PATH_NODES_COUNT; PathNodeIndex++ )
 		{
 			TotalPathLength += (pPath[PathNodeIndex] - pPath[PathNodeIndex-1]).Length();
 			pPathSegmentsLength[PathNodeIndex] = TotalPathLength;
@@ -613,9 +641,9 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	}
 
 	const float	TotalPathTime = 20.0f;	// Total time to walk the path
-	float	PathTime = TotalPathTime - abs( fmodf( AnimateLightTime0, 2.0f * TotalPathTime ) - TotalPathTime );
+	float	PathTime = PING_PONG ? TotalPathTime - abs( fmodf( AnimateLightTime0, 2.0f * TotalPathTime ) - TotalPathTime ) : fmodf( AnimateLightTime0, TotalPathTime );
 	float	PathLength = PathTime * TotalPathLength / TotalPathTime;
-	for ( int PathNodeIndex=0; PathNodeIndex < PathNodesCount-1; PathNodeIndex++ )
+	for ( int PathNodeIndex=0; PathNodeIndex < PATH_NODES_COUNT-1; PathNodeIndex++ )
 	{
 		if ( PathLength >= pPathSegmentsLength[PathNodeIndex] && PathLength <= pPathSegmentsLength[PathNodeIndex+1] )
 		{
@@ -1278,7 +1306,7 @@ void	EffectGlobalIllum2::PreComputeProbes()
 			m_Device.SetRenderTargets( CUBE_MAP_SIZE, CUBE_MAP_SIZE, 3, ppViews, pRTCubeMapDepth->GetDepthStencilView() );
 
 			// Render scene
-			for ( int MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
+			for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
 				RenderMesh( *m_ppCachedMeshes[MeshIndex], m_pMatRenderCubeMap );
 
 
@@ -1660,6 +1688,10 @@ void*	EffectGlobalIllum2::TagMaterial( const Scene& _Owner, Scene::Material& _Ma
 		return m_pMatRenderEmissive;	// Special rendering for emissive materials!
 	}
 
+#ifdef _DEBUG
+	OutputDebugString( "New scene material tagged!\n" );
+#endif
+
 	return m_pMatRender;
 }
 void*	EffectGlobalIllum2::TagTexture( const Scene& _Owner, Scene::Material::Texture& _Texture )
@@ -1737,6 +1769,10 @@ void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh,
 	m_TotalVerticesCount += pPrim->GetVerticesCount();						// Increase total amount of vertices
 	m_TotalFacesCount += pPrim->GetFacesCount();							// Increase total amount of faces
 	m_TotalPrimitivesCount++;
+
+#ifdef _DEBUG
+	OutputDebugString( "New scene primitive tagged!\n" );
+#endif
 
 	return pPrim;
 }
