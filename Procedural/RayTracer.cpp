@@ -36,7 +36,7 @@ bool	RayTracer::Trace( Ray& _Ray )
 	Quad_Internal*	pQuad = m_pQuads;
 	for ( int QuadIndex=0; QuadIndex < m_QuadsCount; QuadIndex++, pQuad++ )
 	{
-		NjFloat3	ToCenter = pQuad->Center - _Ray.Position;
+		float3	ToCenter = pQuad->Center - _Ray.Position;
 		float		HeightFromQuad = ToCenter | pQuad->Normal;		// Negative if above quad
 		float		SlopeToQuad = _Ray.Direction | pQuad->Normal;	// Rate at which we get closer to the quad
 		float		HitDistance = HeightFromQuad / SlopeToQuad;		// Distance at which we'll hit the quad's plane
@@ -44,8 +44,8 @@ bool	RayTracer::Trace( Ray& _Ray )
 			continue;	// No hit, or we hit too far away from best hit...
 
 		// Compute hit position and check we're within the quad
-		NjFloat3	HitPosition = _Ray.Position + HitDistance * _Ray.Direction;	// Position within quad's plane
-		NjFloat3	FromCenter = HitPosition - pQuad->Center;
+		float3	HitPosition = _Ray.Position + HitDistance * _Ray.Direction;	// Position within quad's plane
+		float3	FromCenter = HitPosition - pQuad->Center;
 		float		DistanceX = FromCenter | pQuad->Tangent;
 		float		DistanceY = FromCenter | pQuad->BiTangent;
 		if ( abs(DistanceX) > pQuad->SizeAndInvSize.x || abs(DistanceY) > pQuad->SizeAndInvSize.y )

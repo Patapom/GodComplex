@@ -202,10 +202,10 @@ void	EffectDOF::Render( float _Time, float _DeltaTime )
 	float		Phi = _Time; 
 	float		Theta = 0.33f * _Time; 
 
-	NjFloat3	P( 0.0f, 1.0f, 0.0f );
-	NjFloat3	Axis( sinf(Theta)*sinf(Phi), sinf(Theta)*cosf(Phi), cosf(Theta) );
-	NjFloat4	R = NjFloat4::QuatFromAngleAxis( _Time, Axis );
-	NjFloat3	S = 0.25f * NjFloat3::One;
+	float3	P( 0.0f, 1.0f, 0.0f );
+	float3	Axis( sinf(Theta)*sinf(Phi), sinf(Theta)*cosf(Phi), cosf(Theta) );
+	float4	R = float4::QuatFromAngleAxis( _Time, Axis );
+	float3	S = 0.25f * float3::One;
 
 	m_pCB_Object->m.Local2World.PRS( P, R, S );
 	m_pCB_Object->UpdateData();
@@ -783,7 +783,7 @@ void*	EffectDOF::TagPrimitive( const Scene& _Owner, const Scene::Mesh& _Mesh, co
 void	EffectDOF::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride )
 {
 	// Upload the object's CB
-	memcpy( &m_pCB_Object->m.Local2World, &_Mesh.m_Local2World, sizeof(NjFloat4x4) );
+	memcpy( &m_pCB_Object->m.Local2World, &_Mesh.m_Local2World, sizeof(float4x4) );
 	m_pCB_Object->UpdateData();
 
 	for ( int PrimitiveIndex=0; PrimitiveIndex < _Mesh.m_PrimitivesCount; PrimitiveIndex++ )

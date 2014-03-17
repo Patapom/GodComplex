@@ -60,9 +60,9 @@ namespace PNG2RAW
 			}
 #else
 			// Convert to POM format (i.e. DirectX format actually)
-			ConvertPOM( new FileInfo( "Resources/Scenes/GITest1/pata_diff_color_small.png" ), new FileInfo( "Resources/Scenes/GITest1/pata_diff_colo.pom" ), true );
-
-			ConvertPOM( new DirectoryInfo( "../Arkane/Textures" ), new DirectoryInfo( "../Arkane/TexturesPOM" ), "_d;_s" );
+//			ConvertPOM( new FileInfo( "Resources/Scenes/GITest1/pata_diff_color_small.png" ), new FileInfo( "Resources/Scenes/GITest1/pata_diff_colo.pom" ), true );
+//			ConvertPOM( new DirectoryInfo( "../Arkane/Textures" ), new DirectoryInfo( "../Arkane/TexturesPOM" ), "_d;_s" );
+			ConvertPOM( new DirectoryInfo( "./Resources/Scenes/Sponza/TexturesPNG" ), new DirectoryInfo( "./Resources/Scenes/Sponza/TexturesPOM" ), "_dif;_diff;_spec" );
 
 #endif
 		}

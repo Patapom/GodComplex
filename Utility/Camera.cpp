@@ -3,7 +3,7 @@
 Camera::Camera( Device& _Device ) : m_Device( _Device )
 {
 	m_pCB = new CB<CBData>( m_Device, 0, true );
-	m_pCB->m.Camera2World = m_pCB->m.World2Camera = m_pCB->m.Camera2Proj = m_pCB->m.Proj2Camera = NjFloat4x4::Identity;
+	m_pCB->m.Camera2World = m_pCB->m.World2Camera = m_pCB->m.Camera2Proj = m_pCB->m.Proj2Camera = float4x4::Identity;
 }
 Camera::~Camera()
 {
@@ -19,7 +19,7 @@ void	Camera::SetPerspective( float _FOV, float _AspectRatio, float _Near, float 
 
 	m_pCB->m.Params.Set( W, H, _Near, _Far );
 
-	m_pCB->m.Camera2Proj = NjFloat4x4::ProjectionPerspective( _FOV, _AspectRatio, _Near, _Far );
+	m_pCB->m.Camera2Proj = float4x4::ProjectionPerspective( _FOV, _AspectRatio, _Near, _Far );
 
 // 	float	Q =  _Far / (_Far - _Near);
 // 	m_pCB->m.Camera2Proj.SetRow( 0, NjFloat4( 1.0f / W, 0.0f, 0.0f, 0.0f ) );
@@ -36,15 +36,15 @@ void	Camera::SetPerspective( float _FOV, float _AspectRatio, float _Near, float 
 	UpdateCompositions();
 }
 
-void	Camera::LookAt( const NjFloat3& _Position, const NjFloat3& _Target, const NjFloat3& _Up )
+void	Camera::LookAt( const float3& _Position, const float3& _Target, const float3& _Up )
 {
-	NjFloat3	Z = _Target - _Position;
+	float3	Z = _Target - _Position;
 	Z.Normalize();
 
-	NjFloat3	X = Z ^ _Up;
+	float3	X = Z ^ _Up;
 	X.Normalize();
 
-	NjFloat3	Y = X ^ Z;
+	float3	Y = X ^ Z;
 
 	m_pCB->m.Camera2World.SetRow( 0, X, 0.0f );
 	m_pCB->m.Camera2World.SetRow( 1, Y, 0.0f );

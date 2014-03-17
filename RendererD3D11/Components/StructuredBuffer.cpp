@@ -108,7 +108,7 @@ void	StructuredBuffer::Clear( U32 _pValue[4] )
 	m_Device.DXContext().ClearUnorderedAccessViewUint( m_pUnorderedAccessView, _pValue );
 }
 
-void	StructuredBuffer::Clear( const NjFloat4& _Value )
+void	StructuredBuffer::Clear( const float4& _Value )
 {
 	m_Device.DXContext().ClearUnorderedAccessViewFloat( m_pUnorderedAccessView, &_Value.x );
 }

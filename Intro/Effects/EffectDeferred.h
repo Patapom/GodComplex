@@ -10,9 +10,9 @@ public:		// NESTED TYPES
 
 	struct CBRender
 	{
-		NjFloat3	dUV;
+		float3	dUV;
 		float		__PAD;
-		NjFloat3	Ambient;
+		float3	Ambient;
 	};
 
 	class	Object
@@ -21,17 +21,17 @@ public:		// NESTED TYPES
 
 		struct	CBObject
 		{
-			NjFloat4x4	Local2World;
+			float4x4	Local2World;
 		};
 
 	public:		// FIELDS
-		NjFloat3	m_Position;
-		NjFloat4	m_Rotation;	// Quaternion
-		NjFloat3	m_Scale;
+		float3	m_Position;
+		float4	m_Rotation;	// Quaternion
+		float3	m_Scale;
 
 		// Animation
 		float		m_AnimRotationSpeed;
-		NjFloat3	m_AnimPositionCircleCenter;
+		float3	m_AnimPositionCircleCenter;
 		float		m_AnimPositionCircleRadius;
 		float		m_AnimPositionCircleSpeed;
 
@@ -58,13 +58,13 @@ public:		// NESTED TYPES
 
 		struct	CBLight
 		{
-			NjFloat3	Position;
+			float3	Position;
 			U32			Type;
-			NjFloat3	Direction;
+			float3	Direction;
 			float		__PAD1;
-			NjFloat3	Color;
+			float3	Color;
 			float		__PAD2;
-			NjFloat4	Data;
+			float4	Data;
 		};
 
 	public:
@@ -74,9 +74,9 @@ public:		// NESTED TYPES
 			SPOT,
 			DIRECTIONAL
 		}			m_Type;
-		NjFloat3	m_Position;
-		NjFloat3	m_Direction;
-		NjFloat3	m_Color;
+		float3	m_Position;
+		float3	m_Direction;
+		float3	m_Color;
 		union
 		{
 			struct {	// OMNI

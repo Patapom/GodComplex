@@ -176,12 +176,12 @@ EffectScene::Object::Object( EffectScene& _Owner, const char* _pName )
 	, m_pName( _pName )
 	, m_PrimitivesCount( 0 )
 	, m_ppPrimitives( NULL )
-	, m_Position( NjFloat3::Zero )
-	, m_Rotation( NjFloat3::UnitY, 0.0f )
-	, m_Scale( NjFloat3::One )
+	, m_Position( float3::Zero )
+	, m_Rotation( float3::UnitY, 0.0f )
+	, m_Scale( float3::One )
 	, m_bPRSDirty( true )
 {
-	m_Rotation = NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY );
+	m_Rotation = float4::QuatFromAngleAxis( 0.0f, float3::UnitY );
 	m_pCB_Object = new CB<CBObject>( m_Owner.m_Device, 10 );
 }
 EffectScene::Object::~Object()
@@ -190,7 +190,7 @@ EffectScene::Object::~Object()
 	DestroyPrimitives();
 }
 
-void	EffectScene::Object::SetPRS( const NjFloat3& _Position, const NjFloat4& _Rotation, const NjFloat3& _Scale )
+void	EffectScene::Object::SetPRS( const float3& _Position, const float4& _Rotation, const float3& _Scale )
 {
 	m_Position = _Position;
 	m_Rotation = _Rotation;
@@ -318,7 +318,7 @@ void	EffectScene::Object::Primitive::SetLayerMaterials( Texture2D& _LayeredTextu
 	// We need to convert them into actual extinction values to be used in the classical exp( -Sigma_t * Distance(millimeters) ) formula
 	// We simply assume the opacity of the layer below should be a very low value for extinction=1 when the ray of light travels the layer's whole thickness:
 	const float	LOW_OPACITY_VALUE = 1e-3;
-	NjFloat3	TargetValueAtThickness(
+	float3	TargetValueAtThickness(
 		logf( LERP( LOW_OPACITY_VALUE, 1.0f, ppMats[1]->Opacity ) ) / m_pCB_Primitive->m.Thickness.y,
 		logf( LERP( LOW_OPACITY_VALUE, 1.0f, ppMats[2]->Opacity ) ) / m_pCB_Primitive->m.Thickness.z,
 		logf( LERP( LOW_OPACITY_VALUE, 1.0f, ppMats[3]->Opacity ) ) / m_pCB_Primitive->m.Thickness.w
@@ -333,7 +333,7 @@ void	EffectScene::Object::Primitive::SetLayerMaterials( Texture2D& _LayeredTextu
 EffectScene::Light::Light() : m_bEnabled( true )
 {
 }
-void	EffectScene::Light::SetDirectional( const NjFloat3& _Irradiance, const NjFloat3& _Position, const NjFloat3& _Direction, float _RadiusHotSpot, float _RadiusFalloff, float _Length )
+void	EffectScene::Light::SetDirectional( const float3& _Irradiance, const float3& _Position, const float3& _Direction, float _RadiusHotSpot, float _RadiusFalloff, float _Length )
 {
 	m_Radiance = _Irradiance;
 	m_Position = _Position;
@@ -344,14 +344,14 @@ void	EffectScene::Light::SetDirectional( const NjFloat3& _Irradiance, const NjFl
 	m_Data.m_Length = _Length;
 }
 
-void	EffectScene::Light::SetPoint( const NjFloat3& _Radiance, const NjFloat3& _Position, float _Radius )
+void	EffectScene::Light::SetPoint( const float3& _Radiance, const float3& _Position, float _Radius )
 {
 	m_Radiance = _Radiance;
 	m_Position = _Position;
 	m_Data.m_Radius = _Radius;
 }
 
-void	EffectScene::Light::SetSpot( const NjFloat3& _Radiance, const NjFloat3& _Position, const NjFloat3& _Direction, float _AngleHotSpot, float _AngleFalloff, float _Length )
+void	EffectScene::Light::SetSpot( const float3& _Radiance, const float3& _Position, const float3& _Direction, float _AngleHotSpot, float _AngleFalloff, float _Length )
 {
 	m_Radiance = _Radiance;
 	m_Position = _Position;

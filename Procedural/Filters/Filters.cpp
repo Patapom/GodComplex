@@ -12,7 +12,7 @@ struct __BlurStruct
 };
 
 // Wrap versions
-void	FillBlurGaussianHW( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+void	FillBlurGaussianHW( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__BlurStruct&	Data = *((__BlurStruct*) _pData);
 
@@ -44,7 +44,7 @@ void	FillBlurGaussianHW( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, voi
 	_Pixel.Roughness *= Data.InvSumWeights;
 	_Pixel.Height *= Data.InvSumWeights;
 }
-void	FillBlurGaussianVW( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+void	FillBlurGaussianVW( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__BlurStruct&	Data = *((__BlurStruct*) _pData);
 
@@ -77,7 +77,7 @@ void	FillBlurGaussianVW( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, voi
 	_Pixel.Height *= Data.InvSumWeights;
 }
 // Clamp versions
-void	FillBlurGaussianHC( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+void	FillBlurGaussianHC( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__BlurStruct&	Data = *((__BlurStruct*) _pData);
 
@@ -109,7 +109,7 @@ void	FillBlurGaussianHC( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, voi
 	_Pixel.Roughness *= Data.InvSumWeights;
 	_Pixel.Height *= Data.InvSumWeights;
 }
-void	FillBlurGaussianVC( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+void	FillBlurGaussianVC( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__BlurStruct&	Data = *((__BlurStruct*) _pData);
 
@@ -199,7 +199,7 @@ void	Filters::BlurGaussian( TextureBuilder& _Builder, float _SizeX, float _SizeY
 
 //////////////////////////////////////////////////////////////////////////
 // Unsharp masking
-void	FillUnsharpMaskSubtract( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+void	FillUnsharpMaskSubtract( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 {
 	TextureBuilder&	SourceSmooth = *((TextureBuilder*) _pData);
 
@@ -211,7 +211,7 @@ void	FillUnsharpMaskSubtract( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel
 	_Pixel.Roughness = 2.0f * _Pixel.Roughness - Smooth.Roughness;
 
 	// Clip negatives
-	_Pixel.RGBA = _Pixel.RGBA.Max( NjFloat4::Zero );
+	_Pixel.RGBA = _Pixel.RGBA.Max( float4::Zero );
 	_Pixel.Height = MAX( 0.0f, _Pixel.Height );
 	_Pixel.Roughness = MAX( 0.0f, _Pixel.Roughness );
 }
@@ -233,7 +233,7 @@ struct __BCGStruct
 {
 	float	B, C, G;
 };
-void	FillBCG( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+void	FillBCG( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__BCGStruct&	BCG = *((__BCGStruct*) _pData);
 
@@ -262,10 +262,10 @@ void	Filters::BrightnessContrastGamma( TextureBuilder& _Builder, float _Brightne
 struct __EmbossStruct
 {
 	TextureBuilder*	pSource;
-	NjFloat2		Direction;
+	float2		Direction;
 	float			Amplitude;
 };
-void	FillEmboss( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+void	FillEmboss( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__EmbossStruct&	Params = *((__EmbossStruct*) _pData);
 
@@ -273,12 +273,12 @@ void	FillEmboss( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pDat
 	Params.pSource->SampleWrap( _X + Params.Direction.x, _Y + Params.Direction.y, 0, C0 );
 	Params.pSource->SampleWrap( _X - Params.Direction.x, _Y - Params.Direction.y, 0, C1 );
 
-	_Pixel.RGBA = 0.5f * NjFloat4::One + Params.Amplitude * (C0.RGBA - C1.RGBA);
+	_Pixel.RGBA = 0.5f * float4::One + Params.Amplitude * (C0.RGBA - C1.RGBA);
 	_Pixel.Height = 0.5f + Params.Amplitude * (C0.Height - C1.Height);
 	_Pixel.Roughness = 0.5f + Params.Amplitude * (C0.Roughness - C1.Roughness);
 }
 
-void	Filters::Emboss( TextureBuilder& _Builder, const NjFloat2& _Direction, float _Amplitude )
+void	Filters::Emboss( TextureBuilder& _Builder, const float2& _Direction, float _Amplitude )
 {
 	TextureBuilder	Temp( _Builder.GetWidth(), _Builder.GetHeight() );
 	Temp.CopyFrom( _Builder );
@@ -301,11 +301,11 @@ struct __ErosionStruct
 	int		W, H;
 	int		Size;
 };
-void	FillErode( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+void	FillErode( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__ErosionStruct&	Params = *((__ErosionStruct*) _pData);
 
-	_Pixel.RGBA = FLOAT32_MAX * NjFloat4::One;
+	_Pixel.RGBA = FLOAT32_MAX * float4::One;
 	_Pixel.Height = FLOAT32_MAX;
 	_Pixel.Roughness = FLOAT32_MAX;
 	for ( int Y=_Y-Params.Size; Y <= _Y+Params.Size; Y++ )
@@ -345,11 +345,11 @@ struct __DilationStruct
 	int		W, H;
 	int		Size;
 };
-void	FillDilate( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+void	FillDilate( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__DilationStruct&	Params = *((__DilationStruct*) _pData);
 
-	_Pixel.RGBA = -FLOAT32_MAX * NjFloat4::One;
+	_Pixel.RGBA = -FLOAT32_MAX * float4::One;
 	_Pixel.Height = -FLOAT32_MAX;
 	_Pixel.Roughness = -FLOAT32_MAX;
 	for ( int Y=_Y-Params.Size; Y <= _Y+Params.Size; Y++ )

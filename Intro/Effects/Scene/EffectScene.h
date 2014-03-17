@@ -14,18 +14,18 @@ public:		// NESTED TYPES
 
 	struct CBRender
 	{
-		NjFloat3	dUV;
+		float3	dUV;
 	};
 
 	struct CBLight
 	{
-		NjFloat3	Position;
+		float3	Position;
 		float		__PAD0;
-		NjFloat3	Direction;
+		float3	Direction;
 		float		__PAD1;
-		NjFloat3	Radiance;
+		float3	Radiance;
 		float		__PAD2;
-		NjFloat4	Data;
+		float4	Data;
 	};
 
 

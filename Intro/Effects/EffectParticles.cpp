@@ -21,7 +21,7 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build our voronoï texture & our initial positions & data
-	NjFloat2*	pCellCenters = new NjFloat2[EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT];
+	NjFloat2*	pCellCenters = new float2[EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT];
 	{
 		TextureBuilder		TB( 1024, 1024 );
 		VertexFormatPt4*	pVertices = new VertexFormatPt4[EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT];
@@ -83,18 +83,18 @@ EffectParticles::EffectParticles() : m_ErrorCode( 0 )
 	for ( int Y=0; Y < EFFECT_PARTICLES_COUNT; Y++ )
 		for ( int X=0; X < EFFECT_PARTICLES_COUNT; X++, pScanlinePosition++, pScanlineNormal++, pScanlineTangent++ )
 		{
-			NjFloat2&	CellCenter = pCellCenters[EFFECT_PARTICLES_COUNT*Y+X];
+			float2&	CellCenter = pCellCenters[EFFECT_PARTICLES_COUNT*Y+X];
 			float		Alpha = TWOPI * X / EFFECT_PARTICLES_COUNT;	// Angle on the great circle
 			float		Beta = TWOPI * Y / EFFECT_PARTICLES_COUNT;	// Angle on the small circle
 
-			NjFloat3	T( cosf(Alpha), 0.0f, -sinf(Alpha) );		// Gives the direction to the center on the great circle in the Z^X plane
-			NjFloat3	Center = NjFloat3( 0, 0.8f, 0 ) + R * T;	// Center on the great circle
-			NjFloat3	Ortho( T.z, 0, -T.x );						// Tangent to the great circle in the Z^X plane
-			NjFloat3	B( 0, 1, 0 );								// Bitangent is obviously, always the Y vector
+			float3	T( cosf(Alpha), 0.0f, -sinf(Alpha) );		// Gives the direction to the center on the great circle in the Z^X plane
+			float3	Center = float3( 0, 0.8f, 0 ) + R * T;	// Center on the great circle
+			float3	Ortho( T.z, 0, -T.x );						// Tangent to the great circle in the Z^X plane
+			float3	B( 0, 1, 0 );								// Bitangent is obviously, always the Y vector
 
-			NjFloat3	Normal = cosf(Beta) * T + sinf(Beta) * B;	// The normal to the small circle, also the direction to the point on the surface
-			NjFloat3	Tangent = Ortho;
-			NjFloat3	Pos = Center + r * Normal;					// Position on the surface of the small circle
+			float3	Normal = cosf(Beta) * T + sinf(Beta) * B;	// The normal to the small circle, also the direction to the point on the surface
+			float3	Tangent = Ortho;
+			float3	Pos = Center + r * Normal;					// Position on the surface of the small circle
 
 			float		Radius = R + r * cosf(Beta);				// Radius of the circle where the particle is standing
 			float		Perimeter = TWOPI * Radius;					// Perimeter of that circle
@@ -306,7 +306,7 @@ namespace	// Drawers & Fillers
 		Infos.Distance = sqrtf( _pDistances[0] );
 		return 0.0f;
 	}
-	void	FillVoronoi( int x, int y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+	void	FillVoronoi( int x, int y, const float2& _UV, Pixel& _Pixel, void* _pData )
 	{
  		Noise&	N = *((Noise*) _pData);
 
@@ -315,13 +315,13 @@ namespace	// Drawers & Fillers
 
 		_Pixel.RGBA.Set( float(Infos.ParticleIndex), Infos.Distance, 0, 0 );
 	}
-	void	PerturbVoronoi( int x, int y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData )
+	void	PerturbVoronoi( int x, int y, const float2& _UV, Pixel& _Pixel, void* _pData )
 	{
  		__PerturbVoronoi&	Params = *((__PerturbVoronoi*) _pData);
 		
 		// Perturb the UVs a little
-		NjFloat2	Disturb = Params.pNoise->PerlinVector( 0.02f * _UV );
-		NjFloat2	NewUV = _UV + 0.0125f * Disturb;
+		float2	Disturb = Params.pNoise->PerlinVector( 0.02f * _UV );
+		float2	NewUV = _UV + 0.0125f * Disturb;
 
 		// Use POINT SAMPLING to fetch the original color from the voronoï texture
 		// (because we're dealing with particle indices here, not colors that can be linearly interpolated!)
@@ -333,7 +333,7 @@ namespace	// Drawers & Fillers
 		int		ParticleIndex = int(_Pixel.RGBA.x);
 		ASSERT( ParticleIndex >= 0, "WTF?!" );
 		ASSERT( ParticleIndex < EFFECT_PARTICLES_COUNT*EFFECT_PARTICLES_COUNT, "WTF?!" );
-		NjFloat4&	ParticleVertex = Params.pVertices[ParticleIndex].Pt;
+		float4&	ParticleVertex = Params.pVertices[ParticleIndex].Pt;
 
 // 		if ( ParticleIndex == 0x2F && NewUV.x < 0.4f )
 // 			ParticleIndex++;
@@ -342,7 +342,7 @@ namespace	// Drawers & Fillers
 		// We want to overlap the border instead...
 		float	OVERLAP_TOLERANCE = 4.0f / EFFECT_PARTICLES_COUNT;
 
-		NjFloat2	UV = _UV;
+		float2	UV = _UV;
 		float	DeltaU = UV.x - ParticleVertex.x;
 		float	DeltaV = UV.y - ParticleVertex.y;
 		if ( DeltaU > OVERLAP_TOLERANCE )
@@ -364,7 +364,7 @@ namespace	// Drawers & Fillers
 	}
 };
 
-void	EffectParticles::BuildVoronoiTexture( TextureBuilder& _TB, NjFloat2* _pCellCenters, VertexFormatPt4* _pVertices )
+void	EffectParticles::BuildVoronoiTexture( TextureBuilder& _TB, float2* _pCellCenters, VertexFormatPt4* _pVertices )
 {
 	// Build a voronoï pattern
 	Noise	N( 1 );

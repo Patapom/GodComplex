@@ -292,7 +292,7 @@ namespace FBX.SceneLoader
 		}
 
 		/// <summary>
-		/// Loads a FBX file into a Cirrus scene (which may already contain meshes and materials, don't care)
+		/// Loads a FBX file into a temp scene representation (which may already contain meshes and materials, don't care)
 		/// </summary>
 		/// <param name="_FileName">The name of the FBX file to load</param>
 		/// <param name="_Scene">The cirrus scene into which we should store the data</param>
@@ -302,7 +302,7 @@ namespace FBX.SceneLoader
 		}
 
 		/// <summary>
-		/// Loads a FBX file into a Cirrus scene (which may already contain meshes and materials, don't care)
+		/// Converts a FBX file into a temp scene representation (which may already contain meshes and materials, don't care)
 		/// </summary>
 		/// <param name="_FileName">The name of the FBX file to load</param>
 		/// <param name="_Scene">The cirrus scene into which we should store the data</param>
@@ -648,7 +648,7 @@ namespace FBX.SceneLoader
 			// Build un-optimized primitives
 			TempMesh.BuildPrimitives();
 
-			// Create the cirrus mesh and tie it to our temporary mesh
+			// Create the final scene mesh and tie it to our temporary mesh
 			FBX.Scene.Nodes.Mesh	Mesh = m_Scene.CreateMesh( _FBXMesh.Name, _Parent, _FBXMesh.LocalTransform );
 			m_TempMesh2FinalMesh[TempMesh] = Mesh;
 

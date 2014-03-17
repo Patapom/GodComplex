@@ -71,7 +71,7 @@ float	ComputeShadow( float3 _WorldPosition, float3 _WorldVertexNormal )
 	return _ShadowMap.SampleCmp( ShadowSampler, UV, Zproj );
 }
 
-float	ComputeShadowPCF( float3 _WorldPosition, float3 _WorldVertexNormal, float3 _WorldVertexTangent, float _Radius )
+float	ComputeShadowPCF( float3 _WorldPosition, float3 _WorldVertexNormal, float3 _WorldVertexTangent, float _Radius, float _NormalOffset=0.01 )
 {
 	float3	X = _Radius * _WorldVertexTangent;
 	float3	Y = cross( _WorldVertexNormal, _WorldVertexTangent );
@@ -114,10 +114,10 @@ float	ComputeShadowPCF( float3 _WorldPosition, float3 _WorldVertexNormal, float3
 
 	float	Shadow = 0.0;
 	[unroll]
-	for ( int SampleIndex=0; SampleIndex < SHADOW_SAMPLES_COUNT; SampleIndex++ )
+	for ( uint SampleIndex=0; SampleIndex < SHADOW_SAMPLES_COUNT; SampleIndex++ )
 	{
 		float3	WorldPosition = _WorldPosition + SamplesOffset[SampleIndex].x * X + SamplesOffset[SampleIndex].y * Y;
-		float4	ShadowPosition = World2ShadowMapProj( WorldPosition + 0.01 * _WorldVertexNormal );
+		float4	ShadowPosition = World2ShadowMapProj( WorldPosition + _NormalOffset * _WorldVertexNormal );
 
 		float2	UV = 0.5 * float2( 1.0 + ShadowPosition.x, 1.0 - ShadowPosition.y );
 		float	Zproj = ShadowPosition.z / ShadowPosition.w;

@@ -593,6 +593,8 @@ namespace FBX.SceneLoader.Objects
 
 		public LoaderTempMesh( SceneLoader _Owner, string _Name ) : base( _Owner, _Name )
 		{
+			if ( _Name.IndexOf( "polysurface12", StringComparison.CurrentCultureIgnoreCase ) != -1 )
+				m_Name = _Name;
 		}
 
 		/// <summary>
@@ -826,7 +828,7 @@ namespace FBX.SceneLoader.Objects
 			}
 
 			//////////////////////////////////////////////////////////////////////////
-			// Attempt to retrieve smoothing group & material data
+			// Attempt to retrieve smoothing groups & materials data
 			foreach ( FBXImporter.LayerElement Element in m_LayerElements )
 			{
 				if ( Element.ElementType == FBXImporter.LayerElement.ELEMENT_TYPE.MATERIAL )
@@ -937,20 +939,20 @@ namespace FBX.SceneLoader.Objects
 				if ( m_LayerElementNormal == null && LE.ElementType == FBXImporter.LayerElement.ELEMENT_TYPE.NORMAL )
 				{	// Re-use the normals element
 					m_LayerElementNormal = LE;
-					m_LayerElementNormal.MappingType = FBXImporter.LayerElement.MAPPING_TYPE.BY_TRIANGLE_VERTEX;
-					m_LayerElementNormal.ReferenceType = FBXImporter.LayerElement.REFERENCE_TYPE.DIRECT;
+					m_LayerElementNormal.MappingType = LE.MappingType;// FBXImporter.LayerElement.MAPPING_TYPE.BY_TRIANGLE_VERTEX;
+					m_LayerElementNormal.ReferenceType = LE.ReferenceType;// FBXImporter.LayerElement.REFERENCE_TYPE.DIRECT;
 				}
 				else if ( m_LayerElementTangent == null && LE.ElementType == FBXImporter.LayerElement.ELEMENT_TYPE.TANGENT )
 				{	// Re-use the tangents element
 					m_LayerElementTangent = LE;
-					m_LayerElementTangent.MappingType = FBXImporter.LayerElement.MAPPING_TYPE.BY_TRIANGLE_VERTEX;
-					m_LayerElementTangent.ReferenceType = FBXImporter.LayerElement.REFERENCE_TYPE.DIRECT;
+					m_LayerElementTangent.MappingType = LE.MappingType;// FBXImporter.LayerElement.MAPPING_TYPE.BY_TRIANGLE_VERTEX;
+					m_LayerElementTangent.ReferenceType = LE.ReferenceType;//FBXImporter.LayerElement.REFERENCE_TYPE.DIRECT;
 				}
 				else if ( m_LayerElementBiNormal == null && LE.ElementType == FBXImporter.LayerElement.ELEMENT_TYPE.BINORMAL )
 				{	// Re-use the binormals element
 					m_LayerElementBiNormal = LE;
-					m_LayerElementBiNormal.MappingType = FBXImporter.LayerElement.MAPPING_TYPE.BY_TRIANGLE_VERTEX;
-					m_LayerElementBiNormal.ReferenceType = FBXImporter.LayerElement.REFERENCE_TYPE.DIRECT;
+					m_LayerElementBiNormal.MappingType = LE.MappingType;// FBXImporter.LayerElement.MAPPING_TYPE.BY_TRIANGLE_VERTEX;
+					m_LayerElementBiNormal.ReferenceType = LE.ReferenceType;//FBXImporter.LayerElement.REFERENCE_TYPE.DIRECT;
 				}
 			}
 

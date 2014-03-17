@@ -13,7 +13,7 @@ public:		// NESTED TYPES
 		int			x, y;		// Pixel coordinates in the surface
 		int			w, h;		// Size of the surface
 		float		Coverage;	// Coverage of the pixel (1 for internal pixels, less than 1 for other pixels
-		NjFloat2	UV;			// Normalized size of the surface
+		float2	UV;			// Normalized size of the surface
 		float		Distance;	// Normalized distance to the border of the primitive (positive or negative if there is a bias)
 		void*		pData;		// User data
 	};
@@ -27,7 +27,7 @@ protected:
 	{
 		DrawUtils*	pOwner;
 		int			X, Y;			// Currently drawn pixel in SURFACE space
-		NjFloat4	P;				// Current position + UV
+		float4	P;				// Current position + UV
 		float		Coverage;		// Pixel coverage
 		Pixel*		pScanline;		// Current scanline
 		virtual void	NewScanline()
@@ -89,9 +89,9 @@ protected:	// FIELDS
 	Pixel*		m_pSurface;
 
 	// Transform
-	NjFloat2	m_X;
-	NjFloat2	m_Y;
-	NjFloat2	m_C;
+	float2	m_X;
+	float2	m_Y;
+	float2	m_C;
 
 	mutable DrawInfos			m_Infos;
 	mutable DrawContextRECT		m_ContextRECT;
@@ -128,11 +128,11 @@ public:		// METHODS
 	//	_ThicknessStart/End, thickness of the scratch
 	//	_CurveAngle, angle to add to the scratch direction for every unit step
 	//	_StepSize, size of each subdivision
-	void	DrawScratch( const NjFloat2& _Position, const NjFloat2& _Direction, float _Length, float _ThicknessStart, float _ThicknessEnd, float _CurveAngle, float _StepSize, ScratchFillDelegate _Filler, void* _pData ) const;
+	void	DrawScratch( const float2& _Position, const float2& _Direction, float _Length, float _ThicknessStart, float _ThicknessEnd, float _CurveAngle, float _StepSize, ScratchFillDelegate _Filler, void* _pData ) const;
 
-	void	DrawSplotch( const NjFloat2& _Position, const NjFloat2& _Size, float _Angle, const Noise& _Noise, float _Perturbation ) const;
+	void	DrawSplotch( const float2& _Position, const float2& _Size, float _Angle, const Noise& _Noise, float _Perturbation ) const;
 
 protected:
-	void	DrawQuad( NjFloat4 _pVertices[], DrawContext& _Context ) const;
-	void	Transform( const NjFloat4& _SourcePosition, NjFloat4& _TransformedPosition ) const;
+	void	DrawQuad( float4 _pVertices[], DrawContext& _Context ) const;
+	void	Transform( const float4& _SourcePosition, float4& _TransformedPosition ) const;
 };

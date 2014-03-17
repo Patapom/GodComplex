@@ -26,8 +26,8 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build vertices
-	NjFloat3	Position, Normal, Tangent, BiTangent;
-	NjFloat2	UV;
+	float3	Position, Normal, Tangent, BiTangent;
+	float2	UV;
 
 	// Top band
 	{
@@ -56,7 +56,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			Position.x = Position.z = 0.0f;
 
 			// Write vertex
-			VWRITE( pVertex, NjFloat3::UnitY, NjFloat3::UnitY, Tangent, BiTangent, UV );
+			VWRITE( pVertex, float3::UnitY, float3::UnitY, Tangent, BiTangent, UV );
 		}
 	}
 
@@ -118,7 +118,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			Position.x = Position.z = 0.0f;
 
 			// Write vertex
-			VWRITE( pVertex, -NjFloat3::UnitY, -NjFloat3::UnitY, Tangent, BiTangent, UV );
+			VWRITE( pVertex, -float3::UnitY, -float3::UnitY, Tangent, BiTangent, UV );
 		}
 	}
 	ASSERT( VerticesCount == 0, "Wrong contruction!" );
@@ -174,8 +174,8 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build vertices
-	NjFloat3	Position, Normal, Tangent, BiTangent;
-	NjFloat2	UV;
+	float3	Position, Normal, Tangent, BiTangent;
+	float2	UV;
 
 	// Top vertices
 	if ( _bIncludeCaps )
@@ -191,7 +191,7 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Position.y = 1.0f;
 			Position.x = -0.001f * Tangent.z;
 			Position.z = 0.001f * Tangent.x;
-			Normal = NjFloat3::UnitY;
+			Normal = float3::UnitY;
 
 			BiTangent = Normal ^ Tangent;
 
@@ -204,7 +204,7 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Position.x = Position.z = 0.0f;
 
 			// Write vertex
-			VWRITE( pVertex, NjFloat3::UnitY, NjFloat3::UnitY, Tangent, BiTangent, UV );
+			VWRITE( pVertex, float3::UnitY, float3::UnitY, Tangent, BiTangent, UV );
 		}
 	}
 
@@ -255,7 +255,7 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Position.y = -1.0f;
 			Position.x = -0.001f * Tangent.z;
 			Position.z = 0.001f * Tangent.x;
-			Normal = -NjFloat3::UnitY;
+			Normal = -float3::UnitY;
 
 			BiTangent = Normal ^ Tangent;
 
@@ -268,7 +268,7 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Position.x = Position.z = 0.0f;
 
 			// Write vertex
-			VWRITE( pVertex, -NjFloat3::UnitY, -NjFloat3::UnitY, Tangent, BiTangent, UV );
+			VWRITE( pVertex, -float3::UnitY, -float3::UnitY, Tangent, BiTangent, UV );
 		}
 	}
 	ASSERT( VerticesCount == 0, "Wrong contruction!" );
@@ -321,15 +321,15 @@ void	GeometryBuilder::BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build vertices
-	NjFloat3	Position, Normal, Tangent, BiTangent;
-	NjFloat2	UV;
+	float3	Position, Normal, Tangent, BiTangent;
+	float2	UV;
 
 	for ( int j=0; j < BandsCount; j++ )
 	{
 		float		Phi = TWOPI * j / BandsCount;
 
-		NjFloat3	X( cosf(Phi), sinf(Phi), 0.0f );	// Radial branch in X^Y plane at this angle
-		NjFloat3	Center = _LargeRadius * X;			// Center of the small ring
+		float3	X( cosf(Phi), sinf(Phi), 0.0f );	// Radial branch in X^Y plane at this angle
+		float3	Center = _LargeRadius * X;			// Center of the small ring
 
 		Tangent.x = -sinf(Phi);
 		Tangent.y = cosf(Phi);
@@ -339,7 +339,7 @@ void	GeometryBuilder::BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, 
 		{
 			float	Theta = TWOPI * i / BandLength;
 
-			Normal = cosf(Theta) * X + sinf(Theta) * NjFloat3::UnitZ;
+			Normal = cosf(Theta) * X + sinf(Theta) * float3::UnitZ;
 			Position = Center + _SmallRadius * Normal;
 
 			BiTangent = Normal ^ Tangent;
@@ -382,7 +382,7 @@ void	GeometryBuilder::BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, 
 	_Writer.Finalize( pVerticesArray, pIndicesArray );
 }
 
-void	GeometryBuilder::BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const NjFloat3& _X, const NjFloat3& _Y, IGeometryWriter& _Writer, const MapperBase* _pMapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
+void	GeometryBuilder::BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const float3& _X, const float3& _Y, IGeometryWriter& _Writer, const MapperBase* _pMapper, TweakVertexDelegate _TweakVertex, void* _pUserData )
 {
 	ASSERT( _SubdivisionsX > 0 && _SubdivisionsY > 0, "Can't create a plane with 0 subdivision!" );
 
@@ -401,12 +401,12 @@ void	GeometryBuilder::BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build vertices
-	NjFloat3	Tangent = _X;					Tangent.Normalize();
-	NjFloat3	BiTangent = _Y;					BiTangent.Normalize();
-	NjFloat3	Normal = Tangent ^ BiTangent;	Normal.Normalize();
+	float3	Tangent = _X;					Tangent.Normalize();
+	float3	BiTangent = _Y;					BiTangent.Normalize();
+	float3	Normal = Tangent ^ BiTangent;	Normal.Normalize();
 
-	NjFloat3	Position;
-	NjFloat2	UV;
+	float3	Position;
+	float2	UV;
 
 	for ( int j=0; j <= _SubdivisionsY; j++ )
 	{
@@ -476,28 +476,28 @@ void	GeometryBuilder::BuildCube( int _SubdivisionsX, int _SubdivisionsY, int _Su
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build vertices
-	NjFloat3	pNormals[6] = {
-		-NjFloat3::UnitX,
-		 NjFloat3::UnitX,
-		-NjFloat3::UnitY,
-		 NjFloat3::UnitY,
-		-NjFloat3::UnitZ,
-		 NjFloat3::UnitZ,
+	float3	pNormals[6] = {
+		-float3::UnitX,
+		 float3::UnitX,
+		-float3::UnitY,
+		 float3::UnitY,
+		-float3::UnitZ,
+		 float3::UnitZ,
 	};
-	NjFloat3	pTangents[6] = {
-		 NjFloat3::UnitZ,
-		-NjFloat3::UnitZ,
-		 NjFloat3::UnitX,
-		 NjFloat3::UnitX,
-		-NjFloat3::UnitX,
-		 NjFloat3::UnitX,
+	float3	pTangents[6] = {
+		 float3::UnitZ,
+		-float3::UnitZ,
+		 float3::UnitX,
+		 float3::UnitX,
+		-float3::UnitX,
+		 float3::UnitX,
 	};
 
 	int			pSizesX[6] = { SizeZ, SizeZ, SizeX, SizeX, SizeX, SizeX };
 	int			pSizesY[6] = { SizeY, SizeY, SizeZ, SizeZ, SizeZ, SizeZ };
 
-	NjFloat3	Position, Normal, X, Y;
-	NjFloat2	UV;
+	float3	Position, Normal, X, Y;
+	float2	UV;
 
 	for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 	{
@@ -573,7 +573,7 @@ void	GeometryBuilder::BuildCube( int _SubdivisionsX, int _SubdivisionsY, int _Su
 	_Writer.Finalize( pVerticesArray, pIndicesArray );
 }
 
-void	GeometryBuilder::AppendVertex( IGeometryWriter& _Writer, void*& _pVertex, const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, const NjFloat3& _BiTangent, const NjFloat2& _UV, TweakVertexDelegate _TweakVertex, void* _pUserData )
+void	GeometryBuilder::AppendVertex( IGeometryWriter& _Writer, void*& _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV, TweakVertexDelegate _TweakVertex, void* _pUserData )
 {
 	if ( _TweakVertex == NULL )
 	{
@@ -582,11 +582,11 @@ void	GeometryBuilder::AppendVertex( IGeometryWriter& _Writer, void*& _pVertex, c
 	}
 
 	// Ask the user to tweak the vertices first !
-	NjFloat3	P = _Position;
-	NjFloat3	N = _Normal;
-	NjFloat3	T = _Tangent;
-	NjFloat3	B = _BiTangent;
-	NjFloat2	UV = _UV;
+	float3	P = _Position;
+	float3	N = _Normal;
+	float3	T = _Tangent;
+	float3	B = _BiTangent;
+	float2	UV = _UV;
 	(*_TweakVertex)( P, N, T, B, UV, _pUserData );
 	_Writer.AppendVertex( _pVertex, P, N, T, B, UV );
 }
@@ -595,7 +595,7 @@ void	GeometryBuilder::AppendVertex( IGeometryWriter& _Writer, void*& _pVertex, c
 //////////////////////////////////////////////////////////////////////////
 // Spherical mapping
 //
-GeometryBuilder::MapperSpherical::MapperSpherical( float _WrapU, float _WrapV, const NjFloat3& _Center, const NjFloat3& _X, const NjFloat3& _Y )
+GeometryBuilder::MapperSpherical::MapperSpherical( float _WrapU, float _WrapV, const float3& _Center, const float3& _X, const float3& _Y )
 	: m_WrapU( _WrapU )
 	, m_WrapV( _WrapV )
 	, m_Center( _Center )
@@ -607,9 +607,9 @@ GeometryBuilder::MapperSpherical::MapperSpherical( float _WrapU, float _WrapV, c
 	m_Z = m_X ^ m_Y;
 	m_Z.Normalize();
 }
-void	GeometryBuilder::MapperSpherical::Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const
+void	GeometryBuilder::MapperSpherical::Map( const float3& _Position, const float3& _Normal, const float3& _Tangent, float2& _UV, bool _bIsBandEndVertex ) const
 {
-	NjFloat3	Dir = _Position - m_Center;
+	float3	Dir = _Position - m_Center;
 	Dir.Normalize();
 	float	X = Dir | m_X;
 	float	Y = Dir | m_Y;
@@ -629,7 +629,7 @@ void	GeometryBuilder::MapperSpherical::Map( const NjFloat3& _Position, const NjF
 //////////////////////////////////////////////////////////////////////////
 // Cylindrical mapping
 //
-GeometryBuilder::MapperCylindrical::MapperCylindrical( float _WrapU, float _WrapV, const NjFloat3& _Center, const NjFloat3& _X, const NjFloat3& _Z )
+GeometryBuilder::MapperCylindrical::MapperCylindrical( float _WrapU, float _WrapV, const float3& _Center, const float3& _X, const float3& _Z )
 	: m_WrapU( _WrapU )
 	, m_WrapV( _WrapV )
 	, m_Center( _Center )
@@ -641,9 +641,9 @@ GeometryBuilder::MapperCylindrical::MapperCylindrical( float _WrapU, float _Wrap
 	m_Y = m_Z ^ m_X;
 	m_Y.Normalize();
 }
-void	GeometryBuilder::MapperCylindrical::Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const
+void	GeometryBuilder::MapperCylindrical::Map( const float3& _Position, const float3& _Normal, const float3& _Tangent, float2& _UV, bool _bIsBandEndVertex ) const
 {
-	NjFloat3	Dir = _Position - m_Center;
+	float3	Dir = _Position - m_Center;
 	float	X = Dir | m_X;
 	float	Y = Dir | m_Y;
 	float	Z = Dir | m_Z;
@@ -660,7 +660,7 @@ void	GeometryBuilder::MapperCylindrical::Map( const NjFloat3& _Position, const N
 //////////////////////////////////////////////////////////////////////////
 // Planar mapping
 //
-GeometryBuilder::MapperPlanar::MapperPlanar( float _WrapU, float _WrapV, const NjFloat3& _Center, const NjFloat3& _Tangent, const NjFloat3& _BiTangent )
+GeometryBuilder::MapperPlanar::MapperPlanar( float _WrapU, float _WrapV, const float3& _Center, const float3& _Tangent, const float3& _BiTangent )
 	: m_WrapU( _WrapU )
 	, m_WrapV( _WrapV )
 	, m_Center( _Center )
@@ -668,9 +668,9 @@ GeometryBuilder::MapperPlanar::MapperPlanar( float _WrapU, float _WrapV, const N
 	, m_BiTangent( _BiTangent )
 {
 }
-void	GeometryBuilder::MapperPlanar::Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const
+void	GeometryBuilder::MapperPlanar::Map( const float3& _Position, const float3& _Normal, const float3& _Tangent, float2& _UV, bool _bIsBandEndVertex ) const
 {
-	NjFloat3	Delta = _Position - m_Center;
+	float3	Delta = _Position - m_Center;
 
 	_UV.x = m_WrapU * (Delta | m_Tangent);
 	_UV.y = m_WrapV * (Delta | m_BiTangent);
@@ -680,7 +680,7 @@ void	GeometryBuilder::MapperPlanar::Map( const NjFloat3& _Position, const NjFloa
 //////////////////////////////////////////////////////////////////////////
 // Cube mapping
 //
-GeometryBuilder::MapperCube::MapperCube( float _WrapU, float _WrapV, const NjFloat3& _Center, const NjFloat3& _X, const NjFloat3& _Y, const NjFloat3& _Z )
+GeometryBuilder::MapperCube::MapperCube( float _WrapU, float _WrapV, const float3& _Center, const float3& _X, const float3& _Y, const float3& _Z )
 	: m_WrapU( _WrapU )
 	, m_WrapV( _WrapV )
 	, m_Center( _Center )
@@ -694,10 +694,10 @@ GeometryBuilder::MapperCube::MapperCube( float _WrapU, float _WrapV, const NjFlo
 	m_World2CubeMap.SetRow( 3, m_Center, 1 );
 	m_World2CubeMap = m_World2CubeMap.Inverse();
 }
-void	GeometryBuilder::MapperCube::Map( const NjFloat3& _Position, const NjFloat3& _Normal, const NjFloat3& _Tangent, NjFloat2& _UV, bool _bIsBandEndVertex ) const
+void	GeometryBuilder::MapperCube::Map( const float3& _Position, const float3& _Normal, const float3& _Tangent, float2& _UV, bool _bIsBandEndVertex ) const
 {
-	NjFloat4	P = NjFloat4( _Position, 1 ) * m_World2CubeMap;
-	NjFloat4	D = NjFloat4( _Normal, 0 ) * m_World2CubeMap;
+	float4	P = float4( _Position, 1 ) * m_World2CubeMap;
+	float4	D = float4( _Normal, 0 ) * m_World2CubeMap;
 
 	float		pHits[6];
 	pHits[0] = -(1.0f + P.x) / D.x;	// -X
@@ -716,7 +716,7 @@ void	GeometryBuilder::MapperCube::Map( const NjFloat3& _Position, const NjFloat3
 			fMinHit = pHits[HitIndex];
 		}
 	
-	NjFloat4	HitPos = P + fMinHit * D;
+	float4	HitPos = P + fMinHit * D;
 	switch ( MinHit )
 	{
 	case 0:	// -X

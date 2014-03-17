@@ -2,13 +2,13 @@
 
 #include "../GodComplex.h"
 
-FPSCamera::FPSCamera( Camera& _Camera, const NjFloat3& _Position, const NjFloat3& _Target, const NjFloat3& _Up )
+FPSCamera::FPSCamera( Camera& _Camera, const float3& _Position, const float3& _Target, const float3& _Up )
 	: m_Camera( _Camera )
 {
 	Init( _Position, _Target, _Up );
 }
 
-void	FPSCamera::Init( const NjFloat3& _Position, const NjFloat3& _Target, const NjFloat3& _Up )
+void	FPSCamera::Init( const float3& _Position, const float3& _Target, const float3& _Up )
 {
 	m_Position = _Position;
 	m_Target = _Target;
@@ -44,7 +44,7 @@ void	FPSCamera::Update( float _DeltaTime, float _TranslationSpeed, float _Rotati
 		float	DAngleX = (_RotationSpeed * TWOPI) * MouseDx / RESX;
 		float	DAngleY = (_RotationSpeed * PI) * MouseDy / RESY;
 
-		NjFloat3	At = m_ButtonDownTarget - m_ButtonDownPosition;
+		float3	At = m_ButtonDownTarget - m_ButtonDownPosition;
 		float		Distance2Target = At.Length();
 		At = At / Distance2Target;
 
@@ -54,7 +54,7 @@ void	FPSCamera::Update( float _DeltaTime, float _TranslationSpeed, float _Rotati
 		Theta = CLAMP( Theta - DAngleY, -0.99f * HALFPI, +0.99f * HALFPI );	// Never completly up or down to avoid gimbal lock
 		Phi -= DAngleX;
 
-		NjFloat3	NewAt( sinf(Phi)*cosf(Theta), sinf(Theta), cosf(Phi)*cos(Theta) );
+		float3	NewAt( sinf(Phi)*cosf(Theta), sinf(Theta), cosf(Phi)*cos(Theta) );
 
 		m_Target = m_Position + Distance2Target * NewAt;
 
@@ -66,9 +66,9 @@ void	FPSCamera::Update( float _DeltaTime, float _TranslationSpeed, float _Rotati
 // 		Matrix	RotateMatrix = CamRotXMatrix * CamRotYMatrix * CamRotZMatrix;
 	}
 
-	NjFloat3	At = (m_Target - m_Position).Normalize();
-	NjFloat3	Right = (At ^ m_Up).Normalize();
-	NjFloat3	Up = Right ^ At;
+	float3	At = (m_Target - m_Position).Normalize();
+	float3	Right = (At ^ m_Up).Normalize();
+	float3	Up = Right ^ At;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Handle keyboard manipulation
@@ -77,7 +77,7 @@ void	FPSCamera::Update( float _DeltaTime, float _TranslationSpeed, float _Rotati
 	if ( gs_WindowInfos.Events.Keyboard.State[KEY_LSHIFT] )
 		Speed *= _SpeedBoostWithShift;
 
-	NjFloat3	Delta = NjFloat3::Zero;
+	float3	Delta = float3::Zero;
 	if ( gs_WindowInfos.pKeys['Q'] )
 	{	// Strafe left
 		Delta = Delta - Speed * Right;

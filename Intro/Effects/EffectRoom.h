@@ -19,25 +19,25 @@ protected:	// NESTED TYPES
 
 	struct CBObject
 	{
-		NjFloat4x4	Local2World;	// Local=>World transform to rotate the object
+		float4x4	Local2World;	// Local=>World transform to rotate the object
 
-		NjFloat4	LightColor0;
-		NjFloat4	LightColor1;
-		NjFloat4	LightColor2;
-		NjFloat4	LightColor3;
+		float4	LightColor0;
+		float4	LightColor1;
+		float4	LightColor2;
+		float4	LightColor3;
  	};
 
 	struct CBTesselate
 	{
-		NjFloat3	dUV;
+		float3	dUV;
 		float		__PAD0;
-		NjFloat2	TesselationFactors;
+		float2	TesselationFactors;
 	};
 
 	struct MaterialDescriptor 
 	{
 		int			LightSourceIndex;	// -1 For standard reflective materials
-		NjFloat3	Color;				// Either the diffuse albedo or the emissive power depending on the emissive flag
+		float3	Color;				// Either the diffuse albedo or the emissive power depending on the emissive flag
 	};
 
 private:	// FIELDS
@@ -64,10 +64,10 @@ public:	Texture2D*			m_pTexVoronoi;		// Test voronoï texture
  	CB<CBTesselate>*	m_pCB_Tesselate;
 
 	// Animation parameters
-	NjFloat4			m_LightUpTime;
-	NjFloat4			m_LightFailTimer;		// Time before the light fails
-	NjFloat4			m_LightFailureTimer;	// Time since the light failed (used to animate the failure)
-	NjFloat4			m_LightFailureDuration;	// Duration of the failure
+	float4			m_LightUpTime;
+	float4			m_LightFailTimer;		// Time before the light fails
+	float4			m_LightFailureTimer;	// Time since the light failed (used to animate the failure)
+	float4			m_LightFailureDuration;	// Duration of the failure
 
 //	static MaterialDescriptor	ms_pMaterials[];
 

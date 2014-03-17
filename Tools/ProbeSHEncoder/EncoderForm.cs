@@ -47,6 +47,19 @@ namespace ProbeSHEncoder
 {
 	public partial class EncoderForm : Form
 	{
+		#region NESTED TYPES
+		
+		[System.Diagnostics.DebuggerDisplay( "ProbeID={ProbeID} Importance={Importance}" )]
+		class ProbeInfluence
+		{
+			public const UInt32	INVALID_PROBEID = 0xFFFFFFFF;
+
+			public UInt32	ProbeID = INVALID_PROBEID;
+			public double	Importance = 0.0;
+		};
+
+		#endregion
+
 		#region FIELDS
 
 		private RegistryKey			m_AppKey;
@@ -379,6 +392,9 @@ namespace ProbeSHEncoder
 			progressBarBatchConvert.Value = 0;
 			progressBarBatchConvert.Visible = true;
 
+			uint	MaxFaceIndex = 0;
+			Dictionary<UInt32,ProbeInfluence>	BestProbeInfluencePerFace = new Dictionary<UInt32,ProbeInfluence>();
+
 			string			Errors = null;
 			int				ProcessedProbesCount = 0;
 			List<FileInfo>	PomFiles = new List<FileInfo>( SourceDir.GetFiles( "*.pom" ) );
@@ -401,6 +417,27 @@ namespace ProbeSHEncoder
 					FileInfo	TargetFile = new FileInfo( Path.Combine( TargetDir.FullName, TargetFileName ) );
 					m_Probe.SaveSets( TargetFile );
 
+					// Process probe influences and keep the best ones for each face
+					MaxFaceIndex = Math.Max( MaxFaceIndex, m_Probe.m_MaxFaceIndex );
+					foreach ( uint FaceIndex in m_Probe.m_ProbeInfluencePerFace.Keys )
+					{
+						double	ProbeImportance = m_Probe.m_ProbeInfluencePerFace[FaceIndex];
+						if ( !BestProbeInfluencePerFace.ContainsKey( FaceIndex ) )
+						{	// Use this probe
+							BestProbeInfluencePerFace[FaceIndex] = new ProbeInfluence() { Importance=ProbeImportance, ProbeID=(UInt32) m_Probe.m_ProbeID };
+							continue;
+						}
+
+						double	ExistingImportance = BestProbeInfluencePerFace[FaceIndex].Importance;
+						if ( ExistingImportance >= ProbeImportance )
+							continue;
+
+						// We have a better probe
+						BestProbeInfluencePerFace[FaceIndex].ProbeID = (UInt32) m_Probe.m_ProbeID;
+						BestProbeInfluencePerFace[FaceIndex].Importance = ProbeImportance;
+					}
+
+					// Update UI
 					ProcessedProbesCount++;
 					progressBarBatchConvert.Value = progressBarBatchConvert.Maximum * (OriginalFilesCount - PomFiles.Count) / OriginalFilesCount;
 					progressBarBatchConvert.Refresh();
@@ -413,6 +450,26 @@ namespace ProbeSHEncoder
 				}
 			}
 
+			// Save the final probe influences
+			FileInfo	TargetInfluenceFile = new FileInfo( Path.Combine( TargetDir.FullName, "ProbeInfluence.pim" ) );
+			using ( FileStream S = TargetInfluenceFile.Create() )
+				using( BinaryWriter Writer = new BinaryWriter( S ) )
+					for ( uint FaceIndex=0; FaceIndex < MaxFaceIndex; FaceIndex++ )
+					{
+						if ( BestProbeInfluencePerFace.ContainsKey( FaceIndex ) )
+						{
+							ProbeInfluence	Influence = BestProbeInfluencePerFace[FaceIndex];
+							Writer.Write( Influence.ProbeID );
+							Writer.Write( Influence.Importance );
+						}
+						else
+						{
+							Writer.Write( (int) -1 );
+							Writer.Write( 0.0 );
+						}
+					}
+
+			// Notify
 			progressBarBatchConvert.Value = progressBarBatchConvert.Maximum;
 			if ( Errors == null )
 				MessageBox( "Success! " + ProcessedProbesCount + " probes were processed...", MessageBoxButtons.OK, MessageBoxIcon.Information );
@@ -493,6 +550,268 @@ namespace ProbeSHEncoder
 
 			// We can now save the results
 			saveResultsToolStripMenuItem.Enabled = true;
+		}
+
+		/// <summary>
+		/// This tool builds the additional vertex stream for each primitive that will attach the best probe ID (as a U16)
+		///  to a vertex so the vertex shader has a single entry point into the probes network
+		/// Most face indices have already been rendered in the probe cube map and the batch processing tool took care of
+		///  selecting the most important probe for these faces, but some faces don't have probe information.
+		///  Maybe they have been occluded by other faces (shadowing) or are too small to be rendered in the cube map.
+		/// For these special faces, we need to propagate probe IDs from valid faces until the entire mesh is filled with
+		///  valid probe IDs.
+		/// 
+		/// We proceed primitive per primitive since they are all disconnected so no propagation would be possible cross
+		///  primitives unless we could reconnect split vertices, but I don't want to do that. Maybe it will become necessary
+		///  at some point but for the moment I don't care.
+		/// Some primitives may lack probe ID completely (!!), for these I choose to assign the ID of the nearest probe, which
+		///  may be a bit dangerous, especially if we're dealing with probes that are standing right behind the primitive for example.
+		/// In that case, perhaps using a scoring scheme that depends on both distance and orientation would be better? Let's see that when the problem arises...
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void encodeFaceProbesToolStripMenuItem_Click( object sender, EventArgs e )
+		{
+			// Ask for the influence file to load from
+			string	OldFileName = GetRegKey( "LastProbeInfluenceFileName", GetRegKey( "LastProbesFolderTarget", Path.GetDirectoryName( m_ApplicationPath ) ) );
+			openFileDialogProbeInfluence.InitialDirectory = Path.GetDirectoryName( OldFileName );
+			openFileDialogProbeInfluence.FileName = Path.GetFileName( OldFileName );
+			if ( openFileDialogProbeInfluence.ShowDialog( this ) != DialogResult.OK )
+				return;
+			SetRegKey( "LastProbeInfluenceFileName", openFileDialogProbeInfluence.FileName );
+
+			FileInfo	SourceInfluenceFile = new FileInfo( openFileDialogProbeInfluence.FileName );
+
+			// Ask for the scene file to apply to
+			string	OldSceneFile = GetRegKey( "LastSceneFileName", GetRegKey( "LastProbesFolderSource", Path.GetDirectoryName( m_ApplicationPath ) ) );
+			openFileDialogScene.InitialDirectory = Path.GetDirectoryName( OldSceneFile );
+			openFileDialogScene.FileName = Path.GetFileName( OldSceneFile );
+			if ( openFileDialogScene.ShowDialog( this ) != DialogResult.OK )
+				return;
+			SetRegKey( "LastSceneFileName", openFileDialogScene.FileName );
+
+			FileInfo	SceneFile = new FileInfo( openFileDialogScene.FileName );
+
+			try
+			{
+				// Read the scene file
+				GCXFormat.Scene	GCX = null;
+				using ( FileStream S = SceneFile.OpenRead() )
+					using( BinaryReader R = new BinaryReader( S ) )
+						GCX = new GCXFormat.Scene( R );
+
+				// Read the probe influences
+				ProbeInfluence[]	FaceInfluences = new ProbeInfluence[GCX.m_TotalFacesCount];
+				using ( FileStream S = SourceInfluenceFile.OpenRead() )
+					using( BinaryReader R = new BinaryReader( S ) )
+					{
+						int	SizeofProbeInfluence = System.Runtime.InteropServices.Marshal.SizeOf(typeof(UInt32)) + System.Runtime.InteropServices.Marshal.SizeOf(typeof(double));
+						int	FacesCount = (int) S.Length / SizeofProbeInfluence;
+						if ( (S.Length % SizeofProbeInfluence) != 0 )
+							throw new Exception( "Probe influence file is larger than an integer number of ProbeInfluence structures!" );
+
+						for ( int FaceIndex=0; FaceIndex < FacesCount; FaceIndex++ )
+						{
+							UInt32	ProbeID = R.ReadUInt32();
+							double	Importance = R.ReadDouble();
+							FaceInfluences[FaceIndex] = new ProbeInfluence() { ProbeID = ProbeID, Importance = Importance };
+						}
+						for ( int FaceIndex=FacesCount; FaceIndex < GCX.m_TotalFacesCount; FaceIndex++ )
+							FaceInfluences[FaceIndex] = new ProbeInfluence() { ProbeID = ProbeInfluence.INVALID_PROBEID, Importance = 0.0 };
+					}
+
+				UInt32[]	VertexStreamProbeID = new UInt32[GCX.m_TotalVerticesCount];	// The final vertex stream we're building
+
+
+				// Establish data for progress measurement
+				int	PrimitivesCount = 0;
+				foreach ( GCXFormat.Scene.Node N in GCX.m_Nodes )
+				{
+					GCXFormat.Scene.Mesh	M = N as GCXFormat.Scene.Mesh;
+					if ( M != null )
+						PrimitivesCount += M.m_Primitives.Length;
+				}
+
+				//////////////////////////////////////////////////////////////////////////
+				// The algorithm is quite simple:
+				//	For each primitive
+				//		Create a winged edge structure for each face
+				//		Assign known probe influence to each face
+				//		Build a list of faces without probe influence
+				//
+				//		While list is not empty and its size keeps decreasing
+				//			For each face without influence
+				//				If neighbor faces have influence information
+				//					Copy best influence from neighbor
+				//					Remove face from the list
+				//		
+				//		If list is not empty			// We have a bunch of disconnected faces that can't see any probe
+				//			For each face of the list
+				//				Assign [NO PROBE|NEAREST PROBE|WORLD PROBE] ? (not clear yet which is best)
+				//		
+				//		Redistribute best probe's ID to each face vertex
+				//
+				//	Save stream of vertex probe IDs to be merged into an additional vertex buffer stream at runtime
+				//		
+				int	MeshIndex = 0;
+				int	PrimitiveIndex = 0;
+				int	FacesWithoutProbeCount = 0;
+				int	PrimitivesWithoutProbeCount = 0;
+				string	Errors = "";
+
+				progressBarBatchConvert.Value = 0;
+				progressBarBatchConvert.Visible = true;
+				progressBarSubTask.Value = 0;
+				progressBarSubTask.Visible = true;
+
+				foreach ( GCXFormat.Scene.Node N in GCX.m_Nodes )
+				{
+					GCXFormat.Scene.Mesh	M = N as GCXFormat.Scene.Mesh;
+					if ( M == null )
+						continue;
+
+					foreach ( GCXFormat.Scene.Mesh.Primitive P in M.m_Primitives )
+					{
+						int	FacesCount = P.m_Faces.Length;
+
+						try
+						{
+							P.BuildWingedEdgesMesh();
+						}
+						catch ( Exception _e )
+						{
+							Errors += "Primitive #" + PrimitiveIndex + " of mesh #" + MeshIndex + " has generated an error on Winged Mesh generation: " + _e.Message + "\r\n";
+
+							// Add this primitve to the list of the ones m
+							PrimitivesWithoutProbeCount++;
+							FacesWithoutProbeCount += P.m_Vertices.Length;
+							continue;
+						}
+
+						// Update progress
+						progressBarBatchConvert.Value = progressBarBatchConvert.Maximum * (++PrimitiveIndex) / PrimitivesCount;
+						progressBarSubTask.Value = 0;
+
+						// Tag winged edge faces with probe influence & list faces without valid probe ID
+						List<GCXFormat.Scene.Mesh.Primitive.WingedEdgeTriangle>	MissingProbeIDFaces = new List<GCXFormat.Scene.Mesh.Primitive.WingedEdgeTriangle>( FacesCount );
+						for ( int FaceIndex=0; FaceIndex < FacesCount; FaceIndex++ )
+						{
+							ProbeInfluence	Influence = FaceInfluences[P.m_FaceOffset+FaceIndex];
+							GCXFormat.Scene.Mesh.Primitive.WingedEdgeTriangle	Face = P.m_WingedEdgeFaces[FaceIndex];
+							Face.m_Tag = Influence;
+							if ( Influence.ProbeID == ProbeInfluence.INVALID_PROBEID )
+								MissingProbeIDFaces.Add( Face );
+						}
+
+						// Propagate probe influence
+						int	OriginalCount = MissingProbeIDFaces.Count;
+						int	LastListSize = MissingProbeIDFaces.Count+1;
+						while ( MissingProbeIDFaces.Count > 0 && MissingProbeIDFaces.Count < LastListSize )
+						{
+							LastListSize = MissingProbeIDFaces.Count;	// Keep track of list's size so we know if anything moved
+							for ( int FaceIndex=MissingProbeIDFaces.Count-1; FaceIndex >= 0; FaceIndex-- )	// Browse backward so we can safely remove elements from the list
+							{
+								GCXFormat.Scene.Mesh.Primitive.WingedEdgeTriangle	Face = MissingProbeIDFaces[FaceIndex];
+
+								// Examine neighbors' probe influence and propagate best probe
+								ProbeInfluence	BestProbe = null;
+								for ( int EdgeIndex=0; EdgeIndex < 3; EdgeIndex++ )
+								{
+									int	NeighborFaceIndex = Face.m_Edges[EdgeIndex].GetOtherFaceIndex( Face.m_Index );
+									if ( NeighborFaceIndex != -1 )
+									{
+										GCXFormat.Scene.Mesh.Primitive.WingedEdgeTriangle	NeighborFace = P.m_WingedEdgeFaces[NeighborFaceIndex];
+										ProbeInfluence	NeighborProbe = NeighborFace.m_Tag as ProbeInfluence;
+										if ( NeighborProbe.ProbeID != ProbeInfluence.INVALID_PROBEID && (BestProbe == null || NeighborProbe.Importance > BestProbe.Importance) )
+											BestProbe = NeighborProbe;	// Found a better probe for that face!
+									}
+								}
+
+								if ( BestProbe == null )
+									continue;	// Still no valid probe found...
+
+								Face.m_Tag = BestProbe;	// Share the probe, don't care...
+								MissingProbeIDFaces.RemoveAt( FaceIndex );	// We can safely remove the face by index since we're browsing the list backward
+							}
+
+							// Update progress
+							progressBarSubTask.Value = progressBarSubTask.Maximum * (OriginalCount - MissingProbeIDFaces.Count) / OriginalCount;
+							progressBarSubTask.Refresh();
+						}
+
+						// At this point, either the list of faces missing probe IDs is empty in which case the job is done
+						//	or we need to assign an arbitrary probe ID to those faces
+						if ( MissingProbeIDFaces.Count > 0 )
+						{
+							FacesWithoutProbeCount += MissingProbeIDFaces.Count;
+							PrimitivesWithoutProbeCount++;
+
+							// TODO: Assign nearest probe or something!
+						}
+
+						// Now that we have valid probe IDs for each face, propagate best probe influence to each vertex
+						ProbeInfluence[]	BestProbePerVertex = new ProbeInfluence[P.m_Vertices.Length];
+						for ( int FaceIndex=0; FaceIndex < FacesCount; FaceIndex++ )
+						{
+							GCXFormat.Scene.Mesh.Primitive.Face	Face = P.m_Faces[FaceIndex];
+							ProbeInfluence	FaceProbe = P.m_WingedEdgeFaces[FaceIndex].m_Tag as ProbeInfluence;
+
+							if ( BestProbePerVertex[Face.V0] == null || BestProbePerVertex[Face.V0].Importance < FaceProbe.Importance )	BestProbePerVertex[Face.V0] = FaceProbe;	// Better probe for that vertex
+							if ( BestProbePerVertex[Face.V1] == null || BestProbePerVertex[Face.V1].Importance < FaceProbe.Importance )	BestProbePerVertex[Face.V1] = FaceProbe;	// Better probe for that vertex
+							if ( BestProbePerVertex[Face.V2] == null || BestProbePerVertex[Face.V2].Importance < FaceProbe.Importance )	BestProbePerVertex[Face.V2] = FaceProbe;	// Better probe for that vertex
+						}
+
+						// Finally, we can splat probe IDs into the giant vertex stream
+						for ( int VertexIndex=0; VertexIndex < P.m_Vertices.Length; VertexIndex++ )
+							VertexStreamProbeID[P.m_VertexOffset+VertexIndex] = (UInt32) (BestProbePerVertex[VertexIndex] != null ? BestProbePerVertex[VertexIndex].ProbeID : 0xFFFFFFFF);	// TODO <= warn if we still have invalid vertices!
+					}
+
+					MeshIndex++;
+				}
+
+				progressBarBatchConvert.Value = progressBarBatchConvert.Maximum;
+
+
+				//////////////////////////////////////////////////////////////////////////
+				// Save the final vertex stream to disk
+				FileInfo	TargetVertexStreamFile = new FileInfo( Path.Combine( Path.GetDirectoryName( SceneFile.FullName ), Path.GetFileNameWithoutExtension( SceneFile.FullName ) + "_ProbeID.vertexStream.U16" ) );
+
+				using ( FileStream S = TargetVertexStreamFile.Create() )
+					using( BinaryWriter W = new BinaryWriter( S ) )
+					{
+						for ( int VertexIndex=0; VertexIndex < VertexStreamProbeID.Length; VertexIndex++ )
+							W.Write( VertexStreamProbeID[VertexIndex] );
+					}
+
+				// Notify
+				MessageBoxIcon	Icon = MessageBoxIcon.Information;
+				string	Info  = "Success!\r\n";
+						Info += "Processed " + PrimitivesCount + " primitives for a total of " + GCX.m_TotalFacesCount + " faces and " + GCX.m_TotalVerticesCount + " vertices.\r\n";
+				if ( PrimitivesWithoutProbeCount > 0 )
+				{
+					Icon = MessageBoxIcon.Warning;
+					Info += "\r\n---------------------- WARNING ----------------------\r\n";
+					Info += PrimitivesWithoutProbeCount + " primitives are missing or have incomplete probe information.\r\n";
+					Info += "A total of " + FacesWithoutProbeCount + " faces don't have probe information!\r\n";
+				}
+				if ( Errors != "" )
+				{
+					Icon = MessageBoxIcon.Warning;
+					Info += "\r\n---------------------- ERRORS ----------------------\r\n";
+					Info += Errors;
+				}
+				MessageBox( Info, MessageBoxButtons.OK, Icon );
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred while probe influences in scene file: " + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+				return;
+			}
+			finally
+			{
+				progressBarBatchConvert.Visible = false;
+				progressBarSubTask.Visible = false;
+			}
 		}
 
 		#endregion

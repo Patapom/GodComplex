@@ -40,69 +40,69 @@ public:		// NESTED TYPES
 	struct CBObject
 	{
 //		NjFloat4x4	Local2Proj;	// Local=>Proj transform to locate & project the object to the render target
-		NjFloat4x4	Local2View;
-		NjFloat4x4	View2Proj;
-		NjFloat3	dUV;
+		float4x4	Local2View;
+		float4x4	View2Proj;
+		float3	dUV;
 
 		// Terrain Parameters
 		float		TerrainHeight;
 		float		AlbedoMultiplier;
 		float		CloudShadowStrength;
-		NjFloat2	__PAD;
+		float2	__PAD;
 	};
 
 	struct CBSplat
 	{
-		NjFloat3	dUV;
+		float3	dUV;
 		int			bSampleTerrainShadow;
 	};
 
 	struct CBAtmosphere
 	{
-		NjFloat3	LightDirection;
+		float3	LightDirection;
 		float		SunIntensity;
 
-		NjFloat2	AirParams;		// X=Scattering Factor, Y=Reference Altitude (km)
+		float2	AirParams;		// X=Scattering Factor, Y=Reference Altitude (km)
 		float		GodraysStrengthRayleigh;
 		float		GodraysStrengthMie;
 
-		NjFloat4	FogParams;		// X=Scattering Coeff, Y=Extinction Coeff, Z=Reference Altitude (km), W=Anisotropy
+		float4	FogParams;		// X=Scattering Coeff, Y=Extinction Coeff, Z=Reference Altitude (km), W=Anisotropy
 		float		AltitudeOffset;
 	};
 
 	struct CBShadow
 	{
 //		NjFloat4	LightDirection;
-		NjFloat4x4	World2Shadow;
-		NjFloat4x4	Shadow2World;
-		NjFloat4x4	World2TerrainShadow;
-		NjFloat2	ZMinMax;
+		float4x4	World2Shadow;
+		float4x4	Shadow2World;
+		float4x4	World2TerrainShadow;
+		float2	ZMinMax;
 	};
 
 	struct CBVolume 
 	{
 		// Location & Direct lighting
-		NjFloat2	_CloudAltitudeThickness;
-		NjFloat2	_CloudExtinctionScattering;
-		NjFloat2	_CloudPhases;
+		float2	_CloudAltitudeThickness;
+		float2	_CloudExtinctionScattering;
+		float2	_CloudPhases;
 		float		_CloudShadowStrength;
 
 		// Isotropic lighting
 		float		_CloudIsotropicScattering;
-		NjFloat3	_CloudIsotropicFactors;		// X=Sky factor, Y=Sun factor, Z=Terrain reflectance factor
+		float3	_CloudIsotropicFactors;		// X=Sky factor, Y=Sun factor, Z=Terrain reflectance factor
 		float		__PAD0;
 
 		// Noise
-		NjFloat2	_CloudLoFreqParams;			// X=Frequency Multiplier, Y=Vertical Looping
-		NjFloat2	_CloudLoFreqPositionOffset;
+		float2	_CloudLoFreqParams;			// X=Frequency Multiplier, Y=Vertical Looping
+		float2	_CloudLoFreqPositionOffset;
 
-		NjFloat3	_CloudHiFreqParams;			// X=Frequency Multiplier, Y=Offset, Z=Factor
-		NjFloat2	_CloudHiFreqPositionOffset;
+		float3	_CloudHiFreqParams;			// X=Frequency Multiplier, Y=Offset, Z=Factor
+		float2	_CloudHiFreqPositionOffset;
 
-		NjFloat3	_CloudOffsets;				// X=Low Altitude Offset, Y=Mid Altitude Offset, Z=High Altitude Offset
+		float3	_CloudOffsets;				// X=Low Altitude Offset, Y=Mid Altitude Offset, Z=High Altitude Offset
 //		float		__PAD2;
 
-		NjFloat2	_CloudContrastGamma;		// X=Contrast Y=Gamma
+		float2	_CloudContrastGamma;		// X=Contrast Y=Gamma
 		float		_CloudShapingPower;
 		float		__PAD3;
 	};
@@ -144,12 +144,12 @@ private:	// FIELDS
 	// PRS of our volume box
 	float				m_CloudAltitude;
 	float				m_CloudThickness;
-	NjFloat3			m_Position;
-	NjFloat4			m_Rotation;
-	NjFloat3			m_Scale;
+	float3			m_Position;
+	float4			m_Rotation;
+	float3			m_Scale;
 
-	NjFloat4x4			m_Cloud2World;
-	NjFloat4x4			m_Terrain2World;
+	float4x4			m_Cloud2World;
+	float4x4			m_Terrain2World;
 
 	// Cloud animation infos
 	float				m_CloudAnimSpeedLoFreq;
@@ -200,20 +200,20 @@ private:	// FIELDS
 	CB<CBVolume>*		m_pCB_Volume;
 	CB<CBPreComputeCS>*	m_pCB_PreComputeSky;
 
-	NjFloat4x4			m_World2Light;
-	NjFloat4x4			m_Light2ShadowNormalized;	// Yields a normalized Z instead of world units like World2Shadow
+	float4x4			m_World2Light;
+	float4x4			m_Light2ShadowNormalized;	// Yields a normalized Z instead of world units like World2Shadow
 
-	NjFloat3			m_ShadowPlaneCenterKm;
-	NjFloat3			m_ShadowPlaneNormal;
-	NjFloat3			m_ShadowPlaneX;
-	NjFloat3			m_ShadowPlaneY;
-	NjFloat2			m_ShadowPlaneOffsetKm;
+	float3			m_ShadowPlaneCenterKm;
+	float3			m_ShadowPlaneNormal;
+	float3			m_ShadowPlaneX;
+	float3			m_ShadowPlaneY;
+	float2			m_ShadowPlaneOffsetKm;
 
 	int					m_ViewportWidth;
 	int					m_ViewportHeight;
 
 	// Atmosphere Pre-Computation
-	NjFloat3*			m_pTableTransmittance;
+	float3*			m_pTableTransmittance;
 
 
 
@@ -319,25 +319,25 @@ protected:
 	void		BuildTransmittanceTable( int _Width, int _Height, Texture2D& _StagingTexture );
 
 	float		ComputeOpticalDepth( float _AltitudeKm, float _CosTheta, const float _Href, bool& _bGroundHit, int _StepsCount=TRANSMITTANCE_TABLE_STEPS_COUNT ) const;
-	NjFloat3	GetTransmittance( float _AltitudeKm, float _CosTheta ) const;
-	NjFloat3	GetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm ) const;
-	NjFloat3	SampleTransmittance( const NjFloat2 _UV ) const;
+	float3	GetTransmittance( float _AltitudeKm, float _CosTheta ) const;
+	float3	GetTransmittance( float _AltitudeKm, float _CosTheta, float _DistanceKm ) const;
+	float3	SampleTransmittance( const float2 _UV ) const;
 
 	// Sphere-tracing
-	void		ComputeSphericalData( const NjFloat3& _PositionKm, float& _AltitudeKm, NjFloat3& _Normal ) const;
-	float		SphereIntersectionEnter( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm ) const;
-	float		SphereIntersectionExit( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm ) const;
-	void		SphereIntersections( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm, NjFloat2& _Hits ) const;
-	float		ComputeNearestHit( const NjFloat3& _PositionKm, const NjFloat3& _View, float _SphereAltitudeKm, bool& _IsGround ) const;
+	void		ComputeSphericalData( const float3& _PositionKm, float& _AltitudeKm, float3& _Normal ) const;
+	float		SphereIntersectionEnter( const float3& _PositionKm, const float3& _View, float _SphereAltitudeKm ) const;
+	float		SphereIntersectionExit( const float3& _PositionKm, const float3& _View, float _SphereAltitudeKm ) const;
+	void		SphereIntersections( const float3& _PositionKm, const float3& _View, float _SphereAltitudeKm, float2& _Hits ) const;
+	float		ComputeNearestHit( const float3& _PositionKm, const float3& _View, float _SphereAltitudeKm, bool& _IsGround ) const;
 
 	// Shadow computation
 	void		ComputeShadowTransform();
-	NjFloat3	Project2ShadowPlane( const NjFloat3& _PositionKm, float& Distance2PlaneKm );
-	NjFloat2	World2ShadowQuad( const NjFloat3& _PositionKm, float& Distance2PlaneKm );
-	NjFloat3	FindTangent( NjFloat4x4& _Camera2World, float _TanFovV );
-	void		ComputeFrustumIntersection( NjFloat3 _pCameraFrustumKm[5], float _PlaneHeight, NjFloat2& _QuadMin, NjFloat2& _QuadMax );
+	float3	Project2ShadowPlane( const float3& _PositionKm, float& Distance2PlaneKm );
+	float2	World2ShadowQuad( const float3& _PositionKm, float& Distance2PlaneKm );
+	float3	FindTangent( float4x4& _Camera2World, float _TanFovV );
+	void		ComputeFrustumIntersection( float3 _pCameraFrustumKm[5], float _PlaneHeight, float2& _QuadMin, float2& _QuadMax );
 
-	NjFloat4x4	ComputeTerrainShadowTransform();
+	float4x4	ComputeTerrainShadowTransform();
 
 	Texture3D*	BuildFractalTexture( bool _bLoadFirst );
 };

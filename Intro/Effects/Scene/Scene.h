@@ -33,14 +33,14 @@ public:		// NESTED TYPES
 			struct	CBPrimitive
 			{
 				unsigned int	MatIDs[4];	// 4 material IDs in [0,255] from the material bank, one for each layer of the primitive
-				NjFloat4		Thickness;	// The thickness of the 4 layers, in millimeters. Thickness of layer 0 serves as multiplier for the height map.
-				NjFloat3		Extinction;	// The extinction coefficients of the top 3 layers
+				float4		Thickness;	// The thickness of the 4 layers, in millimeters. Thickness of layer 0 serves as multiplier for the height map.
+				float3		Extinction;	// The extinction coefficients of the top 3 layers
 				float			__Pad1;
-				NjFloat3		IOR;		// The IOR of the top 3 layers
+				float3		IOR;		// The IOR of the top 3 layers
 				float			__Pad2;
-				NjFloat3		Frosting;	// The frosting coefficient of the top 3 layers
+				float3		Frosting;	// The frosting coefficient of the top 3 layers
 				float			__Pad3;
-				NjFloat4		NoDiffuse;	// The "no diffuse" coefficient of the 4 layers
+				float4		NoDiffuse;	// The "no diffuse" coefficient of the 4 layers
 
 				// TODO: Add tiling + offset for each layer
 			};
@@ -71,7 +71,7 @@ public:		// NESTED TYPES
 
 		struct	CBObject
 		{
-			NjFloat4x4	Local2World;
+			float4x4	Local2World;
 		};
 
 	protected:		// FIELDS
@@ -80,9 +80,9 @@ public:		// NESTED TYPES
 		const char*		m_pName;
 
 		bool			m_bPRSDirty;
-		NjFloat3		m_Position;
-		NjFloat4		m_Rotation;	// Rotation as a quaternion
-		NjFloat3		m_Scale;
+		float3		m_Position;
+		float4		m_Rotation;	// Rotation as a quaternion
+		float3		m_Scale;
 
 		CB<CBObject>*	m_pCB_Object;
 
@@ -95,7 +95,7 @@ public:		// NESTED TYPES
 		Object( EffectScene& _Owner, const char* _pName );
 		~Object();
 
-		void		SetPRS( const NjFloat3& _Position, const NjFloat4& _Rotation, const NjFloat3& _Scale=NjFloat3::One );
+		void		SetPRS( const float3& _Position, const float4& _Rotation, const float3& _Scale=float3::One );
 
 		void		Update( float _Time, float _DeltaTime );
 		void		Render( Material& _Material, bool _bDepthPass=false ) const;
@@ -112,9 +112,9 @@ public:		// NESTED TYPES
 
 		bool		m_bEnabled;
 
-		NjFloat3	m_Position;
-		NjFloat3	m_Direction;
-		NjFloat3	m_Radiance;
+		float3	m_Position;
+		float3	m_Direction;
+		float3	m_Radiance;
 
 		union
 		{
@@ -145,9 +145,9 @@ public:		// NESTED TYPES
 
 		Light();
 
-		void	SetDirectional( const NjFloat3& _Irradiance, const NjFloat3& _Position, const NjFloat3& _Direction, float _RadiusHotSpot, float _RadiusFalloff, float _Length );
-		void	SetPoint( const NjFloat3& _Radiance, const NjFloat3& _Position, float _Radius );
-		void	SetSpot( const NjFloat3& _Radiance, const NjFloat3& _Position, const NjFloat3& _Direction, float _AngleHotspot, float _AngleFalloff, float _Length );
+		void	SetDirectional( const float3& _Irradiance, const float3& _Position, const float3& _Direction, float _RadiusHotSpot, float _RadiusFalloff, float _Length );
+		void	SetPoint( const float3& _Radiance, const float3& _Position, float _Radius );
+		void	SetSpot( const float3& _Radiance, const float3& _Position, const float3& _Direction, float _AngleHotspot, float _AngleFalloff, float _Length );
 	};
 
 private:	// FIELDS

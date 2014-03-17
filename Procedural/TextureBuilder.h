@@ -12,7 +12,7 @@ protected:	// CONSTANTS
 
 public:		// NESTED TYPES
 
-	typedef void	(*FillDelegate)( int _X, int _Y, const NjFloat2& _UV, Pixel& _Pixel, void* _pData );
+	typedef void	(*FillDelegate)( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData );
 
 	// The complex structure that is guiding the texture conversion
 	// Use -1 in field positions to avoid storing the field

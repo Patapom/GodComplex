@@ -28,7 +28,7 @@ EffectRoom::EffectRoom( Texture2D& _RTTarget ) : m_ErrorCode( 0 ), m_RTTarget( _
 	float	LightUpTimeBase = 2.0f;
 	float	LightUpTimeVariance = 0.1f;
 	m_LightUpTime.Set( _frand( LightUpTimeBase-LightUpTimeVariance, LightUpTimeBase+LightUpTimeVariance ), _frand( LightUpTimeBase-LightUpTimeVariance, LightUpTimeBase+LightUpTimeVariance ), _frand( LightUpTimeBase-LightUpTimeVariance, LightUpTimeBase+LightUpTimeVariance ), _frand( LightUpTimeBase-LightUpTimeVariance, LightUpTimeBase+LightUpTimeVariance ) );
-	m_LightFailTimer = NjFloat4::Zero;
+	m_LightFailTimer = float4::Zero;
 
 // 	// Test tesselation shader
 // 	{
@@ -121,10 +121,10 @@ void	EffectRoom::Render( float _Time, float _DeltaTime )
 	// Animate lights
 	float		LightMaxIntensity = 10.0f;
 	float		LightIntensity = LightMaxIntensity * (1.0f - expf( -1.0f * _Time ));
-	NjFloat4	LightIntensities = LightIntensity * NjFloat4::One;
+	float4	LightIntensities = LightIntensity * float4::One;
 
-	NjFloat4	FailTimeMin( 1.0f, 10.0f, 0.2f, 5.0f );
-	NjFloat4	FailTimeDelta( 4.0f, 5.0f, 1.0f, 15.0f );
+	float4	FailTimeMin( 1.0f, 10.0f, 0.2f, 5.0f );
+	float4	FailTimeDelta( 4.0f, 5.0f, 1.0f, 15.0f );
 
 		// Check for failures
 	LightIntensities.x *= AnimateFailure( m_LightFailTimer.x, m_LightFailureTimer.x, m_LightFailureDuration.x, FailTimeMin.x, FailTimeDelta.x, _DeltaTime );
@@ -145,7 +145,7 @@ void	EffectRoom::Render( float _Time, float _DeltaTime )
 	gs_Device.SetRenderTarget( gs_Device.DefaultRenderTarget(), &gs_Device.DefaultDepthStencil() );
 	gs_Device.SetStates( gs_Device.m_pRS_CullNone, gs_Device.m_pDS_ReadWriteLess, gs_Device.m_pBS_Disabled );
 
-	m_pCB_Object->m.Local2World.PRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( _TV(0.1f) * _Time, NjFloat3::UnitY ), NjFloat3::One );
+	m_pCB_Object->m.Local2World.PRS( float3::Zero, float4::QuatFromAngleAxis( _TV(0.1f) * _Time, float3::UnitY ), float3::One );
 	m_pCB_Object->UpdateData();
 
 	{	USING_MATERIAL_START( *m_pMatDisplay )
@@ -189,14 +189,14 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Generate the input informations
-	NjFloat2	pSizes[6] =
+	float2	pSizes[6] =
 	{
-		NjFloat2( ROOM_SIZE, ROOM_SIZE ),
-		NjFloat2( ROOM_SIZE, ROOM_SIZE ),
-		NjFloat2( ROOM_SIZE, ROOM_HEIGHT ),
-		NjFloat2( ROOM_SIZE, ROOM_HEIGHT ),
-		NjFloat2( ROOM_SIZE, ROOM_HEIGHT ),
-		NjFloat2( ROOM_SIZE, ROOM_HEIGHT ),
+		float2( ROOM_SIZE, ROOM_SIZE ),
+		float2( ROOM_SIZE, ROOM_SIZE ),
+		float2( ROOM_SIZE, ROOM_HEIGHT ),
+		float2( ROOM_SIZE, ROOM_HEIGHT ),
+		float2( ROOM_SIZE, ROOM_HEIGHT ),
+		float2( ROOM_SIZE, ROOM_HEIGHT ),
 	};
 	int			pIntSizes[2*6] =
 	{
@@ -207,52 +207,52 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 		LIGHTMAP_SIZE, LIGHTMAP_SIZE/2,
 		LIGHTMAP_SIZE, LIGHTMAP_SIZE/2,
 	};
-	NjFloat3	pCenters[6] =
+	float3	pCenters[6] =
 	{
-		NjFloat3( 0.0f, ROOM_HEIGHT, 0.0f ),
-		NjFloat3( 0.0f, 0.0f, 0.0f ),
-		NjFloat3( -0.5f * ROOM_SIZE, 0.5f * ROOM_HEIGHT, 0.0f ),
-		NjFloat3( +0.5f * ROOM_SIZE, 0.5f * ROOM_HEIGHT, 0.0f ),
-		NjFloat3( 0.0f, 0.5f * ROOM_HEIGHT, -0.5f * ROOM_SIZE ),
-		NjFloat3( 0.0f, 0.5f * ROOM_HEIGHT, +0.5f * ROOM_SIZE ),
+		float3( 0.0f, ROOM_HEIGHT, 0.0f ),
+		float3( 0.0f, 0.0f, 0.0f ),
+		float3( -0.5f * ROOM_SIZE, 0.5f * ROOM_HEIGHT, 0.0f ),
+		float3( +0.5f * ROOM_SIZE, 0.5f * ROOM_HEIGHT, 0.0f ),
+		float3( 0.0f, 0.5f * ROOM_HEIGHT, -0.5f * ROOM_SIZE ),
+		float3( 0.0f, 0.5f * ROOM_HEIGHT, +0.5f * ROOM_SIZE ),
 	};
-	NjFloat3	pNormals[6] =
+	float3	pNormals[6] =
 	{
-		NjFloat3( 0.0f, -1.0f, 0.0f ),
-		NjFloat3( 0.0f, +1.0f, 0.0f ),
-		NjFloat3( +1.0f, 0.0f, 0.0f ),
-		NjFloat3( -1.0f, 0.0f, 0.0f ),
-		NjFloat3( 0.0f, 0.0f, +1.0f ),
-		NjFloat3( 0.0f, 0.0f, -1.0f ),
+		float3( 0.0f, -1.0f, 0.0f ),
+		float3( 0.0f, +1.0f, 0.0f ),
+		float3( +1.0f, 0.0f, 0.0f ),
+		float3( -1.0f, 0.0f, 0.0f ),
+		float3( 0.0f, 0.0f, +1.0f ),
+		float3( 0.0f, 0.0f, -1.0f ),
 	};
-	NjFloat3	pTangents[6] =
+	float3	pTangents[6] =
 	{
-		NjFloat3( -1.0f, 0.0f, 0.0f ),
-		NjFloat3( +1.0f, 0.0f, 0.0f ),
-		NjFloat3( 0.0f, 0.0f, +1.0f ),
-		NjFloat3( 0.0f, 0.0f, -1.0f ),
-		NjFloat3( -1.0f, 0.0f, 0.0f ),
-		NjFloat3( +1.0f, 0.0f, 0.0f ),
+		float3( -1.0f, 0.0f, 0.0f ),
+		float3( +1.0f, 0.0f, 0.0f ),
+		float3( 0.0f, 0.0f, +1.0f ),
+		float3( 0.0f, 0.0f, -1.0f ),
+		float3( -1.0f, 0.0f, 0.0f ),
+		float3( +1.0f, 0.0f, 0.0f ),
 	};
-	NjFloat3	pBiTangents[6] =
+	float3	pBiTangents[6] =
 	{
-		NjFloat3( 0.0f, 0.0f, +1.0f ),
-		NjFloat3( 0.0f, 0.0f, +1.0f ),
-		NjFloat3( 0.0f, +1.0f, 0.0f ),
-		NjFloat3( 0.0f, +1.0f, 0.0f ),
-		NjFloat3( 0.0f, +1.0f, 0.0f ),
-		NjFloat3( 0.0f, +1.0f, 0.0f ),
+		float3( 0.0f, 0.0f, +1.0f ),
+		float3( 0.0f, 0.0f, +1.0f ),
+		float3( 0.0f, +1.0f, 0.0f ),
+		float3( 0.0f, +1.0f, 0.0f ),
+		float3( 0.0f, +1.0f, 0.0f ),
+		float3( 0.0f, +1.0f, 0.0f ),
 	};
 	static const float	SCALED_V = 0.5f - 1.0f / LIGHTMAP_SIZE;			// So we don't sample other texels from adjacent faces...
 	static const float	SCALED_OFFSET = 0.5f + 1.0f / LIGHTMAP_SIZE;
-	NjFloat4	pLightMapUVs[6] = 
+	float4	pLightMapUVs[6] = 
 	{
-		NjFloat4( 0.0f, 0.0f, 1.0f, 1.0f ),
-		NjFloat4( 0.0f, 0.0f, 1.0f, 1.0f ),
-		NjFloat4( 0.0f, 0.0f, 1.0f, SCALED_V ),
-		NjFloat4( 0.0f, SCALED_OFFSET, 1.0f, SCALED_V ),
-		NjFloat4( 0.0f, 0.0f, 1.0f, SCALED_V ),
-		NjFloat4( 0.0f, SCALED_OFFSET, 1.0f, SCALED_V ),
+		float4( 0.0f, 0.0f, 1.0f, 1.0f ),
+		float4( 0.0f, 0.0f, 1.0f, 1.0f ),
+		float4( 0.0f, 0.0f, 1.0f, SCALED_V ),
+		float4( 0.0f, SCALED_OFFSET, 1.0f, SCALED_V ),
+		float4( 0.0f, 0.0f, 1.0f, SCALED_V ),
+		float4( 0.0f, SCALED_OFFSET, 1.0f, SCALED_V ),
 	};
 	float		pLightMapArrayIndex[6] =
 	{
@@ -268,12 +268,12 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 		U32						pIndices[6*6];
 		for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 		{
-			NjFloat2	Size = pSizes[FaceIndex];
-			NjFloat3	C = pCenters[FaceIndex];
-			NjFloat3	N = pNormals[FaceIndex];
-			NjFloat3	T = pTangents[FaceIndex];
-			NjFloat3	B = pBiTangents[FaceIndex];
-			NjFloat4	UV = pLightMapUVs[FaceIndex];
+			float2	Size = pSizes[FaceIndex];
+			float3	C = pCenters[FaceIndex];
+			float3	N = pNormals[FaceIndex];
+			float3	T = pTangents[FaceIndex];
+			float3	B = pBiTangents[FaceIndex];
+			float4	UV = pLightMapUVs[FaceIndex];
 			float		ArrayIndex = pLightMapArrayIndex[FaceIndex];
 
 			float		TextureIndex = FaceIndex < 2 ? 0.0f : 1.0f;	// Use wall texture for walls...
@@ -322,7 +322,7 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 		VertexFormatP3N3G3T3T3	pVertices[4*4];
 		U32						pIndices[4*6];
 
-		NjFloat2				LightSize( 1.0f, 8.0f );	// Neons are 1x8 m²
+		float2				LightSize( 1.0f, 8.0f );	// Neons are 1x8 m²
 		float					FirstLightPosX = -0.5f * ROOM_SIZE + (ROOM_SIZE - 7 * LightSize.x) / 2.0f;
 		float					LightPosY = ROOM_HEIGHT - 1e-3f;
 		float					LightPosZ = -0.5f * ROOM_SIZE + (ROOM_SIZE - LightSize.y) / 2.0f;
@@ -368,19 +368,19 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 	// Allocate the input & output buffers
 	struct LightMapInfos
 	{
-		NjFloat3	Position;
+		float3	Position;
 		U32			Seed0;
-		NjFloat3	Normal;
+		float3	Normal;
 		U32			Seed1;
-		NjFloat3	Tangent;
+		float3	Tangent;
 		U32			Seed2;
-		NjFloat3	BiTangent;
+		float3	BiTangent;
 		U32			Seed3;
 	};
 
 	struct	LightMapResult
 	{
-		NjFloat4	Irradiance;
+		float4	Irradiance;
 	};
 
 	SB<LightMapInfos>*	ppLMInfos[6];
@@ -404,7 +404,7 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 	TextureBuilder	TBNormalHeight( LIGHTMAP_SIZE, LIGHTMAP_SIZE/2 );
 					TBNormalHeight.CopyFrom( _TB );	// Scale down...
 	int				Dummy;
-	NjFloat4**		ppWallTextureNormals = (NjFloat4**) TBNormalHeight.Convert( PixelFormatRGBA32F::DESCRIPTOR, TextureBuilder::CONV_NxNyNzH, Dummy );
+	float4**		ppWallTextureNormals = (float4**) TBNormalHeight.Convert( PixelFormatRGBA32F::DESCRIPTOR, TextureBuilder::CONV_NxNyNzH, Dummy );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -414,11 +414,11 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 		int			W = pIntSizes[2*FaceIndex+0];
 		int			H = pIntSizes[2*FaceIndex+1];
 
-		NjFloat2	Size = pSizes[FaceIndex];
-		NjFloat3&	C = pCenters[FaceIndex];
-		NjFloat3&	N = pNormals[FaceIndex];
-		NjFloat3&	T = pTangents[FaceIndex];
-		NjFloat3&	B = pBiTangents[FaceIndex];
+		float2	Size = pSizes[FaceIndex];
+		float3&	C = pCenters[FaceIndex];
+		float3&	N = pNormals[FaceIndex];
+		float3&	T = pTangents[FaceIndex];
+		float3&	B = pBiTangents[FaceIndex];
 
 		static const float	SMALL_OFFSET = 0.01f;
 
@@ -428,7 +428,7 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 			float	fY = CLAMP( float(Y), SMALL_OFFSET, (H-1)-SMALL_OFFSET ) / (H-1) - 0.5f;		// in ]-0.5,0.5[
 					fY *= Size.y;																	// in ]-0.5*Size,+0.5*Size[
 
-			NjFloat4*	pScanlineWallTexture = ppWallTextureNormals[0] + LIGHTMAP_SIZE * Y;
+			float4*	pScanlineWallTexture = ppWallTextureNormals[0] + LIGHTMAP_SIZE * Y;
 			for ( int X=0; X < W; X++, pDest++, pScanlineWallTexture++ )
 			{
 				float	fX = CLAMP( float(X), SMALL_OFFSET, (W-1)-SMALL_OFFSET ) / (W-1) - 0.5f;	// in ]-0.5,0.5[
@@ -445,16 +445,16 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 				else
 				{	// Offset position & orientation based on normal map and height
 					float		Height = 1.0f * pScanlineWallTexture->w;
-					NjFloat3	Normal( 2.0f * (pScanlineWallTexture->x - 0.5f), 2.0f * (pScanlineWallTexture->y - 0.5f), 2.0f * (pScanlineWallTexture->z - 0.5f) );
-					NjFloat3	WSNormal = Normal.x * T + Normal.y * B + Normal.z * N;	// World space
+					float3	Normal( 2.0f * (pScanlineWallTexture->x - 0.5f), 2.0f * (pScanlineWallTexture->y - 0.5f), 2.0f * (pScanlineWallTexture->z - 0.5f) );
+					float3	WSNormal = Normal.x * T + Normal.y * B + Normal.z * N;	// World space
 
 					pDest->Position = C + fX * T + fY * B + Height * N;
 
 					// Rotate local tangent space with normal map
-					NjFloat4x4	Rot; Rot.Rot( N, WSNormal );
-					pDest->Normal = NjFloat4( N, 0.0f ) * Rot;
-					pDest->Tangent = NjFloat4( T, 0.0f ) * Rot;
-					pDest->BiTangent = NjFloat4( B, 0.0f ) * Rot;
+					float4x4	Rot; Rot.Rot( N, WSNormal );
+					pDest->Normal = float4( N, 0.0f ) * Rot;
+					pDest->Tangent = float4( T, 0.0f ) * Rot;
+					pDest->BiTangent = float4( B, 0.0f ) * Rot;
 				}
 
 				pDest->Seed0 = 128;
@@ -527,7 +527,7 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 		{
 			ppLMInfos[FaceIndex]->SetInput( 0 );
 
-			ppResults1[FaceIndex]->Clear( NjFloat4::Zero );
+			ppResults1[FaceIndex]->Clear( float4::Zero );
 			ppResults1[FaceIndex]->SetOutput( 0 );
 			ppAccumResults[FaceIndex]->SetOutput( 1 );
 
@@ -559,11 +559,11 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the final light map
-	NjHalf4*	ppContent[4];
-				ppContent[0] = new NjHalf4[LIGHTMAP_SIZE * LIGHTMAP_SIZE];
-				ppContent[1] = new NjHalf4[LIGHTMAP_SIZE * LIGHTMAP_SIZE];
-				ppContent[2] = new NjHalf4[LIGHTMAP_SIZE * LIGHTMAP_SIZE];
-				ppContent[3] = new NjHalf4[LIGHTMAP_SIZE * LIGHTMAP_SIZE];
+	half4*	ppContent[4];
+				ppContent[0] = new half4[LIGHTMAP_SIZE * LIGHTMAP_SIZE];
+				ppContent[1] = new half4[LIGHTMAP_SIZE * LIGHTMAP_SIZE];
+				ppContent[2] = new half4[LIGHTMAP_SIZE * LIGHTMAP_SIZE];
+				ppContent[3] = new half4[LIGHTMAP_SIZE * LIGHTMAP_SIZE];
 
 	// The first 2 maps (ceiling and floor) are easy
 	for ( int FaceIndex=0; FaceIndex < 2; FaceIndex++ )
@@ -571,7 +571,7 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 		ppAccumResults[FaceIndex]->Read();	// Retrieve the accumulated results for that face
 
 		LightMapResult*	pSource = ppAccumResults[FaceIndex]->m;
-		NjHalf4*		pDest = ppContent[FaceIndex];
+		half4*		pDest = ppContent[FaceIndex];
 		for ( int Y=0; Y < LIGHTMAP_SIZE; Y++ )
 			for ( int X=0; X < LIGHTMAP_SIZE; X++, pSource++, pDest++ )
 			{
@@ -591,7 +591,7 @@ void	EffectRoom::BuildRoom( const TextureBuilder& _TB )
 
 		int				TargetFaceIndex = 2 + ((FaceIndex-2) >> 1);
 		int				TargetFaceOffsetY = ((FaceIndex-2) & 1) * LIGHTMAP_SIZE/2;
-		NjHalf4*		pDest = ppContent[TargetFaceIndex] + TargetFaceOffsetY*LIGHTMAP_SIZE;
+		half4*		pDest = ppContent[TargetFaceIndex] + TargetFaceOffsetY*LIGHTMAP_SIZE;
 		for ( int Y=0; Y < LIGHTMAP_SIZE/2; Y++ )
 			for ( int X=0; X < LIGHTMAP_SIZE; X++, pSource++, pDest++ )
 			{
@@ -649,7 +649,7 @@ namespace RoomFillers
 void	EffectRoom::BuildRoomTextures( TextureBuilder& _TB )
 {
 	{
-		_TB.Clear( Pixel( NjFloat4::Zero ) );
+		_TB.Clear( Pixel( float4::Zero ) );
 
 		DrawUtils	DU;
 		DU.SetupSurface( _TB );

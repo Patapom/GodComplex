@@ -10,15 +10,15 @@ namespace WMath
 	{
 		#region CONSTANTS
 
-		public static readonly Matrix4x4		Zero = new Matrix4x4( new float[,] {	{ 0.0f, 0.0f, 0.0f, 0.0f },
+		public static Matrix4x4		Zero { get { return new Matrix4x4( new float[,] {	{ 0.0f, 0.0f, 0.0f, 0.0f },
 																						{ 0.0f, 0.0f, 0.0f, 0.0f },
 																						{ 0.0f, 0.0f, 0.0f, 0.0f },
-																						{ 0.0f, 0.0f, 0.0f, 0.0f } } );
+																						{ 0.0f, 0.0f, 0.0f, 0.0f } } ); } }
 
-		public static readonly Matrix4x4		Identity = new Matrix4x4( new float[,] {{ 1.0f, 0.0f, 0.0f, 0.0f },
+		public static Matrix4x4		Identity { get { return new Matrix4x4( new float[,] {{ 1.0f, 0.0f, 0.0f, 0.0f },
 																						{ 0.0f, 1.0f, 0.0f, 0.0f },
 																						{ 0.0f, 0.0f, 1.0f, 0.0f },
-																						{ 0.0f, 0.0f, 0.0f, 1.0f } } );
+																						{ 0.0f, 0.0f, 0.0f, 1.0f } } ); } }
 
 		#endregion
 

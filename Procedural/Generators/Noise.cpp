@@ -107,7 +107,7 @@ float	Noise::Perlin( float u ) const
 	return Lerp( N0, N1, t0 );
 }
 
-float	Noise::Perlin( const NjFloat2& uv ) const
+float	Noise::Perlin( const float2& uv ) const
 {
 	NOISE_INDICES( BIAS_U, uv.x, 0 )
 	NOISE_INDICES( BIAS_V, uv.y, 1 )
@@ -123,7 +123,7 @@ float	Noise::Perlin( const NjFloat2& uv ) const
 	return BiLerp( N00, N01, N11, N10, t0, t1 );
 }
 
-float	Noise::Perlin( const NjFloat3& uvw ) const
+float	Noise::Perlin( const float3& uvw ) const
 {
 	NOISE_INDICES( BIAS_U, uvw.x, 0 )
 	NOISE_INDICES( BIAS_V, uvw.y, 1 )
@@ -145,7 +145,7 @@ float	Noise::Perlin( const NjFloat3& uvw ) const
 	return TriLerp( N000, N001, N011, N010, N100, N101, N111, N110, t0, t1, t2 );
 }
 
-float	Noise::Perlin( const NjFloat4& uvwr ) const
+float	Noise::Perlin( const float4& uvwr ) const
 {
 	NOISE_INDICES( BIAS_U, uvwr.x, 0 )
 	NOISE_INDICES( BIAS_V, uvwr.y, 1 )
@@ -180,7 +180,7 @@ float	Noise::Perlin( const NjFloat4& uvwr ) const
 	return Lerp( N0, N1, t3 );
 }
 
-float	Noise::Perlin( const NjFloat4& uvwr, float s ) const
+float	Noise::Perlin( const float4& uvwr, float s ) const
 {
 	NOISE_INDICES( BIAS_U, uvwr.x, 0 )
 	NOISE_INDICES( BIAS_V, uvwr.y, 1 )
@@ -236,7 +236,7 @@ float	Noise::Perlin( const NjFloat4& uvwr, float s ) const
 	return BiLerp( N00, N01, N11, N10, t3, t4 );
 }
 
-float	Noise::Perlin( const NjFloat4& uvwr, const NjFloat2& st ) const
+float	Noise::Perlin( const float4& uvwr, const float2& st ) const
 {
 	NOISE_INDICES( BIAS_U, uvwr.x, 0 )
 	NOISE_INDICES( BIAS_V, uvwr.y, 1 )
@@ -331,19 +331,19 @@ float	Noise::Perlin( const NjFloat4& uvwr, const NjFloat2& st ) const
 	return TriLerp( N000, N001, N011, N010, N100, N101, N111, N110, t3, t4, t5 );
 }
 
-NjFloat2	Noise::PerlinVector( const NjFloat2& _uv ) const
+float2	Noise::PerlinVector( const float2& _uv ) const
 {
-	NjFloat2	uv = _uv;
-	NjFloat2	Result;
+	float2	uv = _uv;
+	float2	Result;
 	Result.x = Perlin( uv );	uv.x += BIAS_U; uv.y += BIAS_V;
 	Result.y = Perlin( uv );
 	return Result;
 }
 
-NjFloat3	Noise::PerlinVector( const NjFloat3& _uvw ) const
+float3	Noise::PerlinVector( const float3& _uvw ) const
 {
-	NjFloat3	uvw = _uvw;
-	NjFloat3	Result;
+	float3	uvw = _uvw;
+	float3	Result;
 	Result.x = Perlin( uvw );	uvw.x += BIAS_U; uvw.y += BIAS_V; uvw.z += BIAS_W;
 	Result.y = Perlin( uvw );	uvw.x += BIAS_R; uvw.y += BIAS_S; uvw.z += BIAS_T;
 	Result.z = Perlin( uvw );
@@ -357,9 +357,9 @@ void	Noise::SetWrappingParameters( float _Frequency, U32 _Seed )
 	_randpushseed();
 	_srand( _Seed, RAND_DEFAULT_SEED_V );
 
-	m_WrapCenter0 = NjFloat2( _frand(), _frand() );
-	m_WrapCenter1 = NjFloat2( _frand(), _frand() );
-	m_WrapCenter2 = NjFloat2( _frand(), _frand() );
+	m_WrapCenter0 = float2( _frand(), _frand() );
+	m_WrapCenter1 = float2( _frand(), _frand() );
+	m_WrapCenter2 = float2( _frand(), _frand() );
 
 	_randpopseed();
 }
@@ -367,25 +367,25 @@ void	Noise::SetWrappingParameters( float _Frequency, U32 _Seed )
 float	Noise::WrapPerlin( float u ) const
 {
 	float		Angle = TWOPI * u;
-	NjFloat2	Pos( m_WrapCenter0.x + cosf( Angle ), m_WrapCenter0.y + sinf( Angle ) );
+	float2	Pos( m_WrapCenter0.x + cosf( Angle ), m_WrapCenter0.y + sinf( Angle ) );
 	return Perlin( Pos );
 }
 
-float	Noise::WrapPerlin( const NjFloat2& uv ) const
+float	Noise::WrapPerlin( const float2& uv ) const
 {
 	float		Angle0 = TWOPI * uv.x;
 	float		Angle1 = TWOPI * uv.y;
-	NjFloat4	Pos( m_WrapCenter0.x + m_WrapRadius * cosf( Angle0 ), m_WrapCenter0.y + m_WrapRadius * sinf( Angle0 ), m_WrapCenter1.x + m_WrapRadius * cosf( Angle1 ), m_WrapCenter1.y + m_WrapRadius * sinf( Angle1 ) );
+	float4	Pos( m_WrapCenter0.x + m_WrapRadius * cosf( Angle0 ), m_WrapCenter0.y + m_WrapRadius * sinf( Angle0 ), m_WrapCenter1.x + m_WrapRadius * cosf( Angle1 ), m_WrapCenter1.y + m_WrapRadius * sinf( Angle1 ) );
 	return Perlin( Pos );
 }
 
-float	Noise::WrapPerlin( const NjFloat3& uvw ) const
+float	Noise::WrapPerlin( const float3& uvw ) const
 {
 	float		Angle0 = TWOPI * uvw.x;
 	float		Angle1 = TWOPI * uvw.y;
 	float		Angle2 = TWOPI * uvw.z;
-	NjFloat4	Pos0( m_WrapCenter0.x + m_WrapRadius * cosf( Angle0 ), m_WrapCenter0.y + m_WrapRadius * sinf( Angle0 ), m_WrapCenter1.x + m_WrapRadius * cosf( Angle1 ), m_WrapCenter1.y + m_WrapRadius * sinf( Angle1 ) );
-	NjFloat2	Pos1( m_WrapCenter2.x + m_WrapRadius * cosf( Angle2 ), m_WrapCenter2.y + m_WrapRadius * sinf( Angle2 ) );
+	float4	Pos0( m_WrapCenter0.x + m_WrapRadius * cosf( Angle0 ), m_WrapCenter0.y + m_WrapRadius * sinf( Angle0 ), m_WrapCenter1.x + m_WrapRadius * cosf( Angle1 ), m_WrapCenter1.y + m_WrapRadius * sinf( Angle1 ) );
+	float2	Pos1( m_WrapCenter2.x + m_WrapRadius * cosf( Angle2 ), m_WrapCenter2.y + m_WrapRadius * sinf( Angle2 ) );
 	return Perlin( Pos0, Pos1 );
 }
 
@@ -399,7 +399,7 @@ void	Noise::SetCellularWrappingParameters( int _SizeX, int _SizeY, int _SizeZ )
 }
 
 // Gets the cell locus for the specified cell coordinates
-void	Noise::CellularGetCenter( int _CellX, int _CellY, NjFloat2& _Center, bool _bWrap ) const
+void	Noise::CellularGetCenter( int _CellX, int _CellY, float2& _Center, bool _bWrap ) const
 {
 	U32	Hx = _bWrap ? (_CellX + 100*m_SizeX) % m_SizeX : _CellX;
 	U32	Hy = _bWrap ? (_CellY + 100*m_SizeY) % m_SizeY : _CellY;
@@ -411,7 +411,7 @@ void	Noise::CellularGetCenter( int _CellX, int _CellY, NjFloat2& _Center, bool _
 	_Center.y = _CellY + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
 }
 
-void	Noise::CellularGetCenter( int _CellX, int _CellY, int _CellZ, NjFloat3& _Center, bool _bWrap ) const
+void	Noise::CellularGetCenter( int _CellX, int _CellY, int _CellZ, float3& _Center, bool _bWrap ) const
 {
 	U32	Hx = _bWrap ? (_CellX + 100*m_SizeX) % m_SizeX : _CellX;
 	U32	Hy = _bWrap ? (_CellY + 100*m_SizeY) % m_SizeY : _CellY;
@@ -425,7 +425,7 @@ void	Noise::CellularGetCenter( int _CellX, int _CellY, int _CellZ, NjFloat3& _Ce
 	_Center.z = _CellZ + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
 }
 
-float	Noise::Cellular( const NjFloat2& _UV, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
+float	Noise::Cellular( const float2& _UV, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
 {
 	int	CellX = floorf( _UV.x );
 	int	CellY = floorf( _UV.y );
@@ -444,7 +444,7 @@ float	Noise::Cellular( const NjFloat2& _UV, CombineDistancesDelegate _Combine, v
 			// Hash two integers into a single integer using FNV hash (http://isthe.com/chongo/tech/comp/fnv/#FNV-source)
 			U32	Hash = U32( (((OFFSET_BASIS ^ Hx) * FNV_PRIME) ^ Hy) * FNV_PRIME );
 
-			NjFloat2	CellCenter;
+			float2	CellCenter;
 			CellCenter.x = X + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
 			CellCenter.y = Y + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
 
@@ -487,7 +487,7 @@ float	Noise::Cellular( const NjFloat2& _UV, CombineDistancesDelegate _Combine, v
 	return _Combine( pSqDistances, pCellX, pCellY, NULL, _pData );
 }
 
-float	Noise::Cellular( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
+float	Noise::Cellular( const float3& _UVW, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
 {
 	int	CellX = floorf( _UVW.x );
 	int	CellY = floorf( _UVW.y );
@@ -511,7 +511,7 @@ float	Noise::Cellular( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, 
 				// Hash three integers into a single integer using FNV hash (http://isthe.com/chongo/tech/comp/fnv/#FNV-source)
 				U32	Hash = U32( (((((OFFSET_BASIS ^ Hx) * FNV_PRIME) ^ Hy) * FNV_PRIME) ^ Hz) * FNV_PRIME );
 
-				NjFloat3	CellCenter;
+				float3	CellCenter;
 				CellCenter.x = X + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
 				CellCenter.y = Y + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
 				CellCenter.z = Z + LCGRandom( Hash ) * 2.3283064370807973754314699618685e-10f;
@@ -566,12 +566,12 @@ float	Noise::Cellular( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, 
 //////////////////////////////////////////////////////////////////////////
 // Worley Noise (from https://github.com/freethenation/CellNoiseDemo)
 // I though about implementing the optimization suggested in Worley's paper to skip inelegible neighbor cubes that are too far away but I remembered I am writing a 64K intro... Less code the better !
-float	Noise::Worley( const NjFloat2& _UV, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
+float	Noise::Worley( const float2& _UV, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
 {
 	int	CellX = floorf( _UV.x );
 	int CellY = floorf( _UV.y );
 
-	NjFloat2	Point;
+	float2	Point;
 
 	float		pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };	// Only keep the 3 closest distances
 	int			pCellX[3] = { -1, -1, -1 };
@@ -638,13 +638,13 @@ float	Noise::Worley( const NjFloat2& _UV, CombineDistancesDelegate _Combine, voi
 	return _Combine( pSqDistances, pCellX, pCellY, NULL, _pData );
 }
 
-float	Noise::Worley( const NjFloat3& _UVW, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
+float	Noise::Worley( const float3& _UVW, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
 {
 	int	CellX = floorf( _UVW.x );
 	int CellY = floorf( _UVW.y );
 	int CellZ = floorf( _UVW.z );
 
-	NjFloat3	Point;
+	float3	Point;
 	float		pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };	// Only keep the 3 closest distances
 	int			pCellX[3] = { -1, -1, -1 };
 	int			pCellY[3] = { -1, -1, -1 };
@@ -919,7 +919,7 @@ void	Noise::Create2DWaveletNoiseTile( int _POT )
 	delete[] ppTemp[1];
 }
 
-float	Noise::Wavelet( const NjFloat2& _UV ) const
+float	Noise::Wavelet( const float2& _UV ) const
 {
 	ASSERT( m_pWavelet2D != NULL, "Did you forget to call Create2DWaveletNoiseTile() ?" );
 
@@ -967,9 +967,9 @@ float	Noise::Wavelet( const NjFloat2& _UV ) const
 
 //////////////////////////////////////////////////////////////////////////
 // Algorithms
-float	Noise::FractionalBrownianMotion( GetNoise2DDelegate _GetNoise, void* _pData, const NjFloat2& _UV, float _FrequencyFactor, float _AmplitudeFactor, int _OctavesCount ) const
+float	Noise::FractionalBrownianMotion( GetNoise2DDelegate _GetNoise, void* _pData, const float2& _UV, float _FrequencyFactor, float _AmplitudeFactor, int _OctavesCount ) const
 {
-	NjFloat2	UV = _UV;
+	float2	UV = _UV;
 
 	float		Result = 0.0f;
 	float		Frequency = 1.0f;
@@ -990,9 +990,9 @@ float	Noise::FractionalBrownianMotion( GetNoise2DDelegate _GetNoise, void* _pDat
 	return Result;
 }
 
-float	Noise::RidgedMultiFractal( GetNoise2DDelegate _GetNoise, void* _pData, const NjFloat2& _UV, float _FrequencyFactor, float _AmplitudeFactor, int _OctavesCount ) const
+float	Noise::RidgedMultiFractal( GetNoise2DDelegate _GetNoise, void* _pData, const float2& _UV, float _FrequencyFactor, float _AmplitudeFactor, int _OctavesCount ) const
 {
-	NjFloat2	UV = _UV;
+	float2	UV = _UV;
 
 	float		Result = 0.0f;
 	float		Frequency = 1.0f;

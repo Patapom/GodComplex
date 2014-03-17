@@ -34,7 +34,7 @@ public:		// NESTED TYPES
 			float		DiffuseRoughness;
 
 			float		Offset;
-			NjFloat3	__PAD0;
+			float3	__PAD0;
 		};
 
 		// Dynamic parameters are tied to the layer using the material and could vary per-primitive if necessary

@@ -115,7 +115,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 
 	// Global illum test
 //	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3( 0, 1, 6 ), -NjFloat3::UnitZ );	// Corridor
-	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, NjFloat3( -12.890693f, 6.1750569f, -7.4139323f ), NjFloat3( -6.5200315f, 3.7125835f, -5.5834103f ) );	// City scene
+	gs_pCameraManipulator = new FPSCamera( *gs_pCamera, float3( -12.890693f, 6.1750569f, -7.4139323f ), float3( -6.5200315f, 3.7125835f, -5.5834103f ) );	// City scene
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -135,12 +135,12 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 	//////////////////////////////////////////////////////////////////////////
 	// Create primitives
 	{
-		NjFloat4	pVertices[4] =
+		float4	pVertices[4] =
 		{
-			NjFloat4( -1.0f, +1.0f, 0.0f, 1.0f ),
-			NjFloat4( -1.0f, -1.0f, 0.0f, 1.0f ),
-			NjFloat4( +1.0f, +1.0f, 0.0f, 1.0f ),
-			NjFloat4( +1.0f, -1.0f, 0.0f, 1.0f ),
+			float4( -1.0f, +1.0f, 0.0f, 1.0f ),
+			float4( -1.0f, -1.0f, 0.0f, 1.0f ),
+			float4( +1.0f, +1.0f, 0.0f, 1.0f ),
+			float4( +1.0f, -1.0f, 0.0f, 1.0f ),
 		};
 		gs_pPrimQuad = new Primitive( gs_Device, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, VertexFormatPt4::DESCRIPTOR );
 	}
@@ -273,14 +273,14 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	// Update the camera settings and upload its data to the shaders
 
 	// TODO: Animate camera...
-	gs_pCamera->LookAt( NjFloat3( _TV(0.0f), _TV(0.8f), _TV(1.4f) ), NjFloat3( 0.0f, 0.8f, 0.0f ), NjFloat3::UnitY );
+	gs_pCamera->LookAt( float3( _TV(0.0f), _TV(0.8f), _TV(1.4f) ), float3( 0.0f, 0.8f, 0.0f ), float3::UnitY );
 
 	gs_pCamera->Upload( 0 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Render the effects
 //	gs_Device.ClearRenderTarget( gs_Device.DefaultRenderTarget(), NjFloat4( 0.5f, 0.5f, 0.5f, 1.0f ) );
-	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.5f, 0.25f, 0.125f, 0.0f ) );
+	gs_Device.ClearRenderTarget( *gs_pRTHDR, float4( 0.5f, 0.25f, 0.125f, 0.0f ) );
 	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
 
 	gs_pEffectTranslucency->Render( _Time, _DeltaTime );
@@ -393,7 +393,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Render the effects
- 	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+ 	gs_Device.ClearRenderTarget( *gs_pRTHDR, float4( 0.0f, 0.0f, 0.0f, 0.0f ) );
  	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
 
 	gs_pEffectVolumetric->Render( _Time, _DeltaTime );
@@ -404,7 +404,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	gs_pCameraManipulator->Update( _DeltaTime, 3.0f, 1.0f );
 	gs_pCamera->Upload( 0 );
 
- 	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+ 	gs_Device.ClearRenderTarget( *gs_pRTHDR, float4( 0.0f, 0.0f, 0.0f, 0.0f ) );
  	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
 
 	gs_pEffectGI->Render( _Time, _DeltaTime );
@@ -415,7 +415,7 @@ bool	IntroDo( float _Time, float _DeltaTime )
 	gs_pCameraManipulator->Update( _DeltaTime, 1.0f, 1.0f );
 	gs_pCamera->Upload( 0 );
 
- 	gs_Device.ClearRenderTarget( *gs_pRTHDR, NjFloat4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+ 	gs_Device.ClearRenderTarget( *gs_pRTHDR, float4( 0.0f, 0.0f, 0.0f, 0.0f ) );
  	gs_Device.ClearDepthStencil( gs_Device.DefaultDepthStencil(), 1.0f, 0 );
 
 	gs_pEffectDOF->Render( _Time, _DeltaTime );
@@ -610,7 +610,7 @@ void	PrepareScene()
 
 		GeometryBuilder::MapperPlanar		MapperPlane( 0.125f, 0.125f );
 		gs_pPrimPlane0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
-		GeometryBuilder::BuildPlane( 1, 1, 10.0f * NjFloat3::UnitX, -10.0f * NjFloat3::UnitZ, *gs_pPrimPlane0, &MapperPlane );
+		GeometryBuilder::BuildPlane( 1, 1, 10.0f * float3::UnitX, -10.0f * float3::UnitZ, *gs_pPrimPlane0, &MapperPlane );
 
 		gs_pPrimTorus0 = new Primitive( gs_Device, VertexFormatP3N3G3T2::DESCRIPTOR );
 		GeometryBuilder::BuildTorus( 60, 30, 1.0f, 0.3f, *gs_pPrimTorus0, NULL );
@@ -625,7 +625,7 @@ void	PrepareScene()
 	// Create our plane object
 	{
 		Scene::Object&	Plane0 = gs_pScene->CreateObjectAt( 0, "Plane0" );
-						Plane0.SetPRS( NjFloat3::Zero, NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ) );
+						Plane0.SetPRS( float3::Zero, float4::QuatFromAngleAxis( 0.0f, float3::UnitY ) );
 
 		Plane0.AllocatePrimitives( 1 );
 		Plane0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimPlane0 );
@@ -635,7 +635,7 @@ void	PrepareScene()
 	// Create our sphere object
 	{
 		Scene::Object&	Sphere0 = gs_pScene->CreateObjectAt( 1, "Sphere0" );
-						Sphere0.SetPRS( NjFloat3( 0, 0.8f, 0 ), NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), 0.8f * NjFloat3::One );
+						Sphere0.SetPRS( float3( 0, 0.8f, 0 ), float4::QuatFromAngleAxis( 0.0f, float3::UnitY ), 0.8f * float3::One );
 
 		Sphere0.AllocatePrimitives( 1 );
 		Sphere0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimSphere0 );
@@ -645,7 +645,7 @@ void	PrepareScene()
 	// Create our torus object
 	{
 		Scene::Object&	Torus0 = gs_pScene->CreateObjectAt( 2, "Torus" );
-						Torus0.SetPRS( NjFloat3( 2.0f, 0.3f, 1.5f ), NjFloat4::QuatFromAngleAxis( 0.5f * PI, NjFloat3::UnitX ) );
+						Torus0.SetPRS( float3( 2.0f, 0.3f, 1.5f ), float4::QuatFromAngleAxis( 0.5f * PI, float3::UnitX ) );
 
 		Torus0.AllocatePrimitives( 1 );
 		Torus0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimTorus0 );
@@ -654,7 +654,7 @@ void	PrepareScene()
 
 		Scene::Object&	Torus1 = gs_pScene->CreateObjectAt( 3, "Torus" );
 //						Torus1.SetPRS( NjFloat3( 2.0f, 0.9f, 1.5f ), NjFloat4::QuatFromAngleAxis( 0.5f * PI, NjFloat3::UnitX ) );
-						Torus1.SetPRS( NjFloat3( -2.0f, 0.3f, 1.6f ), NjFloat4::QuatFromAngleAxis( 0.5f * PI, NjFloat3::UnitX ) );
+						Torus1.SetPRS( float3( -2.0f, 0.3f, 1.6f ), float4::QuatFromAngleAxis( 0.5f * PI, float3::UnitX ) );
 
 		Torus1.AllocatePrimitives( 1 );
 		Torus1.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimTorus0 );
@@ -664,7 +664,7 @@ void	PrepareScene()
 	// Create our cube object
 	{
 		Scene::Object&	Cube0 = gs_pScene->CreateObjectAt( 4, "Sphere0" );
-						Cube0.SetPRS( NjFloat3( -1.5f, 0.5f, -1.0f ), NjFloat4::QuatFromAngleAxis( 0.0f, NjFloat3::UnitY ), 0.5f * NjFloat3::One );
+						Cube0.SetPRS( float3( -1.5f, 0.5f, -1.0f ), float4::QuatFromAngleAxis( 0.0f, float3::UnitY ), 0.5f * float3::One );
 
 		Cube0.AllocatePrimitives( 1 );
 		Cube0.GetPrimitiveAt( 0 ).SetRenderPrimitive( *gs_pPrimCube0 );

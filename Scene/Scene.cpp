@@ -69,6 +69,21 @@ void	Scene::Render( const Node* _pNode, ISceneRenderer& _SceneRenderer ) const
 		Render( _pNode->m_ppChildren[ChildIndex], _SceneRenderer );
 }
 
+void	Scene::ForEach( IVisitor& _Visitor )
+{
+	ForEach( _Visitor, m_pROOT );
+}
+void	Scene::ForEach( IVisitor& _Visitor, Node* _pNode )
+{
+	_Visitor.HandleNode( *_pNode );
+
+	for ( int ChildIndex=0; ChildIndex < _pNode->m_ChildrenCount; ChildIndex++ )
+	{
+		Node*	pChild = _pNode->m_ppChildren[ChildIndex];
+		ForEach( _Visitor, pChild );
+	}
+}
+
 Scene::Node*	Scene::ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChild )
 {
 	if ( _pPrevious == NULL )
@@ -83,6 +98,9 @@ Scene::Node*	Scene::ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChi
 		Scene::Node*	pChild = _pPrevious->m_ppChildren[ChildIndex];
 		if ( pChild->m_Type == _Type )
 			return pChild;
+
+		if ( pChild->m_ChildrenCount == 0 )
+			continue;
 
 		// Look in the child's children...
 		Scene::Node*	pMatch = ForEach( _Type, pChild );
@@ -228,7 +246,7 @@ void	Scene::Node::Init( const U8*& _pData, ISceneTagger& _SceneTagger )
 	m_Local2Parent.m[4*3+3] = ReadF32( _pData );
 
 	// Retrieve LOCAL => WORLD
-	const NjFloat4x4&	Parent2World = m_pParent != NULL ? m_pParent->m_Local2World : NjFloat4x4::Identity;
+	const float4x4&	Parent2World = m_pParent != NULL ? m_pParent->m_Local2World : float4x4::Identity;
 	m_Local2World = m_Local2Parent * Parent2World;
 
 	InitSpecific( _pData, _SceneTagger );
@@ -321,8 +339,8 @@ Scene::Mesh::~Mesh()
 
 void	Scene::Mesh::InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger )
 {
-	m_BBoxMin = 1e8f * NjFloat3::One;
-	m_BBoxMax = -1e8f * NjFloat3::One;
+	m_BBoxMin = 1e8f * float3::One;
+	m_BBoxMax = -1e8f * float3::One;
 
 	m_PrimitivesCount = ReadU16( _pData );
 	m_pPrimitives = new Primitive[m_PrimitivesCount];

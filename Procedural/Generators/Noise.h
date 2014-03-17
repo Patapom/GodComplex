@@ -29,7 +29,7 @@ public:		// NESTED TYPES
 	// The pointers to pCellXYZ contain the indices of the cells where the minimal distances were found
 	typedef float	(*CombineDistancesDelegate)( float _pSqDistances[], int _pCellX[], int _pCellY[], int _pCellZ[], void* _pData );
 
-	typedef float	(*GetNoise2DDelegate)( const NjFloat2& _UV, void* _pData );
+	typedef float	(*GetNoise2DDelegate)( const float2& _UV, void* _pData );
 
 
 protected:	// FIELDS
@@ -44,9 +44,9 @@ protected:	// FIELDS
 
 	// Wrapping parameters for Perlin noise
 	float		m_WrapRadius;
-	NjFloat2	m_WrapCenter0;
-	NjFloat2	m_WrapCenter1;
-	NjFloat2	m_WrapCenter2;
+	float2	m_WrapCenter0;
+	float2	m_WrapCenter1;
+	float2	m_WrapCenter2;
 
 	// Wrapping parameters for cellular/Worley noise
 	int			m_SizeX;
@@ -66,37 +66,37 @@ public:		// METHODS
 
 	// --------- PERLIN ---------
 	float	Perlin( float u ) const;
-	float	Perlin( const NjFloat2& uv ) const;
-	float	Perlin( const NjFloat3& uvw ) const;
-	float	Perlin( const NjFloat4& uvwr ) const;
-	float	Perlin( const NjFloat4& uvwr, float s ) const;
-	float	Perlin( const NjFloat4& uvwr, const NjFloat2& st ) const;
+	float	Perlin( const float2& uv ) const;
+	float	Perlin( const float3& uvw ) const;
+	float	Perlin( const float4& uvwr ) const;
+	float	Perlin( const float4& uvwr, float s ) const;
+	float	Perlin( const float4& uvwr, const float2& st ) const;
 
-	NjFloat2	PerlinVector( const NjFloat2& uv ) const;
-	NjFloat3	PerlinVector( const NjFloat3& uvw ) const;
+	float2	PerlinVector( const float2& uv ) const;
+	float3	PerlinVector( const float3& uvw ) const;
 
 	// Noises that wrap !
 	void	SetWrappingParameters( float _Frequency, U32 _Seed );
 	float	WrapPerlin( float u ) const;
-	float	WrapPerlin( const NjFloat2& uv ) const;
-	float	WrapPerlin( const NjFloat3& uvw ) const;
+	float	WrapPerlin( const float2& uv ) const;
+	float	WrapPerlin( const float3& uvw ) const;
 
 	// --------- CELLULAR ---------
 	void	SetCellularWrappingParameters( int _SizeX, int _SizeY, int _SizeZ );
-	void	CellularGetCenter( int _CellX, int _CellY, NjFloat2& _Center, bool _bWrap=false ) const;
-	void	CellularGetCenter( int _CellX, int _CellY, int _CellZ, NjFloat3& _Center, bool _bWrap=false ) const;
-	float	Cellular( const NjFloat2& uv, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;
-	float	Cellular( const NjFloat3& uvw, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;
-	float	Worley( const NjFloat2& uv, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;
-	float	Worley( const NjFloat3& uvw, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;
+	void	CellularGetCenter( int _CellX, int _CellY, float2& _Center, bool _bWrap=false ) const;
+	void	CellularGetCenter( int _CellX, int _CellY, int _CellZ, float3& _Center, bool _bWrap=false ) const;
+	float	Cellular( const float2& uv, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;
+	float	Cellular( const float3& uvw, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;
+	float	Worley( const float2& uv, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;
+	float	Worley( const float3& uvw, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap=false ) const;
 
 	// --------- WAVELET ---------
 	void	Create2DWaveletNoiseTile( int _POT );
-	float	Wavelet( const NjFloat2& uv ) const;
+	float	Wavelet( const float2& uv ) const;
 
 	// --------- ALGORITHMS ---------
-	float	FractionalBrownianMotion( GetNoise2DDelegate _GetNoise, void* _pData, const NjFloat2& uv, float _FrequencyFactor=2.0f, float _AmplitudeFactor=0.5f, int _OctavesCount=4 ) const;
-	float	RidgedMultiFractal( GetNoise2DDelegate _GetNoise, void* _pData, const NjFloat2& _UV, float _FrequencyFactor=2.0f, float _AmplitudeFactor=0.5f, int _OctavesCount=4 ) const;
+	float	FractionalBrownianMotion( GetNoise2DDelegate _GetNoise, void* _pData, const float2& uv, float _FrequencyFactor=2.0f, float _AmplitudeFactor=0.5f, int _OctavesCount=4 ) const;
+	float	RidgedMultiFractal( GetNoise2DDelegate _GetNoise, void* _pData, const float2& _UV, float _FrequencyFactor=2.0f, float _AmplitudeFactor=0.5f, int _OctavesCount=4 ) const;
 
 private:
 

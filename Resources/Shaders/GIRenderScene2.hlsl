@@ -12,15 +12,7 @@ cbuffer	cbGeneral	: register( b8 )
 	float3		_Ambient;		// Default ambient if no indirect is being used
 	bool		_ShowIndirect;
 	bool		_ShowOnlyIndirect;
-};
-
-struct	VS_IN
-{
-	float3	Position	: POSITION;
-	float3	Normal		: NORMAL;
-	float3	Tangent		: TANGENT;
-	float3	BiTangent	: BITANGENT;
-	float2	UV			: TEXCOORD0;
+	bool		_ShowWhiteDiffuse;
 };
 
 struct	PS_IN
@@ -43,7 +35,50 @@ struct	PS_IN
 	float3	SH8			: SH8;
 };
 
-PS_IN	VS( VS_IN _In )
+void	AccumulateProbeInfluence( ProbeStruct _Probe, float3 _WorldPosition, float3 _WorldNormal, inout float3 _SH[9], inout float _SumWeights )
+{
+	float3	ToProbe = _Probe.Position - _WorldPosition;
+	float	Distance2Probe = length( ToProbe );
+			ToProbe /= Distance2Probe;
+
+	float	ProbeRadius = 2.0 * _Probe.Radius;
+//	float	ProbeRadius = 1.0 * _Probe.Radius;
+
+	// Weight by distance
+// 	const float	MEAN_HARMONIC_DISTANCE = 4.0;
+// 	const float	WEIGHT_AT_DISTANCE = 0.01;
+// 	const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (MEAN_HARMONIC_DISTANCE * MEAN_HARMONIC_DISTANCE);
+// 	float	ProbeWeight = exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
+
+//	float	ProbeWeight = pow( max( 0.01, Distance2Probe ), -3.0 );
+
+	// Weight based on probe's max distance
+	const float	WEIGHT_AT_DISTANCE = 0.05;
+ 	const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (ProbeRadius * ProbeRadius);
+//###	float	ProbeWeight = 2.0 * exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
+	float	ProbeWeight = 10.0 * exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
+
+	// Also weight by orientation to avoid probes facing away from us
+	ProbeWeight *= saturate( lerp( -0.1, 1.0, 0.5 * (1.0 + dot( _WorldNormal, ToProbe )) ) );
+
+
+//ProbeWeight = 1;
+
+// if ( ProbeIndex == 17 )
+// {
+// 	Out.SH0 = ProbeWeight;
+// 	Out.SH1 = Probe.Radius;
+// 	Out.SH2 = Probe.Position;
+// 	return Out;
+// }
+
+	for ( int i=0; i < 9; i++ )
+		_SH[i] += ProbeWeight * _Probe.SH[i];
+
+	_SumWeights += ProbeWeight;
+}
+
+PS_IN	VS( SCENE_VS_IN _In )
 {
 	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
 
@@ -62,51 +97,45 @@ PS_IN	VS( VS_IN _In )
 	float3	SH[9];
 	for ( int i=0; i < 9; i++ )
 		SH[i] = 0.0;
+
+#ifdef PER_VERTEX_PROBE_ID	// Only use the entry point probe and neighbors
+
+	if ( _In.ProbeID != 0xFFFFFFFF )
+	{	// We have an entry point into the probes network!
+//		SH[0] = _In.ProbeID;
+
+		// Accumulate this probe
+		ProbeStruct	OriginProbe = _SBProbes[_In.ProbeID];
+		AccumulateProbeInfluence( OriginProbe, Out.Position, Normal, SH, SumWeights );
+
+		// Then accumulate valid neighbors
+		uint	NeighborProbeID = OriginProbe.NeighborIDs.x & 0xFFFF;
+		if ( NeighborProbeID != 0xFFFF )
+			AccumulateProbeInfluence( _SBProbes[NeighborProbeID], Out.Position, Normal, SH, SumWeights );
+
+		NeighborProbeID = OriginProbe.NeighborIDs.x >> 16;
+		if ( NeighborProbeID != 0xFFFF )
+			AccumulateProbeInfluence( _SBProbes[NeighborProbeID], Out.Position, Normal, SH, SumWeights );
+
+		NeighborProbeID = OriginProbe.NeighborIDs.y & 0xFFFF;
+		if ( NeighborProbeID != 0xFFFF )
+			AccumulateProbeInfluence( _SBProbes[NeighborProbeID], Out.Position, Normal, SH, SumWeights );
+
+		NeighborProbeID = OriginProbe.NeighborIDs.y >> 16;
+		if ( NeighborProbeID != 0xFFFF )
+			AccumulateProbeInfluence( _SBProbes[NeighborProbeID], Out.Position, Normal, SH, SumWeights );
+	}
+
+#else	// SUM ALL THE SCENE'S PROBES!
+
 	for ( uint ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ )
 //for ( uint ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
 	{
 		ProbeStruct	Probe = _SBProbes[ProbeIndex];
-
-		float3	ToProbe = Probe.Position - Out.Position;
-		float	Distance2Probe = length( ToProbe );
-				ToProbe /= Distance2Probe;
-
-		float	ProbeRadius = 2.0 * Probe.Radius;
-//		float	ProbeRadius = 1.0 * Probe.Radius;
-
-		// Weight by distance
-// 		const float	MEAN_HARMONIC_DISTANCE = 4.0;
-// 		const float	WEIGHT_AT_DISTANCE = 0.01;
-// 		const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (MEAN_HARMONIC_DISTANCE * MEAN_HARMONIC_DISTANCE);
-// 		float	ProbeWeight = exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
-
-//		float	ProbeWeight = pow( max( 0.01, Distance2Probe ), -3.0 );
-
-		// Weight based on probe's max distance
-		const float	WEIGHT_AT_DISTANCE = 0.05;
- 		const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (ProbeRadius * ProbeRadius);
-//###		float	ProbeWeight = 2.0 * exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
-		float	ProbeWeight = 10.0 * exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
-
-		// Also weight by orientation to avoid probes facing away from us
-		ProbeWeight *= saturate( lerp( -0.1, 1.0, 0.5 * (1.0 + dot( Normal, ToProbe )) ) );
-
-
-//ProbeWeight = 1;
-
-// if ( ProbeIndex == 17 )
-// {
-// 	Out.SH0 = ProbeWeight;
-// 	Out.SH1 = Probe.Radius;
-// 	Out.SH2 = Probe.Position;
-// 	return Out;
-// }
-
-		for ( int i=0; i < 9; i++ )
-			SH[i] += ProbeWeight * Probe.SH[i];
-
-		SumWeights += ProbeWeight;
+		AccumulateProbeInfluence( Probe, Out.Position, Normal, SH, SumWeights );
 	}
+
+#endif
 
 	// Normalize & store
 //	float	Norm = 1.0 / SumWeights;
@@ -128,7 +157,7 @@ PS_IN	VS( VS_IN _In )
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
-// return float4( _In.SH0, 0 );
+//return float4( 0.01 * _In.SH0, 0 );
 // return float4( 0.01 * _In.SH1, 0 );
 
 #if EMISSIVE
@@ -142,6 +171,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	float3	DiffuseAlbedo = _DiffuseAlbedo;
 	if ( _HasDiffuseTexture )
 		DiffuseAlbedo = _TexDiffuseAlbedo.Sample( LinearWrap, _In.UV.xy ).xyz;
+	if ( _ShowWhiteDiffuse )
+		DiffuseAlbedo = 0.25;
 
 	DiffuseAlbedo *= INVPI;
 
@@ -171,6 +202,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	float3	VertexBiTangent = normalize( _In.BiTangent );
 
 	float3	Normal = normalize( tsNormal.x * VertexTangent + tsNormal.y * VertexBiTangent + tsNormal.z * VertexNormal );
+
+//return float4( Normal, 1 );
 
 	float3	AccumDiffuse = 0.0;
 	float3	AccumSpecular = 0.0;
@@ -205,7 +238,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 
 	if ( !_ShowIndirect )
 	{	// Dummy dull uniform ambient sky
-		Indirect = _Ambient;
+		Indirect = _Ambient * lerp( 0.5, 1.0, 0.5 * (1.0 + Normal.y) );
 	}
 
 	return float4( Indirect + AccumDiffuse, 1 );

@@ -1,29 +1,29 @@
 #include "../API/Types.h"
 
-const NjFloat2	NjFloat2::Zero( 0, 0 );
-const NjFloat2	NjFloat2::One( 1, 1 );
-const NjFloat2	NjFloat2::UnitX( 1, 0 );
-const NjFloat2	NjFloat2::UnitY( 0, 1 );
+const float2	float2::Zero( 0, 0 );
+const float2	float2::One( 1, 1 );
+const float2	float2::UnitX( 1, 0 );
+const float2	float2::UnitY( 0, 1 );
 
-const NjFloat3	NjFloat3::Zero( 0, 0, 0 );
-const NjFloat3	NjFloat3::One( 1, 1, 1 );
-const NjFloat3	NjFloat3::UnitX( 1, 0, 0 );
-const NjFloat3	NjFloat3::UnitY( 0, 1, 0 );
-const NjFloat3	NjFloat3::UnitZ( 0, 0, 1 );
+const float3	float3::Zero( 0, 0, 0 );
+const float3	float3::One( 1, 1, 1 );
+const float3	float3::UnitX( 1, 0, 0 );
+const float3	float3::UnitY( 0, 1, 0 );
+const float3	float3::UnitZ( 0, 0, 1 );
 
-const NjFloat4	NjFloat4::Zero( 0, 0, 0, 0 );
-const NjFloat4	NjFloat4::One( 1, 1, 1, 1 );
-const NjFloat4	NjFloat4::UnitX( 1, 0, 0, 0 );
-const NjFloat4	NjFloat4::UnitY( 0, 1, 0, 0 );
-const NjFloat4	NjFloat4::UnitZ( 0, 0, 1, 0 );
-const NjFloat4	NjFloat4::UnitW( 0, 0, 0, 1 );
+const float4	float4::Zero( 0, 0, 0, 0 );
+const float4	float4::One( 1, 1, 1, 1 );
+const float4	float4::UnitX( 1, 0, 0, 0 );
+const float4	float4::UnitY( 0, 1, 0, 0 );
+const float4	float4::UnitZ( 0, 0, 1, 0 );
+const float4	float4::UnitW( 0, 0, 0, 1 );
 
-const NjFloat4x4	NjFloat4x4::Zero = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-const NjFloat4x4	NjFloat4x4::Identity = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+const float4x4	float4x4::Zero = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+const float4x4	float4x4::Identity = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
 
-NjFloat4	NjFloat4::QuatFromAngleAxis( float _Angle, const NjFloat3& _Axis )
+float4	float4::QuatFromAngleAxis( float _Angle, const float3& _Axis )
 {
-	NjFloat3	NormalizedAxis = _Axis;
+	float3	NormalizedAxis = _Axis;
 				NormalizedAxis.Normalize();
 
 	_Angle *= 0.5f;
@@ -31,17 +31,17 @@ NjFloat4	NjFloat4::QuatFromAngleAxis( float _Angle, const NjFloat3& _Axis )
 	float	c = cosf(_Angle);
 	float	s = sinf(_Angle);
 
-	return NjFloat4( s * NormalizedAxis, c );
+	return float4( s * NormalizedAxis, c );
 }
 
-NjFloat4x4  NjFloat4x4::Inverse() const
+float4x4  float4x4::Inverse() const
 {
 	float	Det = Determinant();
 	ASSERT( abs(Det) > 1e-6f, "Matrix is not inversible !" );
 
 	Det = 1.0f / Det;
 
-	NjFloat4x4  Temp;
+	float4x4  Temp;
 	Temp.m[4*0+0] = CoFactor( 0, 0 ) * Det;
 	Temp.m[4*1+0] = CoFactor( 0, 1 ) * Det;
 	Temp.m[4*2+0] = CoFactor( 0, 2 ) * Det;
@@ -62,12 +62,12 @@ NjFloat4x4  NjFloat4x4::Inverse() const
 	return	Temp;
 }
 
-float	   NjFloat4x4::Determinant() const
+float	   float4x4::Determinant() const
 {
 	return m[0] * CoFactor( 0, 0 ) + m[1] * CoFactor( 0, 1 ) + m[2] * CoFactor( 0, 2 ) + m[3] * CoFactor( 0, 3 ); 
 }
 
-float	   NjFloat4x4::CoFactor( int x, int y ) const
+float	   float4x4::CoFactor( int x, int y ) const
 {
 	static int  IndexLoop[7] = { 0, 1, 2, 3, 0, 1, 2 };
 
@@ -81,19 +81,19 @@ float	   NjFloat4x4::CoFactor( int x, int y ) const
 			* (((x + y) & 1) == 1 ? -1.0f : +1.0f);
 }
 
-NjFloat4x4&	NjFloat4x4::Normalize()
+float4x4&	float4x4::Normalize()
 {
-	NjFloat3&	X = *((NjFloat3*) &m[4*0]);
+	float3&	X = *((float3*) &m[4*0]);
 				X.Normalize();
-	NjFloat3&	Y = *((NjFloat3*) &m[4*1]);
+	float3&	Y = *((float3*) &m[4*1]);
 				Y.Normalize();
-	NjFloat3&	Z = *((NjFloat3*) &m[4*2]);
+	float3&	Z = *((float3*) &m[4*2]);
 				Z.Normalize();
 
 	return *this;
 }
 
-NjFloat4x4&	NjFloat4x4::Scale( const NjFloat3& _Scale )
+float4x4&	float4x4::Scale( const float3& _Scale )
 {
 	m[4*0+0] *= _Scale.x;	m[4*0+1] *= _Scale.x;	m[4*0+2] *= _Scale.x; 	m[4*0+3] *= _Scale.x;
 	m[4*1+0] *= _Scale.y;	m[4*1+1] *= _Scale.y;	m[4*1+2] *= _Scale.y; 	m[4*1+3] *= _Scale.y;
@@ -102,9 +102,9 @@ NjFloat4x4&	NjFloat4x4::Scale( const NjFloat3& _Scale )
 	return *this;
 }
 
-NjFloat4   operator*( const NjFloat4& a, const NjFloat4x4& b )
+float4   operator*( const float4& a, const float4x4& b )
 {
-	NjFloat4	R;
+	float4	R;
 	R.x = a.x * b.m[4*0+0] + a.y * b.m[4*1+0] + a.z * b.m[4*2+0] + a.w * b.m[4*3+0];
 	R.y = a.x * b.m[4*0+1] + a.y * b.m[4*1+1] + a.z * b.m[4*2+1] + a.w * b.m[4*3+1];
 	R.z = a.x * b.m[4*0+2] + a.y * b.m[4*1+2] + a.z * b.m[4*2+2] + a.w * b.m[4*3+2];
@@ -114,10 +114,10 @@ NjFloat4   operator*( const NjFloat4& a, const NjFloat4x4& b )
 }
 
 
-NjFloat4x4	NjFloat4x4::BuildFromQuat( const NjFloat4& _Quat )
+float4x4	float4x4::BuildFromQuat( const float4& _Quat )
 {
-	NjFloat4x4	Result;
-	NjFloat4	q = _Quat;
+	float4x4	Result;
+	float4	q = _Quat;
 	q.Normalize();
 
 	float	xs = 2.0f * q.x;
@@ -152,29 +152,29 @@ NjFloat4x4	NjFloat4x4::BuildFromQuat( const NjFloat4& _Quat )
 	return	Result;
 }
 
-NjFloat4x4&	NjFloat4x4::PRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S )
+float4x4&	float4x4::PRS( const float3& P, const float4& R, const float3& S )
 {
 	return *this = BuildFromPRS( P, R, S );
 }
 
-NjFloat4x4	NjFloat4x4::ProjectionPerspective( float _FOVY, float _AspectRatio, float _Near, float _Far )
+float4x4	float4x4::ProjectionPerspective( float _FOVY, float _AspectRatio, float _Near, float _Far )
 {
 	float	H = tanf( 0.5f * _FOVY );
 	float	W = _AspectRatio * H;
 	float	Q =  _Far / (_Far - _Near);
 
-	NjFloat4x4	Result;
-	Result.SetRow( 0, NjFloat4( 1.0f / W, 0.0f, 0.0f, 0.0f ) );
-	Result.SetRow( 1, NjFloat4( 0.0f, 1.0f / H, 0.0f, 0.0f ) );
-	Result.SetRow( 2, NjFloat4( 0.0f, 0.0f, Q, 1.0f ) );
-	Result.SetRow( 3, NjFloat4( 0.0f, 0.0f, -_Near * Q, 0.0f ) );
+	float4x4	Result;
+	Result.SetRow( 0, float4( 1.0f / W, 0.0f, 0.0f, 0.0f ) );
+	Result.SetRow( 1, float4( 0.0f, 1.0f / H, 0.0f, 0.0f ) );
+	Result.SetRow( 2, float4( 0.0f, 0.0f, Q, 1.0f ) );
+	Result.SetRow( 3, float4( 0.0f, 0.0f, -_Near * Q, 0.0f ) );
 
 	return Result;
 }
 
-NjFloat4x4	NjFloat4x4::BuildFromPRS( const NjFloat3& P, const NjFloat4& R, const NjFloat3& S )
+float4x4	float4x4::BuildFromPRS( const float3& P, const float4& R, const float3& S )
 {
-	NjFloat4x4	Result = BuildFromQuat( R );
+	float4x4	Result = BuildFromQuat( R );
 
 	Result.m[4*0+0] *= S.x;
 	Result.m[4*0+1] *= S.x;
@@ -196,9 +196,9 @@ NjFloat4x4	NjFloat4x4::BuildFromPRS( const NjFloat3& P, const NjFloat4& R, const
 	return	Result;
 }
 
-NjFloat4x4	NjFloat4x4::Rot( const NjFloat3& _Source, const NjFloat3& _Target )
+float4x4	float4x4::Rot( const float3& _Source, const float3& _Target )
 {
-	NjFloat3	Ortho = _Source ^ _Target;
+	float3	Ortho = _Source ^ _Target;
 	float		Length = Ortho.Length();
 	if ( Length > 1e-6f )
 		Ortho = Ortho / Length;
@@ -209,9 +209,9 @@ NjFloat4x4	NjFloat4x4::Rot( const NjFloat3& _Source, const NjFloat3& _Target )
 	return BuildFromAngleAxis( Angle, Ortho );
 }
 
-NjFloat4x4	NjFloat4x4::RotX( float _Angle )
+float4x4	float4x4::RotX( float _Angle )
 {
-	NjFloat4x4	Result = Identity;
+	float4x4	Result = Identity;
 
 	float C = cosf( _Angle );
 	float S = sinf( _Angle );
@@ -220,9 +220,9 @@ NjFloat4x4	NjFloat4x4::RotX( float _Angle )
 
 	return Result;
 }
-NjFloat4x4	NjFloat4x4::RotY( float _Angle )
+float4x4	float4x4::RotY( float _Angle )
 {
-	NjFloat4x4	Result = Identity;
+	float4x4	Result = Identity;
 
 	float C = cosf( _Angle );
 	float S = sinf( _Angle );
@@ -231,9 +231,9 @@ NjFloat4x4	NjFloat4x4::RotY( float _Angle )
 
 	return Result;
 }
-NjFloat4x4	NjFloat4x4::RotZ( float _Angle )
+float4x4	float4x4::RotZ( float _Angle )
 {
-	NjFloat4x4	Result = Identity;
+	float4x4	Result = Identity;
 
 	float C = cosf( _Angle );
 	float S = sinf( _Angle );
@@ -242,13 +242,13 @@ NjFloat4x4	NjFloat4x4::RotZ( float _Angle )
 
 	return Result;
 }
-NjFloat4x4	NjFloat4x4::PYR( float _Pitch, float _Yaw, float _Roll )
+float4x4	float4x4::PYR( float _Pitch, float _Yaw, float _Roll )
 {
-	NjFloat4x4	Pitch = RotX( _Pitch );
-	NjFloat4x4	Yaw = RotY( _Yaw );
-	NjFloat4x4	Roll = RotZ( _Roll );
+	float4x4	Pitch = RotX( _Pitch );
+	float4x4	Yaw = RotY( _Yaw );
+	float4x4	Roll = RotZ( _Roll );
 
-	NjFloat4x4	Result = Pitch * Yaw * Roll;
+	float4x4	Result = Pitch * Yaw * Roll;
 
 	return Result;
 }
@@ -256,7 +256,7 @@ NjFloat4x4	NjFloat4x4::PYR( float _Pitch, float _Yaw, float _Roll )
 
 //////////////////////////////////////////////////////////////////////////
 // Half floats encoding
-const float	NjHalf::SMALLEST = 6.1035156e-005f;	// The smallest encodable float
+const float	half::SMALLEST = 6.1035156e-005f;	// The smallest encodable float
 
 
 #define F16_EXPONENT_BITS 0x1F
@@ -266,7 +266,7 @@ const float	NjHalf::SMALLEST = 6.1035156e-005f;	// The smallest encodable float
 #define F16_MANTISSA_SHIFT (23 - F16_EXPONENT_SHIFT)
 #define F16_MAX_EXPONENT (F16_EXPONENT_BITS << F16_EXPONENT_SHIFT)
 
-NjHalf::NjHalf( float value )
+half::half( float value )
 {
 	U32 f32 = *((U32*) &value);
 	raw = 0;
@@ -297,7 +297,7 @@ NjHalf::NjHalf( float value )
 	}
 }
 
-NjHalf::operator float() const
+half::operator float() const
 {
 	union 
 	{
@@ -341,9 +341,9 @@ NjHalf::operator float() const
 	return f32.f;
 }
 
-NjFloat4x4  NjFloat4x4::operator*( const NjFloat4x4& b ) const
+float4x4  float4x4::operator*( const float4x4& b ) const
 {
-	NjFloat4x4  R;
+	float4x4  R;
 
 	R.m[4*0+0] = m[4*0+0] * b.m[4*0+0] + m[4*0+1] * b.m[4*1+0] + m[4*0+2] * b.m[4*2+0] + m[4*0+3] * b.m[4*3+0];
 	R.m[4*0+1] = m[4*0+0] * b.m[4*0+1] + m[4*0+1] * b.m[4*1+1] + m[4*0+2] * b.m[4*2+1] + m[4*0+3] * b.m[4*3+1];
@@ -368,15 +368,15 @@ NjFloat4x4  NjFloat4x4::operator*( const NjFloat4x4& b ) const
 	return R;
 }
 
-float&	NjFloat4x4::operator()( int _Row, int _Column )
+float&	float4x4::operator()( int _Row, int _Column )
 {
-	NjFloat4*	pRow = 0;
+	float4*	pRow = 0;
 	switch ( _Row&3 )
 	{
-	case 0: pRow = (NjFloat4*) &m[4*0]; break;
-	case 1: pRow = (NjFloat4*) &m[4*1]; break;
-	case 2: pRow = (NjFloat4*) &m[4*2]; break;
-	case 3: pRow = (NjFloat4*) &m[4*3]; break;
+	case 0: pRow = (float4*) &m[4*0]; break;
+	case 1: pRow = (float4*) &m[4*1]; break;
+	case 2: pRow = (float4*) &m[4*2]; break;
+	case 3: pRow = (float4*) &m[4*3]; break;
 	}
 
 	switch ( _Column&3 )

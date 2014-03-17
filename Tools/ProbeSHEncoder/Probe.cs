@@ -412,6 +412,8 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 
 		public WMath.Matrix4x4[]	m_Side2World = new WMath.Matrix4x4[6];
 
+		public int					m_ProbeID = -1;						// This is extracted from the cube map file name... Not very robust but good enough!
+
 		public Pixel[][,]			m_CubeMap = null;					// Original cube map
 		public List<Pixel>			m_ProbePixels = new List<Pixel>();	// List of all pixels in the probe
 		public List<Pixel>			m_ScenePixels = new List<Pixel>();	// List of pixels that participate to the scene (i.e. not at infinity)
@@ -441,7 +443,7 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 
 		// List of influence weights per face index
 		public UInt32				m_MaxFaceIndex = 0;
-		public Dictionary<UInt32,double>		m_ProbeInfluencePerFace = new Dictionary<UInt32,double>();
+		public Dictionary<UInt32,double>	m_ProbeInfluencePerFace = new Dictionary<UInt32,double>();
 
 		#endregion
 
@@ -461,6 +463,17 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 				throw new Exception( "Provided POM file is not a cube map!" );
 			if ( POM.m_Width != CUBE_MAP_SIZE || POM.m_Height != CUBE_MAP_SIZE || POM.m_ArraySizeOrDepth != 4*6 )
 				throw new Exception( "Unexpected cube map size!" );
+
+			// Extract probe ID from the file name
+			string	CubeMapName = Path.GetFileNameWithoutExtension( _POMCubeMap.FullName );
+			int		LastDigitIndex = CubeMapName.Length-1;
+			while ( CubeMapName[LastDigitIndex] >= '0' && CubeMapName[LastDigitIndex] <= '9' && LastDigitIndex > 0 )
+			{
+				LastDigitIndex--;
+			}
+			CubeMapName = CubeMapName.Substring( LastDigitIndex+1 );
+			if ( !int.TryParse( CubeMapName, out m_ProbeID ) )
+				throw new Exception( "Can't retrieve probe ID from cube map file name!" );
 
 			m_CubeMap = new Pixel[6][,];
 			m_ProbePixels.Clear();
@@ -747,16 +760,17 @@ throw new Exception( "More than 10% invalid pixels with inverted normals in that
 					}
 				}
 
-			// Save probe influence for each scene face
-			FileInfo	InfluenceFileName = new FileInfo( Path.Combine( Path.GetDirectoryName( _FileName.FullName ), Path.GetFileNameWithoutExtension( _FileName.FullName ) + ".FaceInfluence" ) );
-			using ( FileStream S = InfluenceFileName.Create() )
-				using ( BinaryWriter W = new BinaryWriter( S ) )
-				{
-					for ( UInt32 FaceIndex=0; FaceIndex < m_MaxFaceIndex; FaceIndex++ )
-					{
-						W.Write( (float) (m_ProbeInfluencePerFace.ContainsKey( FaceIndex ) ? m_ProbeInfluencePerFace[FaceIndex] : 0.0) );
-					}
-				}
+// We now save a single file
+// 			// Save probe influence for each scene face
+// 			FileInfo	InfluenceFileName = new FileInfo( Path.Combine( Path.GetDirectoryName( _FileName.FullName ), Path.GetFileNameWithoutExtension( _FileName.FullName ) + ".FaceInfluence" ) );
+// 			using ( FileStream S = InfluenceFileName.Create() )
+// 				using ( BinaryWriter W = new BinaryWriter( S ) )
+// 				{
+// 					for ( UInt32 FaceIndex=0; FaceIndex < m_MaxFaceIndex; FaceIndex++ )
+// 					{
+// 						W.Write( (float) (m_ProbeInfluencePerFace.ContainsKey( FaceIndex ) ? m_ProbeInfluencePerFace[FaceIndex] : 0.0) );
+// 					}
+// 				}
 		}
 
 		#region Computes k-Means Sets

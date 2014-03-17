@@ -30,19 +30,19 @@ protected:	// NESTED TYPES
 
 	struct CBObject
 	{
-		NjFloat4x4	Local2World;	// Local=>World transform to rotate the object
+		float4x4	Local2World;	// Local=>World transform to rotate the object
  	};
 
 	struct CBMaterial
 	{
 		U32			ID;
-		NjFloat3	DiffuseAlbedo;
+		float3	DiffuseAlbedo;
 
 		U32			HasDiffuseTexture;
-		NjFloat3	SpecularAlbedo;
+		float3	SpecularAlbedo;
 
 		U32			HasSpecularTexture;
-		NjFloat3	EmissiveColor;
+		float3	EmissiveColor;
 
 		float		SpecularExponent;
 		U32			FaceOffset;		// The offset to apply to the object's face index to obtain an absolute face index
@@ -50,10 +50,10 @@ protected:	// NESTED TYPES
 
 	struct CBSplat
 	{
-		NjFloat3	dUV;
+		float3	dUV;
 		float		__PAD;
-		NjFloat4	Offsets[4];
-		NjFloat4	Weights[8];
+		float4	Offsets[4];
+		float4	Weights[8];
 	};
 
 #pragma  pack( pop )

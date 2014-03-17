@@ -4,7 +4,7 @@ namespace WMath
 {
 	/// <summary>
 	/// </summary>
-    [System.Diagnostics.DebuggerDisplay("Min = ({m_Min.x}, {m_Min.y}, {m_Min.z}) Max = ({m_Max.x}, {m_Max.y}, {m_Max.z})")]
+    [System.Diagnostics.DebuggerDisplay("Center = ({m_Center.x}, {m_Center.y}, {m_Center.z}) Radius = m_Radius")]
     public class BoundingSphere
 	{
 		#region	CONSTANTS
