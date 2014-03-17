@@ -3,7 +3,7 @@
 
 
 #define	LOAD_PROBES			// Define this to load probes instead of computing them
-#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene
+//#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene
 
 // Scene selection (also think about changing the scene in the .RC!)
 //#define SCENE_PATH	".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_1Probe\\"
@@ -24,7 +24,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 
 	}
 	{
-ScopedForceMaterialsLoadFromBinary		bisou;
+//ScopedForceMaterialsLoadFromBinary		bisou;
 
 		D3D_SHADER_MACRO	pMacros2[] = { { "EMISSIVE", "1" }, { NULL, NULL } };
 		CHECK_MATERIAL( m_pMatRenderEmissive = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros2 ), 2 );
@@ -439,7 +439,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 {
 	// Setup general data
 	m_pCB_General->m.ShowIndirect = gs_WindowInfos.pKeys[VK_RETURN] == 0;
-	m_pCB_General->m.ShowOnlyIndirect = gs_WindowInfos.pKeys[VK_BACK] == 0;
+	m_pCB_General->m.ShowOnlyIndirect = gs_WindowInfos.pKeys[VK_BACK] != 0;
 	m_pCB_General->m.Ambient = !m_pCB_General->m.ShowIndirect && m_CachedCopy.EnableSky ? 0.05f * NjFloat3( 0.64f, 0.79f, 1.0f ) : NjFloat3::Zero;
 	m_pCB_General->UpdateData();
 
