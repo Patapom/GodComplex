@@ -44,7 +44,7 @@ namespace FBXTestConverter
 			FBX.SceneLoader.SceneLoader	Loader = new FBX.SceneLoader.SceneLoader();
 
 			FBX.SceneLoader.MaterialsDatabase	Materials = new FBX.SceneLoader.MaterialsDatabase();
-			Materials.BuildFromM2( new DirectoryInfo( @"D:\Workspaces\Arkane\m2" ) );
+//			Materials.BuildFromM2( new DirectoryInfo( @"D:\Workspaces\Arkane\m2" ) );
 
 			FBX.Scene.Scene	Scene = new FBX.Scene.Scene();
 			Loader.Load( _File, Scene, 1.0f, Materials );

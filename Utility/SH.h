@@ -42,10 +42,8 @@ public:
 	static double		ComputeSHWindowedCos( int l, int m, double _θ, double _ϕ, int _Order );
 
 	static void			BuildSHCoeffs( const float3& _Direction, double _Coeffs[9] );
-	static void			BuildSHCosineLobe( const float3& _Direction, double _Coeffs[9] );
 
 	// Advanced
-	static void			ZHRotate( const float3& _Direction, const float3& _ZHCoeffs, double _Coeffs[9] );
 	static void			Product3( const double a[9], const double b[9], double r[9] );
 	static void			Product3( const float a[9], const float b[9], float r[9] );
 	static void			Product3( const float3 a[9], const float b[9], float3 r[9] );
@@ -56,6 +54,25 @@ public:
 	static float3		SphericalToCartesian( double _θ, double _ϕ );
 	static void			SphericalToCartesian( double _θ, double _ϕ, float3& _Direction );
 	static float3		Yup2Zup( const float3& _Yup );
+
+	// Y-up helpers
+	// These functions are the same as the SH.hlsl shader helpers and are all ordered using our familiar Y-up reference frame:
+	// 
+	//	   Y
+	//	   |
+	//	   |
+	//	   |
+	//	   o------X
+	//	  /
+	//	 /
+	//	Z
+	//
+	static void			BuildSHCoeffs_YUp( const float3& _Direction, double _Coeffs[9] );
+	static void			BuildSHCosineLobe_YUp( const float3& _Direction, double _Coeffs[9] );
+	static void			BuildSHCone_YUp( const float3& _Direction, float _HalfAngle, double _Coeffs[9] );
+	static void			BuildSHSmoothCone_YUp( const float3& _Direction, float _HalfAngle, double _Coeffs[9] );
+	static void			ZHRotate_YUp( const float3& _Direction, const float3& _ZHCoeffs, double _Coeffs[9] );
+
 
 private:
 	static double		Factorial( int _Value );

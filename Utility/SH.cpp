@@ -84,6 +84,7 @@ double	SH::ComputeSHCoeff( int l, int m, const float3& _Direction )
 	return	ComputeSHCoeff( l, m, θ, ϕ );
 }
 
+// True computation of coefficients
 void	SH::BuildSHCoeffs( const float3& _Direction, double _Coeffs[9] )
 {
 	// Convert from cartesian to polar coords
@@ -94,6 +95,100 @@ void	SH::BuildSHCoeffs( const float3& _Direction, double _Coeffs[9] )
 	for ( int l=0; l < 3; l++ )
 		for ( int m=-l; m <= l; m++ )
 			_Coeffs[CoeffIndex++] = ComputeSHCoeff( l, m, θ, ϕ );
+}
+
+
+// Builds the 9 SH coefficient for the specified direction
+// (We're already accounting for the fact we're Y-up here)
+//
+void	SH::BuildSHCoeffs_YUp( const float3& _Direction, double _Coeffs[9] )
+{
+	const double	f0 = 0.5 / sqrt(PI);
+	const double	f1 = sqrt(3.0) * f0;
+	const double	f2 = sqrt(15.0) * f0;
+	const double	f3 = sqrt(5.0) * 0.5 * f0;
+
+	_Coeffs[0] = f0;
+	_Coeffs[1] = -f1 * _Direction.x;
+	_Coeffs[2] = f1 * _Direction.y;
+	_Coeffs[3] = -f1 * _Direction.z;
+	_Coeffs[4] = f2 * _Direction.x * _Direction.z;
+	_Coeffs[5] = -f2 * _Direction.x * _Direction.y;
+	_Coeffs[6] = f3 * (3.0 * _Direction.y*_Direction.y - 1.0);
+	_Coeffs[7] = -f2 * _Direction.z * _Direction.y;
+	_Coeffs[8] = f2 * 0.5 * (_Direction.z*_Direction.z - _Direction.x*_Direction.x);
+}
+
+// Builds a spherical harmonics cosine lobe
+// (from "Stupid SH Tricks")
+// (We're already accounting for the fact we're Y-up here)
+//
+void	SH::BuildSHCosineLobe_YUp( const float3& _Direction, double _Coeffs[9] )
+{
+	const float3 ZHCoeffs = float3(
+		0.88622692545275801364908374167057f,	// sqrt(PI) / 2
+		1.0233267079464884884795516248893f,		// sqrt(PI / 3)
+		0.49541591220075137666812859564002f		// sqrt(5PI) / 8
+		);
+	ZHRotate_YUp( _Direction, ZHCoeffs, _Coeffs );
+}
+
+// Builds a spherical harmonics cone lobe (same as for a spherical light source subtending a cone of half angle a)
+// (from "Stupid SH Tricks")
+//
+void	SH::BuildSHCone_YUp( const float3& _Direction, float _HalfAngle, double _Coeffs[9] )
+{
+	double	a = _HalfAngle;
+	double	c = cos( a );
+	double	s = sin( a );
+	float3 ZHCoeffs = float3(
+			float( 1.7724538509055160272981674833411 * (1 - c)),				// sqrt(PI) (1 - cos(a))
+			float( 1.5349900619197327327193274373339 * (s * s)),				// 0.5 sqrt(3PI) sin(a)^2
+			float( 1.9816636488030055066725143825601 * (c * (1 - c) * (1 + c)))	// 0.5 sqrt(5PI) cos(a) (1-cos(a)) (cos(a)+1)
+		);
+	ZHRotate_YUp( _Direction, ZHCoeffs, _Coeffs );
+}
+
+// Builds a spherical harmonics smooth cone lobe
+// The light source intensity is 1 at theta=0 and 0 at theta=half angle
+// (from "Stupid SH Tricks")
+//
+void	SH::BuildSHSmoothCone_YUp( const float3& _Direction, float _HalfAngle, double _Coeffs[9] )
+{
+	double	a = _HalfAngle;
+	float	One_a3 = 1.0f / float(a*a*a);
+	double	c = cos( a );
+	double	s = sin( a );
+	float3 ZHCoeffs = One_a3 * float3(
+			float( 1.7724538509055160272981674833411 * (a * (6.0*(1+c) + a*a) - 12*s) ),					// sqrt(PI) (a^3 + 6a - 12*sin(a) + 6*cos(a)*a) / a^3
+			float( 0.76749503095986636635966371866695 * (a * (a*a + 3*c*c) - 3*c*s) ),						// 0.25 sqrt(3PI) (a^3 - 3*cos(a)*sin(a) + 3*cos(a)^2*a) / a^3
+			float( 0.44036969973400122370500319612446 * (-6.0*a -2*c*c*s -9.0*c*a + 14.0*s + 3*c*c*c*a))	// 1/9 sqrt(5PI) (-6a - 2*cos(a)^2*sin(a) - 9*cos(a)*a + 14*sin(a) + 3*cos(a)^3*a) / a^3
+		);
+	ZHRotate_YUp( _Direction, ZHCoeffs, _Coeffs );
+}
+
+// Rotates ZH coefficients in the specified direction (from "Stupid SH Tricks")
+// Rotating ZH comes to evaluating scaled SH in the given direction.
+// The scaling factors for each band are equal to the ZH coefficients multiplied by sqrt( 4PI / (2l+1) )
+//
+void	SH::ZHRotate_YUp( const float3& _Direction, const float3& _ZHCoeffs, double _Coeffs[9] )
+{
+	double	cl0 = 3.5449077018110320545963349666823 * _ZHCoeffs.x;	// sqrt(4PI)
+	double	cl1 = 2.0466534158929769769591032497785 * _ZHCoeffs.y;	// sqrt(4PI/3)
+	double	cl2 = 1.5853309190424044053380115060481 * _ZHCoeffs.z;	// sqrt(4PI/5)
+
+	double	f0 = cl0 * 0.28209479177387814347403972578039;	// 0.5 / sqrt(PI);
+	double	f1 = cl1 * 0.48860251190291992158638462283835;	// 0.5 * sqrt(3.0/PI);
+	double	f2 = cl2 * 1.0925484305920790705433857058027;	// 0.5 * sqrt(15.0/PI);
+	_Coeffs[0] = f0;
+	_Coeffs[1] = -f1 * _Direction.x;
+	_Coeffs[2] = f1 * _Direction.y;
+	_Coeffs[3] = -f1 * _Direction.z;
+	_Coeffs[4] = f2 * _Direction.x * _Direction.z;
+	_Coeffs[5] = -f2 * _Direction.x * _Direction.y;
+	_Coeffs[6] = f2 * 0.28209479177387814347403972578039 * (3.0 * _Direction.y*_Direction.y - 1.0);
+	_Coeffs[7] = -f2 * _Direction.z * _Direction.y;
+	_Coeffs[8] = f2 * 0.5f * (_Direction.z*_Direction.z - _Direction.x*_Direction.x);
 }
 
 /// <summary>

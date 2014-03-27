@@ -273,7 +273,7 @@ private:	// FIELDS
 	Primitive*			m_pPrimPoint;
 
 		// Cached list of meshes
-	int					m_MeshesCount;
+	U32					m_MeshesCount;
 	Scene::Mesh**		m_ppCachedMeshes;
 
 		// Cached list of materials
@@ -313,7 +313,7 @@ private:	// FIELDS
 	SB<RuntimeProbe>*	m_pSB_RuntimeProbes;
 
 	// Probes Update
-	int					m_ProbesCount;
+	U32					m_ProbesCount;
 	ProbeStruct*		m_pProbes;
 	SB<RuntimeProbeUpdateInfos>*			m_pSB_RuntimeProbeUpdateInfos;
 	SB<RuntimeProbeUpdateSetInfos>*			m_pSB_RuntimeProbeSetInfos;
@@ -397,7 +397,7 @@ private:	// FIELDS
 
 public:		// PROPERTIES
 
-	int			GetErrorCode() const	{ return m_ErrorCode; }
+	int				GetErrorCode() const	{ return m_ErrorCode; }
 
 
 public:		// METHODS
@@ -405,7 +405,7 @@ public:		// METHODS
 	EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera );
 	~EffectGlobalIllum2();
 
-	void		Render( float _Time, float _DeltaTime );
+	void			Render( float _Time, float _DeltaTime );
 
 
 	// ISceneTagger Implementation
@@ -420,11 +420,5 @@ public:		// METHODS
 private:
 
 	void			RenderShadowMap( const float3& _SunDirection );
-	void			BuildSHCoeffs( const float3& _Direction, double _Coeffs[9] );
-	void			BuildSHCosineLobe( const float3& _Direction, double _Coeffs[9] );
-	void			BuildSHCone( const float3& _Direction, float _HalfAngle, double _Coeffs[9] );
-	void			BuildSHSmoothCone( const float3& _Direction, float _HalfAngle, double _Coeffs[9] );
-	void			ZHRotate( const float3& _Direction, const float3& _ZHCoeffs, double _Coeffs[9] );
-
 	void			PreComputeProbes();
 };

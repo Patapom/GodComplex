@@ -1,19 +1,33 @@
 ﻿#include "../../GodComplex.h"
 #include "EffectGlobalIllum2.h"
 
+//#define SCENE_CORRIDOR		// Simple corridor
 #define SCENE_SPONZA		// Sponza Atrium
 
 #define	LOAD_PROBES			// Define this to load probes instead of computing them
-//#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene
+#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
 
 // Scene selection (also think about changing the scene in the .RC!)
-//#define SCENE_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_1Probe\\"
-//#define SCENE_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
-#define SCENE_PATH					"..\\Arkane\\Probes\\City\\"
-
+#ifdef SCENE_CORRIDOR
+#define SCENE_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
 #ifdef LOAD_PROBES	// Can't use that until it's been baked!
-#define USE_PER_VERTEX_PROBE_ID		"..\\Arkane\\City_ProbeID.vertexStream.U16"
+#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\GITest1_ProbeID.vertexStream.U16"
 #endif
+
+#elif defined(SCENE_SPONZA)
+#define SCENE_PATH				".\\Resources\\Scenes\\Sponza\\Probes\\"
+#ifdef LOAD_PROBES	// Can't use that until it's been baked!
+#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\Sponza\\Sponza_ProbeID.vertexStream.U16"
+#endif
+
+#else
+#define SCENE_PATH				"..\\Arkane\\Probes\\City\\"
+#ifdef LOAD_PROBES	// Can't use that until it's been baked!
+#define USE_PER_VERTEX_PROBE_ID	"..\\Arkane\\City_ProbeID.vertexStream.U16"
+#endif
+
+#endif
+
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
@@ -31,6 +45,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 	m_SceneVertexFormatDesc.AggregateVertexFormat( VertexFormatP3N3G3B3T2::DESCRIPTOR );
 
 	{
+// Main scene rendering is quite heavy so we prefer to reload it from binary instead
 //ScopedForceMaterialsLoadFromBinary		bisou;
 
 #ifdef USE_PER_VERTEX_PROBE_ID
@@ -58,6 +73,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
  		CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 7 );
 	}
 	{
+// This one is REALLY heavy! So build it once and reload it from binary forever again
 ScopedForceMaterialsLoadFromBinary		bisou;
 		// Compute Shaders
  		CHECK_MATERIAL( m_pCSUpdateProbe = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 20 );
@@ -69,15 +85,14 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	//////////////////////////////////////////////////////////////////////////
 	// Create the textures
 	{
-// 		const char*	ppTextureFileNames[] = {
-// 			"./Resources/Scenes/GITest1/pata_diff_colo.pom",
-// 		};
-
 #ifndef	USE_WHITE_TEXTURES
 
 		const char*	ppTextureFileNames[] = {
 
-#ifdef SCENE_SPONZA
+#ifdef SCENE_CORRIDOR
+		"./Resources/Scenes/GITest1/pata_diff_colo.pom",
+
+#elif defined(SCENE_SPONZA)
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_thorn_diff.pom",
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_thorn_diff.pom",
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_thorn_ddn.pom",
@@ -241,6 +256,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 		}
 
 #else	//#ifndef	USE_WHITE_TEXTURES
+
 		m_TexturesCount = 2;
 		m_ppTextures = new Texture2D*[m_TexturesCount];
 
@@ -290,8 +306,9 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 
 #ifdef USE_PER_VERTEX_PROBE_ID
+
 	//////////////////////////////////////////////////////////////////////////
-	// Load the vertex stream containing U16-packed probe IDs for each vertex
+	// Load the vertex stream containing U32-packed probe IDs for each vertex
 	FILE*	pFile = NULL;
 	fopen_s( &pFile, USE_PER_VERTEX_PROBE_ID, "rb" );
 	ASSERT( pFile != NULL, "Vertex stream for probe IDs file not found!" );
@@ -327,19 +344,46 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	m_pCB_Scene->UpdateData();
 
 
-	// Cache meshes since my ForEach function is slow as hell!! ^^
-	m_MeshesCount = 0;
-	Scene::Mesh*	pMesh = NULL;
-	while ( (pMesh = (Scene::Mesh*) m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
+	// Cache meshes & probes since my ForEach function is slow as hell!! ^^
 	{
-		m_MeshesCount++;
-	}
-	m_ppCachedMeshes = new Scene::Mesh*[m_MeshesCount];
-	m_MeshesCount = 0;
-	pMesh = NULL;
-	while ( (pMesh = (Scene::Mesh*) m_Scene.ForEach( Scene::Node::MESH, pMesh )) != NULL )
-	{
-		m_ppCachedMeshes[m_MeshesCount++] = pMesh;
+		m_MeshesCount = 0;
+		m_ProbesCount = 0;
+
+		class	VisitorCountNodes : public Scene::IVisitor
+		{
+			EffectGlobalIllum2&	m_Owner;
+		public:
+			VisitorCountNodes( EffectGlobalIllum2& _Owner ) : m_Owner( _Owner ) {}
+			void	HandleNode( Scene::Node& _Node ) override
+			{
+				if ( _Node.m_Type == Scene::Node::MESH )
+					m_Owner.m_MeshesCount++;
+				else if ( _Node.m_Type == Scene::Node::PROBE )
+					m_Owner.m_ProbesCount++;
+			}
+		}	Visitor0( *this );
+		m_Scene.ForEach( Visitor0 );
+
+		m_ppCachedMeshes = new Scene::Mesh*[m_MeshesCount];
+		m_pProbes = new ProbeStruct[m_ProbesCount];
+
+		m_MeshesCount = 0;
+		m_ProbesCount = 0;
+
+		class	VisitorStoreNodes : public Scene::IVisitor
+		{
+			EffectGlobalIllum2&	m_Owner;
+		public:
+			VisitorStoreNodes( EffectGlobalIllum2& _Owner ) : m_Owner( _Owner ) {}
+			void	HandleNode( Scene::Node& _Node ) override
+			{
+				if ( _Node.m_Type == Scene::Node::MESH )
+					m_Owner.m_ppCachedMeshes[m_Owner.m_MeshesCount++] = (Scene::Mesh*) &_Node;
+				else if ( _Node.m_Type == Scene::Node::PROBE )
+					m_Owner.m_pProbes[m_Owner.m_ProbesCount++].pSceneProbe = (Scene::Probe*) &_Node;
+			}
+		}	Visitor1( *this );
+		m_Scene.ForEach( Visitor1 );
 	}
 
 
@@ -354,7 +398,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// Start precomputation
+	// Start precomputation/loading of probes
 	PreComputeProbes();
 
 
@@ -376,10 +420,10 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 		{
 			float		Phi = PI * PhiIndex / MAX_THETA;
 			float3	Direction( sinf(Phi) * sinf(Theta), cosf(Theta), cosf(Phi)*sinf(Theta) );
-			BuildSHCoeffs( Direction, SHCoeffs );
+			SH::BuildSHCoeffs_YUp( Direction, SHCoeffs );
 
-			float3	SkyColor = SKY_INTENSITY * (1.0f + 2.0f * MAX( -0.5f, cosf(Theta) )) / 3.0f * float3::One;
-//			NjFloat3	SkyColor = SKY_INTENSITY * NjFloat3( 0.64f, 0.79f, 1.0f );	// Simple uniform blue color
+			float3	SkyColor = (1.0f + 2.0f * MAX( -0.5f, cosf(Theta) )) / 3.0f * float3::One;
+//			float3	SkyColor = 1.0f;	// Simple ambient sky...
 
 			double		SolidAngle = sinf(Theta) * dPhidTheta;
 			SumSolidAngle += SolidAngle;
@@ -400,7 +444,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	}
 
 	for ( int i=0; i < 9; i++ )
-		m_pSHAmbientSky[i] = float3( float( INV4PI * SumSHCoeffs[3*i+0] ), float( INV4PI * SumSHCoeffs[3*i+1] ), float( INV4PI * SumSHCoeffs[3*i+2] ) );
+		m_pSHAmbientSky[i] = float( SKY_INTENSITY * INV4PI * SumSHCoeffs[3*i+0] ) * float3( 0.64f, 0.79f, 1.0f );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -521,14 +565,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 delete pRTCubeMap;
 }
 
-// F5 => toggle point light animation
 float		AnimateLightTime0 = 0.0f;
-
-// F6 => toggle sun light animation
-//float		AnimateLightTime1 = 0.0f;
-
-// F7 => toggle neon area light animation
-//float	AnimateLightTime2 = 0.0f;
 
 #define RENDER_SUN	1
 
@@ -559,9 +596,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	// Animate lights
 
 		// Point light
-//	bool	ShowLight0 = !gs_WindowInfos.pKeysToggle[VK_F1];
 	bool	ShowLight0 = m_CachedCopy.EnablePointLight != 0;
-//	if ( ShowLight0 && !gs_WindowInfos.pKeysToggle[VK_F5] )
 	if ( ShowLight0 && m_CachedCopy.AnimatePointLight )
 		AnimateLightTime0 += _DeltaTime;
 
@@ -573,28 +608,47 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pSB_LightsDynamic->m[0].Type = Scene::Light::POINT;
 	m_pSB_LightsDynamic->m[0].Parms.Set( 0.1f, 0.1f, 0, 0 );
 
-#if 0	// CORRIDOR ANIMATION (simple straight line)
+#ifdef SCENE_CORRIDOR
+	// CORRIDOR ANIMATION (simple straight line)
 
 //	m_pSB_LightsDynamic->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * AnimateLightTime0 ) );	// Move along the corridor
 	m_pSB_LightsDynamic->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime0 ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime0 ), 4.0f * sinf( 0.3f * AnimateLightTime0 ) );	// Move along the corridor
 
-#else	// CITY ANIMATION (follow curve)
-
+#else
+	// PATH ANIMATION (follow curve)
 	static bool	bPathPreComputed = false;
+#ifdef SCENE_SPONZA
+	const float	TOTAL_PATH_TIME = 40.0f;	// Total time to walk the path
+	const bool	PING_PONG = false;
+	const int	PATH_NODES_COUNT = 5;
+	const float	Y = 180.0f;	// Ground floor
+//	const float	Y = 550.0f;	// First floor
+
+	static float3	pPath[] = {
+		0.01f * float3( -1229.0f, Y, -462.0f ),
+		0.01f * float3( -1229.0f, Y, 392.0f ),
+		0.01f * float3( 1075.0f, Y, 392.0f ),
+		0.01f * float3( 1075.0f, Y, -462.0f ),
+		0.01f * float3( -1229.0f, Y, -462.0f ),
+	};
+#else
+	const float	TOTAL_PATH_TIME = 20.0f;	// Total time to walk the path
+	const bool	PING_PONG = true;
+	const int	PATH_NODES_COUNT = 4;
 	static float3	pPath[] = {
 		0.01f * float3( 470.669f, 25.833f, -573.035f ),	// Street exterior
 		0.01f * float3( 470.669f, 25.833f, 1263.286f ),	// Shop interior
 		0.01f * float3( 876.358f, 25.833f, 1263.286f ),	// Shop interior
 		0.01f * float3( 918.254f, 25.833f, 3848.391f ),	// Shop yard
 	};
-	static float	pPathSegmentsLength[4];
+#endif
+	static float	pPathSegmentsLength[PATH_NODES_COUNT];
 	static float	TotalPathLength = 0.0f;
 
-	int		PathNodesCount = sizeof(pPath) / sizeof(float3);
 	if ( !bPathPreComputed )
 	{	// Precompute path lengths
 		pPathSegmentsLength[0] = 0.0f;
-		for ( int PathNodeIndex=1; PathNodeIndex < PathNodesCount; PathNodeIndex++ )
+		for ( int PathNodeIndex=1; PathNodeIndex < PATH_NODES_COUNT; PathNodeIndex++ )
 		{
 			TotalPathLength += (pPath[PathNodeIndex] - pPath[PathNodeIndex-1]).Length();
 			pPathSegmentsLength[PathNodeIndex] = TotalPathLength;
@@ -602,10 +656,9 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		bPathPreComputed = true;
 	}
 
-	const float	TotalPathTime = 20.0f;	// Total time to walk the path
-	float	PathTime = TotalPathTime - abs( fmodf( AnimateLightTime0, 2.0f * TotalPathTime ) - TotalPathTime );
-	float	PathLength = PathTime * TotalPathLength / TotalPathTime;
-	for ( int PathNodeIndex=0; PathNodeIndex < PathNodesCount-1; PathNodeIndex++ )
+	float	PathTime = PING_PONG ? TOTAL_PATH_TIME - abs( fmodf( AnimateLightTime0, 2.0f * TOTAL_PATH_TIME ) - TOTAL_PATH_TIME ) : fmodf( AnimateLightTime0, TOTAL_PATH_TIME );
+	float	PathLength = PathTime * TotalPathLength / TOTAL_PATH_TIME;
+	for ( int PathNodeIndex=0; PathNodeIndex < PATH_NODES_COUNT-1; PathNodeIndex++ )
 	{
 		if ( PathLength >= pPathSegmentsLength[PathNodeIndex] && PathLength <= pPathSegmentsLength[PathNodeIndex+1] )
 		{
@@ -620,21 +673,10 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 #if RENDER_SUN	// Show Sun light
 	{
-//		bool	ShowLight1 = gs_WindowInfos.pKeysToggle[VK_F2] != 0;
 		bool	ShowLight1 = m_CachedCopy.EnableSun != 0;
-// 		if ( ShowLight1 && !gs_WindowInfos.pKeysToggle[VK_F6] )
-// 			AnimateLightTime1 += _DeltaTime;
-// 
-// 		if ( gs_WindowInfos.pKeys[VK_SUBTRACT] )
-// 			UserSunTheta -= 4.0f * _DeltaTime;
-// 		if ( gs_WindowInfos.pKeys[VK_ADD] )
-// 			UserSunTheta += 4.0f * _DeltaTime;
-// 
-// 		float		SunTheta = UserSunTheta * PI / 180.0f;
-// 		float		SunPhi = 0.2f * AnimateLightTime1;
 
-		float		SunTheta = m_CachedCopy.SunTheta;
-		float		SunPhi = m_CachedCopy.SunPhi;
+		float	SunTheta = m_CachedCopy.SunTheta;
+		float	SunPhi = m_CachedCopy.SunPhi;
 		float3	SunDirection( sinf(SunTheta) * sinf(SunPhi), cosf(SunTheta), sinf(SunTheta) * cosf(SunPhi) );
 
 		if ( ShowLight1 )
@@ -664,11 +706,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	// Update emissive materials
 	if ( m_EmissiveMaterialsCount > 0 )
 	{
-//		bool	ShowLight2 = gs_WindowInfos.pKeysToggle[VK_F3] != 0;
 		bool	ShowLight2 = m_CachedCopy.EnableEmissiveMaterials != 0;
-
-// 		if ( ShowLight2 && !gs_WindowInfos.pKeysToggle[VK_F7] )
-// 			AnimateLightTime2 += _DeltaTime;
 
 		float3	EmissiveColor = float3::Zero;
 		if ( ShowLight2 )
@@ -692,9 +730,9 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	float3	pSHAmbient[9];
 	memset( pSHAmbient, 0, 9*sizeof(float3) );
 
-//	if ( gs_WindowInfos.pKeysToggle[VK_F4] )
 	if ( m_CachedCopy.EnableSky )
 	{
+		// Use CIE sky
 //		memcpy_s( pSHAmbient, sizeof(pSHAmbient), m_pSHAmbientSky, sizeof(m_pSHAmbientSky) );
 
 		// Simple ambient sky term
@@ -716,9 +754,18 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 
 #if 1	// Hardware update
-
+	// We prepare the update structures for each probe and send this to the compute shader
+	// . The compute shader will then evaluate lighting for all the sampling points for the probe, use their contribution to weight
+	//		each set's SH coefficients that will be added together to form the indirect lighting SH coefficients.
+	// . Then it will compute the product of ambient sky SH and occlusion SH for the probe to add the contribution of the occluded sky
+	// . It will also add the emissive sets' SH weighted by the intensity of the emissive materials at the time (diffuse area lighting).
+	// . Finally, it will estimate the neighbor's "perceived visibility" and propagate their SH via a product of their SH with the
+	//		neighbor visibility mask (SH product). This way we get additional light bounces from probe to probe.
+	//
+	// Basically for every probe update, we perform 1(sky)+4(neighbor) expensive SH products and compute lighting for 64 points in the scene
+	//
 	U32		ProbeUpdatesCount = MIN( m_CachedCopy.MaxProbeUpdatesPerFrame, U32(m_ProbesCount) );
-//TODO: Handle a stack of probes to update
+//TODO: Handle a proper stack of probes to update
 
 	// Prepare the buffer of probe update infos and sampling point infos
 	int		TotalSamplingPointsCount = 0;
@@ -744,11 +791,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		memcpy_s( ProbeUpdateInfos.SHStatic, sizeof(ProbeUpdateInfos.SHStatic), Probe.pSHBounceStatic, 9*sizeof(float3) );
 		memcpy_s( ProbeUpdateInfos.SHOcclusion, sizeof(ProbeUpdateInfos.SHOcclusion), Probe.pSHOcclusion, 9*sizeof(float) );
 
-// No need to duplicate from the runtime probe infos...
-// 		ProbeUpdateInfos.NeighborProbeIDs[0] = Probe.pNeighborProbeInfos[0].ProbeID;
-// 		ProbeUpdateInfos.NeighborProbeIDs[1] = Probe.pNeighborProbeInfos[1].ProbeID;
-// 		ProbeUpdateInfos.NeighborProbeIDs[2] = Probe.pNeighborProbeInfos[2].ProbeID;
-// 		ProbeUpdateInfos.NeighborProbeIDs[3] = Probe.pNeighborProbeInfos[3].ProbeID;
+		// Copy
 		for( int i=0; i < 9; i++ )
 		{
 			ProbeUpdateInfos.NeighborProbeSH[i].x = Probe.pNeighborProbeInfos[0].SH[i];
@@ -911,7 +954,6 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// 3] Render the debug probes
-//	if ( gs_WindowInfos.pKeysToggle[VK_F12] )
 	if ( m_CachedCopy.ShowDebugProbes != 0 )
 	{
 		USING_MATERIAL_START( *m_pMatRenderDebugProbes )
@@ -973,32 +1015,13 @@ static void	CopyProbeNetworkConnection( int _EntryIndex, EffectGlobalIllum2::Run
 
 void	EffectGlobalIllum2::PreComputeProbes()
 {
-	//////////////////////////////////////////////////////////////////////////
-	// Allocate probes
-	m_ProbesCount = 0;
-	Scene::Node*	pSceneProbe = NULL;
-	while ( pSceneProbe = m_Scene.ForEach( Scene::Node::PROBE, pSceneProbe ) )
-	{
-		m_ProbesCount++;
-	}
-	m_pProbes = new ProbeStruct[m_ProbesCount];
 
-	pSceneProbe = NULL;
-	m_ProbesCount = 0;
-	while ( pSceneProbe = m_Scene.ForEach( Scene::Node::PROBE, pSceneProbe ) )
-	{
-		m_pProbes[m_ProbesCount].pSceneProbe = (Scene::Probe*) pSceneProbe;
-		m_ProbesCount++;
-	}
-
-
-#if defined(LOAD_PROBES)	// Define this to load probe sets from disk
+#ifdef LOAD_PROBES	// Define this to load probe sets from disk
 
 	FILE*	pFile = NULL;
 	char	pTemp[1024];
 
-	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
-//for ( int ProbeIndex=16; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
@@ -1006,7 +1029,7 @@ void	EffectGlobalIllum2::PreComputeProbes()
 		sprintf_s( pTemp, SCENE_PATH "Probe%02d.probeset", ProbeIndex );
 		fopen_s( &pFile, pTemp, "rb" );
 		if ( pFile == NULL )
-		{	// Not ready yet (happens when first computation!)
+		{	// Not ready yet (happens for first time computation!)
 			Probe.SetsCount = Probe.EmissiveSetsCount = 0;
 			continue;
 		}
@@ -1252,15 +1275,12 @@ void	EffectGlobalIllum2::PreComputeProbes()
 	//////////////////////////////////////////////////////////////////////////
 	// Render every probe as a cube map & process
 	//
-	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 //for ( int ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
-		//////////////////////////////////////////////////////////////////////////
-		// 1] Render Albedo + Normal + Distance + Static lit + Emissive Mat ID
-
-		// Clear cube map
+		// Clear cube maps
 		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6*0, 6 ), float4::Zero );
 		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6*1, 6 ), float4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
 
@@ -1287,7 +1307,10 @@ void	EffectGlobalIllum2::PreComputeProbes()
 			pCBCubeMapCamera->m.World2Proj = World2Proj;
 			pCBCubeMapCamera->UpdateData();
 
-			// Render the scene into the specific cube map faces
+			m_Device.ClearDepthStencil( *pRTCubeMapDepth, 1.0f, 0, true, false );
+
+			//////////////////////////////////////////////////////////////////////////
+			// 1] Render Albedo + Normal + Distance + Static lit + Emissive Mat ID
 			m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
 
 			ID3D11RenderTargetView*	ppViews[3] = {
@@ -1297,11 +1320,8 @@ void	EffectGlobalIllum2::PreComputeProbes()
 			};
 			m_Device.SetRenderTargets( CUBE_MAP_SIZE, CUBE_MAP_SIZE, 3, ppViews, pRTCubeMapDepth->GetDepthStencilView() );
 
-			// Clear depth
-			m_Device.ClearDepthStencil( *pRTCubeMapDepth, 1.0f, 0, true, false );
-
 			// Render scene
-			for ( int MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
+			for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
 				RenderMesh( *m_ppCachedMeshes[MeshIndex], m_pMatRenderCubeMap );
 
 
@@ -1322,7 +1342,7 @@ void	EffectGlobalIllum2::PreComputeProbes()
 
 			USING_MATERIAL_START( *m_pMatRenderNeighborProbe )
 
-			for ( int NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ )
+			for ( U32 NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ )
 				if ( NeighborProbeIndex != ProbeIndex )
 				{
 					ProbeStruct&	NeighborProbe = m_pProbes[NeighborProbeIndex];
@@ -1342,12 +1362,16 @@ void	EffectGlobalIllum2::PreComputeProbes()
 		// 3] Read back cube map and create the SH coefficients
 		pRTCubeMapStaging->CopyFrom( *pRTCubeMap );
 
-#if 1	// Save to disk
+#if 1	// Save to disk for processing by the ProbeSHEncoder tool
 		char	pTemp[1024];
 		sprintf_s( pTemp, SCENE_PATH "Probe%02d.pom", ProbeIndex );
 		pRTCubeMapStaging->Save( pTemp );
 #endif
 
+
+/* TODO! At the moment we only read back sets from disk that were computed by the probe SH encoder tool (in Tools.sln)
+	But when the probe SH encoder tool is complete, I'll have to re-write it in C++ for in-place probe encoding...
+	---------------------------------------------------------------------------------------------------------------------
 
 		double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
 		double	SumSolidAngle = 0.0;
@@ -1430,9 +1454,7 @@ Probe.pSHBounceStatic[i] = float3::Zero;
 		//	contribution to the total SH of the probe, this allows us to perform dynamic light bounce on the scene cheaply!
 		//
 
-
-//TODO! At the moment we only read back the only pre-computed set from disk
-
+*/
 	}
 
 	delete pCBCubeMapCamera;
@@ -1458,7 +1480,7 @@ pRTCubeMap->SetPS( 64 );
 	//////////////////////////////////////////////////////////////////////////
 	// Allocate runtime probes structured buffer & copy static infos
 	m_pSB_RuntimeProbes = new SB<RuntimeProbe>( m_Device, m_ProbesCount, true );
-	for ( int ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
@@ -1486,7 +1508,7 @@ pRTCubeMap->SetPS( 64 );
 	//////////////////////////////////////////////////////////////////////////
 	// Build the probes network debug mesh
 	Dictionary<RuntimeProbeNetworkInfos>	Connections;
-	for ( U32 ProbeIndex=0; ProbeIndex < U32(m_ProbesCount); ProbeIndex++ )
+	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
@@ -1556,7 +1578,7 @@ void	EffectGlobalIllum2::RenderShadowMap( const float3& _SunDirection )
 	// Find appropriate bounds
 	float3		BBoxMin = 1e6f * float3::One;
 	float3		BBoxMax = -1e6f * float3::One;
-	for ( int MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
+	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
 	{
 		Scene::Mesh*	pMesh = m_ppCachedMeshes[MeshIndex];
 		float4x4	Mesh2Light = pMesh->m_Local2World * m_pCB_ShadowMap->m.World2Light;
@@ -1636,7 +1658,7 @@ void	EffectGlobalIllum2::RenderShadowMap( const float3& _SunDirection )
 	m_Device.SetRenderTargets( m_pRTShadowMap->GetWidth(), m_pRTShadowMap->GetHeight(), 0, NULL, m_pRTShadowMap->GetDepthStencilView() );
 
 	Scene::Node*	pMesh = NULL;
-	for ( int MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
+	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
 		RenderMesh( *m_ppCachedMeshes[MeshIndex], &M );
 
 	USING_MATERIAL_END
@@ -1648,105 +1670,9 @@ void	EffectGlobalIllum2::RenderShadowMap( const float3& _SunDirection )
 
 
 //////////////////////////////////////////////////////////////////////////
-// Spherical Harmonics Helpers
-
-// Builds the 9 SH coefficient for the specified direction
-// (We're already accounting for the fact we're Y-up here)
-//
-void	EffectGlobalIllum2::BuildSHCoeffs( const float3& _Direction, double _Coeffs[9] )
-{
-	const double	f0 = 0.5 / sqrt(PI);
-	const double	f1 = sqrt(3.0) * f0;
-	const double	f2 = sqrt(15.0) * f0;
-	const double	f3 = sqrt(5.0) * 0.5 * f0;
-
-	_Coeffs[0] = f0;
-	_Coeffs[1] = -f1 * _Direction.x;
-	_Coeffs[2] = f1 * _Direction.y;
-	_Coeffs[3] = -f1 * _Direction.z;
-	_Coeffs[4] = f2 * _Direction.x * _Direction.z;
-	_Coeffs[5] = -f2 * _Direction.x * _Direction.y;
-	_Coeffs[6] = f3 * (3.0 * _Direction.y*_Direction.y - 1.0);
-	_Coeffs[7] = -f2 * _Direction.z * _Direction.y;
-	_Coeffs[8] = f2 * 0.5 * (_Direction.z*_Direction.z - _Direction.x*_Direction.x);
-}
-
-// Builds a spherical harmonics cosine lobe
-// (from "Stupid SH Tricks")
-// (We're already accounting for the fact we're Y-up here)
-//
-void	EffectGlobalIllum2::BuildSHCosineLobe( const float3& _Direction, double _Coeffs[9] )
-{
-	const float3 ZHCoeffs = float3(
-		0.88622692545275801364908374167057f,	// sqrt(PI) / 2
-		1.0233267079464884884795516248893f,		// sqrt(PI / 3)
-		0.49541591220075137666812859564002f		// sqrt(5PI) / 8
-		);
-	ZHRotate( _Direction, ZHCoeffs, _Coeffs );
-}
-
-// Builds a spherical harmonics cone lobe (same as for a spherical light source subtending a cone of half angle a)
-// (from "Stupid SH Tricks")
-//
-void	EffectGlobalIllum2::BuildSHCone( const float3& _Direction, float _HalfAngle, double _Coeffs[9] )
-{
-	double	a = _HalfAngle;
-	double	c = cos( a );
-	double	s = sin( a );
-	float3 ZHCoeffs = float3(
-			float( 1.7724538509055160272981674833411 * (1 - c)),				// sqrt(PI) (1 - cos(a))
-			float( 1.5349900619197327327193274373339 * (s * s)),				// 0.5 sqrt(3PI) sin(a)^2
-			float( 1.9816636488030055066725143825601 * (c * (1 - c) * (1 + c)))	// 0.5 sqrt(5PI) cos(a) (1-cos(a)) (cos(a)+1)
-		);
-	ZHRotate( _Direction, ZHCoeffs, _Coeffs );
-}
-
-// Builds a spherical harmonics smooth cone lobe
-// The light source intensity is 1 at theta=0 and 0 at theta=half angle
-// (from "Stupid SH Tricks")
-//
-void	EffectGlobalIllum2::BuildSHSmoothCone( const float3& _Direction, float _HalfAngle, double _Coeffs[9] )
-{
-	double	a = _HalfAngle;
-	float	One_a3 = 1.0f / float(a*a*a);
-	double	c = cos( a );
-	double	s = sin( a );
-	float3 ZHCoeffs = One_a3 * float3(
-			float( 1.7724538509055160272981674833411 * (a * (6.0*(1+c) + a*a) - 12*s) ),					// sqrt(PI) (a^3 + 6a - 12*sin(a) + 6*cos(a)*a) / a^3
-			float( 0.76749503095986636635966371866695 * (a * (a*a + 3*c*c) - 3*c*s) ),						// 0.25 sqrt(3PI) (a^3 - 3*cos(a)*sin(a) + 3*cos(a)^2*a) / a^3
-			float( 0.44036969973400122370500319612446 * (-6.0*a -2*c*c*s -9.0*c*a + 14.0*s + 3*c*c*c*a))	// 1/9 sqrt(5PI) (-6a - 2*cos(a)^2*sin(a) - 9*cos(a)*a + 14*sin(a) + 3*cos(a)^3*a) / a^3
-		);
-	ZHRotate( _Direction, ZHCoeffs, _Coeffs );
-}
-
-// Rotates ZH coefficients in the specified direction (from "Stupid SH Tricks")
-// Rotating ZH comes to evaluating scaled SH in the given direction.
-// The scaling factors for each band are equal to the ZH coefficients multiplied by sqrt( 4PI / (2l+1) )
-//
-void	EffectGlobalIllum2::ZHRotate( const float3& _Direction, const float3& _ZHCoeffs, double _Coeffs[9] )
-{
-	double	cl0 = 3.5449077018110320545963349666823 * _ZHCoeffs.x;	// sqrt(4PI)
-	double	cl1 = 2.0466534158929769769591032497785 * _ZHCoeffs.y;	// sqrt(4PI/3)
-	double	cl2 = 1.5853309190424044053380115060481 * _ZHCoeffs.z;	// sqrt(4PI/5)
-
-	double	f0 = cl0 * 0.28209479177387814347403972578039;	// 0.5 / sqrt(PI);
-	double	f1 = cl1 * 0.48860251190291992158638462283835;	// 0.5 * sqrt(3.0/PI);
-	double	f2 = cl2 * 1.0925484305920790705433857058027;	// 0.5 * sqrt(15.0/PI);
-	_Coeffs[0] = f0;
-	_Coeffs[1] = -f1 * _Direction.x;
-	_Coeffs[2] = f1 * _Direction.y;
-	_Coeffs[3] = -f1 * _Direction.z;
-	_Coeffs[4] = f2 * _Direction.x * _Direction.z;
-	_Coeffs[5] = -f2 * _Direction.x * _Direction.y;
-	_Coeffs[6] = f2 * 0.28209479177387814347403972578039 * (3.0 * _Direction.y*_Direction.y - 1.0);
-	_Coeffs[7] = -f2 * _Direction.z * _Direction.y;
-	_Coeffs[8] = f2 * 0.5f * (_Direction.z*_Direction.z - _Direction.x*_Direction.x);
-}
-
-
-//////////////////////////////////////////////////////////////////////////
 // Scene Rendering
 //
+// Each scene material will require a tag at creation & destruction time: we simply assign the runtime render material as tag
 void*	EffectGlobalIllum2::TagMaterial( const Scene& _Owner, Scene::Material& _Material )
 {
 	if ( m_bDeleteSceneTags )
@@ -1777,6 +1703,10 @@ void*	EffectGlobalIllum2::TagMaterial( const Scene& _Owner, Scene::Material& _Ma
 		return m_pMatRenderEmissive;	// Special rendering for emissive materials!
 	}
 
+#ifdef _DEBUG
+	OutputDebugString( "New scene material tagged!\n" );
+#endif
+
 	return m_pMatRender;
 }
 void*	EffectGlobalIllum2::TagTexture( const Scene& _Owner, Scene::Material::Texture& _Texture )
@@ -1799,6 +1729,7 @@ void*	EffectGlobalIllum2::TagTexture( const Scene& _Owner, Scene::Material::Text
 #endif
 }
 
+// Each scene node will require a tag at creation & destruction time: we simply keep the light nodes and add them as static lights
 void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, Scene::Node& _Node )
 {
 	if ( m_bDeleteSceneTags )
@@ -1821,6 +1752,7 @@ void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, Scene::Node& _Node )
 	return NULL;
 }
 
+// Each scene mesh's primitive will require a tag at creation & destruction time: we create an actual runtime rendering primitive
 void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh, Scene::Mesh::Primitive& _Primitive )
 {
 	if ( m_bDeleteSceneTags )
@@ -1853,9 +1785,14 @@ void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh,
 	m_TotalFacesCount += pPrim->GetFacesCount();							// Increase total amount of faces
 	m_TotalPrimitivesCount++;
 
+#ifdef _DEBUG
+	OutputDebugString( "New scene primitive tagged!\n" );
+#endif
+
 	return pPrim;
 }
 
+// Mesh rendering: we render each of the mesh's primitive in turn
 void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride )
 {
 	// Upload the object's CB
@@ -1908,8 +1845,6 @@ void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMater
 		m_pCB_Material->m.FaceOffset = U32(pPrim->m_pTag);
 		m_pCB_Material->m.HasNormalTexture = pTexNormal != NULL;
 		m_pCB_Material->UpdateData();
-
-		int		Test = sizeof(CBMaterial);
 
 		// Render
 		pMat->Use();

@@ -200,16 +200,16 @@ public:		// NESTED TYPES
 	{
 	public:
 		// Tags a material with a special user pointer
-		virtual void*	TagMaterial( const Scene& _Scene, Scene::Material& _Material ) abstract;
+		virtual void*	TagMaterial( const Scene& _Scene, Material& _Material ) abstract;
 
 		// Tags a texture with a special user pointer
-		virtual void*	TagTexture( const Scene& _Scene, Scene::Material::Texture& _Texture ) abstract;
+		virtual void*	TagTexture( const Scene& _Scene, Material::Texture& _Texture ) abstract;
 
 		// Tags a node with a special user pointer
-		virtual void*	TagNode( const Scene& _Scene, Scene::Node& _Node ) abstract;
+		virtual void*	TagNode( const Scene& _Scene, Node& _Node ) abstract;
 
 		// Tags a primitive with a special user pointer
-		virtual void*	TagPrimitive( const Scene& _Scene, Scene::Mesh& _Mesh, Scene::Mesh::Primitive& _Primitive ) abstract;
+		virtual void*	TagPrimitive( const Scene& _Scene, Mesh& _Mesh, Mesh::Primitive& _Primitive ) abstract;
 	};
 
 	// Interface passed to the scene loading method to tag abstract scene objects with actual rendering data
@@ -222,6 +222,12 @@ public:		// NESTED TYPES
 		virtual void	RenderMesh( const Scene::Mesh& _Mesh, ::Material* _pMaterialOverride ) abstract;
 	};
 
+	// Use a visitor class to browse the scene nodes
+	class	IVisitor
+	{
+	public:
+		virtual void	HandleNode( Node& _Node ) abstract;
+	};
 
 public:		// FIELDS
 
@@ -243,14 +249,19 @@ public:		// METHODS
 	void			Render( ISceneRenderer& _SceneRenderer ) const;
 	void			ClearTags( ISceneTagger& _SceneTagClearer );
 
+	// Prefer using that routine that iterates on all nodes, select the node type yourself, rather than the ForEach method below
+	void			ForEach( IVisitor& _Visitor );
+
+	// !WARNING! I don't know how to write a proper depth-first search, this routine is SLOW AS HELL!!
 	// Iterates over all the nodes of specific type
 	//	_pPrevious, should be NULL for the first call to trigger a new search
-	Node*			ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChild=0 );
-
+	__declspec(deprecated) Node*			ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChild=0 );
 
 private:
 
 	void			Render( const Node* _pNode, ISceneRenderer& _SceneRenderer ) const;
+
+	void			ForEach( IVisitor& _Visitor, Node* _pParent );
 
 	// Helpers
 	Node*			CreateNode( Node* _pParent, const U8*& _pData, ISceneTagger& _SceneTagger );
