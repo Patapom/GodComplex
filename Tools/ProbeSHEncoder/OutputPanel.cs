@@ -398,13 +398,13 @@ namespace ProbeSHEncoder
 
 		private void	CubeMapSamplerEmissiveMatID( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
-			byte	C = (byte) Math.Min( 255, 255 * (1+_Pixel.EmissiveMatID) / 4 );
+			byte	C = (byte) Math.Min( 255, 255 * ((1+_Pixel.EmissiveMatID) % 4) / 4 );
 			_R = _G = _B = C;
 		}
 
 		private void	CubeMapSamplerNeighborProbeID( Probe.Pixel _Pixel, out byte _R, out byte _G, out byte _B )
 		{
-			byte	C = (byte) Math.Min( 255, 255 * (1+_Pixel.NeighborProbeID) / 4 );
+			byte	C = (byte) Math.Min( 255, 255 * ((1+_Pixel.NeighborProbeID) % 4) / 4 );
 			_R = _G = _B = C;
 		}
 

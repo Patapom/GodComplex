@@ -5,7 +5,13 @@
 #ifndef _GI_INC_
 #define _GI_INC_
 
-#define	SHADOW_NORMAL_OFFSET	0.1	// City scene seems to require that amount of offseting to have "correct" shadows
+// City settings
+// static const float	SHADOW_NORMAL_OFFSET = 0.1;	// City scene seems to require that amount of offseting to have "correct" shadows
+// static const float	SHADOW_PCF_DISC_RADIUS = 0.02;
+
+// Sponza
+static const float	SHADOW_NORMAL_OFFSET = 0.01;	// City scene seems to require that amount of offseting to have "correct" shadows
+static const float	SHADOW_PCF_DISC_RADIUS = 0.1;
 
 #if USE_SHADOW_MAP
 #include "Inc/ShadowMap.hlsl"
@@ -116,7 +122,7 @@ float3	AccumulateLight( float3 _WorldPosition, float3 _WorldNormal, float3 _Worl
 		Irradiance = _LightSource.Color;	// Simple!
 
 #if USE_SHADOW_MAP
-		Irradiance *= ComputeShadowPCF( _WorldPosition, _WorldVertexNormal, _WorldVertexTangent, 0.1, SHADOW_NORMAL_OFFSET );
+		Irradiance *= ComputeShadowPCF( _WorldPosition, _WorldVertexNormal, _WorldVertexTangent, SHADOW_PCF_DISC_RADIUS, SHADOW_NORMAL_OFFSET );
 #endif
 	}
 

@@ -5,7 +5,6 @@
 #ifndef _SHADOW_MAP_INC_
 #define _SHADOW_MAP_INC_
 
-//[
 cbuffer	cbShadowMap : register( b2 )
 {
 	float4x4	_Shadow2World;
@@ -13,14 +12,6 @@ cbuffer	cbShadowMap : register( b2 )
 	float3		_ShadowBoundMin;
 	float3		_ShadowBoundMax;
 };
-//]
-
-// struct ShadowMapInfos
-// {
-// 	float3		BoundMin;
-// 	float3		BoundMax;
-// };
-// StructuredBuffer<ShadowMapInfos>	_ShadowMapInfos : register( t2 );
 
 Texture2D<float>	_ShadowMap : register( t2 );
 
@@ -73,8 +64,11 @@ float	ComputeShadow( float3 _WorldPosition, float3 _WorldVertexNormal )
 
 float	ComputeShadowPCF( float3 _WorldPosition, float3 _WorldVertexNormal, float3 _WorldVertexTangent, float _Radius, float _NormalOffset=0.01 )
 {
-	float3	X = _Radius * _WorldVertexTangent;
+	float3	X = _WorldVertexTangent;
 	float3	Y = cross( _WorldVertexNormal, _WorldVertexTangent );
+
+	X *= _Radius;
+	Y *= _Radius;
 
 	const uint		SHADOW_SAMPLES_COUNT = 32;
 	const float2	SamplesOffset[SHADOW_SAMPLES_COUNT] = {
