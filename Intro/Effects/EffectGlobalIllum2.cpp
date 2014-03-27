@@ -1,27 +1,94 @@
-﻿#include "../../GodComplex.h"
+﻿//////////////////////////////////////////////////////////////////////////
+// How to properly use that code sample and make your own scenes:
+//
+// 1) Creating the scene (I'm using Maya and the FBX SDK v2014.2)
+//	_ Prepare a scene in Maya:
+//		_ I'm only supporting standard lambert/phong materials here since using advanced shaders is not the purpose of this code
+//		_ Place point and spot lights in your scene: they will be considered static lighting
+//		_ Place locators in your scene at relevant positions: they will be considered light probes.
+//			=> It's important to place them where light bounces are important, near the walls (but not too near)
+//				and areas of quick lighting changes, near colored surfaces to capture color bleeding adequately
+//		_ Use a non-zero "Incandescence" value in materials to hint that the material will be used as a dynamic area light
+//	_ Export as FBX
+//	_ Convert to GCX (God Complex scene format)
+//		=> Using the Tools > FBX2GCX you can convert a standard FBX scene into a GCX
+//	_ Patch the code to make it load your scene
+//		=> Taking model below with the SCENE_SPONZA define, create the same pattern for your scene (i.e. create PROBES_PATH, USE_PER_VERTEX_PROBE_ID, etc.)
+//		=> Create a disk folder where probe infos will be stored, make PROBES_PATH point to it
+//		=> Text-edit the GodComplex.rc resource file, locate the line where IDR_SCENE_GI is defined, copy/paste/comment and patch with your scene's path
+//
+// 2) Converting textures
+//	_ Place any textures for your scene anywhere you like (preferably in a "Textures" folder in the scene's directory)
+//		=> Prefer using PNGs! Otherwise, batch convert any format to PNG using photoshop or anything
+//	_ Converting to GCX scene, if successful, should have shown a popup dialog with a list of texture names
+//		=> Copy that list of texture names (ending with the .POM extension)
+//		=> Paste it in the code below where you can see similar lists
+//		=> You just hinted the code at which texture corresponds to which texture ID in the GCX scene
+//	_ Convert your textures to POM
+//		=> Using the Tools > PNG2POM you can batch convert your PNGs into POM format
+//		=> Target directory should be in a "TexturesPOM" folder in the scene's directory, to match the paths you copied in the code
+//
+// 3) Generating probe cube maps
+//	_ Make sure USE_WHITE_TEXTURES is commented (i.e. undefined) because you want to use your scene's textures to get proper color bounces
+//	_ Make sure LOAD_PROBES is commented (i.e. undefined): this will hint the code that we're actually COMPUTING the probes for the first time
+//	_ Run
+//		=> If successful, this should take some time to load the scene, render the probes' cube maps, then it should display the scene
+//			using plain direct lighting only
+//		=> Probe cube maps are now ready to be analyzed and processed to generate probe informations that will be used for indirect lighting
+//		=> Go to the directory pointed by PROBES_PATH and make sure you have as many Probe??.POM files as probes you placed in your scene
+//
+// 4) Processing probe cube maps and generating probe infos
+//	_ Launch the Tools > ProbeSHEncoder project
+//	_ Use Main Menu > File > Batch Encode
+//		=> Point it to the directory where the probe cube maps have been saved, prefer using the same directory as target
+//	_ Wait until all probes have been converted
+//		=> You should now have an equal number of .PROBESET files
+//	_ Click the Main Menu > Tools > Encode Face Probes action
+//		=> Locate the .PIM file that should have been generated at the same place as where the .PROBESET files have been generated
+//		=> Locate your .GCX scene
+//	_ It should show a dialog with informations on what went right/wrong in your scene
+//		=> Typically, faces/primitives that don't have probe informations are faces/primitives too far away from a probe and disconnected from other faces/primitives
+//		=> After that, you just generated an additional vertex stream for each of your scene's vertices that contains the index of the closest probe
+//	_ You now have all the informations needed to render the scene
+//
+// 5) Final result
+//	_ Make sure LOAD_PROBES is not commented (i.e. defined): this will hint the code that we're not LOADING and USING the probes for indirect lighting
+//	_ Run
+//		=> Use WASD/QSDZ to navigate the scene, shift to speed up
+//	_ Also run the Tools > ControlPanelGlobalIllumination project
+//		=> This will provide you with the options to control the demo, like enabling/disabling Sun, Sky, dynamic light, emissive area lights, etc.
+//	_ Enjoy...
+//
+//
+// More questions? contact.patapom[at]patapom.com
+//
+//////////////////////////////////////////////////////////////////////////
+//
+#include "../../GodComplex.h"
 #include "EffectGlobalIllum2.h"
 
 //#define SCENE_CORRIDOR		// Simple corridor
 #define SCENE_SPONZA		// Sponza Atrium
 
 #define	LOAD_PROBES			// Define this to load probes instead of computing them
-#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
+//#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
+//#define	USE_NORMAL_MAPS			// Define this to use normal maps
 
 // Scene selection (also think about changing the scene in the .RC!)
 #ifdef SCENE_CORRIDOR
-#define SCENE_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
+#define PROBES_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
 #ifdef LOAD_PROBES	// Can't use that until it's been baked!
 #define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\GITest1_ProbeID.vertexStream.U16"
 #endif
 
 #elif defined(SCENE_SPONZA)
-#define SCENE_PATH				".\\Resources\\Scenes\\Sponza\\Probes\\"
+#define PROBES_PATH				".\\Resources\\Scenes\\Sponza\\Probes\\"
 #ifdef LOAD_PROBES	// Can't use that until it's been baked!
 #define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\Sponza\\Sponza_ProbeID.vertexStream.U16"
 #endif
 
 #else
-#define SCENE_PATH				"..\\Arkane\\Probes\\City\\"
+#define PROBES_PATH				"..\\Arkane\\Probes\\City\\"
 #ifdef LOAD_PROBES	// Can't use that until it's been baked!
 #define USE_PER_VERTEX_PROBE_ID	"..\\Arkane\\City_ProbeID.vertexStream.U16"
 #endif
@@ -1026,7 +1093,7 @@ void	EffectGlobalIllum2::PreComputeProbes()
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
 		// Read numbered probe
-		sprintf_s( pTemp, SCENE_PATH "Probe%02d.probeset", ProbeIndex );
+		sprintf_s( pTemp, PROBES_PATH "Probe%02d.probeset", ProbeIndex );
 		fopen_s( &pFile, pTemp, "rb" );
 		if ( pFile == NULL )
 		{	// Not ready yet (happens for first time computation!)
@@ -1364,7 +1431,7 @@ void	EffectGlobalIllum2::PreComputeProbes()
 
 #if 1	// Save to disk for processing by the ProbeSHEncoder tool
 		char	pTemp[1024];
-		sprintf_s( pTemp, SCENE_PATH "Probe%02d.pom", ProbeIndex );
+		sprintf_s( pTemp, PROBES_PATH "Probe%02d.pom", ProbeIndex );
 		pRTCubeMapStaging->Save( pTemp );
 #endif
 
@@ -1843,7 +1910,11 @@ void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMater
 		m_pCB_Material->m.EmissiveColor = SceneMaterial.m_EmissiveColor;
 		m_pCB_Material->m.SpecularExponent = SceneMaterial.m_SpecularExponent.x;
 		m_pCB_Material->m.FaceOffset = U32(pPrim->m_pTag);
+#ifdef USE_NORMAL_MAPS
 		m_pCB_Material->m.HasNormalTexture = pTexNormal != NULL;
+#else
+		m_pCB_Material->m.HasNormalTexture = false;
+#endif
 		m_pCB_Material->UpdateData();
 
 		// Render

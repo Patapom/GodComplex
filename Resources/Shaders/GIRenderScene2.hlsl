@@ -238,7 +238,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 
 	if ( !_ShowIndirect )
 	{	// Dummy dull uniform ambient sky
-		Indirect = _Ambient * lerp( 0.5, 1.0, 0.5 * (1.0 + Normal.y) );
+		Indirect = _Ambient * DiffuseAlbedo * lerp( 0.5, 1.0, 0.5 * (1.0 + Normal.y) );
 	}
 
 	return float4( Indirect + AccumDiffuse, 1 );
