@@ -52,21 +52,21 @@ void	Scene::ClearTags( ISceneTagger& _SceneTagClearer )
 	m_pROOT->Exit( _SceneTagClearer );
 }
 
-void	Scene::Render( ISceneRenderer& _SceneRenderer ) const
+void	Scene::Render( ISceneRenderer& _SceneRenderer, bool _SetMaterial ) const
 {
-	Render( m_pROOT, _SceneRenderer );
+	Render( m_pROOT, _SceneRenderer, _SetMaterial );
 }
 
-void	Scene::Render( const Node* _pNode, ISceneRenderer& _SceneRenderer ) const
+void	Scene::Render( const Node* _pNode, ISceneRenderer& _SceneRenderer, bool _SetMaterial ) const
 {
 	ASSERT( _pNode != NULL, "Invalid node!" );
 
 	if ( _pNode->m_Type == Node::MESH )
-		_SceneRenderer.RenderMesh( (const Mesh&) *_pNode, NULL );
+		_SceneRenderer.RenderMesh( (const Mesh&) *_pNode, NULL, _SetMaterial );
 
 	// Render children
 	for ( int ChildIndex=0; ChildIndex < _pNode->m_ChildrenCount; ChildIndex++ )
-		Render( _pNode->m_ppChildren[ChildIndex], _SceneRenderer );
+		Render( _pNode->m_ppChildren[ChildIndex], _SceneRenderer, _SetMaterial );
 }
 
 void	Scene::ForEach( IVisitor& _Visitor )

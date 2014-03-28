@@ -28,10 +28,10 @@ private:	// FIELDS
 	ID3D11Texture2D*				m_pTexture;
 
 	// Cached resource views
-	mutable DictionaryU32			m_CachedShaderViews;
-	mutable DictionaryU32			m_CachedTargetViews;
+	mutable DictionaryU32			m_CachedSRVs;
+	mutable DictionaryU32			m_CachedRTVs;
 	mutable DictionaryU32			m_CachedUAVs;
-	mutable ID3D11DepthStencilView*	m_pCachedDepthStencilView;
+	mutable DictionaryU32			m_CachedDSVs;
 	mutable int						m_LastAssignedSlots[6];
 	mutable int						m_LastAssignedSlotsUAV;
 	D3D11_MAPPED_SUBRESOURCE		m_LockedResource;
@@ -57,10 +57,10 @@ public:	 // METHODS
 	Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format, int _ArraySize=1 );
 	~Texture2D();
 
-	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart=0, int _MipLevelsCount=0, int _ArrayStart=0, int _ArraySize=1 ) const;
+	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart=0, int _MipLevelsCount=0, int _ArrayStart=0, int _ArraySize=0 ) const;
 	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=0 ) const;
 	ID3D11UnorderedAccessView*	GetUAV(  int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=0 ) const;
-	ID3D11DepthStencilView*		GetDepthStencilView() const;
+	ID3D11DepthStencilView*		GetDepthStencilView( int _ArrayStart=0, int _ArraySize=0 ) const;
 
 	// Uploads the texture to the shader
 	void		Set( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;

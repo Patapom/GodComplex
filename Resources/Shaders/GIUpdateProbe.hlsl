@@ -6,6 +6,10 @@
 #include "Inc/SH.hlsl"
 #include "Inc/ShadowMap.hlsl"
 
+static const float	PCF_SHADOW_NORMAL_OFFSET = 0.1;	// Offset from surface to avoid shadow acnea
+static const float	PCF_DISC_RADIUS_FACTOR = 1.0;	// Radius factor to go fetch PCF samples closer or further from sample's center
+
+
 #define	THREADS_X	64						// The maximum amount of sampling points per probe (Must match the MAX_SET_SAMPLES define declared in the header file!)
 #define	THREADS_Y	1
 #define	THREADS_Z	1
@@ -100,7 +104,7 @@ float	ComputeShadowCS( float3 _WorldPosition, float3 _WorldNormal, float _Radius
 		Y = float3( 0, 0, 1 );
 	}
 
-_Radius *= 1.0;
+	_Radius *= PCF_DISC_RADIUS_FACTOR;
 
 	X *= _Radius;
 	Y *= _Radius;
@@ -168,7 +172,7 @@ _Radius *= 1.0;
 	for ( uint SampleIndex=0; SampleIndex < SHADOW_SAMPLES_COUNT; SampleIndex++ )
 	{
 		float2	SampleOffset = SamplesOffset[SampleIndex];
-		float3	SamplePosition = _WorldPosition + SampleOffset.x * X + SampleOffset.y * Y + SHADOW_NORMAL_OFFSET * _WorldNormal;
+		float3	SamplePosition = _WorldPosition + SampleOffset.x * X + SampleOffset.y * Y + PCF_SHADOW_NORMAL_OFFSET * _WorldNormal;
 		float4	ShadowPosition = World2ShadowMapProj( SamplePosition );
 
 		float2	UV = 0.5 * float2( 1.0 + ShadowPosition.x, 1.0 - ShadowPosition.y );

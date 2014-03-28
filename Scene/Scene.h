@@ -61,7 +61,7 @@ public:		// NESTED TYPES
 			DIRECTIONAL,
 			SPOT,
 		}					m_LightType;
-		float3			m_Color;
+		float3				m_Color;
 		float				m_Intensity;
 		float				m_HotSpot;	// For spots only
 		float				m_Falloff;	// For spots only
@@ -101,8 +101,8 @@ public:		// NESTED TYPES
 		public:
 			::Scene::Material*	m_pMaterial;
 
-			float3		m_BBoxMin;
-			float3		m_BBoxMax;
+			float3			m_BBoxMin;
+			float3			m_BBoxMax;
 
 			U32				m_FacesCount;
 			U32*			m_pFaces;
@@ -131,8 +131,8 @@ public:		// NESTED TYPES
 		int					m_PrimitivesCount;
 		Primitive*			m_pPrimitives;
 
-		float3			m_BBoxMin;
-		float3			m_BBoxMax;
+		float3				m_BBoxMin;
+		float3				m_BBoxMax;
 
 	private:
 
@@ -173,14 +173,14 @@ public:		// NESTED TYPES
 		Scene&				m_Owner;
 
 		U32					m_ID;
-		float3			m_Ambient;
-		float3			m_DiffuseAlbedo;
+		float3				m_Ambient;
+		float3				m_DiffuseAlbedo;
 		Texture				m_TexDiffuseAlbedo;
-		float3			m_SpecularAlbedo;
+		float3				m_SpecularAlbedo;
 		Texture				m_TexSpecularAlbedo;
-		float3			m_SpecularExponent;
+		float3				m_SpecularExponent;
 		Texture				m_TexNormal;
-		float3			m_EmissiveColor;
+		float3				m_EmissiveColor;
 
 		void*				m_pTag;	// Custom user tag filled with anything the user needs to render the node
 
@@ -219,7 +219,8 @@ public:		// NESTED TYPES
 		// Renders a mesh
 		//	_Mesh, the mesh to render
 		//	_pMaterialOverride, an optional material used to override the mesh's default material
-		virtual void	RenderMesh( const Scene::Mesh& _Mesh, ::Material* _pMaterialOverride ) abstract;
+		//	_SetMaterial, true to setup the mesh's material (usually, set to false when rendering shadow maps that don't need materials) (except alpha-tested materials)
+		virtual void	RenderMesh( const Scene::Mesh& _Mesh, ::Material* _pMaterialOverride, bool _SetMaterial=true ) abstract;
 	};
 
 	// Use a visitor class to browse the scene nodes
@@ -246,7 +247,7 @@ public:		// METHODS
 
 
 	void			Load( U16 _SceneResourceID, ISceneTagger& _SceneTagger );
-	void			Render( ISceneRenderer& _SceneRenderer ) const;
+	void			Render( ISceneRenderer& _SceneRenderer, bool _SetMaterial=true ) const;
 	void			ClearTags( ISceneTagger& _SceneTagClearer );
 
 	// Prefer using that routine that iterates on all nodes, select the node type yourself, rather than the ForEach method below
@@ -255,11 +256,11 @@ public:		// METHODS
 	// !WARNING! I don't know how to write a proper depth-first search, this routine is SLOW AS HELL!!
 	// Iterates over all the nodes of specific type
 	//	_pPrevious, should be NULL for the first call to trigger a new search
-	__declspec(deprecated) Node*			ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChild=0 );
+	__declspec(deprecated) Node*	ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChild=0 );
 
 private:
 
-	void			Render( const Node* _pNode, ISceneRenderer& _SceneRenderer ) const;
+	void			Render( const Node* _pNode, ISceneRenderer& _SceneRenderer, bool _SetTextures ) const;
 
 	void			ForEach( IVisitor& _Visitor, Node* _pParent );
 

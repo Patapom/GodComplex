@@ -13,6 +13,7 @@ cbuffer	cbGeneral	: register( b8 )
 	bool		_ShowIndirect;
 	bool		_ShowOnlyIndirect;
 	bool		_ShowWhiteDiffuse;
+	bool		_ShowVertexProbeID;
 };
 
 struct	PS_IN
@@ -124,6 +125,9 @@ PS_IN	VS( SCENE_VS_IN _In )
 		NeighborProbeID = OriginProbe.NeighborIDs.y >> 16;
 		if ( NeighborProbeID != 0xFFFF )
 			AccumulateProbeInfluence( _SBProbes[NeighborProbeID], Out.Position, Normal, SH, SumWeights );
+
+		if ( _ShowVertexProbeID )
+			SH[0] = _In.ProbeID;
 	}
 
 #else	// SUM ALL THE SCENE'S PROBES!
@@ -159,6 +163,9 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 {
 //return float4( 0.01 * _In.SH0, 0 );
 // return float4( 0.01 * _In.SH1, 0 );
+
+	if ( _ShowVertexProbeID )
+		return float4( (1+(int3( _In.SH0.xxx ) & 0x7)) / 8.0, 1 );
 
 #if EMISSIVE
 

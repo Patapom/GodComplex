@@ -22,8 +22,8 @@ private:	// FIELDS
 	ID3D11Texture3D*	m_pTexture;
 
 	// Cached resource views
-	mutable DictionaryU32			m_CachedShaderViews;
-	mutable DictionaryU32			m_CachedTargetViews;
+	mutable DictionaryU32			m_CachedSRVs;
+	mutable DictionaryU32			m_CachedRTVs;
 	mutable DictionaryU32			m_CachedUAVs;
 	mutable int						m_LastAssignedSlots[6];
 	mutable int						m_LastAssignedSlotsUAV;
@@ -46,8 +46,8 @@ public:	 // METHODS
 	Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging=false, bool _bUnOrderedAccess=false );
 	~Texture3D();
 
-	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart, int _MipLevelsCount ) const;
-	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const;
+	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart=0, int _MipLevelsCount=0 ) const;
+	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex=0, int _FirstWSlice=0, int _WSize=0 ) const;
 	ID3D11UnorderedAccessView*	GetUAV( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const;
 
 	// Uploads the texture to the shader

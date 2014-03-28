@@ -130,14 +130,15 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 	{
 //ScopedForceMaterialsLoadFromBinary		bisou;
 
- 		CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
- 		CHECK_MATERIAL( m_pMatRenderShadowMap = CreateMaterial( IDR_SHADER_GI_RENDER_SHADOW_MAP, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, NULL ), 8 );
+ 		CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
+ 		CHECK_MATERIAL( m_pMatRenderShadowMap = CreateMaterial( IDR_SHADER_GI_RENDER_SHADOW_MAP, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3::DESCRIPTOR, "VS", NULL, NULL ), 4 );
+ 		CHECK_MATERIAL( m_pMatRenderShadowMapPoint = CreateMaterial( IDR_SHADER_GI_RENDER_SHADOW_MAP, "./Resources/Shaders/GIRenderShadowMap.hlsl", VertexFormatP3::DESCRIPTOR, "VS2", "GS", NULL ), 5 );
 
- 		CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 9 );
- 		CHECK_MATERIAL( m_pMatRenderLights = CreateMaterial( IDR_SHADER_GI_RENDER_LIGHTS, "./Resources/Shaders/GIRenderLights.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
- 		CHECK_MATERIAL( m_pMatRenderDebugProbes = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 4 );
- 		CHECK_MATERIAL( m_pMatRenderDebugProbesNetwork = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3::DESCRIPTOR, "VS_Network", "GS_Network", "PS_Network" ), 5 );
- 		CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 7 );
+ 		CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
+ 		CHECK_MATERIAL( m_pMatRenderLights = CreateMaterial( IDR_SHADER_GI_RENDER_LIGHTS, "./Resources/Shaders/GIRenderLights.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 7 );
+ 		CHECK_MATERIAL( m_pMatRenderDebugProbes = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 8 );
+ 		CHECK_MATERIAL( m_pMatRenderDebugProbesNetwork = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3::DESCRIPTOR, "VS_Network", "GS_Network", "PS_Network" ), 9 );
+ 		CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
 	}
 	{
 // This one is REALLY heavy! So build it once and reload it from binary forever again
@@ -341,6 +342,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 	// Create the shadow map
 	m_pRTShadowMap = new Texture2D( _Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
+	m_pRTShadowMapPoint = new Texture2D( _Device, SHADOW_MAP_POINT_SIZE, SHADOW_MAP_POINT_SIZE, DepthStencilFormatD32F::DESCRIPTOR, 6 );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -352,6 +354,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	m_pCB_Probe = new CB<CBProbe>( _Device, 10 );
 	m_pCB_Splat = new CB<CBSplat>( _Device, 10 );
 	m_pCB_ShadowMap = new CB<CBShadowMap>( _Device, 2, true );
+	m_pCB_ShadowMapPoint = new CB<CBShadowMapPoint>( _Device, 3, true );
 	m_pCB_UpdateProbes = new CB<CBUpdateProbes>( _Device, 10 );
 
 	m_pCB_Scene->m.DynamicLightsCount = 0;
@@ -441,16 +444,31 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 		{
 			EffectGlobalIllum2&	m_Owner;
 		public:
-			VisitorStoreNodes( EffectGlobalIllum2& _Owner ) : m_Owner( _Owner ) {}
+			int		m_PrimitivesCount;
+			int		m_VerticesCount;
+			int		m_FacesCount;
+			VisitorStoreNodes( EffectGlobalIllum2& _Owner ) : m_Owner( _Owner ), m_PrimitivesCount( 0 ), m_FacesCount( 0 ), m_VerticesCount( 0 ) {}
 			void	HandleNode( Scene::Node& _Node ) override
 			{
 				if ( _Node.m_Type == Scene::Node::MESH )
-					m_Owner.m_ppCachedMeshes[m_Owner.m_MeshesCount++] = (Scene::Mesh*) &_Node;
+				{
+					Scene::Mesh*	pMesh = (Scene::Mesh*) &_Node;
+					m_Owner.m_ppCachedMeshes[m_Owner.m_MeshesCount++] = pMesh;
+					m_PrimitivesCount += pMesh->m_PrimitivesCount;
+					for ( int i=0; i < pMesh->m_PrimitivesCount; i++ )
+					{
+						m_VerticesCount += pMesh->m_pPrimitives[i].m_VerticesCount;
+						m_FacesCount += pMesh->m_pPrimitives[i].m_FacesCount;
+					}
+				}
 				else if ( _Node.m_Type == Scene::Node::PROBE )
 					m_Owner.m_pProbes[m_Owner.m_ProbesCount++].pSceneProbe = (Scene::Probe*) &_Node;
 			}
 		}	Visitor1( *this );
 		m_Scene.ForEach( Visitor1 );
+
+		int		VerticesCount = Visitor1.m_VerticesCount;
+		int		FacesCount = Visitor1.m_FacesCount;
 	}
 
 
@@ -601,6 +619,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pSB_LightsStatic;
 
 	delete m_pCB_UpdateProbes;
+	delete m_pCB_ShadowMapPoint;
 	delete m_pCB_ShadowMap;
 	delete m_pCB_Splat;
 	delete m_pCB_Probe;
@@ -609,6 +628,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pCB_Scene;
 	delete m_pCB_General;
 
+	delete m_pRTShadowMapPoint;
 	delete m_pRTShadowMap;
 
 	for ( int TextureIndex=0; TextureIndex < m_TexturesCount; TextureIndex++ )
@@ -619,6 +639,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 
 	delete m_pMatPostProcess;
 	delete m_pCSComputeShadowMapBounds;
+	delete m_pMatRenderShadowMapPoint;
 	delete m_pMatRenderShadowMap;
 	delete m_pMatRenderNeighborProbe;
 	delete m_pMatRenderCubeMap;
@@ -642,6 +663,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pCB_General->m.ShowIndirect = gs_WindowInfos.pKeys[VK_RETURN] == 0;
 	m_pCB_General->m.ShowOnlyIndirect = gs_WindowInfos.pKeys[VK_BACK] == 0;
 	m_pCB_General->m.ShowWhiteDiffuse = gs_WindowInfos.pKeys[VK_DELETE] != 0;
+	m_pCB_General->m.ShowVertexProbeID = gs_WindowInfos.pKeys[VK_INSERT] != 0;
 	m_pCB_General->m.Ambient = !m_pCB_General->m.ShowIndirect && m_CachedCopy.EnableSky ? 0.25f * float3( 0.64f, 0.79f, 1.0f ) : float3::Zero;
 	m_pCB_General->UpdateData();
 
@@ -662,7 +684,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	//////////////////////////////////////////////////////////////////////////
 	// Animate lights
 
-		// Point light
+		// ============= Point light =============
 	bool	ShowLight0 = m_CachedCopy.EnablePointLight != 0;
 	if ( ShowLight0 && m_CachedCopy.AnimatePointLight )
 		AnimateLightTime0 += _DeltaTime;
@@ -737,8 +759,11 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 #endif
 
+	RenderShadowMapPoint( m_pSB_LightsDynamic->m[0].Position, 30.0f );
 
-#if RENDER_SUN	// Show Sun light
+
+	// ============= Sun light =============
+#if RENDER_SUN	
 	{
 		bool	ShowLight1 = m_CachedCopy.EnableSun != 0;
 
@@ -1724,9 +1749,8 @@ void	EffectGlobalIllum2::RenderShadowMap( const float3& _SunDirection )
 	m_Device.ClearDepthStencil( *m_pRTShadowMap, 1.0f, 0, true, false );
 	m_Device.SetRenderTargets( m_pRTShadowMap->GetWidth(), m_pRTShadowMap->GetHeight(), 0, NULL, m_pRTShadowMap->GetDepthStencilView() );
 
-	Scene::Node*	pMesh = NULL;
 	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
-		RenderMesh( *m_ppCachedMeshes[MeshIndex], &M );
+		RenderMesh( *m_ppCachedMeshes[MeshIndex], &M, false );
 
 	USING_MATERIAL_END
 
@@ -1735,6 +1759,33 @@ void	EffectGlobalIllum2::RenderShadowMap( const float3& _SunDirection )
 	m_pRTShadowMap->Set( 2, true );
 }
 
+void	EffectGlobalIllum2::RenderShadowMapPoint( const float3& _Position, float _FarClipDistance )
+{
+	m_pCB_ShadowMapPoint->m.Position = _Position;
+	m_pCB_ShadowMapPoint->m.FarClipDistance = _FarClipDistance;
+	m_pCB_ShadowMapPoint->UpdateData();
+
+	//////////////////////////////////////////////////////////////////////////
+	// Perform actual rendering
+	USING_MATERIAL_START( *m_pMatRenderShadowMapPoint )
+
+	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
+
+	m_pRTShadowMapPoint->RemoveFromLastAssignedSlots();
+	m_Device.ClearDepthStencil( *m_pRTShadowMapPoint, 1.0f, 0, true, false );
+	m_Device.SetRenderTargets( m_pRTShadowMapPoint->GetWidth(), m_pRTShadowMapPoint->GetHeight(), 0, NULL, m_pRTShadowMapPoint->GetDepthStencilView() );
+
+	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
+		RenderMesh( *m_ppCachedMeshes[MeshIndex], &M, false );
+
+	USING_MATERIAL_END
+
+	// Assign the shadow map to shaders
+	m_Device.RemoveRenderTargets();
+	m_pRTShadowMapPoint->Set( 3, true );
+}
+
+#pragma region Scene Rendering
 
 //////////////////////////////////////////////////////////////////////////
 // Scene Rendering
@@ -1860,7 +1911,7 @@ void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh,
 }
 
 // Mesh rendering: we render each of the mesh's primitive in turn
-void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride )
+void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride, bool _SetMaterial )
 {
 	// Upload the object's CB
 	memcpy( &m_pCB_Object->m.Local2World, &_Mesh.m_Local2World, sizeof(float4x4) );
@@ -1879,46 +1930,51 @@ void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMater
 			continue;	// Unsupported primitive!
 
 		// Upload textures
-		Texture2D*	pTexDiffuseAlbedo = (Texture2D*) SceneMaterial.m_TexDiffuseAlbedo.m_pTag;
-		if ( pTexDiffuseAlbedo != NULL )
-			pTexDiffuseAlbedo->SetPS( 10 );
-		else
-			m_ppTextures[0]->SetPS( 10 );
+		if ( _SetMaterial )
+		{
+			Texture2D*	pTexDiffuseAlbedo = (Texture2D*) SceneMaterial.m_TexDiffuseAlbedo.m_pTag;
+			if ( pTexDiffuseAlbedo != NULL )
+				pTexDiffuseAlbedo->SetPS( 10 );
+			else
+				m_ppTextures[0]->SetPS( 10 );
 
-#ifdef USE_WHITE_TEXTURES
-		Texture2D*	pTexNormal = m_ppTextures[1];
-#else
-		Texture2D*	pTexNormal = (Texture2D*) SceneMaterial.m_TexNormal.m_pTag;
-#endif
-		if ( pTexNormal != NULL )
-			pTexNormal->SetPS( 11 );
-		else
-			m_ppTextures[0]->SetPS( 11 );
-
-		Texture2D*	pTexSpecularAlbedo = (Texture2D*) SceneMaterial.m_TexSpecularAlbedo.m_pTag;
-		if ( pTexSpecularAlbedo != NULL )
-			pTexSpecularAlbedo->SetPS( 12 );
-		else
-			m_ppTextures[0]->SetPS( 12 );
-
-		// Upload the primitive's material CB
-		m_pCB_Material->m.ID = SceneMaterial.m_ID;
-		m_pCB_Material->m.DiffuseAlbedo = SceneMaterial.m_DiffuseAlbedo;
-		m_pCB_Material->m.HasDiffuseTexture = pTexDiffuseAlbedo != NULL;
-		m_pCB_Material->m.SpecularAlbedo = SceneMaterial.m_SpecularAlbedo;
-		m_pCB_Material->m.HasSpecularTexture = pTexSpecularAlbedo != NULL;
-		m_pCB_Material->m.EmissiveColor = SceneMaterial.m_EmissiveColor;
-		m_pCB_Material->m.SpecularExponent = SceneMaterial.m_SpecularExponent.x;
-		m_pCB_Material->m.FaceOffset = U32(pPrim->m_pTag);
+			Texture2D*	pTexNormal = NULL;
 #ifdef USE_NORMAL_MAPS
-		m_pCB_Material->m.HasNormalTexture = pTexNormal != NULL;
-#else
-		m_pCB_Material->m.HasNormalTexture = false;
+	#ifdef USE_WHITE_TEXTURES
+			pTexNormal = m_ppTextures[1];
+	#else
+			pTexNormal = (Texture2D*) SceneMaterial.m_TexNormal.m_pTag;
+	#endif
 #endif
-		m_pCB_Material->UpdateData();
+			if ( pTexNormal != NULL )
+				pTexNormal->SetPS( 11 );
+			else
+				m_ppTextures[0]->SetPS( 11 );
+
+			Texture2D*	pTexSpecularAlbedo = (Texture2D*) SceneMaterial.m_TexSpecularAlbedo.m_pTag;
+			if ( pTexSpecularAlbedo != NULL )
+				pTexSpecularAlbedo->SetPS( 12 );
+			else
+				m_ppTextures[0]->SetPS( 12 );
+
+			// Upload the primitive's material CB
+			m_pCB_Material->m.ID = SceneMaterial.m_ID;
+			m_pCB_Material->m.DiffuseAlbedo = SceneMaterial.m_DiffuseAlbedo;
+			m_pCB_Material->m.HasDiffuseTexture = pTexDiffuseAlbedo != NULL;
+			m_pCB_Material->m.SpecularAlbedo = SceneMaterial.m_SpecularAlbedo;
+			m_pCB_Material->m.HasSpecularTexture = pTexSpecularAlbedo != NULL;
+			m_pCB_Material->m.EmissiveColor = SceneMaterial.m_EmissiveColor;
+			m_pCB_Material->m.SpecularExponent = SceneMaterial.m_SpecularExponent.x;
+			m_pCB_Material->m.FaceOffset = U32(pPrim->m_pTag);
+			m_pCB_Material->m.HasNormalTexture = pTexNormal != NULL;
+			m_pCB_Material->UpdateData();
+
+			pMat->Use();
+		}
 
 		// Render
-		pMat->Use();
 		pPrim->Render( *pMat );
 	}
 }
+
+#pragma endregion

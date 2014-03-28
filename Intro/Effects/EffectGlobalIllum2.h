@@ -23,6 +23,7 @@ private:	// CONSTANTS
 	static const U32		MAX_PROBE_UPDATES_PER_FRAME = 32;	// Update a maximum of 32 probes per frame
 
 	static const U32		SHADOW_MAP_SIZE = 1024;
+	static const U32		SHADOW_MAP_POINT_SIZE = 256;		// Point light shadow map
 
 
 protected:	// NESTED TYPES
@@ -35,6 +36,7 @@ protected:	// NESTED TYPES
 		U32			ShowIndirect;
 		U32			ShowOnlyIndirect;
 		U32			ShowWhiteDiffuse;
+		U32			ShowVertexProbeID;
  	};
 
 	struct CBScene
@@ -81,10 +83,16 @@ protected:	// NESTED TYPES
 	{
 		float4x4	Light2World;
 		float4x4	World2Light;
-		float3		BoundsMin;
+		float3		BoundsMin;					// Coordinates of the bounding box (in world space) covered by the shadow
 		float		__PAD0;
 		float3		BoundsMax;
  	};
+
+	struct CBShadowMapPoint
+	{
+		float3		Position;					// Position of the light in world space
+		float		FarClipDistance;
+	};
 
 	struct CBUpdateProbes
 	{
@@ -259,6 +267,7 @@ private:	// FIELDS
 	Material*			m_pMatRenderNeighborProbe;	// Renders the neighbor probes as planes to form a 3D voronoï cell
 	Material*			m_pCSComputeShadowMapBounds;// Computes the shadow map bounds
 	Material*			m_pMatRenderShadowMap;		// Renders the directional shadowmap
+	Material*			m_pMatRenderShadowMapPoint;	// Renders the point light shadowmap
 	Material*			m_pMatPostProcess;			// Post-processes the result
 	Material*			m_pMatRenderDebugProbes;	// Displays the probes as small spheres
 	Material*			m_pMatRenderDebugProbesNetwork;	// Displays the probes network
@@ -296,6 +305,7 @@ private:	// FIELDS
 	int					m_TexturesCount;
 	Texture2D**			m_ppTextures;
 	Texture2D*			m_pRTShadowMap;
+	Texture2D*			m_pRTShadowMapPoint;
 
 	// Constant buffers
  	CB<CBGeneral>*		m_pCB_General;
@@ -305,6 +315,7 @@ private:	// FIELDS
  	CB<CBProbe>*		m_pCB_Probe;
 	CB<CBSplat>*		m_pCB_Splat;
  	CB<CBShadowMap>*	m_pCB_ShadowMap;
+ 	CB<CBShadowMapPoint>*	m_pCB_ShadowMapPoint;
  	CB<CBUpdateProbes>*	m_pCB_UpdateProbes;
 
 	// Runtime scene lights & probes
@@ -415,10 +426,11 @@ public:		// METHODS
 	virtual void*	TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh, Scene::Mesh::Primitive& _Primitive ) override;
 
 	// ISceneRenderer Implementation
-	virtual void	RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride ) override;
+	virtual void	RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride, bool _SetMaterial ) override;
 
 private:
 
 	void			RenderShadowMap( const float3& _SunDirection );
+	void			RenderShadowMapPoint( const float3& _Position, float _FarClipDistance );
 	void			PreComputeProbes();
 };

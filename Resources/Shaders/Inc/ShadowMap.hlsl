@@ -13,7 +13,14 @@ cbuffer	cbShadowMap : register( b2 )
 	float3		_ShadowBoundMax;
 };
 
-Texture2D<float>	_ShadowMap : register( t2 );
+cbuffer	cbShadowMapPoint : register( b3 )
+{
+	float3		_ShadowPointLightPosition;
+	float		_ShadowPointFarClip;
+};
+
+Texture2D<float>		_ShadowMap : register( t2 );
+Texture2DArray<float>	_ShadowMapPoint : register( t3 );
 
 // Transforms the world position into a projected shadow map position
 float4	World2ShadowMapProj( float3 _WorldPosition )
@@ -120,6 +127,37 @@ float	ComputeShadowPCF( float3 _WorldPosition, float3 _WorldVertexNormal, float3
 	}
 
 	return Shadow / SHADOW_SAMPLES_COUNT;
+}
+
+float	ComputeShadowPoint( float3 _WorldPosition, float3 _WorldVertexNormal, float _NormalOffset=0.01 )
+{
+	float3	LocalPosition = _WorldPosition + _NormalOffset * _WorldVertexNormal - _ShadowPointLightPosition;
+	float3	Abs = abs( LocalPosition );
+	float	Max = max( max( Abs.x, Abs.y ), Abs.z );
+	float3	Proj = LocalPosition / Max;
+
+	float3	UV = 0.0;
+	float	Zproj = 0.0;
+	if ( Max == Abs.x )
+	{
+		UV.xy = float2( Proj.z, Proj.y );
+		UV.z = LocalPosition.x > 0.0 ? 0 : 1;
+		Zproj = Abs.z / _ShadowPointFarClip;
+	}
+	else if ( Max == Abs.y )
+	{
+		UV.xy = float2( -Proj.x, -Proj.z );
+		UV.z = LocalPosition.y > 0.0 ? 2 : 3;
+		Zproj = Abs.y / _ShadowPointFarClip;
+	}
+	else //if ( Abs == Abs.z )
+	{
+		UV.xy = float2( -Proj.x, Proj.y );
+		UV.z = LocalPosition.z > 0.0 ? 4 : 5;
+		Zproj = Abs.z / _ShadowPointFarClip;
+	}
+
+	return _ShadowMapPoint.SampleCmp( ShadowSampler, UV, Zproj );
 }
 
 #endif	// _SHADOW_MAP_INC_
