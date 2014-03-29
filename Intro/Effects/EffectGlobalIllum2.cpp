@@ -759,7 +759,8 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 #endif
 
-	RenderShadowMapPoint( m_pSB_LightsDynamic->m[0].Position, 30.0f );
+	if ( ShowLight0 )
+		RenderShadowMapPoint( m_pSB_LightsDynamic->m[0].Position, 30.0f );
 
 
 	// ============= Sun light =============
@@ -1027,7 +1028,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Render the scene
-// 	m_Device.ClearRenderTarget( m_RTTarget, NjFloat4::Zero );
+ 	m_Device.ClearRenderTarget( m_RTTarget, m_CachedCopy.EnableSky ? 1.0f * float4( 0.64f, 0.79f, 1.0f, 0.0f ) : float4::Zero );
 
  	m_Device.SetRenderTarget( m_RTTarget, &m_Device.DefaultDepthStencil() );
 	m_Device.SetStates( m_Device.m_pRS_CullBack, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );

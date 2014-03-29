@@ -188,6 +188,44 @@ float	ComputeShadowCS( float3 _WorldPosition, float3 _WorldNormal, float _Radius
 }
 
 
+// float	ComputeShadowPointCS( float3 _WorldPosition, float3 _WorldVertexNormal, float _NormalOffset=0.01 )
+// {
+// 	float3	LocalPosition = _WorldPosition + _NormalOffset * _WorldVertexNormal - _ShadowPointLightPosition;
+// 	float3	Abs = abs( LocalPosition );
+// 	float	Max = max( max( Abs.x, Abs.y ), Abs.z );
+// 	float3	Proj = LocalPosition / Max;
+// 
+// 	float4	UV = 0.0;
+// 	if ( abs( Max - Abs.x ) < 1e-5 )
+// 	{
+// 		UV = LocalPosition.x > 0.0 ? float4( LocalPosition.z, LocalPosition.y, 0, LocalPosition.x ) : float4( -LocalPosition.z, LocalPosition.y, 1, -LocalPosition.x );
+// 	}
+// 	else if ( abs( Max - Abs.y ) < 1e-5 )
+// 	{
+// 		UV = LocalPosition.y > 0.0 ? float4( -LocalPosition.x, -LocalPosition.z, 2, LocalPosition.y ) : float4( -LocalPosition.x, LocalPosition.z, 3, -LocalPosition.y );
+// 	}
+// 	else //if ( Abs == Abs.z )
+// 	{
+// 		UV = LocalPosition.z > 0.0 ? float4( -LocalPosition.x, LocalPosition.y, 4, LocalPosition.z ) : float4( LocalPosition.x, LocalPosition.y, 5, -LocalPosition.z );
+// 	}
+// 
+// 	UV.xy /= UV.w;
+// 	UV.xy = 0.5 * (1.0 + float2( UV.x, -UV.y ));
+// 
+// 	float	Z = UV.w;
+// 
+// 	const float	NearClip = 0.5;
+// 	const float	FarClip = _ShadowPointFarClip;
+// 	const float	Q = FarClip / (FarClip - NearClip);
+// 
+// 	float	Zproj = Q * (1.0 - NearClip / Z);
+// 
+// 	float	Zshadow = _ShadowMapPoint.SampleCmpLevelZero( LinearClamp, UV.xyz );
+// 
+// 	return step( Zproj, Zshadow );
+// }
+
+
 // Each group processes a single probe
 // Each thread processes a single sampling point and will later process sets and even later collapse SH into a single vector
 [numthreads( THREADS_X, THREADS_Y, THREADS_Z )]
@@ -216,8 +254,8 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 		{
 			LightStruct	LightSource = _SBLightsDynamic[LightIndex];
 
-			float3	Irradiance;
-			float3	Light;
+			float3	Irradiance = 0.0;
+			float3	Light = 0.0;
 			if ( LightSource.Type == 0 || LightSource.Type == 2 )
 			{	// Compute a standard point light
 				Light = LightSource.Position - SamplingPoint.Position;
@@ -239,7 +277,10 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 					float	LdotD = -dot( Light, LightSource.Direction );
 					Irradiance *= smoothstep( LightSource.Parms.w, LightSource.Parms.z, LdotD );
 				}
-
+				else if ( LightSource.Type == 0 )
+				{	// Account for point light shadowing
+					Irradiance *= ComputeShadowPoint( SamplingPoint.Position, SamplingPoint.Normal, PCF_SHADOW_NORMAL_OFFSET );
+				}
 
 				Irradiance *= _DynamicLightsBoost;
 			}

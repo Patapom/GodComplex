@@ -143,11 +143,18 @@ if ( true )
 		UV.y *= 2.0;
 		float	ArrayIndex = 3 * int( UV.y ) + int( UV.x );
 		UV = frac( UV );
-		return _ShadowMapPoint.SampleLevel( LinearClamp, float3( UV, ArrayIndex ), 0.0 ).x;
+		float	Zproj = _ShadowMapPoint.SampleLevel( LinearClamp, float3( UV, ArrayIndex ), 0.0 ).x;
+return 1.0 * Zproj;
+
+		const float	NearClip = 0.01;
+		const float	FarClip = _ShadowPointFarClip;
+
+		float	Z = NearClip * FarClip / (FarClip - Zproj * (FarClip - NearClip));
+		return Z;
 	}
 }
 
-if ( true )
+if ( false )
 {
 	float3	AbsView = abs( View );
 	float	MaxComponent = max( max( AbsView.x, AbsView.y ), AbsView.z );
@@ -173,7 +180,13 @@ if ( true )
 	UV.y = -UV.y;
 	UV.xy = 0.5 * (1.0 + UV.xy);
 
-	return _ShadowMapPoint.SampleLevel( LinearClamp, UV, 0.0 ).x;
+	float	Zproj = _ShadowMapPoint.SampleLevel( LinearClamp, UV, 0.0 ).x;
+
+	const float	NearClip = 0.01;
+	const float	FarClip = _ShadowPointFarClip;
+
+	float	Z = NearClip * FarClip / (FarClip - Zproj * (FarClip - NearClip));
+	return Z;
 }
 
 // Test dot products

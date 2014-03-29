@@ -227,6 +227,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	{
 		LightStruct	LightSource = _SBLightsDynamic[LightIndex];
 		AccumDiffuse += AccumulateLight( _In.Position, Normal, VertexNormal, VertexTangent, LightSource );
+//return AccumulateLight( _In.Position, Normal, VertexNormal, VertexTangent, LightSource ).x;
 	}
 
 	AccumDiffuse *= DiffuseAlbedo;

@@ -120,6 +120,8 @@ float3	AccumulateLight( float3 _WorldPosition, float3 _WorldNormal, float3 _Worl
 #if USE_SHADOW_MAP
 		if ( _LightSource.Type == 0 && dot( _WorldNormal, Light ) > 0.0 )
 			Irradiance *= ComputeShadowPoint( _WorldPosition, _WorldVertexNormal, SHADOW_NORMAL_OFFSET );
+// if ( _LightSource.Type == 0 )
+// return float3( ComputeShadowPoint( _WorldPosition, _WorldVertexNormal, SHADOW_NORMAL_OFFSET ), 0 );
 #endif
 	}
 	else if ( _LightSource.Type == 1 )

@@ -49,36 +49,9 @@ PS_IN	VS( VS_IN _In )
 	return Out;
 }
 
+
 ///////////////////////////////////////////////////////////
 // Point-Light Shadow Map rendering
-static const float3	Xp = float3( 1, 0, 0 );
-static const float3	Xn = float3( -1, 0, 0 );
-static const float3	Yp = float3( 0, 1, 0 );
-static const float3	Yn = float3( 0, -1, 0 );
-static const float3	Zp = float3( 0, 0, 1 );
-static const float3	Zn = float3( 0, 0, -1 );
-
-float4	World2CubeFaceProj( float3 _LocalPosition, float3 _Right, float3 _Up, float3 _At )
-{
-	float3	CubeFacePos = float3( 
-		dot( _LocalPosition, _Right ),
-		dot( _LocalPosition, _Up ),
-		dot( _LocalPosition, _At ) );
-//	float3	CubeFacePos = _LocalPosition;
-
-//  CubeFacePos.x = _LocalPosition.x;
-//  CubeFacePos.y = _LocalPosition.y;
-// CubeFacePos.z = 5.0;
-
-	const float	NearClip = 0.01;
-	const float	FarClip = _ShadowPointFarClip;
-
-return float4( CubeFacePos.xy, CubeFacePos.z * CubeFacePos.z / FarClip, CubeFacePos.z );
-
-	const float	Q = FarClip / (FarClip - NearClip);
-	return float4( CubeFacePos.xy, Q * (CubeFacePos.z - NearClip), CubeFacePos.z );
-}
-
 GS_IN	VS2( VS_IN _In )
 {
 	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
@@ -87,6 +60,27 @@ GS_IN	VS2( VS_IN _In )
 	Out.Position = WorldPosition.xyz - _ShadowPointLightPosition;
 
 	return Out;
+}
+
+static const float3	Xp = float3( 1, 0, 0 );
+static const float3	Xn = float3( -1, 0, 0 );
+static const float3	Yp = float3( 0, 1, 0 );
+static const float3	Yn = float3( 0, -1, 0 );
+static const float3	Zp = float3( 0, 0, 1 );
+static const float3	Zn = float3( 0, 0, -1 );
+
+static const float	NearClip = 0.5;
+static const float	FarClip = _ShadowPointFarClip;
+static const float	Q = FarClip / (FarClip - NearClip);
+
+float4	World2CubeFaceProj( float3 _LocalPosition, float3 _Right, float3 _Up, float3 _At )
+{
+	float3	CubeFacePos = float3( 
+		dot( _LocalPosition, _Right ),
+		dot( _LocalPosition, _Up ),
+		dot( _LocalPosition, _At ) );
+
+	return float4( CubeFacePos.xy, Q * (CubeFacePos.z - NearClip), CubeFacePos.z );
 }
 
 [maxvertexcount( 18 )]
@@ -101,12 +95,9 @@ void	GS( triangle GS_IN _In[3], inout TriangleStream<PS_IN2> _OutStream )
 		float3	Z = Xp;
 		Out.CubeFaceIndex = 0;
 
-		Out.__Position = World2CubeFaceProj( _In[0].Position, X, Y, Z );
-		_OutStream.Append( Out );
-		Out.__Position = World2CubeFaceProj( _In[1].Position, X, Y, Z );
-		_OutStream.Append( Out );
-		Out.__Position = World2CubeFaceProj( _In[2].Position, X, Y, Z );
-		_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[0].Position, X, Y, Z );	_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[1].Position, X, Y, Z );	_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[2].Position, X, Y, Z );	_OutStream.Append( Out );
 		_OutStream.RestartStrip();
 	}
 
@@ -117,12 +108,9 @@ void	GS( triangle GS_IN _In[3], inout TriangleStream<PS_IN2> _OutStream )
 		float3	Z = Xn;
 		Out.CubeFaceIndex = 1;
 
-		Out.__Position = World2CubeFaceProj( _In[0].Position, X, Y, Z );
-		_OutStream.Append( Out );
-		Out.__Position = World2CubeFaceProj( _In[1].Position, X, Y, Z );
-		_OutStream.Append( Out );
-		Out.__Position = World2CubeFaceProj( _In[2].Position, X, Y, Z );
-		_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[0].Position, X, Y, Z );	_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[1].Position, X, Y, Z );	_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[2].Position, X, Y, Z );	_OutStream.Append( Out );
 		_OutStream.RestartStrip();
 	}
 
@@ -133,12 +121,9 @@ void	GS( triangle GS_IN _In[3], inout TriangleStream<PS_IN2> _OutStream )
 		float3	Z = Yp;
 		Out.CubeFaceIndex = 2;
 
-		Out.__Position = World2CubeFaceProj( _In[0].Position, X, Y, Z );
-		_OutStream.Append( Out );
-		Out.__Position = World2CubeFaceProj( _In[1].Position, X, Y, Z );
-		_OutStream.Append( Out );
-		Out.__Position = World2CubeFaceProj( _In[2].Position, X, Y, Z );
-		_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[0].Position, X, Y, Z );	_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[1].Position, X, Y, Z );	_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[2].Position, X, Y, Z );	_OutStream.Append( Out );
 		_OutStream.RestartStrip();
 	}
 	// Write -Y face
@@ -148,12 +133,9 @@ void	GS( triangle GS_IN _In[3], inout TriangleStream<PS_IN2> _OutStream )
 		float3	Z = Yn;
 		Out.CubeFaceIndex = 3;
 
-		Out.__Position = World2CubeFaceProj( _In[0].Position, X, Y, Z );
-		_OutStream.Append( Out );
-		Out.__Position = World2CubeFaceProj( _In[1].Position, X, Y, Z );
-		_OutStream.Append( Out );
-		Out.__Position = World2CubeFaceProj( _In[2].Position, X, Y, Z );
-		_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[0].Position, X, Y, Z );	_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[1].Position, X, Y, Z );	_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[2].Position, X, Y, Z );	_OutStream.Append( Out );
 		_OutStream.RestartStrip();
 	}
 
@@ -164,12 +146,9 @@ void	GS( triangle GS_IN _In[3], inout TriangleStream<PS_IN2> _OutStream )
 		float3	Z = Zp;
 		Out.CubeFaceIndex = 4;
 
-		Out.__Position = World2CubeFaceProj( _In[0].Position, X, Y, Z );
-		_OutStream.Append( Out );
-		Out.__Position = World2CubeFaceProj( _In[1].Position, X, Y, Z );
-		_OutStream.Append( Out );
-		Out.__Position = World2CubeFaceProj( _In[2].Position, X, Y, Z );
-		_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[0].Position, X, Y, Z );	_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[1].Position, X, Y, Z );	_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[2].Position, X, Y, Z );	_OutStream.Append( Out );
 		_OutStream.RestartStrip();
 	}
 	// Write -Z face
@@ -179,12 +158,9 @@ void	GS( triangle GS_IN _In[3], inout TriangleStream<PS_IN2> _OutStream )
 		float3	Z = Zn;
 		Out.CubeFaceIndex = 5;
 
-		Out.__Position = World2CubeFaceProj( _In[0].Position, X, Y, Z );
-		_OutStream.Append( Out );
-		Out.__Position = World2CubeFaceProj( _In[1].Position, X, Y, Z );
-		_OutStream.Append( Out );
-		Out.__Position = World2CubeFaceProj( _In[2].Position, X, Y, Z );
-		_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[0].Position, X, Y, Z );	_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[1].Position, X, Y, Z );	_OutStream.Append( Out );
+		Out.__Position = World2CubeFaceProj( _In[2].Position, X, Y, Z );	_OutStream.Append( Out );
 		_OutStream.RestartStrip();
 	}
 }

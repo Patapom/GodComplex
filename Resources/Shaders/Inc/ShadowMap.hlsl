@@ -136,28 +136,32 @@ float	ComputeShadowPoint( float3 _WorldPosition, float3 _WorldVertexNormal, floa
 	float	Max = max( max( Abs.x, Abs.y ), Abs.z );
 	float3	Proj = LocalPosition / Max;
 
-	float3	UV = 0.0;
-	float	Zproj = 0.0;
-	if ( Max == Abs.x )
+	float4	UV = 0.0;
+	if ( abs( Max - Abs.x ) < 1e-5 )
 	{
-		UV.xy = float2( Proj.z, Proj.y );
-		UV.z = LocalPosition.x > 0.0 ? 0 : 1;
-		Zproj = Abs.z / _ShadowPointFarClip;
+		UV = LocalPosition.x > 0.0 ? float4( LocalPosition.z, LocalPosition.y, 0, LocalPosition.x ) : float4( -LocalPosition.z, LocalPosition.y, 1, -LocalPosition.x );
 	}
-	else if ( Max == Abs.y )
+	else if ( abs( Max - Abs.y ) < 1e-5 )
 	{
-		UV.xy = float2( -Proj.x, -Proj.z );
-		UV.z = LocalPosition.y > 0.0 ? 2 : 3;
-		Zproj = Abs.y / _ShadowPointFarClip;
+		UV = LocalPosition.y > 0.0 ? float4( -LocalPosition.x, -LocalPosition.z, 2, LocalPosition.y ) : float4( -LocalPosition.x, LocalPosition.z, 3, -LocalPosition.y );
 	}
 	else //if ( Abs == Abs.z )
 	{
-		UV.xy = float2( -Proj.x, Proj.y );
-		UV.z = LocalPosition.z > 0.0 ? 4 : 5;
-		Zproj = Abs.z / _ShadowPointFarClip;
+		UV = LocalPosition.z > 0.0 ? float4( -LocalPosition.x, LocalPosition.y, 4, LocalPosition.z ) : float4( LocalPosition.x, LocalPosition.y, 5, -LocalPosition.z );
 	}
 
-	return _ShadowMapPoint.SampleCmp( ShadowSampler, UV, Zproj );
+	UV.xy /= UV.w;
+	UV.xy = 0.5 * (1.0 + float2( UV.x, -UV.y ));
+
+	float	Z = UV.w;
+
+	const float	NearClip = 0.5;
+	const float	FarClip = _ShadowPointFarClip;
+	const float	Q = FarClip / (FarClip - NearClip);
+
+	float	Zproj = Q * (1.0 - NearClip / Z);
+
+	return _ShadowMapPoint.SampleCmpLevelZero( ShadowSampler, UV.xyz, Zproj );
 }
 
 #endif	// _SHADOW_MAP_INC_
