@@ -19,6 +19,7 @@
 #define NUAJ_LIB   // Override the NjFloatX types with our math lib
 #include "../NuajAPI/API/Types.h"
 #include "../NuajAPI/API/Hashtable.h"
+#include "../NuajAPI/API/List.h"
 #include "../NuajAPI/API/ASMHelpers.h"
 
 #endif

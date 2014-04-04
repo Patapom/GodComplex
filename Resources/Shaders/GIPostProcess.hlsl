@@ -132,7 +132,7 @@ View = mul( float4( View, 0.0 ), _Camera2World ).xyz;
 // }
 // DEBUG NEIGHBOR PROBES IDS
 
-if ( true )
+if ( false )
 {
 	if ( UV.x < 0.3 && UV.y < 0.3 )
 	{

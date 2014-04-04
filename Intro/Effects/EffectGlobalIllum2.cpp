@@ -68,11 +68,12 @@
 #include "EffectGlobalIllum2.h"
 
 //#define SCENE_CORRIDOR		// Simple corridor
-#define SCENE_SPONZA		// Sponza Atrium
+#define SCENE_CITY			// City
+//#define SCENE_SPONZA		// Sponza Atrium
 
 #define	LOAD_PROBES			// Define this to load probes instead of computing them
 //#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
-//#define	USE_NORMAL_MAPS			// Define this to use normal maps
+#define	USE_NORMAL_MAPS			// Define this to use normal maps
 
 // Scene selection (also think about changing the scene in the .RC!)
 #ifdef SCENE_CORRIDOR
@@ -87,7 +88,7 @@
 #define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\Sponza\\Sponza_ProbeID.vertexStream.U16"
 #endif
 
-#else
+#elif defined(SCENE_CITY)
 #define PROBES_PATH				"..\\Arkane\\Probes\\City\\"
 #ifdef LOAD_PROBES	// Can't use that until it's been baked!
 #define USE_PER_VERTEX_PROBE_ID	"..\\Arkane\\City_ProbeID.vertexStream.U16"
@@ -142,7 +143,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 	}
 	{
 // This one is REALLY heavy! So build it once and reload it from binary forever again
-ScopedForceMaterialsLoadFromBinary		bisou;
+//ScopedForceMaterialsLoadFromBinary		bisou;
 		// Compute Shaders
  		CHECK_MATERIAL( m_pCSUpdateProbe = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 20 );
 	}
@@ -197,7 +198,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\lion.pom",
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\lion_ddn.pom",
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_roof_diff.pom",
-#else
+#elif defined(SCENE_CITY)
 "..\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_d.pom",
 "..\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_n.pom",
 "..\\Arkane\\TexturesPOM\\floor_tiles_ornt_int_01_s.pom",
@@ -720,7 +721,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 		0.01f * float3( 1075.0f, Y, -462.0f ),
 		0.01f * float3( -1229.0f, Y, -462.0f ),
 	};
-#else
+#elif defined(SCENE_CITY)
 	const float	TOTAL_PATH_TIME = 20.0f;	// Total time to walk the path
 	const bool	PING_PONG = true;
 	const int	PATH_NODES_COUNT = 4;
@@ -761,6 +762,11 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 	if ( ShowLight0 )
 		RenderShadowMapPoint( m_pSB_LightsDynamic->m[0].Position, 30.0f );
+	else
+	{
+		m_pCB_ShadowMapPoint->UpdateData();
+		m_pRTShadowMapPoint->Set( 3, true );
+	}
 
 
 	// ============= Sun light =============
@@ -1374,14 +1380,14 @@ void	EffectGlobalIllum2::PreComputeProbes()
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
 		// Clear cube maps
-		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6*0, 6 ), float4::Zero );
-		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6*1, 6 ), float4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
+		m_Device.ClearRenderTarget( *pRTCubeMap->GetTargetView( 0, 6*0, 6 ), float4::Zero );
+		m_Device.ClearRenderTarget( *pRTCubeMap->GetTargetView( 0, 6*1, 6 ), float4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
 
 		float4	Bisou = float4::Zero;
 		((U32&) Bisou.w) = 0xFFFFFFFFUL;
-		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6*2, 6 ), Bisou );	// Clear emissive surface ID to -1 (invalid) and static color to 0
+		m_Device.ClearRenderTarget( *pRTCubeMap->GetTargetView( 0, 6*2, 6 ), Bisou );	// Clear emissive surface ID to -1 (invalid) and static color to 0
 		((U32&) Bisou.x) = 0xFFFFFFFFUL;
-		m_Device.ClearRenderTarget( pRTCubeMap->GetTargetView( 0, 6*3, 6 ), Bisou );	// Clear probe ID to -1 (invalid)
+		m_Device.ClearRenderTarget( *pRTCubeMap->GetTargetView( 0, 6*3, 6 ), Bisou );	// Clear probe ID to -1 (invalid)
 
 		float4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
 		ProbeLocal2World.Normalize();
@@ -1415,7 +1421,7 @@ void	EffectGlobalIllum2::PreComputeProbes()
 
 			// Render scene
 			for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
-				RenderMesh( *m_ppCachedMeshes[MeshIndex], m_pMatRenderCubeMap );
+				RenderMesh( *m_ppCachedMeshes[MeshIndex], m_pMatRenderCubeMap, true );
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -1596,6 +1602,28 @@ pRTCubeMap->SetPS( 64 );
 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[3] = Probe.pNeighborProbeInfos[3].ProbeID;
 	}
 	m_pSB_RuntimeProbes->Write();
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build the probes' octree
+	float3	SceneBBoxMin = float3::MaxFlt;
+	float3	SceneBBoxMax = -float3::MaxFlt;
+	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
+	{
+		SceneBBoxMin.Min( m_ppCachedMeshes[MeshIndex]->m_BBoxMin );
+		SceneBBoxMax.Max( m_ppCachedMeshes[MeshIndex]->m_BBoxMax );
+	}
+
+	float	MaxDimension = (SceneBBoxMax - SceneBBoxMin).Max();
+
+	m_ProbeOctree.Init( SceneBBoxMin, MaxDimension, 4.0f, m_ProbesCount );
+	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
+	{
+		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
+
+		float3	Position = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
+		m_ProbeOctree.Append( Position, Probe.MaxDistance, &Probe );
+	}
 
 
 	//////////////////////////////////////////////////////////////////////////

@@ -301,6 +301,10 @@ private:	// FIELDS
 	U32*				m_pVertexStreamProbeIDs;
 	Primitive*			m_pPrimProbeIDs;
 
+		// Scene octree containing probes
+	Octree<const ProbeStruct*>	m_ProbeOctree;
+
+
 	// Textures
 	int					m_TexturesCount;
 	Texture2D**			m_ppTextures;
