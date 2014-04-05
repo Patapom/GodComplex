@@ -62,7 +62,9 @@ namespace PNG2RAW
 			// Convert to POM format (i.e. DirectX format actually)
 //			ConvertPOM( new FileInfo( "Resources/Scenes/GITest1/pata_diff_color_small.png" ), new FileInfo( "Resources/Scenes/GITest1/pata_diff_colo.pom" ), true, true );
 //			ConvertPOM( new DirectoryInfo( "../Arkane/Textures" ), new DirectoryInfo( "../Arkane/TexturesPOM" ), "_d;_s", true );
-			ConvertPOM( new DirectoryInfo( "./Resources/Scenes/Sponza/TexturesPNG" ), new DirectoryInfo( "./Resources/Scenes/Sponza/TexturesPOM" ), "_dif;_diff;_spec", true );
+//			ConvertPOM( new DirectoryInfo( "./Resources/Scenes/Sponza/TexturesPNG" ), new DirectoryInfo( "./Resources/Scenes/Sponza/TexturesPOM" ), "_dif;_diff;_spec", true );
+
+			ConvertPOM( new FileInfo( "Resources/Images/Normal.png" ), new FileInfo( "Resources/Images/Normal.POM" ), false, true );
 
 #endif
 		}
@@ -137,8 +139,8 @@ namespace PNG2RAW
 			{
 				if ( _GenerateMipMaps )
 				{
-					double	Mips = Math.Log( Math.Max( B.Width, B.Height ) ) / Math.Log( 2.0 );
-					MipLevelsCount = 1 + (int) Math.Ceiling( Mips );
+					double	Mips = Math.Log( 1+Math.Max( B.Width, B.Height ) ) / Math.Log( 2.0 );
+					MipLevelsCount = (int) Math.Ceiling( Mips );
 				}
 
 				RAWImages = new byte[MipLevelsCount][];

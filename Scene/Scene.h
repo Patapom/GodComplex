@@ -101,27 +101,29 @@ public:		// NESTED TYPES
 		public:
 			::Scene::Material*	m_pMaterial;
 
-			float3			m_BBoxMin;
-			float3			m_BBoxMax;
+			float3				m_LocalBBoxMin;
+			float3				m_LocalBBoxMax;
+			float3				m_GlobalBBoxMin;
+			float3				m_GlobalBBoxMax;
 
-			U32				m_FacesCount;
-			U32*			m_pFaces;
+			U32					m_FacesCount;
+			U32*				m_pFaces;
 
 			enum	VERTEX_FORMAT
 			{
 				P3N3G3B3T2,		// Position3, Normal3, Tangent3, BiTangent3, UV2
 
-			}				m_VertexFormat;
-			U32				m_VerticesCount;
-			void*			m_pVertices;
+			}					m_VertexFormat;
+			U32					m_VerticesCount;
+			void*				m_pVertices;
 
-			void*			m_pTag;	// Custom user tag filled with anything the user needs to render the node
+			void*				m_pTag;	// Custom user tag filled with anything the user needs to render the node
 
 		private:
 			Primitive();
 			~Primitive();
 
-			void		Init( Scene& _Owner, const U8*& _pData );
+			void		Init( Mesh& _Owner, const U8*& _pData );
 
 			friend class Mesh;
 		};
@@ -131,8 +133,10 @@ public:		// NESTED TYPES
 		int					m_PrimitivesCount;
 		Primitive*			m_pPrimitives;
 
-		float3				m_BBoxMin;
-		float3				m_BBoxMax;
+		float3				m_LocalBBoxMin;
+		float3				m_LocalBBoxMax;
+		float3				m_GlobalBBoxMin;
+		float3				m_GlobalBBoxMax;
 
 	private:
 

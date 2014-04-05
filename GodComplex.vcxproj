@@ -442,6 +442,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Utility\FPSCamera.cpp" />
     <ClCompile Include="Utility\Memory.cpp" />
     <ClCompile Include="Utility\MemoryMappedFile.cpp" />
+    <None Include="Resources\Shaders\GIRenderDynamic.hlsl" />
     <None Include="Utility\Octree.inl">
       <FileType>Document</FileType>
     </None>

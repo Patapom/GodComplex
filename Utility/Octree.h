@@ -18,11 +18,22 @@ private:	// NESTED TYPES
 		float3	BBoxMax;
 		T		Value;
 
-		bool	Contains( const float3& _Position )
+		bool	Contains( const float3& _Position ) const
 		{
 			float3	Center2Position = Position - _Position;
 			float	SqDistanceFromCenter = Center2Position.LengthSq();
 			return SqDistanceFromCenter <= SqRadius;
+		}
+
+		bool	IsCloser( const float3& _Position, float& _SqDistance ) const
+		{
+			float3	Center2Position = Position - _Position;
+			float	SqDistanceFromCenter = Center2Position.LengthSq();
+			if ( SqDistanceFromCenter >= _SqDistance )
+				return false;
+
+			_SqDistance = SqDistanceFromCenter;
+			return true;
 		}
 	};
 
@@ -43,11 +54,12 @@ public:
 		Node( Octree& _Owner, Node* _pParent );
 		~Node();
 
-		void	Append( const Content& _Content, const float3& _Min, float _Size, U32 _Level );
-		void	Fetch( const float3& _Position, List<T>& _Result, const float3& _Min, float _Size );
+		int			Append( const Content& _Content, const float3& _Min, float _Size, U32 _Level );
+		void		Fetch( const float3& _Position, List<T>& _Result, const float3& _Min, float _Size ) const;
+		const T*	FetchNearest( const float3& _Position, const float3& _Min, float _Size, float& _SqDistance ) const;
 
 	private:
-		Node&	GetChildNode( U32 _X, U32 _Y, U32 _Z );
+		Node&		GetOrCreateChildNode( U32 _X, U32 _Y, U32 _Z );
 	};
 
 private:	// FIELDS
@@ -82,12 +94,17 @@ public:		// METHODS
 	//	_Position, the position of the sphere containing the value
 	//	_Radius, the radius of the sphere containing the value
 	//	_Value, the value to append
-	void		Append( const float3& _Position, float _Radius, T _Value );
+	// Returns the amount of nodes the value was added to
+	int			Append( const float3& _Position, float _Radius, T _Value );
 
 	// Fetches the values overlapping the provided position
 	//	_Position, the position to find overlapping values for
 	//	_Result, the list that will be populated with values overlapping the provided position
 	void		Fetch( const float3& _Position, List<T>& _Result ) const;
+
+	// Fetches the value closest to the provided position
+	//	_Distance, the distance to the retrieved value
+	const T*	FetchNearest( const float3& _Position, float& _Distance ) const;
 };
 
 #include "Octree.inl"

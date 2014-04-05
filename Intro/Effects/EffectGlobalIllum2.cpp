@@ -14,7 +14,7 @@
 //		=> Using the Tools > FBX2GCX you can convert a standard FBX scene into a GCX
 //	_ Patch the code to make it load your scene
 //		=> Taking model below with the SCENE_SPONZA define, create the same pattern for your scene (i.e. create PROBES_PATH, USE_PER_VERTEX_PROBE_ID, etc.)
-//		=> Create a disk folder where probe infos will be stored, make PROBES_PATH point to it
+//		=> Create a disk folder where probe infos will be stored, make PROBES_PATH point to it (usually, a "Probes" sub-directory in the scene's directory)
 //		=> Text-edit the GodComplex.rc resource file, locate the line where IDR_SCENE_GI is defined, copy/paste/comment and patch with your scene's path
 //
 // 2) Converting textures
@@ -23,7 +23,7 @@
 //	_ Converting to GCX scene, if successful, should have shown a popup dialog with a list of texture names
 //		=> Copy that list of texture names (ending with the .POM extension)
 //		=> Paste it in the code below where you can see similar lists
-//		=> You just hinted the code at which texture corresponds to which texture ID in the GCX scene
+//		=> You just hinted the code of which texture corresponds to which texture ID in the GCX scene
 //	_ Convert your textures to POM
 //		=> Using the Tools > PNG2POM you can batch convert your PNGs into POM format
 //		=> Target directory should be in a "TexturesPOM" folder in the scene's directory, to match the paths you copied in the code
@@ -44,10 +44,10 @@
 //	_ Wait until all probes have been converted
 //		=> You should now have an equal number of .PROBESET files
 //	_ Click the Main Menu > Tools > Encode Face Probes action
-//		=> Locate the .PIM file that should have been generated at the same place as where the .PROBESET files have been generated
+//		=> Locate the .PIM file that should have been generated at the same place as the .PROBESET files
 //		=> Locate your .GCX scene
 //	_ It should show a dialog with informations on what went right/wrong in your scene
-//		=> Typically, faces/primitives that don't have probe informations are faces/primitives too far away from a probe and disconnected from other faces/primitives
+//		=> Typically, faces/primitives that don't have probe informations are faces/primitives too far away from any probe and disconnected from other faces/primitives
 //		=> After that, you just generated an additional vertex stream for each of your scene's vertices that contains the index of the closest probe
 //	_ You now have all the informations needed to render the scene
 //
@@ -114,7 +114,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 
 	{
 // Main scene rendering is quite heavy so we prefer to reload it from binary instead
-//ScopedForceMaterialsLoadFromBinary		bisou;
+ScopedForceMaterialsLoadFromBinary		bisou;
 
 #ifdef USE_PER_VERTEX_PROBE_ID
 		D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { "PER_VERTEX_PROBE_ID", "1" }, { NULL, NULL } };
@@ -137,13 +137,14 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 
  		CHECK_MATERIAL( m_pMatPostProcess = CreateMaterial( IDR_SHADER_GI_POST_PROCESS, "./Resources/Shaders/GIPostProcess.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 6 );
  		CHECK_MATERIAL( m_pMatRenderLights = CreateMaterial( IDR_SHADER_GI_RENDER_LIGHTS, "./Resources/Shaders/GIRenderLights.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 7 );
- 		CHECK_MATERIAL( m_pMatRenderDebugProbes = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 8 );
- 		CHECK_MATERIAL( m_pMatRenderDebugProbesNetwork = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3::DESCRIPTOR, "VS_Network", "GS_Network", "PS_Network" ), 9 );
- 		CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 10 );
+ 		CHECK_MATERIAL( m_pMatRenderDynamic = CreateMaterial( IDR_SHADER_GI_RENDER_DYNAMIC, "./Resources/Shaders/GIRenderDynamic.hlsl", VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 8 );
+ 		CHECK_MATERIAL( m_pMatRenderDebugProbes = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 9 );
+ 		CHECK_MATERIAL( m_pMatRenderDebugProbesNetwork = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3::DESCRIPTOR, "VS_Network", "GS_Network", "PS_Network" ), 10 );
+ 		CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 11 );
 	}
 	{
 // This one is REALLY heavy! So build it once and reload it from binary forever again
-//ScopedForceMaterialsLoadFromBinary		bisou;
+ScopedForceMaterialsLoadFromBinary		bisou;
 		// Compute Shaders
  		CHECK_MATERIAL( m_pCSUpdateProbe = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 20 );
 	}
@@ -339,6 +340,12 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 		NormalZ.Clear( Pixel( float4( 0.5f, 0.5f, 1, 1 ) ) );
 		m_ppTextures[1] = NormalZ.CreateTexture( PixelFormatRGBA8::DESCRIPTOR, TextureBuilder::CONV_RGBA );
 #endif
+
+		// Load the dynamic objects' normal map
+		{
+			TextureFilePOM	DynamicNormal( "./Resources/Images/Normal.POM" );
+			m_pTexDynamicNormalMap = new Texture2D( m_Device, DynamicNormal );
+		}
 	}
 
 	// Create the shadow map
@@ -351,6 +358,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	m_pCB_General = new CB<CBGeneral>( _Device, 8, true );
 	m_pCB_Scene = new CB<CBScene>( _Device, 9, true );
  	m_pCB_Object = new CB<CBObject>( _Device, 10 );
+	m_pCB_DynamicObject = new CB<CBDynamicObject>( _Device, 10 );
  	m_pCB_Material = new CB<CBMaterial>( _Device, 11 );
 	m_pCB_Probe = new CB<CBProbe>( _Device, 10 );
 	m_pCB_Splat = new CB<CBSplat>( _Device, 10 );
@@ -463,7 +471,11 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 					}
 				}
 				else if ( _Node.m_Type == Scene::Node::PROBE )
-					m_Owner.m_pProbes[m_Owner.m_ProbesCount++].pSceneProbe = (Scene::Probe*) &_Node;
+				{
+					m_Owner.m_pProbes[m_Owner.m_ProbesCount].ProbeID = m_Owner.m_ProbesCount;
+					m_Owner.m_pProbes[m_Owner.m_ProbesCount].pSceneProbe = (Scene::Probe*) &_Node;
+					m_Owner.m_ProbesCount++;
+				}
 			}
 		}	Visitor1( *this );
 		m_Scene.ForEach( Visitor1 );
@@ -475,7 +487,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create our sphere primitive for displaying lights & probes
-	m_pPrimSphere = new Primitive( _Device, VertexFormatP3N3::DESCRIPTOR );
+	m_pPrimSphere = new Primitive( _Device, VertexFormatP3N3G3T2::DESCRIPTOR );
 	GeometryBuilder::BuildSphere( 40, 10, *m_pPrimSphere );
 
 	// Create the dummy point primitive for the debug drawing of the probes network
@@ -564,6 +576,9 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 		false,				// U32		EnableEmissiveMaterials;
 		4.0f,				// float	EmissiveIntensity;
 		1.0f, 0.95f, 0.5f,	// float	EmissiveColorR, G, B;
+		//		
+		// Dynamic objects
+		0,					// U32		DynamicObjectsCount;
 		// 
 		// Bounce params
 		100.0f,				// float	BounceFactorSun;
@@ -625,6 +640,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pCB_Splat;
 	delete m_pCB_Probe;
 	delete m_pCB_Material;
+	delete m_pCB_DynamicObject;
 	delete m_pCB_Object;
 	delete m_pCB_Scene;
 	delete m_pCB_General;
@@ -632,6 +648,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pRTShadowMapPoint;
 	delete m_pRTShadowMap;
 
+	delete m_pTexDynamicNormalMap;
 	for ( int TextureIndex=0; TextureIndex < m_TexturesCount; TextureIndex++ )
 		delete m_ppTextures[TextureIndex];
 	delete[] m_ppTextures;
@@ -646,6 +663,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pMatRenderCubeMap;
 	delete m_pMatRenderDebugProbesNetwork;
 	delete m_pMatRenderDebugProbes;
+	delete m_pMatRenderDynamic;
 	delete m_pMatRenderLights;
 	delete m_pMatRenderEmissive;
 	delete m_pMatRender;
@@ -1052,7 +1070,37 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// 3] Render the debug probes
+	// 3] Render the dynamic objects
+	if ( m_CachedCopy.DynamicObjectsCount > 0 )
+	{
+		USING_MATERIAL_START( *m_pMatRenderDynamic )
+
+		m_pTexDynamicNormalMap->SetPS( 11 );
+
+		for ( U32 DynamicObjectIndex=0; DynamicObjectIndex < m_CachedCopy.DynamicObjectsCount; DynamicObjectIndex++ )
+		{
+			DynamicObject&	DynObj = m_pDynamicObjects[DynamicObjectIndex];
+
+			// Update object's position
+			// TODO!
+			m_pCB_DynamicObject->m.Position = DynObj.Position;
+
+			// Retrieve nearest probe
+			float				ProbeDistance;
+			const ProbeStruct* const*	ppNearestProbe = m_ProbeOctree.FetchNearest( DynObj.Position, ProbeDistance );
+			m_pCB_DynamicObject->m.ProbeID = ppNearestProbe != NULL ? (*ppNearestProbe)->ProbeID : 0xFFFFFFFFU;
+
+			m_pCB_DynamicObject->UpdateData();
+
+			m_pPrimSphere->Render( M );
+		}
+
+		USING_MATERIAL_END
+	}
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// 4] Render the debug probes
 	if ( m_CachedCopy.ShowDebugProbes != 0 )
 	{
 		USING_MATERIAL_START( *m_pMatRenderDebugProbes )
@@ -1073,7 +1121,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// 3] Post-process the result
+	// 5] Post-process the result
 	USING_MATERIAL_START( *m_pMatPostProcess )
 
 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
@@ -1606,23 +1654,44 @@ pRTCubeMap->SetPS( 64 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the probes' octree
-	float3	SceneBBoxMin = float3::MaxFlt;
-	float3	SceneBBoxMax = -float3::MaxFlt;
+	m_SceneBBoxMin = float3::MaxFlt;
+	m_SceneBBoxMax = -float3::MaxFlt;
 	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
 	{
-		SceneBBoxMin.Min( m_ppCachedMeshes[MeshIndex]->m_BBoxMin );
-		SceneBBoxMax.Max( m_ppCachedMeshes[MeshIndex]->m_BBoxMax );
+		m_SceneBBoxMin = m_SceneBBoxMin.Min( m_ppCachedMeshes[MeshIndex]->m_GlobalBBoxMin );
+		m_SceneBBoxMax = m_SceneBBoxMax.Max( m_ppCachedMeshes[MeshIndex]->m_GlobalBBoxMax );
 	}
 
-	float	MaxDimension = (SceneBBoxMax - SceneBBoxMin).Max();
+	float	MaxDimension = (m_SceneBBoxMax - m_SceneBBoxMin).Max();
 
-	m_ProbeOctree.Init( SceneBBoxMin, MaxDimension, 4.0f, m_ProbesCount );
+	m_ProbeOctree.Init( m_SceneBBoxMin, MaxDimension, 4.0f, m_ProbesCount );
+	int		MaxNodesCount = 0;
+	int		TotalNodesCount = 0;
+	U32		MaxNodesProbeIndex = ~0;
 	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 	{
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
 		float3	Position = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
-		m_ProbeOctree.Append( Position, Probe.MaxDistance, &Probe );
+		int	NodesCount = m_ProbeOctree.Append( Position, Probe.MaxDistance, &Probe );
+		TotalNodesCount += NodesCount;
+		if ( NodesCount > MaxNodesCount )
+		{	// New probe with more octree nodes
+			MaxNodesCount = NodesCount;
+			MaxNodesProbeIndex = ProbeIndex;
+		}
+	}
+
+	float	AverageNodesCount = float(TotalNodesCount) / m_ProbesCount;
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build initial positions for dynamic dummy objects
+	for ( int DynamicObjectIndex=0; DynamicObjectIndex < MAX_DYNAMIC_OBJECTS; DynamicObjectIndex++ )
+	{
+		m_pDynamicObjects[DynamicObjectIndex].Position.x = _frand( m_SceneBBoxMin.x, m_SceneBBoxMax.x );
+		m_pDynamicObjects[DynamicObjectIndex].Position.y = _frand( m_SceneBBoxMin.y, m_SceneBBoxMax.y );
+		m_pDynamicObjects[DynamicObjectIndex].Position.z = _frand( m_SceneBBoxMin.z, m_SceneBBoxMax.z );
 	}
 
 
@@ -1697,16 +1766,16 @@ void	EffectGlobalIllum2::RenderShadowMap( const float3& _SunDirection )
 	m_pCB_ShadowMap->m.World2Light = m_pCB_ShadowMap->m.Light2World.Inverse();
 
 	// Find appropriate bounds
-	float3		BBoxMin = 1e6f * float3::One;
-	float3		BBoxMax = -1e6f * float3::One;
+	float3		BBoxMin = float3::MaxFlt;
+	float3		BBoxMax = -float3::MaxFlt;
 	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
 	{
 		Scene::Mesh*	pMesh = m_ppCachedMeshes[MeshIndex];
 		float4x4	Mesh2Light = pMesh->m_Local2World * m_pCB_ShadowMap->m.World2Light;
 
 		// Transform the 8 corners of the mesh's BBox into light space and grow the light's bbox
-		const float3&	MeshBBoxMin = ((Scene::Mesh&) *pMesh).m_BBoxMin;
-		const float3&	MeshBBoxMax = ((Scene::Mesh&) *pMesh).m_BBoxMax;
+		const float3&	MeshBBoxMin = ((Scene::Mesh&) *pMesh).m_LocalBBoxMin;
+		const float3&	MeshBBoxMax = ((Scene::Mesh&) *pMesh).m_LocalBBoxMax;
 		for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
 		{
 			float3	D;

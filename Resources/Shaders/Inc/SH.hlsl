@@ -8,7 +8,6 @@
 #ifndef _SH_INC_
 #define _SH_INC_
 
-
 // Evaluates the SH coefficients in the requested direction
 //
 float3	EvaluateSH( float3 _Direction, float3 _SH[9] )

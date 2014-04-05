@@ -640,6 +640,9 @@
     <None Include="Utility\Octree.inl">
       <Filter>Utility</Filter>
     </None>
+    <None Include="Resources\Shaders\GIRenderDynamic.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

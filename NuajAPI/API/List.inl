@@ -44,7 +44,7 @@ template<typename T> const T&	List<T>::operator[]( U32 _Index ) const
 template<typename T> void		List<T>::Append( const T& _Value )
 {
 	Allocate( m_Count+1 );
-	memcpy( m_pList[m_Count-1], &_Value, sizeof(T) );
+	memcpy( &m_pList[m_Count-1], &_Value, sizeof(T) );
 }
 
 template<typename T> T&			List<T>::Append()
@@ -85,10 +85,12 @@ template<typename T> void		List<T>::Allocate( U32 _NewCount )
 	if ( m_Size != 0 )
 		m_Size *= 2;
 	else
-		m_Size = 32;	// Arbitrary...
+		m_Size = 8;	// Arbitrary...
 
 	m_pList = new T[m_Size];
-	memcpy( m_pList, pOldList, OldSize*sizeof(T) );
+	memset( m_pList, 0, m_Size*sizeof(T) );
+	if ( pOldList != NULL )
+		memcpy( m_pList, pOldList, OldSize*sizeof(T) );
 	m_Count = _NewCount;
 
 	delete[] pOldList;

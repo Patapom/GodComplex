@@ -22,6 +22,8 @@ private:	// CONSTANTS
 
 	static const U32		MAX_PROBE_UPDATES_PER_FRAME = 32;	// Update a maximum of 32 probes per frame
 
+	static const U32		MAX_DYNAMIC_OBJECTS = 128;
+
 	static const U32		SHADOW_MAP_SIZE = 1024;
 	static const U32		SHADOW_MAP_POINT_SIZE = 256;		// Point light shadow map
 
@@ -49,6 +51,12 @@ protected:	// NESTED TYPES
 	struct CBObject
 	{
 		float4x4	Local2World;	// Local=>World transform to rotate the object
+ 	};
+
+	struct CBDynamicObject
+	{
+		float3		Position;
+		U32			ProbeID;
  	};
 
 	struct CBMaterial
@@ -173,14 +181,16 @@ public:
 		U32			ProbeIDs[2];					// The IDs of the 2 connected probes
 		float2		NeighborsSolidAngles;			// Their perception of each other's solid angle
 	};
-protected:
 
 #pragma pack( pop )
 
 
+protected:
+
 	// The static probe structure that we read from disk and stream/keep in memory when probes need updating
 	struct	ProbeStruct
 	{
+		U32				ProbeID;				// The ID is simply the probe's index in the array of probes
 		Scene::Probe*	pSceneProbe;
 
 		// Static SH infos
@@ -252,6 +262,11 @@ protected:
 		void			AccumulateLightBounce( const float3 _pSHSet[9] );
 	};
 
+	struct	DynamicObject
+	{
+		float3	Position;
+	};
+
 
 private:	// FIELDS
 
@@ -260,10 +275,11 @@ private:	// FIELDS
 	Texture2D&			m_RTTarget;
 	Primitive&			m_ScreenQuad;
 
-	Material*			m_pMatRender;				// Displays the room
-	Material*			m_pMatRenderEmissive;		// Displays the room's emissive objects (area lights)
+	Material*			m_pMatRender;				// Displays the scene
+	Material*			m_pMatRenderEmissive;		// Displays the scene's emissive objects (area lights)
 	Material*			m_pMatRenderLights;			// Displays the lights as small emissive balls
-	Material*			m_pMatRenderCubeMap;		// Renders the room into a cubemap
+	Material*			m_pMatRenderDynamic;		// Displays the dynamic objects as balls with a normal map
+	Material*			m_pMatRenderCubeMap;		// Renders the scene into a cubemap
 	Material*			m_pMatRenderNeighborProbe;	// Renders the neighbor probes as planes to form a 3D voronoï cell
 	Material*			m_pCSComputeShadowMapBounds;// Computes the shadow map bounds
 	Material*			m_pMatRenderShadowMap;		// Renders the directional shadowmap
@@ -276,6 +292,8 @@ private:	// FIELDS
 
 	// Scene & Primitives
 	Scene				m_Scene;
+	float3				m_SceneBBoxMin;
+	float3				m_SceneBBoxMax;
 	CompositeVertexFormatDescriptor	m_SceneVertexFormatDesc;
 	bool				m_bDeleteSceneTags;
 	Primitive*			m_pPrimSphere;
@@ -301,13 +319,18 @@ private:	// FIELDS
 	U32*				m_pVertexStreamProbeIDs;
 	Primitive*			m_pPrimProbeIDs;
 
+
 		// Scene octree containing probes
 	Octree<const ProbeStruct*>	m_ProbeOctree;
+
+		// Dynamic objects
+	DynamicObject		m_pDynamicObjects[MAX_DYNAMIC_OBJECTS];
 
 
 	// Textures
 	int					m_TexturesCount;
 	Texture2D**			m_ppTextures;
+	Texture2D*			m_pTexDynamicNormalMap;
 	Texture2D*			m_pRTShadowMap;
 	Texture2D*			m_pRTShadowMapPoint;
 
@@ -315,6 +338,7 @@ private:	// FIELDS
  	CB<CBGeneral>*		m_pCB_General;
  	CB<CBScene>*		m_pCB_Scene;
  	CB<CBObject>*		m_pCB_Object;
+	CB<CBDynamicObject>*m_pCB_DynamicObject;
  	CB<CBMaterial>*		m_pCB_Material;
  	CB<CBProbe>*		m_pCB_Probe;
 	CB<CBSplat>*		m_pCB_Splat;
@@ -382,6 +406,9 @@ private:	// FIELDS
 		float	EmissiveColorR;
 		float	EmissiveColorG;
 		float	EmissiveColorB;
+
+		// Dynamic objects
+		U32		DynamicObjectsCount;
 
 		// Bounce params
 		float	BounceFactorSun;

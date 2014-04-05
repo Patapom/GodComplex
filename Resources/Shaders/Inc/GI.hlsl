@@ -139,4 +139,73 @@ float3	AccumulateLight( float3 _WorldPosition, float3 _WorldNormal, float3 _Worl
 	return Irradiance * NdotL;
 }
 
+// Accumulates probe SH based on weight computed from position & normal
+void	AccumulateProbeInfluence( ProbeStruct _Probe, float3 _WorldPosition, float3 _WorldNormal, inout float3 _SH[9], inout float _SumWeights )
+{
+	float3	ToProbe = _Probe.Position - _WorldPosition;
+	float	Distance2Probe = length( ToProbe );
+			ToProbe /= Distance2Probe;
+
+	float	ProbeRadius = 2.0 * _Probe.Radius;
+//	float	ProbeRadius = 1.0 * _Probe.Radius;
+
+	// Weight by distance
+// 	const float	MEAN_HARMONIC_DISTANCE = 4.0;
+// 	const float	WEIGHT_AT_DISTANCE = 0.01;
+// 	const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (MEAN_HARMONIC_DISTANCE * MEAN_HARMONIC_DISTANCE);
+// 	float	ProbeWeight = exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
+
+//	float	ProbeWeight = pow( max( 0.01, Distance2Probe ), -3.0 );
+
+	// Weight based on probe's max distance
+	const float	WEIGHT_AT_DISTANCE = 0.05;
+ 	const float	EXP_FACTOR = log( WEIGHT_AT_DISTANCE ) / (ProbeRadius * ProbeRadius);
+//###	float	ProbeWeight = 2.0 * exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
+	float	ProbeWeight = 10.0 * exp( EXP_FACTOR * Distance2Probe * Distance2Probe );
+
+	// Also weight by orientation to avoid probes facing away from us
+	ProbeWeight *= saturate( lerp( -0.1, 1.0, 0.5 * (1.0 + dot( _WorldNormal, ToProbe )) ) );
+
+	// Accumulate
+	for ( int i=0; i < 9; i++ )
+		_SH[i] += ProbeWeight * _Probe.SH[i];
+
+	_SumWeights += ProbeWeight;
+}
+
+// Gather SH from the specified probe ID and its direct neighbors
+void	GatherProbeSH( float3 _Position, float3 _Normal, uint _ProbeID, inout float3 _SH[9] )
+{
+	float	SumWeights = 0.0;
+
+	// Accumulate this probe
+	ProbeStruct	OriginProbe = _SBProbes[_ProbeID];
+	AccumulateProbeInfluence( OriginProbe, _Position, _Normal, _SH, SumWeights );
+
+	// Then accumulate valid neighbors
+	uint	NeighborProbeID = OriginProbe.NeighborIDs.x & 0xFFFF;
+	if ( NeighborProbeID != 0xFFFF )
+		AccumulateProbeInfluence( _SBProbes[NeighborProbeID], _Position, _Normal, _SH, SumWeights );
+
+	NeighborProbeID = OriginProbe.NeighborIDs.x >> 16;
+	if ( NeighborProbeID != 0xFFFF )
+		AccumulateProbeInfluence( _SBProbes[NeighborProbeID], _Position, _Normal, _SH, SumWeights );
+
+	NeighborProbeID = OriginProbe.NeighborIDs.y & 0xFFFF;
+	if ( NeighborProbeID != 0xFFFF )
+		AccumulateProbeInfluence( _SBProbes[NeighborProbeID], _Position, _Normal, _SH, SumWeights );
+
+	NeighborProbeID = OriginProbe.NeighborIDs.y >> 16;
+	if ( NeighborProbeID != 0xFFFF )
+		AccumulateProbeInfluence( _SBProbes[NeighborProbeID], _Position, _Normal, _SH, SumWeights );
+
+	// Normalize
+//	float	Norm = 1.0 / SumWeights;
+	float	Norm = 1.0 / max( 1.0, SumWeights );	// This max allows single, low influence probes to decrease with distance anyway
+													// But it correctly averages influences when many probes have strong weight
+	[unroll]
+	for ( uint i=0; i < 9; i++ )
+		_SH[i] *= Norm;
+}
+
 #endif	// _GI_INC_
