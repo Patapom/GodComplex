@@ -114,7 +114,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 
 	{
 // Main scene rendering is quite heavy so we prefer to reload it from binary instead
-ScopedForceMaterialsLoadFromBinary		bisou;
+//ScopedForceMaterialsLoadFromBinary		bisou;
 
 #ifdef USE_PER_VERTEX_PROBE_ID
 		D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { "PER_VERTEX_PROBE_ID", "1" }, { NULL, NULL } };

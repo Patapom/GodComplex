@@ -1,6 +1,8 @@
 //////////////////////////////////////////////////////////////////////////
 // This shader renders dynamic objects as balls with normals
 //
+#define USE_SHADOW_MAP	1
+
 #include "Inc/Global.hlsl"
 #include "Inc/ShadowMap.hlsl"
 #include "Inc/GI.hlsl"
