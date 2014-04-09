@@ -673,6 +673,7 @@ delete pRTCubeMap;
 }
 
 float		AnimateLightTime0 = 0.0f;
+float		AnimateDynamicObjects = 0.0f;
 
 #define RENDER_SUN	1
 
@@ -1073,6 +1074,9 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	// 3] Render the dynamic objects
 	if ( m_CachedCopy.DynamicObjectsCount > 0 )
 	{
+		AnimateDynamicObjects += 0.05f * _DeltaTime;
+		float	t = abs( fmodf( AnimateDynamicObjects, 2.0f ) - 1.0f );
+
 		USING_MATERIAL_START( *m_pMatRenderDynamic )
 
 		m_pTexDynamicNormalMap->SetPS( 11 );
@@ -1083,11 +1087,11 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 			// Update object's position
 			// TODO!
-			m_pCB_DynamicObject->m.Position = DynObj.Position;
+			m_pCB_DynamicObject->m.Position = DynObj.PositionStart + (DynObj.PositionEnd - DynObj.PositionStart) * t;
 
 			// Retrieve nearest probe
 			float				ProbeDistance;
-			const ProbeStruct* const*	ppNearestProbe = m_ProbeOctree.FetchNearest( DynObj.Position, ProbeDistance );
+			const ProbeStruct* const*	ppNearestProbe = m_ProbeOctree.FetchNearest( m_pCB_DynamicObject->m.Position, ProbeDistance );
 			m_pCB_DynamicObject->m.ProbeID = ppNearestProbe != NULL ? (*ppNearestProbe)->ProbeID : 0xFFFFFFFFU;
 
 			m_pCB_DynamicObject->UpdateData();
@@ -1687,11 +1691,28 @@ pRTCubeMap->SetPS( 64 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build initial positions for dynamic dummy objects
+	float3	BBoxCenter = 0.5f * (m_SceneBBoxMin + m_SceneBBoxMax);
+	float3	BBoxHalfSize = BBoxCenter - m_SceneBBoxMin;
+			BBoxHalfSize = 0.6f * BBoxHalfSize;
+	float3	BBoxMin, BBoxMax;
+			BBoxMin.x = BBoxCenter.x - BBoxHalfSize.x;
+			BBoxMin.y = BBoxCenter.y - BBoxHalfSize.y;
+			BBoxMin.z = BBoxCenter.z - BBoxHalfSize.z;
+			BBoxMax.x = BBoxCenter.x + BBoxHalfSize.x;
+			BBoxMax.y = BBoxCenter.y + BBoxHalfSize.y;
+			BBoxMax.z = BBoxCenter.z + BBoxHalfSize.z;
+
 	for ( int DynamicObjectIndex=0; DynamicObjectIndex < MAX_DYNAMIC_OBJECTS; DynamicObjectIndex++ )
 	{
-		m_pDynamicObjects[DynamicObjectIndex].Position.x = _frand( m_SceneBBoxMin.x, m_SceneBBoxMax.x );
-		m_pDynamicObjects[DynamicObjectIndex].Position.y = _frand( m_SceneBBoxMin.y, m_SceneBBoxMax.y );
-		m_pDynamicObjects[DynamicObjectIndex].Position.z = _frand( m_SceneBBoxMin.z, m_SceneBBoxMax.z );
+		m_pDynamicObjects[DynamicObjectIndex].PositionStart.x = _frand( BBoxMin.x, BBoxMax.x );
+		m_pDynamicObjects[DynamicObjectIndex].PositionStart.y = _frand( BBoxMin.y, BBoxMax.y );
+		m_pDynamicObjects[DynamicObjectIndex].PositionStart.z = _frand( BBoxMin.z, BBoxMax.z );
+
+		m_pDynamicObjects[DynamicObjectIndex].PositionEnd.x = _frand( BBoxMin.x, BBoxMax.x );
+		m_pDynamicObjects[DynamicObjectIndex].PositionEnd.y = _frand( BBoxMin.y, BBoxMax.y );
+		m_pDynamicObjects[DynamicObjectIndex].PositionEnd.z = _frand( BBoxMin.z, BBoxMax.z );
+
+		m_pDynamicObjects[DynamicObjectIndex].Interpolation = 0.0f;
 	}
 
 

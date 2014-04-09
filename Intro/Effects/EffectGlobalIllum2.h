@@ -264,7 +264,9 @@ protected:
 
 	struct	DynamicObject
 	{
-		float3	Position;
+		float3		PositionStart;
+		float3		PositionEnd;
+		float		Interpolation;
 	};
 
 
