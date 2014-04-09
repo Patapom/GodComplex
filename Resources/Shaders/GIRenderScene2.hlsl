@@ -229,7 +229,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Compute indirect lighting
 	float3	SHIndirect[9] = { _In.SH0, _In.SH1, _In.SH2, _In.SH3, _In.SH4, _In.SH5, _In.SH6, _In.SH7, _In.SH8 };
-	float3	Indirect = (_ShowOnlyIndirect ? INVPI : DiffuseAlbedo) * EvaluateSHIrradiance( _In.Normal, SHIndirect );
+	float3	Indirect = DiffuseAlbedo * EvaluateSHIrradiance( _In.Normal, SHIndirect );
 //	float3	Indirect = DiffuseAlbedo * EvaluateSH( _In.Normal, SHIndirect );
 
 
@@ -238,7 +238,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 
 	if ( !_ShowIndirect )
 	{	// Dummy dull uniform ambient sky
-		Indirect = _Ambient * lerp( 0.5, 1.0, 0.5 * (1.0 + Normal.y) );
+		Indirect = DiffuseAlbedo * _Ambient * lerp( 0.5, 1.0, 0.5 * (1.0 + Normal.y) );
 	}
 
 	return float4( Indirect + AccumDiffuse, 1 );

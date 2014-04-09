@@ -574,7 +574,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	// Setup general data
 	m_pCB_General->m.ShowIndirect = gs_WindowInfos.pKeys[VK_RETURN] == 0;
 	m_pCB_General->m.ShowOnlyIndirect = gs_WindowInfos.pKeys[VK_BACK] != 0;
-	m_pCB_General->m.ShowWhiteDiffuse = gs_WindowInfos.pKeys[VK_DELETE] != 0;
+	m_pCB_General->m.ShowWhiteDiffuse = gs_WindowInfos.pKeysToggle[VK_DELETE] != 0;
 	m_pCB_General->m.Ambient = !m_pCB_General->m.ShowIndirect && m_CachedCopy.EnableSky ? 0.25f * float3( 0.64f, 0.79f, 1.0f ) : float3::Zero;
 	m_pCB_General->UpdateData();
 
