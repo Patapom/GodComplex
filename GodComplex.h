@@ -43,6 +43,7 @@
 #include "Utility/FPSCamera.h"
 #include "Utility/Video.h"
 #include "Utility/TextureFilePOM.h"
+#include "Utility/Octree.h"
 
 // DirectX Renderer
 #include "RendererD3D11/Device.h"

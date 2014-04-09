@@ -8,6 +8,10 @@
 #include "Inc/Global.hlsl"
 #include "Inc/GI.hlsl"
 
+
+static const float	FORCE_MIP_BIAS = 2.0;	// Add a mip bias to avoid too much detail in textures
+
+
 cbuffer	cbCubeMapCamera	: register( b8 )
 {
 	float4x4	_CubeMap2World;
@@ -59,7 +63,7 @@ PS_OUT	PS( PS_IN _In, uint	_FaceIndex : SV_PRIMITIVEID )
 	//
 	Out.DiffuseAlbedo.xyz = _DiffuseAlbedo;
 	if ( _HasDiffuseTexture )
-		Out.DiffuseAlbedo.xyz = _TexDiffuseAlbedo.Sample( LinearWrap, _In.UV ).xyz;
+		Out.DiffuseAlbedo.xyz = _TexDiffuseAlbedo.SampleBias( LinearWrap, _In.UV, FORCE_MIP_BIAS ).xyz;
 
 	Out.DiffuseAlbedo.xyz *= INVPI;
 

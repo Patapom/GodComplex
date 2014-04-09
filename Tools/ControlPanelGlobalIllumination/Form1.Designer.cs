@@ -75,13 +75,15 @@
 			this.checkBoxShowDebugProbes = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlDebugProbeIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.groupBox2 = new System.Windows.Forms.GroupBox();
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.floatTrackbarControlNeighborProbesContribution = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxShowNetwork = new System.Windows.Forms.CheckBox();
 			this.checkBoxEnableRedistribution = new System.Windows.Forms.CheckBox();
 			this.label9 = new System.Windows.Forms.Label();
-			this.label8 = new System.Windows.Forms.Label();
 			this.label15 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label8 = new System.Windows.Forms.Label();
+			this.integerTrackbarControlDynamicObjectsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label16 = new System.Windows.Forms.Label();
 			this.groupBoxAtmosphere.SuspendLayout();
 			this.groupBoxClouds.SuspendLayout();
 			this.groupBoxTerrain.SuspendLayout();
@@ -382,18 +384,20 @@
 			// 
 			// groupBoxTerrain
 			// 
+			this.groupBoxTerrain.Controls.Add(this.integerTrackbarControlDynamicObjectsCount);
 			this.groupBoxTerrain.Controls.Add(this.panelLightColor);
 			this.groupBoxTerrain.Controls.Add(this.checkBoxEnableDynamicPointLight);
 			this.groupBoxTerrain.Controls.Add(this.checkBoxAnimatePointLight);
 			this.groupBoxTerrain.Controls.Add(this.label21);
 			this.groupBoxTerrain.Controls.Add(this.floatTrackbarControlPointLightIntensity);
+			this.groupBoxTerrain.Controls.Add(this.label16);
 			this.groupBoxTerrain.Controls.Add(this.label5);
 			this.groupBoxTerrain.Location = new System.Drawing.Point(334, 12);
 			this.groupBoxTerrain.Name = "groupBoxTerrain";
-			this.groupBoxTerrain.Size = new System.Drawing.Size(308, 117);
+			this.groupBoxTerrain.Size = new System.Drawing.Size(308, 154);
 			this.groupBoxTerrain.TabIndex = 2;
 			this.groupBoxTerrain.TabStop = false;
-			this.groupBoxTerrain.Text = "Dynamic Lights";
+			this.groupBoxTerrain.Text = "Dynamic Lights && Objects";
 			// 
 			// panelLightColor
 			// 
@@ -465,7 +469,7 @@
 			// buttonLoadPreset
 			// 
 			this.buttonLoadPreset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonLoadPreset.Location = new System.Drawing.Point(11, 476);
+			this.buttonLoadPreset.Location = new System.Drawing.Point(11, 510);
 			this.buttonLoadPreset.Name = "buttonLoadPreset";
 			this.buttonLoadPreset.Size = new System.Drawing.Size(75, 23);
 			this.buttonLoadPreset.TabIndex = 1;
@@ -476,7 +480,7 @@
 			// buttonSavePreset
 			// 
 			this.buttonSavePreset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonSavePreset.Location = new System.Drawing.Point(92, 476);
+			this.buttonSavePreset.Location = new System.Drawing.Point(92, 510);
 			this.buttonSavePreset.Name = "buttonSavePreset";
 			this.buttonSavePreset.Size = new System.Drawing.Size(75, 23);
 			this.buttonSavePreset.TabIndex = 2;
@@ -510,7 +514,7 @@
 			this.groupBox1.Controls.Add(this.checkBoxEnableEmissive);
 			this.groupBox1.Controls.Add(this.label6);
 			this.groupBox1.Controls.Add(this.label7);
-			this.groupBox1.Location = new System.Drawing.Point(334, 135);
+			this.groupBox1.Location = new System.Drawing.Point(334, 172);
 			this.groupBox1.Name = "groupBox1";
 			this.groupBox1.Size = new System.Drawing.Size(308, 144);
 			this.groupBox1.TabIndex = 3;
@@ -633,12 +637,27 @@
 			this.groupBox2.Controls.Add(this.label9);
 			this.groupBox2.Controls.Add(this.label15);
 			this.groupBox2.Controls.Add(this.label8);
-			this.groupBox2.Location = new System.Drawing.Point(334, 287);
+			this.groupBox2.Location = new System.Drawing.Point(334, 322);
 			this.groupBox2.Name = "groupBox2";
 			this.groupBox2.Size = new System.Drawing.Size(308, 212);
 			this.groupBox2.TabIndex = 4;
 			this.groupBox2.TabStop = false;
 			this.groupBox2.Text = "Misc.";
+			// 
+			// integerTrackbarControlMaxProbeUpdatesPerFrame
+			// 
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Location = new System.Drawing.Point(88, 174);
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Name = "integerTrackbarControlMaxProbeUpdatesPerFrame";
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.RangeMax = 128;
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.RangeMin = 1;
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Size = new System.Drawing.Size(213, 20);
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.TabIndex = 4;
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Value = 8;
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.VisibleRangeMax = 32;
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.VisibleRangeMin = 1;
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlMaxProbeUpdatesPerFrame_ValueChanged);
 			// 
 			// floatTrackbarControlNeighborProbesContribution
 			// 
@@ -689,6 +708,14 @@
 			this.label9.TabIndex = 2;
 			this.label9.Text = "Neighbor Redist.";
 			// 
+			// label15
+			// 
+			this.label15.Location = new System.Drawing.Point(7, 163);
+			this.label15.Name = "label15";
+			this.label15.Size = new System.Drawing.Size(78, 42);
+			this.label15.TabIndex = 2;
+			this.label15.Text = "Max Probe Updates per Frame";
+			// 
 			// label8
 			// 
 			this.label8.AutoSize = true;
@@ -698,34 +725,33 @@
 			this.label8.TabIndex = 2;
 			this.label8.Text = "Intensity Factor";
 			// 
-			// label15
+			// integerTrackbarControlDynamicObjectsCount
 			// 
-			this.label15.Location = new System.Drawing.Point(7, 163);
-			this.label15.Name = "label15";
-			this.label15.Size = new System.Drawing.Size(78, 42);
-			this.label15.TabIndex = 2;
-			this.label15.Text = "Max Probe Updates per Frame";
+			this.integerTrackbarControlDynamicObjectsCount.Location = new System.Drawing.Point(88, 121);
+			this.integerTrackbarControlDynamicObjectsCount.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlDynamicObjectsCount.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlDynamicObjectsCount.Name = "integerTrackbarControlDynamicObjectsCount";
+			this.integerTrackbarControlDynamicObjectsCount.RangeMax = 128;
+			this.integerTrackbarControlDynamicObjectsCount.RangeMin = 0;
+			this.integerTrackbarControlDynamicObjectsCount.Size = new System.Drawing.Size(213, 20);
+			this.integerTrackbarControlDynamicObjectsCount.TabIndex = 4;
+			this.integerTrackbarControlDynamicObjectsCount.Value = 0;
+			this.integerTrackbarControlDynamicObjectsCount.VisibleRangeMax = 64;
+			this.integerTrackbarControlDynamicObjectsCount.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlDynamicObjectsCount_ValueChanged);
 			// 
-			// integerTrackbarControlMaxProbeUpdatesPerFrame
+			// label16
 			// 
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Location = new System.Drawing.Point(88, 174);
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Name = "integerTrackbarControlMaxProbeUpdatesPerFrame";
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.RangeMax = 128;
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.RangeMin = 1;
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Size = new System.Drawing.Size(213, 20);
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.TabIndex = 4;
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Value = 8;
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.VisibleRangeMax = 32;
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.VisibleRangeMin = 1;
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlMaxProbeUpdatesPerFrame_ValueChanged);
+			this.label16.Location = new System.Drawing.Point(6, 117);
+			this.label16.Name = "label16";
+			this.label16.Size = new System.Drawing.Size(75, 29);
+			this.label16.TabIndex = 2;
+			this.label16.Text = "Dynamic Objects Count";
 			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(654, 512);
+			this.ClientSize = new System.Drawing.Size(654, 546);
 			this.Controls.Add(this.groupBox2);
 			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.groupBoxTerrain);
@@ -810,6 +836,8 @@
 		private System.Windows.Forms.CheckBox checkBoxEnableRedistribution;
 		private System.Windows.Forms.Label label15;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlMaxProbeUpdatesPerFrame;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlDynamicObjectsCount;
+		private System.Windows.Forms.Label label16;
 	}
 }
 

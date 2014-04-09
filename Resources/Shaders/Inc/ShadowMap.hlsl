@@ -5,7 +5,6 @@
 #ifndef _SHADOW_MAP_INC_
 #define _SHADOW_MAP_INC_
 
-//[
 cbuffer	cbShadowMap : register( b2 )
 {
 	float4x4	_Shadow2World;
@@ -13,16 +12,15 @@ cbuffer	cbShadowMap : register( b2 )
 	float3		_ShadowBoundMin;
 	float3		_ShadowBoundMax;
 };
-//]
 
-// struct ShadowMapInfos
-// {
-// 	float3		BoundMin;
-// 	float3		BoundMax;
-// };
-// StructuredBuffer<ShadowMapInfos>	_ShadowMapInfos : register( t2 );
+cbuffer	cbShadowMapPoint : register( b3 )
+{
+	float3		_ShadowPointLightPosition;
+	float		_ShadowPointFarClip;
+};
 
-Texture2D<float>	_ShadowMap : register( t2 );
+Texture2D<float>		_ShadowMap : register( t2 );
+Texture2DArray<float>	_ShadowMapPoint : register( t3 );
 
 // Transforms the world position into a projected shadow map position
 float4	World2ShadowMapProj( float3 _WorldPosition )
@@ -73,8 +71,11 @@ float	ComputeShadow( float3 _WorldPosition, float3 _WorldVertexNormal )
 
 float	ComputeShadowPCF( float3 _WorldPosition, float3 _WorldVertexNormal, float3 _WorldVertexTangent, float _Radius, float _NormalOffset=0.01 )
 {
-	float3	X = _Radius * _WorldVertexTangent;
+	float3	X = _WorldVertexTangent;
 	float3	Y = cross( _WorldVertexNormal, _WorldVertexTangent );
+
+	X *= _Radius;
+	Y *= _Radius;
 
 	const uint		SHADOW_SAMPLES_COUNT = 32;
 	const float2	SamplesOffset[SHADOW_SAMPLES_COUNT] = {
@@ -126,6 +127,41 @@ float	ComputeShadowPCF( float3 _WorldPosition, float3 _WorldVertexNormal, float3
 	}
 
 	return Shadow / SHADOW_SAMPLES_COUNT;
+}
+
+float	ComputeShadowPoint( float3 _WorldPosition, float3 _WorldVertexNormal, float _NormalOffset=0.01 )
+{
+	float3	LocalPosition = _WorldPosition + _NormalOffset * _WorldVertexNormal - _ShadowPointLightPosition;
+	float3	Abs = abs( LocalPosition );
+	float	Max = max( max( Abs.x, Abs.y ), Abs.z );
+	float3	Proj = LocalPosition / Max;
+
+	float4	UV = 0.0;
+	if ( abs( Max - Abs.x ) < 1e-5 )
+	{
+		UV = LocalPosition.x > 0.0 ? float4( LocalPosition.z, LocalPosition.y, 0, LocalPosition.x ) : float4( -LocalPosition.z, LocalPosition.y, 1, -LocalPosition.x );
+	}
+	else if ( abs( Max - Abs.y ) < 1e-5 )
+	{
+		UV = LocalPosition.y > 0.0 ? float4( -LocalPosition.x, -LocalPosition.z, 2, LocalPosition.y ) : float4( -LocalPosition.x, LocalPosition.z, 3, -LocalPosition.y );
+	}
+	else //if ( Abs == Abs.z )
+	{
+		UV = LocalPosition.z > 0.0 ? float4( -LocalPosition.x, LocalPosition.y, 4, LocalPosition.z ) : float4( LocalPosition.x, LocalPosition.y, 5, -LocalPosition.z );
+	}
+
+	UV.xy /= UV.w;
+	UV.xy = 0.5 * (1.0 + float2( UV.x, -UV.y ));
+
+	float	Z = UV.w;
+
+	const float	NearClip = 0.5;
+	const float	FarClip = _ShadowPointFarClip;
+	const float	Q = FarClip / (FarClip - NearClip);
+
+	float	Zproj = Q * (1.0 - NearClip / Z);
+
+	return _ShadowMapPoint.SampleCmpLevelZero( ShadowSampler, UV.xyz, Zproj );
 }
 
 #endif	// _SHADOW_MAP_INC_

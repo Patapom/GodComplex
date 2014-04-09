@@ -21,8 +21,8 @@ Texture3D::~Texture3D()
 {
 	ASSERT( m_pTexture != NULL, "Invalid texture to destroy !" );
 
-	m_CachedShaderViews.ForEach( ReleaseDirectXObject, NULL );
-	m_CachedTargetViews.ForEach( ReleaseDirectXObject, NULL );
+	m_CachedSRVs.ForEach( ReleaseDirectXObject, NULL );
+	m_CachedRTVs.ForEach( ReleaseDirectXObject, NULL );
 	m_CachedUAVs.ForEach( ReleaseDirectXObject, NULL );
 
 	m_pTexture->Release();
@@ -93,7 +93,7 @@ ID3D11ShaderResourceView*	Texture3D::GetShaderView( int _MipLevelStart, int _Mip
 	// Check if we already have it
 //	U32	Hash = _MipLevelsCount | (_MipLevelStart << 4);
 	U32	Hash = _MipLevelStart | (_MipLevelsCount << 4);
-	ID3D11ShaderResourceView*	pExistingView = (ID3D11ShaderResourceView*) m_CachedShaderViews.Get( Hash );
+	ID3D11ShaderResourceView*	pExistingView = (ID3D11ShaderResourceView*) m_CachedSRVs.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;
 
@@ -106,7 +106,7 @@ ID3D11ShaderResourceView*	Texture3D::GetShaderView( int _MipLevelStart, int _Mip
 	ID3D11ShaderResourceView*	pView;
 	Check( m_Device.DXDevice().CreateShaderResourceView( m_pTexture, &Desc, &pView ) );
 
-	m_CachedShaderViews.Add( Hash, pView );
+	m_CachedSRVs.Add( Hash, pView );
 
 	return pView;
 }
@@ -119,7 +119,7 @@ ID3D11RenderTargetView*		Texture3D::GetTargetView( int _MipLevelIndex, int _Firs
 	// Check if we already have it
 //	U32	Hash = _WSize | ((_FirstWSlice | (_MipLevelIndex << 12)) << 12);
 	U32	Hash = (_MipLevelIndex << 0) | (_FirstWSlice << 12) | (_WSize << (4+12));	// Re-organized to have most likely changes (i.e. mip & slice starts) first
-	ID3D11RenderTargetView*	pExistingView = (ID3D11RenderTargetView*) m_CachedTargetViews.Get( Hash );
+	ID3D11RenderTargetView*	pExistingView = (ID3D11RenderTargetView*) m_CachedRTVs.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;
 
@@ -133,7 +133,7 @@ ID3D11RenderTargetView*		Texture3D::GetTargetView( int _MipLevelIndex, int _Firs
 	ID3D11RenderTargetView*	pView;
 	Check( m_Device.DXDevice().CreateRenderTargetView( m_pTexture, &Desc, &pView ) );
 
-	m_CachedTargetViews.Add( Hash, pView );
+	m_CachedRTVs.Add( Hash, pView );
 
 	return pView;
 }

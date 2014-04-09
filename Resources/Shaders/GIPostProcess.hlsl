@@ -137,10 +137,57 @@ if ( false )
 	if ( UV.x < 0.3 && UV.y < 0.3 )
 	{
 		UV /= 0.3;
-		return _ShadowMap.SampleLevel( LinearClamp, UV, 0.0 ).x;
+//		return _ShadowMap.SampleLevel( LinearClamp, UV, 0.0 ).x;
+
+		UV.x *= 3.0;
+		UV.y *= 2.0;
+		float	ArrayIndex = 3 * int( UV.y ) + int( UV.x );
+		UV = frac( UV );
+		float	Zproj = _ShadowMapPoint.SampleLevel( LinearClamp, float3( UV, ArrayIndex ), 0.0 ).x;
+return 1.0 * Zproj;
+
+		const float	NearClip = 0.01;
+		const float	FarClip = _ShadowPointFarClip;
+
+		float	Z = NearClip * FarClip / (FarClip - Zproj * (FarClip - NearClip));
+		return Z;
 	}
 }
 
+if ( false )
+{
+	float3	AbsView = abs( View );
+	float	MaxComponent = max( max( AbsView.x, AbsView.y ), AbsView.z );
+
+	float3	fXYZ = View / MaxComponent;
+	float3	UV = 0.0;
+	if ( abs( MaxComponent - AbsView.x ) < 1e-5 )
+	{	// +X or -X
+		UV.z = View.x > 0.0 ? 0 : 1;
+		UV.xy = View.x < 0.0 ? float2( -fXYZ.z, fXYZ.y ) : fXYZ.zy;
+	}
+	else if ( abs( MaxComponent - AbsView.y ) < 1e-5 )
+	{	// +Y or -Y
+		UV.z = View.y > 0.0 ? 2 : 3;
+		UV.xy = View.y > 0.0 ? float2( -fXYZ.x, -fXYZ.z ) : float2( -fXYZ.x, fXYZ.z );
+	}
+	else // if ( abs( MaxComponent - AbsView.z ) < 1e-5 )
+	{	// +Z or -Z
+		UV.z = View.z > 0.0 ? 4 : 5;
+		UV.xy = View.z < 0.0 ? fXYZ.xy : float2( -fXYZ.x, fXYZ.y );
+	}
+
+	UV.y = -UV.y;
+	UV.xy = 0.5 * (1.0 + UV.xy);
+
+	float	Zproj = _ShadowMapPoint.SampleLevel( LinearClamp, UV, 0.0 ).x;
+
+	const float	NearClip = 0.01;
+	const float	FarClip = _ShadowPointFarClip;
+
+	float	Z = NearClip * FarClip / (FarClip - Zproj * (FarClip - NearClip));
+	return Z;
+}
 
 // Test dot products
 // float3 TestNormal = _TexCubemapProbe.Sample( LinearClamp, float4( View, 1.0 ) ).xyz;

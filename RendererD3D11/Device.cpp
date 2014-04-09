@@ -324,22 +324,26 @@ void	Device::Exit()
 
 void	Device::ClearRenderTarget( const Texture2D& _Target, const float4& _Color )
 {
-	ClearRenderTarget( _Target.GetTargetView( 0, 0, 0 ), _Color );
+	ClearRenderTarget( *_Target.GetTargetView(), _Color );
 }
 
 void	Device::ClearRenderTarget( const Texture3D& _Target, const float4& _Color )
 {
-	ClearRenderTarget( _Target.GetTargetView( 0, 0, 0 ), _Color );
+	ClearRenderTarget( *_Target.GetTargetView(), _Color );
 }
 
-void	Device::ClearRenderTarget( ID3D11RenderTargetView* _pTargetView, const float4& _Color )
+void	Device::ClearRenderTarget( ID3D11RenderTargetView& _TargetView, const float4& _Color )
 {
-	m_pDeviceContext->ClearRenderTargetView( _pTargetView, &_Color.x );
+	m_pDeviceContext->ClearRenderTargetView( &_TargetView, &_Color.x );
 }
 
 void	Device::ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth, bool _bClearStencil )
 {
-	m_pDeviceContext->ClearDepthStencilView( _DepthStencil.GetDepthStencilView(), (_bClearDepth ? D3D11_CLEAR_DEPTH : 0) | (_bClearStencil ? D3D11_CLEAR_STENCIL : 0), _Z, _Stencil );
+	ClearDepthStencil( *_DepthStencil.GetDepthStencilView(), _Z, _Stencil, _bClearDepth, _bClearStencil );
+}
+void	Device::ClearDepthStencil( ID3D11DepthStencilView& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth, bool _bClearStencil )
+{
+	m_pDeviceContext->ClearDepthStencilView( &_DepthStencil, (_bClearDepth ? D3D11_CLEAR_DEPTH : 0) | (_bClearStencil ? D3D11_CLEAR_STENCIL : 0), _Z, _Stencil );
 }
 
 void	Device::SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil, const D3D11_VIEWPORT* _pViewport )

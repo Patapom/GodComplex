@@ -131,6 +131,7 @@ public:
 
 	static const float3	Zero;
 	static const float3	One;
+	static const float3	MaxFlt;
 	static const float3	UnitX;
 	static const float3	UnitY;
 	static const float3	UnitZ;

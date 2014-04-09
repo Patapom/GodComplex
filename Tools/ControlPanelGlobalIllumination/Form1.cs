@@ -57,6 +57,9 @@ namespace ControlPanelGlobalIllumination
 			public float	EmissiveColorG;
 			public float	EmissiveColorB;
 
+			// Dynamic objects params
+			public int		DynamicObjectsCount;
+
 			// Bounce params
 			public float	BounceFactorSun;
 			public float	BounceFactorSky;
@@ -159,6 +162,9 @@ namespace ControlPanelGlobalIllumination
 			checkBoxEnableEmissive.Checked = m_Instance.EnableEmissiveMaterials != 0;
 			floatTrackbarControlEmissiveIntensity.Value = m_Instance.EmissiveIntensity;
 			panelEmissiveColor.BackColor = Color.FromArgb( (int) (255 * m_Instance.EmissiveColorR), (int) (255 * m_Instance.EmissiveColorG), (int) (255 * m_Instance.EmissiveColorB) );
+
+			// Dynamic objects
+			integerTrackbarControlDynamicObjectsCount.Value = m_Instance.DynamicObjectsCount;
 
 			// Bounce
 			floatTrackbarControlSunBounceFactor.Value = m_Instance.BounceFactorSun;
@@ -363,7 +369,7 @@ namespace ControlPanelGlobalIllumination
 
 		#endregion
 
-		#region DYNAMIC LIGHTS
+		#region DYNAMIC LIGHTS & OBJECTS
 
 		private void checkBoxEnableDynamicPointLight_CheckedChanged( object sender, EventArgs e )
 		{
@@ -393,6 +399,12 @@ namespace ControlPanelGlobalIllumination
 			m_Instance.PointLightColorR = colorDialog.Color.R / 255.0f;
 			m_Instance.PointLightColorG = colorDialog.Color.G / 255.0f;
 			m_Instance.PointLightColorB = colorDialog.Color.B / 255.0f;
+			UpdateMMF();
+		}
+
+		private void integerTrackbarControlDynamicObjectsCount_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			m_Instance.DynamicObjectsCount = _Sender.Value;
 			UpdateMMF();
 		}
 

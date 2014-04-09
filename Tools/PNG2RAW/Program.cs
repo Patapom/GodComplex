@@ -60,14 +60,16 @@ namespace PNG2RAW
 			}
 #else
 			// Convert to POM format (i.e. DirectX format actually)
-//			ConvertPOM( new FileInfo( "Resources/Scenes/GITest1/pata_diff_color_small.png" ), new FileInfo( "Resources/Scenes/GITest1/pata_diff_colo.pom" ), true );
-//			ConvertPOM( new DirectoryInfo( "../Arkane/Textures" ), new DirectoryInfo( "../Arkane/TexturesPOM" ), "_d;_s" );
-			ConvertPOM( new DirectoryInfo( "./Resources/Scenes/Sponza/TexturesPNG" ), new DirectoryInfo( "./Resources/Scenes/Sponza/TexturesPOM" ), "_dif;_diff;_spec" );
+//			ConvertPOM( new FileInfo( "Resources/Scenes/GITest1/pata_diff_color_small.png" ), new FileInfo( "Resources/Scenes/GITest1/pata_diff_colo.pom" ), true, true );
+//			ConvertPOM( new DirectoryInfo( "../Arkane/Textures" ), new DirectoryInfo( "../Arkane/TexturesPOM" ), "_d;_s", true );
+//			ConvertPOM( new DirectoryInfo( "./Resources/Scenes/Sponza/TexturesPNG" ), new DirectoryInfo( "./Resources/Scenes/Sponza/TexturesPOM" ), "_dif;_diff;_spec", true );
+
+			ConvertPOM( new FileInfo( "Resources/Images/Normal.png" ), new FileInfo( "Resources/Images/Normal.POM" ), false, true );
 
 #endif
 		}
 
-		static void			ConvertPOM( DirectoryInfo _SourceDir, DirectoryInfo _TargetDir, string _sRGBPattern )
+		static void			ConvertPOM( DirectoryInfo _SourceDir, DirectoryInfo _TargetDir, string _sRGBPattern, bool _GenerateMipMaps )
 		{
 			string[]	sRGBPatterns = _sRGBPattern != null ? _sRGBPattern.Split( ';' ) : new string[0];
 			FileInfo[]	Files = _SourceDir.GetFiles( "*.png" );
@@ -88,7 +90,7 @@ namespace PNG2RAW
 
 				try
 				{
-					ConvertPOM( File, TargetFile, issRGB );
+					ConvertPOM( File, TargetFile, issRGB, _GenerateMipMaps );
 					Console.WriteLine( "Converted \"" + File.FullName + "\" => \"" + TargetFile.FullName + "\"... (" + (100 * FileIndex / Files.Length) + "%)" );
 				}
 				catch ( Exception _e )
@@ -128,18 +130,35 @@ namespace PNG2RAW
 			}
 		}
 
-		static unsafe void	ConvertPOM( FileInfo _Source, FileInfo _Target, bool _sRGB )
+		static unsafe void	ConvertPOM( FileInfo _Source, FileInfo _Target, bool _sRGB, bool _GenerateMipMaps )
 		{
+			int	Width, Height;
+			int	MipLevelsCount = 1;
+			byte[][]	RAWImages = null;
 			using ( Bitmap B = Image.FromFile( _Source.FullName ) as Bitmap )
 			{
-				BitmapData	LockedBitmap = B.LockBits( new Rectangle( 0, 0, B.Width, B.Height ), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb );
+				if ( _GenerateMipMaps )
+				{
+					double	Mips = Math.Log( 1+Math.Max( B.Width, B.Height ) ) / Math.Log( 2.0 );
+					MipLevelsCount = (int) Math.Ceiling( Mips );
+				}
 
-				byte[]		RAWImage = new byte[4*B.Width*B.Height];
+				RAWImages = new byte[MipLevelsCount][];
+
+				Width = B.Width;
+				Height = B.Height;
+
+				// Build mip #0
+				byte[]	RAWImage = new byte[4*Width*Height];
+				RAWImages[0] = RAWImage;
+				
+				BitmapData	LockedBitmap = B.LockBits( new Rectangle( 0, 0, Width, Height ), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb );
+
 				int			ByteIndex = 0;
-				for ( int Y=0; Y < B.Height; Y++ )
+				for ( int Y=0; Y < Height; Y++ )
 				{
 					byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + Y * LockedBitmap.Stride;
-					for ( int X=0; X < B.Width; X++ )
+					for ( int X=0; X < Width; X++ )
 					{
 						RAWImage[ByteIndex+2] = *pScanline++;
 						RAWImage[ByteIndex+1] = *pScanline++;
@@ -150,28 +169,98 @@ namespace PNG2RAW
 				}
 
 				B.UnlockBits( LockedBitmap );
+			}
 
-				using ( FileStream S = new FileInfo( _Target.FullName ).Create() )
-					using ( BinaryWriter W = new BinaryWriter( S ) )
+			// Generate other mips
+			int	W = Width;
+			int	H = Height;
+
+			for ( int MipLevelIndex=1; MipLevelIndex < MipLevelsCount; MipLevelIndex++ )
+			{
+				int	PW = W;
+				int	PH = W;
+				W = Math.Max( 1, W >> 1 );
+				H = Math.Max( 1, H >> 1 );
+
+				byte[]	PreviousMip = RAWImages[MipLevelIndex-1];
+				byte[]	CurrentMip = new byte[4*W*H];
+				RAWImages[MipLevelIndex] = CurrentMip;
+
+				byte	R, G, B, A;
+				for ( int Y=0; Y < H; Y++ )
+				{
+					int	PY0 = PH * Y / H;
+					int	PY1 = Math.Min( PY0+1, PH-1 );
+					for ( int X=0; X < W; X++ )
 					{
-						// Write type & format
-						W.Write( (byte) 0 );	// 2D
-						W.Write( (byte) (28 + (_sRGB ? 1 : 0)) );		// DXGI_FORMAT_R8G8B8A8_UNORM=28, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB=29
+						int	PX0 = PW * X / W;
+						int	PX1 = Math.Min( PX0+1, PW-1 );
+						
+						if ( _sRGB )
+						{
+							R = Lin2sRGB( 0.25f * (sRGB2Lin( PreviousMip[4*(PW*PY0+PX0)+0] ) + sRGB2Lin( PreviousMip[4*(PW*PY0+PX1)+0] ) + sRGB2Lin( PreviousMip[4*(PW*PY1+PX0)+0] ) + sRGB2Lin( PreviousMip[4*(PW*PY1+PX1)+0]) ) );
+							G = Lin2sRGB( 0.25f * (sRGB2Lin( PreviousMip[4*(PW*PY0+PX0)+1] ) + sRGB2Lin( PreviousMip[4*(PW*PY0+PX1)+1] ) + sRGB2Lin( PreviousMip[4*(PW*PY1+PX0)+1] ) + sRGB2Lin( PreviousMip[4*(PW*PY1+PX1)+1]) ) );
+							B = Lin2sRGB( 0.25f * (sRGB2Lin( PreviousMip[4*(PW*PY0+PX0)+2] ) + sRGB2Lin( PreviousMip[4*(PW*PY0+PX1)+2] ) + sRGB2Lin( PreviousMip[4*(PW*PY1+PX0)+2] ) + sRGB2Lin( PreviousMip[4*(PW*PY1+PX1)+2]) ) );
+						}
+						else
+						{	// Simple average will do. I should handle normal maps mip-mapping more seriously but I just don't care...
+							R = (byte) ((PreviousMip[4*(PW*PY0+PX0)+0] + PreviousMip[4*(PW*PY0+PX1)+0] + PreviousMip[4*(PW*PY1+PX0)+0] + PreviousMip[4*(PW*PY1+PX1)+0]) >> 2);
+							G = (byte) ((PreviousMip[4*(PW*PY0+PX0)+1] + PreviousMip[4*(PW*PY0+PX1)+1] + PreviousMip[4*(PW*PY1+PX0)+1] + PreviousMip[4*(PW*PY1+PX1)+1]) >> 2);
+							B = (byte) ((PreviousMip[4*(PW*PY0+PX0)+2] + PreviousMip[4*(PW*PY0+PX1)+2] + PreviousMip[4*(PW*PY1+PX0)+2] + PreviousMip[4*(PW*PY1+PX1)+2]) >> 2);
+						}
 
-						// Write dimensions
-						W.Write( (Int32) B.Width );
-						W.Write( (Int32) B.Height );
-						W.Write( (Int32) 1 );			// ArraySize = 1
-						W.Write( (Int32) 1 );			// MipLevel = 1
+						A = (byte) ((PreviousMip[4*(PW*PY0+PX0)+3] + PreviousMip[4*(PW*PY0+PX1)+3] + PreviousMip[4*(PW*PY1+PX0)+3] + PreviousMip[4*(PW*PY1+PX1)+3]) >> 2);
 
+						CurrentMip[4*(W*Y+X)+0] = R;
+						CurrentMip[4*(W*Y+X)+1] = G;
+						CurrentMip[4*(W*Y+X)+2] = B;
+						CurrentMip[4*(W*Y+X)+3] = A;
+					}
+				}
+			}
+
+			// Write the file
+			using ( FileStream S = new FileInfo( _Target.FullName ).Create() )
+				using ( BinaryWriter BW = new BinaryWriter( S ) )
+				{
+					// Write type & format
+					BW.Write( (byte) 0 );	// 2D
+					BW.Write( (byte) (28 + (_sRGB ? 1 : 0)) );		// DXGI_FORMAT_R8G8B8A8_UNORM=28, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB=29
+
+					// Write dimensions
+					BW.Write( (Int32) Width );
+					BW.Write( (Int32) Height );
+					BW.Write( (Int32) 1 );				// ArraySize = 1
+					BW.Write( (Int32) MipLevelsCount );
+
+					W = Width;
+					H = Height;
+
+					for ( int MipLevelIndex=0; MipLevelIndex < MipLevelsCount; MipLevelIndex++ )
+					{
 						// Write row & depth pitch
-						W.Write( (Int32) (B.Width * 4) );
-						W.Write( (Int32) (B.Width * B.Height * 4) );
+						BW.Write( (Int32) (W * 4) );
+						BW.Write( (Int32) RAWImages[MipLevelIndex].Length );
 
 						// Write content
-						S.Write( RAWImage, 0, RAWImage.Length );
+						S.Write( RAWImages[MipLevelIndex], 0, RAWImages[MipLevelIndex].Length );
+
+						W = Math.Max( 1, W >> 1 );
+						H = Math.Max( 1, H >> 1 );
 					}
-			}
+				}
+		}
+
+		private static float	sRGB2Lin( byte _sRGB )
+		{
+			float	sRGB = _sRGB / 255.0f;
+			return sRGB > 0.04045f ? (float) Math.Pow( (sRGB + 0.055f) / 1.055f, 2.4f ) : sRGB / 12.92f;
+		}
+
+		private static byte		Lin2sRGB( float _Linear )
+		{
+			float	sRGB = _Linear > 0.0031308f ? 1.055f * (float) Math.Pow( _Linear, 1.0f / 2.4f ) - 0.055f : 12.92f * _Linear;
+			return (byte) Math.Max( 0, Math.Min( 255, (255.0f * sRGB) ) );
 		}
 	}
 }

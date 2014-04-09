@@ -52,21 +52,21 @@ void	Scene::ClearTags( ISceneTagger& _SceneTagClearer )
 	m_pROOT->Exit( _SceneTagClearer );
 }
 
-void	Scene::Render( ISceneRenderer& _SceneRenderer ) const
+void	Scene::Render( ISceneRenderer& _SceneRenderer, bool _SetMaterial ) const
 {
-	Render( m_pROOT, _SceneRenderer );
+	Render( m_pROOT, _SceneRenderer, _SetMaterial );
 }
 
-void	Scene::Render( const Node* _pNode, ISceneRenderer& _SceneRenderer ) const
+void	Scene::Render( const Node* _pNode, ISceneRenderer& _SceneRenderer, bool _SetMaterial ) const
 {
 	ASSERT( _pNode != NULL, "Invalid node!" );
 
 	if ( _pNode->m_Type == Node::MESH )
-		_SceneRenderer.RenderMesh( (const Mesh&) *_pNode, NULL );
+		_SceneRenderer.RenderMesh( (const Mesh&) *_pNode, NULL, _SetMaterial );
 
 	// Render children
 	for ( int ChildIndex=0; ChildIndex < _pNode->m_ChildrenCount; ChildIndex++ )
-		Render( _pNode->m_ppChildren[ChildIndex], _SceneRenderer );
+		Render( _pNode->m_ppChildren[ChildIndex], _SceneRenderer, _SetMaterial );
 }
 
 void	Scene::ForEach( IVisitor& _Visitor )
@@ -339,19 +339,23 @@ Scene::Mesh::~Mesh()
 
 void	Scene::Mesh::InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger )
 {
-	m_BBoxMin = 1e8f * float3::One;
-	m_BBoxMax = -1e8f * float3::One;
+	m_LocalBBoxMin = float3::MaxFlt;
+	m_LocalBBoxMax = -float3::MaxFlt;
+	m_GlobalBBoxMin = float3::MaxFlt;
+	m_GlobalBBoxMax = -float3::MaxFlt;
 
 	m_PrimitivesCount = ReadU16( _pData );
 	m_pPrimitives = new Primitive[m_PrimitivesCount];
 	for ( int PrimitiveIndex=0; PrimitiveIndex < m_PrimitivesCount; PrimitiveIndex++ )
 	{
 		Primitive&	P = m_pPrimitives[PrimitiveIndex];
-		P.Init( m_Owner, _pData );
+		P.Init( *this, _pData );
 
 		// Expand our own BBox
-		m_BBoxMin = m_BBoxMin.Min( P.m_BBoxMin );
-		m_BBoxMax = m_BBoxMax.Max( P.m_BBoxMax );
+		m_LocalBBoxMin = m_LocalBBoxMin.Min( P.m_LocalBBoxMin );
+		m_LocalBBoxMax = m_LocalBBoxMax.Max( P.m_LocalBBoxMax );
+		m_GlobalBBoxMin = m_GlobalBBoxMin.Min( P.m_GlobalBBoxMin );
+		m_GlobalBBoxMax = m_GlobalBBoxMax.Max( P.m_GlobalBBoxMax );
 
 		// Tag the primitive
 		P.m_pTag = _SceneTagger.TagPrimitive( m_Owner, *this, P );
@@ -378,22 +382,22 @@ Scene::Mesh::Primitive::~Primitive()
 	delete[] m_pVertices;
 }
 
-void	Scene::Mesh::Primitive::Init( Scene& _Owner, const U8*& _pData )
+void	Scene::Mesh::Primitive::Init( Mesh& _Owner, const U8*& _pData )
 {
 	int	MaterialID = ReadU16( _pData, true );
-	ASSERT( MaterialID < _Owner.m_MaterialsCount, "Material ID out of range!" );
-	m_pMaterial = _Owner.m_ppMaterials[MaterialID];
+	ASSERT( MaterialID < _Owner.m_Owner.m_MaterialsCount, "Material ID out of range!" );
+	m_pMaterial = _Owner.m_Owner.m_ppMaterials[MaterialID];
 
 	m_FacesCount = ReadU32( _pData );
 	m_VerticesCount = ReadU32( _pData );
 
 	// Read BBox in local space
-	m_BBoxMin.x = ReadF32( _pData );
-	m_BBoxMin.y = ReadF32( _pData );
-	m_BBoxMin.z = ReadF32( _pData );
-	m_BBoxMax.x = ReadF32( _pData );
-	m_BBoxMax.y = ReadF32( _pData );
-	m_BBoxMax.z = ReadF32( _pData );
+	m_LocalBBoxMin.x = ReadF32( _pData );
+	m_LocalBBoxMin.y = ReadF32( _pData );
+	m_LocalBBoxMin.z = ReadF32( _pData );
+	m_LocalBBoxMax.x = ReadF32( _pData );
+	m_LocalBBoxMax.y = ReadF32( _pData );
+	m_LocalBBoxMax.z = ReadF32( _pData );
 
 	// Read indices
 	m_pFaces = new U32[3*m_FacesCount];
@@ -425,6 +429,17 @@ void	Scene::Mesh::Primitive::Init( Scene& _Owner, const U8*& _pData )
 	m_pVertices = new U8[VertexBufferSize];
 	memcpy( m_pVertices, _pData, VertexBufferSize );
 	_pData += VertexBufferSize;
+
+	// Compute global bounding box
+	m_GlobalBBoxMin = float3::MaxFlt;
+	m_GlobalBBoxMax = -float3::MaxFlt;
+	for ( U32 VertexIndex=0; VertexIndex < m_VerticesCount; VertexIndex++ )
+	{
+		float3	LocalPosition = *((float3*) ((U8*) m_pVertices + VertexIndex * VertexSize));
+		float3	WorldPosition = float4( LocalPosition, 1 ) * _Owner.m_Local2World;
+		m_GlobalBBoxMin = m_GlobalBBoxMin.Min( WorldPosition );
+		m_GlobalBBoxMax = m_GlobalBBoxMax.Max( WorldPosition );
+	}
 }
 
 // ==== Probe ====

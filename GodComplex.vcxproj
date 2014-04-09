@@ -287,6 +287,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="GodComplex.h" />
     <ClInclude Include="NuajAPI\API\ASMHelpers.h" />
     <ClInclude Include="NuajAPI\API\Hashtable.h" />
+    <ClInclude Include="NuajAPI\API\List.h" />
     <ClInclude Include="NuajAPI\API\Types.h" />
     <ClInclude Include="NuajAPI\Math\Math.h" />
     <ClInclude Include="Procedural\DrawUtils\Draw.h" />
@@ -326,6 +327,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Utility\FPSCamera.h" />
     <ClInclude Include="Utility\Memory.h" />
     <ClInclude Include="Utility\MemoryMappedFile.h" />
+    <ClInclude Include="Utility\Octree.h" />
     <ClInclude Include="Utility\Profiling.h" />
     <ClInclude Include="Utility\Random.h" />
     <ClInclude Include="Utility\Resources.h" />
@@ -408,6 +410,9 @@ MinifyAll.cmd</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugPackedShaders|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="NuajAPI\API\Hashtable.cpp" />
+    <None Include="NuajAPI\API\List.inl">
+      <FileType>Document</FileType>
+    </None>
     <ClCompile Include="NuajAPI\Math\Math.cpp" />
     <ClCompile Include="Procedural\DrawUtils\Draw.cpp" />
     <ClCompile Include="Procedural\Filters\Filters.cpp" />
@@ -437,6 +442,10 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Utility\FPSCamera.cpp" />
     <ClCompile Include="Utility\Memory.cpp" />
     <ClCompile Include="Utility\MemoryMappedFile.cpp" />
+    <None Include="Resources\Shaders\GIRenderDynamic.hlsl" />
+    <None Include="Utility\Octree.inl">
+      <FileType>Document</FileType>
+    </None>
     <ClCompile Include="Utility\Profiling.cpp" />
     <ClCompile Include="Utility\Random.cpp" />
     <ClCompile Include="Utility\Resources.cpp" />

@@ -5,6 +5,8 @@
 //
 #include "Inc/Global.hlsl"
 
+static const float	PLANE_SIZE_RATIO = 0.5;	// The neighbor probe's plane will be RATIO * DistanceBetweenProbes long
+
 cbuffer	cbCubeMapCamera	: register( b8 )
 {
 	float4x4	_CubeMap2World;
@@ -49,7 +51,7 @@ PS_IN	VS( VS_IN _In )
 		PlaneBiTangent = float3( 0, 0, 1 );
 	}
 
-	float4	WorldPosition = float4( _NeighborProbePosition + 1.0 * Distance2Neighbor * (_In.__Position.x * PlaneTangent + _In.__Position.y * PlaneBiTangent), 1.0 );
+	float4	WorldPosition = float4( _NeighborProbePosition + 0.5 * PLANE_SIZE_RATIO * Distance2Neighbor * (_In.__Position.x * PlaneTangent + _In.__Position.y * PlaneBiTangent), 1.0 );
 
 	PS_IN	Out;
 	Out.__Position = mul( WorldPosition, _CubeMapWorld2Proj );

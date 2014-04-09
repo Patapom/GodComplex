@@ -7,6 +7,7 @@ const float2	float2::UnitY( 0, 1 );
 
 const float3	float3::Zero( 0, 0, 0 );
 const float3	float3::One( 1, 1, 1 );
+const float3	float3::MaxFlt( MAX_FLOAT, MAX_FLOAT, MAX_FLOAT );
 const float3	float3::UnitX( 1, 0, 0 );
 const float3	float3::UnitY( 0, 1, 0 );
 const float3	float3::UnitZ( 0, 0, 1 );

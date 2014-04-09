@@ -276,6 +276,12 @@
     <ClInclude Include="Intro\Effects\EffectDOF.h">
       <Filter>Intro\Effects</Filter>
     </ClInclude>
+    <ClInclude Include="Utility\Octree.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="NuajAPI\API\List.h">
+      <Filter>NuajAPI\API</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -626,6 +632,15 @@
       <Filter>Resources\Shaders\DEBUG\DOF</Filter>
     </None>
     <None Include="Resources\Shaders\GIRenderDebugProbes.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="NuajAPI\API\List.inl">
+      <Filter>NuajAPI\API</Filter>
+    </None>
+    <None Include="Utility\Octree.inl">
+      <Filter>Utility</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderDynamic.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
     </None>
   </ItemGroup>
