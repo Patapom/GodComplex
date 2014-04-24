@@ -6,8 +6,10 @@
 #define _GLOBAL_INC_
 
 // WARNING! These must correspond to the resolution set in GodComplex.h !
-static const float	RESX = 1280.0;
-static const float	RESY = 720.0;
+// static const float	RESX = 1280.0;
+// static const float	RESY = 720.0;
+static const float	RESX = 512.0;
+static const float	RESY = 288.0;
 static const float	ASPECT_RATIO = RESX / RESY;
 static const float	INV_ASPECT_RATIO = RESY / RESX;
 static const float2	SCREEN_SIZE = float2( RESX, RESY );

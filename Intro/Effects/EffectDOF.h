@@ -1,12 +1,14 @@
 #pragma once
 
+#define SHADERTOY
+
 #define DOF_NB_SAMPLE		8
 #define DOF_OFFSET_COUNT	(DOF_NB_SAMPLE * 2)
 #define DOF_WEIGHT_COUNT	(DOF_NB_SAMPLE * 4)
 
 template<typename> class CB;
 
-class EffectDOF : public Scene::ISceneTagger, public Scene::ISceneRenderer
+class EffectDOF
 {
 private:	// CONSTANTS
 
@@ -84,6 +86,9 @@ private:	// FIELDS
 	Material*			m_pMatDOFFar;				// Compute far field DOF
 	Material*			m_pMatDOFCombine;			// Combine DOF & scene
 
+
+	Material*			m_pMatShadertoy;
+
 	// Primitives
 	Scene				m_Scene;
 	bool				m_bDeleteSceneTags;
@@ -122,14 +127,14 @@ public:		// METHODS
 	void		Render( float _Time, float _DeltaTime );
 
 
-	// ISceneTagger Implementation
-	virtual void*	TagMaterial( const Scene& _Owner, const Scene::Material& _Material ) override;
-	virtual void*	TagTexture( const Scene& _Owner, const Scene::Material::Texture& _Texture ) override;
-	virtual void*	TagNode( const Scene& _Owner, const Scene::Node& _Node ) override;
-	virtual void*	TagPrimitive( const Scene& _Owner, const Scene::Mesh& _Mesh, const Scene::Mesh::Primitive& _Primitive ) override;
-
-	// ISceneRenderer Implementation
-	virtual void	RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride ) override;
+// 	// ISceneTagger Implementation
+// 	virtual void*	TagMaterial( const Scene& _Owner, const Scene::Material& _Material ) override;
+// 	virtual void*	TagTexture( const Scene& _Owner, const Scene::Material::Texture& _Texture ) override;
+// 	virtual void*	TagNode( const Scene& _Owner, const Scene::Node& _Node ) override;
+// 	virtual void*	TagPrimitive( const Scene& _Owner, const Scene::Mesh& _Mesh, const Scene::Mesh::Primitive& _Primitive ) override;
+// 
+// 	// ISceneRenderer Implementation
+// 	virtual void	RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride ) override;
 
 protected:
 
