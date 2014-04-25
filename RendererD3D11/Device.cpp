@@ -1,3 +1,5 @@
+//#define NSIGHT	// Define this if you're debugging the app using Nvidia Nsight
+
 #include "Device.h"
 #include "Components/Component.h"
 #include "Components/Texture2D.h"
@@ -71,7 +73,7 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	D3D_FEATURE_LEVEL	ObtainedFeatureLevel;
 
 
-#ifdef _DEBUG
+#if defined(_DEBUG) && !defined(NSIGHT))
 	UINT	DebugFlags = D3D11_CREATE_DEVICE_DEBUG;
 #else
 	UINT	DebugFlags = 0;

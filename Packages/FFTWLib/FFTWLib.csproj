@@ -177,6 +177,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="complexarray.cs" />
+    <Compile Include="FFT.cs" />
     <Compile Include="Interop.cs">
       <SubType>Code</SubType>
     </Compile>

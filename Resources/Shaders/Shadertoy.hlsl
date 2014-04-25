@@ -12,6 +12,7 @@ struct	VS_IN
 
 VS_IN	VS( VS_IN _In )	{ return _In; }
 
+#define HLSL
 
 #define mix	lerp
 #define mod	fmod
@@ -89,7 +90,7 @@ float smoothinterp( float x0, float x1, float t )
 
 float2 tunnelCenter( float z )
 {
-//	return float2( 0.0, 0.0 );
+	return float2( 0.0, 0.0 );
 	return float2(	0.1 * (sin( 0.5919 * z ) + sin( 1.2591 * z )*cos( 0.915 * z )),
 					0.1 * (sin( 1.8 * z ) + sin( 0.1378 * z )) );
 }
@@ -186,15 +187,16 @@ float map( float3 p )
 	float	d_tunnel = 1.0 - length( p.xy - c );
 	
 	float	d_gloub = bisou( p );
-	
-//	return smin2( d_tunnel, d_gloub, 0.5 );
-//	return min( d_tunnel, d_gloub );
+//return d_gloub;
+
+//	return smin2( d_tunnel, d_gloub, 0.7 );
+	return min( d_tunnel, d_gloub );
 	return smin( d_tunnel, d_gloub, -4.0 );
 }
 
-float3 normal( float3 p, out float cheapAO )
+float3 normal( float3 p, float eps, out float cheapAO )
 {
-	const float2 e = float2( 0.1, 0.0 );
+	const float2 e = float2( eps, 0.0 );
 	float c = map( p );
 	float3	n = float3(
 		map( p + e.xyy ) - map( p - e.xyy ),
@@ -208,15 +210,20 @@ float3 normal( float3 p, out float cheapAO )
 float3 reflection( float3 p, float3 v, float3 n )
 {
 	v = reflect( v, n );
-	p += (0.1 / dot( v, n )) * v;
+	p += (0.01 / dot( v, n )) * v;
+//	p += 0.01 * n;
 
 	float	t = 0.0;
 	for ( int i=0; i < 64; i++ )
 	{
 		float	d = map( p );
+		if ( abs( d ) < 0.001 ) break;
+
 		t += d;
 		p += d * v;
 	}
+
+return 0.1 * t;
 
 	return p;
 }
@@ -262,11 +269,14 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 //return;
 	
 	float	z = 1.0 * iGlobalTime;
+
+z = 3.0;
+
 //	float3	p = float3( center( z - 0.0 ), z );
 	float3	p = float3( 0.0, -0.3, z );
 	
 	p = safePosition( z, 0.0 );
-	
+
 	float3	target = p + float3(
 		sin( 1.2 * iGlobalTime ),
 		sin( 1.0 + 0.7891 * iGlobalTime ),
@@ -279,8 +289,15 @@ target = p + float3( 0, 0, 1 );
 	float3	up = cross( right, at );
 
 	float	Tan = 0.6;
+#ifdef HLSL
+	float3	v = normalize( float3( iResolution.x / iResolution.y * Tan * (2.0 * uv.x - 1.0), Tan * (1.0 - 2.0 * uv.y), 1.0 ) );
+//	float3	v = float3( iResolution.x / iResolution.y * Tan * (2.0 * uv.x - 1.0), Tan * (1.0 - 2.0 * uv.y), 1.0 );
+#else
 	float3	v = normalize( float3( iResolution.x / iResolution.y * Tan * (2.0 * uv.x - 1.0), Tan * (2.0 * uv.y - 1.0), 1.0 ) );
+#endif
 			v = v.x * right + v.y * up + v.z * at;
+
+// return float4( v, 1 );
 
 	// Compute light position
 	float	lightTime = 0.25 * iGlobalTime;
@@ -296,10 +313,16 @@ target = p + float3( 0, 0, 1 );
 
 	float	scatt = 0.0;
 	float	t = 0.0;
-	for ( int i=0; i < 64; i++ )
+	int	i=0;
+	for ( ; i < 128; i++ )
 	{
 		float	d = map( p );
+		if ( abs( d ) < 0.001 ) break;
+
 		t += d;
+//t += 20.0 * d;
+//t += sign(d) * max( 0.1, abs(d) );
+//t += d * (1.0 + 1.0 * t);
 		p += d * v;
 
 		float3	pos2Light = l - p;
@@ -309,7 +332,16 @@ target = p + float3( 0, 0, 1 );
 		prevPos2Light = pos2Light;
 		prevDist2Light = dist2Light;
 	}
-	
+
+// float	dtdx = ddx(t);
+// float	dtdy = ddy(t);
+// float3	nx = float3( 1.0 / RESX, 0, dtdx );
+// float3	ny = float3( 0, 1.0 / RESX, dtdy );
+// return float4( normalize( cross( nx, ny ) ), 1 );
+
+return 0.1 * t;
+// return i / 64.0;
+
 	const float		LightIntensity = 0.5;
 	const float3	C0 = 1.0 * float3( 0.2, 0.2, 0.2 );
 	const float3	C1 = float3( 1.0, 1.0, 1.0 );
@@ -318,25 +350,47 @@ target = p + float3( 0, 0, 1 );
 
 	// Compute normal and Fresnel
 	float	AO;
-	float3	n = normal( p, AO );
-	float3	F0 = 0.001;
-	float3	Fr = Fresnel( Fresnel_IORFromF0( F0 ), dot( -v, n ), 1.0 );
+	float3	n = normal( p, 0.5, AO );
+	float3	F0 = 0.9 * float3( 1.0, 0.8, 0.5 );
+	float3	Fr = saturate( Fresnel( Fresnel_IORFromF0( F0 ), dot( -v, n ), 1.0 ) );
 
-//return float4( n, 1 );
+
+
+const float2 e = float2( 0.01, 0.0 );
+float c = map( p );
+n = float3(
+	map( p + e.xyy ) - c, //map( p - e.xyy ),
+	map( p + e.yxy ) - c, //map( p - e.yxy ),
+	map( p + e.yyx ) - c //map( p - e.yyx )
+	);
+//return float4( 100.0 * n, 0 );
+float	length_n = length(n);
+//return 10.0 * length_n;
+return float4( n / length_n, 0 );
+
+
+
+//return float4( ddx(p), 1 );
+//return float4( 1.0*p- float3(0,0,8), 1 );
+//return AO;
+return float4( n, 1 );
 //Fr = 1.0;
 
 	// Compute direct lighting
 	float3	Light = l - p;
 	float	dLight = max( 0.05, length( Light ) );
 			Light *= 1.0 / dLight;
-	float	shadow = Shadow( p, n, Light );
+	float	shadow = 1;//Shadow( p, n, Light );
 	float3	colorT = (LightIntensity / (dLight*dLight)) * mix( AO*C0, shadow * C1, 0.5 + 0.5 * dot( n, Light ));
 
-return shadow;
+//return shadow;
 //return float4( colorT, 1 );
 	// Compute reflection
 	float3	p_refl = reflection( p, v, n );
-	float3	n_refl = normal( p_refl, AO );
+
+return float4( p_refl- float3(0,0,8), 1 );
+
+	float3	n_refl = normal( p_refl, 1.0, AO );
 
 			Light = l - p_refl;
 			dLight = max( 0.05, length( Light ) );
