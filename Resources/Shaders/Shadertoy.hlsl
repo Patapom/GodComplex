@@ -21,8 +21,12 @@ VS_IN	VS( VS_IN _In )	{ return _In; }
 #define iGlobalTime _Time.x
 static const float2	iResolution = float2( RESX, RESY );
 
-//const float PI = 3.14159265358979;
+// If you want to puke, just uncomment these two lines... ^^
+#define ANIMATE_TUNNEL
+// #define ROTATE_BARS
+// #define TRANSLATE_BARS
 
+//const float PI = 3.14159265358979;
 
 float repeat( float a, float s )
 {
@@ -90,9 +94,12 @@ float smoothinterp( float x0, float x1, float t )
 
 float2 tunnelCenter( float z )
 {
+#ifdef ANIMATE_TUNNEL
+	return float2(	0.2 * (sin( 0.5919 * z + 4.0 * iGlobalTime ) + sin( 1.2591 * z )*cos( 0.915 * z )),
+					0.2 * (sin( 1.8 * z + 4.0 * iGlobalTime ) + sin( 0.1378 * z )) );
+#else
 	return float2( 0.0, 0.0 );
-	return float2(	0.1 * (sin( 0.5919 * z ) + sin( 1.2591 * z )*cos( 0.915 * z )),
-					0.1 * (sin( 1.8 * z ) + sin( 0.1378 * z )) );
+#endif
 }
 
 static const float barGap = 1.0;
@@ -106,15 +113,19 @@ void barCenterAxis( float z, out float3 barCenter, out float3 barAxis, out float
 	float	zcenter = (0.5+barIndex) * barGap;
 	float	angle = 2.0 * PI * 0.156 * (0.2+barIndex);// + iGlobalTime;
 	
-angle = 0.798 * barIndex;
-//angle = 0.0;
+	angle = 0.798 * barIndex;	// Fixed bars
+#ifdef ROTATE_BARS
+	angle += iGlobalTime * (0.5 + 1.0 * sin( 1234.567 * barIndex ));
+#endif
 
 	barAxis = float3( cos( angle ), sin( angle ), 0.2 * sin( zcenter ) );
 
-//	float2	barOffset = float2( 0.2-0.1 * sin( zcenter ), 0.5 + 0.3 * sin( -1.5 * zcenter)  );
-
+#ifdef TRANSLATE_BARS
+	barOffset = 0.0 + 0.5 * sin( 17.21191 * barIndex + iGlobalTime * (0.5 + 1.0 * sin( 8976.5431 * barIndex )) );
+#else
 	barOffset = 0.0 + 0.5 * sin( 17.21191 * barIndex );
-//	float3	barCenter = float3( center( zcenter ) + barOffset, zcenter );
+#endif
+
 	barCenter = float3( c + barOffset * float2( -barAxis.y, barAxis.x ), zcenter );
 }
 
@@ -127,17 +138,10 @@ float3 safePosition( float z, float rand )
 	float3	barCenter1, barAxis1; float barOffset1;
 	barCenterAxis( z + 0.5 * barGap, barCenter1, barAxis1, barOffset1 );
 	float2	tunnelCenter1 = tunnelCenter( barCenter1.z );
-
-//	float3	barCenter2, barAxis2; float barOffset2;
-//	barCenterAxis( z + barGap, barCenter2, barAxis2, barOffset2 );
-	
-//	avoidPos = float3( c - barOffset * float2( -barAxis.y, barAxis.x ), zcenter );
 	
 	float	z0 = barCenter0.z;
 	float	z1 = barCenter1.z;
 	float	t = (z - z0) / (z1 - z0); // Interpolant
-	
-//t = 0.0;
 	
 	// Compute the 2 valid positions for each bar
 	float	off0 = mix( 0.5*(1.0+barOffset0), 0.5*(-1.0+barOffset0),
@@ -148,26 +152,9 @@ float3 safePosition( float z, float rand )
 						step( 0.0, sign( sin( 37.85961 * (z1 + rand) ) ) ) );
 	float2	safePos1 = tunnelCenter1 + off1 * float2( -barAxis1.y, barAxis1.x );
 	
-//return float3( safePos1, z );
-	
-//	float3	safePos = float3( smoothstep( safePos0, safePos1, t ), z );
-//	float3	safePos = float3( mix( safePos0, safePos1, t ), z );
-	float3	safePos = float3( smoothinterp( safePos0.x, safePos1.x, t ),
-							  smoothinterp( safePos0.y, safePos1.y, t ),
-							  z );
-	return safePos;
-}
-
-float bisou2( float3 p ) 
-{
-	float	r = length( p.xy );
-	float 	a = atan( p.y, p.x );
-	//		a = repeat( a, PI/6.0 );
-	a = (0.5 + floor( a * 6.0 / PI )) * PI / 6.0;
-	
-	float3	c = float3( 0.9 * float2( cos( a ), sin( a ) ), p.z );
-	
-	return length( p - c ) - 0.01;
+	return float3(	smoothinterp( safePos0.x, safePos1.x, t ),
+					smoothinterp( safePos0.y, safePos1.y, t ),
+					z );
 }
 
 float bisou( float3 p )
@@ -178,20 +165,20 @@ float bisou( float3 p )
 	float3	toP = p-c;
 	float3	planeP = toP - dot( toP, axis ) * axis;
 	
-	return length( planeP ) - 0.1;// - 0.05 * noise(37.0569 * p );
+	return length( planeP ) - 0.1
+//		- 0.05 * noise(37.0569 * p )
+		;
 }
 
 float map( float3 p )
 {
 	float2	c = tunnelCenter( p.z );
 	float	d_tunnel = 1.0 - length( p.xy - c );
-	
-	float	d_gloub = bisou( p );
-//return d_gloub;
+	float	d_bar = bisou( p );
 
-	return smin2( d_tunnel, d_gloub, 0.7 );
-	return min( d_tunnel, d_gloub );
-	return smin( d_tunnel, d_gloub, -4.0 );
+	return smin2( d_tunnel, d_bar, 0.7 );
+	return min( d_tunnel, d_bar );
+	return smin( d_tunnel, d_bar, -4.0 );
 }
 
 float3 normal( float3 p, float eps, out float cheapAO )
@@ -210,21 +197,18 @@ float3 normal( float3 p, float eps, out float cheapAO )
 float3 reflection( float3 p, float3 v, float3 n )
 {
 	v = reflect( v, n );
-	p += (0.01 / dot( v, n )) * v;
-//	p += 0.01 * n;
+//	p += (0.01 / dot( v, n )) * v;
+	p += 0.01 * n;
 
 	float	t = 0.0;
 	for ( int i=0; i < 64; i++ )
 	{
 		float	d = map( p );
-//		if ( abs( d ) < 0.001 ) break;
 		if ( d < 0.005 ) break;
 
 		t += d;
 		p += d * v;
 	}
-
-//return 0.1 * t;
 
 	return p;
 }
@@ -246,19 +230,6 @@ float AO( float3 p, float3 n )
 
 float	Shadow( float3 p, float3 l, float distance2Light )
 {
-// 	const float step = 0.05;
-// //	p += (0.001 / dot( l, n )) * l;
-// 	p += 0.1 * n;
-// 	float S = 1.0;
-// 	for ( int i=0; i < 32; i++ )
-// 	{
-// 		float	d = max( 0.0, map( p ) );
-// 		p += step * l;
-// 		
-// 		S *= 1.0 - exp( -20.0 * d * (50.0+float(i)) );
-// 	}
-// 	return S;
-
 	const float	k = 10.0;
 
 	float S = 1.0;
@@ -381,7 +352,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 
 //return float4( p_refl, 1 );
 
-	float3	n_refl = normal( p_refl, 1.0, AO );
+	float3	n_refl = normal( p_refl, 0.0001, AO );
 
 			Light = l - p_refl;
 			dLight = max( 0.05, length( Light ) );

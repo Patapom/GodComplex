@@ -724,6 +724,7 @@ MinifyAll.cmd</Command>
     <None Include="Resources\Shaders\GIRenderDynamic.hlsl" />
     <None Include="Resources\Shaders\Shadertoy.hlsl" />
     <None Include="Resources\Shaders\Shadertoy_Clouds.hlsl" />
+    <None Include="Resources\Shaders\Shadertoy_GLSL.hlsl" />
     <None Include="Utility\Octree.inl">
       <FileType>Document</FileType>
     </None>

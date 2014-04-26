@@ -103,6 +103,9 @@ fX = fZ = 1.0;
 						r = (float) (1.0 / Math.Sqrt( 2.0 ) * fX * SqrtPhillips);
 						i = (float) (1.0 / Math.Sqrt( 2.0 ) * fZ * SqrtPhillips);
 
+r = (float) (U1);// * Math.Exp( -0.001 * Math.Abs( Fx ) ));
+i = 0.0f;//(float) U2;
+
 // r = 0.0;
 // for ( int j=1; j < 100; j++ )
 // 	r += 0.25 * Math.Cos( 2.0 * Math.PI * -j * (X+2*Y) / 256.0 ) / j;
@@ -131,9 +134,9 @@ fX = fZ = 1.0;
 				FFT.Execute( fftwlib.FFT2D.Normalization.SQUARE_ROOT_OF_DIMENSIONS_PRODUCT );
 
 // DEBUG: Test we get back what we fed!
-FFT.SwapInputOutput();
-FFT.InputIsSpatial = false;
-FFT.Execute( fftwlib.FFT2D.Normalization.SQUARE_ROOT_OF_DIMENSIONS_PRODUCT );
+// FFT.SwapInputOutput();
+// FFT.InputIsSpatial = false;
+// FFT.Execute( fftwlib.FFT2D.Normalization.SQUARE_ROOT_OF_DIMENSIONS_PRODUCT );
 
 				// Retrieve results
 				outputPanelSpatial.FillBitmap( ( int _X, int _Y, int _Width, int _Height ) => 

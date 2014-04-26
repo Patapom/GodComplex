@@ -28,29 +28,29 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.outputPanelFrequency = new MotionTextureComputer.OutputPanel();
 			this.outputPanelSpatial = new MotionTextureComputer.OutputPanel();
+			this.outputPanelFrequency = new MotionTextureComputer.OutputPanel();
 			this.SuspendLayout();
+			// 
+			// outputPanelSpatial
+			// 
+			this.outputPanelSpatial.Location = new System.Drawing.Point(518, 0);
+			this.outputPanelSpatial.Name = "outputPanelSpatial";
+			this.outputPanelSpatial.Size = new System.Drawing.Size(512, 512);
+			this.outputPanelSpatial.TabIndex = 0;
 			// 
 			// outputPanelFrequency
 			// 
 			this.outputPanelFrequency.Location = new System.Drawing.Point(0, 0);
 			this.outputPanelFrequency.Name = "outputPanelFrequency";
-			this.outputPanelFrequency.Size = new System.Drawing.Size(448, 448);
+			this.outputPanelFrequency.Size = new System.Drawing.Size(512, 512);
 			this.outputPanelFrequency.TabIndex = 0;
-			// 
-			// outputPanelSpatial
-			// 
-			this.outputPanelSpatial.Location = new System.Drawing.Point(463, 0);
-			this.outputPanelSpatial.Name = "outputPanelSpatial";
-			this.outputPanelSpatial.Size = new System.Drawing.Size(448, 448);
-			this.outputPanelSpatial.TabIndex = 0;
 			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(911, 448);
+			this.ClientSize = new System.Drawing.Size(1030, 512);
 			this.Controls.Add(this.outputPanelSpatial);
 			this.Controls.Add(this.outputPanelFrequency);
 			this.Name = "Form1";

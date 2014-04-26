@@ -649,6 +649,9 @@
     <None Include="Resources\Shaders\Shadertoy_Clouds.hlsl">
       <Filter>Resources\Shaders\DEBUG\DOF</Filter>
     </None>
+    <None Include="Resources\Shaders\Shadertoy_GLSL.hlsl">
+      <Filter>Resources\Shaders\DEBUG\DOF</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">
