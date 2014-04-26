@@ -10,6 +10,17 @@ namespace fftwlib
 {
 	public class	FFT2D : IDisposable
 	{
+		#region NESTED TYPES
+
+		public enum		Normalization
+		{
+			NONE,								// Leave result as is
+			SQUARE_ROOT_OF_DIMENSIONS_PRODUCT,	// Divide result after execution by sqrt(Width*Height)
+			DIMENSIONS_PRODUCT,					// Divide result after execution by Width*Height
+		}
+
+		#endregion
+
 		#region FIELDS
 
 		int			m_Width;
@@ -72,7 +83,7 @@ namespace fftwlib
 		//////////////////////////////////////////////////////////////////////////
 		// Input
 		public delegate void	SetValueSpatialDelegate( int x, int y, out float r, out float i );
-		public void SetInputSpatial( SetValueSpatialDelegate _SetValue )
+		public void FillInputSpatial( SetValueSpatialDelegate _SetValue )
 		{
 			m_InputIsSpatial = true;
 			for ( int Y=0; Y < m_Height; Y++ )
@@ -81,17 +92,23 @@ namespace fftwlib
 		}
 
 		public delegate void	SetValueFrequencyDelegate( int x, int y, out float r, out float i );
-		public void SetInputFrequency( SetValueFrequencyDelegate _SetValue )
+		public void FillInputFrequency( SetValueFrequencyDelegate _SetValue )
 		{
 			m_InputIsSpatial = false;
 			for ( int Y=0; Y < m_Height; Y++ )
+			{
+				int	Fy = Y < 128 ? Y : Y-255;		// Negative frequencies are stored in the second half of the array
 				for ( int X=0; X < m_Width; X++ )
-					_SetValue( X, Y, out m_UserInput[2*(m_Width*Y+X)+0], out m_UserInput[2*(m_Width*Y+X)+1] );
+				{
+					int	Fx = X < 128 ? X : X-255;	// Negative frequencies are stored in the second half of the array
+					_SetValue( Fx, Fy, out m_UserInput[2*(m_Width*Y+X)+0], out m_UserInput[2*(m_Width*Y+X)+1] );
+				}
+			}
 		}
 
 		//////////////////////////////////////////////////////////////////////////
 		// Execution
-		public void	Execute()
+		public void	Execute( Normalization _Normalization )
 		{
 			if ( m_InputIsSpatial && m_PlanForward == IntPtr.Zero )
 				m_PlanForward = fftwlib.fftwf.dft_2d( m_Width, m_Height, m_Input, m_Output, fftwlib.fftw_direction.Forward, fftwlib.fftw_flags.DestroyInput );
@@ -107,9 +124,9 @@ namespace fftwlib
 			// Retrieve results
 			Marshal.Copy( m_Output, m_UserOutput, 0, m_Width*m_Height*2 );
 
-//			if ( !m_InputIsSpatial )
+			if ( _Normalization != Normalization.NONE )
 			{
-				float	Normalizer = 1.0f / (float) Math.Sqrt(m_Width * m_Height);
+				float	Normalizer = _Normalization == Normalization.DIMENSIONS_PRODUCT ? 1.0f / (m_Width * m_Height) : 1.0f / (float) Math.Sqrt(m_Width * m_Height);
 				for ( int i=0; i < 2*m_Width*m_Height; i++ )
 					m_UserOutput[i] *= Normalizer;
 			}

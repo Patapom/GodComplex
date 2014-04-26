@@ -67,7 +67,53 @@ namespace MotionTextureComputer
 			using ( fftwlib.FFT2D FFT = new fftwlib.FFT2D( 256, 256 ) )
 			{
 				// Build the source data
-				FillInput( FFT.Input );
+//				FillInput( FFT.Input );
+
+				{
+					const double	Lx = 400.0;
+					const double	Lz = Lx;
+
+					const double	WindAngle = 45.0 * Math.PI / 180.0;
+					const double	WindVelocity = 20.0;
+
+					double	Wx = Math.Cos( WindAngle );
+					double	Wz = Math.Sin( WindAngle );
+
+					double	U1, U2, fX, fZ;
+
+					Random	RNG = new Random( 1 );
+
+					FFT.FillInputFrequency( ( int Fx, int Fy, out float r, out float i ) => {
+						double	kx = (2.0 * Math.PI / Lx) * Fx;
+						double	kz = (2.0 * Math.PI / Lz) * Fy;
+
+						// Build white gaussian noise
+						// (source: http://www.dspguru.com/dsp/howtos/how-to-generate-white-gaussian-noise)
+						U1 = 1e-10 + RNG.NextDouble();
+						U2 = RNG.NextDouble();
+						fX = Math.Sqrt(-2.0 * Math.Log( U1 )) * Math.Sin( 2.0 * Math.PI * U2 );
+						U1 = 1e-10 + RNG.NextDouble();
+						U2 = RNG.NextDouble();
+						fZ = Math.Sqrt(-2.0 * Math.Log( U1 )) * Math.Sin( 2.0 * Math.PI * U2 );
+
+fX = fZ = 1.0;
+
+						// Build Phillips spectrum
+						double	SqrtPhillips = Math.Sqrt( Phillips( kx, kz, WindVelocity, Wx, Wz ) );
+						r = (float) (1.0 / Math.Sqrt( 2.0 ) * fX * SqrtPhillips);
+						i = (float) (1.0 / Math.Sqrt( 2.0 ) * fZ * SqrtPhillips);
+
+// r = 0.0;
+// for ( int j=1; j < 100; j++ )
+// 	r += 0.25 * Math.Cos( 2.0 * Math.PI * -j * (X+2*Y) / 256.0 ) / j;
+// i = 0.0;
+
+// r = Math.Exp( -0.1 * kx );
+// i = Math.Exp( -0.1 * kz );
+
+						} );
+				}
+
  
 				// Fill in bitmap
 				outputPanelFrequency.FillBitmap( ( int _X, int _Y, int _Width, int _Height ) => 
@@ -82,25 +128,22 @@ namespace MotionTextureComputer
 
 				// Inverse FFT
 				FFT.InputIsSpatial = false;	// We fed frequencies and need an inverse transform
-				FFT.Execute();
+				FFT.Execute( fftwlib.FFT2D.Normalization.SQUARE_ROOT_OF_DIMENSIONS_PRODUCT );
 
 // DEBUG: Test we get back what we fed!
-// FFT.SwapInputOutput();
-// FFT.InputIsSpatial = false;
-// FFT.Execute();
+FFT.SwapInputOutput();
+FFT.InputIsSpatial = false;
+FFT.Execute( fftwlib.FFT2D.Normalization.SQUARE_ROOT_OF_DIMENSIONS_PRODUCT );
 
 				// Retrieve results
 				outputPanelSpatial.FillBitmap( ( int _X, int _Y, int _Width, int _Height ) => 
 					{
 						int	X = 256 * _X / _Width;
 						int	Y = 256 * _Y / _Height;
-// 						byte	R = (byte) (255 * Math.Min( 1.0f, Math.Abs( FFT.Output[2*(256*Y+X)+0] )));
-// 						byte	I = (byte) (255 * Math.Min( 1.0f, Math.Abs( FFT.Output[2*(256*Y+X)+1] )));
-byte	R = (byte) (255 * Math.Min( 1.0f, 1.0e6 * Math.Abs( FFT.Output[2*(256*Y+X)+0] ) ));
-byte	I = (byte) (255 * Math.Min( 1.0f, 1.0e6 * Math.Abs( FFT.Output[2*(256*Y+X)+1] ) ));
-
-// 						byte	R = (byte) (255 * Out[2*(256*Y+X)+0] / 65536.0);	// FWD + BWD FFT => Multiplied by N*N
-// 						byte	I = (byte) (255 * Out[2*(256*Y+X)+1] / 65536.0);
+						byte	R = (byte) (255 * Math.Min( 1.0f, Math.Abs( FFT.Output[2*(256*Y+X)+0] )));
+						byte	I = (byte) (255 * Math.Min( 1.0f, Math.Abs( FFT.Output[2*(256*Y+X)+1] )));
+// byte	R = (byte) (255 * Math.Min( 1.0f, 1.0e6 * Math.Abs( FFT.Output[2*(256*Y+X)+0] ) ));
+// byte	I = (byte) (255 * Math.Min( 1.0f, 1.0e6 * Math.Abs( FFT.Output[2*(256*Y+X)+1] ) ));
 
 						return 0xFF000000 | (uint) ((R << 16) | (I << 8));
 					} );
@@ -128,7 +171,7 @@ byte	I = (byte) (255 * Math.Min( 1.0f, 1.0e6 * Math.Abs( FFT.Output[2*(256*Y+X)+
 			const double	Lx = 400.0;
 			const double	Lz = Lx;
 
-			const double	WindAngle = 0.0 * Math.PI / 180.0;
+			const double	WindAngle = 45.0 * Math.PI / 180.0;
 			const double	WindVelocity = 20.0;
 
 			double	Wx = Math.Cos( WindAngle );

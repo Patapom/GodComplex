@@ -185,6 +185,15 @@ void	EffectDOF::Render( float _Time, float _DeltaTime )
 #ifdef SHADERTOY
 
 	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
+
+	D3D11_VIEWPORT	Viewport;
+	Viewport.TopLeftX = 1010;
+	Viewport.TopLeftY = 509;
+	Viewport.Width = 1;
+	Viewport.Height = 1;
+	Viewport.MinDepth = 0.0f;
+	Viewport.MaxDepth = 1.0f;
+//  	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget(), NULL, &Viewport );
  	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget() );
 
 	USING_MATERIAL_START( *m_pMatShadertoy )

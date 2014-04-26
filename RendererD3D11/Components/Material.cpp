@@ -349,7 +349,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 #endif
 
 	U32 Flags1 = 0;
-#if defined(_DEBUG) && !defined(SAVE_SHADER_BLOB_TO)
+#if (defined(_DEBUG) && !defined(SAVE_SHADER_BLOB_TO)) || defined(NSIGHT)
 		Flags1 |= D3DCOMPILE_DEBUG;
 		Flags1 |= D3DCOMPILE_SKIP_OPTIMIZATION;
 //		Flags1 |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
@@ -360,7 +360,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 	else
 		Flags1 |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
-		Flags1 |= D3DCOMPILE_ENABLE_STRICTNESS;
+//		Flags1 |= D3DCOMPILE_ENABLE_STRICTNESS;
 //		Flags1 |= D3DCOMPILE_IEEE_STRICTNESS;		// D3D9 compatibility, clamps precision to usual float32 but may prevent internal optimizations by the video card. Better leave it disabled!
 		Flags1 |= D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;	// MOST IMPORTANT FLAG !
 
@@ -387,7 +387,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 #endif
 
 // Save the binary blob to disk
-#ifdef SAVE_SHADER_BLOB_TO
+#if defined(SAVE_SHADER_BLOB_TO) && !defined(NSIGHT)
 	SaveBinaryBlob( _pShaderFileName, _pEntryPoint, *pCode );
 #endif
 
