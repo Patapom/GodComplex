@@ -73,7 +73,10 @@ namespace WMath
 		public						Matrix4x4()
 		{
 		}
-
+		public						Matrix4x4( float[] _Source )
+		{
+			Set( _Source );
+		}
 		public						Matrix4x4( float[,] _Source )
 		{
 			Set( _Source );
@@ -115,6 +118,17 @@ namespace WMath
 		public Vector				GetScale()										{ return new Vector( new Vector( m[0, 0], m[0, 1], m[0, 2] ).Magnitude(), new Vector( m[1, 0], m[1, 1], m[1, 2] ).Magnitude(), new Vector( m[2, 0], m[2, 1], m[2, 2] ).Magnitude() ); }
 		public void					SetScale( Vector _Scale )						{ m[0, 0] *= _Scale.x; m[1, 1] *= _Scale.y; m[2, 2] *= _Scale.z; }
 		public Matrix4x4			Scale( Vector _Scale )							{ m[0, 0] *= _Scale.x; m[0, 1] *= _Scale.x; m[0, 2] *= _Scale.x; m[1, 0] *= _Scale.y; m[1, 1] *= _Scale.y; m[1, 2] *= _Scale.y; m[2, 0] *= _Scale.z; m[2, 1] *= _Scale.z; m[2, 2] *= _Scale.z; return this; }
+		public void					Set( float[] _Source )
+		{
+			if ( _Source == null )
+				return;
+			if ( _Source.Length != 16 )
+				throw new Exception( "Unexpected array size!" );
+			m[0,0] = _Source[4*0+0];	m[0,1] = _Source[4*0+1];	m[0,2] = _Source[4*0+2];	m[0,3] = _Source[4*0+3];
+			m[1,0] = _Source[4*1+0];	m[1,1] = _Source[4*1+1];	m[1,2] = _Source[4*1+2];	m[1,3] = _Source[4*1+3];
+			m[2,0] = _Source[4*2+0];	m[2,1] = _Source[4*2+1];	m[2,2] = _Source[4*2+2];	m[2,3] = _Source[4*2+3];
+			m[3,0] = _Source[4*3+0];	m[3,1] = _Source[4*3+1];	m[3,2] = _Source[4*3+2];	m[3,3] = _Source[4*3+3];
+		}
 		public void					Set( float[,] _Source )
 		{
 			if ( _Source == null )

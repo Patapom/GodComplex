@@ -69,6 +69,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateSelfShadowedBumpMap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateEyeCaustics", "Tools\GenerateEyeCaustics\GenerateEyeCaustics.csproj", "{5BBB4716-B449-43F5-B3DD-9C33A5F687F6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StandardizedDiffuseAlbedoMaps", "Tools\StandardizedDiffuseAlbedoMaps\StandardizedDiffuseAlbedoMaps.csproj", "{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -770,6 +772,25 @@ Global
 		{5BBB4716-B449-43F5-B3DD-9C33A5F687F6}.Release|x64.ActiveCfg = Release|x86
 		{5BBB4716-B449-43F5-B3DD-9C33A5F687F6}.Release|x86.ActiveCfg = Release|x86
 		{5BBB4716-B449-43F5-B3DD-9C33A5F687F6}.Release|x86.Build.0 = Release|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Debug|Any CPU.Build.0 = Debug|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Debug|x64.ActiveCfg = Debug|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Debug|x86.ActiveCfg = Debug|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Debug|x86.Build.0 = Debug|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Profile|Any CPU.ActiveCfg = Release|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Profile|Mixed Platforms.ActiveCfg = Release|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Profile|Mixed Platforms.Build.0 = Release|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Profile|x64.ActiveCfg = Release|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Profile|x86.ActiveCfg = Release|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Profile|x86.Build.0 = Release|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Release|Any CPU.ActiveCfg = Release|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Release|Mixed Platforms.Build.0 = Release|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Release|x64.ActiveCfg = Release|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Release|x86.ActiveCfg = Release|x86
+		{F63C2EAB-35D5-45B4-BDAD-749EA99F51A5}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
