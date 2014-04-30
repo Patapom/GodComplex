@@ -1102,10 +1102,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// </summary>
 			protected void	BuildTransformFromChroma( bool _bCheckGammaCurveOverride )
 			{
-				Vector3	xyz_R = new Vector3( m_Chromaticities.R.X, m_Chromaticities.R.Y, 1.0f - m_Chromaticities.R.X - m_Chromaticities.R.Y );
-				Vector3	xyz_G = new Vector3( m_Chromaticities.G.X, m_Chromaticities.G.Y, 1.0f - m_Chromaticities.G.X - m_Chromaticities.G.Y );
-				Vector3	xyz_B = new Vector3( m_Chromaticities.B.X, m_Chromaticities.B.Y, 1.0f - m_Chromaticities.B.X - m_Chromaticities.B.Y );
-				Vector3	XYZ_W = xyY2XYZ( new Vector3( m_Chromaticities.W.X, m_Chromaticities.W.Y, 1.0f ) );
+				Vector	xyz_R = new Vector( m_Chromaticities.R.X, m_Chromaticities.R.Y, 1.0f - m_Chromaticities.R.X - m_Chromaticities.R.Y );
+				Vector	xyz_G = new Vector( m_Chromaticities.G.X, m_Chromaticities.G.Y, 1.0f - m_Chromaticities.G.X - m_Chromaticities.G.Y );
+				Vector	xyz_B = new Vector( m_Chromaticities.B.X, m_Chromaticities.B.Y, 1.0f - m_Chromaticities.B.X - m_Chromaticities.B.Y );
+				Vector	XYZ_W = xyY2XYZ( new Vector( m_Chromaticities.W.X, m_Chromaticities.W.Y, 1.0f ) );
 
 				Matrix	M_xyz = new Matrix(	xyz_R.X, xyz_R.Y, xyz_R.Z, 0.0f,
 											xyz_G.X, xyz_G.Y, xyz_G.Z, 0.0f,
@@ -1113,7 +1113,7 @@ namespace StandardizedDiffuseAlbedoMaps
 											0.0f, 0.0f, 0.0f, 1.0f );
 				M_xyz.Invert();
 
-				Vector3	Sum_RGB = Vector3.TransformCoordinate( XYZ_W, M_xyz );
+				Vector	Sum_RGB = Vector.TransformCoordinate( XYZ_W, M_xyz );
 
 				// Finally, we can retrieve the RGB->XYZ transform
 				m_RGB2XYZ = Matrix.Identity;
@@ -1214,10 +1214,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// </summary>
 			/// <param name="_XYZ"></param>
 			/// <returns></returns>
-			public static Vector3	XYZ2xyY( Vector3 _XYZ )
+			public static Vector	XYZ2xyY( Vector _XYZ )
 			{
 				float	InvSum = 1.0f / (_XYZ.X + _XYZ.Y + _XYZ.Z);
-				return new Vector3( _XYZ.X * InvSum, _XYZ.Y * InvSum, _XYZ.Y );
+				return new Vector( _XYZ.X * InvSum, _XYZ.Y * InvSum, _XYZ.Y );
 			}
 
 			/// <summary>
@@ -1225,10 +1225,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// </summary>
 			/// <param name="_xyY"></param>
 			/// <returns></returns>
-			public static Vector3	xyY2XYZ( Vector3 _xyY )
+			public static Vector	xyY2XYZ( Vector _xyY )
 			{
 				float	Y_y = _xyY.Z / _xyY.Y;
-				return new Vector3( _xyY.X * Y_y, _xyY.Z, (1.0f - _xyY.X - _xyY.Y) * Y_y );
+				return new Vector( _xyY.X * Y_y, _xyY.Z, (1.0f - _xyY.X - _xyY.Y) * Y_y );
 			}
 
 			/// <summary>
@@ -1701,20 +1701,11 @@ namespace StandardizedDiffuseAlbedoMaps
 		#region METHODS
 
 		/// <summary>
-		/// Creates a bitmap placeholder to load the bitmap later
-		/// </summary>
-		/// <param name="_Device"></param>
-		/// <param name="_Name"></param>
-		public	Bitmap2( Device _Device, string _Name ) : base( _Device, _Name )
-		{
-		}
-
-		/// <summary>
 		/// Creates a bitmap from a file
 		/// </summary>
 		/// <param name="_Device"></param>
 		/// <param name="_Name"></param>
-		public	Bitmap2( Device _Device, string _Name, System.IO.FileInfo _ImageFileName ) : this( _Device, _Name )
+		public	Bitmap2( System.IO.FileInfo _ImageFileName )
 		{
 			Load( _ImageFileName, GetFileType( _ImageFileName ) );
 		}
@@ -1726,7 +1717,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_Name"></param>
 		/// <param name="_ImageStream">The image stream to load the bitmap from</param>
 		/// <param name="_ImageFileNameName">The name of the image file the stream is coming from originally (used to identify image file type)</param>
-		public	Bitmap2( Device _Device, string _Name, System.IO.Stream _ImageStream, System.IO.FileInfo _ImageFileNameName ) : this( _Device, _Name )
+		public	Bitmap2( System.IO.Stream _ImageStream, System.IO.FileInfo _ImageFileNameName )
 		{
 			Load( _ImageStream, GetFileType( _ImageFileNameName ) );
 		}
@@ -1738,7 +1729,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_Name"></param>
 		/// <param name="_ImageStream">The image stream to load the bitmap from</param>
 		/// <param name="_FileType">The image type</param>
-		public	Bitmap2( Device _Device, string _Name, System.IO.Stream _ImageStream, FILE_TYPE _FileType ) : this( _Device, _Name )
+		public	Bitmap2( System.IO.Stream _ImageStream, FILE_TYPE _FileType )
 		{
 			Load( _ImageStream, _FileType );
 		}
@@ -1750,7 +1741,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_Name"></param>
 		/// <param name="_ImageFileContent">The memory buffer to load the bitmap from</param>
 		/// <param name="_ImageFileNameName">The name of the image file the stream is coming from originally (used to identify image file type)</param>
-		public	Bitmap2( Device _Device, string _Name, byte[] _ImageFileContent, System.IO.FileInfo _ImageFileNameName ) : this( _Device, _Name )
+		public	Bitmap2( byte[] _ImageFileContent, System.IO.FileInfo _ImageFileNameName )
 		{
 			Load( _ImageFileContent, GetFileType( _ImageFileNameName ) );
 		}
@@ -1762,7 +1753,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_Name"></param>
 		/// <param name="_ImageFileContent">The memory buffer to load the bitmap from</param>
 		/// <param name="_FileType">The image type</param>
-		public	Bitmap2( Device _Device, string _Name, byte[] _ImageFileContent, FILE_TYPE _FileType ) : this( _Device, _Name )
+		public	Bitmap2( byte[] _ImageFileContent, FILE_TYPE _FileType )
 		{
 			Load( _ImageFileContent, _FileType );
 		}
@@ -1774,10 +1765,10 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_Name"></param>
 		/// <param name="_Bitmap">The System.Drawing.Bitmap</param>
 		/// <param name="_ColorProfile">The color profile to use transform the bitmap</param>
-		public	Bitmap2( Device _Device, string _Name, System.Drawing.Bitmap _Bitmap, ColorProfile _ColorProfile ) : this( _Device, _Name )
+		public	Bitmap2( System.Drawing.Bitmap _Bitmap, ColorProfile _ColorProfile )
 		{
 			if ( _ColorProfile == null )
-				throw new NException( this, "Invalid profile : can't convert to CIE XYZ !" );
+				throw new Exception( "Invalid profile : can't convert to CIE XYZ !" );
 			m_ColorProfile = _ColorProfile;
 
 			// Load the bitmap's content and copy it to a double entry array
@@ -2341,22 +2332,22 @@ for ( int Y=0; Y < m_Height; Y++ )
 						m_Bitmap[X,Y] = Palette[Content[Position++]];
 			}
 			else
-				throw new NException( this, "Source format " + _Frame.Format + " not supported !" );
+				throw new Exception( "Source format " + _Frame.Format + " not supported !" );
 		}
 
-		/// <summary>
-		/// Builds a DataStream from a byte[]
-		/// </summary>
-		/// <param name="_ImageFileContent">The image file content as a byte[]</param>
-		/// <param name="_Action">The action to perform with a DataStream created from the byte[]</param>
-		protected void	BuildDataStream( byte[] _ImageFileContent, Action<DataStream> _Action )
-		{
-			Utilities.Pin( _ImageFileContent, ( IntPtr _FileConterPointer ) =>
-				{
-					using ( DataStream MemoryStream = new DataStream( _FileConterPointer, _ImageFileContent.Length, true, false ) )
-						_Action( MemoryStream );
-				} );
-		}
+// 		/// <summary>
+// 		/// Builds a DataStream from a byte[]
+// 		/// </summary>
+// 		/// <param name="_ImageFileContent">The image file content as a byte[]</param>
+// 		/// <param name="_Action">The action to perform with a DataStream created from the byte[]</param>
+// 		protected void	BuildDataStream( byte[] _ImageFileContent, Action<DataStream> _Action )
+// 		{
+// 			Utilities.Pin( _ImageFileContent, ( IntPtr _FileConterPointer ) =>
+// 				{
+// 					using ( DataStream MemoryStream = new DataStream( _FileConterPointer, _ImageFileContent.Length, true, false ) )
+// 						_Action( MemoryStream );
+// 				} );
+// 		}
 
 		/// <summary>
 		/// Loads a System.Drawing.Bitmap into a byte[] containing RGBARGBARG... pixels

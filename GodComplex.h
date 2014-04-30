@@ -8,6 +8,10 @@
 // WARNING! If you ever change these, also reflect the changes in Resources/Shaders/Inc/Global.hlsl !
 #define RESX	1280	// 720p 16:9
 #define RESY	720
+
+// #define RESX	512	// 720p 16:9
+// #define RESY	288
+
 #define ALLOW_WINDOWED
 
 //#define MUSIC			// Enable music

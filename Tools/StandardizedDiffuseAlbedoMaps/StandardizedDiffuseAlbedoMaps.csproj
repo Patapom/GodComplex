@@ -56,12 +56,14 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="IPixelFormat.cs" />
     <Compile Include="OutputPanel.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="OutputPanel.Designer.cs">
       <DependentUpon>OutputPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="PixelFormats.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Form1.resx">

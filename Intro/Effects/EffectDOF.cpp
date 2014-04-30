@@ -5,6 +5,10 @@
 
 EffectDOF::EffectDOF( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera ) : m_ErrorCode( 0 ), m_Device( _Device ), m_RTTarget( _RTHDR ), m_ScreenQuad( _ScreenQuad )
 {
+#ifdef SHADERTOY
+ 	CHECK_MATERIAL( m_pMatShadertoy = CreateMaterial( IDR_SHADER_SHADERTOY, "./Resources/Shaders/Shadertoy.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
+	
+#else
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
 	D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { NULL, NULL } };
@@ -128,10 +132,14 @@ EffectDOF::EffectDOF( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad
 	//////////////////////////////////////////////////////////////////////////
 	// Start precomputation
 //	PreComputeProbes();
+#endif
 }
 
 EffectDOF::~EffectDOF()
 {
+#ifdef SHADERTOY
+ 	delete m_pMatShadertoy;
+#else
 	delete m_pPrimCube;
 
 	m_bDeleteSceneTags = true;
@@ -169,10 +177,32 @@ EffectDOF::~EffectDOF()
 // 	delete m_pMatRenderLights;
 	delete m_pMatRenderCube;
 	delete m_pMatRender;
+#endif
 }
 
 void	EffectDOF::Render( float _Time, float _DeltaTime )
 {
+#ifdef SHADERTOY
+
+	m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_Disabled, m_Device.m_pBS_Disabled );
+
+	D3D11_VIEWPORT	Viewport;
+	Viewport.TopLeftX = 1010;
+	Viewport.TopLeftY = 509;
+	Viewport.Width = 1;
+	Viewport.Height = 1;
+	Viewport.MinDepth = 0.0f;
+	Viewport.MaxDepth = 1.0f;
+//  	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget(), NULL, &Viewport );
+ 	m_Device.SetRenderTarget( m_Device.DefaultRenderTarget() );
+
+	USING_MATERIAL_START( *m_pMatShadertoy )
+
+	m_ScreenQuad.Render( M );
+
+	USING_MATERIAL_END
+
+#else
 	// Setup general data
 	m_pCB_General->m.ShowIndirect = gs_WindowInfos.pKeys[VK_RETURN] == 0;
 	m_pCB_General->UpdateData();
@@ -265,8 +295,10 @@ m_pRTDownsampledHDRTarget->SetPS( 64 );
 	USING_MATERIAL_END
 
 	m_RTTarget.RemoveFromLastAssignedSlots();
+#endif
 }
 
+#ifndef SHADERTOY
 
 void	EffectDOF::Downsample( int _TargetWidth, int _TargetHeight, const ID3D11ShaderResourceView& _Source, const ID3D11RenderTargetView& _Target, DOWNSAMPLE_TYPE _Type ) const
 {
@@ -780,6 +812,7 @@ void*	EffectDOF::TagPrimitive( const Scene& _Owner, const Scene::Mesh& _Mesh, co
 
 	return pPrim;
 }
+
 void	EffectDOF::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride )
 {
 	// Upload the object's CB
@@ -824,3 +857,4 @@ void	EffectDOF::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverri
 		pPrim->Render( *pMat );
 	}
 }
+#endif
