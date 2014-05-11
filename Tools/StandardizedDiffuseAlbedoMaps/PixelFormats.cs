@@ -404,9 +404,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			E = PF_Empty.ToByte( _E );
 		}
 
-		public float	Red		{ get { return DecodedColor.Red; } }
-		public float	Green	{ get { return DecodedColor.Green; } }
-		public float	Blue	{ get { return DecodedColor.Blue; } }
+		public float	Red		{ get { return DecodedColor.x; } }
+		public float	Green	{ get { return DecodedColor.y; } }
+		public float	Blue	{ get { return DecodedColor.z; } }
 		public float	Alpha	{ get { return 1.0f; } }
 
 		#endregion
@@ -424,19 +424,6 @@ namespace StandardizedDiffuseAlbedoMaps
 									);
 			}
 		}
-		
-		public Vector4D	DecodedColorAsVector
-		{
-			get
-			{
-				double Exponent = Math.Pow( 2.0, E - (128 + 8) );
-				return new Vector4D(	(float) ((R + .5) * Exponent),
-										(float) ((G + .5) * Exponent),
-										(float) ((B + .5) * Exponent),
-										1.0f
-									);
-			}
-		} 
 	}
 
 	#endregion

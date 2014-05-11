@@ -14,14 +14,14 @@ namespace StandardizedDiffuseAlbedoMaps
 {
 	public partial class OutputPanel : Panel
 	{
-		private Bitmap	m_Bitmap = null;
+		private Bitmap		m_Bitmap = null;
 
-		private float[,]	m_PhotonsAccumulation = null;
-		public float[,]		PhotonsAccumulation
+		private float[,]	m_Luminance = null;
+		public float[,]		Luminance
 		{
-			get { return m_PhotonsAccumulation; }
+			get { return m_Luminance; }
 			set {
-				m_PhotonsAccumulation = value;
+				m_Luminance = value;
 				UpdateBitmap();
 			}
 		}
@@ -40,16 +40,11 @@ namespace StandardizedDiffuseAlbedoMaps
 			int		W = m_Bitmap.Width;
 			int		H = m_Bitmap.Height;
 
-// 			using ( Graphics G = Graphics.FromImage( m_Bitmap ) )
-// 			{
-// 				G.FillRectangle( Brushes.Black, 0, 0, W, H );
-// 			}
-
 			// Fill pixel per pixel
-			if ( m_PhotonsAccumulation != null )
+			if ( m_Luminance != null )
 			{
-				int		SizeX = m_PhotonsAccumulation.GetLength( 0 );
-				int		SizeY = m_PhotonsAccumulation.GetLength( 0 );
+				int		SizeX = m_Luminance.GetLength( 0 );
+				int		SizeY = m_Luminance.GetLength( 1 );
 
 				BitmapData	LockedBitmap = m_Bitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
 				byte		R, G, B, A = 0xFF;
@@ -58,8 +53,8 @@ namespace StandardizedDiffuseAlbedoMaps
 					byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + LockedBitmap.Stride * Y;
 					for ( int X=0; X < W; X++ )
 					{
-						float	Photons = m_PhotonsAccumulation[SizeX*X/W, SizeY*Y/H];
-						R = G = B = (byte) Math.Min( 255, 255.0f * Photons );
+						float	Lum = m_Luminance[SizeX*X/W, SizeY*Y/H];
+						R = G = B = (byte) Math.Min( 255, 255.0f * Lum );
 						*pScanline++ = B;
 						*pScanline++ = G;
 						*pScanline++ = R;

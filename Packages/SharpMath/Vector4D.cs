@@ -56,6 +56,7 @@ namespace WMath
 		public						Vector4D()											{}
 		public						Vector4D( Vector2D _Source )						{ Set( _Source ); }
 		public						Vector4D( Vector _Source )							{ Set( _Source ); }
+		public						Vector4D( Vector _Source, float _w )				{ Set( _Source, _w ); }
 		public						Vector4D( Vector4D _Source )						{ Set( _Source ); }
 		public						Vector4D( Point4D _Source )							{ Set( _Source ); }
 		public						Vector4D( float _x, float _y, float _z, float _w )	{ Set( _x, _y, _z, _w ); }
@@ -65,6 +66,7 @@ namespace WMath
 		public void					MakeZero()										{ x = y = z = w = 0.0f; }
 		public void					Set( Vector2D _Source )							{ x = _Source.x; y = _Source.y; z = w = 0.0f; }
 		public void					Set( Vector _Source )							{ x = _Source.x; y = _Source.y; z = _Source.z; w = 0.0f; }
+		public void					Set( Vector _Source, float _w )					{ x = _Source.x; y = _Source.y; z = _Source.z; w = _w; }
 		public void					Set( Vector4D _Source )							{ x = _Source.x; y = _Source.y; z = _Source.z; w = _Source.w; }
 		public void					Set( Point4D _Source )							{ x = _Source.x; y = _Source.y; z = _Source.z; w = _Source.w; }
 		public void					Set( float _x, float _y, float _z, float _w )	{ x = _x; y = _y; z = _z; w = _w; }

@@ -9,7 +9,7 @@ using System.Text;
 //using SharpDX.WIC;
 using System.Windows.Media.Imaging;
 
-using WMath;
+//using WMath;
 
 // TODO !!! => Avoir la possibilité de créer une texture avec un seul channel du bitmap !? (filtrage)
 //			=> Mettre une option pour "premultiplied alpha"
@@ -64,6 +64,170 @@ namespace StandardizedDiffuseAlbedoMaps
 	// 
 	// 
 	// The complete article you should read to make up your mind about gamma : http://http.developer.nvidia.com/GPUGems3/gpugems3_ch24.html
+	#endregion
+
+	#region Small math helpers
+
+	[System.Diagnostics.DebuggerDisplay( "x={x} y={y}" )]
+	public struct	float2
+	{
+		public float	x, y;
+		public float2( float _x, float _y )		{ x = _x; y = _y; }
+	}
+	[System.Diagnostics.DebuggerDisplay( "x={x} y={y} z={z}" )]
+	public struct	float3
+	{
+		public float	x, y, z;
+		public float3( float _x, float _y, float _z )		{ x = _x; y = _y; z = _z; }
+		public static float3	operator*( float a, float3 b )		{ return new float3( a * b.x, a * b.y, a * b.z ); }
+	}
+	[System.Diagnostics.DebuggerDisplay( "x={x} y={y} z={z} w={w}" )]
+	public struct	float4
+	{
+		public float	x, y, z, w;
+
+		public float	this[int _coeff]
+		{
+			get
+			{
+				switch ( _coeff )
+				{
+					case 0: return x;
+					case 1: return y;
+					case 2: return z;
+					case 3: return w;
+				}
+				return float.NaN;
+			}
+			set
+			{
+				switch ( _coeff )
+				{
+					case 0: x = value; break;
+					case 1: y = value; break;
+					case 2: z = value; break;
+					case 3: w = value; break;
+				}
+			}
+		}
+
+		public float4( float _x, float _y, float _z, float _w )		{ x = _x; y = _y; z = _z; w = _w; }
+		public float4( float3 _xyz, float _w )						{ x = _xyz.x; y = _xyz.y; z = _xyz.z; w = _w; }
+
+		public static float4	operator*( float4 a, float4x4 b )
+		{
+			return new float4(
+				a.x * b.row0.x + a.y * b.row1.x + a.z * b.row2.x + a.w * b.row3.x,
+				a.x * b.row0.y + a.y * b.row1.y + a.z * b.row2.y + a.w * b.row3.y,
+				a.x * b.row0.z + a.y * b.row1.z + a.z * b.row2.z + a.w * b.row3.z,
+				a.x * b.row0.w + a.y * b.row1.w + a.z * b.row2.w + a.w * b.row3.w
+				);
+		}
+		public float			dot( float4 b ) { return x*b.x + y*b.y + z*b.z + w*b.w; }
+	}
+	public struct	float4x4
+	{
+		public float4	row0;
+		public float4	row1;
+		public float4	row2;
+		public float4	row3;
+
+		public float	this[int row, int column]
+		{
+			get
+			{
+				switch ( row )
+				{
+					case 0: return row0[column];
+					case 1: return row1[column];
+					case 2: return row2[column];
+					case 3: return row3[column];
+				}
+				return float.NaN;
+			}
+			set
+			{
+				switch ( row )
+				{
+					case 0: row0[column] = value; break;
+					case 1: row1[column] = value; break;
+					case 2: row2[column] = value; break;
+					case 3: row3[column] = value; break;
+				}
+			}
+		}
+
+		public float4x4( float[] _a )
+		{
+			row0 = new float4( _a[0], _a[1], _a[2], _a[3] );
+			row1 = new float4( _a[4], _a[5], _a[6], _a[7] );
+			row2 = new float4( _a[8], _a[9], _a[10], _a[11] );
+			row3 = new float4( _a[12], _a[13], _a[14], _a[15] );
+		}
+
+		public float4	column0	{ get { return new float4( row0.x, row1.x, row2.x, row3.x ); } }
+		public float4	column1	{ get { return new float4( row0.y, row1.y, row2.y, row3.y ); } }
+		public float4	column2	{ get { return new float4( row0.z, row1.z, row2.z, row3.z ); } }
+		public float4	column3	{ get { return new float4( row0.w, row1.w, row2.w, row3.w ); } }
+
+		private static int[]		ms_Index	= { 0, 1, 2, 3, 0, 1, 2 };				// This array gives the index of the current component
+		public float				CoFactor( int _dwRow, int _dwCol )
+		{
+			return	((	this[ms_Index[_dwRow+1], ms_Index[_dwCol+1]]*this[ms_Index[_dwRow+2], ms_Index[_dwCol+2]]*this[ms_Index[_dwRow+3], ms_Index[_dwCol+3]] +
+						this[ms_Index[_dwRow+1], ms_Index[_dwCol+2]]*this[ms_Index[_dwRow+2], ms_Index[_dwCol+3]]*this[ms_Index[_dwRow+3], ms_Index[_dwCol+1]] +
+						this[ms_Index[_dwRow+1], ms_Index[_dwCol+3]]*this[ms_Index[_dwRow+2], ms_Index[_dwCol+1]]*this[ms_Index[_dwRow+3], ms_Index[_dwCol+2]] )
+
+					-(	this[ms_Index[_dwRow+3], ms_Index[_dwCol+1]]*this[ms_Index[_dwRow+2], ms_Index[_dwCol+2]]*this[ms_Index[_dwRow+1], ms_Index[_dwCol+3]] +
+						this[ms_Index[_dwRow+3], ms_Index[_dwCol+2]]*this[ms_Index[_dwRow+2], ms_Index[_dwCol+3]]*this[ms_Index[_dwRow+1], ms_Index[_dwCol+1]] +
+						this[ms_Index[_dwRow+3], ms_Index[_dwCol+3]]*this[ms_Index[_dwRow+2], ms_Index[_dwCol+1]]*this[ms_Index[_dwRow+1], ms_Index[_dwCol+2]] ))
+					* (((_dwRow + _dwCol) & 1) == 1 ? -1.0f : +1.0f);
+		}
+		public float				Determinant()					{ return this[0, 0] * CoFactor( 0, 0 ) + this[0, 1] * CoFactor( 0, 1 ) + this[0, 2] * CoFactor( 0, 2 ) + this[0, 3] * CoFactor( 0, 3 ); }
+		public void	Invert()
+		{
+			float	fDet = Determinant();
+			if ( (float) System.Math.Abs(fDet) < float.Epsilon )
+				throw new Exception( "Matrix is not invertible!" );		// The matrix is not invertible! Singular case!
+
+			float	fIDet = 1.0f / fDet;
+
+			float4x4	Temp = new float4x4();
+			Temp[0, 0] = CoFactor( 0, 0 ) * fIDet;
+			Temp[1, 0] = CoFactor( 0, 1 ) * fIDet;
+			Temp[2, 0] = CoFactor( 0, 2 ) * fIDet;
+			Temp[3, 0] = CoFactor( 0, 3 ) * fIDet;
+			Temp[0, 1] = CoFactor( 1, 0 ) * fIDet;
+			Temp[1, 1] = CoFactor( 1, 1 ) * fIDet;
+			Temp[2, 1] = CoFactor( 1, 2 ) * fIDet;
+			Temp[3, 1] = CoFactor( 1, 3 ) * fIDet;
+			Temp[0, 2] = CoFactor( 2, 0 ) * fIDet;
+			Temp[1, 2] = CoFactor( 2, 1 ) * fIDet;
+			Temp[2, 2] = CoFactor( 2, 2 ) * fIDet;
+			Temp[3, 2] = CoFactor( 2, 3 ) * fIDet;
+			Temp[0, 3] = CoFactor( 3, 0 ) * fIDet;
+			Temp[1, 3] = CoFactor( 3, 1 ) * fIDet;
+			Temp[2, 3] = CoFactor( 3, 2 ) * fIDet;
+			Temp[3, 3] = CoFactor( 3, 3 ) * fIDet;
+
+			row0 = Temp.row0;
+			row1 = Temp.row1;
+			row2 = Temp.row2;
+			row3 = Temp.row3;
+		}
+
+		public static float4x4	Identity	{ get { return new float4x4( new float[] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 } ); } }
+
+		public static float4x4	operator*( float4x4 a, float4x4 b )
+		{
+			return new float4x4() {
+				row0 = new float4( a.row0.dot( b.column0 ), a.row0.dot( b.column1 ), a.row0.dot( b.column2 ), a.row0.dot( b.column3 ) ),
+				row1 = new float4( a.row1.dot( b.column0 ), a.row1.dot( b.column1 ), a.row1.dot( b.column2 ), a.row1.dot( b.column3 ) ),
+				row2 = new float4( a.row2.dot( b.column0 ), a.row2.dot( b.column1 ), a.row2.dot( b.column2 ), a.row2.dot( b.column3 ) ),
+				row3 = new float4( a.row3.dot( b.column0 ), a.row3.dot( b.column1 ), a.row3.dot( b.column2 ), a.row3.dot( b.column3 ) )
+			};
+		}
+	}
+
 	#endregion
 
 	/// <summary>
@@ -126,12 +290,12 @@ namespace StandardizedDiffuseAlbedoMaps
 		}
 
 		/// <summary>
-		/// A delegate used to process pixels (i.e. either build or modify the pixel)
+		/// A delegate used to process pixels (i.e. either generate a new pixel or alter the existing pixel)
 		/// </summary>
 		/// <param name="_X"></param>
 		/// <param name="_Y"></param>
 		/// <param name="_Color"></param>
-		public delegate void	ImageProcessDelegate( int _X, int _Y, ref Vector4D _Color );
+		public delegate void	ImageProcessDelegate( int _X, int _Y, ref float4 _Color );
 
 		/// <summary>
 		/// Defines a color converter that can handle transforms between XYZ and RGB
@@ -139,10 +303,10 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// </summary>
 		public interface IColorConverter
 		{
-			Vector4D	XYZ2RGB( Vector4D _XYZ );
-			Vector4D	RGB2XYZ( Vector4D _RGB );
-			void		XYZ2RGB( Vector4D[,] _XYZ );
-			void		RGB2XYZ( Vector4D[,] _RGB );
+			float4		XYZ2RGB( float4 _XYZ );
+			float4		RGB2XYZ( float4 _RGB );
+			void		XYZ2RGB( float4[,] _XYZ );
+			void		RGB2XYZ( float4[,] _RGB );
 		}
 
 		/// <summary>
@@ -156,11 +320,11 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			#region CONSTANTS
 
-			public static readonly Vector2D	ILLUMINANT_A	= new Vector2D( 0.44757f, 0.40745f );	// Incandescent, tungsten
-			public static readonly Vector2D	ILLUMINANT_D50	= new Vector2D( 0.34567f, 0.35850f );	// Daylight, Horizon
-			public static readonly Vector2D	ILLUMINANT_D55	= new Vector2D( 0.33242f, 0.34743f );	// Mid-Morning, Mid-Afternoon
-			public static readonly Vector2D	ILLUMINANT_D65	= new Vector2D( 0.31271f, 0.32902f );	// Daylight, Noon, Overcast (sRGB reference illuminant)
-			public static readonly Vector2D	ILLUMINANT_E	= new Vector2D( 1/3.0f, 1/3.0f );		// Reference
+			public static readonly float2	ILLUMINANT_A	= new float2( 0.44757f, 0.40745f );	// Incandescent, tungsten
+			public static readonly float2	ILLUMINANT_D50	= new float2( 0.34567f, 0.35850f );	// Daylight, Horizon
+			public static readonly float2	ILLUMINANT_D55	= new float2( 0.33242f, 0.34743f );	// Mid-Morning, Mid-Afternoon
+			public static readonly float2	ILLUMINANT_D65	= new float2( 0.31271f, 0.32902f );	// Daylight, Noon, Overcast (sRGB reference illuminant)
+			public static readonly float2	ILLUMINANT_E	= new float2( 1/3.0f, 1/3.0f );		// Reference
 
 			#endregion
 
@@ -168,8 +332,8 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			public enum STANDARD_PROFILE
 			{
-				UNKNOWN,		// No recognizable profile
-				INVALID,		// The profile is invalid (meaning one of the chromaticities was not initialized !)
+				INVALID,		// The profile is invalid (meaning one of the chromaticities was not initialized!)
+				CUSTOM,			// No recognizable standard profile (custom)
 				sRGB,			// sRGB with D65 illuminant
 				ADOBE_RGB_D50,	// Adobe RGB with D50 illuminant
 				ADOBE_RGB_D65,	// Adobe RGB with D65 illuminant
@@ -190,15 +354,25 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// <summary>
 			/// Describes the Red, Green, Blue and White Point chromaticities of a simple/standard color profile
 			/// </summary>
+			[System.Diagnostics.DebuggerDisplay( "R=({R.x},{R.y}) G=({G.x},{G.y}) B=({B.x},{B.y}) W=({W.x},{W.y}) Prof={RecognizedProfile}" )]
 			public struct	Chromaticities
 			{
-				public Vector2D		R, G, B, W;
+				public float2		R, G, B, W;
 
-				public static Chromaticities	sRGB			= new Chromaticities() { R = new Vector2D( 0.6400f, 0.3300f ), G = new Vector2D( 0.3000f, 0.6000f ), B = new Vector2D( 0.1500f, 0.0600f ), W = ILLUMINANT_D65 };
-				public static Chromaticities	AdobeRGB_D50	= new Chromaticities() { R = new Vector2D( 0.6400f, 0.3300f ), G = new Vector2D( 0.2100f, 0.7100f ), B = new Vector2D( 0.1500f, 0.0600f ), W = ILLUMINANT_D50 };
-				public static Chromaticities	AdobeRGB_D65	= new Chromaticities() { R = new Vector2D( 0.6400f, 0.3300f ), G = new Vector2D( 0.2100f, 0.7100f ), B = new Vector2D( 0.1500f, 0.0600f ), W = ILLUMINANT_D65 };
-				public static Chromaticities	ProPhoto		= new Chromaticities() { R = new Vector2D( 0.7347f, 0.2653f ), G = new Vector2D( 0.1596f, 0.8404f ), B = new Vector2D( 0.0366f, 0.0001f ), W = ILLUMINANT_D50 };
-				public static Chromaticities	Radiance		= new Chromaticities() { R = new Vector2D( 0.6400f, 0.3300f ), G = new Vector2D( 0.2900f, 0.6000f ), B = new Vector2D( 0.1500f, 0.0600f ), W = ILLUMINANT_E };
+				public Chromaticities( float xr, float yr, float xg, float yg, float xb, float yb, float xw, float yw )
+				{
+					R = new float2( xr, yr );
+					G = new float2( xg, yg );
+					B = new float2( xb, yb );
+					W = new float2( xw, yw );
+				}
+
+				public static Chromaticities	Empty			{ get { return new Chromaticities() { R = new float2(), G = new float2(), B = new float2(), W = new float2() }; } }
+				public static Chromaticities	sRGB			{ get { return new Chromaticities() { R = new float2( 0.6400f, 0.3300f ), G = new float2( 0.3000f, 0.6000f ), B = new float2( 0.1500f, 0.0600f ), W = ILLUMINANT_D65 }; } }
+				public static Chromaticities	AdobeRGB_D50	{ get { return new Chromaticities() { R = new float2( 0.6400f, 0.3300f ), G = new float2( 0.2100f, 0.7100f ), B = new float2( 0.1500f, 0.0600f ), W = ILLUMINANT_D50 }; } }
+				public static Chromaticities	AdobeRGB_D65	{ get { return new Chromaticities() { R = new float2( 0.6400f, 0.3300f ), G = new float2( 0.2100f, 0.7100f ), B = new float2( 0.1500f, 0.0600f ), W = ILLUMINANT_D65 }; } }
+				public static Chromaticities	ProPhoto		{ get { return new Chromaticities() { R = new float2( 0.7347f, 0.2653f ), G = new float2( 0.1596f, 0.8404f ), B = new float2( 0.0366f, 0.0001f ), W = ILLUMINANT_D50 }; } }
+				public static Chromaticities	Radiance		{ get { return new Chromaticities() { R = new float2( 0.6400f, 0.3300f ), G = new float2( 0.2900f, 0.6000f ), B = new float2( 0.1500f, 0.0600f ), W = ILLUMINANT_E }; } }
 
 				/// <summary>
 				/// Attempts to recognize the current chromaticities as a standard profile
@@ -220,7 +394,7 @@ namespace StandardizedDiffuseAlbedoMaps
 							return STANDARD_PROFILE.RADIANCE;
 
 						// Ensure the profile is valid
-						return R.X != 0.0f && R.Y != 0.0f && G.X != 0.0f && G.Y != 0.0f && B.X != 0.0f && B.Y != 0.0f && W.X != 0.0f && W.Y != 0.0f ? STANDARD_PROFILE.UNKNOWN : STANDARD_PROFILE.INVALID;
+						return R.x != 0.0f && R.y != 0.0f && G.x != 0.0f && G.y != 0.0f && B.x != 0.0f && B.y != 0.0f && W.x != 0.0f && W.y != 0.0f ? STANDARD_PROFILE.CUSTOM : STANDARD_PROFILE.INVALID;
 					}
 				}
 
@@ -229,9 +403,9 @@ namespace StandardizedDiffuseAlbedoMaps
 					return Equals( R, other.R ) && Equals( G, other.G ) && Equals( B, other.B ) && Equals( W, other.W );
 				}
 				private const float	EPSILON = 1e-3f;
-				private bool	Equals( Vector2D a, Vector2D b )
+				private bool	Equals( float2 a, float2 b )
 				{
-					return Math.Abs( a.X - b.X ) < EPSILON && Math.Abs( a.Y - b.Y ) < EPSILON;
+					return Math.Abs( a.x - b.x ) < EPSILON && Math.Abs( a.y - b.y ) < EPSILON;
 				}
 			}
 
@@ -241,14 +415,14 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				#region CONSTANTS
 
-				public static readonly Matrix4x4	MAT_RGB2XYZ = new Matrix4x4( new float[] {
+				public static readonly float4x4	MAT_RGB2XYZ = new float4x4( new float[] {
 						0.4124f, 0.2126f, 0.0193f, 0.0f,
 						0.3576f, 0.7152f, 0.1192f, 0.0f,
 						0.1805f, 0.0722f, 0.9505f, 0.0f,
 						0.0000f, 0.0000f, 0.0000f, 1.0f		// Alpha stays the same
 					} );
 
-				public static readonly Matrix4x4	MAT_XYZ2RGB = new Matrix4x4( new float[] {
+				public static readonly float4x4	MAT_XYZ2RGB = new float4x4( new float[] {
 						 3.2406f, -0.9689f,  0.0557f, 0.0f,
 						-1.5372f,  1.8758f, -0.2040f, 0.0f,
 						-0.4986f,  0.0415f,  1.0570f, 0.0f,
@@ -259,62 +433,62 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				#region IColorConverter Members
 
-				public Vector4D XYZ2RGB( Vector4D _XYZ )
+				public float4 XYZ2RGB( float4 _XYZ )
 				{
 					// Transform into RGB
 					_XYZ = _XYZ * MAT_XYZ2RGB;
 
 					// Gamma correct
-					_XYZ.X = _XYZ.X > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.X, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.X;
-					_XYZ.Y = _XYZ.Y > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.Y, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.Y;
-					_XYZ.Z = _XYZ.Z > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.Z, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.Z;
+					_XYZ.x = _XYZ.x > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.x, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.x;
+					_XYZ.y = _XYZ.y > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.y, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.y;
+					_XYZ.z = _XYZ.z > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.z, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.z;
 
 					return _XYZ;
 				}
 
-				public Vector4D RGB2XYZ( Vector4D _RGB )
+				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Gamma un-correct
-					_RGB.X = _RGB.X < 0.04045f ? _RGB.X / 12.92f : (float) Math.Pow( (_RGB.X + 0.055f) / 1.055f, 2.4f );
-					_RGB.Y = _RGB.Y < 0.04045f ? _RGB.Y / 12.92f : (float) Math.Pow( (_RGB.Y + 0.055f) / 1.055f, 2.4f );
-					_RGB.Z = _RGB.Z < 0.04045f ? _RGB.Z / 12.92f : (float) Math.Pow( (_RGB.Z + 0.055f) / 1.055f, 2.4f );
+					_RGB.x = _RGB.x < 0.04045f ? _RGB.x / 12.92f : (float) Math.Pow( (_RGB.x + 0.055f) / 1.055f, 2.4f );
+					_RGB.y = _RGB.y < 0.04045f ? _RGB.y / 12.92f : (float) Math.Pow( (_RGB.y + 0.055f) / 1.055f, 2.4f );
+					_RGB.z = _RGB.z < 0.04045f ? _RGB.z / 12.92f : (float) Math.Pow( (_RGB.z + 0.055f) / 1.055f, 2.4f );
 
 					// Transform into XYZ
 					return _RGB * MAT_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( Vector4D[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							Vector4D	XYZ = _XYZ[X,Y];
+							float4	XYZ = _XYZ[X,Y];
 
 							// Transform into RGB
 							XYZ =  XYZ * MAT_XYZ2RGB;
 
 							// Gamma correct
-							_XYZ[X,Y].X = XYZ.X > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.X, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.X;
-							_XYZ[X,Y].Y = XYZ.Y > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.Y, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.Y;
-							_XYZ[X,Y].Z = XYZ.Z > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.Z, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.Z;
+							_XYZ[X,Y].x = XYZ.x > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.x, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.x;
+							_XYZ[X,Y].y = XYZ.y > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.y, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.y;
+							_XYZ[X,Y].z = XYZ.z > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.z, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.z;
 						}
 				}
 
-				public void RGB2XYZ( Vector4D[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							Vector4D	RGB = _RGB[X,Y];
+							float4	RGB = _RGB[X,Y];
 
 							// Gamma un-correct
-							RGB.X = RGB.X < 0.04045f ? RGB.X / 12.92f : (float) Math.Pow( (RGB.X + 0.055f) / 1.055f, 2.4f );
-							RGB.Y = RGB.Y < 0.04045f ? RGB.Y / 12.92f : (float) Math.Pow( (RGB.Y + 0.055f) / 1.055f, 2.4f );
-							RGB.Z = RGB.Z < 0.04045f ? RGB.Z / 12.92f : (float) Math.Pow( (RGB.Z + 0.055f) / 1.055f, 2.4f );
+							RGB.x = RGB.x < 0.04045f ? RGB.x / 12.92f : (float) Math.Pow( (RGB.x + 0.055f) / 1.055f, 2.4f );
+							RGB.y = RGB.y < 0.04045f ? RGB.y / 12.92f : (float) Math.Pow( (RGB.y + 0.055f) / 1.055f, 2.4f );
+							RGB.z = RGB.z < 0.04045f ? RGB.z / 12.92f : (float) Math.Pow( (RGB.z + 0.055f) / 1.055f, 2.4f );
 
 							// Transform into XYZ
 							_RGB[X,Y] =  RGB *  MAT_RGB2XYZ;
@@ -328,14 +502,14 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				#region CONSTANTS
 
-				public static readonly Matrix4x4	MAT_RGB2XYZ = new Matrix4x4( new float[] {
+				public static readonly float4x4	MAT_RGB2XYZ = new float4x4( new float[] {
 						0.60974f, 0.31111f, 0.01947f, 0.0f,
 						0.20528f, 0.62567f, 0.06087f, 0.0f,
 						0.14919f, 0.06322f, 0.74457f, 0.0f,
 						0.00000f, 0.00000f, 0.00000f, 1.0f		// Alpha stays the same
 					} );
 
-				public static readonly Matrix4x4	MAT_XYZ2RGB = new Matrix4x4( new float[] {
+				public static readonly float4x4	MAT_XYZ2RGB = new float4x4( new float[] {
 						 1.96253f, -0.97876f,  0.02869f, 0.0f,
 						-0.61068f,  1.91615f, -0.14067f, 0.0f,
 						-0.34137f,  0.03342f,  1.34926f, 0.0f,
@@ -346,62 +520,62 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				#region IColorConverter Members
 
-				public Vector4D XYZ2RGB( Vector4D _XYZ )
+				public float4 XYZ2RGB( float4 _XYZ )
 				{
 					// Transform into RGB
 					_XYZ = _XYZ * MAT_XYZ2RGB;
 
 					// Gamma correct
-					_XYZ.X = (float) Math.Pow( _XYZ.X, 1.0f / 2.19921875f );
-					_XYZ.Y = (float) Math.Pow( _XYZ.Y, 1.0f / 2.19921875f );
-					_XYZ.Z = (float) Math.Pow( _XYZ.Z, 1.0f / 2.19921875f );
+					_XYZ.x = (float) Math.Pow( _XYZ.x, 1.0f / 2.19921875f );
+					_XYZ.y = (float) Math.Pow( _XYZ.y, 1.0f / 2.19921875f );
+					_XYZ.z = (float) Math.Pow( _XYZ.z, 1.0f / 2.19921875f );
 
 					return _XYZ;
 				}
 
-				public Vector4D RGB2XYZ( Vector4D _RGB )
+				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Gamma un-correct
-					_RGB.X = (float) Math.Pow( _RGB.X, 2.19921875f );
-					_RGB.Y = (float) Math.Pow( _RGB.Y, 2.19921875f );
-					_RGB.Z = (float) Math.Pow( _RGB.Z, 2.19921875f );
+					_RGB.x = (float) Math.Pow( _RGB.x, 2.19921875f );
+					_RGB.y = (float) Math.Pow( _RGB.y, 2.19921875f );
+					_RGB.z = (float) Math.Pow( _RGB.z, 2.19921875f );
 
 					// Transform into XYZ
 					return _RGB * MAT_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( Vector4D[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							Vector4D	XYZ = _XYZ[X,Y];
+							float4	XYZ = _XYZ[X,Y];
 
 							// Transform into RGB
 							XYZ = XYZ * MAT_XYZ2RGB;
 
 							// Gamma correct
-							_XYZ[X,Y].X = (float) Math.Pow( XYZ.X, 1.0f / 2.19921875f );
-							_XYZ[X,Y].Y = (float) Math.Pow( XYZ.Y, 1.0f / 2.19921875f );
-							_XYZ[X,Y].Z = (float) Math.Pow( XYZ.Z, 1.0f / 2.19921875f );
+							_XYZ[X,Y].x = (float) Math.Pow( XYZ.x, 1.0f / 2.19921875f );
+							_XYZ[X,Y].y = (float) Math.Pow( XYZ.y, 1.0f / 2.19921875f );
+							_XYZ[X,Y].z = (float) Math.Pow( XYZ.z, 1.0f / 2.19921875f );
 						}
 				}
 
-				public void RGB2XYZ( Vector4D[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							Vector4D	RGB = _RGB[X,Y];
+							float4	RGB = _RGB[X,Y];
 
 							// Gamma un-correct
-							RGB.X = (float) Math.Pow( RGB.X, 2.19921875f );
-							RGB.Y = (float) Math.Pow( RGB.Y, 2.19921875f );
-							RGB.Z = (float) Math.Pow( RGB.Z, 2.19921875f );
+							RGB.x = (float) Math.Pow( RGB.x, 2.19921875f );
+							RGB.y = (float) Math.Pow( RGB.y, 2.19921875f );
+							RGB.z = (float) Math.Pow( RGB.z, 2.19921875f );
 
 							// Transform into XYZ
 							_RGB[X,Y] = RGB * MAT_RGB2XYZ;
@@ -415,14 +589,14 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				#region CONSTANTS
 
-				public static readonly Matrix4x4	MAT_RGB2XYZ = new Matrix4x4( new float[] {
+				public static readonly float4x4	MAT_RGB2XYZ = new float4x4( new float[] {
 						0.57667f, 0.29734f, 0.02703f, 0.0f,
 						0.18556f, 0.62736f, 0.07069f, 0.0f,
 						0.18823f, 0.07529f, 0.99134f, 0.0f,
 						0.00000f, 0.00000f, 0.00000f, 1.0f		// Alpha stays the same
 					} );
 
-				public static readonly Matrix4x4	MAT_XYZ2RGB = new Matrix4x4( new float[] {
+				public static readonly float4x4	MAT_XYZ2RGB = new float4x4( new float[] {
 						 2.04159f, -0.96924f,  0.01344f, 0.0f,
 						-0.56501f,  1.87597f, -0.11836f, 0.0f,
 						-0.34473f,  0.04156f,  1.01517f, 0.0f,
@@ -433,62 +607,62 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				#region IColorConverter Members
 
-				public Vector4D XYZ2RGB( Vector4D _XYZ )
+				public float4 XYZ2RGB( float4 _XYZ )
 				{
 					// Transform into RGB
 					_XYZ = _XYZ * MAT_XYZ2RGB;
 
 					// Gamma correct
-					_XYZ.X = (float) Math.Pow( _XYZ.X, 1.0f / 2.19921875f );
-					_XYZ.Y = (float) Math.Pow( _XYZ.Y, 1.0f / 2.19921875f );
-					_XYZ.Z = (float) Math.Pow( _XYZ.Z, 1.0f / 2.19921875f );
+					_XYZ.x = (float) Math.Pow( _XYZ.x, 1.0f / 2.19921875f );
+					_XYZ.y = (float) Math.Pow( _XYZ.y, 1.0f / 2.19921875f );
+					_XYZ.z = (float) Math.Pow( _XYZ.z, 1.0f / 2.19921875f );
 
 					return _XYZ;
 				}
 
-				public Vector4D RGB2XYZ( Vector4D _RGB )
+				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Gamma un-correct
-					_RGB.X = (float) Math.Pow( _RGB.X, 2.19921875f );
-					_RGB.Y = (float) Math.Pow( _RGB.Y, 2.19921875f );
-					_RGB.Z = (float) Math.Pow( _RGB.Z, 2.19921875f );
+					_RGB.x = (float) Math.Pow( _RGB.x, 2.19921875f );
+					_RGB.y = (float) Math.Pow( _RGB.y, 2.19921875f );
+					_RGB.z = (float) Math.Pow( _RGB.z, 2.19921875f );
 
 					// Transform into XYZ
 					return _RGB * MAT_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( Vector4D[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							Vector4D	XYZ = _XYZ[X,Y];
+							float4	XYZ = _XYZ[X,Y];
 
 							// Transform into RGB
 							XYZ = XYZ * MAT_XYZ2RGB;
 
 							// Gamma correct
-							_XYZ[X,Y].X = (float) Math.Pow( XYZ.X, 1.0f / 2.19921875f );
-							_XYZ[X,Y].Y = (float) Math.Pow( XYZ.Y, 1.0f / 2.19921875f );
-							_XYZ[X,Y].Z = (float) Math.Pow( XYZ.Z, 1.0f / 2.19921875f );
+							_XYZ[X,Y].x = (float) Math.Pow( XYZ.x, 1.0f / 2.19921875f );
+							_XYZ[X,Y].y = (float) Math.Pow( XYZ.y, 1.0f / 2.19921875f );
+							_XYZ[X,Y].z = (float) Math.Pow( XYZ.z, 1.0f / 2.19921875f );
 						}
 				}
 
-				public void RGB2XYZ( Vector4D[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							Vector4D	RGB = _RGB[X,Y];
+							float4	RGB = _RGB[X,Y];
 
 							// Gamma un-correct
-							RGB.X = (float) Math.Pow( RGB.X, 2.19921875f );
-							RGB.Y = (float) Math.Pow( RGB.Y, 2.19921875f );
-							RGB.Z = (float) Math.Pow( RGB.Z, 2.19921875f );
+							RGB.x = (float) Math.Pow( RGB.x, 2.19921875f );
+							RGB.y = (float) Math.Pow( RGB.y, 2.19921875f );
+							RGB.z = (float) Math.Pow( RGB.z, 2.19921875f );
 
 							// Transform into XYZ
 							_RGB[X,Y] = RGB * MAT_RGB2XYZ;
@@ -502,14 +676,14 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				#region CONSTANTS
 
-				public static readonly Matrix4x4	MAT_RGB2XYZ = new Matrix4x4( new float[] {
+				public static readonly float4x4	MAT_RGB2XYZ = new float4x4( new float[] {
 						0.7977f, 0.2880f, 0.0000f, 0.0f,
 						0.1352f, 0.7119f, 0.0000f, 0.0f,
 						0.0313f, 0.0001f, 0.8249f, 0.0f,
 						0.0000f, 0.0000f, 0.0000f, 1.0f		// Alpha stays the same
 					} );
 
-				public static readonly Matrix4x4	MAT_XYZ2RGB = new Matrix4x4( new float[] {
+				public static readonly float4x4	MAT_XYZ2RGB = new float4x4( new float[] {
 						 1.3460f, -0.5446f,  0.0000f, 0.0f,
 						-0.2556f,  1.5082f,  0.0000f, 0.0f,
 						-0.0511f,  0.0205f,  1.2123f, 0.0f,
@@ -520,62 +694,62 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				#region IColorConverter Members
 
-				public Vector4D XYZ2RGB( Vector4D _XYZ )
+				public float4 XYZ2RGB( float4 _XYZ )
 				{
 					// Transform into RGB
 					_XYZ = _XYZ * MAT_XYZ2RGB;
 
 					// Gamma correct
-					_XYZ.X = _XYZ.X > 0.001953f ? (float) Math.Pow( _XYZ.X, 1.0f / 1.8f ) : 16.0f * _XYZ.X;
-					_XYZ.Y = _XYZ.Y > 0.001953f ? (float) Math.Pow( _XYZ.Y, 1.0f / 1.8f ) : 16.0f * _XYZ.Y;
-					_XYZ.Z = _XYZ.Z > 0.001953f ? (float) Math.Pow( _XYZ.Z, 1.0f / 1.8f ) : 16.0f * _XYZ.Z;
+					_XYZ.x = _XYZ.x > 0.001953f ? (float) Math.Pow( _XYZ.x, 1.0f / 1.8f ) : 16.0f * _XYZ.x;
+					_XYZ.y = _XYZ.y > 0.001953f ? (float) Math.Pow( _XYZ.y, 1.0f / 1.8f ) : 16.0f * _XYZ.y;
+					_XYZ.z = _XYZ.z > 0.001953f ? (float) Math.Pow( _XYZ.z, 1.0f / 1.8f ) : 16.0f * _XYZ.z;
 
 					return _XYZ;
 				}
 
-				public Vector4D RGB2XYZ( Vector4D _RGB )
+				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Gamma un-correct
-					_RGB.X = _RGB.X > 0.031248f ? (float) Math.Pow( _RGB.X, 1.8f ) : _RGB.X / 16.0f;
-					_RGB.Y = _RGB.Y > 0.031248f ? (float) Math.Pow( _RGB.Y, 1.8f ) : _RGB.Y / 16.0f;
-					_RGB.Z = _RGB.Z > 0.031248f ? (float) Math.Pow( _RGB.Z, 1.8f ) : _RGB.Z / 16.0f;
+					_RGB.x = _RGB.x > 0.031248f ? (float) Math.Pow( _RGB.x, 1.8f ) : _RGB.x / 16.0f;
+					_RGB.y = _RGB.y > 0.031248f ? (float) Math.Pow( _RGB.y, 1.8f ) : _RGB.y / 16.0f;
+					_RGB.z = _RGB.z > 0.031248f ? (float) Math.Pow( _RGB.z, 1.8f ) : _RGB.z / 16.0f;
 
 					// Transform into XYZ
 					return _RGB * MAT_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( Vector4D[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							Vector4D	XYZ = _XYZ[X,Y];
+							float4	XYZ = _XYZ[X,Y];
 
 							// Transform into RGB
 							XYZ = XYZ * MAT_XYZ2RGB;
 
 							// Gamma correct
-							_XYZ[X,Y].X = XYZ.X > 0.001953f ? (float) Math.Pow( XYZ.X, 1.0f / 1.8f ) : 16.0f * XYZ.X;
-							_XYZ[X,Y].Y = XYZ.Y > 0.001953f ? (float) Math.Pow( XYZ.Y, 1.0f / 1.8f ) : 16.0f * XYZ.Y;
-							_XYZ[X,Y].Z = XYZ.Z > 0.001953f ? (float) Math.Pow( XYZ.Z, 1.0f / 1.8f ) : 16.0f * XYZ.Z;
+							_XYZ[X,Y].x = XYZ.x > 0.001953f ? (float) Math.Pow( XYZ.x, 1.0f / 1.8f ) : 16.0f * XYZ.x;
+							_XYZ[X,Y].y = XYZ.y > 0.001953f ? (float) Math.Pow( XYZ.y, 1.0f / 1.8f ) : 16.0f * XYZ.y;
+							_XYZ[X,Y].z = XYZ.z > 0.001953f ? (float) Math.Pow( XYZ.z, 1.0f / 1.8f ) : 16.0f * XYZ.z;
 						}
 				}
 
-				public void RGB2XYZ( Vector4D[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							Vector4D	RGB = _RGB[X,Y];
+							float4	RGB = _RGB[X,Y];
 
 							// Gamma un-correct
-							RGB.X = RGB.X > 0.031248f ? (float) Math.Pow( RGB.X, 1.8f ) : RGB.X / 16.0f;
-							RGB.Y = RGB.Y > 0.031248f ? (float) Math.Pow( RGB.Y, 1.8f ) : RGB.Y / 16.0f;
-							RGB.Z = RGB.Z > 0.031248f ? (float) Math.Pow( RGB.Z, 1.8f ) : RGB.Z / 16.0f;
+							RGB.x = RGB.x > 0.031248f ? (float) Math.Pow( RGB.x, 1.8f ) : RGB.x / 16.0f;
+							RGB.y = RGB.y > 0.031248f ? (float) Math.Pow( RGB.y, 1.8f ) : RGB.y / 16.0f;
+							RGB.z = RGB.z > 0.031248f ? (float) Math.Pow( RGB.z, 1.8f ) : RGB.z / 16.0f;
 
 							// Transform into XYZ
 							_RGB[X,Y] = RGB * MAT_RGB2XYZ;
@@ -589,14 +763,14 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				#region CONSTANTS
 
-				public static readonly Matrix4x4	MAT_RGB2XYZ = new Matrix4x4( new float[] {
+				public static readonly float4x4	MAT_RGB2XYZ = new float4x4( new float[] {
 						0.5141447f, 0.2651059f, 0.0241005f, 0.0f,
 						0.3238845f, 0.6701059f, 0.1228527f, 0.0f,
 						0.1619709f, 0.0647883f, 0.8530467f, 0.0f,
 						0.0000000f, 0.0000000f, 0.0000000f, 1.0f		// Alpha stays the same
 					} );
 
-				public static readonly Matrix4x4	MAT_XYZ2RGB = new Matrix4x4( new float[] {
+				public static readonly float4x4	MAT_XYZ2RGB = new float4x4( new float[] {
 						 2.5653124f, -1.02210832f,  0.07472437f, 0.0f,
 						-1.1668493f,  1.97828662f, -0.25193953f, 0.0f,
 						-0.3984632f,  0.04382159f,  1.17721522f, 0.0f,
@@ -607,19 +781,19 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				#region IColorConverter Members
 
-				public Vector4D XYZ2RGB( Vector4D _XYZ )
+				public float4 XYZ2RGB( float4 _XYZ )
 				{
 					// Transform into RGB
 					return _XYZ * MAT_XYZ2RGB;
 				}
 
-				public Vector4D RGB2XYZ( Vector4D _RGB )
+				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Transform into XYZ
 					return _RGB * MAT_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( Vector4D[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
@@ -628,7 +802,7 @@ namespace StandardizedDiffuseAlbedoMaps
 							_XYZ[X,Y] = _XYZ[X,Y] * MAT_XYZ2RGB;
 				}
 
-				public void RGB2XYZ( Vector4D[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
@@ -642,10 +816,10 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			protected class		InternalColorConverter_Generic_NoGamma : IColorConverter
 			{
-				protected Matrix4x4	m_RGB2XYZ;
-				protected Matrix4x4	m_XYZ2RGB;
+				protected float4x4	m_RGB2XYZ;
+				protected float4x4	m_XYZ2RGB;
 
-				public InternalColorConverter_Generic_NoGamma( Matrix4x4 _RGB2XYZ, Matrix4x4 _XYZ2RGB )
+				public InternalColorConverter_Generic_NoGamma( float4x4 _RGB2XYZ, float4x4 _XYZ2RGB )
 				{
 					m_RGB2XYZ = _RGB2XYZ;
 					m_XYZ2RGB = _XYZ2RGB;
@@ -653,19 +827,19 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				#region IColorConverter Members
 
-				public Vector4D XYZ2RGB( Vector4D _XYZ )
+				public float4 XYZ2RGB( float4 _XYZ )
 				{
 					// Transform into RGB
 					return _XYZ * m_XYZ2RGB;
 				}
 
-				public Vector4D RGB2XYZ( Vector4D _RGB )
+				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Transform into XYZ
 					return _RGB * m_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( Vector4D[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
@@ -674,7 +848,7 @@ namespace StandardizedDiffuseAlbedoMaps
 							_XYZ[X,Y] = _XYZ[X,Y] * m_XYZ2RGB;
 				}
 
-				public void RGB2XYZ( Vector4D[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
@@ -688,12 +862,12 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			protected class		InternalColorConverter_Generic_StandardGamma : IColorConverter
 			{
-				protected Matrix4x4	m_RGB2XYZ;
-				protected Matrix4x4	m_XYZ2RGB;
+				protected float4x4	m_RGB2XYZ;
+				protected float4x4	m_XYZ2RGB;
 				protected float		m_Gamma = 1.0f;
 				protected float		m_InvGamma = 1.0f;
 
-				public InternalColorConverter_Generic_StandardGamma( Matrix4x4 _RGB2XYZ, Matrix4x4 _XYZ2RGB, float _Gamma )
+				public InternalColorConverter_Generic_StandardGamma( float4x4 _RGB2XYZ, float4x4 _XYZ2RGB, float _Gamma )
 				{
 					m_RGB2XYZ = _RGB2XYZ;
 					m_XYZ2RGB = _XYZ2RGB;
@@ -703,62 +877,62 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				#region IColorConverter Members
 
-				public Vector4D XYZ2RGB( Vector4D _XYZ )
+				public float4 XYZ2RGB( float4 _XYZ )
 				{
 					// Transform into RGB
 					_XYZ = _XYZ * m_XYZ2RGB;
 
 					// Gamma correct
-					_XYZ.X = (float) Math.Pow( _XYZ.X, m_InvGamma );
-					_XYZ.Y = (float) Math.Pow( _XYZ.Y, m_InvGamma );
-					_XYZ.Z = (float) Math.Pow( _XYZ.Z, m_InvGamma );
+					_XYZ.x = (float) Math.Pow( _XYZ.x, m_InvGamma );
+					_XYZ.y = (float) Math.Pow( _XYZ.y, m_InvGamma );
+					_XYZ.z = (float) Math.Pow( _XYZ.z, m_InvGamma );
 
 					return _XYZ;
 				}
 
-				public Vector4D RGB2XYZ( Vector4D _RGB )
+				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Gamma un-correct
-					_RGB.X = (float) Math.Pow( _RGB.X, m_Gamma );
-					_RGB.Y = (float) Math.Pow( _RGB.Y, m_Gamma );
-					_RGB.Z = (float) Math.Pow( _RGB.Z, m_Gamma );
+					_RGB.x = (float) Math.Pow( _RGB.x, m_Gamma );
+					_RGB.y = (float) Math.Pow( _RGB.y, m_Gamma );
+					_RGB.z = (float) Math.Pow( _RGB.z, m_Gamma );
 
 					// Transform into XYZ
 					return _RGB * m_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( Vector4D[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							Vector4D	XYZ = _XYZ[X,Y];
+							float4	XYZ = _XYZ[X,Y];
 
 							// Transform into RGB
 							XYZ = XYZ * m_XYZ2RGB;
 
 							// Gamma correct
-							_XYZ[X,Y].X = (float) Math.Pow( XYZ.X, m_InvGamma );
-							_XYZ[X,Y].Y = (float) Math.Pow( XYZ.Y, m_InvGamma );
-							_XYZ[X,Y].Z = (float) Math.Pow( XYZ.Z, m_InvGamma );
+							_XYZ[X,Y].x = (float) Math.Pow( XYZ.x, m_InvGamma );
+							_XYZ[X,Y].y = (float) Math.Pow( XYZ.y, m_InvGamma );
+							_XYZ[X,Y].z = (float) Math.Pow( XYZ.z, m_InvGamma );
 						}
 				}
 
-				public void RGB2XYZ( Vector4D[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							Vector4D	RGB = _RGB[X,Y];
+							float4	RGB = _RGB[X,Y];
 
 							// Gamma un-correct
-							RGB.X = (float) Math.Pow( RGB.X, m_Gamma );
-							RGB.Y = (float) Math.Pow( RGB.Y, m_Gamma );
-							RGB.Z = (float) Math.Pow( RGB.Z, m_Gamma );
+							RGB.x = (float) Math.Pow( RGB.x, m_Gamma );
+							RGB.y = (float) Math.Pow( RGB.y, m_Gamma );
+							RGB.z = (float) Math.Pow( RGB.z, m_Gamma );
 
 							// Transform into XYZ
 							_RGB[X,Y] = RGB * m_RGB2XYZ;
@@ -770,10 +944,10 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			protected class		InternalColorConverter_Generic_sRGBGamma : IColorConverter
 			{
-				protected Matrix4x4	m_RGB2XYZ;
-				protected Matrix4x4	m_XYZ2RGB;
+				protected float4x4	m_RGB2XYZ;
+				protected float4x4	m_XYZ2RGB;
 
-				public InternalColorConverter_Generic_sRGBGamma( Matrix4x4 _RGB2XYZ, Matrix4x4 _XYZ2RGB )
+				public InternalColorConverter_Generic_sRGBGamma( float4x4 _RGB2XYZ, float4x4 _XYZ2RGB )
 				{
 					m_RGB2XYZ = _RGB2XYZ;
 					m_XYZ2RGB = _XYZ2RGB;
@@ -781,62 +955,62 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				#region IColorConverter Members
 
-				public Vector4D XYZ2RGB( Vector4D _XYZ )
+				public float4 XYZ2RGB( float4 _XYZ )
 				{
 					// Transform into RGB
 					_XYZ = _XYZ * m_XYZ2RGB;
 
 					// Gamma correct
-					_XYZ.X = _XYZ.X > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.X, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.X;
-					_XYZ.Y = _XYZ.Y > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.Y, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.Y;
-					_XYZ.Z = _XYZ.Z > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.Z, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.Z;
+					_XYZ.x = _XYZ.x > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.x, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.x;
+					_XYZ.y = _XYZ.y > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.y, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.y;
+					_XYZ.z = _XYZ.z > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.z, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.z;
 
 					return _XYZ;
 				}
 
-				public Vector4D RGB2XYZ( Vector4D _RGB )
+				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Gamma un-correct
-					_RGB.X = _RGB.X < 0.04045f ? _RGB.X / 12.92f : (float) Math.Pow( (_RGB.X + 0.055f) / 1.055f, 2.4f );
-					_RGB.Y = _RGB.Y < 0.04045f ? _RGB.Y / 12.92f : (float) Math.Pow( (_RGB.Y + 0.055f) / 1.055f, 2.4f );
-					_RGB.Z = _RGB.Z < 0.04045f ? _RGB.Z / 12.92f : (float) Math.Pow( (_RGB.Z + 0.055f) / 1.055f, 2.4f );
+					_RGB.x = _RGB.x < 0.04045f ? _RGB.x / 12.92f : (float) Math.Pow( (_RGB.x + 0.055f) / 1.055f, 2.4f );
+					_RGB.y = _RGB.y < 0.04045f ? _RGB.y / 12.92f : (float) Math.Pow( (_RGB.y + 0.055f) / 1.055f, 2.4f );
+					_RGB.z = _RGB.z < 0.04045f ? _RGB.z / 12.92f : (float) Math.Pow( (_RGB.z + 0.055f) / 1.055f, 2.4f );
 
 					// Transform into XYZ
 					return _RGB * m_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( Vector4D[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							Vector4D	XYZ = _XYZ[X,Y];
+							float4	XYZ = _XYZ[X,Y];
 
 							// Transform into RGB
 							XYZ = XYZ * m_XYZ2RGB;
 
 							// Gamma correct
-							_XYZ[X,Y].X = XYZ.X > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.X, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.X;
-							_XYZ[X,Y].Y = XYZ.Y > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.Y, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.Y;
-							_XYZ[X,Y].Z = XYZ.Z > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.Z, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.Z;
+							_XYZ[X,Y].x = XYZ.x > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.x, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.x;
+							_XYZ[X,Y].y = XYZ.y > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.y, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.y;
+							_XYZ[X,Y].z = XYZ.z > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.z, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.z;
 						}
 				}
 
-				public void RGB2XYZ( Vector4D[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							Vector4D	RGB = _RGB[X,Y];
+							float4	RGB = _RGB[X,Y];
 
 							// Gamma un-correct
-							RGB.X = RGB.X < 0.04045f ? RGB.X / 12.92f : (float) Math.Pow( (RGB.X + 0.055f) / 1.055f, 2.4f );
-							RGB.Y = RGB.Y < 0.04045f ? RGB.Y / 12.92f : (float) Math.Pow( (RGB.Y + 0.055f) / 1.055f, 2.4f );
-							RGB.Z = RGB.Z < 0.04045f ? RGB.Z / 12.92f : (float) Math.Pow( (RGB.Z + 0.055f) / 1.055f, 2.4f );
+							RGB.x = RGB.x < 0.04045f ? RGB.x / 12.92f : (float) Math.Pow( (RGB.x + 0.055f) / 1.055f, 2.4f );
+							RGB.y = RGB.y < 0.04045f ? RGB.y / 12.92f : (float) Math.Pow( (RGB.y + 0.055f) / 1.055f, 2.4f );
+							RGB.z = RGB.z < 0.04045f ? RGB.z / 12.92f : (float) Math.Pow( (RGB.z + 0.055f) / 1.055f, 2.4f );
 
 							// Transform into XYZ
 							_RGB[X,Y] = RGB * m_RGB2XYZ;
@@ -848,10 +1022,10 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			protected class		InternalColorConverter_Generic_ProPhoto : IColorConverter
 			{
-				protected Matrix4x4	m_RGB2XYZ;
-				protected Matrix4x4	m_XYZ2RGB;
+				protected float4x4	m_RGB2XYZ;
+				protected float4x4	m_XYZ2RGB;
 
-				public InternalColorConverter_Generic_ProPhoto( Matrix4x4 _RGB2XYZ, Matrix4x4 _XYZ2RGB )
+				public InternalColorConverter_Generic_ProPhoto( float4x4 _RGB2XYZ, float4x4 _XYZ2RGB )
 				{
 					m_RGB2XYZ = _RGB2XYZ;
 					m_XYZ2RGB = _XYZ2RGB;
@@ -859,62 +1033,62 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				#region IColorConverter Members
 
-				public Vector4D XYZ2RGB( Vector4D _XYZ )
+				public float4 XYZ2RGB( float4 _XYZ )
 				{
 					// Transform into RGB
 					_XYZ = _XYZ * m_XYZ2RGB;
 
 					// Gamma correct
-					_XYZ.X = _XYZ.X > 0.001953f ? (float) Math.Pow( _XYZ.X, 1.0f / 1.8f ) : 16.0f * _XYZ.X;
-					_XYZ.Y = _XYZ.Y > 0.001953f ? (float) Math.Pow( _XYZ.Y, 1.0f / 1.8f ) : 16.0f * _XYZ.Y;
-					_XYZ.Z = _XYZ.Z > 0.001953f ? (float) Math.Pow( _XYZ.Z, 1.0f / 1.8f ) : 16.0f * _XYZ.Z;
+					_XYZ.x = _XYZ.x > 0.001953f ? (float) Math.Pow( _XYZ.x, 1.0f / 1.8f ) : 16.0f * _XYZ.x;
+					_XYZ.y = _XYZ.y > 0.001953f ? (float) Math.Pow( _XYZ.y, 1.0f / 1.8f ) : 16.0f * _XYZ.y;
+					_XYZ.z = _XYZ.z > 0.001953f ? (float) Math.Pow( _XYZ.z, 1.0f / 1.8f ) : 16.0f * _XYZ.z;
 
 					return _XYZ;
 				}
 
-				public Vector4D RGB2XYZ( Vector4D _RGB )
+				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Gamma un-correct
-					_RGB.X = _RGB.X > 0.031248f ? (float) Math.Pow( _RGB.X, 1.8f ) : _RGB.X / 16.0f;
-					_RGB.Y = _RGB.Y > 0.031248f ? (float) Math.Pow( _RGB.Y, 1.8f ) : _RGB.Y / 16.0f;
-					_RGB.Z = _RGB.Z > 0.031248f ? (float) Math.Pow( _RGB.Z, 1.8f ) : _RGB.Z / 16.0f;
+					_RGB.x = _RGB.x > 0.031248f ? (float) Math.Pow( _RGB.x, 1.8f ) : _RGB.x / 16.0f;
+					_RGB.y = _RGB.y > 0.031248f ? (float) Math.Pow( _RGB.y, 1.8f ) : _RGB.y / 16.0f;
+					_RGB.z = _RGB.z > 0.031248f ? (float) Math.Pow( _RGB.z, 1.8f ) : _RGB.z / 16.0f;
 
 					// Transform into XYZ
 					return _RGB * m_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( Vector4D[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							Vector4D	XYZ = _XYZ[X,Y];
+							float4	XYZ = _XYZ[X,Y];
 
 							// Transform into RGB
 							XYZ = XYZ * m_XYZ2RGB;
 
 							// Gamma correct
-							_XYZ[X,Y].X = XYZ.X > 0.001953f ? (float) Math.Pow( XYZ.X, 1.0f / 1.8f ) : 16.0f * XYZ.X;
-							_XYZ[X,Y].Y = XYZ.Y > 0.001953f ? (float) Math.Pow( XYZ.Y, 1.0f / 1.8f ) : 16.0f * XYZ.Y;
-							_XYZ[X,Y].Z = XYZ.Z > 0.001953f ? (float) Math.Pow( XYZ.Z, 1.0f / 1.8f ) : 16.0f * XYZ.Z;
+							_XYZ[X,Y].x = XYZ.x > 0.001953f ? (float) Math.Pow( XYZ.x, 1.0f / 1.8f ) : 16.0f * XYZ.x;
+							_XYZ[X,Y].y = XYZ.y > 0.001953f ? (float) Math.Pow( XYZ.y, 1.0f / 1.8f ) : 16.0f * XYZ.y;
+							_XYZ[X,Y].z = XYZ.z > 0.001953f ? (float) Math.Pow( XYZ.z, 1.0f / 1.8f ) : 16.0f * XYZ.z;
 						}
 				}
 
-				public void RGB2XYZ( Vector4D[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							Vector4D	RGB = _RGB[X,Y];
+							float4	RGB = _RGB[X,Y];
 
 							// Gamma un-correct
-							RGB.X = RGB.X > 0.031248f ? (float) Math.Pow( RGB.X, 1.8f ) : RGB.X / 16.0f;
-							RGB.Y = RGB.Y > 0.031248f ? (float) Math.Pow( RGB.Y, 1.8f ) : RGB.Y / 16.0f;
-							RGB.Z = RGB.Z > 0.031248f ? (float) Math.Pow( RGB.Z, 1.8f ) : RGB.Z / 16.0f;
+							RGB.x = RGB.x > 0.031248f ? (float) Math.Pow( RGB.x, 1.8f ) : RGB.x / 16.0f;
+							RGB.y = RGB.y > 0.031248f ? (float) Math.Pow( RGB.y, 1.8f ) : RGB.y / 16.0f;
+							RGB.z = RGB.z > 0.031248f ? (float) Math.Pow( RGB.z, 1.8f ) : RGB.z / 16.0f;
 
 							// Transform into XYZ
 							_RGB[X,Y] = RGB * m_RGB2XYZ;
@@ -931,13 +1105,13 @@ namespace StandardizedDiffuseAlbedoMaps
 			#region FIELDS
 
 			protected bool				m_bProfileFoundInFile = false;
-			protected Chromaticities	m_Chromaticities = new Chromaticities();
+			protected Chromaticities	m_Chromaticities = Chromaticities.Empty;
 			protected GAMMA_CURVE		m_GammaCurve = GAMMA_CURVE.STANDARD;
 			protected float				m_Gamma = 1.0f;
 			protected float				m_Exposure = 0.0f;
 
-			protected Matrix4x4			m_RGB2XYZ = Matrix4x4.Identity;
-			protected Matrix4x4			m_XYZ2RGB = Matrix4x4.Identity;
+			protected float4x4			m_RGB2XYZ = float4x4.Identity;
+			protected float4x4			m_XYZ2RGB = float4x4.Identity;
 
 			protected IColorConverter	m_InternalConverter = null;
  
@@ -953,12 +1127,12 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// <summary>
 			/// Gets the transform to convert RGB to CIEXYZ
 			/// </summary>
-			public Matrix4x4		MatrixRGB2XYZ			{ get { return m_RGB2XYZ; } }
+			public float4x4		MatrixRGB2XYZ			{ get { return m_RGB2XYZ; } }
 
 			/// <summary>
 			/// Gets the transform to convert CIEXYZ to RGB
 			/// </summary>
-			public Matrix4x4		MatrixXYZ2RGB			{ get { return m_XYZ2RGB; } }
+			public float4x4		MatrixXYZ2RGB			{ get { return m_XYZ2RGB; } }
 
 			/// <summary>
 			/// Gets or sets the image gamma curve
@@ -1027,7 +1201,7 @@ namespace StandardizedDiffuseAlbedoMaps
 						m_Chromaticities = Chromaticities.sRGB;	// Default for GIFs is standard sRGB with no gamma
 						break;
 
-					case FILE_TYPE.BMP:	// BMP Don't have metadata !
+					case FILE_TYPE.BMP:	// BMP Don't have metadata!
 						m_GammaCurve = GAMMA_CURVE.STANDARD;
 						m_Gamma = 1.0f;
 						m_Chromaticities = Chromaticities.sRGB;	// Default for BMPs is standard sRGB with no gamma
@@ -1059,7 +1233,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// </summary>
 			/// <param name="_XYZ"></param>
 			/// <returns></returns>
-			public Vector4D	XYZ2RGB( Vector4D _XYZ )
+			public float4	XYZ2RGB( float4 _XYZ )
 			{
 				return m_InternalConverter.XYZ2RGB( _XYZ );
 			}
@@ -1069,7 +1243,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// </summary>
 			/// <param name="_RGB"></param>
 			/// <returns></returns>
-			public Vector4D	RGB2XYZ( Vector4D _RGB )
+			public float4	RGB2XYZ( float4 _RGB )
 			{
 				return m_InternalConverter.RGB2XYZ( _RGB );
 			}
@@ -1078,7 +1252,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// Converts a CIEXYZ color to a RGB color
 			/// </summary>
 			/// <param name="_XYZ"></param>
-			public void		XYZ2RGB( Vector4D[,] _XYZ )
+			public void		XYZ2RGB( float4[,] _XYZ )
 			{
 				m_InternalConverter.XYZ2RGB( _XYZ );
 			}
@@ -1087,7 +1261,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// Converts a RGB color to a CIEXYZ color
 			/// </summary>
 			/// <param name="_RGB"></param>
-			public void		RGB2XYZ( Vector4D[,] _RGB )
+			public void		RGB2XYZ( float4[,] _RGB )
 			{
 				m_InternalConverter.RGB2XYZ( _RGB );
 			}
@@ -1098,28 +1272,30 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			/// <summary>
 			/// Builds the RGB<->XYZ transforms from chromaticities
-			/// (refer to http://wiki.patapom.com/index.php/Color_Transforms#XYZ_.E2.86.92_xyY for explanations)
+			/// (refer to http://wiki.nuaj.net/index.php/Color_Transforms#XYZ_Matrices for explanations)
 			/// </summary>
 			protected void	BuildTransformFromChroma( bool _bCheckGammaCurveOverride )
 			{
-				Vector	xyz_R = new Vector( m_Chromaticities.R.X, m_Chromaticities.R.Y, 1.0f - m_Chromaticities.R.X - m_Chromaticities.R.Y );
-				Vector	xyz_G = new Vector( m_Chromaticities.G.X, m_Chromaticities.G.Y, 1.0f - m_Chromaticities.G.X - m_Chromaticities.G.Y );
-				Vector	xyz_B = new Vector( m_Chromaticities.B.X, m_Chromaticities.B.Y, 1.0f - m_Chromaticities.B.X - m_Chromaticities.B.Y );
-				Vector	XYZ_W = xyY2XYZ( new Vector( m_Chromaticities.W.X, m_Chromaticities.W.Y, 1.0f ) );
+				float3	xyz_R = new float3( m_Chromaticities.R.x, m_Chromaticities.R.y, 1.0f - m_Chromaticities.R.x - m_Chromaticities.R.y );
+				float3	xyz_G = new float3( m_Chromaticities.G.x, m_Chromaticities.G.y, 1.0f - m_Chromaticities.G.x - m_Chromaticities.G.y );
+				float3	xyz_B = new float3( m_Chromaticities.B.x, m_Chromaticities.B.y, 1.0f - m_Chromaticities.B.x - m_Chromaticities.B.y );
+				float3	XYZ_W = xyY2XYZ( new float3( m_Chromaticities.W.x, m_Chromaticities.W.y, 1.0f ) );
 
-				Matrix	M_xyz = new Matrix(	xyz_R.X, xyz_R.Y, xyz_R.Z, 0.0f,
-											xyz_G.X, xyz_G.Y, xyz_G.Z, 0.0f,
-											xyz_B.X, xyz_B.Y, xyz_B.Z, 0.0f,
-											0.0f, 0.0f, 0.0f, 1.0f );
+				float4x4	M_xyz = new float4x4() {
+					row0 = new float4( xyz_R, 0.0f ),
+					row1 = new float4( xyz_G, 0.0f ),
+					row2 = new float4( xyz_B, 0.0f ),
+					row3 = new float4( 0.0f, 0.0f, 0.0f, 1.0f )
+				};
+
 				M_xyz.Invert();
 
-				Vector	Sum_RGB = Vector.TransformCoordinate( XYZ_W, M_xyz );
+				float4	Sum_RGB = new float4( XYZ_W, 1.0f ) * M_xyz;
 
 				// Finally, we can retrieve the RGB->XYZ transform
-				m_RGB2XYZ = Matrix.Identity;
-				m_RGB2XYZ.Row1 = new Vector4D( Sum_RGB.X * xyz_R, 0.0f );
-				m_RGB2XYZ.Row2 = new Vector4D( Sum_RGB.Y * xyz_G, 0.0f );
-				m_RGB2XYZ.Row3 = new Vector4D( Sum_RGB.Z * xyz_B, 0.0f );
+				m_RGB2XYZ.row0 = new float4( Sum_RGB.x * xyz_R, 0.0f );
+				m_RGB2XYZ.row1 = new float4( Sum_RGB.y * xyz_G, 0.0f );
+				m_RGB2XYZ.row2 = new float4( Sum_RGB.z * xyz_B, 0.0f );
 
 				// And the XYZ->RGB transform
 				m_XYZ2RGB = m_RGB2XYZ;
@@ -1141,7 +1317,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					}
 
 					if ( !bIsGammaCorrect )
-						RecognizedProfile = STANDARD_PROFILE.UNKNOWN;	// A non-standard gamma curves fails our pre-defined design...
+						RecognizedProfile = STANDARD_PROFILE.CUSTOM;	// A non-standard gamma curves fails our pre-defined design...
 				}
 
 
@@ -1214,10 +1390,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// </summary>
 			/// <param name="_XYZ"></param>
 			/// <returns></returns>
-			public static Vector	XYZ2xyY( Vector _XYZ )
+			public static float3	XYZ2xyY( float3 _XYZ )
 			{
-				float	InvSum = 1.0f / (_XYZ.X + _XYZ.Y + _XYZ.Z);
-				return new Vector( _XYZ.X * InvSum, _XYZ.Y * InvSum, _XYZ.Y );
+				float	InvSum = 1.0f / (_XYZ.x + _XYZ.y + _XYZ.z);
+				return new float3( _XYZ.x * InvSum, _XYZ.y * InvSum, _XYZ.y );
 			}
 
 			/// <summary>
@@ -1225,10 +1401,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// </summary>
 			/// <param name="_xyY"></param>
 			/// <returns></returns>
-			public static Vector	xyY2XYZ( Vector _xyY )
+			public static float3	xyY2XYZ( float3 _xyY )
 			{
-				float	Y_y = _xyY.Z / _xyY.Y;
-				return new Vector( _xyY.X * Y_y, _xyY.Z, (1.0f - _xyY.X - _xyY.Y) * Y_y );
+				float	Y_y = _xyY.z / _xyY.y;
+				return new float3( _xyY.x * Y_y, _xyY.z, (1.0f - _xyY.x - _xyY.y) * Y_y );
 			}
 
 			/// <summary>
@@ -1332,16 +1508,16 @@ namespace StandardizedDiffuseAlbedoMaps
 					{
 						BitmapMetadata	ChromaData = v as BitmapMetadata;
 
-						Chromaticities	TempChroma = m_Chromaticities;
+						Chromaticities	TempChroma = Chromaticities.Empty;
 						EnumerateMetaData( ChromaData,
-							new MetaDataProcessor( "/RedX", ( object v2 ) => { TempChroma.R.X = 0.00001f * (uint) v2; } ),
-							new MetaDataProcessor( "/RedY", ( object v2 ) => { TempChroma.R.Y = 0.00001f * (uint) v2; } ),
-							new MetaDataProcessor( "/GreenX", ( object v2 ) => { TempChroma.G.X = 0.00001f * (uint) v2; } ),
-							new MetaDataProcessor( "/GreenY", ( object v2 ) => { TempChroma.G.Y = 0.00001f * (uint) v2; } ),
-							new MetaDataProcessor( "/BlueX", ( object v2 ) => { TempChroma.B.X = 0.00001f * (uint) v2; } ),
-							new MetaDataProcessor( "/BlueY", ( object v2 ) => { TempChroma.B.Y = 0.00001f * (uint) v2; } ),
-							new MetaDataProcessor( "/WhitePointX", ( object v2 ) => { TempChroma.W.X = 0.00001f * (uint) v2; } ),
-							new MetaDataProcessor( "/WhitePointY", ( object v2 ) => { TempChroma.W.Y = 0.00001f * (uint) v2; } )
+							new MetaDataProcessor( "/RedX",			( object v2 ) => { TempChroma.R.x = 0.00001f * (uint) v2; } ),
+							new MetaDataProcessor( "/RedY",			( object v2 ) => { TempChroma.R.y = 0.00001f * (uint) v2; } ),
+							new MetaDataProcessor( "/GreenX",		( object v2 ) => { TempChroma.G.x = 0.00001f * (uint) v2; } ),
+							new MetaDataProcessor( "/GreenY",		( object v2 ) => { TempChroma.G.y = 0.00001f * (uint) v2; } ),
+							new MetaDataProcessor( "/BlueX",		( object v2 ) => { TempChroma.B.x = 0.00001f * (uint) v2; } ),
+							new MetaDataProcessor( "/BlueY",		( object v2 ) => { TempChroma.B.y = 0.00001f * (uint) v2; } ),
+							new MetaDataProcessor( "/WhitePointX",	( object v2 ) => { TempChroma.W.x = 0.00001f * (uint) v2; } ),
+							new MetaDataProcessor( "/WhitePointY",	( object v2 ) => { TempChroma.W.y = 0.00001f * (uint) v2; } )
 							);
 
 						if ( TempChroma.RecognizedProfile != STANDARD_PROFILE.INVALID )
@@ -1352,10 +1528,14 @@ namespace StandardizedDiffuseAlbedoMaps
 					} ),
 					
 					// Read gamma
-					new MetaDataProcessor( "/gAMA/ImageGamma", ( object v ) => { m_GammaCurve = GAMMA_CURVE.STANDARD; m_Gamma = 1.0f / (0.00001f * (uint) v); bGammaWasSpecified = true; } ),
+					new MetaDataProcessor( "/gAMA/ImageGamma", ( object v ) => {
+						m_GammaCurve = GAMMA_CURVE.STANDARD; m_Gamma = 1.0f / (0.00001f * (uint) v); bGammaWasSpecified = true;
+					} ),
 
 					// Read explicit sRGB
-					new MetaDataProcessor( "/sRGB/RenderingIntent", ( object v ) => { m_Chromaticities = Chromaticities.sRGB; bProfileFound = true; bGammaWasSpecified = false; } ),
+					new MetaDataProcessor( "/sRGB/RenderingIntent", ( object v ) => {
+						m_Chromaticities = Chromaticities.sRGB; bProfileFound = true; bGammaWasSpecified = false;
+					} ),
 
 					// Read string profile from iTXT
 					new MetaDataProcessor( "/iTXt/TextEntry", ( object v ) =>
@@ -1659,7 +1839,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		protected bool				m_bHasAlpha = false;
 
 		protected ColorProfile		m_ColorProfile = null;
-		protected Vector4D[,]		m_Bitmap = null;		// CIEXYZ Bitmap content + Alpha
+		protected float4[,]		m_Bitmap = null;		// CIEXYZ Bitmap content + Alpha
 
 		#endregion
 
@@ -1689,7 +1869,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// Gets the image content stored as CIEXYZ + Alpha
 		/// </summary>
 		/// <remarks>You cannot use XYZ content directly : you must use the ColorProfile to perform color transformations</remarks>
-		public Vector4D[,]	ContentXYZ				{ get { return m_Bitmap; } }
+		public float4[,]	ContentXYZ				{ get { return m_Bitmap; } }
 
 		/// <summary>
 		/// Gets the image's color profile
@@ -1764,23 +1944,23 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_Device"></param>
 		/// <param name="_Name"></param>
 		/// <param name="_Bitmap">The System.Drawing.Bitmap</param>
-		/// <param name="_ColorProfile">The color profile to use transform the bitmap</param>
+		/// <param name="_ColorProfile">The color profile to use to transform the bitmap</param>
 		public	Bitmap2( System.Drawing.Bitmap _Bitmap, ColorProfile _ColorProfile )
 		{
 			if ( _ColorProfile == null )
-				throw new Exception( "Invalid profile : can't convert to CIE XYZ !" );
+				throw new Exception( "Invalid profile: can't convert to CIE XYZ !" );
 			m_ColorProfile = _ColorProfile;
 
 			// Load the bitmap's content and copy it to a double entry array
 			byte[]	BitmapContent = LoadBitmap( _Bitmap, out m_Width, out m_Height );
 
-			m_Bitmap = new Vector4D[m_Width,m_Height];
+			m_Bitmap = new float4[m_Width,m_Height];
 
 			int	i=0;
 			for ( int Y=0; Y < m_Height; Y++ )
 				for ( int X=0; X < m_Width; X++ )
 				{
-					m_Bitmap[X,Y] = new Vector4D(
+					m_Bitmap[X,Y] = new float4(
 							BYTE_TO_FLOAT * BitmapContent[i++],	// R
 							BYTE_TO_FLOAT * BitmapContent[i++],	// G
 							BYTE_TO_FLOAT * BitmapContent[i++],	// B
@@ -1838,23 +2018,23 @@ namespace StandardizedDiffuseAlbedoMaps
 						using ( System.IO.MemoryStream Stream = new System.IO.MemoryStream( _ImageFileContent ) )
 						{
 							// ===== 1] Load the bitmap source =====
-							BitmapDecoder	Decoder = BitmapDecoder.Create( Stream, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.OnDemand );
+							BitmapDecoder	Decoder = BitmapDecoder.Create( Stream, BitmapCreateOptions.IgnoreColorProfile | BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnDemand );
 							if ( Decoder.Frames.Count == 0 )
-								throw new NException( this, "BitmapDecoder failed to read at least one bitmap frame !" );
+								throw new Exception( "BitmapDecoder failed to read at least one bitmap frame !" );
 
 							BitmapFrame	Frame = Decoder.Frames[0];
 							if ( Frame == null )
-								throw new NException( this, "Invalid decoded bitmap !" );
+								throw new Exception( "Invalid decoded bitmap !" );
 
 // DEBUG
-int		StrideX = 4*Frame.PixelWidth;
+int		StrideX = (Frame.Format.BitsPerPixel>>3)*Frame.PixelWidth;
 byte[]	DebugImageSource = new byte[StrideX*Frame.PixelHeight];
 Frame.CopyPixels( DebugImageSource, StrideX, 0 );
 // DEBUG
 
 
 // pas de gamma sur les JPEG si non spécifié !
-// Il y a bien une magouille faite lors de la conversion par le FormatConvertedBitmap !
+// Il y a bien une magouille faite lors de la conversion par le FormatConvertedBitmap!
 
 
 							// ===== 2] Build the color profile =====
@@ -1875,39 +2055,39 @@ Frame.CopyPixels( DebugImageSource, StrideX, 0 );
 // 								Converter.DestinationFormat = GENERIC_PIXEL_FORMAT;
 // 								Converter.EndInit();
 // 
-// 								int		Stride = Frame.PixelWidth * Utilities.SizeOf<Vector4D>();
+// 								int		Stride = Frame.PixelWidth * Utilities.SizeOf<float4>();
 // 								Converter.CopyPixels( TempBitmap, Stride, 0 );
 // 							}
 // 							catch ( Exception _e )
 // 							{
-// 								throw new NException( this, "Failed to create the bitmap converter to convert from " + Frame.Format + " to " + GENERIC_PIXEL_FORMAT + " pixel format !", _e );
+// 								throw new Exception( "Failed to create the bitmap converter to convert from " + Frame.Format + " to " + GENERIC_PIXEL_FORMAT + " pixel format !", _e );
 // 							}
 // 
 // 							// ===== 4] Build the target bitmap =====
 // 							m_bHasAlpha = false;
-// 							m_Bitmap = new Vector4D[m_Width,m_Height];
+// 							m_Bitmap = new float4[m_Width,m_Height];
 // 
 // 							int		Position = 0;
-// 							Vector4D	Temp;
+// 							float4	Temp;
 // 							bool	bPreMultiplied = Frame.Format == System.Windows.Media.PixelFormats.Pbgra32 || Frame.Format == System.Windows.Media.PixelFormats.Prgba64 || Frame.Format == System.Windows.Media.PixelFormats.Prgba128Float;
 // 							if ( bPreMultiplied )
 // 							{	// Colors are pre-multiplied by alpha !
 // 								for ( int Y = 0; Y < m_Height; Y++ )
 // 									for ( int X = 0; X < m_Width; X++ )
 // 									{
-// 										Temp.X = TempBitmap[Position++];
-// 										Temp.Y = TempBitmap[Position++];
-// 										Temp.Z = TempBitmap[Position++];
-// 										Temp.W = TempBitmap[Position++];
+// 										Temp.x = TempBitmap[Position++];
+// 										Temp.y = TempBitmap[Position++];
+// 										Temp.z = TempBitmap[Position++];
+// 										Temp.w = TempBitmap[Position++];
 // 
-// 										float	InvA = Temp.W != 0.0f ? 1.0f / Temp.W : 1.0f;
-// 										Temp.X *= InvA;
-// 										Temp.Y *= InvA;
-// 										Temp.Z *= InvA;
+// 										float	InvA = Temp.w != 0.0f ? 1.0f / Temp.w : 1.0f;
+// 										Temp.x *= InvA;
+// 										Temp.y *= InvA;
+// 										Temp.z *= InvA;
 // 
 // 										m_Bitmap[X, Y] = Temp;
 // 
-// 										if ( Temp.W != 1.0f )
+// 										if ( Temp.w != 1.0f )
 // 											m_bHasAlpha = true;
 // 									}
 // 							}
@@ -1916,32 +2096,32 @@ Frame.CopyPixels( DebugImageSource, StrideX, 0 );
 // 								for ( int Y = 0; Y < m_Height; Y++ )
 // 									for ( int X = 0; X < m_Width; X++ )
 // 									{
-// 										Temp.X = TempBitmap[Position++];
-// 										Temp.Y = TempBitmap[Position++];
-// 										Temp.Z = TempBitmap[Position++];
-// 										Temp.W = TempBitmap[Position++];
+// 										Temp.x = TempBitmap[Position++];
+// 										Temp.y = TempBitmap[Position++];
+// 										Temp.z = TempBitmap[Position++];
+// 										Temp.w = TempBitmap[Position++];
 // 
-// 										Temp.X = (float) Math.Pow( Temp.X, 1.0f / 2.2f );	// Correct the behind the scene gamma correction
-// 										Temp.Y = (float) Math.Pow( Temp.Y, 1.0f / 2.2f );
-// 										Temp.Z = (float) Math.Pow( Temp.Z, 1.0f / 2.2f );
+// 										Temp.x = (float) Math.Pow( Temp.x, 1.0f / 2.2f );	// Correct the behind the scene gamma correction
+// 										Temp.y = (float) Math.Pow( Temp.y, 1.0f / 2.2f );
+// 										Temp.z = (float) Math.Pow( Temp.z, 1.0f / 2.2f );
 // 
 // 										m_Bitmap[X, Y] = Temp;
 // 
-// 										if ( Temp.W != 1.0f )
+// 										if ( Temp.w != 1.0f )
 // 											m_bHasAlpha = true;
 // 									}
 // 							}
 
 // DEBUG
-byte[]	DebugImage = new byte[4*m_Width*m_Height];
-for ( int Y=0; Y < m_Height; Y++ )
-	for ( int X=0; X < m_Width; X++ )
-	{
-		DebugImage[4*(m_Width*Y+X)+0] = (byte) Math.Min( 255, Math.Max( 0, (255.0f * m_Bitmap[X,Y].X) ) );
-		DebugImage[4*(m_Width*Y+X)+1] = (byte) Math.Min( 255, Math.Max( 0, (255.0f * m_Bitmap[X,Y].Y) ) );
-		DebugImage[4*(m_Width*Y+X)+2] = (byte) Math.Min( 255, Math.Max( 0, (255.0f * m_Bitmap[X,Y].Z) ) );
-		DebugImage[4*(m_Width*Y+X)+3] = (byte) Math.Min( 255, Math.Max( 0, (255.0f * m_Bitmap[X,Y].W) ) );
-	}
+// byte[]	DebugImage = new byte[4*m_Width*m_Height];
+// for ( int Y=0; Y < m_Height; Y++ )
+// 	for ( int X=0; X < m_Width; X++ )
+// 	{
+// 		DebugImage[4*(m_Width*Y+X)+0] = (byte) Math.Min( 255, Math.Max( 0, (255.0f * m_Bitmap[X,Y].x) ) );
+// 		DebugImage[4*(m_Width*Y+X)+1] = (byte) Math.Min( 255, Math.Max( 0, (255.0f * m_Bitmap[X,Y].y) ) );
+// 		DebugImage[4*(m_Width*Y+X)+2] = (byte) Math.Min( 255, Math.Max( 0, (255.0f * m_Bitmap[X,Y].z) ) );
+// 		DebugImage[4*(m_Width*Y+X)+3] = (byte) Math.Min( 255, Math.Max( 0, (255.0f * m_Bitmap[X,Y].w) ) );
+// 	}
 // DEBUG
 
 
@@ -1953,9 +2133,9 @@ for ( int Y=0; Y < m_Height; Y++ )
 
 					case FILE_TYPE.TGA:
 						{
-							// Load as a System.Drawing.Bitmap and convert to Vector4D
+							// Load as a System.Drawing.Bitmap and convert to float4
 							using ( System.IO.MemoryStream Stream = new System.IO.MemoryStream( _ImageFileContent ) )
-								using ( Nuaj.Helpers.TargaImage TGA = new Nuaj.Helpers.TargaImage( Stream ) )
+								using ( TargaImage TGA = new TargaImage( Stream ) )
 								{
 									// Create a default sRGB linear color profile
 									m_ColorProfile = new ColorProfile(
@@ -1966,20 +2146,20 @@ for ( int Y=0; Y < m_Height; Y++ )
 
 									// Convert
 									byte[]	ImageContent = LoadBitmap( TGA.Image, out m_Width, out m_Height );
-									m_Bitmap = new Vector4D[m_Width,m_Height];
+									m_Bitmap = new float4[m_Width,m_Height];
 									byte	A;
 									int		i = 0;
 									for ( int Y=0; Y < m_Height; Y++ )
 										for ( int X=0; X < m_Width; X++ )
 										{
-											m_Bitmap[X,Y].X = BYTE_TO_FLOAT * ImageContent[i++];
-											m_Bitmap[X,Y].Y = BYTE_TO_FLOAT * ImageContent[i++];
-											m_Bitmap[X,Y].Z = BYTE_TO_FLOAT * ImageContent[i++];
+											m_Bitmap[X,Y].x = BYTE_TO_FLOAT * ImageContent[i++];
+											m_Bitmap[X,Y].y = BYTE_TO_FLOAT * ImageContent[i++];
+											m_Bitmap[X,Y].z = BYTE_TO_FLOAT * ImageContent[i++];
 
 											A = ImageContent[i++];
 											m_bHasAlpha |= A != 0xFF;
 
-											m_Bitmap[X,Y].W = BYTE_TO_FLOAT * A;
+											m_Bitmap[X,Y].w = BYTE_TO_FLOAT * A;
 										}
 
 									// Convert to CIEXYZ
@@ -1998,7 +2178,7 @@ for ( int Y=0; Y < m_Height; Y++ )
 						}
 
 					default:
-						throw new NotSupportedException( "The image file type \"" + _FileType + "\" is not supported by the Bitmap class !" );
+						throw new NotSupportedException( "The image file type \"" + _FileType + "\" is not supported by the Bitmap class!" );
 				}
 			}
 			catch ( Exception )
@@ -2015,7 +2195,7 @@ for ( int Y=0; Y < m_Height; Y++ )
 		/// </summary>
 		/// <param name="_Frame">The source frame to convert</param>
 		/// <remarks>I cannot use the FormatConvertedBitmap class because it applies some unwanted gamma correction depending on the source pixel format.
-		/// For example, if the image is using the Bgr24 format (it uses a 1/2.2 gamma internally) so converting that to our generic format Rgba128Float
+		/// For example, if the image is using the Bgr24 format that uses a 1/2.2 gamma internally, converting that to our generic format Rgba128Float
 		/// (that uses a gamma of 1 internally) will automatically apply a pow( 2.2 ) to the RGB values, which is NOT what we're looking for since we're
 		/// handling gamma correction ourselves here !
 		/// </remarks>
@@ -2023,11 +2203,12 @@ for ( int Y=0; Y < m_Height; Y++ )
 		{
 			m_Width = _Frame.PixelWidth;
 			m_Height = _Frame.PixelHeight;
-			m_Bitmap = new Vector4D[m_Width,m_Height];
+			m_Bitmap = new float4[m_Width,m_Height];
 
 			int		W = m_Width;
 			int		H = m_Height;
-			Vector4D	Temp = new Vector4D();
+
+			float4	V = new float4();
 
 			//////////////////////////////////////////////////////////////////////////
 			// BGR24
@@ -2037,16 +2218,16 @@ for ( int Y=0; Y < m_Height; Y++ )
 				byte[]	Content = new byte[Stride*H];
 				_Frame.CopyPixels( Content, Stride, 0 );
 
-				Temp.W = 1.0f;
 				m_bHasAlpha = false;
 				int	Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Temp.Z = BYTE_TO_FLOAT * Content[Position++];
-						Temp.Y = BYTE_TO_FLOAT * Content[Position++];
-						Temp.X = BYTE_TO_FLOAT * Content[Position++];
-						m_Bitmap[X,Y] = Temp;
+						V.z = BYTE_TO_FLOAT * Content[Position++];
+						V.y = BYTE_TO_FLOAT * Content[Position++];
+						V.x = BYTE_TO_FLOAT * Content[Position++];
+						V.w = 1.0f;
+						m_Bitmap[X,Y] = V;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -2057,17 +2238,17 @@ for ( int Y=0; Y < m_Height; Y++ )
 				byte[]	Content = new byte[Stride*H];
 				_Frame.CopyPixels( Content, Stride, 0 );
 
-				Temp.W = 1.0f;
 				m_bHasAlpha = false;
 				int	Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Temp.Z = BYTE_TO_FLOAT * Content[Position++];
-						Temp.Y = BYTE_TO_FLOAT * Content[Position++];
-						Temp.X = BYTE_TO_FLOAT * Content[Position++];
+						V.z = BYTE_TO_FLOAT * Content[Position++];
+						V.y = BYTE_TO_FLOAT * Content[Position++];
+						V.x = BYTE_TO_FLOAT * Content[Position++];
+						V.w = 1.0f;
 						Position++;
-						m_Bitmap[X,Y] = Temp;
+						m_Bitmap[X,Y] = V;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -2083,15 +2264,15 @@ for ( int Y=0; Y < m_Height; Y++ )
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Temp.Z = BYTE_TO_FLOAT * Content[Position++];
-						Temp.Y = BYTE_TO_FLOAT * Content[Position++];
-						Temp.X = BYTE_TO_FLOAT * Content[Position++];
+						V.z = BYTE_TO_FLOAT * Content[Position++];
+						V.y = BYTE_TO_FLOAT * Content[Position++];
+						V.x = BYTE_TO_FLOAT * Content[Position++];
 
 						A = Content[Position++];
-						Temp.W = BYTE_TO_FLOAT * A;
+						V.w = BYTE_TO_FLOAT * A;
 						m_bHasAlpha |= A != 0xFF;
 
-						m_Bitmap[X,Y] = Temp;
+						m_Bitmap[X,Y] = V;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -2108,21 +2289,21 @@ for ( int Y=0; Y < m_Height; Y++ )
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Temp.Z = BYTE_TO_FLOAT * Content[Position++];
-						Temp.Y = BYTE_TO_FLOAT * Content[Position++];
-						Temp.X = BYTE_TO_FLOAT * Content[Position++];
+						V.z = BYTE_TO_FLOAT * Content[Position++];
+						V.y = BYTE_TO_FLOAT * Content[Position++];
+						V.x = BYTE_TO_FLOAT * Content[Position++];
 
 						A = Content[Position++];
-						Temp.W = BYTE_TO_FLOAT * A;
+						V.w = BYTE_TO_FLOAT * A;
 						m_bHasAlpha |= A != 0xFF;
 
-						// De-premultiply
-						InvA = A != 0 ? 1.0f / Temp.W : 1.0f;
-						Temp.X *= InvA;
-						Temp.Y *= InvA;
-						Temp.Z *= InvA;
+						// Un-premultiply
+						InvA = A != 0 ? 1.0f / V.w : 1.0f;
+						V.x *= InvA;
+						V.y *= InvA;
+						V.z *= InvA;
 
-						m_Bitmap[X,Y] = Temp;
+						m_Bitmap[X,Y] = V;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -2134,15 +2315,15 @@ for ( int Y=0; Y < m_Height; Y++ )
 				_Frame.CopyPixels( Content, Stride, 0 );
 
 				m_bHasAlpha = false;
-				Temp.W = 1.0f;
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Temp.X = WORD_TO_FLOAT * Content[Position++];
-						Temp.Y = WORD_TO_FLOAT * Content[Position++];
-						Temp.Z = WORD_TO_FLOAT * Content[Position++];
-						m_Bitmap[X,Y] = Temp;
+						V.x = WORD_TO_FLOAT * Content[Position++];
+						V.y = WORD_TO_FLOAT * Content[Position++];
+						V.z = WORD_TO_FLOAT * Content[Position++];
+						V.w = 1.0f;
+						m_Bitmap[X,Y] = V;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -2158,15 +2339,15 @@ for ( int Y=0; Y < m_Height; Y++ )
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Temp.X = WORD_TO_FLOAT * Content[Position++];
-						Temp.Y = WORD_TO_FLOAT * Content[Position++];
-						Temp.Z = WORD_TO_FLOAT * Content[Position++];
+						V.x = WORD_TO_FLOAT * Content[Position++];
+						V.y = WORD_TO_FLOAT * Content[Position++];
+						V.z = WORD_TO_FLOAT * Content[Position++];
 
 						A = Content[Position++];
-						Temp.W = BYTE_TO_FLOAT * A;
+						V.w = BYTE_TO_FLOAT * A;
 						m_bHasAlpha |= A != 0xFFFF;
 
-						m_Bitmap[X,Y] = Temp;
+						m_Bitmap[X,Y] = V;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -2183,21 +2364,21 @@ for ( int Y=0; Y < m_Height; Y++ )
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Temp.X = WORD_TO_FLOAT * Content[Position++];
-						Temp.Y = WORD_TO_FLOAT * Content[Position++];
-						Temp.Z = WORD_TO_FLOAT * Content[Position++];
+						V.x = WORD_TO_FLOAT * Content[Position++];
+						V.y = WORD_TO_FLOAT * Content[Position++];
+						V.z = WORD_TO_FLOAT * Content[Position++];
 
 						A = Content[Position++];
-						Temp.W = BYTE_TO_FLOAT * A;
+						V.w = BYTE_TO_FLOAT * A;
 						m_bHasAlpha |= A != 0xFFFF;
 
-						// De-premultiply
-						InvA = A != 0 ? 1.0f / Temp.W : 1.0f;
-						Temp.X *= InvA;
-						Temp.Y *= InvA;
-						Temp.Z *= InvA;
+						// Un-premultiply
+						InvA = A != 0 ? 1.0f / V.w : 1.0f;
+						V.x *= InvA;
+						V.y *= InvA;
+						V.z *= InvA;
 
-						m_Bitmap[X,Y] = Temp;
+						m_Bitmap[X,Y] = V;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -2212,14 +2393,14 @@ for ( int Y=0; Y < m_Height; Y++ )
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Temp.X = Content[Position++];
-						Temp.Y = Content[Position++];
-						Temp.Z = Content[Position++];
-						Temp.W = Content[Position++];
+						V.x = Content[Position++];
+						V.y = Content[Position++];
+						V.z = Content[Position++];
+						V.w = Content[Position++];
 
-						m_bHasAlpha |= Temp.W != 1.0f;
+						m_bHasAlpha |= V.w != 1.0f;
 
-						m_Bitmap[X,Y] = Temp;
+						m_Bitmap[X,Y] = V;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -2235,20 +2416,20 @@ for ( int Y=0; Y < m_Height; Y++ )
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Temp.X = Content[Position++];
-						Temp.Y = Content[Position++];
-						Temp.Z = Content[Position++];
-						Temp.W = Content[Position++];
+						V.x = Content[Position++];
+						V.y = Content[Position++];
+						V.z = Content[Position++];
+						V.w = Content[Position++];
 
-						m_bHasAlpha |= Temp.W != 1.0f;
+						m_bHasAlpha |= V.w != 1.0f;
 
-						// De-Premultiply
-						InvA = Temp.W != 0.0f ? 1.0f / Temp.W : 1.0f;
-						Temp.X *= InvA;
-						Temp.Y *= InvA;
-						Temp.Z *= InvA;
+						// Un-premultiply
+						InvA = V.w != 0.0f ? 1.0f / V.w : 1.0f;
+						V.x *= InvA;
+						V.y *= InvA;
+						V.z *= InvA;
 
-						m_Bitmap[X,Y] = Temp;
+						m_Bitmap[X,Y] = V;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -2260,13 +2441,13 @@ for ( int Y=0; Y < m_Height; Y++ )
 				_Frame.CopyPixels( Content, Stride, 0 );
 
 				m_bHasAlpha = false;
-				Temp.W = 1.0f;
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Temp.X = Temp.Y = Temp.Z = WORD_TO_FLOAT * Content[Position++];
-						m_Bitmap[X,Y] = Temp;
+						V.x = V.y = V.z = WORD_TO_FLOAT * Content[Position++];
+						V.w = 1.0f;
+						m_Bitmap[X,Y] = V;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -2278,13 +2459,13 @@ for ( int Y=0; Y < m_Height; Y++ )
 				_Frame.CopyPixels( Content, Stride, 0 );
 
 				m_bHasAlpha = false;
-				Temp.W = 1.0f;
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Temp.X = Temp.Y = Temp.Z = Content[Position++];
-						m_Bitmap[X,Y] = Temp;
+						V.x = V.y = V.z = Content[Position++];
+						V.w = 1.0f;
+						m_Bitmap[X,Y] = V;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -2296,13 +2477,13 @@ for ( int Y=0; Y < m_Height; Y++ )
 				_Frame.CopyPixels( Content, Stride, 0 );
 
 				m_bHasAlpha = false;
-				Temp.W = 1.0f;
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Temp.X = Temp.Y = Temp.Z = BYTE_TO_FLOAT * Content[Position++];
-						m_Bitmap[X,Y] = Temp;
+						V.x = V.y = V.z = BYTE_TO_FLOAT * Content[Position++];
+						V.w = 1.0f;
+						m_Bitmap[X,Y] = V;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -2313,11 +2494,11 @@ for ( int Y=0; Y < m_Height; Y++ )
 				byte[]	Content = new byte[Stride*H];
 				_Frame.CopyPixels( Content, Stride, 0 );
 
-				Vector4D[]	Palette = new Vector4D[_Frame.Palette.Colors.Count];
+				float4[]	Palette = new float4[_Frame.Palette.Colors.Count];
 				for ( int i=0; i < Palette.Length; i++ )
 				{
 					System.Windows.Media.Color	C = _Frame.Palette.Colors[i];
-					Palette[i] = new Vector4D(
+					Palette[i] = new float4(
 						C.R * BYTE_TO_FLOAT,
 						C.G * BYTE_TO_FLOAT,
 						C.B * BYTE_TO_FLOAT,
@@ -2334,20 +2515,6 @@ for ( int Y=0; Y < m_Height; Y++ )
 			else
 				throw new Exception( "Source format " + _Frame.Format + " not supported !" );
 		}
-
-// 		/// <summary>
-// 		/// Builds a DataStream from a byte[]
-// 		/// </summary>
-// 		/// <param name="_ImageFileContent">The image file content as a byte[]</param>
-// 		/// <param name="_Action">The action to perform with a DataStream created from the byte[]</param>
-// 		protected void	BuildDataStream( byte[] _ImageFileContent, Action<DataStream> _Action )
-// 		{
-// 			Utilities.Pin( _ImageFileContent, ( IntPtr _FileConterPointer ) =>
-// 				{
-// 					using ( DataStream MemoryStream = new DataStream( _FileConterPointer, _ImageFileContent.Length, true, false ) )
-// 						_Action( MemoryStream );
-// 				} );
-// 		}
 
 		/// <summary>
 		/// Loads a System.Drawing.Bitmap into a byte[] containing RGBARGBARG... pixels
@@ -2500,7 +2667,7 @@ for ( int Y=0; Y < m_Height; Y++ )
 		/// <param name="_Device"></param>
 		/// <param name="_Name"></param>
 		/// <param name="_MipLevelsCount">Amount of mip levels to generate (0 is for entire mip maps pyramid)</param>
-		public	Image( Device _Device, string _Name, Vector4D[,] _Image, float _Exposure, int _MipLevelsCount, ImageProcessDelegate _PreProcess ) : base( _Device, _Name )
+		public	Image( Device _Device, string _Name, float4[,] _Image, float _Exposure, int _MipLevelsCount, ImageProcessDelegate _PreProcess ) : base( _Device, _Name )
 		{
 			m_Width = _Image.GetLength( 0 );
 			m_Height = _Image.GetLength( 1 );
@@ -2510,7 +2677,7 @@ for ( int Y=0; Y < m_Height; Y++ )
 
 			Load( _Image, _Exposure, _PreProcess );
 		}
-		public	Image( Device _Device, string _Name, Vector4D[,] _Image, float _Exposure, int _MipLevelsCount ) : this( _Device, _Name, _Image, _Exposure, _MipLevelsCount, null ) {}
+		public	Image( Device _Device, string _Name, float4[,] _Image, float _Exposure, int _MipLevelsCount ) : this( _Device, _Name, _Image, _Exposure, _MipLevelsCount, null ) {}
 
 		/// <summary>
 		/// Creates a custom image using a pixel writer
@@ -2521,7 +2688,7 @@ for ( int Y=0; Y < m_Height; Y++ )
 		public	Image( Device _Device, string _Name, int _Width, int _Height, ImageProcessDelegate _PixelWriter, int _MipLevelsCount ) : base( _Device, _Name )
 		{
 			if ( _PixelWriter == null )
-				throw new NException( this, "Invalid pixel writer !" );
+				throw new Exception( "Invalid pixel writer !" );
 
 			m_Width = _Width;
 			m_Height = _Height;
@@ -2538,7 +2705,7 @@ for ( int Y=0; Y < m_Height; Y++ )
 				m_DataStreams[0] = ToDispose( new DataStream( m_Width * m_Height * PixelSize, true, true ) );
 
 				// Convert all scanlines into the desired format and write them into the stream
-				Vector4D	C = new Vector4D();
+				float4	C = new float4();
 				for ( int Y=0; Y < m_Height; Y++ )
 				{
 					for ( int X=0; X < m_Width; X++ )
@@ -2546,7 +2713,7 @@ for ( int Y=0; Y < m_Height; Y++ )
 						_PixelWriter( X, Y, ref C );
 						Scanline[X].Write( C );
 
-						m_bHasAlpha |= C.W != 1.0f;	// Check if it has alpha...
+						m_bHasAlpha |= C.w != 1.0f;	// Check if it has alpha...
 					}
 
 					m_DataStreams[0].WriteRange<PF>( Scanline );
@@ -2560,7 +2727,7 @@ for ( int Y=0; Y < m_Height; Y++ )
 			}
 			catch ( Exception _e )
 			{
-				throw new NException( this, "An error occurred while creating the custom image !", _e );
+				throw new Exception( "An error occurred while creating the custom image !", _e );
 			}
 		}
 
@@ -2573,9 +2740,9 @@ for ( int Y=0; Y < m_Height; Y++ )
 		public void	Load( System.Drawing.Bitmap _Image, bool _MirrorY, float _ImageGamma, ImageProcessDelegate _PreProcess )
 		{
 			if ( _Image.Width != m_Width )
-				throw new NException( this, "Provided image width mismatch !" );
+				throw new Exception( "Provided image width mismatch !" );
 			if ( _Image.Height != m_Height )
-				throw new NException( this, "Provided image height mismatch !" );
+				throw new Exception( "Provided image height mismatch !" );
 
 			int		PixelSize = System.Runtime.InteropServices.Marshal.SizeOf( typeof(PF) );
 
@@ -2583,7 +2750,7 @@ for ( int Y=0; Y < m_Height; Y++ )
 			// Ensure we're passing a unit image gamma
 			bool	bUsesSRGB = new PF().sRGB;
 			if ( bUsesSRGB && Math.Abs( _ImageGamma - 1.0f ) > 1e-3f )
-				throw new NException( this, "You specified a sRGB pixel format but provided an image gamma different from 1 !" );
+				throw new Exception( "You specified a sRGB pixel format but provided an image gamma different from 1 !" );
 #endif
 
 			byte[]	ImageContent = LoadBitmap( _Image, out m_Width, out m_Height );
@@ -2595,17 +2762,17 @@ for ( int Y=0; Y < m_Height; Y++ )
 				m_DataStreams[0] = ToDispose( new DataStream( m_Width * m_Height * PixelSize, true, true ) );
 
 				// Convert all scanlines into the desired format and write them into the stream
-				Vector4D	Temp = new Vector4D();
+				float4	Temp = new float4();
 				int		Offset;
 				for ( int Y=0; Y < m_Height; Y++ )
 				{
 					Offset = (m_Width * (_MirrorY ? m_Height-1-Y : Y)) << 2;
 					for ( int X=0; X < m_Width; X++ )
 					{
-						Temp.X = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset++], _ImageGamma );
-						Temp.Y = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset++], _ImageGamma );
-						Temp.Z = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset++], _ImageGamma );
-						Temp.W = BYTE_TO_FLOAT * ImageContent[Offset++];
+						Temp.x = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset++], _ImageGamma );
+						Temp.y = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset++], _ImageGamma );
+						Temp.z = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset++], _ImageGamma );
+						Temp.w = BYTE_TO_FLOAT * ImageContent[Offset++];
 
 						if ( _PreProcess != null )
 							_PreProcess( X, Y, ref Temp );
@@ -2626,7 +2793,7 @@ for ( int Y=0; Y < m_Height; Y++ )
 			}
 			catch ( Exception _e )
 			{
-				throw new NException( this, "An error occurred while loading the image !", _e );
+				throw new Exception( "An error occurred while loading the image !", _e );
 			}
 		}
 
@@ -2640,13 +2807,13 @@ for ( int Y=0; Y < m_Height; Y++ )
 		public void	Load( System.Drawing.Bitmap _Image, System.Drawing.Bitmap _Alpha, bool _MirrorY, float _ImageGamma, ImageProcessDelegate _PreProcess )
 		{
 			if ( _Image.Width != m_Width )
-				throw new NException( this, "Provided image width mismatch !" );
+				throw new Exception( "Provided image width mismatch !" );
 			if ( _Image.Height != m_Height )
-				throw new NException( this, "Provided image height mismatch !" );
+				throw new Exception( "Provided image height mismatch !" );
 			if ( _Alpha.Width != m_Width )
-				throw new NException( this, "Provided alpha width mismatch !" );
+				throw new Exception( "Provided alpha width mismatch !" );
 			if ( _Alpha.Height != m_Height )
-				throw new NException( this, "Provided alpha height mismatch !" );
+				throw new Exception( "Provided alpha height mismatch !" );
 
 			int		PixelSize = System.Runtime.InteropServices.Marshal.SizeOf( typeof(PF) );
 
@@ -2654,7 +2821,7 @@ for ( int Y=0; Y < m_Height; Y++ )
 			// Ensure we're passing a unit image gamma
 			bool	bUsesSRGB = new PF().sRGB;
 			if ( bUsesSRGB && Math.Abs( _ImageGamma - 1.0f ) > 1e-3f )
-				throw new NException( this, "You specified a sRGB pixel format but provided an image gamma different from 1 !" );
+				throw new Exception( "You specified a sRGB pixel format but provided an image gamma different from 1 !" );
 #endif
 			// Lock source image
 			byte[]	ImageContent = LoadBitmap( _Image, out m_Width, out m_Height );
@@ -2670,17 +2837,17 @@ for ( int Y=0; Y < m_Height; Y++ )
 
 				// Convert all scanlines into the desired format and write them into the stream
 				int		Offset;
-				Vector4D	Temp = new Vector4D();
+				float4	Temp = new float4();
 
 				for ( int Y=0; Y < m_Height; Y++ )
 				{
 					Offset = (m_Width * (_MirrorY ? m_Height-1-Y : Y)) << 2;
 					for ( int X=0; X < m_Width; X++, Offset+=4 )
 					{
-						Temp.X = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset+0], _ImageGamma );
-						Temp.Y = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset+1], _ImageGamma );
-						Temp.Z = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset+2], _ImageGamma );
-						Temp.W = BYTE_TO_FLOAT * AlphaContent[Offset+0];
+						Temp.x = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset+0], _ImageGamma );
+						Temp.y = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset+1], _ImageGamma );
+						Temp.z = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset+2], _ImageGamma );
+						Temp.w = BYTE_TO_FLOAT * AlphaContent[Offset+0];
 
 						if ( _PreProcess != null )
 							_PreProcess( X, Y, ref Temp );
@@ -2699,7 +2866,7 @@ for ( int Y=0; Y < m_Height; Y++ )
 			}
 			catch ( Exception _e )
 			{
-				throw new NException( this, "An error occurred while loading the image !", _e );
+				throw new Exception( "An error occurred while loading the image !", _e );
 			}
 		}
 
@@ -2708,15 +2875,15 @@ for ( int Y=0; Y < m_Height; Y++ )
 		/// </summary>
 		/// <param name="_Image">Source image to load</param>
 		/// <param name="_Exposure">The exposure correction to apply (default should be 0)</param>
-		public void	Load( Vector4D[,] _Image, float _Exposure, ImageProcessDelegate _PreProcess )
+		public void	Load( float4[,] _Image, float _Exposure, ImageProcessDelegate _PreProcess )
 		{
 			int	Width = _Image.GetLength( 0 );
 			if ( Width != m_Width )
-				throw new NException( this, "Provided image width mismatch !" );
+				throw new Exception( "Provided image width mismatch !" );
 
 			int	Height = _Image.GetLength( 1 );
 			if ( Height != m_Height )
-				throw new NException( this, "Provided image height mismatch !" );
+				throw new Exception( "Provided image height mismatch !" );
 
 			int	PixelSize = System.Runtime.InteropServices.Marshal.SizeOf( typeof(PF) );
 
@@ -2727,12 +2894,12 @@ for ( int Y=0; Y < m_Height; Y++ )
 				m_DataStreams[0] = ToDispose( new DataStream( m_Width * m_Height * PixelSize, true, true ) );
 
 				// Convert all scanlines into the desired format and write them into the stream
-				Vector4D	Temp = new Vector4D();
+				float4	Temp = new float4();
 				for ( int Y=0; Y < m_Height; Y++ )
 				{
 					for ( int X=0; X < m_Width; X++ )
 					{
-						float	fLuminance = 0.3f * _Image[X,Y].X + 0.5f * _Image[X,Y].Y + 0.2f * _Image[X,Y].Z;
+						float	fLuminance = 0.3f * _Image[X,Y].x + 0.5f * _Image[X,Y].y + 0.2f * _Image[X,Y].z;
 						float	fCorrectedLuminance = (float) Math.Pow( 2.0f, Math.Log( fLuminance ) / Math.Log( 2.0 ) + _Exposure );
 
 						Temp = _Image[X,Y] * fCorrectedLuminance / fLuminance;
@@ -2756,7 +2923,7 @@ for ( int Y=0; Y < m_Height; Y++ )
 			}
 			catch ( Exception _e )
 			{
-				throw new NException( this, "An error occurred while loading the image !", _e );
+				throw new Exception( "An error occurred while loading the image !", _e );
 			}
 		}
 
@@ -2947,14 +3114,14 @@ for ( int Y=0; Y < m_Height; Y++ )
 			{
 				System.Drawing.Rectangle	Rect = _CropRectangles[CropRectangleIndex];
 				Result[CropRectangleIndex] = new Image<PF>( _Device, _Name, Rect.Width, Rect.Height,
-					( int _X, int _Y, ref Vector4D _Color ) =>
+					( int _X, int _Y, ref float4 _Color ) =>
 						{
-							Offset = ((Rect.Y + _Y) + (Rect.X + _X)) << 2;
+							Offset = ((Rect.y + _Y) + (Rect.x + _X)) << 2;
 
-							_Color.X = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset++], _ImageGamma );
-							_Color.Y = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset++], _ImageGamma );
-							_Color.Z = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset++], _ImageGamma );
-							_Color.W = BYTE_TO_FLOAT * ImageContent[Offset++];
+							_Color.x = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset++], _ImageGamma );
+							_Color.y = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset++], _ImageGamma );
+							_Color.z = GammaUnCorrect( BYTE_TO_FLOAT * ImageContent[Offset++], _ImageGamma );
+							_Color.w = BYTE_TO_FLOAT * ImageContent[Offset++];
 
 							if ( _PreProcess != null )
 								_PreProcess( _X, _Y, ref _Color );
@@ -3096,13 +3263,13 @@ for ( int Y=0; Y < m_Height; Y++ )
 		#region HDR Loaders
 
 		/// <summary>
-		/// Loads a bitmap in .HDR format into a Vector4D array directly useable by the image constructor
+		/// Loads a bitmap in .HDR format into a float4 array directly useable by the image constructor
 		/// </summary>
 		/// <param name="_HDRFormatBinary"></param>
 		/// <param name="_bTargetNeedsXYZ">Tells if the target needs to be in CIE XYZ space (true) or RGB (false)</param>
 		/// <param name="_ColorProfile">The color profile for the image</param>
 		/// <returns></returns>
-		public static Vector4D[,]	LoadAndDecodeHDRFormat( byte[] _HDRFormatBinary, bool _bTargetNeedsXYZ, out ColorProfile _ColorProfile )
+		public static float4[,]	LoadAndDecodeHDRFormat( byte[] _HDRFormatBinary, bool _bTargetNeedsXYZ, out ColorProfile _ColorProfile )
 		{
 			bool	bSourceIsXYZ;
 			return DecodeRGBEImage( LoadHDRFormat( _HDRFormatBinary, out bSourceIsXYZ, out _ColorProfile ), bSourceIsXYZ, _bTargetNeedsXYZ, _ColorProfile );
@@ -3211,14 +3378,14 @@ for ( int Y=0; Y < m_Height; Y++ )
 					if ( Primaries == null || Primaries.Length != 8 )
 						throw new Exception( "Failed to parse color profile chromaticities !" );
 
-					float.TryParse( Primaries[0], out Chromas.R.X );
-					float.TryParse( Primaries[1], out Chromas.R.Y );
-					float.TryParse( Primaries[2], out Chromas.G.X );
-					float.TryParse( Primaries[3], out Chromas.G.Y );
-					float.TryParse( Primaries[4], out Chromas.B.X );
-					float.TryParse( Primaries[5], out Chromas.B.Y );
-					float.TryParse( Primaries[6], out Chromas.W.X );
-					float.TryParse( Primaries[7], out Chromas.W.Y );
+					float.TryParse( Primaries[0], out Chromas.R.x );
+					float.TryParse( Primaries[1], out Chromas.R.y );
+					float.TryParse( Primaries[2], out Chromas.G.x );
+					float.TryParse( Primaries[3], out Chromas.G.y );
+					float.TryParse( Primaries[4], out Chromas.B.x );
+					float.TryParse( Primaries[5], out Chromas.B.y );
+					float.TryParse( Primaries[6], out Chromas.W.x );
+					float.TryParse( Primaries[7], out Chromas.W.y );
 				}
 
 					// 3.5] Create the color profile
@@ -3334,12 +3501,12 @@ for ( int Y=0; Y < m_Height; Y++ )
 		/// <param name="_bTargetNeedsXYZ">Tells if the target needs to be in CIE XYZ space (true) or RGB (false)</param>
 		/// <param name="_ColorProfile">The color profile for the image</param>
 		/// <returns>A HDR image as floats</returns>
-		public static Vector4D[,]	DecodeRGBEImage( PF_RGBE[,] _Source, bool _bSourceIsXYZ, bool _bTargetNeedsXYZ, ColorProfile _ColorProfile )
+		public static float4[,]	DecodeRGBEImage( PF_RGBE[,] _Source, bool _bSourceIsXYZ, bool _bTargetNeedsXYZ, ColorProfile _ColorProfile )
 		{
 			if ( _Source == null )
 				return	null;
 
-			Vector4D[,]	Result = new Vector4D[_Source.GetLength( 0 ), _Source.GetLength( 1 )];
+			float4[,]	Result = new float4[_Source.GetLength( 0 ), _Source.GetLength( 1 )];
 			DecodeRGBEImage( _Source, _bSourceIsXYZ, Result, _bTargetNeedsXYZ, _ColorProfile );
 
 			return Result;
@@ -3350,10 +3517,10 @@ for ( int Y=0; Y < m_Height; Y++ )
 		/// </summary>
 		/// <param name="_Source">The source RGBE formatted image</param>
 		/// <param name="_bSourceIsXYZ">Tells if the source image is encoded as XYZE rather than RGBE</param>
-		/// <param name="_Target">The target Vector4D image</param>
+		/// <param name="_Target">The target float4 image</param>
 		/// <param name="_bTargetNeedsXYZ">Tells if the target needs to be in CIE XYZ space (true) or RGB (false)</param>
 		/// <param name="_ColorProfile">The color profile for the image</param>
-		public static void			DecodeRGBEImage( PF_RGBE[,] _Source, bool _bSourceIsXYZ, Vector4D[,] _Target, bool _bTargetNeedsXYZ, ColorProfile _ColorProfile )
+		public static void			DecodeRGBEImage( PF_RGBE[,] _Source, bool _bSourceIsXYZ, float4[,] _Target, bool _bTargetNeedsXYZ, ColorProfile _ColorProfile )
 		{
 			if ( _bSourceIsXYZ ^ _bTargetNeedsXYZ )
 			{	// Requires conversion...
@@ -3361,13 +3528,13 @@ for ( int Y=0; Y < m_Height; Y++ )
 				{	// Convert from XYZ to RGB
 					for ( int Y=0; Y < _Source.GetLength( 1 ); Y++ )
 						for ( int X=0; X < _Source.GetLength( 0 ); X++ )
-							_Target[X,Y] = _ColorProfile.XYZ2RGB( _Source[X,Y].DecodedColorAsVector );
+							_Target[X,Y] = _ColorProfile.XYZ2RGB( new float4( _Source[X,Y].DecodedColor.x, _Source[X,Y].DecodedColor.y, _Source[X,Y].DecodedColor.z, 1.0f ) );
 				}
 				else
 				{	// Convert from RGB to XYZ
 					for ( int Y=0; Y < _Source.GetLength( 1 ); Y++ )
 						for ( int X=0; X < _Source.GetLength( 0 ); X++ )
-							_Target[X,Y] = _ColorProfile.RGB2XYZ( _Source[X,Y].DecodedColorAsVector );
+							_Target[X,Y] = _ColorProfile.RGB2XYZ( new float4( _Source[X,Y].DecodedColor.x, _Source[X,Y].DecodedColor.y, _Source[X,Y].DecodedColor.z, 1.0f ) );
 				}
 				return;
 			}
@@ -3375,7 +3542,7 @@ for ( int Y=0; Y < m_Height; Y++ )
 			// Simply decode vector and leave as-is
 			for ( int Y=0; Y < _Source.GetLength( 1 ); Y++ )
 				for ( int X=0; X < _Source.GetLength( 0 ); X++ )
-					_Target[X,Y] = _Source[X,Y].DecodedColorAsVector;
+					_Target[X,Y] = new float4( _Source[X,Y].DecodedColor.x, _Source[X,Y].DecodedColor.y, _Source[X,Y].DecodedColor.z, 1.0f );
 		}
 
 		protected static string		RadianceFileFindInHeader( List<string> _HeaderLines, string _Search )
