@@ -39,7 +39,7 @@
 			// openFileDialogSourceImage
 			// 
 			this.openFileDialogSourceImage.DefaultExt = "*.png";
-			this.openFileDialogSourceImage.Filter = "PNG (*.png)|*.png|All Files (*.*)|*.*";
+			this.openFileDialogSourceImage.Filter = "All supported formats|*.PNG;*.GIF;*.BMP;*.HDR;*.CRW;*.TIFF;*.TGA;*.JPG|PNG (*.png)|*.png|Canon Raw (*.crw)|*.crw|All Files (*.*)|*.*";
 			this.openFileDialogSourceImage.RestoreDirectory = true;
 			this.openFileDialogSourceImage.Title = "Choose a source image of a diffuse albedo map...";
 			// 

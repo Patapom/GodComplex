@@ -6,22 +6,88 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace StandardizedDiffuseAlbedoMaps
 {
 	public partial class Form1 : Form
 	{
-		Bitmap2		m_BitmapXYZ = null;
+		private RegistryKey			m_AppKey;
+		private string				m_ApplicationPath;
+
+		private Bitmap2				m_BitmapXYZ = null;
+
+		#region METHODS
 
 		public Form1()
 		{
+ 			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\StandardizedDiffuseAlbedoMaps" );
+			m_ApplicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );
+
 			InitializeComponent();
 		}
 
+		#region Helpers
+
+		private string	GetRegKey( string _Key, string _Default )
+		{
+			string	Result = m_AppKey.GetValue( _Key ) as string;
+			return Result != null ? Result : _Default;
+		}
+		private void	SetRegKey( string _Key, string _Value )
+		{
+			m_AppKey.SetValue( _Key, _Value );
+		}
+
+		private float	GetRegKeyFloat( string _Key, float _Default )
+		{
+			string	Value = GetRegKey( _Key, _Default.ToString() );
+			float	Result;
+			float.TryParse( Value, out Result );
+			return Result;
+		}
+
+		private int		GetRegKeyInt( string _Key, float _Default )
+		{
+			string	Value = GetRegKey( _Key, _Default.ToString() );
+			int		Result;
+			int.TryParse( Value, out Result );
+			return Result;
+		}
+
+		private void	MessageBox( string _Text )
+		{
+			MessageBox( _Text, MessageBoxButtons.OK );
+		}
+		private void	MessageBox( string _Text, MessageBoxButtons _Buttons )
+		{
+			MessageBox( _Text, _Buttons, MessageBoxIcon.Information );
+		}
+		private void	MessageBox( string _Text, MessageBoxIcon _Icon )
+		{
+			MessageBox( _Text, MessageBoxButtons.OK, _Icon );
+		}
+		private void	MessageBox( string _Text, MessageBoxButtons _Buttons, MessageBoxIcon _Icon )
+		{
+			System.Windows.Forms.MessageBox.Show( this, _Text, "SH Encoder", _Buttons, _Icon );
+		}
+
+		#endregion
+
+		#endregion
+
+		#region EVENT HANDLERS
+
 		private void button1_Click( object sender, EventArgs e )
 		{
- 			if ( openFileDialogSourceImage.ShowDialog( this ) != DialogResult.OK )
+ 			string	OldFileName = GetRegKey( "LastImageFilename", m_ApplicationPath );
+			openFileDialogSourceImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
+			openFileDialogSourceImage.FileName = System.IO.Path.GetFileName( OldFileName );
+
+			if ( openFileDialogSourceImage.ShowDialog( this ) != DialogResult.OK )
  				return;
+
+			SetRegKey( "LastImageFilename", openFileDialogSourceImage.FileName );
 
 // 			System.IO.FileInfo	ImageFile = new System.IO.FileInfo( @"Camera Calibration\Photoshop\CRW_7443.png" );
 //			System.IO.FileInfo	ImageFile = new System.IO.FileInfo( @"Camera Calibration\Photoshop\CRW_7443_small.png" );
@@ -59,5 +125,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				}
 			outputPanel.Luminance = Lum;
 		}
+
+		#endregion
 	}
 }

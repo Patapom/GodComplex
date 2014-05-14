@@ -285,6 +285,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			TIFF,
 			GIF,
 			HDR,
+			CRW,
 
 			UNKNOWN
 		}
@@ -1202,6 +1203,12 @@ namespace StandardizedDiffuseAlbedoMaps
 						break;
 
 					case FILE_TYPE.BMP:	// BMP Don't have metadata!
+						m_GammaCurve = GAMMA_CURVE.STANDARD;
+						m_Gamma = 1.0f;
+						m_Chromaticities = Chromaticities.sRGB;	// Default for BMPs is standard sRGB with no gamma
+						break;
+
+					case FILE_TYPE.CRW:	// Canon Raw has no correction
 						m_GammaCurve = GAMMA_CURVE.STANDARD;
 						m_Gamma = 1.0f;
 						m_Chromaticities = Chromaticities.sRGB;	// Default for BMPs is standard sRGB with no gamma
@@ -2177,6 +2184,42 @@ Frame.CopyPixels( DebugImageSource, StrideX, 0 );
 							return;
 						}
 
+					case FILE_TYPE.CRW:
+						{
+							using ( System.IO.MemoryStream Stream = new System.IO.MemoryStream( _ImageFileContent ) )
+								using ( CanonRawLoader CRWLoader = new CanonRawLoader( Stream ) )
+								{
+// 									// Create a default sRGB linear color profile
+// 									m_ColorProfile = new ColorProfile(
+// 											ColorProfile.Chromaticities.sRGB,	// Use default sRGB color profile
+// 											ColorProfile.GAMMA_CURVE.STANDARD,	// But with a standard gamma curve...
+// 											TGA.ExtensionArea.GammaRatio		// ...whose gamma is retrieved from extension data
+// 										);
+
+// 									// Convert
+// 									byte[]	ImageContent = LoadBitmap( CRWLoader.Image, out m_Width, out m_Height );
+// 									m_Bitmap = new float4[m_Width,m_Height];
+// 									byte	A;
+// 									int		i = 0;
+// 									for ( int Y=0; Y < m_Height; Y++ )
+// 										for ( int X=0; X < m_Width; X++ )
+// 										{
+// 											m_Bitmap[X,Y].x = BYTE_TO_FLOAT * ImageContent[i++];
+// 											m_Bitmap[X,Y].y = BYTE_TO_FLOAT * ImageContent[i++];
+// 											m_Bitmap[X,Y].z = BYTE_TO_FLOAT * ImageContent[i++];
+// 
+// 											A = ImageContent[i++];
+// 											m_bHasAlpha |= A != 0xFF;
+// 
+// 											m_Bitmap[X,Y].w = BYTE_TO_FLOAT * A;
+// 										}
+
+									// Convert to CIEXYZ
+									m_ColorProfile.RGB2XYZ( m_Bitmap );
+								}
+							return;
+						}
+
 					default:
 						throw new NotSupportedException( "The image file type \"" + _FileType + "\" is not supported by the Bitmap class!" );
 				}
@@ -2593,6 +2636,9 @@ Frame.CopyPixels( DebugImageSource, StrideX, 0 );
 
 				case	".GIF":
 					return FILE_TYPE.GIF;
+
+				case	".CRW":
+					return FILE_TYPE.CRW;
 			}
 
 			return FILE_TYPE.UNKNOWN;
