@@ -231,7 +231,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				if ( ChildElement == null )
 					continue;
 
-				if ( ChildElement.Name == "Probe" || ChildElement.HasAttribute( "StandardReflectance" ) )
+				if ( ChildElement.Name != "Probe" || !ChildElement.HasAttribute( "StandardReflectance" ) )
 					continue;
 
 				float	StandardReflectance = 0;

@@ -84,6 +84,8 @@
 			this.label6 = new System.Windows.Forms.Label();
 			this.panelProbeLuminances = new System.Windows.Forms.Panel();
 			this.buttonSaveCalibration = new System.Windows.Forms.Button();
+			this.buttonSetupDatabaseFolder = new System.Windows.Forms.Button();
+			this.buttonReCalibrate = new System.Windows.Forms.Button();
 			this.buttonLoadCalibration = new System.Windows.Forms.Button();
 			this.checkBoxGraphLagrange = new System.Windows.Forms.CheckBox();
 			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
@@ -91,9 +93,9 @@
 			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
 			this.openFileDialogCalibration = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogCalibration = new System.Windows.Forms.SaveFileDialog();
-			this.buttonSetupDatabaseFolder = new System.Windows.Forms.Button();
-			this.buttonReCalibrate = new System.Windows.Forms.Button();
 			this.folderBrowserDialogDatabaseLocation = new System.Windows.Forms.FolderBrowserDialog();
+			this.buttonExplore = new System.Windows.Forms.Button();
+			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
 			this.groupBoxCameraShotInfos.SuspendLayout();
 			this.tabControl.SuspendLayout();
 			this.tabPage2.SuspendLayout();
@@ -119,6 +121,7 @@
 			this.buttonLoadImage.Size = new System.Drawing.Size(97, 37);
 			this.buttonLoadImage.TabIndex = 1;
 			this.buttonLoadImage.Text = "Load Image";
+			this.toolTip.SetToolTip(this.buttonLoadImage, "Load a new image");
 			this.buttonLoadImage.UseVisualStyleBackColor = true;
 			this.buttonLoadImage.Click += new System.EventHandler(this.buttonLoadImage_Click);
 			// 
@@ -131,6 +134,8 @@
 			this.labelLuminance.Size = new System.Drawing.Size(116, 23);
 			this.labelLuminance.TabIndex = 2;
 			this.labelLuminance.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelLuminance, "Shows the luminance under the mouse cursor (takes the sRGB checkbox state into ac" +
+        "count to return sRGB-corrected or linear luminance)");
 			// 
 			// checkBoxsRGB
 			// 
@@ -143,6 +148,8 @@
 			this.checkBoxsRGB.Size = new System.Drawing.Size(54, 17);
 			this.checkBoxsRGB.TabIndex = 3;
 			this.checkBoxsRGB.Text = "sRGB";
+			this.toolTip.SetToolTip(this.checkBoxsRGB, "Shows the image with sRGB corection (visual only, doesn\'t affect internal computa" +
+        "tion of luminances)");
 			this.checkBoxsRGB.UseVisualStyleBackColor = true;
 			this.checkBoxsRGB.CheckedChanged += new System.EventHandler(this.checkBoxsRGB_CheckedChanged);
 			// 
@@ -157,6 +164,8 @@
 			this.checkBoxLuminance.Size = new System.Drawing.Size(78, 17);
 			this.checkBoxLuminance.TabIndex = 3;
 			this.checkBoxLuminance.Text = "Luminance";
+			this.toolTip.SetToolTip(this.checkBoxLuminance, "Shows the image\'s luminance only, as opposed to RGB colors (visual only, doesn\'t " +
+        "affect internal computation of luminances)");
 			this.checkBoxLuminance.UseVisualStyleBackColor = true;
 			this.checkBoxLuminance.CheckedChanged += new System.EventHandler(this.checkBoxLuminance_CheckedChanged);
 			// 
@@ -168,6 +177,7 @@
 			this.checkBoxCalibrate02.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate02.TabIndex = 4;
 			this.checkBoxCalibrate02.Text = "SRS-02-010";
+			this.toolTip.SetToolTip(this.checkBoxCalibrate02, "Check this if the 2% reflectance probe is present in the image");
 			this.checkBoxCalibrate02.UseVisualStyleBackColor = true;
 			this.checkBoxCalibrate02.CheckedChanged += new System.EventHandler(this.checkBoxCalibrate02_CheckedChanged);
 			// 
@@ -197,6 +207,7 @@
 			this.label4.Size = new System.Drawing.Size(69, 13);
 			this.label4.TabIndex = 9;
 			this.label4.Text = "Focal Length";
+			this.toolTip.SetToolTip(this.label4, "Sets the focal length of the camera that shot the current image");
 			// 
 			// label3
 			// 
@@ -206,6 +217,7 @@
 			this.label3.Size = new System.Drawing.Size(47, 13);
 			this.label3.TabIndex = 9;
 			this.label3.Text = "Aperture";
+			this.toolTip.SetToolTip(this.label3, "Sets the aperture of the camera that shot the current image");
 			// 
 			// label2
 			// 
@@ -215,6 +227,7 @@
 			this.label2.Size = new System.Drawing.Size(75, 13);
 			this.label2.TabIndex = 9;
 			this.label2.Text = "Shutter Speed";
+			this.toolTip.SetToolTip(this.label2, "Sets the shutter speed of the camera that shot the current image");
 			// 
 			// label1
 			// 
@@ -224,6 +237,7 @@
 			this.label1.Size = new System.Drawing.Size(59, 13);
 			this.label1.TabIndex = 9;
 			this.label1.Text = "ISO Speed";
+			this.toolTip.SetToolTip(this.label1, "Sets the ISO speed of the camera that shot the current image");
 			// 
 			// floatTrackbarControlISOSpeed
 			// 
@@ -235,6 +249,7 @@
 			this.floatTrackbarControlISOSpeed.RangeMin = 25F;
 			this.floatTrackbarControlISOSpeed.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlISOSpeed.TabIndex = 7;
+			this.toolTip.SetToolTip(this.floatTrackbarControlISOSpeed, "Sets the ISO speed of the camera that shot the current image");
 			this.floatTrackbarControlISOSpeed.Value = 100F;
 			this.floatTrackbarControlISOSpeed.VisibleRangeMax = 200F;
 			this.floatTrackbarControlISOSpeed.VisibleRangeMin = 25F;
@@ -249,6 +264,7 @@
 			this.floatTrackbarControlFocalLength.RangeMin = 0.01F;
 			this.floatTrackbarControlFocalLength.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlFocalLength.TabIndex = 7;
+			this.toolTip.SetToolTip(this.floatTrackbarControlFocalLength, "Sets the focal length of the camera that shot the current image");
 			this.floatTrackbarControlFocalLength.Value = 55F;
 			this.floatTrackbarControlFocalLength.VisibleRangeMax = 100F;
 			this.floatTrackbarControlFocalLength.VisibleRangeMin = 0.01F;
@@ -263,6 +279,7 @@
 			this.floatTrackbarControlAperture.RangeMin = 1F;
 			this.floatTrackbarControlAperture.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlAperture.TabIndex = 7;
+			this.toolTip.SetToolTip(this.floatTrackbarControlAperture, "Sets the aperture of the camera that shot the current image");
 			this.floatTrackbarControlAperture.Value = 8F;
 			this.floatTrackbarControlAperture.VisibleRangeMax = 16F;
 			this.floatTrackbarControlAperture.VisibleRangeMin = 1F;
@@ -277,6 +294,7 @@
 			this.floatTrackbarControlShutterSpeed.RangeMin = 0.0001F;
 			this.floatTrackbarControlShutterSpeed.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlShutterSpeed.TabIndex = 7;
+			this.toolTip.SetToolTip(this.floatTrackbarControlShutterSpeed, "Sets the shutter speed of the camera that shot the current image");
 			this.floatTrackbarControlShutterSpeed.Value = 1F;
 			// 
 			// label15
@@ -319,6 +337,8 @@
 			this.labelProbeRelative99.TabIndex = 6;
 			this.labelProbeRelative99.Text = "label1";
 			this.labelProbeRelative99.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeRelative99, "(debug) Displays the relative luminance of the probe compared to the previous ava" +
+        "ilable probe (e.g. 2 for the 20% probe relative to the 10% probe)");
 			// 
 			// labelProbeNormalized99
 			// 
@@ -330,6 +350,7 @@
 			this.labelProbeNormalized99.TabIndex = 6;
 			this.labelProbeNormalized99.Text = "label1";
 			this.labelProbeNormalized99.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeNormalized99, "Displays the luminance of the probe after normalization of the measured values");
 			// 
 			// labelProbeValue99
 			// 
@@ -341,6 +362,7 @@
 			this.labelProbeValue99.TabIndex = 6;
 			this.labelProbeValue99.Text = "label1";
 			this.labelProbeValue99.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeValue99, "Displays the average luminance of the probe measured from the image");
 			// 
 			// labelProbeRelative75
 			// 
@@ -352,6 +374,8 @@
 			this.labelProbeRelative75.TabIndex = 6;
 			this.labelProbeRelative75.Text = "label1";
 			this.labelProbeRelative75.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeRelative75, "(debug) Displays the relative luminance of the probe compared to the previous ava" +
+        "ilable probe (e.g. 2 for the 20% probe relative to the 10% probe)");
 			// 
 			// labelProbeNormalized75
 			// 
@@ -363,6 +387,7 @@
 			this.labelProbeNormalized75.TabIndex = 6;
 			this.labelProbeNormalized75.Text = "label1";
 			this.labelProbeNormalized75.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeNormalized75, "Displays the luminance of the probe after normalization of the measured values");
 			// 
 			// labelProbeValue75
 			// 
@@ -374,6 +399,7 @@
 			this.labelProbeValue75.TabIndex = 6;
 			this.labelProbeValue75.Text = "label1";
 			this.labelProbeValue75.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeValue75, "Displays the average luminance of the probe measured from the image");
 			// 
 			// labelProbeRelative50
 			// 
@@ -385,6 +411,8 @@
 			this.labelProbeRelative50.TabIndex = 6;
 			this.labelProbeRelative50.Text = "label1";
 			this.labelProbeRelative50.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeRelative50, "(debug) Displays the relative luminance of the probe compared to the previous ava" +
+        "ilable probe (e.g. 2 for the 20% probe relative to the 10% probe)");
 			// 
 			// labelProbeNormalized50
 			// 
@@ -396,6 +424,7 @@
 			this.labelProbeNormalized50.TabIndex = 6;
 			this.labelProbeNormalized50.Text = "label1";
 			this.labelProbeNormalized50.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeNormalized50, "Displays the luminance of the probe after normalization of the measured values");
 			// 
 			// labelProbeValue50
 			// 
@@ -407,6 +436,7 @@
 			this.labelProbeValue50.TabIndex = 6;
 			this.labelProbeValue50.Text = "label1";
 			this.labelProbeValue50.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeValue50, "Displays the average luminance of the probe measured from the image");
 			// 
 			// labelProbeRelative20
 			// 
@@ -418,6 +448,8 @@
 			this.labelProbeRelative20.TabIndex = 6;
 			this.labelProbeRelative20.Text = "label1";
 			this.labelProbeRelative20.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeRelative20, "(debug) Displays the relative luminance of the probe compared to the previous ava" +
+        "ilable probe (e.g. 2 for the 20% probe relative to the 10% probe)");
 			// 
 			// labelProbeNormalized20
 			// 
@@ -429,6 +461,7 @@
 			this.labelProbeNormalized20.TabIndex = 6;
 			this.labelProbeNormalized20.Text = "label1";
 			this.labelProbeNormalized20.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeNormalized20, "Displays the luminance of the probe after normalization of the measured values");
 			// 
 			// labelProbeValue20
 			// 
@@ -440,6 +473,7 @@
 			this.labelProbeValue20.TabIndex = 6;
 			this.labelProbeValue20.Text = "label1";
 			this.labelProbeValue20.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeValue20, "Displays the average luminance of the probe measured from the image");
 			// 
 			// labelProbeRelative10
 			// 
@@ -451,6 +485,8 @@
 			this.labelProbeRelative10.TabIndex = 6;
 			this.labelProbeRelative10.Text = "label1";
 			this.labelProbeRelative10.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeRelative10, "(debug) Displays the relative luminance of the probe compared to the previous ava" +
+        "ilable probe (e.g. 2 for the 20% probe relative to the 10% probe)");
 			// 
 			// labelProbeNormalized10
 			// 
@@ -462,6 +498,7 @@
 			this.labelProbeNormalized10.TabIndex = 6;
 			this.labelProbeNormalized10.Text = "label1";
 			this.labelProbeNormalized10.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeNormalized10, "Displays the luminance of the probe after normalization of the measured values");
 			// 
 			// labelProbeValue10
 			// 
@@ -473,6 +510,7 @@
 			this.labelProbeValue10.TabIndex = 6;
 			this.labelProbeValue10.Text = "label1";
 			this.labelProbeValue10.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeValue10, "Displays the average luminance of the probe measured from the image");
 			// 
 			// labelProbeRelative02
 			// 
@@ -484,6 +522,8 @@
 			this.labelProbeRelative02.TabIndex = 6;
 			this.labelProbeRelative02.Text = "label1";
 			this.labelProbeRelative02.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeRelative02, "(debug) Displays the relative luminance of the probe compared to the previous ava" +
+        "ilable probe (e.g. 2 for the 20% probe relative to the 10% probe)");
 			// 
 			// labelProbeNormalized02
 			// 
@@ -495,6 +535,7 @@
 			this.labelProbeNormalized02.TabIndex = 6;
 			this.labelProbeNormalized02.Text = "label1";
 			this.labelProbeNormalized02.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeNormalized02, "Displays the luminance of the probe after normalization of the measured values");
 			// 
 			// labelProbeValue02
 			// 
@@ -506,6 +547,7 @@
 			this.labelProbeValue02.TabIndex = 6;
 			this.labelProbeValue02.Text = "label1";
 			this.labelProbeValue02.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelProbeValue02, "Displays the average luminance of the probe measured from the image");
 			// 
 			// buttonCalibrate99
 			// 
@@ -515,6 +557,8 @@
 			this.buttonCalibrate99.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate99.TabIndex = 5;
 			this.buttonCalibrate99.Text = "Calibrate";
+			this.toolTip.SetToolTip(this.buttonCalibrate99, "Click to setup the position and radius of the disc covering the probe for measure" +
+        "ment of luminance");
 			this.buttonCalibrate99.UseVisualStyleBackColor = true;
 			this.buttonCalibrate99.Click += new System.EventHandler(this.buttonCalibrate99_Click);
 			// 
@@ -526,6 +570,8 @@
 			this.buttonCalibrate75.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate75.TabIndex = 5;
 			this.buttonCalibrate75.Text = "Calibrate";
+			this.toolTip.SetToolTip(this.buttonCalibrate75, "Click to setup the position and radius of the disc covering the probe for measure" +
+        "ment of luminance");
 			this.buttonCalibrate75.UseVisualStyleBackColor = true;
 			this.buttonCalibrate75.Click += new System.EventHandler(this.buttonCalibrate75_Click);
 			// 
@@ -537,6 +583,8 @@
 			this.buttonCalibrate50.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate50.TabIndex = 5;
 			this.buttonCalibrate50.Text = "Calibrate";
+			this.toolTip.SetToolTip(this.buttonCalibrate50, "Click to setup the position and radius of the disc covering the probe for measure" +
+        "ment of luminance");
 			this.buttonCalibrate50.UseVisualStyleBackColor = true;
 			this.buttonCalibrate50.Click += new System.EventHandler(this.buttonCalibrate50_Click);
 			// 
@@ -548,6 +596,8 @@
 			this.buttonCalibrate20.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate20.TabIndex = 5;
 			this.buttonCalibrate20.Text = "Calibrate";
+			this.toolTip.SetToolTip(this.buttonCalibrate20, "Click to setup the position and radius of the disc covering the probe for measure" +
+        "ment of luminance");
 			this.buttonCalibrate20.UseVisualStyleBackColor = true;
 			this.buttonCalibrate20.Click += new System.EventHandler(this.buttonCalibrate20_Click);
 			// 
@@ -559,6 +609,8 @@
 			this.buttonCalibrate10.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate10.TabIndex = 5;
 			this.buttonCalibrate10.Text = "Calibrate";
+			this.toolTip.SetToolTip(this.buttonCalibrate10, "Click to setup the position and radius of the disc covering the probe for measure" +
+        "ment of luminance");
 			this.buttonCalibrate10.UseVisualStyleBackColor = true;
 			this.buttonCalibrate10.Click += new System.EventHandler(this.buttonCalibrate10_Click);
 			// 
@@ -570,6 +622,8 @@
 			this.buttonCalibrate02.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate02.TabIndex = 5;
 			this.buttonCalibrate02.Text = "Calibrate";
+			this.toolTip.SetToolTip(this.buttonCalibrate02, "Click to setup the position and radius of the disc covering the probe for measure" +
+        "ment of luminance");
 			this.buttonCalibrate02.UseVisualStyleBackColor = true;
 			this.buttonCalibrate02.Click += new System.EventHandler(this.buttonCalibrate02_Click);
 			// 
@@ -581,6 +635,7 @@
 			this.checkBoxCalibrate99.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate99.TabIndex = 4;
 			this.checkBoxCalibrate99.Text = "SRS-99-010";
+			this.toolTip.SetToolTip(this.checkBoxCalibrate99, "Check this if the 99% reflectance probe is present in the image");
 			this.checkBoxCalibrate99.UseVisualStyleBackColor = true;
 			this.checkBoxCalibrate99.CheckedChanged += new System.EventHandler(this.checkBoxCalibrate99_CheckedChanged);
 			// 
@@ -592,6 +647,7 @@
 			this.checkBoxCalibrate75.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate75.TabIndex = 4;
 			this.checkBoxCalibrate75.Text = "SRS-75-010";
+			this.toolTip.SetToolTip(this.checkBoxCalibrate75, "Check this if the 75% reflectance probe is present in the image");
 			this.checkBoxCalibrate75.UseVisualStyleBackColor = true;
 			this.checkBoxCalibrate75.CheckedChanged += new System.EventHandler(this.checkBoxCalibrate75_CheckedChanged);
 			// 
@@ -603,6 +659,7 @@
 			this.checkBoxCalibrate50.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate50.TabIndex = 4;
 			this.checkBoxCalibrate50.Text = "SRS-50-010";
+			this.toolTip.SetToolTip(this.checkBoxCalibrate50, "Check this if the 50% reflectance probe is present in the image");
 			this.checkBoxCalibrate50.UseVisualStyleBackColor = true;
 			this.checkBoxCalibrate50.CheckedChanged += new System.EventHandler(this.checkBoxCalibrate50_CheckedChanged);
 			// 
@@ -614,6 +671,7 @@
 			this.checkBoxCalibrate20.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate20.TabIndex = 4;
 			this.checkBoxCalibrate20.Text = "SRS-20-010";
+			this.toolTip.SetToolTip(this.checkBoxCalibrate20, "Check this if the 20% reflectance probe is present in the image");
 			this.checkBoxCalibrate20.UseVisualStyleBackColor = true;
 			this.checkBoxCalibrate20.CheckedChanged += new System.EventHandler(this.checkBoxCalibrate20_CheckedChanged);
 			// 
@@ -625,6 +683,7 @@
 			this.checkBoxCalibrate10.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate10.TabIndex = 4;
 			this.checkBoxCalibrate10.Text = "SRS-10-010";
+			this.toolTip.SetToolTip(this.checkBoxCalibrate10, "Check this if the 10% reflectance probe is present in the image");
 			this.checkBoxCalibrate10.UseVisualStyleBackColor = true;
 			this.checkBoxCalibrate10.CheckedChanged += new System.EventHandler(this.checkBoxCalibrate10_CheckedChanged);
 			// 
@@ -637,6 +696,8 @@
 			this.label5.Size = new System.Drawing.Size(59, 13);
 			this.label5.TabIndex = 9;
 			this.label5.Text = "Luminance";
+			this.toolTip.SetToolTip(this.label5, "Shows the luminance under the mouse cursor (takes the sRGB checkbox state into ac" +
+        "count to return sRGB-corrected or linear luminance)");
 			// 
 			// tabControl
 			// 
@@ -663,6 +724,7 @@
 			// 
 			// tabPage2
 			// 
+			this.tabPage2.Controls.Add(this.buttonExplore);
 			this.tabPage2.Controls.Add(this.labelCalbrationImageName);
 			this.tabPage2.Controls.Add(this.label6);
 			this.tabPage2.Controls.Add(this.panelProbeLuminances);
@@ -685,10 +747,11 @@
 			this.labelCalbrationImageName.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
 			this.labelCalbrationImageName.Location = new System.Drawing.Point(191, 12);
 			this.labelCalbrationImageName.Name = "labelCalbrationImageName";
-			this.labelCalbrationImageName.Size = new System.Drawing.Size(246, 16);
+			this.labelCalbrationImageName.Size = new System.Drawing.Size(165, 16);
 			this.labelCalbrationImageName.TabIndex = 14;
 			this.labelCalbrationImageName.Text = "<NO IMAGE>";
 			this.labelCalbrationImageName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.toolTip.SetToolTip(this.labelCalbrationImageName, "Displays the name of the image that was used to create the calibration");
 			// 
 			// label6
 			// 
@@ -698,6 +761,7 @@
 			this.label6.Size = new System.Drawing.Size(185, 13);
 			this.label6.TabIndex = 14;
 			this.label6.Text = "Reference Image used for Calibration:";
+			this.toolTip.SetToolTip(this.label6, "Displays the name of the image that was used to create the calibration");
 			// 
 			// panelProbeLuminances
 			// 
@@ -747,8 +811,34 @@
 			this.buttonSaveCalibration.Size = new System.Drawing.Size(75, 23);
 			this.buttonSaveCalibration.TabIndex = 12;
 			this.buttonSaveCalibration.Text = "Save";
+			this.toolTip.SetToolTip(this.buttonSaveCalibration, "Save the calibration data to a file");
 			this.buttonSaveCalibration.UseVisualStyleBackColor = true;
 			this.buttonSaveCalibration.Click += new System.EventHandler(this.buttonSaveCalibration_Click);
+			// 
+			// buttonSetupDatabaseFolder
+			// 
+			this.buttonSetupDatabaseFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonSetupDatabaseFolder.Location = new System.Drawing.Point(6, 537);
+			this.buttonSetupDatabaseFolder.Name = "buttonSetupDatabaseFolder";
+			this.buttonSetupDatabaseFolder.Size = new System.Drawing.Size(185, 23);
+			this.buttonSetupDatabaseFolder.TabIndex = 12;
+			this.buttonSetupDatabaseFolder.Text = "Set Calibration Database Location";
+			this.toolTip.SetToolTip(this.buttonSetupDatabaseFolder, "Sets the location where the calibration files will be collected to create the dat" +
+        "abase of reflectances that will be used to convert textures");
+			this.buttonSetupDatabaseFolder.UseVisualStyleBackColor = true;
+			this.buttonSetupDatabaseFolder.Click += new System.EventHandler(this.buttonSetupDatabaseFolder_Click);
+			// 
+			// buttonReCalibrate
+			// 
+			this.buttonReCalibrate.Location = new System.Drawing.Point(362, 9);
+			this.buttonReCalibrate.Name = "buttonReCalibrate";
+			this.buttonReCalibrate.Size = new System.Drawing.Size(75, 23);
+			this.buttonReCalibrate.TabIndex = 12;
+			this.buttonReCalibrate.Text = "Re-Calibrate";
+			this.toolTip.SetToolTip(this.buttonReCalibrate, "Restart calibration of all probes checked below using the same picked position & " +
+        "radius");
+			this.buttonReCalibrate.UseVisualStyleBackColor = true;
+			this.buttonReCalibrate.Click += new System.EventHandler(this.buttonReCalibrate_Click);
 			// 
 			// buttonLoadCalibration
 			// 
@@ -758,6 +848,7 @@
 			this.buttonLoadCalibration.Size = new System.Drawing.Size(75, 23);
 			this.buttonLoadCalibration.TabIndex = 12;
 			this.buttonLoadCalibration.Text = "Load";
+			this.toolTip.SetToolTip(this.buttonLoadCalibration, "Load an existing calibration file");
 			this.buttonLoadCalibration.UseVisualStyleBackColor = true;
 			this.buttonLoadCalibration.Click += new System.EventHandler(this.buttonLoadCalibration_Click);
 			// 
@@ -765,11 +856,12 @@
 			// 
 			this.checkBoxGraphLagrange.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.checkBoxGraphLagrange.AutoSize = true;
-			this.checkBoxGraphLagrange.Location = new System.Drawing.Point(5, 516);
+			this.checkBoxGraphLagrange.Location = new System.Drawing.Point(6, 516);
 			this.checkBoxGraphLagrange.Name = "checkBoxGraphLagrange";
 			this.checkBoxGraphLagrange.Size = new System.Drawing.Size(150, 17);
 			this.checkBoxGraphLagrange.TabIndex = 3;
 			this.checkBoxGraphLagrange.Text = "Use Lagrange polynomials";
+			this.toolTip.SetToolTip(this.checkBoxGraphLagrange, "Use lagrange polynomial interpolation of probe luminances");
 			this.checkBoxGraphLagrange.UseVisualStyleBackColor = true;
 			this.checkBoxGraphLagrange.CheckedChanged += new System.EventHandler(this.checkBoxGraphLagrange_CheckedChanged);
 			// 
@@ -835,31 +927,21 @@
 			this.saveFileDialogCalibration.Filter = "Calibration Files (*.xml)|*.xml|All Files (*.*)|*.*";
 			this.saveFileDialogCalibration.Title = "Choose the calbration file to save";
 			// 
-			// buttonSetupDatabaseFolder
-			// 
-			this.buttonSetupDatabaseFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.buttonSetupDatabaseFolder.Location = new System.Drawing.Point(6, 537);
-			this.buttonSetupDatabaseFolder.Name = "buttonSetupDatabaseFolder";
-			this.buttonSetupDatabaseFolder.Size = new System.Drawing.Size(185, 23);
-			this.buttonSetupDatabaseFolder.TabIndex = 12;
-			this.buttonSetupDatabaseFolder.Text = "Set Calibration Database Location";
-			this.buttonSetupDatabaseFolder.UseVisualStyleBackColor = true;
-			this.buttonSetupDatabaseFolder.Click += new System.EventHandler(this.buttonSetupDatabaseFolder_Click);
-			// 
-			// buttonReCalibrate
-			// 
-			this.buttonReCalibrate.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.buttonReCalibrate.Location = new System.Drawing.Point(209, 537);
-			this.buttonReCalibrate.Name = "buttonReCalibrate";
-			this.buttonReCalibrate.Size = new System.Drawing.Size(75, 23);
-			this.buttonReCalibrate.TabIndex = 12;
-			this.buttonReCalibrate.Text = "Re-Calibrate";
-			this.buttonReCalibrate.UseVisualStyleBackColor = true;
-			this.buttonReCalibrate.Click += new System.EventHandler(this.buttonReCalibrate_Click);
-			// 
 			// folderBrowserDialogDatabaseLocation
 			// 
 			this.folderBrowserDialogDatabaseLocation.Description = "Select the base folder containing the calibration files to use as a database...";
+			// 
+			// buttonExplore
+			// 
+			this.buttonExplore.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonExplore.Location = new System.Drawing.Point(197, 537);
+			this.buttonExplore.Name = "buttonExplore";
+			this.buttonExplore.Size = new System.Drawing.Size(75, 23);
+			this.buttonExplore.TabIndex = 15;
+			this.buttonExplore.Text = "Explore";
+			this.toolTip.SetToolTip(this.buttonExplore, "Explores the database of calibration probes to compare how calibrations vary with" +
+        " different camera settings (ISO, shutter speed or aperture)");
+			this.buttonExplore.UseVisualStyleBackColor = true;
 			// 
 			// Form1
 			// 
@@ -953,6 +1035,8 @@
 		private System.Windows.Forms.Button buttonSetupDatabaseFolder;
 		private System.Windows.Forms.Button buttonReCalibrate;
 		private System.Windows.Forms.FolderBrowserDialog folderBrowserDialogDatabaseLocation;
+		private System.Windows.Forms.Button buttonExplore;
+		private System.Windows.Forms.ToolTip toolTip;
 	}
 }
 
