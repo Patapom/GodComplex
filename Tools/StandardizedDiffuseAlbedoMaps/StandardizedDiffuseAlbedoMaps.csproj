@@ -56,18 +56,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bitmap.cs" />
-    <Compile Include="CameraCalibration.cs" />
-    <Compile Include="CameraCalibrationDatabase.cs" />
-    <Compile Include="ReferenceImagePanel.cs">
+    <Compile Include="Calibration Tools\CameraCalibration.cs" />
+    <Compile Include="Calibration Tools\CameraCalibrationDatabase.cs" />
+    <Compile Include="Calibration Tools\ReferenceImagePanel.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="ReferenceImagePanel.Designer.cs">
+    <Compile Include="Calibration Tools\ReferenceImagePanel.Designer.cs">
       <DependentUpon>ReferenceImagePanel.cs</DependentUpon>
     </Compile>
-    <Compile Include="GraphPanel.cs">
+    <Compile Include="Calibration Tools\GraphPanel.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="GraphPanel.Designer.cs">
+    <Compile Include="Calibration Tools\GraphPanel.Designer.cs">
       <DependentUpon>GraphPanel.cs</DependentUpon>
     </Compile>
     <Compile Include="Image Formats\CanonRawLoader.cs" />
