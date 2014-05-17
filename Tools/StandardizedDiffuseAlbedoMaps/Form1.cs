@@ -12,6 +12,14 @@ namespace StandardizedDiffuseAlbedoMaps
 {
 	public partial class Form1 : Form
 	{
+		#region CONSTANTS
+
+		private const string	APP_TITLE = "Standardized Diffuse Albedo Maps Creator";
+		private const float		BLACK_VALUES_TOLERANCE = 0.05f;		// We can tolerate up to 5% black values for a probe to be valid
+		private const float		SATURATED_VALUES_TOLERANCE = 0.05f;	// We can tolerate up to 5% saturated values for a probe to be valid
+
+		#endregion
+
 		#region FIELDS
 
 		private RegistryKey			m_AppKey;
@@ -20,7 +28,9 @@ namespace StandardizedDiffuseAlbedoMaps
 		private System.IO.FileInfo	m_ImageFileName = null;
 		private Bitmap2				m_BitmapXYZ = null;
 
-		private CameraCalibration	m_Calibration = new CameraCalibration();
+		// Calibration database
+		private CameraCalibrationDatabase	m_CalibrationDatabase = new CameraCalibrationDatabase();
+		private CameraCalibration			m_Calibration = new CameraCalibration();	// Current calibration
 
 		#endregion
 
@@ -32,6 +42,20 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_ApplicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );
 
 			InitializeComponent();
+		}
+
+		protected override void OnLoad( EventArgs e )
+		{
+			base.OnLoad( e );
+
+			try
+			{
+				m_CalibrationDatabase.DatabasePath = new System.IO.DirectoryInfo( System.IO.Path.GetDirectoryName( GetRegKey( "LastCalibrationDatabasePath", m_ApplicationPath ) ) );
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "Failed to parse the calibration database:\r\n\r\n", _e );
+			}
 
 			UpdateUIFromCalibration();
 		}
@@ -64,96 +88,28 @@ namespace StandardizedDiffuseAlbedoMaps
 			return Result;
 		}
 
-		private void	MessageBox( string _Text )
+		private DialogResult	MessageBox( string _Text )
 		{
-			MessageBox( _Text, MessageBoxButtons.OK );
+			return MessageBox( _Text, MessageBoxButtons.OK );
 		}
-		private void	MessageBox( string _Text, Exception _e )
+		private DialogResult	MessageBox( string _Text, Exception _e )
 		{
-			MessageBox( _Text + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+			return MessageBox( _Text + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 		}
-		private void	MessageBox( string _Text, MessageBoxButtons _Buttons )
+		private DialogResult	MessageBox( string _Text, MessageBoxButtons _Buttons )
 		{
-			MessageBox( _Text, _Buttons, MessageBoxIcon.Information );
+			return MessageBox( _Text, _Buttons, MessageBoxIcon.Information );
 		}
-		private void	MessageBox( string _Text, MessageBoxIcon _Icon )
+		private DialogResult	MessageBox( string _Text, MessageBoxIcon _Icon )
 		{
-			MessageBox( _Text, MessageBoxButtons.OK, _Icon );
+			return MessageBox( _Text, MessageBoxButtons.OK, _Icon );
 		}
-		private void	MessageBox( string _Text, MessageBoxButtons _Buttons, MessageBoxIcon _Icon )
+		private DialogResult	MessageBox( string _Text, MessageBoxButtons _Buttons, MessageBoxIcon _Icon )
 		{
-			System.Windows.Forms.MessageBox.Show( this, _Text, "SH Encoder", _Buttons, _Icon );
+			return System.Windows.Forms.MessageBox.Show( this, _Text, "Texture Reflectances Generator", _Buttons, _Icon );
 		}
 
 		#endregion
-
-		#endregion
-
-		#region EVENT HANDLERS
-
-		private void buttonLoadImage_Click( object sender, EventArgs e )
-		{
- 			string	OldFileName = GetRegKey( "LastImageFilename", m_ApplicationPath );
-			openFileDialogSourceImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
-			openFileDialogSourceImage.FileName = System.IO.Path.GetFileName( OldFileName );
-
-			if ( openFileDialogSourceImage.ShowDialog( this ) != DialogResult.OK )
- 				return;
-
-			SetRegKey( "LastImageFilename", openFileDialogSourceImage.FileName );
-
-			try
-			{
-				// Load
-				System.IO.FileInfo	ImageFileName = new System.IO.FileInfo( openFileDialogSourceImage.FileName );
-				Bitmap2	NewBitmap = new Bitmap2( ImageFileName );
-
-				// Safely assign once loaded
-				m_ImageFileName = ImageFileName;
-				m_BitmapXYZ = NewBitmap;
-
-				// Setup camera shot info if it exists
-				if ( m_BitmapXYZ.HasValidShotInfo )
-				{
-					groupBoxCameraShotInfos.Enabled = false;
-					floatTrackbarControlISOSpeed.Value = m_BitmapXYZ.ISOSpeed;			floatTrackbarControlISOSpeed.SimulateValueChange();	// So we get notified even if value is the same as default slider value
-					floatTrackbarControlShutterSpeed.Value = m_BitmapXYZ.ShutterSpeed;	floatTrackbarControlShutterSpeed.SimulateValueChange();	// So we get notified even if value is the same as default slider value
-					floatTrackbarControlAperture.Value = m_BitmapXYZ.Aperture;			floatTrackbarControlAperture.SimulateValueChange();	// So we get notified even if value is the same as default slider value
-					floatTrackbarControlFocalLength.Value = m_BitmapXYZ.FocalLength;	floatTrackbarControlFocalLength.SimulateValueChange();	// So we get notified even if value is the same as default slider value
-				}
-				else
-					groupBoxCameraShotInfos.Enabled = true;
-
-				RebuildImage();
-				UpdateUIFromCalibration();
-			}
-			catch ( Exception _e )
-			{
-				MessageBox( "An error occurred while loading the image:\r\n\r\n", _e );
-			}
-		}
-
-		private void outputPanel_MouseMove( object sender, MouseEventArgs e )
-		{
-			if ( m_BitmapXYZ == null )
-				return;
-
-			float	Lum = m_BitmapXYZ.ContentXYZ[e.X*m_BitmapXYZ.Width/outputPanel.Width,e.Y*m_BitmapXYZ.Height/outputPanel.Height].y;
-			if ( checkBoxsRGB.Checked )
-				Lum = Bitmap2.ColorProfile.Linear2sRGB( Lum );
-
-			labelLuminance.Text = "L=" + Lum.ToString( "G4" ) + " (" + (int) (Lum*255) + ")";
-		}
-
-		private void checkBoxsRGB_CheckedChanged( object sender, EventArgs e )
-		{
-			RebuildImage();
-		}
-
-		private void checkBoxLuminance_CheckedChanged( object sender, EventArgs e )
-		{
-			RebuildImage();
-		}
 
 		private void RebuildImage()
 		{
@@ -200,15 +156,77 @@ namespace StandardizedDiffuseAlbedoMaps
 			outputPanel.Image = Image;
 		}
 
-		#region Calibration
+		#endregion
 
-		/// <summary>
-		/// Loads all the calibration files from the calibration database folder
-		/// </summary>
-		private void	ParseCalibrationDatabase()
+		#region EVENT HANDLERS
+
+		private void buttonLoadImage_Click( object sender, EventArgs e )
 		{
+ 			string	OldFileName = GetRegKey( "LastImageFilename", m_ApplicationPath );
+			openFileDialogSourceImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
+			openFileDialogSourceImage.FileName = System.IO.Path.GetFileName( OldFileName );
 
+			if ( openFileDialogSourceImage.ShowDialog( this ) != DialogResult.OK )
+ 				return;
+
+			SetRegKey( "LastImageFilename", openFileDialogSourceImage.FileName );
+
+			try
+			{
+				// Load
+				System.IO.FileInfo	ImageFileName = new System.IO.FileInfo( openFileDialogSourceImage.FileName );
+				Bitmap2	NewBitmap = new Bitmap2( ImageFileName );
+
+				// Safely assign once loaded
+				m_ImageFileName = ImageFileName;
+				m_BitmapXYZ = NewBitmap;
+
+				this.Text = APP_TITLE + " (" + ImageFileName.Name + ")";
+
+				// Setup camera shot info if it exists
+				if ( m_BitmapXYZ.HasValidShotInfo )
+				{
+					groupBoxCameraShotInfos.Enabled = false;
+					floatTrackbarControlISOSpeed.Value = m_BitmapXYZ.ISOSpeed;			floatTrackbarControlISOSpeed.SimulateValueChange();	// So we get notified even if value is the same as default slider value
+					floatTrackbarControlShutterSpeed.Value = m_BitmapXYZ.ShutterSpeed;	floatTrackbarControlShutterSpeed.SimulateValueChange();	// So we get notified even if value is the same as default slider value
+					floatTrackbarControlAperture.Value = m_BitmapXYZ.Aperture;			floatTrackbarControlAperture.SimulateValueChange();	// So we get notified even if value is the same as default slider value
+					floatTrackbarControlFocalLength.Value = m_BitmapXYZ.FocalLength;	floatTrackbarControlFocalLength.SimulateValueChange();	// So we get notified even if value is the same as default slider value
+				}
+				else
+					groupBoxCameraShotInfos.Enabled = true;
+
+				RebuildImage();
+				UpdateUIFromCalibration();
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred while loading the image:\r\n\r\n", _e );
+			}
 		}
+
+		private void outputPanel_MouseMove( object sender, MouseEventArgs e )
+		{
+			if ( m_BitmapXYZ == null )
+				return;
+
+			float	Lum = m_BitmapXYZ.ContentXYZ[e.X*m_BitmapXYZ.Width/outputPanel.Width,e.Y*m_BitmapXYZ.Height/outputPanel.Height].y;
+			if ( checkBoxsRGB.Checked )
+				Lum = Bitmap2.ColorProfile.Linear2sRGB( Lum );
+
+			labelLuminance.Text = "L=" + Lum.ToString( "G4" ) + " (" + (int) (Lum*255) + ")";
+		}
+
+		private void checkBoxsRGB_CheckedChanged( object sender, EventArgs e )
+		{
+			RebuildImage();
+		}
+
+		private void checkBoxLuminance_CheckedChanged( object sender, EventArgs e )
+		{
+			RebuildImage();
+		}
+
+		#region Calibration
 
 		/// <summary>
 		/// Integrates the luminance of the pixels in a given circle selected by the user
@@ -216,8 +234,10 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_X"></param>
 		/// <param name="_Y"></param>
 		/// <param name="_Radius"></param>
+		/// <param name="_PercentOfBlackValues"></param>
+		/// <param name="_HasSaturatedValues">Returns the percentage of encountered saturated values. 0 is okay, more means the probe shouldn't be used</param>
 		/// <returns></returns>
-		private float	IntegrateLuminance( float _X, float _Y, float _Radius )
+		private float	IntegrateLuminance( float _X, float _Y, float _Radius, out float _PercentOfBlackValues, out float _PercentOfSaturatedValues )
 		{
 			float	Radius = _Radius * m_BitmapXYZ.Width;
 			float	CenterX = _X * m_BitmapXYZ.Width;
@@ -231,6 +251,9 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			const float	SMOOTHSTEP_MAX_RADIUS = 0.2f;	// We reach max weight 1 at 20% of the border of the circle
 
+			int		TotalBlackValuesCount = 0;
+			int		TotalSaturatedValuesCount = 0;
+			int		TotalValuesCount = 0;
 			float	SumLuminance = 0.0f;
 			float	SumWeights = 0.0f;
 			for ( int Y=Y0; Y < Y1; Y++ )
@@ -247,14 +270,71 @@ namespace StandardizedDiffuseAlbedoMaps
 					float	Weight = x*x*(3.0f - 2.0f*x);
 
 //DEBUG					m_BitmapXYZ.ContentXYZ[X,Y].y = Weight;
-					SumLuminance += Weight * m_BitmapXYZ.ContentXYZ[X,Y].y;
+					float	Luminance = m_BitmapXYZ.ContentXYZ[X,Y].y;
+					if ( Luminance < 0.001f )
+						TotalBlackValuesCount++;		// Warning!
+					if ( Luminance > 0.999f )
+						TotalSaturatedValuesCount++;	// Warning!
+					TotalValuesCount++;
+
+					SumLuminance += Weight * Luminance;
 					SumWeights += Weight;
 				}
 
 //DEBUG			RebuildImage();
 
+			_PercentOfBlackValues = (float) TotalBlackValuesCount / TotalValuesCount;
+			_PercentOfSaturatedValues = (float) TotalSaturatedValuesCount / TotalValuesCount;
+
 			SumLuminance /= SumWeights;
 			return SumLuminance;
+		}
+
+		/// <summary>
+		/// Integrates luminance for the provided probe by sampling luminances in the provided disc
+		/// </summary>
+		/// <param name="_Probe"></param>
+		/// <param name="_Center"></param>
+		/// <param name="_Radius"></param>
+		private void	IntegrateLuminance( CameraCalibration.Probe _Probe, PointF _Center, float _Radius )
+		{
+			float	BlackValues, SaturatedValues;
+			float	MeasuredLuminance = IntegrateLuminance( _Center.X, _Center.Y, _Radius, out BlackValues, out SaturatedValues );
+
+			bool	DisableProbe = false;
+			if ( BlackValues > BLACK_VALUES_TOLERANCE &&
+				MessageBox( "This probe has more than 5% luminance values that are too dark, it's advised you don't use it to calibrate the camera as its values will not be useful.\r\n" +
+							"\r\nDo you wish to disable this probe?",
+							MessageBoxButtons.YesNo, MessageBoxIcon.Warning ) == DialogResult.Yes )
+			{
+				DisableProbe = true;
+			}
+			else if ( SaturatedValues > SATURATED_VALUES_TOLERANCE &&
+				MessageBox( "This probe has more than 5% luminance values that are saturated, it's advised you don't use it to calibrate the camera as its values will not be useful.\r\n" +
+							"\r\nDo you wish to disable this probe?",
+							MessageBoxButtons.YesNo, MessageBoxIcon.Warning ) == DialogResult.Yes )
+			{
+				DisableProbe = true;
+			}
+
+			if ( DisableProbe )
+			{	// Disable probe
+				_Probe.m_IsAvailable = false;
+				_Probe.m_LuminanceMeasured = 0.0f;
+				UpdateUIFromCalibration();
+				return;
+			}
+
+			_Probe.m_LuminanceMeasured = MeasuredLuminance;
+
+			// We now have valid measurement disc infos
+			_Probe.m_MeasurementDiscIsAvailable = true;
+			_Probe.m_MeasurementCenterX = _Center.X;
+			_Probe.m_MeasurementCenterY = _Center.Y;
+			_Probe.m_MeasurementRadius = _Radius;
+
+			CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
+			UpdateUIFromCalibration();
 		}
 
 		/// <summary>
@@ -271,6 +351,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_Calibration.m_CameraShotInfos.m_ShutterSpeed = floatTrackbarControlShutterSpeed.Value;
 			m_Calibration.m_CameraShotInfos.m_Aperture = floatTrackbarControlAperture.Value;
 			m_Calibration.m_CameraShotInfos.m_FocalLength = floatTrackbarControlFocalLength.Value;
+
+			m_Calibration.CreateThumbnail( m_BitmapXYZ );
 		}
 
 		private void UpdateUIFromCalibration()
@@ -323,7 +405,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			labelProbeNormalized99.Text = m_Calibration.m_Reflectance99.m_IsAvailable ? m_Calibration.m_Reflectance99.m_LuminanceNormalized.ToString( Format ) : "";
 			labelProbeRelative99.Text = m_Calibration.m_Reflectance99.m_IsAvailable ? m_Calibration.m_Reflectance99.m_LuminanceRelative.ToString( Format ) : "";
 
-			graphPanel.Calibration = m_Calibration;	// Update the graph
+			graphPanel.Calibration = m_Calibration;				// Update the graph
+			referenceImagePanel.Calibration = m_Calibration;	// Update the image thumbnail
 
 			bool	CanReCalibrate = false;
 			if ( m_BitmapXYZ != null )
@@ -377,72 +460,42 @@ namespace StandardizedDiffuseAlbedoMaps
 		private void buttonCalibrate02_Click( object sender, EventArgs e )
 		{
 			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
-				m_Calibration.m_Reflectance02.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
-				m_Calibration.m_Reflectance02.m_MeasurementCenterX = _Center.X;
-				m_Calibration.m_Reflectance02.m_MeasurementCenterY = _Center.Y;
-				m_Calibration.m_Reflectance02.m_MeasurementRadius = _Radius;
-				CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
-				UpdateUIFromCalibration();
+				IntegrateLuminance( m_Calibration.m_Reflectance02, _Center, _Radius );
 			} );
 		}
 
 		private void buttonCalibrate10_Click( object sender, EventArgs e )
 		{
 			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
-				m_Calibration.m_Reflectance10.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
-				m_Calibration.m_Reflectance10.m_MeasurementCenterX = _Center.X;
-				m_Calibration.m_Reflectance10.m_MeasurementCenterY = _Center.Y;
-				m_Calibration.m_Reflectance10.m_MeasurementRadius = _Radius;
-				CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
-				UpdateUIFromCalibration();
+				IntegrateLuminance( m_Calibration.m_Reflectance10, _Center, _Radius );
 			} );
 		}
 
 		private void buttonCalibrate20_Click( object sender, EventArgs e )
 		{
 			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
-				m_Calibration.m_Reflectance20.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
-				m_Calibration.m_Reflectance20.m_MeasurementCenterX = _Center.X;
-				m_Calibration.m_Reflectance20.m_MeasurementCenterY = _Center.Y;
-				m_Calibration.m_Reflectance20.m_MeasurementRadius = _Radius;
-				CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
-				UpdateUIFromCalibration();
+				IntegrateLuminance( m_Calibration.m_Reflectance20, _Center, _Radius );
 			} );
 		}
 
 		private void buttonCalibrate50_Click( object sender, EventArgs e )
 		{
 			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
-				m_Calibration.m_Reflectance50.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
-				m_Calibration.m_Reflectance50.m_MeasurementCenterX = _Center.X;
-				m_Calibration.m_Reflectance50.m_MeasurementCenterY = _Center.Y;
-				m_Calibration.m_Reflectance50.m_MeasurementRadius = _Radius;
-				CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
-				UpdateUIFromCalibration();
+				IntegrateLuminance( m_Calibration.m_Reflectance50, _Center, _Radius );
 			} );
 		}
 
 		private void buttonCalibrate75_Click( object sender, EventArgs e )
 		{
 			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
-				m_Calibration.m_Reflectance75.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
-				m_Calibration.m_Reflectance75.m_MeasurementCenterX = _Center.X;
-				m_Calibration.m_Reflectance75.m_MeasurementCenterY = _Center.Y;
-				m_Calibration.m_Reflectance75.m_MeasurementRadius = _Radius;
-				CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
-				UpdateUIFromCalibration();
+				IntegrateLuminance( m_Calibration.m_Reflectance75, _Center, _Radius );
 			} );
 		}
 
 		private void buttonCalibrate99_Click( object sender, EventArgs e )
 		{
 			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
-				m_Calibration.m_Reflectance99.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
-				m_Calibration.m_Reflectance99.m_MeasurementCenterX = _Center.X;
-				m_Calibration.m_Reflectance99.m_MeasurementCenterY = _Center.Y;
-				m_Calibration.m_Reflectance99.m_MeasurementRadius = _Radius;
-				CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
-				UpdateUIFromCalibration();
+				IntegrateLuminance( m_Calibration.m_Reflectance99, _Center, _Radius );
 			} );
 		}
 
@@ -485,7 +538,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			string	OldFileName = GetRegKey( "LastCalibrationFilename", m_ApplicationPath );
 			saveFileDialogCalibration.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
-			saveFileDialogCalibration.FileName = System.IO.Path.GetFileNameWithoutExtension( m_ImageFileName.Name ) + ".xml";
+			saveFileDialogCalibration.FileName = System.IO.Path.GetFileNameWithoutExtension( m_Calibration.m_ReferenceImageName ) + ".xml";
 
 			if ( saveFileDialogCalibration.ShowDialog( this ) != DialogResult.OK )
 				return;
@@ -506,26 +559,54 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private void buttonSetupDatabaseFolder_Click( object sender, EventArgs e )
 		{
-			string	OldPath = GetRegKey( "LastCalibrationDatabasePath", m_ApplicationPath );
-			folderBrowserDialogDatabaseLocation.SelectedPath = System.IO.Path.GetDirectoryName( OldPath );
+			string	OldPath = System.IO.Path.GetDirectoryName( GetRegKey( "LastCalibrationDatabasePath", m_ApplicationPath ) );
+			folderBrowserDialogDatabaseLocation.SelectedPath = OldPath;
 			if ( folderBrowserDialogDatabaseLocation.ShowDialog( this ) != DialogResult.OK )
 				return;
 
 			SetRegKey( "LastCalibrationDatabasePath", folderBrowserDialogDatabaseLocation.SelectedPath );
 
-			ParseCalibrationDatabase();
+			// Setup the path again, this will rebuild the database...
+			m_CalibrationDatabase.DatabasePath = new System.IO.DirectoryInfo( folderBrowserDialogDatabaseLocation.SelectedPath );
 		}
 
 		private void buttonReCalibrate_Click( object sender, EventArgs e )
 		{
 			// Re-Calibrate every available probe
+			bool	ProbesHaveSaturatedValues = false;
+			bool	ProbesMissMeasurementDisc = false;
 			foreach ( CameraCalibration.Probe P in m_Calibration.m_Reflectances )
-				if ( P.m_IsAvailable )
-					P.m_LuminanceMeasured = IntegrateLuminance( P.m_MeasurementCenterX, P.m_MeasurementCenterY, P.m_MeasurementRadius );
+				if ( P.m_MeasurementDiscIsAvailable )
+				{
+					float	BlackValues, SaturatedValues;
+					float	MeasuredValue = IntegrateLuminance( P.m_MeasurementCenterX, P.m_MeasurementCenterY, P.m_MeasurementRadius, out BlackValues, out SaturatedValues );
+					if ( BlackValues > BLACK_VALUES_TOLERANCE || SaturatedValues > SATURATED_VALUES_TOLERANCE )
+					{	// Disable that probe as too many values are black or saturated
+						P.m_IsAvailable = false;
+						P.m_LuminanceMeasured = 0.0f;
+						ProbesHaveSaturatedValues = true;
+						continue;
+					}
+
+					// We have a valid measurement!
+					P.m_IsAvailable = true;
+					P.m_LuminanceMeasured = MeasuredValue;
+				}
+				else
+				{	// Disable probe as it has no measurement info
+					P.m_IsAvailable = false;
+					P.m_LuminanceMeasured = 0.0f;
+					ProbesMissMeasurementDisc = true;
+				}
 
 			// We now used the current image as reference for this calibration so commit its data
 			CommitImageToCurrentCalibration();
 			UpdateUIFromCalibration();
+
+			if ( ProbesHaveSaturatedValues )
+				MessageBox( "Some probes have been disabled because the luminance measurement returned too many saturated or black values!", MessageBoxButtons.OK, MessageBoxIcon.Warning );
+			if ( ProbesMissMeasurementDisc )
+				MessageBox( "Some probes can't be measured because they're missing the sampling disc information!\r\nClick the \"Calibrate\" button to place the disk and calibrate manually.", MessageBoxButtons.OK, MessageBoxIcon.Warning );
 		}
 
 		#endregion

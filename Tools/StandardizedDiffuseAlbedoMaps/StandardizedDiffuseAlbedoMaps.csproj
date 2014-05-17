@@ -57,6 +57,13 @@
   <ItemGroup>
     <Compile Include="Bitmap.cs" />
     <Compile Include="CameraCalibration.cs" />
+    <Compile Include="CameraCalibrationDatabase.cs" />
+    <Compile Include="ReferenceImagePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ReferenceImagePanel.Designer.cs">
+      <DependentUpon>ReferenceImagePanel.cs</DependentUpon>
+    </Compile>
     <Compile Include="GraphPanel.cs">
       <SubType>Component</SubType>
     </Compile>

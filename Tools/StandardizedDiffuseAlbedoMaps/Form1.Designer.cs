@@ -80,6 +80,7 @@
 			this.tabControl = new System.Windows.Forms.TabControl();
 			this.tabPageCreation = new System.Windows.Forms.TabPage();
 			this.tabPage2 = new System.Windows.Forms.TabPage();
+			this.buttonExplore = new System.Windows.Forms.Button();
 			this.labelCalbrationImageName = new System.Windows.Forms.Label();
 			this.label6 = new System.Windows.Forms.Label();
 			this.panelProbeLuminances = new System.Windows.Forms.Panel();
@@ -88,14 +89,17 @@
 			this.buttonReCalibrate = new System.Windows.Forms.Button();
 			this.buttonLoadCalibration = new System.Windows.Forms.Button();
 			this.checkBoxGraphLagrange = new System.Windows.Forms.CheckBox();
-			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
 			this.splitContainerMain = new System.Windows.Forms.SplitContainer();
-			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
 			this.openFileDialogCalibration = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogCalibration = new System.Windows.Forms.SaveFileDialog();
 			this.folderBrowserDialogDatabaseLocation = new System.Windows.Forms.FolderBrowserDialog();
-			this.buttonExplore = new System.Windows.Forms.Button();
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
+			this.tabControlCalibrationRepresentation = new System.Windows.Forms.TabControl();
+			this.tabPageLuminancesGraph = new System.Windows.Forms.TabPage();
+			this.tabPageReferenceImage = new System.Windows.Forms.TabPage();
+			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
+			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
+			this.referenceImagePanel = new StandardizedDiffuseAlbedoMaps.ReferenceImagePanel(this.components);
 			this.groupBoxCameraShotInfos.SuspendLayout();
 			this.tabControl.SuspendLayout();
 			this.tabPage2.SuspendLayout();
@@ -104,6 +108,9 @@
 			this.splitContainerMain.Panel1.SuspendLayout();
 			this.splitContainerMain.Panel2.SuspendLayout();
 			this.splitContainerMain.SuspendLayout();
+			this.tabControlCalibrationRepresentation.SuspendLayout();
+			this.tabPageLuminancesGraph.SuspendLayout();
+			this.tabPageReferenceImage.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// openFileDialogSourceImage
@@ -724,6 +731,7 @@
 			// 
 			// tabPage2
 			// 
+			this.tabPage2.Controls.Add(this.tabControlCalibrationRepresentation);
 			this.tabPage2.Controls.Add(this.buttonExplore);
 			this.tabPage2.Controls.Add(this.labelCalbrationImageName);
 			this.tabPage2.Controls.Add(this.label6);
@@ -733,7 +741,6 @@
 			this.tabPage2.Controls.Add(this.buttonReCalibrate);
 			this.tabPage2.Controls.Add(this.buttonLoadCalibration);
 			this.tabPage2.Controls.Add(this.checkBoxGraphLagrange);
-			this.tabPage2.Controls.Add(this.graphPanel);
 			this.tabPage2.Location = new System.Drawing.Point(4, 22);
 			this.tabPage2.Name = "tabPage2";
 			this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
@@ -741,6 +748,18 @@
 			this.tabPage2.TabIndex = 1;
 			this.tabPage2.Text = "Camera Calibration";
 			this.tabPage2.UseVisualStyleBackColor = true;
+			// 
+			// buttonExplore
+			// 
+			this.buttonExplore.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonExplore.Location = new System.Drawing.Point(197, 537);
+			this.buttonExplore.Name = "buttonExplore";
+			this.buttonExplore.Size = new System.Drawing.Size(75, 23);
+			this.buttonExplore.TabIndex = 15;
+			this.buttonExplore.Text = "Explore";
+			this.toolTip.SetToolTip(this.buttonExplore, "Explores the database of calibration probes to compare how calibrations vary with" +
+        " different camera settings (ISO, shutter speed or aperture)");
+			this.buttonExplore.UseVisualStyleBackColor = true;
 			// 
 			// labelCalbrationImageName
 			// 
@@ -865,20 +884,6 @@
 			this.checkBoxGraphLagrange.UseVisualStyleBackColor = true;
 			this.checkBoxGraphLagrange.CheckedChanged += new System.EventHandler(this.checkBoxGraphLagrange_CheckedChanged);
 			// 
-			// graphPanel
-			// 
-			this.graphPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.graphPanel.BackColor = System.Drawing.Color.Ivory;
-			this.graphPanel.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-			this.graphPanel.Calibration = null;
-			this.graphPanel.Location = new System.Drawing.Point(6, 207);
-			this.graphPanel.Name = "graphPanel";
-			this.graphPanel.Size = new System.Drawing.Size(471, 303);
-			this.graphPanel.TabIndex = 11;
-			this.graphPanel.UseLagrange = false;
-			// 
 			// splitContainerMain
 			// 
 			this.splitContainerMain.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -903,18 +908,6 @@
 			this.splitContainerMain.SplitterDistance = 998;
 			this.splitContainerMain.TabIndex = 11;
 			// 
-			// outputPanel
-			// 
-			this.outputPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.outputPanel.Image = null;
-			this.outputPanel.Location = new System.Drawing.Point(3, 0);
-			this.outputPanel.Name = "outputPanel";
-			this.outputPanel.Size = new System.Drawing.Size(996, 716);
-			this.outputPanel.TabIndex = 0;
-			this.outputPanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.outputPanel_MouseMove);
-			// 
 			// openFileDialogCalibration
 			// 
 			this.openFileDialogCalibration.DefaultExt = "*.xml";
@@ -931,17 +924,75 @@
 			// 
 			this.folderBrowserDialogDatabaseLocation.Description = "Select the base folder containing the calibration files to use as a database...";
 			// 
-			// buttonExplore
+			// tabControlCalibrationRepresentation
 			// 
-			this.buttonExplore.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.buttonExplore.Location = new System.Drawing.Point(197, 537);
-			this.buttonExplore.Name = "buttonExplore";
-			this.buttonExplore.Size = new System.Drawing.Size(75, 23);
-			this.buttonExplore.TabIndex = 15;
-			this.buttonExplore.Text = "Explore";
-			this.toolTip.SetToolTip(this.buttonExplore, "Explores the database of calibration probes to compare how calibrations vary with" +
-        " different camera settings (ISO, shutter speed or aperture)");
-			this.buttonExplore.UseVisualStyleBackColor = true;
+			this.tabControlCalibrationRepresentation.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.tabControlCalibrationRepresentation.Controls.Add(this.tabPageLuminancesGraph);
+			this.tabControlCalibrationRepresentation.Controls.Add(this.tabPageReferenceImage);
+			this.tabControlCalibrationRepresentation.Location = new System.Drawing.Point(4, 207);
+			this.tabControlCalibrationRepresentation.Name = "tabControlCalibrationRepresentation";
+			this.tabControlCalibrationRepresentation.SelectedIndex = 0;
+			this.tabControlCalibrationRepresentation.Size = new System.Drawing.Size(476, 324);
+			this.tabControlCalibrationRepresentation.TabIndex = 16;
+			// 
+			// tabPageLuminancesGraph
+			// 
+			this.tabPageLuminancesGraph.Controls.Add(this.graphPanel);
+			this.tabPageLuminancesGraph.Location = new System.Drawing.Point(4, 22);
+			this.tabPageLuminancesGraph.Name = "tabPageLuminancesGraph";
+			this.tabPageLuminancesGraph.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPageLuminancesGraph.Size = new System.Drawing.Size(468, 298);
+			this.tabPageLuminancesGraph.TabIndex = 0;
+			this.tabPageLuminancesGraph.Text = "Luminances Graph";
+			this.tabPageLuminancesGraph.UseVisualStyleBackColor = true;
+			// 
+			// tabPageReferenceImage
+			// 
+			this.tabPageReferenceImage.Controls.Add(this.referenceImagePanel);
+			this.tabPageReferenceImage.Location = new System.Drawing.Point(4, 22);
+			this.tabPageReferenceImage.Name = "tabPageReferenceImage";
+			this.tabPageReferenceImage.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPageReferenceImage.Size = new System.Drawing.Size(468, 298);
+			this.tabPageReferenceImage.TabIndex = 1;
+			this.tabPageReferenceImage.Text = "Reference Image";
+			this.tabPageReferenceImage.UseVisualStyleBackColor = true;
+			// 
+			// outputPanel
+			// 
+			this.outputPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.outputPanel.Image = null;
+			this.outputPanel.Location = new System.Drawing.Point(3, 0);
+			this.outputPanel.Name = "outputPanel";
+			this.outputPanel.Size = new System.Drawing.Size(996, 716);
+			this.outputPanel.TabIndex = 0;
+			this.outputPanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.outputPanel_MouseMove);
+			// 
+			// graphPanel
+			// 
+			this.graphPanel.BackColor = System.Drawing.Color.Ivory;
+			this.graphPanel.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+			this.graphPanel.Calibration = null;
+			this.graphPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.graphPanel.Location = new System.Drawing.Point(3, 3);
+			this.graphPanel.Name = "graphPanel";
+			this.graphPanel.Size = new System.Drawing.Size(462, 292);
+			this.graphPanel.TabIndex = 11;
+			this.graphPanel.UseLagrange = false;
+			// 
+			// referenceImagePanel
+			// 
+			this.referenceImagePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.referenceImagePanel.Calibration = null;
+			this.referenceImagePanel.Location = new System.Drawing.Point(6, 6);
+			this.referenceImagePanel.Name = "referenceImagePanel";
+			this.referenceImagePanel.Size = new System.Drawing.Size(456, 286);
+			this.referenceImagePanel.TabIndex = 0;
 			// 
 			// Form1
 			// 
@@ -964,6 +1015,9 @@
 			this.splitContainerMain.Panel2.ResumeLayout(false);
 			((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).EndInit();
 			this.splitContainerMain.ResumeLayout(false);
+			this.tabControlCalibrationRepresentation.ResumeLayout(false);
+			this.tabPageLuminancesGraph.ResumeLayout(false);
+			this.tabPageReferenceImage.ResumeLayout(false);
 			this.ResumeLayout(false);
 
 		}
@@ -1037,6 +1091,10 @@
 		private System.Windows.Forms.FolderBrowserDialog folderBrowserDialogDatabaseLocation;
 		private System.Windows.Forms.Button buttonExplore;
 		private System.Windows.Forms.ToolTip toolTip;
+		private System.Windows.Forms.TabControl tabControlCalibrationRepresentation;
+		private System.Windows.Forms.TabPage tabPageLuminancesGraph;
+		private System.Windows.Forms.TabPage tabPageReferenceImage;
+		private ReferenceImagePanel referenceImagePanel;
 	}
 }
 

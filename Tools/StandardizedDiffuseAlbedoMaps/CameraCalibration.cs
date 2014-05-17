@@ -17,6 +17,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <summary>
 		/// Contains various luminance information about the reflectance probe
 		/// </summary>
+		[System.Diagnostics.DebuggerDisplay( "Reflectance={StandardReflectance} Measured={m_LuminanceMeasured} Normalized={m_LuminanceNormalized}" )]
 		public class Probe
 		{
 			private float	m_StandardReflectance;	// Standard reflectance (read it but never change it!)
@@ -28,6 +29,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			public float	m_LuminanceRelative;	// Luminance value relative to previous available probe
 
 			// Defines the coordinates of the disc used for the measurement
+			public bool		m_MeasurementDiscIsAvailable = false;
 			public float	m_MeasurementCenterX;
 			public float	m_MeasurementCenterY;
 			public float	m_MeasurementRadius;
@@ -35,8 +37,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			public void		Load( XmlElement _Parent )
 			{
 				XmlElement	Element;
-				Element = _Parent["IsAvailable"];
-				m_IsAvailable = Element != null ? bool.Parse( Element.GetAttribute( "Value" ) ) : false;
+				m_IsAvailable = bool.Parse( _Parent.GetAttribute( "IsAvailable" ) );
 
 				Element = _Parent["Luminance"];
 				m_LuminanceMeasured = Element != null ? float.Parse( Element.GetAttribute( "Measured" ) ) : 0.0f;
@@ -46,19 +47,24 @@ namespace StandardizedDiffuseAlbedoMaps
 				m_MeasurementCenterX = Element != null ? float.Parse( Element.GetAttribute( "X" ) ) : 0.0f;
 				m_MeasurementCenterY = Element != null ? float.Parse( Element.GetAttribute( "Y" ) ) : 0.0f;
 				m_MeasurementRadius = Element != null ? float.Parse( Element.GetAttribute( "Radius" ) ) : 0.0f;
+
+				if ( Element != null && Element.GetAttribute( "Available" ) != "" )
+					m_MeasurementDiscIsAvailable = bool.Parse( Element.GetAttribute( "Available" ) );
+				else
+					m_MeasurementDiscIsAvailable = m_MeasurementCenterX != 0.0f;	// Assume it's available as soon as it has a value other than default
 			}
 
 			public void		Save( XmlElement _Parent )
 			{
-				XmlElement	Element;
-				Element = _Parent.OwnerDocument.CreateElement( "IsAvailable" );			_Parent.AppendChild( Element );
-				Element.SetAttribute( "Value", m_IsAvailable.ToString() );
+				_Parent.SetAttribute( "IsAvailable", m_IsAvailable.ToString() );
 
+				XmlElement	Element;
 				Element = _Parent.OwnerDocument.CreateElement( "Luminance" );			_Parent.AppendChild( Element );
 				Element.SetAttribute( "Measured", m_LuminanceMeasured.ToString() );
 				Element.SetAttribute( "Normalized", m_LuminanceNormalized.ToString() );
 
 				Element = _Parent.OwnerDocument.CreateElement( "MeasurementLocation" );	_Parent.AppendChild( Element );
+				Element.SetAttribute( "Available", m_MeasurementDiscIsAvailable.ToString() );
 				Element.SetAttribute( "X", m_MeasurementCenterX.ToString() );
 				Element.SetAttribute( "Y", m_MeasurementCenterY.ToString() );
 				Element.SetAttribute( "Radius", m_MeasurementRadius.ToString() );
@@ -121,6 +127,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		public Probe[]			m_Reflectances = null;
 
 		public CameraShotInfo	m_CameraShotInfos = new CameraShotInfo();
+
+		public byte[,]			m_Thumbnail = null;
 
 		public CameraCalibration()
 		{
@@ -197,6 +205,28 @@ namespace StandardizedDiffuseAlbedoMaps
 		}
 
 		/// <summary>
+		/// Creates an embeddable thumbnail of the reference image
+		/// </summary>
+		/// <param name="_Image"></param>
+		public void		CreateThumbnail( Bitmap2 _Image )
+		{
+			int		MaxDim = Math.Max( _Image.Width, _Image.Height );
+			int		ThumbnailSize = 256;
+
+			int		W = ThumbnailSize * _Image.Width / MaxDim;
+			int		H = ThumbnailSize * _Image.Height / MaxDim;
+
+			// Build the thumbnail
+			m_Thumbnail = new byte[W,H];
+			for ( int Y=0; Y < H; Y++ )
+				for ( int X=0; X < W; X++ )
+				{
+					float4	XYZ = _Image.ContentXYZ[X*_Image.Width/W, Y*_Image.Height/H];
+					m_Thumbnail[X,Y] = (byte) Math.Min( 255, Math.Max( 0, 255.0f * XYZ.y ) );
+				}
+		}
+
+		/// <summary>
 		/// Loads the calibration data from an XML file
 		/// </summary>
 		/// <param name="_FileName"></param>
@@ -219,6 +249,26 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_ReferenceImageHeight = int.Parse( ImageRefElement.GetAttribute( "Height" ) );
 
 			m_CameraShotInfos.Load( ImageRefElement );
+
+			// Load thumbnail
+			m_Thumbnail = null;
+			XmlElement	ThumbnailElement = ImageRefElement["Thumbnail"];
+			if ( ThumbnailElement != null )
+			{
+				int	W = int.Parse( ThumbnailElement.GetAttribute( "Width" ) );
+				int	H = int.Parse( ThumbnailElement.GetAttribute( "Height" ) );
+				m_Thumbnail = new byte[W,H];
+
+				XmlCDataSection	ThumbnailCData = ThumbnailElement.FirstChild as XmlCDataSection;
+				if ( ThumbnailCData != null )
+				{
+					byte[]	PackedThumbnail = System.Convert.FromBase64String( ThumbnailCData.Data );
+					for ( int Y=0; Y < H; Y++ )
+						for ( int X=0; X < W; X++ )
+							if ( Y*W+X < PackedThumbnail.Length )
+								m_Thumbnail[X,Y] = PackedThumbnail[Y*W+X];
+				}
+			}
 
 			// Read reflectance infos
 			XmlElement	ReflectanceProbesElement = Root["ReflectanceProbes"];
@@ -264,6 +314,20 @@ namespace StandardizedDiffuseAlbedoMaps
 			ImageRefElement.SetAttribute( "Width", m_ReferenceImageWidth.ToString() );
 			ImageRefElement.SetAttribute( "Height", m_ReferenceImageHeight.ToString() );
 			m_CameraShotInfos.Save( ImageRefElement );
+
+			// Set thumbnail
+			XmlElement	ThumbnailElement = Doc.CreateElement( "Thumbnail" );
+			ImageRefElement.AppendChild( ThumbnailElement );
+			ThumbnailElement.SetAttribute( "Width", m_Thumbnail.GetLength(0).ToString() );
+			ThumbnailElement.SetAttribute( "Height", m_Thumbnail.GetLength(1).ToString() );
+
+			byte[]	PackedThumbnail = new byte[m_Thumbnail.Length];
+			for ( int Y=0; Y < m_Thumbnail.GetLength(1); Y++ )
+				for ( int X=0; X < m_Thumbnail.GetLength(0); X++ )
+					PackedThumbnail[m_Thumbnail.GetLength(0)*Y+X] = m_Thumbnail[X,Y];
+			string	PackedThumbnailString = System.Convert.ToBase64String( PackedThumbnail );
+			XmlCDataSection	ThumbnailCData = Doc.CreateCDataSection( PackedThumbnailString );
+			ThumbnailElement.AppendChild( ThumbnailCData );
 
 			// Write reflectance infos
 			XmlElement	ReflectanceProbesElement = Doc.CreateElement( "ReflectanceProbes" );
