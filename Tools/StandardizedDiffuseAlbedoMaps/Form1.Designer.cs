@@ -80,25 +80,28 @@
 			this.tabControl = new System.Windows.Forms.TabControl();
 			this.tabPageCreation = new System.Windows.Forms.TabPage();
 			this.tabPage2 = new System.Windows.Forms.TabPage();
+			this.labelCalbrationImageName = new System.Windows.Forms.Label();
+			this.label6 = new System.Windows.Forms.Label();
+			this.panelProbeLuminances = new System.Windows.Forms.Panel();
 			this.buttonSaveCalibration = new System.Windows.Forms.Button();
 			this.buttonLoadCalibration = new System.Windows.Forms.Button();
 			this.checkBoxGraphLagrange = new System.Windows.Forms.CheckBox();
-			this.splitContainerMain = new System.Windows.Forms.SplitContainer();
-			this.panelProbeLuminances = new System.Windows.Forms.Panel();
-			this.label6 = new System.Windows.Forms.Label();
-			this.labelCalbrationImageName = new System.Windows.Forms.Label();
-			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
 			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
+			this.splitContainerMain = new System.Windows.Forms.SplitContainer();
+			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
 			this.openFileDialogCalibration = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogCalibration = new System.Windows.Forms.SaveFileDialog();
+			this.buttonSetupDatabaseFolder = new System.Windows.Forms.Button();
+			this.buttonReCalibrate = new System.Windows.Forms.Button();
+			this.folderBrowserDialogDatabaseLocation = new System.Windows.Forms.FolderBrowserDialog();
 			this.groupBoxCameraShotInfos.SuspendLayout();
 			this.tabControl.SuspendLayout();
 			this.tabPage2.SuspendLayout();
+			this.panelProbeLuminances.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).BeginInit();
 			this.splitContainerMain.Panel1.SuspendLayout();
 			this.splitContainerMain.Panel2.SuspendLayout();
 			this.splitContainerMain.SuspendLayout();
-			this.panelProbeLuminances.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// openFileDialogSourceImage
@@ -664,6 +667,8 @@
 			this.tabPage2.Controls.Add(this.label6);
 			this.tabPage2.Controls.Add(this.panelProbeLuminances);
 			this.tabPage2.Controls.Add(this.buttonSaveCalibration);
+			this.tabPage2.Controls.Add(this.buttonSetupDatabaseFolder);
+			this.tabPage2.Controls.Add(this.buttonReCalibrate);
 			this.tabPage2.Controls.Add(this.buttonLoadCalibration);
 			this.tabPage2.Controls.Add(this.checkBoxGraphLagrange);
 			this.tabPage2.Controls.Add(this.graphPanel);
@@ -675,63 +680,24 @@
 			this.tabPage2.Text = "Camera Calibration";
 			this.tabPage2.UseVisualStyleBackColor = true;
 			// 
-			// buttonSaveCalibration
+			// labelCalbrationImageName
 			// 
-			this.buttonSaveCalibration.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonSaveCalibration.Location = new System.Drawing.Point(402, 537);
-			this.buttonSaveCalibration.Name = "buttonSaveCalibration";
-			this.buttonSaveCalibration.Size = new System.Drawing.Size(75, 23);
-			this.buttonSaveCalibration.TabIndex = 12;
-			this.buttonSaveCalibration.Text = "Save";
-			this.buttonSaveCalibration.UseVisualStyleBackColor = true;
-			this.buttonSaveCalibration.Click += new System.EventHandler(this.buttonSaveCalibration_Click);
+			this.labelCalbrationImageName.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+			this.labelCalbrationImageName.Location = new System.Drawing.Point(191, 12);
+			this.labelCalbrationImageName.Name = "labelCalbrationImageName";
+			this.labelCalbrationImageName.Size = new System.Drawing.Size(246, 16);
+			this.labelCalbrationImageName.TabIndex = 14;
+			this.labelCalbrationImageName.Text = "<NO IMAGE>";
+			this.labelCalbrationImageName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
 			// 
-			// buttonLoadCalibration
+			// label6
 			// 
-			this.buttonLoadCalibration.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonLoadCalibration.Location = new System.Drawing.Point(321, 537);
-			this.buttonLoadCalibration.Name = "buttonLoadCalibration";
-			this.buttonLoadCalibration.Size = new System.Drawing.Size(75, 23);
-			this.buttonLoadCalibration.TabIndex = 12;
-			this.buttonLoadCalibration.Text = "Load";
-			this.buttonLoadCalibration.UseVisualStyleBackColor = true;
-			this.buttonLoadCalibration.Click += new System.EventHandler(this.buttonLoadCalibration_Click);
-			// 
-			// checkBoxGraphLagrange
-			// 
-			this.checkBoxGraphLagrange.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.checkBoxGraphLagrange.AutoSize = true;
-			this.checkBoxGraphLagrange.Location = new System.Drawing.Point(5, 516);
-			this.checkBoxGraphLagrange.Name = "checkBoxGraphLagrange";
-			this.checkBoxGraphLagrange.Size = new System.Drawing.Size(150, 17);
-			this.checkBoxGraphLagrange.TabIndex = 3;
-			this.checkBoxGraphLagrange.Text = "Use Lagrange polynomials";
-			this.checkBoxGraphLagrange.UseVisualStyleBackColor = true;
-			this.checkBoxGraphLagrange.CheckedChanged += new System.EventHandler(this.checkBoxGraphLagrange_CheckedChanged);
-			// 
-			// splitContainerMain
-			// 
-			this.splitContainerMain.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.splitContainerMain.Location = new System.Drawing.Point(0, 0);
-			this.splitContainerMain.Name = "splitContainerMain";
-			// 
-			// splitContainerMain.Panel1
-			// 
-			this.splitContainerMain.Panel1.Controls.Add(this.outputPanel);
-			this.splitContainerMain.Panel1.Controls.Add(this.checkBoxsRGB);
-			this.splitContainerMain.Panel1.Controls.Add(this.labelLuminance);
-			this.splitContainerMain.Panel1.Controls.Add(this.label5);
-			this.splitContainerMain.Panel1.Controls.Add(this.checkBoxLuminance);
-			// 
-			// splitContainerMain.Panel2
-			// 
-			this.splitContainerMain.Panel2.Controls.Add(this.tabControl);
-			this.splitContainerMain.Panel2.Controls.Add(this.groupBoxCameraShotInfos);
-			this.splitContainerMain.Panel2.Controls.Add(this.buttonLoadImage);
-			this.splitContainerMain.Panel2MinSize = 490;
-			this.splitContainerMain.Size = new System.Drawing.Size(1499, 747);
-			this.splitContainerMain.SplitterDistance = 998;
-			this.splitContainerMain.TabIndex = 11;
+			this.label6.AutoSize = true;
+			this.label6.Location = new System.Drawing.Point(6, 14);
+			this.label6.Name = "label6";
+			this.label6.Size = new System.Drawing.Size(185, 13);
+			this.label6.TabIndex = 14;
+			this.label6.Text = "Reference Image used for Calibration:";
 			// 
 			// panelProbeLuminances
 			// 
@@ -773,36 +739,39 @@
 			this.panelProbeLuminances.Size = new System.Drawing.Size(429, 160);
 			this.panelProbeLuminances.TabIndex = 13;
 			// 
-			// label6
+			// buttonSaveCalibration
 			// 
-			this.label6.AutoSize = true;
-			this.label6.Location = new System.Drawing.Point(6, 14);
-			this.label6.Name = "label6";
-			this.label6.Size = new System.Drawing.Size(179, 13);
-			this.label6.TabIndex = 14;
-			this.label6.Text = "Reference Image use for Calibration:";
+			this.buttonSaveCalibration.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonSaveCalibration.Location = new System.Drawing.Point(402, 537);
+			this.buttonSaveCalibration.Name = "buttonSaveCalibration";
+			this.buttonSaveCalibration.Size = new System.Drawing.Size(75, 23);
+			this.buttonSaveCalibration.TabIndex = 12;
+			this.buttonSaveCalibration.Text = "Save";
+			this.buttonSaveCalibration.UseVisualStyleBackColor = true;
+			this.buttonSaveCalibration.Click += new System.EventHandler(this.buttonSaveCalibration_Click);
 			// 
-			// labelCalbrationImageName
+			// buttonLoadCalibration
 			// 
-			this.labelCalbrationImageName.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-			this.labelCalbrationImageName.Location = new System.Drawing.Point(191, 12);
-			this.labelCalbrationImageName.Name = "labelCalbrationImageName";
-			this.labelCalbrationImageName.Size = new System.Drawing.Size(246, 16);
-			this.labelCalbrationImageName.TabIndex = 14;
-			this.labelCalbrationImageName.Text = "<NO IMAGE>";
-			this.labelCalbrationImageName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.buttonLoadCalibration.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonLoadCalibration.Location = new System.Drawing.Point(321, 537);
+			this.buttonLoadCalibration.Name = "buttonLoadCalibration";
+			this.buttonLoadCalibration.Size = new System.Drawing.Size(75, 23);
+			this.buttonLoadCalibration.TabIndex = 12;
+			this.buttonLoadCalibration.Text = "Load";
+			this.buttonLoadCalibration.UseVisualStyleBackColor = true;
+			this.buttonLoadCalibration.Click += new System.EventHandler(this.buttonLoadCalibration_Click);
 			// 
-			// outputPanel
+			// checkBoxGraphLagrange
 			// 
-			this.outputPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.outputPanel.Image = null;
-			this.outputPanel.Location = new System.Drawing.Point(3, 0);
-			this.outputPanel.Name = "outputPanel";
-			this.outputPanel.Size = new System.Drawing.Size(996, 716);
-			this.outputPanel.TabIndex = 0;
-			this.outputPanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.outputPanel_MouseMove);
+			this.checkBoxGraphLagrange.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.checkBoxGraphLagrange.AutoSize = true;
+			this.checkBoxGraphLagrange.Location = new System.Drawing.Point(5, 516);
+			this.checkBoxGraphLagrange.Name = "checkBoxGraphLagrange";
+			this.checkBoxGraphLagrange.Size = new System.Drawing.Size(150, 17);
+			this.checkBoxGraphLagrange.TabIndex = 3;
+			this.checkBoxGraphLagrange.Text = "Use Lagrange polynomials";
+			this.checkBoxGraphLagrange.UseVisualStyleBackColor = true;
+			this.checkBoxGraphLagrange.CheckedChanged += new System.EventHandler(this.checkBoxGraphLagrange_CheckedChanged);
 			// 
 			// graphPanel
 			// 
@@ -816,7 +785,43 @@
 			this.graphPanel.Name = "graphPanel";
 			this.graphPanel.Size = new System.Drawing.Size(471, 303);
 			this.graphPanel.TabIndex = 11;
-			this.graphPanel.UseLagrange = true;
+			this.graphPanel.UseLagrange = false;
+			// 
+			// splitContainerMain
+			// 
+			this.splitContainerMain.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.splitContainerMain.Location = new System.Drawing.Point(0, 0);
+			this.splitContainerMain.Name = "splitContainerMain";
+			// 
+			// splitContainerMain.Panel1
+			// 
+			this.splitContainerMain.Panel1.Controls.Add(this.outputPanel);
+			this.splitContainerMain.Panel1.Controls.Add(this.checkBoxsRGB);
+			this.splitContainerMain.Panel1.Controls.Add(this.labelLuminance);
+			this.splitContainerMain.Panel1.Controls.Add(this.label5);
+			this.splitContainerMain.Panel1.Controls.Add(this.checkBoxLuminance);
+			// 
+			// splitContainerMain.Panel2
+			// 
+			this.splitContainerMain.Panel2.Controls.Add(this.tabControl);
+			this.splitContainerMain.Panel2.Controls.Add(this.groupBoxCameraShotInfos);
+			this.splitContainerMain.Panel2.Controls.Add(this.buttonLoadImage);
+			this.splitContainerMain.Panel2MinSize = 490;
+			this.splitContainerMain.Size = new System.Drawing.Size(1499, 747);
+			this.splitContainerMain.SplitterDistance = 998;
+			this.splitContainerMain.TabIndex = 11;
+			// 
+			// outputPanel
+			// 
+			this.outputPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.outputPanel.Image = null;
+			this.outputPanel.Location = new System.Drawing.Point(3, 0);
+			this.outputPanel.Name = "outputPanel";
+			this.outputPanel.Size = new System.Drawing.Size(996, 716);
+			this.outputPanel.TabIndex = 0;
+			this.outputPanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.outputPanel_MouseMove);
 			// 
 			// openFileDialogCalibration
 			// 
@@ -829,6 +834,32 @@
 			this.saveFileDialogCalibration.DefaultExt = "*.xml";
 			this.saveFileDialogCalibration.Filter = "Calibration Files (*.xml)|*.xml|All Files (*.*)|*.*";
 			this.saveFileDialogCalibration.Title = "Choose the calbration file to save";
+			// 
+			// buttonSetupDatabaseFolder
+			// 
+			this.buttonSetupDatabaseFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonSetupDatabaseFolder.Location = new System.Drawing.Point(6, 537);
+			this.buttonSetupDatabaseFolder.Name = "buttonSetupDatabaseFolder";
+			this.buttonSetupDatabaseFolder.Size = new System.Drawing.Size(185, 23);
+			this.buttonSetupDatabaseFolder.TabIndex = 12;
+			this.buttonSetupDatabaseFolder.Text = "Set Calibration Database Location";
+			this.buttonSetupDatabaseFolder.UseVisualStyleBackColor = true;
+			this.buttonSetupDatabaseFolder.Click += new System.EventHandler(this.buttonSetupDatabaseFolder_Click);
+			// 
+			// buttonReCalibrate
+			// 
+			this.buttonReCalibrate.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonReCalibrate.Location = new System.Drawing.Point(209, 537);
+			this.buttonReCalibrate.Name = "buttonReCalibrate";
+			this.buttonReCalibrate.Size = new System.Drawing.Size(75, 23);
+			this.buttonReCalibrate.TabIndex = 12;
+			this.buttonReCalibrate.Text = "Re-Calibrate";
+			this.buttonReCalibrate.UseVisualStyleBackColor = true;
+			this.buttonReCalibrate.Click += new System.EventHandler(this.buttonReCalibrate_Click);
+			// 
+			// folderBrowserDialogDatabaseLocation
+			// 
+			this.folderBrowserDialogDatabaseLocation.Description = "Select the base folder containing the calibration files to use as a database...";
 			// 
 			// Form1
 			// 
@@ -844,13 +875,13 @@
 			this.tabControl.ResumeLayout(false);
 			this.tabPage2.ResumeLayout(false);
 			this.tabPage2.PerformLayout();
+			this.panelProbeLuminances.ResumeLayout(false);
+			this.panelProbeLuminances.PerformLayout();
 			this.splitContainerMain.Panel1.ResumeLayout(false);
 			this.splitContainerMain.Panel1.PerformLayout();
 			this.splitContainerMain.Panel2.ResumeLayout(false);
 			((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).EndInit();
 			this.splitContainerMain.ResumeLayout(false);
-			this.panelProbeLuminances.ResumeLayout(false);
-			this.panelProbeLuminances.PerformLayout();
 			this.ResumeLayout(false);
 
 		}
@@ -919,6 +950,9 @@
 		private System.Windows.Forms.Label labelCalbrationImageName;
 		private System.Windows.Forms.OpenFileDialog openFileDialogCalibration;
 		private System.Windows.Forms.SaveFileDialog saveFileDialogCalibration;
+		private System.Windows.Forms.Button buttonSetupDatabaseFolder;
+		private System.Windows.Forms.Button buttonReCalibrate;
+		private System.Windows.Forms.FolderBrowserDialog folderBrowserDialogDatabaseLocation;
 	}
 }
 

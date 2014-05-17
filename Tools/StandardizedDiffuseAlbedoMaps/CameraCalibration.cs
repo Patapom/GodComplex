@@ -19,8 +19,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// </summary>
 		public class Probe
 		{
-			private int	m_StandardReflectance;	// Standard reflectance (read it but never change it!)
-			public int	StandardReflectance	{ get { return m_StandardReflectance; } internal set { m_StandardReflectance = value; } }
+			private float	m_StandardReflectance;	// Standard reflectance (read it but never change it!)
+			public float	StandardReflectance	{ get { return m_StandardReflectance; } internal set { m_StandardReflectance = value; } }
 
 			public bool		m_IsAvailable = false;
 			public float	m_LuminanceMeasured;	// Luminance as measured from a reference image containing the probe
@@ -50,8 +50,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			public void		Save( XmlElement _Parent )
 			{
-				_Parent.SetAttribute( "Reflectance", m_StandardReflectance.ToString() );
-
 				XmlElement	Element;
 				Element = _Parent.OwnerDocument.CreateElement( "IsAvailable" );			_Parent.AppendChild( Element );
 				Element.SetAttribute( "Value", m_IsAvailable.ToString() );
@@ -114,12 +112,12 @@ namespace StandardizedDiffuseAlbedoMaps
 		public int				m_ReferenceImageWidth = 0;
 		public int				m_ReferenceImageHeight = 0;
 
-		public Probe			m_Reflectance02 = new Probe() { StandardReflectance = 02 };	//  2% reflectance probe
-		public Probe			m_Reflectance10 = new Probe() { StandardReflectance = 10 };	// 10% reflectance probe
-		public Probe			m_Reflectance20 = new Probe() { StandardReflectance = 20 };	// 20% reflectance probe
-		public Probe			m_Reflectance50 = new Probe() { StandardReflectance = 50 };	// 50% reflectance probe
-		public Probe			m_Reflectance75 = new Probe() { StandardReflectance = 75 };	// 75% reflectance probe
-		public Probe			m_Reflectance99 = new Probe() { StandardReflectance = 99 };	// 99% reflectance probe
+		public Probe			m_Reflectance02 = new Probe() { StandardReflectance = 0.02f };	//  2% reflectance probe
+		public Probe			m_Reflectance10 = new Probe() { StandardReflectance = 0.10f };	// 10% reflectance probe
+		public Probe			m_Reflectance20 = new Probe() { StandardReflectance = 0.20f };	// 20% reflectance probe
+		public Probe			m_Reflectance50 = new Probe() { StandardReflectance = 0.50f };	// 50% reflectance probe
+		public Probe			m_Reflectance75 = new Probe() { StandardReflectance = 0.75f };	// 75% reflectance probe
+		public Probe			m_Reflectance99 = new Probe() { StandardReflectance = 0.99f };	// 99% reflectance probe
 		public Probe[]			m_Reflectances = null;
 
 		public CameraShotInfo	m_CameraShotInfos = new CameraShotInfo();
@@ -215,6 +213,11 @@ namespace StandardizedDiffuseAlbedoMaps
 			XmlElement	ImageRefElement = Root["ImageReference"];
 			if ( ImageRefElement == null )
 				throw new Exception( "Failed to find expected element \"ImageReference\"!" );
+
+			m_ReferenceImageName = ImageRefElement.GetAttribute( "Name" );
+			m_ReferenceImageWidth = int.Parse( ImageRefElement.GetAttribute( "Width" ) );
+			m_ReferenceImageHeight = int.Parse( ImageRefElement.GetAttribute( "Height" ) );
+
 			m_CameraShotInfos.Load( ImageRefElement );
 
 			// Read reflectance infos
@@ -231,12 +234,12 @@ namespace StandardizedDiffuseAlbedoMaps
 				if ( ChildElement.Name == "Probe" || ChildElement.HasAttribute( "StandardReflectance" ) )
 					continue;
 
-				int	StandardReflectance = 0;
-				if ( !int.TryParse( ChildElement.GetAttribute( "StandardReflectance" ), out StandardReflectance ) )
+				float	StandardReflectance = 0;
+				if ( !float.TryParse( ChildElement.GetAttribute( "StandardReflectance" ), out StandardReflectance ) )
 					throw new Exception( "Failed to retrieve standard reflectance index from probe element!" );
 
 				foreach ( Probe P in m_Reflectances )
-					if ( P.StandardReflectance == StandardReflectance )
+					if ( Math.Abs( P.StandardReflectance - StandardReflectance ) < 1e-6f )
 					{	// Found the probe to load into!
 						P.Load( ChildElement );
 						break;

@@ -202,6 +202,14 @@ namespace StandardizedDiffuseAlbedoMaps
 		#region Calibration
 
 		/// <summary>
+		/// Loads all the calibration files from the calibration database folder
+		/// </summary>
+		private void	ParseCalibrationDatabase()
+		{
+
+		}
+
+		/// <summary>
 		/// Integrates the luminance of the pixels in a given circle selected by the user
 		/// </summary>
 		/// <param name="_X"></param>
@@ -248,13 +256,29 @@ namespace StandardizedDiffuseAlbedoMaps
 			return SumLuminance;
 		}
 
+		/// <summary>
+		/// Commit image data to camera calibration
+		/// Must be called as soon as the current image is used to feed data to the camera calibration
+		/// </summary>
+		private void CommitImageToCurrentCalibration()
+		{
+			m_Calibration.m_ReferenceImageName = m_ImageFileName.FullName;
+			m_Calibration.m_ReferenceImageWidth = m_BitmapXYZ.Width;
+			m_Calibration.m_ReferenceImageHeight = m_BitmapXYZ.Height;
+
+			m_Calibration.m_CameraShotInfos.m_ISOSpeed = floatTrackbarControlISOSpeed.Value;
+			m_Calibration.m_CameraShotInfos.m_ShutterSpeed = floatTrackbarControlShutterSpeed.Value;
+			m_Calibration.m_CameraShotInfos.m_Aperture = floatTrackbarControlAperture.Value;
+			m_Calibration.m_CameraShotInfos.m_FocalLength = floatTrackbarControlFocalLength.Value;
+		}
+
 		private void UpdateUIFromCalibration()
 		{
 			m_Calibration.UpdateAllLuminances();
 
 			string	Format = "G4";
 
-			labelCalbrationImageName.Text = m_Calibration.m_ReferenceImageName != null ? m_Calibration.m_ReferenceImageName : "<NO IMAGE>";
+			labelCalbrationImageName.Text = m_Calibration.m_ReferenceImageName != null ? System.IO.Path.GetFileName( m_Calibration.m_ReferenceImageName ) : "<NO IMAGE>";
 
 			buttonCalibrate02.Enabled = m_Calibration.m_Reflectance02.m_IsAvailable;
 			labelProbeNormalized02.Enabled = m_Calibration.m_Reflectance02.m_IsAvailable;
@@ -293,6 +317,15 @@ namespace StandardizedDiffuseAlbedoMaps
 			labelProbeRelative99.Text = m_Calibration.m_Reflectance99.m_IsAvailable ? m_Calibration.m_Reflectance99.m_LuminanceRelative.ToString( Format ) : "";
 
 			graphPanel.Calibration = m_Calibration;	// Update the graph
+
+			bool	CanReCalibrate = false;
+			foreach ( CameraCalibration.Probe P in m_Calibration.m_Reflectances )
+				if ( P.m_IsAvailable )
+				{	// We have at least one available probe location to use
+					CanReCalibrate = true;
+					break;
+				}
+			buttonReCalibrate.Enabled = CanReCalibrate;
 		}
 
 		private void checkBoxCalibrate02_CheckedChanged( object sender, EventArgs e )
@@ -338,56 +371,67 @@ namespace StandardizedDiffuseAlbedoMaps
 				m_Calibration.m_Reflectance02.m_MeasurementCenterX = _Center.X;
 				m_Calibration.m_Reflectance02.m_MeasurementCenterY = _Center.Y;
 				m_Calibration.m_Reflectance02.m_MeasurementRadius = _Radius;
+				CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
 				UpdateUIFromCalibration();
 			} );
 		}
 
 		private void buttonCalibrate10_Click( object sender, EventArgs e )
 		{
-			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => { m_Calibration.m_Reflectance10.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
+			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
+				m_Calibration.m_Reflectance10.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
 				m_Calibration.m_Reflectance10.m_MeasurementCenterX = _Center.X;
 				m_Calibration.m_Reflectance10.m_MeasurementCenterY = _Center.Y;
 				m_Calibration.m_Reflectance10.m_MeasurementRadius = _Radius;
+				CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
 				UpdateUIFromCalibration();
 			} );
 		}
 
 		private void buttonCalibrate20_Click( object sender, EventArgs e )
 		{
-			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => { m_Calibration.m_Reflectance20.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
+			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
+				m_Calibration.m_Reflectance20.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
 				m_Calibration.m_Reflectance20.m_MeasurementCenterX = _Center.X;
 				m_Calibration.m_Reflectance20.m_MeasurementCenterY = _Center.Y;
 				m_Calibration.m_Reflectance20.m_MeasurementRadius = _Radius;
+				CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
 				UpdateUIFromCalibration();
 			} );
 		}
 
 		private void buttonCalibrate50_Click( object sender, EventArgs e )
 		{
-			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => { m_Calibration.m_Reflectance50.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
+			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
+				m_Calibration.m_Reflectance50.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
 				m_Calibration.m_Reflectance50.m_MeasurementCenterX = _Center.X;
 				m_Calibration.m_Reflectance50.m_MeasurementCenterY = _Center.Y;
 				m_Calibration.m_Reflectance50.m_MeasurementRadius = _Radius;
+				CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
 				UpdateUIFromCalibration();
 			} );
 		}
 
 		private void buttonCalibrate75_Click( object sender, EventArgs e )
 		{
-			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => { m_Calibration.m_Reflectance75.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
+			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
+				m_Calibration.m_Reflectance75.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
 				m_Calibration.m_Reflectance75.m_MeasurementCenterX = _Center.X;
 				m_Calibration.m_Reflectance75.m_MeasurementCenterY = _Center.Y;
 				m_Calibration.m_Reflectance75.m_MeasurementRadius = _Radius;
+				CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
 				UpdateUIFromCalibration();
 			} );
 		}
 
 		private void buttonCalibrate99_Click( object sender, EventArgs e )
 		{
-			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => { m_Calibration.m_Reflectance99.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
+			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
+				m_Calibration.m_Reflectance99.m_LuminanceMeasured = IntegrateLuminance( _Center.X, _Center.Y, _Radius );
 				m_Calibration.m_Reflectance99.m_MeasurementCenterX = _Center.X;
 				m_Calibration.m_Reflectance99.m_MeasurementCenterY = _Center.Y;
 				m_Calibration.m_Reflectance99.m_MeasurementRadius = _Radius;
+				CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
 				UpdateUIFromCalibration();
 			} );
 		}
@@ -429,27 +473,17 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 			}
 
- 			string	OldFileName = GetRegKey( "LastCalibrationFilename", m_ApplicationPath );
+			string	OldFileName = GetRegKey( "LastCalibrationFilename", m_ApplicationPath );
 			saveFileDialogCalibration.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
-			saveFileDialogCalibration.FileName = System.IO.Path.GetFileName( OldFileName );
+			saveFileDialogCalibration.FileName = System.IO.Path.GetFileNameWithoutExtension( m_ImageFileName.Name ) + ".xml";
 
 			if ( saveFileDialogCalibration.ShowDialog( this ) != DialogResult.OK )
- 				return;
+				return;
 
 			SetRegKey( "LastCalibrationFilename", saveFileDialogCalibration.FileName );
 
 			try
 			{
-				// Commit image data to camera calibration
-				m_Calibration.m_ReferenceImageName = m_ImageFileName.FullName;
-				m_Calibration.m_ReferenceImageWidth = m_BitmapXYZ.Width;
-				m_Calibration.m_ReferenceImageHeight = m_BitmapXYZ.Height;
-
-				m_Calibration.m_CameraShotInfos.m_ISOSpeed = floatTrackbarControlISOSpeed.Value;
-				m_Calibration.m_CameraShotInfos.m_ShutterSpeed = floatTrackbarControlShutterSpeed.Value;
-				m_Calibration.m_CameraShotInfos.m_Aperture = floatTrackbarControlAperture.Value;
-				m_Calibration.m_CameraShotInfos.m_FocalLength = floatTrackbarControlFocalLength.Value;
-
 				// Save & update UI
 				m_Calibration.Save( new System.IO.FileInfo( saveFileDialogCalibration.FileName ) );
 				UpdateUIFromCalibration();
@@ -458,6 +492,30 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				MessageBox( "An error occurred while loading calibration file:", _e );
 			}
+		}
+
+		private void buttonSetupDatabaseFolder_Click( object sender, EventArgs e )
+		{
+			string	OldPath = GetRegKey( "LastCalibrationDatabasePath", m_ApplicationPath );
+			folderBrowserDialogDatabaseLocation.SelectedPath = System.IO.Path.GetDirectoryName( OldPath );
+			if ( folderBrowserDialogDatabaseLocation.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			SetRegKey( "LastCalibrationDatabasePath", folderBrowserDialogDatabaseLocation.SelectedPath );
+
+			ParseCalibrationDatabase();
+		}
+
+		private void buttonReCalibrate_Click( object sender, EventArgs e )
+		{
+			// Re-Calibrate every available probe
+			foreach ( CameraCalibration.Probe P in m_Calibration.m_Reflectances )
+				if ( P.m_IsAvailable )
+					P.m_LuminanceMeasured = IntegrateLuminance( P.m_MeasurementCenterX, P.m_MeasurementCenterY, P.m_MeasurementRadius );
+
+			// We now used the current image as reference for this calibration so commit its data
+			CommitImageToCurrentCalibration();
+			UpdateUIFromCalibration();
 		}
 
 		#endregion
