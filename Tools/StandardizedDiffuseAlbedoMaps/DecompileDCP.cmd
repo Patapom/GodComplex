@@ -1,0 +1,1 @@
+..\..\Packages\dcpTool_1_4_0\Binaries\Windows\dcpTool.exe -d "D:\Workspaces\GodComplex\Tools\StandardizedDiffuseAlbedoMaps\Patapom 300D.dcp" "D:\Workspaces\GodComplex\Tools\StandardizedDiffuseAlbedoMaps\Patapom 300D.dcp.xml"
