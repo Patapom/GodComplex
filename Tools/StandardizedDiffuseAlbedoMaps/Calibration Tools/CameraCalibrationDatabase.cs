@@ -47,6 +47,11 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region METHODS
 
+		public void	PrepareCalibrationFor( float _ISOSpeed, float _ShutterSpeed, float _Aperture )
+		{
+
+		}
+
 		#endregion
 	}
 }

@@ -28,6 +28,9 @@ namespace StandardizedDiffuseAlbedoMaps
 		private System.IO.FileInfo	m_ImageFileName = null;
 		private Bitmap2				m_BitmapXYZ = null;
 
+		// Generated texture
+		private CalibratedTexture	m_Texture = new CalibratedTexture();
+
 		// Calibration database
 		private CameraCalibrationDatabase	m_CalibrationDatabase = new CameraCalibrationDatabase();
 		private CameraCalibration			m_Calibration = new CameraCalibration();	// Current calibration
@@ -120,7 +123,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			float3[,]	Image = new float3[m_BitmapXYZ.Width,m_BitmapXYZ.Height];
 
 			if ( checkBoxLuminance.Checked )
-			{
+			{	// Luminance only
 				for ( int Y = 0; Y < m_BitmapXYZ.Height; Y++ )
 					for ( int X = 0; X < m_BitmapXYZ.Width; X++ )
 					{
@@ -134,17 +137,17 @@ namespace StandardizedDiffuseAlbedoMaps
 					}
 			}
 			else
-			{
+			{	// RGB
 				for ( int Y = 0; Y < m_BitmapXYZ.Height; Y++ )
 					for ( int X = 0; X < m_BitmapXYZ.Width; X++ )
 					{
 						float4	XYZ = m_BitmapXYZ.ContentXYZ[X, Y];
 						float4	RGB = m_BitmapXYZ.Profile.XYZ2RGB( XYZ );
-						if ( sRGB )
+						if ( !sRGB )
 						{
-							RGB.x = Bitmap2.ColorProfile.Linear2sRGB( RGB.x );
-							RGB.y = Bitmap2.ColorProfile.Linear2sRGB( RGB.y );
-							RGB.z = Bitmap2.ColorProfile.Linear2sRGB( RGB.z );
+							RGB.x = Bitmap2.ColorProfile.sRGB2Linear( RGB.x );
+							RGB.y = Bitmap2.ColorProfile.sRGB2Linear( RGB.y );
+							RGB.z = Bitmap2.ColorProfile.sRGB2Linear( RGB.z );
 						}
 
 						Image[X, Y].x = RGB.x;
@@ -196,6 +199,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					groupBoxCameraShotInfos.Enabled = true;
 
 				RebuildImage();
+				outputPanel.ResetCropRectangle();
 				UpdateUIFromCalibration();
 			}
 			catch ( Exception _e )
@@ -607,6 +611,70 @@ namespace StandardizedDiffuseAlbedoMaps
 				MessageBox( "Some probes have been disabled because the luminance measurement returned too many saturated or black values!", MessageBoxButtons.OK, MessageBoxIcon.Warning );
 			if ( ProbesMissMeasurementDisc )
 				MessageBox( "Some probes can't be measured because they're missing the sampling disc information!\r\nClick the \"Calibrate\" button to place the disk and calibrate manually.", MessageBoxButtons.OK, MessageBoxIcon.Warning );
+		}
+
+		#endregion
+
+		#region Texture Generation
+
+		private void checkBoxCropTool_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanel.CropRectangleEnabled = checkBoxCropTool.Checked;
+		}
+
+		private void buttonResetCrop_Click( object sender, EventArgs e )
+		{
+			outputPanel.ResetCropRectangle();
+		}
+
+		private void buttonCapture_Click( object sender, EventArgs e )
+		{
+
+		}
+
+		private void panelCustomSwatch0_Click( object sender, EventArgs e )
+		{
+
+		}
+
+		private void panelCustomSwatch1_Click( object sender, EventArgs e )
+		{
+
+		}
+
+		private void panelCustomSwatch2_Click( object sender, EventArgs e )
+		{
+
+		}
+
+		private void panelCustomSwatch3_Click( object sender, EventArgs e )
+		{
+
+		}
+
+		private void panelCustomSwatch4_Click( object sender, EventArgs e )
+		{
+
+		}
+
+		private void panelCustomSwatch5_Click( object sender, EventArgs e )
+		{
+
+		}
+
+		private void panelCustomSwatch6_Click( object sender, EventArgs e )
+		{
+
+		}
+
+		private void panelCustomSwatch7_Click( object sender, EventArgs e )
+		{
+
+		}
+
+		private void panelCustomSwatch8_Click( object sender, EventArgs e )
+		{
+
 		}
 
 		#endregion

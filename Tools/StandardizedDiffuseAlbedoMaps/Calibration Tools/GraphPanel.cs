@@ -135,8 +135,10 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			if ( m_Bitmap != null )
 				m_Bitmap.Dispose();
+			m_Bitmap = null;
 
-			m_Bitmap = new Bitmap( Width, Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb );
+			if ( Width > 0 && Height > 0 )
+				m_Bitmap = new Bitmap( Width, Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb );
 
 			UpdateGraph();
 

@@ -123,6 +123,25 @@
   <metadata name="toolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>864, 17</value>
   </metadata>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="checkBoxCropTool.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADrwAAA68AZW8ckkAAAIYSURBVDhPpZM7z2FRFIYpvkqiQIJGMkg0NKKQTCNRUNBQ
+        mXErMBGNWkgo6VT8pSlIxD0Yt3EbjPkJ8zh7wufMyTTzFifn7LOftd619tqqX/8h1d/s7Xb7KYmXf0d+
+        gdvtdjgc/iHpcrkowiK0+PUCN5vNYDD4XdLxeGSTLLNeryfo+Xy+Xq/wf2ARr9Fo+Hy+b5LgT6cT+x7S
+        6XSsEBSxyP473Gq1qtVqvV4vFoterzeRSKTTaZ7JZDKfz3+RZLfbl8vlZrMRpkRRdzgej4dCoVgsFo1G
+        3W630+l0OBw2m81isXyUhB2TyTQajabTKfyjojuMATpEyEKhADkYDPr9Plsnkwm7P0vSarXdbnc4HK7X
+        azY/G8YbNohXqVTICYZms9lqtSLWYrEAfnt763Q6BAWmYNHIZ8NoYLlcxi0JESTZ9vv9drvN5XJqtbrX
+        64nMclhEKpVKwFhFgsQOz2w2q1KpKAdHBMX2S2bxgW2Px0Naq9UKT07BZzIZYNK+h5/nLOBarfZJErWN
+        x+P5fE5vd7sdJwfMImLxcDg8j+oxRtQmYCHR51Qq5ff7gY1Go8vl4oURwpE8cyAQoNsfJBkMBo1Gw1Qh
+        JgTmIczDy2EaTkiM8RuHdEjUycBDfpXEaSvDTAvHII6HI6GxQpFIBBhMjD2iUnlmMW3i3iBxN5HZbAYW
+        CR8NUoBld1B8Eg4770nlzIqw4iKZfwMPfoSX0A2fCAAAAABJRU5ErkJggg==
+</value>
+  </data>
+  <metadata name="toolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>864, 17</value>
+  </metadata>
   <metadata name="openFileDialogCalibration.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>222, 17</value>
   </metadata>

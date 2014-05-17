@@ -298,6 +298,26 @@ namespace StandardizedDiffuseAlbedoMaps
 		}
 
 		/// <summary>
+		/// Formatting flags for Save() method
+		/// </summary>
+		[Flags]
+		public enum FORMAT_FLAGS
+		{
+			NONE = 0,
+
+			// Bits per pixel component
+			SAVE_8BITS_UNORM = 0,	// Save as byte
+			SAVE_16BITS_UNORM = 1,	// Save as UInt16 if possible (valid for PNG, TIFF)
+			SAVE_32BITS_FLOAT = 2,	// Save as float if possible (valid for TIFF)
+
+			// Gray
+			GRAY = 4,				// Save as gray levels
+
+			SKIP_ALPHA = 8,			// Don't save alpha
+			PREMULTIPLY_ALPHA = 16,	// RGB should be multiplied by alpha
+		}
+
+		/// <summary>
 		/// A delegate used to process pixels (i.e. either generate a new pixel or alter the existing pixel)
 		/// </summary>
 		/// <param name="_X"></param>
@@ -1857,7 +1877,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		protected ColorProfile		m_ColorProfile = null;
 		protected float4[,]			m_Bitmap = null;		// CIEXYZ Bitmap content + Alpha
 
-		protected bool				m_bHasValidShotInfo;		// True if available
+		protected bool				m_bHasValidShotInfo;	// True if available
 		protected float				m_ISOSpeed = -1.0f;
 		protected float				m_ShutterSpeed = -1.0f;
 		protected float				m_Aperture = -1.0f;
@@ -1885,7 +1905,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <summary>
 		/// Tells if the image has an alpha channel
 		/// </summary>
-		public bool			HasAlpha				{ get { return m_bHasAlpha; } }
+		public bool			HasAlpha				{ get { return m_bHasAlpha; } set { m_bHasAlpha = value; } }
 
 		/// <summary>
 		/// Gets the image content stored as CIEXYZ + Alpha
@@ -1896,7 +1916,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <summary>
 		/// Gets the image's color profile
 		/// </summary>
-		public ColorProfile	Profile					{ get { return m_ColorProfile; } }
+		public ColorProfile	Profile					{ get { return m_ColorProfile; } set { m_ColorProfile = value; } }
 
 		/// <summary>
 		/// Tells if the image contains valid shot info (i.e. ISO, Tv, Av, focal length, etc.)
@@ -1926,6 +1946,21 @@ namespace StandardizedDiffuseAlbedoMaps
 		#endregion
 
 		#region METHODS
+
+		/// <summary>
+		/// Manual creation
+		/// </summary>
+		/// <param name="_Width"></param>
+		/// <param name="_Height"></param>
+		public Bitmap2( int _Width, int _Height )
+		{
+			m_Width = _Width;
+			m_Height = _Height;
+			m_Bitmap = new float4[m_Width,m_Height];
+			for ( int Y=0; Y < m_Height; Y++ )
+				for ( int X=0; X < m_Width; X++ )
+					m_Bitmap[X,Y] = new float4( 0, 0, 0, 0 );
+		}
 
 		/// <summary>
 		/// Creates a bitmap from a file
@@ -2074,11 +2109,10 @@ namespace StandardizedDiffuseAlbedoMaps
 								throw new Exception( "Invalid decoded bitmap !" );
 
 // DEBUG
-int		StrideX = (Frame.Format.BitsPerPixel>>3)*Frame.PixelWidth;
-byte[]	DebugImageSource = new byte[StrideX*Frame.PixelHeight];
-Frame.CopyPixels( DebugImageSource, StrideX, 0 );
+// int		StrideX = (Frame.Format.BitsPerPixel>>3)*Frame.PixelWidth;
+// byte[]	DebugImageSource = new byte[StrideX*Frame.PixelHeight];
+// Frame.CopyPixels( DebugImageSource, StrideX, 0 );
 // DEBUG
-
 
 // pas de gamma sur les JPEG si non spécifié !
 // Il y a bien une magouille faite lors de la conversion par le FormatConvertedBitmap!
@@ -2498,7 +2532,7 @@ Frame.CopyPixels( DebugImageSource, StrideX, 0 );
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// PRGBA64 (Pre-Multiplied)
-			else if ( _Frame.Format == System.Windows.Media.PixelFormats.Rgba64 )
+			else if ( _Frame.Format == System.Windows.Media.PixelFormats.Prgba64 )
 			{	
 				int			Stride = 8*W;
 				ushort[]	Content = new ushort[Stride*H];
@@ -2661,6 +2695,409 @@ Frame.CopyPixels( DebugImageSource, StrideX, 0 );
 			else
 				throw new Exception( "Source format " + _Frame.Format + " not supported !" );
 		}
+
+		/// <summary>
+		/// Save to a strea
+		/// </summary>
+		/// <param name="_Stream">The stream to write the image to</param>
+		/// <param name="_FileType">The file type to save as</param>
+		/// <param name="_Parms">Additional formatting flags</param>
+		/// <exception cref="NotSupportedException">Occurs if the image type is not supported by the Bitmap class</exception>
+		/// <exception cref="Exception">Occurs if the source image format cannot be converted to RGBA32F which is the generic format we read from</exception>
+		public void	Save( System.IO.Stream _Stream, FILE_TYPE _FileType, FORMAT_FLAGS _Parms )
+		{
+			try
+			{
+				switch ( _FileType )
+				{
+					case FILE_TYPE.JPEG:
+					case FILE_TYPE.PNG:
+					case FILE_TYPE.TIFF:
+					case FILE_TYPE.GIF:
+					case FILE_TYPE.BMP:
+						{
+							BitmapEncoder	Encoder = null;
+							switch ( _FileType )
+							{
+								case FILE_TYPE.JPEG:	Encoder = new JpegBitmapEncoder(); break;
+								case FILE_TYPE.PNG:		Encoder = new PngBitmapEncoder(); break;
+								case FILE_TYPE.TIFF:	Encoder = new TiffBitmapEncoder(); break;
+								case FILE_TYPE.GIF:		Encoder = new GifBitmapEncoder(); break;
+								case FILE_TYPE.BMP:		Encoder = new BmpBitmapEncoder(); break;
+							}
+
+							// Find the appropriate pixel format
+							int		BitsPerComponent = 8;
+							bool	IsFloat = false;
+							if ( (_Parms & FORMAT_FLAGS.SAVE_16BITS_UNORM) != 0 )
+								BitsPerComponent = 16;
+							if ( (_Parms & FORMAT_FLAGS.SAVE_32BITS_FLOAT) != 0 )
+							{	// Floating-point format
+								BitsPerComponent = 32;
+								IsFloat = true;
+							}
+
+							int		ComponentsCount = (_Parms & FORMAT_FLAGS.GRAY) == 0 ? 3 : 1;
+							if ( m_bHasAlpha && (_Parms & FORMAT_FLAGS.SKIP_ALPHA) == 0 )
+								ComponentsCount++;
+
+							bool	PreMultiplyAlpha = (_Parms & FORMAT_FLAGS.PREMULTIPLY_ALPHA) != 0;
+
+							System.Windows.Media.PixelFormat	Format;
+							if ( ComponentsCount == 1 )
+							{	// Gray
+								switch ( BitsPerComponent )
+								{
+									case 8:		Format = System.Windows.Media.PixelFormats.Gray8; break;
+									case 16:	Format = System.Windows.Media.PixelFormats.Gray16; break;
+									case 32:	Format = System.Windows.Media.PixelFormats.Gray32Float; break;
+									default:	throw new Exception( "Unsupported format!" );
+								}
+							}
+							else if ( ComponentsCount == 3 )
+							{	// RGB
+								switch ( BitsPerComponent )
+								{
+									case 8:		Format = System.Windows.Media.PixelFormats.Rgb24; break;
+									case 16:	Format = System.Windows.Media.PixelFormats.Rgb48; break;
+									case 32:	throw new Exception( "32BITS formats aren't supported without ALPHA!" );
+									default:	throw new Exception( "Unsupported format!" );
+								}
+							}
+							else
+							{	// RGBA
+								switch ( BitsPerComponent )
+								{
+									case 8:		Format = PreMultiplyAlpha ? System.Windows.Media.PixelFormats.Pbgra32 : System.Windows.Media.PixelFormats.Bgra32; break;
+									case 16:	Format = PreMultiplyAlpha ? System.Windows.Media.PixelFormats.Prgba64 : System.Windows.Media.PixelFormats.Rgba64; break;
+									case 32:	Format = PreMultiplyAlpha ? System.Windows.Media.PixelFormats.Prgba128Float : System.Windows.Media.PixelFormats.Rgba128Float;
+										if ( !IsFloat ) throw new Exception( "32BITS_UNORM format isn't supported if not floating-point!" );
+										break;
+									default:	throw new Exception( "Unsupported format!" );
+								}
+							}
+
+							// Convert into appropriate frame
+							BitmapFrame	Frame = ConvertFrame( Format );
+							Encoder.Frames.Add( Frame );
+
+							// Save
+							Encoder.Save( _Stream );
+						}
+						break;
+
+					case FILE_TYPE.TGA:
+//TODO!
+// 						{
+// 							// Load as a System.Drawing.Bitmap and convert to float4
+// 							using ( System.IO.MemoryStream Stream = new System.IO.MemoryStream( _ImageFileContent ) )
+// 								using ( TargaImage TGA = new TargaImage( Stream ) )
+// 								{
+// 									// Create a default sRGB linear color profile
+// 									m_ColorProfile = new ColorProfile(
+// 											ColorProfile.Chromaticities.sRGB,	// Use default sRGB color profile
+// 											ColorProfile.GAMMA_CURVE.STANDARD,	// But with a standard gamma curve...
+// 											TGA.ExtensionArea.GammaRatio		// ...whose gamma is retrieved from extension data
+// 										);
+// 
+// 									// Convert
+// 									byte[]	ImageContent = LoadBitmap( TGA.Image, out m_Width, out m_Height );
+// 									m_Bitmap = new float4[m_Width,m_Height];
+// 									byte	A;
+// 									int		i = 0;
+// 									for ( int Y=0; Y < m_Height; Y++ )
+// 										for ( int X=0; X < m_Width; X++ )
+// 										{
+// 											m_Bitmap[X,Y].x = BYTE_TO_FLOAT * ImageContent[i++];
+// 											m_Bitmap[X,Y].y = BYTE_TO_FLOAT * ImageContent[i++];
+// 											m_Bitmap[X,Y].z = BYTE_TO_FLOAT * ImageContent[i++];
+// 
+// 											A = ImageContent[i++];
+// 											m_bHasAlpha |= A != 0xFF;
+// 
+// 											m_Bitmap[X,Y].w = BYTE_TO_FLOAT * A;
+// 										}
+// 
+// 									// Convert to CIEXYZ
+// 									m_ColorProfile.RGB2XYZ( m_Bitmap );
+// 								}
+// 							return;
+// 						}
+
+					case FILE_TYPE.HDR:
+//TODO!
+// 						{
+// 							// Load as XYZ
+// 							m_Bitmap = LoadAndDecodeHDRFormat( _ImageFileContent, true, out m_ColorProfile );
+// 							m_Width = m_Bitmap.GetLength( 0 );
+// 							m_Height = m_Bitmap.GetLength( 1 );
+// 							return;
+// 						}
+
+					case FILE_TYPE.CRW:
+					case FILE_TYPE.CR2:
+					case FILE_TYPE.DNG:
+					default:
+						throw new NotSupportedException( "The image file type \"" + _FileType + "\" is not supported by the Bitmap class!" );
+				}
+			}
+			catch ( Exception )
+			{
+				throw;	// Go on !
+			}
+			finally
+			{
+			}
+		}
+
+		/// <summary>
+		/// Converts the generic XYZ+A bitmap to the specified format frame
+		/// </summary>
+		/// <param name="_Format">The format to convert into</param>
+		protected BitmapFrame	ConvertFrame( System.Windows.Media.PixelFormat _Format )
+		{
+			// Convert to RGB first
+			float4[,]	RGB = new float4[m_Width,m_Height];
+			Array.Copy( m_Bitmap, RGB, RGB.Length );
+			m_ColorProfile.XYZ2RGB( RGB );
+
+			Array	Pixels = null;
+			int		Stride = 0;
+
+			int		W = m_Width;
+			int		H = m_Height;
+
+			//////////////////////////////////////////////////////////////////////////
+			// BGR24
+			if ( _Format == System.Windows.Media.PixelFormats.Bgr24 )
+			{	
+				Stride = 3*W;
+				byte[]	Content = new byte[Stride*H];
+				Pixels = Content;
+
+				int	Position = 0;
+				for ( int Y = 0; Y < H; Y++ )
+					for ( int X = 0; X < W; X++ )
+					{
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
+					}
+			}
+			//////////////////////////////////////////////////////////////////////////
+			// BGR32
+			else if ( _Format == System.Windows.Media.PixelFormats.Bgr32 )
+			{	
+				Stride = 4*W;
+				byte[]	Content = new byte[Stride*H];
+				Pixels = Content;
+
+				int	Position = 0;
+				for ( int Y = 0; Y < H; Y++ )
+					for ( int X = 0; X < W; X++ )
+					{
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
+						Position++;
+					}
+			}
+			//////////////////////////////////////////////////////////////////////////
+			// BGRA32
+			else if ( _Format == System.Windows.Media.PixelFormats.Bgra32 )
+			{	
+				Stride = 4*W;
+				byte[]	Content = new byte[Stride*H];
+				Pixels = Content;
+
+				int		Position = 0;
+				for ( int Y = 0; Y < H; Y++ )
+					for ( int X = 0; X < W; X++ )
+					{
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
+					}
+			}
+			//////////////////////////////////////////////////////////////////////////
+			// PBGRA32 (Pre-Multiplied)
+			else if ( _Format == System.Windows.Media.PixelFormats.Pbgra32 )
+			{	
+				Stride = 4*W;
+				byte[]	Content = new byte[Stride*H];
+				Pixels = Content;
+
+				int		Position = 0;
+				for ( int Y = 0; Y < H; Y++ )
+					for ( int X = 0; X < W; X++ )
+					{
+						RGB[X,Y].x *= RGB[X,Y].w;
+						RGB[X,Y].y *= RGB[X,Y].w;
+						RGB[X,Y].z *= RGB[X,Y].w;
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].w );
+					}
+			}
+			//////////////////////////////////////////////////////////////////////////
+			// RGB48
+			else if ( _Format == System.Windows.Media.PixelFormats.Rgb48 )
+			{	
+				Stride = 6*W;
+				ushort[]	Content = new ushort[Stride*H];
+				Pixels = Content;
+
+				int		Position = 0;
+				for ( int Y = 0; Y < H; Y++ )
+					for ( int X = 0; X < W; X++ )
+					{
+						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].x );
+						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].y );
+						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].z );
+					}
+			}
+			//////////////////////////////////////////////////////////////////////////
+			// RGBA64
+			else if ( _Format == System.Windows.Media.PixelFormats.Rgba64 )
+			{	
+				Stride = 8*W;
+				ushort[]	Content = new ushort[Stride*H];
+				Pixels = Content;
+
+				int		Position = 0;
+				for ( int Y = 0; Y < H; Y++ )
+					for ( int X = 0; X < W; X++ )
+					{
+						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].x );
+						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].y );
+						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].z );
+						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].w );
+					}
+			}
+			//////////////////////////////////////////////////////////////////////////
+			// PRGBA64 (Pre-Multiplied)
+			else if ( _Format == System.Windows.Media.PixelFormats.Prgba64 )
+			{	
+				Stride = 8*W;
+				ushort[]	Content = new ushort[Stride*H];
+				Pixels = Content;
+
+				int		Position = 0;
+				for ( int Y = 0; Y < H; Y++ )
+					for ( int X = 0; X < W; X++ )
+					{
+						RGB[X,Y].x *= RGB[X,Y].w;
+						RGB[X,Y].y *= RGB[X,Y].w;
+						RGB[X,Y].z *= RGB[X,Y].w;
+						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].x );
+						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].y );
+						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].z );
+						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].w );
+					}
+			}
+			//////////////////////////////////////////////////////////////////////////
+			// RGBA128F
+			else if ( _Format == System.Windows.Media.PixelFormats.Rgba128Float )
+			{	
+				Stride = 16*W;
+				float[]	Content = new float[Stride*H];
+				Pixels = Content;
+
+				int		Position = 0;
+				for ( int Y = 0; Y < H; Y++ )
+					for ( int X = 0; X < W; X++ )
+					{
+						Content[Position++] = RGB[X,Y].x;
+						Content[Position++] = RGB[X,Y].y;
+						Content[Position++] = RGB[X,Y].z;
+						Content[Position++] = RGB[X,Y].w;
+					}
+			}
+			//////////////////////////////////////////////////////////////////////////
+			// PRGBA128F (Pre-Multiplied)
+			else if ( _Format == System.Windows.Media.PixelFormats.Prgba128Float )
+			{	
+				Stride = 16*W;
+				float[]	Content = new float[Stride*H];
+				Pixels = Content;
+
+				int		Position = 0;
+				for ( int Y = 0; Y < H; Y++ )
+					for ( int X = 0; X < W; X++ )
+					{
+						RGB[X,Y].x *= RGB[X,Y].w;
+						RGB[X,Y].y *= RGB[X,Y].w;
+						RGB[X,Y].z *= RGB[X,Y].w;
+						Content[Position++] = RGB[X,Y].x;
+						Content[Position++] = RGB[X,Y].y;
+						Content[Position++] = RGB[X,Y].z;
+						Content[Position++] = RGB[X,Y].w;
+					}
+			}
+			//////////////////////////////////////////////////////////////////////////
+			// Gray16
+			else if ( _Format == System.Windows.Media.PixelFormats.Gray16 )
+			{	
+				Stride = 2*W;
+				ushort[]	Content = new ushort[Stride*H];
+				Pixels = Content;
+
+				int		Position = 0;
+				for ( int Y = 0; Y < H; Y++ )
+					for ( int X = 0; X < W; X++ )
+					{
+						Content[Position++] = FLOAT_TO_WORD( m_Bitmap[X,Y].y );
+					}
+			}
+			//////////////////////////////////////////////////////////////////////////
+			// Gray32F
+			else if ( _Format == System.Windows.Media.PixelFormats.Gray32Float )
+			{	
+				Stride = 4*W;
+				float[]	Content = new float[Stride*H];
+				Pixels = Content;
+
+				int		Position = 0;
+				for ( int Y = 0; Y < H; Y++ )
+					for ( int X = 0; X < W; X++ )
+					{
+						Content[Position++] = m_Bitmap[X,Y].y;
+					}
+			}
+			//////////////////////////////////////////////////////////////////////////
+			// Gray8
+			else if ( _Format == System.Windows.Media.PixelFormats.Gray8 )
+			{	
+				Stride = 1*W;
+				byte[]	Content = new byte[Stride*H];
+				Pixels = Content;
+
+				int		Position = 0;
+				for ( int Y = 0; Y < H; Y++ )
+					for ( int X = 0; X < W; X++ )
+					{
+						Content[Position++] = FLOAT_TO_BYTE( m_Bitmap[X,Y].y );
+					}
+			}
+			//////////////////////////////////////////////////////////////////////////
+			// 256 Colors Palette
+			else if ( _Format == System.Windows.Media.PixelFormats.Indexed8 )
+			{
+				throw new Exception( "Palette format are not supported!" );
+			}
+			else
+				throw new Exception( "Source format " + _Format + " not supported !" );
+
+			// Create the bitmap source & only frame
+			BitmapSource	Source = BitmapSource.Create( m_Width, m_Height, 100, 100, _Format, null, Pixels, Stride );
+			BitmapFrame		Frame = BitmapFrame.Create( Source );
+			return Frame;
+		}
+
+		protected byte		FLOAT_TO_BYTE( float v )	{ return (byte) Math.Max( 0, Math.Min( 255, 255.0f * v ) ); }
+		protected UInt16	FLOAT_TO_WORD( float v )	{ return (UInt16) Math.Max( 0, Math.Min( 65535, 65535.0f * v ) ); }
 
 		/// <summary>
 		/// Loads a System.Drawing.Bitmap into a byte[] containing RGBARGBARG... pixels

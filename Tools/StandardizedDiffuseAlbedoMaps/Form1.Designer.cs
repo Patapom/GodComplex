@@ -29,6 +29,7 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
+			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
 			this.openFileDialogSourceImage = new System.Windows.Forms.OpenFileDialog();
 			this.buttonLoadImage = new System.Windows.Forms.Button();
 			this.labelLuminance = new System.Windows.Forms.Label();
@@ -79,7 +80,37 @@
 			this.label5 = new System.Windows.Forms.Label();
 			this.tabControl = new System.Windows.Forms.TabControl();
 			this.tabPageCreation = new System.Windows.Forms.TabPage();
+			this.checkBoxCropTool = new System.Windows.Forms.CheckBox();
+			this.buttonCapture = new System.Windows.Forms.Button();
+			this.groupBoxColorSwatches = new System.Windows.Forms.GroupBox();
+			this.checkBoxCustomSwatch8 = new System.Windows.Forms.CheckBox();
+			this.checkBoxCustomSwatch7 = new System.Windows.Forms.CheckBox();
+			this.checkBoxCustomSwatch6 = new System.Windows.Forms.CheckBox();
+			this.checkBoxCustomSwatch5 = new System.Windows.Forms.CheckBox();
+			this.checkBoxCustomSwatch4 = new System.Windows.Forms.CheckBox();
+			this.checkBoxCustomSwatch3 = new System.Windows.Forms.CheckBox();
+			this.checkBoxCustomSwatch2 = new System.Windows.Forms.CheckBox();
+			this.checkBoxCustomSwatch1 = new System.Windows.Forms.CheckBox();
+			this.checkBoxCustomSwatch0 = new System.Windows.Forms.CheckBox();
+			this.panelSwatchAverage = new System.Windows.Forms.Panel();
+			this.panelSwatchMax = new System.Windows.Forms.Panel();
+			this.label9 = new System.Windows.Forms.Label();
+			this.label8 = new System.Windows.Forms.Label();
+			this.panelCustomSwatch8 = new System.Windows.Forms.Panel();
+			this.panelCustomSwatch7 = new System.Windows.Forms.Panel();
+			this.panelCustomSwatch6 = new System.Windows.Forms.Panel();
+			this.panelCustomSwatch5 = new System.Windows.Forms.Panel();
+			this.panelCustomSwatch4 = new System.Windows.Forms.Panel();
+			this.panelCustomSwatch3 = new System.Windows.Forms.Panel();
+			this.panelCustomSwatch2 = new System.Windows.Forms.Panel();
+			this.panelCustomSwatch1 = new System.Windows.Forms.Panel();
+			this.panelCustomSwatch0 = new System.Windows.Forms.Panel();
+			this.panelSwatchMin = new System.Windows.Forms.Panel();
+			this.label7 = new System.Windows.Forms.Label();
 			this.tabPage2 = new System.Windows.Forms.TabPage();
+			this.tabControlCalibrationRepresentation = new System.Windows.Forms.TabControl();
+			this.tabPageLuminancesGraph = new System.Windows.Forms.TabPage();
+			this.tabPageReferenceImage = new System.Windows.Forms.TabPage();
 			this.buttonExplore = new System.Windows.Forms.Button();
 			this.labelCalbrationImageName = new System.Windows.Forms.Label();
 			this.label6 = new System.Windows.Forms.Label();
@@ -94,23 +125,24 @@
 			this.saveFileDialogCalibration = new System.Windows.Forms.SaveFileDialog();
 			this.folderBrowserDialogDatabaseLocation = new System.Windows.Forms.FolderBrowserDialog();
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
-			this.tabControlCalibrationRepresentation = new System.Windows.Forms.TabControl();
-			this.tabPageLuminancesGraph = new System.Windows.Forms.TabPage();
-			this.tabPageReferenceImage = new System.Windows.Forms.TabPage();
 			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
+			this.resultTexturePanel = new StandardizedDiffuseAlbedoMaps.ResultTexturePanel(this.components);
 			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
 			this.referenceImagePanel = new StandardizedDiffuseAlbedoMaps.ReferenceImagePanel(this.components);
+			this.buttonResetCrop = new System.Windows.Forms.Button();
 			this.groupBoxCameraShotInfos.SuspendLayout();
 			this.tabControl.SuspendLayout();
+			this.tabPageCreation.SuspendLayout();
+			this.groupBoxColorSwatches.SuspendLayout();
 			this.tabPage2.SuspendLayout();
+			this.tabControlCalibrationRepresentation.SuspendLayout();
+			this.tabPageLuminancesGraph.SuspendLayout();
+			this.tabPageReferenceImage.SuspendLayout();
 			this.panelProbeLuminances.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).BeginInit();
 			this.splitContainerMain.Panel1.SuspendLayout();
 			this.splitContainerMain.Panel2.SuspendLayout();
 			this.splitContainerMain.SuspendLayout();
-			this.tabControlCalibrationRepresentation.SuspendLayout();
-			this.tabPageLuminancesGraph.SuspendLayout();
-			this.tabPageReferenceImage.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// openFileDialogSourceImage
@@ -126,7 +158,7 @@
 			this.buttonLoadImage.Location = new System.Drawing.Point(362, 59);
 			this.buttonLoadImage.Name = "buttonLoadImage";
 			this.buttonLoadImage.Size = new System.Drawing.Size(97, 37);
-			this.buttonLoadImage.TabIndex = 1;
+			this.buttonLoadImage.TabIndex = 0;
 			this.buttonLoadImage.Text = "Load Image";
 			this.toolTip.SetToolTip(this.buttonLoadImage, "Load a new image");
 			this.buttonLoadImage.UseVisualStyleBackColor = true;
@@ -721,6 +753,11 @@
 			// 
 			// tabPageCreation
 			// 
+			this.tabPageCreation.Controls.Add(this.buttonResetCrop);
+			this.tabPageCreation.Controls.Add(this.checkBoxCropTool);
+			this.tabPageCreation.Controls.Add(this.buttonCapture);
+			this.tabPageCreation.Controls.Add(this.groupBoxColorSwatches);
+			this.tabPageCreation.Controls.Add(this.resultTexturePanel);
 			this.tabPageCreation.Location = new System.Drawing.Point(4, 22);
 			this.tabPageCreation.Name = "tabPageCreation";
 			this.tabPageCreation.Padding = new System.Windows.Forms.Padding(3);
@@ -728,6 +765,313 @@
 			this.tabPageCreation.TabIndex = 0;
 			this.tabPageCreation.Text = "Texure Creation";
 			this.tabPageCreation.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxCropTool
+			// 
+			this.checkBoxCropTool.Appearance = System.Windows.Forms.Appearance.Button;
+			this.checkBoxCropTool.AutoSize = true;
+			this.checkBoxCropTool.Image = ((System.Drawing.Image)(resources.GetObject("checkBoxCropTool.Image")));
+			this.checkBoxCropTool.Location = new System.Drawing.Point(7, 7);
+			this.checkBoxCropTool.Name = "checkBoxCropTool";
+			this.checkBoxCropTool.Size = new System.Drawing.Size(26, 26);
+			this.checkBoxCropTool.TabIndex = 4;
+			this.toolTip.SetToolTip(this.checkBoxCropTool, "Shows the crop rectangle");
+			this.checkBoxCropTool.UseVisualStyleBackColor = true;
+			this.checkBoxCropTool.CheckedChanged += new System.EventHandler(this.checkBoxCropTool_CheckedChanged);
+			// 
+			// buttonCapture
+			// 
+			this.buttonCapture.Location = new System.Drawing.Point(132, 9);
+			this.buttonCapture.Name = "buttonCapture";
+			this.buttonCapture.Size = new System.Drawing.Size(75, 23);
+			this.buttonCapture.TabIndex = 3;
+			this.buttonCapture.Text = "Capture";
+			this.toolTip.SetToolTip(this.buttonCapture, "Captures the cropped image into a texture and creates color swatches");
+			this.buttonCapture.UseVisualStyleBackColor = true;
+			this.buttonCapture.Click += new System.EventHandler(this.buttonCapture_Click);
+			// 
+			// groupBoxColorSwatches
+			// 
+			this.groupBoxColorSwatches.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.groupBoxColorSwatches.Controls.Add(this.checkBoxCustomSwatch8);
+			this.groupBoxColorSwatches.Controls.Add(this.checkBoxCustomSwatch7);
+			this.groupBoxColorSwatches.Controls.Add(this.checkBoxCustomSwatch6);
+			this.groupBoxColorSwatches.Controls.Add(this.checkBoxCustomSwatch5);
+			this.groupBoxColorSwatches.Controls.Add(this.checkBoxCustomSwatch4);
+			this.groupBoxColorSwatches.Controls.Add(this.checkBoxCustomSwatch3);
+			this.groupBoxColorSwatches.Controls.Add(this.checkBoxCustomSwatch2);
+			this.groupBoxColorSwatches.Controls.Add(this.checkBoxCustomSwatch1);
+			this.groupBoxColorSwatches.Controls.Add(this.checkBoxCustomSwatch0);
+			this.groupBoxColorSwatches.Controls.Add(this.panelSwatchAverage);
+			this.groupBoxColorSwatches.Controls.Add(this.panelSwatchMax);
+			this.groupBoxColorSwatches.Controls.Add(this.label9);
+			this.groupBoxColorSwatches.Controls.Add(this.label8);
+			this.groupBoxColorSwatches.Controls.Add(this.panelCustomSwatch8);
+			this.groupBoxColorSwatches.Controls.Add(this.panelCustomSwatch7);
+			this.groupBoxColorSwatches.Controls.Add(this.panelCustomSwatch6);
+			this.groupBoxColorSwatches.Controls.Add(this.panelCustomSwatch5);
+			this.groupBoxColorSwatches.Controls.Add(this.panelCustomSwatch4);
+			this.groupBoxColorSwatches.Controls.Add(this.panelCustomSwatch3);
+			this.groupBoxColorSwatches.Controls.Add(this.panelCustomSwatch2);
+			this.groupBoxColorSwatches.Controls.Add(this.panelCustomSwatch1);
+			this.groupBoxColorSwatches.Controls.Add(this.panelCustomSwatch0);
+			this.groupBoxColorSwatches.Controls.Add(this.panelSwatchMin);
+			this.groupBoxColorSwatches.Controls.Add(this.label7);
+			this.groupBoxColorSwatches.Location = new System.Drawing.Point(7, 379);
+			this.groupBoxColorSwatches.Name = "groupBoxColorSwatches";
+			this.groupBoxColorSwatches.Size = new System.Drawing.Size(277, 181);
+			this.groupBoxColorSwatches.TabIndex = 1;
+			this.groupBoxColorSwatches.TabStop = false;
+			this.groupBoxColorSwatches.Text = "Color Swatches";
+			// 
+			// checkBoxCustomSwatch8
+			// 
+			this.checkBoxCustomSwatch8.AutoSize = true;
+			this.checkBoxCustomSwatch8.Location = new System.Drawing.Point(190, 148);
+			this.checkBoxCustomSwatch8.Name = "checkBoxCustomSwatch8";
+			this.checkBoxCustomSwatch8.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch8.TabIndex = 2;
+			this.toolTip.SetToolTip(this.checkBoxCustomSwatch8, "Custom color swatch");
+			this.checkBoxCustomSwatch8.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxCustomSwatch7
+			// 
+			this.checkBoxCustomSwatch7.AutoSize = true;
+			this.checkBoxCustomSwatch7.Location = new System.Drawing.Point(104, 148);
+			this.checkBoxCustomSwatch7.Name = "checkBoxCustomSwatch7";
+			this.checkBoxCustomSwatch7.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch7.TabIndex = 2;
+			this.toolTip.SetToolTip(this.checkBoxCustomSwatch7, "Custom color swatch");
+			this.checkBoxCustomSwatch7.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxCustomSwatch6
+			// 
+			this.checkBoxCustomSwatch6.AutoSize = true;
+			this.checkBoxCustomSwatch6.Location = new System.Drawing.Point(18, 148);
+			this.checkBoxCustomSwatch6.Name = "checkBoxCustomSwatch6";
+			this.checkBoxCustomSwatch6.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch6.TabIndex = 2;
+			this.toolTip.SetToolTip(this.checkBoxCustomSwatch6, "Custom color swatch");
+			this.checkBoxCustomSwatch6.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxCustomSwatch5
+			// 
+			this.checkBoxCustomSwatch5.AutoSize = true;
+			this.checkBoxCustomSwatch5.Location = new System.Drawing.Point(190, 108);
+			this.checkBoxCustomSwatch5.Name = "checkBoxCustomSwatch5";
+			this.checkBoxCustomSwatch5.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch5.TabIndex = 2;
+			this.toolTip.SetToolTip(this.checkBoxCustomSwatch5, "Custom color swatch");
+			this.checkBoxCustomSwatch5.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxCustomSwatch4
+			// 
+			this.checkBoxCustomSwatch4.AutoSize = true;
+			this.checkBoxCustomSwatch4.Location = new System.Drawing.Point(104, 108);
+			this.checkBoxCustomSwatch4.Name = "checkBoxCustomSwatch4";
+			this.checkBoxCustomSwatch4.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch4.TabIndex = 2;
+			this.toolTip.SetToolTip(this.checkBoxCustomSwatch4, "Custom color swatch");
+			this.checkBoxCustomSwatch4.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxCustomSwatch3
+			// 
+			this.checkBoxCustomSwatch3.AutoSize = true;
+			this.checkBoxCustomSwatch3.Location = new System.Drawing.Point(18, 108);
+			this.checkBoxCustomSwatch3.Name = "checkBoxCustomSwatch3";
+			this.checkBoxCustomSwatch3.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch3.TabIndex = 2;
+			this.toolTip.SetToolTip(this.checkBoxCustomSwatch3, "Custom color swatch");
+			this.checkBoxCustomSwatch3.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxCustomSwatch2
+			// 
+			this.checkBoxCustomSwatch2.AutoSize = true;
+			this.checkBoxCustomSwatch2.Location = new System.Drawing.Point(190, 68);
+			this.checkBoxCustomSwatch2.Name = "checkBoxCustomSwatch2";
+			this.checkBoxCustomSwatch2.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch2.TabIndex = 2;
+			this.toolTip.SetToolTip(this.checkBoxCustomSwatch2, "Custom color swatch");
+			this.checkBoxCustomSwatch2.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxCustomSwatch1
+			// 
+			this.checkBoxCustomSwatch1.AutoSize = true;
+			this.checkBoxCustomSwatch1.Location = new System.Drawing.Point(104, 68);
+			this.checkBoxCustomSwatch1.Name = "checkBoxCustomSwatch1";
+			this.checkBoxCustomSwatch1.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch1.TabIndex = 2;
+			this.toolTip.SetToolTip(this.checkBoxCustomSwatch1, "Custom color swatch");
+			this.checkBoxCustomSwatch1.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxCustomSwatch0
+			// 
+			this.checkBoxCustomSwatch0.AutoSize = true;
+			this.checkBoxCustomSwatch0.Location = new System.Drawing.Point(18, 68);
+			this.checkBoxCustomSwatch0.Name = "checkBoxCustomSwatch0";
+			this.checkBoxCustomSwatch0.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch0.TabIndex = 2;
+			this.toolTip.SetToolTip(this.checkBoxCustomSwatch0, "Custom color swatch");
+			this.checkBoxCustomSwatch0.UseVisualStyleBackColor = true;
+			// 
+			// panelSwatchAverage
+			// 
+			this.panelSwatchAverage.BackColor = System.Drawing.Color.DimGray;
+			this.panelSwatchAverage.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelSwatchAverage.Location = new System.Drawing.Point(211, 19);
+			this.panelSwatchAverage.Name = "panelSwatchAverage";
+			this.panelSwatchAverage.Size = new System.Drawing.Size(50, 34);
+			this.panelSwatchAverage.TabIndex = 1;
+			this.toolTip.SetToolTip(this.panelSwatchAverage, "Average luminance in the texture");
+			// 
+			// panelSwatchMax
+			// 
+			this.panelSwatchMax.BackColor = System.Drawing.Color.DimGray;
+			this.panelSwatchMax.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelSwatchMax.Location = new System.Drawing.Point(125, 19);
+			this.panelSwatchMax.Name = "panelSwatchMax";
+			this.panelSwatchMax.Size = new System.Drawing.Size(50, 34);
+			this.panelSwatchMax.TabIndex = 1;
+			this.toolTip.SetToolTip(this.panelSwatchMax, "Maximum luminance in the texture");
+			// 
+			// label9
+			// 
+			this.label9.AutoSize = true;
+			this.label9.Location = new System.Drawing.Point(181, 29);
+			this.label9.Name = "label9";
+			this.label9.Size = new System.Drawing.Size(29, 13);
+			this.label9.TabIndex = 0;
+			this.label9.Text = "Avg.";
+			this.toolTip.SetToolTip(this.label9, "Average luminance in the texture");
+			// 
+			// label8
+			// 
+			this.label8.AutoSize = true;
+			this.label8.Location = new System.Drawing.Point(95, 29);
+			this.label8.Name = "label8";
+			this.label8.Size = new System.Drawing.Size(30, 13);
+			this.label8.TabIndex = 0;
+			this.label8.Text = "Max.";
+			this.toolTip.SetToolTip(this.label8, "Maximum luminance in the texture");
+			// 
+			// panelCustomSwatch8
+			// 
+			this.panelCustomSwatch8.BackColor = System.Drawing.Color.DimGray;
+			this.panelCustomSwatch8.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelCustomSwatch8.Location = new System.Drawing.Point(211, 139);
+			this.panelCustomSwatch8.Name = "panelCustomSwatch8";
+			this.panelCustomSwatch8.Size = new System.Drawing.Size(50, 34);
+			this.panelCustomSwatch8.TabIndex = 1;
+			this.toolTip.SetToolTip(this.panelCustomSwatch8, "Custom color swatch");
+			this.panelCustomSwatch8.Click += new System.EventHandler(this.panelCustomSwatch8_Click);
+			// 
+			// panelCustomSwatch7
+			// 
+			this.panelCustomSwatch7.BackColor = System.Drawing.Color.DimGray;
+			this.panelCustomSwatch7.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelCustomSwatch7.Location = new System.Drawing.Point(125, 139);
+			this.panelCustomSwatch7.Name = "panelCustomSwatch7";
+			this.panelCustomSwatch7.Size = new System.Drawing.Size(50, 34);
+			this.panelCustomSwatch7.TabIndex = 1;
+			this.toolTip.SetToolTip(this.panelCustomSwatch7, "Custom color swatch");
+			this.panelCustomSwatch7.Click += new System.EventHandler(this.panelCustomSwatch7_Click);
+			// 
+			// panelCustomSwatch6
+			// 
+			this.panelCustomSwatch6.BackColor = System.Drawing.Color.DimGray;
+			this.panelCustomSwatch6.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelCustomSwatch6.Location = new System.Drawing.Point(39, 139);
+			this.panelCustomSwatch6.Name = "panelCustomSwatch6";
+			this.panelCustomSwatch6.Size = new System.Drawing.Size(50, 34);
+			this.panelCustomSwatch6.TabIndex = 1;
+			this.toolTip.SetToolTip(this.panelCustomSwatch6, "Custom color swatch");
+			this.panelCustomSwatch6.Click += new System.EventHandler(this.panelCustomSwatch6_Click);
+			// 
+			// panelCustomSwatch5
+			// 
+			this.panelCustomSwatch5.BackColor = System.Drawing.Color.DimGray;
+			this.panelCustomSwatch5.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelCustomSwatch5.Location = new System.Drawing.Point(211, 99);
+			this.panelCustomSwatch5.Name = "panelCustomSwatch5";
+			this.panelCustomSwatch5.Size = new System.Drawing.Size(50, 34);
+			this.panelCustomSwatch5.TabIndex = 1;
+			this.toolTip.SetToolTip(this.panelCustomSwatch5, "Custom color swatch");
+			this.panelCustomSwatch5.Click += new System.EventHandler(this.panelCustomSwatch5_Click);
+			// 
+			// panelCustomSwatch4
+			// 
+			this.panelCustomSwatch4.BackColor = System.Drawing.Color.DimGray;
+			this.panelCustomSwatch4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelCustomSwatch4.Location = new System.Drawing.Point(125, 99);
+			this.panelCustomSwatch4.Name = "panelCustomSwatch4";
+			this.panelCustomSwatch4.Size = new System.Drawing.Size(50, 34);
+			this.panelCustomSwatch4.TabIndex = 1;
+			this.toolTip.SetToolTip(this.panelCustomSwatch4, "Custom color swatch");
+			this.panelCustomSwatch4.Click += new System.EventHandler(this.panelCustomSwatch4_Click);
+			// 
+			// panelCustomSwatch3
+			// 
+			this.panelCustomSwatch3.BackColor = System.Drawing.Color.DimGray;
+			this.panelCustomSwatch3.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelCustomSwatch3.Location = new System.Drawing.Point(39, 99);
+			this.panelCustomSwatch3.Name = "panelCustomSwatch3";
+			this.panelCustomSwatch3.Size = new System.Drawing.Size(50, 34);
+			this.panelCustomSwatch3.TabIndex = 1;
+			this.toolTip.SetToolTip(this.panelCustomSwatch3, "Custom color swatch");
+			this.panelCustomSwatch3.Click += new System.EventHandler(this.panelCustomSwatch3_Click);
+			// 
+			// panelCustomSwatch2
+			// 
+			this.panelCustomSwatch2.BackColor = System.Drawing.Color.DimGray;
+			this.panelCustomSwatch2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelCustomSwatch2.Location = new System.Drawing.Point(211, 59);
+			this.panelCustomSwatch2.Name = "panelCustomSwatch2";
+			this.panelCustomSwatch2.Size = new System.Drawing.Size(50, 34);
+			this.panelCustomSwatch2.TabIndex = 1;
+			this.toolTip.SetToolTip(this.panelCustomSwatch2, "Custom color swatch");
+			this.panelCustomSwatch2.Click += new System.EventHandler(this.panelCustomSwatch2_Click);
+			// 
+			// panelCustomSwatch1
+			// 
+			this.panelCustomSwatch1.BackColor = System.Drawing.Color.DimGray;
+			this.panelCustomSwatch1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelCustomSwatch1.Location = new System.Drawing.Point(125, 59);
+			this.panelCustomSwatch1.Name = "panelCustomSwatch1";
+			this.panelCustomSwatch1.Size = new System.Drawing.Size(50, 34);
+			this.panelCustomSwatch1.TabIndex = 1;
+			this.toolTip.SetToolTip(this.panelCustomSwatch1, "Custom color swatch");
+			this.panelCustomSwatch1.Click += new System.EventHandler(this.panelCustomSwatch1_Click);
+			// 
+			// panelCustomSwatch0
+			// 
+			this.panelCustomSwatch0.BackColor = System.Drawing.Color.DimGray;
+			this.panelCustomSwatch0.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelCustomSwatch0.Location = new System.Drawing.Point(39, 59);
+			this.panelCustomSwatch0.Name = "panelCustomSwatch0";
+			this.panelCustomSwatch0.Size = new System.Drawing.Size(50, 34);
+			this.panelCustomSwatch0.TabIndex = 1;
+			this.toolTip.SetToolTip(this.panelCustomSwatch0, "Custom color swatch");
+			this.panelCustomSwatch0.Click += new System.EventHandler(this.panelCustomSwatch0_Click);
+			// 
+			// panelSwatchMin
+			// 
+			this.panelSwatchMin.BackColor = System.Drawing.Color.DimGray;
+			this.panelSwatchMin.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelSwatchMin.Location = new System.Drawing.Point(39, 19);
+			this.panelSwatchMin.Name = "panelSwatchMin";
+			this.panelSwatchMin.Size = new System.Drawing.Size(50, 34);
+			this.panelSwatchMin.TabIndex = 1;
+			this.toolTip.SetToolTip(this.panelSwatchMin, "Minimum reflectance in the image");
+			// 
+			// label7
+			// 
+			this.label7.AutoSize = true;
+			this.label7.Location = new System.Drawing.Point(9, 29);
+			this.label7.Name = "label7";
+			this.label7.Size = new System.Drawing.Size(27, 13);
+			this.label7.TabIndex = 0;
+			this.label7.Text = "Min.";
+			this.toolTip.SetToolTip(this.label7, "Minimum luminance in the image");
 			// 
 			// tabPage2
 			// 
@@ -748,6 +1092,41 @@
 			this.tabPage2.TabIndex = 1;
 			this.tabPage2.Text = "Camera Calibration";
 			this.tabPage2.UseVisualStyleBackColor = true;
+			// 
+			// tabControlCalibrationRepresentation
+			// 
+			this.tabControlCalibrationRepresentation.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.tabControlCalibrationRepresentation.Controls.Add(this.tabPageLuminancesGraph);
+			this.tabControlCalibrationRepresentation.Controls.Add(this.tabPageReferenceImage);
+			this.tabControlCalibrationRepresentation.Location = new System.Drawing.Point(4, 207);
+			this.tabControlCalibrationRepresentation.Name = "tabControlCalibrationRepresentation";
+			this.tabControlCalibrationRepresentation.SelectedIndex = 0;
+			this.tabControlCalibrationRepresentation.Size = new System.Drawing.Size(476, 324);
+			this.tabControlCalibrationRepresentation.TabIndex = 16;
+			// 
+			// tabPageLuminancesGraph
+			// 
+			this.tabPageLuminancesGraph.Controls.Add(this.graphPanel);
+			this.tabPageLuminancesGraph.Location = new System.Drawing.Point(4, 22);
+			this.tabPageLuminancesGraph.Name = "tabPageLuminancesGraph";
+			this.tabPageLuminancesGraph.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPageLuminancesGraph.Size = new System.Drawing.Size(468, 298);
+			this.tabPageLuminancesGraph.TabIndex = 0;
+			this.tabPageLuminancesGraph.Text = "Luminances Graph";
+			this.tabPageLuminancesGraph.UseVisualStyleBackColor = true;
+			// 
+			// tabPageReferenceImage
+			// 
+			this.tabPageReferenceImage.Controls.Add(this.referenceImagePanel);
+			this.tabPageReferenceImage.Location = new System.Drawing.Point(4, 22);
+			this.tabPageReferenceImage.Name = "tabPageReferenceImage";
+			this.tabPageReferenceImage.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPageReferenceImage.Size = new System.Drawing.Size(468, 298);
+			this.tabPageReferenceImage.TabIndex = 1;
+			this.tabPageReferenceImage.Text = "Reference Image";
+			this.tabPageReferenceImage.UseVisualStyleBackColor = true;
 			// 
 			// buttonExplore
 			// 
@@ -906,7 +1285,7 @@
 			this.splitContainerMain.Panel2MinSize = 490;
 			this.splitContainerMain.Size = new System.Drawing.Size(1499, 747);
 			this.splitContainerMain.SplitterDistance = 998;
-			this.splitContainerMain.TabIndex = 11;
+			this.splitContainerMain.TabIndex = 0;
 			// 
 			// openFileDialogCalibration
 			// 
@@ -924,52 +1303,30 @@
 			// 
 			this.folderBrowserDialogDatabaseLocation.Description = "Select the base folder containing the calibration files to use as a database...";
 			// 
-			// tabControlCalibrationRepresentation
-			// 
-			this.tabControlCalibrationRepresentation.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.tabControlCalibrationRepresentation.Controls.Add(this.tabPageLuminancesGraph);
-			this.tabControlCalibrationRepresentation.Controls.Add(this.tabPageReferenceImage);
-			this.tabControlCalibrationRepresentation.Location = new System.Drawing.Point(4, 207);
-			this.tabControlCalibrationRepresentation.Name = "tabControlCalibrationRepresentation";
-			this.tabControlCalibrationRepresentation.SelectedIndex = 0;
-			this.tabControlCalibrationRepresentation.Size = new System.Drawing.Size(476, 324);
-			this.tabControlCalibrationRepresentation.TabIndex = 16;
-			// 
-			// tabPageLuminancesGraph
-			// 
-			this.tabPageLuminancesGraph.Controls.Add(this.graphPanel);
-			this.tabPageLuminancesGraph.Location = new System.Drawing.Point(4, 22);
-			this.tabPageLuminancesGraph.Name = "tabPageLuminancesGraph";
-			this.tabPageLuminancesGraph.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageLuminancesGraph.Size = new System.Drawing.Size(468, 298);
-			this.tabPageLuminancesGraph.TabIndex = 0;
-			this.tabPageLuminancesGraph.Text = "Luminances Graph";
-			this.tabPageLuminancesGraph.UseVisualStyleBackColor = true;
-			// 
-			// tabPageReferenceImage
-			// 
-			this.tabPageReferenceImage.Controls.Add(this.referenceImagePanel);
-			this.tabPageReferenceImage.Location = new System.Drawing.Point(4, 22);
-			this.tabPageReferenceImage.Name = "tabPageReferenceImage";
-			this.tabPageReferenceImage.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageReferenceImage.Size = new System.Drawing.Size(468, 298);
-			this.tabPageReferenceImage.TabIndex = 1;
-			this.tabPageReferenceImage.Text = "Reference Image";
-			this.tabPageReferenceImage.UseVisualStyleBackColor = true;
-			// 
 			// outputPanel
 			// 
 			this.outputPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.outputPanel.CropRectangleEnabled = false;
 			this.outputPanel.Image = null;
 			this.outputPanel.Location = new System.Drawing.Point(3, 0);
 			this.outputPanel.Name = "outputPanel";
 			this.outputPanel.Size = new System.Drawing.Size(996, 716);
 			this.outputPanel.TabIndex = 0;
 			this.outputPanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.outputPanel_MouseMove);
+			// 
+			// resultTexturePanel
+			// 
+			this.resultTexturePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.resultTexturePanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.resultTexturePanel.Calibration = null;
+			this.resultTexturePanel.Location = new System.Drawing.Point(6, 40);
+			this.resultTexturePanel.Name = "resultTexturePanel";
+			this.resultTexturePanel.Size = new System.Drawing.Size(471, 332);
+			this.resultTexturePanel.TabIndex = 0;
 			// 
 			// graphPanel
 			// 
@@ -994,6 +1351,16 @@
 			this.referenceImagePanel.Size = new System.Drawing.Size(456, 286);
 			this.referenceImagePanel.TabIndex = 0;
 			// 
+			// buttonResetCrop
+			// 
+			this.buttonResetCrop.Location = new System.Drawing.Point(39, 9);
+			this.buttonResetCrop.Name = "buttonResetCrop";
+			this.buttonResetCrop.Size = new System.Drawing.Size(57, 23);
+			this.buttonResetCrop.TabIndex = 5;
+			this.buttonResetCrop.Text = "Reset";
+			this.buttonResetCrop.UseVisualStyleBackColor = true;
+			this.buttonResetCrop.Click += new System.EventHandler(this.buttonResetCrop_Click);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1006,8 +1373,15 @@
 			this.groupBoxCameraShotInfos.ResumeLayout(false);
 			this.groupBoxCameraShotInfos.PerformLayout();
 			this.tabControl.ResumeLayout(false);
+			this.tabPageCreation.ResumeLayout(false);
+			this.tabPageCreation.PerformLayout();
+			this.groupBoxColorSwatches.ResumeLayout(false);
+			this.groupBoxColorSwatches.PerformLayout();
 			this.tabPage2.ResumeLayout(false);
 			this.tabPage2.PerformLayout();
+			this.tabControlCalibrationRepresentation.ResumeLayout(false);
+			this.tabPageLuminancesGraph.ResumeLayout(false);
+			this.tabPageReferenceImage.ResumeLayout(false);
 			this.panelProbeLuminances.ResumeLayout(false);
 			this.panelProbeLuminances.PerformLayout();
 			this.splitContainerMain.Panel1.ResumeLayout(false);
@@ -1015,9 +1389,6 @@
 			this.splitContainerMain.Panel2.ResumeLayout(false);
 			((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).EndInit();
 			this.splitContainerMain.ResumeLayout(false);
-			this.tabControlCalibrationRepresentation.ResumeLayout(false);
-			this.tabPageLuminancesGraph.ResumeLayout(false);
-			this.tabPageReferenceImage.ResumeLayout(false);
 			this.ResumeLayout(false);
 
 		}
@@ -1095,6 +1466,35 @@
 		private System.Windows.Forms.TabPage tabPageLuminancesGraph;
 		private System.Windows.Forms.TabPage tabPageReferenceImage;
 		private ReferenceImagePanel referenceImagePanel;
+		private System.Windows.Forms.GroupBox groupBoxColorSwatches;
+		private ResultTexturePanel resultTexturePanel;
+		private System.Windows.Forms.Panel panelSwatchAverage;
+		private System.Windows.Forms.Panel panelSwatchMax;
+		private System.Windows.Forms.Label label9;
+		private System.Windows.Forms.Label label8;
+		private System.Windows.Forms.Panel panelSwatchMin;
+		private System.Windows.Forms.Label label7;
+		private System.Windows.Forms.CheckBox checkBoxCustomSwatch8;
+		private System.Windows.Forms.CheckBox checkBoxCustomSwatch7;
+		private System.Windows.Forms.CheckBox checkBoxCustomSwatch6;
+		private System.Windows.Forms.CheckBox checkBoxCustomSwatch5;
+		private System.Windows.Forms.CheckBox checkBoxCustomSwatch4;
+		private System.Windows.Forms.CheckBox checkBoxCustomSwatch3;
+		private System.Windows.Forms.CheckBox checkBoxCustomSwatch2;
+		private System.Windows.Forms.CheckBox checkBoxCustomSwatch1;
+		private System.Windows.Forms.CheckBox checkBoxCustomSwatch0;
+		private System.Windows.Forms.Panel panelCustomSwatch8;
+		private System.Windows.Forms.Panel panelCustomSwatch7;
+		private System.Windows.Forms.Panel panelCustomSwatch6;
+		private System.Windows.Forms.Panel panelCustomSwatch5;
+		private System.Windows.Forms.Panel panelCustomSwatch4;
+		private System.Windows.Forms.Panel panelCustomSwatch3;
+		private System.Windows.Forms.Panel panelCustomSwatch2;
+		private System.Windows.Forms.Panel panelCustomSwatch1;
+		private System.Windows.Forms.Panel panelCustomSwatch0;
+		private System.Windows.Forms.Button buttonCapture;
+		private System.Windows.Forms.CheckBox checkBoxCropTool;
+		private System.Windows.Forms.Button buttonResetCrop;
 	}
 }
 
