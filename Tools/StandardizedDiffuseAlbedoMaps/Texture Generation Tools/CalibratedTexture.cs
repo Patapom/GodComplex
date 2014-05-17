@@ -27,9 +27,13 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			// Crop infos
 			public bool			CropSource = false;
-			public float2		CropRectangleCenter;
-			public float2		CropRectangleHalfSize;
+			public float2		CropRectangleCenter;	// In UV space
+			public float2		CropRectangleHalfSize;	// In UV space
 			public float		CropRectangleRotation;
+
+			// Custom swatches
+			public int			CustomSwatchesCount = 0;
+			public float2[]	CustomSwatches = new float2[16];	// In UV space
 		}
 
 		#endregion
@@ -37,6 +41,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		#region FIELDS
 
 		private Bitmap2		m_Texture = null;
+		private Bitmap2[]	m_Swatches = null;
 
 		#endregion
 
@@ -71,9 +76,31 @@ namespace StandardizedDiffuseAlbedoMaps
 //				m_Texture = CropSource( _Source, _Parms.Database );
 			}
 			else
-			{
-
+			{	// Simple texture copy, with luminance calibration
+				m_Texture = new Bitmap2( _Source.Width, _Source.Height );
+				float4	XYZ;
+				float3	xyY;
+				for ( int Y=0; Y < m_Texture.Height; Y++ )
+					for ( int X=0; X < m_Texture.Width; X++ )
+					{
+						XYZ = _Source.ContentXYZ[X,Y];
+						xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
+						xyY.z = _Parms.Database.Calibrate( xyY.z );
+						XYZ = new float4( Bitmap2.ColorProfile.XYZ2xyY( xyY ), XYZ.w );
+						m_Texture.ContentXYZ[X,Y] = XYZ;
+					}
 			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// Build swatches
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// Feed some purely informational shot infos
+			m_Texture.HasValidShotInfo = true;
+			m_Texture.ISOSpeed = _Parms.ISOSpeed;
+			m_Texture.ShutterSpeed = _Parms.ShutterSpeed;
+			m_Texture.Aperture = _Parms.Aperture;
 		}
 
 		#endregion
