@@ -114,6 +114,11 @@ namespace StandardizedDiffuseAlbedoMaps
 		public float4( float _x, float _y, float _z, float _w )		{ x = _x; y = _y; z = _z; w = _w; }
 		public float4( float3 _xyz, float _w )						{ x = _xyz.x; y = _xyz.y; z = _xyz.z; w = _w; }
 
+		public static explicit	operator float3( float4 a )
+		{
+			return new float3( a.x, a.y, a.z );
+		}
+
 		public static float4	operator*( float4 a, float4x4 b )
 		{
 			return new float4(
@@ -286,6 +291,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			GIF,
 			HDR,
 			CRW,
+			CR2,
+			DNG,
 
 			UNKNOWN
 		}
@@ -1208,7 +1215,9 @@ namespace StandardizedDiffuseAlbedoMaps
 						m_Chromaticities = Chromaticities.sRGB;	// Default for BMPs is standard sRGB with no gamma
 						break;
 
-					case FILE_TYPE.CRW:	// Canon Raw has no correction
+					case FILE_TYPE.CRW:	// Raw files have no correction
+					case FILE_TYPE.CR2:
+					case FILE_TYPE.DNG:
 						m_GammaCurve = GAMMA_CURVE.STANDARD;
 						m_Gamma = 1.0f;
 						m_Chromaticities = Chromaticities.sRGB;	// Default for BMPs is standard sRGB with no gamma
@@ -1846,7 +1855,13 @@ namespace StandardizedDiffuseAlbedoMaps
 		protected bool				m_bHasAlpha = false;
 
 		protected ColorProfile		m_ColorProfile = null;
-		protected float4[,]		m_Bitmap = null;		// CIEXYZ Bitmap content + Alpha
+		protected float4[,]			m_Bitmap = null;		// CIEXYZ Bitmap content + Alpha
+
+		protected bool				m_bHasValidShotInfo;		// True if available
+		protected float				m_ISOSpeed = -1.0f;
+		protected float				m_ShutterSpeed = -1.0f;
+		protected float				m_Aperture = -1.0f;
+		protected float				m_FocalLength = -1.0f;
 
 		#endregion
 
@@ -1882,6 +1897,31 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// Gets the image's color profile
 		/// </summary>
 		public ColorProfile	Profile					{ get { return m_ColorProfile; } }
+
+		/// <summary>
+		/// Tells if the image contains valid shot info (i.e. ISO, Tv, Av, focal length, etc.)
+		/// </summary>
+		public bool			HasValidShotInfo		{ get { return m_bHasValidShotInfo; } set { m_bHasValidShotInfo = value; } }
+
+		/// <summary>
+		/// Gets or sets the ISO speed associated to the image
+		/// </summary>
+		public float		ISOSpeed				{ get { return m_ISOSpeed; } set { m_ISOSpeed = value; } }
+
+		/// <summary>
+		/// Gets or sets the shutter speed associated to the image
+		/// </summary>
+		public float		ShutterSpeed			{ get { return m_ShutterSpeed; } set { m_ShutterSpeed = value; } }
+
+		/// <summary>
+		/// Gets or sets the aperture associated to the image
+		/// </summary>
+		public float		Aperture				{ get { return m_Aperture; } set { m_Aperture = value; } }
+
+		/// <summary>
+		/// Gets or sets the focal length associated to the image
+		/// </summary>
+		public float		FocalLength				{ get { return m_FocalLength; } set { m_FocalLength = value; } }
 
 		#endregion
 
@@ -2185,40 +2225,103 @@ Frame.CopyPixels( DebugImageSource, StrideX, 0 );
 						}
 
 					case FILE_TYPE.CRW:
+					case FILE_TYPE.CR2:
+					case FILE_TYPE.DNG:
 						{
 							using ( System.IO.MemoryStream Stream = new System.IO.MemoryStream( _ImageFileContent ) )
-								using ( CanonRawLoader CRWLoader = new CanonRawLoader( Stream ) )
+								using ( LibRawManaged.RawFile Raw = new LibRawManaged.RawFile() )
 								{
-// 									// Create a default sRGB linear color profile
-// 									m_ColorProfile = new ColorProfile(
-// 											ColorProfile.Chromaticities.sRGB,	// Use default sRGB color profile
-// 											ColorProfile.GAMMA_CURVE.STANDARD,	// But with a standard gamma curve...
-// 											TGA.ExtensionArea.GammaRatio		// ...whose gamma is retrieved from extension data
-// 										);
+									Raw.UnpackRAW( Stream );
 
-// 									// Convert
-// 									byte[]	ImageContent = LoadBitmap( CRWLoader.Image, out m_Width, out m_Height );
-// 									m_Bitmap = new float4[m_Width,m_Height];
-// 									byte	A;
-// 									int		i = 0;
-// 									for ( int Y=0; Y < m_Height; Y++ )
-// 										for ( int X=0; X < m_Width; X++ )
-// 										{
-// 											m_Bitmap[X,Y].x = BYTE_TO_FLOAT * ImageContent[i++];
-// 											m_Bitmap[X,Y].y = BYTE_TO_FLOAT * ImageContent[i++];
-// 											m_Bitmap[X,Y].z = BYTE_TO_FLOAT * ImageContent[i++];
-// 
-// 											A = ImageContent[i++];
-// 											m_bHasAlpha |= A != 0xFF;
-// 
-// 											m_Bitmap[X,Y].w = BYTE_TO_FLOAT * A;
-// 										}
+									ColorProfile.Chromaticities	Chroma = Raw.ColorProfile == LibRawManaged.RawFile.COLOR_PROFILE.ADOBE_RGB
+																		? ColorProfile.Chromaticities.AdobeRGB_D65	// Use Adobe RGB
+																		: ColorProfile.Chromaticities.sRGB;			// Use default sRGB color profile
+
+									// Create a default sRGB linear color profile
+									m_ColorProfile = new ColorProfile(
+											Chroma,
+											ColorProfile.GAMMA_CURVE.STANDARD,	// But with a standard gamma curve...
+											1.0f								// Linear
+										);
+
+									// Also get back valid camera shot info
+									m_bHasValidShotInfo = true;
+									m_ISOSpeed = Raw.ISOSpeed;
+									m_ShutterSpeed = Raw.ShutterSpeed;
+									m_Aperture = Raw.Aperture;
+									m_FocalLength = Raw.FocalLength;
+
+ 									// Convert
+									m_Width = Raw.Width;
+									m_Height = Raw.Height;
+//									float	ColorNormalizer = 1.0f / Raw.Maximum;
+									float	ColorNormalizer = 1.0f / 65535.0f;
+
+									m_Bitmap = new float4[m_Width,m_Height];
+									UInt16[,][]	ImageContent = Raw.Image;
+									for ( int Y=0; Y < m_Height; Y++ )
+										for ( int X=0; X < m_Width; X++ )
+										{
+ 											m_Bitmap[X,Y].x = ImageContent[X,Y][0] * ColorNormalizer;
+ 											m_Bitmap[X,Y].y = ImageContent[X,Y][1] * ColorNormalizer;
+ 											m_Bitmap[X,Y].z = ImageContent[X,Y][2] * ColorNormalizer;
+ 											m_Bitmap[X,Y].w = ImageContent[X,Y][3] * ColorNormalizer;
+ 										}
 
 									// Convert to CIEXYZ
 									m_ColorProfile.RGB2XYZ( m_Bitmap );
 								}
+
+#region My poor attempt at reading CRW files
+// 							using ( System.IO.MemoryStream Stream = new System.IO.MemoryStream( _ImageFileContent ) )
+// 								using ( CanonRawLoader CRWLoader = new CanonRawLoader( Stream ) )
+// 								{
+// 									ColorProfile.Chromaticities	Chroma = CRWLoader.m_ColorProfile == CanonRawLoader.DataColorProfile.COLOR_PROFILE.ADOBE_RGB
+// 																		? ColorProfile.Chromaticities.AdobeRGB_D65	// Use Adobe RGB
+// 																		: ColorProfile.Chromaticities.sRGB;			// Use default sRGB color profile
+// 
+// 									// Create a default sRGB linear color profile
+// 									m_ColorProfile = new ColorProfile(
+// 											Chroma,
+// 											ColorProfile.GAMMA_CURVE.STANDARD,	// But with a standard gamma curve...
+// 											1.0f								// Linear
+// 										);
+// 
+//  									// Convert
+// 									m_Width = CRWLoader.m_RAWImage.m_Width;
+// 									m_Height = CRWLoader.m_RAWImage.m_Height;
+// 
+// 									m_Bitmap = new float4[m_Width,m_Height];
+// 									UInt16[]	ImageContent = CRWLoader.m_RAWImage.m_DecodedImage;
+// 									int			i = 0;
+// // 									for ( int Y=0; Y < m_Height; Y++ )
+// // 										for ( int X=0; X < m_Width; X++ )
+// // 										{
+// //  											m_Bitmap[X,Y].x = ImageContent[i++] / 4096.0f;
+// //  											m_Bitmap[X,Y].y = ImageContent[i++] / 4096.0f;
+// //  											m_Bitmap[X,Y].z = ImageContent[i++] / 4096.0f;
+// // 											i++;
+// //  										}
+// 
+// 									i=0;
+// 									for ( int Y=0; Y < m_Height; Y++ )
+// 										for ( int X=0; X < m_Width; X++ )
+//  											m_Bitmap[X,Y].x = ImageContent[i++] / 4096.0f;
+// 									i=0;
+// 									for ( int Y=0; Y < m_Height; Y++ )
+// 										for ( int X=0; X < m_Width; X++ )
+//  											m_Bitmap[X,Y].y = ImageContent[i++] / 4096.0f;
+// 									i=0;
+// 									for ( int Y=0; Y < m_Height; Y++ )
+// 										for ( int X=0; X < m_Width; X++ )
+//  											m_Bitmap[X,Y].z = ImageContent[i++] / 4096.0f;
+// 
+// 									// Convert to CIEXYZ
+// 									m_ColorProfile.RGB2XYZ( m_Bitmap );
+// 								}
+#endregion
 							return;
-						}
+ 						}
 
 					default:
 						throw new NotSupportedException( "The image file type \"" + _FileType + "\" is not supported by the Bitmap class!" );
@@ -2639,6 +2742,10 @@ Frame.CopyPixels( DebugImageSource, StrideX, 0 );
 
 				case	".CRW":
 					return FILE_TYPE.CRW;
+				case	".CR2":
+					return FILE_TYPE.CR2;
+				case	".DNG":
+					return FILE_TYPE.DNG;
 			}
 
 			return FILE_TYPE.UNKNOWN;

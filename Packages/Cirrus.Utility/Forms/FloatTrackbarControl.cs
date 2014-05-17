@@ -48,6 +48,7 @@ namespace Nuaj.Cirrus.Utility
 
 		// Graphics
 		protected SolidBrush		m_BackgroundBrush = null;
+		protected SolidBrush		m_BackgroundBrushDisabled = null;
 		protected SolidBrush		m_SliderBrush = null;
 		protected TextureBrush		m_BrushTrackbarMiddle = null;
 
@@ -255,6 +256,13 @@ namespace Nuaj.Cirrus.Utility
 
 		#region Control Members
 
+		protected override void OnEnabledChanged( EventArgs e )
+		{
+			base.OnEnabledChanged( e );
+
+			textBox.Enabled = Enabled;
+		}
+
 		protected override void OnResize( EventArgs eventargs )
 		{
 			base.OnResize( eventargs );
@@ -352,6 +360,7 @@ namespace Nuaj.Cirrus.Utility
 		protected virtual void	InitializeGraphics()
 		{
 			m_BackgroundBrush = new SolidBrush( Color.FromArgb( 137, 137, 137 ) );
+			m_BackgroundBrushDisabled = new SolidBrush( Color.FromArgb( 170, 170, 170 ) );
 			m_SliderBrush = new SolidBrush( Color.FromArgb( 200, 200, 200 ) );
 
 		    ImageAttributes	ImageAttr = new ImageAttributes();
@@ -365,7 +374,7 @@ namespace Nuaj.Cirrus.Utility
 		protected virtual void	DrawSlider( PaintEventArgs e )
 		{
 			float	fSizeToDraw = m_SliderRectangle.Width * (Value - VisibleRangeMin) / (VisibleRangeMax - VisibleRangeMin);
-			e.Graphics.FillRectangle( m_BackgroundBrush, m_SliderRectangle.X + fSizeToDraw, m_SliderRectangle.Y, m_SliderRectangle.Width - fSizeToDraw, m_SliderRectangle.Height );
+			e.Graphics.FillRectangle( Enabled ? m_BackgroundBrush : m_BackgroundBrushDisabled, m_SliderRectangle.X + fSizeToDraw, m_SliderRectangle.Y, m_SliderRectangle.Width - fSizeToDraw, m_SliderRectangle.Height );
 			e.Graphics.FillRectangle( m_SliderBrush, m_SliderRectangle.X, m_SliderRectangle.Y, fSizeToDraw, m_SliderRectangle.Height );
 		}
 
@@ -373,6 +382,7 @@ namespace Nuaj.Cirrus.Utility
 		{
 			m_BrushTrackbarMiddle.Dispose();
 			m_SliderBrush.Dispose();
+			m_BackgroundBrushDisabled.Dispose();
 			m_BackgroundBrush.Dispose();
 		}
 

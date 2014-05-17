@@ -1,0 +1,245 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{0A60418E-9191-495E-90B9-1B521837FFAB}</ProjectGuid>
+    <Keyword>ManagedCProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CLRSupport>false</CLRSupport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CLRSupport>false</CLRSupport>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Debug\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Release\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>dng_sdk/source;XMP-SDK/public/include;libxml2/include;iconv/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;qMacOS=0;qWinOS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <ProjectReference>
+      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <Link>
+      <AdditionalDependencies>libxml2/lib/libxml2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>dng_sdk/source;XMP-SDK/public/include;libxml2/include;iconv/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;qMacOS=0;qWinOS=1;qDNGReportErrors=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>libxml2/lib/libxml2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="dng_sdk\source\dng_1d_function.h" />
+    <ClInclude Include="dng_sdk\source\dng_1d_table.h" />
+    <ClInclude Include="dng_sdk\source\dng_abort_sniffer.h" />
+    <ClInclude Include="dng_sdk\source\dng_area_task.h" />
+    <ClInclude Include="dng_sdk\source\dng_assertions.h" />
+    <ClInclude Include="dng_sdk\source\dng_auto_ptr.h" />
+    <ClInclude Include="dng_sdk\source\dng_bad_pixels.h" />
+    <ClInclude Include="dng_sdk\source\dng_bottlenecks.h" />
+    <ClInclude Include="dng_sdk\source\dng_camera_profile.h" />
+    <ClInclude Include="dng_sdk\source\dng_classes.h" />
+    <ClInclude Include="dng_sdk\source\dng_color_space.h" />
+    <ClInclude Include="dng_sdk\source\dng_color_spec.h" />
+    <ClInclude Include="dng_sdk\source\dng_date_time.h" />
+    <ClInclude Include="dng_sdk\source\dng_errors.h" />
+    <ClInclude Include="dng_sdk\source\dng_exceptions.h" />
+    <ClInclude Include="dng_sdk\source\dng_exif.h" />
+    <ClInclude Include="dng_sdk\source\dng_fast_module.h" />
+    <ClInclude Include="dng_sdk\source\dng_file_stream.h" />
+    <ClInclude Include="dng_sdk\source\dng_filter_task.h" />
+    <ClInclude Include="dng_sdk\source\dng_fingerprint.h" />
+    <ClInclude Include="dng_sdk\source\dng_flags.h" />
+    <ClInclude Include="dng_sdk\source\dng_gain_map.h" />
+    <ClInclude Include="dng_sdk\source\dng_globals.h" />
+    <ClInclude Include="dng_sdk\source\dng_host.h" />
+    <ClInclude Include="dng_sdk\source\dng_hue_sat_map.h" />
+    <ClInclude Include="dng_sdk\source\dng_ifd.h" />
+    <ClInclude Include="dng_sdk\source\dng_image.h" />
+    <ClInclude Include="dng_sdk\source\dng_image_writer.h" />
+    <ClInclude Include="dng_sdk\source\dng_info.h" />
+    <ClInclude Include="dng_sdk\source\dng_iptc.h" />
+    <ClInclude Include="dng_sdk\source\dng_lens_correction.h" />
+    <ClInclude Include="dng_sdk\source\dng_linearization_info.h" />
+    <ClInclude Include="dng_sdk\source\dng_lossless_jpeg.h" />
+    <ClInclude Include="dng_sdk\source\dng_matrix.h" />
+    <ClInclude Include="dng_sdk\source\dng_memory.h" />
+    <ClInclude Include="dng_sdk\source\dng_memory_stream.h" />
+    <ClInclude Include="dng_sdk\source\dng_misc_opcodes.h" />
+    <ClInclude Include="dng_sdk\source\dng_mosaic_info.h" />
+    <ClInclude Include="dng_sdk\source\dng_mutex.h" />
+    <ClInclude Include="dng_sdk\source\dng_negative.h" />
+    <ClInclude Include="dng_sdk\source\dng_opcode_list.h" />
+    <ClInclude Include="dng_sdk\source\dng_opcodes.h" />
+    <ClInclude Include="dng_sdk\source\dng_orientation.h" />
+    <ClInclude Include="dng_sdk\source\dng_parse_utils.h" />
+    <ClInclude Include="dng_sdk\source\dng_pixel_buffer.h" />
+    <ClInclude Include="dng_sdk\source\dng_point.h" />
+    <ClInclude Include="dng_sdk\source\dng_preview.h" />
+    <ClInclude Include="dng_sdk\source\dng_pthread.h" />
+    <ClInclude Include="dng_sdk\source\dng_rational.h" />
+    <ClInclude Include="dng_sdk\source\dng_read_image.h" />
+    <ClInclude Include="dng_sdk\source\dng_rect.h" />
+    <ClInclude Include="dng_sdk\source\dng_reference.h" />
+    <ClInclude Include="dng_sdk\source\dng_render.h" />
+    <ClInclude Include="dng_sdk\source\dng_resample.h" />
+    <ClInclude Include="dng_sdk\source\dng_sdk_limits.h" />
+    <ClInclude Include="dng_sdk\source\dng_shared.h" />
+    <ClInclude Include="dng_sdk\source\dng_simple_image.h" />
+    <ClInclude Include="dng_sdk\source\dng_spline.h" />
+    <ClInclude Include="dng_sdk\source\dng_stream.h" />
+    <ClInclude Include="dng_sdk\source\dng_string.h" />
+    <ClInclude Include="dng_sdk\source\dng_string_list.h" />
+    <ClInclude Include="dng_sdk\source\dng_tag_codes.h" />
+    <ClInclude Include="dng_sdk\source\dng_tag_types.h" />
+    <ClInclude Include="dng_sdk\source\dng_tag_values.h" />
+    <ClInclude Include="dng_sdk\source\dng_temperature.h" />
+    <ClInclude Include="dng_sdk\source\dng_tile_iterator.h" />
+    <ClInclude Include="dng_sdk\source\dng_tone_curve.h" />
+    <ClInclude Include="dng_sdk\source\dng_types.h" />
+    <ClInclude Include="dng_sdk\source\dng_utils.h" />
+    <ClInclude Include="dng_sdk\source\dng_xmp.h" />
+    <ClInclude Include="dng_sdk\source\dng_xmp_sdk.h" />
+    <ClInclude Include="dng_sdk\source\dng_xy_coord.h" />
+    <ClInclude Include="xml_camera_profile.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dng_sdk\source\dng_1d_function.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_1d_table.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_abort_sniffer.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_area_task.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_bad_pixels.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_bottlenecks.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_camera_profile.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_color_space.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_color_spec.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_date_time.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_exceptions.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_exif.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_file_stream.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_filter_task.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_fingerprint.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_gain_map.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_globals.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_host.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_hue_sat_map.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_ifd.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_image.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_image_writer.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_info.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_iptc.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_lens_correction.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_linearization_info.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_lossless_jpeg.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_matrix.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_memory.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_memory_stream.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_misc_opcodes.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_mosaic_info.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_mutex.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_negative.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_opcode_list.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_opcodes.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_orientation.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_parse_utils.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_pixel_buffer.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_point.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_preview.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_pthread.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_rational.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_read_image.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_rect.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_reference.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_render.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_resample.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_shared.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_simple_image.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_spline.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_stream.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_string.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_string_list.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_tag_types.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_temperature.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_tile_iterator.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_tone_curve.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_utils.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_xmp.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_xmp_sdk.cpp" />
+    <ClCompile Include="dng_sdk\source\dng_xy_coord.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="xml_camera_profile.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="XMP-SDK\build\vsnet8\XMPCore.vcproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="dcpTool.vcxproj">
+      <Project>{0a60418e-9191-495e-90b9-1b521837ffab}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
