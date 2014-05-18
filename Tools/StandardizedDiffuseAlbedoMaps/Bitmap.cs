@@ -73,13 +73,50 @@ namespace StandardizedDiffuseAlbedoMaps
 	{
 		public float	x, y;
 		public float2( float _x, float _y )		{ x = _x; y = _y; }
+
+		public override string ToString()
+		{
+			return x.ToString() + ";" + y.ToString();
+		}
+		public static float2	Parse( string v )
+		{
+			string[]	Components = v.Split( ';' );
+			if ( Components.Length < 2 )
+				throw new Exception( "Not enough vector components!" );
+			float2		Result = new float2();
+			if ( !float.TryParse( Components[0], out Result.x ) )
+				throw new Exception( "Can't parse X field!" );
+			if ( !float.TryParse( Components[1], out Result.y ) )
+				throw new Exception( "Can't parse Y field!" );
+			return Result;
+		}
 	}
 	[System.Diagnostics.DebuggerDisplay( "x={x} y={y} z={z}" )]
 	public struct	float3
 	{
 		public float	x, y, z;
 		public float3( float _x, float _y, float _z )		{ x = _x; y = _y; z = _z; }
+		public static float3	operator+( float3 a, float3 b )		{ return new float3( a.x + b.x, a.y + b.y, a.z + b.z ); }
 		public static float3	operator*( float a, float3 b )		{ return new float3( a * b.x, a * b.y, a * b.z ); }
+
+		public override string ToString()
+		{
+			return x.ToString() + ";" + y.ToString() + ";" + z.ToString();
+		}
+		public static float3	Parse( string v )
+		{
+			string[]	Components = v.Split( ';' );
+			if ( Components.Length < 3 )
+				throw new Exception( "Not enough vector components!" );
+			float3		Result = new float3();
+			if ( !float.TryParse( Components[0], out Result.x ) )
+				throw new Exception( "Can't parse X field!" );
+			if ( !float.TryParse( Components[1], out Result.y ) )
+				throw new Exception( "Can't parse Y field!" );
+			if ( !float.TryParse( Components[2], out Result.z ) )
+				throw new Exception( "Can't parse Z field!" );
+			return Result;
+		}
 	}
 	[System.Diagnostics.DebuggerDisplay( "x={x} y={y} z={z} w={w}" )]
 	public struct	float4
@@ -119,6 +156,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			return new float3( a.x, a.y, a.z );
 		}
 
+		public static float4	operator+( float4 a, float4 b )		{ return new float4( a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w ); }
+		public static float4	operator*( float a, float4 b )		{ return new float4( a * b.x, a * b.y, a * b.z, a *b.w ); }
 		public static float4	operator*( float4 a, float4x4 b )
 		{
 			return new float4(
@@ -129,6 +168,27 @@ namespace StandardizedDiffuseAlbedoMaps
 				);
 		}
 		public float			dot( float4 b ) { return x*b.x + y*b.y + z*b.z + w*b.w; }
+
+		public override string ToString()
+		{
+			return x.ToString() + ";" + y.ToString() + ";" + z.ToString() + ";" + w.ToString();
+		}
+		public static float4	Parse( string v )
+		{
+			string[]	Components = v.Split( ';' );
+			if ( Components.Length < 4 )
+				throw new Exception( "Not enough vector components!" );
+			float4		Result = new float4();
+			if ( !float.TryParse( Components[0], out Result.x ) )
+				throw new Exception( "Can't parse X field!" );
+			if ( !float.TryParse( Components[1], out Result.y ) )
+				throw new Exception( "Can't parse Y field!" );
+			if ( !float.TryParse( Components[2], out Result.z ) )
+				throw new Exception( "Can't parse Z field!" );
+			if ( !float.TryParse( Components[3], out Result.w ) )
+				throw new Exception( "Can't parse W field!" );
+			return Result;
+		}
 	}
 	public struct	float4x4
 	{
@@ -1188,6 +1248,46 @@ namespace StandardizedDiffuseAlbedoMaps
 			#region METHODS
 
 			/// <summary>
+			/// Build from a standard profile
+			/// </summary>
+			/// <param name="_Profile"></param>
+			public ColorProfile( STANDARD_PROFILE _Profile )
+			{
+				switch ( _Profile )
+				{
+					case STANDARD_PROFILE.sRGB:
+						m_Chromaticities = Chromaticities.sRGB;
+						m_GammaCurve = GAMMA_CURVE.sRGB;
+						m_Gamma = 2.4f;
+						break;
+					case STANDARD_PROFILE.ADOBE_RGB_D50:
+						m_Chromaticities = Chromaticities.AdobeRGB_D50;
+						m_GammaCurve = GAMMA_CURVE.STANDARD;
+						m_Gamma = 2.19921875f;
+						break;
+					case STANDARD_PROFILE.ADOBE_RGB_D65:
+						m_Chromaticities = Chromaticities.AdobeRGB_D65;
+						m_GammaCurve = GAMMA_CURVE.STANDARD;
+						m_Gamma = 2.19921875f;
+						break;
+					case STANDARD_PROFILE.PRO_PHOTO:
+						m_Chromaticities = Chromaticities.ProPhoto;
+						m_GammaCurve = GAMMA_CURVE.PRO_PHOTO;
+						m_Gamma = 1.8f;
+						break;
+					case STANDARD_PROFILE.RADIANCE:
+						m_Chromaticities = Chromaticities.Radiance;
+						m_GammaCurve = GAMMA_CURVE.STANDARD;
+						m_Gamma = 1.0f;
+						break;
+					default:
+						throw new Exception( "Unsupported standard profile!" );
+				}
+
+				BuildTransformFromChroma( true );
+			}
+
+			/// <summary>
 			/// Creates the color profile from metadata embedded in the image file
 			/// </summary>
 			/// <param name="_MetaData"></param>
@@ -2052,6 +2152,37 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			// Convert to CIE XYZ
 			m_ColorProfile.RGB2XYZ( m_Bitmap );
+		}
+
+		/// <summary>
+		/// Performs bilinear sampling of the XYZ content
+		/// </summary>
+		/// <param name="X">A column index in [0,Width[ (will be clamped if out of range)</param>
+		/// <param name="Y">A row index in [0,Height[ (will be clamped if out of range)</param>
+		/// <returns>The XYZ at the requested location</returns>
+		public float4	BilinearSample( float X, float Y )
+		{
+			int		X0 = (int) Math.Floor( X );
+			int		Y0 = (int) Math.Floor( Y );
+			float	x = X - X0;
+			float	y = Y - Y0;
+			float	rx = 1.0f - x;
+			float	ry = 1.0f - y;
+			X0 = Math.Max( 0, Math.Min( Width-1, X0 ) );
+			Y0 = Math.Max( 0, Math.Min( Height-1, Y0 ) );
+			int		X1 = Math.Min( Width-1, X0+1 );
+			int		Y1 = Math.Min( Height-1, Y0+1 );
+
+			float4	V00 = m_Bitmap[X0,Y0];
+			float4	V01 = m_Bitmap[X1,Y0];
+			float4	V10 = m_Bitmap[X0,Y1];
+			float4	V11 = m_Bitmap[X1,Y1];
+
+			float4	V0 = rx * V00 + x * V01;
+			float4	V1 = rx * V10 + x * V11;
+
+			float4	V = ry * V0 + y * V1;
+			return V;
 		}
 
 		/// <summary>
