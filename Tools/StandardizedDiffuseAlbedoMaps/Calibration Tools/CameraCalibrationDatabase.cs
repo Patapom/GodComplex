@@ -372,6 +372,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			// Finally, we interpolate on Z (Aperture), we need only 1 single value
 			float	tZ = Math.Max( 0.0f, Math.Min( 1.0f, (EV.z - AperturesY.x) / Math.Max( 1e-6f, AperturesY.y - AperturesY.x) ) );
+			float	rZ = 1.0f - tZ;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Create the special camera calibration that is the result of the interpolation of the 8 ones in the grid
@@ -391,6 +392,19 @@ namespace StandardizedDiffuseAlbedoMaps
 				float	L111 = Grid[1,1,1].m_CameraCalibration.m_Reflectances[ProbeIndex].m_LuminanceMeasured;
 
 				// Interpolate on X (ISO speed)
+				float	L00 = rX.x * L000 + tX.x * L100;
+				float	L10 = rX.x * L010 + tX.x * L110;
+				float	L01 = rX.x * L001 + tX.x * L101;
+				float	L11 = rX.x * L011 + tX.x * L111;
+
+				// Interpolate on Y (shutter speed)
+				float	L0 = rY.x * L00 + tY.x * L10;
+				float	L1 = rY.y * L01 + tY.y * L11;
+
+				// Interpolate on Z (aperture)
+				float	L = rZ * L0 + tZ * L1;
+
+				TargetProbe.m_LuminanceMeasured = L;
 			}
 		}
 
@@ -422,7 +436,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( m_InterpolatedCalibration == null )
 				throw new Exception( "Calibration grid hasn't been prepared for calibration: did you call the PrepareCalibrationFor() method?" );
 			
-
+			_Luminance = m_InterpolatedCalibration.Calibrate( _Luminance );
 
 			return _Luminance;
 		}
