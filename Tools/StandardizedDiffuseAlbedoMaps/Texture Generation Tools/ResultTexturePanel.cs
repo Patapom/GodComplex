@@ -19,40 +19,40 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private Bitmap		m_Thumbnail = null;
 
-		private CameraCalibration	m_CameraCalibration = null;
-		public unsafe CameraCalibration	Calibration
+		private CalibratedTexture	m_Texture = null;
+		public unsafe CalibratedTexture	Texture
 		{
-			get { return m_CameraCalibration; }
+			get { return m_Texture; }
 			set {
-				m_CameraCalibration = value;
-
-				if ( m_CameraCalibration != null && m_CameraCalibration.m_Thumbnail != null )
+				m_Texture = value;
+ 
+				if ( m_Texture != null )
 				{
-					int		W = m_CameraCalibration.m_Thumbnail.GetLength(0);
-					int		H = m_CameraCalibration.m_Thumbnail.GetLength(1);
-					if ( m_Thumbnail == null || m_Thumbnail.Width != W || m_Thumbnail.Height != H )
-					{
-						if ( m_Thumbnail != null )
-							m_Thumbnail.Dispose();
-
-						m_Thumbnail = new Bitmap( W, H, PixelFormat.Format32bppArgb );
-						BitmapData	LockedBitmap = m_Thumbnail.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
-
-						for ( int Y=0; Y < H; Y++ )
-						{
-							byte*	pScanline = (byte*) LockedBitmap.Scan0 + LockedBitmap.Stride * Y;
-							for ( int X=0; X < W; X++ )
-							{
-								byte	L = (byte) (255.0f * Bitmap2.ColorProfile.Linear2sRGB( m_CameraCalibration.m_Thumbnail[X,Y] / 255.0f ));
-								*pScanline++ = L;
-								*pScanline++ = L;
-								*pScanline++ = L;
-								*pScanline++ = 0xFF;
-							}
-						}
-
-						m_Thumbnail.UnlockBits( LockedBitmap );
-					}
+// 					int		W = m_Texture.;
+// 					int		H = m_CameraCalibration.m_Thumbnail.GetLength(1);
+// 					if ( m_Thumbnail == null || m_Thumbnail.Width != W || m_Thumbnail.Height != H )
+// 					{
+// 						if ( m_Thumbnail != null )
+// 							m_Thumbnail.Dispose();
+// 
+// 						m_Thumbnail = new Bitmap( W, H, PixelFormat.Format32bppArgb );
+// 						BitmapData	LockedBitmap = m_Thumbnail.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
+// 
+// 						for ( int Y=0; Y < H; Y++ )
+// 						{
+// 							byte*	pScanline = (byte*) LockedBitmap.Scan0 + LockedBitmap.Stride * Y;
+// 							for ( int X=0; X < W; X++ )
+// 							{
+// 								byte	L = (byte) (255.0f * Bitmap2.ColorProfile.Linear2sRGB( m_CameraCalibration.m_Thumbnail[X,Y] / 255.0f ));
+// 								*pScanline++ = L;
+// 								*pScanline++ = L;
+// 								*pScanline++ = L;
+// 								*pScanline++ = 0xFF;
+// 							}
+// 						}
+// 
+// 						m_Thumbnail.UnlockBits( LockedBitmap );
+// 					}
 				}
 				else
 				{
@@ -82,28 +82,14 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			using ( Graphics G = Graphics.FromImage( m_Bitmap ) )
 			{
-				using ( SolidBrush B = new SolidBrush( BackColor ) )
+				using ( SolidBrush B = new SolidBrush( Color.Black ) )
 					G.FillRectangle( B, 0, 0, W, H );
 
-				if ( m_CameraCalibration != null && m_Thumbnail != null )
+				if ( m_Texture != null )
 				{
 					// Draw thumbnail
 					RectangleF	ClientRect = ImageClientRect();
 					G.DrawImage( m_Thumbnail, ClientRect, new RectangleF( 0, 0, m_Thumbnail.Width, m_Thumbnail.Height ), GraphicsUnit.Pixel );
-
-					// Draw probe measurement circles if available
-					for ( int ProbeIndex=0; ProbeIndex < 6; ProbeIndex++ )
-					{
-						CameraCalibration.Probe	P = m_CameraCalibration.m_Reflectances[ProbeIndex];
-						if ( !P.m_MeasurementDiscIsAvailable )
-							continue;
-
-						PointF	ClientPos = ImageUV2Client( new PointF( P.m_MeasurementCenterX, P.m_MeasurementCenterY ) );
-						float	ClientRadius = ClientRect.Width * P.m_MeasurementRadius;
-
-//						G.DrawEllipse( m_PenProbeShadow, ClientPos.X - ClientRadius, ClientPos.Y - ClientRadius, 2*ClientRadius, 2*ClientRadius );
-						G.DrawEllipse( P.m_IsAvailable ? m_PenProbe : m_PenProbeInvalid, ClientPos.X - ClientRadius, ClientPos.Y - ClientRadius, 2*ClientRadius, 2*ClientRadius );
-					}
 				}
 			}
 

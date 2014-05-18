@@ -28,12 +28,24 @@ namespace StandardizedDiffuseAlbedoMaps
 		private System.IO.FileInfo	m_ImageFileName = null;
 		private Bitmap2				m_BitmapXYZ = null;
 
-		// Generated texture
-		private CalibratedTexture	m_Texture = new CalibratedTexture();
+		// Generated calibrated texture
+		private CalibratedTexture	m_Texture = null;
 
 		// Calibration database
 		private CameraCalibrationDatabase	m_CalibrationDatabase = new CameraCalibrationDatabase();
 		private CameraCalibration			m_Calibration = new CameraCalibration();	// Current calibration
+
+		// Custom swatches
+		private class	CustomSwatch
+		{
+			public CheckBox		m_CheckBox = null;
+			public Panel		m_Panel = null;
+
+			public float2		m_Location = new float2( -1, -1 );		// Last picked location
+			public float3		m_xyY;			// Last picked xyY color
+			public float3		m_RGB;			// Last picked xyY converted into RGB (sRGB) for screen display (also assigned to m_Panel.BackColor)
+		}
+		private CustomSwatch[]		m_CustomSwatches = new CustomSwatch[9];
 
 		#endregion
 
@@ -45,6 +57,17 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_ApplicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );
 
 			InitializeComponent();
+
+			// Initialize custom color swatches
+			m_CustomSwatches[0] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch0, m_Panel = panelCustomSwatch0 };
+			m_CustomSwatches[1] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch1, m_Panel = panelCustomSwatch1 };
+			m_CustomSwatches[2] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch2, m_Panel = panelCustomSwatch2 };
+			m_CustomSwatches[3] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch3, m_Panel = panelCustomSwatch3 };
+			m_CustomSwatches[4] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch4, m_Panel = panelCustomSwatch4 };
+			m_CustomSwatches[5] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch5, m_Panel = panelCustomSwatch5 };
+			m_CustomSwatches[6] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch6, m_Panel = panelCustomSwatch6 };
+			m_CustomSwatches[7] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch7, m_Panel = panelCustomSwatch7 };
+			m_CustomSwatches[8] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch8, m_Panel = panelCustomSwatch8 };
 		}
 
 		protected override void OnLoad( EventArgs e )
@@ -197,6 +220,19 @@ namespace StandardizedDiffuseAlbedoMaps
 				}
 				else
 					groupBoxCameraShotInfos.Enabled = true;
+
+				// Clear calibrated texture & UI
+				if ( m_Texture != null )
+					m_Texture.Dispose();
+				m_Texture = null;
+				resultTexturePanel.Texture = null;
+				buttonSaveCalibratedImage.Enabled = false;
+
+				foreach ( CustomSwatch S in m_CustomSwatches )
+				{
+					S.m_CheckBox.Checked = false;
+					S.m_Panel.BackColor = Color.DimGray;
+				}
 
 				RebuildImage();
 				outputPanel.ResetCropRectangle();
@@ -617,6 +653,48 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region Texture Generation
 
+		private void buttonSaveCalibratedImage_Click( object sender, EventArgs e )
+		{
+			if ( m_Texture == null )
+			{	// No iage loaded you moron!
+				MessageBox( "Can't save calibrated texture as no capture has been done yet!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation );
+				return;
+			}
+
+ 			string	OldFileName = GetRegKey( "LastCalibratedTextureFilename", m_ApplicationPath );
+			saveFileDialogCalibratedImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
+			saveFileDialogCalibratedImage.FileName = System.IO.Path.GetFileName( OldFileName );
+
+			if ( saveFileDialogCalibratedImage.ShowDialog( this ) != DialogResult.OK )
+ 				return;
+
+			SetRegKey( "LastCalibratedTextureFilename", saveFileDialogCalibratedImage.FileName );
+
+			try
+			{
+				System.IO.FileInfo	TargetFileName = new System.IO.FileInfo( saveFileDialogCalibratedImage.FileName );
+				string	Extension = System.IO.Path.GetExtension( TargetFileName.FullName ).ToUpper();
+
+				CalibratedTexture.TARGET_FORMAT	Format = CalibratedTexture.TARGET_FORMAT.PNG16;
+				switch ( Extension )
+				{
+					case ".PNG": Format = CalibratedTexture.TARGET_FORMAT.PNG16; break;
+					case ".TIF":
+					case ".TIFF":
+						Format = CalibratedTexture.TARGET_FORMAT.TIFF;
+						break;
+					default:
+						throw new Exception( "Unsupported file extension!" );
+				}
+				m_Texture.SavePack( TargetFileName, Format );
+				
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred while saving the calibrated image:\r\n\r\n", _e );
+			}
+		}
+
 		private void checkBoxCropTool_CheckedChanged( object sender, EventArgs e )
 		{
 			outputPanel.CropRectangleEnabled = checkBoxCropTool.Checked;
@@ -629,52 +707,122 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private void buttonCapture_Click( object sender, EventArgs e )
 		{
+			if ( m_BitmapXYZ == null )
+			{	// No iage loaded you moron!
+				MessageBox( "Can't capture as no image is currently loaded!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation );
+				return;
+			}
 
+			//////////////////////////////////////////////////////////////////////////
+			// Build swatch locations
+			List<float2>	UsedSwatchesLocations = new List<float2>();
+			foreach ( CustomSwatch S in m_CustomSwatches )
+			{
+				if ( !S.m_CheckBox.Checked || S.m_Location.x < 0.0f || S.m_Location.x > 1.0f || S.m_Location.y < 0.0f || S.m_Location.y > 1.0f )
+					continue;	// Unused...
+				UsedSwatchesLocations.Add( S.m_Location );
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// Prepare parameters
+			CalibratedTexture.CalibrationParms	Parms = new CalibratedTexture.CalibrationParms() {
+				SourceImageName = m_ImageFileName.FullName,
+
+				ISOSpeed = floatTrackbarControlISOSpeed.Value,
+				ShutterSpeed = floatTrackbarControlShutterSpeed.Value,
+				Aperture = floatTrackbarControlAperture.Value,
+
+				CropSource = !outputPanel.IsDefaultCropRectangle,
+				CropRectangleCenter = new float2( outputPanel.CropRectangeCenter.X, outputPanel.CropRectangeCenter.Y ),
+				CropRectangleHalfSize = new float2( outputPanel.CropRectangeHalfSize.X, outputPanel.CropRectangeHalfSize.Y ),
+				CropRectangleRotation = outputPanel.CropRectangeRotation,
+
+				SwatchWidth = panelCustomSwatch0.Width-2,
+				SwatchHeight = panelCustomSwatch0.Height-2,
+				CustomSwatchSamplingLocations = UsedSwatchesLocations.ToArray()
+			};
+
+			//////////////////////////////////////////////////////////////////////////
+			// Go!
+			m_Texture = new CalibratedTexture();
+			m_Texture.Build( m_BitmapXYZ, m_CalibrationDatabase, Parms );
+
+			// Update UI
+			resultTexturePanel.Texture = m_Texture;
+			buttonSaveCalibratedImage.Enabled = true;
 		}
 
+		private void StartColorPicking( int _CustomSwatchIndex )
+		{
+			if ( m_BitmapXYZ == null )
+			{	// No iage loaded you moron!
+				MessageBox( "Can't start color picking for swatch as no image is currently loaded!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation );
+				return;
+			}
+
+			CustomSwatch	S = m_CustomSwatches[_CustomSwatchIndex];
+
+			// Test if we should prepare the database
+			if ( !m_CalibrationDatabase.IsPreparedFor( floatTrackbarControlISOSpeed.Value, floatTrackbarControlShutterSpeed.Value, floatTrackbarControlAperture.Value ) )
+				m_CalibrationDatabase.PrepareCalibrationFor( floatTrackbarControlISOSpeed.Value, floatTrackbarControlShutterSpeed.Value, floatTrackbarControlAperture.Value );	// Then prepare it!
+
+			Bitmap2.ColorProfile	sRGBProfile = new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB );
+
+			outputPanel.StartSwatchColorPicking( ( PointF _Position ) => {
+
+				float4	XYZ = m_BitmapXYZ.BilinearSample( _Position.X * m_BitmapXYZ.Width, _Position.Y * m_BitmapXYZ.Height );
+				S.m_xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
+				S.m_xyY.z = m_CalibrationDatabase.Calibrate( S.m_xyY.z );	// Apply calibration
+				XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( S.m_xyY ), 1.0f );
+				S.m_RGB = (float3) sRGBProfile.XYZ2RGB( XYZ );
+
+				Color	C = Color.FromArgb( (int) (S.m_RGB.x * 255.0f), (int) (S.m_RGB.y * 255.0f), (int) (S.m_RGB.z * 255.0f) );
+				S.m_Panel.BackColor = C;
+			} );
+		}
 		private void panelCustomSwatch0_Click( object sender, EventArgs e )
 		{
-
+			StartColorPicking( 0 );
 		}
 
 		private void panelCustomSwatch1_Click( object sender, EventArgs e )
 		{
-
+			StartColorPicking( 1 );
 		}
 
 		private void panelCustomSwatch2_Click( object sender, EventArgs e )
 		{
-
+			StartColorPicking( 2 );
 		}
 
 		private void panelCustomSwatch3_Click( object sender, EventArgs e )
 		{
-
+			StartColorPicking( 3 );
 		}
 
 		private void panelCustomSwatch4_Click( object sender, EventArgs e )
 		{
-
+			StartColorPicking( 4 );
 		}
 
 		private void panelCustomSwatch5_Click( object sender, EventArgs e )
 		{
-
+			StartColorPicking( 5 );
 		}
 
 		private void panelCustomSwatch6_Click( object sender, EventArgs e )
 		{
-
+			StartColorPicking( 6 );
 		}
 
 		private void panelCustomSwatch7_Click( object sender, EventArgs e )
 		{
-
+			StartColorPicking( 7 );
 		}
 
 		private void panelCustomSwatch8_Click( object sender, EventArgs e )
 		{
-
+			StartColorPicking( 8 );
 		}
 
 		#endregion

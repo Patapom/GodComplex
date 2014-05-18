@@ -326,7 +326,7 @@ namespace StandardizedDiffuseAlbedoMaps
 	/// In a general manner, you should NOT use the latter save option but rather select your working color profile from the "Edit > Color Settings" menu,
 	///  then save your files and make sure you tick the "ICC Profile" checkbox using the DEFAULT save file dialog box to embed that profile in the image.
 	/// </remarks>
-	public class Bitmap2
+	public class Bitmap2 : IDisposable
 	{
 		#region CONSTANTS
 
@@ -4273,6 +4273,15 @@ namespace StandardizedDiffuseAlbedoMaps
 					return Line.Replace( _Search, "" );	// Return line and remove Search criterium
 
 			return null;
+		}
+
+		#endregion
+
+		#region IDisposable Members
+
+		public void Dispose()
+		{
+			// Nothing special to do, we only have clean managed types here...
 		}
 
 		#endregion

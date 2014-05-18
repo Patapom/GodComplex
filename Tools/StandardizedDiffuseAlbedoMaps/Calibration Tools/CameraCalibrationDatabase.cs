@@ -17,9 +17,13 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private System.IO.DirectoryInfo		m_DatabasePath = null;
 
+		private float	m_PreparedForISOSpeed = 0.0f;
+		private float	m_PreparedForShutterSpeed = 0.0f;
+		private float	m_PreparedForAperture = 0.0f;
+
 		#endregion
 
-		#region FIELDS
+		#region PROPERTIES
 
 		public System.IO.DirectoryInfo		DatabasePath
 		{
@@ -43,19 +47,39 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 		}
 
+		public float	PreparedForISOSpeed		{ get { return m_PreparedForISOSpeed; } }
+		public float	PreparedForShutterSpeed	{ get { return m_PreparedForShutterSpeed; } }
+		public float	PreparedForAperture		{ get { return m_PreparedForAperture; } }
+
 		#endregion
 
 		#region METHODS
 
 		/// <summary>
-		/// Prepares the 8 closest calibration tables to process the pixels in an image shot with the specified parameters
+		/// Prepares the 8 closest calibration tables to process the pixels in an image shot with the specified shot infos
 		/// </summary>
 		/// <param name="_ISOSpeed"></param>
 		/// <param name="_ShutterSpeed"></param>
 		/// <param name="_Aperture"></param>
 		public void	PrepareCalibrationFor( float _ISOSpeed, float _ShutterSpeed, float _Aperture )
 		{
+			m_PreparedForISOSpeed = _ISOSpeed;
+			m_PreparedForShutterSpeed = _ShutterSpeed;
+			m_PreparedForAperture = _Aperture;
+		}
 
+		/// <summary>
+		/// Tells if the database is prepared and can be used for processing colors of an image with the specified shot infos
+		/// </summary>
+		/// <param name="_ISOSpeed"></param>
+		/// <param name="_ShutterSpeed"></param>
+		/// <param name="_Aperture"></param>
+		/// <returns></returns>
+		public bool	IsPreparedFor( float _ISOSpeed, float _ShutterSpeed, float _Aperture )
+		{
+			return Math.Abs( _ISOSpeed - m_PreparedForISOSpeed ) < 1e-6f
+				&& Math.Abs( _ShutterSpeed - m_PreparedForShutterSpeed ) < 1e-6f
+				&& Math.Abs( _Aperture - m_PreparedForAperture ) < 1e-6f;
 		}
 
 		/// <summary>

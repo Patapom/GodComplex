@@ -80,6 +80,7 @@
 			this.label5 = new System.Windows.Forms.Label();
 			this.tabControl = new System.Windows.Forms.TabControl();
 			this.tabPageCreation = new System.Windows.Forms.TabPage();
+			this.buttonResetCrop = new System.Windows.Forms.Button();
 			this.checkBoxCropTool = new System.Windows.Forms.CheckBox();
 			this.buttonCapture = new System.Windows.Forms.Button();
 			this.groupBoxColorSwatches = new System.Windows.Forms.GroupBox();
@@ -125,11 +126,12 @@
 			this.saveFileDialogCalibration = new System.Windows.Forms.SaveFileDialog();
 			this.folderBrowserDialogDatabaseLocation = new System.Windows.Forms.FolderBrowserDialog();
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
+			this.buttonSaveCalibratedImage = new System.Windows.Forms.Button();
 			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
 			this.resultTexturePanel = new StandardizedDiffuseAlbedoMaps.ResultTexturePanel(this.components);
 			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
 			this.referenceImagePanel = new StandardizedDiffuseAlbedoMaps.ReferenceImagePanel(this.components);
-			this.buttonResetCrop = new System.Windows.Forms.Button();
+			this.saveFileDialogCalibratedImage = new System.Windows.Forms.SaveFileDialog();
 			this.groupBoxCameraShotInfos.SuspendLayout();
 			this.tabControl.SuspendLayout();
 			this.tabPageCreation.SuspendLayout();
@@ -155,7 +157,7 @@
 			// 
 			// buttonLoadImage
 			// 
-			this.buttonLoadImage.Location = new System.Drawing.Point(362, 59);
+			this.buttonLoadImage.Location = new System.Drawing.Point(355, 16);
 			this.buttonLoadImage.Name = "buttonLoadImage";
 			this.buttonLoadImage.Size = new System.Drawing.Size(97, 37);
 			this.buttonLoadImage.TabIndex = 0;
@@ -766,6 +768,16 @@
 			this.tabPageCreation.Text = "Texure Creation";
 			this.tabPageCreation.UseVisualStyleBackColor = true;
 			// 
+			// buttonResetCrop
+			// 
+			this.buttonResetCrop.Location = new System.Drawing.Point(39, 9);
+			this.buttonResetCrop.Name = "buttonResetCrop";
+			this.buttonResetCrop.Size = new System.Drawing.Size(57, 23);
+			this.buttonResetCrop.TabIndex = 5;
+			this.buttonResetCrop.Text = "Reset";
+			this.buttonResetCrop.UseVisualStyleBackColor = true;
+			this.buttonResetCrop.Click += new System.EventHandler(this.buttonResetCrop_Click);
+			// 
 			// checkBoxCropTool
 			// 
 			this.checkBoxCropTool.Appearance = System.Windows.Forms.Appearance.Button;
@@ -1281,6 +1293,7 @@
 			// 
 			this.splitContainerMain.Panel2.Controls.Add(this.tabControl);
 			this.splitContainerMain.Panel2.Controls.Add(this.groupBoxCameraShotInfos);
+			this.splitContainerMain.Panel2.Controls.Add(this.buttonSaveCalibratedImage);
 			this.splitContainerMain.Panel2.Controls.Add(this.buttonLoadImage);
 			this.splitContainerMain.Panel2MinSize = 490;
 			this.splitContainerMain.Size = new System.Drawing.Size(1499, 747);
@@ -1303,6 +1316,17 @@
 			// 
 			this.folderBrowserDialogDatabaseLocation.Description = "Select the base folder containing the calibration files to use as a database...";
 			// 
+			// buttonSaveCalibratedImage
+			// 
+			this.buttonSaveCalibratedImage.Enabled = false;
+			this.buttonSaveCalibratedImage.Location = new System.Drawing.Point(355, 59);
+			this.buttonSaveCalibratedImage.Name = "buttonSaveCalibratedImage";
+			this.buttonSaveCalibratedImage.Size = new System.Drawing.Size(97, 37);
+			this.buttonSaveCalibratedImage.TabIndex = 0;
+			this.buttonSaveCalibratedImage.Text = "Save Calibrated Image";
+			this.buttonSaveCalibratedImage.UseVisualStyleBackColor = true;
+			this.buttonSaveCalibratedImage.Click += new System.EventHandler(this.buttonSaveCalibratedImage_Click);
+			// 
 			// outputPanel
 			// 
 			this.outputPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -1322,11 +1346,11 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.resultTexturePanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.resultTexturePanel.Calibration = null;
 			this.resultTexturePanel.Location = new System.Drawing.Point(6, 40);
 			this.resultTexturePanel.Name = "resultTexturePanel";
 			this.resultTexturePanel.Size = new System.Drawing.Size(471, 332);
 			this.resultTexturePanel.TabIndex = 0;
+			this.resultTexturePanel.Texture = null;
 			// 
 			// graphPanel
 			// 
@@ -1351,15 +1375,12 @@
 			this.referenceImagePanel.Size = new System.Drawing.Size(456, 286);
 			this.referenceImagePanel.TabIndex = 0;
 			// 
-			// buttonResetCrop
+			// saveFileDialogCalibratedImage
 			// 
-			this.buttonResetCrop.Location = new System.Drawing.Point(39, 9);
-			this.buttonResetCrop.Name = "buttonResetCrop";
-			this.buttonResetCrop.Size = new System.Drawing.Size(57, 23);
-			this.buttonResetCrop.TabIndex = 5;
-			this.buttonResetCrop.Text = "Reset";
-			this.buttonResetCrop.UseVisualStyleBackColor = true;
-			this.buttonResetCrop.Click += new System.EventHandler(this.buttonResetCrop_Click);
+			this.saveFileDialogCalibratedImage.DefaultExt = "*.png";
+			this.saveFileDialogCalibratedImage.Filter = "16-bits PNG Files (*.png)|*.png|16-bits TIFF Files (*.tiff)|*.tif|All Files (*.*)" +
+    "|*.*";
+			this.saveFileDialogCalibratedImage.Title = "Select the name of the target calibrated texture file to save to...";
 			// 
 			// Form1
 			// 
@@ -1495,6 +1516,8 @@
 		private System.Windows.Forms.Button buttonCapture;
 		private System.Windows.Forms.CheckBox checkBoxCropTool;
 		private System.Windows.Forms.Button buttonResetCrop;
+		private System.Windows.Forms.Button buttonSaveCalibratedImage;
+		private System.Windows.Forms.SaveFileDialog saveFileDialogCalibratedImage;
 	}
 }
 

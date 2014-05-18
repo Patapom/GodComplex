@@ -11,7 +11,7 @@ namespace StandardizedDiffuseAlbedoMaps
 	/// <summary>
 	/// This class hosts calibrated texture & swatches infos
 	/// </summary>
-	public class CalibratedTexture
+	public class CalibratedTexture : IDisposable
 	{
 		#region NESTED TYPES
 
@@ -32,17 +32,17 @@ namespace StandardizedDiffuseAlbedoMaps
 			// Swatches
 			public int			SwatchWidth = 48;
 			public int			SwatchHeight = 32;
-			public int			CustomSwatchesCount = 0;
 			public float2[]		CustomSwatchSamplingLocations = new float2[0];	// In UV space
+		}
 
-			// Target format
-			public enum		TARGET_FORMAT
-			{
-				PNG8,
-				PNG16,
-				TIFF,
-			}
-			public TARGET_FORMAT	TargetFormat = TARGET_FORMAT.PNG16;
+		/// <summary>
+		/// Possible target formats for textures
+		/// </summary>
+		public enum		TARGET_FORMAT
+		{
+			PNG8,
+			PNG16,	// Default should be 16-bits PNG
+			TIFF,
 		}
 
 		private class	Swatch
@@ -83,9 +83,6 @@ namespace StandardizedDiffuseAlbedoMaps
 		private Swatch				m_SwatchMin = new Swatch();
 		private Swatch				m_SwatchMax = new Swatch();
 		private Swatch				m_SwatchAvg = new Swatch();
-// 		private float3				m_SwatchMin.xyY = new float3();	// Min color found in texture
-// 		private float3				m_SwatchMax.xyY = new float3();	// Max color found in texture
-// 		private float3				m_SwatchAvg.xyY = new float3();	// Avg color found in texture
 
 		// Custom swatches
 		private CustomSwatch[]		m_CustomSwatches = new CustomSwatch[0];
@@ -176,11 +173,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_SwatchMax.Texture = BuildSwatch( _Parms.SwatchWidth, _Parms.SwatchHeight, m_SwatchMax.xyY );
 			m_SwatchAvg.Texture = BuildSwatch( _Parms.SwatchWidth, _Parms.SwatchHeight, m_SwatchAvg.xyY );
 
-			if ( _Parms.CustomSwatchSamplingLocations == null || _Parms.CustomSwatchSamplingLocations.Length < _Parms.CustomSwatchesCount )
-				throw new Exception( "You didn't provide enough swatch sampling locations to create " + _Parms.CustomSwatchesCount + " custom swatches!" );
+			int	CustomSwatchesCount = _Parms.CustomSwatchSamplingLocations != null ? _Parms.CustomSwatchSamplingLocations.Length : 0;
 
-			m_CustomSwatches = new CustomSwatch[_Parms.CustomSwatchesCount];
-			for ( int CustomSwatchIndex=0; CustomSwatchIndex < _Parms.CustomSwatchesCount; CustomSwatchIndex++ )
+			m_CustomSwatches = new CustomSwatch[CustomSwatchesCount];
+			for ( int CustomSwatchIndex=0; CustomSwatchIndex < CustomSwatchesCount; CustomSwatchIndex++ )
 			{
 				CustomSwatch	S = new CustomSwatch();
 				m_CustomSwatches[CustomSwatchIndex] = S;
@@ -203,7 +199,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// Saves the texture pack (texture + swatches + xml manifest)
 		/// </summary>
 		/// <param name="_FileName"></param>
-		public void		SavePack( System.IO.FileInfo _FileName )
+		public void		SavePack( System.IO.FileInfo _FileName, TARGET_FORMAT _TargetFormat )
 		{
 			if ( m_Texture == null )
 				throw new Exception( "No calibrated texture has been built! Can't save." );
@@ -216,7 +212,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			System.IO.FileInfo	FileName_SwatchMin = new System.IO.FileInfo( System.IO.Path.Combine( Dir.FullName, RawFileName + "_Min" + Extension ) );
 			System.IO.FileInfo	FileName_SwatchMax = new System.IO.FileInfo( System.IO.Path.Combine( Dir.FullName, RawFileName + "_Max" + Extension ) );
 			System.IO.FileInfo	FileName_SwatchAvg = new System.IO.FileInfo( System.IO.Path.Combine( Dir.FullName, RawFileName + "_Avg" + Extension ) );
-			System.IO.FileInfo[]	FileName_CustomSwatches = new System.IO.FileInfo[m_Parameters.CustomSwatchesCount];
+			System.IO.FileInfo[]	FileName_CustomSwatches = new System.IO.FileInfo[m_CustomSwatches.Length];
 			for ( int CustomSwatchIndex=0; CustomSwatchIndex < m_CustomSwatches.Length; CustomSwatchIndex++ )
 				FileName_CustomSwatches[CustomSwatchIndex] = new System.IO.FileInfo( System.IO.Path.Combine( Dir.FullName, RawFileName + "_Custom" + CustomSwatchIndex.ToString() + Extension ) );
 
@@ -225,19 +221,19 @@ namespace StandardizedDiffuseAlbedoMaps
 			// Build image type and format parameters as well as target color profile
 			Bitmap2.FILE_TYPE		FileType = Bitmap2.FILE_TYPE.UNKNOWN;
 			Bitmap2.FORMAT_FLAGS	Format = Bitmap2.FORMAT_FLAGS.NONE;
-			switch ( m_Parameters.TargetFormat )
+			switch ( _TargetFormat )
 			{
-				case CalibrationParms.TARGET_FORMAT.PNG8:
+				case TARGET_FORMAT.PNG8:
 					FileType = Bitmap2.FILE_TYPE.PNG;
 					Format = Bitmap2.FORMAT_FLAGS.SAVE_8BITS_UNORM;
 					break;
 
-				case CalibrationParms.TARGET_FORMAT.PNG16:
+				case TARGET_FORMAT.PNG16:
 					FileType = Bitmap2.FILE_TYPE.PNG;
 					Format = Bitmap2.FORMAT_FLAGS.SAVE_16BITS_UNORM;
 					break;
 
-				case CalibrationParms.TARGET_FORMAT.TIFF:
+				case TARGET_FORMAT.TIFF:
 					FileType = Bitmap2.FILE_TYPE.TIFF;
 					Format = Bitmap2.FORMAT_FLAGS.SAVE_16BITS_UNORM;
 					break;
@@ -277,7 +273,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			SetAttribute( AppendElement( SourceInfosElement, "SwatchesSize" ), "Width", m_Parameters.SwatchWidth.ToString() ).SetAttribute( "Height", m_Parameters.SwatchHeight.ToString() );
 
-			SetAttribute( AppendElement( SourceInfosElement, "TargetFormat" ), "Value", m_Parameters.TargetFormat.ToString() );
+			SetAttribute( AppendElement( SourceInfosElement, "TargetFormat" ), "Value", _TargetFormat.ToString() );
 
 			// Save calibrated texture infos
 			{
@@ -390,6 +386,27 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_CurrentElement.SetAttribute( _Attribute, _Value );
 			return this;
 		}
+
+		#region IDisposable Members
+
+		public void Dispose()
+		{
+			if ( m_Texture != null )
+				m_Texture.Dispose();
+
+			if ( m_SwatchMin.Texture != null )
+				m_SwatchMin.Texture.Dispose();
+			if ( m_SwatchMax.Texture != null )
+				m_SwatchMax.Texture.Dispose();
+			if ( m_SwatchAvg.Texture != null )
+				m_SwatchAvg.Texture.Dispose();
+
+			for ( int i=0; i < m_CustomSwatches.Length; i++ )
+				if ( m_CustomSwatches[i].Texture != null )
+					m_CustomSwatches[i].Texture.Dispose();
+		}
+
+		#endregion
 
 		#endregion
 	}

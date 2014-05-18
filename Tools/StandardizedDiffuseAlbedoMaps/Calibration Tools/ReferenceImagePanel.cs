@@ -82,7 +82,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			using ( Graphics G = Graphics.FromImage( m_Bitmap ) )
 			{
-				using ( SolidBrush B = new SolidBrush( BackColor ) )
+				using ( SolidBrush B = new SolidBrush( Color.Black ) )
 					G.FillRectangle( B, 0, 0, W, H );
 
 				if ( m_CameraCalibration != null && m_Thumbnail != null )
