@@ -74,15 +74,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			base.OnLoad( e );
 
-			try
-			{
-				m_CalibrationDatabase.DatabasePath = new System.IO.DirectoryInfo( System.IO.Path.GetDirectoryName( GetRegKey( "LastCalibrationDatabasePath", m_ApplicationPath ) ) );
-			}
-			catch ( Exception _e )
-			{
-				MessageBox( "Failed to parse the calibration database:\r\n\r\n", _e );
-			}
-
+			ReloadDatabase();
 			UpdateUIFromCalibration();
 		}
 
@@ -136,6 +128,23 @@ namespace StandardizedDiffuseAlbedoMaps
 		}
 
 		#endregion
+
+		void	ReloadDatabase()
+		{
+			try
+			{
+				m_CalibrationDatabase.DatabasePath = new System.IO.DirectoryInfo( System.IO.Path.GetDirectoryName( GetRegKey( "LastCalibrationDatabasePath", m_ApplicationPath ) ) );
+
+				if ( !m_CalibrationDatabase.IsValid )
+					MessageBox( "The database is not valid and can't be used to calibrate images!\r\n\r\nGo to the camera calibration tab and either select a new database location or create new camera calibration data.", MessageBoxButtons.OK, MessageBoxIcon.Warning );
+				if ( m_CalibrationDatabase.HasErrors )
+					MessageBox( "There were some errors during database construction:\r\n\r\n" + m_CalibrationDatabase.ErrorLog, MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "Failed to parse the calibration database:\r\n\r\n", _e );
+			}
+		}
 
 		private void RebuildImage()
 		{
@@ -606,8 +615,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			SetRegKey( "LastCalibrationDatabasePath", folderBrowserDialogDatabaseLocation.SelectedPath );
 
-			// Setup the path again, this will rebuild the database...
-			m_CalibrationDatabase.DatabasePath = new System.IO.DirectoryInfo( folderBrowserDialogDatabaseLocation.SelectedPath );
+			ReloadDatabase();
 		}
 
 		private void buttonReCalibrate_Click( object sender, EventArgs e )
