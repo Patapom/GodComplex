@@ -58,7 +58,6 @@ PS_IN VS( appdata_img v )
 
 float4	PS( PS_IN _In ) : COLOR
 {
-	float3 lkjwejhsdkl_1;
 	float4 opahwcte_2;
 	float4 Result = 0.0;
 	float4 SourceColor = _tex2Dlod(_MainTex, float4( _In.uv, 0, 0.0 ) );
@@ -89,7 +88,6 @@ float4	PS( PS_IN _In ) : COLOR
 	int vbdueff_15;
 	float3 eiieiaced_16;
 	float3 jjdafhue_17;
-	float3 hgeiald_18;
 
 
 
@@ -125,26 +123,24 @@ float4	PS( PS_IN _In ) : COLOR
 
 	float4 tmpvar_29 = mul( _ProjMatrix, float4( csPosition.xyz + csReflectedView, 1.0 ) );
 	tmpvar_29 /= tmpvar_29.w;
+	float3	tmpvar_30 = normalize( tmpvar_29 - projPosition.xyz );	// Some kind of target vector in projective space (the ray?)
+//return float4( tmpvar_30, 1 );
 
-//return tmpvar_29;
-
-	float3 tmpvar_30;
-	tmpvar_30 = normalize( tmpvar_29 - projPosition.xyz );
+	float3 lkjwejhsdkl_1;
 	lkjwejhsdkl_1.z = tmpvar_30.z;
 	lkjwejhsdkl_1.xy = (tmpvar_30.xy * 0.5);
-	hgeiald_18.xy = _In.uv;
-	hgeiald_18.z = Zproj;
-	float tmpvar_31;
-	tmpvar_31 = (2.0 / _ScreenParams.x);
-	float tmpvar_32;
-	tmpvar_32 = sqrt(dot (lkjwejhsdkl_1.xy, lkjwejhsdkl_1.xy));
-	float3 tmpvar_33;
-	tmpvar_33 = (lkjwejhsdkl_1 * ((tmpvar_31 * _stepGlobalScale) / tmpvar_32));
+
+
+	float3	projStartPos = float3( _In.uv, Zproj );
+	float	tmpvar_31 = 2.0 / _ScreenParams.x;
+	float	tmpvar_32 = length( lkjwejhsdkl_1.xy );
+	float3	tmpvar_33 = lkjwejhsdkl_1 * ((tmpvar_31 * _stepGlobalScale) / tmpvar_32);
+
 	jjdafhue_17 = tmpvar_33;
 	vbdueff_15 = int(_maxStep);
 	lenfaiejd_14 = 0.0;
 	biifejd_12 = bool(0);
-	eiieiaced_16 = (hgeiald_18 + tmpvar_33);
+	eiieiaced_16 = (projStartPos + tmpvar_33);
 	icoiuf_11 = 0;
 	s_9 = 0;
 	for (int s_9 = 0; s_9 < 100; ) {
