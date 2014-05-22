@@ -90,27 +90,23 @@ float4	PS( PS_IN _In ) : COLOR
 	float3 eiieiaced_16;
 	float3 jjdafhue_17;
 	float3 hgeiald_18;
-	float4 loveeaed_19;
-	float3 xvzyufalj_21;
 
 
 
 
 	int tmpvar_23 = int(_maxStep);
 
-	float4	projView;
-	projView.w = 1.0;
-	projView.xy = ((_In.uv * 2.0) - 1.0);
-	projView.z = Zproj;
+	// Compute position in projected space
+	float4	projPosition = float4( (_In.uv * 2.0) - 1.0, Zproj, 1.0 );
 
-	float4	csView_unorm = mul(_ProjectionInv, projView);
-			csView_unorm = (csView_unorm / csView_unorm.w);
-	float3	csView = normalize(csView_unorm.xyz);
+	// Transform back into camera space
+	float4	csPosition = mul( _ProjectionInv, projPosition );
+			csPosition = csPosition / csPosition.w;
 
-//return float4( csView_unorm.xy, -csView_unorm.z, csView_unorm.w );
+	// Compute view vector
+	float3	csView = normalize( csPosition.xyz );
 
-	xvzyufalj_21.xy = projView.xy;
-	xvzyufalj_21.z = Zproj;
+//return float4( csPosition.xy, -csPosition.z, csPosition.w );
 
 	float4 wsNormal;
 	wsNormal.w = 0.0;
@@ -119,18 +115,21 @@ float4	PS( PS_IN _In ) : COLOR
 	float3 csNormal;
 	csNormal = normalize( mul(_ViewMatrix, wsNormal).xyz );
 
-return float4( csNormal, 0 );
+//return float4( csNormal, 0 );
 
+	float3 csReflectedView;
+//	csReflectedView = normalize( csView - (2.0 * (dot( csNormal, csView) * csNormal)) );
+	csReflectedView = csView - (2.0 * (dot( csNormal, csView) * csNormal));	// No use to normalize this!
 
-	float3 tmpvar_28;
-	tmpvar_28 = normalize( csView - (2.0 * (dot( csNormal, csView) * csNormal)) );
+//return float4( csReflectedView, 1 );
 
-	loveeaed_19.w = 1.0;
-	loveeaed_19.xyz = (csView_unorm.xyz + tmpvar_28);
-	float4 tmpvar_29;
-	tmpvar_29 = mul(_ProjMatrix, loveeaed_19);
+	float4 tmpvar_29 = mul( _ProjMatrix, float4( csPosition.xyz + csReflectedView, 1.0 ) );
+	tmpvar_29 /= tmpvar_29.w;
+
+//return tmpvar_29;
+
 	float3 tmpvar_30;
-	tmpvar_30 = normalize(((tmpvar_29.xyz / tmpvar_29.w) - xvzyufalj_21));
+	tmpvar_30 = normalize( tmpvar_29 - projPosition.xyz );
 	lkjwejhsdkl_1.z = tmpvar_30.z;
 	lkjwejhsdkl_1.xy = (tmpvar_30.xy * 0.5);
 	hgeiald_18.xy = _In.uv;
@@ -267,7 +266,7 @@ return float4( csNormal, 0 );
 			{
 				float4 tmpvar_57_55;
 				tmpvar_57_55.xyz = _tex2Dlod(_MainTex, float4(opahwcte_2.xy, 0, 0.0)).xyz;
-				tmpvar_57_55.w = (((opahwcte_2.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ((lenfaiejd_14 / float(tmpvar_23)), _fadePower))) * pow (clamp (((dot (normalize(tmpvar_28), normalize(csView_unorm).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
+				tmpvar_57_55.w = (((opahwcte_2.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ((lenfaiejd_14 / float(tmpvar_23)), _fadePower))) * pow (clamp (((dot (normalize(csReflectedView), normalize(csPosition).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
 				Result = tmpvar_57_55;
 			}
 		}
