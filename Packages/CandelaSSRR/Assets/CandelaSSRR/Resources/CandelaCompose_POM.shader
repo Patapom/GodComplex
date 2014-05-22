@@ -60,15 +60,15 @@ half4 frag (v2f i) : COLOR
 	else
 	screenFade = 1-saturate((pow(length(((i.uv * 2.0) - 1.0)),_ScreenFadeControls.y)-_ScreenFadeControls.z)*_ScreenFadeControls.w);
 	
-	float4 col = float4(0,0,0,0);
+	float4 color = float4(0,0,0,0);
 	
 	float	reflectivity = reflections.w*screenFade*saturate(original.w)*_reflectionMultiply; 
 	if ( _SSRRcomposeMode > 0 )
 	{	// Physically Accurate Mode
 // Are you kidding me?
-// 		col = reflections*reflections.w*screenFade*saturate(original.w)*_reflectionMultiply
+// 		color = reflections*reflections.w*screenFade*saturate(original.w)*_reflectionMultiply
 // 			+ original * (1.0-reflections.w*screenFade*saturate(original.w)*_reflectionMultiply);
-		col = lerp( original, reflections, reflectivity );
+		color = lerp( original, reflections, reflectivity );
 	}
 	else
 	{	// Additive Mode
@@ -76,15 +76,19 @@ half4 frag (v2f i) : COLOR
 			reflectivity = 0;
 		else if ( _IsInForwardRender < 1 && tex2Dlod( _CameraDepthTexture, float4( i.uv, 0, 0 ) ).x < 0.7 )
 			reflectivity = 0;
-		col = reflectivity*reflections + original;
+		color = reflectivity*reflections + original;
 	}
 	
 	//Debug Display Screen Fade
 	if(_ScreenFadeControls.x > 0)
-	col = screenFade;
+	color = screenFade;
 	
+
+if ( _DEBUGShowReflectionTexture )
+	color = reflections;
+
 	
-	return col;
+	return color;
 	
 }
 ENDCG

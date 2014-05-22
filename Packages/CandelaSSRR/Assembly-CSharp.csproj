@@ -53,6 +53,7 @@
      <Compile Include="Assets\CandelaSSRR\Examples\Scripts\PinballGUI.cs" />
      <Compile Include="Assets\CandelaSSRR\Examples\Scripts\TurnTableGUI.cs" />
      <Compile Include="Assets\CandelaSSRR\Examples\Scripts\moviePlayer.cs" />
+     <Compile Include="Assets\MoveGameCamera.cs" />
      <None Include="Assets\CandelaSSRR\HelperShaders\Candela Bumped Specular PBS.shader" />
      <None Include="Assets\CandelaSSRR\HelperShaders\Candela Bumped Specular.shader" />
      <None Include="Assets\CandelaSSRR\HelperShaders\Candela Cubemap with SSR.shader" />

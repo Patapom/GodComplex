@@ -281,6 +281,7 @@ if ( !DEBUG_ShowReflectionTexture )
 		reflectionTexture.SetGlobalShaderProperty("_SSRtexture");
 
 // POST_COMPOSE_MATERIAL.SetTexture( "_DEBUGShowReflectionTexture", reflectionTexture );
+POST_COMPOSE_MATERIAL.SetInt( "_DEBUGShowReflectionTexture", DEBUG_ShowReflectionTexture ? 1 : 0 );
 
 		Graphics.Blit(source , destination, POST_COMPOSE_MATERIAL);
 		
