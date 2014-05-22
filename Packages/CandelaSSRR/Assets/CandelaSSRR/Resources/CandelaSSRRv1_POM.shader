@@ -61,6 +61,9 @@ float4	PS( PS_IN _In ) : COLOR
 		Result = float4(0.0, 0.0, 0.0, 0.0);
 		return Result;
 	}
+
+//return float4( 1, 1, 0, 1 );
+
 /*
 
 	float4 tmpvar_5;
@@ -256,9 +259,9 @@ float4	PS( PS_IN _In ) : COLOR
 		}
 		}
 	}
+*/
 
 	return Result;
-//*/
 }
 ENDCG
 
