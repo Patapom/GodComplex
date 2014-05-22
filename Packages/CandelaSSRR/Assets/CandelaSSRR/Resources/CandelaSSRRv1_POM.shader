@@ -91,7 +91,6 @@ float4	PS( PS_IN _In ) : COLOR
 	float3 jjdafhue_17;
 	float3 hgeiald_18;
 	float4 loveeaed_19;
-	float4 mcjkfeeieijd_20;
 	float3 xvzyufalj_21;
 
 
@@ -104,23 +103,30 @@ float4	PS( PS_IN _In ) : COLOR
 	projView.xy = ((_In.uv * 2.0) - 1.0);
 	projView.z = Zproj;
 
-	float4	csView = mul(_ProjectionInv, projView);
-			csView = (csView / csView.w);
+	float4	csView_unorm = mul(_ProjectionInv, projView);
+			csView_unorm = (csView_unorm / csView_unorm.w);
+	float3	csView = normalize(csView_unorm.xyz);
 
-//return float4( csView.xy, -csView.z, csView.w );
+//return float4( csView_unorm.xy, -csView_unorm.z, csView_unorm.w );
 
 	xvzyufalj_21.xy = projView.xy;
 	xvzyufalj_21.z = Zproj;
-	mcjkfeeieijd_20.w = 0.0;
-	mcjkfeeieijd_20.xyz = ((_tex2Dlod(_CameraNormalsTexture, float4(_In.uv, 0, 0.0)).xyz * 2.0) - 1.0);
-	float3 tmpvar_26;
-	tmpvar_26 = normalize(csView.xyz);
-	float3 tmpvar_27;
-	tmpvar_27 = normalize(mul(_ViewMatrix, mcjkfeeieijd_20).xyz);
+
+	float4 wsNormal;
+	wsNormal.w = 0.0;
+	wsNormal.xyz = (_tex2Dlod( _CameraNormalsTexture, float4(_In.uv, 0, 0.0) ).xyz * 2.0) - 1.0;
+
+	float3 csNormal;
+	csNormal = normalize( mul(_ViewMatrix, wsNormal).xyz );
+
+return float4( csNormal, 0 );
+
+
 	float3 tmpvar_28;
-	tmpvar_28 = normalize((tmpvar_26 - (2.0 * (dot (tmpvar_27, tmpvar_26) * tmpvar_27))));
+	tmpvar_28 = normalize( csView - (2.0 * (dot( csNormal, csView) * csNormal)) );
+
 	loveeaed_19.w = 1.0;
-	loveeaed_19.xyz = (csView.xyz + tmpvar_28);
+	loveeaed_19.xyz = (csView_unorm.xyz + tmpvar_28);
 	float4 tmpvar_29;
 	tmpvar_29 = mul(_ProjMatrix, loveeaed_19);
 	float3 tmpvar_30;
@@ -261,7 +267,7 @@ float4	PS( PS_IN _In ) : COLOR
 			{
 				float4 tmpvar_57_55;
 				tmpvar_57_55.xyz = _tex2Dlod(_MainTex, float4(opahwcte_2.xy, 0, 0.0)).xyz;
-				tmpvar_57_55.w = (((opahwcte_2.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ((lenfaiejd_14 / float(tmpvar_23)), _fadePower))) * pow (clamp (((dot (normalize(tmpvar_28), normalize(csView).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
+				tmpvar_57_55.w = (((opahwcte_2.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ((lenfaiejd_14 / float(tmpvar_23)), _fadePower))) * pow (clamp (((dot (normalize(tmpvar_28), normalize(csView_unorm).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
 				Result = tmpvar_57_55;
 			}
 		}
