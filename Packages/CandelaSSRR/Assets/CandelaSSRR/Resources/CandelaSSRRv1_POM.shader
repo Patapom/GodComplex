@@ -93,28 +93,34 @@ float4	PS( PS_IN _In ) : COLOR
 	float4 loveeaed_19;
 	float4 mcjkfeeieijd_20;
 	float3 xvzyufalj_21;
-	float4 efljafolclsdf_22;
-	int tmpvar_23;
-	tmpvar_23 = int(_maxStep);
-	efljafolclsdf_22.w = 1.0;
-	efljafolclsdf_22.xy = ((_In.uv * 2.0) - 1.0);
-	efljafolclsdf_22.z = Zproj;
-	float4 tmpvar_24;
-	tmpvar_24 = mul(_ProjectionInv, efljafolclsdf_22);
-	float4 tmpvar_25;
-	tmpvar_25 = (tmpvar_24 / tmpvar_24.w);
-	xvzyufalj_21.xy = efljafolclsdf_22.xy;
+
+
+
+
+	int tmpvar_23 = int(_maxStep);
+
+	float4	projView;
+	projView.w = 1.0;
+	projView.xy = ((_In.uv * 2.0) - 1.0);
+	projView.z = Zproj;
+
+	float4	csView = mul(_ProjectionInv, projView);
+			csView = (csView / csView.w);
+
+//return float4( csView.xy, -csView.z, csView.w );
+
+	xvzyufalj_21.xy = projView.xy;
 	xvzyufalj_21.z = Zproj;
 	mcjkfeeieijd_20.w = 0.0;
 	mcjkfeeieijd_20.xyz = ((_tex2Dlod(_CameraNormalsTexture, float4(_In.uv, 0, 0.0)).xyz * 2.0) - 1.0);
 	float3 tmpvar_26;
-	tmpvar_26 = normalize(tmpvar_25.xyz);
+	tmpvar_26 = normalize(csView.xyz);
 	float3 tmpvar_27;
 	tmpvar_27 = normalize(mul(_ViewMatrix, mcjkfeeieijd_20).xyz);
 	float3 tmpvar_28;
 	tmpvar_28 = normalize((tmpvar_26 - (2.0 * (dot (tmpvar_27, tmpvar_26) * tmpvar_27))));
 	loveeaed_19.w = 1.0;
-	loveeaed_19.xyz = (tmpvar_25.xyz + tmpvar_28);
+	loveeaed_19.xyz = (csView.xyz + tmpvar_28);
 	float4 tmpvar_29;
 	tmpvar_29 = mul(_ProjMatrix, loveeaed_19);
 	float3 tmpvar_30;
@@ -255,7 +261,7 @@ float4	PS( PS_IN _In ) : COLOR
 			{
 				float4 tmpvar_57_55;
 				tmpvar_57_55.xyz = _tex2Dlod(_MainTex, float4(opahwcte_2.xy, 0, 0.0)).xyz;
-				tmpvar_57_55.w = (((opahwcte_2.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ((lenfaiejd_14 / float(tmpvar_23)), _fadePower))) * pow (clamp (((dot (normalize(tmpvar_28), normalize(tmpvar_25).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
+				tmpvar_57_55.w = (((opahwcte_2.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ((lenfaiejd_14 / float(tmpvar_23)), _fadePower))) * pow (clamp (((dot (normalize(tmpvar_28), normalize(csView).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
 				Result = tmpvar_57_55;
 			}
 		}
