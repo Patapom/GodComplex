@@ -12,8 +12,11 @@ namespace StandardizedDiffuseAlbedoMaps
 	/// This class hosts camera calibration data
 	/// 
 	/// </summary>
+	[System.Diagnostics.DebuggerDisplay( "Ref={System.IO.Path.GetFileName( m_ReferenceImageName )} ISO={m_CameraShotInfos.m_ISOSpeed} Shutter={m_CameraShotInfos.m_ShutterSpeed} Aperture={m_CameraShotInfos.m_Aperture} Focal={m_CameraShotInfos.m_FocalLength}" )]
 	public class CameraCalibration
 	{
+		#region NESTED TYPES
+
 		/// <summary>
 		/// Contains various luminance information about the reflectance probe
 		/// </summary>
@@ -114,6 +117,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 		}
 
+		#endregion
+
+		#region FIELDS
+
 		public string			m_ReferenceImageName = null;
 		public int				m_ReferenceImageWidth = 0;
 		public int				m_ReferenceImageHeight = 0;
@@ -129,6 +136,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		public CameraShotInfo	m_CameraShotInfos = new CameraShotInfo();
 
 		public byte[,]			m_Thumbnail = null;
+
+		#endregion
 
 		public CameraCalibration()
 		{

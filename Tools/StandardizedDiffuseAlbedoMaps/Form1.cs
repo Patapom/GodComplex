@@ -133,11 +133,11 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			try
 			{
-				m_CalibrationDatabase.DatabasePath = new System.IO.DirectoryInfo( System.IO.Path.GetDirectoryName( GetRegKey( "LastCalibrationDatabasePath", m_ApplicationPath ) ) );
+				m_CalibrationDatabase.DatabasePath = new System.IO.DirectoryInfo( GetRegKey( "LastCalibrationDatabasePath", System.IO.Path.GetDirectoryName( m_ApplicationPath ) ) );
 
 				if ( !m_CalibrationDatabase.IsValid )
 					MessageBox( "The database is not valid and can't be used to calibrate images!\r\n\r\nGo to the camera calibration tab and either select a new database location or create new camera calibration data.", MessageBoxButtons.OK, MessageBoxIcon.Warning );
-				if ( m_CalibrationDatabase.HasErrors )
+				else if ( m_CalibrationDatabase.HasErrors )
 					MessageBox( "There were some errors during database construction:\r\n\r\n" + m_CalibrationDatabase.ErrorLog, MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
 			catch ( Exception _e )
@@ -383,7 +383,19 @@ namespace StandardizedDiffuseAlbedoMaps
 			_Probe.m_MeasurementRadius = _Radius;
 
 			CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
-			UpdateUIFromCalibration();
+		}
+
+		private void StartCalibrationPicking( CameraCalibration.Probe _Probe )
+		{
+			if ( m_BitmapXYZ == null )
+			{	// No iage loaded you moron!
+				MessageBox( "Can't start calibration as no image is currently loaded!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation );
+				return;
+			}
+
+			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
+				IntegrateLuminance( _Probe, _Center, _Radius );
+			} );
 		}
 
 		/// <summary>
@@ -402,6 +414,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_Calibration.m_CameraShotInfos.m_FocalLength = floatTrackbarControlFocalLength.Value;
 
 			m_Calibration.CreateThumbnail( m_BitmapXYZ );
+
+			UpdateUIFromCalibration();
 		}
 
 		private void UpdateUIFromCalibration()
@@ -508,44 +522,32 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private void buttonCalibrate02_Click( object sender, EventArgs e )
 		{
-			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
-				IntegrateLuminance( m_Calibration.m_Reflectance02, _Center, _Radius );
-			} );
+			StartCalibrationPicking( m_Calibration.m_Reflectance02 );
 		}
 
 		private void buttonCalibrate10_Click( object sender, EventArgs e )
 		{
-			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
-				IntegrateLuminance( m_Calibration.m_Reflectance10, _Center, _Radius );
-			} );
+			StartCalibrationPicking( m_Calibration.m_Reflectance10 );
 		}
 
 		private void buttonCalibrate20_Click( object sender, EventArgs e )
 		{
-			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
-				IntegrateLuminance( m_Calibration.m_Reflectance20, _Center, _Radius );
-			} );
+			StartCalibrationPicking( m_Calibration.m_Reflectance20 );
 		}
 
 		private void buttonCalibrate50_Click( object sender, EventArgs e )
 		{
-			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
-				IntegrateLuminance( m_Calibration.m_Reflectance50, _Center, _Radius );
-			} );
+			StartCalibrationPicking( m_Calibration.m_Reflectance50 );
 		}
 
 		private void buttonCalibrate75_Click( object sender, EventArgs e )
 		{
-			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
-				IntegrateLuminance( m_Calibration.m_Reflectance75, _Center, _Radius );
-			} );
+			StartCalibrationPicking( m_Calibration.m_Reflectance75 );
 		}
 
 		private void buttonCalibrate99_Click( object sender, EventArgs e )
 		{
-			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
-				IntegrateLuminance( m_Calibration.m_Reflectance99, _Center, _Radius );
-			} );
+			StartCalibrationPicking( m_Calibration.m_Reflectance99 );
 		}
 
 		private void checkBoxGraphLagrange_CheckedChanged( object sender, EventArgs e )
@@ -608,7 +610,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private void buttonSetupDatabaseFolder_Click( object sender, EventArgs e )
 		{
-			string	OldPath = System.IO.Path.GetDirectoryName( GetRegKey( "LastCalibrationDatabasePath", m_ApplicationPath ) );
+			string	OldPath = GetRegKey( "LastCalibrationDatabasePath", System.IO.Path.GetDirectoryName( m_ApplicationPath ) );
 			folderBrowserDialogDatabaseLocation.SelectedPath = OldPath;
 			if ( folderBrowserDialogDatabaseLocation.ShowDialog( this ) != DialogResult.OK )
 				return;
@@ -649,7 +651,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			// We now used the current image as reference for this calibration so commit its data
 			CommitImageToCurrentCalibration();
-			UpdateUIFromCalibration();
 
 			if ( ProbesHaveSaturatedValues )
 				MessageBox( "Some probes have been disabled because the luminance measurement returned too many saturated or black values!", MessageBoxButtons.OK, MessageBoxIcon.Warning );

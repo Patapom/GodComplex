@@ -21,6 +21,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region NESTED TYPES
 
+		[System.Diagnostics.DebuggerDisplay( "ISO={m_EV_ISOSpeed} Shutter={m_EV_ShutterSpeed} Aperture={m_EV_Aperture} EV={EV}" )]
 		private class	GridNode
 		{
 			public CameraCalibration	m_CameraCalibration = null;
@@ -214,9 +215,9 @@ namespace StandardizedDiffuseAlbedoMaps
 
 					// So now we know a new neighbor for the placed node
 					// We need to know on which axis and which direction...
-					float	DeltaX = PairPlaced.m_EV_ISOSpeed - PairUnPlaced.m_EV_ISOSpeed;
-					float	DeltaY = PairPlaced.m_EV_ShutterSpeed - PairUnPlaced.m_EV_ShutterSpeed;
-					float	DeltaZ = PairPlaced.m_EV_Aperture - PairUnPlaced.m_EV_Aperture;
+					float	DeltaX = PairUnPlaced.m_EV_ISOSpeed - PairPlaced.m_EV_ISOSpeed;
+					float	DeltaY = PairUnPlaced.m_EV_ShutterSpeed - PairPlaced.m_EV_ShutterSpeed;
+					float	DeltaZ = PairUnPlaced.m_EV_Aperture - PairPlaced.m_EV_Aperture;
 
 					GridNode[]	AxisPlaced = null;
 					GridNode[]	AxisUnPlaced = null;
@@ -254,12 +255,21 @@ namespace StandardizedDiffuseAlbedoMaps
 
 					// Store the neighbors for each node of the pair
 					if ( AxisPlaced[LeftRight] != null )
-						throw new Exception( "Grid node already has a neighbor!" );	// How can that be?
-					AxisPlaced[LeftRight] = PairUnPlaced;
-					AxisUnPlaced[1-LeftRight] = PairPlaced;
+					{	// Already linked, insert new node instead
+						GridNode	FormerRightNode = AxisPlaced[LeftRight];
+						AxisPlaced[LeftRight] = PairUnPlaced;
+						FormerRightNode.
+						AxisUnPlaced[1-LeftRight] = PairPlaced;
+					}
+					else
+					{
+						AxisPlaced[LeftRight] = PairUnPlaced;
+						AxisUnPlaced[1-LeftRight] = PairPlaced;
+					}
 
-					// Remove the node from unplaced nodes
+					// Remove the node from unplaced nodes & add it to placed ones
 					GridNodes.Remove( PairUnPlaced );
+					PlacedNodes.Add( PairUnPlaced );
 				}
 			}
 		}

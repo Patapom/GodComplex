@@ -27,7 +27,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private enum	CALIBRATION_STAGE
 		{
-			STOPPED,
 			PICK_CENTER,
 			SET_RADIUS,
 		}
@@ -156,6 +155,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_CalibrationDelegate = _Notify;
 			m_CalibrationRadius = 0.0f;
 			ManipulationState = MANIPULATION_STATE.CALIBRATION_TARGET;
+			m_CalibrationStage = CALIBRATION_STAGE.PICK_CENTER;
 		}
 
 		/// <summary>
@@ -418,7 +418,6 @@ namespace StandardizedDiffuseAlbedoMaps
 						m_CalibrationStage = CALIBRATION_STAGE.SET_RADIUS;
 					else if ( m_CalibrationStage == CALIBRATION_STAGE.SET_RADIUS )
 					{	// We're done! Notify!
-						m_CalibrationStage = CALIBRATION_STAGE.STOPPED;
 						if ( m_CalibrationDelegate != null )
 							m_CalibrationDelegate( m_CalibrationCenter, m_CalibrationRadius );
 
