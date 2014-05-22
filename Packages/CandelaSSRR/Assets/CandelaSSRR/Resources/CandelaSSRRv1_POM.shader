@@ -36,6 +36,12 @@ uniform sampler2D	_MainTex;
 //uniform float4		_ZBufferParams;
 //uniform float4		_ScreenParams;
 
+#if TARGET_GLSL
+#define	_tex2Dlod( s, uv ) tex2D( s, uv.xy )	// SIMPLE AS THAT???? ‘ı
+#else
+#define	_tex2Dlod( s, uv ) tex2Dlod( s, uv )
+#endif
+
 struct PS_IN {
 	float4 pos : POSITION;
 	float2 uv : TEXCOORD0;
@@ -55,7 +61,7 @@ float4	PS( PS_IN _In ) : COLOR
 	float3 lkjwejhsdkl_1;
 	float4 opahwcte_2;
 	float4 Result = 0.0;
-	float4 SourceColor = tex2D(_MainTex, float3( _In.uv, 0.0 ) );
+	float4 SourceColor = _tex2Dlod(_MainTex, float4( _In.uv, 0, 0.0 ) );
 
 	if ( SourceColor.w == 0.0 ) {
 		Result = float4(0.0, 0.0, 0.0, 0.0);
@@ -64,10 +70,9 @@ float4	PS( PS_IN _In ) : COLOR
 
 //return float4( 1, 1, 0, 1 );
 
-/*
-
+//*
 	float4 tmpvar_5;
-	tmpvar_5 = tex2D (_CameraDepthTexture, float3(_In.uv, 0.0));
+	tmpvar_5 = _tex2Dlod(_CameraDepthTexture, float4(_In.uv, 0, 0.0));
 	float tmpvar_6;
 	tmpvar_6 = tmpvar_5.x;
 	float tmpvar_7;
@@ -96,23 +101,23 @@ float4	PS( PS_IN _In ) : COLOR
 		efljafolclsdf_22.xy = ((_In.uv * 2.0) - 1.0);
 		efljafolclsdf_22.z = tmpvar_6;
 		float4 tmpvar_24;
-		tmpvar_24 = (_ProjectionInv * efljafolclsdf_22);
+		tmpvar_24 = mul(_ProjectionInv, efljafolclsdf_22);
 		float4 tmpvar_25;
 		tmpvar_25 = (tmpvar_24 / tmpvar_24.w);
 		xvzyufalj_21.xy = efljafolclsdf_22.xy;
 		xvzyufalj_21.z = tmpvar_6;
 		mcjkfeeieijd_20.w = 0.0;
-		mcjkfeeieijd_20.xyz = ((tex2D (_CameraNormalsTexture, float3(_In.uv, 0.0)).xyz * 2.0) - 1.0);
+		mcjkfeeieijd_20.xyz = ((_tex2Dlod(_CameraNormalsTexture, float4(_In.uv, 0, 0.0)).xyz * 2.0) - 1.0);
 		float3 tmpvar_26;
 		tmpvar_26 = normalize(tmpvar_25.xyz);
 		float3 tmpvar_27;
-		tmpvar_27 = normalize((_ViewMatrix * mcjkfeeieijd_20).xyz);
+		tmpvar_27 = normalize(mul(_ViewMatrix, mcjkfeeieijd_20).xyz);
 		float3 tmpvar_28;
 		tmpvar_28 = normalize((tmpvar_26 - (2.0 * (dot (tmpvar_27, tmpvar_26) * tmpvar_27))));
 		loveeaed_19.w = 1.0;
 		loveeaed_19.xyz = (tmpvar_25.xyz + tmpvar_28);
 		float4 tmpvar_29;
-		tmpvar_29 = (_ProjMatrix * loveeaed_19);
+		tmpvar_29 = mul(_ProjMatrix, loveeaed_19);
 		float3 tmpvar_30;
 		tmpvar_30 = normalize(((tmpvar_29.xyz / tmpvar_29.w) - xvzyufalj_21));
 		lkjwejhsdkl_1.z = tmpvar_30.z;
@@ -137,7 +142,7 @@ float4	PS( PS_IN _In ) : COLOR
 			break;
 		};
 		float tmpvar_34;
-		tmpvar_34 = (1.0/(((_ZBufferParams.x * tex2D(_CameraDepthTexture, float3(eiieiaced_16.xy, 0.0)).x) + _ZBufferParams.y)));
+		tmpvar_34 = (1.0/(((_ZBufferParams.x * _tex2Dlod(_CameraDepthTexture, float4(eiieiaced_16.xy, 0, 0.0)).x) + _ZBufferParams.y)));
 		float tmpvar_35;
 		tmpvar_35 = (1.0/(((_ZBufferParams.x * eiieiaced_16.z) + _ZBufferParams.y)));
 		if ((tmpvar_34 < (tmpvar_35 - 1e-06))) {
@@ -209,7 +214,7 @@ float4	PS( PS_IN _In ) : COLOR
 					break;
 					};
 					float tmpvar_51;
-					tmpvar_51 = (1.0/(((_ZBufferParams.x * tex2D(_CameraDepthTexture, float3(oifejef_48.xy, 0.0)).x) + _ZBufferParams.y)));
+					tmpvar_51 = (1.0/(((_ZBufferParams.x * _tex2Dlod(_CameraDepthTexture, float4(oifejef_48.xy, 0, 0.0)).x) + _ZBufferParams.y)));
 					float tmpvar_52;
 					tmpvar_52 = (1.0/(((_ZBufferParams.x * oifejef_48.z) + _ZBufferParams.y)));
 					if ((tmpvar_51 < tmpvar_52)) {
@@ -250,7 +255,7 @@ float4	PS( PS_IN _In ) : COLOR
 				else
 				{
 					float4 tmpvar_57_55;
-					tmpvar_57_55.xyz = tex2D(_MainTex, float3(opahwcte_2.xy, 0.0)).xyz;
+					tmpvar_57_55.xyz = _tex2Dlod(_MainTex, float4(opahwcte_2.xy, 0, 0.0)).xyz;
 					tmpvar_57_55.w = (((opahwcte_2.w * (1.0 - (tmpvar_7 / _maxDepthCull))) * (1.0 - pow ((lenfaiejd_14 / float(tmpvar_23)), _fadePower))) * pow (clamp (((dot (normalize(tmpvar_28), normalize(tmpvar_25).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
 					Result = tmpvar_57_55;
 				}
@@ -259,7 +264,7 @@ float4	PS( PS_IN _In ) : COLOR
 		}
 		}
 	}
-*/
+//*/
 
 	return Result;
 }
