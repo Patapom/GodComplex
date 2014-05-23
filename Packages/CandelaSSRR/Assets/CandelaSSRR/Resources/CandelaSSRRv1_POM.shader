@@ -82,7 +82,6 @@ float4	PS( PS_IN _In ) : COLOR
 	float4 uiduefa_10;
 	float4 rensfief_13;
 	float lenfaiejd_14;
-	float3 eiieiaced_16;
 
 
 
@@ -135,22 +134,21 @@ float4	PS( PS_IN _In ) : COLOR
 
 	bool biifejd_12 = false;
 
-	float3	projStartPos = float3( _In.uv, Zproj );
-	eiieiaced_16 = (projStartPos + globalRay);
+	float3	projCurrentPos = float3( _In.uv, Zproj ) + globalRay;
 	for ( int StepIndex=0; StepIndex < MaxStepsCount; StepIndex++ )
 	{
-		float tmpvar_34 = 1.0 / ((_ZBufferParams.x * _tex2Dlod(_CameraDepthTexture, float4(eiieiaced_16.xy, 0, 0.0)).x) + _ZBufferParams.y);
-		float tmpvar_35 = 1.0 / ((_ZBufferParams.x * eiieiaced_16.z) + _ZBufferParams.y);
+		float	tmpvar_34 = 1.0 / (_ZBufferParams.x * _tex2Dlod( _CameraDepthTexture, float4( projCurrentPos.xy, 0, 0.0 ) ).x + _ZBufferParams.y);
+		float	tmpvar_35 = 1.0 / (_ZBufferParams.x * projCurrentPos.z + _ZBufferParams.y);
 		if ( tmpvar_34 < tmpvar_35 - 1e-06 )
 		{
 			uiduefa_10.w = 1.0;
-			uiduefa_10.xyz = eiieiaced_16;
+			uiduefa_10.xyz = projCurrentPos;
 			rensfief_13 = uiduefa_10;
 			biifejd_12 = true;
 			break;
 		}
 
-		eiieiaced_16 = (eiieiaced_16 + globalRay);
+		projCurrentPos = (projCurrentPos + globalRay);
 		lenfaiejd_14 = (lenfaiejd_14 + 1.0);
 	}
 
@@ -158,7 +156,7 @@ float4	PS( PS_IN _In ) : COLOR
 	{
 		float4 vartfie_36;
 		vartfie_36.w = 0.0;
-		vartfie_36.xyz = eiieiaced_16;
+		vartfie_36.xyz = projCurrentPos;
 		rensfief_13 = vartfie_36;
 		biifejd_12 = true;
 	}
@@ -177,9 +175,7 @@ float4	PS( PS_IN _In ) : COLOR
 	if ( tmpvar_37 > 0.5 )
 		return acccols_8;
 
-	float tmpvar_39;
-	tmpvar_39 = abs((rensfief_13.y - 0.5));
-	if ( tmpvar_39 > 0.5 )
+	if ( abs( rensfief_13.y - 0.5 ) > 0.5 )
 		return acccols_8;
 
 	if ( 1.0 / (_ZBufferParams.x * rensfief_13.z + _ZBufferParams.y) > _maxDepthCull )
@@ -188,83 +184,83 @@ float4	PS( PS_IN _In ) : COLOR
 	if ( rensfief_13.z < 0.1 )
 		return float4( 0.0, 0.0, 0.0, 0.0 );
 
-	if ( rensfief_13.w != 1.0 )
+	if ( rensfief_13.w == 1.0 )
 	{
-		int j_40;
-		float4 greyfsd_41;
-		float3 poffses_42;
-		int i_49_43;
-		bool fjekfesa_44;
-		float4 alsdmes_45;
-		int maxfeis_46;
-		float3 refDir_44_47;
-		float3 oifejef_48;
-		float3 tmpvar_49;
-		tmpvar_49 = (rensfief_13.xyz - globalRay);
-		float3 tmpvar_50;
-		tmpvar_50 = (lkjwejhsdkl_1 * (tmpvar_31 / tmpvar_32));
-		refDir_44_47 = tmpvar_50;
-		maxfeis_46 = int(_maxFineStep);
-		fjekfesa_44 = bool(0);
-		poffses_42 = tmpvar_49;
-		oifejef_48 = (tmpvar_49 + tmpvar_50);
-		i_49_43 = 0;
-		j_40 = 0;
-		for (int j_40 = 0; j_40 < 20; )
+	int j_40;
+	float4 greyfsd_41;
+	float3 poffses_42;
+	int i_49_43;
+	bool fjekfesa_44;
+	float4 alsdmes_45;
+	int maxfeis_46;
+	float3 refDir_44_47;
+	float3 oifejef_48;
+	float3 tmpvar_49;
+	tmpvar_49 = (rensfief_13.xyz - globalRay);
+	float3 tmpvar_50;
+	tmpvar_50 = (lkjwejhsdkl_1 * (tmpvar_31 / tmpvar_32));
+	refDir_44_47 = tmpvar_50;
+	maxfeis_46 = int(_maxFineStep);
+	fjekfesa_44 = bool(0);
+	poffses_42 = tmpvar_49;
+	oifejef_48 = (tmpvar_49 + tmpvar_50);
+	i_49_43 = 0;
+	j_40 = 0;
+	for (int j_40 = 0; j_40 < 20; )
+	{
+		if ( i_49_43 >= maxfeis_46 )
+			break;
+
+		float	tmpvar_51 = 1.0 / (_ZBufferParams.x * _tex2Dlod( _CameraDepthTexture, float4(oifejef_48.xy, 0, 0.0) ).x + _ZBufferParams.y);
+		float	tmpvar_52 = 1.0 / (_ZBufferParams.x * oifejef_48.z + _ZBufferParams.y);
+		if ( tmpvar_51 < tmpvar_52 )
 		{
-			if ( i_49_43 >= maxfeis_46 )
+			if ( tmpvar_52 - tmpvar_51 < _bias )
+			{
+				greyfsd_41.w = 1.0;
+				greyfsd_41.xyz = oifejef_48;
+				alsdmes_45 = greyfsd_41;
+				fjekfesa_44 = bool(1);
 				break;
-
-			float	tmpvar_51 = 1.0 / (_ZBufferParams.x * _tex2Dlod( _CameraDepthTexture, float4(oifejef_48.xy, 0, 0.0) ).x + _ZBufferParams.y);
-			float	tmpvar_52 = 1.0 / (_ZBufferParams.x * oifejef_48.z + _ZBufferParams.y);
-			if ( tmpvar_51 < tmpvar_52 )
-			{
-				if ( tmpvar_52 - tmpvar_51 < _bias )
-				{
-					greyfsd_41.w = 1.0;
-					greyfsd_41.xyz = oifejef_48;
-					alsdmes_45 = greyfsd_41;
-					fjekfesa_44 = bool(1);
-					break;
-				};
-				float3 tmpvar_53;
-				tmpvar_53 = (refDir_44_47 * 0.5);
-				refDir_44_47 = tmpvar_53;
-				oifejef_48 = (poffses_42 + tmpvar_53);
-			}
-			else
-			{
-				poffses_42 = oifejef_48;
-				oifejef_48 = (oifejef_48 + refDir_44_47);
-			}
-
-			i_49_43 = (i_49_43 + 1);
-			j_40 = (j_40 + 1);
-		}
-
-		if ( fjekfesa_44 == bool(0) )
-		{
-			float4 tmpvar_55_54;
-			tmpvar_55_54.w = 0.0;
-			tmpvar_55_54.xyz = oifejef_48;
-			alsdmes_45 = tmpvar_55_54;
-			fjekfesa_44 = bool(1);
-		}
-
-		opahwcte_2 = alsdmes_45;
-		}
-
-		if ((opahwcte_2.w < 0.01))
-		{
-			Result = acccols_8;
+			};
+			float3 tmpvar_53;
+			tmpvar_53 = (refDir_44_47 * 0.5);
+			refDir_44_47 = tmpvar_53;
+			oifejef_48 = (poffses_42 + tmpvar_53);
 		}
 		else
 		{
-			float4 tmpvar_57_55;
-			tmpvar_57_55.xyz = _tex2Dlod(_MainTex, float4(opahwcte_2.xy, 0, 0.0)).xyz;
-			tmpvar_57_55.w = (((opahwcte_2.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ((lenfaiejd_14 / float(tmpvar_23)), _fadePower))) * pow (clamp (((dot (normalize(csReflectedView), normalize(csPosition).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
-			Result = tmpvar_57_55;
+			poffses_42 = oifejef_48;
+			oifejef_48 = (oifejef_48 + refDir_44_47);
 		}
+
+		i_49_43 = (i_49_43 + 1);
+		j_40 = (j_40 + 1);
+	}
+
+	if ( fjekfesa_44 == bool(0) )
+	{
+		float4 tmpvar_55_54;
+		tmpvar_55_54.w = 0.0;
+		tmpvar_55_54.xyz = oifejef_48;
+		alsdmes_45 = tmpvar_55_54;
+		fjekfesa_44 = bool(1);
+	}
+
+	opahwcte_2 = alsdmes_45;
+	}
+
+	if ((opahwcte_2.w < 0.01))
+	{
+		Result = acccols_8;
+	}
+	else
+	{
+		float4 tmpvar_57_55;
+		tmpvar_57_55.xyz = _tex2Dlod(_MainTex, float4(opahwcte_2.xy, 0, 0.0)).xyz;
+		tmpvar_57_55.w = (((opahwcte_2.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ((lenfaiejd_14 / float(tmpvar_23)), _fadePower))) * pow (clamp (((dot (normalize(csReflectedView), normalize(csPosition).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
+		Result = tmpvar_57_55;
+	}
 //*/
 
 	return Result;
