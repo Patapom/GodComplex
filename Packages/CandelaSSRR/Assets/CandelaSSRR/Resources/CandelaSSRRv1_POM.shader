@@ -115,21 +115,20 @@ float4	PS( PS_IN _In ) : COLOR
 
 //return float4( csNormal, 0 );
 
-	float3 csReflectedView;
-//	csReflectedView = normalize( csView - (2.0 * (dot( csNormal, csView) * csNormal)) );
-	csReflectedView = csView - (2.0 * (dot( csNormal, csView) * csNormal));	// No use to normalize this!
-
+//	float3	csReflectedView = normalize( csView - (2.0 * (dot( csNormal, csView) * csNormal)) );
+	float3	csReflectedView = csView - (2.0 * (dot( csNormal, csView) * csNormal));	// No use to normalize this!
 //return float4( csReflectedView, 1 );
 
-	float4 tmpvar_29 = mul( _ProjMatrix, float4( csPosition.xyz + csReflectedView, 1.0 ) );
-	tmpvar_29 /= tmpvar_29.w;
-	float3	tmpvar_30 = normalize( tmpvar_29 - projPosition.xyz );	// Some kind of target vector in projective space (the ray?)
-//return float4( tmpvar_30, 1 );
+	float4	projOffsetPosition = mul( _ProjMatrix, float4( csPosition.xyz + csReflectedView, 1.0 ) );	// Position offset by reflected view
+			projOffsetPosition /= projOffsetPosition.w;
+	float3	projRay = normalize( projOffsetPosition - projPosition.xyz );	// Some kind of target vector in projective space (the ray?)
+//return float4( projRay, 1 );
 
-	float3 lkjwejhsdkl_1;
-	lkjwejhsdkl_1.z = tmpvar_30.z;
-	lkjwejhsdkl_1.xy = (tmpvar_30.xy * 0.5);
+	float3	lkjwejhsdkl_1 = float3( 0.5 * projRay.xy, projRay.z );
 
+// 687, 325
+//return 0.5 * _ScreenParams.x / 687.0;
+//return 0.5 * _ScreenParams.y / 325.0;
 
 	float3	projStartPos = float3( _In.uv, Zproj );
 	float	tmpvar_31 = 2.0 / _ScreenParams.x;
