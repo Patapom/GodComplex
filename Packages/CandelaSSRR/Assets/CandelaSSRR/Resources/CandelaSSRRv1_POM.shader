@@ -79,9 +79,6 @@ float4	PS( PS_IN _In ) : COLOR
 
 
 	float4 acccols_8;
-	float4 uiduefa_10;
-	float4 rensfief_13;
-	float lenfaiejd_14;
 
 
 
@@ -130,39 +127,32 @@ float4	PS( PS_IN _In ) : COLOR
 	float	tmpvar_31 = 2.0 / _ScreenParams.x;
 
 	int		MaxStepsCount = int(_maxStep);
-	lenfaiejd_14 = 0.0;
+	float	reflectionDistance = 0.0;
 
-	bool biifejd_12 = false;
+	bool	globalHitValid = false;
 
 	float3	projCurrentPos = float3( _In.uv, Zproj ) + globalRay;
+	float4	projHitPosition;
 	for ( int StepIndex=0; StepIndex < MaxStepsCount; StepIndex++ )
 	{
-		float	tmpvar_34 = 1.0 / (_ZBufferParams.x * _tex2Dlod( _CameraDepthTexture, float4( projCurrentPos.xy, 0, 0.0 ) ).x + _ZBufferParams.y);
-		float	tmpvar_35 = 1.0 / (_ZBufferParams.x * projCurrentPos.z + _ZBufferParams.y);
-		if ( tmpvar_34 < tmpvar_35 - 1e-06 )
-		{
-			uiduefa_10.w = 1.0;
-			uiduefa_10.xyz = projCurrentPos;
-			rensfief_13 = uiduefa_10;
-			biifejd_12 = true;
+		float	ScreenZ = 1.0 / (_ZBufferParams.x * _tex2Dlod( _CameraDepthTexture, float4( projCurrentPos.xy, 0, 0.0 ) ).x + _ZBufferParams.y);
+		float	CurrentZ = 1.0 / (_ZBufferParams.x * projCurrentPos.z + _ZBufferParams.y);
+		if ( ScreenZ < CurrentZ - 1e-06 )
+		{	// Got a hit
+			projHitPosition = float4( projCurrentPos, 1.0 );
+			globalHitValid = true;
 			break;
 		}
 
-		projCurrentPos = (projCurrentPos + globalRay);
-		lenfaiejd_14 = (lenfaiejd_14 + 1.0);
+		projCurrentPos += globalRay;
+		reflectionDistance += 1.0;
 	}
 
-	if ( !biifejd_12 )
-	{
-		float4 vartfie_36;
-		vartfie_36.w = 0.0;
-		vartfie_36.xyz = projCurrentPos;
-		rensfief_13 = vartfie_36;
-		biifejd_12 = true;
-	}
+	if ( !globalHitValid )
+		projHitPosition = float4( projCurrentPos, 0.0 );
 
-	opahwcte_2 = rensfief_13;
-	float tmpvar_37 = abs( rensfief_13.x - 0.5 );
+	opahwcte_2 = projHitPosition;
+	float tmpvar_37 = abs( projHitPosition.x - 0.5 );
 	acccols_8 = float4(0.0, 0.0, 0.0, 0.0);
 	if ( _SSRRcomposeMode > 0.0 )
 	{
@@ -175,16 +165,16 @@ float4	PS( PS_IN _In ) : COLOR
 	if ( tmpvar_37 > 0.5 )
 		return acccols_8;
 
-	if ( abs( rensfief_13.y - 0.5 ) > 0.5 )
+	if ( abs( projHitPosition.y - 0.5 ) > 0.5 )
 		return acccols_8;
 
-	if ( 1.0 / (_ZBufferParams.x * rensfief_13.z + _ZBufferParams.y) > _maxDepthCull )
+	if ( 1.0 / (_ZBufferParams.x * projHitPosition.z + _ZBufferParams.y) > _maxDepthCull )
 		return float4( 0.0, 0.0, 0.0, 0.0 );
 
-	if ( rensfief_13.z < 0.1 )
+	if ( projHitPosition.z < 0.1 )
 		return float4( 0.0, 0.0, 0.0, 0.0 );
 
-	if ( rensfief_13.w == 1.0 )
+	if ( projHitPosition.w == 1.0 )
 	{
 	int j_40;
 	float4 greyfsd_41;
@@ -196,7 +186,7 @@ float4	PS( PS_IN _In ) : COLOR
 	float3 refDir_44_47;
 	float3 oifejef_48;
 	float3 tmpvar_49;
-	tmpvar_49 = (rensfief_13.xyz - globalRay);
+	tmpvar_49 = projHitPosition.xyz - globalRay;
 	float3 tmpvar_50;
 	tmpvar_50 = (lkjwejhsdkl_1 * (tmpvar_31 / tmpvar_32));
 	refDir_44_47 = tmpvar_50;
@@ -258,7 +248,7 @@ float4	PS( PS_IN _In ) : COLOR
 	{
 		float4 tmpvar_57_55;
 		tmpvar_57_55.xyz = _tex2Dlod(_MainTex, float4(opahwcte_2.xy, 0, 0.0)).xyz;
-		tmpvar_57_55.w = (((opahwcte_2.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ((lenfaiejd_14 / float(tmpvar_23)), _fadePower))) * pow (clamp (((dot (normalize(csReflectedView), normalize(csPosition).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
+		tmpvar_57_55.w = (((opahwcte_2.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ( reflectionDistance / float(tmpvar_23), _fadePower))) * pow (clamp (((dot (normalize(csReflectedView), normalize(csPosition).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
 		Result = tmpvar_57_55;
 	}
 //*/
