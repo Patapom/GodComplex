@@ -69,15 +69,15 @@ float4	PS( PS_IN _In ) : COLOR
 
 	float4 Result = _SSRRcomposeMode > 0.0 ? float4( SourceColor.xyz, 0.0 ) : 0.0;
 
-	float	Zproj = _tex2Dlod(_CameraDepthTexture, float4(_In.uv, 0, 0.0)).x;
+	float	Zproj = _tex2Dlod( _CameraDepthTexture, float4( _In.uv, 0, 0.0 ) ).x;
 	float	Z = UnProject( Zproj );
-//return 80 * Z;
-
 	if ( Z > _maxDepthCull )
 		return 0.0;
 
+//return 80 * Z;
+
 	// Compute position in projected space
-	float4	projPosition = float4( (_In.uv * 2.0) - 1.0, Zproj, 1.0 );
+	float4	projPosition = float4( 2.0 * _In.uv - 1.0, Zproj, 1.0 );
 
 	// Transform back into camera space
 	float4	csPosition = mul( _ProjectionInv, projPosition );
@@ -90,7 +90,7 @@ float4	PS( PS_IN _In ) : COLOR
 
 	float4 wsNormal;
 	wsNormal.w = 0.0;
-	wsNormal.xyz = 2.0 * _tex2Dlod( _CameraNormalsTexture, float4(_In.uv, 0, 0.0) ).xyz - 1.0;
+	wsNormal.xyz = 2.0 * _tex2Dlod( _CameraNormalsTexture, float4( _In.uv, 0, 0.0 ) ).xyz - 1.0;
 
 	float3 csNormal;
 	csNormal = normalize( mul(_ViewMatrix, wsNormal).xyz );
@@ -98,7 +98,7 @@ float4	PS( PS_IN _In ) : COLOR
 //return float4( csNormal, 0 );
 
 //	float3	csReflectedView = normalize( csView - (2.0 * (dot( csNormal, csView) * csNormal)) );
-	float3	csReflectedView = csView - (2.0 * (dot( csNormal, csView) * csNormal));	// No use to normalize this!
+	float3	csReflectedView = csView - 2.0 * dot( csNormal, csView ) * csNormal;	// No use to normalize this!
 //return float4( csReflectedView, 1 );
 
 	float4	projOffsetPosition = mul( _ProjMatrix, float4( csPosition.xyz + csReflectedView, 1.0 ) );	// Position offset by reflected view
@@ -111,9 +111,10 @@ float4	PS( PS_IN _In ) : COLOR
 //return 0.5 * _ScreenParams.x / 687.0;
 //return 0.5 * _ScreenParams.y / 325.0;
 
-	float3	baseRay = float3( 0.5 * projRay.xy, projRay.z );
+	float3	baseRay = float3( 0.5 * projRay.xy, projRay.z );	// 0.5 because we're tracing in UV space, not in [-1,+1] NDC space
 	float	baseRayUVLength = length( baseRay.xy );
-	float3	globalRay = baseRay * ((2.0 * _stepGlobalScale / _ScreenParams.x) / baseRayUVLength);
+			baseRay *= 2.0 / (_ScreenParams.x * baseRayUVLength);
+	float3	globalRay = baseRay * _stepGlobalScale;
 
 	int		MaxGlobalStepsCount = int( _maxStep );
 	float	reflectionDistance = 0.0;
@@ -149,8 +150,7 @@ float4	PS( PS_IN _In ) : COLOR
 	if ( projHitPosition.w == 1.0 )
 	{	// Fine step tracing using binary search (i.e. dichotomic interval reduction)
 		float3	projStartPosition = projHitPosition.xyz - globalRay;	// Go back one step, before the rough intersection
-		float3	originalLengthFineRay = baseRay * ((2.0 / _ScreenParams.x) / baseRayUVLength);
-		float3	fineRay = originalLengthFineRay;	// Start with full length fine ray
+		float3	fineRay = baseRay;	// Start with full length fine ray
 
 		int		MaxFineStepsCount = int( _maxFineStep );
 		bool	fineHitValid = false;
@@ -176,7 +176,7 @@ float4	PS( PS_IN _In ) : COLOR
 			else
 			{	// Make the interval march forward
 				projIntervalPositionStart = projIntervalPositionEnd;
-				projIntervalPositionEnd = projIntervalPositionEnd + originalLengthFineRay;
+				projIntervalPositionEnd = projIntervalPositionEnd + baseRay;
 			}
 		}
 
