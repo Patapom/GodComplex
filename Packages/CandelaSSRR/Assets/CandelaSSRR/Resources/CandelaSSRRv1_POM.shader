@@ -118,20 +118,18 @@ float4	PS( PS_IN _In ) : COLOR
 //return 0.5 * _ScreenParams.x / 687.0;
 //return 0.5 * _ScreenParams.y / 325.0;
 
-	float3	lkjwejhsdkl_1 = float3( 0.5 * projRay.xy, projRay.z );
-	float	tmpvar_32 = length( lkjwejhsdkl_1.xy );
-	float3	globalRay = lkjwejhsdkl_1 * ((2.0 * _stepGlobalScale / _ScreenParams.x) / tmpvar_32);
+	float3	baseRay = float3( 0.5 * projRay.xy, projRay.z );
+	float	baseRayUVLength = length( baseRay.xy );
+	float3	globalRay = baseRay * ((2.0 * _stepGlobalScale / _ScreenParams.x) / baseRayUVLength);
 
-	float	tmpvar_31 = 2.0 / _ScreenParams.x;
-
-	int		MaxStepsCount = int(_maxStep);
+	int		MaxGlobalStepsCount = int( _maxStep );
 	float	reflectionDistance = 0.0;
 
 	bool	globalHitValid = false;
 
 	float3	projCurrentPos = float3( _In.uv, Zproj ) + globalRay;
 	float4	projHitPosition;
-	for ( int StepIndex=0; StepIndex < MaxStepsCount; StepIndex++ )
+	for ( int GlobalStepIndex=0; GlobalStepIndex < MaxGlobalStepsCount; GlobalStepIndex++ )
 	{
 		float	ScreenZ = UnProject( _tex2Dlod( _CameraDepthTexture, float4( projCurrentPos.xy, 0, 0.0 ) ).x );//1.0 / (_ZBufferParams.x * _tex2Dlod( _CameraDepthTexture, float4( projCurrentPos.xy, 0, 0.0 ) ).x + _ZBufferParams.y);
 		float	CurrentZ = UnProject( projCurrentPos.z );//1.0 / (_ZBufferParams.x * projCurrentPos.z + _ZBufferParams.y);
@@ -149,86 +147,65 @@ float4	PS( PS_IN _In ) : COLOR
 	if ( !globalHitValid )
 		projHitPosition = float4( projCurrentPos, 0.0 );	// W set to 0 if no hit
 
-	float4	opahwcte_2 = projHitPosition;
-
 	float4 acccols_8 = _SSRRcomposeMode > 0.0 ? float4( SourceColor.xyz, 0.0 ) : float4( 0.0, 0.0, 0.0, 0.0 );
 	if ( abs( projHitPosition.x - 0.5 ) > 0.5 || abs( projHitPosition.y - 0.5 ) > 0.5 )
 		return acccols_8;
 
-	if ( UnProject( projHitPosition.z ) > _maxDepthCull )
+	if ( UnProject( projHitPosition.z ) > _maxDepthCull || projHitPosition.z < 0.1 )
 		return float4( 0.0, 0.0, 0.0, 0.0 );
 
-	if ( projHitPosition.z < 0.1 )
-		return float4( 0.0, 0.0, 0.0, 0.0 );
-
+	float4	opahwcte_2 = projHitPosition;
 	if ( projHitPosition.w == 1.0 )
-	{	// Fine step tracing
-		float4	greyfsd_41;
+	{	// Fine step tracing using binary search (i.e. dichotomic interval reduction)
 		float4	alsdmes_45;
-		float3	tmpvar_49 = projHitPosition.xyz - globalRay;
-		float3	tmpvar_50 = lkjwejhsdkl_1 * (tmpvar_31 / tmpvar_32);
-		float3	refDir_44_47 = tmpvar_50;
-		int		maxfeis_46 = int(_maxFineStep);
-		bool	fjekfesa_44 = false;
-		float3	poffses_42 = tmpvar_49;
-		float3	oifejef_48 = tmpvar_49 + tmpvar_50;
-		int		i_49_43 = 0;
-		int		j_40 = 0;
-		for (int j_40 = 0; j_40 < 20; )
+		float3	projStartPosition = projHitPosition.xyz - globalRay;
+		float3	originalLengthFineRay = baseRay * ((2.0 / _ScreenParams.x) / baseRayUVLength);
+		float3	fineRay = originalLengthFineRay;	// Start with full length fine ray
+
+		int		MaxFineStepsCount = int( _maxFineStep );
+		bool	fineHitValid = false;
+		float3	projIntervalPositionStart = projStartPosition;
+		float3	projIntervalPositionEnd = projStartPosition + fineRay;
+		for ( int FineStepIndex=0; FineStepIndex < 20; FineStepIndex++ )
 		{
-			if ( i_49_43 >= maxfeis_46 )
+			if ( FineStepIndex >= MaxFineStepsCount )
 				break;
 
-			float	tmpvar_51 = UnProject( _tex2Dlod( _CameraDepthTexture, float4(oifejef_48.xy, 0, 0.0) ).x );
-			float	tmpvar_52 = UnProject( oifejef_48.z );
-			if ( tmpvar_51 < tmpvar_52 )
+			float	ScreenZ = UnProject( _tex2Dlod( _CameraDepthTexture, float4( projIntervalPositionEnd.xy, 0, 0.0 ) ).x );
+			float	CurrentZ = UnProject( projIntervalPositionEnd.z );
+			if ( ScreenZ < CurrentZ )
 			{
-				if ( tmpvar_52 - tmpvar_51 < _bias )
+				if ( CurrentZ - ScreenZ < _bias )
 				{
-					greyfsd_41.w = 1.0;
-					greyfsd_41.xyz = oifejef_48;
-					alsdmes_45 = greyfsd_41;
-					fjekfesa_44 = bool(1);
+					alsdmes_45 = float4( projIntervalPositionEnd, 1.0 );
+					fineHitValid = true;
 					break;
-				};
-				float3 tmpvar_53;
-				tmpvar_53 = (refDir_44_47 * 0.5);
-				refDir_44_47 = tmpvar_53;
-				oifejef_48 = (poffses_42 + tmpvar_53);
+				}
+
+				fineRay *= 0.5;
+				projIntervalPositionEnd = projIntervalPositionStart + fineRay;
 			}
 			else
 			{
-				poffses_42 = oifejef_48;
-				oifejef_48 = (oifejef_48 + refDir_44_47);
+				projIntervalPositionStart = projIntervalPositionEnd;
+				projIntervalPositionEnd = projIntervalPositionEnd + originalLengthFineRay;
 			}
-
-			i_49_43 = (i_49_43 + 1);
-			j_40 = (j_40 + 1);
 		}
 
-		if ( fjekfesa_44 == bool(0) )
+		if ( !fineHitValid )
 		{
-			float4 tmpvar_55_54;
-			tmpvar_55_54.w = 0.0;
-			tmpvar_55_54.xyz = oifejef_48;
-			alsdmes_45 = tmpvar_55_54;
-			fjekfesa_44 = bool(1);
+			alsdmes_45 = float4( projIntervalPositionEnd, 0.0 );
+			fineHitValid = true;
 		}
 
 		opahwcte_2 = alsdmes_45;
 	}
 
 	if ( opahwcte_2.w < 0.01 )
-	{
-		Result = acccols_8;
-	}
-	else
-	{
-		float4 tmpvar_57_55;
-		tmpvar_57_55.xyz = _tex2Dlod(_MainTex, float4(opahwcte_2.xy, 0, 0.0)).xyz;
-		tmpvar_57_55.w = (((opahwcte_2.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ( reflectionDistance / float(tmpvar_23), _fadePower))) * pow (clamp (((dot (normalize(csReflectedView), normalize(csPosition).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
-		Result = tmpvar_57_55;
-	}
+		return acccols_8;
+
+	Result.xyz = _tex2Dlod( _MainTex, float4( opahwcte_2.xy, 0, 0.0 ) ).xyz;
+	Result.w = (((opahwcte_2.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ( reflectionDistance / float(tmpvar_23), _fadePower))) * pow (clamp (((dot (normalize(csReflectedView), normalize(csPosition).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
 //*/
 
 	return Result;
