@@ -154,7 +154,6 @@ float4	PS( PS_IN _In ) : COLOR
 	if ( UnProject( projHitPosition.z ) > _maxDepthCull || projHitPosition.z < 0.1 )
 		return float4( 0.0, 0.0, 0.0, 0.0 );
 
-	float4	opahwcte_2 = projHitPosition;
 	if ( projHitPosition.w == 1.0 )
 	{	// Fine step tracing using binary search (i.e. dichotomic interval reduction)
 		float4	alsdmes_45;
@@ -174,38 +173,34 @@ float4	PS( PS_IN _In ) : COLOR
 			float	ScreenZ = UnProject( _tex2Dlod( _CameraDepthTexture, float4( projIntervalPositionEnd.xy, 0, 0.0 ) ).x );
 			float	CurrentZ = UnProject( projIntervalPositionEnd.z );
 			if ( ScreenZ < CurrentZ )
-			{
+			{	// End position is in front of current position
+				// Reduce interval length and recompute end position
 				if ( CurrentZ - ScreenZ < _bias )
-				{
-					alsdmes_45 = float4( projIntervalPositionEnd, 1.0 );
+				{	// If discrepancy is too low then assume a correct hit
+					projHitPosition = float4( projIntervalPositionEnd, 1.0 );
 					fineHitValid = true;
 					break;
 				}
 
-				fineRay *= 0.5;
-				projIntervalPositionEnd = projIntervalPositionStart + fineRay;
+				fineRay *= 0.5;	// Reduce marching step
+				projIntervalPositionEnd = projIntervalPositionStart + fineRay;	// New end position is at the end of the interval
 			}
 			else
-			{
+			{	// Make the interval march forward
 				projIntervalPositionStart = projIntervalPositionEnd;
 				projIntervalPositionEnd = projIntervalPositionEnd + originalLengthFineRay;
 			}
 		}
 
 		if ( !fineHitValid )
-		{
-			alsdmes_45 = float4( projIntervalPositionEnd, 0.0 );
-			fineHitValid = true;
-		}
-
-		opahwcte_2 = alsdmes_45;
+			projHitPosition = float4( projIntervalPositionEnd, 0.0 );
 	}
 
-	if ( opahwcte_2.w < 0.01 )
+	if ( projHitPosition.w < 0.01 )
 		return acccols_8;
 
-	Result.xyz = _tex2Dlod( _MainTex, float4( opahwcte_2.xy, 0, 0.0 ) ).xyz;
-	Result.w = (((opahwcte_2.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ( reflectionDistance / float(tmpvar_23), _fadePower))) * pow (clamp (((dot (normalize(csReflectedView), normalize(csPosition).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
+	Result.xyz = _tex2Dlod( _MainTex, float4( projHitPosition.xy, 0, 0.0 ) ).xyz;
+	Result.w = (((projHitPosition.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ( reflectionDistance / float(tmpvar_23), _fadePower))) * pow (clamp (((dot (normalize(csReflectedView), normalize(csPosition).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
 //*/
 
 	return Result;
