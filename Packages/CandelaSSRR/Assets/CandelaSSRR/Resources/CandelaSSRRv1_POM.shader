@@ -56,6 +56,11 @@ PS_IN VS( appdata_img v )
 	return o;
 }
 
+float	UnProject( float _Zproj )
+{
+	return 1.0 / (_ZBufferParams.x * _Zproj + _ZBufferParams.y);
+}
+
 float4	PS( PS_IN _In ) : COLOR
 {
 	float4 Result = 0.0;
@@ -70,7 +75,7 @@ float4	PS( PS_IN _In ) : COLOR
 
 //*
 	float	Zproj = _tex2Dlod(_CameraDepthTexture, float4(_In.uv, 0, 0.0)).x;
-	float	Z = 1.0 / (((_ZBufferParams.x * Zproj) + _ZBufferParams.y));
+	float	Z = UnProject( Zproj );
 //return 80 * Z;
 
 	if ( Z > _maxDepthCull )
@@ -92,7 +97,7 @@ float4	PS( PS_IN _In ) : COLOR
 
 	float4 wsNormal;
 	wsNormal.w = 0.0;
-	wsNormal.xyz = (_tex2Dlod( _CameraNormalsTexture, float4(_In.uv, 0, 0.0) ).xyz * 2.0) - 1.0;
+	wsNormal.xyz = 2.0 * _tex2Dlod( _CameraNormalsTexture, float4(_In.uv, 0, 0.0) ).xyz - 1.0;
 
 	float3 csNormal;
 	csNormal = normalize( mul(_ViewMatrix, wsNormal).xyz );
@@ -128,8 +133,8 @@ float4	PS( PS_IN _In ) : COLOR
 	float4	projHitPosition;
 	for ( int StepIndex=0; StepIndex < MaxStepsCount; StepIndex++ )
 	{
-		float	ScreenZ = 1.0 / (_ZBufferParams.x * _tex2Dlod( _CameraDepthTexture, float4( projCurrentPos.xy, 0, 0.0 ) ).x + _ZBufferParams.y);
-		float	CurrentZ = 1.0 / (_ZBufferParams.x * projCurrentPos.z + _ZBufferParams.y);
+		float	ScreenZ = UnProject( _tex2Dlod( _CameraDepthTexture, float4( projCurrentPos.xy, 0, 0.0 ) ).x );//1.0 / (_ZBufferParams.x * _tex2Dlod( _CameraDepthTexture, float4( projCurrentPos.xy, 0, 0.0 ) ).x + _ZBufferParams.y);
+		float	CurrentZ = UnProject( projCurrentPos.z );//1.0 / (_ZBufferParams.x * projCurrentPos.z + _ZBufferParams.y);
 		if ( ScreenZ < CurrentZ - 1e-06 )
 		{	// Got a hit
 			projHitPosition = float4( projCurrentPos, 1.0 );	// W set to 1
@@ -145,24 +150,12 @@ float4	PS( PS_IN _In ) : COLOR
 		projHitPosition = float4( projCurrentPos, 0.0 );	// W set to 0 if no hit
 
 	float4	opahwcte_2 = projHitPosition;
-	float	tmpvar_37 = abs( projHitPosition.x - 0.5 );
 
-	float4 acccols_8 = float4( 0.0, 0.0, 0.0, 0.0 );
-	if ( _SSRRcomposeMode > 0.0 )
-	{
-		float4 tmpvar_38;
-		tmpvar_38.w = 0.0;
-		tmpvar_38.xyz = SourceColor.xyz;
-		acccols_8 = tmpvar_38;
-	}
-
-	if ( tmpvar_37 > 0.5 )
+	float4 acccols_8 = _SSRRcomposeMode > 0.0 ? float4( SourceColor.xyz, 0.0 ) : float4( 0.0, 0.0, 0.0, 0.0 );
+	if ( abs( projHitPosition.x - 0.5 ) > 0.5 || abs( projHitPosition.y - 0.5 ) > 0.5 )
 		return acccols_8;
 
-	if ( abs( projHitPosition.y - 0.5 ) > 0.5 )
-		return acccols_8;
-
-	if ( 1.0 / (_ZBufferParams.x * projHitPosition.z + _ZBufferParams.y) > _maxDepthCull )
+	if ( UnProject( projHitPosition.z ) > _maxDepthCull )
 		return float4( 0.0, 0.0, 0.0, 0.0 );
 
 	if ( projHitPosition.z < 0.1 )
@@ -186,8 +179,8 @@ float4	PS( PS_IN _In ) : COLOR
 			if ( i_49_43 >= maxfeis_46 )
 				break;
 
-			float	tmpvar_51 = 1.0 / (_ZBufferParams.x * _tex2Dlod( _CameraDepthTexture, float4(oifejef_48.xy, 0, 0.0) ).x + _ZBufferParams.y);
-			float	tmpvar_52 = 1.0 / (_ZBufferParams.x * oifejef_48.z + _ZBufferParams.y);
+			float	tmpvar_51 = UnProject( _tex2Dlod( _CameraDepthTexture, float4(oifejef_48.xy, 0, 0.0) ).x );
+			float	tmpvar_52 = UnProject( oifejef_48.z );
 			if ( tmpvar_51 < tmpvar_52 )
 			{
 				if ( tmpvar_52 - tmpvar_51 < _bias )
