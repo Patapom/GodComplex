@@ -58,7 +58,6 @@ PS_IN VS( appdata_img v )
 
 float4	PS( PS_IN _In ) : COLOR
 {
-	float4 opahwcte_2;
 	float4 Result = 0.0;
 	float4 SourceColor = _tex2Dlod(_MainTex, float4( _In.uv, 0, 0.0 ) );
 
@@ -76,12 +75,6 @@ float4	PS( PS_IN _In ) : COLOR
 
 	if ( Z > _maxDepthCull )
 		return 0.0;
-
-
-	float4 acccols_8;
-
-
-
 
 	int tmpvar_23 = int(_maxStep);
 
@@ -139,7 +132,7 @@ float4	PS( PS_IN _In ) : COLOR
 		float	CurrentZ = 1.0 / (_ZBufferParams.x * projCurrentPos.z + _ZBufferParams.y);
 		if ( ScreenZ < CurrentZ - 1e-06 )
 		{	// Got a hit
-			projHitPosition = float4( projCurrentPos, 1.0 );
+			projHitPosition = float4( projCurrentPos, 1.0 );	// W set to 1
 			globalHitValid = true;
 			break;
 		}
@@ -149,11 +142,12 @@ float4	PS( PS_IN _In ) : COLOR
 	}
 
 	if ( !globalHitValid )
-		projHitPosition = float4( projCurrentPos, 0.0 );
+		projHitPosition = float4( projCurrentPos, 0.0 );	// W set to 0 if no hit
 
-	opahwcte_2 = projHitPosition;
-	float tmpvar_37 = abs( projHitPosition.x - 0.5 );
-	acccols_8 = float4(0.0, 0.0, 0.0, 0.0);
+	float4	opahwcte_2 = projHitPosition;
+	float	tmpvar_37 = abs( projHitPosition.x - 0.5 );
+
+	float4 acccols_8 = float4( 0.0, 0.0, 0.0, 0.0 );
 	if ( _SSRRcomposeMode > 0.0 )
 	{
 		float4 tmpvar_38;
@@ -175,72 +169,63 @@ float4	PS( PS_IN _In ) : COLOR
 		return float4( 0.0, 0.0, 0.0, 0.0 );
 
 	if ( projHitPosition.w == 1.0 )
-	{
-	int j_40;
-	float4 greyfsd_41;
-	float3 poffses_42;
-	int i_49_43;
-	bool fjekfesa_44;
-	float4 alsdmes_45;
-	int maxfeis_46;
-	float3 refDir_44_47;
-	float3 oifejef_48;
-	float3 tmpvar_49;
-	tmpvar_49 = projHitPosition.xyz - globalRay;
-	float3 tmpvar_50;
-	tmpvar_50 = (lkjwejhsdkl_1 * (tmpvar_31 / tmpvar_32));
-	refDir_44_47 = tmpvar_50;
-	maxfeis_46 = int(_maxFineStep);
-	fjekfesa_44 = bool(0);
-	poffses_42 = tmpvar_49;
-	oifejef_48 = (tmpvar_49 + tmpvar_50);
-	i_49_43 = 0;
-	j_40 = 0;
-	for (int j_40 = 0; j_40 < 20; )
-	{
-		if ( i_49_43 >= maxfeis_46 )
-			break;
-
-		float	tmpvar_51 = 1.0 / (_ZBufferParams.x * _tex2Dlod( _CameraDepthTexture, float4(oifejef_48.xy, 0, 0.0) ).x + _ZBufferParams.y);
-		float	tmpvar_52 = 1.0 / (_ZBufferParams.x * oifejef_48.z + _ZBufferParams.y);
-		if ( tmpvar_51 < tmpvar_52 )
+	{	// Fine step tracing
+		float4	greyfsd_41;
+		float4	alsdmes_45;
+		float3	tmpvar_49 = projHitPosition.xyz - globalRay;
+		float3	tmpvar_50 = lkjwejhsdkl_1 * (tmpvar_31 / tmpvar_32);
+		float3	refDir_44_47 = tmpvar_50;
+		int		maxfeis_46 = int(_maxFineStep);
+		bool	fjekfesa_44 = false;
+		float3	poffses_42 = tmpvar_49;
+		float3	oifejef_48 = tmpvar_49 + tmpvar_50;
+		int		i_49_43 = 0;
+		int		j_40 = 0;
+		for (int j_40 = 0; j_40 < 20; )
 		{
-			if ( tmpvar_52 - tmpvar_51 < _bias )
-			{
-				greyfsd_41.w = 1.0;
-				greyfsd_41.xyz = oifejef_48;
-				alsdmes_45 = greyfsd_41;
-				fjekfesa_44 = bool(1);
+			if ( i_49_43 >= maxfeis_46 )
 				break;
-			};
-			float3 tmpvar_53;
-			tmpvar_53 = (refDir_44_47 * 0.5);
-			refDir_44_47 = tmpvar_53;
-			oifejef_48 = (poffses_42 + tmpvar_53);
+
+			float	tmpvar_51 = 1.0 / (_ZBufferParams.x * _tex2Dlod( _CameraDepthTexture, float4(oifejef_48.xy, 0, 0.0) ).x + _ZBufferParams.y);
+			float	tmpvar_52 = 1.0 / (_ZBufferParams.x * oifejef_48.z + _ZBufferParams.y);
+			if ( tmpvar_51 < tmpvar_52 )
+			{
+				if ( tmpvar_52 - tmpvar_51 < _bias )
+				{
+					greyfsd_41.w = 1.0;
+					greyfsd_41.xyz = oifejef_48;
+					alsdmes_45 = greyfsd_41;
+					fjekfesa_44 = bool(1);
+					break;
+				};
+				float3 tmpvar_53;
+				tmpvar_53 = (refDir_44_47 * 0.5);
+				refDir_44_47 = tmpvar_53;
+				oifejef_48 = (poffses_42 + tmpvar_53);
+			}
+			else
+			{
+				poffses_42 = oifejef_48;
+				oifejef_48 = (oifejef_48 + refDir_44_47);
+			}
+
+			i_49_43 = (i_49_43 + 1);
+			j_40 = (j_40 + 1);
 		}
-		else
+
+		if ( fjekfesa_44 == bool(0) )
 		{
-			poffses_42 = oifejef_48;
-			oifejef_48 = (oifejef_48 + refDir_44_47);
+			float4 tmpvar_55_54;
+			tmpvar_55_54.w = 0.0;
+			tmpvar_55_54.xyz = oifejef_48;
+			alsdmes_45 = tmpvar_55_54;
+			fjekfesa_44 = bool(1);
 		}
 
-		i_49_43 = (i_49_43 + 1);
-		j_40 = (j_40 + 1);
+		opahwcte_2 = alsdmes_45;
 	}
 
-	if ( fjekfesa_44 == bool(0) )
-	{
-		float4 tmpvar_55_54;
-		tmpvar_55_54.w = 0.0;
-		tmpvar_55_54.xyz = oifejef_48;
-		alsdmes_45 = tmpvar_55_54;
-		fjekfesa_44 = bool(1);
-	}
-
-	opahwcte_2 = alsdmes_45;
-	}
-
-	if ((opahwcte_2.w < 0.01))
+	if ( opahwcte_2.w < 0.01 )
 	{
 		Result = acccols_8;
 	}
