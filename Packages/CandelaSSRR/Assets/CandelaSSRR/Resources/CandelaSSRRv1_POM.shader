@@ -34,7 +34,7 @@ uniform float		_maxDepthCull;
 uniform float		_fadePower;
 uniform sampler2D	_MainTex;
 //uniform float4		_ZBufferParams;
-//uniform float4		_ScreenParams;
+//uniform float4		_ScreenParams;	// XY=screen size
 
 #if TARGET_GLSL
 #define	_tex2Dlod( s, uv ) tex2D( s, uv.xy )	// SIMPLE AS THAT???? Ôõ
@@ -63,25 +63,18 @@ float	UnProject( float _Zproj )
 
 float4	PS( PS_IN _In ) : COLOR
 {
-	float4 Result = 0.0;
 	float4 SourceColor = _tex2Dlod(_MainTex, float4( _In.uv, 0, 0.0 ) );
+	if ( SourceColor.w == 0.0 )
+		return 0.0;
 
-	if ( SourceColor.w == 0.0 ) {
-		Result = float4(0.0, 0.0, 0.0, 0.0);
-		return Result;
-	}
+	float4 Result = _SSRRcomposeMode > 0.0 ? float4( SourceColor.xyz, 0.0 ) : 0.0;
 
-//return float4( 1, 1, 0, 1 );
-
-//*
 	float	Zproj = _tex2Dlod(_CameraDepthTexture, float4(_In.uv, 0, 0.0)).x;
 	float	Z = UnProject( Zproj );
 //return 80 * Z;
 
 	if ( Z > _maxDepthCull )
 		return 0.0;
-
-	int tmpvar_23 = int(_maxStep);
 
 	// Compute position in projected space
 	float4	projPosition = float4( (_In.uv * 2.0) - 1.0, Zproj, 1.0 );
@@ -147,17 +140,15 @@ float4	PS( PS_IN _In ) : COLOR
 	if ( !globalHitValid )
 		projHitPosition = float4( projCurrentPos, 0.0 );	// W set to 0 if no hit
 
-	float4 acccols_8 = _SSRRcomposeMode > 0.0 ? float4( SourceColor.xyz, 0.0 ) : float4( 0.0, 0.0, 0.0, 0.0 );
 	if ( abs( projHitPosition.x - 0.5 ) > 0.5 || abs( projHitPosition.y - 0.5 ) > 0.5 )
-		return acccols_8;
+		return Result;
 
 	if ( UnProject( projHitPosition.z ) > _maxDepthCull || projHitPosition.z < 0.1 )
 		return float4( 0.0, 0.0, 0.0, 0.0 );
 
 	if ( projHitPosition.w == 1.0 )
 	{	// Fine step tracing using binary search (i.e. dichotomic interval reduction)
-		float4	alsdmes_45;
-		float3	projStartPosition = projHitPosition.xyz - globalRay;
+		float3	projStartPosition = projHitPosition.xyz - globalRay;	// Go back one step, before the rough intersection
 		float3	originalLengthFineRay = baseRay * ((2.0 / _ScreenParams.x) / baseRayUVLength);
 		float3	fineRay = originalLengthFineRay;	// Start with full length fine ray
 
@@ -165,16 +156,13 @@ float4	PS( PS_IN _In ) : COLOR
 		bool	fineHitValid = false;
 		float3	projIntervalPositionStart = projStartPosition;
 		float3	projIntervalPositionEnd = projStartPosition + fineRay;
-		for ( int FineStepIndex=0; FineStepIndex < 20; FineStepIndex++ )
+		for ( int FineStepIndex=0; FineStepIndex < MaxFineStepsCount; FineStepIndex++ )
 		{
-			if ( FineStepIndex >= MaxFineStepsCount )
-				break;
-
 			float	ScreenZ = UnProject( _tex2Dlod( _CameraDepthTexture, float4( projIntervalPositionEnd.xy, 0, 0.0 ) ).x );
 			float	CurrentZ = UnProject( projIntervalPositionEnd.z );
 			if ( ScreenZ < CurrentZ )
 			{	// End position is in front of current position
-				// Reduce interval length and recompute end position
+				// Reduce interval length and recompute end position (not moving start position, we have a hit sooner!)
 				if ( CurrentZ - ScreenZ < _bias )
 				{	// If discrepancy is too low then assume a correct hit
 					projHitPosition = float4( projIntervalPositionEnd, 1.0 );
@@ -182,8 +170,8 @@ float4	PS( PS_IN _In ) : COLOR
 					break;
 				}
 
-				fineRay *= 0.5;	// Reduce marching step
-				projIntervalPositionEnd = projIntervalPositionStart + fineRay;	// New end position is at the end of the interval
+				fineRay *= 0.5;	// Halve marching step
+				projIntervalPositionEnd = projIntervalPositionStart + fineRay;	// New end position is at the end of the new interval
 			}
 			else
 			{	// Make the interval march forward
@@ -197,10 +185,13 @@ float4	PS( PS_IN _In ) : COLOR
 	}
 
 	if ( projHitPosition.w < 0.01 )
-		return acccols_8;
+		return Result;	// Opacity too low, no hit...
 
+	// Retrieve scene's color at new UV
 	Result.xyz = _tex2Dlod( _MainTex, float4( projHitPosition.xy, 0, 0.0 ) ).xyz;
-	Result.w = (((projHitPosition.w * (1.0 - (Z / _maxDepthCull))) * (1.0 - pow ( reflectionDistance / float(tmpvar_23), _fadePower))) * pow (clamp (((dot (normalize(csReflectedView), normalize(csPosition).xyz) + 1.0) + (_fadePower * 0.1)), 0.0, 1.0), _fadePower));
+	Result.w = (projHitPosition.w * (1.0 - (Z / _maxDepthCull))
+		* (1.0 - pow( reflectionDistance / _maxStep, _fadePower)))
+		* pow( saturate( dot( normalize(csReflectedView), normalize(csPosition).xyz ) + 1.0 + 0.1 * _fadePower ), _fadePower );
 //*/
 
 	return Result;
