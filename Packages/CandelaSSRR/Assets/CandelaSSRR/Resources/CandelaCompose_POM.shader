@@ -84,8 +84,10 @@ half4 frag (v2f i) : COLOR
 	color = screenFade;
 	
 
-if ( _DEBUGShowReflectionTexture )
+if ( _DEBUGShowReflectionTexture == 1 )
 	color = reflections;
+else if ( _DEBUGShowReflectionTexture == 2 )
+	color = reflections.wwww;
 
 	
 	return color;
