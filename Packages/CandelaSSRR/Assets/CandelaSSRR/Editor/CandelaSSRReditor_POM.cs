@@ -123,6 +123,13 @@ public class CandelaSSRReditor_POM : Editor
 cdla.DEBUG_ShowReflectionTexture = EditorGUILayout.Toggle( "(DEBUG) Show Reflection Texture", cdla.DEBUG_ShowReflectionTexture );
 		
 		GUILayout.EndHorizontal();
+
+		GUILayout.BeginHorizontal();
+
+//DEBUG POM
+cdla.DEBUG_ShowReflectionTextureAlpha = EditorGUILayout.Toggle( "(DEBUG) Show Reflection Texture Alpha", cdla.DEBUG_ShowReflectionTextureAlpha );
+		
+		GUILayout.EndHorizontal();
 		
 		cdla.ScreenFadePower  = EditorGUILayout.Slider("ScreenFadePower", cdla.ScreenFadePower, 0.0f, 10.0f);
 		cdla.ScreenFadeSpread = EditorGUILayout.Slider("ScreenFadeSpread", cdla.ScreenFadeSpread, 0.0f, 3.0f);

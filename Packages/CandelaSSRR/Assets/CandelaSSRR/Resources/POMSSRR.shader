@@ -63,6 +63,8 @@ float4	PS( PS_IN _In ) : COLOR
 	if ( SourceColor.w == 0.0 )
 		return 0.0;
 
+//return SourceColor.w;
+
 	float4	Result = _SSRRcomposeMode > 0.0 ? float4( SourceColor.xyz, 0.0 ) : 0.0;
 
 	float	Zproj = _tex2Dlod( _CameraDepthTexture, float4( _In.uv, 0, 0.0 ) ).x;
@@ -112,7 +114,8 @@ float4	PS( PS_IN _In ) : COLOR
 	float	reflectionDistance = 0.0;
 
 	float4	projHitPosition = float4( float3( _In.uv, Zproj ) + globalRay, 0.0 );
-	float	ScreenZ, CurrentZ;
+	float	OldScreenZ = Z, OldCurrentZ = Z;
+	float	ScreenZ = Z, CurrentZ = Z;
 	for ( int GlobalStepIndex=0; GlobalStepIndex < MaxGlobalStepsCount; GlobalStepIndex++ )
 	{
 		ScreenZ = UnProject( _tex2Dlod( _CameraDepthTexture, float4( projHitPosition.xy, 0, 0.0 ) ).x );
@@ -125,71 +128,98 @@ float4	PS( PS_IN _In ) : COLOR
 
 		projHitPosition.xyz += globalRay;
 		reflectionDistance += 1.0;
+
+		OldScreenZ = ScreenZ;
+		OldCurrentZ = CurrentZ;
 	}
 
+	// POM: These 2 cases should default to global cube map fetch in ray direction
 	if ( abs( projHitPosition.x - 0.5 ) > 0.5 || abs( projHitPosition.y - 0.5 ) > 0.5 )
 		return Result;	// Out of screen...
-
-	if ( UnProject( projHitPosition.z ) > _maxDepthCull || projHitPosition.z < 0.1 )
+	if ( CurrentZ > _maxDepthCull || projHitPosition.z < 0.1 )
 		return float4( 0.0, 0.0, 0.0, 0.0 );	// Out of Z range
 
+	// Fine step tracing using binary search (i.e. dichotomic interval reduction)
 	if ( projHitPosition.w > 1.0-0.01 )
-	{	// Fine step tracing using binary search (i.e. dichotomic interval reduction)
+	{
+#if 1
 		projHitPosition.w = 0.0;	// Reset intersection blend to "no intersection"
 
 		int		MaxFineStepsCount = int( _maxFineStep );
 
 		projHitPosition.xyz -= globalRay;					// Go back one step, before the rough intersection
+//		reflectionDistance -= 1.0;
 		float3	projIntervalPositionStart = projHitPosition.xyz;
 		projHitPosition.xyz += baseRay;						// Interval end is one step forward
-		float3	fineRay = baseRay;							// Start with full length base ray
+		float4	fineRay = float4( baseRay, 1.0 );			// Start with full length base ray
 
 		for ( int FineStepIndex=0; FineStepIndex < MaxFineStepsCount; FineStepIndex++ )
 		{
-			float	FineScreenZ = UnProject( _tex2Dlod( _CameraDepthTexture, float4( projHitPosition.xy, 0, 0.0 ) ).x );
-			float	FineCurrentZ = UnProject( projHitPosition.z );
-			if ( FineScreenZ < FineCurrentZ )
+			ScreenZ = UnProject( _tex2Dlod( _CameraDepthTexture, float4( projHitPosition.xy, 0, 0.0 ) ).x );
+			CurrentZ = UnProject( projHitPosition.z );
+			if ( ScreenZ < CurrentZ )
 			{	// Screen Z is in front of current Z
-#if 0
 				// Reduce interval length and recompute end position (not moving start position since we have a hit in that interval)
-				if ( FineCurrentZ - FineScreenZ < _bias )
+				if ( CurrentZ - ScreenZ < _bias )
 				{	// If discrepancy is too low then assume a correct hit
 					projHitPosition.w = 1.0;
+// 
+// #if 1				// POM: Compute fine intersection
+// 					float	Z0 = CurrentZ;
+// 					float	DZ0 = OldCurrentZ - CurrentZ;
+// 					float	Z1 = ScreenZ;
+// 					float	DZ1 = OldScreenZ - ScreenZ;
+// 					float	t = (Z1 - Z0) / (DZ0 - DZ1);
+// 					projHitPosition.xyz -= t * fineRay;
+// #endif
 					break;
 				}
 
 				fineRay *= 0.5;	// Halve marching step
-				projHitPosition.xyz = projIntervalPositionStart + fineRay;	// New end position is at the end of the new interval
-
-#else
-				// POM: Compute fine intersection
-				float	Z0 = CurrentZ;
-				float	DZ0 = FineCurrentZ - CurrentZ;
-				float	Z1 = ScreenZ;
-				float	DZ1 = FineScreenZ - ScreenZ;
-				float	t = (DZ1 - DZ0) / (Z0 - Z1);
-				projHitPosition = float4( lerp( projIntervalPositionStart, projHitPosition, t ), 1.0 );
-				break;
-#endif
+				projHitPosition.xyz = projIntervalPositionStart + fineRay.xyz;	// New end position is at the end of the new interval
+//				reflectionDistance += fineRay.w;
 			}
 			else
 			{	// Make the interval march forward
 				projIntervalPositionStart = projHitPosition.xyz;
 				projHitPosition.xyz += baseRay;
+//				reflectionDistance += 1.0;
 
-				ScreenZ = FineScreenZ;
-				CurrentZ = FineCurrentZ;
+				OldScreenZ = ScreenZ;
+				OldCurrentZ = CurrentZ;
 			}
 		}
+#endif
+
+#if 1	// POM: Compute fine intersection
+		float	Z0 = CurrentZ;
+		float	DZ0 = OldCurrentZ - CurrentZ;
+		float	Z1 = ScreenZ;
+		float	DZ1 = OldScreenZ - ScreenZ;
+		float	t = (Z1 - Z0) / (DZ0 - DZ1);
+//		projHitPosition.xyz -= t * globalRay;
+		projHitPosition.xyz -= t * fineRay.xyz;
+//		reflectionDistance -= t * fineRay.w;
+#endif
 	}
 
 	if ( projHitPosition.w < 0.01 )
 		return Result;	// Opacity too low, no hit...
 
+// POM: Test better reflection distance computation (works nicely)
+float4	csEndPosition = mul( _ProjectionInv, float4( 2.0 * projHitPosition.xy - 1.0, projHitPosition.z, 1.0 ) );
+		csEndPosition = csEndPosition / csEndPosition.w;
+reflectionDistance = length( csEndPosition.xyz - csPosition.xyz );
+
+
 	// Retrieve scene's color at new UV
 	Result.xyz = _tex2Dlod( _MainTex, float4( projHitPosition.xy, 0, 0.0 ) ).xyz;
-	Result.w = projHitPosition.w * (1.0 - (Z / _maxDepthCull)) * (1.0 - pow( reflectionDistance / _maxStep, _fadePower))
-			 * pow( saturate( dot( normalize(csReflectedView), normalize(csPosition).xyz ) + 1.0 + 0.1 * _fadePower ), _fadePower );
+	Result.w = projHitPosition.w
+ 			 * (1.0 - (Z / _maxDepthCull))
+ 			 * (1.0 - pow( reflectionDistance / _maxStep, _fadePower ))
+	 		 * pow( saturate( dot( normalize(csReflectedView), normalize(csPosition).xyz ) + 1.0 + 0.1 * _fadePower ), _fadePower );
+
+//	Result.w = reflectionDistance * _fadePower;
 //*/
 
 	return Result;

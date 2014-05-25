@@ -70,43 +70,40 @@ v2f vert( appdata_img v )
 
 half4 frag (v2f i) : COLOR
 {
-	if(tex2Dlod(_CameraDepthTexture, float4(i.uv,0,0)).x > 0.99) discard;
+	if ( tex2Dlod(_CameraDepthTexture, float4(i.uv,0,0)).x > 0.99 )
+		discard;
 
-	half4 col = tex2Dlod(_MainTex, float4(i.uv,0,0));
-	float p2 = col.w;
-	int alphaPointsFound = 1;
-	
-	half4 centerSample = tex2Dlod(_CameraDepthNormalsTexture, float4(i.uv,0,0));
-	int numOfPointsFound = 1;
-	float2 sampleUV;
-	int s;
-	half edgeCheck;
-	
+	half4	centerSample = tex2Dlod(_CameraDepthNormalsTexture, float4(i.uv,0,0));
+	half4	col = tex2Dlod(_MainTex, float4(i.uv,0,0));
+	float	p2 = col.w;
+	int		alphaPointsFound = 1;
+	int		numOfPointsFound = 1;
+	float2	sampleUV;
+	int		s;
+	half	edgeCheck;
 	
 	
 	//----------------------------------------------------------------------
 	//WS position
-	float  grazingAngle = 0;
-	float4 worldnorm 	  = tex2Dlod(_CameraNormalsTexture, float4(i.uv,0,0));
-	if(_GrazeBlurPower>0)
+	float	grazingAngle = 0;
+	float4	worldnorm = tex2Dlod(_CameraNormalsTexture, float4(i.uv,0,0));
+	if ( _GrazeBlurPower > 0 )
 	{
-    float4 posWS = mul(_ViewProjectInverse, float4(i.uv * 2 - 1, tex2Dlod(_CameraDepthTexture, float4(i.uv,0,0)).x, 1));
- 	posWS = posWS/posWS.w;
-    grazingAngle   = pow(1-saturate(dot(normalize(_WorldSpaceCameraPos-posWS.xyz),worldnorm.xyz*2.0-1.0)),5);
+		float4	posWS = mul(_ViewProjectInverse, float4(i.uv * 2 - 1, tex2Dlod(_CameraDepthTexture, float4(i.uv,0,0)).x, 1));
+				posWS = posWS/posWS.w;
+		grazingAngle = pow( 1-saturate( dot( normalize( _WorldSpaceCameraPos-posWS.xyz ), worldnorm.xyz*2.0-1.0 ) ), 5.0 );
     }
-    //----------------------------------------------------------------------
-	
-	float blurRad =  _blurSampleRadius*saturate((1-worldnorm.w) + grazingAngle*_GrazeBlurPower) + pow((1-col.w),_DistanceBlurStart)*_DistanceBlurRadius;
-	
-	float alphaBlurRad = 0.75f;
+
+	//----------------------------------------------------------------------
+	float	blurRad =  _blurSampleRadius*saturate((1-worldnorm.w) + grazingAngle*_GrazeBlurPower) + pow((1-col.w),_DistanceBlurStart)*_DistanceBlurRadius;
+	float	alphaBlurRad = 0.75f;
 	
 	//NEGATIVE TEXEL SIDE
 	for(s=1;s<4;s++)
 	{	
-		sampleUV		= i.uv + (float2(-_MainTex_TexelSize.x*s,0)*blurRad);
-		edgeCheck 		= CheckSame(centerSample.xy, DecodeFloatRG(centerSample.zw), tex2Dlod(_CameraDepthNormalsTexture, float4(sampleUV,0,0)));
-		
-		if(edgeCheck > 0)//SamplePoint Ok..
+		sampleUV = i.uv + float2(-_MainTex_TexelSize.x*s,0)*blurRad;
+		edgeCheck = CheckSame(centerSample.xy, DecodeFloatRG(centerSample.zw), tex2Dlod(_CameraDepthNormalsTexture, float4(sampleUV,0,0)));
+		if ( edgeCheck > 0 )//SamplePoint Ok..
 		{
 			col += tex2Dlod(_MainTex, float4(sampleUV,0,0));
 			numOfPointsFound++;
@@ -117,30 +114,6 @@ half4 frag (v2f i) : COLOR
 		}
 		
 	}
-	
-	//------------------------------------------------------------------------------
-	//ALPHA BLUR
-	if(worldnorm.w > 0.7)
-	{
-		for(s=1;s<4;s++)
-		{
-		 sampleUV		= i.uv + (float2(-_MainTex_TexelSize.x*s,0)*alphaBlurRad);
-		 edgeCheck 		= CheckSame(centerSample.xy, DecodeFloatRG(centerSample.zw), tex2Dlod(_CameraDepthNormalsTexture, float4(sampleUV,0,0)));
-		 if(edgeCheck > 0)//SamplePoint Ok..
-		 {
-		  p2 += tex2Dlod(_MainTex, float4(sampleUV,0,0)).w;
-		  alphaPointsFound++;
-		 }
-		 else
-		 {
-		  break;
-		 }
-		
-		}
-	}
-	//------------------------------------------------------------------------------
-	
-	
 	//POSITIVE TEXEL SIDE
 	for(s=1;s<4;s++)
 	{	
@@ -161,29 +134,41 @@ half4 frag (v2f i) : COLOR
 	
 	//------------------------------------------------------------------------------
 	//ALPHA BLUR
-	if(worldnorm.w > 0.7)
+	if ( worldnorm.w > 0.7 )
 	{
 		for(s=1;s<4;s++)
 		{
-		 sampleUV		= i.uv + (float2(+_MainTex_TexelSize.x*s,0)*alphaBlurRad);
-		 edgeCheck 		= CheckSame(centerSample.xy, DecodeFloatRG(centerSample.zw), tex2Dlod(_CameraDepthNormalsTexture, float4(sampleUV,0,0)));
-		 if(edgeCheck > 0)//SamplePoint Ok..
-		 {
-		  p2 += tex2Dlod(_MainTex, float4(sampleUV,0,0)).w;
-		  alphaPointsFound++;
-		 }
-		 else
-		 {
-		  break;
-		 }
-		
+			sampleUV = i.uv + (float2(-_MainTex_TexelSize.x*s,0)*alphaBlurRad);
+			edgeCheck = CheckSame(centerSample.xy, DecodeFloatRG(centerSample.zw), tex2Dlod(_CameraDepthNormalsTexture, float4(sampleUV,0,0)));
+			 if( edgeCheck > 0 )//SamplePoint Ok..
+			 {
+				p2 += tex2Dlod(_MainTex, float4(sampleUV,0,0)).w;
+				alphaPointsFound++;
+			 }
+			 else
+			 {
+				break;
+			 }
+		}
+		for(s=1;s<4;s++)
+		{
+			sampleUV = i.uv + (float2(+_MainTex_TexelSize.x*s,0)*alphaBlurRad);
+			edgeCheck = CheckSame(centerSample.xy, DecodeFloatRG(centerSample.zw), tex2Dlod(_CameraDepthNormalsTexture, float4(sampleUV,0,0)));
+			if(edgeCheck > 0)//SamplePoint Ok..
+			{
+				p2 += tex2Dlod(_MainTex, float4(sampleUV,0,0)).w;
+				alphaPointsFound++;
+			}
+			else
+			{
+				break;
+			}
 		}
 	}
-	//------------------------------------------------------------------------------
 	
 	col /= numOfPointsFound;
 	
-	if(worldnorm.w > 0.7)
+	if ( worldnorm.w > 0.7 )
 		col.w = p2/alphaPointsFound;
 	
 	return col;
@@ -279,12 +264,12 @@ half4 frag (v2f i) : COLOR
 	{
     float4 posWS = mul(_ViewProjectInverse, float4(i.uv * 2 - 1, tex2Dlod(_CameraDepthTexture, float4(i.uv,0,0)).x, 1));
  	posWS = posWS/posWS.w;
-    grazingAngle   = pow(1-saturate(dot(normalize(_WorldSpaceCameraPos-posWS.xyz),worldnorm.xyz*2.0-1.0)),5);
+    grazingAngle   = pow(1-saturate(dot(normalize(_WorldSpaceCameraPos-posWS.xyz),worldnorm.xyz*2.0-1.0)),5);	// Schlick?
     }
     //----------------------------------------------------------------------
 	
-	float blurRad =  _blurSampleRadius*saturate((worldnorm.w) + grazingAngle*_GrazeBlurPower) + pow((1-col.w),_DistanceBlurStart)*_DistanceBlurRadius;
-	
+	float blurRad = _blurSampleRadius * saturate( worldnorm.w + grazingAngle*_GrazeBlurPower )
+				  + pow( 1.0-col.w, _DistanceBlurStart ) * _DistanceBlurRadius;
 	float alphaBlurRad = 0.75f;
 	
 	//NEGATIVE TEXEL SIDE

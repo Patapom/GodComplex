@@ -53,27 +53,27 @@ half4 frag (v2f i) : COLOR
 	
 	//WS position
 	float  grazingAngle = 0;
-	float4 worldnorm 	  = tex2Dlod(_CameraNormalsTexture, float4(i.uv,0,0));
-	if(_GrazeBlurPower>0)
+	float4 worldnorm = tex2Dlod(_CameraNormalsTexture, float4(i.uv,0,0));
+	if ( _GrazeBlurPower > 0 )
 	{
-    float4 posWS = mul(_ViewProjectInverse, float4(i.uv * 2 - 1, tex2Dlod(_CameraDepthTexture, float4(i.uv,0,0)).x, 1));
- 	posWS = posWS/posWS.w;
-    grazingAngle   = pow(1-saturate(dot(normalize(_WorldSpaceCameraPos-posWS.xyz),worldnorm.xyz*2.0-1.0)),5);
+		float4	posWS = mul(_ViewProjectInverse, float4(i.uv * 2 - 1, tex2Dlod(_CameraDepthTexture, float4(i.uv,0,0)).x, 1));
+				posWS = posWS/posWS.w;
+		grazingAngle = pow(1-saturate(dot(normalize(_WorldSpaceCameraPos-posWS.xyz),worldnorm.xyz*2.0-1.0)),5);
     }
     
 	float blurRad =  _BlurRadius*saturate((1-worldnorm.w) + grazingAngle*_GrazeBlurPower) + pow((1-p1.w),_DistanceBlurStart)*_DistanceBlurRadius;
 	
 	if(worldnorm.w > 0.7)
 	{
-	float alphaBlurRad = 0.75f;
-	p2 	 	 += tex2Dlod( _MainTex, float4(i.uv + float2(-_MainTex_TexelSize.x,   0)*alphaBlurRad,0,0)).w
-		   	  + tex2Dlod( _MainTex, float4(i.uv + float2(-_MainTex_TexelSize.x*2, 0)*alphaBlurRad,0,0)).w
-		      + tex2Dlod( _MainTex, float4(i.uv + float2(-_MainTex_TexelSize.x*3, 0)*alphaBlurRad,0,0)).w
-		   	  + tex2Dlod( _MainTex, float4(i.uv + float2(+_MainTex_TexelSize.x,   0)*alphaBlurRad,0,0)).w
-		   	  + tex2Dlod( _MainTex, float4(i.uv + float2(+_MainTex_TexelSize.x*2, 0)*alphaBlurRad,0,0)).w
-		   	  + tex2Dlod( _MainTex, float4(i.uv + float2(+_MainTex_TexelSize.x*3, 0)*alphaBlurRad,0,0)).w;
+		float alphaBlurRad = 0.75f;
+		p2 	 	 += tex2Dlod( _MainTex, float4(i.uv + float2(-_MainTex_TexelSize.x,   0)*alphaBlurRad,0,0)).w
+		   		  + tex2Dlod( _MainTex, float4(i.uv + float2(-_MainTex_TexelSize.x*2, 0)*alphaBlurRad,0,0)).w
+				  + tex2Dlod( _MainTex, float4(i.uv + float2(-_MainTex_TexelSize.x*3, 0)*alphaBlurRad,0,0)).w
+		   		  + tex2Dlod( _MainTex, float4(i.uv + float2(+_MainTex_TexelSize.x,   0)*alphaBlurRad,0,0)).w
+		   		  + tex2Dlod( _MainTex, float4(i.uv + float2(+_MainTex_TexelSize.x*2, 0)*alphaBlurRad,0,0)).w
+		   		  + tex2Dlod( _MainTex, float4(i.uv + float2(+_MainTex_TexelSize.x*3, 0)*alphaBlurRad,0,0)).w;
 		   	  
-	p2 = p2*0.1428571428571429; 	  
+		p2 = p2*0.1428571428571429; 	  
 	} 
 		
 		 	  
@@ -89,8 +89,8 @@ half4 frag (v2f i) : COLOR
 		   	  
 	half4 final =  p1*0.1428571428571429;
 	
-	if(worldnorm.w > 0.7)
-	final.w = p2;
+	if ( worldnorm.w > 0.7 )
+		final.w = p2;
 	
 	return final;
 	

@@ -56,6 +56,7 @@ public class CandelaSSRR_POM : MonoBehaviour
 	public bool InvertRoughness = false;
 
 public bool DEBUG_ShowReflectionTexture = false;
+public bool DEBUG_ShowReflectionTextureAlpha = false;
 
 	//------Internal Use-------------------
 	private Shader   CustomDepth_SHADER;
@@ -107,7 +108,8 @@ public bool DEBUG_ShowReflectionTexture = false;
 			
 			//Create The Materials Required
 //			SSRR_MATERIAL 		    = new Material(Shader.Find("Hidden/CandelaSSRRv1"));
-SSRR_MATERIAL 		    = new Material(Shader.Find("Hidden/CandelaSSRRv1_POM"));
+//SSRR_MATERIAL 		    = new Material(Shader.Find("Hidden/CandelaSSRRv1_POM"));
+SSRR_MATERIAL 		    = new Material(Shader.Find("Hidden/POMSSRR"));
 			SSRR_MATERIAL.hideFlags = HideFlags.HideAndDontSave;
 //			POST_COMPOSE_MATERIAL   = new Material(Shader.Find("Hidden/CandelaCompose"));
 POST_COMPOSE_MATERIAL   = new Material(Shader.Find("Hidden/CandelaCompose_POM"));
@@ -258,30 +260,33 @@ Graphics.Blit(source, reflectionTexture, SSRR_MATERIAL, 0 );	// Only 1 pass => d
 		
 		if(InvertRoughness) roughpass = 1;
 
-if ( !DEBUG_ShowReflectionTexture )
+if ( !DEBUG_ShowReflectionTexture && !DEBUG_ShowReflectionTextureAlpha )
 {	// ALLOW BLURRING ONLY IF NOT DEBUGGING
 
-		if(!BlurQualityHigh  && GlobalBlurRadius > 0)
+		if ( GlobalBlurRadius > 0 )
 		{
-			for(int i=0;i<HQ_BlurIterations;i++)
+			if (!BlurQualityHigh )
 			{
-			Graphics.Blit(reflectionTexture, bluredTexture, BLUR_MATERIALX,roughpass);
-			Graphics.Blit(bluredTexture, reflectionTexture, BLUR_MATERIALY,roughpass);
+				for(int i=0;i<HQ_BlurIterations;i++)
+				{
+				Graphics.Blit(reflectionTexture, bluredTexture, BLUR_MATERIALX,roughpass);
+				Graphics.Blit(bluredTexture, reflectionTexture, BLUR_MATERIALY,roughpass);
+				}
 			}
-		}
-		else if(BlurQualityHigh  && GlobalBlurRadius > 0)
-		{
-			for(int i=0;i<HQ_BlurIterations;i++)
+			else
 			{
-			Graphics.Blit(reflectionTexture, bluredTexture, BLUR_MATERIALX_EA,roughpass);
-			Graphics.Blit(bluredTexture, reflectionTexture, BLUR_MATERIALY_EA,roughpass);
-			}			
+				for(int i=0;i<HQ_BlurIterations;i++)
+				{
+				Graphics.Blit(reflectionTexture, bluredTexture, BLUR_MATERIALX_EA,roughpass);
+				Graphics.Blit(bluredTexture, reflectionTexture, BLUR_MATERIALY_EA,roughpass);
+				}			
+			}
 		}
 }		
 		reflectionTexture.SetGlobalShaderProperty("_SSRtexture");
 
 // POST_COMPOSE_MATERIAL.SetTexture( "_DEBUGShowReflectionTexture", reflectionTexture );
-POST_COMPOSE_MATERIAL.SetInt( "_DEBUGShowReflectionTexture", DEBUG_ShowReflectionTexture ? 1 : 0 );
+POST_COMPOSE_MATERIAL.SetInt( "_DEBUGShowReflectionTexture", DEBUG_ShowReflectionTexture ? (DEBUG_ShowReflectionTextureAlpha ? 2 : 1) : 0 );
 
 		Graphics.Blit(source , destination, POST_COMPOSE_MATERIAL);
 		

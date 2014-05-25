@@ -48,6 +48,7 @@
   <ItemGroup>
      <Compile Include="Assets\CandelaSSRR\Editor\CandelaSSRReditor.cs" />
      <Compile Include="Assets\CandelaSSRR\Editor\CandelaSSRReditor_POM.cs" />
+     <None Include="Assets\CandelaSSRR\Resources\POMSSRR.shader" />
      <None Include="Assets\CandelaSSRR\HelperShaders\Candela Bumped Specular PBS.shader" />
      <None Include="Assets\CandelaSSRR\HelperShaders\Candela Bumped Specular.shader" />
      <None Include="Assets\CandelaSSRR\HelperShaders\Candela Cubemap with SSR.shader" />
