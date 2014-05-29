@@ -32,7 +32,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			// Swatches
 			public int			SwatchWidth = 48;
 			public int			SwatchHeight = 32;
-			public float2[]		CustomSwatchSamplingLocations = new float2[0];	// In UV space
+			public float4[]		CustomSwatchSamplingLocations = new float4[0];	// In UV space. XY=Top Left corner, ZW=Bottom Right corner
 		}
 
 		/// <summary>
@@ -59,7 +59,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		}
 		private class	CustomSwatch : Swatch
 		{
-			public float2		Location;	// The location (in UV space) where the swatch color was taken
+			public float4		Location;	// The location (in UV space) where the swatch color was taken (XY=Top Left Corner, ZW=Bottom Right Corner)
 
 			public override void	Save( CalibratedTexture _Owner, XmlElement _SwatchElement )
 			{
@@ -182,8 +182,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				m_CustomSwatches[CustomSwatchIndex] = S;
 
 				S.Location = _Parms.CustomSwatchSamplingLocations[CustomSwatchIndex];
-				S.xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) _Source.BilinearSample( S.Location.x * _Source.Width, S.Location.y * _Source.Height ) );
-				S.xyY.z = _Database.Calibrate( S.xyY.z );	// Apply luminance calibration
+				S.xyY = ComputeAverageSwatchColor( _Database, _Source, new float2( S.Location.x, S.Location.y ), new float2( S.Location.z, S.Location.w ) );
 				S.Texture = BuildSwatch( _Parms.SwatchWidth, _Parms.SwatchHeight, S.xyY );
 			}
 
@@ -332,6 +331,43 @@ namespace StandardizedDiffuseAlbedoMaps
 				m_CustomSwatches[CustomSwatchIndex].Texture.Profile = Profile;
 				SaveImage( m_CustomSwatches[CustomSwatchIndex].Texture, FileName_CustomSwatches[CustomSwatchIndex], FileType, Format );
 			}
+		}
+
+		/// <summary>
+		/// Computes the average color within a rectangle in UV space
+		/// </summary>
+		/// <param name="_Database">The calibration database we assume has already been prepared for the sampled image's shot infos</param>
+		/// <param name="_Source">The source image to sample from</param>
+		/// <param name="_TopLeft">The top left corner (in UV space) of the rectangle to sample</param>
+		/// <param name="_BottomRight">The bottom right corner (in UV space) of the rectangle to sample</param>
+		/// <returns>The average xyY color</returns>
+		public static float3	ComputeAverageSwatchColor( CameraCalibrationDatabase _Database, Bitmap2 _Source, float2 _TopLeft, float2 _BottomRight )
+		{
+			// Average xyY values in the specified rectangle
+			int		X0 = (int) Math.Floor( _TopLeft.x * _Source.Width );
+			int		Y0 = (int) Math.Floor( _TopLeft.y * _Source.Height );
+			int		X1 = Math.Max( X0+1, (int) Math.Floor( _BottomRight.x * _Source.Width ) );
+			int		Y1 = Math.Max( Y0+1, (int) Math.Floor( _BottomRight.y * _Source.Height ) );
+			int		W = X1 - X0;
+			int		H = Y1 - Y0;
+
+			float3	AveragexyY = new float3( 0, 0, 0 );
+			for ( int Y=Y0; Y < Y1; Y++ )
+				for ( int X=X0; X < X1; X++ )
+				{
+					float4	XYZ = _Source.ContentXYZ[X,Y];
+					float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
+					xyY.z = _Database.Calibrate( xyY.z );	// Apply luminance calibration
+					AveragexyY += AveragexyY;
+				}
+			AveragexyY = (1.0f / (W*H)) * AveragexyY;
+
+// 			// Generate final sRGB value
+// 			float3	FinalXYZ = Bitmap2.ColorProfile.xyY2XYZ( AveragexyY );
+// 			float3	FinalRGB = Bitmap2.ColorProfile.XYZ2xyY( FinalXYZ );
+// 			return FinalRGB;
+
+			return AveragexyY;
 		}
 
 		/// <summary>

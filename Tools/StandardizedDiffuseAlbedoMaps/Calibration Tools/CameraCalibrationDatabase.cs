@@ -31,9 +31,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			public float				m_EV_Aperture;
 
 			// The 6 possible neighbors for this node
-			public GridNode[]			m_NeighborX = new GridNode[2];
-			public GridNode[]			m_NeighborY = new GridNode[2];
-			public GridNode[]			m_NeighborZ = new GridNode[2];
+			public GridNode[][]			m_Neighbors = new GridNode[3][] {	new GridNode[2],	// X left/right
+																			new GridNode[2],	// Y left/right
+																			new GridNode[2]		// Z left/right
+																		};
 
 			/// <summary>
 			/// Gets the global EV for this node
@@ -219,21 +220,18 @@ namespace StandardizedDiffuseAlbedoMaps
 					float	DeltaY = PairUnPlaced.m_EV_ShutterSpeed - PairPlaced.m_EV_ShutterSpeed;
 					float	DeltaZ = PairUnPlaced.m_EV_Aperture - PairPlaced.m_EV_Aperture;
 
-					GridNode[]	AxisPlaced = null;
-					GridNode[]	AxisUnPlaced = null;
+					int			AxisIndex = -1;
 					int			LeftRight = -1;
 					if ( Math.Abs( DeltaX ) > Math.Abs( DeltaY ) )
 					{
 						if ( Math.Abs( DeltaX ) > Math.Abs( DeltaZ ) )
 						{	// Place along X
-							AxisPlaced = PairPlaced.m_NeighborX;
-							AxisUnPlaced = PairUnPlaced.m_NeighborX;
+							AxisIndex = 0;
 							LeftRight = DeltaX < 0.0f ? 0 : 1;
 						}
 						else
 						{	// Place along Z
-							AxisPlaced = PairPlaced.m_NeighborZ;
-							AxisUnPlaced = PairUnPlaced.m_NeighborZ;
+							AxisIndex = 2;
 							LeftRight = DeltaZ < 0.0f ? 0 : 1;
 						}
 					}
@@ -241,30 +239,25 @@ namespace StandardizedDiffuseAlbedoMaps
 					{
 						if ( Math.Abs( DeltaY ) > Math.Abs( DeltaZ ) )
 						{	// Place along Y
-							AxisPlaced = PairPlaced.m_NeighborY;
-							AxisUnPlaced = PairUnPlaced.m_NeighborY;
+							AxisIndex = 1;
 							LeftRight = DeltaY < 0.0f ? 0 : 1;
 						}
 						else
 						{	// Place along Z
-							AxisPlaced = PairPlaced.m_NeighborZ;
-							AxisUnPlaced = PairUnPlaced.m_NeighborZ;
+							AxisIndex = 2;
 							LeftRight = DeltaZ < 0.0f ? 0 : 1;
 						}
 					}
 
-					// Store the neighbors for each node of the pair
-					if ( AxisPlaced[LeftRight] != null )
-					{	// Already linked, insert new node instead
-						GridNode	FormerRightNode = AxisPlaced[LeftRight];
-						AxisPlaced[LeftRight] = PairUnPlaced;
-						FormerRightNode.
-						AxisUnPlaced[1-LeftRight] = PairPlaced;
-					}
-					else
-					{
-						AxisPlaced[LeftRight] = PairUnPlaced;
-						AxisUnPlaced[1-LeftRight] = PairPlaced;
+					// Register each node in the pair as neighbors along the selected axis
+					GridNode	FormerNeighbor = PairPlaced.m_Neighbors[AxisIndex][LeftRight];
+					PairPlaced.m_Neighbors[AxisIndex][LeftRight] = PairUnPlaced;
+					PairUnPlaced.m_Neighbors[AxisIndex][1-LeftRight] = PairPlaced;
+
+					if ( FormerNeighbor != null )
+					{	// Re-link with former neighbor
+						PairUnPlaced.m_Neighbors[AxisIndex][LeftRight] = FormerNeighbor;
+						FormerNeighbor.m_Neighbors[AxisIndex][1-LeftRight] = PairUnPlaced;
 					}
 
 					// Remove the node from unplaced nodes & add it to placed ones
@@ -298,7 +291,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		#region METHODS
 
 		/// <summary>
-		/// Prepares the 8 closest calibration tables to process the pixels in an image shot with the specified shot infos
+		/// Prepares the interpolated calibration table to process the pixels in an image shot with the specified shot infos
 		/// </summary>
 		/// <param name="_ISOSpeed"></param>
 		/// <param name="_ShutterSpeed"></param>
@@ -315,8 +308,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			//////////////////////////////////////////////////////////////////////////
 			// Find the 8 nodes encompassing our values
 			// I'm making the delicate assumption that, although the starting node is chosen on the
-			//	condition it's EV values are strictly inferior to the target we're looking for, all
-			//	neighbor nodes will satisfy the condition they're properly placed.
+			//	condition its EV values are strictly inferior to the target we're looking for, all
+			//	neighbor nodes should satisfy the condition they're properly placed.
 			//
 			// This is true for the direct neighbors +X, +Y, +Z that are immediately above target values
 			//	but for example, neighbor (+X +Y) may have a very bad aperture value (Z) that may be
@@ -334,23 +327,23 @@ namespace StandardizedDiffuseAlbedoMaps
 			// Build the 8 grid nodes from it
 			GridNode[,,]	Grid = new GridNode[2,2,2];
 			Grid[0,0,0] = StartNode;
-			Grid[1,0,0] = StartNode.m_NeighborX[1] != null ? StartNode.m_NeighborX[1] : StartNode;			// +X
-			Grid[0,1,0] = StartNode.m_NeighborY[1] != null ? StartNode.m_NeighborY[1] : StartNode;			// +Y
-			Grid[0,0,1] = StartNode.m_NeighborZ[1] != null ? StartNode.m_NeighborZ[1] : StartNode;			// +Z
-			Grid[1,1,0] = Grid[1,0,0].m_NeighborY[1] != null ? Grid[1,0,0].m_NeighborY[1] : Grid[1,0,0];	// +X +Y
-			Grid[0,1,1] = Grid[0,1,0].m_NeighborZ[1] != null ? Grid[0,1,0].m_NeighborZ[1] : Grid[0,1,0];	// +Y +Z
-			Grid[1,0,1] = Grid[0,0,1].m_NeighborX[1] != null ? Grid[0,0,1].m_NeighborX[1] : Grid[0,0,1];	// +X +Z
-			Grid[1,1,1] = Grid[1,1,0].m_NeighborZ[1] != null ? Grid[1,1,0].m_NeighborZ[1] : Grid[1,1,0];	// +X +Y +Z
+			Grid[1,0,0] = StartNode.m_Neighbors[0][1] != null ? StartNode.m_Neighbors[0][1] : StartNode;		// +X
+			Grid[0,1,0] = StartNode.m_Neighbors[1][1] != null ? StartNode.m_Neighbors[1][1] : StartNode;		// +Y
+			Grid[0,0,1] = StartNode.m_Neighbors[2][1] != null ? StartNode.m_Neighbors[2][1] : StartNode;		// +Z
+			Grid[1,1,0] = Grid[1,0,0].m_Neighbors[1][1] != null ? Grid[1,0,0].m_Neighbors[1][1] : Grid[1,0,0];	// +X +Y
+			Grid[0,1,1] = Grid[0,1,0].m_Neighbors[2][1] != null ? Grid[0,1,0].m_Neighbors[2][1] : Grid[0,1,0];	// +Y +Z
+			Grid[1,0,1] = Grid[0,0,1].m_Neighbors[0][1] != null ? Grid[0,0,1].m_Neighbors[0][1] : Grid[0,0,1];	// +X +Z
+			Grid[1,1,1] = Grid[1,1,0].m_Neighbors[2][1] != null ? Grid[1,1,0].m_Neighbors[2][1] : Grid[1,1,0];	// +X +Y +Z
 
 			//////////////////////////////////////////////////////////////////////////
 			// Create the successive interpolants for trilinear interpolation
 			//
 			// Assume we interpolate on X first (ISO speed), so we need 4 distinct values
 			float4	tX = new float4(
-					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,0,0].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,0,0].m_EV_ISOSpeed - Grid[0,0,0].m_EV_ISOSpeed) ) ),
-					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,1,0].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,1,0].m_EV_ISOSpeed - Grid[0,1,0].m_EV_ISOSpeed) ) ),
-					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,0,1].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,0,1].m_EV_ISOSpeed - Grid[0,0,1].m_EV_ISOSpeed) ) ),
-					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,1,1].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,1,1].m_EV_ISOSpeed - Grid[0,1,1].m_EV_ISOSpeed) ) )
+					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,0,0].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,0,0].m_EV_ISOSpeed - Grid[0,0,0].m_EV_ISOSpeed) ) ),	// Y=0 Z=0
+					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,1,0].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,1,0].m_EV_ISOSpeed - Grid[0,1,0].m_EV_ISOSpeed) ) ),	// Y=1 Z=0
+					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,0,1].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,0,1].m_EV_ISOSpeed - Grid[0,0,1].m_EV_ISOSpeed) ) ),	// Y=0 Z=1
+					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,1,1].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,1,1].m_EV_ISOSpeed - Grid[0,1,1].m_EV_ISOSpeed) ) )	// Y=1 Z=1
 				);
 			float4	rX = new float4( 1.0f - tX.x, 1.0f - tX.y, 1.0f - tX.z, 1.0f - tX.w );
 
@@ -362,10 +355,10 @@ namespace StandardizedDiffuseAlbedoMaps
 					rX.w * Grid[0,1,1].m_EV_ShutterSpeed + tX.w * Grid[1,1,1].m_EV_ShutterSpeed		// Y=1 Z=1
 				);
 			float4	AperturesX = new float4(
-					rX.x * Grid[0,0,0].m_EV_Aperture + tX.x * Grid[1,0,0].m_EV_Aperture,
-					rX.y * Grid[0,1,0].m_EV_Aperture + tX.y * Grid[1,1,0].m_EV_Aperture,
-					rX.z * Grid[0,0,1].m_EV_Aperture + tX.z * Grid[1,0,1].m_EV_Aperture,
-					rX.w * Grid[0,1,1].m_EV_Aperture + tX.w * Grid[1,1,1].m_EV_Aperture
+					rX.x * Grid[0,0,0].m_EV_Aperture + tX.x * Grid[1,0,0].m_EV_Aperture,			// Y=0 Z=0
+					rX.y * Grid[0,1,0].m_EV_Aperture + tX.y * Grid[1,1,0].m_EV_Aperture,			// Y=1 Z=0
+					rX.z * Grid[0,0,1].m_EV_Aperture + tX.z * Grid[1,0,1].m_EV_Aperture,			// Y=0 Z=1
+					rX.w * Grid[0,1,1].m_EV_Aperture + tX.w * Grid[1,1,1].m_EV_Aperture				// Y=1 Z=1
 				);
 
 			// Next we interpolate on Y (Shutter speed), so we need 2 distinct values
@@ -374,6 +367,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					Math.Max( 0.0f, Math.Min( 1.0f, (EV.y - ShutterSpeedsX.z) / Math.Max( 1e-6f, ShutterSpeedsX.w - ShutterSpeedsX.z) ) )	// Z=1
 				);
 			float2	rY = new float2( 1.0f - tY.x, 1.0f - tY.y );
+
 				// Compute the 2 apertures
 			float2	AperturesY = new float2(
 					rY.x * AperturesX.x + tY.x * AperturesX.y,
@@ -384,8 +378,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			float	tZ = Math.Max( 0.0f, Math.Min( 1.0f, (EV.z - AperturesY.x) / Math.Max( 1e-6f, AperturesY.y - AperturesY.x) ) );
 			float	rZ = 1.0f - tZ;
 
+
 			//////////////////////////////////////////////////////////////////////////
-			// Create the special camera calibration that is the result of the interpolation of the 8 ones in the grid
+			// Create the special camera calibration that is the result of the interpolation of the 8 nearest ones in the grid
 			m_InterpolatedCalibration = new CameraCalibration();
 
 			for ( int ProbeIndex=0; ProbeIndex < REQUIRED_PROBES_COUNT; ProbeIndex++ )
@@ -403,9 +398,9 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				// Interpolate on X (ISO speed)
 				float	L00 = rX.x * L000 + tX.x * L100;
-				float	L10 = rX.x * L010 + tX.x * L110;
-				float	L01 = rX.x * L001 + tX.x * L101;
-				float	L11 = rX.x * L011 + tX.x * L111;
+				float	L10 = rX.y * L010 + tX.y * L110;
+				float	L01 = rX.z * L001 + tX.z * L101;
+				float	L11 = rX.w * L011 + tX.w * L111;
 
 				// Interpolate on Y (shutter speed)
 				float	L0 = rY.x * L00 + tY.x * L10;
@@ -463,27 +458,27 @@ namespace StandardizedDiffuseAlbedoMaps
 			GridNode	Current = m_RootNode;
 
 			// Move along X
-			while ( Current.m_EV_ISOSpeed <= _ISOSpeed && Current.m_NeighborX[1] != null )
+			while ( Current.m_EV_ISOSpeed <= _ISOSpeed && Current.m_Neighbors[0][1] != null )
 			{
-				GridNode	Next = Current.m_NeighborX[1];
+				GridNode	Next = Current.m_Neighbors[0][1];
 				if ( Next.m_EV_ISOSpeed > _ISOSpeed )
 					break;	// Next node is larger than provided value! We have our start node along X!
 				Current = Next;
 			}
 
 			// Move along Y
-			while ( Current.m_EV_ShutterSpeed <= _ShutterSpeed && Current.m_NeighborY[1] != null )
+			while ( Current.m_EV_ShutterSpeed <= _ShutterSpeed && Current.m_Neighbors[1][1] != null )
 			{
-				GridNode	Next = Current.m_NeighborY[1];
+				GridNode	Next = Current.m_Neighbors[1][1];
 				if ( Next.m_EV_ShutterSpeed > _ShutterSpeed )
 					break;	// Next node is larger than provided value! We have our start node along Y!
 				Current = Next;
 			}
 
 			// Move along Z
-			while ( Current.m_EV_Aperture <= _Aperture && Current.m_NeighborZ[1] != null )
+			while ( Current.m_EV_Aperture <= _Aperture && Current.m_Neighbors[2][1] != null )
 			{
-				GridNode	Next = Current.m_NeighborZ[1];
+				GridNode	Next = Current.m_Neighbors[2][1];
 				if ( Next.m_EV_Aperture > _Aperture )
 					break;	// Next node is larger than provided value! We have our start node along X!
 				Current = Next;

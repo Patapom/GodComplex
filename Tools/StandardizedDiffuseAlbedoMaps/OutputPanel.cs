@@ -14,8 +14,8 @@ namespace StandardizedDiffuseAlbedoMaps
 	{
 		#region NESTED TYPES
 
-		public delegate void	CalibrationDone( PointF _Center, float _Radius );
-		public delegate void	ColorPickingUpdate( PointF _Position );
+		public delegate void	CalibrationDone( PointF _Center, float _Radius );			// Sends the center and radius of the circle to average as a single luminance
+		public delegate void	ColorPickingUpdate( PointF _TopLeft, PointF _BottomRight );	// Sends the coordinates of the rectangle to average as a single color
 
 		private enum	MANIPULATION_STATE
 		{
@@ -80,11 +80,12 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private bool				m_CropRectangleManipulationStarted = false;
 		private CROP_RECTANGLE_SPOT	m_CropRectangleManipulatedSpot = CROP_RECTANGLE_SPOT.NONE;
-		private PointF				m_CropRectangeManipulationMousePositionButtonDown;
 
 		// Color picking manipulation
 		private ColorPickingUpdate	m_ColorPickingDelegate = null;
 
+		private PointF				m_MousePositionButtonDown;
+		private PointF				m_MousePositionCurrent;
 
 		#endregion
 
@@ -305,99 +306,11 @@ namespace StandardizedDiffuseAlbedoMaps
 														Center.Y + HalfSize.X * m_CropRectangleAxisX.Y - HalfSize.Y * m_CropRectangleAxisY.Y );
 		}
 
-		protected override void OnPaint( PaintEventArgs e )
-		{
-			base.OnPaint( e );
-
-			if ( m_Bitmap != null )
-				e.Graphics.DrawImage( m_Bitmap, 0, 0 );
-//				e.Graphics.DrawImage( m_Bitmap, new Rectangle( 0, 0, Width, Height ), 0, 0, m_Bitmap.Width, m_Bitmap.Height, GraphicsUnit.Pixel );
-
-			if ( m_Image == null )
-				return;
-
-			switch ( ManipulationState )
-			{
-				case MANIPULATION_STATE.CROP_RECTANGLE:
-				{
-					// Paint the crop rectangle
-					UpdateCropRectangleVertices();
-
-					// Draw off-screen area
-					const float	F = 20.0f;
-//					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] { m_CropRectangleVertices[0], m_CropRectangleVertices[1], m_CropRectangleVertices[3], m_CropRectangleVertices[2] } );
-					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[0],
-						new PointF( m_CropRectangleVertices[0].X + F*(+0*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(+0*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[0].X + F*(-1*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(-1*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[0].X + F*(-1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(-1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
-					} );
-					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[1],
-						new PointF( m_CropRectangleVertices[1].X + F*(+1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[1].X + F*(+1*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+1*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[1].X + F*(+0*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+0*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
-					} );
-					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[2],
-						new PointF( m_CropRectangleVertices[2].X + F*(-1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(-1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[2].X + F*(-1*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(-1*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[2].X + F*(+0*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(+0*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
-					} );
-					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[3],
-						new PointF( m_CropRectangleVertices[3].X + F*(+0*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+0*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[3].X + F*(+1*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+1*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[3].X + F*(+1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+0*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
-					} );
-
-					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[1],
-						m_CropRectangleVertices[0],
-						new PointF( m_CropRectangleVertices[0].X + F*(+0*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(+0*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[1].X + F*(+0*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+0*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
-					} );
-					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[3],
-						m_CropRectangleVertices[2],
-						new PointF( m_CropRectangleVertices[2].X + F*(+0*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(+0*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[3].X + F*(+0*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+0*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
-					} );
-					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[2],
-						m_CropRectangleVertices[0],
-						new PointF( m_CropRectangleVertices[0].X + F*(-1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(-1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[2].X + F*(-1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(-1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
-					} );
-					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[1],
-						m_CropRectangleVertices[3],
-						new PointF( m_CropRectangleVertices[3].X + F*(+1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[1].X + F*(+1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
-					} );
-
-					// Draw actual crop rectange
-					e.Graphics.DrawPolygon( m_PenCropRectangle, new PointF[] { m_CropRectangleVertices[0], m_CropRectangleVertices[1], m_CropRectangleVertices[3], m_CropRectangleVertices[2] } );
-					break;
-				}
-
-				case MANIPULATION_STATE.CALIBRATION_TARGET:
-				{	// Paint the calibration target
-					PointF	Center = ImageUV2Client( m_CalibrationCenter );
-					e.Graphics.DrawLine( m_PenTarget, Center.X, Center.Y-20, Center.X, Center.Y+20 );
-					e.Graphics.DrawLine( m_PenTarget, Center.X-20, Center.Y, Center.X+20, Center.Y );
-
-					PointF	Temp = ImageUV2Client( new PointF( m_CalibrationCenter.X + m_CalibrationRadius, m_CalibrationCenter.Y ) );
-					float	ClientRadius = Temp.X - Center.X;
-					e.Graphics.DrawEllipse( m_PenTarget, Center.X-ClientRadius, Center.Y-ClientRadius, 2.0f*ClientRadius, 2.0f*ClientRadius );
-					break;
-				}
-			}
-		}
-
 		protected override void OnMouseDown( MouseEventArgs e )
 		{
 			base.OnMouseDown( e );
+
+			m_MousePositionButtonDown = e.Location;
 
 			switch ( m_ManipulationState )
 			{
@@ -408,7 +321,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 					Capture = true;
 					m_CropRectangleManipulationStarted = true;
-					m_CropRectangeManipulationMousePositionButtonDown = e.Location;
 					break;
 				}
 
@@ -428,10 +340,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				}
 
 				case MANIPULATION_STATE.PICK_COLOR:
-
-					// End manipulation
-					ManipulationState = MANIPULATION_STATE.STOPPED;
-
+					Capture = true;
 					break;
 			}
 		}
@@ -439,6 +348,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		protected override void OnMouseMove( MouseEventArgs e )
 		{
 			base.OnMouseMove( e );
+
+			m_MousePositionCurrent = e.Location;
 
 			switch ( m_ManipulationState )
 			{
@@ -541,12 +452,8 @@ namespace StandardizedDiffuseAlbedoMaps
 				}
 
 				case MANIPULATION_STATE.PICK_COLOR:
-				{
-					PointF	UV = Client2ImageUV( e.Location );
 					Cursor = Cursors.Cross;
-					m_ColorPickingDelegate( UV );
 					break;
-				}
 
 				default:
 					Cursor = Cursors.Default;
@@ -558,9 +465,119 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			base.OnMouseUp( e );
 
-			// Stop any manipulation
+			// End manipulation
+			switch ( m_ManipulationState )
+			{
+				case MANIPULATION_STATE.CROP_RECTANGLE:
+					m_CropRectangleManipulationStarted = false;
+					break;
+
+				case MANIPULATION_STATE.PICK_COLOR:
+					ManipulationState = MANIPULATION_STATE.STOPPED;
+					PointF	UV0 = Client2ImageUV( m_MousePositionButtonDown );
+					PointF	UV1 = Client2ImageUV( e.Location );
+					m_ColorPickingDelegate( UV0, UV1 );
+					break;
+			}
+
 			Capture = false;
-			m_CropRectangleManipulationStarted = false;
+			Cursor = Cursors.Default;
+		}
+
+		protected override void OnPaint( PaintEventArgs e )
+		{
+			base.OnPaint( e );
+
+			if ( m_Bitmap != null )
+				e.Graphics.DrawImage( m_Bitmap, 0, 0 );
+//				e.Graphics.DrawImage( m_Bitmap, new Rectangle( 0, 0, Width, Height ), 0, 0, m_Bitmap.Width, m_Bitmap.Height, GraphicsUnit.Pixel );
+
+			if ( m_Image == null )
+				return;
+
+			switch ( ManipulationState )
+			{
+				case MANIPULATION_STATE.CROP_RECTANGLE:
+				{
+					// Paint the crop rectangle
+					UpdateCropRectangleVertices();
+
+					// Draw off-screen area
+					const float	F = 20.0f;
+//					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] { m_CropRectangleVertices[0], m_CropRectangleVertices[1], m_CropRectangleVertices[3], m_CropRectangleVertices[2] } );
+					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
+						m_CropRectangleVertices[0],
+						new PointF( m_CropRectangleVertices[0].X + F*(+0*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(+0*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
+						new PointF( m_CropRectangleVertices[0].X + F*(-1*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(-1*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
+						new PointF( m_CropRectangleVertices[0].X + F*(-1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(-1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
+					} );
+					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
+						m_CropRectangleVertices[1],
+						new PointF( m_CropRectangleVertices[1].X + F*(+1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
+						new PointF( m_CropRectangleVertices[1].X + F*(+1*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+1*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
+						new PointF( m_CropRectangleVertices[1].X + F*(+0*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+0*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
+					} );
+					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
+						m_CropRectangleVertices[2],
+						new PointF( m_CropRectangleVertices[2].X + F*(-1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(-1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
+						new PointF( m_CropRectangleVertices[2].X + F*(-1*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(-1*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
+						new PointF( m_CropRectangleVertices[2].X + F*(+0*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(+0*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
+					} );
+					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
+						m_CropRectangleVertices[3],
+						new PointF( m_CropRectangleVertices[3].X + F*(+0*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+0*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
+						new PointF( m_CropRectangleVertices[3].X + F*(+1*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+1*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
+						new PointF( m_CropRectangleVertices[3].X + F*(+1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+0*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
+					} );
+
+					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
+						m_CropRectangleVertices[1],
+						m_CropRectangleVertices[0],
+						new PointF( m_CropRectangleVertices[0].X + F*(+0*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(+0*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
+						new PointF( m_CropRectangleVertices[1].X + F*(+0*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+0*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
+					} );
+					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
+						m_CropRectangleVertices[3],
+						m_CropRectangleVertices[2],
+						new PointF( m_CropRectangleVertices[2].X + F*(+0*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(+0*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
+						new PointF( m_CropRectangleVertices[3].X + F*(+0*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+0*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
+					} );
+					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
+						m_CropRectangleVertices[2],
+						m_CropRectangleVertices[0],
+						new PointF( m_CropRectangleVertices[0].X + F*(-1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(-1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
+						new PointF( m_CropRectangleVertices[2].X + F*(-1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(-1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
+					} );
+					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
+						m_CropRectangleVertices[1],
+						m_CropRectangleVertices[3],
+						new PointF( m_CropRectangleVertices[3].X + F*(+1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
+						new PointF( m_CropRectangleVertices[1].X + F*(+1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
+					} );
+
+					// Draw actual crop rectange
+					e.Graphics.DrawPolygon( m_PenCropRectangle, new PointF[] { m_CropRectangleVertices[0], m_CropRectangleVertices[1], m_CropRectangleVertices[3], m_CropRectangleVertices[2] } );
+					break;
+				}
+
+				case MANIPULATION_STATE.CALIBRATION_TARGET:
+				{	// Paint the calibration target
+					PointF	Center = ImageUV2Client( m_CalibrationCenter );
+					e.Graphics.DrawLine( m_PenTarget, Center.X, Center.Y-20, Center.X, Center.Y+20 );
+					e.Graphics.DrawLine( m_PenTarget, Center.X-20, Center.Y, Center.X+20, Center.Y );
+
+					PointF	Temp = ImageUV2Client( new PointF( m_CalibrationCenter.X + m_CalibrationRadius, m_CalibrationCenter.Y ) );
+					float	ClientRadius = Temp.X - Center.X;
+					e.Graphics.DrawEllipse( m_PenTarget, Center.X-ClientRadius, Center.Y-ClientRadius, 2.0f*ClientRadius, 2.0f*ClientRadius );
+					break;
+				}
+
+				case MANIPULATION_STATE.PICK_COLOR:
+				{	// Paint a small red rectangle where the color should be averaged
+					e.Graphics.DrawRectangle( Pens.Red, m_MousePositionButtonDown.X, m_MousePositionButtonDown.Y, m_MousePositionCurrent.X - m_MousePositionButtonDown.X, m_MousePositionCurrent.Y - m_MousePositionButtonDown.Y );
+					break;
+				}
+			}
 		}
 	}
 }

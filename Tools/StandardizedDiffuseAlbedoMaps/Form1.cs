@@ -41,9 +41,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			public CheckBox		m_CheckBox = null;
 			public Panel		m_Panel = null;
 
-			public float2		m_Location = new float2( -1, -1 );		// Last picked location
-			public float3		m_xyY;			// Last picked xyY color
-			public float3		m_RGB;			// Last picked xyY converted into RGB (sRGB) for screen display (also assigned to m_Panel.BackColor)
+			public float2		m_LocationTopLeft = new float2( -1, -1 );		// Last picked location
+			public float2		m_LocationBottomRight = new float2( -1, -1 );	// Last picked location
+			public float3		m_xyY;											// Last picked xyY color
+			public float3		m_RGB;											// Last picked xyY converted into RGB (sRGB) for screen display (also assigned to m_Panel.BackColor)
 		}
 		private CustomSwatch[]		m_CustomSwatches = new CustomSwatch[9];
 
@@ -724,12 +725,12 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			//////////////////////////////////////////////////////////////////////////
 			// Build swatch locations
-			List<float2>	UsedSwatchesLocations = new List<float2>();
+			List<float4>	UsedSwatchesLocations = new List<float4>();
 			foreach ( CustomSwatch S in m_CustomSwatches )
 			{
-				if ( !S.m_CheckBox.Checked || S.m_Location.x < 0.0f || S.m_Location.x > 1.0f || S.m_Location.y < 0.0f || S.m_Location.y > 1.0f )
+				if ( !S.m_CheckBox.Checked || S.m_LocationTopLeft.x < 0.0f || S.m_LocationTopLeft.x > 1.0f || S.m_LocationTopLeft.y < 0.0f || S.m_LocationTopLeft.y > 1.0f )
 					continue;	// Unused...
-				UsedSwatchesLocations.Add( S.m_Location );
+				UsedSwatchesLocations.Add( new float4( S.m_LocationTopLeft.x, S.m_LocationTopLeft.y, S.m_LocationBottomRight.x, S.m_LocationBottomRight.y ) );
 			}
 
 			//////////////////////////////////////////////////////////////////////////
@@ -777,16 +778,16 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			Bitmap2.ColorProfile	sRGBProfile = new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB );
 
-			outputPanel.StartSwatchColorPicking( ( PointF _Position ) => {
+			outputPanel.StartSwatchColorPicking( ( PointF _TopLeft, PointF _BottomRight ) => {
 
-				float4	XYZ = m_BitmapXYZ.BilinearSample( _Position.X * m_BitmapXYZ.Width, _Position.Y * m_BitmapXYZ.Height );
-				S.m_xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
-				S.m_xyY.z = m_CalibrationDatabase.Calibrate( S.m_xyY.z );	// Apply calibration
-				XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( S.m_xyY ), 1.0f );
-				S.m_RGB = (float3) sRGBProfile.XYZ2RGB( XYZ );
+				float3	xyY = CalibratedTexture.ComputeAverageSwatchColor( m_CalibrationDatabase, m_BitmapXYZ, new float2( _TopLeft.X, _TopLeft.Y ), new float2( _BottomRight.X, _BottomRight.Y ) );
+				float3	XYZ = Bitmap2.ColorProfile.xyY2XYZ( xyY );
+				S.m_RGB = (float3) sRGBProfile.XYZ2RGB( new float4( XYZ, 1.0f ) );
 
+				// Update UI
 				Color	C = Color.FromArgb( (int) (S.m_RGB.x * 255.0f), (int) (S.m_RGB.y * 255.0f), (int) (S.m_RGB.z * 255.0f) );
 				S.m_Panel.BackColor = C;
+				S.m_CheckBox.Checked = true;	// Automatically enable color swatch if the user bothered picking a color
 			} );
 		}
 		private void panelCustomSwatch0_Click( object sender, EventArgs e )
