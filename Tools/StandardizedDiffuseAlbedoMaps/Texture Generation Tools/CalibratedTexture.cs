@@ -45,7 +45,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			TIFF,
 		}
 
-		private class	Swatch
+		public class	Swatch
 		{
 			public float3		xyY;		// The color used to build the swatch
 			public Bitmap2		Texture;	// The bitmap generated from the swatch color
@@ -57,7 +57,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				_Owner.SetAttribute( _SwatchElement, "xyY", xyY.ToString() ).SetAttribute( "RGB", RGB.ToString() );
 			}
 		}
-		private class	CustomSwatch : Swatch
+		public class	CustomSwatch : Swatch
 		{
 			public float4		Location;	// The location (in UV space) where the swatch color was taken (XY=Top Left Corner, ZW=Bottom Right Corner)
 
@@ -91,6 +91,13 @@ namespace StandardizedDiffuseAlbedoMaps
 		#endregion
 
 		#region PROPERTIES
+
+		public Bitmap2			Texture			{ get { return m_Texture; } }
+		public Swatch			SwatchMin		{ get { return m_SwatchMin; } }
+		public Swatch			SwatchMax		{ get { return m_SwatchMax; } }
+		public Swatch			SwatchAvg		{ get { return m_SwatchAvg; } }
+		public CustomSwatch[]	CustomSwatches	{ get { return m_CustomSwatches; } }
+
 		#endregion
 
 		#region METHODS
@@ -146,7 +153,7 @@ namespace StandardizedDiffuseAlbedoMaps
 						XYZ = _Source.ContentXYZ[X,Y];
 						xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
 						xyY.z = _Database.Calibrate( xyY.z );	// Apply luminance calibration
-						XYZ = new float4( Bitmap2.ColorProfile.XYZ2xyY( xyY ), XYZ.w );
+						XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
 						m_Texture.ContentXYZ[X,Y] = XYZ;
 
 						// Update min/max/avg values
@@ -188,7 +195,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 
 			//////////////////////////////////////////////////////////////////////////
-			// Feed some purely informational shot infos, probably won't be saved anyway...
+			// Feed some purely informational shot infos to the main texture, probably won't be saved anyway...
 			m_Texture.HasValidShotInfo = true;
 			m_Texture.ISOSpeed = _Parms.ISOSpeed;
 			m_Texture.ShutterSpeed = _Parms.ShutterSpeed;
@@ -208,10 +215,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			string	RawFileName = System.IO.Path.GetFileNameWithoutExtension( _FileName.FullName );
 			string	Extension = System.IO.Path.GetExtension( _FileName.FullName );
 
-			System.IO.FileInfo	FileName_Manifest = new System.IO.FileInfo( System.IO.Path.Combine( Dir.FullName, RawFileName + ".xml" ) );
-			System.IO.FileInfo	FileName_SwatchMin = new System.IO.FileInfo( System.IO.Path.Combine( Dir.FullName, RawFileName + "_Min" + Extension ) );
-			System.IO.FileInfo	FileName_SwatchMax = new System.IO.FileInfo( System.IO.Path.Combine( Dir.FullName, RawFileName + "_Max" + Extension ) );
-			System.IO.FileInfo	FileName_SwatchAvg = new System.IO.FileInfo( System.IO.Path.Combine( Dir.FullName, RawFileName + "_Avg" + Extension ) );
+			System.IO.FileInfo		FileName_Manifest = new System.IO.FileInfo( System.IO.Path.Combine( Dir.FullName, RawFileName + ".xml" ) );
+			System.IO.FileInfo		FileName_SwatchMin = new System.IO.FileInfo( System.IO.Path.Combine( Dir.FullName, RawFileName + "_Min" + Extension ) );
+			System.IO.FileInfo		FileName_SwatchMax = new System.IO.FileInfo( System.IO.Path.Combine( Dir.FullName, RawFileName + "_Max" + Extension ) );
+			System.IO.FileInfo		FileName_SwatchAvg = new System.IO.FileInfo( System.IO.Path.Combine( Dir.FullName, RawFileName + "_Avg" + Extension ) );
 			System.IO.FileInfo[]	FileName_CustomSwatches = new System.IO.FileInfo[m_CustomSwatches.Length];
 			for ( int CustomSwatchIndex=0; CustomSwatchIndex < m_CustomSwatches.Length; CustomSwatchIndex++ )
 				FileName_CustomSwatches[CustomSwatchIndex] = new System.IO.FileInfo( System.IO.Path.Combine( Dir.FullName, RawFileName + "_Custom" + CustomSwatchIndex.ToString() + Extension ) );
@@ -245,73 +252,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 
 			//////////////////////////////////////////////////////////////////////////
-			// Prepare the XML manifest
-			XmlDocument	Doc = new XmlDocument();
-
-			XmlComment	HeaderComment = Doc.CreateComment( 
-				"This is a calibrated texture manifest file generated from the uncalibrated image \"" + m_Parameters.SourceImageName + "\"\r\n" +
-				"Resulting generated images have been stored using a standard sRGB profile and can be used directly as source or color picked by artists\r\n" +
-				" without any other processing. Colors in the textures will have the proper reflectance (assuming the original image has been properly captured\r\n" +
-				" with specular removal using polarization filters) and after sRGB->Linear conversion will be directly useable as reflectance in the lighting equation.\r\n" +
-				"The xyY values are given in device-independent xyY color space and can be used as linear-space colors directly.\r\n\r\n" +
-				"Do not modify!" );
-			Doc.AppendChild( HeaderComment );
-
-			XmlElement	Root = AppendElement( Doc, "Manifest" );
-
-			// Save source image infos
-			XmlElement	SourceInfosElement = AppendElement( Doc, "SourceInfos" );
-			SetAttribute( AppendElement( SourceInfosElement, "SourceImageName" ), "Value", m_Parameters.SourceImageName );
-			SetAttribute( AppendElement( SourceInfosElement, "ISOSpeed" ), "Value", m_Parameters.ISOSpeed.ToString() );
-			SetAttribute( AppendElement( SourceInfosElement, "ShutterSpeed" ), "Value", m_Parameters.ShutterSpeed.ToString() );
-			SetAttribute( AppendElement( SourceInfosElement, "Aperture" ), "Value", m_Parameters.Aperture.ToString() );
-
-			SetAttribute( AppendElement( SourceInfosElement, "CropSource" ), "Value", m_Parameters.CropSource.ToString() );
-			SetAttribute( AppendElement( SourceInfosElement, "CropRectangleCenter" ), "X", m_Parameters.CropRectangleCenter.x.ToString() ).SetAttribute( "Y", m_Parameters.CropRectangleCenter.y.ToString() );
-			SetAttribute( AppendElement( SourceInfosElement, "CropRectangleHalfSize" ), "X", m_Parameters.CropRectangleHalfSize.x.ToString() ).SetAttribute( "Y", m_Parameters.CropRectangleHalfSize.y.ToString() );
-			SetAttribute( AppendElement( SourceInfosElement, "CropRectangleRotation" ), "Value", m_Parameters.CropRectangleRotation.ToString() );
-
-			SetAttribute( AppendElement( SourceInfosElement, "SwatchesSize" ), "Width", m_Parameters.SwatchWidth.ToString() ).SetAttribute( "Height", m_Parameters.SwatchHeight.ToString() );
-
-			SetAttribute( AppendElement( SourceInfosElement, "TargetFormat" ), "Value", _TargetFormat.ToString() );
-
-			// Save calibrated texture infos
-			{
-				XmlElement	CalibratedTextureElement = AppendElement( Doc, "CalibratedTexture" );
-				SetAttribute( CalibratedTextureElement, "Name", _FileName.Name ).SetAttribute( "Width", m_Texture.Width.ToString() ).SetAttribute( "Height", m_Texture.Height.ToString() );
-
-				// Save default swatches
-				XmlElement	DefaultSwatchesElement = AppendElement( CalibratedTextureElement, "DefaultSwatches" );
-				XmlElement	MinSwatchElement = AppendElement( DefaultSwatchesElement, "Min" );
-				SetAttribute( MinSwatchElement, "Name", FileName_SwatchMin.Name );
-				m_SwatchMin.Save( this, MinSwatchElement );
-
-				XmlElement	MaxSwatchElement = AppendElement( DefaultSwatchesElement, "Max" );
-				SetAttribute( MaxSwatchElement, "Name", FileName_SwatchMax.Name );
-				m_SwatchMin.Save( this, MaxSwatchElement );
-
-				XmlElement	AvgSwatchElement = AppendElement( DefaultSwatchesElement, "Avg" );
-				SetAttribute( AvgSwatchElement, "Name", FileName_SwatchAvg.Name );
-				m_SwatchMin.Save( this, AvgSwatchElement );
-			}
-
-			// Save custom swatches infos
-			if ( m_CustomSwatches.Length > 0)
-			{
-				XmlElement	CustomSwatchesElement = AppendElement( Doc, "CustomSwatches" );
-				SetAttribute( CustomSwatchesElement, "Count", m_CustomSwatches.Length.ToString() );
-				for ( int CustomSwatchIndex=0; CustomSwatchIndex < m_CustomSwatches.Length; CustomSwatchIndex++ )
-				{
-					XmlElement	CustomSwatchElement = AppendElement( CustomSwatchesElement, "Custom"+CustomSwatchIndex.ToString() );
-					SetAttribute( CustomSwatchElement, "Name", FileName_CustomSwatches[CustomSwatchIndex].Name );
-					m_CustomSwatches[CustomSwatchIndex].Save( this, CustomSwatchElement );
-				}
-			}
-
-			Doc.Save( FileName_Manifest.FullName );
-
-
-			//////////////////////////////////////////////////////////////////////////
 			// Save textures
 
 			// Save main texture
@@ -332,6 +272,75 @@ namespace StandardizedDiffuseAlbedoMaps
 				m_CustomSwatches[CustomSwatchIndex].Texture.Profile = Profile;
 				SaveImage( m_CustomSwatches[CustomSwatchIndex].Texture, FileName_CustomSwatches[CustomSwatchIndex], FileType, Format );
 			}
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// Prepare the XML manifest
+			XmlDocument	Doc = new XmlDocument();
+
+			XmlComment	HeaderComment = Doc.CreateComment( 
+				"***Do not modify!***\r\n\r\n" +
+				"This is a calibrated texture manifest file generated from the uncalibrated image \"" + m_Parameters.SourceImageName + "\"\r\n" +
+				"Resulting generated images have been stored using a standard sRGB profile and can be used directly as source or color picked by artists\r\n" +
+				" without any other processing. Colors in the textures will have the proper reflectance (assuming the original image has been properly captured\r\n" +
+				" with specular removal using polarization filters) and after sRGB->Linear conversion will be directly useable as reflectance in the lighting equation.\r\n" +
+				"The xyY values are given in device-independent xyY color space and can be used as linear-space colors directly.\r\n\r\n" +
+				"***Do not modify!***" );
+			Doc.AppendChild( HeaderComment );
+
+			XmlElement	Root = Doc.CreateElement( "Manifest" );
+			Doc.AppendChild( Root );
+
+			// Save source image infos
+			XmlElement	SourceInfosElement = AppendElement( Root, "SourceInfos" );
+			SetAttribute( AppendElement( SourceInfosElement, "SourceImageName" ), "Value", m_Parameters.SourceImageName );
+			SetAttribute( AppendElement( SourceInfosElement, "ISOSpeed" ), "Value", m_Parameters.ISOSpeed.ToString() );
+			SetAttribute( AppendElement( SourceInfosElement, "ShutterSpeed" ), "Value", m_Parameters.ShutterSpeed.ToString() );
+			SetAttribute( AppendElement( SourceInfosElement, "Aperture" ), "Value", m_Parameters.Aperture.ToString() );
+
+			SetAttribute( AppendElement( SourceInfosElement, "CropSource" ), "Value", m_Parameters.CropSource.ToString() );
+			SetAttribute( AppendElement( SourceInfosElement, "CropRectangleCenter" ), "X", m_Parameters.CropRectangleCenter.x.ToString() ).SetAttribute( "Y", m_Parameters.CropRectangleCenter.y.ToString() );
+			SetAttribute( AppendElement( SourceInfosElement, "CropRectangleHalfSize" ), "X", m_Parameters.CropRectangleHalfSize.x.ToString() ).SetAttribute( "Y", m_Parameters.CropRectangleHalfSize.y.ToString() );
+			SetAttribute( AppendElement( SourceInfosElement, "CropRectangleRotation" ), "Value", m_Parameters.CropRectangleRotation.ToString() );
+
+			SetAttribute( AppendElement( SourceInfosElement, "SwatchesSize" ), "Width", m_Parameters.SwatchWidth.ToString() ).SetAttribute( "Height", m_Parameters.SwatchHeight.ToString() );
+
+			SetAttribute( AppendElement( SourceInfosElement, "TargetFormat" ), "Value", _TargetFormat.ToString() );
+
+			// Save calibrated texture infos
+			{
+				XmlElement	CalibratedTextureElement = AppendElement( Root, "CalibratedTexture" );
+				SetAttribute( CalibratedTextureElement, "Name", _FileName.Name ).SetAttribute( "Width", m_Texture.Width.ToString() ).SetAttribute( "Height", m_Texture.Height.ToString() );
+
+				// Save default swatches
+				XmlElement	DefaultSwatchesElement = AppendElement( CalibratedTextureElement, "DefaultSwatches" );
+				XmlElement	MinSwatchElement = AppendElement( DefaultSwatchesElement, "Min" );
+				SetAttribute( MinSwatchElement, "Name", FileName_SwatchMin.Name );
+				m_SwatchMin.Save( this, MinSwatchElement );
+
+				XmlElement	MaxSwatchElement = AppendElement( DefaultSwatchesElement, "Max" );
+				SetAttribute( MaxSwatchElement, "Name", FileName_SwatchMax.Name );
+				m_SwatchMax.Save( this, MaxSwatchElement );
+
+				XmlElement	AvgSwatchElement = AppendElement( DefaultSwatchesElement, "Avg" );
+				SetAttribute( AvgSwatchElement, "Name", FileName_SwatchAvg.Name );
+				m_SwatchAvg.Save( this, AvgSwatchElement );
+			}
+
+			// Save custom swatches infos
+			if ( m_CustomSwatches.Length > 0)
+			{
+				XmlElement	CustomSwatchesElement = AppendElement( Root, "CustomSwatches" );
+				SetAttribute( CustomSwatchesElement, "Count", m_CustomSwatches.Length.ToString() );
+				for ( int CustomSwatchIndex=0; CustomSwatchIndex < m_CustomSwatches.Length; CustomSwatchIndex++ )
+				{
+					XmlElement	CustomSwatchElement = AppendElement( CustomSwatchesElement, "Custom"+CustomSwatchIndex.ToString() );
+					SetAttribute( CustomSwatchElement, "Name", FileName_CustomSwatches[CustomSwatchIndex].Name );
+					m_CustomSwatches[CustomSwatchIndex].Save( this, CustomSwatchElement );
+				}
+			}
+
+			Doc.Save( FileName_Manifest.FullName );
 		}
 
 		/// <summary>
@@ -347,8 +356,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			// Average xyY values in the specified rectangle
 			int		X0 = Math.Max( 0, Math.Min( _Source.Width-1, (int) Math.Floor( _TopLeft.x * _Source.Width ) ) );
 			int		Y0 = Math.Max( 0, Math.Min( _Source.Height-1, (int) Math.Floor( _TopLeft.y * _Source.Height ) ) );
-			int		X1 = Math.Min( _Source.Width-1, Math.Max( X0+1, (int) Math.Floor( _BottomRight.x * _Source.Width ) ) );
-			int		Y1 = Math.Min( _Source.Height-1, Math.Max( Y0+1, (int) Math.Floor( _BottomRight.y * _Source.Height ) ) );
+			int		X1 = Math.Min( _Source.Width, Math.Max( X0+1, (int) Math.Floor( _BottomRight.x * _Source.Width ) ) );
+			int		Y1 = Math.Min( _Source.Height, Math.Max( Y0+1, (int) Math.Floor( _BottomRight.y * _Source.Height ) ) );
 			int		W = X1 - X0;
 			int		H = Y1 - Y0;
 

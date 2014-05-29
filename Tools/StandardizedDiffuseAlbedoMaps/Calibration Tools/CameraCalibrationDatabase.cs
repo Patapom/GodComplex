@@ -339,6 +339,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( m_RootNode == null )
 				throw new Exception( "Calibration grid hasn't been built: did you provide a valid database path? Does the path contain camera calibration data?" );
 
+			if ( IsPreparedFor( _ISOSpeed, _ShutterSpeed, _Aperture ) )
+				return;	// Already prepared!
+
 			//////////////////////////////////////////////////////////////////////////
 			// Find the 8 nodes encompassing our values
 			// I'm making the delicate assumption that, although the starting node is chosen on the
@@ -453,8 +456,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			// Fill missing values
 			m_InterpolatedCalibration.UpdateAllLuminances();
 
-			// Re-apply white reflectance reference to trigger a recomputation of the correction factor to apply to images
-			WhiteReflectanceReference = WhiteReflectanceReference;
+			// Reset white reflectance reference because it was set for another
+			WhiteReflectanceReference = -1.0f;
 		}
 
 		/// <summary>

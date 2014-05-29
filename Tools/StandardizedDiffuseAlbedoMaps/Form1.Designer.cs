@@ -81,7 +81,6 @@
 			this.tabControl = new System.Windows.Forms.TabControl();
 			this.tabPageCreation = new System.Windows.Forms.TabPage();
 			this.buttonPickWhiteReflectance = new System.Windows.Forms.Button();
-			this.buttonResetWhiteReflectance = new System.Windows.Forms.Button();
 			this.buttonResetCrop = new System.Windows.Forms.Button();
 			this.checkBoxCropTool = new System.Windows.Forms.CheckBox();
 			this.buttonCapture = new System.Windows.Forms.Button();
@@ -126,6 +125,7 @@
 			this.buttonReCalibrate = new System.Windows.Forms.Button();
 			this.buttonLoadCalibration = new System.Windows.Forms.Button();
 			this.checkBoxGraphLagrange = new System.Windows.Forms.CheckBox();
+			this.buttonResetWhiteReflectance = new System.Windows.Forms.Button();
 			this.splitContainerMain = new System.Windows.Forms.SplitContainer();
 			this.panelWhiteReflectance = new System.Windows.Forms.Panel();
 			this.labelWhiteReflectance = new System.Windows.Forms.Label();
@@ -763,7 +763,6 @@
 			// tabPageCreation
 			// 
 			this.tabPageCreation.Controls.Add(this.buttonPickWhiteReflectance);
-			this.tabPageCreation.Controls.Add(this.buttonResetWhiteReflectance);
 			this.tabPageCreation.Controls.Add(this.buttonResetCrop);
 			this.tabPageCreation.Controls.Add(this.checkBoxCropTool);
 			this.tabPageCreation.Controls.Add(this.buttonCapture);
@@ -788,17 +787,6 @@
         "rence");
 			this.buttonPickWhiteReflectance.UseVisualStyleBackColor = true;
 			this.buttonPickWhiteReflectance.Click += new System.EventHandler(this.buttonPickWhiteReflectance_Click);
-			// 
-			// buttonResetWhiteReflectance
-			// 
-			this.buttonResetWhiteReflectance.Location = new System.Drawing.Point(266, 9);
-			this.buttonResetWhiteReflectance.Name = "buttonResetWhiteReflectance";
-			this.buttonResetWhiteReflectance.Size = new System.Drawing.Size(57, 23);
-			this.buttonResetWhiteReflectance.TabIndex = 5;
-			this.buttonResetWhiteReflectance.Text = "Reset";
-			this.toolTip.SetToolTip(this.buttonResetWhiteReflectance, "Resets the white reflectance reference");
-			this.buttonResetWhiteReflectance.UseVisualStyleBackColor = true;
-			this.buttonResetWhiteReflectance.Click += new System.EventHandler(this.buttonResetWhiteReflectance_Click);
 			// 
 			// buttonResetCrop
 			// 
@@ -1124,11 +1112,11 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.resultTexturePanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.resultTexturePanel.CalibratedTexture = null;
 			this.resultTexturePanel.Location = new System.Drawing.Point(6, 40);
 			this.resultTexturePanel.Name = "resultTexturePanel";
 			this.resultTexturePanel.Size = new System.Drawing.Size(471, 332);
 			this.resultTexturePanel.TabIndex = 0;
-			this.resultTexturePanel.Texture = null;
 			// 
 			// tabPage2
 			// 
@@ -1343,6 +1331,17 @@
 			this.checkBoxGraphLagrange.UseVisualStyleBackColor = true;
 			this.checkBoxGraphLagrange.CheckedChanged += new System.EventHandler(this.checkBoxGraphLagrange_CheckedChanged);
 			// 
+			// buttonResetWhiteReflectance
+			// 
+			this.buttonResetWhiteReflectance.Location = new System.Drawing.Point(315, 1);
+			this.buttonResetWhiteReflectance.Name = "buttonResetWhiteReflectance";
+			this.buttonResetWhiteReflectance.Size = new System.Drawing.Size(57, 23);
+			this.buttonResetWhiteReflectance.TabIndex = 5;
+			this.buttonResetWhiteReflectance.Text = "Reset";
+			this.toolTip.SetToolTip(this.buttonResetWhiteReflectance, "Resets the white reflectance reference");
+			this.buttonResetWhiteReflectance.UseVisualStyleBackColor = true;
+			this.buttonResetWhiteReflectance.Click += new System.EventHandler(this.buttonResetWhiteReflectance_Click);
+			// 
 			// splitContainerMain
 			// 
 			this.splitContainerMain.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -1371,11 +1370,13 @@
 			// 
 			// panelWhiteReflectance
 			// 
+			this.panelWhiteReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.panelWhiteReflectance.Controls.Add(this.labelWhiteReflectance);
+			this.panelWhiteReflectance.Controls.Add(this.buttonResetWhiteReflectance);
 			this.panelWhiteReflectance.Controls.Add(this.label10);
 			this.panelWhiteReflectance.Location = new System.Drawing.Point(418, 717);
 			this.panelWhiteReflectance.Name = "panelWhiteReflectance";
-			this.panelWhiteReflectance.Size = new System.Drawing.Size(346, 26);
+			this.panelWhiteReflectance.Size = new System.Drawing.Size(376, 26);
 			this.panelWhiteReflectance.TabIndex = 10;
 			this.panelWhiteReflectance.Visible = false;
 			// 
@@ -1385,7 +1386,7 @@
 			this.labelWhiteReflectance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.labelWhiteReflectance.Location = new System.Drawing.Point(105, 1);
 			this.labelWhiteReflectance.Name = "labelWhiteReflectance";
-			this.labelWhiteReflectance.Size = new System.Drawing.Size(237, 23);
+			this.labelWhiteReflectance.Size = new System.Drawing.Size(204, 23);
 			this.labelWhiteReflectance.TabIndex = 2;
 			this.labelWhiteReflectance.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
 			// 

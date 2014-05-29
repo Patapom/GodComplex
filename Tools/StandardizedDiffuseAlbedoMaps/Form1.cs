@@ -20,34 +20,71 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#endregion
 
+		#region NESTED TYPES
+
+		private class	Swatch
+		{
+			public Form1		m_Owner = null;
+			public Panel		m_Panel = null;
+
+			public float3		m_xyY;		// Last picked xyY color
+			public float3		m_RGB;		// Last picked xyY converted into RGB (sRGB) for screen display (also assigned to m_Panel.BackColor)
+
+			public virtual void	UpdateSwatchColor()
+			{
+				m_RGB = (float3) m_Owner.m_sRGBProfile.XYZ2RGB( new float4( Bitmap2.ColorProfile.xyY2XYZ( m_xyY ), 1.0f ) );
+
+				Color	C = Color.FromArgb( Math.Min( 255, (int) (m_RGB.x * 255.0f) ), Math.Min( 255, (int) (m_RGB.y * 255.0f) ), Math.Min( 255, (int) (m_RGB.z * 255.0f) ) );
+				m_Panel.BackColor = C;
+			}
+		}
+		private class	CustomSwatch : Swatch
+		{
+			public CheckBox		m_CheckBox = null;
+
+			public float2		m_LocationTopLeft = new float2( -1, -1 );		// Last picked location
+			public float2		m_LocationBottomRight = new float2( -1, -1 );	// Last picked location
+
+			public override void UpdateSwatchColor()
+			{
+				if ( !m_CheckBox.Checked )
+				{
+					m_xyY = m_RGB = new float3( 0, 0, 0 );
+					m_Panel.BackColor = Color.DimGray;
+					return;
+				}
+
+				// Re-capture
+				m_xyY = CalibratedTexture.ComputeAverageSwatchColor( m_Owner.m_CalibrationDatabase, m_Owner.m_BitmapXYZ, m_LocationTopLeft, m_LocationBottomRight );
+				base.UpdateSwatchColor();
+			}
+		}
+
+		#endregion
+
 		#region FIELDS
 
-		private RegistryKey			m_AppKey;
-		private string				m_ApplicationPath;
+		private RegistryKey					m_AppKey;
+		private string						m_ApplicationPath;
 
-		private System.IO.FileInfo	m_ImageFileName = null;
-		private Bitmap2				m_BitmapXYZ = null;
-		private float3				m_WhiteReflectance_xyY = new float3( 0.5f, 0.5f, 1.0f );
+		private Bitmap2.ColorProfile		m_sRGBProfile = new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB );	// For conversion to the screen
+
+		// The currently loaded image
+		private System.IO.FileInfo			m_ImageFileName = null;
+		private Bitmap2						m_BitmapXYZ = null;
 
 		// Generated calibrated texture
-		private CalibratedTexture	m_Texture = null;
+		private CalibratedTexture			m_Texture = null;
 
 		// Calibration database
 		private CameraCalibrationDatabase	m_CalibrationDatabase = new CameraCalibrationDatabase();
 		private CameraCalibration			m_Calibration = new CameraCalibration();	// Current calibration
 
 		// Custom swatches
-		private class	CustomSwatch
-		{
-			public CheckBox		m_CheckBox = null;
-			public Panel		m_Panel = null;
-
-			public float2		m_LocationTopLeft = new float2( -1, -1 );		// Last picked location
-			public float2		m_LocationBottomRight = new float2( -1, -1 );	// Last picked location
-			public float3		m_xyY;											// Last picked xyY color
-			public float3		m_RGB;											// Last picked xyY converted into RGB (sRGB) for screen display (also assigned to m_Panel.BackColor)
-		}
-		private CustomSwatch[]		m_CustomSwatches = new CustomSwatch[9];
+		private Swatch						m_SwatchMin;
+		private Swatch						m_SwatchMax;
+		private Swatch						m_SwatchAvg;
+		private CustomSwatch[]				m_CustomSwatches = new CustomSwatch[9];
 
 		#endregion
 
@@ -60,16 +97,19 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			InitializeComponent();
 
-			// Initialize custom color swatches
-			m_CustomSwatches[0] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch0, m_Panel = panelCustomSwatch0 };
-			m_CustomSwatches[1] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch1, m_Panel = panelCustomSwatch1 };
-			m_CustomSwatches[2] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch2, m_Panel = panelCustomSwatch2 };
-			m_CustomSwatches[3] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch3, m_Panel = panelCustomSwatch3 };
-			m_CustomSwatches[4] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch4, m_Panel = panelCustomSwatch4 };
-			m_CustomSwatches[5] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch5, m_Panel = panelCustomSwatch5 };
-			m_CustomSwatches[6] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch6, m_Panel = panelCustomSwatch6 };
-			m_CustomSwatches[7] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch7, m_Panel = panelCustomSwatch7 };
-			m_CustomSwatches[8] = new CustomSwatch() { m_CheckBox = checkBoxCustomSwatch8, m_Panel = panelCustomSwatch8 };
+			// Initialize color swatches
+			m_SwatchMin = new Swatch() { m_Owner = this, m_Panel = panelSwatchMin };
+			m_SwatchMax = new Swatch() { m_Owner = this, m_Panel = panelSwatchMax };
+			m_SwatchAvg = new Swatch() { m_Owner = this, m_Panel = panelSwatchAverage };
+			m_CustomSwatches[0] = new CustomSwatch() { m_Owner = this, m_CheckBox = checkBoxCustomSwatch0, m_Panel = panelCustomSwatch0 };
+			m_CustomSwatches[1] = new CustomSwatch() { m_Owner = this, m_CheckBox = checkBoxCustomSwatch1, m_Panel = panelCustomSwatch1 };
+			m_CustomSwatches[2] = new CustomSwatch() { m_Owner = this, m_CheckBox = checkBoxCustomSwatch2, m_Panel = panelCustomSwatch2 };
+			m_CustomSwatches[3] = new CustomSwatch() { m_Owner = this, m_CheckBox = checkBoxCustomSwatch3, m_Panel = panelCustomSwatch3 };
+			m_CustomSwatches[4] = new CustomSwatch() { m_Owner = this, m_CheckBox = checkBoxCustomSwatch4, m_Panel = panelCustomSwatch4 };
+			m_CustomSwatches[5] = new CustomSwatch() { m_Owner = this, m_CheckBox = checkBoxCustomSwatch5, m_Panel = panelCustomSwatch5 };
+			m_CustomSwatches[6] = new CustomSwatch() { m_Owner = this, m_CheckBox = checkBoxCustomSwatch6, m_Panel = panelCustomSwatch6 };
+			m_CustomSwatches[7] = new CustomSwatch() { m_Owner = this, m_CheckBox = checkBoxCustomSwatch7, m_Panel = panelCustomSwatch7 };
+			m_CustomSwatches[8] = new CustomSwatch() { m_Owner = this, m_CheckBox = checkBoxCustomSwatch8, m_Panel = panelCustomSwatch8 };
 		}
 
 		protected override void OnLoad( EventArgs e )
@@ -163,9 +203,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			try
 			{
-				// Test if we should prepare the database
-				if ( !m_CalibrationDatabase.IsPreparedFor( floatTrackbarControlISOSpeed.Value, floatTrackbarControlShutterSpeed.Value, floatTrackbarControlAperture.Value ) )
-					m_CalibrationDatabase.PrepareCalibrationFor( floatTrackbarControlISOSpeed.Value, floatTrackbarControlShutterSpeed.Value, floatTrackbarControlAperture.Value );	// Then prepare it!
+				m_CalibrationDatabase.PrepareCalibrationFor( floatTrackbarControlISOSpeed.Value, floatTrackbarControlShutterSpeed.Value, floatTrackbarControlAperture.Value );
 			}
 			catch ( Exception _e )
 			{
@@ -186,10 +224,11 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 
 			bool		sRGB = checkBoxsRGB.Checked;
-			float3[,]	Image = new float3[m_BitmapXYZ.Width,m_BitmapXYZ.Height];
+
+			float4[,]	Image = new float4[m_BitmapXYZ.Width,m_BitmapXYZ.Height];
 
 			if ( checkBoxLuminance.Checked )
-			{	// Luminance only
+			{	// Convert into luminances only
 				for ( int Y = 0; Y < m_BitmapXYZ.Height; Y++ )
 					for ( int X = 0; X < m_BitmapXYZ.Width; X++ )
 					{
@@ -204,22 +243,32 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 			else
 			{	// RGB
-				for ( int Y = 0; Y < m_BitmapXYZ.Height; Y++ )
-					for ( int X = 0; X < m_BitmapXYZ.Width; X++ )
-					{
-						float4	XYZ = m_BitmapXYZ.ContentXYZ[X, Y];
-						float4	RGB = m_BitmapXYZ.Profile.XYZ2RGB( XYZ );
-						if ( !sRGB )
-						{
-							RGB.x = Bitmap2.ColorProfile.sRGB2Linear( RGB.x );
-							RGB.y = Bitmap2.ColorProfile.sRGB2Linear( RGB.y );
-							RGB.z = Bitmap2.ColorProfile.sRGB2Linear( RGB.z );
-						}
 
-						Image[X, Y].x = RGB.x;
-						Image[X, Y].y = RGB.y;
-						Image[X, Y].z = RGB.z;
-					}
+				// Build conversion profile
+				Bitmap2.ColorProfile	Profile = new Bitmap2.ColorProfile(
+					Bitmap2.ColorProfile.Chromaticities.sRGB,													// Always use standard sRGB illuminant
+					sRGB ? Bitmap2.ColorProfile.GAMMA_CURVE.sRGB : Bitmap2.ColorProfile.GAMMA_CURVE.STANDARD,	// Either use sRGB linear toe or a standard gamma
+					sRGB ? Bitmap2.ColorProfile.GAMMA_EXPONENT_sRGB : 1.0f );									// Either use sRGB gamma or linear gamma
+
+				// Convert
+				Profile.XYZ2RGB( m_BitmapXYZ.ContentXYZ, Image );
+
+// 				for ( int Y = 0; Y < m_BitmapXYZ.Height; Y++ )
+// 					for ( int X = 0; X < m_BitmapXYZ.Width; X++ )
+// 					{
+// 						float4	XYZ = m_BitmapXYZ.ContentXYZ[X, Y];
+// 						float4	RGB = m_BitmapXYZ.Profile.XYZ2RGB( XYZ );
+// 						if ( !sRGB )
+// 						{
+// 							RGB.x = Bitmap2.ColorProfile.sRGB2Linear( RGB.x );
+// 							RGB.y = Bitmap2.ColorProfile.sRGB2Linear( RGB.y );
+// 							RGB.z = Bitmap2.ColorProfile.sRGB2Linear( RGB.z );
+// 						}
+// 
+// 						Image[X, Y].x = RGB.x;
+// 						Image[X, Y].y = RGB.y;
+// 						Image[X, Y].z = RGB.z;
+// 					}
 			}
 
 			outputPanel.Image = Image;
@@ -268,7 +317,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				if ( m_Texture != null )
 					m_Texture.Dispose();
 				m_Texture = null;
-				resultTexturePanel.Texture = null;
+				resultTexturePanel.CalibratedTexture = null;
 				buttonSaveCalibratedImage.Enabled = false;
 
 				foreach ( CustomSwatch S in m_CustomSwatches )
@@ -277,10 +326,10 @@ namespace StandardizedDiffuseAlbedoMaps
 					S.m_Panel.BackColor = Color.DimGray;
 				}
 
-				RebuildImage();
-				outputPanel.ResetCropRectangle();
-				UpdateUIFromCalibration();
-				PrepareDatabase( false );
+				PrepareDatabase( false );			// Prepare database with new camera shot infos
+				UpdateWhiteReflectancePanel();		// If the shot infos are different from the ones from which the white reflectance was picked then the values got reset so update UI
+				outputPanel.ResetCropRectangle();	// Previous crop rectangle is not valid anymore
+				RebuildImage();						// Finally, rebuild the image and show it in the output panel
 			}
 			catch ( Exception _e )
 			{
@@ -521,8 +570,12 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private void UpdateWhiteReflectancePanel()
 		{
-			panelWhiteReflectance.Visible = Math.Abs( m_WhiteReflectance_xyY.z - 1.0 ) > 1e-6f;	// Visible only if not default value
-			labelWhiteReflectance.Text = m_WhiteReflectance_xyY.z.ToString() + " Correction=" + m_CalibrationDatabase.WhiteReflectanceCorrectionFactor.ToString();
+			panelWhiteReflectance.Visible = m_CalibrationDatabase.WhiteReflectanceReference > 0.0f;	// Visible only if valid
+			labelWhiteReflectance.Text = m_CalibrationDatabase.WhiteReflectanceReference.ToString() + " Correction=" + m_CalibrationDatabase.WhiteReflectanceCorrectionFactor.ToString();
+
+			// Also update all existing color swatches
+			foreach ( CustomSwatch S in m_CustomSwatches )
+				S.UpdateSwatchColor();
 		}
 
 		private void checkBoxCalibrate02_CheckedChanged( object sender, EventArgs e )
@@ -766,10 +819,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			outputPanel.StartWhiteReflectancePicking( ( PointF _UV ) => {
 
 				float4	XYZ = m_BitmapXYZ.BilinearSample( _UV.X * m_BitmapXYZ.Width, _UV.Y * m_BitmapXYZ.Height );
-				m_WhiteReflectance_xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
+				float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
 
 				// Compute the correction factor to apply to further image
-				m_CalibrationDatabase.WhiteReflectanceReference = m_WhiteReflectance_xyY.z;
+				m_CalibrationDatabase.WhiteReflectanceReference = xyY.z;
 
 				UpdateWhiteReflectancePanel();
 			} );
@@ -777,7 +830,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private void buttonResetWhiteReflectance_Click( object sender, EventArgs e )
 		{
-			m_WhiteReflectance_xyY = new float3( 0.5f, 0.5f, 1.0f );
 			m_CalibrationDatabase.WhiteReflectanceReference = -1.0f;	// Will reset the factor
 
 			UpdateWhiteReflectancePanel();
@@ -824,12 +876,28 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			//////////////////////////////////////////////////////////////////////////
 			// Go!
-			m_Texture = new CalibratedTexture();
-			m_Texture.Build( m_BitmapXYZ, m_CalibrationDatabase, Parms );
+			try
+			{
+				CalibratedTexture	Tex = new CalibratedTexture();
+				Tex.Build( m_BitmapXYZ, m_CalibrationDatabase, Parms );
+				
+				m_Texture = Tex;
 
-			// Update UI
-			resultTexturePanel.Texture = m_Texture;
-			buttonSaveCalibratedImage.Enabled = true;
+				// Update UI
+				resultTexturePanel.CalibratedTexture = m_Texture;
+				buttonSaveCalibratedImage.Enabled = true;
+
+				m_SwatchMin.m_xyY = m_Texture.SwatchMin.xyY;
+				m_SwatchMin.UpdateSwatchColor();
+				m_SwatchMax.m_xyY = m_Texture.SwatchMax.xyY;
+				m_SwatchMax.UpdateSwatchColor();
+				m_SwatchAvg.m_xyY = m_Texture.SwatchAvg.xyY;
+				m_SwatchAvg.UpdateSwatchColor();
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred during capture:\r\n\r\n", _e );
+			}
 		}
 
 		private void StartColorPicking( int _CustomSwatchIndex )
@@ -846,16 +914,11 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			S.m_CheckBox.Checked = true;	// Automatically enable color swatch if the user bothered picking a color
 
-			Bitmap2.ColorProfile	sRGBProfile = new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB );
-
 			outputPanel.StartSwatchColorPicking( ( PointF _TopLeft, PointF _BottomRight ) => {
 
-				S.m_xyY = CalibratedTexture.ComputeAverageSwatchColor( m_CalibrationDatabase, m_BitmapXYZ, new float2( _TopLeft.X, _TopLeft.Y ), new float2( _BottomRight.X, _BottomRight.Y ) );
-				S.m_RGB = (float3) sRGBProfile.XYZ2RGB( new float4( Bitmap2.ColorProfile.xyY2XYZ( S.m_xyY ), 1.0f ) );
-
-				// Update UI
-				Color	C = Color.FromArgb( Math.Min( 255, (int) (S.m_RGB.x * 255.0f) ), Math.Min( 255, (int) (S.m_RGB.y * 255.0f) ), Math.Min( 255, (int) (S.m_RGB.z * 255.0f) ) );
-				S.m_Panel.BackColor = C;
+				S.m_LocationTopLeft = new float2( _TopLeft.X, _TopLeft.Y );
+				S.m_LocationBottomRight = new float2( _BottomRight.X, _BottomRight.Y );
+				S.UpdateSwatchColor();
 			} );
 		}
 		private void panelCustomSwatch0_Click( object sender, EventArgs e )

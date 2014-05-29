@@ -393,8 +393,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			float4		XYZ2RGB( float4 _XYZ );
 			float4		RGB2XYZ( float4 _RGB );
-			void		XYZ2RGB( float4[,] _XYZ );
-			void		RGB2XYZ( float4[,] _RGB );
+			void		XYZ2RGB( float4[,] _XYZ, float4[,] _RGB );
+			void		RGB2XYZ( float4[,] _RGB, float4[,] _XYZ );
 		}
 
 		/// <summary>
@@ -413,6 +413,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			public static readonly float2	ILLUMINANT_D55	= new float2( 0.33242f, 0.34743f );	// Mid-Morning, Mid-Afternoon
 			public static readonly float2	ILLUMINANT_D65	= new float2( 0.31271f, 0.32902f );	// Daylight, Noon, Overcast (sRGB reference illuminant)
 			public static readonly float2	ILLUMINANT_E	= new float2( 1/3.0f, 1/3.0f );		// Reference
+
+			public const float				GAMMA_EXPONENT_sRGB = 2.4f;
+			public const float				GAMMA_EXPONENT_ADOBE = 2.19921875f;
+			public const float				GAMMA_EXPONENT_PRO_PHOTO = 1.8f;
 
 			#endregion
 
@@ -527,9 +531,9 @@ namespace StandardizedDiffuseAlbedoMaps
 					_XYZ = _XYZ * MAT_XYZ2RGB;
 
 					// Gamma correct
-					_XYZ.x = _XYZ.x > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.x, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.x;
-					_XYZ.y = _XYZ.y > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.y, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.y;
-					_XYZ.z = _XYZ.z > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.z, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.z;
+					_XYZ.x = _XYZ.x > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.x, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * _XYZ.x;
+					_XYZ.y = _XYZ.y > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.y, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * _XYZ.y;
+					_XYZ.z = _XYZ.z > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.z, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * _XYZ.z;
 
 					return _XYZ;
 				}
@@ -537,15 +541,15 @@ namespace StandardizedDiffuseAlbedoMaps
 				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Gamma un-correct
-					_RGB.x = _RGB.x < 0.04045f ? _RGB.x / 12.92f : (float) Math.Pow( (_RGB.x + 0.055f) / 1.055f, 2.4f );
-					_RGB.y = _RGB.y < 0.04045f ? _RGB.y / 12.92f : (float) Math.Pow( (_RGB.y + 0.055f) / 1.055f, 2.4f );
-					_RGB.z = _RGB.z < 0.04045f ? _RGB.z / 12.92f : (float) Math.Pow( (_RGB.z + 0.055f) / 1.055f, 2.4f );
+					_RGB.x = _RGB.x < 0.04045f ? _RGB.x / 12.92f : (float) Math.Pow( (_RGB.x + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
+					_RGB.y = _RGB.y < 0.04045f ? _RGB.y / 12.92f : (float) Math.Pow( (_RGB.y + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
+					_RGB.z = _RGB.z < 0.04045f ? _RGB.z / 12.92f : (float) Math.Pow( (_RGB.z + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
 
 					// Transform into XYZ
 					return _RGB * MAT_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( float4[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ, float4[,] _RGB )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
@@ -558,13 +562,13 @@ namespace StandardizedDiffuseAlbedoMaps
 							XYZ =  XYZ * MAT_XYZ2RGB;
 
 							// Gamma correct
-							_XYZ[X,Y].x = XYZ.x > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.x, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.x;
-							_XYZ[X,Y].y = XYZ.y > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.y, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.y;
-							_XYZ[X,Y].z = XYZ.z > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.z, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.z;
+							_RGB[X,Y].x = XYZ.x > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.x, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * XYZ.x;
+							_RGB[X,Y].y = XYZ.y > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.y, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * XYZ.y;
+							_RGB[X,Y].z = XYZ.z > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.z, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * XYZ.z;
 						}
 				}
 
-				public void RGB2XYZ( float4[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB, float4[,] _XYZ )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
@@ -574,12 +578,12 @@ namespace StandardizedDiffuseAlbedoMaps
 							float4	RGB = _RGB[X,Y];
 
 							// Gamma un-correct
-							RGB.x = RGB.x < 0.04045f ? RGB.x / 12.92f : (float) Math.Pow( (RGB.x + 0.055f) / 1.055f, 2.4f );
-							RGB.y = RGB.y < 0.04045f ? RGB.y / 12.92f : (float) Math.Pow( (RGB.y + 0.055f) / 1.055f, 2.4f );
-							RGB.z = RGB.z < 0.04045f ? RGB.z / 12.92f : (float) Math.Pow( (RGB.z + 0.055f) / 1.055f, 2.4f );
+							RGB.x = RGB.x < 0.04045f ? RGB.x / 12.92f : (float) Math.Pow( (RGB.x + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
+							RGB.y = RGB.y < 0.04045f ? RGB.y / 12.92f : (float) Math.Pow( (RGB.y + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
+							RGB.z = RGB.z < 0.04045f ? RGB.z / 12.92f : (float) Math.Pow( (RGB.z + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
 
 							// Transform into XYZ
-							_RGB[X,Y] =  RGB *  MAT_RGB2XYZ;
+							_XYZ[X,Y] =  RGB *  MAT_RGB2XYZ;
 						}
 				}
 
@@ -614,9 +618,9 @@ namespace StandardizedDiffuseAlbedoMaps
 					_XYZ = _XYZ * MAT_XYZ2RGB;
 
 					// Gamma correct
-					_XYZ.x = (float) Math.Pow( _XYZ.x, 1.0f / 2.19921875f );
-					_XYZ.y = (float) Math.Pow( _XYZ.y, 1.0f / 2.19921875f );
-					_XYZ.z = (float) Math.Pow( _XYZ.z, 1.0f / 2.19921875f );
+					_XYZ.x = (float) Math.Pow( _XYZ.x, 1.0f / GAMMA_EXPONENT_ADOBE );
+					_XYZ.y = (float) Math.Pow( _XYZ.y, 1.0f / GAMMA_EXPONENT_ADOBE );
+					_XYZ.z = (float) Math.Pow( _XYZ.z, 1.0f / GAMMA_EXPONENT_ADOBE );
 
 					return _XYZ;
 				}
@@ -624,15 +628,15 @@ namespace StandardizedDiffuseAlbedoMaps
 				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Gamma un-correct
-					_RGB.x = (float) Math.Pow( _RGB.x, 2.19921875f );
-					_RGB.y = (float) Math.Pow( _RGB.y, 2.19921875f );
-					_RGB.z = (float) Math.Pow( _RGB.z, 2.19921875f );
+					_RGB.x = (float) Math.Pow( _RGB.x, GAMMA_EXPONENT_ADOBE );
+					_RGB.y = (float) Math.Pow( _RGB.y, GAMMA_EXPONENT_ADOBE );
+					_RGB.z = (float) Math.Pow( _RGB.z, GAMMA_EXPONENT_ADOBE );
 
 					// Transform into XYZ
 					return _RGB * MAT_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( float4[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ, float4[,] _RGB )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
@@ -645,13 +649,13 @@ namespace StandardizedDiffuseAlbedoMaps
 							XYZ = XYZ * MAT_XYZ2RGB;
 
 							// Gamma correct
-							_XYZ[X,Y].x = (float) Math.Pow( XYZ.x, 1.0f / 2.19921875f );
-							_XYZ[X,Y].y = (float) Math.Pow( XYZ.y, 1.0f / 2.19921875f );
-							_XYZ[X,Y].z = (float) Math.Pow( XYZ.z, 1.0f / 2.19921875f );
+							_RGB[X,Y].x = (float) Math.Pow( XYZ.x, 1.0f / GAMMA_EXPONENT_ADOBE );
+							_RGB[X,Y].y = (float) Math.Pow( XYZ.y, 1.0f / GAMMA_EXPONENT_ADOBE );
+							_RGB[X,Y].z = (float) Math.Pow( XYZ.z, 1.0f / GAMMA_EXPONENT_ADOBE );
 						}
 				}
 
-				public void RGB2XYZ( float4[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB, float4[,] _XYZ )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
@@ -661,12 +665,12 @@ namespace StandardizedDiffuseAlbedoMaps
 							float4	RGB = _RGB[X,Y];
 
 							// Gamma un-correct
-							RGB.x = (float) Math.Pow( RGB.x, 2.19921875f );
-							RGB.y = (float) Math.Pow( RGB.y, 2.19921875f );
-							RGB.z = (float) Math.Pow( RGB.z, 2.19921875f );
+							RGB.x = (float) Math.Pow( RGB.x, GAMMA_EXPONENT_ADOBE );
+							RGB.y = (float) Math.Pow( RGB.y, GAMMA_EXPONENT_ADOBE );
+							RGB.z = (float) Math.Pow( RGB.z, GAMMA_EXPONENT_ADOBE );
 
 							// Transform into XYZ
-							_RGB[X,Y] = RGB * MAT_RGB2XYZ;
+							_XYZ[X,Y] = RGB * MAT_RGB2XYZ;
 						}
 				}
 
@@ -701,9 +705,9 @@ namespace StandardizedDiffuseAlbedoMaps
 					_XYZ = _XYZ * MAT_XYZ2RGB;
 
 					// Gamma correct
-					_XYZ.x = (float) Math.Pow( _XYZ.x, 1.0f / 2.19921875f );
-					_XYZ.y = (float) Math.Pow( _XYZ.y, 1.0f / 2.19921875f );
-					_XYZ.z = (float) Math.Pow( _XYZ.z, 1.0f / 2.19921875f );
+					_XYZ.x = (float) Math.Pow( _XYZ.x, 1.0f / GAMMA_EXPONENT_ADOBE );
+					_XYZ.y = (float) Math.Pow( _XYZ.y, 1.0f / GAMMA_EXPONENT_ADOBE );
+					_XYZ.z = (float) Math.Pow( _XYZ.z, 1.0f / GAMMA_EXPONENT_ADOBE );
 
 					return _XYZ;
 				}
@@ -711,15 +715,15 @@ namespace StandardizedDiffuseAlbedoMaps
 				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Gamma un-correct
-					_RGB.x = (float) Math.Pow( _RGB.x, 2.19921875f );
-					_RGB.y = (float) Math.Pow( _RGB.y, 2.19921875f );
-					_RGB.z = (float) Math.Pow( _RGB.z, 2.19921875f );
+					_RGB.x = (float) Math.Pow( _RGB.x, GAMMA_EXPONENT_ADOBE );
+					_RGB.y = (float) Math.Pow( _RGB.y, GAMMA_EXPONENT_ADOBE );
+					_RGB.z = (float) Math.Pow( _RGB.z, GAMMA_EXPONENT_ADOBE );
 
 					// Transform into XYZ
 					return _RGB * MAT_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( float4[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ, float4[,] _RGB )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
@@ -732,13 +736,13 @@ namespace StandardizedDiffuseAlbedoMaps
 							XYZ = XYZ * MAT_XYZ2RGB;
 
 							// Gamma correct
-							_XYZ[X,Y].x = (float) Math.Pow( XYZ.x, 1.0f / 2.19921875f );
-							_XYZ[X,Y].y = (float) Math.Pow( XYZ.y, 1.0f / 2.19921875f );
-							_XYZ[X,Y].z = (float) Math.Pow( XYZ.z, 1.0f / 2.19921875f );
+							_RGB[X,Y].x = (float) Math.Pow( XYZ.x, 1.0f / GAMMA_EXPONENT_ADOBE );
+							_RGB[X,Y].y = (float) Math.Pow( XYZ.y, 1.0f / GAMMA_EXPONENT_ADOBE );
+							_RGB[X,Y].z = (float) Math.Pow( XYZ.z, 1.0f / GAMMA_EXPONENT_ADOBE );
 						}
 				}
 
-				public void RGB2XYZ( float4[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB, float4[,] _XYZ )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
@@ -748,12 +752,12 @@ namespace StandardizedDiffuseAlbedoMaps
 							float4	RGB = _RGB[X,Y];
 
 							// Gamma un-correct
-							RGB.x = (float) Math.Pow( RGB.x, 2.19921875f );
-							RGB.y = (float) Math.Pow( RGB.y, 2.19921875f );
-							RGB.z = (float) Math.Pow( RGB.z, 2.19921875f );
+							RGB.x = (float) Math.Pow( RGB.x, GAMMA_EXPONENT_ADOBE );
+							RGB.y = (float) Math.Pow( RGB.y, GAMMA_EXPONENT_ADOBE );
+							RGB.z = (float) Math.Pow( RGB.z, GAMMA_EXPONENT_ADOBE );
 
 							// Transform into XYZ
-							_RGB[X,Y] = RGB * MAT_RGB2XYZ;
+							_XYZ[X,Y] = RGB * MAT_RGB2XYZ;
 						}
 				}
 
@@ -788,9 +792,9 @@ namespace StandardizedDiffuseAlbedoMaps
 					_XYZ = _XYZ * MAT_XYZ2RGB;
 
 					// Gamma correct
-					_XYZ.x = _XYZ.x > 0.001953f ? (float) Math.Pow( _XYZ.x, 1.0f / 1.8f ) : 16.0f * _XYZ.x;
-					_XYZ.y = _XYZ.y > 0.001953f ? (float) Math.Pow( _XYZ.y, 1.0f / 1.8f ) : 16.0f * _XYZ.y;
-					_XYZ.z = _XYZ.z > 0.001953f ? (float) Math.Pow( _XYZ.z, 1.0f / 1.8f ) : 16.0f * _XYZ.z;
+					_XYZ.x = _XYZ.x > 0.001953f ? (float) Math.Pow( _XYZ.x, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * _XYZ.x;
+					_XYZ.y = _XYZ.y > 0.001953f ? (float) Math.Pow( _XYZ.y, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * _XYZ.y;
+					_XYZ.z = _XYZ.z > 0.001953f ? (float) Math.Pow( _XYZ.z, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * _XYZ.z;
 
 					return _XYZ;
 				}
@@ -798,15 +802,15 @@ namespace StandardizedDiffuseAlbedoMaps
 				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Gamma un-correct
-					_RGB.x = _RGB.x > 0.031248f ? (float) Math.Pow( _RGB.x, 1.8f ) : _RGB.x / 16.0f;
-					_RGB.y = _RGB.y > 0.031248f ? (float) Math.Pow( _RGB.y, 1.8f ) : _RGB.y / 16.0f;
-					_RGB.z = _RGB.z > 0.031248f ? (float) Math.Pow( _RGB.z, 1.8f ) : _RGB.z / 16.0f;
+					_RGB.x = _RGB.x > 0.031248f ? (float) Math.Pow( _RGB.x, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB.x / 16.0f;
+					_RGB.y = _RGB.y > 0.031248f ? (float) Math.Pow( _RGB.y, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB.y / 16.0f;
+					_RGB.z = _RGB.z > 0.031248f ? (float) Math.Pow( _RGB.z, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB.z / 16.0f;
 
 					// Transform into XYZ
 					return _RGB * MAT_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( float4[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ, float4[,] _RGB )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
@@ -819,13 +823,13 @@ namespace StandardizedDiffuseAlbedoMaps
 							XYZ = XYZ * MAT_XYZ2RGB;
 
 							// Gamma correct
-							_XYZ[X,Y].x = XYZ.x > 0.001953f ? (float) Math.Pow( XYZ.x, 1.0f / 1.8f ) : 16.0f * XYZ.x;
-							_XYZ[X,Y].y = XYZ.y > 0.001953f ? (float) Math.Pow( XYZ.y, 1.0f / 1.8f ) : 16.0f * XYZ.y;
-							_XYZ[X,Y].z = XYZ.z > 0.001953f ? (float) Math.Pow( XYZ.z, 1.0f / 1.8f ) : 16.0f * XYZ.z;
+							_RGB[X,Y].x = XYZ.x > 0.001953f ? (float) Math.Pow( XYZ.x, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * XYZ.x;
+							_RGB[X,Y].y = XYZ.y > 0.001953f ? (float) Math.Pow( XYZ.y, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * XYZ.y;
+							_RGB[X,Y].z = XYZ.z > 0.001953f ? (float) Math.Pow( XYZ.z, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * XYZ.z;
 						}
 				}
 
-				public void RGB2XYZ( float4[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB, float4[,] _XYZ )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
@@ -835,12 +839,12 @@ namespace StandardizedDiffuseAlbedoMaps
 							float4	RGB = _RGB[X,Y];
 
 							// Gamma un-correct
-							RGB.x = RGB.x > 0.031248f ? (float) Math.Pow( RGB.x, 1.8f ) : RGB.x / 16.0f;
-							RGB.y = RGB.y > 0.031248f ? (float) Math.Pow( RGB.y, 1.8f ) : RGB.y / 16.0f;
-							RGB.z = RGB.z > 0.031248f ? (float) Math.Pow( RGB.z, 1.8f ) : RGB.z / 16.0f;
+							RGB.x = RGB.x > 0.031248f ? (float) Math.Pow( RGB.x, GAMMA_EXPONENT_PRO_PHOTO ) : RGB.x / 16.0f;
+							RGB.y = RGB.y > 0.031248f ? (float) Math.Pow( RGB.y, GAMMA_EXPONENT_PRO_PHOTO ) : RGB.y / 16.0f;
+							RGB.z = RGB.z > 0.031248f ? (float) Math.Pow( RGB.z, GAMMA_EXPONENT_PRO_PHOTO ) : RGB.z / 16.0f;
 
 							// Transform into XYZ
-							_RGB[X,Y] = RGB * MAT_RGB2XYZ;
+							_XYZ[X,Y] = RGB * MAT_RGB2XYZ;
 						}
 				}
 
@@ -881,22 +885,22 @@ namespace StandardizedDiffuseAlbedoMaps
 					return _RGB * MAT_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( float4[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ, float4[,] _RGB )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
-							_XYZ[X,Y] = _XYZ[X,Y] * MAT_XYZ2RGB;
+							_RGB[X,Y] = _XYZ[X,Y] * MAT_XYZ2RGB;
 				}
 
-				public void RGB2XYZ( float4[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB, float4[,] _XYZ )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
-							_RGB[X,Y] = _RGB[X,Y] * MAT_RGB2XYZ;
+							_XYZ[X,Y] = _RGB[X,Y] * MAT_RGB2XYZ;
 				}
 
 				#endregion
@@ -927,22 +931,22 @@ namespace StandardizedDiffuseAlbedoMaps
 					return _RGB * m_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( float4[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ, float4[,] _RGB )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
-							_XYZ[X,Y] = _XYZ[X,Y] * m_XYZ2RGB;
+							_RGB[X,Y] = _XYZ[X,Y] * m_XYZ2RGB;
 				}
 
-				public void RGB2XYZ( float4[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB, float4[,] _XYZ )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
-							_RGB[X,Y] = _RGB[X,Y] * m_RGB2XYZ;
+							_XYZ[X,Y] = _RGB[X,Y] * m_RGB2XYZ;
 				}
 
 				#endregion
@@ -989,7 +993,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					return _RGB * m_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( float4[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ, float4[,] _RGB )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
@@ -1002,13 +1006,13 @@ namespace StandardizedDiffuseAlbedoMaps
 							XYZ = XYZ * m_XYZ2RGB;
 
 							// Gamma correct
-							_XYZ[X,Y].x = (float) Math.Pow( XYZ.x, m_InvGamma );
-							_XYZ[X,Y].y = (float) Math.Pow( XYZ.y, m_InvGamma );
-							_XYZ[X,Y].z = (float) Math.Pow( XYZ.z, m_InvGamma );
+							_RGB[X,Y].x = (float) Math.Pow( XYZ.x, m_InvGamma );
+							_RGB[X,Y].y = (float) Math.Pow( XYZ.y, m_InvGamma );
+							_RGB[X,Y].z = (float) Math.Pow( XYZ.z, m_InvGamma );
 						}
 				}
 
-				public void RGB2XYZ( float4[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB, float4[,] _XYZ )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
@@ -1023,7 +1027,7 @@ namespace StandardizedDiffuseAlbedoMaps
 							RGB.z = (float) Math.Pow( RGB.z, m_Gamma );
 
 							// Transform into XYZ
-							_RGB[X,Y] = RGB * m_RGB2XYZ;
+							_XYZ[X,Y] = RGB * m_RGB2XYZ;
 						}
 				}
 
@@ -1049,9 +1053,9 @@ namespace StandardizedDiffuseAlbedoMaps
 					_XYZ = _XYZ * m_XYZ2RGB;
 
 					// Gamma correct
-					_XYZ.x = _XYZ.x > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.x, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.x;
-					_XYZ.y = _XYZ.y > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.y, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.y;
-					_XYZ.z = _XYZ.z > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.z, 1.0f / 2.4f ) - 0.055f : 12.92f * _XYZ.z;
+					_XYZ.x = _XYZ.x > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.x, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * _XYZ.x;
+					_XYZ.y = _XYZ.y > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.y, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * _XYZ.y;
+					_XYZ.z = _XYZ.z > 0.0031308f ? 1.055f * (float) Math.Pow( _XYZ.z, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * _XYZ.z;
 
 					return _XYZ;
 				}
@@ -1059,15 +1063,15 @@ namespace StandardizedDiffuseAlbedoMaps
 				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Gamma un-correct
-					_RGB.x = _RGB.x < 0.04045f ? _RGB.x / 12.92f : (float) Math.Pow( (_RGB.x + 0.055f) / 1.055f, 2.4f );
-					_RGB.y = _RGB.y < 0.04045f ? _RGB.y / 12.92f : (float) Math.Pow( (_RGB.y + 0.055f) / 1.055f, 2.4f );
-					_RGB.z = _RGB.z < 0.04045f ? _RGB.z / 12.92f : (float) Math.Pow( (_RGB.z + 0.055f) / 1.055f, 2.4f );
+					_RGB.x = _RGB.x < 0.04045f ? _RGB.x / 12.92f : (float) Math.Pow( (_RGB.x + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
+					_RGB.y = _RGB.y < 0.04045f ? _RGB.y / 12.92f : (float) Math.Pow( (_RGB.y + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
+					_RGB.z = _RGB.z < 0.04045f ? _RGB.z / 12.92f : (float) Math.Pow( (_RGB.z + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
 
 					// Transform into XYZ
 					return _RGB * m_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( float4[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ, float4[,] _RGB )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
@@ -1080,13 +1084,13 @@ namespace StandardizedDiffuseAlbedoMaps
 							XYZ = XYZ * m_XYZ2RGB;
 
 							// Gamma correct
-							_XYZ[X,Y].x = XYZ.x > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.x, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.x;
-							_XYZ[X,Y].y = XYZ.y > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.y, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.y;
-							_XYZ[X,Y].z = XYZ.z > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.z, 1.0f / 2.4f ) - 0.055f : 12.92f * XYZ.z;
+							_RGB[X,Y].x = XYZ.x > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.x, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * XYZ.x;
+							_RGB[X,Y].y = XYZ.y > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.y, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * XYZ.y;
+							_RGB[X,Y].z = XYZ.z > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.z, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * XYZ.z;
 						}
 				}
 
-				public void RGB2XYZ( float4[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB, float4[,] _XYZ )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
@@ -1096,12 +1100,12 @@ namespace StandardizedDiffuseAlbedoMaps
 							float4	RGB = _RGB[X,Y];
 
 							// Gamma un-correct
-							RGB.x = RGB.x < 0.04045f ? RGB.x / 12.92f : (float) Math.Pow( (RGB.x + 0.055f) / 1.055f, 2.4f );
-							RGB.y = RGB.y < 0.04045f ? RGB.y / 12.92f : (float) Math.Pow( (RGB.y + 0.055f) / 1.055f, 2.4f );
-							RGB.z = RGB.z < 0.04045f ? RGB.z / 12.92f : (float) Math.Pow( (RGB.z + 0.055f) / 1.055f, 2.4f );
+							RGB.x = RGB.x < 0.04045f ? RGB.x / 12.92f : (float) Math.Pow( (RGB.x + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
+							RGB.y = RGB.y < 0.04045f ? RGB.y / 12.92f : (float) Math.Pow( (RGB.y + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
+							RGB.z = RGB.z < 0.04045f ? RGB.z / 12.92f : (float) Math.Pow( (RGB.z + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
 
 							// Transform into XYZ
-							_RGB[X,Y] = RGB * m_RGB2XYZ;
+							_XYZ[X,Y] = RGB * m_RGB2XYZ;
 						}
 				}
 
@@ -1127,9 +1131,9 @@ namespace StandardizedDiffuseAlbedoMaps
 					_XYZ = _XYZ * m_XYZ2RGB;
 
 					// Gamma correct
-					_XYZ.x = _XYZ.x > 0.001953f ? (float) Math.Pow( _XYZ.x, 1.0f / 1.8f ) : 16.0f * _XYZ.x;
-					_XYZ.y = _XYZ.y > 0.001953f ? (float) Math.Pow( _XYZ.y, 1.0f / 1.8f ) : 16.0f * _XYZ.y;
-					_XYZ.z = _XYZ.z > 0.001953f ? (float) Math.Pow( _XYZ.z, 1.0f / 1.8f ) : 16.0f * _XYZ.z;
+					_XYZ.x = _XYZ.x > 0.001953f ? (float) Math.Pow( _XYZ.x, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * _XYZ.x;
+					_XYZ.y = _XYZ.y > 0.001953f ? (float) Math.Pow( _XYZ.y, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * _XYZ.y;
+					_XYZ.z = _XYZ.z > 0.001953f ? (float) Math.Pow( _XYZ.z, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * _XYZ.z;
 
 					return _XYZ;
 				}
@@ -1137,15 +1141,15 @@ namespace StandardizedDiffuseAlbedoMaps
 				public float4 RGB2XYZ( float4 _RGB )
 				{
 					// Gamma un-correct
-					_RGB.x = _RGB.x > 0.031248f ? (float) Math.Pow( _RGB.x, 1.8f ) : _RGB.x / 16.0f;
-					_RGB.y = _RGB.y > 0.031248f ? (float) Math.Pow( _RGB.y, 1.8f ) : _RGB.y / 16.0f;
-					_RGB.z = _RGB.z > 0.031248f ? (float) Math.Pow( _RGB.z, 1.8f ) : _RGB.z / 16.0f;
+					_RGB.x = _RGB.x > 0.031248f ? (float) Math.Pow( _RGB.x, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB.x / 16.0f;
+					_RGB.y = _RGB.y > 0.031248f ? (float) Math.Pow( _RGB.y, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB.y / 16.0f;
+					_RGB.z = _RGB.z > 0.031248f ? (float) Math.Pow( _RGB.z, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB.z / 16.0f;
 
 					// Transform into XYZ
 					return _RGB * m_RGB2XYZ;
 				}
 
-				public void XYZ2RGB( float4[,] _XYZ )
+				public void XYZ2RGB( float4[,] _XYZ, float4[,] _RGB )
 				{
 					int		W = _XYZ.GetLength( 0 );
 					int		H = _XYZ.GetLength( 1 );
@@ -1158,13 +1162,13 @@ namespace StandardizedDiffuseAlbedoMaps
 							XYZ = XYZ * m_XYZ2RGB;
 
 							// Gamma correct
-							_XYZ[X,Y].x = XYZ.x > 0.001953f ? (float) Math.Pow( XYZ.x, 1.0f / 1.8f ) : 16.0f * XYZ.x;
-							_XYZ[X,Y].y = XYZ.y > 0.001953f ? (float) Math.Pow( XYZ.y, 1.0f / 1.8f ) : 16.0f * XYZ.y;
-							_XYZ[X,Y].z = XYZ.z > 0.001953f ? (float) Math.Pow( XYZ.z, 1.0f / 1.8f ) : 16.0f * XYZ.z;
+							_RGB[X,Y].x = XYZ.x > 0.001953f ? (float) Math.Pow( XYZ.x, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * XYZ.x;
+							_RGB[X,Y].y = XYZ.y > 0.001953f ? (float) Math.Pow( XYZ.y, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * XYZ.y;
+							_RGB[X,Y].z = XYZ.z > 0.001953f ? (float) Math.Pow( XYZ.z, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * XYZ.z;
 						}
 				}
 
-				public void RGB2XYZ( float4[,] _RGB )
+				public void RGB2XYZ( float4[,] _RGB, float4[,] _XYZ )
 				{
 					int		W = _RGB.GetLength( 0 );
 					int		H = _RGB.GetLength( 1 );
@@ -1174,12 +1178,12 @@ namespace StandardizedDiffuseAlbedoMaps
 							float4	RGB = _RGB[X,Y];
 
 							// Gamma un-correct
-							RGB.x = RGB.x > 0.031248f ? (float) Math.Pow( RGB.x, 1.8f ) : RGB.x / 16.0f;
-							RGB.y = RGB.y > 0.031248f ? (float) Math.Pow( RGB.y, 1.8f ) : RGB.y / 16.0f;
-							RGB.z = RGB.z > 0.031248f ? (float) Math.Pow( RGB.z, 1.8f ) : RGB.z / 16.0f;
+							RGB.x = RGB.x > 0.031248f ? (float) Math.Pow( RGB.x, GAMMA_EXPONENT_PRO_PHOTO ) : RGB.x / 16.0f;
+							RGB.y = RGB.y > 0.031248f ? (float) Math.Pow( RGB.y, GAMMA_EXPONENT_PRO_PHOTO ) : RGB.y / 16.0f;
+							RGB.z = RGB.z > 0.031248f ? (float) Math.Pow( RGB.z, GAMMA_EXPONENT_PRO_PHOTO ) : RGB.z / 16.0f;
 
 							// Transform into XYZ
-							_RGB[X,Y] = RGB * m_RGB2XYZ;
+							_XYZ[X,Y] = RGB * m_RGB2XYZ;
 						}
 				}
 
@@ -1258,22 +1262,22 @@ namespace StandardizedDiffuseAlbedoMaps
 					case STANDARD_PROFILE.sRGB:
 						m_Chromaticities = Chromaticities.sRGB;
 						m_GammaCurve = GAMMA_CURVE.sRGB;
-						m_Gamma = 2.4f;
+						m_Gamma = GAMMA_EXPONENT_sRGB;
 						break;
 					case STANDARD_PROFILE.ADOBE_RGB_D50:
 						m_Chromaticities = Chromaticities.AdobeRGB_D50;
 						m_GammaCurve = GAMMA_CURVE.STANDARD;
-						m_Gamma = 2.19921875f;
+						m_Gamma = GAMMA_EXPONENT_ADOBE;
 						break;
 					case STANDARD_PROFILE.ADOBE_RGB_D65:
 						m_Chromaticities = Chromaticities.AdobeRGB_D65;
 						m_GammaCurve = GAMMA_CURVE.STANDARD;
-						m_Gamma = 2.19921875f;
+						m_Gamma = GAMMA_EXPONENT_ADOBE;
 						break;
 					case STANDARD_PROFILE.PRO_PHOTO:
 						m_Chromaticities = Chromaticities.ProPhoto;
 						m_GammaCurve = GAMMA_CURVE.PRO_PHOTO;
-						m_Gamma = 1.8f;
+						m_Gamma = GAMMA_EXPONENT_PRO_PHOTO;
 						break;
 					case STANDARD_PROFILE.RADIANCE:
 						m_Chromaticities = Chromaticities.Radiance;
@@ -1311,7 +1315,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 					case FILE_TYPE.PNG:
 						m_GammaCurve = GAMMA_CURVE.sRGB;
-						m_Gamma = 2.4f;
+						m_Gamma = GAMMA_EXPONENT_sRGB;
 						m_Chromaticities = Chromaticities.sRGB;	// Default for PNGs is standard sRGB
 						EnumerateMetaDataPNG( _MetaData, out m_bProfileFoundInFile, out bGammaFoundInFile );
 						break;
@@ -1388,18 +1392,18 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// Converts a CIEXYZ color to a RGB color
 			/// </summary>
 			/// <param name="_XYZ"></param>
-			public void		XYZ2RGB( float4[,] _XYZ )
+			public void		XYZ2RGB( float4[,] _XYZ, float4[,] _RGB )
 			{
-				m_InternalConverter.XYZ2RGB( _XYZ );
+				m_InternalConverter.XYZ2RGB( _XYZ, _RGB );
 			}
 
 			/// <summary>
 			/// Converts a RGB color to a CIEXYZ color
 			/// </summary>
 			/// <param name="_RGB"></param>
-			public void		RGB2XYZ( float4[,] _RGB )
+			public void		RGB2XYZ( float4[,] _RGB, float4[,] _XYZ )
 			{
-				m_InternalConverter.RGB2XYZ( _RGB );
+				m_InternalConverter.RGB2XYZ( _RGB, _XYZ );
 			}
 
 			#endregion
@@ -1445,10 +1449,10 @@ namespace StandardizedDiffuseAlbedoMaps
 					bool	bIsGammaCorrect = true;
 					switch ( RecognizedProfile )
 					{
-						case STANDARD_PROFILE.sRGB:				bIsGammaCorrect = EnsureGamma( GAMMA_CURVE.sRGB, 2.4f ); break;
-						case STANDARD_PROFILE.ADOBE_RGB_D50:	bIsGammaCorrect = EnsureGamma( GAMMA_CURVE.STANDARD, 2.19921875f ); break;
-						case STANDARD_PROFILE.ADOBE_RGB_D65:	bIsGammaCorrect = EnsureGamma( GAMMA_CURVE.STANDARD, 2.19921875f ); break;
-						case STANDARD_PROFILE.PRO_PHOTO:		bIsGammaCorrect = EnsureGamma( GAMMA_CURVE.PRO_PHOTO, 1.8f ); break;
+						case STANDARD_PROFILE.sRGB:				bIsGammaCorrect = EnsureGamma( GAMMA_CURVE.sRGB, GAMMA_EXPONENT_sRGB ); break;
+						case STANDARD_PROFILE.ADOBE_RGB_D50:	bIsGammaCorrect = EnsureGamma( GAMMA_CURVE.STANDARD, GAMMA_EXPONENT_ADOBE ); break;
+						case STANDARD_PROFILE.ADOBE_RGB_D65:	bIsGammaCorrect = EnsureGamma( GAMMA_CURVE.STANDARD, GAMMA_EXPONENT_ADOBE ); break;
+						case STANDARD_PROFILE.PRO_PHOTO:		bIsGammaCorrect = EnsureGamma( GAMMA_CURVE.PRO_PHOTO, GAMMA_EXPONENT_PRO_PHOTO ); break;
 						case STANDARD_PROFILE.RADIANCE:			bIsGammaCorrect = EnsureGamma( GAMMA_CURVE.STANDARD, 1.0f ); break;
 					}
 
@@ -1462,25 +1466,25 @@ namespace StandardizedDiffuseAlbedoMaps
 				{
 					case STANDARD_PROFILE.sRGB:
 						m_GammaCurve = GAMMA_CURVE.sRGB;
-						m_Gamma = 2.4f;
+						m_Gamma = GAMMA_EXPONENT_sRGB;
 						m_InternalConverter = new InternalColorConverter_sRGB();
 						break;
 
 					case STANDARD_PROFILE.ADOBE_RGB_D50:
 						m_GammaCurve = GAMMA_CURVE.STANDARD;
-						m_Gamma = 2.19921875f;
+						m_Gamma = GAMMA_EXPONENT_ADOBE;
 						m_InternalConverter = new InternalColorConverter_AdobeRGB_D50();
 						break;
 
 					case STANDARD_PROFILE.ADOBE_RGB_D65:
 						m_GammaCurve = GAMMA_CURVE.STANDARD;
-						m_Gamma = 2.19921875f;
+						m_Gamma = GAMMA_EXPONENT_ADOBE;
 						m_InternalConverter = new InternalColorConverter_AdobeRGB_D65();
 						break;
 
 					case STANDARD_PROFILE.PRO_PHOTO:
 						m_GammaCurve = GAMMA_CURVE.PRO_PHOTO;
-						m_Gamma = 1.8f;
+						m_Gamma = GAMMA_EXPONENT_PRO_PHOTO;
 						m_InternalConverter = new InternalColorConverter_ProPhoto();
 						break;
 
@@ -1528,7 +1532,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// <returns></returns>
 			public static float3	XYZ2xyY( float3 _XYZ )
 			{
-				float	InvSum = 1.0f / (_XYZ.x + _XYZ.y + _XYZ.z);
+				float	InvSum = 1.0f / Math.Max( 1e-8f, _XYZ.x + _XYZ.y + _XYZ.z);
 				return new float3( _XYZ.x * InvSum, _XYZ.y * InvSum, _XYZ.y );
 			}
 
@@ -1539,7 +1543,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// <returns></returns>
 			public static float3	xyY2XYZ( float3 _xyY )
 			{
-				float	Y_y = _xyY.z / _xyY.y;
+				float	Y_y = _xyY.z / Math.Max( 1e-8f, _xyY.y );
 				return new float3( _xyY.x * Y_y, _xyY.z, (1.0f - _xyY.x - _xyY.y) * Y_y );
 			}
 
@@ -1576,7 +1580,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				if ( c < 0.0031308f )
 					return c * 12.92f;
 
-				return 1.055f * (float) Math.Pow( c, 1.0f / 2.4f ) - 0.055f;
+				return 1.055f * (float) Math.Pow( c, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f;
 			}
 
 			/// <summary>
@@ -1590,7 +1594,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				if ( c < 0.04045f )
 					return c / 12.92f;
 
-				return (float) Math.Pow( (c + 0.055f) / 1.055f, 2.4f );
+				return (float) Math.Pow( (c + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
 			}
 
 			#endregion
@@ -2151,7 +2155,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				}
 
 			// Convert to CIE XYZ
-			m_ColorProfile.RGB2XYZ( m_Bitmap );
+			m_ColorProfile.RGB2XYZ( m_Bitmap, m_Bitmap );
 		}
 
 		/// <summary>
@@ -2254,92 +2258,9 @@ namespace StandardizedDiffuseAlbedoMaps
 
 							// ===== 3] Convert the frame to generic RGBA32F =====
 							ConvertFrame( Frame );
-// 
-// 							m_Width = Frame.PixelWidth;
-// 							m_Height = Frame.PixelHeight;
-// 
-// 							float[]	TempBitmap = new float[m_Width*m_Height*4];
-// 							try
-// 							{
-// 								FormatConvertedBitmap	Converter = new FormatConvertedBitmap();
-// 								Converter.BeginInit();
-// 								Converter.Source = Frame;
-// 								Converter.DestinationFormat = GENERIC_PIXEL_FORMAT;
-// 								Converter.EndInit();
-// 
-// 								int		Stride = Frame.PixelWidth * Utilities.SizeOf<float4>();
-// 								Converter.CopyPixels( TempBitmap, Stride, 0 );
-// 							}
-// 							catch ( Exception _e )
-// 							{
-// 								throw new Exception( "Failed to create the bitmap converter to convert from " + Frame.Format + " to " + GENERIC_PIXEL_FORMAT + " pixel format !", _e );
-// 							}
-// 
-// 							// ===== 4] Build the target bitmap =====
-// 							m_bHasAlpha = false;
-// 							m_Bitmap = new float4[m_Width,m_Height];
-// 
-// 							int		Position = 0;
-// 							float4	Temp;
-// 							bool	bPreMultiplied = Frame.Format == System.Windows.Media.PixelFormats.Pbgra32 || Frame.Format == System.Windows.Media.PixelFormats.Prgba64 || Frame.Format == System.Windows.Media.PixelFormats.Prgba128Float;
-// 							if ( bPreMultiplied )
-// 							{	// Colors are pre-multiplied by alpha !
-// 								for ( int Y = 0; Y < m_Height; Y++ )
-// 									for ( int X = 0; X < m_Width; X++ )
-// 									{
-// 										Temp.x = TempBitmap[Position++];
-// 										Temp.y = TempBitmap[Position++];
-// 										Temp.z = TempBitmap[Position++];
-// 										Temp.w = TempBitmap[Position++];
-// 
-// 										float	InvA = Temp.w != 0.0f ? 1.0f / Temp.w : 1.0f;
-// 										Temp.x *= InvA;
-// 										Temp.y *= InvA;
-// 										Temp.z *= InvA;
-// 
-// 										m_Bitmap[X, Y] = Temp;
-// 
-// 										if ( Temp.w != 1.0f )
-// 											m_bHasAlpha = true;
-// 									}
-// 							}
-// 							else
-// 							{
-// 								for ( int Y = 0; Y < m_Height; Y++ )
-// 									for ( int X = 0; X < m_Width; X++ )
-// 									{
-// 										Temp.x = TempBitmap[Position++];
-// 										Temp.y = TempBitmap[Position++];
-// 										Temp.z = TempBitmap[Position++];
-// 										Temp.w = TempBitmap[Position++];
-// 
-// 										Temp.x = (float) Math.Pow( Temp.x, 1.0f / 2.2f );	// Correct the behind the scene gamma correction
-// 										Temp.y = (float) Math.Pow( Temp.y, 1.0f / 2.2f );
-// 										Temp.z = (float) Math.Pow( Temp.z, 1.0f / 2.2f );
-// 
-// 										m_Bitmap[X, Y] = Temp;
-// 
-// 										if ( Temp.w != 1.0f )
-// 											m_bHasAlpha = true;
-// 									}
-// 							}
 
-// DEBUG
-// byte[]	DebugImage = new byte[4*m_Width*m_Height];
-// for ( int Y=0; Y < m_Height; Y++ )
-// 	for ( int X=0; X < m_Width; X++ )
-// 	{
-// 		DebugImage[4*(m_Width*Y+X)+0] = (byte) Math.Min( 255, Math.Max( 0, (255.0f * m_Bitmap[X,Y].x) ) );
-// 		DebugImage[4*(m_Width*Y+X)+1] = (byte) Math.Min( 255, Math.Max( 0, (255.0f * m_Bitmap[X,Y].y) ) );
-// 		DebugImage[4*(m_Width*Y+X)+2] = (byte) Math.Min( 255, Math.Max( 0, (255.0f * m_Bitmap[X,Y].z) ) );
-// 		DebugImage[4*(m_Width*Y+X)+3] = (byte) Math.Min( 255, Math.Max( 0, (255.0f * m_Bitmap[X,Y].w) ) );
-// 	}
-// DEBUG
-
-
-
-							// ===== 5] Convert to CIE XYZ (our device-independent profile connection space) =====
-							m_ColorProfile.RGB2XYZ( m_Bitmap );
+							// ===== 4] Convert to CIE XYZ (our device-independent profile connection space) =====
+							m_ColorProfile.RGB2XYZ( m_Bitmap, m_Bitmap );
 						}
 						break;
 
@@ -2375,7 +2296,7 @@ namespace StandardizedDiffuseAlbedoMaps
 										}
 
 									// Convert to CIEXYZ
-									m_ColorProfile.RGB2XYZ( m_Bitmap );
+									m_ColorProfile.RGB2XYZ( m_Bitmap, m_Bitmap );
 								}
 							return;
 						}
@@ -2434,7 +2355,7 @@ namespace StandardizedDiffuseAlbedoMaps
  										}
 
 									// Convert to CIEXYZ
-									m_ColorProfile.RGB2XYZ( m_Bitmap );
+									m_ColorProfile.RGB2XYZ( m_Bitmap, m_Bitmap );
 								}
 
 #region My poor attempt at reading CRW files
@@ -2989,8 +2910,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			// Convert to RGB first
 			float4[,]	RGB = new float4[m_Width,m_Height];
-			Array.Copy( m_Bitmap, RGB, RGB.Length );
-			m_ColorProfile.XYZ2RGB( RGB );
+			m_ColorProfile.XYZ2RGB( m_Bitmap, RGB );
 
 			Array	Pixels = null;
 			int		Stride = 0;
@@ -3963,7 +3883,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( c < 0.0031308f )
 				return c * 12.92f;
 
-			return 1.055f * (float) Math.Pow( c, 1.0f / 2.4f ) - 0.055f;
+			return 1.055f * (float) Math.Pow( c, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f;
 		}
 
 		/// <summary>
@@ -3977,7 +3897,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( c < 0.04045f )
 				return c / 12.92f;
 
-			return (float) Math.Pow( (c + 0.055f) / 1.055f, 2.4f );
+			return (float) Math.Pow( (c + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
 		}
 */
 

@@ -36,23 +36,23 @@ namespace StandardizedDiffuseAlbedoMaps
 							m_Thumbnail.Dispose();
 
 						m_Thumbnail = new Bitmap( W, H, PixelFormat.Format32bppArgb );
-						BitmapData	LockedBitmap = m_Thumbnail.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
-
-						for ( int Y=0; Y < H; Y++ )
-						{
-							byte*	pScanline = (byte*) LockedBitmap.Scan0 + LockedBitmap.Stride * Y;
-							for ( int X=0; X < W; X++ )
-							{
-								byte	L = (byte) (255.0f * Bitmap2.ColorProfile.Linear2sRGB( m_CameraCalibration.m_Thumbnail[X,Y] / 255.0f ));
-								*pScanline++ = L;
-								*pScanline++ = L;
-								*pScanline++ = L;
-								*pScanline++ = 0xFF;
-							}
-						}
-
-						m_Thumbnail.UnlockBits( LockedBitmap );
 					}
+
+					// Fill pixels
+					BitmapData	LockedBitmap = m_Thumbnail.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
+					for ( int Y=0; Y < H; Y++ )
+					{
+						byte*	pScanline = (byte*) LockedBitmap.Scan0 + LockedBitmap.Stride * Y;
+						for ( int X=0; X < W; X++ )
+						{
+							byte	L = (byte) (255.0f * Bitmap2.ColorProfile.Linear2sRGB( m_CameraCalibration.m_Thumbnail[X,Y] / 255.0f ));
+							*pScanline++ = L;
+							*pScanline++ = L;
+							*pScanline++ = L;
+							*pScanline++ = 0xFF;
+						}
+					}
+					m_Thumbnail.UnlockBits( LockedBitmap );
 				}
 				else
 				{

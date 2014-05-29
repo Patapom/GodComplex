@@ -13,52 +13,58 @@ namespace StandardizedDiffuseAlbedoMaps
 	public partial class ResultTexturePanel : Panel
 	{
 		private Bitmap		m_Bitmap = null;
-		private Pen			m_PenProbeShadow = new Pen( Color.FromArgb( 0, 0, 0 ), 3.0f );
-		private Pen			m_PenProbe = new Pen( Color.Gold, 2.0f );
-		private Pen			m_PenProbeInvalid = new Pen( Color.Red, 2.0f );
+		private Bitmap		m_TextureBitmap = null;
+		private Bitmap2.ColorProfile	m_sRGBProfile = new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB );
 
-		private Bitmap		m_Thumbnail = null;
 
-		private CalibratedTexture	m_Texture = null;
-		public unsafe CalibratedTexture	Texture
+		private CalibratedTexture	m_CalibratedTexture = null;
+		public unsafe CalibratedTexture	CalibratedTexture
 		{
-			get { return m_Texture; }
+			get { return m_CalibratedTexture; }
 			set {
-				m_Texture = value;
+				m_CalibratedTexture = value;
  
-				if ( m_Texture != null )
+				if ( m_CalibratedTexture != null && m_CalibratedTexture.Texture != null )
 				{
-// 					int		W = m_Texture.;
-// 					int		H = m_CameraCalibration.m_Thumbnail.GetLength(1);
-// 					if ( m_Thumbnail == null || m_Thumbnail.Width != W || m_Thumbnail.Height != H )
-// 					{
-// 						if ( m_Thumbnail != null )
-// 							m_Thumbnail.Dispose();
-// 
-// 						m_Thumbnail = new Bitmap( W, H, PixelFormat.Format32bppArgb );
-// 						BitmapData	LockedBitmap = m_Thumbnail.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
-// 
-// 						for ( int Y=0; Y < H; Y++ )
-// 						{
-// 							byte*	pScanline = (byte*) LockedBitmap.Scan0 + LockedBitmap.Stride * Y;
-// 							for ( int X=0; X < W; X++ )
-// 							{
-// 								byte	L = (byte) (255.0f * Bitmap2.ColorProfile.Linear2sRGB( m_CameraCalibration.m_Thumbnail[X,Y] / 255.0f ));
-// 								*pScanline++ = L;
-// 								*pScanline++ = L;
-// 								*pScanline++ = L;
-// 								*pScanline++ = 0xFF;
-// 							}
-// 						}
-// 
-// 						m_Thumbnail.UnlockBits( LockedBitmap );
-// 					}
+					int		W = m_CalibratedTexture.Texture.Width;
+					int		H = m_CalibratedTexture.Texture.Height;
+					if ( m_TextureBitmap == null || m_TextureBitmap.Width != W || m_TextureBitmap.Height != H )
+					{
+						if ( m_TextureBitmap != null )
+							m_TextureBitmap.Dispose();
+
+						m_TextureBitmap = new Bitmap( W, H, PixelFormat.Format32bppArgb );
+					}
+
+					// Convert to RGB first
+					float4[,]	ContentXYZ = m_CalibratedTexture.Texture.ContentXYZ;
+					float4[,]	ContentRGB = new float4[ContentXYZ.GetLength(0),ContentXYZ.GetLength(1)];
+					m_sRGBProfile.XYZ2RGB( ContentXYZ, ContentRGB );
+
+					// Fill pixels
+					BitmapData	LockedBitmap = m_TextureBitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
+					byte	R, G, B;
+					for ( int Y=0; Y < H; Y++ )
+					{
+						byte*	pScanline = (byte*) LockedBitmap.Scan0 + LockedBitmap.Stride * Y;
+						for ( int X=0; X < W; X++ )
+						{
+							R = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].x ) );
+							G = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].y ) );
+							B = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].z ) );
+							*pScanline++ = B;
+							*pScanline++ = G;
+							*pScanline++ = R;
+							*pScanline++ = 0xFF;
+						}
+					}
+					m_TextureBitmap.UnlockBits( LockedBitmap );
 				}
 				else
 				{
-					if ( m_Thumbnail != null )
-						m_Thumbnail.Dispose();
-					m_Thumbnail = null;
+					if ( m_TextureBitmap != null )
+						m_TextureBitmap.Dispose();
+					m_TextureBitmap = null;
 				}
 
 				UpdateBitmap();
@@ -85,11 +91,11 @@ namespace StandardizedDiffuseAlbedoMaps
 				using ( SolidBrush B = new SolidBrush( Color.Black ) )
 					G.FillRectangle( B, 0, 0, W, H );
 
-				if ( m_Texture != null )
+				if ( m_TextureBitmap != null )
 				{
 					// Draw thumbnail
 					RectangleF	ClientRect = ImageClientRect();
-					G.DrawImage( m_Thumbnail, ClientRect, new RectangleF( 0, 0, m_Thumbnail.Width, m_Thumbnail.Height ), GraphicsUnit.Pixel );
+					G.DrawImage( m_TextureBitmap, ClientRect, new RectangleF( 0, 0, m_TextureBitmap.Width, m_TextureBitmap.Height ), GraphicsUnit.Pixel );
 				}
 			}
 
@@ -98,8 +104,8 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private RectangleF		ImageClientRect()
 		{
-			int		SizeX = m_Thumbnail.Width;
-			int		SizeY = m_Thumbnail.Height;
+			int		SizeX = m_TextureBitmap.Width;
+			int		SizeY = m_TextureBitmap.Height;
 
 			int		WidthIfVertical = SizeX * Height / SizeY;	// Client width of the image if fitting vertically
 			int		HeightIfHorizontal = SizeY * Width / SizeX;	// Client height of the image if fitting horizontally

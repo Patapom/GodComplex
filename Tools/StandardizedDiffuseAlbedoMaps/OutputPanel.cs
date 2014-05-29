@@ -60,7 +60,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		private Bitmap				m_Bitmap = null;
 
 		// Source image in RGB space
-		private float3[,]			m_Image = null;
+		private float4[,]			m_Image = null;
 
 		private MANIPULATION_STATE	m_ManipulationState = MANIPULATION_STATE.STOPPED;
 
@@ -76,9 +76,9 @@ namespace StandardizedDiffuseAlbedoMaps
 		private Pen					m_PenCropRectangle = new Pen( Color.Red, 1.0f );
 		private SolidBrush			m_BrushCroppedZone = new SolidBrush( Color.FromArgb( 128, Color.White ) );
 
-		private PointF				m_CropRectangleCenter;
-		private PointF				m_CropRectangleHalfSize;
-		private float				m_CropRectangleRotation;
+		private PointF				m_CropRectangleCenter = new PointF( 0.5f, 0.5f );
+		private PointF				m_CropRectangleHalfSize = new PointF( 0.5f, 0.5f );
+		private float				m_CropRectangleRotation = 0.0f;
 
 		private bool				m_CropRectangleManipulationStarted = false;
 		private CROP_RECTANGLE_SPOT	m_CropRectangleManipulatedSpot = CROP_RECTANGLE_SPOT.NONE;
@@ -97,7 +97,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region PROPERTIES
 
-		public float3[,]	Image
+		public float4[,]	Image
 		{
 			get { return m_Image; }
 			set {
@@ -225,7 +225,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					{
 						if ( X >= ImageRect.X && X < ImageRect.Right && Y >= ImageRect.Y && Y < ImageRect.Bottom )
 						{
-							float3	RGB = m_Image[(int) (SizeX*(X-ImageRect.X)/ImageRect.Width), (int) (SizeY*(Y-ImageRect.Y)/ImageRect.Height)];
+							float4	RGB = m_Image[(int) (SizeX*(X-ImageRect.X)/ImageRect.Width), (int) (SizeY*(Y-ImageRect.Y)/ImageRect.Height)];
 							R = (byte) Math.Min( 255, 255.0f * RGB.x );
 							G = (byte) Math.Min( 255, 255.0f * RGB.y );
 							B = (byte) Math.Min( 255, 255.0f * RGB.z );
@@ -478,6 +478,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					PointF	UV0 = Client2ImageUV( m_MousePositionButtonDown );
 					PointF	UV1 = Client2ImageUV( e.Location );
 					m_ColorPickingDelegate( UV0, UV1 );
+					Invalidate();
 					break;
 
 				default:
