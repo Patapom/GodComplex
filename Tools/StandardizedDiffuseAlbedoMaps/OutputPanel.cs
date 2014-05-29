@@ -15,14 +15,16 @@ namespace StandardizedDiffuseAlbedoMaps
 		#region NESTED TYPES
 
 		public delegate void	CalibrationDone( PointF _Center, float _Radius );			// Sends the center and radius of the circle to average as a single luminance
-		public delegate void	ColorPickingUpdate( PointF _TopLeft, PointF _BottomRight );	// Sends the coordinates of the rectangle to average as a single color
+		public delegate void	WhiteReflectancePickingDone( PointF _Position );			// Sends the UV coordinates of the point picked as white reflectance reference
+		public delegate void	ColorPickingUpdate( PointF _TopLeft, PointF _BottomRight );	// Sends the UV coordinates of the rectangle to average as a single color
 
 		private enum	MANIPULATION_STATE
 		{
-			STOPPED,			// No manipulation currently taking place
-			CALIBRATION_TARGET,	// User is selecting the calibration target
-			CROP_RECTANGLE,		// User is modifying the crop rectangle
-			PICK_COLOR,			// User is picking a color
+			STOPPED,				// No manipulation currently taking place
+			CALIBRATION_TARGET,		// User is selecting the calibration target
+			CROP_RECTANGLE,			// User is modifying the crop rectangle
+			PICK_WHITE_REFLECTANCE,	// User is picking the white reflectance
+			PICK_COLOR,				// User is picking a swatch color
 		}
 
 		private enum	CALIBRATION_STAGE
@@ -81,9 +83,13 @@ namespace StandardizedDiffuseAlbedoMaps
 		private bool				m_CropRectangleManipulationStarted = false;
 		private CROP_RECTANGLE_SPOT	m_CropRectangleManipulatedSpot = CROP_RECTANGLE_SPOT.NONE;
 
+		// White reflectance picking
+		private WhiteReflectancePickingDone	m_WhiteReflectancePickingDelegate = null;
+
 		// Color picking manipulation
 		private ColorPickingUpdate	m_ColorPickingDelegate = null;
 
+		private MouseButtons		m_MouseButtonsDown = MouseButtons.None;
 		private PointF				m_MousePositionButtonDown;
 		private PointF				m_MousePositionCurrent;
 
@@ -157,6 +163,16 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_CalibrationRadius = 0.0f;
 			ManipulationState = MANIPULATION_STATE.CALIBRATION_TARGET;
 			m_CalibrationStage = CALIBRATION_STAGE.PICK_CENTER;
+		}
+
+		/// <summary>
+		/// Starts white reflectance reference picking
+		/// </summary>
+		/// <param name="_Notify"></param>
+		public void				StartWhiteReflectancePicking( WhiteReflectancePickingDone _Notify )
+		{
+			m_WhiteReflectancePickingDelegate = _Notify;
+			ManipulationState = MANIPULATION_STATE.PICK_WHITE_REFLECTANCE;
 		}
 
 		/// <summary>
@@ -310,7 +326,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			base.OnMouseDown( e );
 
-			m_MousePositionButtonDown = e.Location;
+			m_MouseButtonsDown |= e.Button;
+			Capture = true;
 
 			switch ( m_ManipulationState )
 			{
@@ -319,7 +336,6 @@ namespace StandardizedDiffuseAlbedoMaps
 					if ( m_CropRectangleManipulatedSpot == CROP_RECTANGLE_SPOT.NONE )
 						return;	// Nothing to manipulate...
 
-					Capture = true;
 					m_CropRectangleManipulationStarted = true;
 					break;
 				}
@@ -330,18 +346,18 @@ namespace StandardizedDiffuseAlbedoMaps
 						m_CalibrationStage = CALIBRATION_STAGE.SET_RADIUS;
 					else if ( m_CalibrationStage == CALIBRATION_STAGE.SET_RADIUS )
 					{	// We're done! Notify!
-						if ( m_CalibrationDelegate != null )
-							m_CalibrationDelegate( m_CalibrationCenter, m_CalibrationRadius );
-
-						// End manipulation
-						ManipulationState = MANIPULATION_STATE.STOPPED;
+						m_CalibrationDelegate( m_CalibrationCenter, m_CalibrationRadius );
+						ManipulationState = MANIPULATION_STATE.STOPPED;		// End manipulation
 					}
 					break;
 				}
 
-				case MANIPULATION_STATE.PICK_COLOR:
-					Capture = true;
+				case MANIPULATION_STATE.PICK_WHITE_REFLECTANCE:
+				{
+					m_WhiteReflectancePickingDelegate( Client2ImageUV( m_MousePositionButtonDown ) );
+					ManipulationState = MANIPULATION_STATE.STOPPED;			// End manipulation
 					break;
+				}
 			}
 		}
 
@@ -350,6 +366,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			base.OnMouseMove( e );
 
 			m_MousePositionCurrent = e.Location;
+			if ( m_MouseButtonsDown == MouseButtons.None )
+				m_MousePositionButtonDown = e.Location;
 
 			switch ( m_ManipulationState )
 			{
@@ -451,8 +469,15 @@ namespace StandardizedDiffuseAlbedoMaps
 					break;
 				}
 
+				case MANIPULATION_STATE.PICK_WHITE_REFLECTANCE:
+					Cursor = Cursors.Cross;
+					break;
+
 				case MANIPULATION_STATE.PICK_COLOR:
 					Cursor = Cursors.Cross;
+					PointF	UV0 = Client2ImageUV( m_MousePositionButtonDown );
+					PointF	UV1 = Client2ImageUV( e.Location );
+					m_ColorPickingDelegate( UV0, UV1 );
 					break;
 
 				default:
@@ -465,6 +490,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			base.OnMouseUp( e );
 
+			m_MouseButtonsDown &= ~e.Button;
+
 			// End manipulation
 			switch ( m_ManipulationState )
 			{
@@ -474,9 +501,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				case MANIPULATION_STATE.PICK_COLOR:
 					ManipulationState = MANIPULATION_STATE.STOPPED;
-					PointF	UV0 = Client2ImageUV( m_MousePositionButtonDown );
-					PointF	UV1 = Client2ImageUV( e.Location );
-					m_ColorPickingDelegate( UV0, UV1 );
 					break;
 			}
 

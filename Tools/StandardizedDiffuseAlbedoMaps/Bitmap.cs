@@ -2192,7 +2192,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_FileType"></param>
 		public void	Load( System.IO.FileInfo _ImageFileName, FILE_TYPE _FileType )
 		{
-			using ( System.IO.FileStream ImageStream = _ImageFileName.OpenRead() )
+			using ( System.IO.FileStream ImageStream = _ImageFileName.Open( System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read ) )
 				Load( ImageStream, _FileType );
 		}
 

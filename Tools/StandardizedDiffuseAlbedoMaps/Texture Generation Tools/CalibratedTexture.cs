@@ -65,7 +65,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				base.Save( _Owner, _SwatchElement );
 
-				_Owner.SetAttribute( _SwatchElement, "SamplingLocation", Location.ToString() );
+				_Owner.SetAttribute( _SwatchElement, "SampleTopLeft", (new float2( Location.x, Location.y )).ToString() );
+				_Owner.SetAttribute( _SwatchElement, "SampleBottomRight", (new float2( Location.z, Location.w )).ToString() );
 			}
 		}
 
@@ -344,10 +345,10 @@ namespace StandardizedDiffuseAlbedoMaps
 		public static float3	ComputeAverageSwatchColor( CameraCalibrationDatabase _Database, Bitmap2 _Source, float2 _TopLeft, float2 _BottomRight )
 		{
 			// Average xyY values in the specified rectangle
-			int		X0 = (int) Math.Floor( _TopLeft.x * _Source.Width );
-			int		Y0 = (int) Math.Floor( _TopLeft.y * _Source.Height );
-			int		X1 = Math.Max( X0+1, (int) Math.Floor( _BottomRight.x * _Source.Width ) );
-			int		Y1 = Math.Max( Y0+1, (int) Math.Floor( _BottomRight.y * _Source.Height ) );
+			int		X0 = Math.Max( 0, Math.Min( _Source.Width-1, (int) Math.Floor( _TopLeft.x * _Source.Width ) ) );
+			int		Y0 = Math.Max( 0, Math.Min( _Source.Height-1, (int) Math.Floor( _TopLeft.y * _Source.Height ) ) );
+			int		X1 = Math.Min( _Source.Width-1, Math.Max( X0+1, (int) Math.Floor( _BottomRight.x * _Source.Width ) ) );
+			int		Y1 = Math.Min( _Source.Height-1, Math.Max( Y0+1, (int) Math.Floor( _BottomRight.y * _Source.Height ) ) );
 			int		W = X1 - X0;
 			int		H = Y1 - Y0;
 
@@ -358,14 +359,9 @@ namespace StandardizedDiffuseAlbedoMaps
 					float4	XYZ = _Source.ContentXYZ[X,Y];
 					float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
 					xyY.z = _Database.Calibrate( xyY.z );	// Apply luminance calibration
-					AveragexyY += AveragexyY;
+					AveragexyY += xyY;
 				}
 			AveragexyY = (1.0f / (W*H)) * AveragexyY;
-
-// 			// Generate final sRGB value
-// 			float3	FinalXYZ = Bitmap2.ColorProfile.xyY2XYZ( AveragexyY );
-// 			float3	FinalRGB = Bitmap2.ColorProfile.XYZ2xyY( FinalXYZ );
-// 			return FinalRGB;
 
 			return AveragexyY;
 		}

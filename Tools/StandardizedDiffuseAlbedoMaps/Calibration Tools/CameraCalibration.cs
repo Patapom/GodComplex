@@ -77,6 +77,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <summary>
 		/// Contains shot information about the image used for calibration
 		/// </summary>
+		[System.Diagnostics.DebuggerDisplay( "ISO={m_ISOSpeed} Shutter={m_ShutterSpeed} Aperture={m_Aperture} m_FocalLength={m_FocalLength}" )]
 		public class CameraShotInfo
 		{
 			public float	m_ISOSpeed = -1.0f;

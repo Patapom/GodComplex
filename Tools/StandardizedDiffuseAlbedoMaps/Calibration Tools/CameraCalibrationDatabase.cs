@@ -93,21 +93,29 @@ namespace StandardizedDiffuseAlbedoMaps
 		private string						m_ErrorLog = "";
 
 		// The list of camera calibration data contained in the database
-		private CameraCalibration[]			m_CameraClibrations = new CameraCalibration[0];
+		private CameraCalibration[]			m_CameraCalibrations = new CameraCalibration[0];
+
+		// The correction factor to apply to the image's luminances
+		// If the camera has been properly calibrated but the lighting changes, the user
+		//	has the possibility to drop the white reflectance in an image and use it as
+		//	white reference for the new lighting condition
+		private float						m_WhiteReflectanceReference = -1.0f;	// Not supplied by the user
+		private float						m_WhiteReflectanceCorrectionFactor = 1.0f;	// Default factor is no change at all
 
 		// Generated calibration grid
 		private GridNode					m_RootNode = null;
 
 		// Cached calibration data
-		private float						m_PreparedForISOSpeed = 0.0f;
-		private float						m_PreparedForShutterSpeed = 0.0f;
-		private float						m_PreparedForAperture = 0.0f;
 		private CameraCalibration			m_InterpolatedCalibration = null;
 
 		#endregion
 
 		#region PROPERTIES
 
+		/// <summary>
+		/// Sets the path where to find all the camera calibration files that compose the database
+		/// Setting the property will trigger a database rebuild
+		/// </summary>
 		public System.IO.DirectoryInfo		DatabasePath
 		{
 			get { return m_DatabasePath; }
@@ -115,10 +123,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				if ( m_DatabasePath != null )
 				{	// Clean up existing database
-					m_CameraClibrations = new CameraCalibration[0];
-					m_PreparedForISOSpeed = 0.0f;
-					m_PreparedForShutterSpeed = 0.0f;
-					m_PreparedForAperture = 0.0f;
+					m_CameraCalibrations = new CameraCalibration[0];
 					m_InterpolatedCalibration = null;
 					m_RootNode = null;
 					m_ErrorLog = "";
@@ -162,9 +167,9 @@ namespace StandardizedDiffuseAlbedoMaps
 						m_ErrorLog += "Failed to load camera calibration file \"" + CalibrationFile.FullName + "\": " + _e.Message + "\r\n";
 					}
 				}
-				m_CameraClibrations = CameraCalibrations.ToArray();
+				m_CameraCalibrations = CameraCalibrations.ToArray();
 
-				if ( m_CameraClibrations.Length == 0 )
+				if ( m_CameraCalibrations.Length == 0 )
 				{	// Empty!
 					m_ErrorLog += "Database is empty: no valid file could be parsed...\r\n";
 					return;
@@ -273,6 +278,37 @@ namespace StandardizedDiffuseAlbedoMaps
 		public bool		IsValid					{ get { return m_RootNode != null; } }
 
 		/// <summary>
+		/// Gets or sets the white reflectance reference to use for the image
+		/// Setting a positive value will assume a new white reference for the image and a correction factor
+		///  will be computed and applied to all luminances read from the provided images
+		/// Set to a negative value to reset the correction factor to normal
+		/// </summary>
+		public float	WhiteReflectanceReference
+		{
+			get { return m_WhiteReflectanceReference; }
+			set
+			{
+				m_WhiteReflectanceReference = value;
+				if ( value <= 0.0f || m_InterpolatedCalibration == null )
+					m_WhiteReflectanceCorrectionFactor = 1.0f;
+				else
+				{	// Compute the correction factor
+					float	NormalReflectance = m_InterpolatedCalibration.m_Reflectance99.m_LuminanceMeasured;	// Our normal 99% reflectance to use as white
+					m_WhiteReflectanceCorrectionFactor = NormalReflectance / m_WhiteReflectanceReference;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Gets the white reflectance correction factor applied to all luminances read from any provided image
+		/// This factor is updated by setting the WhiteReflectanceReference property
+		/// </summary>
+		public float	WhiteReflectanceCorrectionFactor
+		{
+			get { return m_WhiteReflectanceCorrectionFactor; }
+		}
+
+		/// <summary>
 		/// Tells if there were some errors during construction
 		/// </summary>
 		public bool		HasErrors				{ get { return m_ErrorLog != ""; } }
@@ -282,9 +318,11 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// </summary>
 		public string	ErrorLog				{ get { return m_ErrorLog; } }
 
-		public float	PreparedForISOSpeed		{ get { return m_PreparedForISOSpeed; } }
-		public float	PreparedForShutterSpeed	{ get { return m_PreparedForShutterSpeed; } }
-		public float	PreparedForAperture		{ get { return m_PreparedForAperture; } }
+		public float	PreparedForISOSpeed		{ get { return m_InterpolatedCalibration != null ? m_InterpolatedCalibration.m_CameraShotInfos.m_ISOSpeed : -1.0f; } }
+		public float	PreparedForShutterSpeed	{ get { return m_InterpolatedCalibration != null ? m_InterpolatedCalibration.m_CameraShotInfos.m_ShutterSpeed : -1.0f; } }
+		public float	PreparedForAperture		{ get { return m_InterpolatedCalibration != null ? m_InterpolatedCalibration.m_CameraShotInfos.m_Aperture : -1.0f; } }
+
+		public CameraCalibration	InterpolatedCalibration	{ get { return m_InterpolatedCalibration; } }
 
 		#endregion
 
@@ -300,10 +338,6 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			if ( m_RootNode == null )
 				throw new Exception( "Calibration grid hasn't been built: did you provide a valid database path? Does the path contain camera calibration data?" );
-
-			m_PreparedForISOSpeed = _ISOSpeed;
-			m_PreparedForShutterSpeed = _ShutterSpeed;
-			m_PreparedForAperture = _Aperture;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Find the 8 nodes encompassing our values
@@ -322,7 +356,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			GridNode.Convert2EV( _ISOSpeed, _ShutterSpeed, _Aperture, out EV.x, out EV.y, out EV.z );
 
 			// Find the start node
-			GridNode		StartNode = FindStartNode( _ISOSpeed, _ShutterSpeed, _Aperture );
+			GridNode		StartNode = FindStartNode( EV.x, EV.y, EV.z );
 
 			// Build the 8 grid nodes from it
 			GridNode[,,]	Grid = new GridNode[2,2,2];
@@ -382,6 +416,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			//////////////////////////////////////////////////////////////////////////
 			// Create the special camera calibration that is the result of the interpolation of the 8 nearest ones in the grid
 			m_InterpolatedCalibration = new CameraCalibration();
+			m_InterpolatedCalibration.m_CameraShotInfos.m_ISOSpeed = _ISOSpeed;
+			m_InterpolatedCalibration.m_CameraShotInfos.m_ShutterSpeed = _ShutterSpeed;
+			m_InterpolatedCalibration.m_CameraShotInfos.m_Aperture = _Aperture;
 
 			for ( int ProbeIndex=0; ProbeIndex < REQUIRED_PROBES_COUNT; ProbeIndex++ )
 			{
@@ -409,8 +446,15 @@ namespace StandardizedDiffuseAlbedoMaps
 				// Interpolate on Z (aperture)
 				float	L = rZ * L0 + tZ * L1;
 
+				TargetProbe.m_IsAvailable = true;
 				TargetProbe.m_LuminanceMeasured = L;
 			}
+
+			// Fill missing values
+			m_InterpolatedCalibration.UpdateAllLuminances();
+
+			// Re-apply white reflectance reference to trigger a recomputation of the correction factor to apply to images
+			WhiteReflectanceReference = WhiteReflectanceReference;
 		}
 
 		/// <summary>
@@ -422,16 +466,17 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <returns></returns>
 		public bool	IsPreparedFor( float _ISOSpeed, float _ShutterSpeed, float _Aperture )
 		{
-			return Math.Abs( _ISOSpeed - m_PreparedForISOSpeed ) < 1e-6f
-				&& Math.Abs( _ShutterSpeed - m_PreparedForShutterSpeed ) < 1e-6f
-				&& Math.Abs( _Aperture - m_PreparedForAperture ) < 1e-6f;
+			return m_InterpolatedCalibration != null
+				&& Math.Abs( _ISOSpeed - m_InterpolatedCalibration.m_CameraShotInfos.m_ISOSpeed ) < 1e-6f
+				&& Math.Abs( _ShutterSpeed - m_InterpolatedCalibration.m_CameraShotInfos.m_ShutterSpeed ) < 1e-6f
+				&& Math.Abs( _Aperture - m_InterpolatedCalibration.m_CameraShotInfos.m_Aperture ) < 1e-6f;
 		}
 
 		/// <summary>
 		/// Calibrates a raw luminance value
 		/// </summary>
 		/// <param name="_Luminance">The uncalibrated luminance value</param>
-		/// <returns>The calibrated luminance value</returns>
+		/// <returns>The calibrated reflectance value</returns>
 		/// <remarks>Typically, you start from a RAW XYZ value that you convert to xyY, pass the Y to this method
 		/// and replace it into your orignal xyY, convert back to XYZ and voilà!</remarks>
 		public float	Calibrate( float _Luminance )
@@ -441,46 +486,45 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( m_InterpolatedCalibration == null )
 				throw new Exception( "Calibration grid hasn't been prepared for calibration: did you call the PrepareCalibrationFor() method?" );
 			
-			_Luminance = m_InterpolatedCalibration.Calibrate( _Luminance );
-
-			return _Luminance;
+			float	Reflectance = m_InterpolatedCalibration.Calibrate( m_WhiteReflectanceCorrectionFactor * _Luminance );
+			return Reflectance;
 		}
 
 		/// <summary>
 		/// Finds the first grid node whose ISO, shutter speed and aperture values are immediately inferior to the ones provided
 		/// </summary>
-		/// <param name="_ISOSpeed"></param>
-		/// <param name="_ShutterSpeed"></param>
-		/// <param name="_Aperture"></param>
+		/// <param name="_EV_ISOSpeed"></param>
+		/// <param name="_EV_ShutterSpeed"></param>
+		/// <param name="_EV_Aperture"></param>
 		/// <returns></returns>
-		private GridNode	FindStartNode( float _ISOSpeed, float _ShutterSpeed, float _Aperture )
+		private GridNode	FindStartNode( float _EV_ISOSpeed, float _EV_ShutterSpeed, float _EV_Aperture )
 		{
 			GridNode	Current = m_RootNode;
 
 			// Move along X
-			while ( Current.m_EV_ISOSpeed <= _ISOSpeed && Current.m_Neighbors[0][1] != null )
+			while ( Current.m_EV_ISOSpeed <= _EV_ISOSpeed && Current.m_Neighbors[0][1] != null )
 			{
 				GridNode	Next = Current.m_Neighbors[0][1];
-				if ( Next.m_EV_ISOSpeed > _ISOSpeed )
+				if ( Next.m_EV_ISOSpeed > _EV_ISOSpeed )
 					break;	// Next node is larger than provided value! We have our start node along X!
 				Current = Next;
 			}
 
 			// Move along Y
-			while ( Current.m_EV_ShutterSpeed <= _ShutterSpeed && Current.m_Neighbors[1][1] != null )
+			while ( Current.m_EV_ShutterSpeed <= _EV_ShutterSpeed && Current.m_Neighbors[1][1] != null )
 			{
 				GridNode	Next = Current.m_Neighbors[1][1];
-				if ( Next.m_EV_ShutterSpeed > _ShutterSpeed )
+				if ( Next.m_EV_ShutterSpeed > _EV_ShutterSpeed )
 					break;	// Next node is larger than provided value! We have our start node along Y!
 				Current = Next;
 			}
 
 			// Move along Z
-			while ( Current.m_EV_Aperture <= _Aperture && Current.m_Neighbors[2][1] != null )
+			while ( Current.m_EV_Aperture <= _EV_Aperture && Current.m_Neighbors[2][1] != null )
 			{
 				GridNode	Next = Current.m_Neighbors[2][1];
-				if ( Next.m_EV_Aperture > _Aperture )
-					break;	// Next node is larger than provided value! We have our start node along X!
+				if ( Next.m_EV_Aperture > _EV_Aperture )
+					break;	// Next node is larger than provided value! We have our start node along Z!
 				Current = Next;
 			}
 

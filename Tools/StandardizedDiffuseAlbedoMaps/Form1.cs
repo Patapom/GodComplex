@@ -27,6 +27,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private System.IO.FileInfo	m_ImageFileName = null;
 		private Bitmap2				m_BitmapXYZ = null;
+		private float3				m_WhiteReflectance_xyY = new float3( 0.5f, 0.5f, 1.0f );
 
 		// Generated calibrated texture
 		private CalibratedTexture	m_Texture = null;
@@ -130,7 +131,10 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#endregion
 
-		void	ReloadDatabase()
+		/// <summary>
+		/// Rebuilds the database by reloading all the files present in the provided database directory
+		/// </summary>
+		private void	ReloadDatabase()
 		{
 			try
 			{
@@ -147,6 +151,35 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 		}
 
+		/// <summary>
+		/// Prepares the database for calibration with current image shot infos
+		/// </summary>
+		/// <returns>False if the database failed to prepare</returns>
+		private bool	PrepareDatabase()
+		{
+			return PrepareDatabase( true );
+		}
+		private bool	PrepareDatabase( bool _AlertIfFailed )
+		{
+			try
+			{
+				// Test if we should prepare the database
+				if ( !m_CalibrationDatabase.IsPreparedFor( floatTrackbarControlISOSpeed.Value, floatTrackbarControlShutterSpeed.Value, floatTrackbarControlAperture.Value ) )
+					m_CalibrationDatabase.PrepareCalibrationFor( floatTrackbarControlISOSpeed.Value, floatTrackbarControlShutterSpeed.Value, floatTrackbarControlAperture.Value );	// Then prepare it!
+			}
+			catch ( Exception _e )
+			{
+				if ( _AlertIfFailed )
+					MessageBox( "Failed to prepare the calibration database for calibrating the current image:\r\n\r\n", _e );
+				return false;
+			}
+
+			return true;
+		}
+
+		/// <summary>
+		/// Rebuilds and assigns the bitmap for the output panel from the loaded image
+		/// </summary>
 		private void RebuildImage()
 		{
 			if ( m_BitmapXYZ == null )
@@ -247,6 +280,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				RebuildImage();
 				outputPanel.ResetCropRectangle();
 				UpdateUIFromCalibration();
+				PrepareDatabase( false );
 			}
 			catch ( Exception _e )
 			{
@@ -389,7 +423,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		private void StartCalibrationPicking( CameraCalibration.Probe _Probe )
 		{
 			if ( m_BitmapXYZ == null )
-			{	// No iage loaded you moron!
+			{	// No image loaded you moron!
 				MessageBox( "Can't start calibration as no image is currently loaded!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation );
 				return;
 			}
@@ -483,6 +517,12 @@ namespace StandardizedDiffuseAlbedoMaps
 					}
 			}
 			buttonReCalibrate.Enabled = CanReCalibrate;
+		}
+
+		private void UpdateWhiteReflectancePanel()
+		{
+			panelWhiteReflectance.Visible = Math.Abs( m_WhiteReflectance_xyY.z - 1.0 ) > 1e-6f;	// Visible only if not default value
+			labelWhiteReflectance.Text = m_WhiteReflectance_xyY.z.ToString() + " Correction=" + m_CalibrationDatabase.WhiteReflectanceCorrectionFactor.ToString();
 		}
 
 		private void checkBoxCalibrate02_CheckedChanged( object sender, EventArgs e )
@@ -583,7 +623,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		private void buttonSaveCalibration_Click( object sender, EventArgs e )
 		{
 			if ( m_BitmapXYZ == null )
-			{	// No iage loaded you moron!
+			{	// No image loaded you moron!
 				MessageBox( "Can't save calibration as no image is currently loaded!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation );
 				return;
 			}
@@ -666,7 +706,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		private void buttonSaveCalibratedImage_Click( object sender, EventArgs e )
 		{
 			if ( m_Texture == null )
-			{	// No iage loaded you moron!
+			{	// No image loaded you moron!
 				MessageBox( "Can't save calibrated texture as no capture has been done yet!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation );
 				return;
 			}
@@ -715,13 +755,43 @@ namespace StandardizedDiffuseAlbedoMaps
 			outputPanel.ResetCropRectangle();
 		}
 
+		private void buttonPickWhiteReflectance_Click( object sender, EventArgs e )
+		{
+			if ( m_BitmapXYZ == null )
+			{	// No image loaded you moron!
+				MessageBox( "Can't pick white reflectance as no image is currently loaded!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation );
+				return;
+			}
+
+			outputPanel.StartWhiteReflectancePicking( ( PointF _UV ) => {
+
+				float4	XYZ = m_BitmapXYZ.BilinearSample( _UV.X * m_BitmapXYZ.Width, _UV.Y * m_BitmapXYZ.Height );
+				m_WhiteReflectance_xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
+
+				// Compute the correction factor to apply to further image
+				m_CalibrationDatabase.WhiteReflectanceReference = m_WhiteReflectance_xyY.z;
+
+				UpdateWhiteReflectancePanel();
+			} );
+		}
+
+		private void buttonResetWhiteReflectance_Click( object sender, EventArgs e )
+		{
+			m_WhiteReflectance_xyY = new float3( 0.5f, 0.5f, 1.0f );
+			m_CalibrationDatabase.WhiteReflectanceReference = -1.0f;	// Will reset the factor
+
+			UpdateWhiteReflectancePanel();
+		}
+
 		private void buttonCapture_Click( object sender, EventArgs e )
 		{
 			if ( m_BitmapXYZ == null )
-			{	// No iage loaded you moron!
+			{	// No image loaded you moron!
 				MessageBox( "Can't capture as no image is currently loaded!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation );
 				return;
 			}
+			if ( !PrepareDatabase() )
+				return;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Build swatch locations
@@ -765,29 +835,27 @@ namespace StandardizedDiffuseAlbedoMaps
 		private void StartColorPicking( int _CustomSwatchIndex )
 		{
 			if ( m_BitmapXYZ == null )
-			{	// No iage loaded you moron!
+			{	// No image loaded you moron!
 				MessageBox( "Can't start color picking for swatch as no image is currently loaded!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation );
 				return;
 			}
+			if ( !PrepareDatabase() )
+				return;
 
 			CustomSwatch	S = m_CustomSwatches[_CustomSwatchIndex];
 
-			// Test if we should prepare the database
-			if ( !m_CalibrationDatabase.IsPreparedFor( floatTrackbarControlISOSpeed.Value, floatTrackbarControlShutterSpeed.Value, floatTrackbarControlAperture.Value ) )
-				m_CalibrationDatabase.PrepareCalibrationFor( floatTrackbarControlISOSpeed.Value, floatTrackbarControlShutterSpeed.Value, floatTrackbarControlAperture.Value );	// Then prepare it!
+			S.m_CheckBox.Checked = true;	// Automatically enable color swatch if the user bothered picking a color
 
 			Bitmap2.ColorProfile	sRGBProfile = new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB );
 
 			outputPanel.StartSwatchColorPicking( ( PointF _TopLeft, PointF _BottomRight ) => {
 
-				float3	xyY = CalibratedTexture.ComputeAverageSwatchColor( m_CalibrationDatabase, m_BitmapXYZ, new float2( _TopLeft.X, _TopLeft.Y ), new float2( _BottomRight.X, _BottomRight.Y ) );
-				float3	XYZ = Bitmap2.ColorProfile.xyY2XYZ( xyY );
-				S.m_RGB = (float3) sRGBProfile.XYZ2RGB( new float4( XYZ, 1.0f ) );
+				S.m_xyY = CalibratedTexture.ComputeAverageSwatchColor( m_CalibrationDatabase, m_BitmapXYZ, new float2( _TopLeft.X, _TopLeft.Y ), new float2( _BottomRight.X, _BottomRight.Y ) );
+				S.m_RGB = (float3) sRGBProfile.XYZ2RGB( new float4( Bitmap2.ColorProfile.xyY2XYZ( S.m_xyY ), 1.0f ) );
 
 				// Update UI
-				Color	C = Color.FromArgb( (int) (S.m_RGB.x * 255.0f), (int) (S.m_RGB.y * 255.0f), (int) (S.m_RGB.z * 255.0f) );
+				Color	C = Color.FromArgb( Math.Min( 255, (int) (S.m_RGB.x * 255.0f) ), Math.Min( 255, (int) (S.m_RGB.y * 255.0f) ), Math.Min( 255, (int) (S.m_RGB.z * 255.0f) ) );
 				S.m_Panel.BackColor = C;
-				S.m_CheckBox.Checked = true;	// Automatically enable color swatch if the user bothered picking a color
 			} );
 		}
 		private void panelCustomSwatch0_Click( object sender, EventArgs e )
@@ -833,6 +901,14 @@ namespace StandardizedDiffuseAlbedoMaps
 		private void panelCustomSwatch8_Click( object sender, EventArgs e )
 		{
 			StartColorPicking( 8 );
+		}
+
+		private void floatTrackbarControlShotInfos_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue )
+		{
+			PrepareDatabase();
+
+			// Update white reflectance to show correction factor
+			UpdateWhiteReflectancePanel();
 		}
 
 		#endregion
