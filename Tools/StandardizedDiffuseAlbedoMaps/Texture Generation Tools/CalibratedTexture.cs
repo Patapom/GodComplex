@@ -25,7 +25,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			// Crop infos
 			public bool			CropSource = false;
-			public float2		CropRectangleCenter;	// In UV space
+			public float2		CropRectangleCenter;	// In UV space (note that UVs are not in [0,1] as usual because of aspect ratio, e.g. X = UV.x * ImageHeight, instead of ImageWidth)
 			public float2		CropRectangleHalfSize;	// In UV space
 			public float		CropRectangleRotation;
 
@@ -138,8 +138,43 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			if ( _Parms.CropSource )
 			{
-// TODO!
-//				m_Texture = CropSource( _Source, _Parms.Database );
+				float	fImageWidth = 2.0f * _Parms.CropRectangleHalfSize.x * _Source.Height;
+				float	fImageHeight = 2.0f * _Parms.CropRectangleHalfSize.y * _Source.Height;
+				int		W = (int) Math.Floor( fImageWidth );
+				int		H = (int) Math.Floor( fImageHeight );
+
+				float2	AxisX = new float2( (float) Math.Cos( _Parms.CropRectangleRotation ), -(float) Math.Sin( _Parms.CropRectangleRotation ) );
+				float2	AxisY = new float2( (float) Math.Sin( _Parms.CropRectangleRotation ), (float) Math.Cos( _Parms.CropRectangleRotation ) );
+				float2	TopLeftCorner = new float2( _Source.Width * _Parms.CropRectangleCenter.x, _Source.Height * _Parms.CropRectangleCenter.y )
+												  + _Source.Height * (-_Parms.CropRectangleHalfSize.x * AxisX - _Parms.CropRectangleHalfSize.y * AxisY);
+
+				m_Texture = new Bitmap2( W, H );
+				float4	XYZ;
+				float3	xyY;
+
+				float2	CurrentScanlinePixel = TopLeftCorner + 0.5f * (fImageWidth - W) * AxisX + 0.5f * (fImageHeight - H) * AxisY;
+				for ( int Y=0; Y < m_Texture.Height; Y++ )
+				{
+					float2	CurrentPixel = CurrentScanlinePixel;
+					for ( int X=0; X < m_Texture.Width; X++ )
+					{
+						XYZ = _Source.BilinearSample( CurrentPixel.x, CurrentPixel.y );
+						xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
+						xyY.z = _Database.Calibrate( xyY.z );	// Apply luminance calibration
+						XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
+						m_Texture.ContentXYZ[X,Y] = XYZ;
+
+						// Update min/max/avg values
+						if ( xyY.z < m_SwatchMin.xyY.z )
+							m_SwatchMin.xyY = xyY;
+						if ( xyY.z > m_SwatchMax.xyY.z )
+							m_SwatchMax.xyY = xyY;
+						m_SwatchAvg.xyY += xyY;
+
+						CurrentPixel += AxisX;
+					}
+					CurrentScanlinePixel += AxisY;
+				}
 			}
 			else
 			{	// Simple texture copy, with luminance calibration

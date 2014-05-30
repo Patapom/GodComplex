@@ -34,7 +34,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				m_RGB = (float3) m_Owner.m_sRGBProfile.XYZ2RGB( new float4( Bitmap2.ColorProfile.xyY2XYZ( m_xyY ), 1.0f ) );
 
-				Color	C = Color.FromArgb( Math.Min( 255, (int) (m_RGB.x * 255.0f) ), Math.Min( 255, (int) (m_RGB.y * 255.0f) ), Math.Min( 255, (int) (m_RGB.z * 255.0f) ) );
+				Color	C = Color.FromArgb( Math.Max( 0, Math.Min( 255, (int) (m_RGB.x * 255.0f) ) ),
+											Math.Max( 0, Math.Min( 255, (int) (m_RGB.y * 255.0f) ) ),
+											Math.Max( 0, Math.Min( 255, (int) (m_RGB.z * 255.0f) ) ) );
 				m_Panel.BackColor = C;
 			}
 		}

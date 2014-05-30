@@ -632,8 +632,8 @@ namespace StandardizedDiffuseAlbedoMaps
 							}
 						}
 
-						CurHalfSize.x = Math.Max( 1e-2f, CurHalfSize.x );
-						CurHalfSize.y = Math.Max( 1e-2f, CurHalfSize.y );
+						CurHalfSize.x = Math.Max( 1e-3f, CurHalfSize.x );
+						CurHalfSize.y = Math.Max( 1e-3f, CurHalfSize.y );
 
 						// Constrain vertices to the image
 						float2[]	Vertices = BuildClipVertices( CurCenter, CurHalfSize, CurAxisX, CurAxisY );
@@ -680,6 +680,9 @@ namespace StandardizedDiffuseAlbedoMaps
 
 						m_CropRectangleCenter = CurCenter;
 						m_CropRectangleHalfSize = CurHalfSize;
+
+						// The crop rectangle has changed!
+						m_CropRectangleIsDefault = false;
 
 						// Repaint to update the crop rectangle
 						Invalidate();
