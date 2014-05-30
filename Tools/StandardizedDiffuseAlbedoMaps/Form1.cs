@@ -327,14 +327,23 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( m_BitmapXYZ == null )
 				return;
 
-			int	X = Math.Max( 0, Math.Min( m_BitmapXYZ.Width-1, e.X*m_BitmapXYZ.Width/outputPanel.Width ) );
-			int	Y = Math.Max( 0, Math.Min( m_BitmapXYZ.Height-1, e.Y*m_BitmapXYZ.Height/outputPanel.Height ) );
+			RectangleF	R = outputPanel.ImageClientRectangle;
 
-			float	Lum = m_BitmapXYZ.ContentXYZ[X,Y].y;
-			if ( checkBoxsRGB.Checked )
-				Lum = Bitmap2.ColorProfile.Linear2sRGB( Lum );
+			float	X = (e.X - R.Left) / R.Width;
+			float	Y = (e.Y - R.Top) / R.Height;
+			if ( X < 0.0f || X > 1.0f || Y < 0.0f || Y > 1.0f )
+			{
+				labelLuminance.Text = "";
+				return;
+			}
 
-			labelLuminance.Text = "L=" + Lum.ToString( "G4" ) + " (" + (int) (Lum*255) + ")";
+			X *= m_BitmapXYZ.Width;
+			Y *= m_BitmapXYZ.Height;
+
+			float	Lum = m_BitmapXYZ.BilinearSample( X, Y ).y;
+			float	Lum_sRGB = Bitmap2.ColorProfile.Linear2sRGB( Lum );
+
+			labelLuminance.Text = "sRGB=" + Lum_sRGB.ToString( "G4" ) + " (" + (int) (Lum_sRGB*255) + ") - Y=" + Lum.ToString( "G4" );
 		}
 
 		private void checkBoxsRGB_CheckedChanged( object sender, EventArgs e )
@@ -786,9 +795,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 		}
 
-		private void checkBoxCropTool_CheckedChanged( object sender, EventArgs e )
+		private void buttonCropTool_Click( object sender, EventArgs e )
 		{
-			outputPanel.CropRectangleEnabled = checkBoxCropTool.Checked;
+			outputPanel.CropRectangleEnabled = !outputPanel.CropRectangleEnabled;
 		}
 
 		private void buttonResetCrop_Click( object sender, EventArgs e )
@@ -960,6 +969,49 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			// Update white reflectance to show correction factor
 			UpdateWhiteReflectancePanel();
+		}
+
+		private void resultTexturePanel_MouseMove( object sender, MouseEventArgs e )
+		{
+			labelCapturedReflectance.Text = "";
+			if ( m_Texture == null )
+				return;
+
+			RectangleF	R = resultTexturePanel.ImageClientRectangle;
+			float	X = (e.X - R.Left) / R.Width;
+			float	Y = (e.Y - R.Top) / R.Height;
+			if ( X < 0.0f || X > 1.0f || Y < 0.0f || Y > 1.0f )
+				return;
+
+			X *= m_Texture.Texture.Width;
+			Y *= m_Texture.Texture.Height;
+
+			float4	XYZ = m_Texture.Texture.BilinearSample( X, Y );
+			float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
+			labelCapturedReflectance.Text = xyY.ToString();
+		}
+
+		private void panelSwatchMin_MouseMove( object sender, MouseEventArgs e )
+		{
+			Swatch	S = null;
+			if ( sender == panelSwatchMin )
+				S = m_SwatchMin;
+			else if ( sender == panelSwatchMax )
+				S = m_SwatchMax;
+			else if ( sender == panelSwatchAverage )
+				S = m_SwatchAvg;
+			else
+			{
+				foreach ( Swatch CS in m_CustomSwatches )
+					if ( sender == CS.m_Panel )
+					{
+						S = CS;
+						break;
+					}
+			}
+
+			labelCapturedSwatchRGB.Text = S != null ? S.m_RGB.ToString() : "";
+			labelCapturedSwatchxyY.Text = S != null ? S.m_xyY.ToString() : "";
 		}
 
 		#endregion

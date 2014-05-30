@@ -130,6 +130,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			set { ManipulationState = value ? MANIPULATION_STATE.CROP_RECTANGLE : MANIPULATION_STATE.STOPPED; }
 		}
 
+		public RectangleF	ImageClientRectangle		{ get { return ImageClientRect(); } }
 
 		private float				ImageWidth			{ get { return (float) m_Image.GetLength(0); } }
 		private float				ImageHeight			{ get { return (float) m_Image.GetLength(1); } }

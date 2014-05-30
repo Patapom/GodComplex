@@ -71,6 +71,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 		}
 
+		public RectangleF	ImageClientRectangle		{ get { return ImageClientRect(); } }
+
 		public ResultTexturePanel( IContainer container )
 		{
 			container.Add( this );

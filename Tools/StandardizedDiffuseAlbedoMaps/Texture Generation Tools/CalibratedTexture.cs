@@ -198,13 +198,13 @@ namespace StandardizedDiffuseAlbedoMaps
 							m_SwatchMax.xyY = xyY;
 						m_SwatchAvg.xyY += xyY;
 					}
-
-				// Normalize average color
-				float	Normalizer = 1.0f / (m_Texture.Width*m_Texture.Height);
-				m_SwatchAvg.xyY.x *= Normalizer;
-				m_SwatchAvg.xyY.y *= Normalizer;
-				m_SwatchAvg.xyY.z *= Normalizer;
 			}
+
+			// Normalize average swatch color
+			float	Normalizer = 1.0f / (m_Texture.Width*m_Texture.Height);
+			m_SwatchAvg.xyY.x *= Normalizer;
+			m_SwatchAvg.xyY.y *= Normalizer;
+			m_SwatchAvg.xyY.z *= Normalizer;
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -316,7 +316,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			XmlComment	HeaderComment = Doc.CreateComment( 
 				"***Do not modify!***\r\n\r\n" +
 				"This is a calibrated texture manifest file generated from the uncalibrated image \"" + m_Parameters.SourceImageName + "\"\r\n" +
-				"Resulting generated images have been stored using a standard sRGB profile and can be used directly as source or color picked by artists\r\n" +
+				"Resulting generated images have been stored using a standard sRGB profile and can be used directly as source or color-picked by artists\r\n" +
 				" without any other processing. Colors in the textures will have the proper reflectance (assuming the original image has been properly captured\r\n" +
 				" with specular removal using polarization filters) and after sRGB->Linear conversion will be directly useable as reflectance in the lighting equation.\r\n" +
 				"The xyY values are given in device-independent xyY color space and can be used as linear-space colors directly.\r\n\r\n" +
