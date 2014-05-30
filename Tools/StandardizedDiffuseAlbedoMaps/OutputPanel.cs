@@ -14,9 +14,9 @@ namespace StandardizedDiffuseAlbedoMaps
 	{
 		#region NESTED TYPES
 
-		public delegate void	CalibrationDone( PointF _Center, float _Radius );			// Sends the center and radius of the circle to average as a single luminance
-		public delegate void	WhiteReflectancePickingDone( PointF _Position );			// Sends the UV coordinates of the point picked as white reflectance reference
-		public delegate void	ColorPickingUpdate( PointF _TopLeft, PointF _BottomRight );	// Sends the UV coordinates of the rectangle to average as a single color
+		public delegate void	CalibrationDone( float2 _Center, float _Radius );			// Sends the center and radius of the circle to average as a single luminance
+		public delegate void	WhiteReflectancePickingDone( float2 _Position );			// Sends the UV coordinates of the point picked as white reflectance reference
+		public delegate void	ColorPickingUpdate( float2 _TopLeft, float2 _BottomRight );	// Sends the UV coordinates of the rectangle to average as a single color
 
 		private enum	MANIPULATION_STATE
 		{
@@ -36,6 +36,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		private enum	CROP_RECTANGLE_SPOT
 		{
 			NONE,
+
+			CENTER,
 
 			CORNER_TOP_LEFT,
 			CORNER_TOP_RIGHT,
@@ -69,19 +71,31 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private CalibrationDone		m_CalibrationDelegate = null;
 		private CALIBRATION_STAGE	m_CalibrationStage;
-		private PointF				m_CalibrationCenter = PointF.Empty;
+		private float2				m_CalibrationCenter = new float2();
 		private float				m_CalibrationRadius = 0.0f;
 
 		// Crop rectangle manipulation
 		private Pen					m_PenCropRectangle = new Pen( Color.Red, 1.0f );
 		private SolidBrush			m_BrushCroppedZone = new SolidBrush( Color.FromArgb( 128, Color.White ) );
 
-		private PointF				m_CropRectangleCenter = new PointF( 0.5f, 0.5f );
-		private PointF				m_CropRectangleHalfSize = new PointF( 0.5f, 0.5f );
+		private bool				m_CropRectangleIsDefault = true;
+		private float2				m_CropRectangleCenter = new float2( 0.5f, 0.5f );
+		private float2				m_CropRectangleHalfSize = new float2( 0.5f, 0.5f );
 		private float				m_CropRectangleRotation = 0.0f;
+		private float2				m_CropRectangleAxisX;	// Updated by UpdateCropRectangleVertices
+		private float2				m_CropRectangleAxisY;	// Updated by UpdateCropRectangleVertices
 
 		private bool				m_CropRectangleManipulationStarted = false;
 		private CROP_RECTANGLE_SPOT	m_CropRectangleManipulatedSpot = CROP_RECTANGLE_SPOT.NONE;
+		private float2				m_ButtonDownCropRectangleCenter;
+		private float2				m_ButtonDownCropRectangleHalfSize;
+		private float				m_ButtonDownCropRectangleRotation;
+		private float2				m_ButtonDownCropRectangleAxisX;
+		private float2				m_ButtonDownCropRectangleAxisY;
+			// Client space data
+		private PointF				m_ButtonDownClientCropRectangleCenter;
+		private PointF[]			m_ButtonDownClientCropRectangleVertices = new PointF[4];	// Top-left, top-right, bottom-left, bottom-right
+
 
 		// White reflectance picking
 		private WhiteReflectancePickingDone	m_WhiteReflectancePickingDelegate = null;
@@ -90,7 +104,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		private ColorPickingUpdate	m_ColorPickingDelegate = null;
 
 		private MouseButtons		m_MouseButtonsDown = MouseButtons.None;
-		private PointF				m_MousePositionButtonDown;
+		private PointF				m_ButtonDownMousePosition;
 		private PointF				m_MousePositionCurrent;
 
 		#endregion
@@ -112,6 +126,11 @@ namespace StandardizedDiffuseAlbedoMaps
 			set { ManipulationState = value ? MANIPULATION_STATE.CROP_RECTANGLE : MANIPULATION_STATE.STOPPED; }
 		}
 
+
+		private float				ImageWidth			{ get { return (float) m_Image.GetLength(0); } }
+		private float				ImageHeight			{ get { return (float) m_Image.GetLength(1); } }
+		private float				ImageAspectRatio	{ get { return ImageWidth / ImageHeight; } }
+
 		private MANIPULATION_STATE	ManipulationState
 		{
 			get { return m_ManipulationState; }
@@ -128,20 +147,9 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <summary>
 		/// If true then don't crop the source image
 		/// </summary>
-		public bool			IsDefaultCropRectangle
-		{
-			get
-			{
-				return Math.Abs( m_CropRectangleCenter.X - 0.5f ) < 1e-6f
-					&& Math.Abs( m_CropRectangleCenter.Y - 0.5f ) < 1e-6f
-					&& Math.Abs( m_CropRectangleHalfSize.X - 0.5f ) < 1e-6f
-					&& Math.Abs( m_CropRectangleHalfSize.Y - 0.5f ) < 1e-6f
-					&& Math.Abs( m_CropRectangleRotation - 0.0f ) < 1e-6f;
-			}
-		}
-
-		public PointF		CropRectangeCenter		{ get { return m_CropRectangleCenter; } }
-		public PointF		CropRectangeHalfSize	{ get { return m_CropRectangleHalfSize; } }
+		public bool			IsDefaultCropRectangle	{ get { return m_CropRectangleIsDefault; } }
+		public float2		CropRectangeCenter		{ get { return m_CropRectangleCenter; } }
+		public float2		CropRectangeHalfSize	{ get { return m_CropRectangleHalfSize; } }
 		public float		CropRectangeRotation	{ get { return m_CropRectangleRotation; } }
 
 		#endregion
@@ -190,14 +198,14 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// </summary>
 		public void				ResetCropRectangle()
 		{
+			m_CropRectangleIsDefault = true;
 			if ( m_Image == null )
 				return;
 
-			RectangleF	ImageRect = ImageClientRect();
-
-			m_CropRectangleCenter = new PointF( 0.5f, 0.5f );
-			m_CropRectangleHalfSize = new PointF( 0.5f, 0.5f );
+			m_CropRectangleCenter = new float2( 0.5f, 0.5f );
+			m_CropRectangleHalfSize = new float2( 0.5f, 0.5f );
 			m_CropRectangleRotation = 0.0f;
+			Invalidate();
 		}
 
 		public unsafe void		UpdateBitmap()
@@ -269,16 +277,28 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 		}
 
-		private PointF	Client2ImageUV( PointF _Position )
+// 		private PointF	Client2Image( PointF _Position )
+// 		{
+// 			RectangleF	ImageRect = ImageClientRect();
+// 			return new PointF( (_Position.X - ImageRect.X) * ImageWidth / ImageRect.Width, (_Position.Y - ImageRect.Y) * ImageHeight / ImageRect.Height );
+// 		}
+// 
+// 		private PointF	Image2Client( PointF _Position )
+// 		{
+// 			RectangleF	ImageRect = ImageClientRect();
+// 			return new PointF( ImageRect.X + _Position.X * ImageRect.Width / ImageWidth, ImageRect.Y + _Position.Y * ImageRect.Height / ImageHeight );
+// 		}
+
+		private float2	Client2ImageUV( PointF _Position )
 		{
 			RectangleF	ImageRect = ImageClientRect();
-			return new PointF( (_Position.X - ImageRect.X) / ImageRect.Width, (_Position.Y - ImageRect.Y) / ImageRect.Height );
+			return new float2( (_Position.X - ImageRect.X) / ImageRect.Width, (_Position.Y - ImageRect.Y) / ImageRect.Height );
 		}
 
-		private PointF	ImageUV2Client( PointF _Position )
+		private PointF	ImageUV2Client( float2 _Position )
 		{
 			RectangleF	ImageRect = ImageClientRect();
-			return new PointF( _Position.X * ImageRect.Width + ImageRect.X, _Position.Y * ImageRect.Height + ImageRect.Y );
+			return new PointF( ImageRect.X + _Position.x * ImageRect.Width, ImageRect.Y + _Position.y * ImageRect.Height );
 		}
 
 		protected override void OnSizeChanged( EventArgs e )
@@ -298,28 +318,26 @@ namespace StandardizedDiffuseAlbedoMaps
 //			base.OnPaintBackground( e );
 		}
 
-		private PointF		m_CropRectangleAxisX;
-		private PointF		m_CropRectangleAxisY;
-		private PointF[]	m_CropRectangleVertices = new PointF[4];	// Top-left, top-right, bottom-left, bottom-right
+		private PointF		m_ClientCropRectangleCenter;
+		private PointF[]	m_ClientCropRectangleVertices = new PointF[4];	// Top-left, top-right, bottom-left, bottom-right
 		private void		UpdateCropRectangleVertices()
 		{
-			m_CropRectangleAxisX = new PointF( (float) Math.Cos( m_CropRectangleRotation ), -(float) Math.Sin( m_CropRectangleRotation ) );
-			m_CropRectangleAxisY = new PointF( -(float) Math.Sin( m_CropRectangleRotation ), -(float) Math.Cos( m_CropRectangleRotation ) );
+			m_CropRectangleAxisX = new float2( (float) Math.Cos( m_CropRectangleRotation ), -(float) Math.Sin( m_CropRectangleRotation ) );
+			m_CropRectangleAxisY = new float2( -(float) Math.Sin( m_CropRectangleRotation ), -(float) Math.Cos( m_CropRectangleRotation ) );
 
 			RectangleF	ImageRect = ImageClientRect();
 
-			PointF	Center = ImageUV2Client( m_CropRectangleCenter );
-//			PointF	HalfSize = new PointF( m_Image.GetLength( 0 ) * m_CropRectangleHalfSize.X, m_Image.GetLength( 1 ) * m_CropRectangleHalfSize.Y );
-			PointF	HalfSize = new PointF( ImageRect.Width * m_CropRectangleHalfSize.X, ImageRect.Height * m_CropRectangleHalfSize.Y );
+			m_ClientCropRectangleCenter = ImageUV2Client( m_CropRectangleCenter );
+			PointF	HalfSize = new PointF( m_CropRectangleHalfSize.x * ImageRect.Width, m_CropRectangleHalfSize.y * ImageRect.Height );
 
-			m_CropRectangleVertices[0] = new PointF(	Center.X - HalfSize.X * m_CropRectangleAxisX.X + HalfSize.Y * m_CropRectangleAxisY.X,
-														Center.Y - HalfSize.X * m_CropRectangleAxisX.Y + HalfSize.Y * m_CropRectangleAxisY.Y );
-			m_CropRectangleVertices[1] = new PointF(	Center.X + HalfSize.X * m_CropRectangleAxisX.X + HalfSize.Y * m_CropRectangleAxisY.X,
-														Center.Y + HalfSize.X * m_CropRectangleAxisX.Y + HalfSize.Y * m_CropRectangleAxisY.Y );
-			m_CropRectangleVertices[2] = new PointF(	Center.X - HalfSize.X * m_CropRectangleAxisX.X - HalfSize.Y * m_CropRectangleAxisY.X,
-														Center.Y - HalfSize.X * m_CropRectangleAxisX.Y - HalfSize.Y * m_CropRectangleAxisY.Y );
-			m_CropRectangleVertices[3] = new PointF(	Center.X + HalfSize.X * m_CropRectangleAxisX.X - HalfSize.Y * m_CropRectangleAxisY.X,
-														Center.Y + HalfSize.X * m_CropRectangleAxisX.Y - HalfSize.Y * m_CropRectangleAxisY.Y );
+			m_ClientCropRectangleVertices[0] = new PointF(	m_ClientCropRectangleCenter.X - HalfSize.X * m_CropRectangleAxisX.x + HalfSize.Y * m_CropRectangleAxisY.x,
+															m_ClientCropRectangleCenter.Y - HalfSize.X * m_CropRectangleAxisX.y + HalfSize.Y * m_CropRectangleAxisY.y );
+			m_ClientCropRectangleVertices[1] = new PointF(	m_ClientCropRectangleCenter.X + HalfSize.X * m_CropRectangleAxisX.x + HalfSize.Y * m_CropRectangleAxisY.x,
+															m_ClientCropRectangleCenter.Y + HalfSize.X * m_CropRectangleAxisX.y + HalfSize.Y * m_CropRectangleAxisY.y );
+			m_ClientCropRectangleVertices[2] = new PointF(	m_ClientCropRectangleCenter.X - HalfSize.X * m_CropRectangleAxisX.x - HalfSize.Y * m_CropRectangleAxisY.x,
+															m_ClientCropRectangleCenter.Y - HalfSize.X * m_CropRectangleAxisX.y - HalfSize.Y * m_CropRectangleAxisY.y );
+			m_ClientCropRectangleVertices[3] = new PointF(	m_ClientCropRectangleCenter.X + HalfSize.X * m_CropRectangleAxisX.x - HalfSize.Y * m_CropRectangleAxisY.x,
+															m_ClientCropRectangleCenter.Y + HalfSize.X * m_CropRectangleAxisX.y - HalfSize.Y * m_CropRectangleAxisY.y );
 		}
 
 		protected override void OnMouseDown( MouseEventArgs e )
@@ -354,7 +372,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				case MANIPULATION_STATE.PICK_WHITE_REFLECTANCE:
 				{
-					m_WhiteReflectancePickingDelegate( Client2ImageUV( m_MousePositionButtonDown ) );
+					m_WhiteReflectancePickingDelegate( Client2ImageUV( m_ButtonDownMousePosition ) );
 					ManipulationState = MANIPULATION_STATE.STOPPED;			// End manipulation
 					break;
 				}
@@ -367,7 +385,22 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			m_MousePositionCurrent = e.Location;
 			if ( m_MouseButtonsDown == MouseButtons.None )
-				m_MousePositionButtonDown = e.Location;
+			{
+				m_ButtonDownMousePosition = e.Location;
+				m_ButtonDownCropRectangleCenter = m_CropRectangleCenter;
+				m_ButtonDownCropRectangleHalfSize = m_CropRectangleHalfSize;
+				m_ButtonDownCropRectangleRotation = m_CropRectangleRotation;
+				m_ButtonDownCropRectangleAxisX = m_CropRectangleAxisX;
+				m_ButtonDownCropRectangleAxisY = m_CropRectangleAxisY;
+
+				m_ButtonDownClientCropRectangleCenter = m_ClientCropRectangleCenter;
+				m_ButtonDownClientCropRectangleVertices = new PointF[4] {
+					m_ClientCropRectangleVertices[0],
+					m_ClientCropRectangleVertices[1],
+					m_ClientCropRectangleVertices[2],
+					m_ClientCropRectangleVertices[3],
+				};
+			}
 
 			switch ( m_ManipulationState )
 			{
@@ -381,13 +414,13 @@ namespace StandardizedDiffuseAlbedoMaps
 
 						PointF	P = e.Location;
 
-						PointF	TopLeftCorner2UV = new PointF( P.X - m_CropRectangleVertices[0].X, P.Y - m_CropRectangleVertices[0].Y );
-						PointF	BottomRightCorner2UV = new PointF( P.X - m_CropRectangleVertices[3].X, P.Y - m_CropRectangleVertices[3].Y );
+						PointF	TopLeftCorner2UV = new PointF( P.X - m_ClientCropRectangleVertices[0].X, P.Y - m_ClientCropRectangleVertices[0].Y );
+						PointF	BottomRightCorner2UV = new PointF( P.X - m_ClientCropRectangleVertices[3].X, P.Y - m_ClientCropRectangleVertices[3].Y );
 
-						float	Distance2Left = -TopLeftCorner2UV.X * m_CropRectangleAxisX.X - TopLeftCorner2UV.Y * m_CropRectangleAxisX.Y;
-						float	Distance2Top = TopLeftCorner2UV.X * m_CropRectangleAxisY.X + TopLeftCorner2UV.Y * m_CropRectangleAxisY.Y;
-						float	Distance2Right = BottomRightCorner2UV.X * m_CropRectangleAxisX.X + BottomRightCorner2UV.Y * m_CropRectangleAxisX.Y;
-						float	Distance2Bottom = -BottomRightCorner2UV.X * m_CropRectangleAxisY.X - BottomRightCorner2UV.Y * m_CropRectangleAxisY.Y;
+						float	Distance2Left = -TopLeftCorner2UV.X * m_CropRectangleAxisX.x - TopLeftCorner2UV.Y * m_CropRectangleAxisX.y;
+						float	Distance2Top = TopLeftCorner2UV.X * m_CropRectangleAxisY.x + TopLeftCorner2UV.Y * m_CropRectangleAxisY.y;
+						float	Distance2Right = BottomRightCorner2UV.X * m_CropRectangleAxisX.x + BottomRightCorner2UV.Y * m_CropRectangleAxisX.y;
+						float	Distance2Bottom = -BottomRightCorner2UV.X * m_CropRectangleAxisY.x - BottomRightCorner2UV.Y * m_CropRectangleAxisY.y;
 
 						// Stretch
 						if ( Math.Abs( Distance2Left ) < TOLERANCE )
@@ -421,6 +454,8 @@ namespace StandardizedDiffuseAlbedoMaps
 							m_CropRectangleManipulatedSpot = CROP_RECTANGLE_SPOT.ROTATE_BOTTOM_RIGHT;
 						else if ( Distance2Bottom > TOLERANCE && Distance2Left > TOLERANCE )
 							m_CropRectangleManipulatedSpot = CROP_RECTANGLE_SPOT.ROTATE_BOTTOM_LEFT;
+						else if ( Distance2Left < 0.0f && Distance2Right < 0.0f && Distance2Bottom < 0.0f && Distance2Top < 0.0f )
+							m_CropRectangleManipulatedSpot = CROP_RECTANGLE_SPOT.CENTER;
 
 						// Update cursor accordingly
 						switch ( m_CropRectangleManipulatedSpot  )
@@ -440,11 +475,185 @@ namespace StandardizedDiffuseAlbedoMaps
 							case CROP_RECTANGLE_SPOT.ROTATE_BOTTOM_RIGHT:
 								Cursor = Cursors.Hand;
 								break;
+							case CROP_RECTANGLE_SPOT.CENTER:
+								Cursor = Cursors.Hand;
+								break;
 						}
 					}
 					else
 					{	// Handle actual manipulation
-						// TODO!
+						float2		CurClientPos = new float2( e.X, e.Y );
+						float2		OldClientPos = new float2( m_ButtonDownMousePosition.X, m_ButtonDownMousePosition.Y );
+						float2		OldClientCenter = new float2( m_ButtonDownClientCropRectangleCenter.X, m_ButtonDownClientCropRectangleCenter.Y );
+
+						float2		OldCenter = m_ButtonDownCropRectangleCenter;
+						float2		OldHalfSize = m_ButtonDownCropRectangleHalfSize;
+						float2		OldAxisX = m_ButtonDownCropRectangleAxisX;
+						float2		OldAxisY = m_ButtonDownCropRectangleAxisY;
+
+						float2[]	OldVertices = new float2[4] {
+							OldCenter - OldHalfSize.x * OldAxisX + OldHalfSize.y * OldAxisY,
+							OldCenter + OldHalfSize.x * OldAxisX + OldHalfSize.y * OldAxisY,
+							OldCenter - OldHalfSize.x * OldAxisX - OldHalfSize.y * OldAxisY,
+							OldCenter + OldHalfSize.x * OldAxisX - OldHalfSize.y * OldAxisY,
+						};
+
+						float2		CurCenter = OldCenter;
+						float2		CurHalfSize = OldHalfSize;
+						float2		CurAxisX = OldAxisX;
+						float2		CurAxisY = OldAxisY;
+
+						RectangleF	ImageRect = ImageClientRect();	// The image's rectangle in client space
+
+						switch ( m_CropRectangleManipulatedSpot )
+						{
+							case CROP_RECTANGLE_SPOT.LEFT:
+							case CROP_RECTANGLE_SPOT.RIGHT:
+							{
+								float2	Center2OldPos = OldClientPos - OldClientCenter;
+								float	OldDistance2Edge = Center2OldPos.Dot( OldAxisX );
+								float2	Center2CurPos = CurClientPos - OldClientCenter;
+								float	CurDistance2Edge = Center2CurPos.Dot( OldAxisX );
+
+								float	Delta = CurDistance2Edge - OldDistance2Edge;	// This is the amount (in client space) we need to move the left/right border
+								float	DeltaUV = Delta / ImageRect.Height;				// This is the same amount in UV space
+								DeltaUV *= 0.5f;	// We're dealing with halves all along
+
+								// Increase width of that amount
+								CurHalfSize.x = OldHalfSize.x + (m_CropRectangleManipulatedSpot == CROP_RECTANGLE_SPOT.LEFT ? -1 : 1) * DeltaUV;
+
+								// Move center along the X axis
+								if ( m_CropRectangleManipulatedSpot == CROP_RECTANGLE_SPOT.LEFT )
+								{	// Keep right fixed, move to the left
+									float2	Right = OldCenter + OldHalfSize.x * OldAxisX;
+									float2	Left = Right - 2.0f * CurHalfSize.x * OldAxisX;
+									CurCenter = 0.5f * (Right + Left);
+								}
+								else
+								{	// Keep left fixed, move to the right
+									float2	Left = OldCenter - OldHalfSize.x * OldAxisX;
+									float2	Right = Left + 2.0f * CurHalfSize.x * OldAxisX;
+									CurCenter = 0.5f * (Right + Left);
+								}
+								break;
+							}
+
+							case CROP_RECTANGLE_SPOT.TOP:
+							case CROP_RECTANGLE_SPOT.BOTTOM:
+							{
+								float2	Center2OldPos = OldClientPos - OldClientCenter;
+								float	OldDistance2Edge = Center2OldPos.Dot( OldAxisY );
+								float2	Center2CurPos = CurClientPos - OldClientCenter;
+								float	CurDistance2Edge = Center2CurPos.Dot( OldAxisY );
+
+								float	Delta = CurDistance2Edge - OldDistance2Edge;	// This is the amount (in client space) we need to move the left/right border
+								float	DeltaUV = Delta / ImageRect.Height;				// This is the same amount in UV space
+								DeltaUV *= 0.5f;	// We're dealing with halves all along
+
+								// Increase height of that amount
+								CurHalfSize.y = OldHalfSize.y + (m_CropRectangleManipulatedSpot == CROP_RECTANGLE_SPOT.TOP ? 1 : -1) * DeltaUV;
+
+								// Move center along the X axis
+								if ( m_CropRectangleManipulatedSpot == CROP_RECTANGLE_SPOT.TOP )
+								{	// Keep bottom fixed, move up
+									float2	Bottom = OldCenter - OldHalfSize.y * OldAxisY;
+									float2	Top = Bottom + 2.0f * CurHalfSize.y * OldAxisY;
+									CurCenter = 0.5f * (Bottom + Top);
+								}
+								else
+								{	// Keep top fixed, move down
+									float2	Top = OldCenter + OldHalfSize.y * OldAxisY;
+									float2	Bottom = Top - 2.0f * CurHalfSize.y * OldAxisY;
+									CurCenter = 0.5f * (Bottom + Top);
+								}
+								break;
+							}
+
+							case CROP_RECTANGLE_SPOT.CORNER_TOP_LEFT:
+							case CROP_RECTANGLE_SPOT.CORNER_TOP_RIGHT:
+							case CROP_RECTANGLE_SPOT.CORNER_BOTTOM_LEFT:
+							case CROP_RECTANGLE_SPOT.CORNER_BOTTOM_RIGHT:
+							{
+								float2	Delta = CurClientPos - OldClientPos;
+								float2	DeltaUV = (1.0f / ImageRect.Height) * Delta;
+
+								float2	Corner = new float2(), OppositeCorner = new float2();
+								switch ( m_CropRectangleManipulatedSpot )
+								{
+									case CROP_RECTANGLE_SPOT.CORNER_TOP_LEFT: Corner = OldVertices[0]; OppositeCorner = OldVertices[3]; break;		// Keep bottom right fixed
+									case CROP_RECTANGLE_SPOT.CORNER_TOP_RIGHT: Corner = OldVertices[1]; OppositeCorner = OldVertices[2]; break;		// Keep bottom left fixed
+									case CROP_RECTANGLE_SPOT.CORNER_BOTTOM_LEFT: Corner = OldVertices[2]; OppositeCorner = OldVertices[1]; break;		// Keep top right fixed
+									case CROP_RECTANGLE_SPOT.CORNER_BOTTOM_RIGHT: Corner = OldVertices[3]; OppositeCorner = OldVertices[0]; break;	// Keep top left fixed
+								}
+
+								// Move corner
+								Corner += DeltaUV;
+
+								// Compute new center
+								CurCenter = new float2( 0.5f * (Corner.x + OppositeCorner.x), 0.5f * (Corner.y + OppositeCorner.y) );
+
+								// Compute new size
+								CurHalfSize = new float2( Math.Abs( (Corner - CurCenter).Dot( OldAxisX ) ), Math.Abs( (Corner - CurCenter).Dot( OldAxisY ) ) );
+
+								break;
+							}
+
+							case CROP_RECTANGLE_SPOT.ROTATE_TOP_LEFT:
+							case CROP_RECTANGLE_SPOT.ROTATE_TOP_RIGHT:
+							case CROP_RECTANGLE_SPOT.ROTATE_BOTTOM_LEFT:
+							case CROP_RECTANGLE_SPOT.ROTATE_BOTTOM_RIGHT:
+							{
+								float2	Center2OldPos = OldClientPos - OldClientCenter;
+								float2	Center2CurPos = CurClientPos - OldClientCenter;
+
+								float	OldAngle = (float) Math.Atan2( -Center2OldPos.y, Center2OldPos.x );
+								float	CurAngle = (float) Math.Atan2( -Center2CurPos.y, Center2CurPos.x );
+
+								m_CropRectangleRotation = m_ButtonDownCropRectangleRotation + CurAngle - OldAngle;
+
+								CurAxisX = new float2( (float) Math.Cos( m_CropRectangleRotation ), -(float) Math.Sin( m_CropRectangleRotation ) );
+								CurAxisY = new float2( -(float) Math.Sin( m_CropRectangleRotation ), -(float) Math.Cos( m_CropRectangleRotation ) );
+								break;
+							}
+
+							case CROP_RECTANGLE_SPOT.CENTER:
+							{
+								float2	Delta = CurClientPos - OldClientPos;
+								float2	DeltaUV = (1.0f / ImageRect.Height) * Delta;
+
+								CurCenter = OldCenter + DeltaUV;
+								break;
+							}
+						}
+
+						CurHalfSize.x = Math.Max( 1e-2f, CurHalfSize.x );
+						CurHalfSize.y = Math.Max( 1e-2f, CurHalfSize.y );
+
+						// Constrain vertices to the image
+						float2[]	Vertices = new float2[4] {
+							CurCenter - CurHalfSize.x * CurAxisX + CurHalfSize.y * CurAxisY,
+							CurCenter + CurHalfSize.x * CurAxisX + CurHalfSize.y * CurAxisY,
+							CurCenter - CurHalfSize.x * CurAxisX - CurHalfSize.y * CurAxisY,
+							CurCenter + CurHalfSize.x * CurAxisX - CurHalfSize.y * CurAxisY,
+						};
+
+						float2	NewCenter = new float2( 0, 0 );
+						for ( int i=0; i < 4; i++ )
+						{
+							Vertices[i].x = Math.Max( 0.0f, Math.Min( 1.0f, Vertices[i].x ) );
+							Vertices[i].y = Math.Max( 0.0f, Math.Min( 1.0f, Vertices[i].y ) );
+							NewCenter += 0.25f * Vertices[i];
+						}
+						m_CropRectangleCenter = NewCenter;
+
+						float	DotX0 = (Vertices[0] - NewCenter).Dot( CurAxisX );
+						float	DotX1 = (Vertices[1] - NewCenter).Dot( CurAxisX );
+						float	DotY0 = (Vertices[2] - NewCenter).Dot( CurAxisY );
+						float	DotY1 = (Vertices[0] - NewCenter).Dot( CurAxisY );
+						m_CropRectangleHalfSize = new float2( 0.5f * (DotX1 - DotX0), 0.5f * (DotY1 - DotY0) );
+
+						// Repaint to update the crop rectangle
+						Invalidate();
 					}
 					break;
 				}
@@ -460,8 +669,8 @@ namespace StandardizedDiffuseAlbedoMaps
 
 						case CALIBRATION_STAGE.SET_RADIUS:
 							{
-								PointF	Temp = Client2ImageUV( e.Location );
-								m_CalibrationRadius = (float) Math.Sqrt( (Temp.X - m_CalibrationCenter.X)*(Temp.X - m_CalibrationCenter.X) + (Temp.Y - m_CalibrationCenter.Y)*(Temp.Y - m_CalibrationCenter.Y) );
+								float2	Temp = Client2ImageUV( e.Location );
+								m_CalibrationRadius = (float) Math.Sqrt( (Temp.x - m_CalibrationCenter.x)*(Temp.x - m_CalibrationCenter.x) + (Temp.y - m_CalibrationCenter.y)*(Temp.y - m_CalibrationCenter.y) );
 								Invalidate();
 							}
 							break;
@@ -475,8 +684,8 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				case MANIPULATION_STATE.PICK_COLOR:
 					Cursor = Cursors.Cross;
-					PointF	UV0 = Client2ImageUV( m_MousePositionButtonDown );
-					PointF	UV1 = Client2ImageUV( e.Location );
+					float2	UV0 = Client2ImageUV( m_ButtonDownMousePosition );
+					float2	UV1 = Client2ImageUV( e.Location );
 					m_ColorPickingDelegate( UV0, UV1 );
 					Invalidate();
 					break;
@@ -528,60 +737,60 @@ namespace StandardizedDiffuseAlbedoMaps
 					UpdateCropRectangleVertices();
 
 					// Draw off-screen area
-					const float	F = 20.0f;
-//					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] { m_CropRectangleVertices[0], m_CropRectangleVertices[1], m_CropRectangleVertices[3], m_CropRectangleVertices[2] } );
+					const float	F = 1000.0f;
+//					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] { m_ClientCropRectangleVertices[0], m_ClientCropRectangleVertices[1], m_ClientCropRectangleVertices[3], m_ClientCropRectangleVertices[2] } );
 					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[0],
-						new PointF( m_CropRectangleVertices[0].X + F*(+0*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(+0*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[0].X + F*(-1*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(-1*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[0].X + F*(-1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(-1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
+						m_ClientCropRectangleVertices[0],
+						new PointF( m_ClientCropRectangleVertices[0].X + F*(+0*m_CropRectangleAxisX.x+1*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[0].Y + F*(+0*m_CropRectangleAxisX.y+1*m_CropRectangleAxisY.y) ),
+						new PointF( m_ClientCropRectangleVertices[0].X + F*(-1*m_CropRectangleAxisX.x+1*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[0].Y + F*(-1*m_CropRectangleAxisX.y+1*m_CropRectangleAxisY.y) ),
+						new PointF( m_ClientCropRectangleVertices[0].X + F*(-1*m_CropRectangleAxisX.x+0*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[0].Y + F*(-1*m_CropRectangleAxisX.y+0*m_CropRectangleAxisY.y) ),
 					} );
 					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[1],
-						new PointF( m_CropRectangleVertices[1].X + F*(+1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[1].X + F*(+1*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+1*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[1].X + F*(+0*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+0*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
+						m_ClientCropRectangleVertices[1],
+						new PointF( m_ClientCropRectangleVertices[1].X + F*(+1*m_CropRectangleAxisX.x+0*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[1].Y + F*(+1*m_CropRectangleAxisX.y+0*m_CropRectangleAxisY.y) ),
+						new PointF( m_ClientCropRectangleVertices[1].X + F*(+1*m_CropRectangleAxisX.x+1*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[1].Y + F*(+1*m_CropRectangleAxisX.y+1*m_CropRectangleAxisY.y) ),
+						new PointF( m_ClientCropRectangleVertices[1].X + F*(+0*m_CropRectangleAxisX.x+1*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[1].Y + F*(+0*m_CropRectangleAxisX.y+1*m_CropRectangleAxisY.y) ),
 					} );
 					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[2],
-						new PointF( m_CropRectangleVertices[2].X + F*(-1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(-1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[2].X + F*(-1*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(-1*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[2].X + F*(+0*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(+0*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
+						m_ClientCropRectangleVertices[2],
+						new PointF( m_ClientCropRectangleVertices[2].X + F*(-1*m_CropRectangleAxisX.x+0*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[2].Y + F*(-1*m_CropRectangleAxisX.y+0*m_CropRectangleAxisY.y) ),
+						new PointF( m_ClientCropRectangleVertices[2].X + F*(-1*m_CropRectangleAxisX.x-1*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[2].Y + F*(-1*m_CropRectangleAxisX.y-1*m_CropRectangleAxisY.y) ),
+						new PointF( m_ClientCropRectangleVertices[2].X + F*(+0*m_CropRectangleAxisX.x-1*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[2].Y + F*(+0*m_CropRectangleAxisX.y-1*m_CropRectangleAxisY.y) ),
 					} );
 					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[3],
-						new PointF( m_CropRectangleVertices[3].X + F*(+0*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+0*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[3].X + F*(+1*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+1*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[3].X + F*(+1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+0*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
+						m_ClientCropRectangleVertices[3],
+						new PointF( m_ClientCropRectangleVertices[3].X + F*(+0*m_CropRectangleAxisX.x-1*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[3].Y + F*(+0*m_CropRectangleAxisX.y-1*m_CropRectangleAxisY.y) ),
+						new PointF( m_ClientCropRectangleVertices[3].X + F*(+1*m_CropRectangleAxisX.x-1*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[3].Y + F*(+1*m_CropRectangleAxisX.y-1*m_CropRectangleAxisY.y) ),
+						new PointF( m_ClientCropRectangleVertices[3].X + F*(+1*m_CropRectangleAxisX.x+0*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[3].Y + F*(+1*m_CropRectangleAxisX.y+0*m_CropRectangleAxisY.y) ),
 					} );
 
 					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[1],
-						m_CropRectangleVertices[0],
-						new PointF( m_CropRectangleVertices[0].X + F*(+0*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(+0*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[1].X + F*(+0*m_CropRectangleAxisX.X+1*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+0*m_CropRectangleAxisX.Y+1*m_CropRectangleAxisY.Y) ),
+						m_ClientCropRectangleVertices[1],
+						m_ClientCropRectangleVertices[0],
+						new PointF( m_ClientCropRectangleVertices[0].X + F*(+0*m_CropRectangleAxisX.x+1*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[0].Y + F*(+0*m_CropRectangleAxisX.y+1*m_CropRectangleAxisY.y) ),
+						new PointF( m_ClientCropRectangleVertices[1].X + F*(+0*m_CropRectangleAxisX.x+1*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[1].Y + F*(+0*m_CropRectangleAxisX.y+1*m_CropRectangleAxisY.y) ),
 					} );
 					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[3],
-						m_CropRectangleVertices[2],
-						new PointF( m_CropRectangleVertices[2].X + F*(+0*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(+0*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[3].X + F*(+0*m_CropRectangleAxisX.X-1*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+0*m_CropRectangleAxisX.Y-1*m_CropRectangleAxisY.Y) ),
+						m_ClientCropRectangleVertices[3],
+						m_ClientCropRectangleVertices[2],
+						new PointF( m_ClientCropRectangleVertices[2].X + F*(+0*m_CropRectangleAxisX.x-1*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[2].Y + F*(+0*m_CropRectangleAxisX.y-1*m_CropRectangleAxisY.y) ),
+						new PointF( m_ClientCropRectangleVertices[3].X + F*(+0*m_CropRectangleAxisX.x-1*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[3].Y + F*(+0*m_CropRectangleAxisX.y-1*m_CropRectangleAxisY.y) ),
 					} );
 					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[2],
-						m_CropRectangleVertices[0],
-						new PointF( m_CropRectangleVertices[0].X + F*(-1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[0].Y + F*(-1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[2].X + F*(-1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[2].Y + F*(-1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
+						m_ClientCropRectangleVertices[2],
+						m_ClientCropRectangleVertices[0],
+						new PointF( m_ClientCropRectangleVertices[0].X + F*(-1*m_CropRectangleAxisX.x+0*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[0].Y + F*(-1*m_CropRectangleAxisX.y+0*m_CropRectangleAxisY.y) ),
+						new PointF( m_ClientCropRectangleVertices[2].X + F*(-1*m_CropRectangleAxisX.x+0*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[2].Y + F*(-1*m_CropRectangleAxisX.y+0*m_CropRectangleAxisY.y) ),
 					} );
 					e.Graphics.FillPolygon( m_BrushCroppedZone, new PointF[] {
-						m_CropRectangleVertices[1],
-						m_CropRectangleVertices[3],
-						new PointF( m_CropRectangleVertices[3].X + F*(+1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[3].Y + F*(+1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
-						new PointF( m_CropRectangleVertices[1].X + F*(+1*m_CropRectangleAxisX.X+0*m_CropRectangleAxisY.X), m_CropRectangleVertices[1].Y + F*(+1*m_CropRectangleAxisX.Y+0*m_CropRectangleAxisY.Y) ),
+						m_ClientCropRectangleVertices[1],
+						m_ClientCropRectangleVertices[3],
+						new PointF( m_ClientCropRectangleVertices[3].X + F*(+1*m_CropRectangleAxisX.x+0*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[3].Y + F*(+1*m_CropRectangleAxisX.y+0*m_CropRectangleAxisY.y) ),
+						new PointF( m_ClientCropRectangleVertices[1].X + F*(+1*m_CropRectangleAxisX.x+0*m_CropRectangleAxisY.x), m_ClientCropRectangleVertices[1].Y + F*(+1*m_CropRectangleAxisX.y+0*m_CropRectangleAxisY.y) ),
 					} );
 
 					// Draw actual crop rectange
-					e.Graphics.DrawPolygon( m_PenCropRectangle, new PointF[] { m_CropRectangleVertices[0], m_CropRectangleVertices[1], m_CropRectangleVertices[3], m_CropRectangleVertices[2] } );
+					e.Graphics.DrawPolygon( m_PenCropRectangle, new PointF[] { m_ClientCropRectangleVertices[0], m_ClientCropRectangleVertices[1], m_ClientCropRectangleVertices[3], m_ClientCropRectangleVertices[2] } );
 					break;
 				}
 
@@ -591,7 +800,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					e.Graphics.DrawLine( m_PenTarget, Center.X, Center.Y-20, Center.X, Center.Y+20 );
 					e.Graphics.DrawLine( m_PenTarget, Center.X-20, Center.Y, Center.X+20, Center.Y );
 
-					PointF	Temp = ImageUV2Client( new PointF( m_CalibrationCenter.X + m_CalibrationRadius, m_CalibrationCenter.Y ) );
+					PointF	Temp = ImageUV2Client( new float2( m_CalibrationCenter.x + m_CalibrationRadius, m_CalibrationCenter.y ) );
 					float	ClientRadius = Temp.X - Center.X;
 					e.Graphics.DrawEllipse( m_PenTarget, Center.X-ClientRadius, Center.Y-ClientRadius, 2.0f*ClientRadius, 2.0f*ClientRadius );
 					break;
@@ -599,7 +808,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				case MANIPULATION_STATE.PICK_COLOR:
 				{	// Paint a small red rectangle where the color should be averaged
-					e.Graphics.DrawRectangle( Pens.Red, m_MousePositionButtonDown.X, m_MousePositionButtonDown.Y, m_MousePositionCurrent.X - m_MousePositionButtonDown.X, m_MousePositionCurrent.Y - m_MousePositionButtonDown.Y );
+					e.Graphics.DrawRectangle( Pens.Red, m_ButtonDownMousePosition.X, m_ButtonDownMousePosition.Y, m_MousePositionCurrent.X - m_ButtonDownMousePosition.X, m_MousePositionCurrent.Y - m_ButtonDownMousePosition.Y );
 					break;
 				}
 			}

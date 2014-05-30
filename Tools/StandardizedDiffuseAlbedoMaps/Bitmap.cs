@@ -73,6 +73,10 @@ namespace StandardizedDiffuseAlbedoMaps
 	{
 		public float	x, y;
 		public float2( float _x, float _y )		{ x = _x; y = _y; }
+		public static float2	operator+( float2 a, float2 b )		{ return new float2( a.x + b.x, a.y + b.y ); }
+		public static float2	operator-( float2 a, float2 b )		{ return new float2( a.x - b.x, a.y - b.y ); }
+		public static float2	operator*( float a, float2 b )		{ return new float2( a * b.x, a * b.y ); }
+		public float			Dot( float2 a )						{ return x*a.x + y*a.y; }
 
 		public override string ToString()
 		{
@@ -97,6 +101,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		public float	x, y, z;
 		public float3( float _x, float _y, float _z )		{ x = _x; y = _y; z = _z; }
 		public static float3	operator+( float3 a, float3 b )		{ return new float3( a.x + b.x, a.y + b.y, a.z + b.z ); }
+		public static float3	operator-( float3 a, float3 b )		{ return new float3( a.x - b.x, a.y - b.y, a.z - b.z ); }
 		public static float3	operator*( float a, float3 b )		{ return new float3( a * b.x, a * b.y, a * b.z ); }
 
 		public override string ToString()

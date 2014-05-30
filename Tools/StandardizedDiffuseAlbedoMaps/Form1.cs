@@ -252,23 +252,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				// Convert
 				Profile.XYZ2RGB( m_BitmapXYZ.ContentXYZ, Image );
-
-// 				for ( int Y = 0; Y < m_BitmapXYZ.Height; Y++ )
-// 					for ( int X = 0; X < m_BitmapXYZ.Width; X++ )
-// 					{
-// 						float4	XYZ = m_BitmapXYZ.ContentXYZ[X, Y];
-// 						float4	RGB = m_BitmapXYZ.Profile.XYZ2RGB( XYZ );
-// 						if ( !sRGB )
-// 						{
-// 							RGB.x = Bitmap2.ColorProfile.sRGB2Linear( RGB.x );
-// 							RGB.y = Bitmap2.ColorProfile.sRGB2Linear( RGB.y );
-// 							RGB.z = Bitmap2.ColorProfile.sRGB2Linear( RGB.z );
-// 						}
-// 
-// 						Image[X, Y].x = RGB.x;
-// 						Image[X, Y].y = RGB.y;
-// 						Image[X, Y].z = RGB.z;
-// 					}
 			}
 
 			outputPanel.Image = Image;
@@ -342,7 +325,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( m_BitmapXYZ == null )
 				return;
 
-			float	Lum = m_BitmapXYZ.ContentXYZ[e.X*m_BitmapXYZ.Width/outputPanel.Width,e.Y*m_BitmapXYZ.Height/outputPanel.Height].y;
+			int	X = Math.Max( 0, Math.Min( m_BitmapXYZ.Width-1, e.X*m_BitmapXYZ.Width/outputPanel.Width ) );
+			int	Y = Math.Max( 0, Math.Min( m_BitmapXYZ.Height-1, e.Y*m_BitmapXYZ.Height/outputPanel.Height ) );
+
+			float	Lum = m_BitmapXYZ.ContentXYZ[X,Y].y;
 			if ( checkBoxsRGB.Checked )
 				Lum = Bitmap2.ColorProfile.Linear2sRGB( Lum );
 
@@ -429,10 +415,10 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_Probe"></param>
 		/// <param name="_Center"></param>
 		/// <param name="_Radius"></param>
-		private void	IntegrateLuminance( CameraCalibration.Probe _Probe, PointF _Center, float _Radius )
+		private void	IntegrateLuminance( CameraCalibration.Probe _Probe, float2 _Center, float _Radius )
 		{
 			float	BlackValues, SaturatedValues;
-			float	MeasuredLuminance = IntegrateLuminance( _Center.X, _Center.Y, _Radius, out BlackValues, out SaturatedValues );
+			float	MeasuredLuminance = IntegrateLuminance( _Center.x, _Center.y, _Radius, out BlackValues, out SaturatedValues );
 
 			bool	DisableProbe = false;
 			if ( BlackValues > BLACK_VALUES_TOLERANCE &&
@@ -462,8 +448,8 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			// We now have valid measurement disc infos
 			_Probe.m_MeasurementDiscIsAvailable = true;
-			_Probe.m_MeasurementCenterX = _Center.X;
-			_Probe.m_MeasurementCenterY = _Center.Y;
+			_Probe.m_MeasurementCenterX = _Center.x;
+			_Probe.m_MeasurementCenterY = _Center.y;
 			_Probe.m_MeasurementRadius = _Radius;
 
 			CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
@@ -477,7 +463,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 			}
 
-			outputPanel.StartCalibrationTargetPicking( ( PointF _Center, float _Radius ) => {
+			outputPanel.StartCalibrationTargetPicking( ( float2 _Center, float _Radius ) => {
 				IntegrateLuminance( _Probe, _Center, _Radius );
 			} );
 		}
@@ -816,9 +802,9 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 			}
 
-			outputPanel.StartWhiteReflectancePicking( ( PointF _UV ) => {
+			outputPanel.StartWhiteReflectancePicking( ( float2 _UV ) => {
 
-				float4	XYZ = m_BitmapXYZ.BilinearSample( _UV.X * m_BitmapXYZ.Width, _UV.Y * m_BitmapXYZ.Height );
+				float4	XYZ = m_BitmapXYZ.BilinearSample( _UV.x * m_BitmapXYZ.Width, _UV.y * m_BitmapXYZ.Height );
 				float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
 
 				// Compute the correction factor to apply to further image
@@ -865,8 +851,8 @@ namespace StandardizedDiffuseAlbedoMaps
 				Aperture = floatTrackbarControlAperture.Value,
 
 				CropSource = !outputPanel.IsDefaultCropRectangle,
-				CropRectangleCenter = new float2( outputPanel.CropRectangeCenter.X, outputPanel.CropRectangeCenter.Y ),
-				CropRectangleHalfSize = new float2( outputPanel.CropRectangeHalfSize.X, outputPanel.CropRectangeHalfSize.Y ),
+				CropRectangleCenter = new float2( outputPanel.CropRectangeCenter.x, outputPanel.CropRectangeCenter.y ),
+				CropRectangleHalfSize = new float2( outputPanel.CropRectangeHalfSize.x, outputPanel.CropRectangeHalfSize.y ),
 				CropRectangleRotation = outputPanel.CropRectangeRotation,
 
 				SwatchWidth = panelCustomSwatch0.Width-2,
@@ -914,10 +900,10 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			S.m_CheckBox.Checked = true;	// Automatically enable color swatch if the user bothered picking a color
 
-			outputPanel.StartSwatchColorPicking( ( PointF _TopLeft, PointF _BottomRight ) => {
+			outputPanel.StartSwatchColorPicking( ( float2 _TopLeft, float2 _BottomRight ) => {
 
-				S.m_LocationTopLeft = new float2( _TopLeft.X, _TopLeft.Y );
-				S.m_LocationBottomRight = new float2( _BottomRight.X, _BottomRight.Y );
+				S.m_LocationTopLeft = new float2( _TopLeft.x, _TopLeft.y );
+				S.m_LocationBottomRight = new float2( _BottomRight.x, _BottomRight.y );
 				S.UpdateSwatchColor();
 			} );
 		}
