@@ -115,7 +115,7 @@
 			this.panelCustomSwatch0 = new System.Windows.Forms.Panel();
 			this.panelSwatchMin = new System.Windows.Forms.Panel();
 			this.label7 = new System.Windows.Forms.Label();
-			this.tabPage2 = new System.Windows.Forms.TabPage();
+			this.tabPageCameraCalibration = new System.Windows.Forms.TabPage();
 			this.tabControlCalibrationRepresentation = new System.Windows.Forms.TabControl();
 			this.tabPageLuminancesGraph = new System.Windows.Forms.TabPage();
 			this.tabPageReferenceImage = new System.Windows.Forms.TabPage();
@@ -146,11 +146,12 @@
 			this.resultTexturePanel = new StandardizedDiffuseAlbedoMaps.ResultTexturePanel(this.components);
 			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
 			this.referenceImagePanel = new StandardizedDiffuseAlbedoMaps.ReferenceImagePanel(this.components);
+			this.tabPageColorCorrection = new System.Windows.Forms.TabPage();
 			this.groupBoxCameraShotInfos.SuspendLayout();
 			this.tabControl.SuspendLayout();
 			this.tabPageCreation.SuspendLayout();
 			this.groupBoxColorSwatches.SuspendLayout();
-			this.tabPage2.SuspendLayout();
+			this.tabPageCameraCalibration.SuspendLayout();
 			this.tabControlCalibrationRepresentation.SuspendLayout();
 			this.tabPageLuminancesGraph.SuspendLayout();
 			this.tabPageReferenceImage.SuspendLayout();
@@ -750,7 +751,8 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.tabControl.Controls.Add(this.tabPageCreation);
-			this.tabControl.Controls.Add(this.tabPage2);
+			this.tabControl.Controls.Add(this.tabPageColorCorrection);
+			this.tabControl.Controls.Add(this.tabPageCameraCalibration);
 			this.tabControl.Location = new System.Drawing.Point(3, 152);
 			this.tabControl.Name = "tabControl";
 			this.tabControl.SelectedIndex = 0;
@@ -1220,25 +1222,25 @@
 			this.label7.Text = "Min.";
 			this.toolTip.SetToolTip(this.label7, "Minimum luminance in the image");
 			// 
-			// tabPage2
+			// tabPageCameraCalibration
 			// 
-			this.tabPage2.Controls.Add(this.tabControlCalibrationRepresentation);
-			this.tabPage2.Controls.Add(this.buttonExplore);
-			this.tabPage2.Controls.Add(this.labelCalbrationImageName);
-			this.tabPage2.Controls.Add(this.label6);
-			this.tabPage2.Controls.Add(this.panelProbeLuminances);
-			this.tabPage2.Controls.Add(this.buttonSaveCalibration);
-			this.tabPage2.Controls.Add(this.buttonSetupDatabaseFolder);
-			this.tabPage2.Controls.Add(this.buttonReCalibrate);
-			this.tabPage2.Controls.Add(this.buttonLoadCalibration);
-			this.tabPage2.Controls.Add(this.checkBoxGraphLagrange);
-			this.tabPage2.Location = new System.Drawing.Point(4, 22);
-			this.tabPage2.Name = "tabPage2";
-			this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPage2.Size = new System.Drawing.Size(483, 566);
-			this.tabPage2.TabIndex = 1;
-			this.tabPage2.Text = "Camera Calibration";
-			this.tabPage2.UseVisualStyleBackColor = true;
+			this.tabPageCameraCalibration.Controls.Add(this.tabControlCalibrationRepresentation);
+			this.tabPageCameraCalibration.Controls.Add(this.buttonExplore);
+			this.tabPageCameraCalibration.Controls.Add(this.labelCalbrationImageName);
+			this.tabPageCameraCalibration.Controls.Add(this.label6);
+			this.tabPageCameraCalibration.Controls.Add(this.panelProbeLuminances);
+			this.tabPageCameraCalibration.Controls.Add(this.buttonSaveCalibration);
+			this.tabPageCameraCalibration.Controls.Add(this.buttonSetupDatabaseFolder);
+			this.tabPageCameraCalibration.Controls.Add(this.buttonReCalibrate);
+			this.tabPageCameraCalibration.Controls.Add(this.buttonLoadCalibration);
+			this.tabPageCameraCalibration.Controls.Add(this.checkBoxGraphLagrange);
+			this.tabPageCameraCalibration.Location = new System.Drawing.Point(4, 22);
+			this.tabPageCameraCalibration.Name = "tabPageCameraCalibration";
+			this.tabPageCameraCalibration.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPageCameraCalibration.Size = new System.Drawing.Size(483, 566);
+			this.tabPageCameraCalibration.TabIndex = 1;
+			this.tabPageCameraCalibration.Text = "Camera Calibration";
+			this.tabPageCameraCalibration.UseVisualStyleBackColor = true;
 			// 
 			// tabControlCalibrationRepresentation
 			// 
@@ -1586,6 +1588,16 @@
 			this.referenceImagePanel.Size = new System.Drawing.Size(456, 286);
 			this.referenceImagePanel.TabIndex = 0;
 			// 
+			// tabPageColorCorrection
+			// 
+			this.tabPageColorCorrection.Location = new System.Drawing.Point(4, 22);
+			this.tabPageColorCorrection.Name = "tabPageColorCorrection";
+			this.tabPageColorCorrection.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPageColorCorrection.Size = new System.Drawing.Size(483, 566);
+			this.tabPageColorCorrection.TabIndex = 2;
+			this.tabPageColorCorrection.Text = "Color Correction";
+			this.tabPageColorCorrection.UseVisualStyleBackColor = true;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1602,8 +1614,8 @@
 			this.tabPageCreation.PerformLayout();
 			this.groupBoxColorSwatches.ResumeLayout(false);
 			this.groupBoxColorSwatches.PerformLayout();
-			this.tabPage2.ResumeLayout(false);
-			this.tabPage2.PerformLayout();
+			this.tabPageCameraCalibration.ResumeLayout(false);
+			this.tabPageCameraCalibration.PerformLayout();
 			this.tabControlCalibrationRepresentation.ResumeLayout(false);
 			this.tabPageLuminancesGraph.ResumeLayout(false);
 			this.tabPageReferenceImage.ResumeLayout(false);
@@ -1673,7 +1685,7 @@
 		private GraphPanel graphPanel;
 		private System.Windows.Forms.TabControl tabControl;
 		private System.Windows.Forms.TabPage tabPageCreation;
-		private System.Windows.Forms.TabPage tabPage2;
+		private System.Windows.Forms.TabPage tabPageCameraCalibration;
 		private System.Windows.Forms.Button buttonLoadCalibration;
 		private System.Windows.Forms.Button buttonSaveCalibration;
 		private System.Windows.Forms.CheckBox checkBoxGraphLagrange;
@@ -1738,6 +1750,7 @@
 		private System.Windows.Forms.Button buttonLoadWhiteReflectanceReference;
 		private System.Windows.Forms.OpenFileDialog openFileDialogWhiteReflectance;
 		private System.Windows.Forms.SaveFileDialog saveFileDialogWhiteReflectance;
+		private System.Windows.Forms.TabPage tabPageColorCorrection;
 	}
 }
 

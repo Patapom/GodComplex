@@ -225,9 +225,9 @@ namespace StandardizedDiffuseAlbedoMaps
 						if ( X >= ImageRect.X && X < ImageRect.Right && Y >= ImageRect.Y && Y < ImageRect.Bottom )
 						{
 							float4	RGB = m_Image[(int) (SizeX*(X-ImageRect.X)/ImageRect.Width), (int) (SizeY*(Y-ImageRect.Y)/ImageRect.Height)];
-							R = (byte) Math.Min( 255, 255.0f * RGB.x );
-							G = (byte) Math.Min( 255, 255.0f * RGB.y );
-							B = (byte) Math.Min( 255, 255.0f * RGB.z );
+							R = (byte) Math.Max( 0, Math.Min( 255, 255.0f * RGB.x ) );
+							G = (byte) Math.Max( 0, Math.Min( 255, 255.0f * RGB.y ) );
+							B = (byte) Math.Max( 0, Math.Min( 255, 255.0f * RGB.z ) );
 						}
 						else
 						{
@@ -278,7 +278,13 @@ namespace StandardizedDiffuseAlbedoMaps
 			RectangleF	ImageRect = ImageClientRect();
 			return new float2( (_Position.X - ImageRect.X) / ImageRect.Width, (_Position.Y - ImageRect.Y) / ImageRect.Height );
 		}
-		
+	
+		private PointF	ImageUV2Client_NoSquareAspectRatio( float2 _Position )
+		{
+			RectangleF	ImageRect = ImageClientRect();
+			return new PointF( ImageRect.X + _Position.x * ImageRect.Width, ImageRect.Y + _Position.y * ImageRect.Height );
+		}
+	
 		/// <summary>
 		/// This is the UVs used for crop rectangle computation
 		/// The V is in [0,1] mapping from [0,ImageHeight] as usual but U takes into account aspect ratio
@@ -331,7 +337,6 @@ namespace StandardizedDiffuseAlbedoMaps
 			RectangleF	ImageRect = ImageClientRect();
 
 			m_ClientCropRectangleCenter = ImageUV2Client( m_CropRectangleCenter );
-//			PointF	HalfSize = new PointF( m_CropRectangleHalfSize.x * ImageRect.Width, m_CropRectangleHalfSize.y * ImageRect.Height );
 
 			float2[]	Vertices = new float2[4] {
 				m_CropRectangleCenter - m_CropRectangleHalfSize.x * m_CropRectangleAxisX + m_CropRectangleHalfSize.y * m_CropRectangleAxisY,
@@ -342,15 +347,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			for ( int i=0; i < 4; i++ )
 				m_ClientCropRectangleVertices[i] = ImageUV2Client( Vertices[i] );
-
-// 			m_ClientCropRectangleVertices[0] = new PointF(	m_ClientCropRectangleCenter.X - HalfSize.X * m_CropRectangleAxisX.x + HalfSize.Y * m_CropRectangleAxisY.x,
-// 															m_ClientCropRectangleCenter.Y - HalfSize.X * m_CropRectangleAxisX.y + HalfSize.Y * m_CropRectangleAxisY.y );
-// 			m_ClientCropRectangleVertices[1] = new PointF(	m_ClientCropRectangleCenter.X + HalfSize.X * m_CropRectangleAxisX.x + HalfSize.Y * m_CropRectangleAxisY.x,
-// 															m_ClientCropRectangleCenter.Y + HalfSize.X * m_CropRectangleAxisX.y + HalfSize.Y * m_CropRectangleAxisY.y );
-// 			m_ClientCropRectangleVertices[2] = new PointF(	m_ClientCropRectangleCenter.X - HalfSize.X * m_CropRectangleAxisX.x - HalfSize.Y * m_CropRectangleAxisY.x,
-// 															m_ClientCropRectangleCenter.Y - HalfSize.X * m_CropRectangleAxisX.y - HalfSize.Y * m_CropRectangleAxisY.y );
-// 			m_ClientCropRectangleVertices[3] = new PointF(	m_ClientCropRectangleCenter.X + HalfSize.X * m_CropRectangleAxisX.x - HalfSize.Y * m_CropRectangleAxisY.x,
-// 															m_ClientCropRectangleCenter.Y + HalfSize.X * m_CropRectangleAxisX.y - HalfSize.Y * m_CropRectangleAxisY.y );
 		}
 
 		protected override void OnMouseDown( MouseEventArgs e )
@@ -833,11 +829,11 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				case MANIPULATION_STATE.CALIBRATION_TARGET:
 				{	// Paint the calibration target
-					PointF	Center = ImageUV2Client( m_CalibrationCenter );
+					PointF	Center = ImageUV2Client_NoSquareAspectRatio( m_CalibrationCenter );
 					e.Graphics.DrawLine( m_PenTarget, Center.X, Center.Y-20, Center.X, Center.Y+20 );
 					e.Graphics.DrawLine( m_PenTarget, Center.X-20, Center.Y, Center.X+20, Center.Y );
 
-					PointF	Temp = ImageUV2Client( new float2( m_CalibrationCenter.x + m_CalibrationRadius, m_CalibrationCenter.y ) );
+					PointF	Temp = ImageUV2Client_NoSquareAspectRatio( new float2( m_CalibrationCenter.x + m_CalibrationRadius, m_CalibrationCenter.y ) );
 					float	ClientRadius = Temp.X - Center.X;
 					e.Graphics.DrawEllipse( m_PenTarget, Center.X-ClientRadius, Center.Y-ClientRadius, 2.0f*ClientRadius, 2.0f*ClientRadius );
 					break;
