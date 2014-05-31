@@ -55,6 +55,12 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Color Correction\WhiteImageReferencePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Color Correction\WhiteImageReferencePanel.Designer.cs">
+      <DependentUpon>WhiteImageReferencePanel.cs</DependentUpon>
+    </Compile>
     <Compile Include="Image Tools\Bitmap.cs" />
     <Compile Include="Calibration Tools\CameraCalibration.cs" />
     <Compile Include="Calibration Tools\CameraCalibrationDatabase.cs" />

@@ -10,11 +10,11 @@ using System.Drawing.Imaging;
 
 namespace StandardizedDiffuseAlbedoMaps
 {
-	public partial class ResultTexturePanel : Panel
+	public partial class WhiteImageReferencePanel : Panel
 	{
 		#region NESTED TYPES
 
-		public delegate void	ColorPickingUpdate( float2 _TopLeft, float2 _BottomRight );	// Sends the UV coordinates of the rectangle to average as a single color and create a swatch
+//		public delegate void	ColorPickingUpdate( float2 _TopLeft, float2 _BottomRight );	// Sends the UV coordinates of the rectangle to average as a single color and create a swatch
 
 		private enum	MANIPULATION_STATE
 		{
@@ -30,14 +30,14 @@ namespace StandardizedDiffuseAlbedoMaps
 		private Bitmap					m_TextureBitmap = null;
 		private Bitmap2.ColorProfile	m_sRGBProfile = new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB );
 
-		private CalibratedTexture		m_CalibratedTexture = null;
+		private Bitmap2					m_WhiteReferenceImage = null;
 
 		// === Manipulation ===
 		private MANIPULATION_STATE		m_ManipulationState = MANIPULATION_STATE.STOPPED;
 
-		// Color picking manipulation
-		private ColorPickingUpdate		m_ColorPickingUpdateDelegate = null;
-		private ColorPickingUpdate		m_ColorPickingEndDelegate = null;
+// 		// Color picking manipulation
+// 		private ColorPickingUpdate		m_ColorPickingUpdateDelegate = null;
+// 		private ColorPickingUpdate		m_ColorPickingEndDelegate = null;
 
 		private MouseButtons			m_MouseButtonsDown = MouseButtons.None;
 		private PointF					m_ButtonDownMousePosition;
@@ -47,16 +47,16 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region PROPERTIES
 
-		public unsafe CalibratedTexture	CalibratedTexture
+		public unsafe Bitmap2	WhiteReferenceImage
 		{
-			get { return m_CalibratedTexture; }
+			get { return m_WhiteReferenceImage; }
 			set {
-				m_CalibratedTexture = value;
+				m_WhiteReferenceImage = value;
  
-				if ( m_CalibratedTexture != null && m_CalibratedTexture.Texture != null )
+				if ( m_WhiteReferenceImage != null )
 				{
-					int		W = m_CalibratedTexture.Texture.Width;
-					int		H = m_CalibratedTexture.Texture.Height;
+					int		W = m_WhiteReferenceImage.Width;
+					int		H = m_WhiteReferenceImage.Height;
 					if ( m_TextureBitmap == null || m_TextureBitmap.Width != W || m_TextureBitmap.Height != H )
 					{
 						if ( m_TextureBitmap != null )
@@ -66,7 +66,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					}
 
 					// Convert to RGB first
-					float4[,]	ContentXYZ = m_CalibratedTexture.Texture.ContentXYZ;
+					float4[,]	ContentXYZ = m_WhiteReferenceImage.ContentXYZ;
 					float4[,]	ContentRGB = new float4[ContentXYZ.GetLength(0),ContentXYZ.GetLength(1)];
 					m_sRGBProfile.XYZ2RGB( ContentXYZ, ContentRGB );
 
@@ -119,23 +119,23 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region METHODS
 
-		public ResultTexturePanel( IContainer container )
+		public WhiteImageReferencePanel( IContainer container )
 		{
 			container.Add( this );
 			InitializeComponent();
 			OnSizeChanged( EventArgs.Empty );
 		}
 
-		/// <summary>
-		/// Starts color picking with the mouse, provided delegate is called on mouse move with new informations
-		/// </summary>
-		/// <param name="_Notify"></param>
-		public void				StartSwatchColorPicking( ColorPickingUpdate _Update, ColorPickingUpdate _PickingEnd )
-		{
-			m_ColorPickingUpdateDelegate = _Update;
-			m_ColorPickingEndDelegate = _PickingEnd;
-			ManipulationState = MANIPULATION_STATE.PICK_COLOR;
-		}
+// 		/// <summary>
+// 		/// Starts color picking with the mouse, provided delegate is called on mouse move with new informations
+// 		/// </summary>
+// 		/// <param name="_Notify"></param>
+// 		public void				StartSwatchColorPicking( ColorPickingUpdate _Update, ColorPickingUpdate _PickingEnd )
+// 		{
+// 			m_ColorPickingUpdateDelegate = _Update;
+// 			m_ColorPickingEndDelegate = _PickingEnd;
+// 			ManipulationState = MANIPULATION_STATE.PICK_COLOR;
+// 		}
 
 		private void		UpdateBitmap()
 		{
@@ -223,13 +223,13 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			switch ( m_ManipulationState )
 			{
-				case MANIPULATION_STATE.PICK_COLOR:
-					Cursor = Cursors.Cross;
-					float2	UV0 = Client2ImageUV( m_ButtonDownMousePosition );
-					float2	UV1 = Client2ImageUV( e.Location );
-					m_ColorPickingUpdateDelegate( UV0, UV1 );
-					Invalidate();
-					break;
+// 				case MANIPULATION_STATE.PICK_COLOR:
+// 					Cursor = Cursors.Cross;
+// 					float2	UV0 = Client2ImageUV( m_ButtonDownMousePosition );
+// 					float2	UV1 = Client2ImageUV( e.Location );
+// 					m_ColorPickingUpdateDelegate( UV0, UV1 );
+// 					Invalidate();
+// 					break;
 
 				default:
 					Cursor = Cursors.Default;
@@ -244,17 +244,17 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_MouseButtonsDown &= ~e.Button;
 
 			// End manipulation
-			switch ( m_ManipulationState )
-			{
-				case MANIPULATION_STATE.PICK_COLOR:
-					ManipulationState = MANIPULATION_STATE.STOPPED;
-
-					// Notify end
-					float2	UV0 = Client2ImageUV( m_ButtonDownMousePosition );
-					float2	UV1 = Client2ImageUV( e.Location );
-					m_ColorPickingEndDelegate( UV0, UV1 );
-					break;
-			}
+// 			switch ( m_ManipulationState )
+// 			{
+// 				case MANIPULATION_STATE.PICK_COLOR:
+// 					ManipulationState = MANIPULATION_STATE.STOPPED;
+// 
+// 					// Notify end
+// 					float2	UV0 = Client2ImageUV( m_ButtonDownMousePosition );
+// 					float2	UV1 = Client2ImageUV( e.Location );
+// 					m_ColorPickingEndDelegate( UV0, UV1 );
+// 					break;
+//			}
 
 			Capture = false;
 			Cursor = Cursors.Default;
@@ -272,31 +272,31 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( m_Bitmap != null )
 				e.Graphics.DrawImage( m_Bitmap, 0, 0 );
 
-			if ( m_CalibratedTexture == null )
-				return;
-
-			// Show custom swatches' location
-			RectangleF		R = ImageClientRect();
-			for ( int SwatchIndex=0; SwatchIndex < m_CalibratedTexture.CustomSwatches.Length; SwatchIndex++ )
-			{
-				CalibratedTexture.CustomSwatch	S = m_CalibratedTexture.CustomSwatches[SwatchIndex];
-
-				PointF	TopLeft = new PointF( R.Left + S.Location.x * R.Width, R.Top + S.Location.y * R.Height );
-				PointF	BottomRight = new PointF( R.Left + S.Location.z * R.Width, R.Top + S.Location.w * R.Height );
-
-				e.Graphics.DrawRectangle( Pens.Red, TopLeft.X, TopLeft.Y, 1+BottomRight.X-TopLeft.X, 1+BottomRight.Y-TopLeft.Y );
-				e.Graphics.DrawString( SwatchIndex.ToString(), Font, Brushes.Red, 0.5f * (TopLeft.X + BottomRight.X - Font.Height), 0.5f * (TopLeft.Y + BottomRight.Y + Font.Height) );
-			}
-
-			// Paint active tools
-			switch ( ManipulationState )
-			{
-				case MANIPULATION_STATE.PICK_COLOR:
-				{	// Paint a small red rectangle where the color should be averaged
-					e.Graphics.DrawRectangle( Pens.Red, m_ButtonDownMousePosition.X, m_ButtonDownMousePosition.Y, m_MousePositionCurrent.X - m_ButtonDownMousePosition.X, m_MousePositionCurrent.Y - m_ButtonDownMousePosition.Y );
-					break;
-				}
-			}
+// 			if ( m_WhiteReferenceImage == null )
+// 				return;
+// 
+// 			// Show custom swatches' location
+// 			RectangleF		R = ImageClientRect();
+// 			for ( int SwatchIndex=0; SwatchIndex < m_CalibratedTexture.CustomSwatches.Length; SwatchIndex++ )
+// 			{
+// 				CalibratedTexture.CustomSwatch	S = m_CalibratedTexture.CustomSwatches[SwatchIndex];
+// 
+// 				PointF	TopLeft = new PointF( R.Left + S.Location.x * R.Width, R.Top + S.Location.y * R.Height );
+// 				PointF	BottomRight = new PointF( R.Left + S.Location.z * R.Width, R.Top + S.Location.w * R.Height );
+// 
+// 				e.Graphics.DrawRectangle( Pens.Red, TopLeft.X, TopLeft.Y, 1+BottomRight.X-TopLeft.X, 1+BottomRight.Y-TopLeft.Y );
+// 				e.Graphics.DrawString( SwatchIndex.ToString(), Font, Brushes.Red, 0.5f * (TopLeft.X + BottomRight.X - Font.Height), 0.5f * (TopLeft.Y + BottomRight.Y + Font.Height) );
+// 			}
+// 
+// 			// Paint active tools
+// 			switch ( ManipulationState )
+// 			{
+// 				case MANIPULATION_STATE.PICK_COLOR:
+// 				{	// Paint a small red rectangle where the color should be averaged
+// 					e.Graphics.DrawRectangle( Pens.Red, m_ButtonDownMousePosition.X, m_ButtonDownMousePosition.Y, m_MousePositionCurrent.X - m_ButtonDownMousePosition.X, m_MousePositionCurrent.Y - m_ButtonDownMousePosition.Y );
+// 					break;
+// 				}
+// 			}
 		}
 
 		#endregion

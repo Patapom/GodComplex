@@ -154,14 +154,17 @@ namespace StandardizedDiffuseAlbedoMaps
 				float3	xyY;
 
 				float2	CurrentScanlinePixel = TopLeftCorner + 0.5f * (fImageWidth - W) * AxisX + 0.5f * (fImageHeight - H) * AxisY;
-				for ( int Y=0; Y < m_Texture.Height; Y++ )
+				for ( int Y=0; Y < H; Y++ )
 				{
+					float	V = (float) Y / H;
 					float2	CurrentPixel = CurrentScanlinePixel;
-					for ( int X=0; X < m_Texture.Width; X++ )
+					for ( int X=0; X < W; X++ )
 					{
+						float	U = (float) X / W;
+
 						XYZ = _Source.BilinearSample( CurrentPixel.x, CurrentPixel.y );
 						xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
-						xyY.z = _Database.Calibrate( xyY.z );	// Apply luminance calibration
+						xyY.z = _Database.CalibrateWithSpatialCorrection( U, V, xyY.z );	// Apply luminance calibration
 						XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
 						m_Texture.ContentXYZ[X,Y] = XYZ;
 
@@ -183,12 +186,19 @@ namespace StandardizedDiffuseAlbedoMaps
 				float4	XYZ;
 				float3	xyY;
 
-				for ( int Y=0; Y < m_Texture.Height; Y++ )
-					for ( int X=0; X < m_Texture.Width; X++ )
+				int	W = m_Texture.Width;
+				int	H = m_Texture.Height;
+
+				for ( int Y=0; Y < H; Y++ )
+				{
+					float	V = (float) Y / H;
+					for ( int X=0; X < W; X++ )
 					{
+						float	U = (float) X / W;
+
 						XYZ = _Source.ContentXYZ[X,Y];
 						xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
-						xyY.z = _Database.Calibrate( xyY.z );	// Apply luminance calibration
+						xyY.z = _Database.CalibrateWithSpatialCorrection( U, V, xyY.z );	// Apply luminance calibration
 						XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
 						m_Texture.ContentXYZ[X,Y] = XYZ;
 
@@ -199,6 +209,7 @@ namespace StandardizedDiffuseAlbedoMaps
 							m_SwatchMax.xyY = xyY;
 						m_SwatchAvg.xyY += xyY;
 					}
+				}
 			}
 
 			// Normalize average swatch color

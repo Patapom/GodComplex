@@ -102,6 +102,10 @@ namespace StandardizedDiffuseAlbedoMaps
 		private float						m_WhiteReflectanceReference = -1.0f;	// Not supplied by the user
 		private float						m_WhiteReflectanceCorrectionFactor = 1.0f;	// Default factor is no change at all
 
+		// White reference image to apply minor luminance corrections to pixels (spatial discrepancy in lighting compensation)
+		// I assume the provided image has been properly generated and normalized (i.e. it has a white maximum of 1)
+		private Bitmap2						m_WhiteReferenceImage = null;
+
 		// Generated calibration grid
 		private GridNode					m_RootNode = null;
 
@@ -297,6 +301,15 @@ namespace StandardizedDiffuseAlbedoMaps
 					m_WhiteReflectanceCorrectionFactor = NormalReflectance / m_WhiteReflectanceReference;
 				}
 			}
+		}
+
+		/// <summary>
+		/// Gets or sets the white reference image to use for spatial luminance correction
+		/// </summary>
+		public Bitmap2	WhiteReferenceImage
+		{
+			get { return m_WhiteReferenceImage; }
+			set { m_WhiteReferenceImage = value; }
 		}
 
 		/// <summary>
@@ -501,7 +514,37 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( m_InterpolatedCalibration == null )
 				throw new Exception( "Calibration grid hasn't been prepared for calibration: did you call the PrepareCalibrationFor() method?" );
 			
+
+
 			float	Reflectance = m_InterpolatedCalibration.Calibrate( m_WhiteReflectanceCorrectionFactor * _Luminance );
+			return Reflectance;
+		}
+
+		/// <summary>
+		/// Calibrates a raw luminance value with spatial luminance correction
+		/// </summary>
+		/// <param name="_U">The U coordinate in the image (U=X/Width)</param>
+		/// <param name="_V">The V coordinate in the image (V=Y/Height)</param>
+		/// <param name="_Luminance">The uncalibrated luminance value</param>
+		/// <returns>The calibrated reflectance value</returns>
+		/// <remarks>Typically, you start from a RAW XYZ value that you convert to xyY, pass the Y to this method
+		/// and replace it into your orignal xyY, convert back to XYZ and voilà!</remarks>
+		public float	CalibrateWithSpatialCorrection( float _U, float _V, float _Luminance )
+		{
+			if ( m_RootNode == null )
+				throw new Exception( "Calibration grid hasn't been built: did you provide a valid database path? Does the path contain camera calibration data?" );
+			if ( m_InterpolatedCalibration == null )
+				throw new Exception( "Calibration grid hasn't been prepared for calibration: did you call the PrepareCalibrationFor() method?" );
+			
+			float	CorrectionFactor = m_WhiteReflectanceCorrectionFactor;
+			if ( m_WhiteReferenceImage != null )
+			{	// Apply spatial correction
+				float4	XYZ = m_WhiteReferenceImage.BilinearSample(_U * m_WhiteReferenceImage.Width, _V * m_WhiteReferenceImage.Height );
+				float	SpatialWhiteRefCorrection = 1.0f / Math.Max( 1e-6f, XYZ.y );
+				CorrectionFactor *= SpatialWhiteRefCorrection;
+			}
+
+			float	Reflectance = m_InterpolatedCalibration.Calibrate( CorrectionFactor * _Luminance );
 			return Reflectance;
 		}
 

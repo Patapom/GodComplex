@@ -130,10 +130,8 @@
 			this.checkBoxGraphLagrange = new System.Windows.Forms.CheckBox();
 			this.buttonResetWhiteReflectance = new System.Windows.Forms.Button();
 			this.splitContainerMain = new System.Windows.Forms.SplitContainer();
-			this.panelWhiteReflectance = new System.Windows.Forms.Panel();
 			this.labelWhiteReflectance = new System.Windows.Forms.Label();
 			this.buttonSaveWhiteReflectanceReference = new System.Windows.Forms.Button();
-			this.label10 = new System.Windows.Forms.Label();
 			this.buttonSaveCalibratedImage = new System.Windows.Forms.Button();
 			this.openFileDialogCalibration = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogCalibration = new System.Windows.Forms.SaveFileDialog();
@@ -142,11 +140,22 @@
 			this.saveFileDialogCalibratedImage = new System.Windows.Forms.SaveFileDialog();
 			this.openFileDialogWhiteReflectance = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogWhiteReflectance = new System.Windows.Forms.SaveFileDialog();
+			this.tabPageColorCorrection = new System.Windows.Forms.TabPage();
+			this.groupBoxWhiteReflectance = new System.Windows.Forms.GroupBox();
+			this.textBox1 = new System.Windows.Forms.TextBox();
 			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
 			this.resultTexturePanel = new StandardizedDiffuseAlbedoMaps.ResultTexturePanel(this.components);
 			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
 			this.referenceImagePanel = new StandardizedDiffuseAlbedoMaps.ReferenceImagePanel(this.components);
-			this.tabPageColorCorrection = new System.Windows.Forms.TabPage();
+			this.groupBoxWhiteImageReference = new System.Windows.Forms.GroupBox();
+			this.textBox2 = new System.Windows.Forms.TextBox();
+			this.whiteImageReferencePanel = new StandardizedDiffuseAlbedoMaps.WhiteImageReferencePanel(this.components);
+			this.buttonPickWhiteRefImage = new System.Windows.Forms.Button();
+			this.buttonResetWhiteRefImage = new System.Windows.Forms.Button();
+			this.buttonLoadWhiteRefImage = new System.Windows.Forms.Button();
+			this.buttonSaveWhiteRefImage = new System.Windows.Forms.Button();
+			this.openFileDialogWhiteRefImage = new System.Windows.Forms.OpenFileDialog();
+			this.saveFileDialogWhiteRefImage = new System.Windows.Forms.SaveFileDialog();
 			this.groupBoxCameraShotInfos.SuspendLayout();
 			this.tabControl.SuspendLayout();
 			this.tabPageCreation.SuspendLayout();
@@ -160,7 +169,9 @@
 			this.splitContainerMain.Panel1.SuspendLayout();
 			this.splitContainerMain.Panel2.SuspendLayout();
 			this.splitContainerMain.SuspendLayout();
-			this.panelWhiteReflectance.SuspendLayout();
+			this.tabPageColorCorrection.SuspendLayout();
+			this.groupBoxWhiteReflectance.SuspendLayout();
+			this.groupBoxWhiteImageReference.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// openFileDialogSourceImage
@@ -756,15 +767,13 @@
 			this.tabControl.Location = new System.Drawing.Point(3, 152);
 			this.tabControl.Name = "tabControl";
 			this.tabControl.SelectedIndex = 0;
-			this.tabControl.Size = new System.Drawing.Size(491, 592);
+			this.tabControl.Size = new System.Drawing.Size(485, 592);
 			this.tabControl.TabIndex = 10;
 			// 
 			// tabPageCreation
 			// 
 			this.tabPageCreation.Controls.Add(this.label19);
-			this.tabPageCreation.Controls.Add(this.buttonLoadWhiteReflectanceReference);
 			this.tabPageCreation.Controls.Add(this.label11);
-			this.tabPageCreation.Controls.Add(this.buttonPickWhiteReflectance);
 			this.tabPageCreation.Controls.Add(this.buttonResetCrop);
 			this.tabPageCreation.Controls.Add(this.labelCapturedSwatchxyY);
 			this.tabPageCreation.Controls.Add(this.labelCapturedSwatchRGB);
@@ -777,7 +786,7 @@
 			this.tabPageCreation.Location = new System.Drawing.Point(4, 22);
 			this.tabPageCreation.Name = "tabPageCreation";
 			this.tabPageCreation.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageCreation.Size = new System.Drawing.Size(483, 566);
+			this.tabPageCreation.Size = new System.Drawing.Size(477, 566);
 			this.tabPageCreation.TabIndex = 0;
 			this.tabPageCreation.Text = "Texure Creation";
 			this.tabPageCreation.UseVisualStyleBackColor = true;
@@ -793,7 +802,8 @@
 			// 
 			// buttonLoadWhiteReflectanceReference
 			// 
-			this.buttonLoadWhiteReflectanceReference.Location = new System.Drawing.Point(266, 9);
+			this.buttonLoadWhiteReflectanceReference.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonLoadWhiteReflectanceReference.Location = new System.Drawing.Point(38, 116);
 			this.buttonLoadWhiteReflectanceReference.Name = "buttonLoadWhiteReflectanceReference";
 			this.buttonLoadWhiteReflectanceReference.Size = new System.Drawing.Size(57, 23);
 			this.buttonLoadWhiteReflectanceReference.TabIndex = 5;
@@ -813,8 +823,9 @@
 			// 
 			// buttonPickWhiteReflectance
 			// 
+			this.buttonPickWhiteReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.buttonPickWhiteReflectance.Image = ((System.Drawing.Image)(resources.GetObject("buttonPickWhiteReflectance.Image")));
-			this.buttonPickWhiteReflectance.Location = new System.Drawing.Point(234, 8);
+			this.buttonPickWhiteReflectance.Location = new System.Drawing.Point(6, 114);
 			this.buttonPickWhiteReflectance.Name = "buttonPickWhiteReflectance";
 			this.buttonPickWhiteReflectance.Size = new System.Drawing.Size(26, 26);
 			this.buttonPickWhiteReflectance.TabIndex = 6;
@@ -841,7 +852,7 @@
 			this.labelCapturedSwatchxyY.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.labelCapturedSwatchxyY.Location = new System.Drawing.Point(290, 493);
 			this.labelCapturedSwatchxyY.Name = "labelCapturedSwatchxyY";
-			this.labelCapturedSwatchxyY.Size = new System.Drawing.Size(184, 20);
+			this.labelCapturedSwatchxyY.Size = new System.Drawing.Size(178, 20);
 			this.labelCapturedSwatchxyY.TabIndex = 2;
 			this.labelCapturedSwatchxyY.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
 			// 
@@ -852,7 +863,7 @@
 			this.labelCapturedSwatchRGB.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.labelCapturedSwatchRGB.Location = new System.Drawing.Point(290, 453);
 			this.labelCapturedSwatchRGB.Name = "labelCapturedSwatchRGB";
-			this.labelCapturedSwatchRGB.Size = new System.Drawing.Size(184, 20);
+			this.labelCapturedSwatchRGB.Size = new System.Drawing.Size(178, 20);
 			this.labelCapturedSwatchRGB.TabIndex = 2;
 			this.labelCapturedSwatchRGB.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
 			// 
@@ -863,7 +874,7 @@
 			this.labelCapturedReflectance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.labelCapturedReflectance.Location = new System.Drawing.Point(290, 400);
 			this.labelCapturedReflectance.Name = "labelCapturedReflectance";
-			this.labelCapturedReflectance.Size = new System.Drawing.Size(184, 20);
+			this.labelCapturedReflectance.Size = new System.Drawing.Size(178, 20);
 			this.labelCapturedReflectance.TabIndex = 2;
 			this.labelCapturedReflectance.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
 			// 
@@ -1237,7 +1248,7 @@
 			this.tabPageCameraCalibration.Location = new System.Drawing.Point(4, 22);
 			this.tabPageCameraCalibration.Name = "tabPageCameraCalibration";
 			this.tabPageCameraCalibration.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageCameraCalibration.Size = new System.Drawing.Size(483, 566);
+			this.tabPageCameraCalibration.Size = new System.Drawing.Size(477, 566);
 			this.tabPageCameraCalibration.TabIndex = 1;
 			this.tabPageCameraCalibration.Text = "Camera Calibration";
 			this.tabPageCameraCalibration.UseVisualStyleBackColor = true;
@@ -1252,7 +1263,7 @@
 			this.tabControlCalibrationRepresentation.Location = new System.Drawing.Point(4, 207);
 			this.tabControlCalibrationRepresentation.Name = "tabControlCalibrationRepresentation";
 			this.tabControlCalibrationRepresentation.SelectedIndex = 0;
-			this.tabControlCalibrationRepresentation.Size = new System.Drawing.Size(476, 324);
+			this.tabControlCalibrationRepresentation.Size = new System.Drawing.Size(470, 324);
 			this.tabControlCalibrationRepresentation.TabIndex = 16;
 			// 
 			// tabPageLuminancesGraph
@@ -1261,7 +1272,7 @@
 			this.tabPageLuminancesGraph.Location = new System.Drawing.Point(4, 22);
 			this.tabPageLuminancesGraph.Name = "tabPageLuminancesGraph";
 			this.tabPageLuminancesGraph.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageLuminancesGraph.Size = new System.Drawing.Size(468, 298);
+			this.tabPageLuminancesGraph.Size = new System.Drawing.Size(462, 298);
 			this.tabPageLuminancesGraph.TabIndex = 0;
 			this.tabPageLuminancesGraph.Text = "Luminances Graph";
 			this.tabPageLuminancesGraph.UseVisualStyleBackColor = true;
@@ -1272,7 +1283,7 @@
 			this.tabPageReferenceImage.Location = new System.Drawing.Point(4, 22);
 			this.tabPageReferenceImage.Name = "tabPageReferenceImage";
 			this.tabPageReferenceImage.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageReferenceImage.Size = new System.Drawing.Size(468, 298);
+			this.tabPageReferenceImage.Size = new System.Drawing.Size(462, 298);
 			this.tabPageReferenceImage.TabIndex = 1;
 			this.tabPageReferenceImage.Text = "Reference Image";
 			this.tabPageReferenceImage.UseVisualStyleBackColor = true;
@@ -1353,7 +1364,7 @@
 			// buttonSaveCalibration
 			// 
 			this.buttonSaveCalibration.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonSaveCalibration.Location = new System.Drawing.Point(402, 537);
+			this.buttonSaveCalibration.Location = new System.Drawing.Point(396, 537);
 			this.buttonSaveCalibration.Name = "buttonSaveCalibration";
 			this.buttonSaveCalibration.Size = new System.Drawing.Size(75, 23);
 			this.buttonSaveCalibration.TabIndex = 12;
@@ -1390,7 +1401,7 @@
 			// buttonLoadCalibration
 			// 
 			this.buttonLoadCalibration.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonLoadCalibration.Location = new System.Drawing.Point(321, 537);
+			this.buttonLoadCalibration.Location = new System.Drawing.Point(315, 537);
 			this.buttonLoadCalibration.Name = "buttonLoadCalibration";
 			this.buttonLoadCalibration.Size = new System.Drawing.Size(75, 23);
 			this.buttonLoadCalibration.TabIndex = 12;
@@ -1414,7 +1425,9 @@
 			// 
 			// buttonResetWhiteReflectance
 			// 
-			this.buttonResetWhiteReflectance.Location = new System.Drawing.Point(378, 1);
+			this.buttonResetWhiteReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonResetWhiteReflectance.Enabled = false;
+			this.buttonResetWhiteReflectance.Location = new System.Drawing.Point(374, 116);
 			this.buttonResetWhiteReflectance.Name = "buttonResetWhiteReflectance";
 			this.buttonResetWhiteReflectance.Size = new System.Drawing.Size(57, 23);
 			this.buttonResetWhiteReflectance.TabIndex = 5;
@@ -1431,7 +1444,6 @@
 			// 
 			// splitContainerMain.Panel1
 			// 
-			this.splitContainerMain.Panel1.Controls.Add(this.panelWhiteReflectance);
 			this.splitContainerMain.Panel1.Controls.Add(this.outputPanel);
 			this.splitContainerMain.Panel1.Controls.Add(this.checkBoxsRGB);
 			this.splitContainerMain.Panel1.Controls.Add(this.labelLuminance);
@@ -1445,27 +1457,14 @@
 			this.splitContainerMain.Panel2.Controls.Add(this.buttonLoadImage);
 			this.splitContainerMain.Panel2MinSize = 490;
 			this.splitContainerMain.Size = new System.Drawing.Size(1499, 747);
-			this.splitContainerMain.SplitterDistance = 998;
+			this.splitContainerMain.SplitterDistance = 1004;
 			this.splitContainerMain.TabIndex = 0;
-			// 
-			// panelWhiteReflectance
-			// 
-			this.panelWhiteReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.panelWhiteReflectance.Controls.Add(this.labelWhiteReflectance);
-			this.panelWhiteReflectance.Controls.Add(this.buttonSaveWhiteReflectanceReference);
-			this.panelWhiteReflectance.Controls.Add(this.buttonResetWhiteReflectance);
-			this.panelWhiteReflectance.Controls.Add(this.label10);
-			this.panelWhiteReflectance.Location = new System.Drawing.Point(418, 717);
-			this.panelWhiteReflectance.Name = "panelWhiteReflectance";
-			this.panelWhiteReflectance.Size = new System.Drawing.Size(438, 26);
-			this.panelWhiteReflectance.TabIndex = 10;
-			this.panelWhiteReflectance.Visible = false;
 			// 
 			// labelWhiteReflectance
 			// 
 			this.labelWhiteReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.labelWhiteReflectance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelWhiteReflectance.Location = new System.Drawing.Point(105, 1);
+			this.labelWhiteReflectance.Location = new System.Drawing.Point(101, 116);
 			this.labelWhiteReflectance.Name = "labelWhiteReflectance";
 			this.labelWhiteReflectance.Size = new System.Drawing.Size(204, 23);
 			this.labelWhiteReflectance.TabIndex = 2;
@@ -1473,7 +1472,9 @@
 			// 
 			// buttonSaveWhiteReflectanceReference
 			// 
-			this.buttonSaveWhiteReflectanceReference.Location = new System.Drawing.Point(315, 1);
+			this.buttonSaveWhiteReflectanceReference.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonSaveWhiteReflectanceReference.Enabled = false;
+			this.buttonSaveWhiteReflectanceReference.Location = new System.Drawing.Point(311, 116);
 			this.buttonSaveWhiteReflectanceReference.Name = "buttonSaveWhiteReflectanceReference";
 			this.buttonSaveWhiteReflectanceReference.Size = new System.Drawing.Size(57, 23);
 			this.buttonSaveWhiteReflectanceReference.TabIndex = 5;
@@ -1481,16 +1482,6 @@
 			this.toolTip.SetToolTip(this.buttonSaveWhiteReflectanceReference, "Saves the white reflectance reference to disk");
 			this.buttonSaveWhiteReflectanceReference.UseVisualStyleBackColor = true;
 			this.buttonSaveWhiteReflectanceReference.Click += new System.EventHandler(this.buttonSaveWhiteReflectanceReference_Click);
-			// 
-			// label10
-			// 
-			this.label10.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.label10.AutoSize = true;
-			this.label10.Location = new System.Drawing.Point(3, 6);
-			this.label10.Name = "label10";
-			this.label10.Size = new System.Drawing.Size(96, 13);
-			this.label10.TabIndex = 9;
-			this.label10.Text = "White Reflectance";
 			// 
 			// buttonSaveCalibratedImage
 			// 
@@ -1539,6 +1530,48 @@
 			this.saveFileDialogWhiteReflectance.Filter = "White Reflectance Files|*.whiteRef|All Files (*.*)|*.*";
 			this.saveFileDialogWhiteReflectance.Title = "Choose the white reflectance reference file to save";
 			// 
+			// tabPageColorCorrection
+			// 
+			this.tabPageColorCorrection.Controls.Add(this.groupBoxWhiteImageReference);
+			this.tabPageColorCorrection.Controls.Add(this.groupBoxWhiteReflectance);
+			this.tabPageColorCorrection.Location = new System.Drawing.Point(4, 22);
+			this.tabPageColorCorrection.Name = "tabPageColorCorrection";
+			this.tabPageColorCorrection.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPageColorCorrection.Size = new System.Drawing.Size(477, 566);
+			this.tabPageColorCorrection.TabIndex = 2;
+			this.tabPageColorCorrection.Text = "Color Correction";
+			this.tabPageColorCorrection.UseVisualStyleBackColor = true;
+			// 
+			// groupBoxWhiteReflectance
+			// 
+			this.groupBoxWhiteReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBoxWhiteReflectance.Controls.Add(this.textBox1);
+			this.groupBoxWhiteReflectance.Controls.Add(this.buttonResetWhiteReflectance);
+			this.groupBoxWhiteReflectance.Controls.Add(this.buttonSaveWhiteReflectanceReference);
+			this.groupBoxWhiteReflectance.Controls.Add(this.labelWhiteReflectance);
+			this.groupBoxWhiteReflectance.Controls.Add(this.buttonPickWhiteReflectance);
+			this.groupBoxWhiteReflectance.Controls.Add(this.buttonLoadWhiteReflectanceReference);
+			this.groupBoxWhiteReflectance.Location = new System.Drawing.Point(6, 6);
+			this.groupBoxWhiteReflectance.Name = "groupBoxWhiteReflectance";
+			this.groupBoxWhiteReflectance.Size = new System.Drawing.Size(465, 148);
+			this.groupBoxWhiteReflectance.TabIndex = 0;
+			this.groupBoxWhiteReflectance.TabStop = false;
+			this.groupBoxWhiteReflectance.Text = "White Reflectance Reference";
+			// 
+			// textBox1
+			// 
+			this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBox1.Location = new System.Drawing.Point(7, 20);
+			this.textBox1.Multiline = true;
+			this.textBox1.Name = "textBox1";
+			this.textBox1.ReadOnly = true;
+			this.textBox1.Size = new System.Drawing.Size(452, 88);
+			this.textBox1.TabIndex = 7;
+			this.textBox1.Text = resources.GetString("textBox1.Text");
+			// 
 			// outputPanel
 			// 
 			this.outputPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -1548,7 +1581,7 @@
 			this.outputPanel.Image = null;
 			this.outputPanel.Location = new System.Drawing.Point(3, 0);
 			this.outputPanel.Name = "outputPanel";
-			this.outputPanel.Size = new System.Drawing.Size(996, 716);
+			this.outputPanel.Size = new System.Drawing.Size(1002, 716);
 			this.outputPanel.TabIndex = 0;
 			this.outputPanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.outputPanel_MouseMove);
 			// 
@@ -1561,7 +1594,7 @@
 			this.resultTexturePanel.CalibratedTexture = null;
 			this.resultTexturePanel.Location = new System.Drawing.Point(6, 40);
 			this.resultTexturePanel.Name = "resultTexturePanel";
-			this.resultTexturePanel.Size = new System.Drawing.Size(471, 332);
+			this.resultTexturePanel.Size = new System.Drawing.Size(465, 332);
 			this.resultTexturePanel.TabIndex = 0;
 			this.resultTexturePanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.resultTexturePanel_MouseMove);
 			// 
@@ -1573,7 +1606,7 @@
 			this.graphPanel.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.graphPanel.Location = new System.Drawing.Point(3, 3);
 			this.graphPanel.Name = "graphPanel";
-			this.graphPanel.Size = new System.Drawing.Size(462, 292);
+			this.graphPanel.Size = new System.Drawing.Size(456, 292);
 			this.graphPanel.TabIndex = 11;
 			this.graphPanel.UseLagrange = false;
 			// 
@@ -1588,15 +1621,102 @@
 			this.referenceImagePanel.Size = new System.Drawing.Size(456, 286);
 			this.referenceImagePanel.TabIndex = 0;
 			// 
-			// tabPageColorCorrection
+			// groupBoxWhiteImageReference
 			// 
-			this.tabPageColorCorrection.Location = new System.Drawing.Point(4, 22);
-			this.tabPageColorCorrection.Name = "tabPageColorCorrection";
-			this.tabPageColorCorrection.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageColorCorrection.Size = new System.Drawing.Size(483, 566);
-			this.tabPageColorCorrection.TabIndex = 2;
-			this.tabPageColorCorrection.Text = "Color Correction";
-			this.tabPageColorCorrection.UseVisualStyleBackColor = true;
+			this.groupBoxWhiteImageReference.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBoxWhiteImageReference.Controls.Add(this.whiteImageReferencePanel);
+			this.groupBoxWhiteImageReference.Controls.Add(this.buttonResetWhiteRefImage);
+			this.groupBoxWhiteImageReference.Controls.Add(this.buttonSaveWhiteRefImage);
+			this.groupBoxWhiteImageReference.Controls.Add(this.textBox2);
+			this.groupBoxWhiteImageReference.Controls.Add(this.buttonPickWhiteRefImage);
+			this.groupBoxWhiteImageReference.Controls.Add(this.buttonLoadWhiteRefImage);
+			this.groupBoxWhiteImageReference.Location = new System.Drawing.Point(6, 160);
+			this.groupBoxWhiteImageReference.Name = "groupBoxWhiteImageReference";
+			this.groupBoxWhiteImageReference.Size = new System.Drawing.Size(465, 236);
+			this.groupBoxWhiteImageReference.TabIndex = 1;
+			this.groupBoxWhiteImageReference.TabStop = false;
+			this.groupBoxWhiteImageReference.Text = "White Image Reference";
+			// 
+			// textBox2
+			// 
+			this.textBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBox2.Location = new System.Drawing.Point(6, 19);
+			this.textBox2.Multiline = true;
+			this.textBox2.Name = "textBox2";
+			this.textBox2.ReadOnly = true;
+			this.textBox2.Size = new System.Drawing.Size(452, 78);
+			this.textBox2.TabIndex = 7;
+			this.textBox2.Text = resources.GetString("textBox2.Text");
+			// 
+			// whiteImageReferencePanel
+			// 
+			this.whiteImageReferencePanel.Location = new System.Drawing.Point(126, 103);
+			this.whiteImageReferencePanel.Name = "whiteImageReferencePanel";
+			this.whiteImageReferencePanel.Size = new System.Drawing.Size(192, 127);
+			this.whiteImageReferencePanel.TabIndex = 8;
+			// 
+			// buttonPickWhiteRefImage
+			// 
+			this.buttonPickWhiteRefImage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonPickWhiteRefImage.Image = ((System.Drawing.Image)(resources.GetObject("buttonPickWhiteRefImage.Image")));
+			this.buttonPickWhiteRefImage.Location = new System.Drawing.Point(6, 116);
+			this.buttonPickWhiteRefImage.Name = "buttonPickWhiteRefImage";
+			this.buttonPickWhiteRefImage.Size = new System.Drawing.Size(26, 26);
+			this.buttonPickWhiteRefImage.TabIndex = 6;
+			this.buttonPickWhiteRefImage.UseVisualStyleBackColor = true;
+			this.buttonPickWhiteRefImage.Click += new System.EventHandler(this.buttonPickWhiteRefImage_Click);
+			// 
+			// buttonResetWhiteRefImage
+			// 
+			this.buttonResetWhiteRefImage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonResetWhiteRefImage.Enabled = false;
+			this.buttonResetWhiteRefImage.Location = new System.Drawing.Point(37, 176);
+			this.buttonResetWhiteRefImage.Name = "buttonResetWhiteRefImage";
+			this.buttonResetWhiteRefImage.Size = new System.Drawing.Size(57, 23);
+			this.buttonResetWhiteRefImage.TabIndex = 5;
+			this.buttonResetWhiteRefImage.Text = "Reset";
+			this.buttonResetWhiteRefImage.UseVisualStyleBackColor = true;
+			this.buttonResetWhiteRefImage.Click += new System.EventHandler(this.buttonResetWhiteRefImage_Click);
+			// 
+			// buttonLoadWhiteRefImage
+			// 
+			this.buttonLoadWhiteRefImage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonLoadWhiteRefImage.Location = new System.Drawing.Point(38, 118);
+			this.buttonLoadWhiteRefImage.Name = "buttonLoadWhiteRefImage";
+			this.buttonLoadWhiteRefImage.Size = new System.Drawing.Size(57, 23);
+			this.buttonLoadWhiteRefImage.TabIndex = 5;
+			this.buttonLoadWhiteRefImage.Text = "Load";
+			this.buttonLoadWhiteRefImage.UseVisualStyleBackColor = true;
+			this.buttonLoadWhiteRefImage.Click += new System.EventHandler(this.buttonLoadWhiteRefImage_Click);
+			// 
+			// buttonSaveWhiteRefImage
+			// 
+			this.buttonSaveWhiteRefImage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonSaveWhiteRefImage.Enabled = false;
+			this.buttonSaveWhiteRefImage.Location = new System.Drawing.Point(37, 147);
+			this.buttonSaveWhiteRefImage.Name = "buttonSaveWhiteRefImage";
+			this.buttonSaveWhiteRefImage.Size = new System.Drawing.Size(57, 23);
+			this.buttonSaveWhiteRefImage.TabIndex = 5;
+			this.buttonSaveWhiteRefImage.Text = "Save";
+			this.buttonSaveWhiteRefImage.UseVisualStyleBackColor = true;
+			this.buttonSaveWhiteRefImage.Click += new System.EventHandler(this.buttonSaveWhiteRefImage_Click);
+			// 
+			// openFileDialogWhiteRefImage
+			// 
+			this.openFileDialogWhiteRefImage.DefaultExt = "*.png";
+			this.openFileDialogWhiteRefImage.Filter = "All supported formats|*.PNG;*.GIF;*.BMP;*.HDR;*.CRW;*.CR2;*.DNG;*.TIFF;*.TGA;*.JP" +
+    "G|All Files (*.*)|*.*";
+			this.openFileDialogWhiteRefImage.RestoreDirectory = true;
+			this.openFileDialogWhiteRefImage.Title = "Choose an image to use as white reference...";
+			// 
+			// saveFileDialogWhiteRefImage
+			// 
+			this.saveFileDialogWhiteRefImage.DefaultExt = "*.png";
+			this.saveFileDialogWhiteRefImage.Filter = "16-bits PNG Files (*.png)|*.png|16-bits TIFF Files (*.tiff)|*.tif|All Files (*.*)" +
+    "|*.*";
+			this.saveFileDialogWhiteRefImage.Title = "Select the name of the white reference image file to save to...";
 			// 
 			// Form1
 			// 
@@ -1626,8 +1746,11 @@
 			this.splitContainerMain.Panel2.ResumeLayout(false);
 			((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).EndInit();
 			this.splitContainerMain.ResumeLayout(false);
-			this.panelWhiteReflectance.ResumeLayout(false);
-			this.panelWhiteReflectance.PerformLayout();
+			this.tabPageColorCorrection.ResumeLayout(false);
+			this.groupBoxWhiteReflectance.ResumeLayout(false);
+			this.groupBoxWhiteReflectance.PerformLayout();
+			this.groupBoxWhiteImageReference.ResumeLayout(false);
+			this.groupBoxWhiteImageReference.PerformLayout();
 			this.ResumeLayout(false);
 
 		}
@@ -1737,9 +1860,7 @@
 		private System.Windows.Forms.SaveFileDialog saveFileDialogCalibratedImage;
 		private System.Windows.Forms.Button buttonPickWhiteReflectance;
 		private System.Windows.Forms.Button buttonResetWhiteReflectance;
-		private System.Windows.Forms.Panel panelWhiteReflectance;
 		private System.Windows.Forms.Label labelWhiteReflectance;
-		private System.Windows.Forms.Label label10;
 		private System.Windows.Forms.Label label19;
 		private System.Windows.Forms.Label label11;
 		private System.Windows.Forms.Label labelCapturedSwatchxyY;
@@ -1751,6 +1872,17 @@
 		private System.Windows.Forms.OpenFileDialog openFileDialogWhiteReflectance;
 		private System.Windows.Forms.SaveFileDialog saveFileDialogWhiteReflectance;
 		private System.Windows.Forms.TabPage tabPageColorCorrection;
+		private System.Windows.Forms.GroupBox groupBoxWhiteReflectance;
+		private System.Windows.Forms.TextBox textBox1;
+		private System.Windows.Forms.GroupBox groupBoxWhiteImageReference;
+		private System.Windows.Forms.TextBox textBox2;
+		private WhiteImageReferencePanel whiteImageReferencePanel;
+		private System.Windows.Forms.Button buttonResetWhiteRefImage;
+		private System.Windows.Forms.Button buttonSaveWhiteRefImage;
+		private System.Windows.Forms.Button buttonPickWhiteRefImage;
+		private System.Windows.Forms.Button buttonLoadWhiteRefImage;
+		private System.Windows.Forms.OpenFileDialog openFileDialogWhiteRefImage;
+		private System.Windows.Forms.SaveFileDialog saveFileDialogWhiteRefImage;
 	}
 }
 
