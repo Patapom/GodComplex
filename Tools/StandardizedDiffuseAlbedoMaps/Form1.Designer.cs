@@ -80,6 +80,7 @@
 			this.tabControl = new System.Windows.Forms.TabControl();
 			this.tabPageCreation = new System.Windows.Forms.TabPage();
 			this.label19 = new System.Windows.Forms.Label();
+			this.buttonLoadWhiteReflectanceReference = new System.Windows.Forms.Button();
 			this.label11 = new System.Windows.Forms.Label();
 			this.buttonPickWhiteReflectance = new System.Windows.Forms.Button();
 			this.buttonResetCrop = new System.Windows.Forms.Button();
@@ -131,6 +132,7 @@
 			this.splitContainerMain = new System.Windows.Forms.SplitContainer();
 			this.panelWhiteReflectance = new System.Windows.Forms.Panel();
 			this.labelWhiteReflectance = new System.Windows.Forms.Label();
+			this.buttonSaveWhiteReflectanceReference = new System.Windows.Forms.Button();
 			this.label10 = new System.Windows.Forms.Label();
 			this.buttonSaveCalibratedImage = new System.Windows.Forms.Button();
 			this.openFileDialogCalibration = new System.Windows.Forms.OpenFileDialog();
@@ -138,6 +140,8 @@
 			this.folderBrowserDialogDatabaseLocation = new System.Windows.Forms.FolderBrowserDialog();
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
 			this.saveFileDialogCalibratedImage = new System.Windows.Forms.SaveFileDialog();
+			this.openFileDialogWhiteReflectance = new System.Windows.Forms.OpenFileDialog();
+			this.saveFileDialogWhiteReflectance = new System.Windows.Forms.SaveFileDialog();
 			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
 			this.resultTexturePanel = new StandardizedDiffuseAlbedoMaps.ResultTexturePanel(this.components);
 			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
@@ -183,7 +187,7 @@
 			this.labelLuminance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.labelLuminance.Location = new System.Drawing.Point(173, 718);
 			this.labelLuminance.Name = "labelLuminance";
-			this.labelLuminance.Size = new System.Drawing.Size(162, 23);
+			this.labelLuminance.Size = new System.Drawing.Size(192, 23);
 			this.labelLuminance.TabIndex = 2;
 			this.labelLuminance.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
 			this.toolTip.SetToolTip(this.labelLuminance, "Shows the luminance under the mouse cursor (takes the sRGB checkbox state into ac" +
@@ -756,6 +760,7 @@
 			// tabPageCreation
 			// 
 			this.tabPageCreation.Controls.Add(this.label19);
+			this.tabPageCreation.Controls.Add(this.buttonLoadWhiteReflectanceReference);
 			this.tabPageCreation.Controls.Add(this.label11);
 			this.tabPageCreation.Controls.Add(this.buttonPickWhiteReflectance);
 			this.tabPageCreation.Controls.Add(this.buttonResetCrop);
@@ -783,6 +788,17 @@
 			this.label19.Size = new System.Drawing.Size(63, 13);
 			this.label19.TabIndex = 7;
 			this.label19.Text = "Swatch xyY";
+			// 
+			// buttonLoadWhiteReflectanceReference
+			// 
+			this.buttonLoadWhiteReflectanceReference.Location = new System.Drawing.Point(266, 9);
+			this.buttonLoadWhiteReflectanceReference.Name = "buttonLoadWhiteReflectanceReference";
+			this.buttonLoadWhiteReflectanceReference.Size = new System.Drawing.Size(57, 23);
+			this.buttonLoadWhiteReflectanceReference.TabIndex = 5;
+			this.buttonLoadWhiteReflectanceReference.Text = "Load";
+			this.toolTip.SetToolTip(this.buttonLoadWhiteReflectanceReference, "Loads the white reflectance reference from disk");
+			this.buttonLoadWhiteReflectanceReference.UseVisualStyleBackColor = true;
+			this.buttonLoadWhiteReflectanceReference.Click += new System.EventHandler(this.buttonLoadWhiteReflectanceReference_Click);
 			// 
 			// label11
 			// 
@@ -919,92 +935,119 @@
 			// checkBoxCustomSwatch8
 			// 
 			this.checkBoxCustomSwatch8.AutoSize = true;
-			this.checkBoxCustomSwatch8.Location = new System.Drawing.Point(190, 148);
+			this.checkBoxCustomSwatch8.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch8.Location = new System.Drawing.Point(177, 148);
 			this.checkBoxCustomSwatch8.Name = "checkBoxCustomSwatch8";
-			this.checkBoxCustomSwatch8.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch8.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch8.TabIndex = 2;
+			this.checkBoxCustomSwatch8.Text = "8";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch8, "Custom color swatch");
 			this.checkBoxCustomSwatch8.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch8.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch7
 			// 
 			this.checkBoxCustomSwatch7.AutoSize = true;
-			this.checkBoxCustomSwatch7.Location = new System.Drawing.Point(104, 148);
+			this.checkBoxCustomSwatch7.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch7.Location = new System.Drawing.Point(91, 148);
 			this.checkBoxCustomSwatch7.Name = "checkBoxCustomSwatch7";
-			this.checkBoxCustomSwatch7.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch7.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch7.TabIndex = 2;
+			this.checkBoxCustomSwatch7.Text = "7";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch7, "Custom color swatch");
 			this.checkBoxCustomSwatch7.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch7.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch6
 			// 
 			this.checkBoxCustomSwatch6.AutoSize = true;
-			this.checkBoxCustomSwatch6.Location = new System.Drawing.Point(18, 148);
+			this.checkBoxCustomSwatch6.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch6.Location = new System.Drawing.Point(5, 148);
 			this.checkBoxCustomSwatch6.Name = "checkBoxCustomSwatch6";
-			this.checkBoxCustomSwatch6.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch6.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch6.TabIndex = 2;
+			this.checkBoxCustomSwatch6.Text = "6";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch6, "Custom color swatch");
 			this.checkBoxCustomSwatch6.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch6.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch5
 			// 
 			this.checkBoxCustomSwatch5.AutoSize = true;
-			this.checkBoxCustomSwatch5.Location = new System.Drawing.Point(190, 108);
+			this.checkBoxCustomSwatch5.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch5.Location = new System.Drawing.Point(177, 108);
 			this.checkBoxCustomSwatch5.Name = "checkBoxCustomSwatch5";
-			this.checkBoxCustomSwatch5.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch5.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch5.TabIndex = 2;
+			this.checkBoxCustomSwatch5.Text = "5";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch5, "Custom color swatch");
 			this.checkBoxCustomSwatch5.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch5.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch4
 			// 
 			this.checkBoxCustomSwatch4.AutoSize = true;
-			this.checkBoxCustomSwatch4.Location = new System.Drawing.Point(104, 108);
+			this.checkBoxCustomSwatch4.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch4.Location = new System.Drawing.Point(91, 108);
 			this.checkBoxCustomSwatch4.Name = "checkBoxCustomSwatch4";
-			this.checkBoxCustomSwatch4.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch4.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch4.TabIndex = 2;
+			this.checkBoxCustomSwatch4.Text = "4";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch4, "Custom color swatch");
 			this.checkBoxCustomSwatch4.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch4.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch3
 			// 
 			this.checkBoxCustomSwatch3.AutoSize = true;
-			this.checkBoxCustomSwatch3.Location = new System.Drawing.Point(18, 108);
+			this.checkBoxCustomSwatch3.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch3.Location = new System.Drawing.Point(5, 108);
 			this.checkBoxCustomSwatch3.Name = "checkBoxCustomSwatch3";
-			this.checkBoxCustomSwatch3.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch3.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch3.TabIndex = 2;
+			this.checkBoxCustomSwatch3.Text = "3";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch3, "Custom color swatch");
 			this.checkBoxCustomSwatch3.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch3.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch2
 			// 
 			this.checkBoxCustomSwatch2.AutoSize = true;
-			this.checkBoxCustomSwatch2.Location = new System.Drawing.Point(190, 68);
+			this.checkBoxCustomSwatch2.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch2.Location = new System.Drawing.Point(177, 68);
 			this.checkBoxCustomSwatch2.Name = "checkBoxCustomSwatch2";
-			this.checkBoxCustomSwatch2.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch2.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch2.TabIndex = 2;
+			this.checkBoxCustomSwatch2.Text = "2";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch2, "Custom color swatch");
 			this.checkBoxCustomSwatch2.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch2.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch1
 			// 
 			this.checkBoxCustomSwatch1.AutoSize = true;
-			this.checkBoxCustomSwatch1.Location = new System.Drawing.Point(104, 68);
+			this.checkBoxCustomSwatch1.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch1.Location = new System.Drawing.Point(91, 68);
 			this.checkBoxCustomSwatch1.Name = "checkBoxCustomSwatch1";
-			this.checkBoxCustomSwatch1.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch1.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch1.TabIndex = 2;
+			this.checkBoxCustomSwatch1.Text = "1";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch1, "Custom color swatch");
 			this.checkBoxCustomSwatch1.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch1.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch0
 			// 
 			this.checkBoxCustomSwatch0.AutoSize = true;
-			this.checkBoxCustomSwatch0.Location = new System.Drawing.Point(18, 68);
+			this.checkBoxCustomSwatch0.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch0.Location = new System.Drawing.Point(5, 68);
 			this.checkBoxCustomSwatch0.Name = "checkBoxCustomSwatch0";
-			this.checkBoxCustomSwatch0.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch0.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch0.TabIndex = 2;
+			this.checkBoxCustomSwatch0.Text = "0";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch0, "Custom color swatch");
 			this.checkBoxCustomSwatch0.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch0.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// panelSwatchAverage
 			// 
@@ -1164,7 +1207,7 @@
 			this.panelSwatchMin.Name = "panelSwatchMin";
 			this.panelSwatchMin.Size = new System.Drawing.Size(50, 34);
 			this.panelSwatchMin.TabIndex = 1;
-			this.toolTip.SetToolTip(this.panelSwatchMin, "Minimum reflectance in the image");
+			this.toolTip.SetToolTip(this.panelSwatchMin, "Minimum reflectance in the texture");
 			this.panelSwatchMin.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelSwatchMin_MouseMove);
 			// 
 			// label7
@@ -1369,7 +1412,7 @@
 			// 
 			// buttonResetWhiteReflectance
 			// 
-			this.buttonResetWhiteReflectance.Location = new System.Drawing.Point(315, 1);
+			this.buttonResetWhiteReflectance.Location = new System.Drawing.Point(378, 1);
 			this.buttonResetWhiteReflectance.Name = "buttonResetWhiteReflectance";
 			this.buttonResetWhiteReflectance.Size = new System.Drawing.Size(57, 23);
 			this.buttonResetWhiteReflectance.TabIndex = 5;
@@ -1407,11 +1450,12 @@
 			// 
 			this.panelWhiteReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.panelWhiteReflectance.Controls.Add(this.labelWhiteReflectance);
+			this.panelWhiteReflectance.Controls.Add(this.buttonSaveWhiteReflectanceReference);
 			this.panelWhiteReflectance.Controls.Add(this.buttonResetWhiteReflectance);
 			this.panelWhiteReflectance.Controls.Add(this.label10);
 			this.panelWhiteReflectance.Location = new System.Drawing.Point(418, 717);
 			this.panelWhiteReflectance.Name = "panelWhiteReflectance";
-			this.panelWhiteReflectance.Size = new System.Drawing.Size(376, 26);
+			this.panelWhiteReflectance.Size = new System.Drawing.Size(438, 26);
 			this.panelWhiteReflectance.TabIndex = 10;
 			this.panelWhiteReflectance.Visible = false;
 			// 
@@ -1424,6 +1468,17 @@
 			this.labelWhiteReflectance.Size = new System.Drawing.Size(204, 23);
 			this.labelWhiteReflectance.TabIndex = 2;
 			this.labelWhiteReflectance.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			// 
+			// buttonSaveWhiteReflectanceReference
+			// 
+			this.buttonSaveWhiteReflectanceReference.Location = new System.Drawing.Point(315, 1);
+			this.buttonSaveWhiteReflectanceReference.Name = "buttonSaveWhiteReflectanceReference";
+			this.buttonSaveWhiteReflectanceReference.Size = new System.Drawing.Size(57, 23);
+			this.buttonSaveWhiteReflectanceReference.TabIndex = 5;
+			this.buttonSaveWhiteReflectanceReference.Text = "Save";
+			this.toolTip.SetToolTip(this.buttonSaveWhiteReflectanceReference, "Saves the white reflectance reference to disk");
+			this.buttonSaveWhiteReflectanceReference.UseVisualStyleBackColor = true;
+			this.buttonSaveWhiteReflectanceReference.Click += new System.EventHandler(this.buttonSaveWhiteReflectanceReference_Click);
 			// 
 			// label10
 			// 
@@ -1468,6 +1523,19 @@
 			this.saveFileDialogCalibratedImage.Filter = "16-bits PNG Files (*.png)|*.png|16-bits TIFF Files (*.tiff)|*.tif|All Files (*.*)" +
     "|*.*";
 			this.saveFileDialogCalibratedImage.Title = "Select the name of the target calibrated texture file to save to...";
+			// 
+			// openFileDialogWhiteReflectance
+			// 
+			this.openFileDialogWhiteReflectance.DefaultExt = "*.whiteRef";
+			this.openFileDialogWhiteReflectance.Filter = "White Reflectance Files|*.whiteRef|All Files (*.*)|*.*";
+			this.openFileDialogWhiteReflectance.RestoreDirectory = true;
+			this.openFileDialogWhiteReflectance.Title = "Choose a white reflectance reference...";
+			// 
+			// saveFileDialogWhiteReflectance
+			// 
+			this.saveFileDialogWhiteReflectance.DefaultExt = "*.whiteRef";
+			this.saveFileDialogWhiteReflectance.Filter = "White Reflectance Files|*.whiteRef|All Files (*.*)|*.*";
+			this.saveFileDialogWhiteReflectance.Title = "Choose the white reflectance reference file to save";
 			// 
 			// outputPanel
 			// 
@@ -1666,6 +1734,10 @@
 		private System.Windows.Forms.Label labelCapturedSwatchRGB;
 		private System.Windows.Forms.Label labelCapturedReflectance;
 		private System.Windows.Forms.Label label12;
+		private System.Windows.Forms.Button buttonSaveWhiteReflectanceReference;
+		private System.Windows.Forms.Button buttonLoadWhiteReflectanceReference;
+		private System.Windows.Forms.OpenFileDialog openFileDialogWhiteReflectance;
+		private System.Windows.Forms.SaveFileDialog saveFileDialogWhiteReflectance;
 	}
 }
 

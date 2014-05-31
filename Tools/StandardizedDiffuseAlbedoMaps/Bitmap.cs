@@ -80,7 +80,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		public override string ToString()
 		{
-			return x.ToString() + ";" + y.ToString();
+			return x.ToString() + "; " + y.ToString();
 		}
 		public static float2	Parse( string v )
 		{
@@ -88,9 +88,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( Components.Length < 2 )
 				throw new Exception( "Not enough vector components!" );
 			float2		Result = new float2();
-			if ( !float.TryParse( Components[0], out Result.x ) )
+			if ( !float.TryParse( Components[0].Trim(), out Result.x ) )
 				throw new Exception( "Can't parse X field!" );
-			if ( !float.TryParse( Components[1], out Result.y ) )
+			if ( !float.TryParse( Components[1].Trim(), out Result.y ) )
 				throw new Exception( "Can't parse Y field!" );
 			return Result;
 		}
@@ -106,7 +106,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		public override string ToString()
 		{
-			return x.ToString() + ";" + y.ToString() + ";" + z.ToString();
+			return x.ToString() + "; " + y.ToString() + "; " + z.ToString();
 		}
 		public static float3	Parse( string v )
 		{
@@ -114,11 +114,11 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( Components.Length < 3 )
 				throw new Exception( "Not enough vector components!" );
 			float3		Result = new float3();
-			if ( !float.TryParse( Components[0], out Result.x ) )
+			if ( !float.TryParse( Components[0].Trim(), out Result.x ) )
 				throw new Exception( "Can't parse X field!" );
-			if ( !float.TryParse( Components[1], out Result.y ) )
+			if ( !float.TryParse( Components[1].Trim(), out Result.y ) )
 				throw new Exception( "Can't parse Y field!" );
-			if ( !float.TryParse( Components[2], out Result.z ) )
+			if ( !float.TryParse( Components[2].Trim(), out Result.z ) )
 				throw new Exception( "Can't parse Z field!" );
 			return Result;
 		}
@@ -176,7 +176,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		public override string ToString()
 		{
-			return x.ToString() + ";" + y.ToString() + ";" + z.ToString() + ";" + w.ToString();
+			return x.ToString() + "; " + y.ToString() + "; " + z.ToString() + "; " + w.ToString();
 		}
 		public static float4	Parse( string v )
 		{
@@ -184,13 +184,13 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( Components.Length < 4 )
 				throw new Exception( "Not enough vector components!" );
 			float4		Result = new float4();
-			if ( !float.TryParse( Components[0], out Result.x ) )
+			if ( !float.TryParse( Components[0].Trim(), out Result.x ) )
 				throw new Exception( "Can't parse X field!" );
-			if ( !float.TryParse( Components[1], out Result.y ) )
+			if ( !float.TryParse( Components[1].Trim(), out Result.y ) )
 				throw new Exception( "Can't parse Y field!" );
-			if ( !float.TryParse( Components[2], out Result.z ) )
+			if ( !float.TryParse( Components[2].Trim(), out Result.z ) )
 				throw new Exception( "Can't parse Z field!" );
-			if ( !float.TryParse( Components[3], out Result.w ) )
+			if ( !float.TryParse( Components[3].Trim(), out Result.w ) )
 				throw new Exception( "Can't parse W field!" );
 			return Result;
 		}

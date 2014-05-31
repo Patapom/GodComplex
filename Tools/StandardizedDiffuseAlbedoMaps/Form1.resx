@@ -123,9 +123,6 @@
   <metadata name="toolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>864, 17</value>
   </metadata>
-  <metadata name="toolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>864, 17</value>
-  </metadata>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="buttonPickWhiteReflectance.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -188,7 +185,7 @@
   <data name="buttonCropTool.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
-        YQUAAAAJcEhZcwAADr8AAA6/ATgFUyQAAAIYSURBVDhPpZM7z2FRFIYpvkqiQIJGMkg0NKKQTCNRUNBQ
+        YQUAAAAJcEhZcwAADrwAAA68AZW8ckkAAAIYSURBVDhPpZM7z2FRFIYpvkqiQIJGMkg0NKKQTCNRUNBQ
         mXErMBGNWkgo6VT8pSlIxD0Yt3EbjPkJ8zh7wufMyTTzFifn7LOftd619tqqX/8h1d/s7Xb7KYmXf0d+
         gdvtdjgc/iHpcrkowiK0+PUCN5vNYDD4XdLxeGSTLLNeryfo+Xy+Xq/wf2ARr9Fo+Hy+b5LgT6cT+x7S
         6XSsEBSxyP473Gq1qtVqvV4vFoterzeRSKTTaZ7JZDKfz3+RZLfbl8vlZrMRpkRRdzgej4dCoVgsFo1G
@@ -211,5 +208,11 @@
   </metadata>
   <metadata name="saveFileDialogCalibratedImage.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>954, 17</value>
+  </metadata>
+  <metadata name="openFileDialogWhiteReflectance.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>111, 57</value>
+  </metadata>
+  <metadata name="saveFileDialogWhiteReflectance.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>334, 56</value>
   </metadata>
 </root>

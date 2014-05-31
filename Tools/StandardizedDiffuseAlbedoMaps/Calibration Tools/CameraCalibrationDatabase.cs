@@ -331,6 +331,18 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <summary>
 		/// Prepares the interpolated calibration table to process the pixels in an image shot with the specified shot infos
 		/// </summary>
+		/// <param name="_Image"></param>
+		public void	PrepareCalibrationFor( Bitmap2 _Image )
+		{
+			if ( !_Image.HasValidShotInfo )
+				throw new Exception( "Can't prepare calibration for specified image since it doesn't have valid shot infos!" );
+
+			PrepareCalibrationFor( _Image.ISOSpeed, _Image.ShutterSpeed, _Image.Aperture );
+		}
+
+		/// <summary>
+		/// Prepares the interpolated calibration table to process the pixels in an image shot with the specified shot infos
+		/// </summary>
 		/// <param name="_ISOSpeed"></param>
 		/// <param name="_ShutterSpeed"></param>
 		/// <param name="_Aperture"></param>

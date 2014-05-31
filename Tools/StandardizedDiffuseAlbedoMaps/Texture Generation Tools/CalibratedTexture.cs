@@ -15,7 +15,7 @@ namespace StandardizedDiffuseAlbedoMaps
 	{
 		#region NESTED TYPES
 
-		public class	CalibrationParms
+		public class	CaptureParms
 		{
 			// Image shot infos
 			public string		SourceImageName;
@@ -28,11 +28,6 @@ namespace StandardizedDiffuseAlbedoMaps
 			public float2		CropRectangleCenter;	// In UV space (note that UVs are not in [0,1] as usual because of aspect ratio, e.g. X = UV.x * ImageHeight, instead of ImageWidth)
 			public float2		CropRectangleHalfSize;	// In UV space
 			public float		CropRectangleRotation;
-
-			// Swatches
-			public int			SwatchWidth = 48;
-			public int			SwatchHeight = 32;
-			public float4[]		CustomSwatchSamplingLocations = new float4[0];	// In UV space. XY=Top Left corner, ZW=Bottom Right corner
 		}
 
 		/// <summary>
@@ -74,8 +69,8 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region FIELDS
 
-		// The parameters that were used to calibrate the texture
-		private CalibrationParms	m_Parameters = null;
+		// The parameters that were used to capture the texture
+		private CaptureParms		m_CaptureParameters = null;
 
 		// Main texture
 		private Bitmap2				m_Texture = null;
@@ -86,6 +81,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		private Swatch				m_SwatchAvg = new Swatch();
 
 		// Custom swatches
+		private int					m_SwatchWidth = 48;
+		private int					m_SwatchHeight = 32;
 		private CustomSwatch[]		m_CustomSwatches = new CustomSwatch[0];
 
 		#endregion
@@ -98,22 +95,24 @@ namespace StandardizedDiffuseAlbedoMaps
 		public Swatch			SwatchAvg		{ get { return m_SwatchAvg; } }
 		public CustomSwatch[]	CustomSwatches	{ get { return m_CustomSwatches; } }
 
+		public int				SwatchWidth		{ get { return m_SwatchWidth; } set { m_SwatchWidth = value; } }
+		public int				SwatchHeight	{ get { return m_SwatchHeight; } set { m_SwatchHeight = value; } }
+
 		#endregion
 
 		#region METHODS
 
 		public	CalibratedTexture()
 		{
-
 		}
 
 		/// <summary>
-		/// Builds the calibrated texture and swatches
+		/// Captures the calibrated texture
 		/// </summary>
-		/// <param name="_Source">The source image to calibrate</param>
+		/// <param name="_Source">The source image to capture</param>
 		/// <param name="_Database">Database to perform proper calibration</param>
-		/// <param name="_Parms">Parameters for the calibration</param>
-		public void		Build( Bitmap2 _Source, CameraCalibrationDatabase _Database, CalibrationParms _Parms )
+		/// <param name="_Parms">Parameters for the capture</param>
+		public void		Capture( Bitmap2 _Source, CameraCalibrationDatabase _Database, CaptureParms _Parms )
 		{
 			if ( _Source == null )
 				throw new Exception( "Invalid source bitmap to build texture from!" );
@@ -121,9 +120,11 @@ namespace StandardizedDiffuseAlbedoMaps
 				throw new Exception( "Invalid calibration database found in parameters!" );
 			if ( _Parms == null )
 				throw new Exception( "Invalid calibration parameters!" );
+			if ( m_SwatchWidth <= 0 || m_SwatchHeight <= 0 )
+				throw new Exception( "Invalid swatch size! Must be > 0!" );
 
 			// Save parameters as they're associated to this texture
-			m_Parameters = _Parms;
+			m_CaptureParameters = _Parms;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Setup the database to find the most appropriate calibration data for our image infos
@@ -206,28 +207,13 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_SwatchAvg.xyY.y *= Normalizer;
 			m_SwatchAvg.xyY.z *= Normalizer;
 
+			m_SwatchMin.Texture = BuildSwatch( m_SwatchWidth, m_SwatchHeight, m_SwatchMin.xyY );
+			m_SwatchMax.Texture = BuildSwatch( m_SwatchWidth, m_SwatchHeight, m_SwatchMax.xyY );
+			m_SwatchAvg.Texture = BuildSwatch( m_SwatchWidth, m_SwatchHeight, m_SwatchAvg.xyY );
 
-			//////////////////////////////////////////////////////////////////////////
-			// Build swatches
-			if ( _Parms.SwatchWidth <= 0 || _Parms.SwatchHeight <= 0 )
-				throw new Exception( "Invalid swatch size! Must be > 0!" );
-
-			m_SwatchMin.Texture = BuildSwatch( _Parms.SwatchWidth, _Parms.SwatchHeight, m_SwatchMin.xyY );
-			m_SwatchMax.Texture = BuildSwatch( _Parms.SwatchWidth, _Parms.SwatchHeight, m_SwatchMax.xyY );
-			m_SwatchAvg.Texture = BuildSwatch( _Parms.SwatchWidth, _Parms.SwatchHeight, m_SwatchAvg.xyY );
-
-			int	CustomSwatchesCount = _Parms.CustomSwatchSamplingLocations != null ? _Parms.CustomSwatchSamplingLocations.Length : 0;
-
-			m_CustomSwatches = new CustomSwatch[CustomSwatchesCount];
-			for ( int CustomSwatchIndex=0; CustomSwatchIndex < CustomSwatchesCount; CustomSwatchIndex++ )
-			{
-				CustomSwatch	S = new CustomSwatch();
-				m_CustomSwatches[CustomSwatchIndex] = S;
-
-				S.Location = _Parms.CustomSwatchSamplingLocations[CustomSwatchIndex];
-				S.xyY = ComputeAverageSwatchColor( _Database, _Source, new float2( S.Location.x, S.Location.y ), new float2( S.Location.z, S.Location.w ) );
-				S.Texture = BuildSwatch( _Parms.SwatchWidth, _Parms.SwatchHeight, S.xyY );
-			}
+			// Rebuild custom swatches
+			foreach ( CustomSwatch CS in m_CustomSwatches )
+				CS.Texture = BuildSwatch( m_SwatchWidth, m_SwatchHeight, CS.xyY );
 
 			//////////////////////////////////////////////////////////////////////////
 			// Feed some purely informational shot infos to the main texture, probably won't be saved anyway...
@@ -235,6 +221,31 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_Texture.ISOSpeed = _Parms.ISOSpeed;
 			m_Texture.ShutterSpeed = _Parms.ShutterSpeed;
 			m_Texture.Aperture = _Parms.Aperture;
+		}
+
+		/// <summary>
+		/// Builds the custom swatches
+		/// </summary>
+		/// <param name="_CustomSwatchSamplingLocations">In UV space. XY=Top Left corner, ZW=Bottom Right corner</param>
+		public void		BuildCustomSwatches( float4[] _CustomSwatchSamplingLocations )
+		{
+			if ( m_Texture == null )
+				throw new Exception( "Cannot build custom swatched because no texture was captured!" );
+			if ( _CustomSwatchSamplingLocations == null )
+				throw new Exception( "Invalid swatch parameters!" );
+			if ( m_SwatchWidth <= 0 || m_SwatchHeight <= 0 )
+				throw new Exception( "Invalid swatch size! Must be > 0!" );
+
+			m_CustomSwatches = new CustomSwatch[_CustomSwatchSamplingLocations.Length];
+			for ( int CustomSwatchIndex=0; CustomSwatchIndex < m_CustomSwatches.Length; CustomSwatchIndex++ )
+			{
+				CustomSwatch	S = new CustomSwatch();
+				m_CustomSwatches[CustomSwatchIndex] = S;
+
+				S.Location = _CustomSwatchSamplingLocations[CustomSwatchIndex];
+				S.xyY = ComputeAverageSwatchColor( new float2( S.Location.x, S.Location.y ), new float2( S.Location.z, S.Location.w ) );
+				S.Texture = BuildSwatch( m_SwatchWidth, m_SwatchHeight, S.xyY );
+			}
 		}
 
 		/// <summary>
@@ -315,7 +326,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			XmlComment	HeaderComment = Doc.CreateComment( 
 				"***Do not modify!***\r\n\r\n" +
-				"This is a calibrated texture manifest file generated from the uncalibrated image \"" + m_Parameters.SourceImageName + "\"\r\n" +
+				"This is a calibrated texture manifest file generated from the uncalibrated image \"" + m_CaptureParameters.SourceImageName + "\"\r\n" +
 				"Resulting generated images have been stored using a standard sRGB profile and can be used directly as source or color-picked by artists\r\n" +
 				" without any other processing. Colors in the textures will have the proper reflectance (assuming the original image has been properly captured\r\n" +
 				" with specular removal using polarization filters) and after sRGB->Linear conversion will be directly useable as reflectance in the lighting equation.\r\n" +
@@ -328,17 +339,17 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			// Save source image infos
 			XmlElement	SourceInfosElement = AppendElement( Root, "SourceInfos" );
-			SetAttribute( AppendElement( SourceInfosElement, "SourceImageName" ), "Value", m_Parameters.SourceImageName );
-			SetAttribute( AppendElement( SourceInfosElement, "ISOSpeed" ), "Value", m_Parameters.ISOSpeed.ToString() );
-			SetAttribute( AppendElement( SourceInfosElement, "ShutterSpeed" ), "Value", m_Parameters.ShutterSpeed.ToString() );
-			SetAttribute( AppendElement( SourceInfosElement, "Aperture" ), "Value", m_Parameters.Aperture.ToString() );
+			SetAttribute( AppendElement( SourceInfosElement, "SourceImageName" ), "Value", m_CaptureParameters.SourceImageName );
+			SetAttribute( AppendElement( SourceInfosElement, "ISOSpeed" ), "Value", m_CaptureParameters.ISOSpeed.ToString() );
+			SetAttribute( AppendElement( SourceInfosElement, "ShutterSpeed" ), "Value", m_CaptureParameters.ShutterSpeed.ToString() );
+			SetAttribute( AppendElement( SourceInfosElement, "Aperture" ), "Value", m_CaptureParameters.Aperture.ToString() );
 
-			SetAttribute( AppendElement( SourceInfosElement, "CropSource" ), "Value", m_Parameters.CropSource.ToString() );
-			SetAttribute( AppendElement( SourceInfosElement, "CropRectangleCenter" ), "X", m_Parameters.CropRectangleCenter.x.ToString() ).SetAttribute( "Y", m_Parameters.CropRectangleCenter.y.ToString() );
-			SetAttribute( AppendElement( SourceInfosElement, "CropRectangleHalfSize" ), "X", m_Parameters.CropRectangleHalfSize.x.ToString() ).SetAttribute( "Y", m_Parameters.CropRectangleHalfSize.y.ToString() );
-			SetAttribute( AppendElement( SourceInfosElement, "CropRectangleRotation" ), "Value", m_Parameters.CropRectangleRotation.ToString() );
+			SetAttribute( AppendElement( SourceInfosElement, "CropSource" ), "Value", m_CaptureParameters.CropSource.ToString() );
+			SetAttribute( AppendElement( SourceInfosElement, "CropRectangleCenter" ), "X", m_CaptureParameters.CropRectangleCenter.x.ToString() ).SetAttribute( "Y", m_CaptureParameters.CropRectangleCenter.y.ToString() );
+			SetAttribute( AppendElement( SourceInfosElement, "CropRectangleHalfSize" ), "X", m_CaptureParameters.CropRectangleHalfSize.x.ToString() ).SetAttribute( "Y", m_CaptureParameters.CropRectangleHalfSize.y.ToString() );
+			SetAttribute( AppendElement( SourceInfosElement, "CropRectangleRotation" ), "Value", m_CaptureParameters.CropRectangleRotation.ToString() );
 
-			SetAttribute( AppendElement( SourceInfosElement, "SwatchesSize" ), "Width", m_Parameters.SwatchWidth.ToString() ).SetAttribute( "Height", m_Parameters.SwatchHeight.ToString() );
+			SetAttribute( AppendElement( SourceInfosElement, "SwatchesSize" ), "Width", m_SwatchWidth.ToString() ).SetAttribute( "Height", m_SwatchHeight.ToString() );
 
 			SetAttribute( AppendElement( SourceInfosElement, "TargetFormat" ), "Value", _TargetFormat.ToString() );
 
@@ -363,7 +374,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 
 			// Save custom swatches infos
-			if ( m_CustomSwatches.Length > 0)
+			if ( m_CustomSwatches.Length > 0 )
 			{
 				XmlElement	CustomSwatchesElement = AppendElement( Root, "CustomSwatches" );
 				SetAttribute( CustomSwatchesElement, "Count", m_CustomSwatches.Length.ToString() );
@@ -381,18 +392,16 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <summary>
 		/// Computes the average color within a rectangle in UV space
 		/// </summary>
-		/// <param name="_Database">The calibration database we assume has already been prepared for the sampled image's shot infos</param>
-		/// <param name="_Source">The source image to sample from</param>
 		/// <param name="_TopLeft">The top left corner (in UV space) of the rectangle to sample</param>
 		/// <param name="_BottomRight">The bottom right corner (in UV space) of the rectangle to sample</param>
 		/// <returns>The average xyY color</returns>
-		public static float3	ComputeAverageSwatchColor( CameraCalibrationDatabase _Database, Bitmap2 _Source, float2 _TopLeft, float2 _BottomRight )
+		public float3	ComputeAverageSwatchColor( float2 _TopLeft, float2 _BottomRight )
 		{
 			// Average xyY values in the specified rectangle
-			int		X0 = Math.Max( 0, Math.Min( _Source.Width-1, (int) Math.Floor( _TopLeft.x * _Source.Width ) ) );
-			int		Y0 = Math.Max( 0, Math.Min( _Source.Height-1, (int) Math.Floor( _TopLeft.y * _Source.Height ) ) );
-			int		X1 = Math.Min( _Source.Width, Math.Max( X0+1, (int) Math.Floor( _BottomRight.x * _Source.Width ) ) );
-			int		Y1 = Math.Min( _Source.Height, Math.Max( Y0+1, (int) Math.Floor( _BottomRight.y * _Source.Height ) ) );
+			int		X0 = Math.Max( 0, Math.Min( m_Texture.Width-1, (int) Math.Floor( _TopLeft.x * m_Texture.Width ) ) );
+			int		Y0 = Math.Max( 0, Math.Min( m_Texture.Height-1, (int) Math.Floor( _TopLeft.y * m_Texture.Height ) ) );
+			int		X1 = Math.Min( m_Texture.Width, Math.Max( X0+1, (int) Math.Floor( _BottomRight.x * m_Texture.Width ) ) );
+			int		Y1 = Math.Min( m_Texture.Height, Math.Max( Y0+1, (int) Math.Floor( _BottomRight.y * m_Texture.Height ) ) );
 			int		W = X1 - X0;
 			int		H = Y1 - Y0;
 
@@ -400,9 +409,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			for ( int Y=Y0; Y < Y1; Y++ )
 				for ( int X=X0; X < X1; X++ )
 				{
-					float4	XYZ = _Source.ContentXYZ[X,Y];
+					float4	XYZ = m_Texture.ContentXYZ[X,Y];
 					float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
-					xyY.z = _Database.Calibrate( xyY.z );	// Apply luminance calibration
 					AveragexyY += xyY;
 				}
 			AveragexyY = (1.0f / (W*H)) * AveragexyY;
@@ -437,7 +445,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			for ( int Y=0; Y < _Height; Y++ )
 				for ( int X=0; X < _Width; X++ )
 				{
-					XYZ = new float4( Bitmap2.ColorProfile.XYZ2xyY( _xyY ), 1.0f );
+					XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( _xyY ), 1.0f );
 					Result.ContentXYZ[X,Y] = XYZ;
 				}
 

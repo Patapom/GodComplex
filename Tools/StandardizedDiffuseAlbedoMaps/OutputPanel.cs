@@ -24,7 +24,6 @@ namespace StandardizedDiffuseAlbedoMaps
 			CALIBRATION_TARGET,		// User is selecting the calibration target
 			CROP_RECTANGLE,			// User is modifying the crop rectangle
 			PICK_WHITE_REFLECTANCE,	// User is picking the white reflectance
-			PICK_COLOR,				// User is picking a swatch color
 		}
 
 		private enum	CALIBRATION_STAGE
@@ -99,9 +98,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		// White reflectance picking
 		private WhiteReflectancePickingDone	m_WhiteReflectancePickingDelegate = null;
-
-		// Color picking manipulation
-		private ColorPickingUpdate	m_ColorPickingDelegate = null;
 
 		private MouseButtons		m_MouseButtonsDown = MouseButtons.None;
 		private PointF				m_ButtonDownMousePosition;
@@ -189,16 +185,6 @@ namespace StandardizedDiffuseAlbedoMaps
 		}
 
 		/// <summary>
-		/// Starts color picking with the mouse, provided delegate is called on mouse move with new informations
-		/// </summary>
-		/// <param name="_Notify"></param>
-		public void				StartSwatchColorPicking( ColorPickingUpdate _Notify )
-		{
-			m_ColorPickingDelegate = _Notify;
-			ManipulationState = MANIPULATION_STATE.PICK_COLOR;
-		}
-
-		/// <summary>
 		/// Resets the crop rectangle to the entire image
 		/// </summary>
 		public void				ResetCropRectangle()
@@ -282,6 +268,26 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 		}
 
+		/// <summary>
+		/// This is a simple UV as used in 3D engines: (0,0) is top left corner of the image, (1,1) is bottom right corner
+		/// </summary>
+		/// <param name="_Position"></param>
+		/// <returns></returns>
+		private float2	Client2ImageUV_NoSquareAspectRatio( PointF _Position )
+		{
+			RectangleF	ImageRect = ImageClientRect();
+			return new float2( (_Position.X - ImageRect.X) / ImageRect.Width, (_Position.Y - ImageRect.Y) / ImageRect.Height );
+		}
+		
+		/// <summary>
+		/// This is the UVs used for crop rectangle computation
+		/// The V is in [0,1] mapping from [0,ImageHeight] as usual but U takes into account aspect ratio
+		///	 to ensure pixels are always squares so for example if you image has an aspect ratio of 2 (Width = 2 * Height)
+		///	 then U will go from [-0.5,1.5] assuming 0.5 is always the center of the image.
+		///	U span is then 1.5+0.5 = 2, which is twice the span of V [0,1] and we keep the correct aspect ratio
+		/// </summary>
+		/// <param name="_Position"></param>
+		/// <returns></returns>
 		private float2	Client2ImageUV( PointF _Position )
 		{
 			RectangleF	ImageRect = ImageClientRect();
@@ -379,7 +385,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				case MANIPULATION_STATE.PICK_WHITE_REFLECTANCE:
 				{
-					m_WhiteReflectancePickingDelegate( Client2ImageUV( m_ButtonDownMousePosition ) );
+					m_WhiteReflectancePickingDelegate( Client2ImageUV_NoSquareAspectRatio( m_ButtonDownMousePosition ) );
 					ManipulationState = MANIPULATION_STATE.STOPPED;			// End manipulation
 					break;
 				}
@@ -696,13 +702,13 @@ namespace StandardizedDiffuseAlbedoMaps
 					switch ( m_CalibrationStage )
 					{
 						case CALIBRATION_STAGE.PICK_CENTER:
-							m_CalibrationCenter = Client2ImageUV( e.Location );
+							m_CalibrationCenter = Client2ImageUV_NoSquareAspectRatio( e.Location );
 							Invalidate();
 							break;
 
 						case CALIBRATION_STAGE.SET_RADIUS:
 							{
-								float2	Temp = Client2ImageUV( e.Location );
+								float2	Temp = Client2ImageUV_NoSquareAspectRatio( e.Location );
 								m_CalibrationRadius = (float) Math.Sqrt( (Temp.x - m_CalibrationCenter.x)*(Temp.x - m_CalibrationCenter.x) + (Temp.y - m_CalibrationCenter.y)*(Temp.y - m_CalibrationCenter.y) );
 								Invalidate();
 							}
@@ -713,14 +719,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				case MANIPULATION_STATE.PICK_WHITE_REFLECTANCE:
 					Cursor = Cursors.Cross;
-					break;
-
-				case MANIPULATION_STATE.PICK_COLOR:
-					Cursor = Cursors.Cross;
-					float2	UV0 = Client2ImageUV( m_ButtonDownMousePosition );
-					float2	UV1 = Client2ImageUV( e.Location );
-					m_ColorPickingDelegate( UV0, UV1 );
-					Invalidate();
 					break;
 
 				default:
@@ -750,10 +748,6 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				case MANIPULATION_STATE.CROP_RECTANGLE:
 					m_CropRectangleManipulationStarted = false;
-					break;
-
-				case MANIPULATION_STATE.PICK_COLOR:
-					ManipulationState = MANIPULATION_STATE.STOPPED;
 					break;
 			}
 
@@ -846,12 +840,6 @@ namespace StandardizedDiffuseAlbedoMaps
 					PointF	Temp = ImageUV2Client( new float2( m_CalibrationCenter.x + m_CalibrationRadius, m_CalibrationCenter.y ) );
 					float	ClientRadius = Temp.X - Center.X;
 					e.Graphics.DrawEllipse( m_PenTarget, Center.X-ClientRadius, Center.Y-ClientRadius, 2.0f*ClientRadius, 2.0f*ClientRadius );
-					break;
-				}
-
-				case MANIPULATION_STATE.PICK_COLOR:
-				{	// Paint a small red rectangle where the color should be averaged
-					e.Graphics.DrawRectangle( Pens.Red, m_ButtonDownMousePosition.X, m_ButtonDownMousePosition.Y, m_MousePositionCurrent.X - m_ButtonDownMousePosition.X, m_MousePositionCurrent.Y - m_ButtonDownMousePosition.Y );
 					break;
 				}
 			}

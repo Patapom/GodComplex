@@ -49,15 +49,16 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			public override void UpdateSwatchColor()
 			{
-				if ( !m_CheckBox.Checked )
+				if ( !m_CheckBox.Checked || m_Owner.m_Texture == null )
 				{
+					m_CheckBox.Checked = false;
 					m_xyY = m_RGB = new float3( 0, 0, 0 );
 					m_Panel.BackColor = Color.DimGray;
 					return;
 				}
 
 				// Re-capture
-				m_xyY = CalibratedTexture.ComputeAverageSwatchColor( m_Owner.m_CalibrationDatabase, m_Owner.m_BitmapXYZ, m_LocationTopLeft, m_LocationBottomRight );
+				m_xyY = m_Owner.m_Texture.ComputeAverageSwatchColor( m_LocationTopLeft, m_LocationBottomRight );
 				base.UpdateSwatchColor();
 			}
 		}
@@ -313,8 +314,8 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				PrepareDatabase( false );			// Prepare database with new camera shot infos
 				UpdateWhiteReflectancePanel();		// If the shot infos are different from the ones from which the white reflectance was picked then the values got reset so update UI
-				outputPanel.ResetCropRectangle();	// Previous crop rectangle is not valid anymore
 				RebuildImage();						// Finally, rebuild the image and show it in the output panel
+				outputPanel.ResetCropRectangle();	// Previous crop rectangle is not valid anymore
 			}
 			catch ( Exception _e )
 			{
@@ -678,7 +679,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 			}
 
-			string	OldFileName = GetRegKey( "LastCalibrationFilename", m_ApplicationPath );
+			string	OldFileName = m_ImageFileName.FullName;// GetRegKey( "LastCalibrationFilename", m_ApplicationPath );
 			saveFileDialogCalibration.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
 			saveFileDialogCalibration.FileName = System.IO.Path.GetFileNameWithoutExtension( m_Calibration.m_ReferenceImageName ) + ".xml";
 
@@ -761,7 +762,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 			}
 
- 			string	OldFileName = GetRegKey( "LastCalibratedTextureFilename", m_ApplicationPath );
+ 			string	OldFileName = GetRegKey( "LastCalibratedTextureFilename", m_ImageFileName.FullName );
 			saveFileDialogCalibratedImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
 			saveFileDialogCalibratedImage.FileName = System.IO.Path.GetFileName( OldFileName );
 
@@ -770,6 +771,8 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			SetRegKey( "LastCalibratedTextureFilename", saveFileDialogCalibratedImage.FileName );
 
+			//////////////////////////////////////////////////////////////////////////
+			// Save actual image
 			try
 			{
 				System.IO.FileInfo	TargetFileName = new System.IO.FileInfo( saveFileDialogCalibratedImage.FileName );
@@ -798,6 +801,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		private void buttonCropTool_Click( object sender, EventArgs e )
 		{
 			outputPanel.CropRectangleEnabled = !outputPanel.CropRectangleEnabled;
+			if ( outputPanel.CropRectangleEnabled )
+				buttonCapture.Focus();	// So a simple press on return triggers the capture
 		}
 
 		private void buttonResetCrop_Click( object sender, EventArgs e )
@@ -832,6 +837,69 @@ namespace StandardizedDiffuseAlbedoMaps
 			UpdateWhiteReflectancePanel();
 		}
 
+		private void buttonLoadWhiteReflectanceReference_Click( object sender, EventArgs e )
+		{
+			string	OldFileName = GetRegKey( "LastWhiteReflectanceFilename", m_ImageFileName != null ? m_ImageFileName.FullName : m_ApplicationPath );
+			openFileDialogWhiteReflectance.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
+			openFileDialogWhiteReflectance.FileName = System.IO.Path.GetFileNameWithoutExtension( OldFileName ) + ".whiteRef";
+
+			if ( openFileDialogWhiteReflectance.ShowDialog( this ) != DialogResult.OK )
+ 				return;
+
+			SetRegKey( "LastWhiteReflectanceFilename", openFileDialogWhiteReflectance.FileName );
+
+			try
+			{
+				System.IO.FileInfo	WhiteRefFileName = new System.IO.FileInfo( openFileDialogWhiteReflectance.FileName );
+
+				// Load
+				System.Xml.XmlDocument	Doc = new System.Xml.XmlDocument();
+				Doc.Load( WhiteRefFileName.FullName );
+
+				System.Xml.XmlElement	Root = Doc["WhiteReflectance"];
+				if ( Root == null )
+					throw new Exception( "Couldn't find expected root element \"WhiteReflectance\"! Is this a white ref file?" );
+
+				float	WhiteRef = 1.0f;
+				if ( !float.TryParse( Root.GetAttribute( "Value" ), out WhiteRef ) )
+					throw new Exception( "Failed to parse white reference value!" );
+
+				m_CalibrationDatabase.WhiteReflectanceReference = WhiteRef;
+
+				UpdateWhiteReflectancePanel();
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred while loading white reflectance file:\r\n\r\n", _e );
+			}
+		}
+
+		private void buttonSaveWhiteReflectanceReference_Click( object sender, EventArgs e )
+		{
+			string	OldFileName =  m_ImageFileName.FullName;
+			saveFileDialogWhiteReflectance.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
+			saveFileDialogWhiteReflectance.FileName = System.IO.Path.GetFileNameWithoutExtension( OldFileName ) + ".whiteRef";
+
+			if ( saveFileDialogWhiteReflectance.ShowDialog( this ) != DialogResult.OK )
+ 				return;
+
+			try
+			{
+				System.IO.FileInfo	WhiteRefFileName = new System.IO.FileInfo( saveFileDialogWhiteReflectance.FileName );
+
+				// Save
+				System.Xml.XmlDocument	Doc = new System.Xml.XmlDocument();
+				System.Xml.XmlElement	Root = Doc.CreateElement( "WhiteReflectance" );
+				Doc.AppendChild( Root );
+				Root.SetAttribute( "Value", m_CalibrationDatabase.WhiteReflectanceReference.ToString() );
+				Doc.Save( WhiteRefFileName.FullName );
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred while saving white reflectance file:\r\n\r\n", _e );
+			}
+		}
+
 		private void buttonCapture_Click( object sender, EventArgs e )
 		{
 			if ( m_BitmapXYZ == null )
@@ -843,18 +911,8 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 
 			//////////////////////////////////////////////////////////////////////////
-			// Build swatch locations
-			List<float4>	UsedSwatchesLocations = new List<float4>();
-			foreach ( CustomSwatch S in m_CustomSwatches )
-			{
-				if ( !S.m_CheckBox.Checked || S.m_LocationTopLeft.x < 0.0f || S.m_LocationTopLeft.x > 1.0f || S.m_LocationTopLeft.y < 0.0f || S.m_LocationTopLeft.y > 1.0f )
-					continue;	// Unused...
-				UsedSwatchesLocations.Add( new float4( S.m_LocationTopLeft.x, S.m_LocationTopLeft.y, S.m_LocationBottomRight.x, S.m_LocationBottomRight.y ) );
-			}
-
-			//////////////////////////////////////////////////////////////////////////
 			// Prepare parameters
-			CalibratedTexture.CalibrationParms	Parms = new CalibratedTexture.CalibrationParms() {
+			CalibratedTexture.CaptureParms	Parms = new CalibratedTexture.CaptureParms() {
 				SourceImageName = m_ImageFileName.FullName,
 
 				ISOSpeed = floatTrackbarControlISOSpeed.Value,
@@ -865,10 +923,6 @@ namespace StandardizedDiffuseAlbedoMaps
 				CropRectangleCenter = new float2( outputPanel.CropRectangeCenter.x, outputPanel.CropRectangeCenter.y ),
 				CropRectangleHalfSize = new float2( outputPanel.CropRectangeHalfSize.x, outputPanel.CropRectangeHalfSize.y ),
 				CropRectangleRotation = outputPanel.CropRectangeRotation,
-
-				SwatchWidth = panelCustomSwatch0.Width-2,
-				SwatchHeight = panelCustomSwatch0.Height-2,
-				CustomSwatchSamplingLocations = UsedSwatchesLocations.ToArray()
 			};
 
 			//////////////////////////////////////////////////////////////////////////
@@ -876,9 +930,13 @@ namespace StandardizedDiffuseAlbedoMaps
 			try
 			{
 				CalibratedTexture	Tex = new CalibratedTexture();
-				Tex.Build( m_BitmapXYZ, m_CalibrationDatabase, Parms );
+				Tex.Capture( m_BitmapXYZ, m_CalibrationDatabase, Parms );
 				
 				m_Texture = Tex;
+
+				// Use the form's swatch panels as default swatch size
+				m_Texture.SwatchWidth = panelCustomSwatch0.Width-2;
+				m_Texture.SwatchHeight = panelCustomSwatch0.Height-2;
 
 				// Update UI
 				resultTexturePanel.CalibratedTexture = m_Texture;
@@ -904,20 +962,54 @@ namespace StandardizedDiffuseAlbedoMaps
 				MessageBox( "Can't start color picking for swatch as no image is currently loaded!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation );
 				return;
 			}
+			if ( m_Texture == null )
+			{	// No texture captured you moron!
+				MessageBox( "Can't start color picking for swatch as no texture has been captured yet!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation );
+				return;
+			}
 			if ( !PrepareDatabase() )
 				return;
 
-			CustomSwatch	S = m_CustomSwatches[_CustomSwatchIndex];
+			CustomSwatch	CS = m_CustomSwatches[_CustomSwatchIndex];
 
-			S.m_CheckBox.Checked = true;	// Automatically enable color swatch if the user bothered picking a color
+			CS.m_CheckBox.Checked = true;	// Automatically enable color swatch if the user bothered picking a color
 
-			outputPanel.StartSwatchColorPicking( ( float2 _TopLeft, float2 _BottomRight ) => {
+			resultTexturePanel.StartSwatchColorPicking( ( float2 _TopLeft, float2 _BottomRight ) => {
 
-				S.m_LocationTopLeft = new float2( _TopLeft.x, _TopLeft.y );
-				S.m_LocationBottomRight = new float2( _BottomRight.x, _BottomRight.y );
-				S.UpdateSwatchColor();
+				CS.m_LocationTopLeft = new float2( _TopLeft.x, _TopLeft.y );
+				CS.m_LocationBottomRight = new float2( _BottomRight.x, _BottomRight.y );
+				CS.UpdateSwatchColor();
+			},
+
+			( float2 _TopLeft, float2 _BottomRight ) => {
+				checkBoxCustomSwatch0_CheckedChanged( null, EventArgs.Empty );	// Rebuild custom swatches when picking is done
 			} );
 		}
+
+		private void checkBoxCustomSwatch0_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( m_Texture == null )
+				return;
+
+			// Rebuild custom swatches for the texture
+			List<float4>	UsedSwatchesLocations = new List<float4>();
+			foreach ( CustomSwatch S in m_CustomSwatches )
+			{
+				if ( !S.m_CheckBox.Checked || S.m_LocationTopLeft.x < 0.0f || S.m_LocationTopLeft.x > 1.0f || S.m_LocationTopLeft.y < 0.0f || S.m_LocationTopLeft.y > 1.0f )
+					continue;	// Unused...
+				UsedSwatchesLocations.Add( new float4( S.m_LocationTopLeft.x, S.m_LocationTopLeft.y, S.m_LocationBottomRight.x, S.m_LocationBottomRight.y ) );
+			}
+
+			m_Texture.BuildCustomSwatches( UsedSwatchesLocations.ToArray() );
+
+			foreach ( CustomSwatch S in m_CustomSwatches )
+				S.UpdateSwatchColor();
+
+			// Repaint result texture so it shows
+			resultTexturePanel.Invalidate();
+
+		}
+
 		private void panelCustomSwatch0_Click( object sender, EventArgs e )
 		{
 			StartColorPicking( 0 );
