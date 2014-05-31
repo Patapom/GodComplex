@@ -359,15 +359,20 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 
 			bool		sRGB = checkBoxsRGB.Checked;
+			bool		SpatialCorrection = checkBoxSpatialLuminanceCorrection.Checked;
 
 			float4[,]	Image = new float4[m_BitmapXYZ.Width,m_BitmapXYZ.Height];
 
 			if ( checkBoxLuminance.Checked )
 			{	// Convert into luminances only
-				for ( int Y = 0; Y < m_BitmapXYZ.Height; Y++ )
-					for ( int X = 0; X < m_BitmapXYZ.Width; X++ )
+				int		W = m_BitmapXYZ.Width;
+				int		H = m_BitmapXYZ.Height;
+				for ( int Y = 0; Y < H; Y++ )
+					for ( int X = 0; X < W; X++ )
 					{
 						float L = m_BitmapXYZ.ContentXYZ[X, Y].y;
+						if ( SpatialCorrection )
+							L*= m_CalibrationDatabase.GetSpatialLuminanceCorrectionFactor( (float) X / W, (float) Y / H );
 						if ( sRGB )
 							L = Bitmap2.ColorProfile.Linear2sRGB( L );
 
@@ -485,6 +490,11 @@ namespace StandardizedDiffuseAlbedoMaps
 		}
 
 		private void checkBoxLuminance_CheckedChanged( object sender, EventArgs e )
+		{
+			RebuildImage();
+		}
+
+		private void checkBoxSpatialLuminanceCorrection_CheckedChanged( object sender, EventArgs e )
 		{
 			RebuildImage();
 		}
@@ -1258,20 +1268,43 @@ namespace StandardizedDiffuseAlbedoMaps
 				}
 
 				// Find the maximum luminance in the image that we'll use as a normalizer
+				Bitmap2	WhiteRef = new Bitmap2( W, H, new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB ) );
 				float	MaxY = 0.0f;
 				for ( int Y=0; Y < H; Y++ )
 					for ( int X=0; X < W; X++ )
 					{
-						float4	XYZ = m_BitmapXYZ.BilinearSample( m_BitmapXYZ.Width * (float) X / W, m_BitmapXYZ.Height * (float) Y / H );
-						MaxY = Math.Max( MaxY, XYZ.y );
+						float	x0 = m_BitmapXYZ.Width * (float) X / W;
+						float	x1 = m_BitmapXYZ.Width * (float) (X+1) / W;
+						float	y0 = m_BitmapXYZ.Height * (float) Y / H;
+						float	y1 = m_BitmapXYZ.Height * (float) (Y+1) / H;
+
+						float4	SumXYZ = new float4( 0, 0, 0, 0 );
+						int		Count = 0;
+						float	y = y0;
+						while ( y < y1 )
+						{
+							float	x = x0;
+							while ( x < x1 )
+							{
+								SumXYZ += m_BitmapXYZ.BilinearSample( x, y );
+								Count++;
+								x++;
+							}
+							y++;
+						}
+						float	Test = (float) (Math.Ceiling(x1-x0) * Math.Ceiling(y1-y0));	// Should equal Count
+						SumXYZ = (1.0f / Math.Max( 1, Count)) * SumXYZ;
+
+						WhiteRef.ContentXYZ[X,Y] = SumXYZ;
+
+						MaxY = Math.Max( MaxY, SumXYZ.y );
 					}
 
 				// Build the actual normalized bitmap
-				Bitmap2	WhiteRef = new Bitmap2( W, H );
 				for ( int Y=0; Y < H; Y++ )
 					for ( int X=0; X < W; X++ )
 					{
-						float4	XYZ = m_BitmapXYZ.BilinearSample( m_BitmapXYZ.Width * (float) X / W, m_BitmapXYZ.Height * (float) Y / H );
+						float4	XYZ = WhiteRef.ContentXYZ[X,Y];
 						float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
 								xyY.z /= MaxY;	// Normalize
 						XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
@@ -1319,14 +1352,14 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			try
 			{
-				System.IO.FileInfo	WhiteRefFileName = new System.IO.FileInfo( saveFileDialogWhiteReflectance.FileName );
+				System.IO.FileInfo	WhiteRefFileName = new System.IO.FileInfo( saveFileDialogWhiteRefImage.FileName );
 
 				using ( System.IO.FileStream S = WhiteRefFileName.Create() )
 					m_CalibrationDatabase.WhiteReferenceImage.Save( S, Bitmap2.FILE_TYPE.PNG, Bitmap2.FORMAT_FLAGS.GRAY | Bitmap2.FORMAT_FLAGS.SAVE_16BITS_UNORM );
 			}
 			catch ( Exception _e )
 			{
-				MessageBox( "An error occurred while saving white reflectance file:\r\n\r\n", _e );
+				MessageBox( "An error occurred while saving the white reference image:\r\n\r\n", _e );
 			}
 		}
 
@@ -1346,8 +1379,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			whiteImageReferencePanel.WhiteReferenceImage = m_CalibrationDatabase.WhiteReferenceImage;
 
 			bool	IsValidRef = m_CalibrationDatabase.WhiteReferenceImage != null;
-			buttonSaveWhiteReflectanceReference.Enabled = IsValidRef;
-			buttonResetWhiteReflectance.Enabled = IsValidRef;
+			buttonSaveWhiteRefImage.Enabled = IsValidRef;
+			buttonResetWhiteRefImage.Enabled = IsValidRef;
 		}
 
 		#endregion

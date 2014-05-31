@@ -149,7 +149,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				float2	TopLeftCorner = new float2( _Source.Width * _Parms.CropRectangleCenter.x, _Source.Height * _Parms.CropRectangleCenter.y )
 												  + _Source.Height * (-_Parms.CropRectangleHalfSize.x * AxisX - _Parms.CropRectangleHalfSize.y * AxisY);
 
-				m_Texture = new Bitmap2( W, H );
+				m_Texture = new Bitmap2( W, H, new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB ) );
 				float4	XYZ;
 				float3	xyY;
 
@@ -182,7 +182,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 			else
 			{	// Simple texture copy, with luminance calibration
-				m_Texture = new Bitmap2( _Source.Width, _Source.Height );
+				m_Texture = new Bitmap2( _Source.Width, _Source.Height, new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB ) );
 				float4	XYZ;
 				float3	xyY;
 
@@ -305,30 +305,20 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( FileType == Bitmap2.FILE_TYPE.UNKNOWN )
 				throw new Exception( "Unknown target file format!" );
 
-			Bitmap2.ColorProfile	Profile = new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB );
-
-
 			//////////////////////////////////////////////////////////////////////////
 			// Save textures
 
 			// Save main texture
-			m_Texture.Profile = Profile;
 			SaveImage( m_Texture, _FileName, FileType, Format );
 
 			// Save default swatches
-			m_SwatchMin.Texture.Profile = Profile;
 			SaveImage( m_SwatchMin.Texture, FileName_SwatchMin, FileType, Format );
-			m_SwatchMax.Texture.Profile = Profile;
 			SaveImage( m_SwatchMax.Texture, FileName_SwatchMax, FileType, Format );
-			m_SwatchAvg.Texture.Profile = Profile;
 			SaveImage( m_SwatchAvg.Texture, FileName_SwatchAvg, FileType, Format );
 
 			// Save custom swatches
 			for ( int CustomSwatchIndex=0; CustomSwatchIndex < m_CustomSwatches.Length; CustomSwatchIndex++ )
-			{
-				m_CustomSwatches[CustomSwatchIndex].Texture.Profile = Profile;
 				SaveImage( m_CustomSwatches[CustomSwatchIndex].Texture, FileName_CustomSwatches[CustomSwatchIndex], FileType, Format );
-			}
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -451,7 +441,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <returns></returns>
 		private Bitmap2	BuildSwatch( int _Width, int _Height, float3 _xyY )
 		{
-			Bitmap2	Result = new Bitmap2( _Width, _Height );
+			Bitmap2	Result = new Bitmap2( _Width, _Height, new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB ) );
 			float4	XYZ;
 			for ( int Y=0; Y < _Height; Y++ )
 				for ( int X=0; X < _Width; X++ )

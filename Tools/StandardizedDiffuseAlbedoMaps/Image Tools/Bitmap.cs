@@ -2061,7 +2061,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// </summary>
 		/// <param name="_Width"></param>
 		/// <param name="_Height"></param>
-		public Bitmap2( int _Width, int _Height )
+		/// <param name="_Profile">An optional color profile, you will need a valid profile if you wish to save the bitmap!</param>
+		public Bitmap2( int _Width, int _Height, ColorProfile _Profile )
 		{
 			m_Width = _Width;
 			m_Height = _Height;
@@ -2069,6 +2070,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			for ( int Y=0; Y < m_Height; Y++ )
 				for ( int X=0; X < m_Width; X++ )
 					m_Bitmap[X,Y] = new float4( 0, 0, 0, 0 );
+			m_ColorProfile = _Profile;
 		}
 
 		/// <summary>
@@ -2760,6 +2762,9 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <exception cref="Exception">Occurs if the source image format cannot be converted to RGBA32F which is the generic format we read from</exception>
 		public void	Save( System.IO.Stream _Stream, FILE_TYPE _FileType, FORMAT_FLAGS _Parms )
 		{
+			if ( m_ColorProfile == null )
+				throw new Exception( "You can't save the bitmap if you don't provide a valid color profile!" );
+
 			try
 			{
 				switch ( _FileType )
