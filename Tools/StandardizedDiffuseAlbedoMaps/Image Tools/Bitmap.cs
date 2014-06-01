@@ -2765,7 +2765,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		}
 
 		/// <summary>
-		/// Save to a strea
+		/// Save to a stream
 		/// </summary>
 		/// <param name="_Stream">The stream to write the image to</param>
 		/// <param name="_FileType">The file type to save as</param>
@@ -2927,15 +2927,33 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_Format">The format to convert into</param>
 		protected BitmapFrame	ConvertFrame( System.Windows.Media.PixelFormat _Format )
 		{
+			int		W = m_Width;
+			int		H = m_Height;
+
 			// Convert to RGB first
-			float4[,]	RGB = new float4[m_Width,m_Height];
-			m_ColorProfile.XYZ2RGB( m_Bitmap, RGB );
+			float4[,]	SourceXYZ = m_Bitmap;
+			float4[,]	RGB = new float4[W,H];
+			if ( _Format == System.Windows.Media.PixelFormats.Gray8 ||
+				 _Format == System.Windows.Media.PixelFormats.Gray16 ||
+				 _Format == System.Windows.Media.PixelFormats.Gray32Float )
+			{	// Convert to grayscale
+				float4[,]	XYZ = new float4[W,H];
+				Array.Copy( m_Bitmap, XYZ, m_Bitmap.LongLength );
+				for ( int Y = 0; Y < H; Y++ )
+					for ( int X = 0; X < W; X++ )
+					{
+						float3	xyY = ColorProfile.XYZ2xyY( (float3) XYZ[X,Y] );
+						xyY.x = m_ColorProfile.Chromas.W.x;
+						xyY.y = m_ColorProfile.Chromas.W.y;
+						XYZ[X,Y] = new float4( ColorProfile.xyY2XYZ( xyY ), XYZ[X,Y].w );
+					}
+				SourceXYZ = XYZ;
+			}
+			
+			m_ColorProfile.XYZ2RGB( SourceXYZ, RGB );	// Standard conversion
 
 			Array	Pixels = null;
 			int		Stride = 0;
-
-			int		W = m_Width;
-			int		H = m_Height;
 
 			//////////////////////////////////////////////////////////////////////////
 			// BGR24
@@ -3118,7 +3136,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Content[Position++] = FLOAT_TO_WORD( m_Bitmap[X,Y].y );
+						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].x );
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -3133,7 +3151,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Content[Position++] = m_Bitmap[X,Y].y;
+						Content[Position++] = RGB[X,Y].x;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -3148,7 +3166,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Content[Position++] = FLOAT_TO_BYTE( m_Bitmap[X,Y].y );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
