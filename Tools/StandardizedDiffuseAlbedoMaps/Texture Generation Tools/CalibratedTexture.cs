@@ -156,11 +156,11 @@ namespace StandardizedDiffuseAlbedoMaps
 				float2	CurrentScanlinePixel = TopLeftCorner + 0.5f * (fImageWidth - W) * AxisX + 0.5f * (fImageHeight - H) * AxisY;
 				for ( int Y=0; Y < H; Y++ )
 				{
-					float	V = (float) Y / H;
 					float2	CurrentPixel = CurrentScanlinePixel;
 					for ( int X=0; X < W; X++ )
 					{
-						float	U = (float) X / W;
+						float	U = CurrentPixel.x / _Source.Width;
+						float	V = CurrentPixel.y / _Source.Height;
 
 						XYZ = _Source.BilinearSample( CurrentPixel.x, CurrentPixel.y );
 						xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );

@@ -285,7 +285,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				PointF	BottomRight = new PointF( R.Left + S.Location.z * R.Width, R.Top + S.Location.w * R.Height );
 
 				e.Graphics.DrawRectangle( Pens.Red, TopLeft.X, TopLeft.Y, 1+BottomRight.X-TopLeft.X, 1+BottomRight.Y-TopLeft.Y );
-				e.Graphics.DrawString( SwatchIndex.ToString(), Font, Brushes.Red, 0.5f * (TopLeft.X + BottomRight.X - Font.Height), 0.5f * (TopLeft.Y + BottomRight.Y + Font.Height) );
+				e.Graphics.DrawString( SwatchIndex.ToString(), Font, Brushes.Red, 0.5f * (TopLeft.X + BottomRight.X - Font.Height), 0.5f * (TopLeft.Y + BottomRight.Y - Font.Height) );
 			}
 
 			// Paint active tools

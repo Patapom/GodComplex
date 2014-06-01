@@ -526,8 +526,6 @@ namespace StandardizedDiffuseAlbedoMaps
 				throw new Exception( "Calibration grid hasn't been built: did you provide a valid database path? Does the path contain camera calibration data?" );
 			if ( m_InterpolatedCalibration == null )
 				throw new Exception( "Calibration grid hasn't been prepared for calibration: did you call the PrepareCalibrationFor() method?" );
-			
-
 
 			float	Reflectance = m_InterpolatedCalibration.Calibrate( m_WhiteReflectanceCorrectionFactor * _Luminance );
 			return Reflectance;

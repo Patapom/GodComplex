@@ -82,6 +82,10 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			return x.ToString() + "; " + y.ToString();
 		}
+		public string ToString( string _Format )
+		{
+			return x.ToString( _Format ) + "; " + y.ToString( _Format );
+		}
 		public static float2	Parse( string v )
 		{
 			string[]	Components = v.Split( ';' );
@@ -107,6 +111,10 @@ namespace StandardizedDiffuseAlbedoMaps
 		public override string ToString()
 		{
 			return x.ToString() + "; " + y.ToString() + "; " + z.ToString();
+		}
+		public string ToString( string _Format )
+		{
+			return x.ToString( _Format ) + "; " + y.ToString( _Format ) + "; " + z.ToString( _Format );
 		}
 		public static float3	Parse( string v )
 		{
@@ -177,6 +185,10 @@ namespace StandardizedDiffuseAlbedoMaps
 		public override string ToString()
 		{
 			return x.ToString() + "; " + y.ToString() + "; " + z.ToString() + "; " + w.ToString();
+		}
+		public string ToString( string _Format )
+		{
+			return x.ToString( _Format ) + "; " + y.ToString( _Format ) + "; " + z.ToString( _Format ) + "; " + w.ToString( _Format );
 		}
 		public static float4	Parse( string v )
 		{

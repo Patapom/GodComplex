@@ -362,11 +362,11 @@ namespace StandardizedDiffuseAlbedoMaps
 			bool		SpatialCorrection = checkBoxSpatialLuminanceCorrection.Checked;
 
 			float4[,]	Image = new float4[m_BitmapXYZ.Width,m_BitmapXYZ.Height];
+			int		W = m_BitmapXYZ.Width;
+			int		H = m_BitmapXYZ.Height;
 
 			if ( checkBoxLuminance.Checked )
 			{	// Convert into luminances only
-				int		W = m_BitmapXYZ.Width;
-				int		H = m_BitmapXYZ.Height;
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
@@ -383,6 +383,22 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 			else
 			{	// RGB
+				float4[,]	Content = m_BitmapXYZ.ContentXYZ;
+
+				if ( checkBoxSpatialLuminanceCorrection.Checked )
+				{
+					Content = new float4[m_BitmapXYZ.Width,m_BitmapXYZ.Height];
+					Array.Copy( m_BitmapXYZ.ContentXYZ, Content, Content.LongLength );
+					for ( int Y=0; Y < H; Y++ )
+						for ( int X=0; X < W; X++ )
+						{
+							float4	XYZ = Content[X,Y];
+							float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
+							xyY.z *= m_CalibrationDatabase.GetSpatialLuminanceCorrectionFactor( (float) X / W, (float) Y / H );
+							XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
+							Content[X,Y] = XYZ;
+						}
+				}
 
 				// Build conversion profile
 				Bitmap2.ColorProfile	Profile = new Bitmap2.ColorProfile(
@@ -391,7 +407,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					sRGB ? Bitmap2.ColorProfile.GAMMA_EXPONENT_sRGB : 1.0f );									// Either use sRGB gamma or linear gamma
 
 				// Convert
-				Profile.XYZ2RGB( m_BitmapXYZ.ContentXYZ, Image );
+				Profile.XYZ2RGB( Content, Image );
 			}
 
 			outputPanel.Image = Image;
@@ -467,18 +483,20 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			RectangleF	R = outputPanel.ImageClientRectangle;
 
-			float	X = (e.X - R.Left) / R.Width;
-			float	Y = (e.Y - R.Top) / R.Height;
-			if ( X < 0.0f || X > 1.0f || Y < 0.0f || Y > 1.0f )
+			float	U = (e.X - R.Left) / R.Width;
+			float	V = (e.Y - R.Top) / R.Height;
+			if ( U < 0.0f || U > 1.0f || V < 0.0f || V > 1.0f )
 			{
 				labelLuminance.Text = "";
 				return;
 			}
 
-			X *= m_BitmapXYZ.Width;
-			Y *= m_BitmapXYZ.Height;
+			float	X = U * m_BitmapXYZ.Width;
+			float	Y = V * m_BitmapXYZ.Height;
 
 			float	Lum = m_BitmapXYZ.BilinearSample( X, Y ).y;
+			if ( checkBoxSpatialLuminanceCorrection.Checked )
+				Lum *= m_CalibrationDatabase.GetSpatialLuminanceCorrectionFactor( U, V );
 			float	Lum_sRGB = Bitmap2.ColorProfile.Linear2sRGB( Lum );
 
 			labelLuminance.Text = "sRGB=" + Lum_sRGB.ToString( "G4" ) + " (" + (int) (Lum_sRGB*255) + ") - Y=" + Lum.ToString( "G4" );
@@ -1122,7 +1140,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			float4	XYZ = m_Texture.Texture.BilinearSample( X, Y );
 			float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
-			labelCapturedReflectance.Text = xyY.ToString();
+			labelCapturedReflectance.Text = xyY.ToString( "G4" );
 		}
 
 		private void panelSwatchMin_MouseMove( object sender, MouseEventArgs e )
@@ -1144,8 +1162,8 @@ namespace StandardizedDiffuseAlbedoMaps
 					}
 			}
 
-			labelCapturedSwatchRGB.Text = S != null ? S.m_RGB.ToString() : "";
-			labelCapturedSwatchxyY.Text = S != null ? S.m_xyY.ToString() : "";
+			labelCapturedSwatchRGB.Text = S != null ? S.m_RGB.ToString( "G4" ) : "";
+			labelCapturedSwatchxyY.Text = S != null ? S.m_xyY.ToString( "G4" ) : "";
 		}
 
 		#endregion
@@ -1231,9 +1249,11 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private void UpdateWhiteReflectanceUI()
 		{
-			labelWhiteReflectance.Text = m_CalibrationDatabase.WhiteReflectanceReference.ToString() + " Correction=" + m_CalibrationDatabase.WhiteReflectanceCorrectionFactor.ToString();
-
 			bool	IsValidRef = m_CalibrationDatabase.WhiteReflectanceReference > 0.0f;
+
+			labelWhiteReflectance.Text = IsValidRef ? m_CalibrationDatabase.WhiteReflectanceReference.ToString( "G4" ) + " Correction=" + m_CalibrationDatabase.WhiteReflectanceCorrectionFactor.ToString( "G4" )
+										: "<Not set> Using no database correction";
+
 			buttonSaveWhiteReflectanceReference.Enabled = IsValidRef;
 			buttonResetWhiteReflectance.Enabled = IsValidRef;
 
@@ -1268,8 +1288,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				}
 
 				// Find the maximum luminance in the image that we'll use as a normalizer
-				Bitmap2	WhiteRef = new Bitmap2( W, H, new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB ) );
-				float	MaxY = 0.0f;
+				Bitmap2	WhiteRef = new Bitmap2( W, H, m_sRGBProfile );
 				for ( int Y=0; Y < H; Y++ )
 					for ( int X=0; X < W; X++ )
 					{
@@ -1295,19 +1314,11 @@ namespace StandardizedDiffuseAlbedoMaps
 						float	Test = (float) (Math.Ceiling(x1-x0) * Math.Ceiling(y1-y0));	// Should equal Count
 						SumXYZ = (1.0f / Math.Max( 1, Count)) * SumXYZ;
 
-						WhiteRef.ContentXYZ[X,Y] = SumXYZ;
+						float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) SumXYZ );
+								xyY.x = m_sRGBProfile.Chromas.W.x;	// B&W
+								xyY.y = m_sRGBProfile.Chromas.W.y;
+						float4	XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), SumXYZ.w );
 
-						MaxY = Math.Max( MaxY, SumXYZ.y );
-					}
-
-				// Build the actual normalized bitmap
-				for ( int Y=0; Y < H; Y++ )
-					for ( int X=0; X < W; X++ )
-					{
-						float4	XYZ = WhiteRef.ContentXYZ[X,Y];
-						float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
-								xyY.z /= MaxY;	// Normalize
-						XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
 						WhiteRef.ContentXYZ[X,Y] = XYZ;
 					}
 
@@ -1372,6 +1383,97 @@ namespace StandardizedDiffuseAlbedoMaps
 			UpdateWhiteReferenceImageUI();
 		}
 
+		private void buttonWhiteRefTest1_Click( object sender, EventArgs e )
+		{
+			int	W = DEFAULT_WHITE_REFERENCE_IMAGE_SIZE;
+			int	H = DEFAULT_WHITE_REFERENCE_IMAGE_SIZE;
+			Bitmap2	WhiteRef = new Bitmap2( W, H, m_sRGBProfile );
+			float3	xyY = new float3( m_sRGBProfile.Chromas.W.x, m_sRGBProfile.Chromas.W.y, 0.0f );
+			for ( int Y=0; Y < H; Y++ )
+			{
+				float	V = (float) Y / H;
+				for ( int X=0; X < W; X++ )
+				{
+					float	U = (float) X / W;
+					float	d = (float) Math.Sqrt( (U-0.5)*(U-0.5) + (V-0.5)*(V-0.5) );
+					xyY.z = 1.0f * Math.Min( 1.0f, (0.5f + 1.0f * d) );
+
+					float4	XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), 1.0f );
+					WhiteRef.ContentXYZ[X,Y] = XYZ;
+				}
+			}
+
+			// Assign to the database
+			m_CalibrationDatabase.WhiteReferenceImage = WhiteRef;
+
+			UpdateWhiteReferenceImageUI();
+		}
+
+		private void buttonWhiteRefTest2_Click( object sender, EventArgs e )
+		{
+			int	W = DEFAULT_WHITE_REFERENCE_IMAGE_SIZE;
+			int	H = DEFAULT_WHITE_REFERENCE_IMAGE_SIZE;
+			Bitmap2	WhiteRef = new Bitmap2( W, H, m_sRGBProfile );
+			float3	xyY = new float3( m_sRGBProfile.Chromas.W.x, m_sRGBProfile.Chromas.W.y, 0.0f );
+			for ( int Y=0; Y < H; Y++ )
+			{
+				float	V = (float) Y / H;
+				for ( int X=0; X < W; X++ )
+				{
+					float	U = (float) X / W;
+					float	d = (float) Math.Sqrt( (U-0.5)*(U-0.5) + (V-0.5)*(V-0.5) );
+					xyY.z = 0.75f * Math.Min( 1.0f, (0.5f + 1.0f * d) );
+
+					float4	XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), 1.0f );
+					WhiteRef.ContentXYZ[X,Y] = XYZ;
+				}
+			}
+
+			// Assign to the database
+			m_CalibrationDatabase.WhiteReferenceImage = WhiteRef;
+
+			UpdateWhiteReferenceImageUI();
+		}
+
+		private void buttonWhiteRefTest3_Click( object sender, EventArgs e )
+		{
+			int	W = DEFAULT_WHITE_REFERENCE_IMAGE_SIZE;
+			int	H = DEFAULT_WHITE_REFERENCE_IMAGE_SIZE;
+			Bitmap2	WhiteRef = new Bitmap2( W, H, m_sRGBProfile );
+			float3	xyY = new float3( m_sRGBProfile.Chromas.W.x, m_sRGBProfile.Chromas.W.y, 0.0f );
+			for ( int Y=0; Y < H; Y++ )
+			{
+				float	V = (float) Y / H;
+				for ( int X=0; X < W; X++ )
+				{
+					float	U = (float) X / W;
+					xyY.z = Math.Min( 1.0f, 1.0f - 0.5f * V );
+
+					float4	XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), 1.0f );
+					WhiteRef.ContentXYZ[X,Y] = XYZ;
+				}
+			}
+
+			// Assign to the database
+			m_CalibrationDatabase.WhiteReferenceImage = WhiteRef;
+
+			UpdateWhiteReferenceImageUI();
+		}
+
+		private void whiteImageReferencePanel_MouseMove( object sender, MouseEventArgs e )
+		{
+			if ( m_CalibrationDatabase.WhiteReferenceImage == null )
+			{
+				labelWhiteReferenceImageCorrection.Text = "<Not Set>";
+				return;
+			}
+
+			RectangleF	R = whiteImageReferencePanel.ImageClientRectangle;
+			float		U = (e.X - R.Left) / R.Width;
+			float		V = (e.Y - R.Top) / R.Height;
+			labelWhiteReferenceImageCorrection.Text = m_CalibrationDatabase.GetSpatialLuminanceCorrectionFactor( U, V ).ToString( "G4" );
+		}
+
 		private void UpdateWhiteReferenceImageUI()
 		{
 //			labelWhiteReflectance.Text = m_CalibrationDatabase.WhiteReflectanceReference.ToString() + " Correction=" + m_CalibrationDatabase.WhiteReflectanceCorrectionFactor.ToString();
@@ -1381,6 +1483,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			bool	IsValidRef = m_CalibrationDatabase.WhiteReferenceImage != null;
 			buttonSaveWhiteRefImage.Enabled = IsValidRef;
 			buttonResetWhiteRefImage.Enabled = IsValidRef;
+
+			if ( checkBoxSpatialLuminanceCorrection.Checked )
+				RebuildImage();	// So we can see the change
 		}
 
 		#endregion
