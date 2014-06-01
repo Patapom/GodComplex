@@ -912,7 +912,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 			}
 
- 			string	OldFileName = GetRegKey( "LastCalibratedTextureFilename", m_ImageFileName.FullName );
+ 			string	OldFileName = GetRegKey( "LastCalibratedTextureFilename", System.IO.Path.Combine( System.IO.Path.GetDirectoryName( m_ImageFileName.FullName ), System.IO.Path.GetFileNameWithoutExtension( m_ImageFileName.FullName ) + ".png" ) );
 			saveFileDialogCalibratedImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
 			saveFileDialogCalibratedImage.FileName = System.IO.Path.GetFileName( OldFileName );
 
@@ -1335,7 +1335,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private void buttonLoadWhiteRefImage_Click( object sender, EventArgs e )
 		{
-			string	OldFileName = GetRegKey( "LastWhiteReferenceImageFilename", m_ImageFileName != null ? System.IO.Path.GetDirectoryName( m_ImageFileName.FullName ) + System.IO.Path.GetFileNameWithoutExtension( m_ImageFileName.FullName ) + ".png" : m_ApplicationPath );
+			string	OldFileName = GetRegKey( "LastWhiteReferenceImageFilename", m_ImageFileName != null ? System.IO.Path.Combine( System.IO.Path.GetDirectoryName( m_ImageFileName.FullName ), System.IO.Path.GetFileNameWithoutExtension( m_ImageFileName.FullName ) + ".png" ) : m_ApplicationPath );
 			openFileDialogWhiteRefImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
 			openFileDialogWhiteRefImage.FileName = System.IO.Path.GetFileName( OldFileName );
 
@@ -1351,7 +1351,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private void buttonSaveWhiteRefImage_Click( object sender, EventArgs e )
 		{
-			string	OldFileName = GetRegKey( "LastWhiteReferenceImageFilename", m_ImageFileName != null ? System.IO.Path.GetDirectoryName( m_ImageFileName.FullName ) + System.IO.Path.GetFileNameWithoutExtension( m_ImageFileName.FullName ) + ".png" : m_ApplicationPath );
+			string	OldFileName = GetRegKey( "LastWhiteReferenceImageFilename", m_ImageFileName != null ? System.IO.Path.Combine( System.IO.Path.GetDirectoryName( m_ImageFileName.FullName ), System.IO.Path.GetFileNameWithoutExtension( m_ImageFileName.FullName ) + ".png" ) : m_ApplicationPath );
 			saveFileDialogWhiteRefImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
 			saveFileDialogWhiteRefImage.FileName = System.IO.Path.GetFileName( OldFileName );
 

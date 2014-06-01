@@ -146,7 +146,10 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				float2	AxisX = new float2( (float) Math.Cos( _Parms.CropRectangleRotation ), -(float) Math.Sin( _Parms.CropRectangleRotation ) );
 				float2	AxisY = new float2( (float) Math.Sin( _Parms.CropRectangleRotation ), (float) Math.Cos( _Parms.CropRectangleRotation ) );
-				float2	TopLeftCorner = new float2( _Source.Width * _Parms.CropRectangleCenter.x, _Source.Height * _Parms.CropRectangleCenter.y )
+
+//			return new PointF( 0.5f * (Width - ImageRect.Height) + _Position.x * ImageRect.Height, ImageRect.Y + _Position.y * ImageRect.Height );
+
+				float2	TopLeftCorner = new float2( 0.5f * (_Source.Width - _Source.Height) + _Parms.CropRectangleCenter.x * _Source.Height, _Source.Height * _Parms.CropRectangleCenter.y )
 												  + _Source.Height * (-_Parms.CropRectangleHalfSize.x * AxisX - _Parms.CropRectangleHalfSize.y * AxisY);
 
 				m_Texture = new Bitmap2( W, H, new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB ) );
