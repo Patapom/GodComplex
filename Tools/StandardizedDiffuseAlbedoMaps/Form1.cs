@@ -92,6 +92,7 @@ namespace StandardizedDiffuseAlbedoMaps
 											Math.Max( 0, Math.Min( 255, (int) (m_RGB.y * 255.0f) ) ),
 											Math.Max( 0, Math.Min( 255, (int) (m_RGB.z * 255.0f) ) ) );
 				m_Panel.BackColor = C;
+				m_Panel.ForeColor = m_xyY.z > 1.0f ? Color.Red : Color.Black;
 			}
 		}
 		private class	CustomSwatch : Swatch
@@ -136,6 +137,12 @@ namespace StandardizedDiffuseAlbedoMaps
 		// Calibration database
 		private CameraCalibrationDatabase	m_CalibrationDatabase = new CameraCalibrationDatabase();
 		private CameraCalibration			m_Calibration = new CameraCalibration();	// Current calibration
+
+		// White reflectance reference
+		private float						m_WhiteReflectanceReference = 0.0f;
+		private float						m_WhiteReflectanceISOSpeed = -1.0f;
+		private float						m_WhiteReflectanceShutterSpeed = -1.0f;
+		private float						m_WhiteReflectanceAperture = -1.0f;
 
 		// Custom swatches
 		private Swatch						m_SwatchMin;
@@ -312,11 +319,18 @@ namespace StandardizedDiffuseAlbedoMaps
 				if ( Root == null )
 					throw new Exception( "Couldn't find expected root element \"WhiteReflectance\"! Is this a white ref file?" );
 
-				float	WhiteRef = 1.0f;
-				if ( !float.TryParse( Root.GetAttribute( "Value" ), out WhiteRef ) )
+				m_WhiteReflectanceReference = 1.0f;
+				if ( !float.TryParse( Root.GetAttribute( "Value" ), out m_WhiteReflectanceReference ) )
 					throw new Exception( "Failed to parse white reference value!" );
 
-				m_CalibrationDatabase.WhiteReflectanceReference = WhiteRef;
+				m_WhiteReflectanceISOSpeed = floatTrackbarControlISOSpeed.Value;
+				float.TryParse( Root.GetAttribute( "ISOSpeed" ), out m_WhiteReflectanceISOSpeed );
+				m_WhiteReflectanceShutterSpeed = floatTrackbarControlShutterSpeed.Value;
+				float.TryParse( Root.GetAttribute( "ShutterSpeed" ), out m_WhiteReflectanceShutterSpeed );
+				m_WhiteReflectanceAperture = floatTrackbarControlAperture.Value;
+				float.TryParse( Root.GetAttribute( "Aperture" ), out m_WhiteReflectanceAperture );
+
+				m_CalibrationDatabase.WhiteReflectanceReference = m_WhiteReflectanceReference;
 
 				UpdateWhiteReflectanceUI();
 			}
@@ -465,8 +479,18 @@ namespace StandardizedDiffuseAlbedoMaps
 					S.m_Panel.BackColor = Color.DimGray;
 				}
 
-				PrepareDatabase( false );			// Prepare database with new camera shot infos
-				UpdateWhiteReflectanceUI();		// If the shot infos are different from the ones from which the white reflectance was picked then the values got reset so update UI
+				// Prepare database with new camera shot infos
+				PrepareDatabase( false );
+
+				// Re-apply white reflectance reference if it's adapted to the 
+				if (	Math.Abs(m_CalibrationDatabase.PreparedForISOSpeed - m_WhiteReflectanceISOSpeed) < 1e-6f
+					&& Math.Abs(m_CalibrationDatabase.PreparedForShutterSpeed - m_WhiteReflectanceShutterSpeed) < 1e-6f
+					&& Math.Abs(m_CalibrationDatabase.PreparedForAperture - m_WhiteReflectanceAperture) < 1e-6f )
+				{
+					m_CalibrationDatabase.WhiteReflectanceReference = m_WhiteReflectanceReference;
+				}
+				UpdateWhiteReflectanceUI();			// If the shot infos are different from the ones from which the white reflectance was picked then the values got reset so update UI
+
 				RebuildImage();						// Finally, rebuild the image and show it in the output panel
 				outputPanel.ResetCropRectangle();	// Previous crop rectangle is not valid anymore
 			}
@@ -528,17 +552,17 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_PercentOfBlackValues"></param>
 		/// <param name="_HasSaturatedValues">Returns the percentage of encountered saturated values. 0 is okay, more means the probe shouldn't be used</param>
 		/// <returns></returns>
-		private float	IntegrateLuminance( float _X, float _Y, float _Radius, out float _PercentOfBlackValues, out float _PercentOfSaturatedValues )
+		private float	IntegrateLuminance( float _X, float _Y, float _Radius, out float _MinLuminance, out float _MaxLuminance, out float _PercentOfBlackValues, out float _PercentOfSaturatedValues )
 		{
 			float	Radius = _Radius * m_BitmapXYZ.Width;
 			float	CenterX = _X * m_BitmapXYZ.Width;
 			float	CenterY = _Y * m_BitmapXYZ.Height;
 			float	SqRadius = Radius*Radius;
 
-			int	X0 = Math.Max( 0, Math.Min( m_BitmapXYZ.Width-1, (int) Math.Floor( CenterX - Radius ) ) );
-			int	X1 = Math.Max( 0, Math.Min( m_BitmapXYZ.Width-1, (int) Math.Ceiling( CenterX + Radius ) ) );
-			int	Y0 = Math.Max( 0, Math.Min( m_BitmapXYZ.Height-1, (int) Math.Floor( CenterY - Radius ) ) );
-			int	Y1 = Math.Max( 0, Math.Min( m_BitmapXYZ.Height-1, (int) Math.Ceiling( CenterY + Radius ) ) );
+			int		X0 = Math.Max( 0, Math.Min( m_BitmapXYZ.Width-1, (int) Math.Floor( CenterX - Radius ) ) );
+			int		X1 = Math.Max( 0, Math.Min( m_BitmapXYZ.Width-1, (int) Math.Ceiling( CenterX + Radius ) ) );
+			int		Y0 = Math.Max( 0, Math.Min( m_BitmapXYZ.Height-1, (int) Math.Floor( CenterY - Radius ) ) );
+			int		Y1 = Math.Max( 0, Math.Min( m_BitmapXYZ.Height-1, (int) Math.Ceiling( CenterY + Radius ) ) );
 
 			const float	SMOOTHSTEP_MAX_RADIUS = 0.2f;	// We reach max weight 1 at 20% of the border of the circle
 
@@ -546,6 +570,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			int		TotalSaturatedValuesCount = 0;
 			int		TotalValuesCount = 0;
 			float	SumLuminance = 0.0f;
+			_MinLuminance = +float.MaxValue;
+			_MaxLuminance = 0.0f;
 			float	SumWeights = 0.0f;
 			for ( int Y=Y0; Y < Y1; Y++ )
 				for ( int X=X0; X < X1; X++ )
@@ -562,12 +588,16 @@ namespace StandardizedDiffuseAlbedoMaps
 
 //DEBUG					m_BitmapXYZ.ContentXYZ[X,Y].y = Weight;
 					float	Luminance = m_BitmapXYZ.ContentXYZ[X,Y].y;
+					Luminance *= m_CalibrationDatabase.GetSpatialLuminanceCorrectionFactor( (float) X / m_BitmapXYZ.Width, (float) Y / m_BitmapXYZ.Height );
+
 					if ( Luminance < 0.001f )
 						TotalBlackValuesCount++;		// Warning!
 					if ( Luminance > 0.999f )
 						TotalSaturatedValuesCount++;	// Warning!
 					TotalValuesCount++;
 
+					_MinLuminance = Math.Min( _MinLuminance, Luminance );
+					_MaxLuminance = Math.Max( _MaxLuminance, Luminance );
 					SumLuminance += Weight * Luminance;
 					SumWeights += Weight;
 				}
@@ -589,8 +619,9 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_Radius"></param>
 		private void	IntegrateLuminance( CameraCalibration.Probe _Probe, float2 _Center, float _Radius )
 		{
+			float	Min, Max;
 			float	BlackValues, SaturatedValues;
-			float	MeasuredLuminance = IntegrateLuminance( _Center.x, _Center.y, _Radius, out BlackValues, out SaturatedValues );
+			float	MeasuredLuminance = IntegrateLuminance( _Center.x, _Center.y, _Radius, out Min, out Max, out BlackValues, out SaturatedValues );
 
 			bool	DisableProbe = false;
 			if ( BlackValues > BLACK_VALUES_TOLERANCE &&
@@ -870,8 +901,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			foreach ( CameraCalibration.Probe P in m_Calibration.m_Reflectances )
 				if ( P.m_MeasurementDiscIsAvailable )
 				{
+					float	Min, Max;
 					float	BlackValues, SaturatedValues;
-					float	MeasuredValue = IntegrateLuminance( P.m_MeasurementCenterX, P.m_MeasurementCenterY, P.m_MeasurementRadius, out BlackValues, out SaturatedValues );
+					float	MeasuredValue = IntegrateLuminance( P.m_MeasurementCenterX, P.m_MeasurementCenterY, P.m_MeasurementRadius, out Min, out Max, out BlackValues, out SaturatedValues );
 					if ( BlackValues > BLACK_VALUES_TOLERANCE || SaturatedValues > SATURATED_VALUES_TOLERANCE )
 					{	// Disable that probe as too many values are black or saturated
 						P.m_IsAvailable = false;
@@ -991,7 +1023,6 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				CalibratedTexture	Tex = new CalibratedTexture();
 				Tex.Capture( m_BitmapXYZ, m_CalibrationDatabase, Parms );
-				
 				m_Texture = Tex;
 
 				// Use the form's swatch panels as default swatch size
@@ -1001,6 +1032,8 @@ namespace StandardizedDiffuseAlbedoMaps
 				// Update UI
 				resultTexturePanel.CalibratedTexture = m_Texture;
 				buttonSaveCalibratedImage.Enabled = true;
+				labelCaptureWhiteReflectanceCorrection.Text = "White Correction " + Tex.WhiteReflectanceCorrectionFactor.ToString( "G4" );
+				labelCaptureSpatialCorrectionStatus.Text = "Spatial Correction is " + (Tex.SpatialCorrectionEnabled ? "enabled" : "disabled");
 
 				m_SwatchMin.m_xyY = m_Texture.SwatchMin.xyY;
 				m_SwatchMin.UpdateSwatchColor();
@@ -1141,6 +1174,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			float4	XYZ = m_Texture.Texture.BilinearSample( X, Y );
 			float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
 			labelCapturedReflectance.Text = xyY.ToString( "G4" );
+			labelCapturedReflectance.ForeColor = xyY.z > 1.0f ? Color.Red : Color.Black;
 		}
 
 		private void panelSwatchMin_MouseMove( object sender, MouseEventArgs e )
@@ -1164,6 +1198,8 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			labelCapturedSwatchRGB.Text = S != null ? S.m_RGB.ToString( "G4" ) : "";
 			labelCapturedSwatchxyY.Text = S != null ? S.m_xyY.ToString( "G4" ) : "";
+			labelCapturedSwatchRGB.ForeColor = S.m_xyY.z > 1.0f ? Color.Red : Color.Black;
+			labelCapturedSwatchxyY.ForeColor = S.m_xyY.z > 1.0f ? Color.Red : Color.Black;
 		}
 
 		#endregion
@@ -1181,13 +1217,25 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 			}
 
-			outputPanel.StartWhiteReflectancePicking( ( float2 _UV ) => {
+			outputPanel.StartCalibrationTargetPicking( ( float2 _Center, float _Radius ) => {
 
-				float4	XYZ = m_BitmapXYZ.BilinearSample( _UV.x * m_BitmapXYZ.Width, _UV.y * m_BitmapXYZ.Height );
-				float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
+				float	Min, Max;
+				float	BlackValues, SaturatedValues;
+				float	MeasuredLuminance = IntegrateLuminance( _Center.x, _Center.y, _Radius, out Min, out Max, out BlackValues, out SaturatedValues );
 
-				// Compute the correction factor to apply to further image
-				m_CalibrationDatabase.WhiteReflectanceReference = xyY.z;
+				if ( BlackValues > BLACK_VALUES_TOLERANCE )
+				{
+					MessageBox( "This probe has more than 5% luminance values that are too dark, it cannot be used as a white reference!", MessageBoxButtons.OK, MessageBoxIcon.Warning );
+					return;
+				}
+				if ( SaturatedValues > SATURATED_VALUES_TOLERANCE )
+				{
+					MessageBox( "This probe has more than 5% luminance values that are saturated, it cannot be used as a white reference!", MessageBoxButtons.OK, MessageBoxIcon.Warning );
+					return;
+				}
+
+//				m_CalibrationDatabase.WhiteReflectanceReference = MeasuredLuminance;
+				m_CalibrationDatabase.WhiteReflectanceReference = Max;	// Use Max instead otherwise we can get luminances higher than 99%!
 
 				UpdateWhiteReflectanceUI();
 			} );
@@ -1230,6 +1278,9 @@ namespace StandardizedDiffuseAlbedoMaps
 				System.Xml.XmlElement	Root = Doc.CreateElement( "WhiteReflectance" );
 				Doc.AppendChild( Root );
 				Root.SetAttribute( "Value", m_CalibrationDatabase.WhiteReflectanceReference.ToString() );
+				Root.SetAttribute( "ISOSpeed", m_CalibrationDatabase.PreparedForISOSpeed.ToString() );
+				Root.SetAttribute( "ShutterSpeed", m_CalibrationDatabase.PreparedForShutterSpeed.ToString() );
+				Root.SetAttribute( "Aperture", m_CalibrationDatabase.PreparedForAperture.ToString() );
 				Doc.Save( WhiteRefFileName.FullName );
 			}
 			catch ( Exception _e )

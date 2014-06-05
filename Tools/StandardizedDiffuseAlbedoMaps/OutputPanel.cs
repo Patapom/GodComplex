@@ -15,7 +15,6 @@ namespace StandardizedDiffuseAlbedoMaps
 		#region NESTED TYPES
 
 		public delegate void	CalibrationDone( float2 _Center, float _Radius );			// Sends the center and radius of the circle to average as a single luminance
-		public delegate void	WhiteReflectancePickingDone( float2 _Position );			// Sends the UV coordinates of the point picked as white reflectance reference
 		public delegate void	ColorPickingUpdate( float2 _TopLeft, float2 _BottomRight );	// Sends the UV coordinates of the rectangle to average as a single color
 
 		private enum	MANIPULATION_STATE
@@ -23,7 +22,6 @@ namespace StandardizedDiffuseAlbedoMaps
 			STOPPED,				// No manipulation currently taking place
 			CALIBRATION_TARGET,		// User is selecting the calibration target
 			CROP_RECTANGLE,			// User is modifying the crop rectangle
-			PICK_WHITE_REFLECTANCE,	// User is picking the white reflectance
 		}
 
 		private enum	CALIBRATION_STAGE
@@ -95,9 +93,6 @@ namespace StandardizedDiffuseAlbedoMaps
 		private PointF				m_ButtonDownClientCropRectangleCenter;
 		private PointF[]			m_ButtonDownClientCropRectangleVertices = new PointF[4];	// Top-left, top-right, bottom-left, bottom-right
 
-
-		// White reflectance picking
-		private WhiteReflectancePickingDone	m_WhiteReflectancePickingDelegate = null;
 
 		private MouseButtons		m_MouseButtonsDown = MouseButtons.None;
 		private PointF				m_ButtonDownMousePosition;
@@ -172,16 +167,6 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_CalibrationRadius = 0.0f;
 			ManipulationState = MANIPULATION_STATE.CALIBRATION_TARGET;
 			m_CalibrationStage = CALIBRATION_STAGE.PICK_CENTER;
-		}
-
-		/// <summary>
-		/// Starts white reflectance reference picking
-		/// </summary>
-		/// <param name="_Notify"></param>
-		public void				StartWhiteReflectancePicking( WhiteReflectancePickingDone _Notify )
-		{
-			m_WhiteReflectancePickingDelegate = _Notify;
-			ManipulationState = MANIPULATION_STATE.PICK_WHITE_REFLECTANCE;
 		}
 
 		/// <summary>
@@ -376,13 +361,6 @@ namespace StandardizedDiffuseAlbedoMaps
 						m_CalibrationDelegate( m_CalibrationCenter, m_CalibrationRadius );
 						ManipulationState = MANIPULATION_STATE.STOPPED;		// End manipulation
 					}
-					break;
-				}
-
-				case MANIPULATION_STATE.PICK_WHITE_REFLECTANCE:
-				{
-					m_WhiteReflectancePickingDelegate( Client2ImageUV_NoSquareAspectRatio( m_ButtonDownMousePosition ) );
-					ManipulationState = MANIPULATION_STATE.STOPPED;			// End manipulation
 					break;
 				}
 			}
@@ -695,6 +673,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				case MANIPULATION_STATE.CALIBRATION_TARGET:
 				{	// Take care of calibration manipulation
+					Cursor = Cursors.Cross;
 					switch ( m_CalibrationStage )
 					{
 						case CALIBRATION_STAGE.PICK_CENTER:
@@ -712,10 +691,6 @@ namespace StandardizedDiffuseAlbedoMaps
 					}
 					break;
 				}
-
-				case MANIPULATION_STATE.PICK_WHITE_REFLECTANCE:
-					Cursor = Cursors.Cross;
-					break;
 
 				default:
 					Cursor = Cursors.Default;

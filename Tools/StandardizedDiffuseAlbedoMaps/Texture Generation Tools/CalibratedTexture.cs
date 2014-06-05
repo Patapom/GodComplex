@@ -74,6 +74,8 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		// Main texture
 		private Bitmap2				m_Texture = null;
+		private float				m_WhiteReflectanceCorrectionFactor = 1.0f;
+		private bool				m_SpatialCorrectionEnabled = false;
 
 		// Default swatches
 		private Swatch				m_SwatchMin = new Swatch();
@@ -97,6 +99,9 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		public int				SwatchWidth		{ get { return m_SwatchWidth; } set { m_SwatchWidth = value; } }
 		public int				SwatchHeight	{ get { return m_SwatchHeight; } set { m_SwatchHeight = value; } }
+
+		public float			WhiteReflectanceCorrectionFactor	{ get { return m_WhiteReflectanceCorrectionFactor; } }
+		public bool				SpatialCorrectionEnabled			{ get { return m_SpatialCorrectionEnabled; } }
 
 		#endregion
 
@@ -125,6 +130,8 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			// Save parameters as they're associated to this texture
 			m_CaptureParameters = _Parms;
+			m_WhiteReflectanceCorrectionFactor = _Database.WhiteReflectanceCorrectionFactor;
+			m_SpatialCorrectionEnabled = _Database.WhiteReferenceImage != null;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Setup the database to find the most appropriate calibration data for our image infos
@@ -136,6 +143,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_SwatchMin.xyY.z = float.MaxValue;
 			m_SwatchMax.xyY.z = -float.MaxValue;
 			m_SwatchAvg.xyY = new float3( 0, 0, 0 );
+			float	MinLuminance_Raw = float.MaxValue;
+			float	MaxLuminance_Raw = -float.MaxValue;
 
 			if ( _Parms.CropSource )
 			{
@@ -146,8 +155,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				float2	AxisX = new float2( (float) Math.Cos( _Parms.CropRectangleRotation ), -(float) Math.Sin( _Parms.CropRectangleRotation ) );
 				float2	AxisY = new float2( (float) Math.Sin( _Parms.CropRectangleRotation ), (float) Math.Cos( _Parms.CropRectangleRotation ) );
-
-//			return new PointF( 0.5f * (Width - ImageRect.Height) + _Position.x * ImageRect.Height, ImageRect.Y + _Position.y * ImageRect.Height );
 
 				float2	TopLeftCorner = new float2( 0.5f * (_Source.Width - _Source.Height) + _Parms.CropRectangleCenter.x * _Source.Height, _Source.Height * _Parms.CropRectangleCenter.y )
 												  + _Source.Height * (-_Parms.CropRectangleHalfSize.x * AxisX - _Parms.CropRectangleHalfSize.y * AxisY);
@@ -166,6 +173,15 @@ namespace StandardizedDiffuseAlbedoMaps
 						float	V = CurrentPixel.y / _Source.Height;
 
 						XYZ = _Source.BilinearSample( CurrentPixel.x, CurrentPixel.y );
+
+//DEBUG
+// float	L = XYZ.y * _Database.GetSpatialLuminanceCorrectionFactor( U, V );
+// if ( L < MinLuminance_Raw )
+// 	MinLuminance_Raw = L;
+// if ( L > MaxLuminance_Raw )
+// 	MaxLuminance_Raw = L;
+//DEBUG
+
 						xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
 						xyY.z = _Database.CalibrateWithSpatialCorrection( U, V, xyY.z );	// Apply luminance calibration
 						XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
@@ -192,14 +208,32 @@ namespace StandardizedDiffuseAlbedoMaps
 				int	W = m_Texture.Width;
 				int	H = m_Texture.Height;
 
-				for ( int Y=0; Y < H; Y++ )
+				int	X0 = 0;
+				int	X1 = W;
+				int	Y0 = 0;
+				int	Y1 = H;
+
+//DEBUG
+// X0 = 1088; Y0 = 764;
+// X1 = X0 + 1100; Y1 = Y0 + 632;
+
+				for ( int Y=Y0; Y < Y1; Y++ )
 				{
 					float	V = (float) Y / H;
-					for ( int X=0; X < W; X++ )
+					for ( int X=X0; X < X1; X++ )
 					{
 						float	U = (float) X / W;
 
 						XYZ = _Source.ContentXYZ[X,Y];
+
+//DEBUG
+// float	L = XYZ.y * _Database.GetSpatialLuminanceCorrectionFactor( U, V );
+// if ( L < MinLuminance_Raw )
+// 	MinLuminance_Raw = L;
+// if ( L > MaxLuminance_Raw )
+// 	MaxLuminance_Raw = L;
+//DEBUG
+
 						xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
 						xyY.z = _Database.CalibrateWithSpatialCorrection( U, V, xyY.z );	// Apply luminance calibration
 						XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
@@ -347,6 +381,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			SetAttribute( AppendElement( SourceInfosElement, "ISOSpeed" ), "Value", m_CaptureParameters.ISOSpeed.ToString() );
 			SetAttribute( AppendElement( SourceInfosElement, "ShutterSpeed" ), "Value", m_CaptureParameters.ShutterSpeed.ToString() );
 			SetAttribute( AppendElement( SourceInfosElement, "Aperture" ), "Value", m_CaptureParameters.Aperture.ToString() );
+
+			SetAttribute( AppendElement( SourceInfosElement, "SpatialCorrection" ), "Status", m_SpatialCorrectionEnabled ? "Enabled" : "Disabled" );
+			SetAttribute( AppendElement( SourceInfosElement, "WhiteReflectanceCorrectionFactor" ), "Value", m_WhiteReflectanceCorrectionFactor.ToString() );
 
 			SetAttribute( AppendElement( SourceInfosElement, "CropSource" ), "Value", m_CaptureParameters.CropSource.ToString() );
 			SetAttribute( AppendElement( SourceInfosElement, "CropRectangleCenter" ), "X", m_CaptureParameters.CropRectangleCenter.x.ToString() ).SetAttribute( "Y", m_CaptureParameters.CropRectangleCenter.y.ToString() );

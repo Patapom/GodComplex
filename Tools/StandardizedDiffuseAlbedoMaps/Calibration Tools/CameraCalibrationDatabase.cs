@@ -494,7 +494,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			// Fill missing values
 			m_InterpolatedCalibration.UpdateAllLuminances();
 
-			// Reset white reflectance reference because it was set for another
+			// Reset white reflectance reference because it was set for another setup
 			WhiteReflectanceReference = -1.0f;
 		}
 

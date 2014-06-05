@@ -180,8 +180,14 @@ namespace StandardizedDiffuseAlbedoMaps
 				float	t = (StandardReflectance - m_CameraCalibration.m_Reflectances[i-1].StandardReflectance) / (m_CameraCalibration.m_Reflectances[i].StandardReflectance - m_CameraCalibration.m_Reflectances[i-1].StandardReflectance);
 				float	Y = m_CameraCalibration.m_Reflectances[i-1].m_LuminanceMeasured + t * (m_CameraCalibration.m_Reflectances[i].m_LuminanceMeasured - m_CameraCalibration.m_Reflectances[i-1].m_LuminanceMeasured);
 
-				e.Graphics.DrawString( "Y=" + Y.ToString( "G4" ), Font, Brushes.Black, P.X + 6, P.Y - 16);
-				e.Graphics.DrawString( "Reflectance=" + (100.0f * StandardReflectance).ToString( "G4" ) + "%", Font, Brushes.Black, P.X + 6, P.Y - 8 );
+				string	LumText = "Reflectance=" + (100.0f * StandardReflectance).ToString( "G4" ) + "%";
+				SizeF	S = e.Graphics.MeasureString( LumText, Font );
+
+				float	TextOffsetX = P.X < 0.5f * Width ? 0 : -S.Width - 6;
+				float	TextOffsetY = P.Y < 0.5f * Height ? 40 : 0;
+
+				e.Graphics.DrawString( "Y=" + Y.ToString( "G4" ), Font, Brushes.Black, TextOffsetX + P.X + 6, TextOffsetY + P.Y - 24);
+				e.Graphics.DrawString( LumText, Font, Brushes.Black, TextOffsetX + P.X + 6, TextOffsetY + P.Y - 16 );
 				break;
 			}
 		}

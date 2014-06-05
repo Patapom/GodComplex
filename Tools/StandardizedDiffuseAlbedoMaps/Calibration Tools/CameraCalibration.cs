@@ -223,22 +223,27 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// and replace it into your orignal xyY, convert back to XYZ and voilà!</remarks>
 		public float	Calibrate( float _Luminance )
 		{
-			Probe	PreviousProbe = m_Reflectances[0];
+			Probe	PreviousProbe = null;
+			Probe	CurrentProbe = m_Reflectances[0];
 			for ( int ProbeIndex=1; ProbeIndex < m_Reflectances.Length; ProbeIndex++ )
 			{
-				Probe	CurrentProbe = m_Reflectances[ProbeIndex];
-				if ( CurrentProbe.m_LuminanceMeasured > _Luminance || ProbeIndex == m_Reflectances.Length-1 )
+				PreviousProbe = CurrentProbe;
+				CurrentProbe = m_Reflectances[ProbeIndex];
+				if ( CurrentProbe.m_LuminanceMeasured >= _Luminance )//|| ProbeIndex == m_Reflectances.Length-1 )
 				{	// Found the correct interval!
 					float	t = (_Luminance - PreviousProbe.m_LuminanceMeasured) / (CurrentProbe.m_LuminanceMeasured - PreviousProbe.m_LuminanceMeasured);
-							t = Math.Max( 0.0f, Math.Min( 1.0f, t ) );	// Should already be in [0,1] but who knows?
+remauve							t = Math.Max( 0.0f, Math.Min( 1.0f, t ) );	// Should already be in [0,1] but who knows?
 					float	CalibratedLuminance = PreviousProbe.StandardReflectance + t * (CurrentProbe.StandardReflectance - PreviousProbe.StandardReflectance);
 					return CalibratedLuminance;
 				}
-				PreviousProbe = CurrentProbe;
 			}
 
 			// Out of range? How come?
-			return 1.0f;
+			{
+				float	t = (_Luminance - PreviousProbe.m_LuminanceMeasured) / (CurrentProbe.m_LuminanceMeasured - PreviousProbe.m_LuminanceMeasured);
+				float	CalibratedLuminance = PreviousProbe.StandardReflectance + t * (CurrentProbe.StandardReflectance - PreviousProbe.StandardReflectance);
+				return CalibratedLuminance;
+			}
 		}
 
 		/// <summary>
