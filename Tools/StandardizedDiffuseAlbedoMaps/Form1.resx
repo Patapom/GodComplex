@@ -123,14 +123,6 @@
   <metadata name="toolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>864, 17</value>
   </metadata>
-  <data name="textBox3.Text" xml:space="preserve">
-    <value>?TODO?
-Apply the Digital Camera Profile (DCP) file correction to generated colors.
-
-At the time, I'm pretty sure it's going to destroy my calibrated reflectances since it's a process that changes hue, saturation and value.
-And values are precisely what we've been fighting for!
-</value>
-  </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="buttonCropTool.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -150,6 +142,14 @@ And values are precisely what we've been fighting for!
   <metadata name="toolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>864, 17</value>
   </metadata>
+  <data name="textBox3.Text" xml:space="preserve">
+    <value>?TODO?
+Apply the Digital Camera Profile (DCP) file correction to generated colors.
+
+At the time, I'm pretty sure it's going to destroy my calibrated reflectances since it's a process that changes hue, saturation and value.
+And values are precisely what we've been fighting for!
+</value>
+  </data>
   <data name="textBox2.Text" xml:space="preserve">
     <value>The white image reference is used to compensate discrepancies in lighting from one pixel to another due to non-uniform lighting.
 You should create it simply by shooting a white sheet of paper with your usual lighting and press the pick button.

@@ -524,7 +524,7 @@ namespace TestGradientPNG
 		///		.---------------------------------------------------------------------------------------------------------------.
 		/// 
 		/// 
-		/// This is the conclusion of this long explanation: we can deduces alpha and roughness from each other and we have a nice simple way of computing the mip levels of the cube map.
+		/// This is the conclusion of this long explanation: we can deduce alpha and roughness from each other and we have a nice simple way of computing the mip levels of the cube map.
 		/// 
 		/// </summary>
 		/// <param name="_CubeFaces"></param>

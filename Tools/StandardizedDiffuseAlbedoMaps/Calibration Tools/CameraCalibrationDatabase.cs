@@ -303,7 +303,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				}
 			}
 		}
-
+ 
 		/// <summary>
 		/// Gets or sets the white reference image to use for spatial luminance correction
 		/// </summary>

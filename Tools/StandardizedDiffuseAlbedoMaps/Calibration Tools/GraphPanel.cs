@@ -121,6 +121,10 @@ namespace StandardizedDiffuseAlbedoMaps
 						float	Y = Y0 + (Y1 - Y0) * Probes[i].m_LuminanceNormalized;
 						G.FillEllipse( m_BrushProbeMeasured, X-2, Y-2, 4, 4 );
 					}
+
+					G.DrawString( "ISO = " + m_CameraCalibration.m_CameraShotInfos.m_ISOSpeed.ToString(), Font, Brushes.Black, X0 + 8, Y1 + 0 );
+					G.DrawString( "Shutter Speed = " + (m_CameraCalibration.m_CameraShotInfos.m_ShutterSpeed < 1.0f ? "1/"+((int)(1.0f/m_CameraCalibration.m_CameraShotInfos.m_ShutterSpeed)).ToString( "G4" ) : m_CameraCalibration.m_CameraShotInfos.m_ShutterSpeed.ToString( "G4" )), Font, Brushes.Black, X0 + 8, Y1 + 1*8 );
+					G.DrawString( "Aperture= " + m_CameraCalibration.m_CameraShotInfos.m_Aperture.ToString( "G4" ), Font, Brushes.Black, X0 + 8, Y1 + 2*8 );
 				}
 
 				// Draw main axes
@@ -156,10 +160,35 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			if ( m_Bitmap != null )
 				e.Graphics.DrawImage( m_Bitmap, 0, 0 );
+
+			if ( m_CameraCalibration == null )
+				return;
+
+			int	X0 = 10;
+			int	X1 = Width - 10;
+			int	Y0 = Height - 10;
+			int	Y1 = 10;
+
+			Point	P = PointToClient( Control.MousePosition );
+			float	x = (float) (P.X - X0) / (X1 - X0);
+			float	StandardReflectance = 0.02f + (0.99f - 0.02f) * x;
+			for ( int i=1; i < m_CameraCalibration.m_Reflectances.Length; i++ )
+			{
+				if ( StandardReflectance < m_CameraCalibration.m_Reflectances[i-1].StandardReflectance || StandardReflectance > m_CameraCalibration.m_Reflectances[i].StandardReflectance )
+					continue;
+
+				float	t = (StandardReflectance - m_CameraCalibration.m_Reflectances[i-1].StandardReflectance) / (m_CameraCalibration.m_Reflectances[i].StandardReflectance - m_CameraCalibration.m_Reflectances[i-1].StandardReflectance);
+				float	Y = m_CameraCalibration.m_Reflectances[i-1].m_LuminanceMeasured + t * (m_CameraCalibration.m_Reflectances[i].m_LuminanceMeasured - m_CameraCalibration.m_Reflectances[i-1].m_LuminanceMeasured);
+
+				e.Graphics.DrawString( "Y=" + Y.ToString( "G4" ), Font, Brushes.Black, P.X + 6, P.Y - 16);
+				e.Graphics.DrawString( "Reflectance=" + (100.0f * StandardReflectance).ToString( "G4" ) + "%", Font, Brushes.Black, P.X + 6, P.Y - 8 );
+				break;
+			}
 		}
 
 		protected override void OnMouseMove( MouseEventArgs e )
 		{
+			Invalidate();
 			base.OnMouseMove( e );
 		}
 	}

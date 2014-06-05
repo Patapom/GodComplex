@@ -71,7 +71,7 @@
 #define SCENE_CITY			// City
 //#define SCENE_SPONZA		// Sponza Atrium
 
-#define	LOAD_PROBES			// Define this to load probes instead of computing them
+//#define	LOAD_PROBES			// Define this to load probes instead of computing them
 //#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
 #define	USE_NORMAL_MAPS			// Define this to use normal maps
 
