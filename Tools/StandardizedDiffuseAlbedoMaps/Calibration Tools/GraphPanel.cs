@@ -167,7 +167,6 @@ namespace StandardizedDiffuseAlbedoMaps
 			int	X0 = 10;
 			int	X1 = Width - 10;
 			int	Y0 = Height - 10;
-			int	Y1 = 10;
 
 			Point	P = PointToClient( Control.MousePosition );
 			float	x = (float) (P.X - X0) / (X1 - X0);

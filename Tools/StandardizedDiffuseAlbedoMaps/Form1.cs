@@ -649,7 +649,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 			}
 
-			_Probe.m_LuminanceMeasured = AveragexyY.z;
+			_Probe.m_LuminanceMeasured = checkBoxCalibrationUseAverageLuminance.Checked ? AveragexyY.z : MaxxyY.z;
 
 			// We now have valid measurement disc infos
 			_Probe.m_MeasurementDiscIsAvailable = true;
@@ -657,7 +657,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			_Probe.m_MeasurementCenterY = _Center.y;
 			_Probe.m_MeasurementRadius = _Radius;
 
-			CommitImageToCurrentCalibration();	// We now used the current image as reference for this calibration so commit its data
+			CommitImageToCurrentCalibration();	// We used the current image as reference for this calibration so commit its data
 		}
 
 		private void StartCalibrationPicking( CameraCalibration.Probe _Probe )
@@ -702,42 +702,42 @@ namespace StandardizedDiffuseAlbedoMaps
 			labelCalbrationImageName.Text = m_Calibration.m_ReferenceImageName != null ? System.IO.Path.GetFileName( m_Calibration.m_ReferenceImageName ) : "<NO IMAGE>";
 
 			checkBoxCalibrate02.Checked = m_Calibration.m_Reflectance02.m_IsAvailable;
-			buttonCalibrate02.Enabled = m_Calibration.m_Reflectance02.m_IsAvailable;
+//			buttonCalibrate02.Enabled = m_Calibration.m_Reflectance02.m_IsAvailable;
 			labelProbeNormalized02.Enabled = m_Calibration.m_Reflectance02.m_IsAvailable;
 			labelProbeValue02.Text = m_Calibration.m_Reflectance02.m_IsAvailable ? m_Calibration.m_Reflectance02.m_LuminanceMeasured.ToString( Format ) : "";
 			labelProbeNormalized02.Text = m_Calibration.m_Reflectance02.m_IsAvailable ? m_Calibration.m_Reflectance02.m_LuminanceNormalized.ToString( Format ) : "";
 			labelProbeRelative02.Text = m_Calibration.m_Reflectance02.m_IsAvailable ? m_Calibration.m_Reflectance02.m_LuminanceRelative.ToString( Format ) : "";
 
 			checkBoxCalibrate10.Checked = m_Calibration.m_Reflectance10.m_IsAvailable;
-			buttonCalibrate10.Enabled = m_Calibration.m_Reflectance10.m_IsAvailable;
+//			buttonCalibrate10.Enabled = m_Calibration.m_Reflectance10.m_IsAvailable;
 			labelProbeNormalized10.Enabled = m_Calibration.m_Reflectance10.m_IsAvailable;
 			labelProbeValue10.Text = m_Calibration.m_Reflectance10.m_IsAvailable ? m_Calibration.m_Reflectance10.m_LuminanceMeasured.ToString( Format ) : "";
 			labelProbeNormalized10.Text = m_Calibration.m_Reflectance10.m_IsAvailable ? m_Calibration.m_Reflectance10.m_LuminanceNormalized.ToString( Format ) : "";
 			labelProbeRelative10.Text = m_Calibration.m_Reflectance10.m_IsAvailable ? m_Calibration.m_Reflectance10.m_LuminanceRelative.ToString( Format ) : "";
 
 			checkBoxCalibrate20.Checked = m_Calibration.m_Reflectance20.m_IsAvailable;
-			buttonCalibrate20.Enabled = m_Calibration.m_Reflectance20.m_IsAvailable;
+//			buttonCalibrate20.Enabled = m_Calibration.m_Reflectance20.m_IsAvailable;
 			labelProbeNormalized20.Enabled = m_Calibration.m_Reflectance20.m_IsAvailable;
 			labelProbeValue20.Text = m_Calibration.m_Reflectance20.m_IsAvailable ? m_Calibration.m_Reflectance20.m_LuminanceMeasured.ToString( Format ) : "";
 			labelProbeNormalized20.Text = m_Calibration.m_Reflectance20.m_IsAvailable ? m_Calibration.m_Reflectance20.m_LuminanceNormalized.ToString( Format ) : "";
 			labelProbeRelative20.Text = m_Calibration.m_Reflectance20.m_IsAvailable ? m_Calibration.m_Reflectance20.m_LuminanceRelative.ToString( Format ) : "";
 
 			checkBoxCalibrate50.Checked = m_Calibration.m_Reflectance50.m_IsAvailable;
-			buttonCalibrate50.Enabled = m_Calibration.m_Reflectance50.m_IsAvailable;
+//			buttonCalibrate50.Enabled = m_Calibration.m_Reflectance50.m_IsAvailable;
 			labelProbeNormalized50.Enabled = m_Calibration.m_Reflectance50.m_IsAvailable;
 			labelProbeValue50.Text = m_Calibration.m_Reflectance50.m_IsAvailable ? m_Calibration.m_Reflectance50.m_LuminanceMeasured.ToString( Format ) : "";
 			labelProbeNormalized50.Text = m_Calibration.m_Reflectance50.m_IsAvailable ? m_Calibration.m_Reflectance50.m_LuminanceNormalized.ToString( Format ) : "";
 			labelProbeRelative50.Text = m_Calibration.m_Reflectance50.m_IsAvailable ? m_Calibration.m_Reflectance50.m_LuminanceRelative.ToString( Format ) : "";
 
 			checkBoxCalibrate75.Checked = m_Calibration.m_Reflectance75.m_IsAvailable;
-			buttonCalibrate75.Enabled = m_Calibration.m_Reflectance75.m_IsAvailable;
+//			buttonCalibrate75.Enabled = m_Calibration.m_Reflectance75.m_IsAvailable;
 			labelProbeNormalized75.Enabled = m_Calibration.m_Reflectance75.m_IsAvailable;
 			labelProbeValue75.Text = m_Calibration.m_Reflectance75.m_IsAvailable ? m_Calibration.m_Reflectance75.m_LuminanceMeasured.ToString( Format ) : "";
 			labelProbeNormalized75.Text = m_Calibration.m_Reflectance75.m_IsAvailable ? m_Calibration.m_Reflectance75.m_LuminanceNormalized.ToString( Format ) : "";
 			labelProbeRelative75.Text = m_Calibration.m_Reflectance75.m_IsAvailable ? m_Calibration.m_Reflectance75.m_LuminanceRelative.ToString( Format ) : "";
 
 			checkBoxCalibrate99.Checked = m_Calibration.m_Reflectance99.m_IsAvailable;
-			buttonCalibrate99.Enabled = m_Calibration.m_Reflectance99.m_IsAvailable;
+//			buttonCalibrate99.Enabled = m_Calibration.m_Reflectance99.m_IsAvailable;
 			labelProbeNormalized99.Enabled = m_Calibration.m_Reflectance99.m_IsAvailable;
 			labelProbeValue99.Text = m_Calibration.m_Reflectance99.m_IsAvailable ? m_Calibration.m_Reflectance99.m_LuminanceMeasured.ToString( Format ) : "";
 			labelProbeNormalized99.Text = m_Calibration.m_Reflectance99.m_IsAvailable ? m_Calibration.m_Reflectance99.m_LuminanceNormalized.ToString( Format ) : "";
@@ -797,31 +797,37 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private void buttonCalibrate02_Click( object sender, EventArgs e )
 		{
+			checkBoxCalibrate02.Checked = true;	// Since we're calibrating, enable!
 			StartCalibrationPicking( m_Calibration.m_Reflectance02 );
 		}
 
 		private void buttonCalibrate10_Click( object sender, EventArgs e )
 		{
+			checkBoxCalibrate10.Checked = true;	// Since we're calibrating, enable!
 			StartCalibrationPicking( m_Calibration.m_Reflectance10 );
 		}
 
 		private void buttonCalibrate20_Click( object sender, EventArgs e )
 		{
+			checkBoxCalibrate20.Checked = true;	// Since we're calibrating, enable!
 			StartCalibrationPicking( m_Calibration.m_Reflectance20 );
 		}
 
 		private void buttonCalibrate50_Click( object sender, EventArgs e )
 		{
+			checkBoxCalibrate50.Checked = true;	// Since we're calibrating, enable!
 			StartCalibrationPicking( m_Calibration.m_Reflectance50 );
 		}
 
 		private void buttonCalibrate75_Click( object sender, EventArgs e )
 		{
+			checkBoxCalibrate75.Checked = true;	// Since we're calibrating, enable!
 			StartCalibrationPicking( m_Calibration.m_Reflectance75 );
 		}
 
 		private void buttonCalibrate99_Click( object sender, EventArgs e )
 		{
+			checkBoxCalibrate99.Checked = true;	// Since we're calibrating, enable!
 			StartCalibrationPicking( m_Calibration.m_Reflectance99 );
 		}
 
@@ -1243,6 +1249,12 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				m_CalibrationDatabase.WhiteReflectanceReference = WhiteRefxyY;
 
+				// Cache white reference data
+				m_WhiteReflectanceReference = m_CalibrationDatabase.WhiteReflectanceReference;
+				m_WhiteReflectanceISOSpeed = m_CalibrationDatabase.PreparedForISOSpeed;
+				m_WhiteReflectanceShutterSpeed = m_CalibrationDatabase.PreparedForShutterSpeed;
+				m_WhiteReflectanceAperture = m_CalibrationDatabase.PreparedForAperture;
+
 				UpdateWhiteReflectanceUI();
 			} );
 		}
@@ -1298,6 +1310,12 @@ namespace StandardizedDiffuseAlbedoMaps
 		private void buttonResetWhiteReflectance_Click( object sender, EventArgs e )
 		{
 			m_CalibrationDatabase.WhiteReflectanceReference = new float3( 0, 0, -1 );	// Will reset the factor
+
+			// Clear cached white reference data
+			m_WhiteReflectanceReference = m_CalibrationDatabase.WhiteReflectanceReference;
+			m_WhiteReflectanceISOSpeed = -1;
+			m_WhiteReflectanceShutterSpeed = -1;
+			m_WhiteReflectanceAperture = -1;
 
 			SetRegKey( "ReloadWhiteReflectanceOnStartup", "false" );	// Prevent auto load on startup
 

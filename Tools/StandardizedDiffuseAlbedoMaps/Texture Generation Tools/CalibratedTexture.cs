@@ -74,6 +74,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		// Main texture
 		private Bitmap2				m_Texture = null;
+		private float3				m_WhiteReflectanceReference = new float3( 0, 0, -1 );
 		private float				m_WhiteReflectanceCorrectionFactor = 1.0f;
 		private bool				m_SpatialCorrectionEnabled = false;
 
@@ -100,6 +101,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		public int				SwatchWidth		{ get { return m_SwatchWidth; } set { m_SwatchWidth = value; } }
 		public int				SwatchHeight	{ get { return m_SwatchHeight; } set { m_SwatchHeight = value; } }
 
+		public float3			WhiteReflectanceReference			{ get { return m_WhiteReflectanceReference; } }
 		public float			WhiteReflectanceCorrectionFactor	{ get { return m_WhiteReflectanceCorrectionFactor; } }
 		public bool				SpatialCorrectionEnabled			{ get { return m_SpatialCorrectionEnabled; } }
 
@@ -130,6 +132,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			// Save parameters as they're associated to this texture
 			m_CaptureParameters = _Parms;
+			m_WhiteReflectanceReference = _Database.WhiteReflectanceReference;
 			m_WhiteReflectanceCorrectionFactor = _Database.WhiteReflectanceCorrectionFactor;
 			m_SpatialCorrectionEnabled = _Database.WhiteReferenceImage != null;
 
@@ -159,17 +162,17 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				float2	TopLeftCorner = new float2( 0.5f * (_Source.Width - _Source.Height) + _Parms.CropRectangleCenter.x * _Source.Height, _Source.Height * _Parms.CropRectangleCenter.y )
 												  + _Source.Height * (-_Parms.CropRectangleHalfSize.x * AxisX - _Parms.CropRectangleHalfSize.y * AxisY);
-				if ( Math.Abs( _Parms.CropRectangleRotation ) < 1e-6f )
-				{	// Use integer pixels to avoid attenuated values due to bilinear filtering
-					TopLeftCorner.x = (float) Math.Floor( TopLeftCorner.x );
-					TopLeftCorner.y = (float) Math.Floor( TopLeftCorner.y );
-				}
 
 				m_Texture = new Bitmap2( W, H, new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB ) );
 				float4	XYZ;
 				float3	xyY;
 
 				float2	CurrentScanlinePixel = TopLeftCorner + 0.5f * (fImageWidth - W) * AxisX + 0.5f * (fImageHeight - H) * AxisY;
+				if ( Math.Abs( _Parms.CropRectangleRotation ) < 1e-6f )
+				{	// Use integer pixels to avoid attenuated values due to bilinear filtering
+					CurrentScanlinePixel.x = (float) Math.Floor( CurrentScanlinePixel.x );
+					CurrentScanlinePixel.y = (float) Math.Floor( CurrentScanlinePixel.y );
+				}
 				for ( int Y=0; Y < H; Y++ )
 				{
 					float2	CurrentPixel = CurrentScanlinePixel;
@@ -189,7 +192,7 @@ namespace StandardizedDiffuseAlbedoMaps
 //DEBUG
 
 						xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
-						xyY.z = _Database.CalibrateWithSpatialCorrection( U, V, xyY.z );	// Apply luminance calibration
+						xyY = _Database.CalibrateWithSpatialCorrection( U, V, xyY );	// Apply luminance calibration
 						XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
 						m_Texture.ContentXYZ[X,Y] = XYZ;
 
@@ -241,7 +244,7 @@ namespace StandardizedDiffuseAlbedoMaps
 //DEBUG
 
 						xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
-						xyY.z = _Database.CalibrateWithSpatialCorrection( U, V, xyY.z );	// Apply luminance calibration
+						xyY = _Database.CalibrateWithSpatialCorrection( U, V, xyY );	// Apply luminance calibration
 						XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
 						m_Texture.ContentXYZ[X,Y] = XYZ;
 
@@ -390,6 +393,8 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			SetAttribute( AppendElement( SourceInfosElement, "SpatialCorrection" ), "Status", m_SpatialCorrectionEnabled ? "Enabled" : "Disabled" );
 			SetAttribute( AppendElement( SourceInfosElement, "WhiteReflectanceCorrectionFactor" ), "Value", m_WhiteReflectanceCorrectionFactor.ToString() );
+			if ( m_WhiteReflectanceReference.z > 0.0f )
+				SetAttribute( AppendElement( SourceInfosElement, "WhiteBalance" ), "xyY", m_WhiteReflectanceReference.ToString() );
 
 			SetAttribute( AppendElement( SourceInfosElement, "CropSource" ), "Value", m_CaptureParameters.CropSource.ToString() );
 			SetAttribute( AppendElement( SourceInfosElement, "CropRectangleCenter" ), "X", m_CaptureParameters.CropRectangleCenter.x.ToString() ).SetAttribute( "Y", m_CaptureParameters.CropRectangleCenter.y.ToString() );

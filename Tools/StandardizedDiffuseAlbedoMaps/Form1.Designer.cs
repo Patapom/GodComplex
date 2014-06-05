@@ -161,13 +161,14 @@
 			this.saveFileDialogWhiteRefImage = new System.Windows.Forms.SaveFileDialog();
 			this.labelCaptureSpatialCorrectionStatus = new System.Windows.Forms.Label();
 			this.labelCaptureWhiteReflectanceCorrection = new System.Windows.Forms.Label();
+			this.floatTrackbarControlTargetWhiteReflectance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label10 = new System.Windows.Forms.Label();
+			this.checkBoxCalibrationUseAverageLuminance = new System.Windows.Forms.CheckBox();
 			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
 			this.resultTexturePanel = new StandardizedDiffuseAlbedoMaps.ResultTexturePanel(this.components);
 			this.whiteImageReferencePanel = new StandardizedDiffuseAlbedoMaps.WhiteImageReferencePanel(this.components);
 			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
 			this.referenceImagePanel = new StandardizedDiffuseAlbedoMaps.ReferenceImagePanel(this.components);
-			this.floatTrackbarControlTargetWhiteReflectance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.label10 = new System.Windows.Forms.Label();
 			this.groupBoxCameraShotInfos.SuspendLayout();
 			this.tabControl.SuspendLayout();
 			this.tabPageCreation.SuspendLayout();
@@ -251,7 +252,7 @@
 			// checkBoxCalibrate02
 			// 
 			this.checkBoxCalibrate02.AutoSize = true;
-			this.checkBoxCalibrate02.Location = new System.Drawing.Point(3, 18);
+			this.checkBoxCalibrate02.Location = new System.Drawing.Point(7, 18);
 			this.checkBoxCalibrate02.Name = "checkBoxCalibrate02";
 			this.checkBoxCalibrate02.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate02.TabIndex = 4;
@@ -633,8 +634,7 @@
 			// 
 			// buttonCalibrate99
 			// 
-			this.buttonCalibrate99.Enabled = false;
-			this.buttonCalibrate99.Location = new System.Drawing.Point(93, 129);
+			this.buttonCalibrate99.Location = new System.Drawing.Point(97, 129);
 			this.buttonCalibrate99.Name = "buttonCalibrate99";
 			this.buttonCalibrate99.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate99.TabIndex = 5;
@@ -646,8 +646,7 @@
 			// 
 			// buttonCalibrate75
 			// 
-			this.buttonCalibrate75.Enabled = false;
-			this.buttonCalibrate75.Location = new System.Drawing.Point(93, 106);
+			this.buttonCalibrate75.Location = new System.Drawing.Point(97, 106);
 			this.buttonCalibrate75.Name = "buttonCalibrate75";
 			this.buttonCalibrate75.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate75.TabIndex = 5;
@@ -659,8 +658,7 @@
 			// 
 			// buttonCalibrate50
 			// 
-			this.buttonCalibrate50.Enabled = false;
-			this.buttonCalibrate50.Location = new System.Drawing.Point(93, 83);
+			this.buttonCalibrate50.Location = new System.Drawing.Point(97, 83);
 			this.buttonCalibrate50.Name = "buttonCalibrate50";
 			this.buttonCalibrate50.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate50.TabIndex = 5;
@@ -672,8 +670,7 @@
 			// 
 			// buttonCalibrate20
 			// 
-			this.buttonCalibrate20.Enabled = false;
-			this.buttonCalibrate20.Location = new System.Drawing.Point(93, 60);
+			this.buttonCalibrate20.Location = new System.Drawing.Point(97, 60);
 			this.buttonCalibrate20.Name = "buttonCalibrate20";
 			this.buttonCalibrate20.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate20.TabIndex = 5;
@@ -685,8 +682,7 @@
 			// 
 			// buttonCalibrate10
 			// 
-			this.buttonCalibrate10.Enabled = false;
-			this.buttonCalibrate10.Location = new System.Drawing.Point(93, 37);
+			this.buttonCalibrate10.Location = new System.Drawing.Point(97, 37);
 			this.buttonCalibrate10.Name = "buttonCalibrate10";
 			this.buttonCalibrate10.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate10.TabIndex = 5;
@@ -698,8 +694,7 @@
 			// 
 			// buttonCalibrate02
 			// 
-			this.buttonCalibrate02.Enabled = false;
-			this.buttonCalibrate02.Location = new System.Drawing.Point(93, 14);
+			this.buttonCalibrate02.Location = new System.Drawing.Point(97, 14);
 			this.buttonCalibrate02.Name = "buttonCalibrate02";
 			this.buttonCalibrate02.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate02.TabIndex = 5;
@@ -712,7 +707,7 @@
 			// checkBoxCalibrate99
 			// 
 			this.checkBoxCalibrate99.AutoSize = true;
-			this.checkBoxCalibrate99.Location = new System.Drawing.Point(3, 133);
+			this.checkBoxCalibrate99.Location = new System.Drawing.Point(7, 133);
 			this.checkBoxCalibrate99.Name = "checkBoxCalibrate99";
 			this.checkBoxCalibrate99.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate99.TabIndex = 4;
@@ -724,7 +719,7 @@
 			// checkBoxCalibrate75
 			// 
 			this.checkBoxCalibrate75.AutoSize = true;
-			this.checkBoxCalibrate75.Location = new System.Drawing.Point(3, 110);
+			this.checkBoxCalibrate75.Location = new System.Drawing.Point(7, 110);
 			this.checkBoxCalibrate75.Name = "checkBoxCalibrate75";
 			this.checkBoxCalibrate75.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate75.TabIndex = 4;
@@ -736,7 +731,7 @@
 			// checkBoxCalibrate50
 			// 
 			this.checkBoxCalibrate50.AutoSize = true;
-			this.checkBoxCalibrate50.Location = new System.Drawing.Point(3, 87);
+			this.checkBoxCalibrate50.Location = new System.Drawing.Point(7, 87);
 			this.checkBoxCalibrate50.Name = "checkBoxCalibrate50";
 			this.checkBoxCalibrate50.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate50.TabIndex = 4;
@@ -748,7 +743,7 @@
 			// checkBoxCalibrate20
 			// 
 			this.checkBoxCalibrate20.AutoSize = true;
-			this.checkBoxCalibrate20.Location = new System.Drawing.Point(3, 64);
+			this.checkBoxCalibrate20.Location = new System.Drawing.Point(7, 64);
 			this.checkBoxCalibrate20.Name = "checkBoxCalibrate20";
 			this.checkBoxCalibrate20.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate20.TabIndex = 4;
@@ -760,7 +755,7 @@
 			// checkBoxCalibrate10
 			// 
 			this.checkBoxCalibrate10.AutoSize = true;
-			this.checkBoxCalibrate10.Location = new System.Drawing.Point(3, 41);
+			this.checkBoxCalibrate10.Location = new System.Drawing.Point(7, 41);
 			this.checkBoxCalibrate10.Name = "checkBoxCalibrate10";
 			this.checkBoxCalibrate10.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate10.TabIndex = 4;
@@ -1489,6 +1484,7 @@
 			// 
 			// tabPageCameraCalibration
 			// 
+			this.tabPageCameraCalibration.Controls.Add(this.checkBoxCalibrationUseAverageLuminance);
 			this.tabPageCameraCalibration.Controls.Add(this.tabControlCalibrationRepresentation);
 			this.tabPageCameraCalibration.Controls.Add(this.buttonExplore);
 			this.tabPageCameraCalibration.Controls.Add(this.labelCalbrationImageName);
@@ -1798,6 +1794,42 @@
 			this.labelCaptureWhiteReflectanceCorrection.TabIndex = 7;
 			this.labelCaptureWhiteReflectanceCorrection.Text = "White correction 1.0";
 			// 
+			// floatTrackbarControlTargetWhiteReflectance
+			// 
+			this.floatTrackbarControlTargetWhiteReflectance.Location = new System.Drawing.Point(101, 118);
+			this.floatTrackbarControlTargetWhiteReflectance.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlTargetWhiteReflectance.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlTargetWhiteReflectance.Name = "floatTrackbarControlTargetWhiteReflectance";
+			this.floatTrackbarControlTargetWhiteReflectance.RangeMax = 100F;
+			this.floatTrackbarControlTargetWhiteReflectance.RangeMin = 1F;
+			this.floatTrackbarControlTargetWhiteReflectance.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlTargetWhiteReflectance.TabIndex = 7;
+			this.floatTrackbarControlTargetWhiteReflectance.Value = 99F;
+			this.floatTrackbarControlTargetWhiteReflectance.VisibleRangeMax = 100F;
+			this.floatTrackbarControlTargetWhiteReflectance.VisibleRangeMin = 1F;
+			// 
+			// label10
+			// 
+			this.label10.AutoSize = true;
+			this.label10.Location = new System.Drawing.Point(4, 122);
+			this.label10.Name = "label10";
+			this.label10.Size = new System.Drawing.Size(99, 13);
+			this.label10.TabIndex = 9;
+			this.label10.Text = "Target Reflectance";
+			// 
+			// checkBoxCalibrationUseAverageLuminance
+			// 
+			this.checkBoxCalibrationUseAverageLuminance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.checkBoxCalibrationUseAverageLuminance.AutoSize = true;
+			this.checkBoxCalibrationUseAverageLuminance.Checked = true;
+			this.checkBoxCalibrationUseAverageLuminance.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxCalibrationUseAverageLuminance.Location = new System.Drawing.Point(326, 206);
+			this.checkBoxCalibrationUseAverageLuminance.Name = "checkBoxCalibrationUseAverageLuminance";
+			this.checkBoxCalibrationUseAverageLuminance.Size = new System.Drawing.Size(143, 17);
+			this.checkBoxCalibrationUseAverageLuminance.TabIndex = 4;
+			this.checkBoxCalibrationUseAverageLuminance.Text = "Use Average Luminance";
+			this.checkBoxCalibrationUseAverageLuminance.UseVisualStyleBackColor = true;
+			// 
 			// outputPanel
 			// 
 			this.outputPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -1860,29 +1892,6 @@
 			this.referenceImagePanel.Name = "referenceImagePanel";
 			this.referenceImagePanel.Size = new System.Drawing.Size(456, 286);
 			this.referenceImagePanel.TabIndex = 0;
-			// 
-			// floatTrackbarControlTargetWhiteReflectance
-			// 
-			this.floatTrackbarControlTargetWhiteReflectance.Location = new System.Drawing.Point(101, 118);
-			this.floatTrackbarControlTargetWhiteReflectance.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlTargetWhiteReflectance.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlTargetWhiteReflectance.Name = "floatTrackbarControlTargetWhiteReflectance";
-			this.floatTrackbarControlTargetWhiteReflectance.RangeMax = 100F;
-			this.floatTrackbarControlTargetWhiteReflectance.RangeMin = 1F;
-			this.floatTrackbarControlTargetWhiteReflectance.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlTargetWhiteReflectance.TabIndex = 7;
-			this.floatTrackbarControlTargetWhiteReflectance.Value = 99F;
-			this.floatTrackbarControlTargetWhiteReflectance.VisibleRangeMax = 100F;
-			this.floatTrackbarControlTargetWhiteReflectance.VisibleRangeMin = 1F;
-			// 
-			// label10
-			// 
-			this.label10.AutoSize = true;
-			this.label10.Location = new System.Drawing.Point(4, 122);
-			this.label10.Name = "label10";
-			this.label10.Size = new System.Drawing.Size(99, 13);
-			this.label10.TabIndex = 9;
-			this.label10.Text = "Target Reflectance";
 			// 
 			// Form1
 			// 
@@ -2063,6 +2072,7 @@
 		private System.Windows.Forms.Label labelCaptureSpatialCorrectionStatus;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTargetWhiteReflectance;
 		private System.Windows.Forms.Label label10;
+		private System.Windows.Forms.CheckBox checkBoxCalibrationUseAverageLuminance;
 	}
 }
 

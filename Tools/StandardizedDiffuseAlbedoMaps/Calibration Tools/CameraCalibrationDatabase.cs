@@ -101,6 +101,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		//	white reference for the new lighting condition
 		private float3						m_WhiteReflectanceReference = new float3( 0, 0, -1 );	// Not supplied by the user
 		private float						m_WhiteReflectanceCorrectionFactor = 1.0f;				// Default factor is no change at all
+		private bool						m_DoWhiteBalance = false;
+		private float3						m_WhiteBalanceXYZ = new float3( 1, 1, 1 );				// Default factor is no change at all
 
 		// White reference image to apply minor luminance corrections to pixels (spatial discrepancy in lighting compensation)
 		// I assume the provided image has been properly generated and normalized (i.e. it has a white maximum of 1)
@@ -295,11 +297,23 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				m_WhiteReflectanceReference = value;
 				if ( value.z <= 1e-6f || m_InterpolatedCalibration == null )
-					m_WhiteReflectanceCorrectionFactor = 1.0f;	// Reset
+				{	// Reset
+					m_WhiteReflectanceCorrectionFactor = 1.0f;
+					m_WhiteBalanceXYZ = new float3( 1, 1, 1 );
+					m_DoWhiteBalance = false;
+				}
 				else
 				{	// Compute the correction factor
 					float	NormalReflectance = m_InterpolatedCalibration.m_Reflectance99.m_LuminanceMeasured;	// Our normal 99% reflectance to use as white
 					m_WhiteReflectanceCorrectionFactor = NormalReflectance / m_WhiteReflectanceReference.z;
+
+					// We assume the target color profile is sRGB
+					float3	SourcexyY = new float3( m_WhiteReflectanceReference.x, m_WhiteReflectanceReference.y, 1.0f );
+					float3	SourceXYZ = Bitmap2.ColorProfile.xyY2XYZ( SourcexyY );
+					float3	TargetxyY = new float3( Bitmap2.ColorProfile.Chromaticities.sRGB.W.x, Bitmap2.ColorProfile.Chromaticities.sRGB.W.y, 1.0f );
+					float3	TargetXYZ = Bitmap2.ColorProfile.xyY2XYZ( TargetxyY );
+					m_WhiteBalanceXYZ = new float3( TargetXYZ.x / SourceXYZ.x, TargetXYZ.y / SourceXYZ.y, TargetXYZ.z / SourceXYZ.z );
+					m_DoWhiteBalance = true;
 				}
 			}
 		}
@@ -516,19 +530,26 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <summary>
 		/// Calibrates a raw luminance value
 		/// </summary>
-		/// <param name="_Luminance">The uncalibrated luminance value</param>
+		/// <param name="_xyY">The uncalibrated value</param>
 		/// <returns>The calibrated reflectance value</returns>
 		/// <remarks>Typically, you start from a RAW XYZ value that you convert to xyY, pass the Y to this method
 		/// and replace it into your orignal xyY, convert back to XYZ and voilà!</remarks>
-		public float	Calibrate( float _Luminance )
+		public float3	Calibrate( float3 _xyY )
 		{
 			if ( m_RootNode == null )
 				throw new Exception( "Calibration grid hasn't been built: did you provide a valid database path? Does the path contain camera calibration data?" );
 			if ( m_InterpolatedCalibration == null )
 				throw new Exception( "Calibration grid hasn't been prepared for calibration: did you call the PrepareCalibrationFor() method?" );
 
-			float	Reflectance = m_InterpolatedCalibration.Calibrate( m_WhiteReflectanceCorrectionFactor * _Luminance );
-			return Reflectance;
+			float	Reflectance = m_InterpolatedCalibration.Calibrate( m_WhiteReflectanceCorrectionFactor * _xyY.z );
+			_xyY.z = Reflectance;
+			if ( m_DoWhiteBalance )
+			{
+				float3	XYZ = Bitmap2.ColorProfile.xyY2XYZ( _xyY );
+				XYZ *= m_WhiteBalanceXYZ;
+				_xyY = Bitmap2.ColorProfile.XYZ2xyY( XYZ );
+			}
+			return _xyY;
 		}
 
 		/// <summary>
@@ -536,11 +557,11 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// </summary>
 		/// <param name="_U">The U coordinate in the image (U=X/Width)</param>
 		/// <param name="_V">The V coordinate in the image (V=Y/Height)</param>
-		/// <param name="_Luminance">The uncalibrated luminance value</param>
+		/// <param name="_Luminance">The uncalibrated value</param>
 		/// <returns>The calibrated reflectance value</returns>
-		/// <remarks>Typically, you start from a RAW XYZ value that you convert to xyY, pass the Y to this method
+		/// <remarks>Typically, you start from a RAW XYZ value that you convert to xyY, pass it to this method
 		/// and replace it into your orignal xyY, convert back to XYZ and voilà!</remarks>
-		public float	CalibrateWithSpatialCorrection( float _U, float _V, float _Luminance )
+		public float3	CalibrateWithSpatialCorrection( float _U, float _V, float3 _xyY )
 		{
 			if ( m_RootNode == null )
 				throw new Exception( "Calibration grid hasn't been built: did you provide a valid database path? Does the path contain camera calibration data?" );
@@ -550,8 +571,15 @@ namespace StandardizedDiffuseAlbedoMaps
 			float	CorrectionFactor = m_WhiteReflectanceCorrectionFactor;
 					CorrectionFactor *= GetSpatialLuminanceCorrectionFactor( _U, _V );	// Apply spatial correction
 
-			float	Reflectance = m_InterpolatedCalibration.Calibrate( CorrectionFactor * _Luminance );
-			return Reflectance;
+			float	Reflectance = m_InterpolatedCalibration.Calibrate( CorrectionFactor * _xyY.z );
+			_xyY.z = Reflectance;
+			if ( m_DoWhiteBalance )
+			{
+				float3	XYZ = Bitmap2.ColorProfile.xyY2XYZ( _xyY );
+				XYZ *= m_WhiteBalanceXYZ;
+				_xyY = Bitmap2.ColorProfile.XYZ2xyY( XYZ );
+			}
+			return _xyY;
 		}
 
 		/// <summary>

@@ -107,6 +107,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		public static float3	operator+( float3 a, float3 b )		{ return new float3( a.x + b.x, a.y + b.y, a.z + b.z ); }
 		public static float3	operator-( float3 a, float3 b )		{ return new float3( a.x - b.x, a.y - b.y, a.z - b.z ); }
 		public static float3	operator*( float a, float3 b )		{ return new float3( a * b.x, a * b.y, a * b.z ); }
+		public static float3	operator*( float3 a, float3 b )		{ return new float3( a.x * b.x, a.y * b.y, a.z * b.z ); }
 
 		public override string ToString()
 		{
