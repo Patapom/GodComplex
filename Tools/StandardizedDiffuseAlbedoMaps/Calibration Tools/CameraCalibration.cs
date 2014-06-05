@@ -229,21 +229,15 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				PreviousProbe = CurrentProbe;
 				CurrentProbe = m_Reflectances[ProbeIndex];
-				if ( CurrentProbe.m_LuminanceMeasured >= _Luminance )//|| ProbeIndex == m_Reflectances.Length-1 )
+				if ( CurrentProbe.m_LuminanceMeasured >= _Luminance || ProbeIndex == m_Reflectances.Length-1 )
 				{	// Found the correct interval!
 					float	t = (_Luminance - PreviousProbe.m_LuminanceMeasured) / (CurrentProbe.m_LuminanceMeasured - PreviousProbe.m_LuminanceMeasured);
-remauve							t = Math.Max( 0.0f, Math.Min( 1.0f, t ) );	// Should already be in [0,1] but who knows?
 					float	CalibratedLuminance = PreviousProbe.StandardReflectance + t * (CurrentProbe.StandardReflectance - PreviousProbe.StandardReflectance);
 					return CalibratedLuminance;
 				}
 			}
 
-			// Out of range? How come?
-			{
-				float	t = (_Luminance - PreviousProbe.m_LuminanceMeasured) / (CurrentProbe.m_LuminanceMeasured - PreviousProbe.m_LuminanceMeasured);
-				float	CalibratedLuminance = PreviousProbe.StandardReflectance + t * (CurrentProbe.StandardReflectance - PreviousProbe.StandardReflectance);
-				return CalibratedLuminance;
-			}
+			return 1.0f;
 		}
 
 		/// <summary>

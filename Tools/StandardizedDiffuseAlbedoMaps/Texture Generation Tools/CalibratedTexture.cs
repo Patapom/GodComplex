@@ -143,8 +143,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_SwatchMin.xyY.z = float.MaxValue;
 			m_SwatchMax.xyY.z = -float.MaxValue;
 			m_SwatchAvg.xyY = new float3( 0, 0, 0 );
-			float	MinLuminance_Raw = float.MaxValue;
-			float	MaxLuminance_Raw = -float.MaxValue;
+//DEBUG
+// float	MinLuminance_Raw = float.MaxValue;
+// float	MaxLuminance_Raw = -float.MaxValue;
 
 			if ( _Parms.CropSource )
 			{
@@ -158,6 +159,11 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				float2	TopLeftCorner = new float2( 0.5f * (_Source.Width - _Source.Height) + _Parms.CropRectangleCenter.x * _Source.Height, _Source.Height * _Parms.CropRectangleCenter.y )
 												  + _Source.Height * (-_Parms.CropRectangleHalfSize.x * AxisX - _Parms.CropRectangleHalfSize.y * AxisY);
+				if ( Math.Abs( _Parms.CropRectangleRotation ) < 1e-6f )
+				{	// Use integer pixels to avoid attenuated values due to bilinear filtering
+					TopLeftCorner.x = (float) Math.Floor( TopLeftCorner.x );
+					TopLeftCorner.y = (float) Math.Floor( TopLeftCorner.y );
+				}
 
 				m_Texture = new Bitmap2( W, H, new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB ) );
 				float4	XYZ;
@@ -482,13 +488,10 @@ namespace StandardizedDiffuseAlbedoMaps
 		private Bitmap2	BuildSwatch( int _Width, int _Height, float3 _xyY )
 		{
 			Bitmap2	Result = new Bitmap2( _Width, _Height, new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB ) );
-			float4	XYZ;
+			float4	XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( _xyY ), 1.0f );
 			for ( int Y=0; Y < _Height; Y++ )
 				for ( int X=0; X < _Width; X++ )
-				{
-					XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( _xyY ), 1.0f );
 					Result.ContentXYZ[X,Y] = XYZ;
-				}
 
 			return Result;
 		}

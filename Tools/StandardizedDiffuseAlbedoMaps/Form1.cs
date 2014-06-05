@@ -139,7 +139,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		private CameraCalibration			m_Calibration = new CameraCalibration();	// Current calibration
 
 		// White reflectance reference
-		private float						m_WhiteReflectanceReference = 0.0f;
+		private float3						m_WhiteReflectanceReference = new float3( 0, 0, -1 );	// Invalid
 		private float						m_WhiteReflectanceISOSpeed = -1.0f;
 		private float						m_WhiteReflectanceShutterSpeed = -1.0f;
 		private float						m_WhiteReflectanceAperture = -1.0f;
@@ -319,9 +319,8 @@ namespace StandardizedDiffuseAlbedoMaps
 				if ( Root == null )
 					throw new Exception( "Couldn't find expected root element \"WhiteReflectance\"! Is this a white ref file?" );
 
-				m_WhiteReflectanceReference = 1.0f;
-				if ( !float.TryParse( Root.GetAttribute( "Value" ), out m_WhiteReflectanceReference ) )
-					throw new Exception( "Failed to parse white reference value!" );
+				m_WhiteReflectanceReference = new float3( 0, 0, -1 );	// Invalid
+				m_WhiteReflectanceReference = float3.Parse( Root.GetAttribute( "Value" ) );
 
 				m_WhiteReflectanceISOSpeed = floatTrackbarControlISOSpeed.Value;
 				float.TryParse( Root.GetAttribute( "ISOSpeed" ), out m_WhiteReflectanceISOSpeed );
@@ -552,7 +551,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_PercentOfBlackValues"></param>
 		/// <param name="_HasSaturatedValues">Returns the percentage of encountered saturated values. 0 is okay, more means the probe shouldn't be used</param>
 		/// <returns></returns>
-		private float	IntegrateLuminance( float _X, float _Y, float _Radius, out float _MinLuminance, out float _MaxLuminance, out float _PercentOfBlackValues, out float _PercentOfSaturatedValues )
+		private float3	IntegrateLuminance( float _X, float _Y, float _Radius, out float3 _MinxyY, out float3 _MaxxyY, out float _PercentOfBlackValues, out float _PercentOfSaturatedValues )
 		{
 			float	Radius = _Radius * m_BitmapXYZ.Width;
 			float	CenterX = _X * m_BitmapXYZ.Width;
@@ -569,9 +568,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			int		TotalBlackValuesCount = 0;
 			int		TotalSaturatedValuesCount = 0;
 			int		TotalValuesCount = 0;
-			float	SumLuminance = 0.0f;
-			_MinLuminance = +float.MaxValue;
-			_MaxLuminance = 0.0f;
+			float3	SumxyY = new float3( 0, 0, 0 );
+			_MinxyY = new float3( 0, 0, +float.MaxValue );
+			_MaxxyY = new float3( 0, 0, 0 );
 			float	SumWeights = 0.0f;
 			for ( int Y=Y0; Y < Y1; Y++ )
 				for ( int X=X0; X < X1; X++ )
@@ -587,18 +586,21 @@ namespace StandardizedDiffuseAlbedoMaps
 					float	Weight = x*x*(3.0f - 2.0f*x);
 
 //DEBUG					m_BitmapXYZ.ContentXYZ[X,Y].y = Weight;
-					float	Luminance = m_BitmapXYZ.ContentXYZ[X,Y].y;
-					Luminance *= m_CalibrationDatabase.GetSpatialLuminanceCorrectionFactor( (float) X / m_BitmapXYZ.Width, (float) Y / m_BitmapXYZ.Height );
+					float3	XYZ = (float3) m_BitmapXYZ.ContentXYZ[X,Y];
+					float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( XYZ );
+					xyY.z *= m_CalibrationDatabase.GetSpatialLuminanceCorrectionFactor( (float) X / m_BitmapXYZ.Width, (float) Y / m_BitmapXYZ.Height );
 
-					if ( Luminance < 0.001f )
+					if ( xyY.z < 0.001f )
 						TotalBlackValuesCount++;		// Warning!
-					if ( Luminance > 0.999f )
+					if ( xyY.z > 0.999f )
 						TotalSaturatedValuesCount++;	// Warning!
 					TotalValuesCount++;
 
-					_MinLuminance = Math.Min( _MinLuminance, Luminance );
-					_MaxLuminance = Math.Max( _MaxLuminance, Luminance );
-					SumLuminance += Weight * Luminance;
+					if ( xyY.z < _MinxyY.z )
+						_MinxyY = xyY;
+					if ( xyY.z > _MaxxyY.z )
+						_MaxxyY = xyY;
+					SumxyY += Weight * xyY;
 					SumWeights += Weight;
 				}
 
@@ -607,8 +609,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			_PercentOfBlackValues = (float) TotalBlackValuesCount / TotalValuesCount;
 			_PercentOfSaturatedValues = (float) TotalSaturatedValuesCount / TotalValuesCount;
 
-			SumLuminance /= SumWeights;
-			return SumLuminance;
+			SumxyY = (1.0f/SumWeights) * SumxyY;
+			return SumxyY;
 		}
 
 		/// <summary>
@@ -619,9 +621,9 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_Radius"></param>
 		private void	IntegrateLuminance( CameraCalibration.Probe _Probe, float2 _Center, float _Radius )
 		{
-			float	Min, Max;
+			float3	MinxyY, MaxxyY;
 			float	BlackValues, SaturatedValues;
-			float	MeasuredLuminance = IntegrateLuminance( _Center.x, _Center.y, _Radius, out Min, out Max, out BlackValues, out SaturatedValues );
+			float3	AveragexyY = IntegrateLuminance( _Center.x, _Center.y, _Radius, out MinxyY, out MaxxyY, out BlackValues, out SaturatedValues );
 
 			bool	DisableProbe = false;
 			if ( BlackValues > BLACK_VALUES_TOLERANCE &&
@@ -647,7 +649,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 			}
 
-			_Probe.m_LuminanceMeasured = MeasuredLuminance;
+			_Probe.m_LuminanceMeasured = AveragexyY.z;
 
 			// We now have valid measurement disc infos
 			_Probe.m_MeasurementDiscIsAvailable = true;
@@ -901,9 +903,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			foreach ( CameraCalibration.Probe P in m_Calibration.m_Reflectances )
 				if ( P.m_MeasurementDiscIsAvailable )
 				{
-					float	Min, Max;
+					float3	MinxyY, MaxxyY;
 					float	BlackValues, SaturatedValues;
-					float	MeasuredValue = IntegrateLuminance( P.m_MeasurementCenterX, P.m_MeasurementCenterY, P.m_MeasurementRadius, out Min, out Max, out BlackValues, out SaturatedValues );
+					float3	AveragexyY = IntegrateLuminance( P.m_MeasurementCenterX, P.m_MeasurementCenterY, P.m_MeasurementRadius, out MinxyY, out MaxxyY, out BlackValues, out SaturatedValues );
 					if ( BlackValues > BLACK_VALUES_TOLERANCE || SaturatedValues > SATURATED_VALUES_TOLERANCE )
 					{	// Disable that probe as too many values are black or saturated
 						P.m_IsAvailable = false;
@@ -914,7 +916,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 					// We have a valid measurement!
 					P.m_IsAvailable = true;
-					P.m_LuminanceMeasured = MeasuredValue;
+					P.m_LuminanceMeasured = AveragexyY.z;
 				}
 				else
 				{	// Disable probe as it has no measurement info
@@ -1219,9 +1221,9 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			outputPanel.StartCalibrationTargetPicking( ( float2 _Center, float _Radius ) => {
 
-				float	Min, Max;
+				float3	MinxyY, MaxxyY;
 				float	BlackValues, SaturatedValues;
-				float	MeasuredLuminance = IntegrateLuminance( _Center.x, _Center.y, _Radius, out Min, out Max, out BlackValues, out SaturatedValues );
+				float3	AveragexyY = IntegrateLuminance( _Center.x, _Center.y, _Radius, out MinxyY, out MaxxyY, out BlackValues, out SaturatedValues );
 
 				if ( BlackValues > BLACK_VALUES_TOLERANCE )
 				{
@@ -1234,8 +1236,12 @@ namespace StandardizedDiffuseAlbedoMaps
 					return;
 				}
 
-//				m_CalibrationDatabase.WhiteReflectanceReference = MeasuredLuminance;
-				m_CalibrationDatabase.WhiteReflectanceReference = Max;	// Use Max instead otherwise we can get luminances higher than 99%!
+				// Scale the luminance based on the user-supplied white target
+//				float3	WhiteRefxyY = AveragexyY;
+				float3	WhiteRefxyY = MaxxyY;	// Use Max otherwise we can get luminances higher than 99%!
+				WhiteRefxyY.z *= 99.0f / floatTrackbarControlTargetWhiteReflectance.Value;
+
+				m_CalibrationDatabase.WhiteReflectanceReference = WhiteRefxyY;
 
 				UpdateWhiteReflectanceUI();
 			} );
@@ -1291,7 +1297,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private void buttonResetWhiteReflectance_Click( object sender, EventArgs e )
 		{
-			m_CalibrationDatabase.WhiteReflectanceReference = -1.0f;	// Will reset the factor
+			m_CalibrationDatabase.WhiteReflectanceReference = new float3( 0, 0, -1 );	// Will reset the factor
 
 			SetRegKey( "ReloadWhiteReflectanceOnStartup", "false" );	// Prevent auto load on startup
 
@@ -1300,9 +1306,9 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private void UpdateWhiteReflectanceUI()
 		{
-			bool	IsValidRef = m_CalibrationDatabase.WhiteReflectanceReference > 0.0f;
+			bool	IsValidRef = m_CalibrationDatabase.WhiteReflectanceReference.z > 0.0f;
 
-			labelWhiteReflectance.Text = IsValidRef ? m_CalibrationDatabase.WhiteReflectanceReference.ToString( "G4" ) + " Correction=" + m_CalibrationDatabase.WhiteReflectanceCorrectionFactor.ToString( "G4" )
+			labelWhiteReflectance.Text = IsValidRef ? "Y=" + m_CalibrationDatabase.WhiteReflectanceReference.z.ToString( "G4" ) + " / Correction=" + m_CalibrationDatabase.WhiteReflectanceCorrectionFactor.ToString( "G4" )
 										: "<Not set> Using no database correction";
 
 			buttonSaveWhiteReflectanceReference.Enabled = IsValidRef;

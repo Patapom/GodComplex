@@ -159,13 +159,15 @@
 			this.saveFileDialogWhiteReflectance = new System.Windows.Forms.SaveFileDialog();
 			this.openFileDialogWhiteRefImage = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogWhiteRefImage = new System.Windows.Forms.SaveFileDialog();
+			this.labelCaptureSpatialCorrectionStatus = new System.Windows.Forms.Label();
+			this.labelCaptureWhiteReflectanceCorrection = new System.Windows.Forms.Label();
 			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
 			this.resultTexturePanel = new StandardizedDiffuseAlbedoMaps.ResultTexturePanel(this.components);
 			this.whiteImageReferencePanel = new StandardizedDiffuseAlbedoMaps.WhiteImageReferencePanel(this.components);
 			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
 			this.referenceImagePanel = new StandardizedDiffuseAlbedoMaps.ReferenceImagePanel(this.components);
-			this.labelCaptureSpatialCorrectionStatus = new System.Windows.Forms.Label();
-			this.labelCaptureWhiteReflectanceCorrection = new System.Windows.Forms.Label();
+			this.floatTrackbarControlTargetWhiteReflectance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label10 = new System.Windows.Forms.Label();
 			this.groupBoxCameraShotInfos.SuspendLayout();
 			this.tabControl.SuspendLayout();
 			this.tabPageCreation.SuspendLayout();
@@ -1240,9 +1242,9 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.groupBoxHueTwist.Controls.Add(this.textBox3);
-			this.groupBoxHueTwist.Location = new System.Drawing.Point(6, 402);
+			this.groupBoxHueTwist.Location = new System.Drawing.Point(6, 427);
 			this.groupBoxHueTwist.Name = "groupBoxHueTwist";
-			this.groupBoxHueTwist.Size = new System.Drawing.Size(465, 158);
+			this.groupBoxHueTwist.Size = new System.Drawing.Size(465, 133);
 			this.groupBoxHueTwist.TabIndex = 2;
 			this.groupBoxHueTwist.TabStop = false;
 			this.groupBoxHueTwist.Text = "Hue Twisting";
@@ -1274,7 +1276,7 @@
 			this.groupBoxWhiteImageReference.Controls.Add(this.textBox2);
 			this.groupBoxWhiteImageReference.Controls.Add(this.buttonPickWhiteRefImage);
 			this.groupBoxWhiteImageReference.Controls.Add(this.buttonLoadWhiteRefImage);
-			this.groupBoxWhiteImageReference.Location = new System.Drawing.Point(6, 160);
+			this.groupBoxWhiteImageReference.Location = new System.Drawing.Point(6, 185);
 			this.groupBoxWhiteImageReference.Name = "groupBoxWhiteImageReference";
 			this.groupBoxWhiteImageReference.Size = new System.Drawing.Size(465, 236);
 			this.groupBoxWhiteImageReference.TabIndex = 1;
@@ -1401,10 +1403,12 @@
 			this.groupBoxWhiteReflectance.Controls.Add(this.buttonSaveWhiteReflectanceReference);
 			this.groupBoxWhiteReflectance.Controls.Add(this.labelWhiteReflectance);
 			this.groupBoxWhiteReflectance.Controls.Add(this.buttonPickWhiteReflectance);
+			this.groupBoxWhiteReflectance.Controls.Add(this.floatTrackbarControlTargetWhiteReflectance);
 			this.groupBoxWhiteReflectance.Controls.Add(this.buttonLoadWhiteReflectanceReference);
+			this.groupBoxWhiteReflectance.Controls.Add(this.label10);
 			this.groupBoxWhiteReflectance.Location = new System.Drawing.Point(6, 6);
 			this.groupBoxWhiteReflectance.Name = "groupBoxWhiteReflectance";
-			this.groupBoxWhiteReflectance.Size = new System.Drawing.Size(465, 148);
+			this.groupBoxWhiteReflectance.Size = new System.Drawing.Size(465, 173);
 			this.groupBoxWhiteReflectance.TabIndex = 0;
 			this.groupBoxWhiteReflectance.TabStop = false;
 			this.groupBoxWhiteReflectance.Text = "White Reflectance Reference";
@@ -1418,7 +1422,7 @@
 			this.textBox1.Multiline = true;
 			this.textBox1.Name = "textBox1";
 			this.textBox1.ReadOnly = true;
-			this.textBox1.Size = new System.Drawing.Size(452, 88);
+			this.textBox1.Size = new System.Drawing.Size(452, 92);
 			this.textBox1.TabIndex = 7;
 			this.textBox1.Text = resources.GetString("textBox1.Text");
 			// 
@@ -1426,7 +1430,7 @@
 			// 
 			this.buttonResetWhiteReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.buttonResetWhiteReflectance.Enabled = false;
-			this.buttonResetWhiteReflectance.Location = new System.Drawing.Point(374, 116);
+			this.buttonResetWhiteReflectance.Location = new System.Drawing.Point(370, 141);
 			this.buttonResetWhiteReflectance.Name = "buttonResetWhiteReflectance";
 			this.buttonResetWhiteReflectance.Size = new System.Drawing.Size(57, 23);
 			this.buttonResetWhiteReflectance.TabIndex = 5;
@@ -1439,7 +1443,7 @@
 			// 
 			this.buttonSaveWhiteReflectanceReference.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.buttonSaveWhiteReflectanceReference.Enabled = false;
-			this.buttonSaveWhiteReflectanceReference.Location = new System.Drawing.Point(311, 116);
+			this.buttonSaveWhiteReflectanceReference.Location = new System.Drawing.Point(307, 141);
 			this.buttonSaveWhiteReflectanceReference.Name = "buttonSaveWhiteReflectanceReference";
 			this.buttonSaveWhiteReflectanceReference.Size = new System.Drawing.Size(57, 23);
 			this.buttonSaveWhiteReflectanceReference.TabIndex = 5;
@@ -1452,9 +1456,9 @@
 			// 
 			this.labelWhiteReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.labelWhiteReflectance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelWhiteReflectance.Location = new System.Drawing.Point(101, 116);
+			this.labelWhiteReflectance.Location = new System.Drawing.Point(101, 141);
 			this.labelWhiteReflectance.Name = "labelWhiteReflectance";
-			this.labelWhiteReflectance.Size = new System.Drawing.Size(204, 23);
+			this.labelWhiteReflectance.Size = new System.Drawing.Size(200, 23);
 			this.labelWhiteReflectance.TabIndex = 2;
 			this.labelWhiteReflectance.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
 			// 
@@ -1462,7 +1466,7 @@
 			// 
 			this.buttonPickWhiteReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.buttonPickWhiteReflectance.Image = ((System.Drawing.Image)(resources.GetObject("buttonPickWhiteReflectance.Image")));
-			this.buttonPickWhiteReflectance.Location = new System.Drawing.Point(6, 114);
+			this.buttonPickWhiteReflectance.Location = new System.Drawing.Point(6, 139);
 			this.buttonPickWhiteReflectance.Name = "buttonPickWhiteReflectance";
 			this.buttonPickWhiteReflectance.Size = new System.Drawing.Size(26, 26);
 			this.buttonPickWhiteReflectance.TabIndex = 6;
@@ -1474,7 +1478,7 @@
 			// buttonLoadWhiteReflectanceReference
 			// 
 			this.buttonLoadWhiteReflectanceReference.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.buttonLoadWhiteReflectanceReference.Location = new System.Drawing.Point(38, 116);
+			this.buttonLoadWhiteReflectanceReference.Location = new System.Drawing.Point(38, 141);
 			this.buttonLoadWhiteReflectanceReference.Name = "buttonLoadWhiteReflectanceReference";
 			this.buttonLoadWhiteReflectanceReference.Size = new System.Drawing.Size(57, 23);
 			this.buttonLoadWhiteReflectanceReference.TabIndex = 5;
@@ -1774,6 +1778,26 @@
     "|*.*";
 			this.saveFileDialogWhiteRefImage.Title = "Select the name of the white reference image file to save to...";
 			// 
+			// labelCaptureSpatialCorrectionStatus
+			// 
+			this.labelCaptureSpatialCorrectionStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.labelCaptureSpatialCorrectionStatus.AutoSize = true;
+			this.labelCaptureSpatialCorrectionStatus.Location = new System.Drawing.Point(290, 544);
+			this.labelCaptureSpatialCorrectionStatus.Name = "labelCaptureSpatialCorrectionStatus";
+			this.labelCaptureSpatialCorrectionStatus.Size = new System.Drawing.Size(142, 13);
+			this.labelCaptureSpatialCorrectionStatus.TabIndex = 7;
+			this.labelCaptureSpatialCorrectionStatus.Text = "Spatial Correction is disabled";
+			// 
+			// labelCaptureWhiteReflectanceCorrection
+			// 
+			this.labelCaptureWhiteReflectanceCorrection.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.labelCaptureWhiteReflectanceCorrection.AutoSize = true;
+			this.labelCaptureWhiteReflectanceCorrection.Location = new System.Drawing.Point(290, 529);
+			this.labelCaptureWhiteReflectanceCorrection.Name = "labelCaptureWhiteReflectanceCorrection";
+			this.labelCaptureWhiteReflectanceCorrection.Size = new System.Drawing.Size(103, 13);
+			this.labelCaptureWhiteReflectanceCorrection.TabIndex = 7;
+			this.labelCaptureWhiteReflectanceCorrection.Text = "White correction 1.0";
+			// 
 			// outputPanel
 			// 
 			this.outputPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -1837,25 +1861,28 @@
 			this.referenceImagePanel.Size = new System.Drawing.Size(456, 286);
 			this.referenceImagePanel.TabIndex = 0;
 			// 
-			// labelCaptureSpatialCorrectionStatus
+			// floatTrackbarControlTargetWhiteReflectance
 			// 
-			this.labelCaptureSpatialCorrectionStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.labelCaptureSpatialCorrectionStatus.AutoSize = true;
-			this.labelCaptureSpatialCorrectionStatus.Location = new System.Drawing.Point(290, 544);
-			this.labelCaptureSpatialCorrectionStatus.Name = "labelCaptureSpatialCorrectionStatus";
-			this.labelCaptureSpatialCorrectionStatus.Size = new System.Drawing.Size(142, 13);
-			this.labelCaptureSpatialCorrectionStatus.TabIndex = 7;
-			this.labelCaptureSpatialCorrectionStatus.Text = "Spatial Correction is disabled";
+			this.floatTrackbarControlTargetWhiteReflectance.Location = new System.Drawing.Point(101, 118);
+			this.floatTrackbarControlTargetWhiteReflectance.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlTargetWhiteReflectance.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlTargetWhiteReflectance.Name = "floatTrackbarControlTargetWhiteReflectance";
+			this.floatTrackbarControlTargetWhiteReflectance.RangeMax = 100F;
+			this.floatTrackbarControlTargetWhiteReflectance.RangeMin = 1F;
+			this.floatTrackbarControlTargetWhiteReflectance.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlTargetWhiteReflectance.TabIndex = 7;
+			this.floatTrackbarControlTargetWhiteReflectance.Value = 99F;
+			this.floatTrackbarControlTargetWhiteReflectance.VisibleRangeMax = 100F;
+			this.floatTrackbarControlTargetWhiteReflectance.VisibleRangeMin = 1F;
 			// 
-			// labelCaptureWhiteReflectanceCorrection
+			// label10
 			// 
-			this.labelCaptureWhiteReflectanceCorrection.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.labelCaptureWhiteReflectanceCorrection.AutoSize = true;
-			this.labelCaptureWhiteReflectanceCorrection.Location = new System.Drawing.Point(290, 529);
-			this.labelCaptureWhiteReflectanceCorrection.Name = "labelCaptureWhiteReflectanceCorrection";
-			this.labelCaptureWhiteReflectanceCorrection.Size = new System.Drawing.Size(103, 13);
-			this.labelCaptureWhiteReflectanceCorrection.TabIndex = 7;
-			this.labelCaptureWhiteReflectanceCorrection.Text = "White correction 1.0";
+			this.label10.AutoSize = true;
+			this.label10.Location = new System.Drawing.Point(4, 122);
+			this.label10.Name = "label10";
+			this.label10.Size = new System.Drawing.Size(99, 13);
+			this.label10.TabIndex = 9;
+			this.label10.Text = "Target Reflectance";
 			// 
 			// Form1
 			// 
@@ -2034,6 +2061,8 @@
 		private System.Windows.Forms.TextBox textBox3;
 		private System.Windows.Forms.Label labelCaptureWhiteReflectanceCorrection;
 		private System.Windows.Forms.Label labelCaptureSpatialCorrectionStatus;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTargetWhiteReflectance;
+		private System.Windows.Forms.Label label10;
 	}
 }
 

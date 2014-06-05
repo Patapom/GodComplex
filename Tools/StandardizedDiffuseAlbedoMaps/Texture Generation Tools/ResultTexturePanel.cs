@@ -28,6 +28,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private Bitmap					m_Bitmap = null;
 		private Bitmap					m_TextureBitmap = null;
+		private Bitmap					m_TextureOutOfRangeBitmap = null;
 		private Bitmap2.ColorProfile	m_sRGBProfile = new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB );
 
 		private CalibratedTexture		m_CalibratedTexture = null;
@@ -60,9 +61,13 @@ namespace StandardizedDiffuseAlbedoMaps
 					if ( m_TextureBitmap == null || m_TextureBitmap.Width != W || m_TextureBitmap.Height != H )
 					{
 						if ( m_TextureBitmap != null )
+						{
 							m_TextureBitmap.Dispose();
+							m_TextureOutOfRangeBitmap.Dispose();
+						}
 
 						m_TextureBitmap = new Bitmap( W, H, PixelFormat.Format32bppArgb );
+						m_TextureOutOfRangeBitmap = new Bitmap( W, H, PixelFormat.Format32bppArgb );
 					}
 
 					// Convert to RGB first
@@ -72,10 +77,12 @@ namespace StandardizedDiffuseAlbedoMaps
 
 					// Fill pixels
 					BitmapData	LockedBitmap = m_TextureBitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
+					BitmapData	LockedBitmap2 = m_TextureOutOfRangeBitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
 					byte	R, G, B;
 					for ( int Y=0; Y < H; Y++ )
 					{
 						byte*	pScanline = (byte*) LockedBitmap.Scan0 + LockedBitmap.Stride * Y;
+						byte*	pScanline2 = (byte*) LockedBitmap2.Scan0 + LockedBitmap2.Stride * Y;
 						for ( int X=0; X < W; X++ )
 						{
 							R = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].x ) );
@@ -85,15 +92,25 @@ namespace StandardizedDiffuseAlbedoMaps
 							*pScanline++ = G;
 							*pScanline++ = R;
 							*pScanline++ = 0xFF;
+
+							*pScanline2++ = 0;
+							*pScanline2++ = 0;
+							*pScanline2++ = (byte) (ContentXYZ[X,Y].y < 0.02f || ContentXYZ[X,Y].y > 0.99f ? 0xFF : 0x00);
+							*pScanline2++ = 0x7F;
 						}
 					}
+					m_TextureOutOfRangeBitmap.UnlockBits( LockedBitmap2 );
 					m_TextureBitmap.UnlockBits( LockedBitmap );
 				}
 				else
 				{
 					if ( m_TextureBitmap != null )
+					{
 						m_TextureBitmap.Dispose();
+						m_TextureOutOfRangeBitmap.Dispose();
+					}
 					m_TextureBitmap = null;
+					m_TextureOutOfRangeBitmap = null;
 				}
 
 				UpdateBitmap();
@@ -211,6 +228,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			m_MouseButtonsDown |= e.Button;
 			Capture = true;
+			Invalidate();
 		}
 
 		protected override void OnMouseMove( MouseEventArgs e )
@@ -256,6 +274,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					break;
 			}
 
+			Invalidate();
 			Capture = false;
 			Cursor = Cursors.Default;
 		}
@@ -296,6 +315,14 @@ namespace StandardizedDiffuseAlbedoMaps
 					e.Graphics.DrawRectangle( Pens.Red, m_ButtonDownMousePosition.X, m_ButtonDownMousePosition.Y, m_MousePositionCurrent.X - m_ButtonDownMousePosition.X, m_MousePositionCurrent.Y - m_ButtonDownMousePosition.Y );
 					break;
 				}
+
+				default:
+					if ( m_TextureOutOfRangeBitmap != null && m_MouseButtonsDown != MouseButtons.None )
+					{
+						RectangleF	ClientRect = ImageClientRect();
+						e.Graphics.DrawImage( m_TextureOutOfRangeBitmap, ClientRect, new RectangleF( 0, 0, m_TextureOutOfRangeBitmap.Width, m_TextureOutOfRangeBitmap.Height ), GraphicsUnit.Pixel );
+					}
+					break;
 			}
 		}
 

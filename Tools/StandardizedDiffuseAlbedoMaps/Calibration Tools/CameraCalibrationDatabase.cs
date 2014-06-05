@@ -99,8 +99,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		// If the camera has been properly calibrated but the lighting changes, the user
 		//	has the possibility to drop the white reflectance in an image and use it as
 		//	white reference for the new lighting condition
-		private float						m_WhiteReflectanceReference = -1.0f;		// Not supplied by the user
-		private float						m_WhiteReflectanceCorrectionFactor = 1.0f;	// Default factor is no change at all
+		private float3						m_WhiteReflectanceReference = new float3( 0, 0, -1 );	// Not supplied by the user
+		private float						m_WhiteReflectanceCorrectionFactor = 1.0f;				// Default factor is no change at all
 
 		// White reference image to apply minor luminance corrections to pixels (spatial discrepancy in lighting compensation)
 		// I assume the provided image has been properly generated and normalized (i.e. it has a white maximum of 1)
@@ -288,18 +288,18 @@ namespace StandardizedDiffuseAlbedoMaps
 		///  will be computed and applied to all luminances read from the provided images
 		/// Set to a negative value to reset the correction factor to normal
 		/// </summary>
-		public float	WhiteReflectanceReference
+		public float3	WhiteReflectanceReference
 		{
 			get { return m_WhiteReflectanceReference; }
 			set
 			{
 				m_WhiteReflectanceReference = value;
-				if ( value <= 0.0f || m_InterpolatedCalibration == null )
-					m_WhiteReflectanceCorrectionFactor = 1.0f;
+				if ( value.z <= 1e-6f || m_InterpolatedCalibration == null )
+					m_WhiteReflectanceCorrectionFactor = 1.0f;	// Reset
 				else
 				{	// Compute the correction factor
 					float	NormalReflectance = m_InterpolatedCalibration.m_Reflectance99.m_LuminanceMeasured;	// Our normal 99% reflectance to use as white
-					m_WhiteReflectanceCorrectionFactor = NormalReflectance / m_WhiteReflectanceReference;
+					m_WhiteReflectanceCorrectionFactor = NormalReflectance / m_WhiteReflectanceReference.z;
 				}
 			}
 		}
@@ -495,7 +495,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_InterpolatedCalibration.UpdateAllLuminances();
 
 			// Reset white reflectance reference because it was set for another setup
-			WhiteReflectanceReference = -1.0f;
+			WhiteReflectanceReference = new float3( 0, 0, -1 );
 		}
 
 		/// <summary>

@@ -1560,7 +1560,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			/// <returns></returns>
 			public static float3	xyY2XYZ( float3 _xyY )
 			{
-				float	Y_y = _xyY.z / Math.Max( 1e-8f, _xyY.y );
+				float	Y_y = _xyY.y > 1e-8f ? _xyY.z / _xyY.y : 0.0f;
 				return new float3( _xyY.x * Y_y, _xyY.z, (1.0f - _xyY.x - _xyY.y) * Y_y );
 			}
 
