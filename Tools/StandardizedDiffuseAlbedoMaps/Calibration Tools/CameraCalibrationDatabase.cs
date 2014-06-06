@@ -620,20 +620,32 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			// Move along Y
 			while ( Current.m_EV_ShutterSpeed <= _EV_ShutterSpeed && Current.m_Neighbors[1][1] != null )
-			{
+			{	// Move right
 				GridNode	Next = Current.m_Neighbors[1][1];
 				if ( Next.m_EV_ShutterSpeed > _EV_ShutterSpeed )
 					break;	// Next node is larger than provided value! We have our start node along Y!
 				Current = Next;
 			}
+			while ( Current.m_EV_ShutterSpeed > _EV_ShutterSpeed && Current.m_Neighbors[1][0] != null )
+			{	// Move left
+				Current = Current.m_Neighbors[1][0];
+				if ( Current.m_EV_ShutterSpeed <= _EV_ShutterSpeed )
+					break;	// Current node is smallerthan provided value! We have our start node along Z!
+			}
 
 			// Move along Z
 			while ( Current.m_EV_Aperture <= _EV_Aperture && Current.m_Neighbors[2][1] != null )
-			{
+			{	// Move right
 				GridNode	Next = Current.m_Neighbors[2][1];
 				if ( Next.m_EV_Aperture > _EV_Aperture )
 					break;	// Next node is larger than provided value! We have our start node along Z!
 				Current = Next;
+			}
+			while ( Current.m_EV_Aperture > _EV_Aperture && Current.m_Neighbors[2][0] != null )
+			{	// Move left
+				Current = Current.m_Neighbors[2][0];
+				if ( Current.m_EV_Aperture <= _EV_Aperture )
+					break;	// Current node is smallerthan provided value! We have our start node along Z!
 			}
 
 			return Current;

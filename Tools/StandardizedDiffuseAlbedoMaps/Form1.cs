@@ -565,6 +565,8 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			const float	SMOOTHSTEP_MAX_RADIUS = 0.2f;	// We reach max weight 1 at 20% of the border of the circle
 
+			bool	ApplySpatialCorrection = checkBoxSpatialLuminanceCorrection.Checked;
+
 			int		TotalBlackValuesCount = 0;
 			int		TotalSaturatedValuesCount = 0;
 			int		TotalValuesCount = 0;
@@ -588,7 +590,8 @@ namespace StandardizedDiffuseAlbedoMaps
 //DEBUG					m_BitmapXYZ.ContentXYZ[X,Y].y = Weight;
 					float3	XYZ = (float3) m_BitmapXYZ.ContentXYZ[X,Y];
 					float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( XYZ );
-					xyY.z *= m_CalibrationDatabase.GetSpatialLuminanceCorrectionFactor( (float) X / m_BitmapXYZ.Width, (float) Y / m_BitmapXYZ.Height );
+					if ( ApplySpatialCorrection )
+						xyY.z *= m_CalibrationDatabase.GetSpatialLuminanceCorrectionFactor( (float) X / m_BitmapXYZ.Width, (float) Y / m_BitmapXYZ.Height );
 
 					if ( xyY.z < 0.001f )
 						TotalBlackValuesCount++;		// Warning!
