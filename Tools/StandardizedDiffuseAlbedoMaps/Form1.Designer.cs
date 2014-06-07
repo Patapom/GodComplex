@@ -79,10 +79,12 @@
 			this.checkBoxCalibrate10 = new System.Windows.Forms.CheckBox();
 			this.tabControl = new System.Windows.Forms.TabControl();
 			this.tabPageCreation = new System.Windows.Forms.TabPage();
+			this.panelCapturedReflectance = new System.Windows.Forms.Panel();
 			this.label19 = new System.Windows.Forms.Label();
 			this.labelCaptureWhiteReflectanceCorrection = new System.Windows.Forms.Label();
 			this.labelCaptureSpatialCorrectionStatus = new System.Windows.Forms.Label();
 			this.label11 = new System.Windows.Forms.Label();
+			this.buttonSafeBorder = new System.Windows.Forms.Button();
 			this.buttonResetCrop = new System.Windows.Forms.Button();
 			this.labelCapturedSwatchxyY = new System.Windows.Forms.Label();
 			this.labelCapturedSwatchRGB = new System.Windows.Forms.Label();
@@ -164,13 +166,12 @@
 			this.saveFileDialogWhiteReflectance = new System.Windows.Forms.SaveFileDialog();
 			this.openFileDialogWhiteRefImage = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogWhiteRefImage = new System.Windows.Forms.SaveFileDialog();
-			this.panelCapturedReflectance = new System.Windows.Forms.Panel();
 			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
 			this.resultTexturePanel = new StandardizedDiffuseAlbedoMaps.ResultTexturePanel(this.components);
 			this.whiteImageReferencePanel = new StandardizedDiffuseAlbedoMaps.WhiteImageReferencePanel(this.components);
 			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
 			this.referenceImagePanel = new StandardizedDiffuseAlbedoMaps.ReferenceImagePanel(this.components);
-			this.buttonSafeBorder = new System.Windows.Forms.Button();
+			this.checkBoxUseMeanMode = new System.Windows.Forms.CheckBox();
 			this.groupBoxCameraShotInfos.SuspendLayout();
 			this.tabControl.SuspendLayout();
 			this.tabPageCreation.SuspendLayout();
@@ -782,6 +783,7 @@
 			// 
 			// tabPageCreation
 			// 
+			this.tabPageCreation.Controls.Add(this.checkBoxUseMeanMode);
 			this.tabPageCreation.Controls.Add(this.panelCapturedReflectance);
 			this.tabPageCreation.Controls.Add(this.label19);
 			this.tabPageCreation.Controls.Add(this.labelCaptureWhiteReflectanceCorrection);
@@ -805,8 +807,18 @@
 			this.tabPageCreation.Text = "Texure Creation";
 			this.tabPageCreation.UseVisualStyleBackColor = true;
 			// 
+			// panelCapturedReflectance
+			// 
+			this.panelCapturedReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.panelCapturedReflectance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelCapturedReflectance.Location = new System.Drawing.Point(419, 423);
+			this.panelCapturedReflectance.Name = "panelCapturedReflectance";
+			this.panelCapturedReflectance.Size = new System.Drawing.Size(49, 21);
+			this.panelCapturedReflectance.TabIndex = 10;
+			// 
 			// label19
 			// 
+			this.label19.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.label19.AutoSize = true;
 			this.label19.Location = new System.Drawing.Point(287, 448);
 			this.label19.Name = "label19";
@@ -836,12 +848,23 @@
 			// 
 			// label11
 			// 
+			this.label11.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.label11.AutoSize = true;
 			this.label11.Location = new System.Drawing.Point(287, 488);
 			this.label11.Name = "label11";
 			this.label11.Size = new System.Drawing.Size(74, 13);
 			this.label11.TabIndex = 7;
 			this.label11.Text = "Swatch sRGB";
+			// 
+			// buttonSafeBorder
+			// 
+			this.buttonSafeBorder.Location = new System.Drawing.Point(218, 9);
+			this.buttonSafeBorder.Name = "buttonSafeBorder";
+			this.buttonSafeBorder.Size = new System.Drawing.Size(57, 23);
+			this.buttonSafeBorder.TabIndex = 5;
+			this.buttonSafeBorder.Text = "Safe";
+			this.buttonSafeBorder.UseVisualStyleBackColor = true;
+			this.buttonSafeBorder.Click += new System.EventHandler(this.buttonSafeBorder_Click);
 			// 
 			// buttonResetCrop
 			// 
@@ -1834,14 +1857,6 @@
     "|*.*";
 			this.saveFileDialogWhiteRefImage.Title = "Select the name of the white reference image file to save to...";
 			// 
-			// panelCapturedReflectance
-			// 
-			this.panelCapturedReflectance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.panelCapturedReflectance.Location = new System.Drawing.Point(419, 423);
-			this.panelCapturedReflectance.Name = "panelCapturedReflectance";
-			this.panelCapturedReflectance.Size = new System.Drawing.Size(49, 21);
-			this.panelCapturedReflectance.TabIndex = 10;
-			// 
 			// outputPanel
 			// 
 			this.outputPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -1905,15 +1920,15 @@
 			this.referenceImagePanel.Size = new System.Drawing.Size(456, 286);
 			this.referenceImagePanel.TabIndex = 0;
 			// 
-			// buttonSafeBorder
+			// checkBoxUseMeanMode
 			// 
-			this.buttonSafeBorder.Location = new System.Drawing.Point(218, 9);
-			this.buttonSafeBorder.Name = "buttonSafeBorder";
-			this.buttonSafeBorder.Size = new System.Drawing.Size(57, 23);
-			this.buttonSafeBorder.TabIndex = 5;
-			this.buttonSafeBorder.Text = "Safe";
-			this.buttonSafeBorder.UseVisualStyleBackColor = true;
-			this.buttonSafeBorder.Click += new System.EventHandler(this.buttonSafeBorder_Click);
+			this.checkBoxUseMeanMode.AutoSize = true;
+			this.checkBoxUseMeanMode.Location = new System.Drawing.Point(313, 13);
+			this.checkBoxUseMeanMode.Name = "checkBoxUseMeanMode";
+			this.checkBoxUseMeanMode.Size = new System.Drawing.Size(142, 17);
+			this.checkBoxUseMeanMode.TabIndex = 11;
+			this.checkBoxUseMeanMode.Text = "Use \"mode\" for min/max";
+			this.checkBoxUseMeanMode.UseVisualStyleBackColor = true;
 			// 
 			// Form1
 			// 
@@ -2097,6 +2112,7 @@
 		private System.Windows.Forms.CheckBox checkBoxCalibrationUseAverageLuminance;
 		private System.Windows.Forms.Panel panelCapturedReflectance;
 		private System.Windows.Forms.Button buttonSafeBorder;
+		private System.Windows.Forms.CheckBox checkBoxUseMeanMode;
 	}
 }
 

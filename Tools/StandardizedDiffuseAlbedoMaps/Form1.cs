@@ -205,6 +205,9 @@ namespace StandardizedDiffuseAlbedoMaps
 					LoadWhiteReferenceImage( WhiteRefFileName, false );
 				}
 			}
+
+			splitContainerMain.Panel2.Focus();
+			buttonLoadImage.Focus();
 		}
 
 		#region Helpers
@@ -955,9 +958,11 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 			}
 
- 			string	OldFileName = GetRegKey( "LastCalibratedTextureFilename", System.IO.Path.Combine( System.IO.Path.GetDirectoryName( m_ImageFileName.FullName ), System.IO.Path.GetFileNameWithoutExtension( m_ImageFileName.FullName ) + ".png" ) );
+			string	ImageNamePNG = System.IO.Path.GetFileNameWithoutExtension( m_ImageFileName.FullName ) + ".png";
+ 			string	OldFileName = GetRegKey( "LastCalibratedTextureFilename", System.IO.Path.Combine( System.IO.Path.GetDirectoryName( m_ImageFileName.FullName ), ImageNamePNG ) );
 			saveFileDialogCalibratedImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
-			saveFileDialogCalibratedImage.FileName = System.IO.Path.GetFileName( OldFileName );
+//			saveFileDialogCalibratedImage.FileName = System.IO.Path.GetFileName( OldFileName );
+			saveFileDialogCalibratedImage.FileName = ImageNamePNG;
 
 			if ( saveFileDialogCalibratedImage.ShowDialog( this ) != DialogResult.OK )
  				return;
@@ -1036,6 +1041,8 @@ namespace StandardizedDiffuseAlbedoMaps
 				CropRectangleCenter = new float2( outputPanel.CropRectangeCenter.x, outputPanel.CropRectangeCenter.y ),
 				CropRectangleHalfSize = new float2( outputPanel.CropRectangeHalfSize.x, outputPanel.CropRectangeHalfSize.y ),
 				CropRectangleRotation = outputPanel.CropRectangeRotation,
+
+				UseModeInsteadOfMean = checkBoxUseMeanMode.Checked,
 			};
 
 			//////////////////////////////////////////////////////////////////////////

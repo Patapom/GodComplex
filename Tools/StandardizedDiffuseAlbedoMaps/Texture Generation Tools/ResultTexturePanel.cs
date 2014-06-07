@@ -75,20 +75,12 @@ namespace StandardizedDiffuseAlbedoMaps
 					float4[,]	ContentRGB = new float4[ContentXYZ.GetLength(0),ContentXYZ.GetLength(1)];
 					m_sRGBProfile.XYZ2RGB( ContentXYZ, ContentRGB );
 
-					// Find significant areas to draw min/max swatch location depending on this panel's size
-					RectangleF	ImageRect = ImageClientRect();
-					float		dU = 1.0f / ImageRect.Width;	// How much a client pixel is worth in U space
-					float		dV = 1.0f / ImageRect.Height;	// How much a client pixel is worth in V space
-					dU *= 2.0f;
-					dV *= 2.0f;
-					float		MinU0 = m_CalibratedTexture.SwatchMin.Location.x - dU;
-					float		MinU1 = m_CalibratedTexture.SwatchMin.Location.x + dU;
-					float		MinV0 = m_CalibratedTexture.SwatchMin.Location.y - dV;
-					float		MinV1 = m_CalibratedTexture.SwatchMin.Location.y + dV;
-					float		MaxU0 = m_CalibratedTexture.SwatchMax.Location.x - dU;
-					float		MaxU1 = m_CalibratedTexture.SwatchMax.Location.x + dU;
-					float		MaxV0 = m_CalibratedTexture.SwatchMax.Location.y - dV;
-					float		MaxV1 = m_CalibratedTexture.SwatchMax.Location.y + dV;
+					// Find significant areas to draw min/max location by isolating the 5% darkest/brightest pixels
+					float		Min = m_CalibratedTexture.SwatchMin.xyY.z;
+					float		Max = m_CalibratedTexture.SwatchMax.xyY.z;
+					float		Range = Math.Max( 1e-6f, Max - Min );
+					float		DarkestPixels = Min + 0.05f * Range;
+					float		BrightestPixels = Max - 0.05f * Range;
 
 					// Fill pixels
 					BitmapData	LockedBitmap = m_TextureBitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
@@ -111,17 +103,21 @@ namespace StandardizedDiffuseAlbedoMaps
 							*pScanline++ = R;
 							*pScanline++ = 0xFF;
 
+							float	Reflectance = ContentXYZ[X,Y].y;
+
 							R = G = B = 0;
 							A = 0x7F;
-							R = (byte) (ContentXYZ[X,Y].y < 0.02f || ContentXYZ[X,Y].y > 0.99f ? 0xFF : 0x00);	// Show out of range pixels in red
-							if ( U >= MinU0 && U <= MinU1 && V >= MinV0 && V <= MinV1 )
+
+							if ( Reflectance < 0.02f || Reflectance > 0.99f )
+								R = 0xFF;	// Show out of range pixels in red
+							else if ( Reflectance < DarkestPixels )
 							{	// Show min spot as a dark yellow
 								R = 0x40;
 								G = 0x40;
 								B = 0;
 								A = 0xFF;
 							}
-							if ( U >= MaxU0 && U <= MaxU1 && V >= MaxV0 && V <= MaxV1 )
+							else if ( Reflectance > BrightestPixels )
 							{	// Show max spot as a bright yellow
 								R = 0xFF;
 								G = 0xFF;

@@ -25,9 +25,11 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			// Crop infos
 			public bool			CropSource = false;
-			public float2		CropRectangleCenter;	// In UV space (note that UVs are not in [0,1] as usual because of aspect ratio, e.g. X = UV.x * ImageHeight, instead of ImageWidth)
-			public float2		CropRectangleHalfSize;	// In UV space
+			public float2		CropRectangleCenter;			// In UV space (note that UVs are not in [0,1] as usual because of aspect ratio, e.g. X = UV.x * ImageHeight, instead of ImageWidth)
+			public float2		CropRectangleHalfSize;			// In UV space
 			public float		CropRectangleRotation;
+
+			public bool			UseModeInsteadOfMean = false;	// Use statistical "mode" operation instead of "mean" to compute min/max swatches
 		}
 
 		/// <summary>
@@ -142,12 +144,19 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			//////////////////////////////////////////////////////////////////////////
 			// Build target texture
-			m_SwatchMin.xyY.z = float.MaxValue;
-			m_SwatchMax.xyY.z = -float.MaxValue;
-			m_SwatchAvg.xyY = new float3( 0, 0, 0 );
+			float4	AvgXYZ = new float4( 0, 0, 0, 0 );
 //DEBUG
 // float	MinLuminance_Raw = float.MaxValue;
 // float	MaxLuminance_Raw = -float.MaxValue;
+
+			const int	EXTREME_VALUES_COUNT = 100;
+			float3[]	ArrayMin = new float3[EXTREME_VALUES_COUNT];
+			float3[]	ArrayMax = new float3[EXTREME_VALUES_COUNT];
+			for ( int i=0; i < EXTREME_VALUES_COUNT; i++ )
+			{
+				ArrayMin[i] = new float3( 0, 1, 0 );
+				ArrayMax[i] = new float3( 0, 0, 0 );
+			}
 
 			if ( _Parms.CropSource )
 			{
@@ -164,6 +173,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				m_Texture = new Bitmap2( W, H, new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB ) );
 				float4	XYZ;
+				float3	ShortXYZ;
 				float3	xyY;
 
 				float2	CurrentScanlinePixel = TopLeftCorner + 0.5f * (fImageWidth - W) * AxisX + 0.5f * (fImageHeight - H) * AxisY;
@@ -192,23 +202,13 @@ namespace StandardizedDiffuseAlbedoMaps
 
 						xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
 						xyY = _Database.CalibrateWithSpatialCorrection( U, V, xyY );	// Apply luminance calibration
-						XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
+						ShortXYZ = Bitmap2.ColorProfile.xyY2XYZ( xyY );
+						XYZ = new float4( ShortXYZ, XYZ.w );
 						m_Texture.ContentXYZ[X,Y] = XYZ;
 
 						// Update min/max/avg values
-						if ( xyY.z < m_SwatchMin.xyY.z )
-						{
-							m_SwatchMin.xyY = xyY;
-							m_SwatchMin.Location.x = (float) X / W;
-							m_SwatchMin.Location.y = (float) Y / H;
-						}
-						if ( xyY.z > m_SwatchMax.xyY.z )
-						{
-							m_SwatchMax.xyY = xyY;
-							m_SwatchMax.Location.x = (float) X / W;
-							m_SwatchMax.Location.y = (float) Y / H;
-						}
-						m_SwatchAvg.xyY += xyY;
+						InsertMinMax( ShortXYZ, ArrayMin, ArrayMax, EXTREME_VALUES_COUNT );
+						AvgXYZ += XYZ;
 
 						CurrentPixel += AxisX;
 					}
@@ -219,6 +219,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			{	// Simple texture copy, with luminance calibration
 				m_Texture = new Bitmap2( _Source.Width, _Source.Height, new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB ) );
 				float4	XYZ;
+				float3	ShortXYZ;
 				float3	xyY;
 
 				int	W = m_Texture.Width;
@@ -252,32 +253,38 @@ namespace StandardizedDiffuseAlbedoMaps
 
 						xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
 						xyY = _Database.CalibrateWithSpatialCorrection( U, V, xyY );	// Apply luminance calibration
-						XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
+						ShortXYZ = Bitmap2.ColorProfile.xyY2XYZ( xyY );
+						XYZ = new float4( ShortXYZ, XYZ.w );
 						m_Texture.ContentXYZ[X,Y] = XYZ;
 
 						// Update min/max/avg values
-						if ( xyY.z < m_SwatchMin.xyY.z )
-						{
-							m_SwatchMin.xyY = xyY;
-							m_SwatchMin.Location.x = (float) X / W;
-							m_SwatchMin.Location.y = (float) Y / H;
-						}
-						if ( xyY.z > m_SwatchMax.xyY.z )
-						{
-							m_SwatchMax.xyY = xyY;
-							m_SwatchMax.Location.x = (float) X / W;
-							m_SwatchMax.Location.y = (float) Y / H;
-						}
-						m_SwatchAvg.xyY += xyY;
+						InsertMinMax( ShortXYZ, ArrayMin, ArrayMax, EXTREME_VALUES_COUNT );
+						AvgXYZ += XYZ;
 					}
 				}
 			}
 
 			// Normalize average swatch color
 			float	Normalizer = 1.0f / (m_Texture.Width*m_Texture.Height);
-			m_SwatchAvg.xyY.x *= Normalizer;
-			m_SwatchAvg.xyY.y *= Normalizer;
-			m_SwatchAvg.xyY.z *= Normalizer;
+			float3	avgxyY = Bitmap2.ColorProfile.XYZ2xyY( Normalizer * ((float3) AvgXYZ) );
+			m_SwatchAvg.xyY = avgxyY;
+
+			// Compute min & max using statistical norm
+ 			float3	BestXYZ_Min;
+ 			float3	BestXYZ_Max;
+
+			if ( _Parms.UseModeInsteadOfMean )
+			{	// Use mode
+				BestXYZ_Min = ComputeMode( ArrayMin );
+				BestXYZ_Max = ComputeMode( ArrayMax );
+			}
+			else
+			{	// Use mean
+ 				BestXYZ_Min = ComputeMean( ArrayMin );
+ 				BestXYZ_Max = ComputeMean( ArrayMax );
+			}
+			m_SwatchMin.xyY = Bitmap2.ColorProfile.XYZ2xyY( BestXYZ_Min );
+			m_SwatchMax.xyY = Bitmap2.ColorProfile.XYZ2xyY( BestXYZ_Max );
 
 			m_SwatchMin.Texture = BuildSwatch( m_SwatchWidth, m_SwatchHeight, m_SwatchMin.xyY );
 			m_SwatchMax.Texture = BuildSwatch( m_SwatchWidth, m_SwatchHeight, m_SwatchMax.xyY );
@@ -294,6 +301,91 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_Texture.ShutterSpeed = _Parms.ShutterSpeed;
 			m_Texture.Aperture = _Parms.Aperture;
 		}
+
+		/// <summary>
+		/// Computes the statistical mean of the values
+		/// </summary>
+		/// <param name="_Values"></param>
+		/// <returns></returns>
+		private float3	ComputeMean( float3[] _Values )
+		{
+			float3	AvgXYZ = new float3( 0, 0, 0 );
+			for ( int i=0; i < _Values.Length; i++ )
+				AvgXYZ += _Values[i];
+			AvgXYZ = (1.0f / _Values.Length) * AvgXYZ;
+			return AvgXYZ;
+		}
+
+		/// <summary>
+		/// Computes the statistical mode of the values
+		/// </summary>
+		/// <param name="_Values"></param>
+		/// <returns></returns>
+		private float3	ComputeMode( float3[] _Values )
+		{
+			int		COUNT = _Values.Length;
+
+			// The idea is simply to discretize the set of values and count the ones that are the most represented
+			float	Start = _Values[0].y;
+			float	End = _Values[_Values.Length-1].y;
+			float	IntervalLength = 0.0f, Normalizer = 0.0f;
+			if ( Math.Abs( End - Start ) > 1e-6f )
+			{
+				IntervalLength = (End - Start) / COUNT;
+				Normalizer = 1.0f / IntervalLength;
+			}
+
+			// Fill bins
+			int[]		Bins = new int[COUNT];
+			float3[]	BinsSum = new float3[COUNT];
+			for ( int i=0; i < _Values.Length; i++ )
+			{
+				int	BinIndex = Math.Min( COUNT-1, (int) Math.Floor( (_Values[i].y - Start) * Normalizer ) );
+				Bins[BinIndex]++;
+				BinsSum[BinIndex] += _Values[i];
+			}
+
+			// Find the one that contains most values (yep, that's the mode!)
+			int		MaxValuesCount = 0;
+			int		MaxValuesBinIndex = -1;
+			for ( int BinIndex=0; BinIndex < COUNT; BinIndex++ )
+				if ( Bins[BinIndex] > MaxValuesCount )
+				{	// More filled up bin discovered!
+					MaxValuesCount = Bins[BinIndex];
+					MaxValuesBinIndex = BinIndex;
+				}
+
+			float3	ModeXYZ = (1.0f / MaxValuesCount) * BinsSum[MaxValuesBinIndex];
+			return ModeXYZ;
+		}
+
+		private void	InsertMinMax( float3 v, float3[] _Min, float3[] _Max, int _Length )
+		{
+			if ( v.y < _Min[_Length-1].y )
+			{	// We're sure we're good enough for that array!
+				for ( int i=0; i < _Length; i++ )
+					if ( v.y < _Min[i].y )
+					{	// Insert here
+						if ( i != _Length-1 )
+							Array.Copy( _Min, i, _Min, i+1, _Length-i-1 );
+						_Min[i] = v;
+						break;
+					}
+			}
+
+			if ( v.y > _Max[_Length-1].y )
+			{	// We're sure we're good enough for that array!
+				for ( int i=0; i < _Length; i++ )
+					if ( v.y > _Max[i].y )
+					{	// Insert here
+						if ( i != _Length-1 )
+							Array.Copy( _Max, i, _Max, i+1, _Length-i-1 );
+						_Max[i] = v;
+						break;
+					}
+			}
+		}
+
 
 		/// <summary>
 		/// Builds the custom swatches
@@ -472,17 +564,17 @@ namespace StandardizedDiffuseAlbedoMaps
 			int		W = X1 - X0;
 			int		H = Y1 - Y0;
 
-			float3	AveragexyY = new float3( 0, 0, 0 );
+			float4	AverageXYZ = new float4( 0, 0, 0, 0 );
 			for ( int Y=Y0; Y < Y1; Y++ )
 				for ( int X=X0; X < X1; X++ )
 				{
 					float4	XYZ = m_Texture.ContentXYZ[X,Y];
-					float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
-					AveragexyY += xyY;
+					AverageXYZ += XYZ;
 				}
-			AveragexyY = (1.0f / (W*H)) * AveragexyY;
+			AverageXYZ = (1.0f / (W*H)) * AverageXYZ;
 
-			return AveragexyY;
+			float3	xyY =  Bitmap2.ColorProfile.XYZ2xyY( (float3) AverageXYZ );
+			return xyY;
 		}
 
 		/// <summary>
