@@ -1003,6 +1003,16 @@ namespace StandardizedDiffuseAlbedoMaps
 			outputPanel.ResetCropRectangle();
 		}
 
+		private void buttonSafeBorder_Click( object sender, EventArgs e )
+		{
+			// This is hardcoded from a satisfying result from a white reference
+			// <CropRectangleCenter X="0.5239879" Y="0.4970015" />
+			// <CropRectangleHalfSize X="0.5800582" Y="0.3470764" />
+			// <CropRectangleRotation Value="0" />
+			//
+			outputPanel.SetCropRectangle( new float2( 0.5239879f, 0.4970015f ), new float2( 0.5800582f, 0.3470764f ), 0.0f );
+		}
+
 		private void buttonCapture_Click( object sender, EventArgs e )
 		{
 			if ( m_BitmapXYZ == null )
@@ -1186,6 +1196,12 @@ namespace StandardizedDiffuseAlbedoMaps
 			float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
 			labelCapturedReflectance.Text = xyY.ToString( "G4" );
 			labelCapturedReflectance.ForeColor = xyY.z > 1.0f ? Color.Red : Color.Black;
+
+			float4	RGB = m_sRGBProfile.XYZ2RGB( XYZ );
+			Color	C = Color.FromArgb( Math.Max( 0, Math.Min( 255, (int) (RGB.x * 255.0f) ) ),
+										Math.Max( 0, Math.Min( 255, (int) (RGB.y * 255.0f) ) ),
+										Math.Max( 0, Math.Min( 255, (int) (RGB.z * 255.0f) ) ) );
+			panelCapturedReflectance.BackColor = C;
 		}
 
 		private void panelSwatchMin_MouseMove( object sender, MouseEventArgs e )

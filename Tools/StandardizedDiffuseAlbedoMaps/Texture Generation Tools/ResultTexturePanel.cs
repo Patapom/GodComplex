@@ -75,16 +75,34 @@ namespace StandardizedDiffuseAlbedoMaps
 					float4[,]	ContentRGB = new float4[ContentXYZ.GetLength(0),ContentXYZ.GetLength(1)];
 					m_sRGBProfile.XYZ2RGB( ContentXYZ, ContentRGB );
 
+					// Find significant areas to draw min/max swatch location depending on this panel's size
+					RectangleF	ImageRect = ImageClientRect();
+					float		dU = 1.0f / ImageRect.Width;	// How much a client pixel is worth in U space
+					float		dV = 1.0f / ImageRect.Height;	// How much a client pixel is worth in V space
+					dU *= 2.0f;
+					dV *= 2.0f;
+					float		MinU0 = m_CalibratedTexture.SwatchMin.Location.x - dU;
+					float		MinU1 = m_CalibratedTexture.SwatchMin.Location.x + dU;
+					float		MinV0 = m_CalibratedTexture.SwatchMin.Location.y - dV;
+					float		MinV1 = m_CalibratedTexture.SwatchMin.Location.y + dV;
+					float		MaxU0 = m_CalibratedTexture.SwatchMax.Location.x - dU;
+					float		MaxU1 = m_CalibratedTexture.SwatchMax.Location.x + dU;
+					float		MaxV0 = m_CalibratedTexture.SwatchMax.Location.y - dV;
+					float		MaxV1 = m_CalibratedTexture.SwatchMax.Location.y + dV;
+
 					// Fill pixels
 					BitmapData	LockedBitmap = m_TextureBitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
 					BitmapData	LockedBitmap2 = m_TextureOutOfRangeBitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
-					byte	R, G, B;
+					byte	R, G, B, A;
 					for ( int Y=0; Y < H; Y++ )
 					{
 						byte*	pScanline = (byte*) LockedBitmap.Scan0 + LockedBitmap.Stride * Y;
 						byte*	pScanline2 = (byte*) LockedBitmap2.Scan0 + LockedBitmap2.Stride * Y;
+						float	V = (float) Y / H;
 						for ( int X=0; X < W; X++ )
 						{
+							float	U = (float) X / W;
+
 							R = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].x ) );
 							G = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].y ) );
 							B = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].z ) );
@@ -93,10 +111,28 @@ namespace StandardizedDiffuseAlbedoMaps
 							*pScanline++ = R;
 							*pScanline++ = 0xFF;
 
-							*pScanline2++ = 0;
-							*pScanline2++ = 0;
-							*pScanline2++ = (byte) (ContentXYZ[X,Y].y < 0.02f || ContentXYZ[X,Y].y > 0.99f ? 0xFF : 0x00);
-							*pScanline2++ = 0x7F;
+							R = G = B = 0;
+							A = 0x7F;
+							R = (byte) (ContentXYZ[X,Y].y < 0.02f || ContentXYZ[X,Y].y > 0.99f ? 0xFF : 0x00);	// Show out of range pixels in red
+							if ( U >= MinU0 && U <= MinU1 && V >= MinV0 && V <= MinV1 )
+							{	// Show min spot as a dark yellow
+								R = 0x40;
+								G = 0x40;
+								B = 0;
+								A = 0xFF;
+							}
+							if ( U >= MaxU0 && U <= MaxU1 && V >= MaxV0 && V <= MaxV1 )
+							{	// Show max spot as a bright yellow
+								R = 0xFF;
+								G = 0xFF;
+								B = 0;
+								A = 0xFF;
+							}
+
+							*pScanline2++ = B;
+							*pScanline2++ = G;
+							*pScanline2++ = R;
+							*pScanline2++ = A;
 						}
 					}
 					m_TextureOutOfRangeBitmap.UnlockBits( LockedBitmap2 );

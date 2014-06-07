@@ -42,8 +42,9 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		public class	Swatch
 		{
-			public float3		xyY;		// The color used to build the swatch
-			public Bitmap2		Texture;	// The bitmap generated from the swatch color
+			public float3		xyY;						// The color used to build the swatch
+			public float4		Location = new float4();	// The location (in UV space) where the swatch color was taken (XY=Top Left Corner, ZW=Bottom Right Corner)
+			public Bitmap2		Texture;					// The bitmap generated from the swatch color
 
 			public virtual void	Save( CalibratedTexture _Owner, XmlElement _SwatchElement )
 			{
@@ -54,8 +55,6 @@ namespace StandardizedDiffuseAlbedoMaps
 		}
 		public class	CustomSwatch : Swatch
 		{
-			public float4		Location;	// The location (in UV space) where the swatch color was taken (XY=Top Left Corner, ZW=Bottom Right Corner)
-
 			public override void	Save( CalibratedTexture _Owner, XmlElement _SwatchElement )
 			{
 				base.Save( _Owner, _SwatchElement );
@@ -198,9 +197,17 @@ namespace StandardizedDiffuseAlbedoMaps
 
 						// Update min/max/avg values
 						if ( xyY.z < m_SwatchMin.xyY.z )
+						{
 							m_SwatchMin.xyY = xyY;
+							m_SwatchMin.Location.x = (float) X / W;
+							m_SwatchMin.Location.y = (float) Y / H;
+						}
 						if ( xyY.z > m_SwatchMax.xyY.z )
+						{
 							m_SwatchMax.xyY = xyY;
+							m_SwatchMax.Location.x = (float) X / W;
+							m_SwatchMax.Location.y = (float) Y / H;
+						}
 						m_SwatchAvg.xyY += xyY;
 
 						CurrentPixel += AxisX;
@@ -250,9 +257,17 @@ namespace StandardizedDiffuseAlbedoMaps
 
 						// Update min/max/avg values
 						if ( xyY.z < m_SwatchMin.xyY.z )
+						{
 							m_SwatchMin.xyY = xyY;
+							m_SwatchMin.Location.x = (float) X / W;
+							m_SwatchMin.Location.y = (float) Y / H;
+						}
 						if ( xyY.z > m_SwatchMax.xyY.z )
+						{
 							m_SwatchMax.xyY = xyY;
+							m_SwatchMax.Location.x = (float) X / W;
+							m_SwatchMax.Location.y = (float) Y / H;
+						}
 						m_SwatchAvg.xyY += xyY;
 					}
 				}

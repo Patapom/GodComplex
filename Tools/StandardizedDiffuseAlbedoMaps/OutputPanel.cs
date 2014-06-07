@@ -184,6 +184,18 @@ namespace StandardizedDiffuseAlbedoMaps
 			Invalidate();
 		}
 
+		/// <summary>
+		/// Sets the crop rectangle to a specific value
+		/// </summary>
+		public void				SetCropRectangle( float2 _Center, float2 _HalfSize, float _Rotation )
+		{
+			m_CropRectangleIsDefault = false;
+			m_CropRectangleCenter = _Center;
+			m_CropRectangleHalfSize = _HalfSize;
+			m_CropRectangleRotation = _Rotation;
+			Invalidate();
+		}
+
 		public unsafe void		UpdateBitmap()
 		{
 			if ( m_Bitmap == null )

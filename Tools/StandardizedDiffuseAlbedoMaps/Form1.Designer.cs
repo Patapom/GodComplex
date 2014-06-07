@@ -80,6 +80,8 @@
 			this.tabControl = new System.Windows.Forms.TabControl();
 			this.tabPageCreation = new System.Windows.Forms.TabPage();
 			this.label19 = new System.Windows.Forms.Label();
+			this.labelCaptureWhiteReflectanceCorrection = new System.Windows.Forms.Label();
+			this.labelCaptureSpatialCorrectionStatus = new System.Windows.Forms.Label();
 			this.label11 = new System.Windows.Forms.Label();
 			this.buttonResetCrop = new System.Windows.Forms.Button();
 			this.labelCapturedSwatchxyY = new System.Windows.Forms.Label();
@@ -133,8 +135,11 @@
 			this.buttonSaveWhiteReflectanceReference = new System.Windows.Forms.Button();
 			this.labelWhiteReflectance = new System.Windows.Forms.Label();
 			this.buttonPickWhiteReflectance = new System.Windows.Forms.Button();
+			this.floatTrackbarControlTargetWhiteReflectance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.buttonLoadWhiteReflectanceReference = new System.Windows.Forms.Button();
+			this.label10 = new System.Windows.Forms.Label();
 			this.tabPageCameraCalibration = new System.Windows.Forms.TabPage();
+			this.checkBoxCalibrationUseAverageLuminance = new System.Windows.Forms.CheckBox();
 			this.tabControlCalibrationRepresentation = new System.Windows.Forms.TabControl();
 			this.tabPageLuminancesGraph = new System.Windows.Forms.TabPage();
 			this.tabPageReferenceImage = new System.Windows.Forms.TabPage();
@@ -159,16 +164,13 @@
 			this.saveFileDialogWhiteReflectance = new System.Windows.Forms.SaveFileDialog();
 			this.openFileDialogWhiteRefImage = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogWhiteRefImage = new System.Windows.Forms.SaveFileDialog();
-			this.labelCaptureSpatialCorrectionStatus = new System.Windows.Forms.Label();
-			this.labelCaptureWhiteReflectanceCorrection = new System.Windows.Forms.Label();
-			this.floatTrackbarControlTargetWhiteReflectance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.label10 = new System.Windows.Forms.Label();
-			this.checkBoxCalibrationUseAverageLuminance = new System.Windows.Forms.CheckBox();
+			this.panelCapturedReflectance = new System.Windows.Forms.Panel();
 			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
 			this.resultTexturePanel = new StandardizedDiffuseAlbedoMaps.ResultTexturePanel(this.components);
 			this.whiteImageReferencePanel = new StandardizedDiffuseAlbedoMaps.WhiteImageReferencePanel(this.components);
 			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
 			this.referenceImagePanel = new StandardizedDiffuseAlbedoMaps.ReferenceImagePanel(this.components);
+			this.buttonSafeBorder = new System.Windows.Forms.Button();
 			this.groupBoxCameraShotInfos.SuspendLayout();
 			this.tabControl.SuspendLayout();
 			this.tabPageCreation.SuspendLayout();
@@ -780,10 +782,12 @@
 			// 
 			// tabPageCreation
 			// 
+			this.tabPageCreation.Controls.Add(this.panelCapturedReflectance);
 			this.tabPageCreation.Controls.Add(this.label19);
 			this.tabPageCreation.Controls.Add(this.labelCaptureWhiteReflectanceCorrection);
 			this.tabPageCreation.Controls.Add(this.labelCaptureSpatialCorrectionStatus);
 			this.tabPageCreation.Controls.Add(this.label11);
+			this.tabPageCreation.Controls.Add(this.buttonSafeBorder);
 			this.tabPageCreation.Controls.Add(this.buttonResetCrop);
 			this.tabPageCreation.Controls.Add(this.labelCapturedSwatchxyY);
 			this.tabPageCreation.Controls.Add(this.labelCapturedSwatchRGB);
@@ -804,16 +808,36 @@
 			// label19
 			// 
 			this.label19.AutoSize = true;
-			this.label19.Location = new System.Drawing.Point(287, 478);
+			this.label19.Location = new System.Drawing.Point(287, 448);
 			this.label19.Name = "label19";
 			this.label19.Size = new System.Drawing.Size(63, 13);
 			this.label19.TabIndex = 7;
 			this.label19.Text = "Swatch xyY";
 			// 
+			// labelCaptureWhiteReflectanceCorrection
+			// 
+			this.labelCaptureWhiteReflectanceCorrection.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.labelCaptureWhiteReflectanceCorrection.AutoSize = true;
+			this.labelCaptureWhiteReflectanceCorrection.Location = new System.Drawing.Point(290, 529);
+			this.labelCaptureWhiteReflectanceCorrection.Name = "labelCaptureWhiteReflectanceCorrection";
+			this.labelCaptureWhiteReflectanceCorrection.Size = new System.Drawing.Size(103, 13);
+			this.labelCaptureWhiteReflectanceCorrection.TabIndex = 7;
+			this.labelCaptureWhiteReflectanceCorrection.Text = "White correction 1.0";
+			// 
+			// labelCaptureSpatialCorrectionStatus
+			// 
+			this.labelCaptureSpatialCorrectionStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.labelCaptureSpatialCorrectionStatus.AutoSize = true;
+			this.labelCaptureSpatialCorrectionStatus.Location = new System.Drawing.Point(290, 544);
+			this.labelCaptureSpatialCorrectionStatus.Name = "labelCaptureSpatialCorrectionStatus";
+			this.labelCaptureSpatialCorrectionStatus.Size = new System.Drawing.Size(142, 13);
+			this.labelCaptureSpatialCorrectionStatus.TabIndex = 7;
+			this.labelCaptureSpatialCorrectionStatus.Text = "Spatial Correction is disabled";
+			// 
 			// label11
 			// 
 			this.label11.AutoSize = true;
-			this.label11.Location = new System.Drawing.Point(287, 438);
+			this.label11.Location = new System.Drawing.Point(287, 488);
 			this.label11.Name = "label11";
 			this.label11.Size = new System.Drawing.Size(74, 13);
 			this.label11.TabIndex = 7;
@@ -835,7 +859,7 @@
 			this.labelCapturedSwatchxyY.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.labelCapturedSwatchxyY.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelCapturedSwatchxyY.Location = new System.Drawing.Point(290, 493);
+			this.labelCapturedSwatchxyY.Location = new System.Drawing.Point(290, 463);
 			this.labelCapturedSwatchxyY.Name = "labelCapturedSwatchxyY";
 			this.labelCapturedSwatchxyY.Size = new System.Drawing.Size(178, 20);
 			this.labelCapturedSwatchxyY.TabIndex = 2;
@@ -846,7 +870,7 @@
 			this.labelCapturedSwatchRGB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.labelCapturedSwatchRGB.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelCapturedSwatchRGB.Location = new System.Drawing.Point(290, 453);
+			this.labelCapturedSwatchRGB.Location = new System.Drawing.Point(290, 503);
 			this.labelCapturedSwatchRGB.Name = "labelCapturedSwatchRGB";
 			this.labelCapturedSwatchRGB.Size = new System.Drawing.Size(178, 20);
 			this.labelCapturedSwatchRGB.TabIndex = 2;
@@ -881,9 +905,9 @@
 			this.label12.AutoSize = true;
 			this.label12.Location = new System.Drawing.Point(287, 385);
 			this.label12.Name = "label12";
-			this.label12.Size = new System.Drawing.Size(85, 13);
+			this.label12.Size = new System.Drawing.Size(61, 13);
 			this.label12.TabIndex = 9;
-			this.label12.Text = "Reflectance xyY";
+			this.label12.Text = "Current xyY";
 			// 
 			// buttonCapture
 			// 
@@ -1470,6 +1494,20 @@
 			this.buttonPickWhiteReflectance.UseVisualStyleBackColor = true;
 			this.buttonPickWhiteReflectance.Click += new System.EventHandler(this.buttonPickWhiteReflectance_Click);
 			// 
+			// floatTrackbarControlTargetWhiteReflectance
+			// 
+			this.floatTrackbarControlTargetWhiteReflectance.Location = new System.Drawing.Point(101, 118);
+			this.floatTrackbarControlTargetWhiteReflectance.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlTargetWhiteReflectance.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlTargetWhiteReflectance.Name = "floatTrackbarControlTargetWhiteReflectance";
+			this.floatTrackbarControlTargetWhiteReflectance.RangeMax = 100F;
+			this.floatTrackbarControlTargetWhiteReflectance.RangeMin = 1F;
+			this.floatTrackbarControlTargetWhiteReflectance.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlTargetWhiteReflectance.TabIndex = 7;
+			this.floatTrackbarControlTargetWhiteReflectance.Value = 99F;
+			this.floatTrackbarControlTargetWhiteReflectance.VisibleRangeMax = 100F;
+			this.floatTrackbarControlTargetWhiteReflectance.VisibleRangeMin = 1F;
+			// 
 			// buttonLoadWhiteReflectanceReference
 			// 
 			this.buttonLoadWhiteReflectanceReference.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
@@ -1481,6 +1519,15 @@
 			this.toolTip.SetToolTip(this.buttonLoadWhiteReflectanceReference, "Loads the white reflectance reference from disk");
 			this.buttonLoadWhiteReflectanceReference.UseVisualStyleBackColor = true;
 			this.buttonLoadWhiteReflectanceReference.Click += new System.EventHandler(this.buttonLoadWhiteReflectanceReference_Click);
+			// 
+			// label10
+			// 
+			this.label10.AutoSize = true;
+			this.label10.Location = new System.Drawing.Point(4, 122);
+			this.label10.Name = "label10";
+			this.label10.Size = new System.Drawing.Size(99, 13);
+			this.label10.TabIndex = 9;
+			this.label10.Text = "Target Reflectance";
 			// 
 			// tabPageCameraCalibration
 			// 
@@ -1502,6 +1549,19 @@
 			this.tabPageCameraCalibration.TabIndex = 1;
 			this.tabPageCameraCalibration.Text = "Camera Calibration";
 			this.tabPageCameraCalibration.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxCalibrationUseAverageLuminance
+			// 
+			this.checkBoxCalibrationUseAverageLuminance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.checkBoxCalibrationUseAverageLuminance.AutoSize = true;
+			this.checkBoxCalibrationUseAverageLuminance.Checked = true;
+			this.checkBoxCalibrationUseAverageLuminance.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxCalibrationUseAverageLuminance.Location = new System.Drawing.Point(326, 206);
+			this.checkBoxCalibrationUseAverageLuminance.Name = "checkBoxCalibrationUseAverageLuminance";
+			this.checkBoxCalibrationUseAverageLuminance.Size = new System.Drawing.Size(143, 17);
+			this.checkBoxCalibrationUseAverageLuminance.TabIndex = 4;
+			this.checkBoxCalibrationUseAverageLuminance.Text = "Use Average Luminance";
+			this.checkBoxCalibrationUseAverageLuminance.UseVisualStyleBackColor = true;
 			// 
 			// tabControlCalibrationRepresentation
 			// 
@@ -1774,61 +1834,13 @@
     "|*.*";
 			this.saveFileDialogWhiteRefImage.Title = "Select the name of the white reference image file to save to...";
 			// 
-			// labelCaptureSpatialCorrectionStatus
+			// panelCapturedReflectance
 			// 
-			this.labelCaptureSpatialCorrectionStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.labelCaptureSpatialCorrectionStatus.AutoSize = true;
-			this.labelCaptureSpatialCorrectionStatus.Location = new System.Drawing.Point(290, 544);
-			this.labelCaptureSpatialCorrectionStatus.Name = "labelCaptureSpatialCorrectionStatus";
-			this.labelCaptureSpatialCorrectionStatus.Size = new System.Drawing.Size(142, 13);
-			this.labelCaptureSpatialCorrectionStatus.TabIndex = 7;
-			this.labelCaptureSpatialCorrectionStatus.Text = "Spatial Correction is disabled";
-			// 
-			// labelCaptureWhiteReflectanceCorrection
-			// 
-			this.labelCaptureWhiteReflectanceCorrection.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.labelCaptureWhiteReflectanceCorrection.AutoSize = true;
-			this.labelCaptureWhiteReflectanceCorrection.Location = new System.Drawing.Point(290, 529);
-			this.labelCaptureWhiteReflectanceCorrection.Name = "labelCaptureWhiteReflectanceCorrection";
-			this.labelCaptureWhiteReflectanceCorrection.Size = new System.Drawing.Size(103, 13);
-			this.labelCaptureWhiteReflectanceCorrection.TabIndex = 7;
-			this.labelCaptureWhiteReflectanceCorrection.Text = "White correction 1.0";
-			// 
-			// floatTrackbarControlTargetWhiteReflectance
-			// 
-			this.floatTrackbarControlTargetWhiteReflectance.Location = new System.Drawing.Point(101, 118);
-			this.floatTrackbarControlTargetWhiteReflectance.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlTargetWhiteReflectance.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlTargetWhiteReflectance.Name = "floatTrackbarControlTargetWhiteReflectance";
-			this.floatTrackbarControlTargetWhiteReflectance.RangeMax = 100F;
-			this.floatTrackbarControlTargetWhiteReflectance.RangeMin = 1F;
-			this.floatTrackbarControlTargetWhiteReflectance.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlTargetWhiteReflectance.TabIndex = 7;
-			this.floatTrackbarControlTargetWhiteReflectance.Value = 99F;
-			this.floatTrackbarControlTargetWhiteReflectance.VisibleRangeMax = 100F;
-			this.floatTrackbarControlTargetWhiteReflectance.VisibleRangeMin = 1F;
-			// 
-			// label10
-			// 
-			this.label10.AutoSize = true;
-			this.label10.Location = new System.Drawing.Point(4, 122);
-			this.label10.Name = "label10";
-			this.label10.Size = new System.Drawing.Size(99, 13);
-			this.label10.TabIndex = 9;
-			this.label10.Text = "Target Reflectance";
-			// 
-			// checkBoxCalibrationUseAverageLuminance
-			// 
-			this.checkBoxCalibrationUseAverageLuminance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.checkBoxCalibrationUseAverageLuminance.AutoSize = true;
-			this.checkBoxCalibrationUseAverageLuminance.Checked = true;
-			this.checkBoxCalibrationUseAverageLuminance.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxCalibrationUseAverageLuminance.Location = new System.Drawing.Point(326, 206);
-			this.checkBoxCalibrationUseAverageLuminance.Name = "checkBoxCalibrationUseAverageLuminance";
-			this.checkBoxCalibrationUseAverageLuminance.Size = new System.Drawing.Size(143, 17);
-			this.checkBoxCalibrationUseAverageLuminance.TabIndex = 4;
-			this.checkBoxCalibrationUseAverageLuminance.Text = "Use Average Luminance";
-			this.checkBoxCalibrationUseAverageLuminance.UseVisualStyleBackColor = true;
+			this.panelCapturedReflectance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelCapturedReflectance.Location = new System.Drawing.Point(419, 423);
+			this.panelCapturedReflectance.Name = "panelCapturedReflectance";
+			this.panelCapturedReflectance.Size = new System.Drawing.Size(49, 21);
+			this.panelCapturedReflectance.TabIndex = 10;
 			// 
 			// outputPanel
 			// 
@@ -1892,6 +1904,16 @@
 			this.referenceImagePanel.Name = "referenceImagePanel";
 			this.referenceImagePanel.Size = new System.Drawing.Size(456, 286);
 			this.referenceImagePanel.TabIndex = 0;
+			// 
+			// buttonSafeBorder
+			// 
+			this.buttonSafeBorder.Location = new System.Drawing.Point(218, 9);
+			this.buttonSafeBorder.Name = "buttonSafeBorder";
+			this.buttonSafeBorder.Size = new System.Drawing.Size(57, 23);
+			this.buttonSafeBorder.TabIndex = 5;
+			this.buttonSafeBorder.Text = "Safe";
+			this.buttonSafeBorder.UseVisualStyleBackColor = true;
+			this.buttonSafeBorder.Click += new System.EventHandler(this.buttonSafeBorder_Click);
 			// 
 			// Form1
 			// 
@@ -2073,6 +2095,8 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTargetWhiteReflectance;
 		private System.Windows.Forms.Label label10;
 		private System.Windows.Forms.CheckBox checkBoxCalibrationUseAverageLuminance;
+		private System.Windows.Forms.Panel panelCapturedReflectance;
+		private System.Windows.Forms.Button buttonSafeBorder;
 	}
 }
 
