@@ -823,6 +823,11 @@ namespace TestFresnel
 		}
 		protected float	Fresnel_SchlickMetal( float n, float k, float _CosTheta )
 		{
+
+n = 1.0f / n;
+k = 1.0f / k;
+
+
 			double	num = (n-1)*(n-1) + 4*n*Math.Pow( 1.0-_CosTheta, 5.0 ) + k*k;
 			double	den = (n+1)*(n+1) + k*k;
 			float	r = (float) (num / den);
@@ -842,6 +847,10 @@ namespace TestFresnel
 
 		protected float	Fresnel_PreciseMetal( float n, float k, float _CosTheta )
 		{
+n = 1.0f / n;
+k = 1.0f / k;
+
+
 			double	SinTheta = Math.Sqrt( 1.0 - _CosTheta*_CosTheta );
 			double	SinThetaTanTheta = SinTheta * SinTheta / _CosTheta;
 			double	n2k2sinTheta2 = n*n - k*k - SinTheta*SinTheta;
