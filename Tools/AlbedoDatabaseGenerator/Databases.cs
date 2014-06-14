@@ -14,7 +14,7 @@ namespace AlbedoDatabaseGenerator
 	{
 		#region NESTED TYPES
 
-		[System.Diagnostics.DebuggerDisplay( "Name={m_FriendlyName} Desc={m_Description} Manifest={m_Manifest}" )]
+		[System.Diagnostics.DebuggerDisplay( "File={m_RelativePath} Name={m_FriendlyName} Desc={m_Description}" )]
 		public class	Entry : IDisposable
 		{
 			#region CONSTANTS
@@ -100,8 +100,9 @@ namespace AlbedoDatabaseGenerator
 				WET = 1,
 				DUSTY = 2,
 				FROSTY = 4,
-				OLD = 8,
-				NEW = 16,
+				VARNISHED = 8,
+				OLD = 16,
+				NEW = 32,
 			}
 
 			#endregion
@@ -205,7 +206,7 @@ namespace AlbedoDatabaseGenerator
 
 			public override string ToString()
 			{
-				if ( m_FriendlyName != null )
+				if ( m_FriendlyName != null && m_FriendlyName != "" )
 					return m_FriendlyName;
 
 				return Path.GetFileName( m_RelativePath );
@@ -215,7 +216,7 @@ namespace AlbedoDatabaseGenerator
 			{
 				m_RelativePath = _EntryElement.GetAttribute( "RelativePath" );
 				m_FriendlyName = _EntryElement["FriendlyName"].GetAttribute( "Value" );
-				m_Description = _EntryElement["FriendlyName"].GetAttribute( "Value" );
+				m_Description = _EntryElement["Description"].GetAttribute( "Value" );
 
 				if ( _EntryElement["EnvironmentImage"] != null )
 					m_OverviewImageRelativePath = _EntryElement["EnvironmentImage"].GetAttribute( "RelativePath" );
@@ -262,10 +263,19 @@ namespace AlbedoDatabaseGenerator
 
 				// Attempt to load an existing thumbnail
 				FileInfo	ThumbnailFileName = new FileInfo( m_Manifest.GetFullPath( Path.GetFileNameWithoutExtension( m_Manifest.m_CalibratedTextureFileName ) + ".jpg" ) );
-				if ( !_ForceRegenerate && ThumbnailFileName.Exists )
-				{	// It does!
-					m_Thumbnail = Bitmap.FromFile( ThumbnailFileName.FullName ) as Bitmap;
-					return;
+				if ( ThumbnailFileName.Exists )
+				{
+					if ( !_ForceRegenerate )
+					{	// It does!
+						m_Thumbnail = Bitmap.FromFile( ThumbnailFileName.FullName ) as Bitmap;
+						return;
+					}
+
+					// Erase existing thumbnail
+					if ( m_Thumbnail != null )
+						m_Thumbnail.Dispose();
+
+					ThumbnailFileName.Delete();
 				}
 
 				// Make sure the textures are ready
@@ -277,6 +287,7 @@ namespace AlbedoDatabaseGenerator
 				int			TargetHeight = THUMBNAIL_WIDTH * Source.Height / Source.Width;
 				Bitmap		Target = new Bitmap( THUMBNAIL_WIDTH, TargetHeight, PixelFormat.Format32bppArgb );
 				BitmapData	LockedBitmap2 = Target.LockBits( new Rectangle( 0, 0, Target.Width, Target.Height ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
+
 				for ( int Y=0; Y < TargetHeight; Y++ )
 				{
 					byte*	pScanlineSource = (byte*) LockedBitmap.Scan0.ToPointer() + (Y * Source.Height / TargetHeight) * LockedBitmap.Stride;
@@ -295,8 +306,6 @@ namespace AlbedoDatabaseGenerator
 				Source.UnlockBits( LockedBitmap );
 
 				// We have a new thumbnail!
-				if ( m_Thumbnail == null )
-					m_Thumbnail.Dispose();
 				m_Thumbnail = Target;
 				m_Thumbnail.Save( ThumbnailFileName.FullName, ImageFormat.Jpeg );
 			}
@@ -620,6 +629,7 @@ namespace AlbedoDatabaseGenerator
 					XmlElement	EntryElement = Root.ChildNodes[EntryIndex] as XmlElement;
 					Entry	E = new Entry( this );
 					E.Load( this, EntryElement );
+					m_Entries.Add( E );
 				}
 				catch ( Exception _e )
 				{

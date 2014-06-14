@@ -93,6 +93,24 @@ namespace AlbedoDatabaseGenerator
 // 			}
 		}
 
+		protected override void OnClosing( CancelEventArgs e )
+		{
+			base.OnClosing( e );
+
+			if ( m_Database != null && m_Database.Entries.Length > 0 )
+			{
+				DialogResult	R = MessageBox( "Do you wish to save the database before closing the application?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning );
+				if ( R == DialogResult.Cancel )
+				{
+					e.Cancel = true;
+					return;
+				}
+
+				if ( R == DialogResult.Yes )
+					buttonSaveDatabase_Click( null, EventArgs.Empty );
+			}
+		}
+
 		protected void	UpdateDatabaseEntries()
 		{
 			listBoxDatabaseEntries.BeginUpdate();
@@ -104,11 +122,14 @@ namespace AlbedoDatabaseGenerator
 
 		private void	UpdateUIFromEntry( Database.Entry _Entry )
 		{
+			textBoxRelativePath.Text = _Entry != null ? _Entry.RelativePath : "";
 			textBoxFriendlyName.Text = _Entry != null ? _Entry.FriendlyName : "";
 			textBoxDescription.Text = _Entry != null ? _Entry.Description : "";
 			textBoxOverviewImage.Text = _Entry != null && _Entry.OverviewImageFileName != null ? _Entry.OverviewImageFileName.FullName : "";
 			panelOverviewImage.SourceImage = _Entry != null ? _Entry.OverviewImage : null;
 			panelThumbnail.SourceImage = _Entry != null ? _Entry.Thumbnail : null;
+
+			UpdateTagsUIFromEntry( _Entry );
 
 			Database.Manifest	M = _Entry != null ? _Entry.Manifest : null;
 			if ( M != null )
@@ -364,8 +385,6 @@ namespace AlbedoDatabaseGenerator
 		private bool	m_ModifyingCheckboxes = false;
 		private int	MutuallyExclusiveChoice( object _Sender, CheckBox[] _Choices )
 		{
-			if ( m_ModifyingCheckboxes )
-				return 0;
 			m_ModifyingCheckboxes = true;
 
 			CheckBox	C = _Sender as CheckBox;
@@ -388,8 +407,6 @@ namespace AlbedoDatabaseGenerator
 		}
 		private int	MutuallyExclusiveChoiceWithMaster( object _Sender, CheckBox[] _Choices, int _MasterChoice )
 		{
-			if ( m_ModifyingCheckboxes )
-				return 0;
 			m_ModifyingCheckboxes = true;
 
 			CheckBox	C = _Sender as CheckBox;
@@ -428,9 +445,7 @@ namespace AlbedoDatabaseGenerator
 			return SelectedChoice | _MasterChoice;
 		}
 
-		private void checkBoxTagType_CheckedChanged( object sender, EventArgs e )
-		{
-			CheckBox[]	c = new CheckBox[] {
+			CheckBox[]	c0 { get { return new CheckBox[] {
 		checkBoxTagWood,			 // WOOD,
 		checkBoxTagStone,			 // STONE,
 		checkBoxTagSkin,			 // SKIN
@@ -438,13 +453,8 @@ namespace AlbedoDatabaseGenerator
 		checkBoxTagPaperCanvas,		 // PAPER_CANVAS,
 		checkBoxTagPaint,			 // PAINT,
 		checkBoxTagPlastic,			 // PLASTIC,
-			};
-			m_SelectedEntry.TagType = (Database.Entry.TAGS_TYPE) MutuallyExclusiveChoice( sender, c );
-		}
-
-		private void checkBoxTagColor_CheckedChanged( object sender, EventArgs e )
-		{
-			CheckBox[]	c = new CheckBox[] {
+			}; } }
+			CheckBox[]	c1 { get { return new CheckBox[] {
 		checkBoxTagBlack,			 // BLACK,
 		checkBoxTagWhite,			 // WHITE,
 		checkBoxTagGray,			 // GRAY,
@@ -455,71 +465,129 @@ namespace AlbedoDatabaseGenerator
 		checkBoxTagCyan,			 // CYAN,
 		checkBoxTagPurple,			 // PURPLE,
 		checkBoxTagOrange,			 // ORANGE,
-			};
-			m_SelectedEntry.TagColor = (Database.Entry.TAGS_COLOR) MutuallyExclusiveChoice( sender, c );
-		}
-
-		private void checkBoxTagShade_CheckedChanged( object sender, EventArgs e )
-		{
-			CheckBox[]	c = new CheckBox[] {
+			}; } }
+			CheckBox[]	c2 { get { return new CheckBox[] {
 		checkBoxTagDark,			 // DARK,
 		checkBoxTagBright,			 // BRIGHT,
 		checkBoxTagNeutral,			 // NEUTRAL,
-			};
-			m_SelectedEntry.TagShade = (Database.Entry.TAGS_SHADE) MutuallyExclusiveChoice( sender, c );
-		}
-
-		private void checkBoxTagNature_CheckedChanged( object sender, EventArgs e )
-		{
-			CheckBox[]	c = new CheckBox[] {
+			}; } }
+			CheckBox[]	c3 { get { return new CheckBox[] {
 		checkBoxTagNature,			 // NATURE,
 		checkBoxTagLeaf,			 // LEAF,
 		checkBoxTagSoil,			 // SOIL,
 		checkBoxTagBark,			 // BARK,
-			};
-			m_SelectedEntry.TagNature = (Database.Entry.TAGS_NATURE) MutuallyExclusiveChoiceWithMaster( sender, c, 256 );
-		}
-
-		private void checkBoxTagFurniture_CheckedChanged( object sender, EventArgs e )
-		{
-			CheckBox[]	c = new CheckBox[] {
+			}; } }
+			CheckBox[]	c4 { get { return new CheckBox[] {
 		checkBoxTagFurniture,		 // FURNITURE,
 		checkBoxTagTable,			 // TABLE,
 		checkBoxTagChair,			 // CHAIR,
 		checkBoxTagDesk,			 // DESK,
 		checkBoxTagWardrobe,		 // WARDROBE,
 		checkBoxTagCabinet,			 // CABINET,
-			};
-			m_SelectedEntry.TagFurniture = (Database.Entry.TAGS_FURNITURE) MutuallyExclusiveChoiceWithMaster( sender, c, 256 );
-		}
-
-		private void checkBoxTagConstruction_CheckedChanged( object sender, EventArgs e )
-		{
-			CheckBox[]	c = new CheckBox[] {
+			}; } }
+			CheckBox[]	c5 { get { return new CheckBox[] {
 		checkBoxTagConstruction,	 // CONSTRUCTION,
 		checkBoxTagWall,			 // WALL,
 		checkBoxTagFloor,			 // FLOOR,
 		checkBoxTagDoorWindow,		 // DOOR_WINDOW,
 		checkBoxTagRoadPavement,	 // ROAD_PAVEMENT,
-			};
-			m_SelectedEntry.TagConstruction = (Database.Entry.TAGS_CONSTRUCTION) MutuallyExclusiveChoiceWithMaster( sender, c, 256 );
-		}
-
-		private void checkBoxTagModifiers_CheckedChanged( object sender, EventArgs e )
-		{
-			CheckBox[]	c = new CheckBox[] {
+			}; } }
+			CheckBox[]	c6 { get { return new CheckBox[] {
 		checkBoxTagWet,				 // WET = 1,
 		checkBoxTagDusty,			 // DUSTY = 2,
 		checkBoxTagFrosty,			 // FROSTY = 4,
-		checkBoxTagOld,				 // OLD = 8,
-		checkBoxTagNew,				 // NEW = 16,
-			};
+		checkBoxTagVarnished,		 // VARNISHED = 8,
+		checkBoxTagOld,				 // OLD = 16,
+		checkBoxTagNew,				 // NEW = 32,
+			}; } }
+
+		private void checkBoxTagType_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( m_ModifyingCheckboxes )
+				return;
+			m_SelectedEntry.TagType = (Database.Entry.TAGS_TYPE) MutuallyExclusiveChoice( sender, c0 );
+		}
+
+		private void checkBoxTagColor_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( m_ModifyingCheckboxes )
+				return;
+			m_SelectedEntry.TagColor = (Database.Entry.TAGS_COLOR) MutuallyExclusiveChoice( sender, c1 );
+		}
+
+		private void checkBoxTagShade_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( m_ModifyingCheckboxes )
+				return;
+			m_SelectedEntry.TagShade = (Database.Entry.TAGS_SHADE) MutuallyExclusiveChoice( sender, c2 );
+		}
+
+		private void checkBoxTagNature_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( m_ModifyingCheckboxes )
+				return;
+			m_SelectedEntry.TagNature = (Database.Entry.TAGS_NATURE) MutuallyExclusiveChoiceWithMaster( sender, c3, (int) Database.Entry.TAGS_NATURE.NATURE );
+		}
+
+		private void checkBoxTagFurniture_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( m_ModifyingCheckboxes )
+				return;
+			m_SelectedEntry.TagFurniture = (Database.Entry.TAGS_FURNITURE) MutuallyExclusiveChoiceWithMaster( sender, c4, (int) Database.Entry.TAGS_FURNITURE.FURNITURE );
+		}
+
+		private void checkBoxTagConstruction_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( m_ModifyingCheckboxes )
+				return;
+			m_SelectedEntry.TagConstruction = (Database.Entry.TAGS_CONSTRUCTION) MutuallyExclusiveChoiceWithMaster( sender, c5, (int) Database.Entry.TAGS_CONSTRUCTION.CONSTRUCTION );
+		}
+		private void checkBoxTagModifiers_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( m_ModifyingCheckboxes )
+				return;
+
 			CheckBox	C = sender as CheckBox;
 			int		Flags = 0;
-			for ( int i=0; i < c.Length; i++ )
-				if ( c[i].Checked )
+			for ( int i=0; i < c6.Length; i++ )
+				if ( c6[i].Checked )
 					Flags |= 1 << i;
 			m_SelectedEntry.TagModifiers = (Database.Entry.TAGS_MODIFIERS) Flags;
+		}
+
+		private void	SetMutuallyExclusiveChoice( int _Value, CheckBox[] _Choices )
+		{
+			_Value--;
+			for ( int i=0; i < _Choices.Length; i++ )
+				_Choices[i].Checked = i == _Value;
+		}
+		private void	SetMutuallyExclusiveChoiceWithMaster( int _Value, int _MasterValue, CheckBox[] _Choices )
+		{
+			bool	IsMasterChecked = (_Value & _MasterValue) != 0;
+			_Choices[0].Checked = IsMasterChecked;
+
+			_Value = _Value & ~_MasterValue;
+			for ( int i=1; i < _Choices.Length; i++ )
+				_Choices[i].Checked = i == _Value;
+		}
+		private void	SetFlagChoice( int _Value, CheckBox[] _Choices )
+		{
+			for ( int i=0; i < _Choices.Length; i++ )
+				_Choices[i].Checked = (_Value & (1 << i)) != 0;
+		}
+		private void	UpdateTagsUIFromEntry( Database.Entry _Entry )
+		{
+			m_ModifyingCheckboxes = true;
+
+			SetMutuallyExclusiveChoice( _Entry != null ? (int) _Entry.TagType : 0, c0 );
+			SetMutuallyExclusiveChoice( _Entry != null ? (int) _Entry.TagColor : 0, c1 );
+			SetMutuallyExclusiveChoice( _Entry != null ? (int) _Entry.TagShade : 0, c2 );
+			SetMutuallyExclusiveChoiceWithMaster( _Entry != null ? (int) _Entry.TagNature : 0, (int) Database.Entry.TAGS_NATURE.NATURE, c3 );
+			SetMutuallyExclusiveChoiceWithMaster( _Entry != null ? (int) _Entry.TagFurniture : 0, (int) Database.Entry.TAGS_FURNITURE.FURNITURE, c4 );
+			SetMutuallyExclusiveChoiceWithMaster( _Entry != null ? (int) _Entry.TagConstruction : 0, (int) Database.Entry.TAGS_CONSTRUCTION.CONSTRUCTION, c5 );
+			SetFlagChoice( _Entry != null ? (int) _Entry.TagModifiers : 0, c6 );
+
+			m_ModifyingCheckboxes = false;
 		}
 
 		#endregion
