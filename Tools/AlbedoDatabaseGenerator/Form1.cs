@@ -24,10 +24,26 @@ namespace AlbedoDatabaseGenerator
 		private string						m_ApplicationPath;
 
 		private Database					m_Database = new Database();
+		private Database.Entry				m_SelectedEntry = null;
 
 		#endregion
 
 		#region PROPERTIES
+
+		private Database.Entry				SelectedEntry
+		{
+			get { return m_SelectedEntry; }
+			set
+			{
+				if ( value == m_SelectedEntry )
+					return;
+
+				m_SelectedEntry = value;
+
+				groupBoxDatabaseEntry.Enabled = m_SelectedEntry != null;
+			}
+		}
+
 		#endregion
 
 		#region METHODS
@@ -55,6 +71,16 @@ namespace AlbedoDatabaseGenerator
 // 				MessageBox( "An error occurred while opening the database:", _e );
 // 			}
 		}
+
+		protected void	UpdateDatabaseEntries()
+		{
+			listBoxDatabaseEntries.BeginUpdate();
+			listBoxDatabaseEntries.Items.Clear();
+			foreach ( Database.Entry Entry in m_Database.Entries )
+				listBoxDatabaseEntries.Items.Add( Entry );
+			listBoxDatabaseEntries.EndUpdate();
+		}
+
 
 		#region Helpers
 
@@ -131,11 +157,13 @@ namespace AlbedoDatabaseGenerator
 			{
 				Database	D = new Database();
 				D.Load( new FileInfo( openFileDialogDatabase.FileName ) );
+
 				m_Database = D;
+				UpdateDatabaseEntries();
 			}
 			catch ( Exception _e )
 			{
-				MessageBox( "An error occurred while opening the database:", _e );
+				MessageBox( "An error occurred while opening the database:\n\n", _e );
 			}
 		}
 
@@ -155,7 +183,7 @@ namespace AlbedoDatabaseGenerator
 			}
 			catch ( Exception _e )
 			{
-				MessageBox( "An error occurred while saving the database:", _e );
+				MessageBox( "An error occurred while saving the database:\n\n", _e );
 			}
 		}
 
@@ -170,11 +198,34 @@ namespace AlbedoDatabaseGenerator
 
 			try
 			{
+				m_Database.RootPath = new DirectoryInfo( folderBrowserDialogDatabaseLocation.SelectedPath );
+				UpdateDatabaseEntries();
 			}
 			catch ( Exception _e )
 			{
-				MessageBox( "An error occurred while changing the database location:", _e );
+				MessageBox( "An error occurred while changing the database location:\n\n", _e );
 			}
+		}
+
+		private void listBoxDatabaseEntries_SelectedIndexChanged( object sender, EventArgs e )
+		{
+			Database.Entry	Selection = listBoxDatabaseEntries.SelectedItem as Database.Entry;
+			SelectedEntry = Selection;
+		}
+
+		private void textBoxFriendlyName_Validated( object sender, EventArgs e )
+		{
+			object	Selection = listBoxDatabaseEntries.SelectedItem;
+
+			// Rebuild the list to update the names
+			UpdateDatabaseEntries();
+
+			listBoxDatabaseEntries.SelectedItem = Selection;
+		}
+
+		private void buttonLoadOverviewImage_Click( object sender, EventArgs e )
+		{
+
 		}
 
 		private void buttonExportJSON_Click( object sender, EventArgs e )
@@ -183,11 +234,6 @@ namespace AlbedoDatabaseGenerator
 		}
 
 		private void buttonGenerateThumbnails_Click( object sender, EventArgs e )
-		{
-
-		}
-
-		private void buttonLoadEnvImage_Click( object sender, EventArgs e )
 		{
 
 		}

@@ -45,7 +45,6 @@ namespace StandardizedDiffuseAlbedoMaps
 		public class	Swatch
 		{
 			public float3		xyY;						// The color used to build the swatch
-			public float4		Location = new float4();	// The location (in UV space) where the swatch color was taken (XY=Top Left Corner, ZW=Bottom Right Corner)
 			public Bitmap2		Texture;					// The bitmap generated from the swatch color
 
 			public virtual void	Save( CalibratedTexture _Owner, XmlElement _SwatchElement )
@@ -57,6 +56,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		}
 		public class	CustomSwatch : Swatch
 		{
+			public float4		Location = new float4();	// The location (in UV space) where the swatch color was taken (XY=Top Left Corner, ZW=Bottom Right Corner)
 			public override void	Save( CalibratedTexture _Owner, XmlElement _SwatchElement )
 			{
 				base.Save( _Owner, _SwatchElement );

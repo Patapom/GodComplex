@@ -51,6 +51,24 @@
 			this.checkBoxTagFrosty = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagDusty = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagWet = new System.Windows.Forms.CheckBox();
+			this.panel2 = new System.Windows.Forms.Panel();
+			this.label10 = new System.Windows.Forms.Label();
+			this.checkBoxTagOrange = new System.Windows.Forms.CheckBox();
+			this.checkBoxTagPurple = new System.Windows.Forms.CheckBox();
+			this.checkBoxTagCyan = new System.Windows.Forms.CheckBox();
+			this.checkBoxYellow = new System.Windows.Forms.CheckBox();
+			this.checkBoxTagBlue = new System.Windows.Forms.CheckBox();
+			this.checkBoxTagGreen = new System.Windows.Forms.CheckBox();
+			this.checkBoxTagRed = new System.Windows.Forms.CheckBox();
+			this.checkBoxTagGray = new System.Windows.Forms.CheckBox();
+			this.checkBoxTagWhite = new System.Windows.Forms.CheckBox();
+			this.checkBoxTagBlack = new System.Windows.Forms.CheckBox();
+			this.panel1 = new System.Windows.Forms.Panel();
+			this.checkBoxTagBark = new System.Windows.Forms.CheckBox();
+			this.checkBoxTagSkin = new System.Windows.Forms.CheckBox();
+			this.checkBoxTagLeaf = new System.Windows.Forms.CheckBox();
+			this.checkBoxTagSoil = new System.Windows.Forms.CheckBox();
+			this.checkBoxTagNature = new System.Windows.Forms.CheckBox();
 			this.panelTagType = new System.Windows.Forms.Panel();
 			this.label8 = new System.Windows.Forms.Label();
 			this.checkBoxTagPaint = new System.Windows.Forms.CheckBox();
@@ -59,12 +77,6 @@
 			this.checkBoxTagPlastic = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagStone = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagWood = new System.Windows.Forms.CheckBox();
-			this.panel1 = new System.Windows.Forms.Panel();
-			this.checkBoxTagBark = new System.Windows.Forms.CheckBox();
-			this.checkBoxTagSkin = new System.Windows.Forms.CheckBox();
-			this.checkBoxTagLeaf = new System.Windows.Forms.CheckBox();
-			this.checkBoxTagSoil = new System.Windows.Forms.CheckBox();
-			this.checkBoxTagNature = new System.Windows.Forms.CheckBox();
 			this.panelConstruction = new System.Windows.Forms.Panel();
 			this.checkBoxTagConstruction = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagRoadPavement = new System.Windows.Forms.CheckBox();
@@ -82,7 +94,7 @@
 			this.panelEnvImage = new System.Windows.Forms.Panel();
 			this.label3 = new System.Windows.Forms.Label();
 			this.panelCS8 = new System.Windows.Forms.Panel();
-			this.buttonLoadEnvImage = new System.Windows.Forms.Button();
+			this.buttonLoadOverviewImage = new System.Windows.Forms.Button();
 			this.panelCS5 = new System.Windows.Forms.Panel();
 			this.panelTexture = new System.Windows.Forms.Panel();
 			this.panelCS2 = new System.Windows.Forms.Panel();
@@ -103,41 +115,36 @@
 			this.panelThumbnail = new System.Windows.Forms.Panel();
 			this.panelCS0 = new System.Windows.Forms.Panel();
 			this.panelSwatchMin = new System.Windows.Forms.Panel();
-			this.listBox1 = new System.Windows.Forms.ListBox();
+			this.listBoxDatabaseEntries = new System.Windows.Forms.ListBox();
 			this.groupBox3 = new System.Windows.Forms.GroupBox();
 			this.buttonGenerateThumbnails = new System.Windows.Forms.Button();
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
 			this.openFileDialogEnvImage = new System.Windows.Forms.OpenFileDialog();
-			this.panel2 = new System.Windows.Forms.Panel();
-			this.label10 = new System.Windows.Forms.Label();
-			this.checkBoxTagGreen = new System.Windows.Forms.CheckBox();
-			this.checkBoxTagRed = new System.Windows.Forms.CheckBox();
-			this.checkBoxTagGray = new System.Windows.Forms.CheckBox();
-			this.checkBoxTagWhite = new System.Windows.Forms.CheckBox();
-			this.checkBoxTagBlack = new System.Windows.Forms.CheckBox();
-			this.checkBoxTagBlue = new System.Windows.Forms.CheckBox();
-			this.checkBoxYellow = new System.Windows.Forms.CheckBox();
-			this.checkBoxTagCyan = new System.Windows.Forms.CheckBox();
-			this.checkBoxTagPurple = new System.Windows.Forms.CheckBox();
-			this.checkBoxTagOrange = new System.Windows.Forms.CheckBox();
-			this.panelHierarchy6 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
-			this.panelHierarchy1 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
+			this.checkBoxTagDark = new System.Windows.Forms.CheckBox();
+			this.checkBoxTagBright = new System.Windows.Forms.CheckBox();
 			this.panelHierarchy2 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
+			this.panelHierarchy6 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
 			this.panelHierarchy5 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
+			this.panelHierarchy1 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
 			this.panelHierarchy4 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
 			this.panelHierarchy3 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
+			this.panel3 = new System.Windows.Forms.Panel();
+			this.label11 = new System.Windows.Forms.Label();
+			this.panelHierarchy7 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
+			this.checkBoxTagNeutral = new System.Windows.Forms.CheckBox();
 			this.groupBox1.SuspendLayout();
 			this.groupBox2.SuspendLayout();
 			this.groupBoxDatabaseEntry.SuspendLayout();
 			this.groupBox4.SuspendLayout();
 			this.panelTagModifiers.SuspendLayout();
-			this.panelTagType.SuspendLayout();
+			this.panel2.SuspendLayout();
 			this.panel1.SuspendLayout();
+			this.panelTagType.SuspendLayout();
 			this.panelConstruction.SuspendLayout();
 			this.panelFurniture.SuspendLayout();
 			this.panelTextureInfos.SuspendLayout();
 			this.groupBox3.SuspendLayout();
-			this.panel2.SuspendLayout();
+			this.panel3.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// buttonLoadDatabase
@@ -256,7 +263,7 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.groupBox2.Controls.Add(this.groupBoxDatabaseEntry);
-			this.groupBox2.Controls.Add(this.listBox1);
+			this.groupBox2.Controls.Add(this.listBoxDatabaseEntries);
 			this.groupBox2.Location = new System.Drawing.Point(12, 151);
 			this.groupBox2.Name = "groupBox2";
 			this.groupBox2.Size = new System.Drawing.Size(1016, 527);
@@ -283,6 +290,7 @@
 			this.groupBox4.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBox4.Controls.Add(this.panel3);
 			this.groupBox4.Controls.Add(this.panelTagModifiers);
 			this.groupBox4.Controls.Add(this.panel2);
 			this.groupBox4.Controls.Add(this.panel1);
@@ -305,7 +313,7 @@
 			this.panelTagModifiers.Controls.Add(this.checkBoxTagFrosty);
 			this.panelTagModifiers.Controls.Add(this.checkBoxTagDusty);
 			this.panelTagModifiers.Controls.Add(this.checkBoxTagWet);
-			this.panelTagModifiers.Location = new System.Drawing.Point(185, 295);
+			this.panelTagModifiers.Location = new System.Drawing.Point(16, 367);
 			this.panelTagModifiers.Name = "panelTagModifiers";
 			this.panelTagModifiers.Size = new System.Drawing.Size(142, 115);
 			this.panelTagModifiers.TabIndex = 3;
@@ -370,6 +378,199 @@
 			this.checkBoxTagWet.Text = "Wet";
 			this.checkBoxTagWet.UseVisualStyleBackColor = true;
 			// 
+			// panel2
+			// 
+			this.panel2.Controls.Add(this.label10);
+			this.panel2.Controls.Add(this.panelHierarchy6);
+			this.panel2.Controls.Add(this.checkBoxTagOrange);
+			this.panel2.Controls.Add(this.checkBoxTagPurple);
+			this.panel2.Controls.Add(this.checkBoxTagCyan);
+			this.panel2.Controls.Add(this.checkBoxYellow);
+			this.panel2.Controls.Add(this.checkBoxTagBlue);
+			this.panel2.Controls.Add(this.checkBoxTagGreen);
+			this.panel2.Controls.Add(this.checkBoxTagRed);
+			this.panel2.Controls.Add(this.checkBoxTagGray);
+			this.panel2.Controls.Add(this.checkBoxTagWhite);
+			this.panel2.Controls.Add(this.checkBoxTagBlack);
+			this.panel2.Location = new System.Drawing.Point(204, 19);
+			this.panel2.Name = "panel2";
+			this.panel2.Size = new System.Drawing.Size(175, 175);
+			this.panel2.TabIndex = 3;
+			// 
+			// label10
+			// 
+			this.label10.Anchor = System.Windows.Forms.AnchorStyles.Left;
+			this.label10.AutoSize = true;
+			this.label10.Location = new System.Drawing.Point(3, 81);
+			this.label10.Name = "label10";
+			this.label10.Size = new System.Drawing.Size(36, 13);
+			this.label10.TabIndex = 2;
+			this.label10.Text = "Colors";
+			// 
+			// checkBoxTagOrange
+			// 
+			this.checkBoxTagOrange.AutoSize = true;
+			this.checkBoxTagOrange.Location = new System.Drawing.Point(73, 153);
+			this.checkBoxTagOrange.Name = "checkBoxTagOrange";
+			this.checkBoxTagOrange.Size = new System.Drawing.Size(61, 17);
+			this.checkBoxTagOrange.TabIndex = 0;
+			this.checkBoxTagOrange.Text = "Orange";
+			this.checkBoxTagOrange.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxTagPurple
+			// 
+			this.checkBoxTagPurple.AutoSize = true;
+			this.checkBoxTagPurple.Location = new System.Drawing.Point(74, 136);
+			this.checkBoxTagPurple.Name = "checkBoxTagPurple";
+			this.checkBoxTagPurple.Size = new System.Drawing.Size(56, 17);
+			this.checkBoxTagPurple.TabIndex = 0;
+			this.checkBoxTagPurple.Text = "Purple";
+			this.checkBoxTagPurple.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxTagCyan
+			// 
+			this.checkBoxTagCyan.AutoSize = true;
+			this.checkBoxTagCyan.Location = new System.Drawing.Point(74, 119);
+			this.checkBoxTagCyan.Name = "checkBoxTagCyan";
+			this.checkBoxTagCyan.Size = new System.Drawing.Size(50, 17);
+			this.checkBoxTagCyan.TabIndex = 0;
+			this.checkBoxTagCyan.Text = "Cyan";
+			this.checkBoxTagCyan.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxYellow
+			// 
+			this.checkBoxYellow.AutoSize = true;
+			this.checkBoxYellow.Location = new System.Drawing.Point(74, 102);
+			this.checkBoxYellow.Name = "checkBoxYellow";
+			this.checkBoxYellow.Size = new System.Drawing.Size(57, 17);
+			this.checkBoxYellow.TabIndex = 0;
+			this.checkBoxYellow.Text = "Yellow";
+			this.checkBoxYellow.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxTagBlue
+			// 
+			this.checkBoxTagBlue.AutoSize = true;
+			this.checkBoxTagBlue.Location = new System.Drawing.Point(74, 85);
+			this.checkBoxTagBlue.Name = "checkBoxTagBlue";
+			this.checkBoxTagBlue.Size = new System.Drawing.Size(47, 17);
+			this.checkBoxTagBlue.TabIndex = 0;
+			this.checkBoxTagBlue.Text = "Blue";
+			this.checkBoxTagBlue.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxTagGreen
+			// 
+			this.checkBoxTagGreen.AutoSize = true;
+			this.checkBoxTagGreen.Location = new System.Drawing.Point(74, 68);
+			this.checkBoxTagGreen.Name = "checkBoxTagGreen";
+			this.checkBoxTagGreen.Size = new System.Drawing.Size(55, 17);
+			this.checkBoxTagGreen.TabIndex = 0;
+			this.checkBoxTagGreen.Text = "Green";
+			this.checkBoxTagGreen.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxTagRed
+			// 
+			this.checkBoxTagRed.AutoSize = true;
+			this.checkBoxTagRed.Location = new System.Drawing.Point(74, 51);
+			this.checkBoxTagRed.Name = "checkBoxTagRed";
+			this.checkBoxTagRed.Size = new System.Drawing.Size(46, 17);
+			this.checkBoxTagRed.TabIndex = 0;
+			this.checkBoxTagRed.Text = "Red";
+			this.checkBoxTagRed.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxTagGray
+			// 
+			this.checkBoxTagGray.AutoSize = true;
+			this.checkBoxTagGray.Location = new System.Drawing.Point(74, 33);
+			this.checkBoxTagGray.Name = "checkBoxTagGray";
+			this.checkBoxTagGray.Size = new System.Drawing.Size(48, 17);
+			this.checkBoxTagGray.TabIndex = 0;
+			this.checkBoxTagGray.Text = "Gray";
+			this.checkBoxTagGray.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxTagWhite
+			// 
+			this.checkBoxTagWhite.AutoSize = true;
+			this.checkBoxTagWhite.Location = new System.Drawing.Point(74, 16);
+			this.checkBoxTagWhite.Name = "checkBoxTagWhite";
+			this.checkBoxTagWhite.Size = new System.Drawing.Size(54, 17);
+			this.checkBoxTagWhite.TabIndex = 0;
+			this.checkBoxTagWhite.Text = "White";
+			this.checkBoxTagWhite.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxTagBlack
+			// 
+			this.checkBoxTagBlack.AutoSize = true;
+			this.checkBoxTagBlack.Location = new System.Drawing.Point(74, -1);
+			this.checkBoxTagBlack.Name = "checkBoxTagBlack";
+			this.checkBoxTagBlack.Size = new System.Drawing.Size(53, 17);
+			this.checkBoxTagBlack.TabIndex = 0;
+			this.checkBoxTagBlack.Text = "Black";
+			this.checkBoxTagBlack.UseVisualStyleBackColor = true;
+			// 
+			// panel1
+			// 
+			this.panel1.Controls.Add(this.checkBoxTagBark);
+			this.panel1.Controls.Add(this.checkBoxTagSkin);
+			this.panel1.Controls.Add(this.checkBoxTagLeaf);
+			this.panel1.Controls.Add(this.checkBoxTagSoil);
+			this.panel1.Controls.Add(this.checkBoxTagNature);
+			this.panel1.Controls.Add(this.panelHierarchy5);
+			this.panel1.Location = new System.Drawing.Point(6, 277);
+			this.panel1.Name = "panel1";
+			this.panel1.Size = new System.Drawing.Size(173, 89);
+			this.panel1.TabIndex = 2;
+			// 
+			// checkBoxTagBark
+			// 
+			this.checkBoxTagBark.AutoSize = true;
+			this.checkBoxTagBark.Location = new System.Drawing.Point(94, 72);
+			this.checkBoxTagBark.Name = "checkBoxTagBark";
+			this.checkBoxTagBark.Size = new System.Drawing.Size(48, 17);
+			this.checkBoxTagBark.TabIndex = 0;
+			this.checkBoxTagBark.Text = "Bark";
+			this.checkBoxTagBark.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxTagSkin
+			// 
+			this.checkBoxTagSkin.AutoSize = true;
+			this.checkBoxTagSkin.Location = new System.Drawing.Point(94, 49);
+			this.checkBoxTagSkin.Name = "checkBoxTagSkin";
+			this.checkBoxTagSkin.Size = new System.Drawing.Size(47, 17);
+			this.checkBoxTagSkin.TabIndex = 0;
+			this.checkBoxTagSkin.Text = "Skin";
+			this.checkBoxTagSkin.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxTagLeaf
+			// 
+			this.checkBoxTagLeaf.AutoSize = true;
+			this.checkBoxTagLeaf.Location = new System.Drawing.Point(94, 26);
+			this.checkBoxTagLeaf.Name = "checkBoxTagLeaf";
+			this.checkBoxTagLeaf.Size = new System.Drawing.Size(47, 17);
+			this.checkBoxTagLeaf.TabIndex = 0;
+			this.checkBoxTagLeaf.Text = "Leaf";
+			this.checkBoxTagLeaf.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxTagSoil
+			// 
+			this.checkBoxTagSoil.AutoSize = true;
+			this.checkBoxTagSoil.Location = new System.Drawing.Point(94, 3);
+			this.checkBoxTagSoil.Name = "checkBoxTagSoil";
+			this.checkBoxTagSoil.Size = new System.Drawing.Size(43, 17);
+			this.checkBoxTagSoil.TabIndex = 0;
+			this.checkBoxTagSoil.Text = "Soil";
+			this.checkBoxTagSoil.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxTagNature
+			// 
+			this.checkBoxTagNature.AutoSize = true;
+			this.checkBoxTagNature.Location = new System.Drawing.Point(3, 37);
+			this.checkBoxTagNature.Name = "checkBoxTagNature";
+			this.checkBoxTagNature.Size = new System.Drawing.Size(58, 17);
+			this.checkBoxTagNature.TabIndex = 0;
+			this.checkBoxTagNature.Text = "Nature";
+			this.toolTip.SetToolTip(this.checkBoxTagNature, "(plants, grass, leaves, vegetation)");
+			this.checkBoxTagNature.UseVisualStyleBackColor = true;
+			// 
 			// panelTagType
 			// 
 			this.panelTagType.Controls.Add(this.label8);
@@ -380,7 +581,7 @@
 			this.panelTagType.Controls.Add(this.checkBoxTagPlastic);
 			this.panelTagType.Controls.Add(this.checkBoxTagStone);
 			this.panelTagType.Controls.Add(this.checkBoxTagWood);
-			this.panelTagType.Location = new System.Drawing.Point(6, 19);
+			this.panelTagType.Location = new System.Drawing.Point(41, 19);
 			this.panelTagType.Name = "panelTagType";
 			this.panelTagType.Size = new System.Drawing.Size(157, 139);
 			this.panelTagType.TabIndex = 3;
@@ -455,70 +656,6 @@
 			this.checkBoxTagWood.Text = "Wood";
 			this.checkBoxTagWood.UseVisualStyleBackColor = true;
 			// 
-			// panel1
-			// 
-			this.panel1.Controls.Add(this.checkBoxTagBark);
-			this.panel1.Controls.Add(this.checkBoxTagSkin);
-			this.panel1.Controls.Add(this.checkBoxTagLeaf);
-			this.panel1.Controls.Add(this.checkBoxTagSoil);
-			this.panel1.Controls.Add(this.checkBoxTagNature);
-			this.panel1.Controls.Add(this.panelHierarchy5);
-			this.panel1.Location = new System.Drawing.Point(6, 283);
-			this.panel1.Name = "panel1";
-			this.panel1.Size = new System.Drawing.Size(173, 89);
-			this.panel1.TabIndex = 2;
-			// 
-			// checkBoxTagBark
-			// 
-			this.checkBoxTagBark.AutoSize = true;
-			this.checkBoxTagBark.Location = new System.Drawing.Point(94, 72);
-			this.checkBoxTagBark.Name = "checkBoxTagBark";
-			this.checkBoxTagBark.Size = new System.Drawing.Size(48, 17);
-			this.checkBoxTagBark.TabIndex = 0;
-			this.checkBoxTagBark.Text = "Bark";
-			this.checkBoxTagBark.UseVisualStyleBackColor = true;
-			// 
-			// checkBoxTagSkin
-			// 
-			this.checkBoxTagSkin.AutoSize = true;
-			this.checkBoxTagSkin.Location = new System.Drawing.Point(94, 49);
-			this.checkBoxTagSkin.Name = "checkBoxTagSkin";
-			this.checkBoxTagSkin.Size = new System.Drawing.Size(47, 17);
-			this.checkBoxTagSkin.TabIndex = 0;
-			this.checkBoxTagSkin.Text = "Skin";
-			this.checkBoxTagSkin.UseVisualStyleBackColor = true;
-			// 
-			// checkBoxTagLeaf
-			// 
-			this.checkBoxTagLeaf.AutoSize = true;
-			this.checkBoxTagLeaf.Location = new System.Drawing.Point(94, 26);
-			this.checkBoxTagLeaf.Name = "checkBoxTagLeaf";
-			this.checkBoxTagLeaf.Size = new System.Drawing.Size(47, 17);
-			this.checkBoxTagLeaf.TabIndex = 0;
-			this.checkBoxTagLeaf.Text = "Leaf";
-			this.checkBoxTagLeaf.UseVisualStyleBackColor = true;
-			// 
-			// checkBoxTagSoil
-			// 
-			this.checkBoxTagSoil.AutoSize = true;
-			this.checkBoxTagSoil.Location = new System.Drawing.Point(94, 3);
-			this.checkBoxTagSoil.Name = "checkBoxTagSoil";
-			this.checkBoxTagSoil.Size = new System.Drawing.Size(43, 17);
-			this.checkBoxTagSoil.TabIndex = 0;
-			this.checkBoxTagSoil.Text = "Soil";
-			this.checkBoxTagSoil.UseVisualStyleBackColor = true;
-			// 
-			// checkBoxTagNature
-			// 
-			this.checkBoxTagNature.AutoSize = true;
-			this.checkBoxTagNature.Location = new System.Drawing.Point(3, 37);
-			this.checkBoxTagNature.Name = "checkBoxTagNature";
-			this.checkBoxTagNature.Size = new System.Drawing.Size(58, 17);
-			this.checkBoxTagNature.TabIndex = 0;
-			this.checkBoxTagNature.Text = "Nature";
-			this.toolTip.SetToolTip(this.checkBoxTagNature, "(plants, grass, leaves, vegetation)");
-			this.checkBoxTagNature.UseVisualStyleBackColor = true;
-			// 
 			// panelConstruction
 			// 
 			this.panelConstruction.Controls.Add(this.panelHierarchy4);
@@ -527,7 +664,7 @@
 			this.panelConstruction.Controls.Add(this.checkBoxTagDoorWindow);
 			this.panelConstruction.Controls.Add(this.checkBoxTagFloor);
 			this.panelConstruction.Controls.Add(this.checkBoxTagWall);
-			this.panelConstruction.Location = new System.Drawing.Point(185, 198);
+			this.panelConstruction.Location = new System.Drawing.Point(185, 200);
 			this.panelConstruction.Name = "panelConstruction";
 			this.panelConstruction.Size = new System.Drawing.Size(214, 91);
 			this.panelConstruction.TabIndex = 1;
@@ -593,7 +730,7 @@
 			this.panelFurniture.Controls.Add(this.checkBoxTagChair);
 			this.panelFurniture.Controls.Add(this.checkBoxTagTable);
 			this.panelFurniture.Controls.Add(this.checkBoxTagFurniture);
-			this.panelFurniture.Location = new System.Drawing.Point(6, 164);
+			this.panelFurniture.Location = new System.Drawing.Point(7, 161);
 			this.panelFurniture.Name = "panelFurniture";
 			this.panelFurniture.Size = new System.Drawing.Size(173, 113);
 			this.panelFurniture.TabIndex = 1;
@@ -666,7 +803,7 @@
 			this.panelTextureInfos.Controls.Add(this.panelEnvImage);
 			this.panelTextureInfos.Controls.Add(this.label3);
 			this.panelTextureInfos.Controls.Add(this.panelCS8);
-			this.panelTextureInfos.Controls.Add(this.buttonLoadEnvImage);
+			this.panelTextureInfos.Controls.Add(this.buttonLoadOverviewImage);
 			this.panelTextureInfos.Controls.Add(this.panelCS5);
 			this.panelTextureInfos.Controls.Add(this.panelTexture);
 			this.panelTextureInfos.Controls.Add(this.panelCS2);
@@ -718,16 +855,16 @@
 			this.panelCS8.Size = new System.Drawing.Size(24, 20);
 			this.panelCS8.TabIndex = 4;
 			// 
-			// buttonLoadEnvImage
+			// buttonLoadOverviewImage
 			// 
-			this.buttonLoadEnvImage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonLoadEnvImage.Location = new System.Drawing.Point(295, 111);
-			this.buttonLoadEnvImage.Name = "buttonLoadEnvImage";
-			this.buttonLoadEnvImage.Size = new System.Drawing.Size(28, 23);
-			this.buttonLoadEnvImage.TabIndex = 0;
-			this.buttonLoadEnvImage.Text = "...";
-			this.buttonLoadEnvImage.UseVisualStyleBackColor = true;
-			this.buttonLoadEnvImage.Click += new System.EventHandler(this.buttonLoadEnvImage_Click);
+			this.buttonLoadOverviewImage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonLoadOverviewImage.Location = new System.Drawing.Point(295, 111);
+			this.buttonLoadOverviewImage.Name = "buttonLoadOverviewImage";
+			this.buttonLoadOverviewImage.Size = new System.Drawing.Size(28, 23);
+			this.buttonLoadOverviewImage.TabIndex = 0;
+			this.buttonLoadOverviewImage.Text = "...";
+			this.buttonLoadOverviewImage.UseVisualStyleBackColor = true;
+			this.buttonLoadOverviewImage.Click += new System.EventHandler(this.buttonLoadOverviewImage_Click);
 			// 
 			// panelCS5
 			// 
@@ -778,9 +915,9 @@
 			this.label4.AutoSize = true;
 			this.label4.Location = new System.Drawing.Point(3, 116);
 			this.label4.Name = "label4";
-			this.label4.Size = new System.Drawing.Size(98, 13);
+			this.label4.Size = new System.Drawing.Size(84, 13);
 			this.label4.TabIndex = 2;
-			this.label4.Text = "Environment Image";
+			this.label4.Text = "Overview Image";
 			// 
 			// panelCS7
 			// 
@@ -832,6 +969,7 @@
 			this.textBoxFriendlyName.Name = "textBoxFriendlyName";
 			this.textBoxFriendlyName.Size = new System.Drawing.Size(291, 20);
 			this.textBoxFriendlyName.TabIndex = 3;
+			this.textBoxFriendlyName.Validated += new System.EventHandler(this.textBoxFriendlyName_Validated);
 			// 
 			// panelSwatchMax
 			// 
@@ -901,16 +1039,17 @@
 			this.panelSwatchMin.Size = new System.Drawing.Size(24, 20);
 			this.panelSwatchMin.TabIndex = 4;
 			// 
-			// listBox1
+			// listBoxDatabaseEntries
 			// 
-			this.listBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+			this.listBoxDatabaseEntries.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
-			this.listBox1.FormattingEnabled = true;
-			this.listBox1.IntegralHeight = false;
-			this.listBox1.Location = new System.Drawing.Point(0, 19);
-			this.listBox1.Name = "listBox1";
-			this.listBox1.Size = new System.Drawing.Size(177, 501);
-			this.listBox1.TabIndex = 0;
+			this.listBoxDatabaseEntries.FormattingEnabled = true;
+			this.listBoxDatabaseEntries.IntegralHeight = false;
+			this.listBoxDatabaseEntries.Location = new System.Drawing.Point(0, 19);
+			this.listBoxDatabaseEntries.Name = "listBoxDatabaseEntries";
+			this.listBoxDatabaseEntries.Size = new System.Drawing.Size(177, 501);
+			this.listBoxDatabaseEntries.TabIndex = 0;
+			this.listBoxDatabaseEntries.SelectedIndexChanged += new System.EventHandler(this.listBoxDatabaseEntries_SelectedIndexChanged);
 			// 
 			// groupBox3
 			// 
@@ -944,154 +1083,25 @@
 			this.openFileDialogEnvImage.Filter = "Supported Image Files|*.jpg;*.png;*.bmp|All Files (*.*)|*.*";
 			this.openFileDialogEnvImage.Title = "Choose an environment image to load";
 			// 
-			// panel2
+			// checkBoxTagDark
 			// 
-			this.panel2.Controls.Add(this.label10);
-			this.panel2.Controls.Add(this.panelHierarchy6);
-			this.panel2.Controls.Add(this.checkBoxTagOrange);
-			this.panel2.Controls.Add(this.checkBoxTagPurple);
-			this.panel2.Controls.Add(this.checkBoxTagCyan);
-			this.panel2.Controls.Add(this.checkBoxYellow);
-			this.panel2.Controls.Add(this.checkBoxTagBlue);
-			this.panel2.Controls.Add(this.checkBoxTagGreen);
-			this.panel2.Controls.Add(this.checkBoxTagRed);
-			this.panel2.Controls.Add(this.checkBoxTagGray);
-			this.panel2.Controls.Add(this.checkBoxTagWhite);
-			this.panel2.Controls.Add(this.checkBoxTagBlack);
-			this.panel2.Location = new System.Drawing.Point(169, 19);
-			this.panel2.Name = "panel2";
-			this.panel2.Size = new System.Drawing.Size(239, 173);
-			this.panel2.TabIndex = 3;
+			this.checkBoxTagDark.AutoSize = true;
+			this.checkBoxTagDark.Location = new System.Drawing.Point(83, 3);
+			this.checkBoxTagDark.Name = "checkBoxTagDark";
+			this.checkBoxTagDark.Size = new System.Drawing.Size(49, 17);
+			this.checkBoxTagDark.TabIndex = 0;
+			this.checkBoxTagDark.Text = "Dark";
+			this.checkBoxTagDark.UseVisualStyleBackColor = true;
 			// 
-			// label10
+			// checkBoxTagBright
 			// 
-			this.label10.Anchor = System.Windows.Forms.AnchorStyles.Left;
-			this.label10.AutoSize = true;
-			this.label10.Location = new System.Drawing.Point(3, 80);
-			this.label10.Name = "label10";
-			this.label10.Size = new System.Drawing.Size(36, 13);
-			this.label10.TabIndex = 2;
-			this.label10.Text = "Colors";
-			// 
-			// checkBoxTagGreen
-			// 
-			this.checkBoxTagGreen.AutoSize = true;
-			this.checkBoxTagGreen.Location = new System.Drawing.Point(74, 67);
-			this.checkBoxTagGreen.Name = "checkBoxTagGreen";
-			this.checkBoxTagGreen.Size = new System.Drawing.Size(55, 17);
-			this.checkBoxTagGreen.TabIndex = 0;
-			this.checkBoxTagGreen.Text = "Green";
-			this.checkBoxTagGreen.UseVisualStyleBackColor = true;
-			// 
-			// checkBoxTagRed
-			// 
-			this.checkBoxTagRed.AutoSize = true;
-			this.checkBoxTagRed.Location = new System.Drawing.Point(74, 50);
-			this.checkBoxTagRed.Name = "checkBoxTagRed";
-			this.checkBoxTagRed.Size = new System.Drawing.Size(46, 17);
-			this.checkBoxTagRed.TabIndex = 0;
-			this.checkBoxTagRed.Text = "Red";
-			this.checkBoxTagRed.UseVisualStyleBackColor = true;
-			// 
-			// checkBoxTagGray
-			// 
-			this.checkBoxTagGray.AutoSize = true;
-			this.checkBoxTagGray.Location = new System.Drawing.Point(74, 33);
-			this.checkBoxTagGray.Name = "checkBoxTagGray";
-			this.checkBoxTagGray.Size = new System.Drawing.Size(48, 17);
-			this.checkBoxTagGray.TabIndex = 0;
-			this.checkBoxTagGray.Text = "Gray";
-			this.checkBoxTagGray.UseVisualStyleBackColor = true;
-			// 
-			// checkBoxTagWhite
-			// 
-			this.checkBoxTagWhite.AutoSize = true;
-			this.checkBoxTagWhite.Location = new System.Drawing.Point(74, 16);
-			this.checkBoxTagWhite.Name = "checkBoxTagWhite";
-			this.checkBoxTagWhite.Size = new System.Drawing.Size(54, 17);
-			this.checkBoxTagWhite.TabIndex = 0;
-			this.checkBoxTagWhite.Text = "White";
-			this.checkBoxTagWhite.UseVisualStyleBackColor = true;
-			// 
-			// checkBoxTagBlack
-			// 
-			this.checkBoxTagBlack.AutoSize = true;
-			this.checkBoxTagBlack.Location = new System.Drawing.Point(74, -1);
-			this.checkBoxTagBlack.Name = "checkBoxTagBlack";
-			this.checkBoxTagBlack.Size = new System.Drawing.Size(53, 17);
-			this.checkBoxTagBlack.TabIndex = 0;
-			this.checkBoxTagBlack.Text = "Black";
-			this.checkBoxTagBlack.UseVisualStyleBackColor = true;
-			// 
-			// checkBoxTagBlue
-			// 
-			this.checkBoxTagBlue.AutoSize = true;
-			this.checkBoxTagBlue.Location = new System.Drawing.Point(74, 84);
-			this.checkBoxTagBlue.Name = "checkBoxTagBlue";
-			this.checkBoxTagBlue.Size = new System.Drawing.Size(47, 17);
-			this.checkBoxTagBlue.TabIndex = 0;
-			this.checkBoxTagBlue.Text = "Blue";
-			this.checkBoxTagBlue.UseVisualStyleBackColor = true;
-			// 
-			// checkBoxYellow
-			// 
-			this.checkBoxYellow.AutoSize = true;
-			this.checkBoxYellow.Location = new System.Drawing.Point(74, 101);
-			this.checkBoxYellow.Name = "checkBoxYellow";
-			this.checkBoxYellow.Size = new System.Drawing.Size(57, 17);
-			this.checkBoxYellow.TabIndex = 0;
-			this.checkBoxYellow.Text = "Yellow";
-			this.checkBoxYellow.UseVisualStyleBackColor = true;
-			// 
-			// checkBoxTagCyan
-			// 
-			this.checkBoxTagCyan.AutoSize = true;
-			this.checkBoxTagCyan.Location = new System.Drawing.Point(74, 118);
-			this.checkBoxTagCyan.Name = "checkBoxTagCyan";
-			this.checkBoxTagCyan.Size = new System.Drawing.Size(50, 17);
-			this.checkBoxTagCyan.TabIndex = 0;
-			this.checkBoxTagCyan.Text = "Cyan";
-			this.checkBoxTagCyan.UseVisualStyleBackColor = true;
-			// 
-			// checkBoxTagPurple
-			// 
-			this.checkBoxTagPurple.AutoSize = true;
-			this.checkBoxTagPurple.Location = new System.Drawing.Point(74, 135);
-			this.checkBoxTagPurple.Name = "checkBoxTagPurple";
-			this.checkBoxTagPurple.Size = new System.Drawing.Size(56, 17);
-			this.checkBoxTagPurple.TabIndex = 0;
-			this.checkBoxTagPurple.Text = "Purple";
-			this.checkBoxTagPurple.UseVisualStyleBackColor = true;
-			// 
-			// checkBoxTagOrange
-			// 
-			this.checkBoxTagOrange.AutoSize = true;
-			this.checkBoxTagOrange.Location = new System.Drawing.Point(73, 152);
-			this.checkBoxTagOrange.Name = "checkBoxTagOrange";
-			this.checkBoxTagOrange.Size = new System.Drawing.Size(61, 17);
-			this.checkBoxTagOrange.TabIndex = 0;
-			this.checkBoxTagOrange.Text = "Orange";
-			this.checkBoxTagOrange.UseVisualStyleBackColor = true;
-			// 
-			// panelHierarchy6
-			// 
-			this.panelHierarchy6.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
-			this.panelHierarchy6.ChildrenCount = 10;
-			this.panelHierarchy6.Location = new System.Drawing.Point(49, 7);
-			this.panelHierarchy6.Name = "panelHierarchy6";
-			this.panelHierarchy6.Size = new System.Drawing.Size(19, 155);
-			this.panelHierarchy6.TabIndex = 1;
-			// 
-			// panelHierarchy1
-			// 
-			this.panelHierarchy1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
-			this.panelHierarchy1.ChildrenCount = 6;
-			this.panelHierarchy1.Location = new System.Drawing.Point(36, 9);
-			this.panelHierarchy1.Name = "panelHierarchy1";
-			this.panelHierarchy1.Size = new System.Drawing.Size(19, 120);
-			this.panelHierarchy1.TabIndex = 1;
+			this.checkBoxTagBright.AutoSize = true;
+			this.checkBoxTagBright.Location = new System.Drawing.Point(83, 26);
+			this.checkBoxTagBright.Name = "checkBoxTagBright";
+			this.checkBoxTagBright.Size = new System.Drawing.Size(53, 17);
+			this.checkBoxTagBright.TabIndex = 0;
+			this.checkBoxTagBright.Text = "Bright";
+			this.checkBoxTagBright.UseVisualStyleBackColor = true;
 			// 
 			// panelHierarchy2
 			// 
@@ -1103,6 +1113,16 @@
 			this.panelHierarchy2.Size = new System.Drawing.Size(19, 93);
 			this.panelHierarchy2.TabIndex = 1;
 			// 
+			// panelHierarchy6
+			// 
+			this.panelHierarchy6.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+			this.panelHierarchy6.ChildrenCount = 10;
+			this.panelHierarchy6.Location = new System.Drawing.Point(49, 7);
+			this.panelHierarchy6.Name = "panelHierarchy6";
+			this.panelHierarchy6.Size = new System.Drawing.Size(19, 157);
+			this.panelHierarchy6.TabIndex = 1;
+			// 
 			// panelHierarchy5
 			// 
 			this.panelHierarchy5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -1112,6 +1132,16 @@
 			this.panelHierarchy5.Name = "panelHierarchy5";
 			this.panelHierarchy5.Size = new System.Drawing.Size(19, 75);
 			this.panelHierarchy5.TabIndex = 1;
+			// 
+			// panelHierarchy1
+			// 
+			this.panelHierarchy1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+			this.panelHierarchy1.ChildrenCount = 6;
+			this.panelHierarchy1.Location = new System.Drawing.Point(36, 9);
+			this.panelHierarchy1.Name = "panelHierarchy1";
+			this.panelHierarchy1.Size = new System.Drawing.Size(19, 120);
+			this.panelHierarchy1.TabIndex = 1;
 			// 
 			// panelHierarchy4
 			// 
@@ -1133,6 +1163,48 @@
 			this.panelHierarchy3.Size = new System.Drawing.Size(19, 94);
 			this.panelHierarchy3.TabIndex = 1;
 			// 
+			// panel3
+			// 
+			this.panel3.Controls.Add(this.label11);
+			this.panel3.Controls.Add(this.panelHierarchy7);
+			this.panel3.Controls.Add(this.checkBoxTagDark);
+			this.panel3.Controls.Add(this.checkBoxTagNeutral);
+			this.panel3.Controls.Add(this.checkBoxTagBright);
+			this.panel3.Location = new System.Drawing.Point(184, 294);
+			this.panel3.Name = "panel3";
+			this.panel3.Size = new System.Drawing.Size(142, 77);
+			this.panel3.TabIndex = 3;
+			// 
+			// label11
+			// 
+			this.label11.Anchor = System.Windows.Forms.AnchorStyles.Left;
+			this.label11.AutoSize = true;
+			this.label11.Location = new System.Drawing.Point(3, 27);
+			this.label11.Name = "label11";
+			this.label11.Size = new System.Drawing.Size(38, 13);
+			this.label11.TabIndex = 2;
+			this.label11.Text = "Shade";
+			// 
+			// panelHierarchy7
+			// 
+			this.panelHierarchy7.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+			this.panelHierarchy7.ChildrenCount = 3;
+			this.panelHierarchy7.Location = new System.Drawing.Point(58, 11);
+			this.panelHierarchy7.Name = "panelHierarchy7";
+			this.panelHierarchy7.Size = new System.Drawing.Size(19, 49);
+			this.panelHierarchy7.TabIndex = 1;
+			// 
+			// checkBoxTagNeutral
+			// 
+			this.checkBoxTagNeutral.AutoSize = true;
+			this.checkBoxTagNeutral.Location = new System.Drawing.Point(83, 51);
+			this.checkBoxTagNeutral.Name = "checkBoxTagNeutral";
+			this.checkBoxTagNeutral.Size = new System.Drawing.Size(60, 17);
+			this.checkBoxTagNeutral.TabIndex = 0;
+			this.checkBoxTagNeutral.Text = "Neutral";
+			this.checkBoxTagNeutral.UseVisualStyleBackColor = true;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1151,10 +1223,12 @@
 			this.groupBox4.ResumeLayout(false);
 			this.panelTagModifiers.ResumeLayout(false);
 			this.panelTagModifiers.PerformLayout();
-			this.panelTagType.ResumeLayout(false);
-			this.panelTagType.PerformLayout();
+			this.panel2.ResumeLayout(false);
+			this.panel2.PerformLayout();
 			this.panel1.ResumeLayout(false);
 			this.panel1.PerformLayout();
+			this.panelTagType.ResumeLayout(false);
+			this.panelTagType.PerformLayout();
 			this.panelConstruction.ResumeLayout(false);
 			this.panelConstruction.PerformLayout();
 			this.panelFurniture.ResumeLayout(false);
@@ -1162,8 +1236,8 @@
 			this.panelTextureInfos.ResumeLayout(false);
 			this.panelTextureInfos.PerformLayout();
 			this.groupBox3.ResumeLayout(false);
-			this.panel2.ResumeLayout(false);
-			this.panel2.PerformLayout();
+			this.panel3.ResumeLayout(false);
+			this.panel3.PerformLayout();
 			this.ResumeLayout(false);
 
 		}
@@ -1183,7 +1257,7 @@
 		private System.Windows.Forms.TextBox textBoxDatabaseRootPath;
 		private System.Windows.Forms.Button buttonExportJSON;
 		private System.Windows.Forms.GroupBox groupBox2;
-		private System.Windows.Forms.ListBox listBox1;
+		private System.Windows.Forms.ListBox listBoxDatabaseEntries;
 		private System.Windows.Forms.GroupBox groupBox3;
 		private System.Windows.Forms.Button buttonGenerateThumbnails;
 		private System.Windows.Forms.GroupBox groupBoxDatabaseEntry;
@@ -1194,7 +1268,7 @@
 		private System.Windows.Forms.GroupBox groupBox4;
 		private System.Windows.Forms.TextBox textBoxFriendlyName;
 		private System.Windows.Forms.Label label3;
-		private System.Windows.Forms.Button buttonLoadEnvImage;
+		private System.Windows.Forms.Button buttonLoadOverviewImage;
 		private System.Windows.Forms.TextBox textBoxEnvImage;
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.OpenFileDialog openFileDialogEnvImage;
@@ -1267,6 +1341,12 @@
 		private System.Windows.Forms.CheckBox checkBoxTagOrange;
 		private System.Windows.Forms.CheckBox checkBoxTagPurple;
 		private System.Windows.Forms.CheckBox checkBoxTagCyan;
+		private System.Windows.Forms.CheckBox checkBoxTagDark;
+		private System.Windows.Forms.CheckBox checkBoxTagBright;
+		private System.Windows.Forms.Panel panel3;
+		private System.Windows.Forms.Label label11;
+		private PanelHierarchy panelHierarchy7;
+		private System.Windows.Forms.CheckBox checkBoxTagNeutral;
 	}
 }
 
