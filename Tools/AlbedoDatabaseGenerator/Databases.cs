@@ -3,18 +3,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Xml;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 using WMath;
 
 namespace AlbedoDatabaseGenerator
 {
-	public class	Database
+	public class	Database : IDisposable
 	{
 		#region NESTED TYPES
 
 		[System.Diagnostics.DebuggerDisplay( "Name={m_FriendlyName} Desc={m_Description} Manifest={m_Manifest}" )]
-		public class	Entry
+		public class	Entry : IDisposable
 		{
+			#region CONSTANTS
+
+			public const int	THUMBNAIL_WIDTH = 256;
+
+			#endregion
+
 			#region NESTED TYPES
 
 			public enum		TAGS_TYPE
@@ -22,10 +30,10 @@ namespace AlbedoDatabaseGenerator
 				NONE,
 				WOOD,
 				STONE,
+				SKIN,
 				FABRIC,
 				PAPER_CANVAS,
 				PAINT,
-//				METAL,
 				PLASTIC,
 			}
 
@@ -52,36 +60,37 @@ namespace AlbedoDatabaseGenerator
 				NEUTRAL,
 			}
 
+			[Flags]
 			public enum		TAGS_NATURE
 			{
-				NONE,
-				NATURE,
-				TABLE,
-				CHAIR,
-				WARDROBE,
-				DESK,
-				CABINET,
+				NONE = 0,
+				NATURE = 256,
+				LEAF = 1 | NATURE,
+				SOIL = 2 | NATURE,
+				BARK = 3 | NATURE,
 			}
 
+			[Flags]
 			public enum		TAGS_FURNITURE
 			{
-				NONE,
-				FURNITURE,
-				TABLE,
-				CHAIR,
-				WARDROBE,
-				DESK,
-				CABINET,
+				NONE = 0,
+				FURNITURE = 256,
+				TABLE = 1 | FURNITURE,
+				CHAIR = 2 | FURNITURE,
+				DESK = 3 | FURNITURE,
+				WARDROBE = 4 | FURNITURE,
+				CABINET = 5 | FURNITURE,
 			}
 
+			[Flags]
 			public enum		TAGS_CONSTRUCTION
 			{
-				NONE,
-				CONSTRUCTION,
-				WALL,
-				FLOOR,
-				DOOR_WINDOW,
-				ROAD_PAVEMENT,
+				NONE = 0,
+				CONSTRUCTION = 256,
+				WALL = 1 | CONSTRUCTION,
+				FLOOR = 2 | CONSTRUCTION,
+				DOOR_WINDOW = 3 | CONSTRUCTION,
+				ROAD_PAVEMENT = 4 | CONSTRUCTION,
 			}
 
 			[Flags]
@@ -99,12 +108,18 @@ namespace AlbedoDatabaseGenerator
 
 			#region FIELDS
 
+			private Database			m_Owner = null;
+
 			private string				m_RelativePath = null;
 			private Manifest			m_Manifest = null;
+
+			private Bitmap				m_Thumbnail = null;
+			private Bitmap				m_OverviewImage = null;
 
 			// User-fed data
 			private string				m_FriendlyName = null;
 			private string				m_Description = null;
+			private string				m_OverviewImageRelativePath = null;
 			private TAGS_TYPE			m_TagType = TAGS_TYPE.NONE;
 			private TAGS_COLOR			m_TagColor = TAGS_COLOR.NONE;
 			private TAGS_SHADE			m_TagShade = TAGS_SHADE.NONE;
@@ -123,10 +138,30 @@ namespace AlbedoDatabaseGenerator
 				set { m_RelativePath = value; }
 			}
 
+			public FileInfo		FullPath
+			{
+				get { return new FileInfo( Path.Combine( m_Owner.RootPath.FullName, m_RelativePath ) ); }
+			}
+
 			public Manifest		Manifest
 			{
 				get { return m_Manifest; }
-				set { m_Manifest = value; }
+				set
+				{
+					m_Manifest = value;
+
+					if ( m_Manifest == null )
+						return;
+
+					// Attempt to reload thumbnail & overview image
+					FileInfo	ThumbnailFileName = new FileInfo( m_Manifest.GetFullPath( Path.GetFileNameWithoutExtension( m_Manifest.m_CalibratedTextureFileName ) + ".jpg" ) );
+					if ( ThumbnailFileName.Exists )
+						m_Thumbnail = Bitmap.FromFile( ThumbnailFileName.FullName ) as Bitmap;
+
+					FileInfo	OverviewFileName = OverviewImageFileName;
+					if ( OverviewFileName != null && OverviewFileName.Exists )
+						m_OverviewImage = Bitmap.FromFile( OverviewFileName.FullName ) as Bitmap;
+				}
 			}
 
 			public string				FriendlyName	{ get { return m_FriendlyName; } set { m_FriendlyName = value; } }
@@ -139,9 +174,34 @@ namespace AlbedoDatabaseGenerator
 			public TAGS_CONSTRUCTION	TagConstruction	{ get { return m_TagConstruction; } set { m_TagConstruction = value; } }
 			public TAGS_MODIFIERS		TagModifiers	{ get { return m_TagModifiers; } set { m_TagModifiers = value; } }
 
+ 			public FileInfo				OverviewImageFileName
+			{
+				get { return m_OverviewImageRelativePath != null ? new FileInfo( Path.Combine( Path.GetDirectoryName( FullPath.FullName ), m_OverviewImageRelativePath ) ) : null; }
+				set
+				{
+					m_OverviewImageRelativePath = value != null ? GetRelativePath( Path.GetDirectoryName( FullPath.FullName ), value.FullName ) : null;
+
+					// Load the bitmap
+					if ( m_OverviewImage != null )
+						m_OverviewImage.Dispose();
+					m_OverviewImage = null;
+
+					if ( m_OverviewImageRelativePath != null )
+						m_OverviewImage = Bitmap.FromFile( value.FullName ) as Bitmap;
+				}
+			}
+
+			public Bitmap				Thumbnail			{ get { return m_Thumbnail; } }
+			public Bitmap				OverviewImage		{ get { return m_OverviewImage; } }
+
 			#endregion
 
 			#region METHODS
+
+			public Entry( Database _Owner )
+			{
+				m_Owner = _Owner;
+			}
 
 			public override string ToString()
 			{
@@ -156,6 +216,9 @@ namespace AlbedoDatabaseGenerator
 				m_RelativePath = _EntryElement.GetAttribute( "RelativePath" );
 				m_FriendlyName = _EntryElement["FriendlyName"].GetAttribute( "Value" );
 				m_Description = _EntryElement["FriendlyName"].GetAttribute( "Value" );
+
+				if ( _EntryElement["EnvironmentImage"] != null )
+					m_OverviewImageRelativePath = _EntryElement["EnvironmentImage"].GetAttribute( "RelativePath" );
 				
 				XmlElement	TagsElement = _EntryElement["Tags"];
 				if ( TagsElement == null )
@@ -176,6 +239,9 @@ namespace AlbedoDatabaseGenerator
 				_Owner.SetAttribute( _Owner.AppendElement( _EntryElement, "FriendlyName" ), "Value", m_FriendlyName );
 				_Owner.SetAttribute( _Owner.AppendElement( _EntryElement, "Description" ), "Value", m_Description );
 
+				if ( m_OverviewImageRelativePath != null )
+					_Owner.SetAttribute( _Owner.AppendElement( _EntryElement, "EnvironmentImage" ), "RelativePath", m_OverviewImageRelativePath );
+
 				XmlElement	TagsElement = _Owner.AppendElement( _EntryElement, "Tags" );
 				_Owner.SetAttribute( _Owner.AppendElement( TagsElement, "Type" ), "Value", m_TagType.ToString() );
 				_Owner.SetAttribute( _Owner.AppendElement( TagsElement, "Color" ), "Value", m_TagColor.ToString() );
@@ -186,22 +252,99 @@ namespace AlbedoDatabaseGenerator
 				_Owner.SetAttribute( _Owner.AppendElement( TagsElement, "Modifiers" ), "Value", m_TagModifiers.ToString() );
 			}
 
+			public unsafe void		GenerateThumbnail( bool _ForceRegenerate )
+			{
+				if ( m_Thumbnail != null && !_ForceRegenerate )
+					return;	// Already generated
+
+				if ( m_Manifest == null )
+					throw new Exception( "Invalid manifest to load textures from!" );
+
+				// Attempt to load an existing thumbnail
+				FileInfo	ThumbnailFileName = new FileInfo( m_Manifest.GetFullPath( Path.GetFileNameWithoutExtension( m_Manifest.m_CalibratedTextureFileName ) + ".jpg" ) );
+				if ( !_ForceRegenerate && ThumbnailFileName.Exists )
+				{	// It does!
+					m_Thumbnail = Bitmap.FromFile( ThumbnailFileName.FullName ) as Bitmap;
+					return;
+				}
+
+				// Make sure the textures are ready
+				m_Manifest.LoadTextures();
+
+				Bitmap		Source = m_Manifest.m_Texture;
+				BitmapData	LockedBitmap = Source.LockBits( new Rectangle( 0, 0, Source.Width, Source.Height ), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb );
+
+				int			TargetHeight = THUMBNAIL_WIDTH * Source.Height / Source.Width;
+				Bitmap		Target = new Bitmap( THUMBNAIL_WIDTH, TargetHeight, PixelFormat.Format32bppArgb );
+				BitmapData	LockedBitmap2 = Target.LockBits( new Rectangle( 0, 0, Target.Width, Target.Height ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
+				for ( int Y=0; Y < TargetHeight; Y++ )
+				{
+					byte*	pScanlineSource = (byte*) LockedBitmap.Scan0.ToPointer() + (Y * Source.Height / TargetHeight) * LockedBitmap.Stride;
+					byte*	pScanlineTarget = (byte*) LockedBitmap2.Scan0.ToPointer() + Y * LockedBitmap2.Stride;
+					for ( int X=0; X < THUMBNAIL_WIDTH; X++ )
+					{
+						byte*	pPixelSource = pScanlineSource + (X * Source.Width / THUMBNAIL_WIDTH) * 4;
+						*pScanlineTarget++ = *pPixelSource++;
+						*pScanlineTarget++ = *pPixelSource++;
+						*pScanlineTarget++ = *pPixelSource++;
+						*pScanlineTarget++ = *pPixelSource++;
+					}
+				}
+
+				Target.UnlockBits( LockedBitmap2 );
+				Source.UnlockBits( LockedBitmap );
+
+				// We have a new thumbnail!
+				if ( m_Thumbnail == null )
+					m_Thumbnail.Dispose();
+				m_Thumbnail = Target;
+				m_Thumbnail.Save( ThumbnailFileName.FullName, ImageFormat.Jpeg );
+			}
+
+			#region IDisposable Members
+
+			public void Dispose()
+			{
+				if ( m_Manifest != null )
+					m_Manifest.Dispose();
+				if ( m_Thumbnail != null )
+					m_Thumbnail.Dispose();
+				if ( m_OverviewImage != null )
+					m_OverviewImage.Dispose();
+			}
+
+			#endregion
+
 			#endregion
 		}
 
 		[System.Diagnostics.DebuggerDisplay( "Name={m_SourceImageFileName} ISO={m_ISOSpeed} Shutter={m_ShutterSpeed} Aperture={m_Aperture}" )]
-		public class	Manifest
+		public class	Manifest : IDisposable
 		{
 			#region NESTED TYPES
 
 			[System.Diagnostics.DebuggerDisplay( "Name={m_ImageFileName} xyY={m_xyY} RGB={m_RGB}" )]
-			public class	Swatch
+			public class	Swatch : IDisposable
 			{
 				public string	m_ImageFileName;
 				public Vector	m_xyY;
 				public Vector	m_RGB;
 				public Vector2D	m_LocationTopLeft;
 				public Vector2D	m_LocationBottomRight;
+
+				public Bitmap	m_Texture = null;
+
+				public Color	Color
+				{
+					get
+					{
+						return Color.FromArgb(
+							(int) Math.Max( 0, Math.Min( 255, 255 * m_RGB.x ) ),
+							(int) Math.Max( 0, Math.Min( 255, 255 * m_RGB.y ) ),
+							(int) Math.Max( 0, Math.Min( 255, 255 * m_RGB.z ) )
+							);
+					}
+				}
 
 				public void		Load( XmlElement _Element )
 				{
@@ -215,11 +358,29 @@ namespace AlbedoDatabaseGenerator
 					if ( _Element.GetAttribute( "SampleBottomRight" ) != "" )
 						m_LocationBottomRight = Vector2D.Parse( _Element.GetAttribute( "SampleBottomRight" ) );
 				}
+
+				public void	LoadTexture( Manifest _Owner )
+				{
+					if ( m_Texture == null )
+						m_Texture = Bitmap.FromFile( _Owner.GetFullPath( m_ImageFileName ) ) as Bitmap;
+				}
+
+				#region IDisposable Members
+
+				public void Dispose()
+				{
+					if ( m_Texture != null )
+						m_Texture.Dispose();
+				}
+
+				#endregion
 			}
 
 			#endregion
 
 			#region FIELDS
+
+			public FileInfo		m_ManifestFileName = null;
 
 			// Source infos
 			public string		m_SourceImageFileName;
@@ -248,6 +409,9 @@ namespace AlbedoDatabaseGenerator
 			// Custom swatches infos
 			public Swatch[]		m_CustomSwatches = new Swatch[0];
 
+			// Texture
+			public Bitmap		m_Texture = null;
+
 			#endregion
 
 			#region METHODS
@@ -258,6 +422,8 @@ namespace AlbedoDatabaseGenerator
 
 			public void		Load( FileInfo _FileName )
 			{
+				m_ManifestFileName = _FileName;
+
 				XmlDocument	Doc = new XmlDocument();
 				Doc.Load( _FileName.FullName );
 
@@ -314,10 +480,40 @@ namespace AlbedoDatabaseGenerator
 				}
 			}
 
-			public void		GenerateThumbnail()
+			/// <summary>
+			/// Loads the textures described by the manifest
+			/// </summary>
+			public void		LoadTextures()
 			{
-				// TODO!
+				if ( m_Texture == null )
+					m_Texture = Bitmap.FromFile( GetFullPath( m_CalibratedTextureFileName ) ) as Bitmap;
+
+				m_SwatchMin.LoadTexture( this );
+				m_SwatchMax.LoadTexture( this );
+				m_SwatchAvg.LoadTexture( this );
+				foreach ( Swatch CS in m_CustomSwatches )
+					CS.LoadTexture( this );
 			}
+
+			public string	GetFullPath( string _RelativeFileName )
+			{
+				return Path.Combine( m_ManifestFileName.DirectoryName, _RelativeFileName );
+			}
+
+			#region IDisposable Members
+
+			public void Dispose()
+			{
+				if ( m_Texture != null )
+					m_Texture.Dispose();
+				m_SwatchMin.Dispose();
+				m_SwatchMax.Dispose();
+				m_SwatchAvg.Dispose();
+				foreach ( Swatch CS in m_CustomSwatches )
+					CS.Dispose();
+			}
+
+			#endregion
 
 			#endregion
 		}
@@ -364,8 +560,8 @@ namespace AlbedoDatabaseGenerator
 						Entry	E = FindEntry( PotentialManifestFile );
 						if ( E == null )
 						{	// Create a new entry for our database
-							E = new Entry();
-							E.RelativePath = GetRelativePath( m_RootPath.FullName, PotentialManifestFile.FullName );
+							E = new Entry( this );
+							E.RelativePath = GetRelativePath( PotentialManifestFile.FullName );
 							m_Entries.Add( E );
 						}
 						E.Manifest = M;
@@ -413,13 +609,16 @@ namespace AlbedoDatabaseGenerator
 				throw new Exception( "Failed to parse amount of entries in the database!" );
 
 			m_Errors = "";
+
+			foreach ( Entry E in m_Entries )
+				E.Dispose();
 			m_Entries.Clear();
 			for ( int EntryIndex=0; EntryIndex < EntriesCount; EntryIndex++ )
 			{
 				try
 				{
 					XmlElement	EntryElement = Root.ChildNodes[EntryIndex] as XmlElement;
-					Entry	E = new Entry();
+					Entry	E = new Entry( this );
 					E.Load( this, EntryElement );
 				}
 				catch ( Exception _e )
@@ -481,12 +680,17 @@ namespace AlbedoDatabaseGenerator
 		/// <returns></returns>
 		private Entry	FindEntry( FileInfo _ManifestFileName )
 		{
-			string	RelativeFileName = GetRelativePath( m_RootPath.FullName, _ManifestFileName.FullName ).ToLower();
+			string	RelativeFileName = GetRelativePath( _ManifestFileName.FullName ).ToLower();
 			foreach ( Entry E in m_Entries )
 				if ( E.RelativePath.ToLower() == RelativeFileName )
 					return E;	// Gotcha!
 
 			return null;
+		}
+
+		public string GetRelativePath( string filespec )
+		{
+			return GetRelativePath( m_RootPath.FullName, filespec );
 		}
 
 		/// <summary>
@@ -495,7 +699,7 @@ namespace AlbedoDatabaseGenerator
 		/// <param name="filespec"></param>
 		/// <param name="folder"></param>
 		/// <returns></returns>
-		string GetRelativePath( string folder, string filespec )
+		public static string GetRelativePath( string folder, string filespec )
 		{
 			Uri pathUri = new Uri(filespec);
 			// Folders must end in a slash
@@ -506,6 +710,16 @@ namespace AlbedoDatabaseGenerator
 			Uri folderUri = new Uri(folder);
 			return Uri.UnescapeDataString(folderUri.MakeRelativeUri(pathUri).ToString().Replace('/', Path.DirectorySeparatorChar));
 		}
+
+		#region IDisposable Members
+
+		public void Dispose()
+		{
+			foreach ( Entry E in m_Entries )
+				E.Dispose();
+		}
+
+		#endregion
 
 		#endregion
 	}

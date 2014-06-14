@@ -30,6 +30,24 @@ namespace AlbedoDatabaseGenerator
 
 		#region PROPERTIES
 
+		private Database					Database
+		{
+			get { return m_Database; }
+			set
+			{
+				if ( value == m_Database )
+					return;
+
+				m_Database = value;
+				SelectedEntry = null;
+
+				// Update UI
+				textBoxDatabaseRootPath.Text = m_Database != null ? m_Database.RootPath.FullName : "";
+				buttonExportJSON.Enabled = m_Database != null;
+				buttonGenerateThumbnails.Enabled = m_Database != null;
+			}
+		}
+
 		private Database.Entry				SelectedEntry
 		{
 			get { return m_SelectedEntry; }
@@ -40,7 +58,9 @@ namespace AlbedoDatabaseGenerator
 
 				m_SelectedEntry = value;
 
+				// Update UI
 				groupBoxDatabaseEntry.Enabled = m_SelectedEntry != null;
+				UpdateUIFromEntry( m_SelectedEntry );
 			}
 		}
 
@@ -62,9 +82,10 @@ namespace AlbedoDatabaseGenerator
 
 // 			try
 // 			{
-// 				m_Database = new Database();
+// 				Database	D = new Database();
 // 				string	CurrentDatabaseFileName = GetRegKey( "DatabaseFileName", Path.Combine( m_ApplicationPath, "Database.rdb" ) );
-// 				m_Database.Load( new FileInfo( CurrentDatabaseFileName ) );
+// 				D.Load( new FileInfo( CurrentDatabaseFileName ) );
+//				Database = D;
 // 			}
 // 			catch ( Exception _e )
 // 			{
@@ -81,6 +102,42 @@ namespace AlbedoDatabaseGenerator
 			listBoxDatabaseEntries.EndUpdate();
 		}
 
+		private void	UpdateUIFromEntry( Database.Entry _Entry )
+		{
+			textBoxFriendlyName.Text = _Entry != null ? _Entry.FriendlyName : "";
+			textBoxDescription.Text = _Entry != null ? _Entry.Description : "";
+			textBoxOverviewImage.Text = _Entry != null && _Entry.OverviewImageFileName != null ? _Entry.OverviewImageFileName.FullName : "";
+			panelOverviewImage.SourceImage = _Entry != null ? _Entry.OverviewImage : null;
+			panelThumbnail.SourceImage = _Entry != null ? _Entry.Thumbnail : null;
+
+			Database.Manifest	M = _Entry != null ? _Entry.Manifest : null;
+			if ( M != null )
+				M.LoadTextures();	// Make sure textures are ready
+
+			panelSwatchMin.BackColor = M != null ? M.m_SwatchMin.Color : BackColor;
+			panelSwatchMax.BackColor = M != null ? M.m_SwatchMax.Color : BackColor;
+			panelSwatchAvg.BackColor = M != null ? M.m_SwatchAvg.Color : BackColor;
+
+			Panel[]	CustomSwatchPanels = new Panel[] {
+				panelCS0,
+				panelCS1,
+				panelCS2,
+				panelCS3,
+				panelCS4,
+				panelCS5,
+				panelCS6,
+				panelCS7,
+				panelCS8,
+			};
+			for ( int i=0; i < CustomSwatchPanels.Length; i++ )
+			{
+				bool	Available = M != null && i < M.m_CustomSwatches.Length;
+				CustomSwatchPanels[i].BackColor = Available ? M.m_CustomSwatches[i].Color : BackColor;
+				panelTexture.CustomSwatches[i] = Available ? new WMath.Vector4D( M.m_CustomSwatches[i].m_LocationTopLeft.x, M.m_CustomSwatches[i].m_LocationTopLeft.y, M.m_CustomSwatches[i].m_LocationBottomRight.x, M.m_CustomSwatches[i].m_LocationBottomRight.y ) : null;
+			}
+
+			panelTexture.SourceImage = M != null ? M.m_Texture : null;
+		}
 
 		#region Helpers
 
@@ -139,7 +196,7 @@ namespace AlbedoDatabaseGenerator
 
 		private void buttonLoadDatabase_Click( object sender, EventArgs e )
 		{
-			if ( m_Database != null )
+			if ( m_Database != null && m_Database.Entries.Length > 0 )
 			{	// Caution!
 				if ( MessageBox( "Loading a new database will lose existing database data, do you wish to continue?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning ) != DialogResult.Yes )
 					return;
@@ -158,7 +215,13 @@ namespace AlbedoDatabaseGenerator
 				Database	D = new Database();
 				D.Load( new FileInfo( openFileDialogDatabase.FileName ) );
 
-				m_Database = D;
+				if ( m_Database != null )
+					m_Database.Dispose();
+
+				Database = D;
+
+				// Update UI
+				textBoxDatabaseFileName.Text = openFileDialogDatabase.FileName;
 				UpdateDatabaseEntries();
 			}
 			catch ( Exception _e )
@@ -199,6 +262,7 @@ namespace AlbedoDatabaseGenerator
 			try
 			{
 				m_Database.RootPath = new DirectoryInfo( folderBrowserDialogDatabaseLocation.SelectedPath );
+				textBoxDatabaseRootPath.Text = m_Database.RootPath.FullName;
 				UpdateDatabaseEntries();
 			}
 			catch ( Exception _e )
@@ -213,6 +277,16 @@ namespace AlbedoDatabaseGenerator
 			SelectedEntry = Selection;
 		}
 
+		private void textBoxFriendlyName_TextChanged( object sender, EventArgs e )
+		{
+			m_SelectedEntry.FriendlyName = textBoxFriendlyName.Text;
+		}
+
+		private void textBoxDescription_TextChanged( object sender, EventArgs e )
+		{
+			m_SelectedEntry.Description = textBoxDescription.Text;
+		}
+
 		private void textBoxFriendlyName_Validated( object sender, EventArgs e )
 		{
 			object	Selection = listBoxDatabaseEntries.SelectedItem;
@@ -225,18 +299,230 @@ namespace AlbedoDatabaseGenerator
 
 		private void buttonLoadOverviewImage_Click( object sender, EventArgs e )
 		{
+			string	OldFileName = GetRegKey( "LastOverviewImageFileName", Path.Combine( m_ApplicationPath, "Stuff.jpg" ) );
+			openFileDialogOverviewImage.InitialDirectory = Path.GetFullPath( OldFileName );
+			openFileDialogOverviewImage.FileName = Path.GetFileName( OldFileName );
+			if ( openFileDialogOverviewImage.ShowDialog( this ) != DialogResult.OK )
+				return;
 
+			SetRegKey( "LastOverviewImageFileName", openFileDialogOverviewImage.FileName );
+
+			try
+			{
+				string	RelativePath =  Database.GetRelativePath( m_Database.RootPath.FullName, openFileDialogOverviewImage.FileName );
+				if ( RelativePath.StartsWith( ".." ) )
+					throw new Exception( "The overview image path is not contained under the database root path! Choose an image that is inside the database folder hierarchy." );
+
+				m_SelectedEntry.OverviewImageFileName = new FileInfo( openFileDialogOverviewImage.FileName );
+				UpdateUIFromEntry( m_SelectedEntry );
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred while opening the overview image:\n\n", _e );
+			}
 		}
 
 		private void buttonExportJSON_Click( object sender, EventArgs e )
 		{
-
+			//TODO!
 		}
 
 		private void buttonGenerateThumbnails_Click( object sender, EventArgs e )
 		{
+			DialogResult	R = DialogResult.None;
+			string	Errors = "";
+			int		ThumbnailsCount = 0;
+			foreach ( Database.Entry E in m_Database.Entries )
+				if ( E.Manifest != null )
+					try
+					{
+						if ( R == DialogResult.None && E.Thumbnail != null )
+						{
+							R = MessageBox( "Do you want to force re-generating existing thumbnails?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question );
+							if ( R == DialogResult.Cancel )
+								return;
+						}
+						E.GenerateThumbnail( R == DialogResult.Yes );
+						ThumbnailsCount++;
+					}
+					catch ( Exception _e )
+					{
+						Errors += "Failed to generate thumbnail for \"" + E.Manifest.m_CalibratedTextureFileName + "\": " + _e.Message + "\n";
+					}
+			
+			// Update UI to refresh thumbnail preview
+			UpdateUIFromEntry( m_SelectedEntry );
 
+			if ( Errors == "" )
+				MessageBox( "Success!\nGenerated " + ThumbnailsCount + " thumbnails...", MessageBoxButtons.OK, MessageBoxIcon.Information );
+			else
+				MessageBox( "Warning!\nGenerated " + ThumbnailsCount + " thumbnails with errors:\n\n" + Errors, MessageBoxButtons.OK, MessageBoxIcon.Warning );
 		}
+
+		#region Tags
+
+		private bool	m_ModifyingCheckboxes = false;
+		private int	MutuallyExclusiveChoice( object _Sender, CheckBox[] _Choices )
+		{
+			if ( m_ModifyingCheckboxes )
+				return 0;
+			m_ModifyingCheckboxes = true;
+
+			CheckBox	C = _Sender as CheckBox;
+			if ( !C.Checked )
+			{	// User unchecked the only possible choice so we know that this tag is empty
+				m_ModifyingCheckboxes = false;
+				return 0;
+			}
+
+			// Uncheck all others and keep the only one that's checked
+			int		SelectedChoice = 0;
+			for ( int ChoiceIndex=0; ChoiceIndex < _Choices.Length; ChoiceIndex++ )
+				if ( _Choices[ChoiceIndex] == C )
+					SelectedChoice = ChoiceIndex;
+				else
+					_Choices[ChoiceIndex].Checked = false;
+
+			m_ModifyingCheckboxes = false;
+			return 1+SelectedChoice;	// 1+ because choice 0 is NONE
+		}
+		private int	MutuallyExclusiveChoiceWithMaster( object _Sender, CheckBox[] _Choices, int _MasterChoice )
+		{
+			if ( m_ModifyingCheckboxes )
+				return 0;
+			m_ModifyingCheckboxes = true;
+
+			CheckBox	C = _Sender as CheckBox;
+			if ( C == _Choices[0] )
+			{	// Master choice
+				if ( !C.Checked )
+				{	// Unchecking the master just clears all other choices
+					for ( int ChoiceIndex=1; ChoiceIndex < _Choices.Length; ChoiceIndex++ )
+						_Choices[ChoiceIndex].Checked = false;
+
+					m_ModifyingCheckboxes = false;
+					return 0;
+				}
+				m_ModifyingCheckboxes = false;
+				return _MasterChoice;
+			}
+
+			// Always check the master
+			_Choices[0].Checked = true;
+
+			if ( !C.Checked )
+			{	// Unchecking a non master tick means we're left with the master choice anyway
+				m_ModifyingCheckboxes = false;
+				return _MasterChoice;
+			}
+
+			// Uncheck all others and keep the only one that's checked
+			int		SelectedChoice = 0;
+			for ( int ChoiceIndex=1; ChoiceIndex < _Choices.Length; ChoiceIndex++ )
+				if ( _Choices[ChoiceIndex] == C )
+					SelectedChoice = ChoiceIndex;
+				else
+					_Choices[ChoiceIndex].Checked = false;
+
+			m_ModifyingCheckboxes = false;
+			return SelectedChoice | _MasterChoice;
+		}
+
+		private void checkBoxTagType_CheckedChanged( object sender, EventArgs e )
+		{
+			CheckBox[]	c = new CheckBox[] {
+		checkBoxTagWood,			 // WOOD,
+		checkBoxTagStone,			 // STONE,
+		checkBoxTagSkin,			 // SKIN
+		checkBoxTagFabric,			 // FABRIC,
+		checkBoxTagPaperCanvas,		 // PAPER_CANVAS,
+		checkBoxTagPaint,			 // PAINT,
+		checkBoxTagPlastic,			 // PLASTIC,
+			};
+			m_SelectedEntry.TagType = (Database.Entry.TAGS_TYPE) MutuallyExclusiveChoice( sender, c );
+		}
+
+		private void checkBoxTagColor_CheckedChanged( object sender, EventArgs e )
+		{
+			CheckBox[]	c = new CheckBox[] {
+		checkBoxTagBlack,			 // BLACK,
+		checkBoxTagWhite,			 // WHITE,
+		checkBoxTagGray,			 // GRAY,
+		checkBoxTagRed,				 // RED,
+		checkBoxTagGreen,			 // GREEN,
+		checkBoxTagBlue,			 // BLUE,
+		checkBoxYellow,				 // YELLOW,
+		checkBoxTagCyan,			 // CYAN,
+		checkBoxTagPurple,			 // PURPLE,
+		checkBoxTagOrange,			 // ORANGE,
+			};
+			m_SelectedEntry.TagColor = (Database.Entry.TAGS_COLOR) MutuallyExclusiveChoice( sender, c );
+		}
+
+		private void checkBoxTagShade_CheckedChanged( object sender, EventArgs e )
+		{
+			CheckBox[]	c = new CheckBox[] {
+		checkBoxTagDark,			 // DARK,
+		checkBoxTagBright,			 // BRIGHT,
+		checkBoxTagNeutral,			 // NEUTRAL,
+			};
+			m_SelectedEntry.TagShade = (Database.Entry.TAGS_SHADE) MutuallyExclusiveChoice( sender, c );
+		}
+
+		private void checkBoxTagNature_CheckedChanged( object sender, EventArgs e )
+		{
+			CheckBox[]	c = new CheckBox[] {
+		checkBoxTagNature,			 // NATURE,
+		checkBoxTagLeaf,			 // LEAF,
+		checkBoxTagSoil,			 // SOIL,
+		checkBoxTagBark,			 // BARK,
+			};
+			m_SelectedEntry.TagNature = (Database.Entry.TAGS_NATURE) MutuallyExclusiveChoiceWithMaster( sender, c, 256 );
+		}
+
+		private void checkBoxTagFurniture_CheckedChanged( object sender, EventArgs e )
+		{
+			CheckBox[]	c = new CheckBox[] {
+		checkBoxTagFurniture,		 // FURNITURE,
+		checkBoxTagTable,			 // TABLE,
+		checkBoxTagChair,			 // CHAIR,
+		checkBoxTagDesk,			 // DESK,
+		checkBoxTagWardrobe,		 // WARDROBE,
+		checkBoxTagCabinet,			 // CABINET,
+			};
+			m_SelectedEntry.TagFurniture = (Database.Entry.TAGS_FURNITURE) MutuallyExclusiveChoiceWithMaster( sender, c, 256 );
+		}
+
+		private void checkBoxTagConstruction_CheckedChanged( object sender, EventArgs e )
+		{
+			CheckBox[]	c = new CheckBox[] {
+		checkBoxTagConstruction,	 // CONSTRUCTION,
+		checkBoxTagWall,			 // WALL,
+		checkBoxTagFloor,			 // FLOOR,
+		checkBoxTagDoorWindow,		 // DOOR_WINDOW,
+		checkBoxTagRoadPavement,	 // ROAD_PAVEMENT,
+			};
+			m_SelectedEntry.TagConstruction = (Database.Entry.TAGS_CONSTRUCTION) MutuallyExclusiveChoiceWithMaster( sender, c, 256 );
+		}
+
+		private void checkBoxTagModifiers_CheckedChanged( object sender, EventArgs e )
+		{
+			CheckBox[]	c = new CheckBox[] {
+		checkBoxTagWet,				 // WET = 1,
+		checkBoxTagDusty,			 // DUSTY = 2,
+		checkBoxTagFrosty,			 // FROSTY = 4,
+		checkBoxTagOld,				 // OLD = 8,
+		checkBoxTagNew,				 // NEW = 16,
+			};
+			CheckBox	C = sender as CheckBox;
+			int		Flags = 0;
+			for ( int i=0; i < c.Length; i++ )
+				if ( c[i].Checked )
+					Flags |= 1 << i;
+			m_SelectedEntry.TagModifiers = (Database.Entry.TAGS_MODIFIERS) Flags;
+		}
+
+		#endregion
 
 		#endregion
 	}

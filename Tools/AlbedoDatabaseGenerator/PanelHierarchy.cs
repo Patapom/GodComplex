@@ -39,10 +39,12 @@ namespace AlbedoDatabaseGenerator
 		{
 			base.OnPaint( e );
 
-			e.Graphics.DrawLine( Pens.Black, 0.5f * Width, 0, 0.5f * Width, Height );
-			e.Graphics.DrawLine( Pens.Black, 0, 0.5f * (Height-1), 0.5f * Width, 0.5f * (Height-1) );
+			Pen	P = Enabled ? Pens.Black : SystemPens.ControlLight;
+
+			e.Graphics.DrawLine( P, 0.5f * Width, 0, 0.5f * Width, Height );
+			e.Graphics.DrawLine( P, 0, 0.5f * (Height-1), 0.5f * Width, 0.5f * (Height-1) );
 			for ( int i=0; i < m_ChildrenCount; i++ )
-				e.Graphics.DrawLine( Pens.Black, 0.5f * Width, (float) i / (m_ChildrenCount-1) * (Height-1), Width, (float) i / (m_ChildrenCount-1) * (Height-1) );
+				e.Graphics.DrawLine( P, 0.5f * Width, (float) i / (m_ChildrenCount-1) * (Height-1), Width, (float) i / (m_ChildrenCount-1) * (Height-1) );
 		}
 	}
 }
