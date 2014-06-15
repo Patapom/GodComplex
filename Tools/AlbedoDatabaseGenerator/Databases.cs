@@ -12,6 +12,12 @@ namespace AlbedoDatabaseGenerator
 {
 	public class	Database : IDisposable
 	{
+		#region CONSTANTS
+
+		private static readonly string	EOL = "\r\n";
+
+		#endregion
+
 		#region NESTED TYPES
 
 		[System.Diagnostics.DebuggerDisplay( "File={m_RelativePath} Name={m_FriendlyName} Desc={m_Description}" )]
@@ -175,6 +181,11 @@ namespace AlbedoDatabaseGenerator
 			public TAGS_CONSTRUCTION	TagConstruction	{ get { return m_TagConstruction; } set { m_TagConstruction = value; } }
 			public TAGS_MODIFIERS		TagModifiers	{ get { return m_TagModifiers; } set { m_TagModifiers = value; } }
 
+			FileInfo					ThumbnailFileName
+			{
+				get { return new FileInfo( m_Manifest.GetFullPath( Path.GetFileNameWithoutExtension( m_Manifest.m_CalibratedTextureFileName ) + ".jpg" ) ); }
+			}
+
  			public FileInfo				OverviewImageFileName
 			{
 				get { return m_OverviewImageRelativePath != null ? new FileInfo( Path.Combine( Path.GetDirectoryName( FullPath.FullName ), m_OverviewImageRelativePath ) ) : null; }
@@ -253,6 +264,115 @@ namespace AlbedoDatabaseGenerator
 				_Owner.SetAttribute( _Owner.AppendElement( TagsElement, "Modifiers" ), "Value", m_TagModifiers.ToString() );
 			}
 
+			private string	m_Indent = "";
+			public string	Export( string _Indent )
+			{
+				m_Indent = _Indent;
+				string	JSON = L( "{" );
+
+				// Write standard infos
+				Indent();
+				JSON += L( "RelativePath : \"" + Path.GetDirectoryName( m_RelativePath ).Replace( '\\', '/' ) + "\"," );
+				JSON += L( "FriendlyName : \"" + m_FriendlyName + "\"," );
+				JSON += L( "Description : \"" + m_Description + "\"," );
+
+				string	Tags = "";
+				if ( m_TagType != TAGS_TYPE.NONE )
+					Tags += "," + m_TagType.ToString();
+				if ( m_TagColor != TAGS_COLOR.NONE )
+					Tags += "," + m_TagColor.ToString();
+				if ( m_TagShade != TAGS_SHADE.NONE )
+					Tags += "," + m_TagShade.ToString();
+				if ( m_TagNature != TAGS_NATURE.NONE )
+					Tags += "," + m_TagNature.ToString();
+				if ( m_TagFurniture != TAGS_FURNITURE.NONE )
+					Tags += "," + m_TagFurniture.ToString();
+				if ( m_TagConstruction != TAGS_CONSTRUCTION.NONE )
+					Tags += "," + m_TagConstruction.ToString();
+				if ( m_TagModifiers != TAGS_MODIFIERS.NONE )
+					Tags += "," + m_TagModifiers.ToString();
+				if ( Tags != "" )
+					Tags = Tags.Remove( 0, 1 );	// Remove first comma
+				JSON += L( "Tags : \"" + Tags + "\"," );
+
+				// Write texture infos
+				if ( m_Manifest != null )
+				{
+					JSON += L( "TextureInfos : {" );
+					Indent();
+
+					JSON += L( "ISOSpeed : " + m_Manifest.m_ISOSpeed + "," );
+					JSON += L( "ShutterSpeed : " + m_Manifest.m_ShutterSpeed + "," );
+					JSON += L( "Aperture : " + m_Manifest.m_Aperture + "," );
+
+					JSON += L( "ThumbnailFileName : \"" + F( ThumbnailFileName.FullName ) + "\"," );
+					JSON += L( "TextureFileName : \"" + F( m_Manifest.GetFullPath( m_Manifest.m_CalibratedTextureFileName ) ) + "\"," );
+					if ( OverviewImageFileName != null )
+						JSON += L( "OverviewImageFileName : \"" + F( OverviewImageFileName.FullName ) + "\"," );
+					
+					{	// Swatches
+						JSON += L( "Swatches : {" );
+						Indent();
+
+						JSON += L( "Min : " ) + ExportSwatch( m_Manifest.m_SwatchMin );
+						JSON += L( "Max : " ) + ExportSwatch( m_Manifest.m_SwatchMax );
+						JSON += L( "Avg : " ) + ExportSwatch( m_Manifest.m_SwatchAvg );
+
+						{	// Custom
+							JSON += L( "Custom : [" );
+							Indent();
+							foreach ( Manifest.Swatch CS in m_Manifest.m_CustomSwatches )
+								JSON += ExportSwatch( CS );
+							UnIndent();
+							JSON += L( "]" );
+						}
+
+						UnIndent();
+						JSON += L( "}" );
+					}
+
+					UnIndent();
+					JSON += L( "}" );
+				}
+
+				UnIndent();
+				JSON += L( "}," );
+				return JSON;
+			}
+
+			private void	Indent()
+			{
+				m_Indent += "	";
+			}
+			private void	UnIndent()
+			{
+				m_Indent = m_Indent.Remove( m_Indent.Length-1, 1 );
+			}
+			private string	L( string _Line )
+			{
+				return m_Indent + _Line + EOL;
+			}
+			private string	F( string _FullPath )
+			{
+				string	RelativeFileName = m_Owner.GetRelativePath( _FullPath );
+				RelativeFileName = RelativeFileName.Replace( '\\', '/' );
+				return RelativeFileName;
+			}
+			private string	ExportSwatch( Manifest.Swatch _Swatch )
+			{
+				string	JSON = L( "{" );
+				Indent();
+
+				JSON += L( "xyY : \"" + _Swatch.m_xyY.ToString() + "\"," );
+				JSON += L( "RGB : \"" + _Swatch.m_RGB.ToString() + "\"," );
+				JSON += L( "Color : \"" + (_Swatch.Color.ToArgb() & 0xFFFFFF).ToString( "X6" ) + "\"," );
+
+				UnIndent();
+				JSON += L( "}," );
+
+				return JSON;
+			}
+
 			public unsafe void		GenerateThumbnail( bool _ForceRegenerate )
 			{
 				if ( m_Thumbnail != null && !_ForceRegenerate )
@@ -262,12 +382,12 @@ namespace AlbedoDatabaseGenerator
 					throw new Exception( "Invalid manifest to load textures from!" );
 
 				// Attempt to load an existing thumbnail
-				FileInfo	ThumbnailFileName = new FileInfo( m_Manifest.GetFullPath( Path.GetFileNameWithoutExtension( m_Manifest.m_CalibratedTextureFileName ) + ".jpg" ) );
-				if ( ThumbnailFileName.Exists )
+				FileInfo	FileName = ThumbnailFileName;
+				if ( FileName.Exists )
 				{
 					if ( !_ForceRegenerate )
 					{	// It does!
-						m_Thumbnail = Bitmap.FromFile( ThumbnailFileName.FullName ) as Bitmap;
+						m_Thumbnail = Bitmap.FromFile( FileName.FullName ) as Bitmap;
 						return;
 					}
 
@@ -275,7 +395,7 @@ namespace AlbedoDatabaseGenerator
 					if ( m_Thumbnail != null )
 						m_Thumbnail.Dispose();
 
-					ThumbnailFileName.Delete();
+					FileName.Delete();
 				}
 
 				// Make sure the textures are ready
@@ -307,7 +427,7 @@ namespace AlbedoDatabaseGenerator
 
 				// We have a new thumbnail!
 				m_Thumbnail = Target;
-				m_Thumbnail.Save( ThumbnailFileName.FullName, ImageFormat.Jpeg );
+				m_Thumbnail.Save( FileName.FullName, ImageFormat.Jpeg );
 			}
 
 			#region IDisposable Members
@@ -658,6 +778,23 @@ namespace AlbedoDatabaseGenerator
 			}
 
 			Doc.Save( _FileName.FullName );
+		}
+
+		/// <summary>
+		/// Exports the database to a JSON file readable by the javascript web page that will help browsing the textures
+		/// </summary>
+		/// <param name="_FileName"></param>
+		public void		Export( FileInfo _FileName )
+		{
+			string	JSON = "{"+EOL;
+			JSON += "	Entries : ["+EOL;
+			foreach ( Entry E in m_Entries )
+				JSON += E.Export( "		" );
+			JSON += "	]"+EOL;
+			JSON += "}"+EOL;
+
+			using ( StreamWriter W = _FileName.CreateText() )
+				W.Write( JSON );
 		}
 
 		#region Xml Helpers

@@ -99,7 +99,7 @@ namespace AlbedoDatabaseGenerator
 
 			if ( m_Database != null && m_Database.Entries.Length > 0 )
 			{
-				DialogResult	R = MessageBox( "Do you wish to save the database before closing the application?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning );
+				DialogResult	R = MessageBox( "Do you wish to save the database before closing the application?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question );
 				if ( R == DialogResult.Cancel )
 				{
 					e.Cancel = true;
@@ -345,7 +345,27 @@ namespace AlbedoDatabaseGenerator
 
 		private void buttonExportJSON_Click( object sender, EventArgs e )
 		{
-			//TODO!
+// 			string	OldFileName = GetRegKey( "JSONDatabaseFileName", Path.Combine( m_ApplicationPath, "Database.json" ) );
+// 			saveFileDialogExportJSON.InitialDirectory = Path.GetFullPath( OldFileName );
+// 			saveFileDialogExportJSON.FileName = Path.GetFileName( OldFileName );
+// 			if ( saveFileDialogExportJSON.ShowDialog( this ) != DialogResult.OK )
+// 				return;
+// 
+// 			SetRegKey( "JSONDatabaseFileName", saveFileDialogExportJSON.FileName );
+
+			try
+			{
+//				m_Database.Export( new FileInfo( saveFileDialogExportJSON.FileName ) );
+
+				FileInfo	Target = new FileInfo( Path.Combine( m_Database.RootPath.FullName, "database.json" ) );
+				m_Database.Export( Target );
+
+				MessageBox( "Success!\r\nJSON file was successfully exported to \"" + Target.FullName + "\"!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred while exporting the database:\n\n", _e );
+			}
 		}
 
 		private void buttonGenerateThumbnails_Click( object sender, EventArgs e )
