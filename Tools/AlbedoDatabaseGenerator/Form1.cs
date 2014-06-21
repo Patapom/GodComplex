@@ -42,6 +42,7 @@ namespace AlbedoDatabaseGenerator
 				SelectedEntry = null;
 
 				// Update UI
+				textBoxDatabaseRootPath.BackColor = m_Database != null && m_Database.RootPath.Exists ? BackColor : Color.Red;
 				textBoxDatabaseRootPath.Text = m_Database != null ? m_Database.RootPath.FullName : "";
 				buttonExportJSON.Enabled = m_Database != null;
 				buttonGenerateThumbnails.Enabled = m_Database != null;
@@ -234,7 +235,14 @@ namespace AlbedoDatabaseGenerator
 			try
 			{
 				Database	D = new Database();
-				D.Load( new FileInfo( openFileDialogDatabase.FileName ) );
+				try
+				{
+					D.Load( new FileInfo( openFileDialogDatabase.FileName ) );
+				}
+				catch ( Database.InvalidDatabaseRootPathException _e )
+				{
+					MessageBox( "The database could not be opened completely as it did not manage to reconnect manifest files on disk based on its embedded location path.\nConsider changing the root folder location to a valid path.\n\nError: " + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Warning );
+				}
 
 				if ( m_Database != null )
 					m_Database.Dispose();
@@ -283,6 +291,7 @@ namespace AlbedoDatabaseGenerator
 			try
 			{
 				m_Database.RootPath = new DirectoryInfo( folderBrowserDialogDatabaseLocation.SelectedPath );
+				textBoxDatabaseRootPath.BackColor = m_Database.RootPath.Exists ? BackColor : Color.Red;
 				textBoxDatabaseRootPath.Text = m_Database.RootPath.FullName;
 				UpdateDatabaseEntries();
 			}

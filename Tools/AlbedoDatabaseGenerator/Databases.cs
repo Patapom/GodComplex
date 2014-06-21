@@ -12,6 +12,18 @@ namespace AlbedoDatabaseGenerator
 {
 	public class	Database : IDisposable
 	{
+		#region NESTED TYPES
+
+		public class InvalidDatabaseRootPathException : Exception
+		{
+			public InvalidDatabaseRootPathException( string _Message ) : base( _Message )
+			{
+
+			}
+		}
+
+		#endregion
+
 		#region CONSTANTS
 
 		private static readonly string	EOL = "\r\n";
@@ -275,6 +287,8 @@ namespace AlbedoDatabaseGenerator
 				JSON += L( "RelativePath : \"" + Path.GetDirectoryName( m_RelativePath ).Replace( '\\', '/' ) + "\"," );
 				JSON += L( "FriendlyName : \"" + m_FriendlyName + "\"," );
 				JSON += L( "Description : \"" + m_Description + "\"," );
+				if ( m_OverviewImageRelativePath != null )
+					JSON += L( "OverviewImagePath: \"" + m_OverviewImageRelativePath + "\"," );
 
 				string	Tags = "";
 				if ( m_TagType != TAGS_TYPE.NONE )
@@ -284,11 +298,14 @@ namespace AlbedoDatabaseGenerator
 				if ( m_TagShade != TAGS_SHADE.NONE )
 					Tags += "," + m_TagShade.ToString();
 				if ( m_TagNature != TAGS_NATURE.NONE )
-					Tags += "," + m_TagNature.ToString();
+					Tags += "," + m_TagNature.ToString()
+						+ (m_TagNature != TAGS_NATURE.NATURE ? ",NATURE" : "");	// Always append parent tag as soon as we have a tag belonging to the category
 				if ( m_TagFurniture != TAGS_FURNITURE.NONE )
-					Tags += "," + m_TagFurniture.ToString();
+					Tags += "," + m_TagFurniture.ToString()
+						+ (m_TagFurniture != TAGS_FURNITURE.FURNITURE ? ",FURNITURE" : "");	// Always append parent tag as soon as we have a tag belonging to the category
 				if ( m_TagConstruction != TAGS_CONSTRUCTION.NONE )
-					Tags += "," + m_TagConstruction.ToString();
+					Tags += "," + m_TagConstruction.ToString()
+						+ (m_TagConstruction != TAGS_CONSTRUCTION.CONSTRUCTION ? ",CONSTRUCTION" : "");	// Always append parent tag as soon as we have a tag belonging to the category
 				if ( m_TagModifiers != TAGS_MODIFIERS.NONE )
 					Tags += "," + m_TagModifiers.ToString();
 				if ( Tags != "" )
@@ -307,6 +324,8 @@ namespace AlbedoDatabaseGenerator
 
 					JSON += L( "ThumbnailFileName : \"" + F( ThumbnailFileName.FullName ) + "\"," );
 					JSON += L( "TextureFileName : \"" + F( m_Manifest.GetFullPath( m_Manifest.m_CalibratedTextureFileName ) ) + "\"," );
+					JSON += L( "TextureWidth : " + m_Manifest.m_CalibratedTextureWidth + "," );
+					JSON += L( "TextureHeight : " + m_Manifest.m_CalibratedTextureHeight + "," );
 					if ( OverviewImageFileName != null )
 						JSON += L( "OverviewImageFileName : \"" + F( OverviewImageFileName.FullName ) + "\"," );
 					
@@ -366,6 +385,11 @@ namespace AlbedoDatabaseGenerator
 				JSON += L( "xyY : \"" + _Swatch.m_xyY.ToString() + "\"," );
 				JSON += L( "RGB : \"" + _Swatch.m_RGB.ToString() + "\"," );
 				JSON += L( "Color : \"" + (_Swatch.Color.ToArgb() & 0xFFFFFF).ToString( "X6" ) + "\"," );
+
+				if ( _Swatch.m_LocationTopLeft != null )
+					JSON += L( "TopLeft : { x : " + _Swatch.m_LocationTopLeft.x + ", y : " + _Swatch.m_LocationTopLeft.y + " }," );
+				if ( _Swatch.m_LocationBottomRight != null )
+					JSON += L( "BottomRight : { x : " + _Swatch.m_LocationBottomRight.x + ", y : " + _Swatch.m_LocationBottomRight.y + " }," );
 
 				UnIndent();
 				JSON += L( "}," );
@@ -670,7 +694,7 @@ namespace AlbedoDatabaseGenerator
 
 				m_RootPath = value;
 				if ( !m_RootPath.Exists )
-					throw new Exception( "The provided database location does not exist on disk! Please change the location to an actual directory so entries should get reconnected to the texture manifests." );
+					throw new InvalidDatabaseRootPathException( "The provided database location does not exist on disk! Please change the location to an actual directory so entries should get reconnected to the texture manifests." );
 
 				m_Errors = "";
 
