@@ -3,6 +3,8 @@
 //
 #pragma once
 
+#define POM_FORMAT_SUPPORT
+
 class Device;
 class IPixelFormatDescriptor;
 class Texture2D;

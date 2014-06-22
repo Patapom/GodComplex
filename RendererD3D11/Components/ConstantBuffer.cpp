@@ -47,7 +47,7 @@ ConstantBuffer::ConstantBuffer( Device& _Device, int _Size, void* _pData, bool _
 
 ConstantBuffer::~ConstantBuffer()
 {
-	ASSERT( m_pBuffer != NULL, "Invalid constant buffer to destroy !" );
+	ASSERT( m_pBuffer != NULL, "Invalid constant buffer to destroy!" );
 	m_pBuffer->Release(); m_pBuffer = NULL;
 
 	if ( m_pShaderResourceView )

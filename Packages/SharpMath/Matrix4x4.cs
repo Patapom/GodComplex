@@ -182,6 +182,21 @@ namespace WMath
 
 			return	this;
 		}
+	
+		public Matrix4x4			MakeProjectionPerspective( float _FOVY, float _AspectRatio, float _Near, float _Far )
+		{
+			float	H = (float) Math.Tan( 0.5f * _FOVY );
+			float	W = _AspectRatio * H;
+			float	Q =  _Far / (_Far - _Near);
+
+			MakeIdentity();
+			SetRow( 0, new Vector4D( 1.0f / W, 0.0f, 0.0f, 0.0f ) );
+			SetRow( 1, new Vector4D( 0.0f, 1.0f / H, 0.0f, 0.0f ) );
+			SetRow( 2, new Vector4D( 0.0f, 0.0f, Q, 1.0f ) );
+			SetRow( 3, new Vector4D( 0.0f, 0.0f, -_Near * Q, 0.0f ) );
+
+			return this;
+		}
 
 		public Vector				GetEuler()
 		{

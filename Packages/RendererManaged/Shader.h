@@ -4,24 +4,30 @@
 #include "Device.h"
 #include "ShaderMacros.h"
 #include "ShaderFile.h"
+#include "VertexFormats.h"
 
 using namespace System;
 
 namespace RendererManaged {
 
-	public ref class ComputeShader
+	public ref class Shader
 	{
-	private:
+	internal:
 
-		::ComputeShader*	m_pShader;
+		::Material*	m_pShader;
 
 	public:
 
-		ComputeShader( Device^ _Device, ShaderFile^ _ShaderFile, String^ _EntryPoint, ShaderMacros^ _Macros )
+		Shader( Device^ _Device, ShaderFile^ _ShaderFile, VERTEX_FORMAT _Format, String^ _EntryPointVS, String^ _EntryPointPS, ShaderMacros^ _Macros )
 		{
 			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _ShaderFile->m_ShaderFileName->FullName ).ToPointer();
 			const char*	ShaderCode = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _ShaderFile->m_ShaderSourceCode ).ToPointer();
-			const char*	EntryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _EntryPoint ).ToPointer();
+			const char*	EntryPointVS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _EntryPointVS ).ToPointer();
+			const char*	EntryPointHS = NULL;	//TODO?
+			const char*	EntryPointDS = NULL;	//TODO?
+			const char*	EntryPointGS = NULL;	//TODO?
+			const char*	EntryPointPS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _EntryPointPS ).ToPointer();
+
 
 			D3D_SHADER_MACRO*	pMacros = NULL;
 			if ( _Macros != nullptr )
@@ -38,12 +44,20 @@ namespace RendererManaged {
 				pMacros[i].Definition = NULL;
 			}
 
-			m_pShader = new ::ComputeShader( *_Device->m_pDevice, ShaderFileName, ShaderCode, pMacros, EntryPoint, NULL );
+			IVertexFormatDescriptor*	pDescriptor = NULL;
+			switch ( _Format )
+			{
+			case VERTEX_FORMAT::Pt4:	pDescriptor = &VertexFormatPt4::DESCRIPTOR; break;
+			}
+			if ( pDescriptor == NULL )
+				throw gcnew Exception( "Unsupported vertex format!" );
+
+			m_pShader = new ::Material( *_Device->m_pDevice, ShaderFileName, *pDescriptor, ShaderCode, pMacros, EntryPointVS, EntryPointHS, EntryPointDS, EntryPointGS, EntryPointPS, NULL );
 
 			delete[] pMacros;
 		}
 
-		~ComputeShader()
+		~Shader()
 		{
 			delete m_pShader;
 		}

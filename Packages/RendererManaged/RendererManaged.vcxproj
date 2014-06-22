@@ -78,28 +78,42 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ComputeShader.h" />
-    <ClInclude Include="RendererManaged.h" />
+    <ClInclude Include="ConstantBuffer.h" />
+    <ClInclude Include="Device.h" />
+    <ClInclude Include="PixelFormats.h" />
+    <ClInclude Include="RenderStates.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Shader.h" />
     <ClInclude Include="ShaderFile.h" />
     <ClInclude Include="ShaderMacros.h" />
     <ClInclude Include="Stdafx.h" />
+    <ClInclude Include="Texture2D.h" />
+    <ClInclude Include="VertexFormats.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp" />
     <ClCompile Include="ComputeShader.cpp" />
-    <ClCompile Include="RendererManaged.cpp" />
+    <ClCompile Include="ConstantBuffer.cpp" />
+    <ClCompile Include="Device.cpp" />
+    <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderFile.cpp" />
     <ClCompile Include="ShaderMacros.cpp" />
     <ClCompile Include="Stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Texture2D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.ico" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="app.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SharpMath\SharpMath.csproj">
+      <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

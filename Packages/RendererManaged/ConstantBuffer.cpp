@@ -2,5 +2,5 @@
 
 #include "stdafx.h"
 
-#include "RendererManaged.h"
+#include "ConstantBuffer.h"
 

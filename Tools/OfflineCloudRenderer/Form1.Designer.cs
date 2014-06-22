@@ -31,13 +31,25 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
+			this.components = new System.ComponentModel.Container();
+			this.viewportPanel = new OfflineCloudRenderer.ViewportPanel(this.components);
 			this.SuspendLayout();
+			// 
+			// viewportPanel
+			// 
+			this.viewportPanel.Device = null;
+			this.viewportPanel.Location = new System.Drawing.Point(12, 12);
+			this.viewportPanel.Name = "viewportPanel";
+			this.viewportPanel.Size = new System.Drawing.Size(910, 512);
+			this.viewportPanel.TabIndex = 0;
+			this.viewportPanel.MouseDown += new System.Windows.Forms.MouseEventHandler(this.viewportPanel_MouseDown);
 			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(935, 657);
+			this.ClientSize = new System.Drawing.Size(1310, 703);
+			this.Controls.Add(this.viewportPanel);
 			this.Name = "Form1";
 			this.Text = "Form1";
 			this.ResumeLayout(false);
@@ -45,6 +57,8 @@
 		}
 
 		#endregion
+
+		private ViewportPanel viewportPanel;
 	}
 }
 

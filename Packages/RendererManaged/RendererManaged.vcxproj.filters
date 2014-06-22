@@ -10,7 +10,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="RendererManaged.h" />
     <ClInclude Include="ComputeShader.h" />
     <ClInclude Include="ShaderMacros.h" />
     <ClInclude Include="resource.h">
@@ -20,15 +19,19 @@
       <Filter>Sources</Filter>
     </ClInclude>
     <ClInclude Include="ShaderFile.h" />
+    <ClInclude Include="ConstantBuffer.h" />
+    <ClInclude Include="Texture2D.h" />
+    <ClInclude Include="Device.h" />
+    <ClInclude Include="PixelFormats.h" />
+    <ClInclude Include="Shader.h" />
+    <ClInclude Include="VertexFormats.h" />
+    <ClInclude Include="RenderStates.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="ComputeShader.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="RendererManaged.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="ShaderMacros.cpp">
@@ -38,6 +41,18 @@
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="ShaderFile.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstantBuffer.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture2D.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Device.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>

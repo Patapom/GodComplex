@@ -1,7 +1,7 @@
 // RendererManaged.h
 
 #pragma once
-#include "RendererManaged.h"
+#include "Device.h"
 
 using namespace System;
 using namespace System::IO;

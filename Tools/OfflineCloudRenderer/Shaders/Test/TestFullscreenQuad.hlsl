@@ -1,0 +1,18 @@
+﻿////////////////////////////////////////////////////////////////////////////////
+// Fullscreen shader test
+////////////////////////////////////////////////////////////////////////////////
+
+struct VS_IN
+{
+	float4	__Position : SV_POSITION;
+};
+
+VS_IN	VS( VS_IN _In )
+{
+	return _In;
+}
+
+float4	PS( VS_IN _In ) : SV_TARGET0
+{
+	return float4( _In.__Position.xy / 512.0, 0, 1 );
+}
