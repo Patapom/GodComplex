@@ -75,12 +75,14 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, con
 #ifdef COMPUTE_SHADER_COMPILE_THREADED
 	// Create the mutex for compilation exclusivity
 	m_hCompileMutex = CreateMutexA( NULL, false, m_pShaderFileName );
-	ASSERT( m_hCompileMutex != 0, "Failed to create compilation mutex !" );
+	if ( m_hCompileMutex == NULL )
+		m_hCompileMutex = OpenMutexA( SYNCHRONIZE, false, m_pShaderFileName );	// Try and reuse any existing mutex
+	ASSERT( m_hCompileMutex != 0, "Failed to create compilation mutex!" );
 #endif
 
 #ifndef COMPUTE_SHADER_COMPILE_AT_RUNTIME
 #ifdef COMPUTE_SHADER_COMPILE_THREADED
-	ASSERT( false, "The COMPUTE_SHADER_COMPILE_THREADED option should only work in pair with the COMPUTE_SHADER_COMPILE_AT_RUNTIME option ! (i.e. You CANNOT define COMPUTE_SHADER_COMPILE_THREADED without defining COMPUTE_SHADER_COMPILE_AT_RUNTIME at the same time !)" );
+	ASSERT( false, "The COMPUTE_SHADER_COMPILE_THREADED option should only work in pair with the COMPUTE_SHADER_COMPILE_AT_RUNTIME option! (i.e. You CANNOT define COMPUTE_SHADER_COMPILE_THREADED without defining COMPUTE_SHADER_COMPILE_AT_RUNTIME at the same time!)" );
 #endif
 
 	// Compile immediately
@@ -394,7 +396,7 @@ bool	ComputeShader::SetUnorderedAccessView( const char* _pBufferName, Structured
 	return	bUsed;
 }
 
-static void	DeleteBindingDescriptors( ComputeShader::ShaderConstants::BindingDesc*& _pValue, void* _pUserData )
+static void	DeleteBindingDescriptors( int _EntryIndex, ComputeShader::ShaderConstants::BindingDesc*& _pValue, void* _pUserData )
 {
 	delete _pValue;
 }

@@ -1,0 +1,155 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Device.h" />
+    <ClInclude Include="Components\Component.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\ComputeShader.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\ConstantBuffer.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\Material.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\Primitive.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\States.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\StructuredBuffer.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\Texture2D.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\Texture3D.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Structures\DepthStencilFormats.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Structures\FormatDescriptor.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Structures\PixelFormats.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Structures\VertexFormats.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NuajAPI\API\ASMHelpers.h">
+      <Filter>NuajAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NuajAPI\API\ConstantsBuffers.h">
+      <Filter>NuajAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NuajAPI\API\Hashtable.h">
+      <Filter>NuajAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NuajAPI\API\IEngine.h">
+      <Filter>NuajAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NuajAPI\API\INuaj.h">
+      <Filter>NuajAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NuajAPI\API\List.h">
+      <Filter>NuajAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NuajAPI\API\NuajParameters.h">
+      <Filter>NuajAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NuajAPI\API\Resources.h">
+      <Filter>NuajAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NuajAPI\API\Types.h">
+      <Filter>NuajAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NuajAPI\Math\Math.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Utility\TextureFilePOM.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="Device.cpp" />
+    <ClCompile Include="Components\Component.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\ComputeShader.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\ConstantBuffer.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\Material.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\Primitive.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\States.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\StructuredBuffer.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\Texture2D.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\Texture3D.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Structures\DepthStencilFormats.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="Structures\PixelFormats.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="Structures\VertexFormats.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NuajAPI\API\Hashtable.cpp">
+      <Filter>NuajAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NuajAPI\Math\Math.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Utility\TextureFilePOM.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Components">
+      <UniqueIdentifier>{0a271598-40c0-41e9-9709-b9a33beab5c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Structures">
+      <UniqueIdentifier>{8349e7c4-df32-474d-8e8b-6cfd5bbd3211}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NuajAPI">
+      <UniqueIdentifier>{d366610f-6180-44c8-887e-9906dfea3766}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math">
+      <UniqueIdentifier>{18dfc4ec-f68a-41a3-943a-f635ff7779f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utility">
+      <UniqueIdentifier>{cdf3c9a5-7eb3-4b16-882e-538947039d51}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\NuajAPI\API\Hashtable.inl">
+      <Filter>NuajAPI</Filter>
+    </None>
+    <None Include="..\NuajAPI\API\List.inl">
+      <Filter>NuajAPI</Filter>
+    </None>
+  </ItemGroup>
+</Project>

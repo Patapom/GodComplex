@@ -145,7 +145,9 @@ void	Primitive::Build( const void* _pVertices, const U32* _pIndices, bool _bDyna
 			Check( m_Device.DXDevice().CreateBuffer( &Desc, NULL, &m_pVB ) );
 
 		// Initialize as if we had only one bound vertex stream
+#ifdef _DEBUG
 		m_ppBoundPrimitives[0] = this;	// We're the first and only bound primitive at the time
+#endif
 		m_BoundVertexStreamsCount = 1;
 		m_ppVertexBuffers[0] = m_pVB;
 		m_pStrides[0] = m_Stride;

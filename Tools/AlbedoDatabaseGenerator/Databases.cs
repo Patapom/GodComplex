@@ -324,6 +324,7 @@ namespace AlbedoDatabaseGenerator
 
 					JSON += L( "ThumbnailFileName : \"" + F( ThumbnailFileName.FullName ) + "\"," );
 					JSON += L( "TextureFileName : \"" + F( m_Manifest.GetFullPath( m_Manifest.m_CalibratedTextureFileName ) ) + "\"," );
+					JSON += L( "PackagePath : \"" + F( m_Manifest.GetFullPath( "" ) ) + "\"," );
 					JSON += L( "TextureWidth : " + m_Manifest.m_CalibratedTextureWidth + "," );
 					JSON += L( "TextureHeight : " + m_Manifest.m_CalibratedTextureHeight + "," );
 					if ( OverviewImageFileName != null )

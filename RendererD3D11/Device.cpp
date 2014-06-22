@@ -483,7 +483,7 @@ void	Device::UnRegisterComponent( Component& _Component )
 
 bool	Device::Check( HRESULT _Result )
 {
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(GODCOMPLEX)
 	ASSERT( _Result == S_OK, "DX HRESULT Check failed !" );
 	if ( _Result != S_OK )
 		PostQuitMessage( _Result );

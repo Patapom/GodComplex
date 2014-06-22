@@ -176,7 +176,7 @@ ID3D11ShaderResourceView*	Texture2D::GetShaderView( int _MipLevelStart, int _Mip
 	// Create a new one
 	D3D11_SHADER_RESOURCE_VIEW_DESC	Desc;
 	Desc.Format = m_bIsDepthStencil ? ((IDepthStencilFormatDescriptor&) m_Format).ReadableDirectXFormat() : m_Format.DirectXFormat();
-	Desc.ViewDimension = m_ArraySize > 1 ? (m_bIsCubeMap ? (m_ArraySize > 6 ? D3D10_1_SRV_DIMENSION_TEXTURECUBEARRAY : D3D10_1_SRV_DIMENSION_TEXTURECUBE) : D3D11_SRV_DIMENSION_TEXTURE2DARRAY) : D3D11_SRV_DIMENSION_TEXTURE2D;
+	Desc.ViewDimension = m_ArraySize > 1 ? (m_bIsCubeMap ? (m_ArraySize > 6 ? D3D11_SRV_DIMENSION_TEXTURECUBEARRAY : D3D11_SRV_DIMENSION_TEXTURECUBE) : D3D11_SRV_DIMENSION_TEXTURE2DARRAY) : D3D11_SRV_DIMENSION_TEXTURE2D;
 	if ( m_bIsCubeMap )
 	{
 		Desc.TextureCubeArray.MostDetailedMip = _MipLevelStart;
