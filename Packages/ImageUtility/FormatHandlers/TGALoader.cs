@@ -39,7 +39,7 @@ using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 
 
-namespace StandardizedDiffuseAlbedoMaps
+namespace ImageUtility
 {
     /// <summary>
     /// Reads and loads a Truevision TGA Format image file.

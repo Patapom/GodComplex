@@ -14,7 +14,7 @@ namespace StandardizedDiffuseAlbedoMaps
 	{
 		#region NESTED TYPES
 
-		public delegate void	ColorPickingUpdate( float2 _TopLeft, float2 _BottomRight );	// Sends the UV coordinates of the rectangle to average as a single color and create a swatch
+		public delegate void	ColorPickingUpdate( ImageUtility.float2 _TopLeft, ImageUtility.float2 _BottomRight );	// Sends the UV coordinates of the rectangle to average as a single color and create a swatch
 
 		private enum	MANIPULATION_STATE
 		{
@@ -29,7 +29,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		private Bitmap					m_Bitmap = null;
 		private Bitmap					m_TextureBitmap = null;
 		private Bitmap					m_TextureOutOfRangeBitmap = null;
-		private Bitmap2.ColorProfile	m_sRGBProfile = new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB );
+		private ImageUtility.ColorProfile	m_sRGBProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );
 
 		private CalibratedTexture		m_CalibratedTexture = null;
 
@@ -71,8 +71,8 @@ namespace StandardizedDiffuseAlbedoMaps
 					}
 
 					// Convert to RGB first
-					float4[,]	ContentXYZ = m_CalibratedTexture.Texture.ContentXYZ;
-					float4[,]	ContentRGB = new float4[ContentXYZ.GetLength(0),ContentXYZ.GetLength(1)];
+					ImageUtility.float4[,]	ContentXYZ = m_CalibratedTexture.Texture.ContentXYZ;
+					ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[ContentXYZ.GetLength(0),ContentXYZ.GetLength(1)];
 					m_sRGBProfile.XYZ2RGB( ContentXYZ, ContentRGB );
 
 					// Find significant areas to draw min/max location by isolating the 5% darkest/brightest pixels
@@ -228,13 +228,13 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 		}
 
-		private float2	Client2ImageUV( PointF _Position )
+		private ImageUtility.float2	Client2ImageUV( PointF _Position )
 		{
 			RectangleF	ImageRect = ImageClientRect();
-			return new float2( (_Position.X - ImageRect.X) / ImageRect.Width, (_Position.Y - ImageRect.Y) / ImageRect.Height );
+			return new ImageUtility.float2( (_Position.X - ImageRect.X) / ImageRect.Width, (_Position.Y - ImageRect.Y) / ImageRect.Height );
 		}
 
-		private PointF	ImageUV2Client( float2 _Position )
+		private PointF	ImageUV2Client( ImageUtility.float2 _Position )
 		{
 			RectangleF	ImageRect = ImageClientRect();
 			return new PointF( _Position.x * ImageRect.Width + ImageRect.X, _Position.y * ImageRect.Height + ImageRect.Y );
@@ -275,8 +275,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				case MANIPULATION_STATE.PICK_COLOR:
 					Cursor = Cursors.Cross;
-					float2	UV0 = Client2ImageUV( m_ButtonDownMousePosition );
-					float2	UV1 = Client2ImageUV( e.Location );
+					ImageUtility.float2	UV0 = Client2ImageUV( m_ButtonDownMousePosition );
+					ImageUtility.float2	UV1 = Client2ImageUV( e.Location );
 					m_ColorPickingUpdateDelegate( UV0, UV1 );
 					Invalidate();
 					break;
@@ -300,8 +300,8 @@ namespace StandardizedDiffuseAlbedoMaps
 					ManipulationState = MANIPULATION_STATE.STOPPED;
 
 					// Notify end
-					float2	UV0 = Client2ImageUV( m_ButtonDownMousePosition );
-					float2	UV1 = Client2ImageUV( e.Location );
+					ImageUtility.float2	UV0 = Client2ImageUV( m_ButtonDownMousePosition );
+					ImageUtility.float2	UV1 = Client2ImageUV( e.Location );
 					m_ColorPickingEndDelegate( UV0, UV1 );
 					break;
 			}

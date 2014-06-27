@@ -4,12 +4,52 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-// using SharpDX;
-// using SharpDX.DXGI;
-using WMath;
-
-namespace StandardizedDiffuseAlbedoMaps
+namespace ImageUtility
 {
+	/// <summary>
+	/// This is the interface to pixel format structures needed for images and textures
+	/// NOTE: This interface is almost identical to the one found in the C++ GodComplex renderer but is abstract from DirectX internal DXGI formats
+	/// </summary>
+	public interface IPixelFormat
+	{
+		/// <summary>
+		/// Tells if the format uses sRGB input (cf. Image<PF> Gamma Correction)
+		/// </summary>
+		bool	sRGB			{ get; }
+
+		/// <summary>
+		/// LDR pixel writer
+		/// </summary>
+		/// <param name="_R"></param>
+		/// <param name="_G"></param>
+		/// <param name="_B"></param>
+		/// <param name="_A"></param>
+		void	Write( uint _R, uint _G, uint _B, uint _A );
+		void	Write( uint _A );
+
+		/// <summary>
+		/// HDR pixel writer
+		/// </summary>
+		/// <param name="_Color"></param>
+		void	Write( float4 _Color );
+		void	Write( float _R, float _G, float _B, float _A );
+		void	Write( float _A );
+
+		float	Red			{ get; }
+		float	Green		{ get; }
+		float	Blue		{ get; }
+		float	Alpha		{ get; }
+	}
+
+	/// <summary>
+	/// This is the interface to depth format structures needed for depth stencil buffers
+	/// They inherit pixel format data and define additional data
+	/// </summary>
+	public interface IDepthFormat : IPixelFormat
+	{
+		// Actually, they don't! :)
+	}
+
 	[StructLayout( LayoutKind.Sequential )]
 	public struct	PF_Empty : IPixelFormat
 	{
@@ -17,13 +57,11 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-//		public Format DirectXFormat		{ get { return Format.Unknown; } }
-
 		public bool	sRGB	{ get { return false; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _A )		{}
-		public void Write( Vector4D _Color )		{}
-		public void Write( float _R, float _G, float _B, float _A )		{}
+		public void Write( float4 _Color )	{}
+		public void Write( float _R, float _G, float _B, float _A )	{}
 		public void Write( uint _A )		{}
 		public void Write( float _A )		{}
 		public int  MipAverage( int _C0, int _C1, int _C2, int _C3 )	{ return 0; }
@@ -80,11 +118,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-// 		public Format DirectXFormat
-// 		{
-// 			get { return Format.R8_UNorm; }
-// 		}
-
 		public bool	sRGB	{ get { return false; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _A )
@@ -92,9 +125,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			R = (byte) _R;
 		}
 
-		public void Write( Vector4D _Color )
+		public void Write( float4 _Color )
 		{
-			R = PF_Empty.ToByte(_Color.X);
+			R = PF_Empty.ToByte(_Color.x);
 		}
 
 		public void Write( float _R, float _G, float _B, float _A )
@@ -128,11 +161,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-// 		public Format DirectXFormat
-// 		{
-// 			get { return Format.R8G8_UNorm; }
-// 		}
-
 		public bool	sRGB	{ get { return false; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _A )
@@ -141,10 +169,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			G = (byte) _G;
 		}
 
-		public void Write( Vector4D _Color )
+		public void Write( float4 _Color )
 		{
-			R = PF_Empty.ToByte(_Color.X);
-			G = PF_Empty.ToByte(_Color.Y);
+			R = PF_Empty.ToByte(_Color.x);
+			G = PF_Empty.ToByte(_Color.y);
 		}
 
 		public void Write( float _R, float _G, float _B, float _A )
@@ -220,11 +248,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-// 		public Format DirectXFormat
-// 		{
-// 			get { return Format.R8G8B8A8_UNorm; }
-// 		}
-
 		public bool	sRGB	{ get { return false; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _A )
@@ -235,12 +258,12 @@ namespace StandardizedDiffuseAlbedoMaps
 			A = (byte) _A;
 		}
 
-		public void Write( Vector4D _Color )
+		public void Write( float4 _Color )
 		{
-			R = PF_Empty.ToByte(_Color.X);
-			G = PF_Empty.ToByte(_Color.Y);
-			B = PF_Empty.ToByte(_Color.Z);
-			A = PF_Empty.ToByte(_Color.W);
+			R = PF_Empty.ToByte(_Color.x);
+			G = PF_Empty.ToByte(_Color.y);
+			B = PF_Empty.ToByte(_Color.z);
+			A = PF_Empty.ToByte(_Color.w);
 		}
 
 		public void Write( float _R, float _G, float _B, float _A )
@@ -279,11 +302,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-// 		public Format DirectXFormat
-// 		{
-// 			get { return Format.R8G8B8A8_UNorm_SRgb; }
-// 		}
-
 		public bool	sRGB	{ get { return true; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _A )
@@ -294,12 +312,12 @@ namespace StandardizedDiffuseAlbedoMaps
 			A = (byte) _A;
 		}
 
-		public void Write( Vector4D _Color )
+		public void Write( float4 _Color )
 		{
-			R = PF_Empty.ToByte(_Color.X);
-			G = PF_Empty.ToByte(_Color.Y);
-			B = PF_Empty.ToByte(_Color.Z);
-			A = PF_Empty.ToByte(_Color.W);
+			R = PF_Empty.ToByte(_Color.x);
+			G = PF_Empty.ToByte(_Color.y);
+			B = PF_Empty.ToByte(_Color.z);
+			A = PF_Empty.ToByte(_Color.w);
 		}
 
 		public void Write( float _R, float _G, float _B, float _A )
@@ -345,11 +363,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-// 		public Format DirectXFormat
-// 		{
-// 			get { return Format.R8G8B8A8_UNorm; }
-// 		}
-
 		public bool	sRGB	{ get { return false; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _E )
@@ -361,9 +374,9 @@ namespace StandardizedDiffuseAlbedoMaps
 		}
 
 		// NOTE: Alpha is ignored, RGB is encoded in RGBE
-		public void Write( Vector4D _Color )
+		public void Write( float4 _Color )
 		{
-			float	fMaxComponent = Math.Max( _Color.X, Math.Max( _Color.Y, _Color.Z ) );
+			float	fMaxComponent = Math.Max( _Color.x, Math.Max( _Color.y, _Color.z ) );
 			if ( fMaxComponent < 1e-16f )
 			{	// Too low to encode...
 				R = G = B = E = 0;
@@ -383,15 +396,15 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			fMaxComponent = (float) Mantissa * 255.99999999f / fMaxComponent;
 
-			R = (byte) (_Color.X * fMaxComponent);
-			G = (byte) (_Color.Y * fMaxComponent);
-			B = (byte) (_Color.Z * fMaxComponent);
+			R = (byte) (_Color.x * fMaxComponent);
+			G = (byte) (_Color.y * fMaxComponent);
+			B = (byte) (_Color.z * fMaxComponent);
 			E = (byte) (Exponent + 128 );
 		}
 
 		public void Write( float _R, float _G, float _B, float _E )
 		{
-			Write( new Vector4D( _R, _G, _B, _E ) );
+			Write( new float4( _R, _G, _B, _E ) );
 		}
 
 		public void Write( uint _E )
@@ -411,12 +424,12 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#endregion
 
-		public Vector4D	DecodedColor
+		public float4	DecodedColor
 		{
 			get
 			{
 				double Exponent = Math.Pow( 2.0, E - (128 + 8) );
-				return new Vector4D(
+				return new float4(
 									(float) ((R + .5) * Exponent),
 									(float) ((G + .5) * Exponent),
 									(float) ((B + .5) * Exponent),
@@ -440,11 +453,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-// 		public Format DirectXFormat
-// 		{
-// 			get { return Format.R16_UNorm; }
-// 		}
-
 		public bool	sRGB	{ get { return false; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _A )
@@ -452,9 +460,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			R = (ushort) _R;
 		}
 
-		public void Write( Vector4D _Color )
+		public void Write( float4 _Color )
 		{
-			R = PF_Empty.ToUShort(_Color.X);
+			R = PF_Empty.ToUShort(_Color.x);
 		}
 
 		public void Write( float _R, float _G, float _B, float _A )
@@ -488,11 +496,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-// 		public Format DirectXFormat
-// 		{
-// 			get { return Format.R16G16_UNorm; }
-// 		}
-
 		public bool	sRGB	{ get { return false; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _A )
@@ -501,10 +504,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			G = (ushort) _G;
 		}
 
-		public void Write( Vector4D _Color )
+		public void Write( float4 _Color )
 		{
-			R = PF_Empty.ToUShort(_Color.X);
-			G = PF_Empty.ToUShort(_Color.Y);
+			R = PF_Empty.ToUShort(_Color.x);
+			G = PF_Empty.ToUShort(_Color.y);
 		}
 
 		public void Write( float _R, float _G, float _B, float _A )
@@ -539,11 +542,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-// 		public Format DirectXFormat
-// 		{
-// 			get { return Format.R16G16B16A16_UNorm; }
-// 		}
-
 		public bool	sRGB	{ get { return false; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _A )
@@ -554,12 +552,12 @@ namespace StandardizedDiffuseAlbedoMaps
 			A = (ushort) _A;
 		}
 
-		public void Write( Vector4D _Color )
+		public void Write( float4 _Color )
 		{
-			R = PF_Empty.ToUShort(_Color.X);
-			G = PF_Empty.ToUShort(_Color.Y);
-			B = PF_Empty.ToUShort(_Color.Z);
-			A = PF_Empty.ToUShort(_Color.W);
+			R = PF_Empty.ToUShort(_Color.x);
+			G = PF_Empty.ToUShort(_Color.y);
+			B = PF_Empty.ToUShort(_Color.z);
+			A = PF_Empty.ToUShort(_Color.w);
 		}
 
 		public void Write( float _R, float _G, float _B, float _A )
@@ -764,11 +762,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-// 		public Format DirectXFormat
-// 		{
-// 			get { return Format.R32_Float; }
-// 		}
-
 		public bool	sRGB	{ get { return false; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _A )
@@ -776,9 +769,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			R = PF_Empty.ToFloat(_R);
 		}
 
-		public void Write( Vector4D _Color )
+		public void Write( float4 _Color )
 		{
-			R = _Color.X;
+			R = _Color.x;
 		}
 
 		public void Write( float _R, float _G, float _B, float _A )
@@ -812,11 +805,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-// 		public Format DirectXFormat
-// 		{
-// 			get { return Format.R32G32_Float; }
-// 		}
-
 		public bool	sRGB	{ get { return false; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _A )
@@ -825,10 +813,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			G = PF_Empty.ToFloat(_G);
 		}
 
-		public void Write( Vector4D _Color )
+		public void Write( float4 _Color )
 		{
-			R = _Color.X;
-			G = _Color.Y;
+			R = _Color.x;
+			G = _Color.y;
 		}
 
 		public void Write( float _R, float _G, float _B, float _A )
@@ -863,11 +851,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-// 		public Format DirectXFormat
-// 		{
-// 			get { return Format.R32G32B32_Float; }
-// 		}
-
 		public bool	sRGB	{ get { return false; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _A )
@@ -877,11 +860,11 @@ namespace StandardizedDiffuseAlbedoMaps
 			B = PF_Empty.ToFloat(_B);
 		}
 
-		public void Write( Vector4D _Color )
+		public void Write( float4 _Color )
 		{
-			R = _Color.X;
-			G = _Color.Y;
-			B = _Color.Z;
+			R = _Color.x;
+			G = _Color.y;
+			B = _Color.z;
 		}
 
 		public void Write( float _R, float _G, float _B, float _A )
@@ -917,11 +900,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-// 		public Format DirectXFormat
-// 		{
-// 			get { return Format.R32G32B32A32_Float; }
-// 		}
-
 		public bool	sRGB	{ get { return false; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _A )
@@ -932,12 +910,12 @@ namespace StandardizedDiffuseAlbedoMaps
 			A = PF_Empty.ToFloat(_A);
 		}
 
-		public void Write( Vector4D _Color )
+		public void Write( float4 _Color )
 		{
-			R = _Color.X;
-			G = _Color.Y;
-			B = _Color.Z;
-			A = _Color.W;
+			R = _Color.x;
+			G = _Color.y;
+			B = _Color.z;
+			A = _Color.w;
 		}
 
 		public void Write( float _R, float _G, float _B, float _A )
@@ -1016,20 +994,6 @@ namespace StandardizedDiffuseAlbedoMaps
 // 		public float	Alpha	{ get { return 1.0f; } }
 // 
 // 		#endregion
-// 
-// 		#region IDepthFormat Members
-// 
-// 		public Format ReadableDirectXFormat
-// 		{
-// 			get { return Format.R16_Typeless; }
-// 		}
-// 
-// 		public Format ShaderResourceDirectXFormat
-// 		{
-// 			get { return Format.R16_Float; }
-// 		}
-// 
-// 		#endregion
 // 	}
 
 	/// <summary>
@@ -1042,11 +1006,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-// 		public Format DirectXFormat
-// 		{
-// 			get { return Format.D32_Float; }
-// 		}
-
 		public bool	sRGB	{ get { return false; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _A )
@@ -1054,9 +1013,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			D = PF_Empty.ToFloat(_R);
 		}
 
-		public void Write( Vector4D _Color )
+		public void Write( float4 _Color )
 		{
-			D = _Color.X;
+			D = _Color.x;
 		}
 
 		public void Write( float _R, float _G, float _B, float _A )
@@ -1078,20 +1037,6 @@ namespace StandardizedDiffuseAlbedoMaps
 		public float	Alpha	{ get { return 1.0f; } }
 
 		#endregion
-
-// 		#region IDepthFormat Members
-// 
-// 		public Format ReadableDirectXFormat
-// 		{
-// 			get { return Format.R32_Typeless; }
-// 		}
-// 
-// 		public Format ShaderResourceDirectXFormat
-// 		{
-// 			get { return Format.R32_Float; }
-// 		}
-// 
-// 		#endregion
 	}
 	
 	/// <summary>
@@ -1105,11 +1050,6 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region IPixelFormat Members
 
-// 		public Format DirectXFormat
-// 		{
-// 			get { return Format.D24_UNorm_S8_UInt; }
-// 		}
-
 		public bool	sRGB	{ get { return false; } }
 
 		public void Write( uint _R, uint _G, uint _B, uint _A )
@@ -1120,12 +1060,12 @@ namespace StandardizedDiffuseAlbedoMaps
 			A = (byte) _A;
 		}
 
-		public void Write( Vector4D _Color )
+		public void Write( float4 _Color )
 		{
-			R = PF_Empty.ToByte(_Color.X);
-			G = PF_Empty.ToByte(_Color.Y);
-			B = PF_Empty.ToByte(_Color.Z);
-			A = PF_Empty.ToByte(_Color.W);
+			R = PF_Empty.ToByte(_Color.x);
+			G = PF_Empty.ToByte(_Color.y);
+			B = PF_Empty.ToByte(_Color.z);
+			A = PF_Empty.ToByte(_Color.w);
 		}
 
 		public void Write( uint _A )
@@ -1149,24 +1089,6 @@ namespace StandardizedDiffuseAlbedoMaps
 		public float	Alpha	{ get { return A / 255.0f; } }
 
 		#endregion
-
-// 		#region IDepthFormat Members
-// 
-// 		public Format ReadableDirectXFormat
-// 		{
-// 			get
-// 			{
-// 				throw new Exception( "This DepthStencil format cannot be used for readable depth-stencil buffers !" );
-// //				return Format.R24_UNorm_X8_Typeless;
-// 			}
-// 		}
-// 
-// 		public Format ShaderResourceDirectXFormat
-// 		{
-// 			get { return Format.R32_Float; }
-// 		}
-// 
-// 		#endregion
 	}
 
 	#endregion

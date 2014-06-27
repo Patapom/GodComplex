@@ -99,14 +99,14 @@ namespace StandardizedDiffuseAlbedoMaps
 		// If the camera has been properly calibrated but the lighting changes, the user
 		//	has the possibility to drop the white reflectance in an image and use it as
 		//	white reference for the new lighting condition
-		private float3						m_WhiteReflectanceReference = new float3( 0, 0, -1 );	// Not supplied by the user
+		private ImageUtility.float3						m_WhiteReflectanceReference = new ImageUtility.float3( 0, 0, -1 );	// Not supplied by the user
 		private float						m_WhiteReflectanceCorrectionFactor = 1.0f;				// Default factor is no change at all
 		private bool						m_DoWhiteBalance = false;
-		private float3						m_WhiteBalanceXYZ = new float3( 1, 1, 1 );				// Default factor is no change at all
+		private ImageUtility.float3						m_WhiteBalanceXYZ = new ImageUtility.float3( 1, 1, 1 );				// Default factor is no change at all
 
 		// White reference image to apply minor luminance corrections to pixels (spatial discrepancy in lighting compensation)
 		// I assume the provided image has been properly generated and normalized (i.e. it has a white maximum of 1)
-		private Bitmap2						m_WhiteReferenceImage = null;
+		private ImageUtility.Bitmap						m_WhiteReferenceImage = null;
 		private float						m_WhiteReflectanceImageMax = 1.0f;			// Maximum luminance in the white reference image
 
 		// Generated calibration grid
@@ -290,7 +290,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		///  will be computed and applied to all luminances read from the provided images
 		/// Set to a negative value to reset the correction factor to normal
 		/// </summary>
-		public float3	WhiteReflectanceReference
+		public ImageUtility.float3	WhiteReflectanceReference
 		{
 			get { return m_WhiteReflectanceReference; }
 			set
@@ -299,7 +299,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				if ( value.z <= 1e-6f || m_InterpolatedCalibration == null )
 				{	// Reset
 					m_WhiteReflectanceCorrectionFactor = 1.0f;
-					m_WhiteBalanceXYZ = new float3( 1, 1, 1 );
+					m_WhiteBalanceXYZ = new ImageUtility.float3( 1, 1, 1 );
 					m_DoWhiteBalance = false;
 				}
 				else
@@ -308,11 +308,11 @@ namespace StandardizedDiffuseAlbedoMaps
 					m_WhiteReflectanceCorrectionFactor = NormalReflectance / m_WhiteReflectanceReference.z;
 
 					// We assume the target color profile is sRGB
-					float3	SourcexyY = new float3( m_WhiteReflectanceReference.x, m_WhiteReflectanceReference.y, 1.0f );
-					float3	SourceXYZ = Bitmap2.ColorProfile.xyY2XYZ( SourcexyY );
-					float3	TargetxyY = new float3( Bitmap2.ColorProfile.Chromaticities.sRGB.W.x, Bitmap2.ColorProfile.Chromaticities.sRGB.W.y, 1.0f );
-					float3	TargetXYZ = Bitmap2.ColorProfile.xyY2XYZ( TargetxyY );
-					m_WhiteBalanceXYZ = new float3( TargetXYZ.x / SourceXYZ.x, TargetXYZ.y / SourceXYZ.y, TargetXYZ.z / SourceXYZ.z );
+					ImageUtility.float3	SourcexyY = new ImageUtility.float3( m_WhiteReflectanceReference.x, m_WhiteReflectanceReference.y, 1.0f );
+					ImageUtility.float3	SourceXYZ = ImageUtility.ColorProfile.xyY2XYZ( SourcexyY );
+					ImageUtility.float3	TargetxyY = new ImageUtility.float3( ImageUtility.ColorProfile.Chromaticities.sRGB.W.x, ImageUtility.ColorProfile.Chromaticities.sRGB.W.y, 1.0f );
+					ImageUtility.float3	TargetXYZ = ImageUtility.ColorProfile.xyY2XYZ( TargetxyY );
+					m_WhiteBalanceXYZ = new ImageUtility.float3( TargetXYZ.x / SourceXYZ.x, TargetXYZ.y / SourceXYZ.y, TargetXYZ.z / SourceXYZ.z );
 					m_DoWhiteBalance = true;
 				}
 			}
@@ -321,7 +321,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <summary>
 		/// Gets or sets the white reference image to use for spatial luminance correction
 		/// </summary>
-		public Bitmap2	WhiteReferenceImage
+		public ImageUtility.Bitmap	WhiteReferenceImage
 		{
 			get { return m_WhiteReferenceImage; }
 			set
@@ -372,7 +372,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// Prepares the interpolated calibration table to process the pixels in an image shot with the specified shot infos
 		/// </summary>
 		/// <param name="_Image"></param>
-		public void	PrepareCalibrationFor( Bitmap2 _Image )
+		public void	PrepareCalibrationFor( ImageUtility.Bitmap _Image )
 		{
 			if ( !_Image.HasValidShotInfo )
 				throw new Exception( "Can't prepare calibration for specified image since it doesn't have valid shot infos!" );
@@ -407,7 +407,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			// Let's hope the user won't provide too fancy calibrations...
 			// (anyway, interpolants are clamped in [0,1] so there's no risk of overshooting)
 			//
-			float3	EV;
+			ImageUtility.float3	EV;
 			GridNode.Convert2EV( _ISOSpeed, _ShutterSpeed, _Aperture, out EV.x, out EV.y, out EV.z );
 
 			// Find the start node
@@ -428,22 +428,22 @@ namespace StandardizedDiffuseAlbedoMaps
 			// Create the successive interpolants for trilinear interpolation
 			//
 			// Assume we interpolate on X first (ISO speed), so we need 4 distinct values
-			float4	tX = new float4(
+			ImageUtility.float4	tX = new ImageUtility.float4(
 					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,0,0].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,0,0].m_EV_ISOSpeed - Grid[0,0,0].m_EV_ISOSpeed) ) ),	// Y=0 Z=0
 					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,1,0].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,1,0].m_EV_ISOSpeed - Grid[0,1,0].m_EV_ISOSpeed) ) ),	// Y=1 Z=0
 					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,0,1].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,0,1].m_EV_ISOSpeed - Grid[0,0,1].m_EV_ISOSpeed) ) ),	// Y=0 Z=1
 					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,1,1].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,1,1].m_EV_ISOSpeed - Grid[0,1,1].m_EV_ISOSpeed) ) )	// Y=1 Z=1
 				);
-			float4	rX = new float4( 1.0f - tX.x, 1.0f - tX.y, 1.0f - tX.z, 1.0f - tX.w );
+			ImageUtility.float4	rX = new ImageUtility.float4( 1.0f - tX.x, 1.0f - tX.y, 1.0f - tX.z, 1.0f - tX.w );
 
 				// Compute the 4 interpolated shutter speeds & apertures
-			float4	ShutterSpeedsX = new float4(
+			ImageUtility.float4	ShutterSpeedsX = new ImageUtility.float4(
 					rX.x * Grid[0,0,0].m_EV_ShutterSpeed + tX.x * Grid[1,0,0].m_EV_ShutterSpeed,	// Y=0 Z=0
 					rX.y * Grid[0,1,0].m_EV_ShutterSpeed + tX.y * Grid[1,1,0].m_EV_ShutterSpeed,	// Y=1 Z=0
 					rX.z * Grid[0,0,1].m_EV_ShutterSpeed + tX.z * Grid[1,0,1].m_EV_ShutterSpeed,	// Y=0 Z=1
 					rX.w * Grid[0,1,1].m_EV_ShutterSpeed + tX.w * Grid[1,1,1].m_EV_ShutterSpeed		// Y=1 Z=1
 				);
-			float4	AperturesX = new float4(
+			ImageUtility.float4	AperturesX = new ImageUtility.float4(
 					rX.x * Grid[0,0,0].m_EV_Aperture + tX.x * Grid[1,0,0].m_EV_Aperture,			// Y=0 Z=0
 					rX.y * Grid[0,1,0].m_EV_Aperture + tX.y * Grid[1,1,0].m_EV_Aperture,			// Y=1 Z=0
 					rX.z * Grid[0,0,1].m_EV_Aperture + tX.z * Grid[1,0,1].m_EV_Aperture,			// Y=0 Z=1
@@ -451,14 +451,14 @@ namespace StandardizedDiffuseAlbedoMaps
 				);
 
 			// Next we interpolate on Y (Shutter speed), so we need 2 distinct values
-			float2	tY = new float2(
+			ImageUtility.float2	tY = new ImageUtility.float2(
 					Math.Max( 0.0f, Math.Min( 1.0f, (EV.y - ShutterSpeedsX.x) / Math.Max( 1e-6f, ShutterSpeedsX.y - ShutterSpeedsX.x) ) ),	// Z=0
 					Math.Max( 0.0f, Math.Min( 1.0f, (EV.y - ShutterSpeedsX.z) / Math.Max( 1e-6f, ShutterSpeedsX.w - ShutterSpeedsX.z) ) )	// Z=1
 				);
-			float2	rY = new float2( 1.0f - tY.x, 1.0f - tY.y );
+			ImageUtility.float2	rY = new ImageUtility.float2( 1.0f - tY.x, 1.0f - tY.y );
 
 				// Compute the 2 apertures
-			float2	AperturesY = new float2(
+			ImageUtility.float2	AperturesY = new ImageUtility.float2(
 					rY.x * AperturesX.x + tY.x * AperturesX.y,
 					rY.y * AperturesX.z + tY.y * AperturesX.w
 				);
@@ -509,7 +509,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			m_InterpolatedCalibration.UpdateAllLuminances();
 
 			// Reset white reflectance reference because it was set for another setup
-			WhiteReflectanceReference = new float3( 0, 0, -1 );
+			WhiteReflectanceReference = new ImageUtility.float3( 0, 0, -1 );
 		}
 
 		/// <summary>
@@ -534,7 +534,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <returns>The calibrated reflectance value</returns>
 		/// <remarks>Typically, you start from a RAW XYZ value that you convert to xyY, pass the Y to this method
 		/// and replace it into your orignal xyY, convert back to XYZ and voilà!</remarks>
-		public float3	Calibrate( float3 _xyY )
+		public ImageUtility.float3	Calibrate( ImageUtility.float3 _xyY )
 		{
 			if ( m_RootNode == null )
 				throw new Exception( "Calibration grid hasn't been built: did you provide a valid database path? Does the path contain camera calibration data?" );
@@ -545,9 +545,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			_xyY.z = Reflectance;
 			if ( m_DoWhiteBalance )
 			{
-				float3	XYZ = Bitmap2.ColorProfile.xyY2XYZ( _xyY );
+				ImageUtility.float3	XYZ = ImageUtility.ColorProfile.xyY2XYZ( _xyY );
 				XYZ *= m_WhiteBalanceXYZ;
-				_xyY = Bitmap2.ColorProfile.XYZ2xyY( XYZ );
+				_xyY = ImageUtility.ColorProfile.XYZ2xyY( XYZ );
 			}
 			return _xyY;
 		}
@@ -561,7 +561,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <returns>The calibrated reflectance value</returns>
 		/// <remarks>Typically, you start from a RAW XYZ value that you convert to xyY, pass it to this method
 		/// and replace it into your orignal xyY, convert back to XYZ and voilà!</remarks>
-		public float3	CalibrateWithSpatialCorrection( float _U, float _V, float3 _xyY )
+		public ImageUtility.float3	CalibrateWithSpatialCorrection( float _U, float _V, ImageUtility.float3 _xyY )
 		{
 			if ( m_RootNode == null )
 				throw new Exception( "Calibration grid hasn't been built: did you provide a valid database path? Does the path contain camera calibration data?" );
@@ -575,9 +575,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			_xyY.z = Reflectance;
 			if ( m_DoWhiteBalance )
 			{
-				float3	XYZ = Bitmap2.ColorProfile.xyY2XYZ( _xyY );
+				ImageUtility.float3	XYZ = ImageUtility.ColorProfile.xyY2XYZ( _xyY );
 				XYZ *= m_WhiteBalanceXYZ;
-				_xyY = Bitmap2.ColorProfile.XYZ2xyY( XYZ );
+				_xyY = ImageUtility.ColorProfile.XYZ2xyY( XYZ );
 			}
 			return _xyY;
 		}
@@ -593,7 +593,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( m_WhiteReferenceImage == null )
 				return 1.0f;
 
-			float4	XYZ = m_WhiteReferenceImage.BilinearSample(_U * m_WhiteReferenceImage.Width, _V * m_WhiteReferenceImage.Height );
+			ImageUtility.float4	XYZ = m_WhiteReferenceImage.BilinearSample(_U * m_WhiteReferenceImage.Width, _V * m_WhiteReferenceImage.Height );
 			float	SpatialWhiteRefCorrection = m_WhiteReflectanceImageMax / Math.Max( 1e-6f, XYZ.y );
 			return SpatialWhiteRefCorrection;
 		}

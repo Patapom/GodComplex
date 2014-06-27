@@ -35,14 +35,14 @@
 			this.buttonGenerate = new System.Windows.Forms.Button();
 			this.label3 = new System.Windows.Forms.Label();
 			this.label4 = new System.Windows.Forms.Label();
+			this.label5 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlLobeExponent = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlPixelSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlZFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.label5 = new System.Windows.Forms.Label();
-			this.outputPanelResult = new GenerateSelfShadowedBumpMap.OutputPanel(this.components);
-			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.OutputPanel(this.components);
+			this.viewportPanelResult = new ViewportPanel(this.components);
+			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
 			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -121,6 +121,15 @@
 			this.label4.TabIndex = 3;
 			this.label4.Text = "Lobe exponent";
 			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(9, 192);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(97, 13);
+			this.label5.TabIndex = 3;
+			this.label5.Text = "Z cheating velocity";
+			// 
 			// label2
 			// 
 			this.label2.AutoSize = true;
@@ -179,22 +188,12 @@
 			this.floatTrackbarControlZFactor.VisibleRangeMax = 1F;
 			this.floatTrackbarControlZFactor.VisibleRangeMin = 0.001F;
 			// 
-			// label5
+			// viewportPanelResult
 			// 
-			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(9, 192);
-			this.label5.Name = "label5";
-			this.label5.Size = new System.Drawing.Size(97, 13);
-			this.label5.TabIndex = 3;
-			this.label5.Text = "Z cheating velocity";
-			// 
-			// outputPanelResult
-			// 
-			this.outputPanelResult.Image = null;
-			this.outputPanelResult.Location = new System.Drawing.Point(856, 16);
-			this.outputPanelResult.Name = "outputPanelResult";
-			this.outputPanelResult.Size = new System.Drawing.Size(512, 512);
-			this.outputPanelResult.TabIndex = 0;
+			this.viewportPanelResult.Location = new System.Drawing.Point(856, 16);
+			this.viewportPanelResult.Name = "viewportPanelResult";
+			this.viewportPanelResult.Size = new System.Drawing.Size(512, 512);
+			this.viewportPanelResult.TabIndex = 0;
 			// 
 			// outputPanelInputHeightMap
 			// 
@@ -210,7 +209,7 @@
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1379, 540);
 			this.Controls.Add(this.groupBox1);
-			this.Controls.Add(this.outputPanelResult);
+			this.Controls.Add(this.viewportPanelResult);
 			this.Controls.Add(this.outputPanelInputHeightMap);
 			this.Name = "Form1";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -223,13 +222,13 @@
 
 		#endregion
 
-		private OutputPanel outputPanelInputHeightMap;
+		private ImagePanel outputPanelInputHeightMap;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlHeight;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlRaysCount;
 		private System.Windows.Forms.GroupBox groupBox1;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Label label1;
-		private OutputPanel outputPanelResult;
+		private ViewportPanel viewportPanelResult;
 		private System.Windows.Forms.Label label3;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPixelSize;
 		private System.Windows.Forms.Button buttonGenerate;

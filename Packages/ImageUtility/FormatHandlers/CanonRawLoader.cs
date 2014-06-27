@@ -7,8 +7,6 @@ using System.Runtime.InteropServices;
 using System.IO;
 using System.Reflection;
 
-using WMath;
-
 namespace StandardizedDiffuseAlbedoMaps
 {
 	/// <summary>

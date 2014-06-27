@@ -282,7 +282,7 @@ namespace GenerateSelfShadowedBumpMap
 			}
 			m_BitmapResult.UnlockBits( LockedBitmap );
 			LockedBitmap = null;
-			outputPanelResult.Image = m_BitmapResult;
+//			outputPanelResult.Image = m_BitmapResult;
 //			Application.DoEvents();
 		}
 

@@ -54,14 +54,20 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="OutputPanel.cs">
+    <Compile Include="ImagePanel.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="OutputPanel.Designer.cs">
-      <DependentUpon>OutputPanel.cs</DependentUpon>
+    <Compile Include="ImagePanel.Designer.cs">
+      <DependentUpon>ImagePanel.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ViewportPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ViewportPanel.Designer.cs">
+      <DependentUpon>ViewportPanel.cs</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
@@ -88,6 +94,10 @@
     <ProjectReference Include="..\..\Packages\Cirrus.Utility\Utility.csproj">
       <Project>{9A67863F-D886-41A5-A8D1-04BA1379B097}</Project>
       <Name>Utility</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Packages\RendererManaged\RendererManaged.vcxproj">
+      <Project>{F96CDFD3-8954-4F4F-AFB0-2855D98F051B}</Project>
+      <Name>RendererManaged</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Packages\SharpMath\SharpMath.csproj">
       <Project>{DD026A89-C5FE-4150-BC85-A660E427826A}</Project>

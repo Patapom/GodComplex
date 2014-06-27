@@ -14,8 +14,8 @@ namespace StandardizedDiffuseAlbedoMaps
 	{
 		#region NESTED TYPES
 
-		public delegate void	CalibrationDone( float2 _Center, float _Radius );			// Sends the center and radius of the circle to average as a single luminance
-		public delegate void	ColorPickingUpdate( float2 _TopLeft, float2 _BottomRight );	// Sends the UV coordinates of the rectangle to average as a single color
+		public delegate void	CalibrationDone( ImageUtility.float2 _Center, float _Radius );			// Sends the center and radius of the circle to average as a single luminance
+		public delegate void	ColorPickingUpdate( ImageUtility.float2 _TopLeft, ImageUtility.float2 _BottomRight );	// Sends the UV coordinates of the rectangle to average as a single color
 
 		private enum	MANIPULATION_STATE
 		{
@@ -59,7 +59,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		private Bitmap				m_Bitmap = null;
 
 		// Source image in RGB space
-		private float4[,]			m_Image = null;
+		private ImageUtility.float4[,]			m_Image = null;
 
 		private MANIPULATION_STATE	m_ManipulationState = MANIPULATION_STATE.STOPPED;
 
@@ -68,7 +68,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private CalibrationDone		m_CalibrationDelegate = null;
 		private CALIBRATION_STAGE	m_CalibrationStage;
-		private float2				m_CalibrationCenter = new float2();
+		private ImageUtility.float2				m_CalibrationCenter = new ImageUtility.float2();
 		private float				m_CalibrationRadius = 0.0f;
 
 		// Crop rectangle manipulation
@@ -76,19 +76,19 @@ namespace StandardizedDiffuseAlbedoMaps
 		private SolidBrush			m_BrushCroppedZone = new SolidBrush( Color.FromArgb( 128, Color.White ) );
 
 		private bool				m_CropRectangleIsDefault = true;
-		private float2				m_CropRectangleCenter = new float2( 0.5f, 0.5f );
-		private float2				m_CropRectangleHalfSize = new float2( 0.5f, 0.5f );
+		private ImageUtility.float2				m_CropRectangleCenter = new ImageUtility.float2( 0.5f, 0.5f );
+		private ImageUtility.float2				m_CropRectangleHalfSize = new ImageUtility.float2( 0.5f, 0.5f );
 		private float				m_CropRectangleRotation = 0.0f;
-		private float2				m_CropRectangleAxisX;	// Updated by UpdateCropRectangleVertices
-		private float2				m_CropRectangleAxisY;	// Updated by UpdateCropRectangleVertices
+		private ImageUtility.float2				m_CropRectangleAxisX;	// Updated by UpdateCropRectangleVertices
+		private ImageUtility.float2				m_CropRectangleAxisY;	// Updated by UpdateCropRectangleVertices
 
 		private bool				m_CropRectangleManipulationStarted = false;
 		private CROP_RECTANGLE_SPOT	m_CropRectangleManipulatedSpot = CROP_RECTANGLE_SPOT.NONE;
-		private float2				m_ButtonDownCropRectangleCenter;
-		private float2				m_ButtonDownCropRectangleHalfSize;
+		private ImageUtility.float2				m_ButtonDownCropRectangleCenter;
+		private ImageUtility.float2				m_ButtonDownCropRectangleHalfSize;
 		private float				m_ButtonDownCropRectangleRotation;
-		private float2				m_ButtonDownCropRectangleAxisX;
-		private float2				m_ButtonDownCropRectangleAxisY;
+		private ImageUtility.float2				m_ButtonDownCropRectangleAxisX;
+		private ImageUtility.float2				m_ButtonDownCropRectangleAxisY;
 			// Client space data
 		private PointF				m_ButtonDownClientCropRectangleCenter;
 		private PointF[]			m_ButtonDownClientCropRectangleVertices = new PointF[4];	// Top-left, top-right, bottom-left, bottom-right
@@ -102,7 +102,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		#region PROPERTIES
 
-		public float4[,]	Image
+		public ImageUtility.float4[,]	Image
 		{
 			get { return m_Image; }
 			set {
@@ -144,8 +144,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// If true then don't crop the source image
 		/// </summary>
 		public bool			IsDefaultCropRectangle	{ get { return m_CropRectangleIsDefault; } }
-		public float2		CropRectangeCenter		{ get { return m_CropRectangleCenter; } }
-		public float2		CropRectangeHalfSize	{ get { return m_CropRectangleHalfSize; } }
+		public ImageUtility.float2		CropRectangeCenter		{ get { return m_CropRectangleCenter; } }
+		public ImageUtility.float2		CropRectangeHalfSize	{ get { return m_CropRectangleHalfSize; } }
 		public float		CropRectangeRotation	{ get { return m_CropRectangleRotation; } }
 
 		#endregion
@@ -178,8 +178,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( m_Image == null )
 				return;
 
-			m_CropRectangleCenter = new float2( 0.5f, 0.5f );
-			m_CropRectangleHalfSize = new float2( 0.5f * ImageAspectRatio, 0.5f );
+			m_CropRectangleCenter = new ImageUtility.float2( 0.5f, 0.5f );
+			m_CropRectangleHalfSize = new ImageUtility.float2( 0.5f * ImageAspectRatio, 0.5f );
 			m_CropRectangleRotation = 0.0f;
 			Invalidate();
 		}
@@ -187,7 +187,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <summary>
 		/// Sets the crop rectangle to a specific value
 		/// </summary>
-		public void				SetCropRectangle( float2 _Center, float2 _HalfSize, float _Rotation )
+		public void				SetCropRectangle( ImageUtility.float2 _Center, ImageUtility.float2 _HalfSize, float _Rotation )
 		{
 			m_CropRectangleIsDefault = false;
 			m_CropRectangleCenter = _Center;
@@ -221,7 +221,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					{
 						if ( X >= ImageRect.X && X < ImageRect.Right && Y >= ImageRect.Y && Y < ImageRect.Bottom )
 						{
-							float4	RGB = m_Image[(int) (SizeX*(X-ImageRect.X)/ImageRect.Width), (int) (SizeY*(Y-ImageRect.Y)/ImageRect.Height)];
+							ImageUtility.float4	RGB = m_Image[(int) (SizeX*(X-ImageRect.X)/ImageRect.Width), (int) (SizeY*(Y-ImageRect.Y)/ImageRect.Height)];
 							R = (byte) Math.Max( 0, Math.Min( 255, 255.0f * RGB.x ) );
 							G = (byte) Math.Max( 0, Math.Min( 255, 255.0f * RGB.y ) );
 							B = (byte) Math.Max( 0, Math.Min( 255, 255.0f * RGB.z ) );
@@ -270,13 +270,13 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// </summary>
 		/// <param name="_Position"></param>
 		/// <returns></returns>
-		private float2	Client2ImageUV_NoSquareAspectRatio( PointF _Position )
+		private ImageUtility.float2	Client2ImageUV_NoSquareAspectRatio( PointF _Position )
 		{
 			RectangleF	ImageRect = ImageClientRect();
-			return new float2( (_Position.X - ImageRect.X) / ImageRect.Width, (_Position.Y - ImageRect.Y) / ImageRect.Height );
+			return new ImageUtility.float2( (_Position.X - ImageRect.X) / ImageRect.Width, (_Position.Y - ImageRect.Y) / ImageRect.Height );
 		}
 	
-		private PointF	ImageUV2Client_NoSquareAspectRatio( float2 _Position )
+		private PointF	ImageUV2Client_NoSquareAspectRatio( ImageUtility.float2 _Position )
 		{
 			RectangleF	ImageRect = ImageClientRect();
 			return new PointF( ImageRect.X + _Position.x * ImageRect.Width, ImageRect.Y + _Position.y * ImageRect.Height );
@@ -291,15 +291,15 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// </summary>
 		/// <param name="_Position"></param>
 		/// <returns></returns>
-		private float2	Client2ImageUV( PointF _Position )
+		private ImageUtility.float2	Client2ImageUV( PointF _Position )
 		{
 			RectangleF	ImageRect = ImageClientRect();
-//			return new float2( (_Position.X - ImageRect.X) / ImageRect.Width, (_Position.Y - ImageRect.Y) / ImageRect.Height );
-//			return new float2( (_Position.X - ImageRect.X) / ImageRect.Height, (_Position.Y - ImageRect.Y) / ImageRect.Height );
-			return new float2( (_Position.X - 0.5f * (Width - ImageRect.Height)) / ImageRect.Height, (_Position.Y - ImageRect.Y) / ImageRect.Height );
+//			return new ImageUtility.float2( (_Position.X - ImageRect.X) / ImageRect.Width, (_Position.Y - ImageRect.Y) / ImageRect.Height );
+//			return new ImageUtility.float2( (_Position.X - ImageRect.X) / ImageRect.Height, (_Position.Y - ImageRect.Y) / ImageRect.Height );
+			return new ImageUtility.float2( (_Position.X - 0.5f * (Width - ImageRect.Height)) / ImageRect.Height, (_Position.Y - ImageRect.Y) / ImageRect.Height );
 		}
 
-		private PointF	ImageUV2Client( float2 _Position )
+		private PointF	ImageUV2Client( ImageUtility.float2 _Position )
 		{
 			RectangleF	ImageRect = ImageClientRect();
 //			return new PointF( ImageRect.X + _Position.x * ImageRect.Width, ImageRect.Y + _Position.y * ImageRect.Height );
@@ -328,14 +328,14 @@ namespace StandardizedDiffuseAlbedoMaps
 		private PointF[]	m_ClientCropRectangleVertices = new PointF[4];	// Top-left, top-right, bottom-left, bottom-right
 		private void		UpdateCropRectangleVertices()
 		{
-			m_CropRectangleAxisX = new float2( (float) Math.Cos( m_CropRectangleRotation ), -(float) Math.Sin( m_CropRectangleRotation ) );
-			m_CropRectangleAxisY = new float2( -(float) Math.Sin( m_CropRectangleRotation ), -(float) Math.Cos( m_CropRectangleRotation ) );
+			m_CropRectangleAxisX = new ImageUtility.float2( (float) Math.Cos( m_CropRectangleRotation ), -(float) Math.Sin( m_CropRectangleRotation ) );
+			m_CropRectangleAxisY = new ImageUtility.float2( -(float) Math.Sin( m_CropRectangleRotation ), -(float) Math.Cos( m_CropRectangleRotation ) );
 
 			RectangleF	ImageRect = ImageClientRect();
 
 			m_ClientCropRectangleCenter = ImageUV2Client( m_CropRectangleCenter );
 
-			float2[]	Vertices = new float2[4] {
+			ImageUtility.float2[]	Vertices = new ImageUtility.float2[4] {
 				m_CropRectangleCenter - m_CropRectangleHalfSize.x * m_CropRectangleAxisX + m_CropRectangleHalfSize.y * m_CropRectangleAxisY,
 				m_CropRectangleCenter + m_CropRectangleHalfSize.x * m_CropRectangleAxisX + m_CropRectangleHalfSize.y * m_CropRectangleAxisY,
 				m_CropRectangleCenter - m_CropRectangleHalfSize.x * m_CropRectangleAxisX - m_CropRectangleHalfSize.y * m_CropRectangleAxisY,
@@ -481,26 +481,26 @@ namespace StandardizedDiffuseAlbedoMaps
 					}
 					else
 					{	// Handle actual manipulation
-						float2		CurClientPos = new float2( e.X, e.Y );
-						float2		OldClientPos = new float2( m_ButtonDownMousePosition.X, m_ButtonDownMousePosition.Y );
-						float2		OldClientCenter = new float2( m_ButtonDownClientCropRectangleCenter.X, m_ButtonDownClientCropRectangleCenter.Y );
+						ImageUtility.float2		CurClientPos = new ImageUtility.float2( e.X, e.Y );
+						ImageUtility.float2		OldClientPos = new ImageUtility.float2( m_ButtonDownMousePosition.X, m_ButtonDownMousePosition.Y );
+						ImageUtility.float2		OldClientCenter = new ImageUtility.float2( m_ButtonDownClientCropRectangleCenter.X, m_ButtonDownClientCropRectangleCenter.Y );
 
-						float2		OldCenter = m_ButtonDownCropRectangleCenter;
-						float2		OldHalfSize = m_ButtonDownCropRectangleHalfSize;
-						float2		OldAxisX = m_ButtonDownCropRectangleAxisX;
-						float2		OldAxisY = m_ButtonDownCropRectangleAxisY;
+						ImageUtility.float2		OldCenter = m_ButtonDownCropRectangleCenter;
+						ImageUtility.float2		OldHalfSize = m_ButtonDownCropRectangleHalfSize;
+						ImageUtility.float2		OldAxisX = m_ButtonDownCropRectangleAxisX;
+						ImageUtility.float2		OldAxisY = m_ButtonDownCropRectangleAxisY;
 
-						float2[]	OldVertices = new float2[4] {
+						ImageUtility.float2[]	OldVertices = new ImageUtility.float2[4] {
 							OldCenter - OldHalfSize.x * OldAxisX + OldHalfSize.y * OldAxisY,
 							OldCenter + OldHalfSize.x * OldAxisX + OldHalfSize.y * OldAxisY,
 							OldCenter - OldHalfSize.x * OldAxisX - OldHalfSize.y * OldAxisY,
 							OldCenter + OldHalfSize.x * OldAxisX - OldHalfSize.y * OldAxisY,
 						};
 
-						float2		CurCenter = OldCenter;
-						float2		CurHalfSize = OldHalfSize;
-						float2		CurAxisX = OldAxisX;
-						float2		CurAxisY = OldAxisY;
+						ImageUtility.float2		CurCenter = OldCenter;
+						ImageUtility.float2		CurHalfSize = OldHalfSize;
+						ImageUtility.float2		CurAxisX = OldAxisX;
+						ImageUtility.float2		CurAxisY = OldAxisY;
 
 						RectangleF	ImageRect = ImageClientRect();	// The image's rectangle in client space
 
@@ -509,9 +509,9 @@ namespace StandardizedDiffuseAlbedoMaps
 							case CROP_RECTANGLE_SPOT.LEFT:
 							case CROP_RECTANGLE_SPOT.RIGHT:
 							{
-								float2	Center2OldPos = OldClientPos - OldClientCenter;
+								ImageUtility.float2	Center2OldPos = OldClientPos - OldClientCenter;
 								float	OldDistance2Edge = Center2OldPos.Dot( OldAxisX );
-								float2	Center2CurPos = CurClientPos - OldClientCenter;
+								ImageUtility.float2	Center2CurPos = CurClientPos - OldClientCenter;
 								float	CurDistance2Edge = Center2CurPos.Dot( OldAxisX );
 
 								float	Delta = CurDistance2Edge - OldDistance2Edge;	// This is the amount (in client space) we need to move the left/right border
@@ -524,14 +524,14 @@ namespace StandardizedDiffuseAlbedoMaps
 								// Move center along the X axis
 								if ( m_CropRectangleManipulatedSpot == CROP_RECTANGLE_SPOT.LEFT )
 								{	// Keep right fixed, move to the left
-									float2	Right = OldCenter + OldHalfSize.x * OldAxisX;
-									float2	Left = Right - 2.0f * CurHalfSize.x * OldAxisX;
+									ImageUtility.float2	Right = OldCenter + OldHalfSize.x * OldAxisX;
+									ImageUtility.float2	Left = Right - 2.0f * CurHalfSize.x * OldAxisX;
 									CurCenter = 0.5f * (Right + Left);
 								}
 								else
 								{	// Keep left fixed, move to the right
-									float2	Left = OldCenter - OldHalfSize.x * OldAxisX;
-									float2	Right = Left + 2.0f * CurHalfSize.x * OldAxisX;
+									ImageUtility.float2	Left = OldCenter - OldHalfSize.x * OldAxisX;
+									ImageUtility.float2	Right = Left + 2.0f * CurHalfSize.x * OldAxisX;
 									CurCenter = 0.5f * (Right + Left);
 								}
 								break;
@@ -540,9 +540,9 @@ namespace StandardizedDiffuseAlbedoMaps
 							case CROP_RECTANGLE_SPOT.TOP:
 							case CROP_RECTANGLE_SPOT.BOTTOM:
 							{
-								float2	Center2OldPos = OldClientPos - OldClientCenter;
+								ImageUtility.float2	Center2OldPos = OldClientPos - OldClientCenter;
 								float	OldDistance2Edge = Center2OldPos.Dot( OldAxisY );
-								float2	Center2CurPos = CurClientPos - OldClientCenter;
+								ImageUtility.float2	Center2CurPos = CurClientPos - OldClientCenter;
 								float	CurDistance2Edge = Center2CurPos.Dot( OldAxisY );
 
 								float	Delta = CurDistance2Edge - OldDistance2Edge;	// This is the amount (in client space) we need to move the left/right border
@@ -555,14 +555,14 @@ namespace StandardizedDiffuseAlbedoMaps
 								// Move center along the X axis
 								if ( m_CropRectangleManipulatedSpot == CROP_RECTANGLE_SPOT.TOP )
 								{	// Keep bottom fixed, move up
-									float2	Bottom = OldCenter - OldHalfSize.y * OldAxisY;
-									float2	Top = Bottom + 2.0f * CurHalfSize.y * OldAxisY;
+									ImageUtility.float2	Bottom = OldCenter - OldHalfSize.y * OldAxisY;
+									ImageUtility.float2	Top = Bottom + 2.0f * CurHalfSize.y * OldAxisY;
 									CurCenter = 0.5f * (Bottom + Top);
 								}
 								else
 								{	// Keep top fixed, move down
-									float2	Top = OldCenter + OldHalfSize.y * OldAxisY;
-									float2	Bottom = Top - 2.0f * CurHalfSize.y * OldAxisY;
+									ImageUtility.float2	Top = OldCenter + OldHalfSize.y * OldAxisY;
+									ImageUtility.float2	Bottom = Top - 2.0f * CurHalfSize.y * OldAxisY;
 									CurCenter = 0.5f * (Bottom + Top);
 								}
 								break;
@@ -573,10 +573,10 @@ namespace StandardizedDiffuseAlbedoMaps
 							case CROP_RECTANGLE_SPOT.CORNER_BOTTOM_LEFT:
 							case CROP_RECTANGLE_SPOT.CORNER_BOTTOM_RIGHT:
 							{
-								float2	Delta = CurClientPos - OldClientPos;
-								float2	DeltaUV = (1.0f / ImageRect.Height) * Delta;
+								ImageUtility.float2	Delta = CurClientPos - OldClientPos;
+								ImageUtility.float2	DeltaUV = (1.0f / ImageRect.Height) * Delta;
 
-								float2	Corner = new float2(), OppositeCorner = new float2();
+								ImageUtility.float2	Corner = new ImageUtility.float2(), OppositeCorner = new ImageUtility.float2();
 								switch ( m_CropRectangleManipulatedSpot )
 								{
 									case CROP_RECTANGLE_SPOT.CORNER_TOP_LEFT: Corner = OldVertices[0]; OppositeCorner = OldVertices[3]; break;		// Keep bottom right fixed
@@ -589,10 +589,10 @@ namespace StandardizedDiffuseAlbedoMaps
 								Corner += DeltaUV;
 
 								// Compute new center
-								CurCenter = new float2( 0.5f * (Corner.x + OppositeCorner.x), 0.5f * (Corner.y + OppositeCorner.y) );
+								CurCenter = new ImageUtility.float2( 0.5f * (Corner.x + OppositeCorner.x), 0.5f * (Corner.y + OppositeCorner.y) );
 
 								// Compute new size
-								CurHalfSize = new float2( Math.Abs( (Corner - CurCenter).Dot( OldAxisX ) ), Math.Abs( (Corner - CurCenter).Dot( OldAxisY ) ) );
+								CurHalfSize = new ImageUtility.float2( Math.Abs( (Corner - CurCenter).Dot( OldAxisX ) ), Math.Abs( (Corner - CurCenter).Dot( OldAxisY ) ) );
 
 								break;
 							}
@@ -602,23 +602,23 @@ namespace StandardizedDiffuseAlbedoMaps
 							case CROP_RECTANGLE_SPOT.ROTATE_BOTTOM_LEFT:
 							case CROP_RECTANGLE_SPOT.ROTATE_BOTTOM_RIGHT:
 							{
-								float2	Center2OldPos = OldClientPos - OldClientCenter;
-								float2	Center2CurPos = CurClientPos - OldClientCenter;
+								ImageUtility.float2	Center2OldPos = OldClientPos - OldClientCenter;
+								ImageUtility.float2	Center2CurPos = CurClientPos - OldClientCenter;
 
 								float	OldAngle = (float) Math.Atan2( -Center2OldPos.y, Center2OldPos.x );
 								float	CurAngle = (float) Math.Atan2( -Center2CurPos.y, Center2CurPos.x );
 
 								m_CropRectangleRotation = m_ButtonDownCropRectangleRotation + CurAngle - OldAngle;
 
-								CurAxisX = new float2( (float) Math.Cos( m_CropRectangleRotation ), -(float) Math.Sin( m_CropRectangleRotation ) );
-								CurAxisY = new float2( -(float) Math.Sin( m_CropRectangleRotation ), -(float) Math.Cos( m_CropRectangleRotation ) );
+								CurAxisX = new ImageUtility.float2( (float) Math.Cos( m_CropRectangleRotation ), -(float) Math.Sin( m_CropRectangleRotation ) );
+								CurAxisY = new ImageUtility.float2( -(float) Math.Sin( m_CropRectangleRotation ), -(float) Math.Cos( m_CropRectangleRotation ) );
 								break;
 							}
 
 							case CROP_RECTANGLE_SPOT.CENTER:
 							{
-								float2	Delta = CurClientPos - OldClientPos;
-								float2	DeltaUV = (1.0f / ImageRect.Height) * Delta;
+								ImageUtility.float2	Delta = CurClientPos - OldClientPos;
+								ImageUtility.float2	DeltaUV = (1.0f / ImageRect.Height) * Delta;
 
 								CurCenter = OldCenter + DeltaUV;
 								break;
@@ -629,7 +629,7 @@ namespace StandardizedDiffuseAlbedoMaps
 						CurHalfSize.y = Math.Max( 1e-3f, CurHalfSize.y );
 
 						// Constrain vertices to the image
-						float2[]	Vertices = BuildClipVertices( CurCenter, CurHalfSize, CurAxisX, CurAxisY );
+						ImageUtility.float2[]	Vertices = BuildClipVertices( CurCenter, CurHalfSize, CurAxisX, CurAxisY );
 
 						float	MinX = 0.5f * (1.0f - ImageAspectRatio);
 						float	MaxX = 0.5f * (1.0f + ImageAspectRatio);
@@ -660,12 +660,12 @@ namespace StandardizedDiffuseAlbedoMaps
 							if ( !Rebuild )
 								continue;
 
-							float2	OppositeVertex = Vertices[3-i];	// This one is fixed
+							ImageUtility.float2	OppositeVertex = Vertices[3-i];	// This one is fixed
 
 							// Recompute center & half size
 							CurCenter = 0.5f * (OppositeVertex + Vertices[i]);
-							float2	Delta = Vertices[i] - OppositeVertex;
-							CurHalfSize = 0.5f * new float2( Math.Abs( Delta.Dot( CurAxisX ) ), Math.Abs( Delta.Dot( CurAxisY ) ) );
+							ImageUtility.float2	Delta = Vertices[i] - OppositeVertex;
+							CurHalfSize = 0.5f * new ImageUtility.float2( Math.Abs( Delta.Dot( CurAxisX ) ), Math.Abs( Delta.Dot( CurAxisY ) ) );
 
 							// Rebuild new vertices
 							Vertices = BuildClipVertices( CurCenter, CurHalfSize, CurAxisX, CurAxisY );
@@ -695,7 +695,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 						case CALIBRATION_STAGE.SET_RADIUS:
 							{
-								float2	Temp = Client2ImageUV_NoSquareAspectRatio( e.Location );
+								ImageUtility.float2	Temp = Client2ImageUV_NoSquareAspectRatio( e.Location );
 								m_CalibrationRadius = (float) Math.Sqrt( (Temp.x - m_CalibrationCenter.x)*(Temp.x - m_CalibrationCenter.x) + (Temp.y - m_CalibrationCenter.y)*(Temp.y - m_CalibrationCenter.y) );
 								Invalidate();
 							}
@@ -710,9 +710,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 		}
 
-		protected float2[]	BuildClipVertices( float2 _Center, float2 _HalfSize, float2 _AxisX, float2 _AxisY )
+		protected ImageUtility.float2[]	BuildClipVertices( ImageUtility.float2 _Center, ImageUtility.float2 _HalfSize, ImageUtility.float2 _AxisX, ImageUtility.float2 _AxisY )
 		{
-			return new float2[4] {
+			return new ImageUtility.float2[4] {
 							_Center - _HalfSize.x * _AxisX + _HalfSize.y * _AxisY,
 							_Center + _HalfSize.x * _AxisX + _HalfSize.y * _AxisY,
 							_Center - _HalfSize.x * _AxisX - _HalfSize.y * _AxisY,
@@ -820,7 +820,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					e.Graphics.DrawLine( m_PenTarget, Center.X, Center.Y-20, Center.X, Center.Y+20 );
 					e.Graphics.DrawLine( m_PenTarget, Center.X-20, Center.Y, Center.X+20, Center.Y );
 
-					PointF	Temp = ImageUV2Client_NoSquareAspectRatio( new float2( m_CalibrationCenter.x + m_CalibrationRadius, m_CalibrationCenter.y ) );
+					PointF	Temp = ImageUV2Client_NoSquareAspectRatio( new ImageUtility.float2( m_CalibrationCenter.x + m_CalibrationRadius, m_CalibrationCenter.y ) );
 					float	ClientRadius = Temp.X - Center.X;
 					e.Graphics.DrawEllipse( m_PenTarget, Center.X-ClientRadius, Center.Y-ClientRadius, 2.0f*ClientRadius, 2.0f*ClientRadius );
 					break;

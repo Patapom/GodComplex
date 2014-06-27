@@ -244,7 +244,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// Creates an embeddable thumbnail of the reference image
 		/// </summary>
 		/// <param name="_Image"></param>
-		public void		CreateThumbnail( Bitmap2 _Image )
+		public void		CreateThumbnail( ImageUtility.Bitmap _Image )
 		{
 			int		MaxDim = Math.Max( _Image.Width, _Image.Height );
 			int		ThumbnailSize = 256;
@@ -257,7 +257,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			for ( int Y=0; Y < H; Y++ )
 				for ( int X=0; X < W; X++ )
 				{
-					float4	XYZ = _Image.ContentXYZ[X*_Image.Width/W, Y*_Image.Height/H];
+					ImageUtility.float4	XYZ = _Image.ContentXYZ[X*_Image.Width/W, Y*_Image.Height/H];
 					m_Thumbnail[X,Y] = (byte) Math.Min( 255, Math.Max( 0, 255.0f * XYZ.y ) );
 				}
 		}
