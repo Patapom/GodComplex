@@ -14,13 +14,67 @@ namespace GenerateSelfShadowedBumpMap
 {
 	public partial class ImagePanel : Panel
 	{
-		private Bitmap	m_Bitmap = null;
-		public Bitmap	Image
+		private Bitmap				m_Bitmap = null;
+
+		private ImageUtility.ColorProfile	m_ProfilesRGB = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );
+
+		private ImageUtility.Bitmap	m_Image = null;
+		public unsafe ImageUtility.Bitmap	Image
 		{
-			get { return m_Bitmap; }
+			get { return m_Image; }
 			set {
-				m_Bitmap = value;
+				m_Image = value;
+				
+				if ( m_Bitmap != null )
+					m_Bitmap.Dispose();
+				m_Bitmap = null;
+
+				if ( m_Image != null )
+				{	// Fill pixel per pixel
+					int	W = m_Image.Width;
+					int	H = m_Image.Height;
+					m_Bitmap = new Bitmap( W, H, PixelFormat.Format32bppArgb );
+
+					ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[W,H];
+					m_ProfilesRGB.XYZ2RGB( m_Image.ContentXYZ, ContentRGB );
+
+					BitmapData	LockedBitmap = m_Bitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
+					for ( int Y=0; Y < H; Y++ )
+					{
+						byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + LockedBitmap.Stride * Y;
+						for ( int X=0; X < W; X++ )
+						{
+							*pScanline++ = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].z ) );
+							*pScanline++ = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].y ) );
+							*pScanline++ = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].x ) );
+							*pScanline++ = 0xFF;
+						}
+					}
+					m_Bitmap.UnlockBits( LockedBitmap );
+				}
+
 				Refresh();
+			}
+		}
+
+		private RectangleF		ImageClientRect
+		{
+			get
+			{
+				int		SizeX = m_Image.Width;
+				int		SizeY = m_Image.Height;
+
+				int		WidthIfVertical = SizeX * Height / SizeY;	// Client width of the image if fitting vertically
+				int		HeightIfHorizontal = SizeY * Width / SizeX;	// Client height of the image if fitting horizontally
+
+				if ( WidthIfVertical > Width )
+				{	// Fit horizontally
+					return new RectangleF( 0, 0.5f * (Height-HeightIfHorizontal), Width, HeightIfHorizontal );
+				}
+				else
+				{	// Fit vertically
+					return new RectangleF( 0.5f * (Width-WidthIfVertical), 0, WidthIfVertical, Height );
+				}
 			}
 		}
 
@@ -30,49 +84,10 @@ namespace GenerateSelfShadowedBumpMap
 			InitializeComponent();
 		}
 
-// 		public unsafe void		UpdateBitmap()
-// 		{
-// 			if ( m_Bitmap == null )
-// 				return;
-// 
-// 			int		W = m_Bitmap.Width;
-// 			int		H = m_Bitmap.Height;
-// 
-// 			using ( Graphics G = Graphics.FromImage( m_Bitmap ) )
-// 			{
-// 				G.FillRectangle( Brushes.White, 0, 0, W, H );
-// 			}
-// 
-// 			// Fill pixel per pixel
-// 			BitmapData	LockedBitmap = m_Bitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
-// 			byte			R, G, B, A = 0xFF;
-// 			for ( int Y=0; Y < H; Y++ )
-// 			{
-// 				byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + LockedBitmap.Stride * Y;
-// 				for ( int X=0; X < W; X++ )
-// 				{
-// 
-// 					*pScanline++ = B;
-// 					*pScanline++ = G;
-// 					*pScanline++ = R;
-// 					*pScanline++ = A;
-// 				}
-// 
-// 			m_Bitmap.UnlockBits( LockedBitmap );
-// 
-// 			Invalidate();
-// 		}
-
 		protected override void OnSizeChanged( EventArgs e )
 		{
-// 			if ( m_Bitmap != null )
-// 				m_Bitmap.Dispose();
-// 
-// 			m_Bitmap = new Bitmap( Width, Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb );
-// 
-// 			UpdateBitmap();
-
 			base.OnSizeChanged( e );
+			Invalidate();
 		}
 
 		protected override void OnPaintBackground( PaintEventArgs e )
@@ -85,8 +100,10 @@ namespace GenerateSelfShadowedBumpMap
 			base.OnPaint( e );
 
 			if ( m_Bitmap != null )
-//				e.Graphics.DrawImage( m_Bitmap, 0, 0 );
-				e.Graphics.DrawImage( m_Bitmap, new Rectangle( 0, 0, Width, Height ), 0, 0, m_Bitmap.Width, m_Bitmap.Height, GraphicsUnit.Pixel );
+			{
+				RectangleF	Rect = ImageClientRect;
+				e.Graphics.DrawImage( m_Bitmap, Rect, new RectangleF( 0, 0, m_Bitmap.Width, m_Bitmap.Height ), GraphicsUnit.Pixel );
+			}
 			else
 				e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
 		}

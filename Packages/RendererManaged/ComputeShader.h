@@ -47,5 +47,15 @@ namespace RendererManaged {
 		{
 			delete m_pShader;
 		}
+
+		void	Use()
+		{
+			m_pShader->Use();
+		}
+
+		void	Dispatch( int _GroupsCountX, int _GroupsCountY, int _GroupsCountZ )
+		{
+			m_pShader->Dispatch( _GroupsCountX, _GroupsCountY, _GroupsCountZ );
+		}
 	};
 }

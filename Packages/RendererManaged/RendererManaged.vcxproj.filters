@@ -26,6 +26,7 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="VertexFormats.h" />
     <ClInclude Include="RenderStates.h" />
+    <ClInclude Include="PixelsBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp">
@@ -55,6 +56,7 @@
     <ClCompile Include="Shader.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
+    <ClCompile Include="PixelsBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.ico">

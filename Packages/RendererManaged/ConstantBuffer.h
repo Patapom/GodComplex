@@ -33,7 +33,7 @@ namespace RendererManaged {
 		void	UpdateData()
 		{
 			cli::pin_ptr<T>	Bisou = &m;
- 				m_pConstantBuffer->UpdateData( Bisou );
+ 			m_pConstantBuffer->UpdateData( Bisou );
 
 			m_pConstantBuffer->Set( m_SlotIndex );
 		}

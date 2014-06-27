@@ -41,7 +41,7 @@
 			this.floatTrackbarControlLobeExponent = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlPixelSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlZFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.viewportPanelResult = new ViewportPanel(this.components);
+			this.viewportPanelResult = new ImagePanel(this.components);
 			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
 			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
@@ -228,7 +228,7 @@
 		private System.Windows.Forms.GroupBox groupBox1;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Label label1;
-		private ViewportPanel viewportPanelResult;
+		private ImagePanel viewportPanelResult;
 		private System.Windows.Forms.Label label3;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPixelSize;
 		private System.Windows.Forms.Button buttonGenerate;
