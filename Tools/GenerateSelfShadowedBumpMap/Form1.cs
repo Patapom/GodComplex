@@ -25,6 +25,14 @@ namespace GenerateSelfShadowedBumpMap
 		private RendererManaged.Texture2D		m_TextureTarget = null;
 		private RendererManaged.Texture2D		m_TextureTarget_CPU = null;
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct	CBInput
+		{
+			public float	TexelsPerMeter;		// Amount of texels per meter (usually 512)
+			public float	Displacement_cm;	// Max displacement value encoded by the height map (in centimeters)
+		}
+
+		private RendererManaged.ConstantBuffer<CBInput>	m_CB_Input;
 		private RendererManaged.ComputeShader	m_CS_GenerateSSBumpMap = null;
 
 		private ImageUtility.Bitmap				m_BitmapResult = null;
@@ -42,6 +50,9 @@ namespace GenerateSelfShadowedBumpMap
 
 			// Create our compute shader
 			m_CS_GenerateSSBumpMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
+
+			// Create our constant buffer
+			m_CB_Input = new RendererManaged.ConstantBuffer<CBInput>( m_Device, 0 );
 
 			LoadHeightMap( new System.IO.FileInfo( "eye_generic_01_disp.png" ) );
 		}
@@ -92,8 +103,13 @@ namespace GenerateSelfShadowedBumpMap
 
 		private unsafe void	Generate()
 		{
+			// Prepare computation parameters
 			m_TextureSource.SetCS( 0 );
 			m_TextureTarget.SetCSUAV( 0 );
+
+			m_CB_Input.m.TexelsPerMeter = floatTrackbarControlPixelDensity.Value;
+			m_CB_Input.m.Displacement_cm = floatTrackbarControlHeight.Value;
+			m_CB_Input.UpdateData();
 
 			// Compute!
 			m_CS_GenerateSSBumpMap.Use();
@@ -140,6 +156,8 @@ namespace GenerateSelfShadowedBumpMap
 
 		protected override void OnClosing( CancelEventArgs e )
 		{
+			m_CS_GenerateSSBumpMap.Dispose();
+			m_CB_Input.Dispose();
 			m_TextureTarget_CPU.Dispose();
 			m_TextureTarget.Dispose();
 			m_TextureSource.Dispose();

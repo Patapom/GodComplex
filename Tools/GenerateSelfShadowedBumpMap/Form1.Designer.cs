@@ -39,16 +39,17 @@
 			this.label2 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlLobeExponent = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlPixelSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlPixelDensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlZFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.viewportPanelResult = new ImagePanel(this.components);
+			this.viewportPanelResult = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
 			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
+			this.progressBar = new System.Windows.Forms.ProgressBar();
 			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlHeight
 			// 
-			this.floatTrackbarControlHeight.Location = new System.Drawing.Point(107, 104);
+			this.floatTrackbarControlHeight.Location = new System.Drawing.Point(105, 51);
 			this.floatTrackbarControlHeight.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlHeight.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlHeight.Name = "floatTrackbarControlHeight";
@@ -83,7 +84,7 @@
 			this.groupBox1.Controls.Add(this.label1);
 			this.groupBox1.Controls.Add(this.integerTrackbarControlRaysCount);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlLobeExponent);
-			this.groupBox1.Controls.Add(this.floatTrackbarControlPixelSize);
+			this.groupBox1.Controls.Add(this.floatTrackbarControlPixelDensity);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlZFactor);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlHeight);
 			this.groupBox1.Location = new System.Drawing.Point(530, 12);
@@ -106,16 +107,16 @@
 			// label3
 			// 
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(8, 133);
+			this.label3.Location = new System.Drawing.Point(6, 80);
 			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(80, 13);
+			this.label3.Size = new System.Drawing.Size(76, 13);
 			this.label3.TabIndex = 3;
-			this.label3.Text = "Pixel size in mm";
+			this.label3.Text = "Pixel per meter";
 			// 
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(6, 67);
+			this.label4.Location = new System.Drawing.Point(6, 166);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(78, 13);
 			this.label4.TabIndex = 3;
@@ -124,7 +125,7 @@
 			// label5
 			// 
 			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(9, 192);
+			this.label5.Location = new System.Drawing.Point(6, 192);
 			this.label5.Name = "label5";
 			this.label5.Size = new System.Drawing.Size(97, 13);
 			this.label5.TabIndex = 3;
@@ -133,11 +134,11 @@
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(8, 107);
+			this.label2.Location = new System.Drawing.Point(6, 54);
 			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(68, 13);
+			this.label2.Size = new System.Drawing.Size(66, 13);
 			this.label2.TabIndex = 3;
-			this.label2.Text = "Height in mm";
+			this.label2.Text = "Height in cm";
 			// 
 			// label1
 			// 
@@ -150,7 +151,7 @@
 			// 
 			// floatTrackbarControlLobeExponent
 			// 
-			this.floatTrackbarControlLobeExponent.Location = new System.Drawing.Point(105, 64);
+			this.floatTrackbarControlLobeExponent.Location = new System.Drawing.Point(105, 163);
 			this.floatTrackbarControlLobeExponent.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeExponent.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlLobeExponent.Name = "floatTrackbarControlLobeExponent";
@@ -161,22 +162,23 @@
 			this.floatTrackbarControlLobeExponent.Value = 1F;
 			this.floatTrackbarControlLobeExponent.VisibleRangeMin = 1F;
 			// 
-			// floatTrackbarControlPixelSize
+			// floatTrackbarControlPixelDensity
 			// 
-			this.floatTrackbarControlPixelSize.Location = new System.Drawing.Point(107, 130);
-			this.floatTrackbarControlPixelSize.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlPixelSize.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlPixelSize.Name = "floatTrackbarControlPixelSize";
-			this.floatTrackbarControlPixelSize.RangeMax = 10000F;
-			this.floatTrackbarControlPixelSize.RangeMin = 0.0001F;
-			this.floatTrackbarControlPixelSize.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlPixelSize.TabIndex = 3;
-			this.floatTrackbarControlPixelSize.Value = 0.0555F;
-			this.floatTrackbarControlPixelSize.VisibleRangeMax = 0.1F;
+			this.floatTrackbarControlPixelDensity.Location = new System.Drawing.Point(105, 77);
+			this.floatTrackbarControlPixelDensity.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlPixelDensity.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlPixelDensity.Name = "floatTrackbarControlPixelDensity";
+			this.floatTrackbarControlPixelDensity.RangeMax = 10000F;
+			this.floatTrackbarControlPixelDensity.RangeMin = 1F;
+			this.floatTrackbarControlPixelDensity.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlPixelDensity.TabIndex = 3;
+			this.floatTrackbarControlPixelDensity.Value = 512F;
+			this.floatTrackbarControlPixelDensity.VisibleRangeMax = 1024F;
+			this.floatTrackbarControlPixelDensity.VisibleRangeMin = 1F;
 			// 
 			// floatTrackbarControlZFactor
 			// 
-			this.floatTrackbarControlZFactor.Location = new System.Drawing.Point(108, 189);
+			this.floatTrackbarControlZFactor.Location = new System.Drawing.Point(105, 189);
 			this.floatTrackbarControlZFactor.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlZFactor.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlZFactor.Name = "floatTrackbarControlZFactor";
@@ -190,6 +192,7 @@
 			// 
 			// viewportPanelResult
 			// 
+			this.viewportPanelResult.Image = null;
 			this.viewportPanelResult.Location = new System.Drawing.Point(856, 16);
 			this.viewportPanelResult.Name = "viewportPanelResult";
 			this.viewportPanelResult.Size = new System.Drawing.Size(512, 512);
@@ -203,11 +206,20 @@
 			this.outputPanelInputHeightMap.Size = new System.Drawing.Size(512, 512);
 			this.outputPanelInputHeightMap.TabIndex = 0;
 			// 
+			// progressBar
+			// 
+			this.progressBar.Location = new System.Drawing.Point(530, 295);
+			this.progressBar.Maximum = 1000;
+			this.progressBar.Name = "progressBar";
+			this.progressBar.Size = new System.Drawing.Size(320, 23);
+			this.progressBar.TabIndex = 4;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1379, 540);
+			this.Controls.Add(this.progressBar);
 			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.viewportPanelResult);
 			this.Controls.Add(this.outputPanelInputHeightMap);
@@ -230,12 +242,13 @@
 		private System.Windows.Forms.Label label1;
 		private ImagePanel viewportPanelResult;
 		private System.Windows.Forms.Label label3;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPixelSize;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPixelDensity;
 		private System.Windows.Forms.Button buttonGenerate;
 		private System.Windows.Forms.Label label4;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLobeExponent;
 		private System.Windows.Forms.Label label5;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlZFactor;
+		private System.Windows.Forms.ProgressBar progressBar;
 	}
 }
 
