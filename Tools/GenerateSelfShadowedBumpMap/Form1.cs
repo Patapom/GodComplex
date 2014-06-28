@@ -160,7 +160,7 @@ namespace GenerateSelfShadowedBumpMap
 			// Compute!
 			m_CS_GenerateSSBumpMap.Use();
 
-			int	h = Math.Max( 1, H / 10 );
+			int	h = Math.Max( 1, H / 100 );
 			int	CallsCount = (int) Math.Ceiling( (float) H / h );
 			for ( int i=0; i < CallsCount; i++ )
 			{
@@ -172,6 +172,10 @@ namespace GenerateSelfShadowedBumpMap
 				progressBar.Refresh();
 				Application.DoEvents();
 			}
+
+// 			m_CB_Input.m.y = 0;
+// 			m_CB_Input.UpdateData();
+// 			m_CS_GenerateSSBumpMap.Dispatch( W, H, 1 );
 
 			//////////////////////////////////////////////////////////////////////////
 			// Copy target to staging for CPU readback and update the resulting bitmap

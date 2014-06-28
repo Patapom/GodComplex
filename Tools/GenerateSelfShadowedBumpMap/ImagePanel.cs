@@ -120,13 +120,12 @@ namespace GenerateSelfShadowedBumpMap
 		{
 			base.OnPaint( e );
 
+			e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
 			if ( m_Bitmap != null )
 			{
 				RectangleF	Rect = ImageClientRect;
 				e.Graphics.DrawImage( m_bShowAO ? m_BitmapAlpha : m_Bitmap, Rect, new RectangleF( 0, 0, m_Bitmap.Width, m_Bitmap.Height ), GraphicsUnit.Pixel );
 			}
-			else
-				e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
 		}
 	}
 }
