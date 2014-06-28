@@ -107,6 +107,14 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, ID3
 	ASSERT( false, "You can't use Compute Shaders if you define DIRECTX10!" );
 #endif
 
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
+	m_pShaderFileName = CopyString( _pShaderFileName );
+#endif
+#ifndef GODCOMPLEX
+	m_pShaderPath = GetShaderPath( _pShaderFileName );
+	m_Pointer2FileName.Add( NULL, m_pShaderPath );
+#endif
+
 	ASSERT( _pCS != NULL, "You can't provide a NULL CS blob!" );
 
 	CompileShaders( NULL, _pCS );

@@ -30,8 +30,10 @@ namespace GenerateSelfShadowedBumpMap
 		{
 			public UInt32	y;					// Index of the texture line we're processing
 			public UInt32	RaysCount;			// Amount of rays in the structured buffer
-			public float	TexelsPerMeter;		// Amount of texels per meter (usually 512)
-			public float	Displacement_cm;	// Max displacement value encoded by the height map (in centimeters)
+			public UInt32	MaxStepsCount;		// Maximum amount of steps to take before stopping
+			public float	TexelSize_mm;		// Size of a texel (in millimeters)
+			public float	Displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
+			public float	AOFactor;			// Darkening factor for AO when ray goes below height map
 		}
 
 		#endregion
@@ -50,6 +52,7 @@ namespace GenerateSelfShadowedBumpMap
 		private RendererManaged.StructuredBuffer<RendererManaged.float3>	m_SB_Rays = null;
 		private RendererManaged.ComputeShader	m_CS_GenerateSSBumpMap = null;
 
+		private ImageUtility.ColorProfile		m_LinearProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.Chromaticities.sRGB, ImageUtility.ColorProfile.GAMMA_CURVE.STANDARD, 1.0f );
 		private ImageUtility.Bitmap				m_BitmapResult = null;
 
 		#endregion
@@ -69,6 +72,7 @@ namespace GenerateSelfShadowedBumpMap
 
 			// Create our compute shader
 			m_CS_GenerateSSBumpMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
+//			m_CS_GenerateSSBumpMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
 
 			// Create our constant buffer
 			m_CB_Input = new RendererManaged.ConstantBuffer<CBInput>( m_Device, 0 );
@@ -77,7 +81,8 @@ namespace GenerateSelfShadowedBumpMap
 			m_SB_Rays = new RendererManaged.StructuredBuffer<RendererManaged.float3>( m_Device, 3 * MAX_THREADS, true );
 			integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
 
-			LoadHeightMap( new System.IO.FileInfo( "eye_generic_01_disp.png" ) );
+//			LoadHeightMap( new System.IO.FileInfo( "eye_generic_01_disp.png" ) );
+			LoadHeightMap( new System.IO.FileInfo( "10 - Smooth.jpg" ) );
 		}
 
 		protected override void OnClosing( CancelEventArgs e )
@@ -135,11 +140,67 @@ namespace GenerateSelfShadowedBumpMap
 			m_TextureTarget_CPU = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, true, false, null );
 
 			// Allocate target bitmap
-			m_BitmapResult = new ImageUtility.Bitmap( W, H, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.Chromaticities.sRGB, ImageUtility.ColorProfile.GAMMA_CURVE.STANDARD, 1.0f ) );
+			m_BitmapResult = new ImageUtility.Bitmap( W, H, m_LinearProfile );
+		}
+
+		private unsafe void	Generate()
+		{
+			// Prepare computation parameters
+			m_TextureSource.SetCS( 0 );
+			m_TextureTarget.SetCSUAV( 0 );
+			m_SB_Rays.SetInput( 1 );
+
+			m_CB_Input.m.RaysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
+			m_CB_Input.m.MaxStepsCount = (UInt32) integerTrackbarControlMaxStepsCount.Value;
+			m_CB_Input.m.TexelSize_mm = 1000.0f / floatTrackbarControlPixelDensity.Value;
+			m_CB_Input.m.Displacement_mm = 10.0f * floatTrackbarControlHeight.Value;
+			m_CB_Input.m.AOFactor = floatTrackbarControlAOFactor.Value;
+
+			//////////////////////////////////////////////////////////////////////////
+			// Compute!
+			m_CS_GenerateSSBumpMap.Use();
+
+			int	h = Math.Max( 1, H / 10 );
+			int	CallsCount = (int) Math.Ceiling( (float) H / h );
+			for ( int i=0; i < CallsCount; i++ )
+			{
+				m_CB_Input.m.y = (UInt32) (i * h);
+				m_CB_Input.UpdateData();
+				m_CS_GenerateSSBumpMap.Dispatch( W, h, 1 );
+
+				progressBar.Value = (i+1) * progressBar.Maximum / CallsCount;
+				progressBar.Refresh();
+				Application.DoEvents();
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// Copy target to staging for CPU readback and update the resulting bitmap
+			m_TextureTarget_CPU.CopyFrom( m_TextureTarget );
+
+			RendererManaged.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
+			using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
+				for ( int Y=0; Y < H; Y++ )
+				{
+					R.BaseStream.Position = Y * Pixels.RowPitch;
+					for ( int X=0; X < W; X++ )
+					{
+						ImageUtility.float4	Color = new ImageUtility.float4( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+						Color = m_LinearProfile.RGB2XYZ( Color );
+						m_BitmapResult.ContentXYZ[X,Y] = Color;
+					}
+				}
+
+			Pixels.Dispose();
+			m_TextureTarget_CPU.UnMap( 0, 0 );
+
+			// Assign result
+			viewportPanelResult.Image = m_BitmapResult;
 		}
 
 		private void	GenerateRays( int _RaysCount )
 		{
+			_RaysCount = Math.Min( MAX_THREADS, _RaysCount );
+
 			// Half-Life 2 basis
 			RendererManaged.float3[]	HL2Basis = new RendererManaged.float3[] {
 				new RendererManaged.float3( (float) Math.Sqrt( 2.0 / 3.0 ), 0.0f, (float) Math.Sqrt( 1.0 / 3.0 ) ),
@@ -157,85 +218,37 @@ namespace GenerateSelfShadowedBumpMap
 			Random	R = new Random( 1 );
 			for ( int RayIndex=0; RayIndex < _RaysCount; RayIndex++ )
 			{
-				float	Phi = (float) ((Math.PI / 3.0) * (2.0 * (RayIndex + R.NextDouble()) / _RaysCount - 1.0));
-				float	Theta = (float) (Math.Acos( Math.Sqrt( (RayIndex + R.NextDouble()) / _RaysCount ) ));
+				// Stratified version
+				double	Phi = ((Math.PI / 3.0) * (2.0 * (RayIndex + R.NextDouble()) / _RaysCount - 1.0));
+				double	Theta = (Math.Acos( Math.Sqrt( (RayIndex + R.NextDouble()) / _RaysCount ) ));
+
+// 				// Don't give a shit version
+// 				double	Phi = (Math.PI / 3.0) * (2.0 * R.NextDouble() - 1.0);
+// //				double	Theta = Math.Acos( Math.Sqrt( R.NextDouble() ) );
+// 				double	Theta = 0.5 * Math.PI * R.NextDouble();
+
+//				Theta = Math.Min( 0.499f * Math.PI, Theta );
+
 
 				double	CosTheta = Math.Cos( Theta );
 				double	SinTheta = Math.Sin( Theta );
 
-				m_SB_Rays.m[MAX_THREADS*0+RayIndex].Set(	(float) (Math.Cos( CenterPhi[0] + Phi ) * SinTheta),
-															(float) (Math.Cos( CenterPhi[0] + Phi ) * SinTheta),
+				double	LengthFactor = 1.0 / SinTheta;	// The ray is scaled so we ensure we always walk at least a texel in the texture
+				CosTheta *= LengthFactor;
+				SinTheta *= LengthFactor;	// Yeah, yields 1... :)
+
+				m_SB_Rays.m[0*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[0] + Phi ) * SinTheta),
+															(float) (Math.Sin( CenterPhi[0] + Phi ) * SinTheta),
 															(float) CosTheta );
-				m_SB_Rays.m[MAX_THREADS*1+RayIndex].Set(	(float) (Math.Cos( CenterPhi[1] + Phi ) * SinTheta),
-															(float) (Math.Cos( CenterPhi[1] + Phi ) * SinTheta),
+				m_SB_Rays.m[1*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[1] + Phi ) * SinTheta),
+															(float) (Math.Sin( CenterPhi[1] + Phi ) * SinTheta),
 															(float) CosTheta );
-				m_SB_Rays.m[MAX_THREADS*2+RayIndex].Set(	(float) (Math.Cos( CenterPhi[2] + Phi ) * SinTheta),
-															(float) (Math.Cos( CenterPhi[2] + Phi ) * SinTheta),
+				m_SB_Rays.m[2*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[2] + Phi ) * SinTheta),
+															(float) (Math.Sin( CenterPhi[2] + Phi ) * SinTheta),
 															(float) CosTheta );
 			}
 
 			m_SB_Rays.Write();
-		}
-
-		private unsafe void	Generate()
-		{
-			// Prepare computation parameters
-			m_TextureSource.SetCS( 0 );
-			m_TextureTarget.SetCSUAV( 0 );
-
-			m_CB_Input.m.TexelsPerMeter = floatTrackbarControlPixelDensity.Value;
-			m_CB_Input.m.Displacement_cm = floatTrackbarControlHeight.Value;
-
-			// Compute!
-			m_CS_GenerateSSBumpMap.Use();
-
-			int	h = Math.Max( 1, H / 100 );
-			int	CallsCount = (int) Math.Ceiling( (float) H / h );
-			for ( int i=0; i < CallsCount; i++ )
-			{
-				m_CB_Input.m.y = (UInt32) (i * h);
-				m_CB_Input.UpdateData();
-				m_CS_GenerateSSBumpMap.Dispatch( W, h, 1 );
-				progressBar.Value = (i+1) * progressBar.Maximum / CallsCount;
-			}
-
-			// Copy target to staging for CPU readback
-			m_TextureTarget_CPU.CopyFrom( m_TextureTarget );
-
-			RendererManaged.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
-			using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
-				for ( int Y=0; Y < H; Y++ )
-				{
-					R.BaseStream.Position = Y * Pixels.RowPitch;
-					for ( int X=0; X < W; X++ )
-					{
-						ImageUtility.float4	Color = new ImageUtility.float4( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-						m_BitmapResult.ContentXYZ[X,Y] = m_BitmapResult.Profile.RGB2XYZ( Color );
-					}
-				}
-
-			Pixels.Dispose();
-			m_TextureTarget_CPU.UnMap( 0, 0 );
-
-			// Assign result
-			viewportPanelResult.Image = m_BitmapResult;
-
-// 			// Build result bitmap
-// 			m_HeightMap = new float[W,H];
-// //			BitmapData	LockedBitmap = m_BitmapSource.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.ReadOnly, PixelFormat.Format64bppArgb );
-// 			BitmapData	LockedBitmap = m_BitmapSource.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb );
-// 			for ( int Y=0; Y < H; Y++ )
-// 			{
-// //				ushort*	pScanline = (ushort*) ((byte*) LockedBitmap.Scan0.ToPointer() + LockedBitmap.Stride * Y);
-// 				byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + LockedBitmap.Stride * Y;
-// 				for ( int X=0; X < W; X++, pScanline+=4 )
-// 				{
-// //					float	Height = pScanline[0] / 65535.0f;
-// 					float	Height = pScanline[0] / 255.0f;
-// 					m_HeightMap[X,Y] = Height;
-// 				}
-// 			}
-// 			m_BitmapSource.UnlockBits( LockedBitmap );
 		}
 
 		private void MessageBox( string _Message )
@@ -478,6 +491,11 @@ namespace GenerateSelfShadowedBumpMap
 			GenerateRays( _Sender.Value );
 		}
 
+		private void checkBoxShowAO_CheckedChanged( object sender, EventArgs e )
+		{
+			viewportPanelResult.ShowAO = checkBoxShowAO.Checked;
+		}
+ 
 		#endregion
- 	}
+	}
 }

@@ -34,16 +34,17 @@
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
 			this.buttonGenerate = new System.Windows.Forms.Button();
 			this.label3 = new System.Windows.Forms.Label();
-			this.label4 = new System.Windows.Forms.Label();
 			this.label5 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlLobeExponent = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlPixelDensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlZFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlAOFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.progressBar = new System.Windows.Forms.ProgressBar();
+			this.integerTrackbarControlMaxStepsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label4 = new System.Windows.Forms.Label();
 			this.viewportPanelResult = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
 			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
+			this.checkBoxShowAO = new System.Windows.Forms.CheckBox();
 			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -79,14 +80,14 @@
 			// 
 			this.groupBox1.Controls.Add(this.buttonGenerate);
 			this.groupBox1.Controls.Add(this.label3);
-			this.groupBox1.Controls.Add(this.label4);
 			this.groupBox1.Controls.Add(this.label5);
 			this.groupBox1.Controls.Add(this.label2);
+			this.groupBox1.Controls.Add(this.label4);
 			this.groupBox1.Controls.Add(this.label1);
+			this.groupBox1.Controls.Add(this.integerTrackbarControlMaxStepsCount);
 			this.groupBox1.Controls.Add(this.integerTrackbarControlRaysCount);
-			this.groupBox1.Controls.Add(this.floatTrackbarControlLobeExponent);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlPixelDensity);
-			this.groupBox1.Controls.Add(this.floatTrackbarControlZFactor);
+			this.groupBox1.Controls.Add(this.floatTrackbarControlAOFactor);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlHeight);
 			this.groupBox1.Location = new System.Drawing.Point(530, 12);
 			this.groupBox1.Name = "groupBox1";
@@ -114,23 +115,14 @@
 			this.label3.TabIndex = 3;
 			this.label3.Text = "Pixel per meter";
 			// 
-			// label4
-			// 
-			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(6, 166);
-			this.label4.Name = "label4";
-			this.label4.Size = new System.Drawing.Size(78, 13);
-			this.label4.TabIndex = 3;
-			this.label4.Text = "Lobe exponent";
-			// 
 			// label5
 			// 
 			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(6, 192);
+			this.label5.Location = new System.Drawing.Point(6, 106);
 			this.label5.Name = "label5";
-			this.label5.Size = new System.Drawing.Size(97, 13);
+			this.label5.Size = new System.Drawing.Size(55, 13);
 			this.label5.TabIndex = 3;
-			this.label5.Text = "Z cheating velocity";
+			this.label5.Text = "AO Factor";
 			// 
 			// label2
 			// 
@@ -150,19 +142,6 @@
 			this.label1.TabIndex = 3;
 			this.label1.Text = "Rays per Pixel";
 			// 
-			// floatTrackbarControlLobeExponent
-			// 
-			this.floatTrackbarControlLobeExponent.Location = new System.Drawing.Point(105, 163);
-			this.floatTrackbarControlLobeExponent.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlLobeExponent.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlLobeExponent.Name = "floatTrackbarControlLobeExponent";
-			this.floatTrackbarControlLobeExponent.RangeMax = 1000F;
-			this.floatTrackbarControlLobeExponent.RangeMin = 1F;
-			this.floatTrackbarControlLobeExponent.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlLobeExponent.TabIndex = 2;
-			this.floatTrackbarControlLobeExponent.Value = 1F;
-			this.floatTrackbarControlLobeExponent.VisibleRangeMin = 1F;
-			// 
 			// floatTrackbarControlPixelDensity
 			// 
 			this.floatTrackbarControlPixelDensity.Location = new System.Drawing.Point(105, 77);
@@ -177,19 +156,19 @@
 			this.floatTrackbarControlPixelDensity.VisibleRangeMax = 1024F;
 			this.floatTrackbarControlPixelDensity.VisibleRangeMin = 1F;
 			// 
-			// floatTrackbarControlZFactor
+			// floatTrackbarControlAOFactor
 			// 
-			this.floatTrackbarControlZFactor.Location = new System.Drawing.Point(105, 189);
-			this.floatTrackbarControlZFactor.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlZFactor.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlZFactor.Name = "floatTrackbarControlZFactor";
-			this.floatTrackbarControlZFactor.RangeMax = 1F;
-			this.floatTrackbarControlZFactor.RangeMin = 0.001F;
-			this.floatTrackbarControlZFactor.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlZFactor.TabIndex = 2;
-			this.floatTrackbarControlZFactor.Value = 0.1F;
-			this.floatTrackbarControlZFactor.VisibleRangeMax = 1F;
-			this.floatTrackbarControlZFactor.VisibleRangeMin = 0.001F;
+			this.floatTrackbarControlAOFactor.Location = new System.Drawing.Point(105, 103);
+			this.floatTrackbarControlAOFactor.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlAOFactor.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlAOFactor.Name = "floatTrackbarControlAOFactor";
+			this.floatTrackbarControlAOFactor.RangeMax = 10000F;
+			this.floatTrackbarControlAOFactor.RangeMin = 0.001F;
+			this.floatTrackbarControlAOFactor.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlAOFactor.TabIndex = 2;
+			this.floatTrackbarControlAOFactor.Value = 10F;
+			this.floatTrackbarControlAOFactor.VisibleRangeMax = 100F;
+			this.floatTrackbarControlAOFactor.VisibleRangeMin = 0.001F;
 			// 
 			// progressBar
 			// 
@@ -198,6 +177,29 @@
 			this.progressBar.Name = "progressBar";
 			this.progressBar.Size = new System.Drawing.Size(320, 23);
 			this.progressBar.TabIndex = 4;
+			// 
+			// integerTrackbarControlMaxStepsCount
+			// 
+			this.integerTrackbarControlMaxStepsCount.Location = new System.Drawing.Point(105, 129);
+			this.integerTrackbarControlMaxStepsCount.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlMaxStepsCount.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlMaxStepsCount.Name = "integerTrackbarControlMaxStepsCount";
+			this.integerTrackbarControlMaxStepsCount.RangeMax = 400;
+			this.integerTrackbarControlMaxStepsCount.RangeMin = 1;
+			this.integerTrackbarControlMaxStepsCount.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlMaxStepsCount.TabIndex = 1;
+			this.integerTrackbarControlMaxStepsCount.Value = 100;
+			this.integerTrackbarControlMaxStepsCount.VisibleRangeMax = 200;
+			this.integerTrackbarControlMaxStepsCount.VisibleRangeMin = 1;
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(6, 132);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(88, 13);
+			this.label4.TabIndex = 3;
+			this.label4.Text = "Max Steps Count";
 			// 
 			// viewportPanelResult
 			// 
@@ -215,11 +217,23 @@
 			this.outputPanelInputHeightMap.Size = new System.Drawing.Size(512, 512);
 			this.outputPanelInputHeightMap.TabIndex = 0;
 			// 
+			// checkBoxShowAO
+			// 
+			this.checkBoxShowAO.AutoSize = true;
+			this.checkBoxShowAO.Location = new System.Drawing.Point(599, 324);
+			this.checkBoxShowAO.Name = "checkBoxShowAO";
+			this.checkBoxShowAO.Size = new System.Drawing.Size(180, 17);
+			this.checkBoxShowAO.TabIndex = 4;
+			this.checkBoxShowAO.Text = "Show Ambient Occlusion (Alpha)";
+			this.checkBoxShowAO.UseVisualStyleBackColor = true;
+			this.checkBoxShowAO.CheckedChanged += new System.EventHandler(this.checkBoxShowAO_CheckedChanged);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1379, 540);
+			this.Controls.Add(this.checkBoxShowAO);
 			this.Controls.Add(this.progressBar);
 			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.viewportPanelResult);
@@ -230,6 +244,7 @@
 			this.groupBox1.ResumeLayout(false);
 			this.groupBox1.PerformLayout();
 			this.ResumeLayout(false);
+			this.PerformLayout();
 
 		}
 
@@ -245,11 +260,12 @@
 		private System.Windows.Forms.Label label3;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPixelDensity;
 		private System.Windows.Forms.Button buttonGenerate;
-		private System.Windows.Forms.Label label4;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLobeExponent;
 		private System.Windows.Forms.Label label5;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlZFactor;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAOFactor;
 		private System.Windows.Forms.ProgressBar progressBar;
+		private System.Windows.Forms.Label label4;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlMaxStepsCount;
+		private System.Windows.Forms.CheckBox checkBoxShowAO;
 	}
 }
 

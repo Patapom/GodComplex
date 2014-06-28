@@ -198,6 +198,7 @@ namespace ImageUtility
 						_RGB[X,Y].x = XYZ.x > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.x, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * XYZ.x;
 						_RGB[X,Y].y = XYZ.y > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.y, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * XYZ.y;
 						_RGB[X,Y].z = XYZ.z > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.z, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * XYZ.z;
+						_RGB[X,Y].w = XYZ.w;
 					}
 			}
 
@@ -285,6 +286,7 @@ namespace ImageUtility
 						_RGB[X,Y].x = (float) Math.Pow( XYZ.x, 1.0f / GAMMA_EXPONENT_ADOBE );
 						_RGB[X,Y].y = (float) Math.Pow( XYZ.y, 1.0f / GAMMA_EXPONENT_ADOBE );
 						_RGB[X,Y].z = (float) Math.Pow( XYZ.z, 1.0f / GAMMA_EXPONENT_ADOBE );
+						_RGB[X,Y].w = XYZ.w;
 					}
 			}
 
@@ -372,6 +374,7 @@ namespace ImageUtility
 						_RGB[X,Y].x = (float) Math.Pow( XYZ.x, 1.0f / GAMMA_EXPONENT_ADOBE );
 						_RGB[X,Y].y = (float) Math.Pow( XYZ.y, 1.0f / GAMMA_EXPONENT_ADOBE );
 						_RGB[X,Y].z = (float) Math.Pow( XYZ.z, 1.0f / GAMMA_EXPONENT_ADOBE );
+						_RGB[X,Y].w = XYZ.w;
 					}
 			}
 
@@ -459,6 +462,7 @@ namespace ImageUtility
 						_RGB[X,Y].x = XYZ.x > 0.001953f ? (float) Math.Pow( XYZ.x, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * XYZ.x;
 						_RGB[X,Y].y = XYZ.y > 0.001953f ? (float) Math.Pow( XYZ.y, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * XYZ.y;
 						_RGB[X,Y].z = XYZ.z > 0.001953f ? (float) Math.Pow( XYZ.z, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * XYZ.z;
+						_RGB[X,Y].w = XYZ.w;
 					}
 			}
 
@@ -642,6 +646,7 @@ namespace ImageUtility
 						_RGB[X,Y].x = (float) Math.Pow( XYZ.x, m_InvGamma );
 						_RGB[X,Y].y = (float) Math.Pow( XYZ.y, m_InvGamma );
 						_RGB[X,Y].z = (float) Math.Pow( XYZ.z, m_InvGamma );
+						_RGB[X,Y].w = XYZ.w;
 					}
 			}
 
@@ -720,6 +725,7 @@ namespace ImageUtility
 						_RGB[X,Y].x = XYZ.x > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.x, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * XYZ.x;
 						_RGB[X,Y].y = XYZ.y > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.y, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * XYZ.y;
 						_RGB[X,Y].z = XYZ.z > 0.0031308f ? 1.055f * (float) Math.Pow( XYZ.z, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * XYZ.z;
+						_RGB[X,Y].w = XYZ.w;
 					}
 			}
 
@@ -798,6 +804,7 @@ namespace ImageUtility
 						_RGB[X,Y].x = XYZ.x > 0.001953f ? (float) Math.Pow( XYZ.x, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * XYZ.x;
 						_RGB[X,Y].y = XYZ.y > 0.001953f ? (float) Math.Pow( XYZ.y, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * XYZ.y;
 						_RGB[X,Y].z = XYZ.z > 0.001953f ? (float) Math.Pow( XYZ.z, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * XYZ.z;
+						_RGB[X,Y].w = XYZ.w;
 					}
 			}
 

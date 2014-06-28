@@ -61,5 +61,33 @@ namespace RendererManaged {
 		{
 			delete m_pShader;
 		}
+
+		static Shader^	CreateFromBinaryBlob( Device^ _Device, VERTEX_FORMAT _Format, FileInfo^ _ShaderFileName, String^ _EntryPointVS, String^ _EntryPointPS )
+		{
+			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _ShaderFileName->FullName ).ToPointer();
+			const char*	EntryPointVS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _EntryPointVS ).ToPointer();
+			const char*	EntryPointHS = NULL;	//TODO?
+			const char*	EntryPointDS = NULL;	//TODO?
+			const char*	EntryPointGS = NULL;	//TODO?
+			const char*	EntryPointPS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _EntryPointPS ).ToPointer();
+
+			IVertexFormatDescriptor*	pDescriptor = NULL;
+			switch ( _Format )
+			{
+			case VERTEX_FORMAT::Pt4:	pDescriptor = &VertexFormatPt4::DESCRIPTOR; break;
+			}
+			if ( pDescriptor == NULL )
+				throw gcnew Exception( "Unsupported vertex format!" );
+
+			::Material*	pShader = ::Material::CreateFromBinaryBlob( *_Device->m_pDevice, ShaderFileName, *pDescriptor, EntryPointVS, EntryPointHS, EntryPointDS, EntryPointGS, EntryPointPS );
+
+			return gcnew Shader( _Device, pShader );
+		}
+
+	private:
+		Shader( Device^ _Device, ::Material* _pShader )
+		{
+			m_pShader = _pShader;
+		}
 	};
 }

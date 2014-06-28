@@ -57,5 +57,21 @@ namespace RendererManaged {
 		{
 			m_pShader->Dispatch( _GroupsCountX, _GroupsCountY, _GroupsCountZ );
 		}
+
+		static ComputeShader^	CreateFromBinaryBlob( Device^ _Device, FileInfo^ _ShaderFileName, String^ _EntryPoint )
+		{
+			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _ShaderFileName->FullName ).ToPointer();
+			const char*	EntryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _EntryPoint ).ToPointer();
+
+			::ComputeShader*	pShader = ::ComputeShader::CreateFromBinaryBlob( *_Device->m_pDevice, ShaderFileName, EntryPoint );
+
+			return gcnew ComputeShader( _Device, pShader );
+		}
+
+	private:
+		ComputeShader( Device^ _Device, ::ComputeShader* _ComputeShader )
+		{
+			m_pShader = _ComputeShader;
+		}
 	};
 }
