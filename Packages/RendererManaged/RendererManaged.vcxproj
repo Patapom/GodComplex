@@ -80,6 +80,7 @@
     <ClInclude Include="ComputeShader.h" />
     <ClInclude Include="ConstantBuffer.h" />
     <ClInclude Include="Device.h" />
+    <ClInclude Include="MathStructs.h" />
     <ClInclude Include="PixelFormats.h" />
     <ClInclude Include="PixelsBuffer.h" />
     <ClInclude Include="RenderStates.h" />
@@ -88,6 +89,7 @@
     <ClInclude Include="ShaderFile.h" />
     <ClInclude Include="ShaderMacros.h" />
     <ClInclude Include="Stdafx.h" />
+    <ClInclude Include="StructuredBuffer.h" />
     <ClInclude Include="Texture2D.h" />
     <ClInclude Include="VertexFormats.h" />
   </ItemGroup>
@@ -96,6 +98,7 @@
     <ClCompile Include="ComputeShader.cpp" />
     <ClCompile Include="ConstantBuffer.cpp" />
     <ClCompile Include="Device.cpp" />
+    <ClCompile Include="MathStructs.cpp" />
     <ClCompile Include="PixelsBuffer.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderFile.cpp" />
@@ -104,6 +107,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="StructuredBuffer.cpp" />
     <ClCompile Include="Texture2D.cpp" />
   </ItemGroup>
   <ItemGroup>

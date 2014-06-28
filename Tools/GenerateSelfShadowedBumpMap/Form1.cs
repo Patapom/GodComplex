@@ -17,6 +17,27 @@ namespace GenerateSelfShadowedBumpMap
 {
 	public partial class Form1 : Form
 	{
+		#region CONSTANTS
+
+		private const int		MAX_THREADS = 1024;	// Maximum threads run by the compute shader
+
+		#endregion
+
+		#region NESTED TYPES
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct	CBInput
+		{
+			public UInt32	y;					// Index of the texture line we're processing
+			public UInt32	RaysCount;			// Amount of rays in the structured buffer
+			public float	TexelsPerMeter;		// Amount of texels per meter (usually 512)
+			public float	Displacement_cm;	// Max displacement value encoded by the height map (in centimeters)
+		}
+
+		#endregion
+
+		#region FIELDS
+
 		private int								W, H;
 		private ImageUtility.Bitmap				m_BitmapSource = null;
 
@@ -25,17 +46,15 @@ namespace GenerateSelfShadowedBumpMap
 		private RendererManaged.Texture2D		m_TextureTarget = null;
 		private RendererManaged.Texture2D		m_TextureTarget_CPU = null;
 
-		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		private struct	CBInput
-		{
-			public float	TexelsPerMeter;		// Amount of texels per meter (usually 512)
-			public float	Displacement_cm;	// Max displacement value encoded by the height map (in centimeters)
-		}
-
 		private RendererManaged.ConstantBuffer<CBInput>	m_CB_Input;
+		private RendererManaged.StructuredBuffer<RendererManaged.float3>	m_SB_Rays = null;
 		private RendererManaged.ComputeShader	m_CS_GenerateSSBumpMap = null;
 
 		private ImageUtility.Bitmap				m_BitmapResult = null;
+
+		#endregion
+
+		#region METHODS
 
 		public unsafe Form1()
 		{
@@ -54,7 +73,25 @@ namespace GenerateSelfShadowedBumpMap
 			// Create our constant buffer
 			m_CB_Input = new RendererManaged.ConstantBuffer<CBInput>( m_Device, 0 );
 
+			// Create our structured buffer containing the rays
+			m_SB_Rays = new RendererManaged.StructuredBuffer<RendererManaged.float3>( m_Device, 3 * MAX_THREADS, true );
+			integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
+
 			LoadHeightMap( new System.IO.FileInfo( "eye_generic_01_disp.png" ) );
+		}
+
+		protected override void OnClosing( CancelEventArgs e )
+		{
+			m_CS_GenerateSSBumpMap.Dispose();
+			m_CB_Input.Dispose();
+			m_SB_Rays.Dispose();
+
+			m_TextureTarget_CPU.Dispose();
+			m_TextureTarget.Dispose();
+			m_TextureSource.Dispose();
+			m_Device.Dispose();
+
+			base.OnClosing( e );
 		}
 
 		private void	LoadHeightMap( System.IO.FileInfo _FileName )
@@ -101,6 +138,45 @@ namespace GenerateSelfShadowedBumpMap
 			m_BitmapResult = new ImageUtility.Bitmap( W, H, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.Chromaticities.sRGB, ImageUtility.ColorProfile.GAMMA_CURVE.STANDARD, 1.0f ) );
 		}
 
+		private void	GenerateRays( int _RaysCount )
+		{
+			// Half-Life 2 basis
+			RendererManaged.float3[]	HL2Basis = new RendererManaged.float3[] {
+				new RendererManaged.float3( (float) Math.Sqrt( 2.0 / 3.0 ), 0.0f, (float) Math.Sqrt( 1.0 / 3.0 ) ),
+				new RendererManaged.float3( -(float) Math.Sqrt( 1.0 / 6.0 ), (float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ),
+				new RendererManaged.float3( -(float) Math.Sqrt( 1.0 / 6.0 ), -(float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) )
+			};
+
+			float	CenterTheta = (float) Math.Acos( HL2Basis[0].z );
+			float[]	CenterPhi = new float[] {
+				(float) Math.Atan2( HL2Basis[0].y, HL2Basis[0].x ),
+				(float) Math.Atan2( HL2Basis[1].y, HL2Basis[1].x ),
+				(float) Math.Atan2( HL2Basis[2].y, HL2Basis[2].x ),
+			};
+
+			Random	R = new Random( 1 );
+			for ( int RayIndex=0; RayIndex < _RaysCount; RayIndex++ )
+			{
+				float	Phi = (float) ((Math.PI / 3.0) * (2.0 * (RayIndex + R.NextDouble()) / _RaysCount - 1.0));
+				float	Theta = (float) (Math.Acos( Math.Sqrt( (RayIndex + R.NextDouble()) / _RaysCount ) ));
+
+				double	CosTheta = Math.Cos( Theta );
+				double	SinTheta = Math.Sin( Theta );
+
+				m_SB_Rays.m[MAX_THREADS*0+RayIndex].Set(	(float) (Math.Cos( CenterPhi[0] + Phi ) * SinTheta),
+															(float) (Math.Cos( CenterPhi[0] + Phi ) * SinTheta),
+															(float) CosTheta );
+				m_SB_Rays.m[MAX_THREADS*1+RayIndex].Set(	(float) (Math.Cos( CenterPhi[1] + Phi ) * SinTheta),
+															(float) (Math.Cos( CenterPhi[1] + Phi ) * SinTheta),
+															(float) CosTheta );
+				m_SB_Rays.m[MAX_THREADS*2+RayIndex].Set(	(float) (Math.Cos( CenterPhi[2] + Phi ) * SinTheta),
+															(float) (Math.Cos( CenterPhi[2] + Phi ) * SinTheta),
+															(float) CosTheta );
+			}
+
+			m_SB_Rays.Write();
+		}
+
 		private unsafe void	Generate()
 		{
 			// Prepare computation parameters
@@ -109,11 +185,19 @@ namespace GenerateSelfShadowedBumpMap
 
 			m_CB_Input.m.TexelsPerMeter = floatTrackbarControlPixelDensity.Value;
 			m_CB_Input.m.Displacement_cm = floatTrackbarControlHeight.Value;
-			m_CB_Input.UpdateData();
 
 			// Compute!
 			m_CS_GenerateSSBumpMap.Use();
-			m_CS_GenerateSSBumpMap.Dispatch( m_BitmapSource.Width, m_BitmapSource.Height, 1 );
+
+			int	h = Math.Max( 1, H / 100 );
+			int	CallsCount = (int) Math.Ceiling( (float) H / h );
+			for ( int i=0; i < CallsCount; i++ )
+			{
+				m_CB_Input.m.y = (UInt32) (i * h);
+				m_CB_Input.UpdateData();
+				m_CS_GenerateSSBumpMap.Dispatch( W, h, 1 );
+				progressBar.Value = (i+1) * progressBar.Maximum / CallsCount;
+			}
 
 			// Copy target to staging for CPU readback
 			m_TextureTarget_CPU.CopyFrom( m_TextureTarget );
@@ -154,18 +238,6 @@ namespace GenerateSelfShadowedBumpMap
 // 			m_BitmapSource.UnlockBits( LockedBitmap );
 		}
 
-		protected override void OnClosing( CancelEventArgs e )
-		{
-			m_CS_GenerateSSBumpMap.Dispose();
-			m_CB_Input.Dispose();
-			m_TextureTarget_CPU.Dispose();
-			m_TextureTarget.Dispose();
-			m_TextureSource.Dispose();
-			m_Device.Dispose();
-
-			base.OnClosing( e );
-		}
-
 		private void MessageBox( string _Message )
 		{
 			MessageBox( _Message, MessageBoxButtons.OK, MessageBoxIcon.Information );
@@ -173,11 +245,6 @@ namespace GenerateSelfShadowedBumpMap
 		private void MessageBox( string _Message, MessageBoxButtons _Buttons, MessageBoxIcon _Icon )
 		{
 			System.Windows.Forms.MessageBox.Show( this, _Message, "Generator", _Buttons, _Icon );
-		}
-
- 		private unsafe void buttonGenerate_Click( object sender, EventArgs e )
- 		{
-			Generate();
 		}
 
 // 			try
@@ -397,5 +464,20 @@ namespace GenerateSelfShadowedBumpMap
 // 			LockedBitmap = null;
 // //			outputPanelResult.Image = m_BitmapResult;
 // //			Application.DoEvents();
+		#endregion
+
+		#region EVENT HANDLERS
+
+ 		private unsafe void buttonGenerate_Click( object sender, EventArgs e )
+ 		{
+			Generate();
+		}
+
+		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
+		{
+			GenerateRays( _Sender.Value );
+		}
+
+		#endregion
  	}
 }

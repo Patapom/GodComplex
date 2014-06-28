@@ -41,9 +41,9 @@
 			this.floatTrackbarControlLobeExponent = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlPixelDensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlZFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.progressBar = new System.Windows.Forms.ProgressBar();
 			this.viewportPanelResult = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
 			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
-			this.progressBar = new System.Windows.Forms.ProgressBar();
 			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -66,13 +66,14 @@
 			this.integerTrackbarControlRaysCount.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlRaysCount.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlRaysCount.Name = "integerTrackbarControlRaysCount";
-			this.integerTrackbarControlRaysCount.RangeMax = 1000;
+			this.integerTrackbarControlRaysCount.RangeMax = 1024;
 			this.integerTrackbarControlRaysCount.RangeMin = 1;
 			this.integerTrackbarControlRaysCount.Size = new System.Drawing.Size(200, 20);
 			this.integerTrackbarControlRaysCount.TabIndex = 1;
 			this.integerTrackbarControlRaysCount.Value = 300;
-			this.integerTrackbarControlRaysCount.VisibleRangeMax = 1000;
+			this.integerTrackbarControlRaysCount.VisibleRangeMax = 1024;
 			this.integerTrackbarControlRaysCount.VisibleRangeMin = 1;
+			this.integerTrackbarControlRaysCount.SliderDragStop += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlRaysCount_SliderDragStop);
 			// 
 			// groupBox1
 			// 
@@ -190,6 +191,14 @@
 			this.floatTrackbarControlZFactor.VisibleRangeMax = 1F;
 			this.floatTrackbarControlZFactor.VisibleRangeMin = 0.001F;
 			// 
+			// progressBar
+			// 
+			this.progressBar.Location = new System.Drawing.Point(530, 295);
+			this.progressBar.Maximum = 1000;
+			this.progressBar.Name = "progressBar";
+			this.progressBar.Size = new System.Drawing.Size(320, 23);
+			this.progressBar.TabIndex = 4;
+			// 
 			// viewportPanelResult
 			// 
 			this.viewportPanelResult.Image = null;
@@ -205,14 +214,6 @@
 			this.outputPanelInputHeightMap.Name = "outputPanelInputHeightMap";
 			this.outputPanelInputHeightMap.Size = new System.Drawing.Size(512, 512);
 			this.outputPanelInputHeightMap.TabIndex = 0;
-			// 
-			// progressBar
-			// 
-			this.progressBar.Location = new System.Drawing.Point(530, 295);
-			this.progressBar.Maximum = 1000;
-			this.progressBar.Name = "progressBar";
-			this.progressBar.Size = new System.Drawing.Size(320, 23);
-			this.progressBar.TabIndex = 4;
 			// 
 			// Form1
 			// 
