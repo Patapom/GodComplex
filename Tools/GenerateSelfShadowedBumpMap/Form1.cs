@@ -145,6 +145,8 @@ namespace GenerateSelfShadowedBumpMap
 
 		private unsafe void	Generate()
 		{
+			groupBox1.Enabled = false;
+
 			// Prepare computation parameters
 			m_TextureSource.SetCS( 0 );
 			m_TextureTarget.SetCSUAV( 0 );
@@ -199,6 +201,8 @@ namespace GenerateSelfShadowedBumpMap
 
 			// Assign result
 			viewportPanelResult.Image = m_BitmapResult;
+
+			groupBox1.Enabled = true;
 		}
 
 		private void	GenerateRays( int _RaysCount )
@@ -223,23 +227,23 @@ namespace GenerateSelfShadowedBumpMap
 			for ( int RayIndex=0; RayIndex < _RaysCount; RayIndex++ )
 			{
 				// Stratified version
-				double	Phi = ((Math.PI / 3.0) * (2.0 * (RayIndex + R.NextDouble()) / _RaysCount - 1.0));
-				double	Theta = (Math.Acos( Math.Sqrt( (RayIndex + R.NextDouble()) / _RaysCount ) ));
+// 				double	Phi = ((Math.PI / 3.0) * (2.0 * (RayIndex + R.NextDouble()) / _RaysCount - 1.0));
+// 				double	Theta = (Math.Acos( Math.Sqrt( (RayIndex + R.NextDouble()) / _RaysCount ) ));
 
-// 				// Don't give a shit version
-// 				double	Phi = (Math.PI / 3.0) * (2.0 * R.NextDouble() - 1.0);
-// //				double	Theta = Math.Acos( Math.Sqrt( R.NextDouble() ) );
-// 				double	Theta = 0.5 * Math.PI * R.NextDouble();
+				// Don't give a shit version
+				double	Phi = (Math.PI / 3.0) * (2.0 * R.NextDouble() - 1.0);
+//				double	Theta = Math.Acos( Math.Sqrt( R.NextDouble() ) );
+				double	Theta = 0.5 * Math.PI * R.NextDouble();
 
-//				Theta = Math.Min( 0.499f * Math.PI, Theta );
+				Theta = Math.Min( 0.499f * Math.PI, Theta );
 
 
 				double	CosTheta = Math.Cos( Theta );
 				double	SinTheta = Math.Sin( Theta );
 
-				double	LengthFactor = 1.0 / SinTheta;	// The ray is scaled so we ensure we always walk at least a texel in the texture
-				CosTheta *= LengthFactor;
-				SinTheta *= LengthFactor;	// Yeah, yields 1... :)
+// 				double	LengthFactor = 1.0 / SinTheta;	// The ray is scaled so we ensure we always walk at least a texel in the texture
+// 				CosTheta *= LengthFactor;
+// 				SinTheta *= LengthFactor;	// Yeah, yields 1... :)
 
 				m_SB_Rays.m[0*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[0] + Phi ) * SinTheta),
 															(float) (Math.Sin( CenterPhi[0] + Phi ) * SinTheta),
@@ -264,17 +268,19 @@ namespace GenerateSelfShadowedBumpMap
 			System.Windows.Forms.MessageBox.Show( this, _Message, "Generator", _Buttons, _Icon );
 		}
 
-// 			try
-// 			{
-// 				groupBox1.Enabled = false;
-// 
-// 				// Half-life basis (Z points outside of the surface, as in normal maps)
-// 				WMath.Vector[]	Basis = new WMath.Vector[] {
-// 					new WMath.Vector( (float) (-1.0 / Math.Sqrt( 6.0 )), (float) (1.0 / Math.Sqrt( 2.0 )), (float) (1.0 / Math.Sqrt( 3.0 )) ),
-// 					new WMath.Vector( (float) (-1.0 / Math.Sqrt( 6.0 )), (float) (-1.0 / Math.Sqrt( 2.0 )), (float) (1.0 / Math.Sqrt( 3.0 )) ),
-// 					new WMath.Vector( (float) (Math.Sqrt( 2.0 ) / Math.Sqrt( 6.0 )), (float) 0.0, (float) (1.0 / Math.Sqrt( 3.0 )) ),
-// 				};
-// 
+		private void	Generate_CPU( int _RaysCount )
+		{
+			try
+			{
+				groupBox1.Enabled = false;
+
+				// Half-life basis (Z points outside of the surface, as in normal maps)
+				WMath.Vector[]	Basis = new WMath.Vector[] {
+					new WMath.Vector( (float) Math.Sqrt( 2.0 / 3.0 ), 0.0f, (float) Math.Sqrt( 1.0 / 3.0 ) ),
+					new WMath.Vector( (float) -Math.Sqrt( 1.0 / 6.0 ), (float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ),
+					new WMath.Vector( (float) -Math.Sqrt( 1.0 / 6.0 ), (float) -Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ),
+				};
+
 // 				// 1] Compute normal map
 // 				WMath.Vector	dX = new WMath.Vector();
 // 				WMath.Vector	dY = new WMath.Vector();
@@ -290,10 +296,10 @@ namespace GenerateSelfShadowedBumpMap
 // 						int	X0 = Math.Max( 0, X-1 );
 // 						int	X1 = Math.Min( W-1, X+1 );
 // 
-// 						float	Hx0 = m_HeightMap[X0,Y];
-// 						float	Hx1 = m_HeightMap[X1,Y];
-// 						float	Hy0 = m_HeightMap[X,Y0];
-// 						float	Hy1 = m_HeightMap[X,Y1];
+// 						float	Hx0 = m_BitmapSource.ContentXYZ[X0,Y].y;
+// 						float	Hx1 = m_BitmapSource.ContentXYZ[X1,Y].y;
+// 						float	Hy0 = m_BitmapSource.ContentXYZ[X,Y0].y;
+// 						float	Hy1 = m_BitmapSource.ContentXYZ[X,Y1].y;
 // 
 // 						dX.Set( 2.0f * ddX, 0.0f, ddH * (Hx1 - Hx0) );
 // 						dY.Set( 0.0f, 2.0f * ddX, ddH * (Hy1 - Hy0) );
@@ -310,153 +316,208 @@ namespace GenerateSelfShadowedBumpMap
 // 					UpdateProgress( m_Normal, Y, true );
 // 				}
 // 				UpdateProgress( m_Normal, H, true );
+
+				float	LobeExponent = 4.0f;//floatTrackbarControlLobeExponent.Value;
+
+				float	PixelSize_mm = 1000.0f / floatTrackbarControlPixelDensity.Value;
+
+				float	Scale = 0.1f * PixelSize_mm / floatTrackbarControlHeight.Value;	// Scale factor to apply to pixel distances so they're renormalized in [0,1], our "heights space"...
+//						Scale *= floatTrackbarControlZFactor.Value;	// Cheat Z velocity so AO is amplified!
+
+				// 2] Build local rays only once
+				int				RaysCount = integerTrackbarControlRaysCount.Value;
+				WMath.Vector[,]	Rays = new WMath.Vector[3,RaysCount];
+
+				// Create orthonormal bases to orient the lobe
+				WMath.Vector	Xr = Basis[0].Cross( WMath.Vector.UnitZ ).Normalized;	// We can safely use (0,0,1) as the "up" direction since the HL2 basis doesn't have any vertical direction
+				WMath.Vector	Yr = Xr.Cross( Basis[0] );
+				WMath.Vector	Xg = Basis[1].Cross( WMath.Vector.UnitZ ).Normalized;	// We can safely use (0,0,1) as the "up" direction since the HL2 basis doesn't have any vertical direction
+				WMath.Vector	Yg = Xg.Cross( Basis[1] );
+				WMath.Vector	Xb = Basis[2].Cross( WMath.Vector.UnitZ ).Normalized;	// We can safely use (0,0,1) as the "up" direction since the HL2 basis doesn't have any vertical direction
+				WMath.Vector	Yb = Xb.Cross( Basis[2] );
+
+				double	Exponent = 1.0 / (1.0 + LobeExponent);
+				for ( int RayIndex=0; RayIndex < RaysCount; RayIndex++ )
+				{
+					if ( false )
+					{
+						double	Phi = 2.0 * Math.PI * WMath.SimpleRNG.GetUniform();
+//						double	Theta = Math.Acos( Math.Pow( WMath.SimpleRNG.GetUniform(), Exponent ) );
+						double	Theta = Math.PI / 3.0 * WMath.SimpleRNG.GetUniform();
+
+						WMath.Vector	RayLocal = new WMath.Vector(
+							(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
+							(float) (Math.Sin( Phi ) * Math.Sin( Theta )),
+							(float) Math.Cos( Theta ) );
+
+						Rays[0,RayIndex] = RayLocal.x * Xr + RayLocal.y * Yr + RayLocal.z * Basis[0];
+						Rays[1,RayIndex] = RayLocal.x * Xg + RayLocal.y * Yg + RayLocal.z * Basis[1];
+						Rays[2,RayIndex] = RayLocal.x * Xb + RayLocal.y * Yb + RayLocal.z * Basis[2];
+					}
+					else
+					{
+						double	Phi = Math.PI / 3.0 * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0);
+						double	Theta = 0.49 * Math.PI * WMath.SimpleRNG.GetUniform();
+						Rays[0,RayIndex] = new WMath.Vector(
+							(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
+							(float) (Math.Sin( Phi ) * Math.Sin( Theta )),
+							(float) Math.Cos( Theta ) );
+
+						Phi = Math.PI / 3.0 * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0 + 2.0);
+						Theta = 0.49 * Math.PI * WMath.SimpleRNG.GetUniform();
+						Rays[1,RayIndex] = new WMath.Vector(
+							(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
+							(float) (Math.Sin( Phi ) * Math.Sin( Theta )),
+							(float) Math.Cos( Theta ) );
+
+						Phi = Math.PI / 3.0 * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0 + 4.0);
+						Theta = 0.49 * Math.PI * WMath.SimpleRNG.GetUniform();
+						Rays[2,RayIndex] = new WMath.Vector(
+							(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
+							(float) (Math.Sin( Phi ) * Math.Sin( Theta )),
+							(float) Math.Cos( Theta ) );
+					}
+
+					Rays[0,RayIndex].z *= Scale;
+					Rays[1,RayIndex].z *= Scale;
+					Rays[2,RayIndex].z *= Scale;
+				}
+
+				// 3] Compute directional occlusion
+				for ( int Y=0; Y < H; Y++ )
+				{
+					for ( int X=0; X < W; X++ )
+					{
+						float	R = ComputeAO( 0, X, Y, Scale, Rays );
+						float	G = ComputeAO( 1, X, Y, Scale, Rays );
+						float	B = ComputeAO( 2, X, Y, Scale, Rays );
+//						N = m_Normal[X,Y];
 // 
-// 				// 2] Compute directional occlusion
-// 				float	Exponent = floatTrackbarControlLobeExponent.Value;
-// 				float	Scale = floatTrackbarControlPixelSize.Value / floatTrackbarControlHeight.Value;	// Scale factor to apply to pixel distances so they're renormalized in [0,1], our "heights space"...
-// 						Scale *= floatTrackbarControlZFactor.Value;	// Cheat Z velocity so AO is amplified!
-// 
-// 				for ( int Y=0; Y < H; Y++ )
-// 				{
-// 					for ( int X=0; X < W; X++ )
-// 					{
-// 						float	R = ComputeAO( Basis[0], X, Y, Scale, Exponent );
-// 						float	G = ComputeAO( Basis[1], X, Y, Scale, Exponent );
-// 						float	B = ComputeAO( Basis[2], X, Y, Scale, Exponent );
-// 						N = m_Normal[X,Y];
-// 
-// 						m_Result[X,Y] = new WMath.Vector( R * N.x, G * N.y, B * N.z );
-// 					}
-// 
-// 					// Update and show progress
-// 					UpdateProgress( m_Result, Y, true );
-// 				}
-// 				UpdateProgress( m_Result, H, true );
-// 
-// 				m_BitmapResult.Save( "eye_generic_01_disp_hl2.png", ImageFormat.Png );
-// 			}
-// 			catch ( Exception _e )
-// 			{
-// 				MessageBox( "An error occurred during generation:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
-// 			}
-// 			finally
-// 			{
-// 				groupBox1.Enabled = true;
-// 			}
-// 		}
-// 
-// 		/// <summary>
-// 		/// Computes the ambient occlusion of the specified coordinate by shooting N rays in a lobe oriented in the specified light direction
-// 		/// </summary>
-// 		/// <param name="_Light"></param>
-// 		/// <param name="_X"></param>
-// 		/// <param name="_Y"></param>
-// 		/// <param name="_Z2HeightScale">Scale factor to apply to world Z coordinate to be remapped into the heights' [0,1] range</param>
-// 		/// <param name="_LobeExponent">1 is a simple cosine lobe</param>
-// 		/// <returns></returns>
-// 		/// 
-// 		WMath.Vector	m_X;
-// 		WMath.Vector	m_Y;
-// 		WMath.Vector	m_RayLocal = new WMath.Vector();
-// 		WMath.Vector	m_RayWorld = new WMath.Vector();
-// 		private float	ComputeAO( WMath.Vector _Light, int _X, int _Y, float _Z2HeightScale, float _LobeExponent )
-// 		{
-// 			double	Exponent = 1.0 / (1.0 + _LobeExponent);
-// 
-// 			WMath.Vector	ScaledLight = new WMath.Vector( _Light.x, _Light.y, _Z2HeightScale *_Light.y ).Normalized;
-// 
-// 			// Create orthonormal basis to orient the lobe
-// 			m_X = ScaledLight.Cross( WMath.Vector.UnitZ ).Normalized;	// We can safely use (0,0,1) as the "up" direction since the HL2 basis doesn't have any vertical direction
-// 			m_Y = m_X.Cross( ScaledLight );
-// 
-// 			// Start from the provided coordinates
-// 			float	X = _X;
-// 			float	Y = _Y;
-// 			float	Z = m_HeightMap[_X,_Y];
-// 
-// 			double	AO = 0.0f;
-// 			int		SamplesCount = 0;
-// 			for ( int RayIndex=0; RayIndex < integerTrackbarControlRaysCount.Value; RayIndex++ )
-// 			{
-// 				double	Phi = 2.0 * Math.PI * WMath.SimpleRNG.GetUniform();
-// 				double	Theta = Math.Acos( Math.Pow( WMath.SimpleRNG.GetUniform(), Exponent ) );
-// 				m_RayLocal.x = (float) (Math.Cos( Phi ) * Math.Sin( Theta ));
-// 				m_RayLocal.y = (float) (Math.Sin( Phi ) * Math.Sin( Theta ));
-// 				m_RayLocal.z = (float) Math.Cos( Theta );
-// 				m_RayWorld = m_RayLocal.x * m_X + m_RayLocal.y * m_Y + m_RayLocal.z * ScaledLight;
-//  				if ( m_RayWorld.z < 0.0f )
-// 				{
-// // AO += 1.0;
-// // SamplesCount++;
-//  					continue;	// Pointing to the ground so don't account for it...
-// 				}
-// 
-// 				// Make sure the ray has a unit step so we always travel at least one pixel
-// //				m_RayWorld.z *= _Z2HeightScale;
-// // 				float	Normalizer = 1.0f / Math.Max( Math.Abs( m_RayWorld.x ), Math.Abs( m_RayWorld.y ) );
-// // 				float	Normalizer = 1.0f;
-// // 				Normalizer = Math.Max( Normalizer, (1.0f - Z) / (128.0f * m_RayWorld.z) );	// This makes sure we can't use more than 128 steps to escape the heightfield
+ 						m_BitmapResult.ContentXYZ[X,Y] = m_LinearProfile.RGB2XYZ( new ImageUtility.float4( R, G, B, (R+G+B)/3.0f ) );
+					}
+
+					// Update and show progress
+					UpdateProgress( m_BitmapResult, Y, true );
+				}
+				UpdateProgress( m_BitmapResult, H, true );
+
+//				m_BitmapResult.Save( "eye_generic_01_disp_hl2.png", ImageFormat.Png );
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred during generation:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
+			finally
+			{
+				groupBox1.Enabled = true;
+			}
+		}
+
+		/// <summary>
+		/// Computes the ambient occlusion of the specified coordinate by shooting N rays in a lobe oriented in the specified light direction
+		/// </summary>
+		/// <param name="_Light"></param>
+		/// <param name="_X"></param>
+		/// <param name="_Y"></param>
+		/// <param name="_Z2HeightScale">Scale factor to apply to world Z coordinate to be remapped into the heights' [0,1] range</param>
+		/// <param name="_LobeExponent">1 is a simple cosine lobe</param>
+		/// <returns></returns>
+		/// 
+		private float	ComputeAO( int _LightIndex, int _X, int _Y, float _Z2HeightScale, WMath.Vector[,] _Rays )
+		{
+			int		RaysCount = _Rays.GetLength( 1 );
+			int		MaxStepsCount = integerTrackbarControlMaxStepsCount.Value;
+
+			float	Z0 = m_BitmapSource.ContentXYZ[_X,_Y].y;
+			double	AO = 0.0f;
+			int		SamplesCount = 0;
+			for ( int RayIndex=0; RayIndex < RaysCount; RayIndex++ )
+			{
+				WMath.Vector	RayWorld = _Rays[_LightIndex,RayIndex];
+ 				if ( RayWorld.z < 0.0f )
+				{
+// AO += 1.0;
+// SamplesCount++;
+ 					continue;	// Pointing to the ground so don't account for it...
+				}
+
+				// Make sure the ray has a unit step so we always travel at least one pixel
+//				m_RayWorld.z *= _Z2HeightScale;
+// 				float	Normalizer = 1.0f / Math.Max( Math.Abs( m_RayWorld.x ), Math.Abs( m_RayWorld.y ) );
+// 				float	Normalizer = 1.0f;
+// 				Normalizer = Math.Max( Normalizer, (1.0f - Z) / (128.0f * m_RayWorld.z) );	// This makes sure we can't use more than 128 steps to escape the heightfield
 // 
 // 				float	Normalizer = (1.0f - Z) / (128.0f * m_RayWorld.z);
 // 
 // 				m_RayWorld.x *= Normalizer;
 // 				m_RayWorld.y *= Normalizer;
 // 				m_RayWorld.z *= Normalizer;
-// 
-// 				// Compute intersection with the height field
-// 				while ( Z < 1.0f )
-// 				{
-// 					X += m_RayWorld.x;
-// 					Y += m_RayWorld.y;
-// 					Z += m_RayWorld.z;
-// 
-// 					float	Height = SampleHeightField( X, Y );
-// 					if ( Height >= Z )
-// 					{	// Hit!
-// 						AO += 1.0;
-// 						break;
-// 					}
-// 				}
-// 
-// 				SamplesCount++;
-// 			}
-// 			AO /= SamplesCount;
-// 
-// 			return (float) (1.0 - AO);
-// 		}
-// 
-// 		private float	SampleHeightField( float _X, float _Y )
-// 		{
-// 			_X *= W;
-// 			_Y *= H;
-// 			int		X0 = (int) Math.Floor( _X );
-// 			int		Y0 = (int) Math.Floor( _Y );
-// 			float	x = _X - X0;
-// 			float	y = _Y - Y0;
-// 			X0 = Math.Max( 0, Math.Min( W-1, X0 ) );
-// 			Y0 = Math.Max( 0, Math.Min( H-1, Y0 ) );
-// 			int		X1 = Math.Min( W-1, X0+1 );
-// 			int		Y1 = Math.Min( H-1, Y0+1 );
-// 
-// 			float	V00 = m_HeightMap[X0,Y0];
-// 			float	V01 = m_HeightMap[X1,Y0];
-// 			float	V10 = m_HeightMap[X0,Y1];
-// 			float	V11 = m_HeightMap[X1,Y1];
-// 
-// 			float	V0 = V00 + (V01-V00) * x;
-// 			float	V1 = V10 + (V11-V10) * x;
-// 
-// 			float	V = V0 + (V1-V0) * y;
-// 			return V;
-// 		}
-// 
-// 		private unsafe void	UpdateProgress( WMath.Vector[,] _Source, int Y, bool _Bias )
-// 		{
-// 			const int	REFRESH_EVERY_N_SCANLINES = 4;
-// 
-// 			if ( Y == 0 || (Y & (REFRESH_EVERY_N_SCANLINES-1)) != 0 )
-// 				return;
-// 
+
+				// Start from the provided coordinates
+				float	X = _X;
+				float	Y = _Y;
+				float	Z = Z0;
+
+				// Compute intersection with the height field
+				int	StepIndex = 0;
+				while ( StepIndex < MaxStepsCount && Z < 1.0f && X > 0.0f && Y > 0.0f && X < W && Y < H )
+				{
+					X += RayWorld.x;
+					Y += RayWorld.y;
+					Z += RayWorld.z;
+
+					float	Height = SampleHeightField( X, Y );
+					if ( Height > Z )
+					{	// Hit!
+						AO += 1.0;
+						break;
+					}
+
+					StepIndex++;
+				}
+
+				SamplesCount++;
+			}
+			AO /= SamplesCount;
+
+			return (float) (1.0 - AO);
+		}
+
+		private float	SampleHeightField( float _X, float _Y )
+		{
+			_X *= W;
+			_Y *= H;
+			int		X0 = (int) Math.Floor( _X );
+			int		Y0 = (int) Math.Floor( _Y );
+			float	x = _X - X0;
+			float	y = _Y - Y0;
+			X0 = Math.Max( 0, Math.Min( W-1, X0 ) );
+			Y0 = Math.Max( 0, Math.Min( H-1, Y0 ) );
+			int		X1 = Math.Min( W-1, X0+1 );
+			int		Y1 = Math.Min( H-1, Y0+1 );
+
+			float	V00 = m_BitmapSource.ContentXYZ[X0,Y0].y;
+			float	V01 = m_BitmapSource.ContentXYZ[X1,Y0].y;
+			float	V10 = m_BitmapSource.ContentXYZ[X0,Y1].y;
+			float	V11 = m_BitmapSource.ContentXYZ[X1,Y1].y;
+
+			float	V0 = V00 + (V01-V00) * x;
+			float	V1 = V10 + (V11-V10) * x;
+
+			float	V = V0 + (V1-V0) * y;
+			return V;
+		}
+
+		private unsafe void	UpdateProgress( ImageUtility.Bitmap _Image, int Y, bool _Bias )
+		{
+			const int	REFRESH_EVERY_N_SCANLINES = 4;
+
+			if ( Y == 0 || (Y & (REFRESH_EVERY_N_SCANLINES-1)) != 0 )
+				return;
+
+			viewportPanelResult.Image = _Image;
+			Application.DoEvents();
+
 // //			BitmapData	LockedBitmap = m_BitmapResult.LockBits( new Rectangle( 0, Y-REFRESH_EVERY_N_SCANLINES, W, REFRESH_EVERY_N_SCANLINES ), ImageLockMode.WriteOnly, PixelFormat.Format64bppRgb );
 // 			BitmapData	LockedBitmap = m_BitmapResult.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb );
 // 			for ( int y=Y-REFRESH_EVERY_N_SCANLINES; y < Y; y++ )
@@ -479,15 +540,18 @@ namespace GenerateSelfShadowedBumpMap
 // 			}
 // 			m_BitmapResult.UnlockBits( LockedBitmap );
 // 			LockedBitmap = null;
-// //			outputPanelResult.Image = m_BitmapResult;
-// //			Application.DoEvents();
+//			outputPanelResult.Image = m_BitmapResult;
+//			Application.DoEvents();
+		}
+
 		#endregion
 
 		#region EVENT HANDLERS
 
  		private unsafe void buttonGenerate_Click( object sender, EventArgs e )
  		{
-			Generate();
+// 			Generate();
+			Generate_CPU( integerTrackbarControlRaysCount.Value );
 		}
 
 		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )

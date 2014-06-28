@@ -55,18 +55,16 @@ float	ComputeDirectionalOcclusion( float2 _TextureDimensions, float2 _PixelPosit
 			break;
 
 		float	H = _Source.Load( int3( Position.xy, 0 ) ).x;
-		Occlusion *= 1.0 - saturate( _AOFactor * (H - Position.z) );	// Will get darker as soon as height map goes above ray position
+//		Occlusion *= 1.0 - saturate( _AOFactor * (H - Position.z) );	// Will get darker as soon as height map goes above ray position
 // 		if ( Occlusion < 1e-3 )
 // 			return 0.0;
 
-// 		if ( H > Position.z )
+ 		if ( H > Position.z )
 // // // if ( abs( H - Position.z ) > 1e-3 )
-//   			return 0.0;
+   			return 0.0;
 	}
 
-//Occlusion = Hash( dot( _Dir, float3( 0.320159, -0.87651, 0.16512603 ) ) );
-
-//	return 1.0;
+	return 1.0;
 	return Occlusion;
 }
 
@@ -86,6 +84,17 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID )
 
 		float	H0 = _Source.Load( int3( PixelPosition, 0 ) ).x;
 
+		float	Hx0 = _Source.Load( int3( PixelPosition-uint2(1,0), 0 ) ).x;
+		float	Hx1 = _Source.Load( int3( PixelPosition+uint2(1,0), 0 ) ).x;
+		float	Hy0 = _Source.Load( int3( PixelPosition-uint2(0,1), 0 ) ).x;
+		float	Hy1 = _Source.Load( int3( PixelPosition+uint2(0,1), 0 ) ).x;
+
+// 		float3	Dx = float3( 2, 0, Hx1 - Hx0 );
+// 		float3	Dy = float3( 0, 2, Hy1 - Hy0 );
+// 		float3	N = normalize( cross( Dx, Dy ) );
+// 		fPixelPosition.xy += 1e-2 * N.xy;
+// 		H0 += 1e-2 * N.z;
+
 		float4	Occlusion;
 		Occlusion.x = ComputeDirectionalOcclusion( Dimensions.xy, fPixelPosition, H0, _Rays[0*MAX_THREADS+RayIndex] );
 		Occlusion.y = ComputeDirectionalOcclusion( Dimensions.xy, fPixelPosition, H0, _Rays[1*MAX_THREADS+RayIndex] );
@@ -93,6 +102,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID )
 		Occlusion.w = dot( Occlusion.xyz, 1.0 / 3.0 );
 
 		gs_Occlusion[RayIndex] = Occlusion;
+
+//gs_Occlusion[RayIndex] = float4( N, 0 );
 	}
 	else
 	{	// Clear remaining rays so they don't interfere with the accumulation
