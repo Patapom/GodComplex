@@ -32,8 +32,10 @@
 			this.floatTrackbarControlHeight = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.integerTrackbarControlRaysCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
+			this.checkBoxWrap = new System.Windows.Forms.CheckBox();
 			this.buttonGenerate = new System.Windows.Forms.Button();
 			this.label3 = new System.Windows.Forms.Label();
+			this.label7 = new System.Windows.Forms.Label();
 			this.label6 = new System.Windows.Forms.Label();
 			this.label5 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
@@ -41,14 +43,18 @@
 			this.label1 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlMaxStepsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.floatTrackbarControlPixelDensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlBilateralTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlBilateralRadius = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlAOFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.progressBar = new System.Windows.Forms.ProgressBar();
-			this.checkBoxShowAO = new System.Windows.Forms.CheckBox();
 			this.viewportPanelResult = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
 			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
-			this.floatTrackbarControlBilateralTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.label7 = new System.Windows.Forms.Label();
+			this.radioButtonShowDirOccRGB = new System.Windows.Forms.RadioButton();
+			this.radioButtonDirOccR = new System.Windows.Forms.RadioButton();
+			this.radioButtonDirOccG = new System.Windows.Forms.RadioButton();
+			this.radioButtonDirOccB = new System.Windows.Forms.RadioButton();
+			this.radioButton1 = new System.Windows.Forms.RadioButton();
+			this.radioButtonDirOccRGBtimeAO = new System.Windows.Forms.RadioButton();
 			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -62,7 +68,7 @@
 			this.floatTrackbarControlHeight.RangeMin = 0.01F;
 			this.floatTrackbarControlHeight.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlHeight.TabIndex = 2;
-			this.floatTrackbarControlHeight.Value = 2F;
+			this.floatTrackbarControlHeight.Value = 10F;
 			this.floatTrackbarControlHeight.VisibleRangeMin = 0.01F;
 			// 
 			// integerTrackbarControlRaysCount
@@ -82,11 +88,11 @@
 			// 
 			// groupBox1
 			// 
+			this.groupBox1.Controls.Add(this.checkBoxWrap);
 			this.groupBox1.Controls.Add(this.buttonGenerate);
 			this.groupBox1.Controls.Add(this.label3);
 			this.groupBox1.Controls.Add(this.label7);
 			this.groupBox1.Controls.Add(this.label6);
-			this.groupBox1.Controls.Add(this.label5);
 			this.groupBox1.Controls.Add(this.label2);
 			this.groupBox1.Controls.Add(this.label4);
 			this.groupBox1.Controls.Add(this.label1);
@@ -95,18 +101,29 @@
 			this.groupBox1.Controls.Add(this.floatTrackbarControlPixelDensity);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlBilateralTolerance);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlBilateralRadius);
-			this.groupBox1.Controls.Add(this.floatTrackbarControlAOFactor);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlHeight);
 			this.groupBox1.Location = new System.Drawing.Point(530, 12);
 			this.groupBox1.Name = "groupBox1";
-			this.groupBox1.Size = new System.Drawing.Size(320, 277);
+			this.groupBox1.Size = new System.Drawing.Size(320, 275);
 			this.groupBox1.TabIndex = 3;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Settings";
 			// 
+			// checkBoxWrap
+			// 
+			this.checkBoxWrap.AutoSize = true;
+			this.checkBoxWrap.Checked = true;
+			this.checkBoxWrap.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxWrap.Location = new System.Drawing.Point(9, 207);
+			this.checkBoxWrap.Name = "checkBoxWrap";
+			this.checkBoxWrap.Size = new System.Drawing.Size(43, 17);
+			this.checkBoxWrap.TabIndex = 4;
+			this.checkBoxWrap.Text = "Tile";
+			this.checkBoxWrap.UseVisualStyleBackColor = true;
+			// 
 			// buttonGenerate
 			// 
-			this.buttonGenerate.Location = new System.Drawing.Point(108, 236);
+			this.buttonGenerate.Location = new System.Drawing.Point(105, 234);
 			this.buttonGenerate.Name = "buttonGenerate";
 			this.buttonGenerate.Size = new System.Drawing.Size(105, 35);
 			this.buttonGenerate.TabIndex = 0;
@@ -119,14 +136,23 @@
 			this.label3.AutoSize = true;
 			this.label3.Location = new System.Drawing.Point(6, 80);
 			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(76, 13);
+			this.label3.Size = new System.Drawing.Size(81, 13);
 			this.label3.TabIndex = 3;
-			this.label3.Text = "Pixel per meter";
+			this.label3.Text = "Pixels per meter";
+			// 
+			// label7
+			// 
+			this.label7.AutoSize = true;
+			this.label7.Location = new System.Drawing.Point(6, 169);
+			this.label7.Name = "label7";
+			this.label7.Size = new System.Drawing.Size(95, 13);
+			this.label7.TabIndex = 3;
+			this.label7.Text = "Bilateral Tolerance";
 			// 
 			// label6
 			// 
 			this.label6.AutoSize = true;
-			this.label6.Location = new System.Drawing.Point(6, 169);
+			this.label6.Location = new System.Drawing.Point(6, 143);
 			this.label6.Name = "label6";
 			this.label6.Size = new System.Drawing.Size(80, 13);
 			this.label6.TabIndex = 3;
@@ -135,11 +161,12 @@
 			// label5
 			// 
 			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(6, 106);
+			this.label5.Location = new System.Drawing.Point(536, 507);
 			this.label5.Name = "label5";
 			this.label5.Size = new System.Drawing.Size(55, 13);
 			this.label5.TabIndex = 3;
 			this.label5.Text = "AO Factor";
+			this.label5.Visible = false;
 			// 
 			// label2
 			// 
@@ -153,7 +180,7 @@
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(6, 132);
+			this.label4.Location = new System.Drawing.Point(6, 106);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(88, 13);
 			this.label4.TabIndex = 3;
@@ -170,7 +197,7 @@
 			// 
 			// integerTrackbarControlMaxStepsCount
 			// 
-			this.integerTrackbarControlMaxStepsCount.Location = new System.Drawing.Point(105, 129);
+			this.integerTrackbarControlMaxStepsCount.Location = new System.Drawing.Point(105, 103);
 			this.integerTrackbarControlMaxStepsCount.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlMaxStepsCount.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlMaxStepsCount.Name = "integerTrackbarControlMaxStepsCount";
@@ -196,9 +223,22 @@
 			this.floatTrackbarControlPixelDensity.VisibleRangeMax = 1024F;
 			this.floatTrackbarControlPixelDensity.VisibleRangeMin = 1F;
 			// 
+			// floatTrackbarControlBilateralTolerance
+			// 
+			this.floatTrackbarControlBilateralTolerance.Location = new System.Drawing.Point(105, 166);
+			this.floatTrackbarControlBilateralTolerance.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlBilateralTolerance.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlBilateralTolerance.Name = "floatTrackbarControlBilateralTolerance";
+			this.floatTrackbarControlBilateralTolerance.RangeMax = 1F;
+			this.floatTrackbarControlBilateralTolerance.RangeMin = 0F;
+			this.floatTrackbarControlBilateralTolerance.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlBilateralTolerance.TabIndex = 2;
+			this.floatTrackbarControlBilateralTolerance.Value = 0.2F;
+			this.floatTrackbarControlBilateralTolerance.VisibleRangeMax = 1F;
+			// 
 			// floatTrackbarControlBilateralRadius
 			// 
-			this.floatTrackbarControlBilateralRadius.Location = new System.Drawing.Point(105, 166);
+			this.floatTrackbarControlBilateralRadius.Location = new System.Drawing.Point(105, 140);
 			this.floatTrackbarControlBilateralRadius.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlBilateralRadius.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlBilateralRadius.Name = "floatTrackbarControlBilateralRadius";
@@ -212,7 +252,7 @@
 			// 
 			// floatTrackbarControlAOFactor
 			// 
-			this.floatTrackbarControlAOFactor.Location = new System.Drawing.Point(105, 103);
+			this.floatTrackbarControlAOFactor.Location = new System.Drawing.Point(635, 504);
 			this.floatTrackbarControlAOFactor.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlAOFactor.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlAOFactor.Name = "floatTrackbarControlAOFactor";
@@ -221,78 +261,121 @@
 			this.floatTrackbarControlAOFactor.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlAOFactor.TabIndex = 2;
 			this.floatTrackbarControlAOFactor.Value = 10F;
+			this.floatTrackbarControlAOFactor.Visible = false;
 			this.floatTrackbarControlAOFactor.VisibleRangeMax = 100F;
 			this.floatTrackbarControlAOFactor.VisibleRangeMin = 0.001F;
 			// 
 			// progressBar
 			// 
-			this.progressBar.Location = new System.Drawing.Point(530, 295);
+			this.progressBar.Location = new System.Drawing.Point(530, 293);
 			this.progressBar.Maximum = 1000;
 			this.progressBar.Name = "progressBar";
 			this.progressBar.Size = new System.Drawing.Size(320, 23);
 			this.progressBar.TabIndex = 4;
-			// 
-			// checkBoxShowAO
-			// 
-			this.checkBoxShowAO.AutoSize = true;
-			this.checkBoxShowAO.Location = new System.Drawing.Point(599, 324);
-			this.checkBoxShowAO.Name = "checkBoxShowAO";
-			this.checkBoxShowAO.Size = new System.Drawing.Size(180, 17);
-			this.checkBoxShowAO.TabIndex = 4;
-			this.checkBoxShowAO.Text = "Show Ambient Occlusion (Alpha)";
-			this.checkBoxShowAO.UseVisualStyleBackColor = true;
-			this.checkBoxShowAO.CheckedChanged += new System.EventHandler(this.checkBoxShowAO_CheckedChanged);
 			// 
 			// viewportPanelResult
 			// 
 			this.viewportPanelResult.Image = null;
 			this.viewportPanelResult.Location = new System.Drawing.Point(856, 16);
 			this.viewportPanelResult.Name = "viewportPanelResult";
-			this.viewportPanelResult.ShowAO = false;
 			this.viewportPanelResult.Size = new System.Drawing.Size(512, 512);
 			this.viewportPanelResult.TabIndex = 0;
+			this.viewportPanelResult.ViewMode = GenerateSelfShadowedBumpMap.ImagePanel.VIEW_MODE.RGB;
 			// 
 			// outputPanelInputHeightMap
 			// 
 			this.outputPanelInputHeightMap.Image = null;
 			this.outputPanelInputHeightMap.Location = new System.Drawing.Point(12, 12);
 			this.outputPanelInputHeightMap.Name = "outputPanelInputHeightMap";
-			this.outputPanelInputHeightMap.ShowAO = false;
 			this.outputPanelInputHeightMap.Size = new System.Drawing.Size(512, 512);
 			this.outputPanelInputHeightMap.TabIndex = 0;
+			this.outputPanelInputHeightMap.ViewMode = GenerateSelfShadowedBumpMap.ImagePanel.VIEW_MODE.RGB;
 			// 
-			// floatTrackbarControlBilateralTolerance
+			// radioButtonShowDirOccRGB
 			// 
-			this.floatTrackbarControlBilateralTolerance.Location = new System.Drawing.Point(105, 192);
-			this.floatTrackbarControlBilateralTolerance.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlBilateralTolerance.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlBilateralTolerance.Name = "floatTrackbarControlBilateralTolerance";
-			this.floatTrackbarControlBilateralTolerance.RangeMax = 1F;
-			this.floatTrackbarControlBilateralTolerance.RangeMin = 0F;
-			this.floatTrackbarControlBilateralTolerance.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlBilateralTolerance.TabIndex = 2;
-			this.floatTrackbarControlBilateralTolerance.Value = 0.2F;
-			this.floatTrackbarControlBilateralTolerance.VisibleRangeMax = 1F;
+			this.radioButtonShowDirOccRGB.AutoSize = true;
+			this.radioButtonShowDirOccRGB.Checked = true;
+			this.radioButtonShowDirOccRGB.Location = new System.Drawing.Point(601, 322);
+			this.radioButtonShowDirOccRGB.Name = "radioButtonShowDirOccRGB";
+			this.radioButtonShowDirOccRGB.Size = new System.Drawing.Size(151, 17);
+			this.radioButtonShowDirOccRGB.TabIndex = 5;
+			this.radioButtonShowDirOccRGB.TabStop = true;
+			this.radioButtonShowDirOccRGB.Text = "Directional Occlusion RGB";
+			this.radioButtonShowDirOccRGB.UseVisualStyleBackColor = true;
+			this.radioButtonShowDirOccRGB.CheckedChanged += new System.EventHandler(this.radioButtonShowDirOccRGB_CheckedChanged);
 			// 
-			// label7
+			// radioButtonDirOccR
 			// 
-			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point(6, 195);
-			this.label7.Name = "label7";
-			this.label7.Size = new System.Drawing.Size(95, 13);
-			this.label7.TabIndex = 3;
-			this.label7.Text = "Bilateral Tolerance";
+			this.radioButtonDirOccR.AutoSize = true;
+			this.radioButtonDirOccR.Location = new System.Drawing.Point(601, 368);
+			this.radioButtonDirOccR.Name = "radioButtonDirOccR";
+			this.radioButtonDirOccR.Size = new System.Drawing.Size(148, 17);
+			this.radioButtonDirOccR.TabIndex = 5;
+			this.radioButtonDirOccR.Text = "Directional Occlusion Red";
+			this.radioButtonDirOccR.UseVisualStyleBackColor = true;
+			this.radioButtonDirOccR.CheckedChanged += new System.EventHandler(this.radioButtonDirOccR_CheckedChanged);
+			// 
+			// radioButtonDirOccG
+			// 
+			this.radioButtonDirOccG.AutoSize = true;
+			this.radioButtonDirOccG.Location = new System.Drawing.Point(601, 391);
+			this.radioButtonDirOccG.Name = "radioButtonDirOccG";
+			this.radioButtonDirOccG.Size = new System.Drawing.Size(157, 17);
+			this.radioButtonDirOccG.TabIndex = 5;
+			this.radioButtonDirOccG.Text = "Directional Occlusion Green";
+			this.radioButtonDirOccG.UseVisualStyleBackColor = true;
+			this.radioButtonDirOccG.CheckedChanged += new System.EventHandler(this.radioButtonDirOccG_CheckedChanged);
+			// 
+			// radioButtonDirOccB
+			// 
+			this.radioButtonDirOccB.AutoSize = true;
+			this.radioButtonDirOccB.Location = new System.Drawing.Point(601, 414);
+			this.radioButtonDirOccB.Name = "radioButtonDirOccB";
+			this.radioButtonDirOccB.Size = new System.Drawing.Size(149, 17);
+			this.radioButtonDirOccB.TabIndex = 5;
+			this.radioButtonDirOccB.Text = "Directional Occlusion Blue";
+			this.radioButtonDirOccB.UseVisualStyleBackColor = true;
+			this.radioButtonDirOccB.CheckedChanged += new System.EventHandler(this.radioButtonDirOccB_CheckedChanged);
+			// 
+			// radioButton1
+			// 
+			this.radioButton1.AutoSize = true;
+			this.radioButton1.Location = new System.Drawing.Point(601, 437);
+			this.radioButton1.Name = "radioButton1";
+			this.radioButton1.Size = new System.Drawing.Size(113, 17);
+			this.radioButton1.TabIndex = 5;
+			this.radioButton1.Text = "Ambient Occlusion";
+			this.radioButton1.UseVisualStyleBackColor = true;
+			this.radioButton1.CheckedChanged += new System.EventHandler(this.radioButton1_CheckedChanged);
+			// 
+			// radioButtonDirOccRGBtimeAO
+			// 
+			this.radioButtonDirOccRGBtimeAO.AutoSize = true;
+			this.radioButtonDirOccRGBtimeAO.Location = new System.Drawing.Point(601, 345);
+			this.radioButtonDirOccRGBtimeAO.Name = "radioButtonDirOccRGBtimeAO";
+			this.radioButtonDirOccRGBtimeAO.Size = new System.Drawing.Size(176, 17);
+			this.radioButtonDirOccRGBtimeAO.TabIndex = 5;
+			this.radioButtonDirOccRGBtimeAO.Text = "Directional Occlusion RGB * AO";
+			this.radioButtonDirOccRGBtimeAO.UseVisualStyleBackColor = true;
+			this.radioButtonDirOccRGBtimeAO.CheckedChanged += new System.EventHandler(this.radioButtonDirOccRGBtimeAO_CheckedChanged);
 			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1379, 540);
-			this.Controls.Add(this.checkBoxShowAO);
+			this.Controls.Add(this.radioButton1);
+			this.Controls.Add(this.radioButtonDirOccB);
+			this.Controls.Add(this.radioButtonDirOccG);
+			this.Controls.Add(this.radioButtonDirOccRGBtimeAO);
+			this.Controls.Add(this.radioButtonDirOccR);
+			this.Controls.Add(this.label5);
+			this.Controls.Add(this.radioButtonShowDirOccRGB);
 			this.Controls.Add(this.progressBar);
 			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.viewportPanelResult);
 			this.Controls.Add(this.outputPanelInputHeightMap);
+			this.Controls.Add(this.floatTrackbarControlAOFactor);
 			this.Name = "Form1";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Form1";
@@ -320,11 +403,17 @@
 		private System.Windows.Forms.ProgressBar progressBar;
 		private System.Windows.Forms.Label label4;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlMaxStepsCount;
-		private System.Windows.Forms.CheckBox checkBoxShowAO;
 		private System.Windows.Forms.Label label6;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateralRadius;
 		private System.Windows.Forms.Label label7;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateralTolerance;
+		private System.Windows.Forms.CheckBox checkBoxWrap;
+		private System.Windows.Forms.RadioButton radioButtonShowDirOccRGB;
+		private System.Windows.Forms.RadioButton radioButtonDirOccR;
+		private System.Windows.Forms.RadioButton radioButtonDirOccG;
+		private System.Windows.Forms.RadioButton radioButtonDirOccB;
+		private System.Windows.Forms.RadioButton radioButton1;
+		private System.Windows.Forms.RadioButton radioButtonDirOccRGBtimeAO;
 	}
 }
 

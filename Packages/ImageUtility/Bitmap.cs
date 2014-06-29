@@ -260,6 +260,16 @@ namespace ImageUtility
 		}
 
 		/// <summary>
+		/// Creates a bitmap from a file
+		/// </summary>
+		/// <param name="_Device"></param>
+		/// <param name="_Name"></param>
+		public	Bitmap( System.IO.FileInfo _ImageFileName, ColorProfile _ProfileOverride )
+		{
+			Load( _ImageFileName, GetFileType( _ImageFileName ), _ProfileOverride );
+		}
+
+		/// <summary>
 		/// Creates a bitmap from a stream
 		/// </summary>
 		/// <param name="_Device"></param>
@@ -277,10 +287,34 @@ namespace ImageUtility
 		/// <param name="_Device"></param>
 		/// <param name="_Name"></param>
 		/// <param name="_ImageStream">The image stream to load the bitmap from</param>
+		/// <param name="_ImageFileNameName">The name of the image file the stream is coming from originally (used to identify image file type)</param>
+		public	Bitmap( System.IO.Stream _ImageStream, System.IO.FileInfo _ImageFileNameName, ColorProfile _ProfileOverride )
+		{
+			Load( _ImageStream, GetFileType( _ImageFileNameName ), _ProfileOverride );
+		}
+
+		/// <summary>
+		/// Creates a bitmap from a stream
+		/// </summary>
+		/// <param name="_Device"></param>
+		/// <param name="_Name"></param>
+		/// <param name="_ImageStream">The image stream to load the bitmap from</param>
 		/// <param name="_FileType">The image type</param>
 		public	Bitmap( System.IO.Stream _ImageStream, FILE_TYPE _FileType )
 		{
 			Load( _ImageStream, _FileType );
+		}
+
+		/// <summary>
+		/// Creates a bitmap from a stream
+		/// </summary>
+		/// <param name="_Device"></param>
+		/// <param name="_Name"></param>
+		/// <param name="_ImageStream">The image stream to load the bitmap from</param>
+		/// <param name="_FileType">The image type</param>
+		public	Bitmap( System.IO.Stream _ImageStream, FILE_TYPE _FileType, ColorProfile _ProfileOverride )
+		{
+			Load( _ImageStream, _FileType, _ProfileOverride );
 		}
 
 		/// <summary>
@@ -301,10 +335,34 @@ namespace ImageUtility
 		/// <param name="_Device"></param>
 		/// <param name="_Name"></param>
 		/// <param name="_ImageFileContent">The memory buffer to load the bitmap from</param>
+		/// <param name="_ImageFileNameName">The name of the image file the stream is coming from originally (used to identify image file type)</param>
+		public	Bitmap( byte[] _ImageFileContent, System.IO.FileInfo _ImageFileNameName, ColorProfile _ProfileOverride )
+		{
+			Load( _ImageFileContent, GetFileType( _ImageFileNameName ), _ProfileOverride );
+		}
+
+		/// <summary>
+		/// Creates a bitmap from memory
+		/// </summary>
+		/// <param name="_Device"></param>
+		/// <param name="_Name"></param>
+		/// <param name="_ImageFileContent">The memory buffer to load the bitmap from</param>
 		/// <param name="_FileType">The image type</param>
 		public	Bitmap( byte[] _ImageFileContent, FILE_TYPE _FileType )
 		{
 			Load( _ImageFileContent, _FileType );
+		}
+
+		/// <summary>
+		/// Creates a bitmap from memory
+		/// </summary>
+		/// <param name="_Device"></param>
+		/// <param name="_Name"></param>
+		/// <param name="_ImageFileContent">The memory buffer to load the bitmap from</param>
+		/// <param name="_FileType">The image type</param>
+		public	Bitmap( byte[] _ImageFileContent, FILE_TYPE _FileType, ColorProfile _ProfileOverride )
+		{
+			Load( _ImageFileContent, _FileType, _ProfileOverride );
 		}
 
 		/// <summary>
@@ -317,7 +375,7 @@ namespace ImageUtility
 		public	Bitmap( System.Drawing.Bitmap _Bitmap, ColorProfile _ColorProfile )
 		{
 			if ( _ColorProfile == null )
-				throw new Exception( "Invalid profile: can't convert to CIE XYZ !" );
+				throw new Exception( "Invalid profile: can't convert to CIE XYZ!" );
 			m_ColorProfile = _ColorProfile;
 
 			// Load the bitmap's content and copy it to a double entry array
@@ -379,8 +437,12 @@ namespace ImageUtility
 		/// <param name="_FileType"></param>
 		public void	Load( System.IO.FileInfo _ImageFileName, FILE_TYPE _FileType )
 		{
+			Load( _ImageFileName, _FileType, null );
+		}
+		public void	Load( System.IO.FileInfo _ImageFileName, FILE_TYPE _FileType, ColorProfile _ProfileOverride )
+		{
 			using ( System.IO.FileStream ImageStream = _ImageFileName.Open( System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read ) )
-				Load( ImageStream, _FileType );
+				Load( ImageStream, _FileType, _ProfileOverride );
 		}
 
 		/// <summary>
@@ -390,11 +452,15 @@ namespace ImageUtility
 		/// <param name="_FileType"></param>
 		public void	Load( System.IO.Stream _ImageStream, FILE_TYPE _FileType )
 		{
+			Load( _ImageStream, _FileType, null );
+		}
+		public void	Load( System.IO.Stream _ImageStream, FILE_TYPE _FileType, ColorProfile _ProfileOverride )
+		{
 			// Read the file's content
 			byte[]	ImageContent = new byte[_ImageStream.Length];
 			_ImageStream.Read( ImageContent, 0, (int) _ImageStream.Length );
 
-			Load( ImageContent, _FileType );
+			Load( ImageContent, _FileType, _ProfileOverride );
 		}
 
 		/// <summary>
@@ -405,6 +471,10 @@ namespace ImageUtility
 		/// <exception cref="NotSupportedException">Occurs if the image type is not supported by the Bitmap class</exception>
 		/// <exception cref="Exception">Occurs if the source image format cannot be converted to RGBA32F which is the generic format we read from</exception>
 		public void	Load( byte[] _ImageFileContent, FILE_TYPE _FileType )
+		{
+			Load( _ImageFileContent, _FileType );
+		}
+		public void	Load( byte[] _ImageFileContent, FILE_TYPE _FileType, ColorProfile _ProfileOverride )
 		{
 			try
 			{
@@ -437,7 +507,7 @@ namespace ImageUtility
 
 
 							// ===== 2] Build the color profile =====
-							m_ColorProfile = new ColorProfile( Frame.Metadata as BitmapMetadata, _FileType );
+							m_ColorProfile = _ProfileOverride != null ? _ProfileOverride : new ColorProfile( Frame.Metadata as BitmapMetadata, _FileType );
 
 							// ===== 3] Convert the frame to generic RGBA32F =====
 							ConvertFrame( Frame );
@@ -454,7 +524,8 @@ namespace ImageUtility
 								using ( TargaImage TGA = new TargaImage( Stream ) )
 								{
 									// Create a default sRGB linear color profile
-									m_ColorProfile = new ColorProfile(
+									m_ColorProfile = _ProfileOverride != null ? _ProfileOverride
+										: new ColorProfile(
 											ColorProfile.Chromaticities.sRGB,	// Use default sRGB color profile
 											ColorProfile.GAMMA_CURVE.STANDARD,	// But with a standard gamma curve...
 											TGA.ExtensionArea.GammaRatio		// ...whose gamma is retrieved from extension data
@@ -487,7 +558,7 @@ namespace ImageUtility
 					case FILE_TYPE.HDR:
 						{
 							// Load as XYZ
-							m_Bitmap = LoadAndDecodeHDRFormat( _ImageFileContent, true, out m_ColorProfile );
+							m_Bitmap = LoadAndDecodeHDRFormat( _ImageFileContent, true, _ProfileOverride, out m_ColorProfile );
 							m_Width = m_Bitmap.GetLength( 0 );
 							m_Height = m_Bitmap.GetLength( 1 );
 							return;
@@ -507,7 +578,8 @@ namespace ImageUtility
 																		: ColorProfile.Chromaticities.sRGB;			// Use default sRGB color profile
 
 									// Create a default sRGB linear color profile
-									m_ColorProfile = new ColorProfile(
+									m_ColorProfile = _ProfileOverride != null ? _ProfileOverride
+										: new ColorProfile(
 											Chroma,
 											ColorProfile.GAMMA_CURVE.STANDARD,	// But with a standard gamma curve...
 											1.0f								// Linear
@@ -1449,10 +1521,10 @@ namespace ImageUtility
 		/// <param name="_bTargetNeedsXYZ">Tells if the target needs to be in CIE XYZ space (true) or RGB (false)</param>
 		/// <param name="_ColorProfile">The color profile for the image</param>
 		/// <returns></returns>
-		public static float4[,]	LoadAndDecodeHDRFormat( byte[] _HDRFormatBinary, bool _bTargetNeedsXYZ, out ColorProfile _ColorProfile )
+		public static float4[,]	LoadAndDecodeHDRFormat( byte[] _HDRFormatBinary, bool _bTargetNeedsXYZ, ColorProfile _ProfileOverride, out ColorProfile _ColorProfile )
 		{
 			bool	bSourceIsXYZ;
-			return DecodeRGBEImage( LoadHDRFormat( _HDRFormatBinary, out bSourceIsXYZ, out _ColorProfile ), bSourceIsXYZ, _bTargetNeedsXYZ, _ColorProfile );
+			return DecodeRGBEImage( LoadHDRFormat( _HDRFormatBinary, _ProfileOverride, out bSourceIsXYZ, out _ColorProfile ), bSourceIsXYZ, _bTargetNeedsXYZ, _ColorProfile );
 		}
 
 		/// <summary>
@@ -1462,7 +1534,7 @@ namespace ImageUtility
 		/// <param name="_bIsXYZ">Tells if the image is encoded as XYZE rather than RGBE</param>
 		/// <param name="_ColorProfile">The color profile for the image</param>
 		/// <returns></returns>
-		public static unsafe PF_RGBE[,]	LoadHDRFormat( byte[] _HDRFormatBinary, out bool _bIsXYZ, out ColorProfile _ColorProfile )
+		public static unsafe PF_RGBE[,]	LoadHDRFormat( byte[] _HDRFormatBinary, ColorProfile _ProfileOverride, out bool _bIsXYZ, out ColorProfile _ColorProfile )
 		{
 			try
 			{
@@ -1569,8 +1641,13 @@ namespace ImageUtility
 				}
 
 					// 3.5] Create the color profile
-				_ColorProfile = new ColorProfile( Chromas, ColorProfile.GAMMA_CURVE.STANDARD, 1.0f );
-				_ColorProfile.Exposure = fExposure;
+				if ( _ProfileOverride == null )
+				{
+					_ColorProfile = new ColorProfile( Chromas, ColorProfile.GAMMA_CURVE.STANDARD, 1.0f );
+					_ColorProfile.Exposure = fExposure;
+				}
+				else
+					_ColorProfile = _ProfileOverride;
 
 					// 3.6] Read the resolution out of the last line
 				int		WayX = +1, WayY = +1;

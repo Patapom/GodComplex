@@ -10,6 +10,7 @@ cbuffer	CBInput : register( b0 )
 {
 	float	_Radius;			// Bilateral filtering radius
 	float	_Tolerance;			// Bilateral filtering range tolerance
+	bool	_Tile;				// Tiling flag
 }
 
 Texture2D<float>			_Source : register( t0 );
@@ -17,9 +18,14 @@ RWTexture2D<float>			_Target : register( u0 );
 
 groupshared float2			gs_Samples[64*64];
 
-float2	GaussianSample( uint2 _PixelPosition, uint2 _PixelOffset, float _H0 )
+float2	GaussianSample( uint2 _Dimensions, int2 _PixelPosition, int2 _PixelOffset, float _H0 )
 {
-	float	H = _Source.Load( int3( _PixelPosition + _PixelOffset, 0 ) ).x;
+	_PixelPosition += _PixelOffset;
+	if ( _Tile )
+		_PixelPosition = (_PixelPosition + _Dimensions) % _Dimensions;
+
+	int2	PixelPosition = int2( _PixelPosition );
+	float	H = _Source.Load( int3( _PixelPosition, 0 ) ).x;
 
 	// Domain filter
 	const float	SIGMA_DOMAIN = -0.5 * pow( _Radius / 3.0f, -2.0 );
@@ -29,7 +35,6 @@ float2	GaussianSample( uint2 _PixelPosition, uint2 _PixelOffset, float _H0 )
 //return DomainGauss * float2( H, 1.0 );
 
 	// Range filter
-// 	const float	SIGMA_RANGE = -0.5 * pow( 1.0 / 3.0f, -2.0 );
 	const float	SIGMA_RANGE = -0.5 * pow( _Tolerance, -2.0 );
 
 	float	Diff = abs( H - _H0 );
@@ -41,16 +46,19 @@ float2	GaussianSample( uint2 _PixelPosition, uint2 _PixelOffset, float _H0 )
 [numthreads( 32, 32, 1 )]
 void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID )
 {
-	uint2	PixelPosition = _GroupID.xy;
+	int2	PixelPosition = _GroupID.xy;
+
+	uint2	Dimensions;
+	_Source.GetDimensions( Dimensions.x, Dimensions.y );
 
 	float	H0 =  _Source.Load( int3( PixelPosition, 0 ) ).x;
 
 	uint	SampleOffset = 4*(32*_GroupThreadID.y+_GroupThreadID.x);
-	uint2	PixelOffset = 2*_GroupThreadID.xy - 32;
-	gs_Samples[SampleOffset+0] = GaussianSample( PixelPosition, PixelOffset, H0 );	PixelOffset.x++;
-	gs_Samples[SampleOffset+1] = GaussianSample( PixelPosition, PixelOffset, H0 );	PixelOffset.y++;
-	gs_Samples[SampleOffset+2] = GaussianSample( PixelPosition, PixelOffset, H0 );	PixelOffset.x--;
-	gs_Samples[SampleOffset+3] = GaussianSample( PixelPosition, PixelOffset, H0 );
+	int2	PixelOffset = 2*_GroupThreadID.xy - 32;
+	gs_Samples[SampleOffset+0] = GaussianSample( Dimensions, PixelPosition, PixelOffset, H0 );	PixelOffset.x++;
+	gs_Samples[SampleOffset+1] = GaussianSample( Dimensions, PixelPosition, PixelOffset, H0 );	PixelOffset.y++;
+	gs_Samples[SampleOffset+2] = GaussianSample( Dimensions, PixelPosition, PixelOffset, H0 );	PixelOffset.x--;
+	gs_Samples[SampleOffset+3] = GaussianSample( Dimensions, PixelPosition, PixelOffset, H0 );
 
 	GroupMemoryBarrierWithGroupSync();
 

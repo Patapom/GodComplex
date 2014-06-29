@@ -31,6 +31,7 @@ namespace GenerateSelfShadowedBumpMap
 			public UInt32	y;					// Index of the texture line we're processing
 			public UInt32	RaysCount;			// Amount of rays in the structured buffer
 			public UInt32	MaxStepsCount;		// Maximum amount of steps to take before stopping
+			public UInt32	Tile;				// Tiling flag
 			public float	TexelSize_mm;		// Size of a texel (in millimeters)
 			public float	Displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
 			public float	AOFactor;			// Darkening factor for AO when ray goes below height map
@@ -41,6 +42,7 @@ namespace GenerateSelfShadowedBumpMap
 		{
 			public float	Radius;				// Radius of the bilateral filter
 			public float	Tolerance;			// Range tolerance of the bilateral filter
+			public UInt32	Tile;				// Tiling flag
 		}
 
 		#endregion
@@ -143,8 +145,8 @@ namespace GenerateSelfShadowedBumpMap
 				m_TextureSource.Dispose();
 			m_TextureSource = null;
 
-			// Load the source image
-			m_BitmapSource = new ImageUtility.Bitmap( _FileName );
+			// Load the source image assuming it's in linear space
+			m_BitmapSource = new ImageUtility.Bitmap( _FileName, m_LinearProfile );
 			outputPanelInputHeightMap.Image = m_BitmapSource;
 
 			W = m_BitmapSource.Width;
@@ -179,6 +181,7 @@ namespace GenerateSelfShadowedBumpMap
 
 			m_CB_Filter.m.Radius = floatTrackbarControlBilateralRadius.Value;
 			m_CB_Filter.m.Tolerance = floatTrackbarControlBilateralTolerance.Value;
+			m_CB_Filter.m.Tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
 			m_CB_Filter.UpdateData();
 
 			m_CS_BilateralFilter.Use();
@@ -196,6 +199,7 @@ namespace GenerateSelfShadowedBumpMap
 
 			m_CB_Input.m.RaysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
 			m_CB_Input.m.MaxStepsCount = (UInt32) integerTrackbarControlMaxStepsCount.Value;
+			m_CB_Input.m.Tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
 			m_CB_Input.m.TexelSize_mm = 1000.0f / floatTrackbarControlPixelDensity.Value;
 			m_CB_Input.m.Displacement_mm = 10.0f * floatTrackbarControlHeight.Value;
 			m_CB_Input.m.AOFactor = floatTrackbarControlAOFactor.Value;
@@ -203,7 +207,7 @@ namespace GenerateSelfShadowedBumpMap
 			// Start
 			m_CS_GenerateSSBumpMap.Use();
 
-			int	h = Math.Max( 1, H / 100 );
+			int	h = Math.Max( 1, H / 20 );
 			int	CallsCount = (int) Math.Ceiling( (float) H / h );
 			for ( int i=0; i < CallsCount; i++ )
 			{
@@ -282,9 +286,9 @@ namespace GenerateSelfShadowedBumpMap
 				double	CosTheta = Math.Cos( Theta );
 				double	SinTheta = Math.Sin( Theta );
 
-// 				double	LengthFactor = 1.0 / SinTheta;	// The ray is scaled so we ensure we always walk at least a texel in the texture
-// 				CosTheta *= LengthFactor;
-// 				SinTheta *= LengthFactor;	// Yeah, yields 1... :)
+				double	LengthFactor = 1.0 / SinTheta;	// The ray is scaled so we ensure we always walk at least a texel in the texture
+				CosTheta *= LengthFactor;
+				SinTheta *= LengthFactor;	// Yeah, yields 1... :)
 
 				m_SB_Rays.m[0*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[0] + Phi ) * SinTheta),
 															(float) (Math.Sin( CenterPhi[0] + Phi ) * SinTheta),
@@ -579,11 +583,42 @@ namespace GenerateSelfShadowedBumpMap
 			GenerateRays( _Sender.Value );
 		}
 
-		private void checkBoxShowAO_CheckedChanged( object sender, EventArgs e )
+		private void radioButtonShowDirOccRGB_CheckedChanged( object sender, EventArgs e )
 		{
-			viewportPanelResult.ShowAO = checkBoxShowAO.Checked;
+			if ( (sender as RadioButton).Checked )
+				viewportPanelResult.ViewMode = ImagePanel.VIEW_MODE.RGB;
 		}
- 
+
+		private void radioButtonDirOccRGBtimeAO_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				viewportPanelResult.ViewMode = ImagePanel.VIEW_MODE.RGB_AO;
+		}
+
+		private void radioButtonDirOccR_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				viewportPanelResult.ViewMode = ImagePanel.VIEW_MODE.R;
+		}
+
+		private void radioButtonDirOccG_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				viewportPanelResult.ViewMode = ImagePanel.VIEW_MODE.G;
+		}
+
+		private void radioButtonDirOccB_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				viewportPanelResult.ViewMode = ImagePanel.VIEW_MODE.B;
+		}
+
+		private void radioButton1_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				viewportPanelResult.ViewMode = ImagePanel.VIEW_MODE.AO;
+		}
+
 		#endregion
 	}
 }
