@@ -25,7 +25,7 @@
 									// Obviously, if you switch textures & render targets often this will give you complete crap results !
 
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 // Define this to save the binary blobs for each shader (only works in DEBUG mode)
 // NOTE: in RELEASE, the blobs are embedded as resources and read from binary so they need to have been saved to
 
