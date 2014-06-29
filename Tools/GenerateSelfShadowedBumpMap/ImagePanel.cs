@@ -21,117 +21,29 @@ namespace GenerateSelfShadowedBumpMap
 			R,
 			G,
 			B,
-			AO
+			AO,
+			AO_FROM_RGB
 		}
 
-		private Bitmap				m_BitmapRGB = null;
-		private Bitmap				m_BitmapRGB_AO = null;
-		private Bitmap				m_BitmapR = null;
-		private Bitmap				m_BitmapG = null;
-		private Bitmap				m_BitmapB = null;
-		private Bitmap				m_BitmapAO = null;
+		private Bitmap				m_Bitmap = null;
+
+		private string				m_MessageOnEmpty = null;
+		public string				MessageOnEmpty
+		{
+			get { return m_MessageOnEmpty; }
+			set { m_MessageOnEmpty = value; Invalidate(); }
+		}
 
  		private ImageUtility.ColorProfile	m_ProfilesRGB = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );
-//		private ImageUtility.ColorProfile	m_ProfilesRGB = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.Chromaticities.sRGB, ImageUtility.ColorProfile.GAMMA_CURVE.STANDARD, 1.0f );
+		private ImageUtility.ColorProfile	m_ProfileLinear = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.Chromaticities.sRGB, ImageUtility.ColorProfile.GAMMA_CURVE.STANDARD, 1.0f );
 
 		private ImageUtility.Bitmap	m_Image = null;
-		public unsafe ImageUtility.Bitmap	Image
+		public ImageUtility.Bitmap	Image
 		{
 			get { return m_Image; }
 			set {
 				m_Image = value;
-				
-				if ( m_BitmapRGB != null )
-				{
-					m_BitmapRGB.Dispose();
-					m_BitmapRGB_AO.Dispose();
-					m_BitmapR.Dispose();
-					m_BitmapG.Dispose();
-					m_BitmapB.Dispose();
-					m_BitmapAO.Dispose();
-				}
-				m_BitmapRGB = null;
-				m_BitmapRGB_AO = null;
-				m_BitmapR = null;
-				m_BitmapG = null;
-				m_BitmapB = null;
-				m_BitmapAO = null;
-
-				if ( m_Image != null )
-				{	// Fill pixel per pixel
-					int	W = m_Image.Width;
-					int	H = m_Image.Height;
-					m_BitmapRGB = new Bitmap( W, H, PixelFormat.Format32bppArgb );
-					m_BitmapRGB_AO = new Bitmap( W, H, PixelFormat.Format32bppArgb );
-					m_BitmapR = new Bitmap( W, H, PixelFormat.Format32bppArgb );
-					m_BitmapG = new Bitmap( W, H, PixelFormat.Format32bppArgb );
-					m_BitmapB = new Bitmap( W, H, PixelFormat.Format32bppArgb );
-					m_BitmapAO = new Bitmap( W, H, PixelFormat.Format32bppArgb );
-
-					ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[W,H];
-					m_ProfilesRGB.XYZ2RGB( m_Image.ContentXYZ, ContentRGB );
-
-					BitmapData	LockedBitmapRGB = m_BitmapRGB.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
-					BitmapData	LockedBitmapRGB_AO = m_BitmapRGB_AO.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
-					BitmapData	LockedBitmapR = m_BitmapR.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
-					BitmapData	LockedBitmapG = m_BitmapG.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
-					BitmapData	LockedBitmapB = m_BitmapB.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
-					BitmapData	LockedBitmapAO = m_BitmapAO.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
-					for ( int Y=0; Y < H; Y++ )
-					{
-						byte*	pScanlineRGB = (byte*) LockedBitmapRGB.Scan0.ToPointer() + LockedBitmapRGB.Stride * Y;
-						byte*	pScanlineRGB_AO = (byte*) LockedBitmapRGB_AO.Scan0.ToPointer() + LockedBitmapRGB_AO.Stride * Y;
-						byte*	pScanlineR = (byte*) LockedBitmapR.Scan0.ToPointer() + LockedBitmapR.Stride * Y;
-						byte*	pScanlineG = (byte*) LockedBitmapG.Scan0.ToPointer() + LockedBitmapG.Stride * Y;
-						byte*	pScanlineB = (byte*) LockedBitmapB.Scan0.ToPointer() + LockedBitmapB.Stride * Y;
-						byte*	pScanlineAO = (byte*) LockedBitmapAO.Scan0.ToPointer() + LockedBitmapRGB.Stride * Y;
-						for ( int X=0; X < W; X++ )
-						{
-							byte	R = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].x ) );
-							byte	G = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].y ) );
-							byte	B = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].z ) );
-							byte	A = (byte) Math.Max( 0, Math.Min( 255, 255 * ImageUtility.ColorProfile.Linear2sRGB( ContentRGB[X,Y].w ) ) );
-
-							*pScanlineRGB++ = B;
-							*pScanlineRGB++ = G;
-							*pScanlineRGB++ = R;
-							*pScanlineRGB++ = 0xFF;
-
-							*pScanlineRGB_AO++ = B;
-							*pScanlineRGB_AO++ = G;
-							*pScanlineRGB_AO++ = R;
-							*pScanlineRGB_AO++ = 0xFF;
-
-							*pScanlineR++ = R;
-							*pScanlineR++ = R;
-							*pScanlineR++ = R;
-							*pScanlineR++ = 0xFF;
-
-							*pScanlineG++ = G;
-							*pScanlineG++ = G;
-							*pScanlineG++ = G;
-							*pScanlineG++ = 0xFF;
-
-							*pScanlineB++ = B;
-							*pScanlineB++ = B;
-							*pScanlineB++ = B;
-							*pScanlineB++ = 0xFF;
-
-							*pScanlineAO++ = A;
-							*pScanlineAO++ = A;
-							*pScanlineAO++ = A;
-							*pScanlineAO++ = 0xFF;
-						}
-					}
-					m_BitmapAO.UnlockBits( LockedBitmapAO );
-					m_BitmapB.UnlockBits( LockedBitmapB );
-					m_BitmapG.UnlockBits( LockedBitmapG );
-					m_BitmapR.UnlockBits( LockedBitmapR );
-					m_BitmapRGB_AO.UnlockBits( LockedBitmapRGB_AO );
-					m_BitmapRGB.UnlockBits( LockedBitmapRGB );
-				}
-
-				Refresh();
+				UpdateBitmap();
 			}
 		}
 
@@ -139,7 +51,22 @@ namespace GenerateSelfShadowedBumpMap
 		public VIEW_MODE		ViewMode
 		{
 			get { return m_ViewMode; }
-			set { m_ViewMode = value; Invalidate(); }
+			set
+			{
+				m_ViewMode = value;
+				UpdateBitmap();
+			}
+		}
+
+		private bool		m_ViewLinear = false;
+		public bool			ViewLinear
+		{
+			get { return m_ViewLinear; }
+			set
+			{
+				m_ViewLinear = value;
+				UpdateBitmap();
+			}
 		}
 
 		private RectangleF		ImageClientRect
@@ -169,6 +96,110 @@ namespace GenerateSelfShadowedBumpMap
 			InitializeComponent();
 		}
 
+		private unsafe void	UpdateBitmap()
+		{
+			if ( m_Image == null )
+				return;
+
+			// Fill pixel per pixel
+			int	W = m_Image.Width;
+			int	H = m_Image.Height;
+			if ( m_Bitmap != null && (m_Bitmap.Width != W || m_Bitmap.Height != H) )
+			{
+				m_Bitmap.Dispose();
+				m_Bitmap = null;
+			}
+			if ( m_Bitmap == null )
+				m_Bitmap = new Bitmap( W, H, PixelFormat.Format32bppArgb );
+
+			ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[W,H];
+			if ( m_ViewLinear )
+				m_ProfileLinear.XYZ2RGB( m_Image.ContentXYZ, ContentRGB );
+			else
+				m_ProfilesRGB.XYZ2RGB( m_Image.ContentXYZ, ContentRGB );
+
+			BitmapData	LockedBitmap = m_Bitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
+			for ( int Y=0; Y < H; Y++ )
+			{
+				byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + LockedBitmap.Stride * Y;
+				for ( int X=0; X < W; X++ )
+				{
+					byte	R = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].x ) );
+					byte	G = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].y ) );
+					byte	B = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].z ) );
+					byte	A = (byte) Math.Max( 0, Math.Min( 255, 255 * (m_ViewLinear ? ContentRGB[X,Y].w : ImageUtility.ColorProfile.Linear2sRGB( ContentRGB[X,Y].w )) ) );
+
+					switch ( m_ViewMode )
+					{
+						case VIEW_MODE.RGB:
+							*pScanline++ = B;
+							*pScanline++ = G;
+							*pScanline++ = R;
+							*pScanline++ = 0xFF;
+							break;
+						case VIEW_MODE.R:
+							*pScanline++ = R;
+							*pScanline++ = R;
+							*pScanline++ = R;
+							*pScanline++ = 0xFF;
+							break;
+						case VIEW_MODE.G:
+							*pScanline++ = G;
+							*pScanline++ = G;
+							*pScanline++ = G;
+							*pScanline++ = 0xFF;
+							break;
+						case VIEW_MODE.B:
+							*pScanline++ = B;
+							*pScanline++ = B;
+							*pScanline++ = B;
+							*pScanline++ = 0xFF;
+							break;
+						case VIEW_MODE.AO:
+							*pScanline++ = A;
+							*pScanline++ = A;
+							*pScanline++ = A;
+							*pScanline++ = 0xFF;
+							break;
+						case VIEW_MODE.AO_FROM_RGB:
+							{
+								float	LinR = ImageUtility.ColorProfile.sRGB2Linear( ContentRGB[X,Y].x );
+								float	LinG = ImageUtility.ColorProfile.sRGB2Linear( ContentRGB[X,Y].y );
+								float	LinB = ImageUtility.ColorProfile.sRGB2Linear( ContentRGB[X,Y].z );
+								float	LinAO = (float) Math.Sqrt( LinR*LinR + LinG*LinG + LinB*LinB ) * 0.57735026918962576450914878050196f;	// divided by sqrt(3)
+								A = (byte) Math.Max( 0, Math.Min( 255, 255 * ImageUtility.ColorProfile.Linear2sRGB( LinAO ) ) );
+								*pScanline++ = A;
+								*pScanline++ = A;
+								*pScanline++ = A;
+								*pScanline++ = 0xFF;
+							}
+							break;
+						case VIEW_MODE.RGB_AO:
+							{
+								float	LinR = ImageUtility.ColorProfile.sRGB2Linear( ContentRGB[X,Y].x );
+								float	LinG = ImageUtility.ColorProfile.sRGB2Linear( ContentRGB[X,Y].y );
+								float	LinB = ImageUtility.ColorProfile.sRGB2Linear( ContentRGB[X,Y].z );
+								float	LinAO = ContentRGB[X,Y].w;
+								LinR *= LinAO;
+								LinG *= LinAO;
+								LinB *= LinAO;
+								R = (byte) Math.Max( 0, Math.Min( 255, 255 * ImageUtility.ColorProfile.Linear2sRGB( LinR ) ) );
+								G = (byte) Math.Max( 0, Math.Min( 255, 255 * ImageUtility.ColorProfile.Linear2sRGB( LinG ) ) );
+								B = (byte) Math.Max( 0, Math.Min( 255, 255 * ImageUtility.ColorProfile.Linear2sRGB( LinB ) ) );
+								*pScanline++ = B;
+								*pScanline++ = G;
+								*pScanline++ = R;
+								*pScanline++ = 0xFF;
+							}
+							break;
+					}
+				}
+			}
+			m_Bitmap.UnlockBits( LockedBitmap );
+
+			Refresh();
+		}
+
 		protected override void OnSizeChanged( EventArgs e )
 		{
 			base.OnSizeChanged( e );
@@ -185,20 +216,15 @@ namespace GenerateSelfShadowedBumpMap
 			base.OnPaint( e );
 
 			e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
-			if ( m_BitmapRGB != null )
+			if ( m_Bitmap != null )
 			{
 				RectangleF	Rect = ImageClientRect;
-				Bitmap		B = null;
-				switch ( m_ViewMode )
-				{
-					case VIEW_MODE.RGB: B = m_BitmapRGB; break;
-					case VIEW_MODE.RGB_AO: B = m_BitmapRGB_AO; break;
-					case VIEW_MODE.R: B = m_BitmapR; break;
-					case VIEW_MODE.G: B = m_BitmapG; break;
-					case VIEW_MODE.B: B = m_BitmapB; break;
-					case VIEW_MODE.AO: B = m_BitmapAO; break;
-				}
-				e.Graphics.DrawImage(B, Rect, new RectangleF( 0, 0, m_BitmapRGB.Width, m_BitmapRGB.Height ), GraphicsUnit.Pixel );
+				e.Graphics.DrawImage( m_Bitmap, Rect, new RectangleF( 0, 0, m_Bitmap.Width, m_Bitmap.Height ), GraphicsUnit.Pixel );
+			}
+			else if ( m_MessageOnEmpty != null )
+			{
+				SizeF	MessageSize = e.Graphics.MeasureString( m_MessageOnEmpty, Font );
+				e.Graphics.DrawString( m_MessageOnEmpty, Font, Brushes.White, 0.5f * (Width-MessageSize.Width), 0.5f * (Height-MessageSize.Height) );
 			}
 		}
 	}

@@ -58,8 +58,7 @@ float	ComputeDirectionalOcclusion( float2 _TextureDimensions, float2 _PixelPosit
 // 			return 0.0;
 
  		if ( H > Position.z )
-// if ( H - Position.z > 1e-3 )
-    			return 0.0;
+    		return 0.0;
 	}
 
 	return Occlusion;
@@ -100,8 +99,6 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID )
 		Occlusion.w = dot( Occlusion.xyz, 1.0 / 3.0 );
 
 		gs_Occlusion[RayIndex] = Occlusion;
-
-//gs_Occlusion[RayIndex] = float4( N, 0 );
 	}
 	else
 	{	// Clear remaining rays so they don't interfere with the accumulation
@@ -117,16 +114,13 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID )
 			Result += gs_Occlusion[i];
 		Result /= _RaysCount;
 
-
 // Shows bilateral filtered source
 //Result = _Source.Load( int3( PixelPosition, 0 ) ).x;
-
-Result.xyz *= Result.w;	// Pre-multiply by AO
 
 		_Target[PixelPosition] = Result;
 	}
 
-
+// This code should be optimum but it fails and introduces noise for some reason I can't explain...
 // // 	// Perform accumulation
 // // 	if ( RayIndex < 512 )
 // // 	{

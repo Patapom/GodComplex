@@ -12,6 +12,7 @@ using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace GenerateSelfShadowedBumpMap
 {
@@ -49,6 +50,9 @@ namespace GenerateSelfShadowedBumpMap
 
 		#region FIELDS
 
+		private RegistryKey						m_AppKey;
+		private string							m_ApplicationPath;
+
 		private int								W, H;
 		private ImageUtility.Bitmap				m_BitmapSource = null;
 
@@ -77,6 +81,9 @@ namespace GenerateSelfShadowedBumpMap
 		public unsafe Form1()
 		{
 			InitializeComponent();
+
+ 			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\SSBumpMapGenerator" );
+			m_ApplicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );
 		}
 
 		protected override void  OnLoad(EventArgs e)
@@ -86,11 +93,13 @@ namespace GenerateSelfShadowedBumpMap
 			m_Device.Init( viewportPanelResult.Handle, viewportPanelResult.Width, viewportPanelResult.Height, false, true );
 
 			// Create our compute shaders
+#if DEBUG
 			m_CS_GenerateSSBumpMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
-//			m_CS_GenerateSSBumpMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
-
 			m_CS_BilateralFilter = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
-//			m_CS_BilateralFilter = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
+#else
+			m_CS_GenerateSSBumpMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
+			m_CS_BilateralFilter = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
+#endif
 
 			// Create our constant buffers
 			m_CB_Input = new RendererManaged.ConstantBuffer<CBInput>( m_Device, 0 );
@@ -101,7 +110,7 @@ namespace GenerateSelfShadowedBumpMap
 			integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
 
 //			LoadHeightMap( new System.IO.FileInfo( "eye_generic_01_disp.png" ) );
-			LoadHeightMap( new System.IO.FileInfo( "10 - Smooth.jpg" ) );
+//			LoadHeightMap( new System.IO.FileInfo( "10 - Smooth.jpg" ) );
 		}
 
 		protected override void OnClosing( CancelEventArgs e )
@@ -128,9 +137,6 @@ namespace GenerateSelfShadowedBumpMap
 			if ( m_BitmapSource != null )
 				m_BitmapSource.Dispose();
 			m_BitmapSource = null;
-			if ( m_BitmapResult != null )
-				m_BitmapResult.Dispose();
-			m_BitmapResult = null;
 
 			if ( m_TextureTarget_CPU != null )
 				m_TextureTarget_CPU.Dispose();
@@ -165,9 +171,6 @@ namespace GenerateSelfShadowedBumpMap
 			m_TextureTarget0 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, true, null );
 			m_TextureTarget1 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
 			m_TextureTarget_CPU = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, true, false, null );
-
-			// Allocate target bitmap
-			m_BitmapResult = new ImageUtility.Bitmap( W, H, m_LinearProfile );
 		}
 
 		private unsafe void	Generate()
@@ -220,6 +223,7 @@ namespace GenerateSelfShadowedBumpMap
 				Application.DoEvents();
 			}
 
+			// Compute in a single shot
 // 			m_CB_Input.m.y = 0;
 // 			m_CB_Input.UpdateData();
 // 			m_CS_GenerateSSBumpMap.Dispatch( W, H, 1 );
@@ -227,6 +231,12 @@ namespace GenerateSelfShadowedBumpMap
 			//////////////////////////////////////////////////////////////////////////
 			// 3] Copy target to staging for CPU readback and update the resulting bitmap
 			m_TextureTarget_CPU.CopyFrom( m_TextureTarget1 );
+
+			if ( m_BitmapResult != null )
+				m_BitmapResult.Dispose();
+			m_BitmapResult = null;
+			m_BitmapResult = new ImageUtility.Bitmap( W, H, m_LinearProfile );
+			m_BitmapResult.HasAlpha = true;
 
 			RendererManaged.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
 			using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
@@ -236,6 +246,8 @@ namespace GenerateSelfShadowedBumpMap
 					for ( int X=0; X < W; X++ )
 					{
 						ImageUtility.float4	Color = new ImageUtility.float4( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+
+//Color.w = 1.0f;
 						Color = m_LinearProfile.RGB2XYZ( Color );
 						m_BitmapResult.ContentXYZ[X,Y] = Color;
 					}
@@ -268,17 +280,16 @@ namespace GenerateSelfShadowedBumpMap
 				(float) Math.Atan2( HL2Basis[2].y, HL2Basis[2].x ),
 			};
 
-			Random	R = new Random( 1 );
 			for ( int RayIndex=0; RayIndex < _RaysCount; RayIndex++ )
 			{
-				// Stratified version
-// 				double	Phi = ((Math.PI / 3.0) * (2.0 * (RayIndex + R.NextDouble()) / _RaysCount - 1.0));
-// 				double	Theta = (Math.Acos( Math.Sqrt( (RayIndex + R.NextDouble()) / _RaysCount ) ));
+				double	Phi = (Math.PI / 3.0) * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0);
 
-				// Don't give a shit version
-				double	Phi = (Math.PI / 3.0) * (2.0 * R.NextDouble() - 1.0);
-//				double	Theta = Math.Acos( Math.Sqrt( R.NextDouble() ) );
-				double	Theta = 0.5 * Math.PI * R.NextDouble();
+				// Stratified version
+				double	Theta = (Math.Acos( Math.Sqrt( (RayIndex + WMath.SimpleRNG.GetUniform()) / _RaysCount ) ));
+
+// 				// Don't give a shit version (a.k.a. melonhead version)
+// //				double	Theta = Math.Acos( Math.Sqrt(WMath.SimpleRNG.GetUniform() ) );
+// 				double	Theta = 0.5 * Math.PI * WMath.SimpleRNG.GetUniform();
 
 				Theta = Math.Min( 0.499f * Math.PI, Theta );
 
@@ -304,16 +315,7 @@ namespace GenerateSelfShadowedBumpMap
 			m_SB_Rays.Write();
 		}
 
-		private void MessageBox( string _Message )
-		{
-			MessageBox( _Message, MessageBoxButtons.OK, MessageBoxIcon.Information );
-		}
-		private void MessageBox( string _Message, MessageBoxButtons _Buttons, MessageBoxIcon _Icon )
-		{
-			System.Windows.Forms.MessageBox.Show( this, _Message, "Generator", _Buttons, _Icon );
-		}
-
-		#region Super Slow CPU Version
+		#region Super Slow CPU Version (without bilateral)
 
 		private void	Generate_CPU( int _RaysCount )
 		{
@@ -568,6 +570,57 @@ namespace GenerateSelfShadowedBumpMap
 
 		#endregion
 
+		#region Helpers
+
+		private string	GetRegKey( string _Key, string _Default )
+		{
+			string	Result = m_AppKey.GetValue( _Key ) as string;
+			return Result != null ? Result : _Default;
+		}
+		private void	SetRegKey( string _Key, string _Value )
+		{
+			m_AppKey.SetValue( _Key, _Value );
+		}
+
+		private float	GetRegKeyFloat( string _Key, float _Default )
+		{
+			string	Value = GetRegKey( _Key, _Default.ToString() );
+			float	Result;
+			float.TryParse( Value, out Result );
+			return Result;
+		}
+
+		private int		GetRegKeyInt( string _Key, float _Default )
+		{
+			string	Value = GetRegKey( _Key, _Default.ToString() );
+			int		Result;
+			int.TryParse( Value, out Result );
+			return Result;
+		}
+
+		private DialogResult	MessageBox( string _Text )
+		{
+			return MessageBox( _Text, MessageBoxButtons.OK );
+		}
+		private DialogResult	MessageBox( string _Text, Exception _e )
+		{
+			return MessageBox( _Text + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+		}
+		private DialogResult	MessageBox( string _Text, MessageBoxButtons _Buttons )
+		{
+			return MessageBox( _Text, _Buttons, MessageBoxIcon.Information );
+		}
+		private DialogResult	MessageBox( string _Text, MessageBoxIcon _Icon )
+		{
+			return MessageBox( _Text, MessageBoxButtons.OK, _Icon );
+		}
+		private DialogResult	MessageBox( string _Text, MessageBoxButtons _Buttons, MessageBoxIcon _Icon )
+		{
+			return System.Windows.Forms.MessageBox.Show( this, _Text, "SSBumpMap Generator", _Buttons, _Icon );
+		}
+
+		#endregion
+
 		#endregion
 
 		#region EVENT HANDLERS
@@ -617,6 +670,94 @@ namespace GenerateSelfShadowedBumpMap
 		{
 			if ( (sender as RadioButton).Checked )
 				viewportPanelResult.ViewMode = ImagePanel.VIEW_MODE.AO;
+		}
+
+		private void radioButtonAOfromRGB_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				viewportPanelResult.ViewMode = ImagePanel.VIEW_MODE.AO_FROM_RGB;
+		}
+
+		private void outputPanelInputHeightMap_Click( object sender, EventArgs e )
+		{
+			string	OldFileName = GetRegKey( "DatabaseFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
+			openFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( OldFileName );
+			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
+			if ( openFileDialogImage.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			SetRegKey( "DatabaseFileName", openFileDialogImage.FileName );
+
+			try
+			{
+				LoadHeightMap( new System.IO.FileInfo( openFileDialogImage.FileName ) );
+
+				groupBox1.Enabled = true;
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred while opening the image:\n\n", _e );
+			}
+
+		}
+
+		private unsafe void viewportPanelResult_Click( object sender, EventArgs e )
+		{
+			if ( m_BitmapResult == null )
+			{
+				MessageBox( "There is no result image to save!" );
+				return;
+			}
+
+			string	SourceFileName = openFileDialogImage.FileName;
+			string	TargetFileName = System.IO.Path.Combine( System.IO.Path.GetDirectoryName( SourceFileName ), System.IO.Path.GetFileNameWithoutExtension( SourceFileName ) + "_ssbump.png" );
+
+			saveFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( TargetFileName );
+			saveFileDialogImage.FileName = System.IO.Path.GetFileName( TargetFileName );
+			if ( saveFileDialogImage.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			try
+			{
+//				m_BitmapResult.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
+
+				using ( Bitmap Bi = new Bitmap( m_BitmapResult.Width, m_BitmapResult.Height, PixelFormat.Format32bppArgb ) )
+				{
+					ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[m_BitmapResult.Width, m_BitmapResult.Height];
+					m_BitmapResult.Profile.XYZ2RGB( m_BitmapResult.ContentXYZ, ContentRGB );
+
+					BitmapData	LockedBitmap = Bi.LockBits( new Rectangle( 0, 0, Bi.Width, Bi.Height ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
+					for ( int Y=0; Y < Bi.Height; Y++ )
+					{
+						byte*	pScanline = (byte*) LockedBitmap.Scan0 + Y*LockedBitmap.Stride;
+						for ( int X=0; X < Bi.Width; X++ )
+						{
+							byte	R = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].x ) );
+							byte	G = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].y ) );
+							byte	B = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].z ) );
+							byte	A = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].w ) );
+							*pScanline++ = B;
+							*pScanline++ = G;
+							*pScanline++ = R;
+							*pScanline++ = A;
+						}
+					}
+					Bi.UnlockBits( LockedBitmap );
+					Bi.Save( saveFileDialogImage.FileName );
+				}
+
+				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred while saving the image:\n\n", _e );
+			}
+		}
+
+		private void checkBoxShowsRGB_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanelInputHeightMap.ViewLinear = !checkBoxShowsRGB.Checked;
+			viewportPanelResult.ViewLinear = !checkBoxShowsRGB.Checked;
 		}
 
 		#endregion

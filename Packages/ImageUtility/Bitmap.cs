@@ -1001,6 +1001,23 @@ namespace ImageUtility
 		}
 
 		/// <summary>
+		/// Save to a file
+		/// </summary>
+		/// <param name="_Stream"></param>
+		/// <param name="_FileType"></param>
+		/// <param name="_Parms"></param>
+		public void	Save( System.IO.FileInfo _FileName )
+		{
+			Save( _FileName, FORMAT_FLAGS.NONE );
+		}
+		public void	Save( System.IO.FileInfo _FileName, FORMAT_FLAGS _Parms )
+		{
+			FILE_TYPE	FileType = GetFileType( _FileName );
+			using ( System.IO.FileStream S = _FileName.Create() )
+				Save( S, FileType, _Parms );
+		}
+
+		/// <summary>
 		/// Save to a stream
 		/// </summary>
 		/// <param name="_Stream">The stream to write the image to</param>
@@ -1032,6 +1049,7 @@ namespace ImageUtility
 								case FILE_TYPE.GIF:		Encoder = new GifBitmapEncoder(); break;
 								case FILE_TYPE.BMP:		Encoder = new BmpBitmapEncoder(); break;
 							}
+
 
 							// Find the appropriate pixel format
 							int		BitsPerComponent = 8;
@@ -1065,7 +1083,7 @@ namespace ImageUtility
 							{	// RGB
 								switch ( BitsPerComponent )
 								{
-									case 8:		Format = System.Windows.Media.PixelFormats.Rgb24; break;
+									case 8:		Format = System.Windows.Media.PixelFormats.Bgr24; break;
 									case 16:	Format = System.Windows.Media.PixelFormats.Rgb48; break;
 									case 32:	throw new Exception( "32BITS formats aren't supported without ALPHA!" );
 									default:	throw new Exception( "Unsupported format!" );

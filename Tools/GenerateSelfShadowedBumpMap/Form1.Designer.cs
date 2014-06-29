@@ -47,14 +47,18 @@
 			this.floatTrackbarControlBilateralRadius = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlAOFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.progressBar = new System.Windows.Forms.ProgressBar();
-			this.viewportPanelResult = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
-			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
 			this.radioButtonShowDirOccRGB = new System.Windows.Forms.RadioButton();
 			this.radioButtonDirOccR = new System.Windows.Forms.RadioButton();
 			this.radioButtonDirOccG = new System.Windows.Forms.RadioButton();
 			this.radioButtonDirOccB = new System.Windows.Forms.RadioButton();
-			this.radioButton1 = new System.Windows.Forms.RadioButton();
+			this.radioButtonAO = new System.Windows.Forms.RadioButton();
 			this.radioButtonDirOccRGBtimeAO = new System.Windows.Forms.RadioButton();
+			this.openFileDialogImage = new System.Windows.Forms.OpenFileDialog();
+			this.saveFileDialogImage = new System.Windows.Forms.SaveFileDialog();
+			this.radioButtonAOfromRGB = new System.Windows.Forms.RadioButton();
+			this.viewportPanelResult = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
+			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
+			this.checkBoxShowsRGB = new System.Windows.Forms.CheckBox();
 			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -102,6 +106,7 @@
 			this.groupBox1.Controls.Add(this.floatTrackbarControlBilateralTolerance);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlBilateralRadius);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlHeight);
+			this.groupBox1.Enabled = false;
 			this.groupBox1.Location = new System.Drawing.Point(530, 12);
 			this.groupBox1.Name = "groupBox1";
 			this.groupBox1.Size = new System.Drawing.Size(320, 275);
@@ -273,29 +278,11 @@
 			this.progressBar.Size = new System.Drawing.Size(320, 23);
 			this.progressBar.TabIndex = 4;
 			// 
-			// viewportPanelResult
-			// 
-			this.viewportPanelResult.Image = null;
-			this.viewportPanelResult.Location = new System.Drawing.Point(856, 16);
-			this.viewportPanelResult.Name = "viewportPanelResult";
-			this.viewportPanelResult.Size = new System.Drawing.Size(512, 512);
-			this.viewportPanelResult.TabIndex = 0;
-			this.viewportPanelResult.ViewMode = GenerateSelfShadowedBumpMap.ImagePanel.VIEW_MODE.RGB;
-			// 
-			// outputPanelInputHeightMap
-			// 
-			this.outputPanelInputHeightMap.Image = null;
-			this.outputPanelInputHeightMap.Location = new System.Drawing.Point(12, 12);
-			this.outputPanelInputHeightMap.Name = "outputPanelInputHeightMap";
-			this.outputPanelInputHeightMap.Size = new System.Drawing.Size(512, 512);
-			this.outputPanelInputHeightMap.TabIndex = 0;
-			this.outputPanelInputHeightMap.ViewMode = GenerateSelfShadowedBumpMap.ImagePanel.VIEW_MODE.RGB;
-			// 
 			// radioButtonShowDirOccRGB
 			// 
 			this.radioButtonShowDirOccRGB.AutoSize = true;
 			this.radioButtonShowDirOccRGB.Checked = true;
-			this.radioButtonShowDirOccRGB.Location = new System.Drawing.Point(601, 322);
+			this.radioButtonShowDirOccRGB.Location = new System.Drawing.Point(530, 322);
 			this.radioButtonShowDirOccRGB.Name = "radioButtonShowDirOccRGB";
 			this.radioButtonShowDirOccRGB.Size = new System.Drawing.Size(151, 17);
 			this.radioButtonShowDirOccRGB.TabIndex = 5;
@@ -307,7 +294,7 @@
 			// radioButtonDirOccR
 			// 
 			this.radioButtonDirOccR.AutoSize = true;
-			this.radioButtonDirOccR.Location = new System.Drawing.Point(601, 368);
+			this.radioButtonDirOccR.Location = new System.Drawing.Point(530, 368);
 			this.radioButtonDirOccR.Name = "radioButtonDirOccR";
 			this.radioButtonDirOccR.Size = new System.Drawing.Size(148, 17);
 			this.radioButtonDirOccR.TabIndex = 5;
@@ -318,7 +305,7 @@
 			// radioButtonDirOccG
 			// 
 			this.radioButtonDirOccG.AutoSize = true;
-			this.radioButtonDirOccG.Location = new System.Drawing.Point(601, 391);
+			this.radioButtonDirOccG.Location = new System.Drawing.Point(530, 391);
 			this.radioButtonDirOccG.Name = "radioButtonDirOccG";
 			this.radioButtonDirOccG.Size = new System.Drawing.Size(157, 17);
 			this.radioButtonDirOccG.TabIndex = 5;
@@ -329,7 +316,7 @@
 			// radioButtonDirOccB
 			// 
 			this.radioButtonDirOccB.AutoSize = true;
-			this.radioButtonDirOccB.Location = new System.Drawing.Point(601, 414);
+			this.radioButtonDirOccB.Location = new System.Drawing.Point(530, 414);
 			this.radioButtonDirOccB.Name = "radioButtonDirOccB";
 			this.radioButtonDirOccB.Size = new System.Drawing.Size(149, 17);
 			this.radioButtonDirOccB.TabIndex = 5;
@@ -337,21 +324,21 @@
 			this.radioButtonDirOccB.UseVisualStyleBackColor = true;
 			this.radioButtonDirOccB.CheckedChanged += new System.EventHandler(this.radioButtonDirOccB_CheckedChanged);
 			// 
-			// radioButton1
+			// radioButtonAO
 			// 
-			this.radioButton1.AutoSize = true;
-			this.radioButton1.Location = new System.Drawing.Point(601, 437);
-			this.radioButton1.Name = "radioButton1";
-			this.radioButton1.Size = new System.Drawing.Size(113, 17);
-			this.radioButton1.TabIndex = 5;
-			this.radioButton1.Text = "Ambient Occlusion";
-			this.radioButton1.UseVisualStyleBackColor = true;
-			this.radioButton1.CheckedChanged += new System.EventHandler(this.radioButton1_CheckedChanged);
+			this.radioButtonAO.AutoSize = true;
+			this.radioButtonAO.Location = new System.Drawing.Point(530, 437);
+			this.radioButtonAO.Name = "radioButtonAO";
+			this.radioButtonAO.Size = new System.Drawing.Size(113, 17);
+			this.radioButtonAO.TabIndex = 5;
+			this.radioButtonAO.Text = "Ambient Occlusion";
+			this.radioButtonAO.UseVisualStyleBackColor = true;
+			this.radioButtonAO.CheckedChanged += new System.EventHandler(this.radioButton1_CheckedChanged);
 			// 
 			// radioButtonDirOccRGBtimeAO
 			// 
 			this.radioButtonDirOccRGBtimeAO.AutoSize = true;
-			this.radioButtonDirOccRGBtimeAO.Location = new System.Drawing.Point(601, 345);
+			this.radioButtonDirOccRGBtimeAO.Location = new System.Drawing.Point(530, 345);
 			this.radioButtonDirOccRGBtimeAO.Name = "radioButtonDirOccRGBtimeAO";
 			this.radioButtonDirOccRGBtimeAO.Size = new System.Drawing.Size(176, 17);
 			this.radioButtonDirOccRGBtimeAO.TabIndex = 5;
@@ -359,12 +346,73 @@
 			this.radioButtonDirOccRGBtimeAO.UseVisualStyleBackColor = true;
 			this.radioButtonDirOccRGBtimeAO.CheckedChanged += new System.EventHandler(this.radioButtonDirOccRGBtimeAO_CheckedChanged);
 			// 
+			// openFileDialogImage
+			// 
+			this.openFileDialogImage.DefaultExt = "*.png";
+			this.openFileDialogImage.Filter = "All Image Files|*.jpg;*.png;*.tga;*.tif|All Files (*.*)|*.*";
+			this.openFileDialogImage.Title = "Choose a height map to load for processing...";
+			// 
+			// saveFileDialogImage
+			// 
+			this.saveFileDialogImage.DefaultExt = "*.png";
+			this.saveFileDialogImage.Filter = "All Image Files|*.jpg;*.png;*.tif|All Files (*.*)|*.*";
+			this.saveFileDialogImage.Title = "Choose an image file to save to...";
+			// 
+			// radioButtonAOfromRGB
+			// 
+			this.radioButtonAOfromRGB.AutoSize = true;
+			this.radioButtonAOfromRGB.Location = new System.Drawing.Point(530, 460);
+			this.radioButtonAOfromRGB.Name = "radioButtonAOfromRGB";
+			this.radioButtonAOfromRGB.Size = new System.Drawing.Size(174, 17);
+			this.radioButtonAOfromRGB.TabIndex = 5;
+			this.radioButtonAOfromRGB.Text = "Ambient Occlusion length(RGB)";
+			this.radioButtonAOfromRGB.UseVisualStyleBackColor = true;
+			this.radioButtonAOfromRGB.CheckedChanged += new System.EventHandler(this.radioButtonAOfromRGB_CheckedChanged);
+			// 
+			// viewportPanelResult
+			// 
+			this.viewportPanelResult.Image = null;
+			this.viewportPanelResult.Location = new System.Drawing.Point(856, 16);
+			this.viewportPanelResult.MessageOnEmpty = null;
+			this.viewportPanelResult.Name = "viewportPanelResult";
+			this.viewportPanelResult.Size = new System.Drawing.Size(512, 512);
+			this.viewportPanelResult.TabIndex = 0;
+			this.viewportPanelResult.ViewMode = GenerateSelfShadowedBumpMap.ImagePanel.VIEW_MODE.RGB;
+			this.viewportPanelResult.Click += new System.EventHandler(this.viewportPanelResult_Click);
+			// 
+			// outputPanelInputHeightMap
+			// 
+			this.outputPanelInputHeightMap.Font = new System.Drawing.Font("Microsoft Sans Serif", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.outputPanelInputHeightMap.Image = null;
+			this.outputPanelInputHeightMap.Location = new System.Drawing.Point(12, 12);
+			this.outputPanelInputHeightMap.MessageOnEmpty = "Click to load a height map...";
+			this.outputPanelInputHeightMap.Name = "outputPanelInputHeightMap";
+			this.outputPanelInputHeightMap.Size = new System.Drawing.Size(512, 512);
+			this.outputPanelInputHeightMap.TabIndex = 0;
+			this.outputPanelInputHeightMap.ViewMode = GenerateSelfShadowedBumpMap.ImagePanel.VIEW_MODE.RGB;
+			this.outputPanelInputHeightMap.Click += new System.EventHandler(this.outputPanelInputHeightMap_Click);
+			// 
+			// checkBoxShowsRGB
+			// 
+			this.checkBoxShowsRGB.AutoSize = true;
+			this.checkBoxShowsRGB.Checked = true;
+			this.checkBoxShowsRGB.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxShowsRGB.Location = new System.Drawing.Point(752, 322);
+			this.checkBoxShowsRGB.Name = "checkBoxShowsRGB";
+			this.checkBoxShowsRGB.Size = new System.Drawing.Size(98, 17);
+			this.checkBoxShowsRGB.TabIndex = 4;
+			this.checkBoxShowsRGB.Text = "Show as sRGB";
+			this.checkBoxShowsRGB.UseVisualStyleBackColor = true;
+			this.checkBoxShowsRGB.CheckedChanged += new System.EventHandler(this.checkBoxShowsRGB_CheckedChanged);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1379, 540);
-			this.Controls.Add(this.radioButton1);
+			this.Controls.Add(this.checkBoxShowsRGB);
+			this.Controls.Add(this.radioButtonAOfromRGB);
+			this.Controls.Add(this.radioButtonAO);
 			this.Controls.Add(this.radioButtonDirOccB);
 			this.Controls.Add(this.radioButtonDirOccG);
 			this.Controls.Add(this.radioButtonDirOccRGBtimeAO);
@@ -376,9 +424,10 @@
 			this.Controls.Add(this.viewportPanelResult);
 			this.Controls.Add(this.outputPanelInputHeightMap);
 			this.Controls.Add(this.floatTrackbarControlAOFactor);
+			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "Form1";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-			this.Text = "Form1";
+			this.Text = "Self-Shadowed Bump Map Generator";
 			this.groupBox1.ResumeLayout(false);
 			this.groupBox1.PerformLayout();
 			this.ResumeLayout(false);
@@ -412,8 +461,12 @@
 		private System.Windows.Forms.RadioButton radioButtonDirOccR;
 		private System.Windows.Forms.RadioButton radioButtonDirOccG;
 		private System.Windows.Forms.RadioButton radioButtonDirOccB;
-		private System.Windows.Forms.RadioButton radioButton1;
+		private System.Windows.Forms.RadioButton radioButtonAO;
 		private System.Windows.Forms.RadioButton radioButtonDirOccRGBtimeAO;
+		private System.Windows.Forms.OpenFileDialog openFileDialogImage;
+		private System.Windows.Forms.SaveFileDialog saveFileDialogImage;
+		private System.Windows.Forms.RadioButton radioButtonAOfromRGB;
+		private System.Windows.Forms.CheckBox checkBoxShowsRGB;
 	}
 }
 
