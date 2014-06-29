@@ -119,6 +119,10 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID )
 			Result += gs_Occlusion[i];
 		Result /= _RaysCount;
 
+
+Result = _Source.Load( int3( PixelPosition, 0 ) ).x;
+
+
 		_Target[PixelPosition] = Result;
 	}
 
