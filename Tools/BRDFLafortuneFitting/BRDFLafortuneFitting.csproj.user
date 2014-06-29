@@ -12,4 +12,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <StartArguments>"TestBRDF/aluminium.binary" "TestBRDF/aluminium.cos" 6</StartArguments>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DirectX10|x86'">
+    <StartArguments>"TestBRDF/aluminium.binary" "TestBRDF/aluminium.cos" 6</StartArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DirectX10|x64'">
+    <StartArguments>"TestBRDF/aluminium.binary" "TestBRDF/aluminium.cos" 6</StartArguments>
+  </PropertyGroup>
 </Project>

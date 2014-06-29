@@ -18,4 +18,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <StartWorkingDirectory>..\..\</StartWorkingDirectory>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DirectX10|x86'">
+    <StartWorkingDirectory>..\..\</StartWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DirectX10|AnyCPU'">
+    <StartWorkingDirectory>..\..\</StartWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DirectX10|x64'">
+    <StartWorkingDirectory>..\..\..\</StartWorkingDirectory>
+  </PropertyGroup>
 </Project>

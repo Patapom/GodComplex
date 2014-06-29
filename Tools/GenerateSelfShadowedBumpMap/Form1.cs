@@ -356,6 +356,7 @@ namespace GenerateSelfShadowedBumpMap
 					}
 					else
 					{
+//*
 						double	Phi = Math.PI / 3.0 * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0);
 						double	Theta = 0.49 * Math.PI * WMath.SimpleRNG.GetUniform();
 						Rays[0,RayIndex] = new WMath.Vector(
@@ -376,11 +377,34 @@ namespace GenerateSelfShadowedBumpMap
 							(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
 							(float) (Math.Sin( Phi ) * Math.Sin( Theta )),
 							(float) Math.Cos( Theta ) );
+//*/
+/*
+						double	Phi = Math.PI / 3.0 * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0);
+						double	Theta = 0.49 * Math.PI * WMath.SimpleRNG.GetUniform();
+						Rays[0,RayIndex] = new WMath.Vector(
+							(float) Math.Cos( Phi ),
+							(float) Math.Sin( Phi ),
+							(float) (Math.Cos( Theta )/Math.Sin( Theta )) );
+
+						Phi = Math.PI / 3.0 * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0 + 2.0);
+						Theta = 0.49 * Math.PI * WMath.SimpleRNG.GetUniform();
+						Rays[1,RayIndex] = new WMath.Vector(
+							(float) Math.Cos( Phi ),
+							(float) Math.Sin( Phi ),
+							(float) (Math.Cos( Theta )/Math.Sin( Theta )) );
+
+						Phi = Math.PI / 3.0 * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0 + 4.0);
+						Theta = 0.49 * Math.PI * WMath.SimpleRNG.GetUniform();
+						Rays[2,RayIndex] = new WMath.Vector(
+							(float) Math.Cos( Phi ),
+							(float) Math.Sin( Phi ),
+							(float) (Math.Cos( Theta )/Math.Sin( Theta )) );
+//*/
 					}
 
-					Rays[0,RayIndex].z *= Scale;
-					Rays[1,RayIndex].z *= Scale;
-					Rays[2,RayIndex].z *= Scale;
+// 					Rays[0,RayIndex].z *= Scale;
+// 					Rays[1,RayIndex].z *= Scale;
+// 					Rays[2,RayIndex].z *= Scale;
 				}
 
 				// 3] Compute directional occlusion
@@ -427,8 +451,10 @@ namespace GenerateSelfShadowedBumpMap
 		{
 			int		RaysCount = _Rays.GetLength( 1 );
 			int		MaxStepsCount = integerTrackbarControlMaxStepsCount.Value;
+			float	PixelSize_mm = 1000.0f / floatTrackbarControlPixelDensity.Value;	// Size of a texel in millimeters
+			float	MaxDisplacement_mm = 10.0f * floatTrackbarControlHeight.Value;		// Maximum encoded displacement in millimeters
 
-			float	Z0 = m_BitmapSource.ContentXYZ[_X,_Y].y;
+			float	H0 = MaxDisplacement_mm * m_BitmapSource.ContentXYZ[_X,_Y].y;
 			double	AO = 0.0f;
 			int		SamplesCount = 0;
 			for ( int RayIndex=0; RayIndex < RaysCount; RayIndex++ )
@@ -456,17 +482,17 @@ namespace GenerateSelfShadowedBumpMap
 				// Start from the provided coordinates
 				float	X = _X;
 				float	Y = _Y;
-				float	Z = Z0;
+				float	Z = H0;
 
 				// Compute intersection with the height field
 				int	StepIndex = 0;
-				while ( StepIndex < MaxStepsCount && Z < 1.0f && X > 0.0f && Y > 0.0f && X < W && Y < H )
+				while ( StepIndex < MaxStepsCount && Z < MaxDisplacement_mm && X > 0.0f && Y > 0.0f && X < W && Y < H )
 				{
 					X += RayWorld.x;
 					Y += RayWorld.y;
-					Z += RayWorld.z;
+					Z += PixelSize_mm * RayWorld.z;
 
-					float	Height = SampleHeightField( X, Y );
+					float	Height = MaxDisplacement_mm * SampleHeightField( X, Y );
 					if ( Height > Z )
 					{	// Hit!
 						AO += 1.0;
@@ -485,8 +511,6 @@ namespace GenerateSelfShadowedBumpMap
 
 		private float	SampleHeightField( float _X, float _Y )
 		{
-			_X *= W;
-			_Y *= H;
 			int		X0 = (int) Math.Floor( _X );
 			int		Y0 = (int) Math.Floor( _Y );
 			float	x = _X - X0;
@@ -518,30 +542,6 @@ namespace GenerateSelfShadowedBumpMap
 			viewportPanelResult.Image = _Image;
 			Application.DoEvents();
 
-// //			BitmapData	LockedBitmap = m_BitmapResult.LockBits( new Rectangle( 0, Y-REFRESH_EVERY_N_SCANLINES, W, REFRESH_EVERY_N_SCANLINES ), ImageLockMode.WriteOnly, PixelFormat.Format64bppRgb );
-// 			BitmapData	LockedBitmap = m_BitmapResult.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb );
-// 			for ( int y=Y-REFRESH_EVERY_N_SCANLINES; y < Y; y++ )
-// 			{
-// //						ushort*	pScanline = (ushort*) ((byte*) LockedBitmap.Scan0.ToPointer() + LockedBitmap.Stride * y);
-// 				byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + LockedBitmap.Stride * y;
-// 				for ( int X=0; X < W; X++ )
-// 				{
-// 					WMath.Vector	V = _Source[X,y];
-// // 							*pScanline++ = (ushort) 65535;												// A
-// // 							*pScanline++ = (ushort) (65535.0 * Math.Max( 0, Math.Min( 1.0, V.x ) ));	// R
-// // 							*pScanline++ = (ushort) (65535.0 * Math.Max( 0, Math.Min( 1.0, V.y ) ));	// G
-// // 							*pScanline++ = (ushort) (65535.0 * Math.Max( 0, Math.Min( 1.0, V.z ) ));	// B
-// 
-// 					*pScanline++ = (byte) (Math.Max( 0, Math.Min( 255, 255.0 * (_Bias ? 0.5f * (1.0f + V.z) : V.z) ) ));	// B
-// 					*pScanline++ = (byte) (Math.Max( 0, Math.Min( 255, 255.0 * (_Bias ? 0.5f * (1.0f + V.y) : V.y) ) ));	// G
-// 					*pScanline++ = (byte) (Math.Max( 0, Math.Min( 255, 255.0 * (_Bias ? 0.5f * (1.0f + V.x) : V.x) ) ));	// R
-// 					*pScanline++ = (byte) 255;												// A
-// 				}
-// 			}
-// 			m_BitmapResult.UnlockBits( LockedBitmap );
-// 			LockedBitmap = null;
-//			outputPanelResult.Image = m_BitmapResult;
-//			Application.DoEvents();
 		}
 
 		#endregion

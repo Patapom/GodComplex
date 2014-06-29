@@ -3,4 +3,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <StartWorkingDirectory>..\..\</StartWorkingDirectory>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DirectX10|x64'">
+    <StartWorkingDirectory>..\..\</StartWorkingDirectory>
+  </PropertyGroup>
 </Project>
