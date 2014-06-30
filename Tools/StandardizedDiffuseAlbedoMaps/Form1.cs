@@ -294,6 +294,11 @@ namespace StandardizedDiffuseAlbedoMaps
 			try
 			{
 				m_CalibrationDatabase.PrepareCalibrationFor( floatTrackbarControlISOSpeed.Value, floatTrackbarControlShutterSpeed.Value, floatTrackbarControlAperture.Value );
+
+				CameraCalibration.CameraShotInfo	Info = m_CalibrationDatabase.InterpolationStartNode.m_CameraCalibration.m_CameraShotInfos;
+				textBoxDatabaseMatchISOSpeed.Text = Info.m_ISOSpeed.ToString( "G4" );
+				textBoxDatabaseMatchShutterSpeed.Text = Info.m_ShutterSpeed < 1.0f ? "1/"+((int)(1.0f/Info.m_ShutterSpeed)).ToString( "G4" ) : Info.m_ShutterSpeed.ToString( "G4" );
+				textBoxDatabaseMatchAperture.Text = "f/" + Info.m_Aperture.ToString( "G4" );
 			}
 			catch ( Exception _e )
 			{
@@ -1069,6 +1074,9 @@ namespace StandardizedDiffuseAlbedoMaps
 				m_SwatchMax.UpdateSwatchColor();
 				m_SwatchAvg.m_xyY = m_Texture.SwatchAvg.xyY;
 				m_SwatchAvg.UpdateSwatchColor();
+
+/Rebuildcustom swatches!
+
 			}
 			catch ( Exception _e )
 			{
@@ -1269,8 +1277,8 @@ namespace StandardizedDiffuseAlbedoMaps
 				}
 
 				// Scale the luminance based on the user-supplied white target
-//				float3	WhiteRefxyY = AveragexyY;
-				float3	WhiteRefxyY = MaxxyY;	// Use Max otherwise we can get luminances higher than 99%!
+				float3	WhiteRefxyY = AveragexyY;	// Use average because calibrating a calibration image should yield exact probe values!
+//				float3	WhiteRefxyY = MaxxyY;		// Use Max otherwise we can get luminances higher than 99%!
 				WhiteRefxyY.z *= 99.0f / floatTrackbarControlTargetWhiteReflectance.Value;
 
 				m_CalibrationDatabase.WhiteReflectanceReference = WhiteRefxyY;
