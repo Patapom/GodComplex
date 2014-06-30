@@ -26,6 +26,9 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="VertexFormats.h" />
     <ClInclude Include="RenderStates.h" />
+    <ClInclude Include="PixelsBuffer.h" />
+    <ClInclude Include="StructuredBuffer.h" />
+    <ClInclude Include="MathStructs.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp">
@@ -53,6 +56,15 @@
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="Shader.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="PixelsBuffer.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuredBuffer.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="MathStructs.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>

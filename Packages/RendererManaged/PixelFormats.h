@@ -12,6 +12,7 @@ namespace RendererManaged {
 		RGBA8_UNORM,
 		R16_FLOAT,
 		RG16_FLOAT,
+		RGBA16_FLOAT,
 		R32_FLOAT,
 		RG32_FLOAT,
 		RGBA32_FLOAT,

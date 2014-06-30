@@ -26,4 +26,25 @@ namespace RendererManaged {
 			delete R;
 		}
 	};
+
+	public ref class ShaderBinaryFile
+	{
+	public:
+
+		FileInfo^			m_ShaderFileName;
+		cli::array<Byte>^	m_ShaderBlob;
+
+	public:
+
+		ShaderBinaryFile( FileInfo^ _ShaderFileName )
+		{
+			m_ShaderFileName = _ShaderFileName;
+
+			FileStream^	R = _ShaderFileName->OpenRead();
+
+			m_ShaderBlob = gcnew cli::array<Byte>( (int) R->Length );
+			R->Read( m_ShaderBlob, 0, (int) R->Length );
+			delete R;
+		}
+	};
 }

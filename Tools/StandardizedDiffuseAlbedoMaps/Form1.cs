@@ -19,7 +19,7 @@
 //	_ Optionnaly, I can take some custom color swatches at different locations in the captured image
 //
 //
-// Technically, I implemented many things like a very sound Bitmap2 class that handles RAW files as well as many other
+// Technically, I implemented many things like a very sound ImageUtility.Bitmap class that handles RAW files as well as many other
 //	standard formats (although only RAW files should be used with this software!). It extracts color profiles from the
 //	original image and various other settings if they're available and the internal picture format is stored into the
 //	device-independent CIE XYZ color space (conversion to RGB can only occur through the use of a color profile!).
@@ -81,12 +81,12 @@ namespace StandardizedDiffuseAlbedoMaps
 			public Form1		m_Owner = null;
 			public Panel		m_Panel = null;
 
-			public float3		m_xyY;		// Last picked xyY color
-			public float3		m_RGB;		// Last picked xyY converted into RGB (sRGB) for screen display (also assigned to m_Panel.BackColor)
+			public ImageUtility.float3		m_xyY;		// Last picked xyY color
+			public ImageUtility.float3		m_RGB;		// Last picked xyY converted into RGB (sRGB) for screen display (also assigned to m_Panel.BackColor)
 
 			public virtual void	UpdateSwatchColor()
 			{
-				m_RGB = (float3) m_Owner.m_sRGBProfile.XYZ2RGB( new float4( Bitmap2.ColorProfile.xyY2XYZ( m_xyY ), 1.0f ) );
+				m_RGB = (ImageUtility.float3) m_Owner.m_sRGBProfile.XYZ2RGB( new ImageUtility.float4( ImageUtility.ColorProfile.xyY2XYZ( m_xyY ), 1.0f ) );
 
 				Color	C = Color.FromArgb( Math.Max( 0, Math.Min( 255, (int) (m_RGB.x * 255.0f) ) ),
 											Math.Max( 0, Math.Min( 255, (int) (m_RGB.y * 255.0f) ) ),
@@ -99,15 +99,15 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			public CheckBox		m_CheckBox = null;
 
-			public float2		m_LocationTopLeft = new float2( -1, -1 );		// Last picked location
-			public float2		m_LocationBottomRight = new float2( -1, -1 );	// Last picked location
+			public ImageUtility.float2		m_LocationTopLeft = new ImageUtility.float2( -1, -1 );		// Last picked location
+			public ImageUtility.float2		m_LocationBottomRight = new ImageUtility.float2( -1, -1 );	// Last picked location
 
 			public override void UpdateSwatchColor()
 			{
 				if ( !m_CheckBox.Checked || m_Owner.m_Texture == null )
 				{
 					m_CheckBox.Checked = false;
-					m_xyY = m_RGB = new float3( 0, 0, 0 );
+					m_xyY = m_RGB = new ImageUtility.float3( 0, 0, 0 );
 					m_Panel.BackColor = Color.DimGray;
 					return;
 				}
@@ -125,11 +125,11 @@ namespace StandardizedDiffuseAlbedoMaps
 		private RegistryKey					m_AppKey;
 		private string						m_ApplicationPath;
 
-		private Bitmap2.ColorProfile		m_sRGBProfile = new Bitmap2.ColorProfile( Bitmap2.ColorProfile.STANDARD_PROFILE.sRGB );	// For conversion to the screen
+		private ImageUtility.ColorProfile	m_sRGBProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );	// For conversion to the screen
 
 		// The currently loaded image
 		private System.IO.FileInfo			m_ImageFileName = null;
-		private Bitmap2						m_BitmapXYZ = null;
+		private ImageUtility.Bitmap						m_BitmapXYZ = null;
 
 		// Generated calibrated texture
 		private CalibratedTexture			m_Texture = null;
@@ -139,7 +139,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		private CameraCalibration			m_Calibration = new CameraCalibration();	// Current calibration
 
 		// White reflectance reference
-		private float3						m_WhiteReflectanceReference = new float3( 0, 0, -1 );	// Invalid
+		private ImageUtility.float3						m_WhiteReflectanceReference = new ImageUtility.float3( 0, 0, -1 );	// Invalid
 		private float						m_WhiteReflectanceISOSpeed = -1.0f;
 		private float						m_WhiteReflectanceShutterSpeed = -1.0f;
 		private float						m_WhiteReflectanceAperture = -1.0f;
@@ -327,8 +327,8 @@ namespace StandardizedDiffuseAlbedoMaps
 				if ( Root == null )
 					throw new Exception( "Couldn't find expected root element \"WhiteReflectance\"! Is this a white ref file?" );
 
-				m_WhiteReflectanceReference = new float3( 0, 0, -1 );	// Invalid
-				m_WhiteReflectanceReference = float3.Parse( Root.GetAttribute( "Value" ) );
+				m_WhiteReflectanceReference = new ImageUtility.float3( 0, 0, -1 );	// Invalid
+				m_WhiteReflectanceReference = ImageUtility.float3.Parse( Root.GetAttribute( "Value" ) );
 
 				m_WhiteReflectanceISOSpeed = floatTrackbarControlISOSpeed.Value;
 				float.TryParse( Root.GetAttribute( "ISOSpeed" ), out m_WhiteReflectanceISOSpeed );
@@ -359,7 +359,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			buttonResetWhiteRefImage.Enabled = false;
 			try
 			{
-				Bitmap2	RefImg = new Bitmap2( _FileName );
+				ImageUtility.Bitmap	RefImg = new ImageUtility.Bitmap( _FileName );
 				m_CalibrationDatabase.WhiteReferenceImage = RefImg;
 
 				UpdateWhiteReferenceImageUI();
@@ -382,7 +382,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			bool		sRGB = checkBoxsRGB.Checked;
 			bool		SpatialCorrection = checkBoxSpatialLuminanceCorrection.Checked;
 
-			float4[,]	Image = new float4[m_BitmapXYZ.Width,m_BitmapXYZ.Height];
+			ImageUtility.float4[,]	Image = new ImageUtility.float4[m_BitmapXYZ.Width,m_BitmapXYZ.Height];
 			int		W = m_BitmapXYZ.Width;
 			int		H = m_BitmapXYZ.Height;
 
@@ -395,7 +395,7 @@ namespace StandardizedDiffuseAlbedoMaps
 						if ( SpatialCorrection )
 							L*= m_CalibrationDatabase.GetSpatialLuminanceCorrectionFactor( (float) X / W, (float) Y / H );
 						if ( sRGB )
-							L = Bitmap2.ColorProfile.Linear2sRGB( L );
+							L = ImageUtility.ColorProfile.Linear2sRGB( L );
 
 						Image[X, Y].x = L;
 						Image[X, Y].y = L;
@@ -404,28 +404,28 @@ namespace StandardizedDiffuseAlbedoMaps
 			}
 			else
 			{	// RGB
-				float4[,]	Content = m_BitmapXYZ.ContentXYZ;
+				ImageUtility.float4[,]	Content = m_BitmapXYZ.ContentXYZ;
 
 				if ( checkBoxSpatialLuminanceCorrection.Checked )
 				{
-					Content = new float4[m_BitmapXYZ.Width,m_BitmapXYZ.Height];
+					Content = new ImageUtility.float4[m_BitmapXYZ.Width,m_BitmapXYZ.Height];
 					Array.Copy( m_BitmapXYZ.ContentXYZ, Content, Content.LongLength );
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
 						{
-							float4	XYZ = Content[X,Y];
-							float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
+							ImageUtility.float4	XYZ = Content[X,Y];
+							ImageUtility.float3	xyY = ImageUtility.ColorProfile.XYZ2xyY( (ImageUtility.float3) XYZ );
 							xyY.z *= m_CalibrationDatabase.GetSpatialLuminanceCorrectionFactor( (float) X / W, (float) Y / H );
-							XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
+							XYZ = new ImageUtility.float4( ImageUtility.ColorProfile.xyY2XYZ( xyY ), XYZ.w );
 							Content[X,Y] = XYZ;
 						}
 				}
 
 				// Build conversion profile
-				Bitmap2.ColorProfile	Profile = new Bitmap2.ColorProfile(
-					Bitmap2.ColorProfile.Chromaticities.sRGB,													// Always use standard sRGB illuminant
-					sRGB ? Bitmap2.ColorProfile.GAMMA_CURVE.sRGB : Bitmap2.ColorProfile.GAMMA_CURVE.STANDARD,	// Either use sRGB linear toe or a standard gamma
-					sRGB ? Bitmap2.ColorProfile.GAMMA_EXPONENT_sRGB : 1.0f );									// Either use sRGB gamma or linear gamma
+				ImageUtility.ColorProfile	Profile = new ImageUtility.ColorProfile(
+					ImageUtility.ColorProfile.Chromaticities.sRGB,													// Always use standard sRGB illuminant
+					sRGB ? ImageUtility.ColorProfile.GAMMA_CURVE.sRGB : ImageUtility.ColorProfile.GAMMA_CURVE.STANDARD,	// Either use sRGB linear toe or a standard gamma
+					sRGB ? ImageUtility.ColorProfile.GAMMA_EXPONENT_sRGB : 1.0f );									// Either use sRGB gamma or linear gamma
 
 				// Convert
 				Profile.XYZ2RGB( Content, Image );
@@ -453,7 +453,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				// Load
 				System.IO.FileInfo	ImageFileName = new System.IO.FileInfo( openFileDialogSourceImage.FileName );
-				Bitmap2	NewBitmap = new Bitmap2( ImageFileName );
+				ImageUtility.Bitmap	NewBitmap = new ImageUtility.Bitmap( ImageFileName );
 
 				// Safely assign once loaded
 				m_ImageFileName = ImageFileName;
@@ -528,7 +528,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			float	Lum = m_BitmapXYZ.BilinearSample( X, Y ).y;
 			if ( checkBoxSpatialLuminanceCorrection.Checked )
 				Lum *= m_CalibrationDatabase.GetSpatialLuminanceCorrectionFactor( U, V );
-			float	Lum_sRGB = Bitmap2.ColorProfile.Linear2sRGB( Lum );
+			float	Lum_sRGB = ImageUtility.ColorProfile.Linear2sRGB( Lum );
 
 			labelLuminance.Text = "sRGB=" + Lum_sRGB.ToString( "G4" ) + " (" + (int) (Lum_sRGB*255) + ") - Y=" + Lum.ToString( "G4" );
 		}
@@ -559,7 +559,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_PercentOfBlackValues"></param>
 		/// <param name="_HasSaturatedValues">Returns the percentage of encountered saturated values. 0 is okay, more means the probe shouldn't be used</param>
 		/// <returns></returns>
-		private float3	IntegrateLuminance( float _X, float _Y, float _Radius, out float3 _MinxyY, out float3 _MaxxyY, out float _PercentOfBlackValues, out float _PercentOfSaturatedValues )
+		private ImageUtility.float3	IntegrateLuminance( float _X, float _Y, float _Radius, out ImageUtility.float3 _MinxyY, out ImageUtility.float3 _MaxxyY, out float _PercentOfBlackValues, out float _PercentOfSaturatedValues )
 		{
 			float	Radius = _Radius * m_BitmapXYZ.Width;
 			float	CenterX = _X * m_BitmapXYZ.Width;
@@ -578,9 +578,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			int		TotalBlackValuesCount = 0;
 			int		TotalSaturatedValuesCount = 0;
 			int		TotalValuesCount = 0;
-			float3	SumxyY = new float3( 0, 0, 0 );
-			_MinxyY = new float3( 0, 0, +float.MaxValue );
-			_MaxxyY = new float3( 0, 0, 0 );
+			ImageUtility.float3	SumxyY = new ImageUtility.float3( 0, 0, 0 );
+			_MinxyY = new ImageUtility.float3( 0, 0, +float.MaxValue );
+			_MaxxyY = new ImageUtility.float3( 0, 0, 0 );
 			float	SumWeights = 0.0f;
 			for ( int Y=Y0; Y < Y1; Y++ )
 				for ( int X=X0; X < X1; X++ )
@@ -596,8 +596,8 @@ namespace StandardizedDiffuseAlbedoMaps
 					float	Weight = x*x*(3.0f - 2.0f*x);
 
 //DEBUG					m_BitmapXYZ.ContentXYZ[X,Y].y = Weight;
-					float3	XYZ = (float3) m_BitmapXYZ.ContentXYZ[X,Y];
-					float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( XYZ );
+					ImageUtility.float3	XYZ = (ImageUtility.float3) m_BitmapXYZ.ContentXYZ[X,Y];
+					ImageUtility.float3	xyY = ImageUtility.ColorProfile.XYZ2xyY( XYZ );
 					if ( ApplySpatialCorrection )
 						xyY.z *= m_CalibrationDatabase.GetSpatialLuminanceCorrectionFactor( (float) X / m_BitmapXYZ.Width, (float) Y / m_BitmapXYZ.Height );
 
@@ -630,11 +630,11 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_Probe"></param>
 		/// <param name="_Center"></param>
 		/// <param name="_Radius"></param>
-		private void	IntegrateLuminance( CameraCalibration.Probe _Probe, float2 _Center, float _Radius )
+		private void	IntegrateLuminance( CameraCalibration.Probe _Probe, ImageUtility.float2 _Center, float _Radius )
 		{
-			float3	MinxyY, MaxxyY;
+			ImageUtility.float3	MinxyY, MaxxyY;
 			float	BlackValues, SaturatedValues;
-			float3	AveragexyY = IntegrateLuminance( _Center.x, _Center.y, _Radius, out MinxyY, out MaxxyY, out BlackValues, out SaturatedValues );
+			ImageUtility.float3	AveragexyY = IntegrateLuminance( _Center.x, _Center.y, _Radius, out MinxyY, out MaxxyY, out BlackValues, out SaturatedValues );
 
 			bool	DisableProbe = false;
 			if ( BlackValues > BLACK_VALUES_TOLERANCE &&
@@ -679,7 +679,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 			}
 
-			outputPanel.StartCalibrationTargetPicking( ( float2 _Center, float _Radius ) => {
+			outputPanel.StartCalibrationTargetPicking( ( ImageUtility.float2 _Center, float _Radius ) => {
 				IntegrateLuminance( _Probe, _Center, _Radius );
 			} );
 		}
@@ -920,9 +920,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			foreach ( CameraCalibration.Probe P in m_Calibration.m_Reflectances )
 				if ( P.m_MeasurementDiscIsAvailable )
 				{
-					float3	MinxyY, MaxxyY;
+					ImageUtility.float3	MinxyY, MaxxyY;
 					float	BlackValues, SaturatedValues;
-					float3	AveragexyY = IntegrateLuminance( P.m_MeasurementCenterX, P.m_MeasurementCenterY, P.m_MeasurementRadius, out MinxyY, out MaxxyY, out BlackValues, out SaturatedValues );
+					ImageUtility.float3	AveragexyY = IntegrateLuminance( P.m_MeasurementCenterX, P.m_MeasurementCenterY, P.m_MeasurementRadius, out MinxyY, out MaxxyY, out BlackValues, out SaturatedValues );
 					if ( BlackValues > BLACK_VALUES_TOLERANCE || SaturatedValues > SATURATED_VALUES_TOLERANCE )
 					{	// Disable that probe as too many values are black or saturated
 						P.m_IsAvailable = false;
@@ -1020,7 +1020,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			// <CropRectangleHalfSize X="0.5800582" Y="0.3470764" />
 			// <CropRectangleRotation Value="0" />
 			//
-			outputPanel.SetCropRectangle( new float2( 0.5239879f, 0.4970015f ), new float2( 0.5800582f, 0.3470764f ), 0.0f );
+			outputPanel.SetCropRectangle( new ImageUtility.float2( 0.5239879f, 0.4970015f ), new ImageUtility.float2( 0.5800582f, 0.3470764f ), 0.0f );
 		}
 
 		private void buttonCapture_Click( object sender, EventArgs e )
@@ -1043,8 +1043,8 @@ namespace StandardizedDiffuseAlbedoMaps
 				Aperture = floatTrackbarControlAperture.Value,
 
 				CropSource = !outputPanel.IsDefaultCropRectangle,
-				CropRectangleCenter = new float2( outputPanel.CropRectangeCenter.x, outputPanel.CropRectangeCenter.y ),
-				CropRectangleHalfSize = new float2( outputPanel.CropRectangeHalfSize.x, outputPanel.CropRectangeHalfSize.y ),
+				CropRectangleCenter = new ImageUtility.float2( outputPanel.CropRectangeCenter.x, outputPanel.CropRectangeCenter.y ),
+				CropRectangleHalfSize = new ImageUtility.float2( outputPanel.CropRectangeHalfSize.x, outputPanel.CropRectangeHalfSize.y ),
 				CropRectangleRotation = outputPanel.CropRectangeRotation,
 
 				UseModeInsteadOfMean = checkBoxUseMeanMode.Checked,
@@ -1103,14 +1103,14 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			CS.m_CheckBox.Checked = true;	// Automatically enable color swatch if the user bothered picking a color
 
-			resultTexturePanel.StartSwatchColorPicking( ( float2 _TopLeft, float2 _BottomRight ) => {
+			resultTexturePanel.StartSwatchColorPicking( ( ImageUtility.float2 _TopLeft, ImageUtility.float2 _BottomRight ) => {
 
-				CS.m_LocationTopLeft = new float2( _TopLeft.x, _TopLeft.y );
-				CS.m_LocationBottomRight = new float2( _BottomRight.x, _BottomRight.y );
+				CS.m_LocationTopLeft = new ImageUtility.float2( _TopLeft.x, _TopLeft.y );
+				CS.m_LocationBottomRight = new ImageUtility.float2( _BottomRight.x, _BottomRight.y );
 				CS.UpdateSwatchColor();
 			},
 
-			( float2 _TopLeft, float2 _BottomRight ) => {
+			( ImageUtility.float2 _TopLeft, ImageUtility.float2 _BottomRight ) => {
 				checkBoxCustomSwatch0_CheckedChanged( null, EventArgs.Empty );	// Rebuild custom swatches when picking is done
 			} );
 		}
@@ -1121,12 +1121,12 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 
 			// Rebuild custom swatches for the texture
-			List<float4>	UsedSwatchesLocations = new List<float4>();
+			List<ImageUtility.float4>	UsedSwatchesLocations = new List<ImageUtility.float4>();
 			foreach ( CustomSwatch S in m_CustomSwatches )
 			{
 				if ( !S.m_CheckBox.Checked || S.m_LocationTopLeft.x < 0.0f || S.m_LocationTopLeft.x > 1.0f || S.m_LocationTopLeft.y < 0.0f || S.m_LocationTopLeft.y > 1.0f )
 					continue;	// Unused...
-				UsedSwatchesLocations.Add( new float4( S.m_LocationTopLeft.x, S.m_LocationTopLeft.y, S.m_LocationBottomRight.x, S.m_LocationBottomRight.y ) );
+				UsedSwatchesLocations.Add( new ImageUtility.float4( S.m_LocationTopLeft.x, S.m_LocationTopLeft.y, S.m_LocationBottomRight.x, S.m_LocationBottomRight.y ) );
 			}
 
 			m_Texture.BuildCustomSwatches( UsedSwatchesLocations.ToArray() );
@@ -1207,12 +1207,12 @@ namespace StandardizedDiffuseAlbedoMaps
 			X *= m_Texture.Texture.Width;
 			Y *= m_Texture.Texture.Height;
 
-			float4	XYZ = m_Texture.Texture.BilinearSample( X, Y );
-			float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) XYZ );
+			ImageUtility.float4	XYZ = m_Texture.Texture.BilinearSample( X, Y );
+			ImageUtility.float3	xyY = ImageUtility.ColorProfile.XYZ2xyY( (ImageUtility.float3) XYZ );
 			labelCapturedReflectance.Text = xyY.ToString( "G4" );
 			labelCapturedReflectance.ForeColor = xyY.z > 1.0f ? Color.Red : Color.Black;
 
-			float4	RGB = m_sRGBProfile.XYZ2RGB( XYZ );
+			ImageUtility.float4	RGB = m_sRGBProfile.XYZ2RGB( XYZ );
 			Color	C = Color.FromArgb( Math.Max( 0, Math.Min( 255, (int) (RGB.x * 255.0f) ) ),
 										Math.Max( 0, Math.Min( 255, (int) (RGB.y * 255.0f) ) ),
 										Math.Max( 0, Math.Min( 255, (int) (RGB.z * 255.0f) ) ) );
@@ -1259,11 +1259,11 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 			}
 
-			outputPanel.StartCalibrationTargetPicking( ( float2 _Center, float _Radius ) => {
+			outputPanel.StartCalibrationTargetPicking( ( ImageUtility.float2 _Center, float _Radius ) => {
 
-				float3	MinxyY, MaxxyY;
+				ImageUtility.float3	MinxyY, MaxxyY;
 				float	BlackValues, SaturatedValues;
-				float3	AveragexyY = IntegrateLuminance( _Center.x, _Center.y, _Radius, out MinxyY, out MaxxyY, out BlackValues, out SaturatedValues );
+				ImageUtility.float3	AveragexyY = IntegrateLuminance( _Center.x, _Center.y, _Radius, out MinxyY, out MaxxyY, out BlackValues, out SaturatedValues );
 
 				if ( BlackValues > BLACK_VALUES_TOLERANCE )
 				{
@@ -1277,8 +1277,8 @@ namespace StandardizedDiffuseAlbedoMaps
 				}
 
 				// Scale the luminance based on the user-supplied white target
-				float3	WhiteRefxyY = AveragexyY;	// Use average because calibrating a calibration image should yield exact probe values!
-//				float3	WhiteRefxyY = MaxxyY;		// Use Max otherwise we can get luminances higher than 99%!
+//				ImageUtility.float3	WhiteRefxyY = AveragexyY;
+				ImageUtility.float3	WhiteRefxyY = MaxxyY;	// Use Max otherwise we can get luminances higher than 99%!
 				WhiteRefxyY.z *= 99.0f / floatTrackbarControlTargetWhiteReflectance.Value;
 
 				m_CalibrationDatabase.WhiteReflectanceReference = WhiteRefxyY;
@@ -1343,7 +1343,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 		private void buttonResetWhiteReflectance_Click( object sender, EventArgs e )
 		{
-			m_CalibrationDatabase.WhiteReflectanceReference = new float3( 0, 0, -1 );	// Will reset the factor
+			m_CalibrationDatabase.WhiteReflectanceReference = new ImageUtility.float3( 0, 0, -1 );	// Will reset the factor
 
 			// Clear cached white reference data
 			m_WhiteReflectanceReference = m_CalibrationDatabase.WhiteReflectanceReference;
@@ -1397,7 +1397,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				}
 
 				// Find the maximum luminance in the image that we'll use as a normalizer
-				Bitmap2	WhiteRef = new Bitmap2( W, H, m_sRGBProfile );
+				ImageUtility.Bitmap	WhiteRef = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
 				for ( int Y=0; Y < H; Y++ )
 					for ( int X=0; X < W; X++ )
 					{
@@ -1406,7 +1406,7 @@ namespace StandardizedDiffuseAlbedoMaps
 						float	y0 = m_BitmapXYZ.Height * (float) Y / H;
 						float	y1 = m_BitmapXYZ.Height * (float) (Y+1) / H;
 
-						float4	SumXYZ = new float4( 0, 0, 0, 0 );
+						ImageUtility.float4	SumXYZ = new ImageUtility.float4( 0, 0, 0, 0 );
 						int		Count = 0;
 						float	y = y0;
 						while ( y < y1 )
@@ -1423,10 +1423,10 @@ namespace StandardizedDiffuseAlbedoMaps
 						float	Test = (float) (Math.Ceiling(x1-x0) * Math.Ceiling(y1-y0));	// Should equal Count
 						SumXYZ = (1.0f / Math.Max( 1, Count)) * SumXYZ;
 
-						float3	xyY = Bitmap2.ColorProfile.XYZ2xyY( (float3) SumXYZ );
+						ImageUtility.float3	xyY = ImageUtility.ColorProfile.XYZ2xyY( (ImageUtility.float3) SumXYZ );
 								xyY.x = m_sRGBProfile.Chromas.W.x;	// B&W
 								xyY.y = m_sRGBProfile.Chromas.W.y;
-						float4	XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), SumXYZ.w );
+						ImageUtility.float4	XYZ = new ImageUtility.float4( ImageUtility.ColorProfile.xyY2XYZ( xyY ), SumXYZ.w );
 
 						WhiteRef.ContentXYZ[X,Y] = XYZ;
 					}
@@ -1475,7 +1475,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				System.IO.FileInfo	WhiteRefFileName = new System.IO.FileInfo( saveFileDialogWhiteRefImage.FileName );
 
 				using ( System.IO.FileStream S = WhiteRefFileName.Create() )
-					m_CalibrationDatabase.WhiteReferenceImage.Save( S, Bitmap2.FILE_TYPE.PNG, Bitmap2.FORMAT_FLAGS.GRAY | Bitmap2.FORMAT_FLAGS.SAVE_16BITS_UNORM );
+					m_CalibrationDatabase.WhiteReferenceImage.Save( S, ImageUtility.Bitmap.FILE_TYPE.PNG, ImageUtility.Bitmap.FORMAT_FLAGS.GRAY | ImageUtility.Bitmap.FORMAT_FLAGS.SAVE_16BITS_UNORM );
 			}
 			catch ( Exception _e )
 			{
@@ -1496,8 +1496,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			int	W = DEFAULT_WHITE_REFERENCE_IMAGE_SIZE;
 			int	H = DEFAULT_WHITE_REFERENCE_IMAGE_SIZE;
-			Bitmap2	WhiteRef = new Bitmap2( W, H, m_sRGBProfile );
-			float3	xyY = new float3( m_sRGBProfile.Chromas.W.x, m_sRGBProfile.Chromas.W.y, 0.0f );
+			ImageUtility.Bitmap	WhiteRef = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
+			ImageUtility.float3	xyY = new ImageUtility.float3( m_sRGBProfile.Chromas.W.x, m_sRGBProfile.Chromas.W.y, 0.0f );
 			for ( int Y=0; Y < H; Y++ )
 			{
 				float	V = (float) Y / H;
@@ -1507,7 +1507,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					float	d = (float) Math.Sqrt( (U-0.5)*(U-0.5) + (V-0.5)*(V-0.5) );
 					xyY.z = 1.0f * Math.Min( 1.0f, (0.5f + 1.0f * d) );
 
-					float4	XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), 1.0f );
+					ImageUtility.float4	XYZ = new ImageUtility.float4( ImageUtility.ColorProfile.xyY2XYZ( xyY ), 1.0f );
 					WhiteRef.ContentXYZ[X,Y] = XYZ;
 				}
 			}
@@ -1522,8 +1522,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			int	W = DEFAULT_WHITE_REFERENCE_IMAGE_SIZE;
 			int	H = DEFAULT_WHITE_REFERENCE_IMAGE_SIZE;
-			Bitmap2	WhiteRef = new Bitmap2( W, H, m_sRGBProfile );
-			float3	xyY = new float3( m_sRGBProfile.Chromas.W.x, m_sRGBProfile.Chromas.W.y, 0.0f );
+			ImageUtility.Bitmap	WhiteRef = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
+			ImageUtility.float3	xyY = new ImageUtility.float3( m_sRGBProfile.Chromas.W.x, m_sRGBProfile.Chromas.W.y, 0.0f );
 			for ( int Y=0; Y < H; Y++ )
 			{
 				float	V = (float) Y / H;
@@ -1533,7 +1533,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					float	d = (float) Math.Sqrt( (U-0.5)*(U-0.5) + (V-0.5)*(V-0.5) );
 					xyY.z = 0.75f * Math.Min( 1.0f, (0.5f + 1.0f * d) );
 
-					float4	XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), 1.0f );
+					ImageUtility.float4	XYZ = new ImageUtility.float4( ImageUtility.ColorProfile.xyY2XYZ( xyY ), 1.0f );
 					WhiteRef.ContentXYZ[X,Y] = XYZ;
 				}
 			}
@@ -1548,8 +1548,8 @@ namespace StandardizedDiffuseAlbedoMaps
 		{
 			int	W = DEFAULT_WHITE_REFERENCE_IMAGE_SIZE;
 			int	H = DEFAULT_WHITE_REFERENCE_IMAGE_SIZE;
-			Bitmap2	WhiteRef = new Bitmap2( W, H, m_sRGBProfile );
-			float3	xyY = new float3( m_sRGBProfile.Chromas.W.x, m_sRGBProfile.Chromas.W.y, 0.0f );
+			ImageUtility.Bitmap	WhiteRef = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
+			ImageUtility.float3	xyY = new ImageUtility.float3( m_sRGBProfile.Chromas.W.x, m_sRGBProfile.Chromas.W.y, 0.0f );
 			for ( int Y=0; Y < H; Y++ )
 			{
 				float	V = (float) Y / H;
@@ -1558,7 +1558,7 @@ namespace StandardizedDiffuseAlbedoMaps
 					float	U = (float) X / W;
 					xyY.z = Math.Min( 1.0f, 1.0f - 0.5f * V );
 
-					float4	XYZ = new float4( Bitmap2.ColorProfile.xyY2XYZ( xyY ), 1.0f );
+					ImageUtility.float4	XYZ = new ImageUtility.float4( ImageUtility.ColorProfile.xyY2XYZ( xyY ), 1.0f );
 					WhiteRef.ContentXYZ[X,Y] = XYZ;
 				}
 			}

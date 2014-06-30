@@ -45,7 +45,7 @@ namespace StandardizedDiffuseAlbedoMaps
 						byte*	pScanline = (byte*) LockedBitmap.Scan0 + LockedBitmap.Stride * Y;
 						for ( int X=0; X < W; X++ )
 						{
-							byte	L = (byte) (255.0f * Bitmap2.ColorProfile.Linear2sRGB( m_CameraCalibration.m_Thumbnail[X,Y] / 255.0f ));
+							byte	L = (byte) (255.0f * ImageUtility.ColorProfile.Linear2sRGB( m_CameraCalibration.m_Thumbnail[X,Y] / 255.0f ));
 							*pScanline++ = L;
 							*pScanline++ = L;
 							*pScanline++ = L;
