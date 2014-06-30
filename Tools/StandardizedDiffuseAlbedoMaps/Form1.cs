@@ -1075,8 +1075,8 @@ namespace StandardizedDiffuseAlbedoMaps
 				m_SwatchAvg.m_xyY = m_Texture.SwatchAvg.xyY;
 				m_SwatchAvg.UpdateSwatchColor();
 
-/Rebuildcustom swatches!
-
+				foreach ( CustomSwatch S in m_CustomSwatches )
+					S.UpdateSwatchColor();
 			}
 			catch ( Exception _e )
 			{

@@ -113,21 +113,39 @@ namespace GenerateSelfShadowedBumpMap
 //			LoadHeightMap( new System.IO.FileInfo( "10 - Smooth.jpg" ) );
 		}
 
+		/// <summary>
+		/// Clean up any resources being used.
+		/// </summary>
+		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+		protected override void Dispose( bool disposing )
+		{
+			if ( disposing && (components != null) )
+			{
+				components.Dispose();
+
+				m_CS_GenerateSSBumpMap.Dispose();
+				m_CS_BilateralFilter.Dispose();
+
+				m_SB_Rays.Dispose();
+				m_CB_Filter.Dispose();
+				m_CB_Input.Dispose();
+
+				if ( m_TextureTarget_CPU != null )
+					m_TextureTarget_CPU.Dispose();
+				if ( m_TextureTarget1 != null )
+					m_TextureTarget1.Dispose();
+				if ( m_TextureTarget0 != null )
+					m_TextureTarget0.Dispose();
+				if ( m_TextureSource != null )
+					m_TextureSource.Dispose();
+
+				m_Device.Dispose();
+			}
+			base.Dispose( disposing );
+		}
+
 		protected override void OnClosing( CancelEventArgs e )
 		{
-			m_CS_BilateralFilter.Dispose();
-			m_CB_Filter.Dispose();
-
-			m_CS_GenerateSSBumpMap.Dispose();
-			m_CB_Input.Dispose();
-			m_SB_Rays.Dispose();
-
-			m_TextureTarget_CPU.Dispose();
-			m_TextureTarget1.Dispose();
-			m_TextureTarget0.Dispose();
-			m_TextureSource.Dispose();
-			m_Device.Dispose();
-
 			base.OnClosing( e );
 		}
 
