@@ -32,7 +32,7 @@ int		Device::ComponentsCount() const
 	return Count;
 }
 
-void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool _sRGB )
+bool	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool _sRGB )
 {
 	// Create a swap chain with 2 back buffers
 	DXGI_SWAP_CHAIN_DESC	SwapChainDesc;
@@ -85,7 +85,7 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 			&SwapChainDesc, &m_pSwapChain,
 			&m_pDevice, &ObtainedFeatureLevel, &m_pDeviceContext ) )
 		)
-		return;
+		return false;
 
 	// Store the default render target
 	ID3D11Texture2D*	pDefaultRenderSurface;
@@ -298,6 +298,8 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	m_pDeviceContext->GSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 	m_pDeviceContext->PSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 	m_pDeviceContext->CSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
+
+	return true;
 }
 
 void	Device::Exit()

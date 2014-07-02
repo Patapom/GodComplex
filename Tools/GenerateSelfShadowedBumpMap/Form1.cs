@@ -29,7 +29,7 @@ namespace GenerateSelfShadowedBumpMap
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct	CBInput
 		{
-			public UInt32	y;					// Index of the texture line we're processing
+			public UInt32	Y0;					// Index of the texture line we're processing
 			public UInt32	RaysCount;			// Amount of rays in the structured buffer
 			public UInt32	MaxStepsCount;		// Maximum amount of steps to take before stopping
 			public UInt32	Tile;				// Tiling flag
@@ -41,6 +41,7 @@ namespace GenerateSelfShadowedBumpMap
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct	CBFilter
 		{
+			public UInt32	Y0;					// Index of the texture line we're processing
 			public float	Radius;				// Radius of the bilateral filter
 			public float	Tolerance;			// Range tolerance of the bilateral filter
 			public UInt32	Tile;				// Tiling flag
@@ -90,27 +91,35 @@ namespace GenerateSelfShadowedBumpMap
 		{
  			base.OnLoad(e);
 
-			m_Device.Init( viewportPanelResult.Handle, viewportPanelResult.Width, viewportPanelResult.Height, false, true );
+			try
+			{
+				m_Device.Init( viewportPanelResult.Handle, viewportPanelResult.Width, viewportPanelResult.Height, false, true );
 
-			// Create our compute shaders
+				// Create our compute shaders
 #if DEBUG
-			m_CS_GenerateSSBumpMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
-			m_CS_BilateralFilter = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
+				m_CS_GenerateSSBumpMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
+				m_CS_BilateralFilter = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
 #else
-			m_CS_GenerateSSBumpMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
-			m_CS_BilateralFilter = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
+				m_CS_GenerateSSBumpMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
+				m_CS_BilateralFilter = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
 #endif
 
-			// Create our constant buffers
-			m_CB_Input = new RendererManaged.ConstantBuffer<CBInput>( m_Device, 0 );
-			m_CB_Filter = new RendererManaged.ConstantBuffer<CBFilter>( m_Device, 0 );
+				// Create our constant buffers
+				m_CB_Input = new RendererManaged.ConstantBuffer<CBInput>( m_Device, 0 );
+				m_CB_Filter = new RendererManaged.ConstantBuffer<CBFilter>( m_Device, 0 );
 
-			// Create our structured buffer containing the rays
-			m_SB_Rays = new RendererManaged.StructuredBuffer<RendererManaged.float3>( m_Device, 3 * MAX_THREADS, true );
-			integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
+				// Create our structured buffer containing the rays
+				m_SB_Rays = new RendererManaged.StructuredBuffer<RendererManaged.float3>( m_Device, 3 * MAX_THREADS, true );
+				integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
 
-//			LoadHeightMap( new System.IO.FileInfo( "eye_generic_01_disp.png" ) );
-//			LoadHeightMap( new System.IO.FileInfo( "10 - Smooth.jpg" ) );
+//				LoadHeightMap( new System.IO.FileInfo( "eye_generic_01_disp.png" ) );
+//				LoadHeightMap( new System.IO.FileInfo( "10 - Smooth.jpg" ) );
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "Failed to create DX11 device and default shaders:\r\n", _e );
+				Close();
+			}
 		}
 
 		/// <summary>
@@ -195,6 +204,9 @@ namespace GenerateSelfShadowedBumpMap
 		{
 			groupBox1.Enabled = false;
 
+			const int	BILATERAL_PROGRESS = 50;
+			const int	MAX_LINES = 16;
+
 			//////////////////////////////////////////////////////////////////////////
 			// 1] Apply bilateral filtering to the input texture as a pre-process
 			m_TextureSource.SetCS( 0 );
@@ -203,10 +215,28 @@ namespace GenerateSelfShadowedBumpMap
 			m_CB_Filter.m.Radius = floatTrackbarControlBilateralRadius.Value;
 			m_CB_Filter.m.Tolerance = floatTrackbarControlBilateralTolerance.Value;
 			m_CB_Filter.m.Tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
-			m_CB_Filter.UpdateData();
 
 			m_CS_BilateralFilter.Use();
-			m_CS_BilateralFilter.Dispatch( W, H, 1 );
+
+			int	h = Math.Max( 1, MAX_LINES*1024 / W );
+			int	CallsCount = (int) Math.Ceiling( (float) H / h );
+			for ( int i=0; i < CallsCount; i++ )
+			{
+				m_CB_Filter.m.Y0 = (UInt32) (i * h);
+				m_CB_Filter.UpdateData();
+
+				m_CS_BilateralFilter.Dispatch( W, h, 1 );
+
+				m_Device.Present( true );
+
+				progressBar.Value = (int) (0.01f * (0 + BILATERAL_PROGRESS * (i+1) / CallsCount) * progressBar.Maximum);
+//				progressBar.Refresh();
+				for ( int a=0; a < 10; a++ )
+					Application.DoEvents();
+			}
+
+			// Single gulp (crashes the driver on large image!)
+//			m_CS_BilateralFilter.Dispatch( W, H, 1 );
 
 			m_TextureTarget0.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
 
@@ -228,18 +258,25 @@ namespace GenerateSelfShadowedBumpMap
 			// Start
 			m_CS_GenerateSSBumpMap.Use();
 
-			int	h = Math.Max( 1, H / 20 );
-			int	CallsCount = (int) Math.Ceiling( (float) H / h );
+//			h = Math.Max( 1, H / 20 );
+			h = Math.Max( 1, MAX_LINES*1024 / W );
+			CallsCount = (int) Math.Ceiling( (float) H / h );
 			for ( int i=0; i < CallsCount; i++ )
 			{
-				m_CB_Input.m.y = (UInt32) (i * h);
+				m_CB_Input.m.Y0 = (UInt32) (i * h);
 				m_CB_Input.UpdateData();
+
 				m_CS_GenerateSSBumpMap.Dispatch( W, h, 1 );
 
-				progressBar.Value = (i+1) * progressBar.Maximum / CallsCount;
-				progressBar.Refresh();
-				Application.DoEvents();
+				m_Device.Present( true );
+
+				progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
+//				progressBar.Refresh();
+				for ( int a=0; a < 10; a++ )
+					Application.DoEvents();
 			}
+
+			progressBar.Value = progressBar.Maximum;
 
 			// Compute in a single shot
 // 			m_CB_Input.m.y = 0;
@@ -711,6 +748,7 @@ namespace GenerateSelfShadowedBumpMap
 				LoadHeightMap( new System.IO.FileInfo( openFileDialogImage.FileName ) );
 
 				groupBox1.Enabled = true;
+				buttonGenerate.Focus();
 			}
 			catch ( Exception _e )
 			{
@@ -754,6 +792,9 @@ namespace GenerateSelfShadowedBumpMap
 							byte	G = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].y ) );
 							byte	B = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].z ) );
 							byte	A = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].w ) );
+
+// R = G = B = A = 128;
+
 							*pScanline++ = B;
 							*pScanline++ = G;
 							*pScanline++ = R;

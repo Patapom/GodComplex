@@ -80,8 +80,11 @@ namespace RendererManaged {
 		void	SetRenderTarget( Texture2D^ _RenderTarget, Texture2D^ _DepthStencilTarget );
 		void	RenderFullscreenQuad( Shader^ _Shader );
 
-		void	Present()
+		void	Present( bool _FlushCommands )
 		{
+			if ( _FlushCommands )
+				m_pDevice->DXContext().Flush();
+
 			m_pDevice->DXSwapChain().Present( 0, 0 );
 		}
 	};

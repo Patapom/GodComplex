@@ -105,7 +105,7 @@ public:	 // METHODS
 //	~Device();	// Don't declare a destructor since the Device exists as a static singleton instance: in release mode, this implies calling some annoying atexit() function that will yield a link error!
 				// Simply don't forget to call Exit() at the end of your program and that should do the trick...
 
-	void	Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool _sRGB );
+	bool	Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool _sRGB );
 	void	Exit();
 
 	// Helpers
