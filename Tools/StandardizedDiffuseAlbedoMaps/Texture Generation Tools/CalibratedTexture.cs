@@ -587,7 +587,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		private void	SaveImage( ImageUtility.Bitmap _Texture, System.IO.FileInfo _FileName, ImageUtility.Bitmap.FILE_TYPE _FileType, ImageUtility.Bitmap.FORMAT_FLAGS _Format )
 		{
 			using ( System.IO.FileStream S = _FileName.Create() )
-				_Texture.Save( S, _FileType, _Format );
+				_Texture.Save( S, _FileType, _Format, null );
 		}
 
 		/// <summary>

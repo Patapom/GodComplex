@@ -64,7 +64,7 @@ namespace RendererManaged {
 			m_pDevice = NULL;
 		}
 
- 		void	Init( System::IntPtr _WindowHandle, int _WindowWidth, int _WindowHeight, bool _FullScreen, bool _sRGBRenderTarget );
+ 		void	Init( System::IntPtr _WindowHandle, bool _FullScreen, bool _sRGBRenderTarget );
 
 		void	Exit()
 		{

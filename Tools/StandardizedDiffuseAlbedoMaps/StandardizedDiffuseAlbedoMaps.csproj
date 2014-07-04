@@ -135,9 +135,6 @@
   <ItemGroup>
     <Folder Include="Image Tools\" />
   </ItemGroup>
-  <ItemGroup>
-    <WCFMetadata Include="Service References\" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>REM /res:$(ProjectDir)ColorPicker.Cur,StandardizedDiffuseAlbedoMaps.ColorPicker.Cur</PreBuildEvent>

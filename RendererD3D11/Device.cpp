@@ -32,14 +32,21 @@ int		Device::ComponentsCount() const
 	return Count;
 }
 
-bool	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool _sRGB )
+bool	Device::Init( HWND _Handle, bool _Fullscreen, bool _sRGB )
 {
+	RECT	Rect;
+	if ( !GetWindowRect( _Handle, &Rect ) )
+		throw "Failed to retrieve window dimensions to initialize device!";
+	
+	int	Width = Rect.right - Rect.left;
+	int	Height = Rect.bottom - Rect.top;
+
 	// Create a swap chain with 2 back buffers
 	DXGI_SWAP_CHAIN_DESC	SwapChainDesc;
 
 	// Simple output buffer
-	SwapChainDesc.BufferDesc.Width = _Width;
-	SwapChainDesc.BufferDesc.Height = _Height;
+	SwapChainDesc.BufferDesc.Width = Width;
+	SwapChainDesc.BufferDesc.Height = Height;
 	SwapChainDesc.BufferDesc.Format = _sRGB ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
 //	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_STRETCHED;
 	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
@@ -98,7 +105,7 @@ bool	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 		m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface, PixelFormatRGBA8::DESCRIPTOR );
 
 	// Create the default depth stencil buffer
-	m_pDefaultDepthStencil = new Texture2D( *this, _Width, _Height, DepthStencilFormatD32F::DESCRIPTOR );
+	m_pDefaultDepthStencil = new Texture2D( *this, Width, Height, DepthStencilFormatD32F::DESCRIPTOR );
 
 
 	//////////////////////////////////////////////////////////////////////////

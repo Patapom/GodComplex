@@ -5,10 +5,10 @@
 #include "Texture2D.h"
 #include "Shader.h"
 
-void	RendererManaged::Device::Init( System::IntPtr _WindowHandle, int _WindowWidth, int _WindowHeight, bool _FullScreen, bool _sRGBRenderTarget )
+void	RendererManaged::Device::Init( System::IntPtr _WindowHandle, bool _FullScreen, bool _sRGBRenderTarget )
 {
 	m_pDevice->Exit();
-	if ( !m_pDevice->Init( _WindowWidth, _WindowHeight, (HWND) _WindowHandle.ToInt32(), _FullScreen, _sRGBRenderTarget ) )
+	if ( !m_pDevice->Init( (HWND) _WindowHandle.ToInt32(), _FullScreen, _sRGBRenderTarget ) )
 		throw gcnew Exception( "Failed to initialize the DirectX device with DX11 level!" );
 
 	m_DefaultTarget = gcnew RendererManaged::Texture2D( m_pDevice->DefaultRenderTarget() );

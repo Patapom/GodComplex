@@ -1475,7 +1475,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				System.IO.FileInfo	WhiteRefFileName = new System.IO.FileInfo( saveFileDialogWhiteRefImage.FileName );
 
 				using ( System.IO.FileStream S = WhiteRefFileName.Create() )
-					m_CalibrationDatabase.WhiteReferenceImage.Save( S, ImageUtility.Bitmap.FILE_TYPE.PNG, ImageUtility.Bitmap.FORMAT_FLAGS.GRAY | ImageUtility.Bitmap.FORMAT_FLAGS.SAVE_16BITS_UNORM );
+					m_CalibrationDatabase.WhiteReferenceImage.Save( S, ImageUtility.Bitmap.FILE_TYPE.PNG, ImageUtility.Bitmap.FORMAT_FLAGS.GRAY | ImageUtility.Bitmap.FORMAT_FLAGS.SAVE_16BITS_UNORM, null );
 			}
 			catch ( Exception _e )
 			{

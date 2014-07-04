@@ -18,10 +18,21 @@ namespace OfflineCloudRenderer
 		#region NESTED TYPES
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		public struct	CB_Input
+		public struct	CB_Camera
 		{
+			public float4		CameraData;		// X=tan(FOV_H/2) Y=tan(FOV_V/2) Z=Near W=Far
+			public float4x4		Camera2World;
+			public float4x4		World2Camera;
+			public float4x4		Camera2Proj;
+			public float4x4		Proj2Camera;
 			public float4x4		World2Proj;
 			public float4x4		Proj2World;
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		public struct	CB_Render
+		{
+			public float4		TargetDimensions;	// XY=Target dimensions, ZW=1/XY
 		}
 
 		#endregion
@@ -35,7 +46,8 @@ namespace OfflineCloudRenderer
 
 		private ComputeShader				m_CS = null;
 		private Shader						m_PS = null;
-		private ConstantBuffer<CB_Input>	m_CB = null;
+		private ConstantBuffer<CB_Camera>	m_CB_Camera = null;
+		private ConstantBuffer<CB_Render>	m_CB_Render = null;
 
 		private List<IDisposable>			m_Disposables = new List<IDisposable>();
 
@@ -56,12 +68,13 @@ namespace OfflineCloudRenderer
 		{
 			base.OnLoad( e );
 
-			m_Device.Init( viewportPanel.Handle, Width, Height, false, true );
+			m_Device.Init( viewportPanel.Handle, false, true );
 			m_Device.Clear( Color.SkyBlue );
 
 			Reg( m_CS = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/Test/TestCompute.hlsl" ) ), "CS", null ) );
-			Reg( m_PS = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/Test/TestFullscreenQuad.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", "PS", null ) );
-			Reg( m_CB = new ConstantBuffer<CB_Input>( m_Device, 0 ) );
+			Reg( m_PS = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/DisplayDistanceField.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", "PS", null ) );
+			Reg( m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 0 ) );
+			Reg( m_CB_Render = new ConstantBuffer<CB_Render>( m_Device, 8 ) );
 		}
 
 		protected override void OnClosing( CancelEventArgs e )
@@ -75,24 +88,38 @@ namespace OfflineCloudRenderer
 			base.OnClosing( e );
 		}
 
+		/// <summary>
+		/// Computes and updates the camera constant buffer
+		/// </summary>
+		/// <param name="_Position"></param>
+		/// <param name="_Target"></param>
+		/// <param name="_FOV"></param>
+		/// <param name="_Near"></param>
+		/// <param name="_Far"></param>
+		private void	UpdateCameraMatrices( float3 _Position, float3 _Target, float3 _Up, float _FOV, float _AspectRatio, float _Near, float _Far )
+		{
+			float	TanHalfFOV = (float) Math.Tan( 0.5 * _FOV );
+			m_CB_Camera.m.CameraData = new float4( _AspectRatio * TanHalfFOV, TanHalfFOV, _Near, _Far );
+
+			m_CB_Camera.m.Camera2World.MakeLookAt( _Position, _Target, _Up );
+			m_CB_Camera.m.World2Camera = m_CB_Camera.m.Camera2World.Inverse;
+			m_CB_Camera.m.Camera2Proj.MakeProjectionPerspective( _FOV, _AspectRatio, _Near, _Far );
+			m_CB_Camera.m.Proj2Camera = m_CB_Camera.m.Camera2Proj.Inverse;
+
+//float4x4	Test = m_CB_Camera.m.Camera2Proj * m_CB_Camera.m.Proj2Camera;
+
+			m_CB_Camera.m.World2Proj = m_CB_Camera.m.World2Camera * m_CB_Camera.m.Camera2Proj;
+			m_CB_Camera.m.Proj2World = m_CB_Camera.m.Proj2Camera * m_CB_Camera.m.Camera2World;
+			m_CB_Camera.UpdateData();
+		}
+
 		private void	Render()
 		{
-			// Setup camera matrix
-			Matrix4x4	Camera2World = new Matrix4x4();
-			Camera2World.MakeLookAt( new WMath.Point( 0.0f, 0.0f, 4.0f ), new WMath.Point( 0, 0, 0 ), new Vector( 0, 1, 0 ) );
-
-			Matrix4x4	Camera2Proj = new Matrix4x4();
-			Camera2Proj.MakeProjectionPerspective( 60.0f * (float) Math.PI / 180.0f, (float) Width / Height, 0.1f, 10.0f );
-
-			Matrix4x4	World2Proj = Camera2World.Inverse * Camera2Proj;
-			Matrix4x4	Proj2World = World2Proj.Inverse;
-
-			m_CB.m.World2Proj.FromMatrix4( World2Proj );
-			m_CB.m.Proj2World.FromMatrix4( Proj2World );
-			m_CB.UpdateData();
+			UpdateCameraMatrices( new float3( 0.0f, 0.0f, 4.0f ), new float3( 0, 0, 0 ), new float3( 0, 1, 0 ), 60.0f * (float) Math.PI / 180.0f, (float) viewportPanel.Width / viewportPanel.Height, 0.1f, 10.0f );
 
 			// Setup default render target as UAV & render using the compute shader
-
+			m_CB_Render.m.TargetDimensions = new float4( viewportPanel.Width, viewportPanel.Height, 1.0f / viewportPanel.Width, 1.0f / viewportPanel.Height );
+			m_CB_Render.UpdateData();
 
 			// Render a fullscreen quad
 			m_Device.SetRenderTarget( m_Device.DefaultTarget, null );

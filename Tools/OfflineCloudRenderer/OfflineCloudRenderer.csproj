@@ -60,6 +60,9 @@
     <Compile Include="ViewportPanel.Designer.cs">
       <DependentUpon>ViewportPanel.cs</DependentUpon>
     </Compile>
+    <Content Include="Shaders\DisplayDistanceField.hlsl" />
+    <Content Include="Shaders\DistanceField.hlsl" />
+    <Content Include="Shaders\Global.hlsl" />
     <Content Include="Shaders\Test\TestCompute.hlsl" />
     <Content Include="Shaders\Test\TestFullscreenQuad.hlsl" />
     <EmbeddedResource Include="Form1.resx">
