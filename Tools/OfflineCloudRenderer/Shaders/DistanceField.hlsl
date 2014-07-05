@@ -7,6 +7,9 @@
 // Pre-Declaration of the distance field evaluator that MUST be declared by your program to be able to use most of the routines written in this file
 float	Map( float3 _Position );
 
+////////////////////////////////////////////////////////////////////////////////
+// Distance functions
+
 // Computes the distance to an ellipsoid
 //	_Position, the position where to evaluate the distance
 //	_Center, the ellipsoid's center
@@ -16,6 +19,34 @@ float	Distance2Ellipsoid( float3 _Position, float3 _Center, float3 _InvRadius )
 {
 	return length( (_Position - _Center) * _InvRadius ) - 1.0;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Composition functions (from http://iquilezles.org/www/articles/smin/smin.htm)
+
+// Polynomial smooth min (k = 0.1);
+float	SmoothMin( float a, float b, float k )
+{
+    float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );
+    return lerp( b, a, h ) - k*h*(1.0-h);
+}
+// Exponential smooth min (k = 32);
+float	SmoothMin2( float a, float b, float k )
+{
+    float res = exp( -k*a ) + exp( -k*b );
+    return -log( res ) / k;
+}
+
+// Power smooth min (k = 8);
+float	SmoothMin3( float a, float b, float k )
+{
+    a = pow( a, k ); b = pow( b, k );
+    return pow( (a*b)/(a+b), 1.0/k );
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Algorithms
 
 // Computes the normal by evaluating the distance field's gradient
 float3	Normal( float3 p, out float _GradientLength, float eps=0.0001 )

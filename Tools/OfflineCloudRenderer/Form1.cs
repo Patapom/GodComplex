@@ -49,6 +49,8 @@ namespace OfflineCloudRenderer
 		private ConstantBuffer<CB_Camera>	m_CB_Camera = null;
 		private ConstantBuffer<CB_Render>	m_CB_Render = null;
 
+		private Texture3D					m_Noise3D = null;
+
 		private List<IDisposable>			m_Disposables = new List<IDisposable>();
 
 		private CameraManipulator			m_Manipulator = new CameraManipulator();
@@ -78,6 +80,8 @@ namespace OfflineCloudRenderer
 			Reg( m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 0 ) );
 			Reg( m_CB_Render = new ConstantBuffer<CB_Render>( m_Device, 8 ) );
 
+			Build3DNoise();
+
 			// Create the camera manipulator
 			m_CB_Camera.m.Camera2World = float4x4.Identity;
 			UpdateCameraProjection( 60.0f * (float) Math.PI / 180.0f, (float) viewportPanel.Width / viewportPanel.Height, 0.1f, 10.0f );
@@ -97,29 +101,12 @@ namespace OfflineCloudRenderer
 
 			base.OnClosing( e );
 		}
- 
-// 		/// <summary>
-// 		/// Computes and updates the camera constant buffer
-// 		/// </summary>
-// 		/// <param name="_Position"></param>
-// 		/// <param name="_Target"></param>
-// 		/// <param name="_FOV"></param>
-// 		/// <param name="_Near"></param>
-// 		/// <param name="_Far"></param>
-// 		private void	UpdateCameraMatrices( float3 _Position, float3 _Target, float3 _Up, float _FOV, float _AspectRatio, float _Near, float _Far )
-// 		{
-// // 			m_CB_Camera.m.Camera2World.MakeLookAt( _Position, _Target, _Up );
-// // 			m_CB_Camera.m.World2Camera = m_CB_Camera.m.Camera2World.Inverse;
-// // 
-// // 			m_CB_Camera.m.Camera2Proj.MakeProjectionPerspective( _FOV, _AspectRatio, _Near, _Far );
-// // 			m_CB_Camera.m.Proj2Camera = m_CB_Camera.m.Camera2Proj.Inverse;
-// 
-// //float4x4	Test = m_CB_Camera.m.Camera2Proj * m_CB_Camera.m.Proj2Camera;
-// 
-// // 			m_CB_Camera.m.World2Proj = m_CB_Camera.m.World2Camera * m_CB_Camera.m.Camera2Proj;
-// // 			m_CB_Camera.m.Proj2World = m_CB_Camera.m.Proj2Camera * m_CB_Camera.m.Camera2World;
-// // 			m_CB_Camera.UpdateData();
-// 		}
+
+		private void	Build3DNoise()
+		{
+//			Reg( m_Noise3D = new Texture3D( m_Device, ) );
+
+		}
 
 		private void	UpdateCameraTransform( float3 _Position, float3 _Target, float3 _Up )
 		{
@@ -236,6 +223,12 @@ namespace OfflineCloudRenderer
 			UpdateCameraTransform( _Camera2World );
 			Render();
 //			viewportPanel.Refresh();
+		}
+
+		private void buttonReload_Click( object sender, EventArgs e )
+		{
+			m_Device.ReloadModifiedShaders();
+			Render();
 		}
 
 		#endregion

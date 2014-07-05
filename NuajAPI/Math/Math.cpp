@@ -25,7 +25,7 @@ const float4x4	float4x4::Identity = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 
 float4	float4::QuatFromAngleAxis( float _Angle, const float3& _Axis )
 {
 	float3	NormalizedAxis = _Axis;
-				NormalizedAxis.Normalize();
+			NormalizedAxis.Normalize();
 
 	_Angle *= 0.5f;
 
@@ -113,7 +113,6 @@ float4   operator*( const float4& a, const float4x4& b )
 
 	return R;
 }
-
 
 float4x4	float4x4::BuildFromQuat( const float4& _Quat )
 {

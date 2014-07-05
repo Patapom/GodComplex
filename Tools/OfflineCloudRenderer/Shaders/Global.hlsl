@@ -52,35 +52,6 @@ cbuffer	cbCamera	: register( b0 )
 //Texture3D<float4>	_TexNoise3D	: register(t0);
 
 
-////////////////////////////////////////////////////////////////////////////////////////
-// Fast analytical Perlin noise
-float Hash( float n )
-{
-	return frac( sin(n) * 43758.5453 );
-}
-
-float FastNoise( float3 x )
-{
-	float3	p = floor(x);
-	float3	f = frac(x);
-
-	f = smoothstep( 0.0, 1.0, f );
-
-	float	n = p.x + 57.0 * p.y + 113.0 * p.z;
-
-	return lerp(	lerp(	lerp( Hash( n +   0.0 ), Hash( n +   1.0 ), f.x ),
-							lerp( Hash( n +  57.0 ), Hash( n +  58.0 ), f.x ), f.y ),
-					lerp(	lerp( Hash( n + 113.0 ), Hash( n + 114.0 ), f.x ),
-							lerp( Hash( n + 170.0 ), Hash( n + 171.0 ), f.x ), f.y ), f.z );
-}
-
-// Fast analytical noise for screen-space perturbation
-float	FastScreenNoise( float2 _XY )
-{
-	return Hash( 1.579849 * _XY.x - 2.60165409 * _XY.y )
-		 * Hash( -1.3468489 * _XY.y + 2.31765 * _XY.x );
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Distort position with noise
@@ -144,6 +115,27 @@ float3	RotateVector( float3 _Vector, float3 _Axis, float _Angle )
 	Result += Ortho * SinCos.x;
 
 	return Result;
+}
+
+// Builds a rotation matrix from an angle and axis
+float3x3	BuildRotationMatrix( float _Angle, float3 _Axis )
+{
+	float	c, s;
+	sincos( 0.5f * _Angle, s, c );
+	float4	q = float4( s * normalize( _Axis ), c );
+
+	float	xs = 2.0 * q.x;
+	float	ys = 2.0 * q.y;
+	float	zs = 2.0 * q.z;
+
+	float	wx, wy, wz, xx, xy, xz, yy, yz, zz;
+	wx = q.w * xs;	wy = q.w * ys;	wz = q.w * zs;
+	xx = q.x * xs;	xy = q.x * ys;	xz = q.x * zs;
+	yy = q.y * ys;	yz = q.y * zs;	zz = q.z * zs;
+
+	return float3x3( 1.0 -	yy - zz,		xy + wz,		xz - wy,
+							xy - wz, 1.0 -	xx - zz,		yz + wx,
+							xz + wy,		yz - wx, 1.0 -	xx - yy );
 }
 
 #endif

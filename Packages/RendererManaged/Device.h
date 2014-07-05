@@ -87,5 +87,12 @@ namespace RendererManaged {
 
 			m_pDevice->DXSwapChain().Present( 0, 0 );
 		}
+
+		void	ReloadModifiedShaders()
+		{
+			// Reload modified shaders
+			Material::WatchShadersModifications();
+			ComputeShader::WatchShadersModifications();
+		}
 	};
 }

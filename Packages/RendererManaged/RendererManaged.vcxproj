@@ -91,6 +91,7 @@
     <ClInclude Include="Stdafx.h" />
     <ClInclude Include="StructuredBuffer.h" />
     <ClInclude Include="Texture2D.h" />
+    <ClInclude Include="Texture3D.h" />
     <ClInclude Include="VertexFormats.h" />
   </ItemGroup>
   <ItemGroup>
@@ -109,6 +110,7 @@
     </ClCompile>
     <ClCompile Include="StructuredBuffer.cpp" />
     <ClCompile Include="Texture2D.cpp" />
+    <ClCompile Include="Texture3D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.ico" />

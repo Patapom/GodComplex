@@ -33,6 +33,7 @@
 		{
 			this.components = new System.ComponentModel.Container();
 			this.viewportPanel = new OfflineCloudRenderer.ViewportPanel(this.components);
+			this.buttonReload = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// viewportPanel
@@ -43,11 +44,22 @@
 			this.viewportPanel.Size = new System.Drawing.Size(910, 512);
 			this.viewportPanel.TabIndex = 0;
 			// 
+			// buttonReload
+			// 
+			this.buttonReload.Location = new System.Drawing.Point(1027, 41);
+			this.buttonReload.Name = "buttonReload";
+			this.buttonReload.Size = new System.Drawing.Size(94, 29);
+			this.buttonReload.TabIndex = 1;
+			this.buttonReload.Text = "Reload Shaders";
+			this.buttonReload.UseVisualStyleBackColor = true;
+			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1200, 756);
+			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.viewportPanel);
 			this.Name = "Form1";
 			this.Text = "Form1";
@@ -58,6 +70,7 @@
 		#endregion
 
 		private ViewportPanel viewportPanel;
+		private System.Windows.Forms.Button buttonReload;
 	}
 }
 
