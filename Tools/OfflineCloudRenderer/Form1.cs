@@ -51,6 +51,8 @@ namespace OfflineCloudRenderer
 
 		private List<IDisposable>			m_Disposables = new List<IDisposable>();
 
+		private CameraManipulator			m_Manipulator = new CameraManipulator();
+
 		#endregion
 
 		#region METHODS
@@ -75,6 +77,14 @@ namespace OfflineCloudRenderer
 			Reg( m_PS = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/DisplayDistanceField.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", "PS", null ) );
 			Reg( m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 0 ) );
 			Reg( m_CB_Render = new ConstantBuffer<CB_Render>( m_Device, 8 ) );
+
+			// Create the camera manipulator
+			m_CB_Camera.m.Camera2World = float4x4.Identity;
+			UpdateCameraProjection( 60.0f * (float) Math.PI / 180.0f, (float) viewportPanel.Width / viewportPanel.Height, 0.1f, 10.0f );
+
+			m_Manipulator.Attach( viewportPanel );
+			m_Manipulator.CameraTransformChanged += new CameraManipulator.UpdateCameraTransformEventHandler( Manipulator_CameraTransformChanged );
+			m_Manipulator.InitializeCamera( new float3( 0.0f, 0.0f, 4.0f ), new float3( 0, 0, 0 ), new float3( 0, 1, 0 ) );
 		}
 
 		protected override void OnClosing( CancelEventArgs e )
@@ -87,27 +97,56 @@ namespace OfflineCloudRenderer
 
 			base.OnClosing( e );
 		}
+ 
+// 		/// <summary>
+// 		/// Computes and updates the camera constant buffer
+// 		/// </summary>
+// 		/// <param name="_Position"></param>
+// 		/// <param name="_Target"></param>
+// 		/// <param name="_FOV"></param>
+// 		/// <param name="_Near"></param>
+// 		/// <param name="_Far"></param>
+// 		private void	UpdateCameraMatrices( float3 _Position, float3 _Target, float3 _Up, float _FOV, float _AspectRatio, float _Near, float _Far )
+// 		{
+// // 			m_CB_Camera.m.Camera2World.MakeLookAt( _Position, _Target, _Up );
+// // 			m_CB_Camera.m.World2Camera = m_CB_Camera.m.Camera2World.Inverse;
+// // 
+// // 			m_CB_Camera.m.Camera2Proj.MakeProjectionPerspective( _FOV, _AspectRatio, _Near, _Far );
+// // 			m_CB_Camera.m.Proj2Camera = m_CB_Camera.m.Camera2Proj.Inverse;
+// 
+// //float4x4	Test = m_CB_Camera.m.Camera2Proj * m_CB_Camera.m.Proj2Camera;
+// 
+// // 			m_CB_Camera.m.World2Proj = m_CB_Camera.m.World2Camera * m_CB_Camera.m.Camera2Proj;
+// // 			m_CB_Camera.m.Proj2World = m_CB_Camera.m.Proj2Camera * m_CB_Camera.m.Camera2World;
+// // 			m_CB_Camera.UpdateData();
+// 		}
 
-		/// <summary>
-		/// Computes and updates the camera constant buffer
-		/// </summary>
-		/// <param name="_Position"></param>
-		/// <param name="_Target"></param>
-		/// <param name="_FOV"></param>
-		/// <param name="_Near"></param>
-		/// <param name="_Far"></param>
-		private void	UpdateCameraMatrices( float3 _Position, float3 _Target, float3 _Up, float _FOV, float _AspectRatio, float _Near, float _Far )
+		private void	UpdateCameraTransform( float3 _Position, float3 _Target, float3 _Up )
+		{
+			m_CB_Camera.m.Camera2World.MakeLookAt( _Position, _Target, _Up );
+		}
+
+		private void	UpdateCameraTransform( float4x4 _Camera2World )
+		{
+			m_CB_Camera.m.Camera2World = _Camera2World;
+			m_CB_Camera.m.World2Camera = m_CB_Camera.m.Camera2World.Inverse;
+
+			UpdateCameraCompositions();
+		}
+
+		private void	UpdateCameraProjection( float _FOV, float _AspectRatio, float _Near, float _Far )
 		{
 			float	TanHalfFOV = (float) Math.Tan( 0.5 * _FOV );
 			m_CB_Camera.m.CameraData = new float4( _AspectRatio * TanHalfFOV, TanHalfFOV, _Near, _Far );
 
-			m_CB_Camera.m.Camera2World.MakeLookAt( _Position, _Target, _Up );
-			m_CB_Camera.m.World2Camera = m_CB_Camera.m.Camera2World.Inverse;
 			m_CB_Camera.m.Camera2Proj.MakeProjectionPerspective( _FOV, _AspectRatio, _Near, _Far );
 			m_CB_Camera.m.Proj2Camera = m_CB_Camera.m.Camera2Proj.Inverse;
 
-//float4x4	Test = m_CB_Camera.m.Camera2Proj * m_CB_Camera.m.Proj2Camera;
+			UpdateCameraCompositions();
+		}
 
+		private void	UpdateCameraCompositions()
+		{
 			m_CB_Camera.m.World2Proj = m_CB_Camera.m.World2Camera * m_CB_Camera.m.Camera2Proj;
 			m_CB_Camera.m.Proj2World = m_CB_Camera.m.Proj2Camera * m_CB_Camera.m.Camera2World;
 			m_CB_Camera.UpdateData();
@@ -115,8 +154,6 @@ namespace OfflineCloudRenderer
 
 		private void	Render()
 		{
-			UpdateCameraMatrices( new float3( 0.0f, 0.0f, 4.0f ), new float3( 0, 0, 0 ), new float3( 0, 1, 0 ), 60.0f * (float) Math.PI / 180.0f, (float) viewportPanel.Width / viewportPanel.Height, 0.1f, 10.0f );
-
 			// Setup default render target as UAV & render using the compute shader
 			m_CB_Render.m.TargetDimensions = new float4( viewportPanel.Width, viewportPanel.Height, 1.0f / viewportPanel.Width, 1.0f / viewportPanel.Height );
 			m_CB_Render.UpdateData();
@@ -194,9 +231,11 @@ namespace OfflineCloudRenderer
 
 		#region EVENT HANDLERS
 
-		private void viewportPanel_MouseDown( object sender, MouseEventArgs e )
+		void	Manipulator_CameraTransformChanged( float4x4 _Camera2World )
 		{
+			UpdateCameraTransform( _Camera2World );
 			Render();
+//			viewportPanel.Refresh();
 		}
 
 		#endregion

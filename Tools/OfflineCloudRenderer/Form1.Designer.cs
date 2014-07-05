@@ -42,7 +42,6 @@
 			this.viewportPanel.Name = "viewportPanel";
 			this.viewportPanel.Size = new System.Drawing.Size(910, 512);
 			this.viewportPanel.TabIndex = 0;
-			this.viewportPanel.MouseDown += new System.Windows.Forms.MouseEventHandler(this.viewportPanel_MouseDown);
 			// 
 			// Form1
 			// 

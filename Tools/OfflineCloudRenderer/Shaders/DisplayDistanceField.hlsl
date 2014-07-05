@@ -11,7 +11,7 @@ cbuffer	cbRender : register(b8)
  
 float	Map( float3 _Position )
 {
-	return Distance2Ellipsoid( _Position, float3( 0.0, 0.0, 0.0 ), 1.0 );
+	return Distance2Ellipsoid( _Position, float3( 0.0, 0.0, 0.0 ), float3( 0.5, 1.0, 1.0 ) );
 }
 
 struct VS_IN
