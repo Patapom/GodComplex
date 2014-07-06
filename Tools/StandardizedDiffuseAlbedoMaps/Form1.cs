@@ -294,6 +294,11 @@ namespace StandardizedDiffuseAlbedoMaps
 			try
 			{
 				m_CalibrationDatabase.PrepareCalibrationFor( floatTrackbarControlISOSpeed.Value, floatTrackbarControlShutterSpeed.Value, floatTrackbarControlAperture.Value );
+
+				CameraCalibration.CameraShotInfo	Info = m_CalibrationDatabase.InterpolationStartNode.m_CameraCalibration.m_CameraShotInfos;
+				textBoxDatabaseMatchISOSpeed.Text = Info.m_ISOSpeed.ToString( "G4" );
+				textBoxDatabaseMatchShutterSpeed.Text = Info.m_ShutterSpeed < 1.0f ? "1/"+((int)(1.0f/Info.m_ShutterSpeed)).ToString( "G4" ) : Info.m_ShutterSpeed.ToString( "G4" );
+				textBoxDatabaseMatchAperture.Text = "f/" + Info.m_Aperture.ToString( "G4" );
 			}
 			catch ( Exception _e )
 			{
@@ -1069,6 +1074,9 @@ namespace StandardizedDiffuseAlbedoMaps
 				m_SwatchMax.UpdateSwatchColor();
 				m_SwatchAvg.m_xyY = m_Texture.SwatchAvg.xyY;
 				m_SwatchAvg.UpdateSwatchColor();
+
+				foreach ( CustomSwatch S in m_CustomSwatches )
+					S.UpdateSwatchColor();
 			}
 			catch ( Exception _e )
 			{
@@ -1467,7 +1475,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				System.IO.FileInfo	WhiteRefFileName = new System.IO.FileInfo( saveFileDialogWhiteRefImage.FileName );
 
 				using ( System.IO.FileStream S = WhiteRefFileName.Create() )
-					m_CalibrationDatabase.WhiteReferenceImage.Save( S, ImageUtility.Bitmap.FILE_TYPE.PNG, ImageUtility.Bitmap.FORMAT_FLAGS.GRAY | ImageUtility.Bitmap.FORMAT_FLAGS.SAVE_16BITS_UNORM );
+					m_CalibrationDatabase.WhiteReferenceImage.Save( S, ImageUtility.Bitmap.FILE_TYPE.PNG, ImageUtility.Bitmap.FORMAT_FLAGS.GRAY | ImageUtility.Bitmap.FORMAT_FLAGS.SAVE_16BITS_UNORM, null );
 			}
 			catch ( Exception _e )
 			{

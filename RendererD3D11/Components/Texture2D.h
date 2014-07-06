@@ -84,7 +84,7 @@ public:	 // METHODS
 	D3D11_MAPPED_SUBRESOURCE&	Map( int _MipLevelIndex, int _ArrayIndex );
 	void		UnMap( int _MipLevelIndex, int _ArrayIndex );
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 	// I/O for staging textures
 	void		Save( const char* _pFileName );
 	void		Load( const char* _pFileName );

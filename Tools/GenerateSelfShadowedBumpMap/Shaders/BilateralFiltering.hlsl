@@ -8,6 +8,7 @@
 //
 cbuffer	CBInput : register( b0 )
 {
+	uint	_Y0;				// Start scanline for this group
 	float	_Radius;			// Bilateral filtering radius
 	float	_Tolerance;			// Bilateral filtering range tolerance
 	bool	_Tile;				// Tiling flag
@@ -46,7 +47,7 @@ float2	GaussianSample( uint2 _Dimensions, int2 _PixelPosition, int2 _PixelOffset
 [numthreads( 32, 32, 1 )]
 void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID )
 {
-	int2	PixelPosition = _GroupID.xy;
+	uint2	PixelPosition = uint2( _GroupID.x, _Y0 + _GroupID.y );
 
 	uint2	Dimensions;
 	_Source.GetDimensions( Dimensions.x, Dimensions.y );

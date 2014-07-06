@@ -124,7 +124,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 					G.DrawString( "ISO = " + m_CameraCalibration.m_CameraShotInfos.m_ISOSpeed.ToString(), Font, Brushes.Black, X0 + 8, Y1 + 0 );
 					G.DrawString( "Shutter Speed = " + (m_CameraCalibration.m_CameraShotInfos.m_ShutterSpeed < 1.0f ? "1/"+((int)(1.0f/m_CameraCalibration.m_CameraShotInfos.m_ShutterSpeed)).ToString( "G4" ) : m_CameraCalibration.m_CameraShotInfos.m_ShutterSpeed.ToString( "G4" )), Font, Brushes.Black, X0 + 8, Y1 + 1*8 );
-					G.DrawString( "Aperture= " + m_CameraCalibration.m_CameraShotInfos.m_Aperture.ToString( "G4" ), Font, Brushes.Black, X0 + 8, Y1 + 2*8 );
+					G.DrawString( "Aperture= f/" + m_CameraCalibration.m_CameraShotInfos.m_Aperture.ToString( "G4" ), Font, Brushes.Black, X0 + 8, Y1 + 2*8 );
 				}
 
 				// Draw main axes
@@ -170,7 +170,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			Point	P = PointToClient( Control.MousePosition );
 			float	x = (float) (P.X - X0) / (X1 - X0);
-			float	StandardReflectance = 0.02f + (0.99f - 0.02f) * x;
+			float	StandardReflectance = x;//0.02f + (0.99f - 0.02f) * x;
 			for ( int i=1; i < m_CameraCalibration.m_Reflectances.Length; i++ )
 			{
 				if ( StandardReflectance < m_CameraCalibration.m_Reflectances[i-1].StandardReflectance || StandardReflectance > m_CameraCalibration.m_Reflectances[i].StandardReflectance )

@@ -79,6 +79,7 @@
 			this.checkBoxCalibrate10 = new System.Windows.Forms.CheckBox();
 			this.tabControl = new System.Windows.Forms.TabControl();
 			this.tabPageCreation = new System.Windows.Forms.TabPage();
+			this.checkBoxUseMeanMode = new System.Windows.Forms.CheckBox();
 			this.panelCapturedReflectance = new System.Windows.Forms.Panel();
 			this.label19 = new System.Windows.Forms.Label();
 			this.labelCaptureWhiteReflectanceCorrection = new System.Windows.Forms.Label();
@@ -117,6 +118,7 @@
 			this.panelCustomSwatch0 = new System.Windows.Forms.Panel();
 			this.panelSwatchMin = new System.Windows.Forms.Panel();
 			this.label7 = new System.Windows.Forms.Label();
+			this.resultTexturePanel = new StandardizedDiffuseAlbedoMaps.ResultTexturePanel(this.components);
 			this.tabPageColorCorrection = new System.Windows.Forms.TabPage();
 			this.groupBoxHueTwist = new System.Windows.Forms.GroupBox();
 			this.textBox3 = new System.Windows.Forms.TextBox();
@@ -126,6 +128,7 @@
 			this.buttonWhiteRefTest2 = new System.Windows.Forms.Button();
 			this.buttonWhiteRefTest1 = new System.Windows.Forms.Button();
 			this.labelWhiteReferenceImageCorrection = new System.Windows.Forms.Label();
+			this.whiteImageReferencePanel = new StandardizedDiffuseAlbedoMaps.WhiteImageReferencePanel(this.components);
 			this.buttonResetWhiteRefImage = new System.Windows.Forms.Button();
 			this.buttonSaveWhiteRefImage = new System.Windows.Forms.Button();
 			this.textBox2 = new System.Windows.Forms.TextBox();
@@ -144,7 +147,9 @@
 			this.checkBoxCalibrationUseAverageLuminance = new System.Windows.Forms.CheckBox();
 			this.tabControlCalibrationRepresentation = new System.Windows.Forms.TabControl();
 			this.tabPageLuminancesGraph = new System.Windows.Forms.TabPage();
+			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
 			this.tabPageReferenceImage = new System.Windows.Forms.TabPage();
+			this.referenceImagePanel = new StandardizedDiffuseAlbedoMaps.ReferenceImagePanel(this.components);
 			this.buttonExplore = new System.Windows.Forms.Button();
 			this.labelCalbrationImageName = new System.Windows.Forms.Label();
 			this.label6 = new System.Windows.Forms.Label();
@@ -155,6 +160,7 @@
 			this.buttonLoadCalibration = new System.Windows.Forms.Button();
 			this.checkBoxGraphLagrange = new System.Windows.Forms.CheckBox();
 			this.splitContainerMain = new System.Windows.Forms.SplitContainer();
+			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
 			this.checkBoxSpatialLuminanceCorrection = new System.Windows.Forms.CheckBox();
 			this.buttonSaveCalibratedImage = new System.Windows.Forms.Button();
 			this.openFileDialogCalibration = new System.Windows.Forms.OpenFileDialog();
@@ -166,12 +172,10 @@
 			this.saveFileDialogWhiteReflectance = new System.Windows.Forms.SaveFileDialog();
 			this.openFileDialogWhiteRefImage = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogWhiteRefImage = new System.Windows.Forms.SaveFileDialog();
-			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
-			this.resultTexturePanel = new StandardizedDiffuseAlbedoMaps.ResultTexturePanel(this.components);
-			this.whiteImageReferencePanel = new StandardizedDiffuseAlbedoMaps.WhiteImageReferencePanel(this.components);
-			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
-			this.referenceImagePanel = new StandardizedDiffuseAlbedoMaps.ReferenceImagePanel(this.components);
-			this.checkBoxUseMeanMode = new System.Windows.Forms.CheckBox();
+			this.label16 = new System.Windows.Forms.Label();
+			this.textBoxDatabaseMatchISOSpeed = new System.Windows.Forms.TextBox();
+			this.textBoxDatabaseMatchShutterSpeed = new System.Windows.Forms.TextBox();
+			this.textBoxDatabaseMatchAperture = new System.Windows.Forms.TextBox();
 			this.groupBoxCameraShotInfos.SuspendLayout();
 			this.tabControl.SuspendLayout();
 			this.tabPageCreation.SuspendLayout();
@@ -201,7 +205,7 @@
 			// 
 			// buttonLoadImage
 			// 
-			this.buttonLoadImage.Location = new System.Drawing.Point(355, 16);
+			this.buttonLoadImage.Location = new System.Drawing.Point(382, 16);
 			this.buttonLoadImage.Name = "buttonLoadImage";
 			this.buttonLoadImage.Size = new System.Drawing.Size(97, 37);
 			this.buttonLoadImage.TabIndex = 0;
@@ -266,6 +270,10 @@
 			// 
 			// groupBoxCameraShotInfos
 			// 
+			this.groupBoxCameraShotInfos.Controls.Add(this.textBoxDatabaseMatchAperture);
+			this.groupBoxCameraShotInfos.Controls.Add(this.textBoxDatabaseMatchShutterSpeed);
+			this.groupBoxCameraShotInfos.Controls.Add(this.textBoxDatabaseMatchISOSpeed);
+			this.groupBoxCameraShotInfos.Controls.Add(this.label16);
 			this.groupBoxCameraShotInfos.Controls.Add(this.label4);
 			this.groupBoxCameraShotInfos.Controls.Add(this.label3);
 			this.groupBoxCameraShotInfos.Controls.Add(this.label2);
@@ -277,7 +285,7 @@
 			this.groupBoxCameraShotInfos.Enabled = false;
 			this.groupBoxCameraShotInfos.Location = new System.Drawing.Point(4, 9);
 			this.groupBoxCameraShotInfos.Name = "groupBoxCameraShotInfos";
-			this.groupBoxCameraShotInfos.Size = new System.Drawing.Size(310, 137);
+			this.groupBoxCameraShotInfos.Size = new System.Drawing.Size(372, 137);
 			this.groupBoxCameraShotInfos.TabIndex = 10;
 			this.groupBoxCameraShotInfos.TabStop = false;
 			this.groupBoxCameraShotInfos.Text = "Camera Shot Info   (can\'t edit if provided by image)";
@@ -285,7 +293,7 @@
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(6, 105);
+			this.label4.Location = new System.Drawing.Point(6, 111);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(69, 13);
 			this.label4.TabIndex = 9;
@@ -295,7 +303,7 @@
 			// label3
 			// 
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(6, 80);
+			this.label3.Location = new System.Drawing.Point(6, 87);
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(47, 13);
 			this.label3.TabIndex = 9;
@@ -305,7 +313,7 @@
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(6, 54);
+			this.label2.Location = new System.Drawing.Point(6, 63);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(75, 13);
 			this.label2.TabIndex = 9;
@@ -315,7 +323,7 @@
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(6, 27);
+			this.label1.Location = new System.Drawing.Point(6, 38);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(59, 13);
 			this.label1.TabIndex = 9;
@@ -324,7 +332,7 @@
 			// 
 			// floatTrackbarControlISOSpeed
 			// 
-			this.floatTrackbarControlISOSpeed.Location = new System.Drawing.Point(87, 24);
+			this.floatTrackbarControlISOSpeed.Location = new System.Drawing.Point(87, 35);
 			this.floatTrackbarControlISOSpeed.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlISOSpeed.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlISOSpeed.Name = "floatTrackbarControlISOSpeed";
@@ -340,7 +348,7 @@
 			// 
 			// floatTrackbarControlFocalLength
 			// 
-			this.floatTrackbarControlFocalLength.Location = new System.Drawing.Point(87, 102);
+			this.floatTrackbarControlFocalLength.Location = new System.Drawing.Point(87, 108);
 			this.floatTrackbarControlFocalLength.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlFocalLength.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlFocalLength.Name = "floatTrackbarControlFocalLength";
@@ -355,7 +363,7 @@
 			// 
 			// floatTrackbarControlAperture
 			// 
-			this.floatTrackbarControlAperture.Location = new System.Drawing.Point(87, 76);
+			this.floatTrackbarControlAperture.Location = new System.Drawing.Point(87, 83);
 			this.floatTrackbarControlAperture.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlAperture.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlAperture.Name = "floatTrackbarControlAperture";
@@ -371,7 +379,7 @@
 			// 
 			// floatTrackbarControlShutterSpeed
 			// 
-			this.floatTrackbarControlShutterSpeed.Location = new System.Drawing.Point(87, 50);
+			this.floatTrackbarControlShutterSpeed.Location = new System.Drawing.Point(87, 59);
 			this.floatTrackbarControlShutterSpeed.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlShutterSpeed.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlShutterSpeed.Name = "floatTrackbarControlShutterSpeed";
@@ -806,6 +814,16 @@
 			this.tabPageCreation.TabIndex = 0;
 			this.tabPageCreation.Text = "Texure Creation";
 			this.tabPageCreation.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxUseMeanMode
+			// 
+			this.checkBoxUseMeanMode.AutoSize = true;
+			this.checkBoxUseMeanMode.Location = new System.Drawing.Point(313, 13);
+			this.checkBoxUseMeanMode.Name = "checkBoxUseMeanMode";
+			this.checkBoxUseMeanMode.Size = new System.Drawing.Size(142, 17);
+			this.checkBoxUseMeanMode.TabIndex = 11;
+			this.checkBoxUseMeanMode.Text = "Use \"mode\" for min/max";
+			this.checkBoxUseMeanMode.UseVisualStyleBackColor = true;
 			// 
 			// panelCapturedReflectance
 			// 
@@ -1265,6 +1283,19 @@
 			this.label7.Text = "Min.";
 			this.toolTip.SetToolTip(this.label7, "Minimum luminance in the image");
 			// 
+			// resultTexturePanel
+			// 
+			this.resultTexturePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.resultTexturePanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.resultTexturePanel.CalibratedTexture = null;
+			this.resultTexturePanel.Location = new System.Drawing.Point(6, 40);
+			this.resultTexturePanel.Name = "resultTexturePanel";
+			this.resultTexturePanel.Size = new System.Drawing.Size(465, 332);
+			this.resultTexturePanel.TabIndex = 0;
+			this.resultTexturePanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.resultTexturePanel_MouseMove);
+			// 
 			// tabPageColorCorrection
 			// 
 			this.tabPageColorCorrection.Controls.Add(this.groupBoxHueTwist);
@@ -1377,6 +1408,18 @@
 			this.labelWhiteReferenceImageCorrection.Size = new System.Drawing.Size(141, 23);
 			this.labelWhiteReferenceImageCorrection.TabIndex = 2;
 			this.labelWhiteReferenceImageCorrection.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			// 
+			// whiteImageReferencePanel
+			// 
+			this.whiteImageReferencePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.whiteImageReferencePanel.Location = new System.Drawing.Point(126, 103);
+			this.whiteImageReferencePanel.Name = "whiteImageReferencePanel";
+			this.whiteImageReferencePanel.Size = new System.Drawing.Size(192, 127);
+			this.whiteImageReferencePanel.TabIndex = 8;
+			this.whiteImageReferencePanel.WhiteReferenceImage = null;
+			this.whiteImageReferencePanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.whiteImageReferencePanel_MouseMove);
 			// 
 			// buttonResetWhiteRefImage
 			// 
@@ -1610,6 +1653,20 @@
 			this.tabPageLuminancesGraph.Text = "Luminances Graph";
 			this.tabPageLuminancesGraph.UseVisualStyleBackColor = true;
 			// 
+			// graphPanel
+			// 
+			this.graphPanel.BackColor = System.Drawing.Color.Ivory;
+			this.graphPanel.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+			this.graphPanel.Calibration = null;
+			this.graphPanel.Cursor = System.Windows.Forms.Cursors.Cross;
+			this.graphPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.graphPanel.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.graphPanel.Location = new System.Drawing.Point(3, 3);
+			this.graphPanel.Name = "graphPanel";
+			this.graphPanel.Size = new System.Drawing.Size(456, 292);
+			this.graphPanel.TabIndex = 11;
+			this.graphPanel.UseLagrange = false;
+			// 
 			// tabPageReferenceImage
 			// 
 			this.tabPageReferenceImage.Controls.Add(this.referenceImagePanel);
@@ -1620,6 +1677,17 @@
 			this.tabPageReferenceImage.TabIndex = 1;
 			this.tabPageReferenceImage.Text = "Reference Image";
 			this.tabPageReferenceImage.UseVisualStyleBackColor = true;
+			// 
+			// referenceImagePanel
+			// 
+			this.referenceImagePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.referenceImagePanel.Calibration = null;
+			this.referenceImagePanel.Location = new System.Drawing.Point(6, 6);
+			this.referenceImagePanel.Name = "referenceImagePanel";
+			this.referenceImagePanel.Size = new System.Drawing.Size(456, 286);
+			this.referenceImagePanel.TabIndex = 0;
 			// 
 			// buttonExplore
 			// 
@@ -1781,6 +1849,19 @@
 			this.splitContainerMain.SplitterDistance = 1004;
 			this.splitContainerMain.TabIndex = 0;
 			// 
+			// outputPanel
+			// 
+			this.outputPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.outputPanel.CropRectangleEnabled = false;
+			this.outputPanel.Image = null;
+			this.outputPanel.Location = new System.Drawing.Point(3, 0);
+			this.outputPanel.Name = "outputPanel";
+			this.outputPanel.Size = new System.Drawing.Size(1002, 716);
+			this.outputPanel.TabIndex = 0;
+			this.outputPanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.outputPanel_MouseMove);
+			// 
 			// checkBoxSpatialLuminanceCorrection
 			// 
 			this.checkBoxSpatialLuminanceCorrection.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
@@ -1798,7 +1879,7 @@
 			// buttonSaveCalibratedImage
 			// 
 			this.buttonSaveCalibratedImage.Enabled = false;
-			this.buttonSaveCalibratedImage.Location = new System.Drawing.Point(355, 59);
+			this.buttonSaveCalibratedImage.Location = new System.Drawing.Point(382, 59);
 			this.buttonSaveCalibratedImage.Name = "buttonSaveCalibratedImage";
 			this.buttonSaveCalibratedImage.Size = new System.Drawing.Size(97, 37);
 			this.buttonSaveCalibratedImage.TabIndex = 0;
@@ -1857,78 +1938,38 @@
     "|*.*";
 			this.saveFileDialogWhiteRefImage.Title = "Select the name of the white reference image file to save to...";
 			// 
-			// outputPanel
+			// label16
 			// 
-			this.outputPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.outputPanel.CropRectangleEnabled = false;
-			this.outputPanel.Image = null;
-			this.outputPanel.Location = new System.Drawing.Point(3, 0);
-			this.outputPanel.Name = "outputPanel";
-			this.outputPanel.Size = new System.Drawing.Size(1002, 716);
-			this.outputPanel.TabIndex = 0;
-			this.outputPanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.outputPanel_MouseMove);
+			this.label16.Location = new System.Drawing.Point(296, 7);
+			this.label16.Name = "label16";
+			this.label16.Size = new System.Drawing.Size(68, 28);
+			this.label16.TabIndex = 10;
+			this.label16.Text = "Database match";
+			this.label16.TextAlign = System.Drawing.ContentAlignment.TopCenter;
 			// 
-			// resultTexturePanel
+			// textBoxDatabaseMatchISOSpeed
 			// 
-			this.resultTexturePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.resultTexturePanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.resultTexturePanel.CalibratedTexture = null;
-			this.resultTexturePanel.Location = new System.Drawing.Point(6, 40);
-			this.resultTexturePanel.Name = "resultTexturePanel";
-			this.resultTexturePanel.Size = new System.Drawing.Size(465, 332);
-			this.resultTexturePanel.TabIndex = 0;
-			this.resultTexturePanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.resultTexturePanel_MouseMove);
+			this.textBoxDatabaseMatchISOSpeed.Location = new System.Drawing.Point(293, 35);
+			this.textBoxDatabaseMatchISOSpeed.Name = "textBoxDatabaseMatchISOSpeed";
+			this.textBoxDatabaseMatchISOSpeed.ReadOnly = true;
+			this.textBoxDatabaseMatchISOSpeed.Size = new System.Drawing.Size(73, 20);
+			this.textBoxDatabaseMatchISOSpeed.TabIndex = 11;
 			// 
-			// whiteImageReferencePanel
+			// textBoxDatabaseMatchShutterSpeed
 			// 
-			this.whiteImageReferencePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.whiteImageReferencePanel.Location = new System.Drawing.Point(126, 103);
-			this.whiteImageReferencePanel.Name = "whiteImageReferencePanel";
-			this.whiteImageReferencePanel.Size = new System.Drawing.Size(192, 127);
-			this.whiteImageReferencePanel.TabIndex = 8;
-			this.whiteImageReferencePanel.WhiteReferenceImage = null;
-			this.whiteImageReferencePanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.whiteImageReferencePanel_MouseMove);
+			this.textBoxDatabaseMatchShutterSpeed.Location = new System.Drawing.Point(293, 60);
+			this.textBoxDatabaseMatchShutterSpeed.Name = "textBoxDatabaseMatchShutterSpeed";
+			this.textBoxDatabaseMatchShutterSpeed.ReadOnly = true;
+			this.textBoxDatabaseMatchShutterSpeed.Size = new System.Drawing.Size(73, 20);
+			this.textBoxDatabaseMatchShutterSpeed.TabIndex = 11;
 			// 
-			// graphPanel
+			// textBoxDatabaseMatchAperture
 			// 
-			this.graphPanel.BackColor = System.Drawing.Color.Ivory;
-			this.graphPanel.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-			this.graphPanel.Calibration = null;
-			this.graphPanel.Cursor = System.Windows.Forms.Cursors.Cross;
-			this.graphPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.graphPanel.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.graphPanel.Location = new System.Drawing.Point(3, 3);
-			this.graphPanel.Name = "graphPanel";
-			this.graphPanel.Size = new System.Drawing.Size(456, 292);
-			this.graphPanel.TabIndex = 11;
-			this.graphPanel.UseLagrange = false;
-			// 
-			// referenceImagePanel
-			// 
-			this.referenceImagePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.referenceImagePanel.Calibration = null;
-			this.referenceImagePanel.Location = new System.Drawing.Point(6, 6);
-			this.referenceImagePanel.Name = "referenceImagePanel";
-			this.referenceImagePanel.Size = new System.Drawing.Size(456, 286);
-			this.referenceImagePanel.TabIndex = 0;
-			// 
-			// checkBoxUseMeanMode
-			// 
-			this.checkBoxUseMeanMode.AutoSize = true;
-			this.checkBoxUseMeanMode.Location = new System.Drawing.Point(313, 13);
-			this.checkBoxUseMeanMode.Name = "checkBoxUseMeanMode";
-			this.checkBoxUseMeanMode.Size = new System.Drawing.Size(142, 17);
-			this.checkBoxUseMeanMode.TabIndex = 11;
-			this.checkBoxUseMeanMode.Text = "Use \"mode\" for min/max";
-			this.checkBoxUseMeanMode.UseVisualStyleBackColor = true;
+			this.textBoxDatabaseMatchAperture.Location = new System.Drawing.Point(293, 84);
+			this.textBoxDatabaseMatchAperture.Name = "textBoxDatabaseMatchAperture";
+			this.textBoxDatabaseMatchAperture.ReadOnly = true;
+			this.textBoxDatabaseMatchAperture.Size = new System.Drawing.Size(73, 20);
+			this.textBoxDatabaseMatchAperture.TabIndex = 11;
 			// 
 			// Form1
 			// 
@@ -2113,6 +2154,10 @@
 		private System.Windows.Forms.Panel panelCapturedReflectance;
 		private System.Windows.Forms.Button buttonSafeBorder;
 		private System.Windows.Forms.CheckBox checkBoxUseMeanMode;
+		private System.Windows.Forms.TextBox textBoxDatabaseMatchAperture;
+		private System.Windows.Forms.TextBox textBoxDatabaseMatchShutterSpeed;
+		private System.Windows.Forms.TextBox textBoxDatabaseMatchISOSpeed;
+		private System.Windows.Forms.Label label16;
 	}
 }
 

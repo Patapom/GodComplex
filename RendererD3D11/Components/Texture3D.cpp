@@ -311,7 +311,7 @@ int	 Texture3D::ComputeMipLevelsCount( int _Width, int _Height, int _Depth, int 
 	return _MipLevelsCount;
 }
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 
 #include "..\..\Utility\TextureFilePOM.h"
 

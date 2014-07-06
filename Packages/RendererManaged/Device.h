@@ -64,7 +64,7 @@ namespace RendererManaged {
 			m_pDevice = NULL;
 		}
 
- 		void	Init( System::IntPtr _WindowHandle, int _WindowWidth, int _WindowHeight, bool _FullScreen, bool _sRGBRenderTarget );
+ 		void	Init( System::IntPtr _WindowHandle, bool _FullScreen, bool _sRGBRenderTarget );
 
 		void	Exit()
 		{
@@ -80,9 +80,19 @@ namespace RendererManaged {
 		void	SetRenderTarget( Texture2D^ _RenderTarget, Texture2D^ _DepthStencilTarget );
 		void	RenderFullscreenQuad( Shader^ _Shader );
 
-		void	Present()
+		void	Present( bool _FlushCommands )
 		{
+			if ( _FlushCommands )
+				m_pDevice->DXContext().Flush();
+
 			m_pDevice->DXSwapChain().Present( 0, 0 );
+		}
+
+		void	ReloadModifiedShaders()
+		{
+			// Reload modified shaders
+			Material::WatchShadersModifications();
+			ComputeShader::WatchShadersModifications();
 		}
 	};
 }

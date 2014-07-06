@@ -150,6 +150,21 @@ namespace ImageUtility
 			PREMULTIPLY_ALPHA = 16,	// RGB should be multiplied by alpha
 		}
 
+		/// <summary>
+		/// This is an aggregate of the various options that can be fed to the Save() method
+		/// </summary>
+		public class FormatEncoderOptions
+		{
+			// FILE_TYPE == JPEG
+			public int	JPEGQualityLevel = 80;	// 80%
+
+			// FILE_TYPE == PNG
+			public PngInterlaceOption	PNGInterlace = PngInterlaceOption.Default;
+
+			// FILE_TYPE == TIFF
+			public TiffCompressOption	TIFFCompression = TiffCompressOption.Rle;
+		}
+
 		#endregion
 
 		#region FIELDS
@@ -1012,9 +1027,13 @@ namespace ImageUtility
 		}
 		public void	Save( System.IO.FileInfo _FileName, FORMAT_FLAGS _Parms )
 		{
+			Save( _FileName, _Parms, null );
+		}
+		public void	Save( System.IO.FileInfo _FileName, FORMAT_FLAGS _Parms, FormatEncoderOptions _Options )
+		{
 			FILE_TYPE	FileType = GetFileType( _FileName );
 			using ( System.IO.FileStream S = _FileName.Create() )
-				Save( S, FileType, _Parms );
+				Save( S, FileType, _Parms, _Options );
 		}
 
 		/// <summary>
@@ -1023,9 +1042,10 @@ namespace ImageUtility
 		/// <param name="_Stream">The stream to write the image to</param>
 		/// <param name="_FileType">The file type to save as</param>
 		/// <param name="_Parms">Additional formatting flags</param>
+		/// <param name="_Options">An optional block of options for encoding</param>
 		/// <exception cref="NotSupportedException">Occurs if the image type is not supported by the Bitmap class</exception>
 		/// <exception cref="Exception">Occurs if the source image format cannot be converted to RGBA32F which is the generic format we read from</exception>
-		public void	Save( System.IO.Stream _Stream, FILE_TYPE _FileType, FORMAT_FLAGS _Parms )
+		public void	Save( System.IO.Stream _Stream, FILE_TYPE _FileType, FORMAT_FLAGS _Parms, FormatEncoderOptions _Options )
 		{
 			if ( m_ColorProfile == null )
 				throw new Exception( "You can't save the bitmap if you don't provide a valid color profile!" );
@@ -1048,6 +1068,30 @@ namespace ImageUtility
 								case FILE_TYPE.TIFF:	Encoder = new TiffBitmapEncoder(); break;
 								case FILE_TYPE.GIF:		Encoder = new GifBitmapEncoder(); break;
 								case FILE_TYPE.BMP:		Encoder = new BmpBitmapEncoder(); break;
+							}
+
+							if ( _Options != null )
+							{
+								switch ( _FileType )
+								{
+									case FILE_TYPE.JPEG:
+										(Encoder as JpegBitmapEncoder).QualityLevel = _Options.JPEGQualityLevel;
+										break;
+
+									case FILE_TYPE.PNG:
+										(Encoder as PngBitmapEncoder).Interlace = _Options.PNGInterlace;
+										break;
+
+									case FILE_TYPE.TIFF:
+										(Encoder as TiffBitmapEncoder).Compression = _Options.TIFFCompression;
+										break;
+
+									case FILE_TYPE.GIF:
+										break;
+
+									case FILE_TYPE.BMP:
+										break;
+								}
 							}
 
 
@@ -1111,7 +1155,7 @@ namespace ImageUtility
 						}
 						break;
 
-					case FILE_TYPE.TGA:
+//					case FILE_TYPE.TGA:
 //TODO!
 // 						{
 // 							// Load as a System.Drawing.Bitmap and convert to float4
@@ -1149,7 +1193,7 @@ namespace ImageUtility
 // 							return;
 // 						}
 
-					case FILE_TYPE.HDR:
+//					case FILE_TYPE.HDR:
 //TODO!
 // 						{
 // 							// Load as XYZ
@@ -1221,9 +1265,9 @@ namespace ImageUtility
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
-						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -1238,9 +1282,9 @@ namespace ImageUtility
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
-						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
 						Position++;
 					}
 			}
@@ -1256,10 +1300,10 @@ namespace ImageUtility
 				for ( int Y = 0; Y < H; Y++ )
 					for ( int X = 0; X < W; X++ )
 					{
-						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
-						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
-						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].w );
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
@@ -1277,9 +1321,9 @@ namespace ImageUtility
 						RGB[X,Y].x *= RGB[X,Y].w;
 						RGB[X,Y].y *= RGB[X,Y].w;
 						RGB[X,Y].z *= RGB[X,Y].w;
-						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
-						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
+						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].w );
 					}
 			}

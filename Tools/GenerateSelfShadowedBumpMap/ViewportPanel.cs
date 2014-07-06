@@ -53,7 +53,7 @@ namespace GenerateSelfShadowedBumpMap
 //			base.OnPaint( e );
 
 			if ( m_Device != null )
-				m_Device.Present();
+				m_Device.Present( false );
 			else
 				e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
 		}

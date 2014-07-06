@@ -22,7 +22,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		#region NESTED TYPES
 
 		[System.Diagnostics.DebuggerDisplay( "ISO={m_EV_ISOSpeed} Shutter={m_EV_ShutterSpeed} Aperture={m_EV_Aperture} EV={EV}" )]
-		private class	GridNode
+		public class	GridNode
 		{
 			public CameraCalibration	m_CameraCalibration = null;
 
@@ -113,6 +113,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		private GridNode					m_RootNode = null;
 
 		// Cached calibration data
+		private GridNode					m_InterpolationStartNode = null;
 		private CameraCalibration			m_InterpolatedCalibration = null;
 
 		#endregion
@@ -132,6 +133,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				{	// Clean up existing database
 					m_CameraCalibrations = new CameraCalibration[0];
 					m_InterpolatedCalibration = null;
+					m_InterpolationStartNode = null;
 					m_RootNode = null;
 					m_ErrorLog = "";
 				}
@@ -362,7 +364,9 @@ namespace StandardizedDiffuseAlbedoMaps
 		public float	PreparedForShutterSpeed	{ get { return m_InterpolatedCalibration != null ? m_InterpolatedCalibration.m_CameraShotInfos.m_ShutterSpeed : -1.0f; } }
 		public float	PreparedForAperture		{ get { return m_InterpolatedCalibration != null ? m_InterpolatedCalibration.m_CameraShotInfos.m_Aperture : -1.0f; } }
 
+		public GridNode				InterpolationStartNode	{ get { return m_InterpolationStartNode; } }
 		public CameraCalibration	InterpolatedCalibration	{ get { return m_InterpolatedCalibration; } }
+
 
 		#endregion
 
@@ -412,6 +416,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			// Find the start node
 			GridNode		StartNode = FindStartNode( EV.x, EV.y, EV.z );
+			m_InterpolationStartNode = StartNode;
 
 			// Build the 8 grid nodes from it
 			GridNode[,,]	Grid = new GridNode[2,2,2];

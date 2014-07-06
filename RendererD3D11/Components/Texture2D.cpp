@@ -433,7 +433,7 @@ int	Texture2D::CalcSubResource( int _MipLevelIndex, int _ArrayIndex )
 	return _MipLevelIndex + (_ArrayIndex * m_MipLevelsCount);
 }
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 
 #include "..\..\Utility\TextureFilePOM.h"
 

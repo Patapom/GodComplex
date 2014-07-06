@@ -41,7 +41,7 @@ Material::Material( Device& _Device, const char* _pShaderFileName, const IVertex
 	m_Pointer2FileName.Add( NULL, m_pShaderPath );
 #endif
 
-#if defined(SURE_DEBUG) && defined(WATCH_SHADER_MODIFICATIONS)
+#if defined(_DEBUG) && defined(WATCH_SHADER_MODIFICATIONS)
 	if ( _pShaderFileName != NULL )
 	{
 		// Just ensure the file exists !

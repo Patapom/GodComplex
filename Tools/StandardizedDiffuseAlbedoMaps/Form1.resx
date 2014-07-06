@@ -127,21 +127,18 @@
   <data name="buttonCropTool.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
-        YQUAAAAJcEhZcwAADrwAAA68AZW8ckkAAAIYSURBVDhPpZM7z2FRFIYpvkqiQIJGMkg0NKKQTCNRUNBQ
-        mXErMBGNWkgo6VT8pSlIxD0Yt3EbjPkJ8zh7wufMyTTzFifn7LOftd619tqqX/8h1d/s7Xb7KYmXf0d+
-        gdvtdjgc/iHpcrkowiK0+PUCN5vNYDD4XdLxeGSTLLNeryfo+Xy+Xq/wf2ARr9Fo+Hy+b5LgT6cT+x7S
-        6XSsEBSxyP473Gq1qtVqvV4vFoterzeRSKTTaZ7JZDKfz3+RZLfbl8vlZrMRpkRRdzgej4dCoVgsFo1G
-        3W630+l0OBw2m81isXyUhB2TyTQajabTKfyjojuMATpEyEKhADkYDPr9Plsnkwm7P0vSarXdbnc4HK7X
-        azY/G8YbNohXqVTICYZms9lqtSLWYrEAfnt763Q6BAWmYNHIZ8NoYLlcxi0JESTZ9vv9drvN5XJqtbrX
-        64nMclhEKpVKwFhFgsQOz2w2q1KpKAdHBMX2S2bxgW2Px0Naq9UKT07BZzIZYNK+h5/nLOBarfZJErWN
-        x+P5fE5vd7sdJwfMImLxcDg8j+oxRtQmYCHR51Qq5ff7gY1Go8vl4oURwpE8cyAQoNsfJBkMBo1Gw1Qh
-        JgTmIczDy2EaTkiM8RuHdEjUycBDfpXEaSvDTAvHII6HI6GxQpFIBBhMjD2iUnlmMW3i3iBxN5HZbAYW
-        CR8NUoBld1B8Eg4770nlzIqw4iKZfwMPfoSX0A2fCAAAAABJRU5ErkJggg==
+        YQUAAAAJcEhZcwAADrwAAA68AZW8ckkAAAIQSURBVDhPpZM7z6FBFIApVBIFEjSSRaKhEYVkG4mCgobK
+        rluBjWjUQkJJp+IvbUEi7sG6rdti7U/YxzvW95F3k032Kd6MmfOcOXNmKH79BzLy9Xr9KcHgPvUXnuRW
+        qxUKhX5InM9nWVmkFktPcqPRCAQC3yUOhwNB94U/6HQ6kp5Op8vlgn+XRb56ve71er9J4B+PR+IeaLVa
+        ZkgK/CT+JjebzUqlUqvVCoWCx+OJx+OpVIpvIpHI5XJfJGw222KxWK/XoihxqJsci8WCwWA0Go1EIi6X
+        y+Fw2O12q9VqNps/SlCO0WgcDoeTyQQfWZzoJjOiQ6TM5/OY/X6/1+sROh6Pif4sodFoOp3OYDBYrVYE
+        vzWMEWWQr1wusycaTKfT5XJJrvl8jqxSqdrtNkmROTDWXQZ8GlgqlaiWDQGT3Xa73WazyWazSqWy2+2K
+        nV9lQbFYRKZUECbl8M1kMgqFguNQEUkpW8Q/yZTtdrvZ1mKx4LOn8NPpNDLbvpfv3X5QrVY/SXC20Wg0
+        m83o7Xa75eaQmQQm9/v921U94GxCFog+J5NJn8+HbDAYnE4nA54QFb3Kfr+fbn+Q0Ov1arWaVwW8EJwH
+        FI//KtNwUlIYy1RIh8Q5efA4XyW4bXmZ18I14NMqroTeCMLhMDLa7dFLEPwqA7743wBdFZhMpke19zhZ
+        WRbSUc57E/5VluV6vf4GD36ElwBZIywAAAAASUVORK5CYII=
 </value>
   </data>
-  <metadata name="toolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>864, 17</value>
-  </metadata>
   <data name="textBox3.Text" xml:space="preserve">
     <value>?TODO?
 Apply the Digital Camera Profile (DCP) file correction to generated colors.
@@ -202,15 +199,14 @@ Click reset to reset the image to a default uniform white.</value>
         XTesb3QPLh88M+QwdP6m681Lt7xuXbu94vbgcOjwnZHokdE77DtTd1PuvriXeW/h/sYH6AdFD6UeVjxS
         fNTws+7PbaOWo6fHXMf6Hwc/vj/OGn/2S8Yv7ycKnpCfVEyqTDZPmU2dmnafvvF05dOJZ+nPFmYKf5X+
         tfa5zvMffnP8rX82YnbiBf/Fp99LXsq/PPRq2aueuYC5R69TXy/MF72Rf3P4LeNt37vwd5MLWe+x7ys/
-        6H7o/ujz8cGn1E+f/gUDmPP8usTo0wAAAAlwSFlzAAALDAAACwwBP0AiyAAAAaZJREFUOE+l1M1uAVEY
-        xvFeAL2HRiIWLFyAhYibseYmbDSRSKwklnZqIa5AMMQwiDG+xdeMj4W9/tuDTidKW+9iVvM7z/uec2ae
-        9g/U0wN2/we8Wq1ePkuW5e12u9vtfouXyyUsk8k4HA6v18tCm83mDmZ5TD6fFzISiQQCAZfLNZlM8Lcw
-        0uPxYJxOp5A+n49VCoWC1ustFosfscgUJhgM4v1+P5mJRKJer/dU9Q5WVRUv0mjB7Xa/xmKSJLVardFo
-        dKttTdNSqVQymRQ7TIF5NmSZnufzuWEY19vu9/vI4/EYj8dDoZDAhBPb6XSm06mu69ePajAYpNNp5OFw
-        QNpstmKxCC6XSvJ5Ws6J22VNJjMajT6fy263V8plqVKpVqvIbrfLIa3Xa2KtGEnm27lYAQlrNhowdoGG
-        xfWwYrPMZrMiE9lutxlkNptxyRj1Ir+S2bpwOHzJZM6L5FRgvCDus8gUdZrZ0HXSBLZIc5+WT/ADs1gu
-        l4PRqrlbcRPMfV7B9MNLbI/SbDJkrVZjzrvy1LbAw+EQoygKGzsej29nfpv5f/+TdxfMwoegeoToAAAA
-        AElFTkSuQmCC
+        6H7o/ujz8cGn1E+f/gUDmPP8usTo0wAAAAlwSFlzAAALDAAACwwBP0AiyAAAAZhJREFUOE+90r2OAVEY
+        xvG9APYeNhJRULgAhYibUXMTGptIJCqJUmcVMlcgGGIYxBjf4mt8FXr+9hhrxSK7yT7FNHN+533fc87L
+        9g/5Lzyfz98+oyjKer3ebDbP4tlsBkulUjabze12s9FqtXqA2R6TzWaFDIVCPp/P4XAMh0P8PYx0uVwY
+        u90upMfjYRdJkvR2ezqd/ohFTWH8fj/e6/VSMxaLVSqVtqY9wJqm4UU1WnA6ne+RiCzL9Xq93+/fa1vX
+        9UQiEY/HkSJgvlVFoefJZLJcLm/jTqeD3O/30Wg0EAgITHHKNpvN0WhkGMbtq+p2u8lkErnb7ZAWiyWX
+        y4EL+bxiTss9sfIaUzMcDr+asVqtxUJBLhZLpRKy1WpxSYvFgrIs/oaR1PwwA0bCatUqjFOgYfE8rvGl
+        TKfToiay0WgwyHg85pEx6lmSE+bogsGgkIQ5z5JbgbFAvOezJCY2DKrdlJd9XuWI+ZHJZGC0etntfUmO
+        mH5YxPGotRqsXC4/I8kX7vV6GFVVOdjBYPBQktPMv8l2ewAXzMKHF/7TVQAAAABJRU5ErkJggg==
 </value>
   </data>
   <data name="textBox1.Text" xml:space="preserve">
@@ -266,15 +262,14 @@ NOTE: It is a very important value! Use a precisely well known reflectance!</val
         XTesb3QPLh88M+QwdP6m681Lt7xuXbu94vbgcOjwnZHokdE77DtTd1PuvriXeW/h/sYH6AdFD6UeVjxS
         fNTws+7PbaOWo6fHXMf6Hwc/vj/OGn/2S8Yv7ycKnpCfVEyqTDZPmU2dmnafvvF05dOJZ+nPFmYKf5X+
         tfa5zvMffnP8rX82YnbiBf/Fp99LXsq/PPRq2aueuYC5R69TXy/MF72Rf3P4LeNt37vwd5MLWe+x7ys/
-        6H7o/ujz8cGn1E+f/gUDmPP8usTo0wAAAAlwSFlzAAALDAAACwwBP0AiyAAAAaZJREFUOE+l1M1uAVEY
-        xvFeAL2HRiIWLFyAhYibseYmbDSRSKwklnZqIa5AMMQwiDG+xdeMj4W9/tuDTidKW+9iVvM7z/uec2ae
-        9g/U0wN2/we8Wq1ePkuW5e12u9vtfouXyyUsk8k4HA6v18tCm83mDmZ5TD6fFzISiQQCAZfLNZlM8Lcw
-        0uPxYJxOp5A+n49VCoWC1ustFosfscgUJhgM4v1+P5mJRKJer/dU9Q5WVRUv0mjB7Xa/xmKSJLVardFo
-        dKttTdNSqVQymRQ7TIF5NmSZnufzuWEY19vu9/vI4/EYj8dDoZDAhBPb6XSm06mu69ePajAYpNNp5OFw
-        QNpstmKxCC6XSvJ5Ws6J22VNJjMajT6fy263V8plqVKpVqvIbrfLIa3Xa2KtGEnm27lYAQlrNhowdoGG
-        xfWwYrPMZrMiE9lutxlkNptxyRj1Ir+S2bpwOHzJZM6L5FRgvCDus8gUdZrZ0HXSBLZIc5+WT/ADs1gu
-        l4PRqrlbcRPMfV7B9MNLbI/SbDJkrVZjzrvy1LbAw+EQoygKGzsej29nfpv5f/+TdxfMwoegeoToAAAA
-        AElFTkSuQmCC
+        6H7o/ujz8cGn1E+f/gUDmPP8usTo0wAAAAlwSFlzAAALDAAACwwBP0AiyAAAAZhJREFUOE+90r2OAVEY
+        xvG9APYeNhJRULgAhYibUXMTGptIJCqJUmcVMlcgGGIYxBjf4mt8FXr+9hhrxSK7yT7FNHN+533fc87L
+        9g/5Lzyfz98+oyjKer3ebDbP4tlsBkulUjabze12s9FqtXqA2R6TzWaFDIVCPp/P4XAMh0P8PYx0uVwY
+        u90upMfjYRdJkvR2ezqd/ohFTWH8fj/e6/VSMxaLVSqVtqY9wJqm4UU1WnA6ne+RiCzL9Xq93+/fa1vX
+        9UQiEY/HkSJgvlVFoefJZLJcLm/jTqeD3O/30Wg0EAgITHHKNpvN0WhkGMbtq+p2u8lkErnb7ZAWiyWX
+        y4EL+bxiTss9sfIaUzMcDr+asVqtxUJBLhZLpRKy1WpxSYvFgrIs/oaR1PwwA0bCatUqjFOgYfE8rvGl
+        TKfToiay0WgwyHg85pEx6lmSE+bogsGgkIQ5z5JbgbFAvOezJCY2DKrdlJd9XuWI+ZHJZGC0etntfUmO
+        mH5YxPGotRqsXC4/I8kX7vV6GFVVOdjBYPBQktPMv8l2ewAXzMKHF/7TVQAAAABJRU5ErkJggg==
 </value>
   </data>
   <metadata name="openFileDialogCalibration.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">

@@ -19,6 +19,9 @@ namespace RendererManaged {
 
 		ShaderFile( FileInfo^ _ShaderFileName )
 		{
+			if ( _ShaderFileName == nullptr || !_ShaderFileName->Exists )
+				throw gcnew Exception( "Shader file \"" + _ShaderFileName + "\" does not exist!" );
+
 			m_ShaderFileName = _ShaderFileName;
 
 			StreamReader^	R = _ShaderFileName->OpenText();
@@ -38,6 +41,9 @@ namespace RendererManaged {
 
 		ShaderBinaryFile( FileInfo^ _ShaderFileName )
 		{
+			if ( _ShaderFileName == nullptr || !_ShaderFileName->Exists )
+				throw gcnew Exception( "Shader file \"" + _ShaderFileName + "\" does not exist!" );
+
 			m_ShaderFileName = _ShaderFileName;
 
 			FileStream^	R = _ShaderFileName->OpenRead();

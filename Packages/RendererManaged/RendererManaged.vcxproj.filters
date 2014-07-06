@@ -29,6 +29,7 @@
     <ClInclude Include="PixelsBuffer.h" />
     <ClInclude Include="StructuredBuffer.h" />
     <ClInclude Include="MathStructs.h" />
+    <ClInclude Include="Texture3D.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp">
@@ -65,6 +66,9 @@
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="MathStructs.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture3D.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>
