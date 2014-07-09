@@ -20,7 +20,10 @@ namespace GenerateSelfShadowedBumpMap
 	{
 		#region CONSTANTS
 
-		private const int		MAX_THREADS = 1024;	// Maximum threads run by the compute shader
+		private const int		MAX_THREADS = 1024;			// Maximum threads run by the compute shader
+
+		private const int		BILATERAL_PROGRESS = 50;	// Bilateral filtering is considered as this % of the total task (bilateral is quite long so I decided it was equivalent to 50% of the complete computation task)
+		private const int		MAX_LINES = 16;				// Process at most that amount of lines of a 4096x4096 image for a single dispatch
 
 		#endregion
 
@@ -35,7 +38,7 @@ namespace GenerateSelfShadowedBumpMap
 			public UInt32	Tile;				// Tiling flag
 			public float	TexelSize_mm;		// Size of a texel (in millimeters)
 			public float	Displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
-			public float	AOFactor;			// Darkening factor for AO when ray goes below height map
+			public float	MediumDensity;		// (TRANSLUCENCY) Density of the medium controlling extinction
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -67,6 +70,8 @@ namespace GenerateSelfShadowedBumpMap
 		private RendererManaged.ConstantBuffer<CBInput>	m_CB_Input;
 		private RendererManaged.StructuredBuffer<RendererManaged.float3>	m_SB_Rays = null;
 		private RendererManaged.ComputeShader	m_CS_GenerateSSBumpMap = null;
+		// Directional Translucency Map Generation
+		private RendererManaged.ComputeShader	m_CS_GenerateTranslucencyMap = null;
 
 		// Bilateral filtering pre-processing
 		private RendererManaged.ConstantBuffer<CBFilter>	m_CB_Filter;
@@ -99,9 +104,11 @@ namespace GenerateSelfShadowedBumpMap
 #if DEBUG
 				m_CS_GenerateSSBumpMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
 				m_CS_BilateralFilter = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
+				m_CS_GenerateTranslucencyMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateTranslucencyMap.hlsl" ) ), "CS", null );
 #else
 				m_CS_GenerateSSBumpMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
 				m_CS_BilateralFilter = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
+				m_CS_GenerateTranslucencyMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateTranslucencyMap.fxbin" ), "CS" );
 #endif
 
 				// Create our constant buffers
@@ -134,6 +141,7 @@ namespace GenerateSelfShadowedBumpMap
 
 				try
 				{
+					m_CS_GenerateTranslucencyMap.Dispose();
 					m_CS_GenerateSSBumpMap.Dispose();
 					m_CS_BilateralFilter.Dispose();
 
@@ -209,19 +217,193 @@ namespace GenerateSelfShadowedBumpMap
 
 		private unsafe void	Generate()
 		{
-			groupBox1.Enabled = false;
+			try
+			{
+				tabControlGenerators.Enabled = false;
 
-			const int	BILATERAL_PROGRESS = 50;
-			const int	MAX_LINES = 16;
+				//////////////////////////////////////////////////////////////////////////
+				// 1] Apply bilateral filtering to the input texture as a pre-process
+				ApplyBilateralFiltering( m_TextureSource, m_TextureTarget0, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, checkBoxWrap.Checked );
 
-			//////////////////////////////////////////////////////////////////////////
-			// 1] Apply bilateral filtering to the input texture as a pre-process
-			m_TextureSource.SetCS( 0 );
-			m_TextureTarget0.SetCSUAV( 0 );
 
-			m_CB_Filter.m.Radius = floatTrackbarControlBilateralRadius.Value;
-			m_CB_Filter.m.Tolerance = floatTrackbarControlBilateralTolerance.Value;
-			m_CB_Filter.m.Tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
+				//////////////////////////////////////////////////////////////////////////
+				// 2] Compute directional occlusion
+
+				// Prepare computation parameters
+				m_TextureTarget0.SetCS( 0 );
+				m_TextureTarget1.SetCSUAV( 0 );
+				m_SB_Rays.SetInput( 1 );
+
+				m_CB_Input.m.RaysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
+				m_CB_Input.m.MaxStepsCount = (UInt32) integerTrackbarControlMaxStepsCount.Value;
+				m_CB_Input.m.Tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
+				m_CB_Input.m.TexelSize_mm = 1000.0f / floatTrackbarControlPixelDensity.Value;
+				m_CB_Input.m.Displacement_mm = 10.0f * floatTrackbarControlHeight.Value;
+
+				// Start
+				m_CS_GenerateSSBumpMap.Use();
+
+				int	h = Math.Max( 1, MAX_LINES*1024 / W );
+				int	CallsCount = (int) Math.Ceiling( (float) H / h );
+				for ( int i=0; i < CallsCount; i++ )
+				{
+					m_CB_Input.m.Y0 = (UInt32) (i * h);
+					m_CB_Input.UpdateData();
+
+					m_CS_GenerateSSBumpMap.Dispatch( W, h, 1 );
+
+					m_Device.Present( true );
+
+					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
+//					for ( int a=0; a < 10; a++ )
+						Application.DoEvents();
+				}
+
+				progressBar.Value = progressBar.Maximum;
+
+				// Compute in a single shot (this is madness!)
+// 				m_CB_Input.m.y = 0;
+// 				m_CB_Input.UpdateData();
+// 				m_CS_GenerateSSBumpMap.Dispatch( W, H, 1 );
+
+				//////////////////////////////////////////////////////////////////////////
+				// 3] Copy target to staging for CPU readback and update the resulting bitmap
+				m_TextureTarget_CPU.CopyFrom( m_TextureTarget1 );
+
+				if ( m_BitmapResult != null )
+					m_BitmapResult.Dispose();
+				m_BitmapResult = null;
+				m_BitmapResult = new ImageUtility.Bitmap( W, H, m_LinearProfile );
+				m_BitmapResult.HasAlpha = true;
+
+				RendererManaged.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
+				using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
+					for ( int Y=0; Y < H; Y++ )
+					{
+						R.BaseStream.Position = Y * Pixels.RowPitch;
+						for ( int X=0; X < W; X++ )
+						{
+							ImageUtility.float4	Color = new ImageUtility.float4( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+							Color = m_LinearProfile.RGB2XYZ( Color );
+							m_BitmapResult.ContentXYZ[X,Y] = Color;
+						}
+					}
+
+				Pixels.Dispose();
+				m_TextureTarget_CPU.UnMap( 0, 0 );
+
+				// Assign result
+				viewportPanelResult.Image = m_BitmapResult;
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
+			}
+			finally
+			{
+				tabControlGenerators.Enabled = true;
+			}
+		}
+
+		private unsafe void	GenerateTranslucency()
+		{
+			try
+			{
+				tabControlGenerators.Enabled = false;
+
+				//////////////////////////////////////////////////////////////////////////
+				// 1] Apply bilateral filtering to the input texture as a pre-process
+				ApplyBilateralFiltering( m_TextureSource, m_TextureTarget0, floatTrackbarControlBilateralRadiusTr.Value, floatTrackbarControlBilateralToleranceTr.Value, checkBoxWrapTr.Checked );
+
+
+				//////////////////////////////////////////////////////////////////////////
+				// 2] Compute directional translucency
+
+				// Prepare computation parameters
+				m_TextureTarget0.SetCS( 0 );
+				m_TextureTarget1.SetCSUAV( 0 );
+				m_SB_Rays.SetInput( 1 );
+
+				m_CB_Input.m.RaysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount2.Value );
+				m_CB_Input.m.MaxStepsCount = (UInt32) integerTrackbarControlMaxStepsCountTr.Value;
+				m_CB_Input.m.Tile = (uint) (checkBoxWrapTr.Checked ? 1 : 0);
+				m_CB_Input.m.TexelSize_mm = 1000.0f / floatTrackbarControlPixelDensityTr.Value;
+				m_CB_Input.m.Displacement_mm = 10.0f * floatTrackbarControlThickness.Value;
+				m_CB_Input.m.MediumDensity = floatTrackbarControlDensity.Value;
+
+				// Start
+				m_CS_GenerateTranslucencyMap.Use();
+
+				int	h = Math.Max( 1, MAX_LINES*1024 / W );
+				int	CallsCount = (int) Math.Ceiling( (float) H / h );
+				for ( int i=0; i < CallsCount; i++ )
+				{
+					m_CB_Input.m.Y0 = (UInt32) (i * h);
+					m_CB_Input.UpdateData();
+
+					m_CS_GenerateTranslucencyMap.Dispatch( W, h, 1 );
+
+					m_Device.Present( true );
+
+					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
+//					for ( int a=0; a < 10; a++ )
+						Application.DoEvents();
+				}
+
+				progressBar.Value = progressBar.Maximum;
+
+				// Compute in a single shot (this is madness!)
+// 				m_CB_Input.m.y = 0;
+// 				m_CB_Input.UpdateData();
+// 				m_CS_GenerateSSBumpMap.Dispatch( W, H, 1 );
+
+				//////////////////////////////////////////////////////////////////////////
+				// 3] Copy target to staging for CPU readback and update the resulting bitmap
+				m_TextureTarget_CPU.CopyFrom( m_TextureTarget1 );
+
+				if ( m_BitmapResult != null )
+					m_BitmapResult.Dispose();
+				m_BitmapResult = null;
+				m_BitmapResult = new ImageUtility.Bitmap( W, H, m_LinearProfile );
+				m_BitmapResult.HasAlpha = true;
+
+				RendererManaged.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
+				using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
+					for ( int Y=0; Y < H; Y++ )
+					{
+						R.BaseStream.Position = Y * Pixels.RowPitch;
+						for ( int X=0; X < W; X++ )
+						{
+							ImageUtility.float4	Color = new ImageUtility.float4( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+							Color = m_LinearProfile.RGB2XYZ( Color );
+							m_BitmapResult.ContentXYZ[X,Y] = Color;
+						}
+					}
+
+				Pixels.Dispose();
+				m_TextureTarget_CPU.UnMap( 0, 0 );
+
+				// Assign result
+				viewportPanelResult.Image = m_BitmapResult;
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
+			}
+			finally
+			{
+				tabControlGenerators.Enabled = true;
+			}
+		}
+
+		private void	ApplyBilateralFiltering( RendererManaged.Texture2D _Source, RendererManaged.Texture2D _Target, float _BilateralRadius, float _BilateralTolerance, bool _Wrap )
+		{
+			_Source.SetCS( 0 );
+			_Target.SetCSUAV( 0 );
+
+			m_CB_Filter.m.Radius = _BilateralRadius;
+			m_CB_Filter.m.Tolerance = _BilateralTolerance;
+			m_CB_Filter.m.Tile = (uint) (_Wrap ? 1 : 0);
 
 			m_CS_BilateralFilter.Use();
 
@@ -237,91 +419,14 @@ namespace GenerateSelfShadowedBumpMap
 				m_Device.Present( true );
 
 				progressBar.Value = (int) (0.01f * (0 + BILATERAL_PROGRESS * (i+1) / CallsCount) * progressBar.Maximum);
-//				progressBar.Refresh();
-				for ( int a=0; a < 10; a++ )
+//				for ( int a=0; a < 10; a++ )
 					Application.DoEvents();
 			}
 
-			// Single gulp (crashes the driver on large image!)
+			// Single gulp (crashes the driver on large images!)
 //			m_CS_BilateralFilter.Dispatch( W, H, 1 );
 
-			m_TextureTarget0.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
-
-			//////////////////////////////////////////////////////////////////////////
-			// 2] Compute directional occlusion
-
-			// Prepare computation parameters
-			m_TextureTarget0.SetCS( 0 );
-			m_TextureTarget1.SetCSUAV( 0 );
-			m_SB_Rays.SetInput( 1 );
-
-			m_CB_Input.m.RaysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
-			m_CB_Input.m.MaxStepsCount = (UInt32) integerTrackbarControlMaxStepsCount.Value;
-			m_CB_Input.m.Tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
-			m_CB_Input.m.TexelSize_mm = 1000.0f / floatTrackbarControlPixelDensity.Value;
-			m_CB_Input.m.Displacement_mm = 10.0f * floatTrackbarControlHeight.Value;
-			m_CB_Input.m.AOFactor = floatTrackbarControlAOFactor.Value;
-
-			// Start
-			m_CS_GenerateSSBumpMap.Use();
-
-//			h = Math.Max( 1, H / 20 );
-			h = Math.Max( 1, MAX_LINES*1024 / W );
-			CallsCount = (int) Math.Ceiling( (float) H / h );
-			for ( int i=0; i < CallsCount; i++ )
-			{
-				m_CB_Input.m.Y0 = (UInt32) (i * h);
-				m_CB_Input.UpdateData();
-
-				m_CS_GenerateSSBumpMap.Dispatch( W, h, 1 );
-
-				m_Device.Present( true );
-
-				progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
-//				progressBar.Refresh();
-				for ( int a=0; a < 10; a++ )
-					Application.DoEvents();
-			}
-
-			progressBar.Value = progressBar.Maximum;
-
-			// Compute in a single shot
-// 			m_CB_Input.m.y = 0;
-// 			m_CB_Input.UpdateData();
-// 			m_CS_GenerateSSBumpMap.Dispatch( W, H, 1 );
-
-			//////////////////////////////////////////////////////////////////////////
-			// 3] Copy target to staging for CPU readback and update the resulting bitmap
-			m_TextureTarget_CPU.CopyFrom( m_TextureTarget1 );
-
-			if ( m_BitmapResult != null )
-				m_BitmapResult.Dispose();
-			m_BitmapResult = null;
-			m_BitmapResult = new ImageUtility.Bitmap( W, H, m_LinearProfile );
-			m_BitmapResult.HasAlpha = true;
-
-			RendererManaged.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
-			using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
-				for ( int Y=0; Y < H; Y++ )
-				{
-					R.BaseStream.Position = Y * Pixels.RowPitch;
-					for ( int X=0; X < W; X++ )
-					{
-						ImageUtility.float4	Color = new ImageUtility.float4( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-
-//Color.w = 1.0f;
-						Color = m_LinearProfile.RGB2XYZ( Color );
-						m_BitmapResult.ContentXYZ[X,Y] = Color;
-					}
-				}
-
-			Pixels.Dispose();
-			m_TextureTarget_CPU.UnMap( 0, 0 );
-
-			// Assign result
-			viewportPanelResult.Image = m_BitmapResult;
-
-			groupBox1.Enabled = true;
+			_Target.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
 		}
 
 		private void	GenerateRays( int _RaysCount )
@@ -383,7 +488,7 @@ namespace GenerateSelfShadowedBumpMap
 		{
 			try
 			{
-				groupBox1.Enabled = false;
+				tabControlGenerators.Enabled = false;
 
 				// Half-life basis (Z points outside of the surface, as in normal maps)
 				WMath.Vector[]	Basis = new WMath.Vector[] {
@@ -520,7 +625,7 @@ namespace GenerateSelfShadowedBumpMap
 			}
 			finally
 			{
-				groupBox1.Enabled = true;
+				tabControlGenerators.Enabled = true;
 			}
 		}
 
@@ -693,6 +798,11 @@ namespace GenerateSelfShadowedBumpMap
 //			Generate_CPU( integerTrackbarControlRaysCount.Value );
 		}
 
+		private void buttonGenerateTranslucency_Click( object sender, EventArgs e )
+		{
+			GenerateTranslucency();
+		}
+
 		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
 		{
 			GenerateRays( _Sender.Value );
@@ -754,7 +864,7 @@ namespace GenerateSelfShadowedBumpMap
 			{
 				LoadHeightMap( new System.IO.FileInfo( openFileDialogImage.FileName ) );
 
-				groupBox1.Enabled = true;
+				tabControlGenerators.Enabled = true;
 				buttonGenerate.Focus();
 			}
 			catch ( Exception _e )

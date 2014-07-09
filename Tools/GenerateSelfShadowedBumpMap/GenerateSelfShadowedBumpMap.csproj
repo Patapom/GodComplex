@@ -129,6 +129,7 @@
   <ItemGroup>
     <Content Include="Shaders\BilateralFiltering.hlsl" />
     <Content Include="Shaders\GenerateSSBumpMap.hlsl" />
+    <Content Include="Shaders\GenerateTranslucencyMap.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

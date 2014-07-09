@@ -16,7 +16,7 @@ cbuffer	CBInput : register( b0 )
 	bool	_Tile;				// Tiling flag
 	float	_TexelSize_mm;		// Texel size in millimeters
 	float	_Displacement_mm;	// Height map max encoded displacement in millimeters
-//	float	_AOFactor;			// Darkening factor for AO when ray goes below height map
+	float	_Density;			// Medium density
 }
 
 Texture2D<float>			_Source : register( t0 );

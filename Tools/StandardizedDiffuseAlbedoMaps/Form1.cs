@@ -559,9 +559,9 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_PercentOfBlackValues"></param>
 		/// <param name="_HasSaturatedValues">Returns the percentage of encountered saturated values. 0 is okay, more means the probe shouldn't be used</param>
 		/// <returns></returns>
-		private ImageUtility.float3	IntegrateLuminance( float _X, float _Y, float _Radius, out ImageUtility.float3 _MinxyY, out ImageUtility.float3 _MaxxyY, out float _PercentOfBlackValues, out float _PercentOfSaturatedValues )
+		private ImageUtility.float3	IntegrateLuminance( float _X, float _Y, float _Radius, out ImageUtility.float3 _MinXYZ, out ImageUtility.float3 _MaxXYZ, out float _PercentOfBlackValues, out float _PercentOfSaturatedValues )
 		{
-			float	Radius = _Radius * m_BitmapXYZ.Width;
+			float	Radius = Math.Max( 1, _Radius * m_BitmapXYZ.Width );
 			float	CenterX = _X * m_BitmapXYZ.Width;
 			float	CenterY = _Y * m_BitmapXYZ.Height;
 			float	SqRadius = Radius*Radius;
@@ -578,9 +578,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			int		TotalBlackValuesCount = 0;
 			int		TotalSaturatedValuesCount = 0;
 			int		TotalValuesCount = 0;
-			ImageUtility.float3	SumxyY = new ImageUtility.float3( 0, 0, 0 );
-			_MinxyY = new ImageUtility.float3( 0, 0, +float.MaxValue );
-			_MaxxyY = new ImageUtility.float3( 0, 0, 0 );
+			ImageUtility.float3	SumXYZ = new ImageUtility.float3( 0, 0, 0 );
+			_MinXYZ = new ImageUtility.float3( 0, +float.MaxValue, 0 );
+			_MaxXYZ = new ImageUtility.float3( 0, 0, 0 );
 			float	SumWeights = 0.0f;
 			for ( int Y=Y0; Y < Y1; Y++ )
 				for ( int X=X0; X < X1; X++ )
@@ -597,21 +597,24 @@ namespace StandardizedDiffuseAlbedoMaps
 
 //DEBUG					m_BitmapXYZ.ContentXYZ[X,Y].y = Weight;
 					ImageUtility.float3	XYZ = (ImageUtility.float3) m_BitmapXYZ.ContentXYZ[X,Y];
-					ImageUtility.float3	xyY = ImageUtility.ColorProfile.XYZ2xyY( XYZ );
 					if ( ApplySpatialCorrection )
+					{
+						ImageUtility.float3	xyY = ImageUtility.ColorProfile.XYZ2xyY( XYZ );
 						xyY.z *= m_CalibrationDatabase.GetSpatialLuminanceCorrectionFactor( (float) X / m_BitmapXYZ.Width, (float) Y / m_BitmapXYZ.Height );
+						XYZ = ImageUtility.ColorProfile.xyY2XYZ( xyY );
+					}
 
-					if ( xyY.z < 0.001f )
+					if ( XYZ.y < 0.001f )
 						TotalBlackValuesCount++;		// Warning!
-					if ( xyY.z > 0.999f )
+					if ( XYZ.y > 0.999f )
 						TotalSaturatedValuesCount++;	// Warning!
 					TotalValuesCount++;
 
-					if ( xyY.z < _MinxyY.z )
-						_MinxyY = xyY;
-					if ( xyY.z > _MaxxyY.z )
-						_MaxxyY = xyY;
-					SumxyY += Weight * xyY;
+					if ( XYZ.y < _MinXYZ.y )
+						_MinXYZ = XYZ;
+					if ( XYZ.y > _MaxXYZ.y )
+						_MaxXYZ = XYZ;
+					SumXYZ += Weight * XYZ;
 					SumWeights += Weight;
 				}
 
@@ -620,8 +623,8 @@ namespace StandardizedDiffuseAlbedoMaps
 			_PercentOfBlackValues = (float) TotalBlackValuesCount / TotalValuesCount;
 			_PercentOfSaturatedValues = (float) TotalSaturatedValuesCount / TotalValuesCount;
 
-			SumxyY = (1.0f/SumWeights) * SumxyY;
-			return SumxyY;
+			SumXYZ = (1.0f/SumWeights) * SumXYZ;
+			return SumXYZ;
 		}
 
 		/// <summary>
@@ -632,9 +635,9 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <param name="_Radius"></param>
 		private void	IntegrateLuminance( CameraCalibration.Probe _Probe, ImageUtility.float2 _Center, float _Radius )
 		{
-			ImageUtility.float3	MinxyY, MaxxyY;
+			ImageUtility.float3	MinXYZ, MaxXYZ;
 			float	BlackValues, SaturatedValues;
-			ImageUtility.float3	AveragexyY = IntegrateLuminance( _Center.x, _Center.y, _Radius, out MinxyY, out MaxxyY, out BlackValues, out SaturatedValues );
+			ImageUtility.float3	AverageXYZ = IntegrateLuminance( _Center.x, _Center.y, _Radius, out MinXYZ, out MaxXYZ, out BlackValues, out SaturatedValues );
 
 			bool	DisableProbe = false;
 			if ( BlackValues > BLACK_VALUES_TOLERANCE &&
@@ -660,7 +663,7 @@ namespace StandardizedDiffuseAlbedoMaps
 				return;
 			}
 
-			_Probe.m_LuminanceMeasured = checkBoxCalibrationUseAverageLuminance.Checked ? AveragexyY.z : MaxxyY.z;
+			_Probe.m_LuminanceMeasured = checkBoxCalibrationUseAverageLuminance.Checked ? AverageXYZ.y : MaxXYZ.y;
 
 			// We now have valid measurement disc infos
 			_Probe.m_MeasurementDiscIsAvailable = true;
@@ -920,9 +923,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			foreach ( CameraCalibration.Probe P in m_Calibration.m_Reflectances )
 				if ( P.m_MeasurementDiscIsAvailable )
 				{
-					ImageUtility.float3	MinxyY, MaxxyY;
+					ImageUtility.float3	MinXYZ, MaxXYZ;
 					float	BlackValues, SaturatedValues;
-					ImageUtility.float3	AveragexyY = IntegrateLuminance( P.m_MeasurementCenterX, P.m_MeasurementCenterY, P.m_MeasurementRadius, out MinxyY, out MaxxyY, out BlackValues, out SaturatedValues );
+					ImageUtility.float3	AverageXYZ = IntegrateLuminance( P.m_MeasurementCenterX, P.m_MeasurementCenterY, P.m_MeasurementRadius, out MinXYZ, out MaxXYZ, out BlackValues, out SaturatedValues );
 					if ( BlackValues > BLACK_VALUES_TOLERANCE || SaturatedValues > SATURATED_VALUES_TOLERANCE )
 					{	// Disable that probe as too many values are black or saturated
 						P.m_IsAvailable = false;
@@ -933,7 +936,7 @@ namespace StandardizedDiffuseAlbedoMaps
 
 					// We have a valid measurement!
 					P.m_IsAvailable = true;
-					P.m_LuminanceMeasured = AveragexyY.z;
+					P.m_LuminanceMeasured = AverageXYZ.y;
 				}
 				else
 				{	// Disable probe as it has no measurement info
@@ -1261,9 +1264,9 @@ namespace StandardizedDiffuseAlbedoMaps
 
 			outputPanel.StartCalibrationTargetPicking( ( ImageUtility.float2 _Center, float _Radius ) => {
 
-				ImageUtility.float3	MinxyY, MaxxyY;
+				ImageUtility.float3	MinXYZ, MaxXYZ;
 				float	BlackValues, SaturatedValues;
-				ImageUtility.float3	AveragexyY = IntegrateLuminance( _Center.x, _Center.y, _Radius, out MinxyY, out MaxxyY, out BlackValues, out SaturatedValues );
+				ImageUtility.float3	AverageXYZ = IntegrateLuminance( _Center.x, _Center.y, _Radius, out MinXYZ, out MaxXYZ, out BlackValues, out SaturatedValues );
 
 				if ( BlackValues > BLACK_VALUES_TOLERANCE )
 				{
@@ -1272,13 +1275,13 @@ namespace StandardizedDiffuseAlbedoMaps
 				}
 				if ( SaturatedValues > SATURATED_VALUES_TOLERANCE )
 				{
-					MessageBox( "This probe has more than 5% luminance values that are saturated, it cannot be used as a white reference!", MessageBoxButtons.OK, MessageBoxIcon.Warning );
-					return;
+					if ( MessageBox( "This probe has more than 5% luminance values that are saturated, it SHOULD NOT be used as a white reference!\r\n\r\nDo you want to use it anyway?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning ) != DialogResult.Yes )
+						return;
 				}
 
 				// Scale the luminance based on the user-supplied white target
-//				ImageUtility.float3	WhiteRefxyY = AveragexyY;
-				ImageUtility.float3	WhiteRefxyY = MaxxyY;	// Use Max otherwise we can get luminances higher than 99%!
+//				ImageUtility.float3	WhiteRefxyY = ImageUtility.ColorProfile.XYZ2xyY( MaxXYZ );		// Use Max otherwise we can get luminances higher than 99%!
+				ImageUtility.float3	WhiteRefxyY = ImageUtility.ColorProfile.XYZ2xyY( AverageXYZ );	// NO! Use Average because we want a white probe to return exactly the same result as when we sampled it at calibration time!!!!
 				WhiteRefxyY.z *= 99.0f / floatTrackbarControlTargetWhiteReflectance.Value;
 
 				m_CalibrationDatabase.WhiteReflectanceReference = WhiteRefxyY;
