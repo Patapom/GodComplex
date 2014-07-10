@@ -41,7 +41,7 @@
 			this.viewportPanel.Device = null;
 			this.viewportPanel.Location = new System.Drawing.Point(12, 12);
 			this.viewportPanel.Name = "viewportPanel";
-			this.viewportPanel.Size = new System.Drawing.Size(910, 512);
+			this.viewportPanel.Size = new System.Drawing.Size(963, 686);
 			this.viewportPanel.TabIndex = 0;
 			// 
 			// buttonReload

@@ -29,8 +29,8 @@ float	FastNoise( float3 x )
 // Fast analytical noise for screen-space perturbation
 float	FastScreenNoise( float2 _XY )
 {
-	return Hash(  1.5798490 * _XY.x - 2.60165409 * _XY.y )
-		 * Hash( -1.3468489 * _XY.y + 2.31765563 * _XY.x );
+	return 	Hash(  13.5798490 * _XY.x - 23.60165409 * _XY.y )
+		  * Hash( -17.3468489 * _XY.y + 27.31765563 * _XY.x );
 }
 
 float	FBM( float3 _Position, float3x3 _Rotation, uint _OctavesCount )
@@ -65,67 +65,35 @@ float	Turbulence( float3 _Position, float3x3 _Rotation, uint _OctavesCount )
 ////////////////////////////////////////////////////////////////////////////////////////
 // Simple cellular noise with a single point per grid cell
 
-// Generate a [0,1[ location within a grid cell given the integer cell index
+// Generate a location within a grid cell given the integer cell index
 float3	GenerateRandomLocation( float3 _GridCellIndex )
 {
-	return float3(
-		Hash( 0.894205 + _GridCellIndex.x ),
-		Hash( 0.136515 + _GridCellIndex.y ),
-		Hash( 0.654318 + _GridCellIndex.z )
-		);
+	return _GridCellIndex
+		 + float3(	Hash( 0.894205 + 17.219 * _GridCellIndex.x - 19.1965 * _GridCellIndex.y + 7.0689 * _GridCellIndex.z ),
+					Hash( 0.136515 - 23.198 * _GridCellIndex.x + 7.95145 * _GridCellIndex.y + 12.123 * _GridCellIndex.z ),
+					Hash( 0.654318 + 19.161 * _GridCellIndex.y - 15.6317 * _GridCellIndex.y - 51.561 * _GridCellIndex.z )
+				 );
 }
 
-float4	Cellular( float3 _Position, float3 _InvGridCellSize )
+float	Cellular( float3 _Position, float3 _InvGridCellSize )
 {
-	_Position *= _InvGridCellSize;
+	_Position = _InvGridCellSize * (_Position + 137.56);
 
-	float3	nPosition = _Position - frac( _Position );
+	float3	nPosition = floor( _Position );
 
-// 	float3	Positions[3*3*3] = {
-// 		GenerateRandomLocation( nPosition + float3( -1, -1, -1 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  0, -1, -1 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  1, -1, -1 ) ),
-// 		GenerateRandomLocation( nPosition + float3( -1,  0, -1 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  0,  0, -1 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  1,  0, -1 ) ),
-// 		GenerateRandomLocation( nPosition + float3( -1,  1, -1 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  0,  1, -1 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  1,  1, -1 ) ),
-// 
-// 		GenerateRandomLocation( nPosition + float3( -1, -1,  0 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  0, -1,  0 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  1, -1,  0 ) ),
-// 		GenerateRandomLocation( nPosition + float3( -1,  0,  0 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  0,  0,  0 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  1,  0,  0 ) ),
-// 		GenerateRandomLocation( nPosition + float3( -1,  1,  0 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  0,  1,  0 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  1,  1,  0 ) ),
-// 
-// 		GenerateRandomLocation( nPosition + float3( -1, -1,  1 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  0, -1,  1 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  1, -1,  1 ) ),
-// 		GenerateRandomLocation( nPosition + float3( -1,  0,  1 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  0,  0,  1 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  1,  0,  1 ) ),
-// 		GenerateRandomLocation( nPosition + float3( -1,  1,  1 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  0,  1,  1 ) ),
-// 		GenerateRandomLocation( nPosition + float3(  1,  1,  1 ) ),
-// 	};
-
-	float4	ClosestPosition = float4( 0, 0, 0, INFINITY );
+	float	ClosestDistance = INFINITY;
 	for ( int z=-1; z <= 1; z++ )
 		for ( int y=-1; y <= 1; y++ )
 			for ( int x=-1; x <= 1; x++ )
 			{
-				float3	Location = GenerateRandomLocation( nPosition + float3( x, y, z ) );
+				float3	nCellIndex = nPosition + float3( x, y, z );
+				float3	Location = GenerateRandomLocation( nCellIndex );	// Interest point within cell
 				float3	Delta = _Position - Location;
 				float	SqDistance = dot( Delta, Delta );
-				ClosestPosition = lerp( ClosestPosition, float4( Location, SqDistance ), step( SqDistance, ClosestPosition.w ) );
+				ClosestDistance = lerp( ClosestDistance, SqDistance, step( SqDistance, ClosestDistance ) );
 			}
 
-	ClosestPosition.w = sqrt( ClosestPosition.w );
-	return ClosestPosition;
+	return sqrt( ClosestDistance );
 }
 
 #endif

@@ -73,6 +73,88 @@ float	Map( float3 _Position )
 	return Distance1( _Position + k * n );
 }
 
+float	EstimateDistance( float2 _Position )
+{
+	float2	Center = float2( 0.0, 0.0 );
+	float2	Size = float2( 0.4, 0.2 );
+
+	float	d = length( (_Position - Center) / Size ) - 1.0;
+	return d;
+}
+
+float2	EstimateNormal( float2 _Position )
+{
+//return normalize( float2( -_Position.y, _Position.x ) );
+
+	const float2 e = float2( 0.0001, 0.0 );
+	float2	N = float2(
+		EstimateDistance( _Position + e.xy ) - EstimateDistance( _Position - e.xy ),
+		EstimateDistance( _Position + e.yx ) - EstimateDistance( _Position - e.yx )
+		);
+	return normalize(N);
+}
+
+float	CellularFBM( float2 _Position, float _Amplitude, float _GridSize )
+{
+	for ( int i=0; i < 4; i++ )
+	{
+		float2	N = EstimateNormal( _Position );
+		_Position += _Amplitude * Cellular( float3( _Position, 3.6516 * i ), 1.0 / _GridSize ) * N;	// Move in the direction of the normal
+		_Amplitude *= 0.5;
+		_GridSize *= 0.5;
+	}
+
+	return EstimateDistance( _Position );
+}
+
+float4	TestDistanceFieldDisplacement2D( float2 _Position )
+{
+	float4	SkyColor = float4( 135, 206, 235, 255 ) / 255.0;
+//return 1.0 * Cellular( float3( _Position, 0 ), 20.0 );
+
+	float	d = EstimateDistance( _Position );
+	float2	N = EstimateNormal( _Position );
+//return float4( N, 0, 1 );
+
+// 	_Position += 0.1 * Cellular( float3( _Position, 0.0 ), 20.0 ) * N;
+// 	d = EstimateDistance( _Position );
+
+	d = CellularFBM( _Position, 0.05, 0.1 );
+
+	return d < 0.0 ? float4( 1, 1, 1, 1 ) : SkyColor;
+}
+
+float	ShowNormalVectorField( float2 _P )
+{
+	float2	N = EstimateNormal( _P );
+	float	L = length(N);
+			N /= L;
+
+	float2	P2 = _P;
+	float2	N2 = N;
+
+	uint	StepsCount = 40 * L;
+	float	R = FastScreenNoise( _P );
+	for( uint i=0; i < StepsCount; i++ )
+	{
+		// Follow normal in both directions
+		_P += _Dimensions.w * N;
+		P2 -= _Dimensions.w * N2;
+		
+ 		// Sample at this location
+ 		N = EstimateNormal( _P );
+ 		N2 = EstimateNormal( P2 );
+
+		// Add noise
+//		R += FastScreenNoise( _P ) + FastScreenNoise( P2 );	// Funny, I had the "intuition" it was because of bilinear sampling of the noise I couldn't get the LIC right...
+															// But why is that so? Still no idea...
+		R += FastScreenNoise( floor( _Dimensions.xy * _P ) * _Dimensions.zw ) + FastScreenNoise( floor( _Dimensions.xy * P2 ) * _Dimensions.zw );
+	}
+
+	return R / (1.0 + 2.0 * StepsCount);
+}
+
+
 struct VS_IN
 {
 	float4	__Position : SV_POSITION;
@@ -86,6 +168,13 @@ VS_IN	VS( VS_IN _In )
 float4	PS( VS_IN _In ) : SV_TARGET0
 {
 	float2	UV = _In.__Position.xy * _Dimensions.zw;
+
+	float2	P = float2( _Dimensions.x * _Dimensions.w * (UV.x - 0.5), 0.5 - UV.y );
+
+//return float4( EstimateNormal( P ), 0, 0 );
+//return EstimateDistance( P ) > 0.0 ? ShowNormalVectorField( P ) : 1.0;
+//return FastScreenNoise( P );
+return TestDistanceFieldDisplacement2D( P );
 
 	// Compute view direction in world space
 	float3	View = normalize( float3( _CameraData.xy * float2( 2.0 * UV.x - 1.0, 1.0 - 2.0 * UV.y ), 1.0 ) );
