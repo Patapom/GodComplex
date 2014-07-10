@@ -55,19 +55,20 @@ namespace AlbedoDatabaseGenerator
 				PLASTIC,
 			}
 
+			[Flags]
 			public enum		TAGS_COLOR
 			{
-				NONE,
-				BLACK,
-				WHITE,
-				GRAY,
-				RED,
-				GREEN,
-				BLUE,
-				YELLOW,
-				CYAN,
-				PURPLE,
-				ORANGE,
+				NONE = 0,
+				BLACK = 1,
+				WHITE = 2,
+				GRAY = 4,
+				RED = 8,
+				GREEN = 16,
+				BLUE = 32,
+				YELLOW = 64,
+				CYAN = 128,
+				PURPLE = 256,
+				ORANGE = 512,
 			}
 
 			public enum		TAGS_SHADE
@@ -229,10 +230,16 @@ namespace AlbedoDatabaseGenerator
 
 			public override string ToString()
 			{
+				string	Result = null;
 				if ( m_FriendlyName != null && m_FriendlyName != "" )
-					return m_FriendlyName;
+					Result = m_FriendlyName;
+				else
+					Result = Path.GetFileName( m_RelativePath ) + " <NO INFO>";
 
-				return Path.GetFileName( m_RelativePath );
+				if ( m_Manifest == null )
+					Result += " <MISSING MANIFEST>";
+
+				return Result;
 			}
 
 			public void		Load( Database _Owner, XmlElement _EntryElement )
@@ -703,6 +710,7 @@ namespace AlbedoDatabaseGenerator
 				foreach ( Entry E in m_Entries )
 					E.Manifest = null;	// Clear manifest
 
+				List<Entry>	PotentialNewEntries = new List<Entry>();
 				FileInfo[]	PotentialManifestFiles = m_RootPath.GetFiles( "*.xml", SearchOption.AllDirectories );
 				foreach ( FileInfo PotentialManifestFile in PotentialManifestFiles )
 				{
@@ -716,7 +724,7 @@ namespace AlbedoDatabaseGenerator
 						{	// Create a new entry for our database
 							E = new Entry( this );
 							E.RelativePath = GetRelativePath( PotentialManifestFile.FullName );
-							m_Entries.Add( E );
+							PotentialNewEntries.Add( E );
 						}
 						E.Manifest = M;
 					}
@@ -725,6 +733,36 @@ namespace AlbedoDatabaseGenerator
 						m_Errors += "An error occurred while loading manifest file \"" + PotentialManifestFile.FullName + "\": " + _e.Message;
 					}
 				}
+
+				// Reconnect all new entries with manifests to sort out true new entries
+				// For example, if the user moved a directory with the manifest and textures to another location,
+				//	we have a new empty entry for the "new manifest", and an existing entry without a manifest.
+				// We obviously can reconnect the two together (assuming there's no ambiguity in the manifest file
+				//	name: that is, no 2 manifests with the same name)
+				//
+				Entry[]	PotentialNewEntriesArray = PotentialNewEntries.ToArray();
+				foreach ( Entry NewEntry in PotentialNewEntriesArray )
+				{
+					string	ManifestFileNameWithoutPath = Path.GetFileName( NewEntry.Manifest.m_ManifestFileName.FullName ).ToLower();
+
+					// Check all existing entries missing a manifest file
+					foreach ( Entry ExistingEntry in m_Entries )
+						if ( ExistingEntry.Manifest == null )
+						{
+							string	RequiredManifestFileNameWithoutPath = Path.GetFileName( ExistingEntry.RelativePath ).ToLower();
+							if ( RequiredManifestFileNameWithoutPath != ManifestFileNameWithoutPath )
+								continue;
+
+							// Found the new manifest's location! Reconnect!
+							ExistingEntry.Manifest = NewEntry.Manifest;
+							ExistingEntry.RelativePath = GetRelativePath( ExistingEntry.Manifest.m_ManifestFileName.FullName );
+
+							PotentialNewEntries.Remove( NewEntry );	// Remove as it was not really a new entry, just a moved manifest...
+						}
+				}
+
+				// Add all remaining new entries that are now confirmed to be truly new entries and not just disconnected entries...
+				m_Entries.AddRange( PotentialNewEntries );
 			}
 		}
 
@@ -742,7 +780,6 @@ namespace AlbedoDatabaseGenerator
 
 		public	Database()
 		{
-
 		}
 
 		public void	Load( FileInfo _FileName )

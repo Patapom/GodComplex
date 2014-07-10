@@ -298,3 +298,8 @@ obj
 /Packages/dcpTool_1_4_0a.zip
 /Packages/RendererManaged/Release
 /Packages/RendererManaged/Debug
+/Packages/FBXImporterManaged/Debug DirectX10/*.cache
+/Packages/FBXImporterManaged/Debug DirectX10/*.tlog
+/Packages/LibRawManaged/Debug DirectX10/*.tlog
+/Packages/RendererManaged/Debug DirectX10/*.tlog
+/Tools/DirectXTexManaged/Debug DirectX10/*.tlog

@@ -473,6 +473,16 @@ namespace AlbedoDatabaseGenerator
 			m_ModifyingCheckboxes = false;
 			return SelectedChoice | _MasterChoice;
 		}
+		private int ORedFlags( object _Sender, CheckBox[] _Choices )
+		{
+			CheckBox	C = _Sender as CheckBox;
+			int		Flags = 0;
+			for ( int i=0; i < _Choices.Length; i++ )
+				if ( _Choices[i].Checked )
+					Flags |= 1 << i;
+
+			return Flags;
+		}
 
 			CheckBox[]	c0 { get { return new CheckBox[] {
 		checkBoxTagWood,			 // WOOD,
@@ -541,7 +551,8 @@ namespace AlbedoDatabaseGenerator
 		{
 			if ( m_ModifyingCheckboxes )
 				return;
-			m_SelectedEntry.TagColor = (Database.Entry.TAGS_COLOR) MutuallyExclusiveChoice( sender, c1 );
+//			m_SelectedEntry.TagColor = (Database.Entry.TAGS_COLOR) MutuallyExclusiveChoice( sender, c1 );
+			m_SelectedEntry.TagColor = (Database.Entry.TAGS_COLOR) ORedFlags( sender, c1 );
 		}
 
 		private void checkBoxTagShade_CheckedChanged( object sender, EventArgs e )
@@ -575,13 +586,7 @@ namespace AlbedoDatabaseGenerator
 		{
 			if ( m_ModifyingCheckboxes )
 				return;
-
-			CheckBox	C = sender as CheckBox;
-			int		Flags = 0;
-			for ( int i=0; i < c6.Length; i++ )
-				if ( c6[i].Checked )
-					Flags |= 1 << i;
-			m_SelectedEntry.TagModifiers = (Database.Entry.TAGS_MODIFIERS) Flags;
+			m_SelectedEntry.TagModifiers = (Database.Entry.TAGS_MODIFIERS) ORedFlags( sender, c6 );
 		}
 
 		private void	SetMutuallyExclusiveChoice( int _Value, CheckBox[] _Choices )
@@ -609,7 +614,8 @@ namespace AlbedoDatabaseGenerator
 			m_ModifyingCheckboxes = true;
 
 			SetMutuallyExclusiveChoice( _Entry != null ? (int) _Entry.TagType : 0, c0 );
-			SetMutuallyExclusiveChoice( _Entry != null ? (int) _Entry.TagColor : 0, c1 );
+//			SetMutuallyExclusiveChoice( _Entry != null ? (int) _Entry.TagColor : 0, c1 );
+			SetFlagChoice( _Entry != null ? (int) _Entry.TagColor : 0, c1 );
 			SetMutuallyExclusiveChoice( _Entry != null ? (int) _Entry.TagShade : 0, c2 );
 			SetMutuallyExclusiveChoiceWithMaster( _Entry != null ? (int) _Entry.TagNature : 0, (int) Database.Entry.TAGS_NATURE.NATURE, c3 );
 			SetMutuallyExclusiveChoiceWithMaster( _Entry != null ? (int) _Entry.TagFurniture : 0, (int) Database.Entry.TAGS_FURNITURE.FURNITURE, c4 );

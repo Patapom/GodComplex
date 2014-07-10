@@ -46,11 +46,13 @@
 			this.groupBox4 = new System.Windows.Forms.GroupBox();
 			this.panel3 = new System.Windows.Forms.Panel();
 			this.label11 = new System.Windows.Forms.Label();
+			this.panelHierarchy7 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
 			this.checkBoxTagDark = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagNeutral = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagBright = new System.Windows.Forms.CheckBox();
 			this.panelTagModifiers = new System.Windows.Forms.Panel();
 			this.label9 = new System.Windows.Forms.Label();
+			this.panelHierarchy2 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
 			this.checkBoxTagNew = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagVarnished = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagOld = new System.Windows.Forms.CheckBox();
@@ -59,6 +61,7 @@
 			this.checkBoxTagWet = new System.Windows.Forms.CheckBox();
 			this.panel2 = new System.Windows.Forms.Panel();
 			this.label10 = new System.Windows.Forms.Label();
+			this.panelHierarchy6 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
 			this.checkBoxTagOrange = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagPurple = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagCyan = new System.Windows.Forms.CheckBox();
@@ -74,9 +77,11 @@
 			this.checkBoxTagLeaf = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagSoil = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagNature = new System.Windows.Forms.CheckBox();
+			this.panelHierarchy5 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
 			this.panelTagType = new System.Windows.Forms.Panel();
 			this.label8 = new System.Windows.Forms.Label();
 			this.checkBoxTagSkin = new System.Windows.Forms.CheckBox();
+			this.panelHierarchy1 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
 			this.checkBoxTagPaint = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagPaperCanvas = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagFabric = new System.Windows.Forms.CheckBox();
@@ -84,6 +89,7 @@
 			this.checkBoxTagStone = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagWood = new System.Windows.Forms.CheckBox();
 			this.panelConstruction = new System.Windows.Forms.Panel();
+			this.panelHierarchy4 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
 			this.checkBoxTagConstruction = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagRoadPavement = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagDoorWindow = new System.Windows.Forms.CheckBox();
@@ -91,17 +97,20 @@
 			this.checkBoxTagWall = new System.Windows.Forms.CheckBox();
 			this.panelFurniture = new System.Windows.Forms.Panel();
 			this.checkBoxTagCabinet = new System.Windows.Forms.CheckBox();
+			this.panelHierarchy3 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
 			this.checkBoxTagDesk = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagWardrobe = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagChair = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagTable = new System.Windows.Forms.CheckBox();
 			this.checkBoxTagFurniture = new System.Windows.Forms.CheckBox();
 			this.panelTextureInfos = new System.Windows.Forms.Panel();
+			this.panelOverviewImage = new AlbedoDatabaseGenerator.TexturePanel(this.components);
 			this.label12 = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
 			this.panelCS8 = new System.Windows.Forms.Panel();
 			this.buttonLoadOverviewImage = new System.Windows.Forms.Button();
 			this.panelCS5 = new System.Windows.Forms.Panel();
+			this.panelTexture = new AlbedoDatabaseGenerator.TexturePanel(this.components);
 			this.panelCS2 = new System.Windows.Forms.Panel();
 			this.label6 = new System.Windows.Forms.Label();
 			this.panelSwatchAvg = new System.Windows.Forms.Panel();
@@ -118,6 +127,7 @@
 			this.panelCS6 = new System.Windows.Forms.Panel();
 			this.textBoxOverviewImage = new System.Windows.Forms.TextBox();
 			this.panelCS3 = new System.Windows.Forms.Panel();
+			this.panelThumbnail = new AlbedoDatabaseGenerator.TexturePanel(this.components);
 			this.panelCS0 = new System.Windows.Forms.Panel();
 			this.panelSwatchMin = new System.Windows.Forms.Panel();
 			this.listBoxDatabaseEntries = new System.Windows.Forms.ListBox();
@@ -126,16 +136,6 @@
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
 			this.openFileDialogOverviewImage = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogExportJSON = new System.Windows.Forms.SaveFileDialog();
-			this.panelHierarchy7 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
-			this.panelHierarchy2 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
-			this.panelHierarchy6 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
-			this.panelHierarchy5 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
-			this.panelHierarchy1 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
-			this.panelHierarchy4 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
-			this.panelHierarchy3 = new AlbedoDatabaseGenerator.PanelHierarchy(this.components);
-			this.panelOverviewImage = new AlbedoDatabaseGenerator.TexturePanel(this.components);
-			this.panelTexture = new AlbedoDatabaseGenerator.TexturePanel(this.components);
-			this.panelThumbnail = new AlbedoDatabaseGenerator.TexturePanel(this.components);
 			this.groupBox1.SuspendLayout();
 			this.groupBox2.SuspendLayout();
 			this.groupBoxDatabaseEntry.SuspendLayout();
@@ -337,6 +337,16 @@
 			this.label11.TabIndex = 2;
 			this.label11.Text = "Shade";
 			// 
+			// panelHierarchy7
+			// 
+			this.panelHierarchy7.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+			this.panelHierarchy7.ChildrenCount = 3;
+			this.panelHierarchy7.Location = new System.Drawing.Point(58, 11);
+			this.panelHierarchy7.Name = "panelHierarchy7";
+			this.panelHierarchy7.Size = new System.Drawing.Size(19, 49);
+			this.panelHierarchy7.TabIndex = 1;
+			// 
 			// checkBoxTagDark
 			// 
 			this.checkBoxTagDark.AutoSize = true;
@@ -394,6 +404,16 @@
 			this.label9.Size = new System.Drawing.Size(49, 13);
 			this.label9.TabIndex = 2;
 			this.label9.Text = "Modifiers";
+			// 
+			// panelHierarchy2
+			// 
+			this.panelHierarchy2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+			this.panelHierarchy2.ChildrenCount = 6;
+			this.panelHierarchy2.Location = new System.Drawing.Point(58, 11);
+			this.panelHierarchy2.Name = "panelHierarchy2";
+			this.panelHierarchy2.Size = new System.Drawing.Size(19, 88);
+			this.panelHierarchy2.TabIndex = 1;
 			// 
 			// checkBoxTagNew
 			// 
@@ -489,6 +509,16 @@
 			this.label10.Size = new System.Drawing.Size(36, 13);
 			this.label10.TabIndex = 2;
 			this.label10.Text = "Colors";
+			// 
+			// panelHierarchy6
+			// 
+			this.panelHierarchy6.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+			this.panelHierarchy6.ChildrenCount = 10;
+			this.panelHierarchy6.Location = new System.Drawing.Point(49, 7);
+			this.panelHierarchy6.Name = "panelHierarchy6";
+			this.panelHierarchy6.Size = new System.Drawing.Size(19, 157);
+			this.panelHierarchy6.TabIndex = 1;
 			// 
 			// checkBoxTagOrange
 			// 
@@ -657,6 +687,16 @@
 			this.checkBoxTagNature.UseVisualStyleBackColor = true;
 			this.checkBoxTagNature.CheckedChanged += new System.EventHandler(this.checkBoxTagNature_CheckedChanged);
 			// 
+			// panelHierarchy5
+			// 
+			this.panelHierarchy5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+			this.panelHierarchy5.ChildrenCount = 3;
+			this.panelHierarchy5.Location = new System.Drawing.Point(69, 9);
+			this.panelHierarchy5.Name = "panelHierarchy5";
+			this.panelHierarchy5.Size = new System.Drawing.Size(19, 51);
+			this.panelHierarchy5.TabIndex = 1;
+			// 
 			// panelTagType
 			// 
 			this.panelTagType.Controls.Add(this.label8);
@@ -694,6 +734,16 @@
 			this.checkBoxTagSkin.UseVisualStyleBackColor = true;
 			this.checkBoxTagSkin.CheckedChanged += new System.EventHandler(this.checkBoxTagType_CheckedChanged);
 			// 
+			// panelHierarchy1
+			// 
+			this.panelHierarchy1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+			this.panelHierarchy1.ChildrenCount = 7;
+			this.panelHierarchy1.Location = new System.Drawing.Point(36, 10);
+			this.panelHierarchy1.Name = "panelHierarchy1";
+			this.panelHierarchy1.Size = new System.Drawing.Size(19, 138);
+			this.panelHierarchy1.TabIndex = 1;
+			// 
 			// checkBoxTagPaint
 			// 
 			this.checkBoxTagPaint.AutoSize = true;
@@ -721,9 +771,9 @@
 			this.checkBoxTagFabric.AutoSize = true;
 			this.checkBoxTagFabric.Location = new System.Drawing.Point(61, 71);
 			this.checkBoxTagFabric.Name = "checkBoxTagFabric";
-			this.checkBoxTagFabric.Size = new System.Drawing.Size(55, 17);
+			this.checkBoxTagFabric.Size = new System.Drawing.Size(85, 17);
 			this.checkBoxTagFabric.TabIndex = 0;
-			this.checkBoxTagFabric.Text = "Fabric";
+			this.checkBoxTagFabric.Text = "Fabric/Wool";
 			this.checkBoxTagFabric.UseVisualStyleBackColor = true;
 			this.checkBoxTagFabric.CheckedChanged += new System.EventHandler(this.checkBoxTagType_CheckedChanged);
 			// 
@@ -772,6 +822,16 @@
 			this.panelConstruction.Name = "panelConstruction";
 			this.panelConstruction.Size = new System.Drawing.Size(214, 91);
 			this.panelConstruction.TabIndex = 1;
+			// 
+			// panelHierarchy4
+			// 
+			this.panelHierarchy4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+			this.panelHierarchy4.ChildrenCount = 4;
+			this.panelHierarchy4.Location = new System.Drawing.Point(85, 9);
+			this.panelHierarchy4.Name = "panelHierarchy4";
+			this.panelHierarchy4.Size = new System.Drawing.Size(19, 72);
+			this.panelHierarchy4.TabIndex = 1;
 			// 
 			// checkBoxTagConstruction
 			// 
@@ -854,6 +914,16 @@
 			this.checkBoxTagCabinet.Text = "Cabinet";
 			this.checkBoxTagCabinet.UseVisualStyleBackColor = true;
 			this.checkBoxTagCabinet.CheckedChanged += new System.EventHandler(this.checkBoxTagFurniture_CheckedChanged);
+			// 
+			// panelHierarchy3
+			// 
+			this.panelHierarchy3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+			this.panelHierarchy3.ChildrenCount = 5;
+			this.panelHierarchy3.Location = new System.Drawing.Point(69, 10);
+			this.panelHierarchy3.Name = "panelHierarchy3";
+			this.panelHierarchy3.Size = new System.Drawing.Size(19, 94);
+			this.panelHierarchy3.TabIndex = 1;
 			// 
 			// checkBoxTagDesk
 			// 
@@ -946,6 +1016,16 @@
 			this.panelTextureInfos.Size = new System.Drawing.Size(402, 482);
 			this.panelTextureInfos.TabIndex = 5;
 			// 
+			// panelOverviewImage
+			// 
+			this.panelOverviewImage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.panelOverviewImage.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelOverviewImage.Location = new System.Drawing.Point(331, 111);
+			this.panelOverviewImage.Name = "panelOverviewImage";
+			this.panelOverviewImage.Size = new System.Drawing.Size(67, 53);
+			this.panelOverviewImage.SourceImage = null;
+			this.panelOverviewImage.TabIndex = 4;
+			// 
 			// label12
 			// 
 			this.label12.AutoSize = true;
@@ -990,6 +1070,18 @@
 			this.panelCS5.Name = "panelCS5";
 			this.panelCS5.Size = new System.Drawing.Size(24, 20);
 			this.panelCS5.TabIndex = 4;
+			// 
+			// panelTexture
+			// 
+			this.panelTexture.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.panelTexture.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelTexture.Location = new System.Drawing.Point(92, 173);
+			this.panelTexture.Name = "panelTexture";
+			this.panelTexture.Size = new System.Drawing.Size(306, 306);
+			this.panelTexture.SourceImage = null;
+			this.panelTexture.TabIndex = 2;
 			// 
 			// panelCS2
 			// 
@@ -1133,6 +1225,15 @@
 			this.panelCS3.Size = new System.Drawing.Size(24, 20);
 			this.panelCS3.TabIndex = 4;
 			// 
+			// panelThumbnail
+			// 
+			this.panelThumbnail.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelThumbnail.Location = new System.Drawing.Point(2, 173);
+			this.panelThumbnail.Name = "panelThumbnail";
+			this.panelThumbnail.Size = new System.Drawing.Size(84, 60);
+			this.panelThumbnail.SourceImage = null;
+			this.panelThumbnail.TabIndex = 4;
+			// 
 			// panelCS0
 			// 
 			this.panelCS0.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
@@ -1197,107 +1298,6 @@
 			// 
 			this.saveFileDialogExportJSON.DefaultExt = "*.json";
 			this.saveFileDialogExportJSON.Filter = "Reflectance Database (*.json)|*.json|All Files (*.*)|*.*";
-			// 
-			// panelHierarchy7
-			// 
-			this.panelHierarchy7.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
-			this.panelHierarchy7.ChildrenCount = 3;
-			this.panelHierarchy7.Location = new System.Drawing.Point(58, 11);
-			this.panelHierarchy7.Name = "panelHierarchy7";
-			this.panelHierarchy7.Size = new System.Drawing.Size(19, 49);
-			this.panelHierarchy7.TabIndex = 1;
-			// 
-			// panelHierarchy2
-			// 
-			this.panelHierarchy2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
-			this.panelHierarchy2.ChildrenCount = 6;
-			this.panelHierarchy2.Location = new System.Drawing.Point(58, 11);
-			this.panelHierarchy2.Name = "panelHierarchy2";
-			this.panelHierarchy2.Size = new System.Drawing.Size(19, 88);
-			this.panelHierarchy2.TabIndex = 1;
-			// 
-			// panelHierarchy6
-			// 
-			this.panelHierarchy6.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
-			this.panelHierarchy6.ChildrenCount = 10;
-			this.panelHierarchy6.Location = new System.Drawing.Point(49, 7);
-			this.panelHierarchy6.Name = "panelHierarchy6";
-			this.panelHierarchy6.Size = new System.Drawing.Size(19, 157);
-			this.panelHierarchy6.TabIndex = 1;
-			// 
-			// panelHierarchy5
-			// 
-			this.panelHierarchy5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
-			this.panelHierarchy5.ChildrenCount = 3;
-			this.panelHierarchy5.Location = new System.Drawing.Point(69, 9);
-			this.panelHierarchy5.Name = "panelHierarchy5";
-			this.panelHierarchy5.Size = new System.Drawing.Size(19, 51);
-			this.panelHierarchy5.TabIndex = 1;
-			// 
-			// panelHierarchy1
-			// 
-			this.panelHierarchy1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
-			this.panelHierarchy1.ChildrenCount = 7;
-			this.panelHierarchy1.Location = new System.Drawing.Point(36, 10);
-			this.panelHierarchy1.Name = "panelHierarchy1";
-			this.panelHierarchy1.Size = new System.Drawing.Size(19, 138);
-			this.panelHierarchy1.TabIndex = 1;
-			// 
-			// panelHierarchy4
-			// 
-			this.panelHierarchy4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
-			this.panelHierarchy4.ChildrenCount = 4;
-			this.panelHierarchy4.Location = new System.Drawing.Point(85, 9);
-			this.panelHierarchy4.Name = "panelHierarchy4";
-			this.panelHierarchy4.Size = new System.Drawing.Size(19, 72);
-			this.panelHierarchy4.TabIndex = 1;
-			// 
-			// panelHierarchy3
-			// 
-			this.panelHierarchy3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
-			this.panelHierarchy3.ChildrenCount = 5;
-			this.panelHierarchy3.Location = new System.Drawing.Point(69, 10);
-			this.panelHierarchy3.Name = "panelHierarchy3";
-			this.panelHierarchy3.Size = new System.Drawing.Size(19, 94);
-			this.panelHierarchy3.TabIndex = 1;
-			// 
-			// panelOverviewImage
-			// 
-			this.panelOverviewImage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.panelOverviewImage.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.panelOverviewImage.Location = new System.Drawing.Point(331, 111);
-			this.panelOverviewImage.Name = "panelOverviewImage";
-			this.panelOverviewImage.Size = new System.Drawing.Size(67, 53);
-			this.panelOverviewImage.SourceImage = null;
-			this.panelOverviewImage.TabIndex = 4;
-			// 
-			// panelTexture
-			// 
-			this.panelTexture.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.panelTexture.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.panelTexture.Location = new System.Drawing.Point(92, 173);
-			this.panelTexture.Name = "panelTexture";
-			this.panelTexture.Size = new System.Drawing.Size(306, 306);
-			this.panelTexture.SourceImage = null;
-			this.panelTexture.TabIndex = 2;
-			// 
-			// panelThumbnail
-			// 
-			this.panelThumbnail.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.panelThumbnail.Location = new System.Drawing.Point(2, 173);
-			this.panelThumbnail.Name = "panelThumbnail";
-			this.panelThumbnail.Size = new System.Drawing.Size(84, 60);
-			this.panelThumbnail.SourceImage = null;
-			this.panelThumbnail.TabIndex = 4;
 			// 
 			// Form1
 			// 
