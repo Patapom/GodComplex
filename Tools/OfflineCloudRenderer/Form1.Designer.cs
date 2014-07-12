@@ -143,6 +143,7 @@
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.viewportPanel);
 			this.Name = "Form1";
+			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Form1";
 			this.ResumeLayout(false);
 			this.PerformLayout();

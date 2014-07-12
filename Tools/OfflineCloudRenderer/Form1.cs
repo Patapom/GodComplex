@@ -417,7 +417,7 @@ namespace OfflineCloudRenderer
 			m_CB_PhotonShooterInput.m.InitialPosition = new float2( 0, 0 );		// Center of the cube side
 			m_CB_PhotonShooterInput.m.InitialIncidence = new float2( 0, 0 );	// Vertical incidence
 			m_CB_PhotonShooterInput.m.CubeSize = 100.0f;						// Try a 100m thick cube
-			m_CB_PhotonShooterInput.m.SigmaScattering = 0.1f;
+			m_CB_PhotonShooterInput.m.SigmaScattering = 0.5f;
 			m_CB_PhotonShooterInput.m.MaxScattering = 100;
 
 			int	BatchesCount = PHOTONS_COUNT / PHOTON_BATCH_SIZE;
@@ -441,7 +441,8 @@ namespace OfflineCloudRenderer
 			m_CB_SplatPhoton.m.SplatSize = 4.0f * (2.0f / m_Tex_Photons.Width);
 			m_CB_SplatPhoton.UpdateData();
 
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
+//			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 			m_Device.SetRenderTarget( m_Tex_Photons, null );
 			m_Device.Clear( m_Tex_Photons, new float4( 0, 0, 0, 0 ) );
 

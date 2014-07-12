@@ -1,4 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // Photon Shooter
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -23,8 +23,6 @@
 
 static const uint	MAX_THREADS = 1024;
 
-//static const float	PI = 3.1415926535897932384626433832795;
-
 cbuffer	CBInput : register( b8 )
 {
 	float2	_InitialPosition;	// Initial beam position in [-1,+1] on the top side of the cube (Y=+1)
@@ -35,7 +33,7 @@ cbuffer	CBInput : register( b8 )
 	uint	_BatchIndex;		// Photon batch index
 }
 
-Texture2D<float>			_PhaseCDF : register( t0 );
+Texture2D<float>	_PhaseCDF : register( t0 );
 
 struct PhotonOut
 {
@@ -57,18 +55,25 @@ float3	Scatter( uint _PhotonIndex, uint _ScatteringEventIndex, float3 _OriginalD
 	float	Random2 = Hash( 3.5984763 * (_MaxScattering * _PhotonIndex + 0.7355 * _ScatteringEventIndex) );
 
 	// Draw a random walk length using eq. 10.22 from "Realistic Image Synthesis using Photon Mapping" (http://graphics.ucsd.edu/~henrik/papers/book/)
-	_Length = -log( 1e-6 * Random2 ) / _SigmaScattering;
+	_Length = -log( 1e-6 + Random2 ) / _SigmaScattering;
+//	_Length = -log( 1e-6 + Random2 ) / 0.5;
 	_Length *= 2.0 / _CubeSize;	// Bring back to lengths in [-1,+1] cube space
+
+ //_Length = 0.2;
+
 
 	// Draw a random orthogonal vector to current direction
 	float2	SinCosPhi, SinCosTheta;
-	sincos( (2.0 * PI) * Random0, SinCosPhi.x, SinCosPhi.y );
-	sincos( (2.0 * PI) * Random0, SinCosTheta.x, SinCosTheta.y );
+	sincos( 132.378 * Random0, SinCosPhi.x, SinCosPhi.y );
+	sincos( PI * Random1, SinCosTheta.x, SinCosTheta.y );
 	float3	RandomVector = float3( SinCosPhi.y * SinCosTheta.x, SinCosTheta.y, SinCosPhi.x * SinCosTheta.x );
 	float3	Ortho = normalize( cross( RandomVector, _OriginalDirection ) );
 
 	// Rotate current direction about that vector by scattering angle
 	float	ScatteringAngle = _PhaseCDF.SampleLevel( LinearWrap, float2( Random0 + Random1, 0.5 ), 0.0 ).x;
+
+//ScatteringAngle = 0.04;
+
 	return RotateVector( _OriginalDirection, Ortho, ScatteringAngle );
 }
 
@@ -111,8 +116,9 @@ PhotonOut	ShootPhoton( uint _PhotonIndex )
 		}
 
 		// No intersection, proceed with marching and scattering
+		R.ExitPosition += MarchLength * R.ExitDirection;
 		R.MarchedLength += MarchLength;
-		Scatter( _PhotonIndex, R.ScatteringEventsCount, R.ExitDirection, MarchLength );
+		R.ExitDirection = Scatter( _PhotonIndex, R.ScatteringEventsCount, R.ExitDirection, MarchLength );
 	}
 
 	// We've been scattered more than allowed!
@@ -120,6 +126,9 @@ PhotonOut	ShootPhoton( uint _PhotonIndex )
 	MarchLength = ComputeCubeExitDistance( R.ExitPosition, R.ExitDirection );
 	R.ExitPosition += MarchLength * R.ExitDirection;
 	R.MarchedLength += MarchLength;
+
+//R.ExitPosition = float3( 1, 0, 0 );
+// R.ExitDirection = 1.0;
 
 	return R;
 }

@@ -31,6 +31,7 @@ struct PS_IN
 	float4	__Position : SV_POSITION;
 	uint	CubeFaceIndex	: SV_RENDERTARGETARRAYINDEX;
 	float2	UV : TEXCOORD0;
+	float4	Data : DATA;
 };
 
 VS_IN	VS( VS_IN _In )
@@ -61,12 +62,12 @@ void	GS( point VS_IN _In[1], inout TriangleStream<PS_IN> _OutStream )
 	else if ( Photon.ExitPosition.y >= 1.0 )
 	{
 		Out.CubeFaceIndex = 2;
-		P.xy = float2( Photon.ExitPosition.x, Photon.ExitPosition.z );
+		P.xy = float2( Photon.ExitPosition.x, -Photon.ExitPosition.z );
 	}
 	else if ( Photon.ExitPosition.y <= -1.0 )
 	{
 		Out.CubeFaceIndex = 3;
-		P.xy = float2( Photon.ExitPosition.x, -Photon.ExitPosition.z );
+		P.xy = float2( Photon.ExitPosition.x, Photon.ExitPosition.z );
 	}
 	else if ( Photon.ExitPosition.z >= 1.0 )
 	{
@@ -80,8 +81,14 @@ void	GS( point VS_IN _In[1], inout TriangleStream<PS_IN> _OutStream )
 	}
 
 
-Out.CubeFaceIndex = 6 * Hash( _In[0].PhotonIndex );
-P = float4( 2.0*Hash( 18.091 * _In[0].PhotonIndex )-1.0, 2.0*Hash( 37.351 * _In[0].PhotonIndex )-1.0, 0, 1 );
+// Out.CubeFaceIndex = 6 * Hash( _In[0].PhotonIndex );
+// P = float4( 2.0*Hash( 18.091 * _In[0].PhotonIndex )-1.0, 2.0*Hash( 37.351 * _In[0].PhotonIndex )-1.0, 0, 1 );
+
+//P = float4( 0, 0, 0, 1 );
+//Out.Data = float4( abs(Photon.ExitDirection), 0 );
+Out.Data = float4( abs(Photon.ExitPosition), 0 );
+//Out.Data = 0.5 * Photon.MarchedLength;
+//Out.Data = 0.5 * Photon.ScatteringEventsCount;
 
 
 	// Stream out the 4 vertices for the splat quad
@@ -104,6 +111,7 @@ P = float4( 2.0*Hash( 18.091 * _In[0].PhotonIndex )-1.0, 2.0*Hash( 37.351 * _In[
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
+return _In.Data;
 //return float4( 1, 1, 0, 0 );
 	return 0.05 * (1.0 - length( _In.UV ));
 }
