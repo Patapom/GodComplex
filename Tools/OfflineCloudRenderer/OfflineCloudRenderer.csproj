@@ -107,6 +107,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Packages\Cirrus.Utility\Utility.csproj">
+      <Project>{9A67863F-D886-41A5-A8D1-04BA1379B097}</Project>
+      <Name>Utility</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Packages\RendererManaged\RendererManaged.vcxproj">
       <Project>{F96CDFD3-8954-4F4F-AFB0-2855D98F051B}</Project>
       <Name>RendererManaged</Name>

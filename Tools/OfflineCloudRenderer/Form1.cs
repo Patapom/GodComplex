@@ -33,6 +33,7 @@ namespace OfflineCloudRenderer
 		public struct	CB_Render
 		{
 			public float4		TargetDimensions;	// XY=Target dimensions, ZW=1/XY
+			public float4		Debug;
 		}
 
 		#endregion
@@ -143,6 +144,7 @@ namespace OfflineCloudRenderer
 		{
 			// Setup default render target as UAV & render using the compute shader
 			m_CB_Render.m.TargetDimensions = new float4( viewportPanel.Width, viewportPanel.Height, 1.0f / viewportPanel.Width, 1.0f / viewportPanel.Height );
+			m_CB_Render.m.Debug = new float4( floatTrackbarControlDebug0.Value, floatTrackbarControlDebug1.Value, floatTrackbarControlDebug2.Value, floatTrackbarControlDebug3.Value );
 			m_CB_Render.UpdateData();
 
 			// Render a fullscreen quad
@@ -228,6 +230,11 @@ namespace OfflineCloudRenderer
 		private void buttonReload_Click( object sender, EventArgs e )
 		{
 			m_Device.ReloadModifiedShaders();
+			Render();
+		}
+
+		private void floatTrackbarControlDebug3_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
 			Render();
 		}
 

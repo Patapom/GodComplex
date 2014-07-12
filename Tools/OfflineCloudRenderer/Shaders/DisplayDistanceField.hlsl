@@ -8,7 +8,11 @@
 cbuffer	cbRender : register(b8)
 {
 	float4		_Dimensions;		// XY=Dimensions of the render target, ZW=1/XY
+	float4		_DEBUG;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// 3D Tests
 
 float	Distance0( float3 _Position )
 {
@@ -40,12 +44,12 @@ float	Distance1( float3 _Position )
 	float3	n = Normal0( _Position, l );
 // 	float	k = Cellular( _Position, 10.0 );
 //	float	k = 0.5 * FastNoise( 4.0 * _Position );
-//	float	k = 0.5 * FBM( 2.0 * _Position, 2.0f * BuildRotationMatrix( 0.03f, float3( 0.95641, 0.10619, -0.10251981 ) ), 4 );
+//	float	k = 0.5 * FBM( 2.0 * _Position, 4, 2.0f * BuildRotationMatrix( 0.03f, float3( 0.95641, 0.10619, -0.10251981 ) ) );
 
 
-//	float	k = 0.5 * Turbulence( 0.5 * _Position, 8.0f * BuildRotationMatrix( 0.03f, float3( 0.95641, 0.10619, -0.10251981 ) ), 4 );	// Poilu!
+//	float	k = 0.5 *  Turbulence( 0.5 * _Position, 4, 8.0f * BuildRotationMatrix( 0.03f, float3( 0.95641, 0.10619, -0.10251981 ) ) );	// Poilu!
 
-	float	k = -0.5 * Turbulence( 0.5 * _Position, 4.0f * BuildRotationMatrix( 0.3f, float3( 0.95641, 0.10619, -0.10251981 ) ), 8 );
+	float	k = -0.5 * Turbulence( 0.5 * _Position, 8, 4.0f * BuildRotationMatrix( 0.3f, float3( 0.95641, 0.10619, -0.10251981 ) ) );
 
 	return Distance0( _Position + k * n );
 }
@@ -69,16 +73,34 @@ float	Map( float3 _Position )
 	float3	n = Normal0( _Position, l );
 // 	float	k = Cellular( _Position, 10.0 );
 //	float	k = 0.25 * FastNoise( 8.0 * _Position );
-	float	k = -0.25 * FBM( 1.0 * _Position, 2.0f * BuildRotationMatrix( 0.03f, float3( 0.81441, -0.5613, 0.5619 ) ), 8 );
+	float	k = -0.25 * FBM( 1.0 * _Position, 8, 2.0f * BuildRotationMatrix( 0.03f, float3( 0.81441, -0.5613, 0.5619 ) ) );
 	return Distance1( _Position + k * n );
 }
 
+
+
+////////////////////////////////////////////////////////////////////////////////
+// 2D Tests
+
+#if 0
 float	EstimateDistance( float2 _Position )
 {
 	float2	Center = float2( 0.0, 0.0 );
 	float2	Size = float2( 0.4, 0.2 );
 
 	float	d = length( (_Position - Center) / Size ) - 1.0;
+
+// 	// Pyroclastic puff, as described by Tessendorf in http://people.clemson.edu/~jtessen/papers_files/ProdVolRender.pdf
+// 	const float2	SphereCenter = float2( 0, 0 );
+// 	const float		SphereRadius = 0.2;
+// 
+// 	float2	Center2Pos = _Position - SphereCenter;
+// 	float	R2 = dot( Center2Pos, Center2Pos );
+// 	float2	N = Center2Pos / sqrt( R2 );
+// 
+// 	float	d = abs( _DEBUG.w * FBM( float3( _DEBUG.y * N, 0 ), _DEBUG.z ) ) + _DEBUG.x - R2 / (SphereRadius*SphereRadius);
+// 			d = -d;
+ 
 	return d;
 }
 
@@ -112,48 +134,166 @@ float4	TestDistanceFieldDisplacement2D( float2 _Position )
 	float4	SkyColor = float4( 135, 206, 235, 255 ) / 255.0;
 //return 1.0 * Cellular( float3( _Position, 0 ), 20.0 );
 
-	float	d = EstimateDistance( _Position );
-	float2	N = EstimateNormal( _Position );
-//return float4( N, 0, 1 );
+// 	float	d = EstimateDistance( _Position );
+// 	float2	N = EstimateNormal( _Position );
+// //return float4( N, 0, 1 );
+// 
+// // 	_Position += 0.1 * Cellular( float3( _Position, 0.0 ), 20.0 ) * N;
+// // 	d = EstimateDistance( _Position );
+// 
+// //	d = CellularFBM( _Position, 0.05, 0.1 );
 
-// 	_Position += 0.1 * Cellular( float3( _Position, 0.0 ), 20.0 ) * N;
-// 	d = EstimateDistance( _Position );
 
-	d = CellularFBM( _Position, 0.05, 0.1 );
+	// Pyroclastic puff, as described by Tessendorf in http://people.clemson.edu/~jtessen/papers_files/ProdVolRender.pdf
+	const float2	SphereCenter = float2( 0, 0 );
+	const float		SphereRadius = 0.2;
+
+	float2	Center2Pos = _Position - SphereCenter;
+	float	R2 = dot( Center2Pos, Center2Pos );
+	float2	N = Center2Pos / sqrt( R2 );
+
+	float	d = abs( _DEBUG.w * FBM( float3( _DEBUG.y * N, 0 ), _DEBUG.z ) ) + _DEBUG.x - R2 / (SphereRadius*SphereRadius);
+			d = -d;
 
 	return d < 0.0 ? float4( 1, 1, 1, 1 ) : SkyColor;
 }
+#else
 
-float	ShowNormalVectorField( float2 _P )
+////////////////////////////////////////////////////////////////////////////////
+// Pyroclastic noise test
+static const float2 eps = float2( 0.0001, 0.0 );
+
+static const float	A0 = (1+_DEBUG.z) * 0.1, f0 = (1+_DEBUG.w) * 1.0;
+static const float	A1 = 0.5 * A0, f1 = 2.0 * f0;
+static const float	A2 = 0.5 * A1, f2 = 2.0 * f1;
+static const float	A3 = 0.5 * A2, f3 = 2.0 * f2;
+
+// Main, underlying distance field
+float	D0( float2 _Position )
 {
-	float2	N = EstimateNormal( _P );
-	float	L = length(N);
-			N /= L;
+	float2	Center = float2( 0.0, 0.0 );
+	float2	Size = float2( 0.4, 0.2 );
 
-	float2	P2 = _P;
-	float2	N2 = N;
-
-	uint	StepsCount = 40 * L;
-	float	R = FastScreenNoise( _P );
-	for( uint i=0; i < StepsCount; i++ )
-	{
-		// Follow normal in both directions
-		_P += _Dimensions.w * N;
-		P2 -= _Dimensions.w * N2;
-		
- 		// Sample at this location
- 		N = EstimateNormal( _P );
- 		N2 = EstimateNormal( P2 );
-
-		// Add noise
-//		R += FastScreenNoise( _P ) + FastScreenNoise( P2 );	// Funny, I had the "intuition" it was because of bilinear sampling of the noise I couldn't get the LIC right...
-															// But why is that so? Still no idea...
-		R += FastScreenNoise( floor( _Dimensions.xy * _P ) * _Dimensions.zw ) + FastScreenNoise( floor( _Dimensions.xy * P2 ) * _Dimensions.zw );
-	}
-
-	return R / (1.0 + 2.0 * StepsCount);
+	float	d = length( (_Position - Center) / Size ) - 1.0;
+	return d;
 }
 
+float2	N0( float2 _Position )
+{
+	return normalize( float2(	D0( _Position + eps.xy ) - D0( _Position - eps.xy ),
+								D0( _Position + eps.yx ) - D0( _Position - eps.yx ) ) );
+}
+
+// Level 1 displacement
+float2	M1( float2 _Position )
+{
+	float2	N = N0( _Position );
+	return _Position - A0 * _DEBUG.x * abs(FBM( float3( f0 * N, 0.0 ), 1+_DEBUG.y )) * N;
+}
+
+float	D1( float2 _Position )
+{
+	return D0( M1( _Position ) );
+}
+
+float2	N1( float2 _Position )
+{
+	return normalize( float2(	D1( _Position + eps.xy ) - D1( _Position - eps.xy ),
+								D1( _Position + eps.yx ) - D1( _Position - eps.yx ) ) );
+}
+
+// Level 2 displacement
+float2	M2( float2 _Position )
+{
+	_Position = M1( _Position );
+	float2	N = N1( _Position );
+	return _Position;// - A1 * _DEBUG.x * abs(FBM( float3( f1 * N, 0.0 ), 1+_DEBUG.y )) * N;
+}
+
+float	D2( float2 _Position )
+{
+	return D1( M2( _Position ) );
+}
+
+float2	N2( float2 _Position )
+{
+	return normalize( float2(	D2( _Position + eps.xy ) - D2( _Position - eps.xy ),
+								D2( _Position + eps.yx ) - D2( _Position - eps.yx ) ) );
+}
+
+/* Recursive functions are not allowed!
+float2	Move( float2 _Position, uint _IterationsCount )
+{
+	float	A = 1.0;
+	float	f = 1.0;
+	for ( uint i=0; i < _IterationsCount; i++ )
+	{
+		float2	Normal = EstimateNormal( _Position, i );
+		_Position += (1.0+_DEBUG.x) * A * FBM( float3( f * _Position, 0.0 ), 1+_DEBUG.y ) * Normal;
+		A *= 0.5;
+		f *= 2.0;
+	}
+
+	return _Position;
+}
+
+float2	EstimateNormal( float2 _Position, uint _Level )
+{
+	float2	N = float2(
+		EstimateDistance( Move( _Position + e.xy, _Level ) ) - EstimateDistance( Move( _Position - e.xy, _Level ) ),
+		EstimateDistance( Move( _Position + e.yx, _Level ) ) - EstimateDistance( Move( _Position - e.yx, _Level ) )
+		);
+	return normalize(N);
+}
+*/
+
+// // This needs to be a recursive function...
+// float	EstimateDistance( float2 _Position, float _DisplacementAmplitude, float _DisplacementFrequency, uint _IterationsCount )
+// {
+// 	if ( _IterationsCount == 0 )
+// 	{	// Level 0 is main distance field estimate
+// 		return EstimateDistance( _Position );
+// 	}
+// 
+// 	// Compute displacement amplitude and frequency for lower levels
+// 	_DisplacementAmplitude *= 2.0;
+// 	_DisplacementFrequency *= 0.5;
+// 
+// 	// Compute normal at position from lower level distance field
+// 	const float2 e = float2( 0.0001, 0.0 );
+// 	float2	N = float2(
+// 		EstimateDistance( _Position + e.xy, _DisplacementAmplitude, _DisplacementFrequency, _IterationsCount-1 ) - EstimateDistance( _Position - e.xy, _DisplacementAmplitude, _DisplacementFrequency, _IterationsCount-1 ),
+// 		EstimateDistance( _Position + e.yx, _DisplacementAmplitude, _DisplacementFrequency, _IterationsCount-1 ) - EstimateDistance( _Position - e.yx, _DisplacementAmplitude, _DisplacementFrequency, _IterationsCount-1 )
+// 		);
+// 	N = normalize( N );
+// 
+// 	// Displace position along normal
+// 	float	Displacement = _DisplacementAmplitude * FBM( float3( (1+_DEBUG.y) * _DisplacementFrequency * _Position, 0 ), 1+_DEBUG.w );
+// 	_Position += Displacement * N;
+// 
+// 	// Recurse
+// 	return EstimateDistance( _Position, _DisplacementAmplitude, _DisplacementFrequency, _IterationsCount-1 );
+// }
+// 
+// float2	EstimateNormal( float2 _Position, float _DisplacementAmplitude, float _DisplacementFrequency, uint _IterationsCount )
+// {
+// //return normalize( float2( -_Position.y, _Position.x ) );
+// 
+// 	const float2 e = float2( 0.0001, 0.0 );
+// 	float2	N = float2(
+// 		EstimateDistance( _Position + e.xy, _IterationsCount ) - EstimateDistance( _Position - e.xy, _IterationsCount ),
+// 		EstimateDistance( _Position + e.yx, _IterationsCount ) - EstimateDistance( _Position - e.yx, _IterationsCount )
+// 		);
+// 	return normalize(N);
+// }
+
+#endif
+
+
+float2	EstimateVector( float2 _Position )
+{
+	return N2( _Position );
+}
 
 struct VS_IN
 {
@@ -172,9 +312,11 @@ float4	PS( VS_IN _In ) : SV_TARGET0
 	float2	P = float2( _Dimensions.x * _Dimensions.w * (UV.x - 0.5), 0.5 - UV.y );
 
 //return float4( EstimateNormal( P ), 0, 0 );
-//return EstimateDistance( P ) > 0.0 ? ShowNormalVectorField( P ) : 1.0;
+
+return D2( P ) < 0.0 ? 1.0 : float4( 135, 206, 235, 255 ) / 255.0;
+//return D2( P ) > 0.0 ? Show2DVectorField( P, _Dimensions.w ) : 1.0;
 //return FastScreenNoise( P );
-return TestDistanceFieldDisplacement2D( P );
+//return TestDistanceFieldDisplacement2D( P );
 
 	// Compute view direction in world space
 	float3	View = normalize( float3( _CameraData.xy * float2( 2.0 * UV.x - 1.0, 1.0 - 2.0 * UV.y ), 1.0 ) );

@@ -102,4 +102,8 @@ float4	ComputeIntersectionExit( float3 _StartPosition, float3 _View, const float
 	return INFINITY;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+// Advanced displacement
+
 #endif
