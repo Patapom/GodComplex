@@ -12,6 +12,8 @@ namespace RendererManaged {
 		NOCHANGE,
 
 		CULL_NONE,
+		CULL_BACK,
+		CULL_FRONT,
 	};
 
 	public enum class	DEPTHSTENCIL_STATE
@@ -28,5 +30,6 @@ namespace RendererManaged {
 		NOCHANGE,
 
 		DISABLED,
+		ADDITIVE,
 	};
 }

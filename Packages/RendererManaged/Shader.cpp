@@ -2,5 +2,5 @@
 
 #include "stdafx.h"
 
-#include "ComputeShader.h"
+#include "Shader.h"
 

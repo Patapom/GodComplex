@@ -303,3 +303,4 @@ obj
 /Packages/LibRawManaged/Debug DirectX10/*.tlog
 /Packages/RendererManaged/Debug DirectX10/*.tlog
 /Tools/DirectXTexManaged/Debug DirectX10/*.tlog
+/Packages/RendererManaged/Debug DirectX10/*.cache

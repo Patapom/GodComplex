@@ -16,9 +16,6 @@
 			if ( disposing && (components != null) )
 			{
 				components.Dispose();
-
-				// Dispose of the device
-				m_Device.Dispose();
 			}
 			base.Dispose( disposing );
 		}
@@ -39,6 +36,8 @@
 			this.floatTrackbarControlDebug2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlDebug3 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.viewportPanel = new OfflineCloudRenderer.ViewportPanel(this.components);
+			this.buttonShootPhotons = new System.Windows.Forms.Button();
+			this.progressBar1 = new System.Windows.Forms.ProgressBar();
 			this.SuspendLayout();
 			// 
 			// buttonReload
@@ -112,11 +111,30 @@
 			this.viewportPanel.Size = new System.Drawing.Size(963, 686);
 			this.viewportPanel.TabIndex = 0;
 			// 
+			// buttonShootPhotons
+			// 
+			this.buttonShootPhotons.Location = new System.Drawing.Point(1048, 421);
+			this.buttonShootPhotons.Name = "buttonShootPhotons";
+			this.buttonShootPhotons.Size = new System.Drawing.Size(93, 23);
+			this.buttonShootPhotons.TabIndex = 4;
+			this.buttonShootPhotons.Text = "Shoot Photons";
+			this.buttonShootPhotons.UseVisualStyleBackColor = true;
+			this.buttonShootPhotons.Click += new System.EventHandler(this.buttonShootPhotons_Click);
+			// 
+			// progressBar1
+			// 
+			this.progressBar1.Location = new System.Drawing.Point(988, 450);
+			this.progressBar1.Name = "progressBar1";
+			this.progressBar1.Size = new System.Drawing.Size(200, 23);
+			this.progressBar1.TabIndex = 5;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1200, 756);
+			this.Controls.Add(this.progressBar1);
+			this.Controls.Add(this.buttonShootPhotons);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.floatTrackbarControlDebug3);
 			this.Controls.Add(this.floatTrackbarControlDebug2);
@@ -140,6 +158,8 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDebug1;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDebug2;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDebug3;
+		private System.Windows.Forms.Button buttonShootPhotons;
+		private System.Windows.Forms.ProgressBar progressBar1;
 	}
 }
 

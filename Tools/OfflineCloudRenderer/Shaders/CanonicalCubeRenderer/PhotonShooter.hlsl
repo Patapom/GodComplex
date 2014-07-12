@@ -18,20 +18,21 @@
 //	_ The position on that side where it exited
 //	_ The angle at which it exited
 //
-#include "Global.hlsl"
-#include "Noise.hlsl"
+#include "../Global.hlsl"
+#include "../Noise.hlsl"
 
 static const uint	MAX_THREADS = 1024;
 
-static const float	PI = 3.1415926535897932384626433832795;
+//static const float	PI = 3.1415926535897932384626433832795;
 
-cbuffer	CBInput : register( b0 )
+cbuffer	CBInput : register( b8 )
 {
 	float2	_InitialPosition;	// Initial beam position in [-1,+1] on the top side of the cube (Y=+1)
 	float2	_InitialIncidence;	// Initial beam angular incidence (Phi,Theta)
 	float	_CubeSize;			// Size of the canonical cube in meters
+	float	_SigmaScattering;	// Scattering coefficient (in m^-1)
 	uint	_MaxScattering;		// Maximum scattering events before exiting the cube (default is 30)
-	float	_
+	uint	_BatchIndex;		// Photon batch index
 }
 
 Texture2D<float>			_PhaseCDF : register( t0 );
@@ -44,21 +45,38 @@ struct PhotonOut
 	uint	ScatteringEventsCount;	// Amount of scattering events before exiting
 };
 
-RWStructuredBuffer<PhotonOut>	_Photons : register( t1 );
+RWStructuredBuffer<PhotonOut>	_Photons : register( u0 );
 
 
 // Performs photon scattering
 // Changes the photon direction and returns the length of the path before next scattering
 float3	Scatter( uint _PhotonIndex, uint _ScatteringEventIndex, float3 _OriginalDirection, out float _Length )
 {
-	float	Random = Hash( 0.371819 * (_MaxScattering * _PhotonIndex + _ScatteringEventIndex) );
+	float	Random0 = Hash( 0.3718198 * (_MaxScattering * _PhotonIndex + _ScatteringEventIndex) );
+	float	Random1 = Hash( 1.7594813 * (_MaxScattering * _PhotonIndex + 0.5637 * _ScatteringEventIndex) );
+	float	Random2 = Hash( 3.5984763 * (_MaxScattering * _PhotonIndex + 0.7355 * _ScatteringEventIndex) );
+
+	// Draw a random walk length using eq. 10.22 from "Realistic Image Synthesis using Photon Mapping" (http://graphics.ucsd.edu/~henrik/papers/book/)
+	_Length = -log( 1e-6 * Random2 ) / _SigmaScattering;
+	_Length *= 2.0 / _CubeSize;	// Bring back to lengths in [-1,+1] cube space
+
+	// Draw a random orthogonal vector to current direction
+	float2	SinCosPhi, SinCosTheta;
+	sincos( (2.0 * PI) * Random0, SinCosPhi.x, SinCosPhi.y );
+	sincos( (2.0 * PI) * Random0, SinCosTheta.x, SinCosTheta.y );
+	float3	RandomVector = float3( SinCosPhi.y * SinCosTheta.x, SinCosTheta.y, SinCosPhi.x * SinCosTheta.x );
+	float3	Ortho = normalize( cross( RandomVector, _OriginalDirection ) );
+
+	// Rotate current direction about that vector by scattering angle
+	float	ScatteringAngle = _PhaseCDF.SampleLevel( LinearWrap, float2( Random0 + Random1, 0.5 ), 0.0 ).x;
+	return RotateVector( _OriginalDirection, Ortho, ScatteringAngle );
 }
 
 float	ComputeCubeExitDistance( float3 _Position, float3 _Direction )
 {
-	float3	ExitDistancesNeg = (-1.0 - R.ExitPosition) / R.ExitDirection;
+	float3	ExitDistancesNeg = (-1.0 - _Position) / _Direction;
 			ExitDistancesNeg = lerp( ExitDistancesNeg, INFINITY, step( ExitDistancesNeg, 0.0 ) );	// Brings all backward intersections to infinity
-	float3	ExitDistancesPos = (1.0 - R.ExitPosition) / R.ExitDirection;
+	float3	ExitDistancesPos = (1.0 - _Position) / _Direction;
 			ExitDistancesPos = lerp( ExitDistancesPos, INFINITY, step( ExitDistancesPos, 0.0 ) );	// Brings all backward intersections to infinity
 
 	float3	MinDistances = min( ExitDistancesNeg, ExitDistancesPos );
@@ -109,6 +127,7 @@ PhotonOut	ShootPhoton( uint _PhotonIndex )
 [numthreads( MAX_THREADS, 1, 1 )]
 void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID )
 {
-	uint	PhotonIndex = MAX_THREADS * _GroupID.x + _GroupThreadID.x;
+//	uint	PhotonIndex = MAX_THREADS * _GroupID.x + _GroupThreadID.x;
+	uint	PhotonIndex = MAX_THREADS * _BatchIndex + _GroupThreadID.x;
 	_Photons[PhotonIndex] = ShootPhoton( PhotonIndex );
 }

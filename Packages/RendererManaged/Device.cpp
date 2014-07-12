@@ -24,26 +24,50 @@ void	RendererManaged::Device::Init( System::IntPtr _WindowHandle, bool _FullScre
 	m_pQuad = new Primitive( *m_pDevice, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, VertexFormatPt4::DESCRIPTOR );
 }
 
+void	RendererManaged::Device::Clear( float4 _ClearColor )
+{
+	m_pDevice->ClearRenderTarget( m_pDevice->DefaultRenderTarget(), ::float4( _ClearColor.x, _ClearColor.y, _ClearColor.z, _ClearColor.w ) );
+}
+
+void	RendererManaged::Device::Clear( Texture2D^ _RenderTarget, float4 _ClearColor )
+{
+	m_pDevice->ClearRenderTarget( *_RenderTarget->m_pTexture, ::float4( _ClearColor.x, _ClearColor.y, _ClearColor.z, _ClearColor.w ) );
+}
+
+void	RendererManaged::Device::ClearDepthStencil( Texture2D^ _RenderTarget, float _Z, byte _Stencil, bool _ClearDepth, bool _ClearStencil )
+{
+	m_pDevice->ClearDepthStencil( *_RenderTarget->m_pTexture, _Z, _Stencil, _ClearDepth, _ClearStencil );
+}
+
 void	RendererManaged::Device::SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCIL_STATE _DS, BLEND_STATE _BS )
 {
 	::RasterizerState*	pRS = NULL;
 	switch ( _RS )
 	{
+	case RASTERIZER_STATE::NOCHANGE: break;
 	case RASTERIZER_STATE::CULL_NONE:	pRS = m_pDevice->m_pRS_CullNone; break;
+	case RASTERIZER_STATE::CULL_BACK:	pRS = m_pDevice->m_pRS_CullBack; break;
+	case RASTERIZER_STATE::CULL_FRONT:	pRS = m_pDevice->m_pRS_CullFront; break;
+	default: throw gcnew Exception( "Unsupported rasterizer state!" );
 	}
 
 	::DepthStencilState*	pDS = NULL;
 	switch ( _DS )
 	{
+	case DEPTHSTENCIL_STATE::NOCHANGE: break;
 	case DEPTHSTENCIL_STATE::DISABLED:						pDS = m_pDevice->m_pDS_Disabled; break;
 	case DEPTHSTENCIL_STATE::READ_DEPTH_LESS_EQUAL:			pDS = m_pDevice->m_pDS_ReadLessEqual; break;
 	case DEPTHSTENCIL_STATE::READ_WRITE_DEPTH_LESS_EQUAL:	pDS = m_pDevice->m_pDS_ReadWriteLess; break;
+	default: throw gcnew Exception( "Unsupported depth stencil state!" );
 	}
 
 	::BlendState*	pBS = NULL;
 	switch ( _BS )
 	{
+	case BLEND_STATE::NOCHANGE: break;
 	case BLEND_STATE::DISABLED:	pBS = m_pDevice->m_pBS_Disabled; break;
+	case BLEND_STATE::ADDITIVE:	pBS = m_pDevice->m_pBS_Additive; break;
+	default: throw gcnew Exception( "Unsupported blend state!" );
 	}
 
 	m_pDevice->SetStates( pRS, pDS, pBS );

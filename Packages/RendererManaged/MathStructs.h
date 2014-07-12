@@ -23,6 +23,7 @@ namespace RendererManaged
 	public:
 		float	x, y, z;
 		float3( float _x, float _y, float _z )		{ Set( _x, _y, _z ); }
+		float3( System::Drawing::Color^ _Color )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f ); }
 		void	Set( float _x, float _y, float _z )	{ x = _x; y = _y; z = _z; }
 		void	FromVector3( WMath::Vector^ a )		{ Set( a->x, a->y, a->z ); }
 
@@ -61,6 +62,7 @@ namespace RendererManaged
 		float	x, y, z, w;
 		float4( float _x, float _y, float _z, float _w )		{ Set( _x, _y, _z, _w ); }
 		float4( float3 _xyz, float _w )							{ Set( _xyz.x, _xyz.y, _xyz.z, _w ); }
+		float4( System::Drawing::Color^ _Color, float _Alpha )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f, _Alpha ); }
 		void	Set( float _x, float _y, float _z, float _w )	{ x = _x; y = _y; z = _z; w = _w; }
 		void	FromVector4( WMath::Vector4D^ a )				{ Set( a->x, a->y, a->z, a->w ); }
 

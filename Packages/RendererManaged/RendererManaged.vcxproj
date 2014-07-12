@@ -106,12 +106,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ByteBuffer.h" />
     <ClInclude Include="ComputeShader.h" />
     <ClInclude Include="ConstantBuffer.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="MathStructs.h" />
     <ClInclude Include="PixelFormats.h" />
     <ClInclude Include="PixelsBuffer.h" />
+    <ClInclude Include="Primitive.h" />
     <ClInclude Include="RenderStates.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Shader.h" />
@@ -125,11 +127,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp" />
+    <ClCompile Include="ByteBuffer.cpp" />
     <ClCompile Include="ComputeShader.cpp" />
     <ClCompile Include="ConstantBuffer.cpp" />
     <ClCompile Include="Device.cpp" />
     <ClCompile Include="MathStructs.cpp" />
     <ClCompile Include="PixelsBuffer.cpp" />
+    <ClCompile Include="Primitive.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderFile.cpp" />
     <ClCompile Include="ShaderMacros.cpp" />

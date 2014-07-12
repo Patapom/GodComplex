@@ -18,21 +18,16 @@ namespace RendererManaged {
 
 	public:
 
+		property int	Width			{ int get() { return m_pTexture->GetWidth(); } }
+		property int	Height			{ int get() { return m_pTexture->GetHeight(); } }
+		property int	Depth			{ int get() { return m_pTexture->GetDepth(); } }
+		property int	MipLevelsCount	{ int get() { return m_pTexture->GetMipLevelsCount(); } }
+
+	public:
+
 		Texture3D( Device^ _Device, int _Width, int _Height, int _Depth, int _MipLevelsCount, PIXEL_FORMAT _PixelFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _MipLevelsContent )
 		{
- 			IPixelFormatDescriptor*	pDescriptor = NULL;
- 			switch ( _PixelFormat )
- 			{
- 			case PIXEL_FORMAT::RGBA8_UNORM:		pDescriptor = &PixelFormatRGBA8::DESCRIPTOR; break;
-			case PIXEL_FORMAT::R16_FLOAT:		pDescriptor = &PixelFormatR16F::DESCRIPTOR; break;
-			case PIXEL_FORMAT::RG16_FLOAT:		pDescriptor = &PixelFormatRG16F::DESCRIPTOR; break;
-			case PIXEL_FORMAT::RGBA16_FLOAT:	pDescriptor = &PixelFormatRGBA16F::DESCRIPTOR; break;
-			case PIXEL_FORMAT::R32_FLOAT:		pDescriptor = &PixelFormatR32F::DESCRIPTOR; break;
-			case PIXEL_FORMAT::RG32_FLOAT:		pDescriptor = &PixelFormatRG32F::DESCRIPTOR; break;
-			case PIXEL_FORMAT::RGBA32_FLOAT:	pDescriptor = &PixelFormatRGBA32F::DESCRIPTOR; break;
- 			}
- 			if ( pDescriptor == NULL )
- 				throw gcnew Exception( "Unsupported pixel format!" );
+ 			IPixelFormatDescriptor*	pDescriptor = GetDescriptor( _PixelFormat );
 
 			void**	ppContent = NULL;
 			if ( _MipLevelsContent != nullptr )

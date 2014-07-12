@@ -78,6 +78,9 @@
     <Compile Include="ViewportPanel.Designer.cs">
       <DependentUpon>ViewportPanel.cs</DependentUpon>
     </Compile>
+    <Content Include="Shaders\CanonicalCubeRenderer\DisplayPhotonCube.hlsl" />
+    <Content Include="Shaders\CanonicalCubeRenderer\PhotonShooter.hlsl" />
+    <Content Include="Shaders\CanonicalCubeRenderer\SplatPhoton.hlsl" />
     <Content Include="Shaders\DisplayDistanceField.hlsl" />
     <Content Include="Shaders\DistanceField.hlsl" />
     <Content Include="Shaders\Global.hlsl" />
@@ -120,6 +123,7 @@
       <Name>SharpMath</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
