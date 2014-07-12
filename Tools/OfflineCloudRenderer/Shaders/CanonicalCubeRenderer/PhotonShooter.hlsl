@@ -51,15 +51,15 @@ RWStructuredBuffer<PhotonOut>	_Photons : register( u0 );
 float3	Scatter( uint _PhotonIndex, uint _ScatteringEventIndex, float3 _OriginalDirection, out float _Length )
 {
 	float	Random0 = Hash( 0.3718198 * (_MaxScattering * _PhotonIndex + _ScatteringEventIndex) );
-	float	Random1 = Hash( 1.7594813 * (_MaxScattering * _PhotonIndex + 0.5637 * _ScatteringEventIndex) );
-	float	Random2 = Hash( 3.5984763 * (_MaxScattering * _PhotonIndex + 0.7355 * _ScatteringEventIndex) );
+	float	Random1 = Hash( 0.7594813 * (_MaxScattering * _PhotonIndex + 0.5637 * _ScatteringEventIndex) );
+	float	Random2 = Hash( 0.5984763 * (_MaxScattering * _PhotonIndex + 0.7355 * _ScatteringEventIndex) );
 
-	// Draw a random walk length using eq. 10.22 from "Realistic Image Synthesis using Photon Mapping" (http://graphics.ucsd.edu/~henrik/papers/book/)
-	_Length = -log( 1e-6 + Random2 ) / _SigmaScattering;
-//	_Length = -log( 1e-6 + Random2 ) / 0.5;
+	// Draw a random walk length
+
+	// Using eq. 10.22 from "Realistic Image Synthesis using Photon Mapping" (http://graphics.ucsd.edu/~henrik/papers/book/)
+	_Length = -log( lerp( 1e-3, 1.0, Random2 ) ) / _SigmaScattering;	// It seems to be the quantile function (http://en.wikipedia.org/wiki/Quantile_function)
+
 	_Length *= 2.0 / _CubeSize;	// Bring back to lengths in [-1,+1] cube space
-
- //_Length = 0.2;
 
 
 	// Draw a random orthogonal vector to current direction

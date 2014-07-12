@@ -86,6 +86,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererLib", "RendererD3D1
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageUtility", "Packages\ImageUtility\ImageUtility.csproj", "{A55979A1-0251-49D2-9A2A-3729C814169A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mie2QuantileFunction", "Tools\Mie2QuantileFunction\Mie2QuantileFunction.csproj", "{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1065,6 +1067,27 @@ Global
 		{A55979A1-0251-49D2-9A2A-3729C814169A}.Release|x64.ActiveCfg = Release|Any CPU
 		{A55979A1-0251-49D2-9A2A-3729C814169A}.Release|x86.ActiveCfg = Release|x86
 		{A55979A1-0251-49D2-9A2A-3729C814169A}.Release|x86.Build.0 = Release|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Debug|Win32.ActiveCfg = Debug|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Debug|x64.ActiveCfg = Debug|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Debug|x86.ActiveCfg = Debug|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Debug|x86.Build.0 = Debug|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Profile|Any CPU.ActiveCfg = Release|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Profile|Mixed Platforms.ActiveCfg = Release|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Profile|Mixed Platforms.Build.0 = Release|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Profile|Win32.ActiveCfg = Release|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Profile|x64.ActiveCfg = Release|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Profile|x86.ActiveCfg = Release|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Profile|x86.Build.0 = Release|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Release|Any CPU.ActiveCfg = Release|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Release|Mixed Platforms.Build.0 = Release|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Release|Win32.ActiveCfg = Release|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Release|x64.ActiveCfg = Release|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Release|x86.ActiveCfg = Release|x86
+		{D7CDCDD2-B6C9-49CF-890A-DA4C3BC9AACB}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
