@@ -7,6 +7,7 @@ cbuffer	cbRender : register(b8)
 {
 	float4		_Dimensions;		// XY=Dimensions of the render target, ZW=1/XY
 	float4		_DEBUG;
+	float		_FluxMultiplier;
 }
 
 Texture2DArray<float4>	_TexPhotons : register(t0);
@@ -34,6 +35,6 @@ PS_IN	VS( VS_IN _In )
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
-	return _TexPhotons.Sample( LinearClamp, _In.UVW );
+	return _FluxMultiplier * _TexPhotons.Sample( LinearClamp, _In.UVW );
 	return float4( _In.UVW.xy, 0, 0 );
 }

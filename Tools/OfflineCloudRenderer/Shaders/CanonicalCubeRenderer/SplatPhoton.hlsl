@@ -6,7 +6,9 @@
 
 cbuffer	cbRender : register(b8)
 {
+	uint		_SplatType;
 	float		_SplatSize;
+	float		_SplatIntensity;
 //	float4		_DEBUG;
 }
 
@@ -48,10 +50,23 @@ void	GS( point VS_IN _In[1], inout TriangleStream<PS_IN> _OutStream )
 
 	PhotonOut	Photon = _Photons[_In[0].PhotonIndex];
 
+	Out.Data = 0.0;
+	switch ( _SplatType )
+	{
+	// Positive
+	case 0: Out.Data = float4( Photon.ExitPosition, 0 ); break;
+	case 1: Out.Data = float4( Photon.ExitDirection, 0 ); break;
 
-//Out.Data = 0.0;
-Out.Data = float4( abs(Photon.ExitPosition), 0 );
-//Out.Data = float4( abs(Photon.ExitDirection), 0 );
+	// Negative
+	case 16+0: Out.Data = float4( -Photon.ExitPosition, 0 ); break;
+	case 16+1: Out.Data = float4( -Photon.ExitDirection, 0 ); break;
+
+	// Absolute
+	case 32+0: Out.Data = float4( abs(Photon.ExitPosition), 0 ); break;
+	case 32+1: Out.Data = float4( abs(Photon.ExitDirection), 0 ); break;
+
+	case 2: Out.Data = 0.01 * Photon.ScatteringEventsCount; break;
+	}
 //Out.Data = float4( Photon.ExitDirection, 0 );
 //Out.Data = float4( _PhaseQuantiles[_In[0].PhotonIndex & 0x3FFFF].xxx, 0 );
 //Out.Data = float4( _In[0].PhotonIndex * 0.001.xxx, 0 );
@@ -128,7 +143,10 @@ Out.Data = float4( 1, 0, 1, 0 );
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
-return _In.Data;
+	if ( _SplatType == 3 )
+//		return _SplatIntensity * (1.0 - length( _In.UV ));
+		return _SplatIntensity * exp( -10.0 * length( _In.UV ) );
+
+	return _In.Data;
 //return float4( 1, 1, 0, 0 );
-	return 0.05 * (1.0 - length( _In.UV ));
 }

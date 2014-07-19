@@ -21,7 +21,7 @@
 #include "../Global.hlsl"
 #include "../Noise.hlsl"
 
-#define USE_RANDOM_TABLE	1024 * 1024	// Use the random table of float4 instead of generating pseudo random numbers on the fly
+#define USE_RANDOM_TABLE	4 * 1024 * 1024	// Use the random table of float4 instead of generating pseudo random numbers on the fly
 
 static const uint	MAX_THREADS = 1024;
 
@@ -75,7 +75,7 @@ float3	Scatter( uint _PhotonIndex, uint _ScatteringEventIndex, float3 _OriginalD
 #if USE_RANDOM_TABLE
 	float	TempRandom = Hash( 0.3718198 * (_MaxScattering * (0.37891+_PhotonIndex) + _ScatteringEventIndex) );
 //	float4	Random = _Random[uint( TempRandom * USE_RANDOM_TABLE) & (USE_RANDOM_TABLE-1)];
-	float4	Random = _Random[uint(_MaxScattering * _PhotonIndex + _ScatteringEventIndex) & (USE_RANDOM_TABLE-1)];
+	float4	Random = _Random[uint(0.37138198 * (_MaxScattering * _PhotonIndex + _ScatteringEventIndex)) & (USE_RANDOM_TABLE-1)];
 #else
 	float4	Random = float4(	Hash( 0.003718198 * (_MaxScattering * (0.37918+_PhotonIndex) + 0.3879 * _ScatteringEventIndex) ),
 								Hash( 0.007594813 * (_MaxScattering * (0.37189+_PhotonIndex) + 0.5637 * _ScatteringEventIndex) ),
@@ -88,14 +88,7 @@ float3	Scatter( uint _PhotonIndex, uint _ScatteringEventIndex, float3 _OriginalD
 
 	// Using eq. 10.22 from "Realistic Image Synthesis using Photon Mapping" (http://graphics.ucsd.edu/~henrik/papers/book/)
 //	_Length = -log( lerp( 1e-3, 1.0, Random.w ) ) / _SigmaScattering;	// It seems to be the quantile function (http://en.wikipedia.org/wiki/Quantile_function)
-//	_Length = -log( lerp( 1e-1, 0.9, 0.25 + 0.70 * Random.w ) ) / _SigmaScattering;	// It seems to be the quantile function (http://en.wikipedia.org/wiki/Quantile_function)
-
-//_Length = -log( 0.001 + (1.0-0.001) * Random.w ) / _SigmaScattering;	// It seems to be the quantile function (http://en.wikipedia.org/wiki/Quantile_function)
-_Length = Random.w / _SigmaScattering;	// It seems to be the quantile function (http://en.wikipedia.org/wiki/Quantile_function)
-
-//_Length = 10.0;
-
-//_Length = clamp( _Length, 1e-3, _CubeSize );
+	_Length = Random.w / _SigmaScattering;	// W component of random vector is special
 
 	_Length *= 2.0 / _CubeSize;	// Bring back to lengths in [-1,+1] cube space
 
@@ -113,12 +106,6 @@ _Length = Random.w / _SigmaScattering;	// It seems to be the quantile function (
 #endif
 	float3	RandomVector = float3( SinCosPhi.y * SinCosTheta.x, SinCosTheta.y, SinCosPhi.x * SinCosTheta.x );
 	float3	Ortho = normalize( cross( RandomVector, _OriginalDirection ) );
-
-// 	float3	Ortho = cross( RandomVector, _OriginalDirection );
-// //	if ( length( Ortho ) < 1e-4 )
-// 		Ortho = float3( 1, 0, 0 );
-// // 	else
-// // 		Ortho /= length(Ortho);
  
 	// Rotate current direction about that vector by scattering angle
 //	float	ScatteringAngle = _PhaseCDF.SampleLevel( LinearWrap, float2( Random.w, 0.5 ), 0.0 ).x;
@@ -126,40 +113,16 @@ _Length = Random.w / _SigmaScattering;	// It seems to be the quantile function (
 
 //ScatteringAngle = 0.04;
 
-// float3	Y = cross( Ortho, _OriginalDirection );
-// float2	SinCosRot;
-// sincos( ScatteringAngle, SinCosRot.x, SinCosRot.y );
-// return _OriginalDirection * SinCosRot.y + Y * SinCosRot.x;
-
 	return RotateVector( _OriginalDirection, Ortho, ScatteringAngle );
-}
-
-float	ComputeCubeExitDistance2( float3 _Position, float3 _Direction )
-{
-	float3	ExitDistancesNeg = (-1.0 - _Position) / _Direction;
-			ExitDistancesNeg = lerp( ExitDistancesNeg, INFINITY, step( ExitDistancesNeg, 0.0 ) );	// Brings all backward intersections to infinity
-	float3	ExitDistancesPos = (1.0 - _Position) / _Direction;
-			ExitDistancesPos = lerp( ExitDistancesPos, INFINITY, step( ExitDistancesPos, 0.0 ) );	// Brings all backward intersections to infinity
-
-	float3	MinDistances = min( ExitDistancesNeg, ExitDistancesPos );
-	return min( min( MinDistances.x, MinDistances.y ), MinDistances.z );
 }
 
 float	ComputeCubeExitDistance( float3 _Position, float3 _Direction )
 {
 	float3	ExitDistancesNeg = (-1.0 - _Position) / min( -1e-6, _Direction );
-//	float3	ExitDistancesNeg = (-1.0 - _Position) / _Direction;
 //			ExitDistancesNeg = lerp( ExitDistancesNeg, INFINITY, step( ExitDistancesNeg, 0.0.xxx ) );	// Brings all backward intersections to infinity
-// 	if ( ExitDistancesNeg.x < 0.0 ) ExitDistancesNeg.x = INFINITY;
-// 	if ( ExitDistancesNeg.y < 0.0 ) ExitDistancesNeg.y = INFINITY;
-// 	if ( ExitDistancesNeg.z < 0.0 ) ExitDistancesNeg.z = INFINITY;
 
 	float3	ExitDistancesPos = (1.0 - _Position) / max( 1e-6, _Direction );
-//	float3	ExitDistancesPos = (1.0 - _Position) / _Direction;
 //			ExitDistancesPos = lerp( ExitDistancesPos, INFINITY, step( ExitDistancesPos, 0.0.xxx ) );	// Brings all backward intersections to infinity
-// 	if ( ExitDistancesPos.x < 0.0 ) ExitDistancesPos.x = INFINITY;
-// 	if ( ExitDistancesPos.y < 0.0 ) ExitDistancesPos.y = INFINITY;
-// 	if ( ExitDistancesPos.z < 0.0 ) ExitDistancesPos.z = INFINITY;
 
 	float3	MinDistances = min( ExitDistancesNeg, ExitDistancesPos );
 	return min( min( MinDistances.x, MinDistances.y ), MinDistances.z );
@@ -173,8 +136,7 @@ PhotonOut	ShootPhoton( uint _PhotonIndex )
 	sincos( _InitialIncidence.y, SinCosTheta.x, SinCosTheta.y );
 
 	PhotonOut	R;
-//	R.ExitPosition = float3( _InitialPosition.x, 1.0-INITIAL_START_EPSILON, _InitialPosition.y );
-	R.ExitPosition = float3( _InitialPosition.x, 0.9, _InitialPosition.y );
+	R.ExitPosition = float3( _InitialPosition.x, 1.0-INITIAL_START_EPSILON, _InitialPosition.y );
 	R.ExitDirection = -float3( SinCosPhi.y * SinCosTheta.x, SinCosTheta.y, SinCosPhi.x * SinCosTheta.x );
 	R.MarchedLength = 0.0;
 	R.ScatteringEventsCount = 0;
@@ -184,8 +146,6 @@ PhotonOut	ShootPhoton( uint _PhotonIndex )
 	Scatter( _PhotonIndex, -1, R.ExitDirection, MarchLength );
 
 //MarchLength = 0.1;
-
-//return R;
 
 	for ( ; R.ScatteringEventsCount < _MaxScattering; R.ScatteringEventsCount++ )
 	{
@@ -216,7 +176,6 @@ PhotonOut	ShootPhoton( uint _PhotonIndex )
 
 //R.ExitDirection = _PhaseQuantiles[_PhotonIndex%(2*QUANTILES_COUNT)];
 //R.ExitPosition = float3( 0, 0, 1 );
-// R.ExitDirection = 1.0;
 
 	return R;
 }
