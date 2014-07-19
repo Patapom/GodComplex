@@ -228,6 +228,17 @@ namespace Mie2QuantileFunction
 				i = j;
 			}
 
+			// Write result to file
+			using ( FileStream S = new FileInfo( "Mie" + QUANTILE_TEXTURE_SIZE +"x2.float" ).Create() )
+				using ( BinaryWriter W = new BinaryWriter( S ) )
+				{
+					for ( int i=0; i < QUANTILE_TEXTURE_SIZE; i++ )
+						W.Write( m_PhaseAnglesQuantilePeak[i] );
+					for ( int i=0; i < QUANTILE_TEXTURE_SIZE; i++ )
+						W.Write( m_PhaseAnglesQuantileOffPeak[i] );
+				}
+
+
 			// Update panel
 			panelOutputScattering.Phase = m_Phase;
 			panelOutputScattering.PhaseQuantilesPeak = m_PhaseAnglesQuantilePeak;
