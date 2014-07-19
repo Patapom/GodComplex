@@ -441,8 +441,8 @@ namespace OfflineCloudRenderer
 			m_SB_PhotonOut.SetOutput( 0 );
 
 			m_CB_PhotonShooterInput.m.MaxScattering = 100;
-			m_CB_PhotonShooterInput.m.InitialPosition = new float2( 0, 0 );				// Center of the cube side
-			m_CB_PhotonShooterInput.m.InitialIncidence = new float2( 0, 0 );			// Vertical incidence
+			m_CB_PhotonShooterInput.m.InitialPosition = new float2( floatTrackbarControlPositionX.Value, floatTrackbarControlPositionZ.Value );	// Center of the cube side
+			m_CB_PhotonShooterInput.m.InitialIncidence = new float2( floatTrackbarControlOrientationPhi.Value * (float) Math.PI / 180.0f, floatTrackbarControlOrientationTheta.Value * (float) Math.PI / 180.0f );			// Vertical incidence
 			m_CB_PhotonShooterInput.m.CubeSize = floatTrackbarControlCubeSize.Value;	// Try a 100m thick cube
 //			m_CB_PhotonShooterInput.m.SigmaScattering = 0.5f;
 			m_CB_PhotonShooterInput.m.SigmaScattering = 0.04523893421169302263386206471922f;	// re=6µm Gamma=2 N0=4e8   Sigma_t = N0 * PI * re²
