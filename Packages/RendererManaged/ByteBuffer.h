@@ -51,6 +51,7 @@ namespace RendererManaged {
 				throw gcnew Exception( "Stream is not opened!" );
 
 			delete m_Stream;
+			m_Stream = nullptr;
 		}
 	};
 }

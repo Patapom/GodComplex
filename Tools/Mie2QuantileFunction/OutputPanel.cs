@@ -17,13 +17,15 @@ namespace Mie2QuantileFunction
 		{
 			LOG,
 			POLAR,
-			BUCKETS,
+			QUANTILES_PEAK,
+			QUANTILES_OFF_PEAK,
+			SCATTERING_SIMULATION,
 		}
 
 		private double[]	m_Phase = null;
 		private double		m_PhaseMin = 0.0f;
 		private double		m_PhaseMax = 0.0f;
-		public double[]			Phase
+		public double[]		Phase
 		{
 			get { return m_Phase; }
 			set
@@ -40,6 +42,30 @@ namespace Mie2QuantileFunction
 					m_PhaseMax = Math.Max( m_PhaseMax, m_Phase[AngleIndex] );
 				}
 			}
+		}
+
+		private struct QuantileInfos
+		{
+			public float	m_AngleStart;
+			public float	m_AngleEnd;
+			public float	m_SumPhase;
+			public float	m_SumPhaseTotal;
+		}
+
+		private QuantileInfos	m_PhaseInfosPeak = new QuantileInfos();
+		private float[]	m_PhaseQuantilesPeak = null;
+		public float[]	PhaseQuantilesPeak
+		{
+			get { return m_PhaseQuantilesPeak; }
+			set { m_PhaseQuantilesPeak = value; }
+		}
+
+		private QuantileInfos	m_PhaseInfosOffPeak = new QuantileInfos();
+		private float[]	m_PhaseQuantilesOffPeak = null;
+		public float[]	PhaseQuantilesOffPeak
+		{
+			get { return m_PhaseQuantilesOffPeak; }
+			set { m_PhaseQuantilesOffPeak = value; }
 		}
 
 		private DISPLAY_TYPE	m_Type = DISPLAY_TYPE.LOG;
@@ -65,6 +91,25 @@ namespace Mie2QuantileFunction
 			InitializeComponent();
 		}
 
+		public void		ScatteringReShoot()
+		{
+			UpdateBitmap();
+		}
+
+		public void		SetQuantileRanges( bool _Peak, float _AngleStart, float _AngleEnd, float _SumPhase, float _TotalPhase )
+		{
+			QuantileInfos	Infos = new QuantileInfos() {
+				m_AngleStart = _AngleStart,
+				m_AngleEnd = _AngleEnd,
+				m_SumPhase = _SumPhase,
+				m_SumPhaseTotal = _TotalPhase
+			};
+			if ( _Peak )
+				m_PhaseInfosPeak = Infos;
+			else
+				m_PhaseInfosOffPeak = Infos;
+		}
+
 		delegate float	EvalDelegate( float x );
 		protected void		UpdateBitmap()
 		{
@@ -85,11 +130,14 @@ namespace Mie2QuantileFunction
 							G.DrawLine( Pens.Black, 10, 0, 10, Height );
 							G.DrawLine( Pens.Black, 0, Height-10, Width, Height-10 );
 
+							double	LogPhaseMin = Math.Floor( Math.Log10( m_PhaseMin ) );
+							double	LogPhaseMax = Math.Ceiling( Math.Log10( m_PhaseMax ) );
+
 							EvalDelegate	Eval = ( float _x ) => {
 								int		AngleIndex = (int) ((m_Phase.Length-1) * _x);
 
-								double	Num = Math.Log10( m_Phase[AngleIndex] ) - Math.Log10( m_PhaseMin );
-								double	Den = Math.Log10( m_PhaseMax ) - Math.Log10( m_PhaseMin );
+								double	Num = Math.Log10( m_Phase[AngleIndex] ) - LogPhaseMin;
+								double	Den = LogPhaseMax - LogPhaseMin;
 								double	P = Num / Den;
 								return (float) P;
 							};
@@ -114,11 +162,136 @@ namespace Mie2QuantileFunction
 							G.DrawLine( Pens.Black, 0, Height/2, Width, Height/2 );
 							G.DrawLine( Pens.Black, Width/2, 0, Width/2, Height );
 
+							double	LogPhaseMin = Math.Floor( Math.Log10( m_PhaseMin ) );
+							double	LogPhaseMax = Math.Ceiling( Math.Log10( m_PhaseMax ) );
+
 							EvalDelegate	Eval = ( float _x ) => {
 								int		AngleIndex = (int) ((m_Phase.Length-1) * _x / Math.PI);
 
-								double	Num = Math.Log10( m_Phase[AngleIndex] ) - Math.Log10( m_PhaseMin );
-								double	Den = Math.Log10( m_PhaseMax ) - Math.Log10( m_PhaseMin );
+								double	Num = Math.Log10( m_Phase[AngleIndex] ) - LogPhaseMin;
+								double	Den = LogPhaseMax - LogPhaseMin;
+								double	P = Num / Den;
+								return (float) P;
+							};
+
+							for ( int i=0; i < 1800; i++ )
+							{
+								float	Angle0 = (float) (Math.PI * i / 1800.0f);
+								float	Angle1 = (float) (Math.PI * (i+1) / 1800.0f);
+								float	P0 = 0.5f * Width * Eval( Angle0 );
+								float	P1 = 0.5f * Width * Eval( Angle1 );
+
+								float	C0 = (float) Math.Cos( Angle0 );
+								float	C1 = (float) Math.Cos( Angle1 );
+								float	S0 = (float) Math.Sin( Angle0 );
+								float	S1 = (float) Math.Sin( Angle1 );
+
+								G.DrawLine( Pens.Black, 0.5f * Width + P0 * C0, 0.5f * Height + P0 * S0, 0.5f * Width + P1 * C1, 0.5f * Height + P1 * S1 );
+								G.DrawLine( Pens.Black, 0.5f * Width + P0 * C0, 0.5f * Height - P0 * S0, 0.5f * Width + P1 * C1, 0.5f * Height - P1 * S1 );
+							}
+						}
+						break;
+
+					case DISPLAY_TYPE.QUANTILES_PEAK:
+					case DISPLAY_TYPE.QUANTILES_OFF_PEAK:
+						{
+							G.DrawLine( Pens.Black, 10, 0, 10, Height );
+							G.DrawLine( Pens.Black, 0, Height-10, Width, Height-10 );
+
+							QuantileInfos	Infos;
+							EvalDelegate	Eval = null;
+							if ( m_Type == DISPLAY_TYPE.QUANTILES_PEAK )
+							{
+								Eval = ( float _x ) => {
+									int		QuantileIndex = (int) ((m_PhaseQuantilesPeak.Length-1) * _x);
+
+									float	R = m_PhaseQuantilesPeak[QuantileIndex] / (m_PhaseInfosPeak.m_AngleEnd * (float) Math.PI / 180.0f);
+									return R;
+								};
+								Infos = m_PhaseInfosPeak;
+							}
+							else
+							{
+								Eval = ( float _x ) => {
+									int		QuantileIndex = (int) ((m_PhaseQuantilesOffPeak.Length-1) * _x);
+
+									float	R = m_PhaseQuantilesOffPeak[QuantileIndex] / (float) Math.PI;
+									return R;
+								};
+								Infos = m_PhaseInfosOffPeak;
+							}
+
+							float	px = 0.0f;
+							float	py = Eval( 0.0f );
+							for ( int X=10; X <= Width; X++ )
+							{
+			 					float	x = (float) (X-10.0f) / (Width - 10);
+
+								float	y = Eval( x );
+								DrawLine( G, px, py, x, y, Pens.Black );
+
+								px = x;
+								py = y;
+							}
+
+							// Draw some info
+							G.DrawString( "Angle Start = " + Infos.m_AngleStart + "°", Font, Brushes.Black, 20, 20*1 );
+							G.DrawString( "Angle End = " + Infos.m_AngleEnd + "°", Font, Brushes.Black, 20, 20*2 );
+							G.DrawString( "Total Phase = " + Infos.m_SumPhaseTotal, Font, Brushes.Black, 20, 20*3 );
+							G.DrawString( "Sum Phase = " + Infos.m_SumPhase + " (" + (100.0 * Infos.m_SumPhase / Infos.m_SumPhaseTotal).ToString( "G6" ) + "%)", Font, Brushes.Black, 20, 20*4 );
+						}
+						break;
+
+					case DISPLAY_TYPE.SCATTERING_SIMULATION:
+						{
+							G.DrawLine( Pens.Black, 0, Height/2, Width, Height/2 );
+							G.DrawLine( Pens.Black, Width/2, 0, Width/2, Height );
+
+							// Shoot random numbers and stack them according to phase tables
+							int[]		Accum = new int[1080];
+							Random		RNG = new Random();
+							float		PeakLimit = m_PhaseInfosPeak.m_SumPhase / m_PhaseInfosPeak.m_SumPhaseTotal;
+							float		NormPeak = 1.0f / PeakLimit;
+							float		NormOffPeak = 1.0f / (1.0f - PeakLimit);
+							int			PeakArraySize = m_PhaseQuantilesPeak.Length;
+							int			OffPeakArraySize = m_PhaseQuantilesOffPeak.Length;
+
+							int			MinAccum = 100000000;
+							int			MaxAccum = 0;
+							for ( int i=0; i < 10000000; i++ )
+							{
+								float	R = (float) RNG.NextDouble();
+								float	Angle;
+								if ( R < PeakLimit )
+								{	// Peak draw
+									int	QuantileIndex = (int) Math.Floor( R * NormPeak * PeakArraySize );
+									Angle = m_PhaseQuantilesPeak[Math.Min( PeakArraySize-1, QuantileIndex )];
+								}
+								else
+								{	// Off-peak draw
+									int	QuantileIndex = (int) Math.Floor( (R-PeakLimit) * NormOffPeak * OffPeakArraySize );
+									Angle = m_PhaseQuantilesOffPeak[Math.Min( OffPeakArraySize-1, QuantileIndex )];
+								}
+
+								int		nAngle = (int) Math.Floor( (Angle * 1080) / Math.PI );
+								Accum[nAngle]++;
+								MinAccum = Math.Min( MinAccum, Accum[nAngle] );
+								MaxAccum = Math.Max( MaxAccum, Accum[nAngle] );
+							}
+
+							float	Normalizer = 1.0f / MaxAccum;
+
+							double	LogPhaseMin = Math.Floor( Math.Log10( Math.Max( 1, MinAccum ) ) );
+							double	LogPhaseMax = Math.Ceiling( Math.Log10( MaxAccum ) );
+
+							EvalDelegate	Eval = ( float _x ) => {
+								int		AngleIndex = (int) Math.Min( 1079, 1080 * _x / Math.PI );
+//								float	P = Accum[AngleIndex] * Normalizer;
+//								float	P = (float) (Math.Log10( Math.Max( 1, Accum[AngleIndex] ) ) / Math.Log10( MaxAccum ));
+//								return P;
+
+								double	Num = Math.Log10( Math.Max( 1, Accum[AngleIndex] ) ) - LogPhaseMin;
+								double	Den = LogPhaseMax - LogPhaseMin;
 								double	P = Num / Den;
 								return (float) P;
 							};
@@ -141,66 +314,6 @@ namespace Mie2QuantileFunction
 						}
 						break;
 				}
-
-// 				FresnelEval	Eval = null;
-// 				if ( m_FromData )
-// 				{
-// 					switch ( m_Type ) 
-// 					{
-// 						case FRESNEL_TYPE.SCHLICK:	Eval = Fresnel_SchlickData; PrepareData(); break;
-// 						case FRESNEL_TYPE.PRECISE:	Eval = Fresnel_PreciseData; PrepareData(); break;
-// 					}
-// 				}
-// 				else
-// 				{
-// 					switch ( m_Type ) 
-// 					{
-// 						case FRESNEL_TYPE.SCHLICK:	Eval = Fresnel_Schlick; PrepareSchlick(); break;
-// 						case FRESNEL_TYPE.PRECISE:	Eval = Fresnel_Precise; PreparePrecise(); break;
-// 					}
-// 				}
-// 
-// 				DrawLine( G, 0, 1, 1, 1, Pens.Gray );
-// 
-// 				float	x = 0.0f;
-// 				float	yr, yg, yb;
-// 				Eval( 1.0f, out yr, out yg, out yb );
-// 				for ( int X=10; X <= Width; X++ )
-// 				{
-// 					float	px = x;
-// 					float	pyr = yr;
-// 					float	pyg = yg;
-// 					float	pyb = yb;
-// 					x = (float) (X-10.0f) / (Width - 10);
-// 
-// 					float	CosTheta = (float) Math.Cos( x * 0.5 * Math.PI );	// Cos(theta)
-// 
-// 					Eval( CosTheta, out yr, out yg, out yb );
-// 
-// 					DrawLine( G, px, pyr, x, yr, Pens.Red );
-// 					DrawLine( G, px, pyg, x, yg, Pens.LimeGreen );
-// 					DrawLine( G, px, pyb, x, yb, Pens.Blue );
-// 				}
-// 
-// 				if ( !m_FromData )
-// 				{
-// 					Eval( 1.0f, out yr, out yg, out yb );
-// 					float	F0 = Math.Max( Math.Max( yr, yg ), yb );
-// 					G.DrawString( "F0 = " + F0, Font, Brushes.Black, 12.0f, Height - 30 - (Height-20) * F0 );
-// 				}
-// 				else
-// 				{
-// 					Eval( 1.0f, out yr, out yg, out yb );
-// 					float	F0 = Math.Max( Math.Max( yr, yg ), yb );
-// 
-// 					float	Offset = Height - 30 - 24 - (Height-20) * F0;
-// 					if ( Offset < 40 )
-// 						Offset = Height - (Height-20) * Math.Min( Math.Min( yr, yg ), yb );
-// 
-// 					G.DrawString( "R (n = " + m_IndicesR.n + " k = " + m_IndicesR.k + ") F0 = " + yr, Font, Brushes.Black, 12.0f, Offset );
-// 					G.DrawString( "G (n = " + m_IndicesG.n + " k = " + m_IndicesG.k + ") F0 = " + yg, Font, Brushes.Black, 12.0f, Offset + 12 );
-// 					G.DrawString( "B (n = " + m_IndicesB.n + " k = " + m_IndicesB.k + ") F0 = " + yb, Font, Brushes.Black, 12.0f, Offset + 24 );
-// 				}
 			}
 
 			Invalidate();

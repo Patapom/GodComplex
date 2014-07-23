@@ -10,6 +10,7 @@ namespace RendererManaged {
 	public enum class	PIXEL_FORMAT
 	{
 		RGBA8_UNORM,
+		RGBA8_UNORM_sRGB,
 		R16_FLOAT,
 		RG16_FLOAT,
 		RGBA16_FLOAT,
@@ -24,6 +25,7 @@ namespace RendererManaged {
  		switch ( _Format )
  		{
  		case PIXEL_FORMAT::RGBA8_UNORM:		pDescriptor = &PixelFormatRGBA8::DESCRIPTOR; break;
+ 		case PIXEL_FORMAT::RGBA8_UNORM_sRGB:pDescriptor = &PixelFormatRGBA8_sRGB::DESCRIPTOR; break;
 		case PIXEL_FORMAT::R16_FLOAT:		pDescriptor = &PixelFormatR16F::DESCRIPTOR; break;
 		case PIXEL_FORMAT::RG16_FLOAT:		pDescriptor = &PixelFormatRG16F::DESCRIPTOR; break;
 		case PIXEL_FORMAT::RGBA16_FLOAT:	pDescriptor = &PixelFormatRGBA16F::DESCRIPTOR; break;

@@ -66,14 +66,17 @@ bool	Device::Init( HWND _Handle, bool _Fullscreen, bool _sRGB )
 	SwapChainDesc.Windowed = !_Fullscreen;
 	SwapChainDesc.Flags = 0;
 
+	int	FeatureLevelsCount = 1;
 #ifdef DIRECTX10
 #	ifdef TRY_DIRECTX10_1
-	D3D_FEATURE_LEVEL	FeatureLevel = D3D_FEATURE_LEVEL_10_1;	// Support D3D10.1 only...
+	D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_10_1,		// Support D3D10.1 only...
+											D3D_FEATURE_LEVEL_10_0 };	// If failed, use D3D10
+	FeatureLevelsCount = 2;
 #	else
-	D3D_FEATURE_LEVEL	FeatureLevel = D3D_FEATURE_LEVEL_10_0;	// Support D3D10 only...
+	D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_10_0 };	// Support D3D10 only...
 #	endif
 #else
-	D3D_FEATURE_LEVEL	FeatureLevel = D3D_FEATURE_LEVEL_11_0;	// Support D3D11...
+	D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_11_0 };	// Support D3D11...
 #endif
 	D3D_FEATURE_LEVEL	ObtainedFeatureLevel;
 
@@ -87,7 +90,7 @@ bool	Device::Init( HWND _Handle, bool _Fullscreen, bool _sRGB )
  	if ( !Check(
 		D3D11CreateDeviceAndSwapChain( NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
 			DebugFlags,
-			&FeatureLevel, 1,
+			FeatureLevels, FeatureLevelsCount,
 			D3D11_SDK_VERSION,
 			&SwapChainDesc, &m_pSwapChain,
 			&m_pDevice, &ObtainedFeatureLevel, &m_pDeviceContext ) )

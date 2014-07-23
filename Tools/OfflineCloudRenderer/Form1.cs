@@ -18,7 +18,9 @@ namespace OfflineCloudRenderer
 		#region CONSTANTS
 
 		private const int		PHOTON_BATCH_SIZE = 1024;	// Must correspond to threads count in compute shader
-		private const int		PHOTONS_COUNT = 1000 * PHOTON_BATCH_SIZE;
+		private const int		PHOTONS_COUNT = 10000 * PHOTON_BATCH_SIZE;
+
+		private const int		RANDOM_TABLE_SIZE = 4 * 1024 * 1024;
 
 		#endregion
 
@@ -41,6 +43,7 @@ namespace OfflineCloudRenderer
 		{
 			public float4		TargetDimensions;	// XY=Target dimensions, ZW=1/XY
 			public float4		Debug;
+			public float		FluxMultiplier;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -57,7 +60,9 @@ namespace OfflineCloudRenderer
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		public struct	CB_SplatPhoton
 		{
+			public uint			SplatType;
 			public float		SplatSize;
+			public float		SplatIntensity;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -86,8 +91,9 @@ namespace OfflineCloudRenderer
 		// Photon Shooter
 		private ComputeShader							m_CS_PhotonShooter = null;
 		private ConstantBuffer<CB_PhotonShooterInput>	m_CB_PhotonShooterInput = null;
-		private Texture2D								m_Tex_PhaseCDF = null;
+		private StructuredBuffer<float>					m_SB_PhaseQuantile = null;
 		private StructuredBuffer<SB_PhotonOut>			m_SB_PhotonOut = null;
+		private StructuredBuffer<float4>				m_SB_Random = null;
 
 		// Photons Splatter
 		private Shader							m_PS_PhotonSplatter	= null;
@@ -100,6 +106,8 @@ namespace OfflineCloudRenderer
 		private Primitive					m_Prim_Cube = null;
 
 //		private Texture3D					m_Noise3D = null;
+
+		private Shader						m_PS_RenderWorldCube = null;
 
 		private List<IDisposable>			m_Disposables = new List<IDisposable>();
 
@@ -137,8 +145,8 @@ namespace OfflineCloudRenderer
 			Reg( m_CS_PhotonShooter = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/PhotonShooter.hlsl" ) ), "CS", null ) );
 			Reg( m_CB_PhotonShooterInput = new ConstantBuffer<CB_PhotonShooterInput>( m_Device, 8 ) );
 			Reg( m_SB_PhotonOut = new StructuredBuffer<SB_PhotonOut>( m_Device, PHOTONS_COUNT, true ) );
-
-			BuildPhaseCDF();
+			BuildPhaseQuantileBuffer( new System.IO.FileInfo( @"Mie65536x2.float" ) );
+			BuildRandomBuffer();
 
 			//////////////////////////////////////////////////////////////////////////
 			// Photons Splatter
@@ -156,6 +164,9 @@ namespace OfflineCloudRenderer
 			// Photons Renderer
 			Reg( m_PS_RenderCube = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/DisplayPhotonCube.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null ) );
 			BuildCube();
+
+
+			Reg( m_PS_RenderWorldCube = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/DisplayWorldCube.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null ) );
 
 			// Create the camera manipulator
 			m_CB_Camera.m.Camera2World = float4x4.Identity;
@@ -183,18 +194,27 @@ namespace OfflineCloudRenderer
 
 		}
 
-		private void	BuildPhaseCDF()
+		private void	BuildPhaseQuantileBuffer( System.IO.FileInfo _PhaseQuantileFileName )
 		{
-			PixelsBuffer	Content = new PixelsBuffer( 512*4 );
-			using ( System.IO.BinaryWriter W = Content.OpenStreamWrite() )
-			{
-				for ( int Angle=0; Angle < 512; Angle++ )
-				{
-					W.Write( (float) Math.PI * Angle / 512 );
-				}
-			}
+			const int	QUANTILES_COUNT = 65536;
 
-			Reg( m_Tex_PhaseCDF = new Texture2D( m_Device, 512, 1, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { Content } ) );
+			Reg( m_SB_PhaseQuantile = new StructuredBuffer<float>( m_Device, 2*QUANTILES_COUNT, true ) );
+			using ( System.IO.FileStream S = _PhaseQuantileFileName.OpenRead() )
+				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) )
+				{
+					for ( int i=0; i < m_SB_PhaseQuantile.m.Length; i++ )
+						m_SB_PhaseQuantile.m[i] = R.ReadSingle();
+				}
+			m_SB_PhaseQuantile.Write();
+		}
+
+		private void	BuildRandomBuffer()
+		{
+			Reg( m_SB_Random = new StructuredBuffer<float4>( m_Device, RANDOM_TABLE_SIZE, true ) );
+			for ( int i=0; i < RANDOM_TABLE_SIZE; i++ )
+//				m_SB_Random.m[i] = new float4( (float) SimpleRNG.GetUniform(), (float) SimpleRNG.GetUniform(), (float) SimpleRNG.GetUniform(), (float) SimpleRNG.GetUniform() );
+				m_SB_Random.m[i] = new float4( (float) SimpleRNG.GetUniform(), (float) SimpleRNG.GetUniform(), (float) SimpleRNG.GetUniform(), -(float) Math.Log( 1e-3 + (1.0-1e-3) * SimpleRNG.GetUniform() ) );
+			m_SB_Random.Write();
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -299,6 +319,7 @@ namespace OfflineCloudRenderer
 			// Setup default render target as UAV & render using the compute shader
 			m_CB_Render.m.TargetDimensions = new float4( viewportPanel.Width, viewportPanel.Height, 1.0f / viewportPanel.Width, 1.0f / viewportPanel.Height );
 			m_CB_Render.m.Debug = new float4( floatTrackbarControlDebug0.Value, floatTrackbarControlDebug1.Value, floatTrackbarControlDebug2.Value, floatTrackbarControlDebug3.Value );
+			m_CB_Render.m.FluxMultiplier = radioButtonAccumFlux.Checked ? floatTrackbarControlFluxMultiplier.Value : 1.0f;
 			m_CB_Render.UpdateData();
 
  			m_Device.SetRenderTarget( m_Device.DefaultTarget, null );
@@ -318,6 +339,10 @@ namespace OfflineCloudRenderer
 			m_PS_RenderCube.Use();
 			m_Prim_Cube.Render( m_PS_RenderCube );
 
+
+			// Render the world cube
+			m_PS_RenderWorldCube.Use();
+			m_Prim_Cube.Render( m_PS_RenderWorldCube );
 
 			// Refresh
 			viewportPanel.Invalidate();
@@ -411,13 +436,14 @@ namespace OfflineCloudRenderer
 			// 1] Shoot the photons and store the result into the structured buffer
 			m_CS_PhotonShooter.Use();
 
-			m_Tex_PhaseCDF.SetCS( 0 );
+			m_SB_Random.SetInput( 0 );
+			m_SB_PhaseQuantile.SetInput( 1 );
 			m_SB_PhotonOut.SetOutput( 0 );
 
 			m_CB_PhotonShooterInput.m.MaxScattering = 100;
-			m_CB_PhotonShooterInput.m.InitialPosition = new float2( 0, 0 );		// Center of the cube side
-			m_CB_PhotonShooterInput.m.InitialIncidence = new float2( 0, 0 );	// Vertical incidence
-			m_CB_PhotonShooterInput.m.CubeSize = 100.0f;						// Try a 100m thick cube
+			m_CB_PhotonShooterInput.m.InitialPosition = new float2( floatTrackbarControlPositionX.Value, floatTrackbarControlPositionZ.Value );	// Center of the cube side
+			m_CB_PhotonShooterInput.m.InitialIncidence = new float2( floatTrackbarControlOrientationPhi.Value * (float) Math.PI / 180.0f, floatTrackbarControlOrientationTheta.Value * (float) Math.PI / 180.0f );			// Vertical incidence
+			m_CB_PhotonShooterInput.m.CubeSize = floatTrackbarControlCubeSize.Value;	// Try a 100m thick cube
 //			m_CB_PhotonShooterInput.m.SigmaScattering = 0.5f;
 			m_CB_PhotonShooterInput.m.SigmaScattering = 0.04523893421169302263386206471922f;	// re=6µm Gamma=2 N0=4e8   Sigma_t = N0 * PI * re²
 													//	mean free path = 22.1048m
@@ -437,14 +463,33 @@ namespace OfflineCloudRenderer
 
 			m_SB_PhotonOut.RemoveFromLastAssignedSlots();
 
+			SplatPhotons();
+		}
 
-			//////////////////////////////////////////////////////////////////////////
-			// 2] Splat photons
-			m_CB_SplatPhoton.m.SplatSize = 4.0f * (2.0f / m_Tex_Photons.Width);
+		private void	SplatPhotons()
+		{
+			m_Tex_Photons.RemoveFromLastAssignedSlots();
+
+			uint	Modifier = (uint) (radioButtonPos.Checked ? 0 : radioButtonNeg.Checked ? 1 : 2) << 4;
+
+			BLEND_STATE	BS = BLEND_STATE.DISABLED;
+			m_CB_SplatPhoton.m.SplatSize = 2.0f * (2.0f / m_Tex_Photons.Width);
+			if ( radioButtonExitPosition.Checked )
+				m_CB_SplatPhoton.m.SplatType = 0 | Modifier;
+			if ( radioButtonExitDirection.Checked )
+				m_CB_SplatPhoton.m.SplatType = 1 | Modifier;
+			if ( radioButtonScatteringEventIndex.Checked )
+				m_CB_SplatPhoton.m.SplatType = 2;
+			if ( radioButtonAccumFlux.Checked )
+			{
+				m_CB_SplatPhoton.m.SplatType = 3;
+				m_CB_SplatPhoton.m.SplatSize = 8.0f * (2.0f / m_Tex_Photons.Width);
+				BS = BLEND_STATE.ADDITIVE;
+			}
+			m_CB_SplatPhoton.m.SplatIntensity = 1000.0f / PHOTONS_COUNT;
 			m_CB_SplatPhoton.UpdateData();
 
-//			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BS );
 			m_Device.SetRenderTarget( m_Tex_Photons, null );
 			m_Device.Clear( m_Tex_Photons, new float4( 0, 0, 0, 0 ) );
 
@@ -456,6 +501,17 @@ namespace OfflineCloudRenderer
 			m_Tex_Photons.RemoveFromLastAssignedSlots();
 
 			Render();
+		}
+
+		private void floatTrackbarControlFluxMultiplier_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			Render();
+		}
+
+		private void radioButtonExitPosition_CheckedChanged( object sender, EventArgs e )
+		{
+			if ( (sender as RadioButton).Checked )
+				SplatPhotons();
 		}
 
 		#endregion
