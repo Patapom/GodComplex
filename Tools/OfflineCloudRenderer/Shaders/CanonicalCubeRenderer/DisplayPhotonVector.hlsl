@@ -8,6 +8,7 @@ cbuffer	cbRender : register(b8)
 {
 	uint		_VectorsPerFace;
 	float		_VectorSizeMultiplier;
+	float		_ClipAboveValue;
 }
 
 Texture2DArray<float4>	_TexPhotons : register(t0);
@@ -35,8 +36,12 @@ PS_IN	VS( VS_IN _In )
 	float3	PhotonDirection = _TexPhotons.SampleLevel( PointClamp, float3( UV, 6*1 + FaceIndex ), 0.0 ).xyz;
 	float	PhotonIntensity = _TexPhotons.SampleLevel( LinearClamp, float3( UV, 6*2 + FaceIndex ), 0.0 ).x;
 
+	float	VectorLength = 0.0;
+	if ( PhotonIntensity < _ClipAboveValue )
+		VectorLength = 10.0 * _VectorSizeMultiplier * PhotonIntensity;
+
 	PS_IN	Out;
-	Out.__Position = mul( float4( PhotonPosition + 10.0 * _VectorSizeMultiplier * PhotonIntensity * _In.Position.x * PhotonDirection, 1.0 ), _World2Proj );
+	Out.__Position = mul( float4( PhotonPosition + VectorLength * _In.Position.x * PhotonDirection, 1.0 ), _World2Proj );
 
 	return Out;
 }

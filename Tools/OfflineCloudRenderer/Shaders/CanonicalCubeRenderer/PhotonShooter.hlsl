@@ -39,6 +39,7 @@ cbuffer	CBInput : register( b8 )
 	float	_SigmaScattering;	// Scattering coefficient (in m^-1)
 	uint	_MaxScattering;		// Maximum scattering events before exiting the cube (default is 30)
 	uint	_BatchIndex;		// Photon batch index
+	bool	_FullSurface;		// Full surface random position
 }
 
 StructuredBuffer<float4>	_Random : register( t0 );
@@ -77,12 +78,14 @@ float3	Scatter( uint _PhotonIndex, uint _ScatteringEventIndex, float3 _OriginalD
 //	float4	Random = _Random[uint( TempRandom * USE_RANDOM_TABLE) & (USE_RANDOM_TABLE-1)];
 	float4	Random = _Random[uint(0.37138198 * (_MaxScattering * _PhotonIndex + _ScatteringEventIndex)) & (USE_RANDOM_TABLE-1)];
 #else
-	float4	Random = float4(	Hash( 0.003718198 * (_MaxScattering * (0.37918+_PhotonIndex) + 0.3879 * _ScatteringEventIndex) ),
-								Hash( 0.007594813 * (_MaxScattering * (0.37189+_PhotonIndex) + 0.5637 * _ScatteringEventIndex) ),
-								Hash( 0.005984763 * (_MaxScattering * (0.37918+_PhotonIndex) + 0.7355 * _ScatteringEventIndex) ),
-								Hash( 0.013984763 * (_MaxScattering * (0.38917+_PhotonIndex) + 0.1234 * _ScatteringEventIndex) )
-							);
+	float4	Random = 0.0;
 #endif
+			Random += float4(	Hash( 0.0003718198 * (_MaxScattering * (0.37918+_PhotonIndex) + 0.3879 * _ScatteringEventIndex) ),
+								Hash( 0.0007594813 * (_MaxScattering * (0.37189+_PhotonIndex) + 0.5637 * _ScatteringEventIndex) ),
+								Hash( 0.0005984763 * (_MaxScattering * (0.37918+_PhotonIndex) + 0.7355 * _ScatteringEventIndex) ),
+								Hash( 0.0013984763 * (_MaxScattering * (0.38917+_PhotonIndex) + 0.1234 * _ScatteringEventIndex) )
+							);
+			Random = frac( Random );
 
 	// Draw a random walk length
 
@@ -136,7 +139,16 @@ PhotonOut	ShootPhoton( uint _PhotonIndex )
 	sincos( _InitialIncidence.y, SinCosTheta.x, SinCosTheta.y );
 
 	PhotonOut	R;
-	R.ExitPosition = float3( _InitialPosition.x, 1.0-INITIAL_START_EPSILON, _InitialPosition.y );
+	if ( _FullSurface )
+	{	// Draw random position
+		R.ExitPosition = float3(	2.0 * Hash( 0.0003718198 * (0.56837+_PhotonIndex) ) - 1.0,
+									1.0-INITIAL_START_EPSILON,
+									2.0 * Hash( 0.0007594813 * (0.37189+_PhotonIndex) ) - 1.0
+								);
+	}
+	else
+		R.ExitPosition = float3( _InitialPosition.x, 1.0-INITIAL_START_EPSILON, _InitialPosition.y );
+
 	R.ExitDirection = -float3( SinCosPhi.y * SinCosTheta.x, SinCosTheta.y, SinCosPhi.x * SinCosTheta.x );
 	R.MarchedLength = 0.0;
 	R.ScatteringEventsCount = 0;
@@ -165,7 +177,6 @@ PhotonOut	ShootPhoton( uint _PhotonIndex )
 		R.ExitPosition += MarchLength * R.ExitDirection;
 		R.MarchedLength += MarchLength;
 		R.ExitDirection = Scatter( _PhotonIndex, R.ScatteringEventsCount, R.ExitDirection, MarchLength );
-
 	}
 
 	// We've been scattered more than allowed!

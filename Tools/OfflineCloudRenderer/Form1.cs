@@ -56,6 +56,7 @@ namespace OfflineCloudRenderer
 			public float		SigmaScattering;		// Scattering coefficient (in m^-1)
 			public uint			MaxScattering;			// Maximum scattering events before exiting the cube (default is 30)
 			public uint			BatchIndex;				// Photons batch index
+			public uint			FullSurface;			// Full surface random location
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -79,6 +80,7 @@ namespace OfflineCloudRenderer
 		{
  			public UInt32		VectorsPerFace;
  			public float		VectorMultiplier;
+ 			public float		ClipAboveValue;
 		}
 
 		#endregion
@@ -358,7 +360,7 @@ namespace OfflineCloudRenderer
 
 			m_CB_Render.UpdateData();
 
- 			m_Device.SetRenderTarget( m_Device.DefaultTarget, null );
+ 			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
 
 // 			// Render a fullscreen quad
 // 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
@@ -379,8 +381,9 @@ namespace OfflineCloudRenderer
 			if ( checkBoxRenderVectors.Checked )
 			{
 				const int		PHOTON_VECTORS_COUNT_PER_FACE = 10000;
-				m_CB_RenderPhotonVector.m.VectorMultiplier = floatTrackbarControlVectorSize.Value;
 				m_CB_RenderPhotonVector.m.VectorsPerFace = PHOTON_VECTORS_COUNT_PER_FACE;
+				m_CB_RenderPhotonVector.m.VectorMultiplier = floatTrackbarControlVectorSize.Value;
+				m_CB_RenderPhotonVector.m.ClipAboveValue = checkBoxClipAboveValue.Checked ? 0.01f * floatTrackbarControlClipAbove.Value : 1e6f;
 				m_CB_RenderPhotonVector.UpdateData();
 				m_PS_RenderPhotonVectors.Use();
 				m_Prim_Line.RenderInstanced( m_PS_RenderPhotonVectors, 6*PHOTON_VECTORS_COUNT_PER_FACE );
@@ -493,6 +496,7 @@ namespace OfflineCloudRenderer
 			m_CB_PhotonShooterInput.m.CubeSize = floatTrackbarControlCubeSize.Value;	// Try a 100m thick cube
 //			m_CB_PhotonShooterInput.m.SigmaScattering = 0.5f;
 			m_CB_PhotonShooterInput.m.SigmaScattering = 0.04523893421169302263386206471922f;	// re=6µm Gamma=2 N0=4e8   Sigma_t = N0 * PI * re²
+			m_CB_PhotonShooterInput.m.FullSurface = (uint)(checkBoxFullSurface.Checked ? 1 : 0);
 													//	mean free path = 22.1048m
 
 			int	BatchesCount = PHOTONS_COUNT / PHOTON_BATCH_SIZE;
@@ -569,6 +573,22 @@ namespace OfflineCloudRenderer
 		private void floatTrackbarControlVectorSize_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			Render();
+		}
+
+		private void checkBoxClipAboveValue_CheckedChanged( object sender, EventArgs e )
+		{
+			Render();
+		}
+
+		private void floatTrackbarControlClipAbove_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			Render();
+		}
+
+		private void checkBoxFullSurface_CheckedChanged( object sender, EventArgs e )
+		{
+			floatTrackbarControlPositionX.Enabled = !checkBoxFullSurface.Checked;
+			floatTrackbarControlPositionZ.Enabled = !checkBoxFullSurface.Checked;
 		}
 
 		#endregion

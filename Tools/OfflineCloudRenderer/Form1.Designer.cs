@@ -55,9 +55,12 @@
 			this.floatTrackbarControlPositionX = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
 			this.radioButtonMarchedLength = new System.Windows.Forms.RadioButton();
-			this.viewportPanel = new OfflineCloudRenderer.ViewportPanel(this.components);
 			this.checkBoxRenderVectors = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlVectorSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxFullSurface = new System.Windows.Forms.CheckBox();
+			this.floatTrackbarControlClipAbove = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxClipAboveValue = new System.Windows.Forms.CheckBox();
+			this.viewportPanel = new OfflineCloudRenderer.ViewportPanel(this.components);
 			this.panel1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -351,14 +354,6 @@
 			this.radioButtonMarchedLength.UseVisualStyleBackColor = true;
 			this.radioButtonMarchedLength.CheckedChanged += new System.EventHandler(this.radioButtonExitPosition_CheckedChanged);
 			// 
-			// viewportPanel
-			// 
-			this.viewportPanel.Device = null;
-			this.viewportPanel.Location = new System.Drawing.Point(12, 12);
-			this.viewportPanel.Name = "viewportPanel";
-			this.viewportPanel.Size = new System.Drawing.Size(963, 686);
-			this.viewportPanel.TabIndex = 0;
-			// 
 			// checkBoxRenderVectors
 			// 
 			this.checkBoxRenderVectors.AutoSize = true;
@@ -383,11 +378,56 @@
 			this.floatTrackbarControlVectorSize.VisibleRangeMax = 2F;
 			this.floatTrackbarControlVectorSize.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlVectorSize_ValueChanged);
 			// 
+			// checkBoxFullSurface
+			// 
+			this.checkBoxFullSurface.AutoSize = true;
+			this.checkBoxFullSurface.Location = new System.Drawing.Point(1036, 11);
+			this.checkBoxFullSurface.Name = "checkBoxFullSurface";
+			this.checkBoxFullSurface.Size = new System.Drawing.Size(82, 17);
+			this.checkBoxFullSurface.TabIndex = 8;
+			this.checkBoxFullSurface.Text = "Full Surface";
+			this.checkBoxFullSurface.UseVisualStyleBackColor = true;
+			this.checkBoxFullSurface.CheckedChanged += new System.EventHandler(this.checkBoxFullSurface_CheckedChanged);
+			// 
+			// floatTrackbarControlClipAbove
+			// 
+			this.floatTrackbarControlClipAbove.Location = new System.Drawing.Point(1003, 523);
+			this.floatTrackbarControlClipAbove.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlClipAbove.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlClipAbove.Name = "floatTrackbarControlClipAbove";
+			this.floatTrackbarControlClipAbove.RangeMin = 0F;
+			this.floatTrackbarControlClipAbove.Size = new System.Drawing.Size(181, 20);
+			this.floatTrackbarControlClipAbove.TabIndex = 2;
+			this.floatTrackbarControlClipAbove.Value = 1F;
+			this.floatTrackbarControlClipAbove.VisibleRangeMax = 2F;
+			this.floatTrackbarControlClipAbove.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlClipAbove_ValueChanged);
+			// 
+			// checkBoxClipAboveValue
+			// 
+			this.checkBoxClipAboveValue.AutoSize = true;
+			this.checkBoxClipAboveValue.Location = new System.Drawing.Point(984, 500);
+			this.checkBoxClipAboveValue.Name = "checkBoxClipAboveValue";
+			this.checkBoxClipAboveValue.Size = new System.Drawing.Size(143, 17);
+			this.checkBoxClipAboveValue.TabIndex = 8;
+			this.checkBoxClipAboveValue.Text = "Clip above value (x 0.01)";
+			this.checkBoxClipAboveValue.UseVisualStyleBackColor = true;
+			this.checkBoxClipAboveValue.CheckedChanged += new System.EventHandler(this.checkBoxClipAboveValue_CheckedChanged);
+			// 
+			// viewportPanel
+			// 
+			this.viewportPanel.Device = null;
+			this.viewportPanel.Location = new System.Drawing.Point(12, 12);
+			this.viewportPanel.Name = "viewportPanel";
+			this.viewportPanel.Size = new System.Drawing.Size(963, 686);
+			this.viewportPanel.TabIndex = 0;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1200, 756);
+			this.Controls.Add(this.checkBoxFullSurface);
+			this.Controls.Add(this.checkBoxClipAboveValue);
 			this.Controls.Add(this.checkBoxRenderVectors);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.radioButtonAccumFlux);
@@ -409,6 +449,7 @@
 			this.Controls.Add(this.floatTrackbarControlDebug2);
 			this.Controls.Add(this.floatTrackbarControlDebug1);
 			this.Controls.Add(this.floatTrackbarControlCubeSize);
+			this.Controls.Add(this.floatTrackbarControlClipAbove);
 			this.Controls.Add(this.floatTrackbarControlVectorSize);
 			this.Controls.Add(this.floatTrackbarControlFluxMultiplier);
 			this.Controls.Add(this.floatTrackbarControlDebug0);
@@ -455,6 +496,9 @@
 		private System.Windows.Forms.RadioButton radioButtonMarchedLength;
 		private System.Windows.Forms.CheckBox checkBoxRenderVectors;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlVectorSize;
+		private System.Windows.Forms.CheckBox checkBoxFullSurface;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlClipAbove;
+		private System.Windows.Forms.CheckBox checkBoxClipAboveValue;
 	}
 }
 
