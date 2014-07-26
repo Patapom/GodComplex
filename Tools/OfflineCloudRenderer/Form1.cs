@@ -74,6 +74,13 @@ namespace OfflineCloudRenderer
 			public UInt32		ScatteringStepsCount;	// Amount of scattering events before exiting
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		public struct	CB_RenderPhotonVector
+		{
+ 			public UInt32		VectorsPerFace;
+ 			public float		VectorMultiplier;
+		}
+
 		#endregion
 
 		#region FIELDS
@@ -105,6 +112,11 @@ namespace OfflineCloudRenderer
 		// Photons Renderer
 		private Shader						m_PS_RenderCube = null;
 		private Primitive					m_Prim_Cube = null;
+
+		// Vectors Renderer
+		private Shader									m_PS_RenderPhotonVectors;
+		private ConstantBuffer<CB_RenderPhotonVector>	m_CB_RenderPhotonVector;
+		private Primitive								m_Prim_Line;
 
 //		private Texture3D					m_Noise3D = null;
 
@@ -167,13 +179,21 @@ namespace OfflineCloudRenderer
 			// Photons Renderer
 			Reg( m_PS_RenderCube = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/DisplayPhotonCube.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null ) );
 			BuildCube();
-
-
 			Reg( m_PS_RenderWorldCube = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/DisplayWorldCube.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null ) );
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// Photon Vectors Renderer
+			Reg( m_PS_RenderPhotonVectors = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/DisplayPhotonVector.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null ) );
+			Reg( m_CB_RenderPhotonVector = new ConstantBuffer<CB_RenderPhotonVector>( m_Device, 8 ) );
+			{
+				ByteBuffer	Line = VertexP3.FromArray( new VertexP3[] { new VertexP3() { P = new float3( 0, 0, 0 ) }, new VertexP3() { P = new float3( 1, 0, 0 ) } } );
+				Reg( m_Prim_Line = new Primitive( m_Device, 2, Line, null, Primitive.TOPOLOGY.LINE_LIST, VERTEX_FORMAT.P3 ) );
+			}
 
 			// Create the camera manipulator
 			m_CB_Camera.m.Camera2World = float4x4.Identity;
-			UpdateCameraProjection( 60.0f * (float) Math.PI / 180.0f, (float) viewportPanel.Width / viewportPanel.Height, 0.1f, 10.0f );
+			UpdateCameraProjection( 60.0f * (float) Math.PI / 180.0f, (float) viewportPanel.Width / viewportPanel.Height, 0.1f, 100.0f );
 
 			m_Manipulator.Attach( viewportPanel );
 			m_Manipulator.CameraTransformChanged += new CameraManipulator.UpdateCameraTransformEventHandler( Manipulator_CameraTransformChanged );
@@ -347,13 +367,24 @@ namespace OfflineCloudRenderer
 
 			// Render the photons cube
  			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
-			m_Device.Clear( m_Device.DefaultTarget, new float4( Color.SkyBlue, 1 ) );
+			m_Device.Clear( m_Device.DefaultTarget, 0.5f * new float4( Color.SkyBlue, 1 ) );
 			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1, 0, true, false );
 
 			m_Tex_Photons.SetPS( 0 );
 
 			m_PS_RenderCube.Use();
 			m_Prim_Cube.Render( m_PS_RenderCube );
+
+			// Render the photon vectors
+			if ( checkBoxRenderVectors.Checked )
+			{
+				const int		PHOTON_VECTORS_COUNT_PER_FACE = 10000;
+				m_CB_RenderPhotonVector.m.VectorMultiplier = floatTrackbarControlVectorSize.Value;
+				m_CB_RenderPhotonVector.m.VectorsPerFace = PHOTON_VECTORS_COUNT_PER_FACE;
+				m_CB_RenderPhotonVector.UpdateData();
+				m_PS_RenderPhotonVectors.Use();
+				m_Prim_Line.RenderInstanced( m_PS_RenderPhotonVectors, 6*PHOTON_VECTORS_COUNT_PER_FACE );
+			}
 
 
 			// Render the world cube
@@ -528,6 +559,16 @@ namespace OfflineCloudRenderer
 		{
 			if ( (sender as RadioButton).Checked )
 				Render();
+		}
+
+		private void checkBoxRenderVectors_CheckedChanged( object sender, EventArgs e )
+		{
+			Render();
+		}
+
+		private void floatTrackbarControlVectorSize_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			Render();
 		}
 
 		#endregion

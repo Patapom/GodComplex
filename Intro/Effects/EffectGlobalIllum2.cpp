@@ -1596,7 +1596,7 @@ void	EffectGlobalIllum2::PreComputeProbes()
 
 		//////////////////////////////////////////////////////////////////////////
 		// 3] Store direct ambient and indirect reflection of static lights on static geometry
-		double	Normalizer = 1.0 / SumSolidAngle;
+// DON'T NORMALIZE		double	Normalizer = 4*PI / SumSolidAngle;
 		for ( int i=0; i < 9; i++ )
 		{
 			Probe.pSHOcclusion[i] = float( Normalizer * pSHOcclusion[i] );

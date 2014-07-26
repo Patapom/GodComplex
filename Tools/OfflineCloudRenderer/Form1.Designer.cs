@@ -48,7 +48,6 @@
 			this.radioButtonPos = new System.Windows.Forms.RadioButton();
 			this.radioButtonAbs = new System.Windows.Forms.RadioButton();
 			this.radioButtonNeg = new System.Windows.Forms.RadioButton();
-			this.viewportPanel = new OfflineCloudRenderer.ViewportPanel(this.components);
 			this.floatTrackbarControlOrientationPhi = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlOrientationTheta = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -56,6 +55,9 @@
 			this.floatTrackbarControlPositionX = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
 			this.radioButtonMarchedLength = new System.Windows.Forms.RadioButton();
+			this.viewportPanel = new OfflineCloudRenderer.ViewportPanel(this.components);
+			this.checkBoxRenderVectors = new System.Windows.Forms.CheckBox();
+			this.floatTrackbarControlVectorSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.panel1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -265,14 +267,6 @@
 			this.radioButtonNeg.UseVisualStyleBackColor = true;
 			this.radioButtonNeg.CheckedChanged += new System.EventHandler(this.radioButtonExitPosition_CheckedChanged);
 			// 
-			// viewportPanel
-			// 
-			this.viewportPanel.Device = null;
-			this.viewportPanel.Location = new System.Drawing.Point(12, 12);
-			this.viewportPanel.Name = "viewportPanel";
-			this.viewportPanel.Size = new System.Drawing.Size(963, 686);
-			this.viewportPanel.TabIndex = 0;
-			// 
 			// floatTrackbarControlOrientationPhi
 			// 
 			this.floatTrackbarControlOrientationPhi.Location = new System.Drawing.Point(984, 123);
@@ -357,11 +351,44 @@
 			this.radioButtonMarchedLength.UseVisualStyleBackColor = true;
 			this.radioButtonMarchedLength.CheckedChanged += new System.EventHandler(this.radioButtonExitPosition_CheckedChanged);
 			// 
+			// viewportPanel
+			// 
+			this.viewportPanel.Device = null;
+			this.viewportPanel.Location = new System.Drawing.Point(12, 12);
+			this.viewportPanel.Name = "viewportPanel";
+			this.viewportPanel.Size = new System.Drawing.Size(963, 686);
+			this.viewportPanel.TabIndex = 0;
+			// 
+			// checkBoxRenderVectors
+			// 
+			this.checkBoxRenderVectors.AutoSize = true;
+			this.checkBoxRenderVectors.Location = new System.Drawing.Point(984, 451);
+			this.checkBoxRenderVectors.Name = "checkBoxRenderVectors";
+			this.checkBoxRenderVectors.Size = new System.Drawing.Size(100, 17);
+			this.checkBoxRenderVectors.TabIndex = 8;
+			this.checkBoxRenderVectors.Text = "Render Vectors";
+			this.checkBoxRenderVectors.UseVisualStyleBackColor = true;
+			this.checkBoxRenderVectors.CheckedChanged += new System.EventHandler(this.checkBoxRenderVectors_CheckedChanged);
+			// 
+			// floatTrackbarControlVectorSize
+			// 
+			this.floatTrackbarControlVectorSize.Location = new System.Drawing.Point(1003, 474);
+			this.floatTrackbarControlVectorSize.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlVectorSize.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlVectorSize.Name = "floatTrackbarControlVectorSize";
+			this.floatTrackbarControlVectorSize.RangeMin = 0F;
+			this.floatTrackbarControlVectorSize.Size = new System.Drawing.Size(181, 20);
+			this.floatTrackbarControlVectorSize.TabIndex = 2;
+			this.floatTrackbarControlVectorSize.Value = 1F;
+			this.floatTrackbarControlVectorSize.VisibleRangeMax = 2F;
+			this.floatTrackbarControlVectorSize.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlVectorSize_ValueChanged);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1200, 756);
+			this.Controls.Add(this.checkBoxRenderVectors);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.radioButtonAccumFlux);
 			this.Controls.Add(this.radioButtonMarchedLength);
@@ -382,6 +409,7 @@
 			this.Controls.Add(this.floatTrackbarControlDebug2);
 			this.Controls.Add(this.floatTrackbarControlDebug1);
 			this.Controls.Add(this.floatTrackbarControlCubeSize);
+			this.Controls.Add(this.floatTrackbarControlVectorSize);
 			this.Controls.Add(this.floatTrackbarControlFluxMultiplier);
 			this.Controls.Add(this.floatTrackbarControlDebug0);
 			this.Controls.Add(this.buttonReload);
@@ -425,6 +453,8 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPositionX;
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.RadioButton radioButtonMarchedLength;
+		private System.Windows.Forms.CheckBox checkBoxRenderVectors;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlVectorSize;
 	}
 }
 
