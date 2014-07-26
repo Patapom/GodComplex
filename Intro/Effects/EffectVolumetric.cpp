@@ -521,8 +521,8 @@ float	t = 2*0.25f * _Time;
 	m_pRTTransmittanceMap->RemoveFromLastAssignedSlots();
 
 	ID3D11RenderTargetView*	ppViews[2] = {
-		m_pRTTransmittanceMap->GetTargetView( 0, 0, 1 ),
-		m_pRTTransmittanceMap->GetTargetView( 0, 1, 1 ),
+		m_pRTTransmittanceMap->GetRTV( 0, 0, 1 ),
+		m_pRTTransmittanceMap->GetRTV( 0, 1, 1 ),
 	};
 	m_Device.SetRenderTargets( m_pRTTransmittanceMap->GetWidth(), m_pRTTransmittanceMap->GetHeight(), 2, ppViews, NULL, &Viewport );
 
@@ -557,7 +557,7 @@ float	t = 2*0.25f * _Time;
 
 			m_Device.ClearDepthStencil( *m_pRTTerrainShadow, 1, 0 );
 
-			m_Device.SetRenderTargets( TERRAIN_SHADOW_MAP_SIZE, TERRAIN_SHADOW_MAP_SIZE, 0, NULL, m_pRTTerrainShadow->GetDepthStencilView() );
+			m_Device.SetRenderTargets( TERRAIN_SHADOW_MAP_SIZE, TERRAIN_SHADOW_MAP_SIZE, 0, NULL, m_pRTTerrainShadow->GetDSV() );
 	 		m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
 
 			m_pCB_Object->m.Local2View = m_Terrain2World;
@@ -696,8 +696,8 @@ float	t = 2*0.25f * _Time;
 		m_Device.ClearRenderTarget( *m_pRTRender, float4( 0.0f, 0.0f, 0.0f, 1.0f ) );
 
 		ID3D11RenderTargetView*	ppViews[] = {
-			m_pRTRender->GetTargetView( 0, 0, 1 ),
-			m_pRTRender->GetTargetView( 0, 1, 1 )
+			m_pRTRender->GetRTV( 0, 0, 1 ),
+			m_pRTRender->GetRTV( 0, 1, 1 )
 		};
 		m_Device.SetRenderTargets( m_pRTRender->GetWidth(), m_pRTRender->GetHeight(), 2, ppViews );
 

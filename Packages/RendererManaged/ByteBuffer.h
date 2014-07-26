@@ -1,7 +1,7 @@
 // ByteBuffer.h
 
 #pragma once
-#include "Device.h"
+//#include "Device.h"
 
 using namespace System;
 using namespace System::IO;

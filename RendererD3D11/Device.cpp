@@ -41,12 +41,17 @@ bool	Device::Init( HWND _Handle, bool _Fullscreen, bool _sRGB )
 	int	Width = Rect.right - Rect.left;
 	int	Height = Rect.bottom - Rect.top;
 
+	return Init( Width, Height, _Handle, _Fullscreen, _sRGB );
+}
+
+bool	Device::Init( U32 _Width, U32 _Height, HWND _Handle, bool _Fullscreen, bool _sRGB )
+{
 	// Create a swap chain with 2 back buffers
 	DXGI_SWAP_CHAIN_DESC	SwapChainDesc;
 
 	// Simple output buffer
-	SwapChainDesc.BufferDesc.Width = Width;
-	SwapChainDesc.BufferDesc.Height = Height;
+	SwapChainDesc.BufferDesc.Width = _Width;
+	SwapChainDesc.BufferDesc.Height = _Height;
 	SwapChainDesc.BufferDesc.Format = _sRGB ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
 //	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_STRETCHED;
 	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
@@ -105,7 +110,7 @@ bool	Device::Init( HWND _Handle, bool _Fullscreen, bool _sRGB )
 		m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface, PixelFormatRGBA8::DESCRIPTOR );
 
 	// Create the default depth stencil buffer
-	m_pDefaultDepthStencil = new Texture2D( *this, Width, Height, DepthStencilFormatD32F::DESCRIPTOR );
+	m_pDefaultDepthStencil = new Texture2D( *this, _Width, _Height, DepthStencilFormatD32F::DESCRIPTOR );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -333,12 +338,12 @@ void	Device::Exit()
 
 void	Device::ClearRenderTarget( const Texture2D& _Target, const float4& _Color )
 {
-	ClearRenderTarget( *_Target.GetTargetView(), _Color );
+	ClearRenderTarget( *_Target.GetRTV(), _Color );
 }
 
 void	Device::ClearRenderTarget( const Texture3D& _Target, const float4& _Color )
 {
-	ClearRenderTarget( *_Target.GetTargetView(), _Color );
+	ClearRenderTarget( *_Target.GetRTV(), _Color );
 }
 
 void	Device::ClearRenderTarget( ID3D11RenderTargetView& _TargetView, const float4& _Color )
@@ -348,7 +353,7 @@ void	Device::ClearRenderTarget( ID3D11RenderTargetView& _TargetView, const float
 
 void	Device::ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth, bool _bClearStencil )
 {
-	ClearDepthStencil( *_DepthStencil.GetDepthStencilView(), _Z, _Stencil, _bClearDepth, _bClearStencil );
+	ClearDepthStencil( *_DepthStencil.GetDSV(), _Z, _Stencil, _bClearDepth, _bClearStencil );
 }
 void	Device::ClearDepthStencil( ID3D11DepthStencilView& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth, bool _bClearStencil )
 {
@@ -357,16 +362,16 @@ void	Device::ClearDepthStencil( ID3D11DepthStencilView& _DepthStencil, float _Z,
 
 void	Device::SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil, const D3D11_VIEWPORT* _pViewport )
 {
-	ID3D11RenderTargetView*	pTargetView = _Target.GetTargetView( 0, 0, 0 );
-	ID3D11DepthStencilView*	pDepthStencilView = _pDepthStencil != NULL ? _pDepthStencil->GetDepthStencilView() : NULL;
+	ID3D11RenderTargetView*	pTargetView = _Target.GetRTV( 0, 0, 0 );
+	ID3D11DepthStencilView*	pDepthStencilView = _pDepthStencil != NULL ? _pDepthStencil->GetDSV() : NULL;
 
 	SetRenderTargets( _Target.GetWidth(), _Target.GetHeight(), 1, &pTargetView, pDepthStencilView, _pViewport );
 }
 
 void	Device::SetRenderTarget( const Texture3D& _Target, const Texture2D* _pDepthStencil, const D3D11_VIEWPORT* _pViewport )
 {
-	ID3D11RenderTargetView*	pTargetView = _Target.GetTargetView( 0, 0, 0 );
-	ID3D11DepthStencilView*	pDepthStencilView = _pDepthStencil != NULL ? _pDepthStencil->GetDepthStencilView() : NULL;
+	ID3D11RenderTargetView*	pTargetView = _Target.GetRTV( 0, 0, 0 );
+	ID3D11DepthStencilView*	pDepthStencilView = _pDepthStencil != NULL ? _pDepthStencil->GetDSV() : NULL;
 
 	SetRenderTargets( _Target.GetWidth(), _Target.GetHeight(), 1, &pTargetView, pDepthStencilView, _pViewport );
 }

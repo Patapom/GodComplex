@@ -106,6 +106,7 @@ public:	 // METHODS
 				// Simply don't forget to call Exit() at the end of your program and that should do the trick...
 
 	bool	Init( HWND _Handle, bool _Fullscreen, bool _sRGB );
+	bool	Init( U32 _Width, U32 _Height, HWND _Handle, bool _Fullscreen, bool _sRGB );
 	void	Exit();
 
 	// Helpers

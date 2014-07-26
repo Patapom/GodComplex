@@ -10,6 +10,24 @@ using namespace System;
 
 namespace RendererManaged {
 
+	ref class Texture3D;
+
+	public ref class	View3D
+	{
+	internal:
+		Texture3D^	m_Owner;
+		int			m_MipLevelStart;
+		int			m_MipLevelsCount;
+		int			m_SliceStart;
+		int			m_SlicesCount;
+
+		virtual property ::ID3D11ShaderResourceView*	SRV { ::ID3D11ShaderResourceView*	get(); }
+		virtual property ::ID3D11RenderTargetView*		RTV { ::ID3D11RenderTargetView*		get(); }
+		virtual property ::ID3D11UnorderedAccessView*	UAV { ::ID3D11UnorderedAccessView*	get(); }
+
+		View3D( Texture3D^ _Owner, int _MipLevelStart, int _MipLevelsCount, int _SliceStart, int _SlicesCount ) : m_Owner( _Owner ), m_MipLevelStart( _MipLevelStart ), m_MipLevelsCount( _MipLevelsCount ), m_SliceStart( _SliceStart ), m_SlicesCount( _SlicesCount ) {}
+	};
+
 	public ref class Texture3D
 	{
 	internal:
@@ -25,27 +43,7 @@ namespace RendererManaged {
 
 	public:
 
-		Texture3D( Device^ _Device, int _Width, int _Height, int _Depth, int _MipLevelsCount, PIXEL_FORMAT _PixelFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _MipLevelsContent )
-		{
- 			IPixelFormatDescriptor*	pDescriptor = GetDescriptor( _PixelFormat );
-
-			void**	ppContent = NULL;
-			if ( _MipLevelsContent != nullptr )
-			{
-				ppContent = new void*[_MipLevelsCount];
-				cli::pin_ptr<Byte>	Bisou;
-				for ( int MipLevelIndex=0; MipLevelIndex < _MipLevelsCount; MipLevelIndex++ )
-				{
-					Bisou = &_MipLevelsContent[MipLevelIndex]->m_Buffer[0];
-					ppContent[MipLevelIndex] = Bisou;
-				}
-			}
-
-			m_pTexture = new ::Texture3D( *_Device->m_pDevice, _Width, _Height, _Depth, *pDescriptor, _MipLevelsCount, ppContent, _Staging, _UAV );
-
-			delete[] ppContent;
-		}
-
+		Texture3D( Device^ _Device, int _Width, int _Height, int _Depth, int _MipLevelsCount, PIXEL_FORMAT _PixelFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _MipLevelsContent );
 		~Texture3D()
 		{
  			delete m_pTexture;
@@ -68,14 +66,26 @@ namespace RendererManaged {
 			m_pTexture->UnMap( _MipLevelIndex );
 		}
 
+		// Views
+		View3D^		GetView()				{ return GetView( 0, 0, 0, 0 ); }
+		View3D^		GetView( int _MipLevelStart, int _MipLevelsCount, int _SliceStart, int _SlicesCount ) { return gcnew View3D( this, _MipLevelStart, _MipLevelsCount, _SliceStart, _SlicesCount ); }
+
 		// Uploads the texture to the shader
-		void		Set( int _SlotIndex )			{ m_pTexture->Set( _SlotIndex, true ); }
-		void		SetVS( int _SlotIndex )			{ m_pTexture->Set( _SlotIndex, true ); }
-		void		SetHS( int _SlotIndex )			{ m_pTexture->Set( _SlotIndex, true ); }
-		void		SetDS( int _SlotIndex )			{ m_pTexture->Set( _SlotIndex, true ); }
-		void		SetGS( int _SlotIndex )			{ m_pTexture->Set( _SlotIndex, true ); }
-		void		SetPS( int _SlotIndex )			{ m_pTexture->Set( _SlotIndex, true ); }
-		void		SetCS( int _SlotIndex )			{ m_pTexture->Set( _SlotIndex, true ); }
+		void		Set( int _SlotIndex )	{ Set( _SlotIndex, nullptr ); }
+		void		SetVS( int _SlotIndex )	{ SetVS( _SlotIndex, nullptr ); }
+		void		SetHS( int _SlotIndex )	{ SetHS( _SlotIndex, nullptr ); }
+		void		SetDS( int _SlotIndex )	{ SetDS( _SlotIndex, nullptr ); }
+		void		SetGS( int _SlotIndex )	{ SetGS( _SlotIndex, nullptr ); }
+		void		SetPS( int _SlotIndex )	{ SetPS( _SlotIndex, nullptr ); }
+		void		SetCS( int _SlotIndex )	{ SetCS( _SlotIndex, nullptr ); }
+
+		void		Set( int _SlotIndex, View3D^ _view );
+		void		SetVS( int _SlotIndex, View3D^ _view );
+		void		SetHS( int _SlotIndex, View3D^ _view );
+		void		SetDS( int _SlotIndex, View3D^ _view );
+		void		SetGS( int _SlotIndex, View3D^ _view );
+		void		SetPS( int _SlotIndex, View3D^ _view );
+		void		SetCS( int _SlotIndex, View3D^ _view );
 		void		RemoveFromLastAssignedSlots()	{ m_pTexture->RemoveFromLastAssignedSlots(); }
 
 		// Upload the texture as a UAV for a compute shader

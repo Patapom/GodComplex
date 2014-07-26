@@ -45,9 +45,9 @@
 			this.floatTrackbarControlCubeSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
 			this.panel1 = new System.Windows.Forms.Panel();
+			this.radioButtonPos = new System.Windows.Forms.RadioButton();
 			this.radioButtonAbs = new System.Windows.Forms.RadioButton();
 			this.radioButtonNeg = new System.Windows.Forms.RadioButton();
-			this.radioButtonPos = new System.Windows.Forms.RadioButton();
 			this.viewportPanel = new OfflineCloudRenderer.ViewportPanel(this.components);
 			this.floatTrackbarControlOrientationPhi = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
@@ -55,6 +55,7 @@
 			this.floatTrackbarControlPositionZ = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlPositionX = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
+			this.radioButtonMarchedLength = new System.Windows.Forms.RadioButton();
 			this.panel1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -175,7 +176,7 @@
 			// 
 			this.radioButtonAccumFlux.AutoSize = true;
 			this.radioButtonAccumFlux.Checked = true;
-			this.radioButtonAccumFlux.Location = new System.Drawing.Point(984, 349);
+			this.radioButtonAccumFlux.Location = new System.Drawing.Point(984, 372);
 			this.radioButtonAccumFlux.Name = "radioButtonAccumFlux";
 			this.radioButtonAccumFlux.Size = new System.Drawing.Size(147, 17);
 			this.radioButtonAccumFlux.TabIndex = 6;
@@ -186,7 +187,7 @@
 			// 
 			// floatTrackbarControlFluxMultiplier
 			// 
-			this.floatTrackbarControlFluxMultiplier.Location = new System.Drawing.Point(1003, 372);
+			this.floatTrackbarControlFluxMultiplier.Location = new System.Drawing.Point(1003, 395);
 			this.floatTrackbarControlFluxMultiplier.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlFluxMultiplier.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlFluxMultiplier.Name = "floatTrackbarControlFluxMultiplier";
@@ -229,6 +230,17 @@
 			this.panel1.Size = new System.Drawing.Size(47, 72);
 			this.panel1.TabIndex = 7;
 			// 
+			// radioButtonPos
+			// 
+			this.radioButtonPos.AutoSize = true;
+			this.radioButtonPos.Location = new System.Drawing.Point(2, 23);
+			this.radioButtonPos.Name = "radioButtonPos";
+			this.radioButtonPos.Size = new System.Drawing.Size(43, 17);
+			this.radioButtonPos.TabIndex = 6;
+			this.radioButtonPos.Text = "Pos";
+			this.radioButtonPos.UseVisualStyleBackColor = true;
+			this.radioButtonPos.CheckedChanged += new System.EventHandler(this.radioButtonExitPosition_CheckedChanged);
+			// 
 			// radioButtonAbs
 			// 
 			this.radioButtonAbs.AutoSize = true;
@@ -252,17 +264,6 @@
 			this.radioButtonNeg.Text = "Neg";
 			this.radioButtonNeg.UseVisualStyleBackColor = true;
 			this.radioButtonNeg.CheckedChanged += new System.EventHandler(this.radioButtonExitPosition_CheckedChanged);
-			// 
-			// radioButtonPos
-			// 
-			this.radioButtonPos.AutoSize = true;
-			this.radioButtonPos.Location = new System.Drawing.Point(2, 23);
-			this.radioButtonPos.Name = "radioButtonPos";
-			this.radioButtonPos.Size = new System.Drawing.Size(43, 17);
-			this.radioButtonPos.TabIndex = 6;
-			this.radioButtonPos.Text = "Pos";
-			this.radioButtonPos.UseVisualStyleBackColor = true;
-			this.radioButtonPos.CheckedChanged += new System.EventHandler(this.radioButtonExitPosition_CheckedChanged);
 			// 
 			// viewportPanel
 			// 
@@ -345,6 +346,17 @@
 			this.label4.TabIndex = 3;
 			this.label4.Text = "Position";
 			// 
+			// radioButtonMarchedLength
+			// 
+			this.radioButtonMarchedLength.AutoSize = true;
+			this.radioButtonMarchedLength.Location = new System.Drawing.Point(984, 349);
+			this.radioButtonMarchedLength.Name = "radioButtonMarchedLength";
+			this.radioButtonMarchedLength.Size = new System.Drawing.Size(103, 17);
+			this.radioButtonMarchedLength.TabIndex = 6;
+			this.radioButtonMarchedLength.Text = "Marched Length";
+			this.radioButtonMarchedLength.UseVisualStyleBackColor = true;
+			this.radioButtonMarchedLength.CheckedChanged += new System.EventHandler(this.radioButtonExitPosition_CheckedChanged);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -352,6 +364,7 @@
 			this.ClientSize = new System.Drawing.Size(1200, 756);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.radioButtonAccumFlux);
+			this.Controls.Add(this.radioButtonMarchedLength);
 			this.Controls.Add(this.radioButtonScatteringEventIndex);
 			this.Controls.Add(this.radioButtonExitDirection);
 			this.Controls.Add(this.radioButtonExitPosition);
@@ -411,6 +424,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPositionZ;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPositionX;
 		private System.Windows.Forms.Label label4;
+		private System.Windows.Forms.RadioButton radioButtonMarchedLength;
 	}
 }
 
