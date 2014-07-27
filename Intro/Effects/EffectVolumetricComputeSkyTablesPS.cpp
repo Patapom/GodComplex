@@ -565,8 +565,8 @@ void	EffectVolumetric::UpdateSkyTables()
 #endif
 
 				ID3D11RenderTargetView*	ppTargets[2] = {
-					m_pRTDeltaScatteringRayleigh->GetTargetView( 0, 0, 0 ),
-					m_pRTDeltaScatteringMie->GetTargetView( 0, 0, 0 ),
+					m_pRTDeltaScatteringRayleigh->GetRTV( 0, 0, 0 ),
+					m_pRTDeltaScatteringMie->GetRTV( 0, 0, 0 ),
 				};
 				m_Device.SetRenderTargets( m_pRTDeltaScatteringRayleigh->GetWidth(), m_pRTDeltaScatteringRayleigh->GetHeight(), 2, ppTargets );
 

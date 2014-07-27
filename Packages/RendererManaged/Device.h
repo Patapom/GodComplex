@@ -24,8 +24,9 @@ using namespace System;
 
 namespace RendererManaged {
 
-	ref class Texture2D;
 	ref class Shader;
+	ref class Texture2D;
+	ref class View2D;
 
 	public ref class Device
 	{
@@ -78,6 +79,7 @@ namespace RendererManaged {
 
 		void	SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCIL_STATE _DS, BLEND_STATE _BS );
 		void	SetRenderTarget( Texture2D^ _RenderTarget, Texture2D^ _DepthStencilTarget );
+		void	SetRenderTargets( cli::array<View2D^>^ _RenderTargetViews, Texture2D^ _DepthStencilTarget );
 		void	RenderFullscreenQuad( Shader^ _Shader );
 
 		void	Present( bool _FlushCommands )

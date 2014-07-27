@@ -185,6 +185,10 @@ void	Primitive::Build( const void* _pVertices, const U32* _pIndices, bool _bDyna
 		m_FacesCount = _pIndices != NULL ? m_IndicesCount : m_VerticesCount;
 		break;
 
+	case D3D11_PRIMITIVE_TOPOLOGY_LINELIST:
+		m_FacesCount = _pIndices != NULL ? m_IndicesCount / 2 : m_VerticesCount / 2;
+		break;
+
 	case D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST:
 		m_FacesCount = _pIndices != NULL ? m_IndicesCount / 3 : m_VerticesCount / 3;
 		break;

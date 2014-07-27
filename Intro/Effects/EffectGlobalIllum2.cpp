@@ -1440,14 +1440,14 @@ void	EffectGlobalIllum2::PreComputeProbes()
 		ProbeStruct&	Probe = m_pProbes[ProbeIndex];
 
 		// Clear cube maps
-		m_Device.ClearRenderTarget( *pRTCubeMap->GetTargetView( 0, 6*0, 6 ), float4::Zero );
-		m_Device.ClearRenderTarget( *pRTCubeMap->GetTargetView( 0, 6*1, 6 ), float4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
+		m_Device.ClearRenderTarget( *pRTCubeMap->GetRTV( 0, 6*0, 6 ), float4::Zero );
+		m_Device.ClearRenderTarget( *pRTCubeMap->GetRTV( 0, 6*1, 6 ), float4( 0, 0, 0, Z_INFINITY ) );	// We clear distance to infinity here
 
 		float4	Bisou = float4::Zero;
 		((U32&) Bisou.w) = 0xFFFFFFFFUL;
-		m_Device.ClearRenderTarget( *pRTCubeMap->GetTargetView( 0, 6*2, 6 ), Bisou );	// Clear emissive surface ID to -1 (invalid) and static color to 0
+		m_Device.ClearRenderTarget( *pRTCubeMap->GetRTV( 0, 6*2, 6 ), Bisou );	// Clear emissive surface ID to -1 (invalid) and static color to 0
 		((U32&) Bisou.x) = 0xFFFFFFFFUL;
-		m_Device.ClearRenderTarget( *pRTCubeMap->GetTargetView( 0, 6*3, 6 ), Bisou );	// Clear probe ID to -1 (invalid)
+		m_Device.ClearRenderTarget( *pRTCubeMap->GetRTV( 0, 6*3, 6 ), Bisou );	// Clear probe ID to -1 (invalid)
 
 		float4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
 		ProbeLocal2World.Normalize();
@@ -1473,11 +1473,11 @@ void	EffectGlobalIllum2::PreComputeProbes()
 			m_Device.SetStates( m_Device.m_pRS_CullFront, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
 
 			ID3D11RenderTargetView*	ppViews[3] = {
-				pRTCubeMap->GetTargetView( 0, 6*0+CubeFaceIndex, 1 ),
-				pRTCubeMap->GetTargetView( 0, 6*1+CubeFaceIndex, 1 ),
-				pRTCubeMap->GetTargetView( 0, 6*2+CubeFaceIndex, 1 )
+				pRTCubeMap->GetRTV( 0, 6*0+CubeFaceIndex, 1 ),
+				pRTCubeMap->GetRTV( 0, 6*1+CubeFaceIndex, 1 ),
+				pRTCubeMap->GetRTV( 0, 6*2+CubeFaceIndex, 1 )
 			};
-			m_Device.SetRenderTargets( CUBE_MAP_SIZE, CUBE_MAP_SIZE, 3, ppViews, pRTCubeMapDepth->GetDepthStencilView() );
+			m_Device.SetRenderTargets( CUBE_MAP_SIZE, CUBE_MAP_SIZE, 3, ppViews, pRTCubeMapDepth->GetDSV() );
 
 			// Render scene
 			for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
@@ -1495,7 +1495,7 @@ void	EffectGlobalIllum2::PreComputeProbes()
 			//	so we can create a linked list of neighbor probes, of their visibilities and solid angle
 			//
 			m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
-			m_Device.SetRenderTarget( CUBE_MAP_SIZE, CUBE_MAP_SIZE, *pRTCubeMap->GetTargetView( 0, 6*3+CubeFaceIndex, 1 ), pRTCubeMapDepth->GetDepthStencilView() );
+			m_Device.SetRenderTarget( CUBE_MAP_SIZE, CUBE_MAP_SIZE, *pRTCubeMap->GetRTV( 0, 6*3+CubeFaceIndex, 1 ), pRTCubeMapDepth->GetDSV() );
 
 			m_pCB_Probe->m.CurrentProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
 
@@ -1596,7 +1596,7 @@ void	EffectGlobalIllum2::PreComputeProbes()
 
 		//////////////////////////////////////////////////////////////////////////
 		// 3] Store direct ambient and indirect reflection of static lights on static geometry
-		double	Normalizer = 1.0 / SumSolidAngle;
+// DON'T NORMALIZE		double	Normalizer = 4*PI / SumSolidAngle;
 		for ( int i=0; i < 9; i++ )
 		{
 			Probe.pSHOcclusion[i] = float( Normalizer * pSHOcclusion[i] );
@@ -1874,7 +1874,7 @@ void	EffectGlobalIllum2::RenderShadowMap( const float3& _SunDirection )
 
 	m_pRTShadowMap->RemoveFromLastAssignedSlots();
 	m_Device.ClearDepthStencil( *m_pRTShadowMap, 1.0f, 0, true, false );
-	m_Device.SetRenderTargets( m_pRTShadowMap->GetWidth(), m_pRTShadowMap->GetHeight(), 0, NULL, m_pRTShadowMap->GetDepthStencilView() );
+	m_Device.SetRenderTargets( m_pRTShadowMap->GetWidth(), m_pRTShadowMap->GetHeight(), 0, NULL, m_pRTShadowMap->GetDSV() );
 
 	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
 		RenderMesh( *m_ppCachedMeshes[MeshIndex], &M, false );
@@ -1900,7 +1900,7 @@ void	EffectGlobalIllum2::RenderShadowMapPoint( const float3& _Position, float _F
 
 	m_pRTShadowMapPoint->RemoveFromLastAssignedSlots();
 	m_Device.ClearDepthStencil( *m_pRTShadowMapPoint, 1.0f, 0, true, false );
-	m_Device.SetRenderTargets( m_pRTShadowMapPoint->GetWidth(), m_pRTShadowMapPoint->GetHeight(), 0, NULL, m_pRTShadowMapPoint->GetDepthStencilView() );
+	m_Device.SetRenderTargets( m_pRTShadowMapPoint->GetWidth(), m_pRTShadowMapPoint->GetHeight(), 0, NULL, m_pRTShadowMapPoint->GetDSV() );
 
 	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
 		RenderMesh( *m_ppCachedMeshes[MeshIndex], &M, false );
