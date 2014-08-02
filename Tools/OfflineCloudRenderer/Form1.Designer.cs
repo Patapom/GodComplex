@@ -61,12 +61,15 @@
 			this.floatTrackbarControlClipAbove = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxClipAboveValue = new System.Windows.Forms.CheckBox();
 			this.viewportPanel = new OfflineCloudRenderer.ViewportPanel(this.components);
+			this.checkBoxSmooth = new System.Windows.Forms.CheckBox();
+			this.checkBoxShowHF = new System.Windows.Forms.CheckBox();
+			this.floatTrackbarControlSmoothRadius = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.panel1.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// buttonReload
 			// 
-			this.buttonReload.Location = new System.Drawing.Point(1042, 603);
+			this.buttonReload.Location = new System.Drawing.Point(881, 715);
 			this.buttonReload.Name = "buttonReload";
 			this.buttonReload.Size = new System.Drawing.Size(94, 29);
 			this.buttonReload.TabIndex = 1;
@@ -357,7 +360,7 @@
 			// checkBoxRenderVectors
 			// 
 			this.checkBoxRenderVectors.AutoSize = true;
-			this.checkBoxRenderVectors.Location = new System.Drawing.Point(984, 451);
+			this.checkBoxRenderVectors.Location = new System.Drawing.Point(984, 528);
 			this.checkBoxRenderVectors.Name = "checkBoxRenderVectors";
 			this.checkBoxRenderVectors.Size = new System.Drawing.Size(100, 17);
 			this.checkBoxRenderVectors.TabIndex = 8;
@@ -367,7 +370,7 @@
 			// 
 			// floatTrackbarControlVectorSize
 			// 
-			this.floatTrackbarControlVectorSize.Location = new System.Drawing.Point(1003, 474);
+			this.floatTrackbarControlVectorSize.Location = new System.Drawing.Point(1003, 551);
 			this.floatTrackbarControlVectorSize.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlVectorSize.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlVectorSize.Name = "floatTrackbarControlVectorSize";
@@ -391,7 +394,7 @@
 			// 
 			// floatTrackbarControlClipAbove
 			// 
-			this.floatTrackbarControlClipAbove.Location = new System.Drawing.Point(1003, 523);
+			this.floatTrackbarControlClipAbove.Location = new System.Drawing.Point(1003, 600);
 			this.floatTrackbarControlClipAbove.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlClipAbove.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlClipAbove.Name = "floatTrackbarControlClipAbove";
@@ -405,7 +408,7 @@
 			// checkBoxClipAboveValue
 			// 
 			this.checkBoxClipAboveValue.AutoSize = true;
-			this.checkBoxClipAboveValue.Location = new System.Drawing.Point(984, 500);
+			this.checkBoxClipAboveValue.Location = new System.Drawing.Point(984, 577);
 			this.checkBoxClipAboveValue.Name = "checkBoxClipAboveValue";
 			this.checkBoxClipAboveValue.Size = new System.Drawing.Size(143, 17);
 			this.checkBoxClipAboveValue.TabIndex = 8;
@@ -421,6 +424,41 @@
 			this.viewportPanel.Size = new System.Drawing.Size(963, 686);
 			this.viewportPanel.TabIndex = 0;
 			// 
+			// checkBoxSmooth
+			// 
+			this.checkBoxSmooth.AutoSize = true;
+			this.checkBoxSmooth.Location = new System.Drawing.Point(984, 450);
+			this.checkBoxSmooth.Name = "checkBoxSmooth";
+			this.checkBoxSmooth.Size = new System.Drawing.Size(82, 17);
+			this.checkBoxSmooth.TabIndex = 8;
+			this.checkBoxSmooth.Text = "Smooth Out";
+			this.checkBoxSmooth.UseVisualStyleBackColor = true;
+			this.checkBoxSmooth.CheckedChanged += new System.EventHandler(this.checkBoxSmooth_CheckedChanged);
+			// 
+			// checkBoxShowHF
+			// 
+			this.checkBoxShowHF.AutoSize = true;
+			this.checkBoxShowHF.Location = new System.Drawing.Point(1072, 450);
+			this.checkBoxShowHF.Name = "checkBoxShowHF";
+			this.checkBoxShowHF.Size = new System.Drawing.Size(93, 17);
+			this.checkBoxShowHF.TabIndex = 8;
+			this.checkBoxShowHF.Text = "Show Hi-Freq.";
+			this.checkBoxShowHF.UseVisualStyleBackColor = true;
+			this.checkBoxShowHF.CheckedChanged += new System.EventHandler(this.checkBoxShowHF_CheckedChanged);
+			// 
+			// floatTrackbarControlSmoothRadius
+			// 
+			this.floatTrackbarControlSmoothRadius.Location = new System.Drawing.Point(1003, 473);
+			this.floatTrackbarControlSmoothRadius.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlSmoothRadius.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlSmoothRadius.Name = "floatTrackbarControlSmoothRadius";
+			this.floatTrackbarControlSmoothRadius.RangeMin = 0F;
+			this.floatTrackbarControlSmoothRadius.Size = new System.Drawing.Size(181, 20);
+			this.floatTrackbarControlSmoothRadius.TabIndex = 2;
+			this.floatTrackbarControlSmoothRadius.Value = 1F;
+			this.floatTrackbarControlSmoothRadius.VisibleRangeMax = 2F;
+			this.floatTrackbarControlSmoothRadius.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSmoothRadius_ValueChanged);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -428,6 +466,8 @@
 			this.ClientSize = new System.Drawing.Size(1200, 756);
 			this.Controls.Add(this.checkBoxFullSurface);
 			this.Controls.Add(this.checkBoxClipAboveValue);
+			this.Controls.Add(this.checkBoxShowHF);
+			this.Controls.Add(this.checkBoxSmooth);
 			this.Controls.Add(this.checkBoxRenderVectors);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.radioButtonAccumFlux);
@@ -451,6 +491,7 @@
 			this.Controls.Add(this.floatTrackbarControlCubeSize);
 			this.Controls.Add(this.floatTrackbarControlClipAbove);
 			this.Controls.Add(this.floatTrackbarControlVectorSize);
+			this.Controls.Add(this.floatTrackbarControlSmoothRadius);
 			this.Controls.Add(this.floatTrackbarControlFluxMultiplier);
 			this.Controls.Add(this.floatTrackbarControlDebug0);
 			this.Controls.Add(this.buttonReload);
@@ -499,6 +540,9 @@
 		private System.Windows.Forms.CheckBox checkBoxFullSurface;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlClipAbove;
 		private System.Windows.Forms.CheckBox checkBoxClipAboveValue;
+		private System.Windows.Forms.CheckBox checkBoxSmooth;
+		private System.Windows.Forms.CheckBox checkBoxShowHF;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlSmoothRadius;
 	}
 }
 
