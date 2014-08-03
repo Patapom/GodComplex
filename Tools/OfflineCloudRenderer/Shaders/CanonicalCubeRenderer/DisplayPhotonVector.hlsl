@@ -34,7 +34,7 @@ PS_IN	VS( VS_IN _In )
 
 	float3	PhotonPosition = _TexPhotons.SampleLevel( PointClamp, float3( UV, 6*0 + FaceIndex ), 0.0 ).xyz;
 	float3	PhotonDirection = _TexPhotons.SampleLevel( PointClamp, float3( UV, 6*1 + FaceIndex ), 0.0 ).xyz;
-	float	PhotonIntensity = _TexPhotons.SampleLevel( LinearClamp, float3( UV, 6*2 + FaceIndex ), 0.0 ).x;
+	float	PhotonIntensity = _TexPhotons.SampleLevel( LinearClamp, float3( UV, 6*3 + FaceIndex ), 0.0 ).x;
 
 	float	VectorLength = 0.0;
 	if ( PhotonIntensity < _ClipAboveValue )

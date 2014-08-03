@@ -57,10 +57,11 @@ public:	 // METHODS
 	Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format, int _ArraySize=1 );
 	~Texture2D();
 
-	ID3D11ShaderResourceView*	GetSRV( int _MipLevelStart=0, int _MipLevelsCount=0, int _ArrayStart=0, int _ArraySize=0 ) const;	// Shader Resource View => Read-Only Input
-	ID3D11RenderTargetView*		GetRTV( int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=0 ) const;							// Render Target View => Write-Only Output
-	ID3D11UnorderedAccessView*	GetUAV(  int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=0 ) const;							// Unordered Access View => Read/Write
-	ID3D11DepthStencilView*		GetDSV( int _ArrayStart=0, int _ArraySize=0 ) const;												// Depth Stencil View => Write-Only Depth Stencil Output
+	// _AsArray is used to force the SRV as viewing a Texture2DArray instead of a TextureCube or TextureCubeArray
+	ID3D11ShaderResourceView*	GetSRV( int _MipLevelStart=0, int _MipLevelsCount=0, int _ArrayStart=0, int _ArraySize=0, bool _AsArray=false ) const;	// Shader Resource View => Read-Only Input
+	ID3D11RenderTargetView*		GetRTV( int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=0 ) const;												// Render Target View => Write-Only Output
+	ID3D11UnorderedAccessView*	GetUAV(  int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=0 ) const;												// Unordered Access View => Read/Write
+	ID3D11DepthStencilView*		GetDSV( int _ArrayStart=0, int _ArraySize=0 ) const;																	// Depth Stencil View => Write-Only Depth Stencil Output
 
 	// Uploads the texture to the shader
 	void		Set( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;

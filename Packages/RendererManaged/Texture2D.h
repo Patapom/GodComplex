@@ -20,13 +20,15 @@ namespace RendererManaged {
 		int			m_MipLevelsCount;
 		int			m_ArrayStart;
 		int			m_ArraySize;
+		bool		m_AsArray;
 
 		virtual property ::ID3D11ShaderResourceView*	SRV { ::ID3D11ShaderResourceView*	get(); }
 		virtual property ::ID3D11RenderTargetView*		RTV { ::ID3D11RenderTargetView*		get(); }
 		virtual property ::ID3D11UnorderedAccessView*	UAV { ::ID3D11UnorderedAccessView*	get(); }
 		virtual property ::ID3D11DepthStencilView*		DSV { ::ID3D11DepthStencilView*		get(); }
 
-		View2D( Texture2D^ _Owner, int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize ) : m_Owner( _Owner ), m_MipLevelStart( _MipLevelStart ), m_MipLevelsCount( _MipLevelsCount ), m_ArrayStart( _ArrayStart ), m_ArraySize( _ArraySize ) {}
+		View2D( Texture2D^ _Owner, int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize ) : m_Owner( _Owner ), m_MipLevelStart( _MipLevelStart ), m_MipLevelsCount( _MipLevelsCount ), m_ArrayStart( _ArrayStart ), m_ArraySize( _ArraySize ), m_AsArray( false ) {}
+		View2D( Texture2D^ _Owner, int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize, bool _AsArray ) : m_Owner( _Owner ), m_MipLevelStart( _MipLevelStart ), m_MipLevelsCount( _MipLevelsCount ), m_ArrayStart( _ArrayStart ), m_ArraySize( _ArraySize ), m_AsArray( _AsArray ) {}
 	};
 
 	public ref class Texture2D
@@ -71,6 +73,7 @@ namespace RendererManaged {
 		// Views
 		View2D^		GetView()				{ return GetView( 0, 0, 0, 0 ); }
 		View2D^		GetView( int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize ) { return gcnew View2D( this, _MipLevelStart, _MipLevelsCount, _ArrayStart, _ArraySize ); }
+		View2D^		GetView( int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize, bool _AsArray ) { return gcnew View2D( this, _MipLevelStart, _MipLevelsCount, _ArrayStart, _ArraySize, _AsArray ); }
 
 		// Uploads the texture to the shader
 		void		Set( int _SlotIndex )	{ Set( _SlotIndex, nullptr ); }

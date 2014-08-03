@@ -78,6 +78,7 @@
     <Compile Include="ViewportPanel.Designer.cs">
       <DependentUpon>ViewportPanel.cs</DependentUpon>
     </Compile>
+    <Content Include="Shaders\CanonicalCubeRenderer\SmoothPhotons.hlsl" />
     <Content Include="Shaders\CanonicalCubeRenderer\DisplayPhotonVector.hlsl" />
     <Content Include="Shaders\CanonicalCubeRenderer\DisplayPhotonCube.hlsl" />
     <Content Include="Shaders\CanonicalCubeRenderer\PhotonShooter.hlsl" />

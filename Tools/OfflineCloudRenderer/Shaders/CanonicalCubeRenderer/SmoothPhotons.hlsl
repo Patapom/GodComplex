@@ -1,17 +1,15 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Displays the photons on a cube
+// Smoothes the photons
 ////////////////////////////////////////////////////////////////////////////////
 #include "../Global.hlsl"
 
 cbuffer	cbRender : register(b8)
 {
-	float4		_Dimensions;		// XY=Dimensions of the render target, ZW=1/XY
-	float4		_DEBUG;
-	float		_FluxMultiplier;
-	uint		_SplatType;
+	float		_SmoothRadius;
+	uint		_KernelSize;
 }
 
-Texture2DArray<float4>	_TexPhotons : register(t0);
+TextureCubeArray<float4>	_TexPhotons : register(t0);
 
 struct VS_IN
 {
@@ -36,16 +34,15 @@ PS_IN	VS( VS_IN _In )
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
-	float3	Data0 = _TexPhotons.Sample( LinearClamp, _In.UVW + float3( 0, 0, 6*0 ) ).xyz;
-	float3	Data1 = _TexPhotons.Sample( LinearClamp, _In.UVW + float3( 0, 0, 6*1 ) ).xyz;
-	float3	Data2 = _TexPhotons.Sample( LinearClamp, _In.UVW + float3( 0, 0, 6*2 ) ).xyz;
-	float4	Data3 = _TexPhotons.Sample( LinearClamp, _In.UVW + float3( 0, 0, 6*3 ) );
+	float4	Data0 = _TexPhotons.Sample( LinearClamp, _In.UVW + float3( 0, 0, 6*0 ) );
+	float4	Data1 = _TexPhotons.Sample( LinearClamp, _In.UVW + float3( 0, 0, 6*1 ) );
+	float4	Data2 = _TexPhotons.Sample( LinearClamp, _In.UVW + float3( 0, 0, 6*2 ) );
 
-	float3	ExitPosition = Data0;
-	float3	ExitDirection = Data1;
-	float	MarchedLength = Data2.x;
-	float	ScatteringEventsCount = Data2.y;
-	float	Intensity = Data3.x;
+	float3	ExitPosition = Data0.xyz;
+	float3	ExitDirection = Data1.xyz;
+	float	MarchedLength = Data0.w;
+	uint	ScatteringEventsCount = Data1.w;
+	float	Intensity = Data2.x;
 
 	float4	Color = 0.0;
 	switch ( _SplatType )

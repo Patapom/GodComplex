@@ -67,6 +67,13 @@ namespace OfflineCloudRenderer
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		public struct	CB_SmoothPhotons
+		{
+ 			public float		SmoothRadius;
+			public uint			KernelSize;
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		public struct	SB_PhotonOut
 		{
 			public float3		ExitPosition;			// Photon exit position in [-1,+1]
@@ -105,15 +112,22 @@ namespace OfflineCloudRenderer
 		private StructuredBuffer<float4>				m_SB_Random = null;
 
 		// Photons Splatter
-		private Shader							m_PS_PhotonSplatter	= null;
-		private Shader							m_PS_PhotonSplatter_Intensity	= null;
-		private ConstantBuffer<CB_SplatPhoton>	m_CB_SplatPhoton;
-		private Texture2D						m_Tex_Photons = null;
-		private Primitive						m_Prim_Point = null;
+		private Shader									m_PS_PhotonSplatter	= null;
+		private Shader									m_PS_PhotonSplatter_Intensity	= null;
+		private ConstantBuffer<CB_SplatPhoton>			m_CB_SplatPhoton;
+		private Texture2D								m_Tex_Photons = null;
+		private Primitive								m_Prim_Point = null;
+
+		// Photons smoother
+		private Shader									m_PS_PhotonsSmooth = null;
+		private Shader									m_PS_PhotonsUnsharpMask = null;
+		private ConstantBuffer<CB_SmoothPhotons>		m_CB_SmoothPhotons;
+		private Texture2D								m_Tex_PhotonsSmooth = null;
+		private Texture2D								m_Tex_PhotonsHiFreq = null;
 
 		// Photons Renderer
-		private Shader						m_PS_RenderCube = null;
-		private Primitive					m_Prim_Cube = null;
+		private Shader									m_PS_RenderCube = null;
+		private Primitive								m_Prim_Cube = null;
 
 		// Vectors Renderer
 		private Shader									m_PS_RenderPhotonVectors;
@@ -169,13 +183,23 @@ namespace OfflineCloudRenderer
 			Reg( m_PS_PhotonSplatter_Intensity = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/SplatPhoton.hlsl" ) ), VERTEX_FORMAT.P3, "VS", "GS", "PS_Intensity", null ) );
 
 			Reg( m_CB_SplatPhoton = new ConstantBuffer<CB_SplatPhoton>( m_Device, 8 ) );
-			Reg( m_Tex_Photons = new Texture2D( m_Device, 512, 512, 6*3, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
+			Reg( m_Tex_Photons = new Texture2D( m_Device, 512, 512, -6*4, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
 
 			// Build a single point that will be instanced as many times as there are photons
 			{
 				ByteBuffer	Point = new ByteBuffer( 3*System.Runtime.InteropServices.Marshal.SizeOf(typeof(float3)) );
 				Reg( m_Prim_Point = new Primitive( m_Device, 1, Point, null, Primitive.TOPOLOGY.POINT_LIST, VERTEX_FORMAT.P3 ) );
 			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// Photons Smoother
+			Reg( m_PS_PhotonsSmooth = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/SmoothPhotons.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null ) );
+			Reg( m_PS_PhotonsUnsharpMask = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/SmoothPhotons.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS_HiFreq", null ) );
+			Reg( m_CB_SmoothPhotons = new ConstantBuffer<CB_SmoothPhotons>( m_Device, 8 ) );
+ 
+			Reg( m_Tex_PhotonsSmooth = new Texture2D( m_Device, 512, 512, 6*4, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
+			Reg( m_Tex_PhotonsHiFreq = new Texture2D( m_Device, 512, 512, 6*4, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
+
 
 			//////////////////////////////////////////////////////////////////////////
 			// Photons Renderer
@@ -366,13 +390,20 @@ namespace OfflineCloudRenderer
 // 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 // 			m_Device.RenderFullscreenQuad( m_PS );
 
-
 			// Render the photons cube
  			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
 			m_Device.Clear( m_Device.DefaultTarget, 0.5f * new float4( Color.SkyBlue, 1 ) );
 			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1, 0, true, false );
 
-			m_Tex_Photons.SetPS( 0 );
+			if ( checkBoxSmooth.Checked )
+			{
+				if ( checkBoxShowHF.Checked )
+					m_Tex_PhotonsHiFreq.SetPS( 0, m_Tex_PhotonsHiFreq.GetView( 0, 0, 0, 0, true ) );
+				else
+					m_Tex_PhotonsSmooth.SetPS( 0, m_Tex_PhotonsSmooth.GetView( 0, 0, 0, 0, true ) );
+			}
+			else
+				m_Tex_Photons.SetPS( 0, m_Tex_Photons.GetView( 0, 0, 0, 0, true) );
 
 			m_PS_RenderCube.Use();
 			m_Prim_Cube.Render( m_PS_RenderCube );
@@ -525,11 +556,12 @@ namespace OfflineCloudRenderer
 			m_CB_SplatPhoton.m.SplatSize = 2.0f * (2.0f / m_Tex_Photons.Width);
 			m_CB_SplatPhoton.UpdateData();
 
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ALPHA_BLEND );
 
 			View2D[]	Views = new View2D[] {
 				m_Tex_Photons.GetView( 0, 0, 6*0, 6 ),
 				m_Tex_Photons.GetView( 0, 0, 6*1, 6 ),
+				m_Tex_Photons.GetView( 0, 0, 6*2, 6 ),
 			};
 			m_Device.SetRenderTargets( Views, null );
 
@@ -543,7 +575,7 @@ namespace OfflineCloudRenderer
 
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
 
-			Views = new View2D[] { m_Tex_Photons.GetView( 0, 0, 6*2, 6 ) };
+			Views = new View2D[] { m_Tex_Photons.GetView( 0, 0, 6*3, 6 ) };
 			m_Device.SetRenderTargets( Views, null );
 
 			m_PS_PhotonSplatter_Intensity.Use();
@@ -589,6 +621,51 @@ namespace OfflineCloudRenderer
 		{
 			floatTrackbarControlPositionX.Enabled = !checkBoxFullSurface.Checked;
 			floatTrackbarControlPositionZ.Enabled = !checkBoxFullSurface.Checked;
+		}
+
+		private void checkBoxSmooth_CheckedChanged( object sender, EventArgs e )
+		{
+			Render();
+		}
+
+		private void checkBoxShowHF_CheckedChanged( object sender, EventArgs e )
+		{
+			Render();
+		}
+
+		private void floatTrackbarControlSmoothRadius_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			if ( !checkBoxSmooth.Checked )
+				return;
+
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+
+			m_Tex_Photons.RemoveFromLastAssignedSlots();
+			m_Tex_Photons.SetPS( 0 );
+
+			m_SB_PhotonOut.SetInput( 0 );
+
+// 			// Splat data
+// 			m_CB_SplatPhoton.m.SplatSize = 2.0f * (2.0f / m_Tex_Photons.Width);
+// 			m_CB_SplatPhoton.UpdateData();
+// 
+// 			View2D[]	Views = new View2D[] {
+// 				m_Tex_Photons.GetView( 0, 0, 6*0, 6 ),
+// 				m_Tex_Photons.GetView( 0, 0, 6*1, 6 ),
+// 			};
+// 			m_Device.SetRenderTargets( Views, null );
+// 
+// 			m_PS_PhotonSplatter.Use();
+// 			m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter, PHOTONS_COUNT );
+// 
+// 			// Apply smoothing
+// 			m_PS_PhotonsSmooth
+// 
+// 			// Compute hi-frequency by difference
+// 			m_Tex_Photons.SetPS( 0 );
+// 			m_Tex_PhotonsSmooth.SetPS( 1 );
+
+			Render();
 		}
 
 		#endregion

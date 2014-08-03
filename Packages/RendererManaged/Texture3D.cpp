@@ -37,7 +37,7 @@ namespace RendererManaged {
 	void	Texture3D::SetCS( int _SlotIndex, View3D^ _view )	{ m_pTexture->Set( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
 
 
-	::ID3D11ShaderResourceView*		View3D::SRV::get() { return m_Owner->m_pTexture->GetSRV( m_MipLevelStart, m_MipLevelsCount ); }
+	::ID3D11ShaderResourceView*		View3D::SRV::get() { return m_AsArray ? m_Owner->m_pTexture->GetSRV( m_MipLevelStart, m_MipLevelsCount, m_SliceStart, m_SlicesCount, m_AsArray ) : m_Owner->m_pTexture->GetSRV( m_MipLevelStart, m_MipLevelsCount ); }
 	::ID3D11RenderTargetView*		View3D::RTV::get() { return m_Owner->m_pTexture->GetRTV( m_MipLevelStart, m_SliceStart, m_SlicesCount ); }
 	::ID3D11UnorderedAccessView*	View3D::UAV::get() { return m_Owner->m_pTexture->GetUAV( m_MipLevelStart, m_SliceStart, m_SlicesCount ); }
 }

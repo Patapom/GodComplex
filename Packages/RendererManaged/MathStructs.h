@@ -15,6 +15,46 @@ namespace RendererManaged
 		float2( float _x, float _y )				{ Set( _x, _y ); }
 		void	Set( float _x, float _y )			{ x = _x; y = _y; }
 		void	FromVector2( WMath::Vector2D^ a )	{ Set( a->x, a->y ); }
+
+		static float2	operator+( float2 a, float2 b )	{ return float2( a.x+b.x, a.y+b.y ); }
+		static float2	operator-( float2 a, float2 b )	{ return float2( a.x-b.x, a.y-b.y ); }
+		static float2	operator-( float2 a )			{ return float2( -a.x, -a.y ); }
+		static float2	operator*( float a, float2 b )	{ return float2( a*b.x, a*b.y ); }
+		static float2	operator*( float2 a, float b )	{ return float2( a.x*b, a.y*b ); }
+		static float2	operator*( float2 a, float2 b )	{ return float2( a.x*b.x, a.y*b.y ); }
+		static float2	operator/( float2 a, float b )	{ return float2( a.x/b, a.y/b ); }
+
+		property float	Length
+		{
+			float	get() { return (float) Math::Sqrt( x*x + y*y ); }
+		}
+
+		property float	LengthSquared
+		{
+			float	get() { return x*x + y*y; }
+		}
+
+		property float2	Normalized	{
+			float2	get()
+			{
+				float	InvLength = 1.0f / Length;
+				return float2( InvLength * x, InvLength * y );
+			}
+		}
+
+		float	Min()			{ return Math::Min( x, y ); }
+		float	Max()			{ return Math::Max( x, y ); }
+		void	Min( float2 p )	{ x = Math::Min( x, p.x ); y = Math::Min( y, p.y ); }
+		void	Max( float2 p )	{ x = Math::Max( x, p.x ); y = Math::Max( y, p.y ); }
+
+		float	Dot( float2 b )	{ return x*b.x + y*b.y; }
+
+		float3	Cross( float2 b ) { return float3(	0, 0, x * b.y - y * b.x ); }
+
+		static property float2	Zero	{ float2 get() { return float2( 0, 0 ); } }
+		static property float2	UnitX	{ float2 get() { return float2( 1, 0 ); } }
+		static property float2	UnitY	{ float2 get() { return float2( 0, 1 ); } }
+		static property float2	One		{ float2 get() { return float2( 1, 1 ); } }
 	};
 
 	[System::Diagnostics::DebuggerDisplayAttribute( "{x}, {y}, {z}" )]
@@ -29,12 +69,22 @@ namespace RendererManaged
 
 		static float3	operator+( float3 a, float3 b )	{ return float3( a.x+b.x, a.y+b.y, a.z+b.z ); }
 		static float3	operator-( float3 a, float3 b )	{ return float3( a.x-b.x, a.y-b.y, a.z-b.z ); }
+		static float3	operator-( float3 a )			{ return float3( -a.x, -a.y, -a.z ); }
 		static float3	operator*( float a, float3 b )	{ return float3( a*b.x, a*b.y, a*b.z ); }
+		static float3	operator*( float3 a, float b )	{ return float3( a.x*b, a.y*b, a.z*b ); }
+		static float3	operator*( float3 a, float3 b )	{ return float3( a.x*b.x, a.y*b.y, a.z*b.z ); }
 		static float3	operator/( float3 a, float b )	{ return float3( a.x/b, a.y/b, a.z/b ); }
+
+		static explicit operator float2( float3 a )		{ return float2( a.x, a.y ); }
 
 		property float	Length
 		{
 			float	get() { return (float) Math::Sqrt( x*x + y*y + z*z ); }
+		}
+
+		property float	LengthSquared
+		{
+			float	get() { return x*x + y*y + z*z; }
 		}
 
 		property float3	Normalized	{
@@ -45,6 +95,11 @@ namespace RendererManaged
 			}
 		}
 
+		float	Min()	{ return Math::Min( Math::Min( x, y ), z ); }
+		float	Max()	{ return Math::Max( Math::Max( x, y ), z ); }
+		void	Min( float3 p )	{ x = Math::Min( x, p.x ); y = Math::Min( y, p.y ); z = Math::Min( z, p.z ); }
+		void	Max( float3 p )	{ x = Math::Max( x, p.x ); y = Math::Max( y, p.y ); z = Math::Max( z, p.z ); }
+
 		float	Dot( float3 b )	{ return x*b.x + y*b.y + z*b.z; }
 
 		float3	Cross( float3 b )
@@ -53,6 +108,12 @@ namespace RendererManaged
 							z * b.x - x * b.z,
 							x * b.y - y * b.x );
 		}
+
+		static property float3	Zero	{ float3 get() { return float3( 0, 0, 0 ); } }
+		static property float3	UnitX	{ float3 get() { return float3( 1, 0, 0 ); } }
+		static property float3	UnitY	{ float3 get() { return float3( 0, 1, 0 ); } }
+		static property float3	UnitZ	{ float3 get() { return float3( 0, 0, 1 ); } }
+		static property float3	One		{ float3 get() { return float3( 1, 1, 1 ); } }
 	};
 
 	[System::Diagnostics::DebuggerDisplayAttribute( "{x}, {y}, {z}, {w}" )]
@@ -64,23 +125,16 @@ namespace RendererManaged
 		float4( float3 _xyz, float _w )							{ Set( _xyz.x, _xyz.y, _xyz.z, _w ); }
 		float4( System::Drawing::Color^ _Color, float _Alpha )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f, _Alpha ); }
 		void	Set( float _x, float _y, float _z, float _w )	{ x = _x; y = _y; z = _z; w = _w; }
+		void	Set( float3 _xyz, float _w )					{ x = _xyz.x; y = _xyz.y; z = _xyz.z; w = _w; }
 		void	FromVector4( WMath::Vector4D^ a )				{ Set( a->x, a->y, a->z, a->w ); }
 
 		static float4	operator+( float4 a, float4 b )	{ return float4( a.x+b.x, a.y+b.y, a.z+b.z, a.w+b.w ); }
 		static float4	operator-( float4 a, float4 b )	{ return float4( a.x-b.x, a.y-b.y, a.z-b.z, a.w-b.w ); }
 		static float4	operator*( float a, float4 b )	{ return float4( a*b.x, a*b.y, a*b.z, a*b.w ); }
+		static float4	operator*( float4 a, float b )	{ return float4( a.x*b, a.y*b, a.z*b, a.w*b ); }
 
-// 		float	operator[]( int _ComponentIndex )
-// 		{
-// 			switch ( _ComponentIndex&3 )
-// 			{
-// 			case 0: return x;
-// 			case 1: return y;
-// 			case 2: return z;
-// 			case 3: return w;
-// 			}
-// 			return x;
-// 		}
+		static explicit operator float2( float4 a )		{ return float2( a.x, a.y ); }
+		static explicit operator float3( float4 a )		{ return float3( a.x, a.y, a.z ); }
 
 		property float	default[int]
 		{
@@ -121,6 +175,13 @@ namespace RendererManaged
 				return float4( InvLength * x, InvLength * y, InvLength * z, InvLength * w );
 			}
 		}
+
+		static property float4	Zero	{ float4 get() { return float4( 0, 0, 0, 0 ); } }
+		static property float4	UnitX	{ float4 get() { return float4( 1, 0, 0, 0 ); } }
+		static property float4	UnitY	{ float4 get() { return float4( 0, 1, 0, 0 ); } }
+		static property float4	UnitZ	{ float4 get() { return float4( 0, 0, 1, 0 ); } }
+		static property float4	UnitW	{ float4 get() { return float4( 0, 0, 0, 1 ); } }
+		static property float4	One		{ float4 get() { return float4( 1, 1, 1, 1 ); } }
 	};
 
 	public value struct	float4x4
@@ -168,17 +229,6 @@ namespace RendererManaged
 
 			return *this;
 		}
-
-// 		float4x4	operator*( float4x4 b )
-// 		{
-// 			float4x4	R;
-// 			R.r0.Set( r0.x*b.r0.x + r0.y*b.r1.x + r0.z*b.r2.x + r0.w*b.r3.x, /**/ r0.x*b.r0.y + r0.y*b.r1.y + r0.z*b.r2.y + r0.w*b.r3.y, /**/ r0.x*b.r0.z + r0.y*b.r1.z + r0.z*b.r2.z + r0.w*b.r3.z, /**/ r0.x*b.r0.w + r0.y*b.r1.w + r0.z*b.r2.w + r0.w*b.r3.w );
-// 			R.r1.Set( r1.x*b.r0.x + r1.y*b.r1.x + r1.z*b.r2.x + r1.w*b.r3.x, /**/ r1.x*b.r0.y + r1.y*b.r1.y + r1.z*b.r2.y + r1.w*b.r3.y, /**/ r1.x*b.r0.z + r1.y*b.r1.z + r1.z*b.r2.z + r1.w*b.r3.z, /**/ r1.x*b.r0.w + r1.y*b.r1.w + r1.z*b.r2.w + r1.w*b.r3.w );
-//			R.r2.Set( r2.x*b.r0.x + r2.y*b.r1.x + r2.z*b.r2.x + r2.w*b.r3.x, /**/ r2.x*b.r0.y + r2.y*b.r1.y + r2.z*b.r2.y + r2.w*b.r3.y, /**/ r2.x*b.r0.z + r2.y*b.r1.z + r2.z*b.r2.z + r2.w*b.r3.z, /**/ r2.x*b.r0.w + r2.y*b.r1.w + r2.z*b.r2.w + r2.w*b.r3.w );
-// 			R.r3.Set( r3.x*b.r0.x + r3.y*b.r1.x + r3.z*b.r2.x + r3.w*b.r3.x, /**/ r3.x*b.r0.y + r3.y*b.r1.y + r3.z*b.r2.y + r3.w*b.r3.y, /**/ r3.x*b.r0.z + r3.y*b.r1.z + r3.z*b.r2.z + r3.w*b.r3.z, /**/ r3.x*b.r0.w + r3.y*b.r1.w + r3.z*b.r2.w + r3.w*b.r3.w );
-// 
-// 			return R;
-// 		}
  
 		static float4x4	operator*( float4x4 a, float4x4 b )
 		{
@@ -202,10 +252,16 @@ namespace RendererManaged
 			return R;
 		}
 
-// 		float4		operator[]( int _RowIndex )
-// 		{
-// 			return GetRow( _RowIndex );
-// 		}
+		static float4	operator*( float4 a, float4x4 b )
+		{
+			float4	R;
+			R.x = a.x*b.r0.x + a.y*b.r1.x + a.z*b.r2.x + a.w*b.r3.x;
+			R.y = a.x*b.r0.y + a.y*b.r1.y + a.z*b.r2.y + a.w*b.r3.y;
+			R.z = a.x*b.r0.z + a.y*b.r1.z + a.z*b.r2.z + a.w*b.r3.z;
+			R.w = a.x*b.r0.w + a.y*b.r1.w + a.z*b.r2.w + a.w*b.r3.w;
+
+			return R;
+		}
 
 		property float4	default[int]
 		{
