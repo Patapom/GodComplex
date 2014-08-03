@@ -39,6 +39,7 @@ struct PS_OUT
 {
 	float4	Data0 : SV_TARGET0;
 	float4	Data1 : SV_TARGET1;
+	float4	Data2 : SV_TARGET2;
 };
 
 VS_IN	VS( VS_IN _In )
@@ -127,9 +128,13 @@ Out.Data1 = float4( 1, 0, 1, 0 );
 
 PS_OUT	PS( PS_IN _In )
 {
+//	float	A = 1;
+	float	A = exp( -4.0 * length( _In.UV ) );
+
 	PS_OUT	Out;
-	Out.Data0 = _In.Data0;
-	Out.Data1 = _In.Data1;
+	Out.Data0 = float4( _In.Data0.xyz, A );
+	Out.Data1 = float4( _In.Data1.xyz, A );
+	Out.Data2 = float4( _In.Data0.w, _In.Data1.w, 0, A );
 	return Out;
 }
 

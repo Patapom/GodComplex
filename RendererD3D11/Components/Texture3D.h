@@ -46,7 +46,8 @@ public:	 // METHODS
 	Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging=false, bool _bUnOrderedAccess=false );
 	~Texture3D();
 
-	ID3D11ShaderResourceView*	GetSRV( int _MipLevelStart=0, int _MipLevelsCount=0 ) const;			// Shader Resource View => Read-Only Input
+	// _AsArray is used to force the SRV as viewing a Texture2DArray instead of a Texture3D (note that otherwise, _FirstWSlice and _WSize are not used)
+	ID3D11ShaderResourceView*	GetSRV( int _MipLevelStart=0, int _MipLevelsCount=0, int _FirstWSlice=0, int _WSize=0, bool _AsArray=false ) const;			// Shader Resource View => Read-Only Input
 	ID3D11RenderTargetView*		GetRTV( int _MipLevelIndex=0, int _FirstWSlice=0, int _WSize=0 ) const;	// Render Target View => Write-Only Output
 	ID3D11UnorderedAccessView*	GetUAV( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const;		// Unordered Access View => Read/Write
 

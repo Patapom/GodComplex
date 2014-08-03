@@ -183,7 +183,7 @@ namespace OfflineCloudRenderer
 			Reg( m_PS_PhotonSplatter_Intensity = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/SplatPhoton.hlsl" ) ), VERTEX_FORMAT.P3, "VS", "GS", "PS_Intensity", null ) );
 
 			Reg( m_CB_SplatPhoton = new ConstantBuffer<CB_SplatPhoton>( m_Device, 8 ) );
-			Reg( m_Tex_Photons = new Texture2D( m_Device, 512, 512, 6*3, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
+			Reg( m_Tex_Photons = new Texture2D( m_Device, 512, 512, -6*4, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
 
 			// Build a single point that will be instanced as many times as there are photons
 			{
@@ -196,9 +196,9 @@ namespace OfflineCloudRenderer
 			Reg( m_PS_PhotonsSmooth = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/SmoothPhotons.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null ) );
 			Reg( m_PS_PhotonsUnsharpMask = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/SmoothPhotons.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS_HiFreq", null ) );
 			Reg( m_CB_SmoothPhotons = new ConstantBuffer<CB_SmoothPhotons>( m_Device, 8 ) );
-
-			Reg( m_Tex_PhotonsSmooth = new Texture2D( m_Device, 512, 512, 6*3, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
-			Reg( m_Tex_PhotonsHiFreq = new Texture2D( m_Device, 512, 512, 6*3, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
+ 
+			Reg( m_Tex_PhotonsSmooth = new Texture2D( m_Device, 512, 512, 6*4, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
+			Reg( m_Tex_PhotonsHiFreq = new Texture2D( m_Device, 512, 512, 6*4, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -398,12 +398,12 @@ namespace OfflineCloudRenderer
 			if ( checkBoxSmooth.Checked )
 			{
 				if ( checkBoxShowHF.Checked )
-					m_Tex_PhotonsHiFreq.SetPS( 0 );
+					m_Tex_PhotonsHiFreq.SetPS( 0, m_Tex_PhotonsHiFreq.GetView( 0, 0, 0, 0, true ) );
 				else
-					m_Tex_PhotonsSmooth.SetPS( 0 );
+					m_Tex_PhotonsSmooth.SetPS( 0, m_Tex_PhotonsSmooth.GetView( 0, 0, 0, 0, true ) );
 			}
 			else
-				m_Tex_Photons.SetPS( 0 );
+				m_Tex_Photons.SetPS( 0, m_Tex_Photons.GetView( 0, 0, 0, 0, true) );
 
 			m_PS_RenderCube.Use();
 			m_Prim_Cube.Render( m_PS_RenderCube );
@@ -556,11 +556,12 @@ namespace OfflineCloudRenderer
 			m_CB_SplatPhoton.m.SplatSize = 2.0f * (2.0f / m_Tex_Photons.Width);
 			m_CB_SplatPhoton.UpdateData();
 
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ALPHA_BLEND );
 
 			View2D[]	Views = new View2D[] {
 				m_Tex_Photons.GetView( 0, 0, 6*0, 6 ),
 				m_Tex_Photons.GetView( 0, 0, 6*1, 6 ),
+				m_Tex_Photons.GetView( 0, 0, 6*2, 6 ),
 			};
 			m_Device.SetRenderTargets( Views, null );
 
@@ -574,7 +575,7 @@ namespace OfflineCloudRenderer
 
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
 
-			Views = new View2D[] { m_Tex_Photons.GetView( 0, 0, 6*2, 6 ) };
+			Views = new View2D[] { m_Tex_Photons.GetView( 0, 0, 6*3, 6 ) };
 			m_Device.SetRenderTargets( Views, null );
 
 			m_PS_PhotonSplatter_Intensity.Use();

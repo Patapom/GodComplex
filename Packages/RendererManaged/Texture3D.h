@@ -20,12 +20,14 @@ namespace RendererManaged {
 		int			m_MipLevelsCount;
 		int			m_SliceStart;
 		int			m_SlicesCount;
+		bool		m_AsArray;
 
 		virtual property ::ID3D11ShaderResourceView*	SRV { ::ID3D11ShaderResourceView*	get(); }
 		virtual property ::ID3D11RenderTargetView*		RTV { ::ID3D11RenderTargetView*		get(); }
 		virtual property ::ID3D11UnorderedAccessView*	UAV { ::ID3D11UnorderedAccessView*	get(); }
 
-		View3D( Texture3D^ _Owner, int _MipLevelStart, int _MipLevelsCount, int _SliceStart, int _SlicesCount ) : m_Owner( _Owner ), m_MipLevelStart( _MipLevelStart ), m_MipLevelsCount( _MipLevelsCount ), m_SliceStart( _SliceStart ), m_SlicesCount( _SlicesCount ) {}
+		View3D( Texture3D^ _Owner, int _MipLevelStart, int _MipLevelsCount, int _SliceStart, int _SlicesCount ) : m_Owner( _Owner ), m_MipLevelStart( _MipLevelStart ), m_MipLevelsCount( _MipLevelsCount ), m_SliceStart( _SliceStart ), m_SlicesCount( _SlicesCount ), m_AsArray( false ) {}
+		View3D( Texture3D^ _Owner, int _MipLevelStart, int _MipLevelsCount, int _SliceStart, int _SlicesCount, bool _AsArray ) : m_Owner( _Owner ), m_MipLevelStart( _MipLevelStart ), m_MipLevelsCount( _MipLevelsCount ), m_SliceStart( _SliceStart ), m_SlicesCount( _SlicesCount ), m_AsArray( _AsArray ) {}
 	};
 
 	public ref class Texture3D
@@ -69,6 +71,7 @@ namespace RendererManaged {
 		// Views
 		View3D^		GetView()				{ return GetView( 0, 0, 0, 0 ); }
 		View3D^		GetView( int _MipLevelStart, int _MipLevelsCount, int _SliceStart, int _SlicesCount ) { return gcnew View3D( this, _MipLevelStart, _MipLevelsCount, _SliceStart, _SlicesCount ); }
+		View3D^		GetView( int _MipLevelStart, int _MipLevelsCount, int _SliceStart, int _SlicesCount, bool _AsArray ) { return gcnew View3D( this, _MipLevelStart, _MipLevelsCount, _SliceStart, _SlicesCount, _AsArray ); }
 
 		// Uploads the texture to the shader
 		void		Set( int _SlotIndex )	{ Set( _SlotIndex, nullptr ); }

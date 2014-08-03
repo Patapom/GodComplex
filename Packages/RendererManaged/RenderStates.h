@@ -31,5 +31,6 @@ namespace RendererManaged {
 
 		DISABLED,
 		ADDITIVE,
+		ALPHA_BLEND,
 	};
 }

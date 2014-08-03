@@ -159,7 +159,7 @@ void	Texture2D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOr
 		Check( m_Device.DXDevice().CreateTexture2D( &Desc, NULL, &m_pTexture ) );
 }
 
-ID3D11ShaderResourceView*	Texture2D::GetSRV( int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize ) const
+ID3D11ShaderResourceView*	Texture2D::GetSRV( int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize, bool _AsArray ) const
 {
 	if ( _ArraySize == 0 )
 		_ArraySize = m_ArraySize - _ArrayStart;
@@ -169,6 +169,8 @@ ID3D11ShaderResourceView*	Texture2D::GetSRV( int _MipLevelStart, int _MipLevelsC
 	// Check if we already have it
 //	U32	Hash = _ArraySize | ((_ArrayStart | ((_MipLevelsCount | (_MipLevelStart << 4)) << 12)) << 12);
 	U32	Hash = (_MipLevelStart << 0) | (_ArrayStart << 4) | (_MipLevelsCount << (4+12)) | (_ArraySize << (4+12+4));	// Re-organized to have most likely changes (i.e. mip & array starts) first
+		Hash ^= _AsArray ? 0x80000000UL : 0;
+
 	ID3D11ShaderResourceView*	pExistingView = (ID3D11ShaderResourceView*) m_CachedSRVs.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;
@@ -176,20 +178,31 @@ ID3D11ShaderResourceView*	Texture2D::GetSRV( int _MipLevelStart, int _MipLevelsC
 	// Create a new one
 	D3D11_SHADER_RESOURCE_VIEW_DESC	Desc;
 	Desc.Format = m_bIsDepthStencil ? ((IDepthStencilFormatDescriptor&) m_Format).ReadableDirectXFormat() : m_Format.DirectXFormat();
-	Desc.ViewDimension = m_ArraySize > 1 ? (m_bIsCubeMap ? (m_ArraySize > 6 ? D3D11_SRV_DIMENSION_TEXTURECUBEARRAY : D3D11_SRV_DIMENSION_TEXTURECUBE) : D3D11_SRV_DIMENSION_TEXTURE2DARRAY) : D3D11_SRV_DIMENSION_TEXTURE2D;
-	if ( m_bIsCubeMap )
-	{
-		Desc.TextureCubeArray.MostDetailedMip = _MipLevelStart;
-		Desc.TextureCubeArray.MipLevels = _MipLevelsCount;
-		Desc.TextureCubeArray.First2DArrayFace = _ArrayStart;
-		Desc.TextureCubeArray.NumCubes = _ArraySize / 6;
-	}
-	else
-	{
+	if ( _AsArray )
+	{	// Force as a Texture2DArray
+		Desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 		Desc.Texture2DArray.MostDetailedMip = _MipLevelStart;
 		Desc.Texture2DArray.MipLevels = _MipLevelsCount;
 		Desc.Texture2DArray.FirstArraySlice = _ArrayStart;
 		Desc.Texture2DArray.ArraySize = _ArraySize;
+	}
+	else
+	{
+		Desc.ViewDimension = m_ArraySize > 1 ? (m_bIsCubeMap ? (m_ArraySize > 6 ? D3D11_SRV_DIMENSION_TEXTURECUBEARRAY : D3D11_SRV_DIMENSION_TEXTURECUBE) : D3D11_SRV_DIMENSION_TEXTURE2DARRAY) : D3D11_SRV_DIMENSION_TEXTURE2D;
+		if ( m_bIsCubeMap )
+		{
+			Desc.TextureCubeArray.MostDetailedMip = _MipLevelStart;
+			Desc.TextureCubeArray.MipLevels = _MipLevelsCount;
+			Desc.TextureCubeArray.First2DArrayFace = _ArrayStart;
+			Desc.TextureCubeArray.NumCubes = _ArraySize / 6;
+		}
+		else
+		{
+			Desc.Texture2DArray.MostDetailedMip = _MipLevelStart;
+			Desc.Texture2DArray.MipLevels = _MipLevelsCount;
+			Desc.Texture2DArray.FirstArraySlice = _ArrayStart;
+			Desc.Texture2DArray.ArraySize = _ArraySize;
+		}
 	}
 
 	ID3D11ShaderResourceView*	pView;

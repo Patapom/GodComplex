@@ -36,7 +36,7 @@ namespace RendererManaged {
 	void	Texture2D::SetCS( int _SlotIndex, View2D^ _view )	{ m_pTexture->Set( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
 
 
-	::ID3D11ShaderResourceView*		View2D::SRV::get() { return m_Owner->m_pTexture->GetSRV( m_MipLevelStart, m_MipLevelsCount, m_ArrayStart, m_ArraySize ); }
+	::ID3D11ShaderResourceView*		View2D::SRV::get() { return m_Owner->m_pTexture->GetSRV( m_MipLevelStart, m_MipLevelsCount, m_ArrayStart, m_ArraySize, m_AsArray ); }
 	::ID3D11RenderTargetView*		View2D::RTV::get() { return m_Owner->m_pTexture->GetRTV( m_MipLevelStart, m_ArrayStart, m_ArraySize ); }
 	::ID3D11UnorderedAccessView*	View2D::UAV::get() { return m_Owner->m_pTexture->GetUAV( m_MipLevelStart, m_ArrayStart, m_ArraySize ); }
 	::ID3D11DepthStencilView*		View2D::DSV::get() { return m_Owner->m_pTexture->GetDSV( m_ArrayStart, m_ArraySize ); }

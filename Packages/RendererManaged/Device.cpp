@@ -67,6 +67,7 @@ void	RendererManaged::Device::SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCI
 	case BLEND_STATE::NOCHANGE: break;
 	case BLEND_STATE::DISABLED:	pBS = m_pDevice->m_pBS_Disabled; break;
 	case BLEND_STATE::ADDITIVE:	pBS = m_pDevice->m_pBS_Additive; break;
+	case BLEND_STATE::ALPHA_BLEND:	pBS = m_pDevice->m_pBS_AlphaBlend; break;
 	default: throw gcnew Exception( "Unsupported blend state!" );
 	}
 
