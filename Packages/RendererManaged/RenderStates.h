@@ -30,6 +30,7 @@ namespace RendererManaged {
 		NOCHANGE,
 
 		DISABLED,
+		ALPHA_BLEND,
 		ADDITIVE,
 	};
 }

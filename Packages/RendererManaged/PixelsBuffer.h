@@ -1,7 +1,11 @@
 // PixelsBuffer.h
-
 #pragma once
-#include "Device.h"
+
+
+#pragma unmanaged
+#include "../../RendererD3D11/Device.h"
+#pragma managed
+
 #include "ByteBuffer.h"
 
 using namespace System;

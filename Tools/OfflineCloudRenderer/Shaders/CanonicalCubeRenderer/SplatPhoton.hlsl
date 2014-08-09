@@ -6,10 +6,8 @@
 
 cbuffer	cbRender : register(b8)
 {
-	uint		_SplatType;
 	float		_SplatSize;
 	float		_SplatIntensity;
-//	float4		_DEBUG;
 }
 
 struct PhotonOut
@@ -33,7 +31,15 @@ struct PS_IN
 	float4	__Position : SV_POSITION;
 	uint	CubeFaceIndex	: SV_RENDERTARGETARRAYINDEX;
 	float2	UV : TEXCOORD0;
-	float4	Data : DATA;
+	float4	Data0 : DATA0;
+	float4	Data1 : DATA1;
+};
+
+struct PS_OUT
+{
+	float4	Data0 : SV_TARGET0;
+	float4	Data1 : SV_TARGET1;
+	float4	Data2 : SV_TARGET2;
 };
 
 VS_IN	VS( VS_IN _In )
@@ -50,28 +56,8 @@ void	GS( point VS_IN _In[1], inout TriangleStream<PS_IN> _OutStream )
 
 	PhotonOut	Photon = _Photons[_In[0].PhotonIndex];
 
-	Out.Data = 0.0;
-	switch ( _SplatType )
-	{
-	// Positive
-	case 0: Out.Data = float4( Photon.ExitPosition, 0 ); break;
-	case 1: Out.Data = float4( Photon.ExitDirection, 0 ); break;
-
-	// Negative
-	case 16+0: Out.Data = float4( -Photon.ExitPosition, 0 ); break;
-	case 16+1: Out.Data = float4( -Photon.ExitDirection, 0 ); break;
-
-	// Absolute
-	case 32+0: Out.Data = float4( abs(Photon.ExitPosition), 0 ); break;
-	case 32+1: Out.Data = float4( abs(Photon.ExitDirection), 0 ); break;
-
-	case 2: Out.Data = 0.01 * Photon.ScatteringEventsCount; break;
-	}
-//Out.Data = float4( Photon.ExitDirection, 0 );
-//Out.Data = float4( _PhaseQuantiles[_In[0].PhotonIndex & 0x3FFFF].xxx, 0 );
-//Out.Data = float4( _In[0].PhotonIndex * 0.001.xxx, 0 );
-//Out.Data = 1000.0 * Photon.MarchedLength;
-//Out.Data = 0.5 * Photon.ScatteringEventsCount;
+	Out.Data0 = float4( Photon.ExitPosition, Photon.MarchedLength );
+	Out.Data1 = float4( Photon.ExitDirection, Photon.ScatteringEventsCount );
 
 	// Determine where to splat the photon
 	const float	eps = 1e-3;
@@ -112,10 +98,9 @@ void	GS( point VS_IN _In[1], inout TriangleStream<PS_IN> _OutStream )
 	{	// Error!
 		Out.CubeFaceIndex = 2;
 		P.xy = 2*float2( Hash( 0.3789161 * (2*_In[0].PhotonIndex) ), Hash( 0.2194 * (2*_In[0].PhotonIndex+1) ) )-1;
-//		Out.Data = float4( abs(Photon.ExitPosition), 0 );
 
-//Out.Data = Photon.MarchedLength;
-Out.Data = float4( 1, 0, 1, 0 );
+Out.Data0 = float4( 1, 0, 1, 0 );
+Out.Data1 = float4( 1, 0, 1, 0 );
 	}
 
 
@@ -141,12 +126,19 @@ Out.Data = float4( 1, 0, 1, 0 );
 	_OutStream.Append( Out );
 }
 
-float4	PS( PS_IN _In ) : SV_TARGET0
+PS_OUT	PS( PS_IN _In )
 {
-	if ( _SplatType == 3 )
-//		return _SplatIntensity * (1.0 - length( _In.UV ));
-		return _SplatIntensity * exp( -10.0 * length( _In.UV ) );
+//	float	A = 1;
+	float	A = exp( -4.0 * length( _In.UV ) );
 
-	return _In.Data;
-//return float4( 1, 1, 0, 0 );
+	PS_OUT	Out;
+	Out.Data0 = float4( _In.Data0.xyz, A );
+	Out.Data1 = float4( _In.Data1.xyz, A );
+	Out.Data2 = float4( _In.Data0.w, _In.Data1.w, 0, A );
+	return Out;
+}
+
+float4	PS_Intensity( PS_IN _In ) : SV_TARGET0
+{
+	return _SplatIntensity * exp( -10.0 * length( _In.UV ) );
 }

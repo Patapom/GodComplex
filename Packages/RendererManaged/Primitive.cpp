@@ -14,6 +14,7 @@ namespace RendererManaged {
 		switch ( _Topology )
 		{
 		case TOPOLOGY::POINT_LIST:		Topology = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST; break;
+		case TOPOLOGY::LINE_LIST:		Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST; break;
 		case TOPOLOGY::TRIANGLE_LIST:	Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST; break;
 		case TOPOLOGY::TRIANGLE_STRIP:	Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP; break;
 		default:

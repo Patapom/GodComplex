@@ -168,7 +168,7 @@ void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D& _RTHDR )
 	m_Device.ClearDepthStencil( *m_pDepthStencilFront, 1.0f, 0 );
 
 	ID3D11RenderTargetView*	ppRenderTargets[1] = { NULL };	// No render target => boost!
-	m_Device.SetRenderTargets( W, H, 0, ppRenderTargets, m_pDepthStencilFront->GetDepthStencilView() );
+	m_Device.SetRenderTargets( W, H, 0, ppRenderTargets, m_pDepthStencilFront->GetDSV() );
 	m_Scene.Render( M, true );
 
 
@@ -180,7 +180,7 @@ void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D& _RTHDR )
 
 	m_Device.ClearDepthStencil( *m_pDepthStencilBack, 1.0f, 0 );
 
-	m_Device.SetRenderTargets( W, H, 0, ppRenderTargets, m_pDepthStencilBack->GetDepthStencilView() );
+	m_Device.SetRenderTargets( W, H, 0, ppRenderTargets, m_pDepthStencilBack->GetDSV() );
 	m_Scene.Render( M, true );
 
 	USING_MATERIAL_END
@@ -217,9 +217,9 @@ void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D& _RTHDR )
 			PreviousHeight = CurrentHeight;
 			CurrentWidth >>= 1;
 			CurrentHeight >>= 1;
-			m_Device.SetRenderTarget( CurrentWidth, CurrentHeight, *m_pRTZBuffer->GetTargetView( MipLevelIndex ) );
+			m_Device.SetRenderTarget( CurrentWidth, CurrentHeight, *m_pRTZBuffer->GetRTV( MipLevelIndex ) );
 
-			m_pRTZBuffer->SetPS( 10, true, m_pRTZBuffer->GetShaderView( MipLevelIndex-1, 1 ) );
+			m_pRTZBuffer->SetPS( 10, true, m_pRTZBuffer->GetSRV( MipLevelIndex-1, 1 ) );
 
 			m_pCB_RenderDownSampled->m.dUV.Set( 1.0f / CurrentWidth, 1.0f / CurrentHeight, 0.0f );
 			m_pCB_RenderDownSampled->UpdateData();
@@ -241,12 +241,12 @@ void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D& _RTHDR )
 
 	ID3D11RenderTargetView*	ppRenderTargets[4] =
 	{
-		m_pRTGBuffer0_2->GetTargetView( 0, 0, 1 ),	// Normal (XY) + Tangent (XY)
-		m_pRTGBuffer0_2->GetTargetView( 0, 1, 1 ),	// Diffuse Albedo (XYZ) + Tangent (W)
-		m_pRTGBuffer0_2->GetTargetView( 0, 2, 1 ),	// Specular Albedo (XYZ) + Height (W)
-		m_pRTGBuffer3->GetTargetView( 0, 0, 1 )		// 4 couples of [Weight,MatId] each packed into a U16
+		m_pRTGBuffer0_2->GetRTV( 0, 0, 1 ),	// Normal (XY) + Tangent (XY)
+		m_pRTGBuffer0_2->GetRTV( 0, 1, 1 ),	// Diffuse Albedo (XYZ) + Tangent (W)
+		m_pRTGBuffer0_2->GetRTV( 0, 2, 1 ),	// Specular Albedo (XYZ) + Height (W)
+		m_pRTGBuffer3->GetRTV( 0, 0, 1 )		// 4 couples of [Weight,MatId] each packed into a U16
 	};
-	m_Device.SetRenderTargets( W, H, 4, ppRenderTargets, m_pDepthStencilFront->GetDepthStencilView() );
+	m_Device.SetRenderTargets( W, H, 4, ppRenderTargets, m_pDepthStencilFront->GetDSV() );
 
 	m_Scene.Render( M );
 
@@ -269,10 +269,10 @@ void	EffectScene::Render( float _Time, float _DeltaTime, Texture2D& _RTHDR )
 
 	ID3D11RenderTargetView*	ppRenderTargets[2] =
 	{
-		m_pRTAccumulatorDiffuseSpecular->GetTargetView( 0, 0, 1 ),
-		m_pRTAccumulatorDiffuseSpecular->GetTargetView( 0, 1, 1 ) 
+		m_pRTAccumulatorDiffuseSpecular->GetRTV( 0, 0, 1 ),
+		m_pRTAccumulatorDiffuseSpecular->GetRTV( 0, 1, 1 ) 
 	};
-	m_Device.SetRenderTargets( W, H, 2, ppRenderTargets, m_pDepthStencilFront->GetDepthStencilView() );
+	m_Device.SetRenderTargets( W, H, 2, ppRenderTargets, m_pDepthStencilFront->GetDSV() );
 
 	// Set our buffers for next shaders...
 	m_pRTGBuffer0_2->SetPS( 10 );
@@ -429,10 +429,10 @@ m_pRTGBufferBack->SetPS( 17 );
 
 		W >>= 1;
 		H >>= 1;
-		ID3D11RenderTargetView*	pView = _RTHDR.GetTargetView( 1 );
+		ID3D11RenderTargetView*	pView = _RTHDR.GetRTV( 1 );
 		m_Device.SetRenderTarget( W, H, *pView );
 
-		_RTHDR.SetPS( 10, true, _RTHDR.GetShaderView( 0, 1 ) );
+		_RTHDR.SetPS( 10, true, _RTHDR.GetSRV( 0, 1 ) );
 
 		m_pCB_Render->m.dUV.Set( 1.0f / W, 1.0f / H, 0.0f );
 		m_pCB_Render->UpdateData();
@@ -444,10 +444,10 @@ m_pRTGBufferBack->SetPS( 17 );
 
 		W >>= 1;
 		H >>= 1;
-		ID3D11RenderTargetView*	pView = _RTHDR.GetTargetView( 2 );
+		ID3D11RenderTargetView*	pView = _RTHDR.GetRTV( 2 );
 		m_Device.SetRenderTarget( W, H, *pView );
 
-		_RTHDR.SetPS( 10, true, _RTHDR.GetShaderView( 1, 1 ) );
+		_RTHDR.SetPS( 10, true, _RTHDR.GetSRV( 1, 1 ) );
 
 		m_pCB_Render->m.dUV.Set( 1.0f / W, 1.0f / H, 0.0f );
 		m_pCB_Render->UpdateData();

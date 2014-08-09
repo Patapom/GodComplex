@@ -10,6 +10,27 @@ using namespace System;
 
 namespace RendererManaged {
 
+	ref class Texture2D;
+
+	public ref class	View2D
+	{
+	internal:
+		Texture2D^	m_Owner;
+		int			m_MipLevelStart;
+		int			m_MipLevelsCount;
+		int			m_ArrayStart;
+		int			m_ArraySize;
+		bool		m_AsArray;
+
+		virtual property ::ID3D11ShaderResourceView*	SRV { ::ID3D11ShaderResourceView*	get(); }
+		virtual property ::ID3D11RenderTargetView*		RTV { ::ID3D11RenderTargetView*		get(); }
+		virtual property ::ID3D11UnorderedAccessView*	UAV { ::ID3D11UnorderedAccessView*	get(); }
+		virtual property ::ID3D11DepthStencilView*		DSV { ::ID3D11DepthStencilView*		get(); }
+
+		View2D( Texture2D^ _Owner, int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize ) : m_Owner( _Owner ), m_MipLevelStart( _MipLevelStart ), m_MipLevelsCount( _MipLevelsCount ), m_ArrayStart( _ArrayStart ), m_ArraySize( _ArraySize ), m_AsArray( false ) {}
+		View2D( Texture2D^ _Owner, int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize, bool _AsArray ) : m_Owner( _Owner ), m_MipLevelStart( _MipLevelStart ), m_MipLevelsCount( _MipLevelsCount ), m_ArrayStart( _ArrayStart ), m_ArraySize( _ArraySize ), m_AsArray( _AsArray ) {}
+	};
+
 	public ref class Texture2D
 	{
 	internal:
@@ -25,26 +46,7 @@ namespace RendererManaged {
 
 	public:
 
-		Texture2D( Device^ _Device, int _Width, int _Height, int _ArraySize, int _MipLevelsCount, PIXEL_FORMAT _PixelFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _MipLevelsContent )
-		{
- 			IPixelFormatDescriptor*	pDescriptor = GetDescriptor( _PixelFormat );
-
-			void**	ppContent = NULL;
-			if ( _MipLevelsContent != nullptr )
-			{
-				ppContent = new void*[_MipLevelsCount];
-				cli::pin_ptr<Byte>	Bisou;
-				for ( int MipLevelIndex=0; MipLevelIndex < _MipLevelsCount; MipLevelIndex++ )
-				{
-					Bisou = &_MipLevelsContent[MipLevelIndex]->m_Buffer[0];
-					ppContent[MipLevelIndex] = Bisou;
-				}
-			}
-
-			m_pTexture = new ::Texture2D( *_Device->m_pDevice, _Width, _Height, _ArraySize, *pDescriptor, _MipLevelsCount, ppContent, _Staging, _UAV );
-
-			delete[] ppContent;
-		}
+		Texture2D( Device^ _Device, int _Width, int _Height, int _ArraySize, int _MipLevelsCount, PIXEL_FORMAT _PixelFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _MipLevelsContent );
 
 		~Texture2D()
 		{
@@ -68,14 +70,27 @@ namespace RendererManaged {
 			m_pTexture->UnMap( _MipLevelIndex, _ArrayIndex );
 		}
 
+		// Views
+		View2D^		GetView()				{ return GetView( 0, 0, 0, 0 ); }
+		View2D^		GetView( int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize ) { return gcnew View2D( this, _MipLevelStart, _MipLevelsCount, _ArrayStart, _ArraySize ); }
+		View2D^		GetView( int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize, bool _AsArray ) { return gcnew View2D( this, _MipLevelStart, _MipLevelsCount, _ArrayStart, _ArraySize, _AsArray ); }
+
 		// Uploads the texture to the shader
-		void		Set( int _SlotIndex )			{ m_pTexture->Set( _SlotIndex, true ); }
-		void		SetVS( int _SlotIndex )			{ m_pTexture->Set( _SlotIndex, true ); }
-		void		SetHS( int _SlotIndex )			{ m_pTexture->Set( _SlotIndex, true ); }
-		void		SetDS( int _SlotIndex )			{ m_pTexture->Set( _SlotIndex, true ); }
-		void		SetGS( int _SlotIndex )			{ m_pTexture->Set( _SlotIndex, true ); }
-		void		SetPS( int _SlotIndex )			{ m_pTexture->Set( _SlotIndex, true ); }
-		void		SetCS( int _SlotIndex )			{ m_pTexture->Set( _SlotIndex, true ); }
+		void		Set( int _SlotIndex )	{ Set( _SlotIndex, nullptr ); }
+		void		SetVS( int _SlotIndex )	{ SetVS( _SlotIndex, nullptr ); }
+		void		SetHS( int _SlotIndex )	{ SetHS( _SlotIndex, nullptr ); }
+		void		SetDS( int _SlotIndex )	{ SetDS( _SlotIndex, nullptr ); }
+		void		SetGS( int _SlotIndex )	{ SetGS( _SlotIndex, nullptr ); }
+		void		SetPS( int _SlotIndex )	{ SetPS( _SlotIndex, nullptr ); }
+		void		SetCS( int _SlotIndex )	{ SetCS( _SlotIndex, nullptr ); }
+
+		void		Set( int _SlotIndex, View2D^ _view );
+		void		SetVS( int _SlotIndex, View2D^ _view );
+		void		SetHS( int _SlotIndex, View2D^ _view );
+		void		SetDS( int _SlotIndex, View2D^ _view );
+		void		SetGS( int _SlotIndex, View2D^ _view );
+		void		SetPS( int _SlotIndex, View2D^ _view );
+		void		SetCS( int _SlotIndex, View2D^ _view );
 		void		RemoveFromLastAssignedSlots()	{ m_pTexture->RemoveFromLastAssignedSlots(); }
 
 		// Upload the texture as a UAV for a compute shader

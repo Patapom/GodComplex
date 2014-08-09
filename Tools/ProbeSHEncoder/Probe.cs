@@ -216,7 +216,8 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 				}
 
 //DON'T NORMALIZE	=> 4PI is part of the integral!!!
-				double	Normalizer = 1.0 / (4.0 * Math.PI);
+//				double	Normalizer = 1.0 / (4.0 * Math.PI);
+				double	Normalizer = 1.0;
 				for ( int i=0; i < 9; i++ )
 					SH[i] = new WMath.Vector( (float) (Normalizer * SHR[i]), (float) (Normalizer * SHG[i]), (float) (Normalizer * SHB[i]) );
 
@@ -237,7 +238,8 @@ static readonly int	FILTER_WINDOW_SIZE = 3;	// Our SH order is 3 so...
 						SHCoeffs[i] += P.SHCoeffs[i] * P.SolidAngle;
 
 //DON'T NORMALIZE	=> 4PI is part of the integral!!!
-				double	Normalizer = 1.0 / (4.0 * Math.PI);
+//				double	Normalizer = 1.0 / (4.0 * Math.PI);
+				double	Normalizer = 1.0;
 				for ( int i=0; i < 9; i++ )
 					SH[i] = (float) (Normalizer * SHCoeffs[i]) * WMath.Vector.One;
 
@@ -977,8 +979,9 @@ int	DEBUG_PixelIndex = 0;
 					SHOcclusion[i] += P.SolidAngle * P.SHCoeffs[i];
 			}
 
-			double	Normalizer = 1.0 / (4.0 * Math.PI);
-//DON'T NORMALIZE	=> 4PI is part of the integral!!!
+// DON'T NORMALIZE	=> 4PI is part of the integral!!!
+//			double	Normalizer = 1.0 / (4.0 * Math.PI);
+			double	Normalizer = 1.0;
 			for ( int i=0; i < 9; i++ )
 			{
 				m_StaticSH[i] = new WMath.Vector( (float) (Normalizer * SHR[i]), (float) (Normalizer * SHG[i]), (float) (Normalizer * SHB[i]) );

@@ -65,8 +65,9 @@ void	RendererManaged::Device::SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCI
 	switch ( _BS )
 	{
 	case BLEND_STATE::NOCHANGE: break;
-	case BLEND_STATE::DISABLED:	pBS = m_pDevice->m_pBS_Disabled; break;
-	case BLEND_STATE::ADDITIVE:	pBS = m_pDevice->m_pBS_Additive; break;
+	case BLEND_STATE::DISABLED:		pBS = m_pDevice->m_pBS_Disabled; break;
+	case BLEND_STATE::ALPHA_BLEND:	pBS = m_pDevice->m_pBS_AlphaBlend; break;
+	case BLEND_STATE::ADDITIVE:		pBS = m_pDevice->m_pBS_Additive; break;
 	default: throw gcnew Exception( "Unsupported blend state!" );
 	}
 
@@ -76,6 +77,22 @@ void	RendererManaged::Device::SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCI
 void	RendererManaged::Device::SetRenderTarget( Texture2D^ _RenderTarget, Texture2D^ _DepthStencilTarget )
 {
 	m_pDevice->SetRenderTarget( *_RenderTarget->m_pTexture, _DepthStencilTarget != nullptr ? _DepthStencilTarget->m_pTexture : NULL );
+}
+
+void	RendererManaged::Device::SetRenderTargets( cli::array<View2D^>^ _RenderTargetViews, Texture2D^ _DepthStencilTarget )
+{
+	if ( _RenderTargetViews == nullptr || _RenderTargetViews->Length == 0 )
+		throw gcnew Exception( "Invalid render targets array!" );
+
+	int	Width = _RenderTargetViews[0]->m_Owner->Width;
+	int	Height = _RenderTargetViews[0]->m_Owner->Height;
+	::ID3D11RenderTargetView**	ppRenderTargets = new ::ID3D11RenderTargetView*[_RenderTargetViews->Length];
+	for ( int i=0; i < _RenderTargetViews->Length; i++ )
+		ppRenderTargets[i] = _RenderTargetViews[i]->RTV;
+
+	m_pDevice->SetRenderTargets( Width, Height, _RenderTargetViews->Length, ppRenderTargets, _DepthStencilTarget != nullptr ? _DepthStencilTarget->m_pTexture->GetDSV() : NULL );
+
+	delete[] ppRenderTargets;
 }
 
 void	RendererManaged::Device::RenderFullscreenQuad( Shader^ _Shader )
