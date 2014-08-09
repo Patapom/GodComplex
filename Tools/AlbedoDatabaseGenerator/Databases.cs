@@ -53,6 +53,7 @@ namespace AlbedoDatabaseGenerator
 				PAPER_CANVAS,
 				PAINT,
 				PLASTIC,
+				METAL,
 			}
 
 			[Flags]
@@ -119,9 +120,10 @@ namespace AlbedoDatabaseGenerator
 				WET = 1,
 				DUSTY = 2,
 				FROSTY = 4,
-				VARNISHED = 8,
-				OLD = 16,
-				NEW = 32,
+				RUSTY = 8,
+				VARNISHED = 16,
+				OLD = 32,
+				NEW = 64,
 			}
 
 			#endregion
@@ -133,7 +135,10 @@ namespace AlbedoDatabaseGenerator
 			private string				m_RelativePath = null;
 			private Manifest			m_Manifest = null;
 
+			private FileInfo			m_ThumbnailFileName = null;
 			private Bitmap				m_Thumbnail = null;
+
+			private FileInfo			m_OverviewFileName = null;
 			private Bitmap				m_OverviewImage = null;
 
 			// User-fed data
@@ -174,13 +179,8 @@ namespace AlbedoDatabaseGenerator
 						return;
 
 					// Attempt to reload thumbnail & overview image
-					FileInfo	ThumbnailFileName = new FileInfo( m_Manifest.GetFullPath( Path.GetFileNameWithoutExtension( m_Manifest.m_CalibratedTextureFileName ) + ".jpg" ) );
-					if ( ThumbnailFileName.Exists )
-						m_Thumbnail = Bitmap.FromFile( ThumbnailFileName.FullName ) as Bitmap;
-
-					FileInfo	OverviewFileName = OverviewImageFileName;
-					if ( OverviewFileName != null && OverviewFileName.Exists )
-						m_OverviewImage = Bitmap.FromFile( OverviewFileName.FullName ) as Bitmap;
+					m_ThumbnailFileName = new FileInfo( m_Manifest.GetFullPath( Path.GetFileNameWithoutExtension( m_Manifest.m_CalibratedTextureFileName ) + ".jpg" ) );
+					m_OverviewFileName = OverviewImageFileName;
 				}
 			}
 
@@ -196,7 +196,7 @@ namespace AlbedoDatabaseGenerator
 
 			FileInfo					ThumbnailFileName
 			{
-				get { return new FileInfo( m_Manifest.GetFullPath( Path.GetFileNameWithoutExtension( m_Manifest.m_CalibratedTextureFileName ) + ".jpg" ) ); }
+				get { return m_ThumbnailFileName; }
 			}
 
  			public FileInfo				OverviewImageFileName
@@ -216,8 +216,40 @@ namespace AlbedoDatabaseGenerator
 				}
 			}
 
-			public Bitmap				Thumbnail			{ get { return m_Thumbnail; } }
-			public Bitmap				OverviewImage		{ get { return m_OverviewImage; } }
+			public Bitmap				Thumbnail
+			{
+				get
+				{
+					if ( m_Thumbnail == null && m_ThumbnailFileName.Exists )
+						try
+						{
+							m_Thumbnail = Bitmap.FromFile( m_ThumbnailFileName.FullName ) as Bitmap;
+						}
+						catch ( Exception )
+						{
+							// Oops!
+						}
+
+					return m_Thumbnail;
+				}
+			}
+			public Bitmap				OverviewImage
+			{
+				get
+				{
+					if ( m_OverviewImage == null && m_OverviewFileName != null && m_OverviewFileName.Exists )
+						try
+						{
+							m_OverviewImage = Bitmap.FromFile( m_OverviewFileName.FullName ) as Bitmap;
+						}
+						catch ( Exception )
+						{
+							// Oops!
+						}
+
+					return m_OverviewImage;
+				}
+			}
 
 			#endregion
 
@@ -293,9 +325,9 @@ namespace AlbedoDatabaseGenerator
 				Indent();
 				JSON += L( "RelativePath : \"" + Path.GetDirectoryName( m_RelativePath ).Replace( '\\', '/' ) + "\"," );
 				JSON += L( "FriendlyName : \"" + m_FriendlyName + "\"," );
-				JSON += L( "Description : \"" + m_Description + "\"," );
+				JSON += L( "Description : \"" + FormatDescription() + "\"," );
 				if ( m_OverviewImageRelativePath != null )
-					JSON += L( "OverviewImagePath: \"" + m_OverviewImageRelativePath + "\"," );
+					JSON += L( "OverviewImagePath: \"" + m_OverviewImageRelativePath.Replace( '\\', '/' ) + "\"," );
 
 				string	Tags = "";
 				if ( m_TagType != TAGS_TYPE.NONE )
@@ -405,6 +437,15 @@ namespace AlbedoDatabaseGenerator
 				return JSON;
 			}
 
+			private string	FormatDescription()
+			{
+				string	Result = m_Description;
+				Result = Result.Replace( "\"", "&quot;" );
+				Result = Result.Replace( "\r", "" );
+				Result = Result.Replace( "\n", "<br/>" );
+				return Result;
+			}
+
 			public unsafe void		GenerateThumbnail( bool _ForceRegenerate )
 			{
 				if ( m_Thumbnail != null && !_ForceRegenerate )
@@ -460,6 +501,8 @@ namespace AlbedoDatabaseGenerator
 				// We have a new thumbnail!
 				m_Thumbnail = Target;
 				m_Thumbnail.Save( FileName.FullName, ImageFormat.Jpeg );
+				m_Thumbnail.Dispose();
+				m_Thumbnail = null;
 			}
 
 			#region IDisposable Members

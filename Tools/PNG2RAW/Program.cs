@@ -19,6 +19,8 @@ namespace PNG2RAW
 // 
 //			Convert( args[0], args[1] );
 
+			SaveLinearGradient( 512, new FileInfo( "./LinearGradient.png" ) );
+
 #if SAVE_RAW
 			string[]	FileNames = new string[]
 			{
@@ -67,6 +69,31 @@ namespace PNG2RAW
 			ConvertPOM( new FileInfo( "Resources/Images/Normal.png" ), new FileInfo( "Resources/Images/Normal.POM" ), false, true );
 
 #endif
+		}
+
+		static unsafe void	SaveLinearGradient( int _Width, FileInfo _FileName )
+		{
+			using ( Bitmap B = new Bitmap( _Width, 2, PixelFormat.Format32bppArgb ) )
+			{
+				int	W = B.Width;
+				int	H = B.Height;
+				BitmapData	LockedBitmap = B.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
+				for ( int Y=0; Y < H; Y++ )
+				{
+					byte*	pScanline = (byte*) LockedBitmap.Scan0 + Y * LockedBitmap.Stride;
+					for ( int X=0; X < W; X++ )
+					{
+						byte	C = (byte) (255 * X / (W-1));
+						*pScanline++ = C;
+						*pScanline++ = C;
+						*pScanline++ = C;
+						*pScanline++ = 0xFF;
+					}
+				}
+				B.UnlockBits( LockedBitmap );
+
+				B.Save( _FileName.FullName );
+			}
 		}
 
 		static void			ConvertPOM( DirectoryInfo _SourceDir, DirectoryInfo _TargetDir, string _sRGBPattern, bool _GenerateMipMaps )

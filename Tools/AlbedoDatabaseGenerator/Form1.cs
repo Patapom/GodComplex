@@ -262,7 +262,7 @@ namespace AlbedoDatabaseGenerator
 		private void buttonSaveDatabase_Click( object sender, EventArgs e )
 		{
 			string	OldFileName = GetRegKey( "DatabaseFileName", Path.Combine( m_ApplicationPath, "Database.rdb" ) );
-			saveFileDialogDatabase.InitialDirectory = Path.GetFullPath( OldFileName );
+			saveFileDialogDatabase.InitialDirectory = Path.GetDirectoryName( OldFileName );
 			saveFileDialogDatabase.FileName = Path.GetFileName( OldFileName );
 			if ( saveFileDialogDatabase.ShowDialog( this ) != DialogResult.OK )
 				return;
@@ -329,8 +329,11 @@ namespace AlbedoDatabaseGenerator
 
 		private void buttonLoadOverviewImage_Click( object sender, EventArgs e )
 		{
-			string	OldFileName = GetRegKey( "LastOverviewImageFileName", Path.Combine( m_ApplicationPath, "Stuff.jpg" ) );
-			openFileDialogOverviewImage.InitialDirectory = Path.GetFullPath( OldFileName );
+//Prefer using current entry's path
+// 			string	OldFileName = GetRegKey( "LastOverviewImageFileName", Path.Combine( m_ApplicationPath, "Stuff.jpg" ) );
+			string	OldFileName = m_SelectedEntry.FullPath.FullName;
+
+			openFileDialogOverviewImage.InitialDirectory = Path.GetDirectoryName( OldFileName );
 			openFileDialogOverviewImage.FileName = Path.GetFileName( OldFileName );
 			if ( openFileDialogOverviewImage.ShowDialog( this ) != DialogResult.OK )
 				return;
@@ -492,6 +495,7 @@ namespace AlbedoDatabaseGenerator
 		checkBoxTagPaperCanvas,		 // PAPER_CANVAS,
 		checkBoxTagPaint,			 // PAINT,
 		checkBoxTagPlastic,			 // PLASTIC,
+		checkBoxTagMetal,			 // METAL,
 			}; } }
 			CheckBox[]	c1 { get { return new CheckBox[] {
 		checkBoxTagBlack,			 // BLACK,
@@ -535,9 +539,10 @@ namespace AlbedoDatabaseGenerator
 		checkBoxTagWet,				 // WET = 1,
 		checkBoxTagDusty,			 // DUSTY = 2,
 		checkBoxTagFrosty,			 // FROSTY = 4,
-		checkBoxTagVarnished,		 // VARNISHED = 8,
-		checkBoxTagOld,				 // OLD = 16,
-		checkBoxTagNew,				 // NEW = 32,
+		checkBoxTagRusty,			 // RUSTY = 8,
+		checkBoxTagVarnished,		 // VARNISHED = 16,
+		checkBoxTagOld,				 // OLD = 32,
+		checkBoxTagNew,				 // NEW = 64,
 			}; } }
 
 		private void checkBoxTagType_CheckedChanged( object sender, EventArgs e )
