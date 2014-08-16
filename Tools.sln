@@ -90,6 +90,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mie2QuantileFunction", "Too
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProbeSHEncoderGPU", "Tools\ProbeSHEncoderGPU\ProbeSHEncoderGPU.csproj", "{06210761-A819-4969-BACA-96E34DFEF164}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OfflineCloudRenderer2", "Tools\OfflineCloudRenderer2\OfflineCloudRenderer2.csproj", "{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug DirectX10|Any CPU = Debug DirectX10|Any CPU
@@ -1436,7 +1438,6 @@ Global
 		{06210761-A819-4969-BACA-96E34DFEF164}.Debug|x64.ActiveCfg = Debug|x64
 		{06210761-A819-4969-BACA-96E34DFEF164}.Debug|x64.Build.0 = Debug|x64
 		{06210761-A819-4969-BACA-96E34DFEF164}.Debug|x86.ActiveCfg = Debug|x86
-		{06210761-A819-4969-BACA-96E34DFEF164}.Debug|x86.Build.0 = Debug|x86
 		{06210761-A819-4969-BACA-96E34DFEF164}.Profile|Any CPU.ActiveCfg = Debug DirectX10|Any CPU
 		{06210761-A819-4969-BACA-96E34DFEF164}.Profile|Any CPU.Build.0 = Debug DirectX10|Any CPU
 		{06210761-A819-4969-BACA-96E34DFEF164}.Profile|Mixed Platforms.ActiveCfg = Debug DirectX10|Any CPU
@@ -1453,6 +1454,34 @@ Global
 		{06210761-A819-4969-BACA-96E34DFEF164}.Release|x64.Build.0 = Release|x64
 		{06210761-A819-4969-BACA-96E34DFEF164}.Release|x86.ActiveCfg = Release|x86
 		{06210761-A819-4969-BACA-96E34DFEF164}.Release|x86.Build.0 = Release|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Debug DirectX10|Any CPU.ActiveCfg = Debug DirectX10|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug DirectX10|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Debug DirectX10|Mixed Platforms.Build.0 = Debug DirectX10|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Debug DirectX10|Win32.ActiveCfg = Debug DirectX10|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Debug DirectX10|x64.ActiveCfg = Debug DirectX10|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Debug DirectX10|x86.ActiveCfg = Debug DirectX10|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Debug DirectX10|x86.Build.0 = Debug DirectX10|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Debug|Win32.ActiveCfg = Debug|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Debug|x64.ActiveCfg = Debug|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Debug|x86.ActiveCfg = Debug|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Debug|x86.Build.0 = Debug|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Profile|Any CPU.ActiveCfg = Debug DirectX10|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Profile|Mixed Platforms.ActiveCfg = Debug DirectX10|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Profile|Mixed Platforms.Build.0 = Debug DirectX10|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Profile|Win32.ActiveCfg = Debug DirectX10|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Profile|x64.ActiveCfg = Debug DirectX10|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Profile|x86.ActiveCfg = Debug DirectX10|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Profile|x86.Build.0 = Debug DirectX10|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Release|Any CPU.ActiveCfg = Release|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Release|Mixed Platforms.Build.0 = Release|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Release|Win32.ActiveCfg = Release|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Release|x64.ActiveCfg = Release|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Release|x86.ActiveCfg = Release|x86
+		{3F99E39D-4FBD-4EEA-8CBC-61E93AE6A06D}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
