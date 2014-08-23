@@ -14,8 +14,8 @@ cbuffer	cbRender : register(b8)
 	uint		_LayerIndex;				// Index of the layer we splat photons to, most significant bit is set to indicate direction (1 is bottom to top, is top to bottom)
 }
 
-StructuredBuffer<Photon>	_Photons_read : register( t8 );					// Read only version
-StructuredBuffer<uint>		_PhotonLayerIndices_Read : register( t9 );		// Read only version
+StructuredBuffer<Photon>	_Photons_read : register( t0 );					// Read only version
+StructuredBuffer<uint>		_PhotonLayerIndices_Read : register( t1 );		// Read only version
 
 struct VS_IN
 {

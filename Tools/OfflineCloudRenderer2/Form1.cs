@@ -89,7 +89,7 @@ namespace OfflineCloudRenderer2
 		public struct	SB_Photon
 		{
 			public float2		Position;				// Position on the layer
-			public uint			Data;					// Packed Phi, Theta on first 2 bytes, layer index on 3rd byte, 4th byte is unused
+			public uint			Direction;				// Packed Phi, Theta each on 2 UINT16
 			public uint			RGBE;					// RGBE-encoded color
 		}
 
@@ -496,15 +496,15 @@ namespace OfflineCloudRenderer2
 		/// <param name="_Direction"></param>
 		/// <param name="_LayerIndex"></param>
 		/// <returns></returns>
-		private uint	PackPhotonDirectionAndLayerIndex( float3 _Direction, int _LayerIndex )
+		private uint	PackPhotonDirection( float3 _Direction )
 		{
-			double	Phi = (Math.PI + Math.Atan2( _Direction.x, _Direction.z )) % (2.0 * Math.PI);
-			byte	nPhi = (byte) (255.0f * Phi / (2.0 * Math.PI));
+			double	Phi = Math.PI + Math.Atan2( _Direction.x, _Direction.z );
+			ushort	nPhi = (ushort) (65535.0f * Phi / (2.0 * Math.PI));
 
 			double	Theta = Math.Acos( _Direction.y );
-			byte	nTheta = (byte) (255.0f * Theta / Math.PI);
+			ushort	nTheta = (ushort) (65535.0f * Theta / Math.PI);
 
-			uint	Result = (uint) (nPhi | ((nTheta | (_LayerIndex << 8)) << 8));
+			uint	Result = (uint) (nPhi | (nTheta << 16));
 			return Result;
 		}
 
@@ -512,7 +512,7 @@ namespace OfflineCloudRenderer2
 		{
 			float	Max = Math.Max( Math.Max( _Color.x, _Color.y ), _Color.z );
 			float	Exponent = (float) Math.Ceiling( Math.Log( Max ) / Math.Log( 2.0 ) );
-			_Color /= (float) Math.Pow( 2.0f, Exponent );	// Normalize components
+			_Color *= (float) Math.Pow( 2.0f, -Exponent );	// Normalize components
 
 			byte	R = (byte) (255.0f * _Color.x);
 			byte	G = (byte) (255.0f * _Color.y);
@@ -528,7 +528,7 @@ namespace OfflineCloudRenderer2
 			// 1] Build initial photon positions and directions
 			float3	SunDirection = new float3( 0, 1, 0 ).Normalized;
 
-			uint	InitialData = PackPhotonDirectionAndLayerIndex( -SunDirection, 0 );
+			uint	InitialDirection = PackPhotonDirection( -SunDirection );
 			uint	InitialColor = EncodeRGBE( new float3( 1.0f, 1.0f, 1.0f ) );
 
 			int		PhotonsPerSize = (int) Math.Floor( Math.Sqrt( PHOTONS_COUNT ) );
@@ -539,11 +539,11 @@ namespace OfflineCloudRenderer2
 				int	Z = PhotonIndex / PhotonsPerSize;
 				int	X = PhotonIndex - Z * PhotonsPerSize;
 
-				float	x = X + (float) SimpleRNG.GetUniform();
-				float	z = Z + (float) SimpleRNG.GetUniform();
+				float	x = ((X + (float) SimpleRNG.GetUniform()) / PhotonsPerSize - 0.5f) * CLOUDSCAPE_SIZE;
+				float	z = ((Z + (float) SimpleRNG.GetUniform()) / PhotonsPerSize - 0.5f) * CLOUDSCAPE_SIZE;
 
 				m_SB_Photons.m[PhotonIndex].Position.Set( x, z );
-				m_SB_Photons.m[PhotonIndex].Data = InitialData;
+				m_SB_Photons.m[PhotonIndex].Direction = InitialDirection;
 				m_SB_Photons.m[PhotonIndex].RGBE = InitialColor;
 			}
 			m_SB_Photons.Write();
@@ -564,16 +564,7 @@ namespace OfflineCloudRenderer2
 			//////////////////////////////////////////////////////////////////////////
 			// 3] Prepare buffers & states
 
-			// 3.1) Prepare buffers
-			m_SB_Photons.SetOutput( 0 );
-			m_SB_Photons.SetInput( 8 );				// RO version for splatting
-			m_SB_PhotonLayerIndices.SetOutput( 1 );
-			m_SB_PhotonLayerIndices.SetInput( 9 );	// RO version for splatting
-			m_SB_ProcessedPhotonsCounter.SetOutput( 2 );
-
-			m_SB_Random.SetInput( 0 );
-			m_SB_PhaseQuantile.SetInput( 1 );
-
+			// 3.1) Prepare density field
 			m_Tex_DensityField.SetCS( 2 );
 
 			// 3.2) Constant buffer for photon shooting
@@ -586,7 +577,7 @@ namespace OfflineCloudRenderer2
 			// 3.3) Prepare photon splatting buffer & states
 			m_CB_SplatPhoton.m.CloudScapeSize.Set( CLOUDSCAPE_SIZE, CLOUDSCAPE_HEIGHT, CLOUDSCAPE_SIZE );
 			m_CB_SplatPhoton.m.SplatSize = 2.0f * (2.0f / m_Tex_PhotonLayers.Width);
- 			m_CB_SplatPhoton.m.SplatIntensity = 1000.0f / PHOTONS_COUNT;
+ 			m_CB_SplatPhoton.m.SplatIntensity = 1.0f;// 1000.0f / PHOTONS_COUNT;
 
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ALPHA_BLEND );	// Splatting is additive
 			m_Tex_PhotonLayers.RemoveFromLastAssignedSlots();
@@ -595,6 +586,9 @@ namespace OfflineCloudRenderer2
 			//////////////////////////////////////////////////////////////////////////
 			// 4] Splat initial photons to the top layer
 			m_PS_PhotonSplatter.Use();
+
+			m_SB_Photons.SetInput( 0 );				// RO version for splatting
+			m_SB_PhotonLayerIndices.SetInput( 1 );	// RO version for splatting
 
 			m_CB_SplatPhoton.m.LayerIndex = 0U;
 			m_CB_SplatPhoton.UpdateData();
@@ -619,11 +613,22 @@ namespace OfflineCloudRenderer2
 					m_CS_PhotonShooter.Use();
 
 					m_CB_PhotonShooterInput.m.LayerIndex = (uint) LayerIndex;
-					m_CB_PhotonShooterInput.UpdateData();
+
+					m_SB_Photons.RemoveFromLastAssignedSlots();
+					m_SB_PhotonLayerIndices.RemoveFromLastAssignedSlots();
+
+					m_SB_Photons.SetOutput( 0 );
+					m_SB_PhotonLayerIndices.SetOutput( 1 );
+					m_SB_ProcessedPhotonsCounter.SetOutput( 2 );
+
+					m_SB_Random.SetInput( 0 );
+					m_SB_PhaseQuantile.SetInput( 1 );
 
 					for ( int BatchIndex=0; BatchIndex < BatchesCount; BatchIndex++ )
 					{
 						m_CB_PhotonShooterInput.m.BatchIndex = (uint) BatchIndex;
+						m_CB_PhotonShooterInput.UpdateData();
+
 						m_CS_PhotonShooter.Dispatch( 1, 1, 1 );
 
 						m_Device.Present( true );
@@ -633,6 +638,9 @@ namespace OfflineCloudRenderer2
 
 					// 5.1.2) Splat the photons that got through to the 2D texture array
 					m_PS_PhotonSplatter.Use();
+
+					m_SB_Photons.SetInput( 0 );				// RO version for splatting
+					m_SB_PhotonLayerIndices.SetInput( 1 );	// RO version for splatting
 
 					m_CB_SplatPhoton.m.LayerIndex = (uint) (LayerIndex+1);
 					m_CB_SplatPhoton.UpdateData();
@@ -648,7 +656,7 @@ namespace OfflineCloudRenderer2
 				// ================================================================================
 				// 5.2] Process every layers from bottom to top
 				BounceIndex++;
-				if ( BounceIndex > BOUNCES_COUNT )
+				if ( BounceIndex >= BOUNCES_COUNT )
 					break;
 
 				m_SB_ProcessedPhotonsCounter.m[0] = 0;
@@ -660,11 +668,22 @@ namespace OfflineCloudRenderer2
 					m_CS_PhotonShooter.Use();
 
 					m_CB_PhotonShooterInput.m.LayerIndex = (uint) LayerIndex | 0x80000000U;	// <= MSB indicates photons are going up
-					m_CB_PhotonShooterInput.UpdateData();
+
+					m_SB_Photons.RemoveFromLastAssignedSlots();
+					m_SB_PhotonLayerIndices.RemoveFromLastAssignedSlots();
+
+					m_SB_Photons.SetOutput( 0 );
+					m_SB_PhotonLayerIndices.SetOutput( 1 );
+					m_SB_ProcessedPhotonsCounter.SetOutput( 2 );
+
+					m_SB_Random.SetInput( 0 );
+					m_SB_PhaseQuantile.SetInput( 1 );
 
 					for ( int BatchIndex=0; BatchIndex < BatchesCount; BatchIndex++ )
 					{
 						m_CB_PhotonShooterInput.m.BatchIndex = (uint) BatchIndex;
+						m_CB_PhotonShooterInput.UpdateData();
+
 						m_CS_PhotonShooter.Dispatch( 1, 1, 1 );
 
 						m_Device.Present( true );
@@ -674,6 +693,9 @@ namespace OfflineCloudRenderer2
 
 					// 5.2.2) Splat the photons that got through to the 2D texture array
 					m_PS_PhotonSplatter.Use();
+
+					m_SB_Photons.SetInput( 0 );				// RO version for splatting
+					m_SB_PhotonLayerIndices.SetInput( 1 );	// RO version for splatting
 
 					m_CB_SplatPhoton.m.LayerIndex = (uint) (LayerIndex-1) | 0x80000000U;	// <= MSB indicates photons are going up
 					m_CB_SplatPhoton.UpdateData();
