@@ -56,10 +56,8 @@ namespace OfflineCloudRenderer2
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		public struct	CB_Render
 		{
-			public float4		TargetDimensions;	// XY=Target dimensions, ZW=1/XY
-			public float4		Debug;
-			public float		FluxMultiplier;
- 			public uint			SplatType;
+			public float3		CloudScapeSize;			// Size of the cloud scape covered by the 3D texture of densities
+			public uint			LayersCount;			// Amount of layers
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -104,8 +102,8 @@ namespace OfflineCloudRenderer2
 
 		private Device						m_Device = new Device();
 
-		private ComputeShader				m_CS = null;
-		private Shader						m_PS = null;
+// 		private ComputeShader				m_CS = null;
+// 		private Shader						m_PS = null;
 		private ConstantBuffer<CB_Camera>	m_CB_Camera = null;
 		private ConstantBuffer<CB_Render>	m_CB_Render = null;
 
@@ -132,6 +130,7 @@ namespace OfflineCloudRenderer2
 
 		// Photons Renderer
 		private Shader						m_PS_RenderLayer = null;
+		private Primitive					m_Prim_Quad = null;
 		private Primitive					m_Prim_Cube = null;
 
 // 		// Vectors Renderer
@@ -165,8 +164,8 @@ namespace OfflineCloudRenderer2
 			m_Device.Init( viewportPanel.Handle, false, true );
 			m_Device.Clear( m_Device.DefaultTarget, new RendererManaged.float4( Color.SkyBlue, 1 ) );
 
-			Reg( m_CS = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/Test/TestCompute.hlsl" ) ), "CS", null ) );
-			Reg( m_PS = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/DisplayDistanceField.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null ) );
+// 			Reg( m_CS = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/Test/TestCompute.hlsl" ) ), "CS", null ) );
+// 			Reg( m_PS = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/DisplayDistanceField.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null ) );
 			Reg( m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 0 ) );
 			Reg( m_CB_Render = new ConstantBuffer<CB_Render>( m_Device, 8 ) );
 
@@ -204,8 +203,10 @@ namespace OfflineCloudRenderer2
 			//////////////////////////////////////////////////////////////////////////
 			// Photons Renderer
 			Reg( m_PS_RenderLayer = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/LayeredRenderer/DisplayPhotonLayer.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null ) );
-			BuildCube();
 			Reg( m_PS_RenderWorldCube = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/DisplayWorldCube.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null ) );
+
+			BuildQuad();
+			BuildCube();
 
 
 // 			//////////////////////////////////////////////////////////////////////////
@@ -246,7 +247,7 @@ namespace OfflineCloudRenderer2
 					for ( int Y=0; Y < DENSITY_FIELD_HEIGHT; Y++ )
 						for ( int Z=0; Z < DENSITY_FIELD_SIZE; Z++ )
 						{
-							W.Write( (byte) 0 );
+							W.Write( (byte) 0 );	// Empty for now: photons should go straight through!
 						}
 
 			Reg( m_Tex_DensityField = new Texture3D( m_Device, DENSITY_FIELD_SIZE, DENSITY_FIELD_HEIGHT, DENSITY_FIELD_SIZE, 1, PIXEL_FORMAT.R8_UNORM, false, false, new PixelsBuffer[] { DensityField } ) );
@@ -277,44 +278,44 @@ namespace OfflineCloudRenderer2
 			m_SB_Random.Write();
 		}
 
-		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		struct Vertex
-		{
-			public float3	P;
-			public float3	UVW;
-		}
+// 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+// 		struct Vertex
+// 		{
+// 			public float3	P;
+// 			public float3	UVW;
+// 		}
 		private void	BuildCube()
 		{
-			Vertex[]	Vertices = new Vertex[4*6];
-			Vertices[4*0+0] = new Vertex() { P = new float3( +1, +1, +1 ), UVW = new float3( 0, 0, 0 ) };	// +X
-			Vertices[4*0+1] = new Vertex() { P = new float3( +1, -1, +1 ), UVW = new float3( 0, 1, 0 ) };
-			Vertices[4*0+2] = new Vertex() { P = new float3( +1, -1, -1 ), UVW = new float3( 1, 1, 0 ) };
-			Vertices[4*0+3] = new Vertex() { P = new float3( +1, +1, -1 ), UVW = new float3( 1, 0, 0 ) };
+			VertexP3N3[]	Vertices = new VertexP3N3[4*6];
+			Vertices[4*0+0] = new VertexP3N3() { P = new float3( +1, +1, +1 ), N = new float3( 0, 0, 0 ) };	// +X
+			Vertices[4*0+1] = new VertexP3N3() { P = new float3( +1, -1, +1 ), N = new float3( 0, 1, 0 ) };
+			Vertices[4*0+2] = new VertexP3N3() { P = new float3( +1, -1, -1 ), N = new float3( 1, 1, 0 ) };
+			Vertices[4*0+3] = new VertexP3N3() { P = new float3( +1, +1, -1 ), N = new float3( 1, 0, 0 ) };
 
-			Vertices[4*1+0] = new Vertex() { P = new float3( -1, +1, -1 ), UVW = new float3( 0, 0, 1 ) };	// -X
-			Vertices[4*1+1] = new Vertex() { P = new float3( -1, -1, -1 ), UVW = new float3( 0, 1, 1 ) };
-			Vertices[4*1+2] = new Vertex() { P = new float3( -1, -1, +1 ), UVW = new float3( 1, 1, 1 ) };
-			Vertices[4*1+3] = new Vertex() { P = new float3( -1, +1, +1 ), UVW = new float3( 1, 0, 1 ) };
+			Vertices[4*1+0] = new VertexP3N3() { P = new float3( -1, +1, -1 ), N = new float3( 0, 0, 1 ) };	// -X
+			Vertices[4*1+1] = new VertexP3N3() { P = new float3( -1, -1, -1 ), N = new float3( 0, 1, 1 ) };
+			Vertices[4*1+2] = new VertexP3N3() { P = new float3( -1, -1, +1 ), N = new float3( 1, 1, 1 ) };
+			Vertices[4*1+3] = new VertexP3N3() { P = new float3( -1, +1, +1 ), N = new float3( 1, 0, 1 ) };
 
-			Vertices[4*2+0] = new Vertex() { P = new float3( -1, +1, -1 ), UVW = new float3( 0, 0, 2 ) };	// +Y
-			Vertices[4*2+1] = new Vertex() { P = new float3( -1, +1, +1 ), UVW = new float3( 0, 1, 2 ) };
-			Vertices[4*2+2] = new Vertex() { P = new float3( +1, +1, +1 ), UVW = new float3( 1, 1, 2 ) };
-			Vertices[4*2+3] = new Vertex() { P = new float3( +1, +1, -1 ), UVW = new float3( 1, 0, 2 ) };
+			Vertices[4*2+0] = new VertexP3N3() { P = new float3( -1, +1, -1 ), N = new float3( 0, 0, 2 ) };	// +Y
+			Vertices[4*2+1] = new VertexP3N3() { P = new float3( -1, +1, +1 ), N = new float3( 0, 1, 2 ) };
+			Vertices[4*2+2] = new VertexP3N3() { P = new float3( +1, +1, +1 ), N = new float3( 1, 1, 2 ) };
+			Vertices[4*2+3] = new VertexP3N3() { P = new float3( +1, +1, -1 ), N = new float3( 1, 0, 2 ) };
 
-			Vertices[4*3+0] = new Vertex() { P = new float3( -1, -1, +1 ), UVW = new float3( 0, 0, 3 ) };	// -Y
-			Vertices[4*3+1] = new Vertex() { P = new float3( -1, -1, -1 ), UVW = new float3( 0, 1, 3 ) };
-			Vertices[4*3+2] = new Vertex() { P = new float3( +1, -1, -1 ), UVW = new float3( 1, 1, 3 ) };
-			Vertices[4*3+3] = new Vertex() { P = new float3( +1, -1, +1 ), UVW = new float3( 1, 0, 3 ) };
+			Vertices[4*3+0] = new VertexP3N3() { P = new float3( -1, -1, +1 ), N = new float3( 0, 0, 3 ) };	// -Y
+			Vertices[4*3+1] = new VertexP3N3() { P = new float3( -1, -1, -1 ), N = new float3( 0, 1, 3 ) };
+			Vertices[4*3+2] = new VertexP3N3() { P = new float3( +1, -1, -1 ), N = new float3( 1, 1, 3 ) };
+			Vertices[4*3+3] = new VertexP3N3() { P = new float3( +1, -1, +1 ), N = new float3( 1, 0, 3 ) };
 
-			Vertices[4*4+0] = new Vertex() { P = new float3( -1, +1, +1 ), UVW = new float3( 0, 0, 4 ) };	// +Z
-			Vertices[4*4+1] = new Vertex() { P = new float3( -1, -1, +1 ), UVW = new float3( 0, 1, 4 ) };
-			Vertices[4*4+2] = new Vertex() { P = new float3( +1, -1, +1 ), UVW = new float3( 1, 1, 4 ) };
-			Vertices[4*4+3] = new Vertex() { P = new float3( +1, +1, +1 ), UVW = new float3( 1, 0, 4 ) };
+			Vertices[4*4+0] = new VertexP3N3() { P = new float3( -1, +1, +1 ), N = new float3( 0, 0, 4 ) };	// +Z
+			Vertices[4*4+1] = new VertexP3N3() { P = new float3( -1, -1, +1 ), N = new float3( 0, 1, 4 ) };
+			Vertices[4*4+2] = new VertexP3N3() { P = new float3( +1, -1, +1 ), N = new float3( 1, 1, 4 ) };
+			Vertices[4*4+3] = new VertexP3N3() { P = new float3( +1, +1, +1 ), N = new float3( 1, 0, 4 ) };
 
-			Vertices[4*5+0] = new Vertex() { P = new float3( +1, +1, -1 ), UVW = new float3( 0, 0, 5 ) };	// -Z
-			Vertices[4*5+1] = new Vertex() { P = new float3( +1, -1, -1 ), UVW = new float3( 0, 1, 5 ) };
-			Vertices[4*5+2] = new Vertex() { P = new float3( -1, -1, -1 ), UVW = new float3( 1, 1, 5 ) };
-			Vertices[4*5+3] = new Vertex() { P = new float3( -1, +1, -1 ), UVW = new float3( 1, 0, 5 ) };
+			Vertices[4*5+0] = new VertexP3N3() { P = new float3( +1, +1, -1 ), N = new float3( 0, 0, 5 ) };	// -Z
+			Vertices[4*5+1] = new VertexP3N3() { P = new float3( +1, -1, -1 ), N = new float3( 0, 1, 5 ) };
+			Vertices[4*5+2] = new VertexP3N3() { P = new float3( -1, -1, -1 ), N = new float3( 1, 1, 5 ) };
+			Vertices[4*5+3] = new VertexP3N3() { P = new float3( -1, +1, -1 ), N = new float3( 1, 0, 5 ) };
 
 			UInt32[]	Indices = new UInt32[6*6];
 			for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
@@ -328,19 +329,23 @@ namespace OfflineCloudRenderer2
 				Indices[6*FaceIndex+5] = (uint) (4*FaceIndex+3);
 			}
 
-			ByteBuffer	VerticesBuffer = new ByteBuffer( 4*6* (6*4) );
-			using ( System.IO.BinaryWriter W = VerticesBuffer.OpenStreamWrite() )
-				for ( int VertexIndex=0; VertexIndex < Vertices.Length; VertexIndex++ )
-				{
-					W.Write( Vertices[VertexIndex].P.x );
-					W.Write( Vertices[VertexIndex].P.y );
-					W.Write( Vertices[VertexIndex].P.z );
-					W.Write( Vertices[VertexIndex].UVW.x );
-					W.Write( Vertices[VertexIndex].UVW.y );
-					W.Write( Vertices[VertexIndex].UVW.z );
-				}
+			ByteBuffer	VerticesBuffer = VertexP3N3.FromArray( Vertices );
 
 			Reg( m_Prim_Cube = new Primitive( m_Device, Vertices.Length, VerticesBuffer, Indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3 ) );
+		}
+
+		private void	BuildQuad()
+		{
+			VertexPt4[]	Vertices = new VertexPt4[] {
+				new VertexPt4() { Pt = new float4( -1, +1, 0, 1 ) },
+				new VertexPt4() { Pt = new float4( -1, -1, 0, 1 ) },
+				new VertexPt4() { Pt = new float4( +1, +1, 0, 1 ) },
+				new VertexPt4() { Pt = new float4( +1, -1, 0, 1 ) },
+			};
+
+			ByteBuffer	VerticesBuffer = VertexPt4.FromArray( Vertices );
+
+			Reg( m_Prim_Quad = new Primitive( m_Device, Vertices.Length, VerticesBuffer, null, Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.Pt4 ) );
 		}
 
 		private void	UpdateCameraTransform( float3 _Position, float3 _Target, float3 _Up )
@@ -432,6 +437,20 @@ namespace OfflineCloudRenderer2
 // 				m_Prim_Line.RenderInstanced( m_PS_RenderPhotonVectors, 6*PHOTON_VECTORS_COUNT_PER_FACE );
 // 			}
 
+
+			// Render photon layers
+ 			m_CB_Render.m.CloudScapeSize.Set( CLOUDSCAPE_SIZE, CLOUDSCAPE_HEIGHT, CLOUDSCAPE_SIZE );
+			m_CB_Render.m.LayersCount = LAYERS_COUNT;
+			m_CB_Render.UpdateData();
+
+			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+
+			m_Tex_PhotonLayers.SetPS( 0 );
+
+			m_PS_RenderLayer.Use();
+
+			m_Prim_Quad.RenderInstanced( m_PS_RenderLayer, LAYERS_COUNT+1 );
 
 			// Render the world cube
 			m_PS_RenderWorldCube.Use();
