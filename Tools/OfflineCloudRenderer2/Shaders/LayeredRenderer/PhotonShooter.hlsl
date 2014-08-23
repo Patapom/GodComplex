@@ -32,18 +32,18 @@ static const float	INITIAL_START_EPSILON = 1e-4;
 
 cbuffer	CBInput : register( b8 )
 {
-	uint	_LayerIndex;			// Index of the layer we start shooting photons from
+	uint	_LayerIndex;			// Index of the layer we start shooting photons from, most significant bit is set to indicate direction (1 is bottom to top, is top to bottom)
 	uint	_LayersCount;			// Total amount of layers
 	float	_LayerThickness;		// Thickness of each individual layer (in meters)
 	float	_SigmaScattering;		// Scattering coefficient (in m^-1)
 
-	uint	_MaxScattering;			// Maximum scattering events before discarding the photon
 	float3	_CloudScapeSize;		// Size of the cloud scape covered by the 3D texture of densities
+	uint	_MaxScattering;			// Maximum scattering events before discarding the photon
 
 	uint	_BatchIndex;			// Photon batch index
 }
 
-Texture3D<float>	_TexDensity;	// 3D noise density texture covering the entire cloudscape
+Texture3D<float>	_TexDensity : register( t2 );	// 3D noise density texture covering the entire cloudscape
 
 // Samples the cloud density given a world space position within the cloud scape
 float	SampleDensity( float3 _Position )
@@ -56,17 +56,18 @@ float	SampleDensity( float3 _Position )
 
 void	ShootPhoton( uint _PhotonIndex )
 {
-	uint	PhotonStartOffset = _SourceBucketOffsets[_LayerIndex];
-	uint	PhotonEndOffset = _SourceBucketOffsets[_LayerIndex+1];
-	uint	PhotonsCount = PhotonEndOffset - PhotonStartOffset;
-	if ( _PhotonIndex >= PhotonsCount )
-		return;	// We've already shot all photons!
+	uint	LayerIndex = _PhotonLayerIndices[_PhotonIndex];
+	uint	PhotonDirection = LayerIndex >> 1;
+			LayerIndex &= 0x7FFFFFFU;
 
-	uint	PhotonIndex = PhotonStartOffset + _PhotonIndex;
-	Photon	Pp = _Photons[PhotonIndex];
+	if ( LayerIndex != _LayerIndex || PhotonDirection != _ShootDirection )
+		return;	// Photon is not concerned
 
+	Photon	Pp = _Photons[_PhotonIndex];
 	PhotonUnpacked	P;
-	UnPackPhoton( Pp, P );
+	UnPackPhoton( Pp, P, _LayerThickness );
+
+	float3	Position = float3( P.Position.x, (_LayersCount - _LayerIndex) * _LayerThickness, P.Position.y );
 
 	// Prepare marching through the layer
 	float	MarchedLength = 0.0;
@@ -79,31 +80,28 @@ void	ShootPhoton( uint _PhotonIndex )
 	float	LayerTopAltitude = (_LayersCount-_LayerIndex) * _LayerThickness;
 	float	LayerBottomAltitude = LayerTopAltitude - _LayerThickness;
 
-	bool	Exited = false;
-
 	while ( ScatteringEventsCount < _MaxScattering )
 	{
 		// March one step
-		P.Position += StepSize * P.Direction;
+		Position += StepSize * P.Direction;
 
-		if ( P.Position.y > LayerTopAltitude )
+		if ( Position.y > LayerTopAltitude )
 		{	// Exited through top of layer, compute exact intersection
-			float	t = (LayerTopAltitude - P.Position.y) / (StepSize * P.Direction.y);
-			P.Position += t * StepSize * P.Direction;
-			Exited = true;
+			float	t = (LayerTopAltitude - Position.y) / (StepSize * P.Direction.y);
+			Position += t * StepSize * P.Direction;
+			LayerIndex |= 0x80000000U;	// Change of direction => now going up
 			break;
 		}
-		else if ( P.Position.y < LayerBottomAltitude )
+		else if ( Position.y < LayerBottomAltitude )
 		{	// Exited through bottom of layer, compute exact intersection
-			float	t = (LayerBottomAltitude - P.Position.y) / (StepSize * P.Direction.y);
-			P.Position += t * StepSize * P.Direction;
-			P.LayerIndex++;	// Passed through the layer
-			Exited = true;
+			float	t = (LayerBottomAltitude - Position.y) / (StepSize * P.Direction.y);
+			Position += t * StepSize * P.Direction;
+			LayerIndex++;	// Passed through the layer
 			break;
 		}
 
 		// Sample density
-		float	Density = SampleDensity( P.Position );
+		float	Density = SampleDensity( Position );
 		OpticalDepth += Density * _SigmaScattering;
 
 		// Draw random number and check if we should be scattered
@@ -123,30 +121,21 @@ void	ShootPhoton( uint _PhotonIndex )
 		StepsCount++;
 	}
 
-	if ( !Exited )
-		return;
+	if ( ScatteringEventsCount >= _MaxScattering )
+		return;	// Too many events, discard photons...
 
 	// Write resulting photon
+	P.Position = Position.xz;
+
 	PackPhoton( P, Pp );
 	_Photons[PhotonIndex] = Pp;
 
-	// Update buckets
-	if ( P.LayerIndex == _LayerIndex )
-	{	// Exited through top, update Bottom => Top bucket with that photon index and increase photons offset for next layer
-		uint	NextLayerPhotonsOffset;
-		InterlockedAdd( _BottomUpPhotonBucketOffsets[_LayerIndex+1], 1, NextLayerPhotonsOffset );
-		_BottomUpPhotonBucket[NextLayerPhotonsOffset] = PhotonIndex;
-	}
-	else
-	{	// Exited through bottom, update Top => Down bucket with that photon index and increase counter of photons still in the race to bottom layer
-		uint	ThroughPhotonsCounter;
-		InterlockedAdd( _TopDownPhotonBucketCounter[0], 1, ThroughPhotonsCounter );
-		_TopDownPhotonBucket[ThroughPhotonsCounter] = PhotonIndex;
+	// Update layer index
+	_PhotonLayerIndices[_PhotonIndex] = LayerIndex;
 
-// 		uint	ThroughPhotonsCounter = _TopDownPhotonBucketCounter[0];
-// 		_TopDownPhotonBucket[ThroughPhotonsCounter] = PhotonIndex;
-// 		_TopDownPhotonBucketCounter[0] = ThroughPhotonsCounter+1;
-	}
+	// Increase processed photons count
+	uint	PreviousCount;
+	InterlockedAdd( _ProcessedPhotonsCounter, 1, PreviousCount );
 }
 
 [numthreads( MAX_THREADS, 1, 1 )]

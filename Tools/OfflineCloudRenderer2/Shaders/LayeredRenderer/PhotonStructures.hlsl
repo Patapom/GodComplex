@@ -7,20 +7,15 @@
 struct Photon
 {
 	float2	Position;				// Position on the layer
-	uint	Data;					// Packed Phi, Theta on first 2 bytes, layer index on 3rd byte, 4th byte is unused
+	uint	Direction;				// Packed Phi, Theta on 2 bytes each
 	uint	RGBE;					// RGBE-encoded color
+						// TODO: add stats like scattering events count & marched length?
 };	// Total size: 16 bytes
 
 RWStructuredBuffer<Photon>	_Photons : register( u0 );						// Contains the photons to shoot through layers
 
-StructuredBuffer<uint>		_SourcePhotonBucket : register( t0 );			// Bucket of source photon indices that need shooting
-StructuredBuffer<uint>		_SourceBucketOffsets : register( t1 );			// Array of L+1 offsets (one for each layer) where to find photon indices for the specific layer
-
-RWStructuredBuffer<uint>	_TopDownPhotonBucket : register( u1 );			// Bucket of target photon indices that exited through the bottom of the layer (i.e. that will need to continue being shot through the next layer)
-RWStructuredBuffer<uint>	_TopDownPhotonBucketCounter : register( u2 );	// Simple counter of photons that keep going through layers
-
-RWStructuredBuffer<uint>	_BottomUpPhotonBucket : register( u3 );			// Bucket of target photon indices that exited through the top of the layer (i.e. that will need to continue being shot through the previous layer when we loop back)
-RWStructuredBuffer<uint>	_BottomUpPhotonBucketOffsets : register( u4 );	// Array of L+1 offsets (one for each layer) where to find photon indices for the specific layer
+RWStructuredBuffer<uint>	_PhotonLayerIndices : register( u1 );			// Index of the layer each photon is standing on, most significant bit is set to indicate direction (1 is bottom to top, is top to bottom)
+RWStructuredBuffer<uint>	_ProcessedPhotonsCounter : register( u2 );		// Counter of process photon reset to 0 for each shooting and incremented every time a photon is processed
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -29,7 +24,6 @@ struct PhotonUnpacked
 {
 	float2	Position;
 	float3	Direction;
-	uint	LayerIndex;
 	float3	Color;
 };
 
@@ -38,15 +32,13 @@ void	UnPackPhoton( in Photon _In, out PhotonUnpacked _Out )
 	_Out.Position = _In.Position;
 
 	// Unpack direction & layer index
-	float	Phi = TWOPI * (_In.Data & 0xFF) / 255.0;
-	float	Theta = PI * ((_In.Data >> 8) & 0xFF) / 255.0f;
+	float	Phi = TWOPI * (_In.Data & 0xFFFF) / 65535.0 - PI;
+	float	Theta = PI * ((_In.Data >> 16) & 0xFFFF) / 65535.0f;
 
 	float2	SCTheta, SCPhi;
 	sincos( Theta, SCTheta.x, SCTheta.y );
 	sincos( Phi, SCPhi.x, SCPhi.y );
 	_Out.Direction = float3( SCTheta.x * SCPhi.x, SCTheta.y, SCTheta.x * SCPhi.y );
-
-	_Out.LayerIndex = uint((_In.Data >> 16) & 0xFF);
 
 	// Unpack color
 	_Out.Color = float3( (_In.RGBE & 0xFF) / 255.0, ((_In.RGBE >> 8) & 0xFF) / 255.0, ((_In.RGBE >> 16) & 0xFF) / 255.0 );
@@ -60,9 +52,9 @@ void	PackPhoton( in PhotonUnpacked _In, out Photon _Out )
 	_Out.Position = _In.Position;
 
 	// Pack direction & layer index
-	uint	Phi = uint( 255 * saturate( fmod( PI + atan2( _In.Direction.x, _In.Direction.z ), TWOPI ) / TWOPI ) );
-	uint	Theta = uint( 255 * saturate( acos( _In.Direction.y ) * INVPI ) );
-	_Out.Data = Phi | ((Theta | (_In.LayerIndex << 8)) << 8);
+	uint	Phi = uint( 65535 * (PI + atan2( _In.Direction.x, _In.Direction.z )) / TWOPI ) );
+	uint	Theta = uint( 65535 * saturate( acos( _In.Direction.y ) * INVPI ) );
+	_Out.Data = Phi | (Theta << 16);
 
 	// Pack color
 	float	Max = max( max( _In.Color.x, _In.Color.y ), _In.Color.z );
@@ -79,8 +71,8 @@ void	PackPhoton( in PhotonUnpacked _In, out Photon _Out )
 ////////////////////////////////////////////////////////////////////////////////
 // Scattering helpers
 //
-StructuredBuffer<float4>	_Random : register( t4 );						// A large table of random numbers, more efficient and random than our analytical noise function
-StructuredBuffer<float>		_PhaseQuantiles : register( t5 );				// Phase function in the form of quantiles.
+StructuredBuffer<float4>	_Random : register( t0 );						// A large table of random numbers, more efficient and random than our analytical noise function
+StructuredBuffer<float>		_PhaseQuantiles : register( t1 );				// Phase function in the form of quantiles.
 																			// _ The first 65536 entries give a random scattering angle from the peak of the phase function
 																			//		that represents ~99% of the scattering probability
 																			// _ The next 65536 entries give a random scattering angle from the rest of the phase function
