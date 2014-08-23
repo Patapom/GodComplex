@@ -26,11 +26,12 @@ struct PS_IN
 
 PS_IN	VS( VS_IN _In )
 {
-	float3	WorldPosition = float3( _In.__Position_In.x, (float) _In.LayerIndex / _LayersCount, -_In.__Position_In.y );
+	float3	WorldPosition = float3( _In.__Position.x, (float) _In.LayerIndex / _LayersCount, -_In.__Position.y );
 
 	PS_IN	Out;
 	Out.__Position = mul( float4( WorldPosition, 1.0 ), _World2Proj );
 	Out.UV = 0.5 * (1.0 + float2( _In.__Position.x, -_In.__Position.y ));
+	Out.LayerIndex = _In.LayerIndex;
 
 	return Out;
 }

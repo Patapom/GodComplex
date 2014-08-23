@@ -77,6 +77,8 @@ void	ShootPhoton( uint _PhotonIndex )
 	float	LayerTopAltitude = (_LayersCount-_LayerIndex) * _LayerThickness;
 	float	LayerBottomAltitude = LayerTopAltitude - _LayerThickness;
 
+	[allow_uav_condition]
+	[loop]
 	while ( ScatteringEventsCount < _MaxScattering )
 	{
 		// March one step

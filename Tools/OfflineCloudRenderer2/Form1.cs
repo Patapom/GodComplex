@@ -196,7 +196,7 @@ namespace OfflineCloudRenderer2
 
 			//////////////////////////////////////////////////////////////////////////
 			// Photons Renderer
-			Reg( m_PS_RenderLayer = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/LayeredRenderer/DisplayPhotonLayer.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null ) );
+			Reg( m_PS_RenderLayer = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/LayeredRenderer/DisplayPhotonLayer.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null ) );
 			Reg( m_PS_RenderWorldCube = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/DisplayWorldCube.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null ) );
 
 			BuildQuad();
@@ -401,6 +401,7 @@ namespace OfflineCloudRenderer2
 			m_Prim_Quad.RenderInstanced( m_PS_RenderLayer, LAYERS_COUNT+1 );
 
 			// Render the world cube
+ 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
 			m_PS_RenderWorldCube.Use();
 			m_Prim_Cube.Render( m_PS_RenderWorldCube );
 
@@ -565,7 +566,9 @@ namespace OfflineCloudRenderer2
 
 			// 3.1) Prepare buffers
 			m_SB_Photons.SetOutput( 0 );
+			m_SB_Photons.SetInput( 8 );				// RO version for splatting
 			m_SB_PhotonLayerIndices.SetOutput( 1 );
+			m_SB_PhotonLayerIndices.SetInput( 9 );	// RO version for splatting
 			m_SB_ProcessedPhotonsCounter.SetOutput( 2 );
 
 			m_SB_Random.SetInput( 0 );
