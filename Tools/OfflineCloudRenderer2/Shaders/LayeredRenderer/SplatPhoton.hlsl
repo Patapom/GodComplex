@@ -52,6 +52,9 @@ void	GS( point VS_IN _In[1], inout TriangleStream<PS_IN> _OutStream )
 	float3	BottomCorner = float3( 0, 0, 0 ) + float3( 0.5 * _CloudScapeSize.x, 0.0, 0.5 * _CloudScapeSize.z );
 	float3	UVW = (float3( P.Position.x, 0.0, P.Position.y ) - TopCorner) / (BottomCorner - TopCorner);
 
+// uint	Count = sqrt(10000000);
+// UVW.xy = float2( -1.0 + 2.0 * (_In[0].PhotonIndex % Count) / Count, -1.0 + 2.0 * (_In[0].PhotonIndex / Count) / Count );
+
 	float4	Pos = float4( 2.0 * UVW.xy - 1.0, 0, 1 );
 
 	// Stream out the 4 vertices for the splat quad
