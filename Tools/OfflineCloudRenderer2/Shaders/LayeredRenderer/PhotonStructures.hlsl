@@ -32,8 +32,8 @@ void	UnPackPhoton( in Photon _In, out PhotonUnpacked _Out )
 	_Out.Position = _In.Position;
 
 	// Unpack direction & layer index
-	float	Phi = TWOPI * (_In.Data & 0xFFFF) / 65535.0 - PI;
-	float	Theta = PI * ((_In.Data >> 16) & 0xFFFF) / 65535.0f;
+	float	Phi = TWOPI * (_In.Direction & 0xFFFF) / 65535.0 - PI;
+	float	Theta = PI * ((_In.Direction >> 16) & 0xFFFF) / 65535.0f;
 
 	float2	SCTheta, SCPhi;
 	sincos( Theta, SCTheta.x, SCTheta.y );
@@ -52,18 +52,18 @@ void	PackPhoton( in PhotonUnpacked _In, out Photon _Out )
 	_Out.Position = _In.Position;
 
 	// Pack direction & layer index
-	uint	Phi = uint( 65535 * (PI + atan2( _In.Direction.x, _In.Direction.z )) / TWOPI ) );
+	uint	Phi = uint( 65535 * saturate( (PI + atan2( _In.Direction.x, _In.Direction.z )) / TWOPI ) );
 	uint	Theta = uint( 65535 * saturate( acos( _In.Direction.y ) * INVPI ) );
-	_Out.Data = Phi | (Theta << 16);
+	_Out.Direction = Phi | (Theta << 16);
 
 	// Pack color
 	float	Max = max( max( _In.Color.x, _In.Color.y ), _In.Color.z );
 	float	Exponent = ceil( log2( Max ) );
-	uint	nExponent = uint( clamp( Exponent + 128, 0, 255 ) );
-	float3	Temp = _In.Color / exp2( Exponent );
+	float3	Temp = _In.Color * exp2( -Exponent );
 	uint	R = uint( clamp( 255 * Temp.x, 0, 255 ) );
 	uint	G = uint( clamp( 255 * Temp.y, 0, 255 ) );
 	uint	B = uint( clamp( 255 * Temp.z, 0, 255 ) );
+	uint	E = uint( clamp( Exponent + 128, 0, 255 ) );
 	_Out.RGBE = R | ((G | ((B | (E << 8)) << 8)) << 8);
 }
 

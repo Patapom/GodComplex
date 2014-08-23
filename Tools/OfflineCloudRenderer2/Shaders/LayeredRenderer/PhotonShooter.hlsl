@@ -24,7 +24,7 @@
 // This texture 2D array is then used, with interpolation, to determine the lighting at a particular 3D position within the cloudscape.
 //
 #include "../Global.hlsl"
-#include "PhotonStructure.hlsl"
+#include "PhotonStructures.hlsl"
 
 static const uint	MAX_THREADS = 1024;
 
@@ -57,15 +57,12 @@ float	SampleDensity( float3 _Position )
 void	ShootPhoton( uint _PhotonIndex )
 {
 	uint	LayerIndex = _PhotonLayerIndices[_PhotonIndex];
-	uint	PhotonDirection = LayerIndex >> 1;
-			LayerIndex &= 0x7FFFFFFU;
-
-	if ( LayerIndex != _LayerIndex || PhotonDirection != _ShootDirection )
+	if ( LayerIndex != _LayerIndex )
 		return;	// Photon is not concerned
 
 	Photon	Pp = _Photons[_PhotonIndex];
 	PhotonUnpacked	P;
-	UnPackPhoton( Pp, P, _LayerThickness );
+	UnPackPhoton( Pp, P );
 
 	float3	Position = float3( P.Position.x, (_LayersCount - _LayerIndex) * _LayerThickness, P.Position.y );
 
@@ -128,14 +125,13 @@ void	ShootPhoton( uint _PhotonIndex )
 	P.Position = Position.xz;
 
 	PackPhoton( P, Pp );
-	_Photons[PhotonIndex] = Pp;
+	_Photons[_PhotonIndex] = Pp;
 
 	// Update layer index
 	_PhotonLayerIndices[_PhotonIndex] = LayerIndex;
 
 	// Increase processed photons count
-	uint	PreviousCount;
-	InterlockedAdd( _ProcessedPhotonsCounter, 1, PreviousCount );
+	InterlockedAdd( _ProcessedPhotonsCounter[0], 1U );
 }
 
 [numthreads( MAX_THREADS, 1, 1 )]
