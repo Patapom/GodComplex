@@ -90,6 +90,10 @@
     <Content Include="Shaders\DisplayWorldCube.hlsl" />
     <Content Include="Shaders\DistanceField.hlsl" />
     <Content Include="Shaders\Global.hlsl" />
+    <Content Include="Shaders\LayeredRenderer\DisplayPhotonLayer.hlsl" />
+    <Content Include="Shaders\LayeredRenderer\PhotonStructures.hlsl" />
+    <Content Include="Shaders\LayeredRenderer\PhotonShooter.hlsl" />
+    <Content Include="Shaders\LayeredRenderer\SplatPhoton.hlsl" />
     <Content Include="Shaders\Noise.hlsl" />
     <Content Include="Shaders\Test\TestCompute.hlsl" />
     <Content Include="Shaders\Test\TestFullscreenQuad.hlsl" />

@@ -22,6 +22,16 @@ namespace OfflineCloudRenderer2
 
 		private const int		RANDOM_TABLE_SIZE = 4 * 1024 * 1024;
 
+		private const int		LAYERS_COUNT = 1;			// Amount of layers the cloudscape will be split into
+
+		// Density field 3D texture size will be DENSITY_FIELD_SIZE*DENSITY_FIELD_SIZE*DENSITY_FIELD_HEIGHT
+		private const int		DENSITY_FIELD_SIZE = 512;
+		private const int		DENSITY_FIELD_HEIGHT = 64;
+
+		// Cloudscape coverage in meters
+		private const float		CLOUDSCAPE_SIZE = 1000.0f;
+		private const float		CLOUDSCAPE_HEIGHT = 100.0f;
+
 		#endregion
 
 		#region NESTED TYPES
@@ -50,13 +60,15 @@ namespace OfflineCloudRenderer2
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		public struct	CB_PhotonShooterInput
 		{
-			public float2		InitialPosition;		// Initial beam position in [-1,+1] on the top side of the cube (Y=+1)
-			public float2		InitialIncidence;		// Initial beam angular incidence (Phi,Theta)
-			public float		CubeSize;				// Size of the canonical cube in meters
+			public uint			LayerIndex;				// Maximum scattering events before exiting the cube (default is 30)
+			public uint			LayersCount;			// Total amount of layers
+			public float		LayerThickness;			// Thickness of each individual layer (in meters)
 			public float		SigmaScattering;		// Scattering coefficient (in m^-1)
-			public uint			MaxScattering;			// Maximum scattering events before exiting the cube (default is 30)
-			public uint			BatchIndex;				// Photons batch index
-			public uint			FullSurface;			// Full surface random location
+
+			public uint			MaxScattering;			// Maximum scattering events before discarding the photon
+			public float3		CloudScapeSize;			// Size of the cloud scape covered by the 3D texture of densities
+
+			public uint			BatchIndex;				// Photon batch index
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -66,28 +78,13 @@ namespace OfflineCloudRenderer2
  			public float		SplatIntensity;
 		}
 
+		// Structured buffers
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		public struct	CB_SmoothPhotons
+		public struct	SB_Photon
 		{
- 			public float		SmoothRadius;
-			public uint			KernelSize;
-		}
-
-		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		public struct	SB_PhotonOut
-		{
-			public float3		ExitPosition;			// Photon exit position in [-1,+1]
-			public float3		ExitDirection;			// Photon exit direction
-			public float		MarchedLength;			// Length the photon had to march before exiting (in canonical [-1,+1] units, multiply by 0.5*CubeSize to get length in meters)
-			public UInt32		ScatteringStepsCount;	// Amount of scattering events before exiting
-		}
-
-		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		public struct	CB_RenderPhotonVector
-		{
- 			public UInt32		VectorsPerFace;
- 			public float		VectorMultiplier;
- 			public float		ClipAboveValue;
+			public float2		Position;				// Position on the layer
+			public uint			Data;					// Packed Phi, Theta on first 2 bytes, layer index on 3rd byte, 4th byte is unused
+			public uint			RGBE;					// RGBE-encoded color
 		}
 
 		#endregion
@@ -107,34 +104,32 @@ namespace OfflineCloudRenderer2
 		// Photon Shooter
 		private ComputeShader							m_CS_PhotonShooter = null;
 		private ConstantBuffer<CB_PhotonShooterInput>	m_CB_PhotonShooterInput = null;
-		private StructuredBuffer<float>					m_SB_PhaseQuantile = null;
-		private StructuredBuffer<SB_PhotonOut>			m_SB_PhotonOut = null;
-		private StructuredBuffer<float4>				m_SB_Random = null;
+
+		private StructuredBuffer<float>		m_SB_PhaseQuantile = null;
+		private StructuredBuffer<float4>	m_SB_Random = null;
+
+		private StructuredBuffer<SB_Photon>	m_SB_Photons = null;
+
+		private StructuredBuffer<uint>[]	m_SB_PhotonBuckets = new StructuredBuffer<uint>[3];
+		private StructuredBuffer<uint>[]	m_SB_PhotonBucketOffsets = new StructuredBuffer<uint>[3];
+
+		private Texture3D					m_Tex_DensityField = null;
 
 		// Photons Splatter
-		private Shader									m_PS_PhotonSplatter	= null;
-		private Shader									m_PS_PhotonSplatter_Intensity	= null;
+		private Shader						m_PS_PhotonSplatter	= null;
+//		private Shader						m_PS_PhotonSplatter_Intensity	= null;
 		private ConstantBuffer<CB_SplatPhoton>			m_CB_SplatPhoton;
-		private Texture2D								m_Tex_Photons = null;
-		private Primitive								m_Prim_Point = null;
-
-		// Photons smoother
-		private Shader									m_PS_PhotonsSmooth = null;
-		private Shader									m_PS_PhotonsUnsharpMask = null;
-		private ConstantBuffer<CB_SmoothPhotons>		m_CB_SmoothPhotons;
-		private Texture2D								m_Tex_PhotonsSmooth = null;
-		private Texture2D								m_Tex_PhotonsHiFreq = null;
+		private Texture2D					m_Tex_PhotonLayers = null;
+		private Primitive					m_Prim_Point = null;
 
 		// Photons Renderer
-		private Shader									m_PS_RenderCube = null;
-		private Primitive								m_Prim_Cube = null;
+		private Shader						m_PS_RenderLayer = null;
+		private Primitive					m_Prim_Cube = null;
 
-		// Vectors Renderer
-		private Shader									m_PS_RenderPhotonVectors;
-		private ConstantBuffer<CB_RenderPhotonVector>	m_CB_RenderPhotonVector;
-		private Primitive								m_Prim_Line;
-
-//		private Texture3D					m_Noise3D = null;
+// 		// Vectors Renderer
+// 		private Shader						m_PS_RenderPhotonVectors;
+// 		private ConstantBuffer<CB_RenderPhotonVector>	m_CB_RenderPhotonVector;
+// 		private Primitive					m_Prim_Line;
 
 		private Shader						m_PS_RenderWorldCube = null;
 
@@ -167,23 +162,32 @@ namespace OfflineCloudRenderer2
 			Reg( m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 0 ) );
 			Reg( m_CB_Render = new ConstantBuffer<CB_Render>( m_Device, 8 ) );
 
-			Build3DNoise();
-
 			//////////////////////////////////////////////////////////////////////////
 			// Photon Shooter
-			Reg( m_CS_PhotonShooter = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/PhotonShooter.hlsl" ) ), "CS", null ) );
+			Reg( m_CS_PhotonShooter = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/LayeredRenderer/PhotonShooter.hlsl" ) ), "CS", null ) );
 			Reg( m_CB_PhotonShooterInput = new ConstantBuffer<CB_PhotonShooterInput>( m_Device, 8 ) );
-			Reg( m_SB_PhotonOut = new StructuredBuffer<SB_PhotonOut>( m_Device, PHOTONS_COUNT, true ) );
+
 			BuildPhaseQuantileBuffer( new System.IO.FileInfo( @"Mie65536x2.float" ) );
 			BuildRandomBuffer();
 
+			Reg( m_SB_Photons = new StructuredBuffer<SB_Photon>( m_Device, PHOTONS_COUNT, true ) );
+
+			for ( int BucketIndex=0; BucketIndex < 3; BucketIndex++ )
+			{
+				Reg( m_SB_PhotonBuckets[BucketIndex] = new StructuredBuffer<uint>( m_Device, PHOTONS_COUNT, true ) );
+				Reg( m_SB_PhotonBucketOffsets[BucketIndex] = new StructuredBuffer<uint>( m_Device, LAYERS_COUNT+1, true ) );
+			}
+
+			Build3DDensityField();
+
+
 			//////////////////////////////////////////////////////////////////////////
 			// Photons Splatter
-			Reg( m_PS_PhotonSplatter = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/SplatPhoton.hlsl" ) ), VERTEX_FORMAT.P3, "VS", "GS", "PS", null ) );
-			Reg( m_PS_PhotonSplatter_Intensity = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/SplatPhoton.hlsl" ) ), VERTEX_FORMAT.P3, "VS", "GS", "PS_Intensity", null ) );
+			Reg( m_PS_PhotonSplatter = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/LayeredRenderer/SplatPhoton.hlsl" ) ), VERTEX_FORMAT.P3, "VS", "GS", "PS", null ) );
+//			Reg( m_PS_PhotonSplatter_Intensity = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/SplatPhoton.hlsl" ) ), VERTEX_FORMAT.P3, "VS", "GS", "PS_Intensity", null ) );
 
 			Reg( m_CB_SplatPhoton = new ConstantBuffer<CB_SplatPhoton>( m_Device, 8 ) );
-			Reg( m_Tex_Photons = new Texture2D( m_Device, 512, 512, -6*4, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
+			Reg( m_Tex_PhotonLayers = new Texture2D( m_Device, 512, 512, LAYERS_COUNT+1, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
 
 			// Build a single point that will be instanced as many times as there are photons
 			{
@@ -191,31 +195,22 @@ namespace OfflineCloudRenderer2
 				Reg( m_Prim_Point = new Primitive( m_Device, 1, Point, null, Primitive.TOPOLOGY.POINT_LIST, VERTEX_FORMAT.P3 ) );
 			}
 
-			//////////////////////////////////////////////////////////////////////////
-			// Photons Smoother
-			Reg( m_PS_PhotonsSmooth = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/SmoothPhotons.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null ) );
-			Reg( m_PS_PhotonsUnsharpMask = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/SmoothPhotons.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS_HiFreq", null ) );
-			Reg( m_CB_SmoothPhotons = new ConstantBuffer<CB_SmoothPhotons>( m_Device, 8 ) );
- 
-			Reg( m_Tex_PhotonsSmooth = new Texture2D( m_Device, 512, 512, 6*4, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
-			Reg( m_Tex_PhotonsHiFreq = new Texture2D( m_Device, 512, 512, 6*4, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
-
 
 			//////////////////////////////////////////////////////////////////////////
 			// Photons Renderer
-			Reg( m_PS_RenderCube = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/DisplayPhotonCube.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null ) );
+			Reg( m_PS_RenderLayer = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/LayeredRenderer/DisplayPhotonLayer.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null ) );
 			BuildCube();
 			Reg( m_PS_RenderWorldCube = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/DisplayWorldCube.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null ) );
 
 
-			//////////////////////////////////////////////////////////////////////////
-			// Photon Vectors Renderer
-			Reg( m_PS_RenderPhotonVectors = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/DisplayPhotonVector.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null ) );
-			Reg( m_CB_RenderPhotonVector = new ConstantBuffer<CB_RenderPhotonVector>( m_Device, 8 ) );
-			{
-				ByteBuffer	Line = VertexP3.FromArray( new VertexP3[] { new VertexP3() { P = new float3( 0, 0, 0 ) }, new VertexP3() { P = new float3( 1, 0, 0 ) } } );
-				Reg( m_Prim_Line = new Primitive( m_Device, 2, Line, null, Primitive.TOPOLOGY.LINE_LIST, VERTEX_FORMAT.P3 ) );
-			}
+// 			//////////////////////////////////////////////////////////////////////////
+// 			// Photon Vectors Renderer
+// 			Reg( m_PS_RenderPhotonVectors = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/CanonicalCubeRenderer/DisplayPhotonVector.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null ) );
+// 			Reg( m_CB_RenderPhotonVector = new ConstantBuffer<CB_RenderPhotonVector>( m_Device, 8 ) );
+// 			{
+// 				ByteBuffer	Line = VertexP3.FromArray( new VertexP3[] { new VertexP3() { P = new float3( 0, 0, 0 ) }, new VertexP3() { P = new float3( 1, 0, 0 ) } } );
+// 				Reg( m_Prim_Line = new Primitive( m_Device, 2, Line, null, Primitive.TOPOLOGY.LINE_LIST, VERTEX_FORMAT.P3 ) );
+// 			}
 
 			// Create the camera manipulator
 			m_CB_Camera.m.Camera2World = float4x4.Identity;
@@ -237,10 +232,21 @@ namespace OfflineCloudRenderer2
 			base.OnClosing( e );
 		}
 
-		private void	Build3DNoise()
+		private void	Build3DDensityField()
 		{
-//			Reg( m_Noise3D = new Texture3D( m_Device, ) );
+			PixelsBuffer	DensityField = new PixelsBuffer( DENSITY_FIELD_SIZE*DENSITY_FIELD_SIZE*DENSITY_FIELD_HEIGHT );
 
+			using ( System.IO.BinaryWriter W = DensityField.OpenStreamWrite() )
+				for ( int X=0; X < DENSITY_FIELD_SIZE; X++ )
+					for ( int Y=0; Y < DENSITY_FIELD_HEIGHT; Y++ )
+						for ( int Z=0; Z < DENSITY_FIELD_SIZE; Z++ )
+						{
+							W.Write( (byte) 0 );
+						}
+
+			Reg( m_Tex_DensityField = new Texture3D( m_Device, DENSITY_FIELD_SIZE, DENSITY_FIELD_HEIGHT, DENSITY_FIELD_SIZE, 1, PIXEL_FORMAT.R8_UNORM, false, false, new PixelsBuffer[] { DensityField } ) );
+
+			DensityField.Dispose();
 		}
 
 		private void	BuildPhaseQuantileBuffer( System.IO.FileInfo _PhaseQuantileFileName )
@@ -365,60 +371,61 @@ namespace OfflineCloudRenderer2
 
 		private void	Render()
 		{
-			// Setup default render target as UAV & render using the compute shader
-			m_CB_Render.m.TargetDimensions = new float4( viewportPanel.Width, viewportPanel.Height, 1.0f / viewportPanel.Width, 1.0f / viewportPanel.Height );
-			m_CB_Render.m.Debug = new float4( floatTrackbarControlDebug0.Value, floatTrackbarControlDebug1.Value, floatTrackbarControlDebug2.Value, floatTrackbarControlDebug3.Value );
-			m_CB_Render.m.FluxMultiplier = floatTrackbarControlFluxMultiplier.Value;
-
-			uint	Modifier = (uint) (radioButtonPos.Checked ? 0 : radioButtonNeg.Checked ? 1 : 2) << 4;
-			if ( radioButtonExitPosition.Checked )
-				m_CB_Render.m.SplatType = 0 | Modifier;
-			if ( radioButtonExitDirection.Checked )
-				m_CB_Render.m.SplatType = 1 | Modifier;
-			if ( radioButtonScatteringEventIndex.Checked )
-				m_CB_Render.m.SplatType = 2;
-			if ( radioButtonMarchedLength.Checked )
-				m_CB_Render.m.SplatType = 3;
-			if ( radioButtonAccumFlux.Checked )
-				m_CB_Render.m.SplatType = 4;
-
-			m_CB_Render.UpdateData();
-
- 			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
-
-// 			// Render a fullscreen quad
-// 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
-// 			m_Device.RenderFullscreenQuad( m_PS );
-
-			// Render the photons cube
- 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
 			m_Device.Clear( m_Device.DefaultTarget, 0.5f * new float4( Color.SkyBlue, 1 ) );
 			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1, 0, true, false );
 
-			if ( checkBoxSmooth.Checked )
-			{
-				if ( checkBoxShowHF.Checked )
-					m_Tex_PhotonsHiFreq.SetPS( 0, m_Tex_PhotonsHiFreq.GetView( 0, 0, 0, 0, true ) );
-				else
-					m_Tex_PhotonsSmooth.SetPS( 0, m_Tex_PhotonsSmooth.GetView( 0, 0, 0, 0, true ) );
-			}
-			else
-				m_Tex_Photons.SetPS( 0, m_Tex_Photons.GetView( 0, 0, 0, 0, true) );
-
-			m_PS_RenderCube.Use();
-			m_Prim_Cube.Render( m_PS_RenderCube );
-
-			// Render the photon vectors
-			if ( checkBoxRenderVectors.Checked )
-			{
-				const int		PHOTON_VECTORS_COUNT_PER_FACE = 10000;
-				m_CB_RenderPhotonVector.m.VectorsPerFace = PHOTON_VECTORS_COUNT_PER_FACE;
-				m_CB_RenderPhotonVector.m.VectorMultiplier = floatTrackbarControlVectorSize.Value;
-				m_CB_RenderPhotonVector.m.ClipAboveValue = checkBoxClipAboveValue.Checked ? 0.01f * floatTrackbarControlClipAbove.Value : 1e6f;
-				m_CB_RenderPhotonVector.UpdateData();
-				m_PS_RenderPhotonVectors.Use();
-				m_Prim_Line.RenderInstanced( m_PS_RenderPhotonVectors, 6*PHOTON_VECTORS_COUNT_PER_FACE );
-			}
+// 			// Setup default render target as UAV & render using the compute shader
+// 			m_CB_Render.m.TargetDimensions = new float4( viewportPanel.Width, viewportPanel.Height, 1.0f / viewportPanel.Width, 1.0f / viewportPanel.Height );
+// 			m_CB_Render.m.Debug = new float4( floatTrackbarControlDebug0.Value, floatTrackbarControlDebug1.Value, floatTrackbarControlDebug2.Value, floatTrackbarControlDebug3.Value );
+// 			m_CB_Render.m.FluxMultiplier = floatTrackbarControlFluxMultiplier.Value;
+// 
+// 			uint	Modifier = (uint) (radioButtonPos.Checked ? 0 : radioButtonNeg.Checked ? 1 : 2) << 4;
+// 			if ( radioButtonExitPosition.Checked )
+// 				m_CB_Render.m.SplatType = 0 | Modifier;
+// 			if ( radioButtonExitDirection.Checked )
+// 				m_CB_Render.m.SplatType = 1 | Modifier;
+// 			if ( radioButtonScatteringEventIndex.Checked )
+// 				m_CB_Render.m.SplatType = 2;
+// 			if ( radioButtonMarchedLength.Checked )
+// 				m_CB_Render.m.SplatType = 3;
+// 			if ( radioButtonAccumFlux.Checked )
+// 				m_CB_Render.m.SplatType = 4;
+// 
+// 			m_CB_Render.UpdateData();
+// 
+//  			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
+// 
+// // 			// Render a fullscreen quad
+// // 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+// // 			m_Device.RenderFullscreenQuad( m_PS );
+// 
+// 			// Render the photons cube
+//  			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
+// 
+// 			if ( checkBoxSmooth.Checked )
+// 			{
+// 				if ( checkBoxShowHF.Checked )
+// 					m_Tex_PhotonsHiFreq.SetPS( 0, m_Tex_PhotonsHiFreq.GetView( 0, 0, 0, 0, true ) );
+// 				else
+// 					m_Tex_PhotonsSmooth.SetPS( 0, m_Tex_PhotonsSmooth.GetView( 0, 0, 0, 0, true ) );
+// 			}
+// 			else
+// 				m_Tex_Photons.SetPS( 0, m_Tex_Photons.GetView( 0, 0, 0, 0, true) );
+// 
+// 			m_PS_RenderCube.Use();
+// 			m_Prim_Cube.Render( m_PS_RenderCube );
+// 
+// 			// Render the photon vectors
+// 			if ( checkBoxRenderVectors.Checked )
+// 			{
+// 				const int		PHOTON_VECTORS_COUNT_PER_FACE = 10000;
+// 				m_CB_RenderPhotonVector.m.VectorsPerFace = PHOTON_VECTORS_COUNT_PER_FACE;
+// 				m_CB_RenderPhotonVector.m.VectorMultiplier = floatTrackbarControlVectorSize.Value;
+// 				m_CB_RenderPhotonVector.m.ClipAboveValue = checkBoxClipAboveValue.Checked ? 0.01f * floatTrackbarControlClipAbove.Value : 1e6f;
+// 				m_CB_RenderPhotonVector.UpdateData();
+// 				m_PS_RenderPhotonVectors.Use();
+// 				m_Prim_Line.RenderInstanced( m_PS_RenderPhotonVectors, 6*PHOTON_VECTORS_COUNT_PER_FACE );
+// 			}
 
 
 			// Render the world cube
@@ -511,159 +518,177 @@ namespace OfflineCloudRenderer2
 			Render();
 		}
 
+		/// <summary>
+		/// Packs a direction and layer index into a single uint expected in the "Data" field of the Photon structure
+		/// </summary>
+		/// <param name="_Direction"></param>
+		/// <param name="_LayerIndex"></param>
+		/// <returns></returns>
+		private uint	PackPhotonDirectionAndLayerIndex( float3 _Direction, int _LayerIndex )
+		{
+			double	Phi = (Math.PI + Math.Atan2( _Direction.x, _Direction.z )) % (2.0 * Math.PI);
+			byte	nPhi = (byte) (255.0f * Phi / (2.0 * Math.PI));
+
+			double	Theta = Math.Acos( _Direction.y );
+			byte	nTheta = (byte) (255.0f * Theta / Math.PI);
+
+			uint	Result = (uint) (nPhi | ((nTheta | (_LayerIndex << 8)) << 8));
+			return Result;
+		}
+
+		private uint	EncodeRGBE( float3 _Color )
+		{
+			float	Max = Math.Max( Math.Max( _Color.x, _Color.y ), _Color.z );
+			float	Exponent = (float) Math.Ceiling( Math.Log( Max ) / Math.Log( 2.0 ) );
+			_Color /= (float) Math.Pow( 2.0f, Exponent );	// Normalize components
+
+			byte	R = (byte) (255.0f * _Color.x);
+			byte	G = (byte) (255.0f * _Color.y);
+			byte	B = (byte) (255.0f * _Color.z);
+			byte	E = (byte) (Exponent + 128);
+			uint	RGBE = (uint) (R | ((G | ((B | (E << 8)) << 8 )) << 8));
+			return RGBE;
+		}
+
 		private void buttonShootPhotons_Click( object sender, EventArgs e )
 		{
 			//////////////////////////////////////////////////////////////////////////
-			// 1] Shoot the photons and store the result into the structured buffer
-			m_CS_PhotonShooter.Use();
+			// 1] Build initial photon positions and directions
+			float3	SunDirection = new float3( 0, 1, 0 ).Normalized;
 
-			m_SB_Random.SetInput( 0 );
-			m_SB_PhaseQuantile.SetInput( 1 );
-			m_SB_PhotonOut.SetOutput( 0 );
+			uint	InitialData = PackPhotonDirectionAndLayerIndex( -SunDirection, 0 );
+			uint	InitialColor = EncodeRGBE( new float3( 1.0f, 1.0f, 1.0f ) );
 
-			m_CB_PhotonShooterInput.m.MaxScattering = 100;
-			m_CB_PhotonShooterInput.m.InitialPosition = new float2( floatTrackbarControlPositionX.Value, floatTrackbarControlPositionZ.Value );	// Center of the cube side
-			m_CB_PhotonShooterInput.m.InitialIncidence = new float2( floatTrackbarControlOrientationPhi.Value * (float) Math.PI / 180.0f, floatTrackbarControlOrientationTheta.Value * (float) Math.PI / 180.0f );			// Vertical incidence
-			m_CB_PhotonShooterInput.m.CubeSize = floatTrackbarControlCubeSize.Value;	// Try a 100m thick cube
-//			m_CB_PhotonShooterInput.m.SigmaScattering = 0.5f;
-			m_CB_PhotonShooterInput.m.SigmaScattering = 0.04523893421169302263386206471922f;	// re=6µm Gamma=2 N0=4e8   Sigma_t = N0 * PI * re²
-			m_CB_PhotonShooterInput.m.FullSurface = (uint)(checkBoxFullSurface.Checked ? 1 : 0);
-													//	mean free path = 22.1048m
+			int		PhotonsPerSize = (int) Math.Floor( Math.Sqrt( PHOTONS_COUNT ) );
+			float	PhotonCoverageSize = CLOUDSCAPE_SIZE / PhotonsPerSize;
 
-			int	BatchesCount = PHOTONS_COUNT / PHOTON_BATCH_SIZE;
-			for ( int BatchIndex=0; BatchIndex < BatchesCount; BatchIndex++ )
+			for ( int PhotonIndex=0; PhotonIndex < PHOTONS_COUNT; PhotonIndex++ )
 			{
-				m_CB_PhotonShooterInput.m.BatchIndex = (uint) BatchIndex;
-				m_CB_PhotonShooterInput.UpdateData();
+				int	Z = PhotonIndex / PhotonsPerSize;
+				int	X = PhotonIndex - Z * PhotonsPerSize;
 
-				m_CS_PhotonShooter.Dispatch( 1, 1, 1 );
+				float	x = X + (float) SimpleRNG.GetUniform();
+				float	z = Z + (float) SimpleRNG.GetUniform();
 
-				m_Device.Present( true );
-				progressBar1.Value = progressBar1.Maximum * (1+BatchIndex) / BatchesCount;
-				Application.DoEvents();
+				m_SB_Photons.m[PhotonIndex].Position.Set( x, z );
+				m_SB_Photons.m[PhotonIndex].Data = InitialData;
+				m_SB_Photons.m[PhotonIndex].RGBE = InitialColor;
 			}
+			m_SB_Photons.Write();
 
-			m_SB_PhotonOut.RemoveFromLastAssignedSlots();
 
 			//////////////////////////////////////////////////////////////////////////
-			// Splat photons
-			m_Tex_Photons.RemoveFromLastAssignedSlots();
-			m_Device.Clear( m_Tex_Photons, new float4( 0, 0, 0, 0 ) );
+			// 2] Initialize buckets & offsets & textures
 
-			m_SB_PhotonOut.SetInput( 0 );
+			// 2.1) Fill source bucket with all photons
+			for ( int PhotonIndex=0; PhotonIndex < PHOTONS_COUNT; PhotonIndex++ )
+				m_SB_PhotonBuckets[0].m[PhotonIndex] = (uint) PhotonIndex;
+			m_SB_PhotonBuckets[0].Write();
 
-			// Splat data
-			m_CB_SplatPhoton.m.SplatSize = 2.0f * (2.0f / m_Tex_Photons.Width);
-			m_CB_SplatPhoton.UpdateData();
+			// 2.2) Clear target buckets of photons (although it doesn't really matter since the CS will overwrite that)
+			for ( int PhotonIndex=0; PhotonIndex < PHOTONS_COUNT; PhotonIndex++ )
+			{
+				m_SB_PhotonBuckets[1].m[PhotonIndex] = 0U;
+				m_SB_PhotonBuckets[2].m[PhotonIndex] = 0U;
+			}
+			m_SB_PhotonBuckets[1].Write();
+			m_SB_PhotonBuckets[2].Write();
 
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ALPHA_BLEND );
+			// 2.3) Initialize source bucket offsets with all photons
+			m_SB_PhotonBucketOffsets[0].m[0] = 0;				// Start at 0
+			m_SB_PhotonBucketOffsets[0].m[1] = PHOTONS_COUNT;	// End at the end...
+			m_SB_PhotonBucketOffsets[0].Write();
 
-			View2D[]	Views = new View2D[] {
-				m_Tex_Photons.GetView( 0, 0, 6*0, 6 ),
-				m_Tex_Photons.GetView( 0, 0, 6*1, 6 ),
-				m_Tex_Photons.GetView( 0, 0, 6*2, 6 ),
-			};
-			m_Device.SetRenderTargets( Views, null );
+			// 2.4) Initialize target buckets to 0
+			for ( int LayerIndex=0; LayerIndex <= LAYERS_COUNT; LayerIndex++ )
+			{
+				m_SB_PhotonBucketOffsets[1].m[LayerIndex] = 0;
+				m_SB_PhotonBucketOffsets[2].m[LayerIndex] = 0;
+			}
+			m_SB_PhotonBucketOffsets[1].Write();
+			m_SB_PhotonBucketOffsets[2].Write();
 
-			m_PS_PhotonSplatter.Use();
-			m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter, PHOTONS_COUNT );
+			// 2.5) Clear photon splatting texture
+			m_Device.Clear( m_Tex_PhotonLayers, new float4( 0, 0, 0, 0 ) );
 
-			// Splat additive intensity
-			m_CB_SplatPhoton.m.SplatSize = 8.0f * (2.0f / m_Tex_Photons.Width);
+
+			//////////////////////////////////////////////////////////////////////////
+			// 3] Prepare buffers & states
+
+			// 3.1) Prepare buffers
+			m_SB_Photons.SetOutput( 0 );
+
+			m_SB_PhotonBuckets[0].SetInput( 0 );
+			m_SB_PhotonBucketOffsets[0].SetInput( 1 );
+			m_SB_PhotonBuckets[1].SetOutput( 1 );
+			m_SB_PhotonBucketOffsets[1].SetOutput( 2 );
+			m_SB_PhotonBuckets[2].SetOutput( 3 );
+			m_SB_PhotonBucketOffsets[2].SetOutput( 4 );
+
+			m_SB_Random.SetInput( 4 );
+			m_SB_PhaseQuantile.SetInput( 5 );
+
+			// 3.2) Constant buffer for photon shooting
+			m_CB_PhotonShooterInput.m.LayersCount = LAYERS_COUNT;
+			m_CB_PhotonShooterInput.m.MaxScattering = 30;
+			m_CB_PhotonShooterInput.m.LayerThickness = floatTrackbarControlLayerThickness.Value;	// Try a 100m thick layer
+			m_CB_PhotonShooterInput.m.SigmaScattering = floatTrackbarControlSigmaScattering.Value;	// 0.04523893421169302263386206471922f;	// re=6µm Gamma=2 N0=4e8   Sigma_t = N0 * PI * re²
+			m_CB_PhotonShooterInput.m.CloudScapeSize.Set( CLOUDSCAPE_SIZE, CLOUDSCAPE_HEIGHT,CLOUDSCAPE_SIZE );
+
+			// 3.3) Constant buffer for photon splatting
+
+
+			// 3.4) Prepare photon splatting buffer & states
+			m_CB_SplatPhoton.m.SplatSize = 2.0f * (2.0f / m_Tex_PhotonLayers.Width);
  			m_CB_SplatPhoton.m.SplatIntensity = 1000.0f / PHOTONS_COUNT;
 			m_CB_SplatPhoton.UpdateData();
 
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ALPHA_BLEND );	// Splatting is additive
+			m_Tex_PhotonLayers.RemoveFromLastAssignedSlots();
 
-			Views = new View2D[] { m_Tex_Photons.GetView( 0, 0, 6*3, 6 ) };
-			m_Device.SetRenderTargets( Views, null );
 
-			m_PS_PhotonSplatter_Intensity.Use();
-			m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter_Intensity, PHOTONS_COUNT );
+			//////////////////////////////////////////////////////////////////////////
+			// 4] Render loop
+			const int	BOUNCES_COUNT = 1;
 
-			m_Tex_Photons.RemoveFromLastAssignedSlots();
+			int	BatchesCount = PHOTONS_COUNT / PHOTON_BATCH_SIZE;
 
-			Render();
-		}
+			for ( int BounceIndex=0; BounceIndex < BOUNCES_COUNT; BounceIndex++ )
+			{
+				// 3.1] Splat initial photons to the top layer
+				//
 
-		private void floatTrackbarControlFluxMultiplier_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
-		{
-			Render();
-		}
+				// 3.2] Process every layers
+				for ( int LayerIndex=0; LayerIndex < LAYERS_COUNT; LayerIndex++ )
+				{
+					// 3.2.2) Shoot a bunch of photons from layer "LayerIndex" to layer "LayerIndex+1"
+					m_CS_PhotonShooter.Use();
 
-		private void radioButtonExitPosition_CheckedChanged( object sender, EventArgs e )
-		{
-			if ( (sender as RadioButton).Checked )
-				Render();
-		}
+					m_CB_PhotonShooterInput.m.LayerIndex = (uint) LayerIndex;
+					m_CB_PhotonShooterInput.UpdateData();
 
-		private void checkBoxRenderVectors_CheckedChanged( object sender, EventArgs e )
-		{
-			Render();
-		}
+					for ( int BatchIndex=0; BatchIndex < BatchesCount; BatchIndex++ )
+					{
+						m_CB_PhotonShooterInput.m.BatchIndex = (uint) BatchIndex;
+						m_CS_PhotonShooter.Dispatch( 1, 1, 1 );
 
-		private void floatTrackbarControlVectorSize_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
-		{
-			Render();
-		}
+						m_Device.Present( true );
+						progressBar1.Value = progressBar1.Maximum * (1+BatchIndex+BatchesCount*(LayerIndex+LAYERS_COUNT*BounceIndex)) / (BOUNCES_COUNT*LAYERS_COUNT*BatchesCount);
+						Application.DoEvents();
+					}
 
-		private void checkBoxClipAboveValue_CheckedChanged( object sender, EventArgs e )
-		{
-			Render();
-		}
+					// 3.2.3) Splat the photons that got through to the 2D texture array
+					m_PS_PhotonSplatter.Use();
 
-		private void floatTrackbarControlClipAbove_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
-		{
-			Render();
-		}
+					// Splat data
+					m_Device.SetRenderTargets( new View2D[] { m_Tex_PhotonLayers.GetView( 0, 0, LayerIndex+1, 0 ) }, null );
 
-		private void checkBoxFullSurface_CheckedChanged( object sender, EventArgs e )
-		{
-			floatTrackbarControlPositionX.Enabled = !checkBoxFullSurface.Checked;
-			floatTrackbarControlPositionZ.Enabled = !checkBoxFullSurface.Checked;
-		}
+					m_PS_PhotonSplatter.Use();
+					m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter, PHOTONS_COUNT );
+				}
+			}
 
-		private void checkBoxSmooth_CheckedChanged( object sender, EventArgs e )
-		{
-			Render();
-		}
-
-		private void checkBoxShowHF_CheckedChanged( object sender, EventArgs e )
-		{
-			Render();
-		}
-
-		private void floatTrackbarControlSmoothRadius_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
-		{
-			if ( !checkBoxSmooth.Checked )
-				return;
-
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
-
-			m_Tex_Photons.RemoveFromLastAssignedSlots();
-			m_Tex_Photons.SetPS( 0 );
-
-			m_SB_PhotonOut.SetInput( 0 );
-
-// 			// Splat data
-// 			m_CB_SplatPhoton.m.SplatSize = 2.0f * (2.0f / m_Tex_Photons.Width);
-// 			m_CB_SplatPhoton.UpdateData();
-// 
-// 			View2D[]	Views = new View2D[] {
-// 				m_Tex_Photons.GetView( 0, 0, 6*0, 6 ),
-// 				m_Tex_Photons.GetView( 0, 0, 6*1, 6 ),
-// 			};
-// 			m_Device.SetRenderTargets( Views, null );
-// 
-// 			m_PS_PhotonSplatter.Use();
-// 			m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter, PHOTONS_COUNT );
-// 
-// 			// Apply smoothing
-// 			m_PS_PhotonsSmooth
-// 
-// 			// Compute hi-frequency by difference
-// 			m_Tex_Photons.SetPS( 0 );
-// 			m_Tex_PhotonsSmooth.SetPS( 1 );
+			m_Tex_PhotonLayers.RemoveFromLastAssignedSlots();
 
 			Render();
 		}
