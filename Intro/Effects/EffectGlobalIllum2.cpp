@@ -52,7 +52,7 @@
 //	_ You now have all the informations needed to render the scene
 //
 // 5) Final result
-//	_ Make sure LOAD_PROBES is not commented (i.e. defined): this will hint the code that we're not LOADING and USING the probes for indirect lighting
+//	_ Make sure LOAD_PROBES is not commented (i.e. defined): this will hint the code that we're now LOADING and USING the probes for indirect lighting
 //	_ Run
 //		=> Use WASD/QSDZ to navigate the scene, shift to speed up
 //	_ Also run the Tools > ControlPanelGlobalIllumination project
@@ -89,14 +89,20 @@
 #endif
 
 #elif defined(SCENE_CITY)
+
+#define CITY_PATH				"..\\Arkane\\"
+//#define CITY_PATH				".\\Resources\\Scenes\\Arkane"
+
 //#define TEXTURES_PATH			"..\\Arkane\\TexturesPOM\\"
-#define TEXTURES_PATH			".\\Resources\\Scenes\\Arkane\\TexturesPOM\\"
 //#define PROBES_PATH				"..\\Arkane\\Probes\\City\\"
-#define PROBES_PATH				".\\Resources\\Scenes\\Arkane\\Probes\\City\\"
+//#ifdef LOAD_PROBES	// Can't use that until it's been baked!
+//#define USE_PER_VERTEX_PROBE_ID	"..\\Arkane\\City_ProbeID.vertexStream.U16"
+//#endif
+
+#define TEXTURES_PATH			CITY_PATH "TexturesPOM\\"
+#define PROBES_PATH				CITY_PATH "Probes\\City\\"
 #ifdef LOAD_PROBES	// Can't use that until it's been baked!
-//#define USE_PER_VERTEX_PROBE_ID	"..\\Arkane\\City_ProbeID.vertexStream.U16"
-//#define USE_PER_VERTEX_PROBE_ID	"..\\Arkane\\City_ProbeID.vertexStream.U16"
-#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\Arkane\\City_ProbeID.vertexStream.U16"
+#define USE_PER_VERTEX_PROBE_ID	CITY_PATH "City_ProbeID.vertexStream.U16"
 #endif
 
 #endif
@@ -886,7 +892,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	// . Then it will compute the product of ambient sky SH and occlusion SH for the probe to add the contribution of the occluded sky
 	// . It will also add the emissive sets' SH weighted by the intensity of the emissive materials at the time (diffuse area lighting).
 	// . Finally, it will estimate the neighbor's "perceived visibility" and propagate their SH via a product of their SH with the
-	//		neighbor visibility mask (SH product). This way we get additional light bounces from probe to probe.
+	//		neighbor visibility mask. This way we get additional light bounces from probe to probe.
 	//
 	// Basically for every probe update, we perform 1(sky)+4(neighbor) expensive SH products and compute lighting for 64 points in the scene
 	//

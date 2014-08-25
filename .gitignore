@@ -309,3 +309,5 @@ obj
 /RendererD3D11/Debug
 /Packages/RendererManaged/Release DirectX10
 /RendererD3D11/Release
+/Tests/TestDevice/Debug
+/Tests/TestDevice/Release
