@@ -41,9 +41,10 @@
 			this.textBoxCommandLine = new System.Windows.Forms.TextBox();
 			this.processCook = new System.Diagnostics.Process();
 			this.panelInput = new System.Windows.Forms.Panel();
-			this.comboBoxExecutable = new System.Windows.Forms.ComboBox();
 			this.label4 = new System.Windows.Forms.Label();
 			this.textBoxExecutablePath = new System.Windows.Forms.TextBox();
+			this.comboBoxExecutable = new System.Windows.Forms.ComboBox();
+			this.textBox1 = new System.Windows.Forms.TextBox();
 			this.groupBoxOutput.SuspendLayout();
 			this.panelInput.SuspendLayout();
 			this.SuspendLayout();
@@ -77,9 +78,9 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.buttonCook.Enabled = false;
 			this.buttonCook.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold);
-			this.buttonCook.Location = new System.Drawing.Point(179, 102);
+			this.buttonCook.Location = new System.Drawing.Point(181, 152);
 			this.buttonCook.Name = "buttonCook";
-			this.buttonCook.Size = new System.Drawing.Size(348, 34);
+			this.buttonCook.Size = new System.Drawing.Size(494, 34);
 			this.buttonCook.TabIndex = 1;
 			this.buttonCook.Text = "Cook";
 			this.buttonCook.UseVisualStyleBackColor = true;
@@ -87,10 +88,11 @@
 			// 
 			// richTextBoxOutput
 			// 
+			this.richTextBoxOutput.BackColor = System.Drawing.Color.Gainsboro;
 			this.richTextBoxOutput.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.richTextBoxOutput.Location = new System.Drawing.Point(3, 16);
 			this.richTextBoxOutput.Name = "richTextBoxOutput";
-			this.richTextBoxOutput.Size = new System.Drawing.Size(680, 328);
+			this.richTextBoxOutput.Size = new System.Drawing.Size(826, 494);
 			this.richTextBoxOutput.TabIndex = 0;
 			this.richTextBoxOutput.Text = "";
 			this.richTextBoxOutput.WordWrap = false;
@@ -108,13 +110,13 @@
 			this.textBoxMapName.Location = new System.Drawing.Point(54, 9);
 			this.textBoxMapName.Name = "textBoxMapName";
 			this.textBoxMapName.ReadOnly = true;
-			this.textBoxMapName.Size = new System.Drawing.Size(594, 20);
+			this.textBoxMapName.Size = new System.Drawing.Size(740, 20);
 			this.textBoxMapName.TabIndex = 4;
 			// 
 			// buttonLoadMap
 			// 
 			this.buttonLoadMap.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonLoadMap.Location = new System.Drawing.Point(654, 6);
+			this.buttonLoadMap.Location = new System.Drawing.Point(800, 6);
 			this.buttonLoadMap.Name = "buttonLoadMap";
 			this.buttonLoadMap.Size = new System.Drawing.Size(35, 24);
 			this.buttonLoadMap.TabIndex = 0;
@@ -137,9 +139,9 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.groupBoxOutput.Controls.Add(this.richTextBoxOutput);
-			this.groupBoxOutput.Location = new System.Drawing.Point(12, 142);
+			this.groupBoxOutput.Location = new System.Drawing.Point(12, 192);
 			this.groupBoxOutput.Name = "groupBoxOutput";
-			this.groupBoxOutput.Size = new System.Drawing.Size(686, 347);
+			this.groupBoxOutput.Size = new System.Drawing.Size(832, 513);
 			this.groupBoxOutput.TabIndex = 0;
 			this.groupBoxOutput.TabStop = false;
 			this.groupBoxOutput.Text = "Output";
@@ -147,7 +149,7 @@
 			// label3
 			// 
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(193, 41);
+			this.label3.Location = new System.Drawing.Point(218, 41);
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(106, 13);
 			this.label3.TabIndex = 0;
@@ -157,11 +159,13 @@
 			// 
 			this.textBoxCommandLine.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.textBoxCommandLine.Location = new System.Drawing.Point(305, 38);
+			this.textBoxCommandLine.Location = new System.Drawing.Point(330, 38);
+			this.textBoxCommandLine.Multiline = true;
 			this.textBoxCommandLine.Name = "textBoxCommandLine";
-			this.textBoxCommandLine.Size = new System.Drawing.Size(384, 20);
+			this.textBoxCommandLine.Size = new System.Drawing.Size(505, 77);
 			this.textBoxCommandLine.TabIndex = 2;
-			this.textBoxCommandLine.Text = "+fs_basepath V:\\blacksparrow\\idtech5\\blacksparrow";
+			this.textBoxCommandLine.Text = "+com_assertOutOfDebugger  1 +r_fullscreen 0 +win_crashDmp_enable 1 +fs_basepath \"" +
+    "V:\\blacksparrow\\idtech5\\blacksparrow\"";
 			this.textBoxCommandLine.TextChanged += new System.EventHandler(this.textBoxCommandLine_TextChanged);
 			// 
 			// processCook
@@ -181,6 +185,7 @@
 			// 
 			this.panelInput.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.panelInput.Controls.Add(this.textBox1);
 			this.panelInput.Controls.Add(this.label1);
 			this.panelInput.Controls.Add(this.label4);
 			this.panelInput.Controls.Add(this.label2);
@@ -193,27 +198,13 @@
 			this.panelInput.Controls.Add(this.buttonLoadMap);
 			this.panelInput.Location = new System.Drawing.Point(0, 1);
 			this.panelInput.Name = "panelInput";
-			this.panelInput.Size = new System.Drawing.Size(709, 95);
+			this.panelInput.Size = new System.Drawing.Size(855, 145);
 			this.panelInput.TabIndex = 6;
-			// 
-			// comboBoxExecutable
-			// 
-			this.comboBoxExecutable.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-			this.comboBoxExecutable.FormattingEnabled = true;
-			this.comboBoxExecutable.Items.AddRange(new object[] {
-            "Debug",
-            "Release",
-            "Perforce Latest"});
-			this.comboBoxExecutable.Location = new System.Drawing.Point(68, 65);
-			this.comboBoxExecutable.Name = "comboBoxExecutable";
-			this.comboBoxExecutable.Size = new System.Drawing.Size(107, 21);
-			this.comboBoxExecutable.TabIndex = 3;
-			this.comboBoxExecutable.SelectedIndexChanged += new System.EventHandler(this.comboBoxExecutable_SelectedIndexChanged);
 			// 
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(3, 68);
+			this.label4.Location = new System.Drawing.Point(3, 124);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(60, 13);
 			this.label4.TabIndex = 0;
@@ -223,17 +214,44 @@
 			// 
 			this.textBoxExecutablePath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.textBoxExecutablePath.Location = new System.Drawing.Point(181, 65);
+			this.textBoxExecutablePath.Location = new System.Drawing.Point(181, 121);
 			this.textBoxExecutablePath.Name = "textBoxExecutablePath";
 			this.textBoxExecutablePath.ReadOnly = true;
-			this.textBoxExecutablePath.Size = new System.Drawing.Size(508, 20);
+			this.textBoxExecutablePath.Size = new System.Drawing.Size(654, 20);
 			this.textBoxExecutablePath.TabIndex = 4;
+			// 
+			// comboBoxExecutable
+			// 
+			this.comboBoxExecutable.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+			this.comboBoxExecutable.FormattingEnabled = true;
+			this.comboBoxExecutable.Items.AddRange(new object[] {
+            "Debug",
+            "Release",
+            "Perforce Latest"});
+			this.comboBoxExecutable.Location = new System.Drawing.Point(68, 121);
+			this.comboBoxExecutable.Name = "comboBoxExecutable";
+			this.comboBoxExecutable.Size = new System.Drawing.Size(107, 21);
+			this.comboBoxExecutable.TabIndex = 3;
+			this.comboBoxExecutable.SelectedIndexChanged += new System.EventHandler(this.comboBoxExecutable_SelectedIndexChanged);
+			// 
+			// textBox1
+			// 
+			this.textBox1.BackColor = System.Drawing.SystemColors.Info;
+			this.textBox1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.textBox1.Location = new System.Drawing.Point(16, 60);
+			this.textBox1.Multiline = true;
+			this.textBox1.Name = "textBox1";
+			this.textBox1.ReadOnly = true;
+			this.textBox1.Size = new System.Drawing.Size(308, 55);
+			this.textBox1.TabIndex = 5;
+			this.textBox1.Text = "NOTE: Command line is always appended with \"+com_production 1 +ark_useStdOut 1 +b" +
+    "uildgame -fast \"";
 			// 
 			// CookerForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(710, 501);
+			this.ClientSize = new System.Drawing.Size(856, 717);
 			this.Controls.Add(this.panelInput);
 			this.Controls.Add(this.groupBoxOutput);
 			this.Controls.Add(this.buttonCook);
@@ -266,6 +284,7 @@
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.ComboBox comboBoxExecutable;
 		private System.Windows.Forms.TextBox textBoxExecutablePath;
+		private System.Windows.Forms.TextBox textBox1;
 	}
 }
 

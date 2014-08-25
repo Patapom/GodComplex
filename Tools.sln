@@ -1436,7 +1436,6 @@ Global
 		{06210761-A819-4969-BACA-96E34DFEF164}.Debug|x64.ActiveCfg = Debug|x64
 		{06210761-A819-4969-BACA-96E34DFEF164}.Debug|x64.Build.0 = Debug|x64
 		{06210761-A819-4969-BACA-96E34DFEF164}.Debug|x86.ActiveCfg = Debug|x86
-		{06210761-A819-4969-BACA-96E34DFEF164}.Debug|x86.Build.0 = Debug|x86
 		{06210761-A819-4969-BACA-96E34DFEF164}.Profile|Any CPU.ActiveCfg = Debug DirectX10|Any CPU
 		{06210761-A819-4969-BACA-96E34DFEF164}.Profile|Any CPU.Build.0 = Debug DirectX10|Any CPU
 		{06210761-A819-4969-BACA-96E34DFEF164}.Profile|Mixed Platforms.ActiveCfg = Debug DirectX10|Any CPU
@@ -1452,7 +1451,6 @@ Global
 		{06210761-A819-4969-BACA-96E34DFEF164}.Release|x64.ActiveCfg = Release|x64
 		{06210761-A819-4969-BACA-96E34DFEF164}.Release|x64.Build.0 = Release|x64
 		{06210761-A819-4969-BACA-96E34DFEF164}.Release|x86.ActiveCfg = Release|x86
-		{06210761-A819-4969-BACA-96E34DFEF164}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

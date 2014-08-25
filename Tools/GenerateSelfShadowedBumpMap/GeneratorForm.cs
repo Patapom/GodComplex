@@ -57,6 +57,7 @@ namespace GenerateSelfShadowedBumpMap
 		private RegistryKey						m_AppKey;
 		private string							m_ApplicationPath;
 
+		private System.IO.FileInfo				m_SourceFileName = null;
 		private int								W, H;
 		private ImageUtility.Bitmap				m_BitmapSource = null;
 
@@ -88,6 +89,11 @@ namespace GenerateSelfShadowedBumpMap
 		{
 			InitializeComponent();
 
+
+// Remove unused tabs until we make them work
+tabControlGenerators.TabPages.RemoveAt( 1 );
+tabControlGenerators.TabPages.RemoveAt( 1 );
+
  			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\SSBumpMapGenerator" );
 			m_ApplicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );
 		}
@@ -108,7 +114,7 @@ namespace GenerateSelfShadowedBumpMap
 #else
 				m_CS_GenerateSSBumpMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
 				m_CS_BilateralFilter = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
-				m_CS_GenerateTranslucencyMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateTranslucencyMap.fxbin" ), "CS" );
+//				m_CS_GenerateTranslucencyMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateTranslucencyMap.fxbin" ), "CS" );
 #endif
 
 				// Create our constant buffers
@@ -141,7 +147,7 @@ namespace GenerateSelfShadowedBumpMap
 
 				try
 				{
-					m_CS_GenerateTranslucencyMap.Dispose();
+//					m_CS_GenerateTranslucencyMap.Dispose();
 					m_CS_GenerateSSBumpMap.Dispose();
 					m_CS_BilateralFilter.Dispose();
 
@@ -194,6 +200,7 @@ namespace GenerateSelfShadowedBumpMap
 			m_TextureSource = null;
 
 			// Load the source image assuming it's in linear space
+			m_SourceFileName = _FileName;
 			m_BitmapSource = new ImageUtility.Bitmap( _FileName, m_LinearProfile );
 			outputPanelInputHeightMap.Image = m_BitmapSource;
 
@@ -882,7 +889,7 @@ namespace GenerateSelfShadowedBumpMap
 				return;
 			}
 
-			string	SourceFileName = openFileDialogImage.FileName;
+			string	SourceFileName = m_SourceFileName.FullName;
 			string	TargetFileName = System.IO.Path.Combine( System.IO.Path.GetDirectoryName( SourceFileName ), System.IO.Path.GetFileNameWithoutExtension( SourceFileName ) + "_ssbump.png" );
 
 			saveFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( TargetFileName );
@@ -908,6 +915,60 @@ namespace GenerateSelfShadowedBumpMap
 			viewportPanelResult.ViewLinear = !checkBoxShowsRGB.Checked;
 		}
 
+		private string	m_DraggedFileName = null;
+		private void outputPanelInputHeightMap_DragEnter( object sender, DragEventArgs e )
+		{
+			m_DraggedFileName = null;
+			if ( (e.AllowedEffect & DragDropEffects.Copy) != DragDropEffects.Copy )
+				return;
+
+			Array	data = ((IDataObject) e.Data).GetData( "FileNameW" ) as Array;
+			if ( data == null || data.Length != 1 )
+				return;
+			if ( !(data.GetValue(0) is String) )
+				return;
+
+			string	DraggedFileName = (data as string[])[0];
+
+			string	Extension = System.IO.Path.GetExtension( DraggedFileName ).ToLower();
+			if (	Extension == ".jpg"
+				||	Extension == ".jpeg"
+				||	Extension == ".png"
+				||	Extension == ".tga"
+				||	Extension == ".bmp"
+				||	Extension == ".tif"
+				||	Extension == ".tiff"
+				||	Extension == ".hdr"
+				||	Extension == ".crw"
+				||	Extension == ".dng"
+				)
+			{
+				m_DraggedFileName = DraggedFileName;	// Supported!
+				e.Effect = DragDropEffects.Copy;
+			}
+		}
+
+		private void outputPanelInputHeightMap_DragDrop( object sender, DragEventArgs e )
+		{
+			if ( m_DraggedFileName != null )
+				LoadHeightMap( new System.IO.FileInfo( m_DraggedFileName ) );
+		}
+
 		#endregion
+
+		private void outputPanelInputHeightMap_DragOver( object sender, DragEventArgs e )
+		{
+
+		}
+
+		private void outputPanelInputHeightMap_GiveFeedback( object sender, GiveFeedbackEventArgs e )
+		{
+
+		}
+
+		private void outputPanelInputHeightMap_QueryContinueDrag( object sender, QueryContinueDragEventArgs e )
+		{
+
+		}
 	}
 }

@@ -30,8 +30,6 @@
 			this.floatTrackbarControlPixelDensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlBilateralTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlBilateralRadius = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.label5 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlAOFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.progressBar = new System.Windows.Forms.ProgressBar();
 			this.radioButtonShowDirOccRGB = new System.Windows.Forms.RadioButton();
 			this.radioButtonDirOccR = new System.Windows.Forms.RadioButton();
@@ -42,32 +40,34 @@
 			this.openFileDialogImage = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogImage = new System.Windows.Forms.SaveFileDialog();
 			this.radioButtonAOfromRGB = new System.Windows.Forms.RadioButton();
-			this.viewportPanelResult = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
-			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
 			this.checkBoxShowsRGB = new System.Windows.Forms.CheckBox();
 			this.tabControlGenerators = new System.Windows.Forms.TabControl();
 			this.tabPageSSBump = new System.Windows.Forms.TabPage();
 			this.tabPageTranslucency = new System.Windows.Forms.TabPage();
-			this.tabPageNormal = new System.Windows.Forms.TabPage();
 			this.checkBoxWrapTr = new System.Windows.Forms.CheckBox();
 			this.integerTrackbarControlRaysCount2 = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.buttonGenerateTranslucency = new System.Windows.Forms.Button();
+			this.floatTrackbarControlDensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlThickness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label8 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlBilateralRadiusTr = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label9 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlBilateralToleranceTr = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label10 = new System.Windows.Forms.Label();
+			this.label14 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlPixelDensityTr = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label11 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlMaxStepsCountTr = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label12 = new System.Windows.Forms.Label();
 			this.label13 = new System.Windows.Forms.Label();
-			this.label14 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlDensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.tabPageNormal = new System.Windows.Forms.TabPage();
+			this.groupBox1 = new System.Windows.Forms.GroupBox();
+			this.viewportPanelResult = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
+			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
 			this.tabControlGenerators.SuspendLayout();
 			this.tabPageSSBump.SuspendLayout();
 			this.tabPageTranslucency.SuspendLayout();
+			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlHeight
@@ -229,31 +229,6 @@
 			this.floatTrackbarControlBilateralRadius.VisibleRangeMax = 32F;
 			this.floatTrackbarControlBilateralRadius.VisibleRangeMin = 0.001F;
 			// 
-			// label5
-			// 
-			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(536, 507);
-			this.label5.Name = "label5";
-			this.label5.Size = new System.Drawing.Size(55, 13);
-			this.label5.TabIndex = 3;
-			this.label5.Text = "AO Factor";
-			this.label5.Visible = false;
-			// 
-			// floatTrackbarControlAOFactor
-			// 
-			this.floatTrackbarControlAOFactor.Location = new System.Drawing.Point(635, 504);
-			this.floatTrackbarControlAOFactor.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlAOFactor.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlAOFactor.Name = "floatTrackbarControlAOFactor";
-			this.floatTrackbarControlAOFactor.RangeMax = 10000F;
-			this.floatTrackbarControlAOFactor.RangeMin = 0.001F;
-			this.floatTrackbarControlAOFactor.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlAOFactor.TabIndex = 2;
-			this.floatTrackbarControlAOFactor.Value = 10F;
-			this.floatTrackbarControlAOFactor.Visible = false;
-			this.floatTrackbarControlAOFactor.VisibleRangeMax = 100F;
-			this.floatTrackbarControlAOFactor.VisibleRangeMin = 0.001F;
-			// 
 			// progressBar
 			// 
 			this.progressBar.Location = new System.Drawing.Point(530, 293);
@@ -264,9 +239,10 @@
 			// 
 			// radioButtonShowDirOccRGB
 			// 
+			this.radioButtonShowDirOccRGB.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.radioButtonShowDirOccRGB.AutoSize = true;
 			this.radioButtonShowDirOccRGB.Checked = true;
-			this.radioButtonShowDirOccRGB.Location = new System.Drawing.Point(530, 322);
+			this.radioButtonShowDirOccRGB.Location = new System.Drawing.Point(10, 42);
 			this.radioButtonShowDirOccRGB.Name = "radioButtonShowDirOccRGB";
 			this.radioButtonShowDirOccRGB.Size = new System.Drawing.Size(151, 17);
 			this.radioButtonShowDirOccRGB.TabIndex = 0;
@@ -277,8 +253,9 @@
 			// 
 			// radioButtonDirOccR
 			// 
+			this.radioButtonDirOccR.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.radioButtonDirOccR.AutoSize = true;
-			this.radioButtonDirOccR.Location = new System.Drawing.Point(530, 368);
+			this.radioButtonDirOccR.Location = new System.Drawing.Point(10, 88);
 			this.radioButtonDirOccR.Name = "radioButtonDirOccR";
 			this.radioButtonDirOccR.Size = new System.Drawing.Size(148, 17);
 			this.radioButtonDirOccR.TabIndex = 2;
@@ -288,8 +265,9 @@
 			// 
 			// radioButtonDirOccG
 			// 
+			this.radioButtonDirOccG.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.radioButtonDirOccG.AutoSize = true;
-			this.radioButtonDirOccG.Location = new System.Drawing.Point(530, 391);
+			this.radioButtonDirOccG.Location = new System.Drawing.Point(10, 111);
 			this.radioButtonDirOccG.Name = "radioButtonDirOccG";
 			this.radioButtonDirOccG.Size = new System.Drawing.Size(157, 17);
 			this.radioButtonDirOccG.TabIndex = 3;
@@ -299,8 +277,9 @@
 			// 
 			// radioButtonDirOccB
 			// 
+			this.radioButtonDirOccB.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.radioButtonDirOccB.AutoSize = true;
-			this.radioButtonDirOccB.Location = new System.Drawing.Point(530, 414);
+			this.radioButtonDirOccB.Location = new System.Drawing.Point(10, 134);
 			this.radioButtonDirOccB.Name = "radioButtonDirOccB";
 			this.radioButtonDirOccB.Size = new System.Drawing.Size(149, 17);
 			this.radioButtonDirOccB.TabIndex = 4;
@@ -310,8 +289,9 @@
 			// 
 			// radioButtonAO
 			// 
+			this.radioButtonAO.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.radioButtonAO.AutoSize = true;
-			this.radioButtonAO.Location = new System.Drawing.Point(530, 437);
+			this.radioButtonAO.Location = new System.Drawing.Point(10, 157);
 			this.radioButtonAO.Name = "radioButtonAO";
 			this.radioButtonAO.Size = new System.Drawing.Size(113, 17);
 			this.radioButtonAO.TabIndex = 5;
@@ -321,8 +301,9 @@
 			// 
 			// radioButtonDirOccRGBtimeAO
 			// 
+			this.radioButtonDirOccRGBtimeAO.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.radioButtonDirOccRGBtimeAO.AutoSize = true;
-			this.radioButtonDirOccRGBtimeAO.Location = new System.Drawing.Point(530, 345);
+			this.radioButtonDirOccRGBtimeAO.Location = new System.Drawing.Point(10, 65);
 			this.radioButtonDirOccRGBtimeAO.Name = "radioButtonDirOccRGBtimeAO";
 			this.radioButtonDirOccRGBtimeAO.Size = new System.Drawing.Size(176, 17);
 			this.radioButtonDirOccRGBtimeAO.TabIndex = 1;
@@ -344,8 +325,9 @@
 			// 
 			// radioButtonAOfromRGB
 			// 
+			this.radioButtonAOfromRGB.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.radioButtonAOfromRGB.AutoSize = true;
-			this.radioButtonAOfromRGB.Location = new System.Drawing.Point(530, 460);
+			this.radioButtonAOfromRGB.Location = new System.Drawing.Point(10, 180);
 			this.radioButtonAOfromRGB.Name = "radioButtonAOfromRGB";
 			this.radioButtonAOfromRGB.Size = new System.Drawing.Size(174, 17);
 			this.radioButtonAOfromRGB.TabIndex = 6;
@@ -353,37 +335,13 @@
 			this.radioButtonAOfromRGB.UseVisualStyleBackColor = true;
 			this.radioButtonAOfromRGB.CheckedChanged += new System.EventHandler(this.radioButtonAOfromRGB_CheckedChanged);
 			// 
-			// viewportPanelResult
-			// 
-			this.viewportPanelResult.Image = null;
-			this.viewportPanelResult.Location = new System.Drawing.Point(856, 16);
-			this.viewportPanelResult.MessageOnEmpty = null;
-			this.viewportPanelResult.Name = "viewportPanelResult";
-			this.viewportPanelResult.Size = new System.Drawing.Size(512, 512);
-			this.viewportPanelResult.TabIndex = 0;
-			this.viewportPanelResult.ViewLinear = false;
-			this.viewportPanelResult.ViewMode = GenerateSelfShadowedBumpMap.ImagePanel.VIEW_MODE.RGB;
-			this.viewportPanelResult.Click += new System.EventHandler(this.viewportPanelResult_Click);
-			// 
-			// outputPanelInputHeightMap
-			// 
-			this.outputPanelInputHeightMap.Font = new System.Drawing.Font("Microsoft Sans Serif", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.outputPanelInputHeightMap.Image = null;
-			this.outputPanelInputHeightMap.Location = new System.Drawing.Point(12, 12);
-			this.outputPanelInputHeightMap.MessageOnEmpty = "Click to load a height map...";
-			this.outputPanelInputHeightMap.Name = "outputPanelInputHeightMap";
-			this.outputPanelInputHeightMap.Size = new System.Drawing.Size(512, 512);
-			this.outputPanelInputHeightMap.TabIndex = 0;
-			this.outputPanelInputHeightMap.ViewLinear = false;
-			this.outputPanelInputHeightMap.ViewMode = GenerateSelfShadowedBumpMap.ImagePanel.VIEW_MODE.RGB;
-			this.outputPanelInputHeightMap.Click += new System.EventHandler(this.outputPanelInputHeightMap_Click);
-			// 
 			// checkBoxShowsRGB
 			// 
+			this.checkBoxShowsRGB.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.checkBoxShowsRGB.AutoSize = true;
 			this.checkBoxShowsRGB.Checked = true;
 			this.checkBoxShowsRGB.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowsRGB.Location = new System.Drawing.Point(752, 322);
+			this.checkBoxShowsRGB.Location = new System.Drawing.Point(10, 19);
 			this.checkBoxShowsRGB.Name = "checkBoxShowsRGB";
 			this.checkBoxShowsRGB.Size = new System.Drawing.Size(98, 17);
 			this.checkBoxShowsRGB.TabIndex = 7;
@@ -452,16 +410,6 @@
 			this.tabPageTranslucency.Text = "Translucency";
 			this.tabPageTranslucency.UseVisualStyleBackColor = true;
 			// 
-			// tabPageNormal
-			// 
-			this.tabPageNormal.Location = new System.Drawing.Point(4, 22);
-			this.tabPageNormal.Name = "tabPageNormal";
-			this.tabPageNormal.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageNormal.Size = new System.Drawing.Size(312, 249);
-			this.tabPageNormal.TabIndex = 2;
-			this.tabPageNormal.Text = "Normal";
-			this.tabPageNormal.UseVisualStyleBackColor = true;
-			// 
 			// checkBoxWrapTr
 			// 
 			this.checkBoxWrapTr.AutoSize = true;
@@ -498,6 +446,19 @@
 			this.buttonGenerateTranslucency.Text = "Generate";
 			this.buttonGenerateTranslucency.UseVisualStyleBackColor = true;
 			this.buttonGenerateTranslucency.Click += new System.EventHandler(this.buttonGenerateTranslucency_Click);
+			// 
+			// floatTrackbarControlDensity
+			// 
+			this.floatTrackbarControlDensity.Location = new System.Drawing.Point(105, 56);
+			this.floatTrackbarControlDensity.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlDensity.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlDensity.Name = "floatTrackbarControlDensity";
+			this.floatTrackbarControlDensity.RangeMax = 1000F;
+			this.floatTrackbarControlDensity.RangeMin = 0.01F;
+			this.floatTrackbarControlDensity.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlDensity.TabIndex = 10;
+			this.floatTrackbarControlDensity.Value = 10F;
+			this.floatTrackbarControlDensity.VisibleRangeMin = 0.01F;
 			// 
 			// floatTrackbarControlThickness
 			// 
@@ -566,6 +527,15 @@
 			this.label10.TabIndex = 16;
 			this.label10.Text = "Bilateral Radius";
 			// 
+			// label14
+			// 
+			this.label14.AutoSize = true;
+			this.label14.Location = new System.Drawing.Point(6, 59);
+			this.label14.Name = "label14";
+			this.label14.Size = new System.Drawing.Size(82, 13);
+			this.label14.TabIndex = 13;
+			this.label14.Text = "Medium Density";
+			// 
 			// floatTrackbarControlPixelDensityTr
 			// 
 			this.floatTrackbarControlPixelDensityTr.Location = new System.Drawing.Point(105, 90);
@@ -621,47 +591,71 @@
 			this.label13.TabIndex = 17;
 			this.label13.Text = "Rays per Pixel";
 			// 
-			// label14
+			// tabPageNormal
 			// 
-			this.label14.AutoSize = true;
-			this.label14.Location = new System.Drawing.Point(6, 59);
-			this.label14.Name = "label14";
-			this.label14.Size = new System.Drawing.Size(82, 13);
-			this.label14.TabIndex = 13;
-			this.label14.Text = "Medium Density";
+			this.tabPageNormal.Location = new System.Drawing.Point(4, 22);
+			this.tabPageNormal.Name = "tabPageNormal";
+			this.tabPageNormal.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPageNormal.Size = new System.Drawing.Size(312, 249);
+			this.tabPageNormal.TabIndex = 2;
+			this.tabPageNormal.Text = "Normal";
+			this.tabPageNormal.UseVisualStyleBackColor = true;
 			// 
-			// floatTrackbarControlDensity
+			// groupBox1
 			// 
-			this.floatTrackbarControlDensity.Location = new System.Drawing.Point(105, 56);
-			this.floatTrackbarControlDensity.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlDensity.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlDensity.Name = "floatTrackbarControlDensity";
-			this.floatTrackbarControlDensity.RangeMax = 1000F;
-			this.floatTrackbarControlDensity.RangeMin = 0.01F;
-			this.floatTrackbarControlDensity.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlDensity.TabIndex = 10;
-			this.floatTrackbarControlDensity.Value = 10F;
-			this.floatTrackbarControlDensity.VisibleRangeMin = 0.01F;
+			this.groupBox1.Controls.Add(this.checkBoxShowsRGB);
+			this.groupBox1.Controls.Add(this.radioButtonShowDirOccRGB);
+			this.groupBox1.Controls.Add(this.radioButtonAOfromRGB);
+			this.groupBox1.Controls.Add(this.radioButtonDirOccR);
+			this.groupBox1.Controls.Add(this.radioButtonAO);
+			this.groupBox1.Controls.Add(this.radioButtonDirOccRGBtimeAO);
+			this.groupBox1.Controls.Add(this.radioButtonDirOccB);
+			this.groupBox1.Controls.Add(this.radioButtonDirOccG);
+			this.groupBox1.Location = new System.Drawing.Point(656, 323);
+			this.groupBox1.Name = "groupBox1";
+			this.groupBox1.Size = new System.Drawing.Size(190, 205);
+			this.groupBox1.TabIndex = 9;
+			this.groupBox1.TabStop = false;
+			this.groupBox1.Text = "Result Display";
+			// 
+			// viewportPanelResult
+			// 
+			this.viewportPanelResult.Image = null;
+			this.viewportPanelResult.Location = new System.Drawing.Point(856, 16);
+			this.viewportPanelResult.MessageOnEmpty = null;
+			this.viewportPanelResult.Name = "viewportPanelResult";
+			this.viewportPanelResult.Size = new System.Drawing.Size(512, 512);
+			this.viewportPanelResult.TabIndex = 0;
+			this.viewportPanelResult.ViewLinear = false;
+			this.viewportPanelResult.ViewMode = GenerateSelfShadowedBumpMap.ImagePanel.VIEW_MODE.RGB;
+			this.viewportPanelResult.Click += new System.EventHandler(this.viewportPanelResult_Click);
+			// 
+			// outputPanelInputHeightMap
+			// 
+			this.outputPanelInputHeightMap.AllowDrop = true;
+			this.outputPanelInputHeightMap.Font = new System.Drawing.Font("Microsoft Sans Serif", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.outputPanelInputHeightMap.Image = null;
+			this.outputPanelInputHeightMap.Location = new System.Drawing.Point(12, 12);
+			this.outputPanelInputHeightMap.MessageOnEmpty = "Click to load a height map,\r\nor drag and drop...";
+			this.outputPanelInputHeightMap.Name = "outputPanelInputHeightMap";
+			this.outputPanelInputHeightMap.Size = new System.Drawing.Size(512, 512);
+			this.outputPanelInputHeightMap.TabIndex = 0;
+			this.outputPanelInputHeightMap.ViewLinear = false;
+			this.outputPanelInputHeightMap.ViewMode = GenerateSelfShadowedBumpMap.ImagePanel.VIEW_MODE.RGB;
+			this.outputPanelInputHeightMap.Click += new System.EventHandler(this.outputPanelInputHeightMap_Click);
+			this.outputPanelInputHeightMap.DragDrop += new System.Windows.Forms.DragEventHandler(this.outputPanelInputHeightMap_DragDrop);
+			this.outputPanelInputHeightMap.DragEnter += new System.Windows.Forms.DragEventHandler(this.outputPanelInputHeightMap_DragEnter);
 			// 
 			// GeneratorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1379, 540);
+			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.tabControlGenerators);
-			this.Controls.Add(this.checkBoxShowsRGB);
-			this.Controls.Add(this.radioButtonAOfromRGB);
-			this.Controls.Add(this.radioButtonAO);
-			this.Controls.Add(this.radioButtonDirOccB);
-			this.Controls.Add(this.radioButtonDirOccG);
-			this.Controls.Add(this.radioButtonDirOccRGBtimeAO);
-			this.Controls.Add(this.radioButtonDirOccR);
-			this.Controls.Add(this.label5);
-			this.Controls.Add(this.radioButtonShowDirOccRGB);
 			this.Controls.Add(this.progressBar);
 			this.Controls.Add(this.viewportPanelResult);
 			this.Controls.Add(this.outputPanelInputHeightMap);
-			this.Controls.Add(this.floatTrackbarControlAOFactor);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "GeneratorForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -671,8 +665,9 @@
 			this.tabPageSSBump.PerformLayout();
 			this.tabPageTranslucency.ResumeLayout(false);
 			this.tabPageTranslucency.PerformLayout();
+			this.groupBox1.ResumeLayout(false);
+			this.groupBox1.PerformLayout();
 			this.ResumeLayout(false);
-			this.PerformLayout();
 
 		}
 
@@ -687,8 +682,6 @@
 		private System.Windows.Forms.Label label3;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPixelDensity;
 		private System.Windows.Forms.Button buttonGenerate;
-		private System.Windows.Forms.Label label5;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAOFactor;
 		private System.Windows.Forms.ProgressBar progressBar;
 		private System.Windows.Forms.Label label4;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlMaxStepsCount;
@@ -727,6 +720,7 @@
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlMaxStepsCountTr;
 		private System.Windows.Forms.Label label12;
 		private System.Windows.Forms.Label label13;
+		private System.Windows.Forms.GroupBox groupBox1;
 	}
 }
 
