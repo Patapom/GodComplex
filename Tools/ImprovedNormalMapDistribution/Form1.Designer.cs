@@ -1,0 +1,105 @@
+﻿namespace ImprovedNormalMapDistribution
+{
+	partial class Form1
+	{
+		/// <summary>
+		/// Required designer variable.
+		/// </summary>
+		private System.ComponentModel.IContainer components = null;
+
+		/// <summary>
+		/// Clean up any resources being used.
+		/// </summary>
+		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+		protected override void Dispose( bool disposing )
+		{
+			if ( disposing && (components != null) )
+			{
+				components.Dispose();
+			}
+			base.Dispose( disposing );
+		}
+
+		#region Windows Form Designer generated code
+
+		/// <summary>
+		/// Required method for Designer support - do not modify
+		/// the contents of this method with the code editor.
+		/// </summary>
+		private void InitializeComponent()
+		{
+			this.components = new System.ComponentModel.Container();
+			this.floatTrackbarControlPhi = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlTheta = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.outputPanel1 = new ImprovedNormalMapDistribution.OutputPanel(this.components);
+			this.outputPanel21 = new ImprovedNormalMapDistribution.OutputPanel2(this.components);
+			this.SuspendLayout();
+			// 
+			// floatTrackbarControlPhi
+			// 
+			this.floatTrackbarControlPhi.Location = new System.Drawing.Point(728, 12);
+			this.floatTrackbarControlPhi.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlPhi.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlPhi.Name = "floatTrackbarControlPhi";
+			this.floatTrackbarControlPhi.RangeMax = 180F;
+			this.floatTrackbarControlPhi.RangeMin = -180F;
+			this.floatTrackbarControlPhi.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlPhi.TabIndex = 1;
+			this.floatTrackbarControlPhi.Value = 0F;
+			this.floatTrackbarControlPhi.VisibleRangeMax = 180F;
+			this.floatTrackbarControlPhi.VisibleRangeMin = -180F;
+			this.floatTrackbarControlPhi.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlPhi_ValueChanged);
+			// 
+			// floatTrackbarControlTheta
+			// 
+			this.floatTrackbarControlTheta.Location = new System.Drawing.Point(728, 38);
+			this.floatTrackbarControlTheta.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlTheta.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlTheta.Name = "floatTrackbarControlTheta";
+			this.floatTrackbarControlTheta.RangeMax = 90F;
+			this.floatTrackbarControlTheta.RangeMin = 0F;
+			this.floatTrackbarControlTheta.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlTheta.TabIndex = 1;
+			this.floatTrackbarControlTheta.Value = 0F;
+			this.floatTrackbarControlTheta.VisibleRangeMax = 90F;
+			this.floatTrackbarControlTheta.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTheta_ValueChanged);
+			// 
+			// outputPanel1
+			// 
+			this.outputPanel1.Location = new System.Drawing.Point(12, 12);
+			this.outputPanel1.Name = "outputPanel1";
+			this.outputPanel1.Size = new System.Drawing.Size(706, 539);
+			this.outputPanel1.TabIndex = 0;
+			// 
+			// outputPanel21
+			// 
+			this.outputPanel21.Location = new System.Drawing.Point(728, 179);
+			this.outputPanel21.Name = "outputPanel21";
+			this.outputPanel21.Size = new System.Drawing.Size(264, 207);
+			this.outputPanel21.TabIndex = 2;
+			this.outputPanel21.Theta = 0D;
+			// 
+			// Form1
+			// 
+			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			this.ClientSize = new System.Drawing.Size(1004, 665);
+			this.Controls.Add(this.outputPanel21);
+			this.Controls.Add(this.floatTrackbarControlTheta);
+			this.Controls.Add(this.floatTrackbarControlPhi);
+			this.Controls.Add(this.outputPanel1);
+			this.Name = "Form1";
+			this.Text = "Form1";
+			this.ResumeLayout(false);
+
+		}
+
+		#endregion
+
+		private OutputPanel outputPanel1;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPhi;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTheta;
+		private OutputPanel2 outputPanel21;
+	}
+}
+
