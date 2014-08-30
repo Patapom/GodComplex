@@ -27,6 +27,14 @@ struct PS_IN
 {
 	float4	__Position : SV_POSITION;
 	float2	UV : TEXCOORD0;
+	float3	Flux : PHOTON_FLUX;
+	float3	Direction : PHOTON_DIRECTION;
+};
+
+struct PS_OUT
+{
+	float4	FluxWeight;
+	float3	Direction;
 };
 
 VS_IN	VS( VS_IN _In )
@@ -47,15 +55,15 @@ void	GS( point VS_IN _In[1], inout TriangleStream<PS_IN> _OutStream )
 	PhotonUnpacked	P;
 	UnPackPhoton( Pp, P );
 
+	// Store flux & weight
+	Out.Flux = P.Color;
+	Out.Direction = P.Direction;
+
 	// Determine where to splat the photon
-	float3	TopCorner = float3( 0, 0, 0 ) + float3( -0.5 * _CloudScapeSize.x, _CloudScapeSize.y, -0.5 * _CloudScapeSize.z );
-	float3	BottomCorner = float3( 0, 0, 0 ) + float3( 0.5 * _CloudScapeSize.x, 0.0, 0.5 * _CloudScapeSize.z );
-	float3	UVW = (float3( P.Position.x, 0.0, P.Position.y ) - TopCorner) / (BottomCorner - TopCorner);
-
-// uint	Count = sqrt(10000000);
-// UVW.xy = float2( -1.0 + 2.0 * (_In[0].PhotonIndex % Count) / Count, -1.0 + 2.0 * (_In[0].PhotonIndex / Count) / Count );
-
-	float4	Pos = float4( 2.0 * UVW.xy - 1.0, 0, 1 );
+	float2	Corner0 = -0.5 * _CloudScapeSize.xz;
+	float2	Corner1 =  0.5 * _CloudScapeSize.xz;
+	float2	UV = (P.Position.xy - Corner0) / (Corner1 - Corner0);
+	float4	Pos = float4( 2.0 * UV - 1.0, 0, 1 );
 
 	// Stream out the 4 vertices for the splat quad
 	Out.UV = float2( -1, 1 );
@@ -75,7 +83,12 @@ void	GS( point VS_IN _In[1], inout TriangleStream<PS_IN> _OutStream )
 	_OutStream.Append( Out );
 }
 
-float4	PS( PS_IN _In ) : SV_TARGET0
+PS_OUT	PS( PS_IN _In )
 {
-	return _SplatIntensity * exp( -10.0 * length( _In.UV ) );
+	PS_OUT	Out;
+	float	Weight = _SplatIntensity * exp( -10.0 * length( _In.UV ) );
+	Out.FluxWeight = float4( _In.Flux, Weight );
+	Out.Direction = _In.Direction;
+
+	return Out;
 }

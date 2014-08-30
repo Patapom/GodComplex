@@ -86,6 +86,7 @@ namespace OfflineCloudRenderer2
 
 		// Structured buffers
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		[System.Diagnostics.DebuggerDisplay( "P=({Position.x}, {Position.y}) D={Direction} RGBE={RGBE}" )]
 		public struct	SB_Photon
 		{
 			public float2		Position;				// Position on the layer
@@ -121,9 +122,11 @@ namespace OfflineCloudRenderer2
 
 		// Photons Splatter
 		private Shader						m_PS_PhotonSplatter	= null;
-		private ConstantBuffer<CB_SplatPhoton>			m_CB_SplatPhoton;
-		private Texture2D					m_Tex_PhotonLayers = null;
+		private ConstantBuffer<CB_SplatPhoton>	m_CB_SplatPhoton;
 		private Primitive					m_Prim_Point = null;
+
+		private Texture3D					m_Tex_PhotonLayers_Flux = null;
+		private Texture3D					m_Tex_PhotonLayers_Direction = null;
 
 		// Photons Renderer
 		private Shader						m_PS_RenderLayer = null;
@@ -185,7 +188,9 @@ namespace OfflineCloudRenderer2
 			Reg( m_PS_PhotonSplatter = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/LayeredRenderer/SplatPhoton.hlsl" ) ), VERTEX_FORMAT.P3, "VS", "GS", "PS", null ) );
 
 			Reg( m_CB_SplatPhoton = new ConstantBuffer<CB_SplatPhoton>( m_Device, 8 ) );
-			Reg( m_Tex_PhotonLayers = new Texture2D( m_Device, 512, 512, LAYERS_COUNT+1, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
+
+			Reg( m_Tex_PhotonLayers_Flux = new Texture3D( m_Device, 512, 512, LAYERS_COUNT+1, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
+			Reg( m_Tex_PhotonLayers_Direction = new Texture3D( m_Device, 512, 512, LAYERS_COUNT+1, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null ) );
 
 			// Build a single point that will be instanced as many times as there are photons
 			{
@@ -392,9 +397,10 @@ namespace OfflineCloudRenderer2
 			m_CB_Render.UpdateData();
 
 			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
 
-			m_Tex_PhotonLayers.SetPS( 0 );
+			m_Tex_PhotonLayers_Flux.SetPS( 0 );
+			m_Tex_PhotonLayers_Direction.SetPS( 1 );
 
 			m_PS_RenderLayer.Use();
 
@@ -558,7 +564,8 @@ namespace OfflineCloudRenderer2
 			m_SB_PhotonLayerIndices.Write();
 
 			// 2.2) Clear photon splatting texture
-			m_Device.Clear( m_Tex_PhotonLayers, new float4( 0, 0, 0, 0 ) );
+			m_Device.Clear( m_Tex_PhotonLayers_Flux, new float4( 0, 0, 0, 0 ) );
+			m_Device.Clear( m_Tex_PhotonLayers_Direction, new float4( 0, 0, 0, 0 ) );
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -576,10 +583,10 @@ namespace OfflineCloudRenderer2
 
 			// 3.3) Prepare photon splatting buffer & states
 			m_CB_SplatPhoton.m.CloudScapeSize.Set( CLOUDSCAPE_SIZE, CLOUDSCAPE_HEIGHT, CLOUDSCAPE_SIZE );
-			m_CB_SplatPhoton.m.SplatSize = 2.0f * (2.0f / m_Tex_PhotonLayers.Width);
+			m_CB_SplatPhoton.m.SplatSize = 1.0f * (2.0f / m_Tex_PhotonLayers.Width);
  			m_CB_SplatPhoton.m.SplatIntensity = 1.0f;// 1000.0f / PHOTONS_COUNT;
 
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ALPHA_BLEND );	// Splatting is additive
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );	// Splatting is additive
 			m_Tex_PhotonLayers.RemoveFromLastAssignedSlots();
 
 
@@ -635,6 +642,11 @@ namespace OfflineCloudRenderer2
 						progressBar1.Value = progressBar1.Maximum * (1+BatchIndex+BatchesCount*(LayerIndex+LAYERS_COUNT*BounceIndex)) / (BOUNCES_COUNT*LAYERS_COUNT*BatchesCount);
 						Application.DoEvents();
 					}
+
+//DEBUG Read back photons buffer
+// m_SB_Photons.Read();
+// m_SB_PhotonLayerIndices.Read();
+//DEBUG
 
 					// 5.1.2) Splat the photons that got through to the 2D texture array
 					m_PS_PhotonSplatter.Use();
