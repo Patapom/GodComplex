@@ -18,7 +18,7 @@ namespace RendererManaged {
 
 	public:
 
-		Shader( Device^ _Device, ShaderFile^ _ShaderFile, VERTEX_FORMAT _Format, String^ _EntryPointVS, String^ _EntryPointGS, String^ _EntryPointPS, ShaderMacros^ _Macros )
+		Shader( Device^ _Device, ShaderFile^ _ShaderFile, VERTEX_FORMAT _Format, String^ _EntryPointVS, String^ _EntryPointGS, String^ _EntryPointPS, cli::array<ShaderMacro^>^ _Macros )
 		{
 			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _ShaderFile->m_ShaderFileName->FullName ).ToPointer();
 			const char*	ShaderCode = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _ShaderFile->m_ShaderSourceCode ).ToPointer();
@@ -32,11 +32,11 @@ namespace RendererManaged {
 			if ( _Macros != nullptr )
 			{
 				int i=0;
-				pMacros = new D3D_SHADER_MACRO[_Macros->m_Macros->Length + 1];
-				for ( ; i < _Macros->m_Macros->Length; i++ )
+				pMacros = new D3D_SHADER_MACRO[_Macros->Length + 1];
+				for ( ; i < _Macros->Length; i++ )
 				{
-					pMacros[i].Name = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _Macros->m_Macros[i]->Name ).ToPointer();
-					pMacros[i].Definition = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _Macros->m_Macros[i]->Value ).ToPointer();
+					pMacros[i].Name = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _Macros[i]->Name ).ToPointer();
+					pMacros[i].Definition = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _Macros[i]->Value ).ToPointer();
 
 				}
 				pMacros[i].Name = NULL;

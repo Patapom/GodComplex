@@ -37,15 +37,19 @@
 			this.floatTrackbarControlDebug3 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.buttonShootPhotons = new System.Windows.Forms.Button();
 			this.progressBar1 = new System.Windows.Forms.ProgressBar();
-			this.floatTrackbarControlLayerThickness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlCloudscapeThickness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
-			this.viewportPanel = new OfflineCloudRenderer2.ViewportPanel(this.components);
 			this.floatTrackbarControlSigmaScattering = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
 			this.radioButtonShowFlux = new System.Windows.Forms.RadioButton();
 			this.radioButtonShowDirection = new System.Windows.Forms.RadioButton();
 			this.floatTrackbarControlDisplayIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxShowNormalized = new System.Windows.Forms.CheckBox();
+			this.radioButtonShowDensityField = new System.Windows.Forms.RadioButton();
+			this.integerTrackbarControlLayerDisplayStart = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label4 = new System.Windows.Forms.Label();
+			this.integerTrackbarControlLayerDisplayEnd = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.viewportPanel = new OfflineCloudRenderer2.ViewportPanel(this.components);
 			this.SuspendLayout();
 			// 
 			// buttonReload
@@ -128,35 +132,27 @@
 			this.progressBar1.Size = new System.Drawing.Size(200, 23);
 			this.progressBar1.TabIndex = 5;
 			// 
-			// floatTrackbarControlLayerThickness
+			// floatTrackbarControlCloudscapeThickness
 			// 
-			this.floatTrackbarControlLayerThickness.Location = new System.Drawing.Point(984, 28);
-			this.floatTrackbarControlLayerThickness.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlLayerThickness.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlLayerThickness.Name = "floatTrackbarControlLayerThickness";
-			this.floatTrackbarControlLayerThickness.RangeMin = 1F;
-			this.floatTrackbarControlLayerThickness.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlLayerThickness.TabIndex = 2;
-			this.floatTrackbarControlLayerThickness.Value = 100F;
-			this.floatTrackbarControlLayerThickness.VisibleRangeMax = 1000F;
-			this.floatTrackbarControlLayerThickness.VisibleRangeMin = 1F;
+			this.floatTrackbarControlCloudscapeThickness.Location = new System.Drawing.Point(984, 28);
+			this.floatTrackbarControlCloudscapeThickness.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlCloudscapeThickness.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlCloudscapeThickness.Name = "floatTrackbarControlCloudscapeThickness";
+			this.floatTrackbarControlCloudscapeThickness.RangeMin = 1F;
+			this.floatTrackbarControlCloudscapeThickness.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlCloudscapeThickness.TabIndex = 2;
+			this.floatTrackbarControlCloudscapeThickness.Value = 1000F;
+			this.floatTrackbarControlCloudscapeThickness.VisibleRangeMax = 1000F;
+			this.floatTrackbarControlCloudscapeThickness.VisibleRangeMin = 1F;
 			// 
 			// label2
 			// 
 			this.label2.AutoSize = true;
 			this.label2.Location = new System.Drawing.Point(981, 12);
 			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(102, 13);
+			this.label2.Size = new System.Drawing.Size(159, 13);
 			this.label2.TabIndex = 3;
-			this.label2.Text = "Layer Thickness (m)";
-			// 
-			// viewportPanel
-			// 
-			this.viewportPanel.Device = null;
-			this.viewportPanel.Location = new System.Drawing.Point(12, 12);
-			this.viewportPanel.Name = "viewportPanel";
-			this.viewportPanel.Size = new System.Drawing.Size(963, 686);
-			this.viewportPanel.TabIndex = 0;
+			this.label2.Text = "Total Cloudscape Thickness (m)";
 			// 
 			// floatTrackbarControlSigmaScattering
 			// 
@@ -214,13 +210,15 @@
 			this.floatTrackbarControlDisplayIntensity.RangeMin = 0F;
 			this.floatTrackbarControlDisplayIntensity.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlDisplayIntensity.TabIndex = 2;
-			this.floatTrackbarControlDisplayIntensity.Value = 1F;
-			this.floatTrackbarControlDisplayIntensity.VisibleRangeMax = 1F;
+			this.floatTrackbarControlDisplayIntensity.Value = 0.01F;
+			this.floatTrackbarControlDisplayIntensity.VisibleRangeMax = 0.1F;
 			this.floatTrackbarControlDisplayIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlDisplayIntensity_ValueChanged);
 			// 
 			// checkBoxShowNormalized
 			// 
 			this.checkBoxShowNormalized.AutoSize = true;
+			this.checkBoxShowNormalized.Checked = true;
+			this.checkBoxShowNormalized.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxShowNormalized.Location = new System.Drawing.Point(1103, 278);
 			this.checkBoxShowNormalized.Name = "checkBoxShowNormalized";
 			this.checkBoxShowNormalized.Size = new System.Drawing.Size(78, 17);
@@ -229,12 +227,72 @@
 			this.checkBoxShowNormalized.UseVisualStyleBackColor = true;
 			this.checkBoxShowNormalized.CheckedChanged += new System.EventHandler(this.checkBoxShowNormalized_CheckedChanged);
 			// 
+			// radioButtonShowDensityField
+			// 
+			this.radioButtonShowDensityField.AutoSize = true;
+			this.radioButtonShowDensityField.Location = new System.Drawing.Point(984, 327);
+			this.radioButtonShowDensityField.Name = "radioButtonShowDensityField";
+			this.radioButtonShowDensityField.Size = new System.Drawing.Size(115, 17);
+			this.radioButtonShowDensityField.TabIndex = 6;
+			this.radioButtonShowDensityField.Text = "Show Density Field";
+			this.radioButtonShowDensityField.UseVisualStyleBackColor = true;
+			this.radioButtonShowDensityField.CheckedChanged += new System.EventHandler(this.radioButtonShowDirection_CheckedChanged);
+			// 
+			// integerTrackbarControlLayerDisplayStart
+			// 
+			this.integerTrackbarControlLayerDisplayStart.Location = new System.Drawing.Point(984, 400);
+			this.integerTrackbarControlLayerDisplayStart.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlLayerDisplayStart.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlLayerDisplayStart.Name = "integerTrackbarControlLayerDisplayStart";
+			this.integerTrackbarControlLayerDisplayStart.RangeMax = 10000;
+			this.integerTrackbarControlLayerDisplayStart.RangeMin = 0;
+			this.integerTrackbarControlLayerDisplayStart.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlLayerDisplayStart.TabIndex = 8;
+			this.integerTrackbarControlLayerDisplayStart.Value = 0;
+			this.integerTrackbarControlLayerDisplayStart.VisibleRangeMax = 10000;
+			this.integerTrackbarControlLayerDisplayStart.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlLayerDisplayStart_ValueChanged);
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(982, 384);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(119, 13);
+			this.label4.TabIndex = 9;
+			this.label4.Text = "Layer Display Start/End";
+			// 
+			// integerTrackbarControlLayerDisplayEnd
+			// 
+			this.integerTrackbarControlLayerDisplayEnd.Location = new System.Drawing.Point(984, 426);
+			this.integerTrackbarControlLayerDisplayEnd.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlLayerDisplayEnd.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlLayerDisplayEnd.Name = "integerTrackbarControlLayerDisplayEnd";
+			this.integerTrackbarControlLayerDisplayEnd.RangeMax = 10000;
+			this.integerTrackbarControlLayerDisplayEnd.RangeMin = 0;
+			this.integerTrackbarControlLayerDisplayEnd.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlLayerDisplayEnd.TabIndex = 8;
+			this.integerTrackbarControlLayerDisplayEnd.Value = 0;
+			this.integerTrackbarControlLayerDisplayEnd.VisibleRangeMax = 10000;
+			this.integerTrackbarControlLayerDisplayEnd.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlLayerDisplayEnd_ValueChanged);
+			// 
+			// viewportPanel
+			// 
+			this.viewportPanel.Device = null;
+			this.viewportPanel.Location = new System.Drawing.Point(12, 12);
+			this.viewportPanel.Name = "viewportPanel";
+			this.viewportPanel.Size = new System.Drawing.Size(963, 686);
+			this.viewportPanel.TabIndex = 0;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1200, 756);
+			this.Controls.Add(this.label4);
+			this.Controls.Add(this.integerTrackbarControlLayerDisplayEnd);
+			this.Controls.Add(this.integerTrackbarControlLayerDisplayStart);
 			this.Controls.Add(this.checkBoxShowNormalized);
+			this.Controls.Add(this.radioButtonShowDensityField);
 			this.Controls.Add(this.radioButtonShowDirection);
 			this.Controls.Add(this.radioButtonShowFlux);
 			this.Controls.Add(this.progressBar1);
@@ -246,7 +304,7 @@
 			this.Controls.Add(this.floatTrackbarControlDebug2);
 			this.Controls.Add(this.floatTrackbarControlSigmaScattering);
 			this.Controls.Add(this.floatTrackbarControlDebug1);
-			this.Controls.Add(this.floatTrackbarControlLayerThickness);
+			this.Controls.Add(this.floatTrackbarControlCloudscapeThickness);
 			this.Controls.Add(this.floatTrackbarControlDisplayIntensity);
 			this.Controls.Add(this.floatTrackbarControlDebug0);
 			this.Controls.Add(this.buttonReload);
@@ -270,7 +328,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDebug3;
 		private System.Windows.Forms.Button buttonShootPhotons;
 		private System.Windows.Forms.ProgressBar progressBar1;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLayerThickness;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlCloudscapeThickness;
 		private System.Windows.Forms.Label label2;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlSigmaScattering;
 		private System.Windows.Forms.Label label3;
@@ -278,6 +336,10 @@
 		private System.Windows.Forms.RadioButton radioButtonShowDirection;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDisplayIntensity;
 		private System.Windows.Forms.CheckBox checkBoxShowNormalized;
+		private System.Windows.Forms.RadioButton radioButtonShowDensityField;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlLayerDisplayStart;
+		private System.Windows.Forms.Label label4;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlLayerDisplayEnd;
 	}
 }
 

@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define DEBUG_INFOS
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -18,7 +20,8 @@ namespace OfflineCloudRenderer2
 		#region CONSTANTS
 
 		private const int		PHOTON_BATCH_SIZE = 1024;		// Must correspond to threads count in compute shader
-		private const int		PHOTONS_COUNT = 10000 * PHOTON_BATCH_SIZE;
+//		private const int		PHOTONS_COUNT = 10000 * PHOTON_BATCH_SIZE;
+		private const int		PHOTONS_COUNT = 1000 * PHOTON_BATCH_SIZE;
 
 		private const int		BOUNCES_COUNT = 1;				// Maximum amount of bounces photons should perform before stopping shooting
 
@@ -27,7 +30,7 @@ namespace OfflineCloudRenderer2
 
 		private const int		RANDOM_TABLE_SIZE = 4 * 1024 * 1024;
 
-		private const int		LAYERS_COUNT = 1;				// Amount of layers the cloudscape will be split into
+		private const int		LAYERS_COUNT = 8;				// Amount of layers the cloudscape will be split into
 
 		// Density field 3D texture size will be DENSITY_FIELD_SIZE*DENSITY_FIELD_SIZE*DENSITY_FIELD_HEIGHT
 		private const int		DENSITY_FIELD_SIZE = 512;
@@ -35,7 +38,7 @@ namespace OfflineCloudRenderer2
 
 		// Cloudscape coverage in meters
 		private const float		CLOUDSCAPE_SIZE = 1000.0f;
-		private const float		CLOUDSCAPE_HEIGHT = 100.0f;
+//		private const float		CLOUDSCAPE_HEIGHT = 100.0f;
 
 		#endregion
 
@@ -58,6 +61,8 @@ namespace OfflineCloudRenderer2
 		{
 			public float3		CloudScapeSize;			// Size of the cloud scape covered by the 3D texture of densities
 			public uint			LayersCount;			// Amount of layers
+
+			public uint			StartLayerIndex;		// Start layer for display
 			public float		IntensityFactor;		// Multiplier for display intensity
 			public uint			DisplayType;			// 0=Flux, 1=Directions, bit #2 for normalization by weight
 		}
@@ -70,8 +75,8 @@ namespace OfflineCloudRenderer2
 			public float		LayerThickness;			// Thickness of each individual layer (in meters)
 			public float		SigmaScattering;		// Scattering coefficient (in m^-1)
 
-			public uint			MaxScattering;			// Maximum scattering events before discarding the photon
 			public float3		CloudScapeSize;			// Size of the cloud scape covered by the 3D texture of densities
+			public uint			MaxScattering;			// Maximum scattering events before discarding the photon
 
 			public uint			BatchIndex;				// Photon batch index
 		}
@@ -94,6 +99,9 @@ namespace OfflineCloudRenderer2
 			public float2		Position;				// Position on the layer
 			public uint			Direction;				// Packed Phi, Theta each on 2 UINT16
 			public uint			RGBE;					// RGBE-encoded color
+#if DEBUG_INFOS
+			public float4		Infos;
+#endif
 		}
 
 		#endregion
@@ -121,6 +129,8 @@ namespace OfflineCloudRenderer2
 		private StructuredBuffer<uint>		m_SB_ProcessedPhotonsCounter = null;
 
 		private Texture3D					m_Tex_DensityField = null;
+
+		private float3						m_CloudScapeSize;
 
 		// Photons Splatter
 		private Shader						m_PS_PhotonSplatter	= null;
@@ -171,7 +181,16 @@ namespace OfflineCloudRenderer2
 
 			//////////////////////////////////////////////////////////////////////////
 			// Photon Shooter
-			Reg( m_CS_PhotonShooter = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/LayeredRenderer/PhotonShooter.hlsl" ) ), "CS", null ) );
+#if DEBUG_INFOS
+			ShaderMacro[]	Macros = new ShaderMacro[] {
+				new ShaderMacro( "DEBUG", "" )
+			};
+#else
+			ShaderMacro[]	Macros = null;
+#endif
+
+
+			Reg( m_CS_PhotonShooter = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/LayeredRenderer/PhotonShooter.hlsl" ) ), "CS", Macros ) );
 			Reg( m_CB_PhotonShooterInput = new ConstantBuffer<CB_PhotonShooterInput>( m_Device, 8 ) );
 
 			BuildPhaseQuantileBuffer( new System.IO.FileInfo( @"Mie65536x2.float" ) );
@@ -187,7 +206,7 @@ namespace OfflineCloudRenderer2
 
 			//////////////////////////////////////////////////////////////////////////
 			// Photons Splatter
-			Reg( m_PS_PhotonSplatter = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/LayeredRenderer/SplatPhoton.hlsl" ) ), VERTEX_FORMAT.P3, "VS", "GS", "PS", null ) );
+			Reg( m_PS_PhotonSplatter = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( @"Shaders/LayeredRenderer/SplatPhoton.hlsl" ) ), VERTEX_FORMAT.P3, "VS", "GS", "PS", Macros ) );
 
 			Reg( m_CB_SplatPhoton = new ConstantBuffer<CB_SplatPhoton>( m_Device, 8 ) );
 
@@ -226,6 +245,13 @@ namespace OfflineCloudRenderer2
 			m_Manipulator.Attach( viewportPanel );
 			m_Manipulator.CameraTransformChanged += new CameraManipulator.UpdateCameraTransformEventHandler( Manipulator_CameraTransformChanged );
 			m_Manipulator.InitializeCamera( new float3( 0.0f, 0.0f, 4.0f ), new float3( 0, 0, 0 ), new float3( 0, 1, 0 ) );
+
+	
+			integerTrackbarControlLayerDisplayStart.RangeMax = LAYERS_COUNT;
+			integerTrackbarControlLayerDisplayStart.VisibleRangeMax = LAYERS_COUNT;
+			integerTrackbarControlLayerDisplayEnd.RangeMax = LAYERS_COUNT+1;
+			integerTrackbarControlLayerDisplayEnd.VisibleRangeMax = LAYERS_COUNT+1;
+			integerTrackbarControlLayerDisplayEnd.Value = LAYERS_COUNT+1;
 		}
 
 		protected override void OnClosing( CancelEventArgs e )
@@ -242,14 +268,29 @@ namespace OfflineCloudRenderer2
 		private void	Build3DDensityField()
 		{
 			PixelsBuffer	DensityField = new PixelsBuffer( DENSITY_FIELD_SIZE*DENSITY_FIELD_SIZE*DENSITY_FIELD_HEIGHT );
+			byte	D;
 
+			float3	P;
+			float3	C = new float3( 0.5f, 0.5f, 0.5f );
 			using ( System.IO.BinaryWriter W = DensityField.OpenStreamWrite() )
 				for ( int X=0; X < DENSITY_FIELD_SIZE; X++ )
+				{
+					P.x = (0.5f+X) / DENSITY_FIELD_SIZE;
 					for ( int Y=0; Y < DENSITY_FIELD_HEIGHT; Y++ )
+					{
+						P.y = (0.5f+Y) / DENSITY_FIELD_HEIGHT;
 						for ( int Z=0; Z < DENSITY_FIELD_SIZE; Z++ )
 						{
-							W.Write( (byte) 0 );	// Empty for now: photons should go straight through!
+							P.z = (0.5f+Z) / DENSITY_FIELD_SIZE;
+
+//							D = 0;	// Empty for now: photons should go straight through!
+
+							D = (byte) ((P - C).LengthSquared < 0.125f ? 255 : 0);
+
+							W.Write( D );
 						}
+					}
+				}
 
 			Reg( m_Tex_DensityField = new Texture3D( m_Device, DENSITY_FIELD_SIZE, DENSITY_FIELD_HEIGHT, DENSITY_FIELD_SIZE, 1, PIXEL_FORMAT.R8_UNORM, false, false, new PixelsBuffer[] { DensityField } ) );
 
@@ -394,10 +435,12 @@ namespace OfflineCloudRenderer2
 
 
 			// Render photon layers
- 			m_CB_Render.m.CloudScapeSize.Set( CLOUDSCAPE_SIZE, CLOUDSCAPE_HEIGHT, CLOUDSCAPE_SIZE );
+ 			m_CB_Render.m.CloudScapeSize = m_CloudScapeSize;
 			m_CB_Render.m.LayersCount = LAYERS_COUNT;
+			m_CB_Render.m.StartLayerIndex = (uint) integerTrackbarControlLayerDisplayStart.Value;
 			m_CB_Render.m.IntensityFactor = floatTrackbarControlDisplayIntensity.Value;
-			m_CB_Render.m.DisplayType = (uint) ((radioButtonShowDirection.Checked ? 1 : 0) | (checkBoxShowNormalized.Checked ? 2 : 0));
+			m_CB_Render.m.DisplayType = (uint) ((radioButtonShowDirection.Checked ? 1 : (radioButtonShowDensityField.Checked ? 2 : 0))
+									  | (checkBoxShowNormalized.Checked ? 4 : 0));
 			m_CB_Render.UpdateData();
 
 			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
@@ -405,10 +448,12 @@ namespace OfflineCloudRenderer2
 
 			m_Tex_PhotonLayers_Flux.SetPS( 0 );
 			m_Tex_PhotonLayers_Direction.SetPS( 1 );
+			m_Tex_DensityField.SetPS( 2 );
 
 			m_PS_RenderLayer.Use();
 
-			m_Prim_Quad.RenderInstanced( m_PS_RenderLayer, LAYERS_COUNT+1 );
+			int	instancesCount = Math.Max( 1, integerTrackbarControlLayerDisplayEnd.Value - integerTrackbarControlLayerDisplayStart.Value );
+			m_Prim_Quad.RenderInstanced( m_PS_RenderLayer, instancesCount );
 
 			// Render the world cube
  			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
@@ -520,6 +565,16 @@ namespace OfflineCloudRenderer2
 			Render();
 		}
 
+		private void integerTrackbarControlLayerDisplayStart_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			Render();
+		}
+
+		private void integerTrackbarControlLayerDisplayEnd_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			Render();
+		}
+
 		/// <summary>
 		/// Packs a direction and layer index into a single uint expected in the "Data" field of the Photon structure
 		/// </summary>
@@ -575,6 +630,10 @@ namespace OfflineCloudRenderer2
 				m_SB_Photons.m[PhotonIndex].Position.Set( x, z );
 				m_SB_Photons.m[PhotonIndex].Direction = InitialDirection;
 				m_SB_Photons.m[PhotonIndex].RGBE = InitialColor;
+
+#if DEBUG_INFOS
+				m_SB_Photons.m[PhotonIndex].Infos.Set( 0, 0, 0, 0 );	// Will store scattering events counter, marched length, steps count, etc.
+#endif
 			}
 			m_SB_Photons.Write();
 
@@ -595,18 +654,20 @@ namespace OfflineCloudRenderer2
 			//////////////////////////////////////////////////////////////////////////
 			// 3] Prepare buffers & states
 
+			m_CloudScapeSize.Set( CLOUDSCAPE_SIZE, floatTrackbarControlCloudscapeThickness.Value, CLOUDSCAPE_SIZE );
+
 			// 3.1) Prepare density field
 			m_Tex_DensityField.SetCS( 2 );
 
 			// 3.2) Constant buffer for photon shooting
 			m_CB_PhotonShooterInput.m.LayersCount = LAYERS_COUNT;
 			m_CB_PhotonShooterInput.m.MaxScattering = 30;
-			m_CB_PhotonShooterInput.m.LayerThickness = floatTrackbarControlLayerThickness.Value;	// Try a 100m thick layer
+			m_CB_PhotonShooterInput.m.LayerThickness = m_CloudScapeSize.y / LAYERS_COUNT;
 			m_CB_PhotonShooterInput.m.SigmaScattering = floatTrackbarControlSigmaScattering.Value;	// 0.04523893421169302263386206471922f;	// re=6µm Gamma=2 N0=4e8   Sigma_t = N0 * PI * re²
-			m_CB_PhotonShooterInput.m.CloudScapeSize.Set( CLOUDSCAPE_SIZE, CLOUDSCAPE_HEIGHT, CLOUDSCAPE_SIZE );
+			m_CB_PhotonShooterInput.m.CloudScapeSize = m_CloudScapeSize;
 
 			// 3.3) Prepare photon splatting buffer & states
-			m_CB_SplatPhoton.m.CloudScapeSize.Set( CLOUDSCAPE_SIZE, CLOUDSCAPE_HEIGHT, CLOUDSCAPE_SIZE );
+			m_CB_SplatPhoton.m.CloudScapeSize = m_CloudScapeSize;
 			m_CB_SplatPhoton.m.SplatSize = 1.0f * (2.0f / m_Tex_PhotonLayers_Flux.Width);
  			m_CB_SplatPhoton.m.SplatIntensity = 1.0f;// 1000.0f / PHOTONS_COUNT;
 
@@ -669,14 +730,18 @@ namespace OfflineCloudRenderer2
 						m_CS_PhotonShooter.Dispatch( 1, 1, 1 );
 
 						m_Device.Present( true );
+
+						// Notify of progress
 						progressBar1.Value = progressBar1.Maximum * (1+BatchIndex+BatchesCount*(LayerIndex+LAYERS_COUNT*BounceIndex)) / (BOUNCES_COUNT*LAYERS_COUNT*BatchesCount);
 						Application.DoEvents();
 					}
 
+#if DEBUG_INFOS
 //DEBUG Read back photons buffer
-// m_SB_Photons.Read();
+m_SB_Photons.Read();
 // m_SB_PhotonLayerIndices.Read();
 //DEBUG
+#endif
 
 					// 5.1.2) Splat the photons that got through to the 2D texture array
 					m_PS_PhotonSplatter.Use();
@@ -731,6 +796,8 @@ namespace OfflineCloudRenderer2
 						m_CS_PhotonShooter.Dispatch( 1, 1, 1 );
 
 						m_Device.Present( true );
+
+						// Notify of progress
 						progressBar1.Value = progressBar1.Maximum * (1+BatchIndex+BatchesCount*(LayerIndex+LAYERS_COUNT*BounceIndex)) / (BOUNCES_COUNT*LAYERS_COUNT*BatchesCount);
 						Application.DoEvents();
 					}

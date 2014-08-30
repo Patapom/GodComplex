@@ -7,24 +7,14 @@ using namespace System;
 
 namespace RendererManaged {
 
-	public ref class ShaderMacros
+	public ref class	ShaderMacro
 	{
 	public:
-
-		ref class	Macro
-		{
-		public:
-			String^		Name;
-			String^		Value;
-		};
-
-		cli::array< Macro^ >^	m_Macros;
+		String^		Name;
+		String^		Value;
 
 	public:
-
-		ShaderMacros( cli::array< Macro^ >^ _Macros )
-		{
-			m_Macros = _Macros;
-		}
+		ShaderMacro() : Name( nullptr ), Value( nullptr ) {}
+		ShaderMacro( String^ _Name, String^ _Value ) : Name( _Name ), Value( _Value ) {}
 	};
 }

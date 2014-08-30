@@ -10,6 +10,9 @@ struct Photon
 	uint	Direction;				// Packed Phi, Theta on 2 bytes each
 	uint	RGBE;					// RGBE-encoded color
 						// TODO: add stats like scattering events count & marched length?
+#ifdef DEBUG
+	float4	Infos;
+#endif
 };	// Total size: 16 bytes
 
 RWStructuredBuffer<Photon>	_Photons : register( u0 );						// Contains the photons to shoot through layers
@@ -25,6 +28,9 @@ struct PhotonUnpacked
 	float2	Position;
 	float3	Direction;
 	float3	Color;
+#ifdef DEBUG
+	float4	Infos;
+#endif
 };
 
 void	UnPackPhoton( in Photon _In, out PhotonUnpacked _Out )
@@ -45,6 +51,10 @@ void	UnPackPhoton( in Photon _In, out PhotonUnpacked _Out )
 	int		nExponent = int((_In.RGBE >> 24) & 0xFF);
 	float	Exponent = exp2( nExponent - 128 );
 	_Out.Color *= Exponent;
+
+#ifdef DEBUG
+	_Out.Infos = _In.Infos;
+#endif
 }
 
 void	PackPhoton( in PhotonUnpacked _In, out Photon _Out )
@@ -65,6 +75,10 @@ void	PackPhoton( in PhotonUnpacked _In, out Photon _Out )
 	uint	B = uint( clamp( 255 * Temp.z, 0, 255 ) );
 	uint	E = uint( clamp( Exponent + 128, 0, 255 ) );
 	_Out.RGBE = R | ((G | ((B | (E << 8)) << 8)) << 8);
+
+#ifdef DEBUG
+	_Out.Infos = _In.Infos;
+#endif
 }
 
 

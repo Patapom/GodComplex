@@ -32,7 +32,7 @@ static const float	INITIAL_START_EPSILON = 1e-4;
 
 cbuffer	CBInput : register( b8 )
 {
-	uint	_LayerIndex;			// Index of the layer we start shooting photons from, most significant bit is set to indicate direction (1 is bottom to top, is top to bottom)
+	uint	_LayerIndex;			// Index of the layer we start shooting photons from, most significant bit is set to indicate direction (0 is top to bottom, 1 is bottom to top)
 	uint	_LayersCount;			// Total amount of layers
 	float	_LayerThickness;		// Thickness of each individual layer (in meters)
 	float	_SigmaScattering;		// Scattering coefficient (in m^-1)
@@ -64,6 +64,10 @@ void	ShootPhoton( uint _PhotonIndex )
 	PhotonUnpacked	P;
 	UnPackPhoton( Pp, P );
 
+
+// TODO: Offset position depending on Up<=>Down flag!
+
+
 	float3	Position = float3( P.Position.x, (_LayersCount - _LayerIndex) * _LayerThickness, P.Position.y );
 
 	// Prepare marching through the layer
@@ -74,20 +78,24 @@ void	ShootPhoton( uint _PhotonIndex )
 	float	StepSize = _LayerThickness / 64.0;	// Arbitrary! Parameter!
 	uint	StepsCount = 0;
 
+const float	MAX_MARCHED_LENGTH = 50.0f * _LayerThickness;	// Arbitrary! Parameter!
+
 	float	LayerTopAltitude = (_LayersCount-_LayerIndex) * _LayerThickness;
 	float	LayerBottomAltitude = LayerTopAltitude - _LayerThickness;
 
 	[allow_uav_condition]
 	[loop]
-	while ( ScatteringEventsCount < _MaxScattering )
+	while ( ScatteringEventsCount < _MaxScattering && MarchedLength < MAX_MARCHED_LENGTH )
 	{
 		// March one step
 		Position += StepSize * P.Direction;
+		MarchedLength += StepSize;
 
 		if ( Position.y > LayerTopAltitude )
 		{	// Exited through top of layer, compute exact intersection
 			float	t = (LayerTopAltitude - Position.y) / (StepSize * P.Direction.y);
 			Position += t * StepSize * P.Direction;
+			MarchedLength += t * StepSize;
 			LayerIndex |= 0x80000000U;	// Change of direction => now going up
 			break;
 		}
@@ -95,25 +103,26 @@ void	ShootPhoton( uint _PhotonIndex )
 		{	// Exited through bottom of layer, compute exact intersection
 			float	t = (LayerBottomAltitude - Position.y) / (StepSize * P.Direction.y);
 			Position += t * StepSize * P.Direction;
+			MarchedLength += t * StepSize;
 			LayerIndex++;	// Passed through the layer
 			break;
 		}
 
 		// Sample density
 		float	Density = SampleDensity( Position );
-		OpticalDepth += Density * _SigmaScattering;
+		OpticalDepth += Density * _SigmaScattering * StepSize;
 
 		// Draw random number and check if we should be scattered
-#if USE_RANDOM_TABLE
-		float	Random = _Random[uint(-0.17138198 * (_MaxScattering * _PhotonIndex + StepsCount)) & (USE_RANDOM_TABLE-1)].x;
-#else
-		float	Random = Hash( -0.01718198 * (_MaxScattering * (0.27891+_PhotonIndex) + StepsCount) );
-#endif
+// #if USE_RANDOM_TABLE
+// 		float	Random = _Random[uint( 2.17138198 * (_MaxScattering * _PhotonIndex + StepsCount + 23.3719 * _LayerIndex)) & (USE_RANDOM_TABLE-1)].x;
+// #else
+		float	Random = Hash( 0.01718198 * (_MaxScattering * (0.27891+_PhotonIndex) + StepsCount) + 0.3719 * _LayerIndex );
+//#endif
 
-		if ( Random > exp( -OpticalDepth * StepSize ) )
+		if ( Random > exp( -OpticalDepth ) )
 		{	// We must scatter!
 			P.Direction = Scatter( _PhotonIndex, ScatteringEventsCount++, _MaxScattering, P.Direction );
-//			OpticalDepth = 0.0;				// Reset optical depth for next scattering event
+//OpticalDepth = 0.0;				// Reset optical depth for next scattering event
 			OpticalDepth += log( Random );	// Reset optical depth for next scattering event
 		}
 
@@ -128,13 +137,27 @@ void	ShootPhoton( uint _PhotonIndex )
 
 
 // Test direction change
-//P.Direction = float3( 1, 0, 0 );
+//P.Direction = RotateVector( P.Direction, normalize( float3( -1, 0, 1 ) ), 0.2 );
 
 // Test position change
-//P.Position += float2( 100.0, 50.0 );
+//P.Position += float2( 20.0, 10.0 );
 
 // Test color change
-//P.Color *= float3( 1.8, 0.6, 0.4 );
+//P.Color *= float3( 0.8, 0.6, 0.4 );
+
+
+#ifdef DEBUG	// Pack some additional infos
+	P.Infos = float4( ScatteringEventsCount, StepsCount, MarchedLength, LayerBottomAltitude );
+
+// 	// Density check
+// 	float3	_Position = float3( 0, 500, 0 );
+// 	float3	TopCorner = float3( 0, 0, 0 ) + float3( -0.5 * _CloudScapeSize.x, _CloudScapeSize.y, -0.5 * _CloudScapeSize.z );
+// 	float3	BottomCorner = float3( 0, 0, 0 ) + float3( 0.5 * _CloudScapeSize.x, 0.0, 0.5 * _CloudScapeSize.z );
+// 	float3	UVW = (_Position - TopCorner) / (BottomCorner - TopCorner);
+// 	float	Density = _TexDensity.SampleLevel( LinearClamp, UVW, 0.0 ).x;
+// 	P.Infos = float4( UVW, Density );
+#endif
+
 
 	PackPhoton( P, Pp );
 	_Photons[_PhotonIndex] = Pp;
