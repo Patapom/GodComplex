@@ -26,8 +26,22 @@ namespace RendererManaged {
 
 	ref class Shader;
 	ref class Texture2D;
-	ref class View2D;
+	ref class Texture3D;
 
+	// Texture view interface
+	public interface class	IView
+	{
+	public:
+		virtual property int	Width				{ int get() = 0; }
+		virtual property int	Height				{ int get() = 0; }
+		virtual property int	ArraySizeOrDepth	{ int get() = 0; }
+		virtual property ::ID3D11ShaderResourceView*	SRV { ::ID3D11ShaderResourceView*	get() = 0; }
+		virtual property ::ID3D11RenderTargetView*		RTV { ::ID3D11RenderTargetView*		get() = 0; }
+		virtual property ::ID3D11UnorderedAccessView*	UAV { ::ID3D11UnorderedAccessView*	get() = 0; }
+		virtual property ::ID3D11DepthStencilView*		DSV { ::ID3D11DepthStencilView*		get() = 0; }
+	};
+
+	// Main device
 	public ref class Device
 	{
 	internal:
@@ -75,11 +89,12 @@ namespace RendererManaged {
 
 		void	Clear( RendererManaged::float4 _ClearColor );
 		void	Clear( Texture2D^ _RenderTarget, RendererManaged::float4 _ClearColor );
+		void	Clear( Texture3D^ _RenderTarget, RendererManaged::float4 _ClearColor );
 		void	ClearDepthStencil( Texture2D^ _RenderTarget, float _Z, byte _Stencil, bool _ClearDepth, bool _ClearStencil );
 
 		void	SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCIL_STATE _DS, BLEND_STATE _BS );
 		void	SetRenderTarget( Texture2D^ _RenderTarget, Texture2D^ _DepthStencilTarget );
-		void	SetRenderTargets( cli::array<View2D^>^ _RenderTargetViews, Texture2D^ _DepthStencilTarget );
+		void	SetRenderTargets( cli::array<IView^>^ _RenderTargetViews, Texture2D^ _DepthStencilTarget );
 		void	RenderFullscreenQuad( Shader^ _Shader );
 
 		void	Present( bool _FlushCommands )

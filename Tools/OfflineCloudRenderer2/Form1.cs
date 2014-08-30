@@ -58,6 +58,8 @@ namespace OfflineCloudRenderer2
 		{
 			public float3		CloudScapeSize;			// Size of the cloud scape covered by the 3D texture of densities
 			public uint			LayersCount;			// Amount of layers
+			public float		IntensityFactor;		// Multiplier for display intensity
+			public uint			DisplayType;			// 0=Flux, 1=Directions, bit #2 for normalization by weight
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -394,6 +396,8 @@ namespace OfflineCloudRenderer2
 			// Render photon layers
  			m_CB_Render.m.CloudScapeSize.Set( CLOUDSCAPE_SIZE, CLOUDSCAPE_HEIGHT, CLOUDSCAPE_SIZE );
 			m_CB_Render.m.LayersCount = LAYERS_COUNT;
+			m_CB_Render.m.IntensityFactor = floatTrackbarControlDisplayIntensity.Value;
+			m_CB_Render.m.DisplayType = (uint) ((radioButtonShowDirection.Checked ? 1 : 0) | (checkBoxShowNormalized.Checked ? 2 : 0));
 			m_CB_Render.UpdateData();
 
 			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
@@ -496,6 +500,26 @@ namespace OfflineCloudRenderer2
 			Render();
 		}
 
+		private void floatTrackbarControlDisplayIntensity_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			Render();
+		}
+
+		private void radioButtonShowFlux_CheckedChanged( object sender, EventArgs e )
+		{
+			Render();
+		}
+
+		private void radioButtonShowDirection_CheckedChanged( object sender, EventArgs e )
+		{
+			Render();
+		}
+
+		private void checkBoxShowNormalized_CheckedChanged( object sender, EventArgs e )
+		{
+			Render();
+		}
+
 		/// <summary>
 		/// Packs a direction and layer index into a single uint expected in the "Data" field of the Photon structure
 		/// </summary>
@@ -583,11 +607,12 @@ namespace OfflineCloudRenderer2
 
 			// 3.3) Prepare photon splatting buffer & states
 			m_CB_SplatPhoton.m.CloudScapeSize.Set( CLOUDSCAPE_SIZE, CLOUDSCAPE_HEIGHT, CLOUDSCAPE_SIZE );
-			m_CB_SplatPhoton.m.SplatSize = 1.0f * (2.0f / m_Tex_PhotonLayers.Width);
+			m_CB_SplatPhoton.m.SplatSize = 1.0f * (2.0f / m_Tex_PhotonLayers_Flux.Width);
  			m_CB_SplatPhoton.m.SplatIntensity = 1.0f;// 1000.0f / PHOTONS_COUNT;
 
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );	// Splatting is additive
-			m_Tex_PhotonLayers.RemoveFromLastAssignedSlots();
+			m_Tex_PhotonLayers_Flux.RemoveFromLastAssignedSlots();
+			m_Tex_PhotonLayers_Direction.RemoveFromLastAssignedSlots();
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -600,13 +625,19 @@ namespace OfflineCloudRenderer2
 			m_CB_SplatPhoton.m.LayerIndex = 0U;
 			m_CB_SplatPhoton.UpdateData();
 
-			m_Device.SetRenderTargets( new View2D[] { m_Tex_PhotonLayers.GetView( 0, 0, 0, 0 ) }, null );
+			m_Device.SetRenderTargets( new View3D[] {
+				m_Tex_PhotonLayers_Flux.GetView( 0, 0, 0, 1 ),
+				m_Tex_PhotonLayers_Direction.GetView( 0, 0, 0, 1 )
+			}, null );
+			m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter, PHOTONS_COUNT );
 			m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter, PHOTONS_COUNT );
 
 
 			//////////////////////////////////////////////////////////////////////////
 			// 5] Render loop
 			int	BatchesCount = PHOTONS_COUNT / PHOTON_BATCH_SIZE;
+
+			m_SB_ProcessedPhotonsCounter.SetOutput( 2 );
 
 			for ( int BounceIndex=0; BounceIndex < BOUNCES_COUNT; BounceIndex++ )
 			{
@@ -626,7 +657,6 @@ namespace OfflineCloudRenderer2
 
 					m_SB_Photons.SetOutput( 0 );
 					m_SB_PhotonLayerIndices.SetOutput( 1 );
-					m_SB_ProcessedPhotonsCounter.SetOutput( 2 );
 
 					m_SB_Random.SetInput( 0 );
 					m_SB_PhaseQuantile.SetInput( 1 );
@@ -657,7 +687,10 @@ namespace OfflineCloudRenderer2
 					m_CB_SplatPhoton.m.LayerIndex = (uint) (LayerIndex+1);
 					m_CB_SplatPhoton.UpdateData();
 
-					m_Device.SetRenderTargets( new View2D[] { m_Tex_PhotonLayers.GetView( 0, 0, LayerIndex+1, 0 ) }, null );
+					m_Device.SetRenderTargets( new View3D[] {
+						m_Tex_PhotonLayers_Flux.GetView( 0, 0, LayerIndex+1, 1 ),
+						m_Tex_PhotonLayers_Direction.GetView( 0, 0, LayerIndex+1, 1 )
+					}, null );
 					m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter, PHOTONS_COUNT );
 				}
 
@@ -686,7 +719,6 @@ namespace OfflineCloudRenderer2
 
 					m_SB_Photons.SetOutput( 0 );
 					m_SB_PhotonLayerIndices.SetOutput( 1 );
-					m_SB_ProcessedPhotonsCounter.SetOutput( 2 );
 
 					m_SB_Random.SetInput( 0 );
 					m_SB_PhaseQuantile.SetInput( 1 );
@@ -712,7 +744,10 @@ namespace OfflineCloudRenderer2
 					m_CB_SplatPhoton.m.LayerIndex = (uint) (LayerIndex-1) | 0x80000000U;	// <= MSB indicates photons are going up
 					m_CB_SplatPhoton.UpdateData();
 
-					m_Device.SetRenderTargets( new View2D[] { m_Tex_PhotonLayers.GetView( 0, 0, LayerIndex-1, 0 ) }, null );
+					m_Device.SetRenderTargets( new View3D[] {
+						m_Tex_PhotonLayers_Flux.GetView( 0, 0, LayerIndex-1, 0 ),
+						m_Tex_PhotonLayers_Direction.GetView( 0, 0, LayerIndex-1, 0 )
+					}, null );
 					m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter, PHOTONS_COUNT );
 				}
 
@@ -721,7 +756,8 @@ namespace OfflineCloudRenderer2
 					break;	// We didn't shoot a significant number of photons to go on...
 			}
 
-			m_Tex_PhotonLayers.RemoveFromLastAssignedSlots();
+			m_Tex_PhotonLayers_Flux.RemoveFromLastAssignedSlots();
+			m_Tex_PhotonLayers_Direction.RemoveFromLastAssignedSlots();
 
 			Render();
 		}

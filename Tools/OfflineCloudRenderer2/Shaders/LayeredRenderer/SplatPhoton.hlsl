@@ -33,8 +33,8 @@ struct PS_IN
 
 struct PS_OUT
 {
-	float4	FluxWeight;
-	float3	Direction;
+	float4	FluxWeight : SV_TARGET0;
+	float3	Direction : SV_TARGET1;
 };
 
 VS_IN	VS( VS_IN _In )

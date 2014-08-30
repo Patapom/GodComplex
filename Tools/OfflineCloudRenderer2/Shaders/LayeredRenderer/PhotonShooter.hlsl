@@ -126,6 +126,16 @@ void	ShootPhoton( uint _PhotonIndex )
 	// Write resulting photon
 	P.Position = Position.xz;
 
+
+// Test direction change
+//P.Direction = float3( 1, 0, 0 );
+
+// Test position change
+//P.Position += float2( 100.0, 50.0 );
+
+// Test color change
+//P.Color *= float3( 1.8, 0.6, 0.4 );
+
 	PackPhoton( P, Pp );
 	_Photons[_PhotonIndex] = Pp;
 

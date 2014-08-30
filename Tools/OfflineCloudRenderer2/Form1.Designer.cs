@@ -42,6 +42,10 @@
 			this.viewportPanel = new OfflineCloudRenderer2.ViewportPanel(this.components);
 			this.floatTrackbarControlSigmaScattering = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
+			this.radioButtonShowFlux = new System.Windows.Forms.RadioButton();
+			this.radioButtonShowDirection = new System.Windows.Forms.RadioButton();
+			this.floatTrackbarControlDisplayIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxShowNormalized = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// buttonReload
@@ -176,11 +180,63 @@
 			this.label3.TabIndex = 3;
 			this.label3.Text = "Scattering Coefficient (1/m)";
 			// 
+			// radioButtonShowFlux
+			// 
+			this.radioButtonShowFlux.AutoSize = true;
+			this.radioButtonShowFlux.Checked = true;
+			this.radioButtonShowFlux.Location = new System.Drawing.Point(985, 254);
+			this.radioButtonShowFlux.Name = "radioButtonShowFlux";
+			this.radioButtonShowFlux.Size = new System.Drawing.Size(74, 17);
+			this.radioButtonShowFlux.TabIndex = 6;
+			this.radioButtonShowFlux.TabStop = true;
+			this.radioButtonShowFlux.Text = "Show Flux";
+			this.radioButtonShowFlux.UseVisualStyleBackColor = true;
+			this.radioButtonShowFlux.CheckedChanged += new System.EventHandler(this.radioButtonShowFlux_CheckedChanged);
+			// 
+			// radioButtonShowDirection
+			// 
+			this.radioButtonShowDirection.AutoSize = true;
+			this.radioButtonShowDirection.Location = new System.Drawing.Point(984, 277);
+			this.radioButtonShowDirection.Name = "radioButtonShowDirection";
+			this.radioButtonShowDirection.Size = new System.Drawing.Size(97, 17);
+			this.radioButtonShowDirection.TabIndex = 6;
+			this.radioButtonShowDirection.Text = "Show Direction";
+			this.radioButtonShowDirection.UseVisualStyleBackColor = true;
+			this.radioButtonShowDirection.CheckedChanged += new System.EventHandler(this.radioButtonShowDirection_CheckedChanged);
+			// 
+			// floatTrackbarControlDisplayIntensity
+			// 
+			this.floatTrackbarControlDisplayIntensity.Location = new System.Drawing.Point(984, 301);
+			this.floatTrackbarControlDisplayIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlDisplayIntensity.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlDisplayIntensity.Name = "floatTrackbarControlDisplayIntensity";
+			this.floatTrackbarControlDisplayIntensity.RangeMax = 100F;
+			this.floatTrackbarControlDisplayIntensity.RangeMin = 0F;
+			this.floatTrackbarControlDisplayIntensity.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlDisplayIntensity.TabIndex = 2;
+			this.floatTrackbarControlDisplayIntensity.Value = 1F;
+			this.floatTrackbarControlDisplayIntensity.VisibleRangeMax = 1F;
+			this.floatTrackbarControlDisplayIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlDisplayIntensity_ValueChanged);
+			// 
+			// checkBoxShowNormalized
+			// 
+			this.checkBoxShowNormalized.AutoSize = true;
+			this.checkBoxShowNormalized.Location = new System.Drawing.Point(1103, 278);
+			this.checkBoxShowNormalized.Name = "checkBoxShowNormalized";
+			this.checkBoxShowNormalized.Size = new System.Drawing.Size(78, 17);
+			this.checkBoxShowNormalized.TabIndex = 7;
+			this.checkBoxShowNormalized.Text = "Normalized";
+			this.checkBoxShowNormalized.UseVisualStyleBackColor = true;
+			this.checkBoxShowNormalized.CheckedChanged += new System.EventHandler(this.checkBoxShowNormalized_CheckedChanged);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1200, 756);
+			this.Controls.Add(this.checkBoxShowNormalized);
+			this.Controls.Add(this.radioButtonShowDirection);
+			this.Controls.Add(this.radioButtonShowFlux);
 			this.Controls.Add(this.progressBar1);
 			this.Controls.Add(this.buttonShootPhotons);
 			this.Controls.Add(this.label3);
@@ -191,6 +247,7 @@
 			this.Controls.Add(this.floatTrackbarControlSigmaScattering);
 			this.Controls.Add(this.floatTrackbarControlDebug1);
 			this.Controls.Add(this.floatTrackbarControlLayerThickness);
+			this.Controls.Add(this.floatTrackbarControlDisplayIntensity);
 			this.Controls.Add(this.floatTrackbarControlDebug0);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.viewportPanel);
@@ -217,6 +274,10 @@
 		private System.Windows.Forms.Label label2;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlSigmaScattering;
 		private System.Windows.Forms.Label label3;
+		private System.Windows.Forms.RadioButton radioButtonShowFlux;
+		private System.Windows.Forms.RadioButton radioButtonShowDirection;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDisplayIntensity;
+		private System.Windows.Forms.CheckBox checkBoxShowNormalized;
 	}
 }
 
