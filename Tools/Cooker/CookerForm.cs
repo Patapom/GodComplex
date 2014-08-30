@@ -42,6 +42,8 @@ namespace Cooker
 
 		private string		m_ExecutablePath = @"V:\blacksparrow\idtech5\blacksparrow";
 
+		private string		m_Custompath = "";
+
 		public CookerForm()
 		{
 			InitializeComponent();
@@ -63,7 +65,7 @@ namespace Cooker
 			comboBoxPlatform.SelectedIndex = PlatformIndex;
 
 			// Retrieve previous executable selection
-			int		ExecutableIndex = 0;
+			int		ExecutableIndex = 2;
 			string	ExecutableIndexAsString = m_AppKey.GetValue( "Executable" ) as string;
 			int.TryParse( ExecutableIndexAsString, out ExecutableIndex );
 
@@ -162,6 +164,11 @@ namespace Cooker
 						throw new Exception( "Unsupported platform type " + comboBoxPlatform.SelectedIndex + "!" );
 				}
 
+				// ORBIS COMMAND LINE (as of 12/08/2014):
+				// Running : "V:\blacksparrow\idtech5\blacksparrow\Blacksparrowx64.exe" +win_silentCrash 1 +com_assertOutOfDebugger  1 +r_fullscreen 0 +ark_usestdout 1 +win_crashDmp_enable 1
+				//			+com_crashProcessOnError 1 +fs_basepath "V:\blacksparrow\idtech5\blacksparrow" +r_imagesMaxMipmapsNbr 4 +com_production 1
+				//			+buildgame -orbis -fast    LIST OF MAPS (e.g.: checkmap/dojo_routine/dojo_routine.map)
+				//
 				P.StartInfo.FileName = ApplicationFileName.FullName;
 				P.StartInfo.Arguments = textBoxCommandLine.Text + " +com_production 1 +ark_useStdOut 1 +buildgame -fast " + PlatformArg + " " + MapRelativeFileName;
 				P.StartInfo.WorkingDirectory = WorkingDirectory.FullName;
@@ -274,7 +281,7 @@ namespace Cooker
 			else if ( Line.IndexOf( "error", StringComparison.InvariantCultureIgnoreCase ) != -1 )
 				LineColor = Color.Red;
 			else if ( Line.IndexOf( "warning", StringComparison.InvariantCultureIgnoreCase ) != -1 )
-				LineColor = Color.Gold;
+				LineColor = Color.Coral;
 
 			if ( LineColor != Color.Black )
 			{
@@ -410,8 +417,24 @@ namespace Cooker
 				case 2:
 					m_ExecutablePath = @"V:\blacksparrow\idtech5\blacksparrow\Blacksparrowx64.exe";
 					break;
+				case 3:
+					m_ExecutablePath = m_Custompath;
+					break;
 			}
 
+			textBoxExecutablePath.Text = m_ExecutablePath;
+			buttonCustomExecutable.Enabled = comboBoxExecutable.SelectedIndex == 3;
+		}
+
+		private void buttonCustom_Click( object sender, EventArgs e )
+		{
+			openFileDialogExecutable.FileName =	m_AppKey.GetValue( "CustomExecutablepath", "" ) as string;
+			if ( openFileDialogExecutable.ShowDialog( this ) != DialogResult.OK ) {
+				return;
+			}
+			m_AppKey.SetValue( "CustomExecutablepath", openFileDialogExecutable.FileName );
+
+			m_ExecutablePath = openFileDialogExecutable.FileName;
 			textBoxExecutablePath.Text = m_ExecutablePath;
 		}
 	}
