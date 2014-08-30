@@ -59,6 +59,7 @@ namespace ImageUtility
 		{
 			INVALID,		// The profile is invalid (meaning one of the chromaticities was not initialized!)
 			CUSTOM,			// No recognizable standard profile (custom)
+			LINEAR,			// sRGB with linear gamma
 			sRGB,			// sRGB with D65 illuminant
 			ADOBE_RGB_D50,	// Adobe RGB with D50 illuminant
 			ADOBE_RGB_D65,	// Adobe RGB with D65 illuminant
@@ -79,7 +80,7 @@ namespace ImageUtility
 		/// <summary>
 		/// Describes the Red, Green, Blue and White Point chromaticities of a simple/standard color profile
 		/// </summary>
-		[System.Diagnostics.DebuggerDisplay( "R=({R.x},{R.y}) G=({G.x},{G.y}) B=({B.x},{B.y}) W=({W.x},{W.y}) Prof={RecognizedProfile}" )]
+		[System.Diagnostics.DebuggerDisplay( "R=({R.x},{R.y}) G=({G.x},{G.y}) B=({B.x},{B.y}) W=({W.x},{W.y}) Prof={RecognizedChromaticity}" )]
 		public struct	Chromaticities
 		{
 			public float2		R, G, B, W;
@@ -103,7 +104,7 @@ namespace ImageUtility
 			/// Attempts to recognize the current chromaticities as a standard profile
 			/// </summary>
 			/// <returns></returns>
-			public STANDARD_PROFILE	RecognizedProfile
+			public STANDARD_PROFILE	RecognizedChromaticity
 			{
 				get
 				{
@@ -859,12 +860,12 @@ namespace ImageUtility
 		/// <summary>
 		/// Gets the transform to convert RGB to CIEXYZ
 		/// </summary>
-		public float4x4		MatrixRGB2XYZ			{ get { return m_RGB2XYZ; } }
+		public float4x4			MatrixRGB2XYZ			{ get { return m_RGB2XYZ; } }
 
 		/// <summary>
 		/// Gets the transform to convert CIEXYZ to RGB
 		/// </summary>
-		public float4x4		MatrixXYZ2RGB			{ get { return m_XYZ2RGB; } }
+		public float4x4			MatrixXYZ2RGB			{ get { return m_XYZ2RGB; } }
 
 		/// <summary>
 		/// Gets or sets the image gamma curve
@@ -899,6 +900,11 @@ namespace ImageUtility
 		{
 			switch ( _Profile )
 			{
+				case STANDARD_PROFILE.LINEAR:
+					m_Chromaticities = Chromaticities.sRGB;
+					m_GammaCurve = GAMMA_CURVE.STANDARD;
+					m_Gamma = 1.0f;
+					break;
 				case STANDARD_PROFILE.sRGB:
 					m_Chromaticities = Chromaticities.sRGB;
 					m_GammaCurve = GAMMA_CURVE.sRGB;
@@ -1082,12 +1088,12 @@ namespace ImageUtility
 			m_XYZ2RGB.Invert();
 
 			// ============= Attempt to recognize a standard profile ============= 
-			STANDARD_PROFILE	RecognizedProfile = m_Chromaticities.RecognizedProfile;
+			STANDARD_PROFILE	RecognizedChromaticity = m_Chromaticities.RecognizedChromaticity;
 
 			if ( _bCheckGammaCurveOverride )
 			{	// Also ensure the gamma ramp is correct before assigning a standard profile
 				bool	bIsGammaCorrect = true;
-				switch ( RecognizedProfile )
+				switch ( RecognizedChromaticity )
 				{
 					case STANDARD_PROFILE.sRGB:				bIsGammaCorrect = EnsureGamma( GAMMA_CURVE.sRGB, GAMMA_EXPONENT_sRGB ); break;
 					case STANDARD_PROFILE.ADOBE_RGB_D50:	bIsGammaCorrect = EnsureGamma( GAMMA_CURVE.STANDARD, GAMMA_EXPONENT_ADOBE ); break;
@@ -1097,12 +1103,12 @@ namespace ImageUtility
 				}
 
 				if ( !bIsGammaCorrect )
-					RecognizedProfile = STANDARD_PROFILE.CUSTOM;	// A non-standard gamma curves fails our pre-defined design...
+					RecognizedChromaticity = STANDARD_PROFILE.CUSTOM;	// A non-standard gamma curves fails our pre-defined design...
 			}
 
 
 			// ============= Assign the internal converter depending on the profile =============
-			switch ( RecognizedProfile )
+			switch ( RecognizedChromaticity )
 			{
 				case STANDARD_PROFILE.sRGB:
 					m_GammaCurve = GAMMA_CURVE.sRGB;
@@ -1300,7 +1306,7 @@ namespace ImageUtility
 						new MetaDataProcessor( "/WhitePointY",	( object v2 ) => { TempChroma.W.y = 0.00001f * (uint) v2; } )
 						);
 
-					if ( TempChroma.RecognizedProfile != STANDARD_PROFILE.INVALID )
+					if ( TempChroma.RecognizedChromaticity != STANDARD_PROFILE.INVALID )
 					{	// Assign new chroma values
 						m_Chromaticities = TempChroma;
 						bProfileFound = true;

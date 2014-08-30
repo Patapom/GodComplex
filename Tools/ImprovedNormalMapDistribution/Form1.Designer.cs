@@ -34,6 +34,9 @@
 			this.outputPanel21 = new ImprovedNormalMapDistribution.OutputPanel2(this.components);
 			this.outputPanel1 = new ImprovedNormalMapDistribution.OutputPanel(this.components);
 			this.checkBoxSplat = new System.Windows.Forms.CheckBox();
+			this.buttonConvert = new System.Windows.Forms.Button();
+			this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
+			this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlPhi
@@ -78,6 +81,7 @@
 			this.outputPanel1.Location = new System.Drawing.Point(12, 12);
 			this.outputPanel1.Name = "outputPanel1";
 			this.outputPanel1.Size = new System.Drawing.Size(706, 539);
+			this.outputPanel1.Splat = false;
 			this.outputPanel1.TabIndex = 0;
 			// 
 			// checkBoxSplat
@@ -91,11 +95,33 @@
 			this.checkBoxSplat.UseVisualStyleBackColor = true;
 			this.checkBoxSplat.CheckedChanged += new System.EventHandler(this.checkBoxSplat_CheckedChanged);
 			// 
+			// buttonConvert
+			// 
+			this.buttonConvert.Location = new System.Drawing.Point(728, 456);
+			this.buttonConvert.Name = "buttonConvert";
+			this.buttonConvert.Size = new System.Drawing.Size(133, 30);
+			this.buttonConvert.TabIndex = 4;
+			this.buttonConvert.Text = "Convert Normal Map";
+			this.buttonConvert.UseVisualStyleBackColor = true;
+			this.buttonConvert.Click += new System.EventHandler(this.buttonConvert_Click);
+			// 
+			// openFileDialog
+			// 
+			this.openFileDialog.DefaultExt = "*.tga";
+			this.openFileDialog.Filter = "Image Files|*.png;*.tga;*.tif|All Files (*.*)|*.*";
+			this.openFileDialog.Title = "Choose a normal map to convert";
+			// 
+			// saveFileDialog
+			// 
+			this.saveFileDialog.DefaultExt = "*.png";
+			this.saveFileDialog.Filter = "PNG Files|*.png";
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1004, 665);
+			this.Controls.Add(this.buttonConvert);
 			this.Controls.Add(this.checkBoxSplat);
 			this.Controls.Add(this.outputPanel21);
 			this.Controls.Add(this.floatTrackbarControlTheta);
@@ -115,6 +141,9 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTheta;
 		private OutputPanel2 outputPanel21;
 		private System.Windows.Forms.CheckBox checkBoxSplat;
+		private System.Windows.Forms.Button buttonConvert;
+		private System.Windows.Forms.OpenFileDialog openFileDialog;
+		private System.Windows.Forms.SaveFileDialog saveFileDialog;
 	}
 }
 
