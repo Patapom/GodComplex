@@ -65,15 +65,21 @@ namespace ImprovedNormalMapDistribution
 
 				// Draw intersection
 				// We try and find the intersection of the 2nd order polynomial:
-				//	f(x) = 1-x²
+				//	y = 1-x²
+				//
 				// with the normal:
-				//	g(x) = tan(Theta).x
-				// So:
+				//	x = sin(Theta).t
+				//	y = cos(Theta).t
 				//
-				//	h(x) = f(x) - g(x) = 0.0
-				//	h(x) = 1-x²-tan(Theta).x
+				// So we're looking for:
 				//
-				double[]	Roots = solvePolynomial( 1.0, -Math.Tan( 0.5*Math.PI - m_Theta ), -1.0, 0, 0 );
+				//	cos(Theta).t = 1 - sin²(Theta).t²
+				//
+				// Or:
+				//
+				//	1 - cos(Theta).t - sin²(Theta).t² = 0
+				//
+				double[]	Roots = solvePolynomial( 1.0, -Math.Cos( m_Theta ), -Math.Sin( m_Theta )*Math.Sin( m_Theta ), 0, 0 );
 
 				double	t = Roots[0];
 				float	Ix = (float) (Math.Sin(Theta) * t);
@@ -142,9 +148,9 @@ namespace ImprovedNormalMapDistribution
 				return	new double[] { 0, 0 };
 
 			Delta = Math.Sqrt( Delta );
-			var	OneOver2a = 0.5 / c;
+			var	OneOver2c = 0.5 / c;
 
-			return	new double[] { OneOver2a * (-b - Delta), OneOver2a * (-b + Delta) };
+			return	new double[] { OneOver2c * (-b - Delta), OneOver2c * (-b + Delta) };
 		}
 
 		// Returns the array of 3 real roots of a cubic polynomial  a + b x + c x^2 + d x^3 = 0

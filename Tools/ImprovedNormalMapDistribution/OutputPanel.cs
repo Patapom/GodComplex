@@ -14,9 +14,28 @@ namespace ImprovedNormalMapDistribution
 	{
 		private Bitmap	m_Bitmap = null;
 
-		private double	m_NormalX = 0;
-		private double	m_NormalY = 0;
-		private double	m_NormalZ = 1;
+		private double	m_Phi = 0;
+		private double	m_Theta = 0;
+
+		private bool	m_Splat = false;
+		public bool		Splat
+		{
+			get { return m_Splat; }
+			set
+			{
+				m_Splat = value;
+				UpdateBitmap();
+			}
+		}
+
+		public void		SetAngles( double _Phi, double _Theta )
+		{
+			m_Phi = _Phi;
+			m_Theta = _Theta;
+
+			if ( !m_Splat )
+				UpdateBitmap();
+		}
 
 		private int		m_IntersectionsCount = 0;
 		private int		m_SumIterationsCount = 0;
@@ -74,12 +93,33 @@ namespace ImprovedNormalMapDistribution
 				}
 
 				// Compute normal intersection
-				float	Nx, Ny;
-//				ComputeIntersectionNewton( out Nx, out Ny );
-				ComputeIntersectionExact( out Nx, out Ny );
-				PointF	N;
-				Transform( Nx, Ny, out N );
-				G.FillEllipse( Brushes.Red, N.X - 4, N.Y - 4, 8, 8 );
+				if ( m_Splat )
+				{
+					for ( int Y=-256; Y < 256; Y++ )
+					{
+						double	Phi = Math.PI * Y / 256.0;
+						for ( int X=0; X <= 128; X++ )
+						{
+							double	Theta = Math.PI * X / 256.0;
+
+							float	Ix, Iy;
+							ComputeIntersectionExact( Phi, Theta, out Ix, out Iy );
+
+							PointF	N;
+							Transform( Ix, Iy, out N );
+							G.FillEllipse( Brushes.Red, N.X - 0.5f, N.Y - 0.5f, 1.0f, 1.0f );
+						}
+					}
+				}
+				else
+				{
+					float	Nx, Ny;
+//					ComputeIntersectionNewton( out Nx, out Ny );
+					ComputeIntersectionExact( out Nx, out Ny );
+					PointF	N;
+					Transform( Nx, Ny, out N );
+					G.FillEllipse( Brushes.Red, N.X - 4, N.Y - 4, 8, 8 );
+				}
 
 				G.DrawString( "Average Iterations = " + ((float) m_SumIterationsCount / m_IntersectionsCount).ToString( "G3"), Font, Brushes.Black, 10, 20 );
 			}
@@ -146,47 +186,57 @@ namespace ImprovedNormalMapDistribution
 		/// </summary>
 		/// <param name="x"></param>
 		/// <param name="y"></param>
-		void	ComputeIntersectionNewton( out float x, out float y )
-		{
-			double	a = m_NormalX*m_NormalX * m_NormalY*m_NormalY;
-			double	b = 0.0;
-			double	c = -m_NormalX*m_NormalX - m_NormalY*m_NormalY;
-			double	d = -m_NormalZ;
-			double	e = 1.0;
-
-			const double	epsilon = 1e-6;
-			const int		MAX_ITERATIONS = 10;
-
-			double	t = 0.0;
-			int		Iteration = 0;
-			while ( Iteration++ < MAX_ITERATIONS )
-			{
-				double	f = e + t*(d + t*(c + t*(b + t*a)));
-				if ( Math.Abs( f ) < epsilon )
-					break;
-
-				double	f_prime = d + t*(2*c + t*(3*b + t*4*a));
-
-				double	t1 = t - f / Math.Sign( f_prime ) * Math.Max( 1e-6, Math.Abs( f_prime ) );
-				t = t1;
-			}
-
-			x = (float) (t * m_NormalX);
-			y = (float) (t * m_NormalY);
-
-			m_IntersectionsCount++;
-			m_SumIterationsCount += Iteration;
-		}
+// 		void	ComputeIntersectionNewton( out float x, out float y )
+// 		{
+// 			double	a = m_NormalX*m_NormalX * m_NormalY*m_NormalY;
+// 			double	b = 0.0;
+// 			double	c = -m_NormalX*m_NormalX - m_NormalY*m_NormalY;
+// 			double	d = -m_NormalZ;
+// 			double	e = 1.0;
+// 
+// 			const double	epsilon = 1e-6;
+// 			const int		MAX_ITERATIONS = 10;
+// 
+// 			double	t = 0.0;
+// 			int		Iteration = 0;
+// 			while ( Iteration++ < MAX_ITERATIONS )
+// 			{
+// 				double	f = e + t*(d + t*(c + t*(b + t*a)));
+// 				if ( Math.Abs( f ) < epsilon )
+// 					break;
+// 
+// 				double	f_prime = d + t*(2*c + t*(3*b + t*4*a));
+// 
+// 				double	t1 = t - f / Math.Sign( f_prime ) * Math.Max( 1e-6, Math.Abs( f_prime ) );
+// 				t = t1;
+// 			}
+// 
+// 			x = (float) (t * m_NormalX);
+// 			y = (float) (t * m_NormalY);
+// 
+// 			m_IntersectionsCount++;
+// 			m_SumIterationsCount += Iteration;
+// 		}
 
 		void	ComputeIntersectionExact( out float x, out float y )
 		{
+			ComputeIntersectionExact( m_Phi, m_Theta, out x, out y );
+		}
+
+		void	ComputeIntersectionExact( double _Phi, double _Theta, out float x, out float y )
+		{
+			double	CosPhi = Math.Cos( _Phi );
+			double	SinPhi = Math.Sin( _Phi );
+			double	CosTheta = Math.Cos( _Theta );
+			double	SinTheta = Math.Sin( _Theta );
+
 			double	t = 0.0;
 //			if ( m_NormalZ < 1.0 )
 			{
-				double	e = m_NormalX*m_NormalX * m_NormalY*m_NormalY;
+				double	e = SinTheta*SinTheta*SinTheta*SinTheta * CosPhi*CosPhi * SinPhi*SinPhi;	// pow( sin(theta), 4 )
 				double	d = 0.0;
-				double	c = -m_NormalX*m_NormalX - m_NormalY*m_NormalY;
-				double	b = -m_NormalZ;
+				double	c = -SinTheta*SinTheta;
+				double	b = -CosTheta;
 				double	a = 1.0;
 
 				double[]	roots = solvePolynomial( a, b, c, d, e );
@@ -197,8 +247,8 @@ namespace ImprovedNormalMapDistribution
 						t = Math.Min( t, roots[i] );
 			}
 
-			x = (float) (t * m_NormalX);
-			y = (float) (t * m_NormalY);
+			x = (float) (t * CosPhi * SinTheta);
+			y = (float) (t * SinPhi * SinTheta);
 
 			m_IntersectionsCount = 1;
 		}
@@ -235,9 +285,9 @@ namespace ImprovedNormalMapDistribution
 				return	new double[] { 0, 0 };
 
 			Delta = Math.Sqrt( Delta );
-			var	OneOver2a = 0.5 / a;
+			var	OneOver2c = 0.5 / c;
 
-			return	new double[] { OneOver2a * (-b - Delta), OneOver2a * (-b + Delta) };
+			return	new double[] { OneOver2c * (-b - Delta), OneOver2c * (-b + Delta) };
 		}
 
 		// Returns the array of 3 real roots of a cubic polynomial  a + b x + c x^2 + d x^3 = 0
@@ -333,15 +383,6 @@ namespace ImprovedNormalMapDistribution
 			};
 
 			return	Result;
-		}
-
-
-		public void		SetNormal( double x, double y, double z )
-		{
-			m_NormalX = x;
-			m_NormalY = y;
-			m_NormalZ = z;
-			UpdateBitmap();
 		}
 
 		protected override void OnSizeChanged( EventArgs e )

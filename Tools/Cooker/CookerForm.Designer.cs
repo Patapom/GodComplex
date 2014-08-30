@@ -41,10 +41,12 @@
 			this.textBoxCommandLine = new System.Windows.Forms.TextBox();
 			this.processCook = new System.Diagnostics.Process();
 			this.panelInput = new System.Windows.Forms.Panel();
+			this.textBox1 = new System.Windows.Forms.TextBox();
 			this.label4 = new System.Windows.Forms.Label();
 			this.textBoxExecutablePath = new System.Windows.Forms.TextBox();
 			this.comboBoxExecutable = new System.Windows.Forms.ComboBox();
-			this.textBox1 = new System.Windows.Forms.TextBox();
+			this.buttonCustomExecutable = new System.Windows.Forms.Button();
+			this.openFileDialogExecutable = new System.Windows.Forms.OpenFileDialog();
 			this.groupBoxOutput.SuspendLayout();
 			this.panelInput.SuspendLayout();
 			this.SuspendLayout();
@@ -195,11 +197,25 @@
 			this.panelInput.Controls.Add(this.textBoxMapName);
 			this.panelInput.Controls.Add(this.comboBoxExecutable);
 			this.panelInput.Controls.Add(this.comboBoxPlatform);
+			this.panelInput.Controls.Add(this.buttonCustomExecutable);
 			this.panelInput.Controls.Add(this.buttonLoadMap);
 			this.panelInput.Location = new System.Drawing.Point(0, 1);
 			this.panelInput.Name = "panelInput";
 			this.panelInput.Size = new System.Drawing.Size(855, 145);
 			this.panelInput.TabIndex = 6;
+			// 
+			// textBox1
+			// 
+			this.textBox1.BackColor = System.Drawing.SystemColors.Info;
+			this.textBox1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.textBox1.Location = new System.Drawing.Point(16, 60);
+			this.textBox1.Multiline = true;
+			this.textBox1.Name = "textBox1";
+			this.textBox1.ReadOnly = true;
+			this.textBox1.Size = new System.Drawing.Size(308, 55);
+			this.textBox1.TabIndex = 5;
+			this.textBox1.Text = "NOTE: Command line is always appended with \"+com_production 1 +ark_useStdOut 1 +b" +
+    "uildgame -fast \"";
 			// 
 			// label4
 			// 
@@ -217,7 +233,7 @@
 			this.textBoxExecutablePath.Location = new System.Drawing.Point(181, 121);
 			this.textBoxExecutablePath.Name = "textBoxExecutablePath";
 			this.textBoxExecutablePath.ReadOnly = true;
-			this.textBoxExecutablePath.Size = new System.Drawing.Size(654, 20);
+			this.textBoxExecutablePath.Size = new System.Drawing.Size(613, 20);
 			this.textBoxExecutablePath.TabIndex = 4;
 			// 
 			// comboBoxExecutable
@@ -227,25 +243,31 @@
 			this.comboBoxExecutable.Items.AddRange(new object[] {
             "Debug",
             "Release",
-            "Perforce Latest"});
+            "Perforce Latest",
+            "Custom"});
 			this.comboBoxExecutable.Location = new System.Drawing.Point(68, 121);
 			this.comboBoxExecutable.Name = "comboBoxExecutable";
 			this.comboBoxExecutable.Size = new System.Drawing.Size(107, 21);
 			this.comboBoxExecutable.TabIndex = 3;
 			this.comboBoxExecutable.SelectedIndexChanged += new System.EventHandler(this.comboBoxExecutable_SelectedIndexChanged);
 			// 
-			// textBox1
+			// buttonCustom
 			// 
-			this.textBox1.BackColor = System.Drawing.SystemColors.Info;
-			this.textBox1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.textBox1.Location = new System.Drawing.Point(16, 60);
-			this.textBox1.Multiline = true;
-			this.textBox1.Name = "textBox1";
-			this.textBox1.ReadOnly = true;
-			this.textBox1.Size = new System.Drawing.Size(308, 55);
-			this.textBox1.TabIndex = 5;
-			this.textBox1.Text = "NOTE: Command line is always appended with \"+com_production 1 +ark_useStdOut 1 +b" +
-    "uildgame -fast \"";
+			this.buttonCustomExecutable.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonCustomExecutable.Enabled = false;
+			this.buttonCustomExecutable.Location = new System.Drawing.Point(800, 118);
+			this.buttonCustomExecutable.Name = "buttonCustom";
+			this.buttonCustomExecutable.Size = new System.Drawing.Size(35, 24);
+			this.buttonCustomExecutable.TabIndex = 0;
+			this.buttonCustomExecutable.Text = "...";
+			this.buttonCustomExecutable.UseVisualStyleBackColor = true;
+			this.buttonCustomExecutable.Click += new System.EventHandler(this.buttonCustom_Click);
+			// 
+			// openFileDialogExecutable
+			// 
+			this.openFileDialogExecutable.DefaultExt = "*.exe";
+			this.openFileDialogExecutable.Filter = "Executables (*.exe)|*.exe|All files|*.*";
+			this.openFileDialogExecutable.Title = "Choose an executable...";
 			// 
 			// CookerForm
 			// 
@@ -285,6 +307,8 @@
 		private System.Windows.Forms.ComboBox comboBoxExecutable;
 		private System.Windows.Forms.TextBox textBoxExecutablePath;
 		private System.Windows.Forms.TextBox textBox1;
+		private System.Windows.Forms.Button buttonCustomExecutable;
+		private System.Windows.Forms.OpenFileDialog openFileDialogExecutable;
 	}
 }
 

@@ -31,8 +31,9 @@
 			this.components = new System.ComponentModel.Container();
 			this.floatTrackbarControlPhi = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlTheta = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.outputPanel1 = new ImprovedNormalMapDistribution.OutputPanel(this.components);
 			this.outputPanel21 = new ImprovedNormalMapDistribution.OutputPanel2(this.components);
+			this.outputPanel1 = new ImprovedNormalMapDistribution.OutputPanel(this.components);
+			this.checkBoxSplat = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlPhi
@@ -64,6 +65,14 @@
 			this.floatTrackbarControlTheta.VisibleRangeMax = 90F;
 			this.floatTrackbarControlTheta.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTheta_ValueChanged);
 			// 
+			// outputPanel21
+			// 
+			this.outputPanel21.Location = new System.Drawing.Point(728, 179);
+			this.outputPanel21.Name = "outputPanel21";
+			this.outputPanel21.Size = new System.Drawing.Size(256, 256);
+			this.outputPanel21.TabIndex = 2;
+			this.outputPanel21.Theta = 0D;
+			// 
 			// outputPanel1
 			// 
 			this.outputPanel1.Location = new System.Drawing.Point(12, 12);
@@ -71,19 +80,23 @@
 			this.outputPanel1.Size = new System.Drawing.Size(706, 539);
 			this.outputPanel1.TabIndex = 0;
 			// 
-			// outputPanel21
+			// checkBoxSplat
 			// 
-			this.outputPanel21.Location = new System.Drawing.Point(728, 179);
-			this.outputPanel21.Name = "outputPanel21";
-			this.outputPanel21.Size = new System.Drawing.Size(264, 207);
-			this.outputPanel21.TabIndex = 2;
-			this.outputPanel21.Theta = 0D;
+			this.checkBoxSplat.AutoSize = true;
+			this.checkBoxSplat.Location = new System.Drawing.Point(728, 79);
+			this.checkBoxSplat.Name = "checkBoxSplat";
+			this.checkBoxSplat.Size = new System.Drawing.Size(182, 17);
+			this.checkBoxSplat.TabIndex = 3;
+			this.checkBoxSplat.Text = "Splat all possible RGBA8 normals";
+			this.checkBoxSplat.UseVisualStyleBackColor = true;
+			this.checkBoxSplat.CheckedChanged += new System.EventHandler(this.checkBoxSplat_CheckedChanged);
 			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1004, 665);
+			this.Controls.Add(this.checkBoxSplat);
 			this.Controls.Add(this.outputPanel21);
 			this.Controls.Add(this.floatTrackbarControlTheta);
 			this.Controls.Add(this.floatTrackbarControlPhi);
@@ -91,6 +104,7 @@
 			this.Name = "Form1";
 			this.Text = "Form1";
 			this.ResumeLayout(false);
+			this.PerformLayout();
 
 		}
 
@@ -100,6 +114,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPhi;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTheta;
 		private OutputPanel2 outputPanel21;
+		private System.Windows.Forms.CheckBox checkBoxSplat;
 	}
 }
 

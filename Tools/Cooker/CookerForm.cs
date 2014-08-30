@@ -42,6 +42,8 @@ namespace Cooker
 
 		private string		m_ExecutablePath = @"V:\blacksparrow\idtech5\blacksparrow";
 
+		private string		m_Custompath = "";
+
 		public CookerForm()
 		{
 			InitializeComponent();
@@ -415,8 +417,24 @@ namespace Cooker
 				case 2:
 					m_ExecutablePath = @"V:\blacksparrow\idtech5\blacksparrow\Blacksparrowx64.exe";
 					break;
+				case 3:
+					m_ExecutablePath = m_Custompath;
+					break;
 			}
 
+			textBoxExecutablePath.Text = m_ExecutablePath;
+			buttonCustomExecutable.Enabled = comboBoxExecutable.SelectedIndex == 3;
+		}
+
+		private void buttonCustom_Click( object sender, EventArgs e )
+		{
+			openFileDialogExecutable.FileName =	m_AppKey.GetValue( "CustomExecutablepath", "" ) as string;
+			if ( openFileDialogExecutable.ShowDialog( this ) != DialogResult.OK ) {
+				return;
+			}
+			m_AppKey.SetValue( "CustomExecutablepath", openFileDialogExecutable.FileName );
+
+			m_ExecutablePath = openFileDialogExecutable.FileName;
 			textBoxExecutablePath.Text = m_ExecutablePath;
 		}
 	}

@@ -44,8 +44,13 @@ namespace ImprovedNormalMapDistribution
 			if ( Z < 1e-12 )
 				Z = 0.0;
 
-			outputPanel1.SetNormal( X, Y, Z );
+			outputPanel1.SetAngles( Phi, Theta );
 			outputPanel21.Theta = Theta;
+		}
+
+		private void checkBoxSplat_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanel1.Splat = checkBoxSplat.Checked;
 		}
 	}
 }
