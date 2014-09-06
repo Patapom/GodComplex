@@ -667,6 +667,8 @@ namespace TestGradientPNG
 
 								Reflectance *= (float) Math.Cos( Theta );
 
+What about the solid angle here?
+								
 						SumReflectance += Reflectance;
 //						Reflectance *= Normalizer;
 
