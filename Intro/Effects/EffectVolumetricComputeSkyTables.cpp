@@ -100,7 +100,7 @@ void	EffectVolumetric::InitSkyTables()
 	// Rayleigh and Mie separated in deltaSR + deltaSM
 	USING_MATERIAL_START( *pMatComputeInScattering_Single )
 
-		ID3D11RenderTargetView*	ppTargets[] = { pRTDeltaScatteringRayleigh->GetTargetView( 0, 0, 0 ), pRTDeltaScatteringMie->GetTargetView( 0, 0, 0 ) };
+		ID3D11RenderTargetView*	ppTargets[] = { pRTDeltaScatteringRayleigh->GetRTV( 0, 0, 0 ), pRTDeltaScatteringMie->GetRTV( 0, 0, 0 ) };
 		m_Device.SetRenderTargets( RES_3D_U, RES_3D_COS_THETA_VIEW, 2, ppTargets );
 
 		CB.m.dUVW = pRTDeltaScatteringRayleigh->GetdUVW();

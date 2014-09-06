@@ -77,11 +77,21 @@
 			this.checkBoxCalibrate50 = new System.Windows.Forms.CheckBox();
 			this.checkBoxCalibrate20 = new System.Windows.Forms.CheckBox();
 			this.checkBoxCalibrate10 = new System.Windows.Forms.CheckBox();
-			this.label5 = new System.Windows.Forms.Label();
 			this.tabControl = new System.Windows.Forms.TabControl();
 			this.tabPageCreation = new System.Windows.Forms.TabPage();
+			this.checkBoxUseMeanMode = new System.Windows.Forms.CheckBox();
+			this.panelCapturedReflectance = new System.Windows.Forms.Panel();
+			this.label19 = new System.Windows.Forms.Label();
+			this.labelCaptureWhiteReflectanceCorrection = new System.Windows.Forms.Label();
+			this.labelCaptureSpatialCorrectionStatus = new System.Windows.Forms.Label();
+			this.label11 = new System.Windows.Forms.Label();
+			this.buttonSafeBorder = new System.Windows.Forms.Button();
 			this.buttonResetCrop = new System.Windows.Forms.Button();
-			this.checkBoxCropTool = new System.Windows.Forms.CheckBox();
+			this.labelCapturedSwatchxyY = new System.Windows.Forms.Label();
+			this.labelCapturedSwatchRGB = new System.Windows.Forms.Label();
+			this.labelCapturedReflectance = new System.Windows.Forms.Label();
+			this.buttonCropTool = new System.Windows.Forms.Button();
+			this.label12 = new System.Windows.Forms.Label();
 			this.buttonCapture = new System.Windows.Forms.Button();
 			this.groupBoxColorSwatches = new System.Windows.Forms.GroupBox();
 			this.checkBoxCustomSwatch8 = new System.Windows.Forms.CheckBox();
@@ -108,10 +118,38 @@
 			this.panelCustomSwatch0 = new System.Windows.Forms.Panel();
 			this.panelSwatchMin = new System.Windows.Forms.Panel();
 			this.label7 = new System.Windows.Forms.Label();
-			this.tabPage2 = new System.Windows.Forms.TabPage();
+			this.resultTexturePanel = new StandardizedDiffuseAlbedoMaps.ResultTexturePanel(this.components);
+			this.tabPageColorCorrection = new System.Windows.Forms.TabPage();
+			this.groupBoxHueTwist = new System.Windows.Forms.GroupBox();
+			this.textBox3 = new System.Windows.Forms.TextBox();
+			this.groupBoxWhiteImageReference = new System.Windows.Forms.GroupBox();
+			this.label5 = new System.Windows.Forms.Label();
+			this.buttonWhiteRefTest3 = new System.Windows.Forms.Button();
+			this.buttonWhiteRefTest2 = new System.Windows.Forms.Button();
+			this.buttonWhiteRefTest1 = new System.Windows.Forms.Button();
+			this.labelWhiteReferenceImageCorrection = new System.Windows.Forms.Label();
+			this.whiteImageReferencePanel = new StandardizedDiffuseAlbedoMaps.WhiteImageReferencePanel(this.components);
+			this.buttonResetWhiteRefImage = new System.Windows.Forms.Button();
+			this.buttonSaveWhiteRefImage = new System.Windows.Forms.Button();
+			this.textBox2 = new System.Windows.Forms.TextBox();
+			this.buttonPickWhiteRefImage = new System.Windows.Forms.Button();
+			this.buttonLoadWhiteRefImage = new System.Windows.Forms.Button();
+			this.groupBoxWhiteReflectance = new System.Windows.Forms.GroupBox();
+			this.textBox1 = new System.Windows.Forms.TextBox();
+			this.buttonResetWhiteReflectance = new System.Windows.Forms.Button();
+			this.buttonSaveWhiteReflectanceReference = new System.Windows.Forms.Button();
+			this.labelWhiteReflectance = new System.Windows.Forms.Label();
+			this.buttonPickWhiteReflectance = new System.Windows.Forms.Button();
+			this.floatTrackbarControlTargetWhiteReflectance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.buttonLoadWhiteReflectanceReference = new System.Windows.Forms.Button();
+			this.label10 = new System.Windows.Forms.Label();
+			this.tabPageCameraCalibration = new System.Windows.Forms.TabPage();
+			this.checkBoxCalibrationUseAverageLuminance = new System.Windows.Forms.CheckBox();
 			this.tabControlCalibrationRepresentation = new System.Windows.Forms.TabControl();
 			this.tabPageLuminancesGraph = new System.Windows.Forms.TabPage();
+			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
 			this.tabPageReferenceImage = new System.Windows.Forms.TabPage();
+			this.referenceImagePanel = new StandardizedDiffuseAlbedoMaps.ReferenceImagePanel(this.components);
 			this.buttonExplore = new System.Windows.Forms.Button();
 			this.labelCalbrationImageName = new System.Windows.Forms.Label();
 			this.label6 = new System.Windows.Forms.Label();
@@ -122,21 +160,31 @@
 			this.buttonLoadCalibration = new System.Windows.Forms.Button();
 			this.checkBoxGraphLagrange = new System.Windows.Forms.CheckBox();
 			this.splitContainerMain = new System.Windows.Forms.SplitContainer();
+			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
+			this.checkBoxSpatialLuminanceCorrection = new System.Windows.Forms.CheckBox();
+			this.buttonSaveCalibratedImage = new System.Windows.Forms.Button();
 			this.openFileDialogCalibration = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogCalibration = new System.Windows.Forms.SaveFileDialog();
 			this.folderBrowserDialogDatabaseLocation = new System.Windows.Forms.FolderBrowserDialog();
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
-			this.buttonSaveCalibratedImage = new System.Windows.Forms.Button();
-			this.outputPanel = new StandardizedDiffuseAlbedoMaps.OutputPanel(this.components);
-			this.resultTexturePanel = new StandardizedDiffuseAlbedoMaps.ResultTexturePanel(this.components);
-			this.graphPanel = new StandardizedDiffuseAlbedoMaps.GraphPanel(this.components);
-			this.referenceImagePanel = new StandardizedDiffuseAlbedoMaps.ReferenceImagePanel(this.components);
 			this.saveFileDialogCalibratedImage = new System.Windows.Forms.SaveFileDialog();
+			this.openFileDialogWhiteReflectance = new System.Windows.Forms.OpenFileDialog();
+			this.saveFileDialogWhiteReflectance = new System.Windows.Forms.SaveFileDialog();
+			this.openFileDialogWhiteRefImage = new System.Windows.Forms.OpenFileDialog();
+			this.saveFileDialogWhiteRefImage = new System.Windows.Forms.SaveFileDialog();
+			this.label16 = new System.Windows.Forms.Label();
+			this.textBoxDatabaseMatchISOSpeed = new System.Windows.Forms.TextBox();
+			this.textBoxDatabaseMatchShutterSpeed = new System.Windows.Forms.TextBox();
+			this.textBoxDatabaseMatchAperture = new System.Windows.Forms.TextBox();
 			this.groupBoxCameraShotInfos.SuspendLayout();
 			this.tabControl.SuspendLayout();
 			this.tabPageCreation.SuspendLayout();
 			this.groupBoxColorSwatches.SuspendLayout();
-			this.tabPage2.SuspendLayout();
+			this.tabPageColorCorrection.SuspendLayout();
+			this.groupBoxHueTwist.SuspendLayout();
+			this.groupBoxWhiteImageReference.SuspendLayout();
+			this.groupBoxWhiteReflectance.SuspendLayout();
+			this.tabPageCameraCalibration.SuspendLayout();
 			this.tabControlCalibrationRepresentation.SuspendLayout();
 			this.tabPageLuminancesGraph.SuspendLayout();
 			this.tabPageReferenceImage.SuspendLayout();
@@ -157,7 +205,7 @@
 			// 
 			// buttonLoadImage
 			// 
-			this.buttonLoadImage.Location = new System.Drawing.Point(355, 16);
+			this.buttonLoadImage.Location = new System.Drawing.Point(382, 16);
 			this.buttonLoadImage.Name = "buttonLoadImage";
 			this.buttonLoadImage.Size = new System.Drawing.Size(97, 37);
 			this.buttonLoadImage.TabIndex = 0;
@@ -170,9 +218,9 @@
 			// 
 			this.labelLuminance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.labelLuminance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelLuminance.Location = new System.Drawing.Point(276, 718);
+			this.labelLuminance.Location = new System.Drawing.Point(173, 718);
 			this.labelLuminance.Name = "labelLuminance";
-			this.labelLuminance.Size = new System.Drawing.Size(116, 23);
+			this.labelLuminance.Size = new System.Drawing.Size(192, 23);
 			this.labelLuminance.TabIndex = 2;
 			this.labelLuminance.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
 			this.toolTip.SetToolTip(this.labelLuminance, "Shows the luminance under the mouse cursor (takes the sRGB checkbox state into ac" +
@@ -198,8 +246,6 @@
 			// 
 			this.checkBoxLuminance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.checkBoxLuminance.AutoSize = true;
-			this.checkBoxLuminance.Checked = true;
-			this.checkBoxLuminance.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxLuminance.Location = new System.Drawing.Point(89, 722);
 			this.checkBoxLuminance.Name = "checkBoxLuminance";
 			this.checkBoxLuminance.Size = new System.Drawing.Size(78, 17);
@@ -213,7 +259,7 @@
 			// checkBoxCalibrate02
 			// 
 			this.checkBoxCalibrate02.AutoSize = true;
-			this.checkBoxCalibrate02.Location = new System.Drawing.Point(3, 18);
+			this.checkBoxCalibrate02.Location = new System.Drawing.Point(7, 18);
 			this.checkBoxCalibrate02.Name = "checkBoxCalibrate02";
 			this.checkBoxCalibrate02.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate02.TabIndex = 4;
@@ -224,6 +270,10 @@
 			// 
 			// groupBoxCameraShotInfos
 			// 
+			this.groupBoxCameraShotInfos.Controls.Add(this.textBoxDatabaseMatchAperture);
+			this.groupBoxCameraShotInfos.Controls.Add(this.textBoxDatabaseMatchShutterSpeed);
+			this.groupBoxCameraShotInfos.Controls.Add(this.textBoxDatabaseMatchISOSpeed);
+			this.groupBoxCameraShotInfos.Controls.Add(this.label16);
 			this.groupBoxCameraShotInfos.Controls.Add(this.label4);
 			this.groupBoxCameraShotInfos.Controls.Add(this.label3);
 			this.groupBoxCameraShotInfos.Controls.Add(this.label2);
@@ -235,7 +285,7 @@
 			this.groupBoxCameraShotInfos.Enabled = false;
 			this.groupBoxCameraShotInfos.Location = new System.Drawing.Point(4, 9);
 			this.groupBoxCameraShotInfos.Name = "groupBoxCameraShotInfos";
-			this.groupBoxCameraShotInfos.Size = new System.Drawing.Size(310, 137);
+			this.groupBoxCameraShotInfos.Size = new System.Drawing.Size(372, 137);
 			this.groupBoxCameraShotInfos.TabIndex = 10;
 			this.groupBoxCameraShotInfos.TabStop = false;
 			this.groupBoxCameraShotInfos.Text = "Camera Shot Info   (can\'t edit if provided by image)";
@@ -243,7 +293,7 @@
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(6, 105);
+			this.label4.Location = new System.Drawing.Point(6, 111);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(69, 13);
 			this.label4.TabIndex = 9;
@@ -253,7 +303,7 @@
 			// label3
 			// 
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(6, 80);
+			this.label3.Location = new System.Drawing.Point(6, 87);
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(47, 13);
 			this.label3.TabIndex = 9;
@@ -263,7 +313,7 @@
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(6, 54);
+			this.label2.Location = new System.Drawing.Point(6, 63);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(75, 13);
 			this.label2.TabIndex = 9;
@@ -273,7 +323,7 @@
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(6, 27);
+			this.label1.Location = new System.Drawing.Point(6, 38);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(59, 13);
 			this.label1.TabIndex = 9;
@@ -282,7 +332,7 @@
 			// 
 			// floatTrackbarControlISOSpeed
 			// 
-			this.floatTrackbarControlISOSpeed.Location = new System.Drawing.Point(87, 24);
+			this.floatTrackbarControlISOSpeed.Location = new System.Drawing.Point(87, 35);
 			this.floatTrackbarControlISOSpeed.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlISOSpeed.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlISOSpeed.Name = "floatTrackbarControlISOSpeed";
@@ -294,10 +344,11 @@
 			this.floatTrackbarControlISOSpeed.Value = 100F;
 			this.floatTrackbarControlISOSpeed.VisibleRangeMax = 200F;
 			this.floatTrackbarControlISOSpeed.VisibleRangeMin = 25F;
+			this.floatTrackbarControlISOSpeed.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlShotInfos_SliderDragStop);
 			// 
 			// floatTrackbarControlFocalLength
 			// 
-			this.floatTrackbarControlFocalLength.Location = new System.Drawing.Point(87, 102);
+			this.floatTrackbarControlFocalLength.Location = new System.Drawing.Point(87, 108);
 			this.floatTrackbarControlFocalLength.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlFocalLength.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlFocalLength.Name = "floatTrackbarControlFocalLength";
@@ -312,7 +363,7 @@
 			// 
 			// floatTrackbarControlAperture
 			// 
-			this.floatTrackbarControlAperture.Location = new System.Drawing.Point(87, 76);
+			this.floatTrackbarControlAperture.Location = new System.Drawing.Point(87, 83);
 			this.floatTrackbarControlAperture.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlAperture.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlAperture.Name = "floatTrackbarControlAperture";
@@ -324,10 +375,11 @@
 			this.floatTrackbarControlAperture.Value = 8F;
 			this.floatTrackbarControlAperture.VisibleRangeMax = 16F;
 			this.floatTrackbarControlAperture.VisibleRangeMin = 1F;
+			this.floatTrackbarControlAperture.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlShotInfos_SliderDragStop);
 			// 
 			// floatTrackbarControlShutterSpeed
 			// 
-			this.floatTrackbarControlShutterSpeed.Location = new System.Drawing.Point(87, 50);
+			this.floatTrackbarControlShutterSpeed.Location = new System.Drawing.Point(87, 59);
 			this.floatTrackbarControlShutterSpeed.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlShutterSpeed.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlShutterSpeed.Name = "floatTrackbarControlShutterSpeed";
@@ -337,6 +389,7 @@
 			this.floatTrackbarControlShutterSpeed.TabIndex = 7;
 			this.toolTip.SetToolTip(this.floatTrackbarControlShutterSpeed, "Sets the shutter speed of the camera that shot the current image");
 			this.floatTrackbarControlShutterSpeed.Value = 1F;
+			this.floatTrackbarControlShutterSpeed.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlShotInfos_SliderDragStop);
 			// 
 			// label15
 			// 
@@ -592,8 +645,7 @@
 			// 
 			// buttonCalibrate99
 			// 
-			this.buttonCalibrate99.Enabled = false;
-			this.buttonCalibrate99.Location = new System.Drawing.Point(93, 129);
+			this.buttonCalibrate99.Location = new System.Drawing.Point(97, 129);
 			this.buttonCalibrate99.Name = "buttonCalibrate99";
 			this.buttonCalibrate99.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate99.TabIndex = 5;
@@ -605,8 +657,7 @@
 			// 
 			// buttonCalibrate75
 			// 
-			this.buttonCalibrate75.Enabled = false;
-			this.buttonCalibrate75.Location = new System.Drawing.Point(93, 106);
+			this.buttonCalibrate75.Location = new System.Drawing.Point(97, 106);
 			this.buttonCalibrate75.Name = "buttonCalibrate75";
 			this.buttonCalibrate75.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate75.TabIndex = 5;
@@ -618,8 +669,7 @@
 			// 
 			// buttonCalibrate50
 			// 
-			this.buttonCalibrate50.Enabled = false;
-			this.buttonCalibrate50.Location = new System.Drawing.Point(93, 83);
+			this.buttonCalibrate50.Location = new System.Drawing.Point(97, 83);
 			this.buttonCalibrate50.Name = "buttonCalibrate50";
 			this.buttonCalibrate50.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate50.TabIndex = 5;
@@ -631,8 +681,7 @@
 			// 
 			// buttonCalibrate20
 			// 
-			this.buttonCalibrate20.Enabled = false;
-			this.buttonCalibrate20.Location = new System.Drawing.Point(93, 60);
+			this.buttonCalibrate20.Location = new System.Drawing.Point(97, 60);
 			this.buttonCalibrate20.Name = "buttonCalibrate20";
 			this.buttonCalibrate20.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate20.TabIndex = 5;
@@ -644,8 +693,7 @@
 			// 
 			// buttonCalibrate10
 			// 
-			this.buttonCalibrate10.Enabled = false;
-			this.buttonCalibrate10.Location = new System.Drawing.Point(93, 37);
+			this.buttonCalibrate10.Location = new System.Drawing.Point(97, 37);
 			this.buttonCalibrate10.Name = "buttonCalibrate10";
 			this.buttonCalibrate10.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate10.TabIndex = 5;
@@ -657,8 +705,7 @@
 			// 
 			// buttonCalibrate02
 			// 
-			this.buttonCalibrate02.Enabled = false;
-			this.buttonCalibrate02.Location = new System.Drawing.Point(93, 14);
+			this.buttonCalibrate02.Location = new System.Drawing.Point(97, 14);
 			this.buttonCalibrate02.Name = "buttonCalibrate02";
 			this.buttonCalibrate02.Size = new System.Drawing.Size(75, 23);
 			this.buttonCalibrate02.TabIndex = 5;
@@ -671,7 +718,7 @@
 			// checkBoxCalibrate99
 			// 
 			this.checkBoxCalibrate99.AutoSize = true;
-			this.checkBoxCalibrate99.Location = new System.Drawing.Point(3, 133);
+			this.checkBoxCalibrate99.Location = new System.Drawing.Point(7, 133);
 			this.checkBoxCalibrate99.Name = "checkBoxCalibrate99";
 			this.checkBoxCalibrate99.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate99.TabIndex = 4;
@@ -683,7 +730,7 @@
 			// checkBoxCalibrate75
 			// 
 			this.checkBoxCalibrate75.AutoSize = true;
-			this.checkBoxCalibrate75.Location = new System.Drawing.Point(3, 110);
+			this.checkBoxCalibrate75.Location = new System.Drawing.Point(7, 110);
 			this.checkBoxCalibrate75.Name = "checkBoxCalibrate75";
 			this.checkBoxCalibrate75.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate75.TabIndex = 4;
@@ -695,7 +742,7 @@
 			// checkBoxCalibrate50
 			// 
 			this.checkBoxCalibrate50.AutoSize = true;
-			this.checkBoxCalibrate50.Location = new System.Drawing.Point(3, 87);
+			this.checkBoxCalibrate50.Location = new System.Drawing.Point(7, 87);
 			this.checkBoxCalibrate50.Name = "checkBoxCalibrate50";
 			this.checkBoxCalibrate50.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate50.TabIndex = 4;
@@ -707,7 +754,7 @@
 			// checkBoxCalibrate20
 			// 
 			this.checkBoxCalibrate20.AutoSize = true;
-			this.checkBoxCalibrate20.Location = new System.Drawing.Point(3, 64);
+			this.checkBoxCalibrate20.Location = new System.Drawing.Point(7, 64);
 			this.checkBoxCalibrate20.Name = "checkBoxCalibrate20";
 			this.checkBoxCalibrate20.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate20.TabIndex = 4;
@@ -719,7 +766,7 @@
 			// checkBoxCalibrate10
 			// 
 			this.checkBoxCalibrate10.AutoSize = true;
-			this.checkBoxCalibrate10.Location = new System.Drawing.Point(3, 41);
+			this.checkBoxCalibrate10.Location = new System.Drawing.Point(7, 41);
 			this.checkBoxCalibrate10.Name = "checkBoxCalibrate10";
 			this.checkBoxCalibrate10.Size = new System.Drawing.Size(84, 17);
 			this.checkBoxCalibrate10.TabIndex = 4;
@@ -728,72 +775,184 @@
 			this.checkBoxCalibrate10.UseVisualStyleBackColor = true;
 			this.checkBoxCalibrate10.CheckedChanged += new System.EventHandler(this.checkBoxCalibrate10_CheckedChanged);
 			// 
-			// label5
-			// 
-			this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(211, 723);
-			this.label5.Name = "label5";
-			this.label5.Size = new System.Drawing.Size(59, 13);
-			this.label5.TabIndex = 9;
-			this.label5.Text = "Luminance";
-			this.toolTip.SetToolTip(this.label5, "Shows the luminance under the mouse cursor (takes the sRGB checkbox state into ac" +
-        "count to return sRGB-corrected or linear luminance)");
-			// 
 			// tabControl
 			// 
 			this.tabControl.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.tabControl.Controls.Add(this.tabPageCreation);
-			this.tabControl.Controls.Add(this.tabPage2);
+			this.tabControl.Controls.Add(this.tabPageColorCorrection);
+			this.tabControl.Controls.Add(this.tabPageCameraCalibration);
 			this.tabControl.Location = new System.Drawing.Point(3, 152);
 			this.tabControl.Name = "tabControl";
 			this.tabControl.SelectedIndex = 0;
-			this.tabControl.Size = new System.Drawing.Size(491, 592);
+			this.tabControl.Size = new System.Drawing.Size(485, 592);
 			this.tabControl.TabIndex = 10;
 			// 
 			// tabPageCreation
 			// 
+			this.tabPageCreation.Controls.Add(this.checkBoxUseMeanMode);
+			this.tabPageCreation.Controls.Add(this.panelCapturedReflectance);
+			this.tabPageCreation.Controls.Add(this.label19);
+			this.tabPageCreation.Controls.Add(this.labelCaptureWhiteReflectanceCorrection);
+			this.tabPageCreation.Controls.Add(this.labelCaptureSpatialCorrectionStatus);
+			this.tabPageCreation.Controls.Add(this.label11);
+			this.tabPageCreation.Controls.Add(this.buttonSafeBorder);
 			this.tabPageCreation.Controls.Add(this.buttonResetCrop);
-			this.tabPageCreation.Controls.Add(this.checkBoxCropTool);
+			this.tabPageCreation.Controls.Add(this.labelCapturedSwatchxyY);
+			this.tabPageCreation.Controls.Add(this.labelCapturedSwatchRGB);
+			this.tabPageCreation.Controls.Add(this.labelCapturedReflectance);
+			this.tabPageCreation.Controls.Add(this.buttonCropTool);
+			this.tabPageCreation.Controls.Add(this.label12);
 			this.tabPageCreation.Controls.Add(this.buttonCapture);
 			this.tabPageCreation.Controls.Add(this.groupBoxColorSwatches);
 			this.tabPageCreation.Controls.Add(this.resultTexturePanel);
 			this.tabPageCreation.Location = new System.Drawing.Point(4, 22);
 			this.tabPageCreation.Name = "tabPageCreation";
 			this.tabPageCreation.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageCreation.Size = new System.Drawing.Size(483, 566);
+			this.tabPageCreation.Size = new System.Drawing.Size(477, 566);
 			this.tabPageCreation.TabIndex = 0;
 			this.tabPageCreation.Text = "Texure Creation";
 			this.tabPageCreation.UseVisualStyleBackColor = true;
 			// 
+			// checkBoxUseMeanMode
+			// 
+			this.checkBoxUseMeanMode.AutoSize = true;
+			this.checkBoxUseMeanMode.Location = new System.Drawing.Point(313, 13);
+			this.checkBoxUseMeanMode.Name = "checkBoxUseMeanMode";
+			this.checkBoxUseMeanMode.Size = new System.Drawing.Size(142, 17);
+			this.checkBoxUseMeanMode.TabIndex = 11;
+			this.checkBoxUseMeanMode.Text = "Use \"mode\" for min/max";
+			this.checkBoxUseMeanMode.UseVisualStyleBackColor = true;
+			// 
+			// panelCapturedReflectance
+			// 
+			this.panelCapturedReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.panelCapturedReflectance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelCapturedReflectance.Location = new System.Drawing.Point(419, 423);
+			this.panelCapturedReflectance.Name = "panelCapturedReflectance";
+			this.panelCapturedReflectance.Size = new System.Drawing.Size(49, 21);
+			this.panelCapturedReflectance.TabIndex = 10;
+			// 
+			// label19
+			// 
+			this.label19.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.label19.AutoSize = true;
+			this.label19.Location = new System.Drawing.Point(287, 448);
+			this.label19.Name = "label19";
+			this.label19.Size = new System.Drawing.Size(63, 13);
+			this.label19.TabIndex = 7;
+			this.label19.Text = "Swatch xyY";
+			// 
+			// labelCaptureWhiteReflectanceCorrection
+			// 
+			this.labelCaptureWhiteReflectanceCorrection.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.labelCaptureWhiteReflectanceCorrection.AutoSize = true;
+			this.labelCaptureWhiteReflectanceCorrection.Location = new System.Drawing.Point(290, 529);
+			this.labelCaptureWhiteReflectanceCorrection.Name = "labelCaptureWhiteReflectanceCorrection";
+			this.labelCaptureWhiteReflectanceCorrection.Size = new System.Drawing.Size(103, 13);
+			this.labelCaptureWhiteReflectanceCorrection.TabIndex = 7;
+			this.labelCaptureWhiteReflectanceCorrection.Text = "White correction 1.0";
+			// 
+			// labelCaptureSpatialCorrectionStatus
+			// 
+			this.labelCaptureSpatialCorrectionStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.labelCaptureSpatialCorrectionStatus.AutoSize = true;
+			this.labelCaptureSpatialCorrectionStatus.Location = new System.Drawing.Point(290, 544);
+			this.labelCaptureSpatialCorrectionStatus.Name = "labelCaptureSpatialCorrectionStatus";
+			this.labelCaptureSpatialCorrectionStatus.Size = new System.Drawing.Size(142, 13);
+			this.labelCaptureSpatialCorrectionStatus.TabIndex = 7;
+			this.labelCaptureSpatialCorrectionStatus.Text = "Spatial Correction is disabled";
+			// 
+			// label11
+			// 
+			this.label11.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.label11.AutoSize = true;
+			this.label11.Location = new System.Drawing.Point(287, 488);
+			this.label11.Name = "label11";
+			this.label11.Size = new System.Drawing.Size(74, 13);
+			this.label11.TabIndex = 7;
+			this.label11.Text = "Swatch sRGB";
+			// 
+			// buttonSafeBorder
+			// 
+			this.buttonSafeBorder.Location = new System.Drawing.Point(218, 9);
+			this.buttonSafeBorder.Name = "buttonSafeBorder";
+			this.buttonSafeBorder.Size = new System.Drawing.Size(57, 23);
+			this.buttonSafeBorder.TabIndex = 5;
+			this.buttonSafeBorder.Text = "Safe";
+			this.buttonSafeBorder.UseVisualStyleBackColor = true;
+			this.buttonSafeBorder.Click += new System.EventHandler(this.buttonSafeBorder_Click);
+			// 
 			// buttonResetCrop
 			// 
-			this.buttonResetCrop.Location = new System.Drawing.Point(39, 9);
+			this.buttonResetCrop.Location = new System.Drawing.Point(155, 9);
 			this.buttonResetCrop.Name = "buttonResetCrop";
 			this.buttonResetCrop.Size = new System.Drawing.Size(57, 23);
 			this.buttonResetCrop.TabIndex = 5;
 			this.buttonResetCrop.Text = "Reset";
+			this.toolTip.SetToolTip(this.buttonResetCrop, "Reset the crop rectangle");
 			this.buttonResetCrop.UseVisualStyleBackColor = true;
 			this.buttonResetCrop.Click += new System.EventHandler(this.buttonResetCrop_Click);
 			// 
-			// checkBoxCropTool
+			// labelCapturedSwatchxyY
 			// 
-			this.checkBoxCropTool.Appearance = System.Windows.Forms.Appearance.Button;
-			this.checkBoxCropTool.AutoSize = true;
-			this.checkBoxCropTool.Image = ((System.Drawing.Image)(resources.GetObject("checkBoxCropTool.Image")));
-			this.checkBoxCropTool.Location = new System.Drawing.Point(7, 7);
-			this.checkBoxCropTool.Name = "checkBoxCropTool";
-			this.checkBoxCropTool.Size = new System.Drawing.Size(26, 26);
-			this.checkBoxCropTool.TabIndex = 4;
-			this.toolTip.SetToolTip(this.checkBoxCropTool, "Shows the crop rectangle");
-			this.checkBoxCropTool.UseVisualStyleBackColor = true;
-			this.checkBoxCropTool.CheckedChanged += new System.EventHandler(this.checkBoxCropTool_CheckedChanged);
+			this.labelCapturedSwatchxyY.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.labelCapturedSwatchxyY.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.labelCapturedSwatchxyY.Location = new System.Drawing.Point(290, 463);
+			this.labelCapturedSwatchxyY.Name = "labelCapturedSwatchxyY";
+			this.labelCapturedSwatchxyY.Size = new System.Drawing.Size(178, 20);
+			this.labelCapturedSwatchxyY.TabIndex = 2;
+			this.labelCapturedSwatchxyY.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			// 
+			// labelCapturedSwatchRGB
+			// 
+			this.labelCapturedSwatchRGB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.labelCapturedSwatchRGB.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.labelCapturedSwatchRGB.Location = new System.Drawing.Point(290, 503);
+			this.labelCapturedSwatchRGB.Name = "labelCapturedSwatchRGB";
+			this.labelCapturedSwatchRGB.Size = new System.Drawing.Size(178, 20);
+			this.labelCapturedSwatchRGB.TabIndex = 2;
+			this.labelCapturedSwatchRGB.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			// 
+			// labelCapturedReflectance
+			// 
+			this.labelCapturedReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.labelCapturedReflectance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.labelCapturedReflectance.Location = new System.Drawing.Point(290, 400);
+			this.labelCapturedReflectance.Name = "labelCapturedReflectance";
+			this.labelCapturedReflectance.Size = new System.Drawing.Size(178, 20);
+			this.labelCapturedReflectance.TabIndex = 2;
+			this.labelCapturedReflectance.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			// 
+			// buttonCropTool
+			// 
+			this.buttonCropTool.AutoSize = true;
+			this.buttonCropTool.Image = ((System.Drawing.Image)(resources.GetObject("buttonCropTool.Image")));
+			this.buttonCropTool.Location = new System.Drawing.Point(122, 8);
+			this.buttonCropTool.Name = "buttonCropTool";
+			this.buttonCropTool.Size = new System.Drawing.Size(26, 26);
+			this.buttonCropTool.TabIndex = 4;
+			this.toolTip.SetToolTip(this.buttonCropTool, "Shows/Hides the crop rectangle");
+			this.buttonCropTool.UseVisualStyleBackColor = true;
+			this.buttonCropTool.Click += new System.EventHandler(this.buttonCropTool_Click);
+			// 
+			// label12
+			// 
+			this.label12.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.label12.AutoSize = true;
+			this.label12.Location = new System.Drawing.Point(287, 385);
+			this.label12.Name = "label12";
+			this.label12.Size = new System.Drawing.Size(61, 13);
+			this.label12.TabIndex = 9;
+			this.label12.Text = "Current xyY";
 			// 
 			// buttonCapture
 			// 
-			this.buttonCapture.Location = new System.Drawing.Point(132, 9);
+			this.buttonCapture.Location = new System.Drawing.Point(7, 9);
 			this.buttonCapture.Name = "buttonCapture";
 			this.buttonCapture.Size = new System.Drawing.Size(75, 23);
 			this.buttonCapture.TabIndex = 3;
@@ -839,92 +998,119 @@
 			// checkBoxCustomSwatch8
 			// 
 			this.checkBoxCustomSwatch8.AutoSize = true;
-			this.checkBoxCustomSwatch8.Location = new System.Drawing.Point(190, 148);
+			this.checkBoxCustomSwatch8.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch8.Location = new System.Drawing.Point(177, 148);
 			this.checkBoxCustomSwatch8.Name = "checkBoxCustomSwatch8";
-			this.checkBoxCustomSwatch8.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch8.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch8.TabIndex = 2;
+			this.checkBoxCustomSwatch8.Text = "8";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch8, "Custom color swatch");
 			this.checkBoxCustomSwatch8.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch8.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch7
 			// 
 			this.checkBoxCustomSwatch7.AutoSize = true;
-			this.checkBoxCustomSwatch7.Location = new System.Drawing.Point(104, 148);
+			this.checkBoxCustomSwatch7.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch7.Location = new System.Drawing.Point(91, 148);
 			this.checkBoxCustomSwatch7.Name = "checkBoxCustomSwatch7";
-			this.checkBoxCustomSwatch7.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch7.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch7.TabIndex = 2;
+			this.checkBoxCustomSwatch7.Text = "7";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch7, "Custom color swatch");
 			this.checkBoxCustomSwatch7.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch7.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch6
 			// 
 			this.checkBoxCustomSwatch6.AutoSize = true;
-			this.checkBoxCustomSwatch6.Location = new System.Drawing.Point(18, 148);
+			this.checkBoxCustomSwatch6.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch6.Location = new System.Drawing.Point(5, 148);
 			this.checkBoxCustomSwatch6.Name = "checkBoxCustomSwatch6";
-			this.checkBoxCustomSwatch6.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch6.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch6.TabIndex = 2;
+			this.checkBoxCustomSwatch6.Text = "6";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch6, "Custom color swatch");
 			this.checkBoxCustomSwatch6.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch6.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch5
 			// 
 			this.checkBoxCustomSwatch5.AutoSize = true;
-			this.checkBoxCustomSwatch5.Location = new System.Drawing.Point(190, 108);
+			this.checkBoxCustomSwatch5.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch5.Location = new System.Drawing.Point(177, 108);
 			this.checkBoxCustomSwatch5.Name = "checkBoxCustomSwatch5";
-			this.checkBoxCustomSwatch5.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch5.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch5.TabIndex = 2;
+			this.checkBoxCustomSwatch5.Text = "5";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch5, "Custom color swatch");
 			this.checkBoxCustomSwatch5.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch5.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch4
 			// 
 			this.checkBoxCustomSwatch4.AutoSize = true;
-			this.checkBoxCustomSwatch4.Location = new System.Drawing.Point(104, 108);
+			this.checkBoxCustomSwatch4.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch4.Location = new System.Drawing.Point(91, 108);
 			this.checkBoxCustomSwatch4.Name = "checkBoxCustomSwatch4";
-			this.checkBoxCustomSwatch4.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch4.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch4.TabIndex = 2;
+			this.checkBoxCustomSwatch4.Text = "4";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch4, "Custom color swatch");
 			this.checkBoxCustomSwatch4.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch4.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch3
 			// 
 			this.checkBoxCustomSwatch3.AutoSize = true;
-			this.checkBoxCustomSwatch3.Location = new System.Drawing.Point(18, 108);
+			this.checkBoxCustomSwatch3.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch3.Location = new System.Drawing.Point(5, 108);
 			this.checkBoxCustomSwatch3.Name = "checkBoxCustomSwatch3";
-			this.checkBoxCustomSwatch3.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch3.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch3.TabIndex = 2;
+			this.checkBoxCustomSwatch3.Text = "3";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch3, "Custom color swatch");
 			this.checkBoxCustomSwatch3.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch3.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch2
 			// 
 			this.checkBoxCustomSwatch2.AutoSize = true;
-			this.checkBoxCustomSwatch2.Location = new System.Drawing.Point(190, 68);
+			this.checkBoxCustomSwatch2.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch2.Location = new System.Drawing.Point(177, 68);
 			this.checkBoxCustomSwatch2.Name = "checkBoxCustomSwatch2";
-			this.checkBoxCustomSwatch2.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch2.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch2.TabIndex = 2;
+			this.checkBoxCustomSwatch2.Text = "2";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch2, "Custom color swatch");
 			this.checkBoxCustomSwatch2.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch2.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch1
 			// 
 			this.checkBoxCustomSwatch1.AutoSize = true;
-			this.checkBoxCustomSwatch1.Location = new System.Drawing.Point(104, 68);
+			this.checkBoxCustomSwatch1.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch1.Location = new System.Drawing.Point(91, 68);
 			this.checkBoxCustomSwatch1.Name = "checkBoxCustomSwatch1";
-			this.checkBoxCustomSwatch1.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch1.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch1.TabIndex = 2;
+			this.checkBoxCustomSwatch1.Text = "1";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch1, "Custom color swatch");
 			this.checkBoxCustomSwatch1.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch1.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// checkBoxCustomSwatch0
 			// 
 			this.checkBoxCustomSwatch0.AutoSize = true;
-			this.checkBoxCustomSwatch0.Location = new System.Drawing.Point(18, 68);
+			this.checkBoxCustomSwatch0.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.checkBoxCustomSwatch0.Location = new System.Drawing.Point(5, 68);
 			this.checkBoxCustomSwatch0.Name = "checkBoxCustomSwatch0";
-			this.checkBoxCustomSwatch0.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxCustomSwatch0.Size = new System.Drawing.Size(32, 17);
 			this.checkBoxCustomSwatch0.TabIndex = 2;
+			this.checkBoxCustomSwatch0.Text = "0";
 			this.toolTip.SetToolTip(this.checkBoxCustomSwatch0, "Custom color swatch");
 			this.checkBoxCustomSwatch0.UseVisualStyleBackColor = true;
+			this.checkBoxCustomSwatch0.CheckedChanged += new System.EventHandler(this.checkBoxCustomSwatch0_CheckedChanged);
 			// 
 			// panelSwatchAverage
 			// 
@@ -935,6 +1121,7 @@
 			this.panelSwatchAverage.Size = new System.Drawing.Size(50, 34);
 			this.panelSwatchAverage.TabIndex = 1;
 			this.toolTip.SetToolTip(this.panelSwatchAverage, "Average luminance in the texture");
+			this.panelSwatchAverage.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelSwatchMin_MouseMove);
 			// 
 			// panelSwatchMax
 			// 
@@ -945,6 +1132,7 @@
 			this.panelSwatchMax.Size = new System.Drawing.Size(50, 34);
 			this.panelSwatchMax.TabIndex = 1;
 			this.toolTip.SetToolTip(this.panelSwatchMax, "Maximum luminance in the texture");
+			this.panelSwatchMax.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelSwatchMin_MouseMove);
 			// 
 			// label9
 			// 
@@ -976,6 +1164,7 @@
 			this.panelCustomSwatch8.TabIndex = 1;
 			this.toolTip.SetToolTip(this.panelCustomSwatch8, "Custom color swatch");
 			this.panelCustomSwatch8.Click += new System.EventHandler(this.panelCustomSwatch8_Click);
+			this.panelCustomSwatch8.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelSwatchMin_MouseMove);
 			// 
 			// panelCustomSwatch7
 			// 
@@ -987,6 +1176,7 @@
 			this.panelCustomSwatch7.TabIndex = 1;
 			this.toolTip.SetToolTip(this.panelCustomSwatch7, "Custom color swatch");
 			this.panelCustomSwatch7.Click += new System.EventHandler(this.panelCustomSwatch7_Click);
+			this.panelCustomSwatch7.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelSwatchMin_MouseMove);
 			// 
 			// panelCustomSwatch6
 			// 
@@ -998,6 +1188,7 @@
 			this.panelCustomSwatch6.TabIndex = 1;
 			this.toolTip.SetToolTip(this.panelCustomSwatch6, "Custom color swatch");
 			this.panelCustomSwatch6.Click += new System.EventHandler(this.panelCustomSwatch6_Click);
+			this.panelCustomSwatch6.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelSwatchMin_MouseMove);
 			// 
 			// panelCustomSwatch5
 			// 
@@ -1009,6 +1200,7 @@
 			this.panelCustomSwatch5.TabIndex = 1;
 			this.toolTip.SetToolTip(this.panelCustomSwatch5, "Custom color swatch");
 			this.panelCustomSwatch5.Click += new System.EventHandler(this.panelCustomSwatch5_Click);
+			this.panelCustomSwatch5.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelSwatchMin_MouseMove);
 			// 
 			// panelCustomSwatch4
 			// 
@@ -1020,6 +1212,7 @@
 			this.panelCustomSwatch4.TabIndex = 1;
 			this.toolTip.SetToolTip(this.panelCustomSwatch4, "Custom color swatch");
 			this.panelCustomSwatch4.Click += new System.EventHandler(this.panelCustomSwatch4_Click);
+			this.panelCustomSwatch4.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelSwatchMin_MouseMove);
 			// 
 			// panelCustomSwatch3
 			// 
@@ -1031,6 +1224,7 @@
 			this.panelCustomSwatch3.TabIndex = 1;
 			this.toolTip.SetToolTip(this.panelCustomSwatch3, "Custom color swatch");
 			this.panelCustomSwatch3.Click += new System.EventHandler(this.panelCustomSwatch3_Click);
+			this.panelCustomSwatch3.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelSwatchMin_MouseMove);
 			// 
 			// panelCustomSwatch2
 			// 
@@ -1042,6 +1236,7 @@
 			this.panelCustomSwatch2.TabIndex = 1;
 			this.toolTip.SetToolTip(this.panelCustomSwatch2, "Custom color swatch");
 			this.panelCustomSwatch2.Click += new System.EventHandler(this.panelCustomSwatch2_Click);
+			this.panelCustomSwatch2.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelSwatchMin_MouseMove);
 			// 
 			// panelCustomSwatch1
 			// 
@@ -1053,6 +1248,7 @@
 			this.panelCustomSwatch1.TabIndex = 1;
 			this.toolTip.SetToolTip(this.panelCustomSwatch1, "Custom color swatch");
 			this.panelCustomSwatch1.Click += new System.EventHandler(this.panelCustomSwatch1_Click);
+			this.panelCustomSwatch1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelSwatchMin_MouseMove);
 			// 
 			// panelCustomSwatch0
 			// 
@@ -1064,6 +1260,7 @@
 			this.panelCustomSwatch0.TabIndex = 1;
 			this.toolTip.SetToolTip(this.panelCustomSwatch0, "Custom color swatch");
 			this.panelCustomSwatch0.Click += new System.EventHandler(this.panelCustomSwatch0_Click);
+			this.panelCustomSwatch0.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelSwatchMin_MouseMove);
 			// 
 			// panelSwatchMin
 			// 
@@ -1073,7 +1270,8 @@
 			this.panelSwatchMin.Name = "panelSwatchMin";
 			this.panelSwatchMin.Size = new System.Drawing.Size(50, 34);
 			this.panelSwatchMin.TabIndex = 1;
-			this.toolTip.SetToolTip(this.panelSwatchMin, "Minimum reflectance in the image");
+			this.toolTip.SetToolTip(this.panelSwatchMin, "Minimum reflectance in the texture");
+			this.panelSwatchMin.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelSwatchMin_MouseMove);
 			// 
 			// label7
 			// 
@@ -1085,25 +1283,351 @@
 			this.label7.Text = "Min.";
 			this.toolTip.SetToolTip(this.label7, "Minimum luminance in the image");
 			// 
-			// tabPage2
+			// resultTexturePanel
 			// 
-			this.tabPage2.Controls.Add(this.tabControlCalibrationRepresentation);
-			this.tabPage2.Controls.Add(this.buttonExplore);
-			this.tabPage2.Controls.Add(this.labelCalbrationImageName);
-			this.tabPage2.Controls.Add(this.label6);
-			this.tabPage2.Controls.Add(this.panelProbeLuminances);
-			this.tabPage2.Controls.Add(this.buttonSaveCalibration);
-			this.tabPage2.Controls.Add(this.buttonSetupDatabaseFolder);
-			this.tabPage2.Controls.Add(this.buttonReCalibrate);
-			this.tabPage2.Controls.Add(this.buttonLoadCalibration);
-			this.tabPage2.Controls.Add(this.checkBoxGraphLagrange);
-			this.tabPage2.Location = new System.Drawing.Point(4, 22);
-			this.tabPage2.Name = "tabPage2";
-			this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPage2.Size = new System.Drawing.Size(483, 566);
-			this.tabPage2.TabIndex = 1;
-			this.tabPage2.Text = "Camera Calibration";
-			this.tabPage2.UseVisualStyleBackColor = true;
+			this.resultTexturePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.resultTexturePanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.resultTexturePanel.CalibratedTexture = null;
+			this.resultTexturePanel.Location = new System.Drawing.Point(6, 40);
+			this.resultTexturePanel.Name = "resultTexturePanel";
+			this.resultTexturePanel.Size = new System.Drawing.Size(465, 332);
+			this.resultTexturePanel.TabIndex = 0;
+			this.resultTexturePanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.resultTexturePanel_MouseMove);
+			// 
+			// tabPageColorCorrection
+			// 
+			this.tabPageColorCorrection.Controls.Add(this.groupBoxHueTwist);
+			this.tabPageColorCorrection.Controls.Add(this.groupBoxWhiteImageReference);
+			this.tabPageColorCorrection.Controls.Add(this.groupBoxWhiteReflectance);
+			this.tabPageColorCorrection.Location = new System.Drawing.Point(4, 22);
+			this.tabPageColorCorrection.Name = "tabPageColorCorrection";
+			this.tabPageColorCorrection.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPageColorCorrection.Size = new System.Drawing.Size(477, 566);
+			this.tabPageColorCorrection.TabIndex = 2;
+			this.tabPageColorCorrection.Text = "Color Correction";
+			this.tabPageColorCorrection.UseVisualStyleBackColor = true;
+			// 
+			// groupBoxHueTwist
+			// 
+			this.groupBoxHueTwist.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBoxHueTwist.Controls.Add(this.textBox3);
+			this.groupBoxHueTwist.Location = new System.Drawing.Point(6, 427);
+			this.groupBoxHueTwist.Name = "groupBoxHueTwist";
+			this.groupBoxHueTwist.Size = new System.Drawing.Size(465, 133);
+			this.groupBoxHueTwist.TabIndex = 2;
+			this.groupBoxHueTwist.TabStop = false;
+			this.groupBoxHueTwist.Text = "Hue Twisting";
+			// 
+			// textBox3
+			// 
+			this.textBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBox3.Location = new System.Drawing.Point(7, 19);
+			this.textBox3.Multiline = true;
+			this.textBox3.Name = "textBox3";
+			this.textBox3.ReadOnly = true;
+			this.textBox3.Size = new System.Drawing.Size(452, 133);
+			this.textBox3.TabIndex = 7;
+			this.textBox3.Text = resources.GetString("textBox3.Text");
+			// 
+			// groupBoxWhiteImageReference
+			// 
+			this.groupBoxWhiteImageReference.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBoxWhiteImageReference.Controls.Add(this.label5);
+			this.groupBoxWhiteImageReference.Controls.Add(this.buttonWhiteRefTest3);
+			this.groupBoxWhiteImageReference.Controls.Add(this.buttonWhiteRefTest2);
+			this.groupBoxWhiteImageReference.Controls.Add(this.buttonWhiteRefTest1);
+			this.groupBoxWhiteImageReference.Controls.Add(this.labelWhiteReferenceImageCorrection);
+			this.groupBoxWhiteImageReference.Controls.Add(this.whiteImageReferencePanel);
+			this.groupBoxWhiteImageReference.Controls.Add(this.buttonResetWhiteRefImage);
+			this.groupBoxWhiteImageReference.Controls.Add(this.buttonSaveWhiteRefImage);
+			this.groupBoxWhiteImageReference.Controls.Add(this.textBox2);
+			this.groupBoxWhiteImageReference.Controls.Add(this.buttonPickWhiteRefImage);
+			this.groupBoxWhiteImageReference.Controls.Add(this.buttonLoadWhiteRefImage);
+			this.groupBoxWhiteImageReference.Location = new System.Drawing.Point(6, 185);
+			this.groupBoxWhiteImageReference.Name = "groupBoxWhiteImageReference";
+			this.groupBoxWhiteImageReference.Size = new System.Drawing.Size(465, 236);
+			this.groupBoxWhiteImageReference.TabIndex = 1;
+			this.groupBoxWhiteImageReference.TabStop = false;
+			this.groupBoxWhiteImageReference.Text = "White Image Reference";
+			// 
+			// label5
+			// 
+			this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(324, 186);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(89, 13);
+			this.label5.TabIndex = 10;
+			this.label5.Text = "White Correction:";
+			// 
+			// buttonWhiteRefTest3
+			// 
+			this.buttonWhiteRefTest3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonWhiteRefTest3.Location = new System.Drawing.Point(409, 103);
+			this.buttonWhiteRefTest3.Name = "buttonWhiteRefTest3";
+			this.buttonWhiteRefTest3.Size = new System.Drawing.Size(49, 23);
+			this.buttonWhiteRefTest3.TabIndex = 9;
+			this.buttonWhiteRefTest3.Text = "Test3";
+			this.buttonWhiteRefTest3.UseVisualStyleBackColor = true;
+			this.buttonWhiteRefTest3.Click += new System.EventHandler(this.buttonWhiteRefTest3_Click);
+			// 
+			// buttonWhiteRefTest2
+			// 
+			this.buttonWhiteRefTest2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonWhiteRefTest2.Location = new System.Drawing.Point(354, 132);
+			this.buttonWhiteRefTest2.Name = "buttonWhiteRefTest2";
+			this.buttonWhiteRefTest2.Size = new System.Drawing.Size(49, 23);
+			this.buttonWhiteRefTest2.TabIndex = 9;
+			this.buttonWhiteRefTest2.Text = "Test2";
+			this.buttonWhiteRefTest2.UseVisualStyleBackColor = true;
+			this.buttonWhiteRefTest2.Click += new System.EventHandler(this.buttonWhiteRefTest2_Click);
+			// 
+			// buttonWhiteRefTest1
+			// 
+			this.buttonWhiteRefTest1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonWhiteRefTest1.Location = new System.Drawing.Point(354, 103);
+			this.buttonWhiteRefTest1.Name = "buttonWhiteRefTest1";
+			this.buttonWhiteRefTest1.Size = new System.Drawing.Size(49, 23);
+			this.buttonWhiteRefTest1.TabIndex = 9;
+			this.buttonWhiteRefTest1.Text = "Test1";
+			this.buttonWhiteRefTest1.UseVisualStyleBackColor = true;
+			this.buttonWhiteRefTest1.Click += new System.EventHandler(this.buttonWhiteRefTest1_Click);
+			// 
+			// labelWhiteReferenceImageCorrection
+			// 
+			this.labelWhiteReferenceImageCorrection.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.labelWhiteReferenceImageCorrection.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.labelWhiteReferenceImageCorrection.Location = new System.Drawing.Point(324, 201);
+			this.labelWhiteReferenceImageCorrection.Name = "labelWhiteReferenceImageCorrection";
+			this.labelWhiteReferenceImageCorrection.Size = new System.Drawing.Size(141, 23);
+			this.labelWhiteReferenceImageCorrection.TabIndex = 2;
+			this.labelWhiteReferenceImageCorrection.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			// 
+			// whiteImageReferencePanel
+			// 
+			this.whiteImageReferencePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.whiteImageReferencePanel.Location = new System.Drawing.Point(126, 103);
+			this.whiteImageReferencePanel.Name = "whiteImageReferencePanel";
+			this.whiteImageReferencePanel.Size = new System.Drawing.Size(192, 127);
+			this.whiteImageReferencePanel.TabIndex = 8;
+			this.whiteImageReferencePanel.WhiteReferenceImage = null;
+			this.whiteImageReferencePanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.whiteImageReferencePanel_MouseMove);
+			// 
+			// buttonResetWhiteRefImage
+			// 
+			this.buttonResetWhiteRefImage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonResetWhiteRefImage.Enabled = false;
+			this.buttonResetWhiteRefImage.Location = new System.Drawing.Point(37, 176);
+			this.buttonResetWhiteRefImage.Name = "buttonResetWhiteRefImage";
+			this.buttonResetWhiteRefImage.Size = new System.Drawing.Size(57, 23);
+			this.buttonResetWhiteRefImage.TabIndex = 5;
+			this.buttonResetWhiteRefImage.Text = "Reset";
+			this.buttonResetWhiteRefImage.UseVisualStyleBackColor = true;
+			this.buttonResetWhiteRefImage.Click += new System.EventHandler(this.buttonResetWhiteRefImage_Click);
+			// 
+			// buttonSaveWhiteRefImage
+			// 
+			this.buttonSaveWhiteRefImage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonSaveWhiteRefImage.Enabled = false;
+			this.buttonSaveWhiteRefImage.Location = new System.Drawing.Point(37, 147);
+			this.buttonSaveWhiteRefImage.Name = "buttonSaveWhiteRefImage";
+			this.buttonSaveWhiteRefImage.Size = new System.Drawing.Size(57, 23);
+			this.buttonSaveWhiteRefImage.TabIndex = 5;
+			this.buttonSaveWhiteRefImage.Text = "Save";
+			this.buttonSaveWhiteRefImage.UseVisualStyleBackColor = true;
+			this.buttonSaveWhiteRefImage.Click += new System.EventHandler(this.buttonSaveWhiteRefImage_Click);
+			// 
+			// textBox2
+			// 
+			this.textBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBox2.Location = new System.Drawing.Point(6, 19);
+			this.textBox2.Multiline = true;
+			this.textBox2.Name = "textBox2";
+			this.textBox2.ReadOnly = true;
+			this.textBox2.Size = new System.Drawing.Size(452, 78);
+			this.textBox2.TabIndex = 7;
+			this.textBox2.Text = resources.GetString("textBox2.Text");
+			// 
+			// buttonPickWhiteRefImage
+			// 
+			this.buttonPickWhiteRefImage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonPickWhiteRefImage.Image = ((System.Drawing.Image)(resources.GetObject("buttonPickWhiteRefImage.Image")));
+			this.buttonPickWhiteRefImage.Location = new System.Drawing.Point(6, 116);
+			this.buttonPickWhiteRefImage.Name = "buttonPickWhiteRefImage";
+			this.buttonPickWhiteRefImage.Size = new System.Drawing.Size(26, 26);
+			this.buttonPickWhiteRefImage.TabIndex = 6;
+			this.buttonPickWhiteRefImage.UseVisualStyleBackColor = true;
+			this.buttonPickWhiteRefImage.Click += new System.EventHandler(this.buttonPickWhiteRefImage_Click);
+			// 
+			// buttonLoadWhiteRefImage
+			// 
+			this.buttonLoadWhiteRefImage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonLoadWhiteRefImage.Location = new System.Drawing.Point(38, 118);
+			this.buttonLoadWhiteRefImage.Name = "buttonLoadWhiteRefImage";
+			this.buttonLoadWhiteRefImage.Size = new System.Drawing.Size(57, 23);
+			this.buttonLoadWhiteRefImage.TabIndex = 5;
+			this.buttonLoadWhiteRefImage.Text = "Load";
+			this.buttonLoadWhiteRefImage.UseVisualStyleBackColor = true;
+			this.buttonLoadWhiteRefImage.Click += new System.EventHandler(this.buttonLoadWhiteRefImage_Click);
+			// 
+			// groupBoxWhiteReflectance
+			// 
+			this.groupBoxWhiteReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBoxWhiteReflectance.Controls.Add(this.textBox1);
+			this.groupBoxWhiteReflectance.Controls.Add(this.buttonResetWhiteReflectance);
+			this.groupBoxWhiteReflectance.Controls.Add(this.buttonSaveWhiteReflectanceReference);
+			this.groupBoxWhiteReflectance.Controls.Add(this.labelWhiteReflectance);
+			this.groupBoxWhiteReflectance.Controls.Add(this.buttonPickWhiteReflectance);
+			this.groupBoxWhiteReflectance.Controls.Add(this.floatTrackbarControlTargetWhiteReflectance);
+			this.groupBoxWhiteReflectance.Controls.Add(this.buttonLoadWhiteReflectanceReference);
+			this.groupBoxWhiteReflectance.Controls.Add(this.label10);
+			this.groupBoxWhiteReflectance.Location = new System.Drawing.Point(6, 6);
+			this.groupBoxWhiteReflectance.Name = "groupBoxWhiteReflectance";
+			this.groupBoxWhiteReflectance.Size = new System.Drawing.Size(465, 173);
+			this.groupBoxWhiteReflectance.TabIndex = 0;
+			this.groupBoxWhiteReflectance.TabStop = false;
+			this.groupBoxWhiteReflectance.Text = "White Reflectance Reference";
+			// 
+			// textBox1
+			// 
+			this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBox1.Location = new System.Drawing.Point(7, 20);
+			this.textBox1.Multiline = true;
+			this.textBox1.Name = "textBox1";
+			this.textBox1.ReadOnly = true;
+			this.textBox1.Size = new System.Drawing.Size(452, 92);
+			this.textBox1.TabIndex = 7;
+			this.textBox1.Text = resources.GetString("textBox1.Text");
+			// 
+			// buttonResetWhiteReflectance
+			// 
+			this.buttonResetWhiteReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonResetWhiteReflectance.Enabled = false;
+			this.buttonResetWhiteReflectance.Location = new System.Drawing.Point(370, 141);
+			this.buttonResetWhiteReflectance.Name = "buttonResetWhiteReflectance";
+			this.buttonResetWhiteReflectance.Size = new System.Drawing.Size(57, 23);
+			this.buttonResetWhiteReflectance.TabIndex = 5;
+			this.buttonResetWhiteReflectance.Text = "Reset";
+			this.toolTip.SetToolTip(this.buttonResetWhiteReflectance, "Resets the white reflectance reference");
+			this.buttonResetWhiteReflectance.UseVisualStyleBackColor = true;
+			this.buttonResetWhiteReflectance.Click += new System.EventHandler(this.buttonResetWhiteReflectance_Click);
+			// 
+			// buttonSaveWhiteReflectanceReference
+			// 
+			this.buttonSaveWhiteReflectanceReference.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonSaveWhiteReflectanceReference.Enabled = false;
+			this.buttonSaveWhiteReflectanceReference.Location = new System.Drawing.Point(307, 141);
+			this.buttonSaveWhiteReflectanceReference.Name = "buttonSaveWhiteReflectanceReference";
+			this.buttonSaveWhiteReflectanceReference.Size = new System.Drawing.Size(57, 23);
+			this.buttonSaveWhiteReflectanceReference.TabIndex = 5;
+			this.buttonSaveWhiteReflectanceReference.Text = "Save";
+			this.toolTip.SetToolTip(this.buttonSaveWhiteReflectanceReference, "Saves the white reflectance reference to disk");
+			this.buttonSaveWhiteReflectanceReference.UseVisualStyleBackColor = true;
+			this.buttonSaveWhiteReflectanceReference.Click += new System.EventHandler(this.buttonSaveWhiteReflectanceReference_Click);
+			// 
+			// labelWhiteReflectance
+			// 
+			this.labelWhiteReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.labelWhiteReflectance.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.labelWhiteReflectance.Location = new System.Drawing.Point(101, 141);
+			this.labelWhiteReflectance.Name = "labelWhiteReflectance";
+			this.labelWhiteReflectance.Size = new System.Drawing.Size(200, 23);
+			this.labelWhiteReflectance.TabIndex = 2;
+			this.labelWhiteReflectance.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			// 
+			// buttonPickWhiteReflectance
+			// 
+			this.buttonPickWhiteReflectance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonPickWhiteReflectance.Image = ((System.Drawing.Image)(resources.GetObject("buttonPickWhiteReflectance.Image")));
+			this.buttonPickWhiteReflectance.Location = new System.Drawing.Point(6, 139);
+			this.buttonPickWhiteReflectance.Name = "buttonPickWhiteReflectance";
+			this.buttonPickWhiteReflectance.Size = new System.Drawing.Size(26, 26);
+			this.buttonPickWhiteReflectance.TabIndex = 6;
+			this.toolTip.SetToolTip(this.buttonPickWhiteReflectance, "Click to pick the white reflectance in the image to use as maximum luminance refe" +
+        "rence");
+			this.buttonPickWhiteReflectance.UseVisualStyleBackColor = true;
+			this.buttonPickWhiteReflectance.Click += new System.EventHandler(this.buttonPickWhiteReflectance_Click);
+			// 
+			// floatTrackbarControlTargetWhiteReflectance
+			// 
+			this.floatTrackbarControlTargetWhiteReflectance.Location = new System.Drawing.Point(101, 118);
+			this.floatTrackbarControlTargetWhiteReflectance.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlTargetWhiteReflectance.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlTargetWhiteReflectance.Name = "floatTrackbarControlTargetWhiteReflectance";
+			this.floatTrackbarControlTargetWhiteReflectance.RangeMax = 100F;
+			this.floatTrackbarControlTargetWhiteReflectance.RangeMin = 1F;
+			this.floatTrackbarControlTargetWhiteReflectance.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlTargetWhiteReflectance.TabIndex = 7;
+			this.floatTrackbarControlTargetWhiteReflectance.Value = 99F;
+			this.floatTrackbarControlTargetWhiteReflectance.VisibleRangeMax = 100F;
+			this.floatTrackbarControlTargetWhiteReflectance.VisibleRangeMin = 1F;
+			// 
+			// buttonLoadWhiteReflectanceReference
+			// 
+			this.buttonLoadWhiteReflectanceReference.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonLoadWhiteReflectanceReference.Location = new System.Drawing.Point(38, 141);
+			this.buttonLoadWhiteReflectanceReference.Name = "buttonLoadWhiteReflectanceReference";
+			this.buttonLoadWhiteReflectanceReference.Size = new System.Drawing.Size(57, 23);
+			this.buttonLoadWhiteReflectanceReference.TabIndex = 5;
+			this.buttonLoadWhiteReflectanceReference.Text = "Load";
+			this.toolTip.SetToolTip(this.buttonLoadWhiteReflectanceReference, "Loads the white reflectance reference from disk");
+			this.buttonLoadWhiteReflectanceReference.UseVisualStyleBackColor = true;
+			this.buttonLoadWhiteReflectanceReference.Click += new System.EventHandler(this.buttonLoadWhiteReflectanceReference_Click);
+			// 
+			// label10
+			// 
+			this.label10.AutoSize = true;
+			this.label10.Location = new System.Drawing.Point(4, 122);
+			this.label10.Name = "label10";
+			this.label10.Size = new System.Drawing.Size(99, 13);
+			this.label10.TabIndex = 9;
+			this.label10.Text = "Target Reflectance";
+			// 
+			// tabPageCameraCalibration
+			// 
+			this.tabPageCameraCalibration.Controls.Add(this.checkBoxCalibrationUseAverageLuminance);
+			this.tabPageCameraCalibration.Controls.Add(this.tabControlCalibrationRepresentation);
+			this.tabPageCameraCalibration.Controls.Add(this.buttonExplore);
+			this.tabPageCameraCalibration.Controls.Add(this.labelCalbrationImageName);
+			this.tabPageCameraCalibration.Controls.Add(this.label6);
+			this.tabPageCameraCalibration.Controls.Add(this.panelProbeLuminances);
+			this.tabPageCameraCalibration.Controls.Add(this.buttonSaveCalibration);
+			this.tabPageCameraCalibration.Controls.Add(this.buttonSetupDatabaseFolder);
+			this.tabPageCameraCalibration.Controls.Add(this.buttonReCalibrate);
+			this.tabPageCameraCalibration.Controls.Add(this.buttonLoadCalibration);
+			this.tabPageCameraCalibration.Controls.Add(this.checkBoxGraphLagrange);
+			this.tabPageCameraCalibration.Location = new System.Drawing.Point(4, 22);
+			this.tabPageCameraCalibration.Name = "tabPageCameraCalibration";
+			this.tabPageCameraCalibration.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPageCameraCalibration.Size = new System.Drawing.Size(477, 566);
+			this.tabPageCameraCalibration.TabIndex = 1;
+			this.tabPageCameraCalibration.Text = "Camera Calibration";
+			this.tabPageCameraCalibration.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxCalibrationUseAverageLuminance
+			// 
+			this.checkBoxCalibrationUseAverageLuminance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.checkBoxCalibrationUseAverageLuminance.AutoSize = true;
+			this.checkBoxCalibrationUseAverageLuminance.Checked = true;
+			this.checkBoxCalibrationUseAverageLuminance.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxCalibrationUseAverageLuminance.Location = new System.Drawing.Point(326, 206);
+			this.checkBoxCalibrationUseAverageLuminance.Name = "checkBoxCalibrationUseAverageLuminance";
+			this.checkBoxCalibrationUseAverageLuminance.Size = new System.Drawing.Size(143, 17);
+			this.checkBoxCalibrationUseAverageLuminance.TabIndex = 4;
+			this.checkBoxCalibrationUseAverageLuminance.Text = "Use Average Luminance";
+			this.checkBoxCalibrationUseAverageLuminance.UseVisualStyleBackColor = true;
 			// 
 			// tabControlCalibrationRepresentation
 			// 
@@ -1115,7 +1639,7 @@
 			this.tabControlCalibrationRepresentation.Location = new System.Drawing.Point(4, 207);
 			this.tabControlCalibrationRepresentation.Name = "tabControlCalibrationRepresentation";
 			this.tabControlCalibrationRepresentation.SelectedIndex = 0;
-			this.tabControlCalibrationRepresentation.Size = new System.Drawing.Size(476, 324);
+			this.tabControlCalibrationRepresentation.Size = new System.Drawing.Size(470, 324);
 			this.tabControlCalibrationRepresentation.TabIndex = 16;
 			// 
 			// tabPageLuminancesGraph
@@ -1124,10 +1648,24 @@
 			this.tabPageLuminancesGraph.Location = new System.Drawing.Point(4, 22);
 			this.tabPageLuminancesGraph.Name = "tabPageLuminancesGraph";
 			this.tabPageLuminancesGraph.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageLuminancesGraph.Size = new System.Drawing.Size(468, 298);
+			this.tabPageLuminancesGraph.Size = new System.Drawing.Size(462, 298);
 			this.tabPageLuminancesGraph.TabIndex = 0;
 			this.tabPageLuminancesGraph.Text = "Luminances Graph";
 			this.tabPageLuminancesGraph.UseVisualStyleBackColor = true;
+			// 
+			// graphPanel
+			// 
+			this.graphPanel.BackColor = System.Drawing.Color.Ivory;
+			this.graphPanel.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+			this.graphPanel.Calibration = null;
+			this.graphPanel.Cursor = System.Windows.Forms.Cursors.Cross;
+			this.graphPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.graphPanel.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.graphPanel.Location = new System.Drawing.Point(3, 3);
+			this.graphPanel.Name = "graphPanel";
+			this.graphPanel.Size = new System.Drawing.Size(456, 292);
+			this.graphPanel.TabIndex = 11;
+			this.graphPanel.UseLagrange = false;
 			// 
 			// tabPageReferenceImage
 			// 
@@ -1135,10 +1673,21 @@
 			this.tabPageReferenceImage.Location = new System.Drawing.Point(4, 22);
 			this.tabPageReferenceImage.Name = "tabPageReferenceImage";
 			this.tabPageReferenceImage.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageReferenceImage.Size = new System.Drawing.Size(468, 298);
+			this.tabPageReferenceImage.Size = new System.Drawing.Size(462, 298);
 			this.tabPageReferenceImage.TabIndex = 1;
 			this.tabPageReferenceImage.Text = "Reference Image";
 			this.tabPageReferenceImage.UseVisualStyleBackColor = true;
+			// 
+			// referenceImagePanel
+			// 
+			this.referenceImagePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.referenceImagePanel.Calibration = null;
+			this.referenceImagePanel.Location = new System.Drawing.Point(6, 6);
+			this.referenceImagePanel.Name = "referenceImagePanel";
+			this.referenceImagePanel.Size = new System.Drawing.Size(456, 286);
+			this.referenceImagePanel.TabIndex = 0;
 			// 
 			// buttonExplore
 			// 
@@ -1216,7 +1765,7 @@
 			// buttonSaveCalibration
 			// 
 			this.buttonSaveCalibration.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonSaveCalibration.Location = new System.Drawing.Point(402, 537);
+			this.buttonSaveCalibration.Location = new System.Drawing.Point(396, 537);
 			this.buttonSaveCalibration.Name = "buttonSaveCalibration";
 			this.buttonSaveCalibration.Size = new System.Drawing.Size(75, 23);
 			this.buttonSaveCalibration.TabIndex = 12;
@@ -1253,7 +1802,7 @@
 			// buttonLoadCalibration
 			// 
 			this.buttonLoadCalibration.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonLoadCalibration.Location = new System.Drawing.Point(321, 537);
+			this.buttonLoadCalibration.Location = new System.Drawing.Point(315, 537);
 			this.buttonLoadCalibration.Name = "buttonLoadCalibration";
 			this.buttonLoadCalibration.Size = new System.Drawing.Size(75, 23);
 			this.buttonLoadCalibration.TabIndex = 12;
@@ -1286,7 +1835,7 @@
 			this.splitContainerMain.Panel1.Controls.Add(this.outputPanel);
 			this.splitContainerMain.Panel1.Controls.Add(this.checkBoxsRGB);
 			this.splitContainerMain.Panel1.Controls.Add(this.labelLuminance);
-			this.splitContainerMain.Panel1.Controls.Add(this.label5);
+			this.splitContainerMain.Panel1.Controls.Add(this.checkBoxSpatialLuminanceCorrection);
 			this.splitContainerMain.Panel1.Controls.Add(this.checkBoxLuminance);
 			// 
 			// splitContainerMain.Panel2
@@ -1297,8 +1846,46 @@
 			this.splitContainerMain.Panel2.Controls.Add(this.buttonLoadImage);
 			this.splitContainerMain.Panel2MinSize = 490;
 			this.splitContainerMain.Size = new System.Drawing.Size(1499, 747);
-			this.splitContainerMain.SplitterDistance = 998;
+			this.splitContainerMain.SplitterDistance = 1004;
 			this.splitContainerMain.TabIndex = 0;
+			// 
+			// outputPanel
+			// 
+			this.outputPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.outputPanel.CropRectangleEnabled = false;
+			this.outputPanel.Image = null;
+			this.outputPanel.Location = new System.Drawing.Point(3, 0);
+			this.outputPanel.Name = "outputPanel";
+			this.outputPanel.Size = new System.Drawing.Size(1002, 716);
+			this.outputPanel.TabIndex = 0;
+			this.outputPanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.outputPanel_MouseMove);
+			// 
+			// checkBoxSpatialLuminanceCorrection
+			// 
+			this.checkBoxSpatialLuminanceCorrection.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.checkBoxSpatialLuminanceCorrection.AutoSize = true;
+			this.checkBoxSpatialLuminanceCorrection.Checked = true;
+			this.checkBoxSpatialLuminanceCorrection.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxSpatialLuminanceCorrection.Location = new System.Drawing.Point(371, 722);
+			this.checkBoxSpatialLuminanceCorrection.Name = "checkBoxSpatialLuminanceCorrection";
+			this.checkBoxSpatialLuminanceCorrection.Size = new System.Drawing.Size(193, 17);
+			this.checkBoxSpatialLuminanceCorrection.TabIndex = 3;
+			this.checkBoxSpatialLuminanceCorrection.Text = "Apply Spatial Luminance Correction";
+			this.checkBoxSpatialLuminanceCorrection.UseVisualStyleBackColor = true;
+			this.checkBoxSpatialLuminanceCorrection.CheckedChanged += new System.EventHandler(this.checkBoxSpatialLuminanceCorrection_CheckedChanged);
+			// 
+			// buttonSaveCalibratedImage
+			// 
+			this.buttonSaveCalibratedImage.Enabled = false;
+			this.buttonSaveCalibratedImage.Location = new System.Drawing.Point(382, 59);
+			this.buttonSaveCalibratedImage.Name = "buttonSaveCalibratedImage";
+			this.buttonSaveCalibratedImage.Size = new System.Drawing.Size(97, 37);
+			this.buttonSaveCalibratedImage.TabIndex = 0;
+			this.buttonSaveCalibratedImage.Text = "Save Calibrated Image";
+			this.buttonSaveCalibratedImage.UseVisualStyleBackColor = true;
+			this.buttonSaveCalibratedImage.Click += new System.EventHandler(this.buttonSaveCalibratedImage_Click);
 			// 
 			// openFileDialogCalibration
 			// 
@@ -1316,71 +1903,73 @@
 			// 
 			this.folderBrowserDialogDatabaseLocation.Description = "Select the base folder containing the calibration files to use as a database...";
 			// 
-			// buttonSaveCalibratedImage
-			// 
-			this.buttonSaveCalibratedImage.Enabled = false;
-			this.buttonSaveCalibratedImage.Location = new System.Drawing.Point(355, 59);
-			this.buttonSaveCalibratedImage.Name = "buttonSaveCalibratedImage";
-			this.buttonSaveCalibratedImage.Size = new System.Drawing.Size(97, 37);
-			this.buttonSaveCalibratedImage.TabIndex = 0;
-			this.buttonSaveCalibratedImage.Text = "Save Calibrated Image";
-			this.buttonSaveCalibratedImage.UseVisualStyleBackColor = true;
-			this.buttonSaveCalibratedImage.Click += new System.EventHandler(this.buttonSaveCalibratedImage_Click);
-			// 
-			// outputPanel
-			// 
-			this.outputPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.outputPanel.CropRectangleEnabled = false;
-			this.outputPanel.Image = null;
-			this.outputPanel.Location = new System.Drawing.Point(3, 0);
-			this.outputPanel.Name = "outputPanel";
-			this.outputPanel.Size = new System.Drawing.Size(996, 716);
-			this.outputPanel.TabIndex = 0;
-			this.outputPanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.outputPanel_MouseMove);
-			// 
-			// resultTexturePanel
-			// 
-			this.resultTexturePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.resultTexturePanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.resultTexturePanel.Location = new System.Drawing.Point(6, 40);
-			this.resultTexturePanel.Name = "resultTexturePanel";
-			this.resultTexturePanel.Size = new System.Drawing.Size(471, 332);
-			this.resultTexturePanel.TabIndex = 0;
-			this.resultTexturePanel.Texture = null;
-			// 
-			// graphPanel
-			// 
-			this.graphPanel.BackColor = System.Drawing.Color.Ivory;
-			this.graphPanel.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-			this.graphPanel.Calibration = null;
-			this.graphPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.graphPanel.Location = new System.Drawing.Point(3, 3);
-			this.graphPanel.Name = "graphPanel";
-			this.graphPanel.Size = new System.Drawing.Size(462, 292);
-			this.graphPanel.TabIndex = 11;
-			this.graphPanel.UseLagrange = false;
-			// 
-			// referenceImagePanel
-			// 
-			this.referenceImagePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.referenceImagePanel.Calibration = null;
-			this.referenceImagePanel.Location = new System.Drawing.Point(6, 6);
-			this.referenceImagePanel.Name = "referenceImagePanel";
-			this.referenceImagePanel.Size = new System.Drawing.Size(456, 286);
-			this.referenceImagePanel.TabIndex = 0;
-			// 
 			// saveFileDialogCalibratedImage
 			// 
 			this.saveFileDialogCalibratedImage.DefaultExt = "*.png";
 			this.saveFileDialogCalibratedImage.Filter = "16-bits PNG Files (*.png)|*.png|16-bits TIFF Files (*.tiff)|*.tif|All Files (*.*)" +
     "|*.*";
 			this.saveFileDialogCalibratedImage.Title = "Select the name of the target calibrated texture file to save to...";
+			// 
+			// openFileDialogWhiteReflectance
+			// 
+			this.openFileDialogWhiteReflectance.DefaultExt = "*.whiteRef";
+			this.openFileDialogWhiteReflectance.Filter = "White Reflectance Files|*.whiteRef|All Files (*.*)|*.*";
+			this.openFileDialogWhiteReflectance.RestoreDirectory = true;
+			this.openFileDialogWhiteReflectance.Title = "Choose a white reflectance reference...";
+			// 
+			// saveFileDialogWhiteReflectance
+			// 
+			this.saveFileDialogWhiteReflectance.DefaultExt = "*.whiteRef";
+			this.saveFileDialogWhiteReflectance.Filter = "White Reflectance Files|*.whiteRef|All Files (*.*)|*.*";
+			this.saveFileDialogWhiteReflectance.Title = "Choose the white reflectance reference file to save";
+			// 
+			// openFileDialogWhiteRefImage
+			// 
+			this.openFileDialogWhiteRefImage.DefaultExt = "*.png";
+			this.openFileDialogWhiteRefImage.Filter = "All supported formats|*.PNG;*.GIF;*.BMP;*.HDR;*.CRW;*.CR2;*.DNG;*.TIFF;*.TGA;*.JP" +
+    "G|All Files (*.*)|*.*";
+			this.openFileDialogWhiteRefImage.RestoreDirectory = true;
+			this.openFileDialogWhiteRefImage.Title = "Choose an image to use as white reference...";
+			// 
+			// saveFileDialogWhiteRefImage
+			// 
+			this.saveFileDialogWhiteRefImage.DefaultExt = "*.png";
+			this.saveFileDialogWhiteRefImage.Filter = "16-bits PNG Files (*.png)|*.png|16-bits TIFF Files (*.tiff)|*.tif|All Files (*.*)" +
+    "|*.*";
+			this.saveFileDialogWhiteRefImage.Title = "Select the name of the white reference image file to save to...";
+			// 
+			// label16
+			// 
+			this.label16.Location = new System.Drawing.Point(296, 7);
+			this.label16.Name = "label16";
+			this.label16.Size = new System.Drawing.Size(68, 28);
+			this.label16.TabIndex = 10;
+			this.label16.Text = "Database match";
+			this.label16.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+			// 
+			// textBoxDatabaseMatchISOSpeed
+			// 
+			this.textBoxDatabaseMatchISOSpeed.Location = new System.Drawing.Point(293, 35);
+			this.textBoxDatabaseMatchISOSpeed.Name = "textBoxDatabaseMatchISOSpeed";
+			this.textBoxDatabaseMatchISOSpeed.ReadOnly = true;
+			this.textBoxDatabaseMatchISOSpeed.Size = new System.Drawing.Size(73, 20);
+			this.textBoxDatabaseMatchISOSpeed.TabIndex = 11;
+			// 
+			// textBoxDatabaseMatchShutterSpeed
+			// 
+			this.textBoxDatabaseMatchShutterSpeed.Location = new System.Drawing.Point(293, 60);
+			this.textBoxDatabaseMatchShutterSpeed.Name = "textBoxDatabaseMatchShutterSpeed";
+			this.textBoxDatabaseMatchShutterSpeed.ReadOnly = true;
+			this.textBoxDatabaseMatchShutterSpeed.Size = new System.Drawing.Size(73, 20);
+			this.textBoxDatabaseMatchShutterSpeed.TabIndex = 11;
+			// 
+			// textBoxDatabaseMatchAperture
+			// 
+			this.textBoxDatabaseMatchAperture.Location = new System.Drawing.Point(293, 84);
+			this.textBoxDatabaseMatchAperture.Name = "textBoxDatabaseMatchAperture";
+			this.textBoxDatabaseMatchAperture.ReadOnly = true;
+			this.textBoxDatabaseMatchAperture.Size = new System.Drawing.Size(73, 20);
+			this.textBoxDatabaseMatchAperture.TabIndex = 11;
 			// 
 			// Form1
 			// 
@@ -1398,8 +1987,15 @@
 			this.tabPageCreation.PerformLayout();
 			this.groupBoxColorSwatches.ResumeLayout(false);
 			this.groupBoxColorSwatches.PerformLayout();
-			this.tabPage2.ResumeLayout(false);
-			this.tabPage2.PerformLayout();
+			this.tabPageColorCorrection.ResumeLayout(false);
+			this.groupBoxHueTwist.ResumeLayout(false);
+			this.groupBoxHueTwist.PerformLayout();
+			this.groupBoxWhiteImageReference.ResumeLayout(false);
+			this.groupBoxWhiteImageReference.PerformLayout();
+			this.groupBoxWhiteReflectance.ResumeLayout(false);
+			this.groupBoxWhiteReflectance.PerformLayout();
+			this.tabPageCameraCalibration.ResumeLayout(false);
+			this.tabPageCameraCalibration.PerformLayout();
 			this.tabControlCalibrationRepresentation.ResumeLayout(false);
 			this.tabPageLuminancesGraph.ResumeLayout(false);
 			this.tabPageReferenceImage.ResumeLayout(false);
@@ -1464,11 +2060,10 @@
 		private System.Windows.Forms.Label label1;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlFocalLength;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAperture;
-		private System.Windows.Forms.Label label5;
 		private GraphPanel graphPanel;
 		private System.Windows.Forms.TabControl tabControl;
 		private System.Windows.Forms.TabPage tabPageCreation;
-		private System.Windows.Forms.TabPage tabPage2;
+		private System.Windows.Forms.TabPage tabPageCameraCalibration;
 		private System.Windows.Forms.Button buttonLoadCalibration;
 		private System.Windows.Forms.Button buttonSaveCalibration;
 		private System.Windows.Forms.CheckBox checkBoxGraphLagrange;
@@ -1514,10 +2109,55 @@
 		private System.Windows.Forms.Panel panelCustomSwatch1;
 		private System.Windows.Forms.Panel panelCustomSwatch0;
 		private System.Windows.Forms.Button buttonCapture;
-		private System.Windows.Forms.CheckBox checkBoxCropTool;
+		private System.Windows.Forms.Button buttonCropTool;
 		private System.Windows.Forms.Button buttonResetCrop;
 		private System.Windows.Forms.Button buttonSaveCalibratedImage;
 		private System.Windows.Forms.SaveFileDialog saveFileDialogCalibratedImage;
+		private System.Windows.Forms.Button buttonPickWhiteReflectance;
+		private System.Windows.Forms.Button buttonResetWhiteReflectance;
+		private System.Windows.Forms.Label labelWhiteReflectance;
+		private System.Windows.Forms.Label label19;
+		private System.Windows.Forms.Label label11;
+		private System.Windows.Forms.Label labelCapturedSwatchxyY;
+		private System.Windows.Forms.Label labelCapturedSwatchRGB;
+		private System.Windows.Forms.Label labelCapturedReflectance;
+		private System.Windows.Forms.Label label12;
+		private System.Windows.Forms.Button buttonSaveWhiteReflectanceReference;
+		private System.Windows.Forms.Button buttonLoadWhiteReflectanceReference;
+		private System.Windows.Forms.OpenFileDialog openFileDialogWhiteReflectance;
+		private System.Windows.Forms.SaveFileDialog saveFileDialogWhiteReflectance;
+		private System.Windows.Forms.TabPage tabPageColorCorrection;
+		private System.Windows.Forms.GroupBox groupBoxWhiteReflectance;
+		private System.Windows.Forms.TextBox textBox1;
+		private System.Windows.Forms.GroupBox groupBoxWhiteImageReference;
+		private System.Windows.Forms.TextBox textBox2;
+		private WhiteImageReferencePanel whiteImageReferencePanel;
+		private System.Windows.Forms.Button buttonResetWhiteRefImage;
+		private System.Windows.Forms.Button buttonSaveWhiteRefImage;
+		private System.Windows.Forms.Button buttonPickWhiteRefImage;
+		private System.Windows.Forms.Button buttonLoadWhiteRefImage;
+		private System.Windows.Forms.OpenFileDialog openFileDialogWhiteRefImage;
+		private System.Windows.Forms.SaveFileDialog saveFileDialogWhiteRefImage;
+		private System.Windows.Forms.CheckBox checkBoxSpatialLuminanceCorrection;
+		private System.Windows.Forms.Button buttonWhiteRefTest3;
+		private System.Windows.Forms.Button buttonWhiteRefTest2;
+		private System.Windows.Forms.Button buttonWhiteRefTest1;
+		private System.Windows.Forms.Label labelWhiteReferenceImageCorrection;
+		private System.Windows.Forms.Label label5;
+		private System.Windows.Forms.GroupBox groupBoxHueTwist;
+		private System.Windows.Forms.TextBox textBox3;
+		private System.Windows.Forms.Label labelCaptureWhiteReflectanceCorrection;
+		private System.Windows.Forms.Label labelCaptureSpatialCorrectionStatus;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTargetWhiteReflectance;
+		private System.Windows.Forms.Label label10;
+		private System.Windows.Forms.CheckBox checkBoxCalibrationUseAverageLuminance;
+		private System.Windows.Forms.Panel panelCapturedReflectance;
+		private System.Windows.Forms.Button buttonSafeBorder;
+		private System.Windows.Forms.CheckBox checkBoxUseMeanMode;
+		private System.Windows.Forms.TextBox textBoxDatabaseMatchAperture;
+		private System.Windows.Forms.TextBox textBoxDatabaseMatchShutterSpeed;
+		private System.Windows.Forms.TextBox textBoxDatabaseMatchISOSpeed;
+		private System.Windows.Forms.Label label16;
 	}
 }
 

@@ -6,7 +6,9 @@
 #define WATCH_SHADER_MODIFICATIONS	// Define this to reload shaders from disk if they changed (comment to ship a demo with embedded shaders)
 #define MATERIAL_REFRESH_CHANGES_INTERVAL	500
 
-#ifndef GODCOMPLEX
+//#define AUTHORIZE_MULTITHREADED_COMPILATION	// Define this to allow multithreaded compilation at runtime
+
+#if !defined(GODCOMPLEX) && defined(AUTHORIZE_MULTITHREADED_COMPILATION)
 // This is useful only for applications, not demos !
 
 #define MATERIAL_COMPILE_AT_RUNTIME	// Define this to start compiling shaders at runtime and avoid blocking (useful for debugging)
@@ -23,9 +25,9 @@
 									// Obviously, if you switch textures & render targets often this will give you complete crap results !
 
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 // Define this to save the binary blobs for each shader (only works in DEBUG mode)
-// NOTE: in RELEASE, the blobs are embedded as resources and read from so they need to have been saved to
+// NOTE: in RELEASE, the blobs are embedded as resources and read from binary so they need to have been saved to
 
 #ifdef GODCOMPLEX
 #define SAVE_SHADER_BLOB_TO		"./Resources/Shaders/Binary/"

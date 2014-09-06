@@ -377,10 +377,10 @@ void	EffectGlobalIllum::PreComputeProbes()
 			m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
 
 			ID3D11RenderTargetView*	ppViews[2] = {
-				ppRTCubeMap[0]->GetTargetView( 0, CubeFaceIndex, 1 ),
-				ppRTCubeMap[1]->GetTargetView( 0, CubeFaceIndex, 1 )
+				ppRTCubeMap[0]->GetRTV( 0, CubeFaceIndex, 1 ),
+				ppRTCubeMap[1]->GetRTV( 0, CubeFaceIndex, 1 )
 			};
-			m_Device.SetRenderTargets( CUBE_MAP_SIZE, CUBE_MAP_SIZE, 2, ppViews, pRTCubeMapDepth->GetDepthStencilView() );
+			m_Device.SetRenderTargets( CUBE_MAP_SIZE, CUBE_MAP_SIZE, 2, ppViews, pRTCubeMapDepth->GetDSV() );
 
 			// Clear depth
 			m_Device.ClearDepthStencil( *pRTCubeMapDepth, 1.0f, 0, true, false );
@@ -402,7 +402,7 @@ void	EffectGlobalIllum::PreComputeProbes()
 			//	so we can create a linked list of neighbor probes, of their visibilities and solid angle
 			//
 			m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadWriteLess, m_Device.m_pBS_Disabled );
-			m_Device.SetRenderTarget( CUBE_MAP_SIZE, CUBE_MAP_SIZE, *ppRTCubeMap[2]->GetTargetView( 0, CubeFaceIndex, 1 ), pRTCubeMapDepth->GetDepthStencilView() );
+			m_Device.SetRenderTarget( CUBE_MAP_SIZE, CUBE_MAP_SIZE, *ppRTCubeMap[2]->GetRTV( 0, CubeFaceIndex, 1 ), pRTCubeMapDepth->GetDSV() );
 
 			m_pCB_Probe->m.CurrentProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
 

@@ -22,7 +22,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		#region NESTED TYPES
 
 		[System.Diagnostics.DebuggerDisplay( "ISO={m_EV_ISOSpeed} Shutter={m_EV_ShutterSpeed} Aperture={m_EV_Aperture} EV={EV}" )]
-		private class	GridNode
+		public class	GridNode
 		{
 			public CameraCalibration	m_CameraCalibration = null;
 
@@ -31,9 +31,10 @@ namespace StandardizedDiffuseAlbedoMaps
 			public float				m_EV_Aperture;
 
 			// The 6 possible neighbors for this node
-			public GridNode[]			m_NeighborX = new GridNode[2];
-			public GridNode[]			m_NeighborY = new GridNode[2];
-			public GridNode[]			m_NeighborZ = new GridNode[2];
+			public GridNode[][]			m_Neighbors = new GridNode[3][] {	new GridNode[2],	// X left/right
+																			new GridNode[2],	// Y left/right
+																			new GridNode[2]		// Z left/right
+																		};
 
 			/// <summary>
 			/// Gets the global EV for this node
@@ -92,21 +93,37 @@ namespace StandardizedDiffuseAlbedoMaps
 		private string						m_ErrorLog = "";
 
 		// The list of camera calibration data contained in the database
-		private CameraCalibration[]			m_CameraClibrations = new CameraCalibration[0];
+		private CameraCalibration[]			m_CameraCalibrations = new CameraCalibration[0];
+
+		// The correction factor to apply to the image's luminances
+		// If the camera has been properly calibrated but the lighting changes, the user
+		//	has the possibility to drop the white reflectance in an image and use it as
+		//	white reference for the new lighting condition
+		private ImageUtility.float3						m_WhiteReflectanceReference = new ImageUtility.float3( 0, 0, -1 );	// Not supplied by the user
+		private float						m_WhiteReflectanceCorrectionFactor = 1.0f;				// Default factor is no change at all
+		private bool						m_DoWhiteBalance = false;
+		private ImageUtility.float3						m_WhiteBalanceXYZ = new ImageUtility.float3( 1, 1, 1 );				// Default factor is no change at all
+
+		// White reference image to apply minor luminance corrections to pixels (spatial discrepancy in lighting compensation)
+		// I assume the provided image has been properly generated and normalized (i.e. it has a white maximum of 1)
+		private ImageUtility.Bitmap						m_WhiteReferenceImage = null;
+		private float						m_WhiteReflectanceImageMax = 1.0f;			// Maximum luminance in the white reference image
 
 		// Generated calibration grid
 		private GridNode					m_RootNode = null;
 
 		// Cached calibration data
-		private float						m_PreparedForISOSpeed = 0.0f;
-		private float						m_PreparedForShutterSpeed = 0.0f;
-		private float						m_PreparedForAperture = 0.0f;
+		private GridNode					m_InterpolationStartNode = null;
 		private CameraCalibration			m_InterpolatedCalibration = null;
 
 		#endregion
 
 		#region PROPERTIES
 
+		/// <summary>
+		/// Sets the path where to find all the camera calibration files that compose the database
+		/// Setting the property will trigger a database rebuild
+		/// </summary>
 		public System.IO.DirectoryInfo		DatabasePath
 		{
 			get { return m_DatabasePath; }
@@ -114,11 +131,9 @@ namespace StandardizedDiffuseAlbedoMaps
 			{
 				if ( m_DatabasePath != null )
 				{	// Clean up existing database
-					m_CameraClibrations = new CameraCalibration[0];
-					m_PreparedForISOSpeed = 0.0f;
-					m_PreparedForShutterSpeed = 0.0f;
-					m_PreparedForAperture = 0.0f;
+					m_CameraCalibrations = new CameraCalibration[0];
 					m_InterpolatedCalibration = null;
+					m_InterpolationStartNode = null;
 					m_RootNode = null;
 					m_ErrorLog = "";
 				}
@@ -161,9 +176,9 @@ namespace StandardizedDiffuseAlbedoMaps
 						m_ErrorLog += "Failed to load camera calibration file \"" + CalibrationFile.FullName + "\": " + _e.Message + "\r\n";
 					}
 				}
-				m_CameraClibrations = CameraCalibrations.ToArray();
+				m_CameraCalibrations = CameraCalibrations.ToArray();
 
-				if ( m_CameraClibrations.Length == 0 )
+				if ( m_CameraCalibrations.Length == 0 )
 				{	// Empty!
 					m_ErrorLog += "Database is empty: no valid file could be parsed...\r\n";
 					return;
@@ -219,21 +234,18 @@ namespace StandardizedDiffuseAlbedoMaps
 					float	DeltaY = PairUnPlaced.m_EV_ShutterSpeed - PairPlaced.m_EV_ShutterSpeed;
 					float	DeltaZ = PairUnPlaced.m_EV_Aperture - PairPlaced.m_EV_Aperture;
 
-					GridNode[]	AxisPlaced = null;
-					GridNode[]	AxisUnPlaced = null;
+					int			AxisIndex = -1;
 					int			LeftRight = -1;
 					if ( Math.Abs( DeltaX ) > Math.Abs( DeltaY ) )
 					{
 						if ( Math.Abs( DeltaX ) > Math.Abs( DeltaZ ) )
 						{	// Place along X
-							AxisPlaced = PairPlaced.m_NeighborX;
-							AxisUnPlaced = PairUnPlaced.m_NeighborX;
+							AxisIndex = 0;
 							LeftRight = DeltaX < 0.0f ? 0 : 1;
 						}
 						else
 						{	// Place along Z
-							AxisPlaced = PairPlaced.m_NeighborZ;
-							AxisUnPlaced = PairUnPlaced.m_NeighborZ;
+							AxisIndex = 2;
 							LeftRight = DeltaZ < 0.0f ? 0 : 1;
 						}
 					}
@@ -241,30 +253,25 @@ namespace StandardizedDiffuseAlbedoMaps
 					{
 						if ( Math.Abs( DeltaY ) > Math.Abs( DeltaZ ) )
 						{	// Place along Y
-							AxisPlaced = PairPlaced.m_NeighborY;
-							AxisUnPlaced = PairUnPlaced.m_NeighborY;
+							AxisIndex = 1;
 							LeftRight = DeltaY < 0.0f ? 0 : 1;
 						}
 						else
 						{	// Place along Z
-							AxisPlaced = PairPlaced.m_NeighborZ;
-							AxisUnPlaced = PairUnPlaced.m_NeighborZ;
+							AxisIndex = 2;
 							LeftRight = DeltaZ < 0.0f ? 0 : 1;
 						}
 					}
 
-					// Store the neighbors for each node of the pair
-					if ( AxisPlaced[LeftRight] != null )
-					{	// Already linked, insert new node instead
-						GridNode	FormerRightNode = AxisPlaced[LeftRight];
-						AxisPlaced[LeftRight] = PairUnPlaced;
-						FormerRightNode.
-						AxisUnPlaced[1-LeftRight] = PairPlaced;
-					}
-					else
-					{
-						AxisPlaced[LeftRight] = PairUnPlaced;
-						AxisUnPlaced[1-LeftRight] = PairPlaced;
+					// Register each node in the pair as neighbors along the selected axis
+					GridNode	FormerNeighbor = PairPlaced.m_Neighbors[AxisIndex][LeftRight];
+					PairPlaced.m_Neighbors[AxisIndex][LeftRight] = PairUnPlaced;
+					PairUnPlaced.m_Neighbors[AxisIndex][1-LeftRight] = PairPlaced;
+
+					if ( FormerNeighbor != null )
+					{	// Re-link with former neighbor
+						PairUnPlaced.m_Neighbors[AxisIndex][LeftRight] = FormerNeighbor;
+						FormerNeighbor.m_Neighbors[AxisIndex][1-LeftRight] = PairUnPlaced;
 					}
 
 					// Remove the node from unplaced nodes & add it to placed ones
@@ -280,6 +287,70 @@ namespace StandardizedDiffuseAlbedoMaps
 		public bool		IsValid					{ get { return m_RootNode != null; } }
 
 		/// <summary>
+		/// Gets or sets the white reflectance reference to use for the image
+		/// Setting a positive value will assume a new white reference for the image and a correction factor
+		///  will be computed and applied to all luminances read from the provided images
+		/// Set to a negative value to reset the correction factor to normal
+		/// </summary>
+		public ImageUtility.float3	WhiteReflectanceReference
+		{
+			get { return m_WhiteReflectanceReference; }
+			set
+			{
+				m_WhiteReflectanceReference = value;
+				if ( value.z <= 1e-6f || m_InterpolatedCalibration == null )
+				{	// Reset
+					m_WhiteReflectanceCorrectionFactor = 1.0f;
+					m_WhiteBalanceXYZ = new ImageUtility.float3( 1, 1, 1 );
+					m_DoWhiteBalance = false;
+				}
+				else
+				{	// Compute the correction factor
+					float	NormalReflectance = m_InterpolatedCalibration.m_Reflectance99.m_LuminanceMeasured;	// Our normal 99% reflectance to use as white
+					m_WhiteReflectanceCorrectionFactor = NormalReflectance / m_WhiteReflectanceReference.z;
+
+					// We assume the target color profile is sRGB
+					ImageUtility.float3	SourcexyY = new ImageUtility.float3( m_WhiteReflectanceReference.x, m_WhiteReflectanceReference.y, 1.0f );
+					ImageUtility.float3	SourceXYZ = ImageUtility.ColorProfile.xyY2XYZ( SourcexyY );
+					ImageUtility.float3	TargetxyY = new ImageUtility.float3( ImageUtility.ColorProfile.Chromaticities.sRGB.W.x, ImageUtility.ColorProfile.Chromaticities.sRGB.W.y, 1.0f );
+					ImageUtility.float3	TargetXYZ = ImageUtility.ColorProfile.xyY2XYZ( TargetxyY );
+					m_WhiteBalanceXYZ = new ImageUtility.float3( TargetXYZ.x / SourceXYZ.x, TargetXYZ.y / SourceXYZ.y, TargetXYZ.z / SourceXYZ.z );
+					m_DoWhiteBalance = true;
+				}
+			}
+		}
+ 
+		/// <summary>
+		/// Gets or sets the white reference image to use for spatial luminance correction
+		/// </summary>
+		public ImageUtility.Bitmap	WhiteReferenceImage
+		{
+			get { return m_WhiteReferenceImage; }
+			set
+			{
+				m_WhiteReferenceImage = value;
+				m_WhiteReflectanceImageMax = 1.0f;
+				if ( m_WhiteReferenceImage == null )
+					return;
+
+				// Compute the maximum luminance in the white reference image
+				m_WhiteReflectanceImageMax = 0.0f;
+				for ( int Y=0; Y < m_WhiteReferenceImage.Height; Y++ )
+					for ( int X=0; X < m_WhiteReferenceImage.Width; X++ )
+						m_WhiteReflectanceImageMax = Math.Max( m_WhiteReflectanceImageMax, m_WhiteReferenceImage.ContentXYZ[X,Y].y );
+			}
+		}
+
+		/// <summary>
+		/// Gets the white reflectance correction factor applied to all luminances read from any provided image
+		/// This factor is updated by setting the WhiteReflectanceReference property
+		/// </summary>
+		public float	WhiteReflectanceCorrectionFactor
+		{
+			get { return m_WhiteReflectanceCorrectionFactor; }
+		}
+
+		/// <summary>
 		/// Tells if there were some errors during construction
 		/// </summary>
 		public bool		HasErrors				{ get { return m_ErrorLog != ""; } }
@@ -289,16 +360,32 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// </summary>
 		public string	ErrorLog				{ get { return m_ErrorLog; } }
 
-		public float	PreparedForISOSpeed		{ get { return m_PreparedForISOSpeed; } }
-		public float	PreparedForShutterSpeed	{ get { return m_PreparedForShutterSpeed; } }
-		public float	PreparedForAperture		{ get { return m_PreparedForAperture; } }
+		public float	PreparedForISOSpeed		{ get { return m_InterpolatedCalibration != null ? m_InterpolatedCalibration.m_CameraShotInfos.m_ISOSpeed : -1.0f; } }
+		public float	PreparedForShutterSpeed	{ get { return m_InterpolatedCalibration != null ? m_InterpolatedCalibration.m_CameraShotInfos.m_ShutterSpeed : -1.0f; } }
+		public float	PreparedForAperture		{ get { return m_InterpolatedCalibration != null ? m_InterpolatedCalibration.m_CameraShotInfos.m_Aperture : -1.0f; } }
+
+		public GridNode				InterpolationStartNode	{ get { return m_InterpolationStartNode; } }
+		public CameraCalibration	InterpolatedCalibration	{ get { return m_InterpolatedCalibration; } }
+
 
 		#endregion
 
 		#region METHODS
 
 		/// <summary>
-		/// Prepares the 8 closest calibration tables to process the pixels in an image shot with the specified shot infos
+		/// Prepares the interpolated calibration table to process the pixels in an image shot with the specified shot infos
+		/// </summary>
+		/// <param name="_Image"></param>
+		public void	PrepareCalibrationFor( ImageUtility.Bitmap _Image )
+		{
+			if ( !_Image.HasValidShotInfo )
+				throw new Exception( "Can't prepare calibration for specified image since it doesn't have valid shot infos!" );
+
+			PrepareCalibrationFor( _Image.ISOSpeed, _Image.ShutterSpeed, _Image.Aperture );
+		}
+
+		/// <summary>
+		/// Prepares the interpolated calibration table to process the pixels in an image shot with the specified shot infos
 		/// </summary>
 		/// <param name="_ISOSpeed"></param>
 		/// <param name="_ShutterSpeed"></param>
@@ -308,15 +395,14 @@ namespace StandardizedDiffuseAlbedoMaps
 			if ( m_RootNode == null )
 				throw new Exception( "Calibration grid hasn't been built: did you provide a valid database path? Does the path contain camera calibration data?" );
 
-			m_PreparedForISOSpeed = _ISOSpeed;
-			m_PreparedForShutterSpeed = _ShutterSpeed;
-			m_PreparedForAperture = _Aperture;
+			if ( IsPreparedFor( _ISOSpeed, _ShutterSpeed, _Aperture ) )
+				return;	// Already prepared!
 
 			//////////////////////////////////////////////////////////////////////////
 			// Find the 8 nodes encompassing our values
 			// I'm making the delicate assumption that, although the starting node is chosen on the
-			//	condition it's EV values are strictly inferior to the target we're looking for, all
-			//	neighbor nodes will satisfy the condition they're properly placed.
+			//	condition its EV values are strictly inferior to the target we're looking for, all
+			//	neighbor nodes should satisfy the condition they're properly placed.
 			//
 			// This is true for the direct neighbors +X, +Y, +Z that are immediately above target values
 			//	but for example, neighbor (+X +Y) may have a very bad aperture value (Z) that may be
@@ -325,57 +411,59 @@ namespace StandardizedDiffuseAlbedoMaps
 			// Let's hope the user won't provide too fancy calibrations...
 			// (anyway, interpolants are clamped in [0,1] so there's no risk of overshooting)
 			//
-			float3	EV;
+			ImageUtility.float3	EV;
 			GridNode.Convert2EV( _ISOSpeed, _ShutterSpeed, _Aperture, out EV.x, out EV.y, out EV.z );
 
 			// Find the start node
-			GridNode		StartNode = FindStartNode( _ISOSpeed, _ShutterSpeed, _Aperture );
+			GridNode		StartNode = FindStartNode( EV.x, EV.y, EV.z );
+			m_InterpolationStartNode = StartNode;
 
 			// Build the 8 grid nodes from it
 			GridNode[,,]	Grid = new GridNode[2,2,2];
 			Grid[0,0,0] = StartNode;
-			Grid[1,0,0] = StartNode.m_NeighborX[1] != null ? StartNode.m_NeighborX[1] : StartNode;			// +X
-			Grid[0,1,0] = StartNode.m_NeighborY[1] != null ? StartNode.m_NeighborY[1] : StartNode;			// +Y
-			Grid[0,0,1] = StartNode.m_NeighborZ[1] != null ? StartNode.m_NeighborZ[1] : StartNode;			// +Z
-			Grid[1,1,0] = Grid[1,0,0].m_NeighborY[1] != null ? Grid[1,0,0].m_NeighborY[1] : Grid[1,0,0];	// +X +Y
-			Grid[0,1,1] = Grid[0,1,0].m_NeighborZ[1] != null ? Grid[0,1,0].m_NeighborZ[1] : Grid[0,1,0];	// +Y +Z
-			Grid[1,0,1] = Grid[0,0,1].m_NeighborX[1] != null ? Grid[0,0,1].m_NeighborX[1] : Grid[0,0,1];	// +X +Z
-			Grid[1,1,1] = Grid[1,1,0].m_NeighborZ[1] != null ? Grid[1,1,0].m_NeighborZ[1] : Grid[1,1,0];	// +X +Y +Z
+			Grid[1,0,0] = StartNode.m_Neighbors[0][1] != null ? StartNode.m_Neighbors[0][1] : StartNode;		// +X
+			Grid[0,1,0] = StartNode.m_Neighbors[1][1] != null ? StartNode.m_Neighbors[1][1] : StartNode;		// +Y
+			Grid[0,0,1] = StartNode.m_Neighbors[2][1] != null ? StartNode.m_Neighbors[2][1] : StartNode;		// +Z
+			Grid[1,1,0] = Grid[1,0,0].m_Neighbors[1][1] != null ? Grid[1,0,0].m_Neighbors[1][1] : Grid[1,0,0];	// +X +Y
+			Grid[0,1,1] = Grid[0,1,0].m_Neighbors[2][1] != null ? Grid[0,1,0].m_Neighbors[2][1] : Grid[0,1,0];	// +Y +Z
+			Grid[1,0,1] = Grid[0,0,1].m_Neighbors[0][1] != null ? Grid[0,0,1].m_Neighbors[0][1] : Grid[0,0,1];	// +X +Z
+			Grid[1,1,1] = Grid[1,1,0].m_Neighbors[2][1] != null ? Grid[1,1,0].m_Neighbors[2][1] : Grid[1,1,0];	// +X +Y +Z
 
 			//////////////////////////////////////////////////////////////////////////
 			// Create the successive interpolants for trilinear interpolation
 			//
 			// Assume we interpolate on X first (ISO speed), so we need 4 distinct values
-			float4	tX = new float4(
-					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,0,0].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,0,0].m_EV_ISOSpeed - Grid[0,0,0].m_EV_ISOSpeed) ) ),
-					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,1,0].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,1,0].m_EV_ISOSpeed - Grid[0,1,0].m_EV_ISOSpeed) ) ),
-					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,0,1].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,0,1].m_EV_ISOSpeed - Grid[0,0,1].m_EV_ISOSpeed) ) ),
-					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,1,1].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,1,1].m_EV_ISOSpeed - Grid[0,1,1].m_EV_ISOSpeed) ) )
+			ImageUtility.float4	tX = new ImageUtility.float4(
+					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,0,0].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,0,0].m_EV_ISOSpeed - Grid[0,0,0].m_EV_ISOSpeed) ) ),	// Y=0 Z=0
+					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,1,0].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,1,0].m_EV_ISOSpeed - Grid[0,1,0].m_EV_ISOSpeed) ) ),	// Y=1 Z=0
+					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,0,1].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,0,1].m_EV_ISOSpeed - Grid[0,0,1].m_EV_ISOSpeed) ) ),	// Y=0 Z=1
+					Math.Max( 0.0f, Math.Min( 1.0f, (EV.x - Grid[0,1,1].m_EV_ISOSpeed) / Math.Max( 1e-6f, Grid[1,1,1].m_EV_ISOSpeed - Grid[0,1,1].m_EV_ISOSpeed) ) )	// Y=1 Z=1
 				);
-			float4	rX = new float4( 1.0f - tX.x, 1.0f - tX.y, 1.0f - tX.z, 1.0f - tX.w );
+			ImageUtility.float4	rX = new ImageUtility.float4( 1.0f - tX.x, 1.0f - tX.y, 1.0f - tX.z, 1.0f - tX.w );
 
 				// Compute the 4 interpolated shutter speeds & apertures
-			float4	ShutterSpeedsX = new float4(
+			ImageUtility.float4	ShutterSpeedsX = new ImageUtility.float4(
 					rX.x * Grid[0,0,0].m_EV_ShutterSpeed + tX.x * Grid[1,0,0].m_EV_ShutterSpeed,	// Y=0 Z=0
 					rX.y * Grid[0,1,0].m_EV_ShutterSpeed + tX.y * Grid[1,1,0].m_EV_ShutterSpeed,	// Y=1 Z=0
 					rX.z * Grid[0,0,1].m_EV_ShutterSpeed + tX.z * Grid[1,0,1].m_EV_ShutterSpeed,	// Y=0 Z=1
 					rX.w * Grid[0,1,1].m_EV_ShutterSpeed + tX.w * Grid[1,1,1].m_EV_ShutterSpeed		// Y=1 Z=1
 				);
-			float4	AperturesX = new float4(
-					rX.x * Grid[0,0,0].m_EV_Aperture + tX.x * Grid[1,0,0].m_EV_Aperture,
-					rX.y * Grid[0,1,0].m_EV_Aperture + tX.y * Grid[1,1,0].m_EV_Aperture,
-					rX.z * Grid[0,0,1].m_EV_Aperture + tX.z * Grid[1,0,1].m_EV_Aperture,
-					rX.w * Grid[0,1,1].m_EV_Aperture + tX.w * Grid[1,1,1].m_EV_Aperture
+			ImageUtility.float4	AperturesX = new ImageUtility.float4(
+					rX.x * Grid[0,0,0].m_EV_Aperture + tX.x * Grid[1,0,0].m_EV_Aperture,			// Y=0 Z=0
+					rX.y * Grid[0,1,0].m_EV_Aperture + tX.y * Grid[1,1,0].m_EV_Aperture,			// Y=1 Z=0
+					rX.z * Grid[0,0,1].m_EV_Aperture + tX.z * Grid[1,0,1].m_EV_Aperture,			// Y=0 Z=1
+					rX.w * Grid[0,1,1].m_EV_Aperture + tX.w * Grid[1,1,1].m_EV_Aperture				// Y=1 Z=1
 				);
 
 			// Next we interpolate on Y (Shutter speed), so we need 2 distinct values
-			float2	tY = new float2(
+			ImageUtility.float2	tY = new ImageUtility.float2(
 					Math.Max( 0.0f, Math.Min( 1.0f, (EV.y - ShutterSpeedsX.x) / Math.Max( 1e-6f, ShutterSpeedsX.y - ShutterSpeedsX.x) ) ),	// Z=0
 					Math.Max( 0.0f, Math.Min( 1.0f, (EV.y - ShutterSpeedsX.z) / Math.Max( 1e-6f, ShutterSpeedsX.w - ShutterSpeedsX.z) ) )	// Z=1
 				);
-			float2	rY = new float2( 1.0f - tY.x, 1.0f - tY.y );
+			ImageUtility.float2	rY = new ImageUtility.float2( 1.0f - tY.x, 1.0f - tY.y );
+
 				// Compute the 2 apertures
-			float2	AperturesY = new float2(
+			ImageUtility.float2	AperturesY = new ImageUtility.float2(
 					rY.x * AperturesX.x + tY.x * AperturesX.y,
 					rY.y * AperturesX.z + tY.y * AperturesX.w
 				);
@@ -384,9 +472,13 @@ namespace StandardizedDiffuseAlbedoMaps
 			float	tZ = Math.Max( 0.0f, Math.Min( 1.0f, (EV.z - AperturesY.x) / Math.Max( 1e-6f, AperturesY.y - AperturesY.x) ) );
 			float	rZ = 1.0f - tZ;
 
+
 			//////////////////////////////////////////////////////////////////////////
-			// Create the special camera calibration that is the result of the interpolation of the 8 ones in the grid
+			// Create the special camera calibration that is the result of the interpolation of the 8 nearest ones in the grid
 			m_InterpolatedCalibration = new CameraCalibration();
+			m_InterpolatedCalibration.m_CameraShotInfos.m_ISOSpeed = _ISOSpeed;
+			m_InterpolatedCalibration.m_CameraShotInfos.m_ShutterSpeed = _ShutterSpeed;
+			m_InterpolatedCalibration.m_CameraShotInfos.m_Aperture = _Aperture;
 
 			for ( int ProbeIndex=0; ProbeIndex < REQUIRED_PROBES_COUNT; ProbeIndex++ )
 			{
@@ -403,9 +495,9 @@ namespace StandardizedDiffuseAlbedoMaps
 
 				// Interpolate on X (ISO speed)
 				float	L00 = rX.x * L000 + tX.x * L100;
-				float	L10 = rX.x * L010 + tX.x * L110;
-				float	L01 = rX.x * L001 + tX.x * L101;
-				float	L11 = rX.x * L011 + tX.x * L111;
+				float	L10 = rX.y * L010 + tX.y * L110;
+				float	L01 = rX.z * L001 + tX.z * L101;
+				float	L11 = rX.w * L011 + tX.w * L111;
 
 				// Interpolate on Y (shutter speed)
 				float	L0 = rY.x * L00 + tY.x * L10;
@@ -414,8 +506,15 @@ namespace StandardizedDiffuseAlbedoMaps
 				// Interpolate on Z (aperture)
 				float	L = rZ * L0 + tZ * L1;
 
+				TargetProbe.m_IsAvailable = true;
 				TargetProbe.m_LuminanceMeasured = L;
 			}
+
+			// Fill missing values
+			m_InterpolatedCalibration.UpdateAllLuminances();
+
+			// Reset white reflectance reference because it was set for another setup
+			WhiteReflectanceReference = new ImageUtility.float3( 0, 0, -1 );
 		}
 
 		/// <summary>
@@ -427,66 +526,131 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <returns></returns>
 		public bool	IsPreparedFor( float _ISOSpeed, float _ShutterSpeed, float _Aperture )
 		{
-			return Math.Abs( _ISOSpeed - m_PreparedForISOSpeed ) < 1e-6f
-				&& Math.Abs( _ShutterSpeed - m_PreparedForShutterSpeed ) < 1e-6f
-				&& Math.Abs( _Aperture - m_PreparedForAperture ) < 1e-6f;
+			return m_InterpolatedCalibration != null
+				&& Math.Abs( _ISOSpeed - m_InterpolatedCalibration.m_CameraShotInfos.m_ISOSpeed ) < 1e-6f
+				&& Math.Abs( _ShutterSpeed - m_InterpolatedCalibration.m_CameraShotInfos.m_ShutterSpeed ) < 1e-6f
+				&& Math.Abs( _Aperture - m_InterpolatedCalibration.m_CameraShotInfos.m_Aperture ) < 1e-6f;
 		}
 
 		/// <summary>
 		/// Calibrates a raw luminance value
 		/// </summary>
-		/// <param name="_Luminance">The uncalibrated luminance value</param>
-		/// <returns>The calibrated luminance value</returns>
+		/// <param name="_xyY">The uncalibrated value</param>
+		/// <returns>The calibrated reflectance value</returns>
 		/// <remarks>Typically, you start from a RAW XYZ value that you convert to xyY, pass the Y to this method
 		/// and replace it into your orignal xyY, convert back to XYZ and voilà!</remarks>
-		public float	Calibrate( float _Luminance )
+		public ImageUtility.float3	Calibrate( ImageUtility.float3 _xyY )
+		{
+			if ( m_RootNode == null )
+				throw new Exception( "Calibration grid hasn't been built: did you provide a valid database path? Does the path contain camera calibration data?" );
+			if ( m_InterpolatedCalibration == null )
+				throw new Exception( "Calibration grid hasn't been prepared for calibration: did you call the PrepareCalibrationFor() method?" );
+
+			float	Reflectance = m_InterpolatedCalibration.Calibrate( m_WhiteReflectanceCorrectionFactor * _xyY.z );
+			_xyY.z = Reflectance;
+			if ( m_DoWhiteBalance )
+			{
+				ImageUtility.float3	XYZ = ImageUtility.ColorProfile.xyY2XYZ( _xyY );
+				XYZ *= m_WhiteBalanceXYZ;
+				_xyY = ImageUtility.ColorProfile.XYZ2xyY( XYZ );
+			}
+			return _xyY;
+		}
+
+		/// <summary>
+		/// Calibrates a raw luminance value with spatial luminance correction
+		/// </summary>
+		/// <param name="_U">The U coordinate in the image (U=X/Width)</param>
+		/// <param name="_V">The V coordinate in the image (V=Y/Height)</param>
+		/// <param name="_Luminance">The uncalibrated value</param>
+		/// <returns>The calibrated reflectance value</returns>
+		/// <remarks>Typically, you start from a RAW XYZ value that you convert to xyY, pass it to this method
+		/// and replace it into your orignal xyY, convert back to XYZ and voilà!</remarks>
+		public ImageUtility.float3	CalibrateWithSpatialCorrection( float _U, float _V, ImageUtility.float3 _xyY )
 		{
 			if ( m_RootNode == null )
 				throw new Exception( "Calibration grid hasn't been built: did you provide a valid database path? Does the path contain camera calibration data?" );
 			if ( m_InterpolatedCalibration == null )
 				throw new Exception( "Calibration grid hasn't been prepared for calibration: did you call the PrepareCalibrationFor() method?" );
 			
-			_Luminance = m_InterpolatedCalibration.Calibrate( _Luminance );
+			float	CorrectionFactor = m_WhiteReflectanceCorrectionFactor;
+					CorrectionFactor *= GetSpatialLuminanceCorrectionFactor( _U, _V );	// Apply spatial correction
 
-			return _Luminance;
+			float	Reflectance = m_InterpolatedCalibration.Calibrate( CorrectionFactor * _xyY.z );
+			_xyY.z = Reflectance;
+			if ( m_DoWhiteBalance )
+			{
+				ImageUtility.float3	XYZ = ImageUtility.ColorProfile.xyY2XYZ( _xyY );
+				XYZ *= m_WhiteBalanceXYZ;
+				_xyY = ImageUtility.ColorProfile.XYZ2xyY( XYZ );
+			}
+			return _xyY;
+		}
+
+		/// <summary>
+		/// Uses the white reference image to retrieve the luminance factor to apply based on the position in the image
+		/// </summary>
+		/// <param name="_U">The U coordinate in the image (U=X/Width)</param>
+		/// <param name="_V">The V coordinate in the image (V=Y/Height)</param>
+		/// <returns>The luminance factor to apply to correct the spatial luminance discrepancies</returns>
+		public float	GetSpatialLuminanceCorrectionFactor( float _U, float _V )
+		{
+			if ( m_WhiteReferenceImage == null )
+				return 1.0f;
+
+			ImageUtility.float4	XYZ = m_WhiteReferenceImage.BilinearSample(_U * m_WhiteReferenceImage.Width, _V * m_WhiteReferenceImage.Height );
+			float	SpatialWhiteRefCorrection = m_WhiteReflectanceImageMax / Math.Max( 1e-6f, XYZ.y );
+			return SpatialWhiteRefCorrection;
 		}
 
 		/// <summary>
 		/// Finds the first grid node whose ISO, shutter speed and aperture values are immediately inferior to the ones provided
 		/// </summary>
-		/// <param name="_ISOSpeed"></param>
-		/// <param name="_ShutterSpeed"></param>
-		/// <param name="_Aperture"></param>
+		/// <param name="_EV_ISOSpeed"></param>
+		/// <param name="_EV_ShutterSpeed"></param>
+		/// <param name="_EV_Aperture"></param>
 		/// <returns></returns>
-		private GridNode	FindStartNode( float _ISOSpeed, float _ShutterSpeed, float _Aperture )
+		private GridNode	FindStartNode( float _EV_ISOSpeed, float _EV_ShutterSpeed, float _EV_Aperture )
 		{
 			GridNode	Current = m_RootNode;
 
 			// Move along X
-			while ( Current.m_EV_ISOSpeed <= _ISOSpeed && Current.m_NeighborX[1] != null )
+			while ( Current.m_EV_ISOSpeed <= _EV_ISOSpeed && Current.m_Neighbors[0][1] != null )
 			{
-				GridNode	Next = Current.m_NeighborX[1];
-				if ( Next.m_EV_ISOSpeed > _ISOSpeed )
+				GridNode	Next = Current.m_Neighbors[0][1];
+				if ( Next.m_EV_ISOSpeed > _EV_ISOSpeed )
 					break;	// Next node is larger than provided value! We have our start node along X!
 				Current = Next;
 			}
 
 			// Move along Y
-			while ( Current.m_EV_ShutterSpeed <= _ShutterSpeed && Current.m_NeighborY[1] != null )
-			{
-				GridNode	Next = Current.m_NeighborY[1];
-				if ( Next.m_EV_ShutterSpeed > _ShutterSpeed )
+			while ( Current.m_EV_ShutterSpeed <= _EV_ShutterSpeed && Current.m_Neighbors[1][1] != null )
+			{	// Move right
+				GridNode	Next = Current.m_Neighbors[1][1];
+				if ( Next.m_EV_ShutterSpeed > _EV_ShutterSpeed )
 					break;	// Next node is larger than provided value! We have our start node along Y!
 				Current = Next;
 			}
+			while ( Current.m_EV_ShutterSpeed > _EV_ShutterSpeed && Current.m_Neighbors[1][0] != null )
+			{	// Move left
+				Current = Current.m_Neighbors[1][0];
+				if ( Current.m_EV_ShutterSpeed <= _EV_ShutterSpeed )
+					break;	// Current node is smallerthan provided value! We have our start node along Z!
+			}
 
 			// Move along Z
-			while ( Current.m_EV_Aperture <= _Aperture && Current.m_NeighborZ[1] != null )
-			{
-				GridNode	Next = Current.m_NeighborZ[1];
-				if ( Next.m_EV_Aperture > _Aperture )
-					break;	// Next node is larger than provided value! We have our start node along X!
+			while ( Current.m_EV_Aperture <= _EV_Aperture && Current.m_Neighbors[2][1] != null )
+			{	// Move right
+				GridNode	Next = Current.m_Neighbors[2][1];
+				if ( Next.m_EV_Aperture > _EV_Aperture )
+					break;	// Next node is larger than provided value! We have our start node along Z!
 				Current = Next;
+			}
+			while ( Current.m_EV_Aperture > _EV_Aperture && Current.m_Neighbors[2][0] != null )
+			{	// Move left
+				Current = Current.m_Neighbors[2][0];
+				if ( Current.m_EV_Aperture <= _EV_Aperture )
+					break;	// Current node is smallerthan provided value! We have our start node along Z!
 			}
 
 			return Current;

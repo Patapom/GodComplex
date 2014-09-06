@@ -32,7 +32,19 @@ int		Device::ComponentsCount() const
 	return Count;
 }
 
-void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool _sRGB )
+bool	Device::Init( HWND _Handle, bool _Fullscreen, bool _sRGB )
+{
+	RECT	Rect;
+	if ( !GetWindowRect( _Handle, &Rect ) )
+		throw "Failed to retrieve window dimensions to initialize device!";
+	
+	int	Width = Rect.right - Rect.left;
+	int	Height = Rect.bottom - Rect.top;
+
+	return Init( Width, Height, _Handle, _Fullscreen, _sRGB );
+}
+
+bool	Device::Init( U32 _Width, U32 _Height, HWND _Handle, bool _Fullscreen, bool _sRGB )
 {
 	// Create a swap chain with 2 back buffers
 	DXGI_SWAP_CHAIN_DESC	SwapChainDesc;
@@ -59,14 +71,17 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	SwapChainDesc.Windowed = !_Fullscreen;
 	SwapChainDesc.Flags = 0;
 
+	int	FeatureLevelsCount = 1;
 #ifdef DIRECTX10
 #	ifdef TRY_DIRECTX10_1
-	D3D_FEATURE_LEVEL	FeatureLevel = D3D_FEATURE_LEVEL_10_1;	// Support D3D10.1 only...
+	D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_10_1,		// Support D3D10.1 only...
+											D3D_FEATURE_LEVEL_10_0 };	// If failed, use D3D10
+	FeatureLevelsCount = 2;
 #	else
-	D3D_FEATURE_LEVEL	FeatureLevel = D3D_FEATURE_LEVEL_10_0;	// Support D3D10 only...
+	D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_10_0 };	// Support D3D10 only...
 #	endif
 #else
-	D3D_FEATURE_LEVEL	FeatureLevel = D3D_FEATURE_LEVEL_11_0;	// Support D3D11...
+	D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_11_0 };	// Support D3D11...
 #endif
 	D3D_FEATURE_LEVEL	ObtainedFeatureLevel;
 
@@ -80,12 +95,12 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
  	if ( !Check(
 		D3D11CreateDeviceAndSwapChain( NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
 			DebugFlags,
-			&FeatureLevel, 1,
+			FeatureLevels, FeatureLevelsCount,
 			D3D11_SDK_VERSION,
 			&SwapChainDesc, &m_pSwapChain,
 			&m_pDevice, &ObtainedFeatureLevel, &m_pDeviceContext ) )
 		)
-		return;
+		return false;
 
 	// Store the default render target
 	ID3D11Texture2D*	pDefaultRenderSurface;
@@ -298,6 +313,8 @@ void	Device::Init( int _Width, int _Height, HWND _Handle, bool _Fullscreen, bool
 	m_pDeviceContext->GSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 	m_pDeviceContext->PSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
 	m_pDeviceContext->CSSetSamplers( 0, SAMPLERS_COUNT, m_ppSamplers );
+
+	return true;
 }
 
 void	Device::Exit()
@@ -324,12 +341,12 @@ void	Device::Exit()
 
 void	Device::ClearRenderTarget( const Texture2D& _Target, const float4& _Color )
 {
-	ClearRenderTarget( *_Target.GetTargetView(), _Color );
+	ClearRenderTarget( *_Target.GetRTV(), _Color );
 }
 
 void	Device::ClearRenderTarget( const Texture3D& _Target, const float4& _Color )
 {
-	ClearRenderTarget( *_Target.GetTargetView(), _Color );
+	ClearRenderTarget( *_Target.GetRTV(), _Color );
 }
 
 void	Device::ClearRenderTarget( ID3D11RenderTargetView& _TargetView, const float4& _Color )
@@ -339,7 +356,7 @@ void	Device::ClearRenderTarget( ID3D11RenderTargetView& _TargetView, const float
 
 void	Device::ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth, bool _bClearStencil )
 {
-	ClearDepthStencil( *_DepthStencil.GetDepthStencilView(), _Z, _Stencil, _bClearDepth, _bClearStencil );
+	ClearDepthStencil( *_DepthStencil.GetDSV(), _Z, _Stencil, _bClearDepth, _bClearStencil );
 }
 void	Device::ClearDepthStencil( ID3D11DepthStencilView& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth, bool _bClearStencil )
 {
@@ -348,16 +365,16 @@ void	Device::ClearDepthStencil( ID3D11DepthStencilView& _DepthStencil, float _Z,
 
 void	Device::SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil, const D3D11_VIEWPORT* _pViewport )
 {
-	ID3D11RenderTargetView*	pTargetView = _Target.GetTargetView( 0, 0, 0 );
-	ID3D11DepthStencilView*	pDepthStencilView = _pDepthStencil != NULL ? _pDepthStencil->GetDepthStencilView() : NULL;
+	ID3D11RenderTargetView*	pTargetView = _Target.GetRTV( 0, 0, 0 );
+	ID3D11DepthStencilView*	pDepthStencilView = _pDepthStencil != NULL ? _pDepthStencil->GetDSV() : NULL;
 
 	SetRenderTargets( _Target.GetWidth(), _Target.GetHeight(), 1, &pTargetView, pDepthStencilView, _pViewport );
 }
 
 void	Device::SetRenderTarget( const Texture3D& _Target, const Texture2D* _pDepthStencil, const D3D11_VIEWPORT* _pViewport )
 {
-	ID3D11RenderTargetView*	pTargetView = _Target.GetTargetView( 0, 0, 0 );
-	ID3D11DepthStencilView*	pDepthStencilView = _pDepthStencil != NULL ? _pDepthStencil->GetDepthStencilView() : NULL;
+	ID3D11RenderTargetView*	pTargetView = _Target.GetRTV( 0, 0, 0 );
+	ID3D11DepthStencilView*	pDepthStencilView = _pDepthStencil != NULL ? _pDepthStencil->GetDSV() : NULL;
 
 	SetRenderTargets( _Target.GetWidth(), _Target.GetHeight(), 1, &pTargetView, pDepthStencilView, _pViewport );
 }
@@ -483,7 +500,7 @@ void	Device::UnRegisterComponent( Component& _Component )
 
 bool	Device::Check( HRESULT _Result )
 {
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(GODCOMPLEX)
 	ASSERT( _Result == S_OK, "DX HRESULT Check failed !" );
 	if ( _Result != S_OK )
 		PostQuitMessage( _Result );

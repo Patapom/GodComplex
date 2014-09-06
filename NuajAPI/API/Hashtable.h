@@ -23,7 +23,7 @@
 #define HT_DEFAULT_SIZE	8192//(1 << 13)	// Default size if 8Kb
 #define HT_MAX_KEYLEN	1024
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 
 // Hashtable of strings, only used to access constants & uniforms by name in the shaders in DEBUG mode
 template<typename T> class	DictionaryString

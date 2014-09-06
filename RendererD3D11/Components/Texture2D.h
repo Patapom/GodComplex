@@ -39,14 +39,14 @@ private:	// FIELDS
 
 public:	 // PROPERTIES
 
-	int			GetWidth() const			{ return m_Width; }
-	int			GetHeight() const			{ return m_Height; }
-	int			GetArraySize() const		{ return m_ArraySize; }
-	int			GetMipLevelsCount() const	{ return m_MipLevelsCount; }
-	bool		IsCubeMap() const			{ return m_bIsCubeMap; }
+	int							GetWidth() const			{ return m_Width; }
+	int							GetHeight() const			{ return m_Height; }
+	int							GetArraySize() const		{ return m_ArraySize; }
+	int							GetMipLevelsCount() const	{ return m_MipLevelsCount; }
+	bool						IsCubeMap() const			{ return m_bIsCubeMap; }
 	const IFormatDescriptor&	GetFormatDescriptor() const	{ return m_Format; }
 
-	float3	GetdUV() const				{ return float3( 1.0f / m_Width, 1.0f / m_Height, 0.0f ); }
+	float3						GetdUV() const				{ return float3( 1.0f / m_Width, 1.0f / m_Height, 0.0f ); }
 
 
 public:	 // METHODS
@@ -57,10 +57,11 @@ public:	 // METHODS
 	Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format, int _ArraySize=1 );
 	~Texture2D();
 
-	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart=0, int _MipLevelsCount=0, int _ArrayStart=0, int _ArraySize=0 ) const;
-	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=0 ) const;
-	ID3D11UnorderedAccessView*	GetUAV(  int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=0 ) const;
-	ID3D11DepthStencilView*		GetDepthStencilView( int _ArrayStart=0, int _ArraySize=0 ) const;
+	// _AsArray is used to force the SRV as viewing a Texture2DArray instead of a TextureCube or TextureCubeArray
+	ID3D11ShaderResourceView*	GetSRV( int _MipLevelStart=0, int _MipLevelsCount=0, int _ArrayStart=0, int _ArraySize=0, bool _AsArray=false ) const;	// Shader Resource View => Read-Only Input
+	ID3D11RenderTargetView*		GetRTV( int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=0 ) const;												// Render Target View => Write-Only Output
+	ID3D11UnorderedAccessView*	GetUAV(  int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=0 ) const;												// Unordered Access View => Read/Write
+	ID3D11DepthStencilView*		GetDSV( int _ArrayStart=0, int _ArraySize=0 ) const;																	// Depth Stencil View => Write-Only Depth Stencil Output
 
 	// Uploads the texture to the shader
 	void		Set( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
@@ -84,7 +85,7 @@ public:	 // METHODS
 	D3D11_MAPPED_SUBRESOURCE&	Map( int _MipLevelIndex, int _ArrayIndex );
 	void		UnMap( int _MipLevelIndex, int _ArrayIndex );
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 	// I/O for staging textures
 	void		Save( const char* _pFileName );
 	void		Load( const char* _pFileName );

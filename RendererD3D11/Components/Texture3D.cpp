@@ -85,23 +85,41 @@ void	Texture3D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOr
 		Check( m_Device.DXDevice().CreateTexture3D( &Desc, NULL, &m_pTexture ) );
 }
 
-ID3D11ShaderResourceView*	Texture3D::GetShaderView( int _MipLevelStart, int _MipLevelsCount ) const
+ID3D11ShaderResourceView*	Texture3D::GetSRV( int _MipLevelStart, int _MipLevelsCount, int _FirstWSlice, int _WSize, bool _AsArray ) const
 {
 	if ( _MipLevelsCount == 0 )
 		_MipLevelsCount = m_MipLevelsCount - _MipLevelStart;
+	if ( _WSize == 0 )
+		_WSize = m_Depth - _FirstWSlice;
 
 	// Check if we already have it
-//	U32	Hash = _MipLevelsCount | (_MipLevelStart << 4);
-	U32	Hash = _MipLevelStart | (_MipLevelsCount << 4);
+	U32	Hash;
+	if ( _AsArray )
+		Hash = (_MipLevelStart << 0) | (_FirstWSlice << 4) | (_MipLevelsCount << (4+12)) | (_WSize << (4+12+4));	// Re-organized to have most likely changes (i.e. mip & array starts) first
+	else
+		Hash = _MipLevelStart | (_MipLevelsCount << 4);
+	Hash ^= _AsArray ? 0x80000000UL : 0;
+
 	ID3D11ShaderResourceView*	pExistingView = (ID3D11ShaderResourceView*) m_CachedSRVs.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC	Desc;
 	Desc.Format = m_Format.DirectXFormat();
-	Desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-	Desc.Texture3D.MostDetailedMip = _MipLevelStart;
-	Desc.Texture3D.MipLevels = _MipLevelsCount;
+	if ( _AsArray )
+	{	// Force as a Texture2DArray
+		Desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		Desc.Texture2DArray.MostDetailedMip = _MipLevelStart;
+		Desc.Texture2DArray.MipLevels = _MipLevelsCount;
+		Desc.Texture2DArray.FirstArraySlice = _FirstWSlice;
+		Desc.Texture2DArray.ArraySize = _WSize;
+	}
+	else
+	{
+		Desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+		Desc.Texture3D.MostDetailedMip = _MipLevelStart;
+		Desc.Texture3D.MipLevels = _MipLevelsCount;
+	}
 
 	ID3D11ShaderResourceView*	pView;
 	Check( m_Device.DXDevice().CreateShaderResourceView( m_pTexture, &Desc, &pView ) );
@@ -111,7 +129,7 @@ ID3D11ShaderResourceView*	Texture3D::GetShaderView( int _MipLevelStart, int _Mip
 	return pView;
 }
 
-ID3D11RenderTargetView*		Texture3D::GetTargetView( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const
+ID3D11RenderTargetView*		Texture3D::GetRTV( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const
 {
 	if ( _WSize == 0 )
 		_WSize = m_Depth - _FirstWSlice;
@@ -170,7 +188,7 @@ void	Texture3D::Set( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResour
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
-	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0 );
+	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_Device.DXContext().HSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &_pView );
@@ -188,7 +206,7 @@ void	Texture3D::SetVS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
-	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0 );
+	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[0] = _SlotIndex;
 }
@@ -196,7 +214,7 @@ void	Texture3D::SetHS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
-	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0 );
+	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_Device.DXContext().HSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[1] = _SlotIndex;
 }
@@ -204,7 +222,7 @@ void	Texture3D::SetDS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
-	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0 );
+	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[2] = _SlotIndex;
 }
@@ -212,7 +230,7 @@ void	Texture3D::SetGS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
-	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0 );
+	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[3] = _SlotIndex;
 }
@@ -220,7 +238,7 @@ void	Texture3D::SetPS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
-	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0 );
+	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[4] = _SlotIndex;
 }
@@ -228,7 +246,7 @@ void	Texture3D::SetCS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
-	_pView = _pView != NULL ? _pView : GetShaderView( 0, 0 );
+	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_Device.DXContext().CSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[5] = _SlotIndex;
 }
@@ -311,7 +329,7 @@ int	 Texture3D::ComputeMipLevelsCount( int _Width, int _Height, int _Depth, int 
 	return _MipLevelsCount;
 }
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 
 #include "..\..\Utility\TextureFilePOM.h"
 

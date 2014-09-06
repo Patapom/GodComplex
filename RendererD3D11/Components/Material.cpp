@@ -41,7 +41,7 @@ Material::Material( Device& _Device, const char* _pShaderFileName, const IVertex
 	m_Pointer2FileName.Add( NULL, m_pShaderPath );
 #endif
 
-#if defined(SURE_DEBUG) && defined(WATCH_SHADER_MODIFICATIONS)
+#if defined(_DEBUG) && defined(WATCH_SHADER_MODIFICATIONS)
 	if ( _pShaderFileName != NULL )
 	{
 		// Just ensure the file exists !
@@ -327,9 +327,11 @@ if ( m_pEntryPointPS != NULL && *m_pEntryPointPS == 1 )
 
 ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget, ID3DInclude* _pInclude, bool _bComputeShader )
 {
+#ifdef SAVE_SHADER_BLOB_TO
 	// Check if we're forced to load from binary...
 	if ( ms_LoadFromBinary )
 		return LoadBinaryBlob( _pShaderFileName, _pEntryPoint );
+#endif
 
 	ID3DBlob*   pCodeText;
 	ID3DBlob*   pCode;
@@ -362,7 +364,7 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 #endif
 //		Flags1 |= D3DCOMPILE_ENABLE_STRICTNESS;
 //		Flags1 |= D3DCOMPILE_IEEE_STRICTNESS;		// D3D9 compatibility, clamps precision to usual float32 but may prevent internal optimizations by the video card. Better leave it disabled!
-		Flags1 |= D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;	// MOST IMPORTANT FLAG !
+		Flags1 |= D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;	// MOST IMPORTANT FLAG!
 
 	U32 Flags2 = 0;
 
@@ -645,7 +647,7 @@ bool	Material::SetTexture( const char* _pBufferName, ID3D11ShaderResourceView* _
 	return	bUsed;
 }
 
-static void	DeleteBindingDescriptors( Material::ShaderConstants::BindingDesc*& _pValue, void* _pUserData )
+static void	DeleteBindingDescriptors( int _EntryIndex, Material::ShaderConstants::BindingDesc*& _pValue, void* _pUserData )
 {
 	delete _pValue;
 }
@@ -925,7 +927,7 @@ void		Material::SaveBinaryBlob( const char* _pShaderFileName, const char* _pEntr
 	const char*	pFileName = strrchr( _pShaderFileName, '/' );
 	if ( pFileName == NULL )
 		pFileName = strrchr( _pShaderFileName, '\\' );
-	ASSERT( pFileName != NULL, "Can't retrieve last /!" );
+	ASSERT( pFileName != NULL, "Can't retrieve last '/' !" );
 	int		FileNameIndex = 1+pFileName - _pShaderFileName;
 	const char*	pExtension = strrchr( _pShaderFileName, '.' );
 	ASSERT( pExtension != NULL, "Can't retrieve extension!" );

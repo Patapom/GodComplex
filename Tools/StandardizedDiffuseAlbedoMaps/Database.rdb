@@ -1,0 +1,237 @@
+<TexturesDatabase Location="D:\Workspaces\GodComplex\Tools\StandardizedDiffuseAlbedoMaps\Standard Reflectances\Camera Calibration 5\Captures" EntriesCount="18">
+  <Entry RelativePath="Arkane Studios\Bureau Pom\CRW_7570.xml">
+    <FriendlyName Value="Bureau Pom" />
+    <Description Value="Que du bisou!" />
+    <EnvironmentImage RelativePath="..\..\Meow!.png" />
+    <Tags>
+      <Type Value="WOOD" />
+      <Color Value="NONE" />
+      <Shade Value="NEUTRAL" />
+      <Nature Value="NONE" />
+      <Furniture Value="DESK" />
+      <Construction Value="NONE" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Canapé Cuir Romu\CRW_7606.xml">
+    <FriendlyName Value="Canapé Cuir Romuald" />
+    <Description Value="" />
+    <Tags>
+      <Type Value="SKIN" />
+      <Color Value="BLACK" />
+      <Shade Value="DARK" />
+      <Nature Value="NONE" />
+      <Furniture Value="CHAIR" />
+      <Construction Value="NONE" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Canapé Gris\CRW_7583.xml">
+    <FriendlyName Value="Grey Armchair" />
+    <Description Value="" />
+    <Tags>
+      <Type Value="FABRIC" />
+      <Color Value="GRAY" />
+      <Shade Value="NEUTRAL" />
+      <Nature Value="NONE" />
+      <Furniture Value="CHAIR" />
+      <Construction Value="NONE" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Canapé Vert\CRW_7581.xml">
+    <FriendlyName Value="Green Armchair" />
+    <Description Value="" />
+    <Tags>
+      <Type Value="FABRIC" />
+      <Color Value="GREEN" />
+      <Shade Value="NONE" />
+      <Nature Value="NONE" />
+      <Furniture Value="CHAIR" />
+      <Construction Value="NONE" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Cube Cuir Noir\CRW_7608.xml">
+    <FriendlyName Value="Black Leather Cube" />
+    <Description Value="" />
+    <Tags>
+      <Type Value="SKIN" />
+      <Color Value="BLACK" />
+      <Shade Value="DARK" />
+      <Nature Value="NONE" />
+      <Furniture Value="CHAIR" />
+      <Construction Value="NONE" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Lobby Bureau Sarah\CRW_7589.xml">
+    <FriendlyName Value="Black Varnished Desk" />
+    <Description Value="" />
+    <Tags>
+      <Type Value="PLASTIC" />
+      <Color Value="BLACK" />
+      <Shade Value="DARK" />
+      <Nature Value="NONE" />
+      <Furniture Value="DESK" />
+      <Construction Value="NONE" />
+      <Modifiers Value="VARNISHED" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Lobby Fauteuil Orange\CRW_7593.xml">
+    <FriendlyName Value="Orange Armchair" />
+    <Description Value="From the lobby" />
+    <Tags>
+      <Type Value="FABRIC" />
+      <Color Value="ORANGE" />
+      <Shade Value="NONE" />
+      <Nature Value="NONE" />
+      <Furniture Value="CHAIR" />
+      <Construction Value="NONE" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Lobby Moquette Noire\CRW_7591.xml">
+    <FriendlyName Value="Black Carpet" />
+    <Description Value="Lobby" />
+    <Tags>
+      <Type Value="FABRIC" />
+      <Color Value="BLACK" />
+      <Shade Value="DARK" />
+      <Nature Value="NONE" />
+      <Furniture Value="NONE" />
+      <Construction Value="FLOOR" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Lobby Parquet\CRW_7587.xml">
+    <FriendlyName Value="Wooden Floor" />
+    <Description Value="Lobby" />
+    <Tags>
+      <Type Value="WOOD" />
+      <Color Value="NONE" />
+      <Shade Value="NEUTRAL" />
+      <Nature Value="NONE" />
+      <Furniture Value="NONE" />
+      <Construction Value="FLOOR" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Moquette Grise\CRW_7572.xml">
+    <FriendlyName Value="Dark Gray Carpet" />
+    <Description Value="" />
+    <Tags>
+      <Type Value="FABRIC" />
+      <Color Value="GRAY" />
+      <Shade Value="DARK" />
+      <Nature Value="NONE" />
+      <Furniture Value="NONE" />
+      <Construction Value="FLOOR" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Moquette Orange\CRW_7575.xml">
+    <FriendlyName Value="Dark Orange Carpet" />
+    <Description Value="" />
+    <Tags>
+      <Type Value="FABRIC" />
+      <Color Value="ORANGE" />
+      <Shade Value="DARK" />
+      <Nature Value="NONE" />
+      <Furniture Value="NONE" />
+      <Construction Value="FLOOR" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Paillasson Réfectoire\CRW_7595.xml">
+    <FriendlyName Value="Dark Gray Doormat" />
+    <Description Value="" />
+    <Tags>
+      <Type Value="FABRIC" />
+      <Color Value="GRAY" />
+      <Shade Value="DARK" />
+      <Nature Value="NONE" />
+      <Furniture Value="NONE" />
+      <Construction Value="FLOOR" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Table Basse Blanche\CRW_7578.xml">
+    <FriendlyName Value="White Table" />
+    <Description Value="" />
+    <Tags>
+      <Type Value="PLASTIC" />
+      <Color Value="WHITE" />
+      <Shade Value="BRIGHT" />
+      <Nature Value="NONE" />
+      <Furniture Value="TABLE" />
+      <Construction Value="NONE" />
+      <Modifiers Value="VARNISHED" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Terrasse Bois\CRW_7597.xml">
+    <FriendlyName Value="Wood floor raw plancks" />
+    <Description Value="" />
+    <Tags>
+      <Type Value="WOOD" />
+      <Color Value="NONE" />
+      <Shade Value="NEUTRAL" />
+      <Nature Value="NONE" />
+      <Furniture Value="NONE" />
+      <Construction Value="FLOOR" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Terrasse Bois\CRW_7597_plank.xml">
+    <FriendlyName Value="Wood floor raw planck (closeup)" />
+    <Description Value="Closeup on a single planck" />
+    <Tags>
+      <Type Value="WOOD" />
+      <Color Value="NONE" />
+      <Shade Value="NEUTRAL" />
+      <Nature Value="NONE" />
+      <Furniture Value="NONE" />
+      <Construction Value="FLOOR" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Terrasse Table Orange\CRW_7603.xml">
+    <FriendlyName Value="Orange Metal Table" />
+    <Description Value="" />
+    <Tags>
+      <Type Value="PAINT" />
+      <Color Value="ORANGE" />
+      <Shade Value="NEUTRAL" />
+      <Nature Value="NONE" />
+      <Furniture Value="TABLE" />
+      <Construction Value="NONE" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Terrasse Table Rouge\CRW_7601.xml">
+    <FriendlyName Value="Red Metal Table" />
+    <Description Value="" />
+    <Tags>
+      <Type Value="PAINT" />
+      <Color Value="RED" />
+      <Shade Value="DARK" />
+      <Nature Value="NONE" />
+      <Furniture Value="TABLE" />
+      <Construction Value="NONE" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+  <Entry RelativePath="Arkane Studios\Terrasse Table Verte\CRW_7599.xml">
+    <FriendlyName Value="Green Metal Table" />
+    <Description Value="" />
+    <Tags>
+      <Type Value="PAINT" />
+      <Color Value="GREEN" />
+      <Shade Value="NEUTRAL" />
+      <Nature Value="NONE" />
+      <Furniture Value="TABLE" />
+      <Construction Value="NONE" />
+      <Modifiers Value="NONE" />
+    </Tags>
+  </Entry>
+</TexturesDatabase>

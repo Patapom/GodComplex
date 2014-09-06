@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef RENDERER_H_INCLUDED
-#define RENDERER_H_INCLUDED
-
 //#include "targetver.h"
 //#define WIN32_LEAN_AND_MEAN			 // Exclude rarely-used stuff from Windows headers
 
@@ -21,5 +18,3 @@
 #include "../NuajAPI/API/Hashtable.h"
 #include "../NuajAPI/API/List.h"
 #include "../NuajAPI/API/ASMHelpers.h"
-
-#endif

@@ -19,6 +19,9 @@ namespace PNG2RAW
 // 
 //			Convert( args[0], args[1] );
 
+			SaveLinearGradient( 512, new FileInfo( "./LinearGradient.png" ) );
+			SaveTestsRGB();
+
 #if SAVE_RAW
 			string[]	FileNames = new string[]
 			{
@@ -67,6 +70,63 @@ namespace PNG2RAW
 			ConvertPOM( new FileInfo( "Resources/Images/Normal.png" ), new FileInfo( "Resources/Images/Normal.POM" ), false, true );
 
 #endif
+		}
+
+		static void			SaveTestsRGB()
+		{
+			ImageUtility.ColorProfile	Profile_sRGB = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );
+			ImageUtility.ColorProfile	Profile_Linear = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.Chromaticities.sRGB, ImageUtility.ColorProfile.GAMMA_CURVE.STANDARD, 1.0f );
+
+			ImageUtility.Bitmap	Gray_sRGB = new ImageUtility.Bitmap( 64, 64, Profile_sRGB );
+			ImageUtility.Bitmap	Gray_Linear = new ImageUtility.Bitmap( 64, 64, Profile_Linear );
+			ImageUtility.Bitmap	Gradient_sRGB = new ImageUtility.Bitmap( 128, 16, Profile_sRGB );
+			ImageUtility.Bitmap	Gradient_Linear = new ImageUtility.Bitmap( 128, 16, Profile_Linear );
+
+			for ( int Y=0; Y < Gray_sRGB.Height; Y++ )
+				for ( int X=0; X < Gray_sRGB.Width; X++ )
+				{
+					Gray_sRGB.ContentXYZ[X,Y] = Profile_Linear.RGB2XYZ( new ImageUtility.float4( 0.5f, 0.5f, 0.5f, 1.0f ) );
+					Gray_Linear.ContentXYZ[X,Y] = Profile_Linear.RGB2XYZ( new ImageUtility.float4( 0.5f, 0.5f, 0.5f, 1.0f ) );
+				}
+
+			int	W = Gradient_sRGB.Width;
+			for ( int Y=0; Y < Gradient_sRGB.Height; Y++ )
+				for ( int X=0; X < Gradient_sRGB.Width; X++ )
+				{
+					float	C = (float) (X+0.5f) / W;
+					Gradient_sRGB.ContentXYZ[X,Y] = Profile_Linear.RGB2XYZ( new ImageUtility.float4( C, C, C, 1.0f ) );
+					Gradient_Linear.ContentXYZ[X,Y] = Profile_Linear.RGB2XYZ( new ImageUtility.float4( C, C, C, 1.0f ) );
+				}
+
+			Gray_sRGB.Save( new FileInfo( "./Gray128_sRGB.png" ) );
+			Gray_Linear.Save( new FileInfo( "./Gray128_Linear.png" ) );
+			Gradient_sRGB.Save( new FileInfo( "./Gradient_sRGB.png" ) );
+			Gradient_Linear.Save( new FileInfo( "./Gradient_Linear.png" ) );
+		}
+
+		static unsafe void	SaveLinearGradient( int _Width, FileInfo _FileName )
+		{
+			using ( Bitmap B = new Bitmap( _Width, 2, PixelFormat.Format32bppArgb ) )
+			{
+				int	W = B.Width;
+				int	H = B.Height;
+				BitmapData	LockedBitmap = B.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
+				for ( int Y=0; Y < H; Y++ )
+				{
+					byte*	pScanline = (byte*) LockedBitmap.Scan0 + Y * LockedBitmap.Stride;
+					for ( int X=0; X < W; X++ )
+					{
+						byte	C = (byte) (255 * X / (W-1));
+						*pScanline++ = C;
+						*pScanline++ = C;
+						*pScanline++ = C;
+						*pScanline++ = 0xFF;
+					}
+				}
+				B.UnlockBits( LockedBitmap );
+
+				B.Save( _FileName.FullName );
+			}
 		}
 
 		static void			ConvertPOM( DirectoryInfo _SourceDir, DirectoryInfo _TargetDir, string _sRGBPattern, bool _GenerateMipMaps )

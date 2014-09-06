@@ -578,6 +578,8 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Utility\Random.h" />
     <ClInclude Include="Utility\Resources.h" />
     <ClInclude Include="Utility\SH.h" />
+    <ClInclude Include="Utility\SHProbeEncoder\SHProbeNetwork.h" />
+    <ClInclude Include="Utility\SHProbeEncoder\SHProbeEncoder.h" />
     <ClInclude Include="Utility\TextureFilePOM.h" />
     <ClInclude Include="Utility\tweakval.h" />
     <ClInclude Include="Utility\Video.h" />
@@ -732,6 +734,8 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Utility\Random.cpp" />
     <ClCompile Include="Utility\Resources.cpp" />
     <ClCompile Include="Utility\SH.cpp" />
+    <ClCompile Include="Utility\SHProbeEncoder\SHProbeNetwork.cpp" />
+    <ClCompile Include="Utility\SHProbeEncoder\SHProbeEncoder.cpp" />
     <ClCompile Include="Utility\TextureFilePOM.cpp" />
     <ClCompile Include="Utility\tweakval.cpp" />
     <ClCompile Include="Utility\Video.cpp" />

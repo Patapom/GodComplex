@@ -46,9 +46,10 @@ public:	 // METHODS
 	Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging=false, bool _bUnOrderedAccess=false );
 	~Texture3D();
 
-	ID3D11ShaderResourceView*	GetShaderView( int _MipLevelStart=0, int _MipLevelsCount=0 ) const;
-	ID3D11RenderTargetView*		GetTargetView( int _MipLevelIndex=0, int _FirstWSlice=0, int _WSize=0 ) const;
-	ID3D11UnorderedAccessView*	GetUAV( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const;
+	// _AsArray is used to force the SRV as viewing a Texture2DArray instead of a Texture3D (note that otherwise, _FirstWSlice and _WSize are not used)
+	ID3D11ShaderResourceView*	GetSRV( int _MipLevelStart=0, int _MipLevelsCount=0, int _FirstWSlice=0, int _WSize=0, bool _AsArray=false ) const;			// Shader Resource View => Read-Only Input
+	ID3D11RenderTargetView*		GetRTV( int _MipLevelIndex=0, int _FirstWSlice=0, int _WSize=0 ) const;	// Render Target View => Write-Only Output
+	ID3D11UnorderedAccessView*	GetUAV( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const;		// Unordered Access View => Read/Write
 
 	// Uploads the texture to the shader
 	void		Set( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
@@ -69,7 +70,7 @@ public:	 // METHODS
 	D3D11_MAPPED_SUBRESOURCE&	Map( int _MipLevelIndex );
 	void		UnMap( int _MipLevelIndex );
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(GODCOMPLEX)
 	// I/O for staging textures
 	void		Save( const char* _pFileName );
 	void		Load( const char* _pFileName );

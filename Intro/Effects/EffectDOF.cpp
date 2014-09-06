@@ -255,8 +255,8 @@ void	EffectDOF::Render( float _Time, float _DeltaTime )
 	U32	QuarterHeight = (HalfHeight+1) >> 1;
 
 	// 3.1) Start by downsampling buffers
-	Downsample( HalfWidth, HalfHeight, m_RTTarget.GetShaderView(), m_pRTDownsampledHDRTarget->GetTargetView( 0, 0, 1 ), AVG );
-	Downsample( QuarterWidth, QuarterHeight, m_pRTDownsampledHDRTarget->GetShaderView( 0, 1, 0, 1 ), m_pRTDownsampledHDRTarget->GetTargetView( 1, 0, 1 ), AVG );
+	Downsample( HalfWidth, HalfHeight, m_RTTarget.GetSRV(), m_pRTDownsampledHDRTarget->GetRTV( 0, 0, 1 ), AVG );
+	Downsample( QuarterWidth, QuarterHeight, m_pRTDownsampledHDRTarget->GetSRV( 0, 1, 0, 1 ), m_pRTDownsampledHDRTarget->GetRTV( 1, 0, 1 ), AVG );
 
 //	DownscaleBuffer( *tr.GetCurrentWindowContext()->m_hdrBufferRenderDest->GetColorImage()->GetView(), *tr.GetCurrentWindowContext()->m_hrBufferDiv2RenderDest->GetColorImage()->GetView(), downscaleType::AVG );
 
@@ -377,7 +377,7 @@ void	EffectDOF::RenderFuzziness() const
 	// 1] Compute near fuzziness
 	USING_MATERIAL_START( *m_pMatComputeFuzzinessNear )
 
-	m_Device.SetRenderTarget( m_pRTTemp->GetWidth(), m_pRTTemp->GetHeight(), *m_pRTTemp->GetTargetView( 0, 0, 1 ) );
+	m_Device.SetRenderTarget( m_pRTTemp->GetWidth(), m_pRTTemp->GetHeight(), *m_pRTTemp->GetRTV( 0, 0, 1 ) );
 
 //	_Source.SetPS( 10 );
 
@@ -400,7 +400,7 @@ void	EffectDOF::RenderFuzziness() const
 	const float	weights[4] = { 0.3125f * Coeff, 0.234375f * Coeff, 0.09375f * Coeff, 0.015625f * Coeff };
 
 	{	// 2.1] Horizontal blur
-		m_Device.SetRenderTarget( m_pRTTemp->GetWidth(), m_pRTTemp->GetHeight(), *m_pRTTemp->GetTargetView( 0, 1, 1 ) );
+		m_Device.SetRenderTarget( m_pRTTemp->GetWidth(), m_pRTTemp->GetHeight(), *m_pRTTemp->GetRTV( 0, 1, 1 ) );
 
 		ComputeKernel( &m_pCB_Splat->m.Offsets->x, &m_pCB_Splat->m.Weights->x, weights, false );
 		ScaleKernel( &m_pCB_Splat->m.Offsets->x, HalfWidth, HalfHeight );
@@ -424,13 +424,13 @@ void	EffectDOF::RenderFuzziness() const
 
 		m_pCB_Splat->UpdateData();
 
-		m_pRTTemp->SetPS( 10, false, m_pRTTemp->GetShaderView( 0, 1, 0, 1 ) );
+		m_pRTTemp->SetPS( 10, false, m_pRTTemp->GetSRV( 0, 1, 0, 1 ) );
 
 		m_ScreenQuad.Render( M );
 	}
 
 	{	// 2.2] Vertical blur
-		m_Device.SetRenderTarget( m_pRTTemp->GetWidth(), m_pRTTemp->GetHeight(), *m_pRTTemp->GetTargetView( 0, 0, 1 ) );
+		m_Device.SetRenderTarget( m_pRTTemp->GetWidth(), m_pRTTemp->GetHeight(), *m_pRTTemp->GetRTV( 0, 0, 1 ) );
 
 		ComputeKernel( &m_pCB_Splat->m.Offsets->x, &m_pCB_Splat->m.Weights->x, weights, true );
 		ScaleKernel( &m_pCB_Splat->m.Offsets->x, HalfWidth, HalfHeight );
@@ -455,7 +455,7 @@ void	EffectDOF::RenderFuzziness() const
 
 		m_pCB_Splat->UpdateData();
 
-		m_pRTTemp->SetPS( 10, false, m_pRTTemp->GetShaderView( 0, 1, 1, 1 ) );
+		m_pRTTemp->SetPS( 10, false, m_pRTTemp->GetSRV( 0, 1, 1, 1 ) );
 
 		m_ScreenQuad.Render( M );
 	}
@@ -467,9 +467,9 @@ void	EffectDOF::RenderFuzziness() const
 	// 3] Compute far fuzziness & combine it with near fuzziness
 	USING_MATERIAL_START( *m_pMatComputeFuzzinessFar )
 
-	m_Device.SetRenderTarget( *m_pRTDOFMask->GetTargetView( 0, 0, 1 ) );
+	m_Device.SetRenderTarget( *m_pRTDOFMask->GetRTV( 0, 0, 1 ) );
 
-	m_pRTTemp->SetPS( 10, false, m_pRTTemp->GetShaderView( 0, 1, 0, 1 ) );
+	m_pRTTemp->SetPS( 10, false, m_pRTTemp->GetSRV( 0, 1, 0, 1 ) );
 
 //	m_pCB_Splat->m.dUV = _Source.GetdUV();
 	m_pCB_Splat->UpdateData();
@@ -496,7 +496,7 @@ void	EffectDOF::RenderDOF() const
 	U32	QuarterHeight = (HalfHeight+1) >> 1;
 
 	// Downsample fuzziness
-	Downsample( QuarterWidth, QuarterHeight, m_pRTDOFMask->GetShaderView( 0, 1, 0, 1 ), m_pRTDOFMask->GetTargetView( 1, 0, 1 ), DOWNSAMPLE_TYPE::MIN );
+	Downsample( QuarterWidth, QuarterHeight, m_pRTDOFMask->GetSRV( 0, 1, 0, 1 ), m_pRTDOFMask->GetRTV( 1, 0, 1 ), DOWNSAMPLE_TYPE::MIN );
 
 
 	const float centerX = 0.5f;//(_pViewportState->GetViewportWidth()/2.f + _pViewportState->GetViewportX())/(float)_pRessources->GetPostFullResTexture()->GetWidth();

@@ -205,7 +205,7 @@ void	EffectParticles::Render( float _Time, float _DeltaTime )
 	
 		ID3D11RenderTargetView*	ppRenderTargets[3] =
 		{
-			m_ppRTParticlePositions[2]->GetTargetView( 0, 0, 1 ), m_ppRTParticleNormals[1]->GetTargetView( 0, 0, 1 ), m_ppRTParticleTangents[1]->GetTargetView( 0, 0, 1 )
+			m_ppRTParticlePositions[2]->GetRTV( 0, 0, 1 ), m_ppRTParticleNormals[1]->GetRTV( 0, 0, 1 ), m_ppRTParticleTangents[1]->GetRTV( 0, 0, 1 )
 		};
 		gs_Device.SetRenderTargets( m_ppRTParticlePositions[2]->GetWidth(), m_ppRTParticlePositions[2]->GetHeight(), 3, ppRenderTargets );
  		gs_Device.SetStates( gs_Device.m_pRS_CullNone, gs_Device.m_pDS_Disabled, gs_Device.m_pBS_Disabled );

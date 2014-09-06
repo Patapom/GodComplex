@@ -4,8 +4,10 @@
 
 #define COMPUTE_SHADER_REFRESH_CHANGES_INTERVAL	500
 
-#ifndef GODCOMPLEX
-// This is useful only for applications, not demos !
+//#define AUTHORIZE_MULTITHREADED_COMPILATION	// Define this to allow multithreaded compilation at runtime
+
+#if !defined(GODCOMPLEX) && defined(AUTHORIZE_MULTITHREADED_COMPILATION)
+// This is useful only for applications, not demos!
 
 #define COMPUTE_SHADER_COMPILE_AT_RUNTIME	// Define this to start compiling shaders at runtime and avoid blocking (useful for debugging)
 											// If you enable that option then the shader will start compiling as soon as WatchShaderModifications() is called on the material

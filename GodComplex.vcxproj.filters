@@ -104,6 +104,9 @@
     <Filter Include="Resources\Shaders\DEBUG\DOF">
       <UniqueIdentifier>{a26e2882-98ff-4d2e-bd83-119f880aaa7a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Utility\SHProbeEncoder">
+      <UniqueIdentifier>{2cd413f0-9627-41d9-8229-625f406f123f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\Events.h">
@@ -282,6 +285,12 @@
     <ClInclude Include="NuajAPI\API\List.h">
       <Filter>NuajAPI\API</Filter>
     </ClInclude>
+    <ClInclude Include="Utility\SHProbeEncoder\SHProbeEncoder.h">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\SHProbeEncoder\SHProbeNetwork.h">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -443,6 +452,12 @@
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectDOF.cpp">
       <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\SHProbeEncoder\SHProbeEncoder.cpp">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\SHProbeEncoder\SHProbeNetwork.cpp">
+      <Filter>Utility\SHProbeEncoder</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

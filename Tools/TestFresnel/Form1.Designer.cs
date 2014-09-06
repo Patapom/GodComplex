@@ -36,6 +36,9 @@
 			this.panelColor = new System.Windows.Forms.Panel();
 			this.colorDialog1 = new System.Windows.Forms.ColorDialog();
 			this.outputPanel1 = new TestFresnel.OutputPanel(this.components);
+			this.openFileDialogRefract = new System.Windows.Forms.OpenFileDialog();
+			this.buttonLoadData = new System.Windows.Forms.Button();
+			this.checkBoxData = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// radioButtonSchlick
@@ -101,6 +104,7 @@
 			// 
 			// outputPanel1
 			// 
+			this.outputPanel1.Data = null;
 			this.outputPanel1.FresnelType = TestFresnel.OutputPanel.FRESNEL_TYPE.SCHLICK;
 			this.outputPanel1.IOR = 1F;
 			this.outputPanel1.Location = new System.Drawing.Point(12, 12);
@@ -109,11 +113,40 @@
 			this.outputPanel1.SpecularTint = System.Drawing.Color.White;
 			this.outputPanel1.TabIndex = 0;
 			// 
+			// openFileDialogRefract
+			// 
+			this.openFileDialogRefract.DefaultExt = "*.txt";
+			this.openFileDialogRefract.Filter = "Text Files|*.txt|All Files (*.*)|*.*";
+			this.openFileDialogRefract.Title = "Choose the TXT file from refractiveindex.info";
+			// 
+			// buttonLoadData
+			// 
+			this.buttonLoadData.Location = new System.Drawing.Point(758, 9);
+			this.buttonLoadData.Name = "buttonLoadData";
+			this.buttonLoadData.Size = new System.Drawing.Size(75, 23);
+			this.buttonLoadData.TabIndex = 5;
+			this.buttonLoadData.Text = "Load Data";
+			this.buttonLoadData.UseVisualStyleBackColor = true;
+			this.buttonLoadData.Click += new System.EventHandler(this.buttonLoadData_Click);
+			// 
+			// checkBoxData
+			// 
+			this.checkBoxData.AutoSize = true;
+			this.checkBoxData.Location = new System.Drawing.Point(703, 13);
+			this.checkBoxData.Name = "checkBoxData";
+			this.checkBoxData.Size = new System.Drawing.Size(49, 17);
+			this.checkBoxData.TabIndex = 6;
+			this.checkBoxData.Text = "Data";
+			this.checkBoxData.UseVisualStyleBackColor = true;
+			this.checkBoxData.CheckedChanged += new System.EventHandler(this.checkBoxData_CheckedChanged);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(845, 578);
+			this.Controls.Add(this.checkBoxData);
+			this.Controls.Add(this.buttonLoadData);
 			this.Controls.Add(this.panelColor);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.floatTrackbarControl1);
@@ -136,6 +169,9 @@
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Panel panelColor;
 		private System.Windows.Forms.ColorDialog colorDialog1;
+		private System.Windows.Forms.OpenFileDialog openFileDialogRefract;
+		private System.Windows.Forms.Button buttonLoadData;
+		private System.Windows.Forms.CheckBox checkBoxData;
 	}
 }
 

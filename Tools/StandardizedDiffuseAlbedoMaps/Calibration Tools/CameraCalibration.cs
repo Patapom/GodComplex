@@ -77,6 +77,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// <summary>
 		/// Contains shot information about the image used for calibration
 		/// </summary>
+		[System.Diagnostics.DebuggerDisplay( "ISO={m_ISOSpeed} Shutter={m_ShutterSpeed} Aperture={m_Aperture} m_FocalLength={m_FocalLength}" )]
 		public class CameraShotInfo
 		{
 			public float	m_ISOSpeed = -1.0f;
@@ -222,21 +223,20 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// and replace it into your orignal xyY, convert back to XYZ and voilà!</remarks>
 		public float	Calibrate( float _Luminance )
 		{
-			Probe	PreviousProbe = m_Reflectances[0];
+			Probe	PreviousProbe = null;
+			Probe	CurrentProbe = m_Reflectances[0];
 			for ( int ProbeIndex=1; ProbeIndex < m_Reflectances.Length; ProbeIndex++ )
 			{
-				Probe	CurrentProbe = m_Reflectances[ProbeIndex];
-				if ( CurrentProbe.m_LuminanceMeasured > _Luminance || ProbeIndex == m_Reflectances.Length-1 )
+				PreviousProbe = CurrentProbe;
+				CurrentProbe = m_Reflectances[ProbeIndex];
+				if ( CurrentProbe.m_LuminanceMeasured >= _Luminance || ProbeIndex == m_Reflectances.Length-1 )
 				{	// Found the correct interval!
 					float	t = (_Luminance - PreviousProbe.m_LuminanceMeasured) / (CurrentProbe.m_LuminanceMeasured - PreviousProbe.m_LuminanceMeasured);
-							t = Math.Max( 0.0f, Math.Min( 1.0f, t ) );	// Should already be in [0,1] but who knows?
 					float	CalibratedLuminance = PreviousProbe.StandardReflectance + t * (CurrentProbe.StandardReflectance - PreviousProbe.StandardReflectance);
 					return CalibratedLuminance;
 				}
-				PreviousProbe = CurrentProbe;
 			}
 
-			// Out of range? How come?
 			return 1.0f;
 		}
 
@@ -244,7 +244,7 @@ namespace StandardizedDiffuseAlbedoMaps
 		/// Creates an embeddable thumbnail of the reference image
 		/// </summary>
 		/// <param name="_Image"></param>
-		public void		CreateThumbnail( Bitmap2 _Image )
+		public void		CreateThumbnail( ImageUtility.Bitmap _Image )
 		{
 			int		MaxDim = Math.Max( _Image.Width, _Image.Height );
 			int		ThumbnailSize = 256;
@@ -257,7 +257,7 @@ namespace StandardizedDiffuseAlbedoMaps
 			for ( int Y=0; Y < H; Y++ )
 				for ( int X=0; X < W; X++ )
 				{
-					float4	XYZ = _Image.ContentXYZ[X*_Image.Width/W, Y*_Image.Height/H];
+					ImageUtility.float4	XYZ = _Image.ContentXYZ[X*_Image.Width/W, Y*_Image.Height/H];
 					m_Thumbnail[X,Y] = (byte) Math.Min( 255, Math.Max( 0, 255.0f * XYZ.y ) );
 				}
 		}

@@ -1,4 +1,8 @@
-#include "../GodComplex.h"
+#include "TextureFilePOM.h"
+#include "../RendererD3D11/Device.h"
+#include "../RendererD3D11/Components/Texture2D.h"
+#include "../RendererD3D11/Components/Texture3D.h"
+#include <stdio.h>
 
 TextureFilePOM::TextureFilePOM()
 	: m_Width( 0 )
