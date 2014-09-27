@@ -64,66 +64,86 @@ void	ShootPhoton( uint _PhotonIndex )
 	PhotonUnpacked	P;
 	UnPackPhoton( Pp, P );
 
+	bool	Bottom2Top = (LayerIndex & 0x80000000U) != 0;
+	int		LayerOffset = Bottom2Top ? 1 : 0;									// Will help us to start from the bottom of the layer when photons are going up
+	uint	DirectionChange_ExitThroughTop = Bottom2Top ? 0 : 0x80000000U;		// Will switch direction if going down and exiting through top of layer
+	uint	DirectionChange_ExitThroughBottom = Bottom2Top ? 0x80000000U : 0;	// Will switch direction if going up and exiting through bottom of layer
 
-// TODO: Offset position depending on Up<=>Down flag!
-
-
-	float3	Position = float3( P.Position.x, (_LayersCount - _LayerIndex) * _LayerThickness, P.Position.y );
+	float4	Position = float4( P.Position.x, (_LayersCount + Bottom2Top - _LayerIndex) * _LayerThickness, P.Position.y, 0.0 );	// 4th parameter is marched distance
 
 	// Prepare marching through the layer
 	float	MarchedLength = 0.0;
 	float	OpticalDepth = 0.0;
 	uint	ScatteringEventsCount = 0;
 
-	float	StepSize = _LayerThickness / 64.0;	// Arbitrary! Parameter!
+const float	MAX_MARCHED_LENGTH = 20.0f * _LayerThickness;	// Arbitrary! Parameter!
+const float	STEPS_COUNT = 128;	// Arbitrary! Parameter!
+
+	float	StepSize = _LayerThickness / STEPS_COUNT;
+	float4	Step = StepSize * float4( P.Direction, 1.0 );
 	uint	StepsCount = 0;
 
-const float	MAX_MARCHED_LENGTH = 50.0f * _LayerThickness;	// Arbitrary! Parameter!
-
-	float	LayerTopAltitude = (_LayersCount-_LayerIndex) * _LayerThickness;
+	float	LayerTopAltitude = (_LayersCount - _LayerIndex) * _LayerThickness;
 	float	LayerBottomAltitude = LayerTopAltitude - _LayerThickness;
+
+	float	DeltaOpticalDepth = _SigmaScattering * StepSize;
 
 	[allow_uav_condition]
 	[loop]
 	while ( ScatteringEventsCount < _MaxScattering && MarchedLength < MAX_MARCHED_LENGTH )
 	{
 		// March one step
-		Position += StepSize * P.Direction;
-		MarchedLength += StepSize;
+		Position += Step;
 
 		if ( Position.y > LayerTopAltitude )
 		{	// Exited through top of layer, compute exact intersection
-			float	t = (LayerTopAltitude - Position.y) / (StepSize * P.Direction.y);
-			Position += t * StepSize * P.Direction;
-			MarchedLength += t * StepSize;
-			LayerIndex |= 0x80000000U;	// Change of direction => now going up
+			float	t = (LayerTopAltitude - Position.y) / Step.y;
+			Position += t * Step;
+			if ( Bottom2Top )
+				LayerIndex--;				// Passed through the layer
+			else
+				LayerIndex |= 0x80000000U;	// Change of direction: now going up!
 			break;
 		}
 		else if ( Position.y < LayerBottomAltitude )
 		{	// Exited through bottom of layer, compute exact intersection
-			float	t = (LayerBottomAltitude - Position.y) / (StepSize * P.Direction.y);
-			Position += t * StepSize * P.Direction;
-			MarchedLength += t * StepSize;
-			LayerIndex++;	// Passed through the layer
+			float	t = (LayerBottomAltitude - Position.y) / Step.y;
+			Position += t * Step;
+			if ( Bottom2Top )
+				LayerIndex &= 0x7FFFFFFFU;	// Change of direction: now going down!
+			else
+				LayerIndex++;				// Passed through the layer
 			break;
 		}
 
 		// Sample density
-		float	Density = SampleDensity( Position );
-		OpticalDepth += Density * _SigmaScattering * StepSize;
+		float	Density = SampleDensity( Position.xyz );
+		OpticalDepth += Density * DeltaOpticalDepth;
 
 		// Draw random number and check if we should be scattered
-// #if USE_RANDOM_TABLE
-// 		float	Random = _Random[uint( 2.17138198 * (_MaxScattering * _PhotonIndex + StepsCount + 23.3719 * _LayerIndex)) & (USE_RANDOM_TABLE-1)].x;
+		float4	Random = 0.0;
+#if USE_RANDOM_TABLE
+//		Random = _Random[uint( 2.17138198 * (_MaxScattering * _PhotonIndex + StepsCount + 323.3719 * _LayerIndex)) & (USE_RANDOM_TABLE-1)];
+		Random = _Random[uint(0.37138198 * (_MaxScattering * _PhotonIndex - 0.692 * StepsCount + 323.3719 * _LayerIndex)) & (USE_RANDOM_TABLE-1)];
 // #else
-		float	Random = Hash( 0.01718198 * (_MaxScattering * (0.27891+_PhotonIndex) + StepsCount) + 0.3719 * _LayerIndex );
-//#endif
+// 		float	Random = Hash( 0.01718198 * (_MaxScattering * (0.27891+_PhotonIndex) + StepsCount) + 0.3719 * _LayerIndex );
+#endif
 
-		if ( Random > exp( -OpticalDepth ) )
+		// Add analytical random to increase randomness even more
+		Random += float4(	Hash( 0.0003718198 * (_MaxScattering * (0.37918+_PhotonIndex) + 0.3879 * StepsCount) ),
+							Hash( 0.0007594813 * (_MaxScattering * (0.37189+_PhotonIndex) + 0.5637 * StepsCount) ),
+							Hash( 0.0005984763 * (_MaxScattering * (0.37918+_PhotonIndex) + 0.7355 * StepsCount) ),
+							Hash( 0.0013984763 * (_MaxScattering * (0.38917+_PhotonIndex) + 0.1234 * StepsCount) )
+						);
+		Random = frac( Random );
+
+		if ( Random.z > exp( -OpticalDepth ) )
 		{	// We must scatter!
-			P.Direction = Scatter( _PhotonIndex, ScatteringEventsCount++, _MaxScattering, P.Direction );
-//OpticalDepth = 0.0;				// Reset optical depth for next scattering event
+//			P.Direction = Scatter( P.Direction, _PhotonIndex, ScatteringEventsCount++, _MaxScattering );
+			P.Direction = Scatter( P.Direction, Random );
+//OpticalDepth = 0.0;						// Reset optical depth for next scattering event
 			OpticalDepth += log( Random );	// Reset optical depth for next scattering event
+			ScatteringEventsCount++;		// One more scattering even...
 		}
 
 		StepsCount++;
@@ -147,7 +167,7 @@ const float	MAX_MARCHED_LENGTH = 50.0f * _LayerThickness;	// Arbitrary! Paramete
 
 
 #ifdef DEBUG	// Pack some additional infos
-	P.Infos = float4( ScatteringEventsCount, StepsCount, MarchedLength, LayerBottomAltitude );
+	P.Infos = float4( ScatteringEventsCount, StepsCount, Position.w, LayerBottomAltitude );
 
 // 	// Density check
 // 	float3	_Position = float3( 0, 500, 0 );

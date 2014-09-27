@@ -85,6 +85,7 @@ void	RendererManaged::Device::SetRenderTarget( Texture2D^ _RenderTarget, Texture
 	m_pDevice->SetRenderTarget( *_RenderTarget->m_pTexture, _DepthStencilTarget != nullptr ? _DepthStencilTarget->m_pTexture : NULL );
 }
 
+static ::ID3D11RenderTargetView*	gs_ppRenderTargetViews[8];
 void	RendererManaged::Device::SetRenderTargets( cli::array<IView^>^ _RenderTargetViews, Texture2D^ _DepthStencilTarget )
 {
 	if ( _RenderTargetViews == nullptr || _RenderTargetViews->Length == 0 )
@@ -92,13 +93,13 @@ void	RendererManaged::Device::SetRenderTargets( cli::array<IView^>^ _RenderTarge
 
 	int	Width = _RenderTargetViews[0]->Width;
 	int	Height = _RenderTargetViews[0]->Height;
-	::ID3D11RenderTargetView**	ppRenderTargets = new ::ID3D11RenderTargetView*[_RenderTargetViews->Length];
+// 		ppRenderTargets = new ::ID3D11RenderTargetView*[_RenderTargetViews->Length];
 	for ( int i=0; i < _RenderTargetViews->Length; i++ )
-		ppRenderTargets[i] = _RenderTargetViews[i]->RTV;
+		gs_ppRenderTargetViews[i] = _RenderTargetViews[i]->RTV;
 
-	m_pDevice->SetRenderTargets( Width, Height, _RenderTargetViews->Length, ppRenderTargets, _DepthStencilTarget != nullptr ? _DepthStencilTarget->m_pTexture->GetDSV() : NULL );
+	m_pDevice->SetRenderTargets( Width, Height, _RenderTargetViews->Length, gs_ppRenderTargetViews, _DepthStencilTarget != nullptr ? _DepthStencilTarget->m_pTexture->GetDSV() : NULL );
 
-	delete[] ppRenderTargets;
+//	delete[] ppRenderTargets;
 }
 
 void	RendererManaged::Device::RenderFullscreenQuad( Shader^ _Shader )
