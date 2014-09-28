@@ -25,8 +25,8 @@ struct VS_IN
 struct PS_IN
 {
 	float4	__Position	: SV_POSITION;
-	float2	UV			: TEXCOORDS0;
 	uint	LayerIndex	: LAYER_INDEX;
+	float2	UV			: TEXCOORDS0;
 };
 
 PS_IN	VS( VS_IN _In )
@@ -48,7 +48,6 @@ PS_IN	VS( VS_IN _In )
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
 	float3	UVW = float3( _In.UV, (0.5+_In.LayerIndex) / (_LayersCount+1) );
-//	float3	UVW = float3( _In.UV, 0.25 );
 
 //	float4	FluxWeight = _TexPhotons_Flux.Sample( PointClamp, UVW );
 //	float3	Direction = _TexPhotons_Direction.Sample( PointClamp, UVW ).xyz;

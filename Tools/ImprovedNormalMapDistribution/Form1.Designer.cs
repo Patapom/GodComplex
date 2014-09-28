@@ -37,6 +37,7 @@
 			this.buttonConvert = new System.Windows.Forms.Button();
 			this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
+			this.buttonConvertNew = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlPhi
@@ -97,13 +98,13 @@
 			// 
 			// buttonConvert
 			// 
-			this.buttonConvert.Location = new System.Drawing.Point(728, 456);
+			this.buttonConvert.Location = new System.Drawing.Point(724, 509);
 			this.buttonConvert.Name = "buttonConvert";
-			this.buttonConvert.Size = new System.Drawing.Size(133, 30);
+			this.buttonConvert.Size = new System.Drawing.Size(133, 42);
 			this.buttonConvert.TabIndex = 4;
-			this.buttonConvert.Text = "Convert Normal Map";
+			this.buttonConvert.Text = "Convert Normal Map  (old format)";
 			this.buttonConvert.UseVisualStyleBackColor = true;
-			this.buttonConvert.Click += new System.EventHandler(this.buttonConvert_Click);
+			this.buttonConvert.Click += new System.EventHandler(this.buttonConvertOld_Click);
 			// 
 			// openFileDialog
 			// 
@@ -116,11 +117,22 @@
 			this.saveFileDialog.DefaultExt = "*.png";
 			this.saveFileDialog.Filter = "PNG Files|*.png";
 			// 
+			// buttonConvertNew
+			// 
+			this.buttonConvertNew.Location = new System.Drawing.Point(724, 464);
+			this.buttonConvertNew.Name = "buttonConvertNew";
+			this.buttonConvertNew.Size = new System.Drawing.Size(133, 39);
+			this.buttonConvertNew.TabIndex = 4;
+			this.buttonConvertNew.Text = "Convert Normal Map (new format)";
+			this.buttonConvertNew.UseVisualStyleBackColor = true;
+			this.buttonConvertNew.Click += new System.EventHandler(this.buttonConvertNew_Click);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1004, 665);
+			this.Controls.Add(this.buttonConvertNew);
 			this.Controls.Add(this.buttonConvert);
 			this.Controls.Add(this.checkBoxSplat);
 			this.Controls.Add(this.outputPanel21);
@@ -144,6 +156,7 @@
 		private System.Windows.Forms.Button buttonConvert;
 		private System.Windows.Forms.OpenFileDialog openFileDialog;
 		private System.Windows.Forms.SaveFileDialog saveFileDialog;
+		private System.Windows.Forms.Button buttonConvertNew;
 	}
 }
 

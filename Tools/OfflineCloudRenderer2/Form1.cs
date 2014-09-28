@@ -1,4 +1,4 @@
-﻿//#define DEBUG_INFOS
+﻿#define DEBUG_INFOS
 
 using System;
 using System.Collections.Generic;
@@ -691,7 +691,6 @@ namespace OfflineCloudRenderer2
 				m_Tex_PhotonLayers_Direction.GetView( 0, 0, 0, 1 )
 			}, null );
 			m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter, PHOTONS_COUNT );
-			m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter, PHOTONS_COUNT );
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -700,7 +699,7 @@ namespace OfflineCloudRenderer2
 
 			m_SB_ProcessedPhotonsCounter.SetOutput( 2 );
 
-			for ( int BounceIndex=0; BounceIndex < BOUNCES_COUNT; BounceIndex++ )
+ 			for ( int BounceIndex=0; BounceIndex < BOUNCES_COUNT; BounceIndex++ )
 			{
 				// 5.1] Process every layers from top to bottom
 				m_SB_ProcessedPhotonsCounter.m[0] = 0;
@@ -740,6 +739,14 @@ namespace OfflineCloudRenderer2
 //DEBUG Read back photons buffer
 m_SB_Photons.Read();
 // m_SB_PhotonLayerIndices.Read();
+// Verify photons have the same energy and were indeed transported to the next layer unaffected (this test is only valid if the density field is filled with 0s)
+// for ( int PhotonIndex=0; PhotonIndex < PHOTONS_COUNT; PhotonIndex++ )
+// {
+// 	if ( m_SB_Photons.m[PhotonIndex].RGBE != 0x80FFFFFF )
+// 		throw new Exception( "Intensity changed!" );
+// 	if ( m_SB_PhotonLayerIndices.m[PhotonIndex] != LayerIndex+1 )
+// 		throw new Exception( "Unexpected layer index!" );
+// }
 //DEBUG
 #endif
 

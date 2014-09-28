@@ -103,21 +103,58 @@ float	GetRandomPhase( float _Random )
 {
 	uint	PhaseIndex;
 	if ( _Random < QUANTILE_PEAK_RATIO )
-		PhaseIndex = uint( QUANTILES_COUNT * _Random * (1.0 / QUANTILE_PEAK_RATIO) );									// Draw from peak
+		PhaseIndex = uint( QUANTILES_COUNT * _Random * (1.0 / QUANTILE_PEAK_RATIO) );							// Draw from peak
 	else
-		PhaseIndex = uint( QUANTILES_COUNT * (1.0 + (_Random-QUANTILE_PEAK_RATIO) * (1.0 / QUANTILE_OFFPEAK_RATIO)) );	// Draw from off-peak
+		PhaseIndex = QUANTILES_COUNT + uint( (_Random-QUANTILE_PEAK_RATIO) * (1.0 / QUANTILE_OFFPEAK_RATIO) );	// Draw from off-peak
 
 	return _PhaseQuantiles[PhaseIndex];
 }
 
 // Changes the photon direction and returns the length of the path before next scattering event
+float3	Scatter( float3 _OriginalDirection, float4 _Random )
+{
+	// Draw a random orthogonal vector to current direction
+#if 0
+
+// #if USE_RANDOM_TABLE
+// 	float2	SinCosPhi, SinCosTheta;
+// 	sincos( TWOPI * _Random.x, SinCosPhi.x, SinCosPhi.y );
+// 	sincos( PI * _Random.y, SinCosTheta.x, SinCosTheta.y );
+// //	float3	RandomVector = normalize( 2.0 * _Random.xyz - 1.0 );
+// #else
+// 	float2	SinCosPhi, SinCosTheta;
+// 	sincos( 132.378 * _Random.x, SinCosPhi.x, SinCosPhi.y );
+// 	sincos( PI * _Random.y, SinCosTheta.x, SinCosTheta.y );
+// #endif
+// 	float3	RandomVector = float3( SinCosPhi.y * SinCosTheta.x, SinCosTheta.y, SinCosPhi.x * SinCosTheta.x );
+// 	float3	Ortho = normalize( cross( RandomVector, _OriginalDirection ) );
+
+#else
+
+	float3	Y = normalize( cross( float3( 1, 0, 1 ), _OriginalDirection ) );	// First vector of the plane orthogonal to our original vector
+	float3	X = cross( _OriginalDirection, Y );									// Second vector of the plane
+
+	float2	SCPhi;
+	sincos( TWOPI * _Random.x, SCPhi.x, SCPhi.y );
+	float3	Ortho = SCPhi.y * X + SCPhi.x * Y;									// Random vector in a disc lying on the orthogonal plane of our original vector
+
+#endif
+ 
+	// Rotate current direction about that vector by the scattering angle
+	float	ScatteringAngle = GetRandomPhase( _Random.y );
+
+// ScatteringAngle = 0.01;
+
+	return RotateVector( _OriginalDirection, Ortho, ScatteringAngle );
+}
+
 //	_PhotonIndex, the index of the photon we're scattering
 //	_ScatteringEventIndex, the index of the scattering event
 //	_MaxScattering, the maximum amount of tolerated scattering events
 //	_OriginalDirection, the current direction of the photon
 // Returns the new, scattered photon direction
 //
-float3	Scatter( uint _PhotonIndex, uint _ScatteringEventIndex, uint _MaxScattering, float3 _OriginalDirection )
+float3	Scatter( float3 _OriginalDirection, uint _PhotonIndex, uint _ScatteringEventIndex, uint _MaxScattering )
 {
 #if USE_RANDOM_TABLE
 // 	float	TempRandom = Hash( 0.3718198 * (_MaxScattering * (0.37891+_PhotonIndex) + _ScatteringEventIndex) );
@@ -135,24 +172,6 @@ float3	Scatter( uint _PhotonIndex, uint _ScatteringEventIndex, uint _MaxScatteri
 					);
 	Random = frac( Random );
 
-
-	// Draw a random orthogonal vector to current direction
-#if USE_RANDOM_TABLE
-	float2	SinCosPhi, SinCosTheta;
-	sincos( TWOPI * Random.x, SinCosPhi.x, SinCosPhi.y );
-	sincos( PI * Random.y, SinCosTheta.x, SinCosTheta.y );
-//	float3	RandomVector = normalize( 2.0 * Random.xyz - 1.0 );
-#else
-	float2	SinCosPhi, SinCosTheta;
-	sincos( 132.378 * Random.x, SinCosPhi.x, SinCosPhi.y );
-	sincos( PI * Random.y, SinCosTheta.x, SinCosTheta.y );
-#endif
-	float3	RandomVector = float3( SinCosPhi.y * SinCosTheta.x, SinCosTheta.y, SinCosPhi.x * SinCosTheta.x );
-	float3	Ortho = normalize( cross( RandomVector, _OriginalDirection ) );
- 
-	// Rotate current direction about that vector by the scattering angle
-	float	ScatteringAngle = GetRandomPhase( Random.z );
-
-	return RotateVector( _OriginalDirection, Ortho, ScatteringAngle );
+	return Scatter( _OriginalDirection, Random );
 }
 
