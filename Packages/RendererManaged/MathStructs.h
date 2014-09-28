@@ -50,6 +50,7 @@ namespace RendererManaged
 		float	Dot( float2 b )	{ return x*b.x + y*b.y; }
 
 		float3	Cross( float2 b ) { return float3(	0, 0, x * b.y - y * b.x ); }
+		float	CrossZ( float2 b ) { return x * b.y - y * b.x; }
 
 		static property float2	Zero	{ float2 get() { return float2( 0, 0 ); } }
 		static property float2	UnitX	{ float2 get() { return float2( 1, 0 ); } }
