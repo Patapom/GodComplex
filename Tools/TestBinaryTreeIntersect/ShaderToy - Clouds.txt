@@ -1,0 +1,282 @@
+// Code from:
+// https://www.shadertoy.com/view/XdfXzn
+//
+// Written by Hubw (Huw Bowles from Studio Gobo)
+//
+//
+//
+
+// Firstly for the original and best visuals see the original shader by iq: https://www.shadertoy.com/view/XslGRr
+// I had to mess with a few things to make this tech demo work :(, due to the limitations
+// of working within a stateless shader, so the quality is compromised here.
+
+// In this shader I make use of the tree-based sampling. See my SIGGRAPH talk for
+// a proper introduction: http://advances.realtimerendering.com/s2013/OceanShoestring_SIGGRAPH2013_Online.pptx
+// And this shader for a live demo: https://www.shadertoy.com/view/XsfSRn
+
+// To summarise, sample distances from the camera are chosen by intersecting a line
+// with a binary tree. The line is chosen to produce a dense sampling near the camera
+// and a sparse sampling futher away. This means we can render an expansive volume
+// with just 32 ray steps. Furthermore, this line is moved with the camera, so that the
+// samples tend to stay relatively stationary in world space. This reduces the aliasing
+// issues associated with a moving camera. You can set the camera speed below using
+// the SPEED constant.
+
+// To see the difference all this makes, click the mouse to see typical view space sampling.
+// The samples are placed in at similar locations but no longer move with the camera.
+
+// It's crazy - and sloooow - to generate the sample locations in the shader - in practice this
+// would be done on the CPU and passed in as an array or in a texture. The variable
+// dens_x moves the line forward. This would be integrated on the CPU as follows:
+//   dens_x += dot( camForward, camVelocity*dt );
+
+// Future work:
+// * Remove noise octaves in the distance. Due to branching costs this is probably
+//   best done by writing a few different noise functions for different LODs and
+//   unrolling the raymarch loop.
+// * Fade out the last sample can pop in or out of existence. I don't know if there's a great
+//   solution for this, besides simply not using it.
+
+//#define FULL_PROCEDURAL
+
+#define SPEED 2.
+float dens_x = 0.;
+float dens_m = .25;
+
+float dens( float x )
+{
+	return dens_m * (x - dens_x) ;//+ y0;
+}
+float dens_inv( float y )
+{
+	return (y /*- y0*/) / dens_m + dens_x;
+}
+
+bool canonicalInt( float i_x0, float i_y0, float segIndex, out float i0, out float i1 )
+{
+	float segWidth = 2. * i_y0 ;
+	
+	float x0_offset = segWidth * segIndex;
+	
+	float x0_seg = i_x0 - x0_offset;
+	float x0_prime = i_y0 / 2.;
+	
+	i0 = (dens_m*x0_seg - 2.*x0_prime) / (dens_m-2.) + x0_offset;
+	i1 = (dens_m*x0_seg + 6.*x0_prime) / (dens_m+2.) + x0_offset;
+	
+	return true;
+}
+
+// this is a recurrence relation that iteratively computes intersections
+// between the density line and the tree.
+float nextDist( float prevDist )
+{
+	float y0_ = dens( prevDist );
+	y0_ = pow( 2.0, floor(log2(y0_)) );
+	#define SEGWIDTH (2.0*y0_)
+	float segIndex = floor( prevDist / SEGWIDTH );
+	
+	for( int i = 0; i < 3; i++ )
+	{
+		float i0, i1;
+		canonicalInt( dens_inv(y0_), y0_, segIndex, i0, i1 );
+		
+		float di = dens(i0);
+		if( i0 > prevDist && di >= y0_ && di < 2.*y0_ )
+		{
+			return i0;
+		}
+		di = dens(i1);
+		if( i1 > prevDist && di >= y0_ && di < 2.*y0_ )
+		{
+			return i1;
+		}
+		
+		if( dens((segIndex+1.0)*SEGWIDTH) > 2.0 * y0_ )
+		{
+			// move up a level
+			y0_ *= 2.;
+			segIndex = floor(segIndex/2.);
+		}
+		else
+		{
+			// move to next segment
+			segIndex += 1.0;
+		}
+	}
+	
+	// shouldnt get here
+	return 0.;
+}
+
+// all this really should be on the CPU. this computes the sample distances which do not
+// vary across pixels
+#define SAMPLE_COUNT 32
+float dists[SAMPLE_COUNT+1]; //+1 because we'll do forward differences to calc dt
+#define MIN_DENS 0.125
+#define DIST_ORIGIN dens_inv( MIN_DENS )
+void populateDists()
+{
+	// generate a naiive view space sampling if the mouse button is down
+	bool useNewApproach = true;
+	if( iMouse.z > 0. )
+		useNewApproach = false;
+	
+	dens_x = SPEED*iGlobalTime * (useNewApproach?1.:0.);
+	
+	float x_origin = DIST_ORIGIN;
+	dists[0] = x_origin;
+	
+	for( int i = 1; i < SAMPLE_COUNT; i++ )
+	{
+		dists[i] = nextDist( dists[i-1] );
+		// now that we are done with it, make it camera relative
+		dists[i-1] -= x_origin;
+	}
+	
+	// last elements
+	dists[SAMPLE_COUNT-1] -= x_origin;
+	dists[SAMPLE_COUNT] = dists[SAMPLE_COUNT-1];
+}
+
+
+#ifdef FULL_PROCEDURAL
+
+// hash based 3d value noise
+float hash( float n )
+{
+    return fract(sin(n)*43758.5453);
+}
+float noise( in vec3 x )
+{
+    vec3 p = floor(x);
+    vec3 f = fract(x);
+
+    f = f*f*(3.0-2.0*f);
+    float n = p.x + p.y*57.0 + 113.0*p.z;
+    return mix(mix(mix( hash(n+  0.0), hash(n+  1.0),f.x),
+                   mix( hash(n+ 57.0), hash(n+ 58.0),f.x),f.y),
+               mix(mix( hash(n+113.0), hash(n+114.0),f.x),
+                   mix( hash(n+170.0), hash(n+171.0),f.x),f.y),f.z);
+}
+#else
+
+// LUT based 3d value noise
+float noise( in vec3 x )
+{
+    vec3 p = floor(x);
+    vec3 f = fract(x);
+	f = f*f*(3.0-2.0*f);
+	
+	vec2 uv = (p.xy+vec2(37.0,17.0)*p.z) + f.xy;
+	vec2 rg = texture2D( iChannel0, (uv+ 0.5)/256.0, -100.0 ).yx;
+	return mix( rg.x, rg.y, f.z );
+}
+#endif
+
+vec4 map( in vec3 p )
+{
+	float d = 0.2 - p.y;
+
+	// NEW - im moving the camera instead of moving the volume function. note that
+	// we want samples to stay stationary relative to the function - if we have  moving
+	// volume we want to make the samples move with it if at all possible. motion
+	// orthogonal into the camera direction is usually not a problem as the function is
+	// densely sampled in this direction by the pixels. motion along the camera direction
+	// is the problem as this is sparsely sampled.
+	vec3 q = p;// - vec3(1.0,0.1,0.0)*iGlobalTime;
+	float f;
+    f  = 0.5000*noise( q ); q = q*2.02;
+    f += 0.2500*noise( q ); q = q*2.03;
+    f += 0.1250*noise( q ); q = q*2.01;
+    f += 0.0625*noise( q );
+
+	d += 3.0 * f;
+
+	d = clamp( d, 0.0, 1.0 );
+	
+	vec4 res = vec4( d );
+
+	res.xyz = mix( 1.15*vec3(1.0,0.95,0.8), vec3(0.7,0.7,0.7), res.x );
+	
+	return res;
+}
+
+
+vec3 sundir = normalize(vec3(-1.0,0.0,-1.));
+
+
+vec4 raymarch( in vec3 ro, in vec3 rd )
+{
+	vec4 sum = vec4(0, 0, 0, 0);
+
+	float x_origin = DIST_ORIGIN;
+	float t = 0.0;
+	for(int i=0; i<SAMPLE_COUNT; i++)
+	{
+		// NEW - read the ray march step distances from the generated sample locations
+		t = dists[i];
+		
+		if( sum.a > 0.99 ) continue;
+
+		vec3 pos = ro + t*rd;
+		vec4 col = map( pos );
+		
+		#if 1
+		float dif =  clamp((col.w - map(pos+0.3*sundir).w)/0.6, 0.0, 1.0 );
+
+        vec3 lin = vec3(0.65,0.68,0.7)*1.35 + 0.45*vec3(0.7, 0.5, 0.3)*dif;
+		col.xyz *= lin;
+		#endif
+		
+		col.a *= 0.35;
+		col.rgb *= col.a;
+
+		// NEW - integrate samples along ray
+		float dt = dists[i+1]-dists[i];
+		// hack - redistribute cloud densities to make more opaque in foreground and
+		// softer in distance. TODO - am i using the right formula for integration?
+		dt = sqrt( dt/5. )*5.;
+		
+		sum = sum + dt * col*(1.0 - sum.a);	
+	}
+
+	sum.xyz /= (0.001+sum.w);
+
+	return clamp( sum, 0.0, 1.0 );
+}
+
+void main(void)
+{
+	// this would be done on the CPU and passed in!!
+	populateDists();
+	
+	vec2 q = gl_FragCoord.xy / iResolution.xy;
+    vec2 p = -1.0 + 2.0*q;
+    p.x *= iResolution.x/ iResolution.y;
+    vec2 mo = -1.0 + 2.0*iMouse.xy / iResolution.xy;
+   
+	// NEW - since i couldnt integrate the camera forward motion (see initial comments),
+	// i had to simplify the motion to make it move along one axis in a simple and
+	// predictable way, and i lost iqs nice camera motion and framing along the way.
+	
+    // camera
+    vec3 ro = vec3(0.-SPEED*iGlobalTime,1.9,0.);//4.0*normalize(vec3(cos(2.75-3.0*mo.x), 0.7+(mo.y+1.0), sin(2.75-3.0*mo.x)));
+	vec3 ta = vec3(ro.x-1., ro.y, ro.z);
+    vec3 ww = normalize( ta - ro);
+    vec3 uu = normalize(cross( vec3(0.0,1.0,0.0), ww ));
+    vec3 vv = normalize(cross(ww,uu));
+    vec3 rd = normalize( p.x*uu + 1.2*p.y*vv + 1.5*ww );
+
+	
+    vec4 res = raymarch( ro, rd );
+
+	float sun = clamp( dot(sundir,rd), 0.0, 1.0 );
+	vec3 col = vec3(0.6,0.71,0.75) - rd.y*0.2*vec3(1.0,0.5,1.0) + 0.15*0.5;
+	col += 0.2*vec3(1.0,.6,0.1)*pow( sun, 8.0 );
+	col *= 0.95;
+	col = mix( col, res.xyz, res.w );
+	col += 0.1*vec3(1.0,0.4,0.2)*pow( sun, 3.0 );
+	    
+    gl_FragColor = vec4( col, 1.0 );
+}
