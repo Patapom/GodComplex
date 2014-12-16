@@ -55,7 +55,7 @@ namespace ImprovedNormalMapDistribution
 			outputPanel1.Splat = checkBoxSplat.Checked;
 		}
 
-		private unsafe void buttonConvert_Click( object sender, EventArgs args )
+		private unsafe void buttonConvertNew_Click( object sender, EventArgs _e )
 		{
 			if ( openFileDialog.ShowDialog( this ) != DialogResult.OK )
 				return;
@@ -80,6 +80,10 @@ namespace ImprovedNormalMapDistribution
 						x = 2.0f * ImageContent[rha++] / 255 - 1.0f;
 						y = 2.0f * ImageContent[rha++] / 255 - 1.0f;
 						z = 2.0f * ImageContent[rha++] / 255 - 1.0f;
+						rha++;	// Skip alpha
+
+						z = Math.Max( 0.0f, z );
+
 						float	Norm = 1.0f / (float) Math.Sqrt( x*x + y*y + z*z );
 						Vectors[X,Y].x = x * Norm;
 						Vectors[X,Y].y = y * Norm;
@@ -121,6 +125,92 @@ namespace ImprovedNormalMapDistribution
 // 					Ny = t * SinPhi * SinTheta;
 					Nx = t * x;
 					Ny = t * y;
+
+					Vectors[X,Y].x = (float) (0.5 * (1.0 + Nx));
+					Vectors[X,Y].y = (float) (0.5 * (1.0 + Ny));
+					Vectors[X,Y].z = 0.0f;
+				}
+
+
+			// Save as target PNG
+			using ( System.Drawing.Bitmap B = new System.Drawing.Bitmap( W, H, System.Drawing.Imaging.PixelFormat.Format32bppRgb ) )
+			{
+				System.Drawing.Imaging.BitmapData	LockedBitmap = B.LockBits( new System.Drawing.Rectangle( 0, 0, W, H ), System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppRgb );
+
+				for ( int Y=0; Y < H; Y++ )
+				{
+					byte*	pScanline = (byte*) LockedBitmap.Scan0 + LockedBitmap.Stride * Y;
+					for ( int X=0; X < W; X++ )
+					{
+						*pScanline++ = 0;
+						*pScanline++ = (byte) (255 * Vectors[X,Y].y);
+						*pScanline++ = (byte) (255 * Vectors[X,Y].x);
+						*pScanline++ = 0xFF;
+					}
+				}
+
+				B.UnlockBits( LockedBitmap );
+				
+				B.Save( TargetFileName.FullName );
+			}
+		}
+
+		private unsafe void buttonConvertOld_Click( object sender, EventArgs args )
+		{
+			if ( openFileDialog.ShowDialog( this ) != DialogResult.OK )
+				return;
+			if ( saveFileDialog.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			FileInfo	SourceFileName = new FileInfo( openFileDialog.FileName );
+			FileInfo	TargetFileName = new FileInfo( saveFileDialog.FileName );
+
+			int			W, H;
+			float3[,]	Vectors;
+			float		x, y, z;
+			using ( TargaImage TGA = new TargaImage( SourceFileName.FullName ) )
+			{
+				// Convert
+				byte[]		ImageContent = Bitmap.LoadBitmap( TGA.Image, out W, out H );
+				Vectors = new float3[W,H];
+				int		rha = 0;
+				for ( int Y=0; Y < H; Y++ )
+					for ( int X=0; X < W; X++ )
+					{
+						x = 2.0f * ImageContent[rha++] / 255 - 1.0f;
+						y = 2.0f * ImageContent[rha++] / 255 - 1.0f;
+						z = 2.0f * ImageContent[rha++] / 255 - 1.0f;
+						rha++;	// Skip alpha
+
+						z = Math.Max( 0.0f, z );
+
+						float	Norm = 1.0f / (float) Math.Sqrt( x*x + y*y + z*z );
+						Vectors[X,Y].x = x * Norm;
+						Vectors[X,Y].y = y * Norm;
+						Vectors[X,Y].z = z * Norm;
+					}
+			}
+
+			// Convert to RG slightly less improved normal
+			double	Nx, Ny;
+			double	a, b, c = -1.0, d, t;
+
+			ushort[,]	PackedNormal = new ushort[W,H];
+			for ( int Y=0; Y < H; Y++ )
+				for ( int X=0; X < W; X++ )
+				{
+					x = Vectors[X,Y].x;
+					y = Vectors[X,Y].y;
+					z = Vectors[X,Y].z;
+
+					// Here I'm using the exact algorithm described by http://rgba32.blogspot.fr/2011/02/improved-normal-map-distributions.html
+					a = (x * x) + (y * y);
+					b = z;
+					d = b*b - 4.0*a*c;
+					t = (-b + Math.Sqrt( d )) / (2.0 * a);
+
+					Nx = x * t;
+					Ny = y * t;
 
 					Vectors[X,Y].x = (float) (0.5 * (1.0 + Nx));
 					Vectors[X,Y].y = (float) (0.5 * (1.0 + Ny));
