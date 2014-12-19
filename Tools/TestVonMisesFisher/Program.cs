@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 
-namespace TestBinaryTreeIntersect
+namespace TestVonMisesFisher
 {
 	static class Program
 	{
@@ -15,7 +15,7 @@ namespace TestBinaryTreeIntersect
 		{
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault( false );
-			Application.Run( new IntersectForm() );
+			Application.Run( new FittingForm() );
 		}
 	}
 }

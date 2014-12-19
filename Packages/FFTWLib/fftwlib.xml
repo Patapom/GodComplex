@@ -4,23 +4,6 @@
         <name>fftwlib</name>
     </assembly>
     <members>
-        <member name="T:fftwlib.fftwf_complexarray">
-            <summary>
-            To simplify FFTW memory management
-            </summary>
-        </member>
-        <member name="M:fftwlib.fftwf_complexarray.#ctor(System.Int32)">
-            <summary>
-            Creates a new array of complex numbers
-            </summary>
-            <param name="length">Logical length of the array</param>
-        </member>
-        <member name="M:fftwlib.fftwf_complexarray.#ctor(System.Single[])">
-            <summary>
-            Creates an FFTW-compatible array from array of floats, initializes to single precision only
-            </summary>
-            <param name="data">Array of floats, alternating real and imaginary</param>
-        </member>
         <member name="T:fftwlib.fftw_flags">
             <summary>
             FFTW planner flags
@@ -584,6 +567,23 @@
             Outputs a "nerd-readable" version of the specified plan to stdout
             </summary>
             <param name="plan">The plan to output</param>
+        </member>
+        <member name="T:fftwlib.fftwf_complexarray">
+            <summary>
+            To simplify FFTW memory management
+            </summary>
+        </member>
+        <member name="M:fftwlib.fftwf_complexarray.#ctor(System.Int32)">
+            <summary>
+            Creates a new array of complex numbers
+            </summary>
+            <param name="length">Logical length of the array</param>
+        </member>
+        <member name="M:fftwlib.fftwf_complexarray.#ctor(System.Single[])">
+            <summary>
+            Creates an FFTW-compatible array from array of floats, initializes to single precision only
+            </summary>
+            <param name="data">Array of floats, alternating real and imaginary</param>
         </member>
     </members>
 </doc>

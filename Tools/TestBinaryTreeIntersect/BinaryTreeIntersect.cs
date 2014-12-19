@@ -7,7 +7,7 @@ namespace TestBinaryTreeIntersect
 {
 	class BinaryTreeIntersect
 	{
-		const float	START_TREE_LEVEL = 3;
+/*		const float	START_TREE_LEVEL = 3;
 		
 //		static const float	SPEED = 2.0f;
 
@@ -104,6 +104,6 @@ namespace TestBinaryTreeIntersect
 			m_Distances[SAMPLE_COUNT-1] -= OriginX;
 			m_Distances[SAMPLE_COUNT] = m_Distances[SAMPLE_COUNT-1];
 		}
-
+*/
 	}
 }
