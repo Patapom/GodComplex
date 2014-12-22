@@ -30,6 +30,7 @@
 		{
 			this.components = new System.ComponentModel.Container();
 			this.panelOutput = new Nuaj.Cirrus.Utility.PanelOutput( this.components );
+			this.panelOutputNormalDistribution = new Nuaj.Cirrus.Utility.PanelOutput( this.components );
 			this.SuspendLayout();
 			// 
 			// panelOutput
@@ -40,13 +41,23 @@
 			this.panelOutput.TabIndex = 0;
 			this.panelOutput.BitmapUpdating += new Nuaj.Cirrus.Utility.PanelOutput.UpdateBitmapDelegate( this.panelOutput_BitmapUpdating );
 			// 
+			// panelOutputNormalDistribution
+			// 
+			this.panelOutputNormalDistribution.Location = new System.Drawing.Point( 502, 270 );
+			this.panelOutputNormalDistribution.Name = "panelOutputNormalDistribution";
+			this.panelOutputNormalDistribution.Size = new System.Drawing.Size( 434, 197 );
+			this.panelOutputNormalDistribution.TabIndex = 0;
+			this.panelOutputNormalDistribution.BitmapUpdating += new Nuaj.Cirrus.Utility.PanelOutput.UpdateBitmapDelegate( this.panelOutputNormalDistribution_BitmapUpdating );
+			// 
 			// FittingForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF( 6F, 13F );
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size( 754, 510 );
+			this.ClientSize = new System.Drawing.Size( 969, 510 );
+			this.Controls.Add( this.panelOutputNormalDistribution );
 			this.Controls.Add( this.panelOutput );
 			this.Name = "FittingForm";
+			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "von Mises - Fisher Distribution Fitting Test";
 			this.ResumeLayout( false );
 
@@ -55,6 +66,7 @@
 		#endregion
 
 		private Nuaj.Cirrus.Utility.PanelOutput panelOutput;
+		private Nuaj.Cirrus.Utility.PanelOutput panelOutputNormalDistribution;
 	}
 }
 

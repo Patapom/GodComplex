@@ -139,9 +139,9 @@ namespace WMath
 			float	k = 1.0f / (1.0f + c);
 
 			
-			m[0, 0] = v.x*v.x*k + c;	m[0, 1] = v.y*v.x*k - v.z;	m[0, 2] = v.z*v.x*k + v.y;
-			m[1, 0] = v.x*v.y*k + v.z;	m[1, 1] = v.y*v.y*k + c;	m[1, 2] = v.z*v.y*k - v.x;
-			m[2, 0] = v.x*v.z*k - v.y;	m[2, 1] = v.y*v.z*k + v.x;	m[2, 2] = v.z*v.z*k + c;
+			m[0, 0] = v.x*v.x*k + c;	m[0, 1] = v.x*v.y*k + v.z;	m[0, 2] = v.x*v.z*k - v.y;
+			m[1, 0] = v.y*v.x*k - v.z;	m[1, 1] = v.y*v.y*k + c;	m[1, 2] = v.y*v.z*k + v.x;
+			m[2, 0] = v.z*v.x*k + v.y;	m[2, 1] = v.z*v.y*k - v.x;	m[2, 2] = v.z*v.z*k + c;
 
 			return this;
 		}

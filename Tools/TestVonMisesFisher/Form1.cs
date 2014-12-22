@@ -76,6 +76,7 @@ namespace TestVonMisesFisher
 		};
 
 		Vector[]		m_RandomDirections = null;
+		float[]			m_RandomThetas = null;
 
 
 		public FittingForm()
@@ -84,10 +85,11 @@ namespace TestVonMisesFisher
 
 			// Create the random points
 			List< Vector >	RandomDirections = new List< Vector >();
+			List< float >	RandomThetas = new List< float >();
 			for ( int LobeIndex=0; LobeIndex < m_RandomLobes.Length; LobeIndex++ )
 			{
-				float	MainPhi = m_RandomLobes[LobeIndex].Phi;
-				float	MainTheta = m_RandomLobes[LobeIndex].Theta;
+				float	MainPhi = (float) (m_RandomLobes[LobeIndex].Phi * Math.PI / 180.0f);
+				float	MainTheta = (float) (m_RandomLobes[LobeIndex].Theta * Math.PI / 180.0f);
 				float	Variance = m_RandomLobes[LobeIndex].Variance;
 				int		PointsCount = m_RandomLobes[LobeIndex].RandomPointsCount;
 
@@ -106,7 +108,7 @@ namespace TestVonMisesFisher
 				for ( int PointIndex=0; PointIndex < PointsCount; PointIndex++ )
 				{
 					float	CosTheta = (float) WMath.SimpleRNG.GetNormal( 0.0f, Variance );
-					float	SinTheta = (float) Math.Sqrt( 1 - CosTheta*CosTheta );
+					float	SinTheta = (float) Math.Sqrt( 1.0f - CosTheta*CosTheta );
 					float	Phi = (float) (WMath.SimpleRNG.GetUniform() * 2.0 * Math.PI);
 
 					Vector	RandomDirection = new Vector(
@@ -118,17 +120,204 @@ namespace TestVonMisesFisher
 					Vector	FinalDirection = RandomDirection * Rot;
 
 					RandomDirections.Add( FinalDirection );
+
+					RandomThetas.Add( CosTheta );
 				}
 			}
 
 			m_RandomDirections = RandomDirections.ToArray();
+			m_RandomThetas = RandomThetas.ToArray();
+
+			panelOutput.UpdateBitmap();
+			panelOutputNormalDistribution.UpdateBitmap();
 		}
+
+		#region Bessel
+
+		private static double[]	FACTORIAL = new double[] {	1.0,
+															1.0,
+															2.0,
+															6.0,
+															24.0,
+															120.0,
+															720.0,
+															5040.0,
+															40320.0,
+															362880.0,
+															3628800.0,
+															39916800.0,
+															479001600.0,
+															6227020800.0,
+															87178291200.0,
+															1307674368000.0,
+															20922789888000.0,
+															355687428096000.0,
+															6402373705728000.0,
+															1.21645100408832e+17,
+															2.43290200817664e+18,
+															5.109094217170944e+19,
+															1.12400072777760768e+21,
+															2.58520167388849766e+22,
+															6.20448401733239439e+23,
+															1.55112100433309860e+25,
+															4.03291461126605636e+26,
+															1.08888694504183522e+28,
+															3.04888344611713861e+29,
+															8.84176199373970195e+30,
+															2.65252859812191059e+32,
+															8.22283865417792282e+33,
+															2.63130836933693530e+35		// 32!
+														};
+
+		/// <summary>
+		/// Computes I0 (from http://mathworld.wolfram.com/ModifiedBesselFunctionoftheFirstKind.html)
+		/// </summary>
+		/// <param name="z"></param>
+		/// <returns></returns>
+		private double	ModifiedBesselI0( double z ) {
+			double	result = 1.0;
+			for ( int k=1; k < 32; k++ ) {
+				double	term = Math.Pow( 0.25 * z * z, k ) / Math.Pow( FACTORIAL[k], 2.0 );
+				result += term;
+			}
+			return result;
+		}
+
+		/// <summary>
+		/// Computes In (from http://mathworld.wolfram.com/ModifiedBesselFunctionoftheFirstKind.html)
+		/// using integral form (5)</summary>
+		/// <param name="z"></param>
+		/// <returns></returns>
+		private double ModifiedBesselI( int n, double z ) {
+			const int		COUNT = 100;
+			const double	dTheta = Math.PI / COUNT;
+			double	result = 0.0;
+			double	theta = 0.0;
+			double	px = Math.Exp( z );
+			for ( int i=1; i <= COUNT; i++ ) {
+				theta += dTheta;
+				double	x = Math.Exp( z * Math.Cos( theta ) ) * Math.Cos( n * theta );
+				result += 0.5f * (x + px);
+				px = x;
+			}
+			result *= dTheta / Math.PI;
+			return result;
+		}
+
+		#endregion
+
+		#region CDF
+
+		private double	Phi( double x, double kappa, double mu ) {
+			double	result = x;
+			double	I0 = 2.0 / ModifiedBesselI0( kappa );
+			for ( int j=1; j < 10; j++ ) {
+				double	term = ModifiedBesselI( j, kappa ) * Math.Sin( j * (x - mu) ) / j;
+				result += term;
+			}
+
+			result /= 2.0 * Math.PI;
+			return result;
+		}
+
+		private double	CDF( double x, double kappa ) {
+			double	Phi0 = Phi( -Math.PI, kappa, 0.0 );
+			double	PhiX = Phi( x, kappa, 0.0 );
+			return PhiX - Phi0;
+		}
+
+		#endregion
 
 		private void panelOutput_BitmapUpdating( int W, int H, Graphics G )
 		{
 			G.FillRectangle( Brushes.White, 0, 0, W, H );
 
+// Test Bessel functions
+// 			float	s = 0.05f;
+// 
+// 			double	pz = 0.0;
+// 			double	py = ModifiedBesselI0( 0.0 );
+// 			for ( int x=1; x < W; x++ ) {
+// 				double	z = x * 6.0 / W;
+// 				double	y = ModifiedBesselI0( z );
+// 
+// 				G.DrawLine( Pens.Black, x-1, (H-1) * (float) (1.0-s*py), x, (H-1) * (float) (1.0-s*y) );
+// 
+// 				pz = z;
+// 				py = y;
+// 			}
+// 
+// 			Color[]	colors = new Color[] {
+// 				Color.FromArgb( 255, 0, 0 ),
+// 				Color.FromArgb( 255, 128, 0 ),
+// 				Color.FromArgb( 128, 255, 0 ),
+// 				Color.FromArgb( 0, 0, 255 ),
+// 			};
+// 
+// 			for ( int i=0; i < 4; i++ ) {
+// 				using ( Pen P = new Pen( colors[i], 1.0f ) ) {
+// 					pz = 0.0;
+// 					py = ModifiedBesselI( i, 0.0 );
+// 					for ( int x=1; x < W; x++ ) {
+// 						double	z = x * 6.0 / W;
+// 						double	y = ModifiedBesselI( i, z );
+// 
+// 						G.DrawLine( P, x-1, (H-1) * (float) (1.0-s*py), x, (H-1) * (float) (1.0-s*y) );
+// 
+// 						pz = z;
+// 						py = y;
+// 					}
+// 				}
+// 			}
 
+
+			// Test CDF
+			Color[]	colors = new Color[] {
+				Color.FromArgb( 0, 0, 0 ),
+				Color.FromArgb( 255, 0, 0 ),
+				Color.FromArgb( 255, 128, 0 ),
+				Color.FromArgb( 128, 255, 0 ),
+				Color.FromArgb( 0, 0, 255 ),
+			};
+
+			for ( int i=0; i < colors.Length; i++ ) {
+				using ( Pen P = new Pen( colors[i], 1.0f ) ) {
+					double	kappa = i > 0 ? Math.Pow( 2.0, -2.0 + i ) : 0.0;
+					double	pz = 0.0;
+					double	py = CDF( -Math.PI, kappa );
+					for ( int x=1; x < W; x++ ) {
+						double	z = Math.PI * (2.0 * x - 1.0) / W;
+						double	y = CDF( z, kappa );
+
+						G.DrawLine( P, x-1, (H-1) * (float) (1.0-py), x, (H-1) * (float) (1.0-y) );
+
+						pz = z;
+						py = y;
+					}
+				}
+			}
+		}
+
+		private void panelOutputNormalDistribution_BitmapUpdating( int W, int H, Graphics G )
+		{
+			G.FillRectangle( Brushes.White, 0, 0, W, H );
+
+			int[]	Buckets = new int[128];
+			int		Peak = 0;
+			for ( int i=0; i < 10000; i++ ) {
+
+				float	Random = (float) WMath.SimpleRNG.GetNormal( 0.0, 4.0 );
+
+				int		BucketIndex = (int) (64 * (1.0f + 0.05f * Random));
+				BucketIndex = Math.Max( 0, Math.Min( 127, BucketIndex ) );
+				Buckets[BucketIndex]++;
+				Peak = Math.Max( Peak, Buckets[BucketIndex] );
+			}
+
+			for ( int i=0; i < 128; i++ ) {
+				float	h = H * Buckets[i] / (1.1f * Peak);
+				G.FillRectangle( Brushes.Black, W * (i+0) / 128.0f, H - h - 1, W/128.0f, h );
+			}
 		}
 	}
 }
