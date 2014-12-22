@@ -228,6 +228,32 @@ namespace TestVonMisesFisher
 
 		#endregion
 
+		#region Uniform -> von Mises Mapping
+
+		private double[]	m_UniformRandom2Angle = new double[2048];
+		private void	BuildDistributionMapping( double kappa, double mu ) {
+			int		N = m_UniformRandom2Angle.Length;
+			double	dTheta = 2.0 * Math.PI / N;
+			double	sum = 0.0;
+			double	theta = -Math.PI;
+			double	I0 = ModifiedBesselI0( kappa );
+			double	Norm = dTheta / (2.0 * Math.PI * I0);
+			for ( int i=0; i < N; i++ ) {
+				double	pdf = Math.Exp( kappa * Math.Cos( theta - mu ) );
+				double	prevSum = sum;
+				sum += pdf;
+				theta += dTheta;
+
+				int	x0 = (int) Math.Floor( prevSum );
+				int	x1 = Math.Min( N-1, (int) Math.Ceiling( sum ) );
+				for ( int x=x0; x < x1; x++ ) {
+					m_UniformRandom2Angle[x] = theta;
+				}
+			}
+		}
+
+		#endregion
+
 		private void panelOutput_BitmapUpdating( int W, int H, Graphics G )
 		{
 			G.FillRectangle( Brushes.White, 0, 0, W, H );
@@ -283,15 +309,15 @@ namespace TestVonMisesFisher
 			for ( int i=0; i < colors.Length; i++ ) {
 				using ( Pen P = new Pen( colors[i], 1.0f ) ) {
 					double	kappa = i > 0 ? Math.Pow( 2.0, -2.0 + i ) : 0.0;
-					double	pz = 0.0;
-					double	py = CDF( -Math.PI, kappa );
+
+					BuildDistributionMapping( kappa, 0.0 );
+
+					double	py = 0.5 * (1.0 + m_UniformRandom2Angle[0] / Math.PI);
 					for ( int x=1; x < W; x++ ) {
-						double	z = Math.PI * (2.0 * x - 1.0) / W;
-						double	y = CDF( z, kappa );
+						double	y = 0.5 * (1.0 + m_UniformRandom2Angle[m_UniformRandom2Angle.Length*x/W] / Math.PI);
 
 						G.DrawLine( P, x-1, (H-1) * (float) (1.0-py), x, (H-1) * (float) (1.0-y) );
 
-						pz = z;
 						py = y;
 					}
 				}

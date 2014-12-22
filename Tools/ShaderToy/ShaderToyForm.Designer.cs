@@ -33,6 +33,7 @@
 			this.panelOutput = new ShaderToy.PanelOutput( this.components );
 			this.floatTrackbarControl1 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.buttonReload = new System.Windows.Forms.Button();
+			this.timer = new System.Windows.Forms.Timer( this.components );
 			this.SuspendLayout();
 			// 
 			// panelOutput
@@ -62,6 +63,11 @@
 			this.buttonReload.UseVisualStyleBackColor = true;
 			this.buttonReload.Click += new System.EventHandler( this.buttonReload_Click );
 			// 
+			// timer
+			// 
+			this.timer.Enabled = true;
+			this.timer.Interval = 10;
+			// 
 			// ShaderToyForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF( 6F, 13F );
@@ -83,6 +89,7 @@
 		private PanelOutput panelOutput;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl1;
 		private System.Windows.Forms.Button buttonReload;
+		private System.Windows.Forms.Timer timer;
 	}
 }
 
