@@ -61,6 +61,7 @@ namespace TestVonMisesFisher
 	{
 		const int		FITTING_LOBES_COUNT = 4;
 
+		[System.Diagnostics.DebuggerDisplay( "({Phi},{Theta}) k={Concentration}" )]
 		struct RandomLobe
 		{
 			public float	Phi;
@@ -69,12 +70,30 @@ namespace TestVonMisesFisher
 			public int		RandomPointsCount;
 		}
 
+		[System.Diagnostics.DebuggerDisplay( "({Phi_deg},{Theta_deg}) k={Concentration} a={Alpha}" )]
+		class FitLobe {
+			public double	Alpha;
+			public Vector	Direction;
+			public double	Concentration;
+
+			public float	Phi		{ get { return (float) Math.Atan2( Direction.x, Direction.z ); } }
+			public float	Theta	{ get { return (float) Math.Acos( Direction.y ); } }
+			public float	Phi_deg		{ get { return (float) (180.0 * Math.Atan2( Direction.x, Direction.z ) / Math.PI); } }
+			public float	Theta_deg	{ get { return (float) (180.0 * Math.Acos( Direction.y ) / Math.PI); } }
+		}
+
 		RandomLobe[]	m_RandomLobes = new RandomLobe[] {
 //			new RandomLobe() { Phi = 30.0f, Theta = 45.0f, Concentration = 100.0f, RandomPointsCount = 4000 },
+
 			new RandomLobe() { Phi = 0.0f, Theta = 0.0f, Concentration = 0.1f, RandomPointsCount = 2000 },
-  			new RandomLobe() { Phi = 90.0f, Theta = 45.0f, Concentration = 4.0f, RandomPointsCount = 4000 },
-  			new RandomLobe() { Phi = 160.0f, Theta = 120.0f, Concentration = 20.0f, RandomPointsCount = 500 },
- 			new RandomLobe() { Phi = -60.0f, Theta = 70.0f, Concentration = 100.0f, RandomPointsCount = 1000 },
+ 			new RandomLobe() { Phi = 90.0f, Theta = 45.0f, Concentration = 4.0f, RandomPointsCount = 4000 },
+ 			new RandomLobe() { Phi = 160.0f, Theta = 120.0f, Concentration = 20.0f, RandomPointsCount = 500 },
+			new RandomLobe() { Phi = -60.0f, Theta = 70.0f, Concentration = 100.0f, RandomPointsCount = 1000 },
+
+// 			new RandomLobe() { Phi = 0.0f, Theta = 0.0f, Concentration = 0.1f, RandomPointsCount = 2000 },
+//   			new RandomLobe() { Phi = 90.0f, Theta = 45.0f, Concentration = 4.0f, RandomPointsCount = 2000 },
+//   			new RandomLobe() { Phi = 160.0f, Theta = 120.0f, Concentration = 20.0f, RandomPointsCount = 2000 },
+//  			new RandomLobe() { Phi = -60.0f, Theta = 70.0f, Concentration = 100.0f, RandomPointsCount = 2000 },
 		};
 
 		Vector[]		m_RandomDirections = null;
@@ -138,7 +157,10 @@ namespace TestVonMisesFisher
 			panelOutputNormalDistribution.UpdateBitmap();
 
 			// Do it!
-			PerformExpectationMaximization( m_RandomDirections, FITTING_LOBES_COUNT );
+			FitLobe[]	Result = new FitLobe[FITTING_LOBES_COUNT];
+			for ( int h=0; h < Result.Length; h++ )
+				Result[h] = new FitLobe();
+			PerformExpectationMaximization( m_RandomDirections, Result );
 		}
 
 		#region Bessel
@@ -281,10 +303,89 @@ pdf *= Math.Abs( Math.Sin( theta ) );	// Spherical coordinates integrand is sin(
 
 		#endregion
 
-		private void	PerformExpectationMaximization( Vector[] _Directions, int _LobesCount ) {
+		private void	PerformExpectationMaximization( Vector[] _Directions, FitLobe[] _Lobes ) {
+			int			n = _Directions.Length;
+			double		invN = 1.0 / n;
+			int			k = _Lobes.Length;
+			double[,]	probabilities = new double[n,k];
 
+			// 1] Initialize lobes
+			for ( int h=0; h < k; h++ ) {
+				_Lobes[h].Direction = _Directions[(int) ((h+0.5f) * n / k)];
+				_Lobes[h].Concentration = 0.5;
+				_Lobes[h].Alpha = 1.0 / k;
+			}
 
+			// 2] Iterate
+			int	iterationsCount = 0;
+			while ( ++iterationsCount < 1000 ) {
+				// 2.1] Compute Expectation (the E step of the algorithm)
+				for ( int i=0; i < n; i++ ) {
+					Vector	dir = _Directions[i];
 
+					// 2.1.1) Compute weighted probability for each direction to belong to each lobe
+					double	weightedSumProbabilities = 0.0;
+					for ( int h=0; h < k; h++ ) {
+						FitLobe	Lobe = _Lobes[h];
+
+						double	kappa = Lobe.Concentration;
+						double	dot = dir.Dot( Lobe.Direction );
+						double	f = kappa / (2.0 * Math.PI * (Math.Exp( kappa ) - Math.Exp( -kappa ))) * Math.Exp( kappa * dot );
+								f *= Lobe.Alpha;
+						probabilities[i,h] = f;
+						weightedSumProbabilities += f;
+					}
+					// 2.1.2) Normalize
+					double	normalizer = weightedSumProbabilities > 1e-12 ? 1.0 / weightedSumProbabilities : 0.0;
+					for ( int h=0; h < k; h++ ) {
+						probabilities[i,h] *= normalizer;
+					}
+				}
+
+				// 2.2] Compute Maximization (the M step of the algorithm)
+				double	sqConvergenceRate = 0.0;
+				for ( int h=0; h < k; h++ ) {
+					FitLobe	Lobe = _Lobes[h];
+
+					// Accumulate new alpha and average direction
+					Lobe.Alpha = 0.0;
+					double	mu_x = 0.0;
+					double	mu_y = 0.0;
+					double	mu_z = 0.0;
+					for ( int i=0; i < n; i++ ) {
+						Vector	dir = _Directions[i];
+						double	p = probabilities[i,h];
+						double	p_over_N = invN * p;
+
+						Lobe.Alpha += p_over_N;
+
+						mu_x += p_over_N * dir.x;
+						mu_y += p_over_N * dir.y;
+						mu_z += p_over_N * dir.z;
+					}
+
+					// Compute new direction
+					double	mu_length = Math.Sqrt( mu_x*mu_x + mu_y*mu_y + mu_z*mu_z );
+					double	r = Lobe.Alpha > 1e-12 ? mu_length / Lobe.Alpha : 0.0;
+
+					// Normalize direction
+					mu_length = mu_length > 1e-12 ? 1.0 / mu_length : 0.0;
+					Lobe.Direction.x = (float) (mu_length * mu_x);
+					Lobe.Direction.y = (float) (mu_length * mu_y);
+					Lobe.Direction.z = (float) (mu_length * mu_z);
+
+					// Compute new concentration
+					double	oldConcentration = Lobe.Concentration;
+					double	newConcentration = (3.0 * r - r*r*r) / (1.0 - r*r);
+					Lobe.Concentration = newConcentration;
+
+					sqConvergenceRate += (newConcentration - oldConcentration) * (newConcentration - oldConcentration);
+				}
+				sqConvergenceRate /= k * k;
+
+				if ( sqConvergenceRate < 1e-6 )
+					break;
+			}
 		}
 
 		private void panelOutput_BitmapUpdating( int W, int H, Graphics G )
