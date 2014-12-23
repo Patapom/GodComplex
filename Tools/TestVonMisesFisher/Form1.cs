@@ -59,20 +59,22 @@ namespace TestVonMisesFisher
 	/// </summary>
 	public partial class FittingForm : Form
 	{
-		const int		LOBES_COUNT = 3;
+		const int		FITTING_LOBES_COUNT = 4;
 
 		struct RandomLobe
 		{
 			public float	Phi;
 			public float	Theta;
-			public float	Variance;
+			public float	Concentration;
 			public int		RandomPointsCount;
 		}
 
 		RandomLobe[]	m_RandomLobes = new RandomLobe[] {
-			new RandomLobe() { Phi = 0.0f, Theta = 0.0f, Variance = 0.1f, RandomPointsCount = 200 },
-			new RandomLobe() { Phi = 90.0f, Theta = 30.0f, Variance = 4.0f, RandomPointsCount = 400 },
-			new RandomLobe() { Phi = 160.0f, Theta = 60.0f, Variance = 50.0f, RandomPointsCount = 50 },
+//			new RandomLobe() { Phi = 30.0f, Theta = 45.0f, Concentration = 100.0f, RandomPointsCount = 4000 },
+			new RandomLobe() { Phi = 0.0f, Theta = 0.0f, Concentration = 0.1f, RandomPointsCount = 2000 },
+  			new RandomLobe() { Phi = 90.0f, Theta = 45.0f, Concentration = 4.0f, RandomPointsCount = 4000 },
+  			new RandomLobe() { Phi = 160.0f, Theta = 120.0f, Concentration = 20.0f, RandomPointsCount = 500 },
+ 			new RandomLobe() { Phi = -60.0f, Theta = 70.0f, Concentration = 100.0f, RandomPointsCount = 1000 },
 		};
 
 		Vector[]		m_RandomDirections = null;
@@ -90,7 +92,7 @@ namespace TestVonMisesFisher
 			{
 				float	MainPhi = (float) (m_RandomLobes[LobeIndex].Phi * Math.PI / 180.0f);
 				float	MainTheta = (float) (m_RandomLobes[LobeIndex].Theta * Math.PI / 180.0f);
-				float	Variance = m_RandomLobes[LobeIndex].Variance;
+				float	Concentration = m_RandomLobes[LobeIndex].Concentration;
 				int		PointsCount = m_RandomLobes[LobeIndex].RandomPointsCount;
 
 				// Build the main direction for the target lobe
@@ -104,17 +106,21 @@ namespace TestVonMisesFisher
 				Matrix3x3	Rot = new Matrix3x3();
 				Rot.MakeRot( Vector.UnitY, MainDirection );
 
+				BuildDistributionMapping( Concentration, 0.0 );
+
 				// Draw random points in the Y-aligned hemisphere and transform them into the main direction
 				for ( int PointIndex=0; PointIndex < PointsCount; PointIndex++ )
 				{
-					float	CosTheta = (float) WMath.SimpleRNG.GetNormal( 0.0f, Variance );
-					float	SinTheta = (float) Math.Sqrt( 1.0f - CosTheta*CosTheta );
-					float	Phi = (float) (WMath.SimpleRNG.GetUniform() * 2.0 * Math.PI);
+					double	Theta = GetTheta();
+					float	CosTheta = (float) Math.Cos( Theta );
+//					float	SinTheta = (float) Math.Sqrt( 1.0f - CosTheta*CosTheta );
+					float	SinTheta = (float) Math.Sin( Theta );
+					float	Phi = (float) (WMath.SimpleRNG.GetUniform() * Math.PI);
 
 					Vector	RandomDirection = new Vector(
-						(float) (SinTheta * Math.Sin( MainPhi )),
+						(float) (SinTheta * Math.Sin( Phi )),
 						CosTheta,
-						(float) (SinTheta * Math.Cos( MainPhi ))
+						(float) (SinTheta * Math.Cos( Phi ))
 						);
 
 					Vector	FinalDirection = RandomDirection * Rot;
@@ -130,6 +136,9 @@ namespace TestVonMisesFisher
 
 			panelOutput.UpdateBitmap();
 			panelOutputNormalDistribution.UpdateBitmap();
+
+			// Do it!
+			PerformExpectationMaximization( m_RandomDirections, FITTING_LOBES_COUNT );
 		}
 
 		#region Bessel
@@ -236,23 +245,47 @@ namespace TestVonMisesFisher
 			double	dTheta = 2.0 * Math.PI / N;
 			double	sum = 0.0;
 			double	theta = -Math.PI;
-			double	I0 = ModifiedBesselI0( kappa );
-			double	Norm = dTheta / (2.0 * Math.PI * I0);
+
+			// Standard von Mises distribution
+//			double	I0 = ModifiedBesselI0( kappa );
+//			double	Norm = dTheta / (2.0 * Math.PI * I0);
+
+			// von Mises - Fisher distribution
+			double	I0_5 = kappa / (2.0 * Math.PI * (Math.Exp( kappa ) - Math.Exp( -kappa )));
+			double	Norm = dTheta * I0_5;
+					Norm *= Math.PI;		// Since theta € [-PI,+PI] and covers half, dPhi = PI
+
 			for ( int i=0; i < N; i++ ) {
 				double	pdf = Math.Exp( kappa * Math.Cos( theta - mu ) );
+
+pdf *= Math.Abs( Math.Sin( theta ) );	// Spherical coordinates integrand is sin(theta).dTheta.dPhi
+
 				double	prevSum = sum;
-				sum += pdf;
+				sum += pdf * Norm;
 				theta += dTheta;
 
-				int	x0 = (int) Math.Floor( prevSum );
-				int	x1 = Math.Min( N-1, (int) Math.Ceiling( sum ) );
+				int	x0 = (int) Math.Floor( prevSum * N );
+				int	x1 = Math.Min( N-1, (int) Math.Ceiling( sum * N ) );
 				for ( int x=x0; x < x1; x++ ) {
 					m_UniformRandom2Angle[x] = theta;
 				}
 			}
 		}
 
+		private double	GetTheta() {
+			double	x = WMath.SimpleRNG.GetUniform();
+			int		index = Math.Min( m_UniformRandom2Angle.Length-1, (int) Math.Floor( x * m_UniformRandom2Angle.Length ) );
+			double	value = m_UniformRandom2Angle[index];
+			return value;
+		}
+
 		#endregion
+
+		private void	PerformExpectationMaximization( Vector[] _Directions, int _LobesCount ) {
+
+
+
+		}
 
 		private void panelOutput_BitmapUpdating( int W, int H, Graphics G )
 		{
@@ -297,28 +330,62 @@ namespace TestVonMisesFisher
 // 			}
 
 
-			// Test CDF
+// 			// Test mapping
+// 			Color[]	colors = new Color[] {
+// 				Color.FromArgb( 0, 0, 0 ),
+// 				Color.FromArgb( 255, 0, 0 ),
+// 				Color.FromArgb( 255, 128, 0 ),
+// 				Color.FromArgb( 128, 255, 0 ),
+// 				Color.FromArgb( 0, 0, 255 ),
+// 			};
+// 
+// 			for ( int i=0; i < colors.Length; i++ ) {
+// 				using ( Pen P = new Pen( colors[i], 1.0f ) ) {
+// 					double	kappa = i > 0 ? Math.Pow( 2.0, -2.0 + i ) : 0.0;
+// 
+// 					BuildDistributionMapping( kappa, 0.0 );
+// 
+// 					double	py = 0.5 * (1.0 + m_UniformRandom2Angle[0] / Math.PI);
+// 					for ( int x=1; x < W; x++ ) {
+// 						double	y = 0.5 * (1.0 + m_UniformRandom2Angle[m_UniformRandom2Angle.Length*x/W] / Math.PI);
+// 
+// 						G.DrawLine( P, x-1, (H-1) * (float) (1.0-py), x, (H-1) * (float) (1.0-y) );
+// 
+// 						py = y;
+// 					}
+// 				}
+// 			}
+
+
+			// Test distribution
 			Color[]	colors = new Color[] {
-				Color.FromArgb( 0, 0, 0 ),
 				Color.FromArgb( 255, 0, 0 ),
 				Color.FromArgb( 255, 128, 0 ),
 				Color.FromArgb( 128, 255, 0 ),
 				Color.FromArgb( 0, 0, 255 ),
 			};
 
-			for ( int i=0; i < colors.Length; i++ ) {
-				using ( Pen P = new Pen( colors[i], 1.0f ) ) {
-					double	kappa = i > 0 ? Math.Pow( 2.0, -2.0 + i ) : 0.0;
+			G.DrawEllipse( Pens.Black, 0, 0, W, H );
 
-					BuildDistributionMapping( kappa, 0.0 );
+			int	PointIndex = 0;
+			for ( int LobeIndex=0; LobeIndex < m_RandomLobes.Length; LobeIndex++ )
+			{
+				float	MainPhi = (float) (m_RandomLobes[LobeIndex].Phi * Math.PI / 180.0f);
+				float	MainTheta = (float) (m_RandomLobes[LobeIndex].Theta * Math.PI / 180.0f);
+				float	Concentration = m_RandomLobes[LobeIndex].Concentration;
+				int		PointsCount = m_RandomLobes[LobeIndex].RandomPointsCount;
 
-					double	py = 0.5 * (1.0 + m_UniformRandom2Angle[0] / Math.PI);
-					for ( int x=1; x < W; x++ ) {
-						double	y = 0.5 * (1.0 + m_UniformRandom2Angle[m_UniformRandom2Angle.Length*x/W] / Math.PI);
+				using ( Brush B = new SolidBrush( colors[LobeIndex] ) ) {
+//					using ( Brush B2 = new SolidBrush( Color.FromArgb( colors[LobeIndex].R >> 1, colors[LobeIndex].G >> 1, colors[LobeIndex].B >> 1 ) ) ) {
+					using ( Brush B2 = new SolidBrush( Color.FromArgb( colors[LobeIndex].R * 2 / 3, colors[LobeIndex].G * 2 / 3, colors[LobeIndex].B * 2 / 3 ) ) ) {
 
-						G.DrawLine( P, x-1, (H-1) * (float) (1.0-py), x, (H-1) * (float) (1.0-y) );
+						for ( int i=0; i < PointsCount; i++, PointIndex++ ) {
+							Vector	Direction = m_RandomDirections[PointIndex];
 
-						py = y;
+							float	Px = 0.5f * (1.0f + Direction.x) * W;
+							float	Py = 0.5f * (1.0f - Direction.y) * H;
+							G.FillRectangle( Direction.z >= 0 ? B : B2, Px-1.0f, Py-1.0f, 2.0f, 2.0f );
+						}
 					}
 				}
 			}
