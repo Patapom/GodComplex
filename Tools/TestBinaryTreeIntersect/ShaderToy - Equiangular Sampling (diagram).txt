@@ -1,0 +1,349 @@
+// Code from:
+// https://www.shadertoy.com/view/4sSSWm
+//
+// Written by Hubw (Huw Bowles from Studio Gobo)
+//
+//
+//
+
+
+#define RANGEX 11.0
+#define RANGEY 8.0
+#define THICK  0.05
+#define EPS 0.001;
+
+// simple macros to pull mouse position in [0,1]
+#define MOUSEX	iMouse.x/iResolution.x
+#define MOUSEY	iMouse.y/iResolution.y
+
+#define CAMX (RANGEX*(MOUSEX-.5)*2.5)
+
+#define SAMPLE_COUNT 32
+#define PARAMETRIC_STEPS 32
+
+vec3 errorColour( float err, float maxerror );
+
+vec3 lightPos = vec3(MOUSEX*RANGEX,RANGEY/2.,0.);
+
+// the density line plot
+bool fn1( float x, out float y, out vec4 col )
+{
+    float u = x / RANGEX;
+    
+	col = vec4(1.,0.,0.,1.);
+	
+    vec3 rayOrigin = vec3(0.0,MOUSEY*RANGEY,0.);
+    vec3 rayDir = vec3(1.,0.,0.);
+    
+	float delta = dot(lightPos - rayOrigin, rayDir);
+    
+	float D = length(rayOrigin + delta*rayDir - lightPos);
+    
+	float thetaA = atan(0.0 - delta, D);
+	float thetaB = atan(RANGEX - delta, D);
+    
+	// take sample
+	float t = x-delta;
+	float pdf = D/((thetaB - thetaA)*(D*D + t*t));
+    
+	y = pdf;
+    
+	return true;
+}
+
+// visualise two tree levels
+float inten = .4;
+float visy0 = .5;
+bool fn2( float x, out float y, out vec4 col )
+{
+    y = MOUSEY*RANGEY;//pow( 2., 1.+floor(log2(MOUSEY*RANGEY)) );
+	col = vec4(inten);
+	return true;
+}
+
+
+
+// this parametric function places a white dot at each sample
+bool pfn1( float u, out float x, out float y, out vec4 col, out float mint, out float maxt )
+{
+	col = vec4(1.);
+	mint = 0.;
+	maxt = 1.;
+    
+	x = 0.;
+    y = RANGEY*MOUSEY;
+    
+    vec3 rayOrigin = vec3(0.0,y,0.);
+    vec3 rayDir = vec3(1.,0.,0.);
+    
+	float delta = dot(lightPos - rayOrigin, rayDir);
+    
+	float D = length(rayOrigin + delta*rayDir - lightPos);
+    
+	float thetaA = atan(0.0 - delta, D);
+	float thetaB = atan(RANGEX - delta, D);
+    
+	float t = D*tan(mix(thetaA, thetaB, u));
+	x = delta + t;
+    
+    // use y value of ray
+    vec4 col_dummy;
+	fn2(x,y,col_dummy);
+    
+	return true;
+}
+
+// show light source
+bool pfn2( float u, out float x, out float y, out vec4 col, out float mint, out float maxt )
+{
+	col = vec4(1.,1.,0.,1.);
+	mint = 0.;
+	maxt = 1.;
+    
+    float rayBand = .25;
+    if( u < 1.-rayBand )
+    {
+        u /= (1.-rayBand);
+        float rad = .04;
+        x = rad * cos(u*2.*3.14159) + lightPos.x;
+        y = rad * sin(u*2.*3.14159) + lightPos.y;
+    }
+    else
+    {
+        u = (u - (1.-rayBand))/rayBand;
+        float rad = .15;
+        x = rad * cos(u*2.*3.14159) + lightPos.x;
+        y = rad * sin(u*2.*3.14159) + lightPos.y;
+    }
+    
+	return true;
+}
+
+
+vec4 graph( vec2 p, float xmin, float xmax, float ymin, float ymax, float width );
+
+void main(void)
+{
+    vec2 uv = gl_FragCoord.xy / iResolution.xy;
+
+    // uv minx maxx miny maxy thickness
+	gl_FragColor = graph( uv, 0., RANGEX, 0., RANGEY, THICK );
+
+	return;
+}
+
+
+float drawNumber( float num, vec2 pos, vec2 pixel_coords );
+
+// p is in [0,1]. 
+vec4 graph( vec2 p, float xmin, float xmax, float ymin, float ymax, float width )
+{
+	vec4 result = vec4(0.1);
+	
+	float thisx = xmin + (xmax-xmin)*p.x;
+	float thisy = ymin + (ymax-ymin)*p.y;
+	
+	// compute gradient between this pixel and next (seems reasonable)
+	float eps = dFdx(thisx);
+
+	float alpha;
+	
+	vec4 axisCol = vec4(vec3(.3),1.);
+	
+	// axes
+	// x
+	alpha = abs( thisy - 0. ); alpha = smoothstep( width, width/4., alpha );
+	result = (1.-alpha)*result + alpha*axisCol;
+	// y
+	alpha = abs( thisx - 0. ); alpha = smoothstep( width, width/4., alpha );
+	result = (1.-alpha)*result + alpha*axisCol;
+	
+	// uses iq's awesome distance to implicit http://www.iquilezles.org/www/articles/distance/distance.htm
+	float f;
+	vec4 fcol;
+	if( fn1( thisx, f, fcol ) )
+	{
+		float f_1; fn1( thisx + eps, f_1, fcol ); float f_prime = (f_1 - f) / eps;
+		alpha = abs(thisy - f)/sqrt(1.+f_prime*f_prime); alpha = smoothstep( width, width/4., alpha ); alpha *= fcol.a;
+		result = (1.-alpha)*result + alpha*fcol;
+	}
+	if( fn2( thisx, f, fcol ) )
+	{
+		float f_1; fn2( thisx + eps, f_1, fcol ); float f_prime = (f_1 - f) / eps;
+		alpha = abs(thisy - f)/sqrt(1.+f_prime*f_prime); alpha = smoothstep( width, width/4., alpha ); alpha *= fcol.a;
+		result = (1.-alpha)*result + alpha*fcol;
+	}
+	// parametric curves. todo - join the dots!
+	float x, mint, maxt;
+	if( pfn2( 0., x, f, fcol, mint, maxt ) )
+	{
+		float dt = (maxt-mint)/float(PARAMETRIC_STEPS);
+		float t = mint;
+		for( int i = 0; i <= PARAMETRIC_STEPS; i++ )
+		{
+			pfn2( t, x, f, fcol, mint, maxt );
+			alpha = length(vec2(x,f)-vec2(thisx,thisy));
+			alpha = smoothstep( width, width/4., alpha ); alpha *= fcol.a;
+			result = (1.-alpha)*result + alpha*fcol;
+			t += dt;
+		}
+	}
+	if( pfn1( 0., x, f, fcol, mint, maxt ) )
+	{
+		float dt = (maxt-mint)/float(PARAMETRIC_STEPS);
+		float t = mint;
+		for( int i = 0; i <= PARAMETRIC_STEPS; i++ )
+		{
+			pfn1( t, x, f, fcol, mint, maxt );
+			alpha = length(vec2(x,f)-vec2(thisx,thisy));
+			alpha = smoothstep( width, width/4., alpha ); alpha *= fcol.a;
+			result = (1.-alpha)*result + alpha*fcol;
+			t += dt;
+		}
+	}
+	
+	result += vec4(drawNumber(xmin, vec2(0.,0.)+vec2(1.)/iResolution.xy, p ));
+	result += vec4(drawNumber(xmax, vec2(1.,0.)+vec2(-26.,1.)/iResolution.xy, p ));
+	result += vec4(drawNumber(ymax, vec2(0.,1.)+vec2(1.,-7.)/iResolution.xy, p ));
+	result += vec4(drawNumber(ymin, vec2(0.,0.)+vec2(1.,10.)/iResolution.xy, p ));
+	
+	return result;
+}
+
+// digits based on the nice ascii shader by movAX13h
+
+float drawDig( vec2 pos, vec2 pixel_coords, float bitfield )
+{
+	// offset relative to 
+	vec2 ic = pixel_coords - pos ;
+	ic = floor(ic*iResolution.xy);
+	// test if overlap letter
+	if( clamp(ic.x, 0., 2.) == ic.x && clamp(ic.y, 0., 4.) == ic.y )
+	{
+		// compute 1d bitindex from 2d pos
+		float bitIndex = ic.y*3.+ic.x;
+		// isolate the bit
+		return floor( mod( bitfield / exp2( floor(bitIndex) ), 2. ) );
+	}
+	return 0.;
+}
+// decimal point
+float drawDecPt( vec2 center, vec2 pixel_coords )
+{
+	return drawDig( center, pixel_coords, 1. );
+}
+// minus sign
+float drawMinus( vec2 center, vec2 pixel_coords )
+{
+	return drawDig( center, pixel_coords, 448. );
+}
+// digits 0 to 9
+float drawDigit( float dig, vec2 pos, vec2 pixel_coords )
+{
+	if( dig == 1. )
+		return drawDig( pos, pixel_coords, 18724. );
+	if( dig == 2. )
+		return drawDig( pos, pixel_coords, 31183. );
+	if( dig == 3. )
+		return drawDig( pos, pixel_coords, 31207. );
+	if( dig == 4. )
+		return drawDig( pos, pixel_coords, 23524. );
+	if( dig == 5. )
+		return drawDig( pos, pixel_coords, 29671. );
+	if( dig == 6. )
+		return drawDig( pos, pixel_coords, 29679. );
+	if( dig == 7. )
+		return drawDig( pos, pixel_coords, 31012. );
+	if( dig == 8. )
+		return drawDig( pos, pixel_coords, 31727. );
+	if( dig == 9. )
+		return drawDig( pos, pixel_coords, 31719. );
+	// 0
+	return drawDig( pos, pixel_coords, 31599. );
+}
+
+// max num width is 26px (minus, 3 nums, dec pt, 2 nums)
+// max height is 6px
+float drawNumber( float num, vec2 pos, vec2 pixel_coords )
+{
+	float result = 0.;
+	bool on = false;
+	float d;
+	
+	// minus sign
+	if( num < 0. )
+	{
+		result += drawMinus( pos, pixel_coords );
+		pos.x += 4. / iResolution.x;
+		num = -num;
+	}
+	// hundreds
+	d = floor(mod(num/100.,10.));
+	if( on || d > 0. )
+	{
+		result += drawDigit( d, pos, pixel_coords );
+		pos.x += 4. / iResolution.x;
+		on = true;
+	}
+	// tens
+	d = floor(mod(num/10.,10.));
+	if( on || d > 0. )
+	{
+		result += drawDigit( d, pos, pixel_coords );
+		pos.x += 4. / iResolution.x;
+		on = true;
+	}
+	// ones
+	d = floor(mod(num,10.));
+	result += drawDigit( d, pos, pixel_coords );
+	pos.x += 4. / iResolution.x;
+	// dec pt
+	result += drawDecPt( pos, pixel_coords );
+	pos.x += 2. / iResolution.x;
+	// tenths
+	d = floor(mod(num/.1,10.));
+	if( true )
+	{
+		result += drawDigit( d, pos, pixel_coords );
+		pos.x += 4. / iResolution.x;
+	}
+	// hundredths
+	d = floor(.5+mod(num/.01,10.));
+	if( d > 0. )
+	{
+		result += drawDigit( d, pos, pixel_coords );
+		pos.x += 4. / iResolution.x;
+	}
+	
+	return clamp(result,0.,1.);
+}
+
+vec3 hsv2rgb(vec3 c);
+vec3 rgb2hsv(vec3 c);
+
+vec3 errorColour( float err, float maxerror )
+{
+	err = 1. - err / maxerror;
+	err *= 2. / 3.;
+	return hsv2rgb( vec3(err, 1., 1.) );
+}
+
+//http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
+
+vec3 rgb2hsv(vec3 c)
+{
+    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+    float d = q.x - min(q.w, q.y);
+    float e = 1.0e-10;
+    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+vec3 hsv2rgb(vec3 c)
+{
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}

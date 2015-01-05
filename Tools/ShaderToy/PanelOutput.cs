@@ -6,21 +6,13 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 
-namespace Nuaj.Cirrus.Utility
+namespace ShaderToy
 {
-	[System.ComponentModel.DefaultEvent( "BitmapUpdating" )]
 	public class PanelOutput : Panel
 	{
-		private Bitmap	m_bitmap = null;
-
-		public delegate void	UpdateBitmapDelegate( int W, int H, Graphics G );
-
-		public event UpdateBitmapDelegate	BitmapUpdating;
-
 		public PanelOutput()
 		{
 			InitializeComponent();
-			UpdateBitmap();
 		}
 
 		public PanelOutput( IContainer container )
@@ -28,7 +20,6 @@ namespace Nuaj.Cirrus.Utility
 			container.Add( this );
 
 			InitializeComponent();
-			UpdateBitmap();
 		}
 
 		/// <summary>
@@ -45,8 +36,6 @@ namespace Nuaj.Cirrus.Utility
 			if ( disposing && (components != null) )
 			{
 				components.Dispose();
-				if ( m_bitmap != null )
-					m_bitmap.Dispose();
 			}
 			base.Dispose( disposing );
 		}
@@ -64,40 +53,15 @@ namespace Nuaj.Cirrus.Utility
 
 		#endregion
 
-		public void	UpdateBitmap() {
-
-			if ( m_bitmap == null || m_bitmap.Width != Width || m_bitmap.Height != Height ) {
-				if ( m_bitmap != null )
-					m_bitmap.Dispose();
-				m_bitmap = new Bitmap( Width, Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb );
-			}
-
-			using ( Graphics G = Graphics.FromImage( m_bitmap ) )
-				if ( BitmapUpdating != null )
-					BitmapUpdating( Width, Height, G );
-				else
-					G.FillRectangle( Brushes.White, 0, 0, Width, Height );
-
-			Invalidate();
-		}
-
 		protected override void OnResize( EventArgs eventargs )
 		{
 			base.OnResize( eventargs );
-			UpdateBitmap();
+			Invalidate();
 		}
 
 		protected override void OnPaintBackground( PaintEventArgs e )
 		{
 //			base.OnPaintBackground( e );	// Don't!
-		}
-
-		protected override void OnPaint( PaintEventArgs e )
-		{
-			base.OnPaint( e );
-			if ( m_bitmap != null ) {
-				e.Graphics.DrawImage( m_bitmap, 0, 0 );
-			}
 		}
 	}
 }
