@@ -1369,7 +1369,7 @@ namespace ImageUtility
         /// <summary>
         /// Creates a new instance of the TargaImage object with strFileName as the image loaded.
         /// </summary>
-        public TargaImage(string strFileName) : this()
+        public TargaImage( string strFileName, bool _ReadHeaderOnly ) : this()
         {
             // make sure we have a .tga file
             if (System.IO.Path.GetExtension(strFileName).ToLower() == ".tga")
@@ -1393,8 +1393,10 @@ namespace ImageUtility
                                 {
                                     this.LoadTGAFooterInfo(binReader);
                                     this.LoadTGAHeaderInfo(binReader);
-                                    this.LoadTGAExtensionArea(binReader);
-                                    this.LoadTGAImage(binReader);
+									if ( !_ReadHeaderOnly ) {
+										this.LoadTGAExtensionArea(binReader);
+										this.LoadTGAImage(binReader);
+	                                }
                                 }
                             }
                             else
@@ -2366,7 +2368,7 @@ namespace ImageUtility
         public static System.Drawing.Bitmap LoadTargaImage(string sFileName)
         {
             System.Drawing.Bitmap b = null;
-            using (TargaImage ti = new TargaImage(sFileName))
+            using (TargaImage ti = new TargaImage(sFileName, false))
             {
                 b = new System.Drawing.Bitmap(ti.Image);
             }
