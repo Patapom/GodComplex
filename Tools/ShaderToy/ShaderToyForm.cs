@@ -126,7 +126,8 @@ namespace ShaderToy
 
 			try
 			{
-				m_Shader_Christmas = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Christmas.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+//				m_Shader_Christmas = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Christmas.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+				m_Shader_Christmas = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Airlight.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 
 				m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			}

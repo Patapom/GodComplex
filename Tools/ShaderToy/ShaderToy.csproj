@@ -79,6 +79,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="Shaders\Airlight.hlsl" />
     <None Include="Shaders\Christmas.hlsl" />
   </ItemGroup>
   <ItemGroup>

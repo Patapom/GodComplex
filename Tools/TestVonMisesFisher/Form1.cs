@@ -82,6 +82,8 @@ namespace TestVonMisesFisher
 			public float	Theta_deg	{ get { return (float) (180.0 * Math.Acos( Direction.y ) / Math.PI); } }
 		}
 
+//		relire l'article sur le scattering => glow = exp chou ?
+
 		RandomLobe[]	m_RandomLobes = new RandomLobe[] {
 //			new RandomLobe() { Phi = 30.0f, Theta = 45.0f, Concentration = 100.0f, RandomPointsCount = 4000 },
 
