@@ -138,13 +138,13 @@ namespace WMath
 								_Op0.x * _Op1.m[0,2] + _Op0.y * _Op1.m[1,2] + _Op0.z * _Op1.m[2,2]
 								);
 		}
-		public static Vector		operator*( Matrix3x3 _Op0, Vector _Op1 )
-		{
-			return new Vector(	_Op1.x * _Op0.m[0,0] + _Op1.y * _Op0.m[0,1] + _Op1.z * _Op0.m[0,2],
-								_Op1.x * _Op0.m[1,0] + _Op1.y * _Op0.m[1,1] + _Op1.z * _Op0.m[1,2],
-								_Op1.x * _Op0.m[2,0] + _Op1.y * _Op0.m[2,1] + _Op1.z * _Op0.m[2,2]
-								);
-		}
+// 		public static Vector		operator*( Matrix3x3 _Op0, Vector _Op1 )
+// 		{
+// 			return new Vector(	_Op1.x * _Op0.m[0,0] + _Op1.y * _Op0.m[0,1] + _Op1.z * _Op0.m[0,2],
+// 								_Op1.x * _Op0.m[1,0] + _Op1.y * _Op0.m[1,1] + _Op1.z * _Op0.m[1,2],
+// 								_Op1.x * _Op0.m[2,0] + _Op1.y * _Op0.m[2,1] + _Op1.z * _Op0.m[2,2]
+// 								);
+// 		}
 		public static Vector		operator*( Vector _Op0, Matrix4x4 _Op1 )
 		{
 			return new Vector(	_Op0.x * _Op1.m[0,0] + _Op0.y * _Op1.m[1,0] + _Op0.z * _Op1.m[2,0],
@@ -152,13 +152,13 @@ namespace WMath
 								_Op0.x * _Op1.m[0,2] + _Op0.y * _Op1.m[1,2] + _Op0.z * _Op1.m[2,2]
 								);
 		}
-		public static Vector		operator*( Matrix4x4 _Op0, Vector _Op1 )
-		{
-			return new Vector(	_Op1.x * _Op0.m[0,0] + _Op1.y * _Op0.m[0,1] + _Op1.z * _Op0.m[0,2],
-								_Op1.x * _Op0.m[1,0] + _Op1.y * _Op0.m[1,1] + _Op1.z * _Op0.m[1,2],
-								_Op1.x * _Op0.m[2,0] + _Op1.y * _Op0.m[2,1] + _Op1.z * _Op0.m[2,2]
-								);
-		}
+// 		public static Vector		operator*( Matrix4x4 _Op0, Vector _Op1 )
+// 		{
+// 			return new Vector(	_Op1.x * _Op0.m[0,0] + _Op1.y * _Op0.m[0,1] + _Op1.z * _Op0.m[0,2],
+// 								_Op1.x * _Op0.m[1,0] + _Op1.y * _Op0.m[1,1] + _Op1.z * _Op0.m[1,2],
+// 								_Op1.x * _Op0.m[2,0] + _Op1.y * _Op0.m[2,1] + _Op1.z * _Op0.m[2,2]
+// 								);
+// 		}
 		public static Vector		operator/( Vector _Op0, float _s )				{ float Is = 1.0f / _s; return new Vector( _Op0.x * Is, _Op0.y * Is, _Op0.z * Is ); }
 		public static Vector		operator/( Vector _Op0, Vector _Op1 )			{ return new Vector( _Op0.x / _Op1.x, _Op0.y / _Op1.y, _Op0.z / _Op1.z ); }
 		public static float			operator|( Vector _Op0, Vector _Op1 )			{ return _Op0.x * _Op1.x + _Op0.y * _Op1.y + _Op0.z * _Op1.z; }

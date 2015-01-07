@@ -16,6 +16,7 @@ namespace ShaderToy
 	{
 		private Device		m_Device = new Device();
 
+
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Main {
 			public float3		iResolution;

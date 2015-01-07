@@ -102,8 +102,29 @@ namespace TestVonMisesFisher
 		float[]			m_RandomThetas = null;
 
 
+// 		public Matrix3x3			MakeRot( Vector _from, Vector _to )
+// 		{
+// 			Vector	v = _from.Cross( _to );
+// 			float	c = _from.Dot( _to );
+// 			float	k = 1.0f / (1.0f + c);
+// 
+// 			Matrix3x3	R = new Matrix3x3();
+// 			R.m[0, 0] = v.x*v.x*k + c;		R.m[0, 1] = v.y*v.x*k - v.z;	R.m[0, 2] = v.z*v.x*k + v.y;
+// 			R.m[1, 0] = v.x*v.y*k + v.z;	R.m[1, 1] = v.y*v.y*k + c;		R.m[1, 2] = v.z*v.y*k - v.x;
+// 			R.m[2, 0] = v.x*v.z*k - v.y;	R.m[2, 1] = v.y*v.z*k + v.x;	R.m[2, 2] = v.z*v.z*k + c;
+// 
+// 			return R;
+// 		}
+
+
 		public FittingForm()
 		{
+// 			Random		RNG = new Random();
+// 			Vector		From = new Vector( 2.0f * (float) RNG.NextDouble() - 1.0f, 2.0f * (float) RNG.NextDouble() - 1.0f, 2.0f * (float) RNG.NextDouble() - 1.0f ).Normalized;
+// 			Vector		To = new Vector( 2.0f * (float) RNG.NextDouble() - 1.0f, 2.0f * (float) RNG.NextDouble() - 1.0f, 2.0f * (float) RNG.NextDouble() - 1.0f ).Normalized;
+// 			Matrix3x3	Pipo = MakeRot( From, To );
+// 			Vector		Test = Pipo * From;
+
 			InitializeComponent();
 
 			// Create the random points
