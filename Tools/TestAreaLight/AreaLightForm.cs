@@ -112,12 +112,42 @@ namespace AreaLightTest
 				using ( System.IO.BinaryWriter W = Buff.OpenStreamWrite() )
 					W.Write( _Content );
 
-				return Image2Texture( _Width, _Height, Buff );
+				return Image2Texture( _Width, _Height, PIXEL_FORMAT.RGBA8_UNORM_sRGB, Buff );
 			}
 		}
-		public Texture2D	Image2Texture( int _Width, int _Height, PixelsBuffer _Content )
+		public Texture2D	PipoImage2Texture( System.IO.FileInfo _FileName ) {
+			using ( System.IO.FileStream S = _FileName.OpenRead() )
+				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+
+					int	W, H;
+					W = R.ReadInt32();
+					H = R.ReadInt32();
+
+					PixelsBuffer	Buff = new PixelsBuffer( 4 * W * H * 4 );
+					using ( System.IO.BinaryWriter Wr = Buff.OpenStreamWrite() )
+					{
+						WMath.Vector4D	C = new WMath.Vector4D();
+						for ( int Y=0; Y < H; Y++ ) {
+							for ( int X=0; X < W; X++ ) {
+								C.x = R.ReadSingle();
+								C.y = R.ReadSingle();
+								C.z = R.ReadSingle();
+								C.w = R.ReadSingle();
+
+								Wr.Write( C.x );
+								Wr.Write( C.y );
+								Wr.Write( C.z );
+								Wr.Write( C.w );
+							}
+						}
+					}
+
+					return Image2Texture( W, H, PIXEL_FORMAT.RGBA32_FLOAT, Buff );
+				}
+		}
+		public Texture2D	Image2Texture( int _Width, int _Height, PIXEL_FORMAT _Format, PixelsBuffer _Content )
 		{
-			return new Texture2D( m_Device, _Width, _Height, 1, 1, PIXEL_FORMAT.RGBA8_UNORM_sRGB, false, false, new PixelsBuffer[] { _Content } );
+			return new Texture2D( m_Device, _Width, _Height, 1, 1, _Format, false, false, new PixelsBuffer[] { _Content } );
 		}
 
 		/// <summary>
@@ -177,6 +207,25 @@ namespace AreaLightTest
 			}
 
 			DirectXTexManaged.TextureCreator.CreateRGBA16FFile( _TargetFileName.FullName, Image );
+
+			// Save as a simple format
+			string	Pipo = _TargetFileName.FullName;
+			Pipo = System.IO.Path.GetFileNameWithoutExtension( Pipo ) + ".pipo";
+			System.IO.FileInfo	SimpleTargetFileName = new System.IO.FileInfo(  Pipo );
+			using ( System.IO.FileStream S = SimpleTargetFileName.OpenWrite() )
+				using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
+
+					Wr.Write( W );
+					Wr.Write( H );
+					for ( int Y=0; Y < H; Y++ ) {
+						for ( int X=0; X < W; X++ ) {
+							Wr.Write( Image[X,Y].x );
+							Wr.Write( Image[X,Y].y );
+							Wr.Write( Image[X,Y].z );
+							Wr.Write( Image[X,Y].w );
+						}
+					}
+				}
 		} 
 
 		#endregion
@@ -224,8 +273,8 @@ namespace AreaLightTest
 			}
 
 			BuildPrimitives();
-			m_Tex_AreaLight = Image2Texture( new System.IO.FileInfo( "StainedGlass.jpg" ) );
-			m_Tex_AreaLightSAT = Image2Texture( new System.IO.FileInfo( "AreaLightSAT.png" ) );
+			m_Tex_AreaLight = Image2Texture( new System.IO.FileInfo( "StainedGlass.png" ) );
+			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT.pipo" ) );
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
@@ -241,15 +290,15 @@ namespace AreaLightTest
 				m_Shader_RenderAreaLight = null;
 			}
 
-			try
-			{
-				m_Shader_RenderScene = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ) ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
-			}
-			catch ( Exception _e )
-			{
-				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
-				m_Shader_RenderScene = null;
-			}
+// 			try
+// 			{
+// 				m_Shader_RenderScene = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ) ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
+// 			}
+// 			catch ( Exception _e )
+// 			{
+// 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
+// 				m_Shader_RenderScene = null;
+// 			}
 
 			// Start game time
 			m_Ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
@@ -296,6 +345,25 @@ namespace AreaLightTest
 			return Time;
 		}
 
+		public void	UpdateCamera() {
+
+			float3	Position = new float3( 0, 1, 4 );
+			float3	Target = new float3( 0, 1, 0 );
+
+//			m_CB_Camera.m._Camera2World = new float4x4();
+			m_CB_Camera.m._Camera2World.MakeLookAtCamera( Position, Target, float3.UnitY );
+			m_CB_Camera.m._World2Camera = m_CB_Camera.m._Camera2World.Inverse;
+
+//			m_CB_Camera.m._Camera2Proj = new float4x4();
+			m_CB_Camera.m._Camera2Proj.MakeProjectionPerspective( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
+			m_CB_Camera.m._Proj2Camera = m_CB_Camera.m._Camera2Proj.Inverse;
+
+			m_CB_Camera.m._World2Proj = m_CB_Camera.m._World2Camera * m_CB_Camera.m._Camera2Proj;
+			m_CB_Camera.m._Proj2World = m_CB_Camera.m._Camera2World * m_CB_Camera.m._Proj2Camera;
+
+			m_CB_Camera.UpdateData();
+		}
+
 		void Application_Idle( object sender, EventArgs e )
 		{
 			if ( m_Device == null )
@@ -307,17 +375,21 @@ namespace AreaLightTest
 			m_CB_Main.UpdateData();
 
 			// Setup camera data
-// 			m_CB_Camera.m.iResolution = new float3( panelOutput.Width, panelOutput.Height, 0 );
-// 			m_CB_Camera.m.iGlobalTime = GetGameTime() - m_StartTime;
-			m_CB_Camera.UpdateData();
+			UpdateCamera();
 
 			// Render scene
-			m_Device.SetRenderTarget( m_Device.DefaultTarget, null );
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
+			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
+
+			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
+			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
 
 			if ( m_Shader_RenderAreaLight != null ) {
 
-				m_CB_Camera.UpdateData();
+//				m_CB_Object.m._Local2World = new float4x4();
+				m_CB_Object.m._Local2World.MakeLookAt( float3.UnitY, float3.UnitY + float3.UnitZ, float3.UnitY ); 
+				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
+				m_CB_Object.UpdateData();
 
 				m_Tex_AreaLight.SetPS( 0 );
 
