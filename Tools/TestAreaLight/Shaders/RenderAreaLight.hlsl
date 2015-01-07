@@ -5,6 +5,7 @@ cbuffer CB_Object : register(b2) {
 };
 
 Texture2D< float4 >	_TexAreaLight : register(t0);
+Texture2D< float4 >	_TexAreaLightSAT : register(t1);
 
 struct VS_IN {
 	float3	Position : POSITION;
@@ -33,5 +34,6 @@ PS_IN	VS( VS_IN _In ) {
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float4	StainedGlass = _TexAreaLight.Sample( LinearClamp, _In.UV );
+			StainedGlass = 0.01 * _TexAreaLightSAT.Sample( LinearClamp, _In.UV );
 	return float4( StainedGlass.xyz, 1 );
 }

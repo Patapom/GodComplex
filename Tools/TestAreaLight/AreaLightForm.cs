@@ -65,7 +65,7 @@ namespace AreaLightTest
 			InitializeComponent();
 
 
-//ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
+ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
 
 
 			Application.Idle += new EventHandler( Application_Idle );
@@ -200,9 +200,8 @@ namespace AreaLightTest
 			}
 
 			for ( int Y=1; Y < H; Y++ ) {
-				Image[0,Y] += Image[W-1,Y-1];	// Sum the total of previous scanline
 				for ( int X=1; X < W; X++ ) {
-					Image[X,Y] += Image[X-1,Y-1];
+					Image[X,Y] += Image[X-1,Y] + Image[X,Y-1];
 				}
 			}
 
@@ -392,6 +391,7 @@ namespace AreaLightTest
 				m_CB_Object.UpdateData();
 
 				m_Tex_AreaLight.SetPS( 0 );
+				m_Tex_AreaLightSAT.SetPS( 1 );
 
 				m_Shader_RenderAreaLight.Use();
 				m_Prim_Rectangle.Render( m_Shader_RenderAreaLight );
