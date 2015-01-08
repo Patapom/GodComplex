@@ -49,7 +49,7 @@ namespace TestBinaryTreeIntersect
 			int		TreeLevel = (int) Math.Pow( 2.0, Math.Floor( Math.Log( y0 ) / Math.Log(2.0) ) );
 
 			float	SegmentWidth = 2.0f * TreeLevel;
-			float	SegmentIndex = (float) Math.Floor( _Distance / SegmentWidth );
+			int		SegmentIndex = (int) Math.Floor( _Distance / SegmentWidth );
 
 			for( int i = 0; i < 3; i++ )
 			{
@@ -67,10 +67,10 @@ namespace TestBinaryTreeIntersect
 				if ( LineFunction( (SegmentIndex+1.0f) * SegmentWidth ) > 2.0f * TreeLevel ) {
 					// move up a level
 					TreeLevel *= 2;
-					SegmentIndex = (float) Math.Floor( SegmentIndex/2.0f );
+					SegmentIndex >>= 1;
 				} else {
 					// Move to next segment
-					SegmentIndex += 1.0f;
+					SegmentIndex++;
 				}
 			}
 	
@@ -78,13 +78,13 @@ namespace TestBinaryTreeIntersect
 			return 0.0f;
 		}
 
-		// all this really should be on the CPU. this computes the sample distances which do not vary across pixels
+		// All this really should be on the CPU. this computes the sample distances which do not vary across pixels
 		const int	SAMPLE_COUNT = 32;
 		float[]		m_Distances = new float[SAMPLE_COUNT+1]; //+1 because we'll do forward differences to calc dt
 
 		void populateDists()
 		{
-			// generate a naiive view space sampling if the mouse button is down
+			// generate a naïve view space sampling if the mouse button is down
 			bool useNewApproach = true;
 // 			if( iMouse.z > 0. )
 // 				useNewApproach = false;
