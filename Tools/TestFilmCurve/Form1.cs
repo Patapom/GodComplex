@@ -16,6 +16,8 @@ namespace TestGradientPNG
 		{
 			InitializeComponent();
 
+			panelGraph.ScaleX = floatTrackbarControlScaleX.Value;
+			panelGraph.ScaleY = floatTrackbarControlScaleY.Value;
 			
 			using ( Bitmap B = new Bitmap( 512, 512, PixelFormat.Format32bppArgb ) )
 			{

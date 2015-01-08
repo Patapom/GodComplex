@@ -311,3 +311,6 @@ obj
 /RendererD3D11/Release
 /Tests/TestDevice/Debug
 /Tests/TestDevice/Release
+/Packages/FBXImporterManaged/Debug DirectX10
+/Packages/LibRawManaged/Debug DirectX10
+/Tools/DirectXTexManaged/Debug DirectX10

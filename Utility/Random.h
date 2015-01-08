@@ -6,6 +6,9 @@
 // Written by John D. Cook 
 // http://www.johndcook.com
 //
+// Project page:
+// http://www.codeproject.com/Articles/25172/Simple-Random-Number-Generation
+//
 #pragma once
 
 #define RAND_DEFAULT_SEED_U	521288629

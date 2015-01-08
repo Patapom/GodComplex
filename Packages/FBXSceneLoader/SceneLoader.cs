@@ -377,7 +377,7 @@ namespace FBX.SceneLoader
 				if ( m_MaterialsDatabase != null )
 				{	// Handle the special case of scenes that were exported as OBJ format and whos material informations lie in the diffuse color "texture"
 					FBXImporter.ObjectProperty	DiffuseColorProperty = Mat.FindProperty( "DiffuseColor" );
-					if ( DiffuseColorProperty.Textures.Length > 0 )
+					if ( DiffuseColorProperty != null && DiffuseColorProperty.Textures.Length > 0 )
 					{
 						string	PseudoTextureName = DiffuseColorProperty.Textures[0].AbsoluteFileName;	// Actually a material name!
 						MaterialsDatabase.Material	MatOverride = m_MaterialsDatabase.FindByName( PseudoTextureName );

@@ -49,7 +49,7 @@ namespace GCXFormat
 
 				// Get diffuse color + texture ID
 				P = _SourceMaterial.Find( "DiffuseColor" );
-				m_DiffuseColor = P.AsFloat3.Value;
+				m_DiffuseColor = P != null ? P.AsFloat3.Value : Vector.One;
 
 				P = _SourceMaterial.Find( "DiffuseTexture" );
 				m_DiffuseTextureID = _Mapper( P != null ? P.AsTexture2D : null );

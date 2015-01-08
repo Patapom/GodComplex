@@ -13,7 +13,8 @@ namespace RendererManaged {
 		Pt4,		// Transformed position (vector4)
 		P3,			// Position
 		P3N3,		// Position+Normal
-		P3N3G3B3T2,	// Position+Normal+Tangent+BiTangent+UV
+		P3N3G3T2,	// Position+Normal+Tangent+UV
+		P3N3G3B3T2,	// Position+Normal+Tangent+Bitangent+UV
 	};
 
 	static ::IVertexFormatDescriptor*	GetDescriptor( VERTEX_FORMAT _Format )
@@ -24,7 +25,8 @@ namespace RendererManaged {
 		case VERTEX_FORMAT::Pt4:		pDescriptor = &VertexFormatPt4::DESCRIPTOR; break;
 		case VERTEX_FORMAT::P3:			pDescriptor = &VertexFormatP3::DESCRIPTOR; break;
 		case VERTEX_FORMAT::P3N3:		pDescriptor = &VertexFormatP3N3::DESCRIPTOR; break;
-		case VERTEX_FORMAT::P3N3G3B3T2:	pDescriptor = &VertexFormatP3N3G3T2::DESCRIPTOR; break;
+		case VERTEX_FORMAT::P3N3G3T2:	pDescriptor = &VertexFormatP3N3G3T2::DESCRIPTOR; break;
+		case VERTEX_FORMAT::P3N3G3B3T2:	pDescriptor = &VertexFormatP3N3G3B3T2::DESCRIPTOR; break;
 		default:	throw gcnew Exception( "Unsupported vertex format!" );
 		}
 
@@ -104,6 +106,42 @@ namespace RendererManaged {
 					W->Write( _Vertices[VertexIndex].N.x );
 					W->Write( _Vertices[VertexIndex].N.y );
 					W->Write( _Vertices[VertexIndex].N.z );
+				}
+				Buffer->CloseStream();
+			}
+			return Buffer;
+		}
+	};
+
+	//////////////////////////////////////////////////////////////////////////
+	// P3N3G3T2
+	[System::Runtime::InteropServices::StructLayoutAttribute( System::Runtime::InteropServices::LayoutKind::Sequential )]
+	public value struct VertexP3N3G3T2
+	{
+		float3	P;		// Position
+		float3	N;		// Normal
+		float3	T;		// Tangent
+		float2	UV;		// TexCoords
+
+		static property int	SizeOf	{ int get() { return System::Runtime::InteropServices::Marshal::SizeOf(VertexP3N3G3T2::typeid); } }
+		static ByteBuffer^	FromArray( cli::array<VertexP3N3G3T2>^ _Vertices )
+		{
+			ByteBuffer^	Buffer = gcnew ByteBuffer( _Vertices->Length * VertexP3N3G3T2::SizeOf );
+			{
+				System::IO::BinaryWriter^ W = Buffer->OpenStreamWrite();
+				for ( int VertexIndex=0; VertexIndex < _Vertices->Length; VertexIndex++ )
+				{
+					W->Write( _Vertices[VertexIndex].P.x );
+					W->Write( _Vertices[VertexIndex].P.y );
+					W->Write( _Vertices[VertexIndex].P.z );
+					W->Write( _Vertices[VertexIndex].N.x );
+					W->Write( _Vertices[VertexIndex].N.y );
+					W->Write( _Vertices[VertexIndex].N.z );
+					W->Write( _Vertices[VertexIndex].T.x );
+					W->Write( _Vertices[VertexIndex].T.y );
+					W->Write( _Vertices[VertexIndex].T.z );
+					W->Write( _Vertices[VertexIndex].UV.x );
+					W->Write( _Vertices[VertexIndex].UV.y );
 				}
 				Buffer->CloseStream();
 			}

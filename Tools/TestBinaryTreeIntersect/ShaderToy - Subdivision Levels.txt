@@ -1,0 +1,208 @@
+// Code from:
+// https://www.shadertoy.com/view/XdfXzn
+//
+// Written by Hubw (Huw Bowles from Studio Gobo)
+//
+//
+//
+
+// FASS - Fast Adaptive Stationary Sampling
+
+// IQ made the original scene: https://www.shadertoy.com/view/XslGRr
+
+// The problem this shader attempts to solve is to efficiently sample each pixel ray,
+// keeping the samples close to stationary in world space, while adapting
+// the sample rate to meet arbitrary requirements (such as concentrating samples
+// near the viewer). This requires a way to smoothly interpolate between sample
+// densities which is achieved as follows.
+
+// Samples are taken at integral power of 2 increments
+
+// Dens 2:  X               X               
+// Dens 4:  X       X       X       X       
+// Dens 8:  X   X   X   X   X   X   X   X   
+
+// If we start at density 2, we can always move down to density 4, as there is always
+// a valid sample location in level 4 for every sample position in level 2.
+// However from density 4, we can only move up to 2 at even sample locations
+
+// To make the transitions between sample levels smooth, each odd sample is given a weight.
+// When moving from density 4 to density 2, the odd samples will gradually be faded out.
+
+// For a work in progress shader illustrating the sampling see
+// https://www.shadertoy.com/view/XlfGzM
+
+// The old version of this algorithm that computed samples on a binary tree is archived here
+// https://www.shadertoy.com/view/XlXGz7
+// My previous shaders either computed explicit intersections with the tree (slow), or divided the
+// ray into chunks and efficiently computed intersections with branches of the tree based on the
+// average density in each chunk. The chunk size forced a minimum sampling rate. In contrast, this
+// latest version of the algorithm evaluates the desired density at each sample and has no minimum
+// sampling rate, is simpler, has less local variables and holds samples COMPLETELY stationary in Z.
+
+#define SPEED 3.
+#define SAMPLE_COUNT 32
+#define DIST_MAX 128.
+#define SAMPLES_ADAPTIVITY .2
+#define EPS 0.001
+
+// mouse toggle
+bool useNewApproach = true;
+
+vec3 sundir = normalize(vec3(-1.0,0.0,-1.));
+
+// LUT based 3d value noise
+float noise( in vec3 x )
+{
+    vec3 p = floor(x);
+    vec3 f = fract(x);
+    f = f*f*(3.0-2.0*f);
+    
+    vec2 uv = (p.xy+vec2(37.0,17.0)*p.z) + f.xy;
+    vec2 rg = texture2D( iChannel0, (uv+ 0.5)/256.0, -100.0 ).yx;
+    return mix( rg.x, rg.y, f.z );
+}
+
+
+vec4 map( in vec3 p )
+{
+    float d = 0.2 - p.y;
+
+    // huwb - im moving the camera in the world instead of moving the clouds
+    vec3 q = p;// - vec3(1.0,0.1,0.0)*iGlobalTime;
+    float f;
+    f  = 0.5000*noise( q ); q = q*2.02;
+    f += 0.2500*noise( q ); q = q*2.03;
+    f += 0.1250*noise( q ); q = q*2.01;
+    f += 0.0625*noise( q );
+
+    d += 3.0 * f;
+
+    d = clamp( d, 0.0, 1.0 );
+    
+    vec4 res = vec4( d );
+
+    res.xyz = mix( 1.15*vec3(1.0,0.95,0.8), vec3(0.7,0.7,0.7), res.x );
+    
+    return res;
+}
+
+// NEW compute desired spacing between samples, modelled as a 1/z curve
+float spacing(float t )
+{
+    // restrict to domain
+    t = max(t,0.);
+    
+    // unnorm pdf - plot this in graphtoy to see shape
+    float pdf = 1. / (SAMPLES_ADAPTIVITY*t + 1.);
+	// integral of pdf over dist
+	float norm = (1. / SAMPLES_ADAPTIVITY)*log(1. + SAMPLES_ADAPTIVITY*DIST_MAX);
+    // norm pdf
+    pdf /= norm;
+    
+    // sample spacing for our sample count
+    return 1. / (float(SAMPLE_COUNT) * pdf);
+}
+
+// NEW mod but moves the boundaries to keep them stationary with the camera
+float mov_mod( float x, float y )
+{
+    return mod(x + (useNewApproach ? SPEED*iGlobalTime : 0.), y) ;
+}
+// NEW put t on an appropriate sample location and initialise sampling data
+void firstT( out float t, out float dt, out float wt, out bool even )
+{
+    t = 0.;
+    dt = exp2(floor(log2(spacing(t))));
+    t = t - mov_mod(t,dt) + dt;
+    even = mov_mod(t,2.*dt) < EPS;
+    wt = 1.;
+}
+// NEW advance t to next sample location
+void nextT( inout float t, inout float dt, inout float wt, inout bool even )
+{
+    float s = spacing(t); // get desired sample spacing
+    if( s < dt ) { dt /= 2.; wt = 1.; even = true; } // can immediately move to higher density
+    else if( even && s > 2.*dt ) { dt *= 2.; wt = 1.; even = mov_mod(t,2.*dt) < EPS; } // move to lower density if a sample is there
+
+    // next sample
+    t += dt;
+    even = !even;
+    if( !even ) wt = clamp( 2. - s/dt,0.,1.); // update wt for odd sample - based on how far previous sample is into its band
+}
+// NEW wt for blending in/out samples without pops
+float sampleWt( float wt, bool even )
+{
+    return even ? (2.-wt) : wt;
+}
+
+vec4 raymarch( in vec3 ro, in vec3 rd )
+{
+    vec4 sum = vec4(0, 0, 0, 0);
+    
+    // setup sampling
+    float t, dt, wt; bool even;
+    firstT( t, dt, wt, even );
+    
+    for(int i=0; i<SAMPLE_COUNT; i++)
+    {
+        if( sum.a > 0.99 ) continue;
+
+        vec3 pos = ro + t*rd;
+        vec4 col = map( pos );
+        
+        // iqs goodness
+        float dif =  clamp((col.w - map(pos+0.3*sundir).w)/0.6, 0.0, 1.0 );
+        vec3 lin = vec3(0.65,0.68,0.7)*1.35 + 0.45*vec3(0.7, 0.5, 0.3)*dif;
+        col.xyz *= lin;
+        col.a *= 0.35;
+        col.rgb *= col.a;
+
+        // fade samples at far field
+        float fadeout = 1.-clamp((t/(DIST_MAX*.3)-.85)/.15,0.,1.); // .3 is an ugly fudge factor due to oversampling
+            
+        // integrate
+        float thisDt = dt * sampleWt( wt, even); // blend in dts
+        thisDt = sqrt(thisDt/5. )*5.; // hack to soften and brighten
+        sum += thisDt * col * (1.0 - sum.a) * fadeout;
+
+        // next sample
+        nextT( t, dt, wt, even );
+    }
+
+    sum.xyz /= (0.001+sum.w);
+
+    return clamp( sum, 0.0, 1.0 );
+}
+
+void main(void)
+{
+    if( iMouse.z > 0. )
+        useNewApproach = false;
+    
+    vec2 q = gl_FragCoord.xy / iResolution.xy;
+    vec2 p = -1.0 + 2.0*q;
+    p.x *= iResolution.x/ iResolution.y;
+    vec2 mo = -1.0 + 2.0*iMouse.xy / iResolution.xy;
+   
+    // camera
+    vec3 ro = vec3(0.-SPEED*iGlobalTime,1.9,0.);//4.0*normalize(vec3(cos(2.75-3.0*mo.x), 0.7+(mo.y+1.0), sin(2.75-3.0*mo.x)));
+    vec3 ta = vec3(ro.x-1., ro.y, ro.z);
+    vec3 ww = normalize( ta - ro);
+    vec3 uu = normalize(cross( vec3(0.0,1.0,0.0), ww ));
+    vec3 vv = normalize(cross(ww,uu));
+    vec3 rd = normalize( p.x*uu + 1.2*p.y*vv + 1.5*ww );
+
+    // divide by forward component to get fixed z instead of fixed dist samples
+    vec4 res = raymarch( ro, rd/dot(rd,ww) );
+
+    float sun = clamp( dot(sundir,rd), 0.0, 1.0 );
+    vec3 col = vec3(0.6,0.71,0.75) - rd.y*0.2*vec3(1.0,0.5,1.0) + 0.15*0.5;
+    col += 0.2*vec3(1.0,.6,0.1)*pow( sun, 8.0 );
+    col *= 0.95;
+    col = mix( col, res.xyz, res.w );
+    col += 0.1*vec3(1.0,0.4,0.2)*pow( sun, 3.0 );
+        
+    gl_FragColor = vec4( col, 1.0 );
+}
+

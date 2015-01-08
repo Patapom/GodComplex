@@ -8,6 +8,9 @@ namespace WMath
 	/// 
 	/// Written by John D. Cook 
 	/// http://www.johndcook.com
+	/// 
+	/// Project page:
+	/// http://www.codeproject.com/Articles/25172/Simple-Random-Number-Generation
 	/// </summary>
 	public class SimpleRNG
 	{

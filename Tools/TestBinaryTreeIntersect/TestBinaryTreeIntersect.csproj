@@ -84,8 +84,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="ShaderToy - Equiangular Sampling %28diagram%29.txt" />
     <Content Include="ShaderToy - Binary Tree Intersect.txt" />
     <Content Include="ShaderToy - Clouds.txt" />
+    <Content Include="ShaderToy - Equiangular Sampling.txt" />
+    <Content Include="ShaderToy - FASS.txt" />
+    <Content Include="ShaderToy - Subdivision Levels.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
