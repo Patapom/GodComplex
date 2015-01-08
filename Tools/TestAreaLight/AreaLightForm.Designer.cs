@@ -90,7 +90,7 @@
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "AreaLightForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-			this.Text = "ShaderToy";
+			this.Text = "Area Light Test";
 			this.ResumeLayout(false);
 			this.PerformLayout();
 

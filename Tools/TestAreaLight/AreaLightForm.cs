@@ -65,7 +65,8 @@ namespace AreaLightTest
 			InitializeComponent();
 
 
-ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
 
 
 			Application.Idle += new EventHandler( Application_Idle );
@@ -195,13 +196,15 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo
 			}
 
 			// Perform the accumulation
-			for ( int X=1; X < W; X++ ) {
-				Image[X,0] += Image[X-1,0];		// Build first scanline
+			for ( int Y=0; Y < H; Y++ ) {
+				for ( int X=1; X < W; X++ ) {
+					Image[X,Y] += Image[X-1,Y];		// Build first scanline
+				}
 			}
 
-			for ( int Y=1; Y < H; Y++ ) {
-				for ( int X=1; X < W; X++ ) {
-					Image[X,Y] += Image[X-1,Y] + Image[X,Y-1];
+			for ( int X=0; X < W; X++ ) {
+				for ( int Y=1; Y < H; Y++ ) {
+					Image[X,Y] += Image[X,Y-1];
 				}
 			}
 

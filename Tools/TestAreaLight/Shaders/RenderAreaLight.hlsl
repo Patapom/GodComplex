@@ -20,7 +20,6 @@ struct PS_IN {
 	float2	UV : TEXCOORDS0;
 };
 
-
 PS_IN	VS( VS_IN _In ) {
 
 	PS_IN	Out;
@@ -32,8 +31,28 @@ PS_IN	VS( VS_IN _In ) {
 	return Out;
 }
 
+static const uint2	TEX_SIZE = uint2( 465, 626 );
+static const float3	dUV = float3( 1.0 / TEX_SIZE, 0.0 );
+
+float4	SampleSATSinglePixel( float2 _UV ) {
+
+	float2	PixelIndex = _UV * TEX_SIZE;
+	float2	NextPixelIndex = PixelIndex + 1;
+	float2	UV2 = NextPixelIndex / TEX_SIZE;
+
+	float4	C00 = _TexAreaLightSAT.Sample( LinearClamp, _UV );
+	float4	C01 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xz );
+	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.zy );
+	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xy );
+
+	return C11 - C10 - C01 + C00;
+}
+
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float4	StainedGlass = _TexAreaLight.Sample( LinearClamp, _In.UV );
-			StainedGlass = 0.01 * _TexAreaLightSAT.Sample( LinearClamp, _In.UV );
+			StainedGlass = 0.0001 * _TexAreaLightSAT.Sample( LinearClamp, _In.UV );
+
+StainedGlass = SampleSATSinglePixel( _In.UV );
+
 	return float4( StainedGlass.xyz, 1 );
 }
