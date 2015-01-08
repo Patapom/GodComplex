@@ -43,8 +43,9 @@ namespace AreaLightTest
 		private struct CB_Material {
 			public float4x4		_AreaLight2World;
 			public float4x4		_World2AreaLight;
-			public float3		_ProjectionDirection;
+			public float3		_ProjectionDirectionDiff;
 			public float		_Area;
+			public float3		_ProjectionDirectionSpec;
 			public float		_LightIntensity;
 			public float		_Gloss;
 			public float		_Metal;
@@ -364,6 +365,10 @@ namespace AreaLightTest
 		public void	UpdateCamera() {
 
 			float3	Position = new float3( 0, 1, 4 );
+					Position.x += floatTrackbarControlCameraPosX.Value;
+					Position.y += floatTrackbarControlCameraPosY.Value;
+					Position.z += floatTrackbarControlCameraPosZ.Value;
+
 			float3	Target = new float3( 0, 1, 0 );
 
 			m_CB_Camera.m._Camera2World.MakeLookAtCamera( Position, Target, float3.UnitY );
@@ -393,7 +398,7 @@ namespace AreaLightTest
 
 			// =========== Render ===========
 			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
 
 			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
 			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
@@ -403,7 +408,7 @@ namespace AreaLightTest
 			float		SizeX = 0.5f;
 			float		SizeY = 1.0f;
 			float4x4	AreaLight2World = new float4x4(); 
-						AreaLight2World.MakeLookAt( float3.UnitY, float3.UnitY + float3.UnitZ, float3.UnitY );
+						AreaLight2World.MakeLookAt( new float3( 0, 1, -1 ), float3.UnitY + float3.UnitZ, float3.UnitY );
 						AreaLight2World.Scale( new float3( SizeX, SizeY, 1.0f ) );
 
 			float4x4	World2AreaLight = AreaLight2World.Inverse;
@@ -438,14 +443,17 @@ namespace AreaLightTest
 
 				const float	DiffusionMin = 1e-2f;
 				const float	DiffusionMax = 1000.0f;
-				float	Diffusion = DiffusionMin / (DiffusionMin / DiffusionMax + floatTrackbarControlProjectionDiffusion.Value);
-						Direction *= Diffusion;
+//				float	Diffusion_Diffuse = DiffusionMin / (DiffusionMin / DiffusionMax + floatTrackbarControlProjectionDiffusion.Value);
+				float	Diffusion_Diffuse = DiffusionMax + (DiffusionMin - DiffusionMax) * (float) Math.Pow( floatTrackbarControlProjectionDiffusion.Value, 0.05f );
+				float	Diffusion_Specular = DiffusionMax + (DiffusionMin - DiffusionMax) * (float) Math.Pow( 1.0f - floatTrackbarControlProjectionDiffusion.Value, 0.05f );
 
-				float3	LocalDirection = (new float4( Direction, 0 ) * World2AreaLight).AsVec3;
+				float3	LocalDirection_Diffuse = (new float4( Diffusion_Diffuse * Direction, 0 ) * World2AreaLight).AsVec3;
+				float3	LocalDirection_Specular = (new float4( Diffusion_Specular * Direction, 0 ) * World2AreaLight).AsVec3;
 
 				m_CB_Material.m._AreaLight2World = AreaLight2World;
 				m_CB_Material.m._World2AreaLight = World2AreaLight;
-				m_CB_Material.m._ProjectionDirection = LocalDirection;
+				m_CB_Material.m._ProjectionDirectionDiff = LocalDirection_Diffuse;
+				m_CB_Material.m._ProjectionDirectionSpec = LocalDirection_Specular;
 				m_CB_Material.m._Area = SizeX * SizeY;
 				m_CB_Material.m._LightIntensity = floatTrackbarControlLightIntensity.Value;
 				m_CB_Material.m._Gloss = floatTrackbarControlGloss.Value;

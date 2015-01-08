@@ -42,9 +42,15 @@
 			this.label4 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlLightIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label5 = new System.Windows.Forms.Label();
-			this.panelOutput = new AreaLightTest.PanelOutput(this.components);
 			this.floatTrackbarControlMetal = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label6 = new System.Windows.Forms.Label();
+			this.panelOutput = new AreaLightTest.PanelOutput(this.components);
+			this.floatTrackbarControlCameraPosX = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label7 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlCameraPosY = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label8 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlCameraPosZ = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label9 = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlProjectionDiffusion
@@ -94,7 +100,7 @@
 			this.floatTrackbarControlProjectionTheta.RangeMin = -90F;
 			this.floatTrackbarControlProjectionTheta.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlProjectionTheta.TabIndex = 1;
-			this.floatTrackbarControlProjectionTheta.Value = 0F;
+			this.floatTrackbarControlProjectionTheta.Value = -20F;
 			this.floatTrackbarControlProjectionTheta.VisibleRangeMax = 90F;
 			this.floatTrackbarControlProjectionTheta.VisibleRangeMin = -90F;
 			// 
@@ -162,7 +168,8 @@
 			this.floatTrackbarControlLightIntensity.RangeMin = 0F;
 			this.floatTrackbarControlLightIntensity.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlLightIntensity.TabIndex = 1;
-			this.floatTrackbarControlLightIntensity.Value = 1F;
+			this.floatTrackbarControlLightIntensity.Value = 10F;
+			this.floatTrackbarControlLightIntensity.VisibleRangeMax = 100F;
 			// 
 			// label5
 			// 
@@ -172,13 +179,6 @@
 			this.label5.Size = new System.Drawing.Size(72, 13);
 			this.label5.TabIndex = 3;
 			this.label5.Text = "Light Intensity";
-			// 
-			// panelOutput
-			// 
-			this.panelOutput.Location = new System.Drawing.Point(12, 12);
-			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size(1024, 640);
-			this.panelOutput.TabIndex = 0;
 			// 
 			// floatTrackbarControlMetal
 			// 
@@ -202,12 +202,88 @@
 			this.label6.TabIndex = 3;
 			this.label6.Text = "Metal";
 			// 
+			// panelOutput
+			// 
+			this.panelOutput.Location = new System.Drawing.Point(12, 12);
+			this.panelOutput.Name = "panelOutput";
+			this.panelOutput.Size = new System.Drawing.Size(1024, 640);
+			this.panelOutput.TabIndex = 0;
+			// 
+			// floatTrackbarControlCameraPosX
+			// 
+			this.floatTrackbarControlCameraPosX.Location = new System.Drawing.Point(1180, 244);
+			this.floatTrackbarControlCameraPosX.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlCameraPosX.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlCameraPosX.Name = "floatTrackbarControlCameraPosX";
+			this.floatTrackbarControlCameraPosX.RangeMax = 100F;
+			this.floatTrackbarControlCameraPosX.RangeMin = -100F;
+			this.floatTrackbarControlCameraPosX.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlCameraPosX.TabIndex = 1;
+			this.floatTrackbarControlCameraPosX.Value = 0F;
+			this.floatTrackbarControlCameraPosX.VisibleRangeMin = -10F;
+			// 
+			// label7
+			// 
+			this.label7.AutoSize = true;
+			this.label7.Location = new System.Drawing.Point(1059, 251);
+			this.label7.Name = "label7";
+			this.label7.Size = new System.Drawing.Size(74, 13);
+			this.label7.TabIndex = 3;
+			this.label7.Text = "Camrea Pos X";
+			// 
+			// floatTrackbarControlCameraPosY
+			// 
+			this.floatTrackbarControlCameraPosY.Location = new System.Drawing.Point(1180, 270);
+			this.floatTrackbarControlCameraPosY.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlCameraPosY.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlCameraPosY.Name = "floatTrackbarControlCameraPosY";
+			this.floatTrackbarControlCameraPosY.RangeMax = 100F;
+			this.floatTrackbarControlCameraPosY.RangeMin = -100F;
+			this.floatTrackbarControlCameraPosY.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlCameraPosY.TabIndex = 1;
+			this.floatTrackbarControlCameraPosY.Value = 0F;
+			this.floatTrackbarControlCameraPosY.VisibleRangeMin = -10F;
+			// 
+			// label8
+			// 
+			this.label8.AutoSize = true;
+			this.label8.Location = new System.Drawing.Point(1059, 277);
+			this.label8.Name = "label8";
+			this.label8.Size = new System.Drawing.Size(74, 13);
+			this.label8.TabIndex = 3;
+			this.label8.Text = "Camrea Pos Y";
+			// 
+			// floatTrackbarControlCameraPosZ
+			// 
+			this.floatTrackbarControlCameraPosZ.Location = new System.Drawing.Point(1180, 296);
+			this.floatTrackbarControlCameraPosZ.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlCameraPosZ.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlCameraPosZ.Name = "floatTrackbarControlCameraPosZ";
+			this.floatTrackbarControlCameraPosZ.RangeMax = 100F;
+			this.floatTrackbarControlCameraPosZ.RangeMin = -100F;
+			this.floatTrackbarControlCameraPosZ.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlCameraPosZ.TabIndex = 1;
+			this.floatTrackbarControlCameraPosZ.Value = 0F;
+			this.floatTrackbarControlCameraPosZ.VisibleRangeMin = -10F;
+			// 
+			// label9
+			// 
+			this.label9.AutoSize = true;
+			this.label9.Location = new System.Drawing.Point(1059, 303);
+			this.label9.Name = "label9";
+			this.label9.Size = new System.Drawing.Size(74, 13);
+			this.label9.TabIndex = 3;
+			this.label9.Text = "Camrea Pos Z";
+			// 
 			// AreaLightForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1392, 665);
 			this.Controls.Add(this.label6);
+			this.Controls.Add(this.label9);
+			this.Controls.Add(this.label8);
+			this.Controls.Add(this.label7);
 			this.Controls.Add(this.label4);
 			this.Controls.Add(this.label5);
 			this.Controls.Add(this.label3);
@@ -215,6 +291,9 @@
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.floatTrackbarControlMetal);
+			this.Controls.Add(this.floatTrackbarControlCameraPosZ);
+			this.Controls.Add(this.floatTrackbarControlCameraPosY);
+			this.Controls.Add(this.floatTrackbarControlCameraPosX);
 			this.Controls.Add(this.floatTrackbarControlGloss);
 			this.Controls.Add(this.floatTrackbarControlLightIntensity);
 			this.Controls.Add(this.floatTrackbarControlProjectionPhi);
@@ -247,6 +326,12 @@
 		private System.Windows.Forms.Label label5;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlMetal;
 		private System.Windows.Forms.Label label6;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlCameraPosX;
+		private System.Windows.Forms.Label label7;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlCameraPosY;
+		private System.Windows.Forms.Label label8;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlCameraPosZ;
+		private System.Windows.Forms.Label label9;
 	}
 }
 

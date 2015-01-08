@@ -8,8 +8,9 @@ cbuffer CB_Object : register(b2) {
 cbuffer CB_Material : register(b3) {
 	float4x4	_AreaLight2World;
 	float4x4	_World2AreaLight;
-	float3		_ProjectionDirection;
+	float3		_ProjectionDirectionDiff;	// Closer to portal when diffusion increases
 	float		_Area;
+	float3		_ProjectionDirectionSpec;	// Closer to portal when diffusion decreases
 	float		_LightIntensity;
 	float		_Gloss;
 	float		_Metal;
@@ -62,7 +63,25 @@ float4	SampleSATSinglePixel( float2 _UV ) {
 	return C11 - C10 - C01 + C00;
 }
 
-// Computes the 2 Uv and the solid angle perceived from a point in world space
+float4	SampleSAT( float2 _UV0, float2 _UV1 ) {
+	// Sample SAT
+	float4	C00 = _TexAreaLightSAT.Sample( LinearClamp, _UV0 );
+	float4	C01 = _TexAreaLightSAT.Sample( LinearClamp, float2( _UV1.x, _UV0.y ) );
+	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, float2( _UV0.x, _UV1.y ) );
+	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV1 );
+	float4	C = C11 - C10 - C01 + C00;
+
+	// Compute normalization factor
+	float2	DeltaUV = _UV1 - _UV0;
+	float	PixelsCount = (DeltaUV.x * TEX_SIZE.x) * (DeltaUV.y * TEX_SIZE.y);
+
+// PixelsCount = 1.0;
+
+	return C / (1e-6 + PixelsCount);
+}
+
+
+// Computes the 2 Uv and the solid angle perceived from a single point in world space
 bool	ComputeSolidAngleFromPoint( float3 _wsPosition, float3 _wsNormal, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle ) {
 
 	float3	lsPosition = mul( float4( _wsPosition, 1.0 ), _World2AreaLight ).xyz;		// Transform world position in local area light space
@@ -96,15 +115,15 @@ bool	ComputeSolidAngleFromPoint( float3 _wsPosition, float3 _wsNormal, out float
 	// Compute the UV coordinates of the intersection of the frustum with the portal's plane
 	float2	lsIntersection[2] = { 0.0.xx, 0.0.xx };
 	for ( uint Corner=0; Corner < 2; Corner++ ) {
-		float3	lsVirtualPos = lsPortal[Corner] - _ProjectionDirection;	// This is the position of the corner of the virtual source
-		float3	Dir = lsVirtualPos - lsPosition;						// This is the pointing direction, originating from the source _wsPosition
-		float	t = -lsPosition.z / Dir.z;								// This is the distance at which we hit the physical portal's plane
-		lsIntersection[Corner] = (lsPosition + t * Dir).xy;				// This is the position on the portal's plane
+		float3	lsVirtualPos = lsPortal[Corner] - _ProjectionDirectionDiff;	// This is the position of the corner of the virtual source
+		float3	Dir = lsVirtualPos - lsPosition;							// This is the pointing direction, originating from the source _wsPosition
+		float	t = -lsPosition.z / Dir.z;									// This is the distance at which we hit the physical portal's plane
+		lsIntersection[Corner] = (lsPosition + t * Dir).xy;					// This is the position on the portal's plane
 	}
 
 	// Retrieve the UVs
-	_UV0 = 0.5 * (1.0 + lsIntersection[0]);
-	_UV1 = max( _UV0 + dUV.xy, 0.5 * (1.0 + lsIntersection[1]) );		// Make sure the UVs are at least separated by a single texel before clamping
+	_UV0 = 0.5 * (1.0 + float2( lsIntersection[0].x, -lsIntersection[0].y));
+	_UV1 = max( _UV0 + dUV.xy, 0.5 * (1.0 + float2( lsIntersection[1].x, -lsIntersection[1].y)) );	// Make sure the UVs are at least separated by a single texel before clamping
 
 	// Clamp to [0,1]
 	_UV0 = saturate( _UV0 );
@@ -124,24 +143,120 @@ bool	ComputeSolidAngleFromPoint( float3 _wsPosition, float3 _wsNormal, out float
 	// Now, we can compute the projected solid angle by dotting with the normal
 	_ProjectedSolidAngle = saturate( dot( _wsNormal, wsPos2Center ) ) * SolidAngle;	// (N.Wi) * dWi
 
+
+_ProjectedSolidAngle = 1;//UVArea;
+
+
+// _UV0 = lsPosition.xy;
+// _UV1 = lsPosition.z;
+// _UV0 = _UV1;
+// _UV1 = 0;
+
 	return true;
 }
 
-float4	SampleSAT( float2 _UV0, float2 _UV1 ) {
-	// Sample SAT
-	float4	C00 = _TexAreaLightSAT.Sample( LinearClamp, _UV0 );
-	float4	C01 = _TexAreaLightSAT.Sample( LinearClamp, float2( _UV1.x, _UV0.y ) );
-	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, float2( _UV0.x, _UV1.y ) );
-	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV1 );
-	float4	C = C11 - C10 - C01 + C00;
 
-	// Compute normalization factor
+// Computes the 2 Uv and the solid angle perceived from a single point in world space watching the area light through a cone (used for specular reflection)
+//	_wsPosition, the world space position of the surface watching the area light
+//	_wsNormal, the world space normal of the surface
+//	_wsView, the view direction (usually, the main reflection direction)
+//	_TanHalfAngle, the tangent of the half-angle of the cone watching
+//
+// Returns:
+//	_UV0, _UV1, the 2 UV coordinates where to sample the SAT
+//	_ProjectedSolidAngle, an estimate of the perceived projected solid angle (i.e. cos(IncidentAngle) * dOmega)
+//
+bool	ComputeSolidAngleFromPointAndDirection( float3 _wsPosition, float3 _wsNormal, float3 _wsView, float _TanHalfAngle, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle, out float4 _Debug ) {
+
+_Debug = 0.0;
+
+	float3	lsPosition = mul( float4( _wsPosition, 1.0 ), _World2AreaLight ).xyz;	// Transform world position into local area light space
+	float3	lsView = mul( float4( _wsView, 0.0 ), _World2AreaLight ).xyz;			// Transform world direction into local area light space
+	if ( lsPosition.z <= 0.0 || lsView.z >= 0.0 ) {
+		// Position is behind area light or watching away from it...
+		_UV0 = _UV1 = 0.0;
+		_ProjectedSolidAngle = 0.0;
+		return false;
+	}
+
+	// In local area light space, the position is in front of a canonical square:
+	//
+	//	(-1,+1)					(+1,+1)
+	//			o-------------o
+	//			|             |
+	//			|             |
+	//			|             |
+	//			|      o      |
+	//			|             |
+	//			|             |
+	//			|             |
+	//			o-------------o
+	//	(-1,-1)					(+1,-1)
+	//
+	//
+
+	// Build a reference frame for the view direction
+	float3	Y = normalize( float3( 0.0, -lsView.z, lsView.y ) );	// = normalize( cross( PlaneTangent, lsView );  where PlaneTangent = (1,0,0)
+	float3	X = cross( lsView, Y );
+
+	// Generate the 4 rays encompassing the cone aperture
+	float2	Dirs[4] = {
+		float2( -1, +1 ),
+		float2( +1, +1 ),
+		float2( -1, -1 ),
+		float2( +1, -1 ),
+	};
+
+	// Compute the intersection of the frustum with the virtual source's plane
+	float	Distance2VirtualSource = lsPosition.z + _ProjectionDirectionSpec.z;
+	float3	lsVirtualSourceCenter = -_ProjectionDirectionSpec;					// Center of the virtual source
+
+	float2	HitMin = 1e6;
+	float2	HitMax = -1e6;
+	for ( uint Corner=0; Corner < 4; Corner++ ) {
+
+		float3	vsDirection = float3( _TanHalfAngle * Dirs[Corner], 1.0 );						// Ray direction in view space
+		float3	lsDirection = vsDirection.x * X + vsDirection.y * Y + vsDirection.z * lsView;	// Ray direction in local space
+
+		float	t = -Distance2VirtualSource / lsDirection.z;									// Distance at which the ray hits the virtual source's plane
+		float3	lsIntersection = lsPosition + t * lsDirection - lsVirtualSourceCenter;			// Hit position on the virtual source's plane, relative to its center
+
+		// Keep min and max hit positions
+		HitMin = min( HitMin, lsIntersection.xy );
+		HitMax = max( HitMax, lsIntersection.xy );
+	}
+
+	// Compute the UV's from the hit positions
+	_UV0 = 0.5 * (1.0 + float2( HitMin.x, -HitMin.y));
+	_UV1 = max( _UV0 + dUV.xy, 0.5 * (1.0 + float2( HitMax.x, -HitMax.y)) );	// Make sure the UVs are at least separated by a single texel before clamping
+
+//_Debug = float4( _UV1, 0, 0 );
+
+	// Clamp to [0,1]
+	_UV0 = saturate( _UV0 );
+	_UV1 = saturate( _UV1 );
+
+	// Compute the solid angle
 	float2	DeltaUV = _UV1 - _UV0;
-	float	PixelsCount = (DeltaUV.x * TEX_SIZE.x) * (DeltaUV.y * TEX_SIZE.y);
+	float	UVArea = DeltaUV.x * DeltaUV.y;	// This is the perceived area in UV space
+	float	wsArea = UVArea * _Area;		// This is the perceived area in world space
 
-	return C / (1e-6 + PixelsCount);
+	float	SolidAngle = wsArea * -dot( _wsView, _AreaLight2World[2].xyz );	// dWi = Area * cos( theta )
+
+	// Now, we can compute the projected solid angle by dotting with the normal
+	_ProjectedSolidAngle = saturate( dot( _wsNormal, _wsView ) ) * SolidAngle;	// (N.Wi) * dWi
+
+
+_ProjectedSolidAngle = 1;//UVArea;
+
+
+// _UV0 = lsPosition.xy;
+// _UV1 = lsPosition.z;
+// _UV0 = _UV1;
+// _UV1 = 0;
+
+	return true;
 }
-
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 // 	float4	StainedGlass = _TexAreaLight.Sample( LinearClamp, _In.UV );
@@ -150,17 +265,44 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 
 	float3	wsPosition = _In.Position;
 	float3	wsNormal = normalize( _In.Normal );
+	float3	wsView = normalize( wsPosition - _Camera2World[3].xyz );
 
 	const float3	RhoD = 0.5;	// 50% diffuse albedo
+	const float3	RhoS = 1.0;
 
-	// Compute diffuse lighting
-	float3	Ld = 0.0;
-	float2	UV0, UV1;
-	float	SolidAngle;
-	if ( ComputeSolidAngleFromPoint( wsPosition, wsNormal, UV0, UV1, SolidAngle ) ) {
+ 	// Compute diffuse lighting
+ 	float3	Ld = 0.0;
+ 	float2	UV0, UV1;
+ 	float	SolidAngle;
+// 	if ( ComputeSolidAngleFromPoint( wsPosition, wsNormal, UV0, UV1, SolidAngle ) ) {
+// 
+// //return float4( 100.0 * (UV1 - UV0), 0, 1 );
+// // float4	Test = float4( UV0, UV1 );
+// // return Test;
+// 
+// //SolidAngle = 1;
+// //return _LightIntensity * SolidAngle;
+// 
+// 
+// 		float3	Irradiance = _LightIntensity * SampleSAT( UV0, UV1 ).xyz;
+// 		Ld = RhoD / PI * Irradiance * SolidAngle;
+// 		return float4( Ld, 1 );
+// 	}
+// 
+// Ld = float3( 1, 1, 0 );
+
+	// Compute specular lighting
+	float3	Ls = 0.0;
+	float3	wsReflectedView = reflect( wsView, wsNormal );
+	float	TanHalfAngle = tan( (1.0 - _Gloss) * 0.5 * PI );
+	float4	Debug;
+ 	if ( ComputeSolidAngleFromPointAndDirection( wsPosition, wsNormal, wsReflectedView, TanHalfAngle, UV0, UV1, SolidAngle, Debug ) ) {
+
+// return Debug;
+
 		float3	Irradiance = _LightIntensity * SampleSAT( UV0, UV1 ).xyz;
-		Ld = RhoD / PI * Irradiance * SolidAngle;
+		Ls = RhoS * Irradiance * SolidAngle;
 	}
 
-	return float4( Ld, 1 );
+	return float4( Ld + Ls, 1 );
 }
