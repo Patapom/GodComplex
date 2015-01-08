@@ -44,6 +44,7 @@ namespace AreaLightTest
 			public float4x4		_AreaLight2World;
 			public float4x4		_World2AreaLight;
 			public float3		_ProjectionDirection;
+			public float		_Area;
 			public float		_LightIntensity;
 			public float		_Gloss;
 			public float		_Metal;
@@ -399,9 +400,11 @@ namespace AreaLightTest
 
 			m_Tex_AreaLightSAT.SetPS( 0 );
 
+			float		SizeX = 0.5f;
+			float		SizeY = 1.0f;
 			float4x4	AreaLight2World = new float4x4(); 
 						AreaLight2World.MakeLookAt( float3.UnitY, float3.UnitY + float3.UnitZ, float3.UnitY );
-						AreaLight2World.Scale( new float3( 0.5f, 1.0f, 1.0f ) );
+						AreaLight2World.Scale( new float3( SizeX, SizeY, 1.0f ) );
 
 			float4x4	World2AreaLight = AreaLight2World.Inverse;
 
@@ -443,6 +446,7 @@ namespace AreaLightTest
 				m_CB_Material.m._AreaLight2World = AreaLight2World;
 				m_CB_Material.m._World2AreaLight = World2AreaLight;
 				m_CB_Material.m._ProjectionDirection = LocalDirection;
+				m_CB_Material.m._Area = SizeX * SizeY;
 				m_CB_Material.m._LightIntensity = floatTrackbarControlLightIntensity.Value;
 				m_CB_Material.m._Gloss = floatTrackbarControlGloss.Value;
 				m_CB_Material.m._Metal = floatTrackbarControlMetal.Value;
