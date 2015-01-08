@@ -39,9 +39,20 @@ namespace AreaLightTest
 			public float4x4		_World2Local;
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_Material {
+			public float4x4		_AreaLight2World;
+			public float4x4		_World2AreaLight;
+			public float3		_ProjectionDirection;
+			public float		_LightIntensity;
+			public float		_Gloss;
+			public float		_Metal;
+		}
+
 		private ConstantBuffer<CB_Main>		m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>	m_CB_Camera = null;
 		private ConstantBuffer<CB_Object>	m_CB_Object = null;
+		private ConstantBuffer<CB_Material>	m_CB_Material = null;
 
 		private Shader		m_Shader_RenderAreaLight = null;
 		private Shader		m_Shader_RenderScene = null;
@@ -281,6 +292,7 @@ namespace AreaLightTest
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
 			m_CB_Object = new ConstantBuffer<CB_Object>( m_Device, 2 );
+			m_CB_Material = new ConstantBuffer<CB_Material>( m_Device, 3 );
 
 			try
 			{
@@ -292,15 +304,15 @@ namespace AreaLightTest
 				m_Shader_RenderAreaLight = null;
 			}
 
-// 			try
-// 			{
-// 				m_Shader_RenderScene = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ) ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
-// 			}
-// 			catch ( Exception _e )
-// 			{
-// 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
-// 				m_Shader_RenderScene = null;
-// 			}
+			try
+			{
+				m_Shader_RenderScene = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ) ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
+			}
+			catch ( Exception _e )
+			{
+				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				m_Shader_RenderScene = null;
+			}
 
 			// Start game time
 			m_Ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
@@ -323,10 +335,11 @@ namespace AreaLightTest
 			m_CB_Main.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Object.Dispose();
+			m_CB_Material.Dispose();
 
 			m_Prim_Quad.Dispose();
 			m_Prim_Rectangle.Dispose();
-			m_Prim_Sphere.Dispose();
+//			m_Prim_Sphere.Dispose();
 
 			m_Tex_AreaLight.Dispose();
 			m_Tex_AreaLightSAT.Dispose();
@@ -352,11 +365,9 @@ namespace AreaLightTest
 			float3	Position = new float3( 0, 1, 4 );
 			float3	Target = new float3( 0, 1, 0 );
 
-//			m_CB_Camera.m._Camera2World = new float4x4();
 			m_CB_Camera.m._Camera2World.MakeLookAtCamera( Position, Target, float3.UnitY );
 			m_CB_Camera.m._World2Camera = m_CB_Camera.m._Camera2World.Inverse;
 
-//			m_CB_Camera.m._Camera2Proj = new float4x4();
 			m_CB_Camera.m._Camera2Proj.MakeProjectionPerspective( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_CB_Camera.m._Proj2Camera = m_CB_Camera.m._Camera2Proj.Inverse;
 
@@ -379,27 +390,68 @@ namespace AreaLightTest
 			// Setup camera data
 			UpdateCamera();
 
-			// Render scene
+			// =========== Render ===========
 			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
 
 			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
 			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
 
-			if ( m_Shader_RenderAreaLight != null ) {
+			m_Tex_AreaLightSAT.SetPS( 0 );
 
-//				m_CB_Object.m._Local2World = new float4x4();
-				m_CB_Object.m._Local2World.MakeLookAt( float3.UnitY, float3.UnitY + float3.UnitZ, float3.UnitY ); 
+			float4x4	AreaLight2World = new float4x4(); 
+						AreaLight2World.MakeLookAt( float3.UnitY, float3.UnitY + float3.UnitZ, float3.UnitY );
+						AreaLight2World.Scale( new float3( 0.5f, 1.0f, 1.0f ) );
+
+			float4x4	World2AreaLight = AreaLight2World.Inverse;
+
+			// Render the area light itself
+			if ( m_Shader_RenderAreaLight != null && m_Shader_RenderAreaLight.Use() ) {
+
+				m_CB_Object.m._Local2World = AreaLight2World;
 				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
 				m_CB_Object.UpdateData();
 
-				m_Tex_AreaLight.SetPS( 0 );
-				m_Tex_AreaLightSAT.SetPS( 1 );
+				m_Tex_AreaLight.SetPS( 1 );
 
-				m_Shader_RenderAreaLight.Use();
 				m_Prim_Rectangle.Render( m_Shader_RenderAreaLight );
 			} else {
-				m_Device.Clear( new float4( 1.0f, 0, 0, 0 ) );
+				m_Device.Clear( new float4( 1, 0, 0, 0 ) );
+			}
+
+
+			// Render the scene
+			if ( m_Shader_RenderScene != null && m_Shader_RenderScene.Use() ) {
+
+				// Create a floor plane
+				m_CB_Object.m._Local2World.MakeLookAt( float3.Zero, float3.UnitY, float3.UnitX );
+				m_CB_Object.m._Local2World.Scale( new float3( 2.0f, 2.0f, 1.0f ) );
+				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
+				m_CB_Object.UpdateData();
+
+				double	Phi = Math.PI * floatTrackbarControlProjectionPhi.Value / 180.0;
+				double	Theta = Math.PI * floatTrackbarControlProjectionTheta.Value / 180.0;
+				float3	Direction = new float3( (float) (Math.Sin(Theta) * Math.Sin(Phi)), (float) (Math.Sin(Theta) * Math.Cos(Phi)), (float) Math.Cos( Theta ) );
+
+				const float	DiffusionMin = 1e-2f;
+				const float	DiffusionMax = 1000.0f;
+				float	Diffusion = DiffusionMin / (DiffusionMin / DiffusionMax + floatTrackbarControlProjectionDiffusion.Value);
+						Direction *= Diffusion;
+
+				float3	LocalDirection = (new float4( Direction, 0 ) * World2AreaLight).AsVec3;
+
+				m_CB_Material.m._AreaLight2World = AreaLight2World;
+				m_CB_Material.m._World2AreaLight = World2AreaLight;
+				m_CB_Material.m._ProjectionDirection = LocalDirection;
+				m_CB_Material.m._LightIntensity = floatTrackbarControlLightIntensity.Value;
+				m_CB_Material.m._Gloss = floatTrackbarControlGloss.Value;
+				m_CB_Material.m._Metal = floatTrackbarControlMetal.Value;
+				m_CB_Material.UpdateData();
+
+				m_Prim_Rectangle.Render( m_Shader_RenderScene );
+
+			} else {
+				m_Device.Clear( new float4( 1, 1, 0, 0 ) );
 			}
 
 
