@@ -407,8 +407,9 @@ namespace AreaLightTest
 
 			float		SizeX = 0.5f;
 			float		SizeY = 1.0f;
+			float3		LightTarget = new float3( floatTrackbarControlLightTargetX.Value, 1.0f + floatTrackbarControlLightTargetY.Value, 1.0f + floatTrackbarControlLightTargetZ.Value );
 			float4x4	AreaLight2World = new float4x4(); 
-						AreaLight2World.MakeLookAt( new float3( 0, 1, -1 ), float3.UnitY + float3.UnitZ, float3.UnitY );
+						AreaLight2World.MakeLookAt( new float3( 0, 1, -1 ), LightTarget, float3.UnitY );
 						AreaLight2World.Scale( new float3( SizeX, SizeY, 1.0f ) );
 
 			float4x4	World2AreaLight = AreaLight2World.Inverse;

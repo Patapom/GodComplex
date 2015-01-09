@@ -51,6 +51,12 @@
 			this.label8 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlCameraPosZ = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label9 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlLightTargetX = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label10 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlLightTargetY = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label11 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlLightTargetZ = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label12 = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlProjectionDiffusion
@@ -229,7 +235,7 @@
 			this.label7.Name = "label7";
 			this.label7.Size = new System.Drawing.Size(74, 13);
 			this.label7.TabIndex = 3;
-			this.label7.Text = "Camrea Pos X";
+			this.label7.Text = "Camera Pos X";
 			// 
 			// floatTrackbarControlCameraPosY
 			// 
@@ -251,7 +257,7 @@
 			this.label8.Name = "label8";
 			this.label8.Size = new System.Drawing.Size(74, 13);
 			this.label8.TabIndex = 3;
-			this.label8.Text = "Camrea Pos Y";
+			this.label8.Text = "Camera Pos Y";
 			// 
 			// floatTrackbarControlCameraPosZ
 			// 
@@ -273,7 +279,73 @@
 			this.label9.Name = "label9";
 			this.label9.Size = new System.Drawing.Size(74, 13);
 			this.label9.TabIndex = 3;
-			this.label9.Text = "Camrea Pos Z";
+			this.label9.Text = "Camera Pos Z";
+			// 
+			// floatTrackbarControlLightTargetX
+			// 
+			this.floatTrackbarControlLightTargetX.Location = new System.Drawing.Point(1180, 346);
+			this.floatTrackbarControlLightTargetX.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlLightTargetX.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlLightTargetX.Name = "floatTrackbarControlLightTargetX";
+			this.floatTrackbarControlLightTargetX.RangeMax = 100F;
+			this.floatTrackbarControlLightTargetX.RangeMin = -100F;
+			this.floatTrackbarControlLightTargetX.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlLightTargetX.TabIndex = 1;
+			this.floatTrackbarControlLightTargetX.Value = 0F;
+			this.floatTrackbarControlLightTargetX.VisibleRangeMin = -10F;
+			// 
+			// label10
+			// 
+			this.label10.AutoSize = true;
+			this.label10.Location = new System.Drawing.Point(1059, 353);
+			this.label10.Name = "label10";
+			this.label10.Size = new System.Drawing.Size(74, 13);
+			this.label10.TabIndex = 3;
+			this.label10.Text = "Light Target X";
+			// 
+			// floatTrackbarControlLightTargetY
+			// 
+			this.floatTrackbarControlLightTargetY.Location = new System.Drawing.Point(1180, 372);
+			this.floatTrackbarControlLightTargetY.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlLightTargetY.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlLightTargetY.Name = "floatTrackbarControlLightTargetY";
+			this.floatTrackbarControlLightTargetY.RangeMax = 100F;
+			this.floatTrackbarControlLightTargetY.RangeMin = -100F;
+			this.floatTrackbarControlLightTargetY.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlLightTargetY.TabIndex = 1;
+			this.floatTrackbarControlLightTargetY.Value = 0F;
+			this.floatTrackbarControlLightTargetY.VisibleRangeMin = -10F;
+			// 
+			// label11
+			// 
+			this.label11.AutoSize = true;
+			this.label11.Location = new System.Drawing.Point(1059, 379);
+			this.label11.Name = "label11";
+			this.label11.Size = new System.Drawing.Size(74, 13);
+			this.label11.TabIndex = 3;
+			this.label11.Text = "Light Target Y";
+			// 
+			// floatTrackbarControlLightTargetZ
+			// 
+			this.floatTrackbarControlLightTargetZ.Location = new System.Drawing.Point(1180, 398);
+			this.floatTrackbarControlLightTargetZ.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlLightTargetZ.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlLightTargetZ.Name = "floatTrackbarControlLightTargetZ";
+			this.floatTrackbarControlLightTargetZ.RangeMax = 100F;
+			this.floatTrackbarControlLightTargetZ.RangeMin = -100F;
+			this.floatTrackbarControlLightTargetZ.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlLightTargetZ.TabIndex = 1;
+			this.floatTrackbarControlLightTargetZ.Value = 0F;
+			this.floatTrackbarControlLightTargetZ.VisibleRangeMin = -10F;
+			// 
+			// label12
+			// 
+			this.label12.AutoSize = true;
+			this.label12.Location = new System.Drawing.Point(1059, 405);
+			this.label12.Name = "label12";
+			this.label12.Size = new System.Drawing.Size(74, 13);
+			this.label12.TabIndex = 3;
+			this.label12.Text = "Light Target Z";
 			// 
 			// AreaLightForm
 			// 
@@ -283,6 +355,9 @@
 			this.Controls.Add(this.label6);
 			this.Controls.Add(this.label9);
 			this.Controls.Add(this.label8);
+			this.Controls.Add(this.label12);
+			this.Controls.Add(this.label11);
+			this.Controls.Add(this.label10);
 			this.Controls.Add(this.label7);
 			this.Controls.Add(this.label4);
 			this.Controls.Add(this.label5);
@@ -293,6 +368,9 @@
 			this.Controls.Add(this.floatTrackbarControlMetal);
 			this.Controls.Add(this.floatTrackbarControlCameraPosZ);
 			this.Controls.Add(this.floatTrackbarControlCameraPosY);
+			this.Controls.Add(this.floatTrackbarControlLightTargetZ);
+			this.Controls.Add(this.floatTrackbarControlLightTargetY);
+			this.Controls.Add(this.floatTrackbarControlLightTargetX);
 			this.Controls.Add(this.floatTrackbarControlCameraPosX);
 			this.Controls.Add(this.floatTrackbarControlGloss);
 			this.Controls.Add(this.floatTrackbarControlLightIntensity);
@@ -332,6 +410,12 @@
 		private System.Windows.Forms.Label label8;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlCameraPosZ;
 		private System.Windows.Forms.Label label9;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLightTargetX;
+		private System.Windows.Forms.Label label10;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLightTargetY;
+		private System.Windows.Forms.Label label11;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLightTargetZ;
+		private System.Windows.Forms.Label label12;
 	}
 }
 

@@ -80,9 +80,14 @@ float4	SampleSAT( float2 _UV0, float2 _UV1 ) {
 	return C / (1e-6 + PixelsCount);
 }
 
+// Determinant of the 3x3 row-major matrix
+float	Determinant( float3 a, float3 b, float3 c ) {
+	return	(a.x * b.y * c.z + a.y * b.z * c.x + a.z * b.x * c.y)
+		-	(a.x * b.z * c.y + a.y * b.x * c.z + a.z * b.y * c.x);
+}
 
-// Computes the 2 Uv and the solid angle perceived from a single point in world space
-bool	ComputeSolidAngleFromPoint( float3 _wsPosition, float3 _wsNormal, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle ) {
+// Computes the 2 UVs and the solid angle perceived from a single point in world space
+bool	ComputeSolidAngleFromPoint____OLD( float3 _wsPosition, float3 _wsNormal, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle ) {
 
 	float3	lsPosition = mul( float4( _wsPosition, 1.0 ), _World2AreaLight ).xyz;		// Transform world position in local area light space
 	if ( lsPosition.z <= 0.0 ) {
@@ -155,18 +160,118 @@ _ProjectedSolidAngle = 1;//UVArea;
 	return true;
 }
 
+// Computes the 2 UVss and the solid angle perceived from a single point in world space (used for diffuse reflection)
+// The area light's unit square is first clipped agains the surface's plane and the remaining bounding rectangle is used as the area to sample for irradiance.
+// The solid angle is computed by decomposing the clipped rectangle into 2 triangles and each triangle's solid angle is then computed via the equation given in http://en.wikipedia.org/wiki/Solid_angle#Tetrahedron
+// 
+bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle, out float4 _Debug ) {
+	_UV0 = _UV1 = 0.0;
+	_ProjectedSolidAngle = 0.0;
+	_Debug = 0.0;
 
-// Computes the 2 Uv and the solid angle perceived from a single point in world space watching the area light through a cone (used for specular reflection)
+	float3	lsPosition = mul( float4( _wsPosition, 1.0 ), _World2AreaLight ).xyz;		// Transform world position in local area light space
+	float3	lsNormal = mul( float4( _wsNormal, 0.0 ), _World2AreaLight ).xyz;			// Transform world normal in local area light space
+	if ( lsPosition.z <= 0.0 ) {
+		// Position is behind area light...
+		return false;
+	}
+
+	// In local area light space, the position is in front of a canonical square:
+	//
+	//	(-1,+1)					(+1,+1)
+	//			o-------------o
+	//			|             |
+	//			|             |
+	//			|             |
+	//			|      o      |
+	//			|             |
+	//			|             |
+	//			|             |
+	//			o-------------o
+	//	(-1,-1)					(+1,-1)
+	//
+	//
+	if ( abs(lsNormal.y) > abs(lsNormal.x) ) {
+		// Check for a vertical cut
+		float2	AlignedNormal = lsNormal.zy;
+		float2	Delta = float2( 0, 1 ) - lsPosition.zy;
+		float	D = dot( Delta, AlignedNormal );
+		float	t = saturate( D / (2.0 * AlignedNormal.y ) );
+
+// _Debug = float4( Delta, 0, 0 );
+// //_Debug = float4( lsPosition.zy, 0, 0 );
+// _Debug = D;	// = 2
+// _Debug = 0.5 * t;
+
+		if ( lsNormal.y >= 0.0 ) {
+			_UV0 = 0.0;
+			_UV1 = float2( 1, t );
+		} else {
+			_UV1 = 1.0;
+			_UV0 = float2( 0, 1-t );
+		}
+	} else {
+		// Check for a horizontal cut
+		float2	AlignedNormal = lsNormal.zx;
+		float2	Delta = float2( 0, 1 ) - lsPosition.zx;
+		float	D = dot( Delta, AlignedNormal );
+		float	t = saturate( D / (2.0 * AlignedNormal.y ) );
+
+//_Debug = float4( -Delta, 0, 0 );
+
+		if ( lsNormal.x >= 0.0 ) {
+			_UV0 = 0.0;
+			_UV1 = float2( t, 1 );
+		} else {
+			_UV1 = 1.0;
+			_UV0 = float2( 1-t, 0 );
+		}
+	}
+
+	// Compute the solid angle
+	// (from http://en.wikipedia.org/wiki/Solid_angle#Tetrahedron)
+	float3	v0 = normalize( float3( 2.0 * _UV0.x - 1.0, 1.0 - 2.0 * _UV0.y, 0.0 ) - lsPosition );
+	float3	v1 = normalize( float3( 2.0 * _UV0.x - 1.0, 1.0 - 2.0 * _UV1.y, 0.0 ) - lsPosition );
+	float3	v2 = normalize( float3( 2.0 * _UV1.x - 1.0, 1.0 - 2.0 * _UV1.y, 0.0 ) - lsPosition );
+	float3	v3 = normalize( float3( 2.0 * _UV1.x - 1.0, 1.0 - 2.0 * _UV0.y, 0.0 ) - lsPosition );
+
+	float	A0 = 2.0 * atan( -Determinant( v0, v1, v2 ) / (1 + dot( v0, v1 ) + dot( v1, v2 ) + dot( v2, v0 )) );
+	float	A1 = 2.0 * atan( -Determinant( v0, v2, v3 ) / (1 + dot( v0, v2 ) + dot( v2, v3 ) + dot( v3, v0 )) );
+	float	SolidAngle = A0 + A1;
+
+// _Debug = -Determinant( v0, v1, v2 );
+// _Debug = -Determinant( v0, v2, v3 );
+// _Debug = A0 + A1;
+
+	// Now, we can compute the projected solid angle by dotting with the normal
+	float3	lsCenter = float3( (_UV1 + _UV0) - 1.0, 0.0 );
+	float3	lsPosition2Center = normalize( lsCenter - lsPosition );
+	_ProjectedSolidAngle = saturate( dot( lsNormal, lsPosition2Center ) ) * SolidAngle;	// (N.Wi) * dWi
+
+// _Debug = _ProjectedSolidAngle;
+
+//_ProjectedSolidAngle = 1;//UVArea;
+
+
+// _UV0 = lsPosition.xy;
+// _UV1 = lsPosition.z;
+// _UV0 = _UV1;
+// _UV1 = 0;
+
+	return true;
+}
+
+// Computes the 2 UVs and the solid angle perceived from a single point in world space watching the area light through a cone (used for specular reflection)
 //	_wsPosition, the world space position of the surface watching the area light
 //	_wsNormal, the world space normal of the surface
 //	_wsView, the view direction (usually, the main reflection direction)
 //	_TanHalfAngle, the tangent of the half-angle of the cone watching
 //
 // Returns:
-//	_UV0, _UV1, the 2 UV coordinates where to sample the SAT
+//	_UV0, _UV1, the 2 UVs coordinates where to sample the SAT
 //	_ProjectedSolidAngle, an estimate of the perceived projected solid angle (i.e. cos(IncidentAngle) * dOmega)
 //
-bool	ComputeSolidAngleFromPointAndDirection( float3 _wsPosition, float3 _wsNormal, float3 _wsView, float _TanHalfAngle, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle, out float4 _Debug ) {
+bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _wsView, float _TanHalfAngle, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle, out float4 _Debug ) {
 
 _Debug = 0.0;
 
@@ -270,39 +375,40 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	const float3	RhoD = 0.5;	// 50% diffuse albedo
 	const float3	RhoS = 1.0;
 
- 	// Compute diffuse lighting
- 	float3	Ld = 0.0;
  	float2	UV0, UV1;
  	float	SolidAngle;
-// 	if ( ComputeSolidAngleFromPoint( wsPosition, wsNormal, UV0, UV1, SolidAngle ) ) {
-// 
-// //return float4( 100.0 * (UV1 - UV0), 0, 1 );
-// // float4	Test = float4( UV0, UV1 );
-// // return Test;
-// 
-// //SolidAngle = 1;
-// //return _LightIntensity * SolidAngle;
-// 
-// 
-// 		float3	Irradiance = _LightIntensity * SampleSAT( UV0, UV1 ).xyz;
-// 		Ld = RhoD / PI * Irradiance * SolidAngle;
-// 		return float4( Ld, 1 );
-// 	}
-// 
-// Ld = float3( 1, 1, 0 );
+ 	float4	Debug;
+
+ 	// Compute diffuse lighting
+ 	float3	Ld = 0.0;
+	if ( ComputeSolidAngleDiffuse( wsPosition, wsNormal, UV0, UV1, SolidAngle, Debug ) ) {
+
+//return Debug;
+//return float4( 100.0 * (UV1 - UV0), 0, 1 );
+// float4	Test = float4( UV0, UV1 );
+// return Test;
+
+//SolidAngle = 1;
+//return _LightIntensity * SolidAngle;
+
+		float3	Irradiance = _LightIntensity * SampleSAT( UV0, UV1 ).xyz;
+		Ld = RhoD / PI * Irradiance * SolidAngle;
+		return float4( Ld, 1 );
+	}
+
+Ld = float3( 1, 1, 0 );
 
 	// Compute specular lighting
 	float3	Ls = 0.0;
-	float3	wsReflectedView = reflect( wsView, wsNormal );
-	float	TanHalfAngle = tan( (1.0 - _Gloss) * 0.5 * PI );
-	float4	Debug;
- 	if ( ComputeSolidAngleFromPointAndDirection( wsPosition, wsNormal, wsReflectedView, TanHalfAngle, UV0, UV1, SolidAngle, Debug ) ) {
-
-// return Debug;
-
-		float3	Irradiance = _LightIntensity * SampleSAT( UV0, UV1 ).xyz;
-		Ls = RhoS * Irradiance * SolidAngle;
-	}
+// 	float3	wsReflectedView = reflect( wsView, wsNormal );
+// 	float	TanHalfAngle = tan( (1.0 - _Gloss) * 0.5 * PI );
+//  	if ( ComputeSolidAngleSpecular( wsPosition, wsNormal, wsReflectedView, TanHalfAngle, UV0, UV1, SolidAngle, Debug ) ) {
+// 
+// // return Debug;
+// 
+// 		float3	Irradiance = _LightIntensity * SampleSAT( UV0, UV1 ).xyz;
+// 		Ls = RhoS * Irradiance * SolidAngle;
+// 	}
 
 	return float4( Ld + Ls, 1 );
 }
