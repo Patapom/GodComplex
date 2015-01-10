@@ -38,7 +38,7 @@ float4	SampleSATSinglePixel( float2 _UV ) {
 	float2	UV2 = NextPixelIndex / TEX_SIZE;
 
 	float4	C00 = _TexAreaLightSAT.Sample( LinearClamp, _UV );
-	float4	C01 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xz );
+	float4	C01	= _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xz );
 	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.zy );
 	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xy );
 	
