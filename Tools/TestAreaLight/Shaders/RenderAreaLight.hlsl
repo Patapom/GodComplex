@@ -1,10 +1,10 @@
 #include "Global.hlsl"
+#include "AreaLight.hlsl"
 
 cbuffer CB_Object : register(b2) {
 	float4x4	_Local2World;
 };
 
-Texture2D< float4 >	_TexAreaLightSAT : register(t0);
 Texture2D< float4 >	_TexAreaLight : register(t1);
 
 struct VS_IN {
@@ -31,9 +31,6 @@ PS_IN	VS( VS_IN _In ) {
 	return Out;
 }
 
-static const uint2	TEX_SIZE = uint2( 465, 626 );
-static const float3	dUV = float3( 1.0 / TEX_SIZE, 0.0 );
-
 float4	SampleSATSinglePixel( float2 _UV ) {
 
 	float2	PixelIndex = _UV * TEX_SIZE;
@@ -44,7 +41,7 @@ float4	SampleSATSinglePixel( float2 _UV ) {
 	float4	C01 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xz );
 	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.zy );
 	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xy );
-
+	
 	return C11 - C10 - C01 + C00;
 }
 
@@ -52,6 +49,15 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 // 	float4	StainedGlass = _TexAreaLight.Sample( LinearClamp, _In.UV );
 // 	float4	StainedGlass = 0.0001 * _TexAreaLightSAT.Sample( LinearClamp, _In.UV );
 	float4	StainedGlass = SampleSATSinglePixel( _In.UV );
+
+
+	// Debug UV clipping
+	float4	Debug;
+	float3	lsPosition = mul( float4( 0, 0, 0, 1 ), _World2AreaLight ).xyz;
+	float3	lsNormal = mul( float4( 0, 1, 0, 0 ), _World2AreaLight ).xyz;
+	float4	ClippedUVs = ComputeClipping( lsPosition, lsNormal, Debug );
+	StainedGlass.xyz = (_In.UV.x < ClippedUVs.x || _In.UV.y < ClippedUVs.y || _In.UV.x > ClippedUVs.z || _In.UV.y > ClippedUVs.w) ? float3( 0.2, 0, 0.2 ) : float3( _In.UV, 0 );
+
 
 	return float4( StainedGlass.xyz, 1 );
 }

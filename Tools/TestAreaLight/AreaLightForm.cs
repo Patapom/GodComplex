@@ -371,7 +371,7 @@ namespace AreaLightTest
 			float	Time = (float) (Ticks * m_Ticks2Seconds);
 			return Time;
 		}
-// 
+
 // 		public void	UpdateCamera() {
 // 
 // 			float3	Position = new float3( 0, 1, 4 );
@@ -427,16 +427,45 @@ namespace AreaLightTest
 			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
 			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
 
+			// Setup area light material
 			m_Tex_AreaLightSAT.SetPS( 0 );
 
-			float		SizeX = 0.5f;
+			float		SizeX = 1.0f;// 0.5f;
 			float		SizeY = 1.0f;
-			float3		LightTarget = new float3( floatTrackbarControlLightTargetX.Value, 1.0f + floatTrackbarControlLightTargetY.Value, 1.0f + floatTrackbarControlLightTargetZ.Value );
+			float		RollAngle = (float) (Math.PI * floatTrackbarControlLightRoll.Value / 180.0);
+			float3		LightPosition = new float3( floatTrackbarControlLightPosX.Value, 1.0f + floatTrackbarControlLightPosY.Value, -1.0f + floatTrackbarControlLightPosZ.Value );
+			float3		LightTarget = new float3( LightPosition.x + floatTrackbarControlLightTargetX.Value, LightPosition.y + floatTrackbarControlLightTargetY.Value, LightPosition.z + 2.0f + floatTrackbarControlLightTargetZ.Value );
+			float3		LightUp = new float3( (float) Math.Sin( -RollAngle ), (float) Math.Cos( RollAngle ), 0.0f );
 			float4x4	AreaLight2World = new float4x4(); 
-						AreaLight2World.MakeLookAt( new float3( 0, 1, -1 ), LightTarget, float3.UnitY );
+						AreaLight2World.MakeLookAt( LightPosition, LightTarget, LightUp );
 						AreaLight2World.Scale( new float3( SizeX, SizeY, 1.0f ) );
 
 			float4x4	World2AreaLight = AreaLight2World.Inverse;
+
+
+			double		Phi = Math.PI * floatTrackbarControlProjectionPhi.Value / 180.0;
+			double		Theta = Math.PI * floatTrackbarControlProjectionTheta.Value / 180.0;
+			float3		Direction = new float3( (float) (Math.Sin(Theta) * Math.Sin(Phi)), (float) (Math.Sin(Theta) * Math.Cos(Phi)), (float) Math.Cos( Theta ) );
+
+			const float	DiffusionMin = 1e-2f;
+			const float	DiffusionMax = 1000.0f;
+//			float		Diffusion_Diffuse = DiffusionMin / (DiffusionMin / DiffusionMax + floatTrackbarControlProjectionDiffusion.Value);
+			float		Diffusion_Diffuse = DiffusionMax + (DiffusionMin - DiffusionMax) * (float) Math.Pow( floatTrackbarControlProjectionDiffusion.Value, 0.05f );
+			float		Diffusion_Specular = DiffusionMax + (DiffusionMin - DiffusionMax) * (float) Math.Pow( 1.0f - floatTrackbarControlProjectionDiffusion.Value, 0.05f );
+
+			float3		LocalDirection_Diffuse = (new float4( Diffusion_Diffuse * Direction, 0 ) * World2AreaLight).AsVec3;
+			float3		LocalDirection_Specular = (new float4( Diffusion_Specular * Direction, 0 ) * World2AreaLight).AsVec3;
+
+			m_CB_Material.m._AreaLight2World = AreaLight2World;
+			m_CB_Material.m._World2AreaLight = World2AreaLight;
+			m_CB_Material.m._ProjectionDirectionDiff = LocalDirection_Diffuse;
+			m_CB_Material.m._ProjectionDirectionSpec = LocalDirection_Specular;
+			m_CB_Material.m._Area = SizeX * SizeY;
+			m_CB_Material.m._LightIntensity = floatTrackbarControlLightIntensity.Value;
+			m_CB_Material.m._Gloss = floatTrackbarControlGloss.Value;
+			m_CB_Material.m._Metal = floatTrackbarControlMetal.Value;
+			m_CB_Material.UpdateData();
+
 
 			// Render the area light itself
 			if ( m_Shader_RenderAreaLight != null && m_Shader_RenderAreaLight.Use() ) {
@@ -461,29 +490,6 @@ namespace AreaLightTest
 				m_CB_Object.m._Local2World.Scale( new float3( 2.0f, 2.0f, 1.0f ) );
 				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
 				m_CB_Object.UpdateData();
-
-				double	Phi = Math.PI * floatTrackbarControlProjectionPhi.Value / 180.0;
-				double	Theta = Math.PI * floatTrackbarControlProjectionTheta.Value / 180.0;
-				float3	Direction = new float3( (float) (Math.Sin(Theta) * Math.Sin(Phi)), (float) (Math.Sin(Theta) * Math.Cos(Phi)), (float) Math.Cos( Theta ) );
-
-				const float	DiffusionMin = 1e-2f;
-				const float	DiffusionMax = 1000.0f;
-//				float	Diffusion_Diffuse = DiffusionMin / (DiffusionMin / DiffusionMax + floatTrackbarControlProjectionDiffusion.Value);
-				float	Diffusion_Diffuse = DiffusionMax + (DiffusionMin - DiffusionMax) * (float) Math.Pow( floatTrackbarControlProjectionDiffusion.Value, 0.05f );
-				float	Diffusion_Specular = DiffusionMax + (DiffusionMin - DiffusionMax) * (float) Math.Pow( 1.0f - floatTrackbarControlProjectionDiffusion.Value, 0.05f );
-
-				float3	LocalDirection_Diffuse = (new float4( Diffusion_Diffuse * Direction, 0 ) * World2AreaLight).AsVec3;
-				float3	LocalDirection_Specular = (new float4( Diffusion_Specular * Direction, 0 ) * World2AreaLight).AsVec3;
-
-				m_CB_Material.m._AreaLight2World = AreaLight2World;
-				m_CB_Material.m._World2AreaLight = World2AreaLight;
-				m_CB_Material.m._ProjectionDirectionDiff = LocalDirection_Diffuse;
-				m_CB_Material.m._ProjectionDirectionSpec = LocalDirection_Specular;
-				m_CB_Material.m._Area = SizeX * SizeY;
-				m_CB_Material.m._LightIntensity = floatTrackbarControlLightIntensity.Value;
-				m_CB_Material.m._Gloss = floatTrackbarControlGloss.Value;
-				m_CB_Material.m._Metal = floatTrackbarControlMetal.Value;
-				m_CB_Material.UpdateData();
 
 				m_Prim_Rectangle.Render( m_Shader_RenderScene );
 
