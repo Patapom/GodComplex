@@ -47,6 +47,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Camera.cs" />
+    <Compile Include="CameraManipulator.cs" />
     <Compile Include="PanelOutput.cs">
       <SubType>Component</SubType>
     </Compile>

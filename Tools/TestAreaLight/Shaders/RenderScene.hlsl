@@ -1,3 +1,9 @@
+
+
+// Check cette ligne dans ward.mrpr, changer ce facteur hardcodé pour voir si ça limite pas un peu nos pics de spec
+// anisotropicRoughness = max( 0.01, anisotropicRoughness );	// Make sure we don't go below 0.01 otherwise specularity is unnatural for our poor lights (only IBL with many samples would solve that!)
+
+
 #include "Global.hlsl"
 
 cbuffer CB_Object : register(b2) {
@@ -86,6 +92,31 @@ float	Determinant( float3 a, float3 b, float3 c ) {
 		-	(a.x * b.z * c.y + a.y * b.x * c.z + a.z * b.y * c.x);
 }
 
+// Compute the solid angle of a rectangular area perceived by a point
+// The solid angle is computed by decomposing the rectangle into 2 triangles and each triangle's solid angle
+//	is then computed via the equation given in http://en.wikipedia.org/wiki/Solid_angle#Tetrahedron
+//
+//	_lsPosition, the position viewing the rectangular area
+//	_UV0, _UV1, the 2 UV coordinates defining the rectangular area of a canonical square in [-1,+1] in both x and y
+//
+float	RectangleSolidAngle( float3 _lsPosition, float2 _UV0, float2 _UV1 ) {
+
+	float3	v0 = normalize( float3( 2.0 * _UV0.x - 1.0, 1.0 - 2.0 * _UV0.y, 0.0 ) - _lsPosition );
+	float3	v1 = normalize( float3( 2.0 * _UV0.x - 1.0, 1.0 - 2.0 * _UV1.y, 0.0 ) - _lsPosition );
+	float3	v2 = normalize( float3( 2.0 * _UV1.x - 1.0, 1.0 - 2.0 * _UV1.y, 0.0 ) - _lsPosition );
+	float3	v3 = normalize( float3( 2.0 * _UV1.x - 1.0, 1.0 - 2.0 * _UV0.y, 0.0 ) - _lsPosition );
+
+	float	dotV0V1 = dot( v0, v1 );
+	float	dotV1V2 = dot( v1, v2 );
+	float	dotV2V3 = dot( v2, v3 );
+	float	dotV3V0 = dot( v3, v0 );
+	float	dotV2V0 = dot( v2, v0 );
+
+	float	A0 = atan( -Determinant( v0, v1, v2 ) / (1.0 + dotV0V1 + dotV1V2 + dotV2V0) );
+	float	A1 = atan( -Determinant( v0, v2, v3 ) / (1.0 + dotV2V0 + dotV2V3 + dotV3V0) );
+	return 2.0 * (A0 + A1);
+}
+
 // Computes the 2 UVs and the solid angle perceived from a single point in world space
 bool	ComputeSolidAngleFromPoint____OLD( float3 _wsPosition, float3 _wsNormal, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle ) {
 
@@ -162,7 +193,6 @@ _ProjectedSolidAngle = 1;//UVArea;
 
 // Computes the 2 UVss and the solid angle perceived from a single point in world space (used for diffuse reflection)
 // The area light's unit square is first clipped agains the surface's plane and the remaining bounding rectangle is used as the area to sample for irradiance.
-// The solid angle is computed by decomposing the clipped rectangle into 2 triangles and each triangle's solid angle is then computed via the equation given in http://en.wikipedia.org/wiki/Solid_angle#Tetrahedron
 // 
 bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle, out float4 _Debug ) {
 	_UV0 = _UV1 = 0.0;
@@ -191,6 +221,9 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 	//	(-1,-1)					(+1,-1)
 	//
 	//
+
+	// Compute potential clipping by the surface's plane
+	// We simplify *a lot* by assuming either a vertical or horizontal normal that cuts the square along one of its main axes
 	if ( abs(lsNormal.y) > abs(lsNormal.x) ) {
 		// Check for a vertical cut
 		float2	AlignedNormal = lsNormal.zy;
@@ -203,7 +236,7 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 // _Debug = D;	// = 2
 // _Debug = 0.5 * t;
 
-		if ( lsNormal.y >= 0.0 ) {
+		if ( AlignedNormal.y >= 0.0 ) {
 			_UV0 = 0.0;
 			_UV1 = float2( 1, t );
 		} else {
@@ -219,7 +252,7 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 
 //_Debug = float4( -Delta, 0, 0 );
 
-		if ( lsNormal.x >= 0.0 ) {
+		if ( AlignedNormal.y >= 0.0 ) {
 			_UV0 = 0.0;
 			_UV1 = float2( t, 1 );
 		} else {
@@ -229,19 +262,7 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 	}
 
 	// Compute the solid angle
-	// (from http://en.wikipedia.org/wiki/Solid_angle#Tetrahedron)
-	float3	v0 = normalize( float3( 2.0 * _UV0.x - 1.0, 1.0 - 2.0 * _UV0.y, 0.0 ) - lsPosition );
-	float3	v1 = normalize( float3( 2.0 * _UV0.x - 1.0, 1.0 - 2.0 * _UV1.y, 0.0 ) - lsPosition );
-	float3	v2 = normalize( float3( 2.0 * _UV1.x - 1.0, 1.0 - 2.0 * _UV1.y, 0.0 ) - lsPosition );
-	float3	v3 = normalize( float3( 2.0 * _UV1.x - 1.0, 1.0 - 2.0 * _UV0.y, 0.0 ) - lsPosition );
-
-	float	A0 = 2.0 * atan( -Determinant( v0, v1, v2 ) / (1 + dot( v0, v1 ) + dot( v1, v2 ) + dot( v2, v0 )) );
-	float	A1 = 2.0 * atan( -Determinant( v0, v2, v3 ) / (1 + dot( v0, v2 ) + dot( v2, v3 ) + dot( v3, v0 )) );
-	float	SolidAngle = A0 + A1;
-
-// _Debug = -Determinant( v0, v1, v2 );
-// _Debug = -Determinant( v0, v2, v3 );
-// _Debug = A0 + A1;
+	float	SolidAngle = RectangleSolidAngle( lsPosition, _UV0, _UV1 );
 
 	// Now, we can compute the projected solid angle by dotting with the normal
 	float3	lsCenter = float3( (_UV1 + _UV0) - 1.0, 0.0 );
@@ -373,7 +394,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float3	wsView = normalize( wsPosition - _Camera2World[3].xyz );
 
 	const float3	RhoD = 0.5;	// 50% diffuse albedo
-	const float3	RhoS = 1.0;
+	const float3	F0 = 0.04;							// DIELECTRIC
+//	const float3	F0 = float3( 0.95, 0.94, 0.93 );	// METAL
 
  	float2	UV0, UV1;
  	float	SolidAngle;
@@ -399,6 +421,10 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 Ld = float3( 1, 1, 0 );
 
 	// Compute specular lighting
+
+//Calculer l'intersection avec le frustum et le portal, puis utiliser le facteur de diffusion pour grossir les UVs!! On va pas s'faire chier hein!
+
+
 	float3	Ls = 0.0;
 // 	float3	wsReflectedView = reflect( wsView, wsNormal );
 // 	float	TanHalfAngle = tan( (1.0 - _Gloss) * 0.5 * PI );
@@ -410,5 +436,12 @@ Ld = float3( 1, 1, 0 );
 // 		Ls = RhoS * Irradiance * SolidAngle;
 // 	}
 
+	// Compute Fresnel
+	float	VdotN = saturate( dot( wsView, wsNormal ) );
+	float3	IOR = Fresnel_IORFromF0( F0 );
+	float3	FresnelSpecular = FresnelAccurate( IOR, VdotN );
+	float3	FresnelDiffuse = 1.0 - FresnelSpecular;
+
+//	return float4( FresnelDiffuse * Ld + FresnelSpecular * Ls, 1 );
 	return float4( Ld + Ls, 1 );
 }

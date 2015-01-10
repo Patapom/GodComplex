@@ -65,6 +65,10 @@ namespace AreaLightTest
 		private Primitive	m_Prim_Rectangle = null;
 		private Primitive	m_Prim_Sphere = null;
 
+
+		private Camera		m_Camera = new Camera();
+		private CameraManipulator	m_Manipulator = new CameraManipulator();
+
 		//////////////////////////////////////////////////////////////////////////
 		// Timing
 		public System.Diagnostics.Stopwatch	m_StopWatch = new System.Diagnostics.Stopwatch();
@@ -81,6 +85,7 @@ namespace AreaLightTest
 // ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
 // ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
 
+			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
 
 			Application.Idle += new EventHandler( Application_Idle );
 		}
@@ -316,6 +321,11 @@ namespace AreaLightTest
 				m_Shader_RenderScene = null;
 			}
 
+			// Setup camera
+			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
+			m_Manipulator.Attach( panelOutput, m_Camera );
+			m_Manipulator.InitializeCamera( new float3( 0, 1, 4 ), new float3( 0, 1, 0 ), float3.UnitY );
+
 			// Start game time
 			m_Ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
 			m_StopWatch.Start();
@@ -361,20 +371,34 @@ namespace AreaLightTest
 			float	Time = (float) (Ticks * m_Ticks2Seconds);
 			return Time;
 		}
+// 
+// 		public void	UpdateCamera() {
+// 
+// 			float3	Position = new float3( 0, 1, 4 );
+// 					Position.x += floatTrackbarControlCameraPosX.Value;
+// 					Position.y += floatTrackbarControlCameraPosY.Value;
+// 					Position.z += floatTrackbarControlCameraPosZ.Value;
+// 
+// 			float3	Target = new float3( 0, 1, 0 );
+// 
+// 			m_CB_Camera.m._Camera2World.MakeLookAtCamera( Position, Target, float3.UnitY );
+// 			m_CB_Camera.m._World2Camera = m_CB_Camera.m._Camera2World.Inverse;
+// 
+// 			m_CB_Camera.m._Camera2Proj.MakeProjectionPerspective( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
+// 			m_CB_Camera.m._Proj2Camera = m_CB_Camera.m._Camera2Proj.Inverse;
+// 
+// 			m_CB_Camera.m._World2Proj = m_CB_Camera.m._World2Camera * m_CB_Camera.m._Camera2Proj;
+// 			m_CB_Camera.m._Proj2World = m_CB_Camera.m._Camera2World * m_CB_Camera.m._Proj2Camera;
+// 
+// 			m_CB_Camera.UpdateData();
+// 		}
 
-		public void	UpdateCamera() {
+		void Camera_CameraTransformChanged( object sender, EventArgs e )
+		{
+			m_CB_Camera.m._Camera2World = m_Camera.Camera2World;
+			m_CB_Camera.m._World2Camera = m_Camera.World2Camera;
 
-			float3	Position = new float3( 0, 1, 4 );
-					Position.x += floatTrackbarControlCameraPosX.Value;
-					Position.y += floatTrackbarControlCameraPosY.Value;
-					Position.z += floatTrackbarControlCameraPosZ.Value;
-
-			float3	Target = new float3( 0, 1, 0 );
-
-			m_CB_Camera.m._Camera2World.MakeLookAtCamera( Position, Target, float3.UnitY );
-			m_CB_Camera.m._World2Camera = m_CB_Camera.m._Camera2World.Inverse;
-
-			m_CB_Camera.m._Camera2Proj.MakeProjectionPerspective( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
+			m_CB_Camera.m._Camera2Proj = m_Camera.Camera2Proj;
 			m_CB_Camera.m._Proj2Camera = m_CB_Camera.m._Camera2Proj.Inverse;
 
 			m_CB_Camera.m._World2Proj = m_CB_Camera.m._World2Camera * m_CB_Camera.m._Camera2Proj;
@@ -394,7 +418,7 @@ namespace AreaLightTest
 			m_CB_Main.UpdateData();
 
 			// Setup camera data
-			UpdateCamera();
+//			UpdateCamera();
 
 			// =========== Render ===========
 			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
