@@ -109,25 +109,28 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 
 		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
 		Ld = RhoD / PI * Irradiance * SolidAngle;
-		return float4( Ld, 1 );
+//		return float4( Ld, 1 );
 	}
 	
-Ld = float3( 1, 1, 0 );
+//Ld = float3( 1, 1, 0 );
 
 	// Compute specular lighting
 
 //Calculer l'intersection avec le frustum et le portal, puis utiliser le facteur de diffusion pour grossir les UVs!! On va pas s'faire chier hein!
 
-
+	
 	float3	Ls = 0.0;
-// 	float3	wsReflectedView = reflect( wsView, wsNormal );
-// 	float	TanHalfAngle = tan( (1.0 - _Gloss) * 0.5 * PI );
-//  	if ( ComputeSolidAngleSpecular( wsPosition, wsNormal, wsReflectedView, TanHalfAngle, UV0, UV1, SolidAngle, Debug ) ) {
+//  	float3	wsReflectedView = reflect( wsView, wsNormal );
+//  	float	TanHalfAngle = tan( (1.0 - _Gloss) * 0.5 * PI );
+//   	if ( ComputeSolidAngleSpecular( wsPosition, wsNormal, wsReflectedView, TanHalfAngle, UV0, UV1, SolidAngle, Debug ) ) {
+//  
+// //return Debug;
+//  
+// 		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
+// 		Ls = Irradiance * SolidAngle;
 // 
-// // return Debug;
-// 
-// 		float3	Irradiance = _LightIntensity * SampleSAT( UV0, UV1 ).xyz;
-// 		Ls = RhoS * Irradiance * SolidAngle;
+// //return SolidAngle;
+// return 1 * float4( Irradiance, 0 );
 // 	}
 	
 	// Compute Fresnel

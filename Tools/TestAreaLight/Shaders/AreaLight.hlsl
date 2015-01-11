@@ -244,9 +244,9 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 	_Debug = 0.0;
 
 	float3	wsCenter2Position = _wsPosition - _AreaLightT;
-	float3	lsPosition = float3(	dot( wsCenter2Position, _AreaLightX ),	// Transform world position in local area light space
-									dot( wsCenter2Position, _AreaLightY ),
-									dot( wsCenter2Position, _AreaLightZ ) );
+	float3	lsPosition = float3(dot( wsCenter2Position, _AreaLightX ),	// Transform world position in local area light space
+								dot( wsCenter2Position, _AreaLightY ),
+								dot( wsCenter2Position, _AreaLightZ ) );
 	if ( lsPosition.z <= 0.0 ) {
 		// Position is behind area light...
 		return false;
@@ -279,8 +279,6 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 	_UV0 = ClippedUVs.xy;
 	_UV1 = ClippedUVs.zw;
 
-_Debug = float4( abs(_UV0), 0, 0 );
-
 	// Compute the solid angle
 	float	SolidAngle = RectangleSolidAngle( lsPosition, _UV0, _UV1 );
 
@@ -294,7 +292,6 @@ _Debug = float4( abs(_UV0), 0, 0 );
 	return true;
 }
 
-/*
 // Computes the 2 UVs and the solid angle perceived from a single point in world space watching the area light through a cone (used for specular reflection)
 //	_wsPosition, the world space position of the surface watching the area light
 //	_wsNormal, the world space normal of the surface
@@ -306,17 +303,29 @@ _Debug = float4( abs(_UV0), 0, 0 );
 //	_ProjectedSolidAngle, an estimate of the perceived projected solid angle (i.e. cos(IncidentAngle) * dOmega)
 //
 bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _wsView, float _TanHalfAngle, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle, out float4 _Debug ) {
+	_UV0 = _UV1 = 0.0;
+	_ProjectedSolidAngle = 0.0;
+	_Debug = 0.0;
 
-_Debug = 0.0;
+	float3	wsCenter2Position = _wsPosition - _AreaLightT;
+	float3	lsPosition = float3(dot( wsCenter2Position, _AreaLightX ),	// Transform world position into local area light space
+								dot( wsCenter2Position, _AreaLightY ),
+								dot( wsCenter2Position, _AreaLightZ ) );
 
-	float3	lsPosition = mul( float4( _wsPosition, 1.0 ), _World2AreaLight ).xyz;	// Transform world position into local area light space
-	float3	lsView = mul( float4( _wsView, 0.0 ), _World2AreaLight ).xyz;			// Transform world direction into local area light space
+	float3	lsView = float3(	dot( _wsView, _AreaLightX ),				// Transform world direction into local area light space
+								dot( _wsView, _AreaLightY ),
+								dot( _wsView, _AreaLightZ ) );
 	if ( lsPosition.z <= 0.0 || lsView.z >= 0.0 ) {
 		// Position is behind area light or watching away from it...
-		_UV0 = _UV1 = 0.0;
-		_ProjectedSolidAngle = 0.0;
 		return false;
 	}
+
+	lsView.xy /= float2( _AreaLightScaleX, _AreaLightScaleY );			// Account for scale
+	lsPosition.xy /= float2( _AreaLightScaleX, _AreaLightScaleY );			// Account for scale
+
+	float3	lsNormal = float3(	dot( _wsNormal, _AreaLightX ),				// Transform world normal in local area light space
+								dot( _wsNormal, _AreaLightY ),
+								dot( _wsNormal, _AreaLightZ ) );
 
 	// In local area light space, the position is in front of a canonical square:
 	//
@@ -347,18 +356,21 @@ _Debug = 0.0;
 	};
 
 	// Compute the intersection of the frustum with the virtual source's plane
-	float	Distance2VirtualSource = lsPosition.z + _ProjectionDirectionSpec.z;
-	float3	lsVirtualSourceCenter = -_ProjectionDirectionSpec;					// Center of the virtual source
+	float	Distance2VirtualSource = lsPosition.z;// + _ProjectionDirectionSpec.z;
+	float3	lsVirtualSourceCenter = 0.0;//-_ProjectionDirectionSpec;					// Center of the virtual source
 
 	float2	HitMin = 1e6;
 	float2	HitMax = -1e6;
 	for ( uint Corner=0; Corner < 4; Corner++ ) {
-
 		float3	vsDirection = float3( _TanHalfAngle * Dirs[Corner], 1.0 );						// Ray direction in view space
 		float3	lsDirection = vsDirection.x * X + vsDirection.y * Y + vsDirection.z * lsView;	// Ray direction in local space
 
 		float	t = -Distance2VirtualSource / lsDirection.z;									// Distance at which the ray hits the virtual source's plane
 		float3	lsIntersection = lsPosition + t * lsDirection - lsVirtualSourceCenter;			// Hit position on the virtual source's plane, relative to its center
+
+// _Debug = float4( lsIntersection, 0 );
+// _Debug = float4( lsDirection, 0 );
+// return true;
 
 		// Keep min and max hit positions
 		HitMin = min( HitMin, lsIntersection.xy );
@@ -367,33 +379,25 @@ _Debug = 0.0;
 
 	// Compute the UV's from the hit positions
 	_UV0 = 0.5 * (1.0 + float2( HitMin.x, -HitMin.y));
-	_UV1 = max( _UV0 + dUV.xy, 0.5 * (1.0 + float2( HitMax.x, -HitMax.y)) );	// Make sure the UVs are at least separated by a single texel before clamping
+	_UV1 = 0.5 * (1.0 + float2( HitMax.x, -HitMax.y));
+	_UV1 = max( _UV0 + dUV.xy, _UV1 );	// Make sure the UVs are at least separated by a single texel before clamping
 
 //_Debug = float4( _UV1, 0, 0 );
 
-	// Clamp to [0,1]
-	_UV0 = saturate( _UV0 );
-	_UV1 = saturate( _UV1 );
+	// Compute potential clipping by the surface's plane
+	float4	ClippedUVs = ComputeClipping( lsPosition, lsNormal, _Debug );
+	_UV0 = clamp( _UV0, ClippedUVs.xy, ClippedUVs.zw );
+	_UV1 = clamp( _UV1, ClippedUVs.xy, ClippedUVs.zw );
 
 	// Compute the solid angle
-	float2	DeltaUV = _UV1 - _UV0;
-	float	UVArea = DeltaUV.x * DeltaUV.y;	// This is the perceived area in UV space
-	float	wsArea = UVArea * _Area;		// This is the perceived area in world space
-
-	float	SolidAngle = wsArea * -dot( _wsView, _AreaLight2World[2].xyz );	// dWi = Area * cos( theta )
+	float	SolidAngle = RectangleSolidAngle( lsPosition, _UV0, _UV1 );
 
 	// Now, we can compute the projected solid angle by dotting with the normal
 	_ProjectedSolidAngle = saturate( dot( _wsNormal, _wsView ) ) * SolidAngle;	// (N.Wi) * dWi
 
-
-_ProjectedSolidAngle = 1;//UVArea;
-
-
-// _UV0 = lsPosition.xy;
-// _UV1 = lsPosition.z;
-// _UV0 = _UV1;
-// _UV1 = 0;
+	// Finally, multiply by PI/4 to account for the fact we traced a square pyramid instead of a cone
+	// (area of the base of the pyramid is 2x2 while area of the circle is PI)
+	_ProjectedSolidAngle *= 0.25 * PI;
 
 	return true;
 }
-*/
