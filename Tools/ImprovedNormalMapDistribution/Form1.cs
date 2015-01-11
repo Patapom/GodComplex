@@ -68,7 +68,7 @@ namespace ImprovedNormalMapDistribution
 			int			W, H;
 			float3[,]	Vectors;
 			float		x, y, z;
-			using ( TargaImage TGA = new TargaImage( SourceFileName.FullName ) )
+			using ( TargaImage TGA = new TargaImage( SourceFileName.FullName, false ) )
 			{
 				// Convert
 				byte[]		ImageContent = Bitmap.LoadBitmap( TGA.Image, out W, out H );
@@ -168,7 +168,7 @@ namespace ImprovedNormalMapDistribution
 			int			W, H;
 			float3[,]	Vectors;
 			float		x, y, z;
-			using ( TargaImage TGA = new TargaImage( SourceFileName.FullName ) )
+			using ( TargaImage TGA = new TargaImage( SourceFileName.FullName, false ) )
 			{
 				// Convert
 				byte[]		ImageContent = Bitmap.LoadBitmap( TGA.Image, out W, out H );

@@ -28,7 +28,8 @@ namespace FBXTestConverter
 			InitializeComponent();
 
 //			LoadScene( new FileInfo( @"..\Arkane\City.fbx" ) );
-			LoadScene( new FileInfo( @".\Resources\Scenes\Sponza\Sponza.fbx" ) );
+//			LoadScene( new FileInfo( @".\Resources\Scenes\Sponza\Sponza.fbx" ) );
+			LoadScene( new FileInfo( @"..\Arkane\Volet.fbx" ) );
 
 //			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1.fbx" ) );
 //			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1_10Probes.fbx" ) );

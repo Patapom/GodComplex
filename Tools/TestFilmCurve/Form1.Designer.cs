@@ -57,7 +57,8 @@
 			this.floatTrackbarControlScaleX.Name = "floatTrackbarControlScaleX";
 			this.floatTrackbarControlScaleX.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlScaleX.TabIndex = 1;
-			this.floatTrackbarControlScaleX.Value = 1F;
+			this.floatTrackbarControlScaleX.Value = 10F;
+			this.floatTrackbarControlScaleX.VisibleRangeMax = 20F;
 			this.floatTrackbarControlScaleX.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScaleX_ValueChanged);
 			// 
 			// floatTrackbarControlScaleY
@@ -69,6 +70,7 @@
 			this.floatTrackbarControlScaleY.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlScaleY.TabIndex = 1;
 			this.floatTrackbarControlScaleY.Value = 1F;
+			this.floatTrackbarControlScaleY.VisibleRangeMax = 5F;
 			this.floatTrackbarControlScaleY.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScaleY_ValueChanged);
 			// 
 			// floatTrackbarControlWhitePoint

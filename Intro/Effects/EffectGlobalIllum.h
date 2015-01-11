@@ -28,18 +28,18 @@ protected:	// NESTED TYPES
 
 	struct CBMaterial
 	{
-		float3	DiffuseColor;
+		float3		DiffuseColor;
 		bool		HasDiffuseTexture;
-		float3	SpecularColor;
+		float3		SpecularColor;
 		bool		HasSpecularTexture;
 		float		SpecularExponent;
 	};
 
 	struct CBProbe
 	{
-		float3	CurrentProbePosition;
+		float3		CurrentProbePosition;
 		U32			NeighborProbeID;
-		float3	NeighborProbePosition;
+		float3		NeighborProbePosition;
  	};
 
 	struct CBSplat
@@ -52,9 +52,9 @@ protected:	// NESTED TYPES
 	{
 		Scene::Probe*	pSceneProbe;
 
-		float3		pSHBounce[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced light
+		float3			pSHBounce[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced light
 		float			pSHOcclusion[9];		// The pre-computed SH taht gives back how much of the environment is perceived in a given direction
-		float3		pSHLight[9];			// The radiance field surrounding the probe
+		float3			pSHLight[9];			// The radiance field surrounding the probe
 		float			ProbeInfluenceDistance;	// The distance above which the probe stops being used
 
 		int				NeighborsCount;			// The amount of neighbor probes
@@ -66,8 +66,8 @@ protected:	// NESTED TYPES
 			ProbeStruct*	pNeighbor;			// The neighbor probe
 		}				pNeighborLinks[MAX_NEIGHBOR_PROBES];		// The array of 32 max neighbor probes
 
-		float3		pSHBouncedLight0[9];	// The resulting bounced irradiance (bounce * light) for current frame
-		float3		pSHBouncedLight1[9];	// The resulting bounced irradiance (bounce * light) from last frame
+		float3			pSHBouncedLight0[9];	// The resulting bounced irradiance (bounce * light) for current frame
+		float3			pSHBouncedLight1[9];	// The resulting bounced irradiance (bounce * light) from last frame
 
 		// Temporary counters for a specific probe to count its neighbors
 		int				__TempNeighborCounter;
@@ -108,8 +108,8 @@ private:	// FIELDS
 	// Light buffer
 	struct	LightStruct
 	{
-		float3	Position;
-		float3	Color;
+		float3		Position;
+		float3		Color;
 		float		Radius;	// Light radius to compute the solid angle for the probe injection
 	};
 	SB<LightStruct>*	m_pSB_Lights;
@@ -117,10 +117,10 @@ private:	// FIELDS
 	// Runtime probes buffer
 	struct RuntimeProbe 
 	{
-		float3	Position;
+		float3		Position;
 		float		ProbeInfluenceDistance;
-		float3	pSHBounce[9];
-		float3	pSHLight[9];
+		float3		pSHBounce[9];
+		float3		pSHLight[9];
 	};
 	SB<RuntimeProbe>*	m_pSB_RuntimeProbes;
 

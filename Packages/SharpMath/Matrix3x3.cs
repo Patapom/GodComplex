@@ -130,6 +130,22 @@ namespace WMath
 		public Matrix3x3			MakeRotX( float _fAngle )						{ MakeIdentity(); float fCosine = (float) System.Math.Cos( _fAngle ); float fSine = (float) System.Math.Sin( _fAngle ); m[1, 1] = +fCosine; m[1, 2] = +fSine; m[2, 1] = -fSine; m[2, 2] = +fCosine; return this; }
 		public Matrix3x3			MakeRotY( float _fAngle )						{ MakeIdentity(); float fCosine = (float) System.Math.Cos( _fAngle ); float fSine = (float) System.Math.Sin( _fAngle ); m[0, 0] = +fCosine; m[0, 2] = -fSine; m[2, 0] = +fSine; m[2, 2] = +fCosine; return this; }
 		public Matrix3x3			MakeRotZ( float _fAngle )						{ MakeIdentity(); float fCosine = (float) System.Math.Cos( _fAngle ); float fSine = (float) System.Math.Sin( _fAngle ); m[0, 0] = +fCosine; m[0, 1] = +fSine; m[1, 0] = -fSine; m[1, 1] = +fCosine; return this; }
+
+		// From http://www.iquilezles.org/www/articles/noacos/noacos.htm
+		public Matrix3x3			MakeRot( Vector _from, Vector _to )
+		{
+			Vector	v = _from.Cross( _to );
+			float	c = _from.Dot( _to );
+			float	k = 1.0f / (1.0f + c);
+
+			
+			m[0, 0] = v.x*v.x*k + c;	m[0, 1] = v.x*v.y*k + v.z;	m[0, 2] = v.x*v.z*k - v.y;
+			m[1, 0] = v.y*v.x*k - v.z;	m[1, 1] = v.y*v.y*k + c;	m[1, 2] = v.y*v.z*k + v.x;
+			m[2, 0] = v.z*v.x*k + v.y;	m[2, 1] = v.z*v.y*k - v.x;	m[2, 2] = v.z*v.z*k + c;
+
+			return this;
+		}
+
 		public Matrix3x3			MakePYR( float _fPitch, float _fYaw, float _fRoll )	{ Matrix3x3 Pitch = new Matrix3x3( INIT_TYPES.ROT_X, _fPitch ); Matrix3x3 Yaw = new Matrix3x3( INIT_TYPES.ROT_Y, _fYaw ); Matrix3x3 Roll = new Matrix3x3( INIT_TYPES.ROT_Z, _fRoll ); Set( Roll * Yaw * Pitch ); return this; }
 		public Vector				GetEuler()
 		{

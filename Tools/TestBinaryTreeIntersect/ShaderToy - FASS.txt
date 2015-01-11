@@ -1,0 +1,388 @@
+// Code from:
+// https://www.shadertoy.com/view/XlfGzM
+//
+// Written by Hubw (Huw Bowles from Studio Gobo)
+//
+//
+//
+
+// FASS - Fast Adaptive Stationary Sampling
+// For a description see https://www.shadertoy.com/view/XdfXzn
+
+
+// Outstanding issue: there seems to be some instability in the sampling, especially prominent at low time values.
+// Havent figured out where this is coming from.
+
+
+// for graph
+#define RANGEX 8.0
+#define RANGEY 8.0
+#define THICK  0.05
+
+// simple macros to pull mouse position in [0,1]
+#define MOUSEX	iMouse.x/iResolution.x
+#define MOUSEY	iMouse.y/iResolution.y
+
+#define CAMX (RANGEX*(MOUSEX-.5)*2.5)
+
+#define SAMPLE_COUNT 32
+#define PARAMETRIC_STEPS 32
+
+#define EPS 0.001
+
+//#define VIS_SAMPLE_LEVELS
+
+// the following function computes the MAX value of a pdf in a range. the pdf here is the equiangular sampling pdf
+// (see shaders Xdf3zB, 4sSSWm).
+// Point sampling the pdf may work for relatively smooth and/or monotonic pdfs (as is the case in XdfXzn),
+// but for a pdf with a sharp feature, i found that the sampling could step right over the feature if I'm using only
+// taking local samples from the pdf. Instead I take the max value of the pdf between the current sample and the next
+// proposed sample, and use this max value to adjust the sampling rate, which seems to work well.
+float pdf_max( float xstart, float xend )
+{
+	vec3 lightPos = vec3(MOUSEX*RANGEX,RANGEY/2.,0.);
+    vec3 rayOrigin = vec3(0.0,MOUSEY*RANGEY,0.);
+    vec3 rayDir = vec3(1.,0.,0.);
+    
+	float delta = dot(lightPos - rayOrigin, rayDir);
+    
+	float D = length(rayOrigin + delta*rayDir - lightPos);
+    
+	float thetaA = atan(0.0 - delta, D);
+	float thetaB = atan(RANGEX - delta, D);
+    
+    // prefers to take highest sampling, then puts in chunk range
+    float x = clamp(delta, xstart, xend);
+    
+    
+	// take sample
+	float t = x-delta;
+     
+	float pdf = D/((thetaB - thetaA)*(D*D + t*t));
+    
+    float spc = pdf*float(SAMPLE_COUNT);
+	return .4*spc; // .5 because it always doubles the sample count :/
+}
+
+// the density line plot
+bool fn1( float x, out float y, out vec4 col )
+{
+	col = vec4(1.,0.,0.,1.);
+	
+	y = pdf_max( x, x );
+	
+	return true;
+}
+
+// visualise two tree levels
+float inten = .4;
+float visy0 = .5;
+bool fn2( float x, out float y, out vec4 col )
+{
+    //y = pow( 2., 1.+floor(log2(MOUSEY*RANGEY)) );
+    y = MOUSEY*RANGEY;
+	col = vec4(inten);
+	return true;
+}
+
+
+
+float dens(float x, float dx)
+{
+    return 1./pdf_max(x,x+dx);
+}
+
+float mov_mod( float x, float y)
+{
+    return mod( x - iGlobalTime/2., y );
+}
+
+// this parametric function places a white dot at each sample
+bool pfn1( float t, out float x, out float y, out vec4 col, out float mint, out float maxt )
+{
+	col = vec4(1.);
+	mint = 0.;
+	maxt = 1.;
+	int thisPt = int(floor(t*float(SAMPLE_COUNT)));
+    
+    // new variables from adaptive sampling
+    
+    // setup sampling
+	x = 0.;
+    float dx = exp2(floor(log2(dens(x,0.))));
+    x -= mov_mod(x,dx);
+    float wt = 1.;
+    bool even = mov_mod(x,2.*dx) < EPS;
+    
+	for( int i = 0; i < SAMPLE_COUNT; i++ )
+	{
+		if( i == thisPt )
+		{
+			break;
+		}
+        
+        
+        // sample at x, give weight wt
+        
+        
+        float densx = dens(x,dx);
+    	if( densx < dx  )
+        {
+            // can move to higher density at any time
+            even = true;
+            
+            //dx = exp2(floor(log2(densx)))
+            dx /= 2.;
+	        densx = dens(x,dx); // required for smooth wt computation below. slight pop if missing.
+            // OPTIONAL: add one or more of the following to add a bit of juice, allows the algorithm to increase
+            // sampling density faster. needed when the pdf is sharp.
+            if( densx < dx ) { dx /= 2.; densx=dens(x,dx); }
+        }
+	    else if( even && densx > 2.*dx )
+        {
+            // move to lower density if a sample is there
+            wt = 1.;
+            
+            dx *= 2.;
+            even = mov_mod(x,2.*dx) < EPS;
+            
+            // i think this will allow the density to drop faster, however it still can only drop on even samples
+            // and I'm not sure that this is a good idea
+            //if( even && (densx = dens(x,dx)) > 2.*dx ) { dx *= 2.; even = mov_mod(x,2.*dx) < EPS; }
+        } 
+        
+        x += dx;
+	    even = !even;
+    	if( !even ) wt = clamp( 2. - densx/dx,0.,1.); // update wt for odd sample - based on how far previous sample is into its band
+	}
+    
+    wt = even ? (2.-wt) : wt;
+    
+    col *= clamp(wt,0.,1.);
+    
+    vec4 col_dummy;
+	fn2(x,y,col_dummy);
+    
+    //y = 1./dx;
+    #ifdef VIS_SAMPLE_LEVELS
+    #endif
+    
+	return true;
+}
+
+
+vec4 graph( vec2 p, float xmin, float xmax, float ymin, float ymax, float width );
+
+void main(void)
+{
+    vec2 uv = gl_FragCoord.xy / iResolution.xy;
+
+    // uv minx maxx miny maxy thickness
+	gl_FragColor = graph( uv, 0., RANGEX, 0., RANGEY, THICK );
+
+	return;
+}
+
+
+float drawNumber( float num, vec2 pos, vec2 pixel_coords );
+
+// p is in [0,1]. 
+vec4 graph( vec2 p, float xmin, float xmax, float ymin, float ymax, float width )
+{
+	vec4 result = vec4(0.1);
+	
+	float thisx = xmin + (xmax-xmin)*p.x;
+	float thisy = ymin + (ymax-ymin)*p.y;
+	
+	// compute gradient between this pixel and next (seems reasonable)
+	float eps = dFdx(thisx);
+
+	float alpha;
+	
+	vec4 axisCol = vec4(vec3(.3),1.);
+	
+	// axes
+	// x
+	alpha = abs( thisy - 0. ); alpha = smoothstep( width, width/4., alpha );
+	result = (1.-alpha)*result + alpha*axisCol;
+	// y
+	alpha = abs( thisx - 0. ); alpha = smoothstep( width, width/4., alpha );
+	result = (1.-alpha)*result + alpha*axisCol;
+	
+	// uses iq's awesome distance to implicit http://www.iquilezles.org/www/articles/distance/distance.htm
+	float f;
+	vec4 fcol;
+	if( fn1( thisx, f, fcol ) )
+	{
+		float f_1; fn1( thisx + eps, f_1, fcol ); float f_prime = (f_1 - f) / eps;
+		alpha = abs(thisy - f)/sqrt(1.+f_prime*f_prime); alpha = smoothstep( width, width/4., alpha ); alpha *= fcol.a;
+		result = (1.-alpha)*result + alpha*fcol;
+	}
+	if( fn2( thisx, f, fcol ) )
+	{
+		float f_1; fn2( thisx + eps, f_1, fcol ); float f_prime = (f_1 - f) / eps;
+		alpha = abs(thisy - f)/sqrt(1.+f_prime*f_prime); alpha = smoothstep( width, width/4., alpha ); alpha *= fcol.a;
+		result = (1.-alpha)*result + alpha*fcol;
+	}
+	// parametric curves. todo - join the dots!
+	float x, mint, maxt;
+	if( pfn1( 0., x, f, fcol, mint, maxt ) )
+	{
+		float dt = (maxt-mint)/float(PARAMETRIC_STEPS);
+		float t = mint;
+		for( int i = 0; i <= PARAMETRIC_STEPS; i++ )
+		{
+			pfn1( t, x, f, fcol, mint, maxt );
+			alpha = length(vec2(x,f)-vec2(thisx,thisy));
+			alpha = smoothstep( width, width/4., alpha ); alpha *= fcol.a;
+			result = (1.-alpha)*result + alpha*fcol;
+			t += dt;
+		}
+	}
+	
+	result += vec4(drawNumber(xmin, vec2(0.,0.)+vec2(1.)/iResolution.xy, p ));
+	result += vec4(drawNumber(xmax, vec2(1.,0.)+vec2(-26.,1.)/iResolution.xy, p ));
+	result += vec4(drawNumber(ymax, vec2(0.,1.)+vec2(1.,-7.)/iResolution.xy, p ));
+	result += vec4(drawNumber(ymin, vec2(0.,0.)+vec2(1.,10.)/iResolution.xy, p ));
+	
+	return result;
+}
+
+// digits based on the nice ascii shader by movAX13h
+
+float drawDig( vec2 pos, vec2 pixel_coords, float bitfield )
+{
+	// offset relative to 
+	vec2 ic = pixel_coords - pos ;
+	ic = floor(ic*iResolution.xy);
+	// test if overlap letter
+	if( clamp(ic.x, 0., 2.) == ic.x && clamp(ic.y, 0., 4.) == ic.y )
+	{
+		// compute 1d bitindex from 2d pos
+		float bitIndex = ic.y*3.+ic.x;
+		// isolate the bit
+		return floor( mod( bitfield / exp2( floor(bitIndex) ), 2. ) );
+	}
+	return 0.;
+}
+// decimal point
+float drawDecPt( vec2 center, vec2 pixel_coords )
+{
+	return drawDig( center, pixel_coords, 1. );
+}
+// minus sign
+float drawMinus( vec2 center, vec2 pixel_coords )
+{
+	return drawDig( center, pixel_coords, 448. );
+}
+// digits 0 to 9
+float drawDigit( float dig, vec2 pos, vec2 pixel_coords )
+{
+	if( dig == 1. )
+		return drawDig( pos, pixel_coords, 18724. );
+	if( dig == 2. )
+		return drawDig( pos, pixel_coords, 31183. );
+	if( dig == 3. )
+		return drawDig( pos, pixel_coords, 31207. );
+	if( dig == 4. )
+		return drawDig( pos, pixel_coords, 23524. );
+	if( dig == 5. )
+		return drawDig( pos, pixel_coords, 29671. );
+	if( dig == 6. )
+		return drawDig( pos, pixel_coords, 29679. );
+	if( dig == 7. )
+		return drawDig( pos, pixel_coords, 31012. );
+	if( dig == 8. )
+		return drawDig( pos, pixel_coords, 31727. );
+	if( dig == 9. )
+		return drawDig( pos, pixel_coords, 31719. );
+	// 0
+	return drawDig( pos, pixel_coords, 31599. );
+}
+
+// max num width is 26px (minus, 3 nums, dec pt, 2 nums)
+// max height is 6px
+float drawNumber( float num, vec2 pos, vec2 pixel_coords )
+{
+	float result = 0.;
+	bool on = false;
+	float d;
+	
+	// minus sign
+	if( num < 0. )
+	{
+		result += drawMinus( pos, pixel_coords );
+		pos.x += 4. / iResolution.x;
+		num = -num;
+	}
+	// hundreds
+	d = floor(mod(num/100.,10.));
+	if( on || d > 0. )
+	{
+		result += drawDigit( d, pos, pixel_coords );
+		pos.x += 4. / iResolution.x;
+		on = true;
+	}
+	// tens
+	d = floor(mod(num/10.,10.));
+	if( on || d > 0. )
+	{
+		result += drawDigit( d, pos, pixel_coords );
+		pos.x += 4. / iResolution.x;
+		on = true;
+	}
+	// ones
+	d = floor(mod(num,10.));
+	result += drawDigit( d, pos, pixel_coords );
+	pos.x += 4. / iResolution.x;
+	// dec pt
+	result += drawDecPt( pos, pixel_coords );
+	pos.x += 2. / iResolution.x;
+	// tenths
+	d = floor(mod(num/.1,10.));
+	if( true )
+	{
+		result += drawDigit( d, pos, pixel_coords );
+		pos.x += 4. / iResolution.x;
+	}
+	// hundredths
+	d = floor(.5+mod(num/.01,10.));
+	if( d > 0. )
+	{
+		result += drawDigit( d, pos, pixel_coords );
+		pos.x += 4. / iResolution.x;
+	}
+	
+	return clamp(result,0.,1.);
+}
+
+vec3 hsv2rgb(vec3 c);
+vec3 rgb2hsv(vec3 c);
+
+vec3 errorColour( float err, float maxerror )
+{
+	err = 1. - err / maxerror;
+	err *= 2. / 3.;
+	return hsv2rgb( vec3(err, 1., 1.) );
+}
+
+//http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
+
+vec3 rgb2hsv(vec3 c)
+{
+    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+    float d = q.x - min(q.w, q.y);
+    float e = 1.0e-10;
+    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+vec3 hsv2rgb(vec3 c)
+{
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+

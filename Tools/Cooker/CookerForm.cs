@@ -22,7 +22,7 @@ namespace Cooker
 		{
 		}
 
-		private FileInfo	m_MapFile = null;
+		private FileInfo	m_MapFile = new FileInfo( @"V:\blacksparrow\idtech5\blacksparrow\base\maps\dummy.map" );
 		private FileInfo	MapFile
 		{
 			get { return m_MapFile; }
@@ -40,9 +40,10 @@ namespace Cooker
 			}
 		}
 
-		private string		m_ExecutablePath = @"V:\blacksparrow\idtech5\blacksparrow";
+		private string		m_ExecutablePath = @"V:\blacksparrow\idtech5\blacksparrow\Blacksparrowx64.exe";
+		private string		m_BasePath = @"V:\blacksparrow\idtech5\blacksparrow";
 
-		private string		m_Custompath = "";
+		private string		m_CustomExecutablePath = @"V:\blacksparrow\idtech5\blacksparrow\Blacksparrowx64.exe";
 
 		public CookerForm()
 		{
@@ -51,11 +52,8 @@ namespace Cooker
 			m_AppKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( @"Software\Arkane\MapCooker" );
 
 			// Retrieve previous map
-			string	MapName = m_AppKey.GetValue( "LastSelectedmap" ) as string;
-			if ( MapName != null )
-				MapFile = new FileInfo( MapName );
-			else
-				openFileDialog.InitialDirectory = @"V:\blacksparrow\idtech5\blacksparrow\base\maps\";	// Makes sense...
+			string	MapName = m_AppKey.GetValue( "LastSelectedmap", m_MapFile.FullName ) as string;
+			MapFile = new FileInfo( MapName );
 
 			// Retrieve previous platform selection
 			int		PlatformIndex = 0;
@@ -69,7 +67,14 @@ namespace Cooker
 			string	ExecutableIndexAsString = m_AppKey.GetValue( "Executable" ) as string;
 			int.TryParse( ExecutableIndexAsString, out ExecutableIndex );
 
+			m_CustomExecutablePath = m_AppKey.GetValue( "CustomExecutablepath", m_CustomExecutablePath ) as string;
+
 			comboBoxExecutable.SelectedIndex = ExecutableIndex;
+			comboBoxExecutable_SelectedIndexChanged( comboBoxExecutable, EventArgs.Empty );
+
+			// Retrieve previous base path
+			m_BasePath = m_AppKey.GetValue( "BasePath", m_BasePath ) as string;
+			textBoxBasePath.Text = m_BasePath;
 
 			// Retrieve previous command line
 			string	CommandLine = m_AppKey.GetValue( "CommandLine" ) as string;
@@ -95,10 +100,13 @@ namespace Cooker
 
 		private void buttonLoadMap_Click(object sender, EventArgs e)
 		{
-			if ( openFileDialog.ShowDialog( this ) != DialogResult.OK )
+			string	MapName = m_AppKey.GetValue( "LastSelectedmap", m_MapFile.FullName ) as string;
+			openFileDialogMap.FileName = Path.GetFileName( MapName );
+			openFileDialogMap.InitialDirectory = Path.GetDirectoryName( MapName );
+			if ( openFileDialogMap.ShowDialog( this ) != DialogResult.OK )
 				return;
 
-			FileInfo	SelectedMapFile = new FileInfo( openFileDialog.FileName );
+			FileInfo	SelectedMapFile = new FileInfo( openFileDialogMap.FileName );
 			if ( !SelectedMapFile.Exists )
 			{
 				MessageBox( "Selected map file \"" + SelectedMapFile.FullName + "\" does not exist!", MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -112,12 +120,46 @@ namespace Cooker
 		{
 			// Update registry
 			m_AppKey.SetValue( "Platform", comboBoxPlatform.SelectedIndex.ToString() );
+			textBoxFinalCommandLine.Text = GenerateCommandLine();
 		}
 
 		private void textBoxCommandLine_TextChanged( object sender, EventArgs e )
 		{
 			// Update registry
 			m_AppKey.SetValue( "CommandLine", textBoxCommandLine.Text );
+			textBoxFinalCommandLine.Text = GenerateCommandLine();
+		}
+
+		/// <summary>
+		/// Generates the final command line used for cooking
+		/// </summary>
+		/// <returns></returns>
+		private string	GenerateCommandLine()
+		{
+			// ORBIS COMMAND LINE (as of 12/08/2014):
+			// Running : "V:\blacksparrow\idtech5\blacksparrow\Blacksparrowx64.exe" +win_silentCrash 1 +com_assertOutOfDebugger  1 +r_fullscreen 0 +ark_usestdout 1 +win_crashDmp_enable 1
+			//			+com_crashProcessOnError 1 +fs_basepath "V:\blacksparrow\idtech5\blacksparrow" +r_imagesMaxMipmapsNbr 4 +com_production 1
+			//			+buildgame -orbis -fast    LIST OF MAPS (e.g.: checkmap/dojo_routine/dojo_routine.map)
+			//
+			DirectoryInfo	WorkingDirectory = new DirectoryInfo( m_BasePath );
+			DirectoryInfo	MapsDirectory = new DirectoryInfo( Path.Combine( WorkingDirectory.FullName, "base\\maps" ) );
+
+			// Strip map from base path
+			string	MapRelativeFileName = MapFile.FullName;
+					MapRelativeFileName = MapRelativeFileName.Replace( MapsDirectory.FullName + "\\", "" );	// Remove absolute
+
+			string	PlatformArg = null;
+			switch ( comboBoxPlatform.SelectedIndex )
+			{
+				case 0:	PlatformArg = "-pc"; break;
+				case 1:	PlatformArg = "-orbis"; break;
+				case 2:	PlatformArg = "-durango"; break;
+				default:
+					throw new Exception( "Unsupported platform type " + comboBoxPlatform.SelectedIndex + "!" );
+			}
+
+			string	CommandLine = textBoxCommandLine.Text + " +com_production 1 +ark_useStdOut 1 +buildgame -fast " + PlatformArg + " +fs_basepath \"" + m_BasePath + "\" " + MapRelativeFileName;
+			return CommandLine;
 		}
 
 		private bool	m_Cooking = false;
@@ -146,32 +188,9 @@ namespace Cooker
 				if ( !ApplicationFileName.Exists )
 					throw new Exception( "Application Blacksparrow64.exe could not be found while looking at \"" + ApplicationFileName.FullName + "\"! Did you build it?" );
 
-				DirectoryInfo	ApplicationDirectory = ApplicationFileName.Directory;
-				DirectoryInfo	WorkingDirectory = new DirectoryInfo( @"V:\blacksparrow\idtech5\blacksparrow\" );
-				DirectoryInfo	MapsDirectory = new DirectoryInfo( Path.Combine( WorkingDirectory.FullName, "base\\maps" ) );
-
-				// Strip map from base path
-				string	MapRelativeFileName = MapFile.FullName;
-						MapRelativeFileName = MapRelativeFileName.Replace( MapsDirectory.FullName+"\\", "" );	// Remove absolute
-
-				string	PlatformArg = null;
-				switch ( comboBoxPlatform.SelectedIndex )
-				{
-					case 0:	PlatformArg = "-pc"; break;
-					case 1:	PlatformArg = "-orbis"; break;
-					case 2:	PlatformArg = "-durango"; break;
-					default:
-						throw new Exception( "Unsupported platform type " + comboBoxPlatform.SelectedIndex + "!" );
-				}
-
-				// ORBIS COMMAND LINE (as of 12/08/2014):
-				// Running : "V:\blacksparrow\idtech5\blacksparrow\Blacksparrowx64.exe" +win_silentCrash 1 +com_assertOutOfDebugger  1 +r_fullscreen 0 +ark_usestdout 1 +win_crashDmp_enable 1
-				//			+com_crashProcessOnError 1 +fs_basepath "V:\blacksparrow\idtech5\blacksparrow" +r_imagesMaxMipmapsNbr 4 +com_production 1
-				//			+buildgame -orbis -fast    LIST OF MAPS (e.g.: checkmap/dojo_routine/dojo_routine.map)
-				//
 				P.StartInfo.FileName = ApplicationFileName.FullName;
-				P.StartInfo.Arguments = textBoxCommandLine.Text + " +com_production 1 +ark_useStdOut 1 +buildgame -fast " + PlatformArg + " " + MapRelativeFileName;
-				P.StartInfo.WorkingDirectory = WorkingDirectory.FullName;
+				P.StartInfo.Arguments = GenerateCommandLine();
+				P.StartInfo.WorkingDirectory = m_BasePath;
 				P.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;	// Start minimized
 
 				// Let's go !!
@@ -418,7 +437,7 @@ namespace Cooker
 					m_ExecutablePath = @"V:\blacksparrow\idtech5\blacksparrow\Blacksparrowx64.exe";
 					break;
 				case 3:
-					m_ExecutablePath = m_Custompath;
+					m_ExecutablePath = m_CustomExecutablePath;
 					break;
 			}
 
@@ -428,14 +447,29 @@ namespace Cooker
 
 		private void buttonCustom_Click( object sender, EventArgs e )
 		{
-			openFileDialogExecutable.FileName =	m_AppKey.GetValue( "CustomExecutablepath", "" ) as string;
+			string	customPath = m_AppKey.GetValue( "CustomExecutablepath", m_CustomExecutablePath ) as string;
+			openFileDialogExecutable.FileName = Path.GetFileName( customPath );
+			openFileDialogExecutable.InitialDirectory = Path.GetDirectoryName( customPath );
 			if ( openFileDialogExecutable.ShowDialog( this ) != DialogResult.OK ) {
 				return;
 			}
 			m_AppKey.SetValue( "CustomExecutablepath", openFileDialogExecutable.FileName );
 
-			m_ExecutablePath = openFileDialogExecutable.FileName;
+			m_CustomExecutablePath = openFileDialogExecutable.FileName;
 			textBoxExecutablePath.Text = m_ExecutablePath;
+		}
+
+		private void buttonBasePath_Click( object sender, EventArgs e )
+		{
+			folderBrowserDialog.SelectedPath =	m_AppKey.GetValue( "BasePath", m_BasePath ) as string;
+			if ( folderBrowserDialog.ShowDialog( this ) != DialogResult.OK ) {
+				return;
+			}
+			string	selectedFolder = folderBrowserDialog.SelectedPath.TrimEnd( '\\' );
+			m_AppKey.SetValue( "BasePath", selectedFolder );
+
+			m_BasePath = selectedFolder;
+			textBoxBasePath.Text = m_BasePath;
 		}
 	}
 }

@@ -203,11 +203,27 @@ namespace RendererManaged
 		float4x4( float4^ _r0, float4^ _r1, float4^ _r2, float4^ _r3 )	{ r0 = *_r0; r1 = *_r1; r2 = *_r2; r3 = *_r3; }
 		void	FromMatrix4( WMath::Matrix4x4^ a )	{ r0.FromVector4( a->GetRow0() ); r1.FromVector4( a->GetRow1() ); r2.FromVector4( a->GetRow2() ); r3.FromVector4( a->GetRow3() ); }
 
-		float4x4	MakeLookAt( float3 _Position, float3 _Target, float3 _Up )
+		// Makes a "look at" camera matrix (left-handed)
+		float4x4	MakeLookAtCamera( float3 _Position, float3 _Target, float3 _Up )
 		{
 			float3	At = (_Target - _Position).Normalized;	// We want Z to point toward target
 			float3	Right = At.Cross( _Up ).Normalized;		// We want X to point to the right
 			float3	Up = Right.Cross( At );					// We want Y to point upward
+
+			r0.Set( Right.x, Right.y, Right.z, 0.0f );
+			r1.Set( Up.x, Up.y, Up.z, 0.0f );
+			r2.Set( At.x, At.y, At.z, 0.0f );
+			r3.Set( _Position.x, _Position.y, _Position.z, 1.0f );
+
+			return *this;
+		}
+
+		// Makes a regular "look at" matrix for objects (right-handed)
+		float4x4	MakeLookAt( float3 _Position, float3 _Target, float3 _Up )
+		{
+			float3	At = (_Target - _Position).Normalized;	// We want Z to point toward target
+			float3	Right = _Up.Cross( At ).Normalized;		// We want X to point to the right
+			float3	Up = At.Cross( Right );					// We want Y to point upward
 
 			r0.Set( Right.x, Right.y, Right.z, 0.0f );
 			r1.Set( Up.x, Up.y, Up.z, 0.0f );

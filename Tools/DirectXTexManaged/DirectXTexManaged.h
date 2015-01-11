@@ -11,7 +11,7 @@ using namespace WMath;
 
 namespace DirectXTexManaged {
 
-	public ref class CubeMapCreator
+	public ref class TextureCreator
 	{
 	public:
 
@@ -119,6 +119,54 @@ namespace DirectXTexManaged {
 					}
 				}
 			}
+
+			// Get array of images
+			size_t						ImagesCount = DXT->GetImageCount();
+			const DirectX::Image*		pImages = DXT->GetImages();
+			const DirectX::TexMetadata&	Meta = DXT->GetMetadata();
+
+			// Save the result
+			System::IntPtr	pFileName = System::Runtime::InteropServices::Marshal::StringToHGlobalUni( _FileName );
+			LPCWSTR			wpFileName = LPCWSTR( pFileName.ToPointer() );
+
+//			DWORD	flags = DirectX::DDS_FLAGS_NONE;
+			DWORD	flags = DirectX::DDS_FLAGS_FORCE_DX10_EXT;
+			hr = DirectX::SaveToDDSFile( pImages, ImagesCount, Meta, flags, wpFileName );
+
+			delete DXT;
+		}
+
+		static void	CreateRGBA16FFile( String^ _FileName, cli::array<WMath::Vector4D^,2>^ _Image )
+		{
+			int	Width = _Image->GetLength( 0 );
+			int	Height = _Image->GetLength( 1 );
+
+			// Create the image and fill it with our data
+			DirectX::ScratchImage*	TempDXT = new DirectX::ScratchImage();
+			HRESULT					hr = TempDXT->Initialize2D( DXGI_FORMAT_R32G32B32A32_FLOAT, Width, Height, 1, 1 );
+			const DirectX::Image*	pTempImage = TempDXT->GetImage( 0, 0, 0 );
+
+			for ( int Y=0; Y < Height; Y++ )
+			{
+				float*	pScanline = (float*) (pTempImage->pixels + Y * pTempImage->rowPitch);
+				for ( int X=0; X < Width; X++ )
+				{
+					float	R = _Image[X,Y]->x;
+					float	G = _Image[X,Y]->y;
+					float	B = _Image[X,Y]->z;
+					float	A = _Image[X,Y]->w;
+
+					*pScanline++ = R;
+					*pScanline++ = G;
+					*pScanline++ = B;
+					*pScanline++ = A;
+				}
+			}
+
+			// Convert to our format
+			DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
+			DirectX::Convert( *pTempImage, DXGI_FORMAT_R16G16B16A16_FLOAT, DirectX::TEX_FILTER_DEFAULT, 0.0f, *DXT );
+			delete TempDXT;
 
 			// Get array of images
 			size_t						ImagesCount = DXT->GetImageCount();
