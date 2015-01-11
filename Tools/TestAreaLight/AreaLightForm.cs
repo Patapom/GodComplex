@@ -34,27 +34,32 @@ namespace AreaLightTest
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		private struct CB_Object {
-			public float4x4		_Local2World;
-			public float4x4		_World2Local;
+		private struct CB_Light {
+			public float3		_AreaLightX;
+			public float		_AreaLightScaleX;
+			public float3		_AreaLightY;
+			public float		_AreaLightScaleY;
+			public float3		_AreaLightZ;
+			public float		_AreaLightDiffusion;
+			public float3		_AreaLightT;
+			public float		_AreaLightIntensity;
+			public float3		_ProjectionDirectionDiff;	// Closer to portal when diffusion increases
+			public float		__PAD00;
+			public float3		_ProjectionDirectionSpec;	// Closer to portal when diffusion decreases
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		private struct CB_Material {
-			public float4x4		_AreaLight2World;
-			public float4x4		_World2AreaLight;
-			public float3		_ProjectionDirectionDiff;
-			public float		_Area;
-			public float3		_ProjectionDirectionSpec;
-			public float		_LightIntensity;
+		private struct CB_Object {
+			public float4x4		_Local2World;
+			public float4x4		_World2Local;
 			public float		_Gloss;
 			public float		_Metal;
 		}
 
 		private ConstantBuffer<CB_Main>		m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>	m_CB_Camera = null;
+		private ConstantBuffer<CB_Light>	m_CB_Light = null;
 		private ConstantBuffer<CB_Object>	m_CB_Object = null;
-		private ConstantBuffer<CB_Material>	m_CB_Material = null;
 
 		private Shader		m_Shader_RenderAreaLight = null;
 		private Shader		m_Shader_RenderScene = null;
@@ -298,8 +303,8 @@ namespace AreaLightTest
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
-			m_CB_Object = new ConstantBuffer<CB_Object>( m_Device, 2 );
-			m_CB_Material = new ConstantBuffer<CB_Material>( m_Device, 3 );
+			m_CB_Light = new ConstantBuffer<CB_Light>( m_Device, 2 );
+			m_CB_Object = new ConstantBuffer<CB_Object>( m_Device, 3 );
 
 			try
 			{
@@ -346,8 +351,8 @@ namespace AreaLightTest
 
 			m_CB_Main.Dispose();
 			m_CB_Camera.Dispose();
+			m_CB_Light.Dispose();
 			m_CB_Object.Dispose();
-			m_CB_Material.Dispose();
 
 			m_Prim_Quad.Dispose();
 			m_Prim_Rectangle.Dispose();
@@ -427,10 +432,10 @@ namespace AreaLightTest
 			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
 			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
 
-			// Setup area light material
+			// Setup area light buffer
 			m_Tex_AreaLightSAT.SetPS( 0 );
 
-			float		SizeX = 1.0f;// 0.5f;
+			float		SizeX = 0.5f;
 			float		SizeY = 1.0f;
 			float		RollAngle = (float) (Math.PI * floatTrackbarControlLightRoll.Value / 180.0);
 			float3		LightPosition = new float3( floatTrackbarControlLightPosX.Value, 1.0f + floatTrackbarControlLightPosY.Value, -1.0f + floatTrackbarControlLightPosZ.Value );
@@ -438,7 +443,6 @@ namespace AreaLightTest
 			float3		LightUp = new float3( (float) Math.Sin( -RollAngle ), (float) Math.Cos( RollAngle ), 0.0f );
 			float4x4	AreaLight2World = new float4x4(); 
 						AreaLight2World.MakeLookAt( LightPosition, LightTarget, LightUp );
-						AreaLight2World.Scale( new float3( SizeX, SizeY, 1.0f ) );
 
 			float4x4	World2AreaLight = AreaLight2World.Inverse;
 
@@ -456,21 +460,24 @@ namespace AreaLightTest
 			float3		LocalDirection_Diffuse = (float3) (new float4( Diffusion_Diffuse * Direction, 0 ) * World2AreaLight);
 			float3		LocalDirection_Specular = (float3) (new float4( Diffusion_Specular * Direction, 0 ) * World2AreaLight);
 
-			m_CB_Material.m._AreaLight2World = AreaLight2World;
-			m_CB_Material.m._World2AreaLight = World2AreaLight;
-			m_CB_Material.m._ProjectionDirectionDiff = LocalDirection_Diffuse;
-			m_CB_Material.m._ProjectionDirectionSpec = LocalDirection_Specular;
-			m_CB_Material.m._Area = SizeX * SizeY;
-			m_CB_Material.m._LightIntensity = floatTrackbarControlLightIntensity.Value;
-			m_CB_Material.m._Gloss = floatTrackbarControlGloss.Value;
-			m_CB_Material.m._Metal = floatTrackbarControlMetal.Value;
-			m_CB_Material.UpdateData();
+			m_CB_Light.m._AreaLightX = (float3) AreaLight2World.GetRow( 0 );
+			m_CB_Light.m._AreaLightY = (float3) AreaLight2World.GetRow( 1 );
+			m_CB_Light.m._AreaLightZ = (float3) AreaLight2World.GetRow( 2 );
+			m_CB_Light.m._AreaLightT = (float3) AreaLight2World.GetRow( 3 );
+			m_CB_Light.m._AreaLightScaleX = SizeX;
+			m_CB_Light.m._AreaLightScaleY = SizeY;
+			m_CB_Light.m._AreaLightDiffusion = floatTrackbarControlProjectionDiffusion.Value;
+			m_CB_Light.m._AreaLightIntensity = floatTrackbarControlLightIntensity.Value;
+			m_CB_Light.m._ProjectionDirectionDiff = LocalDirection_Diffuse;
+			m_CB_Light.m._ProjectionDirectionSpec = LocalDirection_Specular;
+			m_CB_Light.UpdateData();
 
 
 			// Render the area light itself
 			if ( m_Shader_RenderAreaLight != null && m_Shader_RenderAreaLight.Use() ) {
 
 				m_CB_Object.m._Local2World = AreaLight2World;
+				m_CB_Object.m._Local2World.Scale( new float3( SizeX, SizeY, 1.0f ) );
 				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
 				m_CB_Object.UpdateData();
 
@@ -489,6 +496,8 @@ namespace AreaLightTest
 				m_CB_Object.m._Local2World.MakeLookAt( float3.Zero, float3.UnitY, float3.UnitX );
 				m_CB_Object.m._Local2World.Scale( new float3( 2.0f, 2.0f, 1.0f ) );
 				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
+				m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
+				m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
 				m_CB_Object.UpdateData();
 
 				m_Prim_Rectangle.Render( m_Shader_RenderScene );

@@ -1,13 +1,15 @@
 
-cbuffer CB_Material : register(b3) {
-	float4x4	_AreaLight2World;
-	float4x4	_World2AreaLight;
+cbuffer CB_Light : register(b2) {
+	float3		_AreaLightX;
+	float		_AreaLightScaleX;
+	float3		_AreaLightY;
+	float		_AreaLightScaleY;
+	float3		_AreaLightZ;
+	float		_AreaLightDiffusion;
+	float3		_AreaLightT;
+	float		_AreaLightIntensity;
 	float3		_ProjectionDirectionDiff;	// Closer to portal when diffusion increases
-	float		_Area;
 	float3		_ProjectionDirectionSpec;	// Closer to portal when diffusion decreases
-	float		_LightIntensity;
-	float		_Gloss;
-	float		_Metal;
 };
 
 Texture2D< float4 >	_TexAreaLightSAT : register(t0);
@@ -31,11 +33,15 @@ float	Determinant( float3 a, float3 b, float3 c ) {
 //	_UV0, _UV1, the 2 UV coordinates defining the rectangular area of a canonical square in [-1,+1] in both x and y
 //
 float	RectangleSolidAngle( float3 _lsPosition, float2 _UV0, float2 _UV1 ) {
+	float3	v0 = float3( 2.0 * _UV0.x - 1.0, 1.0 - 2.0 * _UV0.y, 0.0 ) - _lsPosition;
+	float3	v1 = float3( 2.0 * _UV0.x - 1.0, 1.0 - 2.0 * _UV1.y, 0.0 ) - _lsPosition;
+	float3	v2 = float3( 2.0 * _UV1.x - 1.0, 1.0 - 2.0 * _UV1.y, 0.0 ) - _lsPosition;
+	float3	v3 = float3( 2.0 * _UV1.x - 1.0, 1.0 - 2.0 * _UV0.y, 0.0 ) - _lsPosition;
 
-	float3	v0 = normalize( float3( 2.0 * _UV0.x - 1.0, 1.0 - 2.0 * _UV0.y, 0.0 ) - _lsPosition );
-	float3	v1 = normalize( float3( 2.0 * _UV0.x - 1.0, 1.0 - 2.0 * _UV1.y, 0.0 ) - _lsPosition );
-	float3	v2 = normalize( float3( 2.0 * _UV1.x - 1.0, 1.0 - 2.0 * _UV1.y, 0.0 ) - _lsPosition );
-	float3	v3 = normalize( float3( 2.0 * _UV1.x - 1.0, 1.0 - 2.0 * _UV0.y, 0.0 ) - _lsPosition );
+	float	lv0 = length( v0 );
+	float	lv1 = length( v1 );
+	float	lv2 = length( v2 );
+	float	lv3 = length( v3 );
 
 	float	dotV0V1 = dot( v0, v1 );
 	float	dotV1V2 = dot( v1, v2 );
@@ -43,10 +49,51 @@ float	RectangleSolidAngle( float3 _lsPosition, float2 _UV0, float2 _UV1 ) {
 	float	dotV3V0 = dot( v3, v0 );
 	float	dotV2V0 = dot( v2, v0 );
 
-	float	A0 = atan( -Determinant( v0, v1, v2 ) / (1.0 + dotV0V1 + dotV1V2 + dotV2V0) );
-	float	A1 = atan( -Determinant( v0, v2, v3 ) / (1.0 + dotV2V0 + dotV2V3 + dotV3V0) );
+// Naïve formula with 2 atans
+//	float	A0 = atan( -Determinant( v0, v1, v2 ) / (lv0+lv1+lv2 + lv2*dotV0V1 + lv0*dotV1V2 + lv1*dotV2V0) );
+//	float	A1 = atan( -Determinant( v0, v2, v3 ) / (lv0+lv2+lv3 + lv3*dotV2V0 + lv0*dotV2V3 + lv2*dotV3V0) );
+// 	return 2.0 * (A0 + A1);
+
+	// But since atan(a)+atan(b) = atan( (a+b) / (1-ab) ) ...
+ 	float	Theta0 = -Determinant( v0, v1, v2 ) / (lv0+lv1+lv2 + lv2*dotV0V1 + lv0*dotV1V2 + lv1*dotV2V0);
+ 	float	Theta1 = -Determinant( v0, v2, v3 ) / (lv0+lv2+lv3 + lv3*dotV2V0 + lv0*dotV2V3 + lv2*dotV3V0);
+	return 2.0 * atan( (Theta0 + Theta1) / (1.0 - Theta0*Theta1) );
+
+// 	// Try and average with a second rectangle split along (v1,v3)
+// 	float	Omega0 = 2.0 * atan( (Theta0 + Theta1) / (1.0 - Theta0*Theta1) );
+// 	float	dotV1V3 = dot( v1, v3 );
+// 
+//  			Theta0 = -Determinant( v0, v1, v3 ) / (lv0+lv1+lv3 + lv3*dotV0V1 + lv0*dotV1V3 + lv1*dotV3V0);
+//  			Theta1 = -Determinant( v1, v2, v3 ) / (lv1+lv2+lv3 + lv3*dotV1V2 + lv1*dotV2V3 + lv2*dotV1V3);
+// 	float	Omega1 = 2.0 * atan( (Theta0 + Theta1) / (1.0 - Theta0*Theta1) );
+// 
+// 	return 0.5 * (Omega0 + Omega1);
+}
+
+float	RectangleSolidAngleWS( float3 _wsPosition, float2 _UV0, float2 _UV1 ) {
+
+	float3	D = _AreaLightT - _wsPosition;
+	float3	v0 = D + _AreaLightX * (2.0 * _UV0.x - 1.0) + _AreaLightY * (1.0 - 2.0 * _UV0.y);
+	float3	v1 = D + _AreaLightX * (2.0 * _UV0.x - 1.0) + _AreaLightY * (1.0 - 2.0 * _UV1.y);
+	float3	v2 = D + _AreaLightX * (2.0 * _UV1.x - 1.0) + _AreaLightY * (1.0 - 2.0 * _UV1.y);
+	float3	v3 = D + _AreaLightX * (2.0 * _UV1.x - 1.0) + _AreaLightY * (1.0 - 2.0 * _UV0.y);
+
+	float	lv0 = length( v0 );
+	float	lv1 = length( v1 );
+	float	lv2 = length( v2 );
+	float	lv3 = length( v3 );
+
+	float	dotV0V1 = dot( v0, v1 );
+	float	dotV1V2 = dot( v1, v2 );
+	float	dotV2V3 = dot( v2, v3 );
+	float	dotV3V0 = dot( v3, v0 );
+	float	dotV2V0 = dot( v2, v0 );
+
+ 	float	A0 = atan( -Determinant( v0, v1, v2 ) / (lv0+lv1+lv2 + lv2*dotV0V1 + lv0*dotV1V2 + lv1*dotV2V0) );
+ 	float	A1 = atan( -Determinant( v0, v2, v3 ) / (lv0+lv2+lv3 + lv3*dotV2V0 + lv0*dotV2V3 + lv2*dotV3V0) );
 	return 2.0 * (A0 + A1);
 }
+
 
 // Computes the potential UV clipping by the surface's normal
 // We simplify *a lot* by assuming either a vertical or horizontal normal that clearly cuts the square along one of its main axes
@@ -113,7 +160,7 @@ _Debug = 0;
 	return lerp( float4( UV0.yx, UV1.yx ), float4( UV0, UV1 ), IsVertical );
 }
 
-// Computes the 2 UVs and the solid angle perceived from a single point in world space
+/*// Computes the 2 UVs and the solid angle perceived from a single point in world space
 bool	ComputeSolidAngleFromPoint____OLD( float3 _wsPosition, float3 _wsNormal, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle ) {
 
 	float3	lsPosition = mul( float4( _wsPosition, 1.0 ), _World2AreaLight ).xyz;		// Transform world position in local area light space
@@ -186,8 +233,9 @@ _ProjectedSolidAngle = 1;//UVArea;
 
 	return true;
 }
+*/
 
-// Computes the 2 UVss and the solid angle perceived from a single point in world space (used for diffuse reflection)
+// Computes the 2 UVs and the solid angle perceived from a single point in world space (used for diffuse reflection)
 // The area light's unit square is first clipped agains the surface's plane and the remaining bounding rectangle is used as the area to sample for irradiance.
 // 
 bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle, out float4 _Debug ) {
@@ -195,12 +243,20 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 	_ProjectedSolidAngle = 0.0;
 	_Debug = 0.0;
 
-	float3	lsPosition = mul( float4( _wsPosition, 1.0 ), _World2AreaLight ).xyz;		// Transform world position in local area light space
-	float3	lsNormal = mul( float4( _wsNormal, 0.0 ), _World2AreaLight ).xyz;			// Transform world normal in local area light space
+	float3	wsCenter2Position = _wsPosition - _AreaLightT;
+	float3	lsPosition = float3(	dot( wsCenter2Position, _AreaLightX ),	// Transform world position in local area light space
+									dot( wsCenter2Position, _AreaLightY ),
+									dot( wsCenter2Position, _AreaLightZ ) );
 	if ( lsPosition.z <= 0.0 ) {
 		// Position is behind area light...
 		return false;
 	}
+
+	lsPosition.xy /= float2( _AreaLightScaleX, _AreaLightScaleY );			// Account for scale
+
+	float3	lsNormal = float3(	dot( _wsNormal, _AreaLightX ),				// Transform world normal in local area light space
+								dot( _wsNormal, _AreaLightY ),
+								dot( _wsNormal, _AreaLightZ ) );
 
 	// In local area light space, the position is in front of a canonical square:
 	//
@@ -219,53 +275,9 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 	//
 
 	// Compute potential clipping by the surface's plane
-	// We simplify *a lot* by assuming either a vertical or horizontal normal that cuts the square along one of its main axes
-	if ( abs(lsNormal.y) > abs(lsNormal.x) ) {
-		// Check for a vertical cut
-		float2	AlignedNormal = lsNormal.zy;
-		float2	AlignedPosition = lsPosition.zy;
-		float2	Delta = float2( 0, 1 ) - AlignedPosition;
-		float	D = dot( Delta, AlignedNormal );
-		float	t = saturate( D / (2.0 * AlignedNormal.y ) );
-
-// _Debug = float4( Delta, 0, 0 );
-// //_Debug = float4( lsPosition.zy, 0, 0 );
-// _Debug = D;	// = 2
-_Debug = 1.0 * t;
-//_Debug = float4( AlignedNormal, 0, 0 );
-//_Debug = float4( AlignedPosition, 0, 0 );
-
-		if ( AlignedNormal.y >= 0.0 ) {
-			_UV0 = 0.0;
-			_UV1 = float2( 1, t );
-		} else {
-			_UV1 = 1.0;
-			_UV0 = float2( 0, 1-t );
-		}
-
-	} else {
-		// Check for a horizontal cut
-		float2	AlignedNormal = float2( lsNormal.z, -lsNormal.x );
-		float2	AlignedPosition = lsPosition.zx;
-		float2	Delta = float2( 0, 1 ) - AlignedPosition;
-		float	D = dot( Delta, AlignedNormal );
-		float	t = saturate( D / (2.0 * AlignedNormal.y ) );
-
-// _Debug = float4( Delta, 0, 0 );
-// //_Debug = float4( lsPosition.zy, 0, 0 );
-// _Debug = D;	// = 2
-_Debug = 1.0 * t;
-//_Debug = float4( AlignedNormal, 0, 0 );
-//_Debug = float4( AlignedPosition, 0, 0 );
-
-		if ( AlignedNormal.y >= 0.0 ) {
-			_UV0 = 0.0;
-			_UV1 = float2( t, 1 );
-		} else {
-			_UV1 = 1.0;
-			_UV0 = float2( 1-t, 0 );
-		}
-	}
+	float4	ClippedUVs = ComputeClipping( lsPosition, lsNormal, _Debug );
+	_UV0 = ClippedUVs.xy;
+	_UV1 = ClippedUVs.zw;
 
 _Debug = float4( abs(_UV0), 0, 0 );
 
@@ -273,23 +285,16 @@ _Debug = float4( abs(_UV0), 0, 0 );
 	float	SolidAngle = RectangleSolidAngle( lsPosition, _UV0, _UV1 );
 
 	// Now, we can compute the projected solid angle by dotting with the normal
-	float3	lsCenter = float3( (_UV1 + _UV0) - 1.0, 0.0 );
+	float3	lsCenter = float3( _UV1.x + _UV0.x - 1.0, 1.0 - _UV1.y - _UV0.y, 0.0 );
 	float3	lsPosition2Center = normalize( lsCenter - lsPosition );
 	_ProjectedSolidAngle = saturate( dot( lsNormal, lsPosition2Center ) ) * SolidAngle;	// (N.Wi) * dWi
 
 // _Debug = _ProjectedSolidAngle;
 
-//_ProjectedSolidAngle = 1;//UVArea;
-
-
-// _UV0 = lsPosition.xy;
-// _UV1 = lsPosition.z;
-// _UV0 = _UV1;
-// _UV1 = 0;
-
 	return true;
 }
 
+/*
 // Computes the 2 UVs and the solid angle perceived from a single point in world space watching the area light through a cone (used for specular reflection)
 //	_wsPosition, the world space position of the surface watching the area light
 //	_wsNormal, the world space normal of the surface
@@ -391,3 +396,4 @@ _ProjectedSolidAngle = 1;//UVArea;
 
 	return true;
 }
+*/

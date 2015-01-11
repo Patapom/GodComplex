@@ -7,9 +7,11 @@
 #include "Global.hlsl"
 #include "AreaLight.hlsl"
 
-cbuffer CB_Object : register(b2) {
+cbuffer CB_Object : register(b3) {
 	float4x4	_Local2World;
 	float4x4	_World2Local;
+	float		_Gloss;
+	float		_Metal;
 };
 
 struct VS_IN {
@@ -87,24 +89,29 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
  	float2	UV0, UV1;
  	float	SolidAngle;
  	float4	Debug;
-
+	
  	// Compute diffuse lighting
  	float3	Ld = 0.0;
 	if ( ComputeSolidAngleDiffuse( wsPosition, wsNormal, UV0, UV1, SolidAngle, Debug ) ) {
+
+
+
+//SolidAngle = RectangleSolidAngleWS( wsPosition, UV0, UV1 );
+
 
 //return Debug;
 //return float4( 100.0 * (UV1 - UV0), 0, 1 );
 // float4	Test = float4( UV0, UV1 );
 // return Test;
-
+//return SolidAngle;
 //SolidAngle = 1;
 //return _LightIntensity * SolidAngle;
 
-		float3	Irradiance = _LightIntensity * SampleSAT( UV0, UV1 ).xyz;
+		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
 		Ld = RhoD / PI * Irradiance * SolidAngle;
 		return float4( Ld, 1 );
 	}
-
+	
 Ld = float3( 1, 1, 0 );
 
 	// Compute specular lighting
@@ -122,7 +129,7 @@ Ld = float3( 1, 1, 0 );
 // 		float3	Irradiance = _LightIntensity * SampleSAT( UV0, UV1 ).xyz;
 // 		Ls = RhoS * Irradiance * SolidAngle;
 // 	}
-
+	
 	// Compute Fresnel
 	float	VdotN = saturate( dot( wsView, wsNormal ) );
 	float3	IOR = Fresnel_IORFromF0( F0 );
