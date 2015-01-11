@@ -140,5 +140,5 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;
 
 //	return float4( FresnelDiffuse * Ld + FresnelSpecular * Ls, 1 );
-	return float4( Ld + Ls, 1 );
+	return float4( 0.05 + Ld + Ls, 1 );
 }

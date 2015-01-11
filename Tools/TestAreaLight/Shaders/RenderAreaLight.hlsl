@@ -51,22 +51,22 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float4	StainedGlass = SampleSATSinglePixel( _In.UV );
 
 
-	// Debug UV clipping
-	float3	wsPosition = float3( 0, 0, 0 );
-	float3	wsNormal = float3( 0, 1, 0 );
-
-	float3	wsCenter2Position = wsPosition - _AreaLightT;
-	float3	lsPosition = float3(	dot( wsCenter2Position, _AreaLightX ),	// Transform world position in local area light space
-									dot( wsCenter2Position, _AreaLightY ),
-									dot( wsCenter2Position, _AreaLightZ ) );
-	lsPosition.xy /= float2( _AreaLightScaleX, _AreaLightScaleY );			// Account for scale
-	float3	lsNormal = float3(	dot( wsNormal, _AreaLightX ),				// Transform world normal in local area light space
-								dot( wsNormal, _AreaLightY ),
-								dot( wsNormal, _AreaLightZ ) );
-
-	float4	Debug;
-	float4	ClippedUVs = ComputeClipping( lsPosition, lsNormal, Debug );
-	StainedGlass.xyz = (_In.UV.x < ClippedUVs.x || _In.UV.y < ClippedUVs.y || _In.UV.x > ClippedUVs.z || _In.UV.y > ClippedUVs.w) ? float3( 0.2, 0, 0.2 ) : float3( _In.UV, 0 );
+// 	// Debug UV clipping
+// 	float3	wsPosition = float3( 0, 0, 0 );
+// 	float3	wsNormal = float3( 0, 1, 0 );
+// 
+// 	float3	wsCenter2Position = wsPosition - _AreaLightT;
+// 	float3	lsPosition = float3(	dot( wsCenter2Position, _AreaLightX ),	// Transform world position in local area light space
+// 									dot( wsCenter2Position, _AreaLightY ),
+// 									dot( wsCenter2Position, _AreaLightZ ) );
+// 	lsPosition.xy /= float2( _AreaLightScaleX, _AreaLightScaleY );			// Account for scale
+// 	float3	lsNormal = float3(	dot( wsNormal, _AreaLightX ),				// Transform world normal in local area light space
+// 								dot( wsNormal, _AreaLightY ),
+// 								dot( wsNormal, _AreaLightZ ) );
+// 
+// 	float4	Debug;
+// 	float4	ClippedUVs = ComputeClipping( lsPosition, lsNormal, Debug );
+// 	StainedGlass.xyz = (_In.UV.x < ClippedUVs.x || _In.UV.y < ClippedUVs.y || _In.UV.x > ClippedUVs.z || _In.UV.y > ClippedUVs.w) ? float3( 0.2, 0, 0.2 ) : float3( _In.UV, 0 );
 
 
 	return float4( StainedGlass.xyz, 1 );

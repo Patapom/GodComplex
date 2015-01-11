@@ -446,7 +446,6 @@ namespace AreaLightTest
 
 			float4x4	World2AreaLight = AreaLight2World.Inverse;
 
-
 			double		Phi = Math.PI * floatTrackbarControlProjectionPhi.Value / 180.0;
 			double		Theta = Math.PI * floatTrackbarControlProjectionTheta.Value / 180.0;
 			float3		Direction = new float3( (float) (Math.Sin(Theta) * Math.Sin(Phi)), (float) (Math.Sin(Theta) * Math.Cos(Phi)), (float) Math.Cos( Theta ) );
@@ -454,10 +453,11 @@ namespace AreaLightTest
 			const float	DiffusionMin = 1e-2f;
 			const float	DiffusionMax = 1000.0f;
 //			float		Diffusion_Diffuse = DiffusionMin / (DiffusionMin / DiffusionMax + floatTrackbarControlProjectionDiffusion.Value);
-			float		Diffusion_Diffuse = DiffusionMax + (DiffusionMin - DiffusionMax) * (float) Math.Pow( floatTrackbarControlProjectionDiffusion.Value, 0.05f );
+			float		Diffusion_Diffuse = DiffusionMax + (DiffusionMin - DiffusionMax) * (float) Math.Pow( floatTrackbarControlProjectionDiffusion.Value, 0.01f );
 			float		Diffusion_Specular = DiffusionMax + (DiffusionMin - DiffusionMax) * (float) Math.Pow( 1.0f - floatTrackbarControlProjectionDiffusion.Value, 0.05f );
 
-			float3		LocalDirection_Diffuse = (float3) (new float4( Diffusion_Diffuse * Direction, 0 ) * World2AreaLight);
+//			float3		LocalDirection_Diffuse = (float3) (new float4( Diffusion_Diffuse * Direction, 0 ) * World2AreaLight);
+			float3		LocalDirection_Diffuse = Diffusion_Diffuse * Direction;
 			float3		LocalDirection_Specular = (float3) (new float4( Diffusion_Specular * Direction, 0 ) * World2AreaLight);
 
 			m_CB_Light.m._AreaLightX = (float3) AreaLight2World.GetRow( 0 );

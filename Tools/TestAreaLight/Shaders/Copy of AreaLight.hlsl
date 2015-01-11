@@ -385,43 +385,18 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 	//	(-1,-1)					(+1,-1)
 	//
 	//
-	float3	lsPortal[2] = {
-		float3( -1, +1, 0 ),		// Top left
-		float3( +1, -1, 0 ),		// Bottom right
-	};
-
-	// Compute the UV coordinates of the intersection of the frustum with the portal's plane
-	float2	lsIntersection[2] = { 0.0.xx, 0.0.xx };
-	for ( uint Corner=0; Corner < 2; Corner++ ) {
-		float3	lsVirtualPos = lsPortal[Corner] - _ProjectionDirectionDiff;	// This is the position of the corner of the virtual source
-		float3	Dir = lsVirtualPos - lsPosition;							// This is the pointing direction, originating from the source _wsPosition
-		float	t = -lsPosition.z / Dir.z;									// This is the distance at which we hit the physical portal's plane
-		lsIntersection[Corner] = (lsPosition + t * Dir).xy;					// This is the position on the portal's plane
-	}
-
-	// Retrieve the UVs
-	_UV0 = 0.5 * (1.0 + float2( lsIntersection[0].x, -lsIntersection[0].y));
-	_UV1 = 0.5 * (1.0 + float2( lsIntersection[1].x, -lsIntersection[1].y));
-	_UV1 = max( _UV1, _UV0 + dUV.xy );	// Make sure the UVs are at least separated by a single texel before clamping
 
 	// Compute potential clipping by the surface's plane
 	float4	ClippedUVs = ComputeClipping( lsPosition, lsNormal, _Debug );
-	_UV0 = clamp( _UV0, ClippedUVs.xy, ClippedUVs.zw );
-	_UV1 = clamp( _UV1, ClippedUVs.xy, ClippedUVs.zw );
+	_UV0 = ClippedUVs.xy;
+	_UV1 = ClippedUVs.zw;
 
 	// Compute the solid angle
-//	float	SolidAngle = RectangleSolidAngle( lsPosition, _UV0, _UV1 );
-	float	SolidAngle = RectangleSolidAngle( lsPosition, ClippedUVs.xy, ClippedUVs.zw );
-
-	// Grow the solid angle depending on diffusion so we get a factor of 1 for fully diffuse
-	//	and a factor of 4PI for fully directional.
-//	SolidAngle *= lerp( 4.0 * PI, 1.0, _AreaLightDiffusion );
-//	SolidAngle *= _AreaLightDiffusion > 1e-2 ? 1.0 / _AreaLightDiffusion : 100.0;
-//	SolidAngle = lerp( 1.0 / (4*PI), SolidAngle, _AreaLightDiffusion );
+	float	SolidAngle = RectangleSolidAngle( lsPosition, _UV0, _UV1 );
 
 	// Now, we can compute the projected solid angle by dotting with the normal
 	float3	lsCenter = float3( _UV1.x + _UV0.x - 1.0, 1.0 - _UV1.y - _UV0.y, 0.0 );
-	float3	lsPosition2Center = normalize( lsCenter - lsPosition );						// Wi, the average incoming light direction
+	float3	lsPosition2Center = normalize( lsCenter - lsPosition );
 	_ProjectedSolidAngle = saturate( dot( lsNormal, lsPosition2Center ) ) * SolidAngle;	// (N.Wi) * dWi
 
 // _Debug = _ProjectedSolidAngle;
