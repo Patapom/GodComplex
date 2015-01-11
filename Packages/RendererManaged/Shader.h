@@ -55,9 +55,9 @@ namespace RendererManaged {
 			delete m_pShader;
 		}
 
-		void	Use()
+		bool	Use()
 		{
-			m_pShader->Use();
+			return m_pShader != nullptr ? m_pShader->Use() : false;
 		}
 
 		static Shader^	CreateFromBinaryBlob( Device^ _Device, VERTEX_FORMAT _Format, FileInfo^ _ShaderFileName, String^ _EntryPointVS, String^ _EntryPointGS, String^ _EntryPointPS )

@@ -169,7 +169,8 @@ public:	 // METHODS
 #endif
 
 	// Must call this before using the material
-	void			Use();
+	// Returns false if the shader cannot be used (like when it's in error state)
+	bool			Use();
 
 	// Static shader compilation helper (also used by ComputeShader)
 	static ID3DBlob*	CompileShader( const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget, ID3DInclude* _pInclude, bool _bComputeShader=false );

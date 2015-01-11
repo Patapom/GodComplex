@@ -24,13 +24,11 @@ namespace RendererManaged
 		static float2	operator*( float2 a, float2 b )	{ return float2( a.x*b.x, a.y*b.y ); }
 		static float2	operator/( float2 a, float b )	{ return float2( a.x/b, a.y/b ); }
 
-		property float	Length
-		{
+		property float	Length {
 			float	get() { return (float) Math::Sqrt( x*x + y*y ); }
 		}
 
-		property float	LengthSquared
-		{
+		property float	LengthSquared {
 			float	get() { return x*x + y*y; }
 		}
 
@@ -78,19 +76,16 @@ namespace RendererManaged
 
 		static explicit operator float2( float3 a )		{ return float2( a.x, a.y ); }
 
-		property float	Length
-		{
+		property float	Length {
 			float	get() { return (float) Math::Sqrt( x*x + y*y + z*z ); }
 		}
 
-		property float	LengthSquared
-		{
+		property float	LengthSquared {
 			float	get() { return x*x + y*y + z*z; }
 		}
 
 		property float3	Normalized	{
-			float3	get()
-			{
+			float3	get() {
 				float	InvLength = 1.0f / Length;
 				return float3( InvLength * x, InvLength * y, InvLength * z );
 			}
@@ -131,14 +126,29 @@ namespace RendererManaged
 
 		static float4	operator+( float4 a, float4 b )	{ return float4( a.x+b.x, a.y+b.y, a.z+b.z, a.w+b.w ); }
 		static float4	operator-( float4 a, float4 b )	{ return float4( a.x-b.x, a.y-b.y, a.z-b.z, a.w-b.w ); }
+		static float4	operator-( float4 a )			{ return float4( -a.x, -a.y, -a.z, -a.w ); }
 		static float4	operator*( float a, float4 b )	{ return float4( a*b.x, a*b.y, a*b.z, a*b.w ); }
 		static float4	operator*( float4 a, float b )	{ return float4( a.x*b, a.y*b, a.z*b, a.w*b ); }
 
 		static explicit operator float2( float4 a )		{ return float2( a.x, a.y ); }
 		static explicit operator float3( float4 a )		{ return float3( a.x, a.y, a.z ); }
 
-		property float	default[int]
-		{
+		property float	Length {
+			float	get() { return (float) Math::Sqrt( x*x + y*y + z*z + w*w ); }
+		}
+
+		property float	LengthSquared {
+			float	get() { return x*x + y*y + z*z + w*w; }
+		}
+
+		property float4	Normalized {
+			float4	get() {
+				float	InvLength = 1.0f / Length;
+				return float4( InvLength * x, InvLength * y, InvLength * z, InvLength * w );
+			}
+		}
+
+		property float	default[int] {
 			float	get( int _ComponentIndex )
 			{
 				switch ( _ComponentIndex&3 )
@@ -164,17 +174,12 @@ namespace RendererManaged
 
 		float	Dot( float4 b )	{ return x*b.x + y*b.y + z*b.z + w*b.w; }
 
-		property float	Length
-		{
-			float	get() { return (float) Math::Sqrt( x*x + y*y + z*z ); }
+		property float2	AsVec2 {
+			float2	get() { return float2( x, y ); }
 		}
 
-		property float4	Normalized	{
-			float4	get()
-			{
-				float	InvLength = 1.0f / Length;
-				return float4( InvLength * x, InvLength * y, InvLength * z, InvLength * w );
-			}
+		property float3	AsVec3 {
+			float3	get() { return float3( x, y, z ); }
 		}
 
 		static property float4	Zero	{ float4 get() { return float4( 0, 0, 0, 0 ); } }
@@ -201,10 +206,10 @@ namespace RendererManaged
 			r3.Set( _values[4*3+0], _values[4*3+1], _values[4*3+2], _values[4*3+3] );
 		}
 		float4x4( float4^ _r0, float4^ _r1, float4^ _r2, float4^ _r3 )	{ r0 = *_r0; r1 = *_r1; r2 = *_r2; r3 = *_r3; }
-		void	FromMatrix4( WMath::Matrix4x4^ a )	{ r0.FromVector4( a->GetRow0() ); r1.FromVector4( a->GetRow1() ); r2.FromVector4( a->GetRow2() ); r3.FromVector4( a->GetRow3() ); }
+		void		FromMatrix4( WMath::Matrix4x4^ a )	{ r0.FromVector4( a->GetRow0() ); r1.FromVector4( a->GetRow1() ); r2.FromVector4( a->GetRow2() ); r3.FromVector4( a->GetRow3() ); }
 
 		// Makes a "look at" camera matrix (left-handed)
-		float4x4	MakeLookAtCamera( float3 _Position, float3 _Target, float3 _Up )
+		float4x4^	MakeLookAtCamera( float3 _Position, float3 _Target, float3 _Up )
 		{
 			float3	At = (_Target - _Position).Normalized;	// We want Z to point toward target
 			float3	Right = At.Cross( _Up ).Normalized;		// We want X to point to the right
@@ -219,7 +224,7 @@ namespace RendererManaged
 		}
 
 		// Makes a regular "look at" matrix for objects (right-handed)
-		float4x4	MakeLookAt( float3 _Position, float3 _Target, float3 _Up )
+		float4x4^	MakeLookAt( float3 _Position, float3 _Target, float3 _Up )
 		{
 			float3	At = (_Target - _Position).Normalized;	// We want Z to point toward target
 			float3	Right = _Up.Cross( At ).Normalized;		// We want X to point to the right
@@ -233,7 +238,7 @@ namespace RendererManaged
 			return *this;
 		}
 	
-		float4x4	MakeProjectionPerspective( float _FOVY, float _AspectRatio, float _Near, float _Far )
+		float4x4^	MakeProjectionPerspective( float _FOVY, float _AspectRatio, float _Near, float _Far )
 		{
 			float	H = (float) Math::Tan( 0.5f * _FOVY );
 			float	W = _AspectRatio * H;
@@ -247,6 +252,13 @@ namespace RendererManaged
 			return *this;
 		}
  
+		float4x4^	Scale( float3 _Scale ) {
+			r0 *= _Scale.x;
+			r1 *= _Scale.y;
+			r2 *= _Scale.z;
+			return *this;
+		}
+
 		static float4x4	operator*( float4x4 a, float4x4 b )
 		{
 			float4x4	R;
@@ -280,10 +292,23 @@ namespace RendererManaged
 			return R;
 		}
 
-		property float4	default[int]
+// 		property float4%	default[int]
+// 		{
+// 			float4%	get( int _RowIndex )				{ return GetRow( _RowIndex ); }
+// 			void	set( int _RowIndex, float4% value )	{ SetRow( _RowIndex, value ); }
+// 		}
+
+		property float	default[int,int]
 		{
-			float4	get( int _RowIndex )				{ return GetRow( _RowIndex ); }
-			void	set( int _RowIndex, float4 value )	{ SetRow( _RowIndex, value ); }
+			float	get( int _RowIndex, int _ColumnIndex )				{ return GetRow( _RowIndex )[_ColumnIndex]; }
+			void	set( int _RowIndex, int _ColumnIndex, float value )	{
+				switch ( _RowIndex & 3 ) {
+				case 0: r0[_ColumnIndex] = value; break;
+				case 1: r1[_ColumnIndex] = value; break;
+				case 2: r2[_ColumnIndex] = value; break;
+				case 3: r3[_ColumnIndex] = value; break;
+				}
+			}
 		}
 
 		float4	GetRow( int _RowIndex )
@@ -360,8 +385,8 @@ namespace RendererManaged
 			float S = (float) Math::Sin( _Angle );
 
 			float4x4	R = Identity;
-			R[1][1] = C;	R[1][2] = S;
-			R[2][1] = -S;	R[2][2] = C;
+			R[1,1] = C;		R[1,2] = S;
+			R[2,1] = -S;	R[2,2] = C;
 
 			return R;
 		}
@@ -371,8 +396,8 @@ namespace RendererManaged
 			float S = (float) Math::Sin( _Angle );
 
 			float4x4	R = Identity;
-			R[0][0] = C;	R[0][2] = -S;
-			R[2][0] = S;	R[2][2] = C;
+			R[0,0] = C;	R[0,2] = -S;
+			R[2,0] = S;	R[2,2] = C;
 
 			return R;
 		}
@@ -382,8 +407,8 @@ namespace RendererManaged
 			float S = (float) Math::Sin( _Angle );
 
 			float4x4	R = Identity;
-			R[0][0] = C;	R[0][1] = S;
-			R[1][0] = -S;	R[1][1] = C;
+			R[0,0] = C;		R[0,1] = S;
+			R[1,0] = -S;	R[1,1] = C;
 
 			return R;
 		}

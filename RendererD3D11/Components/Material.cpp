@@ -161,6 +161,8 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 	if ( m_pGS != NULL )	{ m_pGS->Release(); m_pGS = NULL; }
 	if ( m_pPS != NULL )	{ m_pPS->Release(); m_pPS = NULL; }
 
+	bool	bHasErrors = false;
+
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the compulsory vertex shader
 	ASSERT( _pVS != NULL || m_pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
@@ -178,21 +180,21 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 #ifndef GODCOMPLEX
 		m_VSConstants.Enumerate( *pShader );
 #endif
-		m_bHasErrors |= m_pVS == NULL;
+		bHasErrors |= m_pVS == NULL;
 
 		// Create the associated vertex layout
 		Check( m_Device.DXDevice().CreateInputLayout( m_Format.GetInputElements(), m_Format.GetInputElementsCount(), pShader->GetBufferPointer(), pShader->GetBufferSize(), &m_pVertexLayout ) );
 		ASSERT( m_pVertexLayout != NULL, "Failed to create vertex layout !" );
-		m_bHasErrors |= m_pVertexLayout == NULL;
+		bHasErrors |= m_pVertexLayout == NULL;
 
 		pShader->Release();
 	}
 	else
-		m_bHasErrors = true;
+		bHasErrors = true;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional hull shader
-	if ( !m_bHasErrors && (m_pEntryPointHS != NULL || _pHS != NULL) )
+	if ( !bHasErrors && (m_pEntryPointHS != NULL || _pHS != NULL) )
 	{
 #ifdef DIRECTX10
 		ASSERT( false, "You can't use Hull Shaders if you define DIRECTX10!" );
@@ -207,17 +209,17 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 #ifndef GODCOMPLEX
 			m_HSConstants.Enumerate( *pShader );
 #endif
-			m_bHasErrors |= m_pHS == NULL;
+			bHasErrors |= m_pHS == NULL;
 
 			pShader->Release();
 		}
 		else
-			m_bHasErrors = true;
+			bHasErrors = true;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional domain shader
-	if ( !m_bHasErrors && (m_pEntryPointDS != NULL || _pDS != NULL) )
+	if ( !bHasErrors && (m_pEntryPointDS != NULL || _pDS != NULL) )
 	{
 #ifdef DIRECTX10
 		ASSERT( false, "You can't use Domain Shaders if you define DIRECTX10!" );
@@ -230,17 +232,17 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 #ifndef GODCOMPLEX
 			m_DSConstants.Enumerate( *pShader );
 #endif
-			m_bHasErrors |= m_pDS == NULL;
+			bHasErrors |= m_pDS == NULL;
 
 			pShader->Release();
 		}
 		else
-			m_bHasErrors = true;
+			bHasErrors = true;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional geometry shader
-	if ( !m_bHasErrors && (m_pEntryPointGS != NULL || _pGS != NULL) )
+	if ( !bHasErrors && (m_pEntryPointGS != NULL || _pGS != NULL) )
 	{
 #ifdef DIRECTX10
 		ID3DBlob*   pShader = _pGS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_4_0", this ) : _pGS;
@@ -254,17 +256,17 @@ void	Material::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlo
 #ifndef GODCOMPLEX
 			m_GSConstants.Enumerate( *pShader );
 #endif
-			m_bHasErrors |= m_pGS == NULL;
+			bHasErrors |= m_pGS == NULL;
 
 			pShader->Release();
 		}
 		else
-			m_bHasErrors = true;
+			bHasErrors = true;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional pixel shader
-	if ( !m_bHasErrors && (m_pEntryPointPS != NULL || _pPS != NULL) )
+	if ( !bHasErrors && (m_pEntryPointPS != NULL || _pPS != NULL) )
 	{
 
 #ifdef _DEBUG
@@ -293,13 +295,15 @@ if ( m_pEntryPointPS != NULL && *m_pEntryPointPS == 1 )
 #ifndef GODCOMPLEX
 			m_PSConstants.Enumerate( *pShader );
 #endif
-			m_bHasErrors |= m_pPS == NULL;
+			bHasErrors |= m_pPS == NULL;
 
 			pShader->Release();
 		}
 		else
-			m_bHasErrors = true;
+			bHasErrors = true;
 	}
+
+	m_bHasErrors = bHasErrors;
 }
 
 #if defined(SURE_DEBUG) || !defined(GODCOMPLEX)
@@ -406,10 +410,13 @@ ID3DBlob*   Material::CompileShader( const char* _pShaderFileName, const char* _
 
 #endif	// #ifdef _DEBUG
 
-void	Material::Use()
+bool	Material::Use()
 {
+	if ( HasErrors() )
+		return false;	// Can't use a shader in error state!
+
 	if ( !Lock() )
-		return;	// Someone else is locking it !
+		return false;	// Someone else is locking it !
 
 	ASSERT( m_pVertexLayout != NULL, "Can't use a material with an invalid vertex layout!" );
 
@@ -423,6 +430,8 @@ void	Material::Use()
 	m_Device.m_pCurrentMaterial = this;
 
 	Unlock();
+
+	return true;
 }
 
 HRESULT	Material::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, LPCVOID _pParentData, LPCVOID* _ppData, UINT* _pBytes )
