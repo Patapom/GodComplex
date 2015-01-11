@@ -133,10 +133,10 @@ namespace AreaLightTest
 		/// </summary>
 		public float			OrthographicHeight	{ get { return m_OrthoHeight; } }
 
-		public float3			Right		{ get { return m_Camera2World.r0.AsVec3; } }
-		public float3			Up			{ get { return m_Camera2World.r1.AsVec3; } }
-		public float3			At			{ get { return m_Camera2World.r2.AsVec3; } }
-		public float3			Position	{ get { return m_Camera2World.r3.AsVec3; } }
+		public float3			Right		{ get { return (float3) m_Camera2World.r0; } }
+		public float3			Up			{ get { return (float3) m_Camera2World.r1; } }
+		public float3			At			{ get { return (float3) m_Camera2World.r2; } }
+		public float3			Position	{ get { return (float3) m_Camera2World.r3; } }
 
 		public event EventHandler	CameraTransformChanged;
 		public event EventHandler	CameraProjectionChanged;
