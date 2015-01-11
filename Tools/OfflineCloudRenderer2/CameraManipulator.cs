@@ -221,18 +221,18 @@ namespace OfflineCloudRenderer2
 			float	fSinY = Math.Min( +1.0f, Math.Max( -1.0f, _Matrix.GetRow(0)[2] ) ),
 					fCosY = (float) Math.Sqrt( 1.0f - fSinY*fSinY );
 
-			if ( _Matrix[0][0] < 0.0 && _Matrix[2][2] < 0.0 )
+			if ( _Matrix[0,0] < 0.0 && _Matrix[2,2] < 0.0 )
 				fCosY = -fCosY;
 
 			if ( (float) Math.Abs( fCosY ) > float.Epsilon )
 			{
-				Ret.x = (float)  Math.Atan2( _Matrix[1][2] / fCosY, _Matrix[2][2] / fCosY );
+				Ret.x = (float)  Math.Atan2( _Matrix[1,2] / fCosY, _Matrix[2,2] / fCosY );
 				Ret.y = (float) -Math.Atan2( fSinY, fCosY );
-				Ret.z = (float)  Math.Atan2( _Matrix[0][1] / fCosY, _Matrix[0][0] / fCosY );
+				Ret.z = (float)  Math.Atan2( _Matrix[0,1] / fCosY, _Matrix[0,0] / fCosY );
 			}
 			else
 			{
-				Ret.x = (float)  Math.Atan2( -_Matrix[2][1], _Matrix[1][1] );
+				Ret.x = (float)  Math.Atan2( -_Matrix[2,1], _Matrix[1,1] );
 				Ret.y = (float) -Math.Asin( fSinY );
 				Ret.z = 0.0f;
 			}
@@ -429,7 +429,7 @@ namespace OfflineCloudRenderer2
 						float fAngleY = (m_ButtonDownMousePosition.x - MousePos.x) * 2.0f * (float) Math.PI * m_ManipulationRotationSpeed;
 						float fAngleX = (m_ButtonDownMousePosition.y - MousePos.y) * 2.0f * (float) Math.PI * m_ManipulationRotationSpeed;
 
-						float3	Euler = GetEuler( m_ButtonDownTransform );
+						float3		Euler = GetEuler( m_ButtonDownTransform );
 						float4x4	CamRotYMatrix = float4x4.RotationY( fAngleY + Euler.y );
 						float4x4	CamRotXMatrix = float4x4.RotationX( fAngleX + Euler.x );
 						float4x4	CamRotZMatrix = float4x4.RotationZ( Euler.z );

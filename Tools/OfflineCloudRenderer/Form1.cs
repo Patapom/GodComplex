@@ -334,7 +334,7 @@ namespace OfflineCloudRenderer
 
 		private void	UpdateCameraTransform( float3 _Position, float3 _Target, float3 _Up )
 		{
-			m_CB_Camera.m.Camera2World.MakeLookAt( _Position, _Target, _Up );
+			m_CB_Camera.m.Camera2World.MakeLookAtCamera( _Position, _Target, _Up );
 		}
 
 		private void	UpdateCameraTransform( float4x4 _Camera2World )
