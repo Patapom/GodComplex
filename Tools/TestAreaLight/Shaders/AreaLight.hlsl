@@ -61,6 +61,10 @@ _Debug = 0;
  	float2	AlignedNormal = lerp( float2( _lsNormal.z, -_lsNormal.x ), _lsNormal.zy, IsVertical );
  	float2	AlignedPosition = lerp( float2( _lsPosition.z, -_lsPosition.x ), _lsPosition.zy, IsVertical );
 
+	// Make sure we keep the sign and always treat the positive case
+	float	IsPositive = step( 0.0, AlignedNormal.y );
+	AlignedNormal *= 2.0 * IsPositive - 1.0;	// Mirror normal so we always treat the positive case shown below
+
 	// Once we're reduced to a 2D problem, the computation is easy:
 	//
 	//	                      * Top (0,1)
@@ -96,74 +100,17 @@ _Debug = 0;
 	//	t = D.N / (2*Ny)
 	//
 	float2	D = float2( 0, 1 ) - AlignedPosition;			// (0,1) represents the top of the area light square in 2D
-	float	Dtop_o_N = dot( D, AlignedNormal );
-	float	t = saturate( Dtop_o_N / (2.0 * AlignedNormal.y ) );
+	float	DdotN = dot( D, AlignedNormal );
+	float	t = saturate( DdotN / (2.0 * AlignedNormal.y ) );
 
-	// The remaining operation to perform is to reverse t depending on the sign of the normal...
-	float	IsPositive_top = step( 0.0, Dtop_o_N );// * step( 0.0, -DoN2 );
-	float	Dbottom_o_N = dot( float2( 0, -1 ) - AlignedPosition, AlignedNormal );
-	float	IsPositive_bottom = step( 0.0, Dbottom_o_N );
+	float	Top = lerp( t, 0.0, IsPositive );
+	float	Bottom = lerp( 1.0, t, IsPositive );
 
-// 	float2	UV0 = lerp( float2( 0, t ), lerp( 1.0, 0.0, IsPositive_bottom ), IsPositive_top );	// When normal is up, UV0 is (0,0). Otherwise it's (0,t) since the plane is starting to eat up the square from the top (or the left)
-// 	float2	UV1 = lerp( lerp( 0.0, 1.0, IsPositive_bottom ), float2( 1, t ), IsPositive_top );	// When normal is down, UV1 is (1,1). Otherwise it's (1,t) since the plane is starting to eat up the square from the bottom (or the right)
-
-
-
-	float2	UV0 = Dtop_o_N > 0 ? float2( 0, 0 ) : (Dbottom_o_N < 0.0 ? float2( 0, t ) : float2( 0, 1 ));
-	float2	UV1 = Dbottom_o_N > 0 ? float2( 1, 1 ) : (Dtop_o_N > 0.0 ? float2( 1, t ) : float2( 1, 0 ));
-
+	float2	UV0 = float2( 0.0, Top );
+	float2	UV1 = float2( 1.0, Bottom );
 
 	// And finally swap U and V depending on verticality
 	return lerp( float4( UV0.yx, UV1.yx ), float4( UV0, UV1 ), IsVertical );
-
-// 	if ( abs(lsNormal.y) > abs(lsNormal.x) ) {
-// 		// Check for a vertical cut
-// 		float2	AlignedNormal = lsNormal.zy;
-// 		float2	AlignedPosition = lsPosition.zy;
-// 		float2	Delta = float2( 0, 1 ) - AlignedPosition;
-// 		float	D = dot( Delta, AlignedNormal );
-// 		float	t = saturate( D / (2.0 * AlignedNormal.y ) );
-// 
-// // _Debug = float4( Delta, 0, 0 );
-// // //_Debug = float4( lsPosition.zy, 0, 0 );
-// // _Debug = D;	// = 2
-// _Debug = 1.0 * t;
-// //_Debug = float4( AlignedNormal, 0, 0 );
-// //_Debug = float4( AlignedPosition, 0, 0 );
-// 
-// 		if ( AlignedNormal.y >= 0.0 ) {
-// 			_UV0 = 0.0;
-// 			_UV1 = float2( 1, t );
-// 		} else {
-// 			_UV1 = 1.0;
-// 			_UV0 = float2( 0, 1-t );
-// 		}
-// 
-// 	} else {
-// 		// Check for a horizontal cut
-// 		float2	AlignedNormal = float2( lsNormal.z, -lsNormal.x );
-// 		float2	AlignedPosition = lsPosition.zx;
-// 		float2	Delta = float2( 0, 1 ) - AlignedPosition;
-// 		float	D = dot( Delta, AlignedNormal );
-// 		float	t = saturate( D / (2.0 * AlignedNormal.y ) );
-// 
-// // _Debug = float4( Delta, 0, 0 );
-// // //_Debug = float4( lsPosition.zy, 0, 0 );
-// // _Debug = D;	// = 2
-// _Debug = 1.0 * t;
-// //_Debug = float4( AlignedNormal, 0, 0 );
-// //_Debug = float4( AlignedPosition, 0, 0 );
-// 
-// 		if ( AlignedNormal.y >= 0.0 ) {
-// 			_UV0 = 0.0;
-// 			_UV1 = float2( t, 1 );
-// 		} else {
-// 			_UV1 = 1.0;
-// 			_UV0 = float2( 1-t, 0 );
-// 		}
-// 	}
-// 
-// _Debug = float4( abs(_UV0), 0, 0 );
 }
 
 // Computes the 2 UVs and the solid angle perceived from a single point in world space

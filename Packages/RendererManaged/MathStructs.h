@@ -174,14 +174,6 @@ namespace RendererManaged
 
 		float	Dot( float4 b )	{ return x*b.x + y*b.y + z*b.z + w*b.w; }
 
-		property float2	AsVec2 {
-			float2	get() { return float2( x, y ); }
-		}
-
-		property float3	AsVec3 {
-			float3	get() { return float3( x, y, z ); }
-		}
-
 		static property float4	Zero	{ float4 get() { return float4( 0, 0, 0, 0 ); } }
 		static property float4	UnitX	{ float4 get() { return float4( 1, 0, 0, 0 ); } }
 		static property float4	UnitY	{ float4 get() { return float4( 0, 1, 0, 0 ); } }

@@ -92,7 +92,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
  	float3	Ld = 0.0;
 	if ( ComputeSolidAngleDiffuse( wsPosition, wsNormal, UV0, UV1, SolidAngle, Debug ) ) {
 
-return Debug;
+//return Debug;
 //return float4( 100.0 * (UV1 - UV0), 0, 1 );
 // float4	Test = float4( UV0, UV1 );
 // return Test;

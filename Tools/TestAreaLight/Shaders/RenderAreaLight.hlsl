@@ -32,7 +32,7 @@ PS_IN	VS( VS_IN _In ) {
 }
 
 float4	SampleSATSinglePixel( float2 _UV ) {
-
+	
 	float2	PixelIndex = _UV * TEX_SIZE;
 	float2	NextPixelIndex = PixelIndex + 1;
 	float2	UV2 = NextPixelIndex / TEX_SIZE;
@@ -41,7 +41,7 @@ float4	SampleSATSinglePixel( float2 _UV ) {
 	float4	C01	= _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xz );
 	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.zy );
 	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xy );
-	
+
 	return C11 - C10 - C01 + C00;
 }
 

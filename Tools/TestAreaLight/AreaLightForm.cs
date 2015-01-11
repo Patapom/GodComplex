@@ -453,8 +453,8 @@ namespace AreaLightTest
 			float		Diffusion_Diffuse = DiffusionMax + (DiffusionMin - DiffusionMax) * (float) Math.Pow( floatTrackbarControlProjectionDiffusion.Value, 0.05f );
 			float		Diffusion_Specular = DiffusionMax + (DiffusionMin - DiffusionMax) * (float) Math.Pow( 1.0f - floatTrackbarControlProjectionDiffusion.Value, 0.05f );
 
-			float3		LocalDirection_Diffuse = (new float4( Diffusion_Diffuse * Direction, 0 ) * World2AreaLight).AsVec3;
-			float3		LocalDirection_Specular = (new float4( Diffusion_Specular * Direction, 0 ) * World2AreaLight).AsVec3;
+			float3		LocalDirection_Diffuse = (float3) (new float4( Diffusion_Diffuse * Direction, 0 ) * World2AreaLight);
+			float3		LocalDirection_Specular = (float3) (new float4( Diffusion_Specular * Direction, 0 ) * World2AreaLight);
 
 			m_CB_Material.m._AreaLight2World = AreaLight2World;
 			m_CB_Material.m._World2AreaLight = World2AreaLight;
