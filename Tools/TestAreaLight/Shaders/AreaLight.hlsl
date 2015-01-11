@@ -18,6 +18,20 @@ Texture2D< float4 >	_TexAreaLightSAT : register(t0);
 static const uint2	TEX_SIZE = uint2( 465, 626 );
 static const float3	dUV = float3( 1.0 / TEX_SIZE, 0.0 );
 
+// Samples the SAT
+float4	SampleSAT( float2 _UV0, float2 _UV1 ) {
+	float4	C00 = _TexAreaLightSAT.Sample( LinearClamp, _UV0 );
+	float4	C01 = _TexAreaLightSAT.Sample( LinearClamp, float2( _UV1.x, _UV0.y ) );
+	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, float2( _UV0.x, _UV1.y ) );
+	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV1 );
+	float4	C = C11 - C10 - C01 + C00;
+
+	// Compute normalization factor
+	float2	DeltaUV = _UV1 - _UV0;
+	float	PixelsCount = (DeltaUV.x * TEX_SIZE.x) * (DeltaUV.y * TEX_SIZE.y);
+
+	return C * (PixelsCount > 1e-3 ? 1.0 / PixelsCount : 0.0);
+}
 
 // Determinant of a 3x3 row-major matrix
 float	Determinant( float3 a, float3 b, float3 c ) {
@@ -70,6 +84,7 @@ float	RectangleSolidAngle( float3 _lsPosition, float2 _UV0, float2 _UV1 ) {
 // 	return 0.5 * (Omega0 + Omega1);
 }
 
+// World space version
 // float	RectangleSolidAngleWS( float3 _wsPosition, float2 _UV0, float2 _UV1 ) {
 // 
 // 	float3	D = _AreaLightT - _wsPosition;
@@ -356,7 +371,7 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 	_Debug = 0.0;
 
 	float3	wsCenter2Position = _wsPosition - _AreaLightT;
-	float3	lsPosition = float3(dot( wsCenter2Position, _AreaLightX ),	// Transform world position in local area light space
+	float3	lsPosition = float3(dot( wsCenter2Position, _AreaLightX ),	// Transform world position into local area light space
 								dot( wsCenter2Position, _AreaLightY ),
 								dot( wsCenter2Position, _AreaLightZ ) );
 	if ( lsPosition.z <= 0.0 ) {
@@ -364,9 +379,9 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 		return false;
 	}
 
-	lsPosition.xy /= float2( _AreaLightScaleX, _AreaLightScaleY );			// Account for scale
+	lsPosition.xy /= float2( _AreaLightScaleX, _AreaLightScaleY );		// Account for scale
 
-	float3	lsNormal = float3(	dot( _wsNormal, _AreaLightX ),				// Transform world normal in local area light space
+	float3	lsNormal = float3(	dot( _wsNormal, _AreaLightX ),			// Transform world normal into local area light space
 								dot( _wsNormal, _AreaLightY ),
 								dot( _wsNormal, _AreaLightZ ) );
 
@@ -390,8 +405,14 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 		float3( +1, -1, 0 ),		// Bottom right
 	};
 
-	// Compute the UV coordinates of the intersection of the frustum with the portal's plane
+	// Compute the UV coordinates of the intersection of the virtual light source frustum with the portal's plane
+	// The virtual light source is the portal offset by a given vector so it gets away from the portal along the -Z direction
+	// This gives us:
+	//	_ An almost directional thin brush spanning a few pixels when the virtual light source is far away (almost infinity) from the portal (diffusion = 0)
+	//	_ An area that covers the entire portal when the virtual light source is right on the portal (diffusion = 1)
+	//
 	float2	lsIntersection[2] = { 0.0.xx, 0.0.xx };
+	[unroll]
 	for ( uint Corner=0; Corner < 2; Corner++ ) {
 		float3	lsVirtualPos = lsPortal[Corner] - _ProjectionDirectionDiff;	// This is the position of the corner of the virtual source
 		float3	Dir = lsVirtualPos - lsPosition;							// This is the pointing direction, originating from the source _wsPosition
@@ -412,12 +433,6 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 	// Compute the solid angle
 //	float	SolidAngle = RectangleSolidAngle( lsPosition, _UV0, _UV1 );
 	float	SolidAngle = RectangleSolidAngle( lsPosition, ClippedUVs.xy, ClippedUVs.zw );
-
-	// Grow the solid angle depending on diffusion so we get a factor of 1 for fully diffuse
-	//	and a factor of 4PI for fully directional.
-//	SolidAngle *= lerp( 4.0 * PI, 1.0, _AreaLightDiffusion );
-//	SolidAngle *= _AreaLightDiffusion > 1e-2 ? 1.0 / _AreaLightDiffusion : 100.0;
-//	SolidAngle = lerp( 1.0 / (4*PI), SolidAngle, _AreaLightDiffusion );
 
 	// Now, we can compute the projected solid angle by dotting with the normal
 	float3	lsCenter = float3( _UV1.x + _UV0.x - 1.0, 1.0 - _UV1.y - _UV0.y, 0.0 );
@@ -449,7 +464,7 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 								dot( wsCenter2Position, _AreaLightY ),
 								dot( wsCenter2Position, _AreaLightZ ) );
 
-	float3	lsView = float3(	dot( _wsView, _AreaLightX ),				// Transform world direction into local area light space
+	float3	lsView = float3(	dot( _wsView, _AreaLightX ),			// Transform world direction into local area light space
 								dot( _wsView, _AreaLightY ),
 								dot( _wsView, _AreaLightZ ) );
 	if ( lsPosition.z <= 0.0 || lsView.z >= 0.0 ) {
@@ -458,9 +473,9 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 	}
 
 	lsView.xy /= float2( _AreaLightScaleX, _AreaLightScaleY );			// Account for scale
-	lsPosition.xy /= float2( _AreaLightScaleX, _AreaLightScaleY );			// Account for scale
+	lsPosition.xy /= float2( _AreaLightScaleX, _AreaLightScaleY );		// Account for scale
 
-	float3	lsNormal = float3(	dot( _wsNormal, _AreaLightX ),				// Transform world normal in local area light space
+	float3	lsNormal = float3(	dot( _wsNormal, _AreaLightX ),			// Transform world normal into local area light space
 								dot( _wsNormal, _AreaLightY ),
 								dot( _wsNormal, _AreaLightZ ) );
 
@@ -479,7 +494,20 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 	//	(-1,-1)					(+1,-1)
 	//
 	//
+	float	t = -lsPosition.z / lsView.z;
+	float3	I = lsPosition + t * lsView;
 
+	float	Diffusion = _AreaLightDiffusion;// * step( abs(I.x), 1.0 ) * step( abs(I.y), 1.0 );
+
+	float2	UVcenter = float2( 0.5 * (1.0 + I.x), 0.5 * (1.0 - I.y) );
+	_UV0 = UVcenter - Diffusion;
+	_UV1 = UVcenter + Diffusion + dUV;
+
+	float2	SatUV0 = saturate( _UV0 );
+	float2	SatUV1 = saturate( _UV1 );
+
+
+/*
 	// Build a reference frame for the view direction
 	float3	Y = normalize( float3( 0.0, -lsView.z, lsView.y ) );	// = normalize( cross( PlaneTangent, lsView );  where PlaneTangent = (1,0,0)
 	float3	X = cross( lsView, Y );
@@ -520,6 +548,7 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 	_UV1 = max( _UV0 + dUV.xy, _UV1 );	// Make sure the UVs are at least separated by a single texel before clamping
 
 //_Debug = float4( _UV1, 0, 0 );
+*/
 
 	// Compute potential clipping by the surface's plane
 	float4	ClippedUVs = ComputeClipping( lsPosition, lsNormal, _Debug );
@@ -527,7 +556,8 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 	_UV1 = clamp( _UV1, ClippedUVs.xy, ClippedUVs.zw );
 
 	// Compute the solid angle
-	float	SolidAngle = RectangleSolidAngle( lsPosition, _UV0, _UV1 );
+//	float	SolidAngle = RectangleSolidAngle( lsPosition, _UV0, _UV1 );
+	float	SolidAngle = RectangleSolidAngle( lsPosition, ClippedUVs.xy, ClippedUVs.zw );
 
 	// Now, we can compute the projected solid angle by dotting with the normal
 	_ProjectedSolidAngle = saturate( dot( _wsNormal, _wsView ) ) * SolidAngle;	// (N.Wi) * dWi
@@ -535,6 +565,10 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 	// Finally, multiply by PI/4 to account for the fact we traced a square pyramid instead of a cone
 	// (area of the base of the pyramid is 2x2 while area of the circle is PI)
 	_ProjectedSolidAngle *= 0.25 * PI;
+
+	float2	DeltaUV = _UV1 - _UV0;
+	float2	DeltaSatUV = SatUV1 - SatUV0;
+	_ProjectedSolidAngle *= (DeltaSatUV.x * DeltaSatUV.y) / (DeltaUV.x * DeltaUV.y);
 
 	return true;
 }

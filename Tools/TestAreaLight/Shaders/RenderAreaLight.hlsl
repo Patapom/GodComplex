@@ -3,6 +3,8 @@
 
 cbuffer CB_Object : register(b3) {
 	float4x4	_Local2World;
+	float4x4	_Local2World;
+
 };
 
 Texture2D< float4 >	_TexAreaLight : register(t1);

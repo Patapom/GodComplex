@@ -56,23 +56,6 @@ float4	SampleSATSinglePixel( float2 _UV ) {
 	return C11 - C10 - C01 + C00;
 }
 
-float4	SampleSAT( float2 _UV0, float2 _UV1 ) {
-	// Sample SAT
-	float4	C00 = _TexAreaLightSAT.Sample( LinearClamp, _UV0 );
-	float4	C01 = _TexAreaLightSAT.Sample( LinearClamp, float2( _UV1.x, _UV0.y ) );
-	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, float2( _UV0.x, _UV1.y ) );
-	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV1 );
-	float4	C = C11 - C10 - C01 + C00;
-
-	// Compute normalization factor
-	float2	DeltaUV = _UV1 - _UV0;
-	float	PixelsCount = (DeltaUV.x * TEX_SIZE.x) * (DeltaUV.y * TEX_SIZE.y);
-
-// PixelsCount = 1.0;
-
-	return C / (1e-6 + PixelsCount);
-}
-
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 // 	float4	StainedGlass = _TexAreaLight.Sample( LinearClamp, _In.UV );
 // 	float4	StainedGlass = 0.0001 * _TexAreaLightSAT.Sample( LinearClamp, _In.UV );
@@ -83,8 +66,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float3	wsView = normalize( wsPosition - _Camera2World[3].xyz );
 
 	const float3	RhoD = 0.5;	// 50% diffuse albedo
-	const float3	F0 = 0.04;							// DIELECTRIC
-//	const float3	F0 = float3( 0.95, 0.94, 0.93 );	// METAL
+	const float3	F0 = lerp( 0.04, float3( 0.95, 0.94, 0.93 ), _Metal );
 
  	float2	UV0, UV1;
  	float	SolidAngle;
@@ -113,32 +95,35 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	}
 	
 //Ld = float3( 1, 1, 0 );
-
+	
 	// Compute specular lighting
 
 //Calculer l'intersection avec le frustum et le portal, puis utiliser le facteur de diffusion pour grossir les UVs!! On va pas s'faire chier hein!
 
 	
 	float3	Ls = 0.0;
-//  	float3	wsReflectedView = reflect( wsView, wsNormal );
-//  	float	TanHalfAngle = tan( (1.0 - _Gloss) * 0.5 * PI );
-//   	if ( ComputeSolidAngleSpecular( wsPosition, wsNormal, wsReflectedView, TanHalfAngle, UV0, UV1, SolidAngle, Debug ) ) {
-//  
-// //return Debug;
-//  
-// 		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
-// 		Ls = Irradiance * SolidAngle;
-// 
-// //return SolidAngle;
-// return 1 * float4( Irradiance, 0 );
-// 	}
+ 	float3	wsReflectedView = reflect( wsView, wsNormal );
+ 	float	TanHalfAngle = tan( (1.0 - _Gloss) * 0.5 * PI );
+  	if ( ComputeSolidAngleSpecular( wsPosition, wsNormal, wsReflectedView, TanHalfAngle, UV0, UV1, SolidAngle, Debug ) ) {
+ 
+//return Debug;
+ 
+		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
+		Ls = Irradiance * SolidAngle;
+
+//return SolidAngle;
+//return 1 * float4( Irradiance, 0 );
+	}
 	
 	// Compute Fresnel
-	float	VdotN = saturate( dot( wsView, wsNormal ) );
+	float	VdotN = saturate( -dot( wsView, wsNormal ) );
 	float3	IOR = Fresnel_IORFromF0( F0 );
 	float3	FresnelSpecular = FresnelAccurate( IOR, VdotN );
+
+FresnelSpecular = 1;
+
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;
 
-//	return float4( FresnelDiffuse * Ld + FresnelSpecular * Ls, 1 );
+	return float4( 0.05 + FresnelDiffuse * Ld + FresnelSpecular * Ls, 1 );
 	return float4( 0.05 + Ld + Ls, 1 );
 }
