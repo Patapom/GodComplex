@@ -99,10 +99,16 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 		
 		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
 		
-		float	Roughness = max( 0.5e-2, 1.0 * (1.0 - _Gloss) );
+//		float	Roughness = max( 0.5e-2, 1.0 * (1.0 - _Gloss) );
+		float	Roughness = max( 1.0e-2, 1.0 * (1.0 - _Gloss) );
+
 //		Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * Irradiance * SolidAngle;
 		Ls = RhoD / PI * Irradiance * SolidAngle;
 		
+// float3	Pipo = normalize( lerp( wsReflectedView, wsNormal, Roughness ) );
+// float	k = lerp( 0.4, 0.001, _Gloss );
+// 		Ls = k * ComputeWard( -wsView, wsNormal, Pipo, Roughness ) * Irradiance * SolidAngle;
+
 //Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * SolidAngle;
 //Ls = SolidAngle;
 //return 1 * float4( Irradiance, 0 );
@@ -114,7 +120,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float3	IOR = Fresnel_IORFromF0( F0 );
 	float3	FresnelSpecular = FresnelAccurate( IOR, VdotN );
 	
-//FresnelSpecular = _Metal;
+FresnelSpecular = _Metal;
 
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;
 	

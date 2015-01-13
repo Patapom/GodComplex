@@ -474,9 +474,8 @@ _Gloss = pow( _Gloss, 0.1 );
 	float3	lsView = float3(	dot( _wsView, _AreaLightX ),			// Transform world direction into local area light space
 								dot( _wsView, _AreaLightY ),
 								dot( _wsView, _AreaLightZ ) );
-//	if ( lsPosition.z <= 0.0 || lsView.z >= 0.0 ) {
 	if ( lsPosition.z <= 0.0 ) {
-		// Position is behind area light or watching away from it...
+		// Position is behind area light...
 		return false;
 	}
 
@@ -488,7 +487,7 @@ _Gloss = pow( _Gloss, 0.1 );
 								dot( _wsNormal, _AreaLightZ ) );
 
 	// Tweak the view to point toward the center of the area light depending on glossiness
-	lsView = normalize( lerp( -lsPosition, lsView, _Gloss ) );
+//	lsView = normalize( lerp( -lsPosition, lsView, _Gloss ) );
 
 	// In local area light space, the position is in front of a canonical square:
 	//
@@ -560,8 +559,8 @@ _Gloss = pow( _Gloss, 0.1 );
 
 _Debug = float4( _UV0, 0, 0 );
 
-	_UV0 = clamp( _UV0, ClippedUVs.xy, ClippedUVs.zw );
-	_UV1 = clamp( _UV1, ClippedUVs.xy, ClippedUVs.zw );
+// 	_UV0 = clamp( _UV0, ClippedUVs.xy, ClippedUVs.zw );
+// 	_UV1 = clamp( _UV1, ClippedUVs.xy, ClippedUVs.zw );
 
 	float2	SatUVcenter = clamp( UVcenter, ClippedUVs.xy, ClippedUVs.zw );
 
@@ -600,7 +599,7 @@ _Debug = float4( _UV0, 0, 0 );
 	float	ProjectedSolidAngleSpecular = saturate( dot( lsNormal, lsView ) ) * saturate( -lsView.z ) * SolidAngleSpecular;		// (N.Wi) * dWi
 
 
-ProjectedSolidAngleSpecular *= 0.001/31.831;
+//ProjectedSolidAngleSpecular *= 0.001/31.831;
 
 
 	/////////////////////////////////
@@ -625,6 +624,14 @@ ProjectedSolidAngleDiffuse *= 1.0;
 //	_ProjectedSolidAngle = ProjectedSolidAngleSpecular;
 	_ProjectedSolidAngle = ProjectedSolidAngleDiffuse;
 //	_ProjectedSolidAngle = lerp( ProjectedSolidAngleDiffuse, ProjectedSolidAngleSpecular, _Gloss );
+
+
+
+	_UV0 = lerp( ClippedUVs.xy, _UV0, _Gloss );
+	_UV1 = lerp( ClippedUVs.zw, _UV1, _Gloss );
+	_UV1 = max( _UV0, _UV1 );
+
+
 
 //_Debug = float4( I0, 0 );
 _Debug = float4( UVcenter, 0, 0 );
