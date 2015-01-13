@@ -464,6 +464,8 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 	_ProjectedSolidAngle = 0.0;
 	_Debug = 0.0;
 
+_Gloss = pow( _Gloss, 0.1 );
+
 	float3	wsCenter2Position = _wsPosition - _AreaLightT;
 	float3	lsPosition = float3(dot( wsCenter2Position, _AreaLightX ),	// Transform world position into local area light space
 								dot( wsCenter2Position, _AreaLightY ),
@@ -588,20 +590,24 @@ _Debug = float4( _UV0, 0, 0 );
 	//	it by the radius of the circle of confusion to obtain a nice, round fading
 	//	zone when the circle exits the area light...
 	SolidAngleSpecular *= 1.0 - saturate( length( UVcenter - SatUVcenter ) / (1e-3 + RadiusUV) );
+//	SolidAngleSpecular = max( 1e-1, SolidAngleSpecular );
 
 	// Now, multiply by PI/4 to account for the fact we traced a square pyramid instead of a cone
 	// (area of the base of the pyramid is 2x2 while area of the circle is PI)
 	SolidAngleSpecular *= 0.25 * PI;
 
 	// Finally, we can compute the projected solid angle by dotting with the normal
-	float	ProjectedSolidAngleSpecular = saturate( dot( lsNormal, lsView ) ) * saturate( -lsView.z ) * SolidAngleSpecular;			// (N.Wi) * dWi
+	float	ProjectedSolidAngleSpecular = saturate( dot( lsNormal, lsView ) ) * saturate( -lsView.z ) * SolidAngleSpecular;		// (N.Wi) * dWi
+
+
+ProjectedSolidAngleSpecular *= 0.001/31.831;
 
 
 	/////////////////////////////////
 	// Compute the diffuse solid angle
 //	float	SolidAngleDiffuse = RectangleSolidAngle( lsPosition, _UV0, _UV1 );	// Diffuse solid angle always intersects the clipped square
 	float	SolidAngleDiffuse = RectangleSolidAngle( lsPosition, ClippedUVs.xy, ClippedUVs.zw );
-
+	
 //	float3	lsCenter = float3( _UV1.x + _UV0.x - 1.0, 1.0 - _UV1.y - _UV0.y, 0.0 );
 	float3	lsCenter = float3( ClippedUVs.z + ClippedUVs.x - 1.0, 1.0 - ClippedUVs.y - ClippedUVs.w, 0.0 );
 	float3	lsPosition2Center = normalize( lsCenter - lsPosition );						// Wi, the average incoming light direction
@@ -609,18 +615,23 @@ _Debug = float4( _UV0, 0, 0 );
 //ProjectedSolidAngleDiffuse = SolidAngleDiffuse;
 
 
+//ProjectedSolidAngleDiffuse *= 0.5;
+ProjectedSolidAngleDiffuse *= 1.0;
+
+
 	/////////////////////////////////
 	// Build the result solid angle
 //	_ProjectedSolidAngle = min( ProjectedSolidAngleCone, ProjectedSolidAngleDiffuse );
 //	_ProjectedSolidAngle = ProjectedSolidAngleSpecular;
-//	_ProjectedSolidAngle = ProjectedSolidAngleDiffuse;
-	_ProjectedSolidAngle = lerp( 0.5 * ProjectedSolidAngleDiffuse, (1.0/31.831) * ProjectedSolidAngleSpecular, pow( _Gloss, 1.0 ) );
+	_ProjectedSolidAngle = ProjectedSolidAngleDiffuse;
+//	_ProjectedSolidAngle = lerp( ProjectedSolidAngleDiffuse, ProjectedSolidAngleSpecular, _Gloss );
 
 //_Debug = float4( I0, 0 );
 _Debug = float4( UVcenter, 0, 0 );
 _Debug = RadiusUV;
 _Debug = SolidAngleSpecular;
 _Debug = 1-length( UVcenter - SatUVcenter ) / (1e-3 + RadiusUV);
+_Debug = _ProjectedSolidAngle;
 
 	return true;
 }

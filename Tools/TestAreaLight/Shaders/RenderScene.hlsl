@@ -73,7 +73,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float3	wsPosition = _In.Position;
 	float3	wsNormal = normalize( _In.Normal );
 	float3	wsView = normalize( wsPosition - _Camera2World[3].xyz );
-
+	
 	const float3	RhoD = _DiffuseAlbedo;
 	const float3	F0 = lerp( 0.04, _SpecularTint, _Metal );
 
@@ -100,8 +100,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
 		
 		float	Roughness = max( 0.5e-2, 1.0 * (1.0 - _Gloss) );
-		Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * Irradiance * SolidAngle;
-//		Ls = RhoD / PI * Irradiance * SolidAngle;
+//		Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * Irradiance * SolidAngle;
+		Ls = RhoD / PI * Irradiance * SolidAngle;
 		
 //Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * SolidAngle;
 //Ls = SolidAngle;
@@ -114,7 +114,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float3	IOR = Fresnel_IORFromF0( F0 );
 	float3	FresnelSpecular = FresnelAccurate( IOR, VdotN );
 	
-FresnelSpecular = _Metal;
+//FresnelSpecular = _Metal;
 
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;
 	
