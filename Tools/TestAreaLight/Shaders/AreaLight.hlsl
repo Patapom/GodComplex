@@ -13,17 +13,18 @@ cbuffer CB_Light : register(b2) {
 };
 
 Texture2D< float4 >	_TexAreaLightSAT : register(t0);
+Texture2D< float4 >	_TexAreaLightSATFade : register(t1);
 
 
 static const uint2	TEX_SIZE = uint2( 465, 626 );
 static const float3	dUV = float3( 1.0 / TEX_SIZE, 0.0 );
 
 // Samples the SAT
-float4	SampleSAT( float2 _UV0, float2 _UV1 ) {
-	float4	C00 = _TexAreaLightSAT.Sample( LinearClamp, _UV0 );
-	float4	C01 = _TexAreaLightSAT.Sample( LinearClamp, float2( _UV1.x, _UV0.y ) );
-	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, float2( _UV0.x, _UV1.y ) );
-	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV1 );
+float4	SampleSAT( Texture2D< float4 > _Tex, float2 _UV0, float2 _UV1 ) {
+	float4	C00 = _Tex.Sample( LinearClamp, _UV0 );
+	float4	C01 = _Tex.Sample( LinearClamp, float2( _UV1.x, _UV0.y ) );
+	float4	C10 = _Tex.Sample( LinearClamp, float2( _UV0.x, _UV1.y ) );
+	float4	C11 = _Tex.Sample( LinearClamp, _UV1 );
 	float4	C = C11 - C10 - C01 + C00;
 
 	// Compute normalization factor
@@ -88,31 +89,6 @@ float	RectangleSolidAngle( float3 _lsPosition, float2 _UV0, float2 _UV1 ) {
 // 
 // 	return 0.5 * (Omega0 + Omega1);
 }
-
-// World space version
-// float	RectangleSolidAngleWS( float3 _wsPosition, float2 _UV0, float2 _UV1 ) {
-// 
-// 	float3	D = _AreaLightT - _wsPosition;
-// 	float3	v0 = D + _AreaLightX * (2.0 * _UV0.x - 1.0) + _AreaLightY * (1.0 - 2.0 * _UV0.y);
-// 	float3	v1 = D + _AreaLightX * (2.0 * _UV0.x - 1.0) + _AreaLightY * (1.0 - 2.0 * _UV1.y);
-// 	float3	v2 = D + _AreaLightX * (2.0 * _UV1.x - 1.0) + _AreaLightY * (1.0 - 2.0 * _UV1.y);
-// 	float3	v3 = D + _AreaLightX * (2.0 * _UV1.x - 1.0) + _AreaLightY * (1.0 - 2.0 * _UV0.y);
-// 
-// 	float	lv0 = length( v0 );
-// 	float	lv1 = length( v1 );
-// 	float	lv2 = length( v2 );
-// 	float	lv3 = length( v3 );
-// 
-// 	float	dotV0V1 = dot( v0, v1 );
-// 	float	dotV1V2 = dot( v1, v2 );
-// 	float	dotV2V3 = dot( v2, v3 );
-// 	float	dotV3V0 = dot( v3, v0 );
-// 	float	dotV2V0 = dot( v2, v0 );
-// 
-//  	float	A0 = atan( -Determinant( v0, v1, v2 ) / (lv0+lv1+lv2 + lv2*dotV0V1 + lv0*dotV1V2 + lv1*dotV2V0) );
-//  	float	A1 = atan( -Determinant( v0, v2, v3 ) / (lv0+lv2+lv3 + lv3*dotV2V0 + lv0*dotV2V3 + lv2*dotV3V0) );
-// 	return 2.0 * (A0 + A1);
-// }
 
 
 // Computes the potential UV clipping by the surface's normal
@@ -464,7 +440,7 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 	_ProjectedSolidAngle = 0.0;
 	_Debug = 0.0;
 
-_Gloss = pow( _Gloss, 0.1 );
+_Gloss = pow( _Gloss, 0.5 );
 
 	float3	wsCenter2Position = _wsPosition - _AreaLightT;
 	float3	lsPosition = float3(dot( wsCenter2Position, _AreaLightX ),	// Transform world position into local area light space

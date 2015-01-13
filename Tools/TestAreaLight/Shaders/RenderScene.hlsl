@@ -84,7 +84,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
  	// Compute diffuse lighting
  	float3	Ld = 0.0;
 	if ( ComputeSolidAngleDiffuse( wsPosition, wsNormal, UV0, UV1, SolidAngle, Debug ) ) {
-		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
+		float3	Irradiance = _AreaLightIntensity * SampleSAT( _TexAreaLightSATFade, UV0, UV1 ).xyz;
 		Ld = RhoD / PI * Irradiance * SolidAngle;
 		
 //Ld = SolidAngle;
@@ -97,7 +97,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
  	float3	wsReflectedView = reflect( wsView, wsNormal );
   	if ( ComputeSolidAngleSpecular( wsPosition, wsNormal, wsReflectedView, _Gloss, UV0, UV1, SolidAngle, Debug ) ) {
 		
-		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
+		float3	Irradiance = _AreaLightIntensity * SampleSAT( _TexAreaLightSAT, UV0, UV1 ).xyz;
 		
 //		float	Roughness = max( 0.5e-2, 1.0 * (1.0 - _Gloss) );
 		float	Roughness = max( 1.0e-2, 1.0 * (1.0 - _Gloss) );

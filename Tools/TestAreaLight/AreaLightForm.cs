@@ -67,6 +67,7 @@ namespace AreaLightTest
 		private Shader		m_Shader_RenderScene = null;
 		private Texture2D	m_Tex_AreaLight = null;
 		private Texture2D	m_Tex_AreaLightSAT = null;
+		private Texture2D	m_Tex_AreaLightSATFade = null;
 
 		private Primitive	m_Prim_Quad = null;
 		private Primitive	m_Prim_Rectangle = null;
@@ -93,6 +94,7 @@ namespace AreaLightTest
 //ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
 //ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
 //ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
+//ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
 
 			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
 
@@ -347,9 +349,13 @@ namespace AreaLightTest
 			}
 
 			BuildPrimitives();
-			m_Tex_AreaLight = Image2Texture( new System.IO.FileInfo( "StainedGlass.png" ) );
+//			m_Tex_AreaLight = Image2Texture( new System.IO.FileInfo( "StainedGlass.png" ) );
 //			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT.pipo" ) );
+
+			m_Tex_AreaLight = Image2Texture( new System.IO.FileInfo( "StainedGlass2.jpg" ) );
 			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipo" ) );
+			m_Tex_AreaLightSATFade = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2Fade.pipo" ) );
+
 //			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipo" ) );
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
@@ -411,6 +417,7 @@ namespace AreaLightTest
 
 			m_Tex_AreaLight.Dispose();
 			m_Tex_AreaLightSAT.Dispose();
+			m_Tex_AreaLightSATFade.Dispose();
 
 			m_Device.Exit();
 
@@ -460,8 +467,9 @@ namespace AreaLightTest
 
 			// Setup area light buffer
 			m_Tex_AreaLightSAT.SetPS( 0 );
+			m_Tex_AreaLightSATFade.SetPS( 1 );
 
-			float		SizeX = 1;// 0.5f;
+			float		SizeX = 0.5f;
 			float		SizeY = 1.0f;
 			float		RollAngle = (float) (Math.PI * floatTrackbarControlLightRoll.Value / 180.0);
 			float3		LightPosition = new float3( 1.2f + floatTrackbarControlLightPosX.Value, 1.0f + floatTrackbarControlLightPosY.Value, -1.0f + floatTrackbarControlLightPosZ.Value );
@@ -508,7 +516,7 @@ namespace AreaLightTest
 				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
 				m_CB_Object.UpdateData();
 
-				m_Tex_AreaLight.SetPS( 1 );
+				m_Tex_AreaLight.SetPS( 2 );
 
 				m_Prim_Rectangle.Render( m_Shader_RenderAreaLight );
 			} else {
