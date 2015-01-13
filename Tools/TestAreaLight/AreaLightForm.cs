@@ -52,7 +52,9 @@ namespace AreaLightTest
 		private struct CB_Object {
 			public float4x4		_Local2World;
 			public float4x4		_World2Local;
+			public float3		_DiffuseAlbedo;
 			public float		_Gloss;
+			public float3		_SpecularTint;
 			public float		_Metal;
 		}
 
@@ -87,8 +89,10 @@ namespace AreaLightTest
 			InitializeComponent();
 
 
-// ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
+//ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
+//ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
+//ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
+//ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
 
 			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
 
@@ -221,7 +225,7 @@ namespace AreaLightTest
 			// Perform the accumulation
 			for ( int Y=0; Y < H; Y++ ) {
 				for ( int X=1; X < W; X++ ) {
-					Image[X,Y] += Image[X-1,Y];		// Build first scanline
+					Image[X,Y] += Image[X-1,Y];
 				}
 			}
 
@@ -280,6 +284,51 @@ namespace AreaLightTest
 
 				m_Prim_Rectangle = new Primitive( m_Device, Vertices.Length, VerticesBuffer, null, Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3N3G3B3T2 );
 			}
+
+			{
+				const int	W = 41;
+				const int	H = 22;
+				VertexP3N3G3B3T2[]	Vertices = new VertexP3N3G3B3T2[W*H];
+				for ( int Y=0; Y < H; Y++ ) {
+					double	Theta = Math.PI * Y / (H-1);
+					float	CosTheta = (float) Math.Cos( Theta );
+					float	SinTheta = (float) Math.Sin( Theta );
+					for ( int X=0; X < W; X++ ) {
+						double	Phi = 2.0 * Math.PI * X / (W-1);
+						float	CosPhi = (float) Math.Cos( Phi );
+						float	SinPhi = (float) Math.Sin( Phi );
+
+						float3	N = new float3( SinTheta * SinPhi, CosTheta, SinTheta * CosPhi );
+						float3	T = new float3( CosPhi, 0.0f, -SinPhi );
+						float3	B = N.Cross( T );
+
+						Vertices[W*Y+X] = new VertexP3N3G3B3T2() {
+							P = N,
+							N = N,
+							T = T,
+							B = B,
+							UV = new float2( 2.0f * X / W, 1.0f * Y / H )
+						};
+					}
+				}
+
+				ByteBuffer	VerticesBuffer = VertexP3N3G3B3T2.FromArray( Vertices );
+
+				uint[]		Indices = new uint[(H-1) * (2*W+2)-2];
+				int			IndexCount = 0;
+				for ( int Y=0; Y < H-1; Y++ ) {
+					for ( int X=0; X < W; X++ ) {
+						Indices[IndexCount++] = (uint) ((Y+0) * W + X);
+						Indices[IndexCount++] = (uint) ((Y+1) * W + X);
+					}
+					if ( Y < H-2 ) {
+						Indices[IndexCount++] = (uint) ((Y+1) * W - 1);
+						Indices[IndexCount++] = (uint) ((Y+1) * W + 0);
+					}
+				}
+
+				m_Prim_Sphere = new Primitive( m_Device, Vertices.Length, VerticesBuffer, Indices, Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3N3G3B3T2 );
+			}
 		}
 
 		protected override void OnLoad( EventArgs e )
@@ -299,7 +348,9 @@ namespace AreaLightTest
 
 			BuildPrimitives();
 			m_Tex_AreaLight = Image2Texture( new System.IO.FileInfo( "StainedGlass.png" ) );
-			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT.pipo" ) );
+//			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT.pipo" ) );
+			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipo" ) );
+//			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipo" ) );
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
@@ -356,7 +407,7 @@ namespace AreaLightTest
 
 			m_Prim_Quad.Dispose();
 			m_Prim_Rectangle.Dispose();
-//			m_Prim_Sphere.Dispose();
+			m_Prim_Sphere.Dispose();
 
 			m_Tex_AreaLight.Dispose();
 			m_Tex_AreaLightSAT.Dispose();
@@ -376,27 +427,6 @@ namespace AreaLightTest
 			float	Time = (float) (Ticks * m_Ticks2Seconds);
 			return Time;
 		}
-
-// 		public void	UpdateCamera() {
-// 
-// 			float3	Position = new float3( 0, 1, 4 );
-// 					Position.x += floatTrackbarControlCameraPosX.Value;
-// 					Position.y += floatTrackbarControlCameraPosY.Value;
-// 					Position.z += floatTrackbarControlCameraPosZ.Value;
-// 
-// 			float3	Target = new float3( 0, 1, 0 );
-// 
-// 			m_CB_Camera.m._Camera2World.MakeLookAtCamera( Position, Target, float3.UnitY );
-// 			m_CB_Camera.m._World2Camera = m_CB_Camera.m._Camera2World.Inverse;
-// 
-// 			m_CB_Camera.m._Camera2Proj.MakeProjectionPerspective( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
-// 			m_CB_Camera.m._Proj2Camera = m_CB_Camera.m._Camera2Proj.Inverse;
-// 
-// 			m_CB_Camera.m._World2Proj = m_CB_Camera.m._World2Camera * m_CB_Camera.m._Camera2Proj;
-// 			m_CB_Camera.m._Proj2World = m_CB_Camera.m._Camera2World * m_CB_Camera.m._Proj2Camera;
-// 
-// 			m_CB_Camera.UpdateData();
-// 		}
 
 		void Camera_CameraTransformChanged( object sender, EventArgs e )
 		{
@@ -422,12 +452,8 @@ namespace AreaLightTest
 			m_CB_Main.m.iGlobalTime = GetGameTime() - m_StartTime;
 			m_CB_Main.UpdateData();
 
-			// Setup camera data
-//			UpdateCamera();
-
 			// =========== Render ===========
 			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
 
 			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
 			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
@@ -438,7 +464,7 @@ namespace AreaLightTest
 			float		SizeX = 0.5f;
 			float		SizeY = 1.0f;
 			float		RollAngle = (float) (Math.PI * floatTrackbarControlLightRoll.Value / 180.0);
-			float3		LightPosition = new float3( floatTrackbarControlLightPosX.Value, 1.0f + floatTrackbarControlLightPosY.Value, -1.0f + floatTrackbarControlLightPosZ.Value );
+			float3		LightPosition = new float3( 1.2f + floatTrackbarControlLightPosX.Value, 1.0f + floatTrackbarControlLightPosY.Value, -1.0f + floatTrackbarControlLightPosZ.Value );
 			float3		LightTarget = new float3( LightPosition.x + floatTrackbarControlLightTargetX.Value, LightPosition.y + floatTrackbarControlLightTargetY.Value, LightPosition.z + 2.0f + floatTrackbarControlLightTargetZ.Value );
 			float3		LightUp = new float3( (float) Math.Sin( -RollAngle ), (float) Math.Cos( RollAngle ), 0.0f );
 			float4x4	AreaLight2World = new float4x4(); 
@@ -474,6 +500,7 @@ namespace AreaLightTest
 
 
 			// Render the area light itself
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
 			if ( m_Shader_RenderAreaLight != null && m_Shader_RenderAreaLight.Use() ) {
 
 				m_CB_Object.m._Local2World = AreaLight2World;
@@ -490,17 +517,32 @@ namespace AreaLightTest
 
 
 			// Render the scene
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.NOCHANGE, BLEND_STATE.NOCHANGE );
 			if ( m_Shader_RenderScene != null && m_Shader_RenderScene.Use() ) {
 
-				// Create a floor plane
+				// Render a floor plane
 				m_CB_Object.m._Local2World.MakeLookAt( float3.Zero, float3.UnitY, float3.UnitX );
 				m_CB_Object.m._Local2World.Scale( new float3( 2.0f, 2.0f, 1.0f ) );
 				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
+				m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 1, 1 );
+				m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.93f );
 				m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
 				m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
 				m_CB_Object.UpdateData();
 
 				m_Prim_Rectangle.Render( m_Shader_RenderScene );
+
+				// Render the sphere
+				m_CB_Object.m._Local2World.MakeLookAt( new float3( 0, 0.5f, 1.0f ), new float3( 0, 0.5f, 2 ), float3.UnitY );
+				m_CB_Object.m._Local2World.Scale( new float3( 0.5f, 0.5f, 0.5f ) );
+				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
+				m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 0.8f, 0.5f );
+				m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.4f, 0.03f );
+ 				m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
+ 				m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
+				m_CB_Object.UpdateData();
+
+				m_Prim_Sphere.Render( m_Shader_RenderScene );
 
 			} else {
 				m_Device.Clear( new float4( 1, 1, 0, 0 ) );

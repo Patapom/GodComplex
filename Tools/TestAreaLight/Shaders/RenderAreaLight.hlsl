@@ -3,8 +3,6 @@
 
 cbuffer CB_Object : register(b3) {
 	float4x4	_Local2World;
-	float4x4	_Local2World;
-
 };
 
 Texture2D< float4 >	_TexAreaLight : register(t1);
@@ -50,7 +48,7 @@ float4	SampleSATSinglePixel( float2 _UV ) {
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 // 	float4	StainedGlass = _TexAreaLight.Sample( LinearClamp, _In.UV );
 // 	float4	StainedGlass = 0.0001 * _TexAreaLightSAT.Sample( LinearClamp, _In.UV );
-	float4	StainedGlass = SampleSATSinglePixel( _In.UV );
+	float4	StainedGlass = _AreaLightIntensity * SampleSATSinglePixel( _In.UV );
 
 
 // 	// Debug UV clipping

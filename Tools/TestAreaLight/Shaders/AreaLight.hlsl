@@ -28,7 +28,12 @@ float4	SampleSAT( float2 _UV0, float2 _UV1 ) {
 
 	// Compute normalization factor
 	float2	DeltaUV = _UV1 - _UV0;
-	float	PixelsCount = (DeltaUV.x * TEX_SIZE.x) * (DeltaUV.y * TEX_SIZE.y);
+
+//	float	PixelsCount = (DeltaUV.x * TEX_SIZE.x) * (DeltaUV.y * TEX_SIZE.y);
+
+	uint2	TexSize;
+	_TexAreaLightSAT.GetDimensions( TexSize.x, TexSize.y );
+	float	PixelsCount = (DeltaUV.x * TexSize.x) * (DeltaUV.y * TexSize.y);
 
 	return C * (PixelsCount > 1e-3 ? 1.0 / PixelsCount : 0.0);
 }
@@ -454,7 +459,7 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 //	_UV0, _UV1, the 2 UVs coordinates where to sample the SAT
 //	_ProjectedSolidAngle, an estimate of the perceived projected solid angle (i.e. cos(IncidentAngle) * dOmega)
 //
-bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _wsView, float _TanHalfAngle, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle, out float4 _Debug ) {
+bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _wsView, float _CosHalfAngle, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle, out float4 _Debug ) {
 	_UV0 = _UV1 = 0.0;
 	_ProjectedSolidAngle = 0.0;
 	_Debug = 0.0;
@@ -497,18 +502,38 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 	float	t = -lsPosition.z / lsView.z;
 	float3	I = lsPosition + t * lsView;
 
-	float	Diffusion = _AreaLightDiffusion;// * step( abs(I.x), 1.0 ) * step( abs(I.y), 1.0 );
+// I.xy = clamp( I.xy, -2.0, 2.0 );
+// 
+// float3	Delta = I - lsPosition;
+// 		Delta.xy /= float2( _AreaLightScaleX, _AreaLightScaleY );
+// 		t = length( Delta );
+
+	const float	DIFFUSION_FACTOR = 1;//0.25;
+
+	float	TanHalfAngle = sqrt( 1.0 - _CosHalfAngle*_CosHalfAngle ) / _CosHalfAngle;
+	float	Radius = TanHalfAngle * t;		// Correct radius at hit distance
+			Radius /= -lsView.z;			// Account for radius increase due to grazing angle
+			Radius *= DIFFUSION_FACTOR;		// Arbitrary radius attenuation to avoid too much diffusion (an esthetic factor really)
+
+	float	RadiusUV = 0.5 * Radius;
+//			RadiusUV = saturate( Radius );	// Useless to have a larger radius than the entire area
+//			RadiusUV = lerp( RadiusUV, 1.0, smoothstep( 0.0, 1.0, RadiusUV ) );
 
 	float2	UVcenter = float2( 0.5 * (1.0 + I.x), 0.5 * (1.0 - I.y) );
-	_UV0 = UVcenter - Diffusion;
-	_UV1 = UVcenter + Diffusion + dUV;
+	_UV0 = UVcenter - RadiusUV;
+	_UV1 = UVcenter + RadiusUV + dUV.xy;
 
-	float2	SatUV0 = saturate( _UV0 );
-	float2	SatUV1 = saturate( _UV1 );
+	float2	SatUVcenter = saturate( UVcenter );
+// 	float2	UVMin = 0.5 * RadiusUV;
+// 	float2	UVMax = 1.0 - 0.5 * RadiusUV;
+// 	float2	SatUVcenter = clamp( UVcenter, UVMin, UVMax );
 
+//	float2	SatUV0 = saturate( _UV0 );
+//	float2	SatUV1 = saturate( _UV1 );
+//	float2	DeltaUV = _UV1 - _UV0;
 
-/*
-	// Build a reference frame for the view direction
+	
+/*	// Build a reference frame for the view direction
 	float3	Y = normalize( float3( 0.0, -lsView.z, lsView.y ) );	// = normalize( cross( PlaneTangent, lsView );  where PlaneTangent = (1,0,0)
 	float3	X = cross( lsView, Y );
 
@@ -556,19 +581,57 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 	_UV1 = clamp( _UV1, ClippedUVs.xy, ClippedUVs.zw );
 
 	// Compute the solid angle
-//	float	SolidAngle = RectangleSolidAngle( lsPosition, _UV0, _UV1 );
-	float	SolidAngle = RectangleSolidAngle( lsPosition, ClippedUVs.xy, ClippedUVs.zw );
+//	float	SolidAngleRect = RectangleSolidAngle( lsPosition, _UV0, _UV1 );
+	float	SolidAngleRect = RectangleSolidAngle( lsPosition, ClippedUVs.xy, ClippedUVs.zw );
+	float	SolidAngleCone = 2.0 * PI * (1.0 - _CosHalfAngle);	// Solid angle of a cone
 
-	// Now, we can compute the projected solid angle by dotting with the normal
-	_ProjectedSolidAngle = saturate( dot( _wsNormal, _wsView ) ) * SolidAngle;	// (N.Wi) * dWi
+//	float	SolidAngle = min( SolidAngleCone, SolidAngleRect );
+//	float	SolidAngle = lerp( 0.25 * SolidAngleCone, SolidAngleRect, saturate( RadiusUV ) );
+	float	SolidAngle = 0.25 * SolidAngleCone;
 
-	// Finally, multiply by PI/4 to account for the fact we traced a square pyramid instead of a cone
+
+// float4	UVs = float4( _UV0, _UV1 );
+// 		UVs = clamp( UVs, ClippedUVs.xyxy, ClippedUVs.zwzw );
+// float	SolidAngle = RectangleSolidAngle( lsPosition, UVs.xy, UVs.zw );
+
+	// Compute an approximation of the clipping of the projected disc and the area light:
+	//
+	//	__
+	//	  |  ...
+	//	  |.
+	//	 .|
+	//	. |   
+	//	.I+---+ C
+	//	. |
+	//	 .|
+	//	  |.
+	//	  |  ...
+	//	__|
+	//
+	// We simply need to compute the distance between C, the center of projection
+	//	and I, the closest position to C within the square area light and normalize
+	//	it by the radius of the circle of confusion to obtain a nice, round fading
+	//	zone when the circle exits the area light...
+	SolidAngle *= 1.0 - saturate( length( UVcenter - SatUVcenter ) / RadiusUV );
+
+// _Debug = (DeltaSatUV.x * DeltaSatUV.y) / (DeltaUV.x * DeltaUV.y);
+_Debug = 1.0 - saturate( length( UVcenter - SatUVcenter ) / RadiusUV );
+// //_Debug = float4( 0.25 * SatUV1, 0, 0 );
+//_Debug = SolidAngle;
+//_Debug = float4( I, 0 );
+// _Debug = float4( _UV1, 0, 0 );
+// _Debug = RadiusUV;
+
+	// Now, multiply by PI/4 to account for the fact we traced a square pyramid instead of a cone
 	// (area of the base of the pyramid is 2x2 while area of the circle is PI)
-	_ProjectedSolidAngle *= 0.25 * PI;
+//	SolidAngle *= 0.25 * PI;
 
-	float2	DeltaUV = _UV1 - _UV0;
-	float2	DeltaSatUV = SatUV1 - SatUV0;
-	_ProjectedSolidAngle *= (DeltaSatUV.x * DeltaSatUV.y) / (DeltaUV.x * DeltaUV.y);
+	// Finally, we can compute the projected solid angle by dotting with the normal
+	_ProjectedSolidAngle = saturate( dot( _wsNormal, _wsView ) ) * SolidAngle;	// (N.Wi) * dWi
+//_ProjectedSolidAngle = SolidAngle;
+
+	// Arbitrary factor
+//	_ProjectedSolidAngle *= 0.25;
 
 	return true;
 }

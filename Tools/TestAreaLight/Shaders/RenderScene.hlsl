@@ -10,7 +10,9 @@
 cbuffer CB_Object : register(b3) {
 	float4x4	_Local2World;
 	float4x4	_World2Local;
+	float3		_DiffuseAlbedo;
 	float		_Gloss;
+	float3		_SpecularTint;
 	float		_Metal;
 };
 
@@ -56,6 +58,13 @@ float4	SampleSATSinglePixel( float2 _UV ) {
 	return C11 - C10 - C01 + C00;
 }
 
+// More a Beckmann really, don't have time
+float	ComputeWard( float3 _wsView, float3 _wsNormal, float3 _wsLight, float _Roughness ) {
+	float3	H = normalize( _wsView + _wsLight );
+	float	NdotH = dot( _wsNormal, H );
+	return exp( -(1.0 - NdotH*NdotH) / (_Roughness*_Roughness*NdotH*NdotH) ) / (PI * _Roughness*_Roughness * NdotH*NdotH*NdotH*NdotH);
+}
+
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 // 	float4	StainedGlass = _TexAreaLight.Sample( LinearClamp, _In.UV );
 // 	float4	StainedGlass = 0.0001 * _TexAreaLightSAT.Sample( LinearClamp, _In.UV );
@@ -65,8 +74,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float3	wsNormal = normalize( _In.Normal );
 	float3	wsView = normalize( wsPosition - _Camera2World[3].xyz );
 
-	const float3	RhoD = 0.5;	// 50% diffuse albedo
-	const float3	F0 = lerp( 0.04, float3( 0.95, 0.94, 0.93 ), _Metal );
+	const float3	RhoD = _DiffuseAlbedo;
+	const float3	F0 = lerp( 0.04, _SpecularTint, _Metal );
 
  	float2	UV0, UV1;
  	float	SolidAngle;
@@ -75,42 +84,28 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
  	// Compute diffuse lighting
  	float3	Ld = 0.0;
 	if ( ComputeSolidAngleDiffuse( wsPosition, wsNormal, UV0, UV1, SolidAngle, Debug ) ) {
-
-
-
-//SolidAngle = RectangleSolidAngleWS( wsPosition, UV0, UV1 );
-
-
-//return Debug;
-//return float4( 100.0 * (UV1 - UV0), 0, 1 );
-// float4	Test = float4( UV0, UV1 );
-// return Test;
-//return SolidAngle;
-//SolidAngle = 1;
-//return _LightIntensity * SolidAngle;
-
 		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
 		Ld = RhoD / PI * Irradiance * SolidAngle;
-//		return float4( Ld, 1 );
 	}
 	
 //Ld = float3( 1, 1, 0 );
 	
 	// Compute specular lighting
-
-//Calculer l'intersection avec le frustum et le portal, puis utiliser le facteur de diffusion pour grossir les UVs!! On va pas s'faire chier hein!
-
-	
 	float3	Ls = 0.0;
  	float3	wsReflectedView = reflect( wsView, wsNormal );
- 	float	TanHalfAngle = tan( (1.0 - _Gloss) * 0.5 * PI );
-  	if ( ComputeSolidAngleSpecular( wsPosition, wsNormal, wsReflectedView, TanHalfAngle, UV0, UV1, SolidAngle, Debug ) ) {
+	
+//	float	TanHalfAngle = tan( 0.3 * (1.0 - _Gloss) * PI );
+	float	Roughness = max( 0.5e-2, 1.0 * (1.0 - _Gloss) );
+	float	HalfAngle = 0.0003474660443456835 + Roughness * (1.3331290497744692 - Roughness * 0.5040552688878546);	// cf. HDRCubeMapConvolver to see the link between roughness and aperture angle
+	float	CosHalfAngle = cos( HalfAngle );
+  	if ( ComputeSolidAngleSpecular( wsPosition, wsNormal, wsReflectedView, CosHalfAngle, UV0, UV1, SolidAngle, Debug ) ) {
  
 //return Debug;
- 
-		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
-		Ls = Irradiance * SolidAngle;
 
+		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
+		Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * Irradiance * SolidAngle;
+//Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * SolidAngle;
+		
 //return SolidAngle;
 //return 1 * float4( Irradiance, 0 );
 	}
@@ -119,11 +114,11 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float	VdotN = saturate( -dot( wsView, wsNormal ) );
 	float3	IOR = Fresnel_IORFromF0( F0 );
 	float3	FresnelSpecular = FresnelAccurate( IOR, VdotN );
-
-FresnelSpecular = 1;
+	
+FresnelSpecular = _Metal;
 
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;
-
+	
 	return float4( 0.05 + FresnelDiffuse * Ld + FresnelSpecular * Ls, 1 );
 	return float4( 0.05 + Ld + Ls, 1 );
 }
