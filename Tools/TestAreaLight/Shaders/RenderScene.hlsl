@@ -86,6 +86,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	if ( ComputeSolidAngleDiffuse( wsPosition, wsNormal, UV0, UV1, SolidAngle, Debug ) ) {
 		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
 		Ld = RhoD / PI * Irradiance * SolidAngle;
+		
+//Ld = SolidAngle;
 	}
 	
 //Ld = float3( 1, 1, 0 );
@@ -93,21 +95,18 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	// Compute specular lighting
 	float3	Ls = 0.0;
  	float3	wsReflectedView = reflect( wsView, wsNormal );
-	
-//	float	TanHalfAngle = tan( 0.3 * (1.0 - _Gloss) * PI );
-	float	Roughness = max( 0.5e-2, 1.0 * (1.0 - _Gloss) );
-	float	HalfAngle = 0.0003474660443456835 + Roughness * (1.3331290497744692 - Roughness * 0.5040552688878546);	// cf. HDRCubeMapConvolver to see the link between roughness and aperture angle
-	float	CosHalfAngle = cos( HalfAngle );
-  	if ( ComputeSolidAngleSpecular( wsPosition, wsNormal, wsReflectedView, CosHalfAngle, UV0, UV1, SolidAngle, Debug ) ) {
- 
-//return Debug;
-
-		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
-		Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * Irradiance * SolidAngle;
-//Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * SolidAngle;
+  	if ( ComputeSolidAngleSpecular( wsPosition, wsNormal, wsReflectedView, _Gloss, UV0, UV1, SolidAngle, Debug ) ) {
 		
-//return SolidAngle;
+		float3	Irradiance = _AreaLightIntensity * SampleSAT( UV0, UV1 ).xyz;
+		
+		float	Roughness = max( 0.5e-2, 1.0 * (1.0 - _Gloss) );
+		Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * Irradiance * SolidAngle;
+//		Ls = RhoD / PI * Irradiance * SolidAngle;
+		
+//Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * SolidAngle;
+//Ls = SolidAngle;
 //return 1 * float4( Irradiance, 0 );
+//Ls = Debug;
 	}
 	
 	// Compute Fresnel

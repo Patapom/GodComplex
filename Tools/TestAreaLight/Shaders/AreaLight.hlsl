@@ -459,7 +459,7 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 //	_UV0, _UV1, the 2 UVs coordinates where to sample the SAT
 //	_ProjectedSolidAngle, an estimate of the perceived projected solid angle (i.e. cos(IncidentAngle) * dOmega)
 //
-bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _wsView, float _CosHalfAngle, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle, out float4 _Debug ) {
+bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _wsView, float _Gloss, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle, out float4 _Debug ) {
 	_UV0 = _UV1 = 0.0;
 	_ProjectedSolidAngle = 0.0;
 	_Debug = 0.0;
@@ -472,7 +472,8 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 	float3	lsView = float3(	dot( _wsView, _AreaLightX ),			// Transform world direction into local area light space
 								dot( _wsView, _AreaLightY ),
 								dot( _wsView, _AreaLightZ ) );
-	if ( lsPosition.z <= 0.0 || lsView.z >= 0.0 ) {
+//	if ( lsPosition.z <= 0.0 || lsView.z >= 0.0 ) {
+	if ( lsPosition.z <= 0.0 ) {
 		// Position is behind area light or watching away from it...
 		return false;
 	}
@@ -483,6 +484,9 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 	float3	lsNormal = float3(	dot( _wsNormal, _AreaLightX ),			// Transform world normal into local area light space
 								dot( _wsNormal, _AreaLightY ),
 								dot( _wsNormal, _AreaLightZ ) );
+
+	// Tweak the view to point toward the center of the area light depending on glossiness
+	lsView = normalize( lerp( -lsPosition, lsView, _Gloss ) );
 
 	// In local area light space, the position is in front of a canonical square:
 	//
@@ -499,100 +503,71 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 	//	(-1,-1)					(+1,-1)
 	//
 	//
-	float	t = -lsPosition.z / lsView.z;
-	float3	I = lsPosition + t * lsView;
-
-// I.xy = clamp( I.xy, -2.0, 2.0 );
-// 
-// float3	Delta = I - lsPosition;
-// 		Delta.xy /= float2( _AreaLightScaleX, _AreaLightScaleY );
-// 		t = length( Delta );
-
 	const float	DIFFUSION_FACTOR = 1;//0.25;
 
-	float	TanHalfAngle = sqrt( 1.0 - _CosHalfAngle*_CosHalfAngle ) / _CosHalfAngle;
+	float	Roughness = 1.0 * (1.0 - _Gloss);
+	float	HalfAngle = 0.0003474660443456835 + Roughness * (1.3331290497744692 - Roughness * 0.5040552688878546);	// cf. HDRCubeMapConvolver to see the link between roughness and aperture angle
+	float	SinHalfAngle, CosHalfAngle;
+	sincos( HalfAngle, SinHalfAngle, CosHalfAngle );
+	float	TanHalfAngle = SinHalfAngle / CosHalfAngle;
+
+#if 1
+	// Compute the intersection of the view with the light plane
+	float	t = lsPosition.z / max(1e-3, -lsView.z );
+	float3	I = lsPosition + t * lsView;	// Intersection position on the plane
+
+	// Compute the radius of the specular cone at hit distance
 	float	Radius = TanHalfAngle * t;		// Correct radius at hit distance
-			Radius /= -lsView.z;			// Account for radius increase due to grazing angle
+//			Radius /= -lsView.z;			// Account for radius increase due to grazing angle
 			Radius *= DIFFUSION_FACTOR;		// Arbitrary radius attenuation to avoid too much diffusion (an esthetic factor really)
 
 	float	RadiusUV = 0.5 * Radius;
 //			RadiusUV = saturate( Radius );	// Useless to have a larger radius than the entire area
-//			RadiusUV = lerp( RadiusUV, 1.0, smoothstep( 0.0, 1.0, RadiusUV ) );
+			RadiusUV = lerp( RadiusUV, 1.0, smoothstep( 0.0, 1.0, RadiusUV ) );
 
 	float2	UVcenter = float2( 0.5 * (1.0 + I.x), 0.5 * (1.0 - I.y) );
+
+//UVcenter = 0.5;
+
 	_UV0 = UVcenter - RadiusUV;
-	_UV1 = UVcenter + RadiusUV + dUV.xy;
+	_UV1 = UVcenter + RadiusUV;
+	_UV1 = max( _UV1, _UV0 + dUV.xy );	// Make sure the UVs are at least separated by a single texel before clamping
 
-	float2	SatUVcenter = saturate( UVcenter );
-// 	float2	UVMin = 0.5 * RadiusUV;
-// 	float2	UVMax = 1.0 - 0.5 * RadiusUV;
-// 	float2	SatUVcenter = clamp( UVcenter, UVMin, UVMax );
+#else
 
-//	float2	SatUV0 = saturate( _UV0 );
-//	float2	SatUV1 = saturate( _UV1 );
-//	float2	DeltaUV = _UV1 - _UV0;
-
-	
-/*	// Build a reference frame for the view direction
-	float3	Y = normalize( float3( 0.0, -lsView.z, lsView.y ) );	// = normalize( cross( PlaneTangent, lsView );  where PlaneTangent = (1,0,0)
+	float3	Y = normalize( cross( float3( 1, 0, 0 ), lsView ) );
 	float3	X = cross( lsView, Y );
+	float3	lsTopLeft = TanHalfAngle * (-X + Y) + lsView;
+	float3	lsBottomRight = TanHalfAngle * (X - Y) + lsView;
 
-	// Generate the 4 rays encompassing the cone aperture
-	float2	Dirs[4] = {
-		float2( -1, +1 ),
-		float2( +1, +1 ),
-		float2( -1, -1 ),
-		float2( +1, -1 ),
-	};
+	float3	I0 = lsPosition + (lsPosition.z / max( 1e-3, -lsTopLeft.z)) * lsTopLeft;
+	float3	I1 = lsPosition + (lsPosition.z / max( 1e-3, -lsBottomRight.z)) * lsBottomRight;
+	_UV0 = float2( 0.5 * (1.0 + I0.x), 0.5 * (1.0 - I0.y) );
+	_UV1 = float2( 0.5 * (1.0 + I1.x), 0.5 * (1.0 - I1.y) );
+	_UV1 = max( _UV1, _UV0 + dUV.xy );	// Make sure the UVs are at least separated by a single texel before clamping
 
-	// Compute the intersection of the frustum with the virtual source's plane
-	float	Distance2VirtualSource = lsPosition.z;// + _ProjectionDirectionSpec.z;
-	float3	lsVirtualSourceCenter = 0.0;//-_ProjectionDirectionSpec;					// Center of the virtual source
+	float2	DeltaUV = _UV1 - _UV0;
+//	float	RadiusUV = 0.5 * sqrt( DeltaUV.x*DeltaUV.x + DeltaUV.y*DeltaUV.y );
+	float	RadiusUV = 0.5 * min( DeltaUV.x, DeltaUV.y );
+	float2	UVcenter = 0.5 * (_UV0 + _UV1);
 
-	float2	HitMin = 1e6;
-	float2	HitMax = -1e6;
-	for ( uint Corner=0; Corner < 4; Corner++ ) {
-		float3	vsDirection = float3( _TanHalfAngle * Dirs[Corner], 1.0 );						// Ray direction in view space
-		float3	lsDirection = vsDirection.x * X + vsDirection.y * Y + vsDirection.z * lsView;	// Ray direction in local space
-
-		float	t = -Distance2VirtualSource / lsDirection.z;									// Distance at which the ray hits the virtual source's plane
-		float3	lsIntersection = lsPosition + t * lsDirection - lsVirtualSourceCenter;			// Hit position on the virtual source's plane, relative to its center
-
-// _Debug = float4( lsIntersection, 0 );
-// _Debug = float4( lsDirection, 0 );
-// return true;
-
-		// Keep min and max hit positions
-		HitMin = min( HitMin, lsIntersection.xy );
-		HitMax = max( HitMax, lsIntersection.xy );
-	}
-
-	// Compute the UV's from the hit positions
-	_UV0 = 0.5 * (1.0 + float2( HitMin.x, -HitMin.y));
-	_UV1 = 0.5 * (1.0 + float2( HitMax.x, -HitMax.y));
-	_UV1 = max( _UV0 + dUV.xy, _UV1 );	// Make sure the UVs are at least separated by a single texel before clamping
-
-//_Debug = float4( _UV1, 0, 0 );
-*/
+#endif
 
 	// Compute potential clipping by the surface's plane
 	float4	ClippedUVs = ComputeClipping( lsPosition, lsNormal, _Debug );
+
+_Debug = float4( _UV0, 0, 0 );
+
 	_UV0 = clamp( _UV0, ClippedUVs.xy, ClippedUVs.zw );
 	_UV1 = clamp( _UV1, ClippedUVs.xy, ClippedUVs.zw );
 
-	// Compute the solid angle
-//	float	SolidAngleRect = RectangleSolidAngle( lsPosition, _UV0, _UV1 );
-	float	SolidAngleRect = RectangleSolidAngle( lsPosition, ClippedUVs.xy, ClippedUVs.zw );
-	float	SolidAngleCone = 2.0 * PI * (1.0 - _CosHalfAngle);	// Solid angle of a cone
-
-//	float	SolidAngle = min( SolidAngleCone, SolidAngleRect );
-//	float	SolidAngle = lerp( 0.25 * SolidAngleCone, SolidAngleRect, saturate( RadiusUV ) );
-	float	SolidAngle = 0.25 * SolidAngleCone;
+	float2	SatUVcenter = clamp( UVcenter, ClippedUVs.xy, ClippedUVs.zw );
 
 
-// float4	UVs = float4( _UV0, _UV1 );
-// 		UVs = clamp( UVs, ClippedUVs.xyxy, ClippedUVs.zwzw );
-// float	SolidAngle = RectangleSolidAngle( lsPosition, UVs.xy, UVs.zw );
+	/////////////////////////////////
+	// Compute the specular solid angle
+	float	SolidAngleSpecular = 2.0 * PI * (1.0 - CosHalfAngle);				// Specular solid angle for a cone
+//			SolidAngleSpecular *= 0.0;
 
 	// Compute an approximation of the clipping of the projected disc and the area light:
 	//
@@ -612,26 +587,40 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 	//	and I, the closest position to C within the square area light and normalize
 	//	it by the radius of the circle of confusion to obtain a nice, round fading
 	//	zone when the circle exits the area light...
-	SolidAngle *= 1.0 - saturate( length( UVcenter - SatUVcenter ) / RadiusUV );
-
-// _Debug = (DeltaSatUV.x * DeltaSatUV.y) / (DeltaUV.x * DeltaUV.y);
-_Debug = 1.0 - saturate( length( UVcenter - SatUVcenter ) / RadiusUV );
-// //_Debug = float4( 0.25 * SatUV1, 0, 0 );
-//_Debug = SolidAngle;
-//_Debug = float4( I, 0 );
-// _Debug = float4( _UV1, 0, 0 );
-// _Debug = RadiusUV;
+	SolidAngleSpecular *= 1.0 - saturate( length( UVcenter - SatUVcenter ) / (1e-3 + RadiusUV) );
 
 	// Now, multiply by PI/4 to account for the fact we traced a square pyramid instead of a cone
 	// (area of the base of the pyramid is 2x2 while area of the circle is PI)
-//	SolidAngle *= 0.25 * PI;
+	SolidAngleSpecular *= 0.25 * PI;
 
 	// Finally, we can compute the projected solid angle by dotting with the normal
-	_ProjectedSolidAngle = saturate( dot( _wsNormal, _wsView ) ) * SolidAngle;	// (N.Wi) * dWi
-//_ProjectedSolidAngle = SolidAngle;
+	float	ProjectedSolidAngleSpecular = saturate( dot( lsNormal, lsView ) ) * saturate( -lsView.z ) * SolidAngleSpecular;			// (N.Wi) * dWi
 
-	// Arbitrary factor
-//	_ProjectedSolidAngle *= 0.25;
+
+	/////////////////////////////////
+	// Compute the diffuse solid angle
+//	float	SolidAngleDiffuse = RectangleSolidAngle( lsPosition, _UV0, _UV1 );	// Diffuse solid angle always intersects the clipped square
+	float	SolidAngleDiffuse = RectangleSolidAngle( lsPosition, ClippedUVs.xy, ClippedUVs.zw );
+
+//	float3	lsCenter = float3( _UV1.x + _UV0.x - 1.0, 1.0 - _UV1.y - _UV0.y, 0.0 );
+	float3	lsCenter = float3( ClippedUVs.z + ClippedUVs.x - 1.0, 1.0 - ClippedUVs.y - ClippedUVs.w, 0.0 );
+	float3	lsPosition2Center = normalize( lsCenter - lsPosition );						// Wi, the average incoming light direction
+	float	ProjectedSolidAngleDiffuse = saturate( dot( lsNormal, lsPosition2Center ) ) * SolidAngleDiffuse;	// (N.Wi) * dWi
+//ProjectedSolidAngleDiffuse = SolidAngleDiffuse;
+
+
+	/////////////////////////////////
+	// Build the result solid angle
+//	_ProjectedSolidAngle = min( ProjectedSolidAngleCone, ProjectedSolidAngleDiffuse );
+//	_ProjectedSolidAngle = ProjectedSolidAngleSpecular;
+//	_ProjectedSolidAngle = ProjectedSolidAngleDiffuse;
+	_ProjectedSolidAngle = lerp( 0.5 * ProjectedSolidAngleDiffuse, (1.0/31.831) * ProjectedSolidAngleSpecular, pow( _Gloss, 1.0 ) );
+
+//_Debug = float4( I0, 0 );
+_Debug = float4( UVcenter, 0, 0 );
+_Debug = RadiusUV;
+_Debug = SolidAngleSpecular;
+_Debug = 1-length( UVcenter - SatUVcenter ) / (1e-3 + RadiusUV);
 
 	return true;
 }

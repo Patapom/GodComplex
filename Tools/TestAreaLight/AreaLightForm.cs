@@ -461,7 +461,7 @@ namespace AreaLightTest
 			// Setup area light buffer
 			m_Tex_AreaLightSAT.SetPS( 0 );
 
-			float		SizeX = 0.5f;
+			float		SizeX = 1;// 0.5f;
 			float		SizeY = 1.0f;
 			float		RollAngle = (float) (Math.PI * floatTrackbarControlLightRoll.Value / 180.0);
 			float3		LightPosition = new float3( 1.2f + floatTrackbarControlLightPosX.Value, 1.0f + floatTrackbarControlLightPosY.Value, -1.0f + floatTrackbarControlLightPosZ.Value );

@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     12309,        254]
-NotebookOptionsPosition[     11990,        238]
-NotebookOutlinePosition[     12336,        253]
-CellTagsIndexPosition[     12293,        250]
+NotebookDataLength[     15317,        333]
+NotebookOptionsPosition[     14881,        313]
+NotebookOutlinePosition[     15227,        328]
+CellTagsIndexPosition[     15184,        325]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -234,6 +234,81 @@ Bhm4aBinZ7BFgqncKouSrzLw//8dcJdwy/aslIH/Ax4OTpA=
    3.629632119952161*^9, 3.6296321609892645`*^9}, {3.629632371035267*^9, 
    3.629632401311294*^9}, 3.6296324329074535`*^9, {3.6296406237943153`*^9, 
    3.6296406363625717`*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"beckman", "[", 
+    RowBox[{"a_", ",", "m_"}], "]"}], ":=", " ", 
+   RowBox[{
+    RowBox[{"Exp", "[", 
+     RowBox[{"-", 
+      SuperscriptBox[
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"Tan", "[", "a", "]"}], "/", "m"}], ")"}], "2"]}], "]"}], 
+    " ", "/", " ", 
+    RowBox[{"(", 
+     RowBox[{"4", "*", "Pi", "*", 
+      SuperscriptBox["m", "2"]}], ")"}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Manipulate", "[", 
+  RowBox[{
+   RowBox[{"Plot", "[", 
+    RowBox[{
+     RowBox[{"beckman", "[", 
+      RowBox[{"a", ",", "m"}], "]"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"a", ",", "0.0", ",", 
+       FractionBox["\[Pi]", "2"]}], "}"}], ",", 
+     RowBox[{"PlotRange", "\[Rule]", "Full"}]}], "]"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"m", ",", 
+     FractionBox["1", "100"], ",", 
+     FractionBox["\[Pi]", "2"]}], "}"}]}], "]"}]}], "Input",
+ CellChangeTimes->{{3.630142017244236*^9, 3.630142257346244*^9}, {
+  3.6301448339069405`*^9, 3.6301448344669404`*^9}}],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`m$$ = 1, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`m$$], 
+      Rational[1, 100], Rational[1, 2] Pi}}, Typeset`size$$ = {
+    360., {107., 111.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`m$17394$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, "Variables" :> {$CellContext`m$$ = Rational[1, 100]}, 
+      "ControllerVariables" :> {
+        Hold[$CellContext`m$$, $CellContext`m$17394$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> Plot[
+        $CellContext`beckman[$CellContext`a, $CellContext`m$$], \
+{$CellContext`a, 0., Pi/2}, PlotRange -> Full], 
+      "Specifications" :> {{$CellContext`m$$, 
+         Rational[1, 100], Rational[1, 2] Pi}}, "Options" :> {}, 
+      "DefaultOptions" :> {}],
+     ImageSizeCache->{411., {165., 172.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{{3.630142181974707*^9, 3.6301422260591154`*^9}, 
+   3.6301422582073298`*^9, 3.6301448356029406`*^9}]
 }, Open  ]]
 },
 WindowSize->{2240, 1352},
@@ -254,7 +329,11 @@ CellTagsIndex->{}
 Notebook[{
 Cell[CellGroupData[{
 Cell[580, 22, 1492, 38, 132, "Input"],
-Cell[2075, 62, 9899, 173, 315, "Output"]
+Cell[2075, 62, 9899, 173, 282, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[12011, 240, 1034, 31, 68, "Input"],
+Cell[13048, 273, 1817, 37, 387, "Output"]
 }, Open  ]]
 }
 ]
