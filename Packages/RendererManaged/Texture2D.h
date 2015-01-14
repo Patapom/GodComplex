@@ -52,26 +52,22 @@ namespace RendererManaged {
 	public:
 
 		Texture2D( Device^ _Device, int _Width, int _Height, int _ArraySize, int _MipLevelsCount, PIXEL_FORMAT _PixelFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _MipLevelsContent );
-
-		~Texture2D()
-		{
+		Texture2D( Device^ _Device, int _Width, int _Height, int _ArraySize, DEPTH_STENCIL_FORMAT _DepthStencilFormat );
+		~Texture2D() {
  			delete m_pTexture;
 		}
 
 		// Generally used to copy a GPU texture to a CPU staging resource or vice-versa
-		void	CopyFrom( Texture2D^ _Source )
-		{
+		void	CopyFrom( Texture2D^ _Source ) {
 			m_pTexture->CopyFrom( *_Source->m_pTexture );
 		}
 
-		PixelsBuffer^	Map( int _MipLevelIndex, int _ArrayIndex )
-		{
+		PixelsBuffer^	Map( int _MipLevelIndex, int _ArrayIndex ) {
 			D3D11_MAPPED_SUBRESOURCE&	MappedResource = m_pTexture->Map( _MipLevelIndex, _ArrayIndex );
 			return gcnew PixelsBuffer( MappedResource );
 		}
 
-		void			UnMap( int _MipLevelIndex, int _ArrayIndex )
-		{
+		void			UnMap( int _MipLevelIndex, int _ArrayIndex ) {
 			m_pTexture->UnMap( _MipLevelIndex, _ArrayIndex );
 		}
 

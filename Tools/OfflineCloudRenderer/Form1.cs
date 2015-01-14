@@ -563,7 +563,7 @@ namespace OfflineCloudRenderer
 				m_Tex_Photons.GetView( 0, 0, 6*1, 6 ),
 				m_Tex_Photons.GetView( 0, 0, 6*2, 6 ),
 			};
-			m_Device.SetRenderTargets( Views, null );
+			m_Device.SetRenderTargets( m_Tex_Photons.Width, m_Tex_Photons.Height, Views, null );
 
 			m_PS_PhotonSplatter.Use();
 			m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter, PHOTONS_COUNT );
@@ -576,7 +576,7 @@ namespace OfflineCloudRenderer
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
 
 			Views = new View2D[] { m_Tex_Photons.GetView( 0, 0, 6*3, 6 ) };
-			m_Device.SetRenderTargets( Views, null );
+			m_Device.SetRenderTargets( m_Tex_Photons.Width, m_Tex_Photons.Height, Views, null );
 
 			m_PS_PhotonSplatter_Intensity.Use();
 			m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter_Intensity, PHOTONS_COUNT );

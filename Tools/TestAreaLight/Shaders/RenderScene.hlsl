@@ -6,6 +6,7 @@
 
 #include "Global.hlsl"
 #include "AreaLight.hlsl"
+#include "ParaboloidShadowMap.hlsl"
 
 cbuffer CB_Object : register(b3) {
 	float4x4	_Local2World;
@@ -101,7 +102,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 		
 //		float	Roughness = max( 0.5e-2, 1.0 * (1.0 - _Gloss) );
 		float	Roughness = max( 1.0e-2, 1.0 * (1.0 - _Gloss) );
-
+		
 //		Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * Irradiance * SolidAngle;
 		Ls = RhoD / PI * Irradiance * SolidAngle;
 		
@@ -120,10 +121,14 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float3	IOR = Fresnel_IORFromF0( F0 );
 	float3	FresnelSpecular = FresnelAccurate( IOR, VdotN );
 	
-FresnelSpecular = _Metal;
-
+//FresnelSpecular = _Metal;
+	
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;
 	
-	return float4( 0.05 + FresnelDiffuse * Ld + FresnelSpecular * Ls, 1 );
+	float	Shadow = 1;//ComputeShadow( wsPosition, wsNormal, Debug );
+	
+ //return Debug;
+
+	return float4( 0.05 + Shadow * (FresnelDiffuse * Ld + FresnelSpecular * Ls), 1 );
 	return float4( 0.05 + Ld + Ls, 1 );
 }

@@ -86,18 +86,16 @@ void	RendererManaged::Device::SetRenderTarget( Texture2D^ _RenderTarget, Texture
 }
 
 static ::ID3D11RenderTargetView*	gs_ppRenderTargetViews[8];
-void	RendererManaged::Device::SetRenderTargets( cli::array<IView^>^ _RenderTargetViews, Texture2D^ _DepthStencilTarget )
+void	RendererManaged::Device::SetRenderTargets( int _Width, int _Height, cli::array<IView^>^ _RenderTargetViews, Texture2D^ _DepthStencilTarget )
 {
-	if ( _RenderTargetViews == nullptr || _RenderTargetViews->Length == 0 )
+	if ( _RenderTargetViews == nullptr )
 		throw gcnew Exception( "Invalid render targets array!" );
 
-	int	Width = _RenderTargetViews[0]->Width;
-	int	Height = _RenderTargetViews[0]->Height;
 // 		ppRenderTargets = new ::ID3D11RenderTargetView*[_RenderTargetViews->Length];
 	for ( int i=0; i < _RenderTargetViews->Length; i++ )
 		gs_ppRenderTargetViews[i] = _RenderTargetViews[i]->RTV;
 
-	m_pDevice->SetRenderTargets( Width, Height, _RenderTargetViews->Length, gs_ppRenderTargetViews, _DepthStencilTarget != nullptr ? _DepthStencilTarget->m_pTexture->GetDSV() : NULL );
+	m_pDevice->SetRenderTargets( _Width, _Height, _RenderTargetViews->Length, gs_ppRenderTargetViews, _DepthStencilTarget != nullptr ? _DepthStencilTarget->m_pTexture->GetDSV() : NULL );
 
 //	delete[] ppRenderTargets;
 }

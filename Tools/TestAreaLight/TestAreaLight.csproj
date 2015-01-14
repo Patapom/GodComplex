@@ -60,6 +60,10 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Content Include="Shaders\BuildSmoothie.hlsl" />
+    <Content Include="Shaders\ClippedAO_iQ.hlsl" />
+    <Content Include="Shaders\ParaboloidShadowMap.hlsl" />
+    <Content Include="Shaders\RenderShadowMap.hlsl" />
     <EmbeddedResource Include="AreaLightForm.resx">
       <DependentUpon>AreaLightForm.cs</DependentUpon>
     </EmbeddedResource>

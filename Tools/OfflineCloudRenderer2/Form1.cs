@@ -686,10 +686,11 @@ namespace OfflineCloudRenderer2
 			m_CB_SplatPhoton.m.LayerIndex = 0U;
 			m_CB_SplatPhoton.UpdateData();
 
-			m_Device.SetRenderTargets( new View3D[] {
-				m_Tex_PhotonLayers_Flux.GetView( 0, 0, 0, 1 ),
-				m_Tex_PhotonLayers_Direction.GetView( 0, 0, 0, 1 )
-			}, null );
+			m_Device.SetRenderTargets( m_Tex_PhotonLayers_Flux.Width, m_Tex_PhotonLayers_Flux.Height,
+				new View3D[] {
+					m_Tex_PhotonLayers_Flux.GetView( 0, 0, 0, 1 ),
+					m_Tex_PhotonLayers_Direction.GetView( 0, 0, 0, 1 )
+				}, null );
 			m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter, PHOTONS_COUNT );
 
 
@@ -759,10 +760,11 @@ m_SB_Photons.Read();
 					m_CB_SplatPhoton.m.LayerIndex = (uint) (LayerIndex+1);
 					m_CB_SplatPhoton.UpdateData();
 
-					m_Device.SetRenderTargets( new View3D[] {
-						m_Tex_PhotonLayers_Flux.GetView( 0, 0, LayerIndex+1, 1 ),
-						m_Tex_PhotonLayers_Direction.GetView( 0, 0, LayerIndex+1, 1 )
-					}, null );
+					m_Device.SetRenderTargets( m_Tex_PhotonLayers_Flux.Width, m_Tex_PhotonLayers_Flux.Height,
+						new View3D[] {
+							m_Tex_PhotonLayers_Flux.GetView( 0, 0, LayerIndex+1, 1 ),
+							m_Tex_PhotonLayers_Direction.GetView( 0, 0, LayerIndex+1, 1 )
+						}, null );
 					m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter, PHOTONS_COUNT );
 				}
 
@@ -818,10 +820,11 @@ m_SB_Photons.Read();
 					m_CB_SplatPhoton.m.LayerIndex = (uint) (LayerIndex-1) | 0x80000000U;	// <= MSB indicates photons are going up
 					m_CB_SplatPhoton.UpdateData();
 
-					m_Device.SetRenderTargets( new View3D[] {
-						m_Tex_PhotonLayers_Flux.GetView( 0, 0, LayerIndex-1, 0 ),
-						m_Tex_PhotonLayers_Direction.GetView( 0, 0, LayerIndex-1, 0 )
-					}, null );
+					m_Device.SetRenderTargets( m_Tex_PhotonLayers_Flux.Width, m_Tex_PhotonLayers_Flux.Height,
+						new View3D[] {
+							m_Tex_PhotonLayers_Flux.GetView( 0, 0, LayerIndex-1, 0 ),
+							m_Tex_PhotonLayers_Direction.GetView( 0, 0, LayerIndex-1, 0 )
+						}, null );
 					m_Prim_Point.RenderInstanced( m_PS_PhotonSplatter, PHOTONS_COUNT );
 				}
 

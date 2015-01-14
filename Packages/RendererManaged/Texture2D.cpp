@@ -6,8 +6,7 @@
 
 namespace RendererManaged {
 
-	Texture2D::Texture2D( Device^ _Device, int _Width, int _Height, int _ArraySize, int _MipLevelsCount, PIXEL_FORMAT _PixelFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _MipLevelsContent )
-	{
+	Texture2D::Texture2D( Device^ _Device, int _Width, int _Height, int _ArraySize, int _MipLevelsCount, PIXEL_FORMAT _PixelFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _MipLevelsContent ) {
  		IPixelFormatDescriptor*	pDescriptor = GetDescriptor( _PixelFormat );
 
 		void**	ppContent = NULL;
@@ -25,6 +24,11 @@ namespace RendererManaged {
 		m_pTexture = new ::Texture2D( *_Device->m_pDevice, _Width, _Height, _ArraySize, *pDescriptor, _MipLevelsCount, ppContent, _Staging, _UAV );
 
 		delete[] ppContent;
+	}
+
+	Texture2D::Texture2D( Device^ _Device, int _Width, int _Height, int _ArraySize, DEPTH_STENCIL_FORMAT _DepthStencilFormat ) {
+ 		IDepthStencilFormatDescriptor*	pDescriptor = GetDescriptor( _DepthStencilFormat );
+		m_pTexture = new ::Texture2D( *_Device->m_pDevice, _Width, _Height, *pDescriptor, _ArraySize );
 	}
 
 	void	Texture2D::Set( int _SlotIndex, View2D^ _view )		{ m_pTexture->Set( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }

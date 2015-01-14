@@ -94,7 +94,10 @@ namespace RendererManaged {
 
 		void	SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCIL_STATE _DS, BLEND_STATE _BS );
 		void	SetRenderTarget( Texture2D^ _RenderTarget, Texture2D^ _DepthStencilTarget );
-		void	SetRenderTargets( cli::array<IView^>^ _RenderTargetViews, Texture2D^ _DepthStencilTarget );
+		void	SetRenderTargets( int _Width, int _Height, cli::array<IView^>^ _RenderTargetViews, Texture2D^ _DepthStencilTarget );
+
+		void	RemoveRenderTargets() { m_pDevice->RemoveRenderTargets(); }
+
 		void	RenderFullscreenQuad( Shader^ _Shader );
 
 		void	Present( bool _FlushCommands )

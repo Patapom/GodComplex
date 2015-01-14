@@ -1,11 +1,12 @@
 #include "Global.hlsl"
 #include "AreaLight.hlsl"
+#include "ParaboloidShadowMap.hlsl"
 
 cbuffer CB_Object : register(b3) {
 	float4x4	_Local2World;
 };
 
-Texture2D< float4 >	_TexAreaLight : register(t2);
+Texture2D< float4 >	_TexAreaLight : register(t4);
 
 struct VS_IN {
 	float3	Position : POSITION;
@@ -46,10 +47,16 @@ float4	SampleSATSinglePixel( float2 _UV ) {
 }
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
- 	float4	StainedGlass = _TexAreaLight.Sample( LinearClamp, _In.UV );
+// 	float4	StainedGlass = _TexAreaLight.Sample( LinearClamp, _In.UV );
 // 	float4	StainedGlass = 0.0001 * _TexAreaLightSAT.Sample( LinearClamp, _In.UV );
-//	float4	StainedGlass = SampleSATSinglePixel( _In.UV );
+	float4	StainedGlass = SampleSATSinglePixel( _In.UV );
 	StainedGlass *= _AreaLightIntensity;
+
+// Debug shadow map
+//StainedGlass = 1.0 * _TexShadowMap.Sample( LinearClamp, _In.UV );
+// StainedGlass = float4( _TexShadowMap.SampleLevel( LinearClamp, _In.UV, 0.0 ).x - _TexShadowSmoothie.Sample( LinearClamp, _In.UV ), 0, 0 ).y;
+// StainedGlass = float4( _TexShadowSmoothie.Sample( LinearClamp, _In.UV ), 0, 0 ).y;
+// StainedGlass = float4( _TexShadowSmoothie.Sample( LinearClamp, _In.UV ), 0, 0 ).x;
 
 // 	// Debug UV clipping
 // 	float3	wsPosition = float3( 0, 0, 0 );

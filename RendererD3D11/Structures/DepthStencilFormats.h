@@ -17,6 +17,29 @@ public: // PROPERTIES
 	virtual void		Read( const DepthStencilFormat& _Pixel, float& _Depth, int& _Stencil ) const = 0;
 };
 
+struct DepthStencilFormatD16_UNORM : public DepthStencilFormat
+{
+public:
+
+	static class Desc : public IDepthStencilFormatDescriptor
+	{
+	public:
+
+		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_R16_TYPELESS; }
+		virtual DXGI_FORMAT	WritableDirectXFormat() const	{ return DXGI_FORMAT_D16_UNORM; }
+		virtual DXGI_FORMAT	ReadableDirectXFormat() const	{ return DXGI_FORMAT_R16_UNORM; }
+
+		virtual int			Size() const					{ return sizeof(DepthStencilFormatD16_UNORM); }
+		virtual void		Write( DepthStencilFormat& _Pixel, float _Depth, int _Stencil )					{ DepthStencilFormatD16_UNORM& P = (DepthStencilFormatD16_UNORM&)( _Pixel ); P.Depth = _Depth; }
+		virtual void		Read( const DepthStencilFormat& _Pixel, float& _Depth, int& _Stencil ) const	{ const DepthStencilFormatD16_UNORM& P = (const DepthStencilFormatD16_UNORM&)( _Pixel ); _Depth = P.Depth; }
+	} DESCRIPTOR;
+
+public:
+
+	float	Depth;
+
+};
+
 struct DepthStencilFormatD32F : public DepthStencilFormat
 {
 public:

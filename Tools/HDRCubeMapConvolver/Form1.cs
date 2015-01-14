@@ -202,7 +202,7 @@ namespace TestGradientPNG
 			Vector4D[][][,]	CubeFacesMips = ConvolveCubeMap( CubeFaceSize, CubeFaces );
 
 			// Save as DDS
-			DirectXTexManaged.CubeMapCreator.CreateCubeMapFile( _TargetFile.FullName, CubeFaceSize, CubeFacesMips );
+			DirectXTexManaged.TextureCreator.CreateCubeMapFile( _TargetFile.FullName, CubeFaceSize, CubeFacesMips );
 
 			// Save SH convolution
 			SaveSHConvolution( CubeFaceSize, CubeFacesMips, 3, _SourceFile, _TargetFile );

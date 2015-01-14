@@ -63,15 +63,24 @@ namespace AreaLightTest
 		private ConstantBuffer<CB_Light>	m_CB_Light = null;
 		private ConstantBuffer<CB_Object>	m_CB_Object = null;
 
+		private Shader		m_Shader_RenderShadowMap = null;
+		private Shader		m_Shader_BuildSmoothie = null;
+		private Shader		m_Shader_BuildSmoothieDistanceFieldH = null;
+		private Shader		m_Shader_BuildSmoothieDistanceFieldV = null;
 		private Shader		m_Shader_RenderAreaLight = null;
 		private Shader		m_Shader_RenderScene = null;
 		private Texture2D	m_Tex_AreaLight = null;
 		private Texture2D	m_Tex_AreaLightSAT = null;
 		private Texture2D	m_Tex_AreaLightSATFade = null;
 
+		private Texture2D	m_Tex_ShadowMap = null;
+		private Texture2D	m_Tex_ShadowSmoothie = null;
+		private Texture2D[]	m_Tex_ShadowSmoothiePou = new Texture2D[2];
+
 		private Primitive	m_Prim_Quad = null;
 		private Primitive	m_Prim_Rectangle = null;
 		private Primitive	m_Prim_Sphere = null;
+		private Primitive	m_Prim_Cube = null;
 
 
 		private Camera		m_Camera = new Camera();
@@ -89,7 +98,7 @@ namespace AreaLightTest
 		{
 			InitializeComponent();
 
-
+// Build SATs
 //ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
 //ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
 //ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
@@ -287,7 +296,7 @@ namespace AreaLightTest
 				m_Prim_Rectangle = new Primitive( m_Device, Vertices.Length, VerticesBuffer, null, Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3N3G3B3T2 );
 			}
 
-			{
+			{	// Build the sphere
 				const int	W = 41;
 				const int	H = 22;
 				VertexP3N3G3B3T2[]	Vertices = new VertexP3N3G3B3T2[W*H];
@@ -331,6 +340,75 @@ namespace AreaLightTest
 
 				m_Prim_Sphere = new Primitive( m_Device, Vertices.Length, VerticesBuffer, Indices, Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3N3G3B3T2 );
 			}
+
+			{	// Build the cube
+				float3[]	Normals = new float3[6] {
+					-float3.UnitX,
+					float3.UnitX,
+					-float3.UnitY,
+					float3.UnitY,
+					-float3.UnitZ,
+					float3.UnitZ,
+				};
+
+				float3[]	Tangents = new float3[6] {
+					float3.UnitZ,
+					-float3.UnitZ,
+					float3.UnitX,
+					-float3.UnitX,
+					-float3.UnitX,
+					float3.UnitX,
+				};
+
+				VertexP3N3G3B3T2[]	Vertices = new VertexP3N3G3B3T2[6*4];
+				uint[]		Indices = new uint[2*6*3];
+
+				for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ ) {
+					float3	N = Normals[FaceIndex];
+					float3	T = Tangents[FaceIndex];
+					float3	B = N.Cross( T );
+
+					Vertices[4*FaceIndex+0] = new VertexP3N3G3B3T2() {
+						P = N - T + B,
+						N = N,
+						T = T,
+						B = B,
+						UV = new float2( 0, 0 )
+					};
+					Vertices[4*FaceIndex+1] = new VertexP3N3G3B3T2() {
+						P = N - T - B,
+						N = N,
+						T = T,
+						B = B,
+						UV = new float2( 0, 1 )
+					};
+					Vertices[4*FaceIndex+2] = new VertexP3N3G3B3T2() {
+						P = N + T - B,
+						N = N,
+						T = T,
+						B = B,
+						UV = new float2( 1, 1 )
+					};
+					Vertices[4*FaceIndex+3] = new VertexP3N3G3B3T2() {
+						P = N + T + B,
+						N = N,
+						T = T,
+						B = B,
+						UV = new float2( 1, 0 )
+					};
+
+					Indices[2*3*FaceIndex+0] = (uint) (4*FaceIndex+0);
+					Indices[2*3*FaceIndex+1] = (uint) (4*FaceIndex+1);
+					Indices[2*3*FaceIndex+2] = (uint) (4*FaceIndex+2);
+					Indices[2*3*FaceIndex+3] = (uint) (4*FaceIndex+0);
+					Indices[2*3*FaceIndex+4] = (uint) (4*FaceIndex+2);
+					Indices[2*3*FaceIndex+5] = (uint) (4*FaceIndex+3);
+				}
+
+				ByteBuffer	VerticesBuffer = VertexP3N3G3B3T2.FromArray( Vertices );
+
+				m_Prim_Cube = new Primitive( m_Device, Vertices.Length, VerticesBuffer, Indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
+			}
 		}
 
 		protected override void OnLoad( EventArgs e )
@@ -358,6 +436,13 @@ namespace AreaLightTest
 
 //			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipo" ) );
 
+
+			int	SHADOW_MAP_SIZE = 512;
+			m_Tex_ShadowMap = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, DEPTH_STENCIL_FORMAT.D32 );
+			m_Tex_ShadowSmoothie = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
+			m_Tex_ShadowSmoothiePou[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
+			m_Tex_ShadowSmoothiePou[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
+
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
 			m_CB_Light = new ConstantBuffer<CB_Light>( m_Device, 2 );
@@ -369,8 +454,32 @@ namespace AreaLightTest
 			}
 			catch ( Exception _e )
 			{
-				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				MessageBox.Show( "Shader \"RenderAreaLight\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_RenderAreaLight = null;
+			}
+
+			try
+			{
+				m_Shader_RenderShadowMap = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderShadowMap.hlsl" ) ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
+			}
+			catch ( Exception _e )
+			{
+				MessageBox.Show( "Shader \"RenderShadow\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				m_Shader_RenderShadowMap = null;
+			}
+
+			try
+			{
+				m_Shader_BuildSmoothie = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/BuildSmoothie.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Edge", null );;
+				m_Shader_BuildSmoothieDistanceFieldH = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/BuildSmoothie.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_DistanceFieldH", null );;
+				m_Shader_BuildSmoothieDistanceFieldV = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/BuildSmoothie.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_DistanceFieldV", null );;
+			}
+			catch ( Exception _e )
+			{
+				MessageBox.Show( "Shader \"BuildSmoothie\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				m_Shader_BuildSmoothie = null;
+				m_Shader_BuildSmoothieDistanceFieldH = null;
+				m_Shader_BuildSmoothieDistanceFieldV = null;
 			}
 
 			try
@@ -379,7 +488,7 @@ namespace AreaLightTest
 			}
 			catch ( Exception _e )
 			{
-				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				MessageBox.Show( "Shader \"RenderScene\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_RenderScene = null;
 			}
 
@@ -399,6 +508,14 @@ namespace AreaLightTest
 			if ( m_Device == null )
 				return;
 
+			if ( m_Shader_RenderShadowMap != null ) {
+				m_Shader_RenderShadowMap.Dispose();
+			}
+			if ( m_Shader_BuildSmoothie != null ) {
+				m_Shader_BuildSmoothie.Dispose();
+				m_Shader_BuildSmoothieDistanceFieldH.Dispose();
+				m_Shader_BuildSmoothieDistanceFieldV.Dispose();
+			}
 			if ( m_Shader_RenderAreaLight != null ) {
 				m_Shader_RenderAreaLight.Dispose();
 			}
@@ -414,7 +531,10 @@ namespace AreaLightTest
 			m_Prim_Quad.Dispose();
 			m_Prim_Rectangle.Dispose();
 			m_Prim_Sphere.Dispose();
+			m_Prim_Cube.Dispose();
 
+			m_Tex_ShadowMap.Dispose();
+			m_Tex_ShadowSmoothie.Dispose();
 			m_Tex_AreaLight.Dispose();
 			m_Tex_AreaLightSAT.Dispose();
 			m_Tex_AreaLightSATFade.Dispose();
@@ -449,6 +569,49 @@ namespace AreaLightTest
 			m_CB_Camera.UpdateData();
 		}
 
+		void RenderScene( Shader _Shader ) {
+
+			// Render a floor plane
+			if ( _Shader == m_Shader_RenderScene )
+			{
+				m_CB_Object.m._Local2World.MakeLookAt( float3.Zero, float3.UnitY, float3.UnitX );
+				m_CB_Object.m._Local2World.Scale( new float3( 2.0f, 2.0f, 1.0f ) );
+				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
+				m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 1, 1 );
+				m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.93f );
+				m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
+				m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
+				m_CB_Object.UpdateData();
+
+				m_Prim_Rectangle.Render( _Shader );
+			}
+
+			// Render the sphere
+			m_CB_Object.m._Local2World.MakeLookAt( new float3( 0, 0.5f, 1.0f ), new float3( 0, 0.5f, 2 ), float3.UnitY );
+//			m_CB_Object.m._Local2World.MakeLookAt( new float3( 0, 0.3f, 1.0f ), new float3( 0, 0.3f, 2 ), float3.UnitY );
+			m_CB_Object.m._Local2World.Scale( new float3( 0.5f, 0.5f, 0.5f ) );
+			m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
+			m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 0.8f, 0.5f );
+			m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.4f, 0.03f );
+ 			m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
+ 			m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
+			m_CB_Object.UpdateData();
+
+			m_Prim_Sphere.Render( _Shader );
+
+			// Render the tiny cube
+			m_CB_Object.m._Local2World.MakeLookAt( new float3( 1.0f, 0.1f, 0.0f ), new float3( 1.0f, 0.1f, 1 ), float3.UnitY );
+			m_CB_Object.m._Local2World.Scale( new float3( 0.1f, 0.1f, 0.1f ) );
+			m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
+			m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 1, 1 );
+			m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.92f );
+ 			m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
+ 			m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
+			m_CB_Object.UpdateData();
+
+			m_Prim_Cube.Render( _Shader );
+		}
+
 		void Application_Idle( object sender, EventArgs e )
 		{
 			if ( m_Device == null )
@@ -459,17 +622,8 @@ namespace AreaLightTest
 			m_CB_Main.m.iGlobalTime = GetGameTime() - m_StartTime;
 			m_CB_Main.UpdateData();
 
-			// =========== Render ===========
-			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
-
-			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
-			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
-
 			// Setup area light buffer
-			m_Tex_AreaLightSAT.SetPS( 0 );
-			m_Tex_AreaLightSATFade.SetPS( 1 );
-
-			float		SizeX = 0.5f;
+			float		SizeX = 1;//0.5f;
 			float		SizeY = 1.0f;
 			float		RollAngle = (float) (Math.PI * floatTrackbarControlLightRoll.Value / 180.0);
 			float3		LightPosition = new float3( 1.2f + floatTrackbarControlLightPosX.Value, 1.0f + floatTrackbarControlLightPosY.Value, -1.0f + floatTrackbarControlLightPosZ.Value );
@@ -507,6 +661,61 @@ namespace AreaLightTest
 			m_CB_Light.UpdateData();
 
 
+			// =========== Render shadow map ===========
+			if ( m_Shader_RenderShadowMap != null && m_Shader_RenderShadowMap.Use() ) {
+				m_Tex_ShadowMap.RemoveFromLastAssignedSlots();
+
+				m_Device.SetRenderTargets( m_Tex_ShadowMap.Width, m_Tex_ShadowMap.Height, new View2D[0], m_Tex_ShadowMap );
+				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 1.0f, 0, true, false );
+
+				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
+
+				RenderScene( m_Shader_RenderShadowMap );
+
+				m_Device.RemoveRenderTargets();
+				m_Tex_ShadowMap.SetPS( 2 );
+			}
+
+			if ( m_Shader_BuildSmoothie != null && m_Shader_BuildSmoothie.Use() ) {
+				m_Tex_ShadowSmoothie.RemoveFromLastAssignedSlots();
+
+				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+
+				// Render the (silhouette + Z) RG16 buffer
+				m_Device.SetRenderTarget( m_Tex_ShadowSmoothie, null );
+
+				m_Prim_Quad.Render( m_Shader_BuildSmoothie );
+
+				m_Device.RemoveRenderTargets();
+				m_Tex_ShadowSmoothie.SetPS( 3 );
+
+				// Build distance field
+				m_Device.SetRenderTarget( m_Tex_ShadowSmoothiePou[0], null );
+				m_Shader_BuildSmoothieDistanceFieldH.Use();
+				m_Prim_Quad.Render( m_Shader_BuildSmoothieDistanceFieldH );
+
+// m_Device.RemoveRenderTargets();
+// m_Tex_ShadowSmoothiePou[0].SetPS( 3 );
+
+				m_Device.SetRenderTarget( m_Tex_ShadowSmoothiePou[1], null );
+				m_Tex_ShadowSmoothiePou[0].SetPS( 0 );
+				m_Shader_BuildSmoothieDistanceFieldV.Use();
+				m_Prim_Quad.Render( m_Shader_BuildSmoothieDistanceFieldV );
+
+				m_Device.RemoveRenderTargets();
+				m_Tex_ShadowSmoothiePou[1].SetPS( 3 );
+			}
+
+
+			// =========== Render scene ===========
+			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
+
+			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
+			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
+
+			m_Tex_AreaLightSAT.SetPS( 0 );
+			m_Tex_AreaLightSATFade.SetPS( 1 );
+
 			// Render the area light itself
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
 			if ( m_Shader_RenderAreaLight != null && m_Shader_RenderAreaLight.Use() ) {
@@ -516,7 +725,7 @@ namespace AreaLightTest
 				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
 				m_CB_Object.UpdateData();
 
-				m_Tex_AreaLight.SetPS( 2 );
+				m_Tex_AreaLight.SetPS( 4 );
 
 				m_Prim_Rectangle.Render( m_Shader_RenderAreaLight );
 			} else {
@@ -528,29 +737,7 @@ namespace AreaLightTest
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.NOCHANGE, BLEND_STATE.NOCHANGE );
 			if ( m_Shader_RenderScene != null && m_Shader_RenderScene.Use() ) {
 
-				// Render a floor plane
-				m_CB_Object.m._Local2World.MakeLookAt( float3.Zero, float3.UnitY, float3.UnitX );
-				m_CB_Object.m._Local2World.Scale( new float3( 2.0f, 2.0f, 1.0f ) );
-				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
-				m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 1, 1 );
-				m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.93f );
-				m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
-				m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
-				m_CB_Object.UpdateData();
-
-				m_Prim_Rectangle.Render( m_Shader_RenderScene );
-
-				// Render the sphere
-				m_CB_Object.m._Local2World.MakeLookAt( new float3( 0, 0.5f, 1.0f ), new float3( 0, 0.5f, 2 ), float3.UnitY );
-				m_CB_Object.m._Local2World.Scale( new float3( 0.5f, 0.5f, 0.5f ) );
-				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
-				m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 0.8f, 0.5f );
-				m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.4f, 0.03f );
- 				m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
- 				m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
-				m_CB_Object.UpdateData();
-
-				m_Prim_Sphere.Render( m_Shader_RenderScene );
+				RenderScene( m_Shader_RenderScene );
 
 			} else {
 				m_Device.Clear( new float4( 1, 1, 0, 0 ) );
