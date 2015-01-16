@@ -43,6 +43,7 @@ namespace AreaLightTest
 			public float		_AreaLightDiffusion;
 			public float3		_AreaLightT;
 			public float		_AreaLightIntensity;
+			public float4		_AreaLightTexDimensions;	// XY=Texture size, ZW=1/XY
 			public float3		_ProjectionDirectionDiff;	// Closer to portal when diffusion increases
 			public float		__PAD00;
 			public float3		_ProjectionDirectionSpec;	// Closer to portal when diffusion decreases
@@ -69,6 +70,7 @@ namespace AreaLightTest
 		private Shader		m_Shader_BuildSmoothieDistanceFieldV = null;
 		private Shader		m_Shader_RenderAreaLight = null;
 		private Shader		m_Shader_RenderScene = null;
+
 		private Texture2D	m_Tex_AreaLight = null;
 		private Texture2D	m_Tex_AreaLightSAT = null;
 		private Texture2D	m_Tex_AreaLightSATFade = null;
@@ -99,11 +101,11 @@ namespace AreaLightTest
 			InitializeComponent();
 
 // Build SATs
-//ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
-//ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
-//ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
-//ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
-//ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
+ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
 
 			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
 
@@ -154,6 +156,47 @@ namespace AreaLightTest
 				return Image2Texture( _Width, _Height, PIXEL_FORMAT.RGBA8_UNORM_sRGB, Buff );
 			}
 		}
+
+		public Texture2D	Pipi2Texture( System.IO.FileInfo _FileName ) {
+			using ( System.IO.FileStream S = _FileName.OpenRead() )
+				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+
+					int				MipLevels = R.ReadInt32();
+					PixelsBuffer[]	Mips = new PixelsBuffer[MipLevels];
+					int				ImageWidth = 0, ImageHeight = 0;
+					for ( int MipLevel=0; MipLevel < MipLevels; MipLevel++ ) {
+						int	W, H;
+						W = R.ReadInt32();
+						H = R.ReadInt32();
+						if ( MipLevel == 0 ) {
+							ImageWidth = W;
+							ImageHeight = H;
+						}
+
+						PixelsBuffer	Buff = new PixelsBuffer( 4 * W * H * 4 );
+						Mips[MipLevel] = Buff;
+						using ( System.IO.BinaryWriter Wr = Buff.OpenStreamWrite() )
+						{
+							WMath.Vector4D	C = new WMath.Vector4D();
+							for ( int Y=0; Y < H; Y++ ) {
+								for ( int X=0; X < W; X++ ) {
+									C.x = R.ReadSingle();
+									C.y = R.ReadSingle();
+									C.z = R.ReadSingle();
+									C.w = R.ReadSingle();
+
+									Wr.Write( C.x );
+									Wr.Write( C.y );
+									Wr.Write( C.z );
+									Wr.Write( C.w );
+								}
+							}
+						}
+					}
+
+					return Image2Texture( ImageWidth, ImageHeight, PIXEL_FORMAT.RGBA32_FLOAT, Mips );
+				}
+		}
 		public Texture2D	PipoImage2Texture( System.IO.FileInfo _FileName ) {
 			using ( System.IO.FileStream S = _FileName.OpenRead() )
 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
@@ -186,7 +229,11 @@ namespace AreaLightTest
 		}
 		public Texture2D	Image2Texture( int _Width, int _Height, PIXEL_FORMAT _Format, PixelsBuffer _Content )
 		{
-			return new Texture2D( m_Device, _Width, _Height, 1, 1, _Format, false, false, new PixelsBuffer[] { _Content } );
+			return Image2Texture( _Width, _Height, _Format, new PixelsBuffer[] { _Content } );
+		}
+		public Texture2D	Image2Texture( int _Width, int _Height, PIXEL_FORMAT _Format, PixelsBuffer[] _MipsContent )
+		{
+			return new Texture2D( m_Device, _Width, _Height, 1, _MipsContent.Length, _Format, false, false, _MipsContent );
 		}
 
 		/// <summary>
@@ -233,6 +280,89 @@ namespace AreaLightTest
 				}
 			}
 
+			// Build mips and save as a simple format
+			{
+				int	MaxSize = Math.Max( W, H );
+				int	MipsCount = (int) (Math.Ceiling( Math.Log( MaxSize+1 ) / Math.Log( 2 ) ));
+				WMath.Vector4D[][,]	Mips = new WMath.Vector4D[MipsCount][,];
+				Mips[0] = Image;
+
+				int	TargetWidth = W;
+				int	TargetHeight = H;
+				for ( int MipLevel=1; MipLevel < Mips.Length; MipLevel++ ) {
+					TargetWidth = Math.Max( 1, TargetWidth >> 1 );
+					TargetHeight = Math.Max( 1, TargetHeight >> 1 );
+
+					float	MipPixelSizeX = W / TargetWidth;	// Size of a mip pixel; in amount of original image pixels (i.e. mip #0)
+					float	MipPixelSizeY = H / TargetHeight;	// Size of a mip pixel; in amount of original image pixels (i.e. mip #0)
+					int		KernelSize = 2 * (int) Math.Pow( 2, MipLevel );
+					float	Sigma = (float) Math.Sqrt( -KernelSize*KernelSize / (2.0 * Math.Log( 0.01 )) );	// So we have a weight of 0.01 at a Kernel Size distance
+					float[]	KernelFactors = new float[1+KernelSize];
+					float	SumWeights = 0.0f;
+					for ( int i=0; i <= KernelSize; i++ ) {
+						KernelFactors[i] = (float) (Math.Exp( -i*i / (2.0 * Sigma * Sigma)) / Math.Sqrt( 2 * Math.PI * Sigma * Sigma ) );
+						SumWeights += KernelFactors[i];
+					}
+
+					// Perform a horizontal blur first
+					WMath.Vector4D[,]	Source = Image;
+					WMath.Vector4D[,]	Target = new WMath.Vector4D[TargetWidth,H];
+					for ( int Y=0; Y < H; Y++ ) {
+						for ( int X=0; X < TargetWidth; X++ ) {
+							float	CenterX = X * MipPixelSizeX + 0.5f * (MipPixelSizeX-1);
+							WMath.Vector4D	Sum = KernelFactors[0] * BilinearSample( Source, CenterX, Y );
+							for ( int i=1; i <= KernelSize; i++ ) {
+								Sum += KernelFactors[i] * BilinearSample( Image, CenterX - i, Y );
+								Sum += KernelFactors[i] * BilinearSample( Image, CenterX + i, Y );
+							}
+							Target[X,Y] = Sum;
+						}
+					}
+
+					// Perform vertical blur
+					Source = Target;
+					Mips[MipLevel] = new WMath.Vector4D[TargetWidth,TargetHeight];
+					Target = Mips[MipLevel];
+					for ( int X=0; X < TargetWidth; X++ ) {
+						for ( int Y=0; Y < TargetHeight; Y++ ) {
+							float	CenterY = Y * MipPixelSizeY + 0.5f * (MipPixelSizeY-1);
+							WMath.Vector4D	Sum = KernelFactors[0] * BilinearSample( Source, X, CenterY );
+							for ( int i=1; i <= KernelSize; i++ ) {
+								Sum += KernelFactors[i] * BilinearSample( Source, X, CenterY - i );
+								Sum += KernelFactors[i] * BilinearSample( Source, X, CenterY + i );
+							}
+							Target[X,Y] = Sum;
+						}
+					}
+				}
+
+
+				string	Pipi = _TargetFileName.FullName;
+				Pipi = System.IO.Path.GetFileNameWithoutExtension( Pipi ) + ".pipi";
+				System.IO.FileInfo	SimpleTargetFileName2 = new System.IO.FileInfo(  Pipi );
+				using ( System.IO.FileStream S = SimpleTargetFileName2.OpenWrite() )
+					using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
+						Wr.Write( Mips.Length );
+						for ( int MipLevel=0; MipLevel < Mips.Length; MipLevel++ ) {
+							WMath.Vector4D[,]	Mip = Mips[MipLevel];
+
+							int	MipWidth = Mip.GetLength( 0 );
+							int	MipHeight = Mip.GetLength( 1 );
+							Wr.Write( MipWidth );
+							Wr.Write( MipHeight );
+
+							for ( int Y=0; Y < MipHeight; Y++ ) {
+								for ( int X=0; X < MipWidth; X++ ) {
+									Wr.Write( Mip[X,Y].x );
+									Wr.Write( Mip[X,Y].y );
+									Wr.Write( Mip[X,Y].z );
+									Wr.Write( Mip[X,Y].w );
+								}
+							}
+						}
+					}
+			}
+
 			// Perform the accumulation
 			for ( int Y=0; Y < H; Y++ ) {
 				for ( int X=1; X < W; X++ ) {
@@ -267,6 +397,27 @@ namespace AreaLightTest
 					}
 				}
 		} 
+
+		WMath.Vector4D	BilinearSample( WMath.Vector4D[,] _Source, float _X, float _Y ) {
+			int				X = (int) Math.Floor( _X );
+			float			x = _X - X;
+			int				Y = (int) Math.Floor( _Y );
+			float			y = _Y - Y;
+			int				W = _Source.GetLength( 0 );
+			int				H = _Source.GetLength( 1 );
+			WMath.Vector4D	V00 = X >= 0 && Y >= 0 && X < W && Y < H ? _Source[X,Y] : WMath.Vector4D.Zero;
+			X++;
+			WMath.Vector4D	V01 = X >= 0 && Y >= 0 && X < W && Y < H ? _Source[X,Y] : WMath.Vector4D.Zero;
+			Y++;
+			WMath.Vector4D	V11 = X >= 0 && Y >= 0 && X < W && Y < H ? _Source[X,Y] : WMath.Vector4D.Zero;
+			X--;
+			WMath.Vector4D	V10 = X >= 0 && Y >= 0 && X < W && Y < H ? _Source[X,Y] : WMath.Vector4D.Zero;
+
+			WMath.Vector4D	V0 = (1.0f - x) * V00 + x * V01;
+			WMath.Vector4D	V1 = (1.0f - x) * V10 + x * V11;
+			WMath.Vector4D	Result = (1.0f - y) * V0 + y * V1;
+			return Result;
+		}
 
 		#endregion
 
@@ -427,13 +578,14 @@ namespace AreaLightTest
 			}
 
 			BuildPrimitives();
-//			m_Tex_AreaLight = Image2Texture( new System.IO.FileInfo( "StainedGlass.png" ) );
+//			m_Tex_AreaLight = Pipi2Texture( new System.IO.FileInfo( "AreaLight.pipi" ) );
 //			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT.pipo" ) );
 
-			m_Tex_AreaLight = Image2Texture( new System.IO.FileInfo( "StainedGlass2.jpg" ) );
+			m_Tex_AreaLight = Pipi2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipi" ) );
 			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipo" ) );
 			m_Tex_AreaLightSATFade = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2Fade.pipo" ) );
 
+//			m_Tex_AreaLight = Pipi2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipi" ) );
 //			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipo" ) );
 
 
@@ -656,6 +808,7 @@ namespace AreaLightTest
 			m_CB_Light.m._AreaLightScaleY = SizeY;
 			m_CB_Light.m._AreaLightDiffusion = floatTrackbarControlProjectionDiffusion.Value;
 			m_CB_Light.m._AreaLightIntensity = floatTrackbarControlLightIntensity.Value;
+			m_CB_Light.m._AreaLightTexDimensions = new float4( m_Tex_AreaLightSAT.Width, m_Tex_AreaLightSAT.Height, 1.0f / m_Tex_AreaLightSAT.Width, 1.0f / m_Tex_AreaLightSAT.Height );
 			m_CB_Light.m._ProjectionDirectionDiff = LocalDirection_Diffuse;
 			m_CB_Light.m._ProjectionDirectionSpec = LocalDirection_Specular;
 			m_CB_Light.UpdateData();
@@ -715,6 +868,7 @@ namespace AreaLightTest
 
 			m_Tex_AreaLightSAT.SetPS( 0 );
 			m_Tex_AreaLightSATFade.SetPS( 1 );
+			m_Tex_AreaLight.SetPS( 4 );
 
 			// Render the area light itself
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
@@ -724,8 +878,6 @@ namespace AreaLightTest
 				m_CB_Object.m._Local2World.Scale( new float3( SizeX, SizeY, 1.0f ) );
 				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
 				m_CB_Object.UpdateData();
-
-				m_Tex_AreaLight.SetPS( 4 );
 
 				m_Prim_Rectangle.Render( m_Shader_RenderAreaLight );
 			} else {

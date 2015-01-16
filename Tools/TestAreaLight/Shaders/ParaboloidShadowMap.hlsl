@@ -38,8 +38,9 @@ _Debug = saturate( dot( -lsDeltaPos / ReceiverDistance, _wsNormal ) ) *  step( R
 	float	ExpandedBlockerDistance = SHADOW_ZFAR * Smoothie.y;
 //	float	Sharpness = 1.0 - saturate( ReceiverDistance / ExpandedBlockerDistance );
 	float	Sharpness = saturate( ExpandedBlockerDistance / ReceiverDistance );
-			Smoothie.x = saturate( Smoothie.x / (1.0 - Sharpness) );
+//			Smoothie.x = saturate( Smoothie.x / (1.0 - Sharpness) );
 
+//Smoothie.x = 1;
 _Debug = Smoothie.x;
 //_Debug = Sharpness;
 

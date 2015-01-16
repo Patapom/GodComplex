@@ -8,16 +8,15 @@ cbuffer CB_Light : register(b2) {
 	float		_AreaLightDiffusion;
 	float3		_AreaLightT;
 	float		_AreaLightIntensity;
+	float4		_AreaLightTexDimensions;
 	float3		_ProjectionDirectionDiff;	// Closer to portal when diffusion increases
 	float3		_ProjectionDirectionSpec;	// Closer to portal when diffusion decreases
 };
 
 Texture2D< float4 >	_TexAreaLightSAT : register(t0);
 Texture2D< float4 >	_TexAreaLightSATFade : register(t1);
+Texture2D< float4 >	_TexAreaLight : register(t4);
 
-
-static const uint2	TEX_SIZE = uint2( 465, 626 );
-static const float3	dUV = float3( 1.0 / TEX_SIZE, 0.0 );
 
 // Samples the SAT
 float4	SampleSAT( Texture2D< float4 > _Tex, float2 _UV0, float2 _UV1 ) {
@@ -30,13 +29,24 @@ float4	SampleSAT( Texture2D< float4 > _Tex, float2 _UV0, float2 _UV1 ) {
 	// Compute normalization factor
 	float2	DeltaUV = _UV1 - _UV0;
 
-//	float	PixelsCount = (DeltaUV.x * TEX_SIZE.x) * (DeltaUV.y * TEX_SIZE.y);
+	float	PixelsCount = (DeltaUV.x * _AreaLightTexDimensions.x) * (DeltaUV.y * _AreaLightTexDimensions.y);
 
-	uint2	TexSize;
-	_TexAreaLightSAT.GetDimensions( TexSize.x, TexSize.y );
-	float	PixelsCount = (DeltaUV.x * TexSize.x) * (DeltaUV.y * TexSize.y);
+// 	uint2	TexSize;
+// 	_TexAreaLightSAT.GetDimensions( TexSize.x, TexSize.y );
+// 	float	PixelsCount = (DeltaUV.x * TexSize.x) * (DeltaUV.y * TexSize.y);
 
 	return C * (PixelsCount > 1e-3 ? 1.0 / PixelsCount : 0.0);
+}
+
+// Another version that uses mip mapping
+float4	SampleMip( Texture2D< float4 > _Tex, float2 _UV0, float2 _UV1 ) {
+
+	float2	UV = 0.5 * (_UV0 + _UV1);
+	float2	RadiusUV = 0.5 * (_UV1 - _UV0);
+	float2	RadiusPixel = _AreaLightTexDimensions.xy * RadiusUV;
+	float	MipLevel = log2( max( RadiusPixel.x, RadiusPixel.y ) );
+
+	return _Tex.SampleLevel( LinearBorder, UV, MipLevel );
 }
 
 // Determinant of a 3x3 row-major matrix
@@ -94,7 +104,10 @@ float	RectangleSolidAngle( float3 _lsPosition, float2 _UV0, float2 _UV1 ) {
 // Computes the potential UV clipping by the surface's normal
 // We simplify *a lot* by assuming either a vertical or horizontal normal that clearly cuts the square along one of its main axes
 //
-float4	ComputeClipping( float3 _lsPosition, float3 _lsNormal, out float4 _Debug ) {
+// The problem with this routine is that it yields very noticeable discontinuities every 90° offset by 45° as the principal directions
+//	get switched and the clipping is not continuous when the switch is occurring...
+//
+float4	ComputeClipping_OLD( float3 _lsPosition, float3 _lsNormal, out float4 _Debug ) {
 
 _Debug = 0;
 
@@ -156,192 +169,122 @@ _Debug = 0;
 	return lerp( float4( UV0.yx, UV1.yx ), float4( UV0, UV1 ), IsVertical );
 }
 
-/*// Computes the 2 UVs and the solid angle perceived from a single point in world space
-bool	ComputeSolidAngleFromPoint____OLD( float3 _wsPosition, float3 _wsNormal, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle ) {
+// Condition-less clipping routine that returns the result of the intersection of [P0,P1] with the given plane:
+//	_ Return the intersection point if the segment cuts the plane
+//	_ Return P0 if both P0 and P1 stand below the plane
+//	_ Returns P1 if both P0 and P1 stand above the plane
+//
+float3	ClipSegment( float3 _P0, float3 _P1, float3 _PlanePosition, float3 _PlaneNormal, out float4 _Debug ) {
 
-	float3	lsPosition = mul( float4( _wsPosition, 1.0 ), _World2AreaLight ).xyz;		// Transform world position in local area light space
-	if ( lsPosition.z <= 0.0 ) {
-		// Position is behind area light...
-		_UV0 = _UV1 = 0.0;
-		_ProjectedSolidAngle = 0.0;
-		return false;
-	}
+	float3	V = _P1 - _P0;
+	float3	D = _PlanePosition - _P0;
+	float	d = dot( D, _PlaneNormal );
+	float	t = d / dot( V, _PlaneNormal );
 
-	// In local area light space, the position is in front of a canonical square:
-	//
-	//	(-1,+1)					(+1,+1)
-	//			o-------------o
-	//			|             |
-	//			|             |
-	//			|             |
-	//			|      o      |
-	//			|             |
-	//			|             |
-	//			|             |
-	//			o-------------o
-	//	(-1,-1)					(+1,-1)
-	//
-	//
-	float3	lsPortal[2] = {
-		float3( -1, +1, 0 ),		// Top left
-		float3( +1, -1, 0 ),		// Bottom right
-	};
+_Debug = t;
 
-	// Compute the UV coordinates of the intersection of the frustum with the portal's plane
-	float2	lsIntersection[2] = { 0.0.xx, 0.0.xx };
-	for ( uint Corner=0; Corner < 2; Corner++ ) {
-		float3	lsVirtualPos = lsPortal[Corner] - _ProjectionDirectionDiff;	// This is the position of the corner of the virtual source
-		float3	Dir = lsVirtualPos - lsPosition;							// This is the pointing direction, originating from the source _wsPosition
-		float	t = -lsPosition.z / Dir.z;									// This is the distance at which we hit the physical portal's plane
-		lsIntersection[Corner] = (lsPosition + t * Dir).xy;					// This is the position on the portal's plane
-	}
+	// The actual code we want to execute is:
+	// 	if ( d > 0.0 || t >= 0.0 )
+	// 		return _P0 + saturate( t - 1e-3 ) * V;	// There's an intersection
+	// 	else
+	// 		return _P1;								// Both points are above the plane, go straight to end point
 
-	// Retrieve the UVs
-	_UV0 = 0.5 * (1.0 + float2( lsIntersection[0].x, -lsIntersection[0].y));
-	_UV1 = max( _UV0 + dUV.xy, 0.5 * (1.0 + float2( lsIntersection[1].x, -lsIntersection[1].y)) );	// Make sure the UVs are at least separated by a single texel before clamping
-
-	// Clamp to [0,1]
-	_UV0 = saturate( _UV0 );
-	_UV1 = saturate( _UV1 );
-
-	// Compute the solid angle
-	float2	DeltaUV = _UV1 - _UV0;
-	float	UVArea = DeltaUV.x * DeltaUV.y;	// This is the perceived area in UV space
-	float	wsArea = UVArea * _Area;		// This is the perceived area in world space
-
-	float2	lsCenter = 0.5 * (lsIntersection[0] + lsIntersection[1]);
-	float3	wsCenter = _AreaLight2World[3].xyz + lsCenter.x * _AreaLight2World[0].xyz + lsCenter.y * _AreaLight2World[1].xyz;	// World space center
-	float3	wsPos2Center = normalize( wsCenter - _wsPosition );
-
-	float	SolidAngle = wsArea * -dot( wsPos2Center, _AreaLight2World[2].xyz );	// dWi = Area * cos( theta )
-
-	// Now, we can compute the projected solid angle by dotting with the normal
-	_ProjectedSolidAngle = saturate( dot( _wsNormal, wsPos2Center ) ) * SolidAngle;	// (N.Wi) * dWi
-
-
-_ProjectedSolidAngle = 1;//UVArea;
-
-
-// _UV0 = lsPosition.xy;
-// _UV1 = lsPosition.z;
-// _UV0 = _UV1;
-// _UV1 = 0;
-
-	return true;
+	// But we can replace them with this condition-less code
+	float	IsPositive_d = step( 0.0, d );			// d > 0
+	float	IsPositive_t = 1.0 - step( t, 0.0 );	// t >= 0
+	float	d_or_t = saturate( IsPositive_d + IsPositive_t );
+	return lerp( _P1, _P0 + saturate( t - 1e-3 ) * V, d_or_t );
 }
 
-
-// Computes the 2 UVs and the solid angle perceived from a single point in world space watching the area light through a cone (used for specular reflection)
-//	_wsPosition, the world space position of the surface watching the area light
-//	_wsNormal, the world space normal of the surface
-//	_wsView, the view direction (usually, the main reflection direction)
-//	_TanHalfAngle, the tangent of the half-angle of the cone watching
+// Computes the potential UV clipping by the surface's normal
+// The algorithm is "quite cheap" as it doesn't use any condition and proceeds like:
+//		1) Depending on the orientation of the normal, we choose P0 as the farthest point away from the plane
+//		2) We build P1, P2 and P3 from P0
+//			=> the P0,P1,P2,P3 quad will either be CW or CCW but that does not matter
+//		3) We browse the quad in the P0->P1->P2->P3 orientation and keep the min/max of the clipped segments each time
+//		4) We browse the quad in the P3->P2->P1->P0 orientation and keep the min/max of the clipped segments each time
+//		5) We transform the min/max back into UV0 and UV1
 //
-// Returns:
-//	_UV0, _UV1, the 2 UVs coordinates where to sample the SAT
-//	_ProjectedSolidAngle, an estimate of the perceived projected solid angle (i.e. cos(IncidentAngle) * dOmega)
+// This is a crude approximation of the clipped UV area but it's okay for our needs
+// If you watch the solid angle of the clipped square as perceived by a surface, you will notice some
+//	discontinuities in the sense of "area bounces" because of the min/max but these discontinuites
+//	become less noticeable as they concur with the N.L becoming 0 at these locations
 //
-bool	ComputeSolidAngleSpecular___OLD( float3 _wsPosition, float3 _wsNormal, float3 _wsView, float _TanHalfAngle, out float2 _UV0, out float2 _UV1, out float _ProjectedSolidAngle, out float4 _Debug ) {
-	_UV0 = _UV1 = 0.0;
-	_ProjectedSolidAngle = 0.0;
-	_Debug = 0.0;
+float4	ComputeClipping( float3 _lsPosition, float3 _lsNormal, out float4 _Debug ) {
 
-	float3	wsCenter2Position = _wsPosition - _AreaLightT;
-	float3	lsPosition = float3(dot( wsCenter2Position, _AreaLightX ),	// Transform world position into local area light space
-								dot( wsCenter2Position, _AreaLightY ),
-								dot( wsCenter2Position, _AreaLightZ ) );
+_Debug = 0;
 
-	float3	lsView = float3(	dot( _wsView, _AreaLightX ),				// Transform world direction into local area light space
-								dot( _wsView, _AreaLightY ),
-								dot( _wsView, _AreaLightZ ) );
-	if ( lsPosition.z <= 0.0 || lsView.z >= 0.0 ) {
-		// Position is behind area light or watching away from it...
-		return false;
-	}
+float4	Debug;
 
-	lsView.xy /= float2( _AreaLightScaleX, _AreaLightScaleY );			// Account for scale
-	lsPosition.xy /= float2( _AreaLightScaleX, _AreaLightScaleY );			// Account for scale
+	// Reverse Y so Positions are in the same orientation as UVs
+	_lsPosition.y = -_lsPosition.y;
+	_lsNormal.y = -_lsNormal.y;
 
-	float3	lsNormal = float3(	dot( _wsNormal, _AreaLightX ),				// Transform world normal in local area light space
-								dot( _wsNormal, _AreaLightY ),
-								dot( _wsNormal, _AreaLightZ ) );
+	float	X0 = 1.0 - 2.0 * step( _lsNormal.x, 0.0 );
+	float	Y0 = 1.0 - 2.0 * step( _lsNormal.y, 0.0 );
 
-	// In local area light space, the position is in front of a canonical square:
-	//
-	//	(-1,+1)					(+1,+1)
-	//			o-------------o
-	//			|             |
-	//			|             |
-	//			|             |
-	//			|      o      |
-	//			|             |
-	//			|             |
-	//			|             |
-	//			o-------------o
-	//	(-1,-1)					(+1,-1)
-	//
-	//
+	float3	P0 = float3( X0, Y0, 0.0 );
+	float3	P1 = float3( -X0, Y0, 0.0 );
+	float3	P2 = float3( -X0, -Y0, 0.0 );
+	float3	P3 = float3( X0, -Y0, 0.0 );
 
-	// Build a reference frame for the view direction
-	float3	Y = normalize( float3( 0.0, -lsView.z, lsView.y ) );	// = normalize( cross( PlaneTangent, lsView );  where PlaneTangent = (1,0,0)
-	float3	X = cross( lsView, Y );
+// _Debug = float4( 0.5*(1.0+P3.xy), 0, 0 );
+// return 0.0;
 
-	// Generate the 4 rays encompassing the cone aperture
-	float2	Dirs[4] = {
-		float2( -1, +1 ),
-		float2( +1, +1 ),
-		float2( -1, -1 ),
-		float2( +1, -1 ),
-	};
+	// Compute clipping of the square by browsing the contour in both CCW and CW
+	// We keep the min/max of UVs each time
+	float4	MinMax = float4( 1.0, 1.0, -1.0, -1.0 );
 
-	// Compute the intersection of the frustum with the virtual source's plane
-	float	Distance2VirtualSource = lsPosition.z;// + _ProjectionDirectionSpec.z;
-	float3	lsVirtualSourceCenter = 0.0;//-_ProjectionDirectionSpec;					// Center of the virtual source
+	// CCW
+	float3	P = ClipSegment( P0, P1, _lsPosition, _lsNormal, Debug );
+	MinMax = float4( min( MinMax.xy, P.xy ), max( MinMax.zw, P.xy ) );
 
-	float2	HitMin = 1e6;
-	float2	HitMax = -1e6;
-	for ( uint Corner=0; Corner < 4; Corner++ ) {
-		float3	vsDirection = float3( _TanHalfAngle * Dirs[Corner], 1.0 );						// Ray direction in view space
-		float3	lsDirection = vsDirection.x * X + vsDirection.y * Y + vsDirection.z * lsView;	// Ray direction in local space
+//_Debug = float4( 0.5 * (1.0 + float2( P.x, -P.y )), 0, 0 );
+_Debug = float4( 0.5 * (1.0 + P.xy), 0, 0 );
+// _Debug = Debug;
 
-		float	t = -Distance2VirtualSource / lsDirection.z;									// Distance at which the ray hits the virtual source's plane
-		float3	lsIntersection = lsPosition + t * lsDirection - lsVirtualSourceCenter;			// Hit position on the virtual source's plane, relative to its center
+	P = ClipSegment( P, P2, _lsPosition, _lsNormal, Debug );
+	MinMax = float4( min( MinMax.xy, P.xy ), max( MinMax.zw, P.xy ) );
 
-// _Debug = float4( lsIntersection, 0 );
-// _Debug = float4( lsDirection, 0 );
-// return true;
+_Debug = float4( 0.5 * (1.0 + P.xy), 0, 0 );
+//_Debug = float4( _lsNormal.xy, 0, 0 );
+//_Debug = Debug;
 
-		// Keep min and max hit positions
-		HitMin = min( HitMin, lsIntersection.xy );
-		HitMax = max( HitMax, lsIntersection.xy );
-	}
+	P = ClipSegment( P, P3, _lsPosition, _lsNormal, Debug );
+	MinMax = float4( min( MinMax.xy, P.xy ), max( MinMax.zw, P.xy ) );
 
-	// Compute the UV's from the hit positions
-	_UV0 = 0.5 * (1.0 + float2( HitMin.x, -HitMin.y));
-	_UV1 = 0.5 * (1.0 + float2( HitMax.x, -HitMax.y));
-	_UV1 = max( _UV0 + dUV.xy, _UV1 );	// Make sure the UVs are at least separated by a single texel before clamping
+_Debug = float4( 0.5 * (1.0 + P.xy), 0, 0 );
 
-//_Debug = float4( _UV1, 0, 0 );
+	P = ClipSegment( P, P0, _lsPosition, _lsNormal, Debug );
+	MinMax = float4( min( MinMax.xy, P.xy ), max( MinMax.zw, P.xy ) );
 
-	// Compute potential clipping by the surface's plane
-	float4	ClippedUVs = ComputeClipping( lsPosition, lsNormal, _Debug );
-	_UV0 = clamp( _UV0, ClippedUVs.xy, ClippedUVs.zw );
-	_UV1 = clamp( _UV1, ClippedUVs.xy, ClippedUVs.zw );
+_Debug = float4( 0.5 * (1.0 + P.xy), 0, 0 );
 
-	// Compute the solid angle
-	float	SolidAngle = RectangleSolidAngle( lsPosition, _UV0, _UV1 );
+	// CW
+	P = ClipSegment( P0, P3, _lsPosition, _lsNormal, Debug );
+	MinMax = float4( min( MinMax.xy, P.xy ), max( MinMax.zw, P.xy ) );
 
-	// Now, we can compute the projected solid angle by dotting with the normal
-	_ProjectedSolidAngle = saturate( dot( _wsNormal, _wsView ) ) * SolidAngle;	// (N.Wi) * dWi
+_Debug = float4( 0.5 * (1.0 + P.xy), 0, 0 );
 
-	// Finally, multiply by PI/4 to account for the fact we traced a square pyramid instead of a cone
-	// (area of the base of the pyramid is 2x2 while area of the circle is PI)
-	_ProjectedSolidAngle *= 0.25 * PI;
+	P = ClipSegment( P, P2, _lsPosition, _lsNormal, Debug );
+	MinMax = float4( min( MinMax.xy, P.xy ), max( MinMax.zw, P.xy ) );
 
-	return true;
+_Debug = float4( 0.5 * (1.0 + P.xy), 0, 0 );
+
+	P = ClipSegment( P, P1, _lsPosition, _lsNormal, Debug );
+	MinMax = float4( min( MinMax.xy, P.xy ), max( MinMax.zw, P.xy ) );
+
+_Debug = float4( 0.5 * (1.0 + P.xy), 0, 0 );
+
+	P = ClipSegment( P, P0, _lsPosition, _lsNormal, Debug );
+	MinMax = float4( min( MinMax.xy, P.xy ), max( MinMax.zw, P.xy ) );
+
+_Debug = float4( 0.5 * (1.0 + P.xy), 0, 0 );
+
+	// Finalize UVs
+//	MinMax.yw = -MinMax.yw;
+	return 0.5 * (1.0 + MinMax);
 }
-
-*/
 
 // Computes the 2 UVs and the solid angle perceived from a single point in world space (used for diffuse reflection)
 // The area light's unit square is first clipped agains the surface's plane and the remaining bounding rectangle is used as the area to sample for irradiance.
@@ -404,7 +347,7 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 	// Retrieve the UVs
 	_UV0 = 0.5 * (1.0 + float2( lsIntersection[0].x, -lsIntersection[0].y));
 	_UV1 = 0.5 * (1.0 + float2( lsIntersection[1].x, -lsIntersection[1].y));
-	_UV1 = max( _UV1, _UV0 + dUV.xy );	// Make sure the UVs are at least separated by a single texel before clamping
+	_UV1 = max( _UV1, _UV0 + _AreaLightTexDimensions.zw );	// Make sure the UVs are at least separated by a single texel before clamping
 
 	// Compute potential clipping by the surface's plane
 	float4	ClippedUVs = ComputeClipping( lsPosition, lsNormal, _Debug );
@@ -420,7 +363,8 @@ bool	ComputeSolidAngleDiffuse( float3 _wsPosition, float3 _wsNormal, out float2 
 	float3	lsPosition2Center = normalize( lsCenter - lsPosition );						// Wi, the average incoming light direction
 	_ProjectedSolidAngle = saturate( dot( lsNormal, lsPosition2Center ) ) * SolidAngle;	// (N.Wi) * dWi
 
-// _Debug = _ProjectedSolidAngle;
+_Debug = _ProjectedSolidAngle;
+_Debug = SolidAngle;
 
 	return true;
 }
@@ -508,7 +452,7 @@ _Gloss = pow( _Gloss, 0.5 );
 
 	_UV0 = UVcenter - RadiusUV;
 	_UV1 = UVcenter + RadiusUV;
-	_UV1 = max( _UV1, _UV0 + dUV.xy );	// Make sure the UVs are at least separated by a single texel before clamping
+	_UV1 = max( _UV1, _UV0 + _AreaLightTexDimensions.zw );	// Make sure the UVs are at least separated by a single texel before clamping
 
 #else
 
@@ -521,7 +465,7 @@ _Gloss = pow( _Gloss, 0.5 );
 	float3	I1 = lsPosition + (lsPosition.z / max( 1e-3, -lsBottomRight.z)) * lsBottomRight;
 	_UV0 = float2( 0.5 * (1.0 + I0.x), 0.5 * (1.0 - I0.y) );
 	_UV1 = float2( 0.5 * (1.0 + I1.x), 0.5 * (1.0 - I1.y) );
-	_UV1 = max( _UV1, _UV0 + dUV.xy );	// Make sure the UVs are at least separated by a single texel before clamping
+	_UV1 = max( _UV1, _UV0 + _AreaLightTexDimensions.zw );	// Make sure the UVs are at least separated by a single texel before clamping
 
 	float2	DeltaUV = _UV1 - _UV0;
 //	float	RadiusUV = 0.5 * sqrt( DeltaUV.x*DeltaUV.x + DeltaUV.y*DeltaUV.y );

@@ -221,8 +221,8 @@
 			this.floatTrackbarControlLightPosX.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlLightPosX.TabIndex = 1;
 			this.floatTrackbarControlLightPosX.Value = 0F;
-			this.floatTrackbarControlLightPosX.VisibleRangeMax = 2F;
-			this.floatTrackbarControlLightPosX.VisibleRangeMin = -2F;
+			this.floatTrackbarControlLightPosX.VisibleRangeMax = 3F;
+			this.floatTrackbarControlLightPosX.VisibleRangeMin = -3F;
 			// 
 			// label7
 			// 
@@ -244,8 +244,8 @@
 			this.floatTrackbarControlLightPosY.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlLightPosY.TabIndex = 1;
 			this.floatTrackbarControlLightPosY.Value = 0F;
-			this.floatTrackbarControlLightPosY.VisibleRangeMax = 2F;
-			this.floatTrackbarControlLightPosY.VisibleRangeMin = -2F;
+			this.floatTrackbarControlLightPosY.VisibleRangeMax = 3F;
+			this.floatTrackbarControlLightPosY.VisibleRangeMin = -3F;
 			// 
 			// label8
 			// 
@@ -267,8 +267,8 @@
 			this.floatTrackbarControlLightPosZ.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlLightPosZ.TabIndex = 1;
 			this.floatTrackbarControlLightPosZ.Value = 0F;
-			this.floatTrackbarControlLightPosZ.VisibleRangeMax = 2F;
-			this.floatTrackbarControlLightPosZ.VisibleRangeMin = -2F;
+			this.floatTrackbarControlLightPosZ.VisibleRangeMax = 3F;
+			this.floatTrackbarControlLightPosZ.VisibleRangeMin = -3F;
 			// 
 			// label9
 			// 

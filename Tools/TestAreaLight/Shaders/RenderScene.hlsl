@@ -8,6 +8,8 @@
 #include "AreaLight.hlsl"
 #include "ParaboloidShadowMap.hlsl"
 
+#define USE_SAT	1	// If not defined, will use mip mapping instead
+
 cbuffer CB_Object : register(b3) {
 	float4x4	_Local2World;
 	float4x4	_World2Local;
@@ -45,20 +47,6 @@ PS_IN	VS( VS_IN _In ) {
 	return Out;
 }
 
-float4	SampleSATSinglePixel( float2 _UV ) {
-
-	float2	PixelIndex = _UV * TEX_SIZE;
-	float2	NextPixelIndex = PixelIndex + 1;
-	float2	UV2 = NextPixelIndex / TEX_SIZE;
-
-	float4	C00 = _TexAreaLightSAT.Sample( LinearClamp, _UV );
-	float4	C01 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xz );
-	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.zy );
-	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xy );
-
-	return C11 - C10 - C01 + C00;
-}
-
 // More a Beckmann really, don't have time
 float	ComputeWard( float3 _wsView, float3 _wsNormal, float3 _wsLight, float _Roughness ) {
 	float3	H = normalize( _wsView + _wsLight );
@@ -67,10 +55,6 @@ float	ComputeWard( float3 _wsView, float3 _wsNormal, float3 _wsLight, float _Rou
 }
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
-// 	float4	StainedGlass = _TexAreaLight.Sample( LinearClamp, _In.UV );
-// 	float4	StainedGlass = 0.0001 * _TexAreaLightSAT.Sample( LinearClamp, _In.UV );
-//	float4	StainedGlass = SampleSATSinglePixel( _In.UV );
-
 	float3	wsPosition = _In.Position;
 	float3	wsNormal = normalize( _In.Normal );
 	float3	wsView = normalize( wsPosition - _Camera2World[3].xyz );
@@ -85,23 +69,30 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
  	// Compute diffuse lighting
  	float3	Ld = 0.0;
 	if ( ComputeSolidAngleDiffuse( wsPosition, wsNormal, UV0, UV1, SolidAngle, Debug ) ) {
-		float3	Irradiance = _AreaLightIntensity * SampleSAT( _TexAreaLightSATFade, UV0, UV1 ).xyz;
+#if USE_SAT
+//		float3	Irradiance = SampleSAT( _TexAreaLightSAT, UV0, UV1 ).xyz;
+		float3	Irradiance = SampleSAT( _TexAreaLightSATFade, UV0, UV1 ).xyz;
+#else
+		float3	Irradiance = SampleMip( _TexAreaLight, UV0, UV1 ).xyz;
+#endif
+
+//return Debug;
+
 		Ld = RhoD / PI * Irradiance * SolidAngle;
-		
-//Ld = SolidAngle;
 	}
-	
-//Ld = float3( 1, 1, 0 );
 	
 	// Compute specular lighting
 	float3	Ls = 0.0;
  	float3	wsReflectedView = reflect( wsView, wsNormal );
   	if ( ComputeSolidAngleSpecular( wsPosition, wsNormal, wsReflectedView, _Gloss, UV0, UV1, SolidAngle, Debug ) ) {
+#if USE_SAT
+		float3	Irradiance = SampleSAT( _TexAreaLightSAT, UV0, UV1 ).xyz;
+#else
+		float3	Irradiance = SampleMip( _TexAreaLight, UV0, UV1 ).xyz;
+#endif
 		
-		float3	Irradiance = _AreaLightIntensity * SampleSAT( _TexAreaLightSAT, UV0, UV1 ).xyz;
-		
-//		float	Roughness = max( 0.5e-2, 1.0 * (1.0 - _Gloss) );
-		float	Roughness = max( 1.0e-2, 1.0 * (1.0 - _Gloss) );
+//		float	Roughness = max( 0.005, 1.0 * (1.0 - _Gloss) );
+		float	Roughness = max( 0.01, 1.0 * (1.0 - _Gloss) );
 		
 //		Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * Irradiance * SolidAngle;
 		Ls = RhoD / PI * Irradiance * SolidAngle;
@@ -125,10 +116,10 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;
 	
-	float	Shadow = 1;//ComputeShadow( wsPosition, wsNormal, Debug );
+	float	Shadow = 1;// ComputeShadow( wsPosition, wsNormal, Debug );
 	
  //return Debug;
 
-	return float4( 0.05 + Shadow * (FresnelDiffuse * Ld + FresnelSpecular * Ls), 1 );
+	return float4( 0.05 + Shadow * _AreaLightIntensity * (FresnelDiffuse * Ld + FresnelSpecular * Ls), 1 );
 	return float4( 0.05 + Ld + Ls, 1 );
 }
