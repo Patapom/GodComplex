@@ -13,6 +13,7 @@ namespace RendererManaged {
 		RGBA8_UNORM,
 		RGBA8_UNORM_sRGB,
 		R16_FLOAT,
+		R16_UNORM,
 		RG16_FLOAT,
 		RGBA16_FLOAT,
 		R32_FLOAT,
@@ -29,6 +30,7 @@ namespace RendererManaged {
  		case PIXEL_FORMAT::RGBA8_UNORM:		pDescriptor = &PixelFormatRGBA8::DESCRIPTOR; break;
  		case PIXEL_FORMAT::RGBA8_UNORM_sRGB:pDescriptor = &PixelFormatRGBA8_sRGB::DESCRIPTOR; break;
 		case PIXEL_FORMAT::R16_FLOAT:		pDescriptor = &PixelFormatR16F::DESCRIPTOR; break;
+		case PIXEL_FORMAT::R16_UNORM:		pDescriptor = &PixelFormatR16_UNORM::DESCRIPTOR; break;
 		case PIXEL_FORMAT::RG16_FLOAT:		pDescriptor = &PixelFormatRG16F::DESCRIPTOR; break;
 		case PIXEL_FORMAT::RGBA16_FLOAT:	pDescriptor = &PixelFormatRGBA16F::DESCRIPTOR; break;
 		case PIXEL_FORMAT::R32_FLOAT:		pDescriptor = &PixelFormatR32F::DESCRIPTOR; break;

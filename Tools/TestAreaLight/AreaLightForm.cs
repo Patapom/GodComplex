@@ -52,6 +52,15 @@ namespace AreaLightTest
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_ShadowMap {
+			public float2		_ShadowOffsetXY;			// XY offset in local light space where to place the shadow
+			public float2		_ShadowZFar;				// X=Far clip distance for the shadow, Y=1/X
+			public float		_InvShadowMapSize;			// 1/Size of the shadow map
+			public float		_KernelSize;				// Size of the filtering kernel
+			public float2		_HardeningFactor;			// Hardening factor for the sigmoïd
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Object {
 			public float4x4		_Local2World;
 			public float4x4		_World2Local;
@@ -61,10 +70,11 @@ namespace AreaLightTest
 			public float		_Metal;
 		}
 
-		private ConstantBuffer<CB_Main>		m_CB_Main = null;
-		private ConstantBuffer<CB_Camera>	m_CB_Camera = null;
-		private ConstantBuffer<CB_Light>	m_CB_Light = null;
-		private ConstantBuffer<CB_Object>	m_CB_Object = null;
+		private ConstantBuffer<CB_Main>			m_CB_Main = null;
+		private ConstantBuffer<CB_Camera>		m_CB_Camera = null;
+		private ConstantBuffer<CB_Light>		m_CB_Light = null;
+		private ConstantBuffer<CB_ShadowMap>	m_CB_ShadowMap = null;
+		private ConstantBuffer<CB_Object>		m_CB_Object = null;
 
 		private Shader		m_Shader_RenderShadowMap = null;
 
@@ -604,8 +614,8 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 			int	SHADOW_MAP_SIZE = 512;
 			m_Tex_ShadowMap = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, DEPTH_STENCIL_FORMAT.D32 );
 #if FILTER_EXP_SHADOW_MAP
-			m_Tex_ShadowMapFiltered[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R16_FLOAT, false, false, null );
-			m_Tex_ShadowMapFiltered[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R16_FLOAT, false, false, null );
+			m_Tex_ShadowMapFiltered[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R16_UNORM, false, false, null );
+			m_Tex_ShadowMapFiltered[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R16_UNORM, false, false, null );
 #else
 			m_Tex_ShadowSmoothie = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
 			m_Tex_ShadowSmoothiePou[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
@@ -615,7 +625,8 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
 			m_CB_Light = new ConstantBuffer<CB_Light>( m_Device, 2 );
-			m_CB_Object = new ConstantBuffer<CB_Object>( m_Device, 3 );
+			m_CB_ShadowMap = new ConstantBuffer<CB_ShadowMap>( m_Device, 3 );
+			m_CB_Object = new ConstantBuffer<CB_Object>( m_Device, 4 );
 
 			try
 			{
@@ -716,6 +727,7 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 			m_CB_Main.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Light.Dispose();
+			m_CB_ShadowMap.Dispose();
 			m_CB_Object.Dispose();
 
 			m_Prim_Quad.Dispose();
@@ -827,7 +839,7 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 			m_CB_Main.UpdateData();
 
 			// Setup area light buffer
-			float		SizeX = 1;//0.5f;
+			float		SizeX = 0.5f;
 			float		SizeY = 1.0f;
 			float		RollAngle = (float) (Math.PI * floatTrackbarControlLightRoll.Value / 180.0);
 			float3		LightPosition = new float3( 1.2f + floatTrackbarControlLightPosX.Value, 1.0f + floatTrackbarControlLightPosY.Value, -1.0f + floatTrackbarControlLightPosZ.Value );
@@ -867,6 +879,15 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 
 
 			// =========== Render shadow map ===========
+			float	KernelSize = Math.Max( 1.0f, 32.0f * floatTrackbarControlProjectionDiffusion.Value );
+			float	ShadowZFar = (float) Math.Sqrt( 2.0 ) * m_Camera.Far;
+			m_CB_ShadowMap.m._ShadowOffsetXY = (float2) Direction;
+			m_CB_ShadowMap.m._ShadowZFar = new float2( ShadowZFar, 1.0f / ShadowZFar );
+			m_CB_ShadowMap.m._KernelSize = KernelSize;
+			m_CB_ShadowMap.m._InvShadowMapSize = 1.0f / m_Tex_ShadowMap.Width;
+			m_CB_ShadowMap.m._HardeningFactor = new float2( floatTrackbarControlHardeningFactor.Value, floatTrackbarControlHardeningFactor2.Value );
+			m_CB_ShadowMap.UpdateData();
+
 			if ( m_Shader_RenderShadowMap != null && m_Shader_RenderShadowMap.Use() ) {
 				m_Tex_ShadowMap.RemoveFromLastAssignedSlots();
 
@@ -888,11 +909,6 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 //				m_Tex_ShadowMapFiltered[1].RemoveFromLastAssignedSlots();
 
 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
-
-				// Update diffusion size
-				float	KernelSize = Math.Max( 1.0f, 32.0f * floatTrackbarControlProjectionDiffusion.Value );
-				m_CB_Object.m._Local2World.SetRow( 0, new float4( KernelSize, 1.0f / m_Tex_ShadowMap.Width, 0, 0 ) );
-				m_CB_Object.UpdateData();
 
 				// Filter horizontally
 				m_Device.SetRenderTarget( m_Tex_ShadowMapFiltered[0], null );

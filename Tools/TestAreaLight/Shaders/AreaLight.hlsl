@@ -384,7 +384,7 @@ bool	ComputeSolidAngleSpecular( float3 _wsPosition, float3 _wsNormal, float3 _ws
 	_ProjectedSolidAngle = 0.0;
 	_Debug = 0.0;
 
-_Gloss = pow( _Gloss, 0.5 );
+_Gloss = pow( _Gloss, 0.125 );
 
 	float3	wsCenter2Position = _wsPosition - _AreaLightT;
 	float3	lsPosition = float3(dot( wsCenter2Position, _AreaLightX ),	// Transform world position into local area light space

@@ -5,11 +5,6 @@
 static const float	INV_TEX_SIZE = 1.0 / 512.0;
 //static const float	MAX_DISTANCE = 32.0;
 
-cbuffer CB_Object : register(b3) {
-	float		_KernelSize;
-	float		_InvTexSize;
-};
-
 struct VS_IN {
 	float4	__Position : SV_POSITION;
 };

@@ -2,7 +2,7 @@
 #include "AreaLight.hlsl"
 #include "ParaboloidShadowMap.hlsl"
 
-cbuffer CB_Object : register(b3) {
+cbuffer CB_Object : register(b4) {
 	float4x4	_Local2World;
 	float4x4	_World2Local;
 };
@@ -23,8 +23,8 @@ PS_IN	VS( VS_IN _In ) {
 
 	// Transform into area light space
 	float3	lsDeltaPos = wsPosition - _AreaLightT;
-	float3	lsPosition = float3(	dot( lsDeltaPos, _AreaLightX ),
-									dot( lsDeltaPos, _AreaLightY ),
+	float3	lsPosition = float3(	(dot( lsDeltaPos, _AreaLightX ) / _AreaLightScaleX) + _ShadowOffsetXY.x,
+									(dot( lsDeltaPos, _AreaLightY ) / _AreaLightScaleY) + _ShadowOffsetXY.y,
 									dot( lsDeltaPos, _AreaLightZ ) );
 
 	// Apply paraboloid projection
@@ -33,12 +33,13 @@ PS_IN	VS( VS_IN _In ) {
 
 	float2	projPosition = lsDirection.xy / (1.0 + lsDirection.z);
 
-	float	Z = saturate( Distance / SHADOW_ZFAR );
+	float	Z = Distance * _ShadowZFar.y;
 
 
 // Exponential Z
-Z = exp( -EXP_CONSTANT * Z );
-//Z = exp( EXP_CONSTANT * (Z-1.0) );
+Z = exp( -_ShadowHardeningFactor.x * Z );
+//Z = exp( -EXP_CONSTANT* Z );
+//Z = exp( _ShadowHardeningFactor.x * (Z-1.0) );
 
 
 	Out.__Position = float4( projPosition, Z, 1.0 );

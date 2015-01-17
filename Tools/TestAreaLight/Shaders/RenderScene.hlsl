@@ -10,7 +10,7 @@
 
 #define USE_SAT	1	// If not defined, will use mip mapping instead
 
-cbuffer CB_Object : register(b3) {
+cbuffer CB_Object : register(b4) {
 	float4x4	_Local2World;
 	float4x4	_World2Local;
 	float3		_DiffuseAlbedo;
@@ -35,7 +35,7 @@ struct PS_IN {
 };
 
 PS_IN	VS( VS_IN _In ) {
-
+	
 	PS_IN	Out;
 
 	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );

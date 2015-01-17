@@ -2,7 +2,7 @@
 #include "AreaLight.hlsl"
 #include "ParaboloidShadowMap.hlsl"
 
-cbuffer CB_Object : register(b3) {
+cbuffer CB_Object : register(b4) {
 	float4x4	_Local2World;
 };
 
@@ -172,7 +172,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	StainedGlass *= _AreaLightIntensity;
 
 // Debug shadow map
-StainedGlass = 1.0 * _TexShadowMap.Sample( LinearClamp, _In.UV );
+//StainedGlass = 1.0 * _TexShadowMap.Sample( LinearClamp, _In.UV );
 // StainedGlass = float4( _TexShadowMap.SampleLevel( LinearClamp, _In.UV, 0.0 ).x - _TexShadowSmoothie.Sample( LinearClamp, _In.UV ), 0, 0 ).y;
 //StainedGlass = float4( _TexShadowSmoothie.Sample( LinearClamp, _In.UV ), 0, 0 ).x;
 //StainedGlass = 20.0 * float4( _TexShadowSmoothie.Sample( LinearClamp, _In.UV ), 0, 0 ).y;

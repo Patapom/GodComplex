@@ -56,9 +56,13 @@
 			this.label11 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlLightTargetZ = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label12 = new System.Windows.Forms.Label();
-			this.panelOutput = new AreaLightTest.PanelOutput(this.components);
 			this.floatTrackbarControlLightRoll = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label13 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlHardeningFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label14 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlHardeningFactor2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label15 = new System.Windows.Forms.Label();
+			this.panelOutput = new AreaLightTest.PanelOutput(this.components);
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlProjectionDiffusion
@@ -345,13 +349,6 @@
 			this.label12.TabIndex = 3;
 			this.label12.Text = "Light Target Z";
 			// 
-			// panelOutput
-			// 
-			this.panelOutput.Location = new System.Drawing.Point(12, 12);
-			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size(1024, 640);
-			this.panelOutput.TabIndex = 0;
-			// 
 			// floatTrackbarControlLightRoll
 			// 
 			this.floatTrackbarControlLightRoll.Location = new System.Drawing.Point(1180, 435);
@@ -375,6 +372,59 @@
 			this.label13.TabIndex = 3;
 			this.label13.Text = "Light Roll";
 			// 
+			// floatTrackbarControlHardeningFactor
+			// 
+			this.floatTrackbarControlHardeningFactor.Location = new System.Drawing.Point(1180, 515);
+			this.floatTrackbarControlHardeningFactor.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlHardeningFactor.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlHardeningFactor.Name = "floatTrackbarControlHardeningFactor";
+			this.floatTrackbarControlHardeningFactor.RangeMax = 1000F;
+			this.floatTrackbarControlHardeningFactor.RangeMin = 0.001F;
+			this.floatTrackbarControlHardeningFactor.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlHardeningFactor.TabIndex = 1;
+			this.floatTrackbarControlHardeningFactor.Value = 80F;
+			this.floatTrackbarControlHardeningFactor.VisibleRangeMax = 100F;
+			this.floatTrackbarControlHardeningFactor.VisibleRangeMin = 0.001F;
+			// 
+			// label14
+			// 
+			this.label14.AutoSize = true;
+			this.label14.Location = new System.Drawing.Point(1059, 522);
+			this.label14.Name = "label14";
+			this.label14.Size = new System.Drawing.Size(89, 13);
+			this.label14.TabIndex = 3;
+			this.label14.Text = "Hardening Factor";
+			// 
+			// floatTrackbarControlHardeningFactor2
+			// 
+			this.floatTrackbarControlHardeningFactor2.Location = new System.Drawing.Point(1180, 541);
+			this.floatTrackbarControlHardeningFactor2.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlHardeningFactor2.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlHardeningFactor2.Name = "floatTrackbarControlHardeningFactor2";
+			this.floatTrackbarControlHardeningFactor2.RangeMax = 1000F;
+			this.floatTrackbarControlHardeningFactor2.RangeMin = 0.001F;
+			this.floatTrackbarControlHardeningFactor2.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlHardeningFactor2.TabIndex = 1;
+			this.floatTrackbarControlHardeningFactor2.Value = 20F;
+			this.floatTrackbarControlHardeningFactor2.VisibleRangeMax = 100F;
+			this.floatTrackbarControlHardeningFactor2.VisibleRangeMin = 0.001F;
+			// 
+			// label15
+			// 
+			this.label15.AutoSize = true;
+			this.label15.Location = new System.Drawing.Point(1059, 548);
+			this.label15.Name = "label15";
+			this.label15.Size = new System.Drawing.Size(98, 13);
+			this.label15.TabIndex = 3;
+			this.label15.Text = "Hardening Factor 2";
+			// 
+			// panelOutput
+			// 
+			this.panelOutput.Location = new System.Drawing.Point(12, 12);
+			this.panelOutput.Name = "panelOutput";
+			this.panelOutput.Size = new System.Drawing.Size(1024, 640);
+			this.panelOutput.TabIndex = 0;
+			// 
 			// AreaLightForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -388,6 +438,8 @@
 			this.Controls.Add(this.label11);
 			this.Controls.Add(this.label10);
 			this.Controls.Add(this.label7);
+			this.Controls.Add(this.label15);
+			this.Controls.Add(this.label14);
 			this.Controls.Add(this.label4);
 			this.Controls.Add(this.label5);
 			this.Controls.Add(this.label3);
@@ -402,6 +454,8 @@
 			this.Controls.Add(this.floatTrackbarControlLightTargetY);
 			this.Controls.Add(this.floatTrackbarControlLightTargetX);
 			this.Controls.Add(this.floatTrackbarControlLightPosX);
+			this.Controls.Add(this.floatTrackbarControlHardeningFactor2);
+			this.Controls.Add(this.floatTrackbarControlHardeningFactor);
 			this.Controls.Add(this.floatTrackbarControlGloss);
 			this.Controls.Add(this.floatTrackbarControlLightIntensity);
 			this.Controls.Add(this.floatTrackbarControlProjectionPhi);
@@ -448,6 +502,10 @@
 		private System.Windows.Forms.Label label12;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLightRoll;
 		private System.Windows.Forms.Label label13;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlHardeningFactor;
+		private System.Windows.Forms.Label label14;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlHardeningFactor2;
+		private System.Windows.Forms.Label label15;
 	}
 }
 
