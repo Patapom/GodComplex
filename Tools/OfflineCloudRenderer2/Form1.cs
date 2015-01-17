@@ -444,7 +444,7 @@ namespace OfflineCloudRenderer2
 			m_CB_Render.UpdateData();
 
 			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 
 			m_Tex_PhotonLayers_Flux.SetPS( 0 );
 			m_Tex_PhotonLayers_Direction.SetPS( 1 );
@@ -456,7 +456,7 @@ namespace OfflineCloudRenderer2
 			m_Prim_Quad.RenderInstanced( m_PS_RenderLayer, instancesCount );
 
 			// Render the world cube
- 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
+ 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 			m_PS_RenderWorldCube.Use();
 			m_Prim_Cube.Render( m_PS_RenderWorldCube );
 

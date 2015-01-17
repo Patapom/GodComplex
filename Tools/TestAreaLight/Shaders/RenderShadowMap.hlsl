@@ -1,6 +1,6 @@
 #include "Global.hlsl"
 #include "AreaLight.hlsl"
-//#include "ParaboloidShadowMap.hlsl"
+#include "ParaboloidShadowMap.hlsl"
 
 cbuffer CB_Object : register(b3) {
 	float4x4	_Local2World;
@@ -33,8 +33,13 @@ PS_IN	VS( VS_IN _In ) {
 
 	float2	projPosition = lsDirection.xy / (1.0 + lsDirection.z);
 
-//	float	Z = Distance / SHADOW_ZFAR;
-	float	Z = Distance / (sqrt(2.0) * 100.0);
+	float	Z = saturate( Distance / SHADOW_ZFAR );
+
+
+// Exponential Z
+Z = exp( -EXP_CONSTANT * Z );
+//Z = exp( EXP_CONSTANT * (Z-1.0) );
+
 
 	Out.__Position = float4( projPosition, Z, 1.0 );
 

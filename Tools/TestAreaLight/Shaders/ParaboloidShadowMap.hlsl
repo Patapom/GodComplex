@@ -2,10 +2,12 @@
 static const float	SHADOW_ZFAR = 100.0				// Should be camera Z far
 								* sqrt(2.0);
 
+static const float	EXP_CONSTANT = 80.0;
 
 Texture2D< float >	_TexShadowMap : register(t2);
 Texture2D< float2 >	_TexShadowSmoothie : register(t3);
 
+#if 0
 float	ComputeShadow( float3 _wsPosition, float3 _wsNormal, out float4 _Debug ) {
 
 	// Transform into area light space
@@ -36,9 +38,14 @@ _Debug = saturate( dot( -lsDeltaPos / ReceiverDistance, _wsNormal ) ) *  step( R
 	float2	Smoothie = _TexShadowSmoothie.SampleLevel( LinearClamp, UV, 0.0 );
 
 	float	ExpandedBlockerDistance = SHADOW_ZFAR * Smoothie.y;
+	
+//Shadow = step( ReceiverDistance, ExpandedBlockerDistance );	// 1 if we're in front of the blocker
+
+
 //	float	Sharpness = 1.0 - saturate( ReceiverDistance / ExpandedBlockerDistance );
-	float	Sharpness = saturate( ExpandedBlockerDistance / ReceiverDistance );
+	float	Sharpness = pow( saturate( ExpandedBlockerDistance / ReceiverDistance ), 4.0 );
 //			Smoothie.x = saturate( Smoothie.x / (1.0 - Sharpness) );
+			Smoothie.x = lerp( Smoothie.x, 1.0, Sharpness );
 
 //Smoothie.x = 1;
 _Debug = Smoothie.x;
@@ -46,3 +53,34 @@ _Debug = Smoothie.x;
 
 	return saturate( Smoothie.x * Shadow );//+ dot( -lsDeltaPos / ReceiverDistance, _wsNormal ) );
 }
+#else
+// Exponential shadow mapping
+float	ComputeShadow( float3 _wsPosition, float3 _wsNormal, out float4 _Debug ) {
+
+	// Transform into area light space
+	float3	lsDeltaPos = _wsPosition - _AreaLightT;
+	float3	lsPosition = float3(	dot( lsDeltaPos, _AreaLightX ),
+									dot( lsDeltaPos, _AreaLightY ),
+									dot( lsDeltaPos, _AreaLightZ ) );
+
+	// Apply paraboloid projection
+	float	ReceiverDistance = length( lsPosition );
+	float3	lsDirection = lsPosition / ReceiverDistance;
+
+	float2	projPosition = lsDirection.xy / (1.0 + lsDirection.z);
+
+	// Sample exp( -c.z )
+	float2	UV = float2( 0.5 * (1.0 + projPosition.x), 0.5 * (1.0 - projPosition.y) );
+	float	Exp_BlockerDistance = _TexShadowMap.SampleLevel( LinearClamp, UV, 0.0 );		// exp( -EXP_CONSTANT * Distance/SHADOW_ZFAR )
+//	float	Exp_BlockerDistance = _TexShadowMap.SampleLevel( LinearClamp, UV, 0.0 );		// exp( EXP_CONSTANT * (Distance/SHADOW_ZFAR - 1) )
+
+_Debug = 0;
+
+	// Compute sigmoïd
+	float	Exp_ReceiverDistance = exp( EXP_CONSTANT * ReceiverDistance/SHADOW_ZFAR );
+//	float	Exp_ReceiverDistance = exp( -EXP_CONSTANT * (ReceiverDistance/SHADOW_ZFAR - 1.0) );
+	float	Shadow = 1.0 / (1.0 + Exp_ReceiverDistance * Exp_BlockerDistance);
+//	float	Shadow = 1.0 - saturate( Exp_ReceiverDistance * Exp_BlockerDistance );
+	return Shadow;
+}
+#endif

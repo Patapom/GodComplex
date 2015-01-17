@@ -61,9 +61,10 @@ void	RendererManaged::Device::SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCI
 	switch ( _DS )
 	{
 	case DEPTHSTENCIL_STATE::NOCHANGE: break;
-	case DEPTHSTENCIL_STATE::DISABLED:						pDS = m_pDevice->m_pDS_Disabled; break;
-	case DEPTHSTENCIL_STATE::READ_DEPTH_LESS_EQUAL:			pDS = m_pDevice->m_pDS_ReadLessEqual; break;
-	case DEPTHSTENCIL_STATE::READ_WRITE_DEPTH_LESS_EQUAL:	pDS = m_pDevice->m_pDS_ReadWriteLess; break;
+	case DEPTHSTENCIL_STATE::DISABLED:					pDS = m_pDevice->m_pDS_Disabled; break;
+	case DEPTHSTENCIL_STATE::READ_DEPTH_LESS_EQUAL:		pDS = m_pDevice->m_pDS_ReadLessEqual; break;
+	case DEPTHSTENCIL_STATE::READ_WRITE_DEPTH_LESS:		pDS = m_pDevice->m_pDS_ReadWriteLess; break;
+	case DEPTHSTENCIL_STATE::READ_WRITE_DEPTH_GREATER:	pDS = m_pDevice->m_pDS_ReadWriteGreater; break;
 	default: throw gcnew Exception( "Unsupported depth stencil state!" );
 	}
 

@@ -72,12 +72,12 @@ float2	PS_DistanceFieldV( VS_IN _In ) : SV_TARGET0 {
 	float3	dUV = float3( 1.0.xx / 512.0, 0.0 );
 	float2	UV = _In.__Position.xy * dUV.xy;
 
-//return _TexShadowDistance.SampleLevel( PointClamp, UV, 0.0 ).x;
+// return _TexShadowDistance.SampleLevel( PointClamp, UV, 0.0 );
 
 	const float	eps = 1e-3;
 
 	// Check top and bottom for an edge
-	float2	Distance = float2( 32.0*32.0, 1.0 );
+	float2	sqDistance = float2( 32.0*32.0, 1.0 );
 	float2	UVt = UV;
 	float2	UVb = UV;
 	for ( uint i=0; i < 32; i++ ) {
@@ -87,20 +87,20 @@ float2	PS_DistanceFieldV( VS_IN _In ) : SV_TARGET0 {
 		float2	Dt = _TexShadowDistance.SampleLevel( PointClamp, UVt, 0.0 );
 		float2	Db = _TexShadowDistance.SampleLevel( PointClamp, UVb, 0.0 );
 
-// 		float	SDt = i*i + Dt*Dt;
-// 		float	SDb = i*i + Db*Db;
-// 		Distance = min( Distance, SDt );
-// 		Distance = min( Distance, SDb );
+// 		float	sqDt = i*i + Dt*Dt;
+// 		float	sqDB = i*i + Db*Db;
+// 		sqDistance = min( sqDistance, sqDt );
+// 		sqDistance = min( sqDistance, sqDB );
 
-		float	SDt = i*i + Dt.x*Dt.x;
-		float	SDb = i*i + Db.x*Db.x;
-		if ( SDt < Distance.x && Dt.y <= Distance.y+eps ) {
-			Distance = float2( SDt, Dt.y );
+		float	sqDt = i*i + Dt.x*Dt.x;
+		float	sqDB = i*i + Db.x*Db.x;
+		if ( sqDt < sqDistance.x && Dt.y <= sqDistance.y+eps ) {
+			sqDistance = float2( sqDt, Dt.y );
 		}
-		if ( SDb < Distance.x && Db.y <= Distance.y+eps ) {
-			Distance = float2( SDb, Db.y );
+		if ( sqDB < sqDistance.x && Db.y <= sqDistance.y+eps ) {
+			sqDistance = float2( sqDB, Db.y );
 		}
 	}
 
-	return float2( lerp( sqrt( Distance.x ) / MAX_DISTANCE, 1.0, step( Distance.x, -10.0 ) ), Distance.y );
+	return float2( lerp( sqrt( sqDistance.x ) / MAX_DISTANCE, 1.0, step( sqDistance.x, -10.0 ) ), sqDistance.y );
 }

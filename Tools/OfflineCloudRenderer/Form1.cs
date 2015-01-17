@@ -391,7 +391,7 @@ namespace OfflineCloudRenderer
 // 			m_Device.RenderFullscreenQuad( m_PS );
 
 			// Render the photons cube
- 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
+ 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 			m_Device.Clear( m_Device.DefaultTarget, 0.5f * new float4( Color.SkyBlue, 1 ) );
 			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1, 0, true, false );
 

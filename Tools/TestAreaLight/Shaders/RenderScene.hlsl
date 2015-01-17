@@ -100,7 +100,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 // float3	Pipo = normalize( lerp( wsReflectedView, wsNormal, Roughness ) );
 // float	k = lerp( 0.4, 0.001, _Gloss );
 // 		Ls = k * ComputeWard( -wsView, wsNormal, Pipo, Roughness ) * Irradiance * SolidAngle;
-
+		
 //Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * SolidAngle;
 //Ls = SolidAngle;
 //return 1 * float4( Irradiance, 0 );
@@ -116,8 +116,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;
 	
-	float	Shadow = 1;// ComputeShadow( wsPosition, wsNormal, Debug );
-	
+	float	Shadow = ComputeShadow( wsPosition, wsNormal, Debug );
+//Shadow = 1;
  //return Debug;
 
 	return float4( 0.05 + Shadow * _AreaLightIntensity * (FresnelDiffuse * Ld + FresnelSpecular * Ls), 1 );

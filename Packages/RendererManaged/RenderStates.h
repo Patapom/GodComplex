@@ -22,7 +22,8 @@ namespace RendererManaged {
 
 		DISABLED,
 		READ_DEPTH_LESS_EQUAL,
-		READ_WRITE_DEPTH_LESS_EQUAL,
+		READ_WRITE_DEPTH_LESS,
+		READ_WRITE_DEPTH_GREATER,
 	};
 
 	public enum class	BLEND_STATE

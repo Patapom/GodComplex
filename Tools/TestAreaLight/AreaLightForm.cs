@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define FILTER_EXP_SHADOW_MAP
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -65,9 +67,15 @@ namespace AreaLightTest
 		private ConstantBuffer<CB_Object>	m_CB_Object = null;
 
 		private Shader		m_Shader_RenderShadowMap = null;
+
+#if FILTER_EXP_SHADOW_MAP
+		private Shader		m_Shader_FilterShadowMapH = null;
+		private Shader		m_Shader_FilterShadowMapV = null;
+#else
 		private Shader		m_Shader_BuildSmoothie = null;
 		private Shader		m_Shader_BuildSmoothieDistanceFieldH = null;
 		private Shader		m_Shader_BuildSmoothieDistanceFieldV = null;
+#endif
 		private Shader		m_Shader_RenderAreaLight = null;
 		private Shader		m_Shader_RenderScene = null;
 
@@ -76,8 +84,12 @@ namespace AreaLightTest
 		private Texture2D	m_Tex_AreaLightSATFade = null;
 
 		private Texture2D	m_Tex_ShadowMap = null;
+#if FILTER_EXP_SHADOW_MAP
+		private Texture2D[]	m_Tex_ShadowMapFiltered = new Texture2D[2];
+#else
 		private Texture2D	m_Tex_ShadowSmoothie = null;
 		private Texture2D[]	m_Tex_ShadowSmoothiePou = new Texture2D[2];
+#endif
 
 		private Primitive	m_Prim_Quad = null;
 		private Primitive	m_Prim_Rectangle = null;
@@ -591,9 +603,14 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 
 			int	SHADOW_MAP_SIZE = 512;
 			m_Tex_ShadowMap = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, DEPTH_STENCIL_FORMAT.D32 );
+#if FILTER_EXP_SHADOW_MAP
+			m_Tex_ShadowMapFiltered[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R16_FLOAT, false, false, null );
+			m_Tex_ShadowMapFiltered[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R16_FLOAT, false, false, null );
+#else
 			m_Tex_ShadowSmoothie = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
 			m_Tex_ShadowSmoothiePou[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
 			m_Tex_ShadowSmoothiePou[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
+#endif
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
@@ -620,6 +637,19 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 				m_Shader_RenderShadowMap = null;
 			}
 
+#if FILTER_EXP_SHADOW_MAP
+			try
+			{
+				m_Shader_FilterShadowMapH = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/FilterShadowMap.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_FilterH", null );;
+				m_Shader_FilterShadowMapV = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/FilterShadowMap.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_FilterV", null );;
+			}
+			catch ( Exception _e )
+			{
+				MessageBox.Show( "Shader \"BuildSmoothie\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				m_Shader_FilterShadowMapH = null;
+				m_Shader_FilterShadowMapV = null;
+			}
+#else
 			try
 			{
 				m_Shader_BuildSmoothie = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/BuildSmoothie.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Edge", null );;
@@ -633,6 +663,7 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 				m_Shader_BuildSmoothieDistanceFieldH = null;
 				m_Shader_BuildSmoothieDistanceFieldV = null;
 			}
+#endif
 
 			try
 			{
@@ -663,11 +694,18 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 			if ( m_Shader_RenderShadowMap != null ) {
 				m_Shader_RenderShadowMap.Dispose();
 			}
+#if FILTER_EXP_SHADOW_MAP
+			if ( m_Shader_FilterShadowMapH != null ) {
+				m_Shader_FilterShadowMapH.Dispose();
+				m_Shader_FilterShadowMapV.Dispose();
+			}
+#else
 			if ( m_Shader_BuildSmoothie != null ) {
 				m_Shader_BuildSmoothie.Dispose();
 				m_Shader_BuildSmoothieDistanceFieldH.Dispose();
 				m_Shader_BuildSmoothieDistanceFieldV.Dispose();
 			}
+#endif
 			if ( m_Shader_RenderAreaLight != null ) {
 				m_Shader_RenderAreaLight.Dispose();
 			}
@@ -686,7 +724,14 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 			m_Prim_Cube.Dispose();
 
 			m_Tex_ShadowMap.Dispose();
+#if FILTER_EXP_SHADOW_MAP
+			m_Tex_ShadowMapFiltered[0].Dispose();
+			m_Tex_ShadowMapFiltered[1].Dispose();
+#else
 			m_Tex_ShadowSmoothie.Dispose();
+			m_Tex_ShadowSmoothiePou[0].Dispose();
+			m_Tex_ShadowSmoothiePou[1].Dispose();
+#endif
 			m_Tex_AreaLight.Dispose();
 			m_Tex_AreaLightSAT.Dispose();
 			m_Tex_AreaLightSATFade.Dispose();
@@ -744,24 +789,31 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 			m_CB_Object.m._Local2World.Scale( new float3( 0.5f, 0.5f, 0.5f ) );
 			m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
 			m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 0.8f, 0.5f );
-			m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.4f, 0.03f );
+			m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.93f );
  			m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
  			m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
 			m_CB_Object.UpdateData();
 
 			m_Prim_Sphere.Render( _Shader );
 
-			// Render the tiny cube
-			m_CB_Object.m._Local2World.MakeLookAt( new float3( 1.0f, 0.1f, 0.0f ), new float3( 1.0f, 0.1f, 1 ), float3.UnitY );
-			m_CB_Object.m._Local2World.Scale( new float3( 0.1f, 0.1f, 0.1f ) );
-			m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
-			m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 1, 1 );
-			m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.92f );
- 			m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
- 			m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
-			m_CB_Object.UpdateData();
+			// Render the tiny cubes
+			for ( int CubeIndex=0; CubeIndex < 4; CubeIndex++ ) {
 
-			m_Prim_Cube.Render( _Shader );
+				float	X = -1.0f + 2.0f * CubeIndex / 3;
+				float	Y = 0.1f + 1.0f * (float) Math.Abs( Math.Sin( m_CB_Main.m.iGlobalTime + CubeIndex ));
+
+//				m_CB_Object.m._Local2World.MakeLookAt( new float3( 1.0f, 0.1f, 0.0f ), new float3( 1.0f, 0.1f, 1 ), float3.UnitY );
+				m_CB_Object.m._Local2World.MakeLookAt( new float3( X, Y, 0.0f ), new float3( X, Y, 1 ), float3.UnitY );
+				m_CB_Object.m._Local2World.Scale( new float3( 0.1f, 0.1f, 0.1f ) );
+				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
+				m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 1, 1 );
+				m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.92f );
+ 				m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
+ 				m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
+				m_CB_Object.UpdateData();
+
+				m_Prim_Cube.Render( _Shader );
+			}
 		}
 
 		void Application_Idle( object sender, EventArgs e )
@@ -819,9 +871,11 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 				m_Tex_ShadowMap.RemoveFromLastAssignedSlots();
 
 				m_Device.SetRenderTargets( m_Tex_ShadowMap.Width, m_Tex_ShadowMap.Height, new View2D[0], m_Tex_ShadowMap );
-				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 1.0f, 0, true, false );
+//				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 1.0f, 0, true, false );
+				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 0.0f, 0, true, false );
 
-				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
+//				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
+				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_GREATER, BLEND_STATE.DISABLED );	// For exp shadow map, the Z order is reversed
 
 				RenderScene( m_Shader_RenderShadowMap );
 
@@ -829,6 +883,33 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 				m_Tex_ShadowMap.SetPS( 2 );
 			}
 
+#if FILTER_EXP_SHADOW_MAP
+			if ( m_Shader_FilterShadowMapH != null ) {
+//				m_Tex_ShadowMapFiltered[1].RemoveFromLastAssignedSlots();
+
+				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+
+				// Update diffusion size
+				float	KernelSize = Math.Max( 1.0f, 32.0f * floatTrackbarControlProjectionDiffusion.Value );
+				m_CB_Object.m._Local2World.SetRow( 0, new float4( KernelSize, 1.0f / m_Tex_ShadowMap.Width, 0, 0 ) );
+				m_CB_Object.UpdateData();
+
+				// Filter horizontally
+				m_Device.SetRenderTarget( m_Tex_ShadowMapFiltered[0], null );
+				m_Shader_FilterShadowMapH.Use();
+				m_Prim_Quad.Render( m_Shader_FilterShadowMapH );
+
+				// Filter vertically
+				m_Device.SetRenderTarget( m_Tex_ShadowMapFiltered[1], null );
+				m_Tex_ShadowMapFiltered[0].SetPS( 2 );
+
+				m_Shader_FilterShadowMapV.Use();
+				m_Prim_Quad.Render( m_Shader_FilterShadowMapV );
+
+				m_Device.RemoveRenderTargets();
+				m_Tex_ShadowMapFiltered[1].SetPS( 2 );
+			}
+#else
 			if ( m_Shader_BuildSmoothie != null && m_Shader_BuildSmoothie.Use() ) {
 				m_Tex_ShadowSmoothie.RemoveFromLastAssignedSlots();
 
@@ -858,7 +939,7 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 				m_Device.RemoveRenderTargets();
 				m_Tex_ShadowSmoothiePou[1].SetPS( 3 );
 			}
-
+#endif
 
 			// =========== Render scene ===========
 			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
@@ -871,7 +952,7 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 			m_Tex_AreaLight.SetPS( 4 );
 
 			// Render the area light itself
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 			if ( m_Shader_RenderAreaLight != null && m_Shader_RenderAreaLight.Use() ) {
 
 				m_CB_Object.m._Local2World = AreaLight2World;
