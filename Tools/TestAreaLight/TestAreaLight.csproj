@@ -87,6 +87,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Content Include="Shaders\Copy of AreaLight.hlsl" />
+    <Content Include="Shaders\AreaLightMip.hlsl" />
     <None Include="Shaders\RenderAreaLight.hlsl" />
   </ItemGroup>
   <ItemGroup>

@@ -6,9 +6,8 @@
 
 #include "Global.hlsl"
 #include "AreaLight.hlsl"
+//#include "AreaLightMip.hlsl"
 #include "ParaboloidShadowMap.hlsl"
-
-#define USE_SAT	1	// If not defined, will use mip mapping instead
 
 cbuffer CB_Object : register(b4) {
 	float4x4	_Local2World;
@@ -69,27 +68,19 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
  	// Compute diffuse lighting
  	float3	Ld = 0.0;
 	if ( ComputeSolidAngleDiffuse( wsPosition, wsNormal, UV0, UV1, SolidAngle, Debug ) ) {
-#if USE_SAT
-//		float3	Irradiance = SampleSAT( _TexAreaLightSAT, UV0, UV1 ).xyz;
-		float3	Irradiance = SampleSAT( _TexAreaLightSATFade, UV0, UV1 ).xyz;
-#else
-		float3	Irradiance = SampleMip( _TexAreaLight, UV0, UV1 ).xyz;
-#endif
-
-//return Debug;
+		float3	Irradiance = SampleAreaLight( UV0, UV1 ).xyz;
+//		float3	Irradiance = SampleAreaLight( _TexAreaLightSATFade, UV0, UV1 ).xyz;	// FADE?
 
 		Ld = RhoD / PI * Irradiance * SolidAngle;
+
+//return Debug;
 	}
 	
 	// Compute specular lighting
 	float3	Ls = 0.0;
  	float3	wsReflectedView = reflect( wsView, wsNormal );
   	if ( ComputeSolidAngleSpecular( wsPosition, wsNormal, wsReflectedView, _Gloss, UV0, UV1, SolidAngle, Debug ) ) {
-#if USE_SAT
-		float3	Irradiance = SampleSAT( _TexAreaLightSAT, UV0, UV1 ).xyz;
-#else
-		float3	Irradiance = SampleMip( _TexAreaLight, UV0, UV1 ).xyz;
-#endif
+		float3	Irradiance = SampleAreaLight( UV0, UV1 ).xyz;
 		
 //		float	Roughness = max( 0.005, 1.0 * (1.0 - _Gloss) );
 		float	Roughness = max( 0.01, 1.0 * (1.0 - _Gloss) );
