@@ -5,7 +5,7 @@
 
 
 #include "Global.hlsl"
-#include "AreaLight.hlsl"
+#include "AreaLight2.hlsl"
 #include "ParaboloidShadowMap.hlsl"
 
 #define USE_SAT	1	// If not defined, will use mip mapping instead
