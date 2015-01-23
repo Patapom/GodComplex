@@ -55,19 +55,52 @@ float	ComputeWard( float3 _wsView, float3 _wsNormal, float3 _wsLight, float _Rou
 }
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
+	float4	Debug = 0.0;
+
 	float3	wsPosition = _In.Position;
 	float3	wsNormal = normalize( _In.Normal );
 	float3	wsView = normalize( wsPosition - _Camera2World[3].xyz );
-	
+		
+//	float	Roughness = max( 0.005, 1.0 * (1.0 - _Gloss) );
+	float	Roughness = max( 0.01, 1.0 * (1.0 - _Gloss) );
+
 	const float3	RhoD = _DiffuseAlbedo;
 	const float3	F0 = lerp( 0.04, _SpecularTint, _Metal );
+	float3	IOR = Fresnel_IORFromF0( F0 );
 
+	float	Shadow = ComputeShadow( wsPosition, wsNormal, Debug );
+
+
+#if 1
+	// VERSION 2
+	SurfaceContext	surf;
+	surf.wsPosition = wsPosition;
+	surf.wsNormal = wsNormal;
+	surf.wsView = -wsView;	// In BSP, view points away from the surface 
+	surf.diffuseAlbedo = RhoD / PI;
+	surf.roughness = Roughness;
+	surf.IOR = IOR;
+	surf.fresnelStrength = 1.0;
+
+	float3	RadianceDiffuse, RadianceSpecular;
+	ComputeAreaLightLighting( surf, Shadow, RadianceDiffuse, RadianceSpecular );
+
+// return float4( RadianceDiffuse, 0 );
+return float4( RadianceSpecular, 0 );
+
+	return float4( 0.1 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular, 1 );
+
+#else
+	// VERSION 1
+	//
  	float2	UV0, UV1;
  	float	SolidAngle;
  	float4	Debug;
-	
- 	// Compute diffuse lighting
- 	float3	Ld = 0.0;
+
+	float3	wsReflectedView = reflect( wsView, wsNormal );
+
+	// Compute diffuse lighting
+	float3	Ld = 0.0;
 	if ( ComputeSolidAngleDiffuse( wsPosition, wsNormal, UV0, UV1, SolidAngle, Debug ) ) {
 #if USE_SAT
 //		float3	Irradiance = SampleSAT( _TexAreaLightSAT, UV0, UV1 ).xyz;
@@ -83,16 +116,12 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	
 	// Compute specular lighting
 	float3	Ls = 0.0;
- 	float3	wsReflectedView = reflect( wsView, wsNormal );
   	if ( ComputeSolidAngleSpecular( wsPosition, wsNormal, wsReflectedView, _Gloss, UV0, UV1, SolidAngle, Debug ) ) {
 #if USE_SAT
 		float3	Irradiance = SampleSAT( _TexAreaLightSAT, UV0, UV1 ).xyz;
 #else
 		float3	Irradiance = SampleMip( _TexAreaLight, UV0, UV1 ).xyz;
 #endif
-		
-//		float	Roughness = max( 0.005, 1.0 * (1.0 - _Gloss) );
-		float	Roughness = max( 0.01, 1.0 * (1.0 - _Gloss) );
 		
 //		Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * Irradiance * SolidAngle;
 		Ls = RhoD / PI * Irradiance * SolidAngle;
@@ -109,17 +138,16 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	
 	// Compute Fresnel
 	float	VdotN = saturate( -dot( wsView, wsNormal ) );
-	float3	IOR = Fresnel_IORFromF0( F0 );
 	float3	FresnelSpecular = FresnelAccurate( IOR, VdotN );
 	
 //FresnelSpecular = _Metal;
 	
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;
 	
-	float	Shadow = ComputeShadow( wsPosition, wsNormal, Debug );
 //Shadow = 1;
  //return Debug;
 
 	return float4( 0.05 + Shadow * _AreaLightIntensity * (FresnelDiffuse * Ld + FresnelSpecular * Ls), 1 );
 	return float4( 0.05 + Ld + Ls, 1 );
+#endif
 }

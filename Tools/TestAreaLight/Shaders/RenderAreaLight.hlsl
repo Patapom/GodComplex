@@ -159,6 +159,9 @@ _Debug = float4( 0.5 * (1.0 + P.xy), 0, 0 );
 }
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
+
+return float4( _TexBRDFIntegral.Sample( LinearClamp, _In.UV ), 0, 1 );
+
 // 	float4	StainedGlass = _TexAreaLight.Sample( LinearClamp, _In.UV );
 // 	float4	StainedGlass = 0.0001 * _TexAreaLightSAT.Sample( LinearClamp, _In.UV );
 	float4	StainedGlass = SampleSATSinglePixel( _In.UV );

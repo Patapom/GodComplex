@@ -10,12 +10,12 @@ cbuffer CB_Light : register(b2) {
 	float		_AreaLightIntensity;
 	float4		_AreaLightTexDimensions;
 	float3		_ProjectionDirectionDiff;	// Closer to portal when diffusion increases
-	float3		_ProjectionDirectionSpec;	// Closer to portal when diffusion decreases
 };
 
 Texture2D< float4 >	_TexAreaLightSAT : register(t0);
 Texture2D< float4 >	_TexAreaLightSATFade : register(t1);
 Texture2D< float4 >	_TexAreaLight : register(t4);
+Texture2D< float2 >	_TexBRDFIntegral : register(t5);		// Y should be multiplied by 0.00014996325546887346
 
 static const float4	AREA_LIGHT_TEX_DIMENSIONS = float4( 256.0, 256.0, 1.0/256.0, 1.0/256.0 );
 
@@ -80,24 +80,26 @@ static const float4	AREA_LIGHT_TEX_DIMENSIONS = float4( 256.0, 256.0, 1.0/256.0,
 // Samples the area light given 2 UV coordinates
 float4	SampleAreaLight( float2 _UV0, float2 _UV1, float _SliceIndex ) {
 
+	// Compute the 
+
 return 1.0;
 
-	float4	C00 = $texAreaLightSATs.SampleLevel( $bilinearClamp, float3( _UV0, _SliceIndex ), 0.0 );
-	float4	C01 = $texAreaLightSATs.SampleLevel( $bilinearClamp, float3( _UV1.x, _UV0.y, _SliceIndex ), 0.0 );
-	float4	C10 = $texAreaLightSATs.SampleLevel( $bilinearClamp, float3( _UV0.x, _UV1.y, _SliceIndex ), 0.0 );
-	float4	C11 = $texAreaLightSATs.SampleLevel( $bilinearClamp, float3( _UV1, _SliceIndex ), 0.0 );
-	float4	C = C11 - C10 - C01 + C00;
-
-	// Compute normalization factor
-	float2	DeltaUV = _UV1 - _UV0;
-
-	float	PixelsCount = (DeltaUV.x * AREA_LIGHT_TEX_DIMENSIONS.x) * (DeltaUV.y * AREA_LIGHT_TEX_DIMENSIONS.y);
-
-// 	uint2	TexSize;
-// 	_TexAreaLightSAT.GetDimensions( TexSize.x, TexSize.y );
-// 	float	PixelsCount = (DeltaUV.x * TexSize.x) * (DeltaUV.y * TexSize.y);
-
-	return C * (PixelsCount > 1e-3 ? 1.0 / PixelsCount : 0.0);
+// 	float4	C00 = $texAreaLightSATs.SampleLevel( $bilinearClamp, float3( _UV0, _SliceIndex ), 0.0 );
+// 	float4	C01 = $texAreaLightSATs.SampleLevel( $bilinearClamp, float3( _UV1.x, _UV0.y, _SliceIndex ), 0.0 );
+// 	float4	C10 = $texAreaLightSATs.SampleLevel( $bilinearClamp, float3( _UV0.x, _UV1.y, _SliceIndex ), 0.0 );
+// 	float4	C11 = $texAreaLightSATs.SampleLevel( $bilinearClamp, float3( _UV1, _SliceIndex ), 0.0 );
+// 	float4	C = C11 - C10 - C01 + C00;
+// 
+// 	// Compute normalization factor
+// 	float2	DeltaUV = _UV1 - _UV0;
+// 
+// 	float	PixelsCount = (DeltaUV.x * AREA_LIGHT_TEX_DIMENSIONS.x) * (DeltaUV.y * AREA_LIGHT_TEX_DIMENSIONS.y);
+// 
+// // 	uint2	TexSize;
+// // 	_TexAreaLightSAT.GetDimensions( TexSize.x, TexSize.y );
+// // 	float	PixelsCount = (DeltaUV.x * TexSize.x) * (DeltaUV.y * TexSize.y);
+// 
+// 	return C * (PixelsCount > 1e-3 ? 1.0 / PixelsCount : 0.0);
 }
 
 // Determinant of a 3x3 row-major matrix
@@ -316,7 +318,7 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 
 	// Compute the gloss cone's aperture angle
 	float	Roughness = 1.0 - _Gloss;
-	float	HalfAngle = 0.0003474660443456835 + Roughness * (1.3331290497744692 - Roughness * 0.5040552688878546);	// cf. HDRCubeMapConvolver to see the link between roughness and aperture angle
+	float	HalfAngle = 0.0003474660443456835 + Roughness * (1.3331290497744692 - Roughness * 0.5040552688878546);	// cf. IBL.mrpr to see the link between roughness and aperture angle
 	float	SinHalfAngle, CosHalfAngle;
 	sincos( HalfAngle, SinHalfAngle, CosHalfAngle );
 	float	TanHalfAngle = SinHalfAngle / CosHalfAngle;
@@ -392,40 +394,8 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 	/////////////////////////////////
 	// Build the result solid angle
 //			return lerp( _SolidAngleDiffuse, ProjectedSolidAngleSpecular, _Gloss );	// In theory
-	return _SolidAngleDiffuse;												// In practice...
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////
-// AREA LIGHT SHADOWING
-///////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-void ComputeAreaLightShadow( inout LightContext _Light, SurfaceContext _Surface, const uint _quality ) {
-	_Light.m_shadow = 1.0;
-
-// 			uint	shadowIndex = _Light.m_ShadowSetup;
-// 			if ( shadowIndex != 0xFFFFFFFF ) {
-// // 				if ( _lightType == LIGHT_TYPE_POINT || _lightType == LIGHT_TYPE_HALF_POINT ) {
-// // 					shadowIndex += OmniShadowMapSliceOffset( m_wsToLight );
-// // 					_Light.m_shadow = SampleOmniShadowMap( m_ShadowSetup, m_wsPosition, m_wsNormal, m_wsToLight, _quality );
-// // 				}
-// // 				else {
-// // 					_Light.m_shadow = SampleSpotShadowMap( m_ShadowSetup, m_wsPosition, m_wsNormal, m_SpotDir, _quality );
-// // 				}
-// // 
-// // 				$(tlf/shadow_t) shadowMapInfo = $(tlf/shadows)[ shadowIndex ];
-// // 				m_ShadowSlice = SHADOW_SLICE_INDEX(shadowMapInfo.mInfo);
-// // 				m_WorldToShadowMat = shadowMapInfo.mWorldToShadowMat;
-// // 				m_ShadowToWorldMat = shadowMapInfo.mShadowToWorldMat;
-// // 				m_castsShadow = true;
-// 			}
-// 
-// // 			#if $useSelfShadowedBumpMap && !TRANSLUCENCY_2SIDED
-// // 				// Compute directional attenuation due to self-shadowing
-// // 				_Light.m_shadow *= ComputeDirectionalOcclusion( m_wsToLight, _Surface.AO.yzw, _Surface.AO.x, _Surface.wsHL2Basis_R, _Surface.wsHL2Basis_G, _Surface.wsHL2Basis_B, _Surface.wsHL2Basis_N );
-// // 			#endif
+//	return _SolidAngleDiffuse;												// In practice...
+	return ProjectedSolidAngleSpecular;
 }
 
 
@@ -435,33 +405,44 @@ void ComputeAreaLightShadow( inout LightContext _Light, SurfaceContext _Surface,
 ///////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-void	ComputeAreaLightLighting( in SurfaceContext _Surface, in LightContext _Light, out float3 _RadianceDiffuse, out float3 _RadianceSpecular, const uint _quality ) {
+struct SurfaceContext {
+	float3	wsPosition;
+	float3	wsNormal;
+	float3	wsView;
+	float3	diffuseAlbedo;
+	float	roughness;
+	float3	IOR;
+	float	fresnelStrength;
+};
+
+void	ComputeAreaLightLighting( in SurfaceContext _Surface, float _Shadow, out float3 _RadianceDiffuse, out float3 _RadianceSpecular ) {
 
 	_RadianceDiffuse = _RadianceSpecular = 0.0;
 
 	// 1] =========== Reconstruct area light information from fragmented data from the light context ===========
 	float3	wsPosition = _Surface.wsPosition;
 
-	float3	wsLightPos = _Light.m_wsLightPos;
-	float3	wsLightZ = _Light.m_SpotDir;
+	float3	wsLightPos = _AreaLightT;
+	float3	wsLightZ = _AreaLightZ;
 	float3	wsCenter2Position = wsPosition - wsLightPos;
-	if ( dot( wsCenter2Position, wsLightZ ) <= 0.0 ) {
+	if ( dot( wsCenter2Position, wsLightZ ) <= 0.0 || _Shadow < 1e-6 ) {
 		return;	// We're standing behind the area light...
 	}
 
-	float3	wsLightX = _Light.m_AreaLightX;
+	float3	wsLightX = _AreaLightX;
 	float3	wsLightY = cross( wsLightZ, wsLightX );	// No need to normalize
 
-	float	SizeX = _Light.m_Decay;
-	float	SizeY = _Light.m_originOffset;
+	float	SizeX = _AreaLightScaleX;
+	float	SizeY = _AreaLightScaleY;
 
-	float	Diffusion = -_Light.m_ScatterValue;		// Stored as negative on CPU side to avoid scattering computation condition (if m_ScatterValue > 0)
+	float	Diffusion = _AreaLightDiffusion;
 
-	float3	ProjectionDirection = _Light.m_SpotParms;
+	float3	ProjectionDirection = _ProjectionDirectionDiff;
 
 	// 2] =========== Transform position & normal into local space ===========
 	float3	wsNormal = _Surface.wsNormal;
 	float3	wsView = _Surface.wsView;
+	float3	wsReflectedView = reflect( -wsView, wsNormal );			// There is a negative sign because we need the view pointing toward the surface here!
 
 	float3	lsPosition = float3(dot( wsCenter2Position, wsLightX ),	// Transform world position into local area light space
 								dot( wsCenter2Position, wsLightY ),
@@ -471,9 +452,9 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, in LightContext _Ligh
 								dot( wsNormal, wsLightY ),
 								dot( wsNormal, wsLightZ ) );
 
-	float3	lsView = -float3(	dot( wsView, wsLightX ),			// Transform world direction into local area light space
-								dot( wsView, wsLightY ),			// (There is a negative sign because need the view pointing toward the surface here!)
-								dot( wsView, wsLightZ ) );
+	float3	lsView = float3(	dot( wsReflectedView, wsLightX ),	// Transform reflected view direction into local area light space
+								dot( wsReflectedView, wsLightY ),
+								dot( wsReflectedView, wsLightZ ) );
 
 	// Account for scaling
 	float2	InvScale = 1.0 / float2( SizeX, SizeY );
@@ -487,8 +468,10 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, in LightContext _Ligh
 	//			|        |        |
 	//			|        |        |
 	//			|        |        |
+	//			|        |        |
 	//			|        o -------> X
 	//			|       Z         |
+	//			|                 |
 	//			|                 |
 	//			|                 |
 	//			o-----------------o
@@ -512,14 +495,18 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, in LightContext _Ligh
 	float	SolidAngle_specular = ComputeSolidAngleSpecular( lsPosition, lsNormal, lsView, 1.0 - _Surface.roughness, ClippedUVs, SolidAngle_diffuse, UV0_specular, UV1_specular );
 
 	// 5] =========== Compute the integration ===========
-	float	AreaLightSliceIndex = _Light.m_AreaLightSlice;
-	float3	ShadowedLightColor = _Light.m_shadow * _Light.m_color;
+//	float	AreaLightSliceIndex = _Light.m_AreaLightSlice;
+//	float3	ShadowedLightColor = _Light.m_shadow * _Light.m_color;
+	float	AreaLightSliceIndex = 0.0;
+	float3	ShadowedLightColor = _Shadow * _AreaLightIntensity;
 
 		// 5.1] ----- Compute Fresnel -----
-	float	LdotN = saturate( dot( wsView, wsNormal ) );
 	float	VdotN = saturate( dot( wsView, wsNormal ) );
 	float3	FresnelSpecular = FresnelAccurate( _Surface.IOR, VdotN, _Surface.fresnelStrength );
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;	// Simplify a lot! Don't use Disney's Fresnel as it needs a light direction and we can't provide one here...
+
+// _RadianceDiffuse = FresnelDiffuse;
+// return;
 
 		// 5.2] ----- Diffuse -----
 	float4	IntegralLight_diffuse = SampleAreaLight( UV0_diffuse, UV1_diffuse, AreaLightSliceIndex );

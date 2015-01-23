@@ -48,7 +48,6 @@ namespace AreaLightTest
 			public float4		_AreaLightTexDimensions;	// XY=Texture size, ZW=1/XY
 			public float3		_ProjectionDirectionDiff;	// Closer to portal when diffusion increases
 			public float		__PAD00;
-			public float3		_ProjectionDirectionSpec;	// Closer to portal when diffusion decreases
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -101,6 +100,8 @@ namespace AreaLightTest
 		private Texture2D[]	m_Tex_ShadowSmoothiePou = new Texture2D[2];
 #endif
 
+		private Texture2D	m_Tex_BRDFIntegral = null;
+
 		private Primitive	m_Prim_Quad = null;
 		private Primitive	m_Prim_Rectangle = null;
 		private Primitive	m_Prim_Sphere = null;
@@ -125,9 +126,11 @@ namespace AreaLightTest
 // Build SATs
 // ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
 // ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
-ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
 // ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
 // ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
+
+//ComputeBRDFIntegral( new System.IO.FileInfo( "BRDF0_64x64.bin" ), new System.IO.FileInfo( "BRDF1_64x64.bin" ), 64 );
 
 			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
 
@@ -443,6 +446,418 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 
 		#endregion
 
+		#region BRDF Integration
+
+		void	ComputeBRDFIntegral( System.IO.FileInfo _TableFileName0, System.IO.FileInfo _TableFileName1, int _TableSize ) {
+
+			const int		SAMPLES_COUNT_THETA = 64;
+			const int		SAMPLES_COUNT_PHI = 2*SAMPLES_COUNT_THETA;
+
+			const double	dTheta = 0.5 * Math.PI / SAMPLES_COUNT_THETA;
+			const double	dPhi = Math.PI / SAMPLES_COUNT_PHI;
+
+			double[,]		Table0 = new double[_TableSize,_TableSize];
+			double[,]		Table1 = new double[_TableSize,_TableSize];
+
+			float3	View = new float3();
+			float3	Light = new float3();
+			for ( int Y=0; Y < _TableSize; Y++ ) {
+				float	Roughness = Math.Max( 0.01f, (float) Y / (_TableSize-1) );
+				float	r2 = Roughness * Roughness;
+				float	inv_r2 = 1.0f / r2;
+
+				for ( int X=0; X < _TableSize; X++ ) {
+					float	CosThetaView = (float) (1+X) / _TableSize;
+					float	SinThetaView = (float) Math.Sqrt( 1.0f - CosThetaView*CosThetaView );
+					View.x = SinThetaView;
+					View.y = CosThetaView;
+					View.z = 0.0f;
+
+					double	SumA = 0.0;
+					double	SumB = 0.0;
+					for ( int Theta=0; Theta < SAMPLES_COUNT_THETA; Theta++ ) {
+						double	fTheta = 0.5 * Math.PI * (0.5 + Theta) / SAMPLES_COUNT_THETA;
+						double	CosThetaLight = Math.Cos( fTheta );
+						double	SinThetaLight = Math.Sin( fTheta );
+
+						// Compute solid angle
+						double	SolidAngle = SinThetaLight * dTheta * dPhi;
+						double	ProjectedSolidAngle = CosThetaLight * SolidAngle;
+
+						for ( int Phi=0; Phi < SAMPLES_COUNT_PHI; Phi++ ) {
+							double	fPhi = Math.PI * Phi / SAMPLES_COUNT_PHI;
+							double	CosPhiLight = Math.Cos( fPhi );
+							double	SinPhiLight = Math.Sin( fPhi );
+
+							Light.x = (float) (SinPhiLight * SinThetaLight);
+							Light.y = (float) CosThetaLight;
+							Light.z = (float) (CosPhiLight * SinThetaLight);
+
+							// Compute normal distribution function
+							float3	H = View + Light;
+ 							float3	H_norm = H.Normalized;
+							float	HoH = H.Dot( H );
+							float	HoN = H.y;
+
+							float	HoN2 = HoN * HoN;
+							float	HoN4 = HoN2 * HoN2;
+
+							double	BRDF = Math.Exp( -(H.x*H.x + H.z*H.z) / (r2 * HoN2) ) * HoH / HoN4;
+
+
+// Try with Unreal's GGX & Smith G term to see if we get the same thing
+// double	alpha = r2;
+// double	alpha2 = alpha*alpha;
+// double	D = alpha2 / (Math.PI * Math.Pow( HoN2*(alpha2 - 1.0) + 1.0, 2.0 ));
+// 
+// double	k = (Roughness + 1)*(Roughness + 1) / 8.0;
+// 
+// 		HoN = H_norm.y;
+// double	HoL = H_norm.Dot( Light );
+// double	HoV = H_norm.Dot( View );
+// double	Gl = HoL / (HoL * (1-k) + k);
+// double	Gv = HoV / (HoV * (1-k) + k);
+// double	G = Gl * Gv;
+// 
+// double	BRDF = D * G / (4.0 * Light.y * View.y);
+// //double	BRDF = D * G * H_norm.Dot( View ) / Math.Max( 1e-6, HoN * View.y);
+
+
+// Expensive Ward with angles
+// double	PhiL = Math.Atan2( Light.z, Light.x );
+// double	PhiV = 0.0;//Math.Atan2( View.z, View.x );
+// double	tanDelta = Math.Tan( Math.Acos( H_norm.y ) );
+// double	BRDF = Math.Exp( -tanDelta*tanDelta / r2 ) * 2.0 * (1.0 + CosThetaLight*CosThetaView + SinThetaLight*SinThetaView*Math.Cos( PhiV - PhiL )) / Math.Pow( CosThetaLight + CosThetaView, 4.0 );
+// 
+// SumA += BRDF * ProjectedSolidAngle;
+// SumB += BRDF * ProjectedSolidAngle;
+
+							// Compute Fresnel terms
+							float	H_norm_dot_V = H_norm.x * View.x + H_norm.y * View.y;	// We know that Z=0 here...
+							float	Schlick = 1.0f - H_norm_dot_V;
+							float	Schlick5 = Schlick * Schlick;
+									Schlick5 *= Schlick5 * Schlick;
+
+							double	FresnelA = 1.0f - Schlick5;
+							double	FresnelB = Schlick5;
+
+							SumA += FresnelA * BRDF * ProjectedSolidAngle;
+							SumB += FresnelB * BRDF * ProjectedSolidAngle;
+						}
+					}
+
+					SumA *= 2.0 / (Math.PI * r2);
+					SumB *= 2.0 / (Math.PI * r2);
+
+					// For few samples, the sum goes over 1 because we have poor solid angle sampling resolution...
+					SumA = Math.Min( 1.0, SumA );
+					SumB = Math.Min( 1.0, SumB );
+
+					Table0[X,Y] = SumA;
+					Table1[X,Y] = SumB;
+				}
+			}
+
+			// Write table 0
+			using ( System.IO.FileStream S = _TableFileName0.Create() )
+				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) )
+					for ( int Y=0; Y < _TableSize; Y++ ) {
+						for ( int X=0; X < _TableSize; X++ )
+							W.Write( Table0[X,Y] );
+						}
+
+			// Write table 1
+			using ( System.IO.FileStream S = _TableFileName1.Create() )
+				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) )
+					for ( int Y=0; Y < _TableSize; Y++ ) {
+						for ( int X=0; X < _TableSize; X++ )
+							W.Write( Table1[X,Y] );
+						}
+		}
+
+		Texture2D	BuildBRDFTexture( System.IO.FileInfo _TableFileName0, System.IO.FileInfo _TableFileName1, int _TableSize ) {
+
+			double[,]	Table0 = new double[_TableSize,_TableSize];
+			double[,]	Table1 = new double[_TableSize,_TableSize];
+
+			double	MinA = 1, MaxA = 0;
+			using ( System.IO.FileStream S = _TableFileName0.OpenRead() )
+				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) )
+					for ( int Y=0; Y < _TableSize; Y++ )
+						for ( int X=0; X < _TableSize; X++ ) {
+							Table0[X,Y] = R.ReadDouble();
+							MinA = Math.Min( MinA, Table0[X,Y] );
+							MaxA = Math.Max( MaxA, Table0[X,Y] );
+						}
+
+			double	MinB = 1, MaxB = 0;
+			using ( System.IO.FileStream S = _TableFileName1.OpenRead() )
+				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) )
+					for ( int Y=0; Y < _TableSize; Y++ )
+						for ( int X=0; X < _TableSize; X++ ) {
+							Table1[X,Y] = R.ReadDouble();
+							MinB = Math.Min( MinB, Table1[X,Y] );
+							MaxB = Math.Max( MaxB, Table1[X,Y] );
+						}
+
+			// MaxA = 1
+			// MaxB = 0.00014996325546887346
+
+			// Create the texture
+			PixelsBuffer	Content = new PixelsBuffer( _TableSize*_TableSize*4 );
+			using ( System.IO.BinaryWriter W = Content.OpenStreamWrite() )
+			for ( int Y=0; Y < _TableSize; Y++ )
+				for ( int X=0; X < _TableSize; X++ ) {
+					W.Write( (ushort) (65535.0 * Table0[X,Y] / MaxA) );
+					W.Write( (ushort) (65535.0 * Table1[X,Y] / MaxB) );
+				}
+
+
+			Texture2D	Result = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, PIXEL_FORMAT.RG16_UNORM, false, false, new PixelsBuffer[] { Content } );
+			return Result;
+		}
+
+/*
+
+// 				float	Theta = 0.5 * _UV.x * PI;
+// 				float3	ToLight = float3( sin( Theta ), 0, cos( Theta ) );
+// 				float3	ToView = float3( -sin( Theta ), 0, cos( Theta ) );
+// 
+// 				float	Albedo = 0.0;
+// 				const int	THETA_COUNT = 64; // * $alwaysOne; // warning X4008: floating point division by zero
+// 				const float	dTheta = HALFPI / THETA_COUNT;
+// 				const float	dPhi = PI / THETA_COUNT;
+// 				for ( int i=0; i < THETA_COUNT; i++ )
+// 				{
+// 					Theta = HALFPI * (0.5 + i) / THETA_COUNT;
+// 					for ( int j=0; j < THETA_COUNT; j++ )
+// 					{
+// 						float	Phi = PI * j / THETA_COUNT;
+// 
+// 						ToView = float3( sin( Theta ) * cos( Phi ), sin( Theta ) * sin( Phi ), cos( Theta ) );
+// 
+// 						float3	Half = normalize( ToLight + ToView );
+// 
+// 						// "True" and expensive evaluation of the Ward BRDF
+// 						float	alpha = Roughness;
+// 
+// 						float	CosDelta = Half.z;	// dot( Half, _wsNormal );
+// 						float	delta = acos( CosDelta );
+// 						float	CosThetaL = ToLight.z;
+// 						float	SinThetaL = sqrt( 1.0 - CosThetaL*CosThetaL );
+// 						float	PhiL = atan2( ToLight.y, ToLight.x );
+// 						float	CosThetaV = ToView.z;
+// 						float	SinThetaV = sqrt( 1.0 - CosThetaV*CosThetaV );
+// 						float	PhiV = atan2( ToView.y, ToView.x );
+// 
+// 						float	BRDF = 1.0 / square(alpha) * exp( -square( tan( delta ) / alpha ) ) * 2.0 * (1.0 + CosThetaL*CosThetaV + SinThetaL*SinThetaV*cos( PhiV - PhiL )) / pow4( CosThetaL + CosThetaV );
+// 
+// 						Albedo += BRDF * cos( Theta ) * sin( Theta ) * dTheta * dPhi;
+// 					}
+// 				}
+// 
+// 				Albedo *= 2.0;		// Since we integrate on half a hemisphere...
+// 				Albedo *= INVPI;	// Since we forgot that in the main loop
+// 
+ 
+// ==========================================================================
+// arkDebugBRDFAlbedo
+// 
+// 	Displays the true and theoretical BRDF albedos
+// 
+// ==========================================================================
+//
+renderProg PostFX/Debug/WardBRDFAlbedo {
+	newstyle
+	
+	hlsl_prefix {
+
+		#include <ward>
+		
+		// Displays the BRDF albedo in 2 small screen insets showing how the albedo varies with roughness
+		// The albedo is computed by integrating the BRDF over an entire hemisphere of view directions for a 
+		//	single light direction that varies with U in [0,1] corresponding to Theta_Light in [0,PI/2].
+		//
+		// The goal here is to demonstrate the albedo is correctly bounded (i.e. never > 1).
+		// The especially important part is when the light is at grazing angles (i.e. U -> 1)
+		//
+		// Just call this function in the finalizer post-process, providing the screen UVs and the final color
+		//
+		void	DEBUG_DisplayWardBRDFAlbedo( float2 _UV, inout float3 _Color )
+		{
+			float	Roughness = lerp( 0.01, 1.0, 0.5 * (1.0 + sin( $time.x )) );	// Roughness is varying with time here...
+
+			if ( _UV.x < 0.2 && _UV.y > 0.8 )
+			{	// This version integrates the "true" BRDF
+				// The formula comes from eq. (15) from http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.169.9908&rep=rep1&type=pdf
+				//
+				_UV.x /= 0.2;
+				_UV.y = (_UV.y - 0.8) / 0.2;
+
+				float	Theta = 0.5 * _UV.x * PI;
+				float3	ToLight = float3( sin( Theta ), 0, cos( Theta ) );
+				float3	ToView = float3( -sin( Theta ), 0, cos( Theta ) );
+
+				float	Albedo = 0.0;
+				const int	THETA_COUNT = 64; // * $alwaysOne; // warning X4008: floating point division by zero
+				const float	dTheta = HALFPI / THETA_COUNT;
+				const float	dPhi = PI / THETA_COUNT;
+				for ( int i=0; i < THETA_COUNT; i++ )
+				{
+					Theta = HALFPI * (0.5 + i) / THETA_COUNT;
+					for ( int j=0; j < THETA_COUNT; j++ )
+					{
+						float	Phi = PI * j / THETA_COUNT;
+
+						ToView = float3( sin( Theta ) * cos( Phi ), sin( Theta ) * sin( Phi ), cos( Theta ) );
+
+						float3	Half = normalize( ToLight + ToView );
+
+						// "True" and expensive evaluation of the Ward BRDF
+						float	alpha = Roughness;
+
+						float	CosDelta = Half.z;	// dot( Half, _wsNormal );
+						float	delta = acos( CosDelta );
+						float	CosThetaL = ToLight.z;
+						float	SinThetaL = sqrt( 1.0 - CosThetaL*CosThetaL );
+						float	PhiL = atan2( ToLight.y, ToLight.x );
+						float	CosThetaV = ToView.z;
+						float	SinThetaV = sqrt( 1.0 - CosThetaV*CosThetaV );
+						float	PhiV = atan2( ToView.y, ToView.x );
+
+						float	BRDF = 1.0 / square(alpha) * exp( -square( tan( delta ) / alpha ) ) * 2.0 * (1.0 + CosThetaL*CosThetaV + SinThetaL*SinThetaV*cos( PhiV - PhiL )) / pow4( CosThetaL + CosThetaV );
+
+						Albedo += BRDF * cos( Theta ) * sin( Theta ) * dTheta * dPhi;
+					}
+				}
+
+				Albedo *= 2.0;		// Since we integrate on half a hemisphere...
+				Albedo *= INVPI;	// Since we forgot that in the main loop
+
+				_Color = 1.0 - _UV.y < 0.8 * Albedo ? 1 : 0;
+
+				if ( _UV.x < 0.01 )
+					_Color = Roughness;
+			}
+			else if ( _UV.x > 0.25 && _UV.x < 0.45 && _UV.y > 0.8 )
+			{	// And this version uses our implementation of the Ward BRDF
+				// The formula comes from eq. (23) of the same paper.
+				// Both renderings should be equal and albedo should NEVER be > 1!
+				//
+				_UV.x = (_UV.x - 0.25) / 0.2;
+				_UV.y = (_UV.y - 0.8) / 0.2;
+
+				WardContext	ctx;
+				CreateWardContext( ctx, Roughness, 0.0, 0.0, float3( 1, 0, 0 ), float3( 0, 1, 0 ) );
+
+				float	Theta = 0.5 * _UV.x * PI;
+				float3	ToLight = float3( sin( Theta ), 0, cos( Theta ) );
+				float3	ToView = float3( -sin( Theta ), 0, cos( Theta ) );
+
+				float	Albedo = 0.0;
+				const int	THETA_COUNT = 64; // * $alwaysOne;	// Allows to prevent unrolling and lenghty shader compilation!
+				const float	dTheta = HALFPI / THETA_COUNT;
+				const float	dPhi = PI / THETA_COUNT;
+				for ( int i=0; i < THETA_COUNT; i++ )
+				{
+					Theta = HALFPI * (0.5 + i) / THETA_COUNT;
+					for ( int j=0; j < THETA_COUNT; j++ )
+					{
+						float	Phi = PI * j / THETA_COUNT;
+
+						ToView = float3( sin( Theta ) * cos( Phi ), sin( Theta ) * sin( Phi ), cos( Theta ) );
+ 						Albedo += ctx.ComputeWardTerm( float3( 0, 0, 1 ), ToLight, ToView ) * cos( Theta ) * sin( Theta ) * dTheta * dPhi;
+					}
+				}
+
+				Albedo *= 2.0;		// Since we integrate on half a hemisphere...
+				Albedo *= INVPI;	// Since we forgot that in the main loop
+
+				_Color = (1.0 - _UV.y < 0.8 * Albedo ? 1 : 0) * float3( 1, 0, 0 );
+
+				if ( _UV.x < 0.01 )
+					_Color = Roughness;
+			}
+		}
+	}
+}
+
+ * /
+
+
+/*
+
+		struct WardContext
+		{
+			float3	anisoTangentDivRoughness;
+			float3	anisoBitangentDivRoughness;
+			float	specularNormalization;
+			float	isotropicRoughness;				// Original normalized isotropic roughness
+//			float	diffuseRoughness;				// ARKANE: bmayaux (2013-10-14) Disney diffuse roughness Fresnel term
+		
+			// Computes the Ward normal distribution
+			//	_wsNormal, surface normal
+			//	_wsToLight, world space light vector
+			//	_wsView, world space view vector
+			//	
+			float	ComputeWardTerm( float3 _wsNormal, float3 _wsToLight, float3 _wsView )
+			{
+				float3	Half = _wsToLight + _wsView; 
+//				Half = normalize(Half); // not normalized on purpose, HdotH would be 1 if normalized, nonsense
+			
+				float	HdotN = dot( Half, _wsNormal );
+						HdotN = max( 1e-4f, HdotN );
+				float	invHdotN_2 = 1.0 / square( HdotN );
+				float	invHdotN_4 = square( invHdotN_2 );
+			
+				float	HdotT = dot( Half, anisoTangentDivRoughness );
+				float	HdotB = dot( Half, anisoBitangentDivRoughness );
+				float	HdotH = dot( Half, Half );
+			
+				float	exponent = -invHdotN_2 * (square( HdotT ) + square( HdotB ));
+
+ 				return specularNormalization * exp( exponent ) * HdotH * invHdotN_4;
+			}
+		};
+
+		void	CreateWardContext( out WardContext wardContext, float _Roughness, float _Anisotropy, float _AnisotropyAngle, float3 _Tangent, float3 _BiTangent )
+		{
+			// Tweak roughness so the user feels it's a linear parameter
+			float	Roughness = _Roughness * _Roughness;	// Roughness squared seems to give a nice linear feel...
+															// People at Disney seem to agree with me! (cf §5.4 http://blog.selfshadow.com/publications/s2012-shading-course/burley/s2012_pbs_disney_brdf_notes_v2.pdf)
+
+			// Keep an average normalized roughness value for other people who require it (e.g. IBL)
+			wardContext.isotropicRoughness = Roughness;
+
+			// Build anisotropic roughness along tangent/bitangent
+			float2	anisotropicRoughness = float2( Roughness, Roughness * saturate( 1.0 - _Anisotropy ) );
+
+			anisotropicRoughness = max( 0.01, anisotropicRoughness );	// Make sure we don't go below 0.01 otherwise specularity is unnatural for our poor lights (only IBL with many samples would solve that!)
+
+			// Tangent/Ax, Bitangent/Ay
+			float2	sinCosAnisotropy;
+			sincos( _AnisotropyAngle, sinCosAnisotropy.x, sinCosAnisotropy.y );
+
+			float2	invRoughness = 1.0 / (1e-5 + anisotropicRoughness);
+			wardContext.anisoTangentDivRoughness = (sinCosAnisotropy.y * _Tangent + sinCosAnisotropy.x * _BiTangent) * invRoughness.x;
+			wardContext.anisoBitangentDivRoughness = (sinCosAnisotropy.y * _BiTangent - sinCosAnisotropy.x * _Tangent) * invRoughness.y;
+
+			wardContext.specularNormalization = INVPI * invRoughness.x * invRoughness.y;
+
+// ARKANE: bmayaux (2014-02-05) Sheen is not tied to roughness anymore (for better or for worse?) so it doesn't need to be tied to Ward anymore either!
+// 			// ARKANE: bmayaux (2013-10-14) Disney diffuse roughness Fresnel term
+// 			// Diffuse roughness starts increasing for ward roughness > 0.35 and reaches 1 for ward roughness = 0.85
+// 			//	this to make sure only very diffuse and rough objects have a sheen...
+// //			wardContext.diffuseRoughness = _Sheen * saturate( 2.0 * _Roughness - 0.7 );
+// 			wardContext.diffuseRoughness = _Sheen;	// Use direct sheen value, at the risk of making it strange on smooth materials...
+		}
+
+*/
+
+		#endregion
+
+		#region Primitives
+
 		private void	BuildPrimitives()
 		{
 			{
@@ -584,6 +999,10 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 			}
 		}
 
+		#endregion
+
+		#region Open/Close
+
 		protected override void OnLoad( EventArgs e )
 		{
 			base.OnLoad( e );
@@ -621,6 +1040,8 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 			m_Tex_ShadowSmoothiePou[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
 			m_Tex_ShadowSmoothiePou[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
 #endif
+
+			m_Tex_BRDFIntegral = BuildBRDFTexture( new System.IO.FileInfo( "BRDF0_64x64.bin" ), new System.IO.FileInfo( "BRDF1_64x64.bin" ), 64 );
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
@@ -735,6 +1156,8 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 			m_Prim_Sphere.Dispose();
 			m_Prim_Cube.Dispose();
 
+			m_Tex_BRDFIntegral.Dispose();
+
 			m_Tex_ShadowMap.Dispose();
 #if FILTER_EXP_SHADOW_MAP
 			m_Tex_ShadowMapFiltered[0].Dispose();
@@ -752,6 +1175,8 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 
 			base.OnFormClosed( e );
 		}
+
+		#endregion
 
 		/// <summary>
 		/// Gets the current game time in seconds
@@ -839,7 +1264,7 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 			m_CB_Main.UpdateData();
 
 			// Setup area light buffer
-			float		SizeX = 0.5f;
+			float		SizeX = 1;//0.5f;
 			float		SizeY = 1.0f;
 			float		RollAngle = (float) (Math.PI * floatTrackbarControlLightRoll.Value / 180.0);
 			float3		LightPosition = new float3( 1.2f + floatTrackbarControlLightPosX.Value, 1.0f + floatTrackbarControlLightPosY.Value, -1.0f + floatTrackbarControlLightPosZ.Value );
@@ -874,7 +1299,6 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 			m_CB_Light.m._AreaLightIntensity = floatTrackbarControlLightIntensity.Value;
 			m_CB_Light.m._AreaLightTexDimensions = new float4( m_Tex_AreaLightSAT.Width, m_Tex_AreaLightSAT.Height, 1.0f / m_Tex_AreaLightSAT.Width, 1.0f / m_Tex_AreaLightSAT.Height );
 			m_CB_Light.m._ProjectionDirectionDiff = LocalDirection_Diffuse;
-			m_CB_Light.m._ProjectionDirectionSpec = LocalDirection_Specular;
 			m_CB_Light.UpdateData();
 
 
@@ -966,6 +1390,7 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInf
 			m_Tex_AreaLightSAT.SetPS( 0 );
 			m_Tex_AreaLightSATFade.SetPS( 1 );
 			m_Tex_AreaLight.SetPS( 4 );
+			m_Tex_BRDFIntegral.SetPS( 5 );
 
 			// Render the area light itself
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
