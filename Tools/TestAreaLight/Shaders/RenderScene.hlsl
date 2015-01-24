@@ -56,13 +56,13 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 		
 //	float	Roughness = max( 0.005, 1.0 * (1.0 - _Gloss) );
 	float	Roughness = max( 0.01, 1.0 * (1.0 - _Gloss) );
-
+	
 	const float3	RhoD = _DiffuseAlbedo;
 	const float3	F0 = lerp( 0.04, _SpecularTint, _Metal );
 	float3	IOR = Fresnel_IORFromF0( F0 );
 
 	float	Shadow = ComputeShadow( wsPosition, wsNormal, Debug );
-
+	
 #if 1
 	// VERSION 2
 	SurfaceContext	surf;
@@ -73,12 +73,12 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	surf.roughness = Roughness;
 	surf.IOR = IOR;
 	surf.fresnelStrength = 1.0;
-
+	
 	float3	RadianceDiffuse, RadianceSpecular;
 	ComputeAreaLightLighting( surf, Shadow, RadianceDiffuse, RadianceSpecular );
-
-return float4( RadianceDiffuse, 0 );
-return float4( RadianceSpecular, 0 );
+	
+//return float4( RadianceDiffuse, 0 );
+//return float4( RadianceSpecular, 0 );
 
 	return float4( 0.1 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular, 1 );
 
