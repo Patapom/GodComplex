@@ -73,7 +73,7 @@ namespace RendererManaged {
 		}
 		~Device()
 		{
-			delete m_pQuad;
+//			delete m_pQuad;
 
 			m_pDevice->Exit();
 			delete m_pDevice;

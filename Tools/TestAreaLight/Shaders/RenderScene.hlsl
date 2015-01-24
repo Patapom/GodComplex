@@ -47,13 +47,6 @@ PS_IN	VS( VS_IN _In ) {
 	return Out;
 }
 
-// More a Beckmann really, don't have time
-float	ComputeWard( float3 _wsView, float3 _wsNormal, float3 _wsLight, float _Roughness ) {
-	float3	H = normalize( _wsView + _wsLight );
-	float	NdotH = dot( _wsNormal, H );
-	return exp( -(1.0 - NdotH*NdotH) / (_Roughness*_Roughness*NdotH*NdotH) ) / (PI * _Roughness*_Roughness * NdotH*NdotH*NdotH*NdotH);
-}
-
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float4	Debug = 0.0;
 
@@ -70,7 +63,6 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 
 	float	Shadow = ComputeShadow( wsPosition, wsNormal, Debug );
 
-
 #if 1
 	// VERSION 2
 	SurfaceContext	surf;
@@ -85,7 +77,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float3	RadianceDiffuse, RadianceSpecular;
 	ComputeAreaLightLighting( surf, Shadow, RadianceDiffuse, RadianceSpecular );
 
-// return float4( RadianceDiffuse, 0 );
+return float4( RadianceDiffuse, 0 );
 return float4( RadianceSpecular, 0 );
 
 	return float4( 0.1 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular, 1 );

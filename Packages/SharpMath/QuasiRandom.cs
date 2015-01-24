@@ -4,7 +4,7 @@ namespace WMath
 {
 	/// <summary>
 	/// Hammersley sequence generator
-	/// (ugly) source code by http://people.sc.fsu.edu/~jburkardt/cpp_src/hammersley/hammersley.html
+	/// (ugly) source code from http://people.sc.fsu.edu/~jburkardt/cpp_src/hammersley/hammersley.html
 	/// </summary>
 	public class Hammersley
 	{

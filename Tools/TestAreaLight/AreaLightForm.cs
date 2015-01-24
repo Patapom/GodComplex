@@ -1,4 +1,5 @@
 ﻿#define FILTER_EXP_SHADOW_MAP
+#define USE_COMPUTE_SHADER_FOR_BRDF_INTEGRATION
 
 using System;
 using System.Collections.Generic;
@@ -122,15 +123,6 @@ namespace AreaLightTest
 		public AreaLightForm()
 		{
 			InitializeComponent();
-
-// Build SATs
-// ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
-
-//ComputeBRDFIntegral( new System.IO.FileInfo( "BRDF0_64x64.bin" ), new System.IO.FileInfo( "BRDF1_64x64.bin" ), 64 );
 
 			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
 
@@ -448,61 +440,152 @@ namespace AreaLightTest
 
 		#region BRDF Integration
 
+#if USE_COMPUTE_SHADER_FOR_BRDF_INTEGRATION
+
+		void	ComputeBRDFIntegral( System.IO.FileInfo _TableFileName, int _TableSize ) {
+
+//			ComputeShader	CS = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/ComputeBRDFIntegral.hlsl" ) ), "CS", new ShaderMacro[0] );
+			ComputeShader	CS = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/ComputeBRDFIntegral.hlsl" ) ), "CS", new ShaderMacro[] { new ShaderMacro( "IMPORTANCE_SAMPLING", "1" ) } );
+
+			Texture2D		TexTable = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
+			TexTable.SetCSUAV( 0 );
+			CS.Use();
+			CS.Dispatch( _TableSize >> 4, _TableSize >> 4, 1 );
+			CS.Dispose();
+
+			Texture2D		TexTableStaging = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, PIXEL_FORMAT.RG32_FLOAT, true, false, null );
+			TexTableStaging.CopyFrom( TexTable );
+			TexTable.Dispose();
+
+			// Write tables
+			float2	Temp = new float2();
+			PixelsBuffer Buff = TexTableStaging.Map( 0, 0 );
+			using ( System.IO.BinaryReader R = Buff.OpenStreamRead() )
+				using ( System.IO.FileStream S = _TableFileName.Create() )
+					using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) )
+						for ( int Y=0; Y < _TableSize; Y++ )
+							for ( int X=0; X < _TableSize; X++ ) {
+								Temp.x = R.ReadSingle();
+								Temp.y = R.ReadSingle();
+								W.Write( Temp.x );
+								W.Write( Temp.y );
+							}
+		}
+
+#else
+
 		void	ComputeBRDFIntegral( System.IO.FileInfo _TableFileName0, System.IO.FileInfo _TableFileName1, int _TableSize ) {
 
-			const int		SAMPLES_COUNT_THETA = 64;
+			const int		SAMPLES_COUNT_THETA = 128;
 			const int		SAMPLES_COUNT_PHI = 2*SAMPLES_COUNT_THETA;
 
 			const double	dTheta = 0.5 * Math.PI / SAMPLES_COUNT_THETA;
-			const double	dPhi = Math.PI / SAMPLES_COUNT_PHI;
+			const double	dPhi = 2.0 * Math.PI / SAMPLES_COUNT_PHI;
 
 			double[,]		Table0 = new double[_TableSize,_TableSize];
 			double[,]		Table1 = new double[_TableSize,_TableSize];
+
+
+// float	Theta = 0.5 * _UV.x * PI;
+// float3	ToLight = float3( sin( Theta ), 0, cos( Theta ) );
+// float3	ToView = float3( -sin( Theta ), 0, cos( Theta ) );
+// 
+// float	Albedo = 0.0;
+// const int	THETA_COUNT = 64; // * $alwaysOne; // warning X4008: floating point division by zero
+// const float	dTheta = HALFPI / THETA_COUNT;
+// const float	dPhi = TWOPI / THETA_COUNT;
+// for ( int i=0; i < THETA_COUNT; i++ )
+// {
+// 	Theta = HALFPI * (0.5 + i) / THETA_COUNT;
+// 	for ( int j=0; j < THETA_COUNT; j++ )
+// 	{
+// 		float	Phi = PI * j / THETA_COUNT;
+// 
+// 		ToView = float3( sin( Theta ) * cos( Phi ), sin( Theta ) * sin( Phi ), cos( Theta ) );
+// 
+// 		float3	Half = normalize( ToLight + ToView );
+// 
+// 		// "True" and expensive evaluation of the Ward BRDF
+// 		float	alpha = Roughness;
+// 
+// 		float	CosDelta = Half.z;	// dot( Half, _wsNormal );
+// 		float	delta = acos( CosDelta );
+// 		float	CosThetaL = ToLight.z;
+// 		float	SinThetaL = sqrt( 1.0 - CosThetaL*CosThetaL );
+// 		float	PhiL = atan2( ToLight.y, ToLight.x );
+// 		float	CosThetaV = ToView.z;
+// 		float	SinThetaV = sqrt( 1.0 - CosThetaV*CosThetaV );
+// 		float	PhiV = atan2( ToView.y, ToView.x );
+// 
+// 		float	BRDF = 1.0 / square(alpha) * exp( -square( tan( delta ) / alpha ) ) * 2.0 * (1.0 + CosThetaL*CosThetaV + SinThetaL*SinThetaV*cos( PhiV - PhiL )) / pow4( CosThetaL + CosThetaV );
+// 
+// 		Albedo += BRDF * cos( Theta ) * sin( Theta ) * dTheta * dPhi;
+// 	}
+// }
+// 
+// Albedo *= INVPI;	// Since we forgot that in the main loop
+
+
 
 			float3	View = new float3();
 			float3	Light = new float3();
 			for ( int Y=0; Y < _TableSize; Y++ ) {
 				float	Roughness = Math.Max( 0.01f, (float) Y / (_TableSize-1) );
-				float	r2 = Roughness * Roughness;
-				float	inv_r2 = 1.0f / r2;
+				float	r2 = Roughness*Roughness;
 
 				for ( int X=0; X < _TableSize; X++ ) {
-					float	CosThetaView = (float) (1+X) / _TableSize;
-					float	SinThetaView = (float) Math.Sqrt( 1.0f - CosThetaView*CosThetaView );
-					View.x = SinThetaView;
-					View.y = CosThetaView;
+//					double	CosThetaV = (double) (1+X) / _TableSize;
+//					double	SinThetaV = Math.Sqrt( 1.0 - CosThetaV*CosThetaV );
+
+					double	ThetaV = 0.5 * Math.PI * X / _TableSize;
+					double	CosThetaV = Math.Cos( ThetaV );
+					double	SinThetaV = Math.Sin( ThetaV );
+					View.x = (float) SinThetaV;
+					View.y = (float) CosThetaV;
 					View.z = 0.0f;
 
 					double	SumA = 0.0;
 					double	SumB = 0.0;
 					for ( int Theta=0; Theta < SAMPLES_COUNT_THETA; Theta++ ) {
 						double	fTheta = 0.5 * Math.PI * (0.5 + Theta) / SAMPLES_COUNT_THETA;
-						double	CosThetaLight = Math.Cos( fTheta );
-						double	SinThetaLight = Math.Sin( fTheta );
+						double	CosThetaL = Math.Cos( fTheta );
+						double	SinThetaL = Math.Sin( fTheta );
 
 						// Compute solid angle
-						double	SolidAngle = SinThetaLight * dTheta * dPhi;
-						double	ProjectedSolidAngle = CosThetaLight * SolidAngle;
+						double	SolidAngle = SinThetaL * dTheta * dPhi;
+						double	ProjectedSolidAngle = CosThetaL * SolidAngle;	// (N.L) sin(Theta).dTheta.dPhi
 
 						for ( int Phi=0; Phi < SAMPLES_COUNT_PHI; Phi++ ) {
 							double	fPhi = Math.PI * Phi / SAMPLES_COUNT_PHI;
 							double	CosPhiLight = Math.Cos( fPhi );
 							double	SinPhiLight = Math.Sin( fPhi );
 
-							Light.x = (float) (SinPhiLight * SinThetaLight);
-							Light.y = (float) CosThetaLight;
-							Light.z = (float) (CosPhiLight * SinThetaLight);
+							Light.x = (float) (SinPhiLight * SinThetaL);
+							Light.y = (float) CosThetaL;
+							Light.z = (float) (CosPhiLight * SinThetaL);
 
-							// Compute normal distribution function
-							float3	H = View + Light;
- 							float3	H_norm = H.Normalized;
-							float	HoH = H.Dot( H );
-							float	HoN = H.y;
+// 							// Transform into "reflected-view-centered space"
+// 							Light = Light.x * OrthoX + Light.y * ReflectedView + Light.z * OrthoZ;
+// 							if ( Light.y < 0.0f )
+// 								continue;
+// 							ProjectedSolidAngle = dPhi * dTheta * Light.y * Math.Sqrt( 1.0 - Light.y*Light.y );
 
-							float	HoN2 = HoN * HoN;
-							float	HoN4 = HoN2 * HoN2;
 
-							double	BRDF = Math.Exp( -(H.x*H.x + H.z*H.z) / (r2 * HoN2) ) * HoH / HoN4;
+ 							float3	H_unorm = View + Light;
+ 							float3	H = H_unorm.Normalized;
+
+// 							// Compute normal distribution function
+// 							float	H_unorm_dot_N = H_unorm.y;
+// 							float	H_unorm_dot_N2 = H_unorm_dot_N * H_unorm_dot_N;
+// 							float	H_unorm_dot_N4 = H_unorm_dot_N2 * H_unorm_dot_N2;
+// 
+// 							double	BRDF = Math.Exp( -(H_unorm.x*H_unorm.x + H_unorm.z*H_unorm.z) / (r2 * H_unorm_dot_N2) ) * H_unorm.Dot( H_unorm ) / H_unorm_dot_N4;
+
+							// Expensive Ward
+							double	PhiL = Math.Atan2( Light.z, Light.x );
+							double	PhiV = Math.Atan2( View.z, View.x );
+							double	tanDelta = Math.Tan( Math.Acos( H.y ) );
+							double	BRDF = Math.Exp( -tanDelta*tanDelta / r2 ) * 2.0 * (1.0 + CosThetaL*CosThetaV + SinThetaL*SinThetaV*Math.Cos( PhiV - PhiL )) / Math.Pow( CosThetaL + CosThetaV, 4.0 );
 
 
 // Try with Unreal's GGX & Smith G term to see if we get the same thing
@@ -533,25 +616,27 @@ namespace AreaLightTest
 // SumB += BRDF * ProjectedSolidAngle;
 
 							// Compute Fresnel terms
-							float	H_norm_dot_V = H_norm.x * View.x + H_norm.y * View.y;	// We know that Z=0 here...
-							float	Schlick = 1.0f - H_norm_dot_V;
-							float	Schlick5 = Schlick * Schlick;
+							double	VoH = View.x * H.x + View.y * H.y;
+							double	Schlick = 1.0 - VoH;
+							double	Schlick5 = Schlick * Schlick;
 									Schlick5 *= Schlick5 * Schlick;
 
-							double	FresnelA = 1.0f - Schlick5;
+							double	FresnelA = 1.0 - Schlick5;
 							double	FresnelB = Schlick5;
+
+//FresnelA = FresnelB = 1.0;
 
 							SumA += FresnelA * BRDF * ProjectedSolidAngle;
 							SumB += FresnelB * BRDF * ProjectedSolidAngle;
 						}
 					}
 
-					SumA *= 2.0 / (Math.PI * r2);
-					SumB *= 2.0 / (Math.PI * r2);
+					SumA /= Math.PI * r2;
+					SumB /= Math.PI * r2;
 
-					// For few samples, the sum goes over 1 because we have poor solid angle sampling resolution...
-					SumA = Math.Min( 1.0, SumA );
-					SumB = Math.Min( 1.0, SumB );
+// 					// For few samples, the sum goes over 1 because we have poor solid angle sampling resolution...
+// 					SumA = Math.Min( 1.0, SumA );
+// 					SumB = Math.Min( 1.0, SumB );
 
 					Table0[X,Y] = SumA;
 					Table1[X,Y] = SumB;
@@ -575,45 +660,304 @@ namespace AreaLightTest
 						}
 		}
 
-		Texture2D	BuildBRDFTexture( System.IO.FileInfo _TableFileName0, System.IO.FileInfo _TableFileName1, int _TableSize ) {
+		double	GSmith( double Roughness, double ndotv, double ndotl )
+		{
+//			double	m2   = Roughness * Roughness;
+			double	m2   = (Roughness + 1)*(Roughness + 1) / 8.0;
+			double	visV = ndotv + Math.Sqrt( ndotv * ( ndotv - ndotv * m2 ) + m2 );
+			double	visL = ndotl + Math.Sqrt( ndotl * ( ndotl - ndotl * m2 ) + m2 );
 
-			double[,]	Table0 = new double[_TableSize,_TableSize];
-			double[,]	Table1 = new double[_TableSize,_TableSize];
+			return 1.0f / ( visV * visL );
+		}
 
-			double	MinA = 1, MaxA = 0;
-			using ( System.IO.FileStream S = _TableFileName0.OpenRead() )
-				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) )
-					for ( int Y=0; Y < _TableSize; Y++ )
-						for ( int X=0; X < _TableSize; X++ ) {
-							Table0[X,Y] = R.ReadDouble();
-							MinA = Math.Min( MinA, Table0[X,Y] );
-							MaxA = Math.Max( MaxA, Table0[X,Y] );
+		void	ComputeBRDFIntegralImportanceSampling( System.IO.FileInfo _TableFileName0, System.IO.FileInfo _TableFileName1, int _TableSize ) {
+
+			const int		SAMPLES_COUNT = 1024;
+
+			double[,]		Table0 = new double[_TableSize,_TableSize];
+			double[,]		Table1 = new double[_TableSize,_TableSize];
+
+			WMath.Hammersley	QRNG = new WMath.Hammersley();
+			double[,]			Sequence = QRNG.BuildSequence( SAMPLES_COUNT, 2 );
+
+			float3	View = new float3();
+			float3	Light = new float3();
+			float3	Half = new float3();
+			for ( int Y=0; Y < _TableSize; Y++ ) {
+				double	Roughness = Math.Max( 0.01f, (float) Y / (_TableSize-1) );
+
+
+//Roughness = Math.Pow( 1.0 - Roughness, 4.0 );
+
+
+				double	r2 = Roughness*Roughness;
+
+				for ( int X=0; X < _TableSize; X++ ) {
+					float	CosThetaView = (float) (1+X) / _TableSize;
+					float	SinThetaView = (float) Math.Sqrt( 1.0f - CosThetaView*CosThetaView );
+					View.x = SinThetaView;
+					View.y = CosThetaView;
+					View.z = 0.0f;
+
+					double	SumA = 0.0;
+					double	SumB = 0.0;
+					for ( int SampleIndex=0; SampleIndex < SAMPLES_COUNT; SampleIndex++ ) {
+
+						double	X0 = Sequence[SampleIndex,0];
+						double	X1 = Sequence[SampleIndex,1];
+
+						double	PhiH = 2.0 * Math.PI * X0;
+
+						// WARD
+						double	ThetaH = Math.Atan( -r2 * Math.Log( 1.0 - X1 ) );
+						double	CosThetaH = Math.Cos( ThetaH );
+						double	SinThetaH = Math.Sin( ThetaH );
+
+// 						// GGX
+// 						double	a = r2;
+// 						double	CosThetaH = Math.Sqrt( (1.0 - X1) / (1.0 + (a*a - 1.0) * X1 ) );
+// 						double	SinThetaH = Math.Sqrt( 1.0f - CosThetaH * CosThetaH );
+
+
+						double	CosPhiH = Math.Cos( PhiH );
+						double	SinPhiH = Math.Sin( PhiH );
+
+						Half.x = (float) (SinPhiH * SinThetaH);
+						Half.y = (float) CosThetaH;
+						Half.z = (float) (CosPhiH * SinThetaH);
+
+ 						Light = 2.0f * View.Dot( Half ) * Half - View;	// Light is on the other size of the Half vector...
+
+
+// Intuitively, we should have the same result if we sampled around the reflected view direction
+// 						float3	ReflectedView = 2.0f * View.Dot( float3.UnitY ) * float3.UnitY - View;
+// 						float3	OrthoY = ReflectedView.Cross( float3.UnitZ ).Normalized;
+// 						float3	OrthoX = float3.UnitZ;
+//  						Light = Half.x * OrthoX + Half.y * ReflectedView + Half.z * OrthoY;
+// 
+// 						Half = (View + Light).Normalized;
+
+
+						if ( Light.y <= 0 )
+							continue;
+
+						double	HoN = Half.y;
+						double	HoN2 = HoN*HoN;
+						double	HoV = Half.Dot( View );
+//						float	HoV = Half.x * View.x + Half.y * View.y;	// We know that Z=0 here...
+						double	HoL = Half.Dot( Light );
+						double	NoL = Light.y;
+						double	NoV = View.y;
+
+ 						// Apply sampling weight for correct distribution
+ 						double	SampleWeight = 2.0 / (1.0 + View.y / Light.y);
+ 						double	BRDF = SampleWeight;
+
+
+
+
+
+// Try with Unreal's GGX & Smith G term to see if we get the same thing
+// 
+// 	// GGX NDF
+// // double	alpha = r2;
+// // double	alpha2 = alpha*alpha;
+// // double	D = alpha2 / (Math.PI * Math.Pow( HoN2*(alpha2 - 1.0) + 1.0, 2.0 ));
+// 
+// 	// Smith masking/shadowing
+// double	k = (Roughness + 1)*(Roughness + 1) / 8.0;
+// double	Gl = NoL / (NoL * (1-k) + k);
+// double	Gv = NoV / (NoV * (1-k) + k);
+// double	G = Gl * Gv;
+// 
+// //double	BRDF = G / (4.0 * View.y);
+// //double	BRDF = G * HoV / (HoN * NoV);
+// double	BRDF = NoL * GSmith( Roughness, NoV, NoL ) * 4.0f * HoV / HoN;
+
+
+
+
+						// Compute Fresnel terms
+						double	Schlick = 1.0 - HoV;
+						double	Schlick5 = Schlick * Schlick;
+								Schlick5 *= Schlick5 * Schlick;
+
+						double	FresnelA = 1.0f - Schlick5;
+						double	FresnelB = Schlick5;
+
+//FresnelA = FresnelB = 1.0;
+
+						SumA += FresnelA * BRDF;
+						SumB += FresnelB * BRDF;
+					}
+
+// 					SumA *= 1.0 / (SAMPLES_COUNT * Math.PI * r2);
+// 					SumB *= 1.0 / (SAMPLES_COUNT * Math.PI * r2);
+
+					SumA /= SAMPLES_COUNT;
+					SumB /= SAMPLES_COUNT;
+
+					// For few samples, the sum goes over 1 because we have poor solid angle sampling resolution...
+// 					SumA = Math.Min( 1.0, SumA );
+// 					SumB = Math.Min( 1.0, SumB );
+
+					Table0[X,Y] = SumA;
+					Table1[X,Y] = SumB;
+				}
+			}
+
+			// Write table 0
+			using ( System.IO.FileStream S = _TableFileName0.Create() )
+				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) )
+					for ( int Y=0; Y < _TableSize; Y++ ) {
+						for ( int X=0; X < _TableSize; X++ )
+							W.Write( Table0[X,Y] );
 						}
 
-			double	MinB = 1, MaxB = 0;
-			using ( System.IO.FileStream S = _TableFileName1.OpenRead() )
+			// Write table 1
+			using ( System.IO.FileStream S = _TableFileName1.Create() )
+				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) )
+					for ( int Y=0; Y < _TableSize; Y++ ) {
+						for ( int X=0; X < _TableSize; X++ )
+							W.Write( Table1[X,Y] );
+						}
+		}
+
+/*	https://knarkowicz.wordpress.com/2014/12/27/analytical-dfg-term-for-ibl/
+uint32_t ReverseBits( uint32_t v )
+{
+    v = ( ( v >> 1 ) & 0x55555555 ) | ( ( v & 0x55555555 ) << 1 );
+    v = ( ( v >> 2 ) & 0x33333333 ) | ( ( v & 0x33333333 ) << 2 );
+    v = ( ( v >> 4 ) & 0x0F0F0F0F ) | ( ( v & 0x0F0F0F0F ) << 4 );
+    v = ( ( v >> 8 ) & 0x00FF00FF ) | ( ( v & 0x00FF00FF ) << 8 );
+    v = (   v >> 16               ) | (   v                << 16 );
+    return v;
+}
+
+float GSmith( float roughness, float ndotv, float ndotl )
+{
+    float const m2   = roughness * roughness;
+    float const visV = ndotv + sqrt( ndotv * ( ndotv - ndotv * m2 ) + m2 );
+    float const visL = ndotl + sqrt( ndotl * ( ndotl - ndotl * m2 ) + m2 );
+
+    return 1.0f / ( visV * visL );
+}
+
+int main()
+{
+    float const MATH_PI         = 3.14159f;
+    unsigned const LUT_WIDTH    = 128;
+    unsigned const LUT_HEIGHT   = 128;
+    unsigned const sampleNum    = 128;
+
+    float lutData[ LUT_WIDTH * LUT_HEIGHT * 4 ];
+
+    for ( unsigned y = 0; y < LUT_HEIGHT; ++y )
+    {
+        float const ndotv = ( y + 0.5f ) / LUT_WIDTH;
+
+        for ( unsigned x = 0; x < LUT_WIDTH; ++x )
+        {
+            float const gloss       = ( x + 0.5f ) / LUT_HEIGHT;
+            float const roughness   = powf( 1.0f - gloss, 4.0f );
+
+            float const vx = sqrtf( 1.0f - ndotv * ndotv );
+            float const vy = 0.0f;
+            float const vz = ndotv;
+
+            float scale = 0.0f;
+            float bias  = 0.0f;
+
+            
+            for ( unsigned i = 0; i < sampleNum; ++i )
+            {
+                float const e1 = (float) i / sampleNum;
+                float const e2 = (float) ( (double) ReverseBits( i ) / (double) 0x100000000LL );
+
+                float const phi         = 2.0f * MATH_PI * e1;
+                float const cosPhi      = cosf( phi );
+                float const sinPhi      = sinf( phi );
+                float const cosTheta    = sqrtf( ( 1.0f - e2 ) / ( 1.0f + ( roughness * roughness - 1.0f ) * e2 ) );
+                float const sinTheta    = sqrtf( 1.0f - cosTheta * cosTheta );
+
+                float const hx  = sinTheta * cosf( phi );
+                float const hy  = sinTheta * sinf( phi );
+                float const hz  = cosTheta;
+
+                float const vdh = vx * hx + vy * hy + vz * hz;
+                float const lx  = 2.0f * vdh * hx - vx;
+                float const ly  = 2.0f * vdh * hy - vy;
+                float const lz  = 2.0f * vdh * hz - vz;
+
+                float const ndotl = std::max( lz,   0.0f );
+                float const ndoth = std::max( hz,   0.0f );
+                float const vdoth = std::max( vdh,  0.0f );
+
+                if ( ndotl > 0.0f )
+                {
+                    float const gsmith      = GSmith( roughness, ndotv, ndotl );
+                    float const ndotlVisPDF = ndotl * gsmith * ( 4.0f * vdoth / ndoth );
+                    float const fc          = powf( 1.0f - vdoth, 5.0f );
+
+                    scale   += ndotlVisPDF * ( 1.0f - fc );
+                    bias    += ndotlVisPDF * fc;
+                }
+            }
+            scale /= sampleNum;
+            bias  /= sampleNum;
+
+            lutData[ x * 4 + y * LUT_WIDTH * 4 + 0 ] = scale;
+            lutData[ x * 4 + y * LUT_WIDTH * 4 + 1 ] = bias;
+            lutData[ x * 4 + y * LUT_WIDTH * 4 + 2 ] = 0.0f;
+            lutData[ x * 4 + y * LUT_WIDTH * 4 + 3 ] = 0.0f;
+        }
+    }   
+
+} */
+
+#endif
+
+		Texture2D	BuildBRDFTexture( System.IO.FileInfo _TableFileName, int _TableSize ) {
+
+			float2[,]	Table = new float2[_TableSize,_TableSize];
+
+			float	MinA = 1, MaxA = 0;
+			float	MinB = 1, MaxB = 0;
+			using ( System.IO.FileStream S = _TableFileName.OpenRead() )
 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) )
 					for ( int Y=0; Y < _TableSize; Y++ )
 						for ( int X=0; X < _TableSize; X++ ) {
-							Table1[X,Y] = R.ReadDouble();
-							MinB = Math.Min( MinB, Table1[X,Y] );
-							MaxB = Math.Max( MaxB, Table1[X,Y] );
+							float	A = R.ReadSingle();
+							float	B = R.ReadSingle();
+							Table[X,Y].x = A;
+							Table[X,Y].y = B;
+							MinA = Math.Min( MinA, A );
+							MaxA = Math.Max( MaxA, A );
+							MinB = Math.Min( MinB, B );
+							MaxB = Math.Max( MaxB, B );
 						}
 
 			// MaxA = 1
 			// MaxB = 0.00014996325546887346
 
+// MaxA = 1.0;
+// MaxB = 1.0;
+
 			// Create the texture
-			PixelsBuffer	Content = new PixelsBuffer( _TableSize*_TableSize*4 );
+//			PixelsBuffer	Content = new PixelsBuffer( _TableSize*_TableSize*4 );
+			PixelsBuffer	Content = new PixelsBuffer( _TableSize*_TableSize*2*4 );
 			using ( System.IO.BinaryWriter W = Content.OpenStreamWrite() )
 			for ( int Y=0; Y < _TableSize; Y++ )
 				for ( int X=0; X < _TableSize; X++ ) {
-					W.Write( (ushort) (65535.0 * Table0[X,Y] / MaxA) );
-					W.Write( (ushort) (65535.0 * Table1[X,Y] / MaxB) );
+// 					W.Write( (ushort) (65535.0 * Table[X,Y].x / MaxA) );
+// 					W.Write( (ushort) (65535.0 * Table[X,Y].y / MaxB) );
+					W.Write( Table[X,Y].x );
+					W.Write( Table[X,Y].y );
 				}
 
 
-			Texture2D	Result = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, PIXEL_FORMAT.RG16_UNORM, false, false, new PixelsBuffer[] { Content } );
+//			Texture2D	Result = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, PIXEL_FORMAT.RG16_UNORM, false, false, new PixelsBuffer[] { Content } );
+			Texture2D	Result = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, false, new PixelsBuffer[] { Content } );
 			return Result;
 		}
 
@@ -1018,6 +1362,16 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 				return;
 			}
 
+// Build SATs
+// ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
+
+			buttonRebuildBRDF_Click( null, EventArgs.Empty );
+
+
 			BuildPrimitives();
 //			m_Tex_AreaLight = Pipi2Texture( new System.IO.FileInfo( "AreaLight.pipi" ) );
 //			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT.pipo" ) );
@@ -1041,7 +1395,6 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_Tex_ShadowSmoothiePou[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
 #endif
 
-			m_Tex_BRDFIntegral = BuildBRDFTexture( new System.IO.FileInfo( "BRDF0_64x64.bin" ), new System.IO.FileInfo( "BRDF1_64x64.bin" ), 64 );
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
@@ -1220,37 +1573,37 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 				m_Prim_Rectangle.Render( _Shader );
 			}
 
-			// Render the sphere
-			m_CB_Object.m._Local2World.MakeLookAt( new float3( 0, 0.5f, 1.0f ), new float3( 0, 0.5f, 2 ), float3.UnitY );
-//			m_CB_Object.m._Local2World.MakeLookAt( new float3( 0, 0.3f, 1.0f ), new float3( 0, 0.3f, 2 ), float3.UnitY );
-			m_CB_Object.m._Local2World.Scale( new float3( 0.5f, 0.5f, 0.5f ) );
-			m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
-			m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 0.8f, 0.5f );
-			m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.93f );
- 			m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
- 			m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
-			m_CB_Object.UpdateData();
-
-			m_Prim_Sphere.Render( _Shader );
-
-			// Render the tiny cubes
-			for ( int CubeIndex=0; CubeIndex < 4; CubeIndex++ ) {
-
-				float	X = -1.0f + 2.0f * CubeIndex / 3;
-				float	Y = 0.1f + 1.0f * (float) Math.Abs( Math.Sin( m_CB_Main.m.iGlobalTime + CubeIndex ));
-
-//				m_CB_Object.m._Local2World.MakeLookAt( new float3( 1.0f, 0.1f, 0.0f ), new float3( 1.0f, 0.1f, 1 ), float3.UnitY );
-				m_CB_Object.m._Local2World.MakeLookAt( new float3( X, Y, 0.0f ), new float3( X, Y, 1 ), float3.UnitY );
-				m_CB_Object.m._Local2World.Scale( new float3( 0.1f, 0.1f, 0.1f ) );
-				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
-				m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 1, 1 );
-				m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.92f );
- 				m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
- 				m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
-				m_CB_Object.UpdateData();
-
-				m_Prim_Cube.Render( _Shader );
-			}
+// 			// Render the sphere
+// 			m_CB_Object.m._Local2World.MakeLookAt( new float3( 0, 0.5f, 1.0f ), new float3( 0, 0.5f, 2 ), float3.UnitY );
+// //			m_CB_Object.m._Local2World.MakeLookAt( new float3( 0, 0.3f, 1.0f ), new float3( 0, 0.3f, 2 ), float3.UnitY );
+// 			m_CB_Object.m._Local2World.Scale( new float3( 0.5f, 0.5f, 0.5f ) );
+// 			m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
+// 			m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 0.8f, 0.5f );
+// 			m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.93f );
+//  			m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
+//  			m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
+// 			m_CB_Object.UpdateData();
+// 
+// 			m_Prim_Sphere.Render( _Shader );
+// 
+// 			// Render the tiny cubes
+// 			for ( int CubeIndex=0; CubeIndex < 4; CubeIndex++ ) {
+// 
+// 				float	X = -1.0f + 2.0f * CubeIndex / 3;
+// 				float	Y = 0.1f + 1.0f * (float) Math.Abs( Math.Sin( m_CB_Main.m.iGlobalTime + CubeIndex ));
+// 
+// //				m_CB_Object.m._Local2World.MakeLookAt( new float3( 1.0f, 0.1f, 0.0f ), new float3( 1.0f, 0.1f, 1 ), float3.UnitY );
+// 				m_CB_Object.m._Local2World.MakeLookAt( new float3( X, Y, 0.0f ), new float3( X, Y, 1 ), float3.UnitY );
+// 				m_CB_Object.m._Local2World.Scale( new float3( 0.1f, 0.1f, 0.1f ) );
+// 				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
+// 				m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 1, 1 );
+// 				m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.92f );
+//  				m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
+//  				m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
+// 				m_CB_Object.UpdateData();
+// 
+// 				m_Prim_Cube.Render( _Shader );
+// 			}
 		}
 
 		void Application_Idle( object sender, EventArgs e )
@@ -1264,10 +1617,11 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_CB_Main.UpdateData();
 
 			// Setup area light buffer
-			float		SizeX = 1;//0.5f;
+			float		LighOffsetX = 0;//1.2f;
+			float		SizeX = 0.5f;
 			float		SizeY = 1.0f;
 			float		RollAngle = (float) (Math.PI * floatTrackbarControlLightRoll.Value / 180.0);
-			float3		LightPosition = new float3( 1.2f + floatTrackbarControlLightPosX.Value, 1.0f + floatTrackbarControlLightPosY.Value, -1.0f + floatTrackbarControlLightPosZ.Value );
+			float3		LightPosition = new float3( LighOffsetX + floatTrackbarControlLightPosX.Value, 1.0f + floatTrackbarControlLightPosY.Value, -1.0f + floatTrackbarControlLightPosZ.Value );
 			float3		LightTarget = new float3( LightPosition.x + floatTrackbarControlLightTargetX.Value, LightPosition.y + floatTrackbarControlLightTargetY.Value, LightPosition.z + 2.0f + floatTrackbarControlLightTargetZ.Value );
 			float3		LightUp = new float3( (float) Math.Sin( -RollAngle ), (float) Math.Cos( RollAngle ), 0.0f );
 			float4x4	AreaLight2World = new float4x4(); 
@@ -1390,7 +1744,6 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_Tex_AreaLightSAT.SetPS( 0 );
 			m_Tex_AreaLightSATFade.SetPS( 1 );
 			m_Tex_AreaLight.SetPS( 4 );
-			m_Tex_BRDFIntegral.SetPS( 5 );
 
 			// Render the area light itself
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
@@ -1430,6 +1783,17 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 		{
 			if ( m_Device != null )
 				m_Device.ReloadModifiedShaders();
+		}
+
+		private void buttonRebuildBRDF_Click( object sender, EventArgs e )
+		{
+			ComputeBRDFIntegral( new System.IO.FileInfo( "BRDF0_64x64.bin" ), 64 );
+//			ComputeBRDFIntegralImportanceSampling( new System.IO.FileInfo( "BRDF1_64x64.bin" ), 64 );
+
+			if ( m_Tex_BRDFIntegral != null )
+				m_Tex_BRDFIntegral.Dispose();
+			m_Tex_BRDFIntegral = BuildBRDFTexture( new System.IO.FileInfo( "BRDF0_64x64.bin" ), 64 );
+			m_Tex_BRDFIntegral.SetPS( 5 );
 		}
 	}
 }

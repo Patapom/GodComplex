@@ -15,7 +15,7 @@ cbuffer CB_Light : register(b2) {
 Texture2D< float4 >	_TexAreaLightSAT : register(t0);
 Texture2D< float4 >	_TexAreaLightSATFade : register(t1);
 Texture2D< float4 >	_TexAreaLight : register(t4);
-Texture2D< float2 >	_TexBRDFIntegral : register(t5);		// Y should be multiplied by 0.00014996325546887346
+Texture2D< float2 >	_TexBRDFIntegral : register(t5);
 
 static const float4	AREA_LIGHT_TEX_DIMENSIONS = float4( 256.0, 256.0, 1.0/256.0, 1.0/256.0 );
 
@@ -78,9 +78,13 @@ static const float4	AREA_LIGHT_TEX_DIMENSIONS = float4( 256.0, 256.0, 1.0/256.0,
 // 
 
 // Samples the area light given 2 UV coordinates
-float4	SampleAreaLight( float2 _UV0, float2 _UV1, float _SliceIndex ) {
+float4	SampleAreaLightDiffuse( float2 _UV0, float2 _UV1, float _SliceIndex ) {
 
-	// Compute the 
+	float2	RadiusUV = 0.5 * (_UV1 - _UV0);
+	float2	RadiusPixels = AREA_LIGHT_TEX_DIMENSIONS.xy * RadiusUV;
+	float	MipLevel = log2( max( RadiusPixels.x, RadiusPixels.y ) );
+
+	return _TexAreaLight.SampleLevel( LinearWrap, 0.5*(_UV0+_UV1), MipLevel );
 
 return 1.0;
 
@@ -100,6 +104,12 @@ return 1.0;
 // // 	float	PixelsCount = (DeltaUV.x * TexSize.x) * (DeltaUV.y * TexSize.y);
 // 
 // 	return C * (PixelsCount > 1e-3 ? 1.0 / PixelsCount : 0.0);
+}
+
+float4	SampleAreaLightSpecular( float2 _UV0, float2 _UV1, float _SliceIndex ) {
+
+return _TexAreaLight.SampleLevel( LinearWrap, 0.5*(_UV0+_UV1), 0.0 );
+return 1.0;
 }
 
 // Determinant of a 3x3 row-major matrix
@@ -297,7 +307,7 @@ float	ComputeSolidAngleDiffuse( float3 _lsPosition, float3 _lsNormal, float3 _Pr
 	float	SolidAngle = _ClippedAreaLightSolidAngle;
 
 	float3	lsCenter = float3( _UV1.x + _UV0.x - 1.0, 1.0 - _UV1.y - _UV0.y, 0.0 );
-	float3	lsPosition2Center = normalize( lsCenter - _lsPosition );						// Wi, the average incoming light direction
+	float3	lsPosition2Center = normalize( lsCenter - _lsPosition );		// Wi, the average incoming light direction
 	return saturate( dot( _lsNormal, lsPosition2Center ) ) * SolidAngle;	// (N.Wi) * dWi
 }
 
@@ -509,8 +519,8 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, float _Shadow, out fl
 // return;
 
 		// 5.2] ----- Diffuse -----
-	float4	IntegralLight_diffuse = SampleAreaLight( UV0_diffuse, UV1_diffuse, AreaLightSliceIndex );
-			IntegralLight_diffuse.xyz *= IntegralLight_diffuse.w;	// Diffuse uses alpha to allow smoothing out of the texture's borders...
+	float4	IntegralLight_diffuse = SampleAreaLightDiffuse( UV0_diffuse, UV1_diffuse, AreaLightSliceIndex );
+//			IntegralLight_diffuse.xyz *= IntegralLight_diffuse.w;	// Diffuse uses alpha to allow smoothing out of the texture's borders...
 			IntegralLight_diffuse.xyz *= ShadowedLightColor;
 
 	float3	IntegralBRDF_diffuse = _Surface.diffuseAlbedo * FresnelDiffuse * SolidAngle_diffuse;
@@ -518,15 +528,21 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, float _Shadow, out fl
 	_RadianceDiffuse = IntegralLight_diffuse.xyz * IntegralBRDF_diffuse;
 
 		// 5.3] ----- Specular -----
-	float3	IntegralLight_specular = SampleAreaLight( UV0_specular, UV1_specular, AreaLightSliceIndex ).xyz;
+	float3	IntegralLight_specular = SampleAreaLightSpecular( UV0_specular, UV1_specular, AreaLightSliceIndex ).xyz;
 			IntegralLight_specular *= ShadowedLightColor;
 
-	// Here, I must admit I'm taking a HUUUGE shortcut since I don't have a proper solution for the BRDF's integral yet and don't have time to find one...
-	// What I'm planning to do in a near future (or, in video-games industry's terms: never) is to write a bunch of integral values for various angles and roughnesses in a table
-	//	and approximate that table using a simplified analytical formula, a bit like what they did in http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
-	//	which was later simplified by Krzysztof Narkowicz (https://knarkowicz.wordpress.com/2014/12/27/analytical-dfg-term-for-ibl/).
-	//
-	float3	IntegralBRDF_specular = INVPI * FresnelSpecular * SolidAngle_specular;	// Woohoo! Why not?! :)
+// 	// Here, I must admit I'm taking a HUUUGE shortcut since I don't have a proper solution for the BRDF's integral yet and don't have time to find one...
+// 	// What I'm planning to do in a near future (or, in video-games industry's terms: never) is to write a bunch of integral values for various angles and roughnesses in a table
+// 	//	and approximate that table using a simplified analytical formula, a bit like what they did in http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
+// 	//	which was later simplified by Krzysztof Narkowicz (https://knarkowicz.wordpress.com/2014/12/27/analytical-dfg-term-for-ibl/).
+// 	//
+//	float3	IntegralBRDF_specular = INVPI * FresnelSpecular * SolidAngle_specular;	// Woohoo! Why not?! :)
+//
+// 	_RadianceSpecular = IntegralLight_specular * IntegralBRDF_specular;
 
-	_RadianceSpecular = IntegralLight_specular * IntegralBRDF_specular;
+	float2	PreIntegratedBRDF = _TexBRDFIntegral.SampleLevel( LinearClamp, float2( VdotN, _Surface.roughness ), 0.0 );
+
+	_RadianceSpecular = IntegralLight_specular * SolidAngle_specular * (FresnelSpecular * PreIntegratedBRDF.x + PreIntegratedBRDF.y);
+
+//_RadianceSpecular = FresnelSpecular * PreIntegratedBRDF.x * SolidAngle_specular;
 }
