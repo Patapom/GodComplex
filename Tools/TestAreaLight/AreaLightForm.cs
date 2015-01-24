@@ -48,7 +48,6 @@ namespace AreaLightTest
 			public float		_AreaLightIntensity;
 			public float4		_AreaLightTexDimensions;	// XY=Texture size, ZW=1/XY
 			public float3		_ProjectionDirectionDiff;	// Closer to portal when diffusion increases
-			public float		__PAD00;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -90,6 +89,7 @@ namespace AreaLightTest
 		private Shader		m_Shader_RenderScene = null;
 
 		private Texture2D	m_Tex_AreaLight = null;
+		private Texture3D	m_Tex_AreaLight3D = null;
 		private Texture2D	m_Tex_AreaLightSAT = null;
 		private Texture2D	m_Tex_AreaLightSATFade = null;
 
@@ -214,6 +214,39 @@ namespace AreaLightTest
 					return Image2Texture( ImageWidth, ImageHeight, PIXEL_FORMAT.RGBA32_FLOAT, Mips );
 				}
 		}
+
+		public Texture3D	Pipu2Texture( System.IO.FileInfo _FileName ) {
+			using ( System.IO.FileStream S = _FileName.OpenRead() )
+				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+
+					int		SlicesCount = R.ReadInt32();
+					int		W = R.ReadInt32();
+					int		H = R.ReadInt32();
+
+					PixelsBuffer	Slices = new PixelsBuffer( 4 * W * H * SlicesCount * 4 );
+					using ( System.IO.BinaryWriter Wr = Slices.OpenStreamWrite() ) {
+						for ( int SliceIndex=0; SliceIndex < SlicesCount; SliceIndex++ ) {
+							WMath.Vector4D	C = new WMath.Vector4D();
+							for ( int Y=0; Y < H; Y++ ) {
+								for ( int X=0; X < W; X++ ) {
+									C.x = R.ReadSingle();
+									C.y = R.ReadSingle();
+									C.z = R.ReadSingle();
+									C.w = R.ReadSingle();
+
+									Wr.Write( C.x );
+									Wr.Write( C.y );
+									Wr.Write( C.z );
+									Wr.Write( C.w );
+								}
+							}
+						}
+					}
+
+					return Image2Texture3D( W, H, SlicesCount, PIXEL_FORMAT.RGBA32_FLOAT, new PixelsBuffer[] { Slices } );
+				}
+		}
+
 		public Texture2D	PipoImage2Texture( System.IO.FileInfo _FileName ) {
 			using ( System.IO.FileStream S = _FileName.OpenRead() )
 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
@@ -251,6 +284,10 @@ namespace AreaLightTest
 		public Texture2D	Image2Texture( int _Width, int _Height, PIXEL_FORMAT _Format, PixelsBuffer[] _MipsContent )
 		{
 			return new Texture2D( m_Device, _Width, _Height, 1, _MipsContent.Length, _Format, false, false, _MipsContent );
+		}
+		public Texture3D	Image2Texture3D( int _Width, int _Height, int _Depth, PIXEL_FORMAT _Format, PixelsBuffer[] _SlicesContent )
+		{
+			return new Texture3D( m_Device, _Width, _Height, _Depth, 1, _Format, false, false, _SlicesContent );
 		}
 
 		/// <summary>
@@ -297,22 +334,141 @@ namespace AreaLightTest
 				}
 			}
 
-			// Build mips and save as a simple format
+// 			//////////////////////////////////////////////////////////////////////////
+// 			// Build mips and save as a simple format
+// 			{
+// 				int	MaxSize = Math.Max( W, H );
+// 				int	MipsCount = (int) (Math.Ceiling( Math.Log( MaxSize+1 ) / Math.Log( 2 ) ));
+// 				WMath.Vector4D[][,]	Mips = new WMath.Vector4D[MipsCount][,];
+// 				Mips[0] = Image;
+// 
+// 				int	TargetWidth = W;
+// 				int	TargetHeight = H;
+// 				for ( int MipLevel=1; MipLevel < Mips.Length; MipLevel++ ) {
+// 					TargetWidth = Math.Max( 1, TargetWidth >> 1 );
+// 					TargetHeight = Math.Max( 1, TargetHeight >> 1 );
+// 
+// 					float	MipPixelSizeX = W / TargetWidth;	// Size of a mip pixel; in amount of original image pixels (i.e. mip #0)
+// 					float	MipPixelSizeY = H / TargetHeight;	// Size of a mip pixel; in amount of original image pixels (i.e. mip #0)
+// 					int		KernelSize = 2 * (int) Math.Pow( 2, MipLevel );
+// 					float	Sigma = (float) Math.Sqrt( -KernelSize*KernelSize / (2.0 * Math.Log( 0.01 )) );	// So we have a weight of 0.01 at a Kernel Size distance
+// 					float[]	KernelFactors = new float[1+KernelSize];
+// 					float	SumWeights = 0.0f;
+// 					for ( int i=0; i <= KernelSize; i++ ) {
+// 						KernelFactors[i] = (float) (Math.Exp( -i*i / (2.0 * Sigma * Sigma)) / Math.Sqrt( 2 * Math.PI * Sigma * Sigma ) );
+// 						SumWeights += KernelFactors[i];
+// 					}
+// 
+// 					// Perform a horizontal blur first
+// 					WMath.Vector4D[,]	Source = Image;
+// 					WMath.Vector4D[,]	Target = new WMath.Vector4D[TargetWidth,H];
+// 					for ( int Y=0; Y < H; Y++ ) {
+// 						for ( int X=0; X < TargetWidth; X++ ) {
+// 							float	CenterX = X * MipPixelSizeX + 0.5f * (MipPixelSizeX-1);
+// 							WMath.Vector4D	Sum = KernelFactors[0] * BilinearSample( Source, CenterX, Y );
+// 							for ( int i=1; i <= KernelSize; i++ ) {
+// 								Sum += KernelFactors[i] * BilinearSample( Image, CenterX - i, Y );
+// 								Sum += KernelFactors[i] * BilinearSample( Image, CenterX + i, Y );
+// 							}
+// 							Target[X,Y] = Sum;
+// 						}
+// 					}
+// 
+// 					// Perform vertical blur
+// 					Source = Target;
+// 					Mips[MipLevel] = new WMath.Vector4D[TargetWidth,TargetHeight];
+// 					Target = Mips[MipLevel];
+// 					for ( int X=0; X < TargetWidth; X++ ) {
+// 						for ( int Y=0; Y < TargetHeight; Y++ ) {
+// 							float	CenterY = Y * MipPixelSizeY + 0.5f * (MipPixelSizeY-1);
+// 							WMath.Vector4D	Sum = KernelFactors[0] * BilinearSample( Source, X, CenterY );
+// 							for ( int i=1; i <= KernelSize; i++ ) {
+// 								Sum += KernelFactors[i] * BilinearSample( Source, X, CenterY - i );
+// 								Sum += KernelFactors[i] * BilinearSample( Source, X, CenterY + i );
+// 							}
+// 							Target[X,Y] = Sum;
+// 						}
+// 					}
+// 				}
+// 
+// 
+// 				string	Pipi = _TargetFileName.FullName;
+// 				Pipi = System.IO.Path.GetFileNameWithoutExtension( Pipi ) + ".pipi";
+// 				System.IO.FileInfo	SimpleTargetFileName2 = new System.IO.FileInfo(  Pipi );
+// 				using ( System.IO.FileStream S = SimpleTargetFileName2.OpenWrite() )
+// 					using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
+// 						Wr.Write( Mips.Length );
+// 						for ( int MipLevel=0; MipLevel < Mips.Length; MipLevel++ ) {
+// 							WMath.Vector4D[,]	Mip = Mips[MipLevel];
+// 
+// 							int	MipWidth = Mip.GetLength( 0 );
+// 							int	MipHeight = Mip.GetLength( 1 );
+// 							Wr.Write( MipWidth );
+// 							Wr.Write( MipHeight );
+// 
+// 							for ( int Y=0; Y < MipHeight; Y++ ) {
+// 								for ( int X=0; X < MipWidth; X++ ) {
+// 									Wr.Write( Mip[X,Y].x );
+// 									Wr.Write( Mip[X,Y].y );
+// 									Wr.Write( Mip[X,Y].z );
+// 									Wr.Write( Mip[X,Y].w );
+// 								}
+// 							}
+// 						}
+// 					}
+// 			}
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// Build "3D mips" and save as a simple format
 			{
 				int	MaxSize = Math.Max( W, H );
 				int	MipsCount = (int) (Math.Ceiling( Math.Log( MaxSize+1 ) / Math.Log( 2 ) ));
-				WMath.Vector4D[][,]	Mips = new WMath.Vector4D[MipsCount][,];
-				Mips[0] = Image;
 
-				int	TargetWidth = W;
+				// 1] Build vertical mips
+				WMath.Vector4D[][,]	VerticalMips = new WMath.Vector4D[MipsCount][,];
+				VerticalMips[0] = Image;
+
 				int	TargetHeight = H;
-				for ( int MipLevel=1; MipLevel < Mips.Length; MipLevel++ ) {
-					TargetWidth = Math.Max( 1, TargetWidth >> 1 );
-					TargetHeight = Math.Max( 1, TargetHeight >> 1 );
+				for ( int MipLevel=1; MipLevel < MipsCount; MipLevel++ ) {
+					int	SourceHeight = TargetHeight;
 
-					float	MipPixelSizeX = W / TargetWidth;	// Size of a mip pixel; in amount of original image pixels (i.e. mip #0)
-					float	MipPixelSizeY = H / TargetHeight;	// Size of a mip pixel; in amount of original image pixels (i.e. mip #0)
-					int		KernelSize = 2 * (int) Math.Pow( 2, MipLevel );
+					int	BorderSize = (int) Math.Pow( 2, MipLevel-1 );
+					TargetHeight = Math.Max( 1, H - 2*BorderSize );
+
+					WMath.Vector4D[,]	SourceMip = VerticalMips[MipLevel-1];
+					WMath.Vector4D[,]	TargetMip = new WMath.Vector4D[W,TargetHeight];
+					VerticalMips[MipLevel] = TargetMip;
+					for ( int Y=0; Y < TargetHeight; Y++ ) {
+						float	fY = (float) (Y+0.5f) * SourceHeight / TargetHeight;
+						for ( int X=0; X < W; X++ ) {
+							TargetMip[X,Y] = BilinearSample( SourceMip, X, fY );
+						}
+					}
+				}
+
+
+//MipsCount = 6;
+
+				// 2] Build smoothed slices
+				WMath.Vector4D[][,]	Slices = new WMath.Vector4D[MipsCount][,];
+				Slices[0] = Image;
+
+				for ( int MipLevel=1; MipLevel < Slices.Length; MipLevel++ ) {
+
+					int		BorderSize = (int) Math.Pow( 2, MipLevel-1 );		// Each new "mip" has a border twice the size of the previous level
+
+					int		InsetWidth = Math.Max( 1, W - 2 * BorderSize );		// The inset image is now reduced to account for borders
+					int		InsetHeight = Math.Max( 1, H - 2 * BorderSize );
+
+					int		WidthWithBorders = W + 2 * BorderSize;				// The larger image with borders that will be stored in the specific mip
+					int		HeightWithBorders = H + 2 * BorderSize;
+
+					int		Y0 = BorderSize;
+					int		Y1 = H - BorderSize;
+
+					// Build gaussian weights
+					int		KernelSize = 2 * (int) BorderSize;
 					float	Sigma = (float) Math.Sqrt( -KernelSize*KernelSize / (2.0 * Math.Log( 0.01 )) );	// So we have a weight of 0.01 at a Kernel Size distance
 					float[]	KernelFactors = new float[1+KernelSize];
 					float	SumWeights = 0.0f;
@@ -322,15 +478,24 @@ namespace AreaLightTest
 					}
 
 					// Perform a horizontal blur first
-					WMath.Vector4D[,]	Source = Image;
-					WMath.Vector4D[,]	Target = new WMath.Vector4D[TargetWidth,H];
+					WMath.Vector4D[,]	Source = VerticalMips[MipLevel];
+					WMath.Vector4D[,]	Target = new WMath.Vector4D[W,H];
 					for ( int Y=0; Y < H; Y++ ) {
-						for ( int X=0; X < TargetWidth; X++ ) {
-							float	CenterX = X * MipPixelSizeX + 0.5f * (MipPixelSizeX-1);
-							WMath.Vector4D	Sum = KernelFactors[0] * BilinearSample( Source, CenterX, Y );
+						if ( Y < Y0 || Y >= Y1 ) {
+							// In the borderlands
+							for ( int X=0; X < W; X++ ) {
+								Target[X,Y] = WMath.Vector4D.Zero;
+							}
+							continue;
+						}
+
+						float	fY = (float) (Y - Y0) * H / InsetHeight;
+						for ( int X=0; X < W; X++ ) {
+							float			CenterX = 0.5f * W + ((float) (X+0.5f) / W - 0.5f) * WidthWithBorders;
+							WMath.Vector4D	Sum = KernelFactors[0] * BilinearSample( Source, CenterX, fY );
 							for ( int i=1; i <= KernelSize; i++ ) {
-								Sum += KernelFactors[i] * BilinearSample( Image, CenterX - i, Y );
-								Sum += KernelFactors[i] * BilinearSample( Image, CenterX + i, Y );
+								Sum += KernelFactors[i] * BilinearSample( Image, CenterX - i, fY );
+								Sum += KernelFactors[i] * BilinearSample( Image, CenterX + i, fY );
 							}
 							Target[X,Y] = Sum;
 						}
@@ -338,11 +503,11 @@ namespace AreaLightTest
 
 					// Perform vertical blur
 					Source = Target;
-					Mips[MipLevel] = new WMath.Vector4D[TargetWidth,TargetHeight];
-					Target = Mips[MipLevel];
-					for ( int X=0; X < TargetWidth; X++ ) {
-						for ( int Y=0; Y < TargetHeight; Y++ ) {
-							float	CenterY = Y * MipPixelSizeY + 0.5f * (MipPixelSizeY-1);
+					Slices[MipLevel] = new WMath.Vector4D[W,H];
+					Target = Slices[MipLevel];
+					for ( int X=0; X < W; X++ ) {
+						for ( int Y=0; Y < H; Y++ ) {
+							float			CenterY = 0.5f * H + ((float) (Y+0.5f) / H - 0.5f) * HeightWithBorders;
 							WMath.Vector4D	Sum = KernelFactors[0] * BilinearSample( Source, X, CenterY );
 							for ( int i=1; i <= KernelSize; i++ ) {
 								Sum += KernelFactors[i] * BilinearSample( Source, X, CenterY - i );
@@ -354,22 +519,19 @@ namespace AreaLightTest
 				}
 
 
-				string	Pipi = _TargetFileName.FullName;
-				Pipi = System.IO.Path.GetFileNameWithoutExtension( Pipi ) + ".pipi";
-				System.IO.FileInfo	SimpleTargetFileName2 = new System.IO.FileInfo(  Pipi );
+				string	Pipu = _TargetFileName.FullName;
+				Pipu = System.IO.Path.GetFileNameWithoutExtension( Pipu ) + ".pipu";
+				System.IO.FileInfo	SimpleTargetFileName2 = new System.IO.FileInfo(  Pipu );
 				using ( System.IO.FileStream S = SimpleTargetFileName2.OpenWrite() )
 					using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
-						Wr.Write( Mips.Length );
-						for ( int MipLevel=0; MipLevel < Mips.Length; MipLevel++ ) {
-							WMath.Vector4D[,]	Mip = Mips[MipLevel];
+						Wr.Write( Slices.Length );
+						Wr.Write( W );
+						Wr.Write( H );
 
-							int	MipWidth = Mip.GetLength( 0 );
-							int	MipHeight = Mip.GetLength( 1 );
-							Wr.Write( MipWidth );
-							Wr.Write( MipHeight );
-
-							for ( int Y=0; Y < MipHeight; Y++ ) {
-								for ( int X=0; X < MipWidth; X++ ) {
+						for ( int MipLevel=0; MipLevel < Slices.Length; MipLevel++ ) {
+							WMath.Vector4D[,]	Mip = Slices[MipLevel];
+							for ( int Y=0; Y < H; Y++ ) {
+								for ( int X=0; X < W; X++ ) {
 									Wr.Write( Mip[X,Y].x );
 									Wr.Write( Mip[X,Y].y );
 									Wr.Write( Mip[X,Y].z );
@@ -380,16 +542,17 @@ namespace AreaLightTest
 					}
 			}
 
-			// Perform the accumulation
+			//////////////////////////////////////////////////////////////////////////
+			// Build the SAT
 			for ( int Y=0; Y < H; Y++ ) {
 				for ( int X=1; X < W; X++ ) {
-					Image[X,Y] += Image[X-1,Y];
+					Image[X,Y] += Image[X-1,Y];	// Accumulate along X
 				}
 			}
 
 			for ( int X=0; X < W; X++ ) {
 				for ( int Y=1; Y < H; Y++ ) {
-					Image[X,Y] += Image[X,Y-1];
+					Image[X,Y] += Image[X,Y-1];	// Accumulate along Y
 				}
 			}
 
@@ -1377,6 +1540,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 //			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT.pipo" ) );
 
 			m_Tex_AreaLight = Pipi2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipi" ) );
+//			m_Tex_AreaLight3D = Pipu2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipu" ) );
 			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipo" ) );
 			m_Tex_AreaLightSATFade = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2Fade.pipo" ) );
 
@@ -1521,6 +1685,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_Tex_ShadowSmoothiePou[1].Dispose();
 #endif
 			m_Tex_AreaLight.Dispose();
+//			m_Tex_AreaLight3D.Dispose();
 			m_Tex_AreaLightSAT.Dispose();
 			m_Tex_AreaLightSATFade.Dispose();
 
@@ -1590,7 +1755,8 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			for ( int CubeIndex=0; CubeIndex < 4; CubeIndex++ ) {
 
 				float	X = -1.0f + 2.0f * CubeIndex / 3;
-				float	Y = 0.1f + 1.0f * (float) Math.Abs( Math.Sin( m_CB_Main.m.iGlobalTime + CubeIndex ));
+//				float	Y = 0.1f + 1.0f * (float) Math.Abs( Math.Sin( m_CB_Main.m.iGlobalTime + CubeIndex ));
+				float	Y = 0.1f + (float) Math.Max( 0.0, Math.Sin( m_CB_Main.m.iGlobalTime + CubeIndex ));
 
 //				m_CB_Object.m._Local2World.MakeLookAt( new float3( 1.0f, 0.1f, 0.0f ), new float3( 1.0f, 0.1f, 1 ), float3.UnitY );
 				m_CB_Object.m._Local2World.MakeLookAt( new float3( X, Y, 0.0f ), new float3( X, Y, 1 ), float3.UnitY );
@@ -1637,11 +1803,9 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			const float	DiffusionMax = 1000.0f;
 //			float		Diffusion_Diffuse = DiffusionMin / (DiffusionMin / DiffusionMax + floatTrackbarControlProjectionDiffusion.Value);
 			float		Diffusion_Diffuse = DiffusionMax + (DiffusionMin - DiffusionMax) * (float) Math.Pow( floatTrackbarControlProjectionDiffusion.Value, 0.01f );
-			float		Diffusion_Specular = DiffusionMax + (DiffusionMin - DiffusionMax) * (float) Math.Pow( 1.0f - floatTrackbarControlProjectionDiffusion.Value, 0.05f );
 
 //			float3		LocalDirection_Diffuse = (float3) (new float4( Diffusion_Diffuse * Direction, 0 ) * World2AreaLight);
 			float3		LocalDirection_Diffuse = Diffusion_Diffuse * Direction;
-			float3		LocalDirection_Specular = (float3) (new float4( Diffusion_Specular * Direction, 0 ) * World2AreaLight);
 
 			m_CB_Light.m._AreaLightX = (float3) AreaLight2World.GetRow( 0 );
 			m_CB_Light.m._AreaLightY = (float3) AreaLight2World.GetRow( 1 );
@@ -1742,6 +1906,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
 
 			m_Tex_AreaLightSAT.SetPS( 0 );
+//			m_Tex_AreaLight3D.SetPS( 0 );
 			m_Tex_AreaLightSATFade.SetPS( 1 );
 			m_Tex_AreaLight.SetPS( 4 );
 

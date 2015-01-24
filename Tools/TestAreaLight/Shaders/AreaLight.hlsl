@@ -10,20 +10,18 @@ cbuffer CB_Light : register(b2) {
 	float		_AreaLightIntensity;
 	float4		_AreaLightTexDimensions;
 	float3		_ProjectionDirectionDiff;	// Closer to portal when diffusion increases
-	float3		_ProjectionDirectionSpec;	// Closer to portal when diffusion decreases
 };
 
 Texture2D< float4 >	_TexAreaLightSAT : register(t0);
 Texture2D< float4 >	_TexAreaLightSATFade : register(t1);
-Texture2D< float4 >	_TexAreaLight : register(t4);
 
 
 // Samples the SAT
-float4	SampleSAT( Texture2D< float4 > _Tex, float2 _UV0, float2 _UV1 ) {
-	float4	C00 = _Tex.Sample( LinearClamp, _UV0 );
-	float4	C01 = _Tex.Sample( LinearClamp, float2( _UV1.x, _UV0.y ) );
-	float4	C10 = _Tex.Sample( LinearClamp, float2( _UV0.x, _UV1.y ) );
-	float4	C11 = _Tex.Sample( LinearClamp, _UV1 );
+float4	SampleAreaLight( float2 _UV0, float2 _UV1 ) {
+	float4	C00 = _TexAreaLightSAT.Sample( LinearClamp, _UV0 );
+	float4	C01 = _TexAreaLightSAT.Sample( LinearClamp, float2( _UV1.x, _UV0.y ) );
+	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, float2( _UV0.x, _UV1.y ) );
+	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV1 );
 	float4	C = C11 - C10 - C01 + C00;
 
 	// Compute normalization factor
@@ -39,15 +37,15 @@ float4	SampleSAT( Texture2D< float4 > _Tex, float2 _UV0, float2 _UV1 ) {
 }
 
 // Another version that uses mip mapping
-float4	SampleMip( Texture2D< float4 > _Tex, float2 _UV0, float2 _UV1 ) {
-
-	float2	UV = 0.5 * (_UV0 + _UV1);
-	float2	RadiusUV = 0.5 * (_UV1 - _UV0);
-	float2	RadiusPixel = _AreaLightTexDimensions.xy * RadiusUV;
-	float	MipLevel = log2( max( RadiusPixel.x, RadiusPixel.y ) );
-
-	return _Tex.SampleLevel( LinearBorder, UV, MipLevel );
-}
+// float4	SampleMip( Texture2D< float4 > _Tex, float2 _UV0, float2 _UV1 ) {
+// 
+// 	float2	UV = 0.5 * (_UV0 + _UV1);
+// 	float2	RadiusUV = 0.5 * (_UV1 - _UV0);
+// 	float2	RadiusPixel = _AreaLightTexDimensions.xy * RadiusUV;
+// 	float	MipLevel = log2( max( RadiusPixel.x, RadiusPixel.y ) );
+// 
+// 	return _Tex.SampleLevel( LinearBorder, UV, MipLevel );
+// }
 
 // Determinant of a 3x3 row-major matrix
 float	Determinant( float3 a, float3 b, float3 c ) {

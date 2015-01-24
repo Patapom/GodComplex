@@ -98,7 +98,7 @@ float3	SampleAreaLightDiffuse( float2 _UV0, float2 _UV1, float _SliceIndex ) {
 	return Attenuation * Color.xyz;
 }
 
-float4	SampleAreaLightSpecular( float2 _UV0, float2 _UV1, float _SliceIndex ) {
+float3	SampleAreaLightSpecular( float2 _UV0, float2 _UV1, float _SliceIndex ) {
 
 	float2	DeltaUV = 0.5 * (_UV1 - _UV0);
 	float	RadiusUV = max( DeltaUV.x, DeltaUV.y );
@@ -110,7 +110,7 @@ float4	SampleAreaLightSpecular( float2 _UV0, float2 _UV1, float _SliceIndex ) {
 
 	float	Attenuation = 1.0 - saturate( length( UVCenter - SatUVCenter ) / (1e-3 + RadiusUV) );
 
-	float4	Color = _SliceIndex >= 0 ? _TexAreaLight.SampleLevel( LinearWrap, SatUVCenter, MipLevel ) : 1.0;
+	float3	Color = _SliceIndex >= 0 ? _TexAreaLight.SampleLevel( LinearWrap, SatUVCenter, MipLevel ).xyz : 1.0;
 	return Attenuation * Color;
 // return _TexAreaLight.SampleLevel( LinearWrap, 0.5*(_UV0+_UV1), 0.0 );
 // return 1.0;
