@@ -1,4 +1,6 @@
 
+#define USE_TEXTURE	1
+
 cbuffer CB_Light : register(b2) {
 	float3		_AreaLightX;
 	float		_AreaLightScaleX;
@@ -327,11 +329,15 @@ float	ComputeSolidAngleDiffuse( float3 _lsPosition, float3 _lsNormal, float3 _Pr
 //	_ProjectedSolidAngle, an estimate of the perceived projected solid angle (i.e. cos(IncidentAngle) * dOmega)
 //
 float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _lsView, float _Gloss, float4 _ClippedUVs, float _SolidAngleDiffuse, out float2 _UV0, out float2 _UV1 ) {
-//	_Gloss = pow( _Gloss, 0.125 );	// More linear appearance... To be defined
+// 	_Gloss = max( 0.001, _Gloss );
+// 	_Gloss = pow( _Gloss, 0.125 );	// More linear appearance... To be defined
+
+	_Gloss = max( 0.0, _Gloss );
 
 	// Compute the gloss cone's aperture angle
-	float	Roughness = 1.0 - pow( _Gloss, 0.125 );
-	float	HalfAngle = 0.0003474660443456835 + Roughness * (1.3331290497744692 - Roughness * 0.5040552688878546);	// cf. IBL.mrpr to see the link between roughness and aperture angle
+//	float	Roughness = 1.0 - pow( _Gloss, 0.125 );
+	float	Roughness = 1.0 - _Gloss;
+	float	HalfAngle = Roughness * (1.3331290497744692 - Roughness * 0.5040552688878546);	// cf. IBL.mrpr to see the link between roughness and aperture angle
 	float	SinHalfAngle, CosHalfAngle;
 	sincos( HalfAngle, SinHalfAngle, CosHalfAngle );
 	float	TanHalfAngle = SinHalfAngle / CosHalfAngle;
@@ -398,6 +404,9 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 			FresnelGrazing *= FresnelGrazing;
 			FresnelGrazing *= FresnelGrazing;
 			ProjectedSolidAngleSpecular *= 1.0 - FresnelGrazing;								// Also fade based on V.N to remove grazing angles
+
+			// Assume radiance * 1/PI if the area light is largely diffusing
+			ProjectedSolidAngleSpecular *= lerp( 1.0, INVPI, _AreaLightDiffusion );
 
 
 // Difference with ComputeSolidAngleDiffuse() is that we take the center of the clipped UVs as main direction for dotting with normal, instead of center of target UVs (potentially directional)
@@ -523,7 +532,12 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, float _Shadow, out fl
 	// 5] =========== Compute the integration ===========
 //	float	AreaLightSliceIndex = _Light.m_AreaLightSlice;
 //	float3	ShadowedLightColor = _Light.m_shadow * _Light.m_color;
+
+#ifdef USE_TEXTURE
 	float	AreaLightSliceIndex = 0.0;
+#else
+	float	AreaLightSliceIndex = -1;
+#endif
 	float3	ShadowedLightColor = _Shadow * _AreaLightIntensity;
 
 		// 5.1] ----- Compute Fresnel -----
@@ -535,16 +549,16 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, float _Shadow, out fl
 // return;
 
 		// 5.2] ----- Diffuse -----
-	float3	IntegralLight_diffuse = SampleAreaLightDiffuse( UV0_diffuse, UV1_diffuse, AreaLightSliceIndex );
-			IntegralLight_diffuse *= ShadowedLightColor;
+	float3	Irradiance_diffuse = SampleAreaLightDiffuse( UV0_diffuse, UV1_diffuse, AreaLightSliceIndex );
+			Irradiance_diffuse *= ShadowedLightColor;
 
 	float3	IntegralBRDF_diffuse = _Surface.diffuseAlbedo * FresnelDiffuse * SolidAngle_diffuse;
 
-	_RadianceDiffuse = IntegralLight_diffuse * IntegralBRDF_diffuse;
+	_RadianceDiffuse = Irradiance_diffuse * IntegralBRDF_diffuse;
 
 		// 5.3] ----- Specular -----
-	float3	IntegralLight_specular = SampleAreaLightSpecular( UV0_specular, UV1_specular, AreaLightSliceIndex );
-			IntegralLight_specular *= ShadowedLightColor;
+	float3	Irradiance_specular = SampleAreaLightSpecular( UV0_specular, UV1_specular, AreaLightSliceIndex );
+			Irradiance_specular *= ShadowedLightColor;
 
 // 	// Here, I must admit I'm taking a HUUUGE shortcut since I don't have a proper solution for the BRDF's integral yet and don't have time to find one...
 // 	// What I'm planning to do in a near future (or, in video-games industry's terms: never) is to write a bunch of integral values for various angles and roughnesses in a table
@@ -553,14 +567,12 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, float _Shadow, out fl
 // 	//
 //	float3	IntegralBRDF_specular = INVPI * FresnelSpecular * SolidAngle_specular;	// Woohoo! Why not?! :)
 //
-// 	_RadianceSpecular = IntegralLight_specular * IntegralBRDF_specular;
+// 	_RadianceSpecular = Irradiance_specular * IntegralBRDF_specular;
 
+	// Okay so I did it: I computed the pre-integrated BRDF table and I'm using a texture (for now) to scale/bias the irradiance...
+	// Still need to approximate that texture using polynomials or something...
 	float2	PreIntegratedBRDF = _TexBRDFIntegral.SampleLevel( LinearClamp, float2( VdotN, _Surface.roughness ), 0.0 );
 	float3	IntegralBRDF_specular = FresnelSpecular * PreIntegratedBRDF.x * SolidAngle_specular + PreIntegratedBRDF.y;
 
-//	float3	IntegralBRDF_specular = FresnelSpecular * SolidAngle_specular;
-
-	_RadianceSpecular = IntegralLight_specular * IntegralBRDF_specular;
-
-//_RadianceSpecular = FresnelSpecular * PreIntegratedBRDF.x * SolidAngle_specular;
+	_RadianceSpecular = Irradiance_specular * IntegralBRDF_specular;
 }

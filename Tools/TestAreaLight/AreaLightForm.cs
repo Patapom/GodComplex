@@ -1573,37 +1573,37 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 				m_Prim_Rectangle.Render( _Shader );
 			}
 
-// 			// Render the sphere
-// 			m_CB_Object.m._Local2World.MakeLookAt( new float3( 0, 0.5f, 1.0f ), new float3( 0, 0.5f, 2 ), float3.UnitY );
-// //			m_CB_Object.m._Local2World.MakeLookAt( new float3( 0, 0.3f, 1.0f ), new float3( 0, 0.3f, 2 ), float3.UnitY );
-// 			m_CB_Object.m._Local2World.Scale( new float3( 0.5f, 0.5f, 0.5f ) );
-// 			m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
-// 			m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 0.8f, 0.5f );
-// 			m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.93f );
-//  			m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
-//  			m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
-// 			m_CB_Object.UpdateData();
-// 
-// 			m_Prim_Sphere.Render( _Shader );
-// 
-// 			// Render the tiny cubes
-// 			for ( int CubeIndex=0; CubeIndex < 4; CubeIndex++ ) {
-// 
-// 				float	X = -1.0f + 2.0f * CubeIndex / 3;
-// 				float	Y = 0.1f + 1.0f * (float) Math.Abs( Math.Sin( m_CB_Main.m.iGlobalTime + CubeIndex ));
-// 
-// //				m_CB_Object.m._Local2World.MakeLookAt( new float3( 1.0f, 0.1f, 0.0f ), new float3( 1.0f, 0.1f, 1 ), float3.UnitY );
-// 				m_CB_Object.m._Local2World.MakeLookAt( new float3( X, Y, 0.0f ), new float3( X, Y, 1 ), float3.UnitY );
-// 				m_CB_Object.m._Local2World.Scale( new float3( 0.1f, 0.1f, 0.1f ) );
-// 				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
-// 				m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 1, 1 );
-// 				m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.92f );
-//  				m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
-//  				m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
-// 				m_CB_Object.UpdateData();
-// 
-// 				m_Prim_Cube.Render( _Shader );
-// 			}
+			// Render the sphere
+			m_CB_Object.m._Local2World.MakeLookAt( new float3( 0, 0.5f, 1.0f ), new float3( 0, 0.5f, 2 ), float3.UnitY );
+//			m_CB_Object.m._Local2World.MakeLookAt( new float3( 0, 0.3f, 1.0f ), new float3( 0, 0.3f, 2 ), float3.UnitY );
+			m_CB_Object.m._Local2World.Scale( new float3( 0.5f, 0.5f, 0.5f ) );
+			m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
+			m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 0.8f, 0.5f );
+			m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.93f );
+ 			m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
+ 			m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
+			m_CB_Object.UpdateData();
+
+			m_Prim_Sphere.Render( _Shader );
+
+			// Render the tiny cubes
+			for ( int CubeIndex=0; CubeIndex < 4; CubeIndex++ ) {
+
+				float	X = -1.0f + 2.0f * CubeIndex / 3;
+				float	Y = 0.1f + 1.0f * (float) Math.Abs( Math.Sin( m_CB_Main.m.iGlobalTime + CubeIndex ));
+
+//				m_CB_Object.m._Local2World.MakeLookAt( new float3( 1.0f, 0.1f, 0.0f ), new float3( 1.0f, 0.1f, 1 ), float3.UnitY );
+				m_CB_Object.m._Local2World.MakeLookAt( new float3( X, Y, 0.0f ), new float3( X, Y, 1 ), float3.UnitY );
+				m_CB_Object.m._Local2World.Scale( new float3( 0.1f, 0.1f, 0.1f ) );
+				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
+				m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 1, 1 );
+				m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.92f );
+ 				m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
+ 				m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
+				m_CB_Object.UpdateData();
+
+				m_Prim_Cube.Render( _Shader );
+			}
 		}
 
 		void Application_Idle( object sender, EventArgs e )
