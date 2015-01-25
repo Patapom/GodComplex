@@ -72,7 +72,9 @@ float	ComputeShadow( float3 _wsPosition, float3 _wsNormal, out float4 _Debug ) {
 									dot( lsDeltaPos, _AreaLightZ ) );
 
 	// Apply paraboloid projection
-	float	ReceiverDistance = length( lsPosition );
+	const float	BIAS = 0;//1e-3;
+
+	float	ReceiverDistance = length( lsPosition ) + BIAS;
 	float3	lsDirection = lsPosition / ReceiverDistance;
 
 	float2	projPosition = lsDirection.xy / (1.0 + lsDirection.z);

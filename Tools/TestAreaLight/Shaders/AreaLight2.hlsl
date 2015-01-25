@@ -329,16 +329,11 @@ float	ComputeSolidAngleDiffuse( float3 _lsPosition, float3 _lsNormal, float3 _Pr
 //	_ProjectedSolidAngle, an estimate of the perceived projected solid angle (i.e. cos(IncidentAngle) * dOmega)
 //
 float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _lsView, float _Gloss, float4 _ClippedUVs, float _SolidAngleDiffuse, out float2 _UV0, out float2 _UV1 ) {
-// 	_Gloss = max( 0.001, _Gloss );
-// 	_Gloss = pow( _Gloss, 0.125 );	// More linear appearance... To be defined
 
-//	_Gloss = max( 0.0, _Gloss );
-
-	// Bend view toward normal depending on glossiness
+	// Bend view toward center of area light depending on glossiness
 	_lsView = normalize( lerp( -_lsPosition, _lsView, _Gloss ) );
 
 	// Compute the gloss cone's aperture angle
-//	float	Roughness = 1.0 - pow( _Gloss, 0.125 );
 	float	Roughness = 1.0 - _Gloss;
 	float	HalfAngle = 0.0003474660443456835 + Roughness * (1.3331290497744692 - Roughness * 0.5040552688878546);	// cf. IBL.mrpr to see the link between roughness and aperture angle
 	float	SinHalfAngle, CosHalfAngle;
@@ -346,7 +341,7 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 	float	TanHalfAngle = SinHalfAngle / CosHalfAngle;
 
 	// Compute the intersection of the view with the are light's plane
-	float	t = _lsPosition.z / (1e-3 - _lsView.z);
+	float	t = _lsPosition.z / max( 1e-3, -_lsView.z );
 	float3	I = _lsPosition + t * _lsView;	// Intersection position on the plane
 
 	// Compute the radius of the specular cone at hit distance
@@ -354,6 +349,7 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 
 	float	RadiusUV = 0.5 * Radius;
 //			RadiusUV = lerp( RadiusUV, 1.0, smoothstep( 0.0, 1.0, RadiusUV ) );
+//			RadiusUV = lerp( 1.0, RadiusUV, _Gloss );
 
 	// Compute the UVs encompassing the cone's ellipsoid intersection with the area light plane
 	float2	UVcenter = float2( 0.5 * (1.0 + I.x), 0.5 * (1.0 - I.y) );
@@ -367,7 +363,7 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 
 	/////////////////////////////////
 	// Compute the specular solid angle
-	float	SolidAngle = 2.0 * PI * (1.0 - CosHalfAngle);				// Specular solid angle for a cone
+	float	SolidAngle = 2.0 * PI * (1.0 - CosHalfAngle);		// Solid angle for the specular cone
 
 
 	// Compute an approximation of the clipping of the projected disc and the area light:
@@ -397,26 +393,25 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 //	float2	ClippedUV1 = clamp( _UV1, _ClippedUVs.xy, _ClippedUVs.zw );
 
 	// Interpolate between a "direction light source" unit solid angle and the fully diffuse solid angle, clipped by the area light
-////	SolidAngle = lerp( normalize( _lsPosition ).z, _SolidAngleDiffuse, SolidAngle / _SolidAngleDiffuse );
-//	SolidAngle = lerp( 1.0, _SolidAngleDiffuse, saturate(SolidAngle / _SolidAngleDiffuse) );
+//	SolidAngle = lerp( normalize( _lsPosition ).z, _SolidAngleDiffuse, SolidAngle / _SolidAngleDiffuse );
+	SolidAngle = lerp( 1.0, _SolidAngleDiffuse, saturate(SolidAngle / _SolidAngleDiffuse) );
 
 
 
+// 	// Interpolate between a "direction light source" unit solid angle and the fully diffuse solid angle, clipped by the area light
+// 	float	Attenuation = 1.0 - saturate( length( UVcenter - SatUVcenter ) / (1e-3 + RadiusUV) );
+// 	SolidAngle = Attenuation * lerp( 1.0, _SolidAngleDiffuse, saturate(SolidAngle / _SolidAngleDiffuse) );
 
-
-	// Interpolate between a "direction light source" unit solid angle and the fully diffuse solid angle, clipped by the area light
-	float	Attenuation = 1.0 - saturate( length( UVcenter - SatUVcenter ) / (1e-3 + RadiusUV) );
-	SolidAngle = Attenuation * lerp( 1.0, _SolidAngleDiffuse, saturate(SolidAngle / _SolidAngleDiffuse) );
 
 
 	// Finally, we can compute the projected solid angle by dotting with the normal
 	float	ProjectedSolidAngleSpecular = saturate( dot( _lsNormal, _lsView ) ) * SolidAngle;	// (N.Wi) * dWi
 //			ProjectedSolidAngleSpecular *= saturate( -_lsView.z );								// Also fade based on V.N to remove grazing angles
 
-	float	FresnelGrazing = 1.0 - saturate( -_lsView.z );
-			FresnelGrazing *= FresnelGrazing;
-			FresnelGrazing *= FresnelGrazing;
-			ProjectedSolidAngleSpecular *= 1.0 - FresnelGrazing;								// Also fade based on V.N to remove grazing angles
+// 	float	FresnelGrazing = 1.0 - saturate( -_lsView.z );
+// 			FresnelGrazing *= FresnelGrazing;
+// 			FresnelGrazing *= FresnelGrazing;
+// 			ProjectedSolidAngleSpecular *= 1.0 - FresnelGrazing;								// Also fade based on V.N to remove grazing angles
 
 			// Assume radiance * 1/PI if the area light is largely diffusing
 			ProjectedSolidAngleSpecular *= lerp( 1.0, INVPI, _AreaLightDiffusion );
@@ -539,8 +534,11 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, float _Shadow, out fl
 	float2	UV0_diffuse, UV1_diffuse;
 	float	SolidAngle_diffuse = ComputeSolidAngleDiffuse( lsPosition, lsNormal, ProjectionDirection, ClippedUVs, SolidAngle, UV0_diffuse, UV1_diffuse );
 
+ 	float	Gloss = pow( 1.0 - _Surface.roughness, 0.5 );	// More linear appearance... To be defined (I prefer that one, too bad it costs more :( !)
+//	float	Gloss = 1.0 - pow( _Surface.roughness, 2.0 );	// More linear appearance... To be defined
+
 	float2	UV0_specular, UV1_specular;
-	float	SolidAngle_specular = ComputeSolidAngleSpecular( lsPosition, lsNormal, lsView, 1.0 - _Surface.roughness, ClippedUVs, SolidAngle_diffuse, UV0_specular, UV1_specular );
+	float	SolidAngle_specular = ComputeSolidAngleSpecular( lsPosition, lsNormal, lsView, Gloss, ClippedUVs, SolidAngle_diffuse, UV0_specular, UV1_specular );
 
 	// 5] =========== Compute the integration ===========
 //	float	AreaLightSliceIndex = _Light.m_AreaLightSlice;
@@ -585,7 +583,8 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, float _Shadow, out fl
 	// Okay so I did it: I computed the pre-integrated BRDF table and I'm using a texture (for now) to scale/bias the irradiance...
 	// Still need to approximate that texture using polynomials or something...
 	float2	PreIntegratedBRDF = _TexBRDFIntegral.SampleLevel( LinearClamp, float2( VdotN, _Surface.roughness ), 0.0 );
-	float3	IntegralBRDF_specular = FresnelSpecular * PreIntegratedBRDF.x * SolidAngle_specular + PreIntegratedBRDF.y;
+//	float3	IntegralBRDF_specular = FresnelSpecular * PreIntegratedBRDF.x * SolidAngle_specular + PreIntegratedBRDF.y;
+float3	IntegralBRDF_specular = FresnelSpecular * PreIntegratedBRDF.x * SolidAngle_specular + Gloss*PreIntegratedBRDF.y;	// Remove ambient term when totally rough
 
 	_RadianceSpecular = Irradiance_specular * IntegralBRDF_specular;
 }
