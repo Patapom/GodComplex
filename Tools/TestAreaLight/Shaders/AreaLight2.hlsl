@@ -103,7 +103,7 @@ float3	SampleAreaLightSpecular( float2 _UV0, float2 _UV1, float _SliceIndex ) {
 	float2	DeltaUV = 0.5 * (_UV1 - _UV0);
 	float	RadiusUV = max( DeltaUV.x, DeltaUV.y );
 	float	RadiusPixels = AREA_LIGHT_TEX_DIMENSIONS.x * RadiusUV;
-	float	MipLevel = log2( RadiusPixels );
+	float	MipLevel = log2( 1e-4 + RadiusPixels );
 
 	float2	UVCenter = 0.5 * (_UV0 + _UV1);
 	float2	SatUVCenter = saturate( UVCenter );
@@ -332,32 +332,35 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 // 	_Gloss = max( 0.001, _Gloss );
 // 	_Gloss = pow( _Gloss, 0.125 );	// More linear appearance... To be defined
 
-	_Gloss = max( 0.0, _Gloss );
+//	_Gloss = max( 0.0, _Gloss );
+
+	// Bend view toward normal depending on glossiness
+	_lsView = normalize( lerp( -_lsPosition, _lsView, _Gloss ) );
 
 	// Compute the gloss cone's aperture angle
 //	float	Roughness = 1.0 - pow( _Gloss, 0.125 );
 	float	Roughness = 1.0 - _Gloss;
-	float	HalfAngle = Roughness * (1.3331290497744692 - Roughness * 0.5040552688878546);	// cf. IBL.mrpr to see the link between roughness and aperture angle
+	float	HalfAngle = 0.0003474660443456835 + Roughness * (1.3331290497744692 - Roughness * 0.5040552688878546);	// cf. IBL.mrpr to see the link between roughness and aperture angle
 	float	SinHalfAngle, CosHalfAngle;
 	sincos( HalfAngle, SinHalfAngle, CosHalfAngle );
 	float	TanHalfAngle = SinHalfAngle / CosHalfAngle;
 
 	// Compute the intersection of the view with the are light's plane
-	float	t = _lsPosition.z / max(1e-3, -_lsView.z );
+	float	t = _lsPosition.z / (1e-3 - _lsView.z);
 	float3	I = _lsPosition + t * _lsView;	// Intersection position on the plane
 
 	// Compute the radius of the specular cone at hit distance
 	float	Radius = TanHalfAngle * t;		// Correct radius at hit distance
 
 	float	RadiusUV = 0.5 * Radius;
-			RadiusUV = lerp( RadiusUV, 1.0, smoothstep( 0.0, 1.0, RadiusUV ) );
+//			RadiusUV = lerp( RadiusUV, 1.0, smoothstep( 0.0, 1.0, RadiusUV ) );
 
 	// Compute the UVs encompassing the cone's ellipsoid intersection with the area light plane
 	float2	UVcenter = float2( 0.5 * (1.0 + I.x), 0.5 * (1.0 - I.y) );
 
 	_UV0 = UVcenter - RadiusUV;
 	_UV1 = UVcenter + RadiusUV;
-	_UV1 = max( _UV1, _UV0 + AREA_LIGHT_TEX_DIMENSIONS.zw );	// Make sure the UVs are at least separated by a single texel before clamping
+//	_UV1 = max( _UV1, _UV0 + AREA_LIGHT_TEX_DIMENSIONS.zw );	// Make sure the UVs are at least separated by a single texel before clamping
 
 	// Apply potential clipping by the surface's plane
 	float2	SatUVcenter = clamp( UVcenter, _ClippedUVs.xy, _ClippedUVs.zw );
@@ -365,6 +368,7 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 	/////////////////////////////////
 	// Compute the specular solid angle
 	float	SolidAngle = 2.0 * PI * (1.0 - CosHalfAngle);				// Specular solid angle for a cone
+
 
 	// Compute an approximation of the clipping of the projected disc and the area light:
 	//	__
@@ -393,8 +397,17 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 //	float2	ClippedUV1 = clamp( _UV1, _ClippedUVs.xy, _ClippedUVs.zw );
 
 	// Interpolate between a "direction light source" unit solid angle and the fully diffuse solid angle, clipped by the area light
-//	SolidAngle = lerp( normalize( _lsPosition ).z, _SolidAngleDiffuse, SolidAngle / _SolidAngleDiffuse );
-	SolidAngle = lerp( 1.0, _SolidAngleDiffuse, saturate(SolidAngle / _SolidAngleDiffuse) );
+////	SolidAngle = lerp( normalize( _lsPosition ).z, _SolidAngleDiffuse, SolidAngle / _SolidAngleDiffuse );
+//	SolidAngle = lerp( 1.0, _SolidAngleDiffuse, saturate(SolidAngle / _SolidAngleDiffuse) );
+
+
+
+
+
+	// Interpolate between a "direction light source" unit solid angle and the fully diffuse solid angle, clipped by the area light
+	float	Attenuation = 1.0 - saturate( length( UVcenter - SatUVcenter ) / (1e-3 + RadiusUV) );
+	SolidAngle = Attenuation * lerp( 1.0, _SolidAngleDiffuse, saturate(SolidAngle / _SolidAngleDiffuse) );
+
 
 	// Finally, we can compute the projected solid angle by dotting with the normal
 	float	ProjectedSolidAngleSpecular = saturate( dot( _lsNormal, _lsView ) ) * SolidAngle;	// (N.Wi) * dWi

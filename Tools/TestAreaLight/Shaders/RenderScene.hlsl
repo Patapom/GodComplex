@@ -47,13 +47,13 @@ PS_IN	VS( VS_IN _In ) {
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float4	Debug = 0.0;
-
+	
 	float3	wsPosition = _In.Position;
 	float3	wsNormal = normalize( _In.Normal );
 	float3	wsView = normalize( wsPosition - _Camera2World[3].xyz );
 		
 //	float	Roughness = max( 0.005, 1.0 * (1.0 - _Gloss) );
-	float	Roughness = max( 0.01, 1.0 * (1.0 - _Gloss) );
+	float	Roughness = max( 0.0, 1.0 * (1.0 - _Gloss) );
 	
 	const float3	RhoD = _DiffuseAlbedo;
 	const float3	F0 = lerp( 0.04, _SpecularTint, _Metal );
@@ -76,7 +76,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	ComputeAreaLightLighting( surf, Shadow, RadianceDiffuse, RadianceSpecular );
 	
 //return float4( RadianceDiffuse, 0 );
-//return float4( RadianceSpecular, 0 );
+return float4( RadianceSpecular, 0 );
 
 	return float4( 0.1 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular, 1 );
 
