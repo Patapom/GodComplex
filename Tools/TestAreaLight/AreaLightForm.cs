@@ -1821,7 +1821,8 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 
 
 			// =========== Render shadow map ===========
-			float	KernelSize = Math.Max( 1.0f, 32.0f * floatTrackbarControlProjectionDiffusion.Value );
+			float	KernelSize = 16.0f * floatTrackbarControlProjectionDiffusion.Value;
+
 			float	ShadowZFar = (float) Math.Sqrt( 2.0 ) * m_Camera.Far;
 			m_CB_ShadowMap.m._ShadowOffsetXY = (float2) Direction;
 			m_CB_ShadowMap.m._ShadowZFar = new float2( ShadowZFar, 1.0f / ShadowZFar );

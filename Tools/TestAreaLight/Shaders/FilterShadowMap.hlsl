@@ -23,9 +23,11 @@ float	SampleShadowMap( float2 _UV ) {
 
 float	GaussianFilter( float2 _UV, float2 _dUV ) {
 //	const float	Sigma = sqrt( -MAX_DISTANCE*MAX_DISTANCE / (2.0 * log( 0.01 )) );
-	const float	Sigma = sqrt( -_KernelSize*_KernelSize / (2.0 * log( 0.01 )) );
+	const float	Sigma = sqrt( -_KernelSize*_KernelSize / (2.0 * log( 0.1 )) );
 
 	float	Sum = GaussWeight( 0.0, Sigma ) * SampleShadowMap( _UV );
+
+//_dUV *= 2.0;
 
 	float4	UV_left_right = _UV.xyxy;
 	for ( float i=1; i < _KernelSize; i++ ) {

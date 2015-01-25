@@ -9,7 +9,7 @@ float	Pow4( float a ) { return a * a * a * a; }
 
 #if 1//IMPORTANCE_SAMPLING
 
-static const uint	SAMPLES_COUNT = 1024;
+static const uint	SAMPLES_COUNT = 2048;
 
 // float ReverseBits( uint v )
 // {
