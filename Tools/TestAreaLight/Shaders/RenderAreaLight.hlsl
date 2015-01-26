@@ -33,25 +33,30 @@ PS_IN	VS( VS_IN _In ) {
 	return Out;
 }
 
-// float4	SampleSATSinglePixel( float2 _UV ) {
-// 	
-// 	float2	PixelIndex = _UV * _AreaLightTexDimensions.xy;
-// 	float2	NextPixelIndex = PixelIndex + 1;
-// 	float2	UV2 = NextPixelIndex * _AreaLightTexDimensions.zw;
-// 
-// 	float3	dUV = float3( _AreaLightTexDimensions.zw, 0.0 );
-// 	float4	C00 = _TexAreaLightSAT.Sample( LinearClamp, _UV );
-// 	float4	C01	= _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xz );
-// 	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.zy );
-// 	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xy );
-// 
-// 	return C11 - C10 - C01 + C00;
-// }
+#ifdef USE_SAT
+float4	SampleSATSinglePixel( float2 _UV ) {
+	
+	float2	PixelIndex = _UV * _AreaLightTexDimensions.xy;
+	float2	NextPixelIndex = PixelIndex + 1;
+	float2	UV2 = NextPixelIndex * _AreaLightTexDimensions.zw;
+
+	float3	dUV = float3( _AreaLightTexDimensions.zw, 0.0 );
+	float4	C00 = _TexAreaLightSAT.Sample( LinearClamp, _UV );
+	float4	C01	= _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xz );
+	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.zy );
+	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xy );
+
+	return C11 - C10 - C01 + C00;
+}
+#endif
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
- 	float4	StainedGlass = _TexAreaLight.Sample( LinearClamp, _In.UV );
 // 	float4	StainedGlass = 0.0001 * _TexAreaLightSAT.Sample( LinearClamp, _In.UV );
-//	float4	StainedGlass = SampleSATSinglePixel( _In.UV );
+#ifdef USE_SAT
+	float4	StainedGlass = SampleSATSinglePixel( _In.UV );
+#else
+ 	float4	StainedGlass = _TexAreaLight.Sample( LinearClamp, _In.UV );
+#endif
 
 // 	StainedGlass = _TexAreaLightMIP.SampleLevel( LinearClamp, float3( _In.UV, 0.5 * (1.0 + sin( iGlobalTime )) ), 0.0 );
 

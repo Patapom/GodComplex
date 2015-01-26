@@ -1,4 +1,6 @@
 
+#define USE_SAT	1
+
 cbuffer CB_Light : register(b2) {
 	float3		_AreaLightX;
 	float		_AreaLightScaleX;

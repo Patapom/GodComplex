@@ -86,7 +86,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 		float	Roughness = max( 0.01, 1.0 * (1.0 - _Gloss) );
 		
 //		Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * Irradiance * SolidAngle;
-		Ls = RhoD / PI * Irradiance * SolidAngle;
+//		Ls = RhoD / PI * Irradiance * SolidAngle;
+		Ls = 1.0 / PI * Irradiance * SolidAngle;
 		
 // float3	Pipo = normalize( lerp( wsReflectedView, wsNormal, Roughness ) );
 // float	k = lerp( 0.4, 0.001, _Gloss );

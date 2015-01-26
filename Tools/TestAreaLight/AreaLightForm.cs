@@ -605,6 +605,8 @@ namespace AreaLightTest
 
 		#endregion
 
+		#region Primitives
+
 		private void	BuildPrimitives()
 		{
 			{
@@ -745,6 +747,7 @@ namespace AreaLightTest
 				m_Prim_Cube = new Primitive( m_Device, Vertices.Length, VerticesBuffer, Indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
 			}
 		}
+		#endregion
 
 		protected override void OnLoad( EventArgs e )
 		{
