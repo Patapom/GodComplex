@@ -35,9 +35,13 @@ PS_IN	VS( VS_IN _In ) {
 
 	float	Z = Distance * _ShadowZFar.y;
 
+//	Z += 1.1;
+//	Z *= 1.1;
+
 
 // Exponential Z
-Z = exp( -_ShadowHardeningFactor.x * Z );
+//Z = exp( -_ShadowHardeningFactor.x * Z );
+Z = exp( -_ShadowHardeningFactor.y * Z );
 //Z = exp( -EXP_CONSTANT* Z );
 //Z = exp( _ShadowHardeningFactor.x * (Z-1.0) );
 

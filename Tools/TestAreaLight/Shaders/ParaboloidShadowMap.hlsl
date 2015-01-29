@@ -72,7 +72,9 @@ float	ComputeShadow( float3 _wsPosition, float3 _wsNormal, out float4 _Debug ) {
 									dot( lsDeltaPos, _AreaLightZ ) );
 
 	// Apply paraboloid projection
-	float	ReceiverDistance = length( lsPosition );
+	const float	BIAS = 0.0;
+
+	float	ReceiverDistance = length( lsPosition ) + BIAS;
 	float3	lsDirection = lsPosition / ReceiverDistance;
 
 	float2	projPosition = lsDirection.xy / (1.0 + lsDirection.z);
@@ -85,7 +87,6 @@ _Debug = 0;
 
 	// Compute sigmoïd
 	float	Exp_ReceiverDistance = exp( _ShadowHardeningFactor.x * ReceiverDistance * _ShadowZFar.y );
-//	float	Exp_ReceiverDistance = exp( _ShadowHardeningFactor.y * ReceiverDistance * _ShadowZFar.y );
 
 //return 0.5 + 100.0 * ReceiverDistance * _ShadowZFar.y / log( Exp_BlockerDistance );
 

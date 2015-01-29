@@ -1,13 +1,10 @@
 #include "Global.hlsl"
-#include "AreaLight.hlsl"
-//#include "AreaLightMip.hlsl"
+#include "AreaLight2.hlsl"
 #include "ParaboloidShadowMap.hlsl"
 
 cbuffer CB_Object : register(b4) {
 	float4x4	_Local2World;
 };
-
-Texture2D< float4 >	_TexAreaLight : register(t4);
 
 struct VS_IN {
 	float3	Position : POSITION;
@@ -51,11 +48,15 @@ float4	SampleSATSinglePixel( float2 _UV ) {
 #endif
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
+
+//return float4( _TexBRDFIntegral.Sample( LinearClamp, _In.UV ), 0, 1 );
+
+ 	float4	StainedGlass = _TexAreaLight.SampleLevel( LinearClamp, _In.UV, 0*_AreaLightDiffusion * 7 );
+// 	float4	StainedGlass = _TexAreaLight.SampleLevel( LinearClamp, _In.UV, 9.0 * abs( fmod( 0.25 * iGlobalTime, 2.0 ) - 1.0 ) );
 // 	float4	StainedGlass = 0.0001 * _TexAreaLightSAT.Sample( LinearClamp, _In.UV );
 #ifdef USE_SAT
 	float4	StainedGlass = SampleSATSinglePixel( _In.UV );
 #else
- 	float4	StainedGlass = _TexAreaLight.Sample( LinearClamp, _In.UV );
 #endif
 
 // 	StainedGlass = _TexAreaLightMIP.SampleLevel( LinearClamp, float3( _In.UV, 0.5 * (1.0 + sin( iGlobalTime )) ), 0.0 );
@@ -73,7 +74,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 // 	// Debug UV clipping
 // 	if ( all( abs( 2.0 * _In.UV - 1.0 ) > 0.9 ) )
 // 		return float4( _In.UV, 0, 0 );
-//
+// 
 // 	float3	wsPosition = float3( 0, 0, 0 );
 // 	float3	wsNormal = float3( 0, 1, 0 );
 // 
@@ -87,12 +88,13 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 // 								dot( wsNormal, _AreaLightZ ) );
 // 
 // 	float4	Debug;
-// 	float4	ClippedUVs = ComputeClipping( lsPosition, lsNormal, Debug );
+// 	float4	ClippedUVs = ComputeAreaLightClipping( lsPosition, lsNormal );
 // 	StainedGlass.xyz = (_In.UV.x < ClippedUVs.x || _In.UV.y < ClippedUVs.y || _In.UV.x > ClippedUVs.z || _In.UV.y > ClippedUVs.w) ? float3( 0.2, 0, 0.2 ) : float3( _In.UV, 0 );
 
 //return Debug;
 //return float4( ClippedUVs.zw, 0, 0 );
 
 
+//	return float4( pow( StainedGlass.xyz, 1/2.2 ), 1 );
 	return float4( StainedGlass.xyz, 1 );
 }

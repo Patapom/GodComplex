@@ -7,6 +7,7 @@ PixelFormatRGBA8_sRGB::Desc		PixelFormatRGBA8_sRGB::DESCRIPTOR;
 PixelFormatR16F::Desc			PixelFormatR16F::DESCRIPTOR;
 PixelFormatR16_UNORM::Desc		PixelFormatR16_UNORM::DESCRIPTOR;
 PixelFormatRG16F::Desc			PixelFormatRG16F::DESCRIPTOR;
+PixelFormatRG16_UNORM::Desc		PixelFormatRG16_UNORM::DESCRIPTOR;
 PixelFormatRGBA16_UINT::Desc	PixelFormatRGBA16_UINT::DESCRIPTOR;
 PixelFormatRGBA16_UNORM::Desc	PixelFormatRGBA16_UNORM::DESCRIPTOR;
 PixelFormatRGBA16F::Desc		PixelFormatRGBA16F::DESCRIPTOR;

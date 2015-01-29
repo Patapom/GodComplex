@@ -49,6 +49,8 @@ namespace RendererManaged {
 		property int	ArraySize		{ int get() { return m_pTexture->GetArraySize(); } }
 		property int	MipLevelsCount	{ int get() { return m_pTexture->GetMipLevelsCount(); } }
 
+		void*	GetWrappedtexture()	{ return m_pTexture; }
+
 	public:
 
 		Texture2D( Device^ _Device, int _Width, int _Height, int _ArraySize, int _MipLevelsCount, PIXEL_FORMAT _PixelFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _MipLevelsContent );
@@ -56,6 +58,7 @@ namespace RendererManaged {
 		~Texture2D() {
  			delete m_pTexture;
 		}
+
 
 		// Generally used to copy a GPU texture to a CPU staging resource or vice-versa
 		void	CopyFrom( Texture2D^ _Source ) {
@@ -100,8 +103,7 @@ namespace RendererManaged {
 
 	internal:
 
-		Texture2D( const ::Texture2D& _ExistingTexture )
-		{
+		Texture2D( const ::Texture2D& _ExistingTexture ) {
 			m_pTexture = const_cast< ::Texture2D* >( &_ExistingTexture );
 		}
 	};

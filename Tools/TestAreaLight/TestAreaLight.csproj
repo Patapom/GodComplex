@@ -62,6 +62,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Content Include="Shaders\BuildSmoothie.hlsl" />
     <Content Include="Shaders\ClippedAO_iQ.hlsl" />
+    <Content Include="Shaders\AreaLight2.hlsl" />
+    <Content Include="Shaders\ComputeBRDFIntegral.hlsl" />
     <Content Include="Shaders\FilterShadowMap.hlsl" />
     <Content Include="Shaders\ParaboloidShadowMap.hlsl" />
     <Content Include="Shaders\RenderShadowMap.hlsl" />

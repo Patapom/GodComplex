@@ -1,5 +1,6 @@
 
-#define PI	3.1415926535897932384626433832795
+#define PI		3.1415926535897932384626433832795
+#define INVPI	0.31830988618379067153776752674503
 
 cbuffer CB_Main : register(b0) {
 	float3	iResolution;	// viewport resolution (in pixels)

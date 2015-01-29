@@ -126,7 +126,7 @@ public:
 		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_R16_UNORM; }
 		virtual int			Size() const					{ return sizeof(PixelFormatR16_UNORM); }
 		virtual void		Write( U8* _pPixel, const float4& _Color ) const	{ PixelFormatR16_UNORM& P = (PixelFormatR16_UNORM&)( *_pPixel ); P.R = U16( 65535.0f * _Color.x ); }
-		virtual float4	Read( const U8* _pPixel ) const						{ const PixelFormatR16_UNORM& P = (const PixelFormatR16_UNORM&)( *_pPixel ); return float4( P.R / 65535.0f, 0, 0, 0 ); }
+		virtual float4		Read( const U8* _pPixel ) const						{ const PixelFormatR16_UNORM& P = (const PixelFormatR16_UNORM&)( *_pPixel ); return float4( P.R / 65535.0f, 0, 0, 0 ); }
 	} DESCRIPTOR;
 
 public:
@@ -146,12 +146,32 @@ public:
 		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_R16G16_FLOAT; }
 		virtual int			Size() const					{ return sizeof(PixelFormatRG16F); }
 		virtual void		Write( U8* _pPixel, const float4& _Color ) const	{ PixelFormatRG16F& P = (PixelFormatRG16F&)( *_pPixel ); P.R = _Color.x; P.G = _Color.y; }
-		virtual float4	Read( const U8* _pPixel ) const						{ const PixelFormatRG16F& P = (const PixelFormatRG16F&)( *_pPixel ); return float4( P.R, P.G, 0, 0 ); }
+		virtual float4		Read( const U8* _pPixel ) const						{ const PixelFormatRG16F& P = (const PixelFormatRG16F&)( *_pPixel ); return float4( P.R, P.G, 0, 0 ); }
 	} DESCRIPTOR;
 
 public:
 
 	half  R, G;
+
+};
+
+struct PixelFormatRG16_UNORM : public PixelFormat
+{
+public:
+
+	static class Desc : public IPixelFormatDescriptor
+	{
+	public:
+
+		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_R16G16_UNORM; }
+		virtual int			Size() const					{ return sizeof(PixelFormatRG16_UNORM); }
+		virtual void		Write( U8* _pPixel, const float4& _Color ) const	{ PixelFormatRG16_UNORM& P = (PixelFormatRG16_UNORM&)( *_pPixel ); P.R = U16( 65535.0f * _Color.x ); P.G = U16( 65535.0f * _Color.y ); }
+		virtual float4		Read( const U8* _pPixel ) const						{ const PixelFormatRG16_UNORM& P = (const PixelFormatRG16_UNORM&)( *_pPixel ); return float4( P.R / 65535.0f, P.G / 65535.0f, 0, 0 ); }
+	} DESCRIPTOR;
+
+public:
+
+	U16	R, G;
 
 };
 

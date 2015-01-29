@@ -62,6 +62,7 @@
 			this.label14 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlHardeningFactor2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label15 = new System.Windows.Forms.Label();
+			this.buttonRebuildBRDF = new System.Windows.Forms.Button();
 			this.panelOutput = new AreaLightTest.PanelOutput(this.components);
 			this.SuspendLayout();
 			// 
@@ -112,7 +113,7 @@
 			this.floatTrackbarControlProjectionTheta.RangeMin = -90F;
 			this.floatTrackbarControlProjectionTheta.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlProjectionTheta.TabIndex = 1;
-			this.floatTrackbarControlProjectionTheta.Value = -20F;
+			this.floatTrackbarControlProjectionTheta.Value = -40F;
 			this.floatTrackbarControlProjectionTheta.VisibleRangeMax = 90F;
 			this.floatTrackbarControlProjectionTheta.VisibleRangeMin = -90F;
 			// 
@@ -418,6 +419,16 @@
 			this.label15.TabIndex = 3;
 			this.label15.Text = "Hardening Factor 2";
 			// 
+			// buttonRebuildBRDF
+			// 
+			this.buttonRebuildBRDF.Location = new System.Drawing.Point(1056, 629);
+			this.buttonRebuildBRDF.Name = "buttonRebuildBRDF";
+			this.buttonRebuildBRDF.Size = new System.Drawing.Size(88, 23);
+			this.buttonRebuildBRDF.TabIndex = 2;
+			this.buttonRebuildBRDF.Text = "Rebuild BRDF";
+			this.buttonRebuildBRDF.UseVisualStyleBackColor = true;
+			this.buttonRebuildBRDF.Click += new System.EventHandler(this.buttonRebuildBRDF_Click);
+			// 
 			// panelOutput
 			// 
 			this.panelOutput.Location = new System.Drawing.Point(12, 12);
@@ -445,6 +456,7 @@
 			this.Controls.Add(this.label3);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.label1);
+			this.Controls.Add(this.buttonRebuildBRDF);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.floatTrackbarControlMetal);
 			this.Controls.Add(this.floatTrackbarControlLightPosZ);
@@ -506,6 +518,7 @@
 		private System.Windows.Forms.Label label14;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlHardeningFactor2;
 		private System.Windows.Forms.Label label15;
+		private System.Windows.Forms.Button buttonRebuildBRDF;
 	}
 }
 
