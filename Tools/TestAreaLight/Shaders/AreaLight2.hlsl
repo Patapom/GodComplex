@@ -107,7 +107,8 @@ float3	SampleAreaLight( float2 _UV0, float2 _UV1, float _SliceIndex, const bool 
 	float2	UVCenter = 0.5 * (_UV0 + _UV1);
 	float2	SatUVCenter = saturate( UVCenter );
 
-	float	Attenuation = 1.0 - saturate( length( UVCenter - SatUVCenter ) / (1e-3 + RadiusUV) );
+	float	Attenuation = saturate( length( UVCenter - SatUVCenter ) / (1e-3 + RadiusUV) );
+			Attenuation = smoothstep( 1.0, 0.0, Attenuation );
 
 	float4	Color = _SliceIndex >= 0 ? _TexAreaLight.SampleLevel( LinearWrap, SatUVCenter, MipLevel ) : 1.0;
 	if ( _UseAlpha ) {

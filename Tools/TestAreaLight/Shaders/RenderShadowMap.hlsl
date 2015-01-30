@@ -41,9 +41,11 @@ PS_IN	VS( VS_IN _In ) {
 
 // Exponential Z
 //Z = exp( -_ShadowHardeningFactor.x * Z );
-Z = exp( -_ShadowHardeningFactor.y * Z );
 //Z = exp( -EXP_CONSTANT* Z );
 //Z = exp( _ShadowHardeningFactor.x * (Z-1.0) );
+
+
+	Z = exp( -_ShadowHardeningFactor.y * Z );
 
 
 	Out.__Position = float4( projPosition, Z, 1.0 );

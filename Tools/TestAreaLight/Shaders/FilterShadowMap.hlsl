@@ -22,15 +22,20 @@ float	SampleShadowMap( float2 _UV ) {
 }
 
 float	GaussianFilter( float2 _UV, float2 _dUV ) {
-//	const float	Sigma = sqrt( -MAX_DISTANCE*MAX_DISTANCE / (2.0 * log( 0.01 )) );
-	const float	Sigma = sqrt( -_KernelSize*_KernelSize / (2.0 * log( 0.1 )) );
 
-	float	Sum = GaussWeight( 0.0, Sigma ) * SampleShadowMap( _UV );
+	float	Zcenter = SampleShadowMap( _UV );
+	float	KernelSize = _KernelSize;// * (1.0-Zcenter);
+	uint	iKernelSize = ceil( KernelSize );
+
+//	const float	Sigma = sqrt( -MAX_DISTANCE*MAX_DISTANCE / (2.0 * log( 0.01 )) );
+	const float	Sigma = max( 1e-4, sqrt( -KernelSize*KernelSize / (2.0 * log( 0.1 )) ) );
+
+	float	Sum = GaussWeight( 0.0, Sigma ) * Zcenter;
 
 //_dUV *= 2.0;
 
 	float4	UV_left_right = _UV.xyxy;
-	for ( float i=1; i < _KernelSize; i++ ) {
+	for ( float i=1; i < iKernelSize; i++ ) {
 		UV_left_right.xy -= _dUV;
 		UV_left_right.zw += _dUV;
 		Sum += GaussWeight( i, Sigma ) * (SampleShadowMap( UV_left_right.xy ) + SampleShadowMap( UV_left_right.zw ));
@@ -43,6 +48,7 @@ float	PS_FilterH( VS_IN _In ) : SV_TARGET0 {
 	float2	dUV = float2( INV_TEX_SIZE, 0.0 );
 	float2	UV = _In.__Position.xy * INV_TEX_SIZE;
 //return _TexShadowMap.SampleLevel( LinearClamp, UV, 0.0 );
+
 	return GaussianFilter( UV, dUV );
 }
 
@@ -50,5 +56,6 @@ float	PS_FilterV( VS_IN _In ) : SV_TARGET0 {
 	float2	dUV = float2( 0.0, INV_TEX_SIZE );
 	float2	UV = _In.__Position.xy * INV_TEX_SIZE;
 //return _TexShadowMap.SampleLevel( LinearClamp, UV, 0.0 );
+
 	return GaussianFilter( UV, dUV );
 }
