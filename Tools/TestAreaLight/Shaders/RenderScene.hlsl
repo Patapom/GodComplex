@@ -47,20 +47,23 @@ PS_IN	VS( VS_IN _In ) {
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float4	Debug = 0.0;
-
+	
 	float3	wsPosition = _In.Position;
 	float3	wsNormal = normalize( _In.Normal );
 	float3	wsView = normalize( wsPosition - _Camera2World[3].xyz );
-		
-//	float	Roughness = max( 0.005, 1.0 * (1.0 - _Gloss) );
-	float	Roughness = max( 0.01, 1.0 * (1.0 - _Gloss) );
+
+	float	Roughness = 1.0 - _Gloss;
+//	float	Roughness = abs( fmod( 0.5*iGlobalTime, 2.0 ) - 1.0 );
 	
 	const float3	RhoD = _DiffuseAlbedo;
 	const float3	F0 = lerp( 0.04, _SpecularTint, _Metal );
 	float3	IOR = Fresnel_IORFromF0( F0 );
-
-	float	Shadow = ComputeShadow( wsPosition, wsNormal, Debug );
 	
+	float	Shadow = ComputeShadow( wsPosition, wsNormal, Debug );
+
+	float	RadiusFalloff = 8.0;
+	float	RadiusCutoff = 10.0;
+
 #if 1
 	// VERSION 2
 	SurfaceContext	surf;
@@ -73,12 +76,12 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	surf.fresnelStrength = 1.0;
 	
 	float3	RadianceDiffuse, RadianceSpecular;
-	ComputeAreaLightLighting( surf, Shadow, RadianceDiffuse, RadianceSpecular );
+	ComputeAreaLightLighting( surf, Shadow, float2( RadiusFalloff, RadiusCutoff ), RadianceDiffuse, RadianceSpecular );
 	
 //return float4( RadianceDiffuse, 0 );
 //return float4( RadianceSpecular, 0 );
 
-	return float4( 0.1 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular, 1 );
+	return float4( 0.01 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular, 1 );
 
 #else
 	// VERSION 1
@@ -94,9 +97,9 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	if ( ComputeSolidAngleDiffuse( wsPosition, wsNormal, UV0, UV1, SolidAngle, Debug ) ) {
 		float3	Irradiance = SampleAreaLight( UV0, UV1 ).xyz;
 //		float3	Irradiance = SampleAreaLight( _TexAreaLightSATFade, UV0, UV1 ).xyz;	// FADE?
-
+		
 		Ld = RhoD / PI * Irradiance * SolidAngle;
-
+		
 //return Debug;
 	}
 	
@@ -106,7 +109,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 		float3	Irradiance = SampleAreaLight( UV0, UV1 ).xyz;
 		
 //		Ls = ComputeWard( -wsView, wsNormal, wsReflectedView, Roughness ) * Irradiance * SolidAngle;
-		Ls = RhoD / PI * Irradiance * SolidAngle;
+//		Ls = RhoD / PI * Irradiance * SolidAngle;
+		Ls = 1.0 / PI * Irradiance * SolidAngle;
 		
 // float3	Pipo = normalize( lerp( wsReflectedView, wsNormal, Roughness ) );
 // float	k = lerp( 0.4, 0.001, _Gloss );

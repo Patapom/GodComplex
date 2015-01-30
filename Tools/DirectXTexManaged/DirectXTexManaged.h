@@ -6,6 +6,8 @@
 #include "DirectXTex.h"
 #pragma managed
 
+#include "../../RendererD3D11/Device.h"
+
 using namespace System;
 using namespace WMath;
 
@@ -14,6 +16,9 @@ namespace DirectXTexManaged {
 	public ref class TextureCreator
 	{
 	public:
+
+		// Creates a DDS file from a texture
+		static void CreateDDS( String^ _FileName, RendererManaged::Texture2D^ _Texture );
 
 // 		static void	CreateNormalMapBC5File( String^ _FileName, cli::array< cli::array<WMath::Vector4D^,2>^>^ _Mips )
 // 		{

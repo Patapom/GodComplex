@@ -30,28 +30,34 @@ PS_IN	VS( VS_IN _In ) {
 	return Out;
 }
 
-// float4	SampleSATSinglePixel( float2 _UV ) {
-// 	
-// 	float2	PixelIndex = _UV * _AreaLightTexDimensions.xy;
-// 	float2	NextPixelIndex = PixelIndex + 1;
-// 	float2	UV2 = NextPixelIndex * _AreaLightTexDimensions.zw;
-// 
-// 	float3	dUV = float3( _AreaLightTexDimensions.zw, 0.0 );
-// 	float4	C00 = _TexAreaLightSAT.Sample( LinearClamp, _UV );
-// 	float4	C01	= _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xz );
-// 	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.zy );
-// 	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xy );
-// 
-// 	return C11 - C10 - C01 + C00;
-// }
+#ifdef USE_SAT
+float4	SampleSATSinglePixel( float2 _UV ) {
+	
+	float2	PixelIndex = _UV * _AreaLightTexDimensions.xy;
+	float2	NextPixelIndex = PixelIndex + 1;
+	float2	UV2 = NextPixelIndex * _AreaLightTexDimensions.zw;
+
+	float3	dUV = float3( _AreaLightTexDimensions.zw, 0.0 );
+	float4	C00 = _TexAreaLightSAT.Sample( LinearClamp, _UV );
+	float4	C01	= _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xz );
+	float4	C10 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.zy );
+	float4	C11 = _TexAreaLightSAT.Sample( LinearClamp, _UV + dUV.xy );
+
+	return C11 - C10 - C01 + C00;
+}
+#endif
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 
 //return float4( _TexBRDFIntegral.Sample( LinearClamp, _In.UV ), 0, 1 );
 
- 	float4	StainedGlass = _TexAreaLight.SampleLevel( LinearClamp, _In.UV, 0 * _AreaLightDiffusion * 7 );
+ 	float4	StainedGlass = _TexAreaLight.SampleLevel( LinearClamp, _In.UV, 0*_AreaLightDiffusion * 7 );
+// 	float4	StainedGlass = _TexAreaLight.SampleLevel( LinearClamp, _In.UV, 9.0 * abs( fmod( 0.25 * iGlobalTime, 2.0 ) - 1.0 ) );
 // 	float4	StainedGlass = 0.0001 * _TexAreaLightSAT.Sample( LinearClamp, _In.UV );
-//	float4	StainedGlass = SampleSATSinglePixel( _In.UV );
+#ifdef USE_SAT
+	float4	StainedGlass = SampleSATSinglePixel( _In.UV );
+#else
+#endif
 
 // 	StainedGlass = _TexAreaLightMIP.SampleLevel( LinearClamp, float3( _In.UV, 0.5 * (1.0 + sin( iGlobalTime )) ), 0.0 );
 
@@ -68,7 +74,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 // 	// Debug UV clipping
 // 	if ( all( abs( 2.0 * _In.UV - 1.0 ) > 0.9 ) )
 // 		return float4( _In.UV, 0, 0 );
-//
+// 
 // 	float3	wsPosition = float3( 0, 0, 0 );
 // 	float3	wsNormal = float3( 0, 1, 0 );
 // 
@@ -82,12 +88,13 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 // 								dot( wsNormal, _AreaLightZ ) );
 // 
 // 	float4	Debug;
-// 	float4	ClippedUVs = ComputeClipping( lsPosition, lsNormal, Debug );
+// 	float4	ClippedUVs = ComputeAreaLightClipping( lsPosition, lsNormal );
 // 	StainedGlass.xyz = (_In.UV.x < ClippedUVs.x || _In.UV.y < ClippedUVs.y || _In.UV.x > ClippedUVs.z || _In.UV.y > ClippedUVs.w) ? float3( 0.2, 0, 0.2 ) : float3( _In.UV, 0 );
 
 //return Debug;
 //return float4( ClippedUVs.zw, 0, 0 );
 
 
+//	return float4( pow( StainedGlass.xyz, 1/2.2 ), 1 );
 	return float4( StainedGlass.xyz, 1 );
 }

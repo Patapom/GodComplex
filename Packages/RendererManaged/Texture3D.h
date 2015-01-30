@@ -39,7 +39,7 @@ namespace RendererManaged {
 
 	public ref class Texture3D
 	{
-	internal:
+	public:
 
 		::Texture3D*	m_pTexture;
 
