@@ -1791,7 +1791,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 
 			// Setup area light buffer
 			float		LighOffsetX = 0;//1.2f;
-			float		SizeX = 0.5f;
+			float		SizeX = 1;//0.5f;
 			float		SizeY = 1.0f;
 			float		RollAngle = (float) (Math.PI * floatTrackbarControlLightRoll.Value / 180.0);
 			float3		LightPosition = new float3( LighOffsetX + floatTrackbarControlLightPosX.Value, 1.0f + floatTrackbarControlLightPosY.Value, -1.0f + floatTrackbarControlLightPosZ.Value );
@@ -1842,12 +1842,13 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 				m_Tex_ShadowMap.RemoveFromLastAssignedSlots();
 
 				m_Device.SetRenderTargets( m_Tex_ShadowMap.Width, m_Tex_ShadowMap.Height, new View2D[0], m_Tex_ShadowMap );
-//				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 1.0f, 0, true, false );
+#if FILTER_EXP_SHADOW_MAP
 				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 0.0f, 0, true, false );
-
-//				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_GREATER, BLEND_STATE.DISABLED );	// For exp shadow map, the Z order is reversed
-
+#else
+				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 1.0f, 0, true, false );
+				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
+#endif
 				RenderScene( m_Shader_RenderShadowMap );
 
 				m_Device.RemoveRenderTargets();

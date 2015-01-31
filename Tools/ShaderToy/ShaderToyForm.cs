@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.IO;
 using System.Windows.Forms;
 using System.Drawing.Imaging;
 
@@ -21,6 +22,8 @@ namespace ShaderToy
 		private struct CB_Main {
 			public float3		iResolution;
 			public float		iGlobalTime;
+
+			public float		_Beta;
 		}
 
 		private ConstantBuffer<CB_Main>	m_CB_Main = null;
@@ -41,7 +44,137 @@ namespace ShaderToy
 			InitializeComponent();
 
 			Application.Idle += new EventHandler( Application_Idle );
+
+
+			BuildSurfaceRadianceIntegrals();
 		}
+
+		#region Airlight Integrals
+
+		/// <summary>
+		/// Following the mathematica notebook found in "D:\Docs\Computer Graphics\Volumetric, Clouds, Participating Medium, Light Scattering, Translucency\2005 Sun, Ramamoorthi.nb"
+		///  this routine generates the tables representing the integral of function Gn depending on 2 parameters.
+		/// Several of these tables are generated for different exponents n, the goal is then to find an approximation to generated these tables from an analytical expression.
+		/// </summary>
+		void	BuildSurfaceRadianceIntegrals() {
+
+			string	ResultsPath = @"D:\Docs\Computer Graphics\Volumetric, Clouds, Participating Medium, Light Scattering, Translucency";
+
+			const int		TABLE_SIZE = 64;
+			const double	MAX_V = 10.0;
+
+			const double	HALF_PI = 0.5 * Math.PI;
+
+			const int		IMPORTANCE_SAMPLES_COUNT = 2048;
+
+			for ( int TableIndex=0; TableIndex < 1; TableIndex++ ) {
+				float		Exponent = 1.0f + TableIndex;
+				double[,]	Table = new double[TABLE_SIZE,TABLE_SIZE];
+
+				// Compute the integral for each parameter
+				for ( int Y=0; Y < TABLE_SIZE; Y++ )
+				{
+					double	Theta_s = 0.5 * Math.PI * Y / (TABLE_SIZE-1);		// V in [0,PI/2]
+					double	CosTheta_s = Math.Sin(Theta_s);
+					double	SinTheta_s = Math.Cos(Theta_s);
+
+					for ( int X=0; X < TABLE_SIZE; X++ )
+					{
+						double	Tsp = MAX_V * X / (TABLE_SIZE-1);				// U in [0,10]
+
+// 						double	Sum = 0.0;
+// 						for ( int SampleIndex=0; SampleIndex < IMPORTANCE_SAMPLES_COUNT; SampleIndex++ ) {
+// 
+// 							double	X0 = WMath.SimpleRNG.GetUniform();
+// 							double	X1 = WMath.SimpleRNG.GetUniform();
+// 							double	Phi_i = 2.0 * Math.PI * X0;
+// 							double	Theta_i = Math.Acos( Math.Pow( X1, 1.0 / (1.0 + Exponent) ) );	// Assuming we're integrating a cos^n(theta)
+// 
+// 							double	CosGamma = Math.Cos( Theta_i )*Math.Cos( Theta_s ) + Math.Sin( Theta_i )*Math.Sin( Theta_s )*Math.Cos( Phi_i );	// Angle between the incoming ray and the source
+// 							double	SinGamma = Math.Sqrt( 1 - CosGamma*CosGamma );
+// 							double	Gamma = Math.Acos( CosGamma );
+// 
+// // 							double	x0 = Math.Sin(Theta_i) * Math.Sin( Phi_i );
+// // 							double	y0 = Math.Cos(Theta_i);
+// // 							double	z0 = Math.Sin(Theta_i) * Math.Cos( Phi_i );
+// // 							double	x1 = SinTheta_s;
+// // 							double	y1 = CosTheta_s;
+// // 							Gamma = Math.Acos( x0*x1 + y0*y1 );
+// // 
+// // 							double	CosGamma = Math.Cos( Gamma );
+// // 							double	SinGamma = Math.Sin( Gamma );
+// 
+// 							double	Extinction = Math.Exp( -Tsp * CosGamma );
+// 							double	DeltaF = F( Tsp * SinGamma, HALF_PI ) - F( Tsp * SinGamma, 0.5 * Gamma );
+// 							double	Term = (Extinction / SinGamma) * DeltaF;
+// 							if ( double.IsNaN( Term ) )
+// 								throw new Exception();
+// 
+// 							Sum += Term;
+// 						}
+// 						Sum /= IMPORTANCE_SAMPLES_COUNT;
+
+						const double	dPhi = 2.0 * Math.PI / 80;
+						const double	dTheta = 0.5 * Math.PI / 40;
+
+						double	Sum = 0.0;
+						for ( int ThetaIndex=0; ThetaIndex < 40; ThetaIndex++ ) {
+							double	Theta_i = 0.5 * Math.PI * (0.5+ThetaIndex) / 40;
+							double	SolidAngle = Math.Sin( Theta_i ) * dPhi * dTheta;
+							for ( int PhiIndex=0; PhiIndex < 80; PhiIndex++ ) {
+								double	Phi_i = 2.0 * Math.PI * PhiIndex / 80.0;
+
+// 								double	CosGamma = Math.Cos( Theta_i )*Math.Cos( Theta_s ) + Math.Sin( Theta_i )*Math.Sin( Theta_s )*Math.Cos( Phi_i );	// Angle between the incoming ray and the source
+
+								double	x0 = Math.Sin(Theta_i)*Math.Cos(Phi_i);
+								double	y0 = Math.Cos(Theta_i);
+								double	z0 = Math.Sin(Theta_i)*Math.Sin(Phi_i);
+								double	x1 = SinTheta_s;
+								double	y1 = CosTheta_s;
+								double	CosGamma = x0*x1 + y0*y1;
+
+								double	SinGamma = Math.Sqrt( 1 - CosGamma*CosGamma );
+								double	Gamma = Math.Acos( CosGamma );
+
+								double	Extinction = Math.Exp( -Tsp * CosGamma );
+								double	DeltaF = F( Tsp * SinGamma, HALF_PI ) - F( Tsp * SinGamma, 0.5 * Gamma );
+								double	Term = (Extinction / SinGamma) * DeltaF;
+								if ( double.IsNaN( Term ) )
+									throw new Exception();
+
+								Sum += Term * Math.Pow( Math.Cos( Theta_i ), Exponent ) * SolidAngle;
+							}
+						}
+
+						Table[X,Y] = Sum;
+					}
+				}
+
+				// Write the result
+				FileInfo	TargetFile = new FileInfo( Path.Combine( ResultsPath, "TableG"+TableIndex+".double" ) );
+				using ( FileStream S = TargetFile.Create() )
+					using ( BinaryWriter W = new BinaryWriter( S ) ) {
+						for ( int Y=0; Y < TABLE_SIZE; Y++ )
+							for ( int X=0; X < TABLE_SIZE; X++ )
+								W.Write( Table[X,Y] );
+					}
+			}
+		}
+
+
+		/// <summary>
+		/// Here I'm using the analytical expression to find F(u,v) that I first derived from the first part of the document
+		/// </summary>
+		/// <param name="u"></param>
+		/// <param name="v"></param>
+		/// <returns></returns>
+		double	F( double _u, double _v ) {
+			double	a = 0.00118554 + _v * (0.599188 - 0.012787 * _v);
+			double	b = 0.977767 + _v * (-0.748114 + _v* (0.555383 - _v * 0.175846));
+			return _v * Math.Exp( a * Math.Pow( _u, b ) );
+		}
+
+		#endregion
 
 		#region Image Helpers
 
@@ -184,6 +317,7 @@ namespace ShaderToy
 
 				m_CB_Main.m.iResolution = new float3( panelOutput.Width, panelOutput.Height, 0 );
 				m_CB_Main.m.iGlobalTime = GetGameTime() - m_StartGameTime;
+				m_CB_Main.m._Beta = floatTrackbarControlBeta.Value;
 				m_CB_Main.UpdateData();
 
 				m_Tex_Christmas.SetPS( 0 );

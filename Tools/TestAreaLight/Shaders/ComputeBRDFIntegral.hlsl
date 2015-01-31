@@ -11,16 +11,6 @@ float	Pow4( float a ) { return a * a * a * a; }
 
 static const uint	SAMPLES_COUNT = 2048;
 
-// float ReverseBits( uint v )
-// {
-//     v = ( ( v >> 1 ) & 0x55555555 ) | ( ( v & 0x55555555 ) << 1 );
-//     v = ( ( v >> 2 ) & 0x33333333 ) | ( ( v & 0x33333333 ) << 2 );
-//     v = ( ( v >> 4 ) & 0x0F0F0F0F ) | ( ( v & 0x0F0F0F0F ) << 4 );
-//     v = ( ( v >> 8 ) & 0x00FF00FF ) | ( ( v & 0x00FF00FF ) << 8 );
-//     v = (   v >> 16               ) | (   v                << 16 );
-//     return v / float(0x10000000U);
-// }
-
 // Code from http://forum.unity3d.com/threads/bitwise-operation-hammersley-point-sampling-is-there-an-alternate-method.200000/
 float ReverseBits( uint bits ) {
 	bits = (bits << 16u) | (bits >> 16u);
@@ -86,7 +76,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
  		// Apply sampling weight for correct distribution
  		float	SampleWeight = 2.0 / (1.0 + View.y / Light.y);
- 		float	BRDF = SampleWeight;
+// 		float	BRDF = SampleWeight * Light.y;
+ 		float	BRDF = SampleWeight;		// Don't N.L since it's already accounted for in the pre-integrated irradiance!
 
 		// Compute Fresnel terms
 		float	Schlick = 1.0 - HoV;
@@ -94,6 +85,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 				Schlick5 *= Schlick5 * Schlick;
 
 		float2	Fresnel = float2( 1.0f - Schlick5, Schlick5 );
+//		float2	Fresnel = float2( 1.0f, Schlick5 );
 
 		Sum += Fresnel * BRDF;
 	}
@@ -130,7 +122,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 		float2	SCThetaL;
 		sincos( ThetaL, SCThetaL.x, SCThetaL.y );
 
-		float	SolidAngle = SCThetaL.y * SCThetaL.x * dTheta * dPhi;	// (N.L) sin(Theta) dTheta dPhi
+//		float	SolidAngle = SCThetaL.y * SCThetaL.x * dTheta * dPhi;	// (N.L) sin(Theta) dTheta dPhi
+		float	SolidAngle = SCThetaL.x * dTheta * dPhi;	// sin(Theta) dTheta dPhi   (don't N.L since it's already accounted for in the pre-integrated irradiance!)
 
 		[loop]
 		[fastopt]
@@ -155,6 +148,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 					Schlick5 *= Schlick5 * Schlick;
 
 			float2	Fresnel = float2( 1.0 - Schlick5, Schlick5 );
+//			float2	Fresnel = float2( 1.0, Schlick5 );
 
 			Sum += Fresnel * BRDF * SolidAngle;
 		}

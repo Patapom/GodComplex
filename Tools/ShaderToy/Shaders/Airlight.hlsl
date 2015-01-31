@@ -10,6 +10,7 @@ cbuffer CB_Main : register(b0) {
 	float3	iResolution;	// viewport resolution (in pixels)
 	float	iGlobalTime;	// shader playback time (in seconds)
 
+	float	_Beta;			// Scattering coefficient
 // 	uniform vec3      iResolution;           // viewport resolution (in pixels)
 // 	uniform float     iGlobalTime;           // shader playback time (in seconds)
 // 	uniform vec3      iChannelResolution[4]; // channel resolution (in pixels)
@@ -35,6 +36,7 @@ VS_IN	VS( VS_IN _In ) {
 	return _In;
 }
 
+// u€[0,10], v€[0,PI/2]
 float	F( float _u, float _v ) {
 	float	a = 0.00118554 + _v * (0.599188 - 0.012787 * _v);
 	float	b = 0.977767 + _v * (-0.748114 + _v* (0.555383 - _v * 0.175846));
@@ -87,7 +89,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	float3	I0 = 4.0;	// Light color
 	float3	LightPos = float3( 0, 1, -4 );
 	float3	HitPos = Pos + 1000.0 * View;
-	float	Beta = 0.1;
+	float	Beta = _Beta;
 
 	float3	Color = I0 * Airlight( Pos, LightPos, HitPos, Beta );
 
