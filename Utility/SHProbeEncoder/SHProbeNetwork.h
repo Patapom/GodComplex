@@ -6,6 +6,8 @@
 //
 #pragma once
 
+#include "SHProbeEncoder.h"
+
 class	SHProbeNetwork
 {
 public:		// CONSTANTS
@@ -209,6 +211,8 @@ private:	// FIELDS
 
 	Primitive*				m_pScreenQuad;
 
+	Texture2D*				m_pRTCubeMap;
+
 	Material*				m_pMatRenderCubeMap;		// Renders the scene into a cubemap
 	Material*				m_pMatRenderNeighborProbe;	// Renders the neighbor probes as planes to form a 3D voronoï cell
 	ComputeShader*			m_pCSUpdateProbe;			// Dynamically update probes
@@ -238,8 +242,7 @@ private:	// FIELDS
 	// TODO! I'm only storing the index of the sequence of probes I'll update each frame
 	int						m_ProbeUpdateIndex;
 
-
-	Texture2D*				m_pRTCubeMap;
+	SHProbeEncoder			m_ProbeEncoder;
 
 
 public:
