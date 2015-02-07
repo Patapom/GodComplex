@@ -27,6 +27,9 @@ typedef int NjResourceID;
 
 //////////////////////////////////////////////////////////////////////////
 //
+#define SAFE_DELETE( a )		if ( (a) != NULL ) { delete (a); (a) = NULL; }
+#define SAFE_DELETE_ARRAY( a )	if ( (a) != NULL ) { delete[] (a); (a) = NULL; }
+
 #ifndef GODCOMPLEX
 template<typename T> void		SafeDelete__( T*& _pBuffer )
 {

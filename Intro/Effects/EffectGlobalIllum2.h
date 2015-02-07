@@ -11,15 +11,7 @@ private:	// CONSTANTS
 
 	static const U32		MAX_SCENE_PRIMITIVES = 1024;		// We handle a maximum of 1024 scene primitives. That's not because the tech is limited but simply because I don't have a dynamic list class! ^^
 
-	static const U32		CUBE_MAP_SIZE = 128;
-
 	static const U32		MAX_LIGHTS = 64;
-	static const U32		MAX_PROBE_SETS = 16;
-	static const U32		MAX_PROBE_NEIGHBORS = 4;			// Only keep the 4 most significant neighbors
-	static const U32		MAX_PROBE_EMISSIVE_SETS = 16;
-	static const U32		MAX_SET_SAMPLES = 64;				// Accept a maximum of 64 samples per set
-
-	static const U32		MAX_PROBE_UPDATES_PER_FRAME = 32;	// Update a maximum of 32 probes per frame
 
 	static const U32		MAX_DYNAMIC_OBJECTS = 128;
 
@@ -52,6 +44,11 @@ protected:	// NESTED TYPES
 		float4x4	Local2World;	// Local=>World transform to rotate the object
  	};
 
+	struct CBSplat
+	{
+		float3	dUV;
+	};
+
 	struct CBDynamicObject
 	{
 		float3		Position;
@@ -74,18 +71,6 @@ protected:	// NESTED TYPES
 		U32			HasNormalTexture;
 	};
 
-	struct CBProbe
-	{
-		float3		CurrentProbePosition;
-		U32			NeighborProbeID;
-		float3		NeighborProbePosition;
- 	};
-
-	struct CBSplat
-	{
-		float3	dUV;
-	};
-
 	struct CBShadowMap
 	{
 		float4x4	Light2World;
@@ -101,19 +86,6 @@ protected:	// NESTED TYPES
 		float		FarClipDistance;
 	};
 
-	struct CBUpdateProbes
-	{
-		float4		AmbientSH[9];				// Ambient sky (padded!)
-//		float		SunBoost;	// Merged into the last float4
-
-		float		SkyBoost;
-		float		DynamicLightsBoost;
-		float		StaticLightingBoost;
-
-		float		EmissiveBoost;
-		float		NeighborProbesContributionBoost;
- 	};
-
 	// Structured Buffers
 	// Light buffer
 	struct	LightStruct
@@ -125,64 +97,26 @@ protected:	// NESTED TYPES
 		float4		Parms;						// X=Falloff radius, Y=Cutoff radius, Z=Cos(Falloff angle), W=Cos(Cutoff angle)
 	};
 
-	// Runtime probes buffer that we'll use to light objects
-	struct RuntimeProbe 
-	{
-		float3		Position;
-		float		Radius;
-		float3		pSH[9];
-
-		// Neighbor probes
-		U16			NeighborProbeIDs[4];			// IDs of the 4 most significant neighbors
-	};
-
-	// Probes update buffers
-	struct RuntimeProbeUpdateInfos
-	{
-		U32			Index;							// The index of the probe we're updating
-		U32			SetsStart;						// Index of the first set for the probe
-		U32			SetsCount;						// Amount of sets for the probe
-		U32			EmissiveSetsStart;				// Index of the first emissive set for the probe
-		U32			EmissiveSetsCount;				// Amount of emissive sets for the probe
-		U32			SamplingPointsStart;			// Index of the first sampling point for the probe
-		U32			SamplingPointsCount;			// Amount of sampling points for the probe
-		float3		SHStatic[9];					// Precomputed static SH (static geometry + static lights)
-		float		SHOcclusion[9];					// Directional ambient occlusion for the probe
-
-		// Neighbor probes
-//		U32			NeighborProbeIDs[4];			// The IDs of the 4 most significant neighbor probes
-		float4		NeighborProbeSH[9];				// The SH coefficients to convolve the neighbor's SH with to obtain their contribution to this probe
-	};
-
-	struct	RuntimeProbeUpdateSetInfos
-	{
-		U32			SamplingPointsStart;			// Index of the first sampling point
-		U32			SamplingPointsCount;			// Amount of sampling points
-		float3		SH[9];							// SH for the set
-	};
-
-	struct	RuntimeProbeUpdateEmissiveSetInfos
-	{
-		float3		EmissiveColor;					// Color of the emissive material
-		float		SH[9];							// SH for the set
-	};
-
-	struct RuntimeSamplingPointInfos
-	{
-		float3		Position;						// World position of the sampling point
-		float3		Normal;							// World normal of the sampling point
-		float		Radius;							// Radius of the sampling point's disc approximation
-	};
-
-public:
-	struct RuntimeProbeNetworkInfos
-	{
-		U32			ProbeIDs[2];					// The IDs of the 2 connected probes
-		float2		NeighborsSolidAngles;			// Their perception of each other's solid angle
-	};
-
 #pragma pack( pop )
 
+	// Functors for using probe network
+	class	RenderScene : public SHProbeNetwork::IRenderSceneDelegate {
+	public:	EffectGlobalIllum2&	m_this;
+		RenderScene( EffectGlobalIllum2& _this ) : m_this( _this ) {}
+		void	operator()( Material& _Material ) {
+			for ( U32 MeshIndex=0; MeshIndex < m_this.m_MeshesCount; MeshIndex++ )
+				m_this.RenderMesh( *m_this.m_ppCachedMeshes[MeshIndex], &_Material, true );
+		}
+	};
+
+	class	QueryMaterial : public SHProbeNetwork::IQueryMaterial {
+	public:	EffectGlobalIllum2&	m_this;
+		QueryMaterial( EffectGlobalIllum2& _this ) : m_this( _this ) {}
+		Scene::Material*	operator()( U32 _MaterialID ) {
+			ASSERT( _MaterialID < U32(m_this.m_Scene.m_MaterialsCount), "Material ID out of range!" );
+			return m_this.m_Scene.m_ppMaterials[_MaterialID];
+		}
+	};
 
 protected:
 
@@ -205,16 +139,12 @@ private:	// FIELDS
 	Material*			m_pMatRenderEmissive;		// Displays the scene's emissive objects (area lights)
 	Material*			m_pMatRenderLights;			// Displays the lights as small emissive balls
 	Material*			m_pMatRenderDynamic;		// Displays the dynamic objects as balls with a normal map
-	Material*			m_pMatRenderCubeMap;		// Renders the scene into a cubemap
-	Material*			m_pMatRenderNeighborProbe;	// Renders the neighbor probes as planes to form a 3D voronoï cell
 	Material*			m_pCSComputeShadowMapBounds;// Computes the shadow map bounds
 	Material*			m_pMatRenderShadowMap;		// Renders the directional shadowmap
 	Material*			m_pMatRenderShadowMapPoint;	// Renders the point light shadowmap
 	Material*			m_pMatPostProcess;			// Post-processes the result
 	Material*			m_pMatRenderDebugProbes;	// Displays the probes as small spheres
 	Material*			m_pMatRenderDebugProbesNetwork;	// Displays the probes network
-	
-	ComputeShader*		m_pCSUpdateProbe;			// Dynamically update probes
 
 	// Scene & Primitives
 	Scene				m_Scene;
@@ -245,10 +175,6 @@ private:	// FIELDS
 	U32*				m_pVertexStreamProbeIDs;
 	Primitive*			m_pPrimProbeIDs;
 
-
-		// Scene octree containing probes
-	Octree<const ProbeStruct*>	m_ProbeOctree;
-
 		// Dynamic objects
 	DynamicObject		m_pDynamicObjects[MAX_DYNAMIC_OBJECTS];
 
@@ -261,41 +187,25 @@ private:	// FIELDS
 	Texture2D*			m_pRTShadowMapPoint;
 
 	// Constant buffers
- 	CB<CBGeneral>*		m_pCB_General;
- 	CB<CBScene>*		m_pCB_Scene;
- 	CB<CBObject>*		m_pCB_Object;
-	CB<CBDynamicObject>*m_pCB_DynamicObject;
- 	CB<CBMaterial>*		m_pCB_Material;
- 	CB<CBProbe>*		m_pCB_Probe;
-	CB<CBSplat>*		m_pCB_Splat;
- 	CB<CBShadowMap>*	m_pCB_ShadowMap;
+ 	CB<CBGeneral>*			m_pCB_General;
+ 	CB<CBScene>*			m_pCB_Scene;
+ 	CB<CBObject>*			m_pCB_Object;
+	CB<CBSplat>*			m_pCB_Splat;
+	CB<CBDynamicObject>*	m_pCB_DynamicObject;
+ 	CB<CBMaterial>*			m_pCB_Material;
+ 	CB<CBShadowMap>*		m_pCB_ShadowMap;
  	CB<CBShadowMapPoint>*	m_pCB_ShadowMapPoint;
- 	CB<CBUpdateProbes>*	m_pCB_UpdateProbes;
 
-	// Runtime scene lights & probes
+	// Runtime scene lights
 	SB<LightStruct>*	m_pSB_LightsStatic;
 	SB<LightStruct>*	m_pSB_LightsDynamic;
-	SB<RuntimeProbe>*	m_pSB_RuntimeProbes;
-
-	// Probes Update
-	U32					m_ProbesCount;
-	ProbeStruct*		m_pProbes;
-	SB<RuntimeProbeUpdateInfos>*			m_pSB_RuntimeProbeUpdateInfos;
-	SB<RuntimeProbeUpdateSetInfos>*			m_pSB_RuntimeProbeSetInfos;
-	SB<RuntimeProbeUpdateEmissiveSetInfos>*	m_pSB_RuntimeProbeEmissiveSetInfos;
-	SB<RuntimeSamplingPointInfos>*			m_pSB_RuntimeSamplingPointInfos;
-
-	// Probes network debug
-	SB<RuntimeProbeNetworkInfos>*			m_pSB_RuntimeProbeNetworkInfos;
 
 
 	// Ambient SH computed from CIE overcast sky model
-	float3			m_pSHAmbientSky[9];
+	float3				m_pSHAmbientSky[9];
 
-
-	// Queue of probe indices to update each frame
-	// TODO! I'm only storing the index of the sequence of probes I'll update each frame
-	int				m_ProbeUpdateIndex;
+	// Probes network
+	SHProbeNetwork		m_ProbesNetwork;
 
 
 #ifdef _DEBUG
@@ -389,5 +299,4 @@ private:
 
 	void			RenderShadowMap( const float3& _SunDirection );
 	void			RenderShadowMapPoint( const float3& _Position, float _FarClipDistance );
-	void			PreComputeProbes();
 };
