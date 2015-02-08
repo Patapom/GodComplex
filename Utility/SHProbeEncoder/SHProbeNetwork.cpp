@@ -33,9 +33,9 @@ void	SHProbeNetwork::Init( Device& _Device, Primitive& _ScreenQuad ) {
 	m_pSB_RuntimeProbeNetworkInfos = NULL;
 
 	m_pSB_RuntimeProbeUpdateInfos = new SB<RuntimeProbeUpdateInfos>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME, true );
-	m_pSB_RuntimeProbeSetInfos = new SB<RuntimeProbeUpdateSetInfos>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*MAX_PROBE_SETS, true );
-	m_pSB_RuntimeProbeEmissiveSetInfos = new SB<RuntimeProbeUpdateEmissiveSetInfos>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*MAX_PROBE_EMISSIVE_SETS, true );
-	m_pSB_RuntimeSamplingPointInfos = new SB<RuntimeSamplingPointInfos>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME * MAX_SET_SAMPLES, true );
+	m_pSB_RuntimeProbeSetInfos = new SB<RuntimeProbeUpdateSetInfos>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*SHProbeEncoder::MAX_PROBE_PATCHES, true );
+	m_pSB_RuntimeProbeEmissiveSetInfos = new SB<RuntimeProbeUpdateEmissiveSetInfos>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*SHProbeEncoder::MAX_PROBE_EMISSIVE_PATCHES, true );
+	m_pSB_RuntimeSamplingPointInfos = new SB<RuntimeSamplingPointInfos>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME * SHProbeEncoder::MAX_SAMPLES_PER_PATCH, true );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create shaders
@@ -100,7 +100,7 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 #if 1	// Hardware update
 	// We prepare the update structures for each probe and send this to the compute shader
 	// . The compute shader will then evaluate lighting for all the sampling points for the probe, use their contribution to weight
-	//		each set's SH coefficients that will be added together to form the indirect lighting SH coefficients.
+	//		each patch's SH coefficients that will be added together to form the indirect lighting SH coefficients.
 	// . Then it will compute the product of ambient sky SH and occlusion SH for the probe to add the contribution of the occluded sky
 	// . It will also add the emissive sets' SH weighted by the intensity of the emissive materials at the time (diffuse area lighting).
 	// . Finally, it will estimate the neighbor's "perceived visibility" and propagate their SH via a product of their SH with the
@@ -146,7 +146,7 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 
 		ProbeUpdateInfos.SamplingPointsStart = TotalSamplingPointsCount;
 
-		// Fill the set update infos
+		// Fill the patch update infos
 		int	SetSamplingPointsCount = 0;
 		for ( U32 SetIndex=0; SetIndex < Probe.SetsCount; SetIndex++ )
 		{
@@ -164,7 +164,7 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 			SetSamplingPointsCount += Set.SamplesCount;
 		}
 
-		// Fill the emissive set update infos
+		// Fill the emissive patch update infos
 		for ( U32 EmissiveSetIndex=0; EmissiveSetIndex < Probe.EmissiveSetsCount; EmissiveSetIndex++ )
 		{
 			SHProbe::EmissiveSetInfos		EmissiveSet = Probe.pEmissiveSetInfos[EmissiveSetIndex];
@@ -219,7 +219,7 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 		// Clear light accumulation for the probe
 		Probe.ClearLightBounce( pSHAmbient );
 
-		// Iterate on each set and compute energy level
+		// Iterate on each patch and compute energy level
 		for ( U32 SetIndex=0; SetIndex < Probe.SetsCount; SetIndex++ )
 		{
 			const SHProbe::SetInfos&	Set = Probe.pSetInfos[SetIndex];
@@ -298,7 +298,7 @@ void	SHProbeNetwork::SHProbe::ClearLightBounce( const float3 _pSHAmbient[9] )
 
 void	SHProbeNetwork::SHProbe::AccumulateLightBounce( const float3 _pSHSet[9] )
 {
-	// Simply accumulate dynamic set lighting to bounced light
+	// Simply accumulate dynamic patch lighting to bounced light
 	for ( int i=0; i < 9; i++ )
 		pSHBouncedLight[i] = pSHBouncedLight[i] + _pSHSet[i];
 }
@@ -309,10 +309,10 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 	const float		Z_INFINITY_TEST = 0.99f * Z_INFINITY;
 
 	if ( m_pRTCubeMap == NULL ) {
-		m_pRTCubeMap = new Texture2D( *m_pDevice, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 4, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain albedo (cube 0) + (normal + distance) (cube 1) + (static lighting + emissive surface index) (cube 2) + Probe IDs (cube 3)
+		m_pRTCubeMap = new Texture2D( *m_pDevice, SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, -6 * 4, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain albedo (cube 0) + (normal + distance) (cube 1) + (static lighting + emissive surface index) (cube 2) + Probe IDs (cube 3)
 	}
-	Texture2D*	pRTCubeMapDepth = new Texture2D( *m_pDevice, CUBE_MAP_SIZE, CUBE_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
-	Texture2D*	pRTCubeMapStaging = new Texture2D( *m_pDevice, CUBE_MAP_SIZE, CUBE_MAP_SIZE, -6 * 4, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );
+	Texture2D*	pRTCubeMapDepth = new Texture2D( *m_pDevice, SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
+	Texture2D*	pRTCubeMapStaging = new Texture2D( *m_pDevice, SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, -6 * 4, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -396,7 +396,7 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 		float4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
 		ProbeLocal2World.Normalize();
 
-		ASSERT( ProbeLocal2World.GetRow(0).LengthSq() > 0.999f && ProbeLocal2World.GetRow(1).LengthSq() > 0.999f && ProbeLocal2World.GetRow(2).LengthSq() > 0.999f, "Not identity! If not identity then transform probe set positions/normals/etc. by probe matrix!" );
+		ASSERT( ProbeLocal2World.GetRow(0).LengthSq() > 0.999f && ProbeLocal2World.GetRow(1).LengthSq() > 0.999f && ProbeLocal2World.GetRow(2).LengthSq() > 0.999f, "Not identity! If not identity then transform probe patch positions/normals/etc. by probe matrix!" );
 
 		float4x4	ProbeWorld2Local = ProbeLocal2World.Inverse();
 
@@ -421,7 +421,7 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 				m_pRTCubeMap->GetRTV( 0, 6*1+CubeFaceIndex, 1 ),
 				m_pRTCubeMap->GetRTV( 0, 6*2+CubeFaceIndex, 1 )
 			};
-			m_pDevice->SetRenderTargets( CUBE_MAP_SIZE, CUBE_MAP_SIZE, 3, ppViews, pRTCubeMapDepth->GetDSV() );
+			m_pDevice->SetRenderTargets( SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, 3, ppViews, pRTCubeMapDepth->GetDSV() );
 
 			// Render scene
 			_RenderScene( *m_pMatRenderCubeMap );
@@ -438,7 +438,7 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 			//	so we can create a linked list of neighbor probes, of their visibilities and solid angle
 			//
 			m_pDevice->SetStates( m_pDevice->m_pRS_CullNone, m_pDevice->m_pDS_ReadWriteLess, m_pDevice->m_pBS_Disabled );
-			m_pDevice->SetRenderTarget( CUBE_MAP_SIZE, CUBE_MAP_SIZE, *m_pRTCubeMap->GetRTV( 0, 6*3+CubeFaceIndex, 1 ), pRTCubeMapDepth->GetDSV() );
+			m_pDevice->SetRenderTarget( SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, *m_pRTCubeMap->GetRTV( 0, 6*3+CubeFaceIndex, 1 ), pRTCubeMapDepth->GetDSV() );
 
 			m_pCB_Probe->m.CurrentProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
 
@@ -542,13 +542,13 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 		// Read the amount of dynamic sets
 		U32	SetsCount = 0;
 		fread_s( &SetsCount, sizeof(SetsCount), sizeof(U32), 1, pFile );
-		Probe.SetsCount = MIN( MAX_PROBE_SETS, SetsCount );	// Don't read more than we can chew!
+		Probe.SetsCount = MIN( SHProbeEncoder::MAX_PROBE_PATCHES, SetsCount );	// Don't read more than we can chew!
 
 		// Read the sets
 		SHProbe::SetInfos	DummySet;
 		for ( U32 SetIndex=0; SetIndex < SetsCount; SetIndex++ )
 		{
-			SHProbe::SetInfos&	S = SetIndex < Probe.SetsCount ? Probe.pSetInfos[SetIndex] : DummySet;	// We load into a useless set if out of range...
+			SHProbe::SetInfos&	S = SetIndex < Probe.SetsCount ? Probe.pSetInfos[SetIndex] : DummySet;	// We load into a useless patch if out of range...
 
 			// Read position, normal, albedo
 			fread_s( &S.Position.x, sizeof(S.Position.x), sizeof(float), 1, pFile );
@@ -571,7 +571,7 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 			fread_s( &S.Albedo.y, sizeof(S.Albedo.y), sizeof(float), 1, pFile );
 			fread_s( &S.Albedo.z, sizeof(S.Albedo.z), sizeof(float), 1, pFile );
 
-			// Transform set's position/normal by probe's LOCAL=>WORLD
+			// Transform patch's position/normal by probe's LOCAL=>WORLD
 			S.Position = float3( Probe.pSceneProbe->m_Local2World.GetRow(3) ) + S.Position;
 // 			NjFloat3	wsSetNormal = Set.Normal;
 // 			NjFloat3	wsSetTangent = Set.Tangent;
@@ -590,7 +590,7 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 
 			// Read the samples
 			fread_s( &S.SamplesCount, sizeof(S.SamplesCount), sizeof(U32), 1, pFile );
-			ASSERT( S.SamplesCount < MAX_SET_SAMPLES, "Too many samples for that set!" );
+			ASSERT( S.SamplesCount < SHProbeEncoder::MAX_SAMPLES_PER_PATCH, "Too many samples for that patch!" );
 			for ( U32 SampleIndex=0; SampleIndex < S.SamplesCount; SampleIndex++ )
 			{
 				SHProbe::SetInfos::Sample&	Sample = S.pSamples[SampleIndex];
@@ -609,7 +609,7 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 				fread_s( &Sample.Radius, sizeof(Sample.Radius), sizeof(float), 1, pFile );
 
 
-				// Transform set's position/normal by probe's LOCAL=>WORLD
+				// Transform patch's position/normal by probe's LOCAL=>WORLD
 				Sample.Position = float3( Probe.pSceneProbe->m_Local2World.GetRow(3) ) + Sample.Position;
 //				NjFloat3	wsSetNormal = Sample.Normal;
 // TODO: Handle non-identity matrices! Let's go fast for now...
@@ -622,13 +622,13 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 		// Read the amount of emissive sets
 		U32	EmissiveSetsCount;
 		fread_s( &EmissiveSetsCount, sizeof(EmissiveSetsCount), sizeof(U32), 1, pFile );
-		Probe.EmissiveSetsCount = MIN( MAX_PROBE_EMISSIVE_SETS, EmissiveSetsCount );	// Don't read more than we can chew!
+		Probe.EmissiveSetsCount = MIN( SHProbeEncoder::MAX_PROBE_EMISSIVE_PATCHES, EmissiveSetsCount );	// Don't read more than we can chew!
 
 		// Read the sets
 		SHProbe::EmissiveSetInfos	DummyEmissiveSet;
 		for ( U32 SetIndex=0; SetIndex < EmissiveSetsCount; SetIndex++ )
 		{
-			SHProbe::EmissiveSetInfos&	S = SetIndex < Probe.EmissiveSetsCount ? Probe.pEmissiveSetInfos[SetIndex] : DummyEmissiveSet;	// We load into a useless set if out of range...
+			SHProbe::EmissiveSetInfos&	S = SetIndex < Probe.EmissiveSetsCount ? Probe.pEmissiveSetInfos[SetIndex] : DummyEmissiveSet;	// We load into a useless patch if out of range...
 
 			// Read position, normal
 			fread_s( &S.Position.x, sizeof(S.Position.x), sizeof(float), 1, pFile );

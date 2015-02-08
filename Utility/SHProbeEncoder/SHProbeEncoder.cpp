@@ -4,16 +4,19 @@ const float	SHProbeEncoder::Z_INFINITY = 1e6f;
 const float	SHProbeEncoder::Z_INFINITY_TEST = 0.99f * SHProbeEncoder::Z_INFINITY;
 
 SHProbeEncoder::SHProbeEncoder() {
-	m_CubeMapPixels = new Pixel[6*SHProbeNetwork::CUBE_MAP_SIZE*SHProbeNetwork::CUBE_MAP_SIZE];
+	m_CubeMapPixels = new Pixel[6*CUBE_MAP_SIZE*CUBE_MAP_SIZE];
 	Pixel*	pPixel = m_CubeMapPixels;
 	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
-		for ( int Y=0; Y < SHProbeNetwork::CUBE_MAP_SIZE; Y++ )
-			for ( int X=0; X < SHProbeNetwork::CUBE_MAP_SIZE; X++, pPixel++ ) {
+		for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
+			for ( int X=0; X < CUBE_MAP_SIZE; X++, pPixel++ ) {
 				pPixel->Index = pPixel - m_CubeMapPixels;
 				pPixel->CubeFaceIndex = CubeFaceIndex;
 				pPixel->CubeFaceX = X;
 				pPixel->CubeFaceY = Y;
 			}
+
+	m_ProbePixels.Init( 6*CUBE_MAP_SIZE*CUBE_MAP_SIZE );
+	m_ScenePixels.Init( 6*CUBE_MAP_SIZE*CUBE_MAP_SIZE );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Prepare the cube map face transforms
@@ -64,6 +67,19 @@ SHProbeEncoder::~SHProbeEncoder() {
 
 void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID ) {
 
+	// 1] Read back probe data and prepare pixels for encoding
+	ReadBackProbeCubeMap( _StagingCubeMap );
+
+	// 2] Encode
+
+}
+
+//////////////////////////////////////////////////////////////////////////
+//
+
+//////////////////////////////////////////////////////////////////////////
+//
+void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 	m_MaxFaceIndex = 0;
 
 	m_NearestNeighborProbeDistance = 0.0f;
@@ -74,11 +90,8 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeI
 	m_MinDistance = 0.0;
 	m_MaxDistance = 0.0;
 
-
 	m_ProbePixels.Clear();
 	m_ScenePixels.Clear();
-
-	const int	CUBE_MAP_SIZE = SHProbeNetwork::CUBE_MAP_SIZE;
 
 	double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
 	double	SumSolidAngle = 0.0;
@@ -93,7 +106,7 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeI
 	int		NegativeImportancePixelsCount = 0;
 	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
 	{
-		Pixel*	pCubeMapPixels = &m_CubeMapPixels[CubeFaceIndex*SHProbeNetwork::CUBE_MAP_SIZE*SHProbeNetwork::CUBE_MAP_SIZE];
+		Pixel*	pCubeMapPixels = &m_CubeMapPixels[CubeFaceIndex*CUBE_MAP_SIZE*CUBE_MAP_SIZE];
 
 		// Fill up albedo
 		D3D11_MAPPED_SUBRESOURCE	Map0 = _StagingCubeMap.Map( 0, 4*CubeFaceIndex+0 );
@@ -203,9 +216,164 @@ NegativeImportancePixelsCount++;
 
 	m_MeanDistance /= (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6);
 	m_MeanHarmonicDistance = (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6) / m_MeanHarmonicDistance;
-
 }
 
+//////////////////////////////////////////////////////////////////////////
+//
+void	SHProbeEncoder::Save( const char* _FileName ) {
+
+	FILE*	pFile = NULL;
+	fopen_s( &pFile, _FileName, "rb" );
+	ASSERT( pFile != NULL, "Locked!" );
+
+	// Write the mean, harmonic mean, min, max distances
+	W.Write( (float) m_MeanDistance );
+	W.Write( (float) m_MeanHarmonicDistance );
+	W.Write( (float) m_MinDistance );
+	W.Write( (float) m_MaxDistance );
+
+	// Write the BBox
+	W.Write( m_BBoxMin.x );
+	W.Write( m_BBoxMin.y );
+	W.Write( m_BBoxMin.z );
+	W.Write( m_BBoxMax.x );
+	W.Write( m_BBoxMax.y );
+	W.Write( m_BBoxMax.z );
+
+	// Write static SH
+	for ( int i=0; i < 9; i++ )
+	{
+		W.Write( m_StaticSH[i].x );
+		W.Write( m_StaticSH[i].y );
+		W.Write( m_StaticSH[i].z );
+	}
+
+	// Write occlusion SH
+	for ( int i=0; i < 9; i++ )
+		W.Write( m_OcclusionSH[i] );
+
+	// Write the result sets
+	W.Write( (UInt32) m_Sets.Length );
+
+	foreach ( Set S in m_Sets )
+	{
+		// Write position, normal, albedo
+		W.Write( S.Position.x );
+		W.Write( S.Position.y );
+		W.Write( S.Position.z );
+
+		W.Write( S.Normal.x );
+		W.Write( S.Normal.y );
+		W.Write( S.Normal.z );
+
+		W.Write( S.Tangent.x );
+		W.Write( S.Tangent.y );
+		W.Write( S.Tangent.z );
+
+		W.Write( S.BiTangent.x );
+		W.Write( S.BiTangent.y );
+		W.Write( S.BiTangent.z );
+
+			// Not used, just for information purpose
+		W.Write( (float) (S.Albedo.x / Math.PI) );
+		W.Write( (float) (S.Albedo.y / Math.PI) );
+		W.Write( (float) (S.Albedo.z / Math.PI) );
+
+		// Write SH coefficients (albedo is already factored in)
+		for ( int i=0; i < 9; i++ )
+		{
+			W.Write( S.SH[i].x );
+			W.Write( S.SH[i].y );
+			W.Write( S.SH[i].z );
+		}
+
+		// Write amount of samples
+		W.Write( (UInt32) S.Samples.Length );
+
+		// Write each sample
+		foreach ( Set.Sample Sample in S.Samples )
+		{
+			// Write position
+			W.Write( Sample.Position.x );
+			W.Write( Sample.Position.y );
+			W.Write( Sample.Position.z );
+
+			// Write normal
+			W.Write( Sample.Normal.x );
+			W.Write( Sample.Normal.y );
+			W.Write( Sample.Normal.z );
+
+			// Write radius
+			W.Write( Sample.Radius );
+		}
+	}
+
+	// Write the emissive sets
+	W.Write( (UInt32) m_EmissiveSets.Length );
+
+	foreach ( Set S in m_EmissiveSets )
+	{
+		// Write position, normal, albedo
+		W.Write( S.Position.x );
+		W.Write( S.Position.y );
+		W.Write( S.Position.z );
+
+		W.Write( S.Normal.x );
+		W.Write( S.Normal.y );
+		W.Write( S.Normal.z );
+
+		W.Write( S.Tangent.x );
+		W.Write( S.Tangent.y );
+		W.Write( S.Tangent.z );
+
+		W.Write( S.BiTangent.x );
+		W.Write( S.BiTangent.y );
+		W.Write( S.BiTangent.z );
+
+		// Write emissive mat
+		W.Write( S.EmissiveMatID );
+
+		// Write SH coefficients (we only write luminance here, we don't have the color info that is provided at runtime)
+		for ( int i=0; i < 9; i++ )
+			W.Write( S.SH[i].x );
+	}
+
+	// Write the neighbor probes
+	W.Write( (UInt32) m_NeighborProbes.Count );
+
+	// Write nearest/farthest probe distance
+	W.Write( m_NearestNeighborProbeDistance );
+	W.Write( m_FarthestNeighborProbeDistance );
+
+	foreach ( NeighborProbe NP in m_NeighborProbes )
+	{
+		// Write probe ID, distance, solid angle, direction
+		W.Write( (UInt32) NP.ProbeID );
+		W.Write( NP.Distance );
+		W.Write( (float) NP.SolidAngle );
+		W.Write( NP.Direction.x );
+		W.Write( NP.Direction.y );
+		W.Write( NP.Direction.z );
+
+		// Write SH coefficients (only luminance here since they're used for the product with the neighbor probe's SH)
+		for ( int i=0; i < 9; i++ )
+			W.Write( (float) NP.SH[i] );
+	}
+
+// We now save a single file
+// 			// Save probe influence for each scene face
+// 			FileInfo	InfluenceFileName = new FileInfo( Path.Combine( Path.GetDirectoryName( _FileName.FullName ), Path.GetFileNameWithoutExtension( _FileName.FullName ) + ".FaceInfluence" ) );
+// 			using ( FileStream S = InfluenceFileName.Create() )
+// 				using ( BinaryWriter W = new BinaryWriter( S ) )
+// 				{
+// 					for ( UInt32 FaceIndex=0; FaceIndex < m_MaxFaceIndex; FaceIndex++ )
+// 					{
+// 						W.Write( (float) (m_ProbeInfluencePerFace.ContainsKey( FaceIndex ) ? m_ProbeInfluencePerFace[FaceIndex] : 0.0) );
+// 					}
+// 				}
+}
+
+}
 
 const double	SHProbeEncoder::Pixel::f0 = 0.5 / PI;
 const double	SHProbeEncoder::Pixel::f1 = sqrt(3.0) * SHProbeEncoder::Pixel::f0;

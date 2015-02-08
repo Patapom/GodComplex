@@ -12,14 +12,8 @@ class	SHProbeNetwork
 {
 public:		// CONSTANTS
 
-	static const U32		MAX_PROBE_SETS = 16;				// We only deal with a maximum of 16 diffuse patches (sets)
-	static const U32		MAX_PROBE_EMISSIVE_SETS = 16;		// We only deal with a maximum of 16 emissive patches (sets)
-	static const U32		MAX_SET_SAMPLES = 64;				// Accept a maximum of 64 samples per patch
 	static const U32		MAX_PROBE_NEIGHBORS = 4;			// Only keep the 4 most significant neighbors
-
 	static const U32		MAX_PROBE_UPDATES_PER_FRAME = 32;	// Update a maximum of 32 probes per frame
-
-	static const U32		CUBE_MAP_SIZE = 128;
 
 
 public:		// NESTED TYPES
@@ -59,9 +53,9 @@ public:		// NESTED TYPES
 				float3			Position;
 				float3			Normal;
 				float			Radius;
-			}				pSamples[MAX_SET_SAMPLES];
+			}				pSamples[SHProbeEncoder::MAX_SAMPLES_PER_PATCH];
 
-		}				pSetInfos[MAX_PROBE_SETS];
+		}				pSetInfos[SHProbeEncoder::MAX_PROBE_PATCHES];
 
 		// Emissive sets infos
 		U32				EmissiveSetsCount;		// The amount of emissive sets for that probe
@@ -74,7 +68,7 @@ public:		// NESTED TYPES
 			Scene::Material*	pEmissiveMaterial;	// Direct pointer to the material
 
 			float			pSHEmissive[9];		// The pre-computed SH that gives back how much the probe emits light
-		}				pEmissiveSetInfos[MAX_PROBE_EMISSIVE_SETS];
+		}				pEmissiveSetInfos[SHProbeEncoder::MAX_PROBE_EMISSIVE_PATCHES];
 
 		// Neighbor probes infos
 		float			NearestProbeDistance;

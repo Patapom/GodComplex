@@ -26,7 +26,15 @@
 
 class	SHProbeEncoder
 {
-private:	// CONSTANTS
+public:		// CONSTANTS
+
+	static const U32		MAX_PROBE_PATCHES = 16;				// We only deal with a maximum of 16 diffuse patches (sets)
+	static const U32		MAX_PROBE_EMISSIVE_PATCHES = 16;	// We only deal with a maximum of 16 emissive patches (sets)
+	static const U32		MAX_SAMPLES_PER_PATCH = 64;			// Accept a maximum of 64 samples per patch
+
+	static const U32		CUBE_MAP_SIZE = 128;
+
+private:
 
 	static const float	Z_INFINITY;
 	static const float	Z_INFINITY_TEST;
@@ -441,8 +449,9 @@ private:	// FIELDS
 	int					m_ProbeID;							// This is extracted from the cube map file name... Not very robust but good enough!
 
 	Pixel*				m_CubeMapPixels;					// Original cube map
-	List<Pixel*>		m_ProbePixels;						// List of all pixels in the probe
-	List<Pixel*>		m_ScenePixels;						// List of pixels that participate to the scene (i.e. not at infinity)
+	List<Pixel*>		m_ProbePixels;						// List of all pixels viewed by the probe
+	List<Pixel*>		m_ScenePixels;						// List of pixels that participate to the scene geometry (i.e. not at infinity)
+
 
 	// Generated geometric informations
 	double				m_MeanDistance;
@@ -457,8 +466,8 @@ private:	// FIELDS
 	float				m_OcclusionSH[9];
 
 	// Dynamic & Emissive sets
-	Patch*				m_Patches;
-	Patch*				m_EmissivePatches;
+	Patch				m_Patches[MAX_PROBE_PATCHES];
+	Patch				m_EmissivePatches[MAX_PROBE_EMISSIVE_PATCHES];
 
 	float3				m_SHSumDynamic[9];
 	float3				m_SHSumEmissive[9];
@@ -482,4 +491,12 @@ public:		// METHODS
 
 	// Encodes the MRT cube map into basic SH elements that can later be combined at runtime to form a dynamically updatable probe
 	void	EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID );
+
+	// 
+	void	Save( const char* _FileName );
+
+private:
+	// Reads back the cube map and populates cube map pixels, probe pixels and scene pixels.
+	// After this, the probe is ready for encoding
+	void	ReadBackProbeCubeMap( Texture2D& _StagingCubeMap );
 };
