@@ -472,7 +472,7 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 
 		//////////////////////////////////////////////////////////////////////////
 		// 4] Encode the cube map into separated SH patches
-		m_ProbeEncoder.EncodeProbeCubeMap( *pRTCubeMapStaging );
+		m_ProbeEncoder.EncodeProbeCubeMap( *pRTCubeMapStaging, ProbeIndex );
 	}
 
 	delete pCBCubeMapCamera;

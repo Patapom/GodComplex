@@ -636,7 +636,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 		//
 		// Misc
 		false,				// U32		ShowDebugProbes;
-		false,				// U32		ShowDebugProbes;
+		false,				// U32		ShowDebugProbesNetwork;
 		1.0f,				// float	DebugProbesIntensity;
 	};
 	ParametersBlock&	MappedParams = m_pMMF->GetMappedMemory();

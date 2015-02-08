@@ -76,11 +76,13 @@ public:
 	float		Max() const						{ return MAX( x, y ); }
 	bool		Almost( const float2& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ); }
 
+	float		Dot( const float2& b )			{ return x*b.x + y*b.y; }
+
 	float2		operator-( const float2& v ) const	{ return float2( x-v.x, y-v.y ); }
 	float2		operator+( const float2& v ) const	{ return float2( x+v.x, y+v.y ); }
 	float2		operator*( const float2& v ) const	{ return float2( x*v.x, y*v.y ); }
-	float2		operator*( float v ) const				{ return float2( x * v, y * v ); }
-	float2		operator/( float v ) const				{ return float2( x / v, y / v ); }
+	float2		operator*( float v ) const			{ return float2( x * v, y * v ); }
+	float2		operator/( float v ) const			{ return float2( x / v, y / v ); }
 	float2		operator/( const float2& v ) const	{ return float2( x / v.x, y / v.y ); }
 	float		operator|( const float2& v ) const	{ return x*v.x + y*v.y; }
 	float		operator^( const float2& v ) const	{ return x*v.y - y*v.x; }	// Returns the Z component of the orthogonal vector
@@ -118,14 +120,17 @@ public:
 	float		Max() const						{ return MAX( MAX( x, y ), z ); }
 	bool		Almost( const float3& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ); }
 
+	float		Dot( const float3& b )			{ return x*b.x + y*b.y + z*b.z; }
+	float3		Cross( const float3& b )		{ return float3( y*b.z - z*b.y, b.x*z - b.z*x, x*b.y - y*b.x ); }
+
 	float3		operator-( const float3& v ) const	{ return float3( x-v.x, y-v.y, z-v.z ); }
 	float3		operator+( const float3& v ) const	{ return float3( x+v.x, y+v.y, z+v.z ); }
 	float3		operator*( const float3& v ) const	{ return float3( x*v.x, y*v.y, z*v.z ); }
-	float3		operator*( float v ) const				{ return float3( x * v, y * v, z * v ); }
-	float3		operator/( float v ) const				{ return float3( x / v, y / v, z / v ); }
+	float3		operator*( float v ) const			{ return float3( x * v, y * v, z * v ); }
+	float3		operator/( float v ) const			{ return float3( x / v, y / v, z / v ); }
 	float3		operator/( const float3& v ) const	{ return float3( x / v.x, y / v.y, z / v.z ); }
 	float		operator|( const float3& v ) const	{ return x*v.x + y*v.y + z*v.z; }
-	float3		operator-() const						{ return float3( -x, -y, -z ); }
+	float3		operator-() const					{ return float3( -x, -y, -z ); }
 				operator float2() const				{ return float2( x, y ); }
 	float3		operator^( const float3& v ) const	{ return float3( y * v.z - v.y * z, z * v.x - v.z * x, x * v.y - v.x * y ); }
 
@@ -164,6 +169,8 @@ public:
 	float		Min() const						{ return MIN( MIN( MIN( x, y ), z), w ); }
 	float		Max() const						{ return MAX( MAX( MAX( x, y ), z), w ); }
 	bool		Almost( const float4& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ) && ALMOST( w, b.w ); }
+
+	float		Dot( const float4& b )			{ return x*b.x + y*b.y + z*b.z + w*b.w; }
 
 	float4		operator-()								{ return float4( -x, -y, -z, -w ); }
 				operator float3()						{ return float3( x, y, z ); }
