@@ -78,6 +78,10 @@
 // Scene loading
 #include "Scene/Scene.h"
 
+// Indirect Lighting
+#include "Utility/SHProbeEncoder/SHProbeNetwork.h"
+#include "Utility/SHProbeEncoder/SHProbeEncoder.h"
+
 
 extern const float4	LUMINANCE;	// D65 Illuminant with observer at 2°
 
