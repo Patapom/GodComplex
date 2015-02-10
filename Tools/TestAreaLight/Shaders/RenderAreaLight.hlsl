@@ -49,8 +49,8 @@ float4	SampleSATSinglePixel( float2 _UV ) {
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 
-float2	BRDF = float4( _TexBRDFIntegral.Sample( LinearClamp, _In.UV ), 0, 1 );
-return float4( BRDF, 0, 1 );
+// float2	BRDF = float4( _TexBRDFIntegral.Sample( LinearClamp, _In.UV ), 0, 1 );
+// return float4( BRDF, 0, 1 );
 
  	float4	StainedGlass = _TexAreaLight.SampleLevel( LinearClamp, _In.UV, 0*_AreaLightDiffusion * 7 );
 // 	float4	StainedGlass = _TexAreaLight.SampleLevel( LinearClamp, _In.UV, 9.0 * abs( fmod( 0.25 * iGlobalTime, 2.0 ) - 1.0 ) );
@@ -66,7 +66,7 @@ return float4( BRDF, 0, 1 );
 
 
 // Debug shadow map
-//StainedGlass = 1.0 * _TexShadowMap.Sample( LinearClamp, _In.UV );
+StainedGlass = 1.0 * _TexShadowMap.Sample( LinearClamp, _In.UV );
 // StainedGlass = float4( _TexShadowMap.SampleLevel( LinearClamp, _In.UV, 0.0 ).x - _TexShadowSmoothie.Sample( LinearClamp, _In.UV ), 0, 0 ).y;
 //StainedGlass = float4( _TexShadowSmoothie.Sample( LinearClamp, _In.UV ), 0, 0 ).x;
 //StainedGlass = 20.0 * float4( _TexShadowSmoothie.Sample( LinearClamp, _In.UV ), 0, 0 ).y;

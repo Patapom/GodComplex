@@ -1528,7 +1528,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			catch ( Exception _e )
 			{
 				m_Device = null;
-				MessageBox.Show( "Failed to initialize DX device!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				MessageBox.Show( "Failed to initialize DX device!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				return;
 			}
 
@@ -1790,8 +1790,8 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_CB_Main.UpdateData();
 
 			// Setup area light buffer
-			float		LighOffsetX = 0;//1.2f;
-			float		SizeX = 1;//0.5f;
+			float		LighOffsetX = 1.2f;
+			float		SizeX = 0.5f;
 			float		SizeY = 1.0f;
 			float		RollAngle = (float) (Math.PI * floatTrackbarControlLightRoll.Value / 180.0);
 			float3		LightPosition = new float3( LighOffsetX + floatTrackbarControlLightPosX.Value, 1.0f + floatTrackbarControlLightPosY.Value, -1.0f + floatTrackbarControlLightPosZ.Value );

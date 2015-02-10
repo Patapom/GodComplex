@@ -81,6 +81,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 //return float4( RadianceDiffuse, 0 );
 //return float4( RadianceSpecular, 0 );
 
+return Shadow;
+
 	return float4( 0.01 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular, 1 );
 
 #else
