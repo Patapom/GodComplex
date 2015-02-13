@@ -51,6 +51,7 @@ private:	// NESTED TYPES
 		static const double		f2;
 		static const double		f3;
 
+	public:
 		static float	IMPORTANCE_THRESOLD;	// To be set manually before encoding
 
 	public:
@@ -66,7 +67,7 @@ private:	// NESTED TYPES
 		float		F0;						// Material Fresnel coefficient
 		float3		StaticLitColor;			// Color of the statically lit environment
 		U32			FaceIndex;				// Absolute scene face index
-		int			EmissiveMatID;			// ID of the emissive material or -1 if not emissive
+		U32			EmissiveMatID;			// ID of the emissive material or -1 if not emissive
 		int			NeighborProbeID;		// ID of the nearest neighbor probe
 		float		NeighborProbeDistance;	// Distance to the neighbor probe plane
 		double		SolidAngle;				// Solid angle covered by the pixel
@@ -81,7 +82,7 @@ private:	// NESTED TYPES
 		int			ParentPatchSampleIndex;	// Index of the nearest sample this pixel is part of
 
 		Pixel()
-			: EmissiveMatID( -1 )
+			: EmissiveMatID( ~0UL )
 			, NeighborProbeID( -1 )
 			, ParentPatchSampleIndex( -1 ) {
 		}
@@ -180,6 +181,9 @@ private:	// NESTED TYPES
 	public:
 		List<Pixel*>	Pixels;			// The list of pixels belonging to this patch
 		int				ID;				// Warning: Only available once the computation is over and all sets have been resolved!
+		U32				EmissiveMatID;	// Only valid if the patch is an emissive patch
+
+		float3			Position;		// Average patch position
 
 		// Tangent space generated from principal directions of the points patch
 		float3			Normal;
@@ -194,11 +198,12 @@ private:	// NESTED TYPES
 		// The generated samples that will be used at runtime to estimate lighting and update the patch's SH coefficients
 		struct Sample 
 		{
-			float3	Position;
-			float3	Normal;
-			float	Radius;		// Radius of the disc encompassing all the pixels forming that sample
+			float3			Position;
+			float3			Normal;
+			float			Radius;		// Radius of the disc encompassing all the pixels forming that sample
 		};
-		Sample			Samples[16];
+		int				SamplesCount;
+		Sample			Samples[MAX_SAMPLES_PER_PATCH];
 
 
 //static readonly float	FILTER_WINDOW_SIZE = 3.0f;	// Our SH order is 3 so...
@@ -207,9 +212,12 @@ private:	// NESTED TYPES
 
 		Patch()
 			: ID( -1 )
+			, EmissiveMatID( ~0UL )
+			, Position( float3::Zero )
 			, Normal( float3::Zero )
 			, Tangent( float3::Zero )
-			, BiTangent( float3::Zero ) {}
+			, BiTangent( float3::Zero )
+			, SamplesCount( 0 ) {}
 
 		// Performs the SH encoding of all the pixels belonging to the patch
 		// It simply amounts to summing the directional SH contribution of every pixels in the patch, assuming they all receive the energy received by the patch's substitute center
@@ -424,7 +432,7 @@ private:	// NESTED TYPES
 //	[System.Diagnostics.DebuggerDisplay( "ID={ProbeID} Dist={Distance} Omega={SolidAngle} Dir=({Direction.x}, {Direction.y}, {Direction.z})" )]
 	class	NeighborProbe {
 	public:
-		int			ProbeID;
+		U32			ProbeID;
 		float		Distance;			// Distance to the neighbor probe
 		double		SolidAngle;			// Solid angle covered by the neighbor probe, as perceived by our probe
 		float3		Direction;			// Direction to the probe
@@ -466,7 +474,9 @@ private:	// FIELDS
 	float				m_OcclusionSH[9];
 
 	// Dynamic & Emissive sets
+	U32					m_PatchesCount;
 	Patch				m_Patches[MAX_PROBE_PATCHES];
+	U32					m_EmissivePatchesCount;
 	Patch				m_EmissivePatches[MAX_PROBE_EMISSIVE_PATCHES];
 
 	float3				m_SHSumDynamic[9];
@@ -475,6 +485,7 @@ private:	// FIELDS
 	// List of neighbor probes
 	float				m_NearestNeighborProbeDistance;
 	float				m_FarthestNeighborProbeDistance;
+	U32					m_NeighborProbesCount;
 	List<NeighborProbe>	m_NeighborProbes;
 
 	// List of influence weights per face index
@@ -499,4 +510,10 @@ private:
 	// Reads back the cube map and populates cube map pixels, probe pixels and scene pixels.
 	// After this, the probe is ready for encoding
 	void	ReadBackProbeCubeMap( Texture2D& _StagingCubeMap );
+
+	// Build sets using flood fill and adjacency propagation
+	void	ComputeFloodFill( int _MaxSetsCount, int _MaxLightingSamplesCount, float _SpatialDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight, float _MinimumImportanceDiscardThreshold );
+
+
+	void	FloodFill( Patch _S, Pixel _PreviousPixel, Pixel _P, List<Pixel*> _SetRejectedPixels );
 };
