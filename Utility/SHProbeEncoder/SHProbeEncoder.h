@@ -4,34 +4,33 @@
 // Encodes a cube map containing albedo, normal, distance, material ID, static lighting and emissive material
 //
 // The purpose of this class is to analyze the rendering from a cube map probe to perform a grouping
-//	of the pixels based on their position, normal and albedo to create a limited amount of patches that we'll
+//	of the pixels based on their position, normal and albedo to create a limited amount of surfaces that we'll
 //	be able to replace by simple "disc surface elements" that can be lit with dynamic lights.
 // (http://graphics.pixar.com/library/PointBasedGlobalIlluminationForMovieProduction/paper.pdf)
 // 
-// The pixels belonging to each patch/patch will be considered having the same albedo and will light the probe with
+// The pixels belonging to each surface will be considered having the same albedo and will light the probe with
 //	precomputed spherical harmonic coefficients, each pondered by the solid angle covered by the pixel from the direction
 //	specific to the pixel.
 //
-// To create the patches, I'm using a "Filling method", it's an experimental method of mine that consists in browsing
+// To create the surfaces, I'm using a "Filling method", it's an experimental method of mine that consists in browsing
 //	the pixels of the cube map and perform a fill operation by joining adjacent pixels if and only if they're sufficiently
 //	close enough in terms of distance, normal and color.
-// Each patch created this way has its own list of pixels removed from the global list of free pixels.
+// Each surface created this way has its own list of pixels removed from the global list of free pixels.
 // Pixels whose solid angle is too low are discarded.
 //
-// The algorithm continues until all pixels have been discarded or added to a patch, then the algorithm enters a second
+// The algorithm continues until all pixels have been discarded or added to a surface, then the algorithm enters a second
 //	phase of optimization where sets are merged together if sufficiently close, or discarded if not significant enough.
 //
 //
 #pragma once
 
-
 class	SHProbeEncoder
 {
 public:		// CONSTANTS
 
-	static const U32		MAX_PROBE_PATCHES = 16;				// We only deal with a maximum of 16 diffuse patches (sets)
-	static const U32		MAX_PROBE_EMISSIVE_PATCHES = 16;	// We only deal with a maximum of 16 emissive patches (sets)
-	static const U32		MAX_SAMPLES_PER_PATCH = 64;			// Accept a maximum of 64 samples per patch
+	static const U32		MAX_PROBE_PATCHES = 16;				// We only deal with a maximum of 16 diffuse surfaces (sets)
+	static const U32		MAX_PROBE_EMISSIVE_PATCHES = 16;	// We only deal with a maximum of 16 emissive surfaces (sets)
+	static const U32		MAX_SAMPLES_PER_PATCH = 64;			// Accept a maximum of 64 samples per surface
 
 	static const U32		CUBE_MAP_SIZE = 128;
 	static const int		CUBE_MAP_FACE_SIZE = CUBE_MAP_SIZE * CUBE_MAP_SIZE;
@@ -50,7 +49,7 @@ private:
 
 private:	// NESTED TYPES
 
-	class	Patch;
+	class	Surface;
 
 	// This represents all the information about the pixel of a cube map
 	class	Pixel {
@@ -63,9 +62,9 @@ private:	// NESTED TYPES
 		static float	IMPORTANCE_THRESOLD;	// To be set manually before encoding
 
 	public:
-		Pixel*		pPrevious;				// Pointer to the previous pixel in the list if they're part of a particular patch
-		Pixel*		pNext;					// Pointer to the next pixel in the list if they're part of a particular patch
-		Patch*		pParentPatch;			// The patch the pixel belongs to
+//		Pixel*		pPrevious;				// Pointer to the previous pixel in the list if they're part of a particular surface
+		Pixel*		pNext;					// Pointer to the next pixel in the list if they're part of a particular surface
+		Surface*	pParentSurface;			// The surface the pixel belongs to
 
 		int			Index;					// Index of the pixel in the scene pixels (can help us locate the cube map face + position of the pixel when finding adjacent pixels)
 		int			CubeFaceIndex;
@@ -94,9 +93,9 @@ private:	// NESTED TYPES
 		int			ParentPatchSampleIndex;	// Index of the nearest sample this pixel is part of
 
 		Pixel()
-			: pPrevious( NULL )
-			, pNext( NULL )
-			, pParentPatch( NULL )
+			//: pPrevious( NULL )
+			: pNext( NULL )
+			, pParentSurface( NULL )
 			, Position( float3::Zero )
 			, Normal( float3::Zero )
 			, Albedo( float3::Zero )
@@ -181,13 +180,13 @@ private:	// NESTED TYPES
 
 		// Tells if the pixel is acceptable on its own.
 		// The test checks if the pixel:
-		//	_ doesn't already belong to a patch
+		//	_ doesn't already belong to a surface
 		//	_ is a scene pixel (i.e. not at infinity)
 		//	_ has enough importance
 		bool		IsFloodFillAcceptable()
 		{
-			if ( pParentPatch != NULL )
-				return false;	// We don't accept pixels that are already part of a patch!
+			if ( pParentSurface != NULL )
+				return false;	// We don't accept pixels that are already part of a surface!
 			if ( Infinity )
 				return false;	// We only accept scene pixels!
 			if ( EmissiveMatID != ~0UL )
@@ -198,57 +197,54 @@ private:	// NESTED TYPES
 			return true;
 		}
 
-		void		Unlink() {
-			if ( pPrevious != NULL ) {
-				pPrevious->pNext = pNext;
-			}
-			if ( pNext != NULL ) {
-				pNext->pPrevious = pPrevious;
-			}
-			pNext = pPrevious = NULL;
-		}
-
-		void		LinkBefore( Pixel& _Other ) {
-			Unlink();
-			pPrevious = _Other.pPrevious;
-			pNext = &_Other;
-			if ( _Other.pPrevious != NULL ) {
-				_Other.pPrevious->pNext = this;
-			}
-			_Other.pPrevious = this;
-		}
-
-		void		LinkAfter( Pixel& _Other ) {
-			Unlink();
-			pPrevious = &_Other;
-			pNext = _Other.pNext;
-			if ( _Other.pNext != NULL ) {
-				_Other.pNext->pPrevious = this;
-			}
-			_Other.pNext = this;
-		}
+// 		void		Unlink() {
+// 			if ( pPrevious != NULL ) {
+// 				pPrevious->pNext = pNext;
+// 			}
+// 			if ( pNext != NULL ) {
+// 				pNext->pPrevious = pPrevious;
+// 			}
+// 			pNext = pPrevious = NULL;
+// 		}
+// 
+// 		void		LinkBefore( Pixel& _Other ) {
+// 			Unlink();
+// 			pPrevious = _Other.pPrevious;
+// 			pNext = &_Other;
+// 			if ( _Other.pPrevious != NULL ) {
+// 				_Other.pPrevious->pNext = this;
+// 			}
+// 			_Other.pPrevious = this;
+// 		}
+// 
+// 		void		LinkAfter( Pixel& _Other ) {
+// 			Unlink();
+// 			pPrevious = &_Other;
+// 			pNext = _Other.pNext;
+// 			if ( _Other.pNext != NULL ) {
+// 				_Other.pNext->pPrevious = this;
+// 			}
+// 			_Other.pNext = this;
+// 		}
 	};
 
-	// A patch is a special surface with a centroid, a normal and an average albedo
-	// It also serves as accumulator for all pixels registering to the patch
+	// A surface is a collection of pixels with a centroid, a normal and an average albedo
 //	[System.Diagnostics.DebuggerDisplay( "C={SetPixels.Count} I={Importance} H={AlbedoHSL.x} S={AlbedoHSL.y} L={Albedo.z} P=({Position.x}, {Position.y}, {Position.z})" )]
-	class	Patch : public Pixel {
+	class	Surface : public Pixel {
 	public:
-//		Patch*			pParentPatch;	// Used by patches that were merged into other patches
-
-		int				PixelsCount;	// Amount of pixels in the patch
-		Pixel*			pPixels;		// The list of pixels belonging to this patch
+		int				PixelsCount;	// Amount of pixels in the surface
+		Pixel*			pPixels;		// The list of pixels belonging to this surface
 
 		int				ID;				// Warning: Only available once the computation is over and all sets have been resolved!
 
-		// Tangent space generated from principal directions of the points patch
+		// Tangent space generated from principal directions of the points surface
 		float3			Tangent;
 		float3			BiTangent;
 
-		// The generated SH coefficients for this patch
+		// The generated SH coefficients for this surface
 		float3			SH[9];
 
-		// The generated samples that will be used at runtime to estimate lighting and update the patch's SH coefficients
+		// The generated samples that will be used at runtime to estimate lighting and update the surface's SH coefficients
 		struct Sample 
 		{
 			float3			Position;
@@ -263,7 +259,7 @@ private:	// NESTED TYPES
 
 	public:
 
-		Patch() : Pixel()
+		Surface() : Pixel()
 			, PixelsCount( 0 )
 			, pPixels( NULL )
 			, ID( -1 )
@@ -271,8 +267,8 @@ private:	// NESTED TYPES
 			, BiTangent( float3::Zero )
 			, SamplesCount( 0 ) {}
 
-		// Performs the SH encoding of all the pixels belonging to the patch
-		// It simply amounts to summing the directional SH contribution of every pixels in the patch, assuming they all receive the energy received by the patch's substitute center
+		// Performs the SH encoding of all the pixels belonging to the surface
+		// It simply amounts to summing the directional SH contribution of every pixels in the surface, assuming they all receive the energy received by the surface's substitute center
 		void			EncodeSH()
 		{
 			double		AlbedoR = Albedo.x / PI;
@@ -291,9 +287,9 @@ private:	// NESTED TYPES
 				Pixel&	P = *pPixel;
 				pPixel++;
 
-				// Compute weight factor based on patch's normal and pixel's normal but also based on pixel's normal and view direction
+				// Compute weight factor based on surface's normal and pixel's normal but also based on pixel's normal and view direction
 				double	Factor  = P.SolidAngle								// Solid angle for SH weight, obvious
-								* max( 0.0, P.Normal.Dot( Normal ) )		// This weight is to account for the fact that the point is well aligned with the patch's plane the lighting was computed for
+								* max( 0.0, P.Normal.Dot( Normal ) )		// This weight is to account for the fact that the point is well aligned with the surface's plane the lighting was computed for
 								* max( 0.0, -P.View.Dot( P.Normal ) );		// This weight is to account for the fact that the point is well aligned with the view vector
 																			//	(for example, for a perfectly flat wall this weight will have the effect that points further from the probe's perpendicular will have less importance)
 
@@ -315,8 +311,8 @@ private:	// NESTED TYPES
 //			SphericalHarmonics.SHFunctions.FilterLanczos( SH, FILTER_WINDOW_SIZE );
 		}
 
-		// Performs the emissive SH encoding of all the pixels belonging to the patch
-		// It simply amounts to summing the directional SH contribution of every pixels in the patch
+		// Performs the emissive SH encoding of all the pixels belonging to the surface
+		// It simply amounts to summing the directional SH contribution of every pixels in the surface
 		void			EncodeEmissiveSH() {
 			double	SHCoeffs[9];
 
@@ -345,10 +341,10 @@ private:	// NESTED TYPES
 		Pixel			__ReferencePixel;
 		void			GenerateSamples( int _SamplesCount );
 
-		// This is a very simplistic approach to determine the principal axes of the patch:
-		//  1) Create a dummy tangent space for the patch's plane
+		// This is a very simplistic approach to determine the principal axes of the surface:
+		//  1) Create a dummy tangent space for the surface's plane
 		//  2) Rotate an axis from 0 to 180° in that arbitrary tangent space
-		//		2.1) Compute the max distance of each point of the patch to this axis (i.e. bounding rect extent in that direction)
+		//		2.1) Compute the max distance of each point of the surface to this axis (i.e. bounding rect extent in that direction)
 		//		2.2) Keep the angle where we find the largest distance as our minor principal axis
 		//		2.3) Keep the angle where we find the smallest distance as our major principal axis
 		//
@@ -412,17 +408,17 @@ private:	// NESTED TYPES
 // 		}
 
 /*
-		// Generates N samples among the patch's pixels where lighting will be sampled
+		// Generates N samples among the surface's pixels where lighting will be sampled
 		Pixel	__ReferencePixel;
 		void			GenerateSamples( int _SamplesCount ) {
 			Samples = new Sample[_SamplesCount];
 			if ( _SamplesCount > Pixels.GetCount() )
-				ASSERT( false, "More samples than pixels in the patch! This is useless!" );
+				ASSERT( false, "More samples than pixels in the surface! This is useless!" );
 
 			int	PixelGroupSize = max( 1, Pixels.GetCount() / _SamplesCount );
 			for ( int SampleIndex=0; SampleIndex < _SamplesCount; SampleIndex++ ) {
 				Pixel&	P = Pixels[SampleIndex * PixelGroupSize];	// Arbitrary!
-// TODO: Choose well spaced pixels to cover the maximum area for this patch!
+// TODO: Choose well spaced pixels to cover the maximum area for this surface!
 
 				// Find the nearest pixels around that pixel
 				List<Pixel>	NearestPixels;
@@ -485,6 +481,9 @@ private:	// NESTED TYPES
 // 
 // 		#endregion
 */
+
+		// Sort a linked list of surface from most to least important
+		static void	Sort( Surface* _pList, const IComparer<Surface>& _Comparer );
 	};
 
 	// Contains information on a neighbor probe
@@ -532,12 +531,12 @@ private:	// FIELDS
 	float3				m_StaticSH[9];
 	float				m_OcclusionSH[9];
 
-	// Dynamic & Emissive patches
-	List< Patch* >		m_AllPatches;						// The list of all patches that were allocated, to be deleted once the probe is saved...
-	U32					m_PatchesCount;
-	Patch*				m_ppPatches[MAX_PROBE_PATCHES];
-	U32					m_EmissivePatchesCount;
-	Patch*				m_ppEmissivePatches[MAX_PROBE_EMISSIVE_PATCHES];
+	// Dynamic & Emissive surfaces
+	List< Surface >		m_AllSurfaces;
+	U32					m_SurfacesCount;
+	Surface*			m_ppSurfaces[MAX_PROBE_PATCHES];
+	U32					m_EmissiveSurfacesCount;
+	Surface*			m_ppEmissiveSurfaces[MAX_PROBE_EMISSIVE_PATCHES];
 
 	float3				m_SHSumDynamic[9];
 	float3				m_SHSumEmissive[9];
@@ -566,9 +565,6 @@ public:		// METHODS
 	// Saves the resulting encoded probe to disk
 	void	Save( const char* _FileName );
 
-	// Cleans up all allocated memory once encoding is saved
-	void	CleanUp();
-
 
 private:
 	// Reads back the cube map and populates cube map pixels, probe pixels and scene pixels.
@@ -582,8 +578,8 @@ private:
 	mutable int		m_ScanlinePixelIndex;
 	mutable Pixel*	m_ppScanlinePixelsPool[6 * CUBE_MAP_SIZE * CUBE_MAP_SIZE];
 
-	void	FloodFill( Patch& _S, Pixel* _PreviousPixel, Pixel* _P, Pixel*& _RejectedPixels ) const;
-	bool	CheckAndAcceptPixel( Patch& _Patch, Pixel& _PreviousPixel, Pixel& _P, Pixel*& _RejectedPixels ) const;
+	void	FloodFill( Surface& _S, Pixel* _PreviousPixel, Pixel* _P, Pixel*& _RejectedPixels ) const;
+	bool	CheckAndAcceptPixel( Surface& _Patch, Pixel& _PreviousPixel, Pixel& _P, Pixel*& _RejectedPixels ) const;
 	Pixel&	FindAdjacentPixel( const Pixel& _P, int _Dx, int _Dy ) const;
 
 	// Helpers

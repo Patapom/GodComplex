@@ -3,20 +3,20 @@
 #include "Types.h"
 #include "ASMHelpers.h"
 
+// Comparer should return:
+//	+1 if a < b 
+//	-1 if a > b
+//	 0 if a == b
+template<typename T> class	IComparer {
+public:	virtual int		Compare( const T& a, const T& b ) const = 0;
+};
+
 // Simple list class
 template<typename T> class	List
 {
 protected:	// NESTED TYPES
 
 public:
-
-	// Comparer should return:
-	//	+1 if a < b 
-	//	-1 if a > b
-	//	 0 if a == b
-	template<typename T> class	IComparer {
-	public:	virtual int		Compare( const T& a, const T& b ) const = 0;
-	};
 
 protected:	// FIELDS
 

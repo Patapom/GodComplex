@@ -3,6 +3,12 @@
 const float	SHProbeEncoder::Z_INFINITY = 1e6f;
 const float	SHProbeEncoder::Z_INFINITY_TEST = 0.99f * SHProbeEncoder::Z_INFINITY;
 
+float		SHProbeEncoder::DISTANCE_THRESHOLD = 0.02f;						// 2cm
+float		SHProbeEncoder::ANGULAR_THRESHOLD = acosf( 0.5f * PI / 180 );	// 0.5°
+float		SHProbeEncoder::ALBEDO_HUE_THRESHOLD = 0.04f;					// Close colors!
+float		SHProbeEncoder::ALBEDO_RGB_THRESHOLD = 0.16f;					// Close colors!
+
+
 SHProbeEncoder::SHProbeEncoder() {
 	m_pCubeMapPixels = new Pixel[6*CUBE_MAP_SIZE*CUBE_MAP_SIZE];
 	Pixel*	pPixel = m_pCubeMapPixels;
@@ -15,7 +21,7 @@ SHProbeEncoder::SHProbeEncoder() {
 				pPixel->CubeFaceY = Y;
 			}
 
-// 	m_ScenePixels.Init( 6*CUBE_MAP_SIZE*CUBE_MAP_SIZE );
+	m_AllSurfaces.Init( 6*CUBE_MAP_SIZE*CUBE_MAP_SIZE );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Prepare the cube map face transforms
@@ -61,7 +67,6 @@ SHProbeEncoder::SHProbeEncoder() {
 }
 
 SHProbeEncoder::~SHProbeEncoder() {
-	CleanUp();
 	SAFE_DELETE_ARRAY( m_pCubeMapPixels );
 }
 
@@ -173,7 +178,7 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeI
 
 	// Sort from most important to least important neighbor
 	{
-		class	Comparer : public List<NeighborProbe>::IComparer<NeighborProbe> {
+		class	Comparer : public IComparer<NeighborProbe> {
 		public:	virtual int		Compare( const NeighborProbe& a, const NeighborProbe& b ) const {
 				if ( a.SolidAngle < b.SolidAngle )
 					return +1;
@@ -186,7 +191,7 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeI
 	 	m_NeighborProbes.Sort( Comp );
 	}
 
-	// 2.4) ======== Build patches by flood filling ========
+	// 2.4) ======== Build surfaces by flood filling ========
 	ComputeFloodFill( MAX_PROBE_PATCHES, MAX_SAMPLES_PER_PATCH, 1.0f, 1.0f, 1.0f, 0.5f );
 }
 
@@ -226,10 +231,10 @@ void	SHProbeEncoder::Save( const char* _FileName ) {
 	for ( int i=0; i < 9; i++ )
 		Write( m_OcclusionSH[i] );
 
-	// Write the result patches
-	Write( m_PatchesCount );
-	for ( U32 i=0; i < m_PatchesCount; i++ ) {
-		Patch&	P = *m_ppPatches[i];
+	// Write the result surfaces
+	Write( m_SurfacesCount );
+	for ( U32 i=0; i < m_SurfacesCount; i++ ) {
+		Surface&	P = *m_ppSurfaces[i];
 
 		// Write position, normal, albedo
 		Write( P.Position.x );
@@ -266,7 +271,7 @@ void	SHProbeEncoder::Save( const char* _FileName ) {
 
 		// Write each sample
 		for ( int j=0; j < P.SamplesCount; j++ ) {
-			Patch::Sample&	S = P.Samples[j];
+			Surface::Sample&	S = P.Samples[j];
 
 			// Write position
 			Write( S.Position.x );
@@ -283,11 +288,11 @@ void	SHProbeEncoder::Save( const char* _FileName ) {
 		}
 	}
 
-	// Write the emissive patches
-	Write( m_EmissivePatchesCount );
+	// Write the emissive surfaces
+	Write( m_EmissiveSurfacesCount );
 
-	for ( U32 i=0; i < m_EmissivePatchesCount; i++ ) {
-		Patch&	P = *m_ppEmissivePatches[i];
+	for ( U32 i=0; i < m_EmissiveSurfacesCount; i++ ) {
+		Surface&	P = *m_ppEmissiveSurfaces[i];
 
 		// Write position, normal, albedo
 		Write( P.Position.x );
@@ -352,12 +357,6 @@ void	SHProbeEncoder::Save( const char* _FileName ) {
 // 				}
 }
 
-void	SHProbeEncoder::CleanUp() {
-	for ( int PatchIndex=0; PatchIndex < m_AllPatches.GetCount(); PatchIndex++ ) {
-		SAFE_DELETE( m_AllPatches[PatchIndex] );
-	}
-	m_AllPatches.Clear();
-}
 
 #pragma region Computes Patches by Flood Fill Method
 
@@ -365,10 +364,11 @@ int	DEBUG_PixelIndex = 0;
 
 void	SHProbeEncoder::ComputeFloodFill( int _MaxSetsCount, int _MaxLightingSamplesCount, float _SpatialDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight, float _MinimumImportanceDiscardThreshold ) {
 	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE*CUBE_MAP_FACE_SIZE;
+ 	int	DiscardThreshold = (int) (0.004f * m_ScenePixelsCount);		// Discard surfaces that contain less than 0.4% of the total amount of scene pixels (arbitrary!)
 
-	// Clear the parent patches for each pixel
+	// Clear the parent surfaces for each pixel
 	for ( int i=0; i < TotalPixelsCount; i++ )
-		m_pCubeMapPixels[i].pParentPatch = NULL;
+		m_pCubeMapPixels[i].pParentSurface = NULL;
 
 	// Setup the reference thresholds for pixels' acceptance
 //	Pixel.IMPORTANCE_THRESOLD = (float) ((4.0f * Math.PI / CUBE_MAP_FACE_SIZE) / (m_MeanDistance * m_MeanDistance));	// Compute an average solid angle threshold based on average pixels' distance
@@ -382,8 +382,9 @@ void	SHProbeEncoder::ComputeFloodFill( int _MaxSetsCount, int _MaxLightingSample
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// 4] Iterate on the list of free pixels that belong to no patch and create iterative patches
-	List< Patch* >	Patches( 6*CUBE_MAP_FACE_SIZE );		// Worst case scenario: one patch per pixel!
+	// 1] Iterate on the list of free pixels that belong to no surface and create new surfaces
+	Surface*	pRegularSurfaces = NULL;
+	Surface*	pEmissiveSurfaces = NULL;
 	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
 		Pixel&	P0 = m_pCubeMapPixels[PixelIndex];
 
@@ -393,10 +394,8 @@ DEBUG_PixelIndex = PixelIndex;
 			continue;	// Not part of the scene geometry or too far away
 		}
 
-		// Create a new patch for this pixel
-		Patch&	S = *new Patch();
-		m_AllPatches.Append( &S );	// Keep track of the allocation for clean up in the end
-		Patches.Append( &S );
+		// Create a new surface for this pixel
+		Surface&	S = m_AllSurfaces.Append();
 
 		S.Position = P0.Position;
 		S.Normal = P0.Normal;
@@ -420,143 +419,122 @@ DEBUG_PixelIndex = PixelIndex;
 		m_ScanlinePixelIndex = 0;	// VEEERY important line where we reset the pixel index of the pool of flood filled pixels!
 		FloodFill( S, &S, &P0, pRejectedPixels );
 
-		ASSERT( m_ScanlinePixelIndex != 0, "Can't have empty patches!" );
+		ASSERT( m_ScanlinePixelIndex != 0, "Can't have empty surfaces!" );
 
-		// Remove rejected pixels from the patch (we only temporarily marked them to avoid them being processed twice by the flood filler)
+		// Remove rejected pixels from the surface (we only temporarily marked them to avoid them being processed twice by the flood filler)
 		while ( pRejectedPixels != NULL ) {
-			pRejectedPixels->pParentPatch = NULL;	// Ready for another round!
+			pRejectedPixels->pParentSurface = NULL;	// Ready for another round!
 			pRejectedPixels = pRejectedPixels->pNext;
 		}
 
 		// Finalize importance
 		S.Importance /= S.PixelsCount;
-// DEBUG
-//break;
-	}
 
-	//////////////////////////////////////////////////////////////////////////
-	// Try and merge patches together
+ 		if ( S.PixelsCount < DiscardThreshold || S.Importance < Pixel::IMPORTANCE_THRESOLD ) {
+			continue;	// This surface is not important enough
+		}
 
-		// Merge separate emissive patches that have the same mat ID together
-	List<Patch*>	EmissivePatches;
-
-	m_PatchesCount = 0;
-	m_EmissivePatchesCount = 0;
-
-	ToArray( Patches, m_ppPatches, MAX_PROBE_PATCHES, m_PatchesCount );
-
-	for ( U32 PatchIndex0=0; PatchIndex0 < m_PatchesCount-1; PatchIndex0++ ) {
-		Patch&	S0 = *m_ppPatches[PatchIndex0];
-		if ( S0.EmissiveMatID != ~0UL && S0.pParentPatch == NULL ) {
-			// Remove it from regular patches and inscribe it as an emissive patch
-			EmissivePatches.Append( &S0 );
-			Patches.Remove( &S0 );
-
-			// Merge with any other patch with same Mat ID
-			for ( U32 PatchIndex1=PatchIndex0+1; PatchIndex1 < m_PatchesCount; PatchIndex1++ )
-			{
-				Patch&	S1 = *m_ppPatches[PatchIndex1];
-				if ( S1.EmissiveMatID != ~0UL || S1.EmissiveMatID != S0.EmissiveMatID )
-					continue;
-
-				// Merge!
-				S0.Importance *= S0.PixelsCount;
-				S1.Importance *= S1.PixelsCount;
-
-				Pixel*	pPixel1 = S1.pPixels;
-				while ( pPixel1 != NULL ) {
-					Pixel*	pTemp = pPixel1;
-					pPixel1 = pPixel1->pNext;
-					pTemp->pNext = S0.pPixels;
-					S0.pPixels = pTemp;
-					S0.PixelsCount++;
-				}
-
-				S0.Importance = (S0.Importance + S1.Importance) / S0.PixelsCount;
-
-				// Remove the merged patch
-				Patches.Remove( &S1 );
-				S1.pParentPatch = &S0;	// Mark S0 as its parent so it doesn't get processed again
-			}
+		// Add the surface to the proper list
+		if ( P0.EmissiveMatID == ~0UL ) {
+			// One more regular surface
+			S.pNext = pRegularSurfaces;
+			pRegularSurfaces = &S;
+		} else {
+			// One more emissive surface
+			S.pNext = pEmissiveSurfaces;
+			pEmissiveSurfaces = &S;
 		}
 	}
 
+
 	//////////////////////////////////////////////////////////////////////////
-	// Sort and cull unimportant patches
+	// 2] Try and merge surfaces together
+
+	// 2.1) Merge separate emissive surfaces that have the same mat ID together
+	Surface*	P0 = pEmissiveSurfaces;
+	while ( P0 != NULL ) {
+		if ( P0->pParentSurface != NULL ) {
+
+			// Merge with any other surface with same Mat ID
+			Surface*	PreviousP1 = P0;
+			Surface*	P1 = (Surface*) P0->pNext;
+			while ( P1 != NULL ) {
+				if ( P1->EmissiveMatID == P0->EmissiveMatID ) {
+
+					// Compute new importance of the merged surfaces
+					P0->Importance = (P0->PixelsCount * P0->Importance + P1->PixelsCount * P1->Importance) / (P0->PixelsCount + P1->PixelsCount);
+					P0->PixelsCount += P1->PixelsCount;
+
+					// Merge pixels
+					Pixel*	pPixel1 = P1->pPixels;
+					while ( pPixel1 != NULL ) {
+						Pixel*	pTemp = pPixel1;
+						pPixel1 = pPixel1->pNext;
+						pTemp->pNext = P0->pPixels;
+						P0->pPixels = pTemp;
+					}
+
+					// Remove the merged surface
+					PreviousP1->pNext = P1->pNext;	// Link over that surface
+					P1->pParentSurface = P0;			// Mark P0 as its parent so it doesn't get processed again
+				}
+				P1 = (Surface*) P1->pNext;
+			}
+		}
+		P0 = (Surface*) P0->pNext;
+	}
+
+	// 2.2) Merge close enough surfaces
+	// TODO?
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// 3] Sort and cull unimportant surfaces
 	{
-		class	Comparer : public List<Patch*>::IComparer<Patch*> {
-		public:	virtual int		Compare( Patch* const& a, Patch* const& b ) const {
-				if ( a->PixelsCount < b->PixelsCount )
+		class	Comparer : public IComparer<Surface> {
+		public:	virtual int		Compare( const Surface& a, const Surface& b ) const {
+				if ( a.PixelsCount < b.PixelsCount )
 					return +1;
-				if ( a->PixelsCount > b->PixelsCount )
+				if ( a.PixelsCount > b.PixelsCount )
 					return -1;
 
 				return 0;
 			}
 		} Comp;
-		Patches.Sort( Comp );
 
-		if ( Patches.GetCount() > _MaxSetsCount )
-		{	// Cull patches above our chosen value
-			for ( int SetIndex=_MaxSetsCount; SetIndex < Patches.GetCount(); SetIndex++ )
-				Patches[SetIndex]->ID = ~0UL;	// Invalid index for invalid patches!
+		Surface::Sort( pRegularSurfaces, Comp );
+		Surface::Sort( pEmissiveSurfaces, Comp );
 
-			for ( int InvalidPatchIndex=Patches.GetCount()-1; InvalidPatchIndex >= _MaxSetsCount; InvalidPatchIndex-- ) {
-				Patches.RemoveAt( InvalidPatchIndex );
-			}
-		}
-		ToArray( Patches, m_ppPatches, MAX_PROBE_PATCHES, m_PatchesCount );
-
-		// Do the same for emissive patches
-		EmissivePatches.Sort( Comp );
-
-		if ( EmissivePatches.GetCount() > _MaxSetsCount )
-		{	// Cull patches above our chosen value
-			for ( int SetIndex=_MaxSetsCount; SetIndex < EmissivePatches.GetCount(); SetIndex++ )
-				EmissivePatches[SetIndex]->ID = ~0UL;	// Invalid index for invalid patches!
-
-			for ( int InvalidPatchIndex=EmissivePatches.GetCount()-1; InvalidPatchIndex >= _MaxSetsCount; InvalidPatchIndex-- ) {
-				EmissivePatches.RemoveAt( InvalidPatchIndex );
-			}
+		// Copy down our selected surfaces
+		m_SurfacesCount = 0;
+		Surface*	S = pRegularSurfaces;
+		while ( S != NULL && m_SurfacesCount < MAX_PROBE_PATCHES ) {
+			m_ppSurfaces[m_SurfacesCount++] = S;
+			S = (Surface*) S->pNext;
 		}
 
-		ToArray( EmissivePatches, m_ppEmissivePatches, MAX_PROBE_EMISSIVE_PATCHES, m_EmissivePatchesCount );	// Store as our final emissive patches
-	}
-
-	// Remove patches that contain less than 0.4% of our pixels (arbitrary!) or that are not important enough
-	int	DiscardThreshold = (int) (0.004f * m_ScenePixelsCount);
-	for ( U32 PatchIndex=0; PatchIndex < m_PatchesCount; PatchIndex++ ) {
-		Patch&	S = *m_ppPatches[PatchIndex];
-		if ( S.PixelsCount < DiscardThreshold || S.Importance < Pixel::IMPORTANCE_THRESOLD ) {
-			S.ID = ~0UL;	// Now invalid!
-			Patches.Remove( &S );
+		m_EmissiveSurfacesCount = 0;
+		S = pEmissiveSurfaces;
+		while ( S != NULL && m_EmissiveSurfacesCount < MAX_PROBE_EMISSIVE_PATCHES ) {
+			m_ppEmissiveSurfaces[m_EmissiveSurfacesCount++] = S;
+			S = (Surface*) S->pNext;
 		}
 	}
-
-// 	// Remove patches that are not important enough
-// 	m_Patches = Patches.ToArray();
-// 	foreach ( Patch& S in m_Patches )
-// 		if ( S.Importance < Pixel::IMPORTANCE_THRESOLD ) {
-// 			S.SetIndex = -1;	// Now invalid!
-// 			Patches.Remove( S );
-// 		}
-// 
-// 	m_Patches = Patches.ToArray();
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// Gather informations on each patch
+	// Gather information on each surface
 	m_MeanDistance = 0.0;
 	m_MeanHarmonicDistance = 0.0;
 	m_MinDistance = 1e6;
 	m_MaxDistance = 0.0;
 
-	int		SumCardinality = 0;
-	for ( U32 PatchIndex=0; PatchIndex < m_PatchesCount; PatchIndex++ ) {
-		Patch&	S = *m_ppPatches[PatchIndex];
-		S.ID = PatchIndex;
+	int	SumCardinality = 0;
+	for ( U32 SurfaceIndex=0; SurfaceIndex < m_SurfacesCount; SurfaceIndex++ ) {
+		Surface&	S = *m_ppSurfaces[SurfaceIndex];
+		S.ID = SurfaceIndex;
 
-		// Post-process the pixels to find the one closest to the probe as our new centroid
+		// Post-process the pixels to find the one closest to the probe to use as our centroid
 		Pixel*	pBestPixel = S.pPixels;
 		float3	AverageNormal = float3::Zero;
 		float3	AverageAlbedo = float3::Zero;
@@ -585,7 +563,7 @@ DEBUG_PixelIndex = PixelIndex;
 		S.Normal = AverageNormal;
 		S.SetAlbedo( AverageAlbedo );
 
-		// Count pixels in the patch for statistics
+		// Count pixels in the surface for statistics
 		SumCardinality += S.PixelsCount;
 
 		// Finally, encode SH & find principal axes
@@ -598,18 +576,18 @@ DEBUG_PixelIndex = PixelIndex;
 	m_MeanHarmonicDistance = SumCardinality / m_MeanHarmonicDistance;
 	m_MeanDistance /= SumCardinality;
 
+	// Do the same for emissive surfaces
+	for ( U32 SurfaceIndex=0; SurfaceIndex < m_EmissiveSurfacesCount; SurfaceIndex++ ) {
+		Surface&	S = *m_ppEmissiveSurfaces[SurfaceIndex];
+		S.ID = SurfaceIndex;
 
-	// Do the same for emissive patches
-	for ( U32 PatchIndex=0; PatchIndex < m_EmissivePatchesCount; PatchIndex++ ) {
-		Patch&	S = *m_ppEmissivePatches[PatchIndex];
-		S.ID = PatchIndex;
-
-		// Post-process the pixels to find the one closest to the probe as our new centroid
+		// Post-process the pixels to find the one closest to the probe to use as our centroid
 		Pixel*	pBestPixel = S.pPixels;
 		Pixel*	pPixel = S.pPixels;
 		while ( pPixel != NULL ) {
-			if ( pPixel->Distance < pBestPixel->Distance )
+			if ( pPixel->Distance < pBestPixel->Distance ) {
 				pBestPixel = pPixel;
+			}
 			pPixel = pPixel->pNext;
 		}
 
@@ -619,62 +597,39 @@ DEBUG_PixelIndex = PixelIndex;
 		S.EncodeEmissiveSH();
 	}
 
-	// Generate samples for regular patches
-	U32		TotalSamplesCount = _MaxLightingSamplesCount;
-	if ( TotalSamplesCount < m_PatchesCount ) {
-		// Force samples count to match patches count!
-//		MessageBox( "The amount of samples for the probe was chosen to be " + TotalSamplesCount + " which is inferior to the amount of patches, this would mean some patches wouldn't even get sampled so the actual amount of samples is at least patch to the amount of patches (" + m_Patches.Length + ")", MessageBoxButtons.OK, MessageBoxIcon.Warning );
-		TotalSamplesCount = m_PatchesCount;
+	// Generate sampling points for regular surfaces
+	U32	TotalSamplesCount = _MaxLightingSamplesCount;
+	if ( TotalSamplesCount < m_SurfacesCount ) {
+		// Force samples count to match surfaces count!
+//		MessageBox( "The amount of samples for the probe was chosen to be " + TotalSamplesCount + " which is inferior to the amount of surfaces, this would mean some surfaces wouldn't even get sampled so the actual amount of samples is at least surface to the amount of surfaces (" + m_Patches.Length + ")", MessageBoxButtons.OK, MessageBoxIcon.Warning );
+		TotalSamplesCount = m_SurfacesCount;
 	}
 
-	for ( int PatchIndex=m_PatchesCount-1; PatchIndex >= 0; PatchIndex-- ) {	// We start from the smallest patches to ensure they get some samples
-		Patch&	S = *m_ppPatches[PatchIndex];
-		if ( S.EmissiveMatID != ~0UL )
-			ASSERT( false, "Shouldn't be any emissive patch left in the list of regular patches??!" );
+	for ( int SurfaceIndex=m_SurfacesCount-1; SurfaceIndex >= 0; SurfaceIndex-- ) {	// We start from the smallest surfaces to ensure they get some samples
+		Surface&	S = *m_ppSurfaces[SurfaceIndex];
 
 		int	SamplesCount = TotalSamplesCount * S.PixelsCount / SumCardinality;
 			SamplesCount = max( 1, SamplesCount );				// Ensure we have at least 1 sample no matter what!
 			SamplesCount = min( SamplesCount, S.PixelsCount );	// Can't have more samples than pixels!
 
-		ASSERT( SamplesCount > 0 , "We have a patch with NO light sample!" );
+		ASSERT( SamplesCount > 0 , "We have a surface with NO light sample!" );
 
 		S.GenerateSamples( SamplesCount );
 
-		// Reduce the amount of available samples and the count of remaining pixels so the remaining patches share the remaining samples...
+		// Reduce the amount of available samples and the count of remaining pixels so the remaining surfaces share the remaining samples...
 		TotalSamplesCount -= SamplesCount;
 		SumCardinality -= S.PixelsCount;
 	}
-
-
-// 	//////////////////////////////////////////////////////////////////////////
-// 	// Sum all SH for UI display
-// 	for ( int i=0; i < 9; i++ )
-// 	{
-// 		m_SHSumDynamic[i] = float3.Zero;
-// 		foreach ( Patch S in m_Patches )
-// 			m_SHSumDynamic[i] += S.SH[i];
-// 	}
-// 
-// 	for ( int i=0; i < 9; i++ )
-// 	{
-// 		m_SHSumEmissive[i] = float3.Zero;
-// 		foreach ( Patch S in m_EmissivePatches )
-// 			m_SHSumEmissive[i] += S.SH[i];
-// 	}
 }
 
-#pragma region Flood Fill Algorithm
 
-float		SHProbeEncoder::DISTANCE_THRESHOLD = 0.02f;						// 2cm
-float		SHProbeEncoder::ANGULAR_THRESHOLD = acosf( 0.5f * PI / 180 );	// 0.5°
-float		SHProbeEncoder::ALBEDO_HUE_THRESHOLD = 0.04f;					// Close colors!
-float		SHProbeEncoder::ALBEDO_RGB_THRESHOLD = 0.16f;					// Close colors!
+#pragma region Flood Fill Algorithm
 
 // This should be a faster version (and much less recursive!) than the original flood fill I wrote some time ago
 // The idea here is to process an entire scanline first (going left and right and collecting valid scanline pixels along the way)
 //  then for each of these pixels we move up/down and fill the top/bottom scanlines from these new seeds...
 //
-void	SHProbeEncoder::FloodFill( Patch& _Patch, Pixel* _PreviousPixel, Pixel* _P, Pixel*& _RejectedPixels ) const {
+void	SHProbeEncoder::FloodFill( Surface& _Patch, Pixel* _PreviousPixel, Pixel* _P, Pixel*& _RejectedPixels ) const {
 
 	static int	RecursionLevel = 0;	// For debugging purpose
 
@@ -710,8 +665,7 @@ void	SHProbeEncoder::FloodFill( Patch& _Patch, Pixel* _PreviousPixel, Pixel* _P,
 
 	//////////////////////////////////////////////////////////////////////////
 	// Recurse into each pixel of the top scanline
-	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ )
-	{
+	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
 		Pixel*	Top = &FindAdjacentPixel( *P, 0, 1 );
 
@@ -720,8 +674,7 @@ void	SHProbeEncoder::FloodFill( Patch& _Patch, Pixel* _PreviousPixel, Pixel* _P,
 
 	//////////////////////////////////////////////////////////////////////////
 	// Recurse into each pixel of the bottom scanline
-	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ )
-	{
+	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
 		Pixel*	Bottom = &FindAdjacentPixel( *P, 0, -1 );
 		FloodFill( _Patch, P, Bottom, _RejectedPixels );
@@ -730,15 +683,16 @@ void	SHProbeEncoder::FloodFill( Patch& _Patch, Pixel* _PreviousPixel, Pixel* _P,
 	RecursionLevel--;
 }
 
-bool	SHProbeEncoder::CheckAndAcceptPixel( Patch& _Patch, Pixel& _PreviousPixel, Pixel& _P, Pixel*& _pRejectedPixels ) const {
-	if ( !_P.IsFloodFillAcceptable() )
+bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Patch, Pixel& _PreviousPixel, Pixel& _P, Pixel*& _pRejectedPixels ) const {
+	// Start by checking if we can use that pixel
+	if ( !_P.IsFloodFillAcceptable() ) {
 		return false;
+	}
 
-	//////////////////////////////////////////////////////////////////////////
-	// Check some criterions for a match
+	// Check some additional criterions for a match
 	bool	Accepted = false;
 
-	if ( _PreviousPixel.EmissiveMatID != ~0UL || _P.EmissiveMatID != ~0UL ) {
+	if ( _PreviousPixel.EmissiveMatID != ~0UL && _P.EmissiveMatID != ~0UL ) {
 		// Emissive pixels get grouped together
 		Accepted = _PreviousPixel.EmissiveMatID == _P.EmissiveMatID;
 	} else {
@@ -746,7 +700,7 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Patch& _Patch, Pixel& _PreviousPixel, 
 		float	Dot = _PreviousPixel.Normal | _P.Normal;
 		if ( Dot > ANGULAR_THRESHOLD ) {
 			// Next, let's check the distance discrepancy
-			float	DistanceDiff = fabsf( _PreviousPixel.Distance - _P.Distance );
+			float	DistanceDiff = fabsf( _PreviousPixel.SmoothedDistance - _P.SmoothedDistance );
 			float	ToleranceFactor = -(_P.Normal | _P.View);						// Weight by the surface's slope to be more tolerant for slant surfaces
 					DistanceDiff *= ToleranceFactor;
 			if ( DistanceDiff < DISTANCE_THRESHOLD )
@@ -765,21 +719,23 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Patch& _Patch, Pixel& _PreviousPixel, 
 
 				// Next, let's check color discrepancy
 				// I'm using the simplest metric here...
-				float	ColorDiff = (_PreviousPixel.Albedo - _P.Albedo).Length();
-				if ( ColorDiff < ALBEDO_RGB_THRESHOLD ) {
+				float	ColorDiff = (_PreviousPixel.Albedo - _P.Albedo).LengthSq();
+				if ( ColorDiff < ALBEDO_RGB_THRESHOLD*ALBEDO_RGB_THRESHOLD ) {
 					Accepted = true;	// Winner!
 				}
 			}
 		}
 	}
 
-	// Mark the pixel as member of this patch, even if it's temporary (rejected pixels get removed from patch in the end)
-	_P.pParentPatch = &_Patch;
+	// Mark the pixel as member of this surface, even if it's rejected (rejected pixels get removed from surface in the end)
+	_P.pParentSurface = &_Patch;
 
 	if ( Accepted ) {
+		// We got a new member for the surface!
 		_P.pNext = _Patch.pPixels;
-		_Patch.pPixels = &_P;				// We got a new member for the patch!
+		_Patch.pPixels = &_P;
 		_Patch.Importance += _P.Importance;	// Accumulate average importance
+		_Patch.PixelsCount++;
 	}
 	else {
 		// Sorry buddy, we'll add you to the rejects...
@@ -1149,11 +1105,11 @@ const double	SHProbeEncoder::Pixel::f3 = sqrt(5.0) * 0.5 * SHProbeEncoder::Pixel
 
 float	SHProbeEncoder::Pixel::IMPORTANCE_THRESOLD = 0.0f;
 
-void	SHProbeEncoder::Patch::GenerateSamples( int _SamplesCount ) {
+void	SHProbeEncoder::Surface::GenerateSamples( int _SamplesCount ) {
 	ASSERT( false, "TODO!" );
 /*
 	Sample*	Samples = new Sample[_SamplesCount];
-	ASSERT( _SamplesCount <= PixelsCount, "More samples than pixels in the patch! This is useless!" );
+	ASSERT( _SamplesCount <= PixelsCount, "More samples than pixels in the surface! This is useless!" );
 
 	int	PixelGroupSize = max( 1, PixelsCount / _SamplesCount );
 	for ( int SampleIndex=0; SampleIndex < _SamplesCount; SampleIndex++ ) {
@@ -1203,4 +1159,36 @@ void	SHProbeEncoder::Patch::GenerateSamples( int _SamplesCount ) {
 		P->ParentPatchSampleIndex = ClosestSampleIndex;
 		P = P->pNext;
 	}*/
+}
+
+// Poor man's version of a sort: bubble sort
+void	SHProbeEncoder::Surface::Sort( Surface* _pList, const IComparer<Surface>& _Comparer ) {
+
+	Surface*	pPrevious0 = NULL;
+	Surface*	pCurrent0 = _pList;
+	while ( pCurrent0 != NULL ) {
+
+		Surface*	pPrevious1 = pCurrent0;
+		Surface*	pCurrent1 = (Surface*) pCurrent0->pNext;
+		while ( pCurrent1 != NULL ) {
+
+			if ( _Comparer.Compare( *pCurrent0, *pCurrent1 ) < 0 ) {
+				// Swap elements
+				if ( pPrevious0 != NULL ) {
+					pPrevious0->pNext = pCurrent1;
+				}
+				pPrevious1->pNext = pCurrent0;
+				Pixel*	pTemp = pCurrent0->pNext;
+				pCurrent0->pNext = pCurrent1->pNext;
+				pCurrent1->pNext = pTemp;
+			}
+
+			pPrevious1 = pCurrent1;
+			pCurrent1 = (Surface*) pCurrent1->pNext;
+		}
+
+		pPrevious0 = pCurrent0;
+		pCurrent0 = (Surface*) pCurrent0->pNext;
+	}
+
 }
