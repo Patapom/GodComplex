@@ -15,8 +15,9 @@
 // To create the patches, I'm using a "Filling method", it's an experimental method of mine that consists in browsing
 //	the pixels of the cube map and perform a fill operation by joining adjacent pixels if and only if they're sufficiently
 //	close enough in terms of distance, normal and color.
-// Each patch created this way has its own list of pixels removed from the global list of free pixels, pixels whose solid angle
-//	is too low are discarded.
+// Each patch created this way has its own list of pixels removed from the global list of free pixels.
+// Pixels whose solid angle is too low are discarded.
+//
 // The algorithm continues until all pixels have been discarded or added to a patch, then the algorithm enters a second
 //	phase of optimization where sets are merged together if sufficiently close, or discarded if not significant enough.
 //
@@ -33,6 +34,13 @@ public:		// CONSTANTS
 	static const U32		MAX_SAMPLES_PER_PATCH = 64;			// Accept a maximum of 64 samples per patch
 
 	static const U32		CUBE_MAP_SIZE = 128;
+	static const int		CUBE_MAP_FACE_SIZE = CUBE_MAP_SIZE * CUBE_MAP_SIZE;
+
+	// Various thresholds used to allow merging of adjacent pixels
+	static float			DISTANCE_THRESHOLD;
+	static float			ANGULAR_THRESHOLD;
+	static float			ALBEDO_HUE_THRESHOLD;
+	static float			ALBEDO_RGB_THRESHOLD;
 
 private:
 
@@ -55,6 +63,10 @@ private:	// NESTED TYPES
 		static float	IMPORTANCE_THRESOLD;	// To be set manually before encoding
 
 	public:
+		Pixel*		pPrevious;				// Pointer to the previous pixel in the list if they're part of a particular patch
+		Pixel*		pNext;					// Pointer to the next pixel in the list if they're part of a particular patch
+		Patch*		pParentPatch;			// The patch the pixel belongs to
+
 		int			Index;					// Index of the pixel in the scene pixels (can help us locate the cube map face + position of the pixel when finding adjacent pixels)
 		int			CubeFaceIndex;
 		int			CubeFaceX;
@@ -67,28 +79,41 @@ private:	// NESTED TYPES
 		float		F0;						// Material Fresnel coefficient
 		float3		StaticLitColor;			// Color of the statically lit environment
 		U32			FaceIndex;				// Absolute scene face index
-		U32			EmissiveMatID;			// ID of the emissive material or -1 if not emissive
-		int			NeighborProbeID;		// ID of the nearest neighbor probe
+		U32			EmissiveMatID;			// ID of the emissive material or ~0UL if not emissive
+		U32			NeighborProbeID;		// ID of the nearest neighbor probe
 		float		NeighborProbeDistance;	// Distance to the neighbor probe plane
 		double		SolidAngle;				// Solid angle covered by the pixel
 		double		Importance;				// A measure of "importance" of the scene pixel = -dot( View, Normal ) / Distance²
-		float		Distance;				// Distance to hit point
+		float		Distance;				// Distance from the probe's center
+		float		SmoothedDistance;		// Smoothed out distance for more tolerant merging of noisy surfaces
 		bool		Infinity;				// True if not a scene pixel (i.e. sky pixel)
 		float3		View;					// View vector pointing to that pixel
 
-		double		SHCoeffs[9];
+		double		SHCoeffs[9];			// SH coefficients of the pixel
 
-		Patch*		pParentPatch;
 		int			ParentPatchSampleIndex;	// Index of the nearest sample this pixel is part of
 
 		Pixel()
-			: EmissiveMatID( ~0UL )
-			, NeighborProbeID( -1 )
+			: pPrevious( NULL )
+			, pNext( NULL )
+			, pParentPatch( NULL )
+			, Position( float3::Zero )
+			, Normal( float3::Zero )
+			, Albedo( float3::Zero )
+			, AlbedoHSL( float3::Zero )
+			, FaceIndex( ~0UL )
+			, EmissiveMatID( ~0UL )
+			, NeighborProbeID( ~0UL )
+			, NeighborProbeDistance( 0.0f )
+			, SolidAngle( 0.0 )
+			, Importance( 0.0 )
+			, Distance( 0.0f )
+			, Infinity( false )
+			, View( float3::Zero )
 			, ParentPatchSampleIndex( -1 ) {
 		}
 
-
-		void			InitSH()
+		void		InitSH()
 		{
 			// Build SH coeffs for that pixel
 			SHCoeffs[0] = f0;
@@ -102,9 +127,10 @@ private:	// NESTED TYPES
 			SHCoeffs[8] = f2 * 0.5 * (View.z*View.z - View.x*View.x);
 		}
 
-		void			SetAlbedo( float _R, float _G, float _B )
+		// Sets the albedo's RGB & HSL values
+		void		SetAlbedo( const float3& _RGB )
 		{
-			Albedo.Set( _R, _G, _B );
+			Albedo = _RGB;
 
 			// Convert into HSL
 			float	Min = min( min( Albedo.x, Albedo.y ), Albedo.z );
@@ -137,7 +163,7 @@ private:	// NESTED TYPES
 		}
 
 		// Computes a "distance" between this pixel and another one
-		float	ComputeMetric( const Pixel& _Other, float _PositionDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight )
+		float		ComputeMetric( const Pixel& _Other, float _PositionDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight )
 		{
 			float	EuclidianDistance = (_Other.Position - Position).Length();
 					EuclidianDistance *= _PositionDistanceWeight;
@@ -162,35 +188,62 @@ private:	// NESTED TYPES
 		{
 			if ( pParentPatch != NULL )
 				return false;	// We don't accept pixels that are already part of a patch!
-			if ( EmissiveMatID != -1 )
-				return true;	// Accept all emissive pixels no matter what!
 			if ( Infinity )
 				return false;	// We only accept scene pixels!
+			if ( EmissiveMatID != ~0UL )
+				return true;	// Accept all emissive pixels no matter what!
 			if ( Importance < IMPORTANCE_THRESOLD )
 				return false;	// Not important enough!
 
 			return true;
+		}
+
+		void		Unlink() {
+			if ( pPrevious != NULL ) {
+				pPrevious->pNext = pNext;
+			}
+			if ( pNext != NULL ) {
+				pNext->pPrevious = pPrevious;
+			}
+			pNext = pPrevious = NULL;
+		}
+
+		void		LinkBefore( Pixel& _Other ) {
+			Unlink();
+			pPrevious = _Other.pPrevious;
+			pNext = &_Other;
+			if ( _Other.pPrevious != NULL ) {
+				_Other.pPrevious->pNext = this;
+			}
+			_Other.pPrevious = this;
+		}
+
+		void		LinkAfter( Pixel& _Other ) {
+			Unlink();
+			pPrevious = &_Other;
+			pNext = _Other.pNext;
+			if ( _Other.pNext != NULL ) {
+				_Other.pNext->pPrevious = this;
+			}
+			_Other.pNext = this;
 		}
 	};
 
 	// A patch is a special surface with a centroid, a normal and an average albedo
 	// It also serves as accumulator for all pixels registering to the patch
 //	[System.Diagnostics.DebuggerDisplay( "C={SetPixels.Count} I={Importance} H={AlbedoHSL.x} S={AlbedoHSL.y} L={Albedo.z} P=({Position.x}, {Position.y}, {Position.z})" )]
-	class	Patch//, IComparer<Pixel>
-	{
+	class	Patch : public Pixel {
 	public:
-		List<Pixel*>	Pixels;			// The list of pixels belonging to this patch
-		int				ID;				// Warning: Only available once the computation is over and all sets have been resolved!
-		U32				EmissiveMatID;	// Only valid if the patch is an emissive patch
+//		Patch*			pParentPatch;	// Used by patches that were merged into other patches
 
-		float3			Position;		// Average patch position
+		int				PixelsCount;	// Amount of pixels in the patch
+		Pixel*			pPixels;		// The list of pixels belonging to this patch
+
+		int				ID;				// Warning: Only available once the computation is over and all sets have been resolved!
 
 		// Tangent space generated from principal directions of the points patch
-		float3			Normal;
 		float3			Tangent;
 		float3			BiTangent;
-
-		float3			Albedo;
 
 		// The generated SH coefficients for this patch
 		float3			SH[9];
@@ -210,11 +263,10 @@ private:	// NESTED TYPES
 
 	public:
 
-		Patch()
-			: ID( -1 )
-			, EmissiveMatID( ~0UL )
-			, Position( float3::Zero )
-			, Normal( float3::Zero )
+		Patch() : Pixel()
+			, PixelsCount( 0 )
+			, pPixels( NULL )
+			, ID( -1 )
 			, Tangent( float3::Zero )
 			, BiTangent( float3::Zero )
 			, SamplesCount( 0 ) {}
@@ -234,9 +286,10 @@ private:	// NESTED TYPES
 				SHR[i] = SHG[i] = SHB[i] = 0.0;
 			}
 
-			int		PixelsCount = Pixels.GetCount();
-			for ( int i=0; i < PixelsCount; i++ ) {
-				Pixel&	P = *Pixels[i];
+			Pixel*	pPixel = pPixels;
+			while ( pPixel != NULL ) {
+				Pixel&	P = *pPixel;
+				pPixel++;
 
 				// Compute weight factor based on patch's normal and pixel's normal but also based on pixel's normal and view direction
 				double	Factor  = P.SolidAngle								// Solid angle for SH weight, obvious
@@ -267,9 +320,11 @@ private:	// NESTED TYPES
 		void			EncodeEmissiveSH() {
 			double	SHCoeffs[9];
 
-			int		PixelsCount = Pixels.GetCount();
-			for ( int i=0; i < PixelsCount; i++ ) {
-				Pixel&	P = *Pixels[i];
+			Pixel*	pPixel = pPixels;
+			while ( pPixel != NULL ) {
+				Pixel&	P = *pPixel;
+				pPixel++;
+
 				for ( int i=0; i < 9; i++ )
 					SHCoeffs[i] += P.SHCoeffs[i] * P.SolidAngle;
 			}
@@ -285,6 +340,10 @@ private:	// NESTED TYPES
 // //				SphericalHarmonics.SHFunctions.FilterGaussian( FILTER_WINDOW_SIZE );	// Smoothes A LOT but according to the source of filters code, it's better if using HDR light sources
 // 			SphericalHarmonics.SHFunctions.FilterHanning( SH, FILTER_WINDOW_SIZE );
 		}
+
+		// Generates N samples among the set's pixels where lighting will be sampled
+		Pixel			__ReferencePixel;
+		void			GenerateSamples( int _SamplesCount );
 
 		// This is a very simplistic approach to determine the principal axes of the patch:
 		//  1) Create a dummy tangent space for the patch's plane
@@ -456,9 +515,9 @@ private:	// FIELDS
 
 	int					m_ProbeID;							// This is extracted from the cube map file name... Not very robust but good enough!
 
-	Pixel*				m_CubeMapPixels;					// Original cube map
-	List<Pixel*>		m_ProbePixels;						// List of all pixels viewed by the probe
-	List<Pixel*>		m_ScenePixels;						// List of pixels that participate to the scene geometry (i.e. not at infinity)
+	Pixel*				m_pCubeMapPixels;					// Original cube map
+	int					m_ScenePixelsCount;
+ 	Pixel*				m_pScenePixels;						// List of pixels that participate to the scene geometry (i.e. not at infinity)
 
 
 	// Generated geometric informations
@@ -473,11 +532,12 @@ private:	// FIELDS
 	float3				m_StaticSH[9];
 	float				m_OcclusionSH[9];
 
-	// Dynamic & Emissive sets
+	// Dynamic & Emissive patches
+	List< Patch* >		m_AllPatches;						// The list of all patches that were allocated, to be deleted once the probe is saved...
 	U32					m_PatchesCount;
-	Patch				m_Patches[MAX_PROBE_PATCHES];
+	Patch*				m_ppPatches[MAX_PROBE_PATCHES];
 	U32					m_EmissivePatchesCount;
-	Patch				m_EmissivePatches[MAX_PROBE_EMISSIVE_PATCHES];
+	Patch*				m_ppEmissivePatches[MAX_PROBE_EMISSIVE_PATCHES];
 
 	float3				m_SHSumDynamic[9];
 	float3				m_SHSumEmissive[9];
@@ -485,12 +545,12 @@ private:	// FIELDS
 	// List of neighbor probes
 	float				m_NearestNeighborProbeDistance;
 	float				m_FarthestNeighborProbeDistance;
-	U32					m_NeighborProbesCount;
+//	U32					m_NeighborProbesCount;
 	List<NeighborProbe>	m_NeighborProbes;
 
-	// List of influence weights per face index
-	U32					m_MaxFaceIndex;
-	Dictionary<double>	m_ProbeInfluencePerFace;
+// 	// List of influence weights per face index
+// 	U32					m_MaxFaceIndex;
+// 	Dictionary<double>	m_ProbeInfluencePerFace;
 
 
 public:		// PROPERTIES
@@ -503,8 +563,12 @@ public:		// METHODS
 	// Encodes the MRT cube map into basic SH elements that can later be combined at runtime to form a dynamically updatable probe
 	void	EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID );
 
-	// 
+	// Saves the resulting encoded probe to disk
 	void	Save( const char* _FileName );
+
+	// Cleans up all allocated memory once encoding is saved
+	void	CleanUp();
+
 
 private:
 	// Reads back the cube map and populates cube map pixels, probe pixels and scene pixels.
@@ -514,6 +578,17 @@ private:
 	// Build sets using flood fill and adjacency propagation
 	void	ComputeFloodFill( int _MaxSetsCount, int _MaxLightingSamplesCount, float _SpatialDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight, float _MinimumImportanceDiscardThreshold );
 
+	// Intensive flood fill routine
+	mutable int		m_ScanlinePixelIndex;
+	mutable Pixel*	m_ppScanlinePixelsPool[6 * CUBE_MAP_SIZE * CUBE_MAP_SIZE];
 
-	void	FloodFill( Patch _S, Pixel _PreviousPixel, Pixel _P, List<Pixel*> _SetRejectedPixels );
+	void	FloodFill( Patch& _S, Pixel* _PreviousPixel, Pixel* _P, Pixel*& _RejectedPixels ) const;
+	bool	CheckAndAcceptPixel( Patch& _Patch, Pixel& _PreviousPixel, Pixel& _P, Pixel*& _RejectedPixels ) const;
+	Pixel&	FindAdjacentPixel( const Pixel& _P, int _Dx, int _Dy ) const;
+
+	// Helpers
+	template< typename T > void	ToArray( const List<T>& _List, T* _Array, U32 _Max, U32& _ArraySize ) {
+		_ArraySize = min( U32(_List.GetCount()), _Max );
+		memcpy_s( _Array, _ArraySize*sizeof(T), &_List[0], _ArraySize*sizeof(T) );
+	}
 };

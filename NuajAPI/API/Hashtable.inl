@@ -266,6 +266,20 @@ template<typename T> void	Dictionary<T>::Remove( U32 _Key )
 	}
 }
 
+template<typename T> void	Dictionary<T>::Clear() {
+	// Clear all linked lists of nodes from each head
+	for ( int HeadIndex=0; HeadIndex < m_Size; HeadIndex++ ) {
+		Node*	pNode = m_ppTable[HeadIndex];
+		while ( pNode != NULL ) {
+			Node*	pOld = pNode;
+			pNode = pNode->pNext;
+			delete pOld;
+		}
+	}
+	// Clear heads
+	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+}
+
 template<typename T> void	Dictionary<T>::ForEach( VisitorDelegate _pDelegate, void* _pUserData )
 {
 	int	EntryIndex = 0;

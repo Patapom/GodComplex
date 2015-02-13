@@ -107,6 +107,7 @@ public:		// METHODS
 	T&		Add( U32 _Key );					// store entry
 	T&		Add( U32 _Key, const T& _Value );	// store entry
 	void	Remove( U32 _Key );					// remove entry
+	void	Clear();
 	void	ForEach( VisitorDelegate _pDelegate, void* _pUserData );
 };
 

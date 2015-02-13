@@ -10,6 +10,14 @@ protected:	// NESTED TYPES
 
 public:
 
+	// Comparer should return:
+	//	+1 if a < b 
+	//	-1 if a > b
+	//	 0 if a == b
+	template<typename T> class	IComparer {
+	public:	virtual int		Compare( const T& a, const T& b ) const = 0;
+	};
+
 protected:	// FIELDS
 
 	T*		m_pList;	// List of allocated elements
@@ -35,8 +43,12 @@ public:		// METHODS
 	T&			Insert( U32 _Index );
 	void		Append( const T& _Value );
 	T&			Append();
+	U32			IndexOf( const T& _Value ) const;
 	void		RemoveAt( U32 _Index );
+	bool		Remove( const T& _Value );
 	void		Clear()	{ m_Count = 0; }
+
+	void		Sort( const IComparer<T>& _Comparer );
 
 private:
 	void		Allocate( U32 _NewCount );
