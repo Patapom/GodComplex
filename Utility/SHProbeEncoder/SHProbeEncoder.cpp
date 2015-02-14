@@ -23,6 +23,9 @@ SHProbeEncoder::SHProbeEncoder() {
 
 	m_AllSurfaces.Init( 6*CUBE_MAP_SIZE*CUBE_MAP_SIZE );
 
+	Pixel::ms_RadixNodes[0] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];	// Pre-allocate the maximum amount of radix nodes
+	Pixel::ms_RadixNodes[1] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];	// Pre-allocate the maximum amount of radix nodes
+
 	//////////////////////////////////////////////////////////////////////////
 	// Prepare the cube map face transforms
 	// Here are the transform to render the 6 faces of a cube map
@@ -67,6 +70,8 @@ SHProbeEncoder::SHProbeEncoder() {
 }
 
 SHProbeEncoder::~SHProbeEncoder() {
+	SAFE_DELETE_ARRAY( Pixel::ms_RadixNodes[1] );
+	SAFE_DELETE_ARRAY( Pixel::ms_RadixNodes[0] );
 	SAFE_DELETE_ARRAY( m_pCubeMapPixels );
 }
 
@@ -364,7 +369,7 @@ int	DEBUG_PixelIndex = 0;
 
 void	SHProbeEncoder::ComputeFloodFill( int _MaxSetsCount, int _MaxLightingSamplesCount, float _SpatialDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight, float _MinimumImportanceDiscardThreshold ) {
 	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE*CUBE_MAP_FACE_SIZE;
- 	int	DiscardThreshold = (int) (0.004f * m_ScenePixelsCount);		// Discard surfaces that contain less than 0.4% of the total amount of scene pixels (arbitrary!)
+ 	U32	DiscardThreshold = U32( 0.004f * m_ScenePixelsCount );		// Discard surfaces that contain less than 0.4% of the total amount of scene pixels (arbitrary!)
 
 	// Clear the parent surfaces for each pixel
 	for ( int i=0; i < TotalPixelsCount; i++ )
@@ -491,19 +496,18 @@ DEBUG_PixelIndex = PixelIndex;
 	//////////////////////////////////////////////////////////////////////////
 	// 3] Sort and cull unimportant surfaces
 	{
-		class	Comparer : public IComparer<Surface> {
-		public:	virtual int		Compare( const Surface& a, const Surface& b ) const {
-				if ( a.PixelsCount < b.PixelsCount )
-					return +1;
-				if ( a.PixelsCount > b.PixelsCount )
-					return -1;
-
-				return 0;
+		class	PixelKey : public Pixel::ISortKeyProvider {
+		public:	virtual U32	GetKey( const Pixel& _Pixel ) const {
+				return ((const Surface&) _Pixel).PixelsCount;
 			}
 		} Comp;
 
-		Surface::Sort( pRegularSurfaces, Comp );
-		Surface::Sort( pEmissiveSurfaces, Comp );
+		Pixel*	pTemp0 = (Pixel*) pRegularSurfaces;
+		Pixel*	pTemp1 = (Pixel*) pEmissiveSurfaces;
+		Pixel::Sort( pTemp0, Comp, true );
+		Pixel::Sort( pTemp1, Comp, true );
+		pRegularSurfaces = (Surface*) pTemp0;
+		pEmissiveSurfaces = (Surface*) pTemp1;
 
 		// Copy down our selected surfaces
 		m_SurfacesCount = 0;
@@ -608,7 +612,7 @@ DEBUG_PixelIndex = PixelIndex;
 	for ( int SurfaceIndex=m_SurfacesCount-1; SurfaceIndex >= 0; SurfaceIndex-- ) {	// We start from the smallest surfaces to ensure they get some samples
 		Surface&	S = *m_ppSurfaces[SurfaceIndex];
 
-		int	SamplesCount = TotalSamplesCount * S.PixelsCount / SumCardinality;
+		U32	SamplesCount = TotalSamplesCount * S.PixelsCount / SumCardinality;
 			SamplesCount = max( 1, SamplesCount );				// Ensure we have at least 1 sample no matter what!
 			SamplesCount = min( SamplesCount, S.PixelsCount );	// Can't have more samples than pixels!
 
@@ -1161,34 +1165,119 @@ void	SHProbeEncoder::Surface::GenerateSamples( int _SamplesCount ) {
 	}*/
 }
 
-// Poor man's version of a sort: bubble sort
-void	SHProbeEncoder::Surface::Sort( Surface* _pList, const IComparer<Surface>& _Comparer ) {
-
-	Surface*	pPrevious0 = NULL;
-	Surface*	pCurrent0 = _pList;
-	while ( pCurrent0 != NULL ) {
-
-		Surface*	pPrevious1 = pCurrent0;
-		Surface*	pCurrent1 = (Surface*) pCurrent0->pNext;
-		while ( pCurrent1 != NULL ) {
-
-			if ( _Comparer.Compare( *pCurrent0, *pCurrent1 ) < 0 ) {
-				// Swap elements
-				if ( pPrevious0 != NULL ) {
-					pPrevious0->pNext = pCurrent1;
-				}
-				pPrevious1->pNext = pCurrent0;
-				Pixel*	pTemp = pCurrent0->pNext;
-				pCurrent0->pNext = pCurrent1->pNext;
-				pCurrent1->pNext = pTemp;
-			}
-
-			pPrevious1 = pCurrent1;
-			pCurrent1 = (Surface*) pCurrent1->pNext;
-		}
-
-		pPrevious0 = pCurrent0;
-		pCurrent0 = (Surface*) pCurrent0->pNext;
+SHProbeEncoder::Pixel::RadixNode_t*	SHProbeEncoder::Pixel::ms_RadixNodes[2] = { NULL, NULL };
+void	SHProbeEncoder::Pixel::Sort( Pixel*& _pList, ISortKeyProvider& _KeyProvider, bool _ReverseSortOnExit ) {
+	// Convert linked-list into a sortable list
+	Pixel*			pSource = _pList;
+	RadixNode_t*	pTarget = ms_RadixNodes[0];
+	while ( pSource != NULL ) {
+		pTarget->Key = _KeyProvider.GetKey( *pSource );
+		pTarget->pPixel = pSource;
+		pTarget++;
+		pSource = pSource->pNext;
 	}
 
+	U32	ElementsCount = pTarget - ms_RadixNodes[0];
+	if ( ElementsCount < 2 ) {
+		return;	// Nothing to sort here...
+	}
+
+	// Sort
+	Sort( ElementsCount, ms_RadixNodes[0], ms_RadixNodes[1] );
+
+	// Rebuild sorted linked-list
+	if ( _ReverseSortOnExit ) {
+		// Reversed, largest to smallest sort
+		RadixNode_t*	pNode = ms_RadixNodes[1];
+		_pList = NULL;
+		for ( U32 i=0; i < ElementsCount; i++, pNode++ ) {
+			pNode->pPixel->pNext = _pList;
+			_pList = pNode->pPixel;
+		}
+	} else {
+		// Standard, smallest to largest sort
+		RadixNode_t*	pNode = ms_RadixNodes[1];
+		for ( U32 i=0; i < ElementsCount-1; i++, pNode++ ) {
+			pNode->pPixel->pNext = pNode[1].pPixel;
+		}
+		pNode->pPixel->pNext = NULL;
+		_pList = ms_RadixNodes[1]->pPixel;
+	}
+}
+
+// 11-bits Radix sort from Michael Herf
+// ---- utils for accessing 11-bit quantities
+#define _0(x)	(x & 0x7FF)
+#define _1(x)	(x >> 11 & 0x7FF)
+#define _2(x)	(x >> 22 )
+
+void	SHProbeEncoder::Pixel::Sort( U32 _ElementsCount, RadixNode_t* _pList, RadixNode_t* _pSorted ) {
+	U32		i;
+// 	U32*	sort = (U32*) sorted;
+// 	U32*	array = (U32*) farray;
+
+	// 3 histograms on the stack:
+	const U32	kHist = 2048;		// 11 bits
+	U32			b0[kHist * 3];
+	U32*		b1 = b0 + kHist;
+	U32*		b2 = b1 + kHist;
+
+	for ( i = 0; i < kHist * 3; i++ ) {
+		b0[i] = 0;
+	}
+	//memset(b0, 0, kHist * 12);
+
+	// 1. parallel histogramming pass
+	//
+	RadixNode_t*	pNode = _pList;
+	for ( i=0; i < _ElementsCount; i++, pNode++ ) {
+		U32	fi = pNode->Key;
+		b0[_0(fi)]++;
+		b1[_1(fi)]++;
+		b2[_2(fi)]++;
+	}
+	
+	// 2. Sum the histograms -- each histogram entry records the number of values preceding itself.
+	{
+		U32 sum0 = 0, sum1 = 0, sum2 = 0;
+		U32 tsum;
+		for ( i=0; i < kHist; i++ ) {
+
+			tsum = b0[i] + sum0;
+			b0[i] = sum0 - 1;
+			sum0 = tsum;
+
+			tsum = b1[i] + sum1;
+			b1[i] = sum1 - 1;
+			sum1 = tsum;
+
+			tsum = b2[i] + sum2;
+			b2[i] = sum2 - 1;
+			sum2 = tsum;
+		}
+	}
+
+	// byte 0: read/write histogram, write out to sorted
+	pNode = _pList;
+	for ( i=0; i < _ElementsCount; i++, pNode++ ) {
+		U32 fi = pNode->Key;
+		U32 pos = _0(fi);
+		_pSorted[++b0[pos]] = *pNode;
+	}
+
+	// byte 1: read/write histogram, copy sorted -> original
+	pNode = _pSorted;
+	for ( i=0; i < _ElementsCount; i++, pNode++ ) {
+		U32	si = pNode->Key;
+		U32	pos = _1(si);
+		_pList[++b1[pos]] = *pNode;
+	}
+
+	// byte 2: read/write histogram, copy original -> sorted
+	pNode = _pList;
+	for ( i=0; i < _ElementsCount; i++, pNode++ ) {
+		U32 ai = pNode->Key;
+		U32 pos = _2(ai);
+		_pSorted[++b2[pos]] = *pNode;
+	}
 }

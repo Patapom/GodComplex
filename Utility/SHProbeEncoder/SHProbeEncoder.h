@@ -19,7 +19,7 @@
 // Pixels whose solid angle is too low are discarded.
 //
 // The algorithm continues until all pixels have been discarded or added to a surface, then the algorithm enters a second
-//	phase of optimization where sets are merged together if sufficiently close, or discarded if not significant enough.
+//	phase of optimization where surfaces are merged together if sufficiently close, or discarded if not significant enough.
 //
 //
 #pragma once
@@ -197,6 +197,18 @@ private:	// NESTED TYPES
 			return true;
 		}
 
+		// Sort a linked list of pixels using radix sort
+		struct RadixNode_t {
+			U32		Key;
+			Pixel*	pPixel;
+		};
+		class ISortKeyProvider {
+		public: virtual U32	GetKey( const Pixel& _Pixel ) const = 0;
+		};
+		static RadixNode_t*	ms_RadixNodes[2];
+		static void	Sort( Pixel*& _pList, ISortKeyProvider& _KeyProvider, bool _ReverseSortOnExit );	// Directly takes a linked list and builds a sortable list. If reverse is used, list is rebuilt from largest to lowest key.
+		static void	Sort( U32 _ElementsCount, RadixNode_t* _pList, RadixNode_t* _pSorted );				// Takes a sortable list and a temp buffer
+
 // 		void		Unlink() {
 // 			if ( pPrevious != NULL ) {
 // 				pPrevious->pNext = pNext;
@@ -232,7 +244,7 @@ private:	// NESTED TYPES
 //	[System.Diagnostics.DebuggerDisplay( "C={SetPixels.Count} I={Importance} H={AlbedoHSL.x} S={AlbedoHSL.y} L={Albedo.z} P=({Position.x}, {Position.y}, {Position.z})" )]
 	class	Surface : public Pixel {
 	public:
-		int				PixelsCount;	// Amount of pixels in the surface
+		U32				PixelsCount;	// Amount of pixels in the surface
 		Pixel*			pPixels;		// The list of pixels belonging to this surface
 
 		int				ID;				// Warning: Only available once the computation is over and all sets have been resolved!
@@ -481,9 +493,6 @@ private:	// NESTED TYPES
 // 
 // 		#endregion
 */
-
-		// Sort a linked list of surface from most to least important
-		static void	Sort( Surface* _pList, const IComparer<Surface>& _Comparer );
 	};
 
 	// Contains information on a neighbor probe
@@ -512,10 +521,10 @@ private:	// FIELDS
 
 	float4x4			m_Side2World[6];
 
-	int					m_ProbeID;							// This is extracted from the cube map file name... Not very robust but good enough!
+	U32					m_ProbeID;							// This is extracted from the cube map file name... Not very robust but good enough!
 
 	Pixel*				m_pCubeMapPixels;					// Original cube map
-	int					m_ScenePixelsCount;
+	U32					m_ScenePixelsCount;
  	Pixel*				m_pScenePixels;						// List of pixels that participate to the scene geometry (i.e. not at infinity)
 
 
@@ -544,7 +553,6 @@ private:	// FIELDS
 	// List of neighbor probes
 	float				m_NearestNeighborProbeDistance;
 	float				m_FarthestNeighborProbeDistance;
-//	U32					m_NeighborProbesCount;
 	List<NeighborProbe>	m_NeighborProbes;
 
 // 	// List of influence weights per face index
