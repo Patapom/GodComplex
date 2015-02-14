@@ -645,22 +645,26 @@ void	SHProbeEncoder::FloodFill( Surface& _Patch, Pixel* _PreviousPixel, Pixel* _
 	int	ScanlineStartIndex = m_ScanlinePixelIndex;
 	m_ppScanlinePixelsPool[m_ScanlinePixelIndex++] = _P;	// This pixel is implicitly on the scanline
 
-	// Start going right
-	Pixel*	Previous = _P;
-	Pixel*	Current = &FindAdjacentPixel( *Previous, 1, 0 );
-	while ( CheckAndAcceptPixel( _Patch, *Previous, *Current, _RejectedPixels ) ) {
-		m_ppScanlinePixelsPool[m_ScanlinePixelIndex++] = Current;
-		Previous = Current;
-		Current = &FindAdjacentPixel( *Current, 1, 0 );
+	{	// Start going right
+		CubeMapPixelWalker	P( *this, *_P );
+		Pixel*	Previous = _P;
+		Pixel*	Current = &P.Right();
+		while ( CheckAndAcceptPixel( _Patch, *Previous, *Current, _RejectedPixels ) ) {
+			m_ppScanlinePixelsPool[m_ScanlinePixelIndex++] = Current;
+			Previous = Current;
+			Current = &P.Right();
+		}
 	}
 
-	// Start going left
-	Previous = _P;
-	Current = &FindAdjacentPixel( *Previous, -1, 0 );
-	while ( CheckAndAcceptPixel( _Patch, *Previous, *Current, _RejectedPixels ) ) {
-		m_ppScanlinePixelsPool[m_ScanlinePixelIndex++] = Current;
-		Previous = Current;
-		Current = &FindAdjacentPixel( *Current, -1, 0 );
+	{	// Start going left
+		CubeMapPixelWalker	P( *this, *_P );
+		Pixel*	Previous = _P;
+		Pixel*	Current = &P.Left();
+		while ( CheckAndAcceptPixel( _Patch, *Previous, *Current, _RejectedPixels ) ) {
+			m_ppScanlinePixelsPool[m_ScanlinePixelIndex++] = Current;
+			Previous = Current;
+			Current = &P.Left();
+		}
 	}
 
 	RecursionLevel++;
@@ -671,8 +675,8 @@ void	SHProbeEncoder::FloodFill( Surface& _Patch, Pixel* _PreviousPixel, Pixel* _
 	// Recurse into each pixel of the top scanline
 	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
-		Pixel*	Top = &FindAdjacentPixel( *P, 0, 1 );
-
+		CubeMapPixelWalker	Walker( *this, *P );
+		Pixel*	Top = &Walker.Up();
 		FloodFill( _Patch, P, Top, _RejectedPixels );
 	}
 
@@ -680,7 +684,8 @@ void	SHProbeEncoder::FloodFill( Surface& _Patch, Pixel* _PreviousPixel, Pixel* _
 	// Recurse into each pixel of the bottom scanline
 	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
-		Pixel*	Bottom = &FindAdjacentPixel( *P, 0, -1 );
+		CubeMapPixelWalker	Walker( *this, *P );
+		Pixel*	Bottom = &Walker.Down();
 		FloodFill( _Patch, P, Bottom, _RejectedPixels );
 	}
 
@@ -769,155 +774,185 @@ static int	GoRight[6] = {
 	0,	// Step to +X
 	1,	// Step to -X
 };
-static int	GoDown[6] = {
-	2,	// Step to +Y
-	2,	// Step to +Y
-	4,	// Step to +Z
-	5,	// Step to -Z
-	2,	// Step to +Y
-	2,	// Step to +Y
+static int	GoDown[6] = {	// Go down means V+1!
+	3,	// Step to -Y
+	3,	// Step to -Y
+	4,	// Step to -Z
+	5,	// Step to +Z
+	3,	// Step to -Y
+	3,	// Step to -Y
 };
-static int	GoUp[6] = {
-	3,	// Step to -Y
-	3,	// Step to -Y
+static int	GoUp[6] = {		// Go up means V-1!
+	2,	// Step to +Y
+	2,	// Step to +Y
 	5,	// Step to -Z
 	4,	// Step to +Z
-	3,	// Step to -Y
-	3,	// Step to -Y
+	2,	// Step to +Y
+	2,	// Step to +Y
 };
 
-// Contains the matrices that indicate how the (X,Y) pixel coordinates should be transformed to step from one face to the other
+// Contains the matrices that indicate how the (U,V) pixel coordinates should be transformed to step from one face to the other
 // Transforms arrays are simple matrices:
-//	Tx Xx Xy
-//	Ty Yx Yy
+//	| Tu Xu Yy |
+//	| Tv Xv Yv |
 //
 // Which are used like this:
-//	X' = Tx * CUBE_MAP_SIZE + Xx * X + Xy * Y
-//	Y' = Ty * CUBE_MAP_SIZE + Yx * X + Yy * Y
+//	U' = Tu * CUBE_MAP_SIZE + Xu * U + Yu * V
+//	V' = Tv * CUBE_MAP_SIZE + Xv * U + Yv * V
 //
 const int C = SHProbeEncoder::CUBE_MAP_SIZE;
-const int C2 = 2*C;
+const int C2 = 2*C-1;
 const int C_ = SHProbeEncoder::CUBE_MAP_SIZE-1;
-int	GoLeftTransforms[6][6] = {
+int	GoLeftTransforms[6][6] = {	// U=-1
 	// Going left from +X sends us to +Z
-	{	C,  1,  0,		// X' = C + X	(C is the CUBE_MAP_SIZE)
-		0,  0,  1 },	// Y' = Y
+	{	 C,  1,  0,		// U' = C + U	(C is the CUBE_MAP_SIZE)
+		 0,  0,  1 },	// V' = V
 	// Going left from -X sends us to -Z
-	{	C,  1,  0,		// X' = C + X
-		0,  0,  1 },	// Y' = Y
+	{	 C,  1,  0,		// U' = C + U
+		 0,  0,  1 },	// V' = V
 	// Going left from +Y sends us to -X
-	{	C_,  0, -1,		// X' = C - Y
-		0, -1,  0 },	// Y' = -X
+	{	 0,  0,  1,		// U' = V
+		-1, -1,  0 },	// V' = -1 - U
 	// Going left from -Y sends us to -X
-	{	0,  0,  1,		// X' = Y
-		C,  1,  0 },	// Y' = C + X
+	{	C_,  0, -1,		// U' = C-1 - V
+		 C,  1,  0 },	// V' = C + U
 	// Going left from +Z sends us to -X
-	{	C,  1,  0,		// X' = C + X
-		0,  0,  1 },	// Y' = Y
+	{	 C,  1,  0,		// U' = C + U
+		 0,  0,  1 },	// V' = V
 	// Going left from -Z sends us to +X
-	{	C,  1,  0,		// X' = C + X
-		0,  0,  1 },	// Y' = Y
+	{	 C,  1,  0,		// U' = C + U
+		 0,  0,  1 },	// V' = V
 };
-int	GoRightTransforms[6][6] = {
+int	GoRightTransforms[6][6] = {	// U=C
 	// Going right from +X sends us to -Z
-	{	-C,  1,  0,		// X' = -C + X	(C is the CUBE_MAP_SIZE)
-		0,  0,  1 },	// Y' = Y
+	{	-C,  1,  0,		// U' = -C + U	(C is the CUBE_MAP_SIZE)
+		 0,  0,  1 },	// V' = V
 	// Going right from -X sends us to +Z
-	{	-C,  1,  0,		// X' = -C + X
-		0,  0,  1 },	// Y' = Y
+	{	-C,  1,  0,		// U' = -C + U
+		 0,  0,  1 },	// V' = V
 	// Going right from +Y sends us to +X
-	{	0,  0,  1,		// X' = Y
-		-C, 1,  0 },	// Y' = -C + X
+	{	C_,  0, -1,		// U' = C-1 - V
+		-C,  1,  0 },	// V' = -C + U
 	// Going right from -Y sends us to +X
-	{	C_, 0,  -1,		// X' = C - Y
-		C,  1,  0 },	// Y' = C + X
+	{	 0,  0,  1,		// U' = V
+		C2, -1,  0 },	// V' = 2C-1 - U
 	// Going right from +Z sends us to +X
-	{	-C,  1,  0,		// X' = -C + X
-		0,  0,  1 },	// Y' = Y
+	{	-C,  1,  0,		// U' = -C + U
+		 0,  0,  1 },	// V' = V
 	// Going right from -Z sends us to -X
-	{	-C,  1,  0,		// X' = -C + X
-		0,  0,  1 },	// Y' = Y
+	{	-C,  1,  0,		// U' = -C + U
+		 0,  0,  1 },	// V' = V
 };
-int	GoDownTransforms[6][6] = {
-	// Going down from +X sends us to +Y
-	{	C,  0,  1,		// X' = C + Y	(C is the CUBE_MAP_SIZE)
-		0,  1,  0 },	// Y' = X
-	// Going down from -X sends us to +Y
-	{	0,  0, -1,		// X' = -Y
-		C_, -1,  0 },	// Y' = C - X
+int	GoDownTransforms[6][6] = {	// V=C
+	// Going down from +X sends us to -Y
+	{	C2,  0, -1,		// U' = 2C-1 - V	(C is the CUBE_MAP_SIZE)
+		 0,  1,  0 },	// V' = U
+	// Going down from -X sends us to -Y
+	{	-C,  0,  1,		// U' = -C + V
+		C_, -1,  0 },	// V' = C-1 - U
 	// Going down from +Y sends us to +Z
-	{	0,  1,  0,		// X' = X
-		0,  0, -1 },	// Y' = -Y
+	{	 0,  1,  0,		// U' = U
+		-C,  0,  1 },	// V' = -C + V
 	// Going down from -Y sends us to -Z
-	{	C_, -1,  0,		// X' = C - X
-		C,  0,  1 },	// Y' = C + Y
-	// Going down from +Z sends us to +Y
-	{	0,  1,  0,		// X' = X
-		0,  0, -1 },	// Y' = -Y
-	// Going down from -Z sends us to +Y
-	{	C_, -1,  0,		// X' = C - X
-		C,  0,  1 },	// Y' = C + Y
+	{	C_, -1,  0,		// U' = C-1 - U
+		C2,  0, -1 },	// V' = 2C-1 - V
+	// Going down from +Z sends us to -Y
+	{	 0,  1,  0,		// U' = U
+		-C,  0,  1 },	// V' = -C + V
+	// Going down from -Z sends us to -Y
+	{	C_, -1,  0,		// U' = C-1 - U
+		C2,  0, -1 },	// V' = 2C-1 - V
 };
-int	GoUpTransforms[6][6] = {
-	// Going up from +X sends us to -Y
-	{	C2,  0, -1,		// X' = 2C - Y	(C is the CUBE_MAP_SIZE)
-		C_, -1,  0 },	// Y' = C - X
-	// Going up from -X sends us to -Y
-	{	-C,  0,  1,		// X' = -C + Y
-		0,  1,  0 },	// Y' = X
+int	GoUpTransforms[6][6] = {	// V=-1
+	// Going up from +X sends us to +Y
+	{	C-2,  0, -1,	// U' = C-2 - V	(C is the CUBE_MAP_SIZE)
+		C_,  -1,  0 },	// V' = C-1 - U
+	// Going up from -X sends us to +Y
+	{	-1,  0, -1,		// U' = -1 - V
+		 0,  1,  0 },	// V' = U
 	// Going up from +Y sends us to -Z
-	{	C_, -1,  0,		// X' = C - X
-		-C, 0,  1 },	// Y' = -C + Y
+	{	C_, -1,  0,		// U' = C-1 - U
+		-1,  0, -1 },	// V' = -1 - V
 	// Going up from -Y sends us to +Z
-	{	0,  1,  0,		// X' = X
-		C2,  0, -1 },	// Y' = 2C - Y
-	// Going up from +Z sends us to -Y
-	{	0,  1,  0,		// X' = X
-		C2,  0, -1 },	// Y' = 2C - Y
-	// Going up from -Z sends us to -Y
-	{	C_, -1,  0,		// X' = C - X
-		-C, 0,  1 },	// Y' = -C + Y
+	{	 0,  1,  0,		// U' = U
+		 C,  0,  1 },	// V' = C + V
+	// Going up from +Z sends us to +Y
+	{	 0,  1,  0,		// U' = U
+		 C,  0,  1 },	// V' = C + V
+	// Going up from -Z sends us to +Y
+	{	C_, -1,  0,		// U' = C-1 - U
+		-1,  0, -1 },	// V' = -1 - V
 };
 
-void	TransformXY( int _Transform[6], int& _X, int& _Y ) {
-	int	TempX = _Transform[0] + _Transform[1] * _X + _Transform[2] * _Y;
-	int	TempY = _Transform[3] + _Transform[4] * _X + _Transform[5] * _Y;
-	_X = TempX;
-	_Y = TempY;
+void SHProbeEncoder::CubeMapPixelWalker::Set( Pixel& _Pixel ) {
+	CubeFaceIndex = _Pixel.CubeFaceIndex;
+	U = _Pixel.CubeFaceX;
+	V = _Pixel.CubeFaceY;
+	Ux = 1;	Uy = 0;
+	Vx = 0; Vy = 1;
+}
+SHProbeEncoder::Pixel&	SHProbeEncoder::CubeMapPixelWalker::Get() const {
+	int	FinalPixelIndex = CUBE_MAP_FACE_SIZE * CubeFaceIndex + CUBE_MAP_SIZE * V + U;
+	Pixel&	Result = Owner.m_pCubeMapPixels[FinalPixelIndex];
+	return Result;
+}
+SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Left() {
+//	GoToAdjacentPixel( -1, 0 );	// U-1
+	return Get();
+}
+SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Right() {
+	GoToAdjacentPixel( 0, +1 );	// U+1
+	return Get();
+}
+SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Down() {
+	GoToAdjacentPixel( 0, +1 );	// V+1
+	return Get();
+}
+SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Up() {
+	GoToAdjacentPixel( 0, -1 );	// V-1
+	return Get();
+}
+void	SHProbeEncoder::CubeMapPixelWalker::TransformUV( int _Transform[6] ) {
+	// Transform position
+	int	TempX = _Transform[0] + _Transform[1] * U + _Transform[2] * V;
+	int	TempY = _Transform[3] + _Transform[4] * U + _Transform[5] * V;
+	U = TempX;
+	V = TempY;
+	ASSERT( U==0 || U==C-1 || V==0 || V==C-1, "One of the coordinates should be at an edge!" );
+
+	// Transform directions
+	int	OldUx = Ux, OldUy = Uy;
+	int	OldVx = Vx, OldVy = Vy;
+	Ux = _Transform[1] * OldUx + _Transform[4] * OldUy;
+	Uy = _Transform[2] * OldUx + _Transform[5] * OldUy;
+	Vx = _Transform[1] * OldVx + _Transform[4] * OldVy;
+	Vy = _Transform[2] * OldVx + _Transform[5] * OldVy;
 }
 
-SHProbeEncoder::Pixel&	SHProbeEncoder::FindAdjacentPixel( const Pixel& _P, int _Dx, int _Dy ) const {
-	int	CubeFaceIndex = _P.CubeFaceIndex;
-	int	X = _P.CubeFaceX;
-	int	Y = _P.CubeFaceY;
+void	SHProbeEncoder::CubeMapPixelWalker::GoToAdjacentPixel( int _dU, int _dV ) {
+	U += _dU * Ux + _dV * Vx;
+	V += _dU * Uy + _dV * Vy;
 
-	X += _Dx;
-	if ( X < 0 ) {
+	if ( U < 0 ) {
 		// Stepped out through left side
-		TransformXY( GoLeftTransforms[CubeFaceIndex], X, Y );
+		TransformUV( GoLeftTransforms[CubeFaceIndex] );
 		CubeFaceIndex = GoLeft[CubeFaceIndex];
 	}
-	if ( X >= CUBE_MAP_SIZE ) {
+	if ( U >= CUBE_MAP_SIZE ) {
 		// Stepped out through right side
-		TransformXY( GoRightTransforms[CubeFaceIndex], X, Y );
+		TransformUV( GoRightTransforms[CubeFaceIndex] );
 		CubeFaceIndex = GoRight[CubeFaceIndex];
 	}
-
-	Y += _Dy;
-	if ( Y < 0 ) {
-		// Stepped out through bottom side
-		TransformXY( GoDownTransforms[CubeFaceIndex], X, Y );
-		CubeFaceIndex = GoDown[CubeFaceIndex];
-	}
-	if ( Y >= CUBE_MAP_SIZE ) {
+	if ( V < 0 ) {
 		// Stepped out through top side
-		TransformXY( GoUpTransforms[CubeFaceIndex], X, Y );
+		TransformUV( GoUpTransforms[CubeFaceIndex] );
 		CubeFaceIndex = GoUp[CubeFaceIndex];
 	}
-
-	int	FinalPixelIndex = CUBE_MAP_FACE_SIZE * CubeFaceIndex + CUBE_MAP_SIZE * Y + X;
-
-	return m_pCubeMapPixels[FinalPixelIndex];
+	if ( V >= CUBE_MAP_SIZE ) {
+		// Stepped out through bottom side
+		TransformUV( GoDownTransforms[CubeFaceIndex] );
+		CubeFaceIndex = GoDown[CubeFaceIndex];
+	}
 }
 
 #pragma endregion
@@ -1076,14 +1111,15 @@ NegativeImportancePixelsCount++;
 					continue;	// This only concerns scene pixels...
 				}
 
-				Pixel&	P00 = FindAdjacentPixel( *P, -1, -1 );	// Top left
-				Pixel&	P01 = FindAdjacentPixel( *P, +1, 0 );	// Top
-				Pixel&	P02 = FindAdjacentPixel( *P, +1, 0 );	// Top Right
-				Pixel&	P12 = FindAdjacentPixel( *P, 0, -1 );	// Right
-				Pixel&	P22 = FindAdjacentPixel( *P, 0, -1 );	// Bottom Right
-				Pixel&	P21 = FindAdjacentPixel( *P, -1, 0 );	// Bottom
-				Pixel&	P20 = FindAdjacentPixel( *P, -1, 0 );	// Bottom Left
-				Pixel&	P10 = FindAdjacentPixel( *P, 0, 1 );	// Left
+				CubeMapPixelWalker	Walk( *this, *P );
+				Pixel&	P01 = Walk.Up();	// Top
+				Pixel&	P02 = Walk.Right();	// Top Right
+				Pixel&	P12 = Walk.Down();	// Right
+				Pixel&	P22 = Walk.Down();	// Bottom Right
+				Pixel&	P21 = Walk.Left();	// Bottom
+				Pixel&	P20 = Walk.Left();	// Bottom Left
+				Pixel&	P10 = Walk.Up();	// Left
+				Pixel&	P00 = Walk.Up();	// Top left
 
 				float	SumDistance = P->Distance;
 				float	Count = 1;
@@ -1205,7 +1241,11 @@ void	SHProbeEncoder::Pixel::Sort( Pixel*& _pList, ISortKeyProvider& _KeyProvider
 	}
 }
 
-// 11-bits Radix sort from Michael Herf
+//////////////////////////////////////////////////////////////////////////
+// 11-bits Radix sort from Michael Herf (http://stereopsis.com/radix.html)
+// Without the floating-point sign flipping because we don't care about that here.
+//
+
 // ---- utils for accessing 11-bit quantities
 #define _0(x)	(x & 0x7FF)
 #define _1(x)	(x >> 11 & 0x7FF)
@@ -1213,8 +1253,6 @@ void	SHProbeEncoder::Pixel::Sort( Pixel*& _pList, ISortKeyProvider& _KeyProvider
 
 void	SHProbeEncoder::Pixel::Sort( U32 _ElementsCount, RadixNode_t* _pList, RadixNode_t* _pSorted ) {
 	U32		i;
-// 	U32*	sort = (U32*) sorted;
-// 	U32*	array = (U32*) farray;
 
 	// 3 histograms on the stack:
 	const U32	kHist = 2048;		// 11 bits

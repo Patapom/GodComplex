@@ -516,6 +516,32 @@ private:	// NESTED TYPES
 			, PixelsCount( 0 ) {}
 	};
 
+	class	CubeMapPixelWalker {
+		const SHProbeEncoder&	Owner;
+		U32						CubeFaceIndex;
+		int						U;
+		int						V;
+		int						Ux, Uy;	// Points to right
+		int						Vx, Vy;	// Points to down
+	public:
+
+		CubeMapPixelWalker( const SHProbeEncoder& _Owner, Pixel& _Pixel ) : Owner( _Owner ) {
+			Set( _Pixel );
+		}
+
+		void	Set( Pixel& _Pixel );
+		Pixel&	Get() const;
+
+		Pixel&	Left();
+		Pixel&	Right();
+		Pixel&	Down();
+		Pixel&	Up();
+
+	private:
+		void	TransformUV( int _Transform[6] );
+		void	GoToAdjacentPixel( int _dU, int _dV );
+	};
+
 
 private:	// FIELDS
 
@@ -588,7 +614,7 @@ private:
 
 	void	FloodFill( Surface& _S, Pixel* _PreviousPixel, Pixel* _P, Pixel*& _RejectedPixels ) const;
 	bool	CheckAndAcceptPixel( Surface& _Patch, Pixel& _PreviousPixel, Pixel& _P, Pixel*& _RejectedPixels ) const;
-	Pixel&	FindAdjacentPixel( const Pixel& _P, int _Dx, int _Dy ) const;
+	Pixel&	FindAdjacentPixel( const Pixel& _P, int _dU, int _dV, int& _DirectionU, int& _DirectionV ) const;
 
 	// Helpers
 	template< typename T > void	ToArray( const List<T>& _List, T* _Array, U32 _Max, U32& _ArraySize ) {
