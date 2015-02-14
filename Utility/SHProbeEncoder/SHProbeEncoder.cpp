@@ -865,7 +865,7 @@ int	GoDownTransforms[6][6] = {	// V=C
 };
 int	GoUpTransforms[6][6] = {	// V=-1
 	// Going up from +X sends us to +Y
-	{	C-2,  0, -1,	// U' = C-2 - V	(C is the CUBE_MAP_SIZE)
+	{	 C,   0,  1,	// U' = C + V	(C is the CUBE_MAP_SIZE)
 		C_,  -1,  0 },	// V' = C-1 - U
 	// Going up from -X sends us to +Y
 	{	-1,  0, -1,		// U' = -1 - V
@@ -892,12 +892,12 @@ void SHProbeEncoder::CubeMapPixelWalker::Set( Pixel& _Pixel ) {
 	Vx = 0; Vy = 1;
 }
 SHProbeEncoder::Pixel&	SHProbeEncoder::CubeMapPixelWalker::Get() const {
-	int	FinalPixelIndex = CUBE_MAP_FACE_SIZE * CubeFaceIndex + CUBE_MAP_SIZE * V + U;
+	int		FinalPixelIndex = CUBE_MAP_FACE_SIZE * CubeFaceIndex + CUBE_MAP_SIZE * V + U;
 	Pixel&	Result = Owner.m_pCubeMapPixels[FinalPixelIndex];
 	return Result;
 }
 SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Left() {
-//	GoToAdjacentPixel( -1, 0 );	// U-1
+	GoToAdjacentPixel( -1, 0 );	// U-1
 	return Get();
 }
 SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Right() {
