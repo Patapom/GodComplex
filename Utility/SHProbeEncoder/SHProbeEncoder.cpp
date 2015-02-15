@@ -10,21 +10,6 @@ float		SHProbeEncoder::ALBEDO_RGB_THRESHOLD = 0.16f;					// Close colors!
 
 
 SHProbeEncoder::SHProbeEncoder() {
-	m_pCubeMapPixels = new Pixel[6*CUBE_MAP_SIZE*CUBE_MAP_SIZE];
-	Pixel*	pPixel = m_pCubeMapPixels;
-	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
-		for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
-			for ( int X=0; X < CUBE_MAP_SIZE; X++, pPixel++ ) {
-				pPixel->Index = pPixel - m_pCubeMapPixels;
-				pPixel->CubeFaceIndex = CubeFaceIndex;
-				pPixel->CubeFaceX = X;
-				pPixel->CubeFaceY = Y;
-			}
-
-	m_AllSurfaces.Init( 6*CUBE_MAP_SIZE*CUBE_MAP_SIZE );
-
-	Pixel::ms_RadixNodes[0] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];	// Pre-allocate the maximum amount of radix nodes
-	Pixel::ms_RadixNodes[1] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];	// Pre-allocate the maximum amount of radix nodes
 
 	//////////////////////////////////////////////////////////////////////////
 	// Prepare the cube map face transforms
@@ -67,6 +52,47 @@ SHProbeEncoder::SHProbeEncoder() {
 
 		m_Side2World[CubeFaceIndex] = Camera2Local;	// We don't care about the local=>world transform of the probe, we assume it's the identity matrix
 	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Prepare cube map pixels
+	m_pCubeMapPixels = new Pixel[6*CUBE_MAP_SIZE*CUBE_MAP_SIZE];
+
+	double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
+	double	SumSolidAngle = 0.0;
+
+	Pixel*	pPixel = m_pCubeMapPixels;
+	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
+		for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
+			for ( int X=0; X < CUBE_MAP_SIZE; X++, pPixel++ ) {
+				pPixel->Index = pPixel - m_pCubeMapPixels;
+				pPixel->CubeFaceIndex = CubeFaceIndex;
+				pPixel->CubeFaceX = X;
+				pPixel->CubeFaceY = Y;
+
+				// Build world-space view vector
+				float3	csView( 2.0f * (0.5f + X) / CUBE_MAP_SIZE - 1.0f, 1.0f - 2.0f * (0.5f + Y) / CUBE_MAP_SIZE, 1.0f );
+				float	Distance2Texel = csView.Length();
+						csView = csView / Distance2Texel;
+				float3	wsView = float4( csView, 0 ) * m_Side2World[CubeFaceIndex];
+				pPixel->View = wsView;
+
+				// Retrieve the cube map texel's solid angle (from http://people.cs.kuleuven.be/~philip.dutre/GI/TotalCompendium.pdf)
+				// dw = cos(Theta).dA / r²
+				// cos(Theta) = Adjacent/Hypothenuse = 1/r
+				//
+				double	SolidAngle = dA / (Distance2Texel * Distance2Texel * Distance2Texel);
+				SumSolidAngle += SolidAngle;
+
+				pPixel->SolidAngle = SolidAngle;
+
+				// Build SH coefficients
+				pPixel->InitSH();
+			}
+
+	m_AllSurfaces.Init( 6*CUBE_MAP_SIZE*CUBE_MAP_SIZE );
+
+	Pixel::ms_RadixNodes[0] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];	// Pre-allocate the maximum amount of radix nodes
+	Pixel::ms_RadixNodes[1] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];	// Pre-allocate the maximum amount of radix nodes
 }
 
 SHProbeEncoder::~SHProbeEncoder() {
@@ -389,6 +415,8 @@ void	SHProbeEncoder::ComputeFloodFill( int _MaxSetsCount, int _MaxLightingSample
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Iterate on the list of free pixels that belong to no surface and create new surfaces
+	m_AllSurfaces.Clear();
+
 	Surface*	pRegularSurfaces = NULL;
 	Surface*	pEmissiveSurfaces = NULL;
 	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
@@ -1037,9 +1065,6 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 	m_pScenePixels = NULL;
 	m_ScenePixelsCount = 0;
 
-	double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
-	double	SumSolidAngle = 0.0;
-
 	m_MeanDistance = 0.0;
 	m_MeanHarmonicDistance = 0.0;
 	m_MinDistance = 1e6;
@@ -1088,15 +1113,9 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 				float	Nz = pFaceData2->z;
 				float	Distance = pFaceData2->w;
 
-				float3	csView( 2.0f * (0.5f + X) / CUBE_MAP_SIZE - 1.0f, 1.0f - 2.0f * (0.5f + Y) / CUBE_MAP_SIZE, 1.0f );
-				float	Distance2Texel = csView.Length();
-						csView = csView / Distance2Texel;
-				float3	wsView = float4( csView, 0 ) * m_Side2World[CubeFaceIndex];
-
-				float3	wsPosition( Distance * wsView.x, Distance * wsView.y, Distance * wsView.z );
+				float3	wsPosition( Distance * P->View.x, Distance * P->View.y, Distance * P->View.z );
 
 				P->Position = wsPosition;
-				P->View = wsView;
 				P->Normal.Set( Nx, Ny, Nz );
 				P->Normal.Normalize();
 
@@ -1107,27 +1126,16 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 
 				// ==== Finalize pixel information ====
 
-				// Retrieve the cube map texel's solid angle (from http://people.cs.kuleuven.be/~philip.dutre/GI/TotalCompendium.pdf)
-				// dw = cos(Theta).dA / r²
-				// cos(Theta) = Adjacent/Hypothenuse = 1/r
-				//
-				double	SolidAngle = dA / (Distance2Texel * Distance2Texel * Distance2Texel);
-				SumSolidAngle += SolidAngle;
-
-				P->SolidAngle = SolidAngle;
-				P->Importance = -(wsView | P->Normal) / (Distance * Distance);
-				if ( P->Importance < 0.0 )
-				{
+				P->Importance = -(P->View | P->Normal) / (Distance * Distance);
+				if ( P->Importance < 0.0 ) {
 P->Normal = -P->Normal;
-P->Importance = -(wsView | P->Normal) / (Distance * Distance);
+P->Importance = -(P->View | P->Normal) / (Distance * Distance);
 //P->Importance = -P->Importance;
 NegativeImportancePixelsCount++;
 //					throw new Exception( "WTH?? Negative importance here!" );
 				}
 				P->Distance = Distance;
 				P->Infinity = Distance > Z_INFINITY_TEST;
-
-				P->InitSH();
 
 				if ( P->Infinity )
 					continue;	// Not part of the scene's geometry!
