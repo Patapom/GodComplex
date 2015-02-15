@@ -757,7 +757,7 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Patch, Pixel& _PreviousPixel
 
 #pragma region Adjacency Walker
 
-// Contains the new cube face index when stepping outside of a cube face by the left/right/top/bottom
+// Contains the new cube face index when stepping outside of a cube face through the left/right/top/bottom edge
 static int	GoLeft[6] = {
 	4,	// Step to +Z
 	5,	// Step to -Z
@@ -801,12 +801,16 @@ static int	GoUp[6] = {		// Go up means V-1!
 // Which are used like this:
 //
 //	UV' = [U V 1] * M
+//	 R' = [R R 0] * M
+//	 D' = [D D 0] * M
 //
-// So:
+// So for example:
 //	U' = U * Ru + V * Du + Tu
 //	V' = U * Rv + V * Dv + Tv
 //
 // You have to see the R(ight) and D(own) vectors in M as "what is the new Right/Down vector in this adjacent face?"
+// Normally there's a jpeg image right next to this file that explains how I view the whole cubemap thing, following
+//	the orientations described in https://msdn.microsoft.com/en-us/library/windows/desktop/bb204881%28v=vs.85%29.aspx
 //
 const int C = SHProbeEncoder::CUBE_MAP_SIZE;
 const int C_ = SHProbeEncoder::CUBE_MAP_SIZE-1;
@@ -957,15 +961,15 @@ SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Left() {
 	return Get();
 }
 SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Right() {
-	GoToAdjacentPixel( 0, +1 );	// U+1
-	return Get();
-}
-SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Down() {
-	GoToAdjacentPixel( 0, +1 );	// V+1
+	GoToAdjacentPixel( +1, 0 );	// U+1
 	return Get();
 }
 SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Up() {
 	GoToAdjacentPixel( 0, -1 );	// V-1
+	return Get();
+}
+SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Down() {
+	GoToAdjacentPixel( 0, +1 );	// V+1
 	return Get();
 }
 void	SHProbeEncoder::CubeMapPixelWalker::TransformUV( const int _Transform[6] ) {
@@ -976,15 +980,13 @@ void	SHProbeEncoder::CubeMapPixelWalker::TransformUV( const int _Transform[6] ) 
 	pUV[1] = TempV;
 	ASSERT( pUV[0]==0 || pUV[0]==C-1 || pUV[1]==0 || pUV[1]==C-1, "At least one of the coordinates should be at an edge!" );
 
-	// Transform directions using transposed matrix
-	// That's because we want to know the expression of the former right/down vectors into the
-	//	new basis (i.e. the new cube map face) so we need to multiply by the inverse matrix instead...
+	// Transform Right & Down directions
 	int	pOldRight[2] = { pRight[0], pRight[1] };
 	int	pOldDown[2] = { pDown[0], pDown[1] };
-	pRight[0] = pOldRight[0] * _Transform[0] + pOldRight[1] * _Transform[1];
-	pRight[1] = pOldRight[0] * _Transform[2] + pOldRight[1] * _Transform[3];
-	pDown[0] = pOldDown[0] * _Transform[0] + pOldDown[1] * _Transform[1];
-	pDown[1] = pOldDown[0] * _Transform[2] + pOldDown[1] * _Transform[3];
+	pRight[0] = pOldRight[0] * _Transform[0] + pOldRight[1] * _Transform[2];
+	pRight[1] = pOldRight[0] * _Transform[1] + pOldRight[1] * _Transform[3];
+	pDown[0] = pOldDown[0] * _Transform[0] + pOldDown[1] * _Transform[2];
+	pDown[1] = pOldDown[0] * _Transform[1] + pOldDown[1] * _Transform[3];
 }
 
 void	SHProbeEncoder::CubeMapPixelWalker::GoToAdjacentPixel( int _dU, int _dV ) {
