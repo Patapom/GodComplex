@@ -77,6 +77,7 @@ private:	// NESTED TYPES
 		float3		AlbedoHSL;				// Material albedo in HSL format
 		float		F0;						// Material Fresnel coefficient
 		float3		StaticLitColor;			// Color of the statically lit environment
+		float3		SmoothedStaticLitColor;	// Color of the statically lit environment
 		U32			FaceIndex;				// Absolute scene face index
 		U32			EmissiveMatID;			// ID of the emissive material or ~0UL if not emissive
 		U32			NeighborProbeID;		// ID of the nearest neighbor probe
@@ -86,6 +87,7 @@ private:	// NESTED TYPES
 		float		Distance;				// Distance from the probe's center
 		float		SmoothedDistance;		// Smoothed out distance for more tolerant merging of noisy surfaces
 		bool		Infinity;				// True if not a scene pixel (i.e. sky pixel)
+		float		SmoothedInfinity;		// Smoothed out infinity value for better SH encoding
 		float3		View;					// View vector pointing to that pixel
 
 		double		SHCoeffs[9];			// SH coefficients of the pixel
@@ -519,10 +521,9 @@ private:	// NESTED TYPES
 	class	CubeMapPixelWalker {
 		const SHProbeEncoder&	Owner;
 		U32						CubeFaceIndex;
-		int						U;
-		int						V;
-		int						Ux, Uy;	// Points to right
-		int						Vx, Vy;	// Points to down
+		int						pUV[2];		// Current position on the cube map face, each coordinate in [0,CUBE_MAP_SIZE[
+		int						pRight[2];	// Points to right
+		int						pDown[2];	// Points to down
 	public:
 
 		CubeMapPixelWalker( const SHProbeEncoder& _Owner, Pixel& _Pixel ) : Owner( _Owner ) {
@@ -538,7 +539,7 @@ private:	// NESTED TYPES
 		Pixel&	Up();
 
 	private:
-		void	TransformUV( int _Transform[6] );
+		void	TransformUV( const int _Transform[6] );
 		void	GoToAdjacentPixel( int _dU, int _dV );
 	};
 
