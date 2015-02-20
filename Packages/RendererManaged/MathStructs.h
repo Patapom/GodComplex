@@ -64,7 +64,7 @@ namespace RendererManaged
 		float3( float _x, float _y, float _z )		{ Set( _x, _y, _z ); }
 		float3( System::Drawing::Color^ _Color )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f ); }
 		void	Set( float _x, float _y, float _z )	{ x = _x; y = _y; z = _z; }
-		void	FromVector3( WMath::Vector^ a )		{ Set( a->x, a->y, a->z ); }
+		float3^	FromVector3( WMath::Vector^ a )		{ Set( a->x, a->y, a->z ); return *this; }
 
 		static float3	operator+( float3 a, float3 b )	{ return float3( a.x+b.x, a.y+b.y, a.z+b.z ); }
 		static float3	operator-( float3 a, float3 b )	{ return float3( a.x-b.x, a.y-b.y, a.z-b.z ); }

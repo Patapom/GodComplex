@@ -228,6 +228,10 @@
       <Project>{6DCB34C3-9060-41D5-B153-936BF7FA98E3}</Project>
       <Name>GCXFormat</Name>
     </ProjectReference>
+    <ProjectReference Include="..\idTech5MapSceneLoader\idTech5MapSceneLoader.csproj">
+      <Project>{6B76A5BB-37D1-4EE7-A870-444C0C87CC59}</Project>
+      <Name>idTech5MapSceneLoader</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

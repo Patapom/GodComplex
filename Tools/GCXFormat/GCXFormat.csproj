@@ -156,9 +156,17 @@
       <Project>{D0CC5DC0-D81A-4976-9042-8A3B5427148B}</Project>
       <Name>FBXSceneLoader</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Packages\RendererManaged\RendererManaged.vcxproj">
+      <Project>{F96CDFD3-8954-4F4F-AFB0-2855D98F051B}</Project>
+      <Name>RendererManaged</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Packages\SharpMath\SharpMath.csproj">
       <Project>{DD026A89-C5FE-4150-BC85-A660E427826A}</Project>
       <Name>SharpMath</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\idTech5MapSceneLoader\idTech5MapSceneLoader.csproj">
+      <Project>{6B76A5BB-37D1-4EE7-A870-444C0C87CC59}</Project>
+      <Name>idTech5MapSceneLoader</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

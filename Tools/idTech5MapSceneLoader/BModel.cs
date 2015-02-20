@@ -5,11 +5,19 @@ using System.Text;
 using System.IO;
 using RendererManaged;
 
-namespace Map2GCX
+namespace idTech5Map
 {
+	/// <summary>
+	/// Contains the surfaces & materials to render a 3D model
+	/// </summary>
 	public class Model {
 
+		/// <summary>
+		/// Describes a unique 3D triangle list primitive
+		/// </summary>
 		public class	Surface {
+
+			#region NESTED TYPES
 
 			[System.Diagnostics.DebuggerDisplay( "{m_Info}" )]
 			public struct VertexElement {
@@ -38,7 +46,7 @@ namespace Map2GCX
 						case 0x05070100: m_Reader = ReaderRG16F; break;
 						case 0x0A040100: m_Reader = ReaderRGBA8_SNORM; break;
 						case 0x0A050100: m_Reader = ReaderRGBA8_UNORM; break;
-						default: throw new Exception( "Unrecognized format!" ); break;
+						default: throw new Exception( "Unrecognized format!" );
 					}
 
 					// Decode usage 
@@ -174,44 +182,21 @@ namespace Map2GCX
 				public float3	Barycentric;
 			};
 
-// class idVertexScaleAndBias {
-// public:
-// 	idVec3	xyzScale;
-// 	idVec3	xyzBias;
-// 	idVec2	stScale;
-// 	idVec2	stBias;
-// 
-// 			idVertexScaleAndBias() : 
-// 				xyzScale( 1.0f, 1.0f, 1.0f ),
-// 				xyzBias( 0.0f, 0.0f, 0.0f ), 
-// 				stScale( 1.0f, 1.0f ),
-// 				stBias( 0.0f, 0.0f ) { }
-// 
-// 	void InitFor16BitTexCoords() {
-// 		stScale.Set( texCoord16BitScale );
-// 		stBias.Set( texCoord16BitBias );
-// 	}
-// 
-// 	bool operator!=( const idVertexScaleAndBias& _other ) const {
-// 		return memcmp( this, &_other, sizeof(idVertexScaleAndBias) ) != 0;
-// 	}
-// };
-
+			#endregion
 
 			public Model			m_Owner;
 			public VertexElement[]	m_VertexElements = null;
 			public Vertex[]			m_Vertices = null;
 			public ushort[]			m_Indices = null;
-			public string			m_MaterialName = null;
-			public int				m_MaterialIndex = -1;
+			public Material			m_Material = null;
 			public float3			m_BoundsMin = float3.Zero;
 			public float3			m_BoundsMax = float3.Zero;
 
 			public Surface( Model _Owner, BinaryReader _R ) {
 				m_Owner = _Owner;
 
-				m_MaterialName = m_Owner.ReadString( _R );
-				m_MaterialIndex = (int) m_Owner.ReadBig32( _R );
+				m_Material = new Material( m_Owner.ReadString( _R ) );
+				m_Material.m_MaterialIndex = (int) m_Owner.ReadBig32( _R );
 
 				// Prepare triangles
 				uint	VerticesCount = _R.ReadUInt32();

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using WMath;
+using RendererManaged;
 
 namespace GCXFormat
 {
@@ -18,24 +18,24 @@ namespace GCXFormat
 		public class	Material
 		{
 			public ushort	m_ID = 0xFFFF;
-			public Vector	m_DiffuseColor = null;
+			public float3	m_DiffuseColor = float3.One;
 			public ushort	m_DiffuseTextureID = 0xFFFF;
-			public Vector	m_SpecularColor = null;
+			public float3	m_SpecularColor = float3.One;
 			public ushort	m_SpecularTextureID = 0xFFFF;
-			public Vector	m_SpecularExponent = null;
+			public float3	m_SpecularExponent = float3.One;
 			public ushort	m_NormalTextureID = 0xFFFF;
-			public Vector	m_EmissiveColor = null;
+			public float3	m_EmissiveColor = float3.One;
 
 			public Material( BinaryReader _R )
 			{
 				m_ID = _R.ReadUInt16();
-				m_DiffuseColor = new Vector( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+				m_DiffuseColor = new float3( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
 				m_DiffuseTextureID = _R.ReadUInt16();
-				m_SpecularColor = new Vector( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+				m_SpecularColor = new float3( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
 				m_SpecularTextureID = _R.ReadUInt16();
-				m_SpecularExponent = new Vector( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+				m_SpecularExponent = new float3( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
 				m_NormalTextureID = _R.ReadUInt16();
-				m_EmissiveColor = new Vector( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+				m_EmissiveColor = new float3( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
 
 				if ( _R.ReadUInt16() != 0x1234 )
 					throw new Exception( "Failed to find material end marker!" );
@@ -43,26 +43,37 @@ namespace GCXFormat
 
 			public Material( FBX.Scene.Materials.MaterialParameters _SourceMaterial, MaterialMapperDelegate _Mapper )
 			{
+				float3	Temp = new float3();
+
 				FBX.Scene.Materials.MaterialParameters.Parameter	P = null;
 
 				m_ID = (ushort) _SourceMaterial.ID;
 
 				// Get diffuse color + texture ID
 				P = _SourceMaterial.Find( "DiffuseColor" );
-				m_DiffuseColor = P != null ? P.AsFloat3.Value : Vector.One;
+				if ( P != null ) {
+					Temp.FromVector3( P.AsFloat3.Value );
+					m_DiffuseColor = Temp;
+				}
 
 				P = _SourceMaterial.Find( "DiffuseTexture" );
 				m_DiffuseTextureID = _Mapper( P != null ? P.AsTexture2D : null );
 
 				// Get specular color + texture ID + exponent
 				P = _SourceMaterial.Find( "SpecularColor" );
-				m_SpecularColor = P != null ? P.AsFloat3.Value : Vector.Zero;
+				if ( P != null ) {
+					Temp.FromVector3( P.AsFloat3.Value );
+					m_SpecularColor = Temp;
+				}
 
 				P = _SourceMaterial.Find( "SpecularTexture" );
 				m_SpecularTextureID = _Mapper( P != null ? P.AsTexture2D : null );
 
 				P = _SourceMaterial.Find( "SpecularExponent" );
-				m_SpecularExponent = P != null ? P.AsFloat3.Value : Vector.Zero;
+				if ( P != null ) {
+					Temp.FromVector3( P.AsFloat3.Value );
+					m_SpecularExponent = Temp;
+				}
 
 				// Get noral map ID
 				P = _SourceMaterial.Find( "NormalTexture" );
@@ -70,7 +81,10 @@ namespace GCXFormat
 
 				// Get emissive
 				P = _SourceMaterial.Find( "EmissiveColor" );
-				m_EmissiveColor = P != null ? P.AsFloat3.Value : Vector.Zero;
+				if ( P != null ) {
+					Temp.FromVector3( P.AsFloat3.Value );
+					m_EmissiveColor = Temp;
+				}
 			}
 
 			public void		Save( BinaryWriter _W )
@@ -79,9 +93,9 @@ namespace GCXFormat
 				_W.Write( m_ID );
 
 				// Write diffuse color + texture ID
-				_W.Write( m_DiffuseColor.X );
-				_W.Write( m_DiffuseColor.Y );
-				_W.Write( m_DiffuseColor.Z );
+				_W.Write( m_DiffuseColor.x );
+				_W.Write( m_DiffuseColor.y );
+				_W.Write( m_DiffuseColor.z );
 
 				_W.Write( m_DiffuseTextureID );
 
@@ -125,7 +139,7 @@ namespace GCXFormat
 			public Scene		m_Owner = null;
 			public Node			m_Parent = null;
 			public TYPE			m_Type = TYPE.GENERIC;
-			public Matrix4x4	m_Local2Parent = Matrix4x4.Identity;
+			public float4x4		m_Local2Parent = float4x4.Identity;
 			public Node[]		m_Children = new Node[0];
 
 			public object		m_Tag = null;	// User tag
@@ -142,10 +156,10 @@ namespace GCXFormat
 //				m_Type = (TYPE) _R.ReadByte();	// Already consumed by the guy who called this constructor!
 
 				// Load Local2Parent matrix
-				m_Local2Parent.m[0,0] = _R.ReadSingle();	m_Local2Parent.m[0,1] = _R.ReadSingle();	m_Local2Parent.m[0,2] = _R.ReadSingle();	m_Local2Parent.m[0,3] = _R.ReadSingle();
-				m_Local2Parent.m[1,0] = _R.ReadSingle();	m_Local2Parent.m[1,1] = _R.ReadSingle();	m_Local2Parent.m[1,2] = _R.ReadSingle();	m_Local2Parent.m[1,3] = _R.ReadSingle();
-				m_Local2Parent.m[2,0] = _R.ReadSingle();	m_Local2Parent.m[2,1] = _R.ReadSingle();	m_Local2Parent.m[2,2] = _R.ReadSingle();	m_Local2Parent.m[2,3] = _R.ReadSingle();
-				m_Local2Parent.m[3,0] = _R.ReadSingle();	m_Local2Parent.m[3,1] = _R.ReadSingle();	m_Local2Parent.m[3,2] = _R.ReadSingle();	m_Local2Parent.m[3,3] = _R.ReadSingle();
+				m_Local2Parent.r0.x = _R.ReadSingle();	m_Local2Parent.r0.y = _R.ReadSingle();	m_Local2Parent.r0.z = _R.ReadSingle();	m_Local2Parent.r0.w = _R.ReadSingle();
+				m_Local2Parent.r1.x = _R.ReadSingle();	m_Local2Parent.r1.y = _R.ReadSingle();	m_Local2Parent.r1.z = _R.ReadSingle();	m_Local2Parent.r1.w = _R.ReadSingle();
+				m_Local2Parent.r2.x = _R.ReadSingle();	m_Local2Parent.r2.y = _R.ReadSingle();	m_Local2Parent.r2.z = _R.ReadSingle();	m_Local2Parent.r2.w = _R.ReadSingle();
+				m_Local2Parent.r3.x = _R.ReadSingle();	m_Local2Parent.r3.y = _R.ReadSingle();	m_Local2Parent.r3.z = _R.ReadSingle();	m_Local2Parent.r3.w = _R.ReadSingle();
 
 
 				// =============================
@@ -200,7 +214,7 @@ namespace GCXFormat
 						m_Type = TYPE.PROBE;
 				}
 
-				m_Local2Parent = _Node.Local2Parent;
+				m_Local2Parent.FromMatrix4( _Node.Local2Parent );
 
 				// Build children
 				FBX.Scene.Nodes.Node[]	Children = _Node.Children;
@@ -220,6 +234,61 @@ namespace GCXFormat
 				}
 			}
 
+			// 
+			public Node( Scene _Owner, idTech5Map.Map _Map ) {
+				m_Owner = _Owner;
+				m_Owner.m_Nodes.Add( this );
+
+				List< Node >	Children = new List< Node >();
+				foreach ( idTech5Map.Map.Entity E in _Map.m_Entities ) {
+					switch ( E.m_Type ) {
+						case idTech5Map.Map.Entity.TYPE.MODEL:
+							m_Type = TYPE.MESH;
+							Children.Add( new Mesh( _Owner, E ) );
+							break;
+						case idTech5Map.Map.Entity.TYPE.LIGHT:
+							m_Type = TYPE.LIGHT;
+							Children.Add( new Light( _Owner, E ) );
+							break;
+						case idTech5Map.Map.Entity.TYPE.PLAYER_START:
+							m_Type = TYPE.CAMERA;
+							Children.Add( new Camera( _Owner, E ) );
+							break;
+						case idTech5Map.Map.Entity.TYPE.PROBE:
+							m_Type = TYPE.PROBE;
+							Children.Add( new Node( _Owner, E ) );
+							break;
+						case idTech5Map.Map.Entity.TYPE.UNKNOWN:
+						case idTech5Map.Map.Entity.TYPE.REF_MAP:
+							// Don't care...
+							break;
+					}
+				}
+				m_Children = Children.ToArray();
+			}
+			public Node( Scene _Owner, idTech5Map.Map.Entity _Entity ) {
+				m_Owner = _Owner;
+
+				float3	X = new float3( _Entity.m_Local2World.r0.x, _Entity.m_Local2World.r1.x, _Entity.m_Local2World.r2.x );
+				float3	Y = new float3( _Entity.m_Local2World.r0.y, _Entity.m_Local2World.r1.y, _Entity.m_Local2World.r2.y );
+				float3	Z = new float3( _Entity.m_Local2World.r0.z, _Entity.m_Local2World.r1.z, _Entity.m_Local2World.r2.z );
+				float3	P = new float3( _Entity.m_Local2World.r0.w, _Entity.m_Local2World.r1.w, _Entity.m_Local2World.r2.w );
+
+				X = ConvTech5( X );
+				Y = ConvTech5( Y );
+				Z = ConvTech5( Z );
+				P = ConvTech5( P );
+
+				m_Local2Parent.r0.Set( X, 0 );
+				m_Local2Parent.r1.Set( Y, 0 );
+				m_Local2Parent.r2.Set( Z, 0 );
+				m_Local2Parent.r3.Set( P, 1 );
+			}
+			protected static float3	ConvTech5( float3 V ) {
+				return new float3( V.x, V.z, -V.y );
+			}
+
+
 			public void	Save( BinaryWriter _W )
 			{
 				// =============================
@@ -227,10 +296,10 @@ namespace GCXFormat
 				_W.Write( (byte) m_Type );
 
 					// Write Local2Parent matrix
-				_W.Write( m_Local2Parent.m[0,0] );	_W.Write( m_Local2Parent.m[0,1] );	_W.Write( m_Local2Parent.m[0,2] );	_W.Write( m_Local2Parent.m[0,3] );
-				_W.Write( m_Local2Parent.m[1,0] );	_W.Write( m_Local2Parent.m[1,1] );	_W.Write( m_Local2Parent.m[1,2] );	_W.Write( m_Local2Parent.m[1,3] );
-				_W.Write( m_Local2Parent.m[2,0] );	_W.Write( m_Local2Parent.m[2,1] );	_W.Write( m_Local2Parent.m[2,2] );	_W.Write( m_Local2Parent.m[2,3] );
-				_W.Write( m_Local2Parent.m[3,0] );	_W.Write( m_Local2Parent.m[3,1] );	_W.Write( m_Local2Parent.m[3,2] );	_W.Write( m_Local2Parent.m[3,3] );
+				_W.Write( m_Local2Parent.r0.x );	_W.Write( m_Local2Parent.r0.y );	_W.Write( m_Local2Parent.r0.z );	_W.Write( m_Local2Parent.r0.w );
+				_W.Write( m_Local2Parent.r1.x );	_W.Write( m_Local2Parent.r1.y );	_W.Write( m_Local2Parent.r1.z );	_W.Write( m_Local2Parent.r1.w );
+				_W.Write( m_Local2Parent.r2.x );	_W.Write( m_Local2Parent.r2.y );	_W.Write( m_Local2Parent.r2.z );	_W.Write( m_Local2Parent.r2.w );
+				_W.Write( m_Local2Parent.r3.x );	_W.Write( m_Local2Parent.r3.y );	_W.Write( m_Local2Parent.r3.z );	_W.Write( m_Local2Parent.r3.w );
 
 
 				// =============================
@@ -264,7 +333,7 @@ namespace GCXFormat
 			}
 
 			public LIGHT_TYPE	m_LightType;
-			public Vector		m_Color = null;
+			public float3		m_Color = float3.One;
 			public float		m_Intensity = 0.0f;
 			public float		m_HotSpot = 0.0f;
 			public float		m_ConeAngle = 0.0f;
@@ -278,18 +347,28 @@ namespace GCXFormat
 				FBX.Scene.Nodes.Light _Light = _Node as FBX.Scene.Nodes.Light;
 
 				m_LightType = (LIGHT_TYPE) _Light.Type;
-				m_Color = _Light.Color;
+				m_Color.FromVector3( _Light.Color );
 				m_Intensity = _Light.Intensity;
 				m_HotSpot = _Light.HotSpot;
 				m_ConeAngle = _Light.ConeAngle;
 			}
 
+			public Light( Scene _Owner, idTech5Map.Map.Entity _Entity ) : base( _Owner, _Entity ) {
+				m_LightType = LIGHT_TYPE.POINT;
+// TODO
+// 				m_LightType = (LIGHT_TYPE) _Light.Type;
+// 				m_Color.FromVector3( _Light.Color );
+// 				m_Intensity = _Light.Intensity;
+// 				m_HotSpot = _Light.HotSpot;
+// 				m_ConeAngle = _Light.ConeAngle;
+			}
+
 			protected override void	SaveSpecialized( BinaryWriter _W )
 			{
 				_W.Write( (byte) m_LightType );
-				_W.Write( m_Color.X );
-				_W.Write( m_Color.Y );
-				_W.Write( m_Color.Z );
+				_W.Write( m_Color.x );
+				_W.Write( m_Color.y );
+				_W.Write( m_Color.z );
 				_W.Write( m_Intensity );
 				_W.Write( m_HotSpot );
 				_W.Write( m_ConeAngle );
@@ -298,7 +377,7 @@ namespace GCXFormat
 			protected override void LoadSpecialized( BinaryReader _R )
 			{
 				m_LightType = (LIGHT_TYPE) _R.ReadByte();
-				m_Color = new Vector( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+				m_Color = new float3( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
 				m_Intensity = _R.ReadSingle();
 				m_HotSpot = _R.ReadSingle();
 				m_ConeAngle = _R.ReadSingle();
@@ -317,6 +396,10 @@ namespace GCXFormat
 			{
 				FBX.Scene.Nodes.Camera _Camera = _Node as FBX.Scene.Nodes.Camera;
 				m_FOV = _Camera.FOV;
+			}
+
+			public Camera( Scene _Owner, idTech5Map.Map.Entity _Entity ) : base( _Owner, _Entity ) {
+				m_FOV = (float) (60.0 * Math.PI / 180.0);
 			}
 
 			protected override void	SaveSpecialized( BinaryWriter _W )
@@ -348,19 +431,19 @@ namespace GCXFormat
 				[System.Diagnostics.DebuggerDisplay( "P={P} N={N} G={G] B={B} T={T}" )]
 				public struct	Vertex
 				{
-					public Vector	P;	// Position
-					public Vector	N;	// Normal
-					public Vector	G;	// Tangent
-					public Vector	B;	// BiTangent
-					public Vector2D	T;	// Texcoords
+					public float3	P;	// Position
+					public float3	N;	// Normal
+					public float3	G;	// Tangent
+					public float3	B;	// BiTangent
+					public float2	T;	// Texcoords
 
 					public void	Load( BinaryReader _R )
 					{
-						P = new Vector( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
-						N = new Vector( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
-						G = new Vector( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
-						B = new Vector( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
-						T = new Vector2D( _R.ReadSingle(), _R.ReadSingle() );
+						P = new float3( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+						N = new float3( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+						G = new float3( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+						B = new float3( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+						T = new float2( _R.ReadSingle(), _R.ReadSingle() );
 					}
 
 					public void	Save( BinaryWriter _W )
@@ -385,7 +468,8 @@ namespace GCXFormat
 				public Mesh			m_Owner = null;
 
 				public ushort		m_MaterialID = 0xFFFF;
-				public BoundingBox	m_BBox = BoundingBox.Empty;
+				public float3		m_BBoxMin = float3.Zero;
+				public float3		m_BBoxMax = float3.Zero;
 				public Face[]		m_Faces = null;
 				public Vertex[]		m_Vertices = null;
 
@@ -403,12 +487,12 @@ namespace GCXFormat
 					m_Vertices = new Vertex[_R.ReadUInt32()];
 
 					// Read local bounding box
-					m_BBox.m_Min.x = _R.ReadSingle();
-					m_BBox.m_Min.y = _R.ReadSingle();
-					m_BBox.m_Min.z = _R.ReadSingle();
-					m_BBox.m_Max.x = _R.ReadSingle();
-					m_BBox.m_Max.y = _R.ReadSingle();
-					m_BBox.m_Max.z = _R.ReadSingle();
+					m_BBoxMin.x = _R.ReadSingle();
+					m_BBoxMin.y = _R.ReadSingle();
+					m_BBoxMin.z = _R.ReadSingle();
+					m_BBoxMax.x = _R.ReadSingle();
+					m_BBoxMax.y = _R.ReadSingle();
+					m_BBoxMax.z = _R.ReadSingle();
 
 					// Read faces
 					if ( m_Vertices.Length <= 65536 )
@@ -479,9 +563,13 @@ namespace GCXFormat
 					}
 
 					// Build local space bounding box
-					Vector[]	VertexPositions = Streams[0][0].Content as WMath.Vector[];
-					foreach ( WMath.Vector VertexPosition in VertexPositions )
-						m_BBox.Grow( (WMath.Point) VertexPosition );
+					float3	Temp = new float3();
+					WMath.Vector[]	VertexPositions = Streams[0][0].Content as WMath.Vector[];
+					foreach ( WMath.Vector VertexPosition in VertexPositions ) {
+						Temp.FromVector3( VertexPosition );
+						m_BBoxMin.Min( Temp );
+						m_BBoxMax.Max( Temp );
+					}
 
 					// Build faces
 					int	FaceIndex = 0;
@@ -503,36 +591,69 @@ namespace GCXFormat
 							{
 								case FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.POSITION:
 								{
-									Vector[]	Stream = Streams[UsageIndex][0].Content as Vector[];
+									float3[]	Stream = Streams[UsageIndex][0].Content as float3[];
 									m_Vertices[VertexIndex].P = Stream[VertexIndex];
 									break;
 								}
 								case FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.NORMAL:
 								{
-									Vector[]	Stream = Streams[UsageIndex][0].Content as Vector[];
+									float3[]	Stream = Streams[UsageIndex][0].Content as float3[];
 									m_Vertices[VertexIndex].N = Stream[VertexIndex];
 									break;
 								}
 								case FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TANGENT:
 								{
-									Vector[]	Stream = Streams[UsageIndex][0].Content as Vector[];
+									float3[]	Stream = Streams[UsageIndex][0].Content as float3[];
 									m_Vertices[VertexIndex].G = Stream[VertexIndex];
 									break;
 								}
 								case FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.BITANGENT:
 								{
-									Vector[]	Stream = Streams[UsageIndex][0].Content as Vector[];
+									float3[]	Stream = Streams[UsageIndex][0].Content as float3[];
 									m_Vertices[VertexIndex].B = Stream[VertexIndex];
 									break;
 								}
 								case FBX.Scene.Nodes.Mesh.Primitive.VertexStream.USAGE.TEXCOORDS:
 								{
-									Vector2D[]	Stream = Streams[UsageIndex][0].Content as Vector2D[];
+									float2[]	Stream = Streams[UsageIndex][0].Content as float2[];
 									m_Vertices[VertexIndex].T = Stream[VertexIndex];
 									break;
 								}
 							}
 						}
+					}
+				}
+
+				public Primitive( Mesh _Owner, idTech5Map.Model.Surface _Surface )
+				{
+					m_Owner = _Owner;
+
+					m_MaterialID = (ushort) _Surface.m_Material.m_MaterialIndex;
+
+					int	FacesCount = _Surface.m_Indices.Length / 3;
+
+					m_Faces = new Face[FacesCount];
+					m_Vertices = new Vertex[_Surface.m_Vertices.Length];
+
+					m_BBoxMin = ConvTech5( _Surface.m_BoundsMin );
+					m_BBoxMax = ConvTech5( _Surface.m_BoundsMax );
+
+					// Build faces
+					int	i = 0;
+					for ( int FaceIndex=0; FaceIndex < FacesCount; FaceIndex++ ) {
+						m_Faces[FaceIndex].V0 = _Surface.m_Indices[i++];
+						m_Faces[FaceIndex].V1 = _Surface.m_Indices[i++];
+						m_Faces[FaceIndex].V2 = _Surface.m_Indices[i++];
+					}
+
+					// Build vertices
+					for ( int VertexIndex=0; VertexIndex < m_Vertices.Length; VertexIndex++ ) {
+						idTech5Map.Model.Surface.Vertex	V = _Surface.m_Vertices[VertexIndex];
+						m_Vertices[VertexIndex].P = ConvTech5( V.Position );
+						m_Vertices[VertexIndex].N = ConvTech5( V.Normal );
+						m_Vertices[VertexIndex].G = ConvTech5( V.Tangent );
+						m_Vertices[VertexIndex].B = ConvTech5( V.BiTangent );
+						m_Vertices[VertexIndex].T = V.UVs[0];
 					}
 				}
 
@@ -545,12 +666,12 @@ namespace GCXFormat
 					_W.Write( (UInt32) m_Vertices.Length );
 
 					// Write local space bounding box
-					_W.Write( m_BBox.m_Min.x );
-					_W.Write( m_BBox.m_Min.y );
-					_W.Write( m_BBox.m_Min.z );
-					_W.Write( m_BBox.m_Max.x );
-					_W.Write( m_BBox.m_Max.y );
-					_W.Write( m_BBox.m_Max.z );
+					_W.Write( m_BBoxMin.x );
+					_W.Write( m_BBoxMin.y );
+					_W.Write( m_BBoxMin.z );
+					_W.Write( m_BBoxMax.x );
+					_W.Write( m_BBoxMax.y );
+					_W.Write( m_BBoxMax.z );
 
 					// Write faces
 					if ( m_Vertices.Length <= 65536 )
@@ -699,6 +820,13 @@ namespace GCXFormat
 					m_Primitives[PrimitiveIndex++] = new Primitive( this, SourcePrimitive );
 			}
 
+			public Mesh( Scene _Owner, idTech5Map.Map.Entity _Entity ) : base( _Owner, _Entity ) {
+				m_Primitives = new Primitive[_Entity.m_Model.m_Surfaces.Length];
+				int	PrimitiveIndex = 0;
+				foreach ( idTech5Map.Model.Surface S in _Entity.m_Model.m_Surfaces )
+					m_Primitives[PrimitiveIndex++] = new Primitive( this, S );
+			}
+
 			protected override void	SaveSpecialized( BinaryWriter _W )
 			{
 				// Write primitives
@@ -750,6 +878,10 @@ namespace GCXFormat
 			m_RootNode = new Node( this, null, _R );
 		}
 
+		/// <summary>
+		/// Convert from FBX
+		/// </summary>
+		/// <param name="_Scene"></param>
 		public Scene( FBX.Scene.Scene _Scene )
 		{
 			// Create materials
@@ -760,6 +892,19 @@ namespace GCXFormat
 			// Create nodes
 			if ( _Scene.RootNode != null )
 				m_RootNode = new Node( this, _Scene.RootNode );
+		}
+
+		/// <summary>
+		/// Convert from idTech5 map
+		/// </summary>
+		/// <param name="_Map"></param>
+		public Scene( idTech5Map.Map _Map ) {
+
+			// Create nodes
+			m_RootNode = new Node( this, _Map );
+
+			// Create materials
+
 		}
 
 		public void	Save( BinaryWriter _W )
