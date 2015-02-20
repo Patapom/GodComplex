@@ -435,4 +435,86 @@ namespace RendererManaged
 			return	R;
 		}
 	};
+
+	// Float16
+	#define F16_EXPONENT_BITS	0x1F
+	#define F16_EXPONENT_SHIFT	10
+	#define F16_EXPONENT_BIAS	15
+	#define F16_MANTISSA_BITS	0x03ff
+	#define F16_MANTISSA_SHIFT	(23 - F16_EXPONENT_SHIFT)
+	#define F16_MAX_EXPONENT	(F16_EXPONENT_BITS << F16_EXPONENT_SHIFT)
+
+	[System::Diagnostics::DebuggerDisplayAttribute( "{value}" )]
+	public value class   half {
+	public:
+		static const UInt16	SMALLEST_UINT = 0x0400;
+		static const float	SMALLEST = 6.1035156e-005f;	// The smallest encodable float
+
+		UInt16			raw;
+		property float	value	{ float get() { return ((float) *this); } }
+
+		half( float value ) {
+			U32 f32 = *((U32*) &value);
+			raw = 0;
+
+			// Decode IEEE 754 little-endian 32-bit floating-point value
+			int sign = (f32 >> 16) & 0x8000;
+			// Map exponent to the range [-127,128]
+			int exponent = ((f32 >> 23) & 0xff) - 127;
+			int mantissa = f32 & 0x007fffff;
+			if ( exponent == 128 )
+			{   // Infinity or NaN
+				raw = U16( sign | F16_MAX_EXPONENT );
+				if ( mantissa != 0 ) raw |= (mantissa & F16_MANTISSA_BITS);
+			}
+			else if ( exponent > 15 )
+			{   // Overflow - flush to Infinity
+				raw = U16( sign | F16_MAX_EXPONENT );
+			}
+			else if ( exponent > -15 )
+			{   // Representable value
+				exponent += F16_EXPONENT_BIAS;
+				mantissa >>= F16_MANTISSA_SHIFT;
+				raw = U16( sign | exponent << F16_EXPONENT_SHIFT | mantissa );
+			}
+			else
+			{
+				raw = U16(sign);
+			}
+		}
+
+		static operator float( half _value ) {
+			union 
+			{
+				float   f;
+				U32		ui;
+			} f32;
+
+			int sign = (_value.raw & 0x8000) << 15;
+			int exponent = (_value.raw & 0x7c00) >> 10;
+			int mantissa = (_value.raw & 0x03ff);
+
+			f32.f = 0.0f;
+			if ( exponent == 0 ) {
+				if ( mantissa != 0 ) 
+					f32.f = mantissa / float(1 << 24);
+			} else if ( exponent == 31 ) {
+				f32.ui = sign | 0x7f800000 | mantissa;
+			} else {
+				float scale, decimal;
+				exponent -= 15;
+				if ( exponent < 0 )
+					scale = float( 1.0 / (1 << -exponent) );
+				else 
+					scale = float( 1 << exponent );
+				decimal = 1.0f + (float) mantissa / (1 << 10);
+				f32.f = scale * decimal;
+			}
+	
+			if ( sign != 0 )
+				f32.f = -f32.f;
+
+			return f32.f;
+		}
+	};
 }

@@ -81,9 +81,7 @@ namespace RendererManaged {
 		}
 
  		void	Init( System::IntPtr _WindowHandle, bool _FullScreen, bool _sRGBRenderTarget );
-
-		void	Exit()
-		{
+		void	Exit() {
 			m_pDevice->Exit();
 		}
 
