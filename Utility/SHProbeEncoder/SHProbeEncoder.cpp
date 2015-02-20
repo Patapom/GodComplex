@@ -10,21 +10,6 @@ float		SHProbeEncoder::ALBEDO_RGB_THRESHOLD = 0.16f;					// Close colors!
 
 
 SHProbeEncoder::SHProbeEncoder() {
-	m_pCubeMapPixels = new Pixel[6*CUBE_MAP_SIZE*CUBE_MAP_SIZE];
-	Pixel*	pPixel = m_pCubeMapPixels;
-	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
-		for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
-			for ( int X=0; X < CUBE_MAP_SIZE; X++, pPixel++ ) {
-				pPixel->Index = pPixel - m_pCubeMapPixels;
-				pPixel->CubeFaceIndex = CubeFaceIndex;
-				pPixel->CubeFaceX = X;
-				pPixel->CubeFaceY = Y;
-			}
-
-	m_AllSurfaces.Init( 6*CUBE_MAP_SIZE*CUBE_MAP_SIZE );
-
-	Pixel::ms_RadixNodes[0] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];	// Pre-allocate the maximum amount of radix nodes
-	Pixel::ms_RadixNodes[1] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];	// Pre-allocate the maximum amount of radix nodes
 
 	//////////////////////////////////////////////////////////////////////////
 	// Prepare the cube map face transforms
@@ -67,6 +52,47 @@ SHProbeEncoder::SHProbeEncoder() {
 
 		m_Side2World[CubeFaceIndex] = Camera2Local;	// We don't care about the local=>world transform of the probe, we assume it's the identity matrix
 	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Prepare cube map pixels
+	m_pCubeMapPixels = new Pixel[6*CUBE_MAP_SIZE*CUBE_MAP_SIZE];
+
+	double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
+	double	SumSolidAngle = 0.0;
+
+	Pixel*	pPixel = m_pCubeMapPixels;
+	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
+		for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
+			for ( int X=0; X < CUBE_MAP_SIZE; X++, pPixel++ ) {
+				pPixel->Index = pPixel - m_pCubeMapPixels;
+				pPixel->CubeFaceIndex = CubeFaceIndex;
+				pPixel->CubeFaceX = X;
+				pPixel->CubeFaceY = Y;
+
+				// Build world-space view vector
+				float3	csView( 2.0f * (0.5f + X) / CUBE_MAP_SIZE - 1.0f, 1.0f - 2.0f * (0.5f + Y) / CUBE_MAP_SIZE, 1.0f );
+				float	Distance2Texel = csView.Length();
+						csView = csView / Distance2Texel;
+				float3	wsView = float4( csView, 0 ) * m_Side2World[CubeFaceIndex];
+				pPixel->View = wsView;
+
+				// Retrieve the cube map texel's solid angle (from http://people.cs.kuleuven.be/~philip.dutre/GI/TotalCompendium.pdf)
+				// dw = cos(Theta).dA / r²
+				// cos(Theta) = Adjacent/Hypothenuse = 1/r
+				//
+				double	SolidAngle = dA / (Distance2Texel * Distance2Texel * Distance2Texel);
+				SumSolidAngle += SolidAngle;
+
+				pPixel->SolidAngle = SolidAngle;
+
+				// Build SH coefficients
+				pPixel->InitSH();
+			}
+
+	m_AllSurfaces.Init( 6*CUBE_MAP_SIZE*CUBE_MAP_SIZE );
+
+	Pixel::ms_RadixNodes[0] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];	// Pre-allocate the maximum amount of radix nodes
+	Pixel::ms_RadixNodes[1] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];	// Pre-allocate the maximum amount of radix nodes
 }
 
 SHProbeEncoder::~SHProbeEncoder() {
@@ -84,29 +110,26 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeI
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// 2] Encode
+	// 2] Encode static lighting & directional occlusion
+	//
 
-	// 2.1) ======== Compute occlusion & static lighting SH ========
-	double	SHR[9] = { 0 };
-	double	SHG[9] = { 0 };
-	double	SHB[9] = { 0 };
-	double	SHOcclusion[9] = { 0 };
+	// 2.1) ======== Build occlusion & static lighting SH ========
+	double	SHR[9] = { 0.0 };
+	double	SHG[9] = { 0.0 };
+	double	SHB[9] = { 0.0 };
+	double	SHOcclusion[9] = { 0.0 };
 
 	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
 		Pixel&	P = m_pCubeMapPixels[PixelIndex];
+		for ( int i=0; i < 9; i++ ) {
+			// Accumulate smoothed out static lighting
+			SHR[i] += P.SHCoeffs[i] * P.SolidAngle * P.SmoothedStaticLitColor.x;
+			SHG[i] += P.SHCoeffs[i] * P.SolidAngle * P.SmoothedStaticLitColor.y;
+			SHB[i] += P.SHCoeffs[i] * P.SolidAngle * P.SmoothedStaticLitColor.z;
 
-		if ( !P.Infinity ) {
-			for ( int i=0; i < 9; i++ )
-			{
-				SHR[i] += P.SHCoeffs[i] * P.SolidAngle * P.StaticLitColor.x;
-				SHG[i] += P.SHCoeffs[i] * P.SolidAngle * P.StaticLitColor.y;
-				SHB[i] += P.SHCoeffs[i] * P.SolidAngle * P.StaticLitColor.z;
-			}
-		} else {
 			// No obstacle means direct lighting from the ambient sky...
 			// Accumulate SH coefficients in that direction, weighted by the solid angle
-			for ( int i=0; i < 9; i++ )
-				SHOcclusion[i] += P.SolidAngle * P.SHCoeffs[i];
+			SHOcclusion[i] += P.SolidAngle * P.SmoothedInfinity * P.SHCoeffs[i];
 		}
 	}
 
@@ -115,12 +138,12 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeI
 		m_OcclusionSH[i] = (float) SHOcclusion[i];
 	}
 
-	// Apply filtering
+	// 2.2) ======== Apply filtering ========
 // 	SphericalHarmonics.SHFunctions.FilterLanczos( m_StaticSH, 3 );		// Lanczos should be okay for static lighting
 // 	SphericalHarmonics.SHFunctions.FilterHanning( m_OcclusionSH, 3 );
 
 
-// 	// 2.2) ======== Compute the influence of the probe on each scene face ========
+// 	// 2.3) ======== Compute the influence of the probe on each scene face ========
 // 	m_MaxFaceIndex = 0;
 // 	m_ProbeInfluencePerFace.Clear();
 // 	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
@@ -138,7 +161,9 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeI
 // 	}
 
 
-	// 2.3) ======== Build the neighbor probes network ========
+	//////////////////////////////////////////////////////////////////////////
+	// 3] Build the neighbor probes network
+	//
 	m_NeighborProbes.Clear();
 
 	Dictionary<NeighborProbe*>	NeighborProbeID2Probe;
@@ -196,7 +221,9 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeI
 	 	m_NeighborProbes.Sort( Comp );
 	}
 
-	// 2.4) ======== Build surfaces by flood filling ========
+	//////////////////////////////////////////////////////////////////////////
+	// 4] Build surfaces by flood filling
+	//
 	ComputeFloodFill( MAX_PROBE_PATCHES, MAX_SAMPLES_PER_PATCH, 1.0f, 1.0f, 1.0f, 0.5f );
 }
 
@@ -363,7 +390,7 @@ void	SHProbeEncoder::Save( const char* _FileName ) {
 }
 
 
-#pragma region Computes Patches by Flood Fill Method
+#pragma region Computes Surfaces by Flood Fill Method
 
 int	DEBUG_PixelIndex = 0;
 
@@ -388,6 +415,8 @@ void	SHProbeEncoder::ComputeFloodFill( int _MaxSetsCount, int _MaxLightingSample
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Iterate on the list of free pixels that belong to no surface and create new surfaces
+	m_AllSurfaces.Clear();
+
 	Surface*	pRegularSurfaces = NULL;
 	Surface*	pEmissiveSurfaces = NULL;
 	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
@@ -399,14 +428,16 @@ DEBUG_PixelIndex = PixelIndex;
 			continue;	// Not part of the scene geometry or too far away
 		}
 
-		// Create a new surface for this pixel
+		// Create a new surface from this pixel
 		Surface&	S = m_AllSurfaces.Append();
 
 		S.Position = P0.Position;
 		S.Normal = P0.Normal;
 		S.Distance = P0.Distance;
+		S.SmoothedDistance  = P0.SmoothedDistance;
 		S.EmissiveMatID = P0.EmissiveMatID;
 		S.SetAlbedo( P0.Albedo );
+		S.SmoothedStaticLitColor = P0.SmoothedStaticLitColor;
 
 
 // if ( PixelIndex == 0x2680 )
@@ -423,8 +454,7 @@ DEBUG_PixelIndex = PixelIndex;
 
 		m_ScanlinePixelIndex = 0;	// VEEERY important line where we reset the pixel index of the pool of flood filled pixels!
 		FloodFill( S, &S, &P0, pRejectedPixels );
-
-		ASSERT( m_ScanlinePixelIndex != 0, "Can't have empty surfaces!" );
+		ASSERT( m_ScanlinePixelIndex > 0, "Can't have empty surfaces!" );
 
 		// Remove rejected pixels from the surface (we only temporarily marked them to avoid them being processed twice by the flood filler)
 		while ( pRejectedPixels != NULL ) {
@@ -433,10 +463,10 @@ DEBUG_PixelIndex = PixelIndex;
 		}
 
 		// Finalize importance
-		S.Importance /= S.PixelsCount;
+		S.Importance /= max( 1, S.PixelsCount );
 
  		if ( S.PixelsCount < DiscardThreshold || S.Importance < Pixel::IMPORTANCE_THRESOLD ) {
-			continue;	// This surface is not important enough
+			continue;	// This surface is not important enough so don't even bother (I know it could potentially be joined to a larger surface later but I simply don't care)
 		}
 
 		// Add the surface to the proper list
@@ -456,37 +486,37 @@ DEBUG_PixelIndex = PixelIndex;
 	// 2] Try and merge surfaces together
 
 	// 2.1) Merge separate emissive surfaces that have the same mat ID together
-	Surface*	P0 = pEmissiveSurfaces;
-	while ( P0 != NULL ) {
-		if ( P0->pParentSurface != NULL ) {
+	Surface*	S0 = pEmissiveSurfaces;
+	while ( S0 != NULL ) {
+		if ( S0->pParentSurface != NULL ) {
 
 			// Merge with any other surface with same Mat ID
-			Surface*	PreviousP1 = P0;
-			Surface*	P1 = (Surface*) P0->pNext;
-			while ( P1 != NULL ) {
-				if ( P1->EmissiveMatID == P0->EmissiveMatID ) {
+			Surface*	PreviousS1 = S0;
+			Surface*	S1 = (Surface*) S0->pNext;
+			while ( S1 != NULL ) {
+				if ( S1->EmissiveMatID == S0->EmissiveMatID ) {
 
 					// Compute new importance of the merged surfaces
-					P0->Importance = (P0->PixelsCount * P0->Importance + P1->PixelsCount * P1->Importance) / (P0->PixelsCount + P1->PixelsCount);
-					P0->PixelsCount += P1->PixelsCount;
+					S0->Importance = (S0->PixelsCount * S0->Importance + S1->PixelsCount * S1->Importance) / (S0->PixelsCount + S1->PixelsCount);
+					S0->PixelsCount += S1->PixelsCount;
 
 					// Merge pixels
-					Pixel*	pPixel1 = P1->pPixels;
+					Pixel*	pPixel1 = S1->pPixels;
 					while ( pPixel1 != NULL ) {
 						Pixel*	pTemp = pPixel1;
 						pPixel1 = pPixel1->pNext;
-						pTemp->pNext = P0->pPixels;
-						P0->pPixels = pTemp;
+						pTemp->pNext = S0->pPixels;
+						S0->pPixels = pTemp;
 					}
 
 					// Remove the merged surface
-					PreviousP1->pNext = P1->pNext;	// Link over that surface
-					P1->pParentSurface = P0;			// Mark P0 as its parent so it doesn't get processed again
+					PreviousS1->pNext = S1->pNext;	// Link over that surface
+					S1->pParentSurface = S0;		// Mark S0 as its parent so it doesn't get processed again
 				}
-				P1 = (Surface*) P1->pNext;
+				S1 = (Surface*) S1->pNext;
 			}
 		}
-		P0 = (Surface*) P0->pNext;
+		S0 = (Surface*) S0->pNext;
 	}
 
 	// 2.2) Merge close enough surfaces
@@ -538,7 +568,7 @@ DEBUG_PixelIndex = PixelIndex;
 		Surface&	S = *m_ppSurfaces[SurfaceIndex];
 		S.ID = SurfaceIndex;
 
-		// Post-process the pixels to find the one closest to the probe to use as our centroid
+		// Post-process the pixels to find the one closest to the probe and use it as our centroid
 		Pixel*	pBestPixel = S.pPixels;
 		float3	AverageNormal = float3::Zero;
 		float3	AverageAlbedo = float3::Zero;
@@ -710,21 +740,19 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Patch, Pixel& _PreviousPixel
 		if ( Dot > ANGULAR_THRESHOLD ) {
 			// Next, let's check the distance discrepancy
 			float	DistanceDiff = fabsf( _PreviousPixel.SmoothedDistance - _P.SmoothedDistance );
-			float	ToleranceFactor = -(_P.Normal | _P.View);						// Weight by the surface's slope to be more tolerant for slant surfaces
+			float	ToleranceFactor = -(_P.Normal | _P.View);	// Weight by the surface's slope to be more tolerant for slant surfaces
 					DistanceDiff *= ToleranceFactor;
-			if ( DistanceDiff < DISTANCE_THRESHOLD )
-			{
+			if ( DistanceDiff < DISTANCE_THRESHOLD ) {
 				// Next, let's check the hue discrepancy
-// 						float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
-// 						float	HueDiff1 = 6.0f - HueDiff0;
-// 						float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
-// //								HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
-// 								HueDiff *= Math.Max( _PreviousPixel.AlbedoHSL.y, _P.AlbedoHSL.y );	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
-// 						if ( HueDiff < ALBEDO_HUE_THRESHOLD )
-// 						{
-// 							Accepted = true;	// Winner!
-// 						}
-
+// 				float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
+// 				float	HueDiff1 = 6.0f - HueDiff0;
+// 				float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
+// //						HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
+// 						HueDiff *= Math.Max( _PreviousPixel.AlbedoHSL.y, _P.AlbedoHSL.y );	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
+// 				if ( HueDiff < ALBEDO_HUE_THRESHOLD )
+// 				{
+// 					Accepted = true;	// Winner!
+// 				}
 
 				// Next, let's check color discrepancy
 				// I'm using the simplest metric here...
@@ -736,7 +764,7 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Patch, Pixel& _PreviousPixel
 		}
 	}
 
-	// Mark the pixel as member of this surface, even if it's rejected (rejected pixels get removed from surface in the end)
+	// Mark the pixel as member of this surface, even if it's rejected (rejected pixels get removed from the surface in the end)
 	_P.pParentSurface = &_Patch;
 
 	if ( Accepted ) {
@@ -757,7 +785,7 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Patch, Pixel& _PreviousPixel
 
 #pragma region Adjacency Walker
 
-// Contains the new cube face index when stepping outside of a cube face by the left/right/top/bottom
+// Contains the new cube face index when stepping outside of a cube face through the left/right/top/bottom edge
 static int	GoLeft[6] = {
 	4,	// Step to +Z
 	5,	// Step to -Z
@@ -792,107 +820,167 @@ static int	GoUp[6] = {		// Go up means V-1!
 };
 
 // Contains the matrices that indicate how the (U,V) pixel coordinates should be transformed to step from one face to the other
-// Transforms arrays are simple matrices:
-//	| Tu Xu Yy |
-//	| Tv Xv Yv |
+// Transforms arrays are simple 3x2 matrices:
+//
+//	    | Ru Rv |
+//	M = | Du Dv |
+//	    | Tu Tv |
 //
 // Which are used like this:
-//	U' = Tu * CUBE_MAP_SIZE + Xu * U + Yu * V
-//	V' = Tv * CUBE_MAP_SIZE + Xv * U + Yv * V
+//
+//	UV' = [U V 1] * M
+//	 R' = [R R 0] * M
+//	 D' = [D D 0] * M
+//
+// So for example:
+//	U' = U * Ru + V * Du + Tu
+//	V' = U * Rv + V * Dv + Tv
+//
+// You have to see the R(ight) and D(own) vectors in M as "what is the new Right/Down vector in this adjacent face?"
+// Normally there's a jpeg image right next to this file that explains how I view the whole cubemap thing, following
+//	the orientations described in https://msdn.microsoft.com/en-us/library/windows/desktop/bb204881%28v=vs.85%29.aspx
 //
 const int C = SHProbeEncoder::CUBE_MAP_SIZE;
-const int C2 = 2*C-1;
 const int C_ = SHProbeEncoder::CUBE_MAP_SIZE-1;
-int	GoLeftTransforms[6][6] = {	// U=-1
-	// Going left from +X sends us to +Z
-	{	 C,  1,  0,		// U' = C + U	(C is the CUBE_MAP_SIZE)
-		 0,  0,  1 },	// V' = V
-	// Going left from -X sends us to -Z
-	{	 C,  1,  0,		// U' = C + U
-		 0,  0,  1 },	// V' = V
-	// Going left from +Y sends us to -X
-	{	 0,  0,  1,		// U' = V
-		-1, -1,  0 },	// V' = -1 - U
-	// Going left from -Y sends us to -X
-	{	C_,  0, -1,		// U' = C-1 - V
-		 C,  1,  0 },	// V' = C + U
-	// Going left from +Z sends us to -X
-	{	 C,  1,  0,		// U' = C + U
-		 0,  0,  1 },	// V' = V
-	// Going left from -Z sends us to +X
-	{	 C,  1,  0,		// U' = C + U
-		 0,  0,  1 },	// V' = V
-};
-int	GoRightTransforms[6][6] = {	// U=C
-	// Going right from +X sends us to -Z
-	{	-C,  1,  0,		// U' = -C + U	(C is the CUBE_MAP_SIZE)
-		 0,  0,  1 },	// V' = V
-	// Going right from -X sends us to +Z
-	{	-C,  1,  0,		// U' = -C + U
-		 0,  0,  1 },	// V' = V
-	// Going right from +Y sends us to +X
-	{	C_,  0, -1,		// U' = C-1 - V
-		-C,  1,  0 },	// V' = -C + U
-	// Going right from -Y sends us to +X
-	{	 0,  0,  1,		// U' = V
-		C2, -1,  0 },	// V' = 2C-1 - U
-	// Going right from +Z sends us to +X
-	{	-C,  1,  0,		// U' = -C + U
-		 0,  0,  1 },	// V' = V
-	// Going right from -Z sends us to -X
-	{	-C,  1,  0,		// U' = -C + U
-		 0,  0,  1 },	// V' = V
-};
-int	GoDownTransforms[6][6] = {	// V=C
-	// Going down from +X sends us to -Y
-	{	C2,  0, -1,		// U' = 2C-1 - V	(C is the CUBE_MAP_SIZE)
-		 0,  1,  0 },	// V' = U
-	// Going down from -X sends us to -Y
-	{	-C,  0,  1,		// U' = -C + V
-		C_, -1,  0 },	// V' = C-1 - U
-	// Going down from +Y sends us to +Z
-	{	 0,  1,  0,		// U' = U
-		-C,  0,  1 },	// V' = -C + V
-	// Going down from -Y sends us to -Z
-	{	C_, -1,  0,		// U' = C-1 - U
-		C2,  0, -1 },	// V' = 2C-1 - V
-	// Going down from +Z sends us to -Y
-	{	 0,  1,  0,		// U' = U
-		-C,  0,  1 },	// V' = -C + V
-	// Going down from -Z sends us to -Y
-	{	C_, -1,  0,		// U' = C-1 - U
-		C2,  0, -1 },	// V' = 2C-1 - V
-};
-int	GoUpTransforms[6][6] = {	// V=-1
-	// Going up from +X sends us to +Y
-	{	 C,   0,  1,	// U' = C + V	(C is the CUBE_MAP_SIZE)
-		C_,  -1,  0 },	// V' = C-1 - U
-	// Going up from -X sends us to +Y
-	{	-1,  0, -1,		// U' = -1 - V
-		 0,  1,  0 },	// V' = U
-	// Going up from +Y sends us to -Z
-	{	C_, -1,  0,		// U' = C-1 - U
-		-1,  0, -1 },	// V' = -1 - V
-	// Going up from -Y sends us to +Z
-	{	 0,  1,  0,		// U' = U
-		 C,  0,  1 },	// V' = C + V
-	// Going up from +Z sends us to +Y
-	{	 0,  1,  0,		// U' = U
-		 C,  0,  1 },	// V' = C + V
-	// Going up from -Z sends us to +Y
-	{	C_, -1,  0,		// U' = C-1 - U
-		-1,  0, -1 },	// V' = -1 - V
+const int C2 = 2*C-1;
+
+// Transforms are first ordered by cube face index, then by direction:
+//	0 = Go left		(UV=[-1, V])
+//	1 = Go right	(UV=[ C, V])
+//	2 = Go up		(UV=[U, -1])
+//	3 = Go down		(UV=[U,  C])
+static const int	FaceTransforms[6][4][6] = {
+
+	// Face #0 +X
+	{
+		// Going left sends us to +Z
+		{	 1,  0,
+			 0,  1,
+			 C,  0 },	// UV' = [C-1, V]
+		// Going right sends us to -Z
+		{	 1,  0,
+			 0,  1,
+			-C,  0 },	// UV' = [0, V]
+		// Going up sends us to +Y
+		{	 0, -1,
+			 1,  0,
+			 C, C_ },	// UV' = [C-1, C-1-U]
+		// Going down sends us to -Y
+		{	 0,  1,
+			-1,  0,
+			C2,  0 },	// UV' = [C-1,U]
+	},
+
+	// Face #1 -X
+	{
+		// Going left sends us to -Z
+		{	 1,  0,
+			 0,  1,
+			 C,  0 },	// UV' = [C-1, V]
+		// Going right sends us to +Z
+		{	 1,  0,
+			 0,  1,
+			-C,  0 },	// UV' = [0, V]
+		// Going up sends us to +Y
+		{	 0,  1,
+			-1,  0,
+			-1,  0 },	// UV' = [0, U]
+		// Going down sends us to -Y
+		{	 0, -1,
+			 1,  0,
+			-C, C_ },	// UV' = [0, C-1-U]
+	},
+
+	// Face #2 +Y
+	{
+		// Going left sends us to -X
+		{	 0, -1,
+			 1,  0,
+			 0, -1 },	// UV' = [V,0]
+		// Going right sends us to +X
+		{	 0,  1,
+			-1,  0,
+			C_, -C },	// UV' = [C-1-V, 0]
+		// Going up sends us to -Z
+		{	-1,  0,
+			 0, -1,
+			C_, -1 },	// UV' = [C-1-U, 0]
+		// Going down sends us to +Z
+		{	 1,  0,
+			 0,  1,
+			 0, -C },	// UV' = [U, 0]
+	},
+
+	// Face #3 -Y
+	{
+		// Going left sends us to -X
+		{	 0,  1,
+			-1,  0,
+			C_,  C },	// UV' = [C-1-V,C-1]
+		// Going right sends us to +X
+		{	 0, -1,
+			 1,  0,
+			 0, C2 },	// UV' = [V,C-1]
+		// Going up sends us to +Z
+		{	 1,  0,
+			 0,  1,
+			 0,  C },	// UV' = [U, C-1]
+		// Going down sends us to -Z
+		{	-1,  0,
+			 0, -1,
+			C_, C2 },	// UV' = [C-1-U, C-1]
+	},
+
+	// Face #4 +Z
+	{
+		// Going left sends us to -X
+		{	 1,  0,
+			 0,  1,
+			 C,  0 },	// UV' = [C-1, V]
+		// Going right sends us to +X
+		{	 1,  0,
+			 0,  1,
+			-C,  0 },	// UV' = [0, V]
+		// Going up sends us to +Y
+		{	 1,  0,
+			 0,  1,
+			 0,  C },	// UV' = [U, C-1]
+		// Going down sends us to -Y
+		{	 1,  0,
+			 0,  1,
+			 0, -C },	// UV' = [U, 0]
+	},
+
+	// Face #5 -Z
+	{
+		// Going left sends us to +X
+		{	 1,  0,
+			 0,  1,
+			 C,  0 },	// UV' = [C-1, V]
+		// Going right sends us to -X
+		{	 1,  0,
+			 0,  1,
+			-C,  0 },	// UV' = [0, V]
+		// Going up sends us to +Y
+		{	-1,  0,
+			 0, -1,
+			C_, -1 },	// UV' = [C-1-U, 0]
+		// Going down sends us to -Y
+		{	-1,  0,
+			 0, -1,
+			C_, C2 },	// UV' = [C-1-U, C-1]
+	},
 };
 
 void SHProbeEncoder::CubeMapPixelWalker::Set( Pixel& _Pixel ) {
 	CubeFaceIndex = _Pixel.CubeFaceIndex;
-	U = _Pixel.CubeFaceX;
-	V = _Pixel.CubeFaceY;
-	Ux = 1;	Uy = 0;
-	Vx = 0; Vy = 1;
+	pUV[0] = _Pixel.CubeFaceX;
+	pUV[1] = _Pixel.CubeFaceY;
+	pRight[0] = 1;	pRight[1] = 0;
+	pDown[0] = 0;	pDown[1] = 1;
 }
 SHProbeEncoder::Pixel&	SHProbeEncoder::CubeMapPixelWalker::Get() const {
-	int		FinalPixelIndex = CUBE_MAP_FACE_SIZE * CubeFaceIndex + CUBE_MAP_SIZE * V + U;
+	int		FinalPixelIndex = CUBE_MAP_FACE_SIZE * CubeFaceIndex + CUBE_MAP_SIZE * pUV[1] + pUV[0];
 	Pixel&	Result = Owner.m_pCubeMapPixels[FinalPixelIndex];
 	return Result;
 }
@@ -901,56 +989,56 @@ SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Left() {
 	return Get();
 }
 SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Right() {
-	GoToAdjacentPixel( 0, +1 );	// U+1
-	return Get();
-}
-SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Down() {
-	GoToAdjacentPixel( 0, +1 );	// V+1
+	GoToAdjacentPixel( +1, 0 );	// U+1
 	return Get();
 }
 SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Up() {
 	GoToAdjacentPixel( 0, -1 );	// V-1
 	return Get();
 }
-void	SHProbeEncoder::CubeMapPixelWalker::TransformUV( int _Transform[6] ) {
+SHProbeEncoder::Pixel& SHProbeEncoder::CubeMapPixelWalker::Down() {
+	GoToAdjacentPixel( 0, +1 );	// V+1
+	return Get();
+}
+void	SHProbeEncoder::CubeMapPixelWalker::TransformUV( const int _Transform[6] ) {
 	// Transform position
-	int	TempX = _Transform[0] + _Transform[1] * U + _Transform[2] * V;
-	int	TempY = _Transform[3] + _Transform[4] * U + _Transform[5] * V;
-	U = TempX;
-	V = TempY;
-	ASSERT( U==0 || U==C-1 || V==0 || V==C-1, "One of the coordinates should be at an edge!" );
+	int	TempU = pUV[0] * _Transform[0] + pUV[1] * _Transform[2] + _Transform[4];
+	int	TempV = pUV[0] * _Transform[1] + pUV[1] * _Transform[3] + _Transform[5];
+	pUV[0] = TempU;
+	pUV[1] = TempV;
+	ASSERT( pUV[0]==0 || pUV[0]==C-1 || pUV[1]==0 || pUV[1]==C-1, "At least one of the coordinates should be at an edge!" );
 
-	// Transform directions
-	int	OldUx = Ux, OldUy = Uy;
-	int	OldVx = Vx, OldVy = Vy;
-	Ux = _Transform[1] * OldUx + _Transform[4] * OldUy;
-	Uy = _Transform[2] * OldUx + _Transform[5] * OldUy;
-	Vx = _Transform[1] * OldVx + _Transform[4] * OldVy;
-	Vy = _Transform[2] * OldVx + _Transform[5] * OldVy;
+	// Transform Right & Down directions
+	int	pOldRight[2] = { pRight[0], pRight[1] };
+	int	pOldDown[2] = { pDown[0], pDown[1] };
+	pRight[0] = pOldRight[0] * _Transform[0] + pOldRight[1] * _Transform[2];
+	pRight[1] = pOldRight[0] * _Transform[1] + pOldRight[1] * _Transform[3];
+	pDown[0] = pOldDown[0] * _Transform[0] + pOldDown[1] * _Transform[2];
+	pDown[1] = pOldDown[0] * _Transform[1] + pOldDown[1] * _Transform[3];
 }
 
 void	SHProbeEncoder::CubeMapPixelWalker::GoToAdjacentPixel( int _dU, int _dV ) {
-	U += _dU * Ux + _dV * Vx;
-	V += _dU * Uy + _dV * Vy;
+	pUV[0] += _dU * pRight[0] + _dV * pDown[0];
+	pUV[1] += _dU * pRight[1] + _dV * pDown[1];
 
-	if ( U < 0 ) {
+	if ( pUV[0] < 0 ) {
 		// Stepped out through left side
-		TransformUV( GoLeftTransforms[CubeFaceIndex] );
+		TransformUV( FaceTransforms[CubeFaceIndex][0] );
 		CubeFaceIndex = GoLeft[CubeFaceIndex];
 	}
-	if ( U >= CUBE_MAP_SIZE ) {
+	if ( pUV[0] >= CUBE_MAP_SIZE ) {
 		// Stepped out through right side
-		TransformUV( GoRightTransforms[CubeFaceIndex] );
+		TransformUV( FaceTransforms[CubeFaceIndex][1] );
 		CubeFaceIndex = GoRight[CubeFaceIndex];
 	}
-	if ( V < 0 ) {
+	if ( pUV[1] < 0 ) {
 		// Stepped out through top side
-		TransformUV( GoUpTransforms[CubeFaceIndex] );
+		TransformUV( FaceTransforms[CubeFaceIndex][2] );
 		CubeFaceIndex = GoUp[CubeFaceIndex];
 	}
-	if ( V >= CUBE_MAP_SIZE ) {
+	if ( pUV[1] >= CUBE_MAP_SIZE ) {
 		// Stepped out through bottom side
-		TransformUV( GoDownTransforms[CubeFaceIndex] );
+		TransformUV( FaceTransforms[CubeFaceIndex][3] );
 		CubeFaceIndex = GoDown[CubeFaceIndex];
 	}
 }
@@ -976,9 +1064,6 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 
 	m_pScenePixels = NULL;
 	m_ScenePixelsCount = 0;
-
-	double	dA = 4.0 / (CUBE_MAP_SIZE*CUBE_MAP_SIZE);	// Cube face is supposed to be in [-1,+1], yielding a 2x2 square units
-	double	SumSolidAngle = 0.0;
 
 	m_MeanDistance = 0.0;
 	m_MeanHarmonicDistance = 0.0;
@@ -1028,15 +1113,9 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 				float	Nz = pFaceData2->z;
 				float	Distance = pFaceData2->w;
 
-				float3	csView( 2.0f * (0.5f + X) / CUBE_MAP_SIZE - 1.0f, 1.0f - 2.0f * (0.5f + Y) / CUBE_MAP_SIZE, 1.0f );
-				float	Distance2Texel = csView.Length();
-						csView = csView / Distance2Texel;
-				float3	wsView = float4( csView, 0 ) * m_Side2World[CubeFaceIndex];
-
-				float3	wsPosition( Distance * wsView.x, Distance * wsView.y, Distance * wsView.z );
+				float3	wsPosition( Distance * P->View.x, Distance * P->View.y, Distance * P->View.z );
 
 				P->Position = wsPosition;
-				P->View = wsView;
 				P->Normal.Set( Nx, Ny, Nz );
 				P->Normal.Normalize();
 
@@ -1047,28 +1126,16 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 
 				// ==== Finalize pixel information ====
 
-				// Retrieve the cube map texel's solid angle (from http://people.cs.kuleuven.be/~philip.dutre/GI/TotalCompendium.pdf)
-				// dw = cos(Theta).dA / r²
-				// cos(Theta) = Adjacent/Hypothenuse = 1/r
-				//
-				double	SolidAngle = dA / (Distance2Texel * Distance2Texel * Distance2Texel);
-				SumSolidAngle += SolidAngle;
-
-				P->SolidAngle = SolidAngle;
-				P->Importance = -(wsView | P->Normal) / (Distance * Distance);
-				if ( P->Importance < 0.0 )
-				{
+				P->Importance = -(P->View | P->Normal) / (Distance * Distance);
+				if ( P->Importance < 0.0 ) {
 P->Normal = -P->Normal;
-P->Importance = -(wsView | P->Normal) / (Distance * Distance);
+P->Importance = -(P->View | P->Normal) / (Distance * Distance);
 //P->Importance = -P->Importance;
 NegativeImportancePixelsCount++;
 //					throw new Exception( "WTH?? Negative importance here!" );
 				}
 				P->Distance = Distance;
-				P->SmoothedDistance = 0.0f;
 				P->Infinity = Distance > Z_INFINITY_TEST;
-
-				P->InitSH();
 
 				if ( P->Infinity )
 					continue;	// Not part of the scene's geometry!
@@ -1085,8 +1152,6 @@ NegativeImportancePixelsCount++;
 				m_MaxDistance = max( m_MaxDistance, Distance );
 				m_BBoxMin.Max( wsPosition );
 				m_BBoxMax.Min( wsPosition );
-
-
 			}
 
 		_StagingCubeMap.UnMap( 0, 4*CubeFaceIndex+3 );
@@ -1101,16 +1166,14 @@ NegativeImportancePixelsCount++;
 	m_MeanDistance /= (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6);
 	m_MeanHarmonicDistance = (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6) / m_MeanHarmonicDistance;
 
-	// Perform bilateral filtered smoothing of adjacent distances
+	// Perform bilateral filtered smoothing of adjacent distances, static lit colors & infinity values for smoother SH encoding
 	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ ) {
 		Pixel*	pCubeMapPixels = &m_pCubeMapPixels[CubeFaceIndex*CUBE_MAP_FACE_SIZE];
 		Pixel*	P = pCubeMapPixels;
-		for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
+		for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ ) {
 			for ( int X=0; X < CUBE_MAP_SIZE; X++, P++ ) {
-				if ( P->Infinity ) {
-					continue;	// This only concerns scene pixels...
-				}
 
+				// Gather the 8 pixels around this one
 				CubeMapPixelWalker	Walk( *this, *P );
 				Pixel&	P01 = Walk.Up();	// Top
 				Pixel&	P02 = Walk.Right();	// Top Right
@@ -1121,8 +1184,9 @@ NegativeImportancePixelsCount++;
 				Pixel&	P10 = Walk.Up();	// Left
 				Pixel&	P00 = Walk.Up();	// Top left
 
-				float	SumDistance = P->Distance;
-				float	Count = 1;
+				// Average distance, filtering out the pixels at infinity
+				float	SumDistance = !P->Infinity ? P->Distance : 0.0f;
+				int		Count = P->Infinity ? 0 : 1;
 				if ( !P00.Infinity ) { SumDistance += P00.Distance; Count++; }
 				if ( !P01.Infinity ) { SumDistance += P01.Distance; Count++; }
 				if ( !P02.Infinity ) { SumDistance += P02.Distance; Count++; }
@@ -1131,8 +1195,34 @@ NegativeImportancePixelsCount++;
 				if ( !P20.Infinity ) { SumDistance += P20.Distance; Count++; }
 				if ( !P21.Infinity ) { SumDistance += P21.Distance; Count++; }
 				if ( !P22.Infinity ) { SumDistance += P22.Distance; Count++; }
-				P->SmoothedDistance = SumDistance / Count;
+				P->SmoothedDistance = (!P->Infinity && Count > 0) ? SumDistance / Count : Z_INFINITY;
+
+				// Average static lit color
+				float3	SumColor = !P->Infinity ? P->StaticLitColor : float3::Zero;
+				Count = P->Infinity ? 0 : 1;
+				if ( !P00.Infinity ) { SumColor = SumColor + P00.StaticLitColor; Count++; }
+				if ( !P01.Infinity ) { SumColor = SumColor + P01.StaticLitColor; Count++; }
+				if ( !P02.Infinity ) { SumColor = SumColor + P02.StaticLitColor; Count++; }
+				if ( !P10.Infinity ) { SumColor = SumColor + P10.StaticLitColor; Count++; }
+				if ( !P12.Infinity ) { SumColor = SumColor + P12.StaticLitColor; Count++; }
+				if ( !P20.Infinity ) { SumColor = SumColor + P20.StaticLitColor; Count++; }
+				if ( !P21.Infinity ) { SumColor = SumColor + P21.StaticLitColor; Count++; }
+				if ( !P22.Infinity ) { SumColor = SumColor + P22.StaticLitColor; Count++; }
+				P->SmoothedStaticLitColor = Count > 0 ? SumColor / float(Count) : float3::Zero;
+
+				// Average infinity
+				float	SumInfinity = P->Infinity;
+						SumInfinity += P00.Infinity;
+						SumInfinity += P01.Infinity;
+						SumInfinity += P02.Infinity;
+						SumInfinity += P10.Infinity;
+						SumInfinity += P12.Infinity;
+						SumInfinity += P20.Infinity;
+						SumInfinity += P21.Infinity;
+						SumInfinity += P22.Infinity;
+				P->SmoothedInfinity = SumInfinity / 9;
 			}
+		}
 	}
 }
 
@@ -1243,7 +1333,7 @@ void	SHProbeEncoder::Pixel::Sort( Pixel*& _pList, ISortKeyProvider& _KeyProvider
 
 //////////////////////////////////////////////////////////////////////////
 // 11-bits Radix sort from Michael Herf (http://stereopsis.com/radix.html)
-// Without the floating-point sign flipping because we don't care about that here.
+// (without the floating-point sign flipping because we don't care about that here)
 //
 
 // ---- utils for accessing 11-bit quantities

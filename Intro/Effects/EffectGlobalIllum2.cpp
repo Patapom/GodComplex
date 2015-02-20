@@ -72,7 +72,7 @@
 //#define SCENE_SPONZA		// Sponza Atrium
 
 //#define	LOAD_PROBES			// Define this to load probes instead of computing them
-//#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
+#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
 #define	USE_NORMAL_MAPS			// Define this to use normal maps
 
 // Scene selection (also think about changing the scene in the .RC!)
@@ -124,7 +124,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 
 	{
 // Main scene rendering is quite heavy so we prefer to reload it from binary instead
-//ScopedForceMaterialsLoadFromBinary		bisou;
+ScopedForceMaterialsLoadFromBinary		bisou;
 
 #ifdef USE_PER_VERTEX_PROBE_ID
 		D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { "PER_VERTEX_PROBE_ID", "1" }, { NULL, NULL } };

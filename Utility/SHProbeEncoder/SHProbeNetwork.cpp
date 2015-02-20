@@ -48,7 +48,7 @@ void	SHProbeNetwork::Init( Device& _Device, Primitive& _ScreenQuad ) {
 
 	{
 // This one is REALLY heavy! So build it once and reload it from binary forever again
-//ScopedForceMaterialsLoadFromBinary		bisou;
+ScopedForceMaterialsLoadFromBinary		bisou;
 		// Compute Shaders
  		CHECK_MATERIAL( m_pCSUpdateProbe = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 1 );
 	}
