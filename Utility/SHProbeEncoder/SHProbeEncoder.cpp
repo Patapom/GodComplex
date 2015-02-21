@@ -395,7 +395,7 @@ void	SHProbeEncoder::Save( const char* _FileName ) {
 int	DEBUG_PixelIndex = 0;
 
 void	SHProbeEncoder::ComputeFloodFill( int _MaxSetsCount, int _MaxLightingSamplesCount, float _SpatialDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight, float _MinimumImportanceDiscardThreshold ) {
-	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE*CUBE_MAP_FACE_SIZE;
+	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
  	U32	DiscardThreshold = U32( 0.004f * m_ScenePixelsCount );		// Discard surfaces that contain less than 0.4% of the total amount of scene pixels (arbitrary!)
 
 	// Clear the parent surfaces for each pixel
@@ -418,7 +418,9 @@ void	SHProbeEncoder::ComputeFloodFill( int _MaxSetsCount, int _MaxLightingSample
 	m_AllSurfaces.Clear();
 
 	Surface*	pRegularSurfaces = NULL;
+	int			RegularSurfacesCount = 0;
 	Surface*	pEmissiveSurfaces = NULL;
+	int			EmissiveSurfacesCount = 0;
 	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
 		Pixel&	P0 = m_pCubeMapPixels[PixelIndex];
 
@@ -457,9 +459,11 @@ DEBUG_PixelIndex = PixelIndex;
 		ASSERT( m_ScanlinePixelIndex > 0, "Can't have empty surfaces!" );
 
 		// Remove rejected pixels from the surface (we only temporarily marked them to avoid them being processed twice by the flood filler)
+		int	RejectedPixelsCount = 0;
 		while ( pRejectedPixels != NULL ) {
 			pRejectedPixels->pParentSurface = NULL;	// Ready for another round!
 			pRejectedPixels = pRejectedPixels->pNext;
+			RejectedPixelsCount++;					// For debugging purpose only...
 		}
 
 		// Finalize importance
@@ -474,10 +478,12 @@ DEBUG_PixelIndex = PixelIndex;
 			// One more regular surface
 			S.pNext = pRegularSurfaces;
 			pRegularSurfaces = &S;
+			RegularSurfacesCount++;
 		} else {
 			// One more emissive surface
 			S.pNext = pEmissiveSurfaces;
 			pEmissiveSurfaces = &S;
+			EmissiveSurfacesCount++;
 		}
 	}
 
@@ -646,8 +652,6 @@ DEBUG_PixelIndex = PixelIndex;
 			SamplesCount = max( 1, SamplesCount );				// Ensure we have at least 1 sample no matter what!
 			SamplesCount = min( SamplesCount, S.PixelsCount );	// Can't have more samples than pixels!
 
-		ASSERT( SamplesCount > 0 , "We have a surface with NO light sample!" );
-
 		S.GenerateSamples( SamplesCount );
 
 		// Reduce the amount of available samples and the count of remaining pixels so the remaining surfaces share the remaining samples...
@@ -722,7 +726,7 @@ void	SHProbeEncoder::FloodFill( Surface& _Patch, Pixel* _PreviousPixel, Pixel* _
 	RecursionLevel--;
 }
 
-bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Patch, Pixel& _PreviousPixel, Pixel& _P, Pixel*& _pRejectedPixels ) const {
+bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Surface, Pixel& _PreviousPixel, Pixel& _P, Pixel*& _pRejectedPixels ) const {
 	// Start by checking if we can use that pixel
 	if ( !_P.IsFloodFillAcceptable() ) {
 		return false;
@@ -765,14 +769,14 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Patch, Pixel& _PreviousPixel
 	}
 
 	// Mark the pixel as member of this surface, even if it's rejected (rejected pixels get removed from the surface in the end)
-	_P.pParentSurface = &_Patch;
+	_P.pParentSurface = &_Surface;
 
 	if ( Accepted ) {
 		// We got a new member for the surface!
-		_P.pNext = _Patch.pPixels;
-		_Patch.pPixels = &_P;
-		_Patch.Importance += _P.Importance;	// Accumulate average importance
-		_Patch.PixelsCount++;
+		_P.pNext = _Surface.pPixels;
+		_Surface.pPixels = &_P;
+		_Surface.Importance += _P.Importance;	// Accumulate average importance
+		_Surface.PixelsCount++;
 	}
 	else {
 		// Sorry buddy, we'll add you to the rejects...

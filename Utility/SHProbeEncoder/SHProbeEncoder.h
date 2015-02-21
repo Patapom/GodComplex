@@ -299,7 +299,7 @@ private:	// NESTED TYPES
 			Pixel*	pPixel = pPixels;
 			while ( pPixel != NULL ) {
 				Pixel&	P = *pPixel;
-				pPixel++;
+				pPixel = pPixel->pNext;
 
 				// Compute weight factor based on surface's normal and pixel's normal but also based on pixel's normal and view direction
 				double	Factor  = P.SolidAngle								// Solid angle for SH weight, obvious
@@ -315,11 +315,8 @@ private:	// NESTED TYPES
 				}
 			}
 
-//DON'T NORMALIZE	=> 4PI is part of the integral!!!
-//				double	Normalizer = 1.0 / (4.0 * Math.PI);
-			double	Normalizer = 1.0;
 			for ( int i=0; i < 9; i++ )
-				SH[i].Set( float(Normalizer * SHR[i]), float(Normalizer * SHG[i]), float(Normalizer * SHB[i]) );
+				SH[i].Set( float(SHR[i]), float(SHG[i]), float(SHB[i]) );
 
 			// Apply filtering
 //			SphericalHarmonics.SHFunctions.FilterLanczos( SH, FILTER_WINDOW_SIZE );
