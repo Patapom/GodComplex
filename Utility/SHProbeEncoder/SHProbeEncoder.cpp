@@ -398,7 +398,7 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 	fopen_s( &g_pFile, _FileName, "wb" );
 	ASSERT( g_pFile != NULL, "Locked!" );
 
-	Write( CUBE_MAP_SIZE );
+	Write( U32(CUBE_MAP_SIZE) );
 
 	const Pixel*	P = m_pCubeMapPixels;
 	for ( int i=0; i < 6*CUBE_MAP_FACE_SIZE; i++, P++ ) {
@@ -434,6 +434,8 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 		Write( P->Importance );
 		Write( P->Distance );
 		Write( P->SmoothedDistance );
+		Write( P->Infinity );
+		Write( P->SmoothedInfinity );
 		Write( P->Distance2Border );
 		Write( P->ParentSurfaceSampleIndex );
 	}

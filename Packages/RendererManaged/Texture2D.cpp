@@ -10,14 +10,17 @@ namespace RendererManaged {
  		IPixelFormatDescriptor*	pDescriptor = GetDescriptor( _PixelFormat );
 
 		void**	ppContent = NULL;
-		if ( _MipLevelsContent != nullptr )
-		{
-			ppContent = new void*[_MipLevelsCount];
-			cli::pin_ptr<Byte>	Bisou;
-			for ( int MipLevelIndex=0; MipLevelIndex < _MipLevelsCount; MipLevelIndex++ )
-			{
-				Bisou = &_MipLevelsContent[MipLevelIndex]->m_Buffer[0];
-				ppContent[MipLevelIndex] = Bisou;
+		if ( _MipLevelsContent != nullptr ) {
+
+			cli::pin_ptr< PixelsBuffer^ >	PinIt = &_MipLevelsContent[0];
+
+			int		ArraySize = abs(_ArraySize);
+			ppContent = new void*[_MipLevelsCount*ArraySize];
+			for ( int ArrayIndex=0; ArrayIndex < ArraySize; ArrayIndex++ ) {
+				for ( int MipLevelIndex=0; MipLevelIndex < _MipLevelsCount; MipLevelIndex++ ) {
+					cli::pin_ptr< Byte >	PinThat = &_MipLevelsContent[ArrayIndex*_MipLevelsCount+MipLevelIndex]->m_Buffer[0];
+					ppContent[ArrayIndex*_MipLevelsCount+MipLevelIndex] = PinThat;
+				}
 			}
 		}
 
