@@ -111,6 +111,9 @@ template<typename T> void		List<T>::Allocate( U32 _NewCount ) {
 
 // Poor man's version: bubble sort!
 template<typename T> void	List<T>::Sort( const IComparer<T>& _Comparer ) {
+	if ( m_Size == 0 )
+		return;
+
 	T	temp;
 	for ( U32 i=0; i < m_Size-1; i++ ) {
 		T&	a = m_pList[i];

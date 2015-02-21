@@ -67,43 +67,45 @@
 #include "../../GodComplex.h"
 #include "EffectGlobalIllum2.h"
 
-//#define SCENE_CORRIDOR		// Simple corridor
-#define SCENE_CITY			// City
-//#define SCENE_SPONZA		// Sponza Atrium
+//#define SCENE 0	// Simple corridor
+//#define SCENE 1	// City
+//#define SCENE 2	// Sponza Atrium
+#define SCENE 3	// Test
 
 //#define	LOAD_PROBES			// Define this to load probes instead of computing them
 #define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
 #define	USE_NORMAL_MAPS			// Define this to use normal maps
 
 // Scene selection (also think about changing the scene in the .RC!)
-#ifdef SCENE_CORRIDOR
-#define PROBES_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
-#ifdef LOAD_PROBES	// Can't use that until it's been baked!
-#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\GITest1_ProbeID.vertexStream.U16"
-#endif
+#if SCENE==0
+	#define PROBES_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
+	#ifdef LOAD_PROBES	// Can't use that until it's been baked!
+	#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\GITest1_ProbeID.vertexStream.U16"
+	#endif
 
-#elif defined(SCENE_SPONZA)
-#define PROBES_PATH				".\\Resources\\Scenes\\Sponza\\Probes\\"
-#ifdef LOAD_PROBES	// Can't use that until it's been baked!
-#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\Sponza\\Sponza_ProbeID.vertexStream.U16"
-#endif
+#elif SCENE==2
+	#define PROBES_PATH				".\\Resources\\Scenes\\Sponza\\Probes\\"
+	#ifdef LOAD_PROBES	// Can't use that until it's been baked!
+	#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\Sponza\\Sponza_ProbeID.vertexStream.U16"
+	#endif
 
-#elif defined(SCENE_CITY)
+#elif SCENE==1
+	#define SCENE_PATH				"..\\Arkane\\GIScenes\\City\\"
 
-#define CITY_PATH				"..\\Arkane\\"
-//#define CITY_PATH				".\\Resources\\Scenes\\Arkane"
+	#define TEXTURES_PATH			SCENE_PATH "TexturesPOM\\"
+	#define PROBES_PATH				SCENE_PATH "Probes\\"
+	#ifdef LOAD_PROBES	// Can't use that until it's been baked!
+	#define USE_PER_VERTEX_PROBE_ID	SCENE_PATH "Scene_ProbeID.vertexStream.U16"
+	#endif
 
-//#define TEXTURES_PATH			"..\\Arkane\\TexturesPOM\\"
-//#define PROBES_PATH				"..\\Arkane\\Probes\\City\\"
-//#ifdef LOAD_PROBES	// Can't use that until it's been baked!
-//#define USE_PER_VERTEX_PROBE_ID	"..\\Arkane\\City_ProbeID.vertexStream.U16"
-//#endif
+#elif SCENE==3
+	#define SCENE_PATH				"..\\Arkane\\GIScenes\\SimpleMapWithManyProbes\\"
 
-#define TEXTURES_PATH			CITY_PATH "TexturesPOM\\"
-#define PROBES_PATH				CITY_PATH "Probes\\City\\"
-#ifdef LOAD_PROBES	// Can't use that until it's been baked!
-#define USE_PER_VERTEX_PROBE_ID	CITY_PATH "City_ProbeID.vertexStream.U16"
-#endif
+	#define TEXTURES_PATH			SCENE_PATH "Textures\\"
+	#define PROBES_PATH				SCENE_PATH "Probes\\"
+	#ifdef LOAD_PROBES	// Can't use that until it's been baked!
+	#define USE_PER_VERTEX_PROBE_ID	SCENE_PATH "Scene_ProbeID.vertexStream.U16"
+	#endif
 
 #endif
 
@@ -161,10 +163,10 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 		const char*	ppTextureFileNames[] = {
 
-#ifdef SCENE_CORRIDOR
-		"./Resources/Scenes/GITest1/pata_diff_colo.pom",
+#if SCENE==0	// Corridor
+"./Resources/Scenes/GITest1/pata_diff_colo.pom",
 
-#elif defined(SCENE_SPONZA)
+#elif SCENE==2	// Sponza
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_thorn_diff.pom",
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_thorn_diff.pom",
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_thorn_ddn.pom",
@@ -201,7 +203,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\lion.pom",
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\lion_ddn.pom",
 ".\\Resources\\Scenes\\Sponza\\TexturesPOM\\sponza_roof_diff.pom",
-#elif defined(SCENE_CITY)
+#elif SCENE==1	// City
 "floor_tiles_ornt_int_01_d.pom",
 "floor_tiles_ornt_int_01_n.pom",
 "floor_tiles_ornt_int_01_s.pom",
@@ -314,6 +316,8 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 "streetlamp_01_d.pom",
 "streetlamp_01_n.pom",
 "streetlamp_01_s.pom",
+#elif SCENE==3	// Simple Test
+""
 #endif
 		};
 
@@ -741,40 +745,42 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pSB_LightsDynamic->m[0].Type = Scene::Light::POINT;
 	m_pSB_LightsDynamic->m[0].Parms.Set( 0.1f, 0.1f, 0, 0 );
 
-#ifdef SCENE_CORRIDOR
+#if SCENE==0 || SCENE==3
 	// CORRIDOR ANIMATION (simple straight line)
 
 //	m_pSB_LightsDynamic->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * AnimateLightTime0 ) );	// Move along the corridor
 	m_pSB_LightsDynamic->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime0 ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime0 ), 4.0f * sinf( 0.3f * AnimateLightTime0 ) );	// Move along the corridor
 
 #else
+
 	// PATH ANIMATION (follow curve)
 	static bool	bPathPreComputed = false;
-#ifdef SCENE_SPONZA
-	const float	TOTAL_PATH_TIME = 40.0f;	// Total time to walk the path
-	const bool	PING_PONG = false;
-	const int	PATH_NODES_COUNT = 5;
-	const float	Y = 180.0f;	// Ground floor
-//	const float	Y = 550.0f;	// First floor
+	#if SCENE==2	// Sponza
+		const float	TOTAL_PATH_TIME = 40.0f;	// Total time to walk the path
+		const bool	PING_PONG = false;
+		const int	PATH_NODES_COUNT = 5;
+		const float	Y = 180.0f;	// Ground floor
+	//	const float	Y = 550.0f;	// First floor
 
-	static float3	pPath[] = {
-		0.01f * float3( -1229.0f, Y, -462.0f ),
-		0.01f * float3( -1229.0f, Y, 392.0f ),
-		0.01f * float3( 1075.0f, Y, 392.0f ),
-		0.01f * float3( 1075.0f, Y, -462.0f ),
-		0.01f * float3( -1229.0f, Y, -462.0f ),
-	};
-#elif defined(SCENE_CITY)
-	const float	TOTAL_PATH_TIME = 20.0f;	// Total time to walk the path
-	const bool	PING_PONG = true;
-	const int	PATH_NODES_COUNT = 4;
-	static float3	pPath[] = {
-		0.01f * float3( 470.669f, 25.833f, -573.035f ),	// Street exterior
-		0.01f * float3( 470.669f, 25.833f, 1263.286f ),	// Shop interior
-		0.01f * float3( 876.358f, 25.833f, 1263.286f ),	// Shop interior
-		0.01f * float3( 918.254f, 25.833f, 3848.391f ),	// Shop yard
-	};
-#endif
+		static float3	pPath[] = {
+			0.01f * float3( -1229.0f, Y, -462.0f ),
+			0.01f * float3( -1229.0f, Y, 392.0f ),
+			0.01f * float3( 1075.0f, Y, 392.0f ),
+			0.01f * float3( 1075.0f, Y, -462.0f ),
+			0.01f * float3( -1229.0f, Y, -462.0f ),
+		};
+	#elif SCENE==1
+		const float	TOTAL_PATH_TIME = 20.0f;	// Total time to walk the path
+		const bool	PING_PONG = true;
+		const int	PATH_NODES_COUNT = 4;
+		static float3	pPath[] = {
+			0.01f * float3( 470.669f, 25.833f, -573.035f ),	// Street exterior
+			0.01f * float3( 470.669f, 25.833f, 1263.286f ),	// Shop interior
+			0.01f * float3( 876.358f, 25.833f, 1263.286f ),	// Shop interior
+			0.01f * float3( 918.254f, 25.833f, 3848.391f ),	// Shop yard
+		};
+	#endif
+
 	static float	pPathSegmentsLength[PATH_NODES_COUNT];
 	static float	TotalPathLength = 0.0f;
 

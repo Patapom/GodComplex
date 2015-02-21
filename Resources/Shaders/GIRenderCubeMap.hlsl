@@ -32,7 +32,7 @@ struct	PS_OUT
 {
 	float4	DiffuseAlbedo		: SV_TARGET0;
 	float4	NormalDistance		: SV_TARGET1;
-	float4	StaticLitEmmissive	: SV_TARGET2;
+	float4	StaticLitEmissive	: SV_TARGET2;
 };
 
 PS_IN	VS( SCENE_VS_IN _In )
@@ -65,7 +65,7 @@ PS_OUT	PS( PS_IN _In, uint	_FaceIndex : SV_PRIMITIVEID )
 	if ( _HasDiffuseTexture )
 		Out.DiffuseAlbedo.xyz = _TexDiffuseAlbedo.SampleBias( LinearWrap, _In.UV, FORCE_MIP_BIAS ).xyz;
 
-	Out.DiffuseAlbedo.xyz *= INVPI;
+//	Out.DiffuseAlbedo.xyz *= INVPI;
 
 	Out.DiffuseAlbedo.w = asfloat( _FaceOffset + _FaceIndex );
 
@@ -73,6 +73,8 @@ PS_OUT	PS( PS_IN _In, uint	_FaceIndex : SV_PRIMITIVEID )
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Second RT stores geometry with normal and distance
 	//
+//Normal = float3( 0, 1, 0 );
+
 	Out.NormalDistance = float4( Normal, length( _In.Position - _CubeMap2World[3].xyz ) );	// Store distance
 //	Out.NormalDistance = float4( Normal, dot( _In.Position - _CubeMap2World[3].xyz, _CubeMap2World[2].xyz ) );	// Store Z
 	
@@ -92,7 +94,7 @@ PS_OUT	PS( PS_IN _In, uint	_FaceIndex : SV_PRIMITIVEID )
 
 //AccumDiffuse = _StaticLightsCount;
 
-	Out.StaticLitEmmissive = float4( AccumDiffuse, asfloat( uint( any( abs( _EmissiveColor ) > 1e-4 ) ? _MaterialID : 0xFFFFFFFFUL ) ) );
+	Out.StaticLitEmissive = float4( AccumDiffuse, asfloat( uint( any( abs( _EmissiveColor ) > 1e-4 ) ? _MaterialID : 0xFFFFFFFFUL ) ) );
 
 	return Out;
 }

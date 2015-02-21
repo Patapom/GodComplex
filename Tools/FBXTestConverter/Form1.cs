@@ -27,9 +27,9 @@ namespace FBXTestConverter
 		{
 			InitializeComponent();
 
-//			LoadScene( new FileInfo( @"..\Arkane\City.fbx" ) );
-//			LoadScene( new FileInfo( @".\Resources\Scenes\Sponza\Sponza.fbx" ) );
-			LoadScene( new FileInfo( @"..\Arkane\Volet.fbx" ) );
+			LoadScene( new FileInfo( @"..\Arkane\GIScenes\City\City.fbx" ), new FileInfo( @"..\Arkane\GIScenes\City\scene.gcx" ) );
+//			LoadScene( new FileInfo( @".\Resources\Scenes\Sponza\Sponza.fbx" ), new FileInfo( @"..\Arkane\GIScenes\City\scene.gcx" ) );
+//			LoadScene( new FileInfo( @"..\Arkane\Volet.fbx" ), new FileInfo( @"..\Arkane\volet.gcx" ) );
 
 //			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1.fbx" ) );
 //			LoadScene( new FileInfo( @"..\..\Resources\Scenes\GITest1_10Probes.fbx" ) );
@@ -40,7 +40,7 @@ namespace FBXTestConverter
 		/// Loads a FBX scene and converts it (in the same folder) into its GCX equivalent
 		/// </summary>
 		/// <param name="_File"></param>
-		public void	LoadScene( FileInfo _File )
+		public void	LoadScene( FileInfo _SourceFile, FileInfo _TargetFile )
 		{
 			FBX.SceneLoader.SceneLoader	Loader = new FBX.SceneLoader.SceneLoader();
 
@@ -48,11 +48,11 @@ namespace FBXTestConverter
 //			Materials.BuildFromM2( new DirectoryInfo( @"D:\Workspaces\Arkane\m2" ) );
 
 			FBX.Scene.Scene	Scene = new FBX.Scene.Scene();
-			Loader.Load( _File, Scene, 1.0f, Materials );
+			Loader.Load( _SourceFile, Scene, 1.0f, Materials );
 
 			// Start writing
-			FileInfo	Target = new FileInfo( Path.Combine( Path.GetDirectoryName( _File.FullName ), Path.GetFileNameWithoutExtension( _File.FullName ) + ".gcx" ) );
-			using ( FileStream S = Target.OpenWrite() )
+//			FileInfo	Target = new FileInfo( Path.Combine( Path.GetDirectoryName( _SourceFile.FullName ), Path.GetFileNameWithoutExtension( _SourceFile.FullName ) + ".gcx" ) );
+			using ( FileStream S = _TargetFile.OpenWrite() )
 				using ( BinaryWriter W = new BinaryWriter( S ) )
 				{
 					GCXFormat.Scene	GCX = new GCXFormat.Scene( Scene );
@@ -70,7 +70,7 @@ namespace FBXTestConverter
 			// This way I can simply copy this "code friendly" list and paste it in my C++ code (e.g. const char* ppID2TextureName[] = { PasteHere }; )
 			Infos.Add( "Texture Flat Names:" );
 			Infos.Add( "" );
-			string	DirectoryHeader = Path.GetDirectoryName( _File.ToString() );
+			string	DirectoryHeader = Path.GetDirectoryName( _SourceFile.ToString() );
 			DirectoryHeader = DirectoryHeader.Replace( "\\", "\\\\" );	// Double antislashes
 			foreach ( FBX.Scene.Materials.Texture2D Texture in Scene.Textures )
 //				Infos.Add( "ID #" + Texture.ID.ToString( "D3" ) + " URL=" + Path.GetFileNameWithoutExtension( Texture.URL ) );

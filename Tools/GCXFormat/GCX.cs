@@ -24,7 +24,7 @@ namespace GCXFormat
 			public ushort	m_SpecularTextureID = 0xFFFF;
 			public float3	m_SpecularExponent = float3.One;
 			public ushort	m_NormalTextureID = 0xFFFF;
-			public float3	m_EmissiveColor = float3.One;
+			public float3	m_EmissiveColor = float3.Zero;
 
 			public Material( BinaryReader _R )
 			{
@@ -85,6 +85,13 @@ namespace GCXFormat
 					Temp.FromVector3( P.AsFloat3.Value );
 					m_EmissiveColor = Temp;
 				}
+			}
+
+			public Material( idTech5Map.Material _Material ) {
+				m_ID = (ushort) _Material.m_MaterialIndex;
+
+				// TODO!
+				m_DiffuseColor = 0.5f * float3.One;
 			}
 
 			public void		Save( BinaryWriter _W )
@@ -242,27 +249,36 @@ namespace GCXFormat
 				List< Node >	Children = new List< Node >();
 				foreach ( idTech5Map.Map.Entity E in _Map.m_Entities ) {
 					switch ( E.m_Type ) {
-						case idTech5Map.Map.Entity.TYPE.MODEL:
-							m_Type = TYPE.MESH;
-							Children.Add( new Mesh( _Owner, E ) );
+						case idTech5Map.Map.Entity.TYPE.MODEL: {
+							Node	Child = new Mesh( _Owner, E );
+									Child.m_Type = TYPE.MESH;
+							Children.Add( Child );
 							break;
-						case idTech5Map.Map.Entity.TYPE.LIGHT:
-							m_Type = TYPE.LIGHT;
-							Children.Add( new Light( _Owner, E ) );
+						}
+						case idTech5Map.Map.Entity.TYPE.LIGHT: {
+							Node	Child = new Light( _Owner, E );
+									Child.m_Type = TYPE.LIGHT;
+							Children.Add( Child );
 							break;
-						case idTech5Map.Map.Entity.TYPE.PLAYER_START:
-							m_Type = TYPE.CAMERA;
-							Children.Add( new Camera( _Owner, E ) );
+						}
+						case idTech5Map.Map.Entity.TYPE.PLAYER_START: {
+							Node	Child = new Camera( _Owner, E );
+									Child.m_Type = TYPE.CAMERA;
+							Children.Add( Child );
 							break;
-						case idTech5Map.Map.Entity.TYPE.PROBE:
-							m_Type = TYPE.PROBE;
-							Children.Add( new Node( _Owner, E ) );
+						}
+						case idTech5Map.Map.Entity.TYPE.PROBE: {
+							Node	Child = new Node( _Owner, E );
+									Child.m_Type = TYPE.PROBE;
+							Children.Add( Child );
 							break;
+						}
+
 						case idTech5Map.Map.Entity.TYPE.UNKNOWN:
 						case idTech5Map.Map.Entity.TYPE.REF_MAP:
 							// Don't care...
 							break;
-					}
+						}
 				}
 				m_Children = Children.ToArray();
 			}
@@ -904,7 +920,9 @@ namespace GCXFormat
 			m_RootNode = new Node( this, _Map );
 
 			// Create materials
-
+			foreach ( idTech5Map.Material M in idTech5Map.Material.ms_Materials ) {
+				m_Materials.Add( new Material( M ) );
+			}
 		}
 
 		public void	Save( BinaryWriter _W )

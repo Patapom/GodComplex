@@ -42,15 +42,15 @@ void	SHProbeNetwork::Init( Device& _Device, Primitive& _ScreenQuad ) {
 	{
 //ScopedForceMaterialsLoadFromBinary		bisou;
 
-		CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 3 );
- 		CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 11 );
+		CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 0 );
+ 		CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
 	}
 
 	{
 // This one is REALLY heavy! So build it once and reload it from binary forever again
 ScopedForceMaterialsLoadFromBinary		bisou;
 		// Compute Shaders
- 		CHECK_MATERIAL( m_pCSUpdateProbe = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 1 );
+ 		CHECK_MATERIAL( m_pCSUpdateProbe = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 2 );
 	}
 }
 
@@ -396,6 +396,8 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 		float4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
 		ProbeLocal2World.Normalize();
 
+ProbeLocal2World = float4x4::Identity;
+
 		ASSERT( ProbeLocal2World.GetRow(0).LengthSq() > 0.999f && ProbeLocal2World.GetRow(1).LengthSq() > 0.999f && ProbeLocal2World.GetRow(2).LengthSq() > 0.999f, "Not identity! If not identity then transform probe patch positions/normals/etc. by probe matrix!" );
 
 		float4x4	ProbeWorld2Local = ProbeLocal2World.Inverse();
@@ -466,7 +468,7 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 
 #if 1	// Save to disk for processing by the ProbeSHEncoder tool
 		char	pTemp[1024];
-		sprintf_s( pTemp, "%s/Probe%02d.pom", _pPathToProbes, ProbeIndex );
+		sprintf_s( pTemp, "%sProbe%02d.pom", _pPathToProbes, ProbeIndex );
 		pRTCubeMapStaging->Save( pTemp );
 #endif
 

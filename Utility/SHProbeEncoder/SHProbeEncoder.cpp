@@ -102,7 +102,7 @@ SHProbeEncoder::~SHProbeEncoder() {
 }
 
 void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID ) {
-	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE*CUBE_MAP_FACE_SIZE;
+	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Read back probe data and prepare pixels for encoding
@@ -1077,10 +1077,10 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 		Pixel*	pCubeMapPixels = &m_pCubeMapPixels[CubeFaceIndex*CUBE_MAP_FACE_SIZE];
 
 		// Fill up albedo
-		D3D11_MAPPED_SUBRESOURCE	Map0 = _StagingCubeMap.Map( 0, 4*CubeFaceIndex+0 );
-		D3D11_MAPPED_SUBRESOURCE	Map1 = _StagingCubeMap.Map( 0, 4*CubeFaceIndex+1 );
-		D3D11_MAPPED_SUBRESOURCE	Map2 = _StagingCubeMap.Map( 0, 4*CubeFaceIndex+2 );
-		D3D11_MAPPED_SUBRESOURCE	Map3 = _StagingCubeMap.Map( 0, 4*CubeFaceIndex+3 );
+		D3D11_MAPPED_SUBRESOURCE	Map0 = _StagingCubeMap.Map( 0, 6*0+CubeFaceIndex );
+		D3D11_MAPPED_SUBRESOURCE	Map1 = _StagingCubeMap.Map( 0, 6*1+CubeFaceIndex );
+		D3D11_MAPPED_SUBRESOURCE	Map2 = _StagingCubeMap.Map( 0, 6*2+CubeFaceIndex );
+		D3D11_MAPPED_SUBRESOURCE	Map3 = _StagingCubeMap.Map( 0, 6*3+CubeFaceIndex );
 
 		float4*	pFaceData0 = (float4*) Map0.pData;
 		float4*	pFaceData1 = (float4*) Map1.pData;
@@ -1095,23 +1095,23 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 				float	Green = pFaceData0->y;
 				float	Blue = pFaceData0->z;
 
-				// Work with better precision
-				Red *= PI;
-				Green *= PI;
-				Blue *= PI;
+// 				// Work with better precision
+// 				Red *= PI;
+// 				Green *= PI;
+// 				Blue *= PI;
 
 				P->SetAlbedo( float3( Red, Green, Blue ) );
 				P->FaceIndex = ((U32&) pFaceData0->w);
 
 				// ==== Read back static lighting & emissive material IDs ====
-				P->StaticLitColor = *pFaceData1;
-				P->EmissiveMatID = ((U32&) pFaceData1->w);
+				P->StaticLitColor = *pFaceData2;
+				P->EmissiveMatID = ((U32&) pFaceData2->w);
 
 				// ==== Read back position & normal ====
-				float	Nx = pFaceData2->x;
-				float	Ny = pFaceData2->y;
-				float	Nz = pFaceData2->z;
-				float	Distance = pFaceData2->w;
+				float	Nx = pFaceData1->x;
+				float	Ny = pFaceData1->y;
+				float	Nz = pFaceData1->z;
+				float	Distance = pFaceData1->w;
 
 				float3	wsPosition( Distance * P->View.x, Distance * P->View.y, Distance * P->View.z );
 
@@ -1126,10 +1126,10 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 
 				// ==== Finalize pixel information ====
 
-				P->Importance = -(P->View | P->Normal) / (Distance * Distance);
+				P->Importance = -P->View.Dot( P->Normal ) / (Distance * Distance);
 				if ( P->Importance < 0.0 ) {
 P->Normal = -P->Normal;
-P->Importance = -(P->View | P->Normal) / (Distance * Distance);
+P->Importance = -P->View.Dot( P->Normal ) / (Distance * Distance);
 //P->Importance = -P->Importance;
 NegativeImportancePixelsCount++;
 //					throw new Exception( "WTH?? Negative importance here!" );
@@ -1154,10 +1154,10 @@ NegativeImportancePixelsCount++;
 				m_BBoxMax.Min( wsPosition );
 			}
 
-		_StagingCubeMap.UnMap( 0, 4*CubeFaceIndex+3 );
-		_StagingCubeMap.UnMap( 0, 4*CubeFaceIndex+2 );
-		_StagingCubeMap.UnMap( 0, 4*CubeFaceIndex+1 );
-		_StagingCubeMap.UnMap( 0, 4*CubeFaceIndex+0 );
+		_StagingCubeMap.UnMap( 0, 6*3+CubeFaceIndex );
+		_StagingCubeMap.UnMap( 0, 6*2+CubeFaceIndex );
+		_StagingCubeMap.UnMap( 0, 6*1+CubeFaceIndex );
+		_StagingCubeMap.UnMap( 0, 6*0+CubeFaceIndex );
 	}
 
 	if ( float(NegativeImportancePixelsCount) / (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6) > 0.1f )
@@ -1211,7 +1211,7 @@ NegativeImportancePixelsCount++;
 				P->SmoothedStaticLitColor = Count > 0 ? SumColor / float(Count) : float3::Zero;
 
 				// Average infinity
-				float	SumInfinity = P->Infinity;
+				float	SumInfinity  = P->Infinity;
 						SumInfinity += P00.Infinity;
 						SumInfinity += P01.Infinity;
 						SumInfinity += P02.Infinity;

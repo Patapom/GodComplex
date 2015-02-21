@@ -249,7 +249,7 @@ public:
 
 	void			PreAllocateProbes( int _ProbesCount ) {
 		m_MaxProbesCount = _ProbesCount;
-		m_pProbes = new SHProbe[m_ProbesCount];
+		m_pProbes = new SHProbe[m_MaxProbesCount];
 	}
 
 	void			AddProbe( Scene::Probe& _Probe );

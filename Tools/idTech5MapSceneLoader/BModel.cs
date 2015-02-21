@@ -195,8 +195,8 @@ namespace idTech5Map
 			public Surface( Model _Owner, BinaryReader _R ) {
 				m_Owner = _Owner;
 
-				m_Material = new Material( m_Owner.ReadString( _R ) );
-				m_Material.m_MaterialIndex = (int) m_Owner.ReadBig32( _R );
+				m_Material = Material.Find( m_Owner.ReadString( _R ) );
+				int	MaterialIndex = (int) m_Owner.ReadBig32( _R );		// Don't use that
 
 				// Prepare triangles
 				uint	VerticesCount = _R.ReadUInt32();
