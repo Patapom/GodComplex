@@ -33,9 +33,9 @@ void	SHProbeNetwork::Init( Device& _Device, Primitive& _ScreenQuad ) {
 	m_pSB_RuntimeProbeNetworkInfos = NULL;
 
 	m_pSB_RuntimeProbeUpdateInfos = new SB<RuntimeProbeUpdateInfos>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME, true );
-	m_pSB_RuntimeProbeSetInfos = new SB<RuntimeProbeUpdateSetInfos>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*SHProbeEncoder::MAX_PROBE_PATCHES, true );
-	m_pSB_RuntimeProbeEmissiveSetInfos = new SB<RuntimeProbeUpdateEmissiveSetInfos>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*SHProbeEncoder::MAX_PROBE_EMISSIVE_PATCHES, true );
-	m_pSB_RuntimeSamplingPointInfos = new SB<RuntimeSamplingPointInfos>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME * SHProbeEncoder::MAX_SAMPLES_PER_PATCH, true );
+	m_pSB_RuntimeProbeSurfaces = new SB<RuntimeProbeUpdateSetInfos>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*SHProbeEncoder::MAX_PROBE_SURFACES, true );
+	m_pSB_RuntimeProbeEmissiveSurfaces = new SB<RuntimeProbeUpdateEmissiveSetInfos>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*SHProbeEncoder::MAX_PROBE_EMISSIVE_SURFACES, true );
+	m_pSB_RuntimeSamplingPointInfos = new SB<RuntimeSamplingPointInfos>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME * SHProbeEncoder::MAX_SAMPLES_PER_SURFACE, true );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create shaders
@@ -63,8 +63,8 @@ void	SHProbeNetwork::Exit() {
 	delete m_pMatRenderCubeMap;
 
 	delete m_pSB_RuntimeSamplingPointInfos;
-	delete m_pSB_RuntimeProbeEmissiveSetInfos;
-	delete m_pSB_RuntimeProbeSetInfos;
+	delete m_pSB_RuntimeProbeEmissiveSurfaces;
+	delete m_pSB_RuntimeProbeSurfaces;
 	delete m_pSB_RuntimeProbeUpdateInfos;
 	delete m_pSB_RuntimeProbeNetworkInfos;
 	delete m_pSB_RuntimeProbes;
@@ -128,10 +128,10 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 		RuntimeProbeUpdateInfos&	ProbeUpdateInfos = m_pSB_RuntimeProbeUpdateInfos->m[ProbeUpdateIndex];
 
 		ProbeUpdateInfos.Index = ProbeIndex;
-		ProbeUpdateInfos.SetsStart = TotalSetsCount;
-		ProbeUpdateInfos.SetsCount = Probe.SetsCount;
-		ProbeUpdateInfos.EmissiveSetsStart = TotalEmissiveSetsCount;
-		ProbeUpdateInfos.EmissiveSetsCount = Probe.EmissiveSetsCount;
+		ProbeUpdateInfos.SurfacesStart = TotalSetsCount;
+		ProbeUpdateInfos.SurfacesCount = Probe.SurfacesCount;
+		ProbeUpdateInfos.EmissiveSurfacesStart = TotalEmissiveSetsCount;
+		ProbeUpdateInfos.EmissiveSurfacesCount = Probe.EmissiveSurfacesCount;
 		memcpy_s( ProbeUpdateInfos.SHStatic, sizeof(ProbeUpdateInfos.SHStatic), Probe.pSHBounceStatic, 9*sizeof(float3) );
 		memcpy_s( ProbeUpdateInfos.SHOcclusion, sizeof(ProbeUpdateInfos.SHOcclusion), Probe.pSHOcclusion, 9*sizeof(float) );
 
@@ -148,27 +148,27 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 
 		// Fill the patch update infos
 		int	SetSamplingPointsCount = 0;
-		for ( U32 SetIndex=0; SetIndex < Probe.SetsCount; SetIndex++ )
+		for ( U32 SetIndex=0; SetIndex < Probe.SurfacesCount; SetIndex++ )
 		{
-			SHProbe::SetInfos		Set = Probe.pSetInfos[SetIndex];
-			RuntimeProbeUpdateSetInfos&	SetUpdateInfos = m_pSB_RuntimeProbeSetInfos->m[TotalSetsCount+SetIndex];
+			SHProbe::Surface		Set = Probe.pSurfaces[SetIndex];
+			RuntimeProbeUpdateSetInfos&	SetUpdateInfos = m_pSB_RuntimeProbeSurfaces->m[TotalSetsCount+SetIndex];
 
 			SetUpdateInfos.SamplingPointsStart = SetSamplingPointsCount;
 			SetUpdateInfos.SamplingPointsCount = Set.SamplesCount;
 			memcpy_s( SetUpdateInfos.SH, sizeof(SetUpdateInfos.SH), Set.pSHBounce, 9*sizeof(float3) );
 
 			// Copy sampling points (fortunately it's the same static & runtime structures)
-			memcpy_s( &m_pSB_RuntimeSamplingPointInfos->m[TotalSamplingPointsCount], Set.SamplesCount*sizeof(RuntimeSamplingPointInfos), Set.pSamples, Set.SamplesCount*sizeof(SHProbe::SetInfos::Sample) );
+			memcpy_s( &m_pSB_RuntimeSamplingPointInfos->m[TotalSamplingPointsCount], Set.SamplesCount*sizeof(RuntimeSamplingPointInfos), Set.pSamples, Set.SamplesCount*sizeof(SHProbe::Surface::Sample) );
 
 			TotalSamplingPointsCount += Set.SamplesCount;
 			SetSamplingPointsCount += Set.SamplesCount;
 		}
 
 		// Fill the emissive patch update infos
-		for ( U32 EmissiveSetIndex=0; EmissiveSetIndex < Probe.EmissiveSetsCount; EmissiveSetIndex++ )
+		for ( U32 EmissiveSetIndex=0; EmissiveSetIndex < Probe.EmissiveSurfacesCount; EmissiveSetIndex++ )
 		{
-			SHProbe::EmissiveSetInfos		EmissiveSet = Probe.pEmissiveSetInfos[EmissiveSetIndex];
-			RuntimeProbeUpdateEmissiveSetInfos&	EmissiveSetUpdateInfos = m_pSB_RuntimeProbeEmissiveSetInfos->m[TotalEmissiveSetsCount+EmissiveSetIndex];
+			SHProbe::EmissiveSurface		EmissiveSet = Probe.pEmissiveSurfaces[EmissiveSetIndex];
+			RuntimeProbeUpdateEmissiveSetInfos&	EmissiveSetUpdateInfos = m_pSB_RuntimeProbeEmissiveSurfaces->m[TotalEmissiveSetsCount+EmissiveSetIndex];
 
 			ASSERT( EmissiveSet.pEmissiveMaterial != NULL, "Invalid emissive material!" );
 			EmissiveSetUpdateInfos.EmissiveColor = EmissiveSet.pEmissiveMaterial->m_EmissiveColor;
@@ -176,8 +176,8 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 			memcpy_s( EmissiveSetUpdateInfos.SH, sizeof(EmissiveSetUpdateInfos.SH), EmissiveSet.pSHEmissive, 9*sizeof(float) );
 		}
 
-		TotalSetsCount += Probe.SetsCount;
-		TotalEmissiveSetsCount += Probe.EmissiveSetsCount;
+		TotalSetsCount += Probe.SurfacesCount;
+		TotalEmissiveSetsCount += Probe.EmissiveSurfacesCount;
 
 		ProbeUpdateInfos.SamplingPointsCount = TotalSamplingPointsCount - ProbeUpdateInfos.SamplingPointsStart;	// Total amount of sampling points for the probe
 	}
@@ -188,11 +188,11 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 	m_pSB_RuntimeProbeUpdateInfos->Write( ProbeUpdatesCount );
 	m_pSB_RuntimeProbeUpdateInfos->SetInput( 10 );
 
-	m_pSB_RuntimeProbeSetInfos->Write( TotalSetsCount );
-	m_pSB_RuntimeProbeSetInfos->SetInput( 11 );
+	m_pSB_RuntimeProbeSurfaces->Write( TotalSetsCount );
+	m_pSB_RuntimeProbeSurfaces->SetInput( 11 );
 
-	m_pSB_RuntimeProbeEmissiveSetInfos->Write( TotalEmissiveSetsCount );
-	m_pSB_RuntimeProbeEmissiveSetInfos->SetInput( 12 );
+	m_pSB_RuntimeProbeEmissiveSurfaces->Write( TotalEmissiveSetsCount );
+	m_pSB_RuntimeProbeEmissiveSurfaces->SetInput( 12 );
 
 	m_pSB_RuntimeSamplingPointInfos->Write( TotalSamplingPointsCount );
 	m_pSB_RuntimeSamplingPointInfos->SetInput( 13 );
@@ -220,15 +220,15 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 		Probe.ClearLightBounce( pSHAmbient );
 
 		// Iterate on each patch and compute energy level
-		for ( U32 SetIndex=0; SetIndex < Probe.SetsCount; SetIndex++ )
+		for ( U32 SetIndex=0; SetIndex < Probe.SurfacesCount; SetIndex++ )
 		{
-			const SHProbe::SetInfos&	Set = Probe.pSetInfos[SetIndex];
+			const SHProbe::Surface&	Set = Probe.pSurfaces[SetIndex];
 
 			// Compute irradiance for every sample
 			float3	SetIrradiance = float3::Zero;
 			for ( U32 SampleIndex=0; SampleIndex < Set.SamplesCount; SampleIndex++ )
 			{
-				const SHProbe::SetInfos::Sample&	Sample = Set.pSamples[SampleIndex];
+				const SHProbe::Surface::Sample&	Sample = Set.pSamples[SampleIndex];
 
 				// Compute irradiance from every light
 				for ( int LightIndex=0; LightIndex < m_pCB_Scene->m.DynamicLightsCount; LightIndex++ )
@@ -378,6 +378,8 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 	//////////////////////////////////////////////////////////////////////////
 	// Render every probe as a cube map & process
 	//
+	char	pTemp[1024];
+
 	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
 //for ( int ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
 	{
@@ -466,8 +468,7 @@ ProbeLocal2World = float4x4::Identity;
 		// 3] Read back cube map and create the SH coefficients
 		pRTCubeMapStaging->CopyFrom( *m_pRTCubeMap );
 
-#if 1	// Save to disk for processing by the ProbeSHEncoder tool
-		char	pTemp[1024];
+#if 0	// Save to disk for processing by the ProbeSHEncoder tool
 		sprintf_s( pTemp, "%sProbe%02d.pom", _pPathToProbes, ProbeIndex );
 		pRTCubeMapStaging->Save( pTemp );
 #endif
@@ -475,6 +476,16 @@ ProbeLocal2World = float4x4::Identity;
 		//////////////////////////////////////////////////////////////////////////
 		// 4] Encode the cube map into separated SH patches
 		m_ProbeEncoder.EncodeProbeCubeMap( *pRTCubeMapStaging, ProbeIndex );
+
+		// Save probe results
+		sprintf_s( pTemp, "%sProbe%02d.probeset", _pPathToProbes, ProbeIndex );
+		m_ProbeEncoder.Save( pTemp );
+
+#ifdef _DEBUG
+		// Save probe debug pixels
+		sprintf_s( pTemp, "%sProbe%02d.probepixels", _pPathToProbes, ProbeIndex );
+		m_ProbeEncoder.SavePixels( pTemp );
+#endif
 	}
 
 	delete pCBCubeMapCamera;
@@ -511,7 +522,7 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 		fopen_s( &pFile, pTemp, "rb" );
 		if ( pFile == NULL )
 		{	// Not ready yet (happens for first time computation!)
-			Probe.SetsCount = Probe.EmissiveSetsCount = 0;
+			Probe.SurfacesCount = Probe.EmissiveSurfacesCount = 0;
 			continue;
 		}
 //		ASSERT( pFile != NULL, "Can't find probeset test file!" );
@@ -541,16 +552,16 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 		for ( int i=0; i < 9; i++ )
 			fread_s( &Probe.pSHOcclusion[i], sizeof(Probe.pSHOcclusion[i]), sizeof(float), 1, pFile );
 
-		// Read the amount of dynamic sets
-		U32	SetsCount = 0;
-		fread_s( &SetsCount, sizeof(SetsCount), sizeof(U32), 1, pFile );
-		Probe.SetsCount = MIN( SHProbeEncoder::MAX_PROBE_PATCHES, SetsCount );	// Don't read more than we can chew!
+		// Read the amount of dynamic surfaces
+		U32	SurfacesCount = 0;
+		fread_s( &SurfacesCount, sizeof(SurfacesCount), sizeof(U32), 1, pFile );
+		Probe.SurfacesCount = MIN( SHProbeEncoder::MAX_PROBE_SURFACES, SurfacesCount );	// Don't read more than we can chew!
 
-		// Read the sets
-		SHProbe::SetInfos	DummySet;
-		for ( U32 SetIndex=0; SetIndex < SetsCount; SetIndex++ )
+		// Read the surfaces
+		SHProbe::Surface	DummySurface;
+		for ( U32 SurfaceIndex=0; SurfaceIndex < SurfacesCount; SurfaceIndex++ )
 		{
-			SHProbe::SetInfos&	S = SetIndex < Probe.SetsCount ? Probe.pSetInfos[SetIndex] : DummySet;	// We load into a useless patch if out of range...
+			SHProbe::Surface&	S = SurfaceIndex < Probe.SurfacesCount ? Probe.pSurfaces[SurfaceIndex] : DummySurface;	// We load into a useless surface if out of range...
 
 			// Read position, normal, albedo
 			fread_s( &S.Position.x, sizeof(S.Position.x), sizeof(float), 1, pFile );
@@ -573,6 +584,10 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 			fread_s( &S.Albedo.y, sizeof(S.Albedo.y), sizeof(float), 1, pFile );
 			fread_s( &S.Albedo.z, sizeof(S.Albedo.z), sizeof(float), 1, pFile );
 
+			fread_s( &S.F0.x, sizeof(S.Albedo.x), sizeof(float), 1, pFile );
+			fread_s( &S.F0.y, sizeof(S.Albedo.y), sizeof(float), 1, pFile );
+			fread_s( &S.F0.z, sizeof(S.Albedo.z), sizeof(float), 1, pFile );
+
 			// Transform patch's position/normal by probe's LOCAL=>WORLD
 			S.Position = float3( Probe.pSceneProbe->m_Local2World.GetRow(3) ) + S.Position;
 // 			NjFloat3	wsSetNormal = Set.Normal;
@@ -592,10 +607,10 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 
 			// Read the samples
 			fread_s( &S.SamplesCount, sizeof(S.SamplesCount), sizeof(U32), 1, pFile );
-			ASSERT( S.SamplesCount < SHProbeEncoder::MAX_SAMPLES_PER_PATCH, "Too many samples for that patch!" );
+			ASSERT( S.SamplesCount < SHProbeEncoder::MAX_SAMPLES_PER_SURFACE, "Too many samples for that patch!" );
 			for ( U32 SampleIndex=0; SampleIndex < S.SamplesCount; SampleIndex++ )
 			{
-				SHProbe::SetInfos::Sample&	Sample = S.pSamples[SampleIndex];
+				SHProbe::Surface::Sample&	Sample = S.pSamples[SampleIndex];
 
 				// Read position
 				fread_s( &Sample.Position.x, sizeof(Sample.Position.x), sizeof(float), 1, pFile );
@@ -621,16 +636,16 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 			}
 		}
 
-		// Read the amount of emissive sets
-		U32	EmissiveSetsCount;
-		fread_s( &EmissiveSetsCount, sizeof(EmissiveSetsCount), sizeof(U32), 1, pFile );
-		Probe.EmissiveSetsCount = MIN( SHProbeEncoder::MAX_PROBE_EMISSIVE_PATCHES, EmissiveSetsCount );	// Don't read more than we can chew!
+		// Read the amount of emissive surfaces
+		U32	EmissiveSurfacesCount;
+		fread_s( &EmissiveSurfacesCount, sizeof(EmissiveSurfacesCount), sizeof(U32), 1, pFile );
+		Probe.EmissiveSurfacesCount = MIN( SHProbeEncoder::MAX_PROBE_EMISSIVE_SURFACES, EmissiveSurfacesCount );	// Don't read more than we can chew!
 
-		// Read the sets
-		SHProbe::EmissiveSetInfos	DummyEmissiveSet;
-		for ( U32 SetIndex=0; SetIndex < EmissiveSetsCount; SetIndex++ )
+		// Read the surfaces
+		SHProbe::EmissiveSurface	DummyEmissiveSurface;
+		for ( U32 SurfaceIndex=0; SurfaceIndex < EmissiveSurfacesCount; SurfaceIndex++ )
 		{
-			SHProbe::EmissiveSetInfos&	S = SetIndex < Probe.EmissiveSetsCount ? Probe.pEmissiveSetInfos[SetIndex] : DummyEmissiveSet;	// We load into a useless patch if out of range...
+			SHProbe::EmissiveSurface&	S = SurfaceIndex < Probe.EmissiveSurfacesCount ? Probe.pEmissiveSurfaces[SurfaceIndex] : DummyEmissiveSurface;	// We load into a useless surface if out of range...
 
 			// Read position, normal
 			fread_s( &S.Position.x, sizeof(S.Position.x), sizeof(float), 1, pFile );
@@ -775,6 +790,8 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 	}
 
 	int	ProbeConnectionsCount = Connections.GetEntriesCount();
+	if ( ProbeConnectionsCount == 0 )
+		return;
 
 	// Create the structured buffer from the flattened dictionary
 	m_pSB_RuntimeProbeNetworkInfos = new SB<RuntimeProbeNetworkInfos>( *m_pDevice, ProbeConnectionsCount, true );

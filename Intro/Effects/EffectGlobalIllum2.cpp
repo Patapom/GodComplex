@@ -508,13 +508,15 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 	//////////////////////////////////////////////////////////////////////////
 	// Start precomputation/loading of probes
-	#ifdef LOAD_PROBES
-		QueryMaterial	functor( *this );
-		m_ProbesNetwork.LoadProbes( PROBES_PATH, functor, m_SceneBBoxMin, m_SceneBBoxMax );
-	#else
+	#ifndef LOAD_PROBES
+	{
 		RenderScene		functor( *this );
 		m_ProbesNetwork.PreComputeProbes( PROBES_PATH, functor );
+	}
 	#endif
+
+	QueryMaterial	functor( *this );
+	m_ProbesNetwork.LoadProbes( PROBES_PATH, functor, m_SceneBBoxMin, m_SceneBBoxMax );
 
 
 	//////////////////////////////////////////////////////////////////////////

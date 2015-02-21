@@ -21,70 +21,70 @@ public:		// NESTED TYPES
 	// The static probe structure that we read from disk and stream/keep in memory when probes need updating
 	struct	SHProbe
 	{
-		U32				ProbeID;				// The ID is simply the probe's index in the array of probes
+		U32				ProbeID;					// The ID is simply the probe's index in the array of probes
 		Scene::Probe*	pSceneProbe;
 
 		// Static SH infos
-		float			pSHOcclusion[9];		// The pre-computed SH that gives back how much of the environment is perceived in a given direction
-		float3			pSHBounceStatic[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced static lighting on static geometry
+		float			pSHOcclusion[9];			// The pre-computed SH that gives back how much of the environment is perceived in a given direction
+		float3			pSHBounceStatic[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced static lighting on static geometry
 
 		// Geometric infos
-		float			MeanDistance;			// Mean distance of all scene pixels
-		float			MeanHarmonicDistance;	// Mean harmonic distance (1/sum(1/distance)) of all scene pixels
-		float			MinDistance;			// Distance to closest scene pixel
-		float			MaxDistance;			// Distance to farthest scene pixel
-		float3			BBoxMin;				// Dimensions of the bounding box (axis-aligned) of the scene pixels
+		float			MeanDistance;				// Mean distance of all scene pixels
+		float			MeanHarmonicDistance;		// Mean harmonic distance (1/sum(1/distance)) of all scene pixels
+		float			MinDistance;				// Distance to closest scene pixel
+		float			MaxDistance;				// Distance to farthest scene pixel
+		float3			BBoxMin;					// Dimensions of the bounding box (axis-aligned) of the scene pixels
 		float3			BBoxMax;
 
-		// Generic reflective sets infos
-		U32				SetsCount;				// The amount of dynamic sets for that probe
-		struct SetInfos
+		// Generic reflective surfaces infos
+		U32				SurfacesCount;				// The amount of dynamic surfaces for that probe
+		struct Surface
 		{
-			float3			Position;			// The position of the dynamic set
-			float3			Normal;				// The normal of the dynamic set's plane
-			float3			Tangent;			// The longest principal axis of the set's points cluster (scaled by the length of the axis)
-			float3			BiTangent;			// The shortest principal axis of the set's points cluster (scaled by the length of the axis)
-			float3			Albedo;				// The albedo of the dynamic set (not currently used, for info purpose)
-			float3			pSHBounce[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced dynamic lighting on static geometry, for each dynamic set
+			float3			Position;				// The position of the dynamic surface
+			float3			Normal;					// The normal of the dynamic surface's plane
+			float3			Tangent;				// The longest principal axis of the surface's points cluster (scaled by the length of the axis)
+			float3			BiTangent;				// The shortest principal axis of the surface's points cluster (scaled by the length of the axis)
+			float3			Albedo;					// The albedo of the dynamic surface (not currently used, for info purpose)
+			float3			F0;						// Surface's Fresnel coefficient
+			float3			pSHBounce[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced dynamic lighting on static geometry, for each dynamic surface
 
-			U32				SamplesCount;		// The amount of samples for that probe
+			U32				SamplesCount;			// The amount of samples for that probe
 			struct	Sample
 			{
 				float3			Position;
 				float3			Normal;
 				float			Radius;
-			}				pSamples[SHProbeEncoder::MAX_SAMPLES_PER_PATCH];
+			}				pSamples[SHProbeEncoder::MAX_SAMPLES_PER_SURFACE];
 
-		}				pSetInfos[SHProbeEncoder::MAX_PROBE_PATCHES];
+		}				pSurfaces[SHProbeEncoder::MAX_PROBE_SURFACES];
 
-		// Emissive sets infos
-		U32				EmissiveSetsCount;		// The amount of emissive sets for that probe
-		struct EmissiveSetInfos
+		// Emissive surfaces infos
+		U32				EmissiveSurfacesCount;		// The amount of emissive surfaces for that probe
+		struct EmissiveSurface
 		{
-			float3			Position;			// The position of the emissive set
-			float3			Normal;				// The normal of the emissive set's plane
-			float3			Tangent;			// The longest principal axis of the set's points cluster (scaled by the length of the axis)
-			float3			BiTangent;			// The shortest principal axis of the set's points cluster (scaled by the length of the axis)
+			float3				Position;			// The position of the emissive surface
+			float3				Normal;				// The normal of the emissive surface's plane
+			float3				Tangent;			// The longest principal axis of the surface's points cluster (scaled by the length of the axis)
+			float3				BiTangent;			// The shortest principal axis of the surface's points cluster (scaled by the length of the axis)
 			Scene::Material*	pEmissiveMaterial;	// Direct pointer to the material
-
-			float			pSHEmissive[9];		// The pre-computed SH that gives back how much the probe emits light
-		}				pEmissiveSetInfos[SHProbeEncoder::MAX_PROBE_EMISSIVE_PATCHES];
+			float				pSHEmissive[9];		// The pre-computed SH that gives back how much the probe emits light
+		}				pEmissiveSurfaces[SHProbeEncoder::MAX_PROBE_EMISSIVE_SURFACES];
 
 		// Neighbor probes infos
 		float			NearestProbeDistance;
 		float			FarthestProbeDistance;
 		struct NeighborProbeInfos
 		{
-			U32				ProbeID;			// ID of the neighbor probe
-			float			Distance;			// Average distance to the probe
-			float			SolidAngle;			// Perceived solid angle covered by the probe
-			float3			Direction;			// Average direction to the probe
-			float			SH[9];				// Convolution SH to use to isolate the contribution of the probe's SH this probe should perceive
+			U32				ProbeID;				// ID of the neighbor probe
+			float			Distance;				// Average distance to the probe
+			float			SolidAngle;				// Perceived solid angle covered by the probe
+			float3			Direction;				// Average direction to the probe
+			float			SH[9];					// Convolution SH to use to isolate the contribution of the probe's SH this probe should perceive
 		}				pNeighborProbeInfos[MAX_PROBE_NEIGHBORS];
 
 
 		// ===== Software Computation Section =====
-		float3		pSHBouncedLight[9];		// The resulting bounced irradiance * light(static+dynamic) + emissive for current frame
+		float3			pSHBouncedLight[9];			// The resulting bounced irradiance * light(static+dynamic) + emissive for current frame (only valid if CPU computed)
 
 		// Clears the light bounce accumulator
 		void			ClearLightBounce( const float3 _pSHAmbient[9] );
@@ -127,7 +127,7 @@ private:	// RUNTIME STRUCTURES
 
 	struct CBUpdateProbes	// Used by probes dynamic update
 	{
-		float4		AmbientSH[9];				// Ambient sky (padded!)
+		float4		AmbientSH[9];		// Ambient sky (padded!)
 //		float		SunBoost;	// Merged into the last float4
 
 		float		SkyBoost;
@@ -154,10 +154,10 @@ private:	// RUNTIME STRUCTURES
 	struct RuntimeProbeUpdateInfos
 	{
 		U32			Index;							// The index of the probe we're updating
-		U32			SetsStart;						// Index of the first set for the probe
-		U32			SetsCount;						// Amount of sets for the probe
-		U32			EmissiveSetsStart;				// Index of the first emissive set for the probe
-		U32			EmissiveSetsCount;				// Amount of emissive sets for the probe
+		U32			SurfacesStart;					// Index of the first surface for the probe
+		U32			SurfacesCount;					// Amount of surfaces for the probe
+		U32			EmissiveSurfacesStart;			// Index of the first emissive surface for the probe
+		U32			EmissiveSurfacesCount;			// Amount of emissive surfaces for the probe
 		U32			SamplingPointsStart;			// Index of the first sampling point for the probe
 		U32			SamplingPointsCount;			// Amount of sampling points for the probe
 		float3		SHStatic[9];					// Precomputed static SH (static geometry + static lights)
@@ -172,13 +172,13 @@ private:	// RUNTIME STRUCTURES
 	{
 		U32			SamplingPointsStart;			// Index of the first sampling point
 		U32			SamplingPointsCount;			// Amount of sampling points
-		float3		SH[9];							// SH for the set
+		float3		SH[9];							// SH for the surface
 	};
 
 	struct	RuntimeProbeUpdateEmissiveSetInfos
 	{
 		float3		EmissiveColor;					// Color of the emissive material
-		float		SH[9];							// SH for the set
+		float		SH[9];							// SH for the surface
 	};
 
 	struct RuntimeSamplingPointInfos
@@ -225,8 +225,8 @@ private:	// FIELDS
 	U32						m_MaxProbesCount;
 	SHProbe*				m_pProbes;
 	SB<RuntimeProbeUpdateInfos>*			m_pSB_RuntimeProbeUpdateInfos;
-	SB<RuntimeProbeUpdateSetInfos>*			m_pSB_RuntimeProbeSetInfos;
-	SB<RuntimeProbeUpdateEmissiveSetInfos>*	m_pSB_RuntimeProbeEmissiveSetInfos;
+	SB<RuntimeProbeUpdateSetInfos>*			m_pSB_RuntimeProbeSurfaces;
+	SB<RuntimeProbeUpdateEmissiveSetInfos>*	m_pSB_RuntimeProbeEmissiveSurfaces;
 	SB<RuntimeSamplingPointInfos>*			m_pSB_RuntimeSamplingPointInfos;
 
 	// Probes network debug

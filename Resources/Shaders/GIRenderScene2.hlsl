@@ -100,6 +100,9 @@ PS_IN	VS( SCENE_VS_IN _In )
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
+return float4( 1, 0, 0, 1 );
+
+
 //return float4( 0.01 * _In.SH0, 0 );
 // return float4( 0.01 * _In.SH1, 0 );
 

@@ -224,7 +224,7 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeI
 	//////////////////////////////////////////////////////////////////////////
 	// 4] Build surfaces by flood filling
 	//
-	ComputeFloodFill( MAX_PROBE_PATCHES, MAX_SAMPLES_PER_PATCH, 1.0f, 1.0f, 1.0f, 0.5f );
+	ComputeFloodFill( MAX_PROBE_SURFACES, MAX_SAMPLES_PER_SURFACE, 1.0f, 1.0f, 1.0f, 0.5f );
 }
 
 FILE*	g_pFile = NULL;
@@ -232,9 +232,9 @@ template< typename T> void	Write( const T& _value ) {
 	fwrite( &_value, sizeof(T), 1, g_pFile );
 }
 
-void	SHProbeEncoder::Save( const char* _FileName ) {
+void	SHProbeEncoder::Save( const char* _FileName ) const {
 
-	fopen_s( &g_pFile, _FileName, "rb" );
+	fopen_s( &g_pFile, _FileName, "wb" );
 	ASSERT( g_pFile != NULL, "Locked!" );
 
 	// Write the mean, harmonic mean, min, max distances
@@ -266,57 +266,61 @@ void	SHProbeEncoder::Save( const char* _FileName ) {
 	// Write the result surfaces
 	Write( m_SurfacesCount );
 	for ( U32 i=0; i < m_SurfacesCount; i++ ) {
-		Surface&	P = *m_ppSurfaces[i];
+		Surface&	S = *m_ppSurfaces[i];
 
 		// Write position, normal, albedo
-		Write( P.Position.x );
-		Write( P.Position.y );
-		Write( P.Position.z );
+		Write( S.Position.x );
+		Write( S.Position.y );
+		Write( S.Position.z );
 
-		Write( P.Normal.x );
-		Write( P.Normal.y );
-		Write( P.Normal.z );
+		Write( S.Normal.x );
+		Write( S.Normal.y );
+		Write( S.Normal.z );
 
-		Write( P.Tangent.x );
-		Write( P.Tangent.y );
-		Write( P.Tangent.z );
+		Write( S.Tangent.x );
+		Write( S.Tangent.y );
+		Write( S.Tangent.z );
 
-		Write( P.BiTangent.x );
-		Write( P.BiTangent.y );
-		Write( P.BiTangent.z );
+		Write( S.BiTangent.x );
+		Write( S.BiTangent.y );
+		Write( S.BiTangent.z );
 
 			// Not used, just for information purpose
-		Write( (float) (P.Albedo.x * INVPI) );
-		Write( (float) (P.Albedo.y * INVPI) );
-		Write( (float) (P.Albedo.z * INVPI) );
+		Write( (float) (S.Albedo.x * INVPI) );
+		Write( (float) (S.Albedo.y * INVPI) );
+		Write( (float) (S.Albedo.z * INVPI) );
+
+		Write( S.F0.x );
+		Write( S.F0.y );
+		Write( S.F0.z );
 
 		// Write SH coefficients (albedo is already factored in)
 		for ( int i=0; i < 9; i++ )
 		{
-			Write( P.SH[i].x );
-			Write( P.SH[i].y );
-			Write( P.SH[i].z );
+			Write( S.SH[i].x );
+			Write( S.SH[i].y );
+			Write( S.SH[i].z );
 		}
 
 		// Write amount of samples
-		Write( (U32) P.SamplesCount );
+		Write( (U32) S.SamplesCount );
 
 		// Write each sample
-		for ( int j=0; j < P.SamplesCount; j++ ) {
-			Surface::Sample&	S = P.Samples[j];
+		for ( int j=0; j < S.SamplesCount; j++ ) {
+			Surface::Sample&	Sample = S.Samples[j];
 
 			// Write position
-			Write( S.Position.x );
-			Write( S.Position.y );
-			Write( S.Position.z );
+			Write( Sample.Position.x );
+			Write( Sample.Position.y );
+			Write( Sample.Position.z );
 
 			// Write normal
-			Write( S.Normal.x );
-			Write( S.Normal.y );
-			Write( S.Normal.z );
+			Write( Sample.Normal.x );
+			Write( Sample.Normal.y );
+			Write( Sample.Normal.z );
 
 			// Write radius
-			Write( S.Radius );
+			Write( Sample.Radius );
 		}
 	}
 
@@ -359,7 +363,7 @@ void	SHProbeEncoder::Save( const char* _FileName ) {
 	Write( m_FarthestNeighborProbeDistance );
 
 	for ( int i=0; i < m_NeighborProbes.GetCount(); i++ ) {
-		NeighborProbe&	NP = m_NeighborProbes[i];
+		const NeighborProbe&	NP = m_NeighborProbes[i];
 
 		// Write probe ID, distance, solid angle, direction
 		Write( NP.ProbeID );
@@ -377,16 +381,144 @@ void	SHProbeEncoder::Save( const char* _FileName ) {
 	fclose( g_pFile );
 
 // We now save a single file
-// 			// Save probe influence for each scene face
-// 			FileInfo	InfluenceFileName = new FileInfo( Path.Combine( Path.GetDirectoryName( _FileName.FullName ), Path.GetFileNameWithoutExtension( _FileName.FullName ) + ".FaceInfluence" ) );
-// 			using ( FileStream S = InfluenceFileName.Create() )
-// 				using ( BinaryWriter W = new BinaryWriter( S ) )
-// 				{
-// 					for ( U32 FaceIndex=0; FaceIndex < m_MaxFaceIndex; FaceIndex++ )
-// 					{
-// 						W.Write( (float) (m_ProbeInfluencePerFace.ContainsKey( FaceIndex ) ? m_ProbeInfluencePerFace[FaceIndex] : 0.0) );
-// 					}
-// 				}
+// // Save probe influence for each scene face
+// FileInfo	InfluenceFileName = new FileInfo( Path.Combine( Path.GetDirectoryName( _FileName.FullName ), Path.GetFileNameWithoutExtension( _FileName.FullName ) + ".FaceInfluence" ) );
+// using ( FileStream S = InfluenceFileName.Create() )
+// 	using ( BinaryWriter W = new BinaryWriter( S ) )
+// 	{
+// 		for ( U32 FaceIndex=0; FaceIndex < m_MaxFaceIndex; FaceIndex++ )
+// 		{
+// 			W.Write( (float) (m_ProbeInfluencePerFace.ContainsKey( FaceIndex ) ? m_ProbeInfluencePerFace[FaceIndex] : 0.0) );
+// 		}
+// 	}
+}
+
+void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
+
+	fopen_s( &g_pFile, _FileName, "wb" );
+	ASSERT( g_pFile != NULL, "Locked!" );
+
+	Write( CUBE_MAP_SIZE );
+
+	const Pixel*	P = m_pCubeMapPixels;
+	for ( int i=0; i < 6*CUBE_MAP_FACE_SIZE; i++, P++ ) {
+
+		Write( P->pParentSurface != NULL ? P->pParentSurface->ID : ~0UL );
+
+		Write( P->Position.x );
+		Write( P->Position.y );
+		Write( P->Position.z );
+		Write( P->Normal.x );
+		Write( P->Normal.y );
+		Write( P->Normal.z );
+
+		Write( P->Albedo.x );
+		Write( P->Albedo.y );
+		Write( P->Albedo.z );
+		Write( P->F0.x );
+		Write( P->F0.y );
+		Write( P->F0.z );
+
+		Write( P->StaticLitColor.x );
+		Write( P->StaticLitColor.y );
+		Write( P->StaticLitColor.z );
+		Write( P->SmoothedStaticLitColor.x );
+		Write( P->SmoothedStaticLitColor.y );
+		Write( P->SmoothedStaticLitColor.z );
+
+		Write( P->FaceIndex );
+		Write( P->EmissiveMatID );
+		Write( P->NeighborProbeID );
+		Write( P->NeighborProbeDistance );
+
+		Write( P->Importance );
+		Write( P->Distance );
+		Write( P->SmoothedDistance );
+		Write( P->Distance2Border );
+		Write( P->ParentSurfaceSampleIndex );
+	}
+
+	// Write surfaces
+	Write( m_SurfacesCount );
+	for ( U32 SurfaceIndex=0; SurfaceIndex < m_SurfacesCount; SurfaceIndex++ ) {
+		const Surface*	S = m_ppSurfaces[SurfaceIndex];
+
+		Write( S->Position.x );
+		Write( S->Position.y );
+		Write( S->Position.z );
+
+		Write( S->Normal.x );
+		Write( S->Normal.y );
+		Write( S->Normal.z );
+
+		Write( S->Tangent.x );
+		Write( S->Tangent.y );
+		Write( S->Tangent.z );
+
+		Write( S->BiTangent.x );
+		Write( S->BiTangent.y );
+		Write( S->BiTangent.z );
+
+		Write( S->Albedo.x );
+		Write( S->Albedo.y );
+		Write( S->Albedo.z );
+		Write( S->F0.x );
+		Write( S->F0.y );
+		Write( S->F0.z );
+
+		Write( S->PixelsCount );
+
+		for ( int i=0; i < 9; i++ ) {
+			Write( S->SH[i].x );
+			Write( S->SH[i].y );
+			Write( S->SH[i].z );
+		}
+
+		Write( S->SamplesCount );
+		for ( int SampleIndex=0; SampleIndex < S->SamplesCount; SampleIndex++ ) {
+			const Surface::Sample&	Sample = S->Samples[SampleIndex];
+
+			Write( Sample.Position.x );
+			Write( Sample.Position.y );
+			Write( Sample.Position.z );
+			Write( Sample.Normal.x );
+			Write( Sample.Normal.y );
+			Write( Sample.Normal.z );
+			Write( Sample.Radius );
+		}
+	}
+
+	// Write the emissive surfaces
+	Write( m_EmissiveSurfacesCount );
+	for ( U32 i=0; i < m_EmissiveSurfacesCount; i++ ) {
+		Surface&	S = *m_ppEmissiveSurfaces[i];
+
+		// Write position, normal, albedo
+		Write( S.Position.x );
+		Write( S.Position.y );
+		Write( S.Position.z );
+
+		Write( S.Normal.x );
+		Write( S.Normal.y );
+		Write( S.Normal.z );
+
+		Write( S.Tangent.x );
+		Write( S.Tangent.y );
+		Write( S.Tangent.z );
+
+		Write( S.BiTangent.x );
+		Write( S.BiTangent.y );
+		Write( S.BiTangent.z );
+
+		// Write emissive mat
+		Write( S.EmissiveMatID );
+
+		// Write SH coefficients (we only write luminance here, we don't have the color info that is provided at runtime)
+		for ( int i=0; i < 9; i++ )
+			Write( S.SH[i].x );
+	}
+
+	fclose( g_pFile );
 }
 
 
@@ -454,14 +586,16 @@ DEBUG_PixelIndex = PixelIndex;
 		S.pPixels = NULL;
 	 	Pixel*	pRejectedPixels = NULL;
 
-		m_ScanlinePixelIndex = 0;	// VEEERY important line where we reset the pixel index of the pool of flood filled pixels!
-		FloodFill( S, &S, &P0, pRejectedPixels );
+		m_ScanlinePixelIndex = 0;		// VEEERY important line where we reset the pixel index of the pool of flood filled pixels!
+		P0.Distance2Border = -1;
+		P0.Distance2Border = 1 + FloodFill( S, &S, &P0, pRejectedPixels );
 		ASSERT( m_ScanlinePixelIndex > 0, "Can't have empty surfaces!" );
 
 		// Remove rejected pixels from the surface (we only temporarily marked them to avoid them being processed twice by the flood filler)
 		int	RejectedPixelsCount = 0;
 		while ( pRejectedPixels != NULL ) {
 			pRejectedPixels->pParentSurface = NULL;	// Ready for another round!
+			pRejectedPixels->Distance2Border = INT_MAX;
 			pRejectedPixels = pRejectedPixels->pNext;
 			RejectedPixelsCount++;					// For debugging purpose only...
 		}
@@ -548,14 +682,14 @@ DEBUG_PixelIndex = PixelIndex;
 		// Copy down our selected surfaces
 		m_SurfacesCount = 0;
 		Surface*	S = pRegularSurfaces;
-		while ( S != NULL && m_SurfacesCount < MAX_PROBE_PATCHES ) {
+		while ( S != NULL && m_SurfacesCount < MAX_PROBE_SURFACES ) {
 			m_ppSurfaces[m_SurfacesCount++] = S;
 			S = (Surface*) S->pNext;
 		}
 
 		m_EmissiveSurfacesCount = 0;
 		S = pEmissiveSurfaces;
-		while ( S != NULL && m_EmissiveSurfacesCount < MAX_PROBE_EMISSIVE_PATCHES ) {
+		while ( S != NULL && m_EmissiveSurfacesCount < MAX_PROBE_EMISSIVE_SURFACES ) {
 			m_ppEmissiveSurfaces[m_EmissiveSurfacesCount++] = S;
 			S = (Surface*) S->pNext;
 		}
@@ -667,38 +801,55 @@ DEBUG_PixelIndex = PixelIndex;
 // The idea here is to process an entire scanline first (going left and right and collecting valid scanline pixels along the way)
 //  then for each of these pixels we move up/down and fill the top/bottom scanlines from these new seeds...
 //
-void	SHProbeEncoder::FloodFill( Surface& _Patch, Pixel* _PreviousPixel, Pixel* _P, Pixel*& _RejectedPixels ) const {
+int	SHProbeEncoder::FloodFill( Surface& _Patch, Pixel* _PreviousPixel, Pixel* _P, Pixel*& _RejectedPixels ) const {
 
 	static int	RecursionLevel = 0;	// For debugging purpose
 
 	if ( !CheckAndAcceptPixel( _Patch, *_PreviousPixel, *_P, _RejectedPixels ) )
-		return;
+		return 0;	// We found a border pixel!
 
 	//////////////////////////////////////////////////////////////////////////
 	// Check the entire scanline
 	int	ScanlineStartIndex = m_ScanlinePixelIndex;
 	m_ppScanlinePixelsPool[m_ScanlinePixelIndex++] = _P;	// This pixel is implicitly on the scanline
 
+	int		Distance2BorderLeft = 0;
+	int		Distance2BorderRight = 0;
+
 	{	// Start going right
 		CubeMapPixelWalker	P( *this, *_P );
 		Pixel*	Previous = _P;
 		Pixel*	Current = &P.Right();
 		while ( CheckAndAcceptPixel( _Patch, *Previous, *Current, _RejectedPixels ) ) {
+			Current->Distance2Border = Distance2BorderRight++;
 			m_ppScanlinePixelsPool[m_ScanlinePixelIndex++] = Current;
 			Previous = Current;
 			Current = &P.Right();
 		}
 	}
 
+	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < m_ScanlinePixelIndex; ScanlinePixelIndex++ ) {
+		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
+		P->Distance2Border = Distance2BorderRight - P->Distance2Border;	// Reverse distance to obtain correct distance to the right border
+	}
+
+	int	ScanlineRightEndIndex = m_ScanlinePixelIndex;
+
 	{	// Start going left
 		CubeMapPixelWalker	P( *this, *_P );
 		Pixel*	Previous = _P;
 		Pixel*	Current = &P.Left();
 		while ( CheckAndAcceptPixel( _Patch, *Previous, *Current, _RejectedPixels ) ) {
+			Current->Distance2Border = Distance2BorderLeft++;
 			m_ppScanlinePixelsPool[m_ScanlinePixelIndex++] = Current;
 			Previous = Current;
 			Current = &P.Left();
 		}
+	}
+
+	for ( int ScanlinePixelIndex=ScanlineRightEndIndex; ScanlinePixelIndex < m_ScanlinePixelIndex; ScanlinePixelIndex++ ) {
+		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
+		P->Distance2Border = Distance2BorderLeft - P->Distance2Border;	// Reverse distance to obtain correct distance to the left border
 	}
 
 	RecursionLevel++;
@@ -707,23 +858,52 @@ void	SHProbeEncoder::FloodFill( Surface& _Patch, Pixel* _PreviousPixel, Pixel* _
 
 	//////////////////////////////////////////////////////////////////////////
 	// Recurse into each pixel of the top scanline
-	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ ) {
+	int	PreviousDistance2Border = INT_MAX;
+	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineRightEndIndex; ScanlinePixelIndex++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
+
 		CubeMapPixelWalker	Walker( *this, *P );
 		Pixel*	Top = &Walker.Up();
-		FloodFill( _Patch, P, Top, _RejectedPixels );
+		int		Distance2Border = 1 + FloodFill( _Patch, P, Top, _RejectedPixels );		// Returns the nearest border distance from top propagation
+				Distance2Border = min( PreviousDistance2Border, Distance2Border );		// Accounts for previous pixel distance
+
+		P->Distance2Border = min( P->Distance2Border, Distance2Border );				// The final distance is the smallest distance between the left/right border and any other border found by FloodFill
+		PreviousDistance2Border = 1+P->Distance2Border;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Recurse into each pixel of the bottom scanline
-	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ ) {
+	PreviousDistance2Border = INT_MAX;
+	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineRightEndIndex; ScanlinePixelIndex++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
+
 		CubeMapPixelWalker	Walker( *this, *P );
 		Pixel*	Bottom = &Walker.Down();
-		FloodFill( _Patch, P, Bottom, _RejectedPixels );
+		int		Distance2Border = 1 + FloodFill( _Patch, P, Bottom, _RejectedPixels );	// Returns the nearest border distance from top propagation
+				Distance2Border = min( PreviousDistance2Border, Distance2Border );		// Accounts for previous pixel distance
+
+		P->Distance2Border = min( P->Distance2Border, Distance2Border );				// The final distance is the smallest distance between the left/right border and any other border found by FloodFill
+		PreviousDistance2Border = 1+P->Distance2Border;
 	}
 
 	RecursionLevel--;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Browse pixels in reverse order to propagate back nearest distance from left and right
+	Distance2BorderRight = 1;
+	for ( int ScanlinePixelIndex=ScanlineRightEndIndex-1; ScanlinePixelIndex >= ScanlineStartIndex; ScanlinePixelIndex--, Distance2BorderRight++ ) {
+		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
+		P->Distance2Border = min( P->Distance2Border, Distance2BorderRight );
+		Distance2BorderRight = P->Distance2Border;
+	}
+	Distance2BorderLeft = 1;
+	for ( int ScanlinePixelIndex=ScanlineEndIndex-1; ScanlinePixelIndex >= ScanlineRightEndIndex; ScanlinePixelIndex--, Distance2BorderLeft++ ) {
+		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
+		P->Distance2Border = min( P->Distance2Border, Distance2BorderLeft );
+		Distance2BorderLeft = P->Distance2Border;
+	}
+
+	return min( Distance2BorderLeft, Distance2BorderRight );
 }
 
 bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Surface, Pixel& _PreviousPixel, Pixel& _P, Pixel*& _pRejectedPixels ) const {
@@ -1141,6 +1321,8 @@ NegativeImportancePixelsCount++;
 				P->Distance = Distance;
 				P->Infinity = Distance > Z_INFINITY_TEST;
 
+				P->Distance2Border = 0;
+
 				if ( P->Infinity )
 					continue;	// Not part of the scene's geometry!
 
@@ -1240,7 +1422,6 @@ const double	SHProbeEncoder::Pixel::f3 = sqrt(5.0) * 0.5 * SHProbeEncoder::Pixel
 float	SHProbeEncoder::Pixel::IMPORTANCE_THRESOLD = 0.0f;
 
 void	SHProbeEncoder::Surface::GenerateSamples( int _SamplesCount ) {
-	ASSERT( false, "TODO!" );
 /*
 	Sample*	Samples = new Sample[_SamplesCount];
 	ASSERT( _SamplesCount <= PixelsCount, "More samples than pixels in the surface! This is useless!" );
