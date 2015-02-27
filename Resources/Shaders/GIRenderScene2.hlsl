@@ -100,7 +100,7 @@ PS_IN	VS( SCENE_VS_IN _In )
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
-return float4( 1, 0, 0, 1 );
+//return float4( 1, 0, 0, 1 );
 
 
 //return float4( 0.01 * _In.SH0, 0 );
@@ -152,7 +152,7 @@ return float4( 1, 0, 0, 1 );
 
 	float3	Normal = normalize( tsNormal.x * VertexTangent + tsNormal.y * VertexBiTangent + tsNormal.z * VertexNormal );
 
-//return float4( Normal, 1 );
+return float4( Normal, 1 );
 
 	float3	AccumDiffuse = 0.0;
 	float3	AccumSpecular = 0.0;

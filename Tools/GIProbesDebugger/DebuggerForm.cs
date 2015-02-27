@@ -25,6 +25,7 @@ namespace GIProbesDebugger
 			public float4x4		_Camera2World;
 			public float4		_TargetSize;
 			public uint			_Type;
+			public uint			_Flags;
 		}
 
 		private ConstantBuffer<CB_Main>	m_CB_Main = null;
@@ -123,7 +124,7 @@ namespace GIProbesDebugger
 										Pixel	P = CubeMapFaces[CubeMapFaceIndex][X,Y];
 										switch ( CubeIndex ) {
 											case 0:
-												Value.Set( P.Position, (float) P.ParentSurfaceID );
+												Value.Set( P.Position, P.Distance );
 												break;
 											case 1:
 												Value.Set( P.Normal, (float) P.Importance );
@@ -132,7 +133,7 @@ namespace GIProbesDebugger
 												Value.Set( P.Albedo, P.SmoothedInfinity );
 												break;
 											case 3:
-												Value.Set( P.StaticLitColor, P.Distance );
+												Value.Set( P.StaticLitColor, (float) P.ParentSurfaceID );
 												break;
 											case 4:
 												Value.Set( P.SmoothedStaticLitColor, P.SmoothedDistance );
@@ -233,6 +234,7 @@ namespace GIProbesDebugger
 			// Setup global data
 			m_CB_Main.m._TargetSize = new float4( Width, Height, 1.0f / Width, 1.0f / Height );
 			m_CB_Main.m._Type = (uint) integerTrackbarControlDisplayType.Value;
+			m_CB_Main.m._Flags = (uint) ((checkBoxShowCubeMapFaces.Checked ? 1 : 0) | (checkBoxShowDistance.Checked ? 2 : 0) | (checkBoxShowWSPosition.Checked ? 4 : 0));
 			m_CB_Main.UpdateData();
 
 

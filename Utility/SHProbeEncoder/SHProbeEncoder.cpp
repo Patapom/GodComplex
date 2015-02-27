@@ -538,13 +538,17 @@ void	SHProbeEncoder::ComputeFloodFill( int _MaxSetsCount, int _MaxLightingSample
 
 	// Setup the reference thresholds for pixels' acceptance
 //	Pixel.IMPORTANCE_THRESOLD = (float) ((4.0f * Math.PI / CUBE_MAP_FACE_SIZE) / (m_MeanDistance * m_MeanDistance));	// Compute an average solid angle threshold based on average pixels' distance
-	Pixel::IMPORTANCE_THRESOLD = (float) (0.01f * _MinimumImportanceDiscardThreshold / (m_MeanHarmonicDistance * m_MeanHarmonicDistance));	// Simply use the mean harmonic distance as a good approximation of important pixels
+	Pixel::IMPORTANCE_THRESOLD = (float) (0.1f * _MinimumImportanceDiscardThreshold / (m_MeanHarmonicDistance * m_MeanHarmonicDistance));	// Simply use the mean harmonic distance as a good approximation of important pixels
 																									// Pixels that are further or not facing the probe will have less importance...
 
 	DISTANCE_THRESHOLD = 0.02f * _SpatialDistanceWeight;						// 2cm
 	ANGULAR_THRESHOLD = acosf( 45.0f * _NormalDistanceWeight * PI / 180.0f );	// 45° (we're very generous here!)
 	ALBEDO_HUE_THRESHOLD = 0.04f * _AlbedoDistanceWeight;						// Close colors!
 	ALBEDO_RGB_THRESHOLD = 0.32f * _AlbedoDistanceWeight;						// Close colors!
+
+
+DISTANCE_THRESHOLD = 0.30f;	// 30cm
+
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -569,6 +573,7 @@ DEBUG_PixelIndex = PixelIndex;
 
 		S.Position = P0.Position;
 		S.Normal = P0.Normal;
+		S.View = P0.View;
 		S.Distance = P0.Distance;
 		S.SmoothedDistance  = P0.SmoothedDistance;
 		S.EmissiveMatID = P0.EmissiveMatID;
@@ -589,7 +594,8 @@ DEBUG_PixelIndex = PixelIndex;
 	 	Pixel*	pRejectedPixels = NULL;
 
 		m_ScanlinePixelIndex = 0;		// VEEERY important line where we reset the pixel index of the pool of flood filled pixels!
-		P0.Distance2Border = -1;
+		S.Distance2Border = INT_MAX>>1;
+		P0.Distance2Border = INT_MAX>>1;
 		P0.Distance2Border = 1 + FloodFill( S, &S, &P0, pRejectedPixels );
 		ASSERT( m_ScanlinePixelIndex > 0, "Can't have empty surfaces!" );
 
@@ -597,7 +603,7 @@ DEBUG_PixelIndex = PixelIndex;
 		int	RejectedPixelsCount = 0;
 		while ( pRejectedPixels != NULL ) {
 			pRejectedPixels->pParentSurface = NULL;	// Ready for another round!
-			pRejectedPixels->Distance2Border = INT_MAX;
+			pRejectedPixels->Distance2Border = INT_MAX>>1;
 			pRejectedPixels = pRejectedPixels->pNext;
 			RejectedPixelsCount++;					// For debugging purpose only...
 		}
@@ -803,12 +809,13 @@ DEBUG_PixelIndex = PixelIndex;
 // The idea here is to process an entire scanline first (going left and right and collecting valid scanline pixels along the way)
 //  then for each of these pixels we move up/down and fill the top/bottom scanlines from these new seeds...
 //
-int	SHProbeEncoder::FloodFill( Surface& _Patch, Pixel* _PreviousPixel, Pixel* _P, Pixel*& _RejectedPixels ) const {
+int	SHProbeEncoder::FloodFill( Surface& _Surface, Pixel* _PreviousPixel, Pixel* _P, Pixel*& _RejectedPixels ) const {
 
 	static int	RecursionLevel = 0;	// For debugging purpose
 
-	if ( !CheckAndAcceptPixel( _Patch, *_PreviousPixel, *_P, _RejectedPixels ) )
-		return 0;	// We found a border pixel!
+	bool	bIsBorder = false;
+	if ( !CheckAndAcceptPixel( _Surface, *_PreviousPixel, *_P, _RejectedPixels, bIsBorder ) )
+		return bIsBorder ? 0 : INT_MAX>>1;	// We found a border pixel or the pixel is already used!
 
 	//////////////////////////////////////////////////////////////////////////
 	// Check the entire scanline
@@ -816,23 +823,21 @@ int	SHProbeEncoder::FloodFill( Surface& _Patch, Pixel* _PreviousPixel, Pixel* _P
 	m_ppScanlinePixelsPool[m_ScanlinePixelIndex++] = _P;	// This pixel is implicitly on the scanline
 
 	int		Distance2BorderLeft = 0;
+	int		CountLeft = 0;
 	int		Distance2BorderRight = 0;
+	int		CountRight = 0;
 
 	{	// Start going right
 		CubeMapPixelWalker	P( *this, *_P );
 		Pixel*	Previous = _P;
 		Pixel*	Current = &P.Right();
-		while ( CheckAndAcceptPixel( _Patch, *Previous, *Current, _RejectedPixels ) ) {
-			Current->Distance2Border = Distance2BorderRight++;
+		while ( CheckAndAcceptPixel( _Surface, *Previous, *Current, _RejectedPixels, bIsBorder ) ) {
 			m_ppScanlinePixelsPool[m_ScanlinePixelIndex++] = Current;
 			Previous = Current;
 			Current = &P.Right();
+			CountRight++;
 		}
-	}
-
-	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < m_ScanlinePixelIndex; ScanlinePixelIndex++ ) {
-		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
-		P->Distance2Border = Distance2BorderRight - P->Distance2Border;	// Reverse distance to obtain correct distance to the right border
+		Distance2BorderRight = bIsBorder ? 0 : Current->Distance2Border;	// Start from border or from existing distance
 	}
 
 	int	ScanlineRightEndIndex = m_ScanlinePixelIndex;
@@ -841,32 +846,41 @@ int	SHProbeEncoder::FloodFill( Surface& _Patch, Pixel* _PreviousPixel, Pixel* _P
 		CubeMapPixelWalker	P( *this, *_P );
 		Pixel*	Previous = _P;
 		Pixel*	Current = &P.Left();
-		while ( CheckAndAcceptPixel( _Patch, *Previous, *Current, _RejectedPixels ) ) {
-			Current->Distance2Border = Distance2BorderLeft++;
+		while ( CheckAndAcceptPixel( _Surface, *Previous, *Current, _RejectedPixels, bIsBorder ) ) {
 			m_ppScanlinePixelsPool[m_ScanlinePixelIndex++] = Current;
 			Previous = Current;
 			Current = &P.Left();
+			CountLeft++;
 		}
-	}
-
-	for ( int ScanlinePixelIndex=ScanlineRightEndIndex; ScanlinePixelIndex < m_ScanlinePixelIndex; ScanlinePixelIndex++ ) {
-		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
-		P->Distance2Border = Distance2BorderLeft - P->Distance2Border;	// Reverse distance to obtain correct distance to the left border
+		Distance2BorderLeft = bIsBorder ? 0 : Current->Distance2Border;	// Start from border or from existing distance
 	}
 
 	RecursionLevel++;
 
 	int	ScanlineEndIndex = m_ScanlinePixelIndex;
 
+ 	// Browse all pixels again to reach an equilibrium
+	for ( int ScanlinePixelIndex=ScanlineRightEndIndex-1, i=0; ScanlinePixelIndex >= ScanlineStartIndex; ScanlinePixelIndex--, i++ ) {
+		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
+		int		Distance2BorderLeftOrRight = min( Distance2BorderRight+i, Distance2BorderLeft+CountRight+CountLeft-i );
+		P->Distance2Border = min( _PreviousPixel->Distance2Border + CountRight - i, Distance2BorderLeftOrRight );
+	}
+	for ( int ScanlinePixelIndex=ScanlineEndIndex-1, i=0; ScanlinePixelIndex >= ScanlineRightEndIndex; ScanlinePixelIndex--, i++ ) {
+		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
+		int		Distance2BorderLeftOrRight = min( Distance2BorderLeft+i, Distance2BorderRight+CountRight+CountLeft-i );
+		P->Distance2Border = min( _PreviousPixel->Distance2Border + CountLeft - i, Distance2BorderLeftOrRight );
+	}
+
+
 	//////////////////////////////////////////////////////////////////////////
 	// Recurse into each pixel of the top scanline
-	int	PreviousDistance2Border = INT_MAX;
+	int	PreviousDistance2Border = INT_MAX>>1;
 	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineRightEndIndex; ScanlinePixelIndex++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
 
 		CubeMapPixelWalker	Walker( *this, *P );
 		Pixel*	Top = &Walker.Up();
-		int		Distance2Border = 1 + FloodFill( _Patch, P, Top, _RejectedPixels );		// Returns the nearest border distance from top propagation
+		int		Distance2Border = 1 + FloodFill( _Surface, P, Top, _RejectedPixels );	// Returns the nearest border distance from top propagation
 				Distance2Border = min( PreviousDistance2Border, Distance2Border );		// Accounts for previous pixel distance
 
 		P->Distance2Border = min( P->Distance2Border, Distance2Border );				// The final distance is the smallest distance between the left/right border and any other border found by FloodFill
@@ -875,13 +889,13 @@ int	SHProbeEncoder::FloodFill( Surface& _Patch, Pixel* _PreviousPixel, Pixel* _P
 
 	//////////////////////////////////////////////////////////////////////////
 	// Recurse into each pixel of the bottom scanline
-	PreviousDistance2Border = INT_MAX;
+	PreviousDistance2Border = INT_MAX>>1;
 	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineRightEndIndex; ScanlinePixelIndex++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
 
 		CubeMapPixelWalker	Walker( *this, *P );
 		Pixel*	Bottom = &Walker.Down();
-		int		Distance2Border = 1 + FloodFill( _Patch, P, Bottom, _RejectedPixels );	// Returns the nearest border distance from top propagation
+		int		Distance2Border = 1 + FloodFill( _Surface, P, Bottom, _RejectedPixels );// Returns the nearest border distance from bottom propagation
 				Distance2Border = min( PreviousDistance2Border, Distance2Border );		// Accounts for previous pixel distance
 
 		P->Distance2Border = min( P->Distance2Border, Distance2Border );				// The final distance is the smallest distance between the left/right border and any other border found by FloodFill
@@ -908,9 +922,10 @@ int	SHProbeEncoder::FloodFill( Surface& _Patch, Pixel* _PreviousPixel, Pixel* _P
 	return min( Distance2BorderLeft, Distance2BorderRight );
 }
 
-bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Surface, Pixel& _PreviousPixel, Pixel& _P, Pixel*& _pRejectedPixels ) const {
+bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Surface, Pixel& _PreviousPixel, Pixel& _P, Pixel*& _pRejectedPixels, bool& _IsBorder ) const {
 	// Start by checking if we can use that pixel
 	if ( !_P.IsFloodFillAcceptable() ) {
+		_IsBorder = _P.pParentSurface != &_Surface;	// Was rejected for another reason
 		return false;
 	}
 
@@ -925,10 +940,18 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Surface, Pixel& _PreviousPix
 		float	Dot = _PreviousPixel.Normal | _P.Normal;
 		if ( Dot > ANGULAR_THRESHOLD ) {
 			// Next, let's check the distance discrepancy
+#if 1
+			float3	P0 = _PreviousPixel.SmoothedDistance * _PreviousPixel.View;
+			float3	P1 = _P.SmoothedDistance * _P.View;
+			float	DistanceDiff = (P1 - P0).LengthSq();
+			if ( DistanceDiff < DISTANCE_THRESHOLD*DISTANCE_THRESHOLD ) {
+#else
 			float	DistanceDiff = fabsf( _PreviousPixel.SmoothedDistance - _P.SmoothedDistance );
 			float	ToleranceFactor = -(_P.Normal | _P.View);	// Weight by the surface's slope to be more tolerant for slant surfaces
 					DistanceDiff *= ToleranceFactor;
 			if ( DistanceDiff < DISTANCE_THRESHOLD ) {
+#endif
+
 				// Next, let's check the hue discrepancy
 // 				float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
 // 				float	HueDiff1 = 6.0f - HueDiff0;
@@ -959,11 +982,13 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Surface, Pixel& _PreviousPix
 		_Surface.pPixels = &_P;
 		_Surface.Importance += _P.Importance;	// Accumulate average importance
 		_Surface.PixelsCount++;
+		_IsBorder = false;
 	}
 	else {
 		// Sorry buddy, we'll add you to the rejects...
 		_P.pNext = _pRejectedPixels;
 		_pRejectedPixels = &_P;
+		_IsBorder = true;
 	}
 
 	return Accepted;
@@ -1311,12 +1336,11 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 
 
 				// ==== Finalize pixel information ====
-
 				P->Importance = -P->View.Dot( P->Normal ) / (Distance * Distance);
 				if ( P->Importance < 0.0 ) {
-P->Normal = -P->Normal;
-P->Importance = -P->View.Dot( P->Normal ) / (Distance * Distance);
-//P->Importance = -P->Importance;
+// P->Normal = -P->Normal;
+// P->Importance = -P->View.Dot( P->Normal ) / (Distance * Distance);
+// //P->Importance = -P->Importance;
 NegativeImportancePixelsCount++;
 //					throw new Exception( "WTH?? Negative importance here!" );
 				}

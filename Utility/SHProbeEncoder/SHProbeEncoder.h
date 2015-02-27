@@ -509,7 +509,7 @@ private:
 	mutable Pixel*	m_ppScanlinePixelsPool[6 * CUBE_MAP_SIZE * CUBE_MAP_SIZE];
 
 	int		FloodFill( Surface& _S, Pixel* _PreviousPixel, Pixel* _P, Pixel*& _RejectedPixels ) const;
-	bool	CheckAndAcceptPixel( Surface& _Patch, Pixel& _PreviousPixel, Pixel& _P, Pixel*& _RejectedPixels ) const;
+	bool	CheckAndAcceptPixel( Surface& _Patch, Pixel& _PreviousPixel, Pixel& _P, Pixel*& _RejectedPixels, bool& _IsBorder ) const;
 	Pixel&	FindAdjacentPixel( const Pixel& _P, int _dU, int _dV, int& _DirectionU, int& _DirectionV ) const;
 
 	// Helpers

@@ -651,24 +651,24 @@ namespace GCXFormat
 					m_Faces = new Face[FacesCount];
 					m_Vertices = new Vertex[_Surface.m_Vertices.Length];
 
-					m_BBoxMin = ConvTech5( _Surface.m_BoundsMin );
-					m_BBoxMax = ConvTech5( _Surface.m_BoundsMax );
+					m_BBoxMin = _Surface.m_BoundsMin;
+					m_BBoxMax = _Surface.m_BoundsMax;
 
 					// Build faces
 					int	i = 0;
 					for ( int FaceIndex=0; FaceIndex < FacesCount; FaceIndex++ ) {
 						m_Faces[FaceIndex].V0 = _Surface.m_Indices[i++];
+						m_Faces[FaceIndex].V2 = _Surface.m_Indices[i++];	// Here we reverse faces' orientation
 						m_Faces[FaceIndex].V1 = _Surface.m_Indices[i++];
-						m_Faces[FaceIndex].V2 = _Surface.m_Indices[i++];
 					}
 
 					// Build vertices
 					for ( int VertexIndex=0; VertexIndex < m_Vertices.Length; VertexIndex++ ) {
 						idTech5Map.Model.Surface.Vertex	V = _Surface.m_Vertices[VertexIndex];
-						m_Vertices[VertexIndex].P = ConvTech5( V.Position );
-						m_Vertices[VertexIndex].N = ConvTech5( V.Normal );
-						m_Vertices[VertexIndex].G = ConvTech5( V.Tangent );
-						m_Vertices[VertexIndex].B = ConvTech5( V.BiTangent );
+						m_Vertices[VertexIndex].P = V.Position;
+						m_Vertices[VertexIndex].N = V.Normal;
+						m_Vertices[VertexIndex].G = V.Tangent;
+						m_Vertices[VertexIndex].B = V.BiTangent;
 						m_Vertices[VertexIndex].T = V.UVs[0];
 					}
 				}
@@ -822,6 +822,10 @@ namespace GCXFormat
 			}
 
 			public Primitive[]	m_Primitives = new Primitive[0];
+			public float3		m_BBoxMin_Local;
+			public float3		m_BBoxMax_Local;
+			public float3		m_BBoxMin_World;
+			public float3		m_BBoxMax_World;
 
 			public Mesh( Scene _Owner, Node _Parent, BinaryReader _R ) : base( _Owner, _Parent, _R )
 			{
@@ -837,10 +841,35 @@ namespace GCXFormat
 			}
 
 			public Mesh( Scene _Owner, idTech5Map.Map.Entity _Entity ) : base( _Owner, _Entity ) {
+
+				// BUild primitives and local space BBox
 				m_Primitives = new Primitive[_Entity.m_Model.m_Surfaces.Length];
+				m_BBoxMin_Local = float.MaxValue * float3.One;
+				m_BBoxMax_Local = -float.MaxValue * float3.One;
+
 				int	PrimitiveIndex = 0;
-				foreach ( idTech5Map.Model.Surface S in _Entity.m_Model.m_Surfaces )
-					m_Primitives[PrimitiveIndex++] = new Primitive( this, S );
+				foreach ( idTech5Map.Model.Surface S in _Entity.m_Model.m_Surfaces ) {
+					m_Primitives[PrimitiveIndex] = new Primitive( this, S );
+					m_BBoxMin_Local.Min( m_Primitives[PrimitiveIndex].m_BBoxMin );
+					m_BBoxMax_Local.Max( m_Primitives[PrimitiveIndex].m_BBoxMax );
+					PrimitiveIndex++;
+				}
+
+				// Convert BBox to world space
+				m_BBoxMin_World = float.MaxValue * float3.One;
+				m_BBoxMax_World = -float.MaxValue * float3.One;
+				for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ ) {
+					float	X = (CornerIndex >> 0) & 1;
+					float	Y = (CornerIndex >> 0) & 1;
+					float	Z = (CornerIndex >> 0) & 1;
+					float3	D = m_BBoxMax_Local - m_BBoxMin_Local;
+
+					float3	lsCorner = m_BBoxMin_Local + new float3( X * D.x, Y * D.y, Z * D.z );
+					float3	wsCorner = (float3) (new float4( lsCorner, 1.0f ) * m_Local2Parent);
+
+					m_BBoxMin_World.Min( wsCorner );
+					m_BBoxMax_World.Max( wsCorner );
+				}
 			}
 
 			protected override void	SaveSpecialized( BinaryWriter _W )

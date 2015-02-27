@@ -269,7 +269,7 @@ namespace idTech5Map
 				}
 		}
 
-		#region Binary Reading Helpers
+		#region Binary Reader Helpers
 
 		string	ReadString( BinaryReader _R ) {
 			int	Length = (int) _R.ReadUInt32();
