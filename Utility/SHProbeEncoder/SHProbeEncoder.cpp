@@ -101,7 +101,7 @@ SHProbeEncoder::~SHProbeEncoder() {
 	SAFE_DELETE_ARRAY( m_pCubeMapPixels );
 }
 
-void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID ) {
+void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount ) {
 	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
 
 	//////////////////////////////////////////////////////////////////////////
@@ -164,6 +164,7 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeI
 	//////////////////////////////////////////////////////////////////////////
 	// 3] Build the neighbor probes network
 	//
+	m_NeighborProbes.Init( _ProbesCount );
 	m_NeighborProbes.Clear();
 
 	Dictionary<NeighborProbe*>	NeighborProbeID2Probe;
@@ -874,45 +875,37 @@ int	SHProbeEncoder::FloodFill( Surface& _Surface, Pixel* _PreviousPixel, Pixel* 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Recurse into each pixel of the top scanline
-	int	PreviousDistance2Border = INT_MAX>>1;
 	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineRightEndIndex; ScanlinePixelIndex++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
 
 		CubeMapPixelWalker	Walker( *this, *P );
 		Pixel*	Top = &Walker.Up();
 		int		Distance2Border = 1 + FloodFill( _Surface, P, Top, _RejectedPixels );	// Returns the nearest border distance from top propagation
-				Distance2Border = min( PreviousDistance2Border, Distance2Border );		// Accounts for previous pixel distance
-
 		P->Distance2Border = min( P->Distance2Border, Distance2Border );				// The final distance is the smallest distance between the left/right border and any other border found by FloodFill
-		PreviousDistance2Border = 1+P->Distance2Border;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Recurse into each pixel of the bottom scanline
-	PreviousDistance2Border = INT_MAX>>1;
 	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineRightEndIndex; ScanlinePixelIndex++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
 
 		CubeMapPixelWalker	Walker( *this, *P );
 		Pixel*	Bottom = &Walker.Down();
 		int		Distance2Border = 1 + FloodFill( _Surface, P, Bottom, _RejectedPixels );// Returns the nearest border distance from bottom propagation
-				Distance2Border = min( PreviousDistance2Border, Distance2Border );		// Accounts for previous pixel distance
-
 		P->Distance2Border = min( P->Distance2Border, Distance2Border );				// The final distance is the smallest distance between the left/right border and any other border found by FloodFill
-		PreviousDistance2Border = 1+P->Distance2Border;
 	}
 
 	RecursionLevel--;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Browse pixels in reverse order to propagate back nearest distance from left and right
-	Distance2BorderRight = 1;
+	Distance2BorderRight = m_ppScanlinePixelsPool[ScanlineRightEndIndex-1]->Distance2Border;
 	for ( int ScanlinePixelIndex=ScanlineRightEndIndex-1; ScanlinePixelIndex >= ScanlineStartIndex; ScanlinePixelIndex--, Distance2BorderRight++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
 		P->Distance2Border = min( P->Distance2Border, Distance2BorderRight );
 		Distance2BorderRight = P->Distance2Border;
 	}
-	Distance2BorderLeft = 1;
+	Distance2BorderLeft = m_ppScanlinePixelsPool[ScanlineEndIndex-1]->Distance2Border;
 	for ( int ScanlinePixelIndex=ScanlineEndIndex-1; ScanlinePixelIndex >= ScanlineRightEndIndex; ScanlinePixelIndex--, Distance2BorderLeft++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
 		P->Distance2Border = min( P->Distance2Border, Distance2BorderLeft );

@@ -9,6 +9,7 @@ namespace idTech5Map
 {
 	public class Map
 	{
+		[System.Diagnostics.DebuggerDisplay( "Name={m_Name} Type={m_Type}" )]
 		public class	Entity {
 
 			public enum	 TYPE {
@@ -118,6 +119,10 @@ namespace idTech5Map
 						case "m_kiscule":
 							P.ConsumeString( "= " );
 							P.ReadBlock();
+							break;
+
+						case "//":	// Skip comment
+							P.ReadToEOL();
 							break;
 
 						default:

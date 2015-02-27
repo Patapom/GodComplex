@@ -49,6 +49,7 @@ Global
 		{B74F66F3-1660-4BF2-B317-1CEA8EE5E6BD}.Release|Win32.Build.0 = Release|Win32
 		{B74F66F3-1660-4BF2-B317-1CEA8EE5E6BD}.Release|x64.ActiveCfg = Release|Win32
 		{B74F66F3-1660-4BF2-B317-1CEA8EE5E6BD}.Release|x86.ActiveCfg = Release|Win32
+		{B74F66F3-1660-4BF2-B317-1CEA8EE5E6BD}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

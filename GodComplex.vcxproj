@@ -578,6 +578,9 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Utility\Random.h" />
     <ClInclude Include="Utility\Resources.h" />
     <ClInclude Include="Utility\SH.h" />
+    <ClInclude Include="Utility\SHProbeEncoder\SHProbeEncoderFloodFill.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Utility\SHProbeEncoder\SHProbeNetwork.h" />
     <ClInclude Include="Utility\SHProbeEncoder\SHProbeEncoder.h" />
     <ClInclude Include="Utility\TextureFilePOM.h" />
@@ -734,6 +737,9 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Utility\Random.cpp" />
     <ClCompile Include="Utility\Resources.cpp" />
     <ClCompile Include="Utility\SH.cpp" />
+    <ClCompile Include="Utility\SHProbeEncoder\SHProbeEncoderFloodFill.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Utility\SHProbeEncoder\SHProbeNetwork.cpp" />
     <ClCompile Include="Utility\SHProbeEncoder\SHProbeEncoder.cpp" />
     <ClCompile Include="Utility\TextureFilePOM.cpp" />

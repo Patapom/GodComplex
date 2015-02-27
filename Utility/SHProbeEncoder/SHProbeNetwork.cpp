@@ -476,7 +476,7 @@ ProbeLocal2World.SetRow( 3, Probe.pSceneProbe->m_Local2World.GetRow( 3 ) );
 
 		//////////////////////////////////////////////////////////////////////////
 		// 4] Encode the cube map into separated SH patches
-		m_ProbeEncoder.EncodeProbeCubeMap( *pRTCubeMapStaging, ProbeIndex );
+		m_ProbeEncoder.EncodeProbeCubeMap( *pRTCubeMapStaging, ProbeIndex, m_ProbesCount );
 
 		// Save probe results
 		sprintf_s( pTemp, "%sProbe%02d.probeset", _pPathToProbes, ProbeIndex );

@@ -487,7 +487,7 @@ public:		// METHODS
 	~SHProbeEncoder();
 
 	// Encodes the MRT cube map into basic SH elements that can later be combined at runtime to form a dynamically updatable probe
-	void	EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID );
+	void	EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount );
 
 	// Saves the resulting encoded probe to disk
 	void	Save( const char* _FileName ) const;
