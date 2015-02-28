@@ -8,7 +8,7 @@ float		SHProbeEncoder::ANGULAR_THRESHOLD = acosf( 0.5f * PI / 180 );	// 0.5°
 float		SHProbeEncoder::ALBEDO_HUE_THRESHOLD = 0.04f;					// Close colors!
 float		SHProbeEncoder::ALBEDO_RGB_THRESHOLD = 0.16f;					// Close colors!
 
-const double	SHProbeEncoder::SAMPLE_SH_NORMALIZER = FOURPI / SHProbeEncoder::MAX_PROBE_SAMPLES;
+const double	SHProbeEncoder::SAMPLE_SH_NORMALIZER = 1.0 / SHProbeEncoder::MAX_PROBE_SAMPLES;
 
 SHProbeEncoder::SHProbeEncoder() {
 
@@ -567,14 +567,34 @@ void	SHProbeEncoder::ComputeFloodFill( float _SpatialDistanceWeight, float _Norm
 			pPixel->pParentSample->pPixels = pPixel;
 			pPixel->pParentSample->PixelsCount++;
 			pPixel->pParentList = NULL;
+			pPixel->pNextInList = NULL;
 		}
 	}
+
+
+// DEBUG: Small experiment designed to see if SH sum to 1
+// double	AccumSH[9];
+// memset( AccumSH, 0, 9*sizeof(double) );
+// for ( int SampleIndex=0; SampleIndex < MAX_PROBE_SAMPLES; SampleIndex++ ) {
+// 	Sample&	S = m_pSamples[SampleIndex];
+// 
+// 	double	SH[9];
+// 	SH::BuildSHCosineLobe_YUp( S.View, SH );
+// 
+// 	double	SHNormalizer = SAMPLE_SH_NORMALIZER;
+// 	for ( int i=0; i < 9; i++ )
+// 		AccumSH[i] += SHNormalizer * SH[i];
+// }
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Process each sample
 	List< PixelsList >	SamplePixelGroups( m_MaxSamplePixelsCount );	// Worst case scenario: only 1 pixel per group in each sample so as many groups as pixels
 
 	double	GroupImportanceThreshold = _MinimumImportanceDiscardThreshold / MAX_PROBE_SAMPLES;
+
+GroupImportanceThreshold = 0.0;	// No rejection for now...
+
 
 	m_ValidSamplesCount = 0;
 	for ( int SampleIndex=0; SampleIndex < MAX_PROBE_SAMPLES; SampleIndex++ ) {
@@ -611,14 +631,14 @@ void	SHProbeEncoder::ComputeFloodFill( float _SpatialDistanceWeight, float _Norm
 		PixelsList*	pBestGroup = NULL;
 		for ( int GroupIndex=0; GroupIndex < SamplePixelGroups.GetCount(); GroupIndex++ ) {
 			PixelsList&	Group = SamplePixelGroups[GroupIndex];
-						Group.Importance /= Group.PixelsCount;
+//						Group.Importance /= Group.PixelsCount;
 
 			if ( pBestGroup == NULL || Group.Importance > pBestGroup->Importance ) {
 				pBestGroup = &Group;
 			}
 		}
 
-		if ( pBestGroup->Importance < GroupImportanceThreshold ) {
+		if ( pBestGroup == NULL || pBestGroup->Importance < GroupImportanceThreshold ) {
 			// Discard this sample entirely as it's not important enough
 			S.pPixels = NULL;
 			S.PixelsCount = 0;

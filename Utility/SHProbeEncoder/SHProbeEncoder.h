@@ -28,7 +28,7 @@ public:		// CONSTANTS
 	static float			ALBEDO_HUE_THRESHOLD;
 	static float			ALBEDO_RGB_THRESHOLD;
 
-	static const double		SAMPLE_SH_NORMALIZER;				// 4PI / MAX_PROBE_SAMPLES, an equal share for all samples
+	static const double		SAMPLE_SH_NORMALIZER;				// 1 / MAX_PROBE_SAMPLES, an equal share for all samples
 
 private:
 
