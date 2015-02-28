@@ -875,7 +875,7 @@ int	SHProbeEncoder::FloodFill( Surface& _Surface, Pixel* _PreviousPixel, Pixel* 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Recurse into each pixel of the top scanline
-	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineRightEndIndex; ScanlinePixelIndex++ ) {
+	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
 
 		CubeMapPixelWalker	Walker( *this, *P );
@@ -886,7 +886,7 @@ int	SHProbeEncoder::FloodFill( Surface& _Surface, Pixel* _PreviousPixel, Pixel* 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Recurse into each pixel of the bottom scanline
-	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineRightEndIndex; ScanlinePixelIndex++ ) {
+	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
 
 		CubeMapPixelWalker	Walker( *this, *P );

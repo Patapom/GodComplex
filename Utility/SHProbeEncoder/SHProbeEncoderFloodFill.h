@@ -460,7 +460,7 @@ private:	// FIELDS
 	float				m_OcclusionSH[9];
 
 	// Dynamic & Emissive surfaces
-	List< Surface >		m_AllSurfaces;
+//	List< Surface >		m_AllSurfaces;
 	U32					m_SurfacesCount;
 	Surface*			m_ppSurfaces[MAX_PROBE_SURFACES];
 	U32					m_EmissiveSurfacesCount;

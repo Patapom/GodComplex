@@ -8,6 +8,7 @@ float		SHProbeEncoder::ANGULAR_THRESHOLD = acosf( 0.5f * PI / 180 );	// 0.5°
 float		SHProbeEncoder::ALBEDO_HUE_THRESHOLD = 0.04f;					// Close colors!
 float		SHProbeEncoder::ALBEDO_RGB_THRESHOLD = 0.16f;					// Close colors!
 
+const double	SHProbeEncoder::SAMPLE_SH_NORMALIZER = FOURPI / SHProbeEncoder::MAX_PROBE_SAMPLES;
 
 SHProbeEncoder::SHProbeEncoder() {
 
@@ -89,10 +90,52 @@ SHProbeEncoder::SHProbeEncoder() {
 				pPixel->InitSH();
 			}
 
-	m_AllSurfaces.Init( 6*CUBE_MAP_SIZE*CUBE_MAP_SIZE );
+	//////////////////////////////////////////////////////////////////////////
+	// Prepare equal subdivisions of the sphere using Hemmersley sampling of the sphere and grouping
+	for ( int SampleIndex=0; SampleIndex < MAX_PROBE_SAMPLES; SampleIndex++ ) {
+		Sample&	S = m_pSamples[SampleIndex];
 
-	Pixel::ms_RadixNodes[0] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];	// Pre-allocate the maximum amount of radix nodes
-	Pixel::ms_RadixNodes[1] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];	// Pre-allocate the maximum amount of radix nodes
+		S.Index = SampleIndex;
+		S.OriginalPixelsCount = 0;
+
+		// Build the sample's direction
+		float	Phi = 2.0f * PI * (SampleIndex+0.5f) / MAX_PROBE_SAMPLES;
+		float	Y = 2.0f * ReverseBits( 1+SampleIndex ) - 1.0f;
+		float	Theta = acosf( Y );
+		S.View.Set( sinf(Phi)*sinf(Theta), cosf(Theta), cosf(Phi)*sinf(Theta) );
+	}
+
+	// Assign their sample to each pixel
+	int	PixelsCount = 6*CUBE_MAP_FACE_SIZE;
+		pPixel = m_pCubeMapPixels;
+	m_MaxSamplePixelsCount = 0;
+	for ( int i=0; i < PixelsCount; i++, pPixel++ ) {
+
+		Sample*	pSample = m_pSamples;
+		float	BestSampleWeight = 0.0f;
+		for ( int SampleIndex=0; SampleIndex < MAX_PROBE_SAMPLES; SampleIndex++, pSample++ ) {
+			float	SampleWeight = pSample->View.Dot( pPixel->View );
+			if ( SampleWeight <= BestSampleWeight ) {
+				continue;
+			}
+
+			pPixel->pParentSample = pSample;	// Found a better sample for the pixel!
+			BestSampleWeight = SampleWeight;
+		}
+
+		pSample = pPixel->pParentSample;
+		if ( pSample->pCenterPixel == NULL || pSample->pCenterPixel->Importance < BestSampleWeight ) {
+			pSample->pCenterPixel = pPixel;		// Found a better center pixel for the sample!
+		}
+		pPixel->Importance = BestSampleWeight;	// Assign the sample's weight as temporary importance for the pixel so the sample can compare and choose the best center pixel
+
+		pSample->OriginalPixelsCount++;
+		m_MaxSamplePixelsCount = max( m_MaxSamplePixelsCount, pSample->OriginalPixelsCount );	// Keep track of the maximum amount of pixels encountered across all samples
+	}
+
+	// Pre-allocate the maximum amount of radix nodes
+	Pixel::ms_RadixNodes[0] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];
+	Pixel::ms_RadixNodes[1] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];
 }
 
 SHProbeEncoder::~SHProbeEncoder() {
@@ -223,9 +266,9 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeI
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	// 4] Build surfaces by flood filling
+	// 4] Build samples by flood filling
 	//
-	ComputeFloodFill( MAX_PROBE_SURFACES, MAX_SAMPLES_PER_SURFACE, 1.0f, 1.0f, 1.0f, 0.5f );
+	ComputeFloodFill( 1.0f, 1.0f, 1.0f, 0.5f );
 }
 
 FILE*	g_pFile = NULL;
@@ -264,10 +307,10 @@ void	SHProbeEncoder::Save( const char* _FileName ) const {
 	for ( int i=0; i < 9; i++ )
 		Write( m_OcclusionSH[i] );
 
-	// Write the result surfaces
-	Write( m_SurfacesCount );
-	for ( U32 i=0; i < m_SurfacesCount; i++ ) {
-		Surface&	S = *m_ppSurfaces[i];
+	// Write the result samples
+	Write( m_ValidSamplesCount );
+	for ( U32 i=0; i < m_ValidSamplesCount; i++ ) {
+		const Sample&	S = *m_ppValidSamples[i];
 
 		// Write position, normal, albedo
 		Write( S.Position.x );
@@ -286,7 +329,8 @@ void	SHProbeEncoder::Save( const char* _FileName ) const {
 		Write( S.BiTangent.y );
 		Write( S.BiTangent.z );
 
-			// Not used, just for information purpose
+		Write( S.Radius );
+
 		Write( (float) (S.Albedo.x * INVPI) );
 		Write( (float) (S.Albedo.y * INVPI) );
 		Write( (float) (S.Albedo.z * INVPI) );
@@ -295,66 +339,43 @@ void	SHProbeEncoder::Save( const char* _FileName ) const {
 		Write( S.F0.y );
 		Write( S.F0.z );
 
-		// Write SH coefficients (albedo is already factored in)
-		for ( int i=0; i < 9; i++ )
-		{
-			Write( S.SH[i].x );
-			Write( S.SH[i].y );
-			Write( S.SH[i].z );
-		}
-
-		// Write amount of samples
-		Write( (U32) S.SamplesCount );
-
-		// Write each sample
-		for ( int j=0; j < S.SamplesCount; j++ ) {
-			Surface::Sample&	Sample = S.Samples[j];
-
-			// Write position
-			Write( Sample.Position.x );
-			Write( Sample.Position.y );
-			Write( Sample.Position.z );
-
-			// Write normal
-			Write( Sample.Normal.x );
-			Write( Sample.Normal.y );
-			Write( Sample.Normal.z );
-
-			// Write radius
-			Write( Sample.Radius );
+		// Write SH coefficients
+		for ( int i=0; i < 9; i++ ) {
+			Write( S.SH[i] );
 		}
 	}
 
-	// Write the emissive surfaces
-	Write( m_EmissiveSurfacesCount );
-
-	for ( U32 i=0; i < m_EmissiveSurfacesCount; i++ ) {
-		Surface&	P = *m_ppEmissiveSurfaces[i];
-
-		// Write position, normal, albedo
-		Write( P.Position.x );
-		Write( P.Position.y );
-		Write( P.Position.z );
-
-		Write( P.Normal.x );
-		Write( P.Normal.y );
-		Write( P.Normal.z );
-
-		Write( P.Tangent.x );
-		Write( P.Tangent.y );
-		Write( P.Tangent.z );
-
-		Write( P.BiTangent.x );
-		Write( P.BiTangent.y );
-		Write( P.BiTangent.z );
-
-		// Write emissive mat
-		Write( P.EmissiveMatID );
-
-		// Write SH coefficients (we only write luminance here, we don't have the color info that is provided at runtime)
-		for ( int i=0; i < 9; i++ )
-			Write( P.SH[i].x );
-	}
+ 	Write( U32(0) );
+// 	// Write the emissive surfaces
+// 	Write( m_EmissiveSurfacesCount );
+// 
+// 	for ( U32 i=0; i < m_EmissiveSurfacesCount; i++ ) {
+// 		Surface&	P = *m_ppEmissiveSurfaces[i];
+// 
+// 		// Write position, normal, albedo
+// 		Write( P.Position.x );
+// 		Write( P.Position.y );
+// 		Write( P.Position.z );
+// 
+// 		Write( P.Normal.x );
+// 		Write( P.Normal.y );
+// 		Write( P.Normal.z );
+// 
+// 		Write( P.Tangent.x );
+// 		Write( P.Tangent.y );
+// 		Write( P.Tangent.z );
+// 
+// 		Write( P.BiTangent.x );
+// 		Write( P.BiTangent.y );
+// 		Write( P.BiTangent.z );
+// 
+// 		// Write emissive mat
+// 		Write( P.EmissiveMatID );
+// 
+// 		// Write SH coefficients (we only write luminance here, we don't have the color info that is provided at runtime)
+// 		for ( int i=0; i < 9; i++ )
+// 			Write( P.SH[i].x );
+// 	}
 
 	// Write the neighbor probes
 	Write( m_NeighborProbes.GetCount() );
@@ -404,7 +425,7 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 	const Pixel*	P = m_pCubeMapPixels;
 	for ( int i=0; i < 6*CUBE_MAP_FACE_SIZE; i++, P++ ) {
 
-		Write( P->pParentSurface != NULL ? P->pParentSurface->ID : ~0UL );
+		Write( P->pParentSample->Index );
 
 		Write( P->Position.x );
 		Write( P->Position.y );
@@ -437,66 +458,15 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 		Write( P->SmoothedDistance );
 		Write( P->Infinity );
 		Write( P->SmoothedInfinity );
-		Write( P->Distance2Border );
-		Write( P->ParentSurfaceSampleIndex );
 	}
 
-	// Write surfaces
-	Write( m_SurfacesCount );
-	for ( U32 SurfaceIndex=0; SurfaceIndex < m_SurfacesCount; SurfaceIndex++ ) {
-		const Surface*	S = m_ppSurfaces[SurfaceIndex];
+	// Write samples
+	Write( MAX_PROBE_SAMPLES );
+	for ( U32 SampleIndex=0; SampleIndex < MAX_PROBE_SAMPLES; SampleIndex++ ) {
+		const Sample&	S = m_pSamples[SampleIndex];
 
-		Write( S->Position.x );
-		Write( S->Position.y );
-		Write( S->Position.z );
+		Write( S.ID );
 
-		Write( S->Normal.x );
-		Write( S->Normal.y );
-		Write( S->Normal.z );
-
-		Write( S->Tangent.x );
-		Write( S->Tangent.y );
-		Write( S->Tangent.z );
-
-		Write( S->BiTangent.x );
-		Write( S->BiTangent.y );
-		Write( S->BiTangent.z );
-
-		Write( S->Albedo.x );
-		Write( S->Albedo.y );
-		Write( S->Albedo.z );
-		Write( S->F0.x );
-		Write( S->F0.y );
-		Write( S->F0.z );
-
-		Write( S->PixelsCount );
-
-		for ( int i=0; i < 9; i++ ) {
-			Write( S->SH[i].x );
-			Write( S->SH[i].y );
-			Write( S->SH[i].z );
-		}
-
-		Write( S->SamplesCount );
-		for ( int SampleIndex=0; SampleIndex < S->SamplesCount; SampleIndex++ ) {
-			const Surface::Sample&	Sample = S->Samples[SampleIndex];
-
-			Write( Sample.Position.x );
-			Write( Sample.Position.y );
-			Write( Sample.Position.z );
-			Write( Sample.Normal.x );
-			Write( Sample.Normal.y );
-			Write( Sample.Normal.z );
-			Write( Sample.Radius );
-		}
-	}
-
-	// Write the emissive surfaces
-	Write( m_EmissiveSurfacesCount );
-	for ( U32 i=0; i < m_EmissiveSurfacesCount; i++ ) {
-		Surface&	S = *m_ppEmissiveSurfaces[i];
-
-		// Write position, normal, albedo
 		Write( S.Position.x );
 		Write( S.Position.y );
 		Write( S.Position.z );
@@ -513,45 +483,189 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 		Write( S.BiTangent.y );
 		Write( S.BiTangent.z );
 
-		// Write emissive mat
-		Write( S.EmissiveMatID );
+		Write( S.Radius );
 
-		// Write SH coefficients (we only write luminance here, we don't have the color info that is provided at runtime)
-		for ( int i=0; i < 9; i++ )
-			Write( S.SH[i].x );
+		Write( S.Albedo.x );
+		Write( S.Albedo.y );
+		Write( S.Albedo.z );
+		Write( S.F0.x );
+		Write( S.F0.y );
+		Write( S.F0.z );
+
+		Write( S.PixelsCount );
+
+		for ( int i=0; i < 9; i++ ) {
+			Write( S.SH[i] );
+		}
 	}
+
+	// Write the emissive surfaces
+	Write( U32(0) );
+// 	Write( m_EmissiveSurfacesCount );
+// 	for ( U32 i=0; i < m_EmissiveSurfacesCount; i++ ) {
+// 		Surface&	S = *m_ppEmissiveSurfaces[i];
+// 
+// 		// Write position, normal, albedo
+// 		Write( S.Position.x );
+// 		Write( S.Position.y );
+// 		Write( S.Position.z );
+// 
+// 		Write( S.Normal.x );
+// 		Write( S.Normal.y );
+// 		Write( S.Normal.z );
+// 
+// 		Write( S.Tangent.x );
+// 		Write( S.Tangent.y );
+// 		Write( S.Tangent.z );
+// 
+// 		Write( S.BiTangent.x );
+// 		Write( S.BiTangent.y );
+// 		Write( S.BiTangent.z );
+// 
+// 		// Write emissive mat
+// 		Write( S.EmissiveMatID );
+// 
+// 		// Write SH coefficients (we only write luminance here, we don't have the color info that is provided at runtime)
+// 		for ( int i=0; i < 9; i++ )
+// 			Write( S.SH[i].x );
+// 	}
 
 	fclose( g_pFile );
 }
 
-
-#pragma region Computes Surfaces by Flood Fill Method
+#pragma region Computes Sample Pixels by Flood Fill Method
 
 int	DEBUG_PixelIndex = 0;
 
-void	SHProbeEncoder::ComputeFloodFill( int _MaxSetsCount, int _MaxLightingSamplesCount, float _SpatialDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight, float _MinimumImportanceDiscardThreshold ) {
+void	SHProbeEncoder::ComputeFloodFill( float _SpatialDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight, float _MinimumImportanceDiscardThreshold ) {
 	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
  	U32	DiscardThreshold = U32( 0.004f * m_ScenePixelsCount );		// Discard surfaces that contain less than 0.4% of the total amount of scene pixels (arbitrary!)
-
-	// Clear the parent surfaces for each pixel
-	for ( int i=0; i < TotalPixelsCount; i++ )
-		m_pCubeMapPixels[i].pParentSurface = NULL;
 
 	// Setup the reference thresholds for pixels' acceptance
 //	Pixel.IMPORTANCE_THRESOLD = (float) ((4.0f * Math.PI / CUBE_MAP_FACE_SIZE) / (m_MeanDistance * m_MeanDistance));	// Compute an average solid angle threshold based on average pixels' distance
 	Pixel::IMPORTANCE_THRESOLD = (float) (0.1f * _MinimumImportanceDiscardThreshold / (m_MeanHarmonicDistance * m_MeanHarmonicDistance));	// Simply use the mean harmonic distance as a good approximation of important pixels
 																									// Pixels that are further or not facing the probe will have less importance...
 
-	DISTANCE_THRESHOLD = 0.02f * _SpatialDistanceWeight;						// 2cm
+	DISTANCE_THRESHOLD = 0.30f * _SpatialDistanceWeight;						// 30cm
 	ANGULAR_THRESHOLD = acosf( 45.0f * _NormalDistanceWeight * PI / 180.0f );	// 45° (we're very generous here!)
 	ALBEDO_HUE_THRESHOLD = 0.04f * _AlbedoDistanceWeight;						// Close colors!
 	ALBEDO_RGB_THRESHOLD = 0.32f * _AlbedoDistanceWeight;						// Close colors!
 
 
-DISTANCE_THRESHOLD = 0.30f;	// 30cm
+	//////////////////////////////////////////////////////////////////////////
+	// Initialize the list of pixels belonging to each sample
+	{
+		for ( int SampleIndex=0; SampleIndex < MAX_PROBE_SAMPLES; SampleIndex++ ) {
+			Sample&	S = m_pSamples[SampleIndex];
+			S.PixelsCount = 0;
+			S.pPixels = NULL;	// No pixel in that sample at the moment...
+		}
+
+		Pixel*	pPixel = m_pCubeMapPixels;
+		for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++, pPixel++ ) {
+			pPixel->pNext = pPixel->pParentSample->pPixels;
+			pPixel->pParentSample->pPixels = pPixel;
+			pPixel->pParentSample->PixelsCount++;
+			pPixel->pParentList = NULL;
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Process each sample
+	List< PixelsList >	SamplePixelGroups( m_MaxSamplePixelsCount );	// Worst case scenario: only 1 pixel per group in each sample so as many groups as pixels
+
+	double	GroupImportanceThreshold = _MinimumImportanceDiscardThreshold / MAX_PROBE_SAMPLES;
+
+	m_ValidSamplesCount = 0;
+	for ( int SampleIndex=0; SampleIndex < MAX_PROBE_SAMPLES; SampleIndex++ ) {
+		Sample&	S = m_pSamples[SampleIndex];
+
+		// Build the lists of pixel groups for that sample
+		SamplePixelGroups.Clear();
+		Pixel*	pPixel = S.pPixels;
+		while ( pPixel != NULL ) {
+			if ( pPixel->pParentList == NULL && pPixel->IsFloodFillAcceptable( S ) ) {
+
+				// Propagate from the current pixel and form a coherent group
+				PixelsList&	AcceptedPixels = SamplePixelGroups.Append();
+				AcceptedPixels.PixelsCount = 0;
+				AcceptedPixels.pPixel = NULL;
+				AcceptedPixels.Importance = 0.0;
+
+				PixelsList	RejectedPixels;
+				FloodFill( S, pPixel, pPixel, AcceptedPixels, RejectedPixels );
+
+				// Restore pixels rejected by that group since they may be useful for another group
+				Pixel*	pCurrent = RejectedPixels.pPixel;
+				while ( pCurrent != NULL ) {
+					Pixel*	pTemp = pCurrent;
+					pCurrent = pCurrent->pNextInList;
+					pTemp->pParentList = NULL;
+					pTemp->pNextInList = NULL;
+				}
+			}
+			pPixel = pPixel->pNext;
+		}
+
+		// Keep only the most interesting group
+		PixelsList*	pBestGroup = NULL;
+		for ( int GroupIndex=0; GroupIndex < SamplePixelGroups.GetCount(); GroupIndex++ ) {
+			PixelsList&	Group = SamplePixelGroups[GroupIndex];
+						Group.Importance /= Group.PixelsCount;
+
+			if ( pBestGroup == NULL || Group.Importance > pBestGroup->Importance ) {
+				pBestGroup = &Group;
+			}
+		}
+
+		if ( pBestGroup->Importance < GroupImportanceThreshold ) {
+			// Discard this sample entirely as it's not important enough
+			S.pPixels = NULL;
+			S.PixelsCount = 0;
+			continue;
+		}
+
+		// Build the resulting position, normal, albedo and average direction for the group
+		S.pPixels = pBestGroup->pPixel;
+		S.PixelsCount = pBestGroup->PixelsCount;
+
+		S.Position = float3::Zero;
+		S.Normal = float3::Zero;
+		S.Direction = float3::Zero;
+		S.Albedo = float3::Zero;
+
+		pPixel = S.pPixels;
+		while ( pPixel != NULL ) {
+			S.Position = S.Position + pPixel->Position;
+			S.Normal = S.Normal + pPixel->Normal;
+			S.Direction = S.Direction + pPixel->View;
+			S.Albedo = S.Albedo + pPixel->Albedo;
+			pPixel = pPixel->pNextInList;
+		}
+
+		float	Normalizer = 1.0f / S.PixelsCount;
+		S.Position = S.Position * Normalizer;
+		S.Normal.Normalize();
+		S.Direction.Normalize();
+		S.Albedo = S.Albedo * Normalizer;
+
+		// Build the resulting SH for the group
+		double	SH[9];
+		SH::BuildSHCosineLobe_YUp( S.Normal, SH );
+
+		double	SHNormalizer = SAMPLE_SH_NORMALIZER * S.PixelsCount / S.OriginalPixelsCount;
+		for ( int i=0; i < 9; i++ ) {
+			S.SH[i] = float( SHNormalizer * SH[i]);
+		}
+
+		// Validate the sample
+		S.ID = m_ValidSamplesCount;
+		m_ppValidSamples[m_ValidSamplesCount++] = &S;
+	}
 
 
 
+/*
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Iterate on the list of free pixels that belong to no surface and create new surfaces
 	m_AllSurfaces.Clear();
@@ -800,7 +914,7 @@ DEBUG_PixelIndex = PixelIndex;
 		// Reduce the amount of available samples and the count of remaining pixels so the remaining surfaces share the remaining samples...
 		TotalSamplesCount -= SamplesCount;
 		SumCardinality -= S.PixelsCount;
-	}
+	}*/
 }
 
 
@@ -810,115 +924,70 @@ DEBUG_PixelIndex = PixelIndex;
 // The idea here is to process an entire scanline first (going left and right and collecting valid scanline pixels along the way)
 //  then for each of these pixels we move up/down and fill the top/bottom scanlines from these new seeds...
 //
-int	SHProbeEncoder::FloodFill( Surface& _Surface, Pixel* _PreviousPixel, Pixel* _P, Pixel*& _RejectedPixels ) const {
+void	SHProbeEncoder::FloodFill( Sample& _Sample, Pixel* _PreviousPixel, Pixel* _P, PixelsList& _AcceptedPixels, PixelsList& _RejectedPixels ) const {
 
 	static int	RecursionLevel = 0;	// For debugging purpose
 
-	bool	bIsBorder = false;
-	if ( !CheckAndAcceptPixel( _Surface, *_PreviousPixel, *_P, _RejectedPixels, bIsBorder ) )
-		return bIsBorder ? 0 : INT_MAX>>1;	// We found a border pixel or the pixel is already used!
+	if ( !CheckAndAcceptPixel( _Sample, *_PreviousPixel, *_P, _AcceptedPixels, _RejectedPixels ) )
+		return;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Check the entire scanline
 	int	ScanlineStartIndex = m_ScanlinePixelIndex;
 	m_ppScanlinePixelsPool[m_ScanlinePixelIndex++] = _P;	// This pixel is implicitly on the scanline
 
-	int		Distance2BorderLeft = 0;
-	int		CountLeft = 0;
-	int		Distance2BorderRight = 0;
-	int		CountRight = 0;
-
 	{	// Start going right
 		CubeMapPixelWalker	P( *this, *_P );
 		Pixel*	Previous = _P;
 		Pixel*	Current = &P.Right();
-		while ( CheckAndAcceptPixel( _Surface, *Previous, *Current, _RejectedPixels, bIsBorder ) ) {
+		while ( CheckAndAcceptPixel( _Sample, *Previous, *Current, _AcceptedPixels, _RejectedPixels ) ) {
 			m_ppScanlinePixelsPool[m_ScanlinePixelIndex++] = Current;
 			Previous = Current;
 			Current = &P.Right();
-			CountRight++;
 		}
-		Distance2BorderRight = bIsBorder ? 0 : Current->Distance2Border;	// Start from border or from existing distance
 	}
-
-	int	ScanlineRightEndIndex = m_ScanlinePixelIndex;
 
 	{	// Start going left
 		CubeMapPixelWalker	P( *this, *_P );
 		Pixel*	Previous = _P;
 		Pixel*	Current = &P.Left();
-		while ( CheckAndAcceptPixel( _Surface, *Previous, *Current, _RejectedPixels, bIsBorder ) ) {
+		while ( CheckAndAcceptPixel( _Sample, *Previous, *Current, _AcceptedPixels, _RejectedPixels ) ) {
 			m_ppScanlinePixelsPool[m_ScanlinePixelIndex++] = Current;
 			Previous = Current;
 			Current = &P.Left();
-			CountLeft++;
 		}
-		Distance2BorderLeft = bIsBorder ? 0 : Current->Distance2Border;	// Start from border or from existing distance
 	}
-
-	RecursionLevel++;
 
 	int	ScanlineEndIndex = m_ScanlinePixelIndex;
 
- 	// Browse all pixels again to reach an equilibrium
-	for ( int ScanlinePixelIndex=ScanlineRightEndIndex-1, i=0; ScanlinePixelIndex >= ScanlineStartIndex; ScanlinePixelIndex--, i++ ) {
-		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
-		int		Distance2BorderLeftOrRight = min( Distance2BorderRight+i, Distance2BorderLeft+CountRight+CountLeft-i );
-		P->Distance2Border = min( _PreviousPixel->Distance2Border + CountRight - i, Distance2BorderLeftOrRight );
-	}
-	for ( int ScanlinePixelIndex=ScanlineEndIndex-1, i=0; ScanlinePixelIndex >= ScanlineRightEndIndex; ScanlinePixelIndex--, i++ ) {
-		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
-		int		Distance2BorderLeftOrRight = min( Distance2BorderLeft+i, Distance2BorderRight+CountRight+CountLeft-i );
-		P->Distance2Border = min( _PreviousPixel->Distance2Border + CountLeft - i, Distance2BorderLeftOrRight );
-	}
-
-
 	//////////////////////////////////////////////////////////////////////////
 	// Recurse into each pixel of the top scanline
-	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineRightEndIndex; ScanlinePixelIndex++ ) {
+	RecursionLevel++;
+
+	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
 
 		CubeMapPixelWalker	Walker( *this, *P );
 		Pixel*	Top = &Walker.Up();
-		int		Distance2Border = 1 + FloodFill( _Surface, P, Top, _RejectedPixels );	// Returns the nearest border distance from top propagation
-		P->Distance2Border = min( P->Distance2Border, Distance2Border );				// The final distance is the smallest distance between the left/right border and any other border found by FloodFill
+		FloodFill( _Sample, P, Top, _AcceptedPixels, _RejectedPixels );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Recurse into each pixel of the bottom scanline
-	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineRightEndIndex; ScanlinePixelIndex++ ) {
+	for ( int ScanlinePixelIndex=ScanlineStartIndex; ScanlinePixelIndex < ScanlineEndIndex; ScanlinePixelIndex++ ) {
 		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
 
 		CubeMapPixelWalker	Walker( *this, *P );
 		Pixel*	Bottom = &Walker.Down();
-		int		Distance2Border = 1 + FloodFill( _Surface, P, Bottom, _RejectedPixels );// Returns the nearest border distance from bottom propagation
-		P->Distance2Border = min( P->Distance2Border, Distance2Border );				// The final distance is the smallest distance between the left/right border and any other border found by FloodFill
+		FloodFill( _Sample, P, Bottom, _AcceptedPixels, _RejectedPixels );
 	}
 
 	RecursionLevel--;
-
-	//////////////////////////////////////////////////////////////////////////
-	// Browse pixels in reverse order to propagate back nearest distance from left and right
-	Distance2BorderRight = m_ppScanlinePixelsPool[ScanlineRightEndIndex-1]->Distance2Border;
-	for ( int ScanlinePixelIndex=ScanlineRightEndIndex-1; ScanlinePixelIndex >= ScanlineStartIndex; ScanlinePixelIndex--, Distance2BorderRight++ ) {
-		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
-		P->Distance2Border = min( P->Distance2Border, Distance2BorderRight );
-		Distance2BorderRight = P->Distance2Border;
-	}
-	Distance2BorderLeft = m_ppScanlinePixelsPool[ScanlineEndIndex-1]->Distance2Border;
-	for ( int ScanlinePixelIndex=ScanlineEndIndex-1; ScanlinePixelIndex >= ScanlineRightEndIndex; ScanlinePixelIndex--, Distance2BorderLeft++ ) {
-		Pixel*	P = m_ppScanlinePixelsPool[ScanlinePixelIndex];
-		P->Distance2Border = min( P->Distance2Border, Distance2BorderLeft );
-		Distance2BorderLeft = P->Distance2Border;
-	}
-
-	return min( Distance2BorderLeft, Distance2BorderRight );
 }
 
-bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Surface, Pixel& _PreviousPixel, Pixel& _P, Pixel*& _pRejectedPixels, bool& _IsBorder ) const {
+bool	SHProbeEncoder::CheckAndAcceptPixel( Sample& _Sample, Pixel& _PreviousPixel, Pixel& _P, PixelsList& _AcceptedPixels, PixelsList& _RejectedPixels ) const {
 	// Start by checking if we can use that pixel
-	if ( !_P.IsFloodFillAcceptable() ) {
-		_IsBorder = _P.pParentSurface != &_Surface;	// Was rejected for another reason
+	if ( !_P.IsFloodFillAcceptable( _Sample ) ) {
 		return false;
 	}
 
@@ -966,23 +1035,13 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Surface, Pixel& _PreviousPix
 		}
 	}
 
-	// Mark the pixel as member of this surface, even if it's rejected (rejected pixels get removed from the surface in the end)
-	_P.pParentSurface = &_Surface;
-
-	if ( Accepted ) {
-		// We got a new member for the surface!
-		_P.pNext = _Surface.pPixels;
-		_Surface.pPixels = &_P;
-		_Surface.Importance += _P.Importance;	// Accumulate average importance
-		_Surface.PixelsCount++;
-		_IsBorder = false;
-	}
-	else {
-		// Sorry buddy, we'll add you to the rejects...
-		_P.pNext = _pRejectedPixels;
-		_pRejectedPixels = &_P;
-		_IsBorder = true;
-	}
+	// Add the pixel to the proper list
+	PixelsList&	Target = Accepted ? _AcceptedPixels : _RejectedPixels;
+	_P.pNextInList = Target.pPixel;
+	_P.pParentList = &Target;
+	Target.pPixel = &_P;
+	Target.PixelsCount++;
+	Target.Importance += _P.Importance * _P.SolidAngle;
 
 	return Accepted;
 }
@@ -1340,8 +1399,6 @@ NegativeImportancePixelsCount++;
 				P->Distance = Distance;
 				P->Infinity = Distance > Z_INFINITY_TEST;
 
-				P->Distance2Border = 0;
-
 				if ( P->Infinity )
 					continue;	// Not part of the scene's geometry!
 
@@ -1439,61 +1496,6 @@ const double	SHProbeEncoder::Pixel::f2 = sqrt(15.0) * SHProbeEncoder::Pixel::f0;
 const double	SHProbeEncoder::Pixel::f3 = sqrt(5.0) * 0.5 * SHProbeEncoder::Pixel::f0;
 
 float	SHProbeEncoder::Pixel::IMPORTANCE_THRESOLD = 0.0f;
-
-void	SHProbeEncoder::Surface::GenerateSamples( int _SamplesCount ) {
-/*
-	Sample*	Samples = new Sample[_SamplesCount];
-	ASSERT( _SamplesCount <= PixelsCount, "More samples than pixels in the surface! This is useless!" );
-
-	int	PixelGroupSize = max( 1, PixelsCount / _SamplesCount );
-	for ( int SampleIndex=0; SampleIndex < _SamplesCount; SampleIndex++ ) {
-		Pixel	P = SetPixels[SampleIndex * PixelGroupSize];	// Arbitrary!
-// TODO: Choose well spaced pixels to cover the maximum area for this set!
-
-		// Find the nearest pixels around that pixel
-		List<Pixel*>	NearestPixels = new List<Pixel*>();
-		NearestPixels.AddRange( SetPixels );
-		__ReferencePixel = P;
-		NearestPixels.Sort( this );	// Our comparer will sort by dot product of the view vector with the reference pixel's view vector, "efficiently" grouping pixels as disks
-		NearestPixels.RemoveRange( PixelGroupSize, NearestPixels.Count-PixelGroupSize );	// Remove all pixels outside of the group
-
-		// Compute an average normal & the disc radius (i.e. farthest pixel from reference)
-		float	Radius = 0.0f;
-		float3	AverageNormal = float3::Zero;
-		Pixel*	P2 = NearestPixels[0];
-		foreach ( Pixel P2 in NearestPixels ) {
-			AverageNormal += P2.Normal;
-
-			float	Distance = (P2.Position - P.Position).Length;
-			Radius = max( Radius, Distance );
-		}
-//		AverageNormal /= NearestPixels.Count;
-		AverageNormal.Normalize();
-
-		// Store sample
-		Samples[SampleIndex].Position = P.Position;
-		Samples[SampleIndex].Normal = AverageNormal;
-		Samples[SampleIndex].Radius = Radius;
-	}
-
-	// Associate pixels to their closest sample
-	Pixel*	P = pPixels;
-	while ( P != NULL) {
-		float	ClosestDistance = 1e6f;
-		int		ClosestSampleIndex = -1;
-		for ( int SampleIndex=0; SampleIndex < SamplesCount; SampleIndex++ ) {
-			float	Distance2Sample = (P->Position - Samples[SampleIndex].Position).LengthSq();
-			if ( Distance2Sample >= ClosestDistance )
-				continue;
-
-			ClosestDistance = Distance2Sample;
-			ClosestSampleIndex = SampleIndex;
-		}
-
-		P->ParentPatchSampleIndex = ClosestSampleIndex;
-		P = P->pNext;
-	}*/
-}
 
 SHProbeEncoder::Pixel::RadixNode_t*	SHProbeEncoder::Pixel::ms_RadixNodes[2] = { NULL, NULL };
 void	SHProbeEncoder::Pixel::Sort( Pixel*& _pList, ISortKeyProvider& _KeyProvider, bool _ReverseSortOnExit ) {
