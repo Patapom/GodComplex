@@ -291,6 +291,9 @@
     <ClInclude Include="Utility\SHProbeEncoder\SHProbeNetwork.h">
       <Filter>Utility\SHProbeEncoder</Filter>
     </ClInclude>
+    <ClInclude Include="Utility\SHProbeEncoder\SHProbeEncoderFloodFill.h">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -457,6 +460,9 @@
       <Filter>Utility\SHProbeEncoder</Filter>
     </ClCompile>
     <ClCompile Include="Utility\SHProbeEncoder\SHProbeNetwork.cpp">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\SHProbeEncoder\SHProbeEncoderFloodFill.cpp">
       <Filter>Utility\SHProbeEncoder</Filter>
     </ClCompile>
   </ItemGroup>

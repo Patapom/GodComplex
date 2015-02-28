@@ -5,26 +5,16 @@
 #ifndef _VOLUMETRIC_INC_
 #define _VOLUMETRIC_INC_
 
-#define	USE_FAST_COS	// Use Taylor series instead of actual cosine
+#define	USE_FAST_COS										// Use Taylor series instead of actual cosine
 
 #define	ANIMATE
-#define	PACK_R8				// Noise is packed in a R8 texture instead of R32F
-
-// #define	BOX_BASE	4.0		// 8km (!!) (need to lower that but keep clouds' aspect)
-// #define	BOX_HEIGHT	2.0		// 4km thick
-
-// static const float	EXTINCTION_COEFF = 8.0;
-// static const float	SCATTERING_COEFF = 8.0;
-
-static const float	SUN_INTENSITY = 100.0;
-
-static const float	WORLD2KM = 1.0;						// 1 World unit equals 1.0km
+#define	PACK_R8												// Noise is packed in a R8 texture instead of R32F
 
 
 // static const float	FREQUENCY_MULTIPLIER_LOW = 0.25;	// Noise low frequency multiplier
 // static const float	FREQUENCY_MULTIPLIER_HIGH = 1.5;	// Noise high frequency multiplier
-static const float	FREQUENCY_MULTIPLIER_LOW = 0.0075;	// Noise low frequency multiplier
-static const float	FREQUENCY_MULTIPLIER_HIGH = 0.12;	// Noise high frequency multiplier
+static const float	FREQUENCY_MULTIPLIER_LOW = 0.0075;		// Noise low frequency multiplier
+static const float	FREQUENCY_MULTIPLIER_HIGH = 0.12;		// Noise high frequency multiplier
 
 
 cbuffer	cbShadow	: register( b8 )
@@ -63,40 +53,11 @@ cbuffer	cbVolume	: register( b9 )
 	// float	__PAD
 }
 
-Texture2DArray	_TexCloudTransmittance	: register(t5);
-Texture2D		_TexTerrainShadow		: register(t6);
+Texture2DArray	_TexCloudTransmittance	: register(t4);
+Texture2D		_TexTerrainShadow		: register(t5);
 Texture3D		_TexFractal0			: register(t16);
 Texture3D		_TexFractal1			: register(t17);
 
-
-////////////////////////////////////////////////////////////////////////////////////////
-// Fast analytical Perlin noise
-float Hash( float n )
-{
-	return frac( sin(n) * 43758.5453 );
-}
-
-float FastNoise( float3 x )
-{
-	float3	p = floor(x);
-	float3	f = frac(x);
-
-	f = smoothstep( 0.0, 1.0, f );
-
-	float	n = p.x + 57.0 * p.y + 113.0 * p.z;
-
-	return lerp(	lerp(	lerp( Hash( n +   0.0 ), Hash( n +   1.0 ), f.x ),
-							lerp( Hash( n +  57.0 ), Hash( n +  58.0 ), f.x ), f.y ),
-					lerp(	lerp( Hash( n + 113.0 ), Hash( n + 114.0 ), f.x ),
-							lerp( Hash( n + 170.0 ), Hash( n + 171.0 ), f.x ), f.y ), f.z );
-}
-
-// Fast analytical noise for screen-space perturbation
-float	FastScreenNoise( float2 _XY )
-{
-	return Hash( 1.579849 * _XY.x - 2.60165409 * _XY.y )
-		 * Hash( -1.3468489 * _XY.y + 2.31765 * _XY.x );
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Volume density
@@ -209,7 +170,13 @@ float	Offset = lerp( -0.25, -0.025, y );	// FBM
 //	float3	UVW1 = float3( FREQUENCY_MULTIPLIER_HIGH.xx, 1.0 / _CloudAltitudeThickness.y ) * _Position.xzy;	// Low frequency for the high frequency noise
 //	UVW1 += _Time.x * float3( 0.0, -0.01, 0.0 );	// Good
 #ifdef	ANIMATE
-	float3	UVW1 = float3( _CloudHiFreqParams.xx, 1.0 / _CloudAltitudeThickness.y ) * (_Position.xzy + float3( _CloudHiFreqPositionOffsetX, _CloudHiFreqPositionOffsetZ, 0.0 ));	// Low frequency for the high frequency noise
+//###	float3	UVW1 = float3( _CloudHiFreqParams.xx, 1.0 / _CloudAltitudeThickness.y ) * (_Position.xzy + float3( _CloudHiFreqPositionOffsetX, _CloudHiFreqPositionOffsetZ, 0.0 ));	// Low frequency for the high frequency noise
+
+
+//### Now using uniform scaling
+	float3	UVW1 = float3( _CloudHiFreqParams.xxx ) * (_Position.xzy + float3( _CloudHiFreqPositionOffsetX, _CloudHiFreqPositionOffsetZ, 0.0 ));	// Low frequency for the high frequency noise
+
+
 #else
 	float3	UVW1 = float3( _CloudHiFreqParams.xx, 1.0 / _CloudAltitudeThickness.y ) * _Position.xzy;	// Low frequency for the high frequency noise
 #endif
@@ -305,6 +272,7 @@ float	Erf( float z )
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Shadow Mapping
+#ifdef USE_FAST_COS
 float	FastCos( float _Angle )
 {
 	_Angle = fmod( _Angle + PI, TWOPI ) - PI;
@@ -317,12 +285,36 @@ float2	FastCos( float2 _Angle )
 	float2	x2 = _Angle * _Angle;
 	return 1.0 + x2 * (-0.5 + x2 * ((1.0/24.0) + x2 * (-(1.0/720.0) + x2 * (1.0/40320.0))));
 }
+float3	FastCos( float3 _Angle )
+{
+	_Angle = fmod( _Angle + PI, TWOPI ) - PI;
+	float3	x2 = _Angle * _Angle;
+	return 1.0 + x2 * (-0.5 + x2 * ((1.0/24.0) + x2 * (-(1.0/720.0) + x2 * (1.0/40320.0))));
+}
 float4	FastCos( float4 _Angle )
 {
 	_Angle = fmod( _Angle + PI, TWOPI ) - PI;
 	float4	x2 = _Angle * _Angle;
 	return 1.0 + x2 * (-0.5 + x2 * ((1.0/24.0) + x2 * (-(1.0/720.0) + x2 * (1.0/40320.0))));
 }
+#else
+float	FastCos( float _Angle )
+{
+	return cos( _Angle );
+}
+float2	FastCos( float2 _Angle )
+{
+	return cos( _Angle );
+}
+float3	FastCos( float3 _Angle )
+{
+	return cos( _Angle );
+}
+float4	FastCos( float4 _Angle )
+{
+	return cos( _Angle );
+}
+#endif
 
 float	GetCloudTransmittance( float3 _WorldPosition )
 {
@@ -342,19 +334,10 @@ float	GetCloudTransmittance( float3 _WorldPosition )
 	const float4	CosTerm0 = PI * float4( 0, 1, 2, 3 );
 	const float2	CosTerm1 = PI * float2( 4, 5 );
 
-#ifndef USE_FAST_COS
-	float4	Temp0 = cos( float4( CosTerm0.yzw, CosTerm1.x) * x );
-	float	Temp1 = cos( CosTerm1.y * x );
-// 	float4	Cos0 = float4( 0.5, Temp0.xyz );
-// 	float2	Cos1 = float2( Temp0.w, Temp1 );
-	float4	Cos0 = float4( 1.0, Temp0.xyz );
-	float2	Cos1 = float2( Temp0.w, Temp1 );
-#else
 	float4	Temp0 = FastCos( float4( CosTerm0.yzw, CosTerm1.x) * x );
 	float	Temp1 = FastCos( CosTerm1.y * x );
 	float4	Cos0 = float4( 0.5, Temp0.xyz );
 	float2	Cos1 = float2( Temp0.w, Temp1 );
-#endif
 
 	return saturate( dot( Cos0, C0 ) + dot( Cos1, C1.xy ) );
 }
@@ -367,9 +350,9 @@ float	GetFastCloudTransmittance( float3 _WorldPosition )
 	float2	UV = ShadowPosition.xy;
 
 	float4	C0 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 0 ), 0.0 );
-return C0.x - C0.y + C0.z - C0.w;	// Skip smaller coefficients... No need to tap further.
+return saturate( C0.x - C0.y + C0.z - C0.w );	// Skip smaller coefficients... No need to tap further.
 	float4	C1 = _TexCloudTransmittance.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 );
-	return C0.x - C0.y + C0.z - C0.w + C1.x - C1.y;
+	return saturate( C0.x - C0.y + C0.z - C0.w + C1.x - C1.y );
 }
 
 float	GetTerrainShadow( float3 _Position )

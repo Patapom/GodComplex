@@ -36,9 +36,12 @@
 			this.label1 = new System.Windows.Forms.Label();
 			this.buttonLoadProbe = new System.Windows.Forms.Button();
 			this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
-			this.panelOutput = new GIProbesDebugger.PanelOutput(this.components);
 			this.integerTrackbarControlDisplayType = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
+			this.checkBoxShowCubeMapFaces = new System.Windows.Forms.CheckBox();
+			this.checkBoxShowDistance = new System.Windows.Forms.CheckBox();
+			this.panelOutput = new GIProbesDebugger.PanelOutput(this.components);
+			this.checkBoxShowWSPosition = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlProjectionDiffusion
@@ -93,13 +96,6 @@
 			this.openFileDialog.DefaultExt = "*.probepixels";
 			this.openFileDialog.Filter = "Probe Pixel Files (*.probepixels)|*.probepixels|All Files|*.*";
 			// 
-			// panelOutput
-			// 
-			this.panelOutput.Location = new System.Drawing.Point(12, 12);
-			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size(1024, 640);
-			this.panelOutput.TabIndex = 0;
-			// 
 			// integerTrackbarControlDisplayType
 			// 
 			this.integerTrackbarControlDisplayType.Location = new System.Drawing.Point(1119, 47);
@@ -122,11 +118,51 @@
 			this.label2.TabIndex = 3;
 			this.label2.Text = "Display Type";
 			// 
+			// checkBoxShowCubeMapFaces
+			// 
+			this.checkBoxShowCubeMapFaces.AutoSize = true;
+			this.checkBoxShowCubeMapFaces.Location = new System.Drawing.Point(1050, 86);
+			this.checkBoxShowCubeMapFaces.Name = "checkBoxShowCubeMapFaces";
+			this.checkBoxShowCubeMapFaces.Size = new System.Drawing.Size(132, 17);
+			this.checkBoxShowCubeMapFaces.TabIndex = 5;
+			this.checkBoxShowCubeMapFaces.Text = "Show cube map faces";
+			this.checkBoxShowCubeMapFaces.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxShowDistance
+			// 
+			this.checkBoxShowDistance.AutoSize = true;
+			this.checkBoxShowDistance.Location = new System.Drawing.Point(1050, 109);
+			this.checkBoxShowDistance.Name = "checkBoxShowDistance";
+			this.checkBoxShowDistance.Size = new System.Drawing.Size(96, 17);
+			this.checkBoxShowDistance.TabIndex = 5;
+			this.checkBoxShowDistance.Text = "Show distance";
+			this.checkBoxShowDistance.UseVisualStyleBackColor = true;
+			// 
+			// panelOutput
+			// 
+			this.panelOutput.Location = new System.Drawing.Point(12, 12);
+			this.panelOutput.Name = "panelOutput";
+			this.panelOutput.Size = new System.Drawing.Size(1024, 640);
+			this.panelOutput.TabIndex = 0;
+			// 
+			// checkBoxShowWSPosition
+			// 
+			this.checkBoxShowWSPosition.AutoSize = true;
+			this.checkBoxShowWSPosition.Location = new System.Drawing.Point(1050, 132);
+			this.checkBoxShowWSPosition.Name = "checkBoxShowWSPosition";
+			this.checkBoxShowWSPosition.Size = new System.Drawing.Size(152, 17);
+			this.checkBoxShowWSPosition.TabIndex = 5;
+			this.checkBoxShowWSPosition.Text = "Show world-space position";
+			this.checkBoxShowWSPosition.UseVisualStyleBackColor = true;
+			// 
 			// DebuggerForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1359, 663);
+			this.Controls.Add(this.checkBoxShowWSPosition);
+			this.Controls.Add(this.checkBoxShowDistance);
+			this.Controls.Add(this.checkBoxShowCubeMapFaces);
 			this.Controls.Add(this.integerTrackbarControlDisplayType);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.label1);
@@ -154,6 +190,9 @@
 		private System.Windows.Forms.OpenFileDialog openFileDialog;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlDisplayType;
 		private System.Windows.Forms.Label label2;
+		private System.Windows.Forms.CheckBox checkBoxShowCubeMapFaces;
+		private System.Windows.Forms.CheckBox checkBoxShowDistance;
+		private System.Windows.Forms.CheckBox checkBoxShowWSPosition;
 	}
 }
 
