@@ -33,8 +33,6 @@ namespace GIProbesDebugger
 
 		private Texture2D				m_Tex_CubeMap = null;
 
-		private Primitive				m_Prim_Quad = null;
-
 		private Camera					m_Camera = new Camera();
 		private CameraManipulator		m_Manipulator = new CameraManipulator();
 
@@ -207,8 +205,6 @@ namespace GIProbesDebugger
 			}
 
 			m_CB_Main.Dispose();
-
-			m_Prim_Quad.Dispose();
 
 			if ( m_Tex_CubeMap != null )
 				m_Tex_CubeMap.Dispose();
