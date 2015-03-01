@@ -25,11 +25,33 @@ namespace GIProbesDebugger
 			public uint			_Flags;
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		struct SB_Sample {
+			public uint			ID;
+			public float3		Position;
+			public float3		Normal;
+			public float3		Tangent;
+			public float3		BiTangent;
+			public float		Radius;
+			public float3		Albedo;
+			public float3		F0;
+			public uint			PixelsCount;
+			public float3		SH0, SH1, SH2;
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		struct SB_EmissiveSurface {
+			public uint			ID;
+			public float3		SH0, SH1, SH2;
+		}
+
 		private ConstantBuffer<CB_Main>	m_CB_Main = null;
 
 		private Shader					m_Shader_Render = null;
 
-		private Texture2D				m_Tex_CubeMap = null;
+		private Texture2D								m_Tex_CubeMap = null;
+		private StructuredBuffer<SB_Sample>				m_SB_Samples = null;
+		private StructuredBuffer<SB_EmissiveSurface>	m_SB_EmissiveSurfaces = null;
 
 		private Camera					m_Camera = new Camera();
 		private CameraManipulator		m_Manipulator = new CameraManipulator();
@@ -46,7 +68,8 @@ namespace GIProbesDebugger
 		#region Probe Pixels Loader
 
 		struct Pixel {
-			public uint		ParentSurfaceID;
+			public uint		ParentSampleIndex;
+			public bool		UsedForSampling;
 			public float3	Position;
 			public float3	Normal;
 			public float3	Albedo;
@@ -62,8 +85,6 @@ namespace GIProbesDebugger
 			public float	SmoothedDistance;
 			public bool		Infinity;
 			public float	SmoothedInfinity;
-			public int		Distance2Border;
-			public int		ParentSurfaceSampleIndex;
 		}
 
 		void	LoadProbePixels( FileInfo _FileName ) {
@@ -72,10 +93,22 @@ namespace GIProbesDebugger
 				m_Tex_CubeMap.Dispose();
 				m_Tex_CubeMap = null;
 			}
+			if ( m_SB_Samples != null ) {
+				m_SB_Samples.Dispose();
+				m_SB_Samples = null;
+			}
+			if ( m_SB_EmissiveSurfaces != null ) {
+				m_SB_EmissiveSurfaces.Dispose();
+				m_SB_EmissiveSurfaces = null;
+			}
 
-			Pixel[][,]	CubeMapFaces = new Pixel[6][,];
 			using ( FileStream S = _FileName.OpenRead() )
 				using ( BinaryReader R = new BinaryReader( S ) ) {
+
+					//////////////////////////////////////////////////////////////////
+					// Read pixels
+					Pixel[][,]	CubeMapFaces = new Pixel[6][,];
+
 					int	CubeMapSize = R.ReadInt32();
 					for ( int CubeMapFaceIndex=0; CubeMapFaceIndex < 6; CubeMapFaceIndex++ ) {
 						Pixel[,]	Face = new Pixel[CubeMapSize,CubeMapSize];
@@ -83,7 +116,8 @@ namespace GIProbesDebugger
 
 						for ( int Y=0; Y < CubeMapSize; Y++ )
 							for ( int X=0; X < CubeMapSize; X++ ) {
-								Face[X,Y].ParentSurfaceID = R.ReadUInt32();
+								Face[X,Y].ParentSampleIndex = R.ReadUInt32();
+								Face[X,Y].UsedForSampling = R.ReadBoolean();
 								Face[X,Y].Position.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
 								Face[X,Y].Normal.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
 								Face[X,Y].Albedo.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
@@ -99,14 +133,12 @@ namespace GIProbesDebugger
 								Face[X,Y].SmoothedDistance = R.ReadSingle();
 								Face[X,Y].Infinity = R.ReadByte() != 0;
 								Face[X,Y].SmoothedInfinity = R.ReadSingle();
-								Face[X,Y].Distance2Border = R.ReadInt32();
-								Face[X,Y].ParentSurfaceSampleIndex = R.ReadInt32();
 							}
 
 					}
 
  					List<PixelsBuffer>	Content = new List<PixelsBuffer>();
-					float4			Value = new float4();
+					float4				Value = new float4();
 
 					for ( int CubeIndex=0; CubeIndex < 8; CubeIndex++ ) {
 						for ( int CubeMapFaceIndex=0; CubeMapFaceIndex < 6; CubeMapFaceIndex++ ) {
@@ -122,19 +154,19 @@ namespace GIProbesDebugger
 												Value.Set( P.Position, P.Distance );
 												break;
 											case 1:
-												Value.Set( P.Normal, (float) P.Importance );
+												Value.Set( P.Normal, P.SmoothedDistance );
 												break;
 											case 2:
 												Value.Set( P.Albedo, P.SmoothedInfinity );
 												break;
 											case 3:
-												Value.Set( P.StaticLitColor, (float) P.ParentSurfaceID );
+												Value.Set( P.StaticLitColor, (float) P.ParentSampleIndex );
 												break;
 											case 4:
-												Value.Set( P.SmoothedStaticLitColor, P.SmoothedDistance );
+												Value.Set( P.SmoothedStaticLitColor, (float) P.Importance );
 												break;
 											case 5:
-												Value.Set( (float) P.Distance2Border, (float) P.ParentSurfaceSampleIndex, P.Infinity ? 1 : 0, (float) P.FaceIndex );
+												Value.Set( P.UsedForSampling ? 1 : 0, P.Infinity ? 1 : 0, (float) P.FaceIndex, 0 );
 												break;
 											case 6:
 												Value.Set( P.F0, (float) P.NeighborProbeID );
@@ -153,6 +185,42 @@ namespace GIProbesDebugger
 					}
  
  					m_Tex_CubeMap = new Texture2D( m_Device, CubeMapSize, CubeMapSize, -6*8, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, Content.ToArray() );
+
+					//////////////////////////////////////////////////////////////////
+					// Read samples
+					int	SamplesCount = (int) R.ReadUInt32();
+					m_SB_Samples = new StructuredBuffer<SB_Sample>( m_Device, SamplesCount, true );
+
+					for ( int SampleIndex=0; SampleIndex < SamplesCount; SampleIndex++ ) {
+						m_SB_Samples.m[SampleIndex].ID = R.ReadUInt32();
+						m_SB_Samples.m[SampleIndex].Position.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+						m_SB_Samples.m[SampleIndex].Normal.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+						m_SB_Samples.m[SampleIndex].Tangent.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+						m_SB_Samples.m[SampleIndex].BiTangent.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+						m_SB_Samples.m[SampleIndex].Radius = R.ReadSingle();
+						m_SB_Samples.m[SampleIndex].Albedo.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+						m_SB_Samples.m[SampleIndex].F0.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+						m_SB_Samples.m[SampleIndex].PixelsCount = R.ReadUInt32();
+						m_SB_Samples.m[SampleIndex].SH0.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+						m_SB_Samples.m[SampleIndex].SH1.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+						m_SB_Samples.m[SampleIndex].SH2.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+					}
+					m_SB_Samples.Write();
+
+					//////////////////////////////////////////////////////////////////
+					// Read emissive surfaces
+					int	EmissiveSurfacesCount = (int) R.ReadUInt32();
+					if ( EmissiveSurfacesCount > 0 ) {
+						m_SB_EmissiveSurfaces = new StructuredBuffer<SB_EmissiveSurface>( m_Device, EmissiveSurfacesCount, true );
+
+						for ( int SurfaceIndex=0; SurfaceIndex < EmissiveSurfacesCount; SurfaceIndex++ ) {
+							m_SB_EmissiveSurfaces.m[SurfaceIndex].ID = R.ReadUInt32();
+							m_SB_EmissiveSurfaces.m[SurfaceIndex].SH0.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+							m_SB_EmissiveSurfaces.m[SurfaceIndex].SH1.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+							m_SB_EmissiveSurfaces.m[SurfaceIndex].SH2.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+						}
+						m_SB_EmissiveSurfaces.Write();
+					}
 				}
 		}
 
@@ -206,6 +274,10 @@ namespace GIProbesDebugger
 
 			if ( m_Tex_CubeMap != null )
 				m_Tex_CubeMap.Dispose();
+			if ( m_SB_Samples != null )
+				m_SB_Samples.Dispose();
+			if ( m_SB_EmissiveSurfaces != null )
+				m_SB_EmissiveSurfaces.Dispose();
 
 			m_Device.Exit();
 
@@ -226,8 +298,11 @@ namespace GIProbesDebugger
 
 			// Setup global data
 			m_CB_Main.m._TargetSize = new float4( Width, Height, 1.0f / Width, 1.0f / Height );
+			m_CB_Main.m._Flags = (uint) ((checkBoxShowCubeMapFaces.Checked ? 1 : 0) | (checkBoxShowDistance.Checked ? 2 : 0) | (checkBoxShowWSPosition.Checked ? 4 : 0) | (checkBoxShowSamples.Checked ? 8 : 0));
 			m_CB_Main.m._Type = (uint) integerTrackbarControlDisplayType.Value;
-			m_CB_Main.m._Flags = (uint) ((checkBoxShowCubeMapFaces.Checked ? 1 : 0) | (checkBoxShowDistance.Checked ? 2 : 0) | (checkBoxShowWSPosition.Checked ? 4 : 0));
+			if ( checkBoxShowSamples.Checked ) {
+				m_CB_Main.m._Type = (uint) (radioButtonSampleAll.Checked ? 1 : 0) | ((uint) (radioButtonSampleColor.Checked ? 0 : radioButtonSampleAlbedo.Checked ? 1 : 2) << 1);
+			}
 			m_CB_Main.UpdateData();
 
 
@@ -237,6 +312,10 @@ namespace GIProbesDebugger
 
 			if ( m_Tex_CubeMap != null )
 				m_Tex_CubeMap.SetPS( 0 );
+			if ( m_SB_Samples != null )
+				m_SB_Samples.SetInput( 1 );
+			if ( m_SB_EmissiveSurfaces != null )
+				m_SB_EmissiveSurfaces.SetInput( 2 );
 
 			if ( m_Shader_Render != null && m_Shader_Render.Use() ) {
 				m_Device.RenderFullscreenQuad( m_Shader_Render );
