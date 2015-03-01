@@ -1,7 +1,4 @@
-﻿#define FILTER_EXP_SHADOW_MAP
-#define USE_COMPUTE_SHADER_FOR_BRDF_INTEGRATION
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;

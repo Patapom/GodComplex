@@ -91,7 +91,7 @@ SHProbeEncoder::SHProbeEncoder() {
 			}
 
 	//////////////////////////////////////////////////////////////////////////
-	// Prepare equal subdivisions of the sphere using Hemmersley sampling of the sphere and grouping
+	// Prepare equal subdivisions of the sphere using Hammersley sampling of the sphere and grouping
 	for ( int SampleIndex=0; SampleIndex < MAX_PROBE_SAMPLES; SampleIndex++ ) {
 		Sample&	S = m_pSamples[SampleIndex];
 
@@ -133,9 +133,13 @@ SHProbeEncoder::SHProbeEncoder() {
 		m_MaxSamplePixelsCount = max( m_MaxSamplePixelsCount, pSample->OriginalPixelsCount );	// Keep track of the maximum amount of pixels encountered across all samples
 	}
 
+	//////////////////////////////////////////////////////////////////////////
 	// Pre-allocate the maximum amount of radix nodes
 	Pixel::ms_RadixNodes[0] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];
 	Pixel::ms_RadixNodes[1] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];
+
+	m_SamplePixelGroups.Init( m_MaxSamplePixelsCount );	// Worst case scenario: only 1 pixel per group in each sample so as many groups as pixels!
+	m_EmissiveSurfaces.Init( 6*CUBE_MAP_FACE_SIZE );	// Worst case scenario: all pixels in the cube map are a different emissive material!
 }
 
 SHProbeEncoder::~SHProbeEncoder() {
@@ -345,37 +349,18 @@ void	SHProbeEncoder::Save( const char* _FileName ) const {
 		}
 	}
 
- 	Write( U32(0) );
-// 	// Write the emissive surfaces
-// 	Write( m_EmissiveSurfacesCount );
-// 
-// 	for ( U32 i=0; i < m_EmissiveSurfacesCount; i++ ) {
-// 		Surface&	P = *m_ppEmissiveSurfaces[i];
-// 
-// 		// Write position, normal, albedo
-// 		Write( P.Position.x );
-// 		Write( P.Position.y );
-// 		Write( P.Position.z );
-// 
-// 		Write( P.Normal.x );
-// 		Write( P.Normal.y );
-// 		Write( P.Normal.z );
-// 
-// 		Write( P.Tangent.x );
-// 		Write( P.Tangent.y );
-// 		Write( P.Tangent.z );
-// 
-// 		Write( P.BiTangent.x );
-// 		Write( P.BiTangent.y );
-// 		Write( P.BiTangent.z );
-// 
-// 		// Write emissive mat
-// 		Write( P.EmissiveMatID );
-// 
-// 		// Write SH coefficients (we only write luminance here, we don't have the color info that is provided at runtime)
-// 		for ( int i=0; i < 9; i++ )
-// 			Write( P.SH[i].x );
-// 	}
+	// Write the emissive surfaces
+	Write( m_EmissiveSurfacesCount );
+	for ( U32 i=0; i < m_EmissiveSurfacesCount; i++ ) {
+		EmissiveSurface&	S = *m_ppEmissiveSurfaces[i];
+
+		// Write emissive mat
+		Write( S.EmissiveMatID );
+
+		// Write SH coefficients (we only write luminance here, we don't have the color info that is provided at runtime)
+		for ( int i=0; i < 9; i++ )
+			Write( S.SH[i] );
+	}
 
 	// Write the neighbor probes
 	Write( m_NeighborProbes.GetCount() );
@@ -426,6 +411,7 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 	for ( int i=0; i < 6*CUBE_MAP_FACE_SIZE; i++, P++ ) {
 
 		Write( P->pParentSample->Index );
+		Write( P->bUsedForSampling );
 
 		Write( P->Position.x );
 		Write( P->Position.y );
@@ -500,35 +486,17 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 	}
 
 	// Write the emissive surfaces
-	Write( U32(0) );
-// 	Write( m_EmissiveSurfacesCount );
-// 	for ( U32 i=0; i < m_EmissiveSurfacesCount; i++ ) {
-// 		Surface&	S = *m_ppEmissiveSurfaces[i];
-// 
-// 		// Write position, normal, albedo
-// 		Write( S.Position.x );
-// 		Write( S.Position.y );
-// 		Write( S.Position.z );
-// 
-// 		Write( S.Normal.x );
-// 		Write( S.Normal.y );
-// 		Write( S.Normal.z );
-// 
-// 		Write( S.Tangent.x );
-// 		Write( S.Tangent.y );
-// 		Write( S.Tangent.z );
-// 
-// 		Write( S.BiTangent.x );
-// 		Write( S.BiTangent.y );
-// 		Write( S.BiTangent.z );
-// 
-// 		// Write emissive mat
-// 		Write( S.EmissiveMatID );
-// 
-// 		// Write SH coefficients (we only write luminance here, we don't have the color info that is provided at runtime)
-// 		for ( int i=0; i < 9; i++ )
-// 			Write( S.SH[i].x );
-// 	}
+	Write( m_EmissiveSurfacesCount );
+	for ( U32 i=0; i < m_EmissiveSurfacesCount; i++ ) {
+		EmissiveSurface&	S = *m_ppEmissiveSurfaces[i];
+
+		// Write emissive mat
+		Write( S.EmissiveMatID );
+
+		// Write SH coefficients (we only write luminance here, we don't have the color info that is provided at runtime)
+		for ( int i=0; i < 9; i++ )
+			Write( S.SH[i] );
+	}
 
 	fclose( g_pFile );
 }
@@ -572,7 +540,7 @@ void	SHProbeEncoder::ComputeFloodFill( float _SpatialDistanceWeight, float _Norm
 	}
 
 
-// DEBUG: Small experiment designed to see if SH sum to 1
+// DEBUG: Small experiment designed to see if SH roughly sum to 1
 // double	AccumSH[9];
 // memset( AccumSH, 0, 9*sizeof(double) );
 // for ( int SampleIndex=0; SampleIndex < MAX_PROBE_SAMPLES; SampleIndex++ ) {
@@ -589,8 +557,6 @@ void	SHProbeEncoder::ComputeFloodFill( float _SpatialDistanceWeight, float _Norm
 
 	//////////////////////////////////////////////////////////////////////////
 	// Process each sample
-	List< PixelsList >	SamplePixelGroups( m_MaxSamplePixelsCount );	// Worst case scenario: only 1 pixel per group in each sample so as many groups as pixels
-
 	double	GroupImportanceThreshold = _MinimumImportanceDiscardThreshold / MAX_PROBE_SAMPLES;
 
 GroupImportanceThreshold = 0.0;	// No rejection for now...
@@ -601,25 +567,28 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 		Sample&	S = m_pSamples[SampleIndex];
 
 		// Build the lists of pixel groups for that sample
-		SamplePixelGroups.Clear();
+		m_SamplePixelGroups.Clear();
 		Pixel*	pPixel = S.pPixels;
 		while ( pPixel != NULL ) {
 			if ( pPixel->pParentList == NULL && pPixel->IsFloodFillAcceptable( S ) ) {
 
 				// Propagate from the current pixel and form a coherent group
-				PixelsList&	AcceptedPixels = SamplePixelGroups.Append();
+				PixelsList&	AcceptedPixels = m_SamplePixelGroups.Append();
 				AcceptedPixels.PixelsCount = 0;
-				AcceptedPixels.pPixel = NULL;
+				AcceptedPixels.pPixels = NULL;
 				AcceptedPixels.Importance = 0.0;
 
 				PixelsList	RejectedPixels;
+
+				m_ScanlinePixelIndex = 0;		// VEEERY important line where we reset the pixel index of the pool of flood filled pixels!
 				FloodFill( S, pPixel, pPixel, AcceptedPixels, RejectedPixels );
+				ASSERT( m_ScanlinePixelIndex > 0, "Can't have empty samples!" );
 
 				// Restore pixels rejected by that group since they may be useful for another group
-				Pixel*	pCurrent = RejectedPixels.pPixel;
-				while ( pCurrent != NULL ) {
-					Pixel*	pTemp = pCurrent;
-					pCurrent = pCurrent->pNextInList;
+				while ( RejectedPixels.pPixels != NULL ) {
+					Pixel*	pTemp = RejectedPixels.pPixels;
+					ASSERT( pTemp >= m_pCubeMapPixels && pTemp < m_pCubeMapPixels+6*CUBE_MAP_FACE_SIZE, "Oh!" );
+					RejectedPixels.pPixels = RejectedPixels.pPixels->pNextInList;
 					pTemp->pParentList = NULL;
 					pTemp->pNextInList = NULL;
 				}
@@ -629,10 +598,8 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 
 		// Keep only the most interesting group
 		PixelsList*	pBestGroup = NULL;
-		for ( int GroupIndex=0; GroupIndex < SamplePixelGroups.GetCount(); GroupIndex++ ) {
-			PixelsList&	Group = SamplePixelGroups[GroupIndex];
-//						Group.Importance /= Group.PixelsCount;
-
+		for ( int GroupIndex=0; GroupIndex < m_SamplePixelGroups.GetCount(); GroupIndex++ ) {
+			PixelsList&	Group = m_SamplePixelGroups[GroupIndex];
 			if ( pBestGroup == NULL || Group.Importance > pBestGroup->Importance ) {
 				pBestGroup = &Group;
 			}
@@ -645,25 +612,30 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 			continue;
 		}
 
-		// Build the resulting position, normal, albedo and average direction for the group
-		S.pPixels = pBestGroup->pPixel;
-		S.PixelsCount = pBestGroup->PixelsCount;
+		// Clear used flag for all pixels
+		pPixel = S.pPixels;
+		while ( pPixel != NULL ) {
+			pPixel->bUsedForSampling = false;
+			pPixel = pPixel->pNext;
+		}
 
+		// Build the resulting position, normal, albedo and average direction for the group
 		S.Position = float3::Zero;
 		S.Normal = float3::Zero;
 		S.Direction = float3::Zero;
 		S.Albedo = float3::Zero;
 
-		pPixel = S.pPixels;
+		pPixel = pBestGroup->pPixels;
 		while ( pPixel != NULL ) {
 			S.Position = S.Position + pPixel->Position;
 			S.Normal = S.Normal + pPixel->Normal;
 			S.Direction = S.Direction + pPixel->View;
 			S.Albedo = S.Albedo + pPixel->Albedo;
+			pPixel->bUsedForSampling = true;	// Mark the pixel as used for sampling
 			pPixel = pPixel->pNextInList;
 		}
 
-		float	Normalizer = 1.0f / S.PixelsCount;
+		float	Normalizer = 1.0f / pBestGroup->PixelsCount;
 		S.Position = S.Position * Normalizer;
 		S.Normal.Normalize();
 		S.Direction.Normalize();
@@ -684,264 +656,67 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 	}
 
 
-
-/*
 	//////////////////////////////////////////////////////////////////////////
-	// 1] Iterate on the list of free pixels that belong to no surface and create new surfaces
-	m_AllSurfaces.Clear();
+	// Build the emissive surfaces
+	m_EmissiveSurfaces.Clear();
 
-	Surface*	pRegularSurfaces = NULL;
-	int			RegularSurfacesCount = 0;
-	Surface*	pEmissiveSurfaces = NULL;
-	int			EmissiveSurfacesCount = 0;
-	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
-		Pixel&	P0 = m_pCubeMapPixels[PixelIndex];
+	EmissiveSurface*	MatID2Surface[1024];	// Maximum of 1024 emissive materials, should be enough
+	memset( MatID2Surface, 0, 1024*sizeof(EmissiveSurface*) );
 
-DEBUG_PixelIndex = PixelIndex;
-
-		if ( !P0.IsFloodFillAcceptable() ) {
-			continue;	// Not part of the scene geometry or too far away
+	Pixel*	pPixel = m_pCubeMapPixels;
+	for ( int i=0; i < TotalPixelsCount; i++, pPixel++ ) {
+		if ( pPixel->EmissiveMatID == ~0UL ) {
+			continue;
 		}
 
-		// Create a new surface from this pixel
-		Surface&	S = m_AllSurfaces.Append();
-
-		S.Position = P0.Position;
-		S.Normal = P0.Normal;
-		S.View = P0.View;
-		S.Distance = P0.Distance;
-		S.SmoothedDistance  = P0.SmoothedDistance;
-		S.EmissiveMatID = P0.EmissiveMatID;
-		S.SetAlbedo( P0.Albedo );
-		S.SmoothedStaticLitColor = P0.SmoothedStaticLitColor;
-
-
-// if ( PixelIndex == 0x2680 )
-// 	P0.Albedo.x += 1e-6f;
-
-// if ( P0.IsEmissive )
-//  	P0.Albedo.x += 1e-6f;
-
-
-		// Flood fill adjacent pixels based on a criterion
-		S.PixelsCount = 0;
-		S.pPixels = NULL;
-	 	Pixel*	pRejectedPixels = NULL;
-
-		m_ScanlinePixelIndex = 0;		// VEEERY important line where we reset the pixel index of the pool of flood filled pixels!
-		S.Distance2Border = INT_MAX>>1;
-		P0.Distance2Border = INT_MAX>>1;
-		P0.Distance2Border = 1 + FloodFill( S, &S, &P0, pRejectedPixels );
-		ASSERT( m_ScanlinePixelIndex > 0, "Can't have empty surfaces!" );
-
-		// Remove rejected pixels from the surface (we only temporarily marked them to avoid them being processed twice by the flood filler)
-		int	RejectedPixelsCount = 0;
-		while ( pRejectedPixels != NULL ) {
-			pRejectedPixels->pParentSurface = NULL;	// Ready for another round!
-			pRejectedPixels->Distance2Border = INT_MAX>>1;
-			pRejectedPixels = pRejectedPixels->pNext;
-			RejectedPixelsCount++;					// For debugging purpose only...
+		ASSERT( pPixel->EmissiveMatID < 1024, "Emissive material ID out of range!" );
+		EmissiveSurface*	pSurface = MatID2Surface[pPixel->EmissiveMatID];
+		if ( pSurface == NULL ) {
+			pSurface = &m_EmissiveSurfaces.Append();
+			MatID2Surface[pPixel->EmissiveMatID] = pSurface;
 		}
 
-		// Finalize importance
-		S.Importance /= max( 1, S.PixelsCount );
-
- 		if ( S.PixelsCount < DiscardThreshold || S.Importance < Pixel::IMPORTANCE_THRESOLD ) {
-			continue;	// This surface is not important enough so don't even bother (I know it could potentially be joined to a larger surface later but I simply don't care)
+		// Accumulate SH
+		for ( int i=0; i < 9; i++ ) {
+			pSurface->SH[i] += pPixel->SHCoeffs[i];
 		}
+		pSurface->SolidAngle += pPixel->SolidAngle;
 
-		// Add the surface to the proper list
-		if ( P0.EmissiveMatID == ~0UL ) {
-			// One more regular surface
-			S.pNext = pRegularSurfaces;
-			pRegularSurfaces = &S;
-			RegularSurfacesCount++;
-		} else {
-			// One more emissive surface
-			S.pNext = pEmissiveSurfaces;
-			pEmissiveSurfaces = &S;
-			EmissiveSurfacesCount++;
-		}
+		// Link
+		pPixel->pNext = pSurface->pPixels;
+		pSurface->pPixels = pPixel;
+		pSurface->PixelsCount++;
 	}
 
+	// Sort surfaces
+	m_EmissiveSurfacesCount = 0;
+	for ( U32 SortedSurfaceIndex=0; SortedSurfaceIndex < MAX_PROBE_EMISSIVE_SURFACES; SortedSurfaceIndex++ ) {
 
-	//////////////////////////////////////////////////////////////////////////
-	// 2] Try and merge surfaces together
-
-	// 2.1) Merge separate emissive surfaces that have the same mat ID together
-	Surface*	S0 = pEmissiveSurfaces;
-	while ( S0 != NULL ) {
-		if ( S0->pParentSurface != NULL ) {
-
-			// Merge with any other surface with same Mat ID
-			Surface*	PreviousS1 = S0;
-			Surface*	S1 = (Surface*) S0->pNext;
-			while ( S1 != NULL ) {
-				if ( S1->EmissiveMatID == S0->EmissiveMatID ) {
-
-					// Compute new importance of the merged surfaces
-					S0->Importance = (S0->PixelsCount * S0->Importance + S1->PixelsCount * S1->Importance) / (S0->PixelsCount + S1->PixelsCount);
-					S0->PixelsCount += S1->PixelsCount;
-
-					// Merge pixels
-					Pixel*	pPixel1 = S1->pPixels;
-					while ( pPixel1 != NULL ) {
-						Pixel*	pTemp = pPixel1;
-						pPixel1 = pPixel1->pNext;
-						pTemp->pNext = S0->pPixels;
-						S0->pPixels = pTemp;
-					}
-
-					// Remove the merged surface
-					PreviousS1->pNext = S1->pNext;	// Link over that surface
-					S1->pParentSurface = S0;		// Mark S0 as its parent so it doesn't get processed again
-				}
-				S1 = (Surface*) S1->pNext;
+		EmissiveSurface*	pBestSurface = NULL;
+		for ( int SurfaceIndex=0; SurfaceIndex < m_EmissiveSurfaces.GetCount(); SurfaceIndex++ ) {
+			EmissiveSurface&	Surface = m_EmissiveSurfaces[SurfaceIndex];
+			if ( Surface.EmissiveMatID != ~0U )
+				continue;	// Already sorted out!
+			if ( pBestSurface == NULL || Surface.SolidAngle > pBestSurface->SolidAngle ) {
+				pBestSurface = &Surface;
 			}
 		}
-		S0 = (Surface*) S0->pNext;
-	}
 
-	// 2.2) Merge close enough surfaces
-	// TODO?
-
-
-	//////////////////////////////////////////////////////////////////////////
-	// 3] Sort and cull unimportant surfaces
-	{
-		class	PixelKey : public Pixel::ISortKeyProvider {
-		public:	virtual U32	GetKey( const Pixel& _Pixel ) const {
-				return ((const Surface&) _Pixel).PixelsCount;
-			}
-		} Comp;
-
-		Pixel*	pTemp0 = (Pixel*) pRegularSurfaces;
-		Pixel*	pTemp1 = (Pixel*) pEmissiveSurfaces;
-		Pixel::Sort( pTemp0, Comp, true );
-		Pixel::Sort( pTemp1, Comp, true );
-		pRegularSurfaces = (Surface*) pTemp0;
-		pEmissiveSurfaces = (Surface*) pTemp1;
-
-		// Copy down our selected surfaces
-		m_SurfacesCount = 0;
-		Surface*	S = pRegularSurfaces;
-		while ( S != NULL && m_SurfacesCount < MAX_PROBE_SURFACES ) {
-			m_ppSurfaces[m_SurfacesCount++] = S;
-			S = (Surface*) S->pNext;
+		if ( pBestSurface == NULL || pBestSurface->PixelsCount < DiscardThreshold ) {
+			break;	// We're done or we've encountered insignificant surfaces!
 		}
 
-		m_EmissiveSurfacesCount = 0;
-		S = pEmissiveSurfaces;
-		while ( S != NULL && m_EmissiveSurfacesCount < MAX_PROBE_EMISSIVE_SURFACES ) {
-			m_ppEmissiveSurfaces[m_EmissiveSurfacesCount++] = S;
-			S = (Surface*) S->pNext;
-		}
+		// Assign new best emissive surface
+		pBestSurface->ID = SortedSurfaceIndex;
+		m_ppEmissiveSurfaces[m_EmissiveSurfacesCount++] = pBestSurface;
 	}
-
-
-	//////////////////////////////////////////////////////////////////////////
-	// Gather information on each surface
-	m_MeanDistance = 0.0;
-	m_MeanHarmonicDistance = 0.0;
-	m_MinDistance = 1e6;
-	m_MaxDistance = 0.0;
-
-	int	SumCardinality = 0;
-	for ( U32 SurfaceIndex=0; SurfaceIndex < m_SurfacesCount; SurfaceIndex++ ) {
-		Surface&	S = *m_ppSurfaces[SurfaceIndex];
-		S.ID = SurfaceIndex;
-
-		// Post-process the pixels to find the one closest to the probe and use it as our centroid
-		Pixel*	pBestPixel = S.pPixels;
-		float3	AverageNormal = float3::Zero;
-		float3	AverageAlbedo = float3::Zero;
-
-		Pixel*	pPixel = S.pPixels;
-		while ( pPixel != NULL ) {
-			if ( pPixel->Distance < pBestPixel->Distance )
-				pBestPixel = pPixel;
-
-			AverageNormal = AverageNormal + pPixel->Normal;
-			AverageAlbedo = AverageAlbedo + pPixel->Albedo;
-
-			// Update min/max/avg
-			m_MeanDistance += pPixel->Distance;
-			m_MinDistance = min( m_MinDistance, pPixel->Distance );
-			m_MaxDistance = max( m_MaxDistance, pPixel->Distance );
-			m_MeanHarmonicDistance += 1.0 / pPixel->Distance;
-
-			pPixel = pPixel->pNext;
-		}
-
-		AverageNormal = AverageNormal / float(S.PixelsCount);
-		AverageAlbedo = AverageAlbedo / float(S.PixelsCount);
-
-		S.Position = pBestPixel->Position;	// Our new winner!
-		S.Normal = AverageNormal;
-		S.SetAlbedo( AverageAlbedo );
-
-		// Count pixels in the surface for statistics
-		SumCardinality += S.PixelsCount;
-
-		// Finally, encode SH & find principal axes
-		S.EncodeSH();
-
-// Find a faster way!
-//		S.FindPrincipalAxes();
-	}
-
-	m_MeanHarmonicDistance = SumCardinality / m_MeanHarmonicDistance;
-	m_MeanDistance /= SumCardinality;
-
-	// Do the same for emissive surfaces
-	for ( U32 SurfaceIndex=0; SurfaceIndex < m_EmissiveSurfacesCount; SurfaceIndex++ ) {
-		Surface&	S = *m_ppEmissiveSurfaces[SurfaceIndex];
-		S.ID = SurfaceIndex;
-
-		// Post-process the pixels to find the one closest to the probe to use as our centroid
-		Pixel*	pBestPixel = S.pPixels;
-		Pixel*	pPixel = S.pPixels;
-		while ( pPixel != NULL ) {
-			if ( pPixel->Distance < pBestPixel->Distance ) {
-				pBestPixel = pPixel;
-			}
-			pPixel = pPixel->pNext;
-		}
-
-		S.Position = pBestPixel->Position;	// Our new winner!
-
-		// Finally, encode SH & find principal axes & samples
-		S.EncodeEmissiveSH();
-	}
-
-	// Generate sampling points for regular surfaces
-	U32	TotalSamplesCount = _MaxLightingSamplesCount;
-	if ( TotalSamplesCount < m_SurfacesCount ) {
-		// Force samples count to match surfaces count!
-//		MessageBox( "The amount of samples for the probe was chosen to be " + TotalSamplesCount + " which is inferior to the amount of surfaces, this would mean some surfaces wouldn't even get sampled so the actual amount of samples is at least surface to the amount of surfaces (" + m_Patches.Length + ")", MessageBoxButtons.OK, MessageBoxIcon.Warning );
-		TotalSamplesCount = m_SurfacesCount;
-	}
-
-	for ( int SurfaceIndex=m_SurfacesCount-1; SurfaceIndex >= 0; SurfaceIndex-- ) {	// We start from the smallest surfaces to ensure they get some samples
-		Surface&	S = *m_ppSurfaces[SurfaceIndex];
-
-		U32	SamplesCount = TotalSamplesCount * S.PixelsCount / SumCardinality;
-			SamplesCount = max( 1, SamplesCount );				// Ensure we have at least 1 sample no matter what!
-			SamplesCount = min( SamplesCount, S.PixelsCount );	// Can't have more samples than pixels!
-
-		S.GenerateSamples( SamplesCount );
-
-		// Reduce the amount of available samples and the count of remaining pixels so the remaining surfaces share the remaining samples...
-		TotalSamplesCount -= SamplesCount;
-		SumCardinality -= S.PixelsCount;
-	}*/
 }
 
 
 #pragma region Flood Fill Algorithm
 
 // This should be a faster version (and much less recursive!) than the original flood fill I wrote some time ago
-// The idea here is to process an entire scanline first (going left and right and collecting valid scanline pixels along the way)
+// The idea here is to process an entire scanline first (going left and right and collecting valid pixels along the way)
 //  then for each of these pixels we move up/down and fill the top/bottom scanlines from these new seeds...
 //
 void	SHProbeEncoder::FloodFill( Sample& _Sample, Pixel* _PreviousPixel, Pixel* _P, PixelsList& _AcceptedPixels, PixelsList& _RejectedPixels ) const {
@@ -1006,7 +781,7 @@ void	SHProbeEncoder::FloodFill( Sample& _Sample, Pixel* _PreviousPixel, Pixel* _
 }
 
 bool	SHProbeEncoder::CheckAndAcceptPixel( Sample& _Sample, Pixel& _PreviousPixel, Pixel& _P, PixelsList& _AcceptedPixels, PixelsList& _RejectedPixels ) const {
-	// Start by checking if we can use that pixel
+	// Start by checking if we can use that pixel at all
 	if ( !_P.IsFloodFillAcceptable( _Sample ) ) {
 		return false;
 	}
@@ -1014,52 +789,28 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Sample& _Sample, Pixel& _PreviousPixel
 	// Check some additional criterions for a match
 	bool	Accepted = false;
 
-	if ( _PreviousPixel.EmissiveMatID != ~0UL && _P.EmissiveMatID != ~0UL ) {
-		// Emissive pixels get grouped together
-		Accepted = _PreviousPixel.EmissiveMatID == _P.EmissiveMatID;
-	} else {
-		// First, let's check the angular discrepancy
-		float	Dot = _PreviousPixel.Normal | _P.Normal;
-		if ( Dot > ANGULAR_THRESHOLD ) {
-			// Next, let's check the distance discrepancy
-#if 1
-			float3	P0 = _PreviousPixel.SmoothedDistance * _PreviousPixel.View;
-			float3	P1 = _P.SmoothedDistance * _P.View;
-			float	DistanceDiff = (P1 - P0).LengthSq();
-			if ( DistanceDiff < DISTANCE_THRESHOLD*DISTANCE_THRESHOLD ) {
-#else
-			float	DistanceDiff = fabsf( _PreviousPixel.SmoothedDistance - _P.SmoothedDistance );
-			float	ToleranceFactor = -(_P.Normal | _P.View);	// Weight by the surface's slope to be more tolerant for slant surfaces
-					DistanceDiff *= ToleranceFactor;
-			if ( DistanceDiff < DISTANCE_THRESHOLD ) {
-#endif
-
-				// Next, let's check the hue discrepancy
-// 				float	HueDiff0 = Math.Abs( _PreviousPixel.AlbedoHSL.x - _P.AlbedoHSL.x );
-// 				float	HueDiff1 = 6.0f - HueDiff0;
-// 				float	HueDiff = Math.Min( HueDiff0, HueDiff1 );
-// //						HueDiff *= 0.5f * (_PreviousPixel.AlbedoHSL.y + _P.AlbedoHSL.y);	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
-// 						HueDiff *= Math.Max( _PreviousPixel.AlbedoHSL.y, _P.AlbedoHSL.y );	// Weight by saturation to be less severe with unsaturated colors that can change in hue quite fast
-// 				if ( HueDiff < ALBEDO_HUE_THRESHOLD )
-// 				{
-// 					Accepted = true;	// Winner!
-// 				}
-
-				// Next, let's check color discrepancy
-				// I'm using the simplest metric here...
-				float	ColorDiff = (_PreviousPixel.Albedo - _P.Albedo).LengthSq();
-				if ( ColorDiff < ALBEDO_RGB_THRESHOLD*ALBEDO_RGB_THRESHOLD ) {
-					Accepted = true;	// Winner!
-				}
+	// First, let's check the angular discrepancy
+	float	Dot = _PreviousPixel.Normal | _P.Normal;
+	if ( Dot > ANGULAR_THRESHOLD ) {
+		// Next, let's check the distance discrepancy
+		float3	P0 = _PreviousPixel.SmoothedDistance * _PreviousPixel.View;
+		float3	P1 = _P.SmoothedDistance * _P.View;
+		float	DistanceDiff = (P1 - P0).LengthSq();
+		if ( DistanceDiff < DISTANCE_THRESHOLD*DISTANCE_THRESHOLD ) {
+			// Next, let's check color discrepancy (I'm using the simplest metric here...)
+			float	ColorDiff = (_PreviousPixel.Albedo - _P.Albedo).LengthSq();
+			if ( ColorDiff < ALBEDO_RGB_THRESHOLD*ALBEDO_RGB_THRESHOLD ) {
+				Accepted = true;	// Winner!
 			}
 		}
 	}
 
 	// Add the pixel to the proper list
 	PixelsList&	Target = Accepted ? _AcceptedPixels : _RejectedPixels;
-	_P.pNextInList = Target.pPixel;
+	_P.pNextInList = Target.pPixels;
+	ASSERT( _P.pNextInList == NULL || (_P.pNextInList >= m_pCubeMapPixels && _P.pNextInList < m_pCubeMapPixels+6*CUBE_MAP_FACE_SIZE), "Oh!" );
 	_P.pParentList = &Target;
-	Target.pPixel = &_P;
+	Target.pPixels = &_P;
 	Target.PixelsCount++;
 	Target.Importance += _P.Importance * _P.SolidAngle;
 
@@ -1340,12 +1091,6 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 	m_NearestNeighborProbeDistance = 0.0f;
 	m_FarthestNeighborProbeDistance = 0.0f;
 
-	m_MeanDistance = 0.0;
-	m_MeanHarmonicDistance = 0.0;
-	m_MinDistance = 0.0;
-	m_MaxDistance = 0.0;
-
-	m_pScenePixels = NULL;
 	m_ScenePixelsCount = 0;
 
 	m_MeanDistance = 0.0;
@@ -1422,9 +1167,7 @@ NegativeImportancePixelsCount++;
 				if ( P->Infinity )
 					continue;	// Not part of the scene's geometry!
 
-				// Link-in a new scene pixel (i.e. not infinity)
-				P->pNext = m_pScenePixels;
-				m_pScenePixels = P;
+				// Account for a new scene pixel (i.e. not infinity)
 				m_ScenePixelsCount++;
 
 				// Update dimensions

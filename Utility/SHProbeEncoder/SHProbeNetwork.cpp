@@ -96,15 +96,15 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 
 
 #if 1	// Hardware update
-	// We prepare the update structures for each probe and send this to the compute shader
-	// . The compute shader will then evaluate lighting for all the sampling points for the probe, use their contribution to weight
+	// We prepare the update structures for each probe and send them to the compute shader
+	// . The compute shader will then evaluate lighting for all the samples of each probe, use their contribution to weight
 	//		each sample's SH coefficients that will be added together to form the indirect lighting SH coefficients.
 	// . Then it will compute the product of ambient sky SH and occlusion SH for the probe to add the contribution of the occluded sky
-	// . It will also add the emissive sets' SH weighted by the intensity of the emissive materials at the time (diffuse area lighting).
+	// . It will also add the emissive surfaces' SH weighted by the intensity of the emissive materials at the time (diffuse area lighting).
 	// . Finally, it will estimate the neighbor's "perceived visibility" and propagate their SH via a product of their SH with the
 	//		neighbor visibility mask. This way we get additional light bounces from probe to probe.
 	//
-	// Basically for every probe update, we perform 1(sky)+4(neighbor) expensive SH products and compute lighting for 64 points in the scene
+	// Basically for every probe update, we perform 1(sky)+4(neighbor) expensive SH products and compute lighting for at most 128 samples in the scene
 	//
 	U32		ProbeUpdatesCount = MIN( _Parms.MaxProbeUpdatesPerFrame, U32(m_ProbesCount) );
 //TODO: Handle a proper stack of probes to update
@@ -112,8 +112,7 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 	// Prepare the buffer of probe update infos and sampling point infos
 	int		TotalSamplesCount = 0;
 	int		TotalEmissiveSurfacesCount = 0;
-	for ( U32 ProbeUpdateIndex=0; ProbeUpdateIndex < ProbeUpdatesCount; ProbeUpdateIndex++ )
-	{
+	for ( U32 ProbeUpdateIndex=0; ProbeUpdateIndex < ProbeUpdatesCount; ProbeUpdateIndex++ ) {
 //		int		ProbeIndex = ProbeUpdateIndex;	// Simple at the moment, when we have the update stack we'll have to fetch the index from it...
 
 		// Still simple: we update N probes each frame in sequence, next frame we'll update the next N ones...
@@ -132,19 +131,17 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 		memcpy_s( ProbeUpdateInfos.SHStatic, sizeof(ProbeUpdateInfos.SHStatic), Probe.pSHBounceStatic, 9*sizeof(float3) );
 		memcpy_s( ProbeUpdateInfos.SHOcclusion, sizeof(ProbeUpdateInfos.SHOcclusion), Probe.pSHOcclusion, 9*sizeof(float) );
 
-		// Copy
-		for( int i=0; i < 9; i++ )
-		{
+		// Copy neighbor SH
+		for( int i=0; i < 9; i++ ) {
 			ProbeUpdateInfos.NeighborProbeSH[i].x = Probe.pNeighborProbeInfos[0].SH[i];
 			ProbeUpdateInfos.NeighborProbeSH[i].y = Probe.pNeighborProbeInfos[1].SH[i];
 			ProbeUpdateInfos.NeighborProbeSH[i].z = Probe.pNeighborProbeInfos[2].SH[i];
 			ProbeUpdateInfos.NeighborProbeSH[i].w = Probe.pNeighborProbeInfos[3].SH[i];
 		}
 
-		// Fill the sampling points update infos
+		// Fill the samples update infos
 		SHProbe::Sample*	pSample = Probe.pSamples;
-		for ( U32 SampleIndex=0; SampleIndex < Probe.SamplesCount; SampleIndex++, pSample++ )
-		{
+		for ( U32 SampleIndex=0; SampleIndex < Probe.SamplesCount; SampleIndex++, pSample++ ) {
 			RuntimeProbeUpdateSampleInfo&	SampleUpdateInfos = m_pSB_RuntimeProbeSamples->m[TotalSamplesCount+SampleIndex];
 
 			SampleUpdateInfos.Position = pSample->Position;
@@ -154,9 +151,8 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 			memcpy_s( SampleUpdateInfos.SH, sizeof(SampleUpdateInfos.SH), pSample->pSHBounce, 9*sizeof(float) );
 		}
 
-		// Fill the emissive patch update infos
-		for ( U32 EmissiveSurfaceIndex=0; EmissiveSurfaceIndex < Probe.EmissiveSurfacesCount; EmissiveSurfaceIndex++ )
-		{
+		// Fill the emissive surface update infos
+		for ( U32 EmissiveSurfaceIndex=0; EmissiveSurfaceIndex < Probe.EmissiveSurfacesCount; EmissiveSurfaceIndex++ ) {
 			SHProbe::EmissiveSurface				EmissiveSurface = Probe.pEmissiveSurfaces[EmissiveSurfaceIndex];
 			RuntimeProbeUpdateEmissiveSurfaceInfo&	EmissiveSetUpdateInfos = m_pSB_RuntimeProbeEmissiveSurfaces->m[TotalEmissiveSurfacesCount+EmissiveSurfaceIndex];
 
@@ -365,9 +361,7 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 	//
 	char	pTemp[1024];
 
-	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
-//for ( int ProbeIndex=0; ProbeIndex < 1; ProbeIndex++ )
-	{
+	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
 
 		// Clear cube maps

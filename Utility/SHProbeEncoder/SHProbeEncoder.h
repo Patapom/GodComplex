@@ -81,8 +81,9 @@ private:	// NESTED TYPES
 		double		SHCoeffs[9];			// SH coefficients of the pixel
 
 		Sample*		pParentSample;			// The sample this pixel is part of
+		bool		bUsedForSampling;		// Tells if the pixel is used by the sample
 
-		PixelsList*	pParentList;			// The list thispixel is part of (only temporary, used when building)
+		PixelsList*	pParentList;			// The list this pixel is part of (only temporary, used when building)
 		Pixel*		pNextInList;			// Next pixel in the list
 
 		Pixel()
@@ -153,26 +154,10 @@ private:	// NESTED TYPES
 			AlbedoHSL.Set( H, S, L );
 		}
 
-		// Computes a "distance" between this pixel and another one
-		float		ComputeMetric( const Pixel& _Other, float _PositionDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight )
-		{
-			float	EuclidianDistance = (_Other.Position - Position).Length();
-					EuclidianDistance *= _PositionDistanceWeight;
-
-			float	NormalDistance = 0.5f * (1.0f - (_Other.Normal | Normal));
-					NormalDistance *= _NormalDistanceWeight;	// Used to give the normal as much weight as general euclidian distances...
-
-			float	ColorDistance0 = fabs( AlbedoHSL.x - _Other.AlbedoHSL.x );
-			float	ColorDistance1 = 6.0f - ColorDistance0;
-			float	ColorDistance = min( ColorDistance0, ColorDistance1 ) / 6.0f;
-					ColorDistance *= _AlbedoDistanceWeight;		// Used to give the color as much weight as general euclidian distances...
-
-			return EuclidianDistance + NormalDistance + ColorDistance;
-		}
-
 		// Tells if the pixel is acceptable on its own.
 		// The test checks if the pixel:
-		//	_ doesn't already belong to a surface
+		//	_ doesn't already belong to a list
+		//	_ is part of the same sample
 		//	_ is a scene pixel (i.e. not at infinity)
 		//	_ has enough importance
 		bool		IsFloodFillAcceptable( Sample& _SourceSample )
@@ -184,7 +169,7 @@ private:	// NESTED TYPES
 			if ( Infinity )
 				return false;	// We only accept scene pixels!
 			if ( EmissiveMatID != ~0UL )
-				return true;	// Accept all emissive pixels no matter what!
+				return false;	// Reject all emissive pixels no matter what!
 			if ( Importance < IMPORTANCE_THRESOLD )
 				return false;	// Not important enough!
 
@@ -239,180 +224,30 @@ private:	// NESTED TYPES
 	};
 
 	// A surface is a collection of pixels with a centroid, a normal and an average albedo
-// 	class	Surface : public Pixel {
-// 	public:
-// 		U32				PixelsCount;	// Amount of pixels in the surface
-// 		Pixel*			pPixels;		// The list of pixels belonging to this surface
-// 
-// 		U32				ID;				// Warning: Only available once the computation is over and all surfaces have been resolved!
-// 
-// 		// Tangent space generated from principal directions of the points surface
-// 		float3			Tangent;
-// 		float3			BiTangent;
-// 
-// 		// The generated SH coefficients for this surface
-// 		float3			SH[9];
-// 
-// 		// The generated samples that will be used at runtime to estimate lighting and update the surface's SH coefficients
-// 		struct Sample 
-// 		{
-// 			float3			Position;
-// 			float3			Normal;
-// 			float			Radius;		// Radius of the disc encompassing all the pixels forming that sample
-// 		};
-// 		int				SamplesCount;
-// 		Sample			Samples[MAX_SAMPLES_PER_SURFACE];
-// 
-// 
-// //static readonly float	FILTER_WINDOW_SIZE = 3.0f;	// Our SH order is 3 so...
-// 
-// 	public:
-// 
-// 		Surface() : Pixel()
-// 			, PixelsCount( 0 )
-// 			, pPixels( NULL )
-// 			, ID( -1 )
-// 			, Tangent( float3::Zero )
-// 			, BiTangent( float3::Zero )
-// 			, SamplesCount( 0 ) {}
-// 
-// 		// Performs the SH encoding of all the pixels belonging to the surface
-// 		// It simply amounts to summing the directional SH contribution of every pixels in the surface, assuming they all receive the energy received by the surface's substitute center
-// 		void			EncodeSH()
-// 		{
-// 			double		AlbedoR = Albedo.x / PI;
-// 			double		AlbedoG = Albedo.y / PI;
-// 			double		AlbedoB = Albedo.z / PI;
-// 
-// 			double		SHR[9];
-// 			double		SHG[9];
-// 			double		SHB[9];
-// 			for ( int i=0; i < 9; i++ ) {
-// 				SHR[i] = SHG[i] = SHB[i] = 0.0;
-// 			}
-// 
-// 			Pixel*	pPixel = pPixels;
-// 			while ( pPixel != NULL ) {
-// 				Pixel&	P = *pPixel;
-// 				pPixel = pPixel->pNext;
-// 
-// 				// Compute weight factor based on surface's normal and pixel's normal but also based on pixel's normal and view direction
-// 				double	Factor  = P.SolidAngle								// Solid angle for SH weight, obvious
-// 								* max( 0.0, P.Normal.Dot( Normal ) )		// This weight is to account for the fact that the point is well aligned with the surface's plane the lighting was computed for
-// 								* max( 0.0, -P.View.Dot( P.Normal ) );		// This weight is to account for the fact that the point is well aligned with the view vector
-// 																			//	(for example, for a perfectly flat wall this weight will have the effect that points further from the probe's perpendicular will have less importance)
-// 
-// 				for ( int i=0; i < 9; i++ )
-// 				{
-// 					SHR[i] += P.SHCoeffs[i] * Factor * AlbedoR;
-// 					SHG[i] += P.SHCoeffs[i] * Factor * AlbedoG;
-// 					SHB[i] += P.SHCoeffs[i] * Factor * AlbedoB;
-// 				}
-// 			}
-// 
-// 			for ( int i=0; i < 9; i++ )
-// 				SH[i].Set( float(SHR[i]), float(SHG[i]), float(SHB[i]) );
-// 
-// 			// Apply filtering
-// //			SphericalHarmonics.SHFunctions.FilterLanczos( SH, FILTER_WINDOW_SIZE );
-// 		}
-// 
-// 		// Performs the emissive SH encoding of all the pixels belonging to the surface
-// 		// It simply amounts to summing the directional SH contribution of every pixels in the surface
-// 		void			EncodeEmissiveSH() {
-// 			double	SHCoeffs[9];
-// 
-// 			Pixel*	pPixel = pPixels;
-// 			while ( pPixel != NULL ) {
-// 				Pixel&	P = *pPixel;
-// 				pPixel++;
-// 
-// 				for ( int i=0; i < 9; i++ )
-// 					SHCoeffs[i] += P.SHCoeffs[i] * P.SolidAngle;
-// 			}
-// 
-// //DON'T NORMALIZE	=> 4PI is part of the integral!!!
-// //				double	Normalizer = 1.0 / (4.0 * Math.PI);
-// 			double	Normalizer = 1.0;
-// 			for ( int i=0; i < 9; i++ )
-// 				SH[i] = (float) (Normalizer * SHCoeffs[i]) * float3::One;
-// 
-// // 			// Apply filtering
-// // //				SphericalHarmonics.SHFunctions.FilterLanczos( FILTER_WINDOW_SIZE );
-// // //				SphericalHarmonics.SHFunctions.FilterGaussian( FILTER_WINDOW_SIZE );	// Smoothes A LOT but according to the source of filters code, it's better if using HDR light sources
-// // 			SphericalHarmonics.SHFunctions.FilterHanning( SH, FILTER_WINDOW_SIZE );
-// 		}
-// 
-// 		// Generates N samples among the set's pixels where lighting will be sampled
-// 		Pixel			__ReferencePixel;
-// 		void			GenerateSamples( int _SamplesCount );
-// 
-// 		// This is a very simplistic approach to determine the principal axes of the surface:
-// 		//  1) Create a dummy tangent space for the surface's plane
-// 		//  2) Rotate an axis from 0 to 180° in that arbitrary tangent space
-// 		//		2.1) Compute the max distance of each point of the surface to this axis (i.e. bounding rect extent in that direction)
-// 		//		2.2) Keep the angle where we find the largest distance as our minor principal axis
-// 		//		2.3) Keep the angle where we find the smallest distance as our major principal axis
-// 		//
-// // 		void			FindPrincipalAxes() {
-// // 			// Create an arbitrary tangent space
-// // 			float3	Y = Normal;
-// // 			float3	X = float3.UnitY ^ Y;
-// // 			float3	Z;
-// // 			if ( X.Length < 1e-6 )
-// // 			{	// Invalid basis!
-// // 				X = float3.UnitX;
-// // 				Z = float3.UnitZ;
-// // 			}
-// // 			else
-// // 			{
-// // 				X.Normalize();
-// // 				Z = X ^ Y;
-// // 			}
-// // 
-// // 			// Perform a rotation of a line from 0 to 180°
-// // 			float	MaxDistance = 0.0f;
-// // 			float	MaxDistanceAngle = 0.0f;
-// // 			float	MinDistance = 1e6f;
-// // 			float	MinDistanceAngle = 0.0f;
-// // 			for ( int Angle=0; Angle < 180; Angle+=2 )
-// // 			{
-// // 				float			fAngle = (float) Math.PI * Angle / 180.0f;
-// // 				float3	OrthoDir = (float) -Math.Sin( fAngle ) * X + (float) Math.Cos( fAngle ) * Z;	// This is actually the orthogonal direction to the line we're rotating
-// // 
-// // 				// Compute the max of distances from each point to this line
-// // 				float	Distance = 0.0f;
-// // 				foreach ( Pixel P in Pixels )
-// // 				{
-// // 					float3	Center2Pixel = P.Position - Position;
-// // 					float			Dot = Math.Abs( Center2Pixel | OrthoDir );	// Gives the distance to the closest point on the rotating line
-// // 					Distance = Math.Max( Distance, Dot );
-// // 				}
-// // 
-// // 				// Check for new best candidates
-// // 				if ( Distance > MaxDistance )
-// // 				{	// New best candidate for minor axis!
-// // 					MaxDistance = Distance;
-// // 					MaxDistanceAngle = fAngle;
-// // 				}
-// // 				if ( Distance < MinDistance )
-// // 				{	// New best candidate for major axis!
-// // 					MinDistance = Distance;
-// // 					MinDistanceAngle = fAngle;
-// // 				}
-// // 			}
-// // 
-// // 			// Finalize axes
-// // 			BiTangent = (float) Math.Cos( MaxDistanceAngle ) * X + (float) Math.Sin( MaxDistanceAngle ) * Z;	// Our minor axis
-// // 			Tangent = (float) Math.Cos( MinDistanceAngle ) * X + (float) Math.Sin( MinDistanceAngle ) * Z;		// Our major axis
-// // 
-// // 			float	Diff = Tangent | BiTangent;	// We'd prefer a diff of 0, meaning the found axes are orthogonal...
-// // 
-// // 			// Scale minor/major axes by these distances
-// // 			Tangent *= MaxDistance;
-// // 			BiTangent *= MinDistance;
-// // 		}
-// 	};
+ 	class	EmissiveSurface {
+ 	public:
+		U32				PixelsCount;	// Amount of pixels in the surface
+		Pixel*			pPixels;		// The list of pixels belonging to this surface
+
+		U32				EmissiveMatID;	// ID of the emissive material or ~0UL if not emissive
+		U32				ID;				// Warning: Only available once the computation is over and all surfaces have been resolved!
+
+		double			SolidAngle;		// Accumulated solid angle
+
+ 		// The generated SH coefficients for this surface
+ 		double			SH[9];
+
+ 	public:
+
+		EmissiveSurface()
+			: PixelsCount( 0 )
+			, pPixels( NULL )
+			, EmissiveMatID( ~0UL )
+			, ID( ~0UL )
+			, SolidAngle( 0.0 ) {
+				memset( SH, 0, 9*sizeof(double) );
+			}
+ 	};
 
 	// Contains information on a neighbor probe
 	class	NeighborProbe {
@@ -436,10 +271,10 @@ private:	// NESTED TYPES
 
 	struct PixelsList {
 		U32		PixelsCount;
-		Pixel*	pPixel;
+		Pixel*	pPixels;
 		double	Importance;
 
-		PixelsList() : PixelsCount( 0 ), pPixel( NULL ), Importance( 0.0 ) {}
+		PixelsList() : PixelsCount( 0 ), pPixels( NULL ), Importance( 0.0 ) {}
 	};
 
 private:
@@ -477,8 +312,7 @@ private:	// FIELDS
 	U32					m_ProbeID;							// This is extracted from the cube map file name... Not very robust but good enough!
 
 	Pixel*				m_pCubeMapPixels;					// Original cube map
-	U32					m_ScenePixelsCount;
- 	Pixel*				m_pScenePixels;						// List of pixels that participate to the scene geometry (i.e. not at infinity)
+	U32					m_ScenePixelsCount;					// Amount of pixels that participate to the scene geometry (i.e. not at infinity)
 
 	// Pre-computed samples
 	Sample				m_pSamples[MAX_PROBE_SAMPLES];		// The array of samples best representing the probe's environment
@@ -500,15 +334,13 @@ private:	// FIELDS
 	U32					m_ValidSamplesCount;
 	Sample*				m_ppValidSamples[MAX_PROBE_SAMPLES];
 
-// 	// Dynamic & Emissive surfaces
-// 	List< Surface >		m_AllSurfaces;
-// 	U32					m_SurfacesCount;
-// 	Surface*			m_ppSurfaces[MAX_PROBE_SURFACES];
-// 	U32					m_EmissiveSurfacesCount;
-// 	Surface*			m_ppEmissiveSurfaces[MAX_PROBE_EMISSIVE_SURFACES];
-// 
-// 	float3				m_SHSumDynamic[9];
-// 	float3				m_SHSumEmissive[9];
+	List< PixelsList >	m_SamplePixelGroups;
+
+ 	// Emissive surfaces
+	List< EmissiveSurface >	m_EmissiveSurfaces;
+
+ 	U32					m_EmissiveSurfacesCount;
+ 	EmissiveSurface*	m_ppEmissiveSurfaces[MAX_PROBE_EMISSIVE_SURFACES];
 
 	// List of neighbor probes
 	float				m_NearestNeighborProbeDistance;
