@@ -72,21 +72,26 @@
 //#define SCENE 2	// Sponza Atrium
 #define SCENE 3	// Test
 
-//#define	LOAD_PROBES			// Define this to load probes instead of computing them
+//#define	LOAD_PROBES			// Define this to simply load probes without computing them
 #define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
 #define	USE_NORMAL_MAPS			// Define this to use normal maps
 
 // Scene selection (also think about changing the scene in the .RC!)
 #if SCENE==0
-	#define PROBES_PATH				".\\Resources\\Scenes\\GITest1\\ProbeSets\\GITest1_10Probes\\"
+	#define SCENE_PATH				".\\Resources\\Scenes\\GITest1\\"
+
+	#define PROBES_PATH				SCENE_PATH "ProbeSets\\GITest1_10Probes\\"
 	#ifdef LOAD_PROBES	// Can't use that until it's been baked!
-	#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\GITest1_ProbeID.vertexStream.U16"
+		#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\GITest1_ProbeID.vertexStream.U16"
 	#endif
 
 #elif SCENE==2
-	#define PROBES_PATH				".\\Resources\\Scenes\\Sponza\\Probes\\"
+	#define SCENE_PATH				".\\Resources\\Scenes\\Sponza\\"
+
+	#define TEXTURES_PATH			SCENE_PATH "TexturesPOM\\"
+	#define PROBES_PATH				SCENE_PATH "Probes\\"
 	#ifdef LOAD_PROBES	// Can't use that until it's been baked!
-	#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\Sponza\\Sponza_ProbeID.vertexStream.U16"
+		#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\Sponza\\Sponza_ProbeID.vertexStream.U16"
 	#endif
 
 #elif SCENE==1
@@ -95,7 +100,7 @@
 	#define TEXTURES_PATH			SCENE_PATH "TexturesPOM\\"
 	#define PROBES_PATH				SCENE_PATH "Probes\\"
 	#ifdef LOAD_PROBES	// Can't use that until it's been baked!
-	#define USE_PER_VERTEX_PROBE_ID	SCENE_PATH "Scene_ProbeID.vertexStream.U16"
+		#define USE_PER_VERTEX_PROBE_ID	SCENE_PATH "Scene_ProbeID.vertexStream.U16"
 	#endif
 
 #elif SCENE==3
@@ -104,7 +109,7 @@
 	#define TEXTURES_PATH			SCENE_PATH "Textures\\"
 	#define PROBES_PATH				SCENE_PATH "Probes\\"
 	#ifdef LOAD_PROBES	// Can't use that until it's been baked!
-	#define USE_PER_VERTEX_PROBE_ID	SCENE_PATH "Scene_ProbeID.vertexStream.U16"
+		#define USE_PER_VERTEX_PROBE_ID	SCENE_PATH "Scene_ProbeID.vertexStream.U16"
 	#endif
 
 #endif
@@ -499,8 +504,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	// Compute scene's BBox
 	m_SceneBBoxMin = float3::MaxFlt;
 	m_SceneBBoxMax = -float3::MaxFlt;
-	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
-	{
+	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ ) {
 		m_SceneBBoxMin = m_SceneBBoxMin.Min( m_ppCachedMeshes[MeshIndex]->m_GlobalBBoxMin );
 		m_SceneBBoxMax = m_SceneBBoxMax.Max( m_ppCachedMeshes[MeshIndex]->m_GlobalBBoxMax );
 	}
@@ -511,7 +515,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	#ifndef LOAD_PROBES
 	{
 		RenderScene		functor( *this );
-		m_ProbesNetwork.PreComputeProbes( PROBES_PATH, functor );
+		m_ProbesNetwork.PreComputeProbes( PROBES_PATH, functor, m_Scene, m_TotalFacesCount );
 	}
 	#endif
 
@@ -1232,7 +1236,7 @@ void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh,
 	// Tag the primitive with the face offset
 	pPrim->m_pTag = (void*) m_TotalFacesCount;
 	m_pPrimitiveFaceOffset[m_TotalPrimitivesCount] = m_TotalFacesCount;		// Store face offset for each primitive
-	m_pPrimitiveVertexOffset[m_TotalPrimitivesCount] = m_TotalVerticesCount;// Sotre vertex offset also
+	m_pPrimitiveVertexOffset[m_TotalPrimitivesCount] = m_TotalVerticesCount;// Store vertex offset also
 	m_TotalVerticesCount += pPrim->GetVerticesCount();						// Increase total amount of vertices
 	m_TotalFacesCount += pPrim->GetFacesCount();							// Increase total amount of faces
 	m_TotalPrimitivesCount++;

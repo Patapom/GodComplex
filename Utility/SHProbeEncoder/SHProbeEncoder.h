@@ -347,12 +347,14 @@ private:	// FIELDS
 	float				m_FarthestNeighborProbeDistance;
 	List<NeighborProbe>	m_NeighborProbes;
 
-// 	// List of influence weights per face index
-// 	U32					m_MaxFaceIndex;
-// 	Dictionary<double>	m_ProbeInfluencePerFace;
+ 	// List of influence weights per face index
+	List< double >		m_ProbeInfluencePerFace;
 
 
 public:		// PROPERTIES
+
+	const List< double >&	GetProbeInfluences() const	{ return m_ProbeInfluencePerFace; }
+
 
 public:		// METHODS
 
@@ -360,7 +362,7 @@ public:		// METHODS
 	~SHProbeEncoder();
 
 	// Encodes the MRT cube map into basic SH elements that can later be combined at runtime to form a dynamically updatable probe
-	void	EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount );
+	void	EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount, U32 _SceneTotalFacesCount );
 
 	// Saves the resulting encoded probe to disk
 	void	Save( const char* _FileName ) const;
@@ -372,7 +374,7 @@ public:		// METHODS
 private:
 	// Reads back the cube map and populates cube map pixels, probe pixels and scene pixels.
 	// After this, the probe is ready for encoding
-	void	ReadBackProbeCubeMap( Texture2D& _StagingCubeMap );
+	void	ReadBackProbeCubeMap( Texture2D& _StagingCubeMap, U32 _SceneTotalFacesCount );
 
 	// Build surfaces using flood fill and adjacency propagation
 	void	ComputeFloodFill( float _SpatialDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight, float _MinimumImportanceDiscardThreshold );

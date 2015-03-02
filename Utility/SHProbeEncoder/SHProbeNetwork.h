@@ -222,6 +222,13 @@ private:	// FIELDS
 
 	SHProbeEncoder			m_ProbeEncoder;
 
+	// List of probe influences for each face of the scene
+	struct ProbeInfluence {
+		U32		ProbeID;
+		double	Influence;
+	};
+	List< ProbeInfluence >	m_ProbeInfluencePerFace;
+
 
 public:
 
@@ -244,8 +251,12 @@ public:
 	U32				GetNearestProbe( const float3& _wsPosition ) const;
 
 	// Build/Load/Save
-	void			PreComputeProbes( const char* _pPathToProbes, IRenderSceneDelegate& _RenderScene );
+	void			PreComputeProbes( const char* _pPathToProbes, IRenderSceneDelegate& _RenderScene, Scene& _Scene, U32 _TotalFacesCount );
 	void			LoadProbes( const char* _pPathToProbes, IQueryMaterial& _QueryMaterial, const float3& _SceneBBoxMin, const float3& _SceneBBoxMax );
+
+private:
+
+	void			BuildProbeInfluenceVertexStream( Scene& _Scene, const char* _pPathToStreamFile );
 
 friend static void	CopyProbeNetworkConnection( int _EntryIndex, SHProbeNetwork::RuntimeProbeNetworkInfos& _Value, void* _pUserData );
 

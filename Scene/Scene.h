@@ -254,7 +254,7 @@ public:		// METHODS
 	void			Render( ISceneRenderer& _SceneRenderer, bool _SetMaterial=true ) const;
 	void			ClearTags( ISceneTagger& _SceneTagClearer );
 
-	// Prefer using that routine that iterates on all nodes, select the node type yourself, rather than the ForEach method below
+	// Prefer using that routine that iterates on all nodes, select the node type yourself, rather than the other ForEach method below
 	void			ForEach( IVisitor& _Visitor );
 
 	// !WARNING! I don't know how to write a proper depth-first search, this routine is SLOW AS HELL!!

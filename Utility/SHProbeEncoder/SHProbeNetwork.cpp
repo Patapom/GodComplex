@@ -266,25 +266,7 @@ U32	SHProbeNetwork::GetNearestProbe( const float3& _wsPosition ) const {
 	return probeID;
 }
 
-// void	SHProbeNetwork::SHProbe::ClearLightBounce( const float3 _pSHAmbient[9] )
-// {
-// 	// 1] Perform the product of direct ambient light with direct environment mask and accumulate with indirect lighting
-// 	float3	pSHOccludedAmbientLight[9];
-// 	SH::Product3( _pSHAmbient, pSHOcclusion, pSHOccludedAmbientLight );
-// 
-// 	// 2] Initialize bounced light with ambient SH + static lighting SH
-// 	for ( int i=0; i < 9; i++ )
-// 		pSHBouncedLight[i] = pSHBounceStatic[i] + pSHOccludedAmbientLight[i];
-// }
-// 
-// void	SHProbeNetwork::SHProbe::AccumulateLightBounce( const float3 _pSHSet[9] )
-// {
-// 	// Simply accumulate dynamic patch lighting to bounced light
-// 	for ( int i=0; i < 9; i++ )
-// 		pSHBouncedLight[i] = pSHBouncedLight[i] + _pSHSet[i];
-// }
-
-void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneDelegate& _RenderScene ) {
+void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneDelegate& _RenderScene, Scene& _Scene, U32 _TotalFacesCount ) {
 
 	const float		Z_INFINITY = 1e6f;
 	const float		Z_INFINITY_TEST = 0.99f * Z_INFINITY;
@@ -357,6 +339,17 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 
 
 	//////////////////////////////////////////////////////////////////////////
+	// Initialize probe influences for each face
+	m_ProbeInfluencePerFace.Init( _TotalFacesCount );
+	m_ProbeInfluencePerFace.SetCount( _TotalFacesCount );
+	ProbeInfluence*	pInfluence = &m_ProbeInfluencePerFace[0];
+	for ( U32 FaceIndex=0; FaceIndex < _TotalFacesCount; FaceIndex++, pInfluence++ ) {
+		pInfluence->ProbeID = ~0UL;
+		pInfluence->Influence = 0.0;
+	}
+
+
+	//////////////////////////////////////////////////////////////////////////
 	// Render every probe as a cube map & process
 	//
 	char	pTemp[1024];
@@ -385,8 +378,7 @@ ProbeLocal2World.SetRow( 3, Probe.pSceneProbe->m_Local2World.GetRow( 3 ) );
 		float4x4	ProbeWorld2Local = ProbeLocal2World.Inverse();
 
 		// Render the 6 faces
-		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
-		{
+		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ ) {
 			// Update cube map face camera transform
 			float4x4	World2Proj = ProbeWorld2Local * SideWorld2Proj[CubeFaceIndex];
 
@@ -454,8 +446,8 @@ ProbeLocal2World.SetRow( 3, Probe.pSceneProbe->m_Local2World.GetRow( 3 ) );
 #endif
 
 		//////////////////////////////////////////////////////////////////////////
-		// 4] Encode the cube map into separated SH patches
-		m_ProbeEncoder.EncodeProbeCubeMap( *pRTCubeMapStaging, ProbeIndex, m_ProbesCount );
+		// 4] Encode the cube map into separate SH samples
+		m_ProbeEncoder.EncodeProbeCubeMap( *pRTCubeMapStaging, ProbeIndex, m_ProbesCount, _TotalFacesCount );
 
 		// Save probe results
 		sprintf_s( pTemp, "%sProbe%02d.probeset", _pPathToProbes, ProbeIndex );
@@ -466,9 +458,44 @@ ProbeLocal2World.SetRow( 3, Probe.pSceneProbe->m_Local2World.GetRow( 3 ) );
 		sprintf_s( pTemp, "%sProbe%02d.probepixels", _pPathToProbes, ProbeIndex );
 		m_ProbeEncoder.SavePixels( pTemp );
 #endif
+
+		//////////////////////////////////////////////////////////////////////////
+		// 5] Collate per-face probe influence for the secondary vertex stream
+		const double*	pNewInfluence = &m_ProbeEncoder.GetProbeInfluences()[0];
+		ProbeInfluence*	pCurrentInfluence = &m_ProbeInfluencePerFace[0];
+		for ( U32 FaceIndex=0; FaceIndex < _TotalFacesCount; FaceIndex++, pCurrentInfluence++, pNewInfluence++ ) {
+			if ( *pNewInfluence > pCurrentInfluence->Influence ) {
+				pCurrentInfluence->Influence = *pNewInfluence;
+				pCurrentInfluence->ProbeID = Probe.ProbeID;
+			}
+		}
 	}
 
 	delete pCBCubeMapCamera;
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Save the final probe influences
+	BuildProbeInfluenceVertexStream( _Scene, _pPathToProbes );
+
+// 	FileInfo	TargetInfluenceFile = new FileInfo( Path.Combine( TargetDir.FullName, "ProbeInfluence.pim" ) );
+// 	using ( FileStream S = TargetInfluenceFile.Create() )
+// 		using( BinaryWriter Writer = new BinaryWriter( S ) )
+// 			for ( uint FaceIndex=0; FaceIndex < MaxFaceIndex; FaceIndex++ )
+// 			{
+// 				if ( BestProbeInfluencePerFace.ContainsKey( FaceIndex ) )
+// 				{
+// 					ProbeInfluence	Influence = BestProbeInfluencePerFace[FaceIndex];
+// 					Writer.Write( Influence.ProbeID );
+// 					Writer.Write( Influence.Importance );
+// 				}
+// 				else
+// 				{
+// 					Writer.Write( (int) -1 );
+// 					Writer.Write( 0.0 );
+// 				}
+// 			}
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Release
@@ -483,7 +510,28 @@ m_pRTCubeMap->SetPS( 64 );
 
 //### Keep it for debugging!
 // 	delete m_pRTCubeMap;
+}
 
+void	SHProbeNetwork::BuildProbeInfluenceVertexStream( Scene& _Scene, const char* _pPathToStreamFile ) {
+
+	//////////////////////////////////////////////////////////////////////////
+	// Start by building adjacency structures between primitives' vertices
+	_Scene.ForEach( )
+
+	//////////////////////////////////////////////////////////////////////////
+	// Load the vertex stream containing U32-packed probe IDs for each vertex
+	char	pTemp[1024];
+	sprintf_s( pTemp, "%sScene.vertexStream.U16", _pPathToStreamFile );
+
+	FILE*	pFile = NULL;
+	fopen_s( &pFile, pTemp, "wb" );
+	ASSERT( pFile != NULL, "Can't create vertex stream for probe IDs!" );
+
+// 	m_VertexStreamProbeIDsLength = FileSize / sizeof(U32);
+// 	m_pVertexStreamProbeIDs = new U32[m_VertexStreamProbeIDsLength];
+// 	fread_s( m_pVertexStreamProbeIDs, FileSize, sizeof(U32), m_VertexStreamProbeIDsLength, pFile );
+
+	fclose( pFile );
 }
 
 static void	CopyProbeNetworkConnection( int _EntryIndex, SHProbeNetwork::RuntimeProbeNetworkInfos& _Value, void* _pUserData );

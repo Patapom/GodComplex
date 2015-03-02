@@ -148,12 +148,12 @@ SHProbeEncoder::~SHProbeEncoder() {
 	SAFE_DELETE_ARRAY( m_pCubeMapPixels );
 }
 
-void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount ) {
+void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount, U32 _SceneTotalFacesCount ) {
 	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Read back probe data and prepare pixels for encoding
-	ReadBackProbeCubeMap( _StagingCubeMap );
+	ReadBackProbeCubeMap( _StagingCubeMap, _SceneTotalFacesCount );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1086,7 +1086,7 @@ void	SHProbeEncoder::CubeMapPixelWalker::GoToAdjacentPixel( int _dU, int _dV ) {
 
 //////////////////////////////////////////////////////////////////////////
 //
-void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
+void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap, U32 _SceneTotalFacesCount ) {
 
 	m_NearestNeighborProbeDistance = 0.0f;
 	m_FarthestNeighborProbeDistance = 0.0f;
@@ -1100,6 +1100,12 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 	m_BBoxMin =  float3::MaxFlt;
 	m_BBoxMax = -float3::MaxFlt;
 
+	// Clear face influences
+	m_ProbeInfluencePerFace.Init( _SceneTotalFacesCount );
+	m_ProbeInfluencePerFace.SetCount( _SceneTotalFacesCount );
+	memset( &m_ProbeInfluencePerFace[0], 0, _SceneTotalFacesCount*sizeof(double) );
+
+	// Read back pixels
 	int		NegativeImportancePixelsCount = 0;
 	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ ) {
 		Pixel*	pCubeMapPixels = &m_pCubeMapPixels[CubeFaceIndex*CUBE_MAP_FACE_SIZE];
@@ -1169,6 +1175,11 @@ NegativeImportancePixelsCount++;
 
 				// Account for a new scene pixel (i.e. not infinity)
 				m_ScenePixelsCount++;
+
+				// Accumulate face influence
+				ASSERT( P->FaceIndex != ~0UL, "Invalid face index!" );
+				ASSERT( P->FaceIndex < U32(m_ProbeInfluencePerFace.GetAllocatedSize()), "Face index out of range!" );
+				m_ProbeInfluencePerFace[P->FaceIndex] += P->SolidAngle * P->Importance;
 
 				// Update dimensions
 				m_MeanDistance += Distance;

@@ -27,6 +27,7 @@ protected:	// FIELDS
 public:		// PROPERTIES
 
 	int		GetCount() const			{ return m_Count; }
+	void	SetCount( U32 _Count )		{ ASSERT( _Count <= m_Size, "Count exceeds allocated size!" ); m_Count = _Count; }
 	int		GetAllocatedSize() const	{ return m_Size; }
 
 

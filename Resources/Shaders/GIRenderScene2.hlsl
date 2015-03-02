@@ -56,8 +56,8 @@ PS_IN	VS( SCENE_VS_IN _In )
 		SH[i] = 0.0;
 
 #ifdef PER_VERTEX_PROBE_ID	// Only use the entry point probe and its direct neighbors
-	if ( _In.ProbeID != 0xFFFFFFFF )
-	{	// We have an entry point into the probes network!
+	if ( _In.ProbeID != 0xFFFFFFFF ) {
+		// We have an entry point into the probes network!
 //		SH[0] = _In.ProbeID;
 		GatherProbeSH( Out.Position, Normal, _In.ProbeID, SH );
 		if ( _ShowVertexProbeID )

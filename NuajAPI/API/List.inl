@@ -17,10 +17,12 @@ template<typename T> List<T>::List( U32 _InitialSize )
 
 template<typename T> void	List<T>::Init( U32 _Size )
 {
-	delete[] m_pList;
+	if ( _Size > m_Size ) {
+		delete[] m_pList;
+		m_pList = new T[_Size];
+	}
 
 	m_Size = _Size;
-	m_pList = new T[m_Size];
 	m_Count = 0;
 }
 
