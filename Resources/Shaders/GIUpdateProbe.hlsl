@@ -14,6 +14,7 @@ static const float	PCF_DISC_RADIUS_FACTOR = 1.0;	// Radius factor to go fetch PC
 #define	THREADS_Y	1
 #define	THREADS_Z	1
 
+
 #define MAX_PROBE_SAMPLES			THREADS_X
 #define	MAX_PROBE_EMISSIVE_SURFACES	16		// Must match the MAX_PROBE_EMISSIVE_SURFACES define declared in the header file!
 #define	MAX_PROBE_NEIGHBORS			4		// Must match the MAX_PROBE_NEIGHBORS define declared in the header file!
