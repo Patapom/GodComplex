@@ -41,6 +41,12 @@ void	Scene::Load( U16 _SceneResourceID, ISceneTagger& _SceneTagger )
 
 	// ==== Read Node Hierarchy ====
 	//
+	m_NodesCount = 0;
+	m_MeshesCount = 0;
+	m_LightsCount = 0;
+	m_CamerasCount = 0;
+	m_ProbesCount = 0;
+
 	m_pROOT = CreateNode( NULL, pData, _SceneTagger );
 }
 
@@ -222,6 +228,7 @@ Scene::Node::Node( Scene& _Owner, Node* _pParent )
 	, m_pTag( NULL )
 	, m_ChildIndex( -1 )
 {
+	m_Owner.m_NodesCount++;
 }
 
 void	Scene::Node::Init( const U8*& _pData, ISceneTagger& _SceneTagger )
@@ -298,6 +305,7 @@ Scene::Light::Light( Scene& _Owner, Node* _pParent )
 	, m_HotSpot( 0.0f )
 	, m_Falloff( 0.0f )
 {
+	m_Owner.m_LightsCount++;
 }
 
 void	Scene::Light::InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger )
@@ -315,6 +323,7 @@ Scene::Camera::Camera( Scene& _Owner, Node* _pParent )
 	: Node( _Owner, _pParent )
 	, m_FOV( 0.0f )
 {
+	m_Owner.m_CamerasCount++;
 }
 
 void	Scene::Camera::InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger )
@@ -329,6 +338,7 @@ Scene::Mesh::Mesh( Scene& _Owner, Node* _pParent )
 	, m_PrimitivesCount( 0 )
 	, m_pPrimitives( NULL )
 {
+	m_Owner.m_MeshesCount++;
 }
 Scene::Mesh::~Mesh()
 {
@@ -382,8 +392,7 @@ Scene::Mesh::Primitive::~Primitive()
 	delete[] m_pVertices;
 }
 
-void	Scene::Mesh::Primitive::Init( Mesh& _Owner, const U8*& _pData )
-{
+void	Scene::Mesh::Primitive::Init( Mesh& _Owner, const U8*& _pData ) {
 	int	MaterialID = ReadU16( _pData, true );
 	ASSERT( MaterialID < _Owner.m_Owner.m_MaterialsCount, "Material ID out of range!" );
 	m_pMaterial = _Owner.m_Owner.m_ppMaterials[MaterialID];
@@ -442,10 +451,12 @@ void	Scene::Mesh::Primitive::Init( Mesh& _Owner, const U8*& _pData )
 	}
 }
 
+
 // ==== Probe ====
 Scene::Probe::Probe( Scene& _Owner, Node* _pParent )
 	: Node( _Owner, _pParent )
 {
+	m_Owner.m_ProbesCount++;
 }
 
 

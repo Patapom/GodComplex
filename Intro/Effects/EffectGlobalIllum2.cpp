@@ -434,52 +434,30 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 	// Cache meshes & probes since my ForEach function is slow as hell!! ^^
 	{
-		m_MeshesCount = 0;
+		m_ppCachedMeshes = new Scene::Mesh*[m_Scene.m_MeshesCount];
 
-		class	VisitorCountNodes : public Scene::IVisitor
-		{
-			EffectGlobalIllum2&	m_Owner;
-		public:
-			int	m_ProbesCount;
-			VisitorCountNodes( EffectGlobalIllum2& _Owner ) : m_Owner( _Owner ), m_ProbesCount( 0 ) {}
-			void	HandleNode( Scene::Node& _Node ) override
-			{
-				if ( _Node.m_Type == Scene::Node::MESH )
-					m_Owner.m_MeshesCount++;
-				else if ( _Node.m_Type == Scene::Node::PROBE )
-					m_ProbesCount++;
-			}
-		}	Visitor0( *this );
-		m_Scene.ForEach( Visitor0 );
-
-		m_ppCachedMeshes = new Scene::Mesh*[m_MeshesCount];
-
-		m_ProbesNetwork.PreAllocateProbes( Visitor0.m_ProbesCount );
-
-		m_MeshesCount = 0;
+		m_ProbesNetwork.PreAllocateProbes( m_Scene.m_ProbesCount );
 
 		class	VisitorStoreNodes : public Scene::IVisitor
 		{
 			EffectGlobalIllum2&	m_Owner;
 		public:
+			int		m_MeshIndex;
 			int		m_PrimitivesCount;
 			int		m_VerticesCount;
 			int		m_FacesCount;
-			VisitorStoreNodes( EffectGlobalIllum2& _Owner ) : m_Owner( _Owner ), m_PrimitivesCount( 0 ), m_FacesCount( 0 ), m_VerticesCount( 0 ) {}
+			VisitorStoreNodes( EffectGlobalIllum2& _Owner ) : m_Owner( _Owner ), m_MeshIndex( 0 ), m_PrimitivesCount( 0 ), m_FacesCount( 0 ), m_VerticesCount( 0 ) {}
 			void	HandleNode( Scene::Node& _Node ) override
 			{
-				if ( _Node.m_Type == Scene::Node::MESH )
-				{
+				if ( _Node.m_Type == Scene::Node::MESH ) {
 					Scene::Mesh*	pMesh = (Scene::Mesh*) &_Node;
-					m_Owner.m_ppCachedMeshes[m_Owner.m_MeshesCount++] = pMesh;
+					m_Owner.m_ppCachedMeshes[m_MeshIndex++] = pMesh;
 					m_PrimitivesCount += pMesh->m_PrimitivesCount;
-					for ( int i=0; i < pMesh->m_PrimitivesCount; i++ )
-					{
+					for ( int i=0; i < pMesh->m_PrimitivesCount; i++ ) {
 						m_VerticesCount += pMesh->m_pPrimitives[i].m_VerticesCount;
 						m_FacesCount += pMesh->m_pPrimitives[i].m_FacesCount;
 					}
-				}
-				else if ( _Node.m_Type == Scene::Node::PROBE )
+				} else if ( _Node.m_Type == Scene::Node::PROBE )
 					m_Owner.m_ProbesNetwork.AddProbe( (Scene::Probe&) _Node );
 			}
 		}	Visitor1( *this );
@@ -504,7 +482,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	// Compute scene's BBox
 	m_SceneBBoxMin = float3::MaxFlt;
 	m_SceneBBoxMax = -float3::MaxFlt;
-	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ ) {
+	for ( int MeshIndex=0; MeshIndex < m_Scene.m_MeshesCount; MeshIndex++ ) {
 		m_SceneBBoxMin = m_SceneBBoxMin.Min( m_ppCachedMeshes[MeshIndex]->m_GlobalBBoxMin );
 		m_SceneBBoxMax = m_SceneBBoxMax.Max( m_ppCachedMeshes[MeshIndex]->m_GlobalBBoxMax );
 	}
@@ -667,7 +645,6 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete[] m_pVertexStreamProbeIDs;
 
 	delete[] m_ppCachedMeshes;
-	m_MeshesCount = 0;
 
 	m_bDeleteSceneTags = true;
 	m_Scene.ClearTags( *this );
@@ -1008,7 +985,7 @@ void	EffectGlobalIllum2::RenderShadowMap( const float3& _SunDirection )
 	// Find appropriate bounds
 	float3		BBoxMin = float3::MaxFlt;
 	float3		BBoxMax = -float3::MaxFlt;
-	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
+	for ( int MeshIndex=0; MeshIndex < m_Scene.m_MeshesCount; MeshIndex++ )
 	{
 		Scene::Mesh*	pMesh = m_ppCachedMeshes[MeshIndex];
 		float4x4	Mesh2Light = pMesh->m_Local2World * m_pCB_ShadowMap->m.World2Light;
@@ -1087,7 +1064,7 @@ void	EffectGlobalIllum2::RenderShadowMap( const float3& _SunDirection )
 	m_Device.ClearDepthStencil( *m_pRTShadowMap, 1.0f, 0, true, false );
 	m_Device.SetRenderTargets( m_pRTShadowMap->GetWidth(), m_pRTShadowMap->GetHeight(), 0, NULL, m_pRTShadowMap->GetDSV() );
 
-	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
+	for ( int MeshIndex=0; MeshIndex < m_Scene.m_MeshesCount; MeshIndex++ )
 		RenderMesh( *m_ppCachedMeshes[MeshIndex], &M, false );
 
 	USING_MATERIAL_END
@@ -1113,7 +1090,7 @@ void	EffectGlobalIllum2::RenderShadowMapPoint( const float3& _Position, float _F
 	m_Device.ClearDepthStencil( *m_pRTShadowMapPoint, 1.0f, 0, true, false );
 	m_Device.SetRenderTargets( m_pRTShadowMapPoint->GetWidth(), m_pRTShadowMapPoint->GetHeight(), 0, NULL, m_pRTShadowMapPoint->GetDSV() );
 
-	for ( U32 MeshIndex=0; MeshIndex < m_MeshesCount; MeshIndex++ )
+	for ( int MeshIndex=0; MeshIndex < m_Scene.m_MeshesCount; MeshIndex++ )
 		RenderMesh( *m_ppCachedMeshes[MeshIndex], &M, false );
 
 	USING_MATERIAL_END

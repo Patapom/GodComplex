@@ -183,6 +183,60 @@ private:	// RUNTIME STRUCTURES
 #pragma pack( pop )
 
 
+private:	// BUILD TIME STRUCTURES
+
+	struct ProbeInfluence {
+		U32		ProbeID;
+		double	Influence;
+	};
+
+	class MeshWithAdjacency {
+	public:
+		class	Primitive {
+		public:
+			struct	Face {
+				int				V[3];				// Vertex indices
+				float3			P;					// Center position
+				float3			N;					// Face normal
+				Face*			pAdjacent[3];		// Adjacent faces for each edge (an edge start from a vertex and ends at vertex + 1)
+				ProbeInfluence*	pProbeInfluence;	// The probe influence for this face
+				U32				LastVisitIndex;		// Index of the last visit pass
+
+				void	SetAdjacency( int _V0, int _V1, Face* _AdjacentFace ) {
+					for ( int EdgeIndex=0; EdgeIndex < 3; EdgeIndex++ ) {
+						if ( V[EdgeIndex] == _V0 && V[(EdgeIndex+1)%3] == _V1 ) {
+							pAdjacent[EdgeIndex] = _AdjacentFace;
+							return;
+						}
+					}
+					ASSERT( false, "Failed to retrieve adjacent edge!" );
+				}
+				bool	RecursePropagateProbeInfluences( U32 _PassIndex );
+			};
+
+			int					m_FacesCount;
+			Face*				m_pFaces;
+
+			~Primitive() { SAFE_DELETE_ARRAY( m_pFaces ); }
+			void	Build( const Scene::Mesh::Primitive& _Primitive, ProbeInfluence* _pProbeInfluencePerFace );
+			bool	PropagateProbeInfluences( U32 _PassIndex );
+			void	AssignNearestProbe( U32 _ProbesCount, const float3* _LocalProbePositions );
+		};
+
+remove		float4x4		m_Local2World;
+		float4x4		m_World2Local;
+
+		int				m_PrimitivesCount;
+		Primitive*		m_pPrimitives;
+
+		~MeshWithAdjacency() { SAFE_DELETE_ARRAY( m_pPrimitives ); }
+
+		void	Build( const Scene::Mesh& _Mesh, ProbeInfluence* _pProbeInfluencePerFace );
+		bool	PropagateProbeInfluences( U32 _PassIndex );
+		void	AssignNearestProbe( U32 _ProbesCount, const SHProbe* _pProbes );
+	};
+
+
 private:	// FIELDS
 	
 	Device*					m_pDevice;
@@ -223,10 +277,6 @@ private:	// FIELDS
 	SHProbeEncoder			m_ProbeEncoder;
 
 	// List of probe influences for each face of the scene
-	struct ProbeInfluence {
-		U32		ProbeID;
-		double	Influence;
-	};
 	List< ProbeInfluence >	m_ProbeInfluencePerFace;
 
 

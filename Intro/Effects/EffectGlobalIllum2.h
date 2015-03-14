@@ -104,7 +104,7 @@ protected:	// NESTED TYPES
 	public:	EffectGlobalIllum2&	m_this;
 		RenderScene( EffectGlobalIllum2& _this ) : m_this( _this ) {}
 		void	operator()( Material& _Material ) {
-			for ( U32 MeshIndex=0; MeshIndex < m_this.m_MeshesCount; MeshIndex++ )
+			for ( int MeshIndex=0; MeshIndex < m_this.m_Scene.m_MeshesCount; MeshIndex++ )
 				m_this.RenderMesh( *m_this.m_ppCachedMeshes[MeshIndex], &_Material, true );
 		}
 	};
@@ -156,7 +156,6 @@ private:	// FIELDS
 	Primitive*			m_pPrimPoint;
 
 		// Cached list of meshes
-	U32					m_MeshesCount;
 	Scene::Mesh**		m_ppCachedMeshes;
 
 		// Cached list of materials

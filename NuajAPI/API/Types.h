@@ -67,6 +67,8 @@ template<typename T> void		SafeDeleteArray__( T*& _pBuffer )
 // #define delete[] a )	SafeDeleteArray__( (void*&) (a) );
 #endif
 
+template<typename T> void	Swap( T& a, T& b ) { T temp = a; a = b; b = temp; }
+
 #include "ASMHelpers.h"
 #include "../Math/Math.h"
 

@@ -38,7 +38,7 @@ float4	float4::QuatFromAngleAxis( float _Angle, const float3& _Axis )
 float4x4  float4x4::Inverse() const
 {
 	float	Det = Determinant();
-	ASSERT( abs(Det) > 1e-6f, "Matrix is not inversible !" );
+	ASSERT( abs(Det) > 1e-6f, "Matrix is not inversible!" );
 
 	Det = 1.0f / Det;
 

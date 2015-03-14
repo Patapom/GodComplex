@@ -119,11 +119,19 @@ public:		// NESTED TYPES
 
 			void*				m_pTag;	// Custom user tag filled with anything the user needs to render the node
 
+			struct VF_P3N3G3B3T2 {
+				float3	P;
+				float3	N;
+				float3	G;
+				float3	B;
+				float2	T;
+			};
+
 		private:
 			Primitive();
 			~Primitive();
 
-			void		Init( Mesh& _Owner, const U8*& _pData );
+			void			Init( Mesh& _Owner, const U8*& _pData );
 
 			friend class Mesh;
 		};
@@ -236,6 +244,11 @@ public:		// NESTED TYPES
 
 public:		// FIELDS
 
+	int					m_NodesCount;
+	int					m_MeshesCount;
+	int					m_LightsCount;
+	int					m_CamerasCount;
+	int					m_ProbesCount;
 	Node*				m_pROOT;
 
 	int					m_MaterialsCount;

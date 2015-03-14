@@ -437,16 +437,14 @@ ProbeLocal2World.SetRow( 3, Probe.pSceneProbe->m_Local2World.GetRow( 3 ) );
 
 
 		//////////////////////////////////////////////////////////////////////////
-		// 3] Read back cube map and create the SH coefficients
+		// 3] Read back cube map and create the various dynamic samples & static SH coefficients
 		pRTCubeMapStaging->CopyFrom( *m_pRTCubeMap );
 
-#if 0	// Save to disk for processing by the ProbeSHEncoder tool
+#if 0	// Save to disk for processing by the external ProbeSHEncoder tool (not needed anymore since we're doing everything in here now)
 		sprintf_s( pTemp, "%sProbe%02d.pom", _pPathToProbes, ProbeIndex );
 		pRTCubeMapStaging->Save( pTemp );
 #endif
 
-		//////////////////////////////////////////////////////////////////////////
-		// 4] Encode the cube map into separate SH samples
 		m_ProbeEncoder.EncodeProbeCubeMap( *pRTCubeMapStaging, ProbeIndex, m_ProbesCount, _TotalFacesCount );
 
 		// Save probe results
@@ -460,7 +458,7 @@ ProbeLocal2World.SetRow( 3, Probe.pSceneProbe->m_Local2World.GetRow( 3 ) );
 #endif
 
 		//////////////////////////////////////////////////////////////////////////
-		// 5] Collate per-face probe influence for the secondary vertex stream
+		// 4] Collate per-face probe influence for the secondary vertex stream
 		const double*	pNewInfluence = &m_ProbeEncoder.GetProbeInfluences()[0];
 		ProbeInfluence*	pCurrentInfluence = &m_ProbeInfluencePerFace[0];
 		for ( U32 FaceIndex=0; FaceIndex < _TotalFacesCount; FaceIndex++, pCurrentInfluence++, pNewInfluence++ ) {
@@ -512,11 +510,246 @@ m_pRTCubeMap->SetPS( 64 );
 // 	delete m_pRTCubeMap;
 }
 
+void	SHProbeNetwork::MeshWithAdjacency::Build( const Scene::Mesh& _Mesh, ProbeInfluence* _pProbeInfluencePerFace ) {
+
+	m_World2Local = _Mesh.m_Local2World.Inverse();
+
+	m_pPrimitives = new Primitive[_Mesh.m_PrimitivesCount];
+
+	int	FaceOffset = 0;
+	for ( int PrimitiveIndex=0; PrimitiveIndex < _Mesh.m_PrimitivesCount; PrimitiveIndex++ ) {
+		const Scene::Mesh::Primitive&	SourcePrim = _Mesh.m_pPrimitives[PrimitiveIndex];
+		m_pPrimitives[PrimitiveIndex].Build( SourcePrim, _pProbeInfluencePerFace + FaceOffset );
+		FaceOffset += SourcePrim.m_FacesCount;
+	}
+}
+
+bool	SHProbeNetwork::MeshWithAdjacency::PropagateProbeInfluences( U32 _PassIndex ) {
+	bool	stillSpreading = false;
+	for ( int PrimitiveIndex=0; PrimitiveIndex < m_PrimitivesCount; PrimitiveIndex++ ) {
+		Primitive&	P = m_pPrimitives[PrimitiveIndex];
+		stillSpreading |= P.PropagateProbeInfluences( _PassIndex );
+	}
+
+	return stillSpreading;
+}
+
+void	SHProbeNetwork::MeshWithAdjacency::AssignNearestProbe( U32 _ProbesCount, const SHProbe* _pProbes ) {
+	// Transform probe positions into local space
+	List<float3>	LocalProbePositions;
+	LocalProbePositions.Init( _ProbesCount );
+	for ( U32 ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ ) {
+		const SHProbe&	Probe = _pProbes[ProbeIndex];
+		float3&			lsProbePosition = LocalProbePositions[ProbeIndex];
+
+		lsProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 ) * m_World2Local;
+	}
+
+	// Assign nearest probes
+	for ( int PrimitiveIndex=0; PrimitiveIndex < m_PrimitivesCount; PrimitiveIndex++ ) {
+		Primitive&	P = m_pPrimitives[PrimitiveIndex];
+		P.AssignNearestProbe( _ProbesCount, &LocalProbePositions[0] );
+	}
+}
+
+void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( const Scene::Mesh::Primitive& _Primitive, ProbeInfluence* _pProbeInfluencePerFace ) {
+
+	struct EdgeKey {
+		int	V0, V1;
+		static U32		GetHash( const EdgeKey& _key )							{
+			return _key.V0 ^ _key.V1;
+		}
+		static int		Compare( const EdgeKey& _key0, const EdgeKey& _key1 )	{
+			int	k00 = _key0.V0 < _key0.V1 ? _key0.V0 : _key0.V1;
+			int	k01 = _key0.V0 < _key0.V1 ? _key0.V1 : _key0.V0;
+			int	k10 = _key1.V0 < _key1.V1 ? _key1.V0 : _key1.V1;
+			int	k11 = _key1.V0 < _key1.V1 ? _key1.V1 : _key1.V0;
+			if ( k00 == k10 && k01 == k11 ) return 0;
+			return 1;	// We don't care about ordering at the moment...
+		}
+	};
+	struct FacePair {
+		Face*	F0;
+		Face*	F1;
+	};
+
+	DictionaryGeneric< EdgeKey, FacePair >	SharedEdges( 3 * _Primitive.m_FacesCount );
+
+	m_FacesCount = _Primitive.m_FacesCount;
+	m_pFaces = new Face[m_FacesCount];
+
+	const U32*		pSourceFace = _Primitive.m_pFaces;
+	Face*			pTargetFace = m_pFaces;
+	ProbeInfluence* pProbeInfluence = _pProbeInfluencePerFace;
+	for ( U32 FaceIndex=0; FaceIndex < _Primitive.m_FacesCount; FaceIndex++, pTargetFace++, pProbeInfluence++ ) {
+		// Build the face
+		pTargetFace->V[0] = *pSourceFace++;
+		pTargetFace->V[1] = *pSourceFace++;
+		pTargetFace->V[2] = *pSourceFace++;
+
+		const float3&	P0 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _Primitive.m_pVertices)[pTargetFace->V[0]].P;
+		const float3&	P1 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _Primitive.m_pVertices)[pTargetFace->V[1]].P;
+		const float3&	P2 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _Primitive.m_pVertices)[pTargetFace->V[2]].P;
+
+		pTargetFace->P = (P0 + P1 + P2) / 3.0f;
+		pTargetFace->N = (P2 - P0).Cross( P1 - P0 ).Normalize();
+		pTargetFace->pProbeInfluence = pProbeInfluence;
+
+		// Build adjacency info
+		EdgeKey		Key;
+		for ( int EdgeIndex=0; EdgeIndex < 3; EdgeIndex++ ) {
+			Key.V0 = pTargetFace->V[EdgeIndex];
+			Key.V1 = pTargetFace->V[(EdgeIndex+1)%3];
+
+			FacePair*	ExistingValue = SharedEdges.Get( Key );
+			if ( ExistingValue == NULL ) {
+				// First face sharing this edge!
+				FacePair&	AdjacentFaces = SharedEdges.Add( Key );
+				AdjacentFaces.F0 = pTargetFace;
+				AdjacentFaces.F1 = NULL;
+			} else {
+				// Second face! Build adjacency...
+				ASSERT( ExistingValue->F1 == NULL, "Non-manifold mesh: more than 2 faces share the same edge!" );
+				ExistingValue->F1 = pTargetFace;
+
+				pTargetFace->pAdjacent[EdgeIndex] = ExistingValue->F0;
+				ExistingValue->F0->SetAdjacency( Key.V1, Key.V0, pTargetFace );
+			}
+		}
+	}
+}
+
+bool	SHProbeNetwork::MeshWithAdjacency::Primitive::PropagateProbeInfluences( U32 _PassIndex ) {
+	bool	stillSpreading = false;
+	Face*	pFace = m_pFaces;
+	for ( int FaceIndex=0; FaceIndex < m_FacesCount; FaceIndex++, pFace++ ) {
+		stillSpreading |= pFace->RecursePropagateProbeInfluences( _PassIndex );
+	}
+
+	return stillSpreading;
+}
+
+void	SHProbeNetwork::MeshWithAdjacency::Primitive::AssignNearestProbe( U32 _ProbesCount, const float3* _LocalProbePositions ) {
+	Face*	pFace = m_pFaces;
+	for ( int FaceIndex=0; FaceIndex < m_FacesCount; FaceIndex++, pFace++ ) {
+		if ( pFace->pProbeInfluence->ProbeID != ~0UL )
+			continue;
+
+		float	NearestProbeSqDistance = FLT_MAX;
+		U32		NearestProbeIndex = ~0UL;
+		for ( U32 ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ ) {
+			float	SqDistance = (_LocalProbePositions[ProbeIndex] - pFace->P).LengthSq();
+			if ( SqDistance < NearestProbeSqDistance ) {
+				NearestProbeSqDistance = SqDistance;
+				NearestProbeIndex = ProbeIndex;
+			}
+		}
+		pFace->pProbeInfluence->ProbeID = NearestProbeIndex;
+	}
+}
+
+bool	SHProbeNetwork::MeshWithAdjacency::Primitive::Face::RecursePropagateProbeInfluences( U32 _PassIndex ) {
+	if ( LastVisitIndex == _PassIndex )
+		return false;
+	LastVisitIndex = _PassIndex;	// Visited!
+	
+	bool	spreading = false;
+
+	for ( int EdgeIndex=0; EdgeIndex < 3; EdgeIndex++ ) {
+		if ( pAdjacent[EdgeIndex] == NULL || pAdjacent[EdgeIndex]->LastVisitIndex == _PassIndex )
+			continue;
+
+		Face&	Adjacent = *pAdjacent[EdgeIndex];
+
+		// Compute new influence
+		static const float	DISTANCE_FALLOFF_FACTOR = -1.3862943611198906188344642429164f;			// ln( 0.25 ) so 1m away gets 1/4 the influence
+		static const float	ANGULAR_FALLOFF_FACTOR = 0.5f * -0.30102999566398119521373889472449f;	// ln( 0.5 ) so a 90° face gets 1/2 the influence
+
+		float	DistanceBetweenFaces = (Adjacent.P - P).Length();
+		float	DotNormalBetweenFaces = Adjacent.N.Dot( N );
+		float	FalloffDistance = expf( DISTANCE_FALLOFF_FACTOR * DistanceBetweenFaces );
+		float	FalloffAngle = expf( ANGULAR_FALLOFF_FACTOR * (1.0f - DotNormalBetweenFaces) );
+		double	Falloff = FalloffDistance * FalloffAngle;
+
+		double	ReducedInfluence0 = 0.0f;
+		if ( pProbeInfluence->ProbeID != ~0UL ) {
+			ReducedInfluence0 = pProbeInfluence->Influence * Falloff;
+		}
+		double	ReducedInfluence1 = 0.0f;
+		if ( Adjacent.pProbeInfluence->ProbeID != ~0UL ) {
+			ReducedInfluence1 = Adjacent.pProbeInfluence->Influence * Falloff;
+		}
+
+		if ( ReducedInfluence0 > Adjacent.pProbeInfluence->Influence ) {
+			// Spread from face to adjacent face
+			Adjacent.pProbeInfluence->Influence = ReducedInfluence0;
+			Adjacent.pProbeInfluence->ProbeID = pProbeInfluence->ProbeID;
+			spreading = true;
+		} else if ( ReducedInfluence1 > pProbeInfluence->Influence ) {
+			// Spread from adjacent face to this face
+			pProbeInfluence->Influence = ReducedInfluence1;
+			pProbeInfluence->ProbeID = Adjacent.pProbeInfluence->ProbeID;
+			spreading = true;
+		}
+	}
+
+	return spreading;
+}
+
 void	SHProbeNetwork::BuildProbeInfluenceVertexStream( Scene& _Scene, const char* _pPathToStreamFile ) {
 
 	//////////////////////////////////////////////////////////////////////////
-	// Start by building adjacency structures between primitives' vertices
-	_Scene.ForEach( )
+	// Start by building adjacency structures between primitives' faces
+	List< MeshWithAdjacency >	Meshes;
+	Meshes.Init( _Scene.m_MeshesCount );
+
+	class MeshVisitor : public Scene::IVisitor {
+	public:
+		List< MeshWithAdjacency >*	m_Meshes;
+		ProbeInfluence*				m_ProbeInfluencePerFace;
+		int							m_TotalFacesCount;
+		int							m_TotalVerticesCount;
+		virtual void	HandleNode( Scene::Node& _Node ) override {
+			if ( _Node.m_Type != Scene::Node::MESH )
+				return;
+			
+			Scene::Mesh&		SourceMesh = (Scene::Mesh&) _Node;
+			MeshWithAdjacency&	TargetMesh = m_Meshes->Append();
+			TargetMesh.Build( SourceMesh, m_ProbeInfluencePerFace + m_TotalFacesCount );
+
+			// Accumulate vertices count
+			for ( int PrimitiveIndex=0; PrimitiveIndex < SourceMesh.m_PrimitivesCount; PrimitiveIndex++ ) {
+				Scene::Mesh::Primitive&	P = SourceMesh.m_pPrimitives[PrimitiveIndex];
+				m_TotalFacesCount += P.m_FacesCount;
+				m_TotalVerticesCount += P.m_VerticesCount;
+			}
+		}
+	} visitor;
+	visitor.m_TotalFacesCount = 0;
+	visitor.m_TotalVerticesCount = 0;
+	visitor.m_Meshes = &Meshes;
+	visitor.m_ProbeInfluencePerFace = &m_ProbeInfluencePerFace[0];
+	_Scene.ForEach( visitor );
+
+	//////////////////////////////////////////////////////////////////////////
+	// Propagate best probe indices by adjacency
+	U32		PassIndex = 0;
+	bool	stilSpreading = true;
+	while ( stilSpreading ) {
+
+		stilSpreading = false;
+		for ( int MeshIndex=0; MeshIndex < Meshes.GetCount(); MeshIndex++ ) {
+			MeshWithAdjacency&	M = Meshes[MeshIndex];
+			stilSpreading |= M.PropagateProbeInfluences( PassIndex++ );
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Assign nearest probes to faces without influence (isolated faces)
+	for ( int MeshIndex=0; MeshIndex < Meshes.GetCount(); MeshIndex++ ) {
+		MeshWithAdjacency&	M = Meshes[MeshIndex];
+		M.AssignNearestProbe( m_ProbesCount, m_pProbes );
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Load the vertex stream containing U32-packed probe IDs for each vertex

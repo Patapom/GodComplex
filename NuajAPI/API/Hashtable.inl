@@ -293,3 +293,152 @@ template<typename T> void	Dictionary<T>::ForEach( VisitorDelegate _pDelegate, vo
 		}
 	}
 }
+
+//////////////////////////////////////////////////////////////////////////
+// Generic version
+//
+#ifdef _DEBUG
+template<typename K, typename T>
+int	DictionaryGeneric<K,T>::ms_MaxCollisionsCount = 0;
+#endif
+
+template<typename K, typename T>
+DictionaryGeneric<K,T>::DictionaryGeneric( int _Size ) : m_EntriesCount( 0 )
+{
+	m_Size = _Size;
+	m_ppTable = new Node*[m_Size];
+	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+}
+template<typename K, typename T>
+DictionaryGeneric<K,T>::~DictionaryGeneric()
+{
+	for ( int i=0; i < m_Size; i++ )
+	{
+		Node*	pNode = m_ppTable[i];
+		while ( pNode != NULL )
+		{
+			Node*	pOld = pNode;
+			pNode = pNode->pNext;
+
+			delete pOld;
+		}
+	}
+
+	delete[] m_ppTable;
+}
+
+template<typename K, typename T>
+T*	DictionaryGeneric<K,T>::Get( const K& _Key ) const
+{
+	if ( !m_EntriesCount )
+		return NULL;
+
+	U32		idx = K::GetHash( _Key ) % m_Size;
+	Node*	pNode = m_ppTable[idx];
+
+#ifdef _DEBUG
+	int		CollisionsCount = 0;
+	while ( pNode != NULL )
+	{
+		if ( K::Compare( _Key, pNode->Key ) == 0 )
+		{
+			ms_MaxCollisionsCount = MAX( ms_MaxCollisionsCount, CollisionsCount );
+			return &pNode->Value;
+		}
+ 
+		pNode = pNode->pNext;
+		CollisionsCount++;
+	}
+#else
+	while ( pNode != NULL )
+	{
+		if ( K::Compare( _Key, pNode->Key ) == 0 )
+			return &pNode->Value;
+ 
+		pNode = pNode->pNext;
+	}
+#endif
+
+	return NULL;
+}
+
+template<typename K, typename T>
+T&	DictionaryGeneric<K,T>::Add( const K& _Key )
+{
+	U32		idx = K::GetHash( _Key ) % m_Size;
+ 
+	Node*	pNode = new Node();
+	pNode->Key = _Key;
+	pNode->pNext = m_ppTable[idx];	// Here, we could add a check for m_ppTable[idx] == NULL to ensure no collision...
+	m_ppTable[idx] = pNode;
+
+	m_EntriesCount++;
+
+	return pNode->Value;
+}
+
+template<typename K, typename T>
+T&	DictionaryGeneric<K,T>::Add( const K& _Key, const T& _Value )
+{
+	T&	Value = Add( _Key );
+	memcpy( &Value, &_Value, sizeof(T) );
+
+	return Value;
+}
+
+template<typename K, typename T>
+void	DictionaryGeneric<K,T>::Remove( const K& _Key )
+{
+	U32		idx = _Key % m_Size;
+ 
+	Node*	pPrevious = NULL;
+	Node*	pCurrent = m_ppTable[idx];
+	while ( pCurrent != NULL ) {
+		if ( K::Compare( _Key, pCurrent->Key ) == 0 )
+		{
+			if ( pPrevious != NULL )
+				pPrevious->pNext = pCurrent->pNext;	// Link over...
+			else
+				m_ppTable[idx] = pCurrent->pNext;	// We replaced the root key...
+
+			delete pCurrent;
+
+			m_EntriesCount--;
+
+ 			return;
+		}
+ 
+		pPrevious = pCurrent;
+		pCurrent = pCurrent->pNext;
+	}
+}
+
+template<typename K, typename T>
+void	DictionaryGeneric<K,T>::Clear() {
+	// Clear all linked lists of nodes from each head
+	for ( int HeadIndex=0; HeadIndex < m_Size; HeadIndex++ ) {
+		Node*	pNode = m_ppTable[HeadIndex];
+		while ( pNode != NULL ) {
+			Node*	pOld = pNode;
+			pNode = pNode->pNext;
+			delete pOld;
+		}
+	}
+	// Clear heads
+	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+}
+
+template<typename K, typename T>
+void	DictionaryGeneric<K,T>::ForEach( VisitorDelegate _pDelegate, void* _pUserData )
+{
+	int	EntryIndex = 0;
+	for ( int i=0; i < m_Size; i++ )
+	{
+		Node*	pNode = m_ppTable[i];
+		while ( pNode != NULL )
+		{
+			(*_pDelegate)( EntryIndex++, pNode->Value, _pUserData );
+			pNode = pNode->pNext;
+		}
+	}
+}

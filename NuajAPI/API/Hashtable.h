@@ -68,6 +68,7 @@ public:
 
 #endif
 
+//////////////////////////////////////////////////////////////////////////
 // Specific dictionary storing explicit typed values
 template<typename T> class	Dictionary
 {
@@ -101,7 +102,7 @@ public:		// METHODS
 	Dictionary( int _Size=HT_DEFAULT_SIZE );
 	~Dictionary();
 
-	int		GetEntriesCount() const		{return m_EntriesCount; }	// Amount of entries in the dictionary
+	int		GetEntriesCount() const		{ return m_EntriesCount; }	// Amount of entries in the dictionary
 
 	T*		Get( U32 _Key ) const;				// retrieve entry
 	T&		Add( U32 _Key );					// store entry
@@ -142,11 +143,60 @@ public:		// METHODS
 	DictionaryU32( int _Size=HT_DEFAULT_SIZE );
 	~DictionaryU32();
 
-	void*	Get( U32 _Key ) const;				// retrieve entry
+	void*	Get( U32 _Key ) const;			// retrieve entry
 	void	Add( U32 _Key, void* _pValue );	// store entry
-	void	Remove( U32 _Key );			// remove entry
+	void	Remove( U32 _Key );				// remove entry
+	void	ForEach( VisitorDelegate _pDelegate, void* _pUserData );
+};
+
+//////////////////////////////////////////////////////////////////////////
+// Generic dictionary storing explicit typed values and using an explicit key class
+template<typename K> class	DictionaryKey {
+	static U32		GetHash( const K& _key )					{ ASSERT( false, "You didn't specialize the key class!" ); return 0; }
+	static int		Compare( const K& _key0, const K& _key1 )	{ ASSERT( false, "You didn't specialize the key class!" ); return 0; }
+};
+template<typename K, typename T> class	DictionaryGeneric
+{
+protected:		// NESTED TYPES
+
+	struct	Node
+	{
+		struct Node*		pNext;
+		K					Key;
+		T					Value;
+	};
+
+public:
+
+	typedef void	(*VisitorDelegate)( int _EntryIndex, T& _Value, void* _pUserData );
+
+
+protected:	// FIELDS
+
+	Node**	m_ppTable;
+	int		m_Size;
+	int		m_EntriesCount;
+
+#ifdef _DEBUG
+public:
+	static int	ms_MaxCollisionsCount;	// You can examine this to know if one of the dictionaries has too many collisions (i.e. size too small)
+#endif
+
+public:		// METHODS
+
+	DictionaryGeneric( int _Size=HT_DEFAULT_SIZE );
+	~DictionaryGeneric();
+
+	int		GetEntriesCount() const		{ return m_EntriesCount; }	// Amount of entries in the dictionary
+
+	T*		Get( const K& _Key ) const;				// retrieve entry
+	T&		Add( const K& _Key );					// store entry
+	T&		Add( const K& _Key, const T& _Value );	// store entry
+	void	Remove( const K& _Key );				// remove entry
+	void	Clear();
 	void	ForEach( VisitorDelegate _pDelegate, void* _pUserData );
 };
 
 
+//////////////////////////////////////////////////////////////////////////
 #include "Hashtable.inl"
