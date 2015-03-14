@@ -13,7 +13,7 @@
 //	_ Convert to GCX (God Complex scene format)
 //		=> Using the Tools > FBX2GCX you can convert a standard FBX scene into a GCX
 //	_ Patch the code to make it load your scene
-//		=> Taking model below with the SCENE_SPONZA define, create the same pattern for your scene (i.e. create PROBES_PATH, USE_PER_VERTEX_PROBE_ID, etc.)
+//		=> Taking example on the SCENE_SPONZA define, create the same pattern for your scene (i.e. create PROBES_PATH, TEXTURES_PATH, etc.)
 //		=> Create a disk folder where probe infos will be stored, make PROBES_PATH point to it (usually, a "Probes" sub-directory in the scene's directory)
 //		=> Text-edit the GodComplex.rc resource file, locate the line where IDR_SCENE_GI is defined, copy/paste/comment and patch with your scene's path
 //
@@ -32,31 +32,18 @@
 //	_ Make sure USE_WHITE_TEXTURES is commented (i.e. undefined) because you want to use your scene's textures to get proper color bounces
 //	_ Make sure LOAD_PROBES is commented (i.e. undefined): this will hint the code that we're actually COMPUTING the probes for the first time
 //	_ Run
-//		=> If successful, this should take some time to load the scene, render the probes' cube maps, then it should display the scene
-//			using plain direct lighting only
-//		=> Probe cube maps are now ready to be analyzed and processed to generate probe informations that will be used for indirect lighting
-//		=> Go to the directory pointed by PROBES_PATH and make sure you have as many Probe??.POM files as probes you placed in your scene
+//		=> If successful, this should take some time to load the scene, render the probes' cube maps
+//		=> It should exit the pre-computation and render your scene with indirect lighting
 //
-// 4) Processing probe cube maps and generating probe infos
-//	_ Launch the Tools > ProbeSHEncoder project
-//	_ Use Main Menu > File > Batch Encode
-//		=> Point it to the directory where the probe cube maps have been saved, prefer using the same directory as target
-//	_ Wait until all probes have been converted
-//		=> You should now have an equal number of .PROBESET files
-//	_ Click the Main Menu > Tools > Encode Face Probes action
-//		=> Locate the .PIM file that should have been generated at the same place as the .PROBESET files
-//		=> Locate your .GCX scene
-//	_ It should show a dialog with informations on what went right/wrong in your scene
-//		=> Typically, faces/primitives that don't have probe informations are faces/primitives too far away from any probe and disconnected from other faces/primitives
-//		=> After that, you just generated an additional vertex stream for each of your scene's vertices that contains the index of the closest probe
-//	_ You now have all the informations needed to render the scene
-//
-// 5) Final result
-//	_ Make sure LOAD_PROBES is not commented (i.e. defined): this will hint the code that we're now LOADING and USING the probes for indirect lighting
+// 4) Normal run
+//	_ Make sure LOAD_PROBES is NOT commented
 //	_ Run
+//		=> It should reload the previously computed results and render your scene with indirect lighting
 //		=> Use WASD/QSDZ to navigate the scene, shift to speed up
+//
 //	_ Also run the Tools > ControlPanelGlobalIllumination project
 //		=> This will provide you with the options to control the demo, like enabling/disabling Sun, Sky, dynamic light, emissive area lights, etc.
+//
 //	_ Enjoy...
 //
 //
@@ -72,7 +59,7 @@
 //#define SCENE 2	// Sponza Atrium
 #define SCENE 3	// Test
 
-//#define	LOAD_PROBES			// Define this to simply load probes without computing them
+#define	LOAD_PROBES			// Define this to simply load probes without computing them
 #define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
 #define	USE_NORMAL_MAPS			// Define this to use normal maps
 
@@ -116,19 +103,14 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 
 	{
 // Main scene rendering is quite heavy so we prefer to reload it from binary instead
-//ScopedForceMaterialsLoadFromBinary		bisou;
+ScopedForceMaterialsLoadFromBinary		bisou;
 
-//#ifndef LOAD_PROBES
 		D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { "PER_VERTEX_PROBE_ID", "1" }, { NULL, NULL } };
 		m_SceneVertexFormatDesc.AggregateVertexFormat( VertexFormatU32::DESCRIPTOR );
-// #else
-// 		D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { NULL, NULL } };
-// #endif
  		CHECK_MATERIAL( m_pMatRender = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", m_SceneVertexFormatDesc, "VS", NULL, "PS", pMacros ), 1 );
 
 		D3D_SHADER_MACRO	pMacros2[] = { { "EMISSIVE", "1" }, { NULL, NULL } };
 		CHECK_MATERIAL( m_pMatRenderEmissive = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros2 ), 2 );
-//		CHECK_MATERIAL( m_pMatRenderEmissive = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", m_SceneVertexFormatDesc, "VS", NULL, "PS", pMacros2 ), 2 );
 	}
 	{
 ScopedForceMaterialsLoadFromBinary		bisou;
@@ -472,8 +454,6 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	QueryMaterial	functor( *this );
 	m_ProbesNetwork.LoadProbes( PROBES_PATH, functor, m_SceneBBoxMin, m_SceneBBoxMax );
 
-	ASSERT( m_ProbesNetwork.GetProbeIDVertexStream() != NULL && m_ProbesNetwork.GetProbeIDVertexStream()->GetVerticesCount() == m_TotalVerticesCount, "There's a discrepancy between the scene's total vertices count and last computed probe vertex stream! Did the scene change? In which case, you should probably recompute the probes network by commenting out the \"LOAD_PROBES\" define and start again..." );
-
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize our own objects and assign them as tags to the scene's objects
@@ -484,6 +464,8 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	m_EmissiveMaterialsCount = 0;
 
 	m_Scene.PlaceTags( *this );
+
+	ASSERT( m_ProbesNetwork.GetProbeIDVertexStream() != NULL && m_ProbesNetwork.GetProbeIDVertexStream()->GetVerticesCount() == m_TotalVerticesCount, "There's a discrepancy between the scene's total vertices count and last computed probe vertex stream! Did the scene change? In which case, you should probably recompute the probes network by commenting out the \"LOAD_PROBES\" define and start again..." );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -721,12 +703,13 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pSB_LightsDynamic->m[0].Type = Scene::Light::POINT;
 	m_pSB_LightsDynamic->m[0].Parms.Set( 0.1f, 0.1f, 0, 0 );
 
-#if SCENE==0 || SCENE==3
+#if SCENE==0
 	// CORRIDOR ANIMATION (simple straight line)
-
 //	m_pSB_LightsDynamic->m[0].Position.Set( 0.0f, 0.2f, 4.0f * sinf( 0.4f * AnimateLightTime0 ) );	// Move along the corridor
 	m_pSB_LightsDynamic->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime0 ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime0 ), 4.0f * sinf( 0.3f * AnimateLightTime0 ) );	// Move along the corridor
-
+#elif SCENE==3
+	// ROOM ANIMATION (simple straight line)
+	m_pSB_LightsDynamic->m[0].Position.Set( 6.0f + 0.75f * sinf( 1.0f * AnimateLightTime0 ), 2.0f + 1.3f * cosf( 1.0f * AnimateLightTime0 ), -4.0f + 4.0f * sinf( 0.3f * AnimateLightTime0 ) );
 #else
 
 	// PATH ANIMATION (follow curve)

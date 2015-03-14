@@ -163,7 +163,7 @@ public:
 	// Binary Blobs
 
 	// Helper to reload a compiled binary blob and build the shader from it
-	static ComputeShader*	CreateFromBinaryBlob( Device& _Device, const char* _pShaderFileName, const char* _pEntryPoint );
+	static ComputeShader*	CreateFromBinaryBlob( Device& _Device, const char* _pShaderFileName, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint );
 
 
 private:

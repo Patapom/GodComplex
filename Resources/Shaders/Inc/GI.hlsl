@@ -99,8 +99,8 @@ Texture2D<float4>	_TexSpecularAlbedo : register( t12 );
 // Computes light's irradiance
 float3	AccumulateLight( float3 _WorldPosition, float3 _WorldNormal, float3 _WorldVertexNormal, float3 _WorldVertexTangent, LightStruct _LightSource )
 {
-	float3	Irradiance;
-	float3	Light;
+	float3	Irradiance = 0.0;
+	float3	Light = 0.0;
 
 	if ( _LightSource.Type == 0 || _LightSource.Type == 2 )
 	{	// Compute a standard point light

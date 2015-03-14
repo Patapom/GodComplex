@@ -5,6 +5,20 @@
 #include "Inc/GI.hlsl"
 #include "Inc/SH.hlsl"
 
+//#define	DEBUG_SAMPLES 1	// Only works if 1 probe in the scene!
+
+#if DEBUG_SAMPLES
+struct ProbeUpdateSampleInfo
+{
+	float3		Position;					// World position of the samples
+	float3		Normal;						// World normal of the sample
+	float		Radius;						// Radius of the sample's disc approximation
+	float3		Albedo;						// Albedo of the sample's surface
+	float		SH[9];						// SH contribution of the sample
+};
+StructuredBuffer<ProbeUpdateSampleInfo>		_SBProbeSamples : register( t11 );
+#endif
+
 struct	NetworkProbeStruct
 {
 	uint2		ProbeIDs;
@@ -24,6 +38,7 @@ struct	VS_IN
 struct	PS_IN
 {
 	float4	__Position	: SV_POSITION;
+	float3	Position	: POSITION;
 	float3	Normal		: NORMAL;
 	uint	ProbeID		: PROBEID;
 };
@@ -36,6 +51,7 @@ PS_IN	VS( VS_IN _In )
 
 	PS_IN	Out;
 	Out.__Position = mul( WorldPosition, _World2Proj );
+	Out.Position = WorldPosition.xyz;
 	Out.Normal = _In.Position;
 	Out.ProbeID = _In.InstanceID;
 
@@ -45,6 +61,19 @@ PS_IN	VS( VS_IN _In )
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
 	ProbeStruct	Probe = _SBProbes[_In.ProbeID];
+
+	
+#if DEBUG_SAMPLES
+	for ( uint SampleIndex=0; SampleIndex < 128; SampleIndex++ ) {
+		ProbeUpdateSampleInfo	Sample = _SBProbeSamples[SampleIndex];
+		float3	ToSample = normalize( Sample.Position - _In.Position );
+		if ( dot( ToSample, _In.Normal ) > 0.9 ) {
+			float3	Color = (0.5 + (SampleIndex & 7)) / 8;
+			return float4( Color, 1 );
+		}
+	}
+#endif
+
 
 //return _In.ProbeID == 16;
 

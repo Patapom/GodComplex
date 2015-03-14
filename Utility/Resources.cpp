@@ -150,7 +150,7 @@ Material*		CreateMaterial( U16 _ShaderResourceID, const char* _pFileName, const 
 
 	U32		CodeSize = 0;
 	char*	pShaderCode = LoadResourceShader( _ShaderResourceID, CodeSize );
-	ASSERT( pShaderCode != NULL, "Failed to load shader resource !" );
+	ASSERT( pShaderCode != NULL, "Failed to load shader resource!" );
 
 	gs_IncludesManager.SetCurrentlyCompilingShader( pFileName );
 	Material*	pResult = new Material( gs_Device, pFileName, _Format, pShaderCode, _pMacros, _pEntryPointVS, _pEntryPointHS, _pEntryPointDS, _pEntryPointGS, _pEntryPointPS, &gs_IncludesManager );
@@ -167,7 +167,7 @@ ComputeShader*	CreateComputeShader( U16 _ShaderResourceID, const char* _pFileNam
 
 	U32		CodeSize = 0;
 	char*	pShaderCode = LoadResourceShader( _ShaderResourceID, CodeSize );
-	ASSERT( pShaderCode != NULL, "Failed to load shader resource !" );
+	ASSERT( pShaderCode != NULL, "Failed to load shader resource!" );
 
 	gs_IncludesManager.SetCurrentlyCompilingShader( pFileName );
 	ComputeShader*	pResult = new ComputeShader( gs_Device, pFileName, pShaderCode, _pMacros, _pEntryPoint, &gs_IncludesManager );

@@ -7,6 +7,7 @@
 #include "Inc/GI.hlsl"
 #include "Inc/SH.hlsl"
 
+
 cbuffer	cbGeneral	: register( b8 )
 {
 	float3		_Ambient;		// Default ambient if no indirect is being used
@@ -152,24 +153,26 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 
 	float3	Normal = normalize( tsNormal.x * VertexTangent + tsNormal.y * VertexBiTangent + tsNormal.z * VertexNormal );
 
-return float4( Normal, 1 );
+//return float4( Normal, 1 );
 
 	float3	AccumDiffuse = 0.0;
 	float3	AccumSpecular = 0.0;
 
 	// Process static lights
-	for ( uint LightIndex=0; LightIndex < _StaticLightsCount; LightIndex++ )
 	{
-		LightStruct	LightSource = _SBLightsStatic[LightIndex];
-		AccumDiffuse += AccumulateLight( _In.Position, Normal, VertexNormal, VertexTangent, LightSource );
+		for ( uint LightIndex=0; LightIndex < _StaticLightsCount; LightIndex++ ) {
+			LightStruct	LightSource = _SBLightsStatic[LightIndex];
+			AccumDiffuse += AccumulateLight( _In.Position, Normal, VertexNormal, VertexTangent, LightSource );
+		}
 	}
 
 	// Process dynamic lights
-	for ( uint LightIndex=0; LightIndex < _DynamicLightsCount; LightIndex++ )
 	{
-		LightStruct	LightSource = _SBLightsDynamic[LightIndex];
-		AccumDiffuse += AccumulateLight( _In.Position, Normal, VertexNormal, VertexTangent, LightSource );
+		for ( uint LightIndex=0; LightIndex < _DynamicLightsCount; LightIndex++ ) {
+			LightStruct	LightSource = _SBLightsDynamic[LightIndex];
+			AccumDiffuse += AccumulateLight( _In.Position, Normal, VertexNormal, VertexTangent, LightSource );
 //return AccumulateLight( _In.Position, Normal, VertexNormal, VertexTangent, LightSource ).x;
+		}
 	}
 
 	AccumDiffuse *= DiffuseAlbedo;
@@ -186,9 +189,8 @@ return float4( Normal, 1 );
 //	Indirect *= _ShowIndirect ? 1.0 : 0.0;
 
 	if ( !_ShowIndirect )
-	{	// Dummy dull uniform ambient sky
+		// Dummy dull uniform ambient sky
 		Indirect = _Ambient * DiffuseAlbedo * lerp( 0.5, 1.0, 0.5 * (1.0 + Normal.y) );
-	}
 
 	return float4( Indirect + AccumDiffuse, 1 );
 

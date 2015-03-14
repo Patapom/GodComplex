@@ -141,10 +141,10 @@ ComputeShader::~ComputeShader()
 	if ( m_pMacros != NULL ) { delete[] m_pMacros; m_pMacros = NULL; }
 }
 
-void	ComputeShader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pCS )
-{
+void	ComputeShader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pCS ) {
 	// Release any pre-existing shader
-	if ( m_pCS != NULL )	m_pCS->Release();
+	if ( m_pCS != NULL )
+		m_pCS->Release();
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the compute shader
@@ -693,7 +693,7 @@ time_t		ComputeShader::GetFileModTime( const char* _pFileName )
 
 #endif	// #if defined(_DEBUG) || !defined(GODCOMPLEX)
 
-ComputeShader*	ComputeShader::CreateFromBinaryBlob( Device& _Device, const char* _pShaderFileName, const char* _pEntryPoint )
+ComputeShader*	ComputeShader::CreateFromBinaryBlob( Device& _Device, const char* _pShaderFileName, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint )
 {
 #ifndef SAVE_SHADER_BLOB_TO
 	ASSERT( false, "You can't use that in RELEASE or if binary blobs are not available!" );
@@ -701,7 +701,8 @@ ComputeShader*	ComputeShader::CreateFromBinaryBlob( Device& _Device, const char*
 #else
 	ASSERT( _pEntryPoint != NULL, "You must provide a valid entry point!" );
 
-	ID3DBlob*	pCS = Material::LoadBinaryBlob( _pShaderFileName, _pEntryPoint );
+//	D3D_SHADER_MACRO
+	ID3DBlob*	pCS = Material::LoadBinaryBlob( _pShaderFileName, _pMacros, _pEntryPoint );
 
 	ComputeShader*	pResult = new ComputeShader( _Device, _pShaderFileName, pCS );
 
