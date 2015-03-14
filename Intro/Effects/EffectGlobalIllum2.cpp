@@ -81,36 +81,24 @@
 	#define SCENE_PATH				".\\Resources\\Scenes\\GITest1\\"
 
 	#define PROBES_PATH				SCENE_PATH "ProbeSets\\GITest1_10Probes\\"
-	#ifdef LOAD_PROBES	// Can't use that until it's been baked!
-		#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\GITest1_ProbeID.vertexStream.U16"
-	#endif
 
 #elif SCENE==2
 	#define SCENE_PATH				".\\Resources\\Scenes\\Sponza\\"
 
 	#define TEXTURES_PATH			SCENE_PATH "TexturesPOM\\"
 	#define PROBES_PATH				SCENE_PATH "Probes\\"
-	#ifdef LOAD_PROBES	// Can't use that until it's been baked!
-		#define USE_PER_VERTEX_PROBE_ID	".\\Resources\\Scenes\\Sponza\\Sponza_ProbeID.vertexStream.U16"
-	#endif
 
 #elif SCENE==1
 	#define SCENE_PATH				"..\\Arkane\\GIScenes\\City\\"
 
 	#define TEXTURES_PATH			SCENE_PATH "TexturesPOM\\"
 	#define PROBES_PATH				SCENE_PATH "Probes\\"
-	#ifdef LOAD_PROBES	// Can't use that until it's been baked!
-		#define USE_PER_VERTEX_PROBE_ID	SCENE_PATH "Scene_ProbeID.vertexStream.U16"
-	#endif
 
 #elif SCENE==3
 	#define SCENE_PATH				"..\\Arkane\\GIScenes\\SimpleMapWithManyProbes\\"
 
 	#define TEXTURES_PATH			SCENE_PATH "Textures\\"
 	#define PROBES_PATH				SCENE_PATH "Probes\\"
-	#ifdef LOAD_PROBES	// Can't use that until it's been baked!
-		#define USE_PER_VERTEX_PROBE_ID	SCENE_PATH "Scene_ProbeID.vertexStream.U16"
-	#endif
 
 #endif
 
@@ -121,24 +109,21 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 	: m_ErrorCode( 0 )
 	, m_Device( _Device )
 	, m_RTTarget( _RTHDR )
-	, m_ScreenQuad( _ScreenQuad )
-	, m_pVertexStreamProbeIDs( NULL )
-	, m_pPrimProbeIDs( NULL )
-{
+	, m_ScreenQuad( _ScreenQuad ) {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
 	m_SceneVertexFormatDesc.AggregateVertexFormat( VertexFormatP3N3G3B3T2::DESCRIPTOR );
 
 	{
 // Main scene rendering is quite heavy so we prefer to reload it from binary instead
-ScopedForceMaterialsLoadFromBinary		bisou;
+//ScopedForceMaterialsLoadFromBinary		bisou;
 
-#ifdef USE_PER_VERTEX_PROBE_ID
+//#ifndef LOAD_PROBES
 		D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { "PER_VERTEX_PROBE_ID", "1" }, { NULL, NULL } };
 		m_SceneVertexFormatDesc.AggregateVertexFormat( VertexFormatU32::DESCRIPTOR );
-#else
-		D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { NULL, NULL } };
-#endif
+// #else
+// 		D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { NULL, NULL } };
+// #endif
  		CHECK_MATERIAL( m_pMatRender = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", m_SceneVertexFormatDesc, "VS", NULL, "PS", pMacros ), 1 );
 
 		D3D_SHADER_MACRO	pMacros2[] = { { "EMISSIVE", "1" }, { NULL, NULL } };
@@ -393,44 +378,10 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	// Initialize the probes network
 	m_ProbesNetwork.Init( m_Device, m_ScreenQuad );
 
-#ifdef USE_PER_VERTEX_PROBE_ID
 
 	//////////////////////////////////////////////////////////////////////////
-	// Load the vertex stream containing U32-packed probe IDs for each vertex
-	FILE*	pFile = NULL;
-	fopen_s( &pFile, USE_PER_VERTEX_PROBE_ID, "rb" );
-	ASSERT( pFile != NULL, "Vertex stream for probe IDs file not found!" );
-	fseek( pFile, 0, SEEK_END );
-	int	FileSize = int(ftell( pFile ));
-	fseek( pFile, 0, SEEK_SET );
-
-	m_VertexStreamProbeIDsLength = FileSize / sizeof(U32);
-	m_pVertexStreamProbeIDs = new U32[m_VertexStreamProbeIDsLength];
-	fread_s( m_pVertexStreamProbeIDs, FileSize, sizeof(U32), m_VertexStreamProbeIDsLength, pFile );
-
-	fclose( pFile );
-
-	m_pPrimProbeIDs = new Primitive( _Device, m_VertexStreamProbeIDsLength, m_pVertexStreamProbeIDs, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatU32::DESCRIPTOR );
-
-#endif
-
-
-	//////////////////////////////////////////////////////////////////////////
-	// Create the scene
-	m_bDeleteSceneTags = false;
-	m_TotalFacesCount = 0;
-	m_TotalVerticesCount = 0;
-	m_TotalPrimitivesCount = 0;
-	m_EmissiveMaterialsCount = 0;
-	m_Scene.Load( IDR_SCENE_GI, *this );
-
-	// Upload static lights once and for all
-	m_pSB_LightsStatic->Write( m_pCB_Scene->m.StaticLightsCount );
-	m_pSB_LightsStatic->SetInput( 7, true );
-
-	// Update once so it's ready when we pre-compute probes
-	m_pCB_Scene->UpdateData();
-
+	// Load and init the scene
+	m_Scene.Load( IDR_SCENE_GI );
 
 	// Cache meshes & probes since my ForEach function is slow as hell!! ^^
 	{
@@ -450,6 +401,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 			void	HandleNode( Scene::Node& _Node ) override
 			{
 				if ( _Node.m_Type == Scene::Node::MESH ) {
+					// Register a new mesh
 					Scene::Mesh*	pMesh = (Scene::Mesh*) &_Node;
 					m_Owner.m_ppCachedMeshes[m_MeshIndex++] = pMesh;
 					m_PrimitivesCount += pMesh->m_PrimitivesCount;
@@ -457,15 +409,81 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 						m_VerticesCount += pMesh->m_pPrimitives[i].m_VerticesCount;
 						m_FacesCount += pMesh->m_pPrimitives[i].m_FacesCount;
 					}
+
+				} else if ( _Node.m_Type == Scene::Node::LIGHT ) {
+					// Add another static light
+					Scene::Light&	SourceLight = (Scene::Light&) _Node;
+					LightStruct&	TargetLight = m_Owner.m_pSB_LightsStatic->m[m_Owner.m_pCB_Scene->m.StaticLightsCount++];
+
+					TargetLight.Type = SourceLight.m_LightType;
+					TargetLight.Position = SourceLight.m_Local2World.GetRow( 3 );
+					TargetLight.Direction = -SourceLight.m_Local2World.GetRow( 2 ).Normalize();
+					TargetLight.Color = SourceLight.m_Intensity * SourceLight.m_Color;
+					TargetLight.Parms.Set( 10.0f, 11.0f, cosf( SourceLight.m_HotSpot ), cosf( SourceLight.m_Falloff ) );
+
 				} else if ( _Node.m_Type == Scene::Node::PROBE )
 					m_Owner.m_ProbesNetwork.AddProbe( (Scene::Probe&) _Node );
 			}
 		}	Visitor1( *this );
 		m_Scene.ForEach( Visitor1 );
-
-		int		VerticesCount = Visitor1.m_VerticesCount;
-		int		FacesCount = Visitor1.m_FacesCount;
 	}
+
+	// Compute scene's BBox
+	m_SceneBBoxMin = float3::MaxFlt;
+	m_SceneBBoxMax = -float3::MaxFlt;
+	for ( int MeshIndex=0; MeshIndex < m_Scene.m_MeshesCount; MeshIndex++ ) {
+		m_SceneBBoxMin = m_SceneBBoxMin.Min( m_ppCachedMeshes[MeshIndex]->m_GlobalBBoxMin );
+		m_SceneBBoxMax = m_SceneBBoxMax.Max( m_ppCachedMeshes[MeshIndex]->m_GlobalBBoxMax );
+	}
+
+	// Upload static lights once and for all
+	m_pSB_LightsStatic->Write( m_pCB_Scene->m.StaticLightsCount );
+	m_pSB_LightsStatic->SetInput( 7, true );
+
+	// Update once so it's ready when we pre-compute probes
+	m_pCB_Scene->UpdateData();
+
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Precompute probes if needed
+	{
+#ifndef LOAD_PROBES
+		// Create rendering primitives
+		m_bDeleteSceneTags = false;
+		m_TotalFacesCount = 0;
+		m_TotalVerticesCount = 0;
+		m_TotalPrimitivesCount = 0;
+		m_EmissiveMaterialsCount = 0;
+		m_Scene.PlaceTags( *this );
+
+		// Precompute probes and store result to disk
+		RenderScene		functor( *this );
+		m_ProbesNetwork.PreComputeProbes( PROBES_PATH, functor, m_Scene, m_TotalFacesCount );
+
+		// Delete rendering primitives
+		m_bDeleteSceneTags = true;
+		m_Scene.PlaceTags( *this );
+#endif
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Load probes
+	QueryMaterial	functor( *this );
+	m_ProbesNetwork.LoadProbes( PROBES_PATH, functor, m_SceneBBoxMin, m_SceneBBoxMax );
+
+	ASSERT( m_ProbesNetwork.GetProbeIDVertexStream() != NULL && m_ProbesNetwork.GetProbeIDVertexStream()->GetVerticesCount() == m_TotalVerticesCount, "There's a discrepancy between the scene's total vertices count and last computed probe vertex stream! Did the scene change? In which case, you should probably recompute the probes network by commenting out the \"LOAD_PROBES\" define and start again..." );
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Initialize our own objects and assign them as tags to the scene's objects
+	m_bDeleteSceneTags = false;
+	m_TotalFacesCount = 0;
+	m_TotalVerticesCount = 0;
+	m_TotalPrimitivesCount = 0;
+	m_EmissiveMaterialsCount = 0;
+
+	m_Scene.PlaceTags( *this );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -476,29 +494,6 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	// Create the dummy point primitive for the debug drawing of the probes network
 	float3	Point;
 	m_pPrimPoint = new Primitive( _Device, 1, &Point, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatP3::DESCRIPTOR );
-
-
-	//////////////////////////////////////////////////////////////////////////
-	// Compute scene's BBox
-	m_SceneBBoxMin = float3::MaxFlt;
-	m_SceneBBoxMax = -float3::MaxFlt;
-	for ( int MeshIndex=0; MeshIndex < m_Scene.m_MeshesCount; MeshIndex++ ) {
-		m_SceneBBoxMin = m_SceneBBoxMin.Min( m_ppCachedMeshes[MeshIndex]->m_GlobalBBoxMin );
-		m_SceneBBoxMax = m_SceneBBoxMax.Max( m_ppCachedMeshes[MeshIndex]->m_GlobalBBoxMax );
-	}
-
-
-	//////////////////////////////////////////////////////////////////////////
-	// Start precomputation/loading of probes
-	#ifndef LOAD_PROBES
-	{
-		RenderScene		functor( *this );
-		m_ProbesNetwork.PreComputeProbes( PROBES_PATH, functor, m_Scene, m_TotalFacesCount );
-	}
-	#endif
-
-	QueryMaterial	functor( *this );
-	m_ProbesNetwork.LoadProbes( PROBES_PATH, functor, m_SceneBBoxMin, m_SceneBBoxMax );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -641,13 +636,11 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pPrimPoint;
 	delete m_pPrimSphere;
 
-	delete m_pPrimProbeIDs;
-	delete[] m_pVertexStreamProbeIDs;
-
 	delete[] m_ppCachedMeshes;
 
 	m_bDeleteSceneTags = true;
-	m_Scene.ClearTags( *this );
+	m_Scene.PlaceTags( *this );
+	m_Scene.Exit();
 
 	m_ProbesNetwork.Exit();
 
@@ -1100,18 +1093,16 @@ void	EffectGlobalIllum2::RenderShadowMapPoint( const float3& _Position, float _F
 	m_pRTShadowMapPoint->Set( 3, true );
 }
 
-#pragma region Scene Rendering
+#pragma region Scene Tagging
 
 //////////////////////////////////////////////////////////////////////////
-// Scene Rendering
+// Scene Tagging
 //
 // Each scene material will require a tag at creation & destruction time: we simply assign the runtime render material as tag
 void*	EffectGlobalIllum2::TagMaterial( const Scene& _Owner, Scene::Material& _Material )
 {
 	if ( m_bDeleteSceneTags )
-	{
 		return NULL;
-	}
 
 // 	switch ( _Material.m_ID )
 // 	{
@@ -1145,9 +1136,7 @@ void*	EffectGlobalIllum2::TagMaterial( const Scene& _Owner, Scene::Material& _Ma
 void*	EffectGlobalIllum2::TagTexture( const Scene& _Owner, Scene::Material::Texture& _Texture )
 {
 	if ( m_bDeleteSceneTags )
-	{
 		return NULL;
-	}
 
 	if ( _Texture.m_ID == ~0 )
 		return NULL;	// Invalid textures are not mapped
@@ -1163,25 +1152,7 @@ void*	EffectGlobalIllum2::TagTexture( const Scene& _Owner, Scene::Material::Text
 }
 
 // Each scene node will require a tag at creation & destruction time: we simply keep the light nodes and add them as static lights
-void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, Scene::Node& _Node )
-{
-	if ( m_bDeleteSceneTags )
-	{
-		return NULL;
-	}
-
-	if ( _Node.m_Type == Scene::Node::LIGHT )
-	{	// Add another static light
-		Scene::Light&	SourceLight = (Scene::Light&) _Node;
-		LightStruct&	TargetLight = m_pSB_LightsStatic->m[m_pCB_Scene->m.StaticLightsCount++];
-
-		TargetLight.Type = SourceLight.m_LightType;
-		TargetLight.Position = SourceLight.m_Local2World.GetRow( 3 );
-		TargetLight.Direction = -SourceLight.m_Local2World.GetRow( 2 ).Normalize();
-		TargetLight.Color = SourceLight.m_Intensity * SourceLight.m_Color;
-		TargetLight.Parms.Set( 10.0f, 11.0f, cosf( SourceLight.m_HotSpot ), cosf( SourceLight.m_Falloff ) );
-	}
-
+void*	EffectGlobalIllum2::TagNode( const Scene& _Owner, Scene::Node& _Node ) {
 	return NULL;
 }
 
@@ -1205,10 +1176,11 @@ void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh,
 
 	Primitive*	pPrim = new Primitive( m_Device, _Primitive.m_VerticesCount, _Primitive.m_pVertices, 3*_Primitive.m_FacesCount, _Primitive.m_pFaces, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, *pVertexFormat );
 
-#ifdef USE_PER_VERTEX_PROBE_ID
-	// Bind it additional buffer infos
-	pPrim->BindVertexStream( 1, *m_pPrimProbeIDs, m_TotalVerticesCount );	// We access a small portion of the buffer that only concerns this primitive's vertices
-#endif
+	// Bind additional buffer infos if they're available
+	Primitive*	pAdditionalVertexStream = m_ProbesNetwork.GetProbeIDVertexStream();
+	if ( pAdditionalVertexStream != NULL ) {
+		pPrim->BindVertexStream( 1, *pAdditionalVertexStream, m_TotalVerticesCount );	// We access a small portion of the buffer that only concerns this primitive's vertices
+	}
 
 	// Tag the primitive with the face offset
 	pPrim->m_pTag = (void*) m_TotalFacesCount;
@@ -1224,6 +1196,14 @@ void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh,
 
 	return pPrim;
 }
+
+#pragma endregion
+
+#pragma region Scene Rendering
+
+//////////////////////////////////////////////////////////////////////////
+// Scene Rendering
+//
 
 // Mesh rendering: we render each of the mesh's primitive in turn
 void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride, bool _SetMaterial )

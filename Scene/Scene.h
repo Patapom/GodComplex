@@ -42,12 +42,15 @@ public:		// NESTED TYPES
 		Node( Scene& _Owner, Node* _pParent );
 		~Node();
 
-		void			Init( const U8*& _pData, ISceneTagger& _SceneTagger );
-		void			Exit( ISceneTagger& _SceneTagClearer );
+		void			Init( const U8*& _pData );
+		void			Exit();
+
+		void			PlaceTag( ISceneTagger& _SceneTagger );
 
 		// Override this in your inherited classes to init/exit specific details of the node
-		virtual void	InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger )	{}
-		virtual void	ExitSpecific( ISceneTagger& _SceneTagClearer )			{}
+		virtual void	InitSpecific( const U8*& _pData )				{}
+		virtual void	ExitSpecific()									{}
+		virtual void	PlaceTagSpecific( ISceneTagger& _SceneTagger )	{}
 
 		friend class Scene;
 	};
@@ -71,7 +74,7 @@ public:		// NESTED TYPES
 		Light( Scene& _Owner, Node* _pParent );
 		~Light();
 
-		virtual void	InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger ) override;
+		virtual void	InitSpecific( const U8*& _pData ) override;
 
 		friend class Scene;
 	};
@@ -87,7 +90,7 @@ public:		// NESTED TYPES
 		Camera( Scene& _Owner, Node* _pParent );
 		~Camera();
 
-		virtual void	InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger ) override;
+		virtual void	InitSpecific( const U8*& _pData ) override;
 
 		friend class Scene;
 	};
@@ -151,8 +154,8 @@ public:		// NESTED TYPES
 		Mesh( Scene& _Owner, Node* _pParent );
 		~Mesh();
 
-		virtual void	InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger ) override;
-		virtual void	ExitSpecific( ISceneTagger& _SceneTagClearer ) override;
+		virtual void	InitSpecific( const U8*& _pData ) override;
+		virtual void	PlaceTagSpecific( ISceneTagger& _SceneTagger ) override;
 
 		friend class Scene;
 	};
@@ -200,8 +203,10 @@ public:		// NESTED TYPES
 
 		Material( Scene& _Owner );
 
-		void	Init( const U8*& _pData, ISceneTagger& _SceneTagger );
-		void	Exit( ISceneTagger& _SceneTagClearer );
+		void	Init( const U8*& _pData );
+		void	Exit();
+
+		void	PlaceTag( ISceneTagger& _SceneTagger );
 
 		friend class Scene;
 	};
@@ -263,9 +268,10 @@ public:		// METHODS
 	~Scene();	// WARNING: Call "ClearTags" to dispose of your tags prior destruction!
 
 
-	void			Load( U16 _SceneResourceID, ISceneTagger& _SceneTagger );
+	void			Load( U16 _SceneResourceID );
+	void			PlaceTags( ISceneTagger& _SceneTagger );
 	void			Render( ISceneRenderer& _SceneRenderer, bool _SetMaterial=true ) const;
-	void			ClearTags( ISceneTagger& _SceneTagClearer );
+	void			Exit();
 
 	// Prefer using that routine that iterates on all nodes, select the node type yourself, rather than the other ForEach method below
 	void			ForEach( IVisitor& _Visitor );
@@ -282,7 +288,7 @@ private:
 	void			ForEach( IVisitor& _Visitor, Node* _pParent );
 
 	// Helpers
-	Node*			CreateNode( Node* _pParent, const U8*& _pData, ISceneTagger& _SceneTagger );
+	Node*			CreateNode( Node* _pParent, const U8*& _pData );
 	static U32		ReadU16( const U8*& _pData, bool _IsID=false );
 	static U32		ReadU32( const U8*& _pData );
 	static float	ReadF32( const U8*& _pData );

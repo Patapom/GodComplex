@@ -8,8 +8,8 @@ SHProbeNetwork::SHProbeNetwork()
 	, m_ProbesCount( 0 )
 	, m_MaxProbesCount( 0 )
 	, m_pProbes( NULL )
-	, m_ProbeUpdateIndex( 0 )
-{
+	, m_pPrimProbeIDs( NULL )
+	, m_ProbeUpdateIndex( 0 ) {
 
 }
 
@@ -56,6 +56,8 @@ ScopedForceMaterialsLoadFromBinary		bisou;
 void	SHProbeNetwork::Exit() {
 	m_ProbesCount = 0;
 	SAFE_DELETE_ARRAY( m_pProbes );
+
+	delete m_pPrimProbeIDs;
 
 	delete m_pCSUpdateProbe;
 	delete m_pMatRenderNeighborProbe;
@@ -452,7 +454,7 @@ ProbeLocal2World.SetRow( 3, Probe.pSceneProbe->m_Local2World.GetRow( 3 ) );
 		m_ProbeEncoder.Save( pTemp );
 
 #ifdef _DEBUG
-		// Save probe debug pixels
+		// Save probe debug pixels (can be analyzed with the external tool found in Tools.sln => GIProbesDebugger)
 		sprintf_s( pTemp, "%sProbe%02d.probepixels", _pPathToProbes, ProbeIndex );
 		m_ProbeEncoder.SavePixels( pTemp );
 #endif
@@ -476,24 +478,6 @@ ProbeLocal2World.SetRow( 3, Probe.pSceneProbe->m_Local2World.GetRow( 3 ) );
 	// Save the final probe influences
 	BuildProbeInfluenceVertexStream( _Scene, _pPathToProbes );
 
-// 	FileInfo	TargetInfluenceFile = new FileInfo( Path.Combine( TargetDir.FullName, "ProbeInfluence.pim" ) );
-// 	using ( FileStream S = TargetInfluenceFile.Create() )
-// 		using( BinaryWriter Writer = new BinaryWriter( S ) )
-// 			for ( uint FaceIndex=0; FaceIndex < MaxFaceIndex; FaceIndex++ )
-// 			{
-// 				if ( BestProbeInfluencePerFace.ContainsKey( FaceIndex ) )
-// 				{
-// 					ProbeInfluence	Influence = BestProbeInfluencePerFace[FaceIndex];
-// 					Writer.Write( Influence.ProbeID );
-// 					Writer.Write( Influence.Importance );
-// 				}
-// 				else
-// 				{
-// 					Writer.Write( (int) -1 );
-// 					Writer.Write( 0.0 );
-// 				}
-// 			}
-
 
 	//////////////////////////////////////////////////////////////////////////
 	// Release
@@ -514,6 +498,7 @@ void	SHProbeNetwork::MeshWithAdjacency::Build( const Scene::Mesh& _Mesh, ProbeIn
 
 	m_World2Local = _Mesh.m_Local2World.Inverse();
 
+	m_PrimitivesCount = _Mesh.m_PrimitivesCount;
 	m_pPrimitives = new Primitive[_Mesh.m_PrimitivesCount];
 
 	int	FaceOffset = 0;
@@ -538,6 +523,7 @@ void	SHProbeNetwork::MeshWithAdjacency::AssignNearestProbe( U32 _ProbesCount, co
 	// Transform probe positions into local space
 	List<float3>	LocalProbePositions;
 	LocalProbePositions.Init( _ProbesCount );
+	LocalProbePositions.SetCount( _ProbesCount );
 	for ( U32 ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ ) {
 		const SHProbe&	Probe = _pProbes[ProbeIndex];
 		float3&			lsProbePosition = LocalProbePositions[ProbeIndex];
@@ -552,31 +538,23 @@ void	SHProbeNetwork::MeshWithAdjacency::AssignNearestProbe( U32 _ProbesCount, co
 	}
 }
 
-void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( const Scene::Mesh::Primitive& _Primitive, ProbeInfluence* _pProbeInfluencePerFace ) {
+void	SHProbeNetwork::MeshWithAdjacency::RedistributeProbeIDs2Vertices( ProbeInfluence**& _ppProbeInfluences ) const {
+	for ( int PrimitiveIndex=0; PrimitiveIndex < m_PrimitivesCount; PrimitiveIndex++ ) {
+		Primitive&	P = m_pPrimitives[PrimitiveIndex];
+		P.RedistributeProbeIDs2Vertices( _ppProbeInfluences );
+		_ppProbeInfluences += P.m_VerticesCount;	// Make the pointer advance as we're done with that primitive
+	}
+}
 
-	struct EdgeKey {
-		int	V0, V1;
-		static U32		GetHash( const EdgeKey& _key )							{
-			return _key.V0 ^ _key.V1;
-		}
-		static int		Compare( const EdgeKey& _key0, const EdgeKey& _key1 )	{
-			int	k00 = _key0.V0 < _key0.V1 ? _key0.V0 : _key0.V1;
-			int	k01 = _key0.V0 < _key0.V1 ? _key0.V1 : _key0.V0;
-			int	k10 = _key1.V0 < _key1.V1 ? _key1.V0 : _key1.V1;
-			int	k11 = _key1.V0 < _key1.V1 ? _key1.V1 : _key1.V0;
-			if ( k00 == k10 && k01 == k11 ) return 0;
-			return 1;	// We don't care about ordering at the moment...
-		}
-	};
-	struct FacePair {
-		Face*	F0;
-		Face*	F1;
-	};
+void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( const Scene::Mesh::Primitive& _Primitive, ProbeInfluence* _pProbeInfluencePerFace ) {
 
 	DictionaryGeneric< EdgeKey, FacePair >	SharedEdges( 3 * _Primitive.m_FacesCount );
 
 	m_FacesCount = _Primitive.m_FacesCount;
 	m_pFaces = new Face[m_FacesCount];
+	m_VerticesCount = _Primitive.m_VerticesCount;
+	m_pVerticesProbeInfluence = new ProbeInfluence*[m_VerticesCount];
+	memset( m_pVerticesProbeInfluence, 0, m_VerticesCount*sizeof(ProbeInfluence*) );
 
 	const U32*		pSourceFace = _Primitive.m_pFaces;
 	Face*			pTargetFace = m_pFaces;
@@ -648,6 +626,21 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::AssignNearestProbe( U32 _Prob
 	}
 }
 
+void	SHProbeNetwork::MeshWithAdjacency::Primitive::RedistributeProbeIDs2Vertices( ProbeInfluence** _ppProbeInfluences ) const {
+	Face*	pFace = m_pFaces;
+	for ( int FaceIndex=0; FaceIndex < m_FacesCount; FaceIndex++, pFace++ ) {
+		ProbeInfluence*	pFaceProbeInfluence = pFace->pProbeInfluence;
+
+		for ( int FaceVertexIndex=0; FaceVertexIndex < 3; FaceVertexIndex++ ) {
+			U32					VertexIndex = pFace->V[FaceVertexIndex];
+			ProbeInfluence*&	pVertexProbeInfluence = _ppProbeInfluences[VertexIndex];
+			if ( pVertexProbeInfluence == NULL || pVertexProbeInfluence->Influence < pFaceProbeInfluence->Influence ) {
+				pVertexProbeInfluence = pFaceProbeInfluence;	// This face provides a better influence for the vertex!
+			}
+		}
+	}
+}
+
 bool	SHProbeNetwork::MeshWithAdjacency::Primitive::Face::RecursePropagateProbeInfluences( U32 _PassIndex ) {
 	if ( LastVisitIndex == _PassIndex )
 		return false;
@@ -660,6 +653,8 @@ bool	SHProbeNetwork::MeshWithAdjacency::Primitive::Face::RecursePropagateProbeIn
 			continue;
 
 		Face&	Adjacent = *pAdjacent[EdgeIndex];
+		if ( Adjacent.pProbeInfluence->ProbeID == pProbeInfluence->ProbeID )
+			continue;
 
 		// Compute new influence
 		static const float	DISTANCE_FALLOFF_FACTOR = -1.3862943611198906188344642429164f;			// ln( 0.25 ) so 1m away gets 1/4 the influence
@@ -707,8 +702,8 @@ void	SHProbeNetwork::BuildProbeInfluenceVertexStream( Scene& _Scene, const char*
 	public:
 		List< MeshWithAdjacency >*	m_Meshes;
 		ProbeInfluence*				m_ProbeInfluencePerFace;
-		int							m_TotalFacesCount;
-		int							m_TotalVerticesCount;
+		U32							m_TotalFacesCount;
+		U32							m_TotalVerticesCount;
 		virtual void	HandleNode( Scene::Node& _Node ) override {
 			if ( _Node.m_Type != Scene::Node::MESH )
 				return;
@@ -717,7 +712,7 @@ void	SHProbeNetwork::BuildProbeInfluenceVertexStream( Scene& _Scene, const char*
 			MeshWithAdjacency&	TargetMesh = m_Meshes->Append();
 			TargetMesh.Build( SourceMesh, m_ProbeInfluencePerFace + m_TotalFacesCount );
 
-			// Accumulate vertices count
+			// Accumulate vertices/faces count
 			for ( int PrimitiveIndex=0; PrimitiveIndex < SourceMesh.m_PrimitivesCount; PrimitiveIndex++ ) {
 				Scene::Mesh::Primitive&	P = SourceMesh.m_pPrimitives[PrimitiveIndex];
 				m_TotalFacesCount += P.m_FacesCount;
@@ -740,7 +735,7 @@ void	SHProbeNetwork::BuildProbeInfluenceVertexStream( Scene& _Scene, const char*
 		stilSpreading = false;
 		for ( int MeshIndex=0; MeshIndex < Meshes.GetCount(); MeshIndex++ ) {
 			MeshWithAdjacency&	M = Meshes[MeshIndex];
-			stilSpreading |= M.PropagateProbeInfluences( PassIndex++ );
+			stilSpreading |= M.PropagateProbeInfluences( ++PassIndex );
 		}
 	}
 
@@ -752,19 +747,40 @@ void	SHProbeNetwork::BuildProbeInfluenceVertexStream( Scene& _Scene, const char*
 	}
 
 	//////////////////////////////////////////////////////////////////////////
+	// Redistribute to vertices, choosing the best probe influence each time
+	ProbeInfluence**	pProbeInfluencePerVertex = new ProbeInfluence*[visitor.m_TotalVerticesCount];
+	memset( pProbeInfluencePerVertex, 0, visitor.m_TotalVerticesCount*sizeof(ProbeInfluence*) );
+
+	{
+		ProbeInfluence**	ppInfluence = pProbeInfluencePerVertex;
+		for ( int MeshIndex=0; MeshIndex < Meshes.GetCount(); MeshIndex++ ) {
+			MeshWithAdjacency&	M = Meshes[MeshIndex];
+			M.RedistributeProbeIDs2Vertices( ppInfluence );
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
 	// Load the vertex stream containing U32-packed probe IDs for each vertex
-	char	pTemp[1024];
-	sprintf_s( pTemp, "%sScene.vertexStream.U16", _pPathToStreamFile );
+	{
+		char	pTemp[1024];
+		sprintf_s( pTemp, "%sScene.vertexStream.U16", _pPathToStreamFile );
 
-	FILE*	pFile = NULL;
-	fopen_s( &pFile, pTemp, "wb" );
-	ASSERT( pFile != NULL, "Can't create vertex stream for probe IDs!" );
+		FILE*	pFile = NULL;
+		fopen_s( &pFile, pTemp, "wb" );
+		ASSERT( pFile != NULL, "Can't create vertex stream for probe IDs!" );
 
-// 	m_VertexStreamProbeIDsLength = FileSize / sizeof(U32);
-// 	m_pVertexStreamProbeIDs = new U32[m_VertexStreamProbeIDsLength];
-// 	fread_s( m_pVertexStreamProbeIDs, FileSize, sizeof(U32), m_VertexStreamProbeIDsLength, pFile );
+		fwrite( &visitor.m_TotalVerticesCount, sizeof(U32), 1, pFile );
 
-	fclose( pFile );
+		ProbeInfluence**	ppInfluence = pProbeInfluencePerVertex;
+		for ( U32 VertexIndex=0; VertexIndex < visitor.m_TotalVerticesCount; VertexIndex++, ppInfluence++ ) {
+			ASSERT( ppInfluence != NULL, "Yikes!" );
+			fwrite( &(*ppInfluence)->ProbeID, sizeof(U32), 1, pFile );
+		}
+
+		fclose( pFile );
+	}
+
+	SAFE_DELETE_ARRAY( pProbeInfluencePerVertex );
 }
 
 static void	CopyProbeNetworkConnection( int _EntryIndex, SHProbeNetwork::RuntimeProbeNetworkInfos& _Value, void* _pUserData );
@@ -928,7 +944,6 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 	}
 
 
-
 	//////////////////////////////////////////////////////////////////////////
 	// Allocate runtime probes structured buffer & copy static infos
 	m_pSB_RuntimeProbes = new SB<RuntimeProbe>( *m_pDevice, m_ProbesCount, true );
@@ -955,6 +970,30 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[3] = Probe.pNeighborProbeInfos[3].ProbeID;
 	}
 	m_pSB_RuntimeProbes->Write();
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Load the vertex stream of probe IDs
+	{
+		char	pTemp[1024];
+		sprintf_s( pTemp, "%sScene.vertexStream.U16", _pPathToProbes );
+
+		FILE*	pFile = NULL;
+		fopen_s( &pFile, pTemp, "rb" );
+		ASSERT( pFile != NULL, "Vertex stream for probe IDs file not found!" );
+
+		U32	VertexStreamProbeIDsLength;
+		fread_s( &VertexStreamProbeIDsLength, sizeof(U32), sizeof(U32), 1, pFile );
+		
+		U32*	pVertexStreamProbeIDs = new U32[VertexStreamProbeIDsLength];
+		fread_s( pVertexStreamProbeIDs, VertexStreamProbeIDsLength*sizeof(U32), sizeof(U32), VertexStreamProbeIDsLength, pFile );
+
+		fclose( pFile );
+
+		// Build the additional vertex stream
+		m_pPrimProbeIDs = new Primitive( *m_pDevice, VertexStreamProbeIDsLength, pVertexStreamProbeIDs, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_POINTLIST, VertexFormatU32::DESCRIPTOR );
+		SAFE_DELETE_ARRAY( pVertexStreamProbeIDs );
+	}
 
 
 	//////////////////////////////////////////////////////////////////////////

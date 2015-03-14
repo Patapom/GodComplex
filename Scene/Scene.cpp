@@ -19,8 +19,7 @@ Scene::~Scene()
 	m_MaterialsCount = 0;
 }
 
-void	Scene::Load( U16 _SceneResourceID, ISceneTagger& _SceneTagger )
-{
+void	Scene::Load( U16 _SceneResourceID ) {
 	U32			SceneSize = 0;
 	const U8*	pData = LoadResourceBinary( _SceneResourceID, "SCENE", &SceneSize );
 
@@ -31,12 +30,11 @@ void	Scene::Load( U16 _SceneResourceID, ISceneTagger& _SceneTagger )
 	//
 	m_MaterialsCount = ReadU16( pData );
 	m_ppMaterials = new Material*[m_MaterialsCount];
-	for ( int MaterialIndex=0; MaterialIndex < m_MaterialsCount; MaterialIndex++ )
-	{
+	for ( int MaterialIndex=0; MaterialIndex < m_MaterialsCount; MaterialIndex++ ) {
 		Material*	pMaterial = new Material( *this );
 		m_ppMaterials[MaterialIndex] = pMaterial;
 
-		pMaterial->Init( pData, _SceneTagger );
+		pMaterial->Init( pData );
 	}
 
 	// ==== Read Node Hierarchy ====
@@ -47,24 +45,31 @@ void	Scene::Load( U16 _SceneResourceID, ISceneTagger& _SceneTagger )
 	m_CamerasCount = 0;
 	m_ProbesCount = 0;
 
-	m_pROOT = CreateNode( NULL, pData, _SceneTagger );
+	m_pROOT = CreateNode( NULL, pData );
 }
 
-void	Scene::ClearTags( ISceneTagger& _SceneTagClearer )
-{
+void	Scene::PlaceTags( ISceneTagger& _SceneTagger ) {
+	// Tag materials
+	for ( int MaterialIndex=0; MaterialIndex < m_MaterialsCount; MaterialIndex++ ) {
+		m_ppMaterials[MaterialIndex]->PlaceTag( _SceneTagger );
+	}
+
+	// Tag nodes
+	m_pROOT->PlaceTag( _SceneTagger );
+}
+
+void	Scene::Exit() {
 	for ( int MaterialIndex=0; MaterialIndex < m_MaterialsCount; MaterialIndex++ )
-		m_ppMaterials[MaterialIndex]->Exit( _SceneTagClearer );
+		m_ppMaterials[MaterialIndex]->Exit();
 
-	m_pROOT->Exit( _SceneTagClearer );
+	m_pROOT->Exit();
 }
 
-void	Scene::Render( ISceneRenderer& _SceneRenderer, bool _SetMaterial ) const
-{
+void	Scene::Render( ISceneRenderer& _SceneRenderer, bool _SetMaterial ) const {
 	Render( m_pROOT, _SceneRenderer, _SetMaterial );
 }
 
-void	Scene::Render( const Node* _pNode, ISceneRenderer& _SceneRenderer, bool _SetMaterial ) const
-{
+void	Scene::Render( const Node* _pNode, ISceneRenderer& _SceneRenderer, bool _SetMaterial ) const {
 	ASSERT( _pNode != NULL, "Invalid node!" );
 
 	if ( _pNode->m_Type == Node::MESH )
@@ -90,8 +95,7 @@ void	Scene::ForEach( IVisitor& _Visitor, Node* _pNode )
 	}
 }
 
-Scene::Node*	Scene::ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChild )
-{
+Scene::Node*	Scene::ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChild ) {
 	if ( _pPrevious == NULL )
 	{
 		_pPrevious = m_pROOT;
@@ -138,8 +142,7 @@ Scene::Node*	Scene::ForEach( Node::TYPE _Type, Node* _pPrevious, int _StartAtChi
 }
 
 
-Scene::Node*	Scene::CreateNode( Node* _pParent, const U8*& _pData, ISceneTagger& _SceneTagger )
-{
+Scene::Node*	Scene::CreateNode( Node* _pParent, const U8*& _pData ) {
 	Node*		pResult = NULL;
 	Node::TYPE	NodeType = (Node::TYPE) *_pData;
 	switch ( NodeType )
@@ -166,17 +169,15 @@ Scene::Node*	Scene::CreateNode( Node* _pParent, const U8*& _pData, ISceneTagger&
 		ASSERT( false, "Unsupported node type!" );
 	}
 
-	// Init and tag the node
-	pResult->Init( _pData, _SceneTagger );
+	// Init the node
+	pResult->Init( _pData );
 
 	// Process children
 	pResult->m_ChildrenCount = ReadU16( _pData );
-	if ( pResult->m_ChildrenCount > 0 )
-	{
+	if ( pResult->m_ChildrenCount > 0 ) {
 		pResult->m_ppChildren = new Node*[pResult->m_ChildrenCount];
-		for ( int ChildIndex=0; ChildIndex < pResult->m_ChildrenCount; ChildIndex++ )
-		{
-			Node*	pChild = CreateNode( pResult, _pData, _SceneTagger );
+		for ( int ChildIndex=0; ChildIndex < pResult->m_ChildrenCount; ChildIndex++ ) {
+			Node*	pChild = CreateNode( pResult, _pData );
 			pResult->m_ppChildren[ChildIndex] = pChild;
 		}
 	}
@@ -226,13 +227,19 @@ Scene::Node::Node( Scene& _Owner, Node* _pParent )
 	, m_ChildrenCount( 0 )
 	, m_ppChildren( NULL )
 	, m_pTag( NULL )
-	, m_ChildIndex( -1 )
-{
+	, m_ChildIndex( -1 ) {
 	m_Owner.m_NodesCount++;
 }
-
-void	Scene::Node::Init( const U8*& _pData, ISceneTagger& _SceneTagger )
+Scene::Node::~Node()
 {
+	for ( int ChildIndex=0; ChildIndex < m_ChildrenCount; ChildIndex++ )
+		delete m_ppChildren[ChildIndex];
+	delete[] m_ppChildren;
+	m_ppChildren = NULL;
+	m_ChildrenCount = 0;
+}
+
+void	Scene::Node::Init( const U8*& _pData ) {
 	m_Type = (TYPE) *_pData++;
 
 	m_Local2Parent.m[4*0+0] = ReadF32( _pData );
@@ -256,35 +263,32 @@ void	Scene::Node::Init( const U8*& _pData, ISceneTagger& _SceneTagger )
 	const float4x4&	Parent2World = m_pParent != NULL ? m_pParent->m_Local2World : float4x4::Identity;
 	m_Local2World = m_Local2Parent * Parent2World;
 
-	InitSpecific( _pData, _SceneTagger );
+	InitSpecific( _pData );
 
 	ReadEndNodeMarker( _pData );
-
-	// Ask for a tag
-	m_pTag = _SceneTagger.TagNode( m_Owner, *this );
-}
-Scene::Node::~Node()
-{
-	for ( int ChildIndex=0; ChildIndex < m_ChildrenCount; ChildIndex++ )
-		delete m_ppChildren[ChildIndex];
-	delete[] m_ppChildren;
-	m_ppChildren = NULL;
-	m_ChildrenCount = 0;
 }
 
-void	Scene::Node::Exit( ISceneTagger& _SceneTagClearer )
-{
-	ExitSpecific( _SceneTagClearer );
-
-	m_pTag = _SceneTagClearer.TagNode( m_Owner, *this );
+void	Scene::Node::Exit() {
+	ExitSpecific();
 
 	// Exit on children too
 	for ( int ChildIndex=0; ChildIndex < m_ChildrenCount; ChildIndex++ )
-		m_ppChildren[ChildIndex]->Exit( _SceneTagClearer );
+		m_ppChildren[ChildIndex]->Exit();
 }
 
-void	Scene::Node::SetChildIndex()
-{
+void	Scene::Node::PlaceTag( ISceneTagger& _SceneTagger ) {
+	m_pTag = _SceneTagger.TagNode( m_Owner, *this );
+	PlaceTagSpecific( _SceneTagger );
+
+	// Tag children
+	for ( int ChildIndex=0; ChildIndex < m_ChildrenCount; ChildIndex++ ) {
+		Node&	Child = *m_ppChildren[ChildIndex];
+		Child.m_ChildIndex = ChildIndex;
+		Child.PlaceTag( _SceneTagger );
+	}
+}
+
+void	Scene::Node::SetChildIndex() {
 	if ( m_pParent == NULL )
 		m_ChildIndex = 0;	// Root...
 
@@ -303,13 +307,11 @@ Scene::Light::Light( Scene& _Owner, Node* _pParent )
 	, m_LightType( POINT )
 	, m_Intensity( 1.0f )
 	, m_HotSpot( 0.0f )
-	, m_Falloff( 0.0f )
-{
+	, m_Falloff( 0.0f ) {
 	m_Owner.m_LightsCount++;
 }
 
-void	Scene::Light::InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger )
-{
+void	Scene::Light::InitSpecific( const U8*& _pData ) {
 	m_LightType = (LIGHT_TYPE) *_pData++;
 	m_Color.Set( ReadF32( _pData ), ReadF32( _pData ), ReadF32( _pData ) );
 	m_Intensity = ReadF32( _pData );
@@ -321,13 +323,11 @@ void	Scene::Light::InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger )
 // ==== Camera ====
 Scene::Camera::Camera( Scene& _Owner, Node* _pParent )
 	: Node( _Owner, _pParent )
-	, m_FOV( 0.0f )
-{
+	, m_FOV( 0.0f ) {
 	m_Owner.m_CamerasCount++;
 }
 
-void	Scene::Camera::InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger )
-{
+void	Scene::Camera::InitSpecific( const U8*& _pData ) {
 	m_FOV = ReadF32( _pData );
 }
 
@@ -336,19 +336,16 @@ void	Scene::Camera::InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger 
 Scene::Mesh::Mesh( Scene& _Owner, Node* _pParent )
 	: Node( _Owner, _pParent )
 	, m_PrimitivesCount( 0 )
-	, m_pPrimitives( NULL )
-{
+	, m_pPrimitives( NULL ) {
 	m_Owner.m_MeshesCount++;
 }
-Scene::Mesh::~Mesh()
-{
+Scene::Mesh::~Mesh() {
 	delete[] m_pPrimitives;
 	m_pPrimitives = NULL;
 	m_PrimitivesCount = 0;
 }
 
-void	Scene::Mesh::InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger )
-{
+void	Scene::Mesh::InitSpecific( const U8*& _pData ) {
 	m_LocalBBoxMin = float3::MaxFlt;
 	m_LocalBBoxMax = -float3::MaxFlt;
 	m_GlobalBBoxMin = float3::MaxFlt;
@@ -356,8 +353,7 @@ void	Scene::Mesh::InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger )
 
 	m_PrimitivesCount = ReadU16( _pData );
 	m_pPrimitives = new Primitive[m_PrimitivesCount];
-	for ( int PrimitiveIndex=0; PrimitiveIndex < m_PrimitivesCount; PrimitiveIndex++ )
-	{
+	for ( int PrimitiveIndex=0; PrimitiveIndex < m_PrimitivesCount; PrimitiveIndex++ ) {
 		Primitive&	P = m_pPrimitives[PrimitiveIndex];
 		P.Init( *this, _pData );
 
@@ -366,16 +362,14 @@ void	Scene::Mesh::InitSpecific( const U8*& _pData, ISceneTagger& _SceneTagger )
 		m_LocalBBoxMax = m_LocalBBoxMax.Max( P.m_LocalBBoxMax );
 		m_GlobalBBoxMin = m_GlobalBBoxMin.Min( P.m_GlobalBBoxMin );
 		m_GlobalBBoxMax = m_GlobalBBoxMax.Max( P.m_GlobalBBoxMax );
-
-		// Tag the primitive
-		P.m_pTag = _SceneTagger.TagPrimitive( m_Owner, *this, P );
 	}
 }
 
-void	Scene::Mesh::ExitSpecific( ISceneTagger& _SceneTagClearer )
-{
-	for ( int PrimitiveIndex=0; PrimitiveIndex < m_PrimitivesCount; PrimitiveIndex++ )
-		m_pPrimitives[PrimitiveIndex].m_pTag = _SceneTagClearer.TagPrimitive( m_Owner, *this, m_pPrimitives[PrimitiveIndex] );
+void	Scene::Mesh::PlaceTagSpecific( ISceneTagger& _SceneTagger ) {
+	for ( int PrimitiveIndex=0; PrimitiveIndex < m_PrimitivesCount; PrimitiveIndex++ ) {
+		Primitive&	P = m_pPrimitives[PrimitiveIndex];
+		P.m_pTag = _SceneTagger.TagPrimitive( m_Owner, *this, P );
+	}
 }
 
 Scene::Mesh::Primitive::Primitive()
@@ -383,11 +377,9 @@ Scene::Mesh::Primitive::Primitive()
 	, m_FacesCount( 0 )
 	, m_pFaces( NULL )
 	, m_VerticesCount( 0 )
-	, m_pVertices( NULL )
-{
+	, m_pVertices( NULL ) {
 }
-Scene::Mesh::Primitive::~Primitive()
-{
+Scene::Mesh::Primitive::~Primitive() {
 	delete[] m_pFaces;
 	delete[] m_pVertices;
 }
@@ -454,8 +446,7 @@ void	Scene::Mesh::Primitive::Init( Mesh& _Owner, const U8*& _pData ) {
 
 // ==== Probe ====
 Scene::Probe::Probe( Scene& _Owner, Node* _pParent )
-	: Node( _Owner, _pParent )
-{
+	: Node( _Owner, _pParent ) {
 	m_Owner.m_ProbesCount++;
 }
 
@@ -464,48 +455,42 @@ Scene::Probe::Probe( Scene& _Owner, Node* _pParent )
 Scene::Material::Material( Scene& _Owner )
 	: m_Owner( _Owner )
 	, m_ID( ~0 )
-	, m_pTag( NULL )
-{
+	, m_pTag( NULL ) {
 }
 
-void	Scene::Material::Init( const U8*& _pData, ISceneTagger& _SceneTagger )
-{
+void	Scene::Material::Init( const U8*& _pData ) {
 	m_ID = ReadU16( _pData, true );
 
 	m_DiffuseAlbedo.x = ReadF32( _pData );
 	m_DiffuseAlbedo.y = ReadF32( _pData );
 	m_DiffuseAlbedo.z = ReadF32( _pData );
 	m_TexDiffuseAlbedo.m_ID = ReadU16( _pData, true );
-	m_TexDiffuseAlbedo.m_pTag = _SceneTagger.TagTexture( m_Owner, m_TexDiffuseAlbedo );
 
 	m_SpecularAlbedo.x = ReadF32( _pData );
 	m_SpecularAlbedo.y = ReadF32( _pData );
 	m_SpecularAlbedo.z = ReadF32( _pData );
 	m_TexSpecularAlbedo.m_ID = ReadU16( _pData, true );
-	m_TexSpecularAlbedo.m_pTag = _SceneTagger.TagTexture( m_Owner, m_TexSpecularAlbedo );
 
 	m_SpecularExponent.x = ReadF32( _pData );
 	m_SpecularExponent.y = ReadF32( _pData );
 	m_SpecularExponent.z = ReadF32( _pData );
 
 	m_TexNormal.m_ID = ReadU16( _pData, true );
-	m_TexNormal.m_pTag = _SceneTagger.TagTexture( m_Owner, m_TexNormal );
 
 	m_EmissiveColor.x = ReadF32( _pData );
 	m_EmissiveColor.y = ReadF32( _pData );
 	m_EmissiveColor.z = ReadF32( _pData );
 
 	ReadEndMaterialMarker( _pData );
-
-	// Ask for a tag
-	m_pTag = _SceneTagger.TagMaterial( m_Owner, *this );
 }
 
-void	Scene::Material::Exit( ISceneTagger& _SceneTagClearer )
-{
-	m_TexDiffuseAlbedo.m_pTag = _SceneTagClearer.TagTexture( m_Owner, m_TexDiffuseAlbedo );
-	m_TexNormal.m_pTag = _SceneTagClearer.TagTexture( m_Owner, m_TexNormal );
-	m_TexSpecularAlbedo.m_pTag = _SceneTagClearer.TagTexture( m_Owner, m_TexSpecularAlbedo );
+void	Scene::Material::Exit() {
+}
 
-	m_pTag = _SceneTagClearer.TagMaterial( m_Owner, *this );
+void	Scene::Material::PlaceTag( ISceneTagger& _SceneTagger ) {
+	m_pTag = _SceneTagger.TagMaterial( m_Owner, *this );
+
+	m_TexDiffuseAlbedo.m_pTag = _SceneTagger.TagTexture( m_Owner, m_TexDiffuseAlbedo );
+	m_TexSpecularAlbedo.m_pTag = _SceneTagger.TagTexture( m_Owner, m_TexSpecularAlbedo );
+	m_TexNormal.m_pTag = _SceneTagger.TagTexture( m_Owner, m_TexNormal );
 }

@@ -203,7 +203,8 @@ public:
 
 	float	m[16];
 
-	float4				GetRow( int _RowIndex ) const							{ ASSERT( _RowIndex < 4, "Row index out of range!" ); return float4( m[4*_RowIndex+0], m[4*_RowIndex+1], m[4*_RowIndex+2], m[4*_RowIndex+3] ); }
+	const float4&		GetRow( int _RowIndex ) const							{ ASSERT( _RowIndex < 4, "Row index out of range!" ); return *((float4*) &m[4*_RowIndex] ); }
+	float4&				GetRow( int _RowIndex )									{ ASSERT( _RowIndex < 4, "Row index out of range!" ); return *((float4*) &m[4*_RowIndex] ); }
 	float4x4&			SetRow( int _RowIndex, const float4& _Row )				{ ASSERT( _RowIndex < 4, "Row index out of range!" ); m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _Row.w; return *this; }
 	float4x4&			SetRow( int _RowIndex, const float3& _Row, float _w=0 )	{ ASSERT( _RowIndex < 4, "Row index out of range!" ); m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _w; return *this; }
 	float4x4			Inverse() const;

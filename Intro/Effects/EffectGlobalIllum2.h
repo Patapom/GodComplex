@@ -169,11 +169,6 @@ private:	// FIELDS
 	U32					m_pPrimitiveFaceOffset[MAX_SCENE_PRIMITIVES];
 	U32					m_pPrimitiveVertexOffset[MAX_SCENE_PRIMITIVES];
 
-		// Optional vertex stream containing probe IDs for each vertex
-	U32					m_VertexStreamProbeIDsLength;
-	U32*				m_pVertexStreamProbeIDs;
-	Primitive*			m_pPrimProbeIDs;
-
 		// Dynamic objects
 	DynamicObject		m_pDynamicObjects[MAX_DYNAMIC_OBJECTS];
 

@@ -195,7 +195,7 @@ private:	// BUILD TIME STRUCTURES
 		class	Primitive {
 		public:
 			struct	Face {
-				int				V[3];				// Vertex indices
+				U32				V[3];				// Vertex indices
 				float3			P;					// Center position
 				float3			N;					// Face normal
 				Face*			pAdjacent[3];		// Adjacent faces for each edge (an edge start from a vertex and ends at vertex + 1)
@@ -214,16 +214,40 @@ private:	// BUILD TIME STRUCTURES
 				bool	RecursePropagateProbeInfluences( U32 _PassIndex );
 			};
 
+		private:
+
+			struct EdgeKey {
+				int	V0, V1;
+				static U32		GetHash( const EdgeKey& _key )							{
+					return _key.V0 ^ _key.V1;
+				}
+				static int		Compare( const EdgeKey& _key0, const EdgeKey& _key1 )	{
+					int	k00 = _key0.V0 < _key0.V1 ? _key0.V0 : _key0.V1;
+					int	k01 = _key0.V0 < _key0.V1 ? _key0.V1 : _key0.V0;
+					int	k10 = _key1.V0 < _key1.V1 ? _key1.V0 : _key1.V1;
+					int	k11 = _key1.V0 < _key1.V1 ? _key1.V1 : _key1.V0;
+					if ( k00 == k10 && k01 == k11 ) return 0;
+					return 1;	// We don't care about ordering at the moment...
+				}
+			};
+			struct FacePair {
+				Face*	F0;
+				Face*	F1;
+			};
+
+		public:
 			int					m_FacesCount;
 			Face*				m_pFaces;
+			int					m_VerticesCount;
+			ProbeInfluence**	m_pVerticesProbeInfluence;
 
-			~Primitive() { SAFE_DELETE_ARRAY( m_pFaces ); }
+			~Primitive() { SAFE_DELETE_ARRAY( m_pFaces ); SAFE_DELETE_ARRAY( m_pVerticesProbeInfluence ); }
 			void	Build( const Scene::Mesh::Primitive& _Primitive, ProbeInfluence* _pProbeInfluencePerFace );
 			bool	PropagateProbeInfluences( U32 _PassIndex );
 			void	AssignNearestProbe( U32 _ProbesCount, const float3* _LocalProbePositions );
+			void	RedistributeProbeIDs2Vertices( ProbeInfluence** _ppProbeInfluences ) const;
 		};
 
-remove		float4x4		m_Local2World;
 		float4x4		m_World2Local;
 
 		int				m_PrimitivesCount;
@@ -234,6 +258,7 @@ remove		float4x4		m_Local2World;
 		void	Build( const Scene::Mesh& _Mesh, ProbeInfluence* _pProbeInfluencePerFace );
 		bool	PropagateProbeInfluences( U32 _PassIndex );
 		void	AssignNearestProbe( U32 _ProbesCount, const SHProbe* _pProbes );
+		void	RedistributeProbeIDs2Vertices( ProbeInfluence**& _ppProbeInfluences ) const;
 	};
 
 
@@ -258,6 +283,9 @@ private:	// FIELDS
 
 	// Runtime probes
 	SB<RuntimeProbe>*		m_pSB_RuntimeProbes;
+
+	// Additional vertex stream containing probe IDs for each vertex
+	Primitive*				m_pPrimProbeIDs;
 
 	// Probes Update
 	U32						m_ProbesCount;
@@ -295,6 +323,8 @@ public:
 
 	void			AddProbe( Scene::Probe& _Probe );
 	U32				GetProbesCount() const	{ return m_ProbesCount; }
+
+	Primitive*		GetProbeIDVertexStream() const	{ return m_pPrimProbeIDs; }
 
 	// Runtime use
 	void			UpdateDynamicProbes( DynamicUpdateParms& _Parms );
