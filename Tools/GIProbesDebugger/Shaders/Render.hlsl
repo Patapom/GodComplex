@@ -5,6 +5,7 @@ cbuffer CB_Main : register(b0) {
 	float4		_TargetSize;	// XY=Size, ZW=1/XY
 	uint		_Type;			// Visualization type
 	uint		_Flags;			// 1 = show cube face color, 2 = show distance
+	uint		_SampleIndex;
 };
 
 TextureCubeArray<float4>	_TexCube : register(t0);
@@ -56,6 +57,39 @@ float3	GetCubeFaceColor( float3 _View ) {
 		}
 	}
 }
+
+// Evaluates the SH coefficients in the requested direction
+//
+float3	EvaluateSH( float3 _Direction, float _SH[9] )
+{
+	float	f0 = 0.28209479177387814347403972578039;		// 0.5 / sqrt(PI);
+	float	f1 = 0.48860251190291992158638462283835;		// 0.5 * sqrt(3.0/PI);
+	float	f2 = 1.0925484305920790705433857058027;			// 0.5 * sqrt(15.0/PI);
+
+	float	EvalSH0 = f0;
+	float4	EvalSH1234, EvalSH5678;
+	EvalSH1234.x = -f1 * _Direction.x;
+	EvalSH1234.y = f1 * _Direction.y;
+	EvalSH1234.z = -f1 * _Direction.z;
+	EvalSH1234.w = f2 * _Direction.x * _Direction.z;
+	EvalSH5678.x = -f2 * _Direction.x * _Direction.y;
+	EvalSH5678.y = f2 * 0.28867513459481288225457439025097 * (3.0 * _Direction.y*_Direction.y - 1.0);
+	EvalSH5678.z = -f2 * _Direction.z * _Direction.y;
+	EvalSH5678.w = f2 * 0.5 * (_Direction.z*_Direction.z - _Direction.x*_Direction.x);
+
+	// Dot the SH together
+	return max( 0.0,
+		   EvalSH0		* _SH[0]
+		 + EvalSH1234.x * _SH[1]
+		 + EvalSH1234.y * _SH[2]
+		 + EvalSH1234.z * _SH[3]
+		 + EvalSH1234.w * _SH[4]
+		 + EvalSH5678.x * _SH[5]
+		 + EvalSH5678.y * _SH[6]
+		 + EvalSH5678.z * _SH[7]
+		 + EvalSH5678.w * _SH[8] );
+}
+
 
 // Our cube map array contains:
 //
@@ -134,6 +168,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		float	Factor = ShowAllPixels || _TexCube.SampleLevel( PointWrap, float4( wsView, 5 ), 0.0 ).x > 0.5 ? 1 : 0;
 		uint	Type = _Type >> 1;
 		uint	SampleIndex = _TexCube.SampleLevel( PointWrap, float4( wsView, 3 ), 0.0 ).w;
+				Factor *= _SampleIndex == ~0U || SampleIndex == _SampleIndex ? 1.0 : 0.0;
 
 		ProbeSampleInfo	Sample = _BufferSamples[SampleIndex];
 
@@ -152,9 +187,14 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		case 0: Value = PipoColors[SampleIndex%7]; break;
 		case 1: {
 			float	S = lerp( 0.9, 1.0, 0.5 * (1.0 + Sample.Normal.y) );
-			Value = S * Sample.Albedo; break;
-				}
+			Value = S * Sample.Albedo;
+			break;
+			}
 		case 2: Value = 0.5 * (1.0 + Sample.Normal); break;
+		case 4: {
+			Value = 100.0 * EvaluateSH( wsView, Sample.SH );
+			break;
+			}
 		}
 		Value *= Factor;
 	}

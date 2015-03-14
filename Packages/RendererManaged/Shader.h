@@ -77,7 +77,7 @@ namespace RendererManaged {
 			if ( pDescriptor == NULL )
 				throw gcnew Exception( "Unsupported vertex format!" );
 
-			::Material*	pShader = ::Material::CreateFromBinaryBlob( *_Device->m_pDevice, ShaderFileName, *pDescriptor, EntryPointVS, EntryPointHS, EntryPointDS, EntryPointGS, EntryPointPS );
+			::Material*	pShader = ::Material::CreateFromBinaryBlob( *_Device->m_pDevice, ShaderFileName, *pDescriptor, NULL, EntryPointVS, EntryPointHS, EntryPointDS, EntryPointGS, EntryPointPS );
 
 			return gcnew Shader( _Device, pShader );
 		}

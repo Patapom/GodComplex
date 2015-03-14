@@ -1,6 +1,11 @@
 //////////////////////////////////////////////////////////////////////////
 // This compute shader updates the dynamic probes
 //
+// TODO: If all sphere samples have the same direction then it's useless uploading their SH each time!
+//	==> Create an array of directions, let the CS compute the SH for each one!
+//	==> Or use a 128*9 buffer containing the SH (computing SH is not the most difficult, check against a reload from a buffer...)
+//
+//
 #include "Inc/Global.hlsl"
 #include "Inc/GI.hlsl"
 #include "Inc/SH.hlsl"
@@ -56,7 +61,7 @@ struct ProbeUpdateSampleInfo
 	float3		Normal;						// World normal of the sample
 	float		Radius;						// Radius of the sample's disc approximation
 	float3		Albedo;						// Albedo of the sample's surface
-	float		SH[9];						// SH contribution of the sample
+	float		SH[9];						// SH contribution of the sample (TODO: Factorize in a single 128*9 buffer! => They all have the same direction so avoid wasting space!)
 };
 StructuredBuffer<ProbeUpdateSampleInfo>		_SBProbeSamples : register( t11 );
 

@@ -63,7 +63,7 @@ namespace RendererManaged {
 			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _ShaderFileName->FullName ).ToPointer();
 			const char*	EntryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _EntryPoint ).ToPointer();
 
-			::ComputeShader*	pShader = ::ComputeShader::CreateFromBinaryBlob( *_Device->m_pDevice, ShaderFileName, EntryPoint );
+			::ComputeShader*	pShader = ::ComputeShader::CreateFromBinaryBlob( *_Device->m_pDevice, ShaderFileName, NULL, EntryPoint );
 
 			return gcnew ComputeShader( _Device, pShader );
 		}

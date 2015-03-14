@@ -105,8 +105,7 @@ private:	// NESTED TYPES
 			, pParentList( NULL )
 			, pNextInList( NULL ) {}
 
-		void		InitSH()
-		{
+		void		InitSH() {
 			// Build SH coeffs for that pixel
 			SHCoeffs[0] = f0;
 			SHCoeffs[1] = -f1 * View.x;

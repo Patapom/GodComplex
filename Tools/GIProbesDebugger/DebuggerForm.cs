@@ -23,6 +23,7 @@ namespace GIProbesDebugger
 			public float4		_TargetSize;
 			public uint			_Type;
 			public uint			_Flags;
+			public uint			_SampleIndex;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -301,8 +302,9 @@ namespace GIProbesDebugger
 			m_CB_Main.m._Flags = (uint) ((checkBoxShowCubeMapFaces.Checked ? 1 : 0) | (checkBoxShowDistance.Checked ? 2 : 0) | (checkBoxShowWSPosition.Checked ? 4 : 0) | (checkBoxShowSamples.Checked ? 8 : 0));
 			m_CB_Main.m._Type = (uint) integerTrackbarControlDisplayType.Value;
 			if ( checkBoxShowSamples.Checked ) {
-				m_CB_Main.m._Type = (uint) (radioButtonSampleAll.Checked ? 1 : 0) | ((uint) (radioButtonSampleColor.Checked ? 0 : radioButtonSampleAlbedo.Checked ? 1 : 2) << 1);
+				m_CB_Main.m._Type = (uint) (radioButtonSampleAll.Checked ? 1 : 0) | ((uint) (radioButtonSampleColor.Checked ? 0 : radioButtonSampleAlbedo.Checked ? 1 : radioButtonSampleNormal.Checked ? 2 : 4) << 1);
 			}
+			m_CB_Main.m._SampleIndex = (uint) integerTrackbarControlSampleIndex.Value;
 			m_CB_Main.UpdateData();
 
 
