@@ -59,7 +59,7 @@
 //#define SCENE 2	// Sponza Atrium
 #define SCENE 3	// Test
 
-#define	LOAD_PROBES			// Define this to simply load probes without computing them
+//#define	LOAD_PROBES			// Define this to simply load probes without computing them
 #define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
 #define	USE_NORMAL_MAPS			// Define this to use normal maps
 
@@ -709,7 +709,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pSB_LightsDynamic->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime0 ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime0 ), 4.0f * sinf( 0.3f * AnimateLightTime0 ) );	// Move along the corridor
 #elif SCENE==3
 	// ROOM ANIMATION (simple straight line)
-	m_pSB_LightsDynamic->m[0].Position.Set( 6.0f + 0.75f * sinf( 1.0f * AnimateLightTime0 ), 2.0f + 1.3f * cosf( 1.0f * AnimateLightTime0 ), -4.0f + 4.0f * sinf( 0.3f * AnimateLightTime0 ) );
+	m_pSB_LightsDynamic->m[0].Position.Set( 6.0f + 0.75f * sinf( 1.0f * AnimateLightTime0 ), 2.0f - 1.3f * cosf( 1.0f * AnimateLightTime0 ), -4.0f - 4.0f * cosf( 0.3f * AnimateLightTime0 ) );
 #else
 
 	// PATH ANIMATION (follow curve)

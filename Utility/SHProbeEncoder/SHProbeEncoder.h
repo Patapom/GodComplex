@@ -212,7 +212,7 @@ private:	// NESTED TYPES
 		float3			BiTangent;				// The shortest principal axis of the samples's points cluster (scaled by the length of the axis)
 		float			Radius;					// Approximate radius of the samples's points cluster (used for shadow filtering)
 
-		float			SH[9];					// The generated SH coefficients for this sample
+//		float			SH[9];					// The generated SH coefficients for this sample
 
 		Sample()
 			: PixelsCount( 0 )

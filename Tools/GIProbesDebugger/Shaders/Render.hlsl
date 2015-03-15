@@ -20,7 +20,7 @@ struct ProbeSampleInfo {
 	float3		Albedo;
 	float3		F0;
 	uint		PixelsCount;
-	float		SH[9];
+	float		SHFactor;
 };
 StructuredBuffer< ProbeSampleInfo >	_BufferSamples : register(t1);
 
@@ -90,6 +90,39 @@ float3	EvaluateSH( float3 _Direction, float _SH[9] )
 		 + EvalSH5678.w * _SH[8] );
 }
 
+// Rotates ZH coefficients in the specified direction (from "Stupid SH Tricks")
+// Rotating ZH comes to evaluating scaled SH in the given direction.
+// The scaling factors for each band are equal to the ZH coefficients multiplied by sqrt( 4PI / (2l+1) )
+//
+void ZHRotate( const in float3 _Direction, const in float3 _ZHCoeffs, out float _Coeffs[9] )
+{
+	float	cl0 = 3.5449077018110320545963349666823 * _ZHCoeffs.x;	// sqrt(4PI)
+	float	cl1 = 2.0466534158929769769591032497785 * _ZHCoeffs.y;	// sqrt(4PI/3)
+	float	cl2 = 1.5853309190424044053380115060481 * _ZHCoeffs.z;	// sqrt(4PI/5)
+
+	float	f0 = cl0 * 0.28209479177387814347403972578039;	// 0.5 / sqrt(PI);
+	float	f1 = cl1 * 0.48860251190291992158638462283835;	// 0.5 * sqrt(3.0/PI);
+	float	f2 = cl2 * 1.0925484305920790705433857058027;	// 0.5 * sqrt(15.0/PI);
+	_Coeffs[0] = f0;
+	_Coeffs[1] = -f1 * _Direction.x;
+	_Coeffs[2] = f1 * _Direction.y;
+	_Coeffs[3] = -f1 * _Direction.z;
+	_Coeffs[4] = f2 * _Direction.x * _Direction.z;
+	_Coeffs[5] = -f2 * _Direction.x * _Direction.y;
+	_Coeffs[6] = f2 * 0.28209479177387814347403972578039 * (3.0 * _Direction.y*_Direction.y - 1.0);
+	_Coeffs[7] = -f2 * _Direction.z * _Direction.y;
+	_Coeffs[8] = f2 * 0.5 * (_Direction.z*_Direction.z - _Direction.x*_Direction.x);
+}
+
+void BuildSHCosineLobe( const in float3 _Direction, out float _Coeffs[9] )
+{
+	static const float3 ZHCoeffs = float3(
+		0.88622692545275801364908374167057,	// sqrt(PI) / 2
+		1.0233267079464884884795516248893,	// sqrt(PI / 3)
+		0.49541591220075137666812859564002	// sqrt(5PI) / 8
+		);
+	ZHRotate( _Direction, ZHCoeffs, _Coeffs );
+}
 
 // Our cube map array contains:
 //
@@ -192,7 +225,11 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 			}
 		case 2: Value = 0.5 * (1.0 + Sample.Normal); break;
 		case 4: {
-			Value = 100.0 * EvaluateSH( wsView, Sample.SH );
+
+			float	SH[9];
+			BuildSHCosineLobe( Sample.Normal, SH );
+
+			Value = Sample.SHFactor * Sample.Albedo * EvaluateSH( wsView, SH );
 			break;
 			}
 		}
