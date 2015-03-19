@@ -149,8 +149,8 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 			SampleUpdateInfos.Position = pSample->Position;
 			SampleUpdateInfos.Normal = pSample->Normal;
 			SampleUpdateInfos.Radius = pSample->Radius;
-			SampleUpdateInfos.Albedo = pSample->Albedo;
-			memcpy_s( SampleUpdateInfos.SH, sizeof(SampleUpdateInfos.SH), pSample->pSHBounce, 9*sizeof(float) );
+			SampleUpdateInfos.Albedo = pSample->SHFactor * pSample->Albedo;
+//			memcpy_s( SampleUpdateInfos.SH, sizeof(SampleUpdateInfos.SH), pSample->pSHBounce, 9*sizeof(float) );
 		}
 
 		// Fill the emissive surface update infos
@@ -834,11 +834,10 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 		fread_s( &SamplesCount, sizeof(SamplesCount), sizeof(U32), 1, pFile );
 		Probe.SamplesCount = MIN( SHProbeEncoder::MAX_PROBE_SAMPLES, SamplesCount );	// Don't read more than we can chew!
 
-		// Read the surfaces
+		// Read the samples
 		SHProbe::Sample	DummySample;
-		for ( U32 SampleIndex=0; SampleIndex < SamplesCount; SampleIndex++ )
-		{
-			SHProbe::Sample&	S = SampleIndex < Probe.SamplesCount ? Probe.pSamples[SampleIndex] : DummySample;	// We load into a useless surface if out of range...
+		for ( U32 SampleIndex=0; SampleIndex < SamplesCount; SampleIndex++ ) {
+			SHProbe::Sample&	S = SampleIndex < Probe.SamplesCount ? Probe.pSamples[SampleIndex] : DummySample;	// We load into a useless sample if out of range...
 
 			// Read position, normal, albedo
 			fread_s( &S.Position.x, sizeof(S.Position.x), sizeof(float), 1, pFile );
@@ -867,6 +866,14 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 			fread_s( &S.F0.y, sizeof(S.F0.y), sizeof(float), 1, pFile );
 			fread_s( &S.F0.z, sizeof(S.F0.z), sizeof(float), 1, pFile );
 
+			fread_s( &S.SHFactor, sizeof(S.SHFactor), sizeof(float), 1, pFile );
+			
+// No need: can be regenerated at runtime from normal direction
+// 			// Read SH coefficients
+// 			for ( int i=0; i < 9; i++ ) {
+// 				fread_s( &S.pSHBounce[i], sizeof(S.pSHBounce[i]), sizeof(float), 1, pFile );
+// 			}
+
 			// Transform sample's position/normal by probe's LOCAL=>WORLD
 			S.Position = float3( Probe.pSceneProbe->m_Local2World.GetRow(3) ) + S.Position;
 // 			NjFloat3	wsSetNormal = Set.Normal;
@@ -875,11 +882,6 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 // TODO: Handle non-identity matrices! Let's go fast for now...
 // ARGH! That also means possibly rotating the SH!
 // Let's just force the probes to be axis-aligned, shall we??? :) (lazy man talking) (no, seriously, it makes sense after all)
-
-			// Read SH coefficients
-			for ( int i=0; i < 9; i++ ) {
-				fread_s( &S.pSHBounce[i], sizeof(S.pSHBounce[i]), sizeof(float), 1, pFile );
-			}
 		}
 
 		// Read the amount of emissive surfaces

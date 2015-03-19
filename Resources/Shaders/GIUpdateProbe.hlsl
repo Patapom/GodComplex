@@ -1,11 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 // This compute shader updates the dynamic probes
 //
-// TODO: If all sphere samples have the same direction then it's useless uploading their SH each time!
-//	==> Create an array of directions, let the CS compute the SH for each one!
-//	==> Or use a 128*9 buffer containing the SH (computing SH is not the most difficult, check against a reload from a buffer...)
-//
-//
 #include "Inc/Global.hlsl"
 #include "Inc/GI.hlsl"
 #include "Inc/SH.hlsl"
@@ -61,7 +56,6 @@ struct ProbeUpdateSampleInfo
 	float3		Normal;						// World normal of the sample
 	float		Radius;						// Radius of the sample's disc approximation
 	float3		Albedo;						// Albedo of the sample's surface
-	float		SH[9];						// SH contribution of the sample (TODO: Factorize in a single 128*9 buffer! => They all have the same direction so avoid wasting space!)
 };
 StructuredBuffer<ProbeUpdateSampleInfo>		_SBProbeSamples : register( t11 );
 
@@ -263,7 +257,6 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 				Light /= Distance2Light;
 				float	InvDistance2Light = 1.0 / max( 0.5, Distance2Light );	// Try and avoid highlights when lights get too close to the sample
 
-
 				Irradiance = LightSource.Color * InvDistance2Light * InvDistance2Light;
 
 				if ( LightSource.Type == 2 ) {
@@ -292,8 +285,14 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 
 		// Encode into SH
 		float3	Radiance = SumIrradiance * Sample.Albedo;	// Radiance = Sum( Rho/PI L0.(N.L) )
+
+		float	SH[9];
+		BuildSHCosineLobe( Sample.Normal, SH );	// Build a cosine lobe in the direction of the sample's normal that will reflect lighting diffusely off the surface
+
+//Radiance *= saturate( -Sample.Normal.y );
+
 		for ( uint i=0; i < 9; i++ ) {
-			gs_SamplesSH[9*SampleIndex+i] = Radiance * Sample.SH[i];
+			gs_SamplesSH[9*SampleIndex+i] = Radiance * SH[i];
 		}
 	}
 
@@ -405,8 +404,12 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 			float3	SHCoeff = 0.0;
 			[loop]
 			for ( uint j=0; j < Probe.SamplesCount; j++ ) {
-				ProbeUpdateSetInfos	Set = _SBProbeUpdateSetInfos[Probe.SamplesStart + j];
-				SHCoeff += 100.0 * Set.SH[i];
+				ProbeUpdateSampleInfo	Sample = _SBProbeSamples[Probe.SamplesStart + j];
+
+				float	SH[9];
+				BuildSHCosineLobe( Sample.Normal, SH );	// Build a cosine lobe in the direction of the sample's normal that will reflect lighting diffusely off the surface
+
+				SHCoeff += 0.01 * SH[i];
 			}
 #endif
 

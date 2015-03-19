@@ -343,10 +343,14 @@ void	SHProbeEncoder::Save( const char* _FileName ) const {
 		Write( S.F0.y );
 		Write( S.F0.z );
 
-		// Write SH coefficients
-		for ( int i=0; i < 9; i++ ) {
-			Write( S.SH[i] );
-		}
+		// Write the pixel coverage of the sample
+		Write( float( SAMPLE_SH_NORMALIZER * S.PixelsCount / S.OriginalPixelsCount ) );
+
+// No need: can be regenerated at runtime from normal direction
+// 		// Write SH coefficients
+// 		for ( int i=0; i < 9; i++ ) {
+// 			Write( S.SH[i] );
+// 		}
 	}
 
 	// Write the emissive surfaces
@@ -357,7 +361,7 @@ void	SHProbeEncoder::Save( const char* _FileName ) const {
 		// Write emissive mat
 		Write( S.EmissiveMatID );
 
-		// Write SH coefficients (we only write luminance here, we don't have the color info that is provided at runtime)
+		// Write SH coefficients (we only write luminance here, we don't have the color info, which is provided at runtime)
 		for ( int i=0; i < 9; i++ )
 			Write( S.SH[i] );
 	}
@@ -480,9 +484,14 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 
 		Write( S.PixelsCount );
 
-		for ( int i=0; i < 9; i++ ) {
-			Write( S.SH[i] );
-		}
+		// Write the pixel coverage of the sample
+		Write( float(S.PixelsCount) / S.OriginalPixelsCount );
+
+// No need: can be regenerated at runtime from normal direction
+// 		// Write SH coefficients
+// 		for ( int i=0; i < 9; i++ ) {
+// 			Write( S.SH[i] );
+// 		}
 	}
 
 	// Write the emissive surfaces
@@ -641,14 +650,15 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 		S.Direction.Normalize();
 		S.Albedo = S.Albedo * Normalizer;
 
-		// Build the resulting SH for the group
-		double	SH[9];
-		SH::BuildSHCosineLobe_YUp( S.Normal, SH );
-
-		double	SHNormalizer = SAMPLE_SH_NORMALIZER * S.PixelsCount / S.OriginalPixelsCount;
-		for ( int i=0; i < 9; i++ ) {
-			S.SH[i] = float( SHNormalizer * SH[i]);
-		}
+// No need: can be done at runtime from the normal!
+// 		// Build the resulting SH for the group
+// 		double	SH[9];
+// 		SH::BuildSHCosineLobe_YUp( S.Normal, SH );
+// 
+// 		double	SHNormalizer = SAMPLE_SH_NORMALIZER * S.PixelsCount / S.OriginalPixelsCount;
+// 		for ( int i=0; i < 9; i++ ) {
+// 			S.SH[i] = float( SHNormalizer * SH[i]);
+// 		}
 
 		// Validate the sample
 		S.ID = m_ValidSamplesCount;

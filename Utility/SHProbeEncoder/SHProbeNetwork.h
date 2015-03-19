@@ -47,7 +47,8 @@ public:		// NESTED TYPES
 			float			Radius;					// An average radius for the sample so we can better filter shadows
 			float3			Albedo;					// The albedo of the dynamic surface (not currently used, for info purpose)
 			float3			F0;						// Surface's Fresnel coefficient
-			float			pSHBounce[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced dynamic lighting on static geometry
+			float			SHFactor;				// The ratio of pixels occupied by the sample area compared to the total amount of original pixels
+//			float			pSHBounce[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced dynamic lighting on static geometry
 		}				pSamples[SHProbeEncoder::MAX_PROBE_SAMPLES];
 
 		// Emissive surfaces infos
@@ -164,7 +165,8 @@ private:	// RUNTIME STRUCTURES
 		float3		Normal;							// World normal of the sampling point
 		float		Radius;							// Radius of the sampling point's disc approximation
 		float3		Albedo;							// Albedo of the sample
-		float		SH[9];							// SH for the sample
+// No need: can be generated at runtime from normal direction
+//		float		SH[9];							// SH for the sample
 	};
 
 	struct	RuntimeProbeUpdateEmissiveSurfaceInfo
