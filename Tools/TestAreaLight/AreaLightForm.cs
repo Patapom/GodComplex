@@ -12,6 +12,7 @@ using System.Windows.Forms;
 using System.Drawing.Imaging;
 
 using RendererManaged;
+using Nuaj.Cirrus.Utility;
 
 namespace AreaLightTest
 {
@@ -109,7 +110,7 @@ namespace AreaLightTest
 		private Primitive	m_Prim_Cube = null;
 
 
-		private Camera		m_Camera = new Camera();
+		private Camera				m_Camera = new Camera();
 		private CameraManipulator	m_Manipulator = new CameraManipulator();
 
 		//////////////////////////////////////////////////////////////////////////

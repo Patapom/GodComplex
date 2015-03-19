@@ -314,3 +314,5 @@ obj
 /Packages/LibRawManaged/Debug DirectX10
 /Tools/DirectXTexManaged/Debug DirectX10
 /Utility/SHProbeEncoder/\[Originals\]/IMG_0661.JPG
+/Tools/*.pdb
+/Tools/RendererManaged.dll

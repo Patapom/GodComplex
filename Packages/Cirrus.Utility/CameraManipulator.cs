@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 using RendererManaged;
 
-namespace AreaLightTest
+namespace Nuaj.Cirrus.Utility
 {
 	/// <summary>
 	/// This is a little camera manipulator helper that you can bind to a control
