@@ -28,6 +28,7 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
+			this.components = new System.ComponentModel.Container();
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.label1 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
@@ -35,6 +36,9 @@
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.floatTrackbarControlForce = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.integerTrackbarControlNeighborsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.radioButtonHammersley = new System.Windows.Forms.RadioButton();
+			this.radioButtonRandom = new System.Windows.Forms.RadioButton();
+			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.SuspendLayout();
 			// 
 			// buttonReload
@@ -52,7 +56,7 @@
 			// 
 			this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(733, 16);
+			this.label1.Location = new System.Drawing.Point(733, 41);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(86, 13);
 			this.label1.TabIndex = 3;
@@ -62,7 +66,7 @@
 			// 
 			this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(733, 40);
+			this.label2.Location = new System.Drawing.Point(733, 65);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(34, 13);
 			this.label2.TabIndex = 3;
@@ -73,12 +77,13 @@
 			this.checkBoxSimulate.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.checkBoxSimulate.Appearance = System.Windows.Forms.Appearance.Button;
 			this.checkBoxSimulate.AutoSize = true;
-			this.checkBoxSimulate.Location = new System.Drawing.Point(825, 64);
+			this.checkBoxSimulate.Location = new System.Drawing.Point(825, 89);
 			this.checkBoxSimulate.Name = "checkBoxSimulate";
 			this.checkBoxSimulate.Size = new System.Drawing.Size(57, 23);
 			this.checkBoxSimulate.TabIndex = 4;
 			this.checkBoxSimulate.Text = "Simulate";
 			this.checkBoxSimulate.UseVisualStyleBackColor = true;
+			this.checkBoxSimulate.CheckedChanged += new System.EventHandler(this.checkBoxSimulate_CheckedChanged);
 			// 
 			// panel1
 			// 
@@ -90,7 +95,7 @@
 			// floatTrackbarControlForce
 			// 
 			this.floatTrackbarControlForce.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlForce.Location = new System.Drawing.Point(825, 38);
+			this.floatTrackbarControlForce.Location = new System.Drawing.Point(825, 63);
 			this.floatTrackbarControlForce.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlForce.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlForce.Name = "floatTrackbarControlForce";
@@ -98,13 +103,13 @@
 			this.floatTrackbarControlForce.RangeMin = 0F;
 			this.floatTrackbarControlForce.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlForce.TabIndex = 1;
-			this.floatTrackbarControlForce.Value = 1F;
-			this.floatTrackbarControlForce.VisibleRangeMax = 2F;
+			this.floatTrackbarControlForce.Value = 100F;
+			this.floatTrackbarControlForce.VisibleRangeMax = 200F;
 			// 
 			// integerTrackbarControlNeighborsCount
 			// 
 			this.integerTrackbarControlNeighborsCount.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.integerTrackbarControlNeighborsCount.Location = new System.Drawing.Point(825, 12);
+			this.integerTrackbarControlNeighborsCount.Location = new System.Drawing.Point(825, 37);
 			this.integerTrackbarControlNeighborsCount.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlNeighborsCount.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlNeighborsCount.Name = "integerTrackbarControlNeighborsCount";
@@ -117,11 +122,42 @@
 			this.integerTrackbarControlNeighborsCount.VisibleRangeMin = 1;
 			this.integerTrackbarControlNeighborsCount.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlNeighborsCount_ValueChanged);
 			// 
+			// radioButtonHammersley
+			// 
+			this.radioButtonHammersley.AutoSize = true;
+			this.radioButtonHammersley.Checked = true;
+			this.radioButtonHammersley.Location = new System.Drawing.Point(736, 12);
+			this.radioButtonHammersley.Name = "radioButtonHammersley";
+			this.radioButtonHammersley.Size = new System.Drawing.Size(82, 17);
+			this.radioButtonHammersley.TabIndex = 6;
+			this.radioButtonHammersley.TabStop = true;
+			this.radioButtonHammersley.Text = "Hammersley";
+			this.radioButtonHammersley.UseVisualStyleBackColor = true;
+			this.radioButtonHammersley.CheckedChanged += new System.EventHandler(this.radioButtonHammersley_CheckedChanged);
+			// 
+			// radioButtonRandom
+			// 
+			this.radioButtonRandom.AutoSize = true;
+			this.radioButtonRandom.Location = new System.Drawing.Point(825, 12);
+			this.radioButtonRandom.Name = "radioButtonRandom";
+			this.radioButtonRandom.Size = new System.Drawing.Size(65, 17);
+			this.radioButtonRandom.TabIndex = 6;
+			this.radioButtonRandom.Text = "Random";
+			this.radioButtonRandom.UseVisualStyleBackColor = true;
+			this.radioButtonRandom.CheckedChanged += new System.EventHandler(this.radioButtonRandom_CheckedChanged);
+			// 
+			// timer1
+			// 
+			this.timer1.Interval = 10;
+			this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1037, 669);
+			this.Controls.Add(this.radioButtonRandom);
+			this.Controls.Add(this.radioButtonHammersley);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.checkBoxSimulate);
 			this.Controls.Add(this.label2);
@@ -146,6 +182,9 @@
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.CheckBox checkBoxSimulate;
 		private System.Windows.Forms.Panel panel1;
+		private System.Windows.Forms.RadioButton radioButtonHammersley;
+		private System.Windows.Forms.RadioButton radioButtonRandom;
+		private System.Windows.Forms.Timer timer1;
 	}
 }
 

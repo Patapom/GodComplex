@@ -94,35 +94,35 @@ namespace VoronoiVisualizer
 				return;
 
 			if ( checkBoxSimulate.Checked ) {
-				// Perform simulation
-				int			NeighborsCount = m_NeighborPositions.Length;
-
-				// Compute pressure forces
-				float		F = 0.01f * floatTrackbarControlForce.Value;
-				float3[]	Forces = new float3[NeighborsCount];
-				for ( int i=0; i < NeighborsCount-1; i++ ) {
-					float3	D0 = m_NeighborPositions[i].Normalized;
-					for ( int j=i+1; j < NeighborsCount; j++ ) {
-						float3	D1 = m_NeighborPositions[j].Normalized;
-
-						float3	Dir = (D1 - D0).Normalized;
-
-						float	Dot = D0.Dot( D1 ) - 1.0f;	// in [0,-2]
-						float	Force = F * (float) Math.Exp( Dot );
-						Forces[i] = Forces[i] - Force * Dir;	// Pushes 0 away from 1
-						Forces[j] = Forces[j] + Force * Dir;	// Pushes 1 away from 0
-					}
-				}
-
-				// Apply force
-				for ( int i=0; i < NeighborsCount; i++ ) {
-					float3	NewPosition = (m_NeighborPositions[i] + Forces[i]).Normalized;
-					m_NeighborPositions[i] = NewPosition;
-					m_SB_Neighbors.m[i].m_Position = NewPosition;
-				}
-
-				// Update
-				m_SB_Neighbors.Write();
+// 				// Perform simulation
+// 				int			NeighborsCount = m_NeighborPositions.Length;
+// 
+// 				// Compute pressure forces
+// 				float		F = 0.01f * floatTrackbarControlForce.Value;
+// 				float3[]	Forces = new float3[NeighborsCount];
+// 				for ( int i=0; i < NeighborsCount-1; i++ ) {
+// 					float3	D0 = m_NeighborPositions[i].Normalized;
+// 					for ( int j=i+1; j < NeighborsCount; j++ ) {
+// 						float3	D1 = m_NeighborPositions[j].Normalized;
+// 
+// 						float3	Dir = (D1 - D0).Normalized;
+// 
+// 						float	Dot = D0.Dot( D1 ) - 1.0f;	// in [0,-2]
+// 						float	Force = F * (float) Math.Exp( Dot );
+// 						Forces[i] = Forces[i] - Force * Dir;	// Pushes 0 away from 1
+// 						Forces[j] = Forces[j] + Force * Dir;	// Pushes 1 away from 0
+// 					}
+// 				}
+// 
+// 				// Apply force
+// 				for ( int i=0; i < NeighborsCount; i++ ) {
+// 					float3	NewPosition = (m_NeighborPositions[i] + Forces[i]).Normalized;
+// 					m_NeighborPositions[i] = NewPosition;
+// 					m_SB_Neighbors.m[i].m_Position = NewPosition;
+// 				}
+// 
+// 				// Update
+// 				m_SB_Neighbors.Write();
 			}
 
 			// Update camera
@@ -152,8 +152,18 @@ namespace VoronoiVisualizer
 				m_SB_Neighbors.Dispose();
 			m_SB_Neighbors = new StructuredBuffer< SB_Neighbor >( m_Device, NeighborsCount, true );
 
-			double[,]		Samples = m_Hammersley.BuildSequence( NeighborsCount, 2 );
-			WMath.Vector[]	Directions = m_Hammersley.MapSequenceToSphere( Samples, false );
+			WMath.Vector[]	Directions = null;
+			if ( radioButtonHammersley.Checked ) {
+				double[,]		Samples = m_Hammersley.BuildSequence( NeighborsCount, 2 );
+				Directions = m_Hammersley.MapSequenceToSphere( Samples, false );
+			} else {
+				Random	TempRNG = new Random();
+				Directions = new WMath.Vector[NeighborsCount];
+				for ( int i=0; i < NeighborsCount; i++ ) {
+					Directions[i] = new WMath.Vector( 2.0f * (float) TempRNG.NextDouble() - 1.0f, 2.0f * (float) TempRNG.NextDouble() - 1.0f, 2.0f * (float) TempRNG.NextDouble() - 1.0f );
+					Directions[i].Normalize();
+				}
+			}
 
 			Random	RNG = new Random( 1 );
 
@@ -179,6 +189,54 @@ namespace VoronoiVisualizer
 		{
 			if ( m_Device != null )
 				m_Device.ReloadModifiedShaders();
+		}
+
+		private void radioButtonHammersley_CheckedChanged( object sender, EventArgs e )
+		{
+			integerTrackbarControlNeighborsCount_ValueChanged( integerTrackbarControlNeighborsCount, 0 );
+		}
+
+		private void radioButtonRandom_CheckedChanged( object sender, EventArgs e )
+		{
+			integerTrackbarControlNeighborsCount_ValueChanged( integerTrackbarControlNeighborsCount, 0 );
+		}
+
+		private void checkBoxSimulate_CheckedChanged( object sender, EventArgs e )
+		{
+			timer1.Enabled = checkBoxSimulate.Checked;
+		}
+
+		private void timer1_Tick( object sender, EventArgs e )
+		{
+			// Perform simulation
+			int			NeighborsCount = m_NeighborPositions.Length;
+
+			// Compute pressure forces
+			float		F = 0.01f * floatTrackbarControlForce.Value;
+			float3[]	Forces = new float3[NeighborsCount];
+			for ( int i=0; i < NeighborsCount-1; i++ ) {
+				float3	D0 = m_NeighborPositions[i].Normalized;
+				for ( int j=i+1; j < NeighborsCount; j++ ) {
+					float3	D1 = m_NeighborPositions[j].Normalized;
+
+					float3	Dir = (D1 - D0).Normalized;
+
+					float	Dot = D0.Dot( D1 ) - 1.0f;	// in [0,-2]
+					float	Force = F * (float) Math.Exp( Dot );
+					Forces[i] = Forces[i] - Force * Dir;	// Pushes 0 away from 1
+					Forces[j] = Forces[j] + Force * Dir;	// Pushes 1 away from 0
+				}
+			}
+
+			// Apply force
+			for ( int i=0; i < NeighborsCount; i++ ) {
+				float3	NewPosition = (m_NeighborPositions[i] + Forces[i]).Normalized;
+				m_NeighborPositions[i] = NewPosition;
+				m_SB_Neighbors.m[i].m_Position = NewPosition;
+			}
+
+			// Update
+			m_SB_Neighbors.Write();
 		}
 	}
 }
