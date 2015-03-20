@@ -39,6 +39,8 @@
 			this.radioButtonHammersley = new System.Windows.Forms.RadioButton();
 			this.radioButtonRandom = new System.Windows.Forms.RadioButton();
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
+			this.buttonBuildCell = new System.Windows.Forms.Button();
+			this.checkBoxRenderCell = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// buttonReload
@@ -151,11 +153,34 @@
 			this.timer1.Interval = 10;
 			this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
 			// 
+			// buttonBuildCell
+			// 
+			this.buttonBuildCell.Location = new System.Drawing.Point(825, 119);
+			this.buttonBuildCell.Name = "buttonBuildCell";
+			this.buttonBuildCell.Size = new System.Drawing.Size(96, 23);
+			this.buttonBuildCell.TabIndex = 7;
+			this.buttonBuildCell.Text = "Build Cell Mesh";
+			this.buttonBuildCell.UseVisualStyleBackColor = true;
+			this.buttonBuildCell.Click += new System.EventHandler(this.buttonBuildCell_Click);
+			// 
+			// checkBoxRenderCell
+			// 
+			this.checkBoxRenderCell.Appearance = System.Windows.Forms.Appearance.Button;
+			this.checkBoxRenderCell.AutoSize = true;
+			this.checkBoxRenderCell.Location = new System.Drawing.Point(736, 119);
+			this.checkBoxRenderCell.Name = "checkBoxRenderCell";
+			this.checkBoxRenderCell.Size = new System.Drawing.Size(72, 23);
+			this.checkBoxRenderCell.TabIndex = 8;
+			this.checkBoxRenderCell.Text = "Render Cell";
+			this.checkBoxRenderCell.CheckedChanged += new System.EventHandler(this.checkBoxRenderCell_CheckedChanged);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1037, 669);
+			this.Controls.Add(this.checkBoxRenderCell);
+			this.Controls.Add(this.buttonBuildCell);
 			this.Controls.Add(this.radioButtonRandom);
 			this.Controls.Add(this.radioButtonHammersley);
 			this.Controls.Add(this.panel1);
@@ -185,6 +210,8 @@
 		private System.Windows.Forms.RadioButton radioButtonHammersley;
 		private System.Windows.Forms.RadioButton radioButtonRandom;
 		private System.Windows.Forms.Timer timer1;
+		private System.Windows.Forms.Button buttonBuildCell;
+		private System.Windows.Forms.CheckBox checkBoxRenderCell;
 	}
 }
 

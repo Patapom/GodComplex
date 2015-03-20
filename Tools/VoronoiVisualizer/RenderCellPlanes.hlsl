@@ -1,5 +1,5 @@
 
-cbuffer CB_Camera {
+cbuffer CB_Camera : register( b0 ) {
 	float4x4	_World2Proj;
 };
 
