@@ -55,7 +55,7 @@ namespace VoronoiVisualizer
 			m_Device.Init( panel1.Handle, false, false );
 
 			m_Shader_RenderCellPlanes = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "RenderCellPlanes.hlsl" ) ), VERTEX_FORMAT.T2, "VS", null, "PS", null );
-			m_Shader_RenderCellMesh = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "RenderCellMesh.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
+			m_Shader_RenderCellMesh = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "RenderCellMesh.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );
 
 			VertexT2[]	Vertices = new VertexT2[4] {
 				new VertexT2() { UV = new float2( 0, 0 ) },
@@ -104,6 +104,7 @@ namespace VoronoiVisualizer
 			base.OnFormClosing( e );
 		}
 
+		bool	m_bHasRendered = false;
 		void Application_Idle( object sender, EventArgs e )
 		{
 			if ( m_Device == null )
@@ -124,7 +125,7 @@ namespace VoronoiVisualizer
 					m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
 
 					// Render faces
-					m_CB_Mesh.m.m_Color = new float4( 0.2f, 0.2f, 0, 1 );
+					m_CB_Mesh.m.m_Color = new float4( 0.2f, 0.2f, 0.2f, 1 );
 					m_CB_Mesh.UpdateData();
 					m_Prim_CellFaces.Render( m_Shader_RenderCellMesh );
 
@@ -146,6 +147,7 @@ namespace VoronoiVisualizer
 			}
 
 			m_Device.Present( false );
+			m_bHasRendered = true;
 		}
 
 		private void integerTrackbarControlNeighborsCount_ValueChanged( IntegerTrackbarControl _Sender, int _FormerValue )
@@ -211,6 +213,10 @@ namespace VoronoiVisualizer
 
 		private void timer1_Tick( object sender, EventArgs e )
 		{
+			if ( !m_bHasRendered )
+				return;
+			m_bHasRendered = false;
+
 			// Perform simulation
 			int			NeighborsCount = m_NeighborPositions.Length;
 
@@ -240,6 +246,11 @@ namespace VoronoiVisualizer
 
 			// Update
 			m_SB_Neighbors.Write();
+
+			if ( checkBoxRenderCell.Checked ) {
+				buttonBuildCell_Click( this, EventArgs.Empty );
+				Application.DoEvents();
+			}
 		}
 
 		private void checkBoxRenderCell_CheckedChanged( object sender, EventArgs e )
@@ -306,6 +317,9 @@ namespace VoronoiVisualizer
 			}
 		}
 
+		float		m_AreaMin = float.MaxValue;
+		float		m_AreaMax = -float.MaxValue;
+		float		m_AreaAvg = 0.0f;
 		Primitive	m_Prim_CellFaces = null;
 		Primitive	m_Prim_CellEdges = null;
 		private void buttonBuildCell_Click( object sender, EventArgs e )
@@ -317,9 +331,18 @@ namespace VoronoiVisualizer
 				m_Prim_CellEdges = null;
 			}
 
-			List<VertexP3>	Vertices = new List<VertexP3>();
-			List<uint>		Indices_Faces = new List<uint>();
-			List<uint>		Indices_Edges = new List<uint>();
+			float		AreaThresholdLow = m_AreaMin + 0.1f * (m_AreaAvg - m_AreaMin);
+			float		AreaThresholdHigh = m_AreaMax - 0.1f * (m_AreaMax - m_AreaAvg);
+// 			float		AreaThresholdLow = m_AreaAvg / 1.5f;
+// 			float		AreaThresholdHigh = 1.5f * m_AreaAvg;
+
+			List<VertexP3N3>	Vertices = new List<VertexP3N3>();
+			List<uint>			Indices_Faces = new List<uint>();
+			List<uint>			Indices_Edges = new List<uint>();
+
+			float	AreaMin = float.MaxValue;
+			float	AreaMax = -float.MaxValue;
+			float	AreaAvg = 0.0f;
 
 			for ( int FaceIndex=0; FaceIndex < m_NeighborPositions.Length; FaceIndex++ ) {
 				float3	P = m_NeighborPositions[FaceIndex];
@@ -337,24 +360,56 @@ namespace VoronoiVisualizer
 				// Append vertices & indices for both faces & edges
 				uint	VertexOffset = (uint) Vertices.Count;
 				uint	VerticesCount = (uint) Polygon.m_Vertices.Length;
-				foreach ( float3 Vertex in Polygon.m_Vertices ) {
-					Vertices.Add( new VertexP3() { P = Vertex } );
-				}
+
+				float	PolygonArea = 0.0f;
 				for ( uint FaceTriangleIndex=0; FaceTriangleIndex < VerticesCount-2; FaceTriangleIndex++ ) {
 					Indices_Faces.Add( VertexOffset + 0 );
 					Indices_Faces.Add( VertexOffset + 1 + FaceTriangleIndex );
 					Indices_Faces.Add( VertexOffset + 2 + FaceTriangleIndex );
+
+					float	Area = 0.5f * (Polygon.m_Vertices[2 + FaceTriangleIndex] - Polygon.m_Vertices[0]).Cross( Polygon.m_Vertices[1 + FaceTriangleIndex] - Polygon.m_Vertices[0] ).Length;
+					PolygonArea += Area;
 				}
+				AreaMin = Math.Min( AreaMin, PolygonArea );
+				AreaMax = Math.Max( AreaMax, PolygonArea );
+				AreaAvg += PolygonArea;
+
 				for ( uint VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ ) {
 					Indices_Edges.Add( VertexOffset + VertexIndex );
 					Indices_Edges.Add( VertexOffset + (VertexIndex+1) % VerticesCount );
 				}
+
+				float3	Color = PolygonArea < AreaThresholdLow ? new float3( 1, 0, 0 ) : PolygonArea > AreaThresholdHigh ? new float3( 0, 1, 0 ) : new float3( 1, 1, 0 );
+
+				foreach ( float3 Vertex in Polygon.m_Vertices ) {
+					Vertices.Add( new VertexP3N3() { P = Vertex, N = Color } );
+				}
+
 			}
 
-			m_Prim_CellFaces = new Primitive( m_Device, Vertices.Count, VertexP3.FromArray( Vertices.ToArray() ), Indices_Faces.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3 );
-			m_Prim_CellEdges = new Primitive( m_Device, Vertices.Count, VertexP3.FromArray( Vertices.ToArray() ), Indices_Edges.ToArray(), Primitive.TOPOLOGY.LINE_LIST, VERTEX_FORMAT.P3 );
+			m_AreaMin = AreaMin;
+			m_AreaMax = AreaMax;
+			m_AreaAvg = AreaAvg / m_NeighborPositions.Length;
+			labelStats.Text = "Area min: " + m_AreaMin + "\r\n"
+							+ "Area max: " + m_AreaMax + "\r\n"
+							+ "Area average: " + m_AreaAvg + "\r\n";
+
+			m_Prim_CellFaces = new Primitive( m_Device, Vertices.Count, VertexP3N3.FromArray( Vertices.ToArray() ), Indices_Faces.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3 );
+			m_Prim_CellEdges = new Primitive( m_Device, Vertices.Count, VertexP3N3.FromArray( Vertices.ToArray() ), Indices_Edges.ToArray(), Primitive.TOPOLOGY.LINE_LIST, VERTEX_FORMAT.P3N3 );
 		}
 
 		#endregion
+
+		private void buttonDumpDirections_Click( object sender, EventArgs e )
+		{
+			string	Text = "{\r\n";
+			for ( int NeighborIndex=0; NeighborIndex < m_NeighborPositions.Length; NeighborIndex++ ) {
+				float3	D = m_NeighborPositions[NeighborIndex].Normalized;
+				Text += "float3( " + D.x + "f, " + D.y + "f, " + D.z + "f ),\r\n";
+			}
+			Text += "};\r\n";
+
+			Clipboard.SetText( Text );
+		}
 	}
 }

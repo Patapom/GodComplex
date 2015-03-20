@@ -32,7 +32,6 @@ struct	SCENE_VS_IN
 };
 
 
-// Structured Buffer with our lights
 struct	LightStruct
 {
 	uint	Type;
@@ -41,22 +40,32 @@ struct	LightStruct
 	float3	Color;
 	float4	Parms;						// X=Falloff radius, Y=Cutoff radius, Z=Cos(Falloff angle), W=Cos(Cutoff angle)
 };
-StructuredBuffer<LightStruct>	_SBLightsStatic : register( t7 );
-StructuredBuffer<LightStruct>	_SBLightsDynamic : register( t8 );
 
-// Structured Buffer with our probes
+struct SHCoeffs3 {
+	float3	SH[9];
+};
+struct SHCoeffs {
+	float	SH[9];
+};
+
 // This tiny probe struct is only 120 bytes long!! \o/ ^^
 // UPDATE [2014-03-08]: 128 now, with neighborhood information. Oooh 128! Nice one!
 struct	ProbeStruct
 {
 	float3		Position;
 	float		Radius;
-	float3		SH[9];
+//	float3		SH[9];
 
 	// IDs of our 4 most significant neighbor probes
-	uint2		NeighborIDs;
+//	uint2		NeighborIDs;
 };
-StructuredBuffer<ProbeStruct>	_SBProbes : register( t9 );
+
+
+StructuredBuffer<LightStruct>	_SBLightsStatic : register( t6 );	// Structured Buffer with our static lights
+StructuredBuffer<LightStruct>	_SBLightsDynamic : register( t7 );	// Structured Buffer with our dynamic lights
+StructuredBuffer<ProbeStruct>	_SBProbes : register( t8 );			// Structured Buffer with our probes info (position + radius)
+StructuredBuffer<SHCoeffs3>		_SBProbeSH : register( t9 );		// Structured Buffer with our probes SH coefficients
+
 
 
 // Scene descriptor
@@ -174,8 +183,13 @@ void	AccumulateProbeInfluence( ProbeStruct _Probe, float3 _WorldPosition, float3
 }
 
 // Gather SH from the specified probe ID and its direct neighbors
-void	GatherProbeSH( float3 _Position, float3 _Normal, uint _ProbeID, inout float3 _SH[9] )
+void	GatherProbeSH( float3 _Position, float3 _Normal, uint _ProbeID, inout SHCoeffs3 _SH )
 {
+#if 1
+
+	_SH = _SBProbeSH[_ProbeID];
+
+#else
 	float	SumWeights = 0.0;
 
 	// Accumulate this probe
@@ -206,6 +220,7 @@ void	GatherProbeSH( float3 _Position, float3 _Normal, uint _ProbeID, inout float
 	[unroll]
 	for ( uint i=0; i < 9; i++ )
 		_SH[i] *= Norm;
+#endif
 }
 
 #endif	// _GI_INC_

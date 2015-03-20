@@ -10,7 +10,6 @@ SHProbeNetwork::SHProbeNetwork()
 	, m_pProbes( NULL )
 	, m_pPrimProbeIDs( NULL )
 	, m_ProbeUpdateIndex( 0 ) {
-
 }
 
 SHProbeNetwork::~SHProbeNetwork() {
@@ -33,8 +32,25 @@ void	SHProbeNetwork::Init( Device& _Device, Primitive& _ScreenQuad ) {
 	m_pSB_RuntimeProbeNetworkInfos = NULL;
 
 	m_pSB_RuntimeProbeUpdateInfos = new SB<RuntimeProbeUpdateInfo>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME, true );
-	m_pSB_RuntimeProbeSamples = new SB<RuntimeProbeUpdateSampleInfo>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*SHProbeEncoder::MAX_PROBE_SAMPLES, true );
+	m_pSB_RuntimeProbeSamples = new SB<RuntimeProbeUpdateSampleInfo>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*SHProbeEncoder::PROBE_SAMPLES_COUNT, true );
 	m_pSB_RuntimeProbeEmissiveSurfaces = new SB<RuntimeProbeUpdateEmissiveSurfaceInfo>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*SHProbeEncoder::MAX_PROBE_EMISSIVE_SURFACES, true );
+
+	// Create the static SH coefficients for each sample
+	m_pSB_RuntimeProbeSamplesSH = new SB<SHCoeffs1>( *m_pDevice, SHProbeEncoder::PROBE_SAMPLES_COUNT, true );
+	for ( int SampleIndex=0; SampleIndex < SHProbeEncoder::PROBE_SAMPLES_COUNT; SampleIndex++ ) {
+		const double*	SH = m_ProbeEncoder.GetSampleSHCoefficients( SampleIndex );
+		for ( int SHCoeffIndex=0; SHCoeffIndex < 9; SHCoeffIndex++ )
+			m_pSB_RuntimeProbeSamplesSH->m[SampleIndex].pSH[SHCoeffIndex] = float( SH[SHCoeffIndex] );
+	}
+	m_pSB_RuntimeProbeSamplesSH->Write();
+
+	m_ppSB_RuntimeSHStatic[0] = NULL;
+	m_ppSB_RuntimeSHStatic[1] = NULL;
+	m_pSB_RuntimeSHAmbient = NULL;
+	m_pSB_RuntimeSHDynamic = NULL;
+	m_pSB_RuntimeSHDynamicSun = NULL;
+	m_pSB_RuntimeSHFinal = NULL;
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Create shaders
@@ -47,9 +63,15 @@ void	SHProbeNetwork::Init( Device& _Device, Primitive& _ScreenQuad ) {
 
 	{
 // This one is REALLY heavy! So build it once and reload it from binary forever again
-ScopedForceMaterialsLoadFromBinary		bisou;
-		// Compute Shaders
- 		CHECK_MATERIAL( m_pCSUpdateProbe = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 2 );
+//ScopedForceMaterialsLoadFromBinary		bisou;
+
+		CHECK_MATERIAL( m_pCSUpdateProbeDynamicSH = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 2 );
+	}
+
+	{
+//ScopedForceMaterialsLoadFromBinary	bisou;
+
+ 		CHECK_MATERIAL( m_pCSAccumulateProbeSH = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS_SH" ), 3 );
 	}
 }
 
@@ -59,9 +81,18 @@ void	SHProbeNetwork::Exit() {
 
 	delete m_pPrimProbeIDs;
 
-	delete m_pCSUpdateProbe;
+	delete m_ppSB_RuntimeSHStatic[0];
+	delete m_ppSB_RuntimeSHStatic[1];
+	delete m_pSB_RuntimeSHAmbient;
+	delete m_pSB_RuntimeSHDynamic;
+	delete m_pSB_RuntimeSHDynamicSun;
+	delete m_pSB_RuntimeSHFinal;
+
+	delete m_pCSUpdateProbeDynamicSH;
 	delete m_pMatRenderNeighborProbe;
 	delete m_pMatRenderCubeMap;
+
+	delete m_pSB_RuntimeProbeSamplesSH;
 
 	delete m_pSB_RuntimeProbeEmissiveSurfaces;
 	delete m_pSB_RuntimeProbeSamples;
@@ -71,6 +102,18 @@ void	SHProbeNetwork::Exit() {
 
 	delete m_pCB_UpdateProbes;
 	delete m_pCB_Probe;
+}
+
+void	SHProbeNetwork::PreAllocateProbes( int _ProbesCount ) {
+	m_MaxProbesCount = _ProbesCount;
+	m_pProbes = new SHProbe[m_MaxProbesCount];
+
+	m_ppSB_RuntimeSHStatic[0] = new SB<SHCoeffs3>( *m_pDevice, m_MaxProbesCount, true );
+	m_ppSB_RuntimeSHStatic[1] = new SB<SHCoeffs3>( *m_pDevice, m_MaxProbesCount, true );
+	m_pSB_RuntimeSHAmbient = new SB<SHCoeffs1>( *m_pDevice, m_MaxProbesCount, true );
+	m_pSB_RuntimeSHDynamic = new SB<SHCoeffs3>( *m_pDevice, m_MaxProbesCount, false );
+	m_pSB_RuntimeSHDynamicSun = new SB<SHCoeffs3>( *m_pDevice, m_MaxProbesCount, false );
+	m_pSB_RuntimeSHFinal = new SB<SHCoeffs3>( *m_pDevice, m_MaxProbesCount, false );
 }
 
 void	SHProbeNetwork::AddProbe( Scene::Probe& _Probe ) {
@@ -83,16 +126,18 @@ void	SHProbeNetwork::AddProbe( Scene::Probe& _Probe ) {
 void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 //	ASSERT( m_ProbesCount <= MAX_PROBE_UPDATES_PER_FRAME, "Increase max probes update per frame! Or write the time-sliced updater you promised!" );
 
-	// Prepare constant buffer for update
-	for ( int i=0; i < 9; i++ )
-		m_pCB_UpdateProbes->m.AmbientSH[i] = float4( _Parms.AmbientSkySH[i], 0 );	// Update one by one because of float3 padding
+	U32		ProbeUpdatesCount = MIN( _Parms.MaxProbeUpdatesPerFrame, U32(m_ProbesCount) );
 
-	m_pCB_UpdateProbes->m.AmbientSH[8].w = _Parms.BounceFactorSun.x;	// Last padding hides one of our variables in its W component...
-	m_pCB_UpdateProbes->m.SkyBoost = _Parms.BounceFactorSky.x;
-	m_pCB_UpdateProbes->m.DynamicLightsBoost = _Parms.BounceFactorDynamic.x;
-	m_pCB_UpdateProbes->m.StaticLightingBoost = _Parms.BounceFactorStatic.x;
-	m_pCB_UpdateProbes->m.EmissiveBoost = _Parms.BounceFactorEmissive.x;
-	m_pCB_UpdateProbes->m.NeighborProbesContributionBoost = _Parms.BounceFactorNeighbors.x;
+	// Prepare constant buffer for update
+	m_pCB_UpdateProbes->m.ProbesCount = ProbeUpdatesCount;
+	m_pCB_UpdateProbes->m.SunBoost = _Parms.BounceFactorSun;	// Last padding hides one of our variables in its W component...
+	m_pCB_UpdateProbes->m.SkyBoost = _Parms.BounceFactorSky;
+	m_pCB_UpdateProbes->m.DynamicLightsBoost = _Parms.BounceFactorDynamic;
+	m_pCB_UpdateProbes->m.StaticLightingBoost = _Parms.BounceFactorStatic;
+//	m_pCB_UpdateProbes->m.EmissiveBoost = _Parms.BounceFactorEmissive;
+//	m_pCB_UpdateProbes->m.NeighborProbesContributionBoost = _Parms.BounceFactorNeighbors.x;
+// 	for ( int i=0; i < 9; i++ )
+// 		m_pCB_UpdateProbes->m.AmbientSH[i] = float4( _Parms.AmbientSkySH[i], 0 );	// Update one by one because of float3 padding
 
 	m_pCB_UpdateProbes->UpdateData();
 
@@ -108,17 +153,17 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 	//
 	// Basically for every probe update, we perform 1(sky)+4(neighbor) expensive SH products and compute lighting for at most 128 samples in the scene
 	//
-	U32		ProbeUpdatesCount = MIN( _Parms.MaxProbeUpdatesPerFrame, U32(m_ProbesCount) );
 //TODO: Handle a proper stack of probes to update
 
 	// Prepare the buffer of probe update infos and sampling point infos
-	int		TotalSamplesCount = 0;
+	RuntimeProbeUpdateSampleInfo*	pSampleUpdateInfos = m_pSB_RuntimeProbeSamples->m;
 	int		TotalEmissiveSurfacesCount = 0;
 	for ( U32 ProbeUpdateIndex=0; ProbeUpdateIndex < ProbeUpdatesCount; ProbeUpdateIndex++ ) {
-//		int		ProbeIndex = ProbeUpdateIndex;	// Simple at the moment, when we have the update stack we'll have to fetch the index from it...
+		// Simple at the moment, when we have the update stack we'll have to fetch the index from it...
+//		int			ProbeIndex = ProbeUpdateIndex;
 
 		// Still simple: we update N probes each frame in sequence, next frame we'll update the next N ones...
-		int		ProbeIndex = (m_ProbeUpdateIndex + ProbeUpdateIndex) % m_ProbesCount;
+		int			ProbeIndex = (m_ProbeUpdateIndex + ProbeUpdateIndex) % m_ProbesCount;
 
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
 
@@ -126,12 +171,8 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 		RuntimeProbeUpdateInfo&	ProbeUpdateInfos = m_pSB_RuntimeProbeUpdateInfos->m[ProbeUpdateIndex];
 
 		ProbeUpdateInfos.Index = ProbeIndex;
-		ProbeUpdateInfos.SamplesStart = TotalSamplesCount;
-		ProbeUpdateInfos.SamplesCount = Probe.SamplesCount;
 		ProbeUpdateInfos.EmissiveSurfacesStart = TotalEmissiveSurfacesCount;
 		ProbeUpdateInfos.EmissiveSurfacesCount = Probe.EmissiveSurfacesCount;
-		memcpy_s( ProbeUpdateInfos.SHStatic, sizeof(ProbeUpdateInfos.SHStatic), Probe.pSHBounceStatic, 9*sizeof(float3) );
-		memcpy_s( ProbeUpdateInfos.SHOcclusion, sizeof(ProbeUpdateInfos.SHOcclusion), Probe.pSHOcclusion, 9*sizeof(float) );
 
 		// Copy neighbor SH
 		for( int i=0; i < 9; i++ ) {
@@ -143,14 +184,11 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 
 		// Fill the samples update infos
 		SHProbe::Sample*	pSample = Probe.pSamples;
-		for ( U32 SampleIndex=0; SampleIndex < Probe.SamplesCount; SampleIndex++, pSample++ ) {
-			RuntimeProbeUpdateSampleInfo&	SampleUpdateInfos = m_pSB_RuntimeProbeSamples->m[TotalSamplesCount+SampleIndex];
-
-			SampleUpdateInfos.Position = pSample->Position;
-			SampleUpdateInfos.Normal = pSample->Normal;
-			SampleUpdateInfos.Radius = pSample->Radius;
-			SampleUpdateInfos.Albedo = pSample->SHFactor * pSample->Albedo;
-//			memcpy_s( SampleUpdateInfos.SH, sizeof(SampleUpdateInfos.SH), pSample->pSHBounce, 9*sizeof(float) );
+		for ( U32 SampleIndex=0; SampleIndex < SHProbeEncoder::PROBE_SAMPLES_COUNT; SampleIndex++, pSample++, pSampleUpdateInfos++ ) {
+			pSampleUpdateInfos->Position = pSample->Position;
+			pSampleUpdateInfos->Normal = pSample->Normal;
+			pSampleUpdateInfos->Albedo = pSample->SHFactor * pSample->Albedo;
+			pSampleUpdateInfos->Radius = pSample->Radius;
 		}
 
 		// Fill the emissive surface update infos
@@ -164,30 +202,34 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 			memcpy_s( EmissiveSetUpdateInfos.SH, sizeof(EmissiveSetUpdateInfos.SH), EmissiveSurface.pSHEmissive, 9*sizeof(float) );
 		}
 
-		TotalSamplesCount += Probe.SamplesCount;
 		TotalEmissiveSurfacesCount += Probe.EmissiveSurfacesCount;
 	}
 
+	// =========================================================
 	// Do the update!
-	USING_COMPUTESHADER_START( *m_pCSUpdateProbe )
+	{
+		USING_COMPUTESHADER_START( *m_pCSUpdateProbeDynamicSH )
 
-	m_pSB_RuntimeProbeUpdateInfos->Write( ProbeUpdatesCount );
-	m_pSB_RuntimeProbeUpdateInfos->SetInput( 10 );
+		m_pSB_RuntimeProbeUpdateInfos->Write( ProbeUpdatesCount );
+		m_pSB_RuntimeProbeUpdateInfos->SetInput( 10 );
 
-	m_pSB_RuntimeProbeSamples->Write( TotalSamplesCount );
-	m_pSB_RuntimeProbeSamples->SetInput( 11 );
+		m_pSB_RuntimeProbeSamples->Write( ProbeUpdatesCount * SHProbeEncoder::PROBE_SAMPLES_COUNT );
+		m_pSB_RuntimeProbeSamples->SetInput( 11 );
 
-	m_pSB_RuntimeProbeEmissiveSurfaces->Write( TotalEmissiveSurfacesCount );
-	m_pSB_RuntimeProbeEmissiveSurfaces->SetInput( 12 );
+		m_pSB_RuntimeProbeEmissiveSurfaces->Write( TotalEmissiveSurfacesCount );
+		m_pSB_RuntimeProbeEmissiveSurfaces->SetInput( 12 );
 
-	m_pSB_RuntimeProbes->RemoveFromLastAssignedSlots();
-	m_pSB_RuntimeProbes->SetOutput( 0 );
+		m_pSB_RuntimeProbeSamplesSH->SetInput( 13 );
 
-	M.Dispatch( ProbeUpdatesCount, 1, 1 );
+		m_pSB_RuntimeSHDynamic->RemoveFromLastAssignedSlots();
+		m_pSB_RuntimeSHDynamicSun->RemoveFromLastAssignedSlots();
+		m_pSB_RuntimeSHDynamic->SetOutput( 0 );
+		m_pSB_RuntimeSHDynamicSun->SetOutput( 1 );
 
-	USING_COMPUTE_SHADER_END
+		M.Dispatch( ProbeUpdatesCount, 1, 1 );
 
-	m_pSB_RuntimeProbes->SetInput( 9, true );
+		USING_COMPUTE_SHADER_END
+	}
 
 	// Advance probe update index
 	if ( m_ProbesCount > 0 )
@@ -255,10 +297,31 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 	}
 
 	m_pSB_RuntimeProbes->Write();
-	m_pSB_RuntimeProbes->SetInput( 9, true );
 
 #endif
 
+	// =========================================================
+	// Perform the final accumulation of all the SH sources
+	{
+		USING_COMPUTESHADER_START( *m_pCSAccumulateProbeSH )
+
+		m_ppSB_RuntimeSHStatic[0]->SetInput( 10 );
+		m_pSB_RuntimeSHAmbient->SetInput( 11 );
+		m_pSB_RuntimeSHDynamic->SetInput( 12 );
+		m_pSB_RuntimeSHDynamicSun->SetInput( 13 );
+
+		m_pSB_RuntimeSHFinal->RemoveFromLastAssignedSlots();
+		m_pSB_RuntimeSHFinal->SetOutput( 0 );
+
+		M.Dispatch( m_ProbesCount, 1, 1 );
+
+		USING_COMPUTE_SHADER_END
+	}
+
+	// =========================================================
+	// Setup the input buffers
+	m_pSB_RuntimeProbes->SetInput( 8, true );
+	m_pSB_RuntimeSHFinal->SetInput( 9, true );
 }
 
 U32	SHProbeNetwork::GetNearestProbe( const float3& _wsPosition ) const {
@@ -799,7 +862,8 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 		fopen_s( &pFile, pTemp, "rb" );
 		if ( pFile == NULL ) {
 			// Not ready yet (happens for first time computation!)
-			Probe.SamplesCount = Probe.EmissiveSurfacesCount = 0;
+			memset( Probe.pSamples, 0, SHProbeEncoder::PROBE_SAMPLES_COUNT*sizeof(SHProbe::Sample) );
+			Probe.EmissiveSurfacesCount = 0;
 			continue;
 		}
 //		ASSERT( pFile != NULL, "Can't find probeset test file!" );
@@ -818,26 +882,19 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 		fread_s( &Probe.BBoxMax.z, sizeof(Probe.BBoxMax.z), sizeof(float), 1, pFile );
 
 		// Read static SH
-		for ( int i=0; i < 9; i++ )
-		{
-			fread_s( &Probe.pSHBounceStatic[i].x, sizeof(Probe.pSHBounceStatic[i].x), sizeof(float), 1, pFile );
-			fread_s( &Probe.pSHBounceStatic[i].y, sizeof(Probe.pSHBounceStatic[i].y), sizeof(float), 1, pFile );
-			fread_s( &Probe.pSHBounceStatic[i].z, sizeof(Probe.pSHBounceStatic[i].z), sizeof(float), 1, pFile );
+		for ( int i=0; i < 9; i++ ) {
+			fread_s( &Probe.pSHStaticLighting[i].x, sizeof(Probe.pSHStaticLighting[i].x), sizeof(float), 1, pFile );
+			fread_s( &Probe.pSHStaticLighting[i].y, sizeof(Probe.pSHStaticLighting[i].y), sizeof(float), 1, pFile );
+			fread_s( &Probe.pSHStaticLighting[i].z, sizeof(Probe.pSHStaticLighting[i].z), sizeof(float), 1, pFile );
 		}
 
 		// Read occlusion SH
 		for ( int i=0; i < 9; i++ )
 			fread_s( &Probe.pSHOcclusion[i], sizeof(Probe.pSHOcclusion[i]), sizeof(float), 1, pFile );
 
-		// Read the amount of dynamic samples
-		U32	SamplesCount = 0;
-		fread_s( &SamplesCount, sizeof(SamplesCount), sizeof(U32), 1, pFile );
-		Probe.SamplesCount = MIN( SHProbeEncoder::MAX_PROBE_SAMPLES, SamplesCount );	// Don't read more than we can chew!
-
 		// Read the samples
-		SHProbe::Sample	DummySample;
-		for ( U32 SampleIndex=0; SampleIndex < SamplesCount; SampleIndex++ ) {
-			SHProbe::Sample&	S = SampleIndex < Probe.SamplesCount ? Probe.pSamples[SampleIndex] : DummySample;	// We load into a useless sample if out of range...
+		for ( U32 SampleIndex=0; SampleIndex < SHProbeEncoder::PROBE_SAMPLES_COUNT; SampleIndex++ ) {
+			SHProbe::Sample&	S = Probe.pSamples[SampleIndex];
 
 			// Read position, normal, albedo
 			fread_s( &S.Position.x, sizeof(S.Position.x), sizeof(float), 1, pFile );
@@ -949,29 +1006,45 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 	//////////////////////////////////////////////////////////////////////////
 	// Allocate runtime probes structured buffer & copy static infos
 	m_pSB_RuntimeProbes = new SB<RuntimeProbe>( *m_pDevice, m_ProbesCount, true );
-	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
-	{
+	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
 
 		m_pSB_RuntimeProbes->m[ProbeIndex].Position = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
 		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.MaxDistance;
 //		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.MeanDistance;
 
+
+// 		ASSERT( Probe.pNeighborProbeInfos[0].ProbeID == ~0UL || Probe.pNeighborProbeInfos[0].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
+// 		ASSERT( Probe.pNeighborProbeInfos[1].ProbeID == ~0UL || Probe.pNeighborProbeInfos[1].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
+// 		ASSERT( Probe.pNeighborProbeInfos[2].ProbeID == ~0UL || Probe.pNeighborProbeInfos[2].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
+// 		ASSERT( Probe.pNeighborProbeInfos[3].ProbeID == ~0UL || Probe.pNeighborProbeInfos[3].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
 // 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[0] = Probe.pNeighborProbeInfos[0].ProbeID;
 // 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[1] = Probe.pNeighborProbeInfos[1].ProbeID;
 // 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[2] = Probe.pNeighborProbeInfos[2].ProbeID;
 // 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[3] = Probe.pNeighborProbeInfos[3].ProbeID;
-
-		ASSERT( Probe.pNeighborProbeInfos[0].ProbeID == ~0UL || Probe.pNeighborProbeInfos[0].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
-		ASSERT( Probe.pNeighborProbeInfos[1].ProbeID == ~0UL || Probe.pNeighborProbeInfos[1].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
-		ASSERT( Probe.pNeighborProbeInfos[2].ProbeID == ~0UL || Probe.pNeighborProbeInfos[2].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
-		ASSERT( Probe.pNeighborProbeInfos[3].ProbeID == ~0UL || Probe.pNeighborProbeInfos[3].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
-		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[0] = Probe.pNeighborProbeInfos[0].ProbeID;
-		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[1] = Probe.pNeighborProbeInfos[1].ProbeID;
-		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[2] = Probe.pNeighborProbeInfos[2].ProbeID;
-		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[3] = Probe.pNeighborProbeInfos[3].ProbeID;
 	}
 	m_pSB_RuntimeProbes->Write();
+
+
+	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
+		SHProbe&	Probe = m_pProbes[ProbeIndex];
+
+		for ( int SHCoeffIndex=0; SHCoeffIndex < 9; SHCoeffIndex++ ) {
+			m_ppSB_RuntimeSHStatic[0]->m[ProbeIndex].pSH[SHCoeffIndex] = Probe.pSHStaticLighting[SHCoeffIndex];
+			m_ppSB_RuntimeSHStatic[1]->m[ProbeIndex].pSH[SHCoeffIndex] = Probe.pSHStaticLighting[SHCoeffIndex];
+
+			m_pSB_RuntimeSHAmbient->m[ProbeIndex].pSH[SHCoeffIndex] = Probe.pSHOcclusion[SHCoeffIndex];
+
+			m_pSB_RuntimeSHDynamic->m[ProbeIndex].pSH[SHCoeffIndex] = float3::Zero;
+			m_pSB_RuntimeSHDynamicSun->m[ProbeIndex].pSH[SHCoeffIndex] = float3::Zero;
+		}
+	}
+
+	m_ppSB_RuntimeSHStatic[0]->Write();
+	m_ppSB_RuntimeSHStatic[1]->Write();
+	m_pSB_RuntimeSHAmbient->Write();
+	m_pSB_RuntimeSHDynamic->Write();
+	m_pSB_RuntimeSHDynamicSun->Write();
 
 
 	//////////////////////////////////////////////////////////////////////////

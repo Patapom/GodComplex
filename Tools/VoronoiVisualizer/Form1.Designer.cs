@@ -41,6 +41,8 @@
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.buttonBuildCell = new System.Windows.Forms.Button();
 			this.checkBoxRenderCell = new System.Windows.Forms.CheckBox();
+			this.labelStats = new System.Windows.Forms.Label();
+			this.buttonDumpDirections = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// buttonReload
@@ -150,7 +152,7 @@
 			// 
 			// timer1
 			// 
-			this.timer1.Interval = 10;
+			this.timer1.Interval = 5;
 			this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
 			// 
 			// buttonBuildCell
@@ -174,11 +176,32 @@
 			this.checkBoxRenderCell.Text = "Render Cell";
 			this.checkBoxRenderCell.CheckedChanged += new System.EventHandler(this.checkBoxRenderCell_CheckedChanged);
 			// 
+			// labelStats
+			// 
+			this.labelStats.AutoSize = true;
+			this.labelStats.Location = new System.Drawing.Point(733, 166);
+			this.labelStats.Name = "labelStats";
+			this.labelStats.Size = new System.Drawing.Size(35, 13);
+			this.labelStats.TabIndex = 9;
+			this.labelStats.Text = "label3";
+			// 
+			// buttonDumpDirections
+			// 
+			this.buttonDumpDirections.Location = new System.Drawing.Point(733, 634);
+			this.buttonDumpDirections.Name = "buttonDumpDirections";
+			this.buttonDumpDirections.Size = new System.Drawing.Size(149, 23);
+			this.buttonDumpDirections.TabIndex = 10;
+			this.buttonDumpDirections.Text = "Copy Directions to Clipboard";
+			this.buttonDumpDirections.UseVisualStyleBackColor = true;
+			this.buttonDumpDirections.Click += new System.EventHandler(this.buttonDumpDirections_Click);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1037, 669);
+			this.Controls.Add(this.buttonDumpDirections);
+			this.Controls.Add(this.labelStats);
 			this.Controls.Add(this.checkBoxRenderCell);
 			this.Controls.Add(this.buttonBuildCell);
 			this.Controls.Add(this.radioButtonRandom);
@@ -212,6 +235,8 @@
 		private System.Windows.Forms.Timer timer1;
 		private System.Windows.Forms.Button buttonBuildCell;
 		private System.Windows.Forms.CheckBox checkBoxRenderCell;
+		private System.Windows.Forms.Label labelStats;
+		private System.Windows.Forms.Button buttonDumpDirections;
 	}
 }
 

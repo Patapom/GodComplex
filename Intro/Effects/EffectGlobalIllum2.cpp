@@ -60,7 +60,7 @@
 #define SCENE 3	// Test
 
 //#define	LOAD_PROBES			// Define this to simply load probes without computing them
-#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
+#define USE_WHITE_TEXTURES		// Define this to use a single white texture for the entire scene (low patate machines)
 #define	USE_NORMAL_MAPS			// Define this to use normal maps
 
 // Scene selection (also think about changing the scene in the .RC!)
@@ -420,7 +420,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 	// Upload static lights once and for all
 	m_pSB_LightsStatic->Write( m_pCB_Scene->m.StaticLightsCount );
-	m_pSB_LightsStatic->SetInput( 7, true );
+	m_pSB_LightsStatic->SetInput( 6, true );
 
 	// Update once so it's ready when we pre-compute probes
 	m_pCB_Scene->UpdateData();
@@ -807,7 +807,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 #endif
 
 	m_pSB_LightsDynamic->Write( 2 );
-	m_pSB_LightsDynamic->SetInput( 8, true );
+	m_pSB_LightsDynamic->SetInput( 7, true );
 
 
 	// Update emissive materials

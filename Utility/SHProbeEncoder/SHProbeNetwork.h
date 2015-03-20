@@ -26,7 +26,7 @@ public:		// NESTED TYPES
 
 		// Static SH infos
 		float			pSHOcclusion[9];			// The pre-computed SH that gives back how much of the environment is perceived in a given direction
-		float3			pSHBounceStatic[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced static lighting on static geometry
+		float3			pSHStaticLighting[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced static lighting on static geometry
 
 		// Geometric infos
 		float			MeanDistance;				// Mean distance of all scene pixels
@@ -37,9 +37,7 @@ public:		// NESTED TYPES
 		float3			BBoxMax;
 
 		// Generic reflective surfaces infos
-		U32				SamplesCount;				// The amount of dynamic samples for that probe
-		struct Sample
-		{
+		struct Sample {
 			float3			Position;				// The position of the dynamic surface
 			float3			Normal;					// The normal of the dynamic surface's plane
 			float3			Tangent;				// The longest principal axis of the samples's points cluster (scaled by the length of the axis)
@@ -49,12 +47,11 @@ public:		// NESTED TYPES
 			float3			F0;						// Surface's Fresnel coefficient
 			float			SHFactor;				// The ratio of pixels occupied by the sample area compared to the total amount of original pixels
 //			float			pSHBounce[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced dynamic lighting on static geometry
-		}				pSamples[SHProbeEncoder::MAX_PROBE_SAMPLES];
+		}				pSamples[SHProbeEncoder::PROBE_SAMPLES_COUNT];
 
 		// Emissive surfaces infos
 		U32				EmissiveSurfacesCount;		// The amount of emissive surfaces for that probe
-		struct EmissiveSurface
-		{
+		struct EmissiveSurface {
 			float3				Position;			// The position of the emissive surface
 			float3				Normal;				// The normal of the emissive surface's plane
 			float3				Tangent;			// The longest principal axis of the surface's points cluster (scaled by the length of the axis)
@@ -66,8 +63,7 @@ public:		// NESTED TYPES
 		// Neighbor probes infos
 		float			NearestProbeDistance;
 		float			FarthestProbeDistance;
-		struct NeighborProbeInfos
-		{
+		struct NeighborProbeInfos {
 			U32				ProbeID;				// ID of the neighbor probe
 			float			Distance;				// Average distance to the probe
 			float			SolidAngle;				// Perceived solid angle covered by the probe
@@ -111,48 +107,61 @@ private:	// RUNTIME STRUCTURES
 
 #pragma pack( push, 4 )
 
-	struct CBProbe			// Used by NeighborProbes splatting
-	{
+	struct CBProbe {		// Used by NeighborProbes splatting
 		float3		CurrentProbePosition;
 		U32			NeighborProbeID;
 		float3		NeighborProbePosition;
  	};
 
-	struct CBUpdateProbes	// Used by probes dynamic update
-	{
-		float4		AmbientSH[9];		// Ambient sky (padded!)
+	struct CBUpdateProbes {	// Used by probes dynamic update
+		U32			ProbesCount;
+		float3		StaticLightingBoost;
+
+		float3		SkyBoost;
+		float		__PAD0;
+
+		float3		SunBoost;
+		float		__PAD1;
+
+		float3		DynamicLightsBoost;
+		float		__PAD2;
+
+//		float4		AmbientSH[9];		// Ambient sky (padded!)
 //		float		SunBoost;	// Merged into the last float4
-
-		float		SkyBoost;
-		float		DynamicLightsBoost;
-		float		StaticLightingBoost;
-
-		float		EmissiveBoost;
-		float		NeighborProbesContributionBoost;
+// 		float		EmissiveBoost;
+// 		float		NeighborProbesContributionBoost;
  	};
 
 
 	// Runtime probes buffer that we'll use to light objects
-	struct RuntimeProbe 
-	{
+	struct RuntimeProbe  {
 		float3		Position;
 		float		Radius;
-		float3		pSH[9];
+//		float3		pSH[9];
 
 		// Neighbor probes
-		U16			NeighborProbeIDs[4];			// IDs of the 4 most significant neighbors
+//		U16			NeighborProbeIDs[4];			// IDs of the 4 most significant neighbors
+	};
+
+	struct SHCoeffs1 {
+		float		pSH[9];
+	};
+
+	struct SHCoeffs3 {
+		float3		pSH[9];
 	};
 
 	// Probes update buffers
 	struct RuntimeProbeUpdateInfo
 	{
 		U32			Index;							// The index of the probe we're updating
-		U32			SamplesStart;					// Index of the first sample for the probe
-		U32			SamplesCount;					// Amount of samples for the probe
+// 		U32			SamplesStart;					// Index of the first sample for the probe
+// 		U32			SamplesCount;					// Amount of samples for the probe
 		U32			EmissiveSurfacesStart;			// Index of the first emissive surface for the probe
 		U32			EmissiveSurfacesCount;			// Amount of emissive surfaces for the probe
-		float3		SHStatic[9];					// Precomputed static SH (static geometry + static lights)
-		float		SHOcclusion[9];					// Directional ambient occlusion for the probe
+
+// 		float3		SHStatic[9];					// Precomputed static SH (static geometry + static lights)
+// 		float		SHOcclusion[9];					// Directional ambient occlusion for the probe
 
 		// Neighbor probes
 //		U32			NeighborProbeIDs[4];			// The IDs of the 4 most significant neighbor probes
@@ -163,10 +172,8 @@ private:	// RUNTIME STRUCTURES
 	{
 		float3		Position;						// World position of the sampling point
 		float3		Normal;							// World normal of the sampling point
-		float		Radius;							// Radius of the sampling point's disc approximation
 		float3		Albedo;							// Albedo of the sample
-// No need: can be generated at runtime from normal direction
-//		float		SH[9];							// SH for the sample
+		float		Radius;							// Radius of the sampling point's disc approximation (set to 0 to discard sample)
 	};
 
 	struct	RuntimeProbeUpdateEmissiveSurfaceInfo
@@ -175,7 +182,6 @@ private:	// RUNTIME STRUCTURES
 		float		SH[9];							// SH for the surface
 	};
 
-//public:
 	struct RuntimeProbeNetworkInfos
 	{
 		U32			ProbeIDs[2];					// The IDs of the 2 connected probes
@@ -269,13 +275,19 @@ private:	// FIELDS
 	Device*					m_pDevice;
 	U32						m_ErrorCode;
 
+	// The list of probes in the scene
+	U32						m_ProbesCount;
+	U32						m_MaxProbesCount;
+	SHProbe*				m_pProbes;
+
 	Primitive*				m_pScreenQuad;
 
 	Texture2D*				m_pRTCubeMap;
 
 	Material*				m_pMatRenderCubeMap;		// Renders the scene into a cubemap
 	Material*				m_pMatRenderNeighborProbe;	// Renders the neighbor probes as planes to form a 3D voronoï cell
-	ComputeShader*			m_pCSUpdateProbe;			// Dynamically update probes
+	ComputeShader*			m_pCSUpdateProbeDynamicSH;	// Dynamically update probes (spread across several frames)
+	ComputeShader*			m_pCSAccumulateProbeSH;		// Dynamically update probes' SH by accumulating static + sky + dynamic SH (done each frame)
 
 	Octree<const SHProbe*>	m_ProbeOctree;				// Scene octree containing probes, queried by dynamic objects
 
@@ -284,26 +296,31 @@ private:	// FIELDS
  	CB<CBUpdateProbes>*		m_pCB_UpdateProbes;
 
 	// Runtime probes
-	SB<RuntimeProbe>*		m_pSB_RuntimeProbes;
+	SB<RuntimeProbe>*		m_pSB_RuntimeProbes;		// (SRV) Position + Radius + info for each probe
+
+	SB<SHCoeffs3>*			m_ppSB_RuntimeSHStatic[2];	// (SRV) 2 sets of static SH (2 sets of lights, A and B, render in these)
+	SB<SHCoeffs1>*			m_pSB_RuntimeSHAmbient;		// (SRV) 1 set of ambient sky SH 
+	SB<SHCoeffs3>*			m_pSB_RuntimeSHDynamic;		// (UAV) 1 sets of dynamic SH (updated in real time across several frames)
+	SB<SHCoeffs3>*			m_pSB_RuntimeSHDynamicSun;	// (UAV) 1 sets of dynamic SH for the Sun (updated in real time across several frames)
+	SB<SHCoeffs3>*			m_pSB_RuntimeSHFinal;		// (UAV) The sum of all the above, updated each frame...
+
+	// Probes Update
+	SB<RuntimeProbeUpdateInfo>*					m_pSB_RuntimeProbeUpdateInfos;		// (SRV) Update info for each probe we're updating (e.g. index, emissive surface index/count, neighbor influences, etc.)
+	SB<RuntimeProbeUpdateSampleInfo>*			m_pSB_RuntimeProbeSamples;			// (SRV) Info for each probe sample we're updating (position, normal, albedo, radius)
+	SB<RuntimeProbeUpdateEmissiveSurfaceInfo>*	m_pSB_RuntimeProbeEmissiveSurfaces;	// (SRV) Info for each emissive surface we're updating (color, SH)
+	SB<SHCoeffs1>*								m_pSB_RuntimeProbeSamplesSH;		// (SRV) SH for each sample direction
 
 	// Additional vertex stream containing probe IDs for each vertex
 	Primitive*				m_pPrimProbeIDs;
 
-	// Probes Update
-	U32						m_ProbesCount;
-	U32						m_MaxProbesCount;
-	SHProbe*				m_pProbes;
-	SB<RuntimeProbeUpdateInfo>*					m_pSB_RuntimeProbeUpdateInfos;
-	SB<RuntimeProbeUpdateSampleInfo>*			m_pSB_RuntimeProbeSamples;
-	SB<RuntimeProbeUpdateEmissiveSurfaceInfo>*	m_pSB_RuntimeProbeEmissiveSurfaces;
-
 	// Probes network debug
-	SB<RuntimeProbeNetworkInfos>*				m_pSB_RuntimeProbeNetworkInfos;
+	SB<RuntimeProbeNetworkInfos>*	m_pSB_RuntimeProbeNetworkInfos;
 
 	// Queue of probe indices to update each frame
 	// TODO! I'm only storing the index of the sequence of probes I'll update each frame
 	int						m_ProbeUpdateIndex;
 
+	// The encoder that will render cube maps and process them to generate runtime probe data
 	SHProbeEncoder			m_ProbeEncoder;
 
 	// List of probe influences for each face of the scene
@@ -318,10 +335,7 @@ public:
 	void			Init( Device& _Device, Primitive& _ScreenQuad );
 	void			Exit();
 
-	void			PreAllocateProbes( int _ProbesCount ) {
-		m_MaxProbesCount = _ProbesCount;
-		m_pProbes = new SHProbe[m_MaxProbesCount];
-	}
+	void			PreAllocateProbes( int _ProbesCount );
 
 	void			AddProbe( Scene::Probe& _Probe );
 	U32				GetProbesCount() const	{ return m_ProbesCount; }

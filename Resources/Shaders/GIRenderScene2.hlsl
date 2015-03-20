@@ -51,18 +51,18 @@ PS_IN	VS( SCENE_VS_IN _In )
 
 	float3	Normal = normalize( Out.Normal );
 
-	float3	SH[9];
+	SHCoeffs3	Coeffs;
 	[unroll]
 	for ( uint i=0; i < 9; i++ )
-		SH[i] = 0.0;
+		SHCoeffsSH[i] = 0.0;
 
 #ifdef PER_VERTEX_PROBE_ID	// Only use the entry point probe and its direct neighbors
 	if ( _In.ProbeID != 0xFFFFFFFF ) {
 		// We have an entry point into the probes network!
 //		SH[0] = _In.ProbeID;
-		GatherProbeSH( Out.Position, Normal, _In.ProbeID, SH );
+		GatherProbeSH( Out.Position, Normal, _In.ProbeID, Coeffs );
 		if ( _ShowVertexProbeID )
-			SH[0] = _In.ProbeID;
+			Coeffs.SH[0] = _In.ProbeID;
 	}
 
 #else	// SUM ALL THE SCENE'S PROBES!
@@ -86,15 +86,15 @@ PS_IN	VS( SCENE_VS_IN _In )
 #endif
 
 	// Store for pixel shader
-	Out.SH0 = SH[0];
-	Out.SH1 = SH[1];
-	Out.SH2 = SH[2];
-	Out.SH3 = SH[3];
-	Out.SH4 = SH[4];
-	Out.SH5 = SH[5];
-	Out.SH6 = SH[6];
-	Out.SH7 = SH[7];
-	Out.SH8 = SH[8];
+	Out.SH0 = Coeffs.SH[0];
+	Out.SH1 = Coeffs.SH[1];
+	Out.SH2 = Coeffs.SH[2];
+	Out.SH3 = Coeffs.SH[3];
+	Out.SH4 = Coeffs.SH[4];
+	Out.SH5 = Coeffs.SH[5];
+	Out.SH6 = Coeffs.SH[6];
+	Out.SH7 = Coeffs.SH[7];
+	Out.SH8 = Coeffs.SH[8];
 
 	return Out;
 }
