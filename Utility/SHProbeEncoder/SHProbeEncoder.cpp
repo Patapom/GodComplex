@@ -299,6 +299,21 @@ SHProbeEncoder::SHProbeEncoder() {
 
 	// Build each sample's SH coefficients
 	memset( SH, 0, 9*sizeof(double) );
+
+for ( int ThetaIndex=0; ThetaIndex < 80; ThetaIndex++ ) {
+	double	Theta = 2.0 * acos( sqrt( (ThetaIndex+0.5f) / 80.0f ) );
+	for ( int PhiIndex=0; PhiIndex < 160; PhiIndex++ ) {
+		double	Phi = TWOPI * PhiIndex / 160.0;
+		for ( int i=0; i < 9; i++ ) {
+			int	l = int( floorf( sqrtf( float( i ) ) ) );
+			int	m = i - l*(l+1);
+			SH[i] += FOURPI * SH::ComputeSHCoeff( l, m, Theta, Phi ) / (80.0*160.0);
+		}
+	}
+}
+
+
+
 	pPixel = m_pCubeMapPixels;
 	for ( int i=0; i < PixelsCount; i++, pPixel++ ) {
 		for ( int SHCoeffIndex=0; SHCoeffIndex < 9; SHCoeffIndex++ ) {
