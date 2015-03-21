@@ -12,8 +12,8 @@ cbuffer	cbUpdateProbes : register(b10) {
 	float3	_SunBoost;
 	float3	_DynamicLightsBoost;
 
-// 	float	_EmissiveBoost;
-// 	float	_NeighborProbesContributionBoost;
+	float	_EmissiveBoost;
+	float	_NeighborProbesContributionBoost;
 };
 
 
@@ -46,9 +46,11 @@ void	CS_AccumulateSH(
 	SHCoeffs3	SHDynamicSun = _SBSHDynamicSun[ProbeIndex];
 
 	SHCoeffs3	Result;
-	for ( int i=0; i < 9; i++ )
+	for ( int i=0; i < 9; i++ ) {
 		Result.SH[i] = _StaticLightingBoost * SHStatic.SH[i] + _SkyBoost * SHSky.SH[i] + _DynamicLightsBoost * SHDynamic.SH[i] + _SunBoost * SHDynamicSun.SH[i];
 //		Result.SH[i] = SHDynamicSun.SH[i];
+//		Result.SH[i] = float3( ProbeIndex / 100.0, 0, 0 );
+	}
 
 	_SBSHFinal[ProbeIndex] = Result;
 }
@@ -305,9 +307,6 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 		}
 	}
 
-//SumIrradiance = float3( 1, 0, 0 );
-//SumIrradianceSun = float3( 1, 1, 0 );
-
 	// Encode into SH
 	float3	Radiance = SumIrradiance * Sample.Albedo;
 	float3	RadianceSun = SumIrradianceSun * Sample.Albedo;
@@ -473,56 +472,19 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 		for ( uint i=0; i < 9; i++ ) {
 			// Dynamic = Samples + Emissive + Neighbors
 			SHDynamic.SH[i] = gs_SamplesSH[9*0+i] + gs_SamplesSH[9*1+i] + gs_SamplesSH[9*2+i] + gs_SamplesSH[9*3+i]
-							+ gs_EmissiveSurfaceSH[9*0+i] + gs_EmissiveSurfaceSH[9*1+i] + gs_EmissiveSurfaceSH[9*2+i] + gs_EmissiveSurfaceSH[9*3+i]
-							+ gs_NeighborProbeSH[9*0+i]+ gs_NeighborProbeSH[9*1+i]+ gs_NeighborProbeSH[9*2+i]+ gs_NeighborProbeSH[9*3+i];
+ 							+ _EmissiveBoost * (gs_EmissiveSurfaceSH[9*0+i] + gs_EmissiveSurfaceSH[9*1+i] + gs_EmissiveSurfaceSH[9*2+i] + gs_EmissiveSurfaceSH[9*3+i])
+ 							+ _NeighborProbesContributionBoost * (gs_NeighborProbeSH[9*0+i]+ gs_NeighborProbeSH[9*1+i]+ gs_NeighborProbeSH[9*2+i]+ gs_NeighborProbeSH[9*3+i]);
 
 			// Dynamic Sun = Samples Sun
 			SHDynamicSun.SH[i] = gs_SamplesSHSun[9*0+i] + gs_SamplesSHSun[9*1+i] + gs_SamplesSHSun[9*2+i] + gs_SamplesSHSun[9*3+i];
 		}
+
+//SHDynamic.SH[0] = float3( 1, 0, 0 );
+//SHDynamicSun.SH[0] = float3( 1, 1, 0 );
+// 
+//Probe.Index = UpdateIndex;
+
 		_SBResultDynamic[Probe.Index] = SHDynamic;
 		_SBResultDynamicSun[Probe.Index] = SHDynamicSun;
-
-// 		// 3.1] First, the ambient term needs to be computed by a product of the probe's occlusion SH and the ambient SH so it gets the occluded sky SH
-// 		float3	OccludedAmbientSH[9];
-// 		SHProduct( _AmbientSH, Probe.SHOcclusion, OccludedAmbientSH );
-// 
-// 		// 3.2] Then accumulate static + ambient + neighbor + dynamic + emissive SH
-// 		for ( uint i=0; i < 9; i++ ) {
-// #if 1
-// 			// Static + occluded sky
-// 			float3	SHCoeff = abs(_SkyBoost) * OccludedAmbientSH[i] + _StaticLightingBoost * Probe.SHStatic[i];
-// 
-// 			// + Neighbors
-// 			SHCoeff += _NeighborProbesContributionBoost * (gs_NeighborProbeSH[9*0+i] + gs_NeighborProbeSH[9*1+i] + gs_NeighborProbeSH[9*2+i] + gs_NeighborProbeSH[9*3+i]);
-// 
-// 			// + Dynamic lights
-// 			SHCoeff += gs_DynamicSH[i];
-// 
-// 			// + Emissive materials
-// 			[loop]
-// 			for ( uint j=0; j < Probe.EmissiveSurfacesCount; j++ ) {
-// 				SHCoeff += _EmissiveBoost * gs_EmissiveSurfaceSH[9*j+i];
-// 			}
-// #else
-// 			// Debug SH
-// 			float3	SHCoeff = 0.0;
-// 			[loop]
-// 			for ( uint j=0; j < Probe.SamplesCount; j++ ) {
-// 				ProbeSampleInfo	Sample = _SBProbeSamples[Probe.SamplesStart + j];
-// 
-// 				float	SH[9];
-// 				BuildSHCosineLobe( Sample.Normal, SH );	// Build a cosine lobe in the direction of the sample's normal that will reflect lighting diffusely off the surface
-// 
-// 				SHCoeff += 0.01 * SH[i];
-// 			}
-// #endif
-// 
-// 			// Store result and we're done!
-// 			_SBResult[Probe.Index].SH[i] = SHCoeff;
-// 
-// //_SBResult[Probe.Index].SH[i] = 0.5 * (gs_SamplesSH[63]);
-// //_SBResult[Probe.Index].SH[i] = 0.5 * (gs_DynamicSH[9*0+i]);
-// //_SBResult[Probe.Index].SH[i] = 0.5 * (Probe.Sets[3].SamplesCount / 64.0);
-// 		}
 	}
 }

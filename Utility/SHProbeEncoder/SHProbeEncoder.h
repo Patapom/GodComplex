@@ -340,7 +340,7 @@ private:	// FIELDS
 	// List of neighbor probes
 	float					m_NearestNeighborProbeDistance;
 	float					m_FarthestNeighborProbeDistance;
-	List<NeighborProbe>		m_NeighborProbes;
+	List< NeighborProbe >	m_NeighborProbes;
 
  	// List of influence weights per face index
 	List< double >			m_ProbeInfluencePerFace;

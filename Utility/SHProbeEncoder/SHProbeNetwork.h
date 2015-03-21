@@ -91,8 +91,8 @@ public:		// NESTED TYPES
 		float3	BounceFactorSky;		// Bounce factor for the sky
 		float3	BounceFactorDynamic;	// Bounce factor for dynamic lights
 		float3	BounceFactorStatic;		// Bounce factor for static lights
-		float3	BounceFactorEmissive;	// Bounce factor for emissive materials
-		float3	BounceFactorNeighbors;	// Bounce factor for neighbor probes
+		float	BounceFactorEmissive;	// Bounce factor for emissive materials
+		float	BounceFactorNeighbors;	// Bounce factor for neighbor probes
 	};
 
 	class IRenderSceneDelegate {
@@ -124,12 +124,10 @@ private:	// RUNTIME STRUCTURES
 		float		__PAD2;
 
 		float3		DynamicLightsBoost;
-		float		__PAD3;
+		float		EmissiveBoost;
 
+		float		NeighborProbesContributionBoost;
 //		float4		AmbientSH[9];		// Ambient sky (padded!)
-//		float		SunBoost;	// Merged into the last float4
-// 		float		EmissiveBoost;
-// 		float		NeighborProbesContributionBoost;
  	};
 
 
@@ -155,13 +153,8 @@ private:	// RUNTIME STRUCTURES
 	struct RuntimeProbeUpdateInfo
 	{
 		U32			Index;							// The index of the probe we're updating
-// 		U32			SamplesStart;					// Index of the first sample for the probe
-// 		U32			SamplesCount;					// Amount of samples for the probe
 		U32			EmissiveSurfacesStart;			// Index of the first emissive surface for the probe
 		U32			EmissiveSurfacesCount;			// Amount of emissive surfaces for the probe
-
-// 		float3		SHStatic[9];					// Precomputed static SH (static geometry + static lights)
-// 		float		SHOcclusion[9];					// Directional ambient occlusion for the probe
 
 		// Neighbor probes
 		U32			NeighborProbeIDs[4];			// The IDs of the 4 most significant neighbor probes

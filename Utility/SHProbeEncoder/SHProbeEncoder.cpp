@@ -463,6 +463,13 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeI
 		NP.Distance /= NP.PixelsCount;
 		NP.Direction.Normalize();
 
+// Better leave that to the shader
+// 		// Account for 1/r² attenuation when accumulating SH
+// 		double	rcpSqDistance = 1.0 / (NP.Distance * NP.Distance);
+// 		for ( int i=0; i < 9; i++ ) {
+// 			(*NP)->SH[i] *= rcpSqDistance;;
+// 		}
+
 		m_NearestNeighborProbeDistance = min( m_NearestNeighborProbeDistance, NP.Distance );
 		m_FarthestNeighborProbeDistance = max( m_FarthestNeighborProbeDistance, NP.Distance );
 	}
@@ -697,11 +704,9 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 		// Write the pixel coverage of the sample
 		Write( float(S.PixelsCount) / S.OriginalPixelsCount );
 
-// No need: can be regenerated at runtime from normal direction
-// 		// Write SH coefficients
-// 		for ( int i=0; i < 9; i++ ) {
-// 			Write( S.SH[i] );
-// 		}
+		// Write SH coefficients
+		for ( int i=0; i < 9; i++ )
+			Write( S.SH[i] );
 	}
 
 	// Write the emissive surfaces

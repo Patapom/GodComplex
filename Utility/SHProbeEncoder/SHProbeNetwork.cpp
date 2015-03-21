@@ -126,8 +126,8 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 	m_pCB_UpdateProbes->m.SkyBoost = _Parms.BounceFactorSky;
 	m_pCB_UpdateProbes->m.DynamicLightsBoost = _Parms.BounceFactorDynamic;
 	m_pCB_UpdateProbes->m.StaticLightingBoost = _Parms.BounceFactorStatic;
-//	m_pCB_UpdateProbes->m.EmissiveBoost = _Parms.BounceFactorEmissive;
-//	m_pCB_UpdateProbes->m.NeighborProbesContributionBoost = _Parms.BounceFactorNeighbors.x;
+	m_pCB_UpdateProbes->m.EmissiveBoost = _Parms.BounceFactorEmissive;
+	m_pCB_UpdateProbes->m.NeighborProbesContributionBoost = _Parms.BounceFactorNeighbors;
 // 	for ( int i=0; i < 9; i++ )
 // 		m_pCB_UpdateProbes->m.AmbientSH[i] = float4( _Parms.AmbientSkySH[i], 0 );	// Update one by one because of float3 padding
 

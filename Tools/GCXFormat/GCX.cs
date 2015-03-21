@@ -94,8 +94,7 @@ namespace GCXFormat
 				m_DiffuseColor = 0.5f * float3.One;
 			}
 
-			public void		Save( BinaryWriter _W )
-			{
+			public void		Save( BinaryWriter _W ) {
 				// Write material ID
 				_W.Write( m_ID );
 
@@ -284,6 +283,7 @@ namespace GCXFormat
 			}
 			public Node( Scene _Owner, idTech5Map.Map.Entity _Entity ) {
 				m_Owner = _Owner;
+				m_Owner.m_Nodes.Add( this );
 
 				float3	X = new float3( _Entity.m_Local2World.r0.x, _Entity.m_Local2World.r1.x, _Entity.m_Local2World.r2.x );
 				float3	Y = new float3( _Entity.m_Local2World.r0.y, _Entity.m_Local2World.r1.y, _Entity.m_Local2World.r2.y );
