@@ -361,6 +361,156 @@ SHProbeEncoder::~SHProbeEncoder() {
 	SAFE_DELETE_ARRAY( m_pCubeMapPixels );
 }
 
+void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const float3& _ProbePosition, U32 _ProbesCount ) {
+	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
+
+	//////////////////////////////////////////////////////////////////////////
+	// 1] Read back neighbor IDs
+	//
+	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ ) {
+		Pixel*	pCubeMapPixels = &m_pCubeMapPixels[CubeFaceIndex*CUBE_MAP_FACE_SIZE];
+
+		D3D11_MAPPED_SUBRESOURCE	Map = _StagingCubeMap.Map( 0, CubeFaceIndex );
+
+		float4*	pFaceData = (float4*) Map.pData;
+
+		Pixel*	P = pCubeMapPixels;
+		for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
+			for ( int X=0; X < CUBE_MAP_SIZE; X++, P++, pFaceData++ ) {
+				// ==== Read back neighbor probes ID & distance ====
+				P->NeighborProbeID = ((U32&) pFaceData->x);
+				P->NeighborProbeDistance = pFaceData->y;
+			}
+
+		_StagingCubeMap.UnMap( 0, CubeFaceIndex );
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// 2] Build the neighbor probes network
+	//
+	m_NeighborProbes.Init( _ProbesCount );
+	m_NeighborProbes.Clear();
+
+	Dictionary<NeighborProbe*>	NeighborProbeID2Probe;
+	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
+		Pixel&	P = m_pCubeMapPixels[PixelIndex];
+		if ( P.NeighborProbeID == ~0UL ) {
+			continue;
+		}
+
+		NeighborProbe**	NP = NeighborProbeID2Probe.Get( P.NeighborProbeID );
+		if ( NP == NULL ) {
+			NeighborProbe&	Temp = m_NeighborProbes.Append();
+			Temp.ProbeID = P.NeighborProbeID;
+			Temp.DirectlyVisible = false;	// Not directly visible at the moment
+			NP = &NeighborProbeID2Probe.Add( P.NeighborProbeID, &Temp );
+		}
+
+		// Accumulate direction, solid angle & distance
+		(*NP)->SolidAngle += P.SolidAngle;
+		(*NP)->Distance += P.NeighborProbeDistance;
+		(*NP)->Direction = (*NP)->Direction + P.View;
+
+		// Accumulate SH for neighbor's exchange of energy
+		for ( int i=0; i < 9; i++ ) {
+			(*NP)->SH[i] += P.SolidAngle * P.SHCoeffs[i];
+		}
+
+		(*NP)->PixelsCount++;
+	}
+
+	// Normalize everything
+	m_NearestNeighborProbeDistance = FLT_MAX;
+	m_FarthestNeighborProbeDistance = 0.0f;
+	for ( int NeighborIndex=0; NeighborIndex < m_NeighborProbes.GetCount(); NeighborIndex++ ) {
+		NeighborProbe&	NP = m_NeighborProbes[NeighborIndex];
+
+		NP.Distance /= NP.PixelsCount;
+		NP.Direction.Normalize();
+
+		m_NearestNeighborProbeDistance = min( m_NearestNeighborProbeDistance, NP.Distance );
+		m_FarthestNeighborProbeDistance = max( m_FarthestNeighborProbeDistance, NP.Distance );
+	}
+
+	// Sort from most important to least important neighbor
+	{
+		class	Comparer : public IComparer<NeighborProbe> {
+		public:	virtual int		Compare( const NeighborProbe& a, const NeighborProbe& b ) const {
+				if ( a.SolidAngle < b.SolidAngle )
+					return +1;
+				if ( a.SolidAngle > b.SolidAngle )
+					return -1;
+
+				return 0;
+			}
+		} Comp;
+	 	m_NeighborProbes.Sort( Comp );
+	}
+}
+
+void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount, const float3* _pProbePositions ) {
+	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
+
+	//////////////////////////////////////////////////////////////////////////
+	// 1] Read back neighbor Voronoï IDs
+	//
+	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ ) {
+		Pixel*	pCubeMapPixels = &m_pCubeMapPixels[CubeFaceIndex*CUBE_MAP_FACE_SIZE];
+
+		D3D11_MAPPED_SUBRESOURCE	Map = _StagingCubeMap.Map( 0, CubeFaceIndex );
+
+		float4*	pFaceData = (float4*) Map.pData;
+
+		Pixel*	P = pCubeMapPixels;
+		for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
+			for ( int X=0; X < CUBE_MAP_SIZE; X++, P++, pFaceData++ ) {
+				P->VoronoiProbeID = ((U32&) pFaceData->x);
+			}
+
+		_StagingCubeMap.UnMap( 0, CubeFaceIndex );
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// 2] Build the neighbor probes network
+	//
+	m_VoronoiProbes.Init( _ProbesCount );
+	m_VoronoiProbes.Clear();
+
+	const float3&	P0 = _pProbePositions[_ProbeID];
+
+	Dictionary<VoronoiProbe*>	VoronoiProbeID2Probe;
+	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
+		Pixel&	P = m_pCubeMapPixels[PixelIndex];
+		if ( P.NeighborProbeID == ~0UL ) {
+			continue;
+		}
+
+		VoronoiProbe**	VP = VoronoiProbeID2Probe.Get( P.VoronoiProbeID );
+		if ( VP == NULL ) {
+			ASSERT( P.VoronoiProbeID < _ProbesCount, "Probe index out of range!" );
+
+			// Find the center and normal of the plane
+			const float3&	P1 = _pProbePositions[P.VoronoiProbeID];
+			float3			N = P0 - P1;
+			float			Distance = N.Length();
+			if ( Distance < 1e-3f ) {
+				ASSERT( false, "This probe is much too close to be used as a Voronoï cell plane!" );
+				continue;
+			}
+			N = N / Distance;
+
+			VoronoiProbe&	Temp = m_VoronoiProbes.Append();
+			Temp.ProbeID = P.VoronoiProbeID;
+			(*VP)->Position = P1 + 0.5f * Distance * N;
+			(*VP)->Normal = N;
+
+			VP = &VoronoiProbeID2Probe.Add( P.NeighborProbeID, &Temp );
+		}
+
+		(*VP)->PixelsCount++;
+	}
+}
+
 void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount, U32 _SceneTotalFacesCount ) {
 	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
 
@@ -420,77 +570,8 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeI
 // 		m_MaxFaceIndex = max( m_MaxFaceIndex, P.FaceIndex );
 // 	}
 
-
 	//////////////////////////////////////////////////////////////////////////
-	// 3] Build the neighbor probes network
-	//
-	m_NeighborProbes.Init( _ProbesCount );
-	m_NeighborProbes.Clear();
-
-	Dictionary<NeighborProbe*>	NeighborProbeID2Probe;
-	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
-		Pixel&	P = m_pCubeMapPixels[PixelIndex];
-		if ( P.NeighborProbeID == ~0UL ) {
-			continue;
-		}
-
-		NeighborProbe**	NP = NeighborProbeID2Probe.Get( P.NeighborProbeID );
-		if ( NP == NULL ) {
-			NeighborProbe&	Temp = m_NeighborProbes.Append();
-			Temp.ProbeID = P.NeighborProbeID;
-			NP = &NeighborProbeID2Probe.Add( P.NeighborProbeID, &Temp );
-		}
-
-		// Accumulate direction, solid angle & distance
-		(*NP)->SolidAngle += P.SolidAngle;
-		(*NP)->Distance += P.NeighborProbeDistance;
-		(*NP)->Direction = (*NP)->Direction + P.View;
-
-		// Accumulate SH for neighbor's exchange of energy
-		for ( int i=0; i < 9; i++ ) {
-			(*NP)->SH[i] += P.SolidAngle * P.SHCoeffs[i];
-		}
-
-		(*NP)->PixelsCount++;
-	}
-
-	// Normalize everything
-	m_NearestNeighborProbeDistance = FLT_MAX;
-	m_FarthestNeighborProbeDistance = 0.0f;
-	for ( int NeighborIndex=0; NeighborIndex < m_NeighborProbes.GetCount(); NeighborIndex++ ) {
-		NeighborProbe&	NP = m_NeighborProbes[NeighborIndex];
-
-		NP.Distance /= NP.PixelsCount;
-		NP.Direction.Normalize();
-
-// Better leave that to the shader
-// 		// Account for 1/r² attenuation when accumulating SH
-// 		double	rcpSqDistance = 1.0 / (NP.Distance * NP.Distance);
-// 		for ( int i=0; i < 9; i++ ) {
-// 			(*NP)->SH[i] *= rcpSqDistance;;
-// 		}
-
-		m_NearestNeighborProbeDistance = min( m_NearestNeighborProbeDistance, NP.Distance );
-		m_FarthestNeighborProbeDistance = max( m_FarthestNeighborProbeDistance, NP.Distance );
-	}
-
-	// Sort from most important to least important neighbor
-	{
-		class	Comparer : public IComparer<NeighborProbe> {
-		public:	virtual int		Compare( const NeighborProbe& a, const NeighborProbe& b ) const {
-				if ( a.SolidAngle < b.SolidAngle )
-					return +1;
-				if ( a.SolidAngle > b.SolidAngle )
-					return -1;
-
-				return 0;
-			}
-		} Comp;
-	 	m_NeighborProbes.Sort( Comp );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	// 4] Build samples by flood filling
+	// 3] Build samples by flood filling
 	//
 	ComputeFloodFill( 1.0f, 1.0f, 1.0f, 0.5f );
 }
@@ -588,7 +669,7 @@ void	SHProbeEncoder::Save( const char* _FileName ) const {
 	// Write the neighbor probes
 	Write( m_NeighborProbes.GetCount() );
 
-	// Write nearest/farthest probe distance
+		// Write nearest/farthest probe distance
 	Write( m_NearestNeighborProbeDistance );
 	Write( m_FarthestNeighborProbeDistance );
 
@@ -597,6 +678,7 @@ void	SHProbeEncoder::Save( const char* _FileName ) const {
 
 		// Write probe ID, distance, solid angle, direction
 		Write( NP.ProbeID );
+		Write( NP.DirectlyVisible );
 		Write( NP.Distance );
 		Write( (float) NP.SolidAngle );
 		Write( NP.Direction.x );
@@ -606,6 +688,17 @@ void	SHProbeEncoder::Save( const char* _FileName ) const {
 		// Write SH coefficients (only luminance here since they're used for the product with the neighbor probe's SH)
 		for ( int i=0; i < 9; i++ )
 			Write( (float) NP.SH[i] );
+	}
+
+	// Write the Voronoï probes
+	Write( m_VoronoiProbes.GetCount() );
+	for ( int i=0; i < m_VoronoiProbes.GetCount(); i++ ) {
+		const VoronoiProbe&	VP = m_VoronoiProbes[i];
+
+		// Write probe ID, distance, solid angle, direction
+		Write( VP.ProbeID );
+		Write( VP.Position );
+		Write( VP.Normal );
 	}
 
 	fclose( g_pFile );
@@ -1342,20 +1435,19 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap, U32 _Scen
 	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ ) {
 		Pixel*	pCubeMapPixels = &m_pCubeMapPixels[CubeFaceIndex*CUBE_MAP_FACE_SIZE];
 
-		// Fill up albedo
 		D3D11_MAPPED_SUBRESOURCE	Map0 = _StagingCubeMap.Map( 0, 6*0+CubeFaceIndex );
 		D3D11_MAPPED_SUBRESOURCE	Map1 = _StagingCubeMap.Map( 0, 6*1+CubeFaceIndex );
 		D3D11_MAPPED_SUBRESOURCE	Map2 = _StagingCubeMap.Map( 0, 6*2+CubeFaceIndex );
-		D3D11_MAPPED_SUBRESOURCE	Map3 = _StagingCubeMap.Map( 0, 6*3+CubeFaceIndex );
+//		D3D11_MAPPED_SUBRESOURCE	Map3 = _StagingCubeMap.Map( 0, 6*3+CubeFaceIndex );
 
 		float4*	pFaceData0 = (float4*) Map0.pData;
 		float4*	pFaceData1 = (float4*) Map1.pData;
 		float4*	pFaceData2 = (float4*) Map2.pData;
-		float4*	pFaceData3 = (float4*) Map3.pData;
+//		float4*	pFaceData3 = (float4*) Map3.pData;
 
 		Pixel*	P = pCubeMapPixels;
 		for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
-			for ( int X=0; X < CUBE_MAP_SIZE; X++, P++, pFaceData0++, pFaceData1++, pFaceData2++, pFaceData3++ ) {
+			for ( int X=0; X < CUBE_MAP_SIZE; X++, P++, pFaceData0++, pFaceData1++, pFaceData2++ ) {
 				// ==== Read back albedo & unique face ID ====
 				float	Red = pFaceData0->x;
 				float	Green = pFaceData0->y;
@@ -1384,10 +1476,6 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap, U32 _Scen
 				P->Position = wsPosition;
 				P->Normal.Set( Nx, Ny, Nz );
 				P->Normal.Normalize();
-
-				// ==== Read back neighbor probes ID ====
-				P->NeighborProbeID = ((U32&) pFaceData3->x);
-				P->NeighborProbeDistance = pFaceData3->y;
 
 
 				// ==== Finalize pixel information ====
@@ -1422,7 +1510,7 @@ NegativeImportancePixelsCount++;
 				m_BBoxMax.Min( wsPosition );
 			}
 
-		_StagingCubeMap.UnMap( 0, 6*3+CubeFaceIndex );
+//		_StagingCubeMap.UnMap( 0, 6*3+CubeFaceIndex );
 		_StagingCubeMap.UnMap( 0, 6*2+CubeFaceIndex );
 		_StagingCubeMap.UnMap( 0, 6*1+CubeFaceIndex );
 		_StagingCubeMap.UnMap( 0, 6*0+CubeFaceIndex );
@@ -1434,7 +1522,7 @@ NegativeImportancePixelsCount++;
 	m_MeanDistance /= (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6);
 	m_MeanHarmonicDistance = (CUBE_MAP_SIZE * CUBE_MAP_SIZE * 6) / m_MeanHarmonicDistance;
 
-	// Perform bilateral filtered smoothing of adjacent distances, static lit colors & infinity values for smoother SH encoding
+	// Perform bilateral-filtered smoothing of adjacent distances, static lit colors & infinity values for smoother SH encoding
 	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ ) {
 		Pixel*	pCubeMapPixels = &m_pCubeMapPixels[CubeFaceIndex*CUBE_MAP_FACE_SIZE];
 		Pixel*	P = pCubeMapPixels;

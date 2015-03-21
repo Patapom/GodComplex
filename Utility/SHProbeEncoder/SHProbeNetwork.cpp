@@ -338,10 +338,14 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 	const float		Z_INFINITY_TEST = 0.99f * Z_INFINITY;
 
 	if ( m_pRTCubeMap == NULL ) {
-		m_pRTCubeMap = new Texture2D( *m_pDevice, SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, -6 * 4, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain albedo (cube 0) + (normal + distance) (cube 1) + (static lighting + emissive surface index) (cube 2) + Probe IDs (cube 3)
+		m_pRTCubeMap = new Texture2D( *m_pDevice, SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, -6 * 3, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );				// Will contain albedo (cube 0) + (normal + distance) (cube 1) + (static lighting + emissive surface index) (cube 2)
 	}
-	Texture2D*	pRTCubeMapDepth = new Texture2D( *m_pDevice, SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR );
-	Texture2D*	pRTCubeMapStaging = new Texture2D( *m_pDevice, SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, -6 * 4, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );
+	Texture2D*	pRTCubeMapNeighbors = new Texture2D( *m_pDevice, SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, -6, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL );	// Will contain Neighbor Probe IDs (cube 3)
+	Texture2D*	pRTCubeMapNeighborsStaging = new Texture2D( *m_pDevice, SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, -6, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );
+
+	Texture2D*	pRTCubeMapDepth = new Texture2D( *m_pDevice, SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR, 6 );
+	Texture2D*	pRTCubeMapDepthCopy = new Texture2D( *m_pDevice, SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, DepthStencilFormatD32F::DESCRIPTOR, 6 );
+	Texture2D*	pRTCubeMapStaging = new Texture2D( *m_pDevice, SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, -6 * 3, PixelFormatRGBA32F::DESCRIPTOR, 1, NULL, true );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -403,6 +407,12 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 	};
 	CB<CBCubeMapCamera>*	pCBCubeMapCamera = new CB<CBCubeMapCamera>( *m_pDevice, 8, true );
 
+	float3*	pProbePositions = new float3[m_ProbesCount];
+	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
+		SHProbe&	Probe = m_pProbes[ProbeIndex];
+		pProbePositions[ProbeIndex] = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
+	}
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize probe influences for each face
@@ -422,6 +432,9 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 
 	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
+		float3		ProbePosition = pProbePositions[ProbeIndex];
+
+		m_pCB_Probe->m.CurrentProbePosition = ProbePosition;
 
 		// Clear cube maps
 		m_pDevice->ClearRenderTarget( *m_pRTCubeMap->GetRTV( 0, 6*0, 6 ), float4::Zero );
@@ -430,17 +443,10 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 		float4	Bisou = float4::Zero;
 		((U32&) Bisou.w) = 0xFFFFFFFFUL;
 		m_pDevice->ClearRenderTarget( *m_pRTCubeMap->GetRTV( 0, 6*2, 6 ), Bisou );	// Clear emissive surface ID to -1 (invalid) and static color to 0
-		((U32&) Bisou.x) = 0xFFFFFFFFUL;
-		m_pDevice->ClearRenderTarget( *m_pRTCubeMap->GetRTV( 0, 6*3, 6 ), Bisou );	// Clear probe ID to -1 (invalid)
 
-		float4x4	ProbeLocal2World = Probe.pSceneProbe->m_Local2World;
-		ProbeLocal2World.Normalize();
-
-ProbeLocal2World = float4x4::Identity;
-ProbeLocal2World.SetRow( 3, Probe.pSceneProbe->m_Local2World.GetRow( 3 ) );
-
-		ASSERT( ProbeLocal2World.GetRow(0).LengthSq() > 0.999f && ProbeLocal2World.GetRow(1).LengthSq() > 0.999f && ProbeLocal2World.GetRow(2).LengthSq() > 0.999f, "Not identity! If not identity then transform probe patch positions/normals/etc. by probe matrix!" );
-
+		// Setup probe WORLD -> LOCAL transform
+		float4x4	ProbeLocal2World = float4x4::Identity;
+					ProbeLocal2World.SetRow( 3, ProbePosition, 1 );
 		float4x4	ProbeWorld2Local = ProbeLocal2World.Inverse();
 
 		// Render the 6 faces
@@ -452,7 +458,9 @@ ProbeLocal2World.SetRow( 3, Probe.pSceneProbe->m_Local2World.GetRow( 3 ) );
 			pCBCubeMapCamera->m.World2Proj = World2Proj;
 			pCBCubeMapCamera->UpdateData();
 
-			m_pDevice->ClearDepthStencil( *pRTCubeMapDepth, 1.0f, 0, true, false );
+			ID3D11DepthStencilView*	pDSV = pRTCubeMapDepth->GetDSV( CubeFaceIndex, 1 );
+
+			m_pDevice->ClearDepthStencil( *pDSV, 1.0f, 0, true, false );
 
 			//////////////////////////////////////////////////////////////////////////
 			// 1] Render Albedo + Normal + Distance + Static lit + Emissive Mat ID
@@ -463,36 +471,50 @@ ProbeLocal2World.SetRow( 3, Probe.pSceneProbe->m_Local2World.GetRow( 3 ) );
 				m_pRTCubeMap->GetRTV( 0, 6*1+CubeFaceIndex, 1 ),
 				m_pRTCubeMap->GetRTV( 0, 6*2+CubeFaceIndex, 1 )
 			};
-			m_pDevice->SetRenderTargets( SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, 3, ppViews, pRTCubeMapDepth->GetDSV() );
+			m_pDevice->SetRenderTargets( SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, 3, ppViews, pDSV );
 
 			// Render scene
 			_RenderScene( *m_pMatRenderCubeMap );
+		}
 
+		//////////////////////////////////////////////////////////////////////////
+		// 2] Render neighborhood for each probe
+		// The idea here is simply to build a 3D voronoi cell by splatting the planes passing through all other probes
+		//	with their normal set to the direction from the other probe to the current probe.
+		// Splatting a new plane and accounting for the depth buffer will only let visible pixels from the plane show up
+		//	and write the ID of the probe.
+		//
+		// Reading back the cube map will indicate the solid angle perceived by each probe to each of its neighbors
+		//	so we can create a linked list of neighbor probes, of their visibilities and solid angle
+		//
+		pRTCubeMapDepthCopy->CopyFrom( *pRTCubeMapDepth );
 
-			//////////////////////////////////////////////////////////////////////////
-			// 2] Render neighborhood for each probe
-			// The idea here is simply to build a 3D voronoi cell by splatting the planes passing through all other probes
-			//	with their normal set to the direction from the other probe to the current probe.
-			// Splatting a new plane and accounting for the depth buffer will let visible pixels from the plane show up
-			//	and write the ID of the probe.
-			//
-			// Reading back the cube map will indicate the solid angle perceived by each probe to each of its neighbors
-			//	so we can create a linked list of neighbor probes, of their visibilities and solid angle
-			//
+		((U32&) Bisou.x) = 0xFFFFFFFFUL;
+		m_pDevice->ClearRenderTarget( *pRTCubeMapNeighbors->GetRTV( 0, 0, 6 ), Bisou );	// Clear probe ID to -1 (invalid)
+
+		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ ) {
+			// Update cube map face camera transform
+			float4x4	World2Proj = ProbeWorld2Local * SideWorld2Proj[CubeFaceIndex];
+
+			pCBCubeMapCamera->m.Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
+			pCBCubeMapCamera->m.World2Proj = World2Proj;
+			pCBCubeMapCamera->UpdateData();
+
+			// Render
 			m_pDevice->SetStates( m_pDevice->m_pRS_CullNone, m_pDevice->m_pDS_ReadWriteLess, m_pDevice->m_pBS_Disabled );
-			m_pDevice->SetRenderTarget( SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, *m_pRTCubeMap->GetRTV( 0, 6*3+CubeFaceIndex, 1 ), pRTCubeMapDepth->GetDSV() );
-
-			m_pCB_Probe->m.CurrentProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
+			m_pDevice->SetRenderTarget( SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, *m_pRTCubeMap->GetRTV( 0, 6*3+CubeFaceIndex, 1 ), pRTCubeMapDepthCopy->GetDSV( CubeFaceIndex, 1 ) );
 
 			USING_MATERIAL_START( *m_pMatRenderNeighborProbe )
 
 			for ( U32 NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ )
-				if ( NeighborProbeIndex != ProbeIndex )
-				{
-					SHProbe&	NeighborProbe = m_pProbes[NeighborProbeIndex];
+				if ( NeighborProbeIndex != ProbeIndex ) {
+					const float3&	NeighborProbePosition = pProbePositions[NeighborProbeIndex];
+
+					float	Distance2Neighbor = (NeighborProbePosition - ProbePosition).Length();
 
 					m_pCB_Probe->m.NeighborProbeID = NeighborProbeIndex;
-					m_pCB_Probe->m.NeighborProbePosition = NeighborProbe.pSceneProbe->m_Local2World.GetRow( 3 );
+					m_pCB_Probe->m.NeighborProbePosition = NeighborProbePosition;
+					m_pCB_Probe->m.QuadHalfSize = SATURATE( 0.125f * Distance2Neighbor );	// Will reduce when getting below 8 meters, otherwise renders a constant 2x2m² plane
 					m_pCB_Probe->UpdateData();
 
 					m_pScreenQuad->Render( M );
@@ -500,6 +522,63 @@ ProbeLocal2World.SetRow( 3, Probe.pSceneProbe->m_Local2World.GetRow( 3 ) );
 
 			USING_MATERIAL_END
 		}
+
+		// Build neighbors list immediately since we need it for the Voronoï splatting right after
+		pRTCubeMapNeighborsStaging->CopyFrom( *pRTCubeMapNeighbors );
+
+		m_ProbeEncoder.BuildProbeNeighborIDs( *pRTCubeMapNeighborsStaging, ProbePosition, m_ProbesCount );
+
+
+		//////////////////////////////////////////////////////////////////////////
+		// 3] Build the voronoï cells
+		// This is without a doubt the most important structure to spread the probes' influence correctly:
+		//	1) We render all connections STRICTLY VISIBLE neighbors by splatting large planes in the middle of the connection
+		//		=> This will build the planes for the Voronoï cell
+		//	2) We read back the neighbor IDs and store their planes into the Voronoï structure associated to the probe
+		//		=> The probe's influence will be constrained within the strict influence of this cell
+		//	3) We'll use the Voronoï cell's structure later when we'll spread the influence of the probe across the scene
+		//
+		pRTCubeMapDepthCopy->CopyFrom( *pRTCubeMapDepth );
+
+		((U32&) Bisou.x) = 0xFFFFFFFFUL;
+		m_pDevice->ClearRenderTarget( *pRTCubeMapNeighbors->GetRTV( 0, 0, 6 ), Bisou );	// Clear probe ID to -1 (invalid)
+
+		for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ ) {
+			// Update cube map face camera transform
+			float4x4	World2Proj = ProbeWorld2Local * SideWorld2Proj[CubeFaceIndex];
+
+			pCBCubeMapCamera->m.Camera2World = Side2Local[CubeFaceIndex] * ProbeLocal2World;
+			pCBCubeMapCamera->m.World2Proj = World2Proj;
+			pCBCubeMapCamera->UpdateData();
+
+			m_pDevice->SetStates( m_pDevice->m_pRS_CullNone, m_pDevice->m_pDS_ReadWriteLess, m_pDevice->m_pBS_Disabled );
+			m_pDevice->SetRenderTarget( SHProbeEncoder::CUBE_MAP_SIZE, SHProbeEncoder::CUBE_MAP_SIZE, *m_pRTCubeMap->GetRTV( 0, 6*3+CubeFaceIndex, 1 ), pRTCubeMapDepthCopy->GetDSV( CubeFaceIndex, 1 ) );
+
+			USING_MATERIAL_START( *m_pMatRenderNeighborProbe )
+
+			for ( U32 NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ ) {
+				const SHProbeEncoder::NeighborProbe&	NP = m_ProbeEncoder.GetProbeNeighbors()[NeighborProbeIndex];
+				if ( NeighborProbeIndex != ProbeIndex && NP.DirectlyVisible ) {
+					const float3&	NeighborProbePosition = pProbePositions[NP.ProbeID];
+
+					float3			CenterPosition = 0.5f * (ProbePosition + NeighborProbePosition);
+					float			Distance2Neighbor = (NeighborProbePosition - ProbePosition).Length();
+
+					m_pCB_Probe->m.NeighborProbeID = NP.ProbeID;
+					m_pCB_Probe->m.NeighborProbePosition = CenterPosition;
+					m_pCB_Probe->m.QuadHalfSize = Distance2Neighbor;
+					m_pCB_Probe->UpdateData();
+
+					m_pScreenQuad->Render( M );
+				}
+			}
+
+			USING_MATERIAL_END
+		}
+
+		pRTCubeMapNeighborsStaging->CopyFrom( *pRTCubeMapNeighbors );
+
+		m_ProbeEncoder.BuildProbeVoronoiCell( *pRTCubeMapNeighborsStaging, Probe.ProbeID, m_ProbesCount, pProbePositions );
 
 
 		//////////////////////////////////////////////////////////////////////////
@@ -535,8 +614,8 @@ ProbeLocal2World.SetRow( 3, Probe.pSceneProbe->m_Local2World.GetRow( 3 ) );
 		}
 	}
 
+	delete[] pProbePositions;
 	delete pCBCubeMapCamera;
-
 
 	//////////////////////////////////////////////////////////////////////////
 	// Save the final probe influences
@@ -551,8 +630,10 @@ m_pRTCubeMap->SetPS( 64 );
 #endif
 
 	delete pRTCubeMapStaging;
-
+	delete pRTCubeMapDepthCopy;
 	delete pRTCubeMapDepth;
+	delete pRTCubeMapNeighborsStaging;
+	delete pRTCubeMapNeighbors;
 
 //### Keep it for debugging!
 // 	delete m_pRTCubeMap;
@@ -988,6 +1069,7 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 
 		for ( U32 NeighborProbeIndex=0; NeighborProbeIndex < NeighborProbesCount; NeighborProbeIndex++ ) {
 			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID), sizeof(U32), 1, pFile );
+			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].DirectlyVisible, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].DirectlyVisible), sizeof(bool), 1, pFile );
 			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].Distance, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].Distance), sizeof(float), 1, pFile );
 			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].SolidAngle, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].SolidAngle), sizeof(float), 1, pFile );
 			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].Direction.x, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].Direction), sizeof(float3), 1, pFile );
@@ -996,6 +1078,15 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 		}
 		for ( U32 NeighborProbeIndex=NeighborProbesCount; NeighborProbeIndex < MAX_PROBE_NEIGHBORS; NeighborProbeIndex++ )
 			Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID = ~0;	// Invalid ID
+
+// TODO! => Runtime interpolation needs complex Voronoï structure
+// 		// Read the amount of Voronoï probes
+// 		U32	VoronoiProbesCount;
+// 		fread_s( &VoronoiProbesCount, sizeof(VoronoiProbesCount), sizeof(U32), 1, pFile );
+// 
+// 		for ( U32 VoronoiProbeIndex=0; VoronoiProbeIndex < VoronoiProbesCount; VoronoiProbeIndex++ ) {
+// 			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID), sizeof(U32), 1, pFile );
+// 		}
 
 		fclose( pFile );
 	}

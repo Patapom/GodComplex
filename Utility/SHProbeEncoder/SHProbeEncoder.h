@@ -70,6 +70,7 @@ private:	// NESTED TYPES
 		U32			EmissiveMatID;			// ID of the emissive material or ~0UL if not emissive
 		U32			NeighborProbeID;		// ID of the nearest neighbor probe
 		float		NeighborProbeDistance;	// Distance to the neighbor probe plane
+		U32			VoronoiProbeID;			// ID of the neighbor probe used for constructing the Voronoï cell
 		double		Importance;				// A measure of "importance" of the scene pixel = -dot( View, Normal ) / Distance²
 		float		Distance;				// Distance from the probe's center
 		float		SmoothedDistance;		// Smoothed out distance for more tolerant merging of noisy surfaces
@@ -96,6 +97,7 @@ private:	// NESTED TYPES
 			, EmissiveMatID( ~0UL )
 			, NeighborProbeID( ~0UL )
 			, NeighborProbeDistance( 0.0f )
+			, VoronoiProbeID( ~0UL )
 			, Importance( 0.0 )
 			, Distance( 0.0f )
 			, Infinity( false )
@@ -245,10 +247,34 @@ private:	// NESTED TYPES
 			}
  	};
 
+	struct PixelsList {
+		U32		PixelsCount;
+		Pixel*	pPixels;
+		double	Importance;
+
+		PixelsList() : PixelsCount( 0 ), pPixels( NULL ), Importance( 0.0 ) {}
+	};
+	
+	// Contains information on the probe used as a Voronoï cell plane
+	class	VoronoiProbe {
+	public:
+		U32			ProbeID;
+		float3		Position;			// Position of the Voronoï plane (WARNING: the position is in the middle of the Probe->Neighbor segment, NOT on the neighbor probe itself!)
+		float3		Normal;				// Normal to the Voronoï plane, pointing INWARD toward our probe
+
+		int			PixelsCount;
+
+	public:
+		VoronoiProbe() : ProbeID( ~0UL ), PixelsCount( 0 ) {}
+	};
+
+public:
+
 	// Contains information on a neighbor probe
 	class	NeighborProbe {
 	public:
 		U32			ProbeID;
+		bool		DirectlyVisible;	// True if the very center of the probe is directly visible to our probe (
 		float		Distance;			// Distance to the neighbor probe
 		double		SolidAngle;			// Solid angle covered by the neighbor probe, as perceived by our probe
 		float3		Direction;			// Direction to the probe
@@ -263,14 +289,6 @@ private:	// NESTED TYPES
 			, SolidAngle( 0.0f )
 			, Direction( float3::Zero )
 			, PixelsCount( 0 ) {}
-	};
-
-	struct PixelsList {
-		U32		PixelsCount;
-		Pixel*	pPixels;
-		double	Importance;
-
-		PixelsList() : PixelsCount( 0 ), pPixels( NULL ), Importance( 0.0 ) {}
 	};
 
 
@@ -342,6 +360,9 @@ private:	// FIELDS
 	float					m_FarthestNeighborProbeDistance;
 	List< NeighborProbe >	m_NeighborProbes;
 
+	// List of probes used in the Voronoï cell for the probe
+	List< VoronoiProbe >	m_VoronoiProbes;
+
  	// List of influence weights per face index
 	List< double >			m_ProbeInfluencePerFace;
 
@@ -351,13 +372,19 @@ private:	// FIELDS
 
 public:		// PROPERTIES
 
-	const List< double >&	GetProbeInfluences() const	{ return m_ProbeInfluencePerFace; }
-
+	const List< double >&			GetProbeInfluences() const	{ return m_ProbeInfluencePerFace; }
+	const List< NeighborProbe >&	GetProbeNeighbors() const	{ return m_NeighborProbes; }
 
 public:		// METHODS
 
 	SHProbeEncoder();
 	~SHProbeEncoder();
+
+	// Builds visible neighbor IDs
+	void	BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const float3& _ProbePosition, U32 _ProbesCount );
+
+	// Builds the Voronoï cell information associated to the probe
+	void	BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount, const float3* _pProbePositions );
 
 	// Encodes the MRT cube map into basic SH elements that can later be combined at runtime to form a dynamically updatable probe
 	void	EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount, U32 _SceneTotalFacesCount );

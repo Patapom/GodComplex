@@ -19,7 +19,8 @@ namespace Map2GCX
 		public Form1()
 		{
 			InitializeComponent();
-			ConvertMap( @"..\Arkane\GIScenes\SimpleMapWithManyProbes\test_probes_p - Fixed.map", @"..\Arkane\GIScenes\SimpleMapWithManyProbes\scene.gcx" );
+//			ConvertMap( @"..\Arkane\GIScenes\SimpleMapWithManyProbes\test_probes_p - Fixed.map", @"..\Arkane\GIScenes\SimpleMapWithManyProbes\scene.gcx" );
+			ConvertMap( @"..\Arkane\GIScenes\SimpleMapWithManyProbes\test_probes_p - Fixed 10 probes.map", @"..\Arkane\GIScenes\SimpleMapWithManyProbes\scene.gcx" );
 		}
 
 		private void	ConvertMap( string _SourceFileName, string _TargetFileName ) {

@@ -65,6 +65,7 @@ public:		// NESTED TYPES
 		float			FarthestProbeDistance;
 		struct NeighborProbeInfos {
 			U32				ProbeID;				// ID of the neighbor probe
+			bool			DirectlyVisible;		// True if the center of the neighbor probe is directly visible to this probe
 			float			Distance;				// Average distance to the probe
 			float			SolidAngle;				// Perceived solid angle covered by the probe
 			float3			Direction;				// Average direction to the probe
@@ -111,6 +112,7 @@ private:	// RUNTIME STRUCTURES
 		float3		CurrentProbePosition;
 		U32			NeighborProbeID;
 		float3		NeighborProbePosition;
+		float		QuadHalfSize;
  	};
 
 	struct CBUpdateProbes {	// Used by probes dynamic update
