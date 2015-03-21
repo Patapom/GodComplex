@@ -52,9 +52,6 @@ PS_IN	VS( SCENE_VS_IN _In )
 	float3	Normal = normalize( Out.Normal );
 
 	SHCoeffs3	Coeffs;
-	[unroll]
-	for ( uint i=0; i < 9; i++ )
-		SHCoeffsSH[i] = 0.0;
 
 #ifdef PER_VERTEX_PROBE_ID	// Only use the entry point probe and its direct neighbors
 	if ( _In.ProbeID != 0xFFFFFFFF ) {
@@ -67,12 +64,14 @@ PS_IN	VS( SCENE_VS_IN _In )
 
 #else	// SUM ALL THE SCENE'S PROBES!
 	// Iterate over all the probes and do a weighted sum based on their distance to the vertex's position
-	float	SumWeights = 0.0;
+	[unroll]
+	for ( uint i=0; i < 9; i++ )
+		Coeffs.SH[i] = 0.0;
 
-	for ( uint ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ )
-	{
+	float	SumWeights = 0.0;
+	for ( uint ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ ) {
 		ProbeStruct	Probe = _SBProbes[ProbeIndex];
-		AccumulateProbeInfluence( Probe, Out.Position, Normal, SH, SumWeights );
+		AccumulateProbeInfluence( Probe, ProbeIndex, Out.Position, Normal, Coeffs.SH, SumWeights );
 	}
 
 	// Normalize
@@ -81,7 +80,7 @@ PS_IN	VS( SCENE_VS_IN _In )
 													// But it correctly averages influences when many probes have strong weight
 	[unroll]
 	for ( uint i=0; i < 9; i++ )
-		SH[i] *= Norm;
+		Coeffs.SH[i] *= Norm;
 
 #endif
 

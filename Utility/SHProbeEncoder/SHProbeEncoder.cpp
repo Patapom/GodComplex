@@ -230,6 +230,9 @@ SHProbeEncoder::SHProbeEncoder() {
 
 				// Build SH coefficients
 				pPixel->InitSH();
+
+
+// Make sure we get the same using precise SH coefficients
 // for ( int i=0; i < 9; i++ ) {
 // 	int	l = int( floorf( sqrtf( float( i ) ) ) );
 // 	int	m = i - l*(l+1);
@@ -291,29 +294,28 @@ SHProbeEncoder::SHProbeEncoder() {
 
 		pSample->OriginalPixelsCount++;
 
-		// Debug SH
-		for ( int i=0; i < 9; i++ )
-			SH[i] += pPixel->SolidAngle * pPixel->SHCoeffs[i];
-//			SH[i] += pPixel->SHCoeffs[i] / PixelsCount;
+// Debug SH
+for ( int i=0; i < 9; i++ ) SH[i] += pPixel->SolidAngle * pPixel->SHCoeffs[i];
 	}
+
+	// At this point, SH should only have a non null ambient term equal to 2*sqrt(PI)
+
+// Make sure we get the same result using unbiased sampling on a sphere
+//	memset( SH, 0, 9*sizeof(double) );
+// for ( int ThetaIndex=0; ThetaIndex < 80; ThetaIndex++ ) {
+// 	double	Theta = 2.0 * acos( sqrt( (ThetaIndex+0.5f) / 80.0f ) );
+// 	for ( int PhiIndex=0; PhiIndex < 160; PhiIndex++ ) {
+// 		double	Phi = TWOPI * PhiIndex / 160.0;
+// 		for ( int i=0; i < 9; i++ ) {
+// 			int	l = int( floorf( sqrtf( float( i ) ) ) );
+// 			int	m = i - l*(l+1);
+// 			SH[i] += FOURPI * SH::ComputeSHCoeff( l, m, Theta, Phi ) / (80.0*160.0);
+// 		}
+// 	}
+// }
+
 
 	// Build each sample's SH coefficients
-	memset( SH, 0, 9*sizeof(double) );
-
-for ( int ThetaIndex=0; ThetaIndex < 80; ThetaIndex++ ) {
-	double	Theta = 2.0 * acos( sqrt( (ThetaIndex+0.5f) / 80.0f ) );
-	for ( int PhiIndex=0; PhiIndex < 160; PhiIndex++ ) {
-		double	Phi = TWOPI * PhiIndex / 160.0;
-		for ( int i=0; i < 9; i++ ) {
-			int	l = int( floorf( sqrtf( float( i ) ) ) );
-			int	m = i - l*(l+1);
-			SH[i] += FOURPI * SH::ComputeSHCoeff( l, m, Theta, Phi ) / (80.0*160.0);
-		}
-	}
-}
-
-
-
 	pPixel = m_pCubeMapPixels;
 	for ( int i=0; i < PixelsCount; i++, pPixel++ ) {
 		for ( int SHCoeffIndex=0; SHCoeffIndex < 9; SHCoeffIndex++ ) {
@@ -322,6 +324,8 @@ for ( int ThetaIndex=0; ThetaIndex < 80; ThetaIndex++ ) {
 	}
 
 	// Statistics on samples
+	memset( SH, 0, 9*sizeof(double) );
+
 	m_MinSamplePixelsCount = ~0U;
 	m_MaxSamplePixelsCount = 0;
 	m_AverageSamplePixelsCount = 0;
@@ -336,6 +340,10 @@ for ( int ThetaIndex=0; ThetaIndex < 80; ThetaIndex++ ) {
 		m_AverageSamplePixelsCount += S.OriginalPixelsCount;
 	}
 	m_AverageSamplePixelsCount /= PROBE_SAMPLES_COUNT;
+
+	// At this point, SH should only have a non null ambient term equal to 2*sqrt(PI)
+	//	proving that the sum of all samples' SH coefficients yields the ambient term 1 if lit
+	//	by a uniform environment where radiance is 1 in every direction...
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -772,6 +780,10 @@ void	SHProbeEncoder::ComputeFloodFill( float _SpatialDistanceWeight, float _Norm
 
 GroupImportanceThreshold = 0.0;	// No rejection for now...
 
+	float	SampleRadiusMin = FLT_MAX;
+	float	SampleRadiusMax = -FLT_MAX;
+	float	SampleRadiusAvg = 0.0f;
+	int		ValidSamplesCount = 0;
 	for ( int SampleIndex=0; SampleIndex < PROBE_SAMPLES_COUNT; SampleIndex++ ) {
 		Sample&	S = m_pSamples[SampleIndex];
 
@@ -862,8 +874,14 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 		}
 		AverageSqDistance *= Normalizer;
 		S.Radius = sqrtf( AverageSqDistance);
+
+		SampleRadiusMin = min( SampleRadiusMin, S.Radius );
+		SampleRadiusMax = max( SampleRadiusMax, S.Radius );
+		SampleRadiusAvg += S.Radius;
+		ValidSamplesCount++;
 	}
 
+	SampleRadiusAvg /= ValidSamplesCount;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the emissive surfaces

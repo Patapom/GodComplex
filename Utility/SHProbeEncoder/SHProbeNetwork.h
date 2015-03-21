@@ -86,7 +86,7 @@ public:		// NESTED TYPES
 
 		U32		MaxProbeUpdatesPerFrame;// Maximum amount of probes we can update each frame
 
-		float3	AmbientSkySH[9];		// The SH coefficients used for the ambient sky term
+//		float3	AmbientSkySH[9];		// The SH coefficients used for the ambient sky term
 		float3	BounceFactorSun;		// Bounce factor for the Sun
 		float3	BounceFactorSky;		// Bounce factor for the sky
 		float3	BounceFactorDynamic;	// Bounce factor for dynamic lights
@@ -114,17 +114,17 @@ private:	// RUNTIME STRUCTURES
  	};
 
 	struct CBUpdateProbes {	// Used by probes dynamic update
-		U32			ProbesCount;
 		float3		StaticLightingBoost;
-
-		float3		SkyBoost;
 		float		__PAD0;
 
-		float3		SunBoost;
+		float3		SkyBoost;
 		float		__PAD1;
 
-		float3		DynamicLightsBoost;
+		float3		SunBoost;
 		float		__PAD2;
+
+		float3		DynamicLightsBoost;
+		float		__PAD3;
 
 //		float4		AmbientSH[9];		// Ambient sky (padded!)
 //		float		SunBoost;	// Merged into the last float4
@@ -164,8 +164,8 @@ private:	// RUNTIME STRUCTURES
 // 		float		SHOcclusion[9];					// Directional ambient occlusion for the probe
 
 		// Neighbor probes
-//		U32			NeighborProbeIDs[4];			// The IDs of the 4 most significant neighbor probes
-		float4		NeighborProbeSH[9];				// The SH coefficients to convolve the neighbor's SH with to obtain their contribution to this probe
+		U32			NeighborProbeIDs[4];			// The IDs of the 4 most significant neighbor probes
+		float4		SHConvolution[9];				// The SH coefficients to convolve the neighbor's SH with to obtain their contribution to this probe
 	};
 
 	struct	RuntimeProbeUpdateSampleInfo

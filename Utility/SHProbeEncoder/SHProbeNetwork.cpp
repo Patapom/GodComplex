@@ -55,7 +55,7 @@ void	SHProbeNetwork::Init( Device& _Device, Primitive& _ScreenQuad ) {
 	//////////////////////////////////////////////////////////////////////////
 	// Create shaders
 	{
-//ScopedForceMaterialsLoadFromBinary		bisou;
+ScopedForceMaterialsLoadFromBinary		bisou;
 
 		CHECK_MATERIAL( m_pMatRenderCubeMap = CreateMaterial( IDR_SHADER_GI_RENDER_CUBEMAP, "./Resources/Shaders/GIRenderCubeMap.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS" ), 0 );
  		CHECK_MATERIAL( m_pMatRenderNeighborProbe = CreateMaterial( IDR_SHADER_GI_RENDER_NEIGHBOR_PROBE, "./Resources/Shaders/GIRenderNeighborProbe.hlsl", VertexFormatPt4::DESCRIPTOR, "VS", NULL, "PS" ), 1 );
@@ -63,15 +63,15 @@ void	SHProbeNetwork::Init( Device& _Device, Primitive& _ScreenQuad ) {
 
 	{
 // This one is REALLY heavy! So build it once and reload it from binary forever again
-//ScopedForceMaterialsLoadFromBinary		bisou;
+ScopedForceMaterialsLoadFromBinary		bisou;
 
 		CHECK_MATERIAL( m_pCSUpdateProbeDynamicSH = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS" ), 2 );
 	}
 
 	{
-//ScopedForceMaterialsLoadFromBinary	bisou;
+ScopedForceMaterialsLoadFromBinary	bisou;
 
- 		CHECK_MATERIAL( m_pCSAccumulateProbeSH = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS_SH" ), 3 );
+ 		CHECK_MATERIAL( m_pCSAccumulateProbeSH = CreateComputeShader( IDR_SHADER_GI_UPDATE_PROBE, "./Resources/Shaders/GIUpdateProbe.hlsl", "CS_AccumulateSH" ), 3 );
 	}
 }
 
@@ -107,13 +107,6 @@ void	SHProbeNetwork::Exit() {
 void	SHProbeNetwork::PreAllocateProbes( int _ProbesCount ) {
 	m_MaxProbesCount = _ProbesCount;
 	m_pProbes = new SHProbe[m_MaxProbesCount];
-
-	m_ppSB_RuntimeSHStatic[0] = new SB<SHCoeffs3>( *m_pDevice, m_MaxProbesCount, true );
-	m_ppSB_RuntimeSHStatic[1] = new SB<SHCoeffs3>( *m_pDevice, m_MaxProbesCount, true );
-	m_pSB_RuntimeSHAmbient = new SB<SHCoeffs1>( *m_pDevice, m_MaxProbesCount, true );
-	m_pSB_RuntimeSHDynamic = new SB<SHCoeffs3>( *m_pDevice, m_MaxProbesCount, false );
-	m_pSB_RuntimeSHDynamicSun = new SB<SHCoeffs3>( *m_pDevice, m_MaxProbesCount, false );
-	m_pSB_RuntimeSHFinal = new SB<SHCoeffs3>( *m_pDevice, m_MaxProbesCount, false );
 }
 
 void	SHProbeNetwork::AddProbe( Scene::Probe& _Probe ) {
@@ -129,8 +122,7 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 	U32		ProbeUpdatesCount = MIN( _Parms.MaxProbeUpdatesPerFrame, U32(m_ProbesCount) );
 
 	// Prepare constant buffer for update
-	m_pCB_UpdateProbes->m.ProbesCount = ProbeUpdatesCount;
-	m_pCB_UpdateProbes->m.SunBoost = _Parms.BounceFactorSun;	// Last padding hides one of our variables in its W component...
+	m_pCB_UpdateProbes->m.SunBoost = _Parms.BounceFactorSun;
 	m_pCB_UpdateProbes->m.SkyBoost = _Parms.BounceFactorSky;
 	m_pCB_UpdateProbes->m.DynamicLightsBoost = _Parms.BounceFactorDynamic;
 	m_pCB_UpdateProbes->m.StaticLightingBoost = _Parms.BounceFactorStatic;
@@ -174,12 +166,16 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 		ProbeUpdateInfos.EmissiveSurfacesStart = TotalEmissiveSurfacesCount;
 		ProbeUpdateInfos.EmissiveSurfacesCount = Probe.EmissiveSurfacesCount;
 
-		// Copy neighbor SH
+		// Copy neighbor info
+		ProbeUpdateInfos.NeighborProbeIDs[0] = Probe.pNeighborProbeInfos[0].ProbeID;
+		ProbeUpdateInfos.NeighborProbeIDs[1] = Probe.pNeighborProbeInfos[1].ProbeID;
+		ProbeUpdateInfos.NeighborProbeIDs[2] = Probe.pNeighborProbeInfos[2].ProbeID;
+		ProbeUpdateInfos.NeighborProbeIDs[3] = Probe.pNeighborProbeInfos[3].ProbeID;
 		for( int i=0; i < 9; i++ ) {
-			ProbeUpdateInfos.NeighborProbeSH[i].x = Probe.pNeighborProbeInfos[0].SH[i];
-			ProbeUpdateInfos.NeighborProbeSH[i].y = Probe.pNeighborProbeInfos[1].SH[i];
-			ProbeUpdateInfos.NeighborProbeSH[i].z = Probe.pNeighborProbeInfos[2].SH[i];
-			ProbeUpdateInfos.NeighborProbeSH[i].w = Probe.pNeighborProbeInfos[3].SH[i];
+			ProbeUpdateInfos.SHConvolution[i].x = Probe.pNeighborProbeInfos[0].SH[i];
+			ProbeUpdateInfos.SHConvolution[i].y = Probe.pNeighborProbeInfos[1].SH[i];
+			ProbeUpdateInfos.SHConvolution[i].z = Probe.pNeighborProbeInfos[2].SH[i];
+			ProbeUpdateInfos.SHConvolution[i].w = Probe.pNeighborProbeInfos[3].SH[i];
 		}
 
 		// Fill the samples update infos
@@ -210,6 +206,8 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 	{
 		USING_COMPUTESHADER_START( *m_pCSUpdateProbeDynamicSH )
 
+		m_pSB_RuntimeSHFinal->SetInput( 9, true );	// Feed last frame's SH for neighbor bounce
+
 		m_pSB_RuntimeProbeUpdateInfos->Write( ProbeUpdatesCount );
 		m_pSB_RuntimeProbeUpdateInfos->SetInput( 10 );
 
@@ -221,12 +219,12 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 
 		m_pSB_RuntimeProbeSamplesSH->SetInput( 13 );
 
-		m_pSB_RuntimeSHDynamic->RemoveFromLastAssignedSlots();
-		m_pSB_RuntimeSHDynamicSun->RemoveFromLastAssignedSlots();
 		m_pSB_RuntimeSHDynamic->SetOutput( 0 );
 		m_pSB_RuntimeSHDynamicSun->SetOutput( 1 );
 
 		M.Dispatch( ProbeUpdatesCount, 1, 1 );
+
+		m_pSB_RuntimeSHFinal->RemoveFromLastAssignedSlots();	// So we can bind it as output later
 
 		USING_COMPUTE_SHADER_END
 	}
@@ -310,16 +308,19 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 		m_pSB_RuntimeSHDynamic->SetInput( 12 );
 		m_pSB_RuntimeSHDynamicSun->SetInput( 13 );
 
-		m_pSB_RuntimeSHFinal->RemoveFromLastAssignedSlots();
 		m_pSB_RuntimeSHFinal->SetOutput( 0 );
 
-		M.Dispatch( m_ProbesCount, 1, 1 );
+		int	GroupsCount = (m_ProbesCount + 0xFF) >> 8;	// 256 threads per group
+		M.Dispatch( GroupsCount, 1, 1 );
+
+		m_pSB_RuntimeSHDynamic->RemoveFromLastAssignedSlots();	// So we can bind them as output for next frame update
+		m_pSB_RuntimeSHDynamicSun->RemoveFromLastAssignedSlots();
 
 		USING_COMPUTE_SHADER_END
 	}
 
 	// =========================================================
-	// Setup the input buffers
+	// Setup the input buffers for scene rendering
 	m_pSB_RuntimeProbes->SetInput( 8, true );
 	m_pSB_RuntimeSHFinal->SetInput( 9, true );
 }
@@ -853,8 +854,7 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 	FILE*	pFile = NULL;
 	char	pTemp[1024];
 
-	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
-	{
+	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
 
 		// Read numbered probe
@@ -948,8 +948,7 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 
 		// Read the surfaces
 		SHProbe::EmissiveSurface	DummyEmissiveSurface;
-		for ( U32 SampleIndex=0; SampleIndex < EmissiveSurfacesCount; SampleIndex++ )
-		{
+		for ( U32 SampleIndex=0; SampleIndex < EmissiveSurfacesCount; SampleIndex++ ) {
 			SHProbe::EmissiveSurface&	S = SampleIndex < Probe.EmissiveSurfacesCount ? Probe.pEmissiveSurfaces[SampleIndex] : DummyEmissiveSurface;	// We load into a useless surface if out of range...
 
 			// Read position, normal
@@ -987,8 +986,7 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 		fread_s( &Probe.NearestProbeDistance, sizeof(Probe.NearestProbeDistance), sizeof(float), 1, pFile );
 		fread_s( &Probe.FarthestProbeDistance, sizeof(Probe.FarthestProbeDistance), sizeof(float), 1, pFile );
 
-		for ( U32 NeighborProbeIndex=0; NeighborProbeIndex < NeighborProbesCount; NeighborProbeIndex++ )
-		{
+		for ( U32 NeighborProbeIndex=0; NeighborProbeIndex < NeighborProbesCount; NeighborProbeIndex++ ) {
 			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID), sizeof(U32), 1, pFile );
 			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].Distance, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].Distance), sizeof(float), 1, pFile );
 			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].SolidAngle, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].SolidAngle), sizeof(float), 1, pFile );
@@ -1026,6 +1024,13 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 	m_pSB_RuntimeProbes->Write();
 
 
+	m_ppSB_RuntimeSHStatic[0] = new SB<SHCoeffs3>( *m_pDevice, m_ProbesCount, true );
+	m_ppSB_RuntimeSHStatic[1] = new SB<SHCoeffs3>( *m_pDevice, m_ProbesCount, true );
+	m_pSB_RuntimeSHAmbient = new SB<SHCoeffs1>( *m_pDevice, m_ProbesCount, true );
+	m_pSB_RuntimeSHDynamic = new SB<SHCoeffs3>( *m_pDevice, m_ProbesCount, false );
+	m_pSB_RuntimeSHDynamicSun = new SB<SHCoeffs3>( *m_pDevice, m_ProbesCount, false );
+	m_pSB_RuntimeSHFinal = new SB<SHCoeffs3>( *m_pDevice, m_ProbesCount, false );
+
 	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
 
@@ -1035,16 +1040,16 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 
 			m_pSB_RuntimeSHAmbient->m[ProbeIndex].pSH[SHCoeffIndex] = Probe.pSHOcclusion[SHCoeffIndex];
 
-			m_pSB_RuntimeSHDynamic->m[ProbeIndex].pSH[SHCoeffIndex] = float3::Zero;
-			m_pSB_RuntimeSHDynamicSun->m[ProbeIndex].pSH[SHCoeffIndex] = float3::Zero;
+// 			m_pSB_RuntimeSHDynamic->m[ProbeIndex].pSH[SHCoeffIndex] = float3::Zero;
+// 			m_pSB_RuntimeSHDynamicSun->m[ProbeIndex].pSH[SHCoeffIndex] = float3::Zero;
 		}
 	}
 
 	m_ppSB_RuntimeSHStatic[0]->Write();
 	m_ppSB_RuntimeSHStatic[1]->Write();
 	m_pSB_RuntimeSHAmbient->Write();
-	m_pSB_RuntimeSHDynamic->Write();
-	m_pSB_RuntimeSHDynamicSun->Write();
+// 	m_pSB_RuntimeSHDynamic->Write();
+// 	m_pSB_RuntimeSHDynamicSun->Write();
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1079,8 +1084,7 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 	int		MaxNodesCount = 0;
 	int		TotalNodesCount = 0;
 	U32		MaxNodesProbeIndex = ~0;
-	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
-	{
+	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
 
 		float3	Position = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
@@ -1099,12 +1103,10 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 	//////////////////////////////////////////////////////////////////////////
 	// Build the probes network debug mesh
 	Dictionary<RuntimeProbeNetworkInfos>	Connections;
-	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ )
-	{
+	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
 
-		for ( int NeighborProbeIndex=0; NeighborProbeIndex < MAX_PROBE_NEIGHBORS; NeighborProbeIndex++ )
-		{
+		for ( int NeighborProbeIndex=0; NeighborProbeIndex < MAX_PROBE_NEIGHBORS; NeighborProbeIndex++ ) {
 			SHProbe::NeighborProbeInfos&	NeighborInfos = Probe.pNeighborProbeInfos[NeighborProbeIndex];
 			if ( NeighborInfos.ProbeID == ~0 )
 				continue;
