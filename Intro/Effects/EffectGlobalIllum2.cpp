@@ -59,8 +59,8 @@
 //#define SCENE 2	// Sponza Atrium
 #define SCENE 3	// Test
 
-//#define	LOAD_PROBES			// Define this to simply load probes without computing them
-#define USE_WHITE_TEXTURES	// Define this to use a single white texture for the entire scene (low patate machines)
+//#define	LOAD_PROBES				// Define this to simply load probes without computing them
+#define USE_WHITE_TEXTURES		// Define this to use a single white texture for the entire scene (low patate machines)
 #define	USE_NORMAL_MAPS			// Define this to use normal maps
 
 // Scene selection (also think about changing the scene in the .RC!)
@@ -420,9 +420,10 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 	// Upload static lights once and for all
 	m_pSB_LightsStatic->Write( m_pCB_Scene->m.StaticLightsCount );
-	m_pSB_LightsStatic->SetInput( 7, true );
+	m_pSB_LightsStatic->SetInput( 6, true );
 
 	// Update once so it's ready when we pre-compute probes
+	m_pCB_Scene->m.ProbesCount = m_ProbesNetwork.GetProbesCount();
 	m_pCB_Scene->UpdateData();
 
 
@@ -551,7 +552,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// Initialize the memory mapped file for remote control (control panel is available through the Tools/ControlPanelGlobalIllumination project)
+	// Initialize the memory mapped file for remote control (control panel is available through the Tools > ControlPanelGlobalIllumination project)
 	//
 #ifdef _DEBUG
 	m_pMMF = new MMF<ParametersBlock>( "GlobalIllumination" );
@@ -675,7 +676,6 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 	// Setup scene data
 	m_pCB_Scene->m.DynamicLightsCount = 1 + RENDER_SUN;
-	m_pCB_Scene->m.ProbesCount = m_ProbesNetwork.GetProbesCount();
 	m_pCB_Scene->UpdateData();
 
 
@@ -709,7 +709,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pSB_LightsDynamic->m[0].Position.Set( 0.75f * sinf( 1.0f * AnimateLightTime0 ), 0.5f + 0.3f * cosf( 1.0f * AnimateLightTime0 ), 4.0f * sinf( 0.3f * AnimateLightTime0 ) );	// Move along the corridor
 #elif SCENE==3
 	// ROOM ANIMATION (simple straight line)
-	m_pSB_LightsDynamic->m[0].Position.Set( 6.0f + 0.75f * sinf( 1.0f * AnimateLightTime0 ), 2.0f - 1.3f * cosf( 1.0f * AnimateLightTime0 ), -4.0f - 4.0f * cosf( 0.3f * AnimateLightTime0 ) );
+	m_pSB_LightsDynamic->m[0].Position.Set( 5.0f + 2.75f * sinf( 1.0f * AnimateLightTime0 ), 3.0f - 2.3f * cosf( 1.0f * AnimateLightTime0 ), -6.0f - 8.0f * cosf( 0.3f * AnimateLightTime0 ) );
 #else
 
 	// PATH ANIMATION (follow curve)
@@ -807,12 +807,11 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 #endif
 
 	m_pSB_LightsDynamic->Write( 2 );
-	m_pSB_LightsDynamic->SetInput( 8, true );
+	m_pSB_LightsDynamic->SetInput( 7, true );
 
 
 	// Update emissive materials
-	if ( m_EmissiveMaterialsCount > 0 )
-	{
+	if ( m_EmissiveMaterialsCount > 0 ) {
 		bool	ShowLight2 = m_CachedCopy.EnableEmissiveMaterials != 0;
 
 		float3	EmissiveColor = float3::Zero;
@@ -831,25 +830,26 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 	//////////////////////////////////////////////////////////////////////////
 	// Update dynamic probes
+	float3	SkyColor = m_CachedCopy.EnableSky ? m_CachedCopy.SkyIntensity * float3( m_CachedCopy.SkyColorR, m_CachedCopy.SkyColorG, m_CachedCopy.SkyColorB ) : float3::Zero;
+
 	SHProbeNetwork::DynamicUpdateParms	Parms;
 	Parms.MaxProbeUpdatesPerFrame = m_CachedCopy.MaxProbeUpdatesPerFrame;
-	Parms.BounceFactorSun = m_CachedCopy.BounceFactorSun * float3::One;
-	Parms.BounceFactorSky = m_CachedCopy.BounceFactorSky * float3::One;
-	Parms.BounceFactorDynamic = m_CachedCopy.BounceFactorPoint * float3::One;
-	Parms.BounceFactorStatic = (m_CachedCopy.EnableStaticLighting != 0 ? m_CachedCopy.BounceFactorStaticLights : 0.0f) * float3::One;
-	Parms.BounceFactorEmissive = m_CachedCopy.BounceFactorEmissive * float3::One;
-	Parms.BounceFactorNeighbors = (m_CachedCopy.EnableNeighborsRedistribution ? m_CachedCopy.NeighborProbesContributionBoost : 0.0f) * float3::One;
+	Parms.BounceFactorSun = 0.01f * m_CachedCopy.BounceFactorSun * float3::One;
+	Parms.BounceFactorSky = 0.01f * m_CachedCopy.BounceFactorSky * SkyColor;
+	Parms.BounceFactorDynamic = 0.01f * m_CachedCopy.BounceFactorPoint * float3::One;
+	Parms.BounceFactorStatic = (m_CachedCopy.EnableStaticLighting != 0 ? 0.01f * m_CachedCopy.BounceFactorStaticLights : 0.0f) * float3::One;
+	Parms.BounceFactorEmissive = 0.01f * m_CachedCopy.BounceFactorEmissive;
+	Parms.BounceFactorNeighbors = 0.01f * (m_CachedCopy.EnableNeighborsRedistribution ? m_CachedCopy.NeighborProbesContributionBoost : 0.0f);
 
-	memset( Parms.AmbientSkySH, 0, 9*sizeof(float3) );
-	if ( m_CachedCopy.EnableSky )
-	{
-		// Use CIE sky
-//		memcpy_s( Parms.AmbientSkySH, sizeof(Parms.AmbientSkySH), m_pSHAmbientSky, sizeof(m_pSHAmbientSky) );
-
-		// Simple ambient sky term
-		float	SH0 = 0.28209479177387814347403972578039f;	// DC coeff for SH is 1/(2*sqrt(PI))
-		Parms.AmbientSkySH[0] = SH0 * m_CachedCopy.SkyIntensity * float3( m_CachedCopy.SkyColorR, m_CachedCopy.SkyColorG, m_CachedCopy.SkyColorB );
-	}
+// 	memset( Parms.AmbientSkySH, 0, 9*sizeof(float3) );
+// 	if ( m_CachedCopy.EnableSky ) {
+// 		// Use CIE sky
+// //		memcpy_s( Parms.AmbientSkySH, sizeof(Parms.AmbientSkySH), m_pSHAmbientSky, sizeof(m_pSHAmbientSky) );
+// 
+// 		// Simple ambient sky term
+// 		float	SH0 = 0.28209479177387814347403972578039f;	// DC coeff for SH is 1/(2*sqrt(PI))
+// 		Parms.AmbientSkySH[0] = SH0 * float3::One;
+// 	}
 
 	m_ProbesNetwork.UpdateDynamicProbes( Parms );
 

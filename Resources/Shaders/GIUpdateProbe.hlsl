@@ -6,88 +6,121 @@
 #include "Inc/SH.hlsl"
 #include "Inc/ShadowMap.hlsl"
 
-static const float	PCF_SHADOW_NORMAL_OFFSET = 0.1;	// Offset from surface to avoid shadow acnea
-static const float	PCF_DISC_RADIUS_FACTOR = 1.0;	// Radius factor to go fetch PCF samples closer or further from sample's center
-
-
-#define	THREADS_X	128						// The maximum amount of samples per probe (Must match the MAX_PROBE_SAMPLES define declared in ProbeEncoder.h!)
-#define	THREADS_Y	1
-#define	THREADS_Z	1
-
-
-#define MAX_PROBE_SAMPLES			THREADS_X
-#define	MAX_PROBE_EMISSIVE_SURFACES	16		// Must match the MAX_PROBE_EMISSIVE_SURFACES define declared in the header file!
-#define	MAX_PROBE_NEIGHBORS			4		// Must match the MAX_PROBE_NEIGHBORS define declared in the header file!
-
-
-cbuffer	cbUpdateProbes : register(b10)
-{
-	float3	_AmbientSH[9];					// Ambient sky
-
-	float	_SunBoost;
-	float	_SkyBoost;
-	float	_DynamicLightsBoost;
-	float	_StaticLightingBoost;
+cbuffer	cbUpdateProbes : register(b10) {
+	float3	_StaticLightingBoost;
+	float3	_SkyBoost;
+	float3	_SunBoost;
+	float3	_DynamicLightsBoost;
 
 	float	_EmissiveBoost;
 	float	_NeighborProbesContributionBoost;
 };
 
-// Input probe structures
-struct ProbeUpdateInfos
+
+//////////////////////////////////////////////////////////////////////////
+// Probe SH update
+// This compute shader will accumulate static + ambient sky + dynamic SH into the final buffer
+// It will be executed each frame.
+//////////////////////////////////////////////////////////////////////////
+//
+StructuredBuffer<SHCoeffs3>		_SBSHStatic : register(t10);
+StructuredBuffer<SHCoeffs1>		_SBSHSky : register(t11);
+StructuredBuffer<SHCoeffs3>		_SBSHDynamic : register(t12);
+StructuredBuffer<SHCoeffs3>		_SBSHDynamicSun : register(t13);
+RWStructuredBuffer<SHCoeffs3>	_SBSHFinal : register(u0);
+
+[numthreads( 256, 1, 1 )]
+void	CS_AccumulateSH(
+				uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a Dispatch call, per dimension of the dispatch call
+				uint3 _ThreadID			: SV_DispatchThreadID,	// Defines the global thread offset within the Dispatch call, per dimension of the group
+				uint3 _GroupThreadID	: SV_GroupThreadID,		// Defines the thread offset within the group, per dimension of the group
+				uint  _GroupIndex		: SV_GroupIndex )		// Provides a flattened index for a given thread within a given group
 {
+	uint	ProbeIndex = _ThreadID.x;
+	if ( ProbeIndex >= _ProbesCount )
+		return;
+
+	SHCoeffs3	SHStatic = _SBSHStatic[ProbeIndex];
+	SHCoeffs1	SHSky = _SBSHSky[ProbeIndex];
+	SHCoeffs3	SHDynamic = _SBSHDynamic[ProbeIndex];
+	SHCoeffs3	SHDynamicSun = _SBSHDynamicSun[ProbeIndex];
+
+	SHCoeffs3	Result;
+	for ( int i=0; i < 9; i++ ) {
+		Result.SH[i] = _StaticLightingBoost * SHStatic.SH[i] + _SkyBoost * SHSky.SH[i] + _DynamicLightsBoost * SHDynamic.SH[i] + _SunBoost * SHDynamicSun.SH[i];
+//		Result.SH[i] = SHDynamicSun.SH[i];
+//		Result.SH[i] = float3( ProbeIndex / 100.0, 0, 0 );
+	}
+
+	_SBSHFinal[ProbeIndex] = Result;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Dynamic probes update
+// This compute shader will compute lighting impinging each sample of the probe to generate
+//	a new set of dynamic SH coefficients that will later be stored into the dynamic SH buffer
+//////////////////////////////////////////////////////////////////////////
+//
+#define PROBE_SAMPLES_COUNT			128		// The amount of samples per probe (Must match the PROBE_SAMPLES_COUNT define declared in ProbeEncoder.h!)
+
+#define	THREADS_X	PROBE_SAMPLES_COUNT		// Each thread processes a sample
+#define	THREADS_Y	1
+#define	THREADS_Z	1
+
+#define	MAX_PROBE_EMISSIVE_SURFACES	16		// Must match the MAX_PROBE_EMISSIVE_SURFACES define declared in the header file!
+#define	MAX_PROBE_NEIGHBORS			4		// Must match the MAX_PROBE_NEIGHBORS define declared in the header file!
+
+
+static const float	PCF_SHADOW_NORMAL_OFFSET = 0.1;	// Offset from surface to avoid shadow acnea
+static const float	PCF_DISC_RADIUS_FACTOR = 1.0;	// Radius factor to go fetch PCF samples closer or further from sample's center
+
+
+// Input probe structures
+struct ProbeUpdateInfos {
 	uint		Index;						// The index of the probe we're updating
-	uint		SamplesStart;				// Index of the first sample for the probe
-	uint		SamplesCount;				// Amount of samples for the probe
 	uint		EmissiveSurfacesStart;		// Index of the first emissive surface for the probe
 	uint		EmissiveSurfacesCount;		// Amount of emissive surfaces for the probe
-	float3		SHStatic[9];				// Precomputed static SH (static geometry + static lights)
-	float		SHOcclusion[9];				// Directional ambient occlusion for the probe
 
 	// Neighbor probes informations
-//	uint4		NeighborProbeIDs;			// The IDs of the 4 most significant neighbor probes
+	uint4		NeighborProbeIDs;			// The IDs of the 4 most significant neighbor probes
 	float4		SHConvolution[9];			// The SH coefficients to convolve the neighbor's SH with to obtain their contribution to this probe
 };
 StructuredBuffer<ProbeUpdateInfos>			_SBProbeUpdateInfos : register( t10 );
 
-struct ProbeUpdateSampleInfo
-{
+struct ProbeSampleInfo {
 	float3		Position;					// World position of the samples
 	float3		Normal;						// World normal of the sample
-	float		Radius;						// Radius of the sample's disc approximation
 	float3		Albedo;						// Albedo of the sample's surface
+	float		Radius;						// Radius of the sample's disc approximation (ultimately, this should be an ellipse). A radius of 0 means an invalid sample that won't be accumulated!
 };
-StructuredBuffer<ProbeUpdateSampleInfo>		_SBProbeSamples : register( t11 );
+StructuredBuffer<ProbeSampleInfo>			_SBProbeSamples : register( t11 );
 
-struct	ProbeUpdateEmissiveSurfacesInfos
-{
+struct	ProbeUpdateEmissiveSurfacesInfos {
 	float3		EmissiveColor;				// Color of the emissive material
-	float		SH[9];						// SH for the set
+	float		SH[9];						// SH for the surface
 };
 StructuredBuffer<ProbeUpdateEmissiveSurfacesInfos>	_SBProbeUpdateEmissiveSurfacesInfos : register( t12 );
 
+StructuredBuffer<SHCoeffs1>		_SBSampleSH : register(t13);			// Contains the PROBE_SAMPLES_COUNT SH coefficients for each sample (it's a static buffer since samples have a fixed direction for all probes)
+RWStructuredBuffer<SHCoeffs3>	_SBResultDynamic : register( u0 );		// Result SH buffer for dynamic lights + emissive surfaces + neighbors influence
+RWStructuredBuffer<SHCoeffs3>	_SBResultDynamicSun : register( u1 );	// Result SH buffer for the Sun
 
-// Result structure (declared in Inc/GI.hlsl)
-RWStructuredBuffer<ProbeStruct>	_Output : register( u0 );
 
-
-groupshared float3	gs_SamplesSH[9*THREADS_X];
-groupshared float3	gs_DynamicSH[9*MAX_PROBE_SAMPLES];
+groupshared float3	gs_SamplesSH[9*PROBE_SAMPLES_COUNT];
+groupshared float3	gs_SamplesSHSun[9*PROBE_SAMPLES_COUNT];
 groupshared float3	gs_EmissiveSurfaceSH[9*MAX_PROBE_EMISSIVE_SURFACES];
 groupshared float3	gs_NeighborProbeSH[9*MAX_PROBE_NEIGHBORS];
 
 
-// Computes the shadow value for the given posiion, accounting for a radius around the position for soft shadowing
+// Computes the shadow value for the given position, accounting for a radius around the position for soft shadowing
 float	ComputeShadowCS( float3 _WorldPosition, float3 _WorldNormal, float _Radius ) {
 	// Recompute tangent space
 	float3	X = cross( _WorldNormal, float3( 0, 1, 0 ) );
 	float3	Y;
-	if ( dot(X,X) > 1e-6 )
-	{
+	if ( dot(X,X) > 1e-6 ) {
 		Y = cross( _WorldNormal, X );
-	}
-	else
-	{
+	} else {
 		X = float3( 1, 0, 0 );
 		Y = float3( 0, 0, 1 );
 	}
@@ -175,7 +208,6 @@ float	ComputeShadowCS( float3 _WorldPosition, float3 _WorldNormal, float _Radius
 	return Shadow * (1.0 / SHADOW_SAMPLES_COUNT);
 }
 
-
 // float	ComputeShadowPointCS( float3 _WorldPosition, float3 _WorldVertexNormal, float _NormalOffset=0.01 )
 // {
 // 	float3	LocalPosition = _WorldPosition + _NormalOffset * _WorldVertexNormal - _ShadowPointLightPosition;
@@ -215,29 +247,29 @@ float	ComputeShadowCS( float3 _WorldPosition, float3 _WorldNormal, float _Radius
 
 
 // Each group processes a single probe
-// Each thread processes a single sample and will later process sets and even later collapse SH into a single vector
+// Each thread processes a single sample, process emissive surfaces & neighbors' influence and even later collapse SH into a single vector
 [numthreads( THREADS_X, THREADS_Y, THREADS_Z )]
 void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a Dispatch call, per dimension of the dispatch call
 			uint3 _ThreadID			: SV_DispatchThreadID,	// Defines the global thread offset within the Dispatch call, per dimension of the group
 			uint3 _GroupThreadID	: SV_GroupThreadID,		// Defines the thread offset within the group, per dimension of the group
 			uint  _GroupIndex		: SV_GroupIndex )		// Provides a flattened index for a given thread within a given group
 {
-	int		ProbeIndex = _GroupID.x;
-
-	ProbeUpdateInfos	Probe = _SBProbeUpdateInfos[ProbeIndex];
+	uint				UpdateIndex = _GroupID.x;
+	ProbeUpdateInfos	Probe = _SBProbeUpdateInfos[UpdateIndex];
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Process the samples
+	uint			SampleIndex = _GroupThreadID.x;
+	ProbeSampleInfo	Sample = _SBProbeSamples[UpdateIndex * PROBE_SAMPLES_COUNT + SampleIndex];
 
-	// Determine which sample this thread should process
-	uint	SampleIndex = _GroupThreadID.x;
-	if ( SampleIndex < Probe.SamplesCount ) {
-		ProbeUpdateSampleInfo	Sample = _SBProbeSamples[Probe.SamplesStart + SampleIndex];
+	float3	SumIrradiance = 0.0;
+	float3	SumIrradianceSun = 0.0;
+
+	if ( Sample.Radius > 0.0 ) {
+// TODO: Light list per probe!! Don't process all lights every time!
 
 		// Iterate on lights
-// TODO: Light list per probe!! Don't process all lights every time!
-		float3	SumIrradiance = 0.0;
 		[loop]
 		for ( uint LightIndex=0; LightIndex < _DynamicLightsCount; LightIndex++ ) {
 			LightStruct	LightSource = _SBLightsDynamic[LightIndex];
@@ -246,18 +278,13 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 			float3	Light = 0.0;
 			if ( LightSource.Type == 0 || LightSource.Type == 2 ) {
 				// Compute a standard point light
-				Light = LightSource.Position - Sample.Position;
+				float3	Light = LightSource.Position - Sample.Position;
 				float	Distance2Light = length( Light );
-// 				float	InvDistance2Light = 1.0 / Distance2Light;
-// 				Light *= InvDistance2Light;
-//
-//// Try and avoid highlights when lights get too close to the sample
-//InvDistance2Light = min( 1.0, InvDistance2Light );
+						Light /= Distance2Light;
 
-				Light /= Distance2Light;
 				float	InvDistance2Light = 1.0 / max( 0.5, Distance2Light );	// Try and avoid highlights when lights get too close to the sample
 
-				Irradiance = LightSource.Color * InvDistance2Light * InvDistance2Light;
+				Irradiance = LightSource.Color * saturate( dot( Sample.Normal, Light ) ) * InvDistance2Light * InvDistance2Light;
 
 				if ( LightSource.Type == 2 ) {
 					// Account for spots' angular falloff
@@ -268,32 +295,26 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 					Irradiance *= ComputeShadowPoint( Sample.Position, Sample.Normal, PCF_SHADOW_NORMAL_OFFSET );
 				}
 
-				Irradiance *= _DynamicLightsBoost;
+				SumIrradiance += Irradiance;
 
 			} else if ( LightSource.Type == 1 ) {
 				// Compute a sneaky directional with shadow map
-				Light = LightSource.Direction;
-				Irradiance = LightSource.Color;	// Simple!
+				Irradiance = LightSource.Color * saturate( dot( Sample.Normal, LightSource.Direction ) );	// Simple!
 				Irradiance *= ComputeShadowCS( Sample.Position, Sample.Normal, Sample.Radius );
 
-				Irradiance *= _SunBoost;
+				SumIrradianceSun += Irradiance;
 			}
-
-			float	NdotL = saturate( dot( Sample.Normal, Light ) );
-			SumIrradiance += Irradiance * NdotL;
 		}
+	}
 
-		// Encode into SH
-		float3	Radiance = SumIrradiance * Sample.Albedo;	// Radiance = Sum( Rho/PI L0.(N.L) )
+	// Encode into SH
+	float3	Radiance = SumIrradiance * Sample.Albedo;
+	float3	RadianceSun = SumIrradianceSun * Sample.Albedo;
 
-		float	SH[9];
-		BuildSHCosineLobe( Sample.Normal, SH );	// Build a cosine lobe in the direction of the sample's normal that will reflect lighting diffusely off the surface
-
-//Radiance *= saturate( -Sample.Normal.y );
-
-		for ( uint i=0; i < 9; i++ ) {
-			gs_SamplesSH[9*SampleIndex+i] = Radiance * SH[i];
-		}
+	SHCoeffs1	SampleDirection = _SBSampleSH[SampleIndex];
+	for ( uint i=0; i < 9; i++ ) {
+		gs_SamplesSH[9*SampleIndex+i] = Radiance * SampleDirection.SH[i];
+		gs_SamplesSHSun[9*SampleIndex+i] = RadianceSun * SampleDirection.SH[i];
 	}
 
 	// Ensure all threads have finished computing their sample irradiance
@@ -301,57 +322,71 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// 2] Process the emissive surfaces
-	uint	EmissiveSetIndex = _GroupThreadID.x;
-	if ( EmissiveSetIndex < Probe.EmissiveSurfacesCount ) {
-		// Retrieve emissive set infos for that thread
-		ProbeUpdateEmissiveSurfacesInfos	EmissiveSet = _SBProbeUpdateEmissiveSurfacesInfos[Probe.EmissiveSurfacesStart + EmissiveSetIndex];
+	// 2] Process the emissive surfaces with unused threads (i.e. above 64)
+	uint	ThreadStartIndex_Emissive = THREADS_X >> 1;
+	uint	EmissiveSurfaceIndex = _GroupThreadID.x - ThreadStartIndex_Emissive;
+	if ( EmissiveSurfaceIndex < MAX_PROBE_EMISSIVE_SURFACES ) {
+		if ( EmissiveSurfaceIndex < Probe.EmissiveSurfacesCount ) {
+			// Retrieve emissive set infos for that thread
+			ProbeUpdateEmissiveSurfacesInfos	EmissiveSurface = _SBProbeUpdateEmissiveSurfacesInfos[Probe.EmissiveSurfacesStart + EmissiveSurfaceIndex];
 
-		// Compute SH irradiance
-		for ( uint i=0; i < 9; i++ )
-			gs_EmissiveSurfaceSH[9*EmissiveSetIndex+i] = EmissiveSet.EmissiveColor * EmissiveSet.SH[i];
+			// Build radiance
+			for ( uint i=0; i < 9; i++ )
+				gs_EmissiveSurfaceSH[9*EmissiveSurfaceIndex+i] = EmissiveSurface.EmissiveColor * EmissiveSurface.SH[i];
+		} else {
+			// Clear radiance
+			for ( uint i=0; i < 9; i++ )
+				gs_EmissiveSurfaceSH[9*EmissiveSurfaceIndex+i] = 0.0;
+		}
 	}
-
-	// Ensure all threads have finished computing their set SH
-	GroupMemoryBarrierWithGroupSync();
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// 3] Use 4 threads to add contribution from neighbor probes
-	uint	NeighborIndex = _GroupThreadID.x;
-	if ( NeighborIndex < 4 ) {
-		uint2	NeighborIDs = _Output[Probe.Index].NeighborIDs;	// Packed as X=11|00, Y=33|22
-		uint	NeighborProbeID = 0xFFFF;
-		float4	Swizzle;
-		switch ( NeighborIndex )
-		{
-		case 0:	NeighborProbeID = NeighborIDs.x & 0xFFFF;			Swizzle = float4( 1, 0, 0, 0 ); break;
-		case 1:	NeighborProbeID = (NeighborIDs.x >> 16) & 0xFFFF;	Swizzle = float4( 0, 1, 0, 0 ); break;
-		case 2:	NeighborProbeID = NeighborIDs.y & 0xFFFF;			Swizzle = float4( 0, 0, 1, 0 ); break;
-		case 3:	NeighborProbeID = (NeighborIDs.y >> 16) & 0xFFFF;	Swizzle = float4( 0, 0, 0, 1 ); break;
+	// 3] Use 4 unused threads to add contribution from neighbor probes (i.e. threads above 64 + 16)
+	uint	ThreadStartIndex_Neighbors = ThreadStartIndex_Emissive + MAX_PROBE_EMISSIVE_SURFACES;
+	uint	NeighborIndex = _GroupThreadID.x - ThreadStartIndex_Neighbors;
+	if ( NeighborIndex < MAX_PROBE_NEIGHBORS ) {
+		uint	NeighborProbeID = 0xFFFFU;
+		float4	Swizzle = 0.0;
+
+#if 1
+		// Nowadays, neighbor probes are stored in the update structure
+		switch ( NeighborIndex ) {
+			case 0:	NeighborProbeID = Probe.NeighborProbeIDs.x;	Swizzle = float4( 1, 0, 0, 0 ); break;
+			case 1:	NeighborProbeID = Probe.NeighborProbeIDs.y;	Swizzle = float4( 0, 1, 0, 0 ); break;
+			case 2:	NeighborProbeID = Probe.NeighborProbeIDs.z;	Swizzle = float4( 0, 0, 1, 0 ); break;
+			case 3:	NeighborProbeID = Probe.NeighborProbeIDs.w;	Swizzle = float4( 0, 0, 0, 1 ); break;
 		}
+#else
+		// Formerly, neighbor IDs were stored in the ProbeStruct as a packed uint2
+		uint2	NeighborIDs = _SBResult[Probe.Index].NeighborIDs;	// Packed as X=11|00, Y=33|22
+		switch ( NeighborIndex ) {
+			case 0:	NeighborProbeID = NeighborIDs.x & 0xFFFF;			Swizzle = float4( 1, 0, 0, 0 ); break;
+			case 1:	NeighborProbeID = (NeighborIDs.x >> 16) & 0xFFFF;	Swizzle = float4( 0, 1, 0, 0 ); break;
+			case 2:	NeighborProbeID = NeighborIDs.y & 0xFFFF;			Swizzle = float4( 0, 0, 1, 0 ); break;
+			case 3:	NeighborProbeID = (NeighborIDs.y >> 16) & 0xFFFF;	Swizzle = float4( 0, 0, 0, 1 ); break;
+		}
+#endif
 
-		if ( NeighborProbeID < _ProbesCount )
-		{
-//			float3	NeighborProbeSH[9] = _SBProbes[NeighborProbeID].SH;	// Unless we use a double-buffer of probes?
-			float3	NeighborProbeSH[9] = _Output[NeighborProbeID].SH;
+		if ( NeighborProbeID < _ProbesCount ) {
+			float3	NeighborProbeSH[9] = _SBProbeSH[NeighborProbeID].SH;
 
-			float	NeighborConvolution[9];
+			float	NeighborConvolutionSH[9];
 			for ( uint i=0; i < 9; i++ )
-				NeighborConvolution[i] = dot( Probe.SHConvolution[i], Swizzle );
+				NeighborConvolutionSH[i] = dot( Probe.SHConvolution[i], Swizzle );		// Isolate the SH for this neighbor (4 neighbors SH are packed in a float4 here)
 
 			float3	PerceivedNeighborSH[9];
-			SHProduct( NeighborProbeSH, NeighborConvolution, PerceivedNeighborSH );
+			SHProduct( NeighborProbeSH, NeighborConvolutionSH, PerceivedNeighborSH );	// This is the SH this probe can see from its neighbor
 
 			for ( uint i=0; i < 9; i++ )
 				gs_NeighborProbeSH[9*NeighborIndex+i] = PerceivedNeighborSH[i];
-//				gs_NeighborProbeSH[9*NeighborIndex+i] = NeighborConvolution[i];	// Use this to show the exhanges
+//				gs_NeighborProbeSH[9*NeighborIndex+i] = NeighborConvolutionSH[i];	// Use this to show the exhanges
 //				gs_NeighborProbeSH[9*NeighborIndex+i] = NeighborIndex == 0 && i == 0 ? NeighborProbeID : 0.0;	// Use this to show the neighbor's ID
 //				gs_NeighborProbeSH[9*NeighborIndex+i] = NeighborIndex == 0 ? NeighborProbeSH[i] : 0.0;			// Use this to show the neighbor's SH
 
 		} else {
 			// Accumulate nothing
-			float3	Zero = NeighborProbeID == 0xFFFF ? 0.0 : float3( 1, 0, 1 );
+			float3	Zero = (NeighborProbeID == 0xFFFFU || NeighborProbeID == 0xFFFFFFFFU) ? 0.0 : float3( 1, 0, 1 );	// Debug => Out of range probes will display in magenta!
 			for ( uint i=0; i < 9; i++ )
 				gs_NeighborProbeSH[9*NeighborIndex+i] = Zero;
 		}
@@ -359,66 +394,97 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// 4] Accumulate the SH from all samples using a single thread
-	if ( _GroupThreadID.x == 4 ) {
-		for ( uint i=0; i < 9; i++ )
-			gs_DynamicSH[i] = 0.0;
-
+	// 4] Perform a reduction of the samples' SH & emissive SH
+	uint	BlockOffset = 9*SampleIndex;
+	if ( SampleIndex < 64 ) {
+		uint	BlockOffset2 = BlockOffset + 9*64;	// Offset to the next block of 64 samples
 		[loop]
-		for ( SampleIndex=0; SampleIndex < Probe.SamplesCount; SampleIndex++ ) {
-			for ( uint i=0; i < 9; i++ )
-				gs_DynamicSH[i] += gs_SamplesSH[9*SampleIndex+i];
+		for ( uint i=0; i < 9; i++ ) {
+			gs_SamplesSH[BlockOffset+i] += gs_SamplesSH[BlockOffset2+i];
+			gs_SamplesSHSun[BlockOffset+i] += gs_SamplesSHSun[BlockOffset2+i];
 		}
 	}
 
-	// Ensure all threads have finished computing their set SH
+	GroupMemoryBarrierWithGroupSync();
+
+	if ( SampleIndex < 32 ) {
+		uint	BlockOffset2 = BlockOffset + 9*32;	// Offset to the next block of 32 samples
+		[loop]
+		for ( uint i=0; i < 9; i++ ) {
+			gs_SamplesSH[BlockOffset+i] += gs_SamplesSH[BlockOffset2+i];
+			gs_SamplesSHSun[BlockOffset+i] += gs_SamplesSHSun[BlockOffset2+i];
+		}
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	if ( SampleIndex < 16 ) {
+		uint	BlockOffset2 = BlockOffset + 9*16;	// Offset to the next block of 16 samples
+		[loop]
+		for ( uint i=0; i < 9; i++ ) {
+			gs_SamplesSH[BlockOffset+i] += gs_SamplesSH[BlockOffset2+i];
+			gs_SamplesSHSun[BlockOffset+i] += gs_SamplesSHSun[BlockOffset2+i];
+		}
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	if ( SampleIndex < 8 ) {
+		uint	BlockOffset2 = BlockOffset + 9*8;	// Offset to the next block of 8 samples
+		[loop]
+		for ( uint i=0; i < 9; i++ ) {
+			gs_SamplesSH[BlockOffset+i] += gs_SamplesSH[BlockOffset2+i];
+			gs_SamplesSHSun[BlockOffset+i] += gs_SamplesSHSun[BlockOffset2+i];
+
+			// Reduce emissive as well
+			gs_EmissiveSurfaceSH[BlockOffset+i] = gs_EmissiveSurfaceSH[BlockOffset2+i];
+		}
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	if ( SampleIndex < 4 ) {
+		uint	BlockOffset2 = BlockOffset + 9*4;	// Offset to the next block of 4 samples
+		[loop]
+		for ( uint i=0; i < 9; i++ ) {
+			gs_SamplesSH[BlockOffset+i] += gs_SamplesSH[BlockOffset2+i];
+			gs_SamplesSHSun[BlockOffset+i] += gs_SamplesSHSun[BlockOffset2+i];
+
+			// Reduce emissive as well
+			gs_EmissiveSurfaceSH[BlockOffset+i] = gs_EmissiveSurfaceSH[BlockOffset2+i];
+		}
+	}
+
 	GroupMemoryBarrierWithGroupSync();
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// 5] Use a single thread to finalize SH
+	// At this point, we have 4 sums of SH coefficients in gs_SamplesSH[0+i], gs_SamplesSH[9+i], gs_SamplesSH[18+i] and gs_SamplesSH[27+i]
+	// We won't force a barrier for summing 4 samples so we'll collapse them using a single thread that will also add other SH...
+	//
 	if ( _GroupThreadID.x == 0 ) {
-		// 3.1] First, the ambient term needs to be computed by a product of the probe's occlusion SH and the ambient SH so it gets the occluded sky SH
-		float3	OccludedAmbientSH[9];
-		SHProduct( _AmbientSH, Probe.SHOcclusion, OccludedAmbientSH );
 
-		// 3.2] Then accumulate static + ambient + neighbor + dynamic + emissive SH
+		// Finalize dynamic
+		SHCoeffs3	SHDynamic;
+		SHCoeffs3	SHDynamicSun;
+		[unroll]
 		for ( uint i=0; i < 9; i++ ) {
-#if 1
-			// Static + occluded sky
-			float3	SHCoeff = abs(_SkyBoost) * OccludedAmbientSH[i] + _StaticLightingBoost * Probe.SHStatic[i];
+			// Dynamic = Samples + Emissive + Neighbors
+			SHDynamic.SH[i] = gs_SamplesSH[9*0+i] + gs_SamplesSH[9*1+i] + gs_SamplesSH[9*2+i] + gs_SamplesSH[9*3+i]
+ 							+ _EmissiveBoost * (gs_EmissiveSurfaceSH[9*0+i] + gs_EmissiveSurfaceSH[9*1+i] + gs_EmissiveSurfaceSH[9*2+i] + gs_EmissiveSurfaceSH[9*3+i])
+ 							+ _NeighborProbesContributionBoost * (gs_NeighborProbeSH[9*0+i]+ gs_NeighborProbeSH[9*1+i]+ gs_NeighborProbeSH[9*2+i]+ gs_NeighborProbeSH[9*3+i]);
 
-			// + Neighbors
-			SHCoeff += _NeighborProbesContributionBoost * (gs_NeighborProbeSH[9*0+i] + gs_NeighborProbeSH[9*1+i] + gs_NeighborProbeSH[9*2+i] + gs_NeighborProbeSH[9*3+i]);
-
-			// + Dynamic lights
-			SHCoeff += gs_DynamicSH[i];
-
-			// + Emissive materials
-			[loop]
-			for ( uint j=0; j < Probe.EmissiveSurfacesCount; j++ ) {
-				SHCoeff += _EmissiveBoost * gs_EmissiveSurfaceSH[9*j+i];
-			}
-#else
-			// Debug SH
-			float3	SHCoeff = 0.0;
-			[loop]
-			for ( uint j=0; j < Probe.SamplesCount; j++ ) {
-				ProbeUpdateSampleInfo	Sample = _SBProbeSamples[Probe.SamplesStart + j];
-
-				float	SH[9];
-				BuildSHCosineLobe( Sample.Normal, SH );	// Build a cosine lobe in the direction of the sample's normal that will reflect lighting diffusely off the surface
-
-				SHCoeff += 0.01 * SH[i];
-			}
-#endif
-
-			// Store result and we're done!
-			_Output[Probe.Index].SH[i] = SHCoeff;
-
-//_Output[Probe.Index].SH[i] = 0.5 * (gs_SamplesSH[63]);
-//_Output[Probe.Index].SH[i] = 0.5 * (gs_DynamicSH[9*0+i]);
-//_Output[Probe.Index].SH[i] = 0.5 * (Probe.Sets[3].SamplesCount / 64.0);
+			// Dynamic Sun = Samples Sun
+			SHDynamicSun.SH[i] = gs_SamplesSHSun[9*0+i] + gs_SamplesSHSun[9*1+i] + gs_SamplesSHSun[9*2+i] + gs_SamplesSHSun[9*3+i];
 		}
+
+//SHDynamic.SH[0] = float3( 1, 0, 0 );
+//SHDynamicSun.SH[0] = float3( 1, 1, 0 );
+// 
+//Probe.Index = UpdateIndex;
+
+		_SBResultDynamic[Probe.Index] = SHDynamic;
+		_SBResultDynamicSun[Probe.Index] = SHDynamicSun;
 	}
 }

@@ -208,6 +208,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Camera.cs" />
+    <Compile Include="CameraManipulator.cs" />
     <Compile Include="Forms\FloatTrackbarControl.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -237,7 +239,12 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\RendererManaged\RendererManaged.vcxproj">
+      <Project>{F96CDFD3-8954-4F4F-AFB0-2855D98F051B}</Project>
+      <Name>RendererManaged</Name>
+    </ProjectReference>
+  </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Forms\FloatTrackbarControl.resx">
       <DependentUpon>FloatTrackbarControl.cs</DependentUpon>

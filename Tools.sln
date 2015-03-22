@@ -111,6 +111,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "idTech5MapSceneLoader", "To
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GIProbesDebugger", "Tools\GIProbesDebugger\GIProbesDebugger.csproj", "{7CF0D3EC-F50D-43C3-A091-1166D905DB8B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoronoiVisualizer", "Tools\VoronoiVisualizer\VoronoiVisualizer.csproj", "{2CC01836-7A66-4176-A55C-7A53B4C73745}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug DirectX10|Any CPU = Debug DirectX10|Any CPU
@@ -1752,6 +1754,34 @@ Global
 		{7CF0D3EC-F50D-43C3-A091-1166D905DB8B}.Release|x64.ActiveCfg = Release|x86
 		{7CF0D3EC-F50D-43C3-A091-1166D905DB8B}.Release|x86.ActiveCfg = Release|x86
 		{7CF0D3EC-F50D-43C3-A091-1166D905DB8B}.Release|x86.Build.0 = Release|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Debug DirectX10|Any CPU.ActiveCfg = Debug|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Debug DirectX10|Mixed Platforms.Build.0 = Debug|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Debug DirectX10|Win32.ActiveCfg = Debug|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Debug DirectX10|x64.ActiveCfg = Debug|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Debug DirectX10|x86.ActiveCfg = Debug|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Debug DirectX10|x86.Build.0 = Debug|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Debug|Win32.ActiveCfg = Debug|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Debug|x64.ActiveCfg = Debug|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Debug|x86.ActiveCfg = Debug|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Debug|x86.Build.0 = Debug|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Profile|Any CPU.ActiveCfg = Release|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Profile|Mixed Platforms.ActiveCfg = Release|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Profile|Mixed Platforms.Build.0 = Release|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Profile|Win32.ActiveCfg = Release|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Profile|x64.ActiveCfg = Release|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Profile|x86.ActiveCfg = Release|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Profile|x86.Build.0 = Release|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Release|Any CPU.ActiveCfg = Release|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Release|Mixed Platforms.Build.0 = Release|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Release|Win32.ActiveCfg = Release|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Release|x64.ActiveCfg = Release|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Release|x86.ActiveCfg = Release|x86
+		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

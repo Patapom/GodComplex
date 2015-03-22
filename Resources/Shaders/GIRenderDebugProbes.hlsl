@@ -60,9 +60,6 @@ PS_IN	VS( VS_IN _In )
 
 float4	PS( PS_IN _In ) : SV_TARGET0
 {
-	ProbeStruct	Probe = _SBProbes[_In.ProbeID];
-
-	
 #if DEBUG_SAMPLES
 	for ( uint SampleIndex=0; SampleIndex < 128; SampleIndex++ ) {
 		ProbeUpdateSampleInfo	Sample = _SBProbeSamples[SampleIndex];
@@ -76,6 +73,9 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 
 
 //return _In.ProbeID == 16;
+
+//	ProbeStruct	Probe = _SBProbes[_In.ProbeID];
+	SHCoeffs3	Probe = _SBProbeSH[_In.ProbeID];
 
 	float3	Color = 1.0 * EvaluateSH( _In.Normal, Probe.SH );
 	return float4( Color, 0 );

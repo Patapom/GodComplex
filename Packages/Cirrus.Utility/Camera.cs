@@ -5,7 +5,7 @@ using System.Text;
 
 using RendererManaged;
 
-namespace AreaLightTest
+namespace Nuaj.Cirrus.Utility
 {
 	/// <summary>
 	/// The Camera class doesn't wrap any DirectX component per-se but helps a lot to handle

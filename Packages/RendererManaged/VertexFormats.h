@@ -15,6 +15,7 @@ namespace RendererManaged {
 		P3N3,		// Position+Normal
 		P3N3G3T2,	// Position+Normal+Tangent+UV
 		P3N3G3B3T2,	// Position+Normal+Tangent+Bitangent+UV
+		T2,			// UV
 	};
 
 	static ::IVertexFormatDescriptor*	GetDescriptor( VERTEX_FORMAT _Format )
@@ -27,6 +28,7 @@ namespace RendererManaged {
 		case VERTEX_FORMAT::P3N3:		pDescriptor = &VertexFormatP3N3::DESCRIPTOR; break;
 		case VERTEX_FORMAT::P3N3G3T2:	pDescriptor = &VertexFormatP3N3G3T2::DESCRIPTOR; break;
 		case VERTEX_FORMAT::P3N3G3B3T2:	pDescriptor = &VertexFormatP3N3G3B3T2::DESCRIPTOR; break;
+		case VERTEX_FORMAT::T2:			pDescriptor = &VertexFormatT2::DESCRIPTOR; break;
 		default:	throw gcnew Exception( "Unsupported vertex format!" );
 		}
 
@@ -180,6 +182,30 @@ namespace RendererManaged {
 					W->Write( _Vertices[VertexIndex].B.x );
 					W->Write( _Vertices[VertexIndex].B.y );
 					W->Write( _Vertices[VertexIndex].B.z );
+					W->Write( _Vertices[VertexIndex].UV.x );
+					W->Write( _Vertices[VertexIndex].UV.y );
+				}
+				Buffer->CloseStream();
+			}
+			return Buffer;
+		}
+	};
+
+	//////////////////////////////////////////////////////////////////////////
+	// T2
+	[System::Runtime::InteropServices::StructLayoutAttribute( System::Runtime::InteropServices::LayoutKind::Sequential )]
+	public value struct VertexT2
+	{
+		float2	UV;		// UV
+
+		static property int	SizeOf	{ int get() { return System::Runtime::InteropServices::Marshal::SizeOf(VertexT2::typeid); } }
+		static ByteBuffer^	FromArray( cli::array<VertexT2>^ _Vertices )
+		{
+			ByteBuffer^	Buffer = gcnew ByteBuffer( _Vertices->Length * VertexT2::SizeOf );
+			{
+				System::IO::BinaryWriter^ W = Buffer->OpenStreamWrite();
+				for ( int VertexIndex=0; VertexIndex < _Vertices->Length; VertexIndex++ )
+				{
 					W->Write( _Vertices[VertexIndex].UV.x );
 					W->Write( _Vertices[VertexIndex].UV.y );
 				}

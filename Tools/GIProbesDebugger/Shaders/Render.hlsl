@@ -21,11 +21,12 @@ struct ProbeSampleInfo {
 	float3		F0;
 	uint		PixelsCount;
 	float		SHFactor;
+	float		SH[9];
 };
 StructuredBuffer< ProbeSampleInfo >	_BufferSamples : register(t1);
 
 struct EmissiveSurfaceInfo {
-	uint			ID;
+	uint		ID;
 	float		SH[9];
 };
 StructuredBuffer< EmissiveSurfaceInfo >	_BufferEmissiveSurfaces : register(t2);
@@ -226,10 +227,10 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		case 2: Value = 0.5 * (1.0 + Sample.Normal); break;
 		case 4: {
 
-			float	SH[9];
-			BuildSHCosineLobe( Sample.Normal, SH );
+// 			float	SH[9];
+// 			BuildSHCosineLobe( Sample.Normal, SH );
 
-			Value = Sample.SHFactor * Sample.Albedo * EvaluateSH( wsView, SH );
+			Value = Sample.SHFactor * Sample.Albedo * EvaluateSH( wsView, Sample.SH );
 			break;
 			}
 		}

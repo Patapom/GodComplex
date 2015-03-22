@@ -38,6 +38,7 @@ namespace GIProbesDebugger
 			public float3		F0;
 			public uint			PixelsCount;
 			public float		SHFactor;		// Ratio of sample pixels compared to total pixels count
+			public float3		SH0, SH1, SH2;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -193,7 +194,7 @@ namespace GIProbesDebugger
 					m_SB_Samples = new StructuredBuffer<SB_Sample>( m_Device, SamplesCount, true );
 
 					for ( int SampleIndex=0; SampleIndex < SamplesCount; SampleIndex++ ) {
-						m_SB_Samples.m[SampleIndex].ID = R.ReadUInt32();
+						m_SB_Samples.m[SampleIndex].ID = (uint) SampleIndex;
 						m_SB_Samples.m[SampleIndex].Position.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
 						m_SB_Samples.m[SampleIndex].Normal.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
 						m_SB_Samples.m[SampleIndex].Tangent.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
@@ -204,10 +205,9 @@ namespace GIProbesDebugger
 						m_SB_Samples.m[SampleIndex].PixelsCount = R.ReadUInt32();
 						m_SB_Samples.m[SampleIndex].SHFactor = R.ReadSingle();
 
-// Not provided anymore: SH cosine lobe is generated at runtime
-// 						m_SB_Samples.m[SampleIndex].SH0.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-// 						m_SB_Samples.m[SampleIndex].SH1.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-// 						m_SB_Samples.m[SampleIndex].SH2.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+						m_SB_Samples.m[SampleIndex].SH0.Set( (float) R.ReadDouble(), (float) R.ReadDouble(), (float) R.ReadDouble() );
+						m_SB_Samples.m[SampleIndex].SH1.Set( (float) R.ReadDouble(), (float) R.ReadDouble(), (float) R.ReadDouble() );
+						m_SB_Samples.m[SampleIndex].SH2.Set( (float) R.ReadDouble(), (float) R.ReadDouble(), (float) R.ReadDouble() );
 					}
 					m_SB_Samples.Write();
 

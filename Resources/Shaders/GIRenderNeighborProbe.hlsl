@@ -18,6 +18,7 @@ cbuffer	cbProbe	: register( b10 )
 	float3		_CurrentProbePosition;
 	uint		_NeighborProbeID;
 	float3		_NeighborProbePosition;
+	float		_QuadHalfSize;
 };
 
 struct	VS_IN
@@ -40,18 +41,17 @@ PS_IN	VS( VS_IN _In )
 	float3	PlaneTangent = cross( float3( 0, 1, 0 ), PlaneNormal );
 	float3	PlaneBiTangent;
 	float	L = length( PlaneTangent );
-	if ( L > 1e-6 )
-	{
+	if ( L > 1e-6 ) {
 		PlaneTangent /= L;
 		PlaneBiTangent = cross( PlaneNormal, PlaneTangent );
-	}
-	else
-	{	// Arbitrary basis
+	} else {
+		// Arbitrary basis
 		PlaneTangent = float3( 1, 0, 0 );
 		PlaneBiTangent = float3( 0, 0, 1 );
 	}
 
-	float4	WorldPosition = float4( _NeighborProbePosition + 0.5 * PLANE_SIZE_RATIO * Distance2Neighbor * (_In.__Position.x * PlaneTangent + _In.__Position.y * PlaneBiTangent), 1.0 );
+//	float4	WorldPosition = float4( _NeighborProbePosition + 0.5 * PLANE_SIZE_RATIO * Distance2Neighbor * (_In.__Position.x * PlaneTangent + _In.__Position.y * PlaneBiTangent), 1.0 );
+	float4	WorldPosition = float4( _NeighborProbePosition + _QuadHalfSize * (_In.__Position.x * PlaneTangent + _In.__Position.y * PlaneBiTangent), 1.0 );
 
 	PS_IN	Out;
 	Out.__Position = mul( WorldPosition, _CubeMapWorld2Proj );
