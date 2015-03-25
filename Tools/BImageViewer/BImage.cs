@@ -141,10 +141,80 @@ namespace BImageViewer
 				}
 			}
 
+			public RendererManaged.PIXEL_FORMAT	EquivalentRendererFormat {
+				get {
+					switch ( m_layout ) {
+						case Layout.LAYOUT_8: 
+							switch ( m_type ) {
+								case Type.UNORM: return RendererManaged.PIXEL_FORMAT.R8_UNORM;
+							}
+							break;
+
+						case Layout.LAYOUT_16:
+							switch ( m_type ) {
+								case Type.UNORM: return RendererManaged.PIXEL_FORMAT.R16_UNORM;
+								case Type.FLOAT: return RendererManaged.PIXEL_FORMAT.R16_FLOAT;
+							}
+							break;
+
+						case Layout.LAYOUT_32:
+							switch ( m_type ) {
+								case Type.FLOAT: return RendererManaged.PIXEL_FORMAT.R32_FLOAT;
+							}
+							break;
+
+						case Layout.LAYOUT_8_8_8_8:
+							switch ( m_type ) {
+								case Type.UNORM: return RendererManaged.PIXEL_FORMAT.RGBA8_UNORM;
+								case Type.UNORM_sRGB: return RendererManaged.PIXEL_FORMAT.RGBA8_UNORM_sRGB;
+							}
+							break;
+
+						case Layout.LAYOUT_16_16:
+							switch ( m_type ) {
+								case Type.UNORM: return RendererManaged.PIXEL_FORMAT.RG16_UNORM;
+								case Type.FLOAT: return RendererManaged.PIXEL_FORMAT.RG16_FLOAT;
+							}
+							break;
+
+						case Layout.LAYOUT_32_32:
+							switch ( m_type ) {
+								case Type.FLOAT: return RendererManaged.PIXEL_FORMAT.RG32_FLOAT;
+							}
+							break;
+
+						case Layout.LAYOUT_16_16_16_16:
+							switch ( m_type ) {
+								case Type.FLOAT: return RendererManaged.PIXEL_FORMAT.RGBA16_FLOAT;
+							}
+							break;
+
+						case Layout.LAYOUT_32_32_32_32:
+							switch ( m_type ) {
+								case Type.FLOAT: return RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT;
+							}
+							break;
+
+						case Layout.LAYOUT_BC3:
+							switch ( m_type ) {
+								case Type.UNORM: return RendererManaged.PIXEL_FORMAT.BC3_UNORM;
+								case Type.UNORM_sRGB: return RendererManaged.PIXEL_FORMAT.BC3_UNORM_sRGB;
+							}
+							break;
+					}
+
+					throw new Exception( "Unsupported image format " + ToString() );
+				}
+			}
+
 			public void		Read( BinaryReader _R ) {
 				m_layout = (Layout) ReadBigUInt32( _R );
 				m_type = (Type) ReadBigUInt32( _R );
 				m_swizzle = (Swizzle) ReadBigUInt32( _R );
+			}
+
+			public override string ToString() {
+				return "Layout " + m_layout + " - Type " + m_type + " - Swizzle " + m_swizzle;
 			}
 		}
 
@@ -266,10 +336,10 @@ namespace BImageViewer
 
 		#region FIELDS
 
-		uint			m_sourceFileTime;
-		uint			m_Magic;
-		ImageOptions	m_Opts = new ImageOptions();
-		ImageSlice[]	m_Slices = new ImageSlice[0];
+		public uint			m_sourceFileTime;
+		public uint			m_Magic;
+		public ImageOptions	m_Opts = new ImageOptions();
+		public ImageSlice[]	m_Slices = new ImageSlice[0];
 
 		#endregion
 
@@ -327,6 +397,56 @@ namespace BImageViewer
 
 					m_Slices = Slices.ToArray();
 				}
+		}
+
+		/// <summary>
+		/// Creates a 2D texture from the image
+		/// </summary>
+		/// <returns></returns>
+		public RendererManaged.Texture2D	CreateTexture2D( RendererManaged.Device _Device ) {
+			if ( m_Opts.m_type != ImageOptions.TYPE.TT_2D )
+				throw new Exception( "The image is not a 2D texture!" );
+
+			RendererManaged.PIXEL_FORMAT	TextureFormat = m_Opts.m_format.EquivalentRendererFormat;
+
+			uint	W = m_Opts.m_curWidth;
+			uint	H = m_Opts.m_curHeight;
+			uint	ArraySize = m_Opts.m_arraySize;
+			uint	MipsCount = m_Opts.m_curNumLevels;
+			uint	PixelSize = m_Opts.m_format.BitsCount >> 3;
+
+			List<RendererManaged.PixelsBuffer>	Content = new List<RendererManaged.PixelsBuffer>();
+			for ( uint SliceIndex=0; SliceIndex < ArraySize; SliceIndex++ ) {
+				for ( uint MipLevelIndex=0; MipLevelIndex < MipsCount; MipLevelIndex++ ) {
+					ImageSlice	Slice = m_Slices[SliceIndex*MipsCount+MipLevelIndex];
+
+					RendererManaged.PixelsBuffer	Pixels = new RendererManaged.PixelsBuffer( (int) (W * H * PixelSize) );
+					Content.Add( Pixels );
+
+					using ( BinaryWriter Writer = Pixels.OpenStreamWrite() )
+						Writer.Write( Slice.m_Content );
+				}
+
+				W = Math.Max( 1, W >> 1 );
+				H = Math.Max( 1, H >> 1 );
+			}
+
+			RendererManaged.Texture2D	Result = new RendererManaged.Texture2D( _Device, (int) m_Opts.m_curWidth, (int) m_Opts.m_curHeight, (int) m_Opts.m_arraySize, (int) m_Opts.m_curNumLevels, TextureFormat, false, false, Content.ToArray() );
+			return Result;
+		}
+
+		public RendererManaged.Texture2D	CreateTextureCube( RendererManaged.Device _Device ) {
+			if ( m_Opts.m_type != ImageOptions.TYPE.TT_CUBIC )
+				throw new Exception( "The image is not a 2D texture!" );
+
+			throw new Exception( "Texture cubes are not supported yet!" );
+		}
+
+		public RendererManaged.Texture3D	CreateTexture3D( RendererManaged.Device _Device ) {
+			if ( m_Opts.m_type != ImageOptions.TYPE.TT_3D )
+				throw new Exception( "The image is not a 2D texture!" );
+
+			throw new Exception( "Texture 3D are not supported yet!" );
 		}
 
 		private static ushort ReadBigUInt16( BinaryReader _R ) {
