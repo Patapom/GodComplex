@@ -236,6 +236,27 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		}
 		Value *= Factor;
 	}
+	if ( _Flags & 16 ) {
+		// Show neighbor/voronoï
+		static float3	PipoColors[8] = {
+			float3( 1, 0, 0 ),
+			float3( 1, 1, 0 ),
+			float3( 0, 1, 0 ),
+			float3( 0, 1, 1 ),
+			float3( 0, 0, 1 ),
+			float3( 1, 0, 1 ),
+			float3( 1, 0.5, 0.5 ),
+			float3( 0.5, 0.5, 1 ),
+		};
+
+		uint	ID = ~0U;
+		if ( _Type == 0 )
+			ID = _TexCube.SampleLevel( PointWrap, float4( wsView, 6 ), 0.0 ).w;	// Neighbor ID
+		else
+			ID = _TexCube.SampleLevel( PointWrap, float4( wsView, 5 ), 0.0 ).w;	// Voronoï ID
+
+		Value = ID != ~0U ? PipoColors[ID&7] : 0.0;
+	}
 
 //	float4	Value = _TexCube.SampleLevel( LinearWrap, float4( wsView, _Type ), 0.0 );
 	return float4( Value, 1 );

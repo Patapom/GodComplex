@@ -82,6 +82,7 @@ namespace GIProbesDebugger
 			public uint		EmissiveMatID;
 			public uint		NeighborProbeID;
 			public float	NeighborProbeDistance;
+			public uint		VoronoiProbeID;
 			public double	Importance;
 			public float	Distance;
 			public float	SmoothedDistance;
@@ -130,6 +131,7 @@ namespace GIProbesDebugger
 								Face[X,Y].EmissiveMatID = R.ReadUInt32();
 								Face[X,Y].NeighborProbeID = R.ReadUInt32();
 								Face[X,Y].NeighborProbeDistance = R.ReadSingle();
+								Face[X,Y].VoronoiProbeID = R.ReadUInt32();
 								Face[X,Y].Importance = R.ReadDouble();
 								Face[X,Y].Distance = R.ReadSingle();
 								Face[X,Y].SmoothedDistance = R.ReadSingle();
@@ -168,7 +170,7 @@ namespace GIProbesDebugger
 												Value.Set( P.SmoothedStaticLitColor, (float) P.Importance );
 												break;
 											case 5:
-												Value.Set( P.UsedForSampling ? 1 : 0, P.Infinity ? 1 : 0, (float) P.FaceIndex, 0 );
+												Value.Set( P.UsedForSampling ? 1 : 0, P.Infinity ? 1 : 0, (float) P.FaceIndex, (float) P.VoronoiProbeID );
 												break;
 											case 6:
 												Value.Set( P.F0, (float) P.NeighborProbeID );
@@ -302,10 +304,13 @@ namespace GIProbesDebugger
 
 			// Setup global data
 			m_CB_Main.m._TargetSize = new float4( Width, Height, 1.0f / Width, 1.0f / Height );
-			m_CB_Main.m._Flags = (uint) ((checkBoxShowCubeMapFaces.Checked ? 1 : 0) | (checkBoxShowDistance.Checked ? 2 : 0) | (checkBoxShowWSPosition.Checked ? 4 : 0) | (checkBoxShowSamples.Checked ? 8 : 0));
+			m_CB_Main.m._Flags = (uint) ((checkBoxShowCubeMapFaces.Checked ? 1 : 0) | (checkBoxShowDistance.Checked ? 2 : 0) | (checkBoxShowWSPosition.Checked ? 4 : 0) | (checkBoxShowSamples.Checked ? 8 : 0) | (checkBoxShowNeighbors.Checked ? 16 : 0));
 			m_CB_Main.m._Type = (uint) integerTrackbarControlDisplayType.Value;
 			if ( checkBoxShowSamples.Checked ) {
 				m_CB_Main.m._Type = (uint) (radioButtonSampleAll.Checked ? 1 : 0) | ((uint) (radioButtonSampleColor.Checked ? 0 : radioButtonSampleAlbedo.Checked ? 1 : radioButtonSampleNormal.Checked ? 2 : 4) << 1);
+			}
+			if ( checkBoxShowNeighbors.Checked ) {
+				m_CB_Main.m._Type = (uint) (radioButtonNeighbors.Checked ? 0 : 1);
 			}
 			m_CB_Main.m._SampleIndex = (uint) integerTrackbarControlSampleIndex.Value;
 			m_CB_Main.UpdateData();

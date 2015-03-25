@@ -361,7 +361,7 @@ SHProbeEncoder::~SHProbeEncoder() {
 	SAFE_DELETE_ARRAY( m_pCubeMapPixels );
 }
 
-void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const float3& _ProbePosition, U32 _ProbesCount ) {
+void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const float3& _CurrentProbePosition, U32 _ProbesCount, const float3* _pProbePositions ) {
 	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
 
 	//////////////////////////////////////////////////////////////////////////
@@ -388,15 +388,19 @@ void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const fl
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Build the neighbor probes network
 	//
+	const float	COS_ANGLE_UNIT_PIXEL = cosf( atanf( 2.0f / CUBE_MAP_SIZE ) );	// Use 2 pixels wide aperture along the line of sight to collect a few direct pixels to evaluate visibility...
+
 	m_NeighborProbes.Init( _ProbesCount );
 	m_NeighborProbes.Clear();
 
+	int	DirectlyVisibleNeighborsCount = 0;
 	Dictionary<NeighborProbe*>	NeighborProbeID2Probe;
 	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
 		Pixel&	P = m_pCubeMapPixels[PixelIndex];
 		if ( P.NeighborProbeID == ~0UL ) {
 			continue;
 		}
+		ASSERT( P.NeighborProbeID < _ProbesCount, "Perceived probe index out of range! Problem in shader???" );
 
 		NeighborProbe**	NP = NeighborProbeID2Probe.Get( P.NeighborProbeID );
 		if ( NP == NULL ) {
@@ -414,6 +418,16 @@ void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const fl
 		// Accumulate SH for neighbor's exchange of energy
 		for ( int i=0; i < 9; i++ ) {
 			(*NP)->SH[i] += P.SolidAngle * P.SHCoeffs[i];
+		}
+
+		// Check if it's a pixel we can use for direct visibility evaluation
+		if ( !(*NP)->DirectlyVisible ) {
+			float3	LineOfSightDirection = (_pProbePositions[P.NeighborProbeID] - _CurrentProbePosition).Normalize();
+			float	DotLineOfSight = P.View.Dot( LineOfSightDirection );
+			if ( DotLineOfSight > COS_ANGLE_UNIT_PIXEL ) {
+				(*NP)->DirectlyVisible = true;
+				DirectlyVisibleNeighborsCount++;
+			}
 		}
 
 		(*NP)->PixelsCount++;
@@ -448,7 +462,7 @@ void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const fl
 	}
 }
 
-void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount, const float3* _pProbePositions ) {
+void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, const float3& _CurrentProbePosition, U32 _ProbesCount, const float3* _pProbePositions ) {
 	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
 
 	//////////////////////////////////////////////////////////////////////////
@@ -476,12 +490,12 @@ void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, U32 _Pro
 	m_VoronoiProbes.Init( _ProbesCount );
 	m_VoronoiProbes.Clear();
 
-	const float3&	P0 = _pProbePositions[_ProbeID];
+	const float3&	P0 = _CurrentProbePosition;
 
 	Dictionary<VoronoiProbe*>	VoronoiProbeID2Probe;
 	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
 		Pixel&	P = m_pCubeMapPixels[PixelIndex];
-		if ( P.NeighborProbeID == ~0UL ) {
+		if ( P.VoronoiProbeID == ~0UL ) {
 			continue;
 		}
 
@@ -501,10 +515,10 @@ void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, U32 _Pro
 
 			VoronoiProbe&	Temp = m_VoronoiProbes.Append();
 			Temp.ProbeID = P.VoronoiProbeID;
-			(*VP)->Position = P1 + 0.5f * Distance * N;
-			(*VP)->Normal = N;
+			Temp.Position = P1 + 0.5f * Distance * N;
+			Temp.Normal = N;
 
-			VP = &VoronoiProbeID2Probe.Add( P.NeighborProbeID, &Temp );
+			VP = &VoronoiProbeID2Probe.Add( P.VoronoiProbeID, &Temp );
 		}
 
 		(*VP)->PixelsCount++;
@@ -646,7 +660,7 @@ void	SHProbeEncoder::Save( const char* _FileName ) const {
 		// Write the pixel coverage of the sample
 		Write( float( S.PixelsCount ) / S.OriginalPixelsCount );
 
-// No need: can be regenerated at runtime from normal direction
+// No need: regenerated at runtime through fixed array of sample directions
 // 		// Write SH coefficients
 // 		for ( int i=0; i < 9; i++ ) {
 // 			Write( S.SH[i] );
@@ -702,18 +716,6 @@ void	SHProbeEncoder::Save( const char* _FileName ) const {
 	}
 
 	fclose( g_pFile );
-
-// We now save a single file
-// // Save probe influence for each scene face
-// FileInfo	InfluenceFileName = new FileInfo( Path.Combine( Path.GetDirectoryName( _FileName.FullName ), Path.GetFileNameWithoutExtension( _FileName.FullName ) + ".FaceInfluence" ) );
-// using ( FileStream S = InfluenceFileName.Create() )
-// 	using ( BinaryWriter W = new BinaryWriter( S ) )
-// 	{
-// 		for ( U32 FaceIndex=0; FaceIndex < m_MaxFaceIndex; FaceIndex++ )
-// 		{
-// 			W.Write( (float) (m_ProbeInfluencePerFace.ContainsKey( FaceIndex ) ? m_ProbeInfluencePerFace[FaceIndex] : 0.0) );
-// 		}
-// 	}
 }
 
 void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
@@ -754,6 +756,7 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 		Write( P->EmissiveMatID );
 		Write( P->NeighborProbeID );
 		Write( P->NeighborProbeDistance );
+		Write( P->VoronoiProbeID );
 
 		Write( P->Importance );
 		Write( P->Distance );

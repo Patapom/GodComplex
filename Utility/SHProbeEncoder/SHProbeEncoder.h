@@ -381,10 +381,10 @@ public:		// METHODS
 	~SHProbeEncoder();
 
 	// Builds visible neighbor IDs
-	void	BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const float3& _ProbePosition, U32 _ProbesCount );
+	void	BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const float3& _CurrentProbePosition, U32 _ProbesCount, const float3* _pProbePositions );
 
 	// Builds the Voronoï cell information associated to the probe
-	void	BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount, const float3* _pProbePositions );
+	void	BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, const float3& _CurrentProbePosition, U32 _ProbesCount, const float3* _pProbePositions );
 
 	// Encodes the MRT cube map into basic SH elements that can later be combined at runtime to form a dynamically updatable probe
 	void	EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount, U32 _SceneTotalFacesCount );

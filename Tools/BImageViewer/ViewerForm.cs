@@ -21,10 +21,13 @@ namespace BImageViewer
 			public float4x4		m_World2Proj;
 			public uint			m_ScreenWidth;
 			public uint			m_ScreenHeight;
+
 			public uint			m_ImageWidth;
 			public uint			m_ImageHeight;
 			public uint			m_ImageDepth;
 			public uint			m_ImageType;
+
+			public float		m_MipLevel;
 		};
 
 		ConstantBuffer< CB_Global >		m_CB_Global;
@@ -40,6 +43,8 @@ namespace BImageViewer
 		public ViewerForm( BImage _Image )
 		{
 			InitializeComponent();
+
+//TransparencyKey = SystemColors.Control;
 
 			// Setup device
 			m_Device = new Device();
@@ -60,6 +65,10 @@ namespace BImageViewer
 					m_CB_Global.m.m_ImageHeight = (uint) m_Tex2D.Height;
 					m_CB_Global.m.m_ImageDepth = (uint) m_Tex2D.ArraySize;
 					m_CB_Global.m.m_ImageType = 0;
+
+					integerTrackbarControlMipLevel.RangeMax = m_Tex2D.MipLevelsCount;
+					integerTrackbarControlMipLevel.VisibleRangeMax = m_Tex2D.MipLevelsCount;
+
 				}
 				else if ( _Image.m_Opts.m_type == BImage.ImageOptions.TYPE.TT_CUBIC ) {
 					m_TexCube = _Image.CreateTextureCube( m_Device );
@@ -77,7 +86,6 @@ namespace BImageViewer
 			{
 				MessageBox.Show( this, "Failed to create a valid texture from the image:\r\n\r\n" + _e.Message, "BImage Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
-			
 
 			Application.Idle += new EventHandler( Application_Idle );
 		}
@@ -108,6 +116,7 @@ namespace BImageViewer
 			// Update camera
 			m_CB_Global.m.m_ScreenWidth = (uint) Width;
 			m_CB_Global.m.m_ScreenHeight = (uint) Height;
+			m_CB_Global.m.m_MipLevel = (float) integerTrackbarControlMipLevel.Value;
 			m_CB_Global.UpdateData();
 
 			// Clear

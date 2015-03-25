@@ -8,6 +8,8 @@ cbuffer CB_Camera : register( b0 ) {
 	uint		_ImageHeight;
 	uint		_ImageDepth;
 	uint		_ImageType;
+
+	float		_MipLevel;
 };
 
 Texture2DArray<float4>		_Tex2D : register(t0);
@@ -38,7 +40,7 @@ PS_IN	VS( VS_IN _In ) {
 
 float3	Show2D( PS_IN _In ) {
 	uint	SliceIndex = 0;
-	return _Tex2D.SampleLevel( PointClamp, float3( _In.UV, SliceIndex ), 0.0 ).xyz;
+	return _Tex2D.SampleLevel( PointClamp, float3( _In.UV, SliceIndex ), _MipLevel ).xyz;
 }
 
 float3	ShowCube( PS_IN _In ) {
