@@ -140,6 +140,51 @@ void BuildSHCosineLobe( const in float3 _Direction, out float _Coeffs[9] )
 	ZHRotate( _Direction, ZHCoeffs, _Coeffs );
 }
 
+// Applies Hanning filter for given window size
+void FilterHanning( inout float3 _SH[9], float _WindowSize ) {
+
+	float	rcpWindow = 1.0 / _WindowSize;
+	float2	Factors = float2( 0.5 * (1.0 + cos( PI * rcpWindow )), 0.5 * (1.0 + cos( 2.0 * PI * rcpWindow )) );
+	_SH[1] *= Factors.x;
+	_SH[2] *= Factors.x;
+	_SH[3] *= Factors.x;
+	_SH[4] *= Factors.y;
+	_SH[5] *= Factors.y;
+	_SH[6] *= Factors.y;
+	_SH[7] *= Factors.y;
+	_SH[8] *= Factors.y;
+}
+
+// Applies Lanczos filter for given window size
+void FilterLanczos( inout float3 _SH[9], float _WindowSize ) {
+
+	float	rcpWindow = 1.0 / _WindowSize;
+	float2	Factors = float2( sin( PI * rcpWindow ) / (PI * rcpWindow), sin( 2.0 * PI * rcpWindow ) / (2.0 * PI * rcpWindow) );
+	_SH[1] *= Factors.x;
+	_SH[2] *= Factors.x;
+	_SH[3] *= Factors.x;
+	_SH[4] *= Factors.y;
+	_SH[5] *= Factors.y;
+	_SH[6] *= Factors.y;
+	_SH[7] *= Factors.y;
+	_SH[8] *= Factors.y;
+}
+
+// Applies gaussian filter for given window size
+void FilterGaussian( inout float3 _SH[9], float _WindowSize ) {
+
+	float	rcpWindow = 1.0 / _WindowSize;
+	float2	Factors = float2( exp( -0.5 * (PI * rcpWindow) * (PI * rcpWindow) ), exp( -0.5 * (2.0 * PI * rcpWindow) * (2.0 * PI * rcpWindow) ) );
+	_SH[1] *= Factors.x;
+	_SH[2] *= Factors.x;
+	_SH[3] *= Factors.x;
+	_SH[4] *= Factors.y;
+	_SH[5] *= Factors.y;
+	_SH[6] *= Factors.y;
+	_SH[7] *= Factors.y;
+	_SH[8] *= Factors.y;
+}
+
 // Performs the SH triple product r = a * b
 // From John Snyder
 //
