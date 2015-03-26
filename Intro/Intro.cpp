@@ -170,7 +170,7 @@ int	IntroInit( IntroProgressDelegate& _Delegate )
 
 //		CHECK_EFFECT( gs_pEffectVolumetric = new EffectVolumetric( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_VOLUMETRIC );
 
-		CHECK_EFFECT( gs_pEffectGI = new EffectGlobalIllum2( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_GLOBALILLUM );
+		CHECK_EFFECT( gs_pEffectGI = new EffectGlobalIllum2( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCameraManipulator ), ERR_EFFECT_GLOBALILLUM );
 
 //		CHECK_EFFECT( gs_pEffectDOF = new EffectDOF( gs_Device, *gs_pRTHDR, *gs_pPrimQuad, *gs_pCamera ), ERR_EFFECT_DOF );
 	}

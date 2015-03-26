@@ -274,7 +274,7 @@ public:		// PROPERTIES
 
 public:		// METHODS
 
-	EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera );
+	EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, FPSCamera& _Camera );
 	~EffectGlobalIllum2();
 
 	void			Render( float _Time, float _DeltaTime );

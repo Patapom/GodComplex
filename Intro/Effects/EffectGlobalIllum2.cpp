@@ -92,7 +92,7 @@
 
 #define CHECK_MATERIAL( pMaterial, ErrorCode )		if ( (pMaterial)->HasErrors() ) m_ErrorCode = ErrorCode;
 
-EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera )
+EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, FPSCamera& _Camera )
 	: m_ErrorCode( 0 )
 	, m_Device( _Device )
 	, m_RTTarget( _RTHDR )
@@ -374,12 +374,13 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 		class	VisitorStoreNodes : public Scene::IVisitor
 		{
 			EffectGlobalIllum2&	m_Owner;
+			FPSCamera&			m_Camera;
 		public:
 			int		m_MeshIndex;
 			int		m_PrimitivesCount;
 			int		m_VerticesCount;
 			int		m_FacesCount;
-			VisitorStoreNodes( EffectGlobalIllum2& _Owner ) : m_Owner( _Owner ), m_MeshIndex( 0 ), m_PrimitivesCount( 0 ), m_FacesCount( 0 ), m_VerticesCount( 0 ) {}
+			VisitorStoreNodes( EffectGlobalIllum2& _Owner, FPSCamera& _Camera ) : m_Owner( _Owner ), m_Camera( _Camera ), m_MeshIndex( 0 ), m_PrimitivesCount( 0 ), m_FacesCount( 0 ), m_VerticesCount( 0 ) {}
 			void	HandleNode( Scene::Node& _Node ) override
 			{
 				if ( _Node.m_Type == Scene::Node::MESH ) {
@@ -405,8 +406,13 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 				} else if ( _Node.m_Type == Scene::Node::PROBE )
 					m_Owner.m_ProbesNetwork.AddProbe( (Scene::Probe&) _Node );
+				else if ( _Node.m_Type == Scene::Node::CAMERA ) {
+					float3	CameraPosition = _Node.m_Local2World.GetRow( 3 );
+					float3	CameraAt = -_Node.m_Local2World.GetRow( 1 );
+					m_Camera.Init( CameraPosition, CameraPosition + 4.0f * CameraAt );
+				}
 			}
-		}	Visitor1( *this );
+		}	Visitor1( *this, _Camera );
 		m_Scene.ForEach( Visitor1 );
 	}
 
