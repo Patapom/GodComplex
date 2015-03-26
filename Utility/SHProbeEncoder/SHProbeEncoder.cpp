@@ -451,9 +451,9 @@ void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const fl
 		class	Comparer : public IComparer<NeighborProbe> {
 		public:	virtual int		Compare( const NeighborProbe& a, const NeighborProbe& b ) const {
 				if ( a.SolidAngle < b.SolidAngle )
-					return +1;
-				if ( a.SolidAngle > b.SolidAngle )
 					return -1;
+				if ( a.SolidAngle > b.SolidAngle )
+					return +1;
 
 				return 0;
 			}

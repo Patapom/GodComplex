@@ -196,12 +196,13 @@ private:	// BUILD TIME STRUCTURES
 	class MeshWithAdjacency {
 	public:
 		class	Primitive {
-		public:
+		private:
 			struct	Face {
 				U32				V[3];				// Vertex indices
+				U32				WV[3];				// Welded vertex indices
 				float3			P;					// Center position
 				float3			N;					// Face normal
-				Face*			pAdjacent[3];		// Adjacent faces for each edge (an edge start from a vertex and ends at vertex + 1)
+				Face*			pAdjacent[3];		// Adjacent faces for each edge (an edge starts from a vertex and ends at vertex + 1)
 				ProbeInfluence*	pProbeInfluence;	// The probe influence for this face
 				U32				LastVisitIndex;		// Index of the last visit pass
 
@@ -216,8 +217,6 @@ private:	// BUILD TIME STRUCTURES
 				}
 				bool	RecursePropagateProbeInfluences( U32 _PassIndex );
 			};
-
-		private:
 
 			struct EdgeKey {
 				int	V0, V1;
@@ -238,11 +237,29 @@ private:	// BUILD TIME STRUCTURES
 				Face*	F1;
 			};
 
+			struct VertexCell {
+				VertexCell*	pNext;
+				U32			V;
+				float3		P;
+			};
+			static VertexCell*		ms_ppCells[64*64*64];
+
+			struct WeldedVertex {
+				float3			P;						// Position
+				float3			N;						// Normal
+				U32				SharingVerticesCount;	// Amount of vertices welded together
+				VertexCell*		pSharingVertices;		// List of vertices sharing this welded vertex
+			};
+
 		public:
-			int					m_FacesCount;
-			Face*				m_pFaces;
-			int					m_VerticesCount;
-			ProbeInfluence**	m_pVerticesProbeInfluence;
+			int						m_FacesCount;
+			Face*					m_pFaces;
+
+			List< VertexCell >		m_VertexCells;
+			List< WeldedVertex >	m_WeldedVertices;		
+
+			int						m_VerticesCount;
+			ProbeInfluence**		m_pVerticesProbeInfluence;
 
 			~Primitive() { SAFE_DELETE_ARRAY( m_pFaces ); SAFE_DELETE_ARRAY( m_pVerticesProbeInfluence ); }
 			void	Build( const Scene::Mesh::Primitive& _Primitive, ProbeInfluence* _pProbeInfluencePerFace );
