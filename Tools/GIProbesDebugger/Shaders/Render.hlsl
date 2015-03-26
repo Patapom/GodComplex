@@ -14,9 +14,6 @@ struct ProbeSampleInfo {
 	uint		ID;
 	float3		Position;
 	float3		Normal;
-	float3		Tangent;
-	float3		BiTangent;
-	float		Radius;
 	float3		Albedo;
 	float3		F0;
 	uint		PixelsCount;

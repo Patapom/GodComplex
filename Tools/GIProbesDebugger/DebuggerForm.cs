@@ -31,9 +31,6 @@ namespace GIProbesDebugger
 			public uint			ID;
 			public float3		Position;
 			public float3		Normal;
-			public float3		Tangent;
-			public float3		BiTangent;
-			public float		Radius;
 			public float3		Albedo;
 			public float3		F0;
 			public uint			PixelsCount;
@@ -199,9 +196,6 @@ namespace GIProbesDebugger
 						m_SB_Samples.m[SampleIndex].ID = (uint) SampleIndex;
 						m_SB_Samples.m[SampleIndex].Position.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
 						m_SB_Samples.m[SampleIndex].Normal.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-						m_SB_Samples.m[SampleIndex].Tangent.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-						m_SB_Samples.m[SampleIndex].BiTangent.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-						m_SB_Samples.m[SampleIndex].Radius = R.ReadSingle();
 						m_SB_Samples.m[SampleIndex].Albedo.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
 						m_SB_Samples.m[SampleIndex].F0.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
 						m_SB_Samples.m[SampleIndex].PixelsCount = R.ReadUInt32();
@@ -212,21 +206,6 @@ namespace GIProbesDebugger
 						m_SB_Samples.m[SampleIndex].SH2.Set( (float) R.ReadDouble(), (float) R.ReadDouble(), (float) R.ReadDouble() );
 					}
 					m_SB_Samples.Write();
-
-					//////////////////////////////////////////////////////////////////
-					// Read emissive surfaces
-					int	EmissiveSurfacesCount = (int) R.ReadUInt32();
-					if ( EmissiveSurfacesCount > 0 ) {
-						m_SB_EmissiveSurfaces = new StructuredBuffer<SB_EmissiveSurface>( m_Device, EmissiveSurfacesCount, true );
-
-						for ( int SurfaceIndex=0; SurfaceIndex < EmissiveSurfacesCount; SurfaceIndex++ ) {
-							m_SB_EmissiveSurfaces.m[SurfaceIndex].ID = R.ReadUInt32();
-							m_SB_EmissiveSurfaces.m[SurfaceIndex].SH0.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-							m_SB_EmissiveSurfaces.m[SurfaceIndex].SH1.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-							m_SB_EmissiveSurfaces.m[SurfaceIndex].SH2.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-						}
-						m_SB_EmissiveSurfaces.Write();
-					}
 				}
 		}
 

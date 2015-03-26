@@ -5,7 +5,7 @@
 
 template<typename> class CB;
 
-class EffectGlobalIllum2 : public Scene::ISceneTagger, public Scene::ISceneRenderer
+class EffectGlobalIllum2 : public Scene::ISceneTagger, public Scene::ISceneRenderer, public SHProbeNetwork::DynamicUpdateParms::IQueryMaterial
 {
 private:	// CONSTANTS
 
@@ -109,14 +109,6 @@ protected:	// NESTED TYPES
 		}
 	};
 
-	class	QueryMaterial : public SHProbeNetwork::IQueryMaterial {
-	public:	EffectGlobalIllum2&	m_this;
-		QueryMaterial( EffectGlobalIllum2& _this ) : m_this( _this ) {}
-		Scene::Material*	operator()( U32 _MaterialID ) {
-			ASSERT( _MaterialID < U32(m_this.m_Scene.m_MaterialsCount), "Material ID out of range!" );
-			return m_this.m_Scene.m_ppMaterials[_MaterialID];
-		}
-	};
 
 protected:
 
@@ -293,4 +285,11 @@ private:
 
 	void			RenderShadowMap( const float3& _SunDirection );
 	void			RenderShadowMapPoint( const float3& _Position, float _FarClipDistance );
+
+
+	// SHProbeNetwork::DynamicUpdateParms::IQueryMaterial Implementation
+	Scene::Material*	operator()( U32 _MaterialID ) {
+		ASSERT( _MaterialID < U32(m_Scene.m_MaterialsCount), "Material ID out of range!" );
+		return m_Scene.m_ppMaterials[_MaterialID];
+	}
 };

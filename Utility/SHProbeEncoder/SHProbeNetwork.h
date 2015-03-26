@@ -18,91 +18,28 @@ public:		// CONSTANTS
 
 public:		// NESTED TYPES
 
-	// The static probe structure that we read from disk and stream/keep in memory when probes need updating
-	struct	SHProbe
-	{
-		U32				ProbeID;					// The ID is simply the probe's index in the array of probes
-		Scene::Probe*	pSceneProbe;
-
-		// Static SH infos
-		float			pSHOcclusion[9];			// The pre-computed SH that gives back how much of the environment is perceived in a given direction
-		float3			pSHStaticLighting[9];		// The pre-computed SH that gives back how much the probe perceives of indirectly bounced static lighting on static geometry
-
-		// Geometric infos
-		float			MeanDistance;				// Mean distance of all scene pixels
-		float			MeanHarmonicDistance;		// Mean harmonic distance (1/sum(1/distance)) of all scene pixels
-		float			MinDistance;				// Distance to closest scene pixel
-		float			MaxDistance;				// Distance to farthest scene pixel
-		float3			BBoxMin;					// Dimensions of the bounding box (axis-aligned) of the scene pixels
-		float3			BBoxMax;
-
-		// Generic reflective surfaces infos
-		struct Sample {
-			float3			Position;				// The position of the dynamic surface
-			float3			Normal;					// The normal of the dynamic surface's plane
-			float3			Tangent;				// The longest principal axis of the samples's points cluster (scaled by the length of the axis)
-			float3			BiTangent;				// The shortest principal axis of the samples's points cluster (scaled by the length of the axis)
-			float			Radius;					// An average radius for the sample so we can better filter shadows
-			float3			Albedo;					// The albedo of the dynamic surface (not currently used, for info purpose)
-			float3			F0;						// Surface's Fresnel coefficient
-			float			SHFactor;				// The ratio of pixels occupied by the sample area compared to the total amount of original pixels
-//			float			pSHBounce[9];			// The pre-computed SH that gives back how much the probe perceives of indirectly bounced dynamic lighting on static geometry
-		}				pSamples[SHProbeEncoder::PROBE_SAMPLES_COUNT];
-
-		// Emissive surfaces infos
-		U32				EmissiveSurfacesCount;		// The amount of emissive surfaces for that probe
-		struct EmissiveSurface {
-			float3				Position;			// The position of the emissive surface
-			float3				Normal;				// The normal of the emissive surface's plane
-			float3				Tangent;			// The longest principal axis of the surface's points cluster (scaled by the length of the axis)
-			float3				BiTangent;			// The shortest principal axis of the surface's points cluster (scaled by the length of the axis)
-			Scene::Material*	pEmissiveMaterial;	// Direct pointer to the material
-			float				pSHEmissive[9];		// The pre-computed SH that gives back how much the probe emits light
-		}				pEmissiveSurfaces[SHProbeEncoder::MAX_PROBE_EMISSIVE_SURFACES];
-
-		// Neighbor probes infos
-		float			NearestProbeDistance;
-		float			FarthestProbeDistance;
-		struct NeighborProbeInfos {
-			U32				ProbeID;				// ID of the neighbor probe
-			bool			DirectlyVisible;		// True if the center of the neighbor probe is directly visible to this probe
-			float			Distance;				// Average distance to the probe
-			float			SolidAngle;				// Perceived solid angle covered by the probe
-			float3			Direction;				// Average direction to the probe
-			float			SH[9];					// Convolution SH to use to isolate the contribution of the probe's SH this probe should perceive
-		}				pNeighborProbeInfos[MAX_PROBE_NEIGHBORS];
-
-
-//		// ===== Software Computation Section =====
-//		float3			pSHBouncedLight[9];			// The resulting bounced irradiance * light(static+dynamic) + emissive for current frame (only valid if CPU computed)
-// 
-// 		// Clears the light bounce accumulator
-// 		void			ClearLightBounce( const float3 _pSHAmbient[9] );
-// 
-// 		// Computes the product of SHLight and SHBounce to get the SH coefficients for the bounced light
-// 		void			AccumulateLightBounce( const float3 _pSHSet[9] );
-	};
-
 	struct DynamicUpdateParms {
 
-		U32		MaxProbeUpdatesPerFrame;// Maximum amount of probes we can update each frame
+		class IQueryMaterial {
+		public: virtual Scene::Material*	operator()( U32 _MaterialID ) = 0;
+		};
 
-//		float3	AmbientSkySH[9];		// The SH coefficients used for the ambient sky term
-		float3	BounceFactorSun;		// Bounce factor for the Sun
-		float3	BounceFactorSky;		// Bounce factor for the sky
-		float3	BounceFactorDynamic;	// Bounce factor for dynamic lights
-		float3	BounceFactorStatic;		// Bounce factor for static lights
-		float	BounceFactorEmissive;	// Bounce factor for emissive materials
-		float	BounceFactorNeighbors;	// Bounce factor for neighbor probes
+		U32				MaxProbeUpdatesPerFrame;// Maximum amount of probes we can update each frame
+
+		IQueryMaterial*	pQueryMaterial;
+
+//		float3			AmbientSkySH[9];		// The SH coefficients used for the ambient sky term
+		float3			BounceFactorSun;		// Bounce factor for the Sun
+		float3			BounceFactorSky;		// Bounce factor for the sky
+		float3			BounceFactorDynamic;	// Bounce factor for dynamic lights
+		float3			BounceFactorStatic;		// Bounce factor for static lights
+		float			BounceFactorEmissive;	// Bounce factor for emissive materials
+		float			BounceFactorNeighbors;	// Bounce factor for neighbor probes
 	};
 
 	class IRenderSceneDelegate {
 	public: virtual void	operator()( Material& _Material ) = 0;
 	};
-	class IQueryMaterial {
-	public: virtual Scene::Material*	operator()( U32 _MaterialID ) = 0;
-	};
-
 
 private:	// RUNTIME STRUCTURES
 
@@ -191,6 +128,9 @@ private:	// BUILD TIME STRUCTURES
 	struct ProbeInfluence {
 		U32		ProbeID;
 		double	Influence;
+
+		// 
+		bool	CanSpreadToPosition( const float3& _Position, SHProbe* _pProbes ) const;
 	};
 
 	class MeshWithAdjacency {
@@ -202,51 +142,55 @@ private:	// BUILD TIME STRUCTURES
 				U32				WV[3];				// Welded vertex indices
 				float3			P;					// Center position
 				float3			N;					// Face normal
-				Face*			pAdjacent[3];		// Adjacent faces for each edge (an edge starts from a vertex and ends at vertex + 1)
-				ProbeInfluence*	pProbeInfluence;	// The probe influence for this face
-				U32				LastVisitIndex;		// Index of the last visit pass
 
-				void	SetAdjacency( int _V0, int _V1, Face* _AdjacentFace ) {
-					for ( int EdgeIndex=0; EdgeIndex < 3; EdgeIndex++ ) {
-						if ( V[EdgeIndex] == _V0 && V[(EdgeIndex+1)%3] == _V1 ) {
-							pAdjacent[EdgeIndex] = _AdjacentFace;
-							return;
-						}
-					}
-					ASSERT( false, "Failed to retrieve adjacent edge!" );
-				}
-				bool	RecursePropagateProbeInfluences( U32 _PassIndex );
+// We don't need the adjacency info anymore
+// 				Face*			pAdjacent[3];		// Adjacent faces for each edge (an edge starts from a vertex and ends at vertex + 1)
+// 				ProbeInfluence*	pProbeInfluence;	// The probe influence for this face
+// 				U32				LastVisitIndex;		// Index of the last visit pass
+// 
+// 				void	SetAdjacency( int _V0, int _V1, Face* _AdjacentFace ) {
+// 					for ( int EdgeIndex=0; EdgeIndex < 3; EdgeIndex++ ) {
+// 						if ( V[EdgeIndex] == _V0 && V[(EdgeIndex+1)%3] == _V1 ) {
+// 							pAdjacent[EdgeIndex] = _AdjacentFace;
+// 							return;
+// 						}
+// 					}
+// 					ASSERT( false, "Failed to retrieve adjacent edge!" );
+// 				}
+// 				bool	RecursePropagateProbeInfluences( U32 _PassIndex );
 			};
 
-			struct EdgeKey {
-				int	V0, V1;
-				static U32		GetHash( const EdgeKey& _key )							{
-					return _key.V0 ^ _key.V1;
-				}
-				static int		Compare( const EdgeKey& _key0, const EdgeKey& _key1 )	{
-					int	k00 = _key0.V0 < _key0.V1 ? _key0.V0 : _key0.V1;
-					int	k01 = _key0.V0 < _key0.V1 ? _key0.V1 : _key0.V0;
-					int	k10 = _key1.V0 < _key1.V1 ? _key1.V0 : _key1.V1;
-					int	k11 = _key1.V0 < _key1.V1 ? _key1.V1 : _key1.V0;
-					if ( k00 == k10 && k01 == k11 ) return 0;
-					return 1;	// We don't care about ordering at the moment...
-				}
-			};
-			struct FacePair {
-				Face*	F0;
-				Face*	F1;
-			};
+// 			struct EdgeKey {
+// 				int	V0, V1;
+// 				static U32		GetHash( const EdgeKey& _key )							{
+// 					return _key.V0 ^ _key.V1;
+// 				}
+// 				static int		Compare( const EdgeKey& _key0, const EdgeKey& _key1 )	{
+// 					int	k00 = _key0.V0 < _key0.V1 ? _key0.V0 : _key0.V1;
+// 					int	k01 = _key0.V0 < _key0.V1 ? _key0.V1 : _key0.V0;
+// 					int	k10 = _key1.V0 < _key1.V1 ? _key1.V0 : _key1.V1;
+// 					int	k11 = _key1.V0 < _key1.V1 ? _key1.V1 : _key1.V0;
+// 					if ( k00 == k10 && k01 == k11 ) return 0;
+// 					return 1;	// We don't care about ordering at the moment...
+// 				}
+// 			};
+// 			struct FacePair {
+// 				Face*	F0;
+// 				Face*	F1;
+// 			};
 
+			// Vertex welding structures
 			struct VertexCell {
-				VertexCell*	pNext;
-				U32			V;
-				float3		P;
+				VertexCell*		pNext;
+				U32				V;
+				ProbeInfluence	Influence;				// Probe influence for this vertex
 			};
 			static VertexCell*		ms_ppCells[64*64*64];
 
 			struct WeldedVertex {
 				float3			P;						// Position
 				float3			N;						// Normal
+				ProbeInfluence	Influence;				// Probe influence for this vertex
 				U32				SharingVerticesCount;	// Amount of vertices welded together
 				VertexCell*		pSharingVertices;		// List of vertices sharing this welded vertex
 			};
@@ -360,7 +304,7 @@ public:
 
 	// Build/Load/Save
 	void			PreComputeProbes( const char* _pPathToProbes, IRenderSceneDelegate& _RenderScene, Scene& _Scene, U32 _TotalFacesCount );
-	void			LoadProbes( const char* _pPathToProbes, IQueryMaterial& _QueryMaterial, const float3& _SceneBBoxMin, const float3& _SceneBBoxMax );
+	void			LoadProbes( const char* _pPathToProbes, const float3& _SceneBBoxMin, const float3& _SceneBBoxMax );
 
 private:
 

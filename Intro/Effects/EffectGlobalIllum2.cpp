@@ -458,8 +458,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 	//////////////////////////////////////////////////////////////////////////
 	// Load probes
-	QueryMaterial	functor( *this );
-	m_ProbesNetwork.LoadProbes( PROBES_PATH, functor, m_SceneBBoxMin, m_SceneBBoxMax );
+	m_ProbesNetwork.LoadProbes( PROBES_PATH, m_SceneBBoxMin, m_SceneBBoxMax );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -840,6 +839,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 
 	SHProbeNetwork::DynamicUpdateParms	Parms;
 	Parms.MaxProbeUpdatesPerFrame = m_CachedCopy.MaxProbeUpdatesPerFrame;
+	Parms.pQueryMaterial = this;
 	Parms.BounceFactorSun = 0.01f * m_CachedCopy.BounceFactorSun * float3::One;
 	Parms.BounceFactorSky = 0.01f * m_CachedCopy.BounceFactorSky * SkyColor;
 	Parms.BounceFactorDynamic = 0.01f * m_CachedCopy.BounceFactorPoint * float3::One;

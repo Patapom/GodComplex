@@ -56,6 +56,9 @@ public:
 	static float3		Yup2Zup( const float3& _Yup );
 
 	// Filters
+	static void			FilterHanning( float _SH[9], float w );		// Applies a Hanning window of width w (usually the SH order).
+	static void			FilterLanczos( float _SH[9], float w );		// Applies a Lanczos window of width w (usually the SH order).
+	static void			FilterGaussian( float _SH[9], float w );	// Applies a Gaussian window of width w (usually the SH order).
 	static void			FilterHanning( float3 _SH[9], float w );	// Applies a Hanning window of width w (usually the SH order).
 	static void			FilterLanczos( float3 _SH[9], float w );	// Applies a Lanczos window of width w (usually the SH order).
 	static void			FilterGaussian( float3 _SH[9], float w );	// Applies a Gaussian window of width w (usually the SH order).
@@ -87,5 +90,6 @@ private:
 	static double		ComputeSigmaFactorSinc( int l, int _Order );
 	static double		ComputeSigmaFactorCos( int l, int _Order );
 	static double		ComputeSigmaFactorCos( int l, double h );
+	static void			Filter( float _SH[9], int l, float a );		// Modulate all coefficients of degree l by scalar a.
 	static void			Filter( float3 _SH[9], int l, float a );	// Modulate all coefficients of degree l by scalar a.
 };

@@ -32,12 +32,12 @@ void	SHProbeNetwork::Init( Device& _Device, Primitive& _ScreenQuad ) {
 	m_pSB_RuntimeProbeNetworkInfos = NULL;
 
 	m_pSB_RuntimeProbeUpdateInfos = new SB<RuntimeProbeUpdateInfo>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME, true );
-	m_pSB_RuntimeProbeSamples = new SB<RuntimeProbeUpdateSampleInfo>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*SHProbeEncoder::PROBE_SAMPLES_COUNT, true );
-	m_pSB_RuntimeProbeEmissiveSurfaces = new SB<RuntimeProbeUpdateEmissiveSurfaceInfo>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*SHProbeEncoder::MAX_PROBE_EMISSIVE_SURFACES, true );
+	m_pSB_RuntimeProbeSamples = new SB<RuntimeProbeUpdateSampleInfo>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*SHProbe::SAMPLES_COUNT, true );
+	m_pSB_RuntimeProbeEmissiveSurfaces = new SB<RuntimeProbeUpdateEmissiveSurfaceInfo>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME*SHProbe::MAX_EMISSIVE_SURFACES, true );
 
 	// Create the static SH coefficients for each sample
-	m_pSB_RuntimeProbeSamplesSH = new SB<SHCoeffs1>( *m_pDevice, SHProbeEncoder::PROBE_SAMPLES_COUNT, true );
-	for ( int SampleIndex=0; SampleIndex < SHProbeEncoder::PROBE_SAMPLES_COUNT; SampleIndex++ ) {
+	m_pSB_RuntimeProbeSamplesSH = new SB<SHCoeffs1>( *m_pDevice, SHProbe::SAMPLES_COUNT, true );
+	for ( int SampleIndex=0; SampleIndex < SHProbe::SAMPLES_COUNT; SampleIndex++ ) {
 		const double*	SH = m_ProbeEncoder.GetSampleSHCoefficients( SampleIndex );
 		for ( int SHCoeffIndex=0; SHCoeffIndex < 9; SHCoeffIndex++ )
 			m_pSB_RuntimeProbeSamplesSH->m[SampleIndex].pSH[SHCoeffIndex] = float( SH[SHCoeffIndex] );
@@ -111,8 +111,8 @@ void	SHProbeNetwork::PreAllocateProbes( int _ProbesCount ) {
 
 void	SHProbeNetwork::AddProbe( Scene::Probe& _Probe ) {
 	ASSERT( m_ProbesCount < m_MaxProbesCount, "Probes count out of range!" );
-	m_pProbes[m_ProbesCount].ProbeID = m_ProbesCount;
-	m_pProbes[m_ProbesCount].pSceneProbe = &_Probe;
+	m_pProbes[m_ProbesCount].m_ProbeID = m_ProbesCount;
+	m_pProbes[m_ProbesCount].m_pSceneProbe = &_Probe;
 	m_ProbesCount++;
 }
 
@@ -164,23 +164,23 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 
 		ProbeUpdateInfos.Index = ProbeIndex;
 		ProbeUpdateInfos.EmissiveSurfacesStart = TotalEmissiveSurfacesCount;
-		ProbeUpdateInfos.EmissiveSurfacesCount = Probe.EmissiveSurfacesCount;
+		ProbeUpdateInfos.EmissiveSurfacesCount = Probe.m_EmissiveSurfacesCount;
 
 		// Copy neighbor info
-		ProbeUpdateInfos.NeighborProbeIDs[0] = Probe.pNeighborProbeInfos[0].ProbeID;
-		ProbeUpdateInfos.NeighborProbeIDs[1] = Probe.pNeighborProbeInfos[1].ProbeID;
-		ProbeUpdateInfos.NeighborProbeIDs[2] = Probe.pNeighborProbeInfos[2].ProbeID;
-		ProbeUpdateInfos.NeighborProbeIDs[3] = Probe.pNeighborProbeInfos[3].ProbeID;
+		ProbeUpdateInfos.NeighborProbeIDs[0] = Probe.m_NeighborProbes[0].ProbeID;
+		ProbeUpdateInfos.NeighborProbeIDs[1] = Probe.m_NeighborProbes[1].ProbeID;
+		ProbeUpdateInfos.NeighborProbeIDs[2] = Probe.m_NeighborProbes[2].ProbeID;
+		ProbeUpdateInfos.NeighborProbeIDs[3] = Probe.m_NeighborProbes[3].ProbeID;
 		for( int i=0; i < 9; i++ ) {
-			ProbeUpdateInfos.SHConvolution[i].x = Probe.pNeighborProbeInfos[0].SH[i];
-			ProbeUpdateInfos.SHConvolution[i].y = Probe.pNeighborProbeInfos[1].SH[i];
-			ProbeUpdateInfos.SHConvolution[i].z = Probe.pNeighborProbeInfos[2].SH[i];
-			ProbeUpdateInfos.SHConvolution[i].w = Probe.pNeighborProbeInfos[3].SH[i];
+			ProbeUpdateInfos.SHConvolution[i].x = Probe.m_NeighborProbes[0].SH[i];
+			ProbeUpdateInfos.SHConvolution[i].y = Probe.m_NeighborProbes[1].SH[i];
+			ProbeUpdateInfos.SHConvolution[i].z = Probe.m_NeighborProbes[2].SH[i];
+			ProbeUpdateInfos.SHConvolution[i].w = Probe.m_NeighborProbes[3].SH[i];
 		}
 
 		// Fill the samples update infos
-		SHProbe::Sample*	pSample = Probe.pSamples;
-		for ( U32 SampleIndex=0; SampleIndex < SHProbeEncoder::PROBE_SAMPLES_COUNT; SampleIndex++, pSample++, pSampleUpdateInfos++ ) {
+		SHProbe::Sample*	pSample = Probe.m_pSamples;
+		for ( U32 SampleIndex=0; SampleIndex < SHProbe::SAMPLES_COUNT; SampleIndex++, pSample++, pSampleUpdateInfos++ ) {
 			pSampleUpdateInfos->Position = pSample->Position;
 			pSampleUpdateInfos->Normal = pSample->Normal;
 			pSampleUpdateInfos->Albedo = pSample->SHFactor * pSample->Albedo;
@@ -188,17 +188,19 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 		}
 
 		// Fill the emissive surface update infos
-		for ( U32 EmissiveSurfaceIndex=0; EmissiveSurfaceIndex < Probe.EmissiveSurfacesCount; EmissiveSurfaceIndex++ ) {
-			SHProbe::EmissiveSurface				EmissiveSurface = Probe.pEmissiveSurfaces[EmissiveSurfaceIndex];
+		for ( U32 EmissiveSurfaceIndex=0; EmissiveSurfaceIndex < Probe.m_EmissiveSurfacesCount; EmissiveSurfaceIndex++ ) {
+			const SHProbe::EmissiveSurface&			EmissiveSurface = Probe.m_pEmissiveSurfaces[EmissiveSurfaceIndex];
 			RuntimeProbeUpdateEmissiveSurfaceInfo&	EmissiveSetUpdateInfos = m_pSB_RuntimeProbeEmissiveSurfaces->m[TotalEmissiveSurfacesCount+EmissiveSurfaceIndex];
 
-			ASSERT( EmissiveSurface.pEmissiveMaterial != NULL, "Invalid emissive material!" );
-			EmissiveSetUpdateInfos.EmissiveColor = EmissiveSurface.pEmissiveMaterial->m_EmissiveColor;
+			ASSERT( _Parms.pQueryMaterial != NULL, "Invalid material query functor!" );
+			Scene::Material*	pEmissiveMaterial = (*_Parms.pQueryMaterial)( EmissiveSurface.MaterialID );
+			ASSERT( pEmissiveMaterial != NULL, "Invalid emissive material!" );
+			EmissiveSetUpdateInfos.EmissiveColor = pEmissiveMaterial->m_EmissiveColor;
 
-			memcpy_s( EmissiveSetUpdateInfos.SH, sizeof(EmissiveSetUpdateInfos.SH), EmissiveSurface.pSHEmissive, 9*sizeof(float) );
+			memcpy_s( EmissiveSetUpdateInfos.SH, sizeof(EmissiveSetUpdateInfos.SH), EmissiveSurface.pSH, 9*sizeof(float) );
 		}
 
-		TotalEmissiveSurfacesCount += Probe.EmissiveSurfacesCount;
+		TotalEmissiveSurfacesCount += Probe.m_EmissiveSurfacesCount;
 	}
 
 	// =========================================================
@@ -211,7 +213,7 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 		m_pSB_RuntimeProbeUpdateInfos->Write( ProbeUpdatesCount );
 		m_pSB_RuntimeProbeUpdateInfos->SetInput( 10 );
 
-		m_pSB_RuntimeProbeSamples->Write( ProbeUpdatesCount * SHProbeEncoder::PROBE_SAMPLES_COUNT );
+		m_pSB_RuntimeProbeSamples->Write( ProbeUpdatesCount * SHProbe::SAMPLES_COUNT );
 		m_pSB_RuntimeProbeSamples->SetInput( 11 );
 
 		m_pSB_RuntimeProbeEmissiveSurfaces->Write( TotalEmissiveSurfacesCount );
@@ -328,7 +330,7 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 U32	SHProbeNetwork::GetNearestProbe( const float3& _wsPosition ) const {
 	float					ProbeDistance;
 	const SHProbe* const*	ppNearestProbe = m_ProbeOctree.FetchNearest( _wsPosition, ProbeDistance );
-	U32						probeID = ppNearestProbe != NULL ? (*ppNearestProbe)->ProbeID : 0xFFFFFFFFU;
+	U32						probeID = ppNearestProbe != NULL ? (*ppNearestProbe)->m_ProbeID : 0xFFFFFFFFU;
 	return probeID;
 }
 
@@ -411,7 +413,7 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 	float3*	pProbePositions = new float3[m_ProbesCount];
 	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
-		pProbePositions[ProbeIndex] = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
+		pProbePositions[ProbeIndex] = Probe.m_pSceneProbe->m_Local2World.GetRow( 3 );
 	}
 
 
@@ -527,13 +529,11 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 		// Build neighbors list immediately since we need it for the Voronoï splatting right after
 		pRTCubeMapNeighborsStaging->CopyFrom( *pRTCubeMapNeighbors );
 
-		m_ProbeEncoder.BuildProbeNeighborIDs( *pRTCubeMapNeighborsStaging, ProbePosition, m_ProbesCount, pProbePositions );
-
-		const List< SHProbeEncoder::NeighborProbe >& 	NeighborProbes = m_ProbeEncoder.GetProbeNeighbors();
+		m_ProbeEncoder.BuildProbeNeighborIDs( *pRTCubeMapNeighborsStaging, Probe, m_ProbesCount, pProbePositions );
 
 
 		//////////////////////////////////////////////////////////////////////////
-		// 3] Build the voronoï cells
+		// 3] Build the Voronoï cells
 		// This is without a doubt the most important structure to spread the probes' influence correctly:
 		//	1) We render all connections STRICTLY VISIBLE neighbors by splatting large planes in the middle of the connection
 		//		=> This will build the planes for the Voronoï cell
@@ -559,8 +559,8 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 
 			USING_MATERIAL_START( *m_pMatRenderNeighborProbe )
 
-			for ( U32 NeighborProbeIndex=0; NeighborProbeIndex < U32(NeighborProbes.GetCount()); NeighborProbeIndex++ ) {
-				const SHProbeEncoder::NeighborProbe&	NP = NeighborProbes[NeighborProbeIndex];
+			for ( U32 NeighborProbeIndex=0; NeighborProbeIndex < U32(Probe.m_NeighborProbes.GetCount()); NeighborProbeIndex++ ) {
+				const SHProbe::NeighborProbeInfo&	NP = Probe.m_NeighborProbes[NeighborProbeIndex];
 				if ( NP.DirectlyVisible ) {
 					const float3&	NeighborProbePosition = pProbePositions[NP.ProbeID];
 
@@ -581,7 +581,7 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 
 		pRTCubeMapNeighborsStaging->CopyFrom( *pRTCubeMapNeighbors );
 
-		m_ProbeEncoder.BuildProbeVoronoiCell( *pRTCubeMapNeighborsStaging, ProbePosition, m_ProbesCount, pProbePositions );
+		m_ProbeEncoder.BuildProbeVoronoiCell( *pRTCubeMapNeighborsStaging, Probe, m_ProbesCount, pProbePositions );
 
 
 		//////////////////////////////////////////////////////////////////////////
@@ -593,11 +593,20 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 		pRTCubeMapStaging->Save( pTemp );
 #endif
 
-		m_ProbeEncoder.EncodeProbeCubeMap( *pRTCubeMapStaging, ProbeIndex, m_ProbesCount, _TotalFacesCount );
+		m_ProbeEncoder.EncodeProbeCubeMap( *pRTCubeMapStaging, Probe, m_ProbesCount, _TotalFacesCount );
 
 		// Save probe results
-		sprintf_s( pTemp, "%sProbe%02d.probeset", _pPathToProbes, ProbeIndex );
-		m_ProbeEncoder.Save( pTemp );
+		{
+			sprintf_s( pTemp, "%sProbe%02d.probeset", _pPathToProbes, ProbeIndex );
+
+			FILE*	pFile = NULL;
+			fopen_s( &pFile, pTemp, "wb" );
+			ASSERT( pFile != NULL, "Locked!" );
+
+			Probe.Save( pFile );
+
+			fclose( pFile );
+		}
 
 #ifdef _DEBUG
 		// Save probe debug pixels (can be analyzed with the external tool found in Tools.sln => GIProbesDebugger)
@@ -612,7 +621,7 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 		for ( U32 FaceIndex=0; FaceIndex < _TotalFacesCount; FaceIndex++, pCurrentInfluence++, pNewInfluence++ ) {
 			if ( *pNewInfluence > pCurrentInfluence->Influence ) {
 				pCurrentInfluence->Influence = *pNewInfluence;
-				pCurrentInfluence->ProbeID = Probe.ProbeID;
+				pCurrentInfluence->ProbeID = Probe.m_ProbeID;
 			}
 		}
 	}
@@ -676,7 +685,7 @@ void	SHProbeNetwork::MeshWithAdjacency::AssignNearestProbe( U32 _ProbesCount, co
 		const SHProbe&	Probe = _pProbes[ProbeIndex];
 		float3&			lsProbePosition = LocalProbePositions[ProbeIndex];
 
-		lsProbePosition = Probe.pSceneProbe->m_Local2World.GetRow( 3 ) * m_World2Local;
+		lsProbePosition = Probe.m_pSceneProbe->m_Local2World.GetRow( 3 ) * m_World2Local;
 	}
 
 	// Assign nearest probes
@@ -698,7 +707,7 @@ SHProbeNetwork::MeshWithAdjacency::Primitive::VertexCell*	SHProbeNetwork::MeshWi
 
 void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( const Scene::Mesh::Primitive& _Primitive, ProbeInfluence* _pProbeInfluencePerFace ) {
 
-	DictionaryGeneric< EdgeKey, FacePair >	SharedEdges( 3 * _Primitive.m_FacesCount );
+//	DictionaryGeneric< EdgeKey, FacePair >	SharedEdges( 3 * _Primitive.m_FacesCount );
 
 	m_FacesCount = _Primitive.m_FacesCount;
 	m_pFaces = new Face[m_FacesCount];
@@ -706,6 +715,7 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( const Scene::Mesh::Pri
 	m_pVerticesProbeInfluence = new ProbeInfluence*[m_VerticesCount];
 	memset( m_pVerticesProbeInfluence, 0, m_VerticesCount*sizeof(ProbeInfluence*) );
 
+	Scene::Mesh::Primitive::VF_P3N3G3B3T2*	pVertices = (Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _Primitive.m_pVertices;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build welded vertices structure
@@ -721,17 +731,11 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( const Scene::Mesh::Pri
 	m_VertexCells.Init( m_VerticesCount );
 	m_VertexCells.SetCount( m_VerticesCount );
 
-	memset( ms_ppCells, 0, 64*64*64*sizeof(VertexCell*) );
-// 	VertexCell*	pCell = &m_VertexCells[0];
-// 	for ( int VertexIndex=0; VertexIndex < m_VerticesCount; VertexIndex++, pCell++ ) {
-// 		pCell->pNext = pCell+1;
-// 		pCell->V = ~0U;
-// 	}
-// 	(pCell-1)->pNext = NULL;
-
 	// Fill up the 64x64x64 cells with lists of vertices inside each of the cell
+	memset( ms_ppCells, 0, 64*64*64*sizeof(VertexCell*) );
+
 	VertexCell*	pFreeCell = &m_VertexCells[0];
-	Scene::Mesh::Primitive::VF_P3N3G3B3T2*	pVertex = (Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _Primitive.m_pVertices;
+	Scene::Mesh::Primitive::VF_P3N3G3B3T2*	pVertex = pVertices;
 	for ( int VertexIndex=0; VertexIndex < m_VerticesCount; VertexIndex++, pVertex++, pFreeCell++ ) {
 		float3&	Position = pVertex->P;
 		float3	CellPosition = (Position - BBoxMin) / BBoxCellSize;
@@ -740,16 +744,17 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( const Scene::Mesh::Pri
 		U32		iCellPositionZ = U32( floorf( CellPosition.z ) );
 
 		pFreeCell->V = VertexIndex;
-		pFreeCell->P = Position;
+		pFreeCell->Influence.ProbeID = ~0UL;
 		pFreeCell->pNext = ms_ppCells[iCellPositionX+64*(iCellPositionY+64*iCellPositionZ)];
 		ms_ppCells[iCellPositionX+64*(iCellPositionY+64*iCellPositionZ)] = pFreeCell;
 	}
 
 	// Perform welding
 	List<bool>	WeldedState( m_VerticesCount );
+	WeldedState.SetCount( m_VerticesCount );
 	memset( &WeldedState[0], 0, m_VerticesCount*sizeof(bool) );
 
-	pVertex = (Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _Primitive.m_pVertices;
+	pVertex = pVertices;
 	for ( int VertexIndex=0; VertexIndex < m_VerticesCount; VertexIndex++, pVertex++, pFreeCell++ ) {
 		if ( WeldedState[VertexIndex] )
 			continue;	// Already welded
@@ -760,8 +765,7 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( const Scene::Mesh::Pri
 		NewWeldedVertex.N = float3::Zero;
 		NewWeldedVertex.SharingVerticesCount = 0;
 		NewWeldedVertex.pSharingVertices = NULL;
-
-		WeldedState[VertexIndex] = true;	// Now welded!
+		NewWeldedVertex.Influence.ProbeID = ~0UL;
 
 		float3	CellPosition = (pVertex->P - BBoxMin) / BBoxCellSize;
 		int		iCellPositionX = int( floorf( CellPosition.x ) );
@@ -785,25 +789,33 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( const Scene::Mesh::Pri
 					VertexCell*	pPreviousNeighborCell = NULL;
 					VertexCell*	pNeighborCell = ms_ppCells[NeighborCellOffset];
 					while ( pNeighborCell != NULL ) {
-						if ( (pNeighborCell->P - NewWeldedVertex.P).LengthSq() < 0.01f ) {
-							// New vertex to weld! (NOTE: it's okay to weld ourselves)
-							if ( pPreviousNeighborCell != NULL )
-								pPreviousNeighborCell->pNext = pNeighborCell->pNext;	// Link over that vertex, it's no longer part of the set of unwelded vertices
-							else 
-								ms_ppCells[NeighborCellOffset] = pNeighborCell->pNext;	// We welded the root vertex
-
-							// Link this vertex as a new welded vertex
-							pNeighborCell->pNext = NewWeldedVertex.pSharingVertices;
-							NewWeldedVertex.pSharingVertices = pNeighborCell;
-
-							// Accumulate normals
-							NewWeldedVertex.N = NewWeldedVertex.N + pVertex->N;
-							NewWeldedVertex.SharingVerticesCount++;
+						float	SqDistance = (pVertices[pNeighborCell->V].P - NewWeldedVertex.P).LengthSq();
+						if ( SqDistance > 0.0001f ) {
+							// More than 1cm appart... 
+							pPreviousNeighborCell = pNeighborCell;
+							pNeighborCell = pNeighborCell->pNext;
+							continue;
 						}
 
-						// Examine next vertex
-						pPreviousNeighborCell = pNeighborCell;
+						// New vertex to weld! (NOTE: it's okay to weld ourselves)
+
+						// Link over that vertex, it's no longer part of the set of unwelded vertices
+						VertexCell*	pWeldedCell = pNeighborCell;
 						pNeighborCell = pNeighborCell->pNext;
+						if ( pPreviousNeighborCell != NULL )
+							pPreviousNeighborCell->pNext = pNeighborCell;
+						else 
+							ms_ppCells[NeighborCellOffset] = pNeighborCell;
+
+						// Link-in this vertex as a new welded vertex
+						pWeldedCell->pNext = NewWeldedVertex.pSharingVertices;
+						NewWeldedVertex.pSharingVertices = pWeldedCell;
+
+						// Accumulate normals
+						NewWeldedVertex.N = NewWeldedVertex.N + pVertices[pWeldedCell->V].N;
+						NewWeldedVertex.SharingVerticesCount++;
+
+						WeldedState[pWeldedCell->V] = true;	// Now welded!
 					}
 				}
 			}
@@ -828,29 +840,33 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( const Scene::Mesh::Pri
 
 		pTargetFace->P = (P0 + P1 + P2) / 3.0f;
 		pTargetFace->N = (P2 - P0).Cross( P1 - P0 ).Normalize();
-		pTargetFace->pProbeInfluence = pProbeInfluence;
+//		pTargetFace->pProbeInfluence = pProbeInfluence;
 
-		// Build adjacency info
-		EdgeKey		Key;
-		for ( int EdgeIndex=0; EdgeIndex < 3; EdgeIndex++ ) {
-			Key.V0 = pTargetFace->V[EdgeIndex];
-			Key.V1 = pTargetFace->V[(EdgeIndex+1)%3];
+		// Distribute probe influence to face vertices
+//		pProbeInfluence->
 
-			FacePair*	ExistingValue = SharedEdges.Get( Key );
-			if ( ExistingValue == NULL ) {
-				// First face sharing this edge!
-				FacePair&	AdjacentFaces = SharedEdges.Add( Key );
-				AdjacentFaces.F0 = pTargetFace;
-				AdjacentFaces.F1 = NULL;
-			} else {
-				// Second face! Build adjacency...
-				ASSERT( ExistingValue->F1 == NULL, "Non-manifold mesh: more than 2 faces share the same edge!" );
-				ExistingValue->F1 = pTargetFace;
 
-				pTargetFace->pAdjacent[EdgeIndex] = ExistingValue->F0;
-				ExistingValue->F0->SetAdjacency( Key.V1, Key.V0, pTargetFace );
-			}
-		}
+// 		// Build adjacency info
+// 		EdgeKey		Key;
+// 		for ( int EdgeIndex=0; EdgeIndex < 3; EdgeIndex++ ) {
+// 			Key.V0 = pTargetFace->V[EdgeIndex];
+// 			Key.V1 = pTargetFace->V[(EdgeIndex+1)%3];
+// 
+// 			FacePair*	ExistingValue = SharedEdges.Get( Key );
+// 			if ( ExistingValue == NULL ) {
+// 				// First face sharing this edge!
+// 				FacePair&	AdjacentFaces = SharedEdges.Add( Key );
+// 				AdjacentFaces.F0 = pTargetFace;
+// 				AdjacentFaces.F1 = NULL;
+// 			} else {
+// 				// Second face! Build adjacency...
+// 				ASSERT( ExistingValue->F1 == NULL, "Non-manifold mesh: more than 2 faces share the same edge!" );
+// 				ExistingValue->F1 = pTargetFace;
+// 
+// 				pTargetFace->pAdjacent[EdgeIndex] = ExistingValue->F0;
+// 				ExistingValue->F0->SetAdjacency( Key.V1, Key.V0, pTargetFace );
+// 			}
+// 		}
 	}
 }
 
@@ -858,95 +874,96 @@ bool	SHProbeNetwork::MeshWithAdjacency::Primitive::PropagateProbeInfluences( U32
 	bool	stillSpreading = false;
 	Face*	pFace = m_pFaces;
 	for ( int FaceIndex=0; FaceIndex < m_FacesCount; FaceIndex++, pFace++ ) {
-		stillSpreading |= pFace->RecursePropagateProbeInfluences( _PassIndex );
+//		stillSpreading |= pFace->RecursePropagateProbeInfluences( _PassIndex );
 	}
 
 	return stillSpreading;
 }
 
 void	SHProbeNetwork::MeshWithAdjacency::Primitive::AssignNearestProbe( U32 _ProbesCount, const float3* _LocalProbePositions ) {
-	Face*	pFace = m_pFaces;
-	for ( int FaceIndex=0; FaceIndex < m_FacesCount; FaceIndex++, pFace++ ) {
-		if ( pFace->pProbeInfluence->ProbeID != ~0UL )
-			continue;
-
-		float	NearestProbeSqDistance = FLT_MAX;
-		U32		NearestProbeIndex = ~0UL;
-		for ( U32 ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ ) {
-			float	SqDistance = (_LocalProbePositions[ProbeIndex] - pFace->P).LengthSq();
-			if ( SqDistance < NearestProbeSqDistance ) {
-				NearestProbeSqDistance = SqDistance;
-				NearestProbeIndex = ProbeIndex;
-			}
-		}
-		pFace->pProbeInfluence->ProbeID = NearestProbeIndex;
-	}
+// 	Face*	pFace = m_pFaces;
+// 	for ( int FaceIndex=0; FaceIndex < m_FacesCount; FaceIndex++, pFace++ ) {
+// 		if ( pFace->pProbeInfluence->ProbeID != ~0UL )
+// 			continue;
+// 
+// 		float	NearestProbeSqDistance = FLT_MAX;
+// 		U32		NearestProbeIndex = ~0UL;
+// 		for ( U32 ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ ) {
+// 			float	SqDistance = (_LocalProbePositions[ProbeIndex] - pFace->P).LengthSq();
+// 			if ( SqDistance < NearestProbeSqDistance ) {
+// 				NearestProbeSqDistance = SqDistance;
+// 				NearestProbeIndex = ProbeIndex;
+// 			}
+// 		}
+// 		pFace->pProbeInfluence->ProbeID = NearestProbeIndex;
+// 	}
 }
 
 void	SHProbeNetwork::MeshWithAdjacency::Primitive::RedistributeProbeIDs2Vertices( ProbeInfluence** _ppProbeInfluences ) const {
-	Face*	pFace = m_pFaces;
-	for ( int FaceIndex=0; FaceIndex < m_FacesCount; FaceIndex++, pFace++ ) {
-		ProbeInfluence*	pFaceProbeInfluence = pFace->pProbeInfluence;
-
-		for ( int FaceVertexIndex=0; FaceVertexIndex < 3; FaceVertexIndex++ ) {
-			U32					VertexIndex = pFace->V[FaceVertexIndex];
-			ProbeInfluence*&	pVertexProbeInfluence = _ppProbeInfluences[VertexIndex];
-			if ( pVertexProbeInfluence == NULL || pVertexProbeInfluence->Influence < pFaceProbeInfluence->Influence ) {
-				pVertexProbeInfluence = pFaceProbeInfluence;	// This face provides a better influence for the vertex!
-			}
-		}
-	}
+// 	Face*	pFace = m_pFaces;
+// 	for ( int FaceIndex=0; FaceIndex < m_FacesCount; FaceIndex++, pFace++ ) {
+// 		ProbeInfluence*	pFaceProbeInfluence = pFace->pProbeInfluence;
+// 
+// 		for ( int FaceVertexIndex=0; FaceVertexIndex < 3; FaceVertexIndex++ ) {
+// 			U32					VertexIndex = pFace->V[FaceVertexIndex];
+// 			ProbeInfluence*&	pVertexProbeInfluence = _ppProbeInfluences[VertexIndex];
+// 			if ( pVertexProbeInfluence == NULL || pVertexProbeInfluence->Influence < pFaceProbeInfluence->Influence ) {
+// 				pVertexProbeInfluence = pFaceProbeInfluence;	// This face provides a better influence for the vertex!
+// 			}
+// 		}
+// 	}
 }
 
-bool	SHProbeNetwork::MeshWithAdjacency::Primitive::Face::RecursePropagateProbeInfluences( U32 _PassIndex ) {
-	if ( LastVisitIndex == _PassIndex )
-		return false;
-	LastVisitIndex = _PassIndex;	// Visited!
-	
-	bool	spreading = false;
-
-	for ( int EdgeIndex=0; EdgeIndex < 3; EdgeIndex++ ) {
-		if ( pAdjacent[EdgeIndex] == NULL || pAdjacent[EdgeIndex]->LastVisitIndex == _PassIndex )
-			continue;
-
-		Face&	Adjacent = *pAdjacent[EdgeIndex];
-		if ( Adjacent.pProbeInfluence->ProbeID == pProbeInfluence->ProbeID )
-			continue;
-
-		// Compute new influence
-		static const float	DISTANCE_FALLOFF_FACTOR = -1.3862943611198906188344642429164f;			// ln( 0.25 ) so 1m away gets 1/4 the influence
-		static const float	ANGULAR_FALLOFF_FACTOR = 0.5f * -0.30102999566398119521373889472449f;	// ln( 0.5 ) so a 90° face gets 1/2 the influence
-
-		float	DistanceBetweenFaces = (Adjacent.P - P).Length();
-		float	DotNormalBetweenFaces = Adjacent.N.Dot( N );
-		float	FalloffDistance = expf( DISTANCE_FALLOFF_FACTOR * DistanceBetweenFaces );
-		float	FalloffAngle = expf( ANGULAR_FALLOFF_FACTOR * (1.0f - DotNormalBetweenFaces) );
-		double	Falloff = FalloffDistance * FalloffAngle;
-
-		double	ReducedInfluence0 = 0.0f;
-		if ( pProbeInfluence->ProbeID != ~0UL ) {
-			ReducedInfluence0 = pProbeInfluence->Influence * Falloff;
-		}
-		double	ReducedInfluence1 = 0.0f;
-		if ( Adjacent.pProbeInfluence->ProbeID != ~0UL ) {
-			ReducedInfluence1 = Adjacent.pProbeInfluence->Influence * Falloff;
-		}
-
-		if ( ReducedInfluence0 > Adjacent.pProbeInfluence->Influence ) {
-			// Spread from face to adjacent face
-			Adjacent.pProbeInfluence->Influence = ReducedInfluence0;
-			Adjacent.pProbeInfluence->ProbeID = pProbeInfluence->ProbeID;
-			spreading = true;
-		} else if ( ReducedInfluence1 > pProbeInfluence->Influence ) {
-			// Spread from adjacent face to this face
-			pProbeInfluence->Influence = ReducedInfluence1;
-			pProbeInfluence->ProbeID = Adjacent.pProbeInfluence->ProbeID;
-			spreading = true;
-		}
-	}
-
-	return spreading;
-}
+// We don't need the adjacency anymore
+// bool	SHProbeNetwork::MeshWithAdjacency::Primitive::Face::RecursePropagateProbeInfluences( U32 _PassIndex ) {
+// 	if ( LastVisitIndex == _PassIndex )
+// 		return false;
+// 	LastVisitIndex = _PassIndex;	// Visited!
+// 	
+// 	bool	spreading = false;
+// 
+// 	for ( int EdgeIndex=0; EdgeIndex < 3; EdgeIndex++ ) {
+// 		if ( pAdjacent[EdgeIndex] == NULL || pAdjacent[EdgeIndex]->LastVisitIndex == _PassIndex )
+// 			continue;
+// 
+// 		Face&	Adjacent = *pAdjacent[EdgeIndex];
+// 		if ( Adjacent.pProbeInfluence->ProbeID == pProbeInfluence->ProbeID )
+// 			continue;
+// 
+// 		// Compute new influence
+// 		static const float	DISTANCE_FALLOFF_FACTOR = -1.3862943611198906188344642429164f;			// ln( 0.25 ) so 1m away gets 1/4 the influence
+// 		static const float	ANGULAR_FALLOFF_FACTOR = 0.5f * -0.30102999566398119521373889472449f;	// ln( 0.5 ) so a 90° face gets 1/2 the influence
+// 
+// 		float	DistanceBetweenFaces = (Adjacent.P - P).Length();
+// 		float	DotNormalBetweenFaces = Adjacent.N.Dot( N );
+// 		float	FalloffDistance = expf( DISTANCE_FALLOFF_FACTOR * DistanceBetweenFaces );
+// 		float	FalloffAngle = expf( ANGULAR_FALLOFF_FACTOR * (1.0f - DotNormalBetweenFaces) );
+// 		double	Falloff = FalloffDistance * FalloffAngle;
+// 
+// 		double	ReducedInfluence0 = 0.0f;
+// 		if ( pProbeInfluence->ProbeID != ~0UL ) {
+// 			ReducedInfluence0 = pProbeInfluence->Influence * Falloff;
+// 		}
+// 		double	ReducedInfluence1 = 0.0f;
+// 		if ( Adjacent.pProbeInfluence->ProbeID != ~0UL ) {
+// 			ReducedInfluence1 = Adjacent.pProbeInfluence->Influence * Falloff;
+// 		}
+// 
+// 		if ( ReducedInfluence0 > Adjacent.pProbeInfluence->Influence ) {
+// 			// Spread from face to adjacent face
+// 			Adjacent.pProbeInfluence->Influence = ReducedInfluence0;
+// 			Adjacent.pProbeInfluence->ProbeID = pProbeInfluence->ProbeID;
+// 			spreading = true;
+// 		} else if ( ReducedInfluence1 > pProbeInfluence->Influence ) {
+// 			// Spread from adjacent face to this face
+// 			pProbeInfluence->Influence = ReducedInfluence1;
+// 			pProbeInfluence->ProbeID = Adjacent.pProbeInfluence->ProbeID;
+// 			spreading = true;
+// 		}
+// 	}
+// 
+// 	return spreading;
+// }
 
 void	SHProbeNetwork::BuildProbeInfluenceVertexStream( Scene& _Scene, const char* _pPathToStreamFile ) {
 
@@ -1042,7 +1059,7 @@ void	SHProbeNetwork::BuildProbeInfluenceVertexStream( Scene& _Scene, const char*
 
 static void	CopyProbeNetworkConnection( int _EntryIndex, SHProbeNetwork::RuntimeProbeNetworkInfos& _Value, void* _pUserData );
 
-void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _QueryMaterial, const float3& _SceneBBoxMin, const float3& _SceneBBoxMax ) {
+void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, const float3& _SceneBBoxMin, const float3& _SceneBBoxMax ) {
 
 	FILE*	pFile = NULL;
 	char	pTemp[1024];
@@ -1055,150 +1072,13 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 		fopen_s( &pFile, pTemp, "rb" );
 		if ( pFile == NULL ) {
 			// Not ready yet (happens for first time computation!)
-			memset( Probe.pSamples, 0, SHProbeEncoder::PROBE_SAMPLES_COUNT*sizeof(SHProbe::Sample) );
-			Probe.EmissiveSurfacesCount = 0;
+			memset( Probe.m_pSamples, 0, SHProbe::SAMPLES_COUNT*sizeof(SHProbe::Sample) );
+			Probe.m_EmissiveSurfacesCount = 0;
 			continue;
 		}
 //		ASSERT( pFile != NULL, "Can't find probeset test file!" );
 
-		// Read the boundary infos
-		fread_s( &Probe.MeanDistance, sizeof(Probe.MeanDistance), sizeof(float), 1, pFile );
-		fread_s( &Probe.MeanHarmonicDistance, sizeof(Probe.MeanHarmonicDistance), sizeof(float), 1, pFile );
-		fread_s( &Probe.MinDistance, sizeof(Probe.MinDistance), sizeof(float), 1, pFile );
-		fread_s( &Probe.MaxDistance, sizeof(Probe.MaxDistance), sizeof(float), 1, pFile );
-
-		fread_s( &Probe.BBoxMin.x, sizeof(Probe.BBoxMin.x), sizeof(float), 1, pFile );
-		fread_s( &Probe.BBoxMin.y, sizeof(Probe.BBoxMin.y), sizeof(float), 1, pFile );
-		fread_s( &Probe.BBoxMin.z, sizeof(Probe.BBoxMin.z), sizeof(float), 1, pFile );
-		fread_s( &Probe.BBoxMax.x, sizeof(Probe.BBoxMax.x), sizeof(float), 1, pFile );
-		fread_s( &Probe.BBoxMax.y, sizeof(Probe.BBoxMax.y), sizeof(float), 1, pFile );
-		fread_s( &Probe.BBoxMax.z, sizeof(Probe.BBoxMax.z), sizeof(float), 1, pFile );
-
-		// Read static SH
-		for ( int i=0; i < 9; i++ ) {
-			fread_s( &Probe.pSHStaticLighting[i].x, sizeof(Probe.pSHStaticLighting[i].x), sizeof(float), 1, pFile );
-			fread_s( &Probe.pSHStaticLighting[i].y, sizeof(Probe.pSHStaticLighting[i].y), sizeof(float), 1, pFile );
-			fread_s( &Probe.pSHStaticLighting[i].z, sizeof(Probe.pSHStaticLighting[i].z), sizeof(float), 1, pFile );
-		}
-
-		// Read occlusion SH
-		for ( int i=0; i < 9; i++ )
-			fread_s( &Probe.pSHOcclusion[i], sizeof(Probe.pSHOcclusion[i]), sizeof(float), 1, pFile );
-
-		// Read the samples
-		for ( U32 SampleIndex=0; SampleIndex < SHProbeEncoder::PROBE_SAMPLES_COUNT; SampleIndex++ ) {
-			SHProbe::Sample&	S = Probe.pSamples[SampleIndex];
-
-			// Read position, normal, albedo
-			fread_s( &S.Position.x, sizeof(S.Position.x), sizeof(float), 1, pFile );
-			fread_s( &S.Position.y, sizeof(S.Position.y), sizeof(float), 1, pFile );
-			fread_s( &S.Position.z, sizeof(S.Position.z), sizeof(float), 1, pFile );
-
-			fread_s( &S.Normal.x, sizeof(S.Normal.x), sizeof(float), 1, pFile );
-			fread_s( &S.Normal.y, sizeof(S.Normal.y), sizeof(float), 1, pFile );
-			fread_s( &S.Normal.z, sizeof(S.Normal.z), sizeof(float), 1, pFile );
-
-			fread_s( &S.Tangent.x, sizeof(S.Tangent.x), sizeof(float), 1, pFile );
-			fread_s( &S.Tangent.y, sizeof(S.Tangent.y), sizeof(float), 1, pFile );
-			fread_s( &S.Tangent.z, sizeof(S.Tangent.z), sizeof(float), 1, pFile );
-
-			fread_s( &S.BiTangent.x, sizeof(S.BiTangent.x), sizeof(float), 1, pFile );
-			fread_s( &S.BiTangent.y, sizeof(S.BiTangent.y), sizeof(float), 1, pFile );
-			fread_s( &S.BiTangent.z, sizeof(S.BiTangent.z), sizeof(float), 1, pFile );
-
-			fread_s( &S.Radius, sizeof(S.Radius), sizeof(float), 1, pFile );
-
-			fread_s( &S.Albedo.x, sizeof(S.Albedo.x), sizeof(float), 1, pFile );
-			fread_s( &S.Albedo.y, sizeof(S.Albedo.y), sizeof(float), 1, pFile );
-			fread_s( &S.Albedo.z, sizeof(S.Albedo.z), sizeof(float), 1, pFile );
-
-			fread_s( &S.F0.x, sizeof(S.F0.x), sizeof(float), 1, pFile );
-			fread_s( &S.F0.y, sizeof(S.F0.y), sizeof(float), 1, pFile );
-			fread_s( &S.F0.z, sizeof(S.F0.z), sizeof(float), 1, pFile );
-
-			fread_s( &S.SHFactor, sizeof(S.SHFactor), sizeof(float), 1, pFile );
-			
-// No need: can be regenerated at runtime from normal direction
-// 			// Read SH coefficients
-// 			for ( int i=0; i < 9; i++ ) {
-// 				fread_s( &S.pSHBounce[i], sizeof(S.pSHBounce[i]), sizeof(float), 1, pFile );
-// 			}
-
-			// Transform sample's position/normal by probe's LOCAL=>WORLD
-			S.Position = float3( Probe.pSceneProbe->m_Local2World.GetRow(3) ) + S.Position;
-// 			NjFloat3	wsSetNormal = Set.Normal;
-// 			NjFloat3	wsSetTangent = Set.Tangent;
-// 			NjFloat3	wsSetBiTangent = Set.BiTangent;
-// TODO: Handle non-identity matrices! Let's go fast for now...
-// ARGH! That also means possibly rotating the SH!
-// Let's just force the probes to be axis-aligned, shall we??? :) (lazy man talking) (no, seriously, it makes sense after all)
-		}
-
-		// Read the amount of emissive surfaces
-		U32	EmissiveSurfacesCount;
-		fread_s( &EmissiveSurfacesCount, sizeof(EmissiveSurfacesCount), sizeof(U32), 1, pFile );
-		Probe.EmissiveSurfacesCount = MIN( SHProbeEncoder::MAX_PROBE_EMISSIVE_SURFACES, EmissiveSurfacesCount );	// Don't read more than we can chew!
-
-		// Read the surfaces
-		SHProbe::EmissiveSurface	DummyEmissiveSurface;
-		for ( U32 SampleIndex=0; SampleIndex < EmissiveSurfacesCount; SampleIndex++ ) {
-			SHProbe::EmissiveSurface&	S = SampleIndex < Probe.EmissiveSurfacesCount ? Probe.pEmissiveSurfaces[SampleIndex] : DummyEmissiveSurface;	// We load into a useless surface if out of range...
-
-			// Read position, normal
-			fread_s( &S.Position.x, sizeof(S.Position.x), sizeof(float), 1, pFile );
-			fread_s( &S.Position.y, sizeof(S.Position.y), sizeof(float), 1, pFile );
-			fread_s( &S.Position.z, sizeof(S.Position.z), sizeof(float), 1, pFile );
-
-			fread_s( &S.Normal.x, sizeof(S.Normal.x), sizeof(float), 1, pFile );
-			fread_s( &S.Normal.y, sizeof(S.Normal.y), sizeof(float), 1, pFile );
-			fread_s( &S.Normal.z, sizeof(S.Normal.z), sizeof(float), 1, pFile );
-
-			fread_s( &S.Tangent.x, sizeof(S.Tangent.x), sizeof(float), 1, pFile );
-			fread_s( &S.Tangent.y, sizeof(S.Tangent.y), sizeof(float), 1, pFile );
-			fread_s( &S.Tangent.z, sizeof(S.Tangent.z), sizeof(float), 1, pFile );
-
-			fread_s( &S.BiTangent.x, sizeof(S.BiTangent.x), sizeof(float), 1, pFile );
-			fread_s( &S.BiTangent.y, sizeof(S.BiTangent.y), sizeof(float), 1, pFile );
-			fread_s( &S.BiTangent.z, sizeof(S.BiTangent.z), sizeof(float), 1, pFile );
-
-			// Read emissive material ID
-			U32	EmissiveMatID;
-			fread_s( &EmissiveMatID, sizeof(EmissiveMatID), sizeof(U32), 1, pFile );
-			S.pEmissiveMaterial = _QueryMaterial( EmissiveMatID );
-
-			// Read SH coefficients
-			for ( int i=0; i < 9; i++ )
-				fread_s( &S.pSHEmissive[i], sizeof(S.pSHEmissive[i]), sizeof(float), 1, pFile );
-		}
-
-		// Read the amount of neighbor probes & distance infos
-		U32	NeighborProbesCount;
-		fread_s( &NeighborProbesCount, sizeof(NeighborProbesCount), sizeof(U32), 1, pFile );
-		NeighborProbesCount = MIN( MAX_PROBE_NEIGHBORS, NeighborProbesCount );
-
-		fread_s( &Probe.NearestProbeDistance, sizeof(Probe.NearestProbeDistance), sizeof(float), 1, pFile );
-		fread_s( &Probe.FarthestProbeDistance, sizeof(Probe.FarthestProbeDistance), sizeof(float), 1, pFile );
-
-		for ( U32 NeighborProbeIndex=0; NeighborProbeIndex < NeighborProbesCount; NeighborProbeIndex++ ) {
-			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID), sizeof(U32), 1, pFile );
-			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].DirectlyVisible, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].DirectlyVisible), sizeof(bool), 1, pFile );
-			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].Distance, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].Distance), sizeof(float), 1, pFile );
-			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].SolidAngle, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].SolidAngle), sizeof(float), 1, pFile );
-			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].Direction.x, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].Direction), sizeof(float3), 1, pFile );
-			for ( int i=0; i < 9; i++ )
-				fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].SH[i], sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].SH[i]), sizeof(float), 1, pFile );
-		}
-		for ( U32 NeighborProbeIndex=NeighborProbesCount; NeighborProbeIndex < MAX_PROBE_NEIGHBORS; NeighborProbeIndex++ )
-			Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID = ~0;	// Invalid ID
-
-// TODO! => Runtime interpolation needs complex Voronoï structure
-// 		// Read the amount of Voronoï probes
-// 		U32	VoronoiProbesCount;
-// 		fread_s( &VoronoiProbesCount, sizeof(VoronoiProbesCount), sizeof(U32), 1, pFile );
-// 
-// 		for ( U32 VoronoiProbeIndex=0; VoronoiProbeIndex < VoronoiProbesCount; VoronoiProbeIndex++ ) {
-// 			fread_s( &Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID, sizeof(Probe.pNeighborProbeInfos[NeighborProbeIndex].ProbeID), sizeof(U32), 1, pFile );
-// 		}
+		Probe.Load( pFile );
 
 		fclose( pFile );
 	}
@@ -1210,8 +1090,8 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
 
-		m_pSB_RuntimeProbes->m[ProbeIndex].Position = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
-		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.MaxDistance;
+		m_pSB_RuntimeProbes->m[ProbeIndex].Position = Probe.m_pSceneProbe->m_Local2World.GetRow( 3 );
+		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.m_MaxDistance;
 //		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.MeanDistance;
 
 
@@ -1238,10 +1118,10 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
 
 		for ( int SHCoeffIndex=0; SHCoeffIndex < 9; SHCoeffIndex++ ) {
-			m_ppSB_RuntimeSHStatic[0]->m[ProbeIndex].pSH[SHCoeffIndex] = Probe.pSHStaticLighting[SHCoeffIndex];
-			m_ppSB_RuntimeSHStatic[1]->m[ProbeIndex].pSH[SHCoeffIndex] = Probe.pSHStaticLighting[SHCoeffIndex];
+			m_ppSB_RuntimeSHStatic[0]->m[ProbeIndex].pSH[SHCoeffIndex] = Probe.m_pSHStaticLighting[SHCoeffIndex];
+			m_ppSB_RuntimeSHStatic[1]->m[ProbeIndex].pSH[SHCoeffIndex] = Probe.m_pSHStaticLighting[SHCoeffIndex];
 
-			m_pSB_RuntimeSHAmbient->m[ProbeIndex].pSH[SHCoeffIndex] = Probe.pSHOcclusion[SHCoeffIndex];
+			m_pSB_RuntimeSHAmbient->m[ProbeIndex].pSH[SHCoeffIndex] = Probe.m_pSHOcclusion[SHCoeffIndex];
 
 // 			m_pSB_RuntimeSHDynamic->m[ProbeIndex].pSH[SHCoeffIndex] = float3::Zero;
 // 			m_pSB_RuntimeSHDynamicSun->m[ProbeIndex].pSH[SHCoeffIndex] = float3::Zero;
@@ -1290,8 +1170,8 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
 
-		float3	Position = Probe.pSceneProbe->m_Local2World.GetRow( 3 );
-		int	NodesCount = m_ProbeOctree.Append( Position, Probe.MaxDistance, &Probe );
+		float3	Position = Probe.m_pSceneProbe->m_Local2World.GetRow( 3 );
+		int	NodesCount = m_ProbeOctree.Append( Position, Probe.m_MaxDistance, &Probe );
 		TotalNodesCount += NodesCount;
 		if ( NodesCount > MaxNodesCount )
 		{	// New probe with more octree nodes
@@ -1310,7 +1190,7 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
 
 		for ( int NeighborProbeIndex=0; NeighborProbeIndex < MAX_PROBE_NEIGHBORS; NeighborProbeIndex++ ) {
-			SHProbe::NeighborProbeInfos&	NeighborInfos = Probe.pNeighborProbeInfos[NeighborProbeIndex];
+			SHProbe::NeighborProbeInfo&	NeighborInfos = Probe.m_NeighborProbes[NeighborProbeIndex];
 			if ( NeighborInfos.ProbeID == ~0 )
 				continue;
 			
@@ -1329,10 +1209,10 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, IQueryMaterial& _Qu
 			// Find us in the neighbor probe's neighborhood
 			SHProbe&	NeighborProbe = m_pProbes[NeighborInfos.ProbeID];
 			for ( int NeighborNeighborProbeIndex=0; NeighborNeighborProbeIndex < MAX_PROBE_NEIGHBORS; NeighborNeighborProbeIndex++ )
-				if ( NeighborProbe.pNeighborProbeInfos[NeighborNeighborProbeIndex].ProbeID == ProbeIndex )
+				if ( NeighborProbe.m_NeighborProbes[NeighborNeighborProbeIndex].ProbeID == ProbeIndex )
 				{	// Found us!
 					// Now we can get the exact solid angle!
-					pConnection->NeighborsSolidAngles.y = NeighborProbe.pNeighborProbeInfos[NeighborNeighborProbeIndex].SolidAngle;
+					pConnection->NeighborsSolidAngles.y = NeighborProbe.m_NeighborProbes[NeighborNeighborProbeIndex].SolidAngle;
 					break;
 				}
 		}
