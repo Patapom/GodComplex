@@ -90,6 +90,10 @@ public:		// FIELDS
 
 public:		// METHODS
 
+	// Tells if the specified position is within the probe's Voronoï cell
+	bool	IsInsideVoronoiCell( const float3& _Position ) const;
+
+	// I/O
 	void	Save( FILE* _pFile ) const;
 	void	Load( FILE* _pFile );
 };

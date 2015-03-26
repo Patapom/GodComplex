@@ -143,6 +143,19 @@ float3	SHProbe::ms_SampleDirections[SHProbe::SAMPLES_COUNT] = {
 
 #pragma endregion
 
+bool	SHProbe::IsInsideVoronoiCell( const float3& _Position ) const {
+	const VoronoiProbeInfo*	pPlane = &m_VoronoiProbes[0];
+	for ( int PlaneIndex=0; PlaneIndex < m_VoronoiProbes.GetCount(); PlaneIndex++, pPlane++ ) {
+		float3	D = _Position - pPlane->Position;
+		if ( D.Dot( pPlane->Normal ) < 0.0f )
+			return false;	// Outside!
+	}
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// I/O
+//
 FILE*	g_pFile = NULL;
 template< typename T> void	Write( const T& _value ) {
 	fwrite( &_value, sizeof(T), 1, g_pFile );

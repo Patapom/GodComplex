@@ -128,9 +128,6 @@ private:	// BUILD TIME STRUCTURES
 	struct ProbeInfluence {
 		U32		ProbeID;
 		double	Influence;
-
-		// 
-		bool	CanSpreadToPosition( const float3& _Position, SHProbe* _pProbes ) const;
 	};
 
 	class MeshWithAdjacency {
@@ -183,7 +180,6 @@ private:	// BUILD TIME STRUCTURES
 			struct VertexCell {
 				VertexCell*		pNext;
 				U32				V;
-				ProbeInfluence	Influence;				// Probe influence for this vertex
 			};
 			static VertexCell*		ms_ppCells[64*64*64];
 
@@ -193,6 +189,10 @@ private:	// BUILD TIME STRUCTURES
 				ProbeInfluence	Influence;				// Probe influence for this vertex
 				U32				SharingVerticesCount;	// Amount of vertices welded together
 				VertexCell*		pSharingVertices;		// List of vertices sharing this welded vertex
+
+				List<WeldedVertex*>	AdjacentVertices;
+
+ 				bool	RecursePropagateProbeInfluences( SHProbeNetwork& _Owner, U32 _PassIndex );
 			};
 
 		public:
@@ -206,9 +206,9 @@ private:	// BUILD TIME STRUCTURES
 			ProbeInfluence**		m_pVerticesProbeInfluence;
 
 			~Primitive() { SAFE_DELETE_ARRAY( m_pFaces ); SAFE_DELETE_ARRAY( m_pVerticesProbeInfluence ); }
-			void	Build( const Scene::Mesh::Primitive& _Primitive, ProbeInfluence* _pProbeInfluencePerFace );
-			bool	PropagateProbeInfluences( U32 _PassIndex );
-			void	AssignNearestProbe( U32 _ProbesCount, const float3* _LocalProbePositions );
+			void	Build( SHProbeNetwork& _Owner, const Scene::Mesh::Primitive& _SourcePrimitive, ProbeInfluence* _pProbeInfluencePerFace );
+			bool	PropagateProbeInfluences( SHProbeNetwork& _Owner, U32 _PassIndex );
+			void	AssignNearestProbe( SHProbeNetwork& _Owner );
 			void	RedistributeProbeIDs2Vertices( ProbeInfluence** _ppProbeInfluences ) const;
 		};
 
@@ -219,9 +219,9 @@ private:	// BUILD TIME STRUCTURES
 
 		~MeshWithAdjacency() { SAFE_DELETE_ARRAY( m_pPrimitives ); }
 
-		void	Build( const Scene::Mesh& _Mesh, ProbeInfluence* _pProbeInfluencePerFace );
-		bool	PropagateProbeInfluences( U32 _PassIndex );
-		void	AssignNearestProbe( U32 _ProbesCount, const SHProbe* _pProbes );
+		void	Build( SHProbeNetwork& _Owner, const Scene::Mesh& _Mesh, ProbeInfluence* _pProbeInfluencePerFace );
+		bool	PropagateProbeInfluences( SHProbeNetwork& _Owner, U32 _PassIndex );
+		void	AssignNearestProbe( SHProbeNetwork& _Owner );
 		void	RedistributeProbeIDs2Vertices( ProbeInfluence**& _ppProbeInfluences ) const;
 	};
 

@@ -651,7 +651,7 @@ m_pRTCubeMap->SetPS( 64 );
 // 	delete m_pRTCubeMap;
 }
 
-void	SHProbeNetwork::MeshWithAdjacency::Build( const Scene::Mesh& _Mesh, ProbeInfluence* _pProbeInfluencePerFace ) {
+void	SHProbeNetwork::MeshWithAdjacency::Build( SHProbeNetwork& _Owner, const Scene::Mesh& _Mesh, ProbeInfluence* _pProbeInfluencePerFace ) {
 
 	m_World2Local = _Mesh.m_Local2World.Inverse();
 
@@ -661,16 +661,16 @@ void	SHProbeNetwork::MeshWithAdjacency::Build( const Scene::Mesh& _Mesh, ProbeIn
 	int	FaceOffset = 0;
 	for ( int PrimitiveIndex=0; PrimitiveIndex < _Mesh.m_PrimitivesCount; PrimitiveIndex++ ) {
 		const Scene::Mesh::Primitive&	SourcePrim = _Mesh.m_pPrimitives[PrimitiveIndex];
-		m_pPrimitives[PrimitiveIndex].Build( SourcePrim, _pProbeInfluencePerFace + FaceOffset );
+		m_pPrimitives[PrimitiveIndex].Build( _Owner, SourcePrim, _pProbeInfluencePerFace + FaceOffset );
 		FaceOffset += SourcePrim.m_FacesCount;
 	}
 }
 
-bool	SHProbeNetwork::MeshWithAdjacency::PropagateProbeInfluences( U32 _PassIndex ) {
+bool	SHProbeNetwork::MeshWithAdjacency::PropagateProbeInfluences( SHProbeNetwork& _Owner, U32 _PassIndex ) {
 	bool	stillSpreading = false;
 	for ( int PrimitiveIndex=0; PrimitiveIndex < m_PrimitivesCount; PrimitiveIndex++ ) {
 		Primitive&	P = m_pPrimitives[PrimitiveIndex];
-		stillSpreading |= P.PropagateProbeInfluences( _PassIndex );
+		stillSpreading |= P.PropagateProbeInfluences( _Owner, _PassIndex );
 	}
 
 	return stillSpreading;
@@ -705,145 +705,61 @@ void	SHProbeNetwork::MeshWithAdjacency::RedistributeProbeIDs2Vertices( ProbeInfl
 
 SHProbeNetwork::MeshWithAdjacency::Primitive::VertexCell*	SHProbeNetwork::MeshWithAdjacency::Primitive::ms_ppCells[64*64*64];
 
-void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( const Scene::Mesh::Primitive& _Primitive, ProbeInfluence* _pProbeInfluencePerFace ) {
+void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( SHProbeNetwork& _Owner, const Scene::Mesh::Primitive& _SourcePrimitive, ProbeInfluence* _pProbeInfluencePerFace ) {
+
+	Scene::Mesh::Primitive::VF_P3N3G3B3T2*	pSourceVertices = (Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _SourcePrimitive.m_pVertices;
 
 //	DictionaryGeneric< EdgeKey, FacePair >	SharedEdges( 3 * _Primitive.m_FacesCount );
 
-	m_FacesCount = _Primitive.m_FacesCount;
+	m_FacesCount = _SourcePrimitive.m_FacesCount;
 	m_pFaces = new Face[m_FacesCount];
-	m_VerticesCount = _Primitive.m_VerticesCount;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build and clear per-vertex probe influences
+	m_VerticesCount = _SourcePrimitive.m_VerticesCount;
 	m_pVerticesProbeInfluence = new ProbeInfluence*[m_VerticesCount];
 	memset( m_pVerticesProbeInfluence, 0, m_VerticesCount*sizeof(ProbeInfluence*) );
 
-	Scene::Mesh::Primitive::VF_P3N3G3B3T2*	pVertices = (Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _Primitive.m_pVertices;
 
 	//////////////////////////////////////////////////////////////////////////
-	// Build welded vertices structure
-	m_WeldedVertices.Init( m_VerticesCount );
-	m_WeldedVertices.Clear();
-
-	float3	BBoxCellSize = _Primitive.m_LocalBBoxMax - _Primitive.m_LocalBBoxMin;
-			BBoxCellSize = 1.01f * BBoxCellSize / 64.0f;
-	float3	BBoxMin = 0.5f * (_Primitive.m_LocalBBoxMax + _Primitive.m_LocalBBoxMin)
-					- 32.0f * BBoxCellSize;
-
-	// Create free vertex cells
-	m_VertexCells.Init( m_VerticesCount );
-	m_VertexCells.SetCount( m_VerticesCount );
-
-	// Fill up the 64x64x64 cells with lists of vertices inside each of the cell
-	memset( ms_ppCells, 0, 64*64*64*sizeof(VertexCell*) );
-
-	VertexCell*	pFreeCell = &m_VertexCells[0];
-	Scene::Mesh::Primitive::VF_P3N3G3B3T2*	pVertex = pVertices;
-	for ( int VertexIndex=0; VertexIndex < m_VerticesCount; VertexIndex++, pVertex++, pFreeCell++ ) {
-		float3&	Position = pVertex->P;
-		float3	CellPosition = (Position - BBoxMin) / BBoxCellSize;
-		U32		iCellPositionX = U32( floorf( CellPosition.x ) );
-		U32		iCellPositionY = U32( floorf( CellPosition.y ) );
-		U32		iCellPositionZ = U32( floorf( CellPosition.z ) );
-
-		pFreeCell->V = VertexIndex;
-		pFreeCell->Influence.ProbeID = ~0UL;
-		pFreeCell->pNext = ms_ppCells[iCellPositionX+64*(iCellPositionY+64*iCellPositionZ)];
-		ms_ppCells[iCellPositionX+64*(iCellPositionY+64*iCellPositionZ)] = pFreeCell;
-	}
-
-	// Perform welding
-	List<bool>	WeldedState( m_VerticesCount );
-	WeldedState.SetCount( m_VerticesCount );
-	memset( &WeldedState[0], 0, m_VerticesCount*sizeof(bool) );
-
-	pVertex = pVertices;
-	for ( int VertexIndex=0; VertexIndex < m_VerticesCount; VertexIndex++, pVertex++, pFreeCell++ ) {
-		if ( WeldedState[VertexIndex] )
-			continue;	// Already welded
-
-		// Found a new vertex to weld
-		WeldedVertex&	NewWeldedVertex = m_WeldedVertices.Append();
-		NewWeldedVertex.P = pVertex->P;
-		NewWeldedVertex.N = float3::Zero;
-		NewWeldedVertex.SharingVerticesCount = 0;
-		NewWeldedVertex.pSharingVertices = NULL;
-		NewWeldedVertex.Influence.ProbeID = ~0UL;
-
-		float3	CellPosition = (pVertex->P - BBoxMin) / BBoxCellSize;
-		int		iCellPositionX = int( floorf( CellPosition.x ) );
-		int		iCellPositionY = int( floorf( CellPosition.y ) );
-		int		iCellPositionZ = int( floorf( CellPosition.z ) );
-
-		for ( int Z=-1; Z <= 1; Z++ ) {
-			int	iNeighborCellPositionZ = iCellPositionZ+Z;
-			if ( iNeighborCellPositionZ < 0 || iNeighborCellPositionZ >= 64 )
-				continue;
-			for ( int Y=-1; Y <= 1; Y++ ) {
-				int	iNeighborCellPositionY = iCellPositionY+Y;
-				if ( iNeighborCellPositionY < 0 || iNeighborCellPositionY >= 64 )
-					continue;
-				for ( int X=-1; X <= 1; X++ ) {
-					int	iNeighborCellPositionX = iCellPositionX+X;
-					if ( iNeighborCellPositionX < 0 || iNeighborCellPositionX >= 64 )
-						continue;
-
-					U32			NeighborCellOffset = iNeighborCellPositionX+64*(iNeighborCellPositionY+64*iNeighborCellPositionZ);
-					VertexCell*	pPreviousNeighborCell = NULL;
-					VertexCell*	pNeighborCell = ms_ppCells[NeighborCellOffset];
-					while ( pNeighborCell != NULL ) {
-						float	SqDistance = (pVertices[pNeighborCell->V].P - NewWeldedVertex.P).LengthSq();
-						if ( SqDistance > 0.0001f ) {
-							// More than 1cm appart... 
-							pPreviousNeighborCell = pNeighborCell;
-							pNeighborCell = pNeighborCell->pNext;
-							continue;
-						}
-
-						// New vertex to weld! (NOTE: it's okay to weld ourselves)
-
-						// Link over that vertex, it's no longer part of the set of unwelded vertices
-						VertexCell*	pWeldedCell = pNeighborCell;
-						pNeighborCell = pNeighborCell->pNext;
-						if ( pPreviousNeighborCell != NULL )
-							pPreviousNeighborCell->pNext = pNeighborCell;
-						else 
-							ms_ppCells[NeighborCellOffset] = pNeighborCell;
-
-						// Link-in this vertex as a new welded vertex
-						pWeldedCell->pNext = NewWeldedVertex.pSharingVertices;
-						NewWeldedVertex.pSharingVertices = pWeldedCell;
-
-						// Accumulate normals
-						NewWeldedVertex.N = NewWeldedVertex.N + pVertices[pWeldedCell->V].N;
-						NewWeldedVertex.SharingVerticesCount++;
-
-						WeldedState[pWeldedCell->V] = true;	// Now welded!
-					}
-				}
-			}
-		}
-	}
-
-
-	//////////////////////////////////////////////////////////////////////////
-	// Build faces with adjacency
-	const U32*		pSourceFace = _Primitive.m_pFaces;
+	// Build faces and assign seed per-vertex probe influences
+	const U32*		pSourceFace = _SourcePrimitive.m_pFaces;
 	Face*			pTargetFace = m_pFaces;
-	ProbeInfluence* pProbeInfluence = _pProbeInfluencePerFace;
-	for ( U32 FaceIndex=0; FaceIndex < _Primitive.m_FacesCount; FaceIndex++, pTargetFace++, pProbeInfluence++ ) {
+	ProbeInfluence* pFaceProbeInfluence = _pProbeInfluencePerFace;
+	for ( U32 FaceIndex=0; FaceIndex < _SourcePrimitive.m_FacesCount; FaceIndex++, pTargetFace++, pFaceProbeInfluence++ ) {
 		// Build the face
 		pTargetFace->V[0] = *pSourceFace++;
 		pTargetFace->V[1] = *pSourceFace++;
 		pTargetFace->V[2] = *pSourceFace++;
 
-		const float3&	P0 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _Primitive.m_pVertices)[pTargetFace->V[0]].P;
-		const float3&	P1 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _Primitive.m_pVertices)[pTargetFace->V[1]].P;
-		const float3&	P2 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _Primitive.m_pVertices)[pTargetFace->V[2]].P;
+		const float3&	P0 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _SourcePrimitive.m_pVertices)[pTargetFace->V[0]].P;
+		const float3&	P1 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _SourcePrimitive.m_pVertices)[pTargetFace->V[1]].P;
+		const float3&	P2 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _SourcePrimitive.m_pVertices)[pTargetFace->V[2]].P;
 
 		pTargetFace->P = (P0 + P1 + P2) / 3.0f;
 		pTargetFace->N = (P2 - P0).Cross( P1 - P0 ).Normalize();
-//		pTargetFace->pProbeInfluence = pProbeInfluence;
 
 		// Distribute probe influence to face vertices
-//		pProbeInfluence->
+		if ( pFaceProbeInfluence->ProbeID != ~0UL ) {
+			ASSERT( pFaceProbeInfluence->ProbeID < _Owner.m_ProbesCount, "Influencing probe index out of range!" );
+			const SHProbe&	InfluencingProbe = _Owner.m_pProbes[pFaceProbeInfluence->ProbeID];
+
+			// Distribute if vertex is inside Voronoï cell and existing influence is lower
+			ProbeInfluence*&	Influence0 = m_pVerticesProbeInfluence[pTargetFace->V[0]];
+			if ( InfluencingProbe.IsInsideVoronoiCell( P0 ) && (Influence0 == NULL || Influence0->Influence < pFaceProbeInfluence->Influence) ) {
+				Influence0 = pFaceProbeInfluence;
+			}
+
+			ProbeInfluence*&	Influence1 = m_pVerticesProbeInfluence[pTargetFace->V[1]];
+			if ( InfluencingProbe.IsInsideVoronoiCell( P1 ) && (Influence1 == NULL || Influence1->Influence < pFaceProbeInfluence->Influence) ) {
+				Influence1 = pFaceProbeInfluence;
+			}
+
+			ProbeInfluence*&	Influence2 = m_pVerticesProbeInfluence[pTargetFace->V[2]];
+			if ( InfluencingProbe.IsInsideVoronoiCell( P2 ) && (Influence2 == NULL || Influence2->Influence < pFaceProbeInfluence->Influence) ) {
+				Influence2 = pFaceProbeInfluence;
+			}
+		}
 
 
 // 		// Build adjacency info
@@ -868,19 +784,137 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( const Scene::Mesh::Pri
 // 			}
 // 		}
 	}
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build welded vertices structure and gather largest probe influences
+	m_WeldedVertices.Init( m_VerticesCount );
+	m_WeldedVertices.Clear();
+
+	float3	BBoxCellSize = _SourcePrimitive.m_LocalBBoxMax - _SourcePrimitive.m_LocalBBoxMin;
+			BBoxCellSize = 1.01f * BBoxCellSize / 64.0f;
+	float3	BBoxMin = 0.5f * (_SourcePrimitive.m_LocalBBoxMax + _SourcePrimitive.m_LocalBBoxMin)
+					- 32.0f * BBoxCellSize;
+
+	// Create free vertex cells
+	m_VertexCells.Init( m_VerticesCount );
+	m_VertexCells.SetCount( m_VerticesCount );
+
+	// Fill up the 64x64x64 cells with lists of vertices inside each of the cell
+	memset( ms_ppCells, 0, 64*64*64*sizeof(VertexCell*) );
+
+	VertexCell*	pFreeCell = &m_VertexCells[0];
+	Scene::Mesh::Primitive::VF_P3N3G3B3T2*	pVertex = pSourceVertices;
+	for ( int VertexIndex=0; VertexIndex < m_VerticesCount; VertexIndex++, pVertex++, pFreeCell++ ) {
+		float3&	Position = pVertex->P;
+		float3	CellPosition = (Position - BBoxMin) / BBoxCellSize;
+		U32		iCellPositionX = U32( floorf( CellPosition.x ) );
+		U32		iCellPositionY = U32( floorf( CellPosition.y ) );
+		U32		iCellPositionZ = U32( floorf( CellPosition.z ) );
+
+		// Link it in its nearest integer cell
+		pFreeCell->pNext = ms_ppCells[iCellPositionX+64*(iCellPositionY+64*iCellPositionZ)];
+		ms_ppCells[iCellPositionX+64*(iCellPositionY+64*iCellPositionZ)] = pFreeCell;
+
+		pFreeCell->V = VertexIndex;
+	}
+
+	// Perform welding
+	List<bool>	WeldedState( m_VerticesCount );
+	WeldedState.SetCount( m_VerticesCount );
+	memset( &WeldedState[0], 0, m_VerticesCount*sizeof(bool) );
+
+	pVertex = pSourceVertices;
+	for ( int VertexIndex=0; VertexIndex < m_VerticesCount; VertexIndex++, pVertex++, pFreeCell++ ) {
+		if ( WeldedState[VertexIndex] )
+			continue;	// Already welded
+
+		// Found a new vertex to weld
+		WeldedVertex&	NewWeldedVertex = m_WeldedVertices.Append();
+		NewWeldedVertex.P = pVertex->P;
+		NewWeldedVertex.N = float3::Zero;
+		NewWeldedVertex.SharingVerticesCount = 0;
+		NewWeldedVertex.pSharingVertices = NULL;
+		NewWeldedVertex.Influence.Influence = 0.0;
+		NewWeldedVertex.Influence.ProbeID = ~0UL;	// No valid influence at the moment...
+
+		float3	CellPosition = (pVertex->P - BBoxMin) / BBoxCellSize;
+		int		iCellPositionX = int( floorf( CellPosition.x ) );
+		int		iCellPositionY = int( floorf( CellPosition.y ) );
+		int		iCellPositionZ = int( floorf( CellPosition.z ) );
+
+		for ( int Z=-1; Z <= 1; Z++ ) {
+			int	iNeighborCellPositionZ = iCellPositionZ+Z;
+			if ( iNeighborCellPositionZ < 0 || iNeighborCellPositionZ >= 64 )
+				continue;
+			for ( int Y=-1; Y <= 1; Y++ ) {
+				int	iNeighborCellPositionY = iCellPositionY+Y;
+				if ( iNeighborCellPositionY < 0 || iNeighborCellPositionY >= 64 )
+					continue;
+				for ( int X=-1; X <= 1; X++ ) {
+					int	iNeighborCellPositionX = iCellPositionX+X;
+					if ( iNeighborCellPositionX < 0 || iNeighborCellPositionX >= 64 )
+						continue;
+
+					U32			NeighborCellOffset = iNeighborCellPositionX+64*(iNeighborCellPositionY+64*iNeighborCellPositionZ);
+					VertexCell*	pPreviousNeighborCell = NULL;
+					VertexCell*	pNeighborCell = ms_ppCells[NeighborCellOffset];
+					while ( pNeighborCell != NULL ) {
+						float	SqDistance = (pSourceVertices[pNeighborCell->V].P - NewWeldedVertex.P).LengthSq();
+						if ( SqDistance > 0.0001f ) {
+							// More than 1cm appart... 
+							pPreviousNeighborCell = pNeighborCell;
+							pNeighborCell = pNeighborCell->pNext;
+							continue;
+						}
+
+						// New vertex to weld! (NOTE: it's okay to weld ourselves)
+						VertexCell*	pWeldedCell = pNeighborCell;
+
+						// Link over that vertex, it's no longer part of the set of unwelded vertices
+						pNeighborCell = pNeighborCell->pNext;
+						if ( pPreviousNeighborCell != NULL )
+							pPreviousNeighborCell->pNext = pNeighborCell;
+						else 
+							ms_ppCells[NeighborCellOffset] = pNeighborCell;
+
+						// Link-in this vertex as a new welded vertex
+						pWeldedCell->pNext = NewWeldedVertex.pSharingVertices;
+						NewWeldedVertex.pSharingVertices = pWeldedCell;
+
+						// Accumulate normals
+						NewWeldedVertex.N = NewWeldedVertex.N + pSourceVertices[pWeldedCell->V].N;
+						NewWeldedVertex.SharingVerticesCount++;
+
+						// Assign new influence if valid...
+						const ProbeInfluence*	pInfluence = m_pVerticesProbeInfluence[pWeldedCell->V];
+						if ( pInfluence != NULL && pInfluence->Influence > NewWeldedVertex.Influence.Influence ) {
+							NewWeldedVertex.Influence = *pInfluence;
+						}
+
+						WeldedState[pWeldedCell->V] = true;	// Now welded!
+					}
+				}
+			}
+		}
+	}
+
+Build welded vertices adjacency!
+
 }
 
-bool	SHProbeNetwork::MeshWithAdjacency::Primitive::PropagateProbeInfluences( U32 _PassIndex ) {
-	bool	stillSpreading = false;
-	Face*	pFace = m_pFaces;
-	for ( int FaceIndex=0; FaceIndex < m_FacesCount; FaceIndex++, pFace++ ) {
-//		stillSpreading |= pFace->RecursePropagateProbeInfluences( _PassIndex );
+bool	SHProbeNetwork::MeshWithAdjacency::Primitive::PropagateProbeInfluences( SHProbeNetwork& _Owner, U32 _PassIndex ) {
+	bool			stillSpreading = false;
+	WeldedVertex*	pVertex = &m_WeldedVertices[0];
+	int				VerticesCount = m_WeldedVertices.GetCount();
+	for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++, pVertex++ ) {
+		stillSpreading |= pVertex->RecursePropagateProbeInfluences( _PassIndex );
 	}
 
 	return stillSpreading;
 }
 
-void	SHProbeNetwork::MeshWithAdjacency::Primitive::AssignNearestProbe( U32 _ProbesCount, const float3* _LocalProbePositions ) {
+void	SHProbeNetwork::MeshWithAdjacency::Primitive::AssignNearestProbe( SHProbeNetwork& _Owner ) {
 // 	Face*	pFace = m_pFaces;
 // 	for ( int FaceIndex=0; FaceIndex < m_FacesCount; FaceIndex++, pFace++ ) {
 // 		if ( pFace->pProbeInfluence->ProbeID != ~0UL )
@@ -974,17 +1008,20 @@ void	SHProbeNetwork::BuildProbeInfluenceVertexStream( Scene& _Scene, const char*
 
 	class MeshVisitor : public Scene::IVisitor {
 	public:
+		SHProbeNetwork&				m_Owner;
 		List< MeshWithAdjacency >*	m_Meshes;
 		ProbeInfluence*				m_ProbeInfluencePerFace;
 		U32							m_TotalFacesCount;
 		U32							m_TotalVerticesCount;
+
+		MeshVisitor( SHProbeNetwork& _Owner ) : m_Owner( _Owner ) {}
 		virtual void	HandleNode( Scene::Node& _Node ) override {
 			if ( _Node.m_Type != Scene::Node::MESH )
 				return;
 			
 			Scene::Mesh&		SourceMesh = (Scene::Mesh&) _Node;
 			MeshWithAdjacency&	TargetMesh = m_Meshes->Append();
-			TargetMesh.Build( SourceMesh, m_ProbeInfluencePerFace + m_TotalFacesCount );
+			TargetMesh.Build( m_Owner, SourceMesh, m_ProbeInfluencePerFace + m_TotalFacesCount );
 
 			// Accumulate vertices/faces count
 			for ( int PrimitiveIndex=0; PrimitiveIndex < SourceMesh.m_PrimitivesCount; PrimitiveIndex++ ) {
@@ -993,7 +1030,7 @@ void	SHProbeNetwork::BuildProbeInfluenceVertexStream( Scene& _Scene, const char*
 				m_TotalVerticesCount += P.m_VerticesCount;
 			}
 		}
-	} visitor;
+	} visitor( *this );
 	visitor.m_TotalFacesCount = 0;
 	visitor.m_TotalVerticesCount = 0;
 	visitor.m_Meshes = &Meshes;
@@ -1009,7 +1046,7 @@ void	SHProbeNetwork::BuildProbeInfluenceVertexStream( Scene& _Scene, const char*
 		stilSpreading = false;
 		for ( int MeshIndex=0; MeshIndex < Meshes.GetCount(); MeshIndex++ ) {
 			MeshWithAdjacency&	M = Meshes[MeshIndex];
-			stilSpreading |= M.PropagateProbeInfluences( ++PassIndex );
+			stilSpreading |= M.PropagateProbeInfluences( *this, ++PassIndex );
 		}
 	}
 
