@@ -134,47 +134,6 @@ private:	// BUILD TIME STRUCTURES
 	public:
 		class	Primitive {
 		private:
-			struct	Face {
-				U32				V[3];				// Vertex indices
-// 				float3			P;					// Center position
-// 				float3			N;					// Face normal
-
-// We don't need the adjacency info anymore
-// 				Face*			pAdjacent[3];		// Adjacent faces for each edge (an edge starts from a vertex and ends at vertex + 1)
-// 				ProbeInfluence*	pProbeInfluence;	// The probe influence for this face
-// 				U32				LastVisitIndex;		// Index of the last visit pass
-// 
-// 				void	SetAdjacency( int _V0, int _V1, Face* _AdjacentFace ) {
-// 					for ( int EdgeIndex=0; EdgeIndex < 3; EdgeIndex++ ) {
-// 						if ( V[EdgeIndex] == _V0 && V[(EdgeIndex+1)%3] == _V1 ) {
-// 							pAdjacent[EdgeIndex] = _AdjacentFace;
-// 							return;
-// 						}
-// 					}
-// 					ASSERT( false, "Failed to retrieve adjacent edge!" );
-// 				}
-// 				bool	RecursePropagateProbeInfluences( U32 _PassIndex );
-			};
-
-// 			struct EdgeKey {
-// 				int	V0, V1;
-// 				static U32		GetHash( const EdgeKey& _key )							{
-// 					return _key.V0 ^ _key.V1;
-// 				}
-// 				static int		Compare( const EdgeKey& _key0, const EdgeKey& _key1 )	{
-// 					int	k00 = _key0.V0 < _key0.V1 ? _key0.V0 : _key0.V1;
-// 					int	k01 = _key0.V0 < _key0.V1 ? _key0.V1 : _key0.V0;
-// 					int	k10 = _key1.V0 < _key1.V1 ? _key1.V0 : _key1.V1;
-// 					int	k11 = _key1.V0 < _key1.V1 ? _key1.V1 : _key1.V0;
-// 					if ( k00 == k10 && k01 == k11 ) return 0;
-// 					return 1;	// We don't care about ordering at the moment...
-// 				}
-// 			};
-// 			struct FacePair {
-// 				Face*	F0;
-// 				Face*	F1;
-// 			};
-
 			// Original vertex structure
 			struct Vertex {
 				float3			wsPosition;				// World position (needed to interrogate probes's Voronoï cells that are in world space)
@@ -184,39 +143,35 @@ private:	// BUILD TIME STRUCTURES
 				Vertex() : WeldedVertexIndex( ~0U ), pInfluence( NULL ) {}
 			};
 
-			// Vertex welding structures
+			// Linked-list vertex structure
 			struct VertexLink {
 				VertexLink*		pNext;
 				U32				V;						// Original vertex index
 			};
 			static VertexLink*		ms_ppCells[64*64*64];
 
+			// Welded vertex structure
 			struct WeldedVertex {
-				float3			lsPosition;				// Local position
-				float3			wsPosition;				// World position
-				float3			Normal;					// Normal
-				ProbeInfluence	Influence;				// Probe influence for this vertex
-				U32				SharingVerticesCount;	// Amount of vertices welded together
-				VertexLink*		pSharingVertices;		// List of original vertices sharing this welded vertex
+				float3				lsPosition;				// Local position
+				float3				wsPosition;				// World position
+				float3				lsNormal;				// Local normal
+				ProbeInfluence		Influence;				// Probe influence for this vertex
+				U32					SharingVerticesCount;	// Amount of vertices welded together
+				VertexLink*			pSharingVertices;		// List of original vertices sharing this welded vertex
+				List<WeldedVertex*>	AdjacentVertices;		// List of welded vertices adjacent to this vertex
 
- 				U32				LastVisitIndex;			// Index of the last visit pass
-				List<WeldedVertex*>	AdjacentVertices;	// List of welded vertices adjacent to this vertex
-
-				WeldedVertex() : LastVisitIndex( ~0U ) {}
-
- 				bool	RecursePropagateProbeInfluences( SHProbeNetwork& _Owner, U32 _PassIndex );
+				// Main code that propagates probe influences between adjacent vertices
+ 				bool	PropagateProbeInfluencesBetweenVertices( SHProbeNetwork& _Owner );
 			};
 
 		public:
 			List< Vertex >			m_Vertices;
-			List< Face >			m_Faces;
-
 			List< VertexLink >		m_VertexCells;
 			List< WeldedVertex >	m_WeldedVertices;		
 
 			void	Build( SHProbeNetwork& _Owner, const float4x4& _Local2World, const Scene::Mesh::Primitive& _SourcePrimitive, ProbeInfluence* _pProbeInfluencePerFace );
-			bool	PropagateProbeInfluences( SHProbeNetwork& _Owner, U32 _PassIndex );
-			void	AssignNearestProbe( SHProbeNetwork& _Owner );
+			U32		PropagateProbeInfluences( SHProbeNetwork& _Owner );
+			U32		AssignNearestProbe( SHProbeNetwork& _Owner );
 			void	RedistributeProbeIDs2Vertices( ProbeInfluence const** _ppProbeInfluences ) const;
 		};
 
@@ -229,8 +184,8 @@ private:	// BUILD TIME STRUCTURES
 		~MeshWithAdjacency() { SAFE_DELETE_ARRAY( m_pPrimitives ); }
 
 		void	Build( SHProbeNetwork& _Owner, const Scene::Mesh& _Mesh, ProbeInfluence* _pProbeInfluencePerFace );
-		bool	PropagateProbeInfluences( SHProbeNetwork& _Owner, U32 _PassIndex );
-		void	AssignNearestProbe( SHProbeNetwork& _Owner );
+		U32		PropagateProbeInfluences( SHProbeNetwork& _Owner );
+		U32		AssignNearestProbe( SHProbeNetwork& _Owner );
 		void	RedistributeProbeIDs2Vertices( ProbeInfluence const**& _ppProbeInfluences ) const;
 	};
 

@@ -61,8 +61,8 @@ private:	// NESTED TYPES
 		int			CubeFaceX;
 		int			CubeFaceY;
 
-		float3		Position;				// World position
-		float3		Normal;					// World normal
+		float3		lsPosition;				// Local position
+		float3		lsNormal;				// Local normal
 		float3		Albedo;					// Material albedo
 		float3		AlbedoHSL;				// Material albedo in HSL format
 		float3		F0;						// Material Fresnel coefficient
@@ -91,8 +91,8 @@ private:	// NESTED TYPES
 
 		Pixel()
 			: pNext( NULL )
-			, Position( float3::Zero )
-			, Normal( float3::Zero )
+			, lsPosition( float3::Zero )
+			, lsNormal( float3::Zero )
 			, Albedo( float3::Zero )
 			, AlbedoHSL( float3::Zero )
 			, FaceIndex( ~0UL )

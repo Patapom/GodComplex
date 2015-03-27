@@ -7,6 +7,8 @@
 #pragma once
 
 // The static probe structure that we read from disk and stream/keep in memory when probes need updating
+// NOTE: Unless specified by a "ls" suffix, all points & vectors in this structure are in WORLD SPACE!
+//
 class	SHProbe {
 public:		// CONSTANTS
 	static const U32		SAMPLES_COUNT = 128;			// Subdivide the sphere into 128 samples
@@ -16,7 +18,7 @@ public:		// FIELDS
 
 	U32				m_ProbeID;					// The ID is simply the probe's index in the array of probes
 	Scene::Probe*	m_pSceneProbe;
-	float3			m_Position;					// Cached position (read from scene probe's local2world transform, but we do that often)
+	float3			m_wsPosition;				// Cached world-space position (read from scene probe's local2world transform, but we do that often)
 
 	// Static SH infos
 	float			m_pSHOcclusion[9];			// The pre-computed SH that gives back how much of the environment is perceived in a given direction
@@ -27,8 +29,8 @@ public:		// FIELDS
 	float			m_MeanHarmonicDistance;		// Mean harmonic distance (1/sum(1/distance)) of all scene pixels
 	float			m_MinDistance;				// Distance to closest scene pixel
 	float			m_MaxDistance;				// Distance to farthest scene pixel
-	float3			m_BBoxMin;					// Dimensions of the bounding box (axis-aligned) of the scene pixels
-	float3			m_BBoxMax;
+	float3			m_lsBBoxMin;				// Dimensions of the local axis-aligned bounding box of the scene pixels
+	float3			m_lsBBoxMax;
 
 	// Generic reflective surfaces infos
 	struct Sample {
@@ -75,8 +77,8 @@ public:		// FIELDS
 	// Voronoï probes infos
 	struct VoronoiProbeInfo {
 		U32				ProbeID;				// ID of the neighbor probe defining a Voronoï cell surface
-		float3			Position;				// Position of the Voronoï plane
-		float3			Normal;					// Normal to the Voronoï plane (pointing INWARD the cell, toward this probe)
+		float3			PlanePosition;			// Position of the Voronoï plane
+		float3			PlaneNormal;			// Normal to the Voronoï plane (pointing INWARD the cell, toward this probe)
 
 		VoronoiProbeInfo()
 			: ProbeID( -1 )

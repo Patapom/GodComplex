@@ -146,8 +146,8 @@ float3	SHProbe::ms_SampleDirections[SHProbe::SAMPLES_COUNT] = {
 bool	SHProbe::IsInsideVoronoiCell( const float3& _wsPosition ) const {
 	const VoronoiProbeInfo*	pPlane = &m_VoronoiProbes[0];
 	for ( int PlaneIndex=0; PlaneIndex < m_VoronoiProbes.GetCount(); PlaneIndex++, pPlane++ ) {
-		float3	D = _wsPosition - pPlane->Position;
-		if ( D.Dot( pPlane->Normal ) < 0.0f )
+		float3	D = _wsPosition - pPlane->PlanePosition;
+		if ( D.Dot( pPlane->PlaneNormal ) < 0.0f )
 			return false;	// Outside!
 	}
 	return true;
@@ -175,8 +175,8 @@ void	SHProbe::Save( FILE* _pFile ) const {
 	Write( (float) m_MaxDistance );
 
 	// Write the BBox
-	Write( m_BBoxMin );
-	Write( m_BBoxMax );
+	Write( m_lsBBoxMin );
+	Write( m_lsBBoxMax );
 
 	// Write static SH
 	for ( int i=0; i < 9; i++ )
@@ -204,12 +204,6 @@ void	SHProbe::Save( FILE* _pFile ) const {
 
 		// Write the pixel coverage of the sample
 		Write( S.SHFactor );
-
-// No need: regenerated at runtime through fixed array of sample directions
-// 		// Write SH coefficients
-// 		for ( int i=0; i < 9; i++ ) {
-// 			Write( S.SH[i] );
-// 		}
 	}
 
 	// Write the emissive surfaces
@@ -253,8 +247,8 @@ void	SHProbe::Save( FILE* _pFile ) const {
 
 		// Write probe ID, distance, solid angle, direction
 		Write( VP.ProbeID );
-		Write( VP.Position );
-		Write( VP.Normal );
+		Write( VP.PlanePosition );
+		Write( VP.PlaneNormal );
 	}
 }
 
@@ -268,8 +262,8 @@ void	SHProbe::Load( FILE* _pFile ) {
 	Read( m_MinDistance );
 	Read( m_MaxDistance );
 
-	Read( m_BBoxMin );
-	Read( m_BBoxMax );
+	Read( m_lsBBoxMin );
+	Read( m_lsBBoxMax );
 
 	// Read static SH
 	for ( int i=0; i < 9; i++ )
@@ -297,18 +291,13 @@ void	SHProbe::Load( FILE* _pFile ) {
 		Read( S.F0 );
 
 		Read( S.SHFactor );
-			
-// No need: can be regenerated at runtime from normal direction
-// 			// Read SH coefficients
-// 			for ( int i=0; i < 9; i++ ) {
-// 				fread_s( &S.pSHBounce[i], sizeof(S.pSHBounce[i]), sizeof(float), 1, _pFile );
-// 			}
 
-		// Transform sample's position/normal by probe's LOCAL=>WORLD
-		S.Position = m_Position + S.Position;
-// 			NjFloat3	wsSetNormal = Set.Normal;
-// 			NjFloat3	wsSetTangent = Set.Tangent;
-// 			NjFloat3	wsSetBiTangent = Set.BiTangent;
+		// Offset sample's local position by probe's world position
+		S.Position = m_wsPosition + S.Position;
+
+// 		float3	wsSetNormal = Set.Normal;
+// 		float3	wsSetTangent = Set.Tangent;
+// 		float3	wsSetBiTangent = Set.BiTangent;
 // TODO: Handle non-identity matrices! Let's go fast for now...
 // ARGH! That also means possibly rotating the SH!
 // Let's just force the probes to be axis-aligned, shall we??? :) (lazy man talking) (no, seriously, it makes sense after all)
@@ -316,7 +305,7 @@ void	SHProbe::Load( FILE* _pFile ) {
 
 	// Read the amount of emissive surfaces
 	U32	EmissiveSurfacesCount;
-	fread_s( &EmissiveSurfacesCount, sizeof(EmissiveSurfacesCount), sizeof(U32), 1, _pFile );
+	Read( EmissiveSurfacesCount );
 	EmissiveSurfacesCount = MIN( SHProbe::MAX_EMISSIVE_SURFACES, EmissiveSurfacesCount );	// Don't read more than we can chew!
 
 	// Read the surfaces
@@ -340,27 +329,27 @@ void	SHProbe::Load( FILE* _pFile ) {
 	U32	NeighborProbesCount;
 	Read( NeighborProbesCount );
 	m_NeighborProbes.Init( NeighborProbesCount );
-	m_NeighborProbes.SetCount( NeighborProbesCount );
 
 	for ( U32 NeighborProbeIndex=0; NeighborProbeIndex < NeighborProbesCount; NeighborProbeIndex++ ) {
-		Read( m_NeighborProbes[NeighborProbeIndex].ProbeID );
-		Read( m_NeighborProbes[NeighborProbeIndex].DirectlyVisible );
-		Read( m_NeighborProbes[NeighborProbeIndex].Distance );
-		Read( m_NeighborProbes[NeighborProbeIndex].SolidAngle );
-		Read( m_NeighborProbes[NeighborProbeIndex].Direction );
+		NeighborProbeInfo&	NP = m_NeighborProbes.Append();
+		Read( NP.ProbeID );
+		Read( NP.DirectlyVisible );
+		Read( NP.Distance );
+		Read( NP.SolidAngle );
+		Read( NP.Direction );
 		for ( int i=0; i < 9; i++ )
-			Read( m_NeighborProbes[NeighborProbeIndex].SH[i] );
+			Read( NP.SH[i] );
 	}
 
 	// Read the amount of Voronoï probes
 	U32	VoronoiProbesCount;
 	Read( VoronoiProbesCount );
 	m_VoronoiProbes.Init( VoronoiProbesCount );
-	m_VoronoiProbes.SetCount( VoronoiProbesCount );
 
 	for ( U32 VoronoiProbeIndex=0; VoronoiProbeIndex < VoronoiProbesCount; VoronoiProbeIndex++ ) {
-		Read( m_VoronoiProbes[VoronoiProbeIndex].ProbeID );
-		Read( m_VoronoiProbes[VoronoiProbeIndex].Position );
-		Read( m_VoronoiProbes[VoronoiProbeIndex].Normal );
+		VoronoiProbeInfo&	VP = m_VoronoiProbes.Append();
+		Read( VP.ProbeID );
+		Read( VP.PlanePosition );
+		Read( VP.PlaneNormal );
 	}
 }

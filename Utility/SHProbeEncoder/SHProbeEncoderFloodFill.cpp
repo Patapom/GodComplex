@@ -270,21 +270,10 @@ void	SHProbeEncoder::Save( const char* _FileName ) const {
 		Surface&	S = *m_ppSurfaces[i];
 
 		// Write position, normal, albedo
-		Write( S.Position.x );
-		Write( S.Position.y );
-		Write( S.Position.z );
-
-		Write( S.Normal.x );
-		Write( S.Normal.y );
-		Write( S.Normal.z );
-
-		Write( S.Tangent.x );
-		Write( S.Tangent.y );
-		Write( S.Tangent.z );
-
-		Write( S.BiTangent.x );
-		Write( S.BiTangent.y );
-		Write( S.BiTangent.z );
+		Write( S.lsPosition );
+		Write( S.lsNormal );
+		Write( S.Tangent );
+		Write( S.BiTangent );
 
 			// Not used, just for information purpose
 		Write( (float) (S.Albedo.x * INVPI) );
@@ -332,13 +321,13 @@ void	SHProbeEncoder::Save( const char* _FileName ) const {
 		Surface&	P = *m_ppEmissiveSurfaces[i];
 
 		// Write position, normal, albedo
-		Write( P.Position.x );
-		Write( P.Position.y );
-		Write( P.Position.z );
+		Write( P.lsPosition.x );
+		Write( P.lsPosition.y );
+		Write( P.lsPosition.z );
 
-		Write( P.Normal.x );
-		Write( P.Normal.y );
-		Write( P.Normal.z );
+		Write( P.lsNormal.x );
+		Write( P.lsNormal.y );
+		Write( P.lsNormal.z );
 
 		Write( P.Tangent.x );
 		Write( P.Tangent.y );
@@ -406,12 +395,12 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 
 		Write( P->pParentSurface != NULL ? P->pParentSurface->ID : ~0UL );
 
-		Write( P->Position.x );
-		Write( P->Position.y );
-		Write( P->Position.z );
-		Write( P->Normal.x );
-		Write( P->Normal.y );
-		Write( P->Normal.z );
+		Write( P->lsPosition.x );
+		Write( P->lsPosition.y );
+		Write( P->lsPosition.z );
+		Write( P->lsNormal.x );
+		Write( P->lsNormal.y );
+		Write( P->lsNormal.z );
 
 		Write( P->Albedo.x );
 		Write( P->Albedo.y );
@@ -446,13 +435,13 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 	for ( U32 SurfaceIndex=0; SurfaceIndex < m_SurfacesCount; SurfaceIndex++ ) {
 		const Surface*	S = m_ppSurfaces[SurfaceIndex];
 
-		Write( S->Position.x );
-		Write( S->Position.y );
-		Write( S->Position.z );
+		Write( S->lsPosition.x );
+		Write( S->lsPosition.y );
+		Write( S->lsPosition.z );
 
-		Write( S->Normal.x );
-		Write( S->Normal.y );
-		Write( S->Normal.z );
+		Write( S->lsNormal.x );
+		Write( S->lsNormal.y );
+		Write( S->lsNormal.z );
 
 		Write( S->Tangent.x );
 		Write( S->Tangent.y );
@@ -497,13 +486,13 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 		Surface&	S = *m_ppEmissiveSurfaces[i];
 
 		// Write position, normal, albedo
-		Write( S.Position.x );
-		Write( S.Position.y );
-		Write( S.Position.z );
+		Write( S.lsPosition.x );
+		Write( S.lsPosition.y );
+		Write( S.lsPosition.z );
 
-		Write( S.Normal.x );
-		Write( S.Normal.y );
-		Write( S.Normal.z );
+		Write( S.lsNormal.x );
+		Write( S.lsNormal.y );
+		Write( S.lsNormal.z );
 
 		Write( S.Tangent.x );
 		Write( S.Tangent.y );
@@ -572,8 +561,8 @@ DEBUG_PixelIndex = PixelIndex;
 		// Create a new surface from this pixel
 		Surface&	S = m_AllSurfaces.Append();
 
-		S.Position = P0.Position;
-		S.Normal = P0.Normal;
+		S.lsPosition = P0.lsPosition;
+		S.lsNormal = P0.lsNormal;
 		S.View = P0.View;
 		S.Distance = P0.Distance;
 		S.SmoothedDistance  = P0.SmoothedDistance;
@@ -727,7 +716,7 @@ DEBUG_PixelIndex = PixelIndex;
 			if ( pPixel->Distance < pBestPixel->Distance )
 				pBestPixel = pPixel;
 
-			AverageNormal = AverageNormal + pPixel->Normal;
+			AverageNormal = AverageNormal + pPixel->lsNormal;
 			AverageAlbedo = AverageAlbedo + pPixel->Albedo;
 
 			// Update min/max/avg
@@ -742,8 +731,8 @@ DEBUG_PixelIndex = PixelIndex;
 		AverageNormal = AverageNormal / float(S.PixelsCount);
 		AverageAlbedo = AverageAlbedo / float(S.PixelsCount);
 
-		S.Position = pBestPixel->Position;	// Our new winner!
-		S.Normal = AverageNormal;
+		S.lsPosition = pBestPixel->lsPosition;	// Our new winner!
+		S.lsNormal = AverageNormal;
 		S.SetAlbedo( AverageAlbedo );
 
 		// Count pixels in the surface for statistics
@@ -774,7 +763,7 @@ DEBUG_PixelIndex = PixelIndex;
 			pPixel = pPixel->pNext;
 		}
 
-		S.Position = pBestPixel->Position;	// Our new winner!
+		S.lsPosition = pBestPixel->lsPosition;	// Our new winner!
 
 		// Finally, encode SH & find principal axes & samples
 		S.EncodeEmissiveSH();
@@ -930,7 +919,7 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Surface, Pixel& _PreviousPix
 		Accepted = _PreviousPixel.EmissiveMatID == _P.EmissiveMatID;
 	} else {
 		// First, let's check the angular discrepancy
-		float	Dot = _PreviousPixel.Normal | _P.Normal;
+		float	Dot = _PreviousPixel.lsNormal | _P.lsNormal;
 		if ( Dot > ANGULAR_THRESHOLD ) {
 			// Next, let's check the distance discrepancy
 #if 1
@@ -940,7 +929,7 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Surface& _Surface, Pixel& _PreviousPix
 			if ( DistanceDiff < DISTANCE_THRESHOLD*DISTANCE_THRESHOLD ) {
 #else
 			float	DistanceDiff = fabsf( _PreviousPixel.SmoothedDistance - _P.SmoothedDistance );
-			float	ToleranceFactor = -(_P.Normal | _P.View);	// Weight by the surface's slope to be more tolerant for slant surfaces
+			float	ToleranceFactor = -(_P.lsNormal | _P.View);	// Weight by the surface's slope to be more tolerant for slant surfaces
 					DistanceDiff *= ToleranceFactor;
 			if ( DistanceDiff < DISTANCE_THRESHOLD ) {
 #endif
@@ -1319,9 +1308,9 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 
 				float3	wsPosition( Distance * P->View.x, Distance * P->View.y, Distance * P->View.z );
 
-				P->Position = wsPosition;
-				P->Normal.Set( Nx, Ny, Nz );
-				P->Normal.Normalize();
+				P->lsPosition = wsPosition;
+				P->lsNormal.Set( Nx, Ny, Nz );
+				P->lsNormal.Normalize();
 
 				// ==== Read back neighbor probes ID ====
 				P->NeighborProbeID = ((U32&) pFaceData3->x);
@@ -1329,7 +1318,7 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap ) {
 
 
 				// ==== Finalize pixel information ====
-				P->Importance = -P->View.Dot( P->Normal ) / (Distance * Distance);
+				P->Importance = -P->View.Dot( P->lsNormal ) / (Distance * Distance);
 				if ( P->Importance < 0.0 ) {
 // P->Normal = -P->Normal;
 // P->Importance = -P->View.Dot( P->Normal ) / (Distance * Distance);

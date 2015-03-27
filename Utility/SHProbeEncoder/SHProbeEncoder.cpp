@@ -285,7 +285,7 @@ void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, SHProbe&
 
 		// Check if it's a pixel we can use for direct visibility evaluation
 		if ( !(*NP)->pInfo->DirectlyVisible ) {
-			float3	LineOfSightDirection = (m_pOwner->m_pProbes[P.NeighborProbeID].m_Position - _Probe.m_Position).Normalize();
+			float3	LineOfSightDirection = (m_pOwner->m_pProbes[P.NeighborProbeID].m_wsPosition - _Probe.m_wsPosition).Normalize();
 			float	DotLineOfSight = P.View.Dot( LineOfSightDirection );
 			if ( DotLineOfSight > COS_ANGLE_UNIT_PIXEL ) {
 				(*NP)->pInfo->DirectlyVisible = true;
@@ -353,7 +353,7 @@ void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, SHProbe&
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Build the neighbor probes network
 	//
-	const float3&	P0 = _Probe.m_Position;
+	const float3&	P0 = _Probe.m_wsPosition;
 
 	Dictionary<SHProbe::VoronoiProbeInfo*>	VoronoiProbeID2Probe;
 	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
@@ -370,7 +370,7 @@ void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, SHProbe&
 		ASSERT( P.VoronoiProbeID < ProbesCount, "Probe index out of range!" );
 
 		// Compute the center and normal of the plane
-		const float3&	P1 = m_pOwner->m_pProbes[P.VoronoiProbeID].m_Position;
+		const float3&	P1 = m_pOwner->m_pProbes[P.VoronoiProbeID].m_wsPosition;
 		float3			N = P0 - P1;
 		float			Distance = N.Length();
 		if ( Distance < 1e-3f ) {
@@ -381,8 +381,8 @@ void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, SHProbe&
 
 		SHProbe::VoronoiProbeInfo&	Temp = _Probe.m_VoronoiProbes.Append();
 		Temp.ProbeID = P.VoronoiProbeID;
-		Temp.Position = P1 + 0.5f * Distance * N;
-		Temp.Normal = N;
+		Temp.PlanePosition = P1 + 0.5f * Distance * N;
+		Temp.PlaneNormal = N;
 
 		VP = &VoronoiProbeID2Probe.Add( P.VoronoiProbeID, &Temp );
 	}
@@ -399,8 +399,8 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, SHProbe& _P
 	_Probe.m_MeanHarmonicDistance = float( m_MeanHarmonicDistance );
 	_Probe.m_MinDistance = float( m_MinDistance );
 	_Probe.m_MaxDistance = float( m_MaxDistance );
-	_Probe.m_BBoxMin = m_BBoxMin;
-	_Probe.m_BBoxMax = m_BBoxMax;
+	_Probe.m_lsBBoxMin = m_BBoxMin;
+	_Probe.m_lsBBoxMax = m_BBoxMax;
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -462,8 +462,8 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 		Write( P->pParentSample->Index );
 		Write( P->bUsedForSampling );
 
-		Write( P->Position );
-		Write( P->Normal );
+		Write( P->lsPosition );
+		Write( P->lsNormal );
 
 		Write( P->Albedo );
 		Write( P->F0 );
@@ -489,8 +489,8 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 	for ( U32 SampleIndex=0; SampleIndex < SHProbe::SAMPLES_COUNT; SampleIndex++ ) {
 		const Sample&	S = m_pSamples[SampleIndex];
 
-		Write( S.Position );
-		Write( S.Normal );
+		Write( S.lsPosition );
+		Write( S.lsNormal );
 
 		Write( S.Albedo );
 		Write( S.F0 );
@@ -615,15 +615,15 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 
 		// ================================================================================
 		// Build the resulting sample: position, normal, albedo and average direction for the group
-		S.Position = float3::Zero;
-		S.Normal = float3::Zero;
+		S.lsPosition = float3::Zero;
+		S.lsNormal = float3::Zero;
 		S.AverageDirection = float3::Zero;
 		S.Albedo = float3::Zero;
 
 		pPixel = pBestGroup->pPixels;
 		while ( pPixel != NULL ) {
-			S.Position = S.Position + pPixel->Position;
-			S.Normal = S.Normal + pPixel->Normal;
+			S.lsPosition = S.lsPosition + pPixel->lsPosition;
+			S.lsNormal = S.lsNormal + pPixel->lsNormal;
 			S.AverageDirection = S.AverageDirection + pPixel->View;
 			S.Albedo = S.Albedo + pPixel->Albedo;
 			pPixel->bUsedForSampling = true;	// Mark the pixel as used for sampling
@@ -633,20 +633,20 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 		SHProbe::Sample&	TargetSample = _Probe.m_pSamples[SampleIndex];
 
 		float	Normalizer = 1.0f / pBestGroup->PixelsCount;
-		S.Position = S.Position * Normalizer;
+		S.lsPosition = S.lsPosition * Normalizer;
 		S.Albedo = S.Albedo * Normalizer;
-		TargetSample.Position = S.Position;
-		TargetSample.Normal = S.Normal.Normalize();
+		TargetSample.Position = S.lsPosition;
+		TargetSample.Normal = S.lsNormal.Normalize();
 		TargetSample.AverageDirection = S.AverageDirection.Normalize();
 		TargetSample.Albedo = S.Albedo;
 		TargetSample.SHFactor = float( S.PixelsCount ) / S.OriginalPixelsCount;
 
 		// Build the radius
-		// This is an important data as a value of 0 will discard the sample at runtime
+		// This is an important data as a value of 0 would discard the sample at runtime
 		float	AverageSqDistance = 0.0f;
 		pPixel = pBestGroup->pPixels;
 		while ( pPixel != NULL ) {
-			float3	D = pPixel->Position - S.Position;
+			float3	D = pPixel->lsPosition - S.lsPosition;
 			AverageSqDistance += D.LengthSq();
 			pPixel = pPixel->pNextInList;
 		}
@@ -799,7 +799,7 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Sample& _Sample, Pixel& _PreviousPixel
 	bool	Accepted = false;
 
 	// First, let's check the angular discrepancy
-	float	Dot = _PreviousPixel.Normal | _P.Normal;
+	float	Dot = _PreviousPixel.lsNormal | _P.lsNormal;
 	if ( Dot > ANGULAR_THRESHOLD ) {
 		// Next, let's check the distance discrepancy
 		float3	P0 = _PreviousPixel.SmoothedDistance * _PreviousPixel.View;
@@ -1152,15 +1152,15 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap, U32 _Scen
 				float	Nz = pFaceData1->z;
 				float	Distance = pFaceData1->w;
 
-				float3	wsPosition( Distance * P->View.x, Distance * P->View.y, Distance * P->View.z );
+				float3	lsPosition( Distance * P->View.x, Distance * P->View.y, Distance * P->View.z );
 
-				P->Position = wsPosition;
-				P->Normal.Set( Nx, Ny, Nz );
-				P->Normal.Normalize();
+				P->lsPosition = lsPosition;
+				P->lsNormal.Set( Nx, Ny, Nz );
+				P->lsNormal.Normalize();
 
 
 				// ==== Finalize pixel information ====
-				P->Importance = -P->View.Dot( P->Normal ) / (Distance * Distance);
+				P->Importance = -P->View.Dot( P->lsNormal ) / (Distance * Distance);
 				if ( P->Importance < 0.0 ) {
 // P->Normal = -P->Normal;
 // P->Importance = -P->View.Dot( P->Normal ) / (Distance * Distance);
@@ -1187,8 +1187,8 @@ NegativeImportancePixelsCount++;
 				m_MeanHarmonicDistance += 1.0 / Distance;
 				m_MinDistance = min( m_MinDistance, Distance );
 				m_MaxDistance = max( m_MaxDistance, Distance );
-				m_BBoxMax = m_BBoxMax.Max( wsPosition );
-				m_BBoxMin = m_BBoxMin.Min( wsPosition );
+				m_BBoxMax = m_BBoxMax.Max( lsPosition );
+				m_BBoxMin = m_BBoxMin.Min( lsPosition );
 			}
 
 //		_StagingCubeMap.UnMap( 0, 6*3+CubeFaceIndex );
