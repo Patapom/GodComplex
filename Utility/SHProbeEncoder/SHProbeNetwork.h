@@ -136,9 +136,8 @@ private:	// BUILD TIME STRUCTURES
 		private:
 			struct	Face {
 				U32				V[3];				// Vertex indices
-				U32				WV[3];				// Welded vertex indices
-				float3			P;					// Center position
-				float3			N;					// Face normal
+// 				float3			P;					// Center position
+// 				float3			N;					// Face normal
 
 // We don't need the adjacency info anymore
 // 				Face*			pAdjacent[3];		// Adjacent faces for each edge (an edge starts from a vertex and ends at vertex + 1)
@@ -176,42 +175,52 @@ private:	// BUILD TIME STRUCTURES
 // 				Face*	F1;
 // 			};
 
-			// Vertex welding structures
-			struct VertexCell {
-				VertexCell*		pNext;
-				U32				V;
+			// Original vertex structure
+			struct Vertex {
+				float3			wsPosition;				// World position (needed to interrogate probes's Voronoï cells that are in world space)
+				U32				WeldedVertexIndex;		// Index of the welded vertex this vertex is collapsed into
+				ProbeInfluence*	pInfluence;				// Probe influence associated to this vertex, if any
+
+				Vertex() : WeldedVertexIndex( ~0U ), pInfluence( NULL ) {}
 			};
-			static VertexCell*		ms_ppCells[64*64*64];
+
+			// Vertex welding structures
+			struct VertexLink {
+				VertexLink*		pNext;
+				U32				V;						// Original vertex index
+			};
+			static VertexLink*		ms_ppCells[64*64*64];
 
 			struct WeldedVertex {
-				float3			P;						// Position
-				float3			N;						// Normal
+				float3			lsPosition;				// Local position
+				float3			wsPosition;				// World position
+				float3			Normal;					// Normal
 				ProbeInfluence	Influence;				// Probe influence for this vertex
 				U32				SharingVerticesCount;	// Amount of vertices welded together
-				VertexCell*		pSharingVertices;		// List of vertices sharing this welded vertex
+				VertexLink*		pSharingVertices;		// List of original vertices sharing this welded vertex
 
-				List<WeldedVertex*>	AdjacentVertices;
+ 				U32				LastVisitIndex;			// Index of the last visit pass
+				List<WeldedVertex*>	AdjacentVertices;	// List of welded vertices adjacent to this vertex
+
+				WeldedVertex() : LastVisitIndex( ~0U ) {}
 
  				bool	RecursePropagateProbeInfluences( SHProbeNetwork& _Owner, U32 _PassIndex );
 			};
 
 		public:
-			int						m_FacesCount;
-			Face*					m_pFaces;
+			List< Vertex >			m_Vertices;
+			List< Face >			m_Faces;
 
-			List< VertexCell >		m_VertexCells;
+			List< VertexLink >		m_VertexCells;
 			List< WeldedVertex >	m_WeldedVertices;		
 
-			int						m_VerticesCount;
-			ProbeInfluence**		m_pVerticesProbeInfluence;
-
-			~Primitive() { SAFE_DELETE_ARRAY( m_pFaces ); SAFE_DELETE_ARRAY( m_pVerticesProbeInfluence ); }
-			void	Build( SHProbeNetwork& _Owner, const Scene::Mesh::Primitive& _SourcePrimitive, ProbeInfluence* _pProbeInfluencePerFace );
+			void	Build( SHProbeNetwork& _Owner, const float4x4& _Local2World, const Scene::Mesh::Primitive& _SourcePrimitive, ProbeInfluence* _pProbeInfluencePerFace );
 			bool	PropagateProbeInfluences( SHProbeNetwork& _Owner, U32 _PassIndex );
 			void	AssignNearestProbe( SHProbeNetwork& _Owner );
-			void	RedistributeProbeIDs2Vertices( ProbeInfluence** _ppProbeInfluences ) const;
+			void	RedistributeProbeIDs2Vertices( ProbeInfluence const** _ppProbeInfluences ) const;
 		};
 
+		float4x4		m_Local2World;
 		float4x4		m_World2Local;
 
 		int				m_PrimitivesCount;
@@ -222,7 +231,7 @@ private:	// BUILD TIME STRUCTURES
 		void	Build( SHProbeNetwork& _Owner, const Scene::Mesh& _Mesh, ProbeInfluence* _pProbeInfluencePerFace );
 		bool	PropagateProbeInfluences( SHProbeNetwork& _Owner, U32 _PassIndex );
 		void	AssignNearestProbe( SHProbeNetwork& _Owner );
-		void	RedistributeProbeIDs2Vertices( ProbeInfluence**& _ppProbeInfluences ) const;
+		void	RedistributeProbeIDs2Vertices( ProbeInfluence const**& _ppProbeInfluences ) const;
 	};
 
 
@@ -310,6 +319,7 @@ private:
 
 	void			BuildProbeInfluenceVertexStream( Scene& _Scene, const char* _pPathToStreamFile );
 
+friend class SHProbeEncoder;
 friend static void	CopyProbeNetworkConnection( int _EntryIndex, SHProbeNetwork::RuntimeProbeNetworkInfos& _Value, void* _pUserData );
 
 };

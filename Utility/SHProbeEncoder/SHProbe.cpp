@@ -143,10 +143,10 @@ float3	SHProbe::ms_SampleDirections[SHProbe::SAMPLES_COUNT] = {
 
 #pragma endregion
 
-bool	SHProbe::IsInsideVoronoiCell( const float3& _Position ) const {
+bool	SHProbe::IsInsideVoronoiCell( const float3& _wsPosition ) const {
 	const VoronoiProbeInfo*	pPlane = &m_VoronoiProbes[0];
 	for ( int PlaneIndex=0; PlaneIndex < m_VoronoiProbes.GetCount(); PlaneIndex++, pPlane++ ) {
-		float3	D = _Position - pPlane->Position;
+		float3	D = _wsPosition - pPlane->Position;
 		if ( D.Dot( pPlane->Normal ) < 0.0f )
 			return false;	// Outside!
 	}
@@ -305,7 +305,7 @@ void	SHProbe::Load( FILE* _pFile ) {
 // 			}
 
 		// Transform sample's position/normal by probe's LOCAL=>WORLD
-		S.Position = float3( m_pSceneProbe->m_Local2World.GetRow(3) ) + S.Position;
+		S.Position = m_Position + S.Position;
 // 			NjFloat3	wsSetNormal = Set.Normal;
 // 			NjFloat3	wsSetTangent = Set.Tangent;
 // 			NjFloat3	wsSetBiTangent = Set.BiTangent;

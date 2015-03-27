@@ -17,6 +17,7 @@ SHProbeNetwork::~SHProbeNetwork() {
 }
 
 void	SHProbeNetwork::Init( Device& _Device, Primitive& _ScreenQuad ) {
+	m_ProbeEncoder.m_pOwner = this;
 
 	m_pDevice = &_Device;
 	m_pScreenQuad = &_ScreenQuad;
@@ -113,6 +114,7 @@ void	SHProbeNetwork::AddProbe( Scene::Probe& _Probe ) {
 	ASSERT( m_ProbesCount < m_MaxProbesCount, "Probes count out of range!" );
 	m_pProbes[m_ProbesCount].m_ProbeID = m_ProbesCount;
 	m_pProbes[m_ProbesCount].m_pSceneProbe = &_Probe;
+	m_pProbes[m_ProbesCount].m_Position = float3( _Probe.m_Local2World.GetRow(3) );	// Cache probe position as we're going to use it a lot!
 	m_ProbesCount++;
 }
 
@@ -410,12 +412,6 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 	};
 	CB<CBCubeMapCamera>*	pCBCubeMapCamera = new CB<CBCubeMapCamera>( *m_pDevice, 8, true );
 
-	float3*	pProbePositions = new float3[m_ProbesCount];
-	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
-		SHProbe&	Probe = m_pProbes[ProbeIndex];
-		pProbePositions[ProbeIndex] = Probe.m_pSceneProbe->m_Local2World.GetRow( 3 );
-	}
-
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize probe influences for each face
@@ -435,9 +431,8 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 
 	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
-		float3		ProbePosition = pProbePositions[ProbeIndex];
 
-		m_pCB_Probe->m.CurrentProbePosition = ProbePosition;
+		m_pCB_Probe->m.CurrentProbePosition = Probe.m_Position;
 
 		// Clear cube maps
 		m_pDevice->ClearRenderTarget( *m_pRTCubeMap->GetRTV( 0, 6*0, 6 ), float4::Zero );
@@ -449,7 +444,7 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 
 		// Setup probe WORLD -> LOCAL transform
 		float4x4	ProbeLocal2World = float4x4::Identity;
-					ProbeLocal2World.SetRow( 3, ProbePosition, 1 );
+					ProbeLocal2World.SetRow( 3, Probe.m_Position, 1 );
 		float4x4	ProbeWorld2Local = ProbeLocal2World.Inverse();
 
 		// Render the 6 faces
@@ -511,9 +506,9 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 
 			for ( U32 NeighborProbeIndex=0; NeighborProbeIndex < m_ProbesCount; NeighborProbeIndex++ )
 				if ( NeighborProbeIndex != ProbeIndex ) {
-					const float3&	NeighborProbePosition = pProbePositions[NeighborProbeIndex];
+					const float3&	NeighborProbePosition = m_pProbes[NeighborProbeIndex].m_Position;
 
-					float	Distance2Neighbor = (NeighborProbePosition - ProbePosition).Length();
+					float	Distance2Neighbor = (NeighborProbePosition - Probe.m_Position).Length();
 
 					m_pCB_Probe->m.NeighborProbeID = NeighborProbeIndex;
 					m_pCB_Probe->m.NeighborProbePosition = NeighborProbePosition;
@@ -529,7 +524,7 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 		// Build neighbors list immediately since we need it for the Voronoï splatting right after
 		pRTCubeMapNeighborsStaging->CopyFrom( *pRTCubeMapNeighbors );
 
-		m_ProbeEncoder.BuildProbeNeighborIDs( *pRTCubeMapNeighborsStaging, Probe, m_ProbesCount, pProbePositions );
+		m_ProbeEncoder.BuildProbeNeighborIDs( *pRTCubeMapNeighborsStaging, Probe );
 
 
 		//////////////////////////////////////////////////////////////////////////
@@ -562,10 +557,10 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 			for ( U32 NeighborProbeIndex=0; NeighborProbeIndex < U32(Probe.m_NeighborProbes.GetCount()); NeighborProbeIndex++ ) {
 				const SHProbe::NeighborProbeInfo&	NP = Probe.m_NeighborProbes[NeighborProbeIndex];
 				if ( NP.DirectlyVisible ) {
-					const float3&	NeighborProbePosition = pProbePositions[NP.ProbeID];
+					const float3&	NeighborProbePosition = m_pProbes[NP.ProbeID].m_Position;
 
-					float3	CenterPosition = 0.5f * (ProbePosition + NeighborProbePosition);
-					float	Distance2Neighbor = (NeighborProbePosition - ProbePosition).Length();
+					float3	CenterPosition = 0.5f * (Probe.m_Position + NeighborProbePosition);
+					float	Distance2Neighbor = (NeighborProbePosition - Probe.m_Position).Length();
 
 					m_pCB_Probe->m.NeighborProbeID = NP.ProbeID;
 					m_pCB_Probe->m.NeighborProbePosition = CenterPosition;
@@ -581,7 +576,7 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 
 		pRTCubeMapNeighborsStaging->CopyFrom( *pRTCubeMapNeighbors );
 
-		m_ProbeEncoder.BuildProbeVoronoiCell( *pRTCubeMapNeighborsStaging, Probe, m_ProbesCount, pProbePositions );
+		m_ProbeEncoder.BuildProbeVoronoiCell( *pRTCubeMapNeighborsStaging, Probe );
 
 
 		//////////////////////////////////////////////////////////////////////////
@@ -593,7 +588,7 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 		pRTCubeMapStaging->Save( pTemp );
 #endif
 
-		m_ProbeEncoder.EncodeProbeCubeMap( *pRTCubeMapStaging, Probe, m_ProbesCount, _TotalFacesCount );
+		m_ProbeEncoder.EncodeProbeCubeMap( *pRTCubeMapStaging, Probe, _TotalFacesCount );
 
 		// Save probe results
 		{
@@ -626,7 +621,6 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 		}
 	}
 
-	delete[] pProbePositions;
 	delete pCBCubeMapCamera;
 
 	//////////////////////////////////////////////////////////////////////////
@@ -653,6 +647,7 @@ m_pRTCubeMap->SetPS( 64 );
 
 void	SHProbeNetwork::MeshWithAdjacency::Build( SHProbeNetwork& _Owner, const Scene::Mesh& _Mesh, ProbeInfluence* _pProbeInfluencePerFace ) {
 
+	m_Local2World = _Mesh.m_Local2World;
 	m_World2Local = _Mesh.m_Local2World.Inverse();
 
 	m_PrimitivesCount = _Mesh.m_PrimitivesCount;
@@ -661,7 +656,7 @@ void	SHProbeNetwork::MeshWithAdjacency::Build( SHProbeNetwork& _Owner, const Sce
 	int	FaceOffset = 0;
 	for ( int PrimitiveIndex=0; PrimitiveIndex < _Mesh.m_PrimitivesCount; PrimitiveIndex++ ) {
 		const Scene::Mesh::Primitive&	SourcePrim = _Mesh.m_pPrimitives[PrimitiveIndex];
-		m_pPrimitives[PrimitiveIndex].Build( _Owner, SourcePrim, _pProbeInfluencePerFace + FaceOffset );
+		m_pPrimitives[PrimitiveIndex].Build( _Owner, m_Local2World, SourcePrim, _pProbeInfluencePerFace + FaceOffset );
 		FaceOffset += SourcePrim.m_FacesCount;
 	}
 }
@@ -676,68 +671,92 @@ bool	SHProbeNetwork::MeshWithAdjacency::PropagateProbeInfluences( SHProbeNetwork
 	return stillSpreading;
 }
 
-void	SHProbeNetwork::MeshWithAdjacency::AssignNearestProbe( U32 _ProbesCount, const SHProbe* _pProbes ) {
-	// Transform probe positions into local space
-	List<float3>	LocalProbePositions;
-	LocalProbePositions.Init( _ProbesCount );
-	LocalProbePositions.SetCount( _ProbesCount );
-	for ( U32 ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ ) {
-		const SHProbe&	Probe = _pProbes[ProbeIndex];
-		float3&			lsProbePosition = LocalProbePositions[ProbeIndex];
-
-		lsProbePosition = Probe.m_pSceneProbe->m_Local2World.GetRow( 3 ) * m_World2Local;
-	}
-
-	// Assign nearest probes
+void	SHProbeNetwork::MeshWithAdjacency::AssignNearestProbe( SHProbeNetwork& _Owner ) {
 	for ( int PrimitiveIndex=0; PrimitiveIndex < m_PrimitivesCount; PrimitiveIndex++ ) {
 		Primitive&	P = m_pPrimitives[PrimitiveIndex];
-		P.AssignNearestProbe( _ProbesCount, &LocalProbePositions[0] );
+		P.AssignNearestProbe( _Owner );
 	}
 }
 
-void	SHProbeNetwork::MeshWithAdjacency::RedistributeProbeIDs2Vertices( ProbeInfluence**& _ppProbeInfluences ) const {
+void	SHProbeNetwork::MeshWithAdjacency::RedistributeProbeIDs2Vertices( ProbeInfluence const**& _ppProbeInfluences ) const {
 	for ( int PrimitiveIndex=0; PrimitiveIndex < m_PrimitivesCount; PrimitiveIndex++ ) {
 		Primitive&	P = m_pPrimitives[PrimitiveIndex];
 		P.RedistributeProbeIDs2Vertices( _ppProbeInfluences );
-		_ppProbeInfluences += P.m_VerticesCount;	// Make the pointer advance as we're done with that primitive
+		_ppProbeInfluences += P.m_Vertices.GetCount();	// Make the pointer advance as we're done with that primitive
 	}
 }
 
-SHProbeNetwork::MeshWithAdjacency::Primitive::VertexCell*	SHProbeNetwork::MeshWithAdjacency::Primitive::ms_ppCells[64*64*64];
+SHProbeNetwork::MeshWithAdjacency::Primitive::VertexLink*	SHProbeNetwork::MeshWithAdjacency::Primitive::ms_ppCells[64*64*64];
 
-void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( SHProbeNetwork& _Owner, const Scene::Mesh::Primitive& _SourcePrimitive, ProbeInfluence* _pProbeInfluencePerFace ) {
+void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( SHProbeNetwork& _Owner, const float4x4& _Local2World, const Scene::Mesh::Primitive& _SourcePrimitive, ProbeInfluence* _pProbeInfluencePerFace ) {
 
+	U32		VerticesCount = _SourcePrimitive.m_VerticesCount;
+	U32		FacesCount = _SourcePrimitive.m_FacesCount;
 	Scene::Mesh::Primitive::VF_P3N3G3B3T2*	pSourceVertices = (Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _SourcePrimitive.m_pVertices;
 
 //	DictionaryGeneric< EdgeKey, FacePair >	SharedEdges( 3 * _Primitive.m_FacesCount );
 
-	m_FacesCount = _SourcePrimitive.m_FacesCount;
-	m_pFaces = new Face[m_FacesCount];
-
 	//////////////////////////////////////////////////////////////////////////
-	// Build and clear per-vertex probe influences
-	m_VerticesCount = _SourcePrimitive.m_VerticesCount;
-	m_pVerticesProbeInfluence = new ProbeInfluence*[m_VerticesCount];
-	memset( m_pVerticesProbeInfluence, 0, m_VerticesCount*sizeof(ProbeInfluence*) );
+	// Create vertices world space positions and build the linked-list of vertices located in a 64x64x64 grid subdividing the local BBox of the primitive
+	// (this will be used to quickly weld vertices together)
+	m_Vertices.Init( VerticesCount );
+
+	float3	BBoxCellSize = _SourcePrimitive.m_LocalBBoxMax - _SourcePrimitive.m_LocalBBoxMin;
+			BBoxCellSize = 1.01f * BBoxCellSize / 64.0f;
+	float3	BBoxMin = 0.5f * (_SourcePrimitive.m_LocalBBoxMax + _SourcePrimitive.m_LocalBBoxMin)
+					- 32.0f * BBoxCellSize;
+
+	// Create free vertex cells
+	m_VertexCells.Init( VerticesCount );
+	m_VertexCells.SetCount( VerticesCount );
+
+	// Fill up the 64x64x64 cells with lists of vertices inside each cell
+	memset( ms_ppCells, 0, 64*64*64*sizeof(VertexLink*) );
+
+	VertexLink*	pFreeCell = &m_VertexCells[0];
+	Scene::Mesh::Primitive::VF_P3N3G3B3T2*	pSourceVertex = pSourceVertices;
+	Vertex*									pTargetVertex = &m_Vertices[0];;
+	for ( U32 VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++, pSourceVertex++, pTargetVertex++, pFreeCell++ ) {
+		float3&	Position = pSourceVertex->P;
+		float3	CellPosition = (Position - BBoxMin) / BBoxCellSize;
+		U32		iCellPositionX = U32( floorf( CellPosition.x ) );
+		U32		iCellPositionY = U32( floorf( CellPosition.y ) );
+		U32		iCellPositionZ = U32( floorf( CellPosition.z ) );
+
+		// Link it into its nearest integer cell
+		pFreeCell->pNext = ms_ppCells[iCellPositionX+64*(iCellPositionY+64*iCellPositionZ)];
+		ms_ppCells[iCellPositionX+64*(iCellPositionY+64*iCellPositionZ)] = pFreeCell;
+
+		pFreeCell->V = VertexIndex;
+
+		// Build world space position to interrogate probes's Voronoï cells
+		pTargetVertex->wsPosition = float4( pSourceVertex->P, 1.0f ) * _Local2World;
+	}
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build faces and assign seed per-vertex probe influences
+	m_Faces.Init( FacesCount );
+
 	const U32*		pSourceFace = _SourcePrimitive.m_pFaces;
-	Face*			pTargetFace = m_pFaces;
 	ProbeInfluence* pFaceProbeInfluence = _pProbeInfluencePerFace;
-	for ( U32 FaceIndex=0; FaceIndex < _SourcePrimitive.m_FacesCount; FaceIndex++, pTargetFace++, pFaceProbeInfluence++ ) {
+	for ( U32 FaceIndex=0; FaceIndex < FacesCount; FaceIndex++, pFaceProbeInfluence++ ) {
 		// Build the face
-		pTargetFace->V[0] = *pSourceFace++;
-		pTargetFace->V[1] = *pSourceFace++;
-		pTargetFace->V[2] = *pSourceFace++;
+		Face&	TargetFace = m_Faces.Append();
+		TargetFace.V[0] = *pSourceFace++;
+		TargetFace.V[1] = *pSourceFace++;
+		TargetFace.V[2] = *pSourceFace++;
 
-		const float3&	P0 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _SourcePrimitive.m_pVertices)[pTargetFace->V[0]].P;
-		const float3&	P1 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _SourcePrimitive.m_pVertices)[pTargetFace->V[1]].P;
-		const float3&	P2 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _SourcePrimitive.m_pVertices)[pTargetFace->V[2]].P;
-
-		pTargetFace->P = (P0 + P1 + P2) / 3.0f;
-		pTargetFace->N = (P2 - P0).Cross( P1 - P0 ).Normalize();
+// 		const float3&	P0 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _SourcePrimitive.m_pVertices)[TargetFace.V[0]].P;
+// 		const float3&	P1 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _SourcePrimitive.m_pVertices)[TargetFace.V[1]].P;
+// 		const float3&	P2 = ((Scene::Mesh::Primitive::VF_P3N3G3B3T2*) _SourcePrimitive.m_pVertices)[TargetFace.V[2]].P;
+// 
+// 		float3			wsP0 = float4( P0, 1.0f ) * _Local2World;
+// 		float3			wsP1 = float4( P1, 1.0f ) * _Local2World;
+// 		float3			wsP2 = float4( P2, 1.0f ) * _Local2World;
+// 
+// 		TargetFace.P = (P0 + P1 + P2) / 3.0f;
+// 		TargetFace.N = (P2 - P0).Cross( P1 - P0 ).Normalize();
 
 		// Distribute probe influence to face vertices
 		if ( pFaceProbeInfluence->ProbeID != ~0UL ) {
@@ -745,28 +764,29 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( SHProbeNetwork& _Owner
 			const SHProbe&	InfluencingProbe = _Owner.m_pProbes[pFaceProbeInfluence->ProbeID];
 
 			// Distribute if vertex is inside Voronoï cell and existing influence is lower
-			ProbeInfluence*&	Influence0 = m_pVerticesProbeInfluence[pTargetFace->V[0]];
-			if ( InfluencingProbe.IsInsideVoronoiCell( P0 ) && (Influence0 == NULL || Influence0->Influence < pFaceProbeInfluence->Influence) ) {
-				Influence0 = pFaceProbeInfluence;
+			Vertex&				V0 = m_Vertices[TargetFace.V[0]];
+			if ( InfluencingProbe.IsInsideVoronoiCell( V0.wsPosition ) && (V0.pInfluence == NULL || V0.pInfluence->Influence < pFaceProbeInfluence->Influence) ) {
+				V0.pInfluence = pFaceProbeInfluence;
 			}
 
-			ProbeInfluence*&	Influence1 = m_pVerticesProbeInfluence[pTargetFace->V[1]];
-			if ( InfluencingProbe.IsInsideVoronoiCell( P1 ) && (Influence1 == NULL || Influence1->Influence < pFaceProbeInfluence->Influence) ) {
-				Influence1 = pFaceProbeInfluence;
+			Vertex&				V1 = m_Vertices[TargetFace.V[1]];
+			ProbeInfluence*&	Influence1 = m_Vertices[TargetFace.V[1]].pInfluence;
+			if ( InfluencingProbe.IsInsideVoronoiCell( V1.wsPosition ) && (V1.pInfluence == NULL || V1.pInfluence->Influence < pFaceProbeInfluence->Influence) ) {
+				V1.pInfluence = pFaceProbeInfluence;
 			}
 
-			ProbeInfluence*&	Influence2 = m_pVerticesProbeInfluence[pTargetFace->V[2]];
-			if ( InfluencingProbe.IsInsideVoronoiCell( P2 ) && (Influence2 == NULL || Influence2->Influence < pFaceProbeInfluence->Influence) ) {
-				Influence2 = pFaceProbeInfluence;
+			Vertex&				V2 = m_Vertices[TargetFace.V[2]];
+			ProbeInfluence*&	Influence2 = m_Vertices[TargetFace.V[2]].pInfluence;
+			if ( InfluencingProbe.IsInsideVoronoiCell( V2.wsPosition ) && (V2.pInfluence == NULL || V2.pInfluence->Influence < pFaceProbeInfluence->Influence) ) {
+				V2.pInfluence = pFaceProbeInfluence;
 			}
 		}
-
 
 // 		// Build adjacency info
 // 		EdgeKey		Key;
 // 		for ( int EdgeIndex=0; EdgeIndex < 3; EdgeIndex++ ) {
-// 			Key.V0 = pTargetFace->V[EdgeIndex];
-// 			Key.V1 = pTargetFace->V[(EdgeIndex+1)%3];
+// 			Key.V0 = TargetFace.V[EdgeIndex];
+// 			Key.V1 = TargetFace.V[(EdgeIndex+1)%3];
 // 
 // 			FacePair*	ExistingValue = SharedEdges.Get( Key );
 // 			if ( ExistingValue == NULL ) {
@@ -779,7 +799,7 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( SHProbeNetwork& _Owner
 // 				ASSERT( ExistingValue->F1 == NULL, "Non-manifold mesh: more than 2 faces share the same edge!" );
 // 				ExistingValue->F1 = pTargetFace;
 // 
-// 				pTargetFace->pAdjacent[EdgeIndex] = ExistingValue->F0;
+// 				TargetFace.pAdjacent[EdgeIndex] = ExistingValue->F0;
 // 				ExistingValue->F0->SetAdjacency( Key.V1, Key.V0, pTargetFace );
 // 			}
 // 		}
@@ -788,61 +808,36 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( SHProbeNetwork& _Owner
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build welded vertices structure and gather largest probe influences
-	m_WeldedVertices.Init( m_VerticesCount );
+	m_WeldedVertices.Init( VerticesCount );
 	m_WeldedVertices.Clear();
 
-	float3	BBoxCellSize = _SourcePrimitive.m_LocalBBoxMax - _SourcePrimitive.m_LocalBBoxMin;
-			BBoxCellSize = 1.01f * BBoxCellSize / 64.0f;
-	float3	BBoxMin = 0.5f * (_SourcePrimitive.m_LocalBBoxMax + _SourcePrimitive.m_LocalBBoxMin)
-					- 32.0f * BBoxCellSize;
+	List<bool>	WeldedState( VerticesCount );
+	WeldedState.SetCount( VerticesCount );
+	memset( &WeldedState[0], 0, VerticesCount*sizeof(bool) );
 
-	// Create free vertex cells
-	m_VertexCells.Init( m_VerticesCount );
-	m_VertexCells.SetCount( m_VerticesCount );
-
-	// Fill up the 64x64x64 cells with lists of vertices inside each of the cell
-	memset( ms_ppCells, 0, 64*64*64*sizeof(VertexCell*) );
-
-	VertexCell*	pFreeCell = &m_VertexCells[0];
-	Scene::Mesh::Primitive::VF_P3N3G3B3T2*	pVertex = pSourceVertices;
-	for ( int VertexIndex=0; VertexIndex < m_VerticesCount; VertexIndex++, pVertex++, pFreeCell++ ) {
-		float3&	Position = pVertex->P;
-		float3	CellPosition = (Position - BBoxMin) / BBoxCellSize;
-		U32		iCellPositionX = U32( floorf( CellPosition.x ) );
-		U32		iCellPositionY = U32( floorf( CellPosition.y ) );
-		U32		iCellPositionZ = U32( floorf( CellPosition.z ) );
-
-		// Link it in its nearest integer cell
-		pFreeCell->pNext = ms_ppCells[iCellPositionX+64*(iCellPositionY+64*iCellPositionZ)];
-		ms_ppCells[iCellPositionX+64*(iCellPositionY+64*iCellPositionZ)] = pFreeCell;
-
-		pFreeCell->V = VertexIndex;
-	}
-
-	// Perform welding
-	List<bool>	WeldedState( m_VerticesCount );
-	WeldedState.SetCount( m_VerticesCount );
-	memset( &WeldedState[0], 0, m_VerticesCount*sizeof(bool) );
-
-	pVertex = pSourceVertices;
-	for ( int VertexIndex=0; VertexIndex < m_VerticesCount; VertexIndex++, pVertex++, pFreeCell++ ) {
+	pSourceVertex = pSourceVertices;
+	pTargetVertex = &m_Vertices[0];
+	for ( U32 VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++, pSourceVertex++, pTargetVertex++, pFreeCell++ ) {
 		if ( WeldedState[VertexIndex] )
 			continue;	// Already welded
 
 		// Found a new vertex to weld
+		U32				WeldedVertexIndex = m_WeldedVertices.GetCount();
 		WeldedVertex&	NewWeldedVertex = m_WeldedVertices.Append();
-		NewWeldedVertex.P = pVertex->P;
-		NewWeldedVertex.N = float3::Zero;
+		NewWeldedVertex.lsPosition = pSourceVertex->P;
+		NewWeldedVertex.wsPosition = pTargetVertex->wsPosition;
+		NewWeldedVertex.Normal = float3::Zero;
 		NewWeldedVertex.SharingVerticesCount = 0;
 		NewWeldedVertex.pSharingVertices = NULL;
 		NewWeldedVertex.Influence.Influence = 0.0;
 		NewWeldedVertex.Influence.ProbeID = ~0UL;	// No valid influence at the moment...
 
-		float3	CellPosition = (pVertex->P - BBoxMin) / BBoxCellSize;
+		float3	CellPosition = (pSourceVertex->P - BBoxMin) / BBoxCellSize;
 		int		iCellPositionX = int( floorf( CellPosition.x ) );
 		int		iCellPositionY = int( floorf( CellPosition.y ) );
 		int		iCellPositionZ = int( floorf( CellPosition.z ) );
 
+		// Examine neighbor cells as well (TODO: examine only if the vertex position is close to the cell's edge)
 		for ( int Z=-1; Z <= 1; Z++ ) {
 			int	iNeighborCellPositionZ = iCellPositionZ+Z;
 			if ( iNeighborCellPositionZ < 0 || iNeighborCellPositionZ >= 64 )
@@ -857,10 +852,10 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( SHProbeNetwork& _Owner
 						continue;
 
 					U32			NeighborCellOffset = iNeighborCellPositionX+64*(iNeighborCellPositionY+64*iNeighborCellPositionZ);
-					VertexCell*	pPreviousNeighborCell = NULL;
-					VertexCell*	pNeighborCell = ms_ppCells[NeighborCellOffset];
+					VertexLink*	pPreviousNeighborCell = NULL;
+					VertexLink*	pNeighborCell = ms_ppCells[NeighborCellOffset];
 					while ( pNeighborCell != NULL ) {
-						float	SqDistance = (pSourceVertices[pNeighborCell->V].P - NewWeldedVertex.P).LengthSq();
+						float	SqDistance = (pSourceVertices[pNeighborCell->V].P - NewWeldedVertex.lsPosition).LengthSq();
 						if ( SqDistance > 0.0001f ) {
 							// More than 1cm appart... 
 							pPreviousNeighborCell = pNeighborCell;
@@ -869,9 +864,9 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( SHProbeNetwork& _Owner
 						}
 
 						// New vertex to weld! (NOTE: it's okay to weld ourselves)
-						VertexCell*	pWeldedCell = pNeighborCell;
+						VertexLink*	pWeldedCell = pNeighborCell;
 
-						// Link over that vertex, it's no longer part of the set of unwelded vertices
+						// Link over that vertex: it's no longer part of the set of unwelded vertices
 						pNeighborCell = pNeighborCell->pNext;
 						if ( pPreviousNeighborCell != NULL )
 							pPreviousNeighborCell->pNext = pNeighborCell;
@@ -883,14 +878,17 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( SHProbeNetwork& _Owner
 						NewWeldedVertex.pSharingVertices = pWeldedCell;
 
 						// Accumulate normals
-						NewWeldedVertex.N = NewWeldedVertex.N + pSourceVertices[pWeldedCell->V].N;
+						NewWeldedVertex.Normal = NewWeldedVertex.Normal + pSourceVertices[pWeldedCell->V].N;
 						NewWeldedVertex.SharingVerticesCount++;
 
 						// Assign new influence if valid...
-						const ProbeInfluence*	pInfluence = m_pVerticesProbeInfluence[pWeldedCell->V];
+						const ProbeInfluence*	pInfluence = m_Vertices[pWeldedCell->V].pInfluence;
 						if ( pInfluence != NULL && pInfluence->Influence > NewWeldedVertex.Influence.Influence ) {
 							NewWeldedVertex.Influence = *pInfluence;
 						}
+
+						// Assign welded vertex index to the original vertex
+						m_Vertices[pWeldedCell->V].WeldedVertexIndex = WeldedVertexIndex;
 
 						WeldedState[pWeldedCell->V] = true;	// Now welded!
 					}
@@ -899,8 +897,34 @@ void	SHProbeNetwork::MeshWithAdjacency::Primitive::Build( SHProbeNetwork& _Owner
 		}
 	}
 
-Build welded vertices adjacency!
+	// Normalize normals
+	WeldedVertex*	pWeldedVertex = &m_WeldedVertices[0];
+	for ( U32 WeldedVertexIndex=0; WeldedVertexIndex < U32(m_WeldedVertices.GetCount()); WeldedVertexIndex++, pWeldedVertex++ ) {
+		pWeldedVertex->Normal.Normalize();
+	}
 
+
+	//////////////////////////////////////////////////////////////////////////
+	// Build welded vertices adjacency
+	for ( U32 FaceIndex=0; FaceIndex < FacesCount; FaceIndex++, pFaceProbeInfluence++ ) {
+		// Build the face
+		Face&	TargetFace = m_Faces[FaceIndex];
+
+		U32		WV[3] = {
+			m_Vertices[TargetFace.V[0]].WeldedVertexIndex,
+			m_Vertices[TargetFace.V[1]].WeldedVertexIndex,
+			m_Vertices[TargetFace.V[2]].WeldedVertexIndex };
+
+		for ( U32 EdgeIndex=0; EdgeIndex < 3; EdgeIndex++ ) {
+			U32				V0 = WV[EdgeIndex];
+			U32				V1 = WV[(EdgeIndex+1)%3];
+			WeldedVertex&	WV0 = m_WeldedVertices[V0];
+			WeldedVertex&	WV1 = m_WeldedVertices[V1];
+
+			m_WeldedVertices[V0].AdjacentVertices.AppendUnique( &WV1 );
+			m_WeldedVertices[V1].AdjacentVertices.AppendUnique( &WV0 );
+		}
+	}
 }
 
 bool	SHProbeNetwork::MeshWithAdjacency::Primitive::PropagateProbeInfluences( SHProbeNetwork& _Owner, U32 _PassIndex ) {
@@ -908,45 +932,94 @@ bool	SHProbeNetwork::MeshWithAdjacency::Primitive::PropagateProbeInfluences( SHP
 	WeldedVertex*	pVertex = &m_WeldedVertices[0];
 	int				VerticesCount = m_WeldedVertices.GetCount();
 	for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++, pVertex++ ) {
-		stillSpreading |= pVertex->RecursePropagateProbeInfluences( _PassIndex );
+		stillSpreading |= pVertex->RecursePropagateProbeInfluences( _Owner, _PassIndex );
 	}
 
 	return stillSpreading;
 }
 
-void	SHProbeNetwork::MeshWithAdjacency::Primitive::AssignNearestProbe( SHProbeNetwork& _Owner ) {
-// 	Face*	pFace = m_pFaces;
-// 	for ( int FaceIndex=0; FaceIndex < m_FacesCount; FaceIndex++, pFace++ ) {
-// 		if ( pFace->pProbeInfluence->ProbeID != ~0UL )
-// 			continue;
 // 
-// 		float	NearestProbeSqDistance = FLT_MAX;
-// 		U32		NearestProbeIndex = ~0UL;
-// 		for ( U32 ProbeIndex=0; ProbeIndex < _ProbesCount; ProbeIndex++ ) {
-// 			float	SqDistance = (_LocalProbePositions[ProbeIndex] - pFace->P).LengthSq();
-// 			if ( SqDistance < NearestProbeSqDistance ) {
-// 				NearestProbeSqDistance = SqDistance;
-// 				NearestProbeIndex = ProbeIndex;
-// 			}
-// 		}
-// 		pFace->pProbeInfluence->ProbeID = NearestProbeIndex;
-// 	}
+void	SHProbeNetwork::MeshWithAdjacency::Primitive::AssignNearestProbe( SHProbeNetwork& _Owner ) {
+	WeldedVertex*	pWeldedVertex = &m_WeldedVertices[0];
+	int				VerticesCount = m_WeldedVertices.GetCount();
+	for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++, pWeldedVertex++ ) {
+		if ( pWeldedVertex->Influence.ProbeID != ~0U )
+			continue;
+
+		float	NearestProbeSqDistance = FLT_MAX;
+		U32		NearestProbeIndex = ~0UL;
+		for ( U32 ProbeIndex=0; ProbeIndex < _Owner.m_ProbesCount; ProbeIndex++ ) {
+			float	SqDistance = (_Owner.m_pProbes[ProbeIndex].m_Position - pWeldedVertex->wsPosition).LengthSq();
+			if ( SqDistance < NearestProbeSqDistance ) {
+				NearestProbeSqDistance = SqDistance;
+				NearestProbeIndex = ProbeIndex;
+			}
+		}
+		pWeldedVertex->Influence.ProbeID = NearestProbeIndex;
+	}
 }
 
-void	SHProbeNetwork::MeshWithAdjacency::Primitive::RedistributeProbeIDs2Vertices( ProbeInfluence** _ppProbeInfluences ) const {
-// 	Face*	pFace = m_pFaces;
-// 	for ( int FaceIndex=0; FaceIndex < m_FacesCount; FaceIndex++, pFace++ ) {
-// 		ProbeInfluence*	pFaceProbeInfluence = pFace->pProbeInfluence;
-// 
-// 		for ( int FaceVertexIndex=0; FaceVertexIndex < 3; FaceVertexIndex++ ) {
-// 			U32					VertexIndex = pFace->V[FaceVertexIndex];
-// 			ProbeInfluence*&	pVertexProbeInfluence = _ppProbeInfluences[VertexIndex];
-// 			if ( pVertexProbeInfluence == NULL || pVertexProbeInfluence->Influence < pFaceProbeInfluence->Influence ) {
-// 				pVertexProbeInfluence = pFaceProbeInfluence;	// This face provides a better influence for the vertex!
-// 			}
-// 		}
-// 	}
+// Redistributes the probe influences from welded vertices to original vertices
+void	SHProbeNetwork::MeshWithAdjacency::Primitive::RedistributeProbeIDs2Vertices( ProbeInfluence const** _ppProbeInfluences ) const {
+	const WeldedVertex*	pWeldedVertex = &m_WeldedVertices[0];
+	int					VerticesCount = m_WeldedVertices.GetCount();
+	for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++, pWeldedVertex++ ) {
+		VertexLink*	pOriginalVertex = pWeldedVertex->pSharingVertices;
+		while ( pOriginalVertex != NULL ) {
+			if ( _ppProbeInfluences[pOriginalVertex->V] == NULL || pWeldedVertex->Influence.Influence > _ppProbeInfluences[pOriginalVertex->V]->Influence )
+				_ppProbeInfluences[pOriginalVertex->V] = &pWeldedVertex->Influence;	// Replace vertex influence by a larger one
+
+			pOriginalVertex = pOriginalVertex->pNext;
+		}
+	}
 }
+
+bool	SHProbeNetwork::MeshWithAdjacency::Primitive::WeldedVertex::RecursePropagateProbeInfluences( SHProbeNetwork& _Owner, U32 _PassIndex ) {
+	if ( LastVisitIndex == _PassIndex )
+		return false;				// Already visited!
+	LastVisitIndex = _PassIndex;	// Visited!
+
+	static const float	DISTANCE_FALLOFF_FACTOR = -1.3862943611198906188344642429164f;			// ln( 0.25 ) so 1m away gets 1/4 the influence
+	static const float	ANGULAR_FALLOFF_FACTOR = 0.5f * -0.30102999566398119521373889472449f;	// ln( 0.5 ) so a 90° face gets 1/2 the influence
+
+	bool			spreading = false;
+	WeldedVertex**	ppAdjacentVertex = &AdjacentVertices[0];
+	for ( U32 AdjacentVertexIndex=0; AdjacentVertexIndex < U32(AdjacentVertices.GetCount()); AdjacentVertexIndex++, ppAdjacentVertex++ ) {
+		WeldedVertex&	AdjacentVertex = **ppAdjacentVertex;
+		if ( AdjacentVertex.Influence.ProbeID == Influence.ProbeID )
+			continue;	// Both vertices are influenced by the same probe so our work is done here...
+ 
+		float	Distance = (AdjacentVertex.lsPosition - lsPosition).Length();
+		float	DotNormalBetweenFaces = AdjacentVertex.Normal.Dot( Normal );
+		float	FalloffDistance = expf( DISTANCE_FALLOFF_FACTOR * Distance );
+		float	FalloffAngle = expf( ANGULAR_FALLOFF_FACTOR * (1.0f - DotNormalBetweenFaces) );
+		double	Falloff = FalloffDistance * FalloffAngle;
+
+		double	ReducedInfluence0 = -1.0;
+		if ( Influence.ProbeID != ~0UL && (AdjacentVertex.Influence.ProbeID == ~0UL || _Owner.m_pProbes[AdjacentVertex.Influence.ProbeID].IsInsideVoronoiCell( AdjacentVertex.wsPosition )) ) {
+			ReducedInfluence0 = Influence.Influence * Falloff;
+		}
+		double	ReducedInfluence1 = -1.0;
+		if ( AdjacentVertex.Influence.ProbeID != ~0UL && (Influence.ProbeID == ~0UL || _Owner.m_pProbes[Influence.ProbeID].IsInsideVoronoiCell( wsPosition )) ) {
+			ReducedInfluence1 = AdjacentVertex.Influence.Influence * Falloff;
+		}
+
+		if ( ReducedInfluence0 > AdjacentVertex.Influence.Influence ) {
+			// Spread from this vertex to adjacent vertex
+			AdjacentVertex.Influence.Influence = ReducedInfluence0;
+			AdjacentVertex.Influence.ProbeID = Influence.ProbeID;
+			spreading = true;
+		} else if ( ReducedInfluence1 > Influence.Influence ) {
+			// Spread from adjacent vertex to this vertex
+			Influence.Influence = ReducedInfluence1;
+			Influence.ProbeID = AdjacentVertex.Influence.ProbeID;
+			spreading = true;
+		}
+	}
+
+	return spreading;
+}
+
 
 // We don't need the adjacency anymore
 // bool	SHProbeNetwork::MeshWithAdjacency::Primitive::Face::RecursePropagateProbeInfluences( U32 _PassIndex ) {
@@ -1051,19 +1124,19 @@ void	SHProbeNetwork::BuildProbeInfluenceVertexStream( Scene& _Scene, const char*
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	// Assign nearest probes to faces without influence (isolated faces)
+	// Assign nearest probes to vertices without influence (isolated vertices)
 	for ( int MeshIndex=0; MeshIndex < Meshes.GetCount(); MeshIndex++ ) {
 		MeshWithAdjacency&	M = Meshes[MeshIndex];
-		M.AssignNearestProbe( m_ProbesCount, m_pProbes );
+		M.AssignNearestProbe( *this );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Redistribute to vertices, choosing the best probe influence each time
-	ProbeInfluence**	pProbeInfluencePerVertex = new ProbeInfluence*[visitor.m_TotalVerticesCount];
+	ProbeInfluence const**	pProbeInfluencePerVertex = new ProbeInfluence const*[visitor.m_TotalVerticesCount];
 	memset( pProbeInfluencePerVertex, 0, visitor.m_TotalVerticesCount*sizeof(ProbeInfluence*) );
 
 	{
-		ProbeInfluence**	ppInfluence = pProbeInfluencePerVertex;
+		ProbeInfluence const**	ppInfluence = pProbeInfluencePerVertex;
 		for ( int MeshIndex=0; MeshIndex < Meshes.GetCount(); MeshIndex++ ) {
 			MeshWithAdjacency&	M = Meshes[MeshIndex];
 			M.RedistributeProbeIDs2Vertices( ppInfluence );
@@ -1082,7 +1155,7 @@ void	SHProbeNetwork::BuildProbeInfluenceVertexStream( Scene& _Scene, const char*
 
 		fwrite( &visitor.m_TotalVerticesCount, sizeof(U32), 1, pFile );
 
-		ProbeInfluence**	ppInfluence = pProbeInfluencePerVertex;
+		ProbeInfluence const**	ppInfluence = pProbeInfluencePerVertex;
 		for ( U32 VertexIndex=0; VertexIndex < visitor.m_TotalVerticesCount; VertexIndex++, ppInfluence++ ) {
 			ASSERT( ppInfluence != NULL, "Yikes!" );
 			fwrite( &(*ppInfluence)->ProbeID, sizeof(U32), 1, pFile );
@@ -1127,7 +1200,7 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, const float3& _Scen
 	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
 
-		m_pSB_RuntimeProbes->m[ProbeIndex].Position = Probe.m_pSceneProbe->m_Local2World.GetRow( 3 );
+		m_pSB_RuntimeProbes->m[ProbeIndex].Position = Probe.m_Position;
 		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.m_MaxDistance;
 //		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.MeanDistance;
 
@@ -1207,8 +1280,7 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, const float3& _Scen
 	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
 
-		float3	Position = Probe.m_pSceneProbe->m_Local2World.GetRow( 3 );
-		int	NodesCount = m_ProbeOctree.Append( Position, Probe.m_MaxDistance, &Probe );
+		int	NodesCount = m_ProbeOctree.Append( Probe.m_Position, Probe.m_MaxDistance, &Probe );
 		TotalNodesCount += NodesCount;
 		if ( NodesCount > MaxNodesCount )
 		{	// New probe with more octree nodes

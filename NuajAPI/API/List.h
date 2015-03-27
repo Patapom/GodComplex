@@ -43,6 +43,7 @@ public:		// METHODS
 	const T&	operator[]( U32 _Index ) const;
 	T&			Insert( U32 _Index );
 	void		Append( const T& _Value );
+	void		AppendUnique( const T& _Value );
 	T&			Append();
 	U32			IndexOf( const T& _Value ) const;
 	void		RemoveAt( U32 _Index );

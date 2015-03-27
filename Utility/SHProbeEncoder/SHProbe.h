@@ -16,6 +16,7 @@ public:		// FIELDS
 
 	U32				m_ProbeID;					// The ID is simply the probe's index in the array of probes
 	Scene::Probe*	m_pSceneProbe;
+	float3			m_Position;					// Cached position (read from scene probe's local2world transform, but we do that often)
 
 	// Static SH infos
 	float			m_pSHOcclusion[9];			// The pre-computed SH that gives back how much of the environment is perceived in a given direction
@@ -91,7 +92,7 @@ public:		// FIELDS
 public:		// METHODS
 
 	// Tells if the specified position is within the probe's Voronoï cell
-	bool	IsInsideVoronoiCell( const float3& _Position ) const;
+	bool		IsInsideVoronoiCell( const float3& _wsPosition ) const;
 
 	// I/O
 	void	Save( FILE* _pFile ) const;

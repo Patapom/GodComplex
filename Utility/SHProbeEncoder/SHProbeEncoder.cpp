@@ -219,9 +219,9 @@ SHProbeEncoder::~SHProbeEncoder() {
 	SAFE_DELETE_ARRAY( m_pCubeMapPixels );
 }
 
-void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, SHProbe& _Probe, U32 _ProbesCount, const float3* _pProbePositions ) {
-	int				TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
-	const float3&	CurrentProbePosition = _Probe.m_pSceneProbe->m_Local2World.GetRow( 3 );
+void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, SHProbe& _Probe ) {
+	U32	ProbesCount = m_pOwner->m_ProbesCount;
+	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Read back neighbor IDs
@@ -249,8 +249,8 @@ void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, SHProbe&
 	//
 	const float	COS_ANGLE_UNIT_PIXEL = cosf( atanf( 2.0f / CUBE_MAP_SIZE ) );	// Use 2 pixels wide aperture along the line of sight to collect a few direct pixels to evaluate visibility...
 
-	m_NeighborProbes.Init( _ProbesCount );
-	_Probe.m_NeighborProbes.Init( _ProbesCount );
+	m_NeighborProbes.Init( ProbesCount );
+	_Probe.m_NeighborProbes.Init( ProbesCount );
 
 	int	DirectlyVisibleNeighborsCount = 0;
 	Dictionary<NeighborProbe*>	NeighborProbeID2Probe;
@@ -259,7 +259,7 @@ void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, SHProbe&
 		if ( P.NeighborProbeID == ~0UL ) {
 			continue;
 		}
-		ASSERT( P.NeighborProbeID < _ProbesCount, "Perceived probe index out of range! Problem in shader???" );
+		ASSERT( P.NeighborProbeID < ProbesCount, "Perceived probe index out of range! Problem in shader???" );
 
 		NeighborProbe**	NP = NeighborProbeID2Probe.Get( P.NeighborProbeID );
 		if ( NP == NULL ) {
@@ -285,7 +285,7 @@ void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, SHProbe&
 
 		// Check if it's a pixel we can use for direct visibility evaluation
 		if ( !(*NP)->pInfo->DirectlyVisible ) {
-			float3	LineOfSightDirection = (_pProbePositions[P.NeighborProbeID] - CurrentProbePosition).Normalize();
+			float3	LineOfSightDirection = (m_pOwner->m_pProbes[P.NeighborProbeID].m_Position - _Probe.m_Position).Normalize();
 			float	DotLineOfSight = P.View.Dot( LineOfSightDirection );
 			if ( DotLineOfSight > COS_ANGLE_UNIT_PIXEL ) {
 				(*NP)->pInfo->DirectlyVisible = true;
@@ -327,9 +327,9 @@ void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, SHProbe&
 	}
 }
 
-void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, SHProbe& _Probe, U32 _ProbesCount, const float3* _pProbePositions ) {
-	int				TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
-	const float3&	CurrentProbePosition = _Probe.m_pSceneProbe->m_Local2World.GetRow( 3 );
+void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, SHProbe& _Probe ) {
+	U32	ProbesCount = m_pOwner->m_ProbesCount;
+	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Read back neighbor Voronoï IDs
@@ -353,7 +353,7 @@ void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, SHProbe&
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Build the neighbor probes network
 	//
-	const float3&	P0 = CurrentProbePosition;
+	const float3&	P0 = _Probe.m_Position;
 
 	Dictionary<SHProbe::VoronoiProbeInfo*>	VoronoiProbeID2Probe;
 	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
@@ -367,10 +367,10 @@ void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, SHProbe&
 			continue;
 		}
 
-		ASSERT( P.VoronoiProbeID < _ProbesCount, "Probe index out of range!" );
+		ASSERT( P.VoronoiProbeID < ProbesCount, "Probe index out of range!" );
 
 		// Compute the center and normal of the plane
-		const float3&	P1 = _pProbePositions[P.VoronoiProbeID];
+		const float3&	P1 = m_pOwner->m_pProbes[P.VoronoiProbeID].m_Position;
 		float3			N = P0 - P1;
 		float			Distance = N.Length();
 		if ( Distance < 1e-3f ) {
@@ -388,7 +388,7 @@ void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, SHProbe&
 	}
 }
 
-void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, SHProbe& _Probe, U32 _ProbesCount, U32 _SceneTotalFacesCount ) {
+void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, SHProbe& _Probe, U32 _SceneTotalFacesCount ) {
 	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
 
 	//////////////////////////////////////////////////////////////////////////

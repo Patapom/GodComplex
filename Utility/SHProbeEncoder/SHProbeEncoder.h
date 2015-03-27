@@ -14,8 +14,11 @@
 
 #include "SHProbe.h"
 
-class	SHProbeEncoder
-{
+class SHProbeNetwork;
+
+class	SHProbeEncoder {
+friend class SHProbeNetwork;
+
 public:		// CONSTANTS
 
 	static const U32		CUBE_MAP_SIZE = 128;
@@ -305,6 +308,8 @@ private:
 
 private:	// FIELDS
 
+	SHProbeNetwork*			m_pOwner;
+
 	float4x4				m_Side2World[6];
 
 	U32						m_ProbeID;							// This is extracted from the cube map file name... Not very robust but good enough!
@@ -352,13 +357,13 @@ public:		// METHODS
 	~SHProbeEncoder();
 
 	// Builds visible neighbor IDs
-	void	BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, SHProbe& _Probe, U32 _ProbesCount, const float3* _pProbePositions );
+	void	BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, SHProbe& _Probe );
 
 	// Builds the Voronoï cell information associated to the probe
-	void	BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, SHProbe& _Probe, U32 _ProbesCount, const float3* _pProbePositions );
+	void	BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, SHProbe& _Probe );
 
 	// Encodes the MRT cube map into basic SH elements that can later be combined at runtime to form a dynamically updatable probe
-	void	EncodeProbeCubeMap( Texture2D& _StagingCubeMap, SHProbe& _Probe, U32 _ProbesCount, U32 _SceneTotalFacesCount );
+	void	EncodeProbeCubeMap( Texture2D& _StagingCubeMap, SHProbe& _Probe, U32 _SceneTotalFacesCount );
 
 	// Saves a debugging structure of all the pixels and surfaces
 	void	SavePixels( const char* _FileName ) const;
@@ -400,5 +405,4 @@ private:
 		float	Result = float(bits * 2.3283064365386963e-10); // / 0x100000000
 		return Result;
 	}
-
 };
