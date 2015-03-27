@@ -53,13 +53,14 @@
 //
 #include "../../GodComplex.h"
 #include "EffectGlobalIllum2.h"
+#include "../../Utility/SHProbeEncoder/SHProbe.h"
 
 //#define SCENE 0	// Simple corridor
 //#define SCENE 1	// City
 //#define SCENE 2	// Sponza Atrium
 #define SCENE 3	// Test
 
-//#define	LOAD_PROBES				// Define this to simply load probes without computing them
+#define	LOAD_PROBES				// Define this to simply load probes without computing them
 #define USE_WHITE_TEXTURES		// Define this to use a single white texture for the entire scene (low patate machines)
 #define	USE_NORMAL_MAPS			// Define this to use normal maps
 
@@ -96,7 +97,11 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 	: m_ErrorCode( 0 )
 	, m_Device( _Device )
 	, m_RTTarget( _RTHDR )
-	, m_ScreenQuad( _ScreenQuad ) {
+	, m_ScreenQuad( _ScreenQuad )
+	, m_DebugVoronoiCellIndex( ~0U )
+	, m_pPrimVoronoiCellPlanes( NULL )
+	, m_pPrimVoronoiCellEdges( NULL ) {
+
 	//////////////////////////////////////////////////////////////////////////
 	// Create the materials
 	m_SceneVertexFormatDesc.AggregateVertexFormat( VertexFormatP3N3G3B3T2::DESCRIPTOR );
@@ -123,6 +128,7 @@ ScopedForceMaterialsLoadFromBinary		bisou;
  		CHECK_MATERIAL( m_pMatRenderDynamic = CreateMaterial( IDR_SHADER_GI_RENDER_DYNAMIC, "./Resources/Shaders/GIRenderDynamic.hlsl", VertexFormatP3N3G3T2::DESCRIPTOR, "VS", NULL, "PS" ), 8 );
  		CHECK_MATERIAL( m_pMatRenderDebugProbes = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3N3::DESCRIPTOR, "VS", NULL, "PS" ), 9 );
  		CHECK_MATERIAL( m_pMatRenderDebugProbesNetwork = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_PROBES, "./Resources/Shaders/GIRenderDebugProbes.hlsl", VertexFormatP3::DESCRIPTOR, "VS_Network", "GS_Network", "PS_Network" ), 10 );
+ 		CHECK_MATERIAL( m_pMatRenderDebugProbeVoronoi = CreateMaterial( IDR_SHADER_GI_RENDER_DEBUG_VORONOI, "./Resources/Shaders/GIRenderDebugVoronoi.hlsl", VertexFormatP3::DESCRIPTOR, "VS", NULL, "PS" ), 11 );
 	}
 
 m_pCSComputeShadowMapBounds = NULL;	// TODO!
@@ -339,6 +345,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 	m_pCB_General = new CB<CBGeneral>( _Device, 8, true );
 	m_pCB_Scene = new CB<CBScene>( _Device, 9, true );
  	m_pCB_Object = new CB<CBObject>( _Device, 10 );
+	m_pCB_ObjectVoronoi = new CB<CBObjectVoronoi>( _Device, 10 );
 	m_pCB_Splat = new CB<CBSplat>( _Device, 10 );
 	m_pCB_DynamicObject = new CB<CBDynamicObject>( _Device, 10 );
  	m_pCB_Material = new CB<CBMaterial>( _Device, 11 );
@@ -632,6 +639,11 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 
 	m_ProbesNetwork.Exit();
 
+	if ( m_pPrimVoronoiCellPlanes != NULL )
+		delete m_pPrimVoronoiCellPlanes;
+	if ( m_pPrimVoronoiCellEdges != NULL )
+		delete m_pPrimVoronoiCellEdges;
+
 	delete m_pSB_LightsDynamic;
 	delete m_pSB_LightsStatic;
 
@@ -640,6 +652,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pCB_Material;
 	delete m_pCB_DynamicObject;
 	delete m_pCB_Splat;
+	delete m_pCB_ObjectVoronoi;
 	delete m_pCB_Object;
 	delete m_pCB_Scene;
 	delete m_pCB_General;
@@ -656,6 +669,7 @@ EffectGlobalIllum2::~EffectGlobalIllum2()
 	delete m_pCSComputeShadowMapBounds;
 	delete m_pMatRenderShadowMapPoint;
 	delete m_pMatRenderShadowMap;
+	delete m_pMatRenderDebugProbeVoronoi;
 	delete m_pMatRenderDebugProbesNetwork;
 	delete m_pMatRenderDebugProbes;
 	delete m_pMatRenderDynamic;
@@ -948,6 +962,34 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	USING_MATERIAL_END
 
 	m_RTTarget.RemoveFromLastAssignedSlots();
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// 6] Render debug probe voronoï cell
+#if _DEBUG
+	if ( m_CachedCopy.ShowDebugProbeVoronoiCell ) {
+		USING_MATERIAL_START( *m_pMatRenderDebugProbeVoronoi )
+
+		m_Device.SetStates( m_Device.m_pRS_CullNone, m_Device.m_pDS_ReadLessEqual, m_Device.m_pBS_Additive );
+		m_Device.SetRenderTarget( m_Device.DefaultRenderTarget(), &m_Device.DefaultDepthStencil() );
+
+		BuildVoronoiPrimitives();
+
+		if ( m_pPrimVoronoiCellPlanes != NULL ) {
+			m_pCB_ObjectVoronoi->m.Color = float4( 0.2f, 0.2f, 0.2f, 1 );
+			m_pCB_ObjectVoronoi->UpdateData();
+			m_pPrimVoronoiCellPlanes->Render( M );
+		}
+
+		if ( m_pPrimVoronoiCellEdges != NULL ) {
+			m_pCB_ObjectVoronoi->m.Color = float4( 1, 1, 1, 1 );
+			m_pCB_ObjectVoronoi->UpdateData();
+			m_pPrimVoronoiCellEdges->Render( M );
+		}
+
+		USING_MATERIAL_END
+	}
+#endif
 }
 
 
@@ -1192,6 +1234,7 @@ void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh,
 
 #pragma endregion
 
+
 //////////////////////////////////////////////////////////////////////////
 // Scene Rendering
 //
@@ -1265,3 +1308,145 @@ void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMater
 }
 
 #pragma endregion
+
+
+//////////////////////////////////////////////////////////////////////////
+// Voronoï Cell Primitive builder
+void	EffectGlobalIllum2::BuildVoronoiPrimitives() {
+	U32	ProbeVoronoiCellIndex = MIN( m_CachedCopy.ProbeVoronoiCellIndex, m_ProbesNetwork.GetProbesCount()-1 );
+	if ( ProbeVoronoiCellIndex == m_DebugVoronoiCellIndex && m_pPrimVoronoiCellPlanes != NULL )
+		return;	// Already built...
+	m_DebugVoronoiCellIndex = ProbeVoronoiCellIndex;
+
+	SAFE_DELETE( m_pPrimVoronoiCellPlanes );
+	SAFE_DELETE( m_pPrimVoronoiCellEdges );
+
+	const SHProbe&	Probe = m_ProbesNetwork.GetProbe( ProbeVoronoiCellIndex );
+	if ( Probe.m_VoronoiProbes.GetCount() == 0 )
+		return;	// Empty neighborhood... Nothing to display!
+
+
+	// Dirty inline class that will help us build our cell's polygons
+	class	CellPolygon {
+	private:
+		float3			m_P;
+		float3			m_T;
+		float3			m_B;
+		float3			m_N;
+		int				m_CurrentListIndex;
+		List<float3>	m_pVertices[2];
+
+	public:
+
+		const List<float3>&	GetVertices() const	{ return m_pVertices[m_CurrentListIndex]; }
+
+	public:
+		CellPolygon( const float3& _P, const float3& _N ) {
+
+			m_P = _P;
+			m_N = _N;
+			if ( fabsf( m_N.y ) < 1.0f-1e-3f ) {
+				m_T = float3::UnitY.Cross( m_N ).Normalize();
+				m_B = m_N.Cross( m_T );
+			} else {
+				m_T = float3::UnitZ;
+				m_B = float3::UnitX;
+			}
+
+			// Start with 4 vertices
+			const float	R = 10.0f;	// Default plane size is 10 meters
+			m_CurrentListIndex = 0;
+			m_pVertices[0].Init( 4 );
+			m_pVertices[0].Append( m_P + R * (-m_T + m_B) );
+			m_pVertices[0].Append( m_P + R * (-m_T - m_B) );
+			m_pVertices[0].Append( m_P + R * ( m_T - m_B) );
+			m_pVertices[0].Append( m_P + R * ( m_T + m_B) );
+		}
+
+		// Cut polygon with a new plane, yielding a new polygon
+		void	Cut( const float3& _P, const float3& _N ) {
+			List<float3>&	SourceVertices = m_pVertices[m_CurrentListIndex];
+			m_CurrentListIndex ^= 1;
+			List<float3>&	TargetVertices = m_pVertices[m_CurrentListIndex];
+			TargetVertices.Init( SourceVertices.GetCount() + 1 );	// Any intersection add at most one more vertex every time...
+
+			for ( int EdgeIndex=0; EdgeIndex < SourceVertices.GetCount(); EdgeIndex++ ) {
+				float3	P0 = SourceVertices[EdgeIndex+0];
+				float3	P1 = SourceVertices[(EdgeIndex+1) % SourceVertices.GetCount()];
+				float	Dot0 = (P0 - _P).Dot( _N );
+				float	Dot1 = (P1 - _P).Dot( _N );
+				bool	InFront0 = Dot0 >= 0.0f;
+				bool	InFront1 = Dot1 >= 0.0f;
+				if ( !InFront0 && !InFront1 )
+					continue;	// This edge is completely behind the cutting plane, skip it entirely
+
+				if ( InFront0 && InFront1 ) {
+					// This edge is completely in front of the cutting plane, add P1
+					TargetVertices.Append( P1 );
+				} else {
+					// The edge intersects the plane
+					float3	D = P1 - P0;
+					float	t = -Dot0 / D.Dot( _N );
+					float3	I = P0 + t * D;
+					TargetVertices.Append( I );		// Add intersection no matter what
+					if ( InFront1 )
+						TargetVertices.Append( P1 );	// Since the edge is entering the plane, also add end point
+				}
+			}
+		}
+	};
+
+	// Builds vertices & indices for primitives
+	List<VertexFormatP3>	Vertices;
+	List<U32>				Indices_Faces;
+	List<U32>				Indices_Edges;
+
+	for ( int PlaneIndex=0; PlaneIndex < Probe.m_VoronoiProbes.GetCount(); PlaneIndex++ ) {
+		const SHProbe::VoronoiProbeInfo&	VoronoiInfo = Probe.m_VoronoiProbes[PlaneIndex];
+
+		// Build the polygon by cutting it with all other neighbors
+		CellPolygon	Polygon( VoronoiInfo.PlanePosition, VoronoiInfo.PlaneNormal );
+		for ( int NeighborPlaneIndex=0; NeighborPlaneIndex < Probe.m_VoronoiProbes.GetCount(); NeighborPlaneIndex++ )
+			if ( NeighborPlaneIndex != PlaneIndex ) {
+				const SHProbe::VoronoiProbeInfo&	NeighborVoronoiInfo = Probe.m_VoronoiProbes[NeighborPlaneIndex];
+				Polygon.Cut( NeighborVoronoiInfo.PlanePosition, NeighborVoronoiInfo.PlaneNormal );
+			}
+
+		// Append vertices & indices for both faces & edges
+		const List<float3>&	PolygonVertices = Polygon.GetVertices();
+		U32					VerticesCount = PolygonVertices.GetCount();
+		U32					VertexOffset = Vertices.GetCount();
+		if ( VerticesCount < 3 )
+			continue;	// Completely culled!
+
+//		float				PolygonArea = 0.0f;
+		for ( U32 FaceTriangleIndex=0; FaceTriangleIndex < VerticesCount-2; FaceTriangleIndex++ ) {
+			Indices_Faces.Append( VertexOffset + 0 );
+			Indices_Faces.Append( VertexOffset + 1 + FaceTriangleIndex );
+			Indices_Faces.Append( VertexOffset + 2 + FaceTriangleIndex );
+
+// 			float	Area = 0.5f * (Polygon.m_Vertices[2 + FaceTriangleIndex] - Polygon.m_Vertices[0]).Cross( Polygon.m_Vertices[1 + FaceTriangleIndex] - Polygon.m_Vertices[0] ).Length;
+// 			PolygonArea += Area;
+		}
+// 		AreaMin = Math.Min( AreaMin, PolygonArea );
+// 		AreaMax = Math.Max( AreaMax, PolygonArea );
+// 		AreaAvg += PolygonArea;
+
+		for ( U32 VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ ) {
+			Indices_Edges.Append( VertexOffset + VertexIndex );
+			Indices_Edges.Append( VertexOffset + (VertexIndex+1) % VerticesCount );
+		}
+
+//		float3	Color = PolygonArea < AreaThresholdLow ? new float3( 1, 0, 0 ) : PolygonArea > AreaThresholdHigh ? new float3( 0, 1, 0 ) : new float3( 1, 1, 0 );
+
+		const float3*	pPolygonVertex = &PolygonVertices[0];
+		for ( U32 VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ ) {
+			VertexFormatP3&	Vertex = Vertices.Append();
+			Vertex.P = *pPolygonVertex++;
+		}
+	}
+
+	// Build actual primitives
+	m_pPrimVoronoiCellPlanes = new Primitive( m_Device, Vertices.GetCount(), &Vertices[0], Indices_Faces.GetCount(), &Indices_Faces[0], D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, VertexFormatP3::DESCRIPTOR );
+	m_pPrimVoronoiCellEdges = new Primitive( m_Device, Vertices.GetCount(), &Vertices[0], Indices_Edges.GetCount(), &Indices_Edges[0], D3D11_PRIMITIVE_TOPOLOGY_LINELIST, VertexFormatP3::DESCRIPTOR );
+}

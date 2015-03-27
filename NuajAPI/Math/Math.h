@@ -110,30 +110,30 @@ public:
 
 	void		Set( float _x, float _y, float _z ) { x = _x; y = _y; z = _z; }
 
-	float		LengthSq() const	{ return x*x + y*y + z*z; }
-	float		Length() const		{ return sqrtf( x*x + y*y + z*z ); }
-	float3&		Normalize()			{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; z *= InvL; return *this; }
+	float		LengthSq() const						{ return x*x + y*y + z*z; }
+	float		Length() const							{ return sqrtf( x*x + y*y + z*z ); }
+	float3&		Normalize()								{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; z *= InvL; return *this; }
 
 	float3		Lerp( const float3& b, float t ) const	{ float r = 1.0f - t; return float3( x * r + b.x * t, y * r + b.y * t, z * r + b.z * t ); }
-	float3		Min( const float3& b ) const	{ return float3( MIN( x, b.x ), MIN( y, b.y ), MIN( z, b.z ) ); }
-	float3		Max( const float3& b ) const	{ return float3( MAX( x, b.x ), MAX( y, b.y ), MAX( z, b.z ) ); }
-	float		Min() const						{ return MIN( MIN( x, y ), z ); }
-	float		Max() const						{ return MAX( MAX( x, y ), z ); }
-	bool		Almost( const float3& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ); }
+	float3		Min( const float3& b ) const			{ return float3( MIN( x, b.x ), MIN( y, b.y ), MIN( z, b.z ) ); }
+	float3		Max( const float3& b ) const			{ return float3( MAX( x, b.x ), MAX( y, b.y ), MAX( z, b.z ) ); }
+	float		Min() const								{ return MIN( MIN( x, y ), z ); }
+	float		Max() const								{ return MAX( MAX( x, y ), z ); }
+	bool		Almost( const float3& b ) const			{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ); }
 
-	float		Dot( const float3& b )			{ return x*b.x + y*b.y + z*b.z; }
-	float3		Cross( const float3& b )		{ return float3( y*b.z - z*b.y, b.x*z - b.z*x, x*b.y - y*b.x ); }
+	float		Dot( const float3& b ) const			{ return x*b.x + y*b.y + z*b.z; }
+	float3		Cross( const float3& b ) const			{ return float3( y*b.z - z*b.y, b.x*z - b.z*x, x*b.y - y*b.x ); }
 
-	float3		operator-( const float3& v ) const	{ return float3( x-v.x, y-v.y, z-v.z ); }
-	float3		operator+( const float3& v ) const	{ return float3( x+v.x, y+v.y, z+v.z ); }
-	float3		operator*( const float3& v ) const	{ return float3( x*v.x, y*v.y, z*v.z ); }
-	float3		operator*( float v ) const			{ return float3( x * v, y * v, z * v ); }
-	float3		operator/( float v ) const			{ return float3( x / v, y / v, z / v ); }
-	float3		operator/( const float3& v ) const	{ return float3( x / v.x, y / v.y, z / v.z ); }
-	float		operator|( const float3& v ) const	{ return x*v.x + y*v.y + z*v.z; }
-	float3		operator-() const					{ return float3( -x, -y, -z ); }
-				operator float2() const				{ return float2( x, y ); }
-	float3		operator^( const float3& v ) const	{ return float3( y * v.z - v.y * z, z * v.x - v.z * x, x * v.y - v.x * y ); }
+	float3		operator-( const float3& v ) const		{ return float3( x-v.x, y-v.y, z-v.z ); }
+	float3		operator+( const float3& v ) const		{ return float3( x+v.x, y+v.y, z+v.z ); }
+	float3		operator*( const float3& v ) const		{ return float3( x*v.x, y*v.y, z*v.z ); }
+	float3		operator*( float v ) const				{ return float3( x * v, y * v, z * v ); }
+	float3		operator/( float v ) const				{ return float3( x / v, y / v, z / v ); }
+	float3		operator/( const float3& v ) const		{ return float3( x / v.x, y / v.y, z / v.z ); }
+	float		operator|( const float3& v ) const		{ return x*v.x + y*v.y + z*v.z; }
+	float3		operator-() const						{ return float3( -x, -y, -z ); }
+				operator float2() const					{ return float2( x, y ); }
+	float3		operator^( const float3& v ) const		{ return float3( y * v.z - v.y * z, z * v.x - v.z * x, x * v.y - v.x * y ); }
 
 	static const float3	Zero;
 	static const float3	One;

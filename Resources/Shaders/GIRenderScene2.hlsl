@@ -107,7 +107,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0
 // return float4( 0.01 * _In.SH1, 0 );
 
 	if ( _ShowVertexProbeID ) {
-//		return float4( (1+(uint3( _In.SH0.xxx ) & 0x7)) / 8.0, 1 );
+//		return float4( (1+(uint3( 0.5 + _In.SH0.xxx ) & 0x7)) / 8.0, 1 );
 
 		static float3	PipoColors[8] = {
 			float3( 1, 0, 0 ),

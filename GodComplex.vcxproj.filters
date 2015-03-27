@@ -679,6 +679,9 @@
     <None Include="Resources\Shaders\Shadertoy_GLSL.hlsl">
       <Filter>Resources\Shaders\DEBUG\DOF</Filter>
     </None>
+    <None Include="Resources\Shaders\GIRenderDebugVoronoi.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GodComplex.rc">

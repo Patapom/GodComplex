@@ -34,31 +34,20 @@
 			this.checkBoxEnableSun = new System.Windows.Forms.CheckBox();
 			this.label4 = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlSunIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlSkyIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlSunAzimuth = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlSunTheta = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label42 = new System.Windows.Forms.Label();
 			this.groupBoxClouds = new System.Windows.Forms.GroupBox();
-			this.floatTrackbarControlPointLightBounceFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label11 = new System.Windows.Forms.Label();
 			this.label12 = new System.Windows.Forms.Label();
 			this.label13 = new System.Windows.Forms.Label();
 			this.label14 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlEmissiveLightsBounceFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlStaticLightsBounceFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlSkyBounceFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlSunBounceFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label10 = new System.Windows.Forms.Label();
 			this.groupBoxTerrain = new System.Windows.Forms.GroupBox();
-			this.integerTrackbarControlDynamicObjectsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.panelLightColor = new System.Windows.Forms.Panel();
 			this.checkBoxEnableDynamicPointLight = new System.Windows.Forms.CheckBox();
 			this.checkBoxAnimatePointLight = new System.Windows.Forms.CheckBox();
 			this.label21 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlPointLightIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label16 = new System.Windows.Forms.Label();
 			this.label5 = new System.Windows.Forms.Label();
 			this.buttonLoadPreset = new System.Windows.Forms.Button();
@@ -67,7 +56,6 @@
 			this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
 			this.colorDialog = new System.Windows.Forms.ColorDialog();
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
-			this.floatTrackbarControlEmissiveIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.panelEmissiveColor = new System.Windows.Forms.Panel();
 			this.checkBoxEmissiveRandomAnimation = new System.Windows.Forms.CheckBox();
 			this.checkBoxEnableStaticLighting = new System.Windows.Forms.CheckBox();
@@ -76,15 +64,30 @@
 			this.label7 = new System.Windows.Forms.Label();
 			this.checkBoxShowDebugProbes = new System.Windows.Forms.CheckBox();
 			this.groupBox2 = new System.Windows.Forms.GroupBox();
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlNeighborProbesContribution = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxShowNetwork = new System.Windows.Forms.CheckBox();
-			this.floatTrackbarControlDebugProbeIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxEnableRedistribution = new System.Windows.Forms.CheckBox();
 			this.label9 = new System.Windows.Forms.Label();
 			this.label15 = new System.Windows.Forms.Label();
 			this.label8 = new System.Windows.Forms.Label();
 			this.checkBoxShowProbeInfluences = new System.Windows.Forms.CheckBox();
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.floatTrackbarControlNeighborProbesContribution = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlDebugProbeIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlEmissiveIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.integerTrackbarControlDynamicObjectsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.floatTrackbarControlPointLightIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlPointLightBounceFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlEmissiveLightsBounceFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlStaticLightsBounceFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlSkyBounceFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlSunBounceFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlSunIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlSkyIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlSunAzimuth = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlSunTheta = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxShowProbeVoronoiCell = new System.Windows.Forms.CheckBox();
+			this.integerTrackbarControlVoronoiProbeIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label17 = new System.Windows.Forms.Label();
 			this.groupBoxAtmosphere.SuspendLayout();
 			this.groupBoxClouds.SuspendLayout();
 			this.groupBoxTerrain.SuspendLayout();
@@ -165,20 +168,6 @@
 			this.label3.TabIndex = 2;
 			this.label3.Text = "Sky Intensity";
 			// 
-			// floatTrackbarControlSunIntensity
-			// 
-			this.floatTrackbarControlSunIntensity.Location = new System.Drawing.Point(88, 97);
-			this.floatTrackbarControlSunIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlSunIntensity.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlSunIntensity.Name = "floatTrackbarControlSunIntensity";
-			this.floatTrackbarControlSunIntensity.RangeMax = 1000F;
-			this.floatTrackbarControlSunIntensity.RangeMin = 0F;
-			this.floatTrackbarControlSunIntensity.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlSunIntensity.TabIndex = 2;
-			this.floatTrackbarControlSunIntensity.Value = 30F;
-			this.floatTrackbarControlSunIntensity.VisibleRangeMax = 100F;
-			this.floatTrackbarControlSunIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSunIntensity_ValueChanged);
-			// 
 			// label2
 			// 
 			this.label2.AutoSize = true;
@@ -196,49 +185,6 @@
 			this.label1.Size = new System.Drawing.Size(73, 13);
 			this.label1.TabIndex = 2;
 			this.label1.Text = "Sun Elevation";
-			// 
-			// floatTrackbarControlSkyIntensity
-			// 
-			this.floatTrackbarControlSkyIntensity.Location = new System.Drawing.Point(88, 175);
-			this.floatTrackbarControlSkyIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlSkyIntensity.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlSkyIntensity.Name = "floatTrackbarControlSkyIntensity";
-			this.floatTrackbarControlSkyIntensity.RangeMax = 1000F;
-			this.floatTrackbarControlSkyIntensity.RangeMin = 0F;
-			this.floatTrackbarControlSkyIntensity.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlSkyIntensity.TabIndex = 3;
-			this.floatTrackbarControlSkyIntensity.Value = 3F;
-			this.floatTrackbarControlSkyIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSkyIntensity_ValueChanged);
-			// 
-			// floatTrackbarControlSunAzimuth
-			// 
-			this.floatTrackbarControlSunAzimuth.Location = new System.Drawing.Point(88, 74);
-			this.floatTrackbarControlSunAzimuth.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlSunAzimuth.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlSunAzimuth.Name = "floatTrackbarControlSunAzimuth";
-			this.floatTrackbarControlSunAzimuth.RangeMax = 180F;
-			this.floatTrackbarControlSunAzimuth.RangeMin = -180F;
-			this.floatTrackbarControlSunAzimuth.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlSunAzimuth.TabIndex = 1;
-			this.floatTrackbarControlSunAzimuth.Value = 0F;
-			this.floatTrackbarControlSunAzimuth.VisibleRangeMax = 180F;
-			this.floatTrackbarControlSunAzimuth.VisibleRangeMin = -180F;
-			this.floatTrackbarControlSunAzimuth.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSunAzimuth_ValueChanged);
-			// 
-			// floatTrackbarControlSunTheta
-			// 
-			this.floatTrackbarControlSunTheta.Location = new System.Drawing.Point(88, 48);
-			this.floatTrackbarControlSunTheta.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlSunTheta.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlSunTheta.Name = "floatTrackbarControlSunTheta";
-			this.floatTrackbarControlSunTheta.RangeMax = 180F;
-			this.floatTrackbarControlSunTheta.RangeMin = 1F;
-			this.floatTrackbarControlSunTheta.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlSunTheta.TabIndex = 0;
-			this.floatTrackbarControlSunTheta.Value = 45F;
-			this.floatTrackbarControlSunTheta.VisibleRangeMax = 120F;
-			this.floatTrackbarControlSunTheta.VisibleRangeMin = 1F;
-			this.floatTrackbarControlSunTheta.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSunTheta_ValueChanged);
 			// 
 			// label42
 			// 
@@ -267,20 +213,6 @@
 			this.groupBoxClouds.TabIndex = 1;
 			this.groupBoxClouds.TabStop = false;
 			this.groupBoxClouds.Text = "Bounce Factors";
-			// 
-			// floatTrackbarControlPointLightBounceFactor
-			// 
-			this.floatTrackbarControlPointLightBounceFactor.Location = new System.Drawing.Point(88, 82);
-			this.floatTrackbarControlPointLightBounceFactor.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlPointLightBounceFactor.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlPointLightBounceFactor.Name = "floatTrackbarControlPointLightBounceFactor";
-			this.floatTrackbarControlPointLightBounceFactor.RangeMax = 1000F;
-			this.floatTrackbarControlPointLightBounceFactor.RangeMin = 0F;
-			this.floatTrackbarControlPointLightBounceFactor.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlPointLightBounceFactor.TabIndex = 2;
-			this.floatTrackbarControlPointLightBounceFactor.Value = 100F;
-			this.floatTrackbarControlPointLightBounceFactor.VisibleRangeMax = 100F;
-			this.floatTrackbarControlPointLightBounceFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlPointLightBounceFactor_ValueChanged);
 			// 
 			// label11
 			// 
@@ -318,62 +250,6 @@
 			this.label14.TabIndex = 2;
 			this.label14.Text = "Sun";
 			// 
-			// floatTrackbarControlEmissiveLightsBounceFactor
-			// 
-			this.floatTrackbarControlEmissiveLightsBounceFactor.Location = new System.Drawing.Point(88, 134);
-			this.floatTrackbarControlEmissiveLightsBounceFactor.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlEmissiveLightsBounceFactor.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlEmissiveLightsBounceFactor.Name = "floatTrackbarControlEmissiveLightsBounceFactor";
-			this.floatTrackbarControlEmissiveLightsBounceFactor.RangeMax = 1000F;
-			this.floatTrackbarControlEmissiveLightsBounceFactor.RangeMin = 0F;
-			this.floatTrackbarControlEmissiveLightsBounceFactor.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlEmissiveLightsBounceFactor.TabIndex = 4;
-			this.floatTrackbarControlEmissiveLightsBounceFactor.Value = 100F;
-			this.floatTrackbarControlEmissiveLightsBounceFactor.VisibleRangeMax = 100F;
-			this.floatTrackbarControlEmissiveLightsBounceFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlEmissiveLightsBounceFactor_ValueChanged);
-			// 
-			// floatTrackbarControlStaticLightsBounceFactor
-			// 
-			this.floatTrackbarControlStaticLightsBounceFactor.Location = new System.Drawing.Point(88, 108);
-			this.floatTrackbarControlStaticLightsBounceFactor.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlStaticLightsBounceFactor.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlStaticLightsBounceFactor.Name = "floatTrackbarControlStaticLightsBounceFactor";
-			this.floatTrackbarControlStaticLightsBounceFactor.RangeMax = 1000F;
-			this.floatTrackbarControlStaticLightsBounceFactor.RangeMin = 0F;
-			this.floatTrackbarControlStaticLightsBounceFactor.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlStaticLightsBounceFactor.TabIndex = 3;
-			this.floatTrackbarControlStaticLightsBounceFactor.Value = 100F;
-			this.floatTrackbarControlStaticLightsBounceFactor.VisibleRangeMax = 100F;
-			this.floatTrackbarControlStaticLightsBounceFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlStaticLightsBounceFactor_ValueChanged);
-			// 
-			// floatTrackbarControlSkyBounceFactor
-			// 
-			this.floatTrackbarControlSkyBounceFactor.Location = new System.Drawing.Point(88, 56);
-			this.floatTrackbarControlSkyBounceFactor.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlSkyBounceFactor.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlSkyBounceFactor.Name = "floatTrackbarControlSkyBounceFactor";
-			this.floatTrackbarControlSkyBounceFactor.RangeMax = 1000F;
-			this.floatTrackbarControlSkyBounceFactor.RangeMin = 0F;
-			this.floatTrackbarControlSkyBounceFactor.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlSkyBounceFactor.TabIndex = 1;
-			this.floatTrackbarControlSkyBounceFactor.Value = 100F;
-			this.floatTrackbarControlSkyBounceFactor.VisibleRangeMax = 100F;
-			this.floatTrackbarControlSkyBounceFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSkyBounceFactor_ValueChanged);
-			// 
-			// floatTrackbarControlSunBounceFactor
-			// 
-			this.floatTrackbarControlSunBounceFactor.Location = new System.Drawing.Point(88, 30);
-			this.floatTrackbarControlSunBounceFactor.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlSunBounceFactor.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlSunBounceFactor.Name = "floatTrackbarControlSunBounceFactor";
-			this.floatTrackbarControlSunBounceFactor.RangeMax = 1000F;
-			this.floatTrackbarControlSunBounceFactor.RangeMin = 0F;
-			this.floatTrackbarControlSunBounceFactor.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlSunBounceFactor.TabIndex = 0;
-			this.floatTrackbarControlSunBounceFactor.Value = 100F;
-			this.floatTrackbarControlSunBounceFactor.VisibleRangeMax = 100F;
-			this.floatTrackbarControlSunBounceFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSunBounceFactor_ValueChanged);
-			// 
 			// label10
 			// 
 			this.label10.AutoSize = true;
@@ -399,20 +275,6 @@
 			this.groupBoxTerrain.TabIndex = 2;
 			this.groupBoxTerrain.TabStop = false;
 			this.groupBoxTerrain.Text = "Dynamic Lights && Objects";
-			// 
-			// integerTrackbarControlDynamicObjectsCount
-			// 
-			this.integerTrackbarControlDynamicObjectsCount.Location = new System.Drawing.Point(88, 121);
-			this.integerTrackbarControlDynamicObjectsCount.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlDynamicObjectsCount.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlDynamicObjectsCount.Name = "integerTrackbarControlDynamicObjectsCount";
-			this.integerTrackbarControlDynamicObjectsCount.RangeMax = 128;
-			this.integerTrackbarControlDynamicObjectsCount.RangeMin = 0;
-			this.integerTrackbarControlDynamicObjectsCount.Size = new System.Drawing.Size(213, 20);
-			this.integerTrackbarControlDynamicObjectsCount.TabIndex = 4;
-			this.integerTrackbarControlDynamicObjectsCount.Value = 0;
-			this.integerTrackbarControlDynamicObjectsCount.VisibleRangeMax = 64;
-			this.integerTrackbarControlDynamicObjectsCount.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlDynamicObjectsCount_ValueChanged);
 			// 
 			// panelLightColor
 			// 
@@ -457,20 +319,6 @@
 			this.label21.Size = new System.Drawing.Size(72, 13);
 			this.label21.TabIndex = 2;
 			this.label21.Text = "Light Intensity";
-			// 
-			// floatTrackbarControlPointLightIntensity
-			// 
-			this.floatTrackbarControlPointLightIntensity.Location = new System.Drawing.Point(88, 54);
-			this.floatTrackbarControlPointLightIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlPointLightIntensity.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlPointLightIntensity.Name = "floatTrackbarControlPointLightIntensity";
-			this.floatTrackbarControlPointLightIntensity.RangeMax = 100F;
-			this.floatTrackbarControlPointLightIntensity.RangeMin = 0F;
-			this.floatTrackbarControlPointLightIntensity.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlPointLightIntensity.TabIndex = 1;
-			this.floatTrackbarControlPointLightIntensity.Value = 10F;
-			this.floatTrackbarControlPointLightIntensity.VisibleRangeMax = 20F;
-			this.floatTrackbarControlPointLightIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlPointLightIntensity_ValueChanged);
 			// 
 			// label16
 			// 
@@ -543,20 +391,6 @@
 			this.groupBox1.TabIndex = 3;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Static Lighting && Emissive Surfaces";
-			// 
-			// floatTrackbarControlEmissiveIntensity
-			// 
-			this.floatTrackbarControlEmissiveIntensity.Location = new System.Drawing.Point(88, 83);
-			this.floatTrackbarControlEmissiveIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlEmissiveIntensity.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlEmissiveIntensity.Name = "floatTrackbarControlEmissiveIntensity";
-			this.floatTrackbarControlEmissiveIntensity.RangeMax = 100F;
-			this.floatTrackbarControlEmissiveIntensity.RangeMin = 0F;
-			this.floatTrackbarControlEmissiveIntensity.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlEmissiveIntensity.TabIndex = 2;
-			this.floatTrackbarControlEmissiveIntensity.Value = 10F;
-			this.floatTrackbarControlEmissiveIntensity.VisibleRangeMax = 20F;
-			this.floatTrackbarControlEmissiveIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlEmissiveIntensity_ValueChanged);
 			// 
 			// panelEmissiveColor
 			// 
@@ -637,14 +471,17 @@
 			// 
 			// groupBox2
 			// 
+			this.groupBox2.Controls.Add(this.integerTrackbarControlVoronoiProbeIndex);
 			this.groupBox2.Controls.Add(this.integerTrackbarControlMaxProbeUpdatesPerFrame);
 			this.groupBox2.Controls.Add(this.floatTrackbarControlNeighborProbesContribution);
+			this.groupBox2.Controls.Add(this.checkBoxShowProbeVoronoiCell);
 			this.groupBox2.Controls.Add(this.checkBoxShowProbeInfluences);
 			this.groupBox2.Controls.Add(this.checkBoxShowNetwork);
 			this.groupBox2.Controls.Add(this.checkBoxShowDebugProbes);
 			this.groupBox2.Controls.Add(this.floatTrackbarControlDebugProbeIntensity);
 			this.groupBox2.Controls.Add(this.checkBoxEnableRedistribution);
 			this.groupBox2.Controls.Add(this.label9);
+			this.groupBox2.Controls.Add(this.label17);
 			this.groupBox2.Controls.Add(this.label15);
 			this.groupBox2.Controls.Add(this.label8);
 			this.groupBox2.Location = new System.Drawing.Point(648, 17);
@@ -653,35 +490,6 @@
 			this.groupBox2.TabIndex = 4;
 			this.groupBox2.TabStop = false;
 			this.groupBox2.Text = "Misc.";
-			// 
-			// integerTrackbarControlMaxProbeUpdatesPerFrame
-			// 
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Location = new System.Drawing.Point(88, 174);
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Name = "integerTrackbarControlMaxProbeUpdatesPerFrame";
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.RangeMax = 128;
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.RangeMin = 1;
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Size = new System.Drawing.Size(213, 20);
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.TabIndex = 4;
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Value = 8;
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.VisibleRangeMax = 32;
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.VisibleRangeMin = 1;
-			this.integerTrackbarControlMaxProbeUpdatesPerFrame.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlMaxProbeUpdatesPerFrame_ValueChanged);
-			// 
-			// floatTrackbarControlNeighborProbesContribution
-			// 
-			this.floatTrackbarControlNeighborProbesContribution.Location = new System.Drawing.Point(88, 49);
-			this.floatTrackbarControlNeighborProbesContribution.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlNeighborProbesContribution.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlNeighborProbesContribution.Name = "floatTrackbarControlNeighborProbesContribution";
-			this.floatTrackbarControlNeighborProbesContribution.RangeMax = 1000F;
-			this.floatTrackbarControlNeighborProbesContribution.RangeMin = 0F;
-			this.floatTrackbarControlNeighborProbesContribution.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlNeighborProbesContribution.TabIndex = 0;
-			this.floatTrackbarControlNeighborProbesContribution.Value = 50F;
-			this.floatTrackbarControlNeighborProbesContribution.VisibleRangeMax = 100F;
-			this.floatTrackbarControlNeighborProbesContribution.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlNeighborProbesContribution_ValueChanged);
 			// 
 			// checkBoxShowNetwork
 			// 
@@ -694,20 +502,6 @@
 			this.checkBoxShowNetwork.Text = "Show Debug Probes Network";
 			this.checkBoxShowNetwork.UseVisualStyleBackColor = true;
 			this.checkBoxShowNetwork.CheckedChanged += new System.EventHandler(this.checkBoxShowNetwork_CheckedChanged);
-			// 
-			// floatTrackbarControlDebugProbeIntensity
-			// 
-			this.floatTrackbarControlDebugProbeIntensity.Location = new System.Drawing.Point(88, 108);
-			this.floatTrackbarControlDebugProbeIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlDebugProbeIntensity.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlDebugProbeIntensity.Name = "floatTrackbarControlDebugProbeIntensity";
-			this.floatTrackbarControlDebugProbeIntensity.RangeMax = 1000F;
-			this.floatTrackbarControlDebugProbeIntensity.RangeMin = 0F;
-			this.floatTrackbarControlDebugProbeIntensity.Size = new System.Drawing.Size(214, 20);
-			this.floatTrackbarControlDebugProbeIntensity.TabIndex = 0;
-			this.floatTrackbarControlDebugProbeIntensity.Value = 1F;
-			this.floatTrackbarControlDebugProbeIntensity.VisibleRangeMax = 2F;
-			this.floatTrackbarControlDebugProbeIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlDebugProbeIntensity_ValueChanged);
 			// 
 			// checkBoxEnableRedistribution
 			// 
@@ -760,6 +554,252 @@
 			this.checkBoxShowProbeInfluences.Text = "Show Probe Influences";
 			this.checkBoxShowProbeInfluences.UseVisualStyleBackColor = true;
 			this.checkBoxShowProbeInfluences.CheckedChanged += new System.EventHandler(this.checkBoxShowProbeInfluences_CheckedChanged);
+			// 
+			// integerTrackbarControlMaxProbeUpdatesPerFrame
+			// 
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Location = new System.Drawing.Point(88, 174);
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Name = "integerTrackbarControlMaxProbeUpdatesPerFrame";
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.RangeMax = 128;
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.RangeMin = 1;
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Size = new System.Drawing.Size(213, 20);
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.TabIndex = 4;
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.Value = 8;
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.VisibleRangeMax = 32;
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.VisibleRangeMin = 1;
+			this.integerTrackbarControlMaxProbeUpdatesPerFrame.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlMaxProbeUpdatesPerFrame_ValueChanged);
+			// 
+			// floatTrackbarControlNeighborProbesContribution
+			// 
+			this.floatTrackbarControlNeighborProbesContribution.Location = new System.Drawing.Point(88, 49);
+			this.floatTrackbarControlNeighborProbesContribution.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlNeighborProbesContribution.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlNeighborProbesContribution.Name = "floatTrackbarControlNeighborProbesContribution";
+			this.floatTrackbarControlNeighborProbesContribution.RangeMax = 1000F;
+			this.floatTrackbarControlNeighborProbesContribution.RangeMin = 0F;
+			this.floatTrackbarControlNeighborProbesContribution.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlNeighborProbesContribution.TabIndex = 0;
+			this.floatTrackbarControlNeighborProbesContribution.Value = 50F;
+			this.floatTrackbarControlNeighborProbesContribution.VisibleRangeMax = 100F;
+			this.floatTrackbarControlNeighborProbesContribution.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlNeighborProbesContribution_ValueChanged);
+			// 
+			// floatTrackbarControlDebugProbeIntensity
+			// 
+			this.floatTrackbarControlDebugProbeIntensity.Location = new System.Drawing.Point(88, 108);
+			this.floatTrackbarControlDebugProbeIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlDebugProbeIntensity.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlDebugProbeIntensity.Name = "floatTrackbarControlDebugProbeIntensity";
+			this.floatTrackbarControlDebugProbeIntensity.RangeMax = 1000F;
+			this.floatTrackbarControlDebugProbeIntensity.RangeMin = 0F;
+			this.floatTrackbarControlDebugProbeIntensity.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlDebugProbeIntensity.TabIndex = 0;
+			this.floatTrackbarControlDebugProbeIntensity.Value = 1F;
+			this.floatTrackbarControlDebugProbeIntensity.VisibleRangeMax = 2F;
+			this.floatTrackbarControlDebugProbeIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlDebugProbeIntensity_ValueChanged);
+			// 
+			// floatTrackbarControlEmissiveIntensity
+			// 
+			this.floatTrackbarControlEmissiveIntensity.Location = new System.Drawing.Point(88, 83);
+			this.floatTrackbarControlEmissiveIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlEmissiveIntensity.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlEmissiveIntensity.Name = "floatTrackbarControlEmissiveIntensity";
+			this.floatTrackbarControlEmissiveIntensity.RangeMax = 100F;
+			this.floatTrackbarControlEmissiveIntensity.RangeMin = 0F;
+			this.floatTrackbarControlEmissiveIntensity.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlEmissiveIntensity.TabIndex = 2;
+			this.floatTrackbarControlEmissiveIntensity.Value = 10F;
+			this.floatTrackbarControlEmissiveIntensity.VisibleRangeMax = 20F;
+			this.floatTrackbarControlEmissiveIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlEmissiveIntensity_ValueChanged);
+			// 
+			// integerTrackbarControlDynamicObjectsCount
+			// 
+			this.integerTrackbarControlDynamicObjectsCount.Location = new System.Drawing.Point(88, 121);
+			this.integerTrackbarControlDynamicObjectsCount.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlDynamicObjectsCount.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlDynamicObjectsCount.Name = "integerTrackbarControlDynamicObjectsCount";
+			this.integerTrackbarControlDynamicObjectsCount.RangeMax = 128;
+			this.integerTrackbarControlDynamicObjectsCount.RangeMin = 0;
+			this.integerTrackbarControlDynamicObjectsCount.Size = new System.Drawing.Size(213, 20);
+			this.integerTrackbarControlDynamicObjectsCount.TabIndex = 4;
+			this.integerTrackbarControlDynamicObjectsCount.Value = 0;
+			this.integerTrackbarControlDynamicObjectsCount.VisibleRangeMax = 64;
+			this.integerTrackbarControlDynamicObjectsCount.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlDynamicObjectsCount_ValueChanged);
+			// 
+			// floatTrackbarControlPointLightIntensity
+			// 
+			this.floatTrackbarControlPointLightIntensity.Location = new System.Drawing.Point(88, 54);
+			this.floatTrackbarControlPointLightIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlPointLightIntensity.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlPointLightIntensity.Name = "floatTrackbarControlPointLightIntensity";
+			this.floatTrackbarControlPointLightIntensity.RangeMax = 100F;
+			this.floatTrackbarControlPointLightIntensity.RangeMin = 0F;
+			this.floatTrackbarControlPointLightIntensity.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlPointLightIntensity.TabIndex = 1;
+			this.floatTrackbarControlPointLightIntensity.Value = 10F;
+			this.floatTrackbarControlPointLightIntensity.VisibleRangeMax = 20F;
+			this.floatTrackbarControlPointLightIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlPointLightIntensity_ValueChanged);
+			// 
+			// floatTrackbarControlPointLightBounceFactor
+			// 
+			this.floatTrackbarControlPointLightBounceFactor.Location = new System.Drawing.Point(88, 82);
+			this.floatTrackbarControlPointLightBounceFactor.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlPointLightBounceFactor.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlPointLightBounceFactor.Name = "floatTrackbarControlPointLightBounceFactor";
+			this.floatTrackbarControlPointLightBounceFactor.RangeMax = 1000F;
+			this.floatTrackbarControlPointLightBounceFactor.RangeMin = 0F;
+			this.floatTrackbarControlPointLightBounceFactor.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlPointLightBounceFactor.TabIndex = 2;
+			this.floatTrackbarControlPointLightBounceFactor.Value = 100F;
+			this.floatTrackbarControlPointLightBounceFactor.VisibleRangeMax = 100F;
+			this.floatTrackbarControlPointLightBounceFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlPointLightBounceFactor_ValueChanged);
+			// 
+			// floatTrackbarControlEmissiveLightsBounceFactor
+			// 
+			this.floatTrackbarControlEmissiveLightsBounceFactor.Location = new System.Drawing.Point(88, 134);
+			this.floatTrackbarControlEmissiveLightsBounceFactor.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlEmissiveLightsBounceFactor.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlEmissiveLightsBounceFactor.Name = "floatTrackbarControlEmissiveLightsBounceFactor";
+			this.floatTrackbarControlEmissiveLightsBounceFactor.RangeMax = 1000F;
+			this.floatTrackbarControlEmissiveLightsBounceFactor.RangeMin = 0F;
+			this.floatTrackbarControlEmissiveLightsBounceFactor.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlEmissiveLightsBounceFactor.TabIndex = 4;
+			this.floatTrackbarControlEmissiveLightsBounceFactor.Value = 100F;
+			this.floatTrackbarControlEmissiveLightsBounceFactor.VisibleRangeMax = 100F;
+			this.floatTrackbarControlEmissiveLightsBounceFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlEmissiveLightsBounceFactor_ValueChanged);
+			// 
+			// floatTrackbarControlStaticLightsBounceFactor
+			// 
+			this.floatTrackbarControlStaticLightsBounceFactor.Location = new System.Drawing.Point(88, 108);
+			this.floatTrackbarControlStaticLightsBounceFactor.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlStaticLightsBounceFactor.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlStaticLightsBounceFactor.Name = "floatTrackbarControlStaticLightsBounceFactor";
+			this.floatTrackbarControlStaticLightsBounceFactor.RangeMax = 1000F;
+			this.floatTrackbarControlStaticLightsBounceFactor.RangeMin = 0F;
+			this.floatTrackbarControlStaticLightsBounceFactor.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlStaticLightsBounceFactor.TabIndex = 3;
+			this.floatTrackbarControlStaticLightsBounceFactor.Value = 100F;
+			this.floatTrackbarControlStaticLightsBounceFactor.VisibleRangeMax = 100F;
+			this.floatTrackbarControlStaticLightsBounceFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlStaticLightsBounceFactor_ValueChanged);
+			// 
+			// floatTrackbarControlSkyBounceFactor
+			// 
+			this.floatTrackbarControlSkyBounceFactor.Location = new System.Drawing.Point(88, 56);
+			this.floatTrackbarControlSkyBounceFactor.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlSkyBounceFactor.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlSkyBounceFactor.Name = "floatTrackbarControlSkyBounceFactor";
+			this.floatTrackbarControlSkyBounceFactor.RangeMax = 1000F;
+			this.floatTrackbarControlSkyBounceFactor.RangeMin = 0F;
+			this.floatTrackbarControlSkyBounceFactor.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlSkyBounceFactor.TabIndex = 1;
+			this.floatTrackbarControlSkyBounceFactor.Value = 100F;
+			this.floatTrackbarControlSkyBounceFactor.VisibleRangeMax = 100F;
+			this.floatTrackbarControlSkyBounceFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSkyBounceFactor_ValueChanged);
+			// 
+			// floatTrackbarControlSunBounceFactor
+			// 
+			this.floatTrackbarControlSunBounceFactor.Location = new System.Drawing.Point(88, 30);
+			this.floatTrackbarControlSunBounceFactor.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlSunBounceFactor.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlSunBounceFactor.Name = "floatTrackbarControlSunBounceFactor";
+			this.floatTrackbarControlSunBounceFactor.RangeMax = 1000F;
+			this.floatTrackbarControlSunBounceFactor.RangeMin = 0F;
+			this.floatTrackbarControlSunBounceFactor.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlSunBounceFactor.TabIndex = 0;
+			this.floatTrackbarControlSunBounceFactor.Value = 100F;
+			this.floatTrackbarControlSunBounceFactor.VisibleRangeMax = 100F;
+			this.floatTrackbarControlSunBounceFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSunBounceFactor_ValueChanged);
+			// 
+			// floatTrackbarControlSunIntensity
+			// 
+			this.floatTrackbarControlSunIntensity.Location = new System.Drawing.Point(88, 97);
+			this.floatTrackbarControlSunIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlSunIntensity.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlSunIntensity.Name = "floatTrackbarControlSunIntensity";
+			this.floatTrackbarControlSunIntensity.RangeMax = 1000F;
+			this.floatTrackbarControlSunIntensity.RangeMin = 0F;
+			this.floatTrackbarControlSunIntensity.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlSunIntensity.TabIndex = 2;
+			this.floatTrackbarControlSunIntensity.Value = 30F;
+			this.floatTrackbarControlSunIntensity.VisibleRangeMax = 100F;
+			this.floatTrackbarControlSunIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSunIntensity_ValueChanged);
+			// 
+			// floatTrackbarControlSkyIntensity
+			// 
+			this.floatTrackbarControlSkyIntensity.Location = new System.Drawing.Point(88, 175);
+			this.floatTrackbarControlSkyIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlSkyIntensity.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlSkyIntensity.Name = "floatTrackbarControlSkyIntensity";
+			this.floatTrackbarControlSkyIntensity.RangeMax = 1000F;
+			this.floatTrackbarControlSkyIntensity.RangeMin = 0F;
+			this.floatTrackbarControlSkyIntensity.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlSkyIntensity.TabIndex = 3;
+			this.floatTrackbarControlSkyIntensity.Value = 3F;
+			this.floatTrackbarControlSkyIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSkyIntensity_ValueChanged);
+			// 
+			// floatTrackbarControlSunAzimuth
+			// 
+			this.floatTrackbarControlSunAzimuth.Location = new System.Drawing.Point(88, 74);
+			this.floatTrackbarControlSunAzimuth.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlSunAzimuth.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlSunAzimuth.Name = "floatTrackbarControlSunAzimuth";
+			this.floatTrackbarControlSunAzimuth.RangeMax = 180F;
+			this.floatTrackbarControlSunAzimuth.RangeMin = -180F;
+			this.floatTrackbarControlSunAzimuth.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlSunAzimuth.TabIndex = 1;
+			this.floatTrackbarControlSunAzimuth.Value = 0F;
+			this.floatTrackbarControlSunAzimuth.VisibleRangeMax = 180F;
+			this.floatTrackbarControlSunAzimuth.VisibleRangeMin = -180F;
+			this.floatTrackbarControlSunAzimuth.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSunAzimuth_ValueChanged);
+			// 
+			// floatTrackbarControlSunTheta
+			// 
+			this.floatTrackbarControlSunTheta.Location = new System.Drawing.Point(88, 48);
+			this.floatTrackbarControlSunTheta.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlSunTheta.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlSunTheta.Name = "floatTrackbarControlSunTheta";
+			this.floatTrackbarControlSunTheta.RangeMax = 180F;
+			this.floatTrackbarControlSunTheta.RangeMin = 1F;
+			this.floatTrackbarControlSunTheta.Size = new System.Drawing.Size(214, 20);
+			this.floatTrackbarControlSunTheta.TabIndex = 0;
+			this.floatTrackbarControlSunTheta.Value = 45F;
+			this.floatTrackbarControlSunTheta.VisibleRangeMax = 120F;
+			this.floatTrackbarControlSunTheta.VisibleRangeMin = 1F;
+			this.floatTrackbarControlSunTheta.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSunTheta_ValueChanged);
+			// 
+			// checkBoxShowProbeVoronoiCell
+			// 
+			this.checkBoxShowProbeVoronoiCell.AutoSize = true;
+			this.checkBoxShowProbeVoronoiCell.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.checkBoxShowProbeVoronoiCell.Location = new System.Drawing.Point(10, 264);
+			this.checkBoxShowProbeVoronoiCell.Name = "checkBoxShowProbeVoronoiCell";
+			this.checkBoxShowProbeVoronoiCell.Size = new System.Drawing.Size(168, 17);
+			this.checkBoxShowProbeVoronoiCell.TabIndex = 3;
+			this.checkBoxShowProbeVoronoiCell.Text = "Show Probe Voronoï Cell";
+			this.checkBoxShowProbeVoronoiCell.UseVisualStyleBackColor = true;
+			this.checkBoxShowProbeVoronoiCell.CheckedChanged += new System.EventHandler(this.checkBoxShowProbeVoronoiCell_CheckedChanged);
+			// 
+			// integerTrackbarControlVoronoiProbeIndex
+			// 
+			this.integerTrackbarControlVoronoiProbeIndex.Location = new System.Drawing.Point(88, 287);
+			this.integerTrackbarControlVoronoiProbeIndex.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlVoronoiProbeIndex.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlVoronoiProbeIndex.Name = "integerTrackbarControlVoronoiProbeIndex";
+			this.integerTrackbarControlVoronoiProbeIndex.RangeMax = 1000;
+			this.integerTrackbarControlVoronoiProbeIndex.RangeMin = 0;
+			this.integerTrackbarControlVoronoiProbeIndex.Size = new System.Drawing.Size(213, 20);
+			this.integerTrackbarControlVoronoiProbeIndex.TabIndex = 4;
+			this.integerTrackbarControlVoronoiProbeIndex.Value = 0;
+			this.integerTrackbarControlVoronoiProbeIndex.VisibleRangeMax = 10;
+			this.integerTrackbarControlVoronoiProbeIndex.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlProbeIndex_ValueChanged);
+			// 
+			// label17
+			// 
+			this.label17.Location = new System.Drawing.Point(7, 289);
+			this.label17.Name = "label17";
+			this.label17.Size = new System.Drawing.Size(78, 20);
+			this.label17.TabIndex = 2;
+			this.label17.Text = "Probe index";
 			// 
 			// Form1
 			// 
@@ -853,6 +893,9 @@
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlDynamicObjectsCount;
 		private System.Windows.Forms.Label label16;
 		private System.Windows.Forms.CheckBox checkBoxShowProbeInfluences;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlVoronoiProbeIndex;
+		private System.Windows.Forms.CheckBox checkBoxShowProbeVoronoiCell;
+		private System.Windows.Forms.Label label17;
 	}
 }
 

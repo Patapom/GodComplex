@@ -258,7 +258,8 @@ public:
 	void			PreAllocateProbes( int _ProbesCount );
 
 	void			AddProbe( Scene::Probe& _Probe );
-	U32				GetProbesCount() const	{ return m_ProbesCount; }
+	U32				GetProbesCount() const			{ return m_ProbesCount; }
+	const SHProbe&	GetProbe( U32 _Index ) const	{ return m_pProbes[_Index]; }
 
 	Primitive*		GetProbeIDVertexStream() const	{ return m_pPrimProbeIDs; }
 
