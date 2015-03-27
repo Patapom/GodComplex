@@ -250,6 +250,7 @@ private:	// FIELDS
 		U32		ShowDebugProbes;
 		U32		ShowDebugProbesNetwork;
 		float	DebugProbesIntensity;
+		U32		ShowDebugProbeInfluences;
 	};
 
 	// Memory-Mapped File for tweaking

@@ -676,6 +676,10 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 	m_pCB_General->m.ShowOnlyIndirect = gs_WindowInfos.pKeys[VK_BACK] == 0;
 	m_pCB_General->m.ShowWhiteDiffuse = gs_WindowInfos.pKeys[VK_DELETE] != 0;
 	m_pCB_General->m.ShowVertexProbeID = gs_WindowInfos.pKeys[VK_INSERT] != 0;
+#ifdef _DEBUG
+	m_pCB_General->m.ShowVertexProbeID |= m_CachedCopy.ShowDebugProbeInfluences;
+#endif
+
 	m_pCB_General->m.Ambient = !m_pCB_General->m.ShowIndirect && m_CachedCopy.EnableSky ? 0.25f * float3( 0.64f, 0.79f, 1.0f ) : float3::Zero;
 	m_pCB_General->UpdateData();
 
@@ -1188,11 +1192,10 @@ void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh,
 
 #pragma endregion
 
-#pragma region Scene Rendering
-
 //////////////////////////////////////////////////////////////////////////
 // Scene Rendering
 //
+#pragma region Scene Rendering
 
 // Mesh rendering: we render each of the mesh's primitive in turn
 void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride, bool _SetMaterial )

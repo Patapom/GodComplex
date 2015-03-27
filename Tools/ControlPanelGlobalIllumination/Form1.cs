@@ -78,6 +78,7 @@ namespace ControlPanelGlobalIllumination
 			public int		ShowDebugProbes;
 			public int		ShowDebugProbesNetwork;
 			public float	DebugProbesIntensity;
+			public int		ShowDebugProbeInfluences;
 
 			public void	SetChecksum( int _Checksum )	{ Checksum = _Checksum; }
 		}
@@ -183,6 +184,7 @@ namespace ControlPanelGlobalIllumination
 			// Debug
 			checkBoxShowDebugProbes.Checked = m_Instance.ShowDebugProbes != 0;
 			checkBoxShowNetwork.Checked = m_Instance.ShowDebugProbesNetwork != 0;
+			checkBoxShowProbeInfluences.Checked = m_Instance.ShowDebugProbeInfluences != 0;
 
 			// Refresh block
 			m_bInternalUpdate = false;
@@ -517,6 +519,12 @@ namespace ControlPanelGlobalIllumination
 		private void integerTrackbarControlMaxProbeUpdatesPerFrame_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			m_Instance.MaxProbeUpdatesPerFrame = _Sender.Value;
+			UpdateMMF();
+		}
+
+		private void checkBoxShowProbeInfluences_CheckedChanged( object sender, EventArgs e )
+		{
+			m_Instance.ShowDebugProbeInfluences = (sender as CheckBox).Checked ? 1 : 0;
 			UpdateMMF();
 		}
 
