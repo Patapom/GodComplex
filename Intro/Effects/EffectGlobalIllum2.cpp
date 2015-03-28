@@ -1417,7 +1417,7 @@ void	EffectGlobalIllum2::BuildVoronoiPrimitives() {
 		U32					VerticesCount = PolygonVertices.GetCount();
 		U32					VertexOffset = Vertices.GetCount();
 		if ( VerticesCount < 3 )
-			continue;	// Completely culled!
+			continue;	// Completely culled! This shouldn't be happening... This means the cube map resolution rendering let a wrong plane appear!
 
 //		float				PolygonArea = 0.0f;
 		for ( U32 FaceTriangleIndex=0; FaceTriangleIndex < VerticesCount-2; FaceTriangleIndex++ ) {
