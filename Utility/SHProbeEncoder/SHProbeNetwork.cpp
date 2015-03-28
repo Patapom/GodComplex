@@ -30,6 +30,7 @@ void	SHProbeNetwork::Init( Device& _Device, Primitive& _ScreenQuad ) {
 	//////////////////////////////////////////////////////////////////////////
 	// Create the probes structured buffers
 	m_pSB_RuntimeProbes = NULL;
+	m_pSB_ProbeNeighbors = NULL;
 	m_pSB_RuntimeProbeNetworkInfos = NULL;
 
 	m_pSB_RuntimeProbeUpdateInfos = new SB<RuntimeProbeUpdateInfo>( *m_pDevice, MAX_PROBE_UPDATES_PER_FRAME, true );
@@ -100,6 +101,8 @@ void	SHProbeNetwork::Exit() {
 	delete m_pSB_RuntimeProbeUpdateInfos;
 	delete m_pSB_RuntimeProbeNetworkInfos;
 	delete m_pSB_RuntimeProbes;
+
+	delete m_pSB_ProbeNeighbors;
 
 	delete m_pCB_UpdateProbes;
 	delete m_pCB_Probe;
@@ -210,7 +213,7 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 	{
 		USING_COMPUTESHADER_START( *m_pCSUpdateProbeDynamicSH )
 
-		m_pSB_RuntimeSHFinal->SetInput( 9, true );	// Feed last frame's SH for neighbor bounce
+		m_pSB_RuntimeSHFinal->SetInput( 8, true );	// Feed last frame's SH for neighbor bounce
 
 		m_pSB_RuntimeProbeUpdateInfos->Write( ProbeUpdatesCount );
 		m_pSB_RuntimeProbeUpdateInfos->SetInput( 10 );
@@ -325,8 +328,9 @@ void	SHProbeNetwork::UpdateDynamicProbes( DynamicUpdateParms& _Parms ) {
 
 	// =========================================================
 	// Setup the input buffers for scene rendering
-	m_pSB_RuntimeProbes->SetInput( 8, true );
-	m_pSB_RuntimeSHFinal->SetInput( 9, true );
+	m_pSB_RuntimeProbes->SetInput( 7, true );
+	m_pSB_RuntimeSHFinal->SetInput( 8, true );
+	m_pSB_ProbeNeighbors->SetInput( 9, true );
 }
 
 U32	SHProbeNetwork::GetNearestProbe( const float3& _wsPosition ) const {
@@ -1119,28 +1123,55 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, const float3& _Scen
 
 
 	//////////////////////////////////////////////////////////////////////////
-	// Allocate runtime probes structured buffer & copy static infos
-	m_pSB_RuntimeProbes = new SB<RuntimeProbe>( *m_pDevice, m_ProbesCount, true );
+	// Count total number of neighbors
+	U32		TotalNeighborsCount = 0;
+	U32		MinNeighborsCount = INT_MAX;
+	U32		MaxNeighborsCount = 0;
 	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
+		U32			NeighborsCount = Probe.m_VoronoiProbes.GetCount();
+
+		TotalNeighborsCount += NeighborsCount;
+		MinNeighborsCount = MIN( MinNeighborsCount, NeighborsCount );
+		MaxNeighborsCount = MAX( MaxNeighborsCount, NeighborsCount );
+	}
+	float	AvgNeighborsCount = float(TotalNeighborsCount) / m_ProbesCount;
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Allocate runtime probes structured buffer
+	m_pSB_RuntimeProbes = new SB<RuntimeProbe>( *m_pDevice, m_ProbesCount, true );
+	m_pSB_ProbeNeighbors = new SB<ProbeNeighbors>( *m_pDevice, TotalNeighborsCount, true );
+
+	ProbeNeighbors*	pNeighbor = m_pSB_ProbeNeighbors->m;
+
+	TotalNeighborsCount = 0;
+	for ( U32 ProbeIndex=0; ProbeIndex < m_ProbesCount; ProbeIndex++ ) {
+		SHProbe&	Probe = m_pProbes[ProbeIndex];
+		U32			NeighborsCount = Probe.m_VoronoiProbes.GetCount();
 
 		m_pSB_RuntimeProbes->m[ProbeIndex].Position = Probe.m_wsPosition;
 		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.m_MaxDistance;
 //		m_pSB_RuntimeProbes->m[ProbeIndex].Radius = Probe.MeanDistance;
 
+		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborsOffset = TotalNeighborsCount;
+		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborsCount = NeighborsCount;
 
-// 		ASSERT( Probe.pNeighborProbeInfos[0].ProbeID == ~0UL || Probe.pNeighborProbeInfos[0].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
-// 		ASSERT( Probe.pNeighborProbeInfos[1].ProbeID == ~0UL || Probe.pNeighborProbeInfos[1].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
-// 		ASSERT( Probe.pNeighborProbeInfos[2].ProbeID == ~0UL || Probe.pNeighborProbeInfos[2].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
-// 		ASSERT( Probe.pNeighborProbeInfos[3].ProbeID == ~0UL || Probe.pNeighborProbeInfos[3].ProbeID < 65535, "Too many probes to be encoded into a U16!" );
-// 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[0] = Probe.pNeighborProbeInfos[0].ProbeID;
-// 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[1] = Probe.pNeighborProbeInfos[1].ProbeID;
-// 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[2] = Probe.pNeighborProbeInfos[2].ProbeID;
-// 		m_pSB_RuntimeProbes->m[ProbeIndex].NeighborProbeIDs[3] = Probe.pNeighborProbeInfos[3].ProbeID;
+		// Write neighbors
+		for ( U32 NeighborIndex=0; NeighborIndex < NeighborsCount; NeighborIndex++, pNeighbor++ ) {
+			SHProbe::VoronoiProbeInfo&	Neighbor = Probe.m_VoronoiProbes[NeighborIndex];
+			pNeighbor->ProbeID = Neighbor.ProbeID;
+			pNeighbor->Position = m_pProbes[Neighbor.ProbeID].m_wsPosition;
+		}
+
+		TotalNeighborsCount += NeighborsCount;
 	}
 	m_pSB_RuntimeProbes->Write();
+	m_pSB_ProbeNeighbors->Write();
 
 
+	//////////////////////////////////////////////////////////////////////////
+	// Copy static lighting & occlusion info
 	m_ppSB_RuntimeSHStatic[0] = new SB<SHCoeffs3>( *m_pDevice, m_ProbesCount, true );
 	m_ppSB_RuntimeSHStatic[1] = new SB<SHCoeffs3>( *m_pDevice, m_ProbesCount, true );
 	m_pSB_RuntimeSHAmbient = new SB<SHCoeffs1>( *m_pDevice, m_ProbesCount, true );
@@ -1167,6 +1198,7 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, const float3& _Scen
 	m_pSB_RuntimeSHAmbient->Write();
 // 	m_pSB_RuntimeSHDynamic->Write();
 // 	m_pSB_RuntimeSHDynamicSun->Write();
+
 
 
 	//////////////////////////////////////////////////////////////////////////

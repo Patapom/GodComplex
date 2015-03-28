@@ -108,7 +108,7 @@ EffectGlobalIllum2::EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Prim
 
 	{
 // Main scene rendering is quite heavy so we prefer to reload it from binary instead
-ScopedForceMaterialsLoadFromBinary		bisou;
+//ScopedForceMaterialsLoadFromBinary		bisou;
 
 		D3D_SHADER_MACRO	pMacros[] = { { "USE_SHADOW_MAP", "1" }, { "PER_VERTEX_PROBE_ID", "1" }, { NULL, NULL } };
 		m_SceneVertexFormatDesc.AggregateVertexFormat( VertexFormatU32::DESCRIPTOR );
@@ -117,6 +117,7 @@ ScopedForceMaterialsLoadFromBinary		bisou;
 		D3D_SHADER_MACRO	pMacros2[] = { { "EMISSIVE", "1" }, { NULL, NULL } };
 		CHECK_MATERIAL( m_pMatRenderEmissive = CreateMaterial( IDR_SHADER_GI_RENDER_SCENE, "./Resources/Shaders/GIRenderScene2.hlsl", VertexFormatP3N3G3B3T2::DESCRIPTOR, "VS", NULL, "PS", pMacros2 ), 2 );
 	}
+
 	{
 ScopedForceMaterialsLoadFromBinary		bisou;
 
@@ -433,7 +434,7 @@ m_pCSComputeShadowMapBounds = NULL;	// TODO!
 
 	// Upload static lights once and for all
 	m_pSB_LightsStatic->Write( m_pCB_Scene->m.StaticLightsCount );
-	m_pSB_LightsStatic->SetInput( 6, true );
+	m_pSB_LightsStatic->SetInput( 5, true );
 
 	// Update once so it's ready when we pre-compute probes
 	m_pCB_Scene->m.ProbesCount = m_ProbesNetwork.GetProbesCount();
@@ -830,7 +831,7 @@ void	EffectGlobalIllum2::Render( float _Time, float _DeltaTime )
 #endif
 
 	m_pSB_LightsDynamic->Write( 2 );
-	m_pSB_LightsDynamic->SetInput( 7, true );
+	m_pSB_LightsDynamic->SetInput( 6, true );
 
 
 	// Update emissive materials

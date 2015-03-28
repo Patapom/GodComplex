@@ -37,6 +37,92 @@ struct	PS_IN
 	float3	SH8			: SH8;
 };
 
+
+
+// Stolen from http://www.iquilezles.org/www/articles/smin/smin.htm
+float	TEMPSmoothMin( float a, float b ) {
+#if 0	// Exponential version
+	const float	k = -16.0;
+	float	res = exp( k*a ) + exp( k*b );
+	return log( res ) / k;
+#elif 0	// Power version
+	const float k = 16.0;
+	a = pow( saturate(a), k );
+	b = pow( saturate(b), k );
+	return pow( (a*b) / (a+b), 1.0/k );
+#else
+	return min( a, b );
+#endif
+}
+
+
+void	TEMPGatherProbeSH( float3 _Position, float3 _Normal, uint _ProbeID, inout SHCoeffs3 _SH ) {
+	[unroll]
+	for ( uint i=0; i < 9; i++ )
+		_SH.SH[i] = 0.0;
+
+	uint	ProbeIDs[16];
+	float3	ProbePositions[16];
+	float	Weights[16] = { 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6 };
+
+	ProbeStruct	OriginProbe = _SBProbes[_ProbeID];
+	ProbeIDs[0] = _ProbeID;
+	ProbePositions[0] = OriginProbe.Position;
+
+	[loop]
+	for ( uint n=0; n < OriginProbe.NeighborsCount; n++ ) {
+		NeighborsStruct	NeighborInfo = _SBNeighborProbes[OriginProbe.NeighborsOffset+n];
+		ProbeIDs[1+n] = NeighborInfo.ProbeID;
+		ProbePositions[1+n] = NeighborInfo.Position;
+	}
+
+	// Compute bidirectional weights
+	[loop]
+	for ( uint i0=0; i0 < OriginProbe.NeighborsCount; i0++ ) {
+		float3	P0 = ProbePositions[i0];
+		[loop]
+		for ( uint i1=i0+1; i1 <= OriginProbe.NeighborsCount; i1++ ) {
+			float3	P1 = ProbePositions[i1];
+
+			float3	Normal = P1 - P0;
+			float	Distance = length( Normal );
+					Normal /= Distance;
+
+ 			float	Weight0 = dot( P1 - _Position, Normal ) / Distance;
+ 			float	Weight1 = dot( _Position - P0, Normal ) / Distance;
+
+			Weights[i0] = TEMPSmoothMin( Weights[i0], Weight0 );
+			Weights[i1] = TEMPSmoothMin( Weights[i1], Weight1 );
+
+//Weights[1+n] = 0.0;
+		}
+	}
+
+	// Accumulate SH
+	float	SumWeights = 0.0;
+
+	[loop]
+	for ( uint n=0; n <= OriginProbe.NeighborsCount; n++ ) {
+		SHCoeffs3	ProbeSH = _SBProbeSH[ProbeIDs[n]];
+		float		Weight = saturate( Weights[n] );
+		SumWeights += Weight;
+
+		[unroll]
+		for ( uint i=0; i < 9; i++ )
+			_SH.SH[i] += Weight * ProbeSH.SH[i];
+	}
+
+
+	// Normalize
+	float	Norm = 1.0 / (1e-5 + SumWeights);
+//	float	Norm = 1.0 / max( 1.0, SumWeights );	// This max allows single, low influence probes to decrease with distance anyway
+													// But it correctly averages influences when many probes have strong weight
+	[unroll]
+	for ( uint i=0; i < 9; i++ )
+		_SH.SH[i] *= Norm;
+}
+
+
 PS_IN	VS( SCENE_VS_IN _In )
 {
 	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
@@ -57,11 +143,10 @@ PS_IN	VS( SCENE_VS_IN _In )
 	if ( _In.ProbeID != 0xFFFFFFFF ) {
 		// We have an entry point into the probes network!
 //		SH[0] = _In.ProbeID;
-		GatherProbeSH( Out.Position, Normal, _In.ProbeID, Coeffs );
+		TEMPGatherProbeSH( Out.Position, Normal, _In.ProbeID, Coeffs );
 		if ( _ShowVertexProbeID )
 			Coeffs.SH[0] = _In.ProbeID;
 	}
-
 #else	// SUM ALL THE SCENE'S PROBES!
 	// Iterate over all the probes and do a weighted sum based on their distance to the vertex's position
 	[unroll]

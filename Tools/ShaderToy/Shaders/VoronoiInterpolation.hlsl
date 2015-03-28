@@ -98,7 +98,6 @@ return SumWeights;
 // Stolen from http://www.iquilezles.org/www/articles/smin/smin.htm
 float	SmoothMin( float a, float b ) {
 	if ( _ShowWeights & 2 ) {
-
 #if 1	// Exponential version
 		const float	k = -16.0;
 		float	res = exp( k*a ) + exp( k*b );
@@ -116,6 +115,27 @@ float	SmoothMin( float a, float b ) {
 float	ComputeInterpolationWeight( float2 _UV, uint _CurrentCellIndex, float2 _ProbePositions[PROBES_COUNT] ) {
 
 	float	Weights[PROBES_COUNT] = { 1e5, 1e5, 1e5, 1e5, 1e5 };
+#if 0
+	// Use single links to main probe
+	float2	ProbePosition0 = _ProbePositions[0];
+	for ( uint Index1=1; Index1 < PROBES_COUNT; Index1++ ) {
+		float2	ProbePosition1 = _ProbePositions[Index1];
+
+		float2	Normal = ProbePosition1 - ProbePosition0;
+		float	Distance = length( Normal );
+				Normal /= Distance;
+
+ 		float	Weight0 = dot( ProbePosition1 - _UV, Normal ) / Distance;
+ 		float	Weight1 = dot( _UV - ProbePosition0, Normal ) / Distance;
+
+		Weights[0] = SmoothMin( Weights[0], Weight0 );
+		Weights[Index1] = SmoothMin( Weights[Index1], Weight1 );
+	}
+#else
+	// Use all possible links between probes
+	// Gives the correct result but actually we could restrict the amount of links to N (direct neighbors) + K (direct neighbors of each neighbor)
+	// Actually, this could end up being 2*N instead of N*(N-1) links!
+	//
 	for ( uint Index0=0; Index0 < PROBES_COUNT-1; Index0++ ) {
 		float2	ProbePosition0 = _ProbePositions[Index0];
 		for ( uint Index1=Index0+1; Index1 < PROBES_COUNT; Index1++ ) {
@@ -135,6 +155,7 @@ float	ComputeInterpolationWeight( float2 _UV, uint _CurrentCellIndex, float2 _Pr
 			Weights[Index1] = SmoothMin( Weights[Index1], Weight1 );
 		}
 	}
+#endif
 
 	return Weights[_IsolatedProbeIndex];
 }

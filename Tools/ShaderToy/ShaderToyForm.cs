@@ -339,7 +339,7 @@ namespace ShaderToy
 			}
 
 			BuildQuad();
-			m_Tex_Christmas = Image2Texture( new System.IO.FileInfo( "christmas.jpg" ) );
+//			m_Tex_Christmas = Image2Texture( new System.IO.FileInfo( "christmas.jpg" ) );
 
 			try
 			{
@@ -378,7 +378,7 @@ namespace ShaderToy
 				m_Shader_Christmas.Dispose();
 			}
 			m_Prim_Quad.Dispose();
-			m_Tex_Christmas.Dispose();
+//			m_Tex_Christmas.Dispose();
 
 			m_Device.Exit();
 
@@ -412,7 +412,7 @@ namespace ShaderToy
 				m_CB_Main.m._ShowWeights = (uint) ((checkBoxShowWeights.Checked ? 1 : 0) | (checkBoxSmoothStep.Checked ? 2 : 0));
 				m_CB_Main.UpdateData();
 
-				m_Tex_Christmas.SetPS( 0 );
+//				m_Tex_Christmas.SetPS( 0 );
 
 				m_Shader_Christmas.Use();
 				m_Prim_Quad.Render( m_Shader_Christmas );

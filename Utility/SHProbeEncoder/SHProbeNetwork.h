@@ -69,15 +69,19 @@ private:	// RUNTIME STRUCTURES
 //		float4		AmbientSH[9];		// Ambient sky (padded!)
  	};
 
-
-	// Runtime probes buffer that we'll use to light objects
+	// Runtime probes buffer containing the probe's position and all neighbor probes in the Voronoï cell
 	struct RuntimeProbe  {
 		float3		Position;
 		float		Radius;
+		U32			NeighborsOffset;
+		U32			NeighborsCount;
 //		float3		pSH[9];
+	};
 
-		// Neighbor probes
-//		U16			NeighborProbeIDs[4];			// IDs of the 4 most significant neighbors
+	// Voronoï cell neighbor
+	struct ProbeNeighbors {
+		U32			ProbeID;			// ID of the neighbor probe
+		float3		Position;			// Position of the neighbor probe
 	};
 
 	struct SHCoeffs1 {
@@ -223,6 +227,9 @@ private:	// FIELDS
 	SB<SHCoeffs3>*			m_pSB_RuntimeSHDynamic;		// (UAV) 1 sets of dynamic SH (updated in real time across several frames)
 	SB<SHCoeffs3>*			m_pSB_RuntimeSHDynamicSun;	// (UAV) 1 sets of dynamic SH for the Sun (updated in real time across several frames)
 	SB<SHCoeffs3>*			m_pSB_RuntimeSHFinal;		// (UAV) The sum of all the above, updated each frame...
+
+	// Voronoï cell neighbors
+	SB<ProbeNeighbors>*		m_pSB_ProbeNeighbors;
 
 	// Probes Update
 	SB<RuntimeProbeUpdateInfo>*					m_pSB_RuntimeProbeUpdateInfos;		// (SRV) Update info for each probe we're updating (e.g. index, emissive surface index/count, neighbor influences, etc.)
