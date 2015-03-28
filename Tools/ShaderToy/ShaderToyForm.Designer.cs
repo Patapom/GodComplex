@@ -33,13 +33,15 @@
 			this.floatTrackbarControlWeightMultiplier = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.timer = new System.Windows.Forms.Timer(this.components);
+			this.checkBoxShowWeights = new System.Windows.Forms.CheckBox();
+			this.checkBoxSmoothStep = new System.Windows.Forms.CheckBox();
 			this.panelOutput = new ShaderToy.PanelOutput(this.components);
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlWeightMultiplier
 			// 
 			this.floatTrackbarControlWeightMultiplier.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlWeightMultiplier.Location = new System.Drawing.Point(1020, 12);
+			this.floatTrackbarControlWeightMultiplier.Location = new System.Drawing.Point(1020, 61);
 			this.floatTrackbarControlWeightMultiplier.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlWeightMultiplier.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlWeightMultiplier.Name = "floatTrackbarControlWeightMultiplier";
@@ -66,6 +68,26 @@
 			this.timer.Enabled = true;
 			this.timer.Interval = 10;
 			// 
+			// checkBoxShowWeights
+			// 
+			this.checkBoxShowWeights.AutoSize = true;
+			this.checkBoxShowWeights.Location = new System.Drawing.Point(1020, 12);
+			this.checkBoxShowWeights.Name = "checkBoxShowWeights";
+			this.checkBoxShowWeights.Size = new System.Drawing.Size(92, 17);
+			this.checkBoxShowWeights.TabIndex = 3;
+			this.checkBoxShowWeights.Text = "Show weights";
+			this.checkBoxShowWeights.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxSmoothStep
+			// 
+			this.checkBoxSmoothStep.AutoSize = true;
+			this.checkBoxSmoothStep.Location = new System.Drawing.Point(1020, 35);
+			this.checkBoxSmoothStep.Name = "checkBoxSmoothStep";
+			this.checkBoxSmoothStep.Size = new System.Drawing.Size(125, 17);
+			this.checkBoxSmoothStep.TabIndex = 3;
+			this.checkBoxSmoothStep.Text = "Use smooth minimum";
+			this.checkBoxSmoothStep.UseVisualStyleBackColor = true;
+			// 
 			// panelOutput
 			// 
 			this.panelOutput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -84,6 +106,8 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1232, 666);
+			this.Controls.Add(this.checkBoxSmoothStep);
+			this.Controls.Add(this.checkBoxShowWeights);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.floatTrackbarControlWeightMultiplier);
 			this.Controls.Add(this.panelOutput);
@@ -92,6 +116,7 @@
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "ShaderToy";
 			this.ResumeLayout(false);
+			this.PerformLayout();
 
 		}
 
@@ -101,6 +126,8 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlWeightMultiplier;
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.Timer timer;
+		private System.Windows.Forms.CheckBox checkBoxShowWeights;
+		private System.Windows.Forms.CheckBox checkBoxSmoothStep;
 	}
 }
 

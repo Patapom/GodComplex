@@ -31,6 +31,7 @@ namespace ShaderToy
 
 			public uint			_IsolatedProbeIndex;
 			public float		_WeightMultiplier;
+			public uint			_ShowWeights;
 		}
 
 		private ConstantBuffer<CB_Main>	m_CB_Main = null;
@@ -408,6 +409,7 @@ namespace ShaderToy
 				m_CB_Main.m.iResolution = new float3( panelOutput.Width, panelOutput.Height, 0 );
 				m_CB_Main.m.iGlobalTime = GetGameTime() - m_StartGameTime;
 				m_CB_Main.m._WeightMultiplier = floatTrackbarControlWeightMultiplier.Value;
+				m_CB_Main.m._ShowWeights = (uint) ((checkBoxShowWeights.Checked ? 1 : 0) | (checkBoxSmoothStep.Checked ? 2 : 0));
 				m_CB_Main.UpdateData();
 
 				m_Tex_Christmas.SetPS( 0 );

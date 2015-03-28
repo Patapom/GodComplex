@@ -14,6 +14,7 @@ cbuffer CB_Main : register(b0) {
 
 	uint	_IsolatedProbeIndex;
 	float	_WeightMultiplier;
+	uint	_ShowWeights;
 };
 
 Texture2D< float4 >	_Tex : register(t0);
@@ -54,7 +55,7 @@ float	IsOnProbe( float2 _UV, float _Distance2Probe ) {
 	return smoothstep( 0.01, 0.006, _Distance2Probe );
 }
 
-float	ComputeInterpolationWeight( float2 _UV, uint _CurrentCellIndex, float2 _ProbePositions[PROBES_COUNT] ) {
+float	ComputeInterpolationWeight_TEST( float2 _UV, uint _CurrentCellIndex, float2 _ProbePositions[PROBES_COUNT] ) {
 	float2	CenterPosition = _ProbePositions[0];
 	float	Distance2Center = length( _UV - CenterPosition );
 
@@ -63,7 +64,7 @@ float	ComputeInterpolationWeight( float2 _UV, uint _CurrentCellIndex, float2 _Pr
 		float	SumWeights = 1e6;
 		for ( uint NeighborIndex=1; NeighborIndex < PROBES_COUNT; NeighborIndex++ ) {
 			float2	NeighborPosition = _ProbePositions[NeighborIndex];
-			float2	PlanePosition = 0.5 * (CenterPosition + NeighborPosition);
+			float2	PlanePosition = NeighborPosition;
 			float2	PlaneNormal = CenterPosition - NeighborPosition;
 			float	DistanceCenter2Plane = length( PlaneNormal );
 					PlaneNormal /= DistanceCenter2Plane;
@@ -71,12 +72,10 @@ float	ComputeInterpolationWeight( float2 _UV, uint _CurrentCellIndex, float2 _Pr
 			float	Distance2Neighbor = length( _UV - NeighborPosition );
 			float	Distance2Plane = dot( _UV - PlanePosition, PlaneNormal );
 
-// 			float	Weight = smoothstep( 0.0, 1.0, 2.0 * Distance2Plane / DistanceCenter2Plane );
-			float	Weight = 0.5 * (1.0 + Distance2Plane / DistanceCenter2Plane);
-//			SumWeights += Weight;
+			float	Weight = Distance2Plane / DistanceCenter2Plane;
+//			float	Weight = smoothstep( 0.0, 1.0, Distance2Plane / DistanceCenter2Plane );
 			SumWeights = min( SumWeights, Weight );
 		}
-		SumWeights *= 1.0;
 
 return SumWeights;
 		return _CurrentCellIndex == _IsolatedProbeIndex ? SumWeights / (PROBES_COUNT-1.0) : 0.0;
@@ -94,6 +93,50 @@ return SumWeights;
 
 	return smoothstep( 0.0, 1.0, 2.0 * Distance2Plane / DistanceCenter2Plane );
 	return -Distance2Neighbor / Distance2Plane;
+}
+
+// Stolen from http://www.iquilezles.org/www/articles/smin/smin.htm
+float	SmoothMin( float a, float b ) {
+	if ( _ShowWeights & 2 ) {
+
+#if 1	// Exponential version
+		const float	k = -16.0;
+		float	res = exp( k*a ) + exp( k*b );
+		return log( res ) / k;
+#else	// Power version
+		const float k = 16.0;
+		a = pow( saturate(a), k );
+		b = pow( saturate(b), k );
+		return pow( (a*b) / (a+b), 1.0/k );
+#endif
+	}
+	return min( a, b );
+}
+
+float	ComputeInterpolationWeight( float2 _UV, uint _CurrentCellIndex, float2 _ProbePositions[PROBES_COUNT] ) {
+
+	float	Weights[PROBES_COUNT] = { 1e5, 1e5, 1e5, 1e5, 1e5 };
+	for ( uint Index0=0; Index0 < PROBES_COUNT-1; Index0++ ) {
+		float2	ProbePosition0 = _ProbePositions[Index0];
+		for ( uint Index1=Index0+1; Index1 < PROBES_COUNT; Index1++ ) {
+			float2	ProbePosition1 = _ProbePositions[Index1];
+
+			float2	Normal = ProbePosition1 - ProbePosition0;
+			float	Distance = length( Normal );
+					Normal /= Distance;
+
+ 			float	Weight0 = dot( ProbePosition1 - _UV, Normal ) / Distance;
+ 			float	Weight1 = dot( _UV - ProbePosition0, Normal ) / Distance;
+
+// 			Weight0 = smoothstep( 0.0, 1.0, dot( ProbePosition1 - _UV, Normal ) / Distance );
+// 			Weight1 = smoothstep( 0.0, 1.0, dot( _UV - ProbePosition0, Normal ) / Distance );
+
+			Weights[Index0] = SmoothMin( Weights[Index0], Weight0 );
+			Weights[Index1] = SmoothMin( Weights[Index1], Weight1 );
+		}
+	}
+
+	return Weights[_IsolatedProbeIndex];
 }
 
 float4	PS( VS_IN _In ) : SV_TARGET0 {
@@ -123,12 +166,14 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	float3	CellColor = 0.4 * NEIGHBOR_COLORS[BestProbeIndex];
 
 	// Compute interpolation weight
-	float	InterpolationWeight = ComputeInterpolationWeight( UV, BestProbeIndex, CellPositions );
-	float3	SpecialBoundary = abs( InterpolationWeight - 0.5 ) < 0.5e-2 ? float3( 0, 0, 1 ) : 0.0;
-			SpecialBoundary += abs( InterpolationWeight - 0.0 ) < 0.5e-2 ? float3( 1, 0, 0 ) : 0.0;
-			SpecialBoundary += abs( InterpolationWeight - 0.75 ) < 0.5e-2 ? float3( 0, 1, 0 ) : 0.0;
-	float3	InterpolationColor = _WeightMultiplier * InterpolationWeight + SpecialBoundary;
-
+	float3	InterpolationColor = 0.0;
+	if ( _ShowWeights & 1 ) {
+		float	InterpolationWeight = ComputeInterpolationWeight( UV, BestProbeIndex, CellPositions );
+		float3	SpecialBoundary = abs( InterpolationWeight - 0.5 ) < 0.5e-2 ? float3( 0, 0, 1 ) : 0.0;
+				SpecialBoundary += abs( InterpolationWeight - 0.0 ) < 0.5e-2 ? float3( 1, 0, 0 ) : 0.0;
+				SpecialBoundary += abs( InterpolationWeight - 0.75 ) < 0.5e-2 ? float3( 0, 1, 0 ) : 0.0;
+		InterpolationColor = _WeightMultiplier * saturate( InterpolationWeight ) + SpecialBoundary;
+	}
 
 	return float4( lerp( CellColor, float3( 1, 1, 0 ), RightOnProbe ) + InterpolationColor, 1.0 );
 }
