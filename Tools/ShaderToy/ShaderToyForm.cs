@@ -23,7 +23,15 @@ namespace ShaderToy
 			public float3		iResolution;
 			public float		iGlobalTime;
 
-			public float		_Beta;
+			public float2		_MainPosition;
+			public float2		_NeighborPosition0;
+			public float2		_NeighborPosition1;
+			public float2		_NeighborPosition2;
+			public float2		_NeighborPosition3;
+
+			public uint			_IsolatedProbeIndex;
+			public float		_WeightMultiplier;
+			public uint			_ShowWeights;
 		}
 
 		private ConstantBuffer<CB_Main>	m_CB_Main = null;
@@ -45,8 +53,7 @@ namespace ShaderToy
 
 			Application.Idle += new EventHandler( Application_Idle );
 
-
-			BuildSurfaceRadianceIntegrals();
+//			BuildSurfaceRadianceIntegrals();
 		}
 
 		#region Airlight Integrals
@@ -332,12 +339,13 @@ namespace ShaderToy
 			}
 
 			BuildQuad();
-			m_Tex_Christmas = Image2Texture( new System.IO.FileInfo( "christmas.jpg" ) );
+//			m_Tex_Christmas = Image2Texture( new System.IO.FileInfo( "christmas.jpg" ) );
 
 			try
 			{
 //				m_Shader_Christmas = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Christmas.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
-				m_Shader_Christmas = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Airlight.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+//				m_Shader_Christmas = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Airlight.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+				m_Shader_Christmas = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/VoronoiInterpolation.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 
 				m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			}
@@ -346,6 +354,13 @@ namespace ShaderToy
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_Christmas = null;
 			}
+
+			// Initialize Voronoï neighbor positions
+			m_CB_Main.m._MainPosition = new float2( 0.0f, 0.0f );
+			m_CB_Main.m._NeighborPosition0 = new float2( -0.4f, -0.6f );
+			m_CB_Main.m._NeighborPosition1 = new float2( 0.6f, -0.4f );
+			m_CB_Main.m._NeighborPosition2 = new float2( -0.2f, 0.8f );
+			m_CB_Main.m._NeighborPosition3 = new float2( -0.6f, 0.14f );
 
 			// Start game time
 			m_Ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
@@ -363,7 +378,7 @@ namespace ShaderToy
 				m_Shader_Christmas.Dispose();
 			}
 			m_Prim_Quad.Dispose();
-			m_Tex_Christmas.Dispose();
+//			m_Tex_Christmas.Dispose();
 
 			m_Device.Exit();
 
@@ -393,10 +408,11 @@ namespace ShaderToy
 
 				m_CB_Main.m.iResolution = new float3( panelOutput.Width, panelOutput.Height, 0 );
 				m_CB_Main.m.iGlobalTime = GetGameTime() - m_StartGameTime;
-				m_CB_Main.m._Beta = floatTrackbarControlBeta.Value;
+				m_CB_Main.m._WeightMultiplier = floatTrackbarControlWeightMultiplier.Value;
+				m_CB_Main.m._ShowWeights = (uint) ((checkBoxShowWeights.Checked ? 1 : 0) | (checkBoxSmoothStep.Checked ? 2 : 0));
 				m_CB_Main.UpdateData();
 
-				m_Tex_Christmas.SetPS( 0 );
+//				m_Tex_Christmas.SetPS( 0 );
 
 				m_Shader_Christmas.Use();
 				m_Prim_Quad.Render( m_Shader_Christmas );
@@ -416,6 +432,77 @@ namespace ShaderToy
 		{
 			if ( m_Device != null )
 				m_Device.ReloadModifiedShaders();
+		}
+		
+		float2	Client2UV( Point _ClientPos ) {
+			float2	UV = 2.0f * new float2( (float) _ClientPos.X / panelOutput.Width, (float) _ClientPos.Y / panelOutput.Height ) - float2.One;
+					UV.x *= (float) panelOutput.Width / panelOutput.Height;
+
+			return UV;
+		}
+
+		bool	m_MouseDown = false;
+		float2	m_ButtonDownMouseUV;
+		int		m_ButtonDownCellIndex = 0;
+		float2	m_ButtonDownCellUV;
+		private void panelOutput_MouseDown( object sender, MouseEventArgs e )
+		{
+			if ( e.Button != MouseButtons.Left)
+				return;
+
+			m_MouseDown = true;
+			m_ButtonDownMouseUV = Client2UV( e.Location );
+
+			// Determine which cell the user clicked
+			float2[]	CellPositions = new float2[] {
+				m_CB_Main.m._MainPosition,
+				m_CB_Main.m._NeighborPosition0,
+				m_CB_Main.m._NeighborPosition1,
+				m_CB_Main.m._NeighborPosition2,
+				m_CB_Main.m._NeighborPosition3,
+			};
+
+			float	BestCellSqDistance = float.MaxValue;
+			for ( int CellIndex=0; CellIndex < CellPositions.Length; CellIndex++ ) {
+				float	CellSqDistance = (m_ButtonDownMouseUV - CellPositions[CellIndex]).LengthSquared;
+				if ( CellSqDistance < BestCellSqDistance ) {
+					BestCellSqDistance = CellSqDistance;
+					m_ButtonDownCellIndex = CellIndex;
+				}
+			}
+			m_ButtonDownCellUV = CellPositions[m_ButtonDownCellIndex];
+			m_CB_Main.m._IsolatedProbeIndex = (uint) m_ButtonDownCellIndex;
+		}
+
+		private void panelOutput_MouseMove( object sender, MouseEventArgs e )
+		{
+			if ( !m_MouseDown )
+				return;
+
+			float2	MouseUV = Client2UV( e.Location );
+
+			float2[]	CellPositions = new float2[] {
+				m_CB_Main.m._MainPosition,
+				m_CB_Main.m._NeighborPosition0,
+				m_CB_Main.m._NeighborPosition1,
+				m_CB_Main.m._NeighborPosition2,
+				m_CB_Main.m._NeighborPosition3,
+			};
+
+			// Make it move
+			CellPositions[m_ButtonDownCellIndex] = m_ButtonDownCellUV + MouseUV - m_ButtonDownMouseUV;
+
+			// Update positions
+			m_CB_Main.m._MainPosition = CellPositions[0];
+			m_CB_Main.m._NeighborPosition0 = CellPositions[1];
+			m_CB_Main.m._NeighborPosition1 = CellPositions[2];
+			m_CB_Main.m._NeighborPosition2 = CellPositions[3];
+			m_CB_Main.m._NeighborPosition3 = CellPositions[4];
+		}
+
+		private void panelOutput_MouseUp( object sender, MouseEventArgs e )
+		{
+			m_MouseDown = false;
 		}
 	}
 }

@@ -45,14 +45,19 @@
 			this.radioButtonSamplesUsed = new System.Windows.Forms.RadioButton();
 			this.radioButtonSampleAll = new System.Windows.Forms.RadioButton();
 			this.panel2 = new System.Windows.Forms.Panel();
+			this.radioButtonSampleSH = new System.Windows.Forms.RadioButton();
 			this.radioButtonSampleNormal = new System.Windows.Forms.RadioButton();
 			this.radioButtonSampleAlbedo = new System.Windows.Forms.RadioButton();
 			this.radioButtonSampleColor = new System.Windows.Forms.RadioButton();
 			this.label3 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlSampleIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.radioButtonSampleSH = new System.Windows.Forms.RadioButton();
+			this.checkBoxShowNeighbors = new System.Windows.Forms.CheckBox();
+			this.panel3 = new System.Windows.Forms.Panel();
+			this.radioButtonVoronoi = new System.Windows.Forms.RadioButton();
+			this.radioButtonNeighbors = new System.Windows.Forms.RadioButton();
 			this.panel1.SuspendLayout();
 			this.panel2.SuspendLayout();
+			this.panel3.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// buttonReload
@@ -198,6 +203,16 @@
 			this.panel2.Size = new System.Drawing.Size(211, 89);
 			this.panel2.TabIndex = 6;
 			// 
+			// radioButtonSampleSH
+			// 
+			this.radioButtonSampleSH.AutoSize = true;
+			this.radioButtonSampleSH.Location = new System.Drawing.Point(3, 20);
+			this.radioButtonSampleSH.Name = "radioButtonSampleSH";
+			this.radioButtonSampleSH.Size = new System.Drawing.Size(40, 17);
+			this.radioButtonSampleSH.TabIndex = 0;
+			this.radioButtonSampleSH.Text = "SH";
+			this.radioButtonSampleSH.UseVisualStyleBackColor = true;
+			// 
 			// radioButtonSampleNormal
 			// 
 			this.radioButtonSampleNormal.AutoSize = true;
@@ -253,15 +268,46 @@
 			this.integerTrackbarControlSampleIndex.VisibleRangeMax = 127;
 			this.integerTrackbarControlSampleIndex.VisibleRangeMin = -1;
 			// 
-			// radioButtonSampleSH
+			// checkBoxShowNeighbors
 			// 
-			this.radioButtonSampleSH.AutoSize = true;
-			this.radioButtonSampleSH.Location = new System.Drawing.Point(3, 20);
-			this.radioButtonSampleSH.Name = "radioButtonSampleSH";
-			this.radioButtonSampleSH.Size = new System.Drawing.Size(40, 17);
-			this.radioButtonSampleSH.TabIndex = 0;
-			this.radioButtonSampleSH.Text = "SH";
-			this.radioButtonSampleSH.UseVisualStyleBackColor = true;
+			this.checkBoxShowNeighbors.AutoSize = true;
+			this.checkBoxShowNeighbors.Location = new System.Drawing.Point(1050, 286);
+			this.checkBoxShowNeighbors.Name = "checkBoxShowNeighbors";
+			this.checkBoxShowNeighbors.Size = new System.Drawing.Size(102, 17);
+			this.checkBoxShowNeighbors.TabIndex = 5;
+			this.checkBoxShowNeighbors.Text = "Show neighbors";
+			this.checkBoxShowNeighbors.UseVisualStyleBackColor = true;
+			// 
+			// panel3
+			// 
+			this.panel3.Controls.Add(this.radioButtonVoronoi);
+			this.panel3.Controls.Add(this.radioButtonNeighbors);
+			this.panel3.Location = new System.Drawing.Point(1150, 282);
+			this.panel3.Name = "panel3";
+			this.panel3.Size = new System.Drawing.Size(197, 21);
+			this.panel3.TabIndex = 6;
+			// 
+			// radioButtonVoronoi
+			// 
+			this.radioButtonVoronoi.AutoSize = true;
+			this.radioButtonVoronoi.Location = new System.Drawing.Point(75, 3);
+			this.radioButtonVoronoi.Name = "radioButtonVoronoi";
+			this.radioButtonVoronoi.Size = new System.Drawing.Size(63, 17);
+			this.radioButtonVoronoi.TabIndex = 0;
+			this.radioButtonVoronoi.Text = "Voronoï";
+			this.radioButtonVoronoi.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonNeighbors
+			// 
+			this.radioButtonNeighbors.AutoSize = true;
+			this.radioButtonNeighbors.Checked = true;
+			this.radioButtonNeighbors.Location = new System.Drawing.Point(3, 3);
+			this.radioButtonNeighbors.Name = "radioButtonNeighbors";
+			this.radioButtonNeighbors.Size = new System.Drawing.Size(73, 17);
+			this.radioButtonNeighbors.TabIndex = 0;
+			this.radioButtonNeighbors.TabStop = true;
+			this.radioButtonNeighbors.Text = "Neighbors";
+			this.radioButtonNeighbors.UseVisualStyleBackColor = true;
 			// 
 			// DebuggerForm
 			// 
@@ -269,8 +315,10 @@
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1359, 663);
 			this.Controls.Add(this.panel2);
+			this.Controls.Add(this.panel3);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.checkBoxShowWSPosition);
+			this.Controls.Add(this.checkBoxShowNeighbors);
 			this.Controls.Add(this.checkBoxShowSamples);
 			this.Controls.Add(this.checkBoxShowDistance);
 			this.Controls.Add(this.checkBoxShowCubeMapFaces);
@@ -287,6 +335,8 @@
 			this.panel1.PerformLayout();
 			this.panel2.ResumeLayout(false);
 			this.panel2.PerformLayout();
+			this.panel3.ResumeLayout(false);
+			this.panel3.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -315,6 +365,10 @@
 		private System.Windows.Forms.RadioButton radioButtonSampleSH;
 		private System.Windows.Forms.Label label3;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlSampleIndex;
+		private System.Windows.Forms.CheckBox checkBoxShowNeighbors;
+		private System.Windows.Forms.Panel panel3;
+		private System.Windows.Forms.RadioButton radioButtonVoronoi;
+		private System.Windows.Forms.RadioButton radioButtonNeighbors;
 	}
 }
 

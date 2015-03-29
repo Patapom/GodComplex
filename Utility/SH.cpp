@@ -559,6 +559,72 @@ float3	SH::Yup2Zup( const float3& _Yup )
 
 
 //////////////////////////////////////////////////////////////////////////
+// SH Filtering
+// Code stolen from https://github.com/rlk/sht
+//
+void	SH::FilterHanning( float _SH[9], float w ) {
+	for ( int l = 0; l < 3; l++ )
+		if ( l > w )
+			Filter( _SH, l, 0 );
+		else if ( l > 0 )
+			Filter( _SH, l, 0.5f * (cosf(PI * l / w) + 1.0f) );
+}
+
+void	SH::FilterLanczos( float _SH[9], float w ) {
+	for ( int l = 0; l < 3; l++ )
+		if ( l > 0 ) {
+			float	angle = PI * l / w;
+			Filter( _SH, l, sinf(angle) / angle );
+		}
+}
+
+void	SH::FilterGaussian( float _SH[9], float w ) {
+	for ( int l = 0; l < 3; l++ ) {
+		float	angle = PI * l / w;
+		Filter( _SH, l, expf( -0.5f * angle * angle ) );
+	}
+}
+
+void	SH::FilterHanning( float3 _SH[9], float w ) {
+	for ( int l = 0; l < 3; l++ )
+		if ( l > w )
+			Filter( _SH, l, 0 );
+		else if ( l > 0 )
+			Filter( _SH, l, 0.5f * (cosf(PI * l / w) + 1.0f) );
+}
+
+void	SH::FilterLanczos( float3 _SH[9], float w ) {
+	for ( int l = 0; l < 3; l++ )
+		if ( l > 0 ) {
+			float	angle = PI * l / w;
+			Filter( _SH, l, sinf(angle) / angle );
+		}
+}
+
+void	SH::FilterGaussian( float3 _SH[9], float w ) {
+	for ( int l = 0; l < 3; l++ ) {
+		float	angle = PI * l / w;
+		Filter( _SH, l, expf( -0.5f * angle * angle ) );
+	}
+}
+
+// Modulate all coefficients of degree l by scalar a.
+void	SH::Filter( float _SH[9], int l, float a )
+{
+	for ( int m=-l; m <= l; m++ ) {
+		int	offset = l*(l+1)+m;
+		_SH[offset] = a * _SH[offset];
+	}
+}
+void	SH::Filter( float3 _SH[9], int l, float a )
+{
+	for ( int m=-l; m <= l; m++ ) {
+		int	offset = l*(l+1)+m;
+		_SH[offset] = a * _SH[offset];
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////
 // SH Coefficients & Legendre Polynomials & Windowing Sigma Factors
 //
 

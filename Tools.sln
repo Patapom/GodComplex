@@ -113,6 +113,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GIProbesDebugger", "Tools\G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoronoiVisualizer", "Tools\VoronoiVisualizer\VoronoiVisualizer.csproj", "{2CC01836-7A66-4176-A55C-7A53B4C73745}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BImageViewer", "Tools\BImageViewer\BImageViewer.csproj", "{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug DirectX10|Any CPU = Debug DirectX10|Any CPU
@@ -1782,6 +1784,34 @@ Global
 		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Release|x64.ActiveCfg = Release|x86
 		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Release|x86.ActiveCfg = Release|x86
 		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Release|x86.Build.0 = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug DirectX10|Any CPU.ActiveCfg = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug DirectX10|Mixed Platforms.Build.0 = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug DirectX10|Win32.ActiveCfg = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug DirectX10|x64.ActiveCfg = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug DirectX10|x86.ActiveCfg = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug DirectX10|x86.Build.0 = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|Win32.ActiveCfg = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|x64.ActiveCfg = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|x86.ActiveCfg = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|x86.Build.0 = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|Any CPU.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|Mixed Platforms.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|Mixed Platforms.Build.0 = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|Win32.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|x64.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|x86.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|x86.Build.0 = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|Any CPU.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|Mixed Platforms.Build.0 = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|Win32.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|x64.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|x86.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

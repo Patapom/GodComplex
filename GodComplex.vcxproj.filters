@@ -294,6 +294,9 @@
     <ClInclude Include="Utility\SHProbeEncoder\SHProbeEncoderFloodFill.h">
       <Filter>Utility\SHProbeEncoder</Filter>
     </ClInclude>
+    <ClInclude Include="Utility\SHProbeEncoder\SHProbe.h">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -463,6 +466,9 @@
       <Filter>Utility\SHProbeEncoder</Filter>
     </ClCompile>
     <ClCompile Include="Utility\SHProbeEncoder\SHProbeEncoderFloodFill.cpp">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\SHProbeEncoder\SHProbe.cpp">
       <Filter>Utility\SHProbeEncoder</Filter>
     </ClCompile>
   </ItemGroup>
@@ -672,6 +678,9 @@
     </None>
     <None Include="Resources\Shaders\Shadertoy_GLSL.hlsl">
       <Filter>Resources\Shaders\DEBUG\DOF</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderDebugVoronoi.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

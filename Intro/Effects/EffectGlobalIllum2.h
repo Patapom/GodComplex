@@ -5,7 +5,7 @@
 
 template<typename> class CB;
 
-class EffectGlobalIllum2 : public Scene::ISceneTagger, public Scene::ISceneRenderer
+class EffectGlobalIllum2 : public Scene::ISceneTagger, public Scene::ISceneRenderer, public SHProbeNetwork::DynamicUpdateParms::IQueryMaterial
 {
 private:	// CONSTANTS
 
@@ -23,8 +23,7 @@ protected:	// NESTED TYPES
 	
 #pragma pack( push, 4 )
 
-	struct CBGeneral
-	{
+	struct CBGeneral {
 		float3		Ambient;
 		U32			ShowIndirect;
 		U32			ShowOnlyIndirect;
@@ -32,31 +31,30 @@ protected:	// NESTED TYPES
 		U32			ShowVertexProbeID;
  	};
 
-	struct CBScene
-	{
+	struct CBScene {
 		U32			StaticLightsCount;
 		U32			DynamicLightsCount;
 		U32			ProbesCount;
  	};
 
-	struct CBObject
-	{
+	struct CBObject {
 		float4x4	Local2World;	// Local=>World transform to rotate the object
  	};
 
-	struct CBSplat
-	{
+	struct CBObjectVoronoi {
+		float4		Color;
+	};
+
+	struct CBSplat {
 		float3	dUV;
 	};
 
-	struct CBDynamicObject
-	{
+	struct CBDynamicObject {
 		float3		Position;
 		U32			ProbeID;
  	};
 
-	struct CBMaterial
-	{
+	struct CBMaterial {
 		U32			ID;
 		float3		DiffuseAlbedo;
 
@@ -71,8 +69,7 @@ protected:	// NESTED TYPES
 		U32			HasNormalTexture;
 	};
 
-	struct CBShadowMap
-	{
+	struct CBShadowMap {
 		float4x4	Light2World;
 		float4x4	World2Light;
 		float3		BoundsMin;					// Coordinates of the bounding box (in world space) covered by the shadow
@@ -80,8 +77,7 @@ protected:	// NESTED TYPES
 		float3		BoundsMax;
  	};
 
-	struct CBShadowMapPoint
-	{
+	struct CBShadowMapPoint {
 		float3		Position;					// Position of the light in world space
 		float		FarClipDistance;
 	};
@@ -109,14 +105,6 @@ protected:	// NESTED TYPES
 		}
 	};
 
-	class	QueryMaterial : public SHProbeNetwork::IQueryMaterial {
-	public:	EffectGlobalIllum2&	m_this;
-		QueryMaterial( EffectGlobalIllum2& _this ) : m_this( _this ) {}
-		Scene::Material*	operator()( U32 _MaterialID ) {
-			ASSERT( _MaterialID < U32(m_this.m_Scene.m_MaterialsCount), "Material ID out of range!" );
-			return m_this.m_Scene.m_ppMaterials[_MaterialID];
-		}
-	};
 
 protected:
 
@@ -135,16 +123,17 @@ private:	// FIELDS
 	Texture2D&			m_RTTarget;
 	Primitive&			m_ScreenQuad;
 
-	Material*			m_pMatRender;				// Displays the scene
-	Material*			m_pMatRenderEmissive;		// Displays the scene's emissive objects (area lights)
-	Material*			m_pMatRenderLights;			// Displays the lights as small emissive balls
-	Material*			m_pMatRenderDynamic;		// Displays the dynamic objects as balls with a normal map
-	Material*			m_pCSComputeShadowMapBounds;// Computes the shadow map bounds
-	Material*			m_pMatRenderShadowMap;		// Renders the directional shadowmap
-	Material*			m_pMatRenderShadowMapPoint;	// Renders the point light shadowmap
-	Material*			m_pMatPostProcess;			// Post-processes the result
-	Material*			m_pMatRenderDebugProbes;	// Displays the probes as small spheres
+	Material*			m_pMatRender;					// Displays the scene
+	Material*			m_pMatRenderEmissive;			// Displays the scene's emissive objects (area lights)
+	Material*			m_pMatRenderLights;				// Displays the lights as small emissive balls
+	Material*			m_pMatRenderDynamic;			// Displays the dynamic objects as balls with a normal map
+	Material*			m_pCSComputeShadowMapBounds;	// Computes the shadow map bounds
+	Material*			m_pMatRenderShadowMap;			// Renders the directional shadowmap
+	Material*			m_pMatRenderShadowMapPoint;		// Renders the point light shadowmap
+	Material*			m_pMatPostProcess;				// Post-processes the result
+	Material*			m_pMatRenderDebugProbes;		// Displays the probes as small spheres
 	Material*			m_pMatRenderDebugProbesNetwork;	// Displays the probes network
+	Material*			m_pMatRenderDebugProbeVoronoi;	// Displays the probe Voronoï cells
 
 	// Scene & Primitives
 	Scene				m_Scene;
@@ -154,6 +143,10 @@ private:	// FIELDS
 	bool				m_bDeleteSceneTags;
 	Primitive*			m_pPrimSphere;
 	Primitive*			m_pPrimPoint;
+
+	U32					m_DebugVoronoiCellIndex;
+	Primitive*			m_pPrimVoronoiCellPlanes;
+	Primitive*			m_pPrimVoronoiCellEdges;
 
 		// Cached list of meshes
 	Scene::Mesh**		m_ppCachedMeshes;
@@ -184,6 +177,7 @@ private:	// FIELDS
  	CB<CBGeneral>*			m_pCB_General;
  	CB<CBScene>*			m_pCB_Scene;
  	CB<CBObject>*			m_pCB_Object;
+	CB<CBObjectVoronoi>*	m_pCB_ObjectVoronoi;
 	CB<CBSplat>*			m_pCB_Splat;
 	CB<CBDynamicObject>*	m_pCB_DynamicObject;
  	CB<CBMaterial>*			m_pCB_Material;
@@ -258,6 +252,9 @@ private:	// FIELDS
 		U32		ShowDebugProbes;
 		U32		ShowDebugProbesNetwork;
 		float	DebugProbesIntensity;
+		U32		ShowDebugProbeInfluences;
+		U32		ShowDebugProbeVoronoiCell;
+		U32		ProbeVoronoiCellIndex;
 	};
 
 	// Memory-Mapped File for tweaking
@@ -274,7 +271,7 @@ public:		// PROPERTIES
 
 public:		// METHODS
 
-	EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, Camera& _Camera );
+	EffectGlobalIllum2( Device& _Device, Texture2D& _RTHDR, Primitive& _ScreenQuad, FPSCamera& _Camera );
 	~EffectGlobalIllum2();
 
 	void			Render( float _Time, float _DeltaTime );
@@ -293,4 +290,12 @@ private:
 
 	void			RenderShadowMap( const float3& _SunDirection );
 	void			RenderShadowMapPoint( const float3& _Position, float _FarClipDistance );
+
+	void			BuildVoronoiPrimitives();
+
+	// SHProbeNetwork::DynamicUpdateParms::IQueryMaterial Implementation
+	Scene::Material*	operator()( U32 _MaterialID ) {
+		ASSERT( _MaterialID < U32(m_Scene.m_MaterialsCount), "Material ID out of range!" );
+		return m_Scene.m_ppMaterials[_MaterialID];
+	}
 };

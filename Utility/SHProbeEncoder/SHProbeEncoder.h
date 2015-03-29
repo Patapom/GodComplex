@@ -12,12 +12,14 @@
 //
 #pragma once
 
-class	SHProbeEncoder
-{
-public:		// CONSTANTS
+#include "SHProbe.h"
 
-	static const U32		PROBE_SAMPLES_COUNT = 128;			// Subdivide the sphere into 128 samples
-	static const U32		MAX_PROBE_EMISSIVE_SURFACES = 16;	// We only deal with a maximum of 16 emissive surfaces
+class SHProbeNetwork;
+
+class	SHProbeEncoder {
+friend class SHProbeNetwork;
+
+public:		// CONSTANTS
 
 	static const U32		CUBE_MAP_SIZE = 128;
 	static const int		CUBE_MAP_FACE_SIZE = CUBE_MAP_SIZE * CUBE_MAP_SIZE;
@@ -59,8 +61,8 @@ private:	// NESTED TYPES
 		int			CubeFaceX;
 		int			CubeFaceY;
 
-		float3		Position;				// World position
-		float3		Normal;					// World normal
+		float3		lsPosition;				// Local position
+		float3		lsNormal;				// Local normal
 		float3		Albedo;					// Material albedo
 		float3		AlbedoHSL;				// Material albedo in HSL format
 		float3		F0;						// Material Fresnel coefficient
@@ -89,8 +91,8 @@ private:	// NESTED TYPES
 
 		Pixel()
 			: pNext( NULL )
-			, Position( float3::Zero )
-			, Normal( float3::Zero )
+			, lsPosition( float3::Zero )
+			, lsNormal( float3::Zero )
 			, Albedo( float3::Zero )
 			, AlbedoHSL( float3::Zero )
 			, FaceIndex( ~0UL )
@@ -205,18 +207,15 @@ private:	// NESTED TYPES
 		U32				OriginalPixelsCount;	// The amount of pixels belonging to the sample, discarded or not (theoretically, all samples should contain an equal amount of pixels since we uniformly subdivided the sphere)
 		Pixel*			pCenterPixel;			// The pixel at the center of this sample
 
-		float3			Direction;				// The average direction toward this sample
-		float3			Tangent;				// The longest principal axis of the samples's points cluster (scaled by the length of the axis)
-		float3			BiTangent;				// The shortest principal axis of the samples's points cluster (scaled by the length of the axis)
-		float			Radius;					// Approximate radius of the samples's points cluster (used for shadow filtering)
-
+ 		float3			AverageDirection;		// The average direction toward this sample
 		double			SH[9];					// The generated SH coefficients for this sample
 
 		Sample()
 			: PixelsCount( 0 )
 			, pPixels( NULL )
 			, OriginalPixelsCount( 0 )
-			, pCenterPixel( NULL ) {
+			, pCenterPixel( NULL )
+			, AverageDirection( float3::Zero ) {
 			memset( SH, 0, 9*sizeof(double) );
 		}
 	};
@@ -254,42 +253,29 @@ private:	// NESTED TYPES
 
 		PixelsList() : PixelsCount( 0 ), pPixels( NULL ), Importance( 0.0 ) {}
 	};
-	
-	// Contains information on the probe used as a Voronoï cell plane
-	class	VoronoiProbe {
-	public:
-		U32			ProbeID;
-		float3		Position;			// Position of the Voronoï plane (WARNING: the position is in the middle of the Probe->Neighbor segment, NOT on the neighbor probe itself!)
-		float3		Normal;				// Normal to the Voronoï plane, pointing INWARD toward our probe
 
-		int			PixelsCount;
-
-	public:
-		VoronoiProbe() : ProbeID( ~0UL ), PixelsCount( 0 ) {}
-	};
-
-public:
 
 	// Contains information on a neighbor probe
 	class	NeighborProbe {
 	public:
-		U32			ProbeID;
-		bool		DirectlyVisible;	// True if the very center of the probe is directly visible to our probe (
-		float		Distance;			// Distance to the neighbor probe
-		double		SolidAngle;			// Solid angle covered by the neighbor probe, as perceived by our probe
-		float3		Direction;			// Direction to the probe
-		double		SH[9];				// SH coefficients used to isolate the probe's contribution to our probe
-
+		SHProbe::NeighborProbeInfo*	pInfo;
+ 		double		SolidAngle;			// Solid angle covered by the neighbor probe, as perceived by our probe
+ 		double		SH[9];				// SH coefficients used to isolate the probe's contribution to our probe
 		int			PixelsCount;
 
 	public:
-		NeighborProbe()
-			: ProbeID( -1 )
-			, Distance( 0.0f )
-			, SolidAngle( 0.0f )
-			, Direction( float3::Zero )
-			, PixelsCount( 0 ) {}
+		NeighborProbe() : pInfo( NULL ), PixelsCount( 0 ), SolidAngle( 0.0 ) { memset( SH, 0, 9*sizeof(double) ); }
 	};
+
+// 	// Contains information on the probe used as a Voronoï cell plane
+// 	class	VoronoiProbe {
+// 	public:
+// 		SHProbe::VoronoiProbeInfo*	pInfo;
+// 		int			PixelsCount;
+// 
+// 	public:
+// 		VoronoiProbe() : pInfo( NULL ), PixelsCount( 0 ) {}
+// 	};
 
 
 private:
@@ -322,6 +308,8 @@ private:
 
 private:	// FIELDS
 
+	SHProbeNetwork*			m_pOwner;
+
 	float4x4				m_Side2World[6];
 
 	U32						m_ProbeID;							// This is extracted from the cube map file name... Not very robust but good enough!
@@ -330,7 +318,7 @@ private:	// FIELDS
 	U32						m_ScenePixelsCount;					// Amount of pixels that participate to the scene geometry (i.e. not at infinity)
 
 	// Pre-computed samples
-	Sample					m_pSamples[PROBE_SAMPLES_COUNT];	// The array of samples best representing the probe's environment
+	Sample					m_pSamples[SHProbe::SAMPLES_COUNT];	// The array of samples best representing the probe's environment
 	U32						m_MinSamplePixelsCount;				// The minimum amount of pixels encountered on the samples
 	U32						m_MaxSamplePixelsCount;				// The maximum amount of pixels encountered on the samples
 	U32						m_AverageSamplePixelsCount;			// The average amount of pixels encountered on the samples
@@ -342,32 +330,20 @@ private:	// FIELDS
 	double					m_MaxDistance;
 	float3					m_BBoxMin;
 	float3					m_BBoxMax;
-
-	// Static and occlusion SH
-	float3					m_StaticSH[9];
-	float					m_OcclusionSH[9];
-
+ 
 	List< PixelsList >		m_SamplePixelGroups;
 
  	// Emissive surfaces
 	List< EmissiveSurface >	m_EmissiveSurfaces;
 
- 	U32						m_EmissiveSurfacesCount;
- 	EmissiveSurface*		m_ppEmissiveSurfaces[MAX_PROBE_EMISSIVE_SURFACES];
-
 	// List of neighbor probes
-	float					m_NearestNeighborProbeDistance;
-	float					m_FarthestNeighborProbeDistance;
 	List< NeighborProbe >	m_NeighborProbes;
 
-	// List of probes used in the Voronoï cell for the probe
-	List< VoronoiProbe >	m_VoronoiProbes;
+//	// List of probes used in the Voronoï cell for the probe
+//	List< VoronoiProbe >	m_VoronoiProbes;
 
  	// List of influence weights per face index
 	List< double >			m_ProbeInfluencePerFace;
-
-	// Static list of samples directions
-	static float3			ms_SampleDirections[PROBE_SAMPLES_COUNT];
 
 
 public:		// PROPERTIES
@@ -381,16 +357,13 @@ public:		// METHODS
 	~SHProbeEncoder();
 
 	// Builds visible neighbor IDs
-	void	BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const float3& _ProbePosition, U32 _ProbesCount );
+	void	BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, SHProbe& _Probe );
 
 	// Builds the Voronoï cell information associated to the probe
-	void	BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount, const float3* _pProbePositions );
+	void	BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, SHProbe& _Probe );
 
 	// Encodes the MRT cube map into basic SH elements that can later be combined at runtime to form a dynamically updatable probe
-	void	EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount, U32 _SceneTotalFacesCount );
-
-	// Saves the resulting encoded probe to disk
-	void	Save( const char* _FileName ) const;
+	void	EncodeProbeCubeMap( Texture2D& _StagingCubeMap, SHProbe& _Probe, U32 _SceneTotalFacesCount );
 
 	// Saves a debugging structure of all the pixels and surfaces
 	void	SavePixels( const char* _FileName ) const;
@@ -406,7 +379,7 @@ private:
 	void	ReadBackProbeCubeMap( Texture2D& _StagingCubeMap, U32 _SceneTotalFacesCount );
 
 	// Build surfaces using flood fill and adjacency propagation
-	void	ComputeFloodFill( float _SpatialDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight, float _MinimumImportanceDiscardThreshold );
+	void	ComputeFloodFill( SHProbe& _Probe, float _SpatialDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight, float _MinimumImportanceDiscardThreshold );
 
 	// Intensive flood fill routine
 	mutable int		m_ScanlinePixelIndex;
@@ -432,5 +405,4 @@ private:
 		float	Result = float(bits * 2.3283064365386963e-10); // / 0x100000000
 		return Result;
 	}
-
 };

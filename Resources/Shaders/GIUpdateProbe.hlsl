@@ -479,6 +479,15 @@ void	CS( uint3 _GroupID			: SV_GroupID,			// Defines the group offset within a D
 			SHDynamicSun.SH[i] = gs_SamplesSHSun[9*0+i] + gs_SamplesSHSun[9*1+i] + gs_SamplesSHSun[9*2+i] + gs_SamplesSHSun[9*3+i];
 		}
 
+		// Filter out dynamic
+		FilterLanczos( SHDynamic.SH, 3.0 );		// Nice result
+
+		// Filter out Sun
+		FilterLanczos( SHDynamicSun.SH, 2.0 );	// Nice result
+//		FilterHanning( SHDynamicSun.SH, 2.0 );
+//		FilterGaussian( SHDynamicSun.SH, 4.0 );	// 2.0 => Covers the entire sphere even for a very directional source, 4 is okay bit like lanczos 2.0
+
+
 //SHDynamic.SH[0] = float3( 1, 0, 0 );
 //SHDynamicSun.SH[0] = float3( 1, 1, 0 );
 // 

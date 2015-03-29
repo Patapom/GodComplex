@@ -6,19 +6,19 @@
 
 namespace RendererManaged {
 
-	Texture2D::Texture2D( Device^ _Device, int _Width, int _Height, int _ArraySize, int _MipLevelsCount, PIXEL_FORMAT _PixelFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _MipLevelsContent ) {
+	Texture2D::Texture2D( Device^ _Device, int _Width, int _Height, int _ArraySize, int _MipLevelsCount, PIXEL_FORMAT _PixelFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _Content ) {
  		IPixelFormatDescriptor*	pDescriptor = GetDescriptor( _PixelFormat );
 
 		void**	ppContent = NULL;
-		if ( _MipLevelsContent != nullptr ) {
+		if ( _Content != nullptr ) {
 
-			cli::pin_ptr< PixelsBuffer^ >	PinIt = &_MipLevelsContent[0];
+			cli::pin_ptr< PixelsBuffer^ >	PinIt = &_Content[0];
 
 			int		ArraySize = abs(_ArraySize);
 			ppContent = new void*[_MipLevelsCount*ArraySize];
 			for ( int ArrayIndex=0; ArrayIndex < ArraySize; ArrayIndex++ ) {
 				for ( int MipLevelIndex=0; MipLevelIndex < _MipLevelsCount; MipLevelIndex++ ) {
-					cli::pin_ptr< Byte >	PinThat = &_MipLevelsContent[ArrayIndex*_MipLevelsCount+MipLevelIndex]->m_Buffer[0];
+					cli::pin_ptr< Byte >	PinThat = &_Content[ArrayIndex*_MipLevelsCount+MipLevelIndex]->m_Buffer[0];
 					ppContent[ArrayIndex*_MipLevelsCount+MipLevelIndex] = PinThat;
 				}
 			}

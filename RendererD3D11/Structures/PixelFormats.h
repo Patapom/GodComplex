@@ -288,11 +288,53 @@ public:
 		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_R32G32B32A32_FLOAT; }
 		virtual int			Size() const					{ return sizeof(PixelFormatRGBA32F); }
 		virtual void		Write( U8* _pPixel, const float4& _Color ) const	{ PixelFormatRGBA32F& P = (PixelFormatRGBA32F&)( *_pPixel ); P.R = _Color.x; P.G = _Color.y; P.B = _Color.z; P.A = _Color.w; }
-		virtual float4	Read( const U8* _pPixel ) const						{ const PixelFormatRGBA32F& P = (const PixelFormatRGBA32F&)( *_pPixel ); return float4( P.R, P.G, P.B, P.A ); }
+		virtual float4		Read( const U8* _pPixel ) const						{ const PixelFormatRGBA32F& P = (const PixelFormatRGBA32F&)( *_pPixel ); return float4( P.R, P.G, P.B, P.A ); }
 	} DESCRIPTOR;
 
 public:
 
 	float  R, G, B, A;
 
+};
+
+//////////////////////////////////////////////////////////////////////////
+// COMPRESSED FORMATS
+//////////////////////////////////////////////////////////////////////////
+//
+struct PixelFormatBC3_UNORM : public PixelFormat
+{
+public:
+
+	static class Desc : public IPixelFormatDescriptor
+	{
+	public:
+
+		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_BC3_UNORM; }
+		virtual int			Size() const					{ return sizeof(PixelFormatBC3_UNORM); }
+		virtual void		Write( U8* _pPixel, const float4& _Color ) const	{ ASSERT( false, "Can't write individual BC3 pixels!" ); }
+		virtual float4		Read( const U8* _pPixel ) const						{ ASSERT( false, "Can't read individual BC3 pixels!" ); return float4::Zero; }
+	} DESCRIPTOR;
+
+public:
+
+	U8		value;
+};
+
+struct PixelFormatBC3_UNORM_sRGB : public PixelFormat
+{
+public:
+
+	static class Desc : public IPixelFormatDescriptor
+	{
+	public:
+
+		virtual DXGI_FORMAT	DirectXFormat() const			{ return DXGI_FORMAT_BC3_UNORM_SRGB; }
+		virtual int			Size() const					{ return sizeof(PixelFormatBC3_UNORM_sRGB); }
+		virtual void		Write( U8* _pPixel, const float4& _Color ) const	{ ASSERT( false, "Can't write individual BC3 pixels!" ); }
+		virtual float4		Read( const U8* _pPixel ) const						{ ASSERT( false, "Can't read individual BC3 pixels!" ); return float4::Zero; }
+	} DESCRIPTOR;
+
+public:
+
+	U8		value;
 };

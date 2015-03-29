@@ -578,6 +578,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Utility\Random.h" />
     <ClInclude Include="Utility\Resources.h" />
     <ClInclude Include="Utility\SH.h" />
+    <ClInclude Include="Utility\SHProbeEncoder\SHProbe.h" />
     <ClInclude Include="Utility\SHProbeEncoder\SHProbeEncoderFloodFill.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClInclude>
@@ -726,6 +727,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Utility\FPSCamera.cpp" />
     <ClCompile Include="Utility\Memory.cpp" />
     <ClCompile Include="Utility\MemoryMappedFile.cpp" />
+    <None Include="Resources\Shaders\GIRenderDebugVoronoi.hlsl" />
     <None Include="Resources\Shaders\GIRenderDynamic.hlsl" />
     <None Include="Resources\Shaders\Shadertoy.hlsl" />
     <None Include="Resources\Shaders\Shadertoy_Clouds.hlsl" />
@@ -737,6 +739,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Utility\Random.cpp" />
     <ClCompile Include="Utility\Resources.cpp" />
     <ClCompile Include="Utility\SH.cpp" />
+    <ClCompile Include="Utility\SHProbeEncoder\SHProbe.cpp" />
     <ClCompile Include="Utility\SHProbeEncoder\SHProbeEncoderFloodFill.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>

@@ -70,8 +70,7 @@ cbuffer	cbMaterial	: register( b11 )
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Structured Buffers
-struct	LightStruct
-{
+struct	LightStruct {
 	uint	Type;
 	float3	Position;
 	float3	Direction;
@@ -87,19 +86,23 @@ struct SHCoeffs1 {
 };
 
 // Contains probe information
-struct	ProbeStruct
-{
+struct	ProbeStruct {
 	float3		Position;
 	float		Radius;
-
-	// IDs of our 4 most significant neighbor probes
-//	uint2		NeighborIDs;
+	uint		NeighborsOffset;
+	uint		NeighborsCount;
 };
 
-StructuredBuffer<LightStruct>	_SBLightsStatic : register( t6 );	// Structured Buffer with our static lights
-StructuredBuffer<LightStruct>	_SBLightsDynamic : register( t7 );	// Structured Buffer with our dynamic lights
-StructuredBuffer<ProbeStruct>	_SBProbes : register( t8 );			// Structured Buffer with our probes info (position + radius)
-StructuredBuffer<SHCoeffs3>		_SBProbeSH : register( t9 );		// Structured Buffer with our probes SH coefficients
+struct NeighborsStruct {
+	uint		ProbeID;
+	float3		Position;
+};
+
+StructuredBuffer<LightStruct>		_SBLightsStatic : register( t5 );	// Structured Buffer with our static lights
+StructuredBuffer<LightStruct>		_SBLightsDynamic : register( t6 );	// Structured Buffer with our dynamic lights
+StructuredBuffer<ProbeStruct>		_SBProbes : register( t7 );			// Structured Buffer with our probes info (position + radius)
+StructuredBuffer<SHCoeffs3>			_SBProbeSH : register( t8 );		// Structured Buffer with our probes SH coefficients
+StructuredBuffer<NeighborsStruct>	_SBNeighborProbes : register( t9 );	// Structured Buffer with our neighbor probes info (ID + position)
 
 
 // Optional textures associated to the material
@@ -190,7 +193,7 @@ void	AccumulateProbeInfluence( ProbeStruct _Probe, uint _ProbeID, float3 _wsPosi
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Gather SH from the specified probe ID and its direct neighbors
-void	GatherProbeSH( float3 _Position, float3 _Normal, uint _ProbeID, inout SHCoeffs3 _SH ) {
+void	GatherProbeSH_OLD( float3 _Position, float3 _Normal, uint _ProbeID, inout SHCoeffs3 _SH ) {
 	[unroll]
 	for ( uint i=0; i < 9; i++ )
 		_SH.SH[i] = 0.0;
@@ -220,6 +223,77 @@ void	GatherProbeSH( float3 _Position, float3 _Normal, uint _ProbeID, inout SHCoe
 	if ( NeighborProbeID != 0xFFFF )
 		AccumulateProbeInfluence( _SBProbes[NeighborProbeID], NeighborProbeID, _Position, _Normal, _SH, SumWeights );
 #endif
+
+
+	// Normalize
+	float	Norm = 1.0 / (1e-5 + SumWeights);
+//	float	Norm = 1.0 / max( 1.0, SumWeights );	// This max allows single, low influence probes to decrease with distance anyway
+													// But it correctly averages influences when many probes have strong weight
+	[unroll]
+	for ( uint i=0; i < 9; i++ )
+		_SH.SH[i] *= Norm;
+}
+
+
+// Stolen from http://www.iquilezles.org/www/articles/smin/smin.htm
+float	SmoothMin( float a, float b ) {
+#if 0	// Exponential version
+	const float	k = -16.0;
+	float	res = exp( k*a ) + exp( k*b );
+	return log( res ) / k;
+#elif 0	// Power version
+	const float k = 16.0;
+	a = pow( saturate(a), k );
+	b = pow( saturate(b), k );
+	return pow( (a*b) / (a+b), 1.0/k );
+#else
+	return min( a, b );
+#endif
+}
+
+void	GatherProbeSH( float3 _Position, float3 _Normal, uint _ProbeID, inout SHCoeffs3 _SH ) {
+	[unroll]
+	for ( uint i=0; i < 9; i++ )
+		_SH.SH[i] = 0.0;
+
+	uint	ProbeIDs[16];
+	float	Weights[16] = { 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6 };
+
+	ProbeStruct	OriginProbe = _SBProbes[_ProbeID];
+	ProbeIDs[0] = _ProbeID;
+
+	[loop]
+	for ( uint n=0; n < OriginProbe.NeighborsCount; n++ ) {
+		NeighborsStruct	NeighborInfo = _SBNeighborProbes[OriginProbe.NeighborsOffset+n];
+		ProbeIDs[1+n] = NeighborInfo.ProbeID;
+
+		// Compute bidirectional weight
+		float3	Normal = NeighborInfo.Position - OriginProbe.Position;
+		float	Distance = length( Normal );
+				Normal /= Distance;
+
+ 		float	Weight0 = dot( NeighborInfo.Position - _Position, Normal ) / Distance;
+ 		float	Weight1 = dot( _Position - OriginProbe.Position, Normal ) / Distance;
+
+		Weights[0] = SmoothMin( Weights[0], Weight0 );
+		Weights[1+n] = SmoothMin( Weights[1+n], Weight1 );
+
+//Weights[1+n] = 0.0;
+	}
+
+	// Accumulate SH
+	float	SumWeights = 0.0;
+
+	[loop]
+	for ( uint n=0; n <= OriginProbe.NeighborsCount; n++ ) {
+		SHCoeffs3	ProbeSH = _SBProbeSH[ProbeIDs[n]];
+		float		Weight = saturate( Weights[n] );
+		SumWeights += Weight;
+
+		[unroll]
+		for ( uint i=0; i < 9; i++ )
+			_SH.SH[i] += Weight * ProbeSH.SH[i];
+	}
 
 
 	// Normalize

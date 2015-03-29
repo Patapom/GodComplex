@@ -20,6 +20,8 @@ namespace RendererManaged {
 		R32_FLOAT,
 		RG32_FLOAT,
 		RGBA32_FLOAT,
+		BC3_UNORM,
+		BC3_UNORM_sRGB,
 	};
 
 	static ::IPixelFormatDescriptor*	GetDescriptor( PIXEL_FORMAT _Format )
@@ -38,6 +40,8 @@ namespace RendererManaged {
 		case PIXEL_FORMAT::R32_FLOAT:		pDescriptor = &PixelFormatR32F::DESCRIPTOR; break;
 		case PIXEL_FORMAT::RG32_FLOAT:		pDescriptor = &PixelFormatRG32F::DESCRIPTOR; break;
 		case PIXEL_FORMAT::RGBA32_FLOAT:	pDescriptor = &PixelFormatRGBA32F::DESCRIPTOR; break;
+		case PIXEL_FORMAT::BC3_UNORM:		pDescriptor = &PixelFormatBC3_UNORM::DESCRIPTOR; break;
+		case PIXEL_FORMAT::BC3_UNORM_sRGB:	pDescriptor = &PixelFormatBC3_UNORM_sRGB::DESCRIPTOR; break;
 
 		default:	throw gcnew Exception( "Unsupported pixel format!" );
  		}

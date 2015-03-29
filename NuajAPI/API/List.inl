@@ -48,6 +48,15 @@ template<typename T> void		List<T>::Append( const T& _Value ) {
 	memcpy( &m_pList[m_Count-1], &_Value, sizeof(T) );
 }
 
+template<typename T> void		List<T>::AppendUnique( const T& _Value ) {
+	T*	pExistingValue = m_pList;
+	for ( U32 i=0; i < m_Count; i++, pExistingValue++ ) {
+		if ( *pExistingValue == _Value )
+			return;	// Already in!
+	}
+	Append( _Value );
+}
+
 template<typename T> T&			List<T>::Append() {
 	Allocate( m_Count+1 );
 	return m_pList[m_Count-1];

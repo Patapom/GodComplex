@@ -8,149 +8,7 @@ float		SHProbeEncoder::ANGULAR_THRESHOLD = acosf( 0.5f * PI / 180 );	// 0.5°
 float		SHProbeEncoder::ALBEDO_HUE_THRESHOLD = 0.04f;					// Close colors!
 float		SHProbeEncoder::ALBEDO_RGB_THRESHOLD = 0.16f;					// Close colors!
 
-const double	SHProbeEncoder::SAMPLE_SH_NORMALIZER = 1.0 / SHProbeEncoder::PROBE_SAMPLES_COUNT;
-
-#pragma region Static Sample Directions
-
-// Samples directions were generated using the Tools > Voronoï Visualizer project
-//	1) Enter the amount of samples as "neighbors"
-//	2) Press "Simulate" and "Render Cell"
-//	3) Wait a bit until the cell is stabilized
-//	4) Press "Copy Directions to Clipboard"
-//	5) Paste here...
-//
-float3	SHProbeEncoder::ms_SampleDirections[SHProbeEncoder::PROBE_SAMPLES_COUNT] = {
-	float3( -0.06512748f, -0.9806018f, -0.184874f ),
-	float3( 0.2651609f, -0.963407f, -0.03920109f ),
-	float3( -0.3364103f, -0.9396475f, 0.06237629f ),
-	float3( 0.3598919f, -0.8961947f, 0.2594475f ),
-	float3( -0.3848802f, -0.8907829f, -0.2416054f ),
-	float3( 0.2143864f, -0.9064168f, -0.3639329f ),
-	float3( -0.2476965f, -0.8934737f, 0.3746345f ),
-	float3( 0.08229525f, -0.9112423f, 0.4035655f ),
-	float3( -0.1003698f, -0.8721034f, -0.4789171f ),
-	float3( 0.5008324f, -0.8374052f, -0.2189056f ),
-	float3( -0.5485207f, -0.7896309f, 0.2749692f ),
-	float3( 0.5953481f, -0.799063f, 0.08401915f ),
-	float3( -0.6287103f, -0.7764353f, -0.04326314f ),
-	float3( 0.1291676f, -0.7389665f, -0.6612445f ),
-	float3( -0.05498989f, -0.7613023f, 0.6460611f ),
-	float3( 0.1534568f, -0.563389f, 0.8118152f ),
-	float3( -0.1932014f, -0.6435598f, -0.7406106f ),
-	float3( 0.7858406f, -0.6098233f, -0.1028104f ),
-	float3( -0.7977792f, -0.5799627f, 0.1648988f ),
-	float3( 0.581167f, -0.6974975f, 0.4192162f ),
-	float3( -0.6550472f, -0.6681805f, -0.3527721f ),
-	float3( 0.419537f, -0.7176616f, -0.5558333f ),
-	float3( -0.3937273f, -0.7073917f, 0.5870057f ),
-	float3( 0.3013652f, -0.7534088f, 0.5844265f ),
-	float3( -0.3967903f, -0.7520766f, -0.5262493f ),
-	float3( 0.6712496f, -0.6281286f, -0.393546f ),
-	float3( -0.6733227f, -0.565805f, 0.4759215f ),
-	float3( 0.8012968f, -0.5589657f, 0.2132624f ),
-	float3( -0.8418803f, -0.516003f, -0.1580462f ),
-	float3( 0.06062728f, -0.4960088f, -0.8661985f ),
-	float3( -0.2067396f, -0.5451078f, 0.8124754f ),
-	float3( -0.0135234f, -0.3130138f, 0.9496524f ),
-	float3( -0.08399558f, -0.2372432f, -0.9678122f ),
-	float3( 0.941248f, -0.3341865f, -0.04869918f ),
-	float3( -0.9517626f, -0.3001086f, 0.06389888f ),
-	float3( 0.7467493f, -0.4237861f, 0.5126117f ),
-	float3( -0.5619847f, -0.5092604f, -0.6517876f ),
-	float3( 0.6390445f, -0.4245374f, -0.6413971f ),
-	float3( -0.5330486f, -0.431778f, 0.7276173f ),
-	float3( 0.4824985f, -0.5209638f, 0.7041249f ),
-	float3( -0.3415031f, -0.3915559f, -0.8544353f ),
-	float3( 0.8565712f, -0.3631245f, -0.3666422f ),
-	float3( -0.8575178f, -0.3269508f, 0.3971983f ),
-	float3( 0.9242319f, -0.2675065f, 0.2724625f ),
-	float3( -0.7920873f, -0.3738262f, -0.482547f ),
-	float3( 0.3699216f, -0.4851609f, -0.7923238f ),
-	float3( -0.3395496f, -0.2589717f, 0.9042344f ),
-	float3( 0.3215487f, -0.2934381f, 0.900278f ),
-	float3( -0.3478316f, -0.05664718f, -0.9358441f ),
-	float3( 0.9481271f, -0.06919942f, -0.3102683f ),
-	float3( -0.9581742f, -0.05305798f, 0.2812242f ),
-	float3( 0.8241861f, -0.08944064f, 0.5592117f ),
-	float3( -0.8134472f, -0.05967117f, -0.5785698f ),
-	float3( 0.5305196f, -0.1686577f, -0.8307247f ),
-	float3( -0.5368034f, -0.02535539f, 0.8433263f ),
-	float3( 0.6192603f, -0.2281732f, 0.7513014f ),
-	float3( -0.6107424f, -0.2060255f, -0.7645569f ),
-	float3( 0.7807169f, -0.1347422f, -0.6101849f ),
-	float3( -0.7276722f, -0.1989731f, 0.656432f ),
-	float3( 0.999599f, -0.02614969f, 0.01086181f ),
-	float3( -0.9428056f, -0.2125831f, -0.2567606f ),
-	float3( 0.2407486f, -0.2056587f, -0.9485486f ),
-	float3( -0.1987798f, 0.0105478f, 0.9799875f ),
-	float3( 0.1273821f, -0.03292004f, 0.9913073f ),
-	float3( -0.002547364f, 0.06687968f, -0.9977578f ),
-	float3( 0.9536465f, 0.2358233f, -0.1869379f ),
-	float3( -0.9990733f, 0.03723105f, -0.02160015f ),
-	float3( 0.6906661f, 0.1618242f, 0.7048356f ),
-	float3( -0.7522958f, 0.2701904f, -0.6008729f ),
-	float3( 0.6176641f, 0.1348862f, -0.7747882f ),
-	float3( -0.6514491f, 0.2400095f, 0.7197288f ),
-	float3( 0.4705701f, 0.01217525f, 0.8822786f ),
-	float3( -0.5776926f, 0.1217202f, -0.8071279f ),
-	float3( 0.8364277f, 0.1642735f, -0.5228794f ),
-	float3( -0.8359304f, 0.07170705f, 0.5441309f ),
-	float3( 0.9476179f, 0.05754003f, 0.3141806f ),
-	float3( -0.9381226f, 0.09691005f, -0.3324671f ),
-	float3( 0.3239818f, 0.1051278f, -0.9402042f ),
-	float3( -0.3718577f, 0.278695f, 0.8854665f ),
-	float3( 0.272253f, 0.2451147f, 0.9304823f ),
-	float3( -0.2721535f, 0.2557805f, -0.9276361f ),
-	float3( 0.8088649f, 0.4513687f, -0.3768342f ),
-	float3( -0.9221582f, 0.2692063f, 0.2777631f ),
-	float3( 0.8300252f, 0.3087177f, 0.4644907f ),
-	float3( -0.857693f, 0.3983283f, -0.3251113f ),
-	float3( 0.3910697f, 0.3968202f, -0.8304205f ),
-	float3( -0.4996046f, 0.530091f, 0.6851269f ),
-	float3( 0.4946553f, 0.4020301f, 0.7705115f ),
-	float3( -0.4935963f, 0.4407661f, -0.7497252f ),
-	float3( 0.635273f, 0.4374456f, -0.6364507f ),
-	float3( -0.7561093f, 0.4412021f, 0.4833629f ),
-	float3( 0.9396623f, 0.3184428f, 0.1250164f ),
-	float3( -0.9352374f, 0.353172f, -0.02450851f ),
-	float3( 0.06936274f, 0.3622317f, -0.9295037f ),
-	float3( -0.04819092f, 0.2942277f, 0.9545197f ),
-	float3( 0.1667844f, 0.5328495f, 0.8296111f ),
-	float3( -0.1822327f, 0.5435508f, -0.8193558f ),
-	float3( 0.8248289f, 0.5602912f, -0.07570429f ),
-	float3( -0.7954615f, 0.5801681f, 0.1750599f ),
-	float3( 0.6398923f, 0.5480904f, 0.5386417f ),
-	float3( -0.6483262f, 0.5866553f, -0.4852925f ),
-	float3( 0.4392658f, 0.6834472f, -0.5830484f ),
-	float3( -0.3104446f, 0.7584106f, 0.5730947f ),
-	float3( 0.3634647f, 0.6954272f, 0.6198987f ),
-	float3( -0.3818772f, 0.7156429f, -0.584829f ),
-	float3( 0.6258243f, 0.7065871f, -0.3302707f ),
-	float3( -0.5864075f, 0.7085361f, 0.3925592f ),
-	float3( 0.7781015f, 0.5786623f, 0.2443525f ),
-	float3( -0.7502664f, 0.6437194f, -0.1507497f ),
-	float3( 0.1741025f, 0.6239144f, -0.7618525f ),
-	float3( -0.186251f, 0.5542929f, 0.8112152f ),
-	float3( 0.03052288f, 0.7557275f, 0.6541746f ),
-	float3( -0.06895267f, 0.7775376f, -0.6250446f ),
-	float3( 0.6115053f, 0.7912098f, 0.006967954f ),
-	float3( -0.5787853f, 0.8137574f, 0.05297609f ),
-	float3( 0.5305579f, 0.785412f, 0.3188049f ),
-	float3( -0.4992356f, 0.8194184f, -0.2816331f ),
-	float3( 0.1935211f, 0.8581434f, -0.4755414f ),
-	float3( -0.07527816f, 0.9143383f, 0.3978928f ),
-	float3( 0.239242f, 0.8908177f, 0.3862734f ),
-	float3( -0.1890372f, 0.9122233f, -0.3634742f ),
-	float3( 0.393363f, 0.8897788f, -0.2314289f ),
-	float3( -0.3529578f, 0.9009489f, 0.2524119f ),
-	float3( 0.3177822f, 0.944992f, 0.07748912f ),
-	float3( -0.2825107f, 0.9572946f, -0.06143976f ),
-	float3( 0.07187531f, 0.9781598f, -0.1950316f ),
-	float3( -0.004785682f, 0.9944577f, 0.105029f ),
-	float3( -0.01342054f, -0.9926256f, 0.1204758f ),
-};
-
-#pragma endregion
+const double	SHProbeEncoder::SAMPLE_SH_NORMALIZER = 1.0 / SHProbe::SAMPLES_COUNT;
 
 SHProbeEncoder::SHProbeEncoder() {
 
@@ -245,23 +103,23 @@ SHProbeEncoder::SHProbeEncoder() {
 
 #if 1
 	// Use the array of sample directions generated by the external tool "Voronoï Visualizer"
-	for ( int SampleIndex=0; SampleIndex < PROBE_SAMPLES_COUNT; SampleIndex++ ) {
+	for ( int SampleIndex=0; SampleIndex < SHProbe::SAMPLES_COUNT; SampleIndex++ ) {
 		Sample&	S = m_pSamples[SampleIndex];
 		S.Index = SampleIndex;
 		S.OriginalPixelsCount = 0;
-		S.View = ms_SampleDirections[SampleIndex];
+		S.View = SHProbe::ms_SampleDirections[SampleIndex];
 	}
 
 #else
 	// Prepare equal subdivisions of the sphere using Hammersley sampling of the sphere and grouping
-	for ( int SampleIndex=0; SampleIndex < PROBE_SAMPLES_COUNT; SampleIndex++ ) {
+	for ( int SampleIndex=0; SampleIndex < SHProbe::SAMPLES_COUNT; SampleIndex++ ) {
 		Sample&	S = m_pSamples[SampleIndex];
 
 		S.Index = SampleIndex;
 		S.OriginalPixelsCount = 0;
 
 		// Build the sample's direction
-		float	Phi = 2.0f * PI * (SampleIndex+0.5f) / PROBE_SAMPLES_COUNT;
+		float	Phi = 2.0f * PI * (SampleIndex+0.5f) / SHProbe::SAMPLES_COUNT;
 		float	Y = 2.0f * ReverseBits( 1+SampleIndex ) - 1.0f;
 		float	Theta = acosf( Y );
 		S.View.Set( sinf(Phi)*sinf(Theta), cosf(Theta), cosf(Phi)*sinf(Theta) );
@@ -276,7 +134,7 @@ SHProbeEncoder::SHProbeEncoder() {
 	for ( int i=0; i < PixelsCount; i++, pPixel++ ) {
 		Sample*	pSample = m_pSamples;
 		float	BestSampleWeight = 0.0f;
-		for ( int SampleIndex=0; SampleIndex < PROBE_SAMPLES_COUNT; SampleIndex++, pSample++ ) {
+		for ( int SampleIndex=0; SampleIndex < SHProbe::SAMPLES_COUNT; SampleIndex++, pSample++ ) {
 			float	SampleWeight = pSample->View.Dot( pPixel->View );
 			if ( SampleWeight <= BestSampleWeight ) {
 				continue;
@@ -329,7 +187,7 @@ for ( int i=0; i < 9; i++ ) SH[i] += pPixel->SolidAngle * pPixel->SHCoeffs[i];
 	m_MinSamplePixelsCount = ~0U;
 	m_MaxSamplePixelsCount = 0;
 	m_AverageSamplePixelsCount = 0;
-	for ( int SampleIndex=0; SampleIndex < PROBE_SAMPLES_COUNT; SampleIndex++ ) {
+	for ( int SampleIndex=0; SampleIndex < SHProbe::SAMPLES_COUNT; SampleIndex++ ) {
 		const Sample&	S = m_pSamples[SampleIndex];
 
 		for ( int i=0; i < 9; i++ )
@@ -339,7 +197,7 @@ for ( int i=0; i < 9; i++ ) SH[i] += pPixel->SolidAngle * pPixel->SHCoeffs[i];
 		m_MinSamplePixelsCount = min( m_MinSamplePixelsCount, S.OriginalPixelsCount );
 		m_AverageSamplePixelsCount += S.OriginalPixelsCount;
 	}
-	m_AverageSamplePixelsCount /= PROBE_SAMPLES_COUNT;
+	m_AverageSamplePixelsCount /= SHProbe::SAMPLES_COUNT;
 
 	// At this point, SH should only have a non null ambient term equal to 2*sqrt(PI)
 	//	proving that the sum of all samples' SH coefficients yields the ambient term 1 if lit
@@ -352,7 +210,7 @@ for ( int i=0; i < 9; i++ ) SH[i] += pPixel->SolidAngle * pPixel->SHCoeffs[i];
 	Pixel::ms_RadixNodes[1] = new SHProbeEncoder::Pixel::RadixNode_t[6*CUBE_MAP_FACE_SIZE];
 
 	m_SamplePixelGroups.Init( m_MaxSamplePixelsCount );	// Worst case scenario: only 1 pixel per group in each sample so as many groups as pixels!
-	m_EmissiveSurfaces.Init( 6*CUBE_MAP_FACE_SIZE );	// Worst case scenario: all pixels in the cube map are a different emissive material!
+//	m_EmissiveSurfaces.Init( 6*CUBE_MAP_FACE_SIZE );	// Worst case scenario: all pixels in the cube map are a different emissive material!
 }
 
 SHProbeEncoder::~SHProbeEncoder() {
@@ -361,7 +219,8 @@ SHProbeEncoder::~SHProbeEncoder() {
 	SAFE_DELETE_ARRAY( m_pCubeMapPixels );
 }
 
-void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const float3& _ProbePosition, U32 _ProbesCount ) {
+void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, SHProbe& _Probe ) {
+	U32	ProbesCount = m_pOwner->m_ProbesCount;
 	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
 
 	//////////////////////////////////////////////////////////////////////////
@@ -388,48 +247,68 @@ void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const fl
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Build the neighbor probes network
 	//
-	m_NeighborProbes.Init( _ProbesCount );
-	m_NeighborProbes.Clear();
+	const float	COS_ANGLE_UNIT_PIXEL = cosf( atanf( 2.0f / CUBE_MAP_SIZE ) );	// Use 2 pixels wide aperture along the line of sight to collect a few direct pixels to evaluate visibility...
 
+	m_NeighborProbes.Init( ProbesCount );
+	_Probe.m_NeighborProbes.Init( ProbesCount );
+
+	int	DirectlyVisibleNeighborsCount = 0;
 	Dictionary<NeighborProbe*>	NeighborProbeID2Probe;
 	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
 		Pixel&	P = m_pCubeMapPixels[PixelIndex];
 		if ( P.NeighborProbeID == ~0UL ) {
 			continue;
 		}
+		ASSERT( P.NeighborProbeID < ProbesCount, "Perceived probe index out of range! Problem in shader???" );
 
 		NeighborProbe**	NP = NeighborProbeID2Probe.Get( P.NeighborProbeID );
 		if ( NP == NULL ) {
+			SHProbe::NeighborProbeInfo&	TempInfo = _Probe.m_NeighborProbes.Append();
+			TempInfo.ProbeID = P.NeighborProbeID;
+			TempInfo.DirectlyVisible = false;	// Not directly visible at the moment
+
 			NeighborProbe&	Temp = m_NeighborProbes.Append();
-			Temp.ProbeID = P.NeighborProbeID;
-			Temp.DirectlyVisible = false;	// Not directly visible at the moment
+			Temp.pInfo = &TempInfo;
+
 			NP = &NeighborProbeID2Probe.Add( P.NeighborProbeID, &Temp );
 		}
 
 		// Accumulate direction, solid angle & distance
 		(*NP)->SolidAngle += P.SolidAngle;
-		(*NP)->Distance += P.NeighborProbeDistance;
-		(*NP)->Direction = (*NP)->Direction + P.View;
+		(*NP)->pInfo->Distance += P.NeighborProbeDistance;
+		(*NP)->pInfo->Direction = (*NP)->pInfo->Direction + P.View;
 
 		// Accumulate SH for neighbor's exchange of energy
 		for ( int i=0; i < 9; i++ ) {
 			(*NP)->SH[i] += P.SolidAngle * P.SHCoeffs[i];
 		}
 
+		// Check if it's a pixel we can use for direct visibility evaluation
+		if ( !(*NP)->pInfo->DirectlyVisible ) {
+			float3	LineOfSightDirection = (m_pOwner->m_pProbes[P.NeighborProbeID].m_wsPosition - _Probe.m_wsPosition).Normalize();
+			float	DotLineOfSight = P.View.Dot( LineOfSightDirection );
+			if ( DotLineOfSight > COS_ANGLE_UNIT_PIXEL ) {
+				(*NP)->pInfo->DirectlyVisible = true;
+				DirectlyVisibleNeighborsCount++;
+			}
+		}
+
 		(*NP)->PixelsCount++;
 	}
 
 	// Normalize everything
-	m_NearestNeighborProbeDistance = FLT_MAX;
-	m_FarthestNeighborProbeDistance = 0.0f;
+	_Probe.m_NearestNeighborProbeDistance = FLT_MAX;
+	_Probe.m_FarthestNeighborProbeDistance = 0.0f;
 	for ( int NeighborIndex=0; NeighborIndex < m_NeighborProbes.GetCount(); NeighborIndex++ ) {
 		NeighborProbe&	NP = m_NeighborProbes[NeighborIndex];
+		NP.pInfo->Direction.Normalize();
+		NP.pInfo->Distance /= NP.PixelsCount;
+		NP.pInfo->SolidAngle = float(NP.SolidAngle);
+		for ( int i=0; i < 9; i++ )
+			NP.pInfo->SH[i] = float( NP.SH[i] );
 
-		NP.Distance /= NP.PixelsCount;
-		NP.Direction.Normalize();
-
-		m_NearestNeighborProbeDistance = min( m_NearestNeighborProbeDistance, NP.Distance );
-		m_FarthestNeighborProbeDistance = max( m_FarthestNeighborProbeDistance, NP.Distance );
+		_Probe.m_NearestNeighborProbeDistance = min( _Probe.m_NearestNeighborProbeDistance, NP.pInfo->Distance );
+		_Probe.m_FarthestNeighborProbeDistance = max( _Probe.m_FarthestNeighborProbeDistance, NP.pInfo->Distance );
 	}
 
 	// Sort from most important to least important neighbor
@@ -437,9 +316,9 @@ void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const fl
 		class	Comparer : public IComparer<NeighborProbe> {
 		public:	virtual int		Compare( const NeighborProbe& a, const NeighborProbe& b ) const {
 				if ( a.SolidAngle < b.SolidAngle )
-					return +1;
-				if ( a.SolidAngle > b.SolidAngle )
 					return -1;
+				if ( a.SolidAngle > b.SolidAngle )
+					return +1;
 
 				return 0;
 			}
@@ -448,7 +327,8 @@ void	SHProbeEncoder::BuildProbeNeighborIDs( Texture2D& _StagingCubeMap, const fl
 	}
 }
 
-void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount, const float3* _pProbePositions ) {
+void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, SHProbe& _Probe ) {
+	U32	ProbesCount = m_pOwner->m_ProbesCount;
 	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
 
 	//////////////////////////////////////////////////////////////////////////
@@ -473,50 +353,54 @@ void	SHProbeEncoder::BuildProbeVoronoiCell( Texture2D& _StagingCubeMap, U32 _Pro
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Build the neighbor probes network
 	//
-	m_VoronoiProbes.Init( _ProbesCount );
-	m_VoronoiProbes.Clear();
+	const float3&	P0 = _Probe.m_wsPosition;
 
-	const float3&	P0 = _pProbePositions[_ProbeID];
-
-	Dictionary<VoronoiProbe*>	VoronoiProbeID2Probe;
+	Dictionary<SHProbe::VoronoiProbeInfo*>	VoronoiProbeID2Probe;
 	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
 		Pixel&	P = m_pCubeMapPixels[PixelIndex];
-		if ( P.NeighborProbeID == ~0UL ) {
+		if ( P.VoronoiProbeID == ~0UL ) {
 			continue;
 		}
 
-		VoronoiProbe**	VP = VoronoiProbeID2Probe.Get( P.VoronoiProbeID );
-		if ( VP == NULL ) {
-			ASSERT( P.VoronoiProbeID < _ProbesCount, "Probe index out of range!" );
-
-			// Find the center and normal of the plane
-			const float3&	P1 = _pProbePositions[P.VoronoiProbeID];
-			float3			N = P0 - P1;
-			float			Distance = N.Length();
-			if ( Distance < 1e-3f ) {
-				ASSERT( false, "This probe is much too close to be used as a Voronoï cell plane!" );
-				continue;
-			}
-			N = N / Distance;
-
-			VoronoiProbe&	Temp = m_VoronoiProbes.Append();
-			Temp.ProbeID = P.VoronoiProbeID;
-			(*VP)->Position = P1 + 0.5f * Distance * N;
-			(*VP)->Normal = N;
-
-			VP = &VoronoiProbeID2Probe.Add( P.NeighborProbeID, &Temp );
+		SHProbe::VoronoiProbeInfo**	VP = VoronoiProbeID2Probe.Get( P.VoronoiProbeID );
+		if ( VP != NULL ) {
+			continue;
 		}
 
-		(*VP)->PixelsCount++;
+		ASSERT( P.VoronoiProbeID < ProbesCount, "Probe index out of range!" );
+
+		// Compute the center and normal of the plane
+		const float3&	P1 = m_pOwner->m_pProbes[P.VoronoiProbeID].m_wsPosition;
+		float3			N = P0 - P1;
+		float			Distance = N.Length();
+		if ( Distance < 1e-3f ) {
+			ASSERT( false, "This probe is much too close to be used as a Voronoï cell plane!" );
+			continue;
+		}
+		N = N / Distance;
+
+		SHProbe::VoronoiProbeInfo&	Temp = _Probe.m_VoronoiProbes.Append();
+		Temp.ProbeID = P.VoronoiProbeID;
+		Temp.PlanePosition = P1 + 0.5f * Distance * N;
+		Temp.PlaneNormal = N;
+
+		VP = &VoronoiProbeID2Probe.Add( P.VoronoiProbeID, &Temp );
 	}
 }
 
-void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeID, U32 _ProbesCount, U32 _SceneTotalFacesCount ) {
+void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, SHProbe& _Probe, U32 _SceneTotalFacesCount ) {
 	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Read back probe data and prepare pixels for encoding
 	ReadBackProbeCubeMap( _StagingCubeMap, _SceneTotalFacesCount );
+
+	_Probe.m_MeanDistance = float( m_MeanDistance );
+	_Probe.m_MeanHarmonicDistance = float( m_MeanHarmonicDistance );
+	_Probe.m_MinDistance = float( m_MinDistance );
+	_Probe.m_MaxDistance = float( m_MaxDistance );
+	_Probe.m_lsBBoxMin = m_BBoxMin;
+	_Probe.m_lsBBoxMax = m_BBoxMax;
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -544,182 +428,31 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, U32 _ProbeI
 	}
 
 	for ( int i=0; i < 9; i++ ) {
-		m_StaticSH[i].Set( (float) SHR[i], (float) SHG[i], (float) SHB[i] );
-		m_OcclusionSH[i] = (float) SHOcclusion[i];
+		_Probe.m_pSHStaticLighting[i].Set( (float) SHR[i], (float) SHG[i], (float) SHB[i] );
+		_Probe.m_pSHOcclusion[i] = (float) SHOcclusion[i];
 	}
 
 	// 2.2) ======== Apply filtering ========
-// 	SphericalHarmonics.SHFunctions.FilterLanczos( m_StaticSH, 3 );		// Lanczos should be okay for static lighting
-// 	SphericalHarmonics.SHFunctions.FilterHanning( m_OcclusionSH, 3 );
-
-
-// 	// 2.3) ======== Compute the influence of the probe on each scene face ========
-// 	m_MaxFaceIndex = 0;
-// 	m_ProbeInfluencePerFace.Clear();
-// 	for ( int PixelIndex=0; PixelIndex < TotalPixelsCount; PixelIndex++ ) {
-// 		Pixel&	P = m_pCubeMapPixels[PixelIndex];
-// 		if ( P.Infinity )
-// 			continue;
-// 
-// 		double*	pFaceInfluence = m_ProbeInfluencePerFace.Get( P.FaceIndex );
-// 		if ( pFaceInfluence == NULL ) {
-// 			pFaceInfluence = &m_ProbeInfluencePerFace.Add( P.FaceIndex, 0.0 );
-// 		}
-// 
-// 		*pFaceInfluence += P.SolidAngle;
-// 		m_MaxFaceIndex = max( m_MaxFaceIndex, P.FaceIndex );
-// 	}
+	SH::FilterLanczos( _Probe.m_pSHStaticLighting, 3 );		// Lanczos should be okay for static lighting
+ 	SH::FilterHanning( _Probe.m_pSHOcclusion, 3 );
 
 	//////////////////////////////////////////////////////////////////////////
 	// 3] Build samples by flood filling
 	//
-	ComputeFloodFill( 1.0f, 1.0f, 1.0f, 0.5f );
+	ComputeFloodFill( _Probe, 1.0f, 1.0f, 1.0f, 0.5f );
 }
 
-FILE*	g_pFile = NULL;
-template< typename T> void	Write( const T& _value ) {
-	fwrite( &_value, sizeof(T), 1, g_pFile );
-}
-
-void	SHProbeEncoder::Save( const char* _FileName ) const {
-
-	fopen_s( &g_pFile, _FileName, "wb" );
-	ASSERT( g_pFile != NULL, "Locked!" );
-
-	// Write the mean, harmonic mean, min, max distances
-	Write( (float) m_MeanDistance );
-	Write( (float) m_MeanHarmonicDistance );
-	Write( (float) m_MinDistance );
-	Write( (float) m_MaxDistance );
-
-	// Write the BBox
-	Write( m_BBoxMin.x );
-	Write( m_BBoxMin.y );
-	Write( m_BBoxMin.z );
-	Write( m_BBoxMax.x );
-	Write( m_BBoxMax.y );
-	Write( m_BBoxMax.z );
-
-	// Write static SH
-	for ( int i=0; i < 9; i++ )
-	{
-		Write( m_StaticSH[i].x );
-		Write( m_StaticSH[i].y );
-		Write( m_StaticSH[i].z );
+namespace {
+	FILE*	g_pTempFile = NULL;
+	template< typename T> void	Write( const T& _value ) {
+		fwrite( &_value, sizeof(T), 1, g_pTempFile );
 	}
-
-	// Write occlusion SH
-	for ( int i=0; i < 9; i++ )
-		Write( m_OcclusionSH[i] );
-
-	// Write the result samples
-	for ( U32 i=0; i < PROBE_SAMPLES_COUNT; i++ ) {
-		const Sample&	S = m_pSamples[i];
-
-		// Write position, normal, albedo
-		Write( S.Position.x );
-		Write( S.Position.y );
-		Write( S.Position.z );
-
-		Write( S.Normal.x );
-		Write( S.Normal.y );
-		Write( S.Normal.z );
-
-		Write( S.Tangent.x );
-		Write( S.Tangent.y );
-		Write( S.Tangent.z );
-
-		Write( S.BiTangent.x );
-		Write( S.BiTangent.y );
-		Write( S.BiTangent.z );
-
-		Write( S.Radius );
-
-		Write( (float) (S.Albedo.x * INVPI) );
-		Write( (float) (S.Albedo.y * INVPI) );
-		Write( (float) (S.Albedo.z * INVPI) );
-
-		Write( S.F0.x );
-		Write( S.F0.y );
-		Write( S.F0.z );
-
-		// Write the pixel coverage of the sample
-		Write( float( S.PixelsCount ) / S.OriginalPixelsCount );
-
-// No need: can be regenerated at runtime from normal direction
-// 		// Write SH coefficients
-// 		for ( int i=0; i < 9; i++ ) {
-// 			Write( S.SH[i] );
-// 		}
-	}
-
-	// Write the emissive surfaces
-	Write( m_EmissiveSurfacesCount );
-	for ( U32 i=0; i < m_EmissiveSurfacesCount; i++ ) {
-		EmissiveSurface&	S = *m_ppEmissiveSurfaces[i];
-
-		// Write emissive mat
-		Write( S.EmissiveMatID );
-
-		// Write SH coefficients (we only write luminance here, we don't have the color info, which is provided at runtime)
-		for ( int i=0; i < 9; i++ )
-			Write( S.SH[i] );
-	}
-
-	// Write the neighbor probes
-	Write( m_NeighborProbes.GetCount() );
-
-		// Write nearest/farthest probe distance
-	Write( m_NearestNeighborProbeDistance );
-	Write( m_FarthestNeighborProbeDistance );
-
-	for ( int i=0; i < m_NeighborProbes.GetCount(); i++ ) {
-		const NeighborProbe&	NP = m_NeighborProbes[i];
-
-		// Write probe ID, distance, solid angle, direction
-		Write( NP.ProbeID );
-		Write( NP.DirectlyVisible );
-		Write( NP.Distance );
-		Write( (float) NP.SolidAngle );
-		Write( NP.Direction.x );
-		Write( NP.Direction.y );
-		Write( NP.Direction.z );
-
-		// Write SH coefficients (only luminance here since they're used for the product with the neighbor probe's SH)
-		for ( int i=0; i < 9; i++ )
-			Write( (float) NP.SH[i] );
-	}
-
-	// Write the Voronoï probes
-	Write( m_VoronoiProbes.GetCount() );
-	for ( int i=0; i < m_VoronoiProbes.GetCount(); i++ ) {
-		const VoronoiProbe&	VP = m_VoronoiProbes[i];
-
-		// Write probe ID, distance, solid angle, direction
-		Write( VP.ProbeID );
-		Write( VP.Position );
-		Write( VP.Normal );
-	}
-
-	fclose( g_pFile );
-
-// We now save a single file
-// // Save probe influence for each scene face
-// FileInfo	InfluenceFileName = new FileInfo( Path.Combine( Path.GetDirectoryName( _FileName.FullName ), Path.GetFileNameWithoutExtension( _FileName.FullName ) + ".FaceInfluence" ) );
-// using ( FileStream S = InfluenceFileName.Create() )
-// 	using ( BinaryWriter W = new BinaryWriter( S ) )
-// 	{
-// 		for ( U32 FaceIndex=0; FaceIndex < m_MaxFaceIndex; FaceIndex++ )
-// 		{
-// 			W.Write( (float) (m_ProbeInfluencePerFace.ContainsKey( FaceIndex ) ? m_ProbeInfluencePerFace[FaceIndex] : 0.0) );
-// 		}
-// 	}
 }
 
 void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 
-	fopen_s( &g_pFile, _FileName, "wb" );
-	ASSERT( g_pFile != NULL, "Locked!" );
+	fopen_s( &g_pTempFile, _FileName, "wb" );
+	ASSERT( g_pTempFile != NULL, "Locked!" );
 
 	Write( U32(CUBE_MAP_SIZE) );
 
@@ -729,31 +462,20 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 		Write( P->pParentSample->Index );
 		Write( P->bUsedForSampling );
 
-		Write( P->Position.x );
-		Write( P->Position.y );
-		Write( P->Position.z );
-		Write( P->Normal.x );
-		Write( P->Normal.y );
-		Write( P->Normal.z );
+		Write( P->lsPosition );
+		Write( P->lsNormal );
 
-		Write( P->Albedo.x );
-		Write( P->Albedo.y );
-		Write( P->Albedo.z );
-		Write( P->F0.x );
-		Write( P->F0.y );
-		Write( P->F0.z );
+		Write( P->Albedo );
+		Write( P->F0 );
 
-		Write( P->StaticLitColor.x );
-		Write( P->StaticLitColor.y );
-		Write( P->StaticLitColor.z );
-		Write( P->SmoothedStaticLitColor.x );
-		Write( P->SmoothedStaticLitColor.y );
-		Write( P->SmoothedStaticLitColor.z );
+		Write( P->StaticLitColor );
+		Write( P->SmoothedStaticLitColor );
 
 		Write( P->FaceIndex );
 		Write( P->EmissiveMatID );
 		Write( P->NeighborProbeID );
 		Write( P->NeighborProbeDistance );
+		Write( P->VoronoiProbeID );
 
 		Write( P->Importance );
 		Write( P->Distance );
@@ -763,34 +485,15 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 	}
 
 	// Write samples
-	Write( PROBE_SAMPLES_COUNT );
-	for ( U32 SampleIndex=0; SampleIndex < PROBE_SAMPLES_COUNT; SampleIndex++ ) {
+	Write( SHProbe::SAMPLES_COUNT );
+	for ( U32 SampleIndex=0; SampleIndex < SHProbe::SAMPLES_COUNT; SampleIndex++ ) {
 		const Sample&	S = m_pSamples[SampleIndex];
 
-		Write( S.Position.x );
-		Write( S.Position.y );
-		Write( S.Position.z );
+		Write( S.lsPosition );
+		Write( S.lsNormal );
 
-		Write( S.Normal.x );
-		Write( S.Normal.y );
-		Write( S.Normal.z );
-
-		Write( S.Tangent.x );
-		Write( S.Tangent.y );
-		Write( S.Tangent.z );
-
-		Write( S.BiTangent.x );
-		Write( S.BiTangent.y );
-		Write( S.BiTangent.z );
-
-		Write( S.Radius );
-
-		Write( S.Albedo.x );
-		Write( S.Albedo.y );
-		Write( S.Albedo.z );
-		Write( S.F0.x );
-		Write( S.F0.y );
-		Write( S.F0.z );
+		Write( S.Albedo );
+		Write( S.F0 );
 
 		Write( S.PixelsCount );
 
@@ -802,27 +505,14 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 			Write( S.SH[i] );
 	}
 
-	// Write the emissive surfaces
-	Write( m_EmissiveSurfacesCount );
-	for ( U32 i=0; i < m_EmissiveSurfacesCount; i++ ) {
-		EmissiveSurface&	S = *m_ppEmissiveSurfaces[i];
-
-		// Write emissive mat
-		Write( S.EmissiveMatID );
-
-		// Write SH coefficients (we only write luminance here, we don't have the color info that is provided at runtime)
-		for ( int i=0; i < 9; i++ )
-			Write( S.SH[i] );
-	}
-
-	fclose( g_pFile );
+	fclose( g_pTempFile );
 }
 
 #pragma region Computes Sample Pixels by Flood Fill Method
 
 int	DEBUG_PixelIndex = 0;
 
-void	SHProbeEncoder::ComputeFloodFill( float _SpatialDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight, float _MinimumImportanceDiscardThreshold ) {
+void	SHProbeEncoder::ComputeFloodFill( SHProbe& _Probe, float _SpatialDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight, float _MinimumImportanceDiscardThreshold ) {
 	int	TotalPixelsCount = 6*CUBE_MAP_FACE_SIZE;
  	U32	DiscardThreshold = U32( 0.004f * m_ScenePixelsCount );		// Discard surfaces that contain less than 0.4% of the total amount of scene pixels (arbitrary!)
 
@@ -840,7 +530,7 @@ void	SHProbeEncoder::ComputeFloodFill( float _SpatialDistanceWeight, float _Norm
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize the list of pixels belonging to each sample
 	{
-		for ( int SampleIndex=0; SampleIndex < PROBE_SAMPLES_COUNT; SampleIndex++ ) {
+		for ( int SampleIndex=0; SampleIndex < SHProbe::SAMPLES_COUNT; SampleIndex++ ) {
 			Sample&	S = m_pSamples[SampleIndex];
 			S.PixelsCount = 0;
 			S.pPixels = NULL;	// No pixel in that sample at the moment...
@@ -857,24 +547,9 @@ void	SHProbeEncoder::ComputeFloodFill( float _SpatialDistanceWeight, float _Norm
 	}
 
 
-// DEBUG: Small experiment designed to see if SH roughly sum to 1
-// double	AccumSH[9];
-// memset( AccumSH, 0, 9*sizeof(double) );
-// for ( int SampleIndex=0; SampleIndex < MAX_PROBE_SAMPLES; SampleIndex++ ) {
-// 	Sample&	S = m_pSamples[SampleIndex];
-// 
-// 	double	SH[9];
-// 	SH::BuildSHCosineLobe_YUp( S.View, SH );
-// 
-// 	double	SHNormalizer = SAMPLE_SH_NORMALIZER;
-// 	for ( int i=0; i < 9; i++ )
-// 		AccumSH[i] += SHNormalizer * SH[i];
-// }
-
-
 	//////////////////////////////////////////////////////////////////////////
 	// Process each sample
-	double	GroupImportanceThreshold = _MinimumImportanceDiscardThreshold / PROBE_SAMPLES_COUNT;
+	double	GroupImportanceThreshold = _MinimumImportanceDiscardThreshold / SHProbe::SAMPLES_COUNT;
 
 GroupImportanceThreshold = 0.0;	// No rejection for now...
 
@@ -882,7 +557,7 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 	float	SampleRadiusMax = -FLT_MAX;
 	float	SampleRadiusAvg = 0.0f;
 	int		ValidSamplesCount = 0;
-	for ( int SampleIndex=0; SampleIndex < PROBE_SAMPLES_COUNT; SampleIndex++ ) {
+	for ( int SampleIndex=0; SampleIndex < SHProbe::SAMPLES_COUNT; SampleIndex++ ) {
 		Sample&	S = m_pSamples[SampleIndex];
 
 		// Build the lists of pixel groups for that sample
@@ -928,7 +603,6 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 			// Discard this sample entirely as it's not important enough
 			S.pPixels = NULL;
 			S.PixelsCount = 0;
-			S.Radius = 0.0f;	// !IMPORTANT! ==> A radius of 0 will discard the sample at runtime!
 			continue;
 		}
 
@@ -939,47 +613,54 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 			pPixel = pPixel->pNext;
 		}
 
-		// Build the resulting position, normal, albedo and average direction for the group
-		S.Position = float3::Zero;
-		S.Normal = float3::Zero;
-		S.Direction = float3::Zero;
+		// ================================================================================
+		// Build the resulting sample: position, normal, albedo and average direction for the group
+		S.lsPosition = float3::Zero;
+		S.lsNormal = float3::Zero;
+		S.AverageDirection = float3::Zero;
 		S.Albedo = float3::Zero;
 
 		pPixel = pBestGroup->pPixels;
 		while ( pPixel != NULL ) {
-			S.Position = S.Position + pPixel->Position;
-			S.Normal = S.Normal + pPixel->Normal;
-			S.Direction = S.Direction + pPixel->View;
+			S.lsPosition = S.lsPosition + pPixel->lsPosition;
+			S.lsNormal = S.lsNormal + pPixel->lsNormal;
+			S.AverageDirection = S.AverageDirection + pPixel->View;
 			S.Albedo = S.Albedo + pPixel->Albedo;
 			pPixel->bUsedForSampling = true;	// Mark the pixel as used for sampling
 			pPixel = pPixel->pNextInList;
 		}
 
+		SHProbe::Sample&	TargetSample = _Probe.m_pSamples[SampleIndex];
+
 		float	Normalizer = 1.0f / pBestGroup->PixelsCount;
-		S.Position = S.Position * Normalizer;
-		S.Normal.Normalize();
-		S.Direction.Normalize();
+		S.lsPosition = S.lsPosition * Normalizer;
 		S.Albedo = S.Albedo * Normalizer;
+		TargetSample.Position = S.lsPosition;
+		TargetSample.Normal = S.lsNormal.Normalize();
+		TargetSample.AverageDirection = S.AverageDirection.Normalize();
+		TargetSample.Albedo = S.Albedo;
+		TargetSample.SHFactor = float( S.PixelsCount ) / S.OriginalPixelsCount;
 
 		// Build the radius
-		// This is an important data as a value of 0 will discard the sample at runtime
+		// This is an important data as a value of 0 would discard the sample at runtime
 		float	AverageSqDistance = 0.0f;
 		pPixel = pBestGroup->pPixels;
 		while ( pPixel != NULL ) {
-			float3	D = pPixel->Position - S.Position;
+			float3	D = pPixel->lsPosition - S.lsPosition;
 			AverageSqDistance += D.LengthSq();
 			pPixel = pPixel->pNextInList;
 		}
 		AverageSqDistance *= Normalizer;
-		S.Radius = sqrtf( AverageSqDistance);
+		TargetSample.Radius = sqrtf( AverageSqDistance );
 
-		SampleRadiusMin = min( SampleRadiusMin, S.Radius );
-		SampleRadiusMax = max( SampleRadiusMax, S.Radius );
-		SampleRadiusAvg += S.Radius;
+		SampleRadiusMin = min( SampleRadiusMin, TargetSample.Radius );
+		SampleRadiusMax = max( SampleRadiusMax, TargetSample.Radius );
+		SampleRadiusAvg += TargetSample.Radius;
 		ValidSamplesCount++;
 	}
 
 	SampleRadiusAvg /= ValidSamplesCount;
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the emissive surfaces
@@ -1014,9 +695,8 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 	}
 
 	// Sort surfaces
-	m_EmissiveSurfacesCount = 0;
-	for ( U32 SortedSurfaceIndex=0; SortedSurfaceIndex < MAX_PROBE_EMISSIVE_SURFACES; SortedSurfaceIndex++ ) {
-
+	_Probe.m_EmissiveSurfacesCount = 0;
+	for ( U32 SortedSurfaceIndex=0; SortedSurfaceIndex < SHProbe::MAX_EMISSIVE_SURFACES; SortedSurfaceIndex++ ) {
 		EmissiveSurface*	pBestSurface = NULL;
 		for ( int SurfaceIndex=0; SurfaceIndex < m_EmissiveSurfaces.GetCount(); SurfaceIndex++ ) {
 			EmissiveSurface&	Surface = m_EmissiveSurfaces[SurfaceIndex];
@@ -1031,9 +711,13 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 			break;	// We're done or we've encountered insignificant surfaces!
 		}
 
-		// Assign new best emissive surface
 		pBestSurface->ID = SortedSurfaceIndex;
-		m_ppEmissiveSurfaces[m_EmissiveSurfacesCount++] = pBestSurface;
+
+		// Create new emissive surface
+		_Probe.m_pEmissiveSurfaces[_Probe.m_EmissiveSurfacesCount].MaterialID = pBestSurface->EmissiveMatID;
+		for ( int i=0; i < 9; i++ )
+			_Probe.m_pEmissiveSurfaces[_Probe.m_EmissiveSurfacesCount].pSH[i] = float( pBestSurface->SH[i] );
+		_Probe.m_EmissiveSurfacesCount++;
 	}
 }
 
@@ -1115,7 +799,7 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Sample& _Sample, Pixel& _PreviousPixel
 	bool	Accepted = false;
 
 	// First, let's check the angular discrepancy
-	float	Dot = _PreviousPixel.Normal | _P.Normal;
+	float	Dot = _PreviousPixel.lsNormal | _P.lsNormal;
 	if ( Dot > ANGULAR_THRESHOLD ) {
 		// Next, let's check the distance discrepancy
 		float3	P0 = _PreviousPixel.SmoothedDistance * _PreviousPixel.View;
@@ -1413,9 +1097,6 @@ void	SHProbeEncoder::CubeMapPixelWalker::GoToAdjacentPixel( int _dU, int _dV ) {
 //
 void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap, U32 _SceneTotalFacesCount ) {
 
-	m_NearestNeighborProbeDistance = 0.0f;
-	m_FarthestNeighborProbeDistance = 0.0f;
-
 	m_ScenePixelsCount = 0;
 
 	m_MeanDistance = 0.0;
@@ -1471,15 +1152,15 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap, U32 _Scen
 				float	Nz = pFaceData1->z;
 				float	Distance = pFaceData1->w;
 
-				float3	wsPosition( Distance * P->View.x, Distance * P->View.y, Distance * P->View.z );
+				float3	lsPosition( Distance * P->View.x, Distance * P->View.y, Distance * P->View.z );
 
-				P->Position = wsPosition;
-				P->Normal.Set( Nx, Ny, Nz );
-				P->Normal.Normalize();
+				P->lsPosition = lsPosition;
+				P->lsNormal.Set( Nx, Ny, Nz );
+				P->lsNormal.Normalize();
 
 
 				// ==== Finalize pixel information ====
-				P->Importance = -P->View.Dot( P->Normal ) / (Distance * Distance);
+				P->Importance = -P->View.Dot( P->lsNormal ) / (Distance * Distance);
 				if ( P->Importance < 0.0 ) {
 // P->Normal = -P->Normal;
 // P->Importance = -P->View.Dot( P->Normal ) / (Distance * Distance);
@@ -1506,8 +1187,8 @@ NegativeImportancePixelsCount++;
 				m_MeanHarmonicDistance += 1.0 / Distance;
 				m_MinDistance = min( m_MinDistance, Distance );
 				m_MaxDistance = max( m_MaxDistance, Distance );
-				m_BBoxMin.Max( wsPosition );
-				m_BBoxMax.Min( wsPosition );
+				m_BBoxMax = m_BBoxMax.Max( lsPosition );
+				m_BBoxMin = m_BBoxMin.Min( lsPosition );
 			}
 
 //		_StagingCubeMap.UnMap( 0, 6*3+CubeFaceIndex );
@@ -1709,3 +1390,4 @@ void	SHProbeEncoder::Pixel::Sort( U32 _ElementsCount, RadixNode_t* _pList, Radix
 		_pSorted[++b2[pos]] = *pNode;
 	}
 }
+

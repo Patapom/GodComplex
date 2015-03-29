@@ -69,6 +69,7 @@
 			this.label9 = new System.Windows.Forms.Label();
 			this.label15 = new System.Windows.Forms.Label();
 			this.label8 = new System.Windows.Forms.Label();
+			this.checkBoxShowProbeInfluences = new System.Windows.Forms.CheckBox();
 			this.integerTrackbarControlMaxProbeUpdatesPerFrame = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.floatTrackbarControlNeighborProbesContribution = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlDebugProbeIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -84,6 +85,9 @@
 			this.floatTrackbarControlSkyIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlSunAzimuth = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlSunTheta = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxShowProbeVoronoiCell = new System.Windows.Forms.CheckBox();
+			this.integerTrackbarControlVoronoiProbeIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label17 = new System.Windows.Forms.Label();
 			this.groupBoxAtmosphere.SuspendLayout();
 			this.groupBoxClouds.SuspendLayout();
 			this.groupBoxTerrain.SuspendLayout();
@@ -335,8 +339,8 @@
 			// 
 			// buttonLoadPreset
 			// 
-			this.buttonLoadPreset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonLoadPreset.Location = new System.Drawing.Point(11, 510);
+			this.buttonLoadPreset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonLoadPreset.Location = new System.Drawing.Point(8, 511);
 			this.buttonLoadPreset.Name = "buttonLoadPreset";
 			this.buttonLoadPreset.Size = new System.Drawing.Size(75, 23);
 			this.buttonLoadPreset.TabIndex = 1;
@@ -346,8 +350,8 @@
 			// 
 			// buttonSavePreset
 			// 
-			this.buttonSavePreset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonSavePreset.Location = new System.Drawing.Point(92, 510);
+			this.buttonSavePreset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.buttonSavePreset.Location = new System.Drawing.Point(89, 511);
 			this.buttonSavePreset.Name = "buttonSavePreset";
 			this.buttonSavePreset.Size = new System.Drawing.Size(75, 23);
 			this.buttonSavePreset.TabIndex = 2;
@@ -467,18 +471,22 @@
 			// 
 			// groupBox2
 			// 
+			this.groupBox2.Controls.Add(this.integerTrackbarControlVoronoiProbeIndex);
 			this.groupBox2.Controls.Add(this.integerTrackbarControlMaxProbeUpdatesPerFrame);
 			this.groupBox2.Controls.Add(this.floatTrackbarControlNeighborProbesContribution);
+			this.groupBox2.Controls.Add(this.checkBoxShowProbeVoronoiCell);
+			this.groupBox2.Controls.Add(this.checkBoxShowProbeInfluences);
 			this.groupBox2.Controls.Add(this.checkBoxShowNetwork);
 			this.groupBox2.Controls.Add(this.checkBoxShowDebugProbes);
 			this.groupBox2.Controls.Add(this.floatTrackbarControlDebugProbeIntensity);
 			this.groupBox2.Controls.Add(this.checkBoxEnableRedistribution);
 			this.groupBox2.Controls.Add(this.label9);
+			this.groupBox2.Controls.Add(this.label17);
 			this.groupBox2.Controls.Add(this.label15);
 			this.groupBox2.Controls.Add(this.label8);
-			this.groupBox2.Location = new System.Drawing.Point(334, 322);
+			this.groupBox2.Location = new System.Drawing.Point(648, 17);
 			this.groupBox2.Name = "groupBox2";
-			this.groupBox2.Size = new System.Drawing.Size(308, 212);
+			this.groupBox2.Size = new System.Drawing.Size(308, 408);
 			this.groupBox2.TabIndex = 4;
 			this.groupBox2.TabStop = false;
 			this.groupBox2.Text = "Misc.";
@@ -534,6 +542,18 @@
 			this.label8.Size = new System.Drawing.Size(79, 13);
 			this.label8.TabIndex = 2;
 			this.label8.Text = "Intensity Factor";
+			// 
+			// checkBoxShowProbeInfluences
+			// 
+			this.checkBoxShowProbeInfluences.AutoSize = true;
+			this.checkBoxShowProbeInfluences.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.checkBoxShowProbeInfluences.Location = new System.Drawing.Point(9, 237);
+			this.checkBoxShowProbeInfluences.Name = "checkBoxShowProbeInfluences";
+			this.checkBoxShowProbeInfluences.Size = new System.Drawing.Size(157, 17);
+			this.checkBoxShowProbeInfluences.TabIndex = 3;
+			this.checkBoxShowProbeInfluences.Text = "Show Probe Influences";
+			this.checkBoxShowProbeInfluences.UseVisualStyleBackColor = true;
+			this.checkBoxShowProbeInfluences.CheckedChanged += new System.EventHandler(this.checkBoxShowProbeInfluences_CheckedChanged);
 			// 
 			// integerTrackbarControlMaxProbeUpdatesPerFrame
 			// 
@@ -747,11 +767,45 @@
 			this.floatTrackbarControlSunTheta.VisibleRangeMin = 1F;
 			this.floatTrackbarControlSunTheta.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSunTheta_ValueChanged);
 			// 
+			// checkBoxShowProbeVoronoiCell
+			// 
+			this.checkBoxShowProbeVoronoiCell.AutoSize = true;
+			this.checkBoxShowProbeVoronoiCell.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.checkBoxShowProbeVoronoiCell.Location = new System.Drawing.Point(10, 264);
+			this.checkBoxShowProbeVoronoiCell.Name = "checkBoxShowProbeVoronoiCell";
+			this.checkBoxShowProbeVoronoiCell.Size = new System.Drawing.Size(168, 17);
+			this.checkBoxShowProbeVoronoiCell.TabIndex = 3;
+			this.checkBoxShowProbeVoronoiCell.Text = "Show Probe Voronoï Cell";
+			this.checkBoxShowProbeVoronoiCell.UseVisualStyleBackColor = true;
+			this.checkBoxShowProbeVoronoiCell.CheckedChanged += new System.EventHandler(this.checkBoxShowProbeVoronoiCell_CheckedChanged);
+			// 
+			// integerTrackbarControlVoronoiProbeIndex
+			// 
+			this.integerTrackbarControlVoronoiProbeIndex.Location = new System.Drawing.Point(88, 287);
+			this.integerTrackbarControlVoronoiProbeIndex.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlVoronoiProbeIndex.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlVoronoiProbeIndex.Name = "integerTrackbarControlVoronoiProbeIndex";
+			this.integerTrackbarControlVoronoiProbeIndex.RangeMax = 1000;
+			this.integerTrackbarControlVoronoiProbeIndex.RangeMin = 0;
+			this.integerTrackbarControlVoronoiProbeIndex.Size = new System.Drawing.Size(213, 20);
+			this.integerTrackbarControlVoronoiProbeIndex.TabIndex = 4;
+			this.integerTrackbarControlVoronoiProbeIndex.Value = 0;
+			this.integerTrackbarControlVoronoiProbeIndex.VisibleRangeMax = 10;
+			this.integerTrackbarControlVoronoiProbeIndex.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlProbeIndex_ValueChanged);
+			// 
+			// label17
+			// 
+			this.label17.Location = new System.Drawing.Point(7, 289);
+			this.label17.Name = "label17";
+			this.label17.Size = new System.Drawing.Size(78, 20);
+			this.label17.TabIndex = 2;
+			this.label17.Text = "Probe index";
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(654, 546);
+			this.ClientSize = new System.Drawing.Size(1060, 546);
 			this.Controls.Add(this.groupBox2);
 			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.groupBoxTerrain);
@@ -838,6 +892,10 @@
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlMaxProbeUpdatesPerFrame;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlDynamicObjectsCount;
 		private System.Windows.Forms.Label label16;
+		private System.Windows.Forms.CheckBox checkBoxShowProbeInfluences;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlVoronoiProbeIndex;
+		private System.Windows.Forms.CheckBox checkBoxShowProbeVoronoiCell;
+		private System.Windows.Forms.Label label17;
 	}
 }
 

@@ -70,8 +70,8 @@ private:	// NESTED TYPES
 		int			CubeFaceX;
 		int			CubeFaceY;
 
-		float3		Position;				// World position
-		float3		Normal;					// World normal
+		float3		lsPosition;				// World position
+		float3		lsNormal;					// World normal
 		float3		Albedo;					// Material albedo
 		float3		AlbedoHSL;				// Material albedo in HSL format
 		float3		F0;						// Material Fresnel coefficient
@@ -97,8 +97,8 @@ private:	// NESTED TYPES
 		Pixel()
 			: pNext( NULL )
 			, pParentSurface( NULL )
-			, Position( float3::Zero )
-			, Normal( float3::Zero )
+			, lsPosition( float3::Zero )
+			, lsNormal( float3::Zero )
 			, Albedo( float3::Zero )
 			, AlbedoHSL( float3::Zero )
 			, FaceIndex( ~0UL )
@@ -166,10 +166,10 @@ private:	// NESTED TYPES
 		// Computes a "distance" between this pixel and another one
 		float		ComputeMetric( const Pixel& _Other, float _PositionDistanceWeight, float _NormalDistanceWeight, float _AlbedoDistanceWeight )
 		{
-			float	EuclidianDistance = (_Other.Position - Position).Length();
+			float	EuclidianDistance = (_Other.lsPosition - lsPosition).Length();
 					EuclidianDistance *= _PositionDistanceWeight;
 
-			float	NormalDistance = 0.5f * (1.0f - (_Other.Normal | Normal));
+			float	NormalDistance = 0.5f * (1.0f - (_Other.lsNormal | lsNormal));
 					NormalDistance *= _NormalDistanceWeight;	// Used to give the normal as much weight as general euclidian distances...
 
 			float	ColorDistance0 = fabs( AlbedoHSL.x - _Other.AlbedoHSL.x );
@@ -273,8 +273,8 @@ private:	// NESTED TYPES
 
 				// Compute weight factor based on surface's normal and pixel's normal but also based on pixel's normal and view direction
 				double	Factor  = P.SolidAngle								// Solid angle for SH weight, obvious
-								* max( 0.0, P.Normal.Dot( Normal ) )		// This weight is to account for the fact that the point is well aligned with the surface's plane the lighting was computed for
-								* max( 0.0, -P.View.Dot( P.Normal ) );		// This weight is to account for the fact that the point is well aligned with the view vector
+								* max( 0.0, P.lsNormal.Dot( lsNormal ) )		// This weight is to account for the fact that the point is well aligned with the surface's plane the lighting was computed for
+								* max( 0.0, -P.View.Dot( P.lsNormal ) );		// This weight is to account for the fact that the point is well aligned with the view vector
 																			//	(for example, for a perfectly flat wall this weight will have the effect that points further from the probe's perpendicular will have less importance)
 
 				for ( int i=0; i < 9; i++ )

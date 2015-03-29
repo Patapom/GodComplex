@@ -15,3 +15,5 @@ PixelFormatR32F::Desc			PixelFormatR32F::DESCRIPTOR;
 PixelFormatR32_UINT::Desc		PixelFormatR32_UINT::DESCRIPTOR;
 PixelFormatRG32F::Desc			PixelFormatRG32F::DESCRIPTOR;
 PixelFormatRGBA32F::Desc		PixelFormatRGBA32F::DESCRIPTOR;
+PixelFormatBC3_UNORM::Desc		PixelFormatBC3_UNORM::DESCRIPTOR;
+PixelFormatBC3_UNORM_sRGB::Desc	PixelFormatBC3_UNORM_sRGB::DESCRIPTOR;
