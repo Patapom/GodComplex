@@ -60,7 +60,7 @@
 //#define SCENE 2	// Sponza Atrium
 #define SCENE 3	// Test
 
-#define	LOAD_PROBES				// Define this to simply load probes without computing them
+//#define	LOAD_PROBES				// Define this to simply load probes without computing them
 #define USE_WHITE_TEXTURES		// Define this to use a single white texture for the entire scene (low patate machines)
 #define	USE_NORMAL_MAPS			// Define this to use normal maps
 

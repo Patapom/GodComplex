@@ -1106,7 +1106,7 @@ void	SHProbeNetwork::LoadProbes( const char* _pPathToProbes, const float3& _Scen
 		SHProbe&	Probe = m_pProbes[ProbeIndex];
 
 		// Read numbered probe
-		sprintf_s( pTemp, "%s/Probe%02d.probeset", _pPathToProbes, ProbeIndex );
+		sprintf_s( pTemp, "%sProbe%02d.probeset", _pPathToProbes, ProbeIndex );
 		fopen_s( &pFile, pTemp, "rb" );
 		if ( pFile == NULL ) {
 			// Not ready yet (happens for first time computation!)

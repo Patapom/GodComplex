@@ -115,6 +115,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoronoiVisualizer", "Tools\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BImageViewer", "Tools\BImageViewer\BImageViewer.csproj", "{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SHZHConvolutionViewer", "Tools\SHZHConvolutionViewer\SHZHConvolutionViewer.csproj", "{AF08E4EA-48FF-4F49-A3D5-86A88020203D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug DirectX10|Any CPU = Debug DirectX10|Any CPU
@@ -1812,6 +1814,34 @@ Global
 		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|x64.ActiveCfg = Release|x86
 		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|x86.ActiveCfg = Release|x86
 		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|x86.Build.0 = Release|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Debug DirectX10|Any CPU.ActiveCfg = Debug|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Debug DirectX10|Mixed Platforms.Build.0 = Debug|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Debug DirectX10|Win32.ActiveCfg = Debug|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Debug DirectX10|x64.ActiveCfg = Debug|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Debug DirectX10|x86.ActiveCfg = Debug|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Debug DirectX10|x86.Build.0 = Debug|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Debug|Win32.ActiveCfg = Debug|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Debug|x64.ActiveCfg = Debug|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Debug|x86.ActiveCfg = Debug|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Debug|x86.Build.0 = Debug|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Profile|Any CPU.ActiveCfg = Release|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Profile|Mixed Platforms.ActiveCfg = Release|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Profile|Mixed Platforms.Build.0 = Release|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Profile|Win32.ActiveCfg = Release|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Profile|x64.ActiveCfg = Release|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Profile|x86.ActiveCfg = Release|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Profile|x86.Build.0 = Release|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Release|Any CPU.ActiveCfg = Release|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Release|Mixed Platforms.Build.0 = Release|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Release|Win32.ActiveCfg = Release|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Release|x64.ActiveCfg = Release|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Release|x86.ActiveCfg = Release|x86
+		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -417,9 +417,9 @@ void	SHProbeEncoder::EncodeProbeCubeMap( Texture2D& _StagingCubeMap, SHProbe& _P
 		Pixel&	P = m_pCubeMapPixels[PixelIndex];
 		for ( int i=0; i < 9; i++ ) {
 			// Accumulate smoothed out static lighting
-			SHR[i] += P.SHCoeffs[i] * P.SolidAngle * P.SmoothedStaticLitColor.x;
-			SHG[i] += P.SHCoeffs[i] * P.SolidAngle * P.SmoothedStaticLitColor.y;
-			SHB[i] += P.SHCoeffs[i] * P.SolidAngle * P.SmoothedStaticLitColor.z;
+			SHR[i] += P.SolidAngle * P.SmoothedStaticLitColor.x * P.SHCoeffs[i];
+			SHG[i] += P.SolidAngle * P.SmoothedStaticLitColor.y * P.SHCoeffs[i];
+			SHB[i] += P.SolidAngle * P.SmoothedStaticLitColor.z * P.SHCoeffs[i];
 
 			// No obstacle means direct lighting from the ambient sky...
 			// Accumulate SH coefficients in that direction, weighted by the solid angle
@@ -463,7 +463,7 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 		Write( P->bUsedForSampling );
 
 		Write( P->lsPosition );
-		Write( P->lsNormal );
+		Write( P->wsNormal );
 
 		Write( P->Albedo );
 		Write( P->F0 );
@@ -490,7 +490,7 @@ void	SHProbeEncoder::SavePixels( const char* _FileName ) const {
 		const Sample&	S = m_pSamples[SampleIndex];
 
 		Write( S.lsPosition );
-		Write( S.lsNormal );
+		Write( S.wsNormal );
 
 		Write( S.Albedo );
 		Write( S.F0 );
@@ -616,14 +616,14 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 		// ================================================================================
 		// Build the resulting sample: position, normal, albedo and average direction for the group
 		S.lsPosition = float3::Zero;
-		S.lsNormal = float3::Zero;
+		S.wsNormal = float3::Zero;
 		S.AverageDirection = float3::Zero;
 		S.Albedo = float3::Zero;
 
 		pPixel = pBestGroup->pPixels;
 		while ( pPixel != NULL ) {
 			S.lsPosition = S.lsPosition + pPixel->lsPosition;
-			S.lsNormal = S.lsNormal + pPixel->lsNormal;
+			S.wsNormal = S.wsNormal + pPixel->wsNormal;
 			S.AverageDirection = S.AverageDirection + pPixel->View;
 			S.Albedo = S.Albedo + pPixel->Albedo;
 			pPixel->bUsedForSampling = true;	// Mark the pixel as used for sampling
@@ -636,7 +636,7 @@ GroupImportanceThreshold = 0.0;	// No rejection for now...
 		S.lsPosition = S.lsPosition * Normalizer;
 		S.Albedo = S.Albedo * Normalizer;
 		TargetSample.Position = S.lsPosition;
-		TargetSample.Normal = S.lsNormal.Normalize();
+		TargetSample.Normal = S.wsNormal.Normalize();
 		TargetSample.AverageDirection = S.AverageDirection.Normalize();
 		TargetSample.Albedo = S.Albedo;
 		TargetSample.SHFactor = float( S.PixelsCount ) / S.OriginalPixelsCount;
@@ -799,7 +799,7 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Sample& _Sample, Pixel& _PreviousPixel
 	bool	Accepted = false;
 
 	// First, let's check the angular discrepancy
-	float	Dot = _PreviousPixel.lsNormal | _P.lsNormal;
+	float	Dot = _PreviousPixel.wsNormal | _P.wsNormal;
 	if ( Dot > ANGULAR_THRESHOLD ) {
 		// Next, let's check the distance discrepancy
 		float3	P0 = _PreviousPixel.SmoothedDistance * _PreviousPixel.View;
@@ -1155,12 +1155,12 @@ void	SHProbeEncoder::ReadBackProbeCubeMap( Texture2D& _StagingCubeMap, U32 _Scen
 				float3	lsPosition( Distance * P->View.x, Distance * P->View.y, Distance * P->View.z );
 
 				P->lsPosition = lsPosition;
-				P->lsNormal.Set( Nx, Ny, Nz );
-				P->lsNormal.Normalize();
+				P->wsNormal.Set( Nx, Ny, Nz );
+				P->wsNormal.Normalize();
 
 
 				// ==== Finalize pixel information ====
-				P->Importance = -P->View.Dot( P->lsNormal ) / (Distance * Distance);
+				P->Importance = -P->View.Dot( P->wsNormal ) / (Distance * Distance);
 				if ( P->Importance < 0.0 ) {
 // P->Normal = -P->Normal;
 // P->Importance = -P->View.Dot( P->Normal ) / (Distance * Distance);

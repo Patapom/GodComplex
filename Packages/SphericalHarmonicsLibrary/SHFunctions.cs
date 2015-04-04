@@ -126,7 +126,7 @@ namespace SphericalHarmonics
 		/// <remarks>The operation performed when the delegate is called is :
 		/// Result[_AccumulatedSHCoeffIndex] += SHVector0[_SHCoeffIndex0] * SHVector1[_SHCoeffIndex1] * _Sign * _ClebschGordanCoefficient
 		/// </remarks>
-		public delegate void		ConvolutionDelegate( int _AccumulatedSHCoeffIndex, int _SHCoeffIndex0, int _SHCoeffIndex1, double _Sign, double _ClebschGordanCoefficient );
+		public delegate void		ProductDelegate( int _AccumulatedSHCoeffIndex, int _SHCoeffIndex0, int _SHCoeffIndex1, double _Sign, double _ClebschGordanCoefficient );
 
 		/// <summary>
 		/// The delegate used to evaluate the function to minimize using BFGS
@@ -864,7 +864,7 @@ namespace SphericalHarmonics
 		}
 
 		/// <summary>
-		/// Computes the convolution of 2 vectors of SH coefficients of the specified order using Clebsch-Gordan coefficients
+		/// Computes the product and re-projection in SH of 2 vectors of SH coefficients of the specified order using Clebsch-Gordan coefficients
 		/// </summary>
 		/// <param name="_Vector0">First vector</param>
 		/// <param name="_Vector1">Second vector</param>
@@ -872,7 +872,7 @@ namespace SphericalHarmonics
 		/// <returns>The convolution of the 2 vectors</returns>
 		/// <remarks>This method is quite time-consuming as the convolution is computed using 5 loops but, as an optimisation, we can notice that most Clebsh-Gordan are 0
 		/// and a vector of non-null coefficients could be precomputed as only the SH vectors' coefficients change</remarks>
-		public static double[]		Convolve( double[] _Vector0, double[] _Vector1, int _Order, ConvolutionDelegate _Delegate )
+		public static double[]		ProductClebschGordan( double[] _Vector0, double[] _Vector1, int _Order, ProductDelegate _Delegate )
 		{
 			if ( _Vector0 == null || _Vector1 == null )
 				throw new Exception( "Invalid coefficients!" );
