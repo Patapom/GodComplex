@@ -14,7 +14,7 @@ namespace SphericalHarmonics
 	/// 
 	///		( sinθ cosϕ, sinθ sinϕ, cosθ ) → (x, y, z)
 	/// 
-	///	 _ Azimuth ϕ is zero on +X and increases CCW (i.e. PI/2 at +Y, PI at -X and 3PI/2 at -Y)
+	///	 _ Azimuth ϕ is zero on +X and increases CCW (i.e. PI/2 at +Y, PI at -X and -PI/2 at -Y)
 	///	 _ Elevation θ is zero on +Z and PI on -Z
 	/// 
 	/// 
@@ -22,7 +22,7 @@ namespace SphericalHarmonics
 	///                   |
 	///                   |
 	///                   |
-	/// ϕ=3PI/2 -Y - - - -o------+Y ϕ=PI/2
+	/// ϕ=-PI/2 -Y - - - -o------+Y ϕ=PI/2
 	///                  /.
 	///                 / .
 	///               +X  .
@@ -195,12 +195,20 @@ namespace SphericalHarmonics
 			if ( Math.Abs( m ) > l )
 				throw new Exception( "m parameter is outside the [-l,+l] range!" );
 
+// 			if ( m == 0 )
+// 				return	K( l, m ) * P( l, m, Math.Cos( _θ ) );
+// 			else if ( m > 0 )
+// 				return SQRT2 * K( l, m ) * Math.Cos( m * _ϕ ) * P( l, m, Math.Cos( _θ ) );
+// 			else
+// 				return SQRT2 * K( l, -m ) * Math.Sin( -m * _ϕ ) * P( l, -m, Math.Cos( _θ ) );
+
+			// (2015-04-13) According to wikipedia (http://en.wikipedia.org/wiki/Spherical_harmonics#Real_form) we should multiply coeffs by (-1)^m ...
 			if ( m == 0 )
 				return	K( l, m ) * P( l, m, Math.Cos( _θ ) );
 			else if ( m > 0 )
-				return SQRT2 * K( l, m ) * Math.Cos( m * _ϕ ) * P( l, m, Math.Cos( _θ ) );
+				return Math.Pow( -1, m ) * SQRT2 * K( l, m ) * Math.Cos( m * _ϕ ) * P( l, m, Math.Cos( _θ ) );
 			else
-				return SQRT2 * K( l, -m ) * Math.Sin( -m * _ϕ ) * P( l, -m, Math.Cos( _θ ) );
+				return Math.Pow( -1, m ) * SQRT2 * K( l, -m ) * Math.Sin( -m * _ϕ ) * P( l, -m, Math.Cos( _θ ) );
 		}
 
 		// Here, we choose the convention that the vertical axis defining THETA is the Y axis
@@ -1326,6 +1334,10 @@ namespace SphericalHarmonics
 		//
 		public static double	P( int l, int m, double x )
 		{
+// if ( l == 1 && m == 1 )
+// 	return -Math.Sqrt( 1 - x*x );
+
+
 			double	pmm = 1.0;
 			if ( m > 0 )
 			{	// pmm = (-1) ^ m * Factorial( 2 * m - 1 ) * ( (1 - x) * (1 + x) ) ^ (m/2);
