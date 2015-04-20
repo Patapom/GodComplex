@@ -94,6 +94,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="PostProcess.hlsl" />
+    <Content Include="RenderCellMesh_Opaque.hlsl" />
     <Content Include="RenderCellMesh.hlsl" />
     <Content Include="RenderCellPlanes.hlsl" />
   </ItemGroup>

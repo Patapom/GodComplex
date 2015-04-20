@@ -38,7 +38,12 @@ namespace VoronoiVisualizer
 		StructuredBuffer< SB_Neighbor >	m_SB_Neighbors;
 		Shader							m_Shader_RenderCellPlanes;
 		Shader							m_Shader_RenderCellMesh;
+		Shader							m_Shader_RenderCellMesh_Opaque;
+		Shader							m_Shader_PostProcess;
+		Shader							m_Shader_PostProcess2;
 		Primitive						m_Prim_Quad;
+
+		Texture2D[]			m_RT_WorldPositions = new Texture2D[2];
 
 		WMath.Hammersley	m_Hammersley = new WMath.Hammersley();
 		float3[]			m_NeighborPositions = null;
@@ -56,6 +61,9 @@ namespace VoronoiVisualizer
 
 			m_Shader_RenderCellPlanes = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "RenderCellPlanes.hlsl" ) ), VERTEX_FORMAT.T2, "VS", null, "PS", null );
 			m_Shader_RenderCellMesh = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "RenderCellMesh.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );
+			m_Shader_RenderCellMesh_Opaque = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "RenderCellMesh_Opaque.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );
+			m_Shader_PostProcess = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "PostProcess.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_Shader_PostProcess2 = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "PostProcess.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
 			VertexT2[]	Vertices = new VertexT2[4] {
 				new VertexT2() { UV = new float2( 0, 0 ) },
@@ -64,6 +72,12 @@ namespace VoronoiVisualizer
 				new VertexT2() { UV = new float2( 1, 1 ) },
 			};
 			m_Prim_Quad = new Primitive( m_Device, 4, VertexT2.FromArray( Vertices ), null, Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.T2 );
+
+
+			m_RT_WorldPositions[0] = new Texture2D( m_Device, panel1.Width, panel1.Height, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
+			m_RT_WorldPositions[1] = new Texture2D( m_Device, panel1.Width, panel1.Height, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
+			m_Device.Clear( m_RT_WorldPositions[0], float4.Zero );
+			m_Device.Clear( m_RT_WorldPositions[1], float4.Zero );
 
 			// Setup camera
 			m_CB_Camera = new ConstantBuffer< CB_Camera >( m_Device, 0 );
@@ -93,6 +107,10 @@ namespace VoronoiVisualizer
 				m_Prim_CellEdges.Dispose();
 			}
 
+			m_RT_WorldPositions[0].Dispose();
+			m_RT_WorldPositions[1].Dispose();
+
+			m_Shader_RenderCellMesh_Opaque.Dispose();
 			m_Shader_RenderCellMesh.Dispose();
 			m_Shader_RenderCellPlanes.Dispose();
 			m_Prim_Quad.Dispose();
@@ -135,6 +153,15 @@ namespace VoronoiVisualizer
 					m_CB_Mesh.UpdateData();
 					m_Prim_CellEdges.Render( m_Shader_RenderCellMesh );
 				}
+
+
+				// Render again
+				if ( m_Shader_RenderCellMesh_Opaque.Use() ) {
+					m_Device.SetRenderTarget( m_RT_WorldPositions[0], m_Device.DefaultDepthStencil );
+					m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
+
+					m_Prim_CellFaces.Render( m_Shader_RenderCellMesh );
+				}
 			} else {
 				// Render planes
 				if ( m_Shader_RenderCellPlanes.Use() ) {
@@ -143,6 +170,27 @@ namespace VoronoiVisualizer
 					m_SB_Neighbors.SetInput( 0 );
 
 					m_Prim_Quad.RenderInstanced( m_Shader_RenderCellPlanes, m_SB_Neighbors.m.Length );
+				}
+			}
+
+			// Post-Process
+			if ( checkBoxRenderCell.Checked ) {
+				if ( m_Shader_PostProcess.Use() ) {
+					m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+					m_Device.SetRenderTarget( m_RT_WorldPositions[1], null );
+					m_RT_WorldPositions[0].SetPS( 0 );
+					m_Device.RenderFullscreenQuad( m_Shader_PostProcess );
+
+					Texture2D	Temp = m_RT_WorldPositions[0];
+					m_RT_WorldPositions[0] = m_RT_WorldPositions[1];
+					m_RT_WorldPositions[1] = Temp;
+				}
+
+				if ( m_Shader_PostProcess2.Use() ) {
+					m_Device.SetRenderTarget( m_Device.DefaultTarget, null );
+					m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
+					m_RT_WorldPositions[0].SetPS( 0 );
+					m_Device.RenderFullscreenQuad( m_Shader_PostProcess2 );
 				}
 			}
 
