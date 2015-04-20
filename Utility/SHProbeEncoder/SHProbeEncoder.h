@@ -62,7 +62,7 @@ private:	// NESTED TYPES
 		int			CubeFaceY;
 
 		float3		lsPosition;				// Local position
-		float3		lsNormal;				// Local normal
+		float3		wsNormal;				// World normal
 		float3		Albedo;					// Material albedo
 		float3		AlbedoHSL;				// Material albedo in HSL format
 		float3		F0;						// Material Fresnel coefficient
@@ -92,7 +92,7 @@ private:	// NESTED TYPES
 		Pixel()
 			: pNext( NULL )
 			, lsPosition( float3::Zero )
-			, lsNormal( float3::Zero )
+			, wsNormal( float3::Zero )
 			, Albedo( float3::Zero )
 			, AlbedoHSL( float3::Zero )
 			, FaceIndex( ~0UL )
@@ -387,7 +387,6 @@ private:
 
 	void	FloodFill( Sample& _S, Pixel* _PreviousPixel, Pixel* _P, PixelsList& _AcceptedPixels, PixelsList& _RejectedPixels ) const;
 	bool	CheckAndAcceptPixel( Sample& _Sample, Pixel& _PreviousPixel, Pixel& _P, PixelsList& _AcceptedPixels, PixelsList& _RejectedPixels ) const;
-	Pixel&	FindAdjacentPixel( const Pixel& _P, int _dU, int _dV, int& _DirectionU, int& _DirectionV ) const;
 
 	// Helpers
 	template< typename T > void	ToArray( const List<T>& _List, T* _Array, U32 _Max, U32& _ArraySize ) {

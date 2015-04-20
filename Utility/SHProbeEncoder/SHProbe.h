@@ -88,7 +88,7 @@ public:		// FIELDS
 
 
 	// Static list of samples directions
-	static float3			ms_SampleDirections[SHProbe::SAMPLES_COUNT];
+	static float3			ms_SampleDirections[SAMPLES_COUNT];
 
 
 public:		// METHODS
