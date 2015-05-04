@@ -14,7 +14,7 @@ struct VS_IN {
 
 struct PS_IN {
 	float4	__Position : SV_POSITION;
-	float3	Color : COLOR;
+	float3	wsPosition : POSITION;
 };
 
 PS_IN	VS( VS_IN _In ) {
@@ -22,13 +22,11 @@ PS_IN	VS( VS_IN _In ) {
 
 	float4		wsPosition = float4( _In.Position, 1.0 );
 	Out.__Position = mul( wsPosition, _World2Proj );
-	Out.Color = _In.Color;
+	Out.wsPosition = wsPosition.xyz;
 
 	return Out;
 }
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
-//	return _Color;
-	return float4( _Color.xyz * _In.Color, 1 );
+	return float4( _In.wsPosition, 1 );
 }
-
