@@ -342,7 +342,7 @@ namespace VoronoiVisualizer
 
 			float	AreaMin = float.MaxValue;
 			float	AreaMax = -float.MaxValue;
-			float	AreaAvg = 0.0f;
+			float	TotalArea = 0.0f;
 
 			for ( int FaceIndex=0; FaceIndex < m_NeighborPositions.Length; FaceIndex++ ) {
 				float3	P = m_NeighborPositions[FaceIndex];
@@ -372,7 +372,7 @@ namespace VoronoiVisualizer
 				}
 				AreaMin = Math.Min( AreaMin, PolygonArea );
 				AreaMax = Math.Max( AreaMax, PolygonArea );
-				AreaAvg += PolygonArea;
+				TotalArea += PolygonArea;
 
 				for ( uint VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ ) {
 					Indices_Edges.Add( VertexOffset + VertexIndex );
@@ -389,10 +389,11 @@ namespace VoronoiVisualizer
 
 			m_AreaMin = AreaMin;
 			m_AreaMax = AreaMax;
-			m_AreaAvg = AreaAvg / m_NeighborPositions.Length;
+			m_AreaAvg = TotalArea / m_NeighborPositions.Length;
 			labelStats.Text = "Area min: " + m_AreaMin + "\r\n"
 							+ "Area max: " + m_AreaMax + "\r\n"
-							+ "Area average: " + m_AreaAvg + "\r\n";
+							+ "Area average: " + m_AreaAvg + "\r\n"
+							+ "Area total: " + TotalArea + "\r\n";
 
 			m_Prim_CellFaces = new Primitive( m_Device, Vertices.Count, VertexP3N3.FromArray( Vertices.ToArray() ), Indices_Faces.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3 );
 			m_Prim_CellEdges = new Primitive( m_Device, Vertices.Count, VertexP3N3.FromArray( Vertices.ToArray() ), Indices_Edges.ToArray(), Primitive.TOPOLOGY.LINE_LIST, VERTEX_FORMAT.P3N3 );

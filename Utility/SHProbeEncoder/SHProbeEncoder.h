@@ -321,7 +321,7 @@ private:	// FIELDS
 	Sample					m_pSamples[SHProbe::SAMPLES_COUNT];	// The array of samples best representing the probe's environment
 	U32						m_MinSamplePixelsCount;				// The minimum amount of pixels encountered on the samples
 	U32						m_MaxSamplePixelsCount;				// The maximum amount of pixels encountered on the samples
-	U32						m_AverageSamplePixelsCount;			// The average amount of pixels encountered on the samples
+	float					m_AverageSamplePixelsCount;			// The average amount of pixels encountered on the samples
 
 	// Generated geometric informations
 	double					m_MeanDistance;

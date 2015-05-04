@@ -186,7 +186,7 @@ for ( int i=0; i < 9; i++ ) SH[i] += pPixel->SolidAngle * pPixel->SHCoeffs[i];
 
 	m_MinSamplePixelsCount = ~0U;
 	m_MaxSamplePixelsCount = 0;
-	m_AverageSamplePixelsCount = 0;
+	m_AverageSamplePixelsCount = 0.0f;
 	for ( int SampleIndex=0; SampleIndex < SHProbe::SAMPLES_COUNT; SampleIndex++ ) {
 		const Sample&	S = m_pSamples[SampleIndex];
 
@@ -199,7 +199,7 @@ for ( int i=0; i < 9; i++ ) SH[i] += pPixel->SolidAngle * pPixel->SHCoeffs[i];
 	}
 	m_AverageSamplePixelsCount /= SHProbe::SAMPLES_COUNT;
 
-	// At this point, SH should only have a non null ambient term equal to 2*sqrt(PI)
+	// At this point, SH should only have a non null ambient term equal to sqrt(4*PI)
 	//	proving that the sum of all samples' SH coefficients yields the ambient term 1 if lit
 	//	by a uniform environment where radiance is 1 in every direction...
 

@@ -50,9 +50,9 @@ double	SH::ComputeSHCoeff( int l, int m, double _θ, double _ϕ )
 	if ( m == 0 )
 		return	K( l, m ) * P( l, m, cos( _θ ) );
 	else if ( m > 0 )
-		return SQRT2 * K( l, m ) * cos( m * _ϕ ) * P( l, m, cos( _θ ) );
+		return powf( -1.0f, float(m) ) * SQRT2 * K( l, m ) * cos( m * _ϕ ) * P( l, m, cos( _θ ) );
 	else
-		return SQRT2 * K( l, -m ) * sin( -m * _ϕ ) * P( l, -m, cos( _θ ) );
+		return powf( -1.0f, float(m) ) * SQRT2 * K( l, -m ) * sin( -m * _ϕ ) * P( l, -m, cos( _θ ) );
 }
 
 // Computes a SH windowed with a cardinal sine function
