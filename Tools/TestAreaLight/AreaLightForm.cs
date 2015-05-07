@@ -68,6 +68,9 @@ namespace AreaLightTest
 			public float		_Gloss;
 			public float3		_SpecularTint;
 			public float		_Metal;
+			public UInt32		_UseTexture;
+			public UInt32		_FalseColors;
+			public float		_FalseColorsMaxRange;
 		}
 
 		private ConstantBuffer<CB_Main>			m_CB_Main = null;
@@ -93,6 +96,7 @@ namespace AreaLightTest
 //		private Texture3D	m_Tex_AreaLight3D = null;
 		private Texture2D	m_Tex_AreaLightSAT = null;
 		private Texture2D	m_Tex_AreaLightSATFade = null;
+		private Texture2D	m_Tex_FalseColors = null;
 
 		private Texture2D	m_Tex_ShadowMap = null;
 #if FILTER_EXP_SHADOW_MAP
@@ -1555,6 +1559,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 //			m_Tex_AreaLight = Pipi2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipi" ) );
 //			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipo" ) );
 
+			m_Tex_FalseColors = Image2Texture( new System.IO.FileInfo( "FalseColorsSpectrum.png" ) );
 
 			int	SHADOW_MAP_SIZE = 512;
 			m_Tex_ShadowMap = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, DEPTH_STENCIL_FORMAT.D32 );
@@ -1697,6 +1702,8 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_Tex_AreaLightSAT.Dispose();
 			m_Tex_AreaLightSATFade.Dispose();
 
+			m_Tex_FalseColors.Dispose();
+
 			m_Device.Exit();
 
 			base.OnFormClosed( e );
@@ -1741,6 +1748,9 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 				m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.93f );
 				m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
 				m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
+				m_CB_Object.m._UseTexture = checkBoxUseTexture.Checked ? 1U : 0U;
+				m_CB_Object.m._FalseColors = checkBoxFalseColors.Checked ? 1U : 0U;
+				m_CB_Object.m._FalseColorsMaxRange = floatTrackbarControlFalseColorsRange.Value;
 				m_CB_Object.UpdateData();
 
 				m_Prim_Rectangle.Render( _Shader );
@@ -1755,6 +1765,9 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.93f );
  			m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
  			m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
+			m_CB_Object.m._UseTexture = checkBoxUseTexture.Checked ? 1U : 0U;
+			m_CB_Object.m._FalseColors = checkBoxFalseColors.Checked ? 1U : 0U;
+			m_CB_Object.m._FalseColorsMaxRange = floatTrackbarControlFalseColorsRange.Value;
 			m_CB_Object.UpdateData();
 
 			m_Prim_Sphere.Render( _Shader );
@@ -1774,6 +1787,9 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 				m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.92f );
  				m_CB_Object.m._Gloss = floatTrackbarControlGloss.Value;
  				m_CB_Object.m._Metal = floatTrackbarControlMetal.Value;
+				m_CB_Object.m._UseTexture = checkBoxUseTexture.Checked ? 1U : 0U;
+				m_CB_Object.m._FalseColors = checkBoxFalseColors.Checked ? 1U : 0U;
+				m_CB_Object.m._FalseColorsMaxRange = floatTrackbarControlFalseColorsRange.Value;
 				m_CB_Object.UpdateData();
 
 				m_Prim_Cube.Render( _Shader );
@@ -1919,6 +1935,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 //			m_Tex_AreaLight3D.SetPS( 0 );
 			m_Tex_AreaLightSATFade.SetPS( 1 );
 			m_Tex_AreaLight.SetPS( 4 );
+			m_Tex_FalseColors.SetPS( 6 );
 
 			// Render the area light itself
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
@@ -1927,6 +1944,9 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 				m_CB_Object.m._Local2World = AreaLight2World;
 				m_CB_Object.m._Local2World.Scale( new float3( SizeX, SizeY, 1.0f ) );
 				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
+				m_CB_Object.m._UseTexture = checkBoxUseTexture.Checked ? 1U : 0U;
+				m_CB_Object.m._FalseColors = checkBoxFalseColors.Checked ? 1U : 0U;
+				m_CB_Object.m._FalseColorsMaxRange = floatTrackbarControlFalseColorsRange.Value;
 				m_CB_Object.UpdateData();
 
 				m_Prim_Rectangle.Render( m_Shader_RenderAreaLight );
@@ -1969,6 +1989,11 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 				m_Tex_BRDFIntegral.Dispose();
 			m_Tex_BRDFIntegral = BuildBRDFTexture( new System.IO.FileInfo( "BRDF0_64x64.bin" ), 64 );
 			m_Tex_BRDFIntegral.SetPS( 5 );
+		}
+
+		private void checkBoxUseTexture_CheckedChanged( object sender, EventArgs e )
+		{
+
 		}
 	}
 }

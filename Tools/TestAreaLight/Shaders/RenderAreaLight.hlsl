@@ -4,6 +4,14 @@
 
 cbuffer CB_Object : register(b4) {
 	float4x4	_Local2World;
+	float4x4	_World2Local;
+	float3		_DiffuseAlbedo;
+	float		_Gloss;
+	float3		_SpecularTint;
+	float		_Metal;
+	uint		_UseTexture;
+	uint		_FalseColors;
+	float		_FalseColorsMaxRange;
 };
 
 struct VS_IN {
@@ -52,17 +60,21 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 // float2	BRDF = float4( _TexBRDFIntegral.Sample( LinearClamp, _In.UV ), 0, 1 );
 // return float4( BRDF, 0, 1 );
 
- 	float4	StainedGlass = _TexAreaLight.SampleLevel( LinearClamp, _In.UV, 0*_AreaLightDiffusion * 7 );
+ 	float3	StainedGlass = _UseTexture ? _TexAreaLight.SampleLevel( LinearClamp, _In.UV, 0*_AreaLightDiffusion * 7 ).xyz : 1.0;
 // 	float4	StainedGlass = _TexAreaLight.SampleLevel( LinearClamp, _In.UV, 9.0 * abs( fmod( 0.25 * iGlobalTime, 2.0 ) - 1.0 ) );
 // 	float4	StainedGlass = 0.0001 * _TexAreaLightSAT.Sample( LinearClamp, _In.UV );
 #ifdef USE_SAT
-	float4	StainedGlass = SampleSATSinglePixel( _In.UV );
+	float3	StainedGlass = SampleSATSinglePixel( _In.UV ).xyz;
 #else
 #endif
 
 // 	StainedGlass = _TexAreaLightMIP.SampleLevel( LinearClamp, float3( _In.UV, 0.5 * (1.0 + sin( iGlobalTime )) ), 0.0 );
 
 	StainedGlass *= _AreaLightIntensity;
+
+
+	if ( _FalseColors )
+		StainedGlass = _TexFalseColors.SampleLevel( LinearClamp, float2( dot( LUMINANCE, StainedGlass ) / _FalseColorsMaxRange, 0.5 ), 0.0 ).xyz;
 
 
 // Debug shadow map
@@ -96,6 +108,6 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 //return float4( ClippedUVs.zw, 0, 0 );
 
 
-//	return float4( pow( StainedGlass.xyz, 1/2.2 ), 1 );
-	return float4( StainedGlass.xyz, 1 );
+//	return float4( pow( StainedGlass, 1/2.2 ), 1 );
+	return float4( StainedGlass, 1 );
 }

@@ -64,6 +64,9 @@
 			this.label15 = new System.Windows.Forms.Label();
 			this.buttonRebuildBRDF = new System.Windows.Forms.Button();
 			this.panelOutput = new AreaLightTest.PanelOutput(this.components);
+			this.checkBoxUseTexture = new System.Windows.Forms.CheckBox();
+			this.checkBoxFalseColors = new System.Windows.Forms.CheckBox();
+			this.floatTrackbarControlFalseColorsRange = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlProjectionDiffusion
@@ -436,6 +439,40 @@
 			this.panelOutput.Size = new System.Drawing.Size(1024, 640);
 			this.panelOutput.TabIndex = 0;
 			// 
+			// checkBoxUseTexture
+			// 
+			this.checkBoxUseTexture.AutoSize = true;
+			this.checkBoxUseTexture.Location = new System.Drawing.Point(1062, 584);
+			this.checkBoxUseTexture.Name = "checkBoxUseTexture";
+			this.checkBoxUseTexture.Size = new System.Drawing.Size(84, 17);
+			this.checkBoxUseTexture.TabIndex = 4;
+			this.checkBoxUseTexture.Text = "Use Texture";
+			this.checkBoxUseTexture.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxFalseColors
+			// 
+			this.checkBoxFalseColors.AutoSize = true;
+			this.checkBoxFalseColors.Location = new System.Drawing.Point(1152, 584);
+			this.checkBoxFalseColors.Name = "checkBoxFalseColors";
+			this.checkBoxFalseColors.Size = new System.Drawing.Size(83, 17);
+			this.checkBoxFalseColors.TabIndex = 4;
+			this.checkBoxFalseColors.Text = "False Colors";
+			this.checkBoxFalseColors.UseVisualStyleBackColor = true;
+			this.checkBoxFalseColors.CheckedChanged += new System.EventHandler(this.checkBoxUseTexture_CheckedChanged);
+			// 
+			// floatTrackbarControlFalseColorsRange
+			// 
+			this.floatTrackbarControlFalseColorsRange.Location = new System.Drawing.Point(1236, 582);
+			this.floatTrackbarControlFalseColorsRange.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlFalseColorsRange.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlFalseColorsRange.Name = "floatTrackbarControlFalseColorsRange";
+			this.floatTrackbarControlFalseColorsRange.RangeMax = 1000F;
+			this.floatTrackbarControlFalseColorsRange.RangeMin = 0.001F;
+			this.floatTrackbarControlFalseColorsRange.Size = new System.Drawing.Size(144, 20);
+			this.floatTrackbarControlFalseColorsRange.TabIndex = 1;
+			this.floatTrackbarControlFalseColorsRange.Value = 10F;
+			this.floatTrackbarControlFalseColorsRange.VisibleRangeMin = 0.001F;
+			// 
 			// AreaLightForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -466,6 +503,7 @@
 			this.Controls.Add(this.floatTrackbarControlLightTargetY);
 			this.Controls.Add(this.floatTrackbarControlLightTargetX);
 			this.Controls.Add(this.floatTrackbarControlLightPosX);
+			this.Controls.Add(this.floatTrackbarControlFalseColorsRange);
 			this.Controls.Add(this.floatTrackbarControlHardeningFactor2);
 			this.Controls.Add(this.floatTrackbarControlHardeningFactor);
 			this.Controls.Add(this.floatTrackbarControlGloss);
@@ -473,6 +511,8 @@
 			this.Controls.Add(this.floatTrackbarControlProjectionPhi);
 			this.Controls.Add(this.floatTrackbarControlProjectionTheta);
 			this.Controls.Add(this.floatTrackbarControlProjectionDiffusion);
+			this.Controls.Add(this.checkBoxUseTexture);
+			this.Controls.Add(this.checkBoxFalseColors);
 			this.Controls.Add(this.panelOutput);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "AreaLightForm";
@@ -519,6 +559,9 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlHardeningFactor2;
 		private System.Windows.Forms.Label label15;
 		private System.Windows.Forms.Button buttonRebuildBRDF;
+		private System.Windows.Forms.CheckBox checkBoxUseTexture;
+		private System.Windows.Forms.CheckBox checkBoxFalseColors;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlFalseColorsRange;
 	}
 }
 

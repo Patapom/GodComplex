@@ -771,7 +771,6 @@ Global
 		{04040D82-8A53-498E-86A6-305724AB523E}.Release|x64.ActiveCfg = Release|x64
 		{04040D82-8A53-498E-86A6-305724AB523E}.Release|x64.Build.0 = Release|x64
 		{04040D82-8A53-498E-86A6-305724AB523E}.Release|x86.ActiveCfg = Release|x86
-		{04040D82-8A53-498E-86A6-305724AB523E}.Release|x86.Build.0 = Release|x86
 		{17C01446-DAC5-4F86-9ACE-E535C5B37679}.Debug DirectX10|Any CPU.ActiveCfg = Debug DirectX10|x64
 		{17C01446-DAC5-4F86-9ACE-E535C5B37679}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug DirectX10|x64
 		{17C01446-DAC5-4F86-9ACE-E535C5B37679}.Debug DirectX10|Mixed Platforms.Build.0 = Debug DirectX10|x64

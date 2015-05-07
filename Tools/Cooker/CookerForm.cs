@@ -22,7 +22,7 @@ namespace Cooker
 		{
 		}
 
-		private FileInfo	m_MapFile = new FileInfo( @"V:\blacksparrow\idtech5\blacksparrow\base\maps\dummy.map" );
+		private FileInfo	m_MapFile = new FileInfo( @"V:\Dishonored2\Dishonored2\base\maps\dummy.map" );
 		private FileInfo	MapFile
 		{
 			get { return m_MapFile; }
@@ -40,10 +40,10 @@ namespace Cooker
 			}
 		}
 
-		private string		m_ExecutablePath = @"V:\blacksparrow\idtech5\blacksparrow\Blacksparrowx64.exe";
-		private string		m_BasePath = @"V:\blacksparrow\idtech5\blacksparrow";
+		private string		m_ExecutablePath = @"V:\Dishonored2\Dishonored2\Dishonored2_x64.exe";
+		private string		m_BasePath = @"V:\Dishonored2\Dishonored2";
 
-		private string		m_CustomExecutablePath = @"V:\blacksparrow\idtech5\blacksparrow\Blacksparrowx64.exe";
+		private string		m_CustomExecutablePath = @"V:\Dishonored2\Dishonored2\Dishonored2_x64.exe";
 
 		public CookerForm()
 		{
@@ -158,7 +158,7 @@ namespace Cooker
 					throw new Exception( "Unsupported platform type " + comboBoxPlatform.SelectedIndex + "!" );
 			}
 
-			string	CommandLine = textBoxCommandLine.Text + " +com_production 1 +ark_useStdOut 1 +buildgame -fast " + PlatformArg + " +fs_basepath \"" + m_BasePath + "\" " + MapRelativeFileName;
+			string	CommandLine = textBoxCommandLine.Text + " +com_production 1 +ark_useStdOut 1 +fs_basepath \"" + m_BasePath + "\" +buildgame -fast " + PlatformArg + " " + MapRelativeFileName;
 			return CommandLine;
 		}
 
@@ -428,13 +428,13 @@ namespace Cooker
 			switch ( comboBoxExecutable.SelectedIndex )
 			{
 				case 0:
-					m_ExecutablePath = @"V:\blacksparrow\idtech5\tech5\build\Blacksparrow\x64\Debug\Blacksparrowx64.exe";
+					m_ExecutablePath = @"V:\Dishonored2\VoidEngine\build\output\x64\Debug\Dishonored2_x64.exe";
 					break;
 				case 1:
-					m_ExecutablePath = @"V:\blacksparrow\idtech5\tech5\build\Blacksparrow\x64\Release\Blacksparrowx64.exe";
+					m_ExecutablePath = @"V:\Dishonored2\VoidEngine\build\output\x64\Release\Dishonored2_x64.exe";
 					break;
 				case 2:
-					m_ExecutablePath = @"V:\blacksparrow\idtech5\blacksparrow\Blacksparrowx64.exe";
+					m_ExecutablePath = @"V:\Dishonored2\Dishonored2\Dishonored2_x64.exe";
 					break;
 				case 3:
 					m_ExecutablePath = m_CustomExecutablePath;
@@ -456,7 +456,7 @@ namespace Cooker
 			m_AppKey.SetValue( "CustomExecutablepath", openFileDialogExecutable.FileName );
 
 			m_CustomExecutablePath = openFileDialogExecutable.FileName;
-			textBoxExecutablePath.Text = m_ExecutablePath;
+			textBoxExecutablePath.Text = m_CustomExecutablePath;
 		}
 
 		private void buttonBasePath_Click( object sender, EventArgs e )

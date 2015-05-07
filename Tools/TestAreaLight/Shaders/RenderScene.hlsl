@@ -15,6 +15,9 @@ cbuffer CB_Object : register(b4) {
 	float		_Gloss;
 	float3		_SpecularTint;
 	float		_Metal;
+	uint		_UseTexture;
+	uint		_FalseColors;
+	float		_FalseColorsMaxRange;
 };
 
 struct VS_IN {
@@ -64,28 +67,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float	RadiusFalloff = 8.0;
 	float	RadiusCutoff = 10.0;
 
-#if 1
-	// VERSION 2
-	SurfaceContext	surf;
-	surf.wsPosition = wsPosition;
-	surf.wsNormal = wsNormal;
-	surf.wsView = -wsView;	// In BSP, view points away from the surface 
-	surf.diffuseAlbedo = RhoD / PI;
-	surf.roughness = Roughness;
-	surf.IOR = IOR;
-	surf.fresnelStrength = 1.0;
-	
-	float3	RadianceDiffuse, RadianceSpecular;
-	ComputeAreaLightLighting( surf, Shadow, float2( RadiusFalloff, RadiusCutoff ), RadianceDiffuse, RadianceSpecular );
-	
-//return float4( RadianceDiffuse, 0 );
-//return float4( RadianceSpecular, 0 );
-
-//return Shadow;
-
-	return float4( 0.01 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular, 1 );
-
-#else
+#if 0
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// VERSION 1
 	//
  	float2	UV0, UV1;
@@ -135,7 +118,47 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 //Shadow = 1;
  //return Debug;
 
-	return float4( 0.05 + Shadow * _AreaLightIntensity * (FresnelDiffuse * Ld + FresnelSpecular * Ls), 1 );
-	return float4( 0.05 + Ld + Ls, 1 );
+	float3	Result = 0.05 + Shadow * _AreaLightIntensity * (FresnelDiffuse * Ld + FresnelSpecular * Ls);
+//	float3	Result = 0.05 + Ld + Ls;
+
+	if ( _FalseColors )
+		Result = float3( 1, 0, 0 );
+//		Result = _TexFalseColors.SampleLevel( LinearClamp, float2( 0.01 * dot( LUMINANCE, Result ), 0.5 ), 0.0 ).xyz;
+
+	return float4( Result, 1 );
+	
+#else
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// VERSION 2
+	SurfaceContext	surf;
+	surf.wsPosition = wsPosition;
+	surf.wsNormal = wsNormal;
+	surf.wsView = -wsView;	// In BSP, view points away from the surface 
+	surf.diffuseAlbedo = RhoD / PI;
+	surf.roughness = Roughness;
+	surf.IOR = IOR;
+	surf.fresnelStrength = 1.0;
+
+	uint	AreaLightSliceIndex = _UseTexture ? 0 : ~0U;
+
+	float3	RadianceDiffuse, RadianceSpecular;
+	ComputeAreaLightLighting( surf, AreaLightSliceIndex, Shadow, float2( RadiusFalloff, RadiusCutoff ), RadianceDiffuse, RadianceSpecular );
+	
+//return float4( RadianceDiffuse, 0 );
+//return float4( RadianceSpecular, 0 );
+
+//return Shadow;
+
+	float3	Result = 0.01 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular;
+	if ( _FalseColors )
+		Result = _TexFalseColors.SampleLevel( LinearClamp, float2( dot( LUMINANCE, Result ) / _FalseColorsMaxRange, 0.5 ), 0.0 ).xyz;
+		
+
+//Result = normalize( -_ProjectionDirectionDiff );
+
+
+	return float4( Result, 1 );
+
 #endif
 }

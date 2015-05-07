@@ -29,6 +29,10 @@ SamplerState LinearMirror	: register( s4 );
 SamplerState PointMirror	: register( s5 );
 SamplerState LinearBorder	: register( s6 );	// Black border
 
+
+static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.nuaj.net/index.php?title=Colorimetry)
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // FRESNEL
 

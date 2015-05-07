@@ -1,6 +1,4 @@
 
-#define USE_TEXTURE	1
-
 cbuffer CB_Light : register(b2) {
 	float3		_AreaLightX;
 	float		_AreaLightScaleX;
@@ -18,6 +16,7 @@ Texture2D< float4 >	_TexAreaLightSAT : register(t0);
 Texture2D< float4 >	_TexAreaLightSATFade : register(t1);
 Texture2D< float4 >	_TexAreaLight : register(t4);
 Texture2D< float2 >	_TexBRDFIntegral : register(t5);
+Texture2D< float4 >	_TexFalseColors : register(t6);
 
 static const float4	AREA_LIGHT_TEX_DIMENSIONS = float4( 256.0, 256.0, 1.0/256.0, 1.0/256.0 );
 
@@ -80,7 +79,7 @@ static const float4	AREA_LIGHT_TEX_DIMENSIONS = float4( 256.0, 256.0, 1.0/256.0,
 // 
 
 // Samples the area light given 2 UV coordinates
-float3	SampleAreaLight( float2 _UV0, float2 _UV1, float _SliceIndex, const bool _UseAlpha ) {
+float3	SampleAreaLight( float2 _UV0, float2 _UV1, uint _SliceIndex, const bool _UseAlpha ) {
 
 	float2	DeltaUV = 0.5 * (_UV1 - _UV0);
 	float	RadiusUV = max( DeltaUV.x, DeltaUV.y );
@@ -110,7 +109,7 @@ float3	SampleAreaLight( float2 _UV0, float2 _UV1, float _SliceIndex, const bool 
 	float	Attenuation = saturate( length( UVCenter - SatUVCenter ) / (1e-3 + RadiusUV) );
 			Attenuation = smoothstep( 1.0, 0.0, Attenuation );
 
-	float4	Color = _SliceIndex >= 0 ? _TexAreaLight.SampleLevel( LinearWrap, SatUVCenter, MipLevel ) : 1.0;
+	float4	Color = _SliceIndex != ~0U ? _TexAreaLight.SampleLevel( LinearWrap, SatUVCenter, MipLevel ) : 1.0;
 	if ( _UseAlpha ) {
 		Color.xyz *= Color.w;	// Diffuse uses alpha to allow smoothing out of the texture's borders...
 	}
@@ -311,7 +310,7 @@ float	ComputeSolidAngleDiffuse( float3 _lsPosition, float3 _lsNormal, float3 _Pr
 	_UV1 = 0.5 * (1.0 + float2( lsIntersection[1].x, -lsIntersection[1].y));
 
 	// Compute the projected solid angle for the entire area light
-	float	SolidAngle = _ClippedAreaLightSolidAngle;
+//	float	SolidAngle = _ClippedAreaLightSolidAngle;
 
 //	float2	ClippedUV0 = clamp( _UV0, _ClippedUVs.xy, _ClippedUVs.zw );
 //	float2	ClippedUV1 = clamp( _UV1, _ClippedUVs.xy, _ClippedUVs.zw );
@@ -319,7 +318,16 @@ float	ComputeSolidAngleDiffuse( float3 _lsPosition, float3 _lsNormal, float3 _Pr
 //	float	SolidAngle = RectangleSolidAngle( _lsPosition, _ClippedUVs.xy, _ClippedUVs.zw );
 
 	float3	lsCenter = float3( _UV1.x + _UV0.x - 1.0, 1.0 - _UV1.y - _UV0.y, 0.0 );
-	float3	lsPosition2Center = normalize( lsCenter - _lsPosition );		// Wi, the average incoming light direction
+	float3	lsPosition2Center = lsCenter - _lsPosition;		// Wi, the average incoming light direction
+	float	r = length( lsPosition2Center );
+			lsPosition2Center /= lsPosition2Center;
+
+
+	// Compute the projected solid angle for the entire area light
+	float	SolidAngle = lerp( 1.0, _ClippedAreaLightSolidAngle / (r * r), _AreaLightDiffusion );
+//	float	SolidAngle = _ClippedAreaLightSolidAngle;
+
+
 	return saturate( dot( _lsNormal, lsPosition2Center ) ) * SolidAngle;	// (N.Wi) * dWi
 }
 
@@ -416,6 +424,14 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 // 	_UV1 = lerp( _ClippedUVs.zw, _UV1, _Gloss );
 // 	_UV1 = max( _UV0, _UV1 );
 
+
+
+
+//ProjectedSolidAngleSpecular *= lerp( step( abs( I.x ), 1.0 ) * step( abs( I.y ), 1.0 ), 1.0, _AreaLightDiffusion );
+
+
+
+
 	/////////////////////////////////
 	// Build the result solid angle
 	return ProjectedSolidAngleSpecular;
@@ -438,7 +454,7 @@ struct SurfaceContext {
 	float	fresnelStrength;
 };
 
-void	ComputeAreaLightLighting( in SurfaceContext _Surface, float _Shadow, float2 _RadiusFalloffCutoff, out float3 _RadianceDiffuse, out float3 _RadianceSpecular ) {
+void	ComputeAreaLightLighting( in SurfaceContext _Surface, uint _SliceIndex, float _Shadow, float2 _RadiusFalloffCutoff, out float3 _RadianceDiffuse, out float3 _RadianceSpecular ) {
 
 	_RadianceDiffuse = _RadianceSpecular = 0.0;
 
@@ -524,11 +540,6 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, float _Shadow, float2
 //	float	AreaLightSliceIndex = _Light.m_AreaLightSlice;
 //	float3	ShadowedLightColor = _Light.m_shadow * _Light.m_color;
 
-#ifdef USE_TEXTURE
-	float	AreaLightSliceIndex = 0.0;
-#else
-	float	AreaLightSliceIndex = -1;
-#endif
 	float3	ShadowedLightColor = _Shadow * _AreaLightIntensity;
 
 		// 5.1] ----- Compute Fresnel -----
@@ -540,7 +551,7 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, float _Shadow, float2
 // return;
 
 		// 5.2] ----- Diffuse -----
-	float3	Irradiance_diffuse = SampleAreaLight( UV0_diffuse, UV1_diffuse, AreaLightSliceIndex, false );
+	float3	Irradiance_diffuse = SampleAreaLight( UV0_diffuse, UV1_diffuse, _SliceIndex, false );
 			Irradiance_diffuse *= ShadowedLightColor;
 
 	float3	IntegralBRDF_diffuse = _Surface.diffuseAlbedo * FresnelDiffuse * SolidAngle_diffuse;
@@ -548,7 +559,7 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, float _Shadow, float2
 	_RadianceDiffuse = Irradiance_diffuse * IntegralBRDF_diffuse;
 
 		// 5.3] ----- Specular -----
-	float3	Irradiance_specular = SampleAreaLight( UV0_specular, UV1_specular, AreaLightSliceIndex, false );
+	float3	Irradiance_specular = SampleAreaLight( UV0_specular, UV1_specular, _SliceIndex, false );
 			Irradiance_specular *= ShadowedLightColor;
 
 // 	// Here, I must admit I'm taking a HUUUGE shortcut since I don't have a proper solution for the BRDF's integral yet and don't have time to find one...
@@ -569,7 +580,29 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, float _Shadow, float2
 //float3	IntegralBRDF_specular = F0 * PreIntegratedBRDF.x * SolidAngle_specular + PreIntegratedBRDF.y;
 float3	IntegralBRDF_specular = F0 * PreIntegratedBRDF.x * SolidAngle_specular + Gloss*PreIntegratedBRDF.y;	// Remove ambient term when totally rough
 
+
+
+/////////////
+/////////////
+/////////////
+	// Dull out specular in directional mode
+	float3	wsLightDir = normalize( -_ProjectionDirectionDiff );	// Toward light
+	float3	wsHalf = normalize( wsLightDir + wsView );
+	float	NdotH = pow( saturate( dot( wsNormal, wsHalf ) ), 1.0-Diffusion );
+//	float	NdotH = pow( saturate( dot( wsNormal, wsHalf ) ), 1e-6 + 1000.0 * (1.0 - Diffusion) );
+//	float	NdotH = saturate( dot( wsNormal, wsHalf ) );
+
+
+/////////////
+/////////////
+/////////////
+
+
+
+
 	_RadianceSpecular = Irradiance_specular * IntegralBRDF_specular;
+
+//_RadianceSpecular = NdotH;
 
 //_RadianceSpecular = lsView;
 
