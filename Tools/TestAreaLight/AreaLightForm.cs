@@ -1564,8 +1564,10 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			int	SHADOW_MAP_SIZE = 512;
 			m_Tex_ShadowMap = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, DEPTH_STENCIL_FORMAT.D32 );
 #if FILTER_EXP_SHADOW_MAP
-			m_Tex_ShadowMapFiltered[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R16_UNORM, false, false, null );
-			m_Tex_ShadowMapFiltered[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R16_UNORM, false, false, null );
+// 			m_Tex_ShadowMapFiltered[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R16_UNORM, false, false, null );
+// 			m_Tex_ShadowMapFiltered[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R16_UNORM, false, false, null );
+			m_Tex_ShadowMapFiltered[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, null );
+			m_Tex_ShadowMapFiltered[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, null );
 #else
 			m_Tex_ShadowSmoothie = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
 			m_Tex_ShadowSmoothiePou[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
@@ -1742,7 +1744,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			if ( _Shader == m_Shader_RenderScene )
 			{
 				m_CB_Object.m._Local2World.MakeLookAt( float3.Zero, float3.UnitY, float3.UnitX );
-				m_CB_Object.m._Local2World.Scale( new float3( 2.0f, 2.0f, 1.0f ) );
+				m_CB_Object.m._Local2World.Scale( new float3( 8.0f, 8.0f, 1.0f ) );
 				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
 				m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 1, 1 );
 				m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.93f );
@@ -1803,7 +1805,8 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 
 			// Setup global data
 			m_CB_Main.m.iResolution = new float3( panelOutput.Width, panelOutput.Height, 0 );
-			m_CB_Main.m.iGlobalTime = GetGameTime() - m_StartTime;
+			if ( checkBoxAnimate.Checked )
+				m_CB_Main.m.iGlobalTime = GetGameTime() - m_StartTime;
 			m_CB_Main.UpdateData();
 
 			// Setup area light buffer
@@ -1845,7 +1848,8 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 
 
 			// =========== Render shadow map ===========
-			float	KernelSize = 16.0f * floatTrackbarControlProjectionDiffusion.Value;
+//			float	KernelSize = 16.0f * floatTrackbarControlProjectionDiffusion.Value;
+			float	KernelSize = floatTrackbarControlKernelSize.Value;
 
 			float	ShadowZFar = (float) Math.Sqrt( 2.0 ) * m_Camera.Far;
 			m_CB_ShadowMap.m._ShadowOffsetXY = (float2) Direction;
@@ -1860,8 +1864,10 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 
 				m_Device.SetRenderTargets( m_Tex_ShadowMap.Width, m_Tex_ShadowMap.Height, new View2D[0], m_Tex_ShadowMap );
 #if FILTER_EXP_SHADOW_MAP
-				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 0.0f, 0, true, false );
-				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_GREATER, BLEND_STATE.DISABLED );	// For exp shadow map, the Z order is reversed
+// 				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 0.0f, 0, true, false );
+// 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_GREATER, BLEND_STATE.DISABLED );	// For exp shadow map, the Z order is reversed
+				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 1.0f, 0, true, false );
+				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );	// For exp shadow map, the Z order is reversed
 #else
 				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 1.0f, 0, true, false );
 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );

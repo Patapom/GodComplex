@@ -9,6 +9,7 @@ cbuffer CB_Object : register(b4) {
 
 struct VS_IN {
 	float3	Position : POSITION;
+	float3	Normal : NORMAL;
 };
 
 struct PS_IN {
@@ -20,6 +21,9 @@ PS_IN	VS( VS_IN _In ) {
 	PS_IN	Out;
 
 	float3	wsPosition = mul( float4( _In.Position, 1.0 ), _Local2World ).xyz;
+	float3	wsNormal = mul( float4( _In.Normal, 0.0 ), _Local2World ).xyz;
+
+//wsPosition -= 0.1 * wsNormal;
 
 	// Transform into area light space
 	float3	lsDeltaPos = wsPosition - _AreaLightT;
@@ -33,22 +37,16 @@ PS_IN	VS( VS_IN _In ) {
 
 	float2	projPosition = lsDirection.xy / (1.0 + lsDirection.z);
 
-	float	Z = Distance * _ShadowZFar.y;
+	const float	BIAS = 0.0;
 
-//	Z += 1.1;
-//	Z *= 1.1;
-
-
-// Exponential Z
-//Z = exp( -_ShadowHardeningFactor.x * Z );
-//Z = exp( -EXP_CONSTANT* Z );
-//Z = exp( _ShadowHardeningFactor.x * (Z-1.0) );
+	float	Z = (Distance + BIAS) * _ShadowZFar.y;
 
 
+	// Exponential Z
 	Z = exp( -_ShadowHardeningFactor.y * Z );
 
 
-	Out.__Position = float4( projPosition, Z, 1.0 );
+	Out.__Position = float4( projPosition, 1.0 - Z, sign( lsPosition.z ) );
 
 	return Out;
 }

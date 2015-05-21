@@ -68,6 +68,9 @@
 			this.checkBoxFalseColors = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlFalseColorsRange = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.panel1 = new System.Windows.Forms.Panel();
+			this.checkBoxAnimate = new System.Windows.Forms.CheckBox();
+			this.floatTrackbarControlKernelSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label16 = new System.Windows.Forms.Label();
 			this.panelOutput = new AreaLightTest.PanelOutput( this.components );
 			this.SuspendLayout();
 			// 
@@ -81,7 +84,7 @@
 			this.floatTrackbarControlProjectionDiffusion.RangeMin = 0F;
 			this.floatTrackbarControlProjectionDiffusion.Size = new System.Drawing.Size( 200, 20 );
 			this.floatTrackbarControlProjectionDiffusion.TabIndex = 1;
-			this.floatTrackbarControlProjectionDiffusion.Value = 0F;
+			this.floatTrackbarControlProjectionDiffusion.Value = 1F;
 			this.floatTrackbarControlProjectionDiffusion.VisibleRangeMax = 1F;
 			// 
 			// buttonReload
@@ -291,7 +294,7 @@
 			// 
 			// floatTrackbarControlLightTargetX
 			// 
-			this.floatTrackbarControlLightTargetX.Location = new System.Drawing.Point( 1180, 346 );
+			this.floatTrackbarControlLightTargetX.Location = new System.Drawing.Point( 1180, 338 );
 			this.floatTrackbarControlLightTargetX.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlLightTargetX.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlLightTargetX.Name = "floatTrackbarControlLightTargetX";
@@ -299,13 +302,13 @@
 			this.floatTrackbarControlLightTargetX.RangeMin = -100F;
 			this.floatTrackbarControlLightTargetX.Size = new System.Drawing.Size( 200, 20 );
 			this.floatTrackbarControlLightTargetX.TabIndex = 1;
-			this.floatTrackbarControlLightTargetX.Value = 0F;
+			this.floatTrackbarControlLightTargetX.Value = -1.324F;
 			this.floatTrackbarControlLightTargetX.VisibleRangeMin = -10F;
 			// 
 			// label10
 			// 
 			this.label10.AutoSize = true;
-			this.label10.Location = new System.Drawing.Point( 1059, 353 );
+			this.label10.Location = new System.Drawing.Point( 1059, 345 );
 			this.label10.Name = "label10";
 			this.label10.Size = new System.Drawing.Size( 74, 13 );
 			this.label10.TabIndex = 3;
@@ -313,7 +316,7 @@
 			// 
 			// floatTrackbarControlLightTargetY
 			// 
-			this.floatTrackbarControlLightTargetY.Location = new System.Drawing.Point( 1180, 372 );
+			this.floatTrackbarControlLightTargetY.Location = new System.Drawing.Point( 1180, 364 );
 			this.floatTrackbarControlLightTargetY.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlLightTargetY.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlLightTargetY.Name = "floatTrackbarControlLightTargetY";
@@ -327,7 +330,7 @@
 			// label11
 			// 
 			this.label11.AutoSize = true;
-			this.label11.Location = new System.Drawing.Point( 1059, 379 );
+			this.label11.Location = new System.Drawing.Point( 1059, 371 );
 			this.label11.Name = "label11";
 			this.label11.Size = new System.Drawing.Size( 74, 13 );
 			this.label11.TabIndex = 3;
@@ -335,7 +338,7 @@
 			// 
 			// floatTrackbarControlLightTargetZ
 			// 
-			this.floatTrackbarControlLightTargetZ.Location = new System.Drawing.Point( 1180, 398 );
+			this.floatTrackbarControlLightTargetZ.Location = new System.Drawing.Point( 1180, 390 );
 			this.floatTrackbarControlLightTargetZ.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlLightTargetZ.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlLightTargetZ.Name = "floatTrackbarControlLightTargetZ";
@@ -349,7 +352,7 @@
 			// label12
 			// 
 			this.label12.AutoSize = true;
-			this.label12.Location = new System.Drawing.Point( 1059, 405 );
+			this.label12.Location = new System.Drawing.Point( 1059, 397 );
 			this.label12.Name = "label12";
 			this.label12.Size = new System.Drawing.Size( 74, 13 );
 			this.label12.TabIndex = 3;
@@ -357,7 +360,7 @@
 			// 
 			// floatTrackbarControlLightRoll
 			// 
-			this.floatTrackbarControlLightRoll.Location = new System.Drawing.Point( 1180, 435 );
+			this.floatTrackbarControlLightRoll.Location = new System.Drawing.Point( 1180, 430 );
 			this.floatTrackbarControlLightRoll.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlLightRoll.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlLightRoll.Name = "floatTrackbarControlLightRoll";
@@ -372,7 +375,7 @@
 			// label13
 			// 
 			this.label13.AutoSize = true;
-			this.label13.Location = new System.Drawing.Point( 1059, 442 );
+			this.label13.Location = new System.Drawing.Point( 1059, 432 );
 			this.label13.Name = "label13";
 			this.label13.Size = new System.Drawing.Size( 51, 13 );
 			this.label13.TabIndex = 3;
@@ -395,11 +398,11 @@
 			// label14
 			// 
 			this.label14.AutoSize = true;
-			this.label14.Location = new System.Drawing.Point( 1059, 522 );
+			this.label14.Location = new System.Drawing.Point( 1043, 522 );
 			this.label14.Name = "label14";
-			this.label14.Size = new System.Drawing.Size( 89, 13 );
+			this.label14.Size = new System.Drawing.Size( 118, 13 );
 			this.label14.TabIndex = 3;
-			this.label14.Text = "Hardening Factor";
+			this.label14.Text = "Hardening Factor Read";
 			// 
 			// floatTrackbarControlHardeningFactor2
 			// 
@@ -411,18 +414,18 @@
 			this.floatTrackbarControlHardeningFactor2.RangeMin = 0.001F;
 			this.floatTrackbarControlHardeningFactor2.Size = new System.Drawing.Size( 200, 20 );
 			this.floatTrackbarControlHardeningFactor2.TabIndex = 1;
-			this.floatTrackbarControlHardeningFactor2.Value = 20F;
+			this.floatTrackbarControlHardeningFactor2.Value = 80F;
 			this.floatTrackbarControlHardeningFactor2.VisibleRangeMax = 100F;
 			this.floatTrackbarControlHardeningFactor2.VisibleRangeMin = 0.001F;
 			// 
 			// label15
 			// 
 			this.label15.AutoSize = true;
-			this.label15.Location = new System.Drawing.Point( 1059, 548 );
+			this.label15.Location = new System.Drawing.Point( 1043, 548 );
 			this.label15.Name = "label15";
-			this.label15.Size = new System.Drawing.Size( 98, 13 );
+			this.label15.Size = new System.Drawing.Size( 131, 13 );
 			this.label15.TabIndex = 3;
-			this.label15.Text = "Hardening Factor 2";
+			this.label15.Text = "Hardening Factor Shadow";
 			// 
 			// buttonRebuildBRDF
 			// 
@@ -478,6 +481,38 @@
 			this.panel1.Size = new System.Drawing.Size( 186, 12 );
 			this.panel1.TabIndex = 5;
 			// 
+			// checkBoxAnimate
+			// 
+			this.checkBoxAnimate.AutoSize = true;
+			this.checkBoxAnimate.Location = new System.Drawing.Point( 1062, 607 );
+			this.checkBoxAnimate.Name = "checkBoxAnimate";
+			this.checkBoxAnimate.Size = new System.Drawing.Size( 64, 17 );
+			this.checkBoxAnimate.TabIndex = 4;
+			this.checkBoxAnimate.Text = "Animate";
+			this.checkBoxAnimate.UseVisualStyleBackColor = true;
+			// 
+			// floatTrackbarControlKernelSize
+			// 
+			this.floatTrackbarControlKernelSize.Location = new System.Drawing.Point( 1180, 473 );
+			this.floatTrackbarControlKernelSize.MaximumSize = new System.Drawing.Size( 10000, 20 );
+			this.floatTrackbarControlKernelSize.MinimumSize = new System.Drawing.Size( 70, 20 );
+			this.floatTrackbarControlKernelSize.Name = "floatTrackbarControlKernelSize";
+			this.floatTrackbarControlKernelSize.RangeMax = 32F;
+			this.floatTrackbarControlKernelSize.RangeMin = 0F;
+			this.floatTrackbarControlKernelSize.Size = new System.Drawing.Size( 200, 20 );
+			this.floatTrackbarControlKernelSize.TabIndex = 1;
+			this.floatTrackbarControlKernelSize.Value = 3.7F;
+			this.floatTrackbarControlKernelSize.VisibleRangeMax = 32F;
+			// 
+			// label16
+			// 
+			this.label16.AutoSize = true;
+			this.label16.Location = new System.Drawing.Point( 1059, 475 );
+			this.label16.Name = "label16";
+			this.label16.Size = new System.Drawing.Size( 81, 13 );
+			this.label16.TabIndex = 3;
+			this.label16.Text = "Blur Kernel Size";
+			// 
 			// panelOutput
 			// 
 			this.panelOutput.Location = new System.Drawing.Point( 12, 12 );
@@ -494,6 +529,7 @@
 			this.Controls.Add( this.label6 );
 			this.Controls.Add( this.label9 );
 			this.Controls.Add( this.label8 );
+			this.Controls.Add( this.label16 );
 			this.Controls.Add( this.label13 );
 			this.Controls.Add( this.label12 );
 			this.Controls.Add( this.label11 );
@@ -511,6 +547,7 @@
 			this.Controls.Add( this.floatTrackbarControlMetal );
 			this.Controls.Add( this.floatTrackbarControlLightPosZ );
 			this.Controls.Add( this.floatTrackbarControlLightPosY );
+			this.Controls.Add( this.floatTrackbarControlKernelSize );
 			this.Controls.Add( this.floatTrackbarControlLightRoll );
 			this.Controls.Add( this.floatTrackbarControlLightTargetZ );
 			this.Controls.Add( this.floatTrackbarControlLightTargetY );
@@ -524,6 +561,7 @@
 			this.Controls.Add( this.floatTrackbarControlProjectionPhi );
 			this.Controls.Add( this.floatTrackbarControlProjectionTheta );
 			this.Controls.Add( this.floatTrackbarControlProjectionDiffusion );
+			this.Controls.Add( this.checkBoxAnimate );
 			this.Controls.Add( this.checkBoxUseTexture );
 			this.Controls.Add( this.checkBoxFalseColors );
 			this.Controls.Add( this.panelOutput );
@@ -576,6 +614,9 @@
 		private System.Windows.Forms.CheckBox checkBoxFalseColors;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlFalseColorsRange;
 		private System.Windows.Forms.Panel panel1;
+		private System.Windows.Forms.CheckBox checkBoxAnimate;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlKernelSize;
+		private System.Windows.Forms.Label label16;
 	}
 }
 

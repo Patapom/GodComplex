@@ -65,6 +65,10 @@ _Debug = Smoothie.x;
 // Exponential shadow mapping
 float	ComputeShadow( float3 _wsPosition, float3 _wsNormal, out float4 _Debug ) {
 
+_Debug = 0;
+
+//_wsPosition += 0.1 * _wsNormal;
+
 	// Transform into area light space
 	float3	lsDeltaPos = _wsPosition - _AreaLightT;
 	float3	lsPosition = float3(	(dot( lsDeltaPos, _AreaLightX ) / _AreaLightScaleX) + _ShadowOffsetXY.x,
@@ -72,27 +76,37 @@ float	ComputeShadow( float3 _wsPosition, float3 _wsNormal, out float4 _Debug ) {
 									dot( lsDeltaPos, _AreaLightZ ) );
 
 	// Apply paraboloid projection
-	const float	BIAS = 0.0;
-
-	float	ReceiverDistance = length( lsPosition ) + BIAS;
+	float	ReceiverDistance = length( lsPosition );
 	float3	lsDirection = lsPosition / ReceiverDistance;
 
 	float2	projPosition = lsDirection.xy / (1.0 + lsDirection.z);
 	float2	UV = float2( 0.5 * (1.0 + projPosition.x), 0.5 * (1.0 - projPosition.y) );
 
 	// Sample exp( -c.z )
-	float	Exp_BlockerDistance = _TexShadowMap.SampleLevel( LinearClamp, UV, 0.0 );		// exp( -EXP_CONSTANT * Distance/SHADOW_ZFAR )
+	float	Exp_BlockerDistance = 1.0 - _TexShadowMap.SampleLevel( LinearClamp, UV, 0.0 );		// exp( -EXP_CONSTANT * Distance/SHADOW_ZFAR )
 
-_Debug = 0;
 
-	// Compute sigmoïd
-	float	Exp_ReceiverDistance = exp( _ShadowHardeningFactor.x * ReceiverDistance * _ShadowZFar.y );
+//Exp_BlockerDistance = exp( _ShadowHardeningFactor.y * (log( 1.0 - Exp_BlockerDistance ) / _ShadowHardeningFactor.y) );
+//return Exp_BlockerDistance;
+
+
+	// Compute exponential
+	const float	BIAS = -0.0;
+
+	float	Z = (ReceiverDistance + BIAS) * _ShadowZFar.y;
+	float	Exp_ReceiverDistance = exp( _ShadowHardeningFactor.x * Z );
 
 //return 0.5 + 100.0 * ReceiverDistance * _ShadowZFar.y / log( Exp_BlockerDistance );
 
 //	float	Exp_ReceiverDistance = exp( -_ShadowHardeningFactor * (ReceiverDistance * _ShadowZFar.y - 1.0) );
-	float	Shadow = 1.0 / (1.0 + Exp_ReceiverDistance * Exp_BlockerDistance);		// Sigmoïd
-//	float	Shadow = 1.0 - saturate( Exp_ReceiverDistance * Exp_BlockerDistance );	// Standard ESM
+//	float	Shadow = 1.0 / (1.0 + Exp_ReceiverDistance * Exp_BlockerDistance);		// Sigmoïd
+	float	Shadow = 1.0 - saturate( Exp_ReceiverDistance * Exp_BlockerDistance );	// Standard ESM
+
+
+	// Contrast
+//Shadow = saturate( 2.0 * (Shadow - 0.5) );
+//Shadow = smoothstep( 0.0, 0.2, Shadow );
+
 	return Shadow;
 }
 #endif

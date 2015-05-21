@@ -94,11 +94,11 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	
 //return float4( RadianceDiffuse, 0 );
 //return float4( RadianceSpecular, 0 );
-
-//return Shadow;
 	
 	float3	Result = 0.01 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular;
 
+Result = Shadow;
+	
 	
 //float3	wsLight = normalize( -_ProjectionDirectionDiff );
 //Result = ComputeWard( wsLight, surf.wsView, surf.wsNormal, surf.wsTangent, surf.wsBiTangent, max( 0.01, Roughness ) );

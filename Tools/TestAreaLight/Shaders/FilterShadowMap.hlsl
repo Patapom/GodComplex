@@ -24,10 +24,10 @@ float	SampleShadowMap( float2 _UV ) {
 float	GaussianFilter( float2 _UV, float2 _dUV ) {
 
 	float	Zcenter = SampleShadowMap( _UV );
-	float	KernelSize = _KernelSize;// * (1.0-Zcenter);
-	uint	iKernelSize = 2*ceil( KernelSize );
+	float	KernelSize = max( 1.0, _KernelSize );// * (1.0-Zcenter);
+	uint	iKernelSize = 2.0 * ceil( KernelSize );
 
-	const float	Sigma = sqrt( -KernelSize*KernelSize / (2.0 * log( 0.5 )) );
+	const float	Sigma = sqrt( -KernelSize*KernelSize / (2.0 * log( 0.2 )) );
 //	const float	Sigma = max( 1e-4, sqrt( -KernelSize*KernelSize / (2.0 * log( 0.1 )) ) );
 
 	float	Sum = GaussWeight( 0.0, Sigma ) * Zcenter;
