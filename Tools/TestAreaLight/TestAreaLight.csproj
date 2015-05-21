@@ -64,6 +64,7 @@
     <Content Include="Shaders\ClippedAO_iQ.hlsl" />
     <Content Include="Shaders\AreaLight2.hlsl" />
     <Content Include="Shaders\ComputeBRDFIntegral.hlsl" />
+    <Content Include="Shaders\AreaLight3.hlsl" />
     <Content Include="Shaders\FilterShadowMap.hlsl" />
     <Content Include="Shaders\ParaboloidShadowMap.hlsl" />
     <Content Include="Shaders\RenderShadowMap.hlsl" />
@@ -89,7 +90,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Content Include="Shaders\Copy of AreaLight.hlsl" />
+    <Content Include="Shaders\Ward.hlsl" />
     <Content Include="Shaders\AreaLightMip.hlsl" />
     <None Include="Shaders\RenderAreaLight.hlsl" />
   </ItemGroup>

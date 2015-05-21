@@ -1559,7 +1559,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 //			m_Tex_AreaLight = Pipi2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipi" ) );
 //			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipo" ) );
 
-			m_Tex_FalseColors = Image2Texture( new System.IO.FileInfo( "FalseColorsSpectrum.png" ) );
+			m_Tex_FalseColors = Image2Texture( new System.IO.FileInfo( "FalseColorsSpectrum2.png" ) );
 
 			int	SHADOW_MAP_SIZE = 512;
 			m_Tex_ShadowMap = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, DEPTH_STENCIL_FORMAT.D32 );

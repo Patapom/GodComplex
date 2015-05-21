@@ -1,5 +1,5 @@
 #include "Global.hlsl"
-#include "AreaLight2.hlsl"
+#include "AreaLight3.hlsl"
 #include "ParaboloidShadowMap.hlsl"
 
 cbuffer CB_Object : register(b4) {
