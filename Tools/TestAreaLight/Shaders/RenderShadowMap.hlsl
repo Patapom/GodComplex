@@ -25,28 +25,18 @@ PS_IN	VS( VS_IN _In ) {
 
 //wsPosition -= 0.1 * wsNormal;
 
-	// Transform into area light space
-	float3	lsDeltaPos = wsPosition - _AreaLightT;
-	float3	lsPosition = float3(	(dot( lsDeltaPos, _AreaLightX ) / _AreaLightScaleX) + _ShadowOffsetXY.x,
-									(dot( lsDeltaPos, _AreaLightY ) / _AreaLightScaleY) + _ShadowOffsetXY.y,
-									dot( lsDeltaPos, _AreaLightZ ) );
-
 	// Apply paraboloid projection
-	float	Distance = length( lsPosition );
-	float3	lsDirection = lsPosition / Distance;
-
-	float2	projPosition = lsDirection.xy / (1.0 + lsDirection.z);
+	float	Distance;
+	float3	projPosition = World2Paraboloid( wsPosition, Distance );
 
 	const float	BIAS = 0.0;
 
 	float	Z = (Distance + BIAS) * _ShadowZFar.y;
 
-
 	// Exponential Z
 	Z = exp( -_ShadowHardeningFactor.y * Z );
 
-
-	Out.__Position = float4( projPosition, 1.0 - Z, sign( lsPosition.z ) );
+	Out.__Position = float4( projPosition.xy, 1.0 - Z, sign( projPosition.z ) );
 
 	return Out;
 }

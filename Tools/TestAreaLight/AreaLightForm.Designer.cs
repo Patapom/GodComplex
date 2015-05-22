@@ -71,6 +71,7 @@
 			this.checkBoxAnimate = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlKernelSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label16 = new System.Windows.Forms.Label();
+			this.checkBoxCullFront = new System.Windows.Forms.CheckBox();
 			this.panelOutput = new AreaLightTest.PanelOutput( this.components );
 			this.SuspendLayout();
 			// 
@@ -391,7 +392,7 @@
 			this.floatTrackbarControlHardeningFactor.RangeMin = 0.001F;
 			this.floatTrackbarControlHardeningFactor.Size = new System.Drawing.Size( 200, 20 );
 			this.floatTrackbarControlHardeningFactor.TabIndex = 1;
-			this.floatTrackbarControlHardeningFactor.Value = 80F;
+			this.floatTrackbarControlHardeningFactor.Value = 10F;
 			this.floatTrackbarControlHardeningFactor.VisibleRangeMax = 100F;
 			this.floatTrackbarControlHardeningFactor.VisibleRangeMin = 0.001F;
 			// 
@@ -414,7 +415,7 @@
 			this.floatTrackbarControlHardeningFactor2.RangeMin = 0.001F;
 			this.floatTrackbarControlHardeningFactor2.Size = new System.Drawing.Size( 200, 20 );
 			this.floatTrackbarControlHardeningFactor2.TabIndex = 1;
-			this.floatTrackbarControlHardeningFactor2.Value = 80F;
+			this.floatTrackbarControlHardeningFactor2.Value = 10F;
 			this.floatTrackbarControlHardeningFactor2.VisibleRangeMax = 100F;
 			this.floatTrackbarControlHardeningFactor2.VisibleRangeMin = 0.001F;
 			// 
@@ -513,6 +514,18 @@
 			this.label16.TabIndex = 3;
 			this.label16.Text = "Blur Kernel Size";
 			// 
+			// checkBoxCullFront
+			// 
+			this.checkBoxCullFront.AutoSize = true;
+			this.checkBoxCullFront.Checked = true;
+			this.checkBoxCullFront.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxCullFront.Location = new System.Drawing.Point( 1132, 608 );
+			this.checkBoxCullFront.Name = "checkBoxCullFront";
+			this.checkBoxCullFront.Size = new System.Drawing.Size( 43, 17 );
+			this.checkBoxCullFront.TabIndex = 4;
+			this.checkBoxCullFront.Text = "Cull";
+			this.checkBoxCullFront.UseVisualStyleBackColor = true;
+			// 
 			// panelOutput
 			// 
 			this.panelOutput.Location = new System.Drawing.Point( 12, 12 );
@@ -561,6 +574,7 @@
 			this.Controls.Add( this.floatTrackbarControlProjectionPhi );
 			this.Controls.Add( this.floatTrackbarControlProjectionTheta );
 			this.Controls.Add( this.floatTrackbarControlProjectionDiffusion );
+			this.Controls.Add( this.checkBoxCullFront );
 			this.Controls.Add( this.checkBoxAnimate );
 			this.Controls.Add( this.checkBoxUseTexture );
 			this.Controls.Add( this.checkBoxFalseColors );
@@ -617,6 +631,7 @@
 		private System.Windows.Forms.CheckBox checkBoxAnimate;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlKernelSize;
 		private System.Windows.Forms.Label label16;
+		private System.Windows.Forms.CheckBox checkBoxCullFront;
 	}
 }
 

@@ -559,7 +559,7 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, uint _SliceIndex, flo
 	float3	ShadowedLightColor = _Shadow * _AreaLightIntensity;
 
 			// Assume radiance * 1/PI if the area light is largely diffusing
-//			ShadowedLightColor *= lerp( 1.0, INVPI, _AreaLightDiffusion );
+			ShadowedLightColor *= lerp( 1.0, INVPI, _AreaLightDiffusion );
 
 	float3	wsLight = normalize( -_ProjectionDirectionDiff );	// Toward light
 

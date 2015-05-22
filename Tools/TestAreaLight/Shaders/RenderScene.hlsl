@@ -97,7 +97,9 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	
 	float3	Result = 0.01 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular;
 
-Result = Shadow;
+
+//Shadow = smoothstep( 0.0, 0.1, Shadow );
+//Result = Shadow;
 	
 	
 //float3	wsLight = normalize( -_ProjectionDirectionDiff );

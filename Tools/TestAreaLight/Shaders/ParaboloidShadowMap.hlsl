@@ -2,7 +2,7 @@
 // static const float	SHADOW_ZFAR = 100.0				// Should be camera Z far
 // 								* sqrt(2.0);
 // 
-static const float	EXP_CONSTANT = 80.0;
+//static const float	EXP_CONSTANT = 80.0;
 
 cbuffer CB_ShadowMap : register(b3) {
 	float2		_ShadowOffsetXY;			// XY Offset in [-1,+1] depending on where to place the shadow source
@@ -14,6 +14,27 @@ cbuffer CB_ShadowMap : register(b3) {
 
 Texture2D< float >	_TexShadowMap : register(t2);
 Texture2D< float2 >	_TexShadowSmoothie : register(t3);
+
+float3	World2Paraboloid( float3 _wsPosition, out float _Distance ) {
+
+	// Transform into area light space
+	float3	lsDeltaPos = _wsPosition - _AreaLightT;
+//	float3	lsPosition = float3(	(dot( lsDeltaPos, _AreaLightX ) / _AreaLightScaleX) + _ShadowOffsetXY.x,
+//									(dot( lsDeltaPos, _AreaLightY ) / _AreaLightScaleY) + _ShadowOffsetXY.y,
+//									 dot( lsDeltaPos, _AreaLightZ ) );
+	float3	lsPosition = float3( dot( lsDeltaPos, _AreaLightX ) + _ShadowOffsetXY.x,
+								 dot( lsDeltaPos, _AreaLightY ) + _ShadowOffsetXY.y,
+								 dot( lsDeltaPos, _AreaLightZ ) );
+
+	// Apply paraboloid projection
+	_Distance = length( lsPosition );
+
+//return float3( lsPosition.xy / lsPosition.z, lsPosition.z );
+
+	float3	lsDirection = lsPosition / _Distance;
+
+	return float3( lsDirection.xy / (1.0 + lsDirection.z), lsPosition.z );
+}
 
 #if 0
 float	ComputeShadow( float3 _wsPosition, float3 _wsNormal, out float4 _Debug ) {
@@ -69,26 +90,16 @@ _Debug = 0;
 
 //_wsPosition += 0.1 * _wsNormal;
 
-	// Transform into area light space
-	float3	lsDeltaPos = _wsPosition - _AreaLightT;
-	float3	lsPosition = float3(	(dot( lsDeltaPos, _AreaLightX ) / _AreaLightScaleX) + _ShadowOffsetXY.x,
-									(dot( lsDeltaPos, _AreaLightY ) / _AreaLightScaleY) + _ShadowOffsetXY.y,
-									dot( lsDeltaPos, _AreaLightZ ) );
-
-	// Apply paraboloid projection
-	float	ReceiverDistance = length( lsPosition );
-	float3	lsDirection = lsPosition / ReceiverDistance;
-
-	float2	projPosition = lsDirection.xy / (1.0 + lsDirection.z);
-	float2	UV = float2( 0.5 * (1.0 + projPosition.x), 0.5 * (1.0 - projPosition.y) );
+	// Compute paraboloïd position
+	float	ReceiverDistance;
+	float2	pbPosition = World2Paraboloid( _wsPosition, ReceiverDistance ).xy;
+	float2	UV = float2( 0.5 * (1.0 + pbPosition.x), 0.5 * (1.0 - pbPosition.y) );
 
 	// Sample exp( -c.z )
-	float	Exp_BlockerDistance = 1.0 - _TexShadowMap.SampleLevel( LinearClamp, UV, 0.0 );		// exp( -EXP_CONSTANT * Distance/SHADOW_ZFAR )
-
+	float	Exp_BlockerDistance = 1.0 - _TexShadowMap.SampleLevel( LinearClamp, UV, 0.0 );		// 1 - exp( -EXP_CONSTANT * Distance/SHADOW_ZFAR )
 
 //Exp_BlockerDistance = exp( _ShadowHardeningFactor.y * (log( 1.0 - Exp_BlockerDistance ) / _ShadowHardeningFactor.y) );
 //return Exp_BlockerDistance;
-
 
 	// Compute exponential
 	const float	BIAS = -0.0;

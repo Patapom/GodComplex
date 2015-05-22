@@ -13,7 +13,7 @@ VS_IN	VS( VS_IN _In ) { return _In; }
 
 
 float	GaussWeight( float _X, float _Sigma ) {
-	return exp( -_X*_X / (2.0 * _Sigma * _Sigma)) / sqrt( 2.0 * PI * _Sigma * _Sigma );
+	return exp( -_X*_X / (2.0 * _Sigma * _Sigma));
 }
 
 float	SampleShadowMap( float2 _UV ) {
@@ -24,10 +24,10 @@ float	SampleShadowMap( float2 _UV ) {
 float	GaussianFilter( float2 _UV, float2 _dUV ) {
 
 	float	Zcenter = SampleShadowMap( _UV );
-	float	KernelSize = max( 1.0, _KernelSize );// * (1.0-Zcenter);
-	uint	iKernelSize = 2.0 * ceil( KernelSize );
+	float	KernelSize = max( 2.0, _KernelSize );// * (1.0-Zcenter);
+	uint	iKernelSize = 1.0 * ceil( KernelSize );
 
-	const float	Sigma = sqrt( -KernelSize*KernelSize / (2.0 * log( 0.2 )) );
+	const float	Sigma = sqrt( -KernelSize*KernelSize / (2.0 * log( 0.01 )) );
 //	const float	Sigma = max( 1e-4, sqrt( -KernelSize*KernelSize / (2.0 * log( 0.1 )) ) );
 
 	float	Sum = GaussWeight( 0.0, Sigma ) * Zcenter;
@@ -35,13 +35,13 @@ float	GaussianFilter( float2 _UV, float2 _dUV ) {
 //_dUV *= 2.0;
 
 	float4	UV_left_right = _UV.xyxy;
-	for ( float i=1; i < iKernelSize; i++ ) {
+	for ( float i=1; i <= iKernelSize; i++ ) {
 		UV_left_right.xy -= _dUV;
 		UV_left_right.zw += _dUV;
 		Sum += GaussWeight( i, Sigma ) * (SampleShadowMap( UV_left_right.xy ) + SampleShadowMap( UV_left_right.zw ));
 	}
 
-	return Sum;
+	return Sum / sqrt( 2.0 * PI * Sigma * Sigma );
 }
 
 float	PS_FilterH( VS_IN _In ) : SV_TARGET0 {
