@@ -30,6 +30,7 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
+			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AreaLightForm));
 			this.floatTrackbarControlProjectionDiffusion = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.timer = new System.Windows.Forms.Timer(this.components);
@@ -67,6 +68,7 @@
 			this.checkBoxUseTexture = new System.Windows.Forms.CheckBox();
 			this.checkBoxFalseColors = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlFalseColorsRange = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.panel1 = new System.Windows.Forms.Panel();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlProjectionDiffusion
@@ -473,11 +475,21 @@
 			this.floatTrackbarControlFalseColorsRange.Value = 10F;
 			this.floatTrackbarControlFalseColorsRange.VisibleRangeMin = 0.001F;
 			// 
+			// panel1
+			// 
+			this.panel1.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("panel1.BackgroundImage")));
+			this.panel1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+			this.panel1.Location = new System.Drawing.Point(1152, 608);
+			this.panel1.Name = "panel1";
+			this.panel1.Size = new System.Drawing.Size(228, 15);
+			this.panel1.TabIndex = 5;
+			// 
 			// AreaLightForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1392, 665);
+			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.label6);
 			this.Controls.Add(this.label9);
 			this.Controls.Add(this.label8);
@@ -562,6 +574,7 @@
 		private System.Windows.Forms.CheckBox checkBoxUseTexture;
 		private System.Windows.Forms.CheckBox checkBoxFalseColors;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlFalseColorsRange;
+		private System.Windows.Forms.Panel panel1;
 	}
 }
 
