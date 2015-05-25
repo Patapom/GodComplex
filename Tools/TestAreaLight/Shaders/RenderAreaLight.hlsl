@@ -1,5 +1,5 @@
 #include "Global.hlsl"
-#include "AreaLight2.hlsl"
+#include "AreaLight3.hlsl"
 #include "ParaboloidShadowMap.hlsl"
 
 cbuffer CB_Object : register(b4) {
@@ -72,16 +72,16 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 
 	StainedGlass *= _AreaLightIntensity;
 
-
-	if ( _FalseColors )
-		StainedGlass = _TexFalseColors.SampleLevel( LinearClamp, float2( dot( LUMINANCE, StainedGlass ) / _FalseColorsMaxRange, 0.5 ), 0.0 ).xyz;
-
-
 // Debug shadow map
 //StainedGlass = 1.0 * _TexShadowMap.Sample( LinearClamp, _In.UV );
 // StainedGlass = float4( _TexShadowMap.SampleLevel( LinearClamp, _In.UV, 0.0 ).x - _TexShadowSmoothie.Sample( LinearClamp, _In.UV ), 0, 0 ).y;
 //StainedGlass = float4( _TexShadowSmoothie.Sample( LinearClamp, _In.UV ), 0, 0 ).x;
 //StainedGlass = 20.0 * float4( _TexShadowSmoothie.Sample( LinearClamp, _In.UV ), 0, 0 ).y;
+
+
+	if ( _FalseColors )
+		StainedGlass = _TexFalseColors.SampleLevel( LinearClamp, float2( dot( LUMINANCE, StainedGlass ) / _FalseColorsMaxRange, 0.5 ), 0.0 ).xyz;
+
 
 
 // 	// Debug UV clipping

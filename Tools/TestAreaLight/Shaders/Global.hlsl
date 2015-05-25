@@ -93,3 +93,9 @@ float3	FresnelAccurate( float3 _IOR, float _CosTheta, float _FresnelStrength=1.0
 
 	return 0.5 * a * b;
 }
+
+// Smooth minimum by iQ
+float SmoothMin( float a, float b, float k ) {
+    float res = exp( -k*a ) + exp( -k*b );
+    return -log( res ) / k;
+}

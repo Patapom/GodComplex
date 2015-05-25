@@ -9,6 +9,7 @@ cbuffer CB_Object : register(b4) {
 
 struct VS_IN {
 	float3	Position : POSITION;
+	float3	Normal : NORMAL;
 };
 
 struct PS_IN {
@@ -20,35 +21,22 @@ PS_IN	VS( VS_IN _In ) {
 	PS_IN	Out;
 
 	float3	wsPosition = mul( float4( _In.Position, 1.0 ), _Local2World ).xyz;
+	float3	wsNormal = mul( float4( _In.Normal, 0.0 ), _Local2World ).xyz;
 
-	// Transform into area light space
-	float3	lsDeltaPos = wsPosition - _AreaLightT;
-	float3	lsPosition = float3(	(dot( lsDeltaPos, _AreaLightX ) / _AreaLightScaleX) + _ShadowOffsetXY.x,
-									(dot( lsDeltaPos, _AreaLightY ) / _AreaLightScaleY) + _ShadowOffsetXY.y,
-									dot( lsDeltaPos, _AreaLightZ ) );
+//wsPosition -= 0.1 * wsNormal;
 
 	// Apply paraboloid projection
-	float	Distance = length( lsPosition );
-	float3	lsDirection = lsPosition / Distance;
+	float	Distance;
+	float3	projPosition = World2Paraboloid( wsPosition, Distance );
 
-	float2	projPosition = lsDirection.xy / (1.0 + lsDirection.z);
+	const float	BIAS = 0.0;
 
-	float	Z = Distance * _ShadowZFar.y;
+	float	Z = (Distance + BIAS) * _ShadowZFar.y;
 
-//	Z += 1.1;
-//	Z *= 1.1;
-
-
-// Exponential Z
-//Z = exp( -_ShadowHardeningFactor.x * Z );
-//Z = exp( -EXP_CONSTANT* Z );
-//Z = exp( _ShadowHardeningFactor.x * (Z-1.0) );
-
-
+	// Exponential Z
 	Z = exp( -_ShadowHardeningFactor.y * Z );
 
-
-	Out.__Position = float4( projPosition, Z, 1.0 );
+	Out.__Position = float4( projPosition.xy, 1.0 - Z, sign( projPosition.z ) );
 
 	return Out;
 }
