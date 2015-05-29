@@ -580,9 +580,9 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, uint _SliceIndex, flo
 	float3	Irradiance_diffuse = SampleAreaLight( UV0_diffuse, UV1_diffuse, _SliceIndex, false );
 			Irradiance_diffuse *= ShadowedLightColor;
 
-	float3	IntegralBRDF_diffuse = _Surface.diffuseAlbedo * FresnelDiffuse;
+	float3	IntegralBRDF_diffuse = _Surface.diffuseAlbedo * FresnelDiffuse * SolidAngle_diffuse;
 
-	_RadianceDiffuse = Irradiance_diffuse * IntegralBRDF_diffuse * SolidAngle_diffuse;
+	_RadianceDiffuse = Irradiance_diffuse * IntegralBRDF_diffuse;
 
 
 		// -----------------------------------

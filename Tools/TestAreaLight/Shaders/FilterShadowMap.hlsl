@@ -41,7 +41,7 @@ float	GaussianFilter( float2 _UV, float2 _dUV ) {
 		Sum += GaussWeight( i, Sigma ) * (SampleShadowMap( UV_left_right.xy ) + SampleShadowMap( UV_left_right.zw ));
 	}
 
-	return Sum / sqrt( 2.0 * PI * Sigma * Sigma );
+	return Sum / sqrt( PI * 2.0 * Sigma * Sigma );
 }
 
 float	PS_FilterH( VS_IN _In ) : SV_TARGET0 {
