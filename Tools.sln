@@ -117,6 +117,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BImageViewer", "Tools\BImag
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SHZHConvolutionViewer", "Tools\SHZHConvolutionViewer\SHZHConvolutionViewer.csproj", "{AF08E4EA-48FF-4F49-A3D5-86A88020203D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sRGBLinearConverter", "Tools\sRGBLinearConverter\sRGBLinearConverter.csproj", "{59AB0801-6E22-4781-B48D-3FD46421204C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug DirectX10|Any CPU = Debug DirectX10|Any CPU
@@ -1841,6 +1843,34 @@ Global
 		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Release|x64.ActiveCfg = Release|x86
 		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Release|x86.ActiveCfg = Release|x86
 		{AF08E4EA-48FF-4F49-A3D5-86A88020203D}.Release|x86.Build.0 = Release|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Debug DirectX10|Any CPU.ActiveCfg = Debug|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Debug DirectX10|Mixed Platforms.Build.0 = Debug|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Debug DirectX10|Win32.ActiveCfg = Debug|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Debug DirectX10|x64.ActiveCfg = Debug|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Debug DirectX10|x86.ActiveCfg = Debug|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Debug DirectX10|x86.Build.0 = Debug|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Debug|Win32.ActiveCfg = Debug|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Debug|x64.ActiveCfg = Debug|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Debug|x86.ActiveCfg = Debug|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Debug|x86.Build.0 = Debug|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Profile|Any CPU.ActiveCfg = Release|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Profile|Mixed Platforms.ActiveCfg = Release|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Profile|Mixed Platforms.Build.0 = Release|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Profile|Win32.ActiveCfg = Release|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Profile|x64.ActiveCfg = Release|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Profile|x86.ActiveCfg = Release|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Profile|x86.Build.0 = Release|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Release|Any CPU.ActiveCfg = Release|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Release|Mixed Platforms.Build.0 = Release|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Release|Win32.ActiveCfg = Release|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Release|x64.ActiveCfg = Release|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Release|x86.ActiveCfg = Release|x86
+		{59AB0801-6E22-4781-B48D-3FD46421204C}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
