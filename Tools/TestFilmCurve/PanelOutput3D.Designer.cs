@@ -1,6 +1,6 @@
-﻿namespace TestFilmicCurve
+namespace TestFilmicCurve
 {
-	partial class OutputPanelHammersley
+	partial class PanelOutput
 	{
 		/// <summary>
 		/// Required designer variable.
