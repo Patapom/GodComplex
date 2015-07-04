@@ -231,6 +231,10 @@
       <Project>{DD026A89-C5FE-4150-BC85-A660E427826A}</Project>
       <Name>SharpMath</Name>
     </ProjectReference>
+    <ProjectReference Include="..\DirectXTexManaged\DirectXTexManaged.vcxproj">
+      <Project>{17C01446-DAC5-4F86-9ACE-E535C5B37679}</Project>
+      <Name>DirectXTexManaged</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

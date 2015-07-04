@@ -33,12 +33,28 @@ namespace TestFilmicCurve
 			public float4x4		_Proj2Camera;
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_ToneMapping {
+			public float		_Exposure;
+			public uint			_Flags;
+			public float		_A;
+			public float		_B;
+			public float		_C;
+			public float		_D;
+			public float		_E;
+			public float		_F;
+			public float		_WhitePoint;
+
+			public float		_SaturationFactor;
+			public float		_DarkenFactor;
+		}
+
 		private ConstantBuffer<CB_Main>			m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>		m_CB_Camera = null;
+		private ConstantBuffer<CB_ToneMapping>	m_CB_ToneMapping = null;
 
-		private Shader		m_Shader_ToneMapping = null;
-		private Texture2D	m_Tex_CubeMap = null;
-		private Primitive	m_Prim_Quad = null;
+		private Shader				m_Shader_ToneMapping = null;
+		private Texture2D			m_Tex_CubeMap = null;
 
 		private Camera				m_Camera = new Camera();
 		private CameraManipulator	m_Manipulator = new CameraManipulator();
@@ -93,6 +109,7 @@ namespace TestFilmicCurve
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
+			m_CB_ToneMapping = new ConstantBuffer<CB_ToneMapping>( m_Device, 10 );
 
 			try {
 				m_Shader_ToneMapping = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/ToneMapping.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
@@ -100,6 +117,9 @@ namespace TestFilmicCurve
 				MessageBox.Show( "Shader \"ToneMapping\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_ToneMapping = null;
 			}
+
+			// Load cube map
+			m_Tex_CubeMap = DirectXTexManaged.TextureCreator.CreateTexture2DFromDDSFile( m_Device, "garage4_hd.dds" );
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (90.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
@@ -116,6 +136,9 @@ namespace TestFilmicCurve
 				m_Shader_ToneMapping.Dispose();
 			}
 
+			m_Tex_CubeMap.Dispose();
+
+			m_CB_ToneMapping.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Main.Dispose();
 
@@ -151,6 +174,20 @@ namespace TestFilmicCurve
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_Shader_ToneMapping.Use() ) {
+
+				m_Tex_CubeMap.SetPS( 0 );
+
+				m_CB_ToneMapping.m._Exposure = (float) Math.Pow( 2, floatTrackbarControlExposure.Value );
+				m_CB_ToneMapping.m._Flags = checkBoxEnable.Checked ? 1U : 0U;
+				m_CB_ToneMapping.m._A = floatTrackbarControlA.Value;
+				m_CB_ToneMapping.m._B = floatTrackbarControlB.Value;
+				m_CB_ToneMapping.m._C = floatTrackbarControlC.Value;
+				m_CB_ToneMapping.m._D = floatTrackbarControlD.Value;
+				m_CB_ToneMapping.m._E = floatTrackbarControlE.Value;
+				m_CB_ToneMapping.m._F = floatTrackbarControlF.Value;
+				m_CB_ToneMapping.m._WhitePoint = floatTrackbarControlWhitePoint.Value;
+				m_CB_ToneMapping.UpdateData();
+
 				m_Device.RenderFullscreenQuad( m_Shader_ToneMapping );
 			}
 
@@ -209,6 +246,17 @@ namespace TestFilmicCurve
 		{
 			if ( m_Device != null )
 				m_Device.ReloadModifiedShaders();
+		}
+
+		private void buttonReset_Click( object sender, EventArgs e )
+		{
+			floatTrackbarControlA.Value = 0.15f;
+			floatTrackbarControlB.Value = 0.5f;
+			floatTrackbarControlC.Value = 0.1f;
+			floatTrackbarControlD.Value = 0.2f;
+			floatTrackbarControlE.Value = 0.02f;
+			floatTrackbarControlF.Value = 0.3f;
+			floatTrackbarControlWhitePoint.Value = 10f;
 		}
 
 		#endregion

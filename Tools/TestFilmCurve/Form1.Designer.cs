@@ -46,10 +46,16 @@
 			this.floatTrackbarControlF = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label7 = new System.Windows.Forms.Label();
 			this.timer = new System.Windows.Forms.Timer(this.components);
+			this.buttonReload = new System.Windows.Forms.Button();
+			this.label8 = new System.Windows.Forms.Label();
+			this.label9 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlExposure = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label10 = new System.Windows.Forms.Label();
+			this.checkBoxEnable = new System.Windows.Forms.CheckBox();
+			this.buttonReset = new System.Windows.Forms.Button();
 			this.panelOutput = new TestFilmicCurve.PanelOutput3D(this.components);
 			this.outputPanelHammersley1 = new TestFilmicCurve.OutputPanelHammersley(this.components);
 			this.panelGraph = new TestFilmicCurve.OutputPanel(this.components);
-			this.buttonReload = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlScaleX
@@ -244,6 +250,83 @@
 			this.timer.Enabled = true;
 			this.timer.Interval = 10;
 			// 
+			// buttonReload
+			// 
+			this.buttonReload.Location = new System.Drawing.Point(708, 551);
+			this.buttonReload.Name = "buttonReload";
+			this.buttonReload.Size = new System.Drawing.Size(75, 23);
+			this.buttonReload.TabIndex = 5;
+			this.buttonReload.Text = "Reload";
+			this.buttonReload.UseVisualStyleBackColor = true;
+			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
+			// 
+			// label8
+			// 
+			this.label8.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.label8.AutoSize = true;
+			this.label8.Location = new System.Drawing.Point(927, 252);
+			this.label8.Name = "label8";
+			this.label8.Size = new System.Drawing.Size(44, 13);
+			this.label8.TabIndex = 2;
+			this.label8.Text = "Scale X";
+			// 
+			// label9
+			// 
+			this.label9.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.label9.AutoSize = true;
+			this.label9.Location = new System.Drawing.Point(927, 279);
+			this.label9.Name = "label9";
+			this.label9.Size = new System.Drawing.Size(44, 13);
+			this.label9.TabIndex = 2;
+			this.label9.Text = "Scale Y";
+			// 
+			// floatTrackbarControlExposure
+			// 
+			this.floatTrackbarControlExposure.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlExposure.Location = new System.Drawing.Point(735, 343);
+			this.floatTrackbarControlExposure.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlExposure.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlExposure.Name = "floatTrackbarControlExposure";
+			this.floatTrackbarControlExposure.RangeMax = 10F;
+			this.floatTrackbarControlExposure.RangeMin = -10F;
+			this.floatTrackbarControlExposure.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlExposure.TabIndex = 1;
+			this.floatTrackbarControlExposure.Value = 0F;
+			this.floatTrackbarControlExposure.VisibleRangeMax = 2F;
+			this.floatTrackbarControlExposure.VisibleRangeMin = -2F;
+			// 
+			// label10
+			// 
+			this.label10.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.label10.AutoSize = true;
+			this.label10.Location = new System.Drawing.Point(708, 347);
+			this.label10.Name = "label10";
+			this.label10.Size = new System.Drawing.Size(21, 13);
+			this.label10.TabIndex = 2;
+			this.label10.Text = "EV";
+			// 
+			// checkBoxEnable
+			// 
+			this.checkBoxEnable.AutoSize = true;
+			this.checkBoxEnable.Checked = true;
+			this.checkBoxEnable.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxEnable.Location = new System.Drawing.Point(711, 382);
+			this.checkBoxEnable.Name = "checkBoxEnable";
+			this.checkBoxEnable.Size = new System.Drawing.Size(131, 17);
+			this.checkBoxEnable.TabIndex = 6;
+			this.checkBoxEnable.Text = "Enable Tone Mapping";
+			this.checkBoxEnable.UseVisualStyleBackColor = true;
+			// 
+			// buttonReset
+			// 
+			this.buttonReset.Location = new System.Drawing.Point(708, 416);
+			this.buttonReset.Name = "buttonReset";
+			this.buttonReset.Size = new System.Drawing.Size(75, 23);
+			this.buttonReset.TabIndex = 5;
+			this.buttonReset.Text = "Reset";
+			this.buttonReset.UseVisualStyleBackColor = true;
+			this.buttonReset.Click += new System.EventHandler(this.buttonReset_Click);
+			// 
 			// panelOutput
 			// 
 			this.panelOutput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -279,24 +362,19 @@
 			this.panelGraph.TabIndex = 0;
 			this.panelGraph.WhitePoint = 10F;
 			// 
-			// buttonReload
-			// 
-			this.buttonReload.Location = new System.Drawing.Point(708, 551);
-			this.buttonReload.Name = "buttonReload";
-			this.buttonReload.Size = new System.Drawing.Size(75, 23);
-			this.buttonReload.TabIndex = 5;
-			this.buttonReload.Text = "Reload";
-			this.buttonReload.UseVisualStyleBackColor = true;
-			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
-			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1264, 586);
+			this.Controls.Add(this.checkBoxEnable);
+			this.Controls.Add(this.buttonReset);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.panelOutput);
 			this.Controls.Add(this.outputPanelHammersley1);
+			this.Controls.Add(this.label9);
+			this.Controls.Add(this.label10);
+			this.Controls.Add(this.label8);
 			this.Controls.Add(this.label7);
 			this.Controls.Add(this.label6);
 			this.Controls.Add(this.label5);
@@ -312,11 +390,12 @@
 			this.Controls.Add(this.floatTrackbarControlB);
 			this.Controls.Add(this.floatTrackbarControlScaleY);
 			this.Controls.Add(this.floatTrackbarControlA);
+			this.Controls.Add(this.floatTrackbarControlExposure);
 			this.Controls.Add(this.floatTrackbarControlScaleX);
 			this.Controls.Add(this.panelGraph);
 			this.Name = "Form1";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-			this.Text = "Form1";
+			this.Text = "Film Tone Mapping Test";
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -345,6 +424,12 @@
 		private System.Windows.Forms.Timer timer;
 		private PanelOutput3D panelOutput;
 		private System.Windows.Forms.Button buttonReload;
+		private System.Windows.Forms.Label label8;
+		private System.Windows.Forms.Label label9;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlExposure;
+		private System.Windows.Forms.Label label10;
+		private System.Windows.Forms.CheckBox checkBoxEnable;
+		private System.Windows.Forms.Button buttonReset;
 	}
 }
 
