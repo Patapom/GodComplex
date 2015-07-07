@@ -568,8 +568,8 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, uint _SliceIndex, flo
 	float	HdotN = saturate( dot( H, wsNormal ) );
 
 		// 5.1] ----- Compute Fresnel -----
-//	float3	FresnelSpecular = FresnelAccurate( _Surface.IOR, VdotN, _Surface.fresnelStrength );
-	float3	FresnelSpecular = FresnelAccurate( _Surface.IOR, HdotN, _Surface.fresnelStrength );
+	float3	FresnelSpecular = FresnelAccurate( _Surface.IOR, VdotN, _Surface.fresnelStrength );
+//	float3	FresnelSpecular = FresnelAccurate( _Surface.IOR, HdotN, _Surface.fresnelStrength );
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;	// Simplify a lot! Don't use Disney's Fresnel as it needs a light direction and we can't provide one here...
 
 // _RadianceDiffuse = FresnelDiffuse;
@@ -614,6 +614,7 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, uint _SliceIndex, flo
 
 //	_RadianceSpecular = Irradiance_specular * lerp( WardBRDF_specular, IntegralBRDF_specular, _AreaLightDiffusion ) * SolidAngle_specular;
 	_RadianceSpecular = Irradiance_specular * FresnelSpecular * WardBRDF_specular * SolidAngle_specular;
+//	_RadianceSpecular = Irradiance_specular * IntegralBRDF_specular * SolidAngle_specular;
 //_RadianceSpecular = Irradiance_specular * WardBRDF_specular;
 
 
@@ -621,6 +622,10 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, uint _SliceIndex, flo
 //_RadianceSpecular = NdotH;
 
 //_RadianceSpecular = lsView;
+
+
+//_RadianceSpecular = FresnelSpecular;
+
 
 
 	// 6] =========== Attenuate with distance ===========

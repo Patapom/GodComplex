@@ -101,7 +101,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 //Shadow = smoothstep( 0.0, 0.1, Shadow );
 //Result = Shadow;
 	
-	
+
 //float3	wsLight = normalize( -_ProjectionDirectionDiff );
 //Result = ComputeWard( wsLight, surf.wsView, surf.wsNormal, surf.wsTangent, surf.wsBiTangent, max( 0.01, Roughness ) );
 //Result = RadianceSpecular;
