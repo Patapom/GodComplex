@@ -188,5 +188,73 @@ namespace DirectXTexManaged {
 
 			delete DXT;
 		}
+
+		static RendererManaged::Texture2D^	CreateTexture2DFromDDSFile( RendererManaged::Device^ _Device, String^ _FileName ) {
+
+			// Create the image and fill it with our data
+			DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
+
+			DirectX::TexMetadata	meta;
+
+			// Load into memory
+			System::IntPtr	pFileName = System::Runtime::InteropServices::Marshal::StringToHGlobalUni( _FileName );
+			LPCWSTR			wpFileName = LPCWSTR( pFileName.ToPointer() );
+
+			DWORD	flags = DirectX::DDS_FLAGS_NONE;
+//			DWORD	flags = DirectX::DDS_FLAGS_FORCE_DX10_EXT;
+			DirectX::LoadFromDDSFile( wpFileName, flags, &meta, *DXT );
+
+			//////////////////////////////////////////////////////////////////////////
+			// Convert into texture
+
+			// Retrieve supported format
+			RendererManaged::PIXEL_FORMAT	format = RendererManaged::PIXEL_FORMAT::UNKNOWN;
+			int	pixelSize = 0;
+			switch ( meta.format ) {
+				case DXGI_FORMAT_R8_UNORM: format = RendererManaged::PIXEL_FORMAT::R8_UNORM; pixelSize = 1; break;
+				case DXGI_FORMAT_R8G8B8A8_UNORM: format = RendererManaged::PIXEL_FORMAT::RGBA8_UNORM; pixelSize = 4; break;
+				case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: format = RendererManaged::PIXEL_FORMAT::RGBA8_UNORM_sRGB; pixelSize = 4; break;
+				case DXGI_FORMAT_R16_FLOAT: format = RendererManaged::PIXEL_FORMAT::R16_FLOAT; pixelSize = 2; break;
+				case DXGI_FORMAT_R16_UNORM: format = RendererManaged::PIXEL_FORMAT::R16_UNORM; pixelSize = 2; break;
+				case DXGI_FORMAT_R16G16_FLOAT: format = RendererManaged::PIXEL_FORMAT::RG16_FLOAT; pixelSize = 4; break;
+				case DXGI_FORMAT_R16G16_UNORM: format = RendererManaged::PIXEL_FORMAT::RG16_UNORM; pixelSize = 4; break;
+				case DXGI_FORMAT_R16G16B16A16_FLOAT: format = RendererManaged::PIXEL_FORMAT::RGBA16_FLOAT; pixelSize = 8; break;
+				case DXGI_FORMAT_R32_FLOAT: format = RendererManaged::PIXEL_FORMAT::R32_FLOAT; pixelSize = 4; break;
+				case DXGI_FORMAT_R32G32_FLOAT: format = RendererManaged::PIXEL_FORMAT::RG32_FLOAT; pixelSize = 8; break;
+				case DXGI_FORMAT_R32G32B32A32_FLOAT: format = RendererManaged::PIXEL_FORMAT::RGBA32_FLOAT; pixelSize = 16; break;
+				case DXGI_FORMAT_BC3_UNORM: format = RendererManaged::PIXEL_FORMAT::BC3_UNORM; break;
+				case DXGI_FORMAT_BC3_UNORM_SRGB: format = RendererManaged::PIXEL_FORMAT::BC3_UNORM_sRGB; break;
+			}
+
+			// Build content slices
+			if ( DXT->GetImageCount() != meta.arraySize * meta.mipLevels )
+				throw gcnew Exception( "Unexpected amount of images!" );
+
+			cli::array< RendererManaged::PixelsBuffer^ >^	content = gcnew cli::array< RendererManaged::PixelsBuffer^ >( meta.arraySize * meta.mipLevels );
+			for ( int arrayIndex=0; arrayIndex < int(meta.arraySize); arrayIndex++ ) {
+				int	W = meta.width;
+				int	H = meta.height;
+				for ( int mipIndex=0; mipIndex < int(meta.mipLevels); mipIndex++ ) {
+					const DirectX::Image*	sourceImage = DXT->GetImage( mipIndex, arrayIndex, 0U );
+
+					RendererManaged::PixelsBuffer^	buffer = gcnew RendererManaged::PixelsBuffer( sourceImage->slicePitch );
+					content[arrayIndex*meta.mipLevels+mipIndex] = buffer;
+
+					cli::array< Byte >^	byteArray = gcnew cli::array< Byte >( sourceImage->slicePitch );
+					System::Runtime::InteropServices::Marshal::Copy( (IntPtr) sourceImage->pixels, byteArray, 0, sourceImage->slicePitch );
+
+					System::IO::BinaryWriter^	writer = buffer->OpenStreamWrite();
+					writer->Write( byteArray );
+					buffer->CloseStream();
+				}
+			}
+
+			// Build texture
+			RendererManaged::Texture2D^	Result = gcnew RendererManaged::Texture2D( _Device, meta.width, meta.height, meta.IsCubemap() ? -int(meta.arraySize) : int(meta.arraySize), meta.mipLevels, format, false, false, content );
+
+			delete DXT;
+
+			return Result;
+		}
 	};
 }

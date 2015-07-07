@@ -12,7 +12,7 @@ namespace RendererManaged {
 		void**	ppContent = NULL;
 		if ( _Content != nullptr ) {
 
-			cli::pin_ptr< PixelsBuffer^ >	PinIt = &_Content[0];
+			cli::pin_ptr< PixelsBuffer^ >	PinThis = &_Content[0];
 
 			int		ArraySize = abs(_ArraySize);
 			ppContent = new void*[_MipLevelsCount*ArraySize];

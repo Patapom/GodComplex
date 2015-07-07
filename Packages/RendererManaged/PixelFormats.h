@@ -9,6 +9,7 @@ namespace RendererManaged {
 
 	public enum class	PIXEL_FORMAT
 	{
+		UNKNOWN,
 		R8_UNORM,
 		RGBA8_UNORM,
 		RGBA8_UNORM_sRGB,

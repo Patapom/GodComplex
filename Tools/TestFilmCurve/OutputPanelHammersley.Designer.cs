@@ -1,4 +1,4 @@
-﻿namespace TestGradientPNG
+﻿namespace TestFilmicCurve
 {
 	partial class OutputPanelHammersley
 	{

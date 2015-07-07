@@ -1733,7 +1733,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_CB_Camera.m._Proj2Camera = m_CB_Camera.m._Camera2Proj.Inverse;
 
 			m_CB_Camera.m._World2Proj = m_CB_Camera.m._World2Camera * m_CB_Camera.m._Camera2Proj;
-			m_CB_Camera.m._Proj2World = m_CB_Camera.m._Camera2World * m_CB_Camera.m._Proj2Camera;
+			m_CB_Camera.m._Proj2World = m_CB_Camera.m._Proj2Camera * m_CB_Camera.m._Camera2World;
 
 			m_CB_Camera.UpdateData();
 		}
