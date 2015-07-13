@@ -165,15 +165,17 @@ void	ComputeShader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pCS ) {
 		m_bHasErrors = true;
 }
 
-void	ComputeShader::Use()
+bool	ComputeShader::Use()
 {
 	if ( !Lock() )
-		return;	// Someone else is locking it !
+		return false;	// Someone else is locking it !
 
 	m_Device.DXContext().CSSetShader( m_pCS, NULL, 0 );
 	ms_pCurrentShader = this;
 
 	Unlock();
+
+	return true;
 }
 
 void	ComputeShader::Dispatch( int _GroupsCountX, int _GroupsCountY, int _GroupsCountZ )

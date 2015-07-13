@@ -129,6 +129,7 @@ namespace RendererManaged
 		static float4	operator-( float4 a )			{ return float4( -a.x, -a.y, -a.z, -a.w ); }
 		static float4	operator*( float a, float4 b )	{ return float4( a*b.x, a*b.y, a*b.z, a*b.w ); }
 		static float4	operator*( float4 a, float b )	{ return float4( a.x*b, a.y*b, a.z*b, a.w*b ); }
+		static float4	operator/( float4 a, float b )	{ return float4( a.x/b, a.y/b, a.z/b, a.w/b ); }
 
 		static explicit operator float2( float4 a )		{ return float2( a.x, a.y ); }
 		static explicit operator float3( float4 a )		{ return float3( a.x, a.y, a.z ); }

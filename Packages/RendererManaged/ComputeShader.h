@@ -48,9 +48,9 @@ namespace RendererManaged {
 			delete m_pShader;
 		}
 
-		void	Use()
+		bool	Use()
 		{
-			m_pShader->Use();
+			return m_pShader->Use();
 		}
 
 		void	Dispatch( int _GroupsCountX, int _GroupsCountY, int _GroupsCountZ )

@@ -6,7 +6,8 @@
 //
 StructuredBuffer*	StructuredBuffer::ms_ppOutputs[D3D11_PS_CS_UAV_REGISTER_COUNT] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
-StructuredBuffer::StructuredBuffer( Device& _Device, int _ElementSize, int _ElementsCount, bool _bWriteable ) : Component( _Device )
+StructuredBuffer::StructuredBuffer( Device& _Device, int _ElementSize, int _ElementsCount, bool _bWriteable )
+	: Component( _Device )
 {
 	ASSERT( _ElementSize > 0, "Buffer must have at least one element!" );
 	ASSERT( (_ElementSize&3)==0, "Element size must be a multiple of 4!" );
@@ -149,8 +150,7 @@ void	StructuredBuffer::SetInput( int _SlotIndex )
 	m_LastAssignedSlots[5] = _SlotIndex;
 }
 
-void	StructuredBuffer::SetOutput( int _SlotIndex )
-{
+void	StructuredBuffer::SetOutput( int _SlotIndex ) {
 #ifdef _DEBUG
 	ASSERT( ms_ppOutputs[_SlotIndex] != this, "StructureBuffer already assigned to this output slot! It's only a warning, you can ignore this but you should consider removing this redundant SetOutput() from your code..." );
 #endif
