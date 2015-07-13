@@ -15,7 +15,7 @@ namespace Project4D
 	// 4D Projection is done using information from http://steve.hollasch.net/thesis/chapter4.html
 	public partial class ProjectForm : Form
 	{
-		const int	POINTS_COUNT = 256 * 100;
+		const int	POINTS_COUNT = 256 * 200;
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Camera {
@@ -37,6 +37,12 @@ namespace Project4D
 			public float		_CameraTanHalfFOV;
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_Simulation {
+			public uint			_Flags;
+			public float		_TimeStep;
+		}
+
 // 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 // 		private struct SB_Point {
 // 			public float3		__Position;	// Projected position + Z
@@ -45,14 +51,17 @@ namespace Project4D
 
 		private Device				m_Device = new Device();
 
-		private ConstantBuffer<CB_Camera>	m_CB_Camera = null;
-		private ConstantBuffer<CB_Camera4D>	m_CB_Camera4D = null;
+		private ConstantBuffer<CB_Camera>		m_CB_Camera = null;
+		private ConstantBuffer<CB_Camera4D>		m_CB_Camera4D = null;
+		private ConstantBuffer<CB_Simulation>	m_CB_Simulation = null;
 
-		private StructuredBuffer<float4>	m_SB_Points4D = null;
+		private StructuredBuffer<float4>	m_SB_Velocities4D = null;
+		private StructuredBuffer<float4>[]	m_SB_Points4D = new StructuredBuffer<float4>[2];
 		private StructuredBuffer<float4>	m_SB_Points2D = null;
 
 		private Primitive			m_PrimQuad = null;
 
+		private ComputeShader		m_CS_Simulator = null;
 		private ComputeShader		m_CS_Project4D = null;
 		private Shader				m_PS_Display = null;
 
@@ -66,6 +75,7 @@ namespace Project4D
 		private float4				m_CameraOver4D = float4.UnitZ;
 
 		private DateTime			m_StartTime = DateTime.Now;
+		private DateTime			m_LastTime = DateTime.Now;
 
 		public ProjectForm()
 		{
@@ -91,11 +101,13 @@ namespace Project4D
 				return;
 			}
 
+			m_CS_Simulator = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Simulator.hlsl" ) ), "CS", null );
 			m_CS_Project4D = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Project4D.hlsl" ) ), "CS", null );
 			m_PS_Display = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Display.hlsl" ) ), VERTEX_FORMAT.T2, "VS", null, "PS", null );
 
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
 			m_CB_Camera4D = new ConstantBuffer<CB_Camera4D>( m_Device, 2 );
+			m_CB_Simulation = new ConstantBuffer<CB_Simulation>( m_Device, 3 );
 
 			{
 				VertexT2[]	Vertices = new VertexT2[4] {
@@ -109,20 +121,12 @@ namespace Project4D
 
 			/////////////////////////////////////////////////////////////////////////////////////
 			// Create and fill the structured buffers with initial points lying on the surface of a hypersphere
-			m_SB_Points4D = new StructuredBuffer<float4>( m_Device, POINTS_COUNT, true );
+			m_SB_Velocities4D = new StructuredBuffer<float4>( m_Device, POINTS_COUNT, true );
+			m_SB_Points4D[0] = new StructuredBuffer<float4>( m_Device, POINTS_COUNT, true );
+			m_SB_Points4D[1] = new StructuredBuffer<float4>( m_Device, POINTS_COUNT, true );
 			m_SB_Points2D = new StructuredBuffer<float4>( m_Device, POINTS_COUNT, false );
 
-			Random	RNG = new Random( 1 );
-			float4	temp = new float4();
-			for ( int i=0; i < POINTS_COUNT; i++ ) {
-				temp.x = (float) (2.0 * RNG.NextDouble() - 1.0);
-				temp.y = (float) (2.0 * RNG.NextDouble() - 1.0);
-				temp.z = (float) (2.0 * RNG.NextDouble() - 1.0);
-				temp.w = (float) (2.0 * RNG.NextDouble() - 1.0);
-				temp = temp.Normalized;	// Makes the point lie on a hypersphere of radius 1
-				m_SB_Points4D.m[i] = temp;
-			}
-			m_SB_Points4D.Write();	// Upload
+			buttonInit_Click( buttonInit, EventArgs.Empty );
 
 			/////////////////////////////////////////////////////////////////////////////////////
 			// Setup camera
@@ -137,8 +141,11 @@ namespace Project4D
 				return;
 
 			m_SB_Points2D.Dispose();
-			m_SB_Points4D.Dispose();
+			m_SB_Points4D[0].Dispose();
+			m_SB_Points4D[1].Dispose();
+			m_SB_Velocities4D.Dispose();
 
+			m_CB_Simulation.Dispose();
 			m_CB_Camera4D.Dispose();
 			m_CB_Camera.Dispose();
 
@@ -146,6 +153,7 @@ namespace Project4D
 
 			m_PS_Display.Dispose();
 			m_CS_Project4D.Dispose();
+			m_CS_Simulator.Dispose();
 
 			m_Device.Exit();
 
@@ -196,6 +204,8 @@ namespace Project4D
 
 			DateTime	currentTime = DateTime.Now;
 			double		time = (float) (currentTime - m_StartTime).TotalSeconds;
+			double		deltaTime = (float) (currentTime - m_LastTime).TotalSeconds;
+			m_LastTime = currentTime;
 
 
 			/////////////////////////////////////////////////////////////////////////////////////
@@ -228,17 +238,43 @@ namespace Project4D
 
 			m_CB_Camera4D.UpdateData();
 
+
+			/////////////////////////////////////////////////////////////////////////////////////
+			// Simulate
+			if ( m_CS_Simulator.Use() ) {
+				m_SB_Points4D[0].RemoveFromLastAssignedSlots();
+
+				m_SB_Points4D[0].SetInput( 0 );
+				m_SB_Velocities4D.SetInput( 1 );
+				m_SB_Points4D[1].SetOutput( 0 );
+
+				float	timeStep = floatTrackbarControlTimeStep.Value * (float) (deltaTime / 0.01);	// Compensate for variations in delta time based on the default 10ms timer delay
+
+				m_CB_Simulation.m._Flags = 0;
+				m_CB_Simulation.m._TimeStep = checkBoxSimulate.Checked ? timeStep : 0.0f;
+				m_CB_Simulation.UpdateData();
+
+				int	groupsCount = POINTS_COUNT >> 8;
+				m_CS_Simulator.Dispatch( groupsCount, 1, 1 );
+
+				StructuredBuffer<float4>	Temp = m_SB_Points4D[0];
+				m_SB_Points4D[0] = m_SB_Points4D[1];
+				m_SB_Points4D[1] = Temp;
+			}
+
+
 			/////////////////////////////////////////////////////////////////////////////////////
 			// Transform points from 4D to 2D using compute shader
 			if ( m_CS_Project4D.Use() ) {
-				m_SB_Points4D.SetInput( 0 );
-				m_SB_Points2D.SetOutput( 0 );
-
 				m_SB_Points2D.RemoveFromLastAssignedSlots();
+
+				m_SB_Points4D[0].SetInput( 0 );
+				m_SB_Points2D.SetOutput( 0 );
 
 				int	groupsCount = POINTS_COUNT >> 8;
 				m_CS_Project4D.Dispatch( groupsCount, 1, 1 );
 			}
+
 
 			/////////////////////////////////////////////////////////////////////////////////////
 			// Render points
@@ -262,6 +298,107 @@ namespace Project4D
 		{
 			if ( m_Device != null )
 				m_Device.ReloadModifiedShaders();
+		}
+
+		private void buttonInit_Click( object sender, EventArgs e )
+		{
+			int	initType = radioButton1.Checked ? 1 : radioButton2.Checked ? 2 : radioButton3.Checked ? 3 : radioButton4.Checked ? 4 : radioButton5.Checked ? 5 : 0;
+				
+			Random	RNG = new Random( 1 );
+			float3	temp3 = new float3();
+			float4	temp = new float4();
+
+			// Initialize positions
+			StructuredBuffer<float4>	buffer = m_SB_Points4D[0];
+			switch ( initType ) {
+				case 1:	// Big Bang
+					temp = new float4( 0, 0, 0, 1 );
+					for ( int i=0; i < POINTS_COUNT; i++ )
+						buffer.m[i] = temp;
+					break;
+
+				case 2:	// X translation
+					for ( int i=0; i < POINTS_COUNT; i++ ) {
+						temp3.x = (float) (2.0 * RNG.NextDouble() - 1.0);
+						temp3.y = (float) (2.0 * RNG.NextDouble() - 1.0);
+						temp3.z = (float) (2.0 * RNG.NextDouble() - 1.0);
+//						temp3 = temp3.Normalized;
+						temp.x = -100.0f;
+						temp.y = temp3.x;
+						temp.z = temp3.y;
+						temp.w = temp3.z;
+						temp = temp.Normalized;	// Makes the point lie on a hypersphere of radius 1
+						buffer.m[i] = temp;
+					}
+					break;
+
+				case 5:	// W translation
+					for ( int i=0; i < POINTS_COUNT; i++ ) {
+						temp3.x = (float) (2.0 * RNG.NextDouble() - 1.0);
+						temp3.y = (float) (2.0 * RNG.NextDouble() - 1.0);
+						temp3.z = (float) (2.0 * RNG.NextDouble() - 1.0);
+//						temp3 = temp3.Normalized;
+						temp.x = temp3.x;
+						temp.y = temp3.y;
+						temp.z = temp3.z;
+						temp.w = -100.0f;
+						temp = temp.Normalized;	// Makes the point lie on a hypersphere of radius 1
+						buffer.m[i] = temp;
+					}
+					break;
+
+				default:	// Total random
+					for ( int i=0; i < POINTS_COUNT; i++ ) {
+						temp.x = (float) (2.0 * RNG.NextDouble() - 1.0);
+						temp.y = (float) (2.0 * RNG.NextDouble() - 1.0);
+						temp.z = (float) (2.0 * RNG.NextDouble() - 1.0);
+						temp.w = (float) (2.0 * RNG.NextDouble() - 1.0);
+						temp = temp.Normalized;	// Makes the point lie on a hypersphere of radius 1
+						buffer.m[i] = temp;
+					}
+					break;
+			}
+			buffer.Write();	// Upload
+
+			// Initialize velocities
+			switch ( initType ) {
+				case 0:
+					temp = float4.Zero;
+					for ( int i=0; i < POINTS_COUNT; i++ )
+						m_SB_Velocities4D.m[i] = temp;
+					break;
+				case 1:
+					for ( int i=0; i < POINTS_COUNT; i++ ) {
+						temp.x = (float) (2.0 * RNG.NextDouble() - 1.0);
+						temp.y = (float) (2.0 * RNG.NextDouble() - 1.0);
+						temp.z = (float) (2.0 * RNG.NextDouble() - 1.0);
+						temp.w = (float) (2.0 * RNG.NextDouble() - 1.0);
+						temp = temp.Normalized;	// Makes the point lie on a hypersphere of radius 1
+						m_SB_Velocities4D.m[i] = temp;
+					}
+					break;
+				case 2:
+					temp = float4.UnitX;
+					for ( int i=0; i < POINTS_COUNT; i++ )
+						m_SB_Velocities4D.m[i] = temp;
+					break;
+				case 3:
+					temp = float4.UnitY;
+					for ( int i=0; i < POINTS_COUNT; i++ )
+						m_SB_Velocities4D.m[i] = temp;
+					break;
+				case 4:
+					temp = float4.UnitZ;
+					for ( int i=0; i < POINTS_COUNT; i++ )
+						m_SB_Velocities4D.m[i] = temp;
+					break;
+				case 5:
+					temp = float4.UnitW;
+					for ( int i=0; i < POINTS_COUNT; i++ )
+						m_SB_Velocities4D.m[i] = temp;
+					break;
+			}
+			m_SB_Velocities4D.Write();	// Upload
 		}
 	}
 }

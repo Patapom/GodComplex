@@ -93,6 +93,7 @@
     <Content Include="Shaders\Global.hlsl" />
     <Content Include="Shaders\Display.hlsl" />
     <Content Include="Shaders\Project4D.hlsl" />
+    <Content Include="Shaders\Simulator.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Shaders\Binary\" />

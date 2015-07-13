@@ -2,6 +2,8 @@
 //
 #include "Global.hlsl"
 
+static const uint	TOTAL_POINTS_COUNT = 200 * 256;
+
 cbuffer CB_Camera4D : register(b2) {
 	float4	_Camera4DPosition;
 	float4	_Camera4DX;				// Camera vectors are already factored by 1/Far clip
@@ -25,13 +27,12 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	uint	pointIndex = _DispatchThreadID.x;
 
 	// Transform into 4D camera space
-#if 0
+#if 1
 	float4	wsPosition4 = _BufferPointsIn[pointIndex];
 #else
-	const uint	TOTAL = 100 * 256;
-	float	phi = 2.0 * PI * pointIndex / TOTAL;
-	float	theta = 2.0 * acos( sqrt( sin( 43789.34 * pointIndex / TOTAL ) ) );
-	float	alpha = sin( 13787.16 * pointIndex / TOTAL );
+	float	phi = 2.0 * PI * pointIndex / TOTAL_POINTS_COUNT;
+	float	theta = 2.0 * acos( sqrt( sin( 43789.34 * pointIndex / TOTAL_POINTS_COUNT ) ) );
+	float	alpha = sin( 13787.16 * pointIndex / TOTAL_POINTS_COUNT );
 	float4	wsPosition4 = float4( sin(theta)*cos(phi), cos(theta), sin(theta)*sin(phi), alpha );
 #endif
 	
@@ -50,15 +51,14 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 	// Project into 2D space
 #if 1
-	float4	wsPosition3 = float4( csPosition4.xyz, 1.0 );
+	float3	wsPosition3 = csPosition4.xyz;
 #else
-	const uint	TOTAL = 100 * 256;
-	float	phi = 2.0 * PI * pointIndex / TOTAL;
-	float	theta = 2.0 * acos( sqrt( sin( 43789.34 * pointIndex / TOTAL ) ) );
-	float4	wsPosition3 = float4( sin(theta)*cos(phi), cos(theta), sin(theta)*sin(phi), 1.0 );
+	float	phi2 = 2.0 * PI * pointIndex / TOTAL_POINTS_COUNT;
+	float	theta2 = 2.0 * acos( sqrt( sin( 43789.34 * pointIndex / TOTAL_POINTS_COUNT ) ) );
+	float3	wsPosition3 = float3( sin(theta2)*cos(phi2), cos(theta2), sin(theta2)*sin(phi2) );
 #endif
 
-	float4	projPosition3 = mul( wsPosition3, _World2Proj );
+	float4	projPosition3 = mul( float4( wsPosition3, 1.0 ), _World2Proj );
 			projPosition3 /= projPosition3.w;
 
 //projPosition3.x = -1.0 + 2.0 * pointIndex / 100000;
