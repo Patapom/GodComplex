@@ -316,3 +316,6 @@ obj
 /Utility/SHProbeEncoder/\[Originals\]/IMG_0661.JPG
 /Tools/*.pdb
 /Tools/RendererManaged.dll
+/Tools/GenerateSelfShadowedBumpMap/eye_generic_01_disp_hl2.png
+/Tools/GenerateSelfShadowedBumpMap/eye_generic_01_disp_hl2_100rays.png
+/Tools/GenerateSelfShadowedBumpMap/eye_generic_01_disp_hl2_40rays.png
