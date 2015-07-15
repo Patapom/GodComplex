@@ -51,6 +51,7 @@ public:		// METHODS
 
 	// Removes the structured buffer from any last assigned SRV slots
 	void			RemoveFromLastAssignedSlots() const;
+	void			RemoveFromLastAssignedSlotUAV() const;
 };
 
 

@@ -116,7 +116,7 @@ public:	 // METHODS
 	bool			SetUnorderedAccessView( const char* _pBufferName, StructuredBuffer& _Buffer );
 #endif
 
-	void			Use();
+	bool			Use();
 
 	// Runs the compute shader using as many thread groups as necessary
 	//	_GroupsCountXYZ, the amount of thread groups to run the shader on (up to 65535)
