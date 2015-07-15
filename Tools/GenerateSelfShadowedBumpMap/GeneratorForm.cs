@@ -30,20 +30,28 @@ namespace GenerateSelfShadowedBumpMap
 		#region NESTED TYPES
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		private struct	CBInput
-		{
+		private struct	CBInput {
 			public UInt32	Y0;					// Index of the texture line we're processing
 			public UInt32	RaysCount;			// Amount of rays in the structured buffer
 			public UInt32	MaxStepsCount;		// Maximum amount of steps to take before stopping
 			public UInt32	Tile;				// Tiling flag
 			public float	TexelSize_mm;		// Size of a texel (in millimeters)
 			public float	Displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
-			public float	MediumDensity;		// (TRANSLUCENCY) Density of the medium controlling extinction
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		private struct	CBFilter
-		{
+		private struct	CBInput2 {
+			public UInt32	Y0;					// Index of the texture line we're processing
+			public UInt32	RaysCount;			// Amount of rays in the structured buffer
+// 			public UInt32	MaxStepsCount;		// Maximum amount of steps to take before stopping
+			public UInt32	Tile;				// Tiling flag
+			public float	TexelSize_mm;		// Size of a texel (in millimeters)
+			public float	Displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
+			public float	MediumDensity;		// Density of the medium controlling extinction
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct	CBFilter {
 			public UInt32	Y0;					// Index of the texture line we're processing
 			public float	Radius;				// Radius of the bilateral filter
 			public float	Tolerance;			// Range tolerance of the bilateral filter
@@ -68,11 +76,14 @@ namespace GenerateSelfShadowedBumpMap
 		private RendererManaged.Texture2D		m_TextureTarget_CPU = null;
 
 		// SSBump Generation
-		private RendererManaged.ConstantBuffer<CBInput>	m_CB_Input;
+		private RendererManaged.ConstantBuffer<CBInput>						m_CB_Input;
 		private RendererManaged.StructuredBuffer<RendererManaged.float3>	m_SB_Rays = null;
-		private RendererManaged.ComputeShader	m_CS_GenerateSSBumpMap = null;
+		private RendererManaged.ComputeShader								m_CS_GenerateSSBumpMap = null;
+
 		// Directional Translucency Map Generation
-		private RendererManaged.ComputeShader	m_CS_GenerateTranslucencyMap = null;
+		private RendererManaged.ConstantBuffer<CBInput2>					m_CB_Input2;
+		private RendererManaged.StructuredBuffer<RendererManaged.float3>	m_SB_Rays2 = null;
+		private RendererManaged.ComputeShader								m_CS_GenerateTranslucencyMap = null;
 
 		// Bilateral filtering pre-processing
 		private RendererManaged.ConstantBuffer<CBFilter>	m_CB_Filter;
@@ -91,8 +102,8 @@ namespace GenerateSelfShadowedBumpMap
 
 
 // Remove unused tabs until we make them work
-tabControlGenerators.TabPages.RemoveAt( 1 );
-tabControlGenerators.TabPages.RemoveAt( 1 );
+//tabControlGenerators.TabPages.RemoveAt( 1 );
+tabControlGenerators.TabPages.RemoveAt( 2 );
 
  			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\SSBumpMapGenerator" );
 			m_ApplicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );
@@ -102,34 +113,37 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 		{
  			base.OnLoad(e);
 
-			try
-			{
+			try {
 				m_Device.Init( viewportPanelResult.Handle, false, true );
 
 				// Create our compute shaders
 #if DEBUG
 				m_CS_GenerateSSBumpMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
 				m_CS_BilateralFilter = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
+
 				m_CS_GenerateTranslucencyMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateTranslucencyMap.hlsl" ) ), "CS", null );
 #else
 				m_CS_GenerateSSBumpMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
 				m_CS_BilateralFilter = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
-//				m_CS_GenerateTranslucencyMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateTranslucencyMap.fxbin" ), "CS" );
+
+				m_CS_GenerateTranslucencyMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateTranslucencyMap.fxbin" ), "CS" );
 #endif
 
 				// Create our constant buffers
 				m_CB_Input = new RendererManaged.ConstantBuffer<CBInput>( m_Device, 0 );
+				m_CB_Input2 = new RendererManaged.ConstantBuffer<CBInput2>( m_Device, 0 );
 				m_CB_Filter = new RendererManaged.ConstantBuffer<CBFilter>( m_Device, 0 );
 
 				// Create our structured buffer containing the rays
 				m_SB_Rays = new RendererManaged.StructuredBuffer<RendererManaged.float3>( m_Device, 3 * MAX_THREADS, true );
+				m_SB_Rays2 = new RendererManaged.StructuredBuffer<RendererManaged.float3>( m_Device, 3 * MAX_THREADS, true );
 				integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
+				integerTrackbarControlRaysCount2_ValueChanged( integerTrackbarControlRaysCount, 0 );
 
 //				LoadHeightMap( new System.IO.FileInfo( "eye_generic_01_disp.png" ) );
 //				LoadHeightMap( new System.IO.FileInfo( "10 - Smooth.jpg" ) );
-			}
-			catch ( Exception _e )
-			{
+
+			} catch ( Exception _e ) {
 				MessageBox( "Failed to create DX11 device and default shaders:\r\n", _e );
 				Close();
 			}
@@ -145,14 +159,15 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 			{
 				components.Dispose();
 
-				try
-				{
-//					m_CS_GenerateTranslucencyMap.Dispose();
+				try {
+					m_CS_GenerateTranslucencyMap.Dispose();
 					m_CS_GenerateSSBumpMap.Dispose();
 					m_CS_BilateralFilter.Dispose();
 
+					m_SB_Rays2.Dispose();
 					m_SB_Rays.Dispose();
 					m_CB_Filter.Dispose();
+					m_CB_Input2.Dispose();
 					m_CB_Input.Dispose();
 
 					if ( m_TextureTarget_CPU != null )
@@ -165,10 +180,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 						m_TextureSource.Dispose();
 
 					m_Device.Dispose();
-				}
-				catch ( Exception )
-				{
-					
+				} catch ( Exception ) {
 				}
 			}
 			base.Dispose( disposing );
@@ -222,10 +234,8 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 			m_TextureTarget_CPU = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, true, false, null );
 		}
 
-		private unsafe void	Generate()
-		{
-			try
-			{
+		private unsafe void	Generate() {
+			try {
 				tabControlGenerators.Enabled = false;
 
 				//////////////////////////////////////////////////////////////////////////
@@ -248,7 +258,8 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 				m_CB_Input.m.Displacement_mm = 10.0f * floatTrackbarControlHeight.Value;
 
 				// Start
-				m_CS_GenerateSSBumpMap.Use();
+				if ( !m_CS_GenerateSSBumpMap.Use() )
+					throw new Exception( "Can't generate self-shadowed bump map as compute shader failed to compile!" );
 
 				int	h = Math.Max( 1, MAX_LINES*1024 / W );
 				int	CallsCount = (int) Math.Ceiling( (float) H / h );
@@ -273,6 +284,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 // 				m_CB_Input.UpdateData();
 // 				m_CS_GenerateSSBumpMap.Dispatch( W, H, 1 );
 
+
 				//////////////////////////////////////////////////////////////////////////
 				// 3] Copy target to staging for CPU readback and update the resulting bitmap
 				m_TextureTarget_CPU.CopyFrom( m_TextureTarget1 );
@@ -301,21 +313,16 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 
 				// Assign result
 				viewportPanelResult.Image = m_BitmapResult;
-			}
-			catch ( Exception _e )
-			{
+
+			} catch ( Exception _e ) {
 				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
-			}
-			finally
-			{
+			} finally {
 				tabControlGenerators.Enabled = true;
 			}
 		}
 
-		private unsafe void	GenerateTranslucency()
-		{
-			try
-			{
+		private unsafe void	GenerateTranslucency() {
+			try {
 				tabControlGenerators.Enabled = false;
 
 				//////////////////////////////////////////////////////////////////////////
@@ -329,17 +336,18 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 				// Prepare computation parameters
 				m_TextureTarget0.SetCS( 0 );
 				m_TextureTarget1.SetCSUAV( 0 );
-				m_SB_Rays.SetInput( 1 );
+				m_SB_Rays2.SetInput( 1 );
 
-				m_CB_Input.m.RaysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount2.Value );
-				m_CB_Input.m.MaxStepsCount = (UInt32) integerTrackbarControlMaxStepsCountTr.Value;
-				m_CB_Input.m.Tile = (uint) (checkBoxWrapTr.Checked ? 1 : 0);
-				m_CB_Input.m.TexelSize_mm = 1000.0f / floatTrackbarControlPixelDensityTr.Value;
-				m_CB_Input.m.Displacement_mm = 10.0f * floatTrackbarControlThickness.Value;
-				m_CB_Input.m.MediumDensity = floatTrackbarControlDensity.Value;
+				m_CB_Input2.m.RaysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount2.Value );
+//				m_CB_Input2.m.MaxStepsCount = (UInt32) integerTrackbarControlMaxStepsCountTr.Value;
+				m_CB_Input2.m.Tile = (uint) (checkBoxWrapTr.Checked ? 1 : 0);
+				m_CB_Input2.m.TexelSize_mm = 1000.0f / floatTrackbarControlPixelDensityTr.Value;
+				m_CB_Input2.m.Displacement_mm = 10.0f * floatTrackbarControlThickness.Value;
+				m_CB_Input2.m.MediumDensity = floatTrackbarControlDensity.Value;
 
 				// Start
-				m_CS_GenerateTranslucencyMap.Use();
+				if ( !m_CS_GenerateTranslucencyMap.Use() )
+					throw new Exception( "Can't generate translucency map as compute shader failed to compile!" );
 
 				int	h = Math.Max( 1, MAX_LINES*1024 / W );
 				int	CallsCount = (int) Math.Ceiling( (float) H / h );
@@ -359,11 +367,6 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 
 				progressBar.Value = progressBar.Maximum;
 
-				// Compute in a single shot (this is madness!)
-// 				m_CB_Input.m.y = 0;
-// 				m_CB_Input.UpdateData();
-// 				m_CS_GenerateSSBumpMap.Dispatch( W, H, 1 );
-
 				//////////////////////////////////////////////////////////////////////////
 				// 3] Copy target to staging for CPU readback and update the resulting bitmap
 				m_TextureTarget_CPU.CopyFrom( m_TextureTarget1 );
@@ -392,19 +395,15 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 
 				// Assign result
 				viewportPanelResult.Image = m_BitmapResult;
-			}
-			catch ( Exception _e )
-			{
+
+			} catch ( Exception _e ) {
 				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
-			}
-			finally
-			{
+			} finally {
 				tabControlGenerators.Enabled = true;
 			}
 		}
 
-		private void	ApplyBilateralFiltering( RendererManaged.Texture2D _Source, RendererManaged.Texture2D _Target, float _BilateralRadius, float _BilateralTolerance, bool _Wrap )
-		{
+		private void	ApplyBilateralFiltering( RendererManaged.Texture2D _Source, RendererManaged.Texture2D _Target, float _BilateralRadius, float _BilateralTolerance, bool _Wrap ) {
 			_Source.SetCS( 0 );
 			_Target.SetCSUAV( 0 );
 
@@ -436,8 +435,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 			_Target.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
 		}
 
-		private void	GenerateRays( int _RaysCount )
-		{
+		private void	GenerateRays( int _RaysCount, RendererManaged.StructuredBuffer<RendererManaged.float3> _Target ) {
 			_RaysCount = Math.Min( MAX_THREADS, _RaysCount );
 
 			// Half-Life 2 basis
@@ -454,8 +452,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 				(float) Math.Atan2( HL2Basis[2].y, HL2Basis[2].x ),
 			};
 
-			for ( int RayIndex=0; RayIndex < _RaysCount; RayIndex++ )
-			{
+			for ( int RayIndex=0; RayIndex < _RaysCount; RayIndex++ ) {
 				double	Phi = (Math.PI / 3.0) * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0);
 
 				// Stratified version
@@ -475,18 +472,18 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 				CosTheta *= LengthFactor;
 				SinTheta *= LengthFactor;	// Yeah, yields 1... :)
 
-				m_SB_Rays.m[0*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[0] + Phi ) * SinTheta),
-															(float) (Math.Sin( CenterPhi[0] + Phi ) * SinTheta),
-															(float) CosTheta );
-				m_SB_Rays.m[1*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[1] + Phi ) * SinTheta),
-															(float) (Math.Sin( CenterPhi[1] + Phi ) * SinTheta),
-															(float) CosTheta );
-				m_SB_Rays.m[2*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[2] + Phi ) * SinTheta),
-															(float) (Math.Sin( CenterPhi[2] + Phi ) * SinTheta),
-															(float) CosTheta );
+				_Target.m[0*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[0] + Phi ) * SinTheta),
+														(float) (Math.Sin( CenterPhi[0] + Phi ) * SinTheta),
+														(float) CosTheta );
+				_Target.m[1*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[1] + Phi ) * SinTheta),
+														(float) (Math.Sin( CenterPhi[1] + Phi ) * SinTheta),
+														(float) CosTheta );
+				_Target.m[2*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[2] + Phi ) * SinTheta),
+														(float) (Math.Sin( CenterPhi[2] + Phi ) * SinTheta),
+														(float) CosTheta );
 			}
 
-			m_SB_Rays.Write();
+			_Target.Write();
 		}
 
 		#region Super Slow CPU Version (without bilateral)
@@ -793,7 +790,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 			return System.Windows.Forms.MessageBox.Show( this, _Text, "SSBumpMap Generator", _Buttons, _Icon );
 		}
 
-		#endregion
+		#endregion 
 
 		#endregion
 
@@ -812,7 +809,12 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 
 		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
 		{
-			GenerateRays( _Sender.Value );
+			GenerateRays( _Sender.Value, m_SB_Rays );
+		}
+
+		private void integerTrackbarControlRaysCount2_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
+		{
+			GenerateRays( _Sender.Value, m_SB_Rays2 );
 		}
 
 		private void radioButtonShowDirOccRGB_CheckedChanged( object sender, EventArgs e )
@@ -955,20 +957,5 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 		}
 
 		#endregion
-
-		private void outputPanelInputHeightMap_DragOver( object sender, DragEventArgs e )
-		{
-
-		}
-
-		private void outputPanelInputHeightMap_GiveFeedback( object sender, GiveFeedbackEventArgs e )
-		{
-
-		}
-
-		private void outputPanelInputHeightMap_QueryContinueDrag( object sender, QueryContinueDragEventArgs e )
-		{
-
-		}
 	}
 }
