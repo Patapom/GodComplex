@@ -1,10 +1,9 @@
 ﻿////////////////////////////////////////////////////////////////////////////////
-// Directional Translucency Map generator
-// This compute shader will generate the directional translucency map and store the result into a target UAV
+// Visibility Map generator
+// This compute shader will generate a 3D texture based containing horizon angles
+//	for a limited amount of directions, each direction is stored in a separate slice.
 ////////////////////////////////////////////////////////////////////////////////
 //
-static const uint	MAX_THREADS = 1024;
-
 static const uint	DIPOLES_COUNT = 3;	// We're using a maximum of 3 dipoles
 
 static const float	PI = 3.1415926535897932384626433832795;

@@ -22,10 +22,12 @@ namespace GenerateTranslucencyMap
 	{
 		#region CONSTANTS
 
-		private const int		MAX_THREADS = 1024;			// Maximum threads run by the compute shader
+//		private const int		MAX_THREADS = 1024;			// Maximum threads run by the compute shader
 
 		private const int		BILATERAL_PROGRESS = 50;	// Bilateral filtering is considered as this % of the total task (bilateral is quite long so I decided it was equivalent to 50% of the complete computation task)
 		private const int		MAX_LINES = 16;				// Process at most that amount of lines of a 4096x4096 image for a single dispatch
+
+		private const int		VISIBILITY_SLICES = 16;		// Maximum amount of horizon lines collected in the visibility texture
 
 		#endregion
 
@@ -68,6 +70,7 @@ namespace GenerateTranslucencyMap
 
 		private RendererManaged.Device			m_Device = new RendererManaged.Device();
 		private RendererManaged.Texture2D		m_TextureSourceThickness = null;
+		private RendererManaged.Texture3D		m_TextureSourceVisibility = null;	// Procedurally generated from thickness
 		private RendererManaged.Texture2D		m_TextureSourceNormal = null;
 		private RendererManaged.Texture2D		m_TextureSourceAlbedo = null;
 		private RendererManaged.Texture2D		m_TextureSourceTransmittance = null;
@@ -90,7 +93,10 @@ namespace GenerateTranslucencyMap
 
 		private ImageUtility.ColorProfile		m_LinearProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR );
 		private ImageUtility.ColorProfile		m_sRGBProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );
-		private ImageUtility.Bitmap				m_BitmapResult = null;
+		private ImageUtility.Bitmap				m_BitmapResult0 = null;
+		private ImageUtility.Bitmap				m_BitmapResult1 = null;
+		private ImageUtility.Bitmap				m_BitmapResult2 = null;
+		private ImageUtility.Bitmap				m_BitmapResult3 = null;
 
 		#endregion
 
@@ -127,7 +133,7 @@ namespace GenerateTranslucencyMap
 				m_CB_Input = new RendererManaged.ConstantBuffer<CBInput>( m_Device, 0 );
 
 				// Create our structured buffer containing the rays
-				m_SB_Rays = new RendererManaged.StructuredBuffer<RendererManaged.float3>( m_Device, 3 * MAX_THREADS, true );
+//				m_SB_Rays = new RendererManaged.StructuredBuffer<RendererManaged.float3>( m_Device, 3 * MAX_THREADS, true );
 				integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
 
 //				LoadHeightMap( new System.IO.FileInfo( "eye_generic_01_disp.png" ) );
@@ -171,6 +177,8 @@ namespace GenerateTranslucencyMap
 						m_TextureSourceTransmittance.Dispose();
 					if ( m_TextureSourceAlbedo != null )
 						m_TextureSourceAlbedo.Dispose();
+					if ( m_TextureSourceVisibility != null )
+						m_TextureSourceVisibility.Dispose();
 
 					m_Device.Dispose();
 				} catch ( Exception ) {
@@ -206,6 +214,9 @@ namespace GenerateTranslucencyMap
 				if ( m_TextureSourceThickness != null )
 					m_TextureSourceThickness.Dispose();
 				m_TextureSourceThickness = null;
+				if ( m_TextureSourceVisibility != null )
+					m_TextureSourceVisibility.Dispose();
+				m_TextureSourceVisibility = null;
 
 				// Load the source image assuming it's in linear space
 				m_SourceFileName = _FileName;
@@ -224,6 +235,9 @@ namespace GenerateTranslucencyMap
 
 				m_TextureSourceThickness = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, false, new RendererManaged.PixelsBuffer[] { SourceHeightMap } );
 
+				// Build the 3D visibility texture
+				m_TextureSourceVisibility = new RendererManaged.Texture3D( m_Device, W, H, VISIBILITY_SLICES, 1, RendererManaged.PIXEL_FORMAT.R16_FLOAT, false, true, null );
+
 				// Build the target UAV & staging texture for readback
 				m_TextureTarget0 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, true, null );
 				m_TextureTarget1 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
@@ -237,6 +251,8 @@ namespace GenerateTranslucencyMap
 				MessageBox( "An error occurred while opening the thickness map:\n\n", _e );
 			}
 		}
+
+		#region Images Loading
 
 		private void	LoadNormalMap( System.IO.FileInfo _FileName ) {
 			try
@@ -349,39 +365,72 @@ namespace GenerateTranslucencyMap
 			}
 		}
 
+		#endregion
+
 		private unsafe void	Generate() {
 			try {
 				groupBoxOptions.Enabled = false;
 
 				//////////////////////////////////////////////////////////////////////////
+				// 0] Fill empty textures
+				if ( m_BitmapSourceNormal == null )
+					LoadNormalMap( new System.IO.FileInfo( "default_normal.png" ) );
+				if ( m_BitmapSourceTransmittance == null )
+					LoadTransmittanceMap( new System.IO.FileInfo( "default_transmittance.png" ) );
+				if ( m_BitmapSourceAlbedo == null )
+					LoadAlbedoMap( new System.IO.FileInfo( "default_albedo.png" ) );
+
+				//////////////////////////////////////////////////////////////////////////
 				// 1] Apply bilateral filtering to the input texture as a pre-process
-				ApplyBilateralFiltering( m_TextureSourceThickness, m_TextureTarget0, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, false );
+//				ApplyBilateralFiltering( m_TextureSourceThickness, m_TextureTarget0, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, false );
+//				m_TextureTarget0.SetCS( 0 );
+
+				m_TextureSourceThickness.SetCS( 0 );
+				m_TextureSourceNormal.SetCS( 1 );
+				m_TextureSourceTransmittance.SetCS( 2 );
+				m_TextureSourceAlbedo.SetCS( 3 );
 
 
 				//////////////////////////////////////////////////////////////////////////
-				// 2] Compute directional occlusion
+				// 2] Compute visibility texture
+				if ( !m_CS_GenerateVisibilityMap.Use() )
+					throw new Exception( "Can't generate translucency map as visibility map compute shader failed to compile!" );
+
+				BuildVisibilityMap( m_TextureSourceThickness, m_TextureSourceVisibility );
+
+				m_TextureSourceVisibility.SetCS( 4 );
+
+
+				//////////////////////////////////////////////////////////////////////////
+				// 3] Compute directional occlusion
+				if ( !m_CS_GenerateTranslucencyMap.Use() )
+					throw new Exception( "Can't generate translucency map as compute shader failed to compile!" );
 
 				// Prepare computation parameters
-				m_TextureTarget0.SetCS( 0 );
+//				m_TextureTarget0.SetCS( 0 );
+m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filtering...
 				m_TextureTarget1.SetCSUAV( 0 );
-				m_SB_Rays.SetInput( 1 );
+//				m_SB_Rays.SetInput( 1 );
 
-				m_CB_Input.m.RaysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
-				m_CB_Input.m.MaxStepsCount = (UInt32) integerTrackbarControlMaxStepsCount.Value;
-				m_CB_Input.m.Tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
-				m_CB_Input.m.TexelSize_mm = 1000.0f / floatTrackbarControlPixelDensity.Value;
-//				m_CB_Input.m.Displacement_mm = 10.0f * floatTrackbarControlHeight.Value;
+				m_CB_Input.m._Width = (uint) W;
+				m_CB_Input.m._Height = (uint) H;
+				m_CB_Input.m._TexelSize_mm = 1000.0f / floatTrackbarControlPixelDensity.Value;
+				m_CB_Input.m._Thickness_mm = floatTrackbarControlThickness.Value;
+				m_CB_Input.m._KernelSize = 32;
+				m_CB_Input.m._Sigma_a = floatTrackbarControlAbsorptionCoefficient.Value;
+				m_CB_Input.m._Sigma_s = floatTrackbarControlScatteringCoefficient.Value;
+				m_CB_Input.m._g = floatTrackbarControlScatteringAnisotropy.Value;
+
+				m_CB_Input.m._Light = new RendererManaged.float3( );
+
+				m_CB_Input.UpdateData( );
+
 
 				// Start
-				if ( !m_CS_GenerateTranslucencyMap.Use() )
-					throw new Exception( "Can't generate self-shadowed bump map as compute shader failed to compile!" );
-
 				int	h = Math.Max( 1, MAX_LINES*1024 / W );
 				int	CallsCount = (int) Math.Ceiling( (float) H / h );
 				for ( int i=0; i < CallsCount; i++ )
 				{
-					m_CB_Input.m.Y0 = (UInt32) (i * h);
-					m_CB_Input.UpdateData();
 
 					m_CS_GenerateTranslucencyMap.Dispatch( W, h, 1 );
 
@@ -404,11 +453,22 @@ namespace GenerateTranslucencyMap
 				// 3] Copy target to staging for CPU readback and update the resulting bitmap
 				m_TextureTarget_CPU.CopyFrom( m_TextureTarget1 );
 
-				if ( m_BitmapResult != null )
-					m_BitmapResult.Dispose();
-				m_BitmapResult = null;
-				m_BitmapResult = new ImageUtility.Bitmap( W, H, m_LinearProfile );
-				m_BitmapResult.HasAlpha = true;
+				if ( m_BitmapResult0 != null )
+					m_BitmapResult0.Dispose();
+				if ( m_BitmapResult1 != null )
+					m_BitmapResult1.Dispose();
+				if ( m_BitmapResult2 != null )
+					m_BitmapResult2.Dispose();
+				if ( m_BitmapResult3 != null )
+					m_BitmapResult3.Dispose();
+				m_BitmapResult0 = new ImageUtility.Bitmap( W, H, m_LinearProfile );
+				m_BitmapResult1 = new ImageUtility.Bitmap( W, H, m_LinearProfile );
+				m_BitmapResult2 = new ImageUtility.Bitmap( W, H, m_LinearProfile );
+				m_BitmapResult3 = new ImageUtility.Bitmap( W, H, m_LinearProfile );
+				m_BitmapResult0.HasAlpha = true;
+				m_BitmapResult1.HasAlpha = true;
+				m_BitmapResult2.HasAlpha = true;
+				m_BitmapResult3.HasAlpha = true;
 
 				RendererManaged.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
 				using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
@@ -419,7 +479,10 @@ namespace GenerateTranslucencyMap
 						{
 							ImageUtility.float4	Color = new ImageUtility.float4( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
 							Color = m_LinearProfile.RGB2XYZ( Color );
-							m_BitmapResult.ContentXYZ[X,Y] = Color;
+							m_BitmapResult0.ContentXYZ[X,Y] = Color;
+							m_BitmapResult1.ContentXYZ[X,Y] = Color;
+							m_BitmapResult2.ContentXYZ[X,Y] = Color;
+							m_BitmapResult3.ContentXYZ[X,Y] = Color;
 						}
 					}
 
@@ -427,13 +490,22 @@ namespace GenerateTranslucencyMap
 				m_TextureTarget_CPU.UnMap( 0, 0 );
 
 				// Assign result
-				viewportPanelResult.Image = m_BitmapResult;
+				imagePanelResult0.Image = m_BitmapResult0;
+				imagePanelResult1.Image = m_BitmapResult1;
+				imagePanelResult2.Image = m_BitmapResult2;
+				imagePanelResult3.Image = m_BitmapResult3;
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
 			} finally {
 				groupBoxOptions.Enabled = true;
 			}
+		}
+
+		private void	BuildVisibilityMap( RendererManaged.Texture2D _Source, RendererManaged.Texture3D _Target ) {
+			_Source.SetCS( 0 );
+			_Target.SetCSUAV( 0 );
+
 		}
 
 		private void	ApplyBilateralFiltering( RendererManaged.Texture2D _Source, RendererManaged.Texture2D _Target, float _BilateralRadius, float _BilateralTolerance, bool _Wrap ) {
@@ -469,54 +541,54 @@ namespace GenerateTranslucencyMap
 		}
 
 		private void	GenerateRays( int _RaysCount, RendererManaged.StructuredBuffer<RendererManaged.float3> _Target ) {
-			_RaysCount = Math.Min( MAX_THREADS, _RaysCount );
-
-			// Half-Life 2 basis
-			RendererManaged.float3[]	HL2Basis = new RendererManaged.float3[] {
-				new RendererManaged.float3( (float) Math.Sqrt( 2.0 / 3.0 ), 0.0f, (float) Math.Sqrt( 1.0 / 3.0 ) ),
-				new RendererManaged.float3( -(float) Math.Sqrt( 1.0 / 6.0 ), (float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ),
-				new RendererManaged.float3( -(float) Math.Sqrt( 1.0 / 6.0 ), -(float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) )
-			};
-
-			float	CenterTheta = (float) Math.Acos( HL2Basis[0].z );
-			float[]	CenterPhi = new float[] {
-				(float) Math.Atan2( HL2Basis[0].y, HL2Basis[0].x ),
-				(float) Math.Atan2( HL2Basis[1].y, HL2Basis[1].x ),
-				(float) Math.Atan2( HL2Basis[2].y, HL2Basis[2].x ),
-			};
-
-			for ( int RayIndex=0; RayIndex < _RaysCount; RayIndex++ ) {
-				double	Phi = (Math.PI / 3.0) * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0);
-
-				// Stratified version
-				double	Theta = (Math.Acos( Math.Sqrt( (RayIndex + WMath.SimpleRNG.GetUniform()) / _RaysCount ) ));
-
-// 				// Don't give a shit version (a.k.a. melonhead version)
-// //				double	Theta = Math.Acos( Math.Sqrt(WMath.SimpleRNG.GetUniform() ) );
-// 				double	Theta = 0.5 * Math.PI * WMath.SimpleRNG.GetUniform();
-
-				Theta = Math.Min( 0.499f * Math.PI, Theta );
-
-
-				double	CosTheta = Math.Cos( Theta );
-				double	SinTheta = Math.Sin( Theta );
-
-				double	LengthFactor = 1.0 / SinTheta;	// The ray is scaled so we ensure we always walk at least a texel in the texture
-				CosTheta *= LengthFactor;
-				SinTheta *= LengthFactor;	// Yeah, yields 1... :)
-
-				_Target.m[0*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[0] + Phi ) * SinTheta),
-														(float) (Math.Sin( CenterPhi[0] + Phi ) * SinTheta),
-														(float) CosTheta );
-				_Target.m[1*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[1] + Phi ) * SinTheta),
-														(float) (Math.Sin( CenterPhi[1] + Phi ) * SinTheta),
-														(float) CosTheta );
-				_Target.m[2*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[2] + Phi ) * SinTheta),
-														(float) (Math.Sin( CenterPhi[2] + Phi ) * SinTheta),
-														(float) CosTheta );
-			}
-
-			_Target.Write();
+// 			_RaysCount = Math.Min( MAX_THREADS, _RaysCount );
+// 
+// 			// Half-Life 2 basis
+// 			RendererManaged.float3[]	HL2Basis = new RendererManaged.float3[] {
+// 				new RendererManaged.float3( (float) Math.Sqrt( 2.0 / 3.0 ), 0.0f, (float) Math.Sqrt( 1.0 / 3.0 ) ),
+// 				new RendererManaged.float3( -(float) Math.Sqrt( 1.0 / 6.0 ), (float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ),
+// 				new RendererManaged.float3( -(float) Math.Sqrt( 1.0 / 6.0 ), -(float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) )
+// 			};
+// 
+// 			float	CenterTheta = (float) Math.Acos( HL2Basis[0].z );
+// 			float[]	CenterPhi = new float[] {
+// 				(float) Math.Atan2( HL2Basis[0].y, HL2Basis[0].x ),
+// 				(float) Math.Atan2( HL2Basis[1].y, HL2Basis[1].x ),
+// 				(float) Math.Atan2( HL2Basis[2].y, HL2Basis[2].x ),
+// 			};
+// 
+// 			for ( int RayIndex=0; RayIndex < _RaysCount; RayIndex++ ) {
+// 				double	Phi = (Math.PI / 3.0) * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0);
+// 
+// 				// Stratified version
+// 				double	Theta = (Math.Acos( Math.Sqrt( (RayIndex + WMath.SimpleRNG.GetUniform()) / _RaysCount ) ));
+// 
+// // 				// Don't give a shit version (a.k.a. melonhead version)
+// // //				double	Theta = Math.Acos( Math.Sqrt(WMath.SimpleRNG.GetUniform() ) );
+// // 				double	Theta = 0.5 * Math.PI * WMath.SimpleRNG.GetUniform();
+// 
+// 				Theta = Math.Min( 0.499f * Math.PI, Theta );
+// 
+// 
+// 				double	CosTheta = Math.Cos( Theta );
+// 				double	SinTheta = Math.Sin( Theta );
+// 
+// 				double	LengthFactor = 1.0 / SinTheta;	// The ray is scaled so we ensure we always walk at least a texel in the texture
+// 				CosTheta *= LengthFactor;
+// 				SinTheta *= LengthFactor;	// Yeah, yields 1... :)
+// 
+// 				_Target.m[0*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[0] + Phi ) * SinTheta),
+// 														(float) (Math.Sin( CenterPhi[0] + Phi ) * SinTheta),
+// 														(float) CosTheta );
+// 				_Target.m[1*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[1] + Phi ) * SinTheta),
+// 														(float) (Math.Sin( CenterPhi[1] + Phi ) * SinTheta),
+// 														(float) CosTheta );
+// 				_Target.m[2*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[2] + Phi ) * SinTheta),
+// 														(float) (Math.Sin( CenterPhi[2] + Phi ) * SinTheta),
+// 														(float) CosTheta );
+// 			}
+// 
+// 			_Target.Write();
 		}
 
 		#region Helpers
@@ -666,45 +738,94 @@ namespace GenerateTranslucencyMap
 
 		private void imagePanelResult0_Click(object sender, EventArgs e)
 		{
-			if ( m_BitmapResult == null )
-			{
+			if ( m_BitmapResult0 == null ) {
 				MessageBox( "There is no result image to save!" );
 				return;
 			}
 
 			string	SourceFileName = m_SourceFileName.FullName;
-			string	TargetFileName = System.IO.Path.Combine( System.IO.Path.GetDirectoryName( SourceFileName ), System.IO.Path.GetFileNameWithoutExtension( SourceFileName ) + "_ssbump.png" );
+			string	TargetFileName = System.IO.Path.Combine( System.IO.Path.GetDirectoryName( SourceFileName ), System.IO.Path.GetFileNameWithoutExtension( SourceFileName ) + "_translucency0.png" );
 
 			saveFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( TargetFileName );
 			saveFileDialogImage.FileName = System.IO.Path.GetFileName( TargetFileName );
 			if ( saveFileDialogImage.ShowDialog( this ) != DialogResult.OK )
 				return;
 
-			try
-			{
-				m_BitmapResult.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
-
+			try {
+				m_BitmapResult0.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
 				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
-			}
-			catch ( Exception _e )
-			{
+			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving the image:\n\n", _e );
 			}
 		}
 
 		private void imagePanelResult1_Click(object sender, EventArgs e)
 		{
-		
+			if ( m_BitmapResult1 == null ) {
+				MessageBox( "There is no result image to save!" );
+				return;
+			}
+
+			string	SourceFileName = m_SourceFileName.FullName;
+			string	TargetFileName = System.IO.Path.Combine( System.IO.Path.GetDirectoryName( SourceFileName ), System.IO.Path.GetFileNameWithoutExtension( SourceFileName ) + "_translucency1.png" );
+
+			saveFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( TargetFileName );
+			saveFileDialogImage.FileName = System.IO.Path.GetFileName( TargetFileName );
+			if ( saveFileDialogImage.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			try {
+				m_BitmapResult1.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
+				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while saving the image:\n\n", _e );
+			}
 		}
 
 		private void imagePanelResult2_Click(object sender, EventArgs e)
 		{
-		
+			if ( m_BitmapResult2 == null ) {
+				MessageBox( "There is no result image to save!" );
+				return;
+			}
+
+			string	SourceFileName = m_SourceFileName.FullName;
+			string	TargetFileName = System.IO.Path.Combine( System.IO.Path.GetDirectoryName( SourceFileName ), System.IO.Path.GetFileNameWithoutExtension( SourceFileName ) + "_translucency2.png" );
+
+			saveFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( TargetFileName );
+			saveFileDialogImage.FileName = System.IO.Path.GetFileName( TargetFileName );
+			if ( saveFileDialogImage.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			try {
+				m_BitmapResult2.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
+				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while saving the image:\n\n", _e );
+			}
 		}
 
 		private void imagePanelResult3_Click(object sender, EventArgs e)
 		{
-		
+			if ( m_BitmapResult3 == null ) {
+				MessageBox( "There is no result image to save!" );
+				return;
+			}
+
+			string	SourceFileName = m_SourceFileName.FullName;
+			string	TargetFileName = System.IO.Path.Combine( System.IO.Path.GetDirectoryName( SourceFileName ), System.IO.Path.GetFileNameWithoutExtension( SourceFileName ) + "_translucency.png" );
+
+			saveFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( TargetFileName );
+			saveFileDialogImage.FileName = System.IO.Path.GetFileName( TargetFileName );
+			if ( saveFileDialogImage.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			try {
+				m_BitmapResult3.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
+				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while saving the image:\n\n", _e );
+			}
 		}
 
 		#region Thickness Map (Input)

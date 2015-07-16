@@ -52,7 +52,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID )
 	uint2	Dimensions;
 	_Source.GetDimensions( Dimensions.x, Dimensions.y );
 
-	float	H0 =  _Source.Load( int3( PixelPosition, 0 ) ).x;
+	float	H0 =  _Source.Load( uint3( PixelPosition, 0 ) ).x;
 
 	uint	SampleOffset = 4*(32*_GroupThreadID.y+_GroupThreadID.x);
 	int2	PixelOffset = 2*_GroupThreadID.xy - 32;

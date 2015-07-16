@@ -20,6 +20,8 @@ cbuffer	CBInput : register( b0 ) {
 	float3	_Light;				// Light direction (in tangent space)
 }
 
+SamplerState LinearWrap		: register( s2 );
+
 Texture2D<float>			_SourceThickness : register( t0 );
 Texture2D<float>			_SourceNormal : register( t1 );
 Texture2D<float>			_SourceTransmittance : register( t2 );
