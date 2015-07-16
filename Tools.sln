@@ -121,6 +121,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sRGBLinearConverter", "Tool
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Project4D", "Tools\Project4D\Project4D.csproj", "{DCEB6C30-109E-4672-8B6F-9A6C84B41DED}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateTranslucencyMap", "Tools\GenerateTranslucencyMap\GenerateTranslucencyMap.csproj", "{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug DirectX10|Any CPU = Debug DirectX10|Any CPU
@@ -1901,6 +1903,37 @@ Global
 		{DCEB6C30-109E-4672-8B6F-9A6C84B41DED}.Release|x64.ActiveCfg = Release|x86
 		{DCEB6C30-109E-4672-8B6F-9A6C84B41DED}.Release|x86.ActiveCfg = Release|x86
 		{DCEB6C30-109E-4672-8B6F-9A6C84B41DED}.Release|x86.Build.0 = Release|x86
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug DirectX10|Any CPU.ActiveCfg = Debug DirectX10|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug DirectX10|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug DirectX10|Mixed Platforms.Build.0 = Debug DirectX10|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug DirectX10|Win32.ActiveCfg = Debug DirectX10|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug DirectX10|x64.ActiveCfg = Debug DirectX10|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug DirectX10|x64.Build.0 = Debug DirectX10|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug DirectX10|x86.ActiveCfg = Debug DirectX10|x86
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug DirectX10|x86.Build.0 = Debug DirectX10|x86
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug|Mixed Platforms.Build.0 = Debug|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug|Win32.ActiveCfg = Debug|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug|x64.ActiveCfg = Debug|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug|x64.Build.0 = Debug|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug|x86.ActiveCfg = Debug|x86
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Debug|x86.Build.0 = Debug|x86
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Profile|Any CPU.ActiveCfg = Debug DirectX10|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Profile|Mixed Platforms.ActiveCfg = Debug DirectX10|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Profile|Mixed Platforms.Build.0 = Debug DirectX10|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Profile|Win32.ActiveCfg = Debug DirectX10|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Profile|x64.ActiveCfg = Debug DirectX10|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Profile|x64.Build.0 = Debug DirectX10|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Profile|x86.ActiveCfg = Debug DirectX10|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Release|Any CPU.ActiveCfg = Release|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Release|Mixed Platforms.ActiveCfg = Release|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Release|Mixed Platforms.Build.0 = Release|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Release|Win32.ActiveCfg = Release|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Release|x64.ActiveCfg = Release|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Release|x64.Build.0 = Release|x64
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Release|x86.ActiveCfg = Release|x86
+		{7A5BCE1A-C2E9-42CA-AF42-B35220BEDA82}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

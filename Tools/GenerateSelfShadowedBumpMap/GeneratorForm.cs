@@ -40,17 +40,6 @@ namespace GenerateSelfShadowedBumpMap
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		private struct	CBInput2 {
-			public UInt32	Y0;					// Index of the texture line we're processing
-			public UInt32	RaysCount;			// Amount of rays in the structured buffer
-// 			public UInt32	MaxStepsCount;		// Maximum amount of steps to take before stopping
-			public UInt32	Tile;				// Tiling flag
-			public float	TexelSize_mm;		// Size of a texel (in millimeters)
-			public float	Displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
-			public float	MediumDensity;		// Density of the medium controlling extinction
-		}
-
-		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct	CBFilter {
 			public UInt32	Y0;					// Index of the texture line we're processing
 			public float	Radius;				// Radius of the bilateral filter
@@ -79,11 +68,6 @@ namespace GenerateSelfShadowedBumpMap
 		private RendererManaged.ConstantBuffer<CBInput>						m_CB_Input;
 		private RendererManaged.StructuredBuffer<RendererManaged.float3>	m_SB_Rays = null;
 		private RendererManaged.ComputeShader								m_CS_GenerateSSBumpMap = null;
-
-		// Directional Translucency Map Generation
-		private RendererManaged.ConstantBuffer<CBInput2>					m_CB_Input2;
-		private RendererManaged.StructuredBuffer<RendererManaged.float3>	m_SB_Rays2 = null;
-		private RendererManaged.ComputeShader								m_CS_GenerateTranslucencyMap = null;
 
 		// Bilateral filtering pre-processing
 		private RendererManaged.ConstantBuffer<CBFilter>	m_CB_Filter;
@@ -118,27 +102,20 @@ tabControlGenerators.TabPages.RemoveAt( 2 );
 
 				// Create our compute shaders
 #if DEBUG
-				m_CS_GenerateSSBumpMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
 				m_CS_BilateralFilter = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
-
-				m_CS_GenerateTranslucencyMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateTranslucencyMap.hlsl" ) ), "CS", null );
+				m_CS_GenerateSSBumpMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
 #else
-				m_CS_GenerateSSBumpMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
 				m_CS_BilateralFilter = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
-
-				m_CS_GenerateTranslucencyMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateTranslucencyMap.fxbin" ), "CS" );
+				m_CS_GenerateSSBumpMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
 #endif
 
 				// Create our constant buffers
 				m_CB_Input = new RendererManaged.ConstantBuffer<CBInput>( m_Device, 0 );
-				m_CB_Input2 = new RendererManaged.ConstantBuffer<CBInput2>( m_Device, 0 );
 				m_CB_Filter = new RendererManaged.ConstantBuffer<CBFilter>( m_Device, 0 );
 
 				// Create our structured buffer containing the rays
 				m_SB_Rays = new RendererManaged.StructuredBuffer<RendererManaged.float3>( m_Device, 3 * MAX_THREADS, true );
-				m_SB_Rays2 = new RendererManaged.StructuredBuffer<RendererManaged.float3>( m_Device, 3 * MAX_THREADS, true );
 				integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
-				integerTrackbarControlRaysCount2_ValueChanged( integerTrackbarControlRaysCount, 0 );
 
 //				LoadHeightMap( new System.IO.FileInfo( "eye_generic_01_disp.png" ) );
 //				LoadHeightMap( new System.IO.FileInfo( "10 - Smooth.jpg" ) );
@@ -160,14 +137,11 @@ tabControlGenerators.TabPages.RemoveAt( 2 );
 				components.Dispose();
 
 				try {
-					m_CS_GenerateTranslucencyMap.Dispose();
 					m_CS_GenerateSSBumpMap.Dispose();
 					m_CS_BilateralFilter.Dispose();
 
-					m_SB_Rays2.Dispose();
 					m_SB_Rays.Dispose();
 					m_CB_Filter.Dispose();
-					m_CB_Input2.Dispose();
 					m_CB_Input.Dispose();
 
 					if ( m_TextureTarget_CPU != null )
@@ -191,47 +165,58 @@ tabControlGenerators.TabPages.RemoveAt( 2 );
 			base.OnClosing( e );
 		}
 
-		private void	LoadHeightMap( System.IO.FileInfo _FileName )
-		{
-			// Dispose of existing resources
-			if ( m_BitmapSource != null )
-				m_BitmapSource.Dispose();
-			m_BitmapSource = null;
+		private void	LoadHeightMap( System.IO.FileInfo _FileName ) {
+			try
+			{
+				tabControlGenerators.Enabled = false;
 
-			if ( m_TextureTarget_CPU != null )
-				m_TextureTarget_CPU.Dispose();
-			m_TextureTarget_CPU = null;
-			if ( m_TextureTarget0 != null )
-				m_TextureTarget0.Dispose();
-			m_TextureTarget0 = null;
-			if ( m_TextureTarget1 != null )
-				m_TextureTarget1.Dispose();
-			m_TextureTarget1 = null;
-			if ( m_TextureSource != null )
-				m_TextureSource.Dispose();
-			m_TextureSource = null;
+				// Dispose of existing resources
+				if ( m_BitmapSource != null )
+					m_BitmapSource.Dispose();
+				m_BitmapSource = null;
 
-			// Load the source image assuming it's in linear space
-			m_SourceFileName = _FileName;
-			m_BitmapSource = new ImageUtility.Bitmap( _FileName, m_LinearProfile );
-			outputPanelInputHeightMap.Image = m_BitmapSource;
+				if ( m_TextureTarget_CPU != null )
+					m_TextureTarget_CPU.Dispose();
+				m_TextureTarget_CPU = null;
+				if ( m_TextureTarget0 != null )
+					m_TextureTarget0.Dispose();
+				m_TextureTarget0 = null;
+				if ( m_TextureTarget1 != null )
+					m_TextureTarget1.Dispose();
+				m_TextureTarget1 = null;
+				if ( m_TextureSource != null )
+					m_TextureSource.Dispose();
+				m_TextureSource = null;
 
-			W = m_BitmapSource.Width;
-			H = m_BitmapSource.Height;
+				// Load the source image assuming it's in linear space
+				m_SourceFileName = _FileName;
+				m_BitmapSource = new ImageUtility.Bitmap( _FileName, m_LinearProfile );
+				outputPanelInputHeightMap.Image = m_BitmapSource;
 
-			// Build the source texture
-			RendererManaged.PixelsBuffer	SourceHeightMap = new RendererManaged.PixelsBuffer( W*H*4 );
-			using ( System.IO.BinaryWriter Wr = SourceHeightMap.OpenStreamWrite() )
-				for ( int Y=0; Y < H; Y++ )
-					for ( int X=0; X < W; X++ )
-						Wr.Write( m_BitmapSource.ContentXYZ[X,Y].y );
+				W = m_BitmapSource.Width;
+				H = m_BitmapSource.Height;
 
-			m_TextureSource = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, false, new RendererManaged.PixelsBuffer[] { SourceHeightMap } );
+				// Build the source texture
+				RendererManaged.PixelsBuffer	SourceHeightMap = new RendererManaged.PixelsBuffer( W*H*4 );
+				using ( System.IO.BinaryWriter Wr = SourceHeightMap.OpenStreamWrite() )
+					for ( int Y=0; Y < H; Y++ )
+						for ( int X=0; X < W; X++ )
+							Wr.Write( m_BitmapSource.ContentXYZ[X,Y].y );
 
-			// Build the target UAV & staging texture for readback
-			m_TextureTarget0 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, true, null );
-			m_TextureTarget1 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
-			m_TextureTarget_CPU = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, true, false, null );
+				m_TextureSource = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, false, new RendererManaged.PixelsBuffer[] { SourceHeightMap } );
+
+				// Build the target UAV & staging texture for readback
+				m_TextureTarget0 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, true, null );
+				m_TextureTarget1 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
+				m_TextureTarget_CPU = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, true, false, null );
+
+				tabControlGenerators.Enabled = true;
+				buttonGenerate.Focus();
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred while opening the image:\n\n", _e );
+			}
 		}
 
 		private unsafe void	Generate() {
@@ -284,88 +269,6 @@ tabControlGenerators.TabPages.RemoveAt( 2 );
 // 				m_CB_Input.UpdateData();
 // 				m_CS_GenerateSSBumpMap.Dispatch( W, H, 1 );
 
-
-				//////////////////////////////////////////////////////////////////////////
-				// 3] Copy target to staging for CPU readback and update the resulting bitmap
-				m_TextureTarget_CPU.CopyFrom( m_TextureTarget1 );
-
-				if ( m_BitmapResult != null )
-					m_BitmapResult.Dispose();
-				m_BitmapResult = null;
-				m_BitmapResult = new ImageUtility.Bitmap( W, H, m_LinearProfile );
-				m_BitmapResult.HasAlpha = true;
-
-				RendererManaged.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
-				using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
-					for ( int Y=0; Y < H; Y++ )
-					{
-						R.BaseStream.Position = Y * Pixels.RowPitch;
-						for ( int X=0; X < W; X++ )
-						{
-							ImageUtility.float4	Color = new ImageUtility.float4( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-							Color = m_LinearProfile.RGB2XYZ( Color );
-							m_BitmapResult.ContentXYZ[X,Y] = Color;
-						}
-					}
-
-				Pixels.Dispose();
-				m_TextureTarget_CPU.UnMap( 0, 0 );
-
-				// Assign result
-				viewportPanelResult.Image = m_BitmapResult;
-
-			} catch ( Exception _e ) {
-				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
-			} finally {
-				tabControlGenerators.Enabled = true;
-			}
-		}
-
-		private unsafe void	GenerateTranslucency() {
-			try {
-				tabControlGenerators.Enabled = false;
-
-				//////////////////////////////////////////////////////////////////////////
-				// 1] Apply bilateral filtering to the input texture as a pre-process
-				ApplyBilateralFiltering( m_TextureSource, m_TextureTarget0, floatTrackbarControlBilateralRadiusTr.Value, floatTrackbarControlBilateralToleranceTr.Value, checkBoxWrapTr.Checked );
-
-
-				//////////////////////////////////////////////////////////////////////////
-				// 2] Compute directional translucency
-
-				// Prepare computation parameters
-				m_TextureTarget0.SetCS( 0 );
-				m_TextureTarget1.SetCSUAV( 0 );
-				m_SB_Rays2.SetInput( 1 );
-
-				m_CB_Input2.m.RaysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount2.Value );
-//				m_CB_Input2.m.MaxStepsCount = (UInt32) integerTrackbarControlMaxStepsCountTr.Value;
-				m_CB_Input2.m.Tile = (uint) (checkBoxWrapTr.Checked ? 1 : 0);
-				m_CB_Input2.m.TexelSize_mm = 1000.0f / floatTrackbarControlPixelDensityTr.Value;
-				m_CB_Input2.m.Displacement_mm = 10.0f * floatTrackbarControlThickness.Value;
-				m_CB_Input2.m.MediumDensity = floatTrackbarControlDensity.Value;
-
-				// Start
-				if ( !m_CS_GenerateTranslucencyMap.Use() )
-					throw new Exception( "Can't generate translucency map as compute shader failed to compile!" );
-
-				int	h = Math.Max( 1, MAX_LINES*1024 / W );
-				int	CallsCount = (int) Math.Ceiling( (float) H / h );
-				for ( int i=0; i < CallsCount; i++ )
-				{
-					m_CB_Input.m.Y0 = (UInt32) (i * h);
-					m_CB_Input.UpdateData();
-
-					m_CS_GenerateTranslucencyMap.Dispatch( W, h, 1 );
-
-					m_Device.Present( true );
-
-					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
-//					for ( int a=0; a < 10; a++ )
-						Application.DoEvents();
-				}
-
-				progressBar.Value = progressBar.Maximum;
 
 				//////////////////////////////////////////////////////////////////////////
 				// 3] Copy target to staging for CPU readback and update the resulting bitmap
@@ -802,19 +705,9 @@ tabControlGenerators.TabPages.RemoveAt( 2 );
 //			Generate_CPU( integerTrackbarControlRaysCount.Value );
 		}
 
-		private void buttonGenerateTranslucency_Click( object sender, EventArgs e )
-		{
-			GenerateTranslucency();
-		}
-
 		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
 		{
 			GenerateRays( _Sender.Value, m_SB_Rays );
-		}
-
-		private void integerTrackbarControlRaysCount2_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
-		{
-			GenerateRays( _Sender.Value, m_SB_Rays2 );
 		}
 
 		private void radioButtonShowDirOccRGB_CheckedChanged( object sender, EventArgs e )
@@ -859,30 +752,6 @@ tabControlGenerators.TabPages.RemoveAt( 2 );
 				viewportPanelResult.ViewMode = ImagePanel.VIEW_MODE.AO_FROM_RGB;
 		}
 
-		private void outputPanelInputHeightMap_Click( object sender, EventArgs e )
-		{
-			string	OldFileName = GetRegKey( "DatabaseFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
-			openFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( OldFileName );
-			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
-			if ( openFileDialogImage.ShowDialog( this ) != DialogResult.OK )
-				return;
-
-			SetRegKey( "DatabaseFileName", openFileDialogImage.FileName );
-
-			try
-			{
-				LoadHeightMap( new System.IO.FileInfo( openFileDialogImage.FileName ) );
-
-				tabControlGenerators.Enabled = true;
-				buttonGenerate.Focus();
-			}
-			catch ( Exception _e )
-			{
-				MessageBox( "An error occurred while opening the image:\n\n", _e );
-			}
-
-		}
-
 		private unsafe void viewportPanelResult_Click( object sender, EventArgs e )
 		{
 			if ( m_BitmapResult == null )
@@ -915,6 +784,19 @@ tabControlGenerators.TabPages.RemoveAt( 2 );
 		{
 			outputPanelInputHeightMap.ViewLinear = !checkBoxShowsRGB.Checked;
 			viewportPanelResult.ViewLinear = !checkBoxShowsRGB.Checked;
+		}
+
+		private void outputPanelInputHeightMap_Click( object sender, EventArgs e )
+		{
+			string	OldFileName = GetRegKey( "DatabaseFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
+			openFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( OldFileName );
+			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
+			if ( openFileDialogImage.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			SetRegKey( "DatabaseFileName", openFileDialogImage.FileName );
+
+			LoadHeightMap( new System.IO.FileInfo( openFileDialogImage.FileName ) );
 		}
 
 		private string	m_DraggedFileName = null;
