@@ -242,6 +242,7 @@ namespace GenerateTranslucencyMap
 				if ( m_TextureSourceVisibility != null )
 					m_TextureSourceVisibility.Dispose();
 				m_TextureSourceVisibility = null;
+				m_viewerForm.m_Tex_Visibility = null;
 
 				// Load the source image assuming it's in linear space
 				m_SourceFileName = _FileName;
@@ -262,6 +263,7 @@ namespace GenerateTranslucencyMap
 
 				// Build the 3D visibility texture
 				m_TextureSourceVisibility = new RendererManaged.Texture3D( m_Device, W, H, VISIBILITY_SLICES, 1, RendererManaged.PIXEL_FORMAT.R16_FLOAT, false, true, null );
+				m_viewerForm.m_Tex_Visibility = m_TextureSourceVisibility;
 
 				// Build the target UAV & staging texture for readback
 				m_TextureTarget0 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, true, null );
@@ -435,7 +437,7 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 
 				m_CB_Input.m._Width = (uint) W;
 				m_CB_Input.m._Height = (uint) H;
-				m_CB_Input.m._TexelSize_mm = 1000.0f / floatTrackbarControlPixelDensity.Value;
+				m_CB_Input.m._TexelSize_mm = 10.0f / floatTrackbarControlPixelDensity.Value;
 				m_CB_Input.m._Thickness_mm = floatTrackbarControlThickness.Value;
 				m_CB_Input.m._KernelSize = 32;
 				m_CB_Input.m._Sigma_a = floatTrackbarControlAbsorptionCoefficient.Value;
@@ -533,7 +535,7 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 			m_CB_Visibility.m._Width = (uint) W;
 			m_CB_Visibility.m._Width = (uint) H;
 			m_CB_Visibility.m._Thickness_mm = floatTrackbarControlThickness.Value;
-			m_CB_Visibility.m._TexelSize_mm = 1000.0f / floatTrackbarControlPixelDensity.Value;
+			m_CB_Visibility.m._TexelSize_mm = 10.0f / floatTrackbarControlPixelDensity.Value;
 			m_CB_Visibility.m._DiscRadius = 32;
 
 			int	h = Math.Max( 1, MAX_LINES*1024 / W );

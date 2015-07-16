@@ -8,7 +8,7 @@ static const float	PI = 3.1415926535897932384626433832795;
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (sRGB white point) (cf. http://wiki.patapom.com/index.php/Colorimetry)
 
 static const uint	SLICES_COUNT = 16;		// Amount of azimutal slices
-static const uint	RAYS_COUNT = 32;		// Rays count per slice
+static const uint	RAYS_COUNT = 64;		// Rays count per slice
 
 cbuffer	CBInput : register( b0 )
 {
@@ -73,7 +73,13 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 	///////////////////////////////////////////////////////////////////
 	// Average angles
-	if ( rayIndex < 16 ) {
+	if ( rayIndex < 32 && RAYS_COUNT > 32 ) {
+		gs_MaximumAngle[RAYS_COUNT*sliceIndex+rayIndex+0] += gs_MaximumAngle[RAYS_COUNT*sliceIndex+rayIndex+32];
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	if ( rayIndex < 16 && RAYS_COUNT > 16 ) {
 		gs_MaximumAngle[RAYS_COUNT*sliceIndex+rayIndex+0] += gs_MaximumAngle[RAYS_COUNT*sliceIndex+rayIndex+16];
 	}
 

@@ -253,11 +253,11 @@
 			// label8
 			// 
 			this.label8.AutoSize = true;
-			this.label8.Location = new System.Drawing.Point(9, 194);
+			this.label8.Location = new System.Drawing.Point(5, 194);
 			this.label8.Name = "label8";
-			this.label8.Size = new System.Drawing.Size(81, 13);
+			this.label8.Size = new System.Drawing.Size(104, 13);
 			this.label8.TabIndex = 30;
-			this.label8.Text = "Pixels per meter";
+			this.label8.Text = "Pixels per centimeter";
 			// 
 			// floatTrackbarControlBilateralRadius
 			// 
@@ -323,8 +323,8 @@
 			this.floatTrackbarControlPixelDensity.RangeMin = 1F;
 			this.floatTrackbarControlPixelDensity.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlPixelDensity.TabIndex = 26;
-			this.floatTrackbarControlPixelDensity.Value = 512F;
-			this.floatTrackbarControlPixelDensity.VisibleRangeMax = 1024F;
+			this.floatTrackbarControlPixelDensity.Value = 200F;
+			this.floatTrackbarControlPixelDensity.VisibleRangeMax = 512F;
 			this.floatTrackbarControlPixelDensity.VisibleRangeMin = 1F;
 			// 
 			// label11

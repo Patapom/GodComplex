@@ -15,12 +15,16 @@ namespace GenerateTranslucencyMap
 	{
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct	CBDisplay {
+			public uint		_Width;
+			public uint		_Height;
 			public float	_Time;
 		}
 
 		private Device						m_Device;
 		private ConstantBuffer<CBDisplay>	m_CB_Display;
 		private Shader						m_PS_Display;
+
+		public Texture3D					m_Tex_Visibility;
 
 		private DateTime					m_StartTime = DateTime.Now;
 
@@ -40,6 +44,8 @@ namespace GenerateTranslucencyMap
 			#endif
 
 			m_CB_Display = new ConstantBuffer<CBDisplay>( m_Device, 0 );
+			m_CB_Display.m._Width = (uint) Width;
+			m_CB_Display.m._Height = (uint) Height;
 
 			Application.Idle += new EventHandler( Application_Idle );
 		}
@@ -73,7 +79,8 @@ namespace GenerateTranslucencyMap
 
 			if ( m_PS_Display.Use() ) {
 
-
+				if ( m_Tex_Visibility != null )
+					m_Tex_Visibility.SetPS( 0 );
 
 				m_Device.RenderFullscreenQuad( m_PS_Display );
 			}
