@@ -87,7 +87,7 @@ namespace GenerateSelfShadowedBumpMap
 
 // Remove unused tabs until we make them work
 //tabControlGenerators.TabPages.RemoveAt( 1 );
-tabControlGenerators.TabPages.RemoveAt( 2 );
+tabControlGenerators.TabPages.RemoveAt( 1 );
 
  			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\SSBumpMapGenerator" );
 			m_ApplicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );

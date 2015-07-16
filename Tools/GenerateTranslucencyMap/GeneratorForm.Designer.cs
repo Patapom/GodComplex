@@ -44,15 +44,15 @@
 			this.label11 = new System.Windows.Forms.Label();
 			this.label13 = new System.Windows.Forms.Label();
 			this.groupBoxOptions = new System.Windows.Forms.GroupBox();
+			this.floatTrackbarControlScatteringAnisotropy = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlRefractionIndex = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlAbsorptionCoefficient = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label2 = new System.Windows.Forms.Label();
+			this.label3 = new System.Windows.Forms.Label();
+			this.label1 = new System.Windows.Forms.Label();
 			this.imagePanelNormalMap = new GenerateTranslucencyMap.ImagePanel(this.components);
 			this.imagePanelAlbedoMap = new GenerateTranslucencyMap.ImagePanel(this.components);
 			this.imagePanelTransmittanceMap = new GenerateTranslucencyMap.ImagePanel(this.components);
-			this.label1 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlAbsorptionCoefficient = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.label2 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlScatteringAnisotropy = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.label3 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlRefractionIndex = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.imagePanelResult1 = new GenerateTranslucencyMap.ImagePanel(this.components);
 			this.imagePanelResult2 = new GenerateTranslucencyMap.ImagePanel(this.components);
 			this.imagePanelResult3 = new GenerateTranslucencyMap.ImagePanel(this.components);
@@ -146,7 +146,7 @@
 			// 
 			this.openFileDialogImage.DefaultExt = "*.png";
 			this.openFileDialogImage.Filter = "All Image Files|*.jpg;*.png;*.tga;*.tif|All Files (*.*)|*.*";
-			this.openFileDialogImage.Title = "Choose a height map to load for processing...";
+			this.openFileDialogImage.Title = "Choose a map to load for processing...";
 			// 
 			// saveFileDialogImage
 			// 
@@ -209,14 +209,14 @@
 			this.imagePanelResult0.ViewMode = GenerateTranslucencyMap.ImagePanel.VIEW_MODE.RGB;
 			this.imagePanelResult0.Click += new System.EventHandler(this.imagePanelResult0_Click);
 			// 
-			// imagePanelInputThicknessMap
+			// imagePanelThicknessMap
 			// 
 			this.imagePanelThicknessMap.AllowDrop = true;
 			this.imagePanelThicknessMap.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
 			this.imagePanelThicknessMap.Image = null;
 			this.imagePanelThicknessMap.Location = new System.Drawing.Point(12, 12);
 			this.imagePanelThicknessMap.MessageOnEmpty = "Click to load a thickness map,\r\nor drag and drop...";
-			this.imagePanelThicknessMap.Name = "imagePanelInputThicknessMap";
+			this.imagePanelThicknessMap.Name = "imagePanelThicknessMap";
 			this.imagePanelThicknessMap.Size = new System.Drawing.Size(250, 250);
 			this.imagePanelThicknessMap.TabIndex = 0;
 			this.imagePanelThicknessMap.ViewLinear = false;
@@ -399,6 +399,74 @@
 			this.groupBoxOptions.TabStop = false;
 			this.groupBoxOptions.Text = "Translucency Map Options";
 			// 
+			// floatTrackbarControlScatteringAnisotropy
+			// 
+			this.floatTrackbarControlScatteringAnisotropy.Location = new System.Drawing.Point(108, 128);
+			this.floatTrackbarControlScatteringAnisotropy.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlScatteringAnisotropy.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlScatteringAnisotropy.Name = "floatTrackbarControlScatteringAnisotropy";
+			this.floatTrackbarControlScatteringAnisotropy.RangeMax = 1F;
+			this.floatTrackbarControlScatteringAnisotropy.RangeMin = -1F;
+			this.floatTrackbarControlScatteringAnisotropy.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlScatteringAnisotropy.TabIndex = 25;
+			this.floatTrackbarControlScatteringAnisotropy.Value = 0.07F;
+			this.floatTrackbarControlScatteringAnisotropy.VisibleRangeMax = 1F;
+			this.floatTrackbarControlScatteringAnisotropy.VisibleRangeMin = -1F;
+			// 
+			// floatTrackbarControlRefractionIndex
+			// 
+			this.floatTrackbarControlRefractionIndex.Location = new System.Drawing.Point(107, 154);
+			this.floatTrackbarControlRefractionIndex.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRefractionIndex.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRefractionIndex.Name = "floatTrackbarControlRefractionIndex";
+			this.floatTrackbarControlRefractionIndex.RangeMax = 1000F;
+			this.floatTrackbarControlRefractionIndex.RangeMin = 0F;
+			this.floatTrackbarControlRefractionIndex.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlRefractionIndex.TabIndex = 25;
+			this.floatTrackbarControlRefractionIndex.Value = 1.33F;
+			this.floatTrackbarControlRefractionIndex.VisibleRangeMax = 2F;
+			// 
+			// floatTrackbarControlAbsorptionCoefficient
+			// 
+			this.floatTrackbarControlAbsorptionCoefficient.Location = new System.Drawing.Point(107, 102);
+			this.floatTrackbarControlAbsorptionCoefficient.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlAbsorptionCoefficient.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlAbsorptionCoefficient.Name = "floatTrackbarControlAbsorptionCoefficient";
+			this.floatTrackbarControlAbsorptionCoefficient.RangeMax = 1000F;
+			this.floatTrackbarControlAbsorptionCoefficient.RangeMin = 0.001F;
+			this.floatTrackbarControlAbsorptionCoefficient.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlAbsorptionCoefficient.TabIndex = 25;
+			this.floatTrackbarControlAbsorptionCoefficient.Value = 0.4F;
+			this.floatTrackbarControlAbsorptionCoefficient.VisibleRangeMax = 1F;
+			this.floatTrackbarControlAbsorptionCoefficient.VisibleRangeMin = 0.001F;
+			// 
+			// label2
+			// 
+			this.label2.AutoSize = true;
+			this.label2.Location = new System.Drawing.Point(9, 131);
+			this.label2.Name = "label2";
+			this.label2.Size = new System.Drawing.Size(87, 13);
+			this.label2.TabIndex = 29;
+			this.label2.Text = "Scatt. Anisotropy";
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point(8, 157);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(85, 13);
+			this.label3.TabIndex = 29;
+			this.label3.Text = "Refraction Index";
+			// 
+			// label1
+			// 
+			this.label1.AutoSize = true;
+			this.label1.Location = new System.Drawing.Point(8, 105);
+			this.label1.Name = "label1";
+			this.label1.Size = new System.Drawing.Size(93, 13);
+			this.label1.TabIndex = 29;
+			this.label1.Text = "Absorption (1/mm)";
+			// 
 			// imagePanelNormalMap
 			// 
 			this.imagePanelNormalMap.AllowDrop = true;
@@ -446,74 +514,6 @@
 			this.imagePanelTransmittanceMap.Click += new System.EventHandler(this.imagePanelTransmittanceMap_Click);
 			this.imagePanelTransmittanceMap.DragDrop += new System.Windows.Forms.DragEventHandler(this.imagePanelTransmittanceMap_DragDrop);
 			this.imagePanelTransmittanceMap.DragEnter += new System.Windows.Forms.DragEventHandler(this.imagePanelTransmittanceMap_DragEnter);
-			// 
-			// label1
-			// 
-			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(8, 105);
-			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(93, 13);
-			this.label1.TabIndex = 29;
-			this.label1.Text = "Absorption (1/mm)";
-			// 
-			// floatTrackbarControlAbsorptionCoefficient
-			// 
-			this.floatTrackbarControlAbsorptionCoefficient.Location = new System.Drawing.Point(107, 102);
-			this.floatTrackbarControlAbsorptionCoefficient.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlAbsorptionCoefficient.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlAbsorptionCoefficient.Name = "floatTrackbarControlAbsorptionCoefficient";
-			this.floatTrackbarControlAbsorptionCoefficient.RangeMax = 1000F;
-			this.floatTrackbarControlAbsorptionCoefficient.RangeMin = 0.001F;
-			this.floatTrackbarControlAbsorptionCoefficient.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlAbsorptionCoefficient.TabIndex = 25;
-			this.floatTrackbarControlAbsorptionCoefficient.Value = 0.4F;
-			this.floatTrackbarControlAbsorptionCoefficient.VisibleRangeMax = 1F;
-			this.floatTrackbarControlAbsorptionCoefficient.VisibleRangeMin = 0.001F;
-			// 
-			// label2
-			// 
-			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(9, 131);
-			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(87, 13);
-			this.label2.TabIndex = 29;
-			this.label2.Text = "Scatt. Anisotropy";
-			// 
-			// floatTrackbarControlScatteringAnisotropy
-			// 
-			this.floatTrackbarControlScatteringAnisotropy.Location = new System.Drawing.Point(108, 128);
-			this.floatTrackbarControlScatteringAnisotropy.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlScatteringAnisotropy.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlScatteringAnisotropy.Name = "floatTrackbarControlScatteringAnisotropy";
-			this.floatTrackbarControlScatteringAnisotropy.RangeMax = 1F;
-			this.floatTrackbarControlScatteringAnisotropy.RangeMin = -1F;
-			this.floatTrackbarControlScatteringAnisotropy.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlScatteringAnisotropy.TabIndex = 25;
-			this.floatTrackbarControlScatteringAnisotropy.Value = 0.07F;
-			this.floatTrackbarControlScatteringAnisotropy.VisibleRangeMax = 1F;
-			this.floatTrackbarControlScatteringAnisotropy.VisibleRangeMin = -1F;
-			// 
-			// label3
-			// 
-			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(8, 157);
-			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(85, 13);
-			this.label3.TabIndex = 29;
-			this.label3.Text = "Refraction Index";
-			// 
-			// floatTrackbarControlRefractionIndex
-			// 
-			this.floatTrackbarControlRefractionIndex.Location = new System.Drawing.Point(107, 154);
-			this.floatTrackbarControlRefractionIndex.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlRefractionIndex.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlRefractionIndex.Name = "floatTrackbarControlRefractionIndex";
-			this.floatTrackbarControlRefractionIndex.RangeMax = 1000F;
-			this.floatTrackbarControlRefractionIndex.RangeMin = 0F;
-			this.floatTrackbarControlRefractionIndex.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlRefractionIndex.TabIndex = 25;
-			this.floatTrackbarControlRefractionIndex.Value = 1.33F;
-			this.floatTrackbarControlRefractionIndex.VisibleRangeMax = 2F;
 			// 
 			// imagePanelResult1
 			// 

@@ -3,7 +3,7 @@
 // This compute shader will generate the directional translucency map and store the result into a target UAV
 ////////////////////////////////////////////////////////////////////////////////
 //
-static const uint	DIPOLES_COUNT = 3;	// We're using a maximum of 3 dipoles
+static const int	DIPOLES_COUNT = 3;	// We're using a maximum of 3 dipoles
 
 static const float	PI = 3.1415926535897932384626433832795;
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (sRGB white point) (cf. http://wiki.patapom.com/index.php/Colorimetry)
@@ -23,9 +23,9 @@ cbuffer	CBInput : register( b0 ) {
 SamplerState LinearWrap		: register( s2 );
 
 Texture2D<float>			_SourceThickness : register( t0 );
-Texture2D<float>			_SourceNormal : register( t1 );
-Texture2D<float>			_SourceTransmittance : register( t2 );
-Texture2D<float>			_SourceAlbedo : register( t3 );
+Texture2D<float3>			_SourceNormal : register( t1 );
+Texture2D<float3>			_SourceTransmittance : register( t2 );
+Texture2D<float3>			_SourceAlbedo : register( t3 );
 Texture3D<float>			_SourceVisibility : register( t4 );	// This is an interpolable array of 16 principal visiblity directions
 																// Each slice in the array gives the cos(horizon angle) to compare against a ray direction
 
@@ -82,15 +82,15 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 			float	d = _Thickness_mm * _SourceThickness.Load( int3( Pos, 0 ) ).x;
 
 			// Fetch local diffuse albedo and compute average diffuse reflectance
-			float3	albedo = _SourceAlbedo.Load( int3( PixelPosition, 0 ) ).xyz;
+			float3	albedo = _SourceAlbedo.Load( int3( PixelPosition, 0 ) );
 			float	rho_d = dot( LUMINANCE, albedo );								// Luminance = average albedo reflectance
 			float3	rho_t = 1.0 - albedo;
 
 			// Fetch local normal
-			float3	normal = 2.0 * _SourceNormal.SampleLevel( LinearWrap, UV, 0 ).xyz - 1.0;
+			float3	normal = 2.0 * _SourceNormal.SampleLevel( LinearWrap, UV, 0 ) - 1.0;
 
 			// Fetch local transmittance
-			float3	transmittance = _SourceTransmittance.SampleLevel( LinearWrap, UV, 0 ).xyz;
+			float3	transmittance = _SourceTransmittance.SampleLevel( LinearWrap, UV, 0 );
 			float3	sigma_tr = sqrt( 3.0 * _Sigma_a * sigma_t * transmittance );	// Effective transport coefficient (in mm^-1)
 
 			// Compute local parameters
@@ -115,7 +115,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 			// Compute irradiance for our light directions
 			float2	CurrentUV = pixel2UV * float2( 0.5 + Pos );
 			float	visibility = ComputeVisibility( CurrentUV, _Light );
-			float3	E = rho_t * visibility * saturate( normal, _Light );
+			float3	E = rho_t * visibility * saturate( dot( normal, _Light ) );
 
 			// Accumulate
 			Result += E * Tr;

@@ -1,4 +1,6 @@
-﻿//////////////////////////////////////////////////////////////////////////
+﻿#define BISOU
+
+//////////////////////////////////////////////////////////////////////////
 // Implements the Directional Translucency Map from Habel "Physically Based Real-Time Translucency for Leaves" (2007)
 // Source: https://www.cg.tuwien.ac.at/research/publications/2007/Habel_2007_RTT/
 // 
@@ -24,7 +26,8 @@ namespace GenerateTranslucencyMap
 
 //		private const int		MAX_THREADS = 1024;			// Maximum threads run by the compute shader
 
-		private const int		BILATERAL_PROGRESS = 50;	// Bilateral filtering is considered as this % of the total task (bilateral is quite long so I decided it was equivalent to 50% of the complete computation task)
+		private const int		BILATERAL_PROGRESS = 40;	// Bilateral filtering is considered as this % of the total task (bilateral is quite long so I decided it was equivalent to 50% of the complete computation task)
+		private const int		VISIBILITY_PROGRESS = 50;	// Visibility computation is considered as this % of the total task
 		private const int		MAX_LINES = 16;				// Process at most that amount of lines of a 4096x4096 image for a single dispatch
 
 		private const int		VISIBILITY_SLICES = 16;		// Maximum amount of horizon lines collected in the visibility texture
@@ -44,6 +47,16 @@ namespace GenerateTranslucencyMap
 			public float					_Sigma_s;			// Scattering coefficient (mm^-1)
 			public float					_g;					// Scattering anisotropy (mean cosine of scattering phase function)
 			public RendererManaged.float3	_Light;				// Light direction (in tangent space)
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct	CBVisibility {
+			public uint						_Width;
+			public uint						_Height;
+			public uint						_Y0;
+			public float					_TexelSize_mm;		// Texel size in millimeters
+			public float					_Thickness_mm;		// Thickness map max encoded displacement in millimeters
+			public uint						_DiscRadius;		// Radius of the disc where the horizon will get sampled
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -81,15 +94,15 @@ namespace GenerateTranslucencyMap
 		// Directional Translucency Map Generation
 		private RendererManaged.ConstantBuffer<CBInput>						m_CB_Input;
 		private RendererManaged.StructuredBuffer<RendererManaged.float3>	m_SB_Rays = null;
-		private RendererManaged.ComputeShader								m_CS_GenerateVisibilityMap = null;
 		private RendererManaged.ComputeShader								m_CS_GenerateTranslucencyMap = null;
 
 		// Visibility map generation
-
+		private RendererManaged.ConstantBuffer<CBVisibility>	m_CB_Visibility;
+		private RendererManaged.ComputeShader					m_CS_GenerateVisibilityMap = null;
 
 		// Bilateral filtering pre-processing
 		private RendererManaged.ConstantBuffer<CBFilter>	m_CB_Filter;
-		private RendererManaged.ComputeShader	m_CS_BilateralFilter = null;
+		private RendererManaged.ComputeShader				m_CS_BilateralFilter = null;
 
 		private ImageUtility.ColorProfile		m_LinearProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR );
 		private ImageUtility.ColorProfile		m_sRGBProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );
@@ -102,8 +115,11 @@ namespace GenerateTranslucencyMap
 
 		#region METHODS
 
-		public unsafe GeneratorForm()
+		public GeneratorForm()
 		{
+openFileDialogImage = new System.Windows.Forms.OpenFileDialog();
+imagePanelInputThicknessMap_Click( null, EventArgs.Empty );
+
 			InitializeComponent();
 
  			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\TranslucencyMapGenerator" );
@@ -115,10 +131,10 @@ namespace GenerateTranslucencyMap
  			base.OnLoad(e);
 
 			try {
-				m_Device.Init( imagePanelResult0.Handle, false, true );
+				m_Device.Init( imagePanelResult3.Handle, false, true );
 
 				// Create our compute shaders
-#if DEBUG
+#if DEBUG && !BISOU
 				m_CS_BilateralFilter = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
 				m_CS_GenerateVisibilityMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateVisibilityMap.hlsl" ) ), "CS", null );
 				m_CS_GenerateTranslucencyMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateTranslucencyMap.hlsl" ) ), "CS", null );
@@ -130,6 +146,7 @@ namespace GenerateTranslucencyMap
 
 				// Create our constant buffers
 				m_CB_Filter = new RendererManaged.ConstantBuffer<CBFilter>( m_Device, 0 );
+				m_CB_Visibility = new RendererManaged.ConstantBuffer<CBVisibility>( m_Device, 0 );
 				m_CB_Input = new RendererManaged.ConstantBuffer<CBInput>( m_Device, 0 );
 
 				// Create our structured buffer containing the rays
@@ -157,10 +174,12 @@ namespace GenerateTranslucencyMap
 
 				try {
 					m_CS_GenerateTranslucencyMap.Dispose();
+					m_CS_GenerateVisibilityMap.Dispose();
 					m_CS_BilateralFilter.Dispose();
 
 					m_SB_Rays.Dispose();
 					m_CB_Filter.Dispose();
+					m_CB_Visibility.Dispose();
 					m_CB_Input.Dispose();
 
 					if ( m_TextureTarget_CPU != null )
@@ -191,6 +210,8 @@ namespace GenerateTranslucencyMap
 		{
 			base.OnClosing( e );
 		}
+
+		#region Images Loading
 
 		private void	LoadThicknessMap( System.IO.FileInfo _FileName ) {
 			try
@@ -248,11 +269,9 @@ namespace GenerateTranslucencyMap
 			}
 			catch ( Exception _e )
 			{
-				MessageBox( "An error occurred while opening the thickness map:\n\n", _e );
+				MessageBox( "An error occurred while opening the thickness map \"" + _FileName.FullName + "\":\n\n", _e );
 			}
 		}
-
-		#region Images Loading
 
 		private void	LoadNormalMap( System.IO.FileInfo _FileName ) {
 			try
@@ -287,7 +306,7 @@ namespace GenerateTranslucencyMap
 			}
 			catch ( Exception _e )
 			{
-				MessageBox( "An error occurred while opening the normal map:\n\n", _e );
+				MessageBox( "An error occurred while opening the normal map \"" + _FileName.FullName + "\":\n\n", _e );
 			}
 		}
 
@@ -324,7 +343,7 @@ namespace GenerateTranslucencyMap
 			}
 			catch ( Exception _e )
 			{
-				MessageBox( "An error occurred while opening the transmittance map:\n\n", _e );
+				MessageBox( "An error occurred while opening the transmittance map \"" + _FileName.FullName + "\":\n\n", _e );
 			}
 		}
 
@@ -361,7 +380,7 @@ namespace GenerateTranslucencyMap
 			}
 			catch ( Exception _e )
 			{
-				MessageBox( "An error occurred while opening the albedo map:\n\n", _e );
+				MessageBox( "An error occurred while opening the albedo map \"" + _FileName.FullName + "\":\n\n", _e );
 			}
 		}
 
@@ -372,13 +391,14 @@ namespace GenerateTranslucencyMap
 				groupBoxOptions.Enabled = false;
 
 				//////////////////////////////////////////////////////////////////////////
-				// 0] Fill empty textures
+				// 0] Assign empty textures
 				if ( m_BitmapSourceNormal == null )
 					LoadNormalMap( new System.IO.FileInfo( "default_normal.png" ) );
 				if ( m_BitmapSourceTransmittance == null )
 					LoadTransmittanceMap( new System.IO.FileInfo( "default_transmittance.png" ) );
 				if ( m_BitmapSourceAlbedo == null )
 					LoadAlbedoMap( new System.IO.FileInfo( "default_albedo.png" ) );
+
 
 				//////////////////////////////////////////////////////////////////////////
 				// 1] Apply bilateral filtering to the input texture as a pre-process
@@ -393,9 +413,6 @@ namespace GenerateTranslucencyMap
 
 				//////////////////////////////////////////////////////////////////////////
 				// 2] Compute visibility texture
-				if ( !m_CS_GenerateVisibilityMap.Use() )
-					throw new Exception( "Can't generate translucency map as visibility map compute shader failed to compile!" );
-
 				BuildVisibilityMap( m_TextureSourceThickness, m_TextureSourceVisibility );
 
 				m_TextureSourceVisibility.SetCS( 4 );
@@ -436,7 +453,7 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 
 					m_Device.Present( true );
 
-					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
+					progressBar.Value = (int) (0.01f * (VISIBILITY_PROGRESS + (100-VISIBILITY_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
 //					for ( int a=0; a < 10; a++ )
 						Application.DoEvents();
 				}
@@ -503,20 +520,50 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 		}
 
 		private void	BuildVisibilityMap( RendererManaged.Texture2D _Source, RendererManaged.Texture3D _Target ) {
+			if ( !m_CS_GenerateVisibilityMap.Use() )
+				throw new Exception( "Can't generate translucency map as visibility map compute shader failed to compile!" );
+
 			_Source.SetCS( 0 );
 			_Target.SetCSUAV( 0 );
 
+			m_CB_Visibility.m._Width = (uint) W;
+			m_CB_Visibility.m._Width = (uint) H;
+			m_CB_Visibility.m._Thickness_mm = floatTrackbarControlThickness.Value;
+			m_CB_Visibility.m._TexelSize_mm = 1000.0f / floatTrackbarControlPixelDensity.Value;
+			m_CB_Visibility.m._DiscRadius = 32;
+
+			int	h = Math.Max( 1, MAX_LINES*1024 / W );
+			int	CallsCount = (int) Math.Ceiling( (float) H / h );
+			for ( int i=0; i < CallsCount; i++ )
+			{
+				m_CB_Visibility.m._Y0 = (UInt32) (i * h);
+				m_CB_Visibility.UpdateData();
+
+				m_CS_GenerateVisibilityMap.Dispatch( W, h, 1 );
+
+				m_Device.Present( true );
+
+				progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (VISIBILITY_PROGRESS - BILATERAL_PROGRESS) * (i+1) / CallsCount) * progressBar.Maximum);
+//				for ( int a=0; a < 10; a++ )
+					Application.DoEvents();
+			}
+
+			// Single gulp (crashes the driver on large images!)
+//			m_CS_GenerateVisibilityMap.Dispatch( W, H, 1 );
+
+			_Target.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
 		}
 
 		private void	ApplyBilateralFiltering( RendererManaged.Texture2D _Source, RendererManaged.Texture2D _Target, float _BilateralRadius, float _BilateralTolerance, bool _Wrap ) {
+			if ( !m_CS_BilateralFilter.Use() )
+				throw new Exception( "Can't generate translucency map as bilateral filter compute shader failed to compile!" );
+
 			_Source.SetCS( 0 );
 			_Target.SetCSUAV( 0 );
 
 			m_CB_Filter.m.Radius = _BilateralRadius;
 			m_CB_Filter.m.Tolerance = _BilateralTolerance;
 			m_CB_Filter.m.Tile = (uint) (_Wrap ? 1 : 0);
-
-			m_CS_BilateralFilter.Use();
 
 			int	h = Math.Max( 1, MAX_LINES*1024 / W );
 			int	CallsCount = (int) Math.Ceiling( (float) H / h );
@@ -529,7 +576,7 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 
 				m_Device.Present( true );
 
-				progressBar.Value = (int) (0.01f * (0 + BILATERAL_PROGRESS * (i+1) / CallsCount) * progressBar.Maximum);
+				progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS * (i+1) / CallsCount) * progressBar.Maximum);
 //				for ( int a=0; a < 10; a++ )
 					Application.DoEvents();
 			}
@@ -832,9 +879,9 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 
 		private void imagePanelInputThicknessMap_Click( object sender, EventArgs e )
 		{
-			string	OldFileName = GetRegKey( "ThicknessMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
-			openFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( OldFileName );
-			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
+//			string	OldFileName = GetRegKey( "ThicknessMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
+// 			openFileDialogImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
+// 			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
 			if ( openFileDialogImage.ShowDialog( this ) != DialogResult.OK )
 				return;
 
