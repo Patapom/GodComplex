@@ -28,8 +28,6 @@
 			this.radioButtonAOfromRGB = new System.Windows.Forms.RadioButton();
 			this.checkBoxShowsRGB = new System.Windows.Forms.CheckBox();
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
-			this.imagePanelResult0 = new GenerateTranslucencyMap.ImagePanel(this.components);
-			this.imagePanelThicknessMap = new GenerateTranslucencyMap.ImagePanel(this.components);
 			this.integerTrackbarControlRaysCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.buttonGenerate = new System.Windows.Forms.Button();
 			this.floatTrackbarControlScatteringCoefficient = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -50,12 +48,15 @@
 			this.label2 = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
-			this.imagePanelNormalMap = new GenerateTranslucencyMap.ImagePanel(this.components);
-			this.imagePanelAlbedoMap = new GenerateTranslucencyMap.ImagePanel(this.components);
-			this.imagePanelTransmittanceMap = new GenerateTranslucencyMap.ImagePanel(this.components);
-			this.imagePanelResult1 = new GenerateTranslucencyMap.ImagePanel(this.components);
-			this.imagePanelResult2 = new GenerateTranslucencyMap.ImagePanel(this.components);
 			this.imagePanelResult3 = new GenerateTranslucencyMap.ImagePanel(this.components);
+			this.imagePanelResult2 = new GenerateTranslucencyMap.ImagePanel(this.components);
+			this.imagePanelResult1 = new GenerateTranslucencyMap.ImagePanel(this.components);
+			this.imagePanelResult0 = new GenerateTranslucencyMap.ImagePanel(this.components);
+			this.imagePanelNormalMap = new GenerateTranslucencyMap.ImagePanel(this.components);
+			this.imagePanelTransmittanceMap = new GenerateTranslucencyMap.ImagePanel(this.components);
+			this.imagePanelAlbedoMap = new GenerateTranslucencyMap.ImagePanel(this.components);
+			this.imagePanelThicknessMap = new GenerateTranslucencyMap.ImagePanel(this.components);
+			this.buttonShowViewer = new System.Windows.Forms.Button();
 			this.groupBox1.SuspendLayout();
 			this.groupBoxOptions.SuspendLayout();
 			this.SuspendLayout();
@@ -197,34 +198,6 @@
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Result Display";
 			// 
-			// imagePanelResult0
-			// 
-			this.imagePanelResult0.Image = null;
-			this.imagePanelResult0.Location = new System.Drawing.Point(856, 16);
-			this.imagePanelResult0.MessageOnEmpty = null;
-			this.imagePanelResult0.Name = "imagePanelResult0";
-			this.imagePanelResult0.Size = new System.Drawing.Size(250, 250);
-			this.imagePanelResult0.TabIndex = 0;
-			this.imagePanelResult0.ViewLinear = false;
-			this.imagePanelResult0.ViewMode = GenerateTranslucencyMap.ImagePanel.VIEW_MODE.RGB;
-			this.imagePanelResult0.Click += new System.EventHandler(this.imagePanelResult0_Click);
-			// 
-			// imagePanelThicknessMap
-			// 
-			this.imagePanelThicknessMap.AllowDrop = true;
-			this.imagePanelThicknessMap.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
-			this.imagePanelThicknessMap.Image = null;
-			this.imagePanelThicknessMap.Location = new System.Drawing.Point(12, 12);
-			this.imagePanelThicknessMap.MessageOnEmpty = "Click to load a thickness map,\r\nor drag and drop...";
-			this.imagePanelThicknessMap.Name = "imagePanelThicknessMap";
-			this.imagePanelThicknessMap.Size = new System.Drawing.Size(250, 250);
-			this.imagePanelThicknessMap.TabIndex = 0;
-			this.imagePanelThicknessMap.ViewLinear = false;
-			this.imagePanelThicknessMap.ViewMode = GenerateTranslucencyMap.ImagePanel.VIEW_MODE.RGB;
-			this.imagePanelThicknessMap.Click += new System.EventHandler(this.imagePanelInputThicknessMap_Click);
-			this.imagePanelThicknessMap.DragDrop += new System.Windows.Forms.DragEventHandler(this.imagePanelInputThicknessMap_DragDrop);
-			this.imagePanelThicknessMap.DragEnter += new System.Windows.Forms.DragEventHandler(this.imagePanelInputThicknessMap_DragEnter);
-			// 
 			// integerTrackbarControlRaysCount
 			// 
 			this.integerTrackbarControlRaysCount.Location = new System.Drawing.Point(107, 24);
@@ -247,6 +220,7 @@
 			this.buttonGenerate.TabIndex = 19;
 			this.buttonGenerate.Text = "Generate";
 			this.buttonGenerate.UseVisualStyleBackColor = true;
+			this.buttonGenerate.Click += new System.EventHandler(this.buttonGenerate_Click);
 			// 
 			// floatTrackbarControlScatteringCoefficient
 			// 
@@ -467,6 +441,54 @@
 			this.label1.TabIndex = 29;
 			this.label1.Text = "Absorption (1/mm)";
 			// 
+			// imagePanelResult3
+			// 
+			this.imagePanelResult3.Image = null;
+			this.imagePanelResult3.Location = new System.Drawing.Point(1117, 278);
+			this.imagePanelResult3.MessageOnEmpty = null;
+			this.imagePanelResult3.Name = "imagePanelResult3";
+			this.imagePanelResult3.Size = new System.Drawing.Size(250, 250);
+			this.imagePanelResult3.TabIndex = 0;
+			this.imagePanelResult3.ViewLinear = false;
+			this.imagePanelResult3.ViewMode = GenerateTranslucencyMap.ImagePanel.VIEW_MODE.RGB;
+			this.imagePanelResult3.Click += new System.EventHandler(this.imagePanelResult3_Click);
+			// 
+			// imagePanelResult2
+			// 
+			this.imagePanelResult2.Image = null;
+			this.imagePanelResult2.Location = new System.Drawing.Point(856, 278);
+			this.imagePanelResult2.MessageOnEmpty = null;
+			this.imagePanelResult2.Name = "imagePanelResult2";
+			this.imagePanelResult2.Size = new System.Drawing.Size(250, 250);
+			this.imagePanelResult2.TabIndex = 0;
+			this.imagePanelResult2.ViewLinear = false;
+			this.imagePanelResult2.ViewMode = GenerateTranslucencyMap.ImagePanel.VIEW_MODE.RGB;
+			this.imagePanelResult2.Click += new System.EventHandler(this.imagePanelResult2_Click);
+			// 
+			// imagePanelResult1
+			// 
+			this.imagePanelResult1.Image = null;
+			this.imagePanelResult1.Location = new System.Drawing.Point(1117, 16);
+			this.imagePanelResult1.MessageOnEmpty = null;
+			this.imagePanelResult1.Name = "imagePanelResult1";
+			this.imagePanelResult1.Size = new System.Drawing.Size(250, 250);
+			this.imagePanelResult1.TabIndex = 0;
+			this.imagePanelResult1.ViewLinear = false;
+			this.imagePanelResult1.ViewMode = GenerateTranslucencyMap.ImagePanel.VIEW_MODE.RGB;
+			this.imagePanelResult1.Click += new System.EventHandler(this.imagePanelResult1_Click);
+			// 
+			// imagePanelResult0
+			// 
+			this.imagePanelResult0.Image = null;
+			this.imagePanelResult0.Location = new System.Drawing.Point(856, 16);
+			this.imagePanelResult0.MessageOnEmpty = null;
+			this.imagePanelResult0.Name = "imagePanelResult0";
+			this.imagePanelResult0.Size = new System.Drawing.Size(250, 250);
+			this.imagePanelResult0.TabIndex = 0;
+			this.imagePanelResult0.ViewLinear = false;
+			this.imagePanelResult0.ViewMode = GenerateTranslucencyMap.ImagePanel.VIEW_MODE.RGB;
+			this.imagePanelResult0.Click += new System.EventHandler(this.imagePanelResult0_Click);
+			// 
 			// imagePanelNormalMap
 			// 
 			this.imagePanelNormalMap.AllowDrop = true;
@@ -482,22 +504,6 @@
 			this.imagePanelNormalMap.Click += new System.EventHandler(this.imagePanelNormalMap_Click);
 			this.imagePanelNormalMap.DragDrop += new System.Windows.Forms.DragEventHandler(this.imagePanelNormalMap_DragDrop);
 			this.imagePanelNormalMap.DragEnter += new System.Windows.Forms.DragEventHandler(this.imagePanelNormalMap_DragEnter);
-			// 
-			// imagePanelAlbedoMap
-			// 
-			this.imagePanelAlbedoMap.AllowDrop = true;
-			this.imagePanelAlbedoMap.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
-			this.imagePanelAlbedoMap.Image = null;
-			this.imagePanelAlbedoMap.Location = new System.Drawing.Point(12, 278);
-			this.imagePanelAlbedoMap.MessageOnEmpty = "Click to load an albedo map,\r\nor drag and drop...";
-			this.imagePanelAlbedoMap.Name = "imagePanelAlbedoMap";
-			this.imagePanelAlbedoMap.Size = new System.Drawing.Size(250, 250);
-			this.imagePanelAlbedoMap.TabIndex = 0;
-			this.imagePanelAlbedoMap.ViewLinear = false;
-			this.imagePanelAlbedoMap.ViewMode = GenerateTranslucencyMap.ImagePanel.VIEW_MODE.RGB;
-			this.imagePanelAlbedoMap.Click += new System.EventHandler(this.imagePanelAlbedoMap_Click);
-			this.imagePanelAlbedoMap.DragDrop += new System.Windows.Forms.DragEventHandler(this.imagePanelAlbedoMap_DragDrop);
-			this.imagePanelAlbedoMap.DragEnter += new System.Windows.Forms.DragEventHandler(this.imagePanelAlbedoMap_DragEnter);
 			// 
 			// imagePanelTransmittanceMap
 			// 
@@ -515,47 +521,54 @@
 			this.imagePanelTransmittanceMap.DragDrop += new System.Windows.Forms.DragEventHandler(this.imagePanelTransmittanceMap_DragDrop);
 			this.imagePanelTransmittanceMap.DragEnter += new System.Windows.Forms.DragEventHandler(this.imagePanelTransmittanceMap_DragEnter);
 			// 
-			// imagePanelResult1
+			// imagePanelAlbedoMap
 			// 
-			this.imagePanelResult1.Image = null;
-			this.imagePanelResult1.Location = new System.Drawing.Point(1117, 16);
-			this.imagePanelResult1.MessageOnEmpty = null;
-			this.imagePanelResult1.Name = "imagePanelResult1";
-			this.imagePanelResult1.Size = new System.Drawing.Size(250, 250);
-			this.imagePanelResult1.TabIndex = 0;
-			this.imagePanelResult1.ViewLinear = false;
-			this.imagePanelResult1.ViewMode = GenerateTranslucencyMap.ImagePanel.VIEW_MODE.RGB;
-			this.imagePanelResult1.Click += new System.EventHandler(this.imagePanelResult1_Click);
+			this.imagePanelAlbedoMap.AllowDrop = true;
+			this.imagePanelAlbedoMap.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
+			this.imagePanelAlbedoMap.Image = null;
+			this.imagePanelAlbedoMap.Location = new System.Drawing.Point(12, 278);
+			this.imagePanelAlbedoMap.MessageOnEmpty = "Click to load an albedo map,\r\nor drag and drop...";
+			this.imagePanelAlbedoMap.Name = "imagePanelAlbedoMap";
+			this.imagePanelAlbedoMap.Size = new System.Drawing.Size(250, 250);
+			this.imagePanelAlbedoMap.TabIndex = 0;
+			this.imagePanelAlbedoMap.ViewLinear = false;
+			this.imagePanelAlbedoMap.ViewMode = GenerateTranslucencyMap.ImagePanel.VIEW_MODE.RGB;
+			this.imagePanelAlbedoMap.Click += new System.EventHandler(this.imagePanelAlbedoMap_Click);
+			this.imagePanelAlbedoMap.DragDrop += new System.Windows.Forms.DragEventHandler(this.imagePanelAlbedoMap_DragDrop);
+			this.imagePanelAlbedoMap.DragEnter += new System.Windows.Forms.DragEventHandler(this.imagePanelAlbedoMap_DragEnter);
 			// 
-			// imagePanelResult2
+			// imagePanelThicknessMap
 			// 
-			this.imagePanelResult2.Image = null;
-			this.imagePanelResult2.Location = new System.Drawing.Point(856, 278);
-			this.imagePanelResult2.MessageOnEmpty = null;
-			this.imagePanelResult2.Name = "imagePanelResult2";
-			this.imagePanelResult2.Size = new System.Drawing.Size(250, 250);
-			this.imagePanelResult2.TabIndex = 0;
-			this.imagePanelResult2.ViewLinear = false;
-			this.imagePanelResult2.ViewMode = GenerateTranslucencyMap.ImagePanel.VIEW_MODE.RGB;
-			this.imagePanelResult2.Click += new System.EventHandler(this.imagePanelResult2_Click);
+			this.imagePanelThicknessMap.AllowDrop = true;
+			this.imagePanelThicknessMap.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
+			this.imagePanelThicknessMap.Image = null;
+			this.imagePanelThicknessMap.Location = new System.Drawing.Point(12, 12);
+			this.imagePanelThicknessMap.MessageOnEmpty = "Click to load a thickness map,\r\nor drag and drop...";
+			this.imagePanelThicknessMap.Name = "imagePanelThicknessMap";
+			this.imagePanelThicknessMap.Size = new System.Drawing.Size(250, 250);
+			this.imagePanelThicknessMap.TabIndex = 0;
+			this.imagePanelThicknessMap.ViewLinear = false;
+			this.imagePanelThicknessMap.ViewMode = GenerateTranslucencyMap.ImagePanel.VIEW_MODE.RGB;
+			this.imagePanelThicknessMap.Click += new System.EventHandler(this.imagePanelInputThicknessMap_Click);
+			this.imagePanelThicknessMap.DragDrop += new System.Windows.Forms.DragEventHandler(this.imagePanelInputThicknessMap_DragDrop);
+			this.imagePanelThicknessMap.DragEnter += new System.Windows.Forms.DragEventHandler(this.imagePanelInputThicknessMap_DragEnter);
 			// 
-			// imagePanelResult3
+			// buttonShowViewer
 			// 
-			this.imagePanelResult3.Image = null;
-			this.imagePanelResult3.Location = new System.Drawing.Point(1117, 278);
-			this.imagePanelResult3.MessageOnEmpty = null;
-			this.imagePanelResult3.Name = "imagePanelResult3";
-			this.imagePanelResult3.Size = new System.Drawing.Size(250, 250);
-			this.imagePanelResult3.TabIndex = 0;
-			this.imagePanelResult3.ViewLinear = false;
-			this.imagePanelResult3.ViewMode = GenerateTranslucencyMap.ImagePanel.VIEW_MODE.RGB;
-			this.imagePanelResult3.Click += new System.EventHandler(this.imagePanelResult3_Click);
+			this.buttonShowViewer.Location = new System.Drawing.Point(530, 424);
+			this.buttonShowViewer.Name = "buttonShowViewer";
+			this.buttonShowViewer.Size = new System.Drawing.Size(75, 23);
+			this.buttonShowViewer.TabIndex = 36;
+			this.buttonShowViewer.Text = "View";
+			this.buttonShowViewer.UseVisualStyleBackColor = true;
+			this.buttonShowViewer.Click += new System.EventHandler(this.buttonShowViewer_Click);
 			// 
 			// GeneratorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1379, 540);
+			this.Controls.Add(this.buttonShowViewer);
 			this.Controls.Add(this.groupBoxOptions);
 			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.progressBar);
@@ -621,6 +634,7 @@
 		private ImagePanel imagePanelResult1;
 		private ImagePanel imagePanelResult2;
 		private ImagePanel imagePanelResult3;
+		private System.Windows.Forms.Button buttonShowViewer;
 	}
 }
 

@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle( "GenerateSelfShadowedBumpMap" )]
+[assembly: AssemblyTitle( "GenerateTranslucencyMap" )]
 [assembly: AssemblyDescription( "" )]
 [assembly: AssemblyConfiguration( "" )]
 [assembly: AssemblyCompany( "" )]
-[assembly: AssemblyProduct( "GenerateSelfShadowedBumpMap" )]
-[assembly: AssemblyCopyright( "Copyright ©  2014" )]
+[assembly: AssemblyProduct( "GenerateTranslucencyMap" )]
+[assembly: AssemblyCopyright( "Copyright ©  2015" )]
 [assembly: AssemblyTrademark( "" )]
 [assembly: AssemblyCulture( "" )]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible( false )]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid( "c437df65-e897-4b95-8416-a81a9cc761e0" )]
+[assembly: Guid( "1d6f1869-243b-4db5-893e-f39866c35824" )]
 
 // Version information for an assembly consists of the following four values:
 //

@@ -1,4 +1,4 @@
-﻿#define BISOU
+﻿//#define BISOU
 
 //////////////////////////////////////////////////////////////////////////
 // Implements the Directional Translucency Map from Habel "Physically Based Real-Time Translucency for Leaves" (2007)
@@ -74,6 +74,8 @@ namespace GenerateTranslucencyMap
 		private RegistryKey						m_AppKey;
 		private string							m_ApplicationPath;
 
+		private ViewerForm						m_viewerForm = new ViewerForm();
+
 		private System.IO.FileInfo				m_SourceFileName = null;
 		private int								W, H;
 		private ImageUtility.Bitmap				m_BitmapSourceThickness = null;
@@ -117,9 +119,6 @@ namespace GenerateTranslucencyMap
 
 		public GeneratorForm()
 		{
-openFileDialogImage = new System.Windows.Forms.OpenFileDialog();
-imagePanelInputThicknessMap_Click( null, EventArgs.Empty );
-
 			InitializeComponent();
 
  			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\TranslucencyMapGenerator" );
@@ -131,18 +130,21 @@ imagePanelInputThicknessMap_Click( null, EventArgs.Empty );
  			base.OnLoad(e);
 
 			try {
-				m_Device.Init( imagePanelResult3.Handle, false, true );
+//				m_Device.Init( imagePanelResult3.Handle, false, true );
+				m_Device.Init( m_viewerForm.Handle, false, true );
+
+				m_viewerForm.Init( m_Device );
 
 				// Create our compute shaders
-#if DEBUG && !BISOU
-				m_CS_BilateralFilter = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
-				m_CS_GenerateVisibilityMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateVisibilityMap.hlsl" ) ), "CS", null );
-				m_CS_GenerateTranslucencyMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateTranslucencyMap.hlsl" ) ), "CS", null );
-#else
-				m_CS_BilateralFilter = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
-				m_CS_GenerateVisibilityMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateVisibilityMap.fxbin" ), "CS" );
-				m_CS_GenerateTranslucencyMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateTranslucencyMap.fxbin" ), "CS" );
-#endif
+				#if DEBUG && !BISOU
+					m_CS_BilateralFilter = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
+					m_CS_GenerateVisibilityMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateVisibilityMap.hlsl" ) ), "CS", null );
+					m_CS_GenerateTranslucencyMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateTranslucencyMap.hlsl" ) ), "CS", null );
+				#else
+					m_CS_BilateralFilter = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
+					m_CS_GenerateVisibilityMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateVisibilityMap.fxbin" ), "CS" );
+					m_CS_GenerateTranslucencyMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateTranslucencyMap.fxbin" ), "CS" );
+				#endif
 
 				// Create our constant buffers
 				m_CB_Filter = new RendererManaged.ConstantBuffer<CBFilter>( m_Device, 0 );
@@ -198,6 +200,8 @@ imagePanelInputThicknessMap_Click( null, EventArgs.Empty );
 						m_TextureSourceAlbedo.Dispose();
 					if ( m_TextureSourceVisibility != null )
 						m_TextureSourceVisibility.Dispose();
+
+					m_viewerForm.Dispose();
 
 					m_Device.Dispose();
 				} catch ( Exception ) {
@@ -292,7 +296,7 @@ imagePanelInputThicknessMap_Click( null, EventArgs.Empty );
 				ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[W,H];
 				m_LinearProfile.XYZ2RGB( m_BitmapSourceNormal.ContentXYZ, ContentRGB );
 
-				RendererManaged.PixelsBuffer	SourceMap = new RendererManaged.PixelsBuffer( W*H*4 );
+				RendererManaged.PixelsBuffer	SourceMap = new RendererManaged.PixelsBuffer( W*H*16 );
 				using ( System.IO.BinaryWriter Wr = SourceMap.OpenStreamWrite() )
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ ) {
@@ -329,7 +333,7 @@ imagePanelInputThicknessMap_Click( null, EventArgs.Empty );
 				ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[W,H];
 				m_sRGBProfile.XYZ2RGB( m_BitmapSourceTransmittance.ContentXYZ, ContentRGB );
 
-				RendererManaged.PixelsBuffer	SourceMap = new RendererManaged.PixelsBuffer( W*H*4 );
+				RendererManaged.PixelsBuffer	SourceMap = new RendererManaged.PixelsBuffer( W*H*16 );
 				using ( System.IO.BinaryWriter Wr = SourceMap.OpenStreamWrite() )
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ ) {
@@ -366,7 +370,7 @@ imagePanelInputThicknessMap_Click( null, EventArgs.Empty );
 				ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[W,H];
 				m_sRGBProfile.XYZ2RGB( m_BitmapSourceAlbedo.ContentXYZ, ContentRGB );
 
-				RendererManaged.PixelsBuffer	SourceMap = new RendererManaged.PixelsBuffer( W*H*4 );
+				RendererManaged.PixelsBuffer	SourceMap = new RendererManaged.PixelsBuffer( W*H*16 );
 				using ( System.IO.BinaryWriter Wr = SourceMap.OpenStreamWrite() )
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ ) {
@@ -386,7 +390,7 @@ imagePanelInputThicknessMap_Click( null, EventArgs.Empty );
 
 		#endregion
 
-		private unsafe void	Generate() {
+		private void	Generate() {
 			try {
 				groupBoxOptions.Enabled = false;
 
@@ -420,7 +424,7 @@ imagePanelInputThicknessMap_Click( null, EventArgs.Empty );
 
 				//////////////////////////////////////////////////////////////////////////
 				// 3] Compute directional occlusion
-				if ( !m_CS_GenerateTranslucencyMap.Use() )
+/*				if ( !m_CS_GenerateTranslucencyMap.Use() )
 					throw new Exception( "Can't generate translucency map as compute shader failed to compile!" );
 
 				// Prepare computation parameters
@@ -464,7 +468,7 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 // 				m_CB_Input.m.y = 0;
 // 				m_CB_Input.UpdateData();
 // 				m_CS_GenerateSSBumpMap.Dispatch( W, H, 1 );
-
+//*/
 
 				//////////////////////////////////////////////////////////////////////////
 				// 3] Copy target to staging for CPU readback and update the resulting bitmap
@@ -693,10 +697,9 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 
 		#region EVENT HANDLERS
 
- 		private unsafe void buttonGenerate_Click( object sender, EventArgs e )
+ 		private void buttonGenerate_Click( object sender, EventArgs e )
  		{
  			Generate();
-//			Generate_CPU( integerTrackbarControlRaysCount.Value );
 		}
 
 		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
@@ -879,9 +882,9 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 
 		private void imagePanelInputThicknessMap_Click( object sender, EventArgs e )
 		{
-//			string	OldFileName = GetRegKey( "ThicknessMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
-// 			openFileDialogImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
-// 			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
+			string	OldFileName = GetRegKey( "ThicknessMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
+			openFileDialogImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
+			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
 			if ( openFileDialogImage.ShowDialog( this ) != DialogResult.OK )
 				return;
 
@@ -1034,6 +1037,12 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 		}
 
 		#endregion
+
+		private void buttonShowViewer_Click( object sender, EventArgs e )
+		{
+			m_viewerForm.Show( this );
+		}
+
 
 		#endregion
 	}

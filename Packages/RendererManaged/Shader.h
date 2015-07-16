@@ -60,7 +60,7 @@ namespace RendererManaged {
 			return m_pShader != nullptr ? m_pShader->Use() : false;
 		}
 
-		static Shader^	CreateFromBinaryBlob( Device^ _Device, VERTEX_FORMAT _Format, FileInfo^ _ShaderFileName, String^ _EntryPointVS, String^ _EntryPointGS, String^ _EntryPointPS )
+		static Shader^	CreateFromBinaryBlob( Device^ _Device, FileInfo^ _ShaderFileName, VERTEX_FORMAT _Format, String^ _EntryPointVS, String^ _EntryPointGS, String^ _EntryPointPS )
 		{
 			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _ShaderFileName->FullName ).ToPointer();
 			const char*	EntryPointVS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _EntryPointVS ).ToPointer();
