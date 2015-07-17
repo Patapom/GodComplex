@@ -48,6 +48,7 @@
 			this.label2 = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
+			this.buttonShowViewer = new System.Windows.Forms.Button();
 			this.imagePanelResult3 = new GenerateTranslucencyMap.ImagePanel(this.components);
 			this.imagePanelResult2 = new GenerateTranslucencyMap.ImagePanel(this.components);
 			this.imagePanelResult1 = new GenerateTranslucencyMap.ImagePanel(this.components);
@@ -56,7 +57,8 @@
 			this.imagePanelTransmittanceMap = new GenerateTranslucencyMap.ImagePanel(this.components);
 			this.imagePanelAlbedoMap = new GenerateTranslucencyMap.ImagePanel(this.components);
 			this.imagePanelThicknessMap = new GenerateTranslucencyMap.ImagePanel(this.components);
-			this.buttonShowViewer = new System.Windows.Forms.Button();
+			this.buttonReload = new System.Windows.Forms.Button();
+			this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
 			this.groupBox1.SuspendLayout();
 			this.groupBoxOptions.SuspendLayout();
 			this.SuspendLayout();
@@ -246,8 +248,8 @@
 			this.floatTrackbarControlThickness.RangeMin = 0.01F;
 			this.floatTrackbarControlThickness.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlThickness.TabIndex = 24;
-			this.floatTrackbarControlThickness.Value = 1F;
-			this.floatTrackbarControlThickness.VisibleRangeMax = 1F;
+			this.floatTrackbarControlThickness.Value = 2F;
+			this.floatTrackbarControlThickness.VisibleRangeMax = 4F;
 			this.floatTrackbarControlThickness.VisibleRangeMin = 0.01F;
 			// 
 			// label8
@@ -255,9 +257,11 @@
 			this.label8.AutoSize = true;
 			this.label8.Location = new System.Drawing.Point(5, 194);
 			this.label8.Name = "label8";
-			this.label8.Size = new System.Drawing.Size(104, 13);
+			this.label8.Size = new System.Drawing.Size(87, 13);
 			this.label8.TabIndex = 30;
-			this.label8.Text = "Pixels per centimeter";
+			this.label8.Text = "Subject size (cm)";
+			this.toolTip1.SetToolTip(this.label8, "Size of the subject in the image in centimeters (e.g. about 8cm for the vertical " +
+        "leaf in the example)");
 			// 
 			// floatTrackbarControlBilateralRadius
 			// 
@@ -319,13 +323,13 @@
 			this.floatTrackbarControlPixelDensity.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlPixelDensity.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlPixelDensity.Name = "floatTrackbarControlPixelDensity";
-			this.floatTrackbarControlPixelDensity.RangeMax = 10000F;
-			this.floatTrackbarControlPixelDensity.RangeMin = 1F;
+			this.floatTrackbarControlPixelDensity.RangeMax = 100F;
+			this.floatTrackbarControlPixelDensity.RangeMin = 0F;
 			this.floatTrackbarControlPixelDensity.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlPixelDensity.TabIndex = 26;
-			this.floatTrackbarControlPixelDensity.Value = 200F;
-			this.floatTrackbarControlPixelDensity.VisibleRangeMax = 512F;
-			this.floatTrackbarControlPixelDensity.VisibleRangeMin = 1F;
+			this.toolTip1.SetToolTip(this.floatTrackbarControlPixelDensity, "Size of the subject in the image in centimeters (e.g. about 8cm for the vertical " +
+        "leaf in the example)");
+			this.floatTrackbarControlPixelDensity.Value = 8F;
 			// 
 			// label11
 			// 
@@ -366,6 +370,7 @@
 			this.groupBoxOptions.Controls.Add(this.label10);
 			this.groupBoxOptions.Controls.Add(this.label9);
 			this.groupBoxOptions.Controls.Add(this.floatTrackbarControlBilateralTolerance);
+			this.groupBoxOptions.Enabled = false;
 			this.groupBoxOptions.Location = new System.Drawing.Point(530, 12);
 			this.groupBoxOptions.Name = "groupBoxOptions";
 			this.groupBoxOptions.Size = new System.Drawing.Size(320, 358);
@@ -440,6 +445,16 @@
 			this.label1.Size = new System.Drawing.Size(93, 13);
 			this.label1.TabIndex = 29;
 			this.label1.Text = "Absorption (1/mm)";
+			// 
+			// buttonShowViewer
+			// 
+			this.buttonShowViewer.Location = new System.Drawing.Point(530, 424);
+			this.buttonShowViewer.Name = "buttonShowViewer";
+			this.buttonShowViewer.Size = new System.Drawing.Size(75, 23);
+			this.buttonShowViewer.TabIndex = 36;
+			this.buttonShowViewer.Text = "View";
+			this.buttonShowViewer.UseVisualStyleBackColor = true;
+			this.buttonShowViewer.Click += new System.EventHandler(this.buttonShowViewer_Click);
 			// 
 			// imagePanelResult3
 			// 
@@ -553,21 +568,22 @@
 			this.imagePanelThicknessMap.DragDrop += new System.Windows.Forms.DragEventHandler(this.imagePanelInputThicknessMap_DragDrop);
 			this.imagePanelThicknessMap.DragEnter += new System.Windows.Forms.DragEventHandler(this.imagePanelInputThicknessMap_DragEnter);
 			// 
-			// buttonShowViewer
+			// buttonReload
 			// 
-			this.buttonShowViewer.Location = new System.Drawing.Point(530, 424);
-			this.buttonShowViewer.Name = "buttonShowViewer";
-			this.buttonShowViewer.Size = new System.Drawing.Size(75, 23);
-			this.buttonShowViewer.TabIndex = 36;
-			this.buttonShowViewer.Text = "View";
-			this.buttonShowViewer.UseVisualStyleBackColor = true;
-			this.buttonShowViewer.Click += new System.EventHandler(this.buttonShowViewer_Click);
+			this.buttonReload.Location = new System.Drawing.Point(530, 505);
+			this.buttonReload.Name = "buttonReload";
+			this.buttonReload.Size = new System.Drawing.Size(75, 23);
+			this.buttonReload.TabIndex = 37;
+			this.buttonReload.Text = "Reload";
+			this.buttonReload.UseVisualStyleBackColor = true;
+			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
 			// 
 			// GeneratorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1379, 540);
+			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.buttonShowViewer);
 			this.Controls.Add(this.groupBoxOptions);
 			this.Controls.Add(this.groupBox1);
@@ -635,6 +651,8 @@
 		private ImagePanel imagePanelResult2;
 		private ImagePanel imagePanelResult3;
 		private System.Windows.Forms.Button buttonShowViewer;
+		private System.Windows.Forms.Button buttonReload;
+		private System.Windows.Forms.ToolTip toolTip1;
 	}
 }
 

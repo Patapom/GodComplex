@@ -30,7 +30,7 @@ namespace GenerateTranslucencyMap
 		private const int		VISIBILITY_PROGRESS = 50;	// Visibility computation is considered as this % of the total task
 		private const int		MAX_LINES = 16;				// Process at most that amount of lines of a 4096x4096 image for a single dispatch
 
-		private const int		VISIBILITY_SLICES = 16;		// Maximum amount of horizon lines collected in the visibility texture
+		private const int		VISIBILITY_SLICES = 32;		// Maximum amount of horizon lines collected in the visibility texture
 
 		#endregion
 
@@ -74,7 +74,7 @@ namespace GenerateTranslucencyMap
 		private RegistryKey						m_AppKey;
 		private string							m_ApplicationPath;
 
-		private ViewerForm						m_viewerForm = new ViewerForm();
+		private ViewerForm						m_viewerForm;
 
 		private System.IO.FileInfo				m_SourceFileName = null;
 		private int								W, H;
@@ -83,15 +83,15 @@ namespace GenerateTranslucencyMap
 		private ImageUtility.Bitmap				m_BitmapSourceAlbedo = null;
 		private ImageUtility.Bitmap				m_BitmapSourceTransmittance = null;
 
-		private RendererManaged.Device			m_Device = new RendererManaged.Device();
-		private RendererManaged.Texture2D		m_TextureSourceThickness = null;
-		private RendererManaged.Texture3D		m_TextureSourceVisibility = null;	// Procedurally generated from thickness
-		private RendererManaged.Texture2D		m_TextureSourceNormal = null;
-		private RendererManaged.Texture2D		m_TextureSourceAlbedo = null;
-		private RendererManaged.Texture2D		m_TextureSourceTransmittance = null;
-		private RendererManaged.Texture2D		m_TextureTarget0 = null;
-		private RendererManaged.Texture2D		m_TextureTarget1 = null;
-		private RendererManaged.Texture2D		m_TextureTarget_CPU = null;
+		internal RendererManaged.Device			m_Device = new RendererManaged.Device();
+		internal RendererManaged.Texture2D		m_TextureSourceThickness = null;
+		internal RendererManaged.Texture3D		m_TextureSourceVisibility = null;	// Procedurally generated from thickness
+		internal RendererManaged.Texture2D		m_TextureSourceNormal = null;
+		internal RendererManaged.Texture2D		m_TextureSourceAlbedo = null;
+		internal RendererManaged.Texture2D		m_TextureSourceTransmittance = null;
+		internal RendererManaged.Texture2D		m_TextureTarget0 = null;
+		internal RendererManaged.Texture2D		m_TextureTarget1 = null;
+		internal RendererManaged.Texture2D		m_TextureTarget_CPU = null;
 
 		// Directional Translucency Map Generation
 		private RendererManaged.ConstantBuffer<CBInput>						m_CB_Input;
@@ -121,6 +121,8 @@ namespace GenerateTranslucencyMap
 		{
 			InitializeComponent();
 
+			m_viewerForm = new ViewerForm( this );
+
  			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\TranslucencyMapGenerator" );
 			m_ApplicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );
 		}
@@ -130,10 +132,9 @@ namespace GenerateTranslucencyMap
  			base.OnLoad(e);
 
 			try {
-//				m_Device.Init( imagePanelResult3.Handle, false, true );
 				m_Device.Init( m_viewerForm.Handle, false, true );
 
-				m_viewerForm.Init( m_Device );
+				m_viewerForm.Init();
 
 				// Create our compute shaders
 				#if DEBUG && !BISOU
@@ -226,6 +227,13 @@ namespace GenerateTranslucencyMap
 				if ( m_BitmapSourceThickness != null )
 					m_BitmapSourceThickness.Dispose();
 				m_BitmapSourceThickness = null;
+				if ( m_TextureSourceThickness != null )
+					m_TextureSourceThickness.Dispose();
+				m_TextureSourceThickness = null;
+
+				if ( m_TextureSourceVisibility != null )
+					m_TextureSourceVisibility.Dispose();
+				m_TextureSourceVisibility = null;
 
 				if ( m_TextureTarget_CPU != null )
 					m_TextureTarget_CPU.Dispose();
@@ -236,13 +244,6 @@ namespace GenerateTranslucencyMap
 				if ( m_TextureTarget1 != null )
 					m_TextureTarget1.Dispose();
 				m_TextureTarget1 = null;
-				if ( m_TextureSourceThickness != null )
-					m_TextureSourceThickness.Dispose();
-				m_TextureSourceThickness = null;
-				if ( m_TextureSourceVisibility != null )
-					m_TextureSourceVisibility.Dispose();
-				m_TextureSourceVisibility = null;
-				m_viewerForm.m_Tex_Visibility = null;
 
 				// Load the source image assuming it's in linear space
 				m_SourceFileName = _FileName;
@@ -263,7 +264,6 @@ namespace GenerateTranslucencyMap
 
 				// Build the 3D visibility texture
 				m_TextureSourceVisibility = new RendererManaged.Texture3D( m_Device, W, H, VISIBILITY_SLICES, 1, RendererManaged.PIXEL_FORMAT.R16_FLOAT, false, true, null );
-				m_viewerForm.m_Tex_Visibility = m_TextureSourceVisibility;
 
 				// Build the target UAV & staging texture for readback
 				m_TextureTarget0 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, true, null );
@@ -286,6 +286,9 @@ namespace GenerateTranslucencyMap
 				if ( m_BitmapSourceNormal != null )
 					m_BitmapSourceNormal.Dispose();
 				m_BitmapSourceNormal = null;
+				if ( m_TextureSourceNormal != null )
+					m_TextureSourceNormal.Dispose();
+				m_TextureSourceNormal = null;
 
 				// Load the source image assuming it's in linear space
 				m_BitmapSourceNormal = new ImageUtility.Bitmap( _FileName, m_LinearProfile );
@@ -323,6 +326,9 @@ namespace GenerateTranslucencyMap
 				if ( m_BitmapSourceTransmittance != null )
 					m_BitmapSourceTransmittance.Dispose();
 				m_BitmapSourceTransmittance = null;
+				if ( m_TextureSourceTransmittance != null )
+					m_TextureSourceTransmittance.Dispose();
+				m_TextureSourceTransmittance = null;
 
 				// Load the source image assuming it's in linear space
 				m_BitmapSourceTransmittance = new ImageUtility.Bitmap( _FileName, m_sRGBProfile );
@@ -333,7 +339,7 @@ namespace GenerateTranslucencyMap
 
 				// Build the source texture
 				ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[W,H];
-				m_sRGBProfile.XYZ2RGB( m_BitmapSourceTransmittance.ContentXYZ, ContentRGB );
+				m_LinearProfile.XYZ2RGB( m_BitmapSourceTransmittance.ContentXYZ, ContentRGB );
 
 				RendererManaged.PixelsBuffer	SourceMap = new RendererManaged.PixelsBuffer( W*H*16 );
 				using ( System.IO.BinaryWriter Wr = SourceMap.OpenStreamWrite() )
@@ -360,6 +366,9 @@ namespace GenerateTranslucencyMap
 				if ( m_BitmapSourceAlbedo != null )
 					m_BitmapSourceAlbedo.Dispose();
 				m_BitmapSourceAlbedo = null;
+				if ( m_TextureSourceAlbedo != null )
+					m_TextureSourceAlbedo.Dispose();
+				m_TextureSourceAlbedo = null;
 
 				// Load the source image assuming it's in linear space
 				m_BitmapSourceAlbedo = new ImageUtility.Bitmap( _FileName, m_sRGBProfile );
@@ -370,7 +379,7 @@ namespace GenerateTranslucencyMap
 
 				// Build the source texture
 				ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[W,H];
-				m_sRGBProfile.XYZ2RGB( m_BitmapSourceAlbedo.ContentXYZ, ContentRGB );
+				m_LinearProfile.XYZ2RGB( m_BitmapSourceAlbedo.ContentXYZ, ContentRGB );
 
 				RendererManaged.PixelsBuffer	SourceMap = new RendererManaged.PixelsBuffer( W*H*16 );
 				using ( System.IO.BinaryWriter Wr = SourceMap.OpenStreamWrite() )
@@ -437,7 +446,7 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 
 				m_CB_Input.m._Width = (uint) W;
 				m_CB_Input.m._Height = (uint) H;
-				m_CB_Input.m._TexelSize_mm = 10.0f / floatTrackbarControlPixelDensity.Value;
+				m_CB_Input.m._TexelSize_mm = 10.0f * floatTrackbarControlPixelDensity.Value / Math.Max( W, H );
 				m_CB_Input.m._Thickness_mm = floatTrackbarControlThickness.Value;
 				m_CB_Input.m._KernelSize = 32;
 				m_CB_Input.m._Sigma_a = floatTrackbarControlAbsorptionCoefficient.Value;
@@ -529,13 +538,15 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 			if ( !m_CS_GenerateVisibilityMap.Use() )
 				throw new Exception( "Can't generate translucency map as visibility map compute shader failed to compile!" );
 
+			_Target.RemoveFromLastAssignedSlots();
+
 			_Source.SetCS( 0 );
 			_Target.SetCSUAV( 0 );
 
 			m_CB_Visibility.m._Width = (uint) W;
-			m_CB_Visibility.m._Width = (uint) H;
+			m_CB_Visibility.m._Height = (uint) H;
 			m_CB_Visibility.m._Thickness_mm = floatTrackbarControlThickness.Value;
-			m_CB_Visibility.m._TexelSize_mm = 10.0f / floatTrackbarControlPixelDensity.Value;
+			m_CB_Visibility.m._TexelSize_mm = 10.0f * floatTrackbarControlPixelDensity.Value / Math.Max( W, H );
 			m_CB_Visibility.m._DiscRadius = 32;
 
 			int	h = Math.Max( 1, MAX_LINES*1024 / W );
@@ -1045,6 +1056,10 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 			m_viewerForm.Show( this );
 		}
 
+		private void buttonReload_Click( object sender, EventArgs e )
+		{
+			m_Device.ReloadModifiedShaders();
+		}
 
 		#endregion
 	}

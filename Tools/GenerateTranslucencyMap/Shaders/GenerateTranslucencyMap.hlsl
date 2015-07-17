@@ -1,4 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // Directional Translucency Map generator
 // This compute shader will generate the directional translucency map and store the result into a target UAV
 ////////////////////////////////////////////////////////////////////////////////
@@ -6,7 +6,7 @@
 static const int	DIPOLES_COUNT = 3;	// We're using a maximum of 3 dipoles
 
 static const float	PI = 3.1415926535897932384626433832795;
-static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (sRGB white point) (cf. http://wiki.patapom.com/index.php/Colorimetry)
+static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2 degree observer (sRGB white point) (cf. http://wiki.patapom.com/index.php/Colorimetry)
 
 cbuffer	CBInput : register( b0 ) {
 	uint	_Width;

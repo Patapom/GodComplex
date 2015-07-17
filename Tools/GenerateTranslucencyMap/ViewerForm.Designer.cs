@@ -31,6 +31,7 @@
 			this.ClientSize = new System.Drawing.Size(796, 519);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "ViewerForm";
+			this.ShowInTaskbar = false;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Text = "ViewerForm";
 			this.ResumeLayout(false);
