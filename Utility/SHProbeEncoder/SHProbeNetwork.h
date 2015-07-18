@@ -38,7 +38,7 @@ public:		// NESTED TYPES
 	};
 
 	class IRenderSceneDelegate {
-	public: virtual void	operator()( Material& _Material ) = 0;
+	public: virtual void	operator()( Shader& _Material ) = 0;
 	};
 
 private:	// RUNTIME STRUCTURES
@@ -208,8 +208,8 @@ private:	// FIELDS
 
 	Texture2D*				m_pRTCubeMap;
 
-	Material*				m_pMatRenderCubeMap;		// Renders the scene into a cubemap
-	Material*				m_pMatRenderNeighborProbe;	// Renders the neighbor probes as planes to form a 3D voronoï cell
+	Shader*				m_pMatRenderCubeMap;		// Renders the scene into a cubemap
+	Shader*				m_pMatRenderNeighborProbe;	// Renders the neighbor probes as planes to form a 3D voronoï cell
 	ComputeShader*			m_pCSUpdateProbeDynamicSH;	// Dynamically update probes (spread across several frames)
 	ComputeShader*			m_pCSAccumulateProbeSH;		// Dynamically update probes' SH by accumulating static + sky + dynamic SH (done each frame)
 

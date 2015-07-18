@@ -6,6 +6,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
+static const uint	THREADS_COUNT = 32;
+static const uint	KERNEL_AREA = (2*THREADS_COUNT)*(2*THREADS_COUNT);
+
 cbuffer	CBInput : register( b0 )
 {
 	uint	_Y0;				// Start scanline for this group
@@ -17,15 +20,16 @@ cbuffer	CBInput : register( b0 )
 Texture2D<float>			_Source : register( t0 );
 RWTexture2D<float>			_Target : register( u0 );
 
-groupshared float2			gs_Samples[64*64];
+groupshared float2			gs_Samples[KERNEL_AREA];
 
-float2	GaussianSample( uint2 _Dimensions, int2 _PixelPosition, int2 _PixelOffset, float _H0 )
+float2	GaussianSample( int2 _Dimensions, int2 _PixelPosition, int2 _PixelOffset, float _H0 )
 {
 	_PixelPosition += _PixelOffset;
 	if ( _Tile )
-		_PixelPosition = (_PixelPosition + _Dimensions) % _Dimensions;
+		_PixelPosition = uint2(_PixelPosition + _Dimensions) % uint2(_Dimensions);
+	else if ( any( _PixelPosition.xy < 0 ) || any( _PixelPosition.xy >= _Dimensions ) )
+		return 0.0;
 
-	int2	PixelPosition = int2( _PixelPosition );
 	float	H = _Source.Load( int3( _PixelPosition, 0 ) ).x;
 
 	// Domain filter
@@ -44,32 +48,80 @@ float2	GaussianSample( uint2 _Dimensions, int2 _PixelPosition, int2 _PixelOffset
 	return DomainGauss * RangeGauss * float2( H, 1.0 );
 }
 
-[numthreads( 32, 32, 1 )]
+uint	GetSampleIndex( uint2 _Pos ) {
+	return 2*THREADS_COUNT*_Pos.y+_Pos.x;
+}
+
+[numthreads( THREADS_COUNT, THREADS_COUNT, 1 )]
 void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID )
 {
 	uint2	PixelPosition = uint2( _GroupID.x, _Y0 + _GroupID.y );
+	uint2	ThreadIndex = _GroupThreadID.xy;
 
-	uint2	Dimensions;
+	int2	Dimensions;
 	_Source.GetDimensions( Dimensions.x, Dimensions.y );
 
 	float	H0 =  _Source.Load( uint3( PixelPosition, 0 ) ).x;
 
-	uint	SampleOffset = 4*(32*_GroupThreadID.y+_GroupThreadID.x);
-	int2	PixelOffset = 2*_GroupThreadID.xy - 32;
-	gs_Samples[SampleOffset+0] = GaussianSample( Dimensions, PixelPosition, PixelOffset, H0 );	PixelOffset.x++;
-	gs_Samples[SampleOffset+1] = GaussianSample( Dimensions, PixelPosition, PixelOffset, H0 );	PixelOffset.y++;
-	gs_Samples[SampleOffset+2] = GaussianSample( Dimensions, PixelPosition, PixelOffset, H0 );	PixelOffset.x--;
-	gs_Samples[SampleOffset+3] = GaussianSample( Dimensions, PixelPosition, PixelOffset, H0 );
+	// Each thred processes 4 samples
+	uint	SampleOffset = GetSampleIndex( 2*ThreadIndex );
+	int2	PixelOffset = 2*int2(ThreadIndex) - int(THREADS_COUNT);
+	gs_Samples[SampleOffset+0] = GaussianSample( Dimensions, PixelPosition, PixelOffset, H0 );					PixelOffset.x++;
+	gs_Samples[SampleOffset+1] = GaussianSample( Dimensions, PixelPosition, PixelOffset, H0 );					PixelOffset.y++;
+	gs_Samples[SampleOffset+2*THREADS_COUNT+1] = GaussianSample( Dimensions, PixelPosition, PixelOffset, H0 );	PixelOffset.x--;
+	gs_Samples[SampleOffset+2*THREADS_COUNT+0] = GaussianSample( Dimensions, PixelPosition, PixelOffset, H0 );
 
 	GroupMemoryBarrierWithGroupSync();
 
-	if ( all( _GroupThreadID == 0 ) )
-	{
-		float2	Result = 0.0;
-		for ( int i=0; i < 64*64; i++ )
-			Result += gs_Samples[i];
-		Result.x /= Result.y;
+	// Perform parallel reduction
+	uint	SampleIndex = GetSampleIndex( ThreadIndex );
 
-		_Target[PixelPosition] = Result.x;
+	if ( all( ThreadIndex < 32U ) && THREADS_COUNT >= 32 ) {
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2(32, 0) )];
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2( 0,32) )];
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2(32,32) )];
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	if ( all( ThreadIndex < 16 ) && THREADS_COUNT >= 16 ) {
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2(16, 0) )];
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2( 0,16) )];
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2(16,16) )];
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	if ( all( ThreadIndex < 8 ) && THREADS_COUNT >= 8 ) {
+		uint	SampleIndex = GetSampleIndex( ThreadIndex );
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2(8,0) )];
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2(0,8) )];
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2(8,8) )];
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	if ( all( ThreadIndex < 4 ) && THREADS_COUNT >= 4 ) {
+		uint	SampleIndex = GetSampleIndex( ThreadIndex );
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2(4,0) )];
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2(0,4) )];
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2(4,4) )];
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	if ( all( ThreadIndex < 2 ) && THREADS_COUNT >= 2 ) {
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2(2,0) )];
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2(0,2) )];
+		gs_Samples[SampleIndex] += gs_Samples[GetSampleIndex( ThreadIndex+uint2(2,2) )];
+	}
+
+//	GroupMemoryBarrierWithGroupSync();	// Wavefront is large enough so we don't need to sync
+
+	// Final sum
+	if ( all( ThreadIndex == 0 ) ) {
+		float2	Result  = gs_Samples[0] + gs_Samples[1] + gs_Samples[2] + gs_Samples[3];
+
+		_Target[PixelPosition] = Result.x / Result.y;
 	}
 }

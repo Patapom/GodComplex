@@ -2,7 +2,7 @@
 #include "ComputeShader.h"
 #include "ConstantBuffer.h"
 #include "StructuredBuffer.h"
-#include "Material.h"
+#include "Shader.h"
 
 #include <stdio.h>
 #include <io.h>
@@ -149,7 +149,7 @@ void	ComputeShader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pCS ) {
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the compute shader
 	ASSERT( _pCS != NULL || m_pEntryPointCS != NULL, "Invalid ComputeShader entry point!" );
-	ID3DBlob*   pShader = _pCS == NULL ? Material::CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointCS, "cs_5_0", this, true ) : _pCS;
+	ID3DBlob*   pShader = _pCS == NULL ? Shader::CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointCS, "cs_5_0", this, true ) : _pCS;
 	if ( pShader != NULL )
 	{
 		Check( m_Device.DXDevice().CreateComputeShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pCS ) );
@@ -704,7 +704,7 @@ ComputeShader*	ComputeShader::CreateFromBinaryBlob( Device& _Device, const char*
 	ASSERT( _pEntryPoint != NULL, "You must provide a valid entry point!" );
 
 //	D3D_SHADER_MACRO
-	ID3DBlob*	pCS = Material::LoadBinaryBlob( _pShaderFileName, _pMacros, _pEntryPoint );
+	ID3DBlob*	pCS = Shader::LoadBinaryBlob( _pShaderFileName, _pMacros, _pEntryPoint );
 
 	ComputeShader*	pResult = new ComputeShader( _Device, _pShaderFileName, pCS );
 

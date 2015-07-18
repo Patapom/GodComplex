@@ -32,7 +32,7 @@ void	EffectScene::Update( float _Time, float _DeltaTime )
 			m_ppObjects[ObjectIndex]->Update( _Time, _DeltaTime );
 }
 
-void	EffectScene::Render( Material& _Material, bool _bDepthPass ) const
+void	EffectScene::Render( Shader& _Material, bool _bDepthPass ) const
 {
 	// Upload our materials
 	m_pMaterials->UpdateMaterialsBuffer();
@@ -208,7 +208,7 @@ void	EffectScene::Object::Update( float _Time, float _DeltaTime )
 	m_bPRSDirty = false;
 }
 
-void	EffectScene::Object::Render( Material& _Material, bool _bDepthPass ) const
+void	EffectScene::Object::Render( Shader& _Material, bool _bDepthPass ) const
 {
 	// Update our transform
 	m_pCB_Object->UpdateData();
@@ -258,7 +258,7 @@ EffectScene::Object::Primitive::~Primitive()
 	delete m_pCB_Primitive;
 }
 
-void	EffectScene::Object::Primitive::Render( Material& _Material, bool _bDepthPass ) const
+void	EffectScene::Object::Primitive::Render( Shader& _Material, bool _bDepthPass ) const
 {
 	ASSERT( m_pPrimitive != NULL, "Primitive was not set!" );
 

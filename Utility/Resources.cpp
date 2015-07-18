@@ -61,7 +61,7 @@ public:
 		const char**	ppDependencies;									// List of dependencies
 	};
 	Dependencies*						m_pDependencies;				// The list of dependencies for each include file
-	DictionaryString<Material*>			m_pShaderName2Material;			// A map from shader file to material
+	DictionaryString<Shader*>			m_pShaderName2Material;			// A map from shader file to material
 	DictionaryString<ComputeShader*>	m_pShaderName2ComputeShader;	// A map from shader file to material
 
 	const char*							m_pCurrentShaderFileName;		// The name of the shader currently being compiled
@@ -120,7 +120,7 @@ public:
 	}
 
 	void	SetCurrentlyCompilingShader( const char* _pShaderFileName );
-	void	RegisterMaterial( const char* _pShaderFileName, Material& _Material );
+	void	RegisterMaterial( const char* _pShaderFileName, Shader& _Material );
 	void	RegisterComputeShader( const char* _pShaderFileName, ComputeShader& _ComputeShader );
 
 #ifdef SURE_DEBUG
@@ -139,12 +139,12 @@ struct	ShaderResource
 	const char*	pShaderFileName;
 };
 
-Material*		CreateMaterial( U16 _ShaderResourceID, const char* _pFileName, const IVertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, D3D_SHADER_MACRO* _pMacros )
+Shader*		CreateMaterial( U16 _ShaderResourceID, const char* _pFileName, const IVertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, D3D_SHADER_MACRO* _pMacros )
 {
 	return CreateMaterial( _ShaderResourceID, _pFileName, _Format, _pEntryPointVS, NULL, NULL, _pEntryPointGS, _pEntryPointPS, _pMacros );
 }
 
-Material*		CreateMaterial( U16 _ShaderResourceID, const char* _pFileName, const IVertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, D3D_SHADER_MACRO* _pMacros )
+Shader*		CreateMaterial( U16 _ShaderResourceID, const char* _pFileName, const IVertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, D3D_SHADER_MACRO* _pMacros )
 {
 	const char*	pFileName = _pFileName;
 
@@ -153,7 +153,7 @@ Material*		CreateMaterial( U16 _ShaderResourceID, const char* _pFileName, const 
 	ASSERT( pShaderCode != NULL, "Failed to load shader resource!" );
 
 	gs_IncludesManager.SetCurrentlyCompilingShader( pFileName );
-	Material*	pResult = new Material( gs_Device, pFileName, _Format, pShaderCode, _pMacros, _pEntryPointVS, _pEntryPointHS, _pEntryPointDS, _pEntryPointGS, _pEntryPointPS, &gs_IncludesManager );
+	Shader*	pResult = new Shader( gs_Device, pFileName, _Format, pShaderCode, _pMacros, _pEntryPointVS, _pEntryPointHS, _pEntryPointDS, _pEntryPointGS, _pEntryPointPS, &gs_IncludesManager );
 	gs_IncludesManager.RegisterMaterial( pFileName, *pResult );
 
 	delete pShaderCode;	// We musn't forget to delete this temporary buffer !
@@ -238,7 +238,7 @@ void	IncludesManager::SetCurrentlyCompilingShader( const char* _pShaderFileName 
 #endif
 }
 
-void	IncludesManager::RegisterMaterial( const char* _pShaderFileName, Material& _Material )
+void	IncludesManager::RegisterMaterial( const char* _pShaderFileName, Shader& _Material )
 {
 #ifdef _DEBUG
 	m_pShaderName2Material.AddUnique( _pShaderFileName, &_Material );
@@ -288,7 +288,7 @@ void	IncludesManager::WatchIncludeModifications() const
 		for ( int DependencyIndex=0; DependencyIndex < D.Count; DependencyIndex++ )
 		{
 			const char*	pShaderFile = D.ppDependencies[DependencyIndex];
-			Material**	ppMaterial = m_pShaderName2Material.Get( pShaderFile );
+			Shader**	ppMaterial = m_pShaderName2Material.Get( pShaderFile );
 			if ( ppMaterial != NULL )
 			{	// Recompile that material...
 				(*ppMaterial)->ForceRecompile();

@@ -160,20 +160,20 @@ private:	// FIELDS
 
 	// Internal Data
 	ComputeShader*		m_pMatDownsampleDepth;
-	Material*			m_pMatDepthWrite;
-	Material*			m_pMatSplatCameraFrustum;
-	Material*			m_pMatComputeTransmittance;
-	Material*			m_pMatDepthPrePass;
-	Material*			m_ppMatDisplay[2];
-	Material*			m_pMatCombine;
+	Shader*			m_pMatDepthWrite;
+	Shader*			m_pMatSplatCameraFrustum;
+	Shader*			m_pMatComputeTransmittance;
+	Shader*			m_pMatDepthPrePass;
+	Shader*			m_ppMatDisplay[2];
+	Shader*			m_pMatCombine;
 
 	Primitive*			m_pPrimBox;
 	Primitive*			m_pPrimFrustum;
 #ifdef SHOW_TERRAIN
 	Primitive*			m_pPrimTerrain;
 	Texture2D*			m_pRTTerrainShadow;
-	Material*			m_pMatTerrainShadow;
-	Material*			m_pMatTerrain;
+	Shader*			m_pMatTerrainShadow;
+	Shader*			m_pMatTerrain;
 #endif
 
 	Texture2D*			m_pRTDownsampledDepth;
@@ -311,7 +311,7 @@ protected:
 #ifdef BUILD_SKY_TABLES_USING_CS
 	void		DispatchStage( ComputeShader& M );
 #else
-	void		DispatchStage( Material& M );
+	void		DispatchStage( Shader& M );
 #endif
 
 

@@ -26,7 +26,7 @@ namespace idTech5Map
 				public byte		m_usageIndex;
 				public byte		m_offset;
 				public byte		m_stream;
-				string			m_Info;
+				public string	m_Info;
 
 				delegate float4	Reader( BinaryReader _R );
 				Reader			m_Reader;

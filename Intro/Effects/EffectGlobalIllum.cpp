@@ -825,7 +825,7 @@ void*	EffectGlobalIllum::TagPrimitive( const Scene::Mesh& _Mesh, const Scene::Me
 	return pPrim;
 }
 
-void	EffectGlobalIllum::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride ) const
+void	EffectGlobalIllum::RenderMesh( const Scene::Mesh& _Mesh, Shader* _pMaterialOverride ) const
 {
 	// Upload the object's CB
 	memcpy( &m_pCB_Object->m.Local2World, &_Mesh.m_Local2World, sizeof(float4x4) );
@@ -837,7 +837,7 @@ void	EffectGlobalIllum::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMateri
 		Scene::Mesh::Primitive&	ScenePrimitive = _Mesh.m_pPrimitives[PrimitiveIndex];
 		Scene::Material&		SceneMaterial = *ScenePrimitive.m_pMaterial;
 
-		Material*	pMat = _pMaterialOverride == NULL ? (Material*) SceneMaterial.m_pTag : _pMaterialOverride;
+		Shader*	pMat = _pMaterialOverride == NULL ? (Shader*) SceneMaterial.m_pTag : _pMaterialOverride;
 		if ( pMat == NULL )
 			continue;	// Unsupported material!
 		Primitive*	pPrim = (Primitive*) ScenePrimitive.m_pTag;

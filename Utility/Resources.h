@@ -19,7 +19,7 @@
 #include "d3dcommon.h"
 
 class IVertexFormatDescriptor;
-class Material;
+class Shader;
 class ComputeShader;
 
 
@@ -34,8 +34,8 @@ char*			LoadResourceShader( U16 _ResourceID, U32& _CodeSize );
 
 // Create a full-fledged material given the shader resource ID and the vertex format
 // NOTE: The _pFileName is only here for debug purpose and should be provided only if you wish to watch a change on the source file
-Material*		CreateMaterial( U16 _ShaderResourceID, const char* _pFileName, const IVertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, D3D_SHADER_MACRO* _pMacros=NULL );
-Material*		CreateMaterial( U16 _ShaderResourceID, const char* _pFileName, const IVertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, D3D_SHADER_MACRO* _pMacros=NULL );
+Shader*		CreateMaterial( U16 _ShaderResourceID, const char* _pFileName, const IVertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointGS, const char* _pEntryPointPS, D3D_SHADER_MACRO* _pMacros=NULL );
+Shader*		CreateMaterial( U16 _ShaderResourceID, const char* _pFileName, const IVertexFormatDescriptor& _Format, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, D3D_SHADER_MACRO* _pMacros=NULL );
 
 // Create a full-fledged compute shader given the shader resource ID
 // NOTE: The _pFileName is only here for debug purpose and should be provided only if you wish to watch a change on the source file

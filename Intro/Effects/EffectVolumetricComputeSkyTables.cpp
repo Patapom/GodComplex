@@ -27,15 +27,15 @@ void	EffectVolumetric::InitSkyTables()
 	Texture3D*	pRTDeltaScatteringMie = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );			// deltaSM (temp)
 	Texture3D*	pRTDeltaScattering = new Texture3D( m_Device, RES_3D_U, RES_3D_COS_THETA_VIEW, RES_3D_ALTITUDE, PixelFormatRGBA16F::DESCRIPTOR, 1, NULL );				// deltaJ (temp)
 
-	Material*	pMatComputeTransmittance;
-	Material*	pMatComputeIrradiance_Single;
-	Material*	pMatComputeInScattering_Single;
-	Material*	pMatComputeInScattering_Delta;
-	Material*	pMatComputeIrradiance_Delta;
-	Material*	pMatComputeInScattering_Multiple;
-	Material*	pMatMergeInitialScattering;
-	Material*	pMatAccumulateIrradiance;
-	Material*	pMatAccumulateInScattering;
+	Shader*	pMatComputeTransmittance;
+	Shader*	pMatComputeIrradiance_Single;
+	Shader*	pMatComputeInScattering_Single;
+	Shader*	pMatComputeInScattering_Delta;
+	Shader*	pMatComputeIrradiance_Delta;
+	Shader*	pMatComputeInScattering_Multiple;
+	Shader*	pMatMergeInitialScattering;
+	Shader*	pMatAccumulateIrradiance;
+	Shader*	pMatAccumulateInScattering;
 
 	CHECK_MATERIAL( pMatComputeInScattering_Delta = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, VertexFormatPt4::DESCRIPTOR, "VS", "GS", "PreComputeInScattering_Delta" ), 14 );			// inscatterS
 

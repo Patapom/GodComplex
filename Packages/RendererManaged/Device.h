@@ -7,7 +7,7 @@
 #include "../../RendererD3D11/Components/Texture2D.h"
 #include "../../RendererD3D11/Components/Texture3D.h"
 #include "../../RendererD3D11/Components/StructuredBuffer.h"
-#include "../../RendererD3D11/Components/Material.h"
+#include "../../RendererD3D11/Components/Shader.h"
 #include "../../RendererD3D11/Components/ComputeShader.h"
 #include "../../RendererD3D11/Components/ConstantBuffer.h"
 #include "../../RendererD3D11/Components/Primitive.h"
@@ -32,13 +32,13 @@ namespace RendererManaged {
 	public interface class	IView
 	{
 	public:
-		virtual property int	Width				{ int get() = 0; }
-		virtual property int	Height				{ int get() = 0; }
-		virtual property int	ArraySizeOrDepth	{ int get() = 0; }
-		virtual property ::ID3D11ShaderResourceView*	SRV { ::ID3D11ShaderResourceView*	get() = 0; }
-		virtual property ::ID3D11RenderTargetView*		RTV { ::ID3D11RenderTargetView*		get() = 0; }
-		virtual property ::ID3D11UnorderedAccessView*	UAV { ::ID3D11UnorderedAccessView*	get() = 0; }
-		virtual property ::ID3D11DepthStencilView*		DSV { ::ID3D11DepthStencilView*		get() = 0; }
+		virtual property int							Width				{ int get() = 0; }
+		virtual property int							Height				{ int get() = 0; }
+		virtual property int							ArraySizeOrDepth	{ int get() = 0; }
+		virtual property ::ID3D11ShaderResourceView*	SRV					{ ::ID3D11ShaderResourceView*	get() = 0; }
+		virtual property ::ID3D11RenderTargetView*		RTV					{ ::ID3D11RenderTargetView*		get() = 0; }
+		virtual property ::ID3D11UnorderedAccessView*	UAV					{ ::ID3D11UnorderedAccessView*	get() = 0; }
+		virtual property ::ID3D11DepthStencilView*		DSV					{ ::ID3D11DepthStencilView*		get() = 0; }
 	};
 
 	// Main device
@@ -109,8 +109,8 @@ namespace RendererManaged {
 		void	ReloadModifiedShaders()
 		{
 			// Reload modified shaders
-			Material::WatchShadersModifications();
-			ComputeShader::WatchShadersModifications();
+			::Shader::WatchShadersModifications();
+			::ComputeShader::WatchShadersModifications();
 		}
 	};
 }

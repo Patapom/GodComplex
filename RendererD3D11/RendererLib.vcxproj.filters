@@ -14,9 +14,6 @@
     <ClInclude Include="Components\ConstantBuffer.h">
       <Filter>Components</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Material.h">
-      <Filter>Components</Filter>
-    </ClInclude>
     <ClInclude Include="Components\Primitive.h">
       <Filter>Components</Filter>
     </ClInclude>
@@ -77,6 +74,9 @@
     <ClInclude Include="..\Utility\TextureFilePOM.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Components\Shader.h">
+      <Filter>Components</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -88,9 +88,6 @@
       <Filter>Components</Filter>
     </ClCompile>
     <ClCompile Include="Components\ConstantBuffer.cpp">
-      <Filter>Components</Filter>
-    </ClCompile>
-    <ClCompile Include="Components\Material.cpp">
       <Filter>Components</Filter>
     </ClCompile>
     <ClCompile Include="Components\Primitive.cpp">
@@ -125,6 +122,9 @@
     </ClCompile>
     <ClCompile Include="..\Utility\TextureFilePOM.cpp">
       <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Components\Shader.cpp">
+      <Filter>Components</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

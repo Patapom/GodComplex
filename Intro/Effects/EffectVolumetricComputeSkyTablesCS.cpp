@@ -31,7 +31,7 @@ namespace
 	ComputeShader*		m_pCSComputeInScattering_Single = NULL;
 	ComputeShader*		m_pCSComputeInScattering_Delta = NULL;
 #ifdef USE_PIXEL_SHADER_FOR_DELTA_IRRADIANCE
-	Material*			m_pMatComputeIrradiance_Delta = NULL;
+	Shader*			m_pMatComputeIrradiance_Delta = NULL;
 #else
 	ComputeShader*		m_pCSComputeIrradiance_Delta = NULL;
 #endif
@@ -200,7 +200,7 @@ void	EffectVolumetric::InitSkyTables()
 	CHECK_MATERIAL( m_pCSComputeTransmittance = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",			"PreComputeTransmittance" ), 10 );
 	CHECK_MATERIAL( m_pCSComputeIrradiance_Single = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Single" ), 11 );
 #ifdef USE_PIXEL_SHADER_FOR_DELTA_IRRADIANCE
-	CHECK_MATERIAL( m_pMatComputeIrradiance_Delta = Material::CreateFromBinaryBlob( m_Device, VertexFormatPt4::DESCRIPTOR, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl", "VS", NULL, NULL, NULL, "PreComputeIrradiance_Delta" ), 12 );
+	CHECK_MATERIAL( m_pMatComputeIrradiance_Delta = Shader::CreateFromBinaryBlob( m_Device, VertexFormatPt4::DESCRIPTOR, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl", "VS", NULL, NULL, NULL, "PreComputeIrradiance_Delta" ), 12 );
 #else
 	CHECK_MATERIAL( m_pCSComputeIrradiance_Delta = ComputeShader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmosphereCS.hlsl",		"PreComputeIrradiance_Delta" ), 12 );
 #endif

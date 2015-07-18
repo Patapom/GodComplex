@@ -56,9 +56,9 @@ private:	// FIELDS
 	int					m_ErrorCode;
 	Texture2D&			m_RTTarget;
 
-	Material*			m_pMatBuildZBuffer;	// Renders the internal & exteral objects into a single RGBA16F linear ZBuffer
-	Material*			m_pMatDiffusion;	// Performs light diffusion through the volume
-	Material*			m_pMatDisplay;		// Some material for primitive display
+	Shader*			m_pMatBuildZBuffer;	// Renders the internal & exteral objects into a single RGBA16F linear ZBuffer
+	Shader*			m_pMatDiffusion;	// Performs light diffusion through the volume
+	Shader*			m_pMatDisplay;		// Some material for primitive display
 
 	Primitive*			m_pPrimTorusInternal;
 	Primitive*			m_pPrimSphereExternal;

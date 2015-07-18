@@ -45,8 +45,8 @@ private:	// FIELDS
 	int					m_ErrorCode;
 	Texture2D&			m_RTTarget;
 
-	Material*			m_pMatDisplay;			// Displays the room
-	Material*			m_pMatDisplayEmissive;	// Displays the lights
+	Shader*			m_pMatDisplay;			// Displays the room
+	Shader*			m_pMatDisplayEmissive;	// Displays the lights
 //	Material*			m_pMatTestTesselation;	// My first Domain Shader!
 
 	// Primitives

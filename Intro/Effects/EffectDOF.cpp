@@ -302,7 +302,7 @@ m_pRTDownsampledHDRTarget->SetPS( 64 );
 
 void	EffectDOF::Downsample( int _TargetWidth, int _TargetHeight, const ID3D11ShaderResourceView& _Source, const ID3D11RenderTargetView& _Target, DOWNSAMPLE_TYPE _Type ) const
 {
-	Material*	pMaterial = NULL;
+	Shader*	pMaterial = NULL;
 	switch ( _Type )
 	{
 	case 0:	pMaterial = m_pMatDownsampleMin; break;
@@ -813,7 +813,7 @@ void*	EffectDOF::TagPrimitive( const Scene& _Owner, const Scene::Mesh& _Mesh, co
 	return pPrim;
 }
 
-void	EffectDOF::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride )
+void	EffectDOF::RenderMesh( const Scene::Mesh& _Mesh, Shader* _pMaterialOverride )
 {
 	// Upload the object's CB
 	memcpy( &m_pCB_Object->m.Local2World, &_Mesh.m_Local2World, sizeof(float4x4) );
@@ -824,7 +824,7 @@ void	EffectDOF::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverri
 		Scene::Mesh::Primitive&	ScenePrimitive = _Mesh.m_pPrimitives[PrimitiveIndex];
 		Scene::Material&		SceneMaterial = *ScenePrimitive.m_pMaterial;
 
-		Material*	pMat = _pMaterialOverride == NULL ? (Material*) SceneMaterial.m_pTag : _pMaterialOverride;
+		Shader*	pMat = _pMaterialOverride == NULL ? (Shader*) SceneMaterial.m_pTag : _pMaterialOverride;
 		if ( pMat == NULL )
 			continue;	// Unsupported material!
 		Primitive*	pPrim = (Primitive*) ScenePrimitive.m_pTag;

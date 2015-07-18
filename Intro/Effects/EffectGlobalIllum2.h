@@ -99,7 +99,7 @@ protected:	// NESTED TYPES
 	class	RenderScene : public SHProbeNetwork::IRenderSceneDelegate {
 	public:	EffectGlobalIllum2&	m_this;
 		RenderScene( EffectGlobalIllum2& _this ) : m_this( _this ) {}
-		void	operator()( Material& _Material ) {
+		void	operator()( Shader& _Material ) {
 			for ( int MeshIndex=0; MeshIndex < m_this.m_Scene.m_MeshesCount; MeshIndex++ )
 				m_this.RenderMesh( *m_this.m_ppCachedMeshes[MeshIndex], &_Material, true );
 		}
@@ -123,17 +123,17 @@ private:	// FIELDS
 	Texture2D&			m_RTTarget;
 	Primitive&			m_ScreenQuad;
 
-	Material*			m_pMatRender;					// Displays the scene
-	Material*			m_pMatRenderEmissive;			// Displays the scene's emissive objects (area lights)
-	Material*			m_pMatRenderLights;				// Displays the lights as small emissive balls
-	Material*			m_pMatRenderDynamic;			// Displays the dynamic objects as balls with a normal map
-	Material*			m_pCSComputeShadowMapBounds;	// Computes the shadow map bounds
-	Material*			m_pMatRenderShadowMap;			// Renders the directional shadowmap
-	Material*			m_pMatRenderShadowMapPoint;		// Renders the point light shadowmap
-	Material*			m_pMatPostProcess;				// Post-processes the result
-	Material*			m_pMatRenderDebugProbes;		// Displays the probes as small spheres
-	Material*			m_pMatRenderDebugProbesNetwork;	// Displays the probes network
-	Material*			m_pMatRenderDebugProbeVoronoi;	// Displays the probe Voronoï cells
+	Shader*			m_pMatRender;					// Displays the scene
+	Shader*			m_pMatRenderEmissive;			// Displays the scene's emissive objects (area lights)
+	Shader*			m_pMatRenderLights;				// Displays the lights as small emissive balls
+	Shader*			m_pMatRenderDynamic;			// Displays the dynamic objects as balls with a normal map
+	Shader*			m_pCSComputeShadowMapBounds;	// Computes the shadow map bounds
+	Shader*			m_pMatRenderShadowMap;			// Renders the directional shadowmap
+	Shader*			m_pMatRenderShadowMapPoint;		// Renders the point light shadowmap
+	Shader*			m_pMatPostProcess;				// Post-processes the result
+	Shader*			m_pMatRenderDebugProbes;		// Displays the probes as small spheres
+	Shader*			m_pMatRenderDebugProbesNetwork;	// Displays the probes network
+	Shader*			m_pMatRenderDebugProbeVoronoi;	// Displays the probe Voronoï cells
 
 	// Scene & Primitives
 	Scene				m_Scene;
@@ -284,7 +284,7 @@ public:		// METHODS
 	virtual void*	TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh, Scene::Mesh::Primitive& _Primitive ) override;
 
 	// ISceneRenderer Implementation
-	virtual void	RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride, bool _SetMaterial ) override;
+	virtual void	RenderMesh( const Scene::Mesh& _Mesh, Shader* _pMaterialOverride, bool _SetMaterial ) override;
 
 private:
 

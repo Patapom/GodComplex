@@ -101,7 +101,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 			float3	Tr = 0.0;
 			for ( int DipoleIndex=-DIPOLES_COUNT; DipoleIndex <= DIPOLES_COUNT; DipoleIndex++ ) {
 				float	Zr = 2.0 * DipoleIndex * (d + 2.0 * Zb) + l;
-				float	Zv = Zr - l - 2.0 * Zb;
+				float	Zv = Zr - 2.0 * (l + Zb);
 
 				float	Dr = length( float3( _TexelSize_mm * Pos, Zr ) );			// in mm
 				float	Dv = length( float3( _TexelSize_mm * Pos, Zv ) );			// in mm

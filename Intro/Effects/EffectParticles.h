@@ -21,9 +21,9 @@ private:	// FIELDS
 
 	int					m_ErrorCode;
 
-	Material*			m_pMatCompute;
-	Material*			m_pMatDisplay;
-	Material*			m_pMatDebugVoronoi;
+	Shader*			m_pMatCompute;
+	Shader*			m_pMatDisplay;
+	Shader*			m_pMatDebugVoronoi;
 
 	Primitive*			m_pPrimParticle;
 

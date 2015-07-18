@@ -690,7 +690,7 @@ float	t = 2*0.25f * _Time;
 	PERF_BEGIN_EVENT( D3DCOLOR( 0xFFFF0000 ), L"Render Volume" );
 
 //	Material*	pMat = m_Camera.GetCB().Camera2World.GetRow(2).y > m_CloudAltitude+m_CloudThickness ? m_ppMatDisplay[1] : m_ppMatDisplay[0];
-	Material*	pMat = m_ppMatDisplay[0];
+	Shader*	pMat = m_ppMatDisplay[0];
 	USING_MATERIAL_START( *pMat )
 
 		m_Device.ClearRenderTarget( *m_pRTRender, float4( 0.0f, 0.0f, 0.0f, 1.0f ) );

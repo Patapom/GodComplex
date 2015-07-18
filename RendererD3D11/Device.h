@@ -7,7 +7,7 @@
 #define TRY_DIRECTX10_1	// Define this to attempt using DX10.1
 
 class Component;
-class Material;
+class Shader;
 class Texture2D;
 class Texture3D;
 class RasterizerState;
@@ -46,7 +46,7 @@ private:	// FIELDS
 
 	Component*				m_pComponentsStackTop;	// Remember this is the stack TOP so access the components using their m_pNext pointer to reach back to the bottom
 
-	Material*				m_pCurrentMaterial;		// The currently used material
+	Shader*				m_pCurrentMaterial;		// The currently used material
 	RasterizerState*		m_pCurrentRasterizerState;
 	DepthStencilState*		m_pCurrentDepthStencilState;
 	BlendState*				m_pCurrentBlendState;
@@ -97,7 +97,7 @@ public:	 // PROPERTIES
 	const Texture2D&		DefaultRenderTarget() const	{ return *m_pDefaultRenderTarget; }
 	const Texture2D&		DefaultDepthStencil() const	{ return *m_pDefaultDepthStencil; }
 
-	Material*				CurrentMaterial()			{ return m_pCurrentMaterial; }
+	Shader*				CurrentMaterial()			{ return m_pCurrentMaterial; }
 
 
 public:	 // METHODS
@@ -139,6 +139,6 @@ public:
 	static bool	Check( HRESULT _Result );
 
 	friend class Component;
-	friend class Material;
+	friend class Shader;
 };
 

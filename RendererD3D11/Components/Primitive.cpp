@@ -47,11 +47,11 @@ Primitive::~Primitive()
 	if ( m_pIB != NULL ) m_pIB->Release(); m_pIB = NULL;
 }
 
-void	Primitive::Render( Material& _Material )
+void	Primitive::Render( Shader& _Material )
 {
 	Render( _Material, 0, m_VerticesCount, 0, m_IndicesCount, 0 );
 }
-void	Primitive::Render( Material& _Material, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset )
+void	Primitive::Render( Shader& _Material, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset )
 {
 	ASSERT( m_Device.CurrentMaterial() == &_Material, "Attempting to render with a material that is not the currently used material!" );
 
@@ -83,11 +83,11 @@ void	Primitive::Render( Material& _Material, int _StartVertex, int _VerticesCoun
 	}
 }
 
-void	Primitive::RenderInstanced( Material& _Material, int _InstancesCount )
+void	Primitive::RenderInstanced( Shader& _Material, int _InstancesCount )
 {
 	RenderInstanced( _Material, _InstancesCount, 0, m_VerticesCount, 0, m_IndicesCount, 0 );
 }
-void	Primitive::RenderInstanced( Material& _Material, int _InstancesCount, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset )
+void	Primitive::RenderInstanced( Shader& _Material, int _InstancesCount, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset )
 {
 	ASSERT( m_Device.CurrentMaterial() == &_Material, "Attempting to render with a material that is not the currently used material!" );
 

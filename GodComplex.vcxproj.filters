@@ -128,9 +128,6 @@
     <ClInclude Include="RendererD3D11\Components\ConstantBuffer.h">
       <Filter>RendererD3D11\Components</Filter>
     </ClInclude>
-    <ClInclude Include="RendererD3D11\Components\Material.h">
-      <Filter>RendererD3D11\Components</Filter>
-    </ClInclude>
     <ClInclude Include="RendererD3D11\Components\Primitive.h">
       <Filter>RendererD3D11\Components</Filter>
     </ClInclude>
@@ -297,6 +294,9 @@
     <ClInclude Include="Utility\SHProbeEncoder\SHProbe.h">
       <Filter>Utility\SHProbeEncoder</Filter>
     </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Shader.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GodComplex.cpp" />
@@ -310,9 +310,6 @@
       <Filter>RendererD3D11\Components</Filter>
     </ClCompile>
     <ClCompile Include="RendererD3D11\Components\ConstantBuffer.cpp">
-      <Filter>RendererD3D11\Components</Filter>
-    </ClCompile>
-    <ClCompile Include="RendererD3D11\Components\Material.cpp">
       <Filter>RendererD3D11\Components</Filter>
     </ClCompile>
     <ClCompile Include="RendererD3D11\Components\Primitive.cpp">
@@ -470,6 +467,9 @@
     </ClCompile>
     <ClCompile Include="Utility\SHProbeEncoder\SHProbe.cpp">
       <Filter>Utility\SHProbeEncoder</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Shader.cpp">
+      <Filter>RendererD3D11\Components</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

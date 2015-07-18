@@ -110,7 +110,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID )
 	if ( RayIndex == 0 )
 	{
 		float4	Result = 0.0;
-		for ( int i=0; i < MAX_THREADS; i++ )
+		for ( uint i=0; i < MAX_THREADS; i++ )
 			Result += gs_Occlusion[i];
 		Result /= _RaysCount;
 

@@ -17,7 +17,7 @@ static Camera*			gs_pCamera = NULL;
 Primitive*				gs_pPrimQuad = NULL;		// Screen quad for post-processes
 
 // Materials
-static Material*		gs_pMatPostFinal = NULL;	// Final post-process rendering to the screen
+static Shader*		gs_pMatPostFinal = NULL;	// Final post-process rendering to the screen
 
 // Constant buffers
 static CB<CBGlobal>*	gs_pCB_Global = NULL;

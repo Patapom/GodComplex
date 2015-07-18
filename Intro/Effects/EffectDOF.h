@@ -74,20 +74,20 @@ private:	// FIELDS
 	Texture2D&			m_RTTarget;
 	Primitive&			m_ScreenQuad;
 
-	Material*			m_pMatRender;				// Renders the scene
-	Material*			m_pMatRenderCube;			// Renders the gloubi cube
-	Material*			m_pMatDownsampleMin;		// Downsample color scene
-	Material*			m_pMatDownsampleMax;		// Downsample color scene
-	Material*			m_pMatDownsampleAvg;		// Downsample color scene
-	Material*			m_pMatComputeFuzzinessNear;	// Compute near field fuzziness
-	Material*			m_pMatComputeFuzzinessFar;	// Compute far field fuzziness
-	Material*			m_pMatComputeFuzzinessBlur;	// Blurs near field fuzziness
-	Material*			m_pMatDOFNear;				// Compute near field DOF
-	Material*			m_pMatDOFFar;				// Compute far field DOF
-	Material*			m_pMatDOFCombine;			// Combine DOF & scene
+	Shader*			m_pMatRender;				// Renders the scene
+	Shader*			m_pMatRenderCube;			// Renders the gloubi cube
+	Shader*			m_pMatDownsampleMin;		// Downsample color scene
+	Shader*			m_pMatDownsampleMax;		// Downsample color scene
+	Shader*			m_pMatDownsampleAvg;		// Downsample color scene
+	Shader*			m_pMatComputeFuzzinessNear;	// Compute near field fuzziness
+	Shader*			m_pMatComputeFuzzinessFar;	// Compute far field fuzziness
+	Shader*			m_pMatComputeFuzzinessBlur;	// Blurs near field fuzziness
+	Shader*			m_pMatDOFNear;				// Compute near field DOF
+	Shader*			m_pMatDOFFar;				// Compute far field DOF
+	Shader*			m_pMatDOFCombine;			// Combine DOF & scene
 
 
-	Material*			m_pMatShadertoy;
+	Shader*			m_pMatShadertoy;
 
 	// Primitives
 	Scene				m_Scene;

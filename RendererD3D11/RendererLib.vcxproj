@@ -87,7 +87,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;WARNING_AS_ERRORS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -165,8 +165,8 @@
     <ClInclude Include="Components\Component.h" />
     <ClInclude Include="Components\ComputeShader.h" />
     <ClInclude Include="Components\ConstantBuffer.h" />
-    <ClInclude Include="Components\Material.h" />
     <ClInclude Include="Components\Primitive.h" />
+    <ClInclude Include="Components\Shader.h" />
     <ClInclude Include="Components\States.h" />
     <ClInclude Include="Components\StructuredBuffer.h" />
     <ClInclude Include="Components\Texture2D.h" />
@@ -187,8 +187,8 @@
     <ClCompile Include="Components\Component.cpp" />
     <ClCompile Include="Components\ComputeShader.cpp" />
     <ClCompile Include="Components\ConstantBuffer.cpp" />
-    <ClCompile Include="Components\Material.cpp" />
     <ClCompile Include="Components\Primitive.cpp" />
+    <ClCompile Include="Components\Shader.cpp" />
     <ClCompile Include="Components\States.cpp" />
     <ClCompile Include="Components\StructuredBuffer.cpp" />
     <ClCompile Include="Components\Texture2D.cpp" />

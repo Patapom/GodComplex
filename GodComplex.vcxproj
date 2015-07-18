@@ -547,7 +547,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="RendererD3D11\Components\ConstantBuffer.h">
       <DeploymentContent>false</DeploymentContent>
     </ClInclude>
-    <ClInclude Include="RendererD3D11\Components\Material.h" />
+    <ClInclude Include="RendererD3D11\Components\Shader.h" />
     <ClInclude Include="RendererD3D11\Components\Primitive.h" />
     <ClInclude Include="RendererD3D11\Components\States.h" />
     <ClInclude Include="RendererD3D11\Components\StructuredBuffer.h" />
@@ -711,7 +711,7 @@ MinifyAll.cmd</Command>
     <ClCompile Include="RendererD3D11\Components\ConstantBuffer.cpp">
       <DeploymentContent>false</DeploymentContent>
     </ClCompile>
-    <ClCompile Include="RendererD3D11\Components\Material.cpp" />
+    <ClCompile Include="RendererD3D11\Components\Shader.cpp" />
     <ClCompile Include="RendererD3D11\Components\Primitive.cpp" />
     <ClCompile Include="RendererD3D11\Components\States.cpp" />
     <ClCompile Include="RendererD3D11\Components\StructuredBuffer.cpp" />

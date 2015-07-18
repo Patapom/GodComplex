@@ -417,10 +417,10 @@ namespace GenerateTranslucencyMap
 
 				//////////////////////////////////////////////////////////////////////////
 				// 1] Apply bilateral filtering to the input texture as a pre-process
-//				ApplyBilateralFiltering( m_TextureSourceThickness, m_TextureTarget0, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, false );
-//				m_TextureTarget0.SetCS( 0 );
+				ApplyBilateralFiltering( m_TextureSourceThickness, m_TextureTarget0, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, false );
+				m_TextureTarget0.SetCS( 0 );
+//m_TextureSourceThickness.SetCS( 0 );
 
-				m_TextureSourceThickness.SetCS( 0 );
 				m_TextureSourceNormal.SetCS( 1 );
 				m_TextureSourceTransmittance.SetCS( 2 );
 				m_TextureSourceAlbedo.SetCS( 3 );
@@ -428,7 +428,8 @@ namespace GenerateTranslucencyMap
 
 				//////////////////////////////////////////////////////////////////////////
 				// 2] Compute visibility texture
-				BuildVisibilityMap( m_TextureSourceThickness, m_TextureSourceVisibility );
+				BuildVisibilityMap( m_TextureTarget0, m_TextureSourceVisibility );
+//BuildVisibilityMap( m_TextureSourceThickness, m_TextureSourceVisibility );
 
 				m_TextureSourceVisibility.SetCS( 4 );
 

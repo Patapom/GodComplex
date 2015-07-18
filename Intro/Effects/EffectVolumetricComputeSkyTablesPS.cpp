@@ -18,17 +18,17 @@ namespace
 
 	RasterizerState*	m_pRS_CullNoneWithScissoring;
 
-	Material*			m_pMatPSTComputeTransmittance = NULL;		// PST stands for precompute sky table
-	Material*			m_pMatPSTComputeTransmittance_Limited = NULL;
-	Material*			m_pMatPSTComputeIrradiance_Single = NULL;
-	Material*			m_pMatPSTComputeIrradiance_Delta = NULL;
-	Material*			m_pMatPSTComputeInScattering_Single = NULL;
-	Material*			m_pMatPSTComputeInScattering_Delta = NULL;
-	Material*			m_pMatPSTtComputeIrradiance_Delta = NULL;
-	Material*			m_pMatPSTComputeInScattering_Multiple = NULL;
-	Material*			m_pMatPSTMergeInitialScattering = NULL;
-	Material*			m_pMatPSTAccumulateIrradiance = NULL;
-	Material*			m_pMatPSTAccumulateInScattering = NULL;
+	Shader*			m_pMatPSTComputeTransmittance = NULL;		// PST stands for precompute sky table
+	Shader*			m_pMatPSTComputeTransmittance_Limited = NULL;
+	Shader*			m_pMatPSTComputeIrradiance_Single = NULL;
+	Shader*			m_pMatPSTComputeIrradiance_Delta = NULL;
+	Shader*			m_pMatPSTComputeInScattering_Single = NULL;
+	Shader*			m_pMatPSTComputeInScattering_Delta = NULL;
+	Shader*			m_pMatPSTtComputeIrradiance_Delta = NULL;
+	Shader*			m_pMatPSTComputeInScattering_Multiple = NULL;
+	Shader*			m_pMatPSTMergeInitialScattering = NULL;
+	Shader*			m_pMatPSTAccumulateIrradiance = NULL;
+	Shader*			m_pMatPSTAccumulateInScattering = NULL;
 
 	bool				m_bSkyTableDirty = false;
 
@@ -204,16 +204,16 @@ void	EffectVolumetric::InitSkyTables()
 	CHECK_MATERIAL( m_pMatPSTAccumulateInScattering = CreateMaterial( IDR_SHADER_VOLUMETRIC_PRECOMPUTE_ATMOSPHERE, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,		"VS", "GS", "AccumulateInScattering" ), 19 );			// copyInscatterN
 #else
 	// Reload from binary blobs
-	CHECK_MATERIAL( m_pMatPSTComputeTransmittance = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,					"VS", NULL, NULL, "GS",	"PreComputeTransmittance" ), 10 );
-	CHECK_MATERIAL( m_pMatPSTComputeTransmittance_Limited = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeTransmittance_Limited" ), 11 );
-	CHECK_MATERIAL( m_pMatPSTComputeIrradiance_Single = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"PreComputeIrradiance_Single" ), 12 );
-	CHECK_MATERIAL( m_pMatPSTComputeIrradiance_Delta = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"PreComputeIrradiance_Delta" ), 13 );
-	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Single = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeInScattering_Single" ), 14 );
-	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Delta = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeInScattering_Delta" ), 15 );
-	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Multiple = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeInScattering_Multiple" ), 16 );
-	CHECK_MATERIAL( m_pMatPSTMergeInitialScattering = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"MergeInitialScattering" ), 17 );
-	CHECK_MATERIAL( m_pMatPSTAccumulateIrradiance = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,					"VS", NULL, NULL, "GS",	"AccumulateIrradiance" ), 18 );
-	CHECK_MATERIAL( m_pMatPSTAccumulateInScattering = Material::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"AccumulateInScattering" ), 19 );
+	CHECK_MATERIAL( m_pMatPSTComputeTransmittance = Shader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,					"VS", NULL, NULL, "GS",	"PreComputeTransmittance" ), 10 );
+	CHECK_MATERIAL( m_pMatPSTComputeTransmittance_Limited = Shader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeTransmittance_Limited" ), 11 );
+	CHECK_MATERIAL( m_pMatPSTComputeIrradiance_Single = Shader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"PreComputeIrradiance_Single" ), 12 );
+	CHECK_MATERIAL( m_pMatPSTComputeIrradiance_Delta = Shader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"PreComputeIrradiance_Delta" ), 13 );
+	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Single = Shader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeInScattering_Single" ), 14 );
+	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Delta = Shader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeInScattering_Delta" ), 15 );
+	CHECK_MATERIAL( m_pMatPSTComputeInScattering_Multiple = Shader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,			"VS", NULL, NULL, "GS",	"PreComputeInScattering_Multiple" ), 16 );
+	CHECK_MATERIAL( m_pMatPSTMergeInitialScattering = Shader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"MergeInitialScattering" ), 17 );
+	CHECK_MATERIAL( m_pMatPSTAccumulateIrradiance = Shader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,					"VS", NULL, NULL, "GS",	"AccumulateIrradiance" ), 18 );
+	CHECK_MATERIAL( m_pMatPSTAccumulateInScattering = Shader::CreateFromBinaryBlob( m_Device, "./Resources/Shaders/VolumetricPreComputeAtmospherePS.hlsl", VertexFormatPt4::DESCRIPTOR,				"VS", NULL, NULL, "GS",	"AccumulateInScattering" ), 19 );
 #endif
 
 //###
@@ -328,7 +328,7 @@ bool	EffectVolumetric::IncreaseStagePass( int _StageIndex )
 	return false;
 }
 
-void	EffectVolumetric::DispatchStage( Material& M )
+void	EffectVolumetric::DispatchStage( Shader& M )
 {
 	m_pCB_PreComputeSky->UpdateData();
 

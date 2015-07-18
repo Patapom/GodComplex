@@ -86,10 +86,10 @@ private:	// FIELDS
 	Texture2D&			m_RTTarget;
 	Primitive&			m_ScreenQuad;
 
-	Material*			m_pMatRender;				// Displays the room
-	Material*			m_pMatRenderCubeMap;		// Renders the room into a cubemap
-	Material*			m_pMatRenderNeighborProbe;	// Renders the neighbor probes as planes to form a 3D voronoï cell
-	Material*			m_pMatPostProcess;			// Post-processes the result
+	Shader*			m_pMatRender;				// Displays the room
+	Shader*			m_pMatRenderCubeMap;		// Renders the room into a cubemap
+	Shader*			m_pMatRenderNeighborProbe;	// Renders the neighbor probes as planes to form a 3D voronoï cell
+	Shader*			m_pMatPostProcess;			// Post-processes the result
 
 	// Primitives
 	Scene				m_Scene;
@@ -153,7 +153,7 @@ public:		// METHODS
 	virtual void*	TagPrimitive( const Scene::Mesh& _Mesh, const Scene::Mesh::Primitive& _Primitive ) const override;
 
 	// ISceneRenderer Implementation
-	virtual void	RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride ) const override;
+	virtual void	RenderMesh( const Scene::Mesh& _Mesh, Shader* _pMaterialOverride ) const override;
 
 private:
 

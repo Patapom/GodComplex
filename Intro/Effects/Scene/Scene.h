@@ -62,7 +62,7 @@ public:		// NESTED TYPES
 			Primitive( Object& _Owner );
 			~Primitive();
 
-			void	Render( Material& _Material, bool _bDepthPass=false ) const;
+			void	Render( Shader& _Material, bool _bDepthPass=false ) const;
 
 			void	SetRenderPrimitive( ::Primitive& _Primitive );
 //			void	SetMaterial( MaterialParameters& _Material );
@@ -98,7 +98,7 @@ public:		// NESTED TYPES
 		void		SetPRS( const float3& _Position, const float4& _Rotation, const float3& _Scale=float3::One );
 
 		void		Update( float _Time, float _DeltaTime );
-		void		Render( Material& _Material, bool _bDepthPass=false ) const;
+		void		Render( Shader& _Material, bool _bDepthPass=false ) const;
 
 		// Primitives management
 		void		AllocatePrimitives( int _PrimitivesCount );
@@ -194,7 +194,7 @@ public:		// METHODS
 	~EffectScene();
 
 	void		Update( float _Time, float _DeltaTime );
-	void		Render( Material& _Material, bool _bDepthPass=false ) const;
+	void		Render( Shader& _Material, bool _bDepthPass=false ) const;
 
 	// Objects management
 	void		AllocateObjects( int _ObjectsCount );

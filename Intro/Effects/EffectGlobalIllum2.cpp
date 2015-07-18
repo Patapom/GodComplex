@@ -1242,7 +1242,7 @@ void*	EffectGlobalIllum2::TagPrimitive( const Scene& _Owner, Scene::Mesh& _Mesh,
 #pragma region Scene Rendering
 
 // Mesh rendering: we render each of the mesh's primitive in turn
-void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMaterialOverride, bool _SetMaterial )
+void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Shader* _pMaterialOverride, bool _SetMaterial )
 {
 	// Upload the object's CB
 	memcpy( &m_pCB_Object->m.Local2World, &_Mesh.m_Local2World, sizeof(float4x4) );
@@ -1253,7 +1253,7 @@ void	EffectGlobalIllum2::RenderMesh( const Scene::Mesh& _Mesh, Material* _pMater
 		Scene::Mesh::Primitive&	ScenePrimitive = _Mesh.m_pPrimitives[PrimitiveIndex];
 		Scene::Material&		SceneMaterial = *ScenePrimitive.m_pMaterial;
 
-		Material*	pMat = _pMaterialOverride == NULL ? (Material*) SceneMaterial.m_pTag : _pMaterialOverride;
+		Shader*	pMat = _pMaterialOverride == NULL ? (Shader*) SceneMaterial.m_pTag : _pMaterialOverride;
 		if ( pMat == NULL )
 			continue;	// Unsupported material!
 		Primitive*	pPrim = (Primitive*) ScenePrimitive.m_pTag;

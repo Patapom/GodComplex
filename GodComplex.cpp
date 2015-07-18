@@ -472,7 +472,7 @@ void WINAPI	EntryPoint()
 
 		// Reload modified shaders
 		WatchIncludesModifications();
-		Material::WatchShadersModifications();
+		Shader::WatchShadersModifications();
 		ComputeShader::WatchShadersModifications();
 #endif
 

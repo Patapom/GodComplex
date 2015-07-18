@@ -14,7 +14,7 @@ namespace RendererManaged {
 	{
 	internal:
 
-		::Material*	m_pShader;
+		::Shader*	m_pShader;
 
 	public:
 
@@ -45,7 +45,7 @@ namespace RendererManaged {
 
 			IVertexFormatDescriptor*	pDescriptor = GetDescriptor( _Format );
 
-			m_pShader = new ::Material( *_Device->m_pDevice, ShaderFileName, *pDescriptor, ShaderCode, pMacros, EntryPointVS, EntryPointHS, EntryPointDS, EntryPointGS, EntryPointPS, NULL );
+			m_pShader = new ::Shader( *_Device->m_pDevice, ShaderFileName, *pDescriptor, ShaderCode, pMacros, EntryPointVS, EntryPointHS, EntryPointDS, EntryPointGS, EntryPointPS, NULL );
 
 			delete[] pMacros;
 		}
@@ -77,13 +77,13 @@ namespace RendererManaged {
 			if ( pDescriptor == NULL )
 				throw gcnew Exception( "Unsupported vertex format!" );
 
-			::Material*	pShader = ::Material::CreateFromBinaryBlob( *_Device->m_pDevice, ShaderFileName, *pDescriptor, NULL, EntryPointVS, EntryPointHS, EntryPointDS, EntryPointGS, EntryPointPS );
+			::Shader*	pShader = ::Shader::CreateFromBinaryBlob( *_Device->m_pDevice, ShaderFileName, *pDescriptor, NULL, EntryPointVS, EntryPointHS, EntryPointDS, EntryPointGS, EntryPointPS );
 
 			return gcnew Shader( _Device, pShader );
 		}
 
 	private:
-		Shader( Device^ _Device, ::Material* _pShader )
+		Shader( Device^ _Device, ::Shader* _pShader )
 		{
 			m_pShader = _pShader;
 		}

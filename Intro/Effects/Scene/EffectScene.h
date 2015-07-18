@@ -36,22 +36,22 @@ private:	// FIELDS
 
 	int					m_ErrorCode;
 
-	Material*			m_pMatDepthPass;
-	Material*			m_pMatBuildLinearZ;
-	Material*			m_pMatFillGBuffer;
-	Material*			m_pMatFillGBufferBackFaces;
-	Material*			m_pMatDownSample;
-	Material*			m_pMatShading_Directional_StencilPass;
-	Material*			m_pMatShading_Directional;
-	Material*			m_pMatShading_Point_StencilPass;
-	Material*			m_pMatShading_Point;
-	Material*			m_pMatShading_Spot_StencilPass;
-	Material*			m_pMatShading_Spot;
-	Material*			m_pMatIndirectLighting;
-	Material*			m_pMatBokehSplat;
-	Material*			m_pMatDownSampleBokeh0;
-	Material*			m_pMatDownSampleBokeh1;
-	Material*			m_pMatFinalize;
+	Shader*			m_pMatDepthPass;
+	Shader*			m_pMatBuildLinearZ;
+	Shader*			m_pMatFillGBuffer;
+	Shader*			m_pMatFillGBufferBackFaces;
+	Shader*			m_pMatDownSample;
+	Shader*			m_pMatShading_Directional_StencilPass;
+	Shader*			m_pMatShading_Directional;
+	Shader*			m_pMatShading_Point_StencilPass;
+	Shader*			m_pMatShading_Point;
+	Shader*			m_pMatShading_Spot_StencilPass;
+	Shader*			m_pMatShading_Spot;
+	Shader*			m_pMatIndirectLighting;
+	Shader*			m_pMatBokehSplat;
+	Shader*			m_pMatDownSampleBokeh0;
+	Shader*			m_pMatDownSampleBokeh1;
+	Shader*			m_pMatFinalize;
 
 	Texture2D*			m_pDepthStencilFront;
 	Texture2D*			m_pDepthStencilBack;

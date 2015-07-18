@@ -237,7 +237,7 @@ public:		// NESTED TYPES
 		//	_Mesh, the mesh to render
 		//	_pMaterialOverride, an optional material used to override the mesh's default material
 		//	_SetMaterial, true to setup the mesh's material (usually, set to false when rendering shadow maps that don't need materials) (except alpha-tested materials)
-		virtual void	RenderMesh( const Scene::Mesh& _Mesh, ::Material* _pMaterialOverride, bool _SetMaterial=true ) abstract;
+		virtual void	RenderMesh( const Scene::Mesh& _Mesh, ::Shader* _pMaterialOverride, bool _SetMaterial=true ) abstract;
 	};
 
 	// Use a visitor class to browse the scene nodes

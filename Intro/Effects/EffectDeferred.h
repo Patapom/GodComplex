@@ -112,10 +112,10 @@ private:	// FIELDS
 
 	int					m_ErrorCode;
 
-	Material*			m_pMatDepthPass;
-	Material*			m_pMatFillGBuffer;
-	Material*			m_pMatShading_StencilPass;
-	Material*			m_pMatShading;
+	Shader*			m_pMatDepthPass;
+	Shader*			m_pMatFillGBuffer;
+	Shader*			m_pMatShading_StencilPass;
+	Shader*			m_pMatShading;
 
 	int					m_ObjectsCount;
 	Object**			m_ppObjects;
