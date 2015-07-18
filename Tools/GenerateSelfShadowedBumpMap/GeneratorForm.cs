@@ -54,15 +54,17 @@ namespace GenerateSelfShadowedBumpMap
 		private RegistryKey						m_AppKey;
 		private string							m_ApplicationPath;
 
+		private ViewerForm						m_viewerForm;
+
 		private System.IO.FileInfo				m_SourceFileName = null;
 		private int								W, H;
 		private ImageUtility.Bitmap				m_BitmapSource = null;
 
-		private RendererManaged.Device			m_Device = new RendererManaged.Device();
-		private RendererManaged.Texture2D		m_TextureSource = null;
-		private RendererManaged.Texture2D		m_TextureTarget0 = null;
-		private RendererManaged.Texture2D		m_TextureTarget1 = null;
-		private RendererManaged.Texture2D		m_TextureTarget_CPU = null;
+		internal RendererManaged.Device			m_Device = new RendererManaged.Device();
+		internal RendererManaged.Texture2D		m_TextureSource = null;
+		internal RendererManaged.Texture2D		m_TextureTarget0 = null;
+		internal RendererManaged.Texture2D		m_TextureTarget1 = null;
+		internal RendererManaged.Texture2D		m_TextureTarget_CPU = null;
 
 		// SSBump Generation
 		private RendererManaged.ConstantBuffer<CBInput>						m_CB_Input;
@@ -78,15 +80,27 @@ namespace GenerateSelfShadowedBumpMap
 
 		#endregion
 
+		#region PROPERTIES
+
+		internal float	TextureHeight_mm {
+			get { return 10.0f * floatTrackbarControlHeight.Value; }
+		}
+
+		internal float	TextureSize_mm {
+			get { return 10.0f * floatTrackbarControlPixelDensity.Value; }
+		}
+
+		#endregion
+
 		#region METHODS
 
 		public unsafe GeneratorForm()
 		{
 			InitializeComponent();
 
+			m_viewerForm = new ViewerForm( this );
 
 // Remove unused tabs until we make them work
-//tabControlGenerators.TabPages.RemoveAt( 1 );
 tabControlGenerators.TabPages.RemoveAt( 1 );
 
  			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\SSBumpMapGenerator" );
@@ -98,7 +112,9 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
  			base.OnLoad(e);
 
 			try {
-				m_Device.Init( viewportPanelResult.Handle, false, true );
+				m_Device.Init( m_viewerForm.Handle, false, true );
+
+				m_viewerForm.Init();
 
 				// Create our compute shaders
 #if DEBUG
@@ -219,7 +235,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 			}
 		}
 
-		private unsafe void	Generate() {
+		private void	Generate() {
 			try {
 				tabControlGenerators.Enabled = false;
 
@@ -230,6 +246,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 
 				//////////////////////////////////////////////////////////////////////////
 				// 2] Compute directional occlusion
+				m_TextureTarget1.RemoveFromLastAssignedSlots();
 
 				// Prepare computation parameters
 				m_TextureTarget0.SetCS( 0 );
@@ -239,8 +256,8 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 				m_CB_Input.m.RaysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
 				m_CB_Input.m.MaxStepsCount = (UInt32) integerTrackbarControlMaxStepsCount.Value;
 				m_CB_Input.m.Tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
-				m_CB_Input.m.TexelSize_mm = 1000.0f / floatTrackbarControlPixelDensity.Value;
-				m_CB_Input.m.Displacement_mm = 10.0f * floatTrackbarControlHeight.Value;
+				m_CB_Input.m.TexelSize_mm = TextureSize_mm / Math.Max( W, H );
+				m_CB_Input.m.Displacement_mm = TextureHeight_mm;
 
 				// Start
 				if ( !m_CS_GenerateSSBumpMap.Use() )
@@ -261,6 +278,8 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 //					for ( int a=0; a < 10; a++ )
 						Application.DoEvents();
 				}
+
+				m_TextureTarget1.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
 
 				progressBar.Value = progressBar.Maximum;
 
@@ -836,6 +855,19 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 		{
 			if ( m_DraggedFileName != null )
 				LoadHeightMap( new System.IO.FileInfo( m_DraggedFileName ) );
+		}
+
+		private void buttonReload_Click( object sender, EventArgs e )
+		{
+			m_Device.ReloadModifiedShaders();
+		}
+
+		private void buttonTest_Click( object sender, EventArgs e )
+		{
+			if ( m_viewerForm.Visible )
+				m_viewerForm.Hide();
+			else
+				m_viewerForm.Show( this );
 		}
 
 		#endregion

@@ -74,6 +74,14 @@ namespace Nuaj.Cirrus.Utility
 			set { m_Camera = value; CameraTransform = m_CameraTransform; }
 		}
 
+		public float3		CameraPosition {
+			get { return (float3) m_CameraTransform.r3; }
+		}
+
+		public float3		TargetPosition {
+			get { return (float3) (m_CameraTransform.r3 + m_CameraTargetDistance * m_CameraTransform.r2); }
+		}
+
 		protected float4x4	CameraTransform
 		{
 			get { return m_CameraTransform; }
@@ -115,7 +123,7 @@ namespace Nuaj.Cirrus.Utility
 			{
 				float4x4	CamMat = CameraTransform;
 				float4x4	TargetMat = float4x4.Identity;
-						TargetMat.r3 =  CamMat.r3  + m_CameraTargetDistance * CamMat.r2;
+							TargetMat.r3 =  CamMat.r3  + m_CameraTargetDistance * CamMat.r2;
 
 				return	TargetMat;
 			}

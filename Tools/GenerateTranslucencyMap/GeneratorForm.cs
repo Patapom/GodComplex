@@ -26,7 +26,7 @@ namespace GenerateTranslucencyMap
 
 //		private const int		MAX_THREADS = 1024;			// Maximum threads run by the compute shader
 
-		private const int		BILATERAL_PROGRESS = 40;	// Bilateral filtering is considered as this % of the total task (bilateral is quite long so I decided it was equivalent to 50% of the complete computation task)
+		private const int		BILATERAL_PROGRESS = 25;	// Bilateral filtering is considered as this % of the total task (bilateral is quite long so I decided it was equivalent to 50% of the complete computation task)
 		private const int		VISIBILITY_PROGRESS = 50;	// Visibility computation is considered as this % of the total task
 		private const int		MAX_LINES = 16;				// Process at most that amount of lines of a 4096x4096 image for a single dispatch
 
@@ -1054,7 +1054,10 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 
 		private void buttonShowViewer_Click( object sender, EventArgs e )
 		{
-			m_viewerForm.Show( this );
+			if ( m_viewerForm.Visible )
+				m_viewerForm.Hide();
+			else
+				m_viewerForm.Show( this );
 		}
 
 		private void buttonReload_Click( object sender, EventArgs e )

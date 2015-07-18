@@ -47,6 +47,8 @@
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
 			this.viewportPanelResult = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
 			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
+			this.buttonTest = new System.Windows.Forms.Button();
+			this.buttonReload = new System.Windows.Forms.Button();
 			this.tabControlGenerators.SuspendLayout();
 			this.tabPageSSBump.SuspendLayout();
 			this.groupBox1.SuspendLayout();
@@ -54,7 +56,7 @@
 			// 
 			// floatTrackbarControlHeight
 			// 
-			this.floatTrackbarControlHeight.Location = new System.Drawing.Point(105, 30);
+			this.floatTrackbarControlHeight.Location = new System.Drawing.Point(106, 7);
 			this.floatTrackbarControlHeight.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlHeight.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlHeight.Name = "floatTrackbarControlHeight";
@@ -67,7 +69,7 @@
 			// 
 			// integerTrackbarControlRaysCount
 			// 
-			this.integerTrackbarControlRaysCount.Location = new System.Drawing.Point(105, 4);
+			this.integerTrackbarControlRaysCount.Location = new System.Drawing.Point(106, 80);
 			this.integerTrackbarControlRaysCount.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlRaysCount.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlRaysCount.Name = "integerTrackbarControlRaysCount";
@@ -104,17 +106,16 @@
 			// 
 			// label3
 			// 
-			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(7, 92);
+			this.label3.Location = new System.Drawing.Point(2, 36);
 			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(81, 13);
+			this.label3.Size = new System.Drawing.Size(102, 31);
 			this.label3.TabIndex = 3;
-			this.label3.Text = "Pixels per meter";
+			this.label3.Text = "Physical Texture Size (cm)";
 			// 
 			// label7
 			// 
 			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point(7, 181);
+			this.label7.Location = new System.Drawing.Point(3, 181);
 			this.label7.Name = "label7";
 			this.label7.Size = new System.Drawing.Size(95, 13);
 			this.label7.TabIndex = 3;
@@ -123,7 +124,7 @@
 			// label6
 			// 
 			this.label6.AutoSize = true;
-			this.label6.Location = new System.Drawing.Point(7, 155);
+			this.label6.Location = new System.Drawing.Point(3, 155);
 			this.label6.Name = "label6";
 			this.label6.Size = new System.Drawing.Size(80, 13);
 			this.label6.TabIndex = 3;
@@ -132,16 +133,16 @@
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(6, 33);
+			this.label2.Location = new System.Drawing.Point(1, 10);
 			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(66, 13);
+			this.label2.Size = new System.Drawing.Size(107, 13);
 			this.label2.TabIndex = 3;
-			this.label2.Text = "Height in cm";
+			this.label2.Text = "Encoded Height (cm)";
 			// 
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(7, 118);
+			this.label4.Location = new System.Drawing.Point(1, 109);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(88, 13);
 			this.label4.TabIndex = 3;
@@ -150,7 +151,7 @@
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(6, 7);
+			this.label1.Location = new System.Drawing.Point(1, 83);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(74, 13);
 			this.label1.TabIndex = 3;
@@ -158,7 +159,7 @@
 			// 
 			// integerTrackbarControlMaxStepsCount
 			// 
-			this.integerTrackbarControlMaxStepsCount.Location = new System.Drawing.Point(106, 115);
+			this.integerTrackbarControlMaxStepsCount.Location = new System.Drawing.Point(106, 106);
 			this.integerTrackbarControlMaxStepsCount.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlMaxStepsCount.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlMaxStepsCount.Name = "integerTrackbarControlMaxStepsCount";
@@ -172,7 +173,7 @@
 			// 
 			// floatTrackbarControlPixelDensity
 			// 
-			this.floatTrackbarControlPixelDensity.Location = new System.Drawing.Point(106, 89);
+			this.floatTrackbarControlPixelDensity.Location = new System.Drawing.Point(106, 33);
 			this.floatTrackbarControlPixelDensity.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlPixelDensity.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlPixelDensity.Name = "floatTrackbarControlPixelDensity";
@@ -180,8 +181,8 @@
 			this.floatTrackbarControlPixelDensity.RangeMin = 1F;
 			this.floatTrackbarControlPixelDensity.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlPixelDensity.TabIndex = 3;
-			this.floatTrackbarControlPixelDensity.Value = 512F;
-			this.floatTrackbarControlPixelDensity.VisibleRangeMax = 1024F;
+			this.floatTrackbarControlPixelDensity.Value = 100F;
+			this.floatTrackbarControlPixelDensity.VisibleRangeMax = 200F;
 			this.floatTrackbarControlPixelDensity.VisibleRangeMin = 1F;
 			// 
 			// floatTrackbarControlBilateralTolerance
@@ -335,6 +336,7 @@
 			// 
 			this.tabControlGenerators.Controls.Add(this.tabPageSSBump);
 			this.tabControlGenerators.Controls.Add(this.tabPageNormal);
+			this.tabControlGenerators.Enabled = false;
 			this.tabControlGenerators.Location = new System.Drawing.Point(530, 12);
 			this.tabControlGenerators.Name = "tabControlGenerators";
 			this.tabControlGenerators.SelectedIndex = 0;
@@ -347,14 +349,14 @@
 			this.tabPageSSBump.Controls.Add(this.integerTrackbarControlRaysCount);
 			this.tabPageSSBump.Controls.Add(this.buttonGenerate);
 			this.tabPageSSBump.Controls.Add(this.floatTrackbarControlHeight);
-			this.tabPageSSBump.Controls.Add(this.label3);
 			this.tabPageSSBump.Controls.Add(this.floatTrackbarControlBilateralRadius);
-			this.tabPageSSBump.Controls.Add(this.label7);
 			this.tabPageSSBump.Controls.Add(this.floatTrackbarControlBilateralTolerance);
-			this.tabPageSSBump.Controls.Add(this.label6);
 			this.tabPageSSBump.Controls.Add(this.floatTrackbarControlPixelDensity);
-			this.tabPageSSBump.Controls.Add(this.label2);
 			this.tabPageSSBump.Controls.Add(this.integerTrackbarControlMaxStepsCount);
+			this.tabPageSSBump.Controls.Add(this.label3);
+			this.tabPageSSBump.Controls.Add(this.label7);
+			this.tabPageSSBump.Controls.Add(this.label6);
+			this.tabPageSSBump.Controls.Add(this.label2);
 			this.tabPageSSBump.Controls.Add(this.label4);
 			this.tabPageSSBump.Controls.Add(this.label1);
 			this.tabPageSSBump.Location = new System.Drawing.Point(4, 22);
@@ -385,7 +387,7 @@
 			this.groupBox1.Controls.Add(this.radioButtonDirOccRGBtimeAO);
 			this.groupBox1.Controls.Add(this.radioButtonDirOccB);
 			this.groupBox1.Controls.Add(this.radioButtonDirOccG);
-			this.groupBox1.Location = new System.Drawing.Point(596, 323);
+			this.groupBox1.Location = new System.Drawing.Point(530, 322);
 			this.groupBox1.Name = "groupBox1";
 			this.groupBox1.Size = new System.Drawing.Size(190, 205);
 			this.groupBox1.TabIndex = 9;
@@ -420,11 +422,33 @@
 			this.outputPanelInputHeightMap.DragDrop += new System.Windows.Forms.DragEventHandler(this.outputPanelInputHeightMap_DragDrop);
 			this.outputPanelInputHeightMap.DragEnter += new System.Windows.Forms.DragEventHandler(this.outputPanelInputHeightMap_DragEnter);
 			// 
+			// buttonTest
+			// 
+			this.buttonTest.Location = new System.Drawing.Point(771, 433);
+			this.buttonTest.Name = "buttonTest";
+			this.buttonTest.Size = new System.Drawing.Size(75, 23);
+			this.buttonTest.TabIndex = 10;
+			this.buttonTest.Text = "Test";
+			this.buttonTest.UseVisualStyleBackColor = true;
+			this.buttonTest.Click += new System.EventHandler(this.buttonTest_Click);
+			// 
+			// buttonReload
+			// 
+			this.buttonReload.Location = new System.Drawing.Point(771, 499);
+			this.buttonReload.Name = "buttonReload";
+			this.buttonReload.Size = new System.Drawing.Size(75, 23);
+			this.buttonReload.TabIndex = 10;
+			this.buttonReload.Text = "Reload";
+			this.buttonReload.UseVisualStyleBackColor = true;
+			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
+			// 
 			// GeneratorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1379, 540);
+			this.Controls.Add(this.buttonReload);
+			this.Controls.Add(this.buttonTest);
 			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.tabControlGenerators);
 			this.Controls.Add(this.progressBar);
@@ -476,6 +500,8 @@
 		private System.Windows.Forms.TabPage tabPageSSBump;
 		private System.Windows.Forms.TabPage tabPageNormal;
 		private System.Windows.Forms.GroupBox groupBox1;
+		private System.Windows.Forms.Button buttonTest;
+		private System.Windows.Forms.Button buttonReload;
 	}
 }
 
