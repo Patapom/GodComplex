@@ -59,6 +59,9 @@
 			this.imagePanelThicknessMap = new GenerateTranslucencyMap.ImagePanel(this.components);
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+			this.floatTrackbarControlDominantHue = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label4 = new System.Windows.Forms.Label();
+			this.panelDominantHue = new System.Windows.Forms.Panel();
 			this.groupBox1.SuspendLayout();
 			this.groupBoxOptions.SuspendLayout();
 			this.SuspendLayout();
@@ -459,7 +462,7 @@
 			// imagePanelResult3
 			// 
 			this.imagePanelResult3.Image = null;
-			this.imagePanelResult3.Location = new System.Drawing.Point(1117, 278);
+			this.imagePanelResult3.Location = new System.Drawing.Point(1117, 268);
 			this.imagePanelResult3.MessageOnEmpty = null;
 			this.imagePanelResult3.Name = "imagePanelResult3";
 			this.imagePanelResult3.Size = new System.Drawing.Size(250, 250);
@@ -471,7 +474,7 @@
 			// imagePanelResult2
 			// 
 			this.imagePanelResult2.Image = null;
-			this.imagePanelResult2.Location = new System.Drawing.Point(856, 278);
+			this.imagePanelResult2.Location = new System.Drawing.Point(856, 268);
 			this.imagePanelResult2.MessageOnEmpty = null;
 			this.imagePanelResult2.Name = "imagePanelResult2";
 			this.imagePanelResult2.Size = new System.Drawing.Size(250, 250);
@@ -483,7 +486,7 @@
 			// imagePanelResult1
 			// 
 			this.imagePanelResult1.Image = null;
-			this.imagePanelResult1.Location = new System.Drawing.Point(1117, 16);
+			this.imagePanelResult1.Location = new System.Drawing.Point(1117, 12);
 			this.imagePanelResult1.MessageOnEmpty = null;
 			this.imagePanelResult1.Name = "imagePanelResult1";
 			this.imagePanelResult1.Size = new System.Drawing.Size(250, 250);
@@ -495,7 +498,7 @@
 			// imagePanelResult0
 			// 
 			this.imagePanelResult0.Image = null;
-			this.imagePanelResult0.Location = new System.Drawing.Point(856, 16);
+			this.imagePanelResult0.Location = new System.Drawing.Point(856, 12);
 			this.imagePanelResult0.MessageOnEmpty = null;
 			this.imagePanelResult0.Name = "imagePanelResult0";
 			this.imagePanelResult0.Size = new System.Drawing.Size(250, 250);
@@ -525,7 +528,7 @@
 			this.imagePanelTransmittanceMap.AllowDrop = true;
 			this.imagePanelTransmittanceMap.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
 			this.imagePanelTransmittanceMap.Image = null;
-			this.imagePanelTransmittanceMap.Location = new System.Drawing.Point(274, 278);
+			this.imagePanelTransmittanceMap.Location = new System.Drawing.Point(274, 268);
 			this.imagePanelTransmittanceMap.MessageOnEmpty = "Click to load a transmittance map,\r\nor drag and drop...";
 			this.imagePanelTransmittanceMap.Name = "imagePanelTransmittanceMap";
 			this.imagePanelTransmittanceMap.Size = new System.Drawing.Size(250, 250);
@@ -541,7 +544,7 @@
 			this.imagePanelAlbedoMap.AllowDrop = true;
 			this.imagePanelAlbedoMap.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
 			this.imagePanelAlbedoMap.Image = null;
-			this.imagePanelAlbedoMap.Location = new System.Drawing.Point(12, 278);
+			this.imagePanelAlbedoMap.Location = new System.Drawing.Point(12, 268);
 			this.imagePanelAlbedoMap.MessageOnEmpty = "Click to load an albedo map,\r\nor drag and drop...";
 			this.imagePanelAlbedoMap.Name = "imagePanelAlbedoMap";
 			this.imagePanelAlbedoMap.Size = new System.Drawing.Size(250, 250);
@@ -578,11 +581,45 @@
 			this.buttonReload.UseVisualStyleBackColor = true;
 			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
 			// 
+			// floatTrackbarControlDominantHue
+			// 
+			this.floatTrackbarControlDominantHue.Location = new System.Drawing.Point(1117, 519);
+			this.floatTrackbarControlDominantHue.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlDominantHue.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlDominantHue.Name = "floatTrackbarControlDominantHue";
+			this.floatTrackbarControlDominantHue.RangeMax = 360F;
+			this.floatTrackbarControlDominantHue.RangeMin = 0F;
+			this.floatTrackbarControlDominantHue.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlDominantHue.TabIndex = 22;
+			this.floatTrackbarControlDominantHue.Value = 120F;
+			this.floatTrackbarControlDominantHue.VisibleRangeMax = 360F;
+			this.floatTrackbarControlDominantHue.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlDominantHue_ValueChanged);
+			this.floatTrackbarControlDominantHue.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlDominantHue_SliderDragStop);
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(981, 522);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(134, 13);
+			this.label4.TabIndex = 32;
+			this.label4.Text = "Dominant Hue for Combine";
+			// 
+			// panelDominantHue
+			// 
+			this.panelDominantHue.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelDominantHue.Location = new System.Drawing.Point(1324, 519);
+			this.panelDominantHue.Name = "panelDominantHue";
+			this.panelDominantHue.Size = new System.Drawing.Size(43, 19);
+			this.panelDominantHue.TabIndex = 38;
+			// 
 			// GeneratorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1379, 540);
+			this.Controls.Add(this.panelDominantHue);
+			this.Controls.Add(this.floatTrackbarControlDominantHue);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.buttonShowViewer);
 			this.Controls.Add(this.groupBoxOptions);
@@ -596,6 +633,7 @@
 			this.Controls.Add(this.imagePanelTransmittanceMap);
 			this.Controls.Add(this.imagePanelAlbedoMap);
 			this.Controls.Add(this.imagePanelThicknessMap);
+			this.Controls.Add(this.label4);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "GeneratorForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -605,6 +643,7 @@
 			this.groupBoxOptions.ResumeLayout(false);
 			this.groupBoxOptions.PerformLayout();
 			this.ResumeLayout(false);
+			this.PerformLayout();
 
 		}
 
@@ -653,6 +692,9 @@
 		private System.Windows.Forms.Button buttonShowViewer;
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.ToolTip toolTip1;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDominantHue;
+		private System.Windows.Forms.Label label4;
+		private System.Windows.Forms.Panel panelDominantHue;
 	}
 }
 

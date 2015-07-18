@@ -440,6 +440,7 @@
 			this.buttonReload.TabIndex = 10;
 			this.buttonReload.Text = "Reload";
 			this.buttonReload.UseVisualStyleBackColor = true;
+			this.buttonReload.Visible = false;
 			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
 			// 
 			// GeneratorForm

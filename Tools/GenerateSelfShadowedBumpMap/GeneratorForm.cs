@@ -105,6 +105,10 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 
  			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\SSBumpMapGenerator" );
 			m_ApplicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );
+
+			#if DEBUG
+				buttonReload.Visible = true;
+			#endif
 		}
 
 		protected override void  OnLoad(EventArgs e)
@@ -117,13 +121,13 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 				m_viewerForm.Init();
 
 				// Create our compute shaders
-#if DEBUG
-				m_CS_BilateralFilter = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
-				m_CS_GenerateSSBumpMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
-#else
-				m_CS_BilateralFilter = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
-				m_CS_GenerateSSBumpMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
-#endif
+				#if DEBUG
+					m_CS_BilateralFilter = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
+					m_CS_GenerateSSBumpMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
+				#else
+					m_CS_BilateralFilter = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
+					m_CS_GenerateSSBumpMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
+				#endif
 
 				// Create our constant buffers
 				m_CB_Input = new RendererManaged.ConstantBuffer<CBInput>( m_Device, 0 );
@@ -142,6 +146,34 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 			}
 		}
 
+		protected override void OnClosing( CancelEventArgs e )
+		{
+			try {
+				m_viewerForm.Dispose();
+
+				m_CS_GenerateSSBumpMap.Dispose();
+				m_CS_BilateralFilter.Dispose();
+
+				m_SB_Rays.Dispose();
+				m_CB_Filter.Dispose();
+				m_CB_Input.Dispose();
+
+				if ( m_TextureTarget_CPU != null )
+					m_TextureTarget_CPU.Dispose();
+				if ( m_TextureTarget1 != null )
+					m_TextureTarget1.Dispose();
+				if ( m_TextureTarget0 != null )
+					m_TextureTarget0.Dispose();
+				if ( m_TextureSource != null )
+					m_TextureSource.Dispose();
+
+				m_Device.Dispose();
+			} catch ( Exception ) {
+			}
+
+			base.OnClosing( e );
+		}
+
 		/// <summary>
 		/// Clean up any resources being used.
 		/// </summary>
@@ -151,34 +183,8 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 			if ( disposing && (components != null) )
 			{
 				components.Dispose();
-
-				try {
-					m_CS_GenerateSSBumpMap.Dispose();
-					m_CS_BilateralFilter.Dispose();
-
-					m_SB_Rays.Dispose();
-					m_CB_Filter.Dispose();
-					m_CB_Input.Dispose();
-
-					if ( m_TextureTarget_CPU != null )
-						m_TextureTarget_CPU.Dispose();
-					if ( m_TextureTarget1 != null )
-						m_TextureTarget1.Dispose();
-					if ( m_TextureTarget0 != null )
-						m_TextureTarget0.Dispose();
-					if ( m_TextureSource != null )
-						m_TextureSource.Dispose();
-
-					m_Device.Dispose();
-				} catch ( Exception ) {
-				}
 			}
 			base.Dispose( disposing );
-		}
-
-		protected override void OnClosing( CancelEventArgs e )
-		{
-			base.OnClosing( e );
 		}
 
 		private void	LoadHeightMap( System.IO.FileInfo _FileName ) {

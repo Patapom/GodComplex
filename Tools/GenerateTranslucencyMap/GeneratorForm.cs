@@ -89,8 +89,14 @@ namespace GenerateTranslucencyMap
 		internal RendererManaged.Texture2D		m_TextureSourceNormal = null;
 		internal RendererManaged.Texture2D		m_TextureSourceAlbedo = null;
 		internal RendererManaged.Texture2D		m_TextureSourceTransmittance = null;
-		internal RendererManaged.Texture2D		m_TextureTarget0 = null;
-		internal RendererManaged.Texture2D		m_TextureTarget1 = null;
+		internal RendererManaged.Texture2D		m_TextureFilteredThickness = null;
+
+		internal RendererManaged.Texture2D[][]	m_TextureTargets = new RendererManaged.Texture2D[3][] {
+			new RendererManaged.Texture2D[2],
+			new RendererManaged.Texture2D[2],
+			new RendererManaged.Texture2D[2],
+		};
+
 		internal RendererManaged.Texture2D		m_TextureTarget_CPU = null;
 
 		// Directional Translucency Map Generation
@@ -108,10 +114,20 @@ namespace GenerateTranslucencyMap
 
 		private ImageUtility.ColorProfile		m_LinearProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR );
 		private ImageUtility.ColorProfile		m_sRGBProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );
-		private ImageUtility.Bitmap				m_BitmapResult0 = null;
-		private ImageUtility.Bitmap				m_BitmapResult1 = null;
-		private ImageUtility.Bitmap				m_BitmapResult2 = null;
-		private ImageUtility.Bitmap				m_BitmapResult3 = null;
+		private ImageUtility.Bitmap[]			m_BitmapResults = new ImageUtility.Bitmap[3];
+		private ImageUtility.Bitmap				m_BitmapResultCombined = null;
+
+		#endregion
+
+		#region PROPERTIES
+
+		internal float	Thickness_mm {
+			get { return floatTrackbarControlThickness.Value; }
+		}
+
+		internal float	TextureSize_mm {
+			get { return 10.0f * floatTrackbarControlPixelDensity.Value; }
+		}
 
 		#endregion
 
@@ -125,6 +141,9 @@ namespace GenerateTranslucencyMap
 
  			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\TranslucencyMapGenerator" );
 			m_ApplicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );
+
+			// Show dominant hue
+			floatTrackbarControlDominantHue_ValueChanged( floatTrackbarControlDominantHue, 0.0f );
 		}
 
 		protected override void  OnLoad(EventArgs e)
@@ -174,45 +193,54 @@ namespace GenerateTranslucencyMap
 			if ( disposing && (components != null) )
 			{
 				components.Dispose();
-
-				try {
-					m_CS_GenerateTranslucencyMap.Dispose();
-					m_CS_GenerateVisibilityMap.Dispose();
-					m_CS_BilateralFilter.Dispose();
-
-					m_SB_Rays.Dispose();
-					m_CB_Filter.Dispose();
-					m_CB_Visibility.Dispose();
-					m_CB_Input.Dispose();
-
-					if ( m_TextureTarget_CPU != null )
-						m_TextureTarget_CPU.Dispose();
-					if ( m_TextureTarget1 != null )
-						m_TextureTarget1.Dispose();
-					if ( m_TextureTarget0 != null )
-						m_TextureTarget0.Dispose();
-					if ( m_TextureSourceThickness != null )
-						m_TextureSourceThickness.Dispose();
-					if ( m_TextureSourceNormal != null )
-						m_TextureSourceNormal.Dispose();
-					if ( m_TextureSourceTransmittance != null )
-						m_TextureSourceTransmittance.Dispose();
-					if ( m_TextureSourceAlbedo != null )
-						m_TextureSourceAlbedo.Dispose();
-					if ( m_TextureSourceVisibility != null )
-						m_TextureSourceVisibility.Dispose();
-
-					m_viewerForm.Dispose();
-
-					m_Device.Dispose();
-				} catch ( Exception ) {
-				}
 			}
 			base.Dispose( disposing );
 		}
 
 		protected override void OnClosing( CancelEventArgs e )
 		{
+			try {
+				m_viewerForm.Dispose();
+
+				m_CS_GenerateTranslucencyMap.Dispose();
+				m_CS_GenerateVisibilityMap.Dispose();
+				m_CS_BilateralFilter.Dispose();
+
+				m_SB_Rays.Dispose();
+				m_CB_Filter.Dispose();
+				m_CB_Visibility.Dispose();
+				m_CB_Input.Dispose();
+
+				if ( m_TextureTarget_CPU != null ) {
+					m_TextureTarget_CPU.Dispose();
+				}
+				if ( m_TextureTargets[0] != null ) {
+					m_TextureTargets[0][0].Dispose();
+					m_TextureTargets[0][1].Dispose();
+					m_TextureTargets[1][0].Dispose();
+					m_TextureTargets[1][1].Dispose();
+					m_TextureTargets[2][0].Dispose();
+					m_TextureTargets[2][1].Dispose();
+				}
+				if ( m_TextureFilteredThickness != null )
+					m_TextureFilteredThickness.Dispose();
+				if ( m_TextureSourceThickness != null )
+					m_TextureSourceThickness.Dispose();
+				if ( m_TextureSourceNormal != null )
+					m_TextureSourceNormal.Dispose();
+				if ( m_TextureSourceTransmittance != null )
+					m_TextureSourceTransmittance.Dispose();
+				if ( m_TextureSourceAlbedo != null )
+					m_TextureSourceAlbedo.Dispose();
+				if ( m_TextureSourceVisibility != null )
+					m_TextureSourceVisibility.Dispose();
+
+				m_viewerForm.Dispose();
+
+				m_Device.Dispose();
+			} catch ( Exception ) {
+			}
+
 			base.OnClosing( e );
 		}
 
@@ -235,15 +263,29 @@ namespace GenerateTranslucencyMap
 					m_TextureSourceVisibility.Dispose();
 				m_TextureSourceVisibility = null;
 
-				if ( m_TextureTarget_CPU != null )
+				if ( m_TextureTarget_CPU != null ) {
 					m_TextureTarget_CPU.Dispose();
+				}
 				m_TextureTarget_CPU = null;
-				if ( m_TextureTarget0 != null )
-					m_TextureTarget0.Dispose();
-				m_TextureTarget0 = null;
-				if ( m_TextureTarget1 != null )
-					m_TextureTarget1.Dispose();
-				m_TextureTarget1 = null;
+
+				if ( m_TextureFilteredThickness != null )
+					m_TextureFilteredThickness.Dispose();
+				m_TextureFilteredThickness = null;
+
+				if ( m_TextureTargets[0][0] != null ) {
+					m_TextureTargets[0][0].Dispose();
+					m_TextureTargets[0][1].Dispose();
+					m_TextureTargets[1][0].Dispose();
+					m_TextureTargets[1][1].Dispose();
+					m_TextureTargets[2][0].Dispose();
+					m_TextureTargets[2][1].Dispose();
+				}
+				m_TextureTargets[0][0] = null;
+				m_TextureTargets[0][1] = null;
+				m_TextureTargets[1][0] = null;
+				m_TextureTargets[1][1] = null;
+				m_TextureTargets[2][0] = null;
+				m_TextureTargets[2][1] = null;
 
 				// Load the source image assuming it's in linear space
 				m_SourceFileName = _FileName;
@@ -266,8 +308,12 @@ namespace GenerateTranslucencyMap
 				m_TextureSourceVisibility = new RendererManaged.Texture3D( m_Device, W, H, VISIBILITY_SLICES, 1, RendererManaged.PIXEL_FORMAT.R16_FLOAT, false, true, null );
 
 				// Build the target UAV & staging texture for readback
-				m_TextureTarget0 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_TextureTarget1 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
+				m_TextureFilteredThickness = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, true, null );
+
+				for ( int i=0; i < 3; i++ ) {
+					m_TextureTargets[i][0] = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
+					m_TextureTargets[i][1] = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
+				}
 				m_TextureTarget_CPU = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, true, false, null );
 
 				groupBoxOptions.Enabled = true;
@@ -417,9 +463,9 @@ namespace GenerateTranslucencyMap
 
 				//////////////////////////////////////////////////////////////////////////
 				// 1] Apply bilateral filtering to the input texture as a pre-process
-				ApplyBilateralFiltering( m_TextureSourceThickness, m_TextureTarget0, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, false );
-				m_TextureTarget0.SetCS( 0 );
-//m_TextureSourceThickness.SetCS( 0 );
+				ApplyBilateralFiltering( m_TextureSourceThickness, m_TextureFilteredThickness, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, false );
+				m_TextureFilteredThickness.SetCS( 0 );
+//m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filtering...
 
 				m_TextureSourceNormal.SetCS( 1 );
 				m_TextureSourceTransmittance.SetCS( 2 );
@@ -428,105 +474,123 @@ namespace GenerateTranslucencyMap
 
 				//////////////////////////////////////////////////////////////////////////
 				// 2] Compute visibility texture
-				BuildVisibilityMap( m_TextureTarget0, m_TextureSourceVisibility );
-//BuildVisibilityMap( m_TextureSourceThickness, m_TextureSourceVisibility );
+				BuildVisibilityMap( m_TextureFilteredThickness, m_TextureSourceVisibility );
+//BuildVisibilityMap( m_TextureSourceThickness, m_TextureSourceVisibility );	// While we're not using bilateral filtering...
 
 				m_TextureSourceVisibility.SetCS( 4 );
 
 
-				//////////////////////////////////////////////////////////////////////////
+//*				//////////////////////////////////////////////////////////////////////////
 				// 3] Compute directional occlusion
-/*				if ( !m_CS_GenerateTranslucencyMap.Use() )
+				if ( !m_CS_GenerateTranslucencyMap.Use() )
 					throw new Exception( "Can't generate translucency map as compute shader failed to compile!" );
 
 				// Prepare computation parameters
-//				m_TextureTarget0.SetCS( 0 );
-m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filtering...
-				m_TextureTarget1.SetCSUAV( 0 );
 //				m_SB_Rays.SetInput( 1 );
 
 				m_CB_Input.m._Width = (uint) W;
 				m_CB_Input.m._Height = (uint) H;
-				m_CB_Input.m._TexelSize_mm = 10.0f * floatTrackbarControlPixelDensity.Value / Math.Max( W, H );
-				m_CB_Input.m._Thickness_mm = floatTrackbarControlThickness.Value;
-				m_CB_Input.m._KernelSize = 32;
+				m_CB_Input.m._TexelSize_mm = TextureSize_mm / Math.Max( W, H );
+				m_CB_Input.m._Thickness_mm = Thickness_mm;
+				m_CB_Input.m._KernelSize = 8;
 				m_CB_Input.m._Sigma_a = floatTrackbarControlAbsorptionCoefficient.Value;
 				m_CB_Input.m._Sigma_s = floatTrackbarControlScatteringCoefficient.Value;
 				m_CB_Input.m._g = floatTrackbarControlScatteringAnisotropy.Value;
 
-				m_CB_Input.m._Light = new RendererManaged.float3( );
+				int	groupsCountX = (W + 15) >> 4;
+				int	groupsCountY = (H + 15) >> 4;
 
-				m_CB_Input.UpdateData( );
+				int	RaysCount = 1;//integerTrackbarControlRaysCount.Value;
 
+				// For each HL2 basis direction
+				for ( int i=0; i < 3; i++ ) {
 
-				// Start
-				int	h = Math.Max( 1, MAX_LINES*1024 / W );
-				int	CallsCount = (int) Math.Ceiling( (float) H / h );
-				for ( int i=0; i < CallsCount; i++ )
-				{
+					switch ( i ) {
+						case 0: m_CB_Input.m._Light = new RendererManaged.float3( (float) Math.Sqrt( 2.0 / 3.0 ), 0.0f, (float) Math.Sqrt( 1.0 / 3.0 ) ); break;
+						case 1: m_CB_Input.m._Light = new RendererManaged.float3( (float) -Math.Sqrt( 1.0 / 6.0 ), (float)  Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ); break;
+						case 2: m_CB_Input.m._Light = new RendererManaged.float3( (float) -Math.Sqrt( 1.0 / 6.0 ), (float) -Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ); break;
+					}
+					m_CB_Input.UpdateData();
 
-					m_CS_GenerateTranslucencyMap.Dispatch( W, h, 1 );
+					// Clear initial target
+					m_Device.Clear( m_TextureTargets[i][0], RendererManaged.float4.Zero );
+
+					// Start
+					for ( int RayIndex=0; RayIndex < RaysCount; RayIndex++ ) {
+
+						m_TextureTargets[i][0].SetCS( 5 );
+						m_TextureTargets[i][1].SetCSUAV( 0 );
+
+	 					m_CS_GenerateTranslucencyMap.Dispatch( groupsCountX, groupsCountY, 1 );
+
+						// Swap targets
+						RendererManaged.Texture2D	Temp = m_TextureTargets[i][0];
+						m_TextureTargets[i][0] = m_TextureTargets[i][1];
+						m_TextureTargets[i][1] = Temp;
+					}
+
+					m_TextureTargets[i][0].RemoveFromLastAssignedSlotUAV();
 
 					m_Device.Present( true );
 
-					progressBar.Value = (int) (0.01f * (VISIBILITY_PROGRESS + (100-VISIBILITY_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
-//					for ( int a=0; a < 10; a++ )
-						Application.DoEvents();
+					float	progress = (float) (RaysCount*i+1) / (3*RaysCount);
+
+					progressBar.Value = (int) (0.01f * (VISIBILITY_PROGRESS + (100-VISIBILITY_PROGRESS) * progress) * progressBar.Maximum);
+					Application.DoEvents();
 				}
 
-				progressBar.Value = progressBar.Maximum;
+// 				int	CallsCount = (int) Math.Ceiling( (float) H / h );
+// 				for ( int i=0; i < CallsCount; i++ )
+// 				{
+// 
+// 					m_CS_GenerateTranslucencyMap.Dispatch( W, h, 1 );
+// 
+// 					m_Device.Present( true );
+// 
+// 					progressBar.Value = (int) (0.01f * (VISIBILITY_PROGRESS + (100-VISIBILITY_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
+// //					for ( int a=0; a < 10; a++ )
+// 						Application.DoEvents();
+// 				}
+ 
+ 				progressBar.Value = progressBar.Maximum;
 
-				// Compute in a single shot (this is madness!)
-// 				m_CB_Input.m.y = 0;
-// 				m_CB_Input.UpdateData();
-// 				m_CS_GenerateSSBumpMap.Dispatch( W, H, 1 );
 //*/
 
 				//////////////////////////////////////////////////////////////////////////
 				// 3] Copy target to staging for CPU readback and update the resulting bitmap
-				m_TextureTarget_CPU.CopyFrom( m_TextureTarget1 );
+				ImagePanel[]	ImagePanels = new ImagePanel[3] {
+					imagePanelResult0,
+					imagePanelResult1,
+					imagePanelResult2,
+				};
+				for ( int i=0; i < 3; i++ ) {
+					if ( m_BitmapResults[i] != null )
+						m_BitmapResults[i].Dispose();
+					m_BitmapResults[i] = new ImageUtility.Bitmap( W, H, m_LinearProfile );
+					m_BitmapResults[i].HasAlpha = true;
 
-				if ( m_BitmapResult0 != null )
-					m_BitmapResult0.Dispose();
-				if ( m_BitmapResult1 != null )
-					m_BitmapResult1.Dispose();
-				if ( m_BitmapResult2 != null )
-					m_BitmapResult2.Dispose();
-				if ( m_BitmapResult3 != null )
-					m_BitmapResult3.Dispose();
-				m_BitmapResult0 = new ImageUtility.Bitmap( W, H, m_LinearProfile );
-				m_BitmapResult1 = new ImageUtility.Bitmap( W, H, m_LinearProfile );
-				m_BitmapResult2 = new ImageUtility.Bitmap( W, H, m_LinearProfile );
-				m_BitmapResult3 = new ImageUtility.Bitmap( W, H, m_LinearProfile );
-				m_BitmapResult0.HasAlpha = true;
-				m_BitmapResult1.HasAlpha = true;
-				m_BitmapResult2.HasAlpha = true;
-				m_BitmapResult3.HasAlpha = true;
+					// Copy from GPU to CPU
+					m_TextureTarget_CPU.CopyFrom( m_TextureTargets[i][0] );
 
-				RendererManaged.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
-				using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
-					for ( int Y=0; Y < H; Y++ )
-					{
-						R.BaseStream.Position = Y * Pixels.RowPitch;
-						for ( int X=0; X < W; X++ )
+					RendererManaged.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
+					using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
+						for ( int Y=0; Y < H; Y++ )
 						{
-							ImageUtility.float4	Color = new ImageUtility.float4( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-							Color = m_LinearProfile.RGB2XYZ( Color );
-							m_BitmapResult0.ContentXYZ[X,Y] = Color;
-							m_BitmapResult1.ContentXYZ[X,Y] = Color;
-							m_BitmapResult2.ContentXYZ[X,Y] = Color;
-							m_BitmapResult3.ContentXYZ[X,Y] = Color;
+							R.BaseStream.Position = Y * Pixels.RowPitch;
+							for ( int X=0; X < W; X++ )
+							{
+								ImageUtility.float4	Color = new ImageUtility.float4( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+								Color = m_LinearProfile.RGB2XYZ( Color );
+								m_BitmapResults[i].ContentXYZ[X,Y] = Color;
+							}
 						}
-					}
 
-				Pixels.Dispose();
-				m_TextureTarget_CPU.UnMap( 0, 0 );
+					Pixels.Dispose();
+					m_TextureTarget_CPU.UnMap( 0, 0 );
 
-				// Assign result
-				imagePanelResult0.Image = m_BitmapResult0;
-				imagePanelResult1.Image = m_BitmapResult1;
-				imagePanelResult2.Image = m_BitmapResult2;
-				imagePanelResult3.Image = m_BitmapResult3;
+					// Assign result
+					ImagePanels[i].Image = m_BitmapResults[i];
+				}
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
@@ -546,8 +610,8 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 
 			m_CB_Visibility.m._Width = (uint) W;
 			m_CB_Visibility.m._Height = (uint) H;
-			m_CB_Visibility.m._Thickness_mm = floatTrackbarControlThickness.Value;
-			m_CB_Visibility.m._TexelSize_mm = 10.0f * floatTrackbarControlPixelDensity.Value / Math.Max( W, H );
+			m_CB_Visibility.m._Thickness_mm = Thickness_mm;
+			m_CB_Visibility.m._TexelSize_mm = TextureSize_mm / Math.Max( W, H );
 			m_CB_Visibility.m._DiscRadius = 32;
 
 			int	h = Math.Max( 1, MAX_LINES*1024 / W );
@@ -802,7 +866,7 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 
 		private void imagePanelResult0_Click(object sender, EventArgs e)
 		{
-			if ( m_BitmapResult0 == null ) {
+			if ( m_BitmapResults[0] == null ) {
 				MessageBox( "There is no result image to save!" );
 				return;
 			}
@@ -816,7 +880,7 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 				return;
 
 			try {
-				m_BitmapResult0.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
+				m_BitmapResults[0].Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
 				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving the image:\n\n", _e );
@@ -825,7 +889,7 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 
 		private void imagePanelResult1_Click(object sender, EventArgs e)
 		{
-			if ( m_BitmapResult1 == null ) {
+			if ( m_BitmapResults[1] == null ) {
 				MessageBox( "There is no result image to save!" );
 				return;
 			}
@@ -839,7 +903,7 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 				return;
 
 			try {
-				m_BitmapResult1.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
+				m_BitmapResults[1].Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
 				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving the image:\n\n", _e );
@@ -848,7 +912,7 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 
 		private void imagePanelResult2_Click(object sender, EventArgs e)
 		{
-			if ( m_BitmapResult2 == null ) {
+			if ( m_BitmapResults[2] == null ) {
 				MessageBox( "There is no result image to save!" );
 				return;
 			}
@@ -862,7 +926,7 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 				return;
 
 			try {
-				m_BitmapResult2.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
+				m_BitmapResults[2].Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
 				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving the image:\n\n", _e );
@@ -871,7 +935,7 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 
 		private void imagePanelResult3_Click(object sender, EventArgs e)
 		{
-			if ( m_BitmapResult3 == null ) {
+			if ( m_BitmapResultCombined == null ) {
 				MessageBox( "There is no result image to save!" );
 				return;
 			}
@@ -885,7 +949,7 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 				return;
 
 			try {
-				m_BitmapResult3.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
+				m_BitmapResultCombined.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
 				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving the image:\n\n", _e );
@@ -1063,6 +1127,43 @@ m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filterin
 		private void buttonReload_Click( object sender, EventArgs e )
 		{
 			m_Device.ReloadModifiedShaders();
+		}
+
+		private void floatTrackbarControlDominantHue_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue )
+		{
+
+		}
+
+		private void floatTrackbarControlDominantHue_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+			RendererManaged.float3	RGB = HSL2RGB( new RendererManaged.float3( _Sender.Value / 360.0f, 1.0f, 0.5f ) );
+			panelDominantHue.BackColor = Color.FromArgb( (int) (255 * RGB.x), (int) (255 * RGB.y), (int) (255 * RGB.z) );
+		}
+
+		RendererManaged.float3	HSL2RGB( RendererManaged.float3 _HSL ) {
+			float	H = _HSL.x;
+			float	S = _HSL.y;
+			float	L = _HSL.z;
+
+			if ( S == 0.0f )
+			   return L * RendererManaged.float3.One;
+
+			float	var_2 = _HSL.z < 0.5f ? L * ( 1 + S ) :( L + S ) - ( S * L );
+			float	var_1 = 2 * L - var_2;
+
+			float	R = Hue_2_RGB( var_1, var_2, H + 1 / 3.0f ) ;
+			float	G = Hue_2_RGB( var_1, var_2, H );
+			float	B = Hue_2_RGB( var_1, var_2, H - 1 / 3.0f );
+
+			return new RendererManaged.float3( R, G, B );
+		}
+
+		float	Hue_2_RGB( float v1, float v2, float vH ) {
+			if ( vH < 0 ) vH += 1;
+			if ( vH > 1 ) vH -= 1;
+			if ( ( 6 * vH ) < 1 ) return ( v1 + ( v2 - v1 ) * 6 * vH );
+			if ( ( 2 * vH ) < 1 ) return ( v2 );
+			if ( ( 3 * vH ) < 2 ) return ( v1 + ( v2 - v1 ) * ( ( 2.0f / 3 ) - vH ) * 6 );
+			return v1;
 		}
 
 		#endregion

@@ -13,22 +13,26 @@ cbuffer	CBInput : register( b0 ) {
 	uint	_Height;
 	float	_TexelSize_mm;		// Texel size in millimeters
 	float	_Thickness_mm;		// Thickness map max encoded displacement in millimeters
+
 	uint	_KernelSize;		// Size of the convolution kernel
 	float	_Sigma_a;			// Absorption coefficient (mm^-1)
 	float	_Sigma_s;			// Scattering coefficient (mm^-1)
 	float	_g;					// Scattering anisotropy (mean cosine of scattering phase function)
+
 	float3	_Light;				// Light direction (in tangent space)
 }
 
+SamplerState LinearClamp	: register( s0 );
 SamplerState LinearWrap		: register( s2 );
 
 Texture2D<float>			_SourceThickness : register( t0 );
 Texture2D<float3>			_SourceNormal : register( t1 );
 Texture2D<float3>			_SourceTransmittance : register( t2 );
-Texture2D<float3>			_SourceAlbedo : register( t3 );
+Texture2D<float4>			_SourceAlbedo : register( t3 );
 Texture3D<float>			_SourceVisibility : register( t4 );	// This is an interpolable array of 16 principal visiblity directions
 																// Each slice in the array gives the cos(horizon angle) to compare against a ray direction
 
+Texture2D<float4>			_Previous : register( t5 );
 RWTexture2D<float4>			_Target : register( u0 );
 // RWTexture2D<float4>			_Target1 : register( u1 );
 // RWTexture2D<float4>			_Target2 : register( u2 );
@@ -55,8 +59,6 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	float2	pixel2UV = 1.0 / float2( _Width, _Height );
 	float2	UV = pixel2UV * float2( 0.5 + PixelPosition );
 
-	uint	RayIndex = _GroupThreadID.x;
-
 	uint	K = 2*_KernelSize;
 
 	// Compute general parameters (TODO: move to constant buffer)
@@ -66,31 +68,35 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	float	l = 1.0 / sigma_t;								// Mean free path
 	float	D = l / 3.0;
 
-	float3	Result = 0.0;
-	uint2	Pos;
+	float3	result = 0.0;
+	uint2	localPos;
 	for ( uint Y=0; Y <= K; Y++ ) {
-		Pos.y = PixelPosition.y - _KernelSize + Y;
-		if ( Pos.y > _Height )
+		localPos.y = PixelPosition.y - _KernelSize + Y;
+		if ( localPos.y > _Height )
 			continue;
 
 		for ( uint X=0; X <= K; X++ ) {
-			Pos.x = PixelPosition.x - _KernelSize + X;
-			if ( Pos.x > _Width )
+			localPos.x = PixelPosition.x - _KernelSize + X;
+			if ( localPos.x > _Width )
 				continue;
 
+			float2	LocalUV = pixel2UV * float2( 0.5 + localPos );
+
 			// Fetch local thickness
-			float	d = _Thickness_mm * _SourceThickness.Load( int3( Pos, 0 ) ).x;
+			float	d = _Thickness_mm * _SourceThickness.Load( uint3( localPos, 0 ) ).x;
 
 			// Fetch local diffuse albedo and compute average diffuse reflectance
-			float3	albedo = _SourceAlbedo.Load( int3( PixelPosition, 0 ) );
-			float	rho_d = dot( LUMINANCE, albedo );								// Luminance = average albedo reflectance
-			float3	rho_t = 1.0 - albedo;
+			float4	albedo = _SourceAlbedo.SampleLevel( LinearClamp, LocalUV, 0.0 );
+			float	rho_d = dot( LUMINANCE, albedo.xyz );							// Luminance = average albedo reflectance
+			float3	rho_t = 1.0 - albedo.xyz;
+
+			d *= albedo.w;
 
 			// Fetch local normal
-			float3	normal = 2.0 * _SourceNormal.SampleLevel( LinearWrap, UV, 0 ) - 1.0;
+			float3	normal = 2.0 * _SourceNormal.SampleLevel( LinearClamp, LocalUV, 0.0 ) - 1.0;
 
 			// Fetch local transmittance
-			float3	transmittance = _SourceTransmittance.SampleLevel( LinearWrap, UV, 0 );
+			float3	transmittance = max( 0.0, _SourceTransmittance.SampleLevel( LinearClamp, LocalUV, 0.0 ) );
 			float3	sigma_tr = sqrt( 3.0 * _Sigma_a * sigma_t * transmittance );	// Effective transport coefficient (in mm^-1)
 
 			// Compute local parameters
@@ -98,29 +104,57 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 			float	Zb = 2.0 * A * D;
 
 			// Compute transmittance (accumulate dipoles contribution)
+			float2	relativePos = _TexelSize_mm * (float2( X, Y ) - _KernelSize);
 			float3	Tr = 0.0;
+
+
+//_Target[PixelPosition] = 0.1 * A;
+//_Target[PixelPosition] = float4( sigma_tr, 0 );
+//_Target[PixelPosition] = float4( sqrt( 3.0 * _Sigma_a * sigma_t * transmittance ), 0 );
+//_Target[PixelPosition] = float4( transmittance, 0 );
+//_Target[PixelPosition] = float4( -relativePos / (16.0 * _TexelSize_mm), 0, 0 );
+//_Target[PixelPosition] = -(int(X) - int(_KernelSize)) / 16.0;
+//return;
+
 			for ( int DipoleIndex=-DIPOLES_COUNT; DipoleIndex <= DIPOLES_COUNT; DipoleIndex++ ) {
+//int DipoleIndex=-3;{
 				float	Zr = 2.0 * DipoleIndex * (d + 2.0 * Zb) + l;
 				float	Zv = Zr - 2.0 * (l + Zb);
 
-				float	Dr = length( float3( _TexelSize_mm * Pos, Zr ) );			// in mm
-				float	Dv = length( float3( _TexelSize_mm * Pos, Zv ) );			// in mm
+				float	Dr = length( float3( relativePos, Zr ) );		// in mm
+				float	Dv = length( float3( relativePos, Zv ) );		// in mm
 
 				float3	pole_r = (d - Zr) * (1.0 + sigma_tr * Dr * exp( -sigma_tr * Dr )) / (Dr * Dr * Dr);	// Real
 				float3	pole_v = (d - Zv) * (1.0 + sigma_tr * Dv * exp( -sigma_tr * Dv )) / (Dv * Dv * Dv);	// Virtual
 				Tr += pole_r + pole_v;
+
+// _Target[PixelPosition] = abs(0.1*Zr);
+// _Target[PixelPosition] = abs(0.1*Zv);
+//_Target[PixelPosition] = float4( 1.0 * pole_r, 0 );
+//_Target[PixelPosition] = float4( 100.0 * sigma_tr * Dr * exp( -sigma_tr * Dr ), 0 );
+//_Target[PixelPosition] = Dv < 1e-6 ? float4( 1, 0, 0, 0 ) : 0.0;
+//return;
 			}
 			Tr *= alpha / (4.0 * PI);
 
 			// Compute irradiance for our light directions
-			float2	CurrentUV = pixel2UV * float2( 0.5 + Pos );
-			float	visibility = ComputeVisibility( CurrentUV, _Light );
+			float	visibility = ComputeVisibility( LocalUV, _Light );
 			float3	E = rho_t * visibility * saturate( dot( normal, _Light ) );
 
+// _Target[PixelPosition] = float4( Tr, 0 );
+// _Target[PixelPosition] = float4( E, 0 );
+// return;
+
 			// Accumulate
-			Result += E * Tr;
+			result += E * Tr;
 		}
 	}
 
-	_Target[PixelPosition] = float4( Result, 0 );
+	result *= _TexelSize_mm*_TexelSize_mm / (K*K);
+
+// result = float3( UV, 0 );
+// result = _Light;
+
+	float4	Current = _Previous[PixelPosition];
+	_Target[PixelPosition] = Current + float4( result, 0 );
 }

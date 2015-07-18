@@ -92,7 +92,7 @@ float	F( float _u, float _v ) {
 	return _v * exp( a * pow( _u, b ) );
 }
 
-float	Airlight( float3 _cameraPosition, float3 _lightPosition, float3 _hitPosition, float _beta ) {
+float	Airlight( float3 _cameraPosition, float3 _cameraView, float3 _lightPosition, float3 _hitPosition, float _beta ) {
 	float3	V2S = _lightPosition - _cameraPosition;
 	float	Dsv = length( V2S );
 			V2S /= Dsv;
@@ -114,7 +114,8 @@ float	Airlight( float3 _cameraPosition, float3 _lightPosition, float3 _hitPositi
 	float	F0 = F( A1, v0 );
 
 	float	v1 = 0.25 * PI + atan( (Tvp - Tsv * CosGamma) / A1 );
-	float	F1 = F( A1, v1 );
+//	float	F1 = F( A1, v1 );
+	float	F1 = saturate( dot( V2S, _cameraView )) * F( A1, v1 );
 
 	return A0 * saturate( F1 - F0 );
 }
@@ -143,7 +144,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 // 		t = 1000.0;
 
 	// Add light scattering
-	Color += LIGHT_INTENSITY * Airlight( _CameraPos, _Light, _CameraPos + t * wsView, AIRLIGHT_BETA );
+	Color += LIGHT_INTENSITY * Airlight( _CameraPos, wsView, _Light, _CameraPos + t * wsView, AIRLIGHT_BETA );
 
 	return Color;
 }

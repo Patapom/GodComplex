@@ -61,7 +61,7 @@ namespace GenerateSelfShadowedBumpMap
 			#if DEBUG
 				m_PS_Display = new Shader( Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Display.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			#else
-				m_PS_Display = Shader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				m_PS_Display = Shader.CreateFromBinaryBlob( Device, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
 			#endif
 
 			m_CB_Display = new ConstantBuffer<CBDisplay>( Device, 0 );

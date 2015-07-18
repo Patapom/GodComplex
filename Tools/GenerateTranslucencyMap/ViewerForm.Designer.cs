@@ -33,7 +33,11 @@
 			this.Name = "ViewerForm";
 			this.ShowInTaskbar = false;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-			this.Text = "ViewerForm";
+			this.Text = "Backspace toggles horizon map";
+			this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ViewerForm_KeyDown);
+			this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.ViewerForm_MouseDown);
+			this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.ViewerForm_MouseMove);
+			this.MouseUp += new System.Windows.Forms.MouseEventHandler(this.ViewerForm_MouseUp);
 			this.ResumeLayout(false);
 
 		}
