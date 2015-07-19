@@ -149,7 +149,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 		protected override void OnClosing( CancelEventArgs e )
 		{
 			try {
-				m_viewerForm.Dispose();
+				m_viewerForm.Exit();
 
 				m_CS_GenerateSSBumpMap.Dispose();
 				m_CS_BilateralFilter.Dispose();

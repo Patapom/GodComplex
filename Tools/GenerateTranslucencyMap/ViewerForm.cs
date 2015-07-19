@@ -79,24 +79,14 @@ namespace GenerateTranslucencyMap
 			Application.Idle += new EventHandler( Application_Idle );
 		}
 
+		public void Exit() {
+			m_CB_Display.Dispose();
+			m_PS_Display.Dispose();
+		}
+
 		bool m_Manipulator_EnableMouseAction( MouseEventArgs _e )
 		{
 			return Control.ModifierKeys != Keys.Shift;
-		}
-
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-		protected override void Dispose( bool disposing )
-		{
-			if ( disposing && (components != null) ) {
-				m_CB_Display.Dispose();
-				m_PS_Display.Dispose();
-
-				components.Dispose();
-			}
-			base.Dispose( disposing );
 		}
 
 		void Camera_CameraTransformChanged( object sender, EventArgs e )

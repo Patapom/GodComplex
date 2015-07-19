@@ -20,6 +20,7 @@ cbuffer	CBInput : register( b0 ) {
 	float	_g;					// Scattering anisotropy (mean cosine of scattering phase function)
 
 	float3	_Light;				// Light direction (in tangent space)
+	float	_F0;				// Fresnel reflection coefficient at normal incidence
 }
 
 SamplerState LinearClamp	: register( s0 );
@@ -39,7 +40,7 @@ RWTexture2D<float4>			_Target : register( u0 );
 
 StructuredBuffer<float3>	_Rays : register( t1 );
 
-// Computes the visibility of the ray at the given position
+// Computes the visibility of the ray at the given position using the horizon map
 float	ComputeVisibility( float2 _UV, float3 _Direction ) {
 	float	phi = atan2( _Direction.y, _Direction.x );	// [-PI,PI]
 	float	W = phi / (2.0 * PI);						// [-0.5,+0.5]
@@ -47,6 +48,15 @@ float	ComputeVisibility( float2 _UV, float3 _Direction ) {
 	float	cosThetaMin = 0.9 * cosTheta;
 	float	cosThetaMax = 1.1 * cosTheta;
 	return smoothstep( cosThetaMax, cosThetaMin, _Direction.z );
+}
+
+// Schlick's approximation to Fresnel reflection (http://en.wikipedia.org/wiki/Schlick's_approximation)
+float	FresnelSchlick( float _F0, float _CosTheta, float _FresnelStrength=1.0 )
+{
+	float	t = 1.0 - saturate( _CosTheta );
+	float	t2 = t * t;
+	float	t4 = t2 * t2;
+	return lerp( _F0, 1.0, _FresnelStrength * t4 * t );
 }
 
 [numthreads( 16, 16, 1 )]
@@ -88,16 +98,19 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 			// Fetch local diffuse albedo and compute average diffuse reflectance
 			float4	albedo = _SourceAlbedo.SampleLevel( LinearClamp, LocalUV, 0.0 );
 			float	rho_d = dot( LUMINANCE, albedo.xyz );							// Luminance = average albedo reflectance
-			float3	rho_t = 1.0 - albedo.xyz;
 
 			d *= albedo.w;
 
 			// Fetch local normal
 			float3	normal = 2.0 * _SourceNormal.SampleLevel( LinearClamp, LocalUV, 0.0 ) - 1.0;
 
+			// Compute diffuse fresnel transmission
+			float	Fs = FresnelSchlick( _F0, dot( _Light, normal ) );
+			float	Fd = 1.0 - Fs;	// I know it's more complicated than this
+
 			// Fetch local transmittance
 			float3	transmittance = max( 0.0, _SourceTransmittance.SampleLevel( LinearClamp, LocalUV, 0.0 ) );
-			float3	sigma_tr = sqrt( 3.0 * _Sigma_a * sigma_t * transmittance );	// Effective transport coefficient (in mm^-1)
+			float3	sigma_tr = sqrt( 3.0 * _Sigma_a * sigma_t * transmittance * transmittance );	// Effective transport coefficient (in mm^-1)
 
 			// Compute local parameters
 			float	A = (1.0 + rho_d) / (1.0 - rho_d);								// Change of fluence due to internal reflection at the surface
@@ -138,6 +151,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 			Tr *= alpha / (4.0 * PI);
 
 			// Compute irradiance for our light directions
+			float3	rho_t = 1.0 - Fd * albedo.xyz;
+
 			float	visibility = ComputeVisibility( LocalUV, _Light );
 			float3	E = rho_t * visibility * saturate( dot( normal, _Light ) );
 
