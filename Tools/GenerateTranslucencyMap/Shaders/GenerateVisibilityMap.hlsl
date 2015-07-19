@@ -111,8 +111,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	// Finalize
 	if ( rayIndex == 0 ) {
 		float	averageAngle = (gs_MaximumAngle[RAYS_COUNT*sliceIndex+0] + gs_MaximumAngle[RAYS_COUNT*sliceIndex+1] + gs_MaximumAngle[RAYS_COUNT*sliceIndex+2] + gs_MaximumAngle[RAYS_COUNT*sliceIndex+3]) / RAYS_COUNT;
-		float	cosAverageAngle = cos( averageAngle );
-		_Target[uint3( PixelPosition, sliceIndex )] = cosAverageAngle;
+		float	sinAverageAngle = sin( averageAngle );
+		_Target[uint3( PixelPosition, sliceIndex )] = sinAverageAngle;	// We need the angle from the vertical axis! so we need cos(PI/2-averageAngle) = sin(averageAngle)...
 //_Target[uint3( PixelPosition, sliceIndex )] = 1.0;
 //_Target[uint3( PixelPosition, sliceIndex )] = 1.0 / sliceIndex;
 	}

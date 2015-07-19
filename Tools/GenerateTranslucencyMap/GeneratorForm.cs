@@ -168,6 +168,11 @@ namespace GenerateTranslucencyMap
 
 			// Show dominant hue
 			floatTrackbarControlDominantHue_ValueChanged( floatTrackbarControlDominantHue, 0.0f );
+
+			#if DEBUG
+			integerTrackbarControlKernelSize.Visible = true;
+			label5.Visible = true;
+			#endif
 		}
 
 		protected override void  OnLoad(EventArgs e)
@@ -207,6 +212,13 @@ namespace GenerateTranslucencyMap
 				MessageBox( "Failed to create DX11 device and default shaders:\r\n", _e );
 				Close();
 			}
+
+
+LoadThicknessMap( new System.IO.FileInfo( "Leaf_thickness.tga" ) );
+LoadNormalMap( new System.IO.FileInfo( "Leaf_normal.tga" ) );
+LoadAlbedoMap( new System.IO.FileInfo( "Leaf_albedo.tga" ) );
+LoadTransmittanceMap( new System.IO.FileInfo( "Leaf_transmittance.tga" ) );
+
 		}
 
 		protected override void OnClosing( CancelEventArgs e )
@@ -507,13 +519,11 @@ namespace GenerateTranslucencyMap
 					throw new Exception( "Can't generate translucency map as compute shader failed to compile!" );
 
 				// Prepare computation parameters
-//				m_SB_Rays.SetInput( 1 );
-
 				m_CB_Generate.m._Width = (uint) W;
 				m_CB_Generate.m._Height = (uint) H;
 				m_CB_Generate.m._TexelSize_mm = TextureSize_mm / Math.Max( W, H );
 				m_CB_Generate.m._Thickness_mm = Thickness_mm;
-				m_CB_Generate.m._KernelSize = 8;
+				m_CB_Generate.m._KernelSize = (uint) integerTrackbarControlKernelSize.Value;
 				m_CB_Generate.m._Sigma_a = floatTrackbarControlAbsorptionCoefficient.Value;
 				m_CB_Generate.m._Sigma_s = floatTrackbarControlScatteringCoefficient.Value;
 				m_CB_Generate.m._g = floatTrackbarControlScatteringAnisotropy.Value;
@@ -526,17 +536,18 @@ namespace GenerateTranslucencyMap
 				int	groupsCountX = (W + 15) >> 4;
 				int	groupsCountY = (H + 15) >> 4;
 
-				int	RaysCount = 1;//integerTrackbarControlRaysCount.Value;
+				int	RaysCount = integerTrackbarControlRaysCount.Value;
+				int	UpdateCountMax = Math.Max( 1, RaysCount / 100 );
+				int	UpdateCount = 0;
 
 				// For each HL2 basis direction
 				for ( int i=0; i < 3; i++ ) {
 
-					switch ( i ) {
-						case 0: m_CB_Generate.m._Light = new float3( (float) Math.Sqrt( 2.0 / 3.0 ), 0.0f, (float) Math.Sqrt( 1.0 / 3.0 ) ); break;
-						case 1: m_CB_Generate.m._Light = new float3( (float) -Math.Sqrt( 1.0 / 6.0 ), (float)  Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ); break;
-						case 2: m_CB_Generate.m._Light = new float3( (float) -Math.Sqrt( 1.0 / 6.0 ), (float) -Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ); break;
-					}
-					m_CB_Generate.UpdateData();
+// 					switch ( i ) {
+// 						case 0: m_CB_Generate.m._Light = new float3( (float) Math.Sqrt( 2.0 / 3.0 ), 0.0f, (float) Math.Sqrt( 1.0 / 3.0 ) ); break;
+// 						case 1: m_CB_Generate.m._Light = new float3( (float) -Math.Sqrt( 1.0 / 6.0 ), (float)  Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ); break;
+// 						case 2: m_CB_Generate.m._Light = new float3( (float) -Math.Sqrt( 1.0 / 6.0 ), (float) -Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ); break;
+// 					}
 
 					// Clear initial target
 					m_Device.Clear( m_TextureTargets[i][0], float4.Zero );
@@ -544,46 +555,67 @@ namespace GenerateTranslucencyMap
 					// Start
 					for ( int RayIndex=0; RayIndex < RaysCount; RayIndex++ ) {
 
+						m_CB_Generate.m._Light = m_Rays[i][RayIndex];
+m_CB_Generate.m._Light = float3.UnitZ;
+						m_CB_Generate.UpdateData();
+
 						m_TextureTargets[i][0].SetCS( 5 );
 						m_TextureTargets[i][1].SetCSUAV( 0 );
 
 	 					m_CS_GenerateTranslucencyMap.Dispatch( groupsCountX, groupsCountY, 1 );
 
+						m_TextureTargets[i][0].RemoveFromLastAssignedSlots();
+						m_TextureTargets[i][1].RemoveFromLastAssignedSlotUAV();
+
 						// Swap targets
 						Texture2D	Temp = m_TextureTargets[i][0];
 						m_TextureTargets[i][0] = m_TextureTargets[i][1];
 						m_TextureTargets[i][1] = Temp;
+
+						// Progress
+						if ( UpdateCount++ >= UpdateCountMax ) {
+							UpdateCount = 0;
+
+							m_Device.Present( true );
+
+							float	progress = (float) (RaysCount*i+1) / (3*RaysCount);
+							progressBar.Value = (int) (0.01f * (VISIBILITY_PROGRESS + (100-VISIBILITY_PROGRESS) * progress) * progressBar.Maximum);
+							Application.DoEvents();
+						}
 					}
-
-					m_TextureTargets[i][0].RemoveFromLastAssignedSlotUAV();
-
-					m_Device.Present( true );
-
-					float	progress = (float) (RaysCount*i+1) / (3*RaysCount);
-
-					progressBar.Value = (int) (0.01f * (VISIBILITY_PROGRESS + (100-VISIBILITY_PROGRESS) * progress) * progressBar.Maximum);
-					Application.DoEvents();
 				}
-
-// 				int	CallsCount = (int) Math.Ceiling( (float) H / h );
-// 				for ( int i=0; i < CallsCount; i++ )
-// 				{
-// 
-// 					m_CS_GenerateTranslucencyMap.Dispatch( W, h, 1 );
-// 
-// 					m_Device.Present( true );
-// 
-// 					progressBar.Value = (int) (0.01f * (VISIBILITY_PROGRESS + (100-VISIBILITY_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
-// //					for ( int a=0; a < 10; a++ )
-// 						Application.DoEvents();
-// 				}
  
  				progressBar.Value = progressBar.Maximum;
 
+				//////////////////////////////////////////////////////////////////////////
+				// 3] Normalize results
+				if ( !m_CS_Helper_Normalize.Use() )
+					throw new Exception( "Can't normalize translucency map as normalization compute shader failed to compile!" );
+
+				for ( int i=0; i < 3; i++ ) {
+
+					m_CB_Helper.m._Width = (uint) W;
+					m_CB_Helper.m._Height = (uint) H;
+					m_CB_Helper.m._Parms = (1.0f / RaysCount) * float3.One;
+					m_CB_Helper.UpdateData();
+
+					m_TextureTargets[i][0].SetCS( 0 );
+					m_TextureTargets[i][1].SetCSUAV( 0 );
+
+					m_CS_Helper_Normalize.Dispatch( groupsCountX, groupsCountY, 1 );
+
+					m_TextureTargets[i][0].RemoveFromLastAssignedSlots();
+					m_TextureTargets[i][1].RemoveFromLastAssignedSlotUAV();
+
+					// Swap targets
+					Texture2D	Temp = m_TextureTargets[i][0];
+					m_TextureTargets[i][0] = m_TextureTargets[i][1];
+					m_TextureTargets[i][1] = Temp;
+				}
 //*/
 
 				//////////////////////////////////////////////////////////////////////////
-				// 3] Copy target to staging for CPU readback and update the resulting bitmaps
+				// 4] Copy target to staging for CPU readback and update the resulting bitmaps
 				ImagePanel[]	ImagePanels = new ImagePanel[3] {
 					imagePanelResult0,
 					imagePanelResult1,
@@ -592,7 +624,8 @@ namespace GenerateTranslucencyMap
 				for ( int i=0; i < 3; i++ ) {
 					if ( m_BitmapResults[i] != null )
 						m_BitmapResults[i].Dispose();
-					m_BitmapResults[i] = new ImageUtility.Bitmap( W, H, m_LinearProfile );
+//					m_BitmapResults[i] = new ImageUtility.Bitmap( W, H, m_LinearProfile );
+					m_BitmapResults[i] = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
 					m_BitmapResults[i].HasAlpha = true;
 
 					// Copy from GPU to CPU
@@ -619,7 +652,7 @@ namespace GenerateTranslucencyMap
 				}
 
 				//////////////////////////////////////////////////////////////////////////
-				// 4] Mix results
+				// 5] Mix results
 				MixResults( MixColor );
 
 			} catch ( Exception _e ) {
@@ -757,34 +790,35 @@ namespace GenerateTranslucencyMap
 				new float3( -(float) Math.Sqrt( 1.0 / 6.0 ), (float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ),
 				new float3( -(float) Math.Sqrt( 1.0 / 6.0 ), -(float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) )
 			};
-
-			float	CenterTheta = (float) Math.Acos( HL2Basis[0].z );
-			float[]	CenterPhi = new float[] {
-				(float) Math.Atan2( HL2Basis[0].y, HL2Basis[0].x ),
-				(float) Math.Atan2( HL2Basis[1].y, HL2Basis[1].x ),
-				(float) Math.Atan2( HL2Basis[2].y, HL2Basis[2].x ),
+			float3[]	X = new float3[] {
+				HL2Basis[0].Cross( float3.UnitZ ).Normalized,
+				HL2Basis[1].Cross( float3.UnitZ ).Normalized,
+				HL2Basis[2].Cross( float3.UnitZ ).Normalized,
+			};
+			float3[]	Y = new float3[] {
+				X[0].Cross( HL2Basis[0] ),
+				X[1].Cross( HL2Basis[1] ),
+				X[2].Cross( HL2Basis[2] ),
 			};
 
+			double	randomTheta = 0.0;	// So first draw is always the HL2 direction itself
 			for ( int RayIndex=0; RayIndex < _RaysCount; RayIndex++ ) {
-				double	Phi = (Math.PI / 3.0) * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0);
-
 				// Stratified version
-				double	Theta = (Math.Acos( Math.Sqrt( (RayIndex + WMath.SimpleRNG.GetUniform()) / _RaysCount ) ));
-
-				Theta = Math.Min( 0.499f * Math.PI, Theta );
+				double	Phi = (Math.PI / 3.0) * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0);
+				double	Theta = 2.0 * Math.Asin( Math.Sqrt( 0.5 * (RayIndex + randomTheta) / _RaysCount ) );
 
 				double	CosTheta = Math.Cos( Theta );
 				double	SinTheta = Math.Sin( Theta );
 
-				m_Rays[0][RayIndex].Set(	(float) (Math.Cos( CenterPhi[0] + Phi ) * SinTheta),
-											(float) (Math.Sin( CenterPhi[0] + Phi ) * SinTheta),
-											(float) CosTheta );
-				m_Rays[1][RayIndex].Set(	(float) (Math.Cos( CenterPhi[1] + Phi ) * SinTheta),
-											(float) (Math.Sin( CenterPhi[1] + Phi ) * SinTheta),
-											(float) CosTheta );
-				m_Rays[2][RayIndex].Set(	(float) (Math.Cos( CenterPhi[2] + Phi ) * SinTheta),
-											(float) (Math.Sin( CenterPhi[2] + Phi ) * SinTheta),
-											(float) CosTheta );
+				float3	Dir = new float3( (float) (Math.Cos( Phi ) * SinTheta),
+										  (float) (Math.Sin( Phi ) * SinTheta),
+										  (float) CosTheta );
+
+				m_Rays[0][RayIndex] = Dir.x * X[0] + Dir.y * Y[0] + Dir.z * HL2Basis[0];
+				m_Rays[1][RayIndex] = Dir.x * X[1] + Dir.y * Y[1] + Dir.z * HL2Basis[1];
+				m_Rays[2][RayIndex] = Dir.x * X[2] + Dir.y * Y[2] + Dir.z * HL2Basis[2];
+
+				randomTheta = WMath.SimpleRNG.GetUniform();
 			}
 		}
 
@@ -870,7 +904,7 @@ namespace GenerateTranslucencyMap
 
 			try {
 				m_BitmapResults[0].Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
-				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+//				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving the image:\n\n", _e );
 			}
@@ -893,7 +927,7 @@ namespace GenerateTranslucencyMap
 
 			try {
 				m_BitmapResults[1].Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
-				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+//				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving the image:\n\n", _e );
 			}
@@ -916,7 +950,7 @@ namespace GenerateTranslucencyMap
 
 			try {
 				m_BitmapResults[2].Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
-				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+//				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving the image:\n\n", _e );
 			}
@@ -939,7 +973,7 @@ namespace GenerateTranslucencyMap
 
 			try {
 				m_BitmapResultCombined.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
-				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+//				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving the image:\n\n", _e );
 			}
@@ -1160,5 +1194,6 @@ namespace GenerateTranslucencyMap
 		}
 
 		#endregion
+
 	}
 }

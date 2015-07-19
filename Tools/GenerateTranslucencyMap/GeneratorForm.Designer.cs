@@ -53,6 +53,13 @@
 			this.label3 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
 			this.buttonShowViewer = new System.Windows.Forms.Button();
+			this.buttonReload = new System.Windows.Forms.Button();
+			this.toolTip1 = new System.Windows.Forms.ToolTip( this.components );
+			this.floatTrackbarControlDominantHue = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label4 = new System.Windows.Forms.Label();
+			this.panelDominantHue = new System.Windows.Forms.Panel();
+			this.integerTrackbarControlKernelSize = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label5 = new System.Windows.Forms.Label();
 			this.imagePanelResult3 = new GenerateTranslucencyMap.ImagePanel( this.components );
 			this.imagePanelResult2 = new GenerateTranslucencyMap.ImagePanel( this.components );
 			this.imagePanelResult1 = new GenerateTranslucencyMap.ImagePanel( this.components );
@@ -61,17 +68,12 @@
 			this.imagePanelTransmittanceMap = new GenerateTranslucencyMap.ImagePanel( this.components );
 			this.imagePanelAlbedoMap = new GenerateTranslucencyMap.ImagePanel( this.components );
 			this.imagePanelThicknessMap = new GenerateTranslucencyMap.ImagePanel( this.components );
-			this.buttonReload = new System.Windows.Forms.Button();
-			this.toolTip1 = new System.Windows.Forms.ToolTip( this.components );
-			this.floatTrackbarControlDominantHue = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.label4 = new System.Windows.Forms.Label();
-			this.panelDominantHue = new System.Windows.Forms.Panel();
 			this.groupBoxOptions.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// progressBar
 			// 
-			this.progressBar.Location = new System.Drawing.Point( 530, 340 );
+			this.progressBar.Location = new System.Drawing.Point( 530, 364 );
 			this.progressBar.Maximum = 1000;
 			this.progressBar.Name = "progressBar";
 			this.progressBar.Size = new System.Drawing.Size( 320, 23 );
@@ -99,13 +101,14 @@
 			this.integerTrackbarControlRaysCount.RangeMin = 1;
 			this.integerTrackbarControlRaysCount.Size = new System.Drawing.Size( 200, 20 );
 			this.integerTrackbarControlRaysCount.TabIndex = 21;
-			this.integerTrackbarControlRaysCount.Value = 128;
-			this.integerTrackbarControlRaysCount.VisibleRangeMax = 256;
+			this.integerTrackbarControlRaysCount.Value = 1;
+			this.integerTrackbarControlRaysCount.VisibleRangeMax = 128;
 			this.integerTrackbarControlRaysCount.VisibleRangeMin = 1;
+			this.integerTrackbarControlRaysCount.SliderDragStop += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.SliderDragStopEventHandler( this.integerTrackbarControlRaysCount_SliderDragStop );
 			// 
 			// buttonGenerate
 			// 
-			this.buttonGenerate.Location = new System.Drawing.Point( 106, 281 );
+			this.buttonGenerate.Location = new System.Drawing.Point( 108, 304 );
 			this.buttonGenerate.Name = "buttonGenerate";
 			this.buttonGenerate.Size = new System.Drawing.Size( 105, 35 );
 			this.buttonGenerate.TabIndex = 19;
@@ -144,7 +147,7 @@
 			// label8
 			// 
 			this.label8.AutoSize = true;
-			this.label8.Location = new System.Drawing.Point( 5, 194 );
+			this.label8.Location = new System.Drawing.Point( 5, 193 );
 			this.label8.Name = "label8";
 			this.label8.Size = new System.Drawing.Size( 87, 13 );
 			this.label8.TabIndex = 30;
@@ -154,7 +157,7 @@
 			// 
 			// floatTrackbarControlBilateralRadius
 			// 
-			this.floatTrackbarControlBilateralRadius.Location = new System.Drawing.Point( 107, 230 );
+			this.floatTrackbarControlBilateralRadius.Location = new System.Drawing.Point( 108, 253 );
 			this.floatTrackbarControlBilateralRadius.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlBilateralRadius.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlBilateralRadius.Name = "floatTrackbarControlBilateralRadius";
@@ -169,7 +172,7 @@
 			// label9
 			// 
 			this.label9.AutoSize = true;
-			this.label9.Location = new System.Drawing.Point( 8, 259 );
+			this.label9.Location = new System.Drawing.Point( 8, 282 );
 			this.label9.Name = "label9";
 			this.label9.Size = new System.Drawing.Size( 95, 13 );
 			this.label9.TabIndex = 31;
@@ -177,7 +180,7 @@
 			// 
 			// floatTrackbarControlBilateralTolerance
 			// 
-			this.floatTrackbarControlBilateralTolerance.Location = new System.Drawing.Point( 107, 256 );
+			this.floatTrackbarControlBilateralTolerance.Location = new System.Drawing.Point( 108, 279 );
 			this.floatTrackbarControlBilateralTolerance.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlBilateralTolerance.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlBilateralTolerance.Name = "floatTrackbarControlBilateralTolerance";
@@ -191,7 +194,7 @@
 			// label10
 			// 
 			this.label10.AutoSize = true;
-			this.label10.Location = new System.Drawing.Point( 8, 233 );
+			this.label10.Location = new System.Drawing.Point( 8, 256 );
 			this.label10.Name = "label10";
 			this.label10.Size = new System.Drawing.Size( 80, 13 );
 			this.label10.TabIndex = 32;
@@ -208,7 +211,7 @@
 			// 
 			// floatTrackbarControlPixelDensity
 			// 
-			this.floatTrackbarControlPixelDensity.Location = new System.Drawing.Point( 108, 191 );
+			this.floatTrackbarControlPixelDensity.Location = new System.Drawing.Point( 108, 189 );
 			this.floatTrackbarControlPixelDensity.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlPixelDensity.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlPixelDensity.Name = "floatTrackbarControlPixelDensity";
@@ -240,7 +243,9 @@
 			// 
 			// groupBoxOptions
 			// 
+			this.groupBoxOptions.Controls.Add( this.label5 );
 			this.groupBoxOptions.Controls.Add( this.label13 );
+			this.groupBoxOptions.Controls.Add( this.integerTrackbarControlKernelSize );
 			this.groupBoxOptions.Controls.Add( this.integerTrackbarControlRaysCount );
 			this.groupBoxOptions.Controls.Add( this.buttonGenerate );
 			this.groupBoxOptions.Controls.Add( this.floatTrackbarControlScatteringAnisotropy );
@@ -262,7 +267,7 @@
 			this.groupBoxOptions.Enabled = false;
 			this.groupBoxOptions.Location = new System.Drawing.Point( 530, 12 );
 			this.groupBoxOptions.Name = "groupBoxOptions";
-			this.groupBoxOptions.Size = new System.Drawing.Size( 320, 322 );
+			this.groupBoxOptions.Size = new System.Drawing.Size( 320, 346 );
 			this.groupBoxOptions.TabIndex = 35;
 			this.groupBoxOptions.TabStop = false;
 			this.groupBoxOptions.Text = "Translucency Map Options";
@@ -337,13 +342,80 @@
 			// 
 			// buttonShowViewer
 			// 
-			this.buttonShowViewer.Location = new System.Drawing.Point( 775, 388 );
+			this.buttonShowViewer.Location = new System.Drawing.Point( 775, 427 );
 			this.buttonShowViewer.Name = "buttonShowViewer";
 			this.buttonShowViewer.Size = new System.Drawing.Size( 75, 23 );
 			this.buttonShowViewer.TabIndex = 36;
 			this.buttonShowViewer.Text = "View";
 			this.buttonShowViewer.UseVisualStyleBackColor = true;
 			this.buttonShowViewer.Click += new System.EventHandler( this.buttonShowViewer_Click );
+			// 
+			// buttonReload
+			// 
+			this.buttonReload.Location = new System.Drawing.Point( 775, 500 );
+			this.buttonReload.Name = "buttonReload";
+			this.buttonReload.Size = new System.Drawing.Size( 75, 23 );
+			this.buttonReload.TabIndex = 37;
+			this.buttonReload.Text = "Reload";
+			this.buttonReload.UseVisualStyleBackColor = true;
+			this.buttonReload.Click += new System.EventHandler( this.buttonReload_Click );
+			// 
+			// floatTrackbarControlDominantHue
+			// 
+			this.floatTrackbarControlDominantHue.Location = new System.Drawing.Point( 1117, 519 );
+			this.floatTrackbarControlDominantHue.MaximumSize = new System.Drawing.Size( 10000, 20 );
+			this.floatTrackbarControlDominantHue.MinimumSize = new System.Drawing.Size( 70, 20 );
+			this.floatTrackbarControlDominantHue.Name = "floatTrackbarControlDominantHue";
+			this.floatTrackbarControlDominantHue.RangeMax = 360F;
+			this.floatTrackbarControlDominantHue.RangeMin = 0F;
+			this.floatTrackbarControlDominantHue.Size = new System.Drawing.Size( 200, 20 );
+			this.floatTrackbarControlDominantHue.TabIndex = 22;
+			this.floatTrackbarControlDominantHue.Value = 120F;
+			this.floatTrackbarControlDominantHue.VisibleRangeMax = 360F;
+			this.floatTrackbarControlDominantHue.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler( this.floatTrackbarControlDominantHue_ValueChanged );
+			this.floatTrackbarControlDominantHue.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler( this.floatTrackbarControlDominantHue_SliderDragStop );
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point( 981, 522 );
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size( 134, 13 );
+			this.label4.TabIndex = 32;
+			this.label4.Text = "Dominant Hue for Combine";
+			// 
+			// panelDominantHue
+			// 
+			this.panelDominantHue.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelDominantHue.Location = new System.Drawing.Point( 1324, 519 );
+			this.panelDominantHue.Name = "panelDominantHue";
+			this.panelDominantHue.Size = new System.Drawing.Size( 43, 19 );
+			this.panelDominantHue.TabIndex = 38;
+			// 
+			// integerTrackbarControlKernelSize
+			// 
+			this.integerTrackbarControlKernelSize.Location = new System.Drawing.Point( 107, 218 );
+			this.integerTrackbarControlKernelSize.MaximumSize = new System.Drawing.Size( 10000, 20 );
+			this.integerTrackbarControlKernelSize.MinimumSize = new System.Drawing.Size( 70, 20 );
+			this.integerTrackbarControlKernelSize.Name = "integerTrackbarControlKernelSize";
+			this.integerTrackbarControlKernelSize.RangeMax = 256;
+			this.integerTrackbarControlKernelSize.RangeMin = 1;
+			this.integerTrackbarControlKernelSize.Size = new System.Drawing.Size( 200, 20 );
+			this.integerTrackbarControlKernelSize.TabIndex = 21;
+			this.integerTrackbarControlKernelSize.Value = 16;
+			this.integerTrackbarControlKernelSize.Visible = false;
+			this.integerTrackbarControlKernelSize.VisibleRangeMax = 32;
+			this.integerTrackbarControlKernelSize.VisibleRangeMin = 1;
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point( 5, 223 );
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size( 60, 13 );
+			this.label5.TabIndex = 33;
+			this.label5.Text = "Kernel Size";
+			this.label5.Visible = false;
 			// 
 			// imagePanelResult3
 			// 
@@ -457,48 +529,6 @@
 			this.imagePanelThicknessMap.DragDrop += new System.Windows.Forms.DragEventHandler( this.imagePanelInputThicknessMap_DragDrop );
 			this.imagePanelThicknessMap.DragEnter += new System.Windows.Forms.DragEventHandler( this.imagePanelInputThicknessMap_DragEnter );
 			// 
-			// buttonReload
-			// 
-			this.buttonReload.Location = new System.Drawing.Point( 775, 500 );
-			this.buttonReload.Name = "buttonReload";
-			this.buttonReload.Size = new System.Drawing.Size( 75, 23 );
-			this.buttonReload.TabIndex = 37;
-			this.buttonReload.Text = "Reload";
-			this.buttonReload.UseVisualStyleBackColor = true;
-			this.buttonReload.Click += new System.EventHandler( this.buttonReload_Click );
-			// 
-			// floatTrackbarControlDominantHue
-			// 
-			this.floatTrackbarControlDominantHue.Location = new System.Drawing.Point( 1117, 519 );
-			this.floatTrackbarControlDominantHue.MaximumSize = new System.Drawing.Size( 10000, 20 );
-			this.floatTrackbarControlDominantHue.MinimumSize = new System.Drawing.Size( 70, 20 );
-			this.floatTrackbarControlDominantHue.Name = "floatTrackbarControlDominantHue";
-			this.floatTrackbarControlDominantHue.RangeMax = 360F;
-			this.floatTrackbarControlDominantHue.RangeMin = 0F;
-			this.floatTrackbarControlDominantHue.Size = new System.Drawing.Size( 200, 20 );
-			this.floatTrackbarControlDominantHue.TabIndex = 22;
-			this.floatTrackbarControlDominantHue.Value = 120F;
-			this.floatTrackbarControlDominantHue.VisibleRangeMax = 360F;
-			this.floatTrackbarControlDominantHue.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler( this.floatTrackbarControlDominantHue_ValueChanged );
-			this.floatTrackbarControlDominantHue.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler( this.floatTrackbarControlDominantHue_SliderDragStop );
-			// 
-			// label4
-			// 
-			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point( 981, 522 );
-			this.label4.Name = "label4";
-			this.label4.Size = new System.Drawing.Size( 134, 13 );
-			this.label4.TabIndex = 32;
-			this.label4.Text = "Dominant Hue for Combine";
-			// 
-			// panelDominantHue
-			// 
-			this.panelDominantHue.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.panelDominantHue.Location = new System.Drawing.Point( 1324, 519 );
-			this.panelDominantHue.Name = "panelDominantHue";
-			this.panelDominantHue.Size = new System.Drawing.Size( 43, 19 );
-			this.panelDominantHue.TabIndex = 38;
-			// 
 			// GeneratorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF( 6F, 13F );
@@ -569,6 +599,8 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDominantHue;
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.Panel panelDominantHue;
+		private System.Windows.Forms.Label label5;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlKernelSize;
 	}
 }
 

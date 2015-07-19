@@ -45,9 +45,12 @@ float	ComputeVisibility( float2 _UV, float3 _Direction ) {
 	float	phi = atan2( _Direction.y, _Direction.x );	// [-PI,PI]
 	float	W = phi / (2.0 * PI);						// [-0.5,+0.5]
 	float	cosTheta = _SourceVisibility.SampleLevel( LinearWrap, float3( _UV, W ), 0.0 );
+
+//return _Direction.z > cosTheta ? 1 : 0;
+
 	float	cosThetaMin = 0.9 * cosTheta;
 	float	cosThetaMax = 1.1 * cosTheta;
-	return smoothstep( cosThetaMax, cosThetaMin, _Direction.z );
+	return smoothstep( cosThetaMin, cosThetaMax, _Direction.z );
 }
 
 // Schlick's approximation to Fresnel reflection (http://en.wikipedia.org/wiki/Schlick's_approximation)
@@ -106,7 +109,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 			// Compute diffuse fresnel transmission
 			float	Fs = FresnelSchlick( _F0, dot( _Light, normal ) );
-			float	Fd = 1.0 - Fs;	// I know it's more complicated than this
+			float	Fd = 1.0 - Fs;	// I know it's a bit more complicated than this...
 
 			// Fetch local transmittance
 			float3	transmittance = max( 0.0, _SourceTransmittance.SampleLevel( LinearClamp, LocalUV, 0.0 ) );
@@ -137,9 +140,14 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 				float	Dr = length( float3( relativePos, Zr ) );		// in mm
 				float	Dv = length( float3( relativePos, Zv ) );		// in mm
 
-				float3	pole_r = (d - Zr) * (1.0 + sigma_tr * Dr * exp( -sigma_tr * Dr )) / (Dr * Dr * Dr);	// Real
-				float3	pole_v = (d - Zv) * (1.0 + sigma_tr * Dv * exp( -sigma_tr * Dv )) / (Dv * Dv * Dv);	// Virtual
-				Tr += pole_r + pole_v;
+//Dr = Dv = 1.0;
+
+				float3	pole_r = (d - Zr) * (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
+				float3	pole_v = (d - Zv) * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);	// Virtual
+//				Tr += pole_r + pole_v;
+//Tr += max( 0.0, pole_r + pole_v );
+pole_r = (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
+Tr += pole_r;
 
 // _Target[PixelPosition] = abs(0.1*Zr);
 // _Target[PixelPosition] = abs(0.1*Zv);
@@ -161,15 +169,26 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 // return;
 
 			// Accumulate
-			result += E * Tr;
+//			result += E * Tr;
+result += 100.0 * Tr;
+//result += 50.0 * exp( -sigma_tr * d );
+//result += visibility;
+//result += 1.0 * E;
 		}
 	}
 
 	result *= _TexelSize_mm*_TexelSize_mm / (K*K);
+//	result *= _TexelSize_mm*_TexelSize_mm;
+//	result *= 1.0 / (K*K);
+
+
+//result *= 0.1;
+
 
 // result = float3( UV, 0 );
-// result = _Light;
+//result = _Light;
+//result = ComputeVisibility( UV, _Light );
 
 	float4	Current = _Previous[PixelPosition];
-	_Target[PixelPosition] = Current + float4( result, 0 );
+	_Target[PixelPosition] = Current + float4( result, 1 );
 }

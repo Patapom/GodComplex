@@ -28,7 +28,7 @@ void	CS_Finalize( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTH
 		return;
 
 	float3	V = _Source0.Load( uint3( PixelPosition, 0 ) );
-	_Target[PixelPosition] = float4( _Parm * V, 0 );
+	_Target[PixelPosition] = float4( _Parm * V, 1 );
 }
 
 // Second shader will mix the 3 RGB sources into a single RGB source using a dominant wavelength
@@ -42,5 +42,5 @@ void	CS_Mix( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADI
 	float3	V0 = _Source0.Load( uint3( PixelPosition, 0 ) );
 	float3	V1 = _Source1.Load( uint3( PixelPosition, 0 ) );
 	float3	V2 = _Source2.Load( uint3( PixelPosition, 0 ) );
-	_Target[PixelPosition] = float4( dot( _Parm, V0 ), dot( _Parm, V1 ), dot( _Parm, V2 ), 0 );
+	_Target[PixelPosition] = float4( dot( _Parm, V0 ), dot( _Parm, V1 ), dot( _Parm, V2 ), 1 );
 }
