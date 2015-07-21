@@ -68,6 +68,23 @@ namespace Nuaj.Cirrus.Utility
 
 		#region PROPERTIES
 
+		public float			ManipulationRotationSpeed {
+			get { return m_ManipulationRotationSpeed; }
+			set { m_ManipulationRotationSpeed = value; }
+		}
+		public float			ManipulationPanSpeed {
+			get { return m_ManipulationPanSpeed; }
+			set { m_ManipulationPanSpeed = value; }
+		}
+		public float			ManipulationZoomSpeed {
+			get { return m_ManipulationZoomSpeed; }
+			set { m_ManipulationZoomSpeed = value; }
+		}
+		public float			ManipulationZoomAcceleration {
+			get { return m_ManipulationZoomAcceleration; }
+			set { m_ManipulationZoomAcceleration = value; }
+		}
+
 		public Camera		ManipulatedCamera
 		{
 			get { return m_Camera; }

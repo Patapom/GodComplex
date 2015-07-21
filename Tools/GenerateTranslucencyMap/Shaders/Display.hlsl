@@ -12,11 +12,12 @@ cbuffer	CBDisplay : register( b0 ) {
 	uint2	_Size;
 	float	_Time;
 	uint	_Flags;
-	float3	_Light;		// Light position
-	float	_Height_mm;	// Texture height
+	float3	_Light;			// Light position
+	float	_Thickness_mm;	// Texture thickness
 	float3	_CameraPos;
-	float	_Size_mm;	// Texture size
+	float	_Size_mm;		// Texture size
 	float3	_CameraTarget;
+	float	_IOR;			// IOR
 	float3	_CameraUp;
 }
 
@@ -25,61 +26,20 @@ SamplerState LinearWrap		: register( s2 );
 
 Texture2D<float>			_TexThickness : register( t0 );
 Texture2D<float3>			_TexNormal : register( t1 );
-Texture2D<float3>			_TexTransmittance : register( t2 );
-Texture2D<float3>			_TexAlbedo : register( t3 );
+Texture2D<float4>			_TexTransmittance : register( t2 );
+Texture2D<float4>			_TexAlbedo : register( t3 );
 Texture3D<float>			_TexVisibility : register( t4 );	// This is an interpolable array of 16 principal visiblity directions
 
 Texture2D<float3>			_TexResult0 : register( t5 );
 Texture2D<float3>			_TexResult1 : register( t6 );
 Texture2D<float3>			_TexResult2 : register( t7 );
+Texture2D<float3>			_TexResultRGB : register( t8 );
 
 struct VS_IN {
 	float4	__Position : SV_POSITION;
 };
 
 VS_IN	VS( VS_IN _In ) { return _In; }
-
-float3	ComputeAverageNormal( float2 _UV ) {
-	if ( (_Flags & 4) != 0 )
-		return float3( 0, 1, 0 );	// Disable normal map
-
-	float3	tsNormal = _TexNormal.SampleLevel( LinearWrap, _UV, 0.0 );
-	return float3( tsNormal.x, tsNormal.z, tsNormal.y ); 
-}
-
-float3	ComputeSSBump( float3 _wsPosition ) {
-	float2	UV = _wsPosition.xz / (0.001 * _Size_mm) - 0.5;
-
-	// Compute normal from height map (poor approximation)
-	float3	wsNormal = ComputeAverageNormal( UV );
-
-	// Compute light intensity
-	float3	L = LIGHT_INTENSITY;
-	float3	Light = _Light - _wsPosition;	// Light direction
-	float	d = length( Light );
-			Light /= d;
-
-	L /= max( 1e-3, d * d );	// 1/r² attenuation
-
-	const float3	HL2_R = float3( sqrt( 2.0 / 3.0 ), 0.0, sqrt( 1.0 / 3.0 ) );
-	const float3	HL2_G = float3( -sqrt( 1.0 / 6.0 ), sqrt( 1.0 / 2.0 ), sqrt( 1.0 / 3.0 ) );
-	const float3	HL2_B = float3( -sqrt( 1.0 / 6.0 ), -sqrt( 1.0 / 2.0 ), sqrt( 1.0 / 3.0 ) );
-
-// 	float4	SSBump = _TexSSBump.SampleLevel( LinearWrap, UV, 0.0 );
-// 
-// 	float3	SSBumpLight = float3( Light.x, Light.z, Light.y );	// SSBump was computed for Z-up
-// 
-// 	float	Occlusion = SSBump.x * saturate( dot( HL2_R, SSBumpLight ) )
-// 					  + SSBump.y * saturate( dot( HL2_G, SSBumpLight ) )
-// 					  + SSBump.z * saturate( dot( HL2_B, SSBumpLight ) );
-// 			Occlusion *= SSBump.w;	// Global AO
-// 
-// 	if ( (_Flags & 2) == 0 )
-// 		L *= Occlusion;
-
-	// Diffuse BRDF
-	return (0.5 / PI) * lerp( 0.1, 1.0, saturate( dot( Light, wsNormal ) ) ) * L;
-}
 
 // This is my analytical solution to the airlight integral as explained in "A Practical Analytic Single Scattering Model for Real Time Rendering" (http://www.cs.columbia.edu/~bosun/sig05.htm)
 // u€[0,10], v€[0,PI/2]
@@ -142,10 +102,105 @@ float3	ShowVisibilityMap( float2 _UV ) {
 	return float3( sin( _Time ), 0, 0 );
 }
 
+// Schlick's approximation to Fresnel reflection (http://en.wikipedia.org/wiki/Schlick's_approximation)
+float	FresnelSchlick( float _F0, float _CosTheta, float _FresnelStrength=1.0 )
+{
+	float	t = 1.0 - saturate( _CosTheta );
+	float	t2 = t * t;
+	float	t4 = t2 * t2;
+	return lerp( _F0, 1.0, _FresnelStrength * t4 * t );
+}
+
+// Ward specular reflection model
+// From "A New Ward BRDF with Bounded Albedo" by Dür et al.
+// (isotropic version, I know it's stupid since Ward is essentially interesting for its anisotropic characteristics but in the engine we don't even use it...)
+//
+float	ComputeWard( float3 _Light, float3 _View, float3 _Normal, float3 _Tangent, float3 _BiTangent, float _Roughness ) {
+
+	float3	H_unorm = _Light + _View;
+	float	invRoughness = 1.0 / _Roughness;
+	float	invSqRoughness = invRoughness * invRoughness;
+
+#if 1
+	float	HdotH = dot( H_unorm, H_unorm );
+	float	HdotN = dot( H_unorm, _Normal );
+	float	HdotT = dot( H_unorm, _Tangent );
+	float	HdotB = dot( H_unorm, _BiTangent );
+	float	sqHdotN = HdotN * HdotN;
+	float	invSqHdotN = 1.0 / sqHdotN;
+	float	sqTanHdotN = (HdotT*HdotT + HdotB*HdotB) * invSqHdotN;
+	return (1.0/PI) * invSqRoughness * (exp( -invSqRoughness * sqTanHdotN ) * invSqHdotN * invSqHdotN) * HdotH;
+#else
+	float3	H = normalize( H_unorm );
+	float	NdotH = dot( _Normal, H );
+	float	LdotH = dot( _Light, H );
+	float	cosTheta = NdotH;
+	float	sqCosTheta = cosTheta * cosTheta;
+	float	sqSinTheta = 1.0 - sqCosTheta;
+	float	sqTanTheta = sqSinTheta / sqCosTheta;
+	return (1.0/PI) * invSqRoughness * exp( -invSqRoughness * sqTanTheta ) / (4 * NdotH*NdotH*NdotH*NdotH * LdotH*LdotH);
+#endif
+}
+float3	ComputeTranslucency( float3 _wsPosition, float3 _wsView ) {
+	float2	UV = _wsPosition.xz / (0.001 * _Size_mm) - 0.5;
+
+	// Get albedo
+	float4	rawAlbedo = _TexAlbedo.SampleLevel( LinearWrap, UV, 0.0 );
+	if ( rawAlbedo.w < 0.5 )
+		return 0.0;
+	float3	Rho_d = rawAlbedo.xyz / PI;
+
+	// Get normal & compute tangent space
+	float3	tsNormal = 2.0 * _TexNormal.SampleLevel( LinearWrap, UV, 0.0 ) - 1.0;
+	float3	wsNormal = float3( tsNormal.x, tsNormal.z, tsNormal.y ); 
+
+	float3	wsTangent = normalize( cross( wsNormal, float3( 0, 0, 1 ) ) );
+	float3	wsBiTangent = cross( wsTangent, wsNormal );
+
+	// Compute light intensity & direction
+	float3	L = LIGHT_INTENSITY;
+	float3	Light = _Light - _wsPosition;	// Light direction
+	float	d = length( Light );
+			Light /= d;
+
+	L /= max( 1e-3, d * d );	// 1/r² attenuation
+
+	// Build special vectors & dots
+	float3	H = normalize( Light + _wsView );
+	float	NdotL = dot( wsNormal, Light );
+	float	NdotH = dot( wsNormal, H );
+	float	NdotV = dot( wsNormal, _wsView );
+
+	// Compute Fresnel reflectance
+	float	F0 = (_IOR - 1.0f) / (_IOR + 1.0f);
+	float	Fs = FresnelSchlick( F0, NdotL );
+
+	if ( _wsView.y < 0.0 ) {
+		// Standard front lighting
+		float	Rho_s = ComputeWard( Light, -_wsView, wsNormal, wsTangent, wsBiTangent, 0.2 );	// Standard roughness for a leaf... Could be a parm...
+		return L * lerp( Rho_d, Rho_s, Fs) * NdotL;
+	}
+
+	// Back lighting
+	const float3	HL2_R = float3( sqrt( 2.0 / 3.0 ), 0.0, sqrt( 1.0 / 3.0 ) );
+	const float3	HL2_G = float3( -sqrt( 1.0 / 6.0 ), sqrt( 1.0 / 2.0 ), sqrt( 1.0 / 3.0 ) );
+	const float3	HL2_B = float3( -sqrt( 1.0 / 6.0 ), -sqrt( 1.0 / 2.0 ), sqrt( 1.0 / 3.0 ) );
+
+	float3	Tr = _TexResultRGB.SampleLevel( LinearWrap, UV, 0.0 );
+	float3	HL2Light = float3( Light.x, Light.z, Light.y );	// Translucency was computed for Z-up
+	float	Translucency = Tr.x * saturate( dot( HL2_R, HL2Light ) )
+						 + Tr.y * saturate( dot( HL2_G, HL2Light ) )
+						 + Tr.z * saturate( dot( HL2_B, HL2Light ) );
+
+	float3	Rho_t = 1.0 - (1.0-Fs) * Rho_d * PI;
+
+	return L * (Rho_t / PI) * Translucency;
+}
+
 float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float2	UV = _In.__Position.xy / _Size;
 
-	if ( (_Flags & 4) == 0 )
+	if ( (_Flags & 4) != 0 )
 		return ShowVisibilityMap( UV );
 
 	if ( (_Flags & 1) == 0 )
@@ -164,9 +219,9 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float3	Color = 0.0;
 	float	t = -_CameraPos.y / wsView.y;
 	if ( t > 0.0 )
-		Color = ComputeSSBump( _CameraPos + t * wsView );
-// 	else
-// 		t = 1000.0;
+		Color = ComputeTranslucency( _CameraPos + t * wsView, wsView );
+	if ( t <= 0.0 || (_CameraPos.y < 0.0 && all( Color < 1e-3 )) )
+		t = 1000.0;	// Infinity
 
 	// Add light scattering
 	Color += LIGHT_INTENSITY * Airlight( _CameraPos, wsView, _Light, _CameraPos + t * wsView, AIRLIGHT_BETA );

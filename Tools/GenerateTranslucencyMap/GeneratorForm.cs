@@ -153,6 +153,10 @@ namespace GenerateTranslucencyMap
 			get { return new float3( panelDominantHue.BackColor.R / 255.0f, panelDominantHue.BackColor.G / 255.0f, panelDominantHue.BackColor.B / 255.0f ); }
 		}
 
+		internal float	IOR {
+			get { return floatTrackbarControlRefractionIndex.Value; }
+		}
+
 		#endregion
 
 		#region METHODS
@@ -218,6 +222,8 @@ LoadThicknessMap( new System.IO.FileInfo( "Leaf_thickness.tga" ) );
 LoadNormalMap( new System.IO.FileInfo( "Leaf_normal.tga" ) );
 LoadAlbedoMap( new System.IO.FileInfo( "Leaf_albedo.tga" ) );
 LoadTransmittanceMap( new System.IO.FileInfo( "Leaf_transmittance.tga" ) );
+
+LoadResults( new System.IO.FileInfo( "Leaf_thickness.tga" ) );
 
 		}
 
@@ -478,6 +484,102 @@ LoadTransmittanceMap( new System.IO.FileInfo( "Leaf_transmittance.tga" ) );
 			}
 		}
 
+		private void	LoadResults( System.IO.FileInfo _FileName ) {
+			try
+			{
+				groupBoxOptions.Enabled = false;
+
+				// Dispose of existing resources
+				if ( m_TextureTargets[0][0] != null ) {
+					m_TextureTargets[0][0].Dispose();
+					m_TextureTargets[0][1].Dispose();
+					m_TextureTargets[1][0].Dispose();
+					m_TextureTargets[1][1].Dispose();
+					m_TextureTargets[2][0].Dispose();
+					m_TextureTargets[2][1].Dispose();
+					m_TextureTargetCombined.Dispose();
+				}
+				m_TextureTargets[0][0] = null;
+				m_TextureTargets[0][1] = null;
+				m_TextureTargets[1][0] = null;
+				m_TextureTargets[1][1] = null;
+				m_TextureTargets[2][0] = null;
+				m_TextureTargets[2][1] = null;
+				m_TextureTargetCombined = null;
+
+				if ( m_BitmapResults[0] != null )
+					m_BitmapResults[0].Dispose();
+				if ( m_BitmapResults[1] != null )
+					m_BitmapResults[1].Dispose();
+				if ( m_BitmapResults[2] != null )
+					m_BitmapResults[2].Dispose();
+				if ( m_BitmapResultCombined != null )
+					m_BitmapResultCombined.Dispose();
+				m_BitmapResults[0] = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
+				m_BitmapResults[1] = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
+				m_BitmapResults[2] = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
+				m_BitmapResultCombined = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
+
+				// Load the result images assuming it's in sRGB space
+				string[]		FileNames = new string[4] {
+					System.IO.Path.Combine( System.IO.Path.GetDirectoryName( _FileName.FullName ), System.IO.Path.GetFileNameWithoutExtension( _FileName.FullName ) + "_translucency0.png" ),
+					System.IO.Path.Combine( System.IO.Path.GetDirectoryName( _FileName.FullName ), System.IO.Path.GetFileNameWithoutExtension( _FileName.FullName ) + "_translucency1.png" ),
+					System.IO.Path.Combine( System.IO.Path.GetDirectoryName( _FileName.FullName ), System.IO.Path.GetFileNameWithoutExtension( _FileName.FullName ) + "_translucency2.png" ),
+					System.IO.Path.Combine( System.IO.Path.GetDirectoryName( _FileName.FullName ), System.IO.Path.GetFileNameWithoutExtension( _FileName.FullName ) + "_translucency.png" ),
+				};
+				ImageUtility.Bitmap[]	Bitmaps = new ImageUtility.Bitmap[] {
+					m_BitmapResults[0],
+					m_BitmapResults[1],
+					m_BitmapResults[2],
+					m_BitmapResultCombined
+				};
+				Texture2D[]		Results = new Texture2D[] {
+					m_TextureTargets[0][0],
+					m_TextureTargets[1][0],
+					m_TextureTargets[2][0],
+					m_TextureTargetCombined,
+				};
+				ImagePanel[]	Panels = new ImagePanel[] {
+					imagePanelResult0,
+					imagePanelResult1,
+					imagePanelResult2,
+					imagePanelResult3,
+				};
+
+				for ( int i=0; i < 4; i++ ) {
+					ImageUtility.Bitmap	B = Bitmaps[i];
+					B.Load( new System.IO.FileInfo( FileNames[i] ), ImageUtility.Bitmap.FILE_TYPE.PNG, m_sRGBProfile );
+
+					Panels[i].Image = B;
+
+					// Build the texture
+					ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[B.Width,B.Height];
+					m_LinearProfile.XYZ2RGB( B.ContentXYZ, ContentRGB );
+
+					PixelsBuffer	SourceMap = new PixelsBuffer( B.Width*B.Height*16 );
+					using ( System.IO.BinaryWriter Wr = SourceMap.OpenStreamWrite() )
+						for ( int Y=0; Y < B.Height; Y++ )
+							for ( int X=0; X < B.Width; X++ ) {
+								Wr.Write( ContentRGB[X,Y].x );
+								Wr.Write( ContentRGB[X,Y].y );
+								Wr.Write( ContentRGB[X,Y].z );
+								Wr.Write( ContentRGB[X,Y].w );
+							}
+
+					Results[i] = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, new PixelsBuffer[] { SourceMap } );
+				}
+
+				m_TextureTargets[0][0] = Results[0];
+				m_TextureTargets[1][0] = Results[1];
+				m_TextureTargets[2][0] = Results[2];
+				m_TextureTargetCombined = Results[3];
+			}
+			catch ( Exception _e )
+			{
+				MessageBox( "An error occurred while opening the result maps \"" + _FileName.FullName + "\":\n\n", _e );
+			}
+		}
+
 		#endregion
 
 		private void	Generate() {
@@ -556,7 +658,7 @@ LoadTransmittanceMap( new System.IO.FileInfo( "Leaf_transmittance.tga" ) );
 					for ( int RayIndex=0; RayIndex < RaysCount; RayIndex++ ) {
 
 						m_CB_Generate.m._Light = m_Rays[i][RayIndex];
-m_CB_Generate.m._Light = float3.UnitZ;
+//m_CB_Generate.m._Light = float3.UnitZ;
 						m_CB_Generate.UpdateData();
 
 						m_TextureTargets[i][0].SetCS( 5 );
@@ -752,7 +854,7 @@ m_CB_Generate.m._Light = float3.UnitZ;
 			// 2] Copy target to staging for CPU readback and update the resulting bitmaps
 			if ( m_BitmapResultCombined != null )
 				m_BitmapResultCombined.Dispose();
-			m_BitmapResultCombined = new ImageUtility.Bitmap( W, H, m_LinearProfile );
+			m_BitmapResultCombined = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
 			m_BitmapResultCombined.HasAlpha = true;
 
 			// Copy from GPU to CPU
@@ -1194,6 +1296,5 @@ m_CB_Generate.m._Light = float3.UnitZ;
 		}
 
 		#endregion
-
 	}
 }

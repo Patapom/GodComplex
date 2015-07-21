@@ -133,7 +133,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 //return;
 
 			for ( int DipoleIndex=-DIPOLES_COUNT; DipoleIndex <= DIPOLES_COUNT; DipoleIndex++ ) {
-//int DipoleIndex=-3;{
+//for ( int DipoleIndex=-1; DipoleIndex <= 1; DipoleIndex++ ) {
+//int DipoleIndex=0;{
 				float	Zr = 2.0 * DipoleIndex * (d + 2.0 * Zb) + l;
 				float	Zv = Zr - 2.0 * (l + Zb);
 
@@ -144,10 +145,15 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 				float3	pole_r = (d - Zr) * (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
 				float3	pole_v = (d - Zv) * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);	// Virtual
-//				Tr += pole_r + pole_v;
+// 				float3	pole_r = Zr * (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
+// 				float3	pole_v = Zv * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);	// Virtual
+				Tr += pole_r - pole_v;
+//sigma_tr *= 10.0;
+// Tr += (d - Zr) * (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr)
+//     - (d - Zv) * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);
 //Tr += max( 0.0, pole_r + pole_v );
-pole_r = (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
-Tr += pole_r;
+// pole_r = (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
+// Tr += pole_r;
 
 // _Target[PixelPosition] = abs(0.1*Zr);
 // _Target[PixelPosition] = abs(0.1*Zv);
@@ -156,6 +162,28 @@ Tr += pole_r;
 //_Target[PixelPosition] = Dv < 1e-6 ? float4( 1, 0, 0, 0 ) : 0.0;
 //return;
 			}
+
+
+// float	test = 0.0;
+// float	Zr = 2.0 * -test * (d + 2.0 * Zb) + l;
+// float	Zv = Zr - 2.0 * (l + Zb);
+// float	Dr = length( float3( relativePos, Zr ) );		// in mm
+// float	Dv = length( float3( relativePos, Zv ) );		// in mm
+// float3	pole_r = (d - Zr) * (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
+// float3	pole_v = (d - Zv) * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);	// Virtual
+// Tr = pole_r + pole_v;
+// 
+// Zr = 2.0 * +test * (d + 2.0 * Zb) + l;
+// Zv = Zr - 2.0 * (l + Zb);
+// Dr = length( float3( relativePos, Zr ) );		// in mm
+// Dv = length( float3( relativePos, Zv ) );		// in mm
+// pole_r = (d - Zr) * (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
+// pole_v = (d - Zv) * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);	// Virtual
+// Tr = pole_r + pole_v;
+// 
+// Tr = 1.0 * Tr;
+
+
 			Tr *= alpha / (4.0 * PI);
 
 			// Compute irradiance for our light directions
@@ -170,16 +198,29 @@ Tr += pole_r;
 
 			// Accumulate
 //			result += E * Tr;
-result += 100.0 * Tr;
+result += 100.0 * E * Tr;
 //result += 50.0 * exp( -sigma_tr * d );
 //result += visibility;
-//result += 1.0 * E;
+//result += 50.0 * Tr;
+//result += 100.0 * E;
 		}
 	}
+
+//	result *= alpha / (4.0 * PI);	// Transmittance constant weight
+
 
 	result *= _TexelSize_mm*_TexelSize_mm / (K*K);
 //	result *= _TexelSize_mm*_TexelSize_mm;
 //	result *= 1.0 / (K*K);
+
+
+	// TODO: Single scattering term?
+	// TODO: Single scattering term?
+	// TODO: Single scattering term?
+	// TODO: Single scattering term?
+	// TODO: Single scattering term?
+	// TODO: Single scattering term?
+
 
 
 //result *= 0.1;

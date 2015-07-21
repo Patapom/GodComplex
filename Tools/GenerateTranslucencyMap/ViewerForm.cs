@@ -21,11 +21,11 @@ namespace GenerateTranslucencyMap
 			public float	_Time;
 			public uint		_Flags;
 			public float3	_Light;
-			public float	_Height_mm;
+			public float	_Thickness_mm;
 			public float3	_CameraPos;
 			public float	_Size_mm;
 			public float3	_CameraTarget;
-			float			__PAD;
+			public float	_IOR;
 			public float3	_CameraUp;
 		}
 
@@ -71,7 +71,8 @@ namespace GenerateTranslucencyMap
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) Width / Height, 0.01f, 100.0f );
 			m_Manipulator.Attach( this, m_Camera );
-			m_Manipulator.InitializeCamera( new float3( 0, 1, 1 ), new float3( 0, 0, 0 ), float3.UnitY );
+			m_Manipulator.InitializeCamera( new float3( 0, 0.1f, 0.1f ), new float3( 0, 0, 0 ), float3.UnitY );
+			m_Manipulator.ManipulationPanSpeed = 0.1f;
 			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
 			m_Manipulator.EnableMouseAction += new CameraManipulator.EnableMouseActionEventHandler( m_Manipulator_EnableMouseAction );
 			Camera_CameraTransformChanged( m_Manipulator, EventArgs.Empty );
@@ -111,8 +112,9 @@ namespace GenerateTranslucencyMap
 // 			const float	CAMERA_ANGLE = 45.0f * (float) Math.PI / 180.0f;
 // 			m_CB_Display.m._CameraPos = new float3( 0.0f, m_CameraDistance * (float) Math.Sin( CAMERA_ANGLE ), m_CameraDistance * (float) Math.Cos( CAMERA_ANGLE ) );
 
-			m_CB_Display.m._Height_mm = 1.0f;//m_Owner.TextureHeight_mm;
-			m_CB_Display.m._Size_mm = 1.0f;//m_Owner.TextureSize_mm;
+			m_CB_Display.m._Thickness_mm = m_Owner.Thickness_mm;
+			m_CB_Display.m._Size_mm = m_Owner.TextureSize_mm;
+			m_CB_Display.m._IOR = m_Owner.IOR;
 			m_CB_Display.UpdateData();
 
 			// Render
@@ -141,6 +143,7 @@ namespace GenerateTranslucencyMap
  					m_Owner.m_TextureTargets[0][0].SetPS( 5 );
  					m_Owner.m_TextureTargets[1][0].SetPS( 6 );
  					m_Owner.m_TextureTargets[2][0].SetPS( 7 );
+ 					m_Owner.m_TextureTargetCombined.SetPS( 8 );
 
 					m_CB_Display.m._Flags |= 1U;
 				}
@@ -181,7 +184,7 @@ namespace GenerateTranslucencyMap
 			const float	MOVE_SPEED = 2.0f;
 			if ( (m_ButtonsDown & MouseButtons.Left) != 0 ) {
 				float3	CamX = (float3) m_Camera.Camera2World.r0;
-				float3	CamZ = float3.UnitY.Cross( CamX ).Normalized;
+				float3	CamZ = (m_Camera.Camera2World.r2.y > 0.0f ? -1.0f : 1.0f) * float3.UnitY.Cross( CamX ).Normalized;	// Invert sign if viewing up...
 				m_LightPos = m_ButtonDownLightPos + (MOVE_SPEED * Dx / Width) * CamX - (MOVE_SPEED * Dy / Height) * CamZ;
 
 			} else if ( (m_ButtonsDown & MouseButtons.Middle) != 0 ) {

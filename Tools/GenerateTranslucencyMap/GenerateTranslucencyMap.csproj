@@ -124,6 +124,7 @@
     <Content Include="Shaders\Display.hlsl" />
     <Content Include="Shaders\GenerateTranslucencyMap.hlsl" />
     <Content Include="Shaders\GenerateVisibilityMap.hlsl" />
+    <Content Include="Shaders\Ward.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
