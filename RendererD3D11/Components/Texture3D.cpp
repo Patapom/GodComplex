@@ -262,8 +262,7 @@ void	Texture3D::RemoveFromLastAssignedSlots() const
 		Device::SSF_COMPUTE_SHADER,
 	};
 	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
-		if ( m_LastAssignedSlots[ShaderStageIndex] != -1 )
-		{
+		if ( m_LastAssignedSlots[ShaderStageIndex] != -1 ) {
 			m_Device.RemoveShaderResources( m_LastAssignedSlots[ShaderStageIndex], 1, pStageFlags[ShaderStageIndex] );
 			m_LastAssignedSlots[ShaderStageIndex] = -1;
 		}

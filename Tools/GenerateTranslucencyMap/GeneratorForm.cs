@@ -223,7 +223,7 @@ LoadNormalMap( new System.IO.FileInfo( "Leaf_normal.tga" ) );
 LoadAlbedoMap( new System.IO.FileInfo( "Leaf_albedo.tga" ) );
 LoadTransmittanceMap( new System.IO.FileInfo( "Leaf_transmittance.tga" ) );
 
-LoadResults( new System.IO.FileInfo( "Leaf_thickness.tga" ) );
+//LoadResults( new System.IO.FileInfo( "Leaf_thickness.tga" ) );
 
 		}
 
@@ -570,8 +570,11 @@ LoadResults( new System.IO.FileInfo( "Leaf_thickness.tga" ) );
 				}
 
 				m_TextureTargets[0][0] = Results[0];
+				m_TextureTargets[0][1] = Results[0];
 				m_TextureTargets[1][0] = Results[1];
+				m_TextureTargets[1][1] = Results[1];
 				m_TextureTargets[2][0] = Results[2];
+				m_TextureTargets[2][1] = Results[2];
 				m_TextureTargetCombined = Results[3];
 			}
 			catch ( Exception _e )
@@ -595,24 +598,23 @@ LoadResults( new System.IO.FileInfo( "Leaf_thickness.tga" ) );
 				if ( m_BitmapSourceAlbedo == null )
 					LoadAlbedoMap( new System.IO.FileInfo( "default_albedo.png" ) );
 
+				m_TextureTargets[0][0].RemoveFromLastAssignedSlots();
+				m_TextureTargets[0][1].RemoveFromLastAssignedSlots();
+				m_TextureTargets[1][0].RemoveFromLastAssignedSlots();
+				m_TextureTargets[1][1].RemoveFromLastAssignedSlots();
+				m_TextureTargets[2][0].RemoveFromLastAssignedSlots();
+				m_TextureTargets[2][1].RemoveFromLastAssignedSlots();
+
 
 				//////////////////////////////////////////////////////////////////////////
 				// 1] Apply bilateral filtering to the input texture as a pre-process
 				ApplyBilateralFiltering( m_TextureSourceThickness, m_TextureFilteredThickness, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, false );
-				m_TextureFilteredThickness.SetCS( 0 );
-//m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filtering...
-
-				m_TextureSourceNormal.SetCS( 1 );
-				m_TextureSourceTransmittance.SetCS( 2 );
-				m_TextureSourceAlbedo.SetCS( 3 );
 
 
 				//////////////////////////////////////////////////////////////////////////
 				// 2] Compute visibility texture
 				BuildVisibilityMap( m_TextureFilteredThickness, m_TextureSourceVisibility );
 //BuildVisibilityMap( m_TextureSourceThickness, m_TextureSourceVisibility );	// While we're not using bilateral filtering...
-
-				m_TextureSourceVisibility.SetCS( 4 );
 
 
 //*				//////////////////////////////////////////////////////////////////////////
@@ -634,6 +636,13 @@ LoadResults( new System.IO.FileInfo( "Leaf_thickness.tga" ) );
 				m_CB_Generate.m._F0 = (IOR - 1.0f) / (IOR + 1.0f);
 				m_CB_Generate.m._F0 *= m_CB_Generate.m._F0;
 
+				// Assign inputs
+				m_TextureFilteredThickness.SetCS( 0 );
+//m_TextureSourceThickness.SetCS( 0 );	// While we're not using bilateral filtering...
+				m_TextureSourceNormal.SetCS( 1 );
+				m_TextureSourceTransmittance.SetCS( 2 );
+				m_TextureSourceAlbedo.SetCS( 3 );
+				m_TextureSourceVisibility.SetCS( 4 );
 
 				int	groupsCountX = (W + 15) >> 4;
 				int	groupsCountY = (H + 15) >> 4;
@@ -843,12 +852,15 @@ LoadResults( new System.IO.FileInfo( "Leaf_thickness.tga" ) );
 			m_TextureTargets[0][0].SetCS( 0 );
 			m_TextureTargets[1][0].SetCS( 1 );
 			m_TextureTargets[2][0].SetCS( 2 );
+			m_TextureTargetCombined.RemoveFromLastAssignedSlots();
 			m_TextureTargetCombined.SetCSUAV( 0 );
 
 			int	groupsCountX = (W + 15) >> 4;
 			int	groupsCountY = (H + 15) >> 4;
 
 			m_CS_Helper_Mix.Dispatch( groupsCountX, groupsCountY, 1 );
+
+			m_TextureTargetCombined.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
 
 			//////////////////////////////////////////////////////////////////////////
 			// 2] Copy target to staging for CPU readback and update the resulting bitmaps

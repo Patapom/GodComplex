@@ -4,7 +4,7 @@
 //
 static const float	PI = 3.1415926535897932384626433832795;
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2 degree observer (sRGB white point) (cf. http://wiki.patapom.com/index.php/Colorimetry)
-static const float	LIGHT_INTENSITY = 4.0;
+static const float	LIGHT_INTENSITY = 1.0;
 static const float	AIRLIGHT_BETA = 0.01;
 static const float	CAMERA_FOV = 60.0 * PI / 180.0;
 
@@ -141,7 +141,7 @@ float	ComputeWard( float3 _Light, float3 _View, float3 _Normal, float3 _Tangent,
 	return (1.0/PI) * invSqRoughness * exp( -invSqRoughness * sqTanTheta ) / (4 * NdotH*NdotH*NdotH*NdotH * LdotH*LdotH);
 #endif
 }
-float3	ComputeTranslucency( float3 _wsPosition, float3 _wsView ) {
+float4	ComputeTranslucency( float3 _wsPosition, float3 _wsView ) {
 	float2	UV = _wsPosition.xz / (0.001 * _Size_mm) - 0.5;
 
 	// Get albedo
@@ -178,7 +178,7 @@ float3	ComputeTranslucency( float3 _wsPosition, float3 _wsView ) {
 	if ( _wsView.y < 0.0 ) {
 		// Standard front lighting
 		float	Rho_s = ComputeWard( Light, -_wsView, wsNormal, wsTangent, wsBiTangent, 0.2 );	// Standard roughness for a leaf... Could be a parm...
-		return L * lerp( Rho_d, Rho_s, Fs) * NdotL;
+		return float4( L * lerp( Rho_d, Rho_s, Fs) * NdotL, 0.0 );
 	}
 
 	// Back lighting
@@ -186,19 +186,36 @@ float3	ComputeTranslucency( float3 _wsPosition, float3 _wsView ) {
 	const float3	HL2_G = float3( -sqrt( 1.0 / 6.0 ), sqrt( 1.0 / 2.0 ), sqrt( 1.0 / 3.0 ) );
 	const float3	HL2_B = float3( -sqrt( 1.0 / 6.0 ), -sqrt( 1.0 / 2.0 ), sqrt( 1.0 / 3.0 ) );
 
-	float3	Tr = _TexResultRGB.SampleLevel( LinearWrap, UV, 0.0 );
-	float3	HL2Light = float3( Light.x, Light.z, Light.y );	// Translucency was computed for Z-up
-	float	Translucency = Tr.x * saturate( dot( HL2_R, HL2Light ) )
-						 + Tr.y * saturate( dot( HL2_G, HL2Light ) )
-						 + Tr.z * saturate( dot( HL2_B, HL2Light ) );
+	float3	HL2Light = float3( -Light.x, Light.z, Light.y );	// Translucency was computed for Z-up
+
+	float3	Translucency = 0.0;
+	if ( (_Flags & 2) != 0 ) {
+		float3	Tr = _TexResultRGB.SampleLevel( LinearWrap, UV, 0.0 );
+		Translucency = Tr.x * saturate( dot( HL2_R, HL2Light ) )
+					 + Tr.y * saturate( dot( HL2_G, HL2Light ) )
+					 + Tr.z * saturate( dot( HL2_B, HL2Light ) );
+
+		Translucency *= _TexTransmittance.SampleLevel( LinearWrap, UV, 0.0 ).xyz;
+	} else {
+		float3	Tr0 = _TexResult0.SampleLevel( LinearWrap, UV, 0.0 );
+		float3	Tr1 = _TexResult0.SampleLevel( LinearWrap, UV, 0.0 );
+		float3	Tr2 = _TexResult0.SampleLevel( LinearWrap, UV, 0.0 );
+		Translucency = Tr0 * saturate( dot( HL2_R, HL2Light ) )
+					 + Tr1 * saturate( dot( HL2_G, HL2Light ) )
+					 + Tr2 * saturate( dot( HL2_B, HL2Light ) );
+	}
+
+Translucency *= 1.0;
 
 	float3	Rho_t = 1.0 - (1.0-Fs) * Rho_d * PI;
 
-	return L * (Rho_t / PI) * Translucency;
+	return float4( L * (Rho_t / PI) * Translucency, 1.0 );
 }
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float2	UV = _In.__Position.xy / _Size;
+
+//return _TexResultRGB.SampleLevel( LinearWrap, UV, 0.0 );
 
 	if ( (_Flags & 4) != 0 )
 		return ShowVisibilityMap( UV );
@@ -216,15 +233,16 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float3	wsView = csView.x * Right + csView.y * Up + csView.z * At;
 
 	// Intersect with ground plane
-	float3	Color = 0.0;
+	float4	Color = 0.0;
 	float	t = -_CameraPos.y / wsView.y;
 	if ( t > 0.0 )
 		Color = ComputeTranslucency( _CameraPos + t * wsView, wsView );
-	if ( t <= 0.0 || (_CameraPos.y < 0.0 && all( Color < 1e-3 )) )
+	if ( t <= 0.0 || (_CameraPos.y < 0.0 && all( Color < 1e-5 )) )
 		t = 1000.0;	// Infinity
 
 	// Add light scattering
-	Color += LIGHT_INTENSITY * Airlight( _CameraPos, wsView, _Light, _CameraPos + t * wsView, AIRLIGHT_BETA );
+//	Color += LIGHT_INTENSITY * Airlight( _CameraPos, wsView, _Light, _CameraPos + t * wsView, AIRLIGHT_BETA );
+	Color += (1.0 - Color.w) * LIGHT_INTENSITY * pow( saturate( dot( normalize( _Light - _CameraPos ), wsView ) ), 1000.0 );
 
-	return Color;
+	return Color.xyz;
 }

@@ -108,7 +108,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 			float3	normal = 2.0 * _SourceNormal.SampleLevel( LinearClamp, LocalUV, 0.0 ) - 1.0;
 
 			// Compute diffuse fresnel transmission
-			float	Fs = FresnelSchlick( _F0, dot( _Light, normal ) );
+			float	Fs = FresnelSchlick( _F0, saturate( dot( _Light, normal ) ) );
 			float	Fd = 1.0 - Fs;	// I know it's a bit more complicated than this...
 
 			// Fetch local transmittance
@@ -147,7 +147,9 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 				float3	pole_v = (d - Zv) * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);	// Virtual
 // 				float3	pole_r = Zr * (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
 // 				float3	pole_v = Zv * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);	// Virtual
-				Tr += pole_r - pole_v;
+//				Tr += pole_r - pole_v;
+				Tr += abs( pole_r - pole_v );
+
 //sigma_tr *= 10.0;
 // Tr += (d - Zr) * (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr)
 //     - (d - Zv) * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);
@@ -184,10 +186,13 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 // Tr = 1.0 * Tr;
 
 
+//Tr = abs(Tr);
+
 			Tr *= alpha / (4.0 * PI);
 
 			// Compute irradiance for our light directions
-			float3	rho_t = 1.0 - Fd * albedo.xyz;
+//			float3	rho_t = 1.0 - Fd * albedo.xyz;
+float3	rho_t = Fd * transmittance;
 
 			float	visibility = ComputeVisibility( LocalUV, _Light );
 			float3	E = rho_t * visibility * saturate( dot( normal, _Light ) );
@@ -197,8 +202,9 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 // return;
 
 			// Accumulate
-//			result += E * Tr;
-result += 100.0 * E * Tr;
+			result += E * Tr;
+// result += 1000.0 * E * Tr;
+//result += 1.0 * E * Tr;
 //result += 50.0 * exp( -sigma_tr * d );
 //result += visibility;
 //result += 50.0 * Tr;
@@ -209,8 +215,8 @@ result += 100.0 * E * Tr;
 //	result *= alpha / (4.0 * PI);	// Transmittance constant weight
 
 
-	result *= _TexelSize_mm*_TexelSize_mm / (K*K);
-//	result *= _TexelSize_mm*_TexelSize_mm;
+//	result *= _TexelSize_mm*_TexelSize_mm / (K*K);
+	result *= _TexelSize_mm*_TexelSize_mm;
 //	result *= 1.0 / (K*K);
 
 

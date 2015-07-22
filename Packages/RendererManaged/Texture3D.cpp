@@ -29,12 +29,12 @@ namespace RendererManaged {
 	}
 
 	void	Texture3D::Set( int _SlotIndex, View3D^ _view )		{ m_pTexture->Set( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture3D::SetVS( int _SlotIndex, View3D^ _view )	{ m_pTexture->Set( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture3D::SetHS( int _SlotIndex, View3D^ _view )	{ m_pTexture->Set( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture3D::SetDS( int _SlotIndex, View3D^ _view )	{ m_pTexture->Set( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture3D::SetGS( int _SlotIndex, View3D^ _view )	{ m_pTexture->Set( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture3D::SetPS( int _SlotIndex, View3D^ _view )	{ m_pTexture->Set( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture3D::SetCS( int _SlotIndex, View3D^ _view )	{ m_pTexture->Set( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture3D::SetVS( int _SlotIndex, View3D^ _view )	{ m_pTexture->SetVS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture3D::SetHS( int _SlotIndex, View3D^ _view )	{ m_pTexture->SetHS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture3D::SetDS( int _SlotIndex, View3D^ _view )	{ m_pTexture->SetDS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture3D::SetGS( int _SlotIndex, View3D^ _view )	{ m_pTexture->SetGS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture3D::SetPS( int _SlotIndex, View3D^ _view )	{ m_pTexture->SetPS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture3D::SetCS( int _SlotIndex, View3D^ _view )	{ m_pTexture->SetCS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
 
 
 	int								View3D::Width::get() { return m_Owner->Width; }
