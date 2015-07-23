@@ -383,6 +383,7 @@
 			this.buttonReload.TabIndex = 37;
 			this.buttonReload.Text = "Reload";
 			this.buttonReload.UseVisualStyleBackColor = true;
+			this.buttonReload.Visible = false;
 			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
 			// 
 			// floatTrackbarControlDominantHue

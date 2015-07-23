@@ -5,7 +5,9 @@
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <StartWorkingDirectory>../../</StartWorkingDirectory>
+    <StartWorkingDirectory>..\..\</StartWorkingDirectory>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
+    <StartAction>Project</StartAction>
+    <StartProgram>V:\Dishonored2\Dishonored2\tools\TranslucencyMapGenerator\GenerateTranslucencyMap.exe</StartProgram>
   </PropertyGroup>
 </Project>

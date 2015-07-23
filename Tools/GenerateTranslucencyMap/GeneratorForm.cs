@@ -157,6 +157,11 @@ namespace GenerateTranslucencyMap
 			get { return floatTrackbarControlRefractionIndex.Value; }
 		}
 
+		// Cheap extinction coeff for rendering
+		internal float	Sigma_t {
+			get { return floatTrackbarControlScatteringCoefficient.Value + floatTrackbarControlAbsorptionCoefficient.Value; }
+		}
+
 		#endregion
 
 		#region METHODS
@@ -176,6 +181,7 @@ namespace GenerateTranslucencyMap
 			#if DEBUG
 			integerTrackbarControlKernelSize.Visible = true;
 			label5.Visible = true;
+			buttonReload.Visible = true;
 			#endif
 		}
 
@@ -199,8 +205,8 @@ namespace GenerateTranslucencyMap
 					m_CS_BilateralFilter = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
 					m_CS_GenerateVisibilityMap = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateVisibilityMap.fxbin" ), "CS" );
 					m_CS_GenerateTranslucencyMap = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateTranslucencyMap.fxbin" ), "CS" );
-					m_CS_Helper_Normalize = new ComputeShader.CreateFromBinaryBlob( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ) ), "CS_Finalize" );
-					m_CS_Helper_Mix = new ComputeShader.CreateFromBinaryBlob( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ) ), "CS_Mix" );
+					m_CS_Helper_Normalize = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ), "CS_Finalize" );
+					m_CS_Helper_Mix = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ), "CS_Mix" );
 				#endif
 
 				// Create our constant buffers
@@ -227,10 +233,11 @@ LoadTransmittanceMap( new System.IO.FileInfo( "Leaf_transmittance.tga" ) );
 
 		}
 
-		protected override void OnClosing( CancelEventArgs e )
+		protected override void OnFormClosing( FormClosingEventArgs e )
 		{
 			try {
 				m_viewerForm.Exit();
+				m_viewerForm.Dispose();
 
 				m_CS_Helper_Normalize.Dispose();
 				m_CS_Helper_Mix.Dispose();
@@ -246,7 +253,7 @@ LoadTransmittanceMap( new System.IO.FileInfo( "Leaf_transmittance.tga" ) );
 				if ( m_TextureTarget_CPU != null ) {
 					m_TextureTarget_CPU.Dispose();
 				}
-				if ( m_TextureTargets[0] != null ) {
+				if ( m_TextureTargets[0][0] != null ) {
 					m_TextureTargets[0][0].Dispose();
 					m_TextureTargets[0][1].Dispose();
 					m_TextureTargets[1][0].Dispose();
@@ -269,13 +276,12 @@ LoadTransmittanceMap( new System.IO.FileInfo( "Leaf_transmittance.tga" ) );
 				if ( m_TextureSourceVisibility != null )
 					m_TextureSourceVisibility.Dispose();
 
-				m_viewerForm.Dispose();
-
 				m_Device.Dispose();
 			} catch ( Exception ) {
 			}
 
-			base.OnClosing( e );
+			e.Cancel = false;
+			base.OnFormClosing( e );
 		}
 
 		#region Images Loading

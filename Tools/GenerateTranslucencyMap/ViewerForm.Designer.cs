@@ -40,12 +40,13 @@
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(796, 519);
+			this.ClientSize = new System.Drawing.Size(839, 568);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "ViewerForm";
 			this.ShowInTaskbar = false;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-			this.Text = "Backspace toggles horizon map";
+			this.Text = "Mouse moves camera (Maya-like) /// Shift + Mouse moves light /// Return toggles R" +
+    "GB translucency ON and OFF /// Backspace toggles single scattering";
 			this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ViewerForm_KeyDown);
 			this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.ViewerForm_MouseDown);
 			this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.ViewerForm_MouseMove);

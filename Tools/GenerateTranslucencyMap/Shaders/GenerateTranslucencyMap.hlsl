@@ -35,8 +35,6 @@ Texture3D<float>			_SourceVisibility : register( t4 );	// This is an interpolabl
 
 Texture2D<float4>			_Previous : register( t5 );
 RWTexture2D<float4>			_Target : register( u0 );
-// RWTexture2D<float4>			_Target1 : register( u1 );
-// RWTexture2D<float4>			_Target2 : register( u2 );
 
 StructuredBuffer<float3>	_Rays : register( t1 );
 
@@ -122,102 +120,39 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 			// Compute transmittance (accumulate dipoles contribution)
 			float2	relativePos = _TexelSize_mm * (float2( X, Y ) - _KernelSize);
 			float3	Tr = 0.0;
-
-
-//_Target[PixelPosition] = 0.1 * A;
-//_Target[PixelPosition] = float4( sigma_tr, 0 );
-//_Target[PixelPosition] = float4( sqrt( 3.0 * _Sigma_a * sigma_t * transmittance ), 0 );
-//_Target[PixelPosition] = float4( transmittance, 0 );
-//_Target[PixelPosition] = float4( -relativePos / (16.0 * _TexelSize_mm), 0, 0 );
-//_Target[PixelPosition] = -(int(X) - int(_KernelSize)) / 16.0;
-//return;
-
 			for ( int DipoleIndex=-DIPOLES_COUNT; DipoleIndex <= DIPOLES_COUNT; DipoleIndex++ ) {
-//for ( int DipoleIndex=-1; DipoleIndex <= 1; DipoleIndex++ ) {
-//int DipoleIndex=0;{
 				float	Zr = 2.0 * DipoleIndex * (d + 2.0 * Zb) + l;
 				float	Zv = Zr - 2.0 * (l + Zb);
 
 				float	Dr = length( float3( relativePos, Zr ) );		// in mm
 				float	Dv = length( float3( relativePos, Zv ) );		// in mm
 
-//Dr = Dv = 1.0;
-
 				float3	pole_r = (d - Zr) * (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
 				float3	pole_v = (d - Zv) * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);	// Virtual
 // 				float3	pole_r = Zr * (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
 // 				float3	pole_v = Zv * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);	// Virtual
 //				Tr += pole_r - pole_v;
-				Tr += abs( pole_r - pole_v );
-
-//sigma_tr *= 10.0;
-// Tr += (d - Zr) * (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr)
-//     - (d - Zv) * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);
-//Tr += max( 0.0, pole_r + pole_v );
-// pole_r = (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
-// Tr += pole_r;
-
-// _Target[PixelPosition] = abs(0.1*Zr);
-// _Target[PixelPosition] = abs(0.1*Zv);
-//_Target[PixelPosition] = float4( 1.0 * pole_r, 0 );
-//_Target[PixelPosition] = float4( 100.0 * sigma_tr * Dr * exp( -sigma_tr * Dr ), 0 );
-//_Target[PixelPosition] = Dv < 1e-6 ? float4( 1, 0, 0, 0 ) : 0.0;
-//return;
+				Tr += abs( pole_r - pole_v );	// Another problem here: I have to use the absolute value otherwise I have negative results! And taking the abs() at the end gives shitty results...
 			}
-
-
-// float	test = 0.0;
-// float	Zr = 2.0 * -test * (d + 2.0 * Zb) + l;
-// float	Zv = Zr - 2.0 * (l + Zb);
-// float	Dr = length( float3( relativePos, Zr ) );		// in mm
-// float	Dv = length( float3( relativePos, Zv ) );		// in mm
-// float3	pole_r = (d - Zr) * (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
-// float3	pole_v = (d - Zv) * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);	// Virtual
-// Tr = pole_r + pole_v;
-// 
-// Zr = 2.0 * +test * (d + 2.0 * Zb) + l;
-// Zv = Zr - 2.0 * (l + Zb);
-// Dr = length( float3( relativePos, Zr ) );		// in mm
-// Dv = length( float3( relativePos, Zv ) );		// in mm
-// pole_r = (d - Zr) * (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
-// pole_v = (d - Zv) * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);	// Virtual
-// Tr = pole_r + pole_v;
-// 
-// Tr = 1.0 * Tr;
-
-
-//Tr = abs(Tr);
-
-			Tr *= alpha / (4.0 * PI);
+//			Tr *= alpha / (4.0 * PI);
 
 			// Compute irradiance for our light directions
-//			float3	rho_t = 1.0 - Fd * albedo.xyz;
-float3	rho_t = Fd * transmittance;
+//			float3	rho_t = 1.0 - Fd * albedo.xyz;	// This completely reverses the colors! I can't understand why since I'm doing exactly what's said in the paper... :(
+			float3	rho_t = Fd * transmittance;		// So instead I'm using the transmittance directly...
 
 			float	visibility = ComputeVisibility( LocalUV, _Light );
 			float3	E = rho_t * visibility * saturate( dot( normal, _Light ) );
 
-// _Target[PixelPosition] = float4( Tr, 0 );
-// _Target[PixelPosition] = float4( E, 0 );
-// return;
-
 			// Accumulate
 			result += E * Tr;
-// result += 1000.0 * E * Tr;
-//result += 1.0 * E * Tr;
-//result += 50.0 * exp( -sigma_tr * d );
-//result += visibility;
-//result += 50.0 * Tr;
-//result += 100.0 * E;
 		}
 	}
 
-//	result *= alpha / (4.0 * PI);	// Transmittance constant weight
+	result *= alpha / (4.0 * PI);	// Transmittance constant weighting is only done at the end
 
 
 //	result *= _TexelSize_mm*_TexelSize_mm / (K*K);
 	result *= _TexelSize_mm*_TexelSize_mm;
-//	result *= 1.0 / (K*K);
 
 
 	// TODO: Single scattering term?
@@ -226,15 +161,8 @@ float3	rho_t = Fd * transmittance;
 	// TODO: Single scattering term?
 	// TODO: Single scattering term?
 	// TODO: Single scattering term?
-
-
 
 //result *= 0.1;
-
-
-// result = float3( UV, 0 );
-//result = _Light;
-//result = ComputeVisibility( UV, _Light );
 
 	float4	Current = _Previous[PixelPosition];
 	_Target[PixelPosition] = Current + float4( result, 1 );

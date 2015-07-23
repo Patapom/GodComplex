@@ -27,6 +27,7 @@ namespace GenerateTranslucencyMap
 			public float3	_CameraTarget;
 			public float	_IOR;
 			public float3	_CameraUp;
+			public float	_Sigma_t;
 		}
 
 		private GeneratorForm				m_Owner;
@@ -36,7 +37,7 @@ namespace GenerateTranslucencyMap
 
 		private DateTime					m_StartTime = DateTime.Now;
 
-		private float3						m_LightPos = new float3( 0, 1, 0 );
+		private float3						m_LightPos = new float3( 0, 0.1f, 0 );
 
 		// Manipulation
 		private MouseButtons				m_ButtonsDown = MouseButtons.None;
@@ -71,7 +72,7 @@ namespace GenerateTranslucencyMap
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) Width / Height, 0.01f, 100.0f );
 			m_Manipulator.Attach( this, m_Camera );
-			m_Manipulator.InitializeCamera( new float3( 0, 0.1f, 0.1f ), new float3( 0, 0, 0 ), float3.UnitY );
+			m_Manipulator.InitializeCamera( new float3( 0, -0.1f, 0.1f ), new float3( 0, 0, 0 ), float3.UnitY );
 			m_Manipulator.ManipulationPanSpeed = 0.1f;
 			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
 			m_Manipulator.EnableMouseAction += new CameraManipulator.EnableMouseActionEventHandler( m_Manipulator_EnableMouseAction );
@@ -80,9 +81,11 @@ namespace GenerateTranslucencyMap
 			Application.Idle += new EventHandler( Application_Idle );
 		}
 
+		bool	m_exiting = false;
 		public void Exit() {
 			m_CB_Display.Dispose();
 			m_PS_Display.Dispose();
+			m_exiting = true;
 		}
 
 		bool m_Manipulator_EnableMouseAction( MouseEventArgs _e )
@@ -115,6 +118,7 @@ namespace GenerateTranslucencyMap
 			m_CB_Display.m._Thickness_mm = m_Owner.Thickness_mm;
 			m_CB_Display.m._Size_mm = m_Owner.TextureSize_mm;
 			m_CB_Display.m._IOR = m_Owner.IOR;
+			m_CB_Display.m._Sigma_t = m_Owner.Sigma_t;
 			m_CB_Display.UpdateData();
 
 			// Render
@@ -124,7 +128,7 @@ namespace GenerateTranslucencyMap
 			if ( m_PS_Display.Use() ) {
 
 				m_CB_Display.m._Flags &= ~1U;
- 				if ( m_Owner.m_TextureTargets[0] != null ) {
+ 				if ( m_Owner.m_TextureTargets[0][0] != null ) {
 
 					if ( m_Owner.m_TextureSourceThickness != null )
 						m_Owner.m_TextureSourceThickness.SetPS( 0 );
@@ -156,7 +160,7 @@ namespace GenerateTranslucencyMap
 
 		protected override void OnFormClosing( FormClosingEventArgs e )
 		{
-			e.Cancel = true;
+			e.Cancel = !m_exiting;
 			Visible = false;	// Only hide...
 			base.OnFormClosing( e );
 		}
