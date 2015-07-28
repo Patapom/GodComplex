@@ -215,7 +215,7 @@
 			this.floatTrackbarControlPixelDensity.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlPixelDensity.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlPixelDensity.Name = "floatTrackbarControlPixelDensity";
-			this.floatTrackbarControlPixelDensity.RangeMax = 100F;
+			this.floatTrackbarControlPixelDensity.RangeMax = 1000F;
 			this.floatTrackbarControlPixelDensity.RangeMin = 0F;
 			this.floatTrackbarControlPixelDensity.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlPixelDensity.TabIndex = 26;
@@ -553,7 +553,7 @@
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "GeneratorForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-			this.Text = "Self-Shadowed Bump Map Generator";
+			this.Text = "Directional Translucency Map Generator";
 			this.groupBoxOptions.ResumeLayout(false);
 			this.groupBoxOptions.PerformLayout();
 			this.ResumeLayout(false);
