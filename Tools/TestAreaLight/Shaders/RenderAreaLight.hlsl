@@ -57,10 +57,10 @@ float4	SampleSATSinglePixel( float2 _UV ) {
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 
-float2	BRDF = float4( _TexBRDFIntegral.Sample( LinearClamp, _In.UV ), 0, 1 );
+float2	BRDF = _TexBRDFIntegral.Sample( LinearClamp, _In.UV );
 //return float4( (BRDF.x + BRDF.y) > 0.98 ? float3( 1, 1, 1 ) : float3( 1, 0, 0 ), 1 );
 //return float4( 1.0 * (BRDF.x + BRDF.y).xxx, 1 );
-return float4( BRDF, 0, 1 );
+//return float4( BRDF, 0, 1 );
 
  	float3	StainedGlass = _UseTexture ? _TexAreaLight.SampleLevel( LinearClamp, _In.UV, 0*_AreaLightDiffusion * 7 ).xyz : 1.0;
 // 	float4	StainedGlass = _TexAreaLight.SampleLevel( LinearClamp, _In.UV, 9.0 * abs( fmod( 0.25 * iGlobalTime, 2.0 ) - 1.0 ) );

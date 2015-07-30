@@ -123,6 +123,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Project4D", "Tools\Project4
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateTranslucencyMap", "Tools\GenerateTranslucencyMap\GenerateTranslucencyMap.csproj", "{99EF9619-2208-4BF2-9841-E72FFD912805}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestBoxFitting", "Tools\TestBoxFitting\TestBoxFitting.csproj", "{B75C3965-BE2A-4269-848C-840AA520EAFA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug DirectX10|Any CPU = Debug DirectX10|Any CPU
@@ -1931,6 +1933,34 @@ Global
 		{99EF9619-2208-4BF2-9841-E72FFD912805}.Release|x64.ActiveCfg = Release|x86
 		{99EF9619-2208-4BF2-9841-E72FFD912805}.Release|x86.ActiveCfg = Release|x86
 		{99EF9619-2208-4BF2-9841-E72FFD912805}.Release|x86.Build.0 = Release|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Debug DirectX10|Any CPU.ActiveCfg = Debug|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Debug DirectX10|Mixed Platforms.Build.0 = Debug|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Debug DirectX10|Win32.ActiveCfg = Debug|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Debug DirectX10|x64.ActiveCfg = Debug|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Debug DirectX10|x86.ActiveCfg = Debug|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Debug DirectX10|x86.Build.0 = Debug|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Debug|Win32.ActiveCfg = Debug|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Debug|x64.ActiveCfg = Debug|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Debug|x86.ActiveCfg = Debug|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Debug|x86.Build.0 = Debug|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Profile|Any CPU.ActiveCfg = Release|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Profile|Mixed Platforms.ActiveCfg = Release|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Profile|Mixed Platforms.Build.0 = Release|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Profile|Win32.ActiveCfg = Release|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Profile|x64.ActiveCfg = Release|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Profile|x86.ActiveCfg = Release|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Profile|x86.Build.0 = Release|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Release|Any CPU.ActiveCfg = Release|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Release|Mixed Platforms.Build.0 = Release|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Release|Win32.ActiveCfg = Release|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Release|x64.ActiveCfg = Release|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Release|x86.ActiveCfg = Release|x86
+		{B75C3965-BE2A-4269-848C-840AA520EAFA}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

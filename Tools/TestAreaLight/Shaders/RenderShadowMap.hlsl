@@ -31,12 +31,12 @@ PS_IN	VS( VS_IN _In ) {
 
 	const float	BIAS = 0.0;
 
-	float	Z = (Distance + BIAS) * _ShadowZFar.y;
+	float	Z = (Distance + BIAS) * _ShadowZFar.y;	// Distance / Far => in [0,1]
 
 	// Exponential Z
 	Z = exp( -_ShadowHardeningFactor.y * Z );
 
-	Out.__Position = float4( projPosition.xy, 1.0 - Z, sign( projPosition.z ) );
+	Out.__Position = float4( projPosition.xy, 1.0 - Z, sign( projPosition.z ) );	// Store the complement of the 
 
 	return Out;
 }

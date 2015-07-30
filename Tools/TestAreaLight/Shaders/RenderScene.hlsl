@@ -48,7 +48,7 @@ PS_IN	VS( VS_IN _In ) {
 	Out.Tangent = mul( float4( _In.Tangent, 0.0 ), _Local2World ).xyz;
 	Out.BiTangent = mul( float4( _In.BiTangent, 0.0 ), _Local2World ).xyz;
 	Out.UV = _In.UV;
-
+	
 	return Out;
 }
 
@@ -60,7 +60,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float3	wsTangent = normalize( _In.Tangent );
 	float3	wsBiTangent = normalize( _In.BiTangent );
 	float3	wsView = normalize( wsPosition - _Camera2World[3].xyz );
-
+	
 	float	Roughness = 1.0 - _Gloss;
 //	float	Roughness = abs( fmod( 0.5*iGlobalTime, 2.0 ) - 1.0 );
 	
@@ -72,8 +72,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 
 	float	RadiusFalloff = 8.0;
 	float	RadiusCutoff = 10.0;
-
-
+	
+	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//
 	SurfaceContext	surf;
@@ -88,16 +88,16 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	surf.fresnelStrength = 1.0;
 	
 	uint	AreaLightSliceIndex = _UseTexture ? 0 : ~0U;
-
+	
 	float3	RadianceDiffuse, RadianceSpecular;
 	ComputeAreaLightLighting( surf, AreaLightSliceIndex, Shadow, float2( RadiusFalloff, RadiusCutoff ), RadianceDiffuse, RadianceSpecular );
-	
-//return float4( RadianceDiffuse, 0 );
-//return float4( RadianceSpecular, 0 );
-	
+
 	float3	Result = 0.01 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular;
+	
+//Result =  RadianceDiffuse;
+//Result =  RadianceSpecular;
 
-
+	
 //Shadow = smoothstep( 0.0, 0.1, Shadow );
 //Result = Shadow;
 	
