@@ -1,6 +1,6 @@
 namespace TestBoxFitting
 {
-	partial class PanelOutput
+	partial class PanelHistogram
 	{
 		/// <summary>
 		/// Required designer variable.

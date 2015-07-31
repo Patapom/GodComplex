@@ -72,7 +72,7 @@ namespace TestBoxFitting
 			UpdateBitmap();
 		}
 
-		const float	MAX_RANGE = 10.0f;	// 20 meters left and right from the center
+		const float	MAX_RANGE = 20.0f;	// 20 meters left and right from the center
 
 		public unsafe void		UpdateBitmap() {
 			if ( m_Owner == null ) {
@@ -90,33 +90,46 @@ namespace TestBoxFitting
 				// Draw obstacles
 				float	world2Client = Math.Min( Width, Height ) / (2.0f * MAX_RANGE);
 				foreach ( Form1.Obstacle O in m_Owner.m_ObstaclesRound ) {
-					float	angle = (float) Math.Atan2( O.m_Orientation.x, O.m_Orientation.y );
+					float	angle = (float) Math.Atan2( -O.m_Orientation.y, O.m_Orientation.x );
 					PointF	P = World2Client( O.m_Position );
 					PointF	S = World2Client( O.m_Scale );
 							S.X -= 0.5f * W;
 							S.Y -= 0.5f * H;
 
-					S.X = 2;
-					S.Y = 2;
+// 					S.X = 2;
+// 					S.Y = 2;
 
 					G.ResetTransform();
 					G.TranslateTransform( P.X, P.Y );
 //					G.ScaleTransform( world2Client * O.m_Scale.x, world2Client * O.m_Scale.y );
 					G.RotateTransform( (float) (angle * 180.0f / Math.PI) );
-					G.DrawEllipse( Pens.Red, -S.X, S.Y, 2.0f * S.X, 2.0f * S.Y );
+					G.DrawEllipse( Pens.Red, -S.X, -S.Y, 2.0f * S.X, 2.0f * S.Y );
 				}
 				G.ResetTransform();
 
+				foreach ( Form1.Obstacle O in m_Owner.m_ObstaclesSquare ) {
+					float2	Y = new float2( -O.m_Orientation.y, O.m_Orientation.x );
+					PointF	P0 = World2Client( O.m_Position + O.m_Scale.x * O.m_Orientation + O.m_Scale.y * Y );
+					PointF	P1 = World2Client( O.m_Position - O.m_Scale.x * O.m_Orientation + O.m_Scale.y * Y );
+					PointF	P2 = World2Client( O.m_Position - O.m_Scale.x * O.m_Orientation - O.m_Scale.y * Y );
+					PointF	P3 = World2Client( O.m_Position + O.m_Scale.x * O.m_Orientation - O.m_Scale.y * Y );
+
+					G.DrawLine( Pens.Blue, P0, P1 );
+					G.DrawLine( Pens.Blue, P1, P2 );
+					G.DrawLine( Pens.Blue, P2, P3 );
+					G.DrawLine( Pens.Blue, P3, P0 );
+				}
+
 				// Draw "depth buffer"
-				PointF	P0 = World2Client( SamplePosition( 0.0f ) );
-				PointF	P1;
+				PointF	Z0 = World2Client( SamplePosition( 0.0f ) );
+				PointF	Z1;
 				for ( int i=1; i <= 1000; i++ ) {
 					float	angle = (float) (2.0 * Math.PI * i / 1000);
-					P1 = World2Client( SamplePosition( angle ) );
+					Z1 = World2Client( SamplePosition( angle ) );
 
-					G.DrawLine( Pens.Black, P0, P1 );
+					G.DrawLine( Pens.Black, Z0, Z1 );
 
-					P0 = P1;
+					Z0 = Z1;
 				}
 
 // 				PointF	Center = World2Client( float2.Zero );

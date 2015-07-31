@@ -161,14 +161,17 @@ namespace TestBoxFitting
 			panelOutput.m_Owner = this;
 			panelHistogram.m_Owner = this;
 
-			// Build a random polygonal room
-			Random	RNG = new Random( 3 );
+			BuildRoom();
+		}
 
-			const float		MAX_DISTANCE = 10.0f;
+		// Build a random polygonal room
+		void	BuildRoom() {
+			const float		MAX_DISTANCE = 20.0f;
 
-			int			planesCount = (int) (4 + 2 * RNG.NextDouble());
+			Random	RNG = new Random( integerTrackbarControlRandomSeed.Value );
 
-planesCount = 5;
+//			int			planesCount = (int) (4 + 2 * RNG.NextDouble());
+			int			planesCount = integerTrackbarControlRoomPlanesCount.Value;
 
 			float2[]	planePositions = new float2[planesCount];
 			float2[]	planeNormals = new float2[planesCount];
@@ -225,31 +228,35 @@ planesCount = 5;
 				m_Pixels[i].Normal = normal;
 			}
 
-// 			// Add some obstacles
-// 			const int	OBSTACLES_COUNT = 40;
-// 			const float	MAX_OBSTACLE_DISTANCE = 10.0f;
-// 
-// 			for ( int i=0; i < OBSTACLES_COUNT; i++ ) {
-// //				float2	pos = m_boxCenter + MAX_OBSTACLE_DISTANCE * new float2( (float) (2.0 * RNG.NextDouble() - 1.0), (float) (2.0 * RNG.NextDouble() - 1.0) );
-// 
-// 				float	d = MAX_OBSTACLE_DISTANCE * (float) (0.3 + 0.7 * RNG.NextDouble());
-// 				float	a = (float) (2.0 * Math.PI * RNG.NextDouble());
-// 				float2	pos = m_boxCenter + d * new float2( (float) Math.Cos( a ), (float) Math.Sin( a ) );
-// 				float2	dir = new float2( (float) (2.0 * RNG.NextDouble() - 1.0), (float) (2.0 * RNG.NextDouble() - 1.0) ).Normalized;
-// 				float2	radius = 1.0f * new float2( (float) (0.1 + 0.9 * RNG.NextDouble()), (float) (0.1 + 0.9 * RNG.NextDouble()) );
-// 
-// 				Obstacle	O = new Obstacle() {
-// 					m_Position = pos,
-// 					m_Orientation = dir,
-// 					m_Scale = radius
-// 				};
-// 
-// 				switch ( RNG.Next( 2 ) ) {
-// 					case 0: AddObstacleRound( pos, dir, radius ); m_ObstaclesRound.Add( O ); break;
-// 					case 1: AddObstacleSquare( pos, dir, radius ); m_ObstaclesSquare.Add( O ); break;
-// 				}
-// 			}
-// 
+			// Add some obstacles
+			int	OBSTACLES_COUNT = integerTrackbarControlObstacles.Value;
+			const float	MAX_OBSTACLE_DISTANCE = 15.0f;
+
+			m_ObstaclesRound.Clear();
+			m_ObstaclesSquare.Clear();
+			for ( int i=0; i < OBSTACLES_COUNT; i++ ) {
+//				float2	pos = m_boxCenter + MAX_OBSTACLE_DISTANCE * new float2( (float) (2.0 * RNG.NextDouble() - 1.0), (float) (2.0 * RNG.NextDouble() - 1.0) );
+
+				float	d = MAX_OBSTACLE_DISTANCE * (float) (0.3 + 0.7 * RNG.NextDouble());
+				float	a = (float) (2.0 * Math.PI * RNG.NextDouble());
+				float2	pos = m_boxCenter + d * new float2( (float) Math.Cos( a ), (float) Math.Sin( a ) );
+				float2	dir = new float2( (float) (2.0 * RNG.NextDouble() - 1.0), (float) (2.0 * RNG.NextDouble() - 1.0) ).Normalized;
+				float2	radius = 1.0f * new float2( (float) (0.1 + 0.9 * RNG.NextDouble()), (float) (0.1 + 0.9 * RNG.NextDouble()) );
+
+				Obstacle	O = new Obstacle() {
+					m_Position = pos,
+					m_Orientation = dir,
+					m_Scale = radius
+				};
+
+				double	k = RNG.NextDouble();
+				if ( k < 0.7 ) {
+					AddObstacleRound( pos, dir, radius ); m_ObstaclesRound.Add( O );
+				} else {
+					AddObstacleSquare( pos, dir, radius ); m_ObstaclesSquare.Add( O );
+				}
+			}
+
 
 			//////////////////////////////////////////////////////////////////////////
 			// Use EM to obtain principal directions
@@ -259,7 +266,7 @@ planesCount = 5;
 					directions.Add( new float3( m_Pixels[i].Normal.x, m_Pixels[i].Normal.y, 0.0f ) );
 			}
 
-			planesCount = 4;
+			planesCount = integerTrackbarControlResultPlanesCount.Value;
 
 			m_Lobes = new FitLobe[planesCount];
 			for ( int i=0; i < planesCount; i++ )
@@ -287,7 +294,6 @@ planesCount = 5;
 				}
 
 				P.m_Position = sumPositions / sumWeights;
-				m_Planes[planeIndex] = P;
 
 // 				// Harmonic mean
 // 				float	sumWeights = 0.0f;
@@ -300,7 +306,15 @@ planesCount = 5;
 // 				float	averageDistance = PIXELS_COUNT / sumWeights;
 // 
 // 				P.m_Position = m_boxCenter - averageDistance * P.m_Normal;
-// 				m_Planes[planeIndex] = P;
+
+
+				// Replace plane to be the closest to the center
+				float2	Center2Pos = P.m_Position - m_boxCenter;
+				float	D = P.m_Normal.Dot( Center2Pos );
+				P.m_Position = m_boxCenter + D * P.m_Normal;
+
+
+				m_Planes[planeIndex] = P;
 
 				text += "{ " + m_Lobes[planeIndex].Direction.x.ToString( "G4" ) + ", " + m_Lobes[planeIndex].Direction.y.ToString( "G4" ) + ", " + m_Lobes[planeIndex].Direction.z.ToString( "G4" ) + "}  -  k=" + m_Lobes[planeIndex].Concentration.ToString( "G4" ) + "  -  weight = " + m_Lobes[planeIndex].Alpha.ToString( "G4" ) + "\r\n";
 			}
@@ -314,6 +328,7 @@ planesCount = 5;
 		}
 
 		void	AddObstacleRound( float2 _P, float2 _D, float2 _radius ) {
+
 			float2	X = new float2( _D.x / _radius.x, _D.y / _radius.x );
 			float2	Y = new float2( -_D.y / _radius.y, _D.x / _radius.y );
 
@@ -346,6 +361,7 @@ planesCount = 5;
 		}
 
 		void	AddObstacleSquare( float2 _P, float2 _D, float2 _radius ) {
+
 			float2	X = new float2( _D.x / _radius.x, _D.y / _radius.x );
 			float2	Y = new float2( -_D.y / _radius.y, _D.x / _radius.y );
 
@@ -358,16 +374,16 @@ planesCount = 5;
 				float2	V = new float2( wsV.Dot( X ), wsV.Dot( Y ) );
 
 				// Compute the intersection with the unit box centered in 0
-				float	c = C.Dot( C ) - 1.0f;
-				float	b = C.Dot( V );
-				float	a = V.Dot( V );
-				float	Delta = b*b - a*c;
-				if ( Delta < 0.0f )
-					continue;
+				float	t0 = (C.x + Math.Sign( V.x )) / -V.x;
+				float2	I0 = C + t0 * V;
+				if ( Math.Abs( I0.y ) > 1.0f )
+					t0 = float.MaxValue;
 
-				Delta = (float) Math.Sqrt( Delta );
-				float	t0 = (-b - Delta) / a;
-				float	t1 = (-b + Delta) / a;
+				float	t1 = (C.y + Math.Sign( V.y )) / -V.y;
+				float2	I1 = C + t1 * V;
+				if ( Math.Abs( I1.x ) > 1.0f )
+					t1 = float.MaxValue;
+
 				float	t = Math.Min( t0, t1 );
 				if ( t < 0.0f || t > m_Pixels[i].Distance )
 					continue;
@@ -375,6 +391,36 @@ planesCount = 5;
 				m_Pixels[i].Distance = t;
 				m_Pixels[i].Position = m_boxCenter + t * wsV;
 			}
+		}
+
+		private void integerTrackbarControlRoomPlanesCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
+		{
+//			BuildRoom();
+		}
+
+		private void integerTrackbarControlObstacles_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
+		{
+//			BuildRoom();
+		}
+
+		private void integerTrackbarControlResultPlanesCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
+		{
+//			BuildRoom();
+		}
+
+		private void integerTrackbarControlObstacles_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			BuildRoom();
+		}
+
+		private void integerTrackbarControlRoomPlanesCount_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			BuildRoom();
+		}
+
+		private void integerTrackbarControlResultPlanesCount_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			BuildRoom();
 		}
 	}
 }
