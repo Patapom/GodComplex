@@ -54,7 +54,7 @@ PS_IN	VS( VS_IN _In ) {
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float4	Debug = 0.0;
-	
+
 	float3	wsPosition = _In.Position;
 	float3	wsNormal = normalize( _In.Normal );
 	float3	wsTangent = normalize( _In.Tangent );
@@ -69,7 +69,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float3	IOR = Fresnel_IORFromF0( F0 );
 	
 	float	Shadow = ComputeShadow( wsPosition, wsNormal, Debug );
-
+	
 	float	RadiusFalloff = 8.0;
 	float	RadiusCutoff = 10.0;
 	

@@ -72,6 +72,8 @@ namespace TestBoxFitting
 			UpdateBitmap();
 		}
 
+		const float	MAX_RANGE = 10.0f;	// 20 meters left and right from the center
+
 		public unsafe void		UpdateBitmap() {
 			if ( m_Owner == null ) {
 				Invalidate();
@@ -85,6 +87,27 @@ namespace TestBoxFitting
 
 				G.FillRectangle( Brushes.White, 0, 0, W, H );
 
+				// Draw obstacles
+				float	world2Client = Math.Min( Width, Height ) / (2.0f * MAX_RANGE);
+				foreach ( Form1.Obstacle O in m_Owner.m_ObstaclesRound ) {
+					float	angle = (float) Math.Atan2( O.m_Orientation.x, O.m_Orientation.y );
+					PointF	P = World2Client( O.m_Position );
+					PointF	S = World2Client( O.m_Scale );
+							S.X -= 0.5f * W;
+							S.Y -= 0.5f * H;
+
+					S.X = 2;
+					S.Y = 2;
+
+					G.ResetTransform();
+					G.TranslateTransform( P.X, P.Y );
+//					G.ScaleTransform( world2Client * O.m_Scale.x, world2Client * O.m_Scale.y );
+					G.RotateTransform( (float) (angle * 180.0f / Math.PI) );
+					G.DrawEllipse( Pens.Red, -S.X, S.Y, 2.0f * S.X, 2.0f * S.Y );
+				}
+				G.ResetTransform();
+
+				// Draw "depth buffer"
 				PointF	P0 = World2Client( SamplePosition( 0.0f ) );
 				PointF	P1;
 				for ( int i=1; i <= 1000; i++ ) {
@@ -94,6 +117,25 @@ namespace TestBoxFitting
 					G.DrawLine( Pens.Black, P0, P1 );
 
 					P0 = P1;
+				}
+
+// 				PointF	Center = World2Client( float2.Zero );
+// 				G.FillEllipse( Brushes.Red, Center.X - 2, Center.Y-2, 5, 5 );
+
+				PointF	Center = World2Client( m_Owner.m_boxCenter );
+				G.FillEllipse( Brushes.Red, Center.X - 2, Center.Y-2, 5, 5 );
+
+				// Draw main directions
+				for ( int lobeIndex=0; lobeIndex < m_Owner.m_Lobes.Length; lobeIndex++ ) {
+//					float2	mainNormal = (float2) m_Owner.m_Lobes[lobeIndex].Direction;
+					float2	mainNormal = m_Owner.m_Planes[lobeIndex].m_Normal;
+					float2	mainDirection = new float2( -mainNormal.y, mainNormal.x );
+
+					float2	mainPosition = m_Owner.m_Planes[lobeIndex].m_Position;
+
+					PointF	D0 = World2Client( mainPosition - 20.0f * mainDirection );
+					PointF	D1 = World2Client( mainPosition + 20.0f * mainDirection );
+					G.DrawLine( Pens.DarkGreen, D0, D1 );
 				}
 			}
 
@@ -105,18 +147,19 @@ namespace TestBoxFitting
 
 			int		i0 = Math.Max( 0, Math.Min( Form1.PIXELS_COUNT-1, (int) Math.Floor( pixelAngle ) ) );
 			int		i1 = Math.Min( Form1.PIXELS_COUNT-1, i0+1 );
-			float	t = _angle - i0;
+			float	t = pixelAngle - i0;
 
 			Form1.Pixel	P0 = m_Owner.m_Pixels[i0];
 			Form1.Pixel	P1 = m_Owner.m_Pixels[i1];
 			float		dist = P0.Distance * (1.0f - t) + P1.Distance * t;
+
+			dist = Math.Min( 1000.0f, dist );
 
 			float2		result = dist * new float2( (float) Math.Cos( _angle ), (float) Math.Sin( _angle ) );
 			return result;
 		}
 
 		PointF	World2Client( float2 _wsPosition ) {
-			const float	MAX_RANGE = 20.0f;	// 20 meters left and right from the center
 			float	world2Client = Math.Min( Width, Height ) / (2.0f * MAX_RANGE);
 
 			float	x = 0.5f * Width + _wsPosition.x * world2Client;

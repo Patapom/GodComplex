@@ -378,18 +378,22 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 
 	/////////////////////////////////
 	// Compute the specular solid angle
-	float	SolidAngle = 2.0 * PI * (1.0 - CosHalfAngle);		// Solid angle for the specular cone
+//	float	SolidAngle = 2.0 * PI * (1.0 - CosHalfAngle);		// Solid angle for the specular cone
 //			SolidAngle = min( SolidAngle, _ClippedAreaLightSolidAngle );
 //			SolidAngle = SmoothMin( SolidAngle, _ClippedAreaLightSolidAngle, 32.0 );
+
+	float	SolidAngle = _ClippedAreaLightSolidAngle;
 
 
 	// Finally, we can compute the projected solid angle by dotting with the normal
 	float	ProjectedSolidAngleSpecular = saturate( dot( _lsNormal, _lsView ) ) * SolidAngle;	// (N.Wi) * dWi
 
-// 	float	FresnelGrazing = 1.0 + _lsView.z;
-// 			FresnelGrazing *= FresnelGrazing;
-// 			FresnelGrazing *= FresnelGrazing;
-// 			ProjectedSolidAngleSpecular *= 1.0 - FresnelGrazing;								// Also fade based on V.N to remove grazing angles
+	float	FresnelGrazing = saturate( 1.0 + _lsView.z );
+			FresnelGrazing *= FresnelGrazing;
+//			FresnelGrazing *= FresnelGrazing;
+			ProjectedSolidAngleSpecular *= 1.0 - FresnelGrazing;								// Also fade based on V.N to remove grazing angles
+
+//	ProjectedSolidAngleSpecular *= 1.0 - pow( saturate( 1.0+_lsView.z ), 2.0 );
 
 	/////////////////////////////////
 	// Build the result solid angle
@@ -494,6 +498,11 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, uint _SliceIndex, flo
 	float	SolidAngle = RectangleSolidAngle( lsPosition, ClippedUVs.xy, ClippedUVs.zw );
 
 
+	// Compute light direction toward the center of the clipped area
+	float2	CenterUV = 0.5 * (ClippedUVs.xy + ClippedUVs.zw);
+	wsLight = normalize( (2.0*CenterUV.x-1.0) * wsLightX + (1.0-2.0*CenterUV.y) * wsLightY - wsCenter2Position );
+
+
 	// 4] =========== Compute diffuse & specular solid angles ===========
 	float2	UV0_diffuse, UV1_diffuse;
 	float	SolidAngle_diffuse = ComputeSolidAngleDiffuse( lsPosition, lsNormal, ProjectionDirection, ClippedUVs, SolidAngle, UV0_diffuse, UV1_diffuse );
@@ -539,8 +548,10 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, uint _SliceIndex, flo
 	float2	PreIntegratedBRDF = _TexBRDFIntegral.SampleLevel( LinearClamp, float2( VdotN, Roughness ), 0.0 );
 	float3	F0 = Fresnel_F0FromIOR( _Surface.IOR );
 
-//	float3	IntegralBRDF_specular = F0 * PreIntegratedBRDF.x * SolidAngle + PreIntegratedBRDF.y;
-	float3	IntegralBRDF_specular = F0 * PreIntegratedBRDF.x * SolidAngle + (1.0-Roughness*Roughness)*PreIntegratedBRDF.y;	// Remove ambient term when totally rough
+//	SolidAngle *= saturate( dot( lsNormal, lsView ) ) * saturate( -lsView.z );
+
+//	float3	IntegralBRDF_specular = F0 * PreIntegratedBRDF.x * SolidAngle_specular + PreIntegratedBRDF.y;
+	float3	IntegralBRDF_specular = F0 * PreIntegratedBRDF.x * SolidAngle_specular + (1.0-Roughness*Roughness)*PreIntegratedBRDF.y;	// Remove ambient term when totally rough
 
 
 	// Compute Ward
