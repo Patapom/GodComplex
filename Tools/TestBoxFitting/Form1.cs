@@ -287,7 +287,7 @@ namespace TestBoxFitting
 				float	sumWeights = 0.0f;
 				for ( int i=0; i < PIXELS_COUNT; i++ ) {
 					float	dot = Math.Max( 0.0f, P.m_Normal.Dot( m_Pixels[i].Normal ) );
-							dot = (float) Math.Pow( dot, 10.0 );
+							dot = (float) Math.Pow( dot, floatTrackbarControlWeightExponent.Value );
 					float	weight = dot;
 					sumPositions += weight * m_Pixels[i].Position;
 					sumWeights += weight;
@@ -297,15 +297,18 @@ namespace TestBoxFitting
 
 // 				// Harmonic mean
 // 				float	sumWeights = 0.0f;
+// 				float	sumWeightedDistances = 0.0f;
 // 				for ( int i=0; i < PIXELS_COUNT; i++ ) {
 // 					float	dot = Math.Max( 0.0f, P.m_Normal.Dot( m_Pixels[i].Normal ) );
 // //							dot = (float) Math.Pow( dot, 10.0 );
 // 					float	weight = dot;
-// 					sumWeights += 1.0f / Math.Max( 1e-4f, weight * m_Pixels[i].Distance );
+// 					float	orthoDistance = (m_Pixels[i].Position - m_boxCenter).Dot( P.m_Normal );
+// 					sumWeights += weight;
+// 					sumWeightedDistances += 1.0f / Math.Max( 1e-4f, weight * orthoDistance );
 // 				}
-// 				float	averageDistance = PIXELS_COUNT / sumWeights;
+// 				float	averageOrthoDistance = sumWeights * PIXELS_COUNT / sumWeightedDistances;
 // 
-// 				P.m_Position = m_boxCenter - averageDistance * P.m_Normal;
+// 				P.m_Position = m_boxCenter - averageOrthoDistance * P.m_Normal;
 
 
 				// Replace plane to be the closest to the center
@@ -419,6 +422,11 @@ namespace TestBoxFitting
 		}
 
 		private void integerTrackbarControlResultPlanesCount_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			BuildRoom();
+		}
+
+		private void floatTrackbarControlWeightExponent_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			BuildRoom();
 		}

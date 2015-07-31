@@ -36,10 +36,12 @@
 			this.label2 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlResultPlanesCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
-			this.panelOutput = new TestBoxFitting.PanelOutput(this.components);
-			this.panelHistogram = new TestBoxFitting.PanelHistogram(this.components);
 			this.integerTrackbarControlRandomSeed = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
+			this.panelOutput = new TestBoxFitting.PanelOutput(this.components);
+			this.panelHistogram = new TestBoxFitting.PanelHistogram(this.components);
+			this.floatTrackbarControlWeightExponent = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label5 = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
 			// textBoxPlanes
@@ -125,20 +127,6 @@
 			this.label3.TabIndex = 4;
 			this.label3.Text = "Requested Planes Count";
 			// 
-			// panelOutput
-			// 
-			this.panelOutput.Location = new System.Drawing.Point(12, 12);
-			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size(1029, 611);
-			this.panelOutput.TabIndex = 0;
-			// 
-			// panelHistogram
-			// 
-			this.panelHistogram.Location = new System.Drawing.Point(12, 629);
-			this.panelHistogram.Name = "panelHistogram";
-			this.panelHistogram.Size = new System.Drawing.Size(347, 220);
-			this.panelHistogram.TabIndex = 1;
-			// 
 			// integerTrackbarControlRandomSeed
 			// 
 			this.integerTrackbarControlRandomSeed.Location = new System.Drawing.Point(841, 829);
@@ -164,11 +152,49 @@
 			this.label4.TabIndex = 4;
 			this.label4.Text = "Random Seed";
 			// 
+			// panelOutput
+			// 
+			this.panelOutput.Location = new System.Drawing.Point(12, 12);
+			this.panelOutput.Name = "panelOutput";
+			this.panelOutput.Size = new System.Drawing.Size(1029, 611);
+			this.panelOutput.TabIndex = 0;
+			// 
+			// panelHistogram
+			// 
+			this.panelHistogram.Location = new System.Drawing.Point(12, 629);
+			this.panelHistogram.Name = "panelHistogram";
+			this.panelHistogram.Size = new System.Drawing.Size(347, 220);
+			this.panelHistogram.TabIndex = 1;
+			// 
+			// floatTrackbarControlWeightExponent
+			// 
+			this.floatTrackbarControlWeightExponent.Location = new System.Drawing.Point(841, 775);
+			this.floatTrackbarControlWeightExponent.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlWeightExponent.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlWeightExponent.Name = "floatTrackbarControlWeightExponent";
+			this.floatTrackbarControlWeightExponent.RangeMin = 0F;
+			this.floatTrackbarControlWeightExponent.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlWeightExponent.TabIndex = 5;
+			this.floatTrackbarControlWeightExponent.Value = 10F;
+			this.floatTrackbarControlWeightExponent.VisibleRangeMax = 100F;
+			this.floatTrackbarControlWeightExponent.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlWeightExponent_ValueChanged);
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(711, 777);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(89, 13);
+			this.label5.TabIndex = 4;
+			this.label5.Text = "Weight Exponent";
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1053, 861);
+			this.Controls.Add(this.floatTrackbarControlWeightExponent);
+			this.Controls.Add(this.label5);
 			this.Controls.Add(this.label3);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.label4);
@@ -200,6 +226,8 @@
 		private System.Windows.Forms.Label label3;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlRandomSeed;
 		private System.Windows.Forms.Label label4;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlWeightExponent;
+		private System.Windows.Forms.Label label5;
 	}
 }
 
