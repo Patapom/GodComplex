@@ -73,6 +73,7 @@ namespace TestBoxFitting
 			// 
 			// PanelOutput
 			// 
+			this.BackColor = System.Drawing.Color.LightCoral;
 			this.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.ResumeLayout(false);
 
@@ -158,7 +159,8 @@ namespace TestBoxFitting
 				G.FillEllipse( Brushes.Red, Center.X - 2, Center.Y-2, 5, 5 );
 
 				// Draw main planes
-				using ( Pen PlanePen = new Pen( Color.Gold, 2.0f) ) {
+				using ( Pen PlanePen = new Pen( Color.Gold, 2.0f) )
+					using ( Pen DismissedPen = new Pen( Color.FromArgb( 255, 200, 200 ) ) ) {
 					for ( int planeIndex=0; planeIndex < m_Owner.m_Lobes.Length; planeIndex++ ) {
 						if ( !m_showDismissedPlanes || !m_Owner.m_Planes[planeIndex].m_Dismissed )
 							continue;
@@ -169,7 +171,8 @@ namespace TestBoxFitting
 
 						PointF	D0 = World2Client( mainPosition - 40.0f * mainDirection );
 						PointF	D1 = World2Client( mainPosition + 40.0f * mainDirection );
-						G.DrawLine( Pens.IndianRed, D0, D1 );
+//						G.DrawLine( Pens.MistyRose, D0, D1 );
+						G.DrawLine( DismissedPen, D0, D1 );
 
 						D0 = World2Client( mainPosition );
 						D1 = World2Client( mainPosition + 2.0f * mainNormal );

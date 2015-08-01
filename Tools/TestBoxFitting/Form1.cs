@@ -401,8 +401,7 @@ namespace TestBoxFitting
 					continue;	// Already dismissed...
 
 				float3	averageDirection = (float) P0.Alpha * P0.Direction;
-				double	averageKappa = P0.Alpha * P0.Concentration;
-				double	sumAlpha = P0.Alpha;
+				double	maxKappa = P0.Concentration;
 				for ( int j=i+1; j < planesCount; j++ ) {
 					FitLobe	P1 = m_Lobes[j];
 					if ( m_Planes[j].m_Dismissed )
@@ -413,40 +412,19 @@ namespace TestBoxFitting
 						continue;
 
 					averageDirection += (float) P1.Alpha * P1.Direction;
-					averageKappa += P1.Alpha * P1.Concentration;
-					sumAlpha += P1.Alpha;
+					maxKappa = Math.Max( maxKappa, P1.Concentration );
 
 					m_Planes[j].m_Dismissed = true;	// Dismiss
 					m_Planes[j].m_DismissalReason += " SIMILAR" + i;
 				}
 				P0.Direction = averageDirection.Normalized;
-				P0.Concentration = averageKappa / sumAlpha;
+				P0.Concentration = maxKappa;
 			}
 
 
 			//////////////////////////////////////////////////////////////////////////
-			// Reconstruct weights by normal affinity
-			// We do the same operation as the normal weighting to compute ortho distances: dot each pixel with each plane normal and use that as a weight
-			//
-			if ( checkBoxReconstructWeights.Checked )
-				for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
-					float2	Normal = new float2( m_Lobes[planeIndex].Direction.x, m_Lobes[planeIndex].Direction.y );
-
-					// Use weighted sum
-					float	sumWeights = 0.0f;
-					for ( int i=0; i < PIXELS_COUNT; i++ ) {
-						float	weight = Math.Max( 0.0f, Normal.Dot( m_Pixels[i].Normal ) );
-								weight = (float) Math.Pow( weight, floatTrackbarControlWeightExponent.Value );
-						sumWeights += weight;
-					}
-					float	finalWeight = sumWeights / PIXELS_COUNT;
-					m_Lobes[planeIndex].Alpha = finalWeight;
-					m_Planes[planeIndex].m_Weight = finalWeight;
-				}
-
-
-			//////////////////////////////////////////////////////////////////////////
 			// Place planes at the best positions
+			float	maxOrthoDistance = 0.0f;
 			for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
 				float2	Normal = new float2( m_Lobes[planeIndex].Direction.x, m_Lobes[planeIndex].Direction.y );
 				m_Planes[planeIndex].m_Normal = Normal;
@@ -480,6 +458,8 @@ namespace TestBoxFitting
 				else 
 					finalOrthoDistance = radioButtonProbabilities.Checked ? averageOrthoDistance0 : averageOrthoDistance1;
 
+				maxOrthoDistance = Math.Max( maxOrthoDistance, finalOrthoDistance );
+
 				m_Planes[planeIndex].m_OrthoDistance = finalOrthoDistance;
 				m_Planes[planeIndex].m_Position = m_boxCenter - finalOrthoDistance * Normal;
 
@@ -491,9 +471,54 @@ namespace TestBoxFitting
 
 
 			//////////////////////////////////////////////////////////////////////////
-			// Dismiss unimportant planes
-			string	text = planesCount + " Planes:\r\n";
+			// Reconstruct weight
+			if ( radioButtonNormalAffinity.Checked ) {
+				// Reconstruct weights by normal affinity
+				// We do the same operation as the normal weighting to compute ortho distances: dot each pixel with each plane normal and use that as a weight
+				for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
+					float2	Normal = new float2( m_Lobes[planeIndex].Direction.x, m_Lobes[planeIndex].Direction.y );
 
+					// Use weighted sum
+					float	sumWeights = 0.0f;
+					for ( int i=0; i < PIXELS_COUNT; i++ ) {
+						float	weight = Math.Max( 0.0f, Normal.Dot( m_Pixels[i].Normal ) );
+								weight = (float) Math.Pow( weight, floatTrackbarControlWeightExponent.Value );
+						sumWeights += weight;
+					}
+					float	finalWeight = sumWeights / PIXELS_COUNT;
+					m_Lobes[planeIndex].Alpha = finalWeight;
+					m_Planes[planeIndex].m_Weight = finalWeight;
+				}
+			} else if ( radioButtonLargestD.Checked ) {
+				// Choose largest ortho distances
+				for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
+					float	weight = Math.Max( 0.0f, m_Planes[planeIndex].m_OrthoDistance / maxOrthoDistance );
+					m_Lobes[planeIndex].Alpha = weight;
+					m_Planes[planeIndex].m_Weight = weight;
+				}
+			} else if ( radioButtonLargestD.Checked ) {
+				// Hybrid method combining ortho distance and normal affinity
+				for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
+					float2	Normal = new float2( m_Lobes[planeIndex].Direction.x, m_Lobes[planeIndex].Direction.y );
+
+					// Use weighted sum
+					float	sumWeights = 0.0f;
+					for ( int i=0; i < PIXELS_COUNT; i++ ) {
+						float	weight = Math.Max( 0.0f, Normal.Dot( m_Pixels[i].Normal ) );
+								weight = (float) Math.Pow( weight, floatTrackbarControlWeightExponent.Value );
+						sumWeights += weight;
+					}
+					float	finalWeight = sumWeights / PIXELS_COUNT;
+							finalWeight *= Math.Max( 0.0f, m_Planes[planeIndex].m_OrthoDistance / maxOrthoDistance );
+
+					m_Lobes[planeIndex].Alpha = finalWeight;
+					m_Planes[planeIndex].m_Weight = finalWeight;
+				}
+			}
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// Dismiss unimportant planes
 			float	averageWeight = 0.0f, harmonicAverageWeight = 0.0f, averageConcentration = 0.0f, harmonicAverageConcentration = 0.0f;
 			float	maxWeight = 0.0f, maxConcentration = 0.0f;
 			float	minWeight = float.MaxValue, minConcentration = float.MaxValue;
@@ -527,12 +552,6 @@ namespace TestBoxFitting
 			float	dismissWeight = floatTrackbarControlDismissFactor.Value * harmonicAverageWeight;
 			float	dismissConcentration = floatTrackbarControlDismissFactor.Value * harmonicAverageConcentration;
 
-			text += "Min, Max, Avg, HAvg Weight = " + minWeight.ToString( "G4" ) + ", " + maxWeight.ToString( "G4" ) + ", " + averageWeight.ToString( "G4" ) + ", " + harmonicAverageWeight.ToString( "G4" ) + "\r\n";
-			text += "Dismiss weight = " + dismissWeight + "\r\n\r\n";
-
-			text += "Min, Max, Avg, HAvg Kappa = " + minConcentration.ToString( "G4" ) + ", " + maxConcentration.ToString( "G4" ) + ", " + averageConcentration.ToString( "G4" ) + ", " + harmonicAverageConcentration.ToString( "G4" ) + "\r\n";
-			text += "Dismiss kappa = " + dismissConcentration + "\r\n\r\n";
-
 			// Select the N best planes/Dismiss others
 			if ( !radioButtonUseBest.Checked )
 				for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
@@ -561,8 +580,19 @@ namespace TestBoxFitting
 				}
 			}
 
+
+			//////////////////////////////////////////////////////////////////////////
+			// Display info
+			string	text = "";
+			text += "Min, Max, Avg, HAvg Weight = " + minWeight.ToString( "G4" ) + ", " + maxWeight.ToString( "G4" ) + ", " + averageWeight.ToString( "G4" ) + ", " + harmonicAverageWeight.ToString( "G4" ) + "\r\n";
+			text += "Dismiss weight = " + dismissWeight + "\r\n\r\n";
+
+			text += "Min, Max, Avg, HAvg Kappa = " + minConcentration.ToString( "G4" ) + ", " + maxConcentration.ToString( "G4" ) + ", " + averageConcentration.ToString( "G4" ) + ", " + harmonicAverageConcentration.ToString( "G4" ) + "\r\n";
+			text += "Dismiss kappa = " + dismissConcentration + "\r\n\r\n";
+
+			text += planesCount + " Planes:\r\n";
 			for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
-				text += "Plane #" + planeIndex + " " + (m_Planes[planeIndex].m_Dismissed ? "(DIS)" : "") + " => { " + m_Lobes[planeIndex].Direction.x.ToString( "G4" ) + ", " + m_Lobes[planeIndex].Direction.y.ToString( "G4" ) + "} D = " + m_Planes[planeIndex].m_OrthoDistance.ToString( "G4" ) + "  -  k=" + m_Lobes[planeIndex].Concentration.ToString( "G4" ) + "  -  weight = " + m_Lobes[planeIndex].Alpha.ToString( "G4" ) + m_Planes[planeIndex].m_DismissalReason + "\r\n";
+				text += "#" + planeIndex + " => { " + m_Lobes[planeIndex].Direction.x.ToString( "G4" ) + ", " + m_Lobes[planeIndex].Direction.y.ToString( "G4" ) + "} D = " + m_Planes[planeIndex].m_OrthoDistance.ToString( "G4" ) + "  -  k=" + m_Lobes[planeIndex].Concentration.ToString( "G4" ) + "  -  weight = " + m_Lobes[planeIndex].Alpha.ToString( "G4" ) + m_Planes[planeIndex].m_DismissalReason + " " + (m_Planes[planeIndex].m_Dismissed ? "(DIS)" : "") + "\r\n";
 			}
 
 			textBoxPlanes.Text = text;
@@ -691,6 +721,11 @@ namespace TestBoxFitting
 		}
 
 		private void checkBoxReconstructWeights_CheckedChanged( object sender, EventArgs e )
+		{
+			BuildRoom();
+		}
+
+		private void radioButtonDefaultEMWeight_CheckedChanged( object sender, EventArgs e )
 		{
 			BuildRoom();
 		}

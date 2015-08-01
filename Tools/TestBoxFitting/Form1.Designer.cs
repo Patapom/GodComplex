@@ -47,9 +47,9 @@
 			this.floatTrackbarControlDismissFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.panel2 = new System.Windows.Forms.Panel();
-			this.radioButtonUseBest = new System.Windows.Forms.RadioButton();
 			this.radioButtonDismissWeight = new System.Windows.Forms.RadioButton();
 			this.radioButtonDismissKappa = new System.Windows.Forms.RadioButton();
+			this.radioButtonUseBest = new System.Windows.Forms.RadioButton();
 			this.integerTrackbarControlKeepBestPlanesCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label7 = new System.Windows.Forms.Label();
 			this.panelDismissFactor = new System.Windows.Forms.Panel();
@@ -57,13 +57,19 @@
 			this.label8 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlSimilarPlanes = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxShowDismissedPlanes = new System.Windows.Forms.CheckBox();
-			this.checkBoxReconstructWeights = new System.Windows.Forms.CheckBox();
+			this.radioButtonDefaultEMWeight = new System.Windows.Forms.RadioButton();
+			this.panel3 = new System.Windows.Forms.Panel();
+			this.radioButtonLargestD = new System.Windows.Forms.RadioButton();
+			this.radioButtonWeightHybrid = new System.Windows.Forms.RadioButton();
+			this.radioButtonNormalAffinity = new System.Windows.Forms.RadioButton();
+			this.label9 = new System.Windows.Forms.Label();
 			this.panelOutput = new TestBoxFitting.PanelOutput(this.components);
 			this.panelHistogram = new TestBoxFitting.PanelHistogram(this.components);
 			this.panel1.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.panelDismissFactor.SuspendLayout();
 			this.panelKeepBestPlanes.SuspendLayout();
+			this.panel3.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// textBoxPlanes
@@ -134,7 +140,7 @@
 			this.integerTrackbarControlResultPlanesCount.RangeMin = 1;
 			this.integerTrackbarControlResultPlanesCount.Size = new System.Drawing.Size(200, 20);
 			this.integerTrackbarControlResultPlanesCount.TabIndex = 3;
-			this.integerTrackbarControlResultPlanesCount.Value = 4;
+			this.integerTrackbarControlResultPlanesCount.Value = 8;
 			this.integerTrackbarControlResultPlanesCount.VisibleRangeMax = 10;
 			this.integerTrackbarControlResultPlanesCount.VisibleRangeMin = 1;
 			this.integerTrackbarControlResultPlanesCount.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlResultPlanesCount_ValueChanged);
@@ -250,7 +256,7 @@
 			this.floatTrackbarControlDismissFactor.RangeMin = 0F;
 			this.floatTrackbarControlDismissFactor.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlDismissFactor.TabIndex = 5;
-			this.floatTrackbarControlDismissFactor.Value = 0.2F;
+			this.floatTrackbarControlDismissFactor.Value = 0.5F;
 			this.floatTrackbarControlDismissFactor.VisibleRangeMax = 1F;
 			this.floatTrackbarControlDismissFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlWeightExponent_ValueChanged);
 			// 
@@ -266,26 +272,13 @@
 			// 
 			// panel2
 			// 
-			this.panel2.Controls.Add(this.radioButtonUseBest);
 			this.panel2.Controls.Add(this.radioButtonDismissWeight);
 			this.panel2.Controls.Add(this.radioButtonDismissKappa);
+			this.panel2.Controls.Add(this.radioButtonUseBest);
 			this.panel2.Location = new System.Drawing.Point(520, 799);
 			this.panel2.Name = "panel2";
 			this.panel2.Size = new System.Drawing.Size(337, 18);
 			this.panel2.TabIndex = 8;
-			// 
-			// radioButtonUseBest
-			// 
-			this.radioButtonUseBest.AutoSize = true;
-			this.radioButtonUseBest.Checked = true;
-			this.radioButtonUseBest.Location = new System.Drawing.Point(10, 1);
-			this.radioButtonUseBest.Name = "radioButtonUseBest";
-			this.radioButtonUseBest.Size = new System.Drawing.Size(68, 17);
-			this.radioButtonUseBest.TabIndex = 6;
-			this.radioButtonUseBest.TabStop = true;
-			this.radioButtonUseBest.Text = "Use Best";
-			this.radioButtonUseBest.UseVisualStyleBackColor = true;
-			this.radioButtonUseBest.CheckedChanged += new System.EventHandler(this.radioButtonUseBest_CheckedChanged);
 			// 
 			// radioButtonDismissWeight
 			// 
@@ -308,6 +301,19 @@
 			this.radioButtonDismissKappa.Text = "Dismiss by Kappa";
 			this.radioButtonDismissKappa.UseVisualStyleBackColor = true;
 			this.radioButtonDismissKappa.CheckedChanged += new System.EventHandler(this.radioButtonUseBest_CheckedChanged);
+			// 
+			// radioButtonUseBest
+			// 
+			this.radioButtonUseBest.AutoSize = true;
+			this.radioButtonUseBest.Checked = true;
+			this.radioButtonUseBest.Location = new System.Drawing.Point(10, 1);
+			this.radioButtonUseBest.Name = "radioButtonUseBest";
+			this.radioButtonUseBest.Size = new System.Drawing.Size(77, 17);
+			this.radioButtonUseBest.TabIndex = 6;
+			this.radioButtonUseBest.TabStop = true;
+			this.radioButtonUseBest.Text = "No Dismiss";
+			this.radioButtonUseBest.UseVisualStyleBackColor = true;
+			this.radioButtonUseBest.CheckedChanged += new System.EventHandler(this.radioButtonUseBest_CheckedChanged);
 			// 
 			// integerTrackbarControlKeepBestPlanesCount
 			// 
@@ -372,7 +378,7 @@
 			this.floatTrackbarControlSimilarPlanes.RangeMin = 0F;
 			this.floatTrackbarControlSimilarPlanes.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlSimilarPlanes.TabIndex = 5;
-			this.floatTrackbarControlSimilarPlanes.Value = 0.8F;
+			this.floatTrackbarControlSimilarPlanes.Value = 0.5F;
 			this.floatTrackbarControlSimilarPlanes.VisibleRangeMax = 1F;
 			this.floatTrackbarControlSimilarPlanes.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlWeightExponent_ValueChanged);
 			// 
@@ -387,20 +393,76 @@
 			this.checkBoxShowDismissedPlanes.UseVisualStyleBackColor = true;
 			this.checkBoxShowDismissedPlanes.CheckedChanged += new System.EventHandler(this.checkBoxShowDismissedPlanes_CheckedChanged);
 			// 
-			// checkBoxReconstructWeights
+			// radioButtonDefaultEMWeight
 			// 
-			this.checkBoxReconstructWeights.AutoSize = true;
-			this.checkBoxReconstructWeights.Location = new System.Drawing.Point(530, 735);
-			this.checkBoxReconstructWeights.Name = "checkBoxReconstructWeights";
-			this.checkBoxReconstructWeights.Size = new System.Drawing.Size(210, 17);
-			this.checkBoxReconstructWeights.TabIndex = 12;
-			this.checkBoxReconstructWeights.Checked = true;
-			this.checkBoxReconstructWeights.Text = "Reconstruct Weights by Normal Affinity";
-			this.checkBoxReconstructWeights.UseVisualStyleBackColor = true;
-			this.checkBoxReconstructWeights.CheckedChanged += new System.EventHandler(this.checkBoxReconstructWeights_CheckedChanged);
+			this.radioButtonDefaultEMWeight.AutoSize = true;
+			this.radioButtonDefaultEMWeight.Location = new System.Drawing.Point(54, 5);
+			this.radioButtonDefaultEMWeight.Name = "radioButtonDefaultEMWeight";
+			this.radioButtonDefaultEMWeight.Size = new System.Drawing.Size(78, 17);
+			this.radioButtonDefaultEMWeight.TabIndex = 14;
+			this.radioButtonDefaultEMWeight.Text = "Default EM";
+			this.radioButtonDefaultEMWeight.UseVisualStyleBackColor = true;
+			this.radioButtonDefaultEMWeight.CheckedChanged += new System.EventHandler(this.radioButtonDefaultEMWeight_CheckedChanged);
+			// 
+			// panel3
+			// 
+			this.panel3.Controls.Add(this.radioButtonLargestD);
+			this.panel3.Controls.Add(this.radioButtonWeightHybrid);
+			this.panel3.Controls.Add(this.radioButtonNormalAffinity);
+			this.panel3.Controls.Add(this.radioButtonDefaultEMWeight);
+			this.panel3.Controls.Add(this.label9);
+			this.panel3.Location = new System.Drawing.Point(520, 731);
+			this.panel3.Name = "panel3";
+			this.panel3.Size = new System.Drawing.Size(376, 25);
+			this.panel3.TabIndex = 15;
+			// 
+			// radioButtonLargestD
+			// 
+			this.radioButtonLargestD.AutoSize = true;
+			this.radioButtonLargestD.Location = new System.Drawing.Point(134, 5);
+			this.radioButtonLargestD.Name = "radioButtonLargestD";
+			this.radioButtonLargestD.Size = new System.Drawing.Size(71, 17);
+			this.radioButtonLargestD.TabIndex = 14;
+			this.radioButtonLargestD.Text = "Largest D";
+			this.radioButtonLargestD.UseVisualStyleBackColor = true;
+			this.radioButtonLargestD.CheckedChanged += new System.EventHandler(this.radioButtonDefaultEMWeight_CheckedChanged);
+			// 
+			// radioButtonWeightHybrid
+			// 
+			this.radioButtonWeightHybrid.AutoSize = true;
+			this.radioButtonWeightHybrid.Checked = true;
+			this.radioButtonWeightHybrid.Location = new System.Drawing.Point(309, 5);
+			this.radioButtonWeightHybrid.Name = "radioButtonWeightHybrid";
+			this.radioButtonWeightHybrid.Size = new System.Drawing.Size(55, 17);
+			this.radioButtonWeightHybrid.TabIndex = 14;
+			this.radioButtonWeightHybrid.TabStop = true;
+			this.radioButtonWeightHybrid.Text = "Hybrid";
+			this.radioButtonWeightHybrid.UseVisualStyleBackColor = true;
+			this.radioButtonWeightHybrid.CheckedChanged += new System.EventHandler(this.radioButtonDefaultEMWeight_CheckedChanged);
+			// 
+			// radioButtonNormalAffinity
+			// 
+			this.radioButtonNormalAffinity.AutoSize = true;
+			this.radioButtonNormalAffinity.Location = new System.Drawing.Point(211, 5);
+			this.radioButtonNormalAffinity.Name = "radioButtonNormalAffinity";
+			this.radioButtonNormalAffinity.Size = new System.Drawing.Size(92, 17);
+			this.radioButtonNormalAffinity.TabIndex = 14;
+			this.radioButtonNormalAffinity.Text = "Normal Affinity";
+			this.radioButtonNormalAffinity.UseVisualStyleBackColor = true;
+			this.radioButtonNormalAffinity.CheckedChanged += new System.EventHandler(this.radioButtonDefaultEMWeight_CheckedChanged);
+			// 
+			// label9
+			// 
+			this.label9.AutoSize = true;
+			this.label9.Location = new System.Drawing.Point(7, 7);
+			this.label9.Name = "label9";
+			this.label9.Size = new System.Drawing.Size(44, 13);
+			this.label9.TabIndex = 4;
+			this.label9.Text = "Weight:";
 			// 
 			// panelOutput
 			// 
+			this.panelOutput.BackColor = System.Drawing.Color.MistyRose;
 			this.panelOutput.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.panelOutput.Location = new System.Drawing.Point(12, 12);
 			this.panelOutput.Name = "panelOutput";
@@ -420,7 +482,7 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1523, 861);
-			this.Controls.Add(this.checkBoxReconstructWeights);
+			this.Controls.Add(this.panel3);
 			this.Controls.Add(this.checkBoxShowDismissedPlanes);
 			this.Controls.Add(this.panelKeepBestPlanes);
 			this.Controls.Add(this.panelDismissFactor);
@@ -452,6 +514,8 @@
 			this.panelDismissFactor.PerformLayout();
 			this.panelKeepBestPlanes.ResumeLayout(false);
 			this.panelKeepBestPlanes.PerformLayout();
+			this.panel3.ResumeLayout(false);
+			this.panel3.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -489,7 +553,12 @@
 		private System.Windows.Forms.Label label8;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlSimilarPlanes;
 		private System.Windows.Forms.CheckBox checkBoxShowDismissedPlanes;
-		private System.Windows.Forms.CheckBox checkBoxReconstructWeights;
+		private System.Windows.Forms.RadioButton radioButtonDefaultEMWeight;
+		private System.Windows.Forms.Panel panel3;
+		private System.Windows.Forms.RadioButton radioButtonLargestD;
+		private System.Windows.Forms.RadioButton radioButtonNormalAffinity;
+		private System.Windows.Forms.Label label9;
+		private System.Windows.Forms.RadioButton radioButtonWeightHybrid;
 	}
 }
 
