@@ -132,7 +132,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 // 				float3	pole_r = Zr * (1.0 + sigma_tr * Dr) * exp( -sigma_tr * Dr ) / (Dr * Dr * Dr);	// Real
 // 				float3	pole_v = Zv * (1.0 + sigma_tr * Dv) * exp( -sigma_tr * Dv ) / (Dv * Dv * Dv);	// Virtual
 //				Tr += pole_r - pole_v;
-				Tr += abs( pole_r - pole_v );	// Another problem here: I have to use the absolute value otherwise I have negative results! And taking the abs() at the end gives shitty results...
+//				Tr += abs( pole_r - pole_v );	// Another problem here: I have to use the absolute value otherwise I have negative results! And taking the abs() at the end gives shitty results...
+				Tr += max( 0.0, pole_r - pole_v );	// Another problem here: I have to use the absolute value otherwise I have negative results! And taking the abs() at the end gives shitty results...
 			}
 //			Tr *= alpha / (4.0 * PI);
 
