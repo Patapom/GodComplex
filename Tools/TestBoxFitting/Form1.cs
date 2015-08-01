@@ -417,7 +417,7 @@ namespace TestBoxFitting
 					sumAlpha += P1.Alpha;
 
 					m_Planes[j].m_Dismissed = true;	// Dismiss
-					m_Planes[j].m_DismissalReason += " SIMILAR" + j;
+					m_Planes[j].m_DismissalReason += " SIMILAR" + i;
 				}
 				P0.Direction = averageDirection.Normalized;
 				P0.Concentration = averageKappa / sumAlpha;
@@ -555,7 +555,7 @@ namespace TestBoxFitting
 			SortedPlanes.Sort();
 			for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
 				SortedPlane	SP = SortedPlanes[planeIndex];
-				if ( planeIndex >= integerTrackbarControlKeepBestPlanesCount.Value ) {
+				if ( !m_Planes[SP.planeIndex].m_Dismissed && planeIndex >= integerTrackbarControlKeepBestPlanesCount.Value ) {
 					m_Planes[SP.planeIndex].m_Dismissed = true;
 					m_Planes[SP.planeIndex].m_DismissalReason += " LIMIT";
 				}
