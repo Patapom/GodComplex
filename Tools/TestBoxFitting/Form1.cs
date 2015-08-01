@@ -47,11 +47,13 @@ namespace TestBoxFitting
 		/// <param name="_Lobes"></param>
 		/// <param name="_MaxIterations"></param>
 		/// <param name="_ConvergenceThreshold">Default should be 1e-6</param>
+		double[,]	probabilities;
 		private void	PerformExpectationMaximization( float3[] _Directions, FitLobe[] _Lobes, int _MaxIterations, double _ConvergenceThreshold ) {
 			int			n = _Directions.Length;
 			double		invN = 1.0 / n;
 			int			k = _Lobes.Length;
-			double[,]	probabilities = new double[n,k];
+
+			probabilities = new double[n,k];
 
 			// 1] Initialize lobes
 			for ( int h=0; h < k; h++ ) {
@@ -116,6 +118,7 @@ namespace TestBoxFitting
 					// Compute new direction
 					double	mu_length = Math.Sqrt( mu_x*mu_x + mu_y*mu_y + mu_z*mu_z );
 					double	r = Lobe.Alpha > 1e-12 ? mu_length / Lobe.Alpha : 0.0;
+							r = Math.Min( 1.0-1e-12, r );	// Avoid invalid concentrations
 
 					// Normalize direction
 					mu_length = mu_length > 1e-12 ? 1.0 / mu_length : 0.0;
@@ -144,6 +147,7 @@ namespace TestBoxFitting
 		public struct Plane {
 			public float2	m_Position;
 			public float2	m_Normal;
+			public bool		m_Dismissed;
 		}
 		public Plane[]		m_Planes = null;
 
@@ -162,6 +166,20 @@ namespace TestBoxFitting
 			panelHistogram.m_Owner = this;
 
 			BuildRoom();
+		}
+
+		[System.Diagnostics.DebuggerDisplay( "weight={weight} - Index={planeIndex}" )]
+		struct SortedPlane : IComparable<SortedPlane> {
+			public float	weight;
+			public int		planeIndex;
+
+			#region IComparable<SortedPlane> Members
+
+			public int CompareTo( SortedPlane other ) {
+				return -Comparer<float>.Default.Compare( weight, other.weight );
+			}
+
+			#endregion
 		}
 
 		// Build a random polygonal room
@@ -262,12 +280,12 @@ namespace TestBoxFitting
 			// Use EM to obtain principal directions
 			List<float3>	directions = new List<float3>( PIXELS_COUNT );
 			for ( int i=0; i < PIXELS_COUNT; i++ ) {
-				if ( m_Pixels[i].Distance < 1e3f )
+//				if ( m_Pixels[i].Distance < 1e3f )
 					directions.Add( new float3( m_Pixels[i].Normal.x, m_Pixels[i].Normal.y, 0.0f ) );
 			}
 
 			planesCount = integerTrackbarControlResultPlanesCount.Value;
-
+			m_Planes = new Plane[planesCount];
 			m_Lobes = new FitLobe[planesCount];
 			for ( int i=0; i < planesCount; i++ )
 				m_Lobes[i] = new FitLobe();
@@ -275,55 +293,125 @@ namespace TestBoxFitting
 
 
 			//////////////////////////////////////////////////////////////////////////
-			// Place planes at the best positions
+			// Remove similar planes
+			for ( int i=0; i < planesCount-1; i++ ) {
+				FitLobe	P0 = m_Lobes[i];
+				if ( P0.Alpha == 0.0 )
+					continue;	// Already dismissed...
+
+				float3	averageDirection = (float) P0.Alpha * P0.Direction;
+				for ( int j=i+1; j < planesCount; j++ ) {
+					FitLobe	P1 = m_Lobes[j];
+					float	dot = P0.Direction.Dot( P1.Direction );
+					if ( dot < floatTrackbarControlSimilarPlanes.Value )
+						continue;
+
+					averageDirection += (float) P1.Alpha * P1.Direction;
+					P1.Alpha = 0.0;
+				}
+				P0.Direction = averageDirection.Normalized;
+			}
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// Get information about planes, dismiss unimportant ones
 			string	text = planesCount + " Planes:\r\n";
 
-			m_Planes = new Plane[planesCount];
-			for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
-				Plane	P = new Plane();
-				P.m_Normal = new float2( m_Lobes[planeIndex].Direction.x, m_Lobes[planeIndex].Direction.y );
+			float	averageWeight = 0.0f, harmonicAverageWeight = 0.0f, averageConcentration = 0.0f, harmonicAverageConcentration = 0.0f;
+			float	maxWeight = 0.0f, maxConcentration = 0.0f;
+			float	minWeight = float.MaxValue, minConcentration = float.MaxValue;
 
-				float2	sumPositions = float2.Zero;
-				float	sumWeights = 0.0f;
-				for ( int i=0; i < PIXELS_COUNT; i++ ) {
-					float	dot = Math.Max( 0.0f, P.m_Normal.Dot( m_Pixels[i].Normal ) );
-							dot = (float) Math.Pow( dot, floatTrackbarControlWeightExponent.Value );
-					float	weight = dot;
-					sumPositions += weight * m_Pixels[i].Position;
-					sumWeights += weight;
+			List<SortedPlane>	SortedPlanes = new List<SortedPlane>( planesCount );
+			for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
+				float	weight = (float) m_Lobes[planeIndex].Alpha;
+				minWeight = Math.Min( minWeight, weight );
+				maxWeight = Math.Max( maxWeight, weight );
+				averageWeight += weight;
+				harmonicAverageWeight += 1.0f / Math.Max( 1e-4f, weight );
+
+				float	concentration = (float) m_Lobes[planeIndex].Concentration;
+				minConcentration = Math.Min( minConcentration, concentration );
+				maxConcentration = Math.Max( maxConcentration, concentration );
+				averageConcentration += concentration;
+				harmonicAverageConcentration += 1.0f / Math.Max( 1e-4f, concentration );
+
+				SortedPlanes.Add( new SortedPlane() { planeIndex = planeIndex, weight = weight } );
+			}
+
+			averageWeight /= planesCount;
+			harmonicAverageWeight = planesCount / harmonicAverageWeight;
+			averageConcentration /= planesCount;
+			harmonicAverageConcentration = planesCount / harmonicAverageConcentration;
+//			float	dismissWeight = 0.5f / planesCount;
+			float	dismissWeight = floatTrackbarControlDismissFactor.Value * harmonicAverageWeight;
+			float	dismissConcentration = floatTrackbarControlDismissFactor.Value * harmonicAverageConcentration;
+
+			text += "Min, Max, Avg, HAvg Weight = " + minWeight.ToString( "G4" ) + ", " + maxWeight.ToString( "G4" ) + ", " + averageWeight.ToString( "G4" ) + ", " + harmonicAverageWeight.ToString( "G4" ) + "\r\n";
+			text += "Dismiss weight = " + dismissWeight + "\r\n\r\n";
+
+			text += "Min, Max, Avg, HAvg Kappa = " + minConcentration.ToString( "G4" ) + ", " + maxConcentration.ToString( "G4" ) + ", " + averageConcentration.ToString( "G4" ) + ", " + harmonicAverageConcentration.ToString( "G4" ) + "\r\n";
+			text += "Dismiss kappa = " + dismissConcentration + "\r\n\r\n";
+
+			// Select the N best planes/Dismiss others
+			if ( !radioButtonUseBest.Checked )
+				for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
+						m_Planes[planeIndex].m_Dismissed = radioButtonDismissKappa.Checked ? m_Lobes[planeIndex].Concentration < dismissConcentration : m_Lobes[planeIndex].Alpha < dismissWeight;
 				}
 
-				P.m_Position = sumPositions / sumWeights;
-
-// 				// Harmonic mean
-// 				float	sumWeights = 0.0f;
-// 				float	sumWeightedDistances = 0.0f;
-// 				for ( int i=0; i < PIXELS_COUNT; i++ ) {
-// 					float	dot = Math.Max( 0.0f, P.m_Normal.Dot( m_Pixels[i].Normal ) );
-// //							dot = (float) Math.Pow( dot, 10.0 );
-// 					float	weight = dot;
-// 					float	orthoDistance = (m_Pixels[i].Position - m_boxCenter).Dot( P.m_Normal );
-// 					sumWeights += weight;
-// 					sumWeightedDistances += 1.0f / Math.Max( 1e-4f, weight * orthoDistance );
-// 				}
-// 				float	averageOrthoDistance = sumWeights * PIXELS_COUNT / sumWeightedDistances;
-// 
-// 				P.m_Position = m_boxCenter - averageOrthoDistance * P.m_Normal;
+			// Dismiss planes above target count
+			SortedPlanes.Sort();
+			for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
+				SortedPlane	SP = SortedPlanes[planeIndex];
+				m_Planes[SP.planeIndex].m_Dismissed |= planeIndex >= integerTrackbarControlKeepBestPlanesCount.Value;
+			}
 
 
-				// Replace plane to be the closest to the center
-				float2	Center2Pos = P.m_Position - m_boxCenter;
-				float	D = P.m_Normal.Dot( Center2Pos );
-				P.m_Position = m_boxCenter + D * P.m_Normal;
+			//////////////////////////////////////////////////////////////////////////
+			// Place planes at the best positions
+			for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
+				float2	Normal = new float2( m_Lobes[planeIndex].Direction.x, m_Lobes[planeIndex].Direction.y );
+				m_Planes[planeIndex].m_Normal = Normal;
 
+				// Use computed probabilities
+				float	sumOrthoDistances0 = 0.0f;
+				float	sumWeights0 = 0.0f;
+				for ( int i=0; i < PIXELS_COUNT; i++ ) {
+					float	orthoDistance = (m_Pixels[i].Position - m_boxCenter).Dot( Normal );
+					float	weight = (float) probabilities[i,planeIndex];
+					sumOrthoDistances0 += weight * orthoDistance;
+					sumWeights0 += weight;
+				}
+				float	averageOrthoDistance0 = sumOrthoDistances0 / sumWeights0;
 
-				m_Planes[planeIndex] = P;
+				// Use weighted sum
+				float	sumOrthoDistances1 = 0.0f;
+				float	sumWeights1 = 0.0f;
+				for ( int i=0; i < PIXELS_COUNT; i++ ) {
+					float	orthoDistance = (m_Pixels[i].Position - m_boxCenter).Dot( Normal );
+					float	dot = Math.Max( 0.0f, Normal.Dot( m_Pixels[i].Normal ) );
+							dot = (float) Math.Pow( dot, floatTrackbarControlWeightExponent.Value );
+					float	weight = dot;
+					sumOrthoDistances1 += weight * orthoDistance;
+					sumWeights1 += weight;
+				}
+				float	averageOrthoDistance1 = sumOrthoDistances1 / sumWeights1;
 
-				text += "{ " + m_Lobes[planeIndex].Direction.x.ToString( "G4" ) + ", " + m_Lobes[planeIndex].Direction.y.ToString( "G4" ) + ", " + m_Lobes[planeIndex].Direction.z.ToString( "G4" ) + "}  -  k=" + m_Lobes[planeIndex].Concentration.ToString( "G4" ) + "  -  weight = " + m_Lobes[planeIndex].Alpha.ToString( "G4" ) + "\r\n";
+				float2	Position;
+				if ( radioButtonBest.Checked )
+					Position = m_boxCenter + Math.Min( averageOrthoDistance0, averageOrthoDistance1 ) * Normal;
+				else {
+					if ( radioButtonProbabilities.Checked )
+						Position = m_boxCenter + averageOrthoDistance0 * Normal;
+					else
+						Position = m_boxCenter + averageOrthoDistance1 * Normal;
+				}
+
+				m_Planes[planeIndex].m_Position = Position;
+
+				text += "Plane #" + planeIndex + " " + (m_Planes[planeIndex].m_Dismissed ? "(DIS)" : "") + " => { " + m_Lobes[planeIndex].Direction.x.ToString( "G4" ) + ", " + m_Lobes[planeIndex].Direction.y.ToString( "G4" ) + "}  -  k=" + m_Lobes[planeIndex].Concentration.ToString( "G4" ) + "  -  weight = " + m_Lobes[planeIndex].Alpha.ToString( "G4" ) + "\r\n";
 			}
 
 			textBoxPlanes.Text = text;
-
 
 			// Refresh
 			panelOutput.UpdateBitmap();
@@ -358,8 +446,12 @@ namespace TestBoxFitting
 				if ( t < 0.0f || t > m_Pixels[i].Distance )
 					continue;
 
+				float2	I = C + t * V;	// Hit in local space, also the normal
+				float2	wsN = (I.x * _radius.x * _radius.x * X + I.y * _radius.y * _radius.y * Y).Normalized;
+
 				m_Pixels[i].Distance = t;
 				m_Pixels[i].Position = m_boxCenter + t * wsV;
+				m_Pixels[i].Normal = wsN;
 			}
 		}
 
@@ -379,20 +471,33 @@ namespace TestBoxFitting
 				// Compute the intersection with the unit box centered in 0
 				float	t0 = (C.x + Math.Sign( V.x )) / -V.x;
 				float2	I0 = C + t0 * V;
+				float2	N0 = new float2( Math.Sign( V.x ), 0.0f );
 				if ( Math.Abs( I0.y ) > 1.0f )
 					t0 = float.MaxValue;
 
 				float	t1 = (C.y + Math.Sign( V.y )) / -V.y;
 				float2	I1 = C + t1 * V;
+				float2	N1 = new float2( 0.0f, Math.Sign( V.y ) );
 				if ( Math.Abs( I1.x ) > 1.0f )
 					t1 = float.MaxValue;
 
-				float	t = Math.Min( t0, t1 );
+				float	t;	// Math.Min( t0, t1 )
+				float2	N;
+				if ( t0 < t1 ) {
+					t = t0;
+					N = N0;
+				} else {
+					t = t1;
+					N = N1;
+				}
 				if ( t < 0.0f || t > m_Pixels[i].Distance )
 					continue;
 
+				float2	wsN = (N.x * _radius.x * _radius.x * X + N.y * _radius.y * _radius.y * Y).Normalized;
+
 				m_Pixels[i].Distance = t;
 				m_Pixels[i].Position = m_boxCenter + t * wsV;
+				m_Pixels[i].Normal = wsN;
 			}
 		}
 
@@ -429,6 +534,28 @@ namespace TestBoxFitting
 		private void floatTrackbarControlWeightExponent_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			BuildRoom();
+		}
+
+		private void radioButtonNormalWeight_CheckedChanged( object sender, EventArgs e )
+		{
+			BuildRoom();
+		}
+
+		private void checkBoxDismissKappa_CheckedChanged( object sender, EventArgs e )
+		{
+			BuildRoom();
+		}
+
+		private void radioButtonUseBest_CheckedChanged( object sender, EventArgs e )
+		{
+ 			panelDismissFactor.Visible = !radioButtonUseBest.Checked;
+// 			panelKeepBestPlanes.Visible = radioButtonUseBest.Checked;
+			BuildRoom();
+		}
+
+		private void checkBoxShowDismissedPlanes_CheckedChanged( object sender, EventArgs e )
+		{
+			panelOutput.ShowDismissedPlanes = checkBoxShowDismissedPlanes.Checked;
 		}
 	}
 }

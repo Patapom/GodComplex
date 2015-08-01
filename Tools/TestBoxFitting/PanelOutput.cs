@@ -17,6 +17,19 @@ namespace TestBoxFitting
 
 		private Bitmap		m_Bitmap = null;
 
+		private bool		m_showDismissedPlanes = false;
+		public bool			ShowDismissedPlanes {
+			get { return m_showDismissedPlanes; }
+			set { m_showDismissedPlanes = value; UpdateBitmap(); }
+		}
+
+		float2				m_center = float2.Zero;
+
+		MouseButtons		m_buttonsDown = MouseButtons.None;
+		float2				m_buttonDownPos;
+		float2				m_buttonDownCenter;
+
+
 		public PanelOutput()
 		{
 			InitializeComponent();
@@ -56,7 +69,13 @@ namespace TestBoxFitting
 		/// </summary>
 		private void InitializeComponent()
 		{
-			components = new System.ComponentModel.Container();
+			this.SuspendLayout();
+			// 
+			// PanelOutput
+			// 
+			this.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.ResumeLayout(false);
+
 		}
 
 		#endregion
@@ -91,7 +110,7 @@ namespace TestBoxFitting
 				float	world2Client = Math.Min( Width, Height ) / (2.0f * MAX_RANGE);
 				foreach ( Form1.Obstacle O in m_Owner.m_ObstaclesRound ) {
 					float	angle = (float) Math.Atan2( -O.m_Orientation.y, O.m_Orientation.x );
-					PointF	P = World2Client( O.m_Position );
+					PointF	P = World2Client( m_center + O.m_Position );
 					PointF	S = World2Client( O.m_Scale );
 							S.X -= 0.5f * W;
 							S.Y -= 0.5f * H;
@@ -109,10 +128,10 @@ namespace TestBoxFitting
 
 				foreach ( Form1.Obstacle O in m_Owner.m_ObstaclesSquare ) {
 					float2	Y = new float2( -O.m_Orientation.y, O.m_Orientation.x );
-					PointF	P0 = World2Client( O.m_Position + O.m_Scale.x * O.m_Orientation + O.m_Scale.y * Y );
-					PointF	P1 = World2Client( O.m_Position - O.m_Scale.x * O.m_Orientation + O.m_Scale.y * Y );
-					PointF	P2 = World2Client( O.m_Position - O.m_Scale.x * O.m_Orientation - O.m_Scale.y * Y );
-					PointF	P3 = World2Client( O.m_Position + O.m_Scale.x * O.m_Orientation - O.m_Scale.y * Y );
+					PointF	P0 = World2Client( m_center + O.m_Position + O.m_Scale.x * O.m_Orientation + O.m_Scale.y * Y );
+					PointF	P1 = World2Client( m_center + O.m_Position - O.m_Scale.x * O.m_Orientation + O.m_Scale.y * Y );
+					PointF	P2 = World2Client( m_center + O.m_Position - O.m_Scale.x * O.m_Orientation - O.m_Scale.y * Y );
+					PointF	P3 = World2Client( m_center + O.m_Position + O.m_Scale.x * O.m_Orientation - O.m_Scale.y * Y );
 
 					G.DrawLine( Pens.Blue, P0, P1 );
 					G.DrawLine( Pens.Blue, P1, P2 );
@@ -121,11 +140,11 @@ namespace TestBoxFitting
 				}
 
 				// Draw "depth buffer"
-				PointF	Z0 = World2Client( SamplePosition( 0.0f ) );
+				PointF	Z0 = World2Client( m_center + SamplePosition( 0.0f ) );
 				PointF	Z1;
 				for ( int i=1; i <= 1000; i++ ) {
 					float	angle = (float) (2.0 * Math.PI * i / 1000);
-					Z1 = World2Client( SamplePosition( angle ) );
+					Z1 = World2Client( m_center + SamplePosition( angle ) );
 
 					G.DrawLine( Pens.Black, Z0, Z1 );
 
@@ -135,20 +154,47 @@ namespace TestBoxFitting
 // 				PointF	Center = World2Client( float2.Zero );
 // 				G.FillEllipse( Brushes.Red, Center.X - 2, Center.Y-2, 5, 5 );
 
-				PointF	Center = World2Client( m_Owner.m_boxCenter );
+				PointF	Center = World2Client( m_center + m_Owner.m_boxCenter );
 				G.FillEllipse( Brushes.Red, Center.X - 2, Center.Y-2, 5, 5 );
 
-				// Draw main directions
-				for ( int lobeIndex=0; lobeIndex < m_Owner.m_Lobes.Length; lobeIndex++ ) {
-//					float2	mainNormal = (float2) m_Owner.m_Lobes[lobeIndex].Direction;
-					float2	mainNormal = m_Owner.m_Planes[lobeIndex].m_Normal;
-					float2	mainDirection = new float2( -mainNormal.y, mainNormal.x );
+				// Draw main planes
+				using ( Pen PlanePen = new Pen( Color.Gold, 2.0f) ) {
+					for ( int planeIndex=0; planeIndex < m_Owner.m_Lobes.Length; planeIndex++ ) {
+						if ( !m_showDismissedPlanes || !m_Owner.m_Planes[planeIndex].m_Dismissed )
+							continue;
 
-					float2	mainPosition = m_Owner.m_Planes[lobeIndex].m_Position;
+						float2	mainPosition = m_center + m_Owner.m_Planes[planeIndex].m_Position;
+						float2	mainNormal = m_Owner.m_Planes[planeIndex].m_Normal;
+						float2	mainDirection = new float2( -mainNormal.y, mainNormal.x );
 
-					PointF	D0 = World2Client( mainPosition - 20.0f * mainDirection );
-					PointF	D1 = World2Client( mainPosition + 20.0f * mainDirection );
-					G.DrawLine( Pens.DarkGreen, D0, D1 );
+						PointF	D0 = World2Client( mainPosition - 40.0f * mainDirection );
+						PointF	D1 = World2Client( mainPosition + 40.0f * mainDirection );
+						G.DrawLine( Pens.IndianRed, D0, D1 );
+
+						D0 = World2Client( mainPosition );
+						D1 = World2Client( mainPosition + 2.0f * mainNormal );
+						G.DrawLine( PlanePen, D0, D1 );
+
+						G.DrawString( planeIndex.ToString(), Font, Brushes.Gray, World2Client( mainPosition + new float2( 0.0f, -1.0f ) )  );
+					}
+					for ( int planeIndex=0; planeIndex < m_Owner.m_Lobes.Length; planeIndex++ ) {
+						if ( m_Owner.m_Planes[planeIndex].m_Dismissed )
+							continue;
+
+						float2	mainPosition = m_center + m_Owner.m_Planes[planeIndex].m_Position;
+						float2	mainNormal = m_Owner.m_Planes[planeIndex].m_Normal;
+						float2	mainDirection = new float2( -mainNormal.y, mainNormal.x );
+
+						PointF	D0 = World2Client( mainPosition - 40.0f * mainDirection );
+						PointF	D1 = World2Client( mainPosition + 40.0f * mainDirection );
+						G.DrawLine( Pens.LimeGreen, D0, D1 );
+
+						D0 = World2Client( mainPosition );
+						D1 = World2Client( mainPosition + 2.0f * mainNormal );
+						G.DrawLine( PlanePen, D0, D1 );
+
+						G.DrawString( planeIndex.ToString(), Font, Brushes.Black, World2Client( mainPosition )  );
+					}
 				}
 			}
 
@@ -180,6 +226,14 @@ namespace TestBoxFitting
 			return new PointF( x, y );
 		}
 
+		float2	Client2World( PointF _clPosition ) {
+			float	world2Client = Math.Min( Width, Height ) / (2.0f * MAX_RANGE);
+
+			float	x = (_clPosition.X - 0.5f * Width) / world2Client;
+			float	y = -(_clPosition.Y - 0.5f * Height) / world2Client;
+			return new float2( x, y );
+		}
+
 		protected override void OnPaintBackground( PaintEventArgs e )
 		{
 //			base.OnPaintBackground( e );	// Don't!
@@ -192,6 +246,31 @@ namespace TestBoxFitting
 				e.Graphics.DrawImage( m_Bitmap, 0, 0 );
 			else
 				e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
+		}
+
+		protected override void OnMouseDown( MouseEventArgs e )
+		{
+			base.OnMouseDown( e );
+			m_buttonsDown |= e.Button;
+			m_buttonDownPos = Client2World( e.Location );
+			m_buttonDownCenter = m_center;
+		}
+
+		protected override void OnMouseUp( MouseEventArgs e )
+		{
+			base.OnMouseUp( e );
+			m_buttonsDown &= ~e.Button;
+		}
+
+		protected override void OnMouseMove( MouseEventArgs e )
+		{
+			base.OnMouseMove( e );
+			if ( m_buttonsDown != MouseButtons.Left )
+				return;
+
+			float2	wsCurrent = Client2World( e.Location );
+			m_center = m_buttonDownCenter + (wsCurrent - m_buttonDownPos);
+			UpdateBitmap();
 		}
 	}
 }
