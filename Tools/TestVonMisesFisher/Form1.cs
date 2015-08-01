@@ -76,8 +76,8 @@ namespace TestVonMisesFisher
 			public Vector	Direction;
 			public double	Concentration;
 
-			public float	Phi		{ get { return (float) Math.Atan2( Direction.x, Direction.z ); } }
-			public float	Theta	{ get { return (float) Math.Acos( Direction.y ); } }
+			public float	Phi			{ get { return (float) Math.Atan2( Direction.x, Direction.z ); } }
+			public float	Theta		{ get { return (float) Math.Acos( Direction.y ); } }
 			public float	Phi_deg		{ get { return (float) (180.0 * Math.Atan2( Direction.x, Direction.z ) / Math.PI); } }
 			public float	Theta_deg	{ get { return (float) (180.0 * Math.Acos( Direction.y ) / Math.PI); } }
 		}

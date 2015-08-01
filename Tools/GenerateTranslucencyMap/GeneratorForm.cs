@@ -224,10 +224,10 @@ namespace GenerateTranslucencyMap
 			}
 
 
-LoadThicknessMap( new System.IO.FileInfo( "Leaf_thickness.tga" ) );
-LoadNormalMap( new System.IO.FileInfo( "Leaf_normal.tga" ) );
-LoadAlbedoMap( new System.IO.FileInfo( "Leaf_albedo.tga" ) );
-LoadTransmittanceMap( new System.IO.FileInfo( "Leaf_transmittance.tga" ) );
+// LoadThicknessMap( new System.IO.FileInfo( "Leaf_thickness.tga" ) );
+// LoadNormalMap( new System.IO.FileInfo( "Leaf_normal.tga" ) );
+// LoadAlbedoMap( new System.IO.FileInfo( "Leaf_albedo.tga" ) );
+// LoadTransmittanceMap( new System.IO.FileInfo( "Leaf_transmittance.tga" ) );
 
 //LoadResults( new System.IO.FileInfo( "Leaf_thickness.tga" ) );
 
