@@ -283,17 +283,18 @@ namespace TestBoxFitting
 				Plane	P = new Plane();
 				P.m_Normal = new float2( m_Lobes[planeIndex].Direction.x, m_Lobes[planeIndex].Direction.y );
 
-				float2	sumPositions = float2.Zero;
-				float	sumWeights = 0.0f;
-				for ( int i=0; i < PIXELS_COUNT; i++ ) {
-					float	dot = Math.Max( 0.0f, P.m_Normal.Dot( m_Pixels[i].Normal ) );
-							dot = (float) Math.Pow( dot, floatTrackbarControlWeightExponent.Value );
-					float	weight = dot;
-					sumPositions += weight * m_Pixels[i].Position;
-					sumWeights += weight;
-				}
+// 				float2	sumPositions = float2.Zero;
+// 				float	sumWeights = 0.0f;
+// 				for ( int i=0; i < PIXELS_COUNT; i++ ) {
+// 					float	dot = Math.Max( 0.0f, P.m_Normal.Dot( m_Pixels[i].Normal ) );
+// 							dot = (float) Math.Pow( dot, floatTrackbarControlWeightExponent.Value );
+// 					float	weight = dot;
+// 					sumPositions += weight * m_Pixels[i].Position;
+// 					sumWeights += weight;
+// 				}
+// 
+// 				P.m_Position = sumPositions / sumWeights;
 
-				P.m_Position = sumPositions / sumWeights;
 
 // 				// Harmonic mean
 // 				float	sumWeights = 0.0f;
@@ -311,11 +312,26 @@ namespace TestBoxFitting
 // 				P.m_Position = m_boxCenter - averageOrthoDistance * P.m_Normal;
 
 
-				// Replace plane to be the closest to the center
-				float2	Center2Pos = P.m_Position - m_boxCenter;
-				float	D = P.m_Normal.Dot( Center2Pos );
-				P.m_Position = m_boxCenter + D * P.m_Normal;
+// 				// Replace plane to be the closest to the center
+// 				float2	Center2Pos = P.m_Position - m_boxCenter;
+// 				float	D = P.m_Normal.Dot( Center2Pos );
+// 				P.m_Position = m_boxCenter + D * P.m_Normal;
 
+
+
+				float	sumOrthoDistances = 0.0f;
+				float	sumWeights = 0.0f;
+				for ( int i=0; i < PIXELS_COUNT; i++ ) {
+					float	dot = Math.Max( 0.0f, P.m_Normal.Dot( m_Pixels[i].Normal ) );
+							dot = (float) Math.Pow( dot, floatTrackbarControlWeightExponent.Value );
+					float	weight = dot;
+					float	D = (m_Pixels[i].Position - m_boxCenter).Dot( P.m_Normal );
+					sumOrthoDistances += weight * D;
+					sumWeights += weight;
+				}
+				sumOrthoDistances /= sumWeights;
+
+				P.m_Position = m_boxCenter + sumOrthoDistances * P.m_Normal;
 
 				m_Planes[planeIndex] = P;
 
