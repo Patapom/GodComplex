@@ -13,6 +13,7 @@ using System.Drawing.Imaging;
 
 using RendererManaged;
 using Nuaj.Cirrus.Utility;
+using Nuaj.Cirrus;
 
 namespace AreaLightTest
 {
@@ -97,6 +98,9 @@ namespace AreaLightTest
 		private Texture2D	m_Tex_AreaLightSAT = null;
 		private Texture2D	m_Tex_AreaLightSATFade = null;
 		private Texture2D	m_Tex_FalseColors = null;
+
+		private Texture2D	m_Tex_GlossMap = null;
+		private Texture2D	m_Tex_Normal = null;
 
 		private Texture2D	m_Tex_ShadowMap = null;
 #if FILTER_EXP_SHADOW_MAP
@@ -1561,6 +1565,9 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 
 			m_Tex_FalseColors = Image2Texture( new System.IO.FileInfo( "FalseColorsSpectrum2.png" ) );
 
+			m_Tex_GlossMap = Image2Texture( new System.IO.FileInfo( "wooden_dirty_floor_01_g.png" ) );
+			m_Tex_Normal = Image2Texture( new System.IO.FileInfo( "wooden_dirty_floor_01_n.png" ) );
+
 			int	SHADOW_MAP_SIZE = 512;
 			m_Tex_ShadowMap = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, DEPTH_STENCIL_FORMAT.D32 );
 #if FILTER_EXP_SHADOW_MAP
@@ -1704,6 +1711,8 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_Tex_AreaLightSAT.Dispose();
 			m_Tex_AreaLightSATFade.Dispose();
 
+			m_Tex_Normal.Dispose();
+			m_Tex_GlossMap.Dispose();
 			m_Tex_FalseColors.Dispose();
 
 			m_Device.Exit();
@@ -1811,7 +1820,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 
 			// Setup area light buffer
 			float		LighOffsetX = 1.2f;
-			float		SizeX = 0.5f;
+			float		SizeX = floatTrackbarControlLightScaleX.Value;
 			float		SizeY = 1.0f;
 			float		RollAngle = (float) (Math.PI * floatTrackbarControlLightRoll.Value / 180.0);
 			float3		LightPosition = new float3( LighOffsetX + floatTrackbarControlLightPosX.Value, 1.0f + floatTrackbarControlLightPosY.Value, -1.0f + floatTrackbarControlLightPosZ.Value );
@@ -1943,6 +1952,8 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_Tex_AreaLightSATFade.SetPS( 1 );
 			m_Tex_AreaLight.SetPS( 4 );
 			m_Tex_FalseColors.SetPS( 6 );
+			m_Tex_GlossMap.SetPS( 7 );
+			m_Tex_Normal.SetPS( 8 );
 
 			// Render the area light itself
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );

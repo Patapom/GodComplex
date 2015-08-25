@@ -17,6 +17,8 @@ Texture2D< float4 >	_TexAreaLightSATFade : register(t1);
 Texture2D< float4 >	_TexAreaLight : register(t4);
 Texture2D< float2 >	_TexBRDFIntegral : register(t5);
 Texture2D< float4 >	_TexFalseColors : register(t6);
+Texture2D< float >	_TexGloss : register(t7);
+Texture2D< float3 >	_TexNormal : register(t8);
 
 static const float4	AREA_LIGHT_TEX_DIMENSIONS = float4( 256.0, 256.0, 1.0/256.0, 1.0/256.0 );
 
@@ -84,8 +86,7 @@ static const float4	AREA_LIGHT_TEX_DIMENSIONS = float4( 256.0, 256.0, 1.0/256.0,
 float3	SampleAreaLight( float2 _UV0, float2 _UV1, uint _SliceIndex, const bool _UseAlpha ) {
 
 	float2	DeltaUV = 0.5 * (_UV1 - _UV0);
-	float	RadiusUV = max( DeltaUV.x, DeltaUV.y );
-	float	RadiusPixels = AREA_LIGHT_TEX_DIMENSIONS.x * RadiusUV;
+	float	RadiusPixels = AREA_LIGHT_TEX_DIMENSIONS.x * max( DeltaUV.x, DeltaUV.y );
 	float	MipLevel = log2( 1e-4 + RadiusPixels );
 
 	// Compute an approximation of the clipping of the projected disc and the area light:
@@ -108,7 +109,7 @@ float3	SampleAreaLight( float2 _UV0, float2 _UV1, uint _SliceIndex, const bool _
 	float2	UVCenter = 0.5 * (_UV0 + _UV1);
 	float2	SatUVCenter = saturate( UVCenter );
 
-	float	Attenuation = saturate( length( UVCenter - SatUVCenter ) / (1e-3 + RadiusUV) );
+	float	Attenuation = saturate( length( (UVCenter - SatUVCenter) / (1e-3 + DeltaUV) ) );
 			Attenuation = smoothstep( 1.0, 0.0, Attenuation );
 
 	float4	Color = _SliceIndex != ~0U ? _TexAreaLight.SampleLevel( LinearWrap, SatUVCenter, MipLevel ) : 1.0;
@@ -337,6 +338,7 @@ float	ComputeSolidAngleDiffuse( float3 _lsPosition, float3 _lsNormal, float3 _Pr
 //	_lsPosition, the local space position of the surface watching the area light
 //	_lsNormal, the local space normal of the surface
 //	_lsView, the view direction (usually, the main reflection direction)
+//	_InvSize, 1/SizeXY of the area light
 //	_Gloss, the surface's gloss factor
 //	_ClippedUVs, the UVs of the potentially clipped area light
 //	_ClippedAreaLightSolidAngle, the solid angle for the visible part of the area light
@@ -345,7 +347,7 @@ float	ComputeSolidAngleDiffuse( float3 _lsPosition, float3 _lsNormal, float3 _Pr
 //	_UV0, _UV1, the 2 UVs coordinates where to sample the SAT
 //	_ProjectedSolidAngle, an estimate of the perceived projected solid angle (i.e. cos(IncidentAngle) * dOmega)
 //
-float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _lsView, float _Roughness, float4 _ClippedUVs, float _ClippedAreaLightSolidAngle, out float2 _UV0, out float2 _UV1 ) {
+float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _lsView, float2 _InvSize, float _Roughness, float4 _ClippedUVs, float _ClippedAreaLightSolidAngle, out float2 _UV0, out float2 _UV1 ) {
 
 	// Compute the gloss cone's aperture angle
 	float	HalfAngle = 0.0003474660443456835 + _Roughness * (1.3331290497744692 - _Roughness * 0.5040552688878546);	// cf. IBL.mrpr to see the link between roughness and aperture angle
@@ -365,9 +367,11 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 	float	t = -_lsPosition.z / _lsView.z;
 	float3	I = _lsPosition + t * _lsView;	// Intersection position on the plane
 
+//return 0.1 * t;
+
 	// Compute the radius of the specular cone at hit distance
-	float	Radius = TanHalfAngle * t;		// Correct radius at hit distance
-	float	RadiusUV = 0.5 * Radius;		// Radius in UV space
+	float2	Radius = TanHalfAngle * t;	// Correct radius at hit distance
+	float2	RadiusUV = 0.5 * Radius;	// Radius in UV space
 
 	// Compute the UVs encompassing the cone's ellipsoid intersection with the area light plane
 	float2	UVcenter = float2( 0.5 * (1.0 + I.x), 0.5 * (1.0 - I.y) );
@@ -419,166 +423,347 @@ struct SurfaceContext {
 	float	fresnelStrength;
 };
 
-void	ComputeAreaLightLighting( in SurfaceContext _Surface, uint _SliceIndex, float _Shadow, float2 _RadiusFalloffCutoff, out float3 _RadianceDiffuse, out float3 _RadianceSpecular ) {
+// Former routine called in a single block
+// void	ComputeAreaLightLighting( in SurfaceContext _Surface, uint _SliceIndex, float _Shadow, float2 _RadiusFalloffCutoff, out float3 _RadianceDiffuse, out float3 _RadianceSpecular ) {
+// 
+// 	_RadianceDiffuse = _RadianceSpecular = 0.0;
+// 
+// 	float	Roughness = max( 0.01, _Surface.roughness * _Surface.roughness );
+// 
+// 
+// 	// 1] =========== Reconstruct area light information from fragmented data from the light context ===========
+// 	float3	wsPosition = _Surface.wsPosition;
+// 
+// 	float3	wsLightPos = _AreaLightT;
+// 	float3	wsLightZ = _AreaLightZ;
+// 	float3	wsCenter2Position = wsPosition - wsLightPos;
+// 	if ( dot( wsCenter2Position, wsLightZ ) <= 0.0 || _Shadow <= 0.0 ) {
+// 		return;	// We're standing behind the area light...
+// 	}
+// 
+// 	float3	wsLightX = _AreaLightX;
+// 	float3	wsLightY = cross( wsLightZ, wsLightX );	// No need to normalize
+// 
+// 	float	SizeX = _AreaLightScaleX;
+// 	float	SizeY = _AreaLightScaleY;
+// 
+// 	float	Diffusion = _AreaLightDiffusion;
+// 
+// 	float3	ProjectionDirection = _ProjectionDirectionDiff;
+// 
+// 
+// 	// 2] =========== Transform position & normal into local space ===========
+// 	float3	wsNormal = _Surface.wsNormal;
+// 	float3	wsView = _Surface.wsView;								// Toward camera
+// 	float3	wsLight = normalize( -_ProjectionDirectionDiff );		// Toward light
+// 	float3	wsReflectedView = reflect( -wsView, wsNormal );			// There is a negative sign because we need the view pointing toward the surface here!
+// 
+// 	float3	lsPosition = float3(dot( wsCenter2Position, wsLightX ),	// Transform world position into local area light space
+// 								dot( wsCenter2Position, wsLightY ),
+// 								dot( wsCenter2Position, wsLightZ ) );
+// 
+// 	float3	lsNormal = float3(	dot( wsNormal, wsLightX ),			// Transform world normal into local area light space
+// 								dot( wsNormal, wsLightY ),
+// 								dot( wsNormal, wsLightZ ) );
+// 
+// 	float3	lsView = float3(	dot( wsReflectedView, wsLightX ),	// Transform reflected view direction into local area light space
+// 								dot( wsReflectedView, wsLightY ),
+// 								dot( wsReflectedView, wsLightZ ) );
+// 
+// 	// Account for scaling
+// 	float2	InvScale = 1.0 / float2( SizeX, SizeY );
+// 	lsView.xy *= InvScale;
+// 	lsPosition.xy *= InvScale;
+// 
+// 	// Once we get there, lsPosition, lsView and lsNormal all are in local space, in front of the canonical area light square:
+// 	//
+// 	//	(-1,+1)			 Y			(+1,+1)
+// 	//			o--------^--------o
+// 	//			|        |        |
+// 	//			|        |        |
+// 	//			|        |        |
+// 	//			|        |        |
+// 	//			|        o -------> X
+// 	//			|       Z         |
+// 	//			|                 |
+// 	//			|                 |
+// 	//			|                 |
+// 	//			o-----------------o
+// 	//	(-1,-1)						(+1,-1)
+// 	//
+// 	//
+// 
+// 
+// 	// 3] =========== Compute potential area light clipping by the surface's plane ===========
+// 	float4	ClippedUVs = ComputeAreaLightClipping( lsPosition, lsNormal );
+// 	float2	DeltaUVs = ClippedUVs.zw - ClippedUVs.xy;
+// 	if ( any( DeltaUVs < 1e-4 ) ) {
+// 		return;	// The light is fully clipped so there's no use going any further...
+// 	}
+// 	float	SolidAngle = RectangleSolidAngle( lsPosition, ClippedUVs.xy, ClippedUVs.zw );
+// 
+// 
+// 	// Compute light direction toward the center of the clipped area
+// 	float2	CenterUV = 0.5 * (ClippedUVs.xy + ClippedUVs.zw);
+// 	wsLight = normalize( (2.0*CenterUV.x-1.0) * wsLightX + (1.0-2.0*CenterUV.y) * wsLightY - wsCenter2Position );
+// 
+// 
+// 	// 4] =========== Compute diffuse & specular solid angles ===========
+// 	float2	UV0_diffuse, UV1_diffuse;
+// 	float	SolidAngle_diffuse = ComputeSolidAngleDiffuse( lsPosition, lsNormal, ProjectionDirection, ClippedUVs, SolidAngle, UV0_diffuse, UV1_diffuse );
+// 
+// 	float2	UV0_specular, UV1_specular;
+// 	float	SolidAngle_specular = ComputeSolidAngleSpecular( lsPosition, lsNormal, lsView, Roughness, ClippedUVs, SolidAngle, UV0_specular, UV1_specular );
+// 
+// 
+// 	// 5] =========== Compute the integration ===========
+// //	float	AreaLightSliceIndex = _Light.m_AreaLightSlice;
+// //	float3	ShadowedLightColor = _Light.m_shadow * _Light.m_color;
+// 
+// 	float3	ShadowedLightColor = _Shadow * _AreaLightIntensity;
+// 
+// 			// Assume radiance * 1/PI if the area light is largely diffusing
+// //			ShadowedLightColor *= lerp( 1.0, INVPI, _AreaLightDiffusion );
+// 
+// 	float3	H = normalize( wsView + wsLight );
+// 	float	VdotN = saturate( dot( wsView, wsNormal ) );
+// 	float	HdotN = saturate( dot( H, wsNormal ) );
+// 
+// 		// 5.1] ----- Compute Fresnel -----
+// //	float3	FresnelSpecular = FresnelAccurate( _Surface.IOR, VdotN, _Surface.fresnelStrength );
+// 	float3	FresnelSpecular = FresnelAccurate( _Surface.IOR, HdotN, _Surface.fresnelStrength );
+// 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;	// Simplify a lot! Don't use Disney's Fresnel as it needs a light direction and we can't provide one here...
+// 
+// 		// -----------------------------------
+// 		// 5.2] ----- Diffuse -----
+// 	float3	Irradiance_diffuse = SampleAreaLight( UV0_diffuse, UV1_diffuse, _SliceIndex, false );
+// 			Irradiance_diffuse *= ShadowedLightColor;
+// 
+// 	float3	IntegralBRDF_diffuse = _Surface.diffuseAlbedo * FresnelDiffuse * SolidAngle_diffuse;
+// 
+// 	_RadianceDiffuse = Irradiance_diffuse * IntegralBRDF_diffuse;
+// 
+// 
+// 		// -----------------------------------
+// 		// 5.3] ----- Specular -----
+// 	float3	Irradiance_specular = SampleAreaLight( UV0_specular, UV1_specular, _SliceIndex, false );
+// 			Irradiance_specular *= ShadowedLightColor;
+// 
+// 	// Use the pre-integrated BRDF table to approximate specular BRDF integration over the entire area light
+// 	float2	PreIntegratedBRDF = _TexBRDFIntegral.SampleLevel( LinearClamp, float2( VdotN, Roughness ), 0.0 );
+// 	float3	F0 = Fresnel_F0FromIOR( _Surface.IOR );
+// 
+// //	SolidAngle *= saturate( dot( lsNormal, lsView ) ) * saturate( -lsView.z );
+// 
+// //	float3	IntegralBRDF_specular = F0 * PreIntegratedBRDF.x * SolidAngle_specular + PreIntegratedBRDF.y;
+// 	float3	IntegralBRDF_specular = F0 * PreIntegratedBRDF.x * SolidAngle_specular + (1.0-Roughness*Roughness)*PreIntegratedBRDF.y;	// Remove ambient term when totally rough
+// 
+// 
+// 	// Compute Ward
+// //	float3	wsDir = normalize( lerp( wsLight, wsReflectedView, _AreaLightDiffusion ) );
+// //	float3	wsDir = normalize( lerp( wsLight, wsReflectedView, pow( saturate( _AreaLightDiffusion ), 0.25 ) ) );
+// 	float3	wsDir = wsReflectedView;
+// 	float	WardBRDF_specular = ComputeWard( wsDir, wsView, _Surface.wsNormal, _Surface.wsTangent, _Surface.wsBiTangent, Roughness );
+// 
+// //	_RadianceSpecular = Irradiance_specular * lerp( FresnelSpecular * WardBRDF_specular * SolidAngle_specular, IntegralBRDF_specular, _AreaLightDiffusion );
+// 	_RadianceSpecular = Irradiance_specular * IntegralBRDF_specular;
+// //	_RadianceSpecular = Irradiance_specular * FresnelSpecular * WardBRDF_specular * SolidAngle_specular;
+// 
+// 
+// //_RadianceSpecular = 100000.0 * SolidAngle_specular;
+// //_RadianceSpecular = WardBRDF_specular;
+// 
+// 
+// 
+// 	// 6] =========== Attenuate with distance ===========
+// 	float	Distance2Light = length( wsCenter2Position );
+// // 	float	Attenuation = 1.0 / (Distance2Light*Distance2Light)
+// // 						* smoothstep( _RadiusFalloffCutoff.y, _RadiusFalloffCutoff.x, Distance2Light );	// Now with forced cutoff smoothed out like this (so we keep the physically correct 1/r� but can nonetheless artificially attenuate early)
+// 	float	Attenuation = smoothstep( _RadiusFalloffCutoff.y, _RadiusFalloffCutoff.x, Distance2Light );	// Now with forced cutoff smoothed out like this (so we keep the physically correct 1/r� but can nonetheless artificially attenuate early)
+// 
+// 	_RadianceDiffuse *= Attenuation;
+// 	_RadianceSpecular *= Attenuation;
+// 
+// 
+// //_RadianceSpecular = WardBRDF_specular * SolidAngle_specular;
+// }
 
-	_RadianceDiffuse = _RadianceSpecular = 0.0;
+///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+// AREA LIGHT COMPUTE LIGHTING
+///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 
-	float	Roughness = max( 0.01, _Surface.roughness * _Surface.roughness );
+struct AreaLightContext {
+	float		m_attenuation;			// Combined radial and angular attenuations
+	float		m_diffusion;			// Light diffusion factor in [0,1]
+	float3		m_color;				// Light "color" (radiance or irradiance)
+	float		m_shadow;				// Shadow factor
+	float		m_roughness;			// Tweaked roughness to be used for specular term
+	float3		m_wsLight;				// Pointing toward the center of the clipped area light patch
 
+	float		m_solidAngle_area;		// The solid angle of the area light perceived by the surface (clipped by the surface's plane)
+	float		m_solidAngle_diffuse;	// The solid angle to use for the diffuse part of the BRDF
+	float		m_solidAngle_specular;	// The solid angle to use for the specular part of the BRDF
+
+	float3		m_irradianceDiffuse;	// The diffuse irradiance arriving at the surface
+	float3		m_irradianceSpecular;	// The specular irradiance arriving at the surface
+};
+
+struct ComputeLightingResult {
+	float3	accumDiffuse;
+	float3	accumSpecular;
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+// Creates an "advanced" light context for area lights
+//
+AreaLightContext	CreateAreaLightContext( in SurfaceContext _Surface, uint _SliceIndex, float _Shadow, float2 _RadiusFalloffCutoff, const uint _quality ) {
+
+	AreaLightContext	Result = (AreaLightContext) 0;
+
+	Result.m_color = _AreaLightIntensity;//_Light.m_color;	// Already provided, just forward it...
+	Result.m_shadow = _Shadow;//_Light.m_shadow;	// Already provided, just forward it...
+	Result.m_roughness = max( 0.01, _Surface.roughness * _Surface.roughness );
 
 	// 1] =========== Reconstruct area light information from fragmented data from the light context ===========
 	float3	wsPosition = _Surface.wsPosition;
-
-	float3	wsLightPos = _AreaLightT;
-	float3	wsLightZ = _AreaLightZ;
+	float3	wsLightPos = _AreaLightT;//_Light.m_wsLightPos;
+	float3	wsLightZ = _AreaLightZ;//_Light.m_SpotDir;
 	float3	wsCenter2Position = wsPosition - wsLightPos;
-	if ( dot( wsCenter2Position, wsLightZ ) <= 0.0 || _Shadow <= 0.0 ) {
-		return;	// We're standing behind the area light...
-	}
+	if ( dot( wsCenter2Position, wsLightZ ) > 0.0 && _Shadow > 0.0 ) {	// Are we standing behind the area light?
 
-	float3	wsLightX = _AreaLightX;
-	float3	wsLightY = cross( wsLightZ, wsLightX );	// No need to normalize
+		float3	wsLightX = _AreaLightX;//_Light.m_AreaLightX;
+		float3	wsLightY = cross( wsLightZ, wsLightX );		// No need to normalize
 
-	float	SizeX = _AreaLightScaleX;
-	float	SizeY = _AreaLightScaleY;
+		float	SizeX = _AreaLightScaleX;//_Light.m_Decay;
+		float	SizeY = _AreaLightScaleY;//_Light.m_originOffset;
 
-	float	Diffusion = _AreaLightDiffusion;
+		Result.m_diffusion = _AreaLightDiffusion;//-_Light.m_ScatterValue;		// Stored as negative on CPU side to avoid scattering computation condition (if m_ScatterValue > 0)
 
-	float3	ProjectionDirection = _ProjectionDirectionDiff;
+		float3	ProjectionDirection = _ProjectionDirectionDiff;//_Light.m_SpotParms;
+
+		// 1] =========== Compute attenuation with distance ===========
+		float	Distance2Light = length( wsCenter2Position );
+		Result.m_attenuation = smoothstep( _RadiusFalloffCutoff.y, _RadiusFalloffCutoff.x, Distance2Light );	// Now with forced cutoff smoothed out like this (so we keep the physically correct 1/r� but can nonetheless artificially attenuate early)
+
+		// 2] =========== Transform position & normal into local space ===========
+		float3	wsNormal = _Surface.wsNormal;
+		float3	wsView = _Surface.wsView;								// Toward camera
+		float3	wsReflectedView = reflect( -wsView, wsNormal );			// There is a negative sign because we need the view pointing toward the surface here!
+
+		float3	lsPosition = float3(dot( wsCenter2Position, wsLightX ),	// Transform world position into local area light space
+									dot( wsCenter2Position, wsLightY ),
+									dot( wsCenter2Position, wsLightZ ) );
+
+		float3	lsNormal = float3(	dot( wsNormal, wsLightX ),			// Transform world normal into local area light space
+									dot( wsNormal, wsLightY ),
+									dot( wsNormal, wsLightZ ) );
+
+		float3	lsView = float3(	dot( wsReflectedView, wsLightX ),	// Transform reflected view direction into local area light space
+									dot( wsReflectedView, wsLightY ),
+									dot( wsReflectedView, wsLightZ ) );
+
+		// Account for scaling
+		float2	InvScale = 1.0 / float2( SizeX, SizeY );
+		lsPosition.xy *= InvScale;
+		lsView.xy *= InvScale;
+//		lsView = normalize( lsView * float3( InvScale, 1.0 ) );
+//		lsView.xy *= float2( SizeX, SizeY );
 
 
-	// 2] =========== Transform position & normal into local space ===========
+		// Once we get there, lsPosition, lsView and lsNormal all are in local space, in front of the canonical area light square:
+		//
+		//	(-1,+1)			 Y			(+1,+1)
+		//			o--------^--------o
+		//			|        |        |
+		//			|        |        |
+		//			|        |        |
+		//			|        o -------> X
+		//			|       Z         |
+		//			|                 |
+		//			|                 |
+		//			o-----------------o
+		//	(-1,-1)						(+1,-1)
+		//
+		//
+
+		// 3] =========== Compute potential area light clipping by the surface's plane ===========
+		float4	ClippedUVs = ComputeAreaLightClipping( lsPosition, lsNormal );
+		float2	DeltaUVs = ClippedUVs.zw - ClippedUVs.xy;
+		if ( all( DeltaUVs > 1e-4 ) ) {	// Is the light fully clipped?
+			Result.m_solidAngle_area = RectangleSolidAngle( lsPosition, ClippedUVs.xy, ClippedUVs.zw );
+
+			// Compute light direction toward the center of the clipped area
+			float2	CenterUV = 0.5 * (ClippedUVs.xy + ClippedUVs.zw);
+			Result.m_wsLight = normalize( (2.0*CenterUV.x-1.0) * wsLightX + (1.0-2.0*CenterUV.y) * wsLightY - wsCenter2Position );
+
+			// 4] =========== Compute diffuse & specular solid angles ===========
+			float2	UV0_diffuse, UV1_diffuse;
+			Result.m_solidAngle_diffuse = ComputeSolidAngleDiffuse( lsPosition, lsNormal, ProjectionDirection, ClippedUVs, Result.m_solidAngle_area, UV0_diffuse, UV1_diffuse );
+
+			float2	UV0_specular, UV1_specular;
+			Result.m_solidAngle_specular = ComputeSolidAngleSpecular( lsPosition, lsNormal, lsView, InvScale, Result.m_roughness, ClippedUVs, Result.m_solidAngle_area, UV0_specular, UV1_specular );
+
+			// 5] =========== Compute diffuse & specular irradiance ===========
+			Result.m_irradianceDiffuse = SampleAreaLight( UV0_diffuse, UV1_diffuse, _SliceIndex, false );
+			Result.m_irradianceSpecular = SampleAreaLight( UV0_specular, UV1_specular, _SliceIndex, false ).xyz;
+		}
+	}	// if ( dot( wsCenter2Position, wsLightZ ) > 0.0 && _Light.m_shadow > 0.0 )
+
+	return Result;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+// Default lighting computation function, to be called from the BRDF
+//
+void	ComputeAreaLightLighting( inout ComputeLightingResult _Result, in SurfaceContext _Surface, in AreaLightContext _Light ) {
+
+	float3	ShadowedLightColor = _Light.m_attenuation * _Light.m_shadow * _Light.m_color;
+//			ShadowedLightColor *= lerp( 1.0, INVPI, _Light.m_diffusion );	// Assume radiance * 1/PI if the area light is largely diffusing
+
 	float3	wsNormal = _Surface.wsNormal;
-	float3	wsView = _Surface.wsView;								// Toward camera
-	float3	wsLight = normalize( -_ProjectionDirectionDiff );		// Toward light
-	float3	wsReflectedView = reflect( -wsView, wsNormal );			// There is a negative sign because we need the view pointing toward the surface here!
-
-	float3	lsPosition = float3(dot( wsCenter2Position, wsLightX ),	// Transform world position into local area light space
-								dot( wsCenter2Position, wsLightY ),
-								dot( wsCenter2Position, wsLightZ ) );
-
-	float3	lsNormal = float3(	dot( wsNormal, wsLightX ),			// Transform world normal into local area light space
-								dot( wsNormal, wsLightY ),
-								dot( wsNormal, wsLightZ ) );
-
-	float3	lsView = float3(	dot( wsReflectedView, wsLightX ),	// Transform reflected view direction into local area light space
-								dot( wsReflectedView, wsLightY ),
-								dot( wsReflectedView, wsLightZ ) );
-
-	// Account for scaling
-	float2	InvScale = 1.0 / float2( SizeX, SizeY );
-	lsView.xy *= InvScale;
-	lsPosition.xy *= InvScale;
-
-	// Once we get there, lsPosition, lsView and lsNormal all are in local space, in front of the canonical area light square:
-	//
-	//	(-1,+1)			 Y			(+1,+1)
-	//			o--------^--------o
-	//			|        |        |
-	//			|        |        |
-	//			|        |        |
-	//			|        |        |
-	//			|        o -------> X
-	//			|       Z         |
-	//			|                 |
-	//			|                 |
-	//			|                 |
-	//			o-----------------o
-	//	(-1,-1)						(+1,-1)
-	//
-	//
-
-
-	// 3] =========== Compute potential area light clipping by the surface's plane ===========
-	float4	ClippedUVs = ComputeAreaLightClipping( lsPosition, lsNormal );
-	float2	DeltaUVs = ClippedUVs.zw - ClippedUVs.xy;
-	if ( any( DeltaUVs < 1e-4 ) ) {
-		return;	// The light is fully clipped so there's no use going any further...
-	}
-	float	SolidAngle = RectangleSolidAngle( lsPosition, ClippedUVs.xy, ClippedUVs.zw );
-
-
-	// Compute light direction toward the center of the clipped area
-	float2	CenterUV = 0.5 * (ClippedUVs.xy + ClippedUVs.zw);
-	wsLight = normalize( (2.0*CenterUV.x-1.0) * wsLightX + (1.0-2.0*CenterUV.y) * wsLightY - wsCenter2Position );
-
-
-	// 4] =========== Compute diffuse & specular solid angles ===========
-	float2	UV0_diffuse, UV1_diffuse;
-	float	SolidAngle_diffuse = ComputeSolidAngleDiffuse( lsPosition, lsNormal, ProjectionDirection, ClippedUVs, SolidAngle, UV0_diffuse, UV1_diffuse );
-
-	float2	UV0_specular, UV1_specular;
-	float	SolidAngle_specular = ComputeSolidAngleSpecular( lsPosition, lsNormal, lsView, Roughness, ClippedUVs, SolidAngle, UV0_specular, UV1_specular );
-
-
-	// 5] =========== Compute the integration ===========
-//	float	AreaLightSliceIndex = _Light.m_AreaLightSlice;
-//	float3	ShadowedLightColor = _Light.m_shadow * _Light.m_color;
-
-	float3	ShadowedLightColor = _Shadow * _AreaLightIntensity;
-
-			// Assume radiance * 1/PI if the area light is largely diffusing
-//			ShadowedLightColor *= lerp( 1.0, INVPI, _AreaLightDiffusion );
+	float3	wsView = _Surface.wsView;				// Toward camera
+	float3	wsLight = _Light.m_wsLight;				// Toward the light
 
 	float3	H = normalize( wsView + wsLight );
 	float	VdotN = saturate( dot( wsView, wsNormal ) );
 	float	HdotN = saturate( dot( H, wsNormal ) );
 
-		// 5.1] ----- Compute Fresnel -----
-//	float3	FresnelSpecular = FresnelAccurate( _Surface.IOR, VdotN, _Surface.fresnelStrength );
+	// 1] ----- Compute Fresnel -----
 	float3	FresnelSpecular = FresnelAccurate( _Surface.IOR, HdotN, _Surface.fresnelStrength );
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;	// Simplify a lot! Don't use Disney's Fresnel as it needs a light direction and we can't provide one here...
 
-		// -----------------------------------
-		// 5.2] ----- Diffuse -----
-	float3	Irradiance_diffuse = SampleAreaLight( UV0_diffuse, UV1_diffuse, _SliceIndex, false );
-			Irradiance_diffuse *= ShadowedLightColor;
 
-	float3	IntegralBRDF_diffuse = _Surface.diffuseAlbedo * FresnelDiffuse * SolidAngle_diffuse;
+	// 2] ----- Diffuse term -----
+	float3	Irradiance_diffuse = ShadowedLightColor * _Light.m_irradianceDiffuse;
 
-	_RadianceDiffuse = Irradiance_diffuse * IntegralBRDF_diffuse;
+	float3	IntegralBRDF_diffuse = _Surface.diffuseAlbedo * FresnelDiffuse * _Light.m_solidAngle_diffuse;	// = Fresnel * Rho/PI * (N.L) * dw
 
-
-		// -----------------------------------
-		// 5.3] ----- Specular -----
-	float3	Irradiance_specular = SampleAreaLight( UV0_specular, UV1_specular, _SliceIndex, false );
-			Irradiance_specular *= ShadowedLightColor;
-
-	// Use the pre-integrated BRDF table to approximate specular BRDF integration over the entire area light
-	float2	PreIntegratedBRDF = _TexBRDFIntegral.SampleLevel( LinearClamp, float2( VdotN, Roughness ), 0.0 );
-	float3	F0 = Fresnel_F0FromIOR( _Surface.IOR );
-
-//	SolidAngle *= saturate( dot( lsNormal, lsView ) ) * saturate( -lsView.z );
-
-//	float3	IntegralBRDF_specular = F0 * PreIntegratedBRDF.x * SolidAngle_specular + PreIntegratedBRDF.y;
-	float3	IntegralBRDF_specular = F0 * PreIntegratedBRDF.x * SolidAngle_specular + (1.0-Roughness*Roughness)*PreIntegratedBRDF.y;	// Remove ambient term when totally rough
+	_Result.accumDiffuse += Irradiance_diffuse * IntegralBRDF_diffuse;
 
 
-	// Compute Ward
-//	float3	wsDir = normalize( lerp( wsLight, wsReflectedView, _AreaLightDiffusion ) );
-//	float3	wsDir = normalize( lerp( wsLight, wsReflectedView, pow( saturate( _AreaLightDiffusion ), 0.25 ) ) );
-	float3	wsDir = wsReflectedView;
-	float	WardBRDF_specular = ComputeWard( wsDir, wsView, _Surface.wsNormal, _Surface.wsTangent, _Surface.wsBiTangent, Roughness );
+	// 3] ----- Specular -----
+	float3	Irradiance_specular = ShadowedLightColor * _Light.m_irradianceSpecular;
 
-//	_RadianceSpecular = Irradiance_specular * lerp( FresnelSpecular * WardBRDF_specular * SolidAngle_specular, IntegralBRDF_specular, _AreaLightDiffusion );
-	_RadianceSpecular = Irradiance_specular * IntegralBRDF_specular;
-//	_RadianceSpecular = Irradiance_specular * FresnelSpecular * WardBRDF_specular * SolidAngle_specular;
+	#if 1
+		// Use the pre-integrated BRDF table to approximate specular BRDF integration over the entire area light
+// 		float2	PreIntegratedBRDF = FetchPreIntegratedBRDF( VdotN, _Light.m_roughness );
+		float2	PreIntegratedBRDF = _TexBRDFIntegral.SampleLevel( LinearClamp, float2( VdotN, _Light.m_roughness ), 0.0 );
+ 		float3	F0 = Fresnel_F0FromIOR( _Surface.IOR );
+//				float3	IntegralBRDF_specular = F0 * PreIntegratedBRDF.x * _Light.m_solidAngle_specular + PreIntegratedBRDF.y;
+ 		float3	IntegralBRDF_specular = F0 * PreIntegratedBRDF.x * _Light.m_solidAngle_specular + (1.0-_Light.m_roughness*_Light.m_roughness)*PreIntegratedBRDF.y;	// Remove ambient term when totally rough
+	#else
+		// Use a basic Ward for specular
+		float3	wsReflectedView = reflect( -wsView, wsNormal );			// There is a negative sign because we need the view pointing toward the surface here!
+		float3	wsDir = normalize( lerp( wsLight, wsReflectedView, _Light.m_diffusion ) );
+		float	WardBRDF_specular = ComputeWard( wsDir, wsView, _Surface.wsNormal, _Surface.wsTangent, _Surface.wsBiTangent, _Light.m_roughness );
+		float3	IntegralBRDF_specular = FresnelSpecular * WardBRDF_specular * _Light.m_solidAngle_specular;	// = Fresnel * Ward( L, V, N ) * (N.L) * dw
+	#endif
 
+	_Result.accumSpecular += Irradiance_specular * IntegralBRDF_specular;
 
-//_RadianceSpecular = 100000.0 * SolidAngle_specular;
-//_RadianceSpecular = WardBRDF_specular;
-
-
-
-	// 6] =========== Attenuate with distance ===========
-	float	Distance2Light = length( wsCenter2Position );
-// 	float	Attenuation = 1.0 / (Distance2Light*Distance2Light)
-// 						* smoothstep( _RadiusFalloffCutoff.y, _RadiusFalloffCutoff.x, Distance2Light );	// Now with forced cutoff smoothed out like this (so we keep the physically correct 1/r� but can nonetheless artificially attenuate early)
-	float	Attenuation = smoothstep( _RadiusFalloffCutoff.y, _RadiusFalloffCutoff.x, Distance2Light );	// Now with forced cutoff smoothed out like this (so we keep the physically correct 1/r� but can nonetheless artificially attenuate early)
-
-	_RadianceDiffuse *= Attenuation;
-	_RadianceSpecular *= Attenuation;
-
-
-//_RadianceSpecular = WardBRDF_specular * SolidAngle_specular;
+//_Result.accumSpecular = _Light.m_solidAngle_specular;
 }
+//
+///////////////////////////////////////////////////////////////////////////////////////////////

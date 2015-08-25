@@ -61,9 +61,10 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float3	wsBiTangent = normalize( _In.BiTangent );
 	float3	wsView = normalize( wsPosition - _Camera2World[3].xyz );
 	
-	float	Roughness = 1.0 - _Gloss;
-//	float	Roughness = abs( fmod( 0.5*iGlobalTime, 2.0 ) - 1.0 );
+	float	Roughness = 1.0 - _Gloss;// * _TexGloss.Sample( LinearWrap, 10.0 * _In.UV );
 	
+//return _TexGloss.Sample( LinearWrap, 2.0 * _In.UV );
+
 	const float3	RhoD = _DiffuseAlbedo;
 	const float3	F0 = lerp( 0.04, _SpecularTint, _Metal );
 	float3	IOR = Fresnel_IORFromF0( F0 );
@@ -73,7 +74,17 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float	RadiusFalloff = 8.0;
 	float	RadiusCutoff = 10.0;
 	
+// 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// 	// Add small normal perturbations
+// 	wsNormal.x += 0.05 * sin( 1000.0 * wsPosition.x );
+// 	wsNormal.z += 0.05 * sin( 1000.0 * wsPosition.z );
+// 	wsNormal = normalize( wsNormal );
 	
+// 	float3	tsNormal = _TexNormal.Sample( LinearWrap, 10.0 * _In.UV );
+// 	wsNormal = tsNormal.x * wsTangent + tsNormal.y * wsBiTangent + tsNormal.z * wsNormal;
+// 	wsTangent = normalize( cross( wsNormal, wsBiTangent ) );
+// 	wsBiTangent = cross( wsTangent, wsNormal );
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//
 	SurfaceContext	surf;
@@ -89,8 +100,15 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	
 	uint	AreaLightSliceIndex = _UseTexture ? 0 : ~0U;
 	
-	float3	RadianceDiffuse, RadianceSpecular;
-	ComputeAreaLightLighting( surf, AreaLightSliceIndex, Shadow, float2( RadiusFalloff, RadiusCutoff ), RadianceDiffuse, RadianceSpecular );
+// 	float3	RadianceDiffuse, RadianceSpecular;
+// 	ComputeAreaLightLighting( surf, AreaLightSliceIndex, Shadow, float2( RadiusFalloff, RadiusCutoff ), RadianceDiffuse, RadianceSpecular );
+
+	ComputeLightingResult	Accum = (ComputeLightingResult) 0;
+	AreaLightContext		AreaContext = CreateAreaLightContext( surf, AreaLightSliceIndex, Shadow, float2( RadiusFalloff, RadiusCutoff ), 2 );
+	ComputeAreaLightLighting( Accum, surf, AreaContext );
+ 	float3	RadianceDiffuse = Accum.accumDiffuse;
+	float3	RadianceSpecular = Accum.accumSpecular;
+return float4( RadianceSpecular, 1 );
 
 	float3	Result = 0.01 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular;
 	
