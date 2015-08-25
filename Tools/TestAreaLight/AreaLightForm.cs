@@ -1565,8 +1565,8 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 
 			m_Tex_FalseColors = Image2Texture( new System.IO.FileInfo( "FalseColorsSpectrum2.png" ) );
 
-			m_Tex_GlossMap = Image2Texture( new System.IO.FileInfo( "wooden_dirty_floor_01_g.png" ) );
-			m_Tex_Normal = Image2Texture( new System.IO.FileInfo( "wooden_dirty_floor_01_n.png" ) );
+// 			m_Tex_GlossMap = Image2Texture( new System.IO.FileInfo( "wooden_dirty_floor_01_g.png" ) );
+// 			m_Tex_Normal = Image2Texture( new System.IO.FileInfo( "wooden_dirty_floor_01_n.png" ) );
 
 			int	SHADOW_MAP_SIZE = 512;
 			m_Tex_ShadowMap = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, DEPTH_STENCIL_FORMAT.D32 );
@@ -1711,8 +1711,8 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_Tex_AreaLightSAT.Dispose();
 			m_Tex_AreaLightSATFade.Dispose();
 
-			m_Tex_Normal.Dispose();
-			m_Tex_GlossMap.Dispose();
+// 			m_Tex_Normal.Dispose();
+// 			m_Tex_GlossMap.Dispose();
 			m_Tex_FalseColors.Dispose();
 
 			m_Device.Exit();
@@ -1753,7 +1753,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			if ( _Shader == m_Shader_RenderScene )
 			{
 				m_CB_Object.m._Local2World.MakeLookAt( float3.Zero, float3.UnitY, float3.UnitX );
-				m_CB_Object.m._Local2World.Scale( new float3( 8.0f, 8.0f, 1.0f ) );
+				m_CB_Object.m._Local2World.Scale( new float3( 16.0f, 16.0f, 1.0f ) );
 				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
 				m_CB_Object.m._DiffuseAlbedo = 0.5f * new float3( 1, 1, 1 );
 				m_CB_Object.m._SpecularTint = new float3( 0.95f, 0.94f, 0.93f );
@@ -1952,8 +1952,8 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_Tex_AreaLightSATFade.SetPS( 1 );
 			m_Tex_AreaLight.SetPS( 4 );
 			m_Tex_FalseColors.SetPS( 6 );
-			m_Tex_GlossMap.SetPS( 7 );
-			m_Tex_Normal.SetPS( 8 );
+// 			m_Tex_GlossMap.SetPS( 7 );
+// 			m_Tex_Normal.SetPS( 8 );
 
 			// Render the area light itself
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );

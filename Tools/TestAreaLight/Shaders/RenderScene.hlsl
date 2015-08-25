@@ -71,8 +71,8 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	
 	float	Shadow = ComputeShadow( wsPosition, wsNormal, Debug );
 	
-	float	RadiusFalloff = 8.0;
-	float	RadiusCutoff = 10.0;
+	float	RadiusFalloff = 16.0;
+	float	RadiusCutoff = 20.0;
 	
 // 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 	// Add small normal perturbations
@@ -102,13 +102,12 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	
 // 	float3	RadianceDiffuse, RadianceSpecular;
 // 	ComputeAreaLightLighting( surf, AreaLightSliceIndex, Shadow, float2( RadiusFalloff, RadiusCutoff ), RadianceDiffuse, RadianceSpecular );
-
+	
 	ComputeLightingResult	Accum = (ComputeLightingResult) 0;
 	AreaLightContext		AreaContext = CreateAreaLightContext( surf, AreaLightSliceIndex, Shadow, float2( RadiusFalloff, RadiusCutoff ), 2 );
 	ComputeAreaLightLighting( Accum, surf, AreaContext );
  	float3	RadianceDiffuse = Accum.accumDiffuse;
 	float3	RadianceSpecular = Accum.accumSpecular;
-return float4( RadianceSpecular, 1 );
 
 	float3	Result = 0.01 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular;
 	

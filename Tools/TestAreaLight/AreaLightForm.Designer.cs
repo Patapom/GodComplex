@@ -504,7 +504,7 @@
 			this.floatTrackbarControlKernelSize.RangeMin = 0F;
 			this.floatTrackbarControlKernelSize.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlKernelSize.TabIndex = 1;
-			this.floatTrackbarControlKernelSize.Value = 3.7F;
+			this.floatTrackbarControlKernelSize.Value = 3.01F;
 			this.floatTrackbarControlKernelSize.VisibleRangeMax = 32F;
 			// 
 			// label16
