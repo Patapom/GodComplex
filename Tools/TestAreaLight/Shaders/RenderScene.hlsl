@@ -84,7 +84,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 // 	wsNormal = tsNormal.x * wsTangent + tsNormal.y * wsBiTangent + tsNormal.z * wsNormal;
 // 	wsTangent = normalize( cross( wsNormal, wsBiTangent ) );
 // 	wsBiTangent = cross( wsTangent, wsNormal );
-
+	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//
 	SurfaceContext	surf;
@@ -108,12 +108,12 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	ComputeAreaLightLighting( Accum, surf, AreaContext );
  	float3	RadianceDiffuse = Accum.accumDiffuse;
 	float3	RadianceSpecular = Accum.accumSpecular;
-
+	
 	float3	Result = 0.01 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular;
 	
 //Result =  RadianceDiffuse;
 //Result =  RadianceSpecular;
-
+	
 	
 //Shadow = smoothstep( 0.0, 0.1, Shadow );
 //Result = Shadow;

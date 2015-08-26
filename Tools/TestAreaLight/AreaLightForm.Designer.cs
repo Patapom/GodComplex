@@ -124,7 +124,7 @@
 			this.floatTrackbarControlProjectionTheta.RangeMin = -90F;
 			this.floatTrackbarControlProjectionTheta.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlProjectionTheta.TabIndex = 1;
-			this.floatTrackbarControlProjectionTheta.Value = -40F;
+			this.floatTrackbarControlProjectionTheta.Value = -22.5F;
 			this.floatTrackbarControlProjectionTheta.VisibleRangeMax = 90F;
 			this.floatTrackbarControlProjectionTheta.VisibleRangeMin = -90F;
 			// 
