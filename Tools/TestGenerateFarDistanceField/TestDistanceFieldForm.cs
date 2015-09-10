@@ -50,6 +50,9 @@ namespace TestGenerateFarDistanceField
 		private ConstantBuffer<CB_Object>	m_CB_Object = null;
 
 		private Shader				m_Shader_RenderScene = null;
+		private ComputeShader		m_Shader_SplatDepthStencil = null;
+
+		private Texture3D			m_Tex_DistanceField = null;
 
 		private Primitive			m_Prim_Quad = null;
 		private Primitive			m_Prim_Rectangle = null;
@@ -81,10 +84,17 @@ namespace TestGenerateFarDistanceField
 			}
 
 			try {
-				m_Shader_RenderScene = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ) ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
+				m_Shader_RenderScene = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ) ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader \"RenderScene\" failed to compile!\n\n" + _e.Message, "Distance Field Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_RenderScene = null;
+			}
+
+			try {
+				m_Shader_SplatDepthStencil = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS", null );
+			} catch ( Exception _e ) {
+				MessageBox.Show( "Shader \"SplatDepthStencil\" failed to compile!\n\n" + _e.Message, "Distance Field Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				m_Shader_SplatDepthStencil = null;
 			}
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
@@ -92,6 +102,12 @@ namespace TestGenerateFarDistanceField
 			m_CB_Object = new ConstantBuffer<CB_Object>( m_Device, 2 );
 
 			BuildPrimitives();
+
+			int	cellsCountY = (panelOutput.Height + 0x7F) >> 7;
+			int	cellSize = cellsCountY << 7;
+			int	cellsCountX = (panelOutput.Width + cellSize-1) / cellSize;
+			int	cellsCountZ = 64;
+			m_Tex_DistanceField = new Texture3D( m_Device, cellsCountX, cellsCountY, cellsCountZ, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );	// TODO: Use mips to smooth stuff up?
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
@@ -103,6 +119,8 @@ namespace TestGenerateFarDistanceField
 		{
 			base.OnClosed( e );
 
+			m_Tex_DistanceField.Dispose();
+
 			m_Prim_Cube.Dispose();
 			m_Prim_Sphere.Dispose();
 			m_Prim_Rectangle.Dispose();
@@ -112,6 +130,7 @@ namespace TestGenerateFarDistanceField
 			m_CB_Camera.Dispose();
 			m_CB_Main.Dispose();
 
+			m_Shader_SplatDepthStencil.Dispose();
 			m_Shader_RenderScene.Dispose();
 
 			m_Device.Dispose();
@@ -336,6 +355,18 @@ namespace TestGenerateFarDistanceField
 				m_CB_Object.UpdateData();
 
 				m_Prim_Cube.Render( m_Shader_RenderScene );
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// Splat depth-stencil into 3D map
+			if (m_Shader_SplatDepthStencil != null && m_Shader_SplatDepthStencil.Use() ) {
+
+				m_Device.RemoveRenderTargets();	// So we can use the depth stencil as input
+//				m_Device.DefaultDepthStencil.RemoveFromLastAssignedSlots()
+				m_Device.DefaultDepthStencil.SetCS( 0 );
+				m_Tex_DistanceField.SetCSUAV( 0 );
+
+
 			}
 
 			m_Device.Present( false );

@@ -94,6 +94,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Global.hlsl" />
+    <Content Include="Shaders\SplatDepthStencil.hlsl" />
     <Content Include="Shaders\RenderScene.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
