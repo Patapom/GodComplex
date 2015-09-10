@@ -118,7 +118,7 @@ namespace TestBoxFitting
 					// Compute new direction
 					double	mu_length = Math.Sqrt( mu_x*mu_x + mu_y*mu_y + mu_z*mu_z );
 					double	r = Lobe.Alpha > 1e-12 ? mu_length / Lobe.Alpha : 0.0;
-							r = Math.Min( 1.0-1e-12, r );	// Avoid invalid concentrations
+							r = Math.Min( 1.0-1e-12, r );	// Avoid invalid, negative concentrations
 
 					// Normalize direction
 					mu_length = mu_length > 1e-12 ? 1.0 / mu_length : 0.0;
@@ -496,7 +496,7 @@ namespace TestBoxFitting
 					m_Lobes[planeIndex].Alpha = weight;
 					m_Planes[planeIndex].m_Weight = weight;
 				}
-			} else if ( radioButtonLargestD.Checked ) {
+			} else if ( radioButtonWeightHybrid.Checked ) {
 				// Hybrid method combining ortho distance and normal affinity
 				for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
 					float2	Normal = new float2( m_Lobes[planeIndex].Direction.x, m_Lobes[planeIndex].Direction.y );
@@ -584,11 +584,8 @@ namespace TestBoxFitting
 			//////////////////////////////////////////////////////////////////////////
 			// Display info
 			string	text = "";
-			text += "Min, Max, Avg, HAvg Weight = " + minWeight.ToString( "G4" ) + ", " + maxWeight.ToString( "G4" ) + ", " + averageWeight.ToString( "G4" ) + ", " + harmonicAverageWeight.ToString( "G4" ) + "\r\n";
-			text += "Dismiss weight = " + dismissWeight + "\r\n\r\n";
-
-			text += "Min, Max, Avg, HAvg Kappa = " + minConcentration.ToString( "G4" ) + ", " + maxConcentration.ToString( "G4" ) + ", " + averageConcentration.ToString( "G4" ) + ", " + harmonicAverageConcentration.ToString( "G4" ) + "\r\n";
-			text += "Dismiss kappa = " + dismissConcentration + "\r\n\r\n";
+			text += "Min, Max, Avg, HAvg Weight = " + minWeight.ToString( "G4" ) + ", " + maxWeight.ToString( "G4" ) + ", " + averageWeight.ToString( "G4" ) + ", " + harmonicAverageWeight.ToString( "G4" ) + " > Dismiss weight = " + dismissWeight + "\r\n";
+			text += "Min, Max, Avg, HAvg Kappa = " + minConcentration.ToString( "G4" ) + ", " + maxConcentration.ToString( "G4" ) + ", " + averageConcentration.ToString( "G4" ) + ", " + harmonicAverageConcentration.ToString( "G4" ) + " > Dismiss kappa = " + dismissConcentration + "\r\n\r\n";
 
 			text += planesCount + " Planes:\r\n";
 			for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {

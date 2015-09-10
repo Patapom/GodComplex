@@ -97,7 +97,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	surf.roughness = Roughness;
 	surf.IOR = IOR;
 	surf.fresnelStrength = 1.0;
-	
+
 	uint	AreaLightSliceIndex = _UseTexture ? 0 : ~0U;
 	
 // 	float3	RadianceDiffuse, RadianceSpecular;

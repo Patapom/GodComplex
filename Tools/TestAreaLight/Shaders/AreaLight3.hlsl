@@ -85,14 +85,16 @@ static const float4	AREA_LIGHT_TEX_DIMENSIONS = float4( 256.0, 256.0, 1.0/256.0,
 // Samples the area light given 2 local coordinates
 float3	SampleAreaLight( float2 _lsPosMin, float2 _lsPosMax, float2 _AreaLightScale, uint _SliceIndex, const bool _UseAlpha ) {
 
+	// Transform local space coordinates into UV coordinates
 	float2	InvScale = 1.0 / _AreaLightScale;
 	float2	UV0 = InvScale * float2( _lsPosMin.x, _lsPosMax.y );
 			UV0 = 0.5 * float2( 1.0 + UV0.x, 1.0 - UV0.y );
 	float2	UV1 = InvScale * float2( _lsPosMax.x, _lsPosMin.y );
 			UV1 = 0.5 * float2( 1.0 + UV1.x, 1.0 - UV1.y );
 
+	// Determine mip level
 	float2	DeltaUV = 0.5 * (UV1 - UV0);
-	float	RadiusPixels = AREA_LIGHT_TEX_DIMENSIONS.x * max( DeltaUV.x, DeltaUV.y );
+	float	RadiusPixels = AREA_LIGHT_TEX_DIMENSIONS.x * 0.5 * (DeltaUV.x + DeltaUV.y);
 	float	MipLevel = log2( 1e-4 + RadiusPixels );
 
 	// Compute an approximation of the clipping of the projected disc and the area light:
@@ -114,11 +116,9 @@ float3	SampleAreaLight( float2 _lsPosMin, float2 _lsPosMax, float2 _AreaLightSca
 	//	zone when the circle exits the area light...
 	float2	UVCenter = 0.5 * (UV0 + UV1);
 	float2	SatUVCenter = saturate( UVCenter );
-
-	float	Attenuation = saturate( length( (UVCenter - SatUVCenter) / (1e-3 + DeltaUV) ) );
 // 	float	RadiusUV = max( DeltaUV.x, DeltaUV.y );
-// 	float	Attenuation = saturate( length( (UVCenter - SatUVCenter) / (1e-3 + RadiusUV) ) );
-			Attenuation = smoothstep( 1.0, 0.0, Attenuation );
+// 	float	Attenuation = smoothstep( 1.0, 0.0, saturate( length( (UVCenter - SatUVCenter) / (1e-3 + RadiusUV) ) ) );
+	float	Attenuation = smoothstep( 1.0, 0.0, saturate( length( (UVCenter - SatUVCenter) / (1e-3 + DeltaUV) ) ) );	// That one accounts for anisotropy
 
 	float4	Color = _SliceIndex != ~0U ? _TexAreaLight.SampleLevel( LinearWrap, SatUVCenter, MipLevel ) : 1.0;
 	if ( _UseAlpha ) {
@@ -136,14 +136,26 @@ float	MatrixDeterminant( float3 a, float3 b, float3 c ) {
 
 // Compute the solid angle of a rectangular area perceived by a point
 //	_lsPosition, the position viewing the rectangular area
-//	_lsPosMin, _lsPosMax, the coordinates defining the rectangular area of the light
+//	_lsPosMin, _lsPosMax, the coordinates defining the clipped rectangular area of the light (axis-aligned)
 //
 float	RectangleSolidAngle( float3 _lsPosition, float2 _lsPosMin, float2 _lsPosMax ) {
 #if 1
-	// This formula is an approximation using the solid angle subtended by a cone
-	// The idea is to find theta, the cone's half angle
-	// We can find cos(alpha) and cos(beta) easily since they are the dot product of the vectors
-	//	pointing toward (for example) the top and bottom of the area light
+	// This formula is an approximation using the solid angle subtended by a cone (https://en.wikipedia.org/wiki/Solid_angle#Cone.2C_spherical_cap.2C_hemisphere)
+	// The idea is to find theta, the cone's half angle:
+	//
+	//								*
+	//							  /a|lpha
+	//							/	|
+	//						  /		|
+	//						/		|
+	//					  /			|
+	//		 N  ^	    /			|
+	//			|     /			   b|eta
+	//			|   /2theta  ------	*
+	//			| /  -----
+	//	--------*---------------------
+	//
+	// We can find cos(alpha) and cos(beta) easily since they are the dot product of the vectors pointing toward (for example) the top and bottom of the area light
 	// We know that theta = (PI - alpha - beta) / 2
 	// So:
 	//	cos( theta ) = cos( PI/2 - (alpha + beta) / 2 ) = sin( alpha / 2 + beta / 2 ) = sin( alpha / 2 ) * cos( beta / 2 ) + sin( beta / 2 ) * cos( alpha / 2 )
@@ -155,13 +167,14 @@ float	RectangleSolidAngle( float3 _lsPosition, float2 _lsPosMin, float2 _lsPosMa
 	// So:
 	//	cos( theta ) = sqrt( (1 - cos( alpha )) * (1 + cos( beta )) / 4 ) + sqrt( (1 - cos( beta )) * (1 + cos( alpha )) / 4 )
 	//
-	// We compute the average of 2 solid angles (1 along the vertical and one along the horizontal)
+	// Using Omega = 2PI*(1-cos(theta)) we then find the solid angle subtended by the cone.
+	// We compute the average of 2 solid angles (1 along the vertical and one along the horizontal) so we can account for elongated area lights.
 	//
 	float2	ClippedPos = clamp( _lsPosition.xy, _lsPosMin, _lsPosMax );
 	float	CosAlpha_x = normalize( float3( _lsPosMax.x, ClippedPos.y, -1e-2 ) - _lsPosition ).x;
-	float	CosBeta_x = -normalize( float3( _lsPosMin.x, ClippedPos.y, -1e-2 ) - _lsPosition ).x;
+	float	CosBeta_x = normalize( _lsPosition - float3( _lsPosMin.x, ClippedPos.y, -1e-2 ) ).x;
 	float	CosAlpha_y = normalize( float3( ClippedPos.x, _lsPosMax.y, -1e-2 ) - _lsPosition ).y;
-	float	CosBeta_y = -normalize( float3( ClippedPos.x, _lsPosMin.y, -1e-2 ) - _lsPosition ).y;
+	float	CosBeta_y = normalize( _lsPosition - float3( ClippedPos.x, _lsPosMin.y, -1e-2 ) ).y;
 
 	float	CosTheta_x = sqrt( 0.25 * (1.0 - CosAlpha_x) * (1.0 + CosBeta_x) )
 					   + sqrt( 0.25 * (1.0 + CosAlpha_x) * (1.0 - CosBeta_x) );
@@ -169,9 +182,13 @@ float	RectangleSolidAngle( float3 _lsPosition, float2 _lsPosMin, float2 _lsPosMa
 	float	CosTheta_y = sqrt( 0.25 * (1.0 - CosAlpha_y) * (1.0 + CosBeta_y) )
 					   + sqrt( 0.25 * (1.0 + CosAlpha_y) * (1.0 - CosBeta_y) );
 
-	float	SolidAngle_x = 2.0 * PI * (1.0 - CosTheta_x );
-	float	SolidAngle_y = 2.0 * PI * (1.0 - CosTheta_y );
-	return 0.5 * (SolidAngle_x + SolidAngle_y);
+	// Normally...
+	// float	SolidAngle_x = 2.0 * PI * (1.0 - CosTheta_x );
+	// float	SolidAngle_y = 2.0 * PI * (1.0 - CosTheta_y );
+	// return 0.5 * (SolidAngle_x + SolidAngle_y);
+	//
+	// Which simplifies into...
+	return PI * (2.0 - CosTheta_x - CosTheta_y);
 
 #else
 	// Here, the solid angle is computed by decomposing the rectangle into 2 triangles and each triangle's solid angle
@@ -200,10 +217,15 @@ float	RectangleSolidAngle( float3 _lsPosition, float2 _lsPosMin, float2 _lsPosMa
 // 	A0 = A0 < 0.0 ? PI + A0 : A0;
 // 	A1 = A1 < 0.0 ? PI + A1 : A1;
 
-	// This one seems to be "working" but the solid angle gets over 2PI!! :(
+	// This one seems to be "working"...
  	float	A0 = PI * frac( atan( abs( MatrixDeterminant( v0, v1, v2 ) ) / (lv0+lv1+lv2 + lv2*dotV0V1 + lv0*dotV1V2 + lv1*dotV2V0) ) / PI );
  	float	A1 = PI * frac( atan( abs( MatrixDeterminant( v2, v3, v0 ) ) / (lv2+lv3+lv0 + lv0*dotV2V3 + lv3*dotV2V0 + lv2*dotV3V0) ) / PI );
-	return 2.0 * (A0 + A1);
+	return A0 + A1;
+
+	// This one has singularities :(
+//  	float	A0 = 0.5*PI * frac( atan( abs( MatrixDeterminant( v0, v1, v2 ) ) / (lv0+lv1+lv2 + lv2*dotV0V1 + lv0*dotV1V2 + lv1*dotV2V0) ) * 2.0 / PI );
+//  	float	A1 = 0.5*PI * frac( atan( abs( MatrixDeterminant( v2, v3, v0 ) ) / (lv2+lv3+lv0 + lv0*dotV2V3 + lv3*dotV2V0 + lv2*dotV3V0) ) * 2.0 / PI );
+// 	return 2.0 * (A0 + A1);
 
 	// But since atan(a)+atan(b) = atan( (a+b) / (1-ab) ) ...
 	// DOESN'T WORK WITH LARGE AREA LIGHTS!!! :(
@@ -357,33 +379,69 @@ float	ComputeSolidAngleDiffuse( float3 _lsPosition, float3 _lsNormal, float3 _Pr
 	_lsPositionMin = lsIntersection[0];
 	_lsPositionMax = lsIntersection[1];
 
-	// Find the line direction of the intersection of the surface plane and the area light plane
-	float3	LineOrtho = normalize( float3( _lsNormal.x, _lsNormal.y, 1e-4 ) );	// This is the orthogonal direction to the line direction
-	float3	LineDir = float3( -LineOrtho.y, LineOrtho.x, LineOrtho.z );
+	// Formerly, I simply used the center of the intersection positions to derive an average light vector to compute the L.N
+	// The problem with that approach is that it tends to show a bulge of luminance located around the center of the light (this shows a lot on elongated lights!)
+//	float3	lsCenter = float3( 0.5 * (_lsPositionMin + _lsPositionMax), 0.0 );
+//			lsCenter.xy = clamp( lsCenter.xy, _lsClippedPositions.xy, _lsClippedPositions.zw );
+//	float3	lsCenter = float3( clamp( _lsPosition.xy, _lsPositionMin, _lsPositionMax ), 0.0 );
 
-	// Find the average "vertical" displacement along the direction orthogonal to the line
-	float4	dotsY = float4( dot( LineOrtho.xy, _lsPositionMin ), dot( LineOrtho.xy, _lsPositionMax ), dot( LineOrtho.xy, float2( _lsPositionMin.x, _lsPositionMax.y ) ), dot( LineOrtho.xy, float2( _lsPositionMax.x, _lsPositionMin.y ) ) );
-	float	CenterY = 0.25 * (dotsY.x + dotsY.y + dotsY.z + dotsY.w);
+	// Now we're looking for an average light direction to compute the L.N term
+	//	• We will find the "average light position" we need along a line that is parallel to the intersection of the surface and light planes.
+	//	• This line will pass through an average position between the 4 corners of the min/max rectangle (i.e. _lsPositionMin, _lsPositionMax and their combination)
+	//	• The segment of that line will be bound by the min/max positions of the min/max rectangle along the line
+	//
+	//		 ______
+	//		|      | Area light
+	//		|----*-| <= Average light position along the "average line" which is parallel to the intersection between the area and surface planes
+	//		|______|
+	//	   /      . \ <== the dot is _lsPosition on the surface
+	//	  /__________\ Surface
+	//
+	#if 1
+		// It turns out using only the min and max corners gives pretty much the same results as the 4 corners version so here we go!
+		// Find the line direction of the intersection between the surface and the light planes
+		float3	LineOrtho = normalize( float3( _lsNormal.x, _lsNormal.y, 1e-4 ) );	// This is the orthogonal direction to the line direction
+		float3	LineDir = float3( -LineOrtho.y, LineOrtho.x, LineOrtho.z );			// This is the direction of the intersection line between surface and light
 
-	// Find the min/max displacements along the direction of the line
-	float4	dotsX = float4( dot( LineDir.xy, _lsPositionMin ), dot( LineDir.xy, _lsPositionMax ), dot( LineDir.xy, float2( _lsPositionMin.x, _lsPositionMax.y ) ), dot( LineDir.xy, float2( _lsPositionMax.x, _lsPositionMin.y ) ) );
-	float2	MinX2 = min( dotsX.xy, dotsX.zw );
-	float	MinX = min( MinX2.x, MinX2.y );
-	float2	MaxX2 = max( dotsX.xy, dotsX.zw );
-	float	MaxX = max( MinX2.x, MinX2.y );
-	float	centerX = clamp( dot( LineDir.xy, _lsPosition.xy ), MinX, MaxX );
-//	float	centerX = dot( LineDir.xy, _lsPosition.xy );
+		// Find the average "vertical" displacement along the direction orthogonal to the line
+		float2	dotsY = float2( dot( LineOrtho.xy, _lsPositionMin ), dot( LineOrtho.xy, _lsPositionMax ) );
+		float	CenterY = 0.5 * (dotsY.x + dotsY.y);
+
+		// Find the min/max displacements along the direction of the line
+		float2	dotsX = float2( dot( LineDir.xy, _lsPositionMin ), dot( LineDir.xy, _lsPositionMax ) );
+		float	centerX = clamp( dot( LineDir.xy, _lsPosition.xy ), min( dotsX.x, dotsX.y ), max( dotsX.x, dotsX.y ) );
+	#else
+		// More expensive "4 corners" version
+		// Find the line direction of the intersection between the surface and the light planes
+		float3	LineOrtho = normalize( float3( _lsNormal.x, _lsNormal.y, 1e-4 ) );	// This is the orthogonal direction to the line direction
+		float3	LineDir = float3( -LineOrtho.y, LineOrtho.x, LineOrtho.z );
+
+		// Find the average "vertical" displacement along the direction orthogonal to the line
+		float4	dotsY = float4( dot( LineOrtho.xy, _lsPositionMin ), dot( LineOrtho.xy, _lsPositionMax ), dot( LineOrtho.xy, float2( _lsPositionMin.x, _lsPositionMax.y ) ), dot( LineOrtho.xy, float2( _lsPositionMax.x, _lsPositionMin.y ) ) );
+
+	//dotsY.zw = dotsY.xy;
+
+		float	CenterY = 0.25 * (dotsY.x + dotsY.y + dotsY.z + dotsY.w);
+
+		// Find the min/max displacements along the direction of the line
+		float4	dotsX = float4( dot( LineDir.xy, _lsPositionMin ), dot( LineDir.xy, _lsPositionMax ), dot( LineDir.xy, float2( _lsPositionMin.x, _lsPositionMax.y ) ), dot( LineDir.xy, float2( _lsPositionMax.x, _lsPositionMin.y ) ) );
+
+	//dotsX.zw = dotsX.xy;
+
+		float2	MinX2 = min( dotsX.xy, dotsX.zw );
+		float	MinX = min( MinX2.x, MinX2.y );
+		float2	MaxX2 = max( dotsX.xy, dotsX.zw );
+		float	MaxX = max( MinX2.x, MinX2.y );
+		float	centerX = clamp( dot( LineDir.xy, _lsPosition.xy ), MinX, MaxX );
+	#endif
 
 	// Compute an average center on the line
 	float3	lsCenter = centerX * LineDir + CenterY * LineOrtho;
 
 	// Compute the projected solid angle for the entire area light
-//	float3	lsCenter = float3( 0.5 * (_lsPositionMin + _lsPositionMax), 0.0 );
-//			lsCenter.xy = clamp( lsCenter.xy, _lsClippedPositions.xy, _lsClippedPositions.zw );
-//	float3	lsCenter = float3( clamp( _lsPosition.xy, _lsPositionMin, _lsPositionMax ), 0.0 );
 	float3	lsPosition2Center = lsCenter - _lsPosition;		// Wi, the average incoming light direction
 	float	r = length( lsPosition2Center );
-			lsPosition2Center /= r;
+			lsPosition2Center *= r > 1e-6 ? 1.0 / r : 0.0;
 
 	// Compute the projected solid angle for the entire area light
 //	float	SolidAngle = lerp( 1.0, _ClippedAreaLightSolidAngle / (r * r), _AreaLightDiffusion );
@@ -397,7 +455,7 @@ float	ComputeSolidAngleDiffuse( float3 _lsPosition, float3 _lsNormal, float3 _Pr
 //	_lsPosition, the local space position of the surface watching the area light
 //	_lsNormal, the local space normal of the surface
 //	_lsView, the view direction (usually, the main reflection direction)
-//	_Gloss, the surface's gloss factor
+//	_Roughness, the surface's roughness factor
 //	_lsClippedPositions, the UVs of the potentially clipped area light
 //	_ClippedAreaLightSolidAngle, the solid angle for the visible part of the area light
 //
@@ -423,10 +481,8 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 	float	t = -_lsPosition.z / _lsView.z;
 	float3	I = _lsPosition + t * _lsView;	// Intersection position on the plane
 
-//return 0.1 * t;
-
 	// Compute the radius of the specular cone at hit distance
-	float2	Radius  = TanHalfAngle * t;						// Correct radius at hit distance
+	float2	Radius  = TanHalfAngle * t;
 //					/ sqrt( 1.0 - _lsView.xy*_lsView.xy );	// This will make the X/Y radii grow depending on view angle
 
 	// Compute the bounding positions encompassing the cone's ellipsoid intersection with the area light plane
@@ -440,26 +496,23 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 //			SolidAngle = min( SolidAngle, _ClippedAreaLightSolidAngle );
 //			SolidAngle = SmoothMin( SolidAngle, _ClippedAreaLightSolidAngle, 32.0 );
 
-	float2	lsClipedPosMin = clamp( _lsPositionMin, _lsClippedPositions.xy, _lsClippedPositions.zw );
-	float2	lsClipedPosMax = clamp( _lsPositionMax, _lsClippedPositions.xy, _lsClippedPositions.zw );
-	float	CoveredArea = (lsClipedPosMax.x - lsClipedPosMin.x) * (lsClipedPosMax.y - lsClipedPosMin.y);
-	float	TotalArea = (_lsClippedPositions.z - _lsClippedPositions.x) * (_lsClippedPositions.w - _lsClippedPositions.y);
-	float	SolidAngle = _ClippedAreaLightSolidAngle * CoveredArea / TotalArea;
+// 	float2	lsClipedPosMin = clamp( _lsPositionMin, _lsClippedPositions.xy, _lsClippedPositions.zw );
+// 	float2	lsClipedPosMax = clamp( _lsPositionMax, _lsClippedPositions.xy, _lsClippedPositions.zw );
+// 	float	CoveredArea = (lsClipedPosMax.x - lsClipedPosMin.x) * (lsClipedPosMax.y - lsClipedPosMin.y);
+// 	float	TotalArea = 1e-6 + (_lsClippedPositions.z - _lsClippedPositions.x) * (_lsClippedPositions.w - _lsClippedPositions.y);
+// 	float	SolidAngle = _ClippedAreaLightSolidAngle * CoveredArea / TotalArea;
+//	float	SolidAngle = _ClippedAreaLightSolidAngle * smoothstep( 0.0, 1.0, CoveredArea / TotalArea );
+	float	SolidAngle = _ClippedAreaLightSolidAngle;
 
-
-	// Finally, we can compute the projected solid angle by dotting with the normal
-	float	ProjectedSolidAngleSpecular = saturate( dot( _lsNormal, _lsView ) ) * SolidAngle;	// (N.Wi) * dWi
-
+	// Fade based on V.N to remove grazing angles specularities
 	float	FresnelGrazing = saturate( 1.0 + _lsView.z );
 			FresnelGrazing *= FresnelGrazing;
 			FresnelGrazing *= FresnelGrazing;
-			ProjectedSolidAngleSpecular *= 1.0 - FresnelGrazing;								// Also fade based on V.N to remove grazing angles
+	SolidAngle *= 1.0 - FresnelGrazing;
 
+	// Finally, we can compute the projected solid angle by dotting with the normal
 //	ProjectedSolidAngleSpecular *= 1.0 - pow( saturate( 1.0+_lsView.z ), 2.0 );
-
-	/////////////////////////////////
-	// Build the result solid angle
-	return ProjectedSolidAngleSpecular;
+	return saturate( dot( _lsNormal, _lsView ) ) * SolidAngle;	// (N.Wi) * dWi
 }
 
 
@@ -597,7 +650,6 @@ void	ComputeAreaLightLighting( inout ComputeLightingResult _Result, in SurfaceCo
 	float3	FresnelSpecular = FresnelAccurate( _Surface.IOR, HdotN, _Surface.fresnelStrength );
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;	// Simplify a lot! Don't use Disney's Fresnel as it needs a light direction and we can't provide one here...
 
-
 	// 2] ----- Diffuse term -----
 	float3	Irradiance_diffuse = ShadowedLightColor * _Light.m_irradianceDiffuse;
 
@@ -607,8 +659,7 @@ void	ComputeAreaLightLighting( inout ComputeLightingResult _Result, in SurfaceCo
 //_Result.accumDiffuse = _Light.m_solidAngle_diffuse;
 //_Result.accumDiffuse = _Light.m_solidAngle_area;
 
-
-	// 3] ----- Specular -----
+	// 3] ----- Specular Term -----
 	float3	Irradiance_specular = ShadowedLightColor * _Light.m_irradianceSpecular;
 
 	#if 1
