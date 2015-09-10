@@ -1,23 +1,12 @@
-
-
-// Check cette ligne dans ward.mrpr, changer ce facteur hardcodé pour voir si ça limite pas un peu nos pics de spec
-// anisotropicRoughness = max( 0.01, anisotropicRoughness );	// Make sure we don't go below 0.01 otherwise specularity is unnatural for our poor lights (only IBL with many samples would solve that!)
-
-
 #include "Global.hlsl"
-#include "AreaLight3.hlsl"
-#include "ParaboloidShadowMap.hlsl"
 
-cbuffer CB_Object : register(b4) {
+cbuffer CB_Object : register(b2) {
 	float4x4	_Local2World;
 	float4x4	_World2Local;
 	float3		_DiffuseAlbedo;
 	float		_Gloss;
 	float3		_SpecularTint;
 	float		_Metal;
-	uint		_UseTexture;
-	uint		_FalseColors;
-	float		_FalseColorsMaxRange;
 };
 
 struct VS_IN {
@@ -52,6 +41,23 @@ PS_IN	VS( VS_IN _In ) {
 	return Out;
 }
 
+struct SurfaceContext {
+	float3	wsPosition;
+	float3	wsNormal;
+	float3	wsTangent;
+	float3	wsBiTangent;
+	float3	wsView;
+	float3	diffuseAlbedo;
+	float	roughness;
+	float3	IOR;
+	float	fresnelStrength;
+};
+
+// From http://graphicrants.blogspot.fr/2013/08/specular-brdf-reference.html
+float	Smith_GGX( float _dot, float _alpha2 ) {
+	return 2.0 * _dot / (_dot + sqrt( _alpha2 + (1.0 - _alpha2) * _dot*_dot ));
+}
+
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float4	Debug = 0.0;
 
@@ -61,18 +67,14 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float3	wsBiTangent = normalize( _In.BiTangent );
 	float3	wsView = normalize( wsPosition - _Camera2World[3].xyz );
 	
-	float	Roughness = 1.0 - _Gloss;// * _TexGloss.Sample( LinearWrap, 10.0 * _In.UV );
-	
-//return _TexGloss.Sample( LinearWrap, 2.0 * _In.UV );
+	float	Roughness = 1.0 - _Gloss;
+			Roughness *= Roughness * Roughness;
+			Roughness = max( 0.005, Roughness );
 
 	const float3	RhoD = _DiffuseAlbedo;
 	const float3	F0 = lerp( 0.04, _SpecularTint, _Metal );
 	float3	IOR = Fresnel_IORFromF0( F0 );
 	
-	float	Shadow = ComputeShadow( wsPosition, wsNormal, Debug );
-	
-	float	RadiusFalloff = 16.0;
-	float	RadiusCutoff = 20.0;
 	
 // 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 	// Add small normal perturbations
@@ -84,9 +86,9 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 // 	wsNormal = tsNormal.x * wsTangent + tsNormal.y * wsBiTangent + tsNormal.z * wsNormal;
 // 	wsTangent = normalize( cross( wsNormal, wsBiTangent ) );
 // 	wsBiTangent = cross( wsTangent, wsNormal );
-	
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//
+	// Prepare surface
 	SurfaceContext	surf;
 	surf.wsPosition = wsPosition;
 	surf.wsNormal = wsNormal;
@@ -98,38 +100,47 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	surf.IOR = IOR;
 	surf.fresnelStrength = 1.0;
 
-	uint	AreaLightSliceIndex = _UseTexture ? 0 : ~0U;
-	
-// 	float3	RadianceDiffuse, RadianceSpecular;
-// 	ComputeAreaLightLighting( surf, AreaLightSliceIndex, Shadow, float2( RadiusFalloff, RadiusCutoff ), RadianceDiffuse, RadianceSpecular );
-	
-	ComputeLightingResult	Accum = (ComputeLightingResult) 0;
-	AreaLightContext		AreaContext = CreateAreaLightContext( surf, AreaLightSliceIndex, Shadow, float2( RadiusFalloff, RadiusCutoff ), 2 );
-	ComputeAreaLightLighting( Accum, surf, AreaContext );
- 	float3	RadianceDiffuse = Accum.accumDiffuse;
-	float3	RadianceSpecular = Accum.accumSpecular;
-	
-	float3	Result = 0.01 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular;
-	
-//Result =  RadianceDiffuse;
-//Result =  RadianceSpecular;
-	
-	
-//Shadow = smoothstep( 0.0, 0.1, Shadow );
-//Result = Shadow;
-	
 
-//float3	wsLight = normalize( -_ProjectionDirectionDiff );
-//Result = ComputeWard( wsLight, surf.wsView, surf.wsNormal, surf.wsTangent, surf.wsBiTangent, max( 0.01, Roughness ) );
-//Result = RadianceSpecular;
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Prepare a single light
+	const float3	wsLightPos = float3( 0.0, 3.0, 0.0 );	// Assume point light
+	const float3	LightIntensity = 20.0;
 
+	float3	wsLight = wsLightPos - surf.wsPosition;
+	float	Distance2Light = length( wsLight );
+	wsLight *= Distance2Light > 1e-6 ? 1.0 / Distance2Light : 0.0;
 
-	if ( _FalseColors )
-		Result = _TexFalseColors.SampleLevel( LinearClamp, float2( dot( LUMINANCE, Result ) / _FalseColorsMaxRange, 0.5 ), 0.0 ).xyz;
-		
+	float	Shadow = 1.0;//ComputeShadow( wsPosition, wsNormal, Debug );
+	float	RadiusFalloff = 16.0;
+	float	RadiusCutoff = 20.0;
+	float	Attenuation = Shadow * smoothstep( RadiusCutoff, RadiusFalloff, Distance2Light ) / (Distance2Light * Distance2Light);
 
-//Result = normalize( -_ProjectionDirectionDiff );
-//Result = wsLight;
+	float3	Radiance_in = LightIntensity * Attenuation;
 
+//return float4( Radiance_in, 1 );
+
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// BRDF computation (GGX + Smith shadowing)
+	float3	Half = normalize( wsLight + surf.wsView );
+	float	LdotN = saturate( dot( wsLight, surf.wsNormal ) );
+	float	VdotN = saturate( dot( surf.wsView, surf.wsNormal ) );
+	float	HdotN = dot( Half, surf.wsNormal );
+
+		// Specular
+	float	alpha2 = surf.roughness * surf.roughness;
+	float	den = (HdotN * HdotN * (alpha2 - 1.0) + 1.0);
+	float	GGX = alpha2 / (PI * den * den);	// TODO: Find out what happens when varying the denominator's exponent (need to find proper normalization!)
+	float	Smith = Smith_GGX( LdotN, alpha2 ) * Smith_GGX( VdotN, alpha2 );
+	float3	Fresnel_specular = FresnelAccurate( surf.IOR, HdotN );
+	float3	BRDF_specular = Fresnel_specular * Smith * GGX / (4.0 * LdotN * VdotN);
+
+		// Diffuse
+	float3	Fresnel_diffuse = 1.0 - Fresnel_specular;
+	float3	BRDF_diffuse = Fresnel_diffuse * surf.diffuseAlbedo;
+
+	float3	Radiance_out = Radiance_in * (BRDF_diffuse + BRDF_specular) * LdotN;
+
+	float3	Result = 0.01 * float3( 1, 0.98, 0.8 ) + Radiance_out;
 	return float4( Result, 1 );
 }
