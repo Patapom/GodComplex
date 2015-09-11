@@ -14,10 +14,10 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	float4	Color = _TexSource[PixelPos];
 
 	uint2	CellPosXY = PixelPos >> 3;	// Cells are 8x8 pixels
-	uint	CellPosZ = uint( 64.0 * abs( 1.0 - 2.0 * frac( 0.1 * iGlobalTime ) ) );
+	uint	CellPosZ = uint( 64.0 * abs( 1.0 - 2.0 * frac( 1.0 * iGlobalTime ) ) );
 	float4	DistanceField = _TexDistance[uint3( CellPosXY, CellPosZ )];
 
-	Color = lerp( Color, float4( 1, 0, 0, 1 ), DistanceField.w );
+	Color = lerp( float4( 1, 0, 0, 1 ), Color, saturate( DistanceField.w ) );
 //	Color += 0.1 * DistanceField;
 
 	return Color;

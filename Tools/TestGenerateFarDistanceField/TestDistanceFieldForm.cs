@@ -50,10 +50,11 @@ namespace TestGenerateFarDistanceField
 		private ConstantBuffer<CB_Object>	m_CB_Object = null;
 
 		private Shader				m_Shader_RenderScene = null;
-		private ComputeShader		m_Shader_SplatDepthStencil = null;
+		private ComputeShader[]		m_Shader_SplatDepthStencil = new ComputeShader[3];
 		private Shader				m_Shader_PostProcess = null;
 
 		private Texture2D			m_Tex_TempTarget = null;
+		private Texture3D[]			m_Tex_TempDepth3D = new Texture3D[3];
 		private Texture3D			m_Tex_DistanceField = null;
 
 		private Primitive			m_Prim_Quad = null;
@@ -66,6 +67,13 @@ namespace TestGenerateFarDistanceField
 
 		private DateTime			m_TimeSTart = DateTime.Now;
 
+		void	TAS( int[] _array, int a, int b ) {
+			if ( _array[a] > _array[b] ) {
+				int temp = _array[a];
+				_array[a] = _array[b];
+				_array[b] = temp;
+			}
+		}
 		public TestDistanceFieldForm()
 		{
 			InitializeComponent();
@@ -95,10 +103,14 @@ namespace TestGenerateFarDistanceField
 			}
 
 			try {
-				m_Shader_SplatDepthStencil = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS", null );
+				m_Shader_SplatDepthStencil[0] = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS0", null );
+				m_Shader_SplatDepthStencil[1] = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS1", null );
+				m_Shader_SplatDepthStencil[2] = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS2", null );
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader \"SplatDepthStencil\" failed to compile!\n\n" + _e.Message, "Distance Field Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
-				m_Shader_SplatDepthStencil = null;
+				m_Shader_SplatDepthStencil[0] = null;
+				m_Shader_SplatDepthStencil[1] = null;
+				m_Shader_SplatDepthStencil[2] = null;
 			}
 
 			try {
@@ -117,13 +129,25 @@ namespace TestGenerateFarDistanceField
 			// Allocate texture
 			m_Tex_TempTarget = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 1, 1, PIXEL_FORMAT.RGBA8_UNORM_sRGB, false, false, null );
 
-// 			int	cellsCountY = (panelOutput.Height + 0x7F) >> 7;
-// 			int	cellSize = cellsCountY << 7;
-// 			int	cellsCountX = (panelOutput.Width + cellSize-1) / cellSize;
-			int	cellsCountX = (panelOutput.Width + 7) >> 3;
-			int	cellsCountY = (panelOutput.Height + 7) >> 3;
-			int	cellsCountZ = 64;
-			m_Tex_DistanceField = new Texture3D( m_Device, cellsCountX, cellsCountY, cellsCountZ, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );	// TODO: Use mips to smooth stuff up?
+			// Allocate several 3D textures for depth-stencil reduction
+			int	W = (panelOutput.Width + 7) & ~7;
+			int	H = (panelOutput.Height + 7) & ~7;
+			int	D = 1;
+			for ( int depthLevel=0; depthLevel < 3; depthLevel++ ) {
+
+				// On every level, resolution is reduced by 2 and depth gets multiplied by 4
+				W >>= 1;
+				H >>= 1;
+				D <<= 2;
+
+				m_Tex_TempDepth3D[depthLevel] = new Texture3D( m_Device, W, H, D, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
+			}
+
+// 			int	cellsCountX = (panelOutput.Width + 7) >> 3;
+// 			int	cellsCountY = (panelOutput.Height + 7) >> 3;
+// 			int	cellsCountZ = 64;
+// 			m_Tex_DistanceField = new Texture3D( m_Device, cellsCountX, cellsCountY, cellsCountZ, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );	// TODO: Use mips to smooth stuff up?
+			m_Tex_DistanceField = new Texture3D( m_Device, W, H, D, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );	// TODO: Use mips to smooth stuff up?
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
@@ -135,6 +159,9 @@ namespace TestGenerateFarDistanceField
 			base.OnClosed( e );
 
 			m_Tex_DistanceField.Dispose();
+			m_Tex_TempDepth3D[0].Dispose();
+			m_Tex_TempDepth3D[1].Dispose();
+			m_Tex_TempDepth3D[2].Dispose();
 			m_Tex_TempTarget.Dispose();
 
 			m_Prim_Cube.Dispose();
@@ -147,7 +174,9 @@ namespace TestGenerateFarDistanceField
 			m_CB_Main.Dispose();
 
 			m_Shader_PostProcess.Dispose();
-			m_Shader_SplatDepthStencil.Dispose();
+			m_Shader_SplatDepthStencil[2].Dispose();
+			m_Shader_SplatDepthStencil[1].Dispose();
+			m_Shader_SplatDepthStencil[0].Dispose();
 			m_Shader_RenderScene.Dispose();
 
 			m_Device.Dispose();
@@ -381,30 +410,53 @@ namespace TestGenerateFarDistanceField
 
 			//////////////////////////////////////////////////////////////////////////
 			// Splat depth-stencil into 3D map
-			if ( m_Shader_SplatDepthStencil != null && m_Shader_SplatDepthStencil.Use() ) {
 
-				m_Device.Clear( m_Tex_DistanceField, new float4( 0, 0, 0, 1e6f ) );
+			// 1st pass downsamples by 2 and build 4 depth levels
+			if ( m_Shader_SplatDepthStencil[0] != null && m_Shader_SplatDepthStencil[0].Use() ) {
+
+//				m_Device.Clear( m_Tex_DistanceField, new float4( 0, 0, 0, 1e6f ) );
 
 				m_Device.RemoveRenderTargets();	// So we can use the depth stencil as input
-				m_Device.DefaultDepthStencil.SetCS( 0 );
-				m_Tex_DistanceField.SetCSUAV( 0 );
+				m_Device.DefaultDepthStencil.SetCS( 1 );
+				m_Tex_TempDepth3D[0].SetCSUAV( 0 );
 
-				int	groupsCountX = m_Tex_DistanceField.Width;
-				int	groupsCountY = m_Tex_DistanceField.Height;
-				m_Shader_SplatDepthStencil.Dispatch( groupsCountX, groupsCountY, 1 );
+				int	groupsCountX = m_Tex_TempDepth3D[0].Width;
+				int	groupsCountY = m_Tex_TempDepth3D[0].Height;
+				m_Shader_SplatDepthStencil[0].Dispatch( groupsCountX, groupsCountY, 1 );
 
 				m_Device.DefaultDepthStencil.RemoveFromLastAssignedSlots();	// So we can use it again next time!
-				m_Tex_DistanceField.RemoveFromLastAssignedSlotUAV();		// So we can use it as input
+//				m_Tex_DistanceField.RemoveFromLastAssignedSlotUAV();		// So we can use it as input
 			}
 
+			// 2nd pass downsamples by 2 and build 16 depth levels
+			if ( m_Shader_SplatDepthStencil[1] != null && m_Shader_SplatDepthStencil[1].Use() ) {
+				m_Tex_TempDepth3D[0].SetCS( 0 );
+				m_Tex_TempDepth3D[1].SetCSUAV( 0 );
+
+				int	groupsCountX = m_Tex_TempDepth3D[1].Width;
+				int	groupsCountY = m_Tex_TempDepth3D[1].Height;
+				m_Shader_SplatDepthStencil[1].Dispatch( groupsCountX, groupsCountY, 1 );
+			}
+
+			// 3rd pass downsamples by 2 and build 64 depth levels
+			if ( m_Shader_SplatDepthStencil[2] != null && m_Shader_SplatDepthStencil[2].Use() ) {
+				m_Tex_TempDepth3D[1].SetCS( 0 );
+				m_Tex_TempDepth3D[2].SetCSUAV( 0 );
+
+				int	groupsCountX = m_Tex_TempDepth3D[2].Width;
+				int	groupsCountY = m_Tex_TempDepth3D[2].Height;
+				m_Shader_SplatDepthStencil[2].Dispatch( groupsCountX, groupsCountY, 1 );
+			}
+
+
 			//////////////////////////////////////////////////////////////////////////
-			// 
+			// Display rendered scene + distance field stuff
 			if ( m_Shader_PostProcess != null && m_Shader_PostProcess.Use() ) {
 				m_Device.SetRenderTarget( m_Device.DefaultTarget, null );
 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 				m_Tex_TempTarget.SetPS( 0 );
-				m_Tex_DistanceField.SetPS( 1 );
+				m_Tex_TempDepth3D[2].SetPS( 1 );
 
 				m_Prim_Quad.Render( m_Shader_PostProcess );
 
