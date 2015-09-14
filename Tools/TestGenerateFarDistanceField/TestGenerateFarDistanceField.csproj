@@ -94,6 +94,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Global.hlsl" />
+    <Content Include="Shaders\BuildDistanceField.hlsl" />
     <Content Include="Shaders\PostProcess.hlsl" />
     <Content Include="Shaders\SplatDepthStencil.hlsl" />
     <Content Include="Shaders\RenderScene.hlsl" />

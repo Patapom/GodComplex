@@ -2,7 +2,7 @@
 
 static const float	DISTANCE_FIELD_FAR = 10.0;	// 64 depth levels get spread over that distance
 
-Texture3D< float >		_TexSource : register(t0);
+Texture3D< float3 >		_TexSource : register(t0);
 Texture2D< float >		_TexDepthStencil : register(t1);	// Special case for the first pass: source is the depth stencil buffer!
 RWTexture3D< float4 >	_TexTarget : register(u0);
 
@@ -21,16 +21,10 @@ void	CS0( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, 
 	if ( all( PixelPosition < Dimensions ) )
 		Zproj = _TexDepthStencil.Load( uint3( PixelPosition, 0 ) ).x;
 
-	// Unproject Z
-	const float2	ZnearFar = float2( 0.01, 10.0 );
-// 	float	Q = ZnearFar.y / (ZnearFar.y - ZnearFar.x);
-// 	float	Z = Q * ZnearFar.x / (Q - Zproj);
-
 	// Compute camera position
 	float4	projPosition = float4( 2.0 * (PixelPosition.x + 0.5) / Dimensions.x - 1.0, 1.0 - 2.0 * (PixelPosition.y + 0.5) / Dimensions.y, Zproj, 1.0 );
 	float4	csPosition = mul( projPosition, _Proj2Camera );
 			csPosition.xyz /= csPosition.w;
-//	csPosition.w = floor( (csPosition.z - ZnearFar.x) * 64.0 / (ZnearFar.y - ZnearFar.x) );	// Depth cell index
 
 	csPosition.z /= DISTANCE_FIELD_FAR;	// Normalized
 
@@ -41,9 +35,9 @@ void	CS0( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, 
 	for ( uint i=0; i < 4; i++ )
 		gs_csPositions0[ThreadIndex][i] = 0.0;
 
-	uint	CellIndex = uint( floor( 4.0 * csPosition.z ) );
+	uint	CellIndex = floor( 4.0 * csPosition.z );
 	if ( CellIndex < 4 )
-		gs_csPositions0[ThreadIndex][CellIndex] = float4( csPosition.xyz, 1.0 );	// Each thread/pixel will write to one of the 4 available depth cells
+		gs_csPositions0[ThreadIndex][CellIndex] = float4( csPosition.xyz, 1.0 );	// Each thread/pixel will write one value to one of the 4 available depth cells
  
  	GroupMemoryBarrierWithGroupSync();
 
@@ -71,7 +65,7 @@ void	CS1( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, 
 
 	//////////////////////////////////////////////////////////////////////////////////////////
 	// Read the 4 values previously assigned to source
-	float4	csPositions[4];
+	float3	csPositions[4];
 	csPositions[0] = _TexSource.Load( uint4( PixelPosition, 0, 0 ) );
 	csPositions[1] = _TexSource.Load( uint4( PixelPosition, 1, 0 ) );
 	csPositions[2] = _TexSource.Load( uint4( PixelPosition, 2, 0 ) );
@@ -88,10 +82,10 @@ void	CS1( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, 
 //		[unroll]
 		[fastopt]
 		for ( uint j=0; j < 4; j++ ) {
-			float3	csPosition = csPositions[j].xyz;
+			float3	csPosition = csPositions[j];
 			uint	CellIndex = uint( floor( 16.0 * csPosition.z ) );
 			if ( CellIndex < 16 )
-				gs_csPositions1[ThreadIndex][CellIndex] += float4( csPosition, 1.0 );	// Each thread/pixel will write to one of the 16 available depth cells
+				gs_csPositions1[ThreadIndex][CellIndex] = float4( csPosition, 1.0 );	// Each thread/pixel will write its 4 values to 4 of the 16 available depth cells
 		}
 	}
 
@@ -127,7 +121,7 @@ void	CS2( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, 
 
 	//////////////////////////////////////////////////////////////////////////////////////////
 	// Read the 16 values previously assigned to source
-	float4	csPositions[16];
+	float3	csPositions[16];
 	{
 		[unroll]
 		for ( uint i=0; i < 16; i++ )
@@ -145,7 +139,7 @@ void	CS2( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, 
 //		[unroll]
 		[fastopt]
 		for ( uint j=0; j < 16; j++ ) {
-			float3	csPosition = csPositions[j].xyz;
+			float3	csPosition = csPositions[j];
 			uint	CellIndex = uint( floor( 64.0 * csPosition.z ) );
 			if ( CellIndex < 64 )
 				gs_csPositions2[ThreadIndex][CellIndex] += float4( csPosition, 1.0 );	// Each thread/pixel will write to one of the 64 available depth cells
@@ -166,13 +160,8 @@ void	CS2( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, 
 										+ gs_csPositions2[2][16*ThreadIndex+i]
 										+ gs_csPositions2[3][16*ThreadIndex+i];
 
-			csAveragePosition = csAveragePosition.w > 0.0 ? csAveragePosition / csAveragePosition.w : 1e6;
-
-
-//csAveragePosition.xy = _GroupID.xy;
-
-
-			_TexTarget[uint3( _GroupID.xy, 16*ThreadIndex+i )] = float4( csAveragePosition.xyz, 0.0 );
+			csAveragePosition = csAveragePosition.w > 0.0 ? float4( csAveragePosition.xyz / csAveragePosition.w, 0.0 ) : 1e6;
+			_TexTarget[uint3( _GroupID.xy, 16*ThreadIndex+i )] = csAveragePosition;
 		}
 	}
 }

@@ -104,6 +104,13 @@ namespace TestGenerateFarDistanceField
 				m_Shader_RenderScene = null;
 			}
 
+			try {
+				m_Shader_PostProcess = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			} catch ( Exception _e ) {
+				MessageBox.Show( "Shader \"PostProcess\" failed to compile!\n\n" + _e.Message, "Distance Field Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				m_Shader_PostProcess = null;
+			}
+
 			#if DEBUG && !BISOU
 				try {
 					m_Shader_SplatDepthStencil[0] = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS0", null );
@@ -127,13 +134,6 @@ namespace TestGenerateFarDistanceField
 					m_Shader_SplatDepthStencil[2] = null;
 				}
 			#endif
-
-			try {
-				m_Shader_PostProcess = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-			} catch ( Exception _e ) {
-				MessageBox.Show( "Shader \"PostProcess\" failed to compile!\n\n" + _e.Message, "Distance Field Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
-				m_Shader_PostProcess = null;
-			}
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
@@ -476,7 +476,7 @@ namespace TestGenerateFarDistanceField
 
 				m_Tex_TempTarget.SetPS( 0 );
 //				m_Tex_TempDepth3D[2].SetPS( 1 );
-m_Tex_TempDepth3D[1].SetPS( 1 );
+m_Tex_TempDepth3D[2].SetPS( 1 );
 
 				m_Prim_Quad.Render( m_Shader_PostProcess );
 
