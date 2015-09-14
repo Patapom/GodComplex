@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define BISOU
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -102,16 +104,29 @@ namespace TestGenerateFarDistanceField
 				m_Shader_RenderScene = null;
 			}
 
-			try {
-				m_Shader_SplatDepthStencil[0] = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS0", null );
-				m_Shader_SplatDepthStencil[1] = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS1", null );
-				m_Shader_SplatDepthStencil[2] = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS2", null );
-			} catch ( Exception _e ) {
-				MessageBox.Show( "Shader \"SplatDepthStencil\" failed to compile!\n\n" + _e.Message, "Distance Field Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
-				m_Shader_SplatDepthStencil[0] = null;
-				m_Shader_SplatDepthStencil[1] = null;
-				m_Shader_SplatDepthStencil[2] = null;
-			}
+			#if DEBUG && !BISOU
+				try {
+					m_Shader_SplatDepthStencil[0] = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS0", null );
+					m_Shader_SplatDepthStencil[1] = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS1", null );
+					m_Shader_SplatDepthStencil[2] = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS2", null );
+				} catch ( Exception _e ) {
+					MessageBox.Show( "Shader \"SplatDepthStencil\" failed to compile!\n\n" + _e.Message, "Distance Field Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
+					m_Shader_SplatDepthStencil[0] = null;
+					m_Shader_SplatDepthStencil[1] = null;
+					m_Shader_SplatDepthStencil[2] = null;
+				}
+			#else
+				try {
+					m_Shader_SplatDepthStencil[0] = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/SplatDepthStencil.fxbin" ), "CS0" );
+					m_Shader_SplatDepthStencil[1] = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/SplatDepthStencil.fxbin" ), "CS1" );
+					m_Shader_SplatDepthStencil[2] = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/SplatDepthStencil.fxbin" ), "CS2" );
+				} catch ( Exception _e ) {
+					MessageBox.Show( "Shader \"SplatDepthStencil\" failed to compile!\n\n" + _e.Message, "Distance Field Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
+					m_Shader_SplatDepthStencil[0] = null;
+					m_Shader_SplatDepthStencil[1] = null;
+					m_Shader_SplatDepthStencil[2] = null;
+				}
+			#endif
 
 			try {
 				m_Shader_PostProcess = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
@@ -425,7 +440,7 @@ namespace TestGenerateFarDistanceField
 				m_Shader_SplatDepthStencil[0].Dispatch( groupsCountX, groupsCountY, 1 );
 
 				m_Device.DefaultDepthStencil.RemoveFromLastAssignedSlots();	// So we can use it again next time!
-//				m_Tex_DistanceField.RemoveFromLastAssignedSlotUAV();		// So we can use it as input
+				m_Tex_TempDepth3D[0].RemoveFromLastAssignedSlotUAV();		// So we can use it as input
 			}
 
 			// 2nd pass downsamples by 2 and build 16 depth levels
@@ -436,6 +451,8 @@ namespace TestGenerateFarDistanceField
 				int	groupsCountX = m_Tex_TempDepth3D[1].Width;
 				int	groupsCountY = m_Tex_TempDepth3D[1].Height;
 				m_Shader_SplatDepthStencil[1].Dispatch( groupsCountX, groupsCountY, 1 );
+
+				m_Tex_TempDepth3D[1].RemoveFromLastAssignedSlotUAV();		// So we can use it as input
 			}
 
 			// 3rd pass downsamples by 2 and build 64 depth levels
@@ -446,6 +463,8 @@ namespace TestGenerateFarDistanceField
 				int	groupsCountX = m_Tex_TempDepth3D[2].Width;
 				int	groupsCountY = m_Tex_TempDepth3D[2].Height;
 				m_Shader_SplatDepthStencil[2].Dispatch( groupsCountX, groupsCountY, 1 );
+
+				m_Tex_TempDepth3D[2].RemoveFromLastAssignedSlotUAV();		// So we can use it as input
 			}
 
 
@@ -456,7 +475,8 @@ namespace TestGenerateFarDistanceField
 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 				m_Tex_TempTarget.SetPS( 0 );
-				m_Tex_TempDepth3D[2].SetPS( 1 );
+//				m_Tex_TempDepth3D[2].SetPS( 1 );
+m_Tex_TempDepth3D[1].SetPS( 1 );
 
 				m_Prim_Quad.Render( m_Shader_PostProcess );
 
