@@ -116,11 +116,15 @@ namespace TestConvexHull
 				}
 
 				// Draw convex hull planes
+				int		planeIndex = 0;
 				foreach ( Plane P in m_Owner.m_convexHull ) {
 					float3	Dir = new float3( -P.normal.y, P.normal.x, 0.0f );
-					PointF	P0 = World2Client( m_center + (float2) (P.position - 8.0f * Dir) );
-					PointF	P1 = World2Client( m_center + (float2) (P.position + 8.0f * Dir) );
+					PointF	P0 = World2Client( m_center + (float2) (P.position - 12.0f * Dir) );
+					PointF	P1 = World2Client( m_center + (float2) (P.position + 12.0f * Dir) );
 					G.DrawLine( Pens.DarkGreen, P0, P1 );
+
+					P0 = World2Client( m_center + (float2) P.position );
+					G.DrawString( (planeIndex++).ToString(), Font, Brushes.DarkGreen, P0 );
 				}
 			}
 
