@@ -127,6 +127,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestBoxFitting", "Tools\Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestGenerateFarDistanceField", "Tools\TestGenerateFarDistanceField\TestGenerateFarDistanceField.csproj", "{DEB8047C-F268-4578-BA31-AF010A5F920A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConvexHull", "Tools\TestConvexHull\TestConvexHull.csproj", "{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug DirectX10|Any CPU = Debug DirectX10|Any CPU
@@ -1991,6 +1993,34 @@ Global
 		{DEB8047C-F268-4578-BA31-AF010A5F920A}.Release|x64.ActiveCfg = Release|x86
 		{DEB8047C-F268-4578-BA31-AF010A5F920A}.Release|x86.ActiveCfg = Release|x86
 		{DEB8047C-F268-4578-BA31-AF010A5F920A}.Release|x86.Build.0 = Release|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Debug DirectX10|Any CPU.ActiveCfg = Debug|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Debug DirectX10|Mixed Platforms.Build.0 = Debug|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Debug DirectX10|Win32.ActiveCfg = Debug|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Debug DirectX10|x64.ActiveCfg = Debug|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Debug DirectX10|x86.ActiveCfg = Debug|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Debug DirectX10|x86.Build.0 = Debug|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Debug|Win32.ActiveCfg = Debug|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Debug|x64.ActiveCfg = Debug|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Debug|x86.ActiveCfg = Debug|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Debug|x86.Build.0 = Debug|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Profile|Any CPU.ActiveCfg = Release|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Profile|Mixed Platforms.ActiveCfg = Release|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Profile|Mixed Platforms.Build.0 = Release|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Profile|Win32.ActiveCfg = Release|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Profile|x64.ActiveCfg = Release|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Profile|x86.ActiveCfg = Release|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Profile|x86.Build.0 = Release|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Release|Any CPU.ActiveCfg = Release|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Release|Mixed Platforms.Build.0 = Release|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Release|Win32.ActiveCfg = Release|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Release|x64.ActiveCfg = Release|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Release|x86.ActiveCfg = Release|x86
+		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
