@@ -55,7 +55,7 @@ void	CS0( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, 
 								+ gs_csPositions0[2][ThreadIndex]
 								+ gs_csPositions0[3][ThreadIndex];
 
-	csAveragePosition = csAveragePosition.w > 0.0 ? csAveragePosition / csAveragePosition.w : float4( 0.0, 0.0, 1.0, 0.0 );
+	csAveragePosition = csAveragePosition.w > 0.0 ? csAveragePosition / csAveragePosition.w : float4( 0, 0, 1, 0 );
 	_TexTarget[uint3( _GroupID.xy, ThreadIndex )] = float4( csAveragePosition.xyz, 0.0 );
 }
 
@@ -109,7 +109,7 @@ void	CS1( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, 
 										+ gs_csPositions1[2][4*ThreadIndex+i]
 										+ gs_csPositions1[3][4*ThreadIndex+i];
 
-			csAveragePosition = csAveragePosition.w > 0.0 ? csAveragePosition / csAveragePosition.w : float4( 0.0, 0.0, 2.0, 0.0 );
+			csAveragePosition = csAveragePosition.w > 0.0 ? csAveragePosition / csAveragePosition.w : float4( 0, 0, 1, 0 );
 			_TexTarget[uint3( _GroupID.xy, 4*ThreadIndex+i )] = float4( csAveragePosition.xyz, 0.0 );
 		}
 	}
