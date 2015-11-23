@@ -152,6 +152,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="OutputPanel2.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="OutputPanel2.Designer.cs">
+      <DependentUpon>OutputPanel2.cs</DependentUpon>
+    </Compile>
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -215,13 +215,13 @@ namespace TestConvexHull
 			//
 			List< Plane >	validPlanes = new List< Plane >();
 			for ( int i=0; i < planes.Count; i++ ) {
-				Plane	candidatePlane = planes[i];
+				Plane	candidate = planes[i];
 				bool	isValid = true;
 
 				// Check shadowing by existing planes
 				for ( int j=0; j < results.Count; j++ ) {
 					Plane	existingPlane = results[j];
-					if ( (existingPlane.position - candidatePlane.position).Dot( candidatePlane.normal ) < 0.0f ) {
+					if ( (existingPlane.position - candidate.position).Dot( candidate.normal ) < 0.0f ) {
 						isValid = false;		// Existing plane hides this candidate's position
 						break;
 					}
@@ -233,14 +233,14 @@ namespace TestConvexHull
 				for ( int j=0; j < planes.Count; j++ )
 					if ( i != j ) {
 						Plane	otherCandidate = planes[j];
-						if ( (otherCandidate.position - candidatePlane.position).Dot( candidatePlane.normal ) < 0.0f ) {
+						if ( (otherCandidate.position - candidate.position).Dot( candidate.normal ) < 0.0f ) {
 							isValid = false;	// Other candidate hides this candidate's position
 							break;
 						}
 					}
 
 				if ( isValid )
-					validPlanes.Add( candidatePlane );
+					validPlanes.Add( candidate );
 			}
 
 			while ( true ) {

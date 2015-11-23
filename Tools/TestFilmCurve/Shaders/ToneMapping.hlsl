@@ -67,7 +67,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 //		float	S = (MaxRGB - MinRGB) / (1.00001 - abs(2*L-1));
 		float	S = (MaxRGB - MinRGB) / MaxRGB;
 
-		Color *= 1.0 - _A * pow( S, _B );
+		Color *= 1.0 - _A * pow( abs( S ), _B );
 //		Color = S;
 	}
 

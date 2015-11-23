@@ -28,6 +28,7 @@ namespace TestFresnel
 			floatTrackbarControl1.Enabled = true;
 			panelColor.Enabled = true;
 			outputPanel1.FresnelType = OutputPanel.FRESNEL_TYPE.SCHLICK;
+			outputPanel2.FresnelType = OutputPanel2.FRESNEL_TYPE.SCHLICK;
 		}
 
 		private void radioButtonPrecise_CheckedChanged( object sender, EventArgs e )
@@ -35,6 +36,7 @@ namespace TestFresnel
 			floatTrackbarControl1.Enabled = true;
 			panelColor.Enabled = true;
 			outputPanel1.FresnelType = OutputPanel.FRESNEL_TYPE.PRECISE;
+			outputPanel2.FresnelType = OutputPanel2.FRESNEL_TYPE.PRECISE;
 		}
 
 		private void checkBoxData_CheckedChanged( object sender, EventArgs e )
@@ -47,6 +49,7 @@ namespace TestFresnel
 		private void floatTrackbarControl1_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			outputPanel1.IOR = _Sender.Value;
+			outputPanel2.IOR = _Sender.Value;
 		}
 
 		private void panelColor_Click( object sender, EventArgs e )
@@ -55,6 +58,7 @@ namespace TestFresnel
 				return;
 
 			outputPanel1.SpecularTint = colorDialog1.Color;
+			outputPanel2.SpecularTint = colorDialog1.Color;
 			panelColor.BackColor = colorDialog1.Color;
 		}
 
