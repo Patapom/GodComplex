@@ -273,12 +273,11 @@ namespace TestFresnel
 			yr = 1.0f - FdrIntegral_Schlick( _IOR );
 			yg = 1.0f - yr / (_IOR*_IOR);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
 
-
 			float	eta = 1.0f / _IOR;	// eta is "the relative index of refraction of the medium with the reflected ray to the other medium"
 										// So eta = IOR_air / IOR_other
 
 			yb = 1.0f - FdrAnalytic( eta );
-			yy = 1.0f - yb / (eta*eta);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
+			yy = (1.0f - yb) / (eta*eta);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
 
 //yg = (1.0f - yr) / (_IOR*_IOR);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
 
@@ -396,6 +395,10 @@ namespace TestFresnel
 			float	x, y;
 			BilinearSampleTable( m_Roughness, out x, out y );
 
+
+//y *= (1.0f-m_Roughness)*(1.0f-m_Roughness);
+
+
 			float	TotalSpecularReflection = F0 * x + y;
 			float	TotalDiffuseReflection = 1.0f - TotalSpecularReflection;
 					TotalDiffuseReflection *= m_PeakFactor;
@@ -424,6 +427,12 @@ namespace TestFresnel
 			//	TotalSpecularReflection_y ~= 0.181446 - 0.133354 x - 0.141096 x^2 + 0.142539 x^3
 			x = 0.818887f + 0.156573f * m_Roughness - 0.669738f * m_Roughness*m_Roughness + 0.262344f * m_Roughness*m_Roughness*m_Roughness;
 			y = 0.181446f - 0.133354f * m_Roughness - 0.141096f * m_Roughness*m_Roughness + 0.142539f * m_Roughness*m_Roughness*m_Roughness;
+
+
+// Use artificial weakening of base factor when roughness tends towards 0 so we avoid "white veil" due to Schlick approximation
+//y *= (1.0f-m_Roughness)*(1.0f-m_Roughness);
+y *= 1.0f-m_Roughness*m_Roughness;
+
 
 			TotalSpecularReflection = F0 * x + y;
 			TotalDiffuseReflection = 1.0f - TotalSpecularReflection;

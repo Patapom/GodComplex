@@ -96,6 +96,7 @@
 			this.floatTrackbarControlIOR.Value = 1F;
 			this.floatTrackbarControlIOR.VisibleRangeMin = 0.1F;
 			this.floatTrackbarControlIOR.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
+			this.floatTrackbarControlIOR.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlIOR_SliderDragStop);
 			// 
 			// panelColor
 			// 
@@ -263,6 +264,7 @@
 			this.outputPanel2.Location = new System.Drawing.Point(12, 447);
 			this.outputPanel2.MaxIOR = 10F;
 			this.outputPanel2.Name = "outputPanel2";
+			this.outputPanel2.PeakFactor = 1F;
 			this.outputPanel2.PlotAgainstF0 = false;
 			this.outputPanel2.Roughness = 1F;
 			this.outputPanel2.Size = new System.Drawing.Size(559, 268);

@@ -226,5 +226,10 @@ namespace TestFresnel
 		private void floatTrackbarControlPeakFactor_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			outputPanel2.PeakFactor = floatTrackbarControlPeakFactor.Value;
 		}
+
+		private void floatTrackbarControlIOR_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
+			if ( _Sender.Value < 10.0f )
+				_Sender.VisibleRangeMax = 10.0f;	// Restore visibility range
+		}
 	}
 }
