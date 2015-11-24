@@ -61,6 +61,15 @@ namespace TestFresnel
 			}
 		}
 
+		protected float			m_PeakFactor = 1.0f;
+		public float			PeakFactor {
+			get { return m_PeakFactor; }
+			set {
+				m_PeakFactor = value;
+				UpdateBitmap();
+			}
+		}
+
 		protected bool			m_PlotAgainstF0 = false;
 		public bool				PlotAgainstF0 {
 			get { return m_PlotAgainstF0; }
@@ -389,6 +398,7 @@ namespace TestFresnel
 
 			float	TotalSpecularReflection = F0 * x + y;
 			float	TotalDiffuseReflection = 1.0f - TotalSpecularReflection;
+					TotalDiffuseReflection *= m_PeakFactor;
 
 			yr = TotalDiffuseReflection;
 
@@ -399,8 +409,27 @@ namespace TestFresnel
 			float	eta = 1.0f / _IOR;	// eta is "the relative index of refraction of the medium with the reflected ray to the other medium"
 										// So eta = IOR_air / IOR_other
 
-			yy = FdrAnalytic( eta );
+//			yy = FdrAnalytic( eta );
 //			yy = 1.0f - (1.0f - yy) / (eta*eta);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
+
+
+			// After fiiting in Mathematica, it turns out that:
+			//	TotalSpecularReflection_x ~= 0.831387 + 0.000403213 x - 0.276223 x^2	<= x = roughness
+			//	TotalSpecularReflection_y ~= 0.188237 - 0.218206 x + 0.0727132 x^2
+// 			x = 0.831387f + 0.000403213f * m_Roughness - 0.276223f * m_Roughness*m_Roughness;
+// 			y = 0.188237f - 0.218206f * m_Roughness + 0.0727132f * m_Roughness*m_Roughness;
+
+			// And here's a closer fit with a 3rd degree polynomial:
+			//	TotalSpecularReflection_x ~= 0.818887 + 0.156573 x - 0.669738 x^2 + 0.262344 x^3	<= x = roughness
+			//	TotalSpecularReflection_y ~= 0.181446 - 0.133354 x - 0.141096 x^2 + 0.142539 x^3
+			x = 0.818887f + 0.156573f * m_Roughness - 0.669738f * m_Roughness*m_Roughness + 0.262344f * m_Roughness*m_Roughness*m_Roughness;
+			y = 0.181446f - 0.133354f * m_Roughness - 0.141096f * m_Roughness*m_Roughness + 0.142539f * m_Roughness*m_Roughness*m_Roughness;
+
+			TotalSpecularReflection = F0 * x + y;
+			TotalDiffuseReflection = 1.0f - TotalSpecularReflection;
+			TotalDiffuseReflection *= m_PeakFactor;
+
+			yy = TotalDiffuseReflection;
 		}
 
 		#endregion

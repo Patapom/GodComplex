@@ -212,6 +212,7 @@ namespace TestFresnel
 			else
 				outputPanel2.FresnelType = radioButtonPrecise.Checked ? OutputPanel2.FRESNEL_TYPE.PRECISE : OutputPanel2.FRESNEL_TYPE.SCHLICK;
 			floatTrackbarControlRoughness.Enabled = checkBoxusePreComputedTable.Checked;
+			floatTrackbarControlPeakFactor.Enabled = checkBoxusePreComputedTable.Checked;
 		}
 
 		private void floatTrackbarControlRoughness_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
@@ -220,6 +221,10 @@ namespace TestFresnel
 
 		private void checkBoxPlotAgainstF0_CheckedChanged( object sender, EventArgs e ) {
 			outputPanel2.PlotAgainstF0 = checkBoxPlotAgainstF0.Checked;
+		}
+
+		private void floatTrackbarControlPeakFactor_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+			outputPanel2.PeakFactor = floatTrackbarControlPeakFactor.Value;
 		}
 	}
 }

@@ -46,10 +46,13 @@
 			this.label1 = new System.Windows.Forms.Label();
 			this.checkBoxusePreComputedTable = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxPlotAgainstF0 = new System.Windows.Forms.CheckBox();
 			this.outputPanel2 = new TestFresnel.OutputPanel2(this.components);
 			this.outputPanel1 = new TestFresnel.OutputPanel(this.components);
 			this.label3 = new System.Windows.Forms.Label();
-			this.checkBoxPlotAgainstF0 = new System.Windows.Forms.CheckBox();
+			this.label5 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlPeakFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label6 = new System.Windows.Forms.Label();
 			this.panel1.SuspendLayout();
 			this.outputPanel1.SuspendLayout();
 			this.SuspendLayout();
@@ -218,7 +221,7 @@
 			// checkBoxusePreComputedTable
 			// 
 			this.checkBoxusePreComputedTable.AutoSize = true;
-			this.checkBoxusePreComputedTable.Location = new System.Drawing.Point(577, 671);
+			this.checkBoxusePreComputedTable.Location = new System.Drawing.Point(577, 646);
 			this.checkBoxusePreComputedTable.Name = "checkBoxusePreComputedTable";
 			this.checkBoxusePreComputedTable.Size = new System.Drawing.Size(145, 17);
 			this.checkBoxusePreComputedTable.TabIndex = 6;
@@ -229,18 +232,29 @@
 			// floatTrackbarControlRoughness
 			// 
 			this.floatTrackbarControlRoughness.Enabled = false;
-			this.floatTrackbarControlRoughness.Location = new System.Drawing.Point(577, 694);
+			this.floatTrackbarControlRoughness.Location = new System.Drawing.Point(641, 695);
 			this.floatTrackbarControlRoughness.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlRoughness.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlRoughness.Name = "floatTrackbarControlRoughness";
 			this.floatTrackbarControlRoughness.RangeMax = 1F;
 			this.floatTrackbarControlRoughness.RangeMin = 0.0001F;
-			this.floatTrackbarControlRoughness.Size = new System.Drawing.Size(197, 20);
+			this.floatTrackbarControlRoughness.Size = new System.Drawing.Size(170, 20);
 			this.floatTrackbarControlRoughness.TabIndex = 2;
 			this.floatTrackbarControlRoughness.Value = 1F;
 			this.floatTrackbarControlRoughness.VisibleRangeMax = 1F;
 			this.floatTrackbarControlRoughness.VisibleRangeMin = 0.0001F;
 			this.floatTrackbarControlRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughness_ValueChanged);
+			// 
+			// checkBoxPlotAgainstF0
+			// 
+			this.checkBoxPlotAgainstF0.AutoSize = true;
+			this.checkBoxPlotAgainstF0.Location = new System.Drawing.Point(580, 489);
+			this.checkBoxPlotAgainstF0.Name = "checkBoxPlotAgainstF0";
+			this.checkBoxPlotAgainstF0.Size = new System.Drawing.Size(96, 17);
+			this.checkBoxPlotAgainstF0.TabIndex = 6;
+			this.checkBoxPlotAgainstF0.Text = "Plot against F0";
+			this.checkBoxPlotAgainstF0.UseVisualStyleBackColor = true;
+			this.checkBoxPlotAgainstF0.CheckedChanged += new System.EventHandler(this.checkBoxPlotAgainstF0_CheckedChanged);
 			// 
 			// outputPanel2
 			// 
@@ -249,6 +263,7 @@
 			this.outputPanel2.Location = new System.Drawing.Point(12, 447);
 			this.outputPanel2.MaxIOR = 10F;
 			this.outputPanel2.Name = "outputPanel2";
+			this.outputPanel2.PlotAgainstF0 = false;
 			this.outputPanel2.Roughness = 1F;
 			this.outputPanel2.Size = new System.Drawing.Size(559, 268);
 			this.outputPanel2.TabIndex = 8;
@@ -277,23 +292,49 @@
 			this.label3.TabIndex = 3;
 			this.label3.Text = "Fresnel against cos(theta)";
 			// 
-			// checkBoxPlotAgainstF0
+			// label5
 			// 
-			this.checkBoxPlotAgainstF0.AutoSize = true;
-			this.checkBoxPlotAgainstF0.Location = new System.Drawing.Point(580, 489);
-			this.checkBoxPlotAgainstF0.Name = "checkBoxPlotAgainstF0";
-			this.checkBoxPlotAgainstF0.Size = new System.Drawing.Size(96, 17);
-			this.checkBoxPlotAgainstF0.TabIndex = 6;
-			this.checkBoxPlotAgainstF0.Text = "Plot against F0";
-			this.checkBoxPlotAgainstF0.UseVisualStyleBackColor = true;
-			this.checkBoxPlotAgainstF0.CheckedChanged += new System.EventHandler(this.checkBoxPlotAgainstF0_CheckedChanged);
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(574, 697);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(61, 13);
+			this.label5.TabIndex = 11;
+			this.label5.Text = "Roughness";
+			// 
+			// floatTrackbarControlPeakFactor
+			// 
+			this.floatTrackbarControlPeakFactor.Enabled = false;
+			this.floatTrackbarControlPeakFactor.Location = new System.Drawing.Point(641, 669);
+			this.floatTrackbarControlPeakFactor.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlPeakFactor.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlPeakFactor.Name = "floatTrackbarControlPeakFactor";
+			this.floatTrackbarControlPeakFactor.RangeMax = 1F;
+			this.floatTrackbarControlPeakFactor.RangeMin = 0.0001F;
+			this.floatTrackbarControlPeakFactor.Size = new System.Drawing.Size(170, 20);
+			this.floatTrackbarControlPeakFactor.TabIndex = 2;
+			this.floatTrackbarControlPeakFactor.Value = 1F;
+			this.floatTrackbarControlPeakFactor.VisibleRangeMax = 1F;
+			this.floatTrackbarControlPeakFactor.VisibleRangeMin = 0.0001F;
+			this.floatTrackbarControlPeakFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlPeakFactor_ValueChanged);
+			// 
+			// label6
+			// 
+			this.label6.AutoSize = true;
+			this.label6.Location = new System.Drawing.Point(574, 671);
+			this.label6.Name = "label6";
+			this.label6.Size = new System.Drawing.Size(65, 13);
+			this.label6.TabIndex = 11;
+			this.label6.Text = "Peak Factor";
 			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(823, 727);
+			this.Controls.Add(this.label6);
+			this.Controls.Add(this.label5);
 			this.Controls.Add(this.label1);
+			this.Controls.Add(this.floatTrackbarControlPeakFactor);
 			this.Controls.Add(this.floatTrackbarControlRoughness);
 			this.Controls.Add(this.floatTrackbarControlVerticalScale);
 			this.Controls.Add(this.panel1);
@@ -342,6 +383,9 @@
 		private System.Windows.Forms.CheckBox checkBoxusePreComputedTable;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughness;
 		private System.Windows.Forms.CheckBox checkBoxPlotAgainstF0;
+		private System.Windows.Forms.Label label5;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPeakFactor;
+		private System.Windows.Forms.Label label6;
 	}
 }
 
