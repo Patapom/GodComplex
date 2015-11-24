@@ -18,52 +18,104 @@ namespace TestFresnel
 			K,
 		}
 
+		// F0 = ((n2 - n1) / (n2 + n1))²
+		// Assuming n1=1 (air)
+		public static float	IOR_to_F0( float _IOR ) {
+			float	F0 = (_IOR-1.0f) / (_IOR+1.0f);
+					F0 *= F0;
+			return F0;
+		}
+
+		// We look for n2 so:
+		//	n2 = (1+a)/(1-a) with a = sqrt(F0)
+		public static float	F0_to_IOR( float _F0 ) {
+			float	a = (float) Math.Sqrt( _F0 );
+			float	IOR = (1.0f + a) / (1.001f - a);
+			return IOR;
+		}
+
 		public Form1()
 		{
 			InitializeComponent();
 		}
 
-		private void radioButtonSchlick_CheckedChanged( object sender, EventArgs e )
-		{
-			floatTrackbarControl1.Enabled = true;
-			panelColor.Enabled = true;
+		private void radioButtonSchlick_CheckedChanged( object sender, EventArgs e ) {
 			outputPanel1.FresnelType = OutputPanel.FRESNEL_TYPE.SCHLICK;
 			outputPanel2.FresnelType = OutputPanel2.FRESNEL_TYPE.SCHLICK;
 		}
 
-		private void radioButtonPrecise_CheckedChanged( object sender, EventArgs e )
-		{
-			floatTrackbarControl1.Enabled = true;
-			panelColor.Enabled = true;
+		private void radioButtonPrecise_CheckedChanged( object sender, EventArgs e ) {
 			outputPanel1.FresnelType = OutputPanel.FRESNEL_TYPE.PRECISE;
 			outputPanel2.FresnelType = OutputPanel2.FRESNEL_TYPE.PRECISE;
 		}
 
-		private void checkBoxData_CheckedChanged( object sender, EventArgs e )
-		{
-			floatTrackbarControl1.Enabled = !checkBoxData.Checked;
+		private void radioButtonIOR_CheckedChanged( object sender, EventArgs e ) {
+			floatTrackbarControlIOR.Enabled = true;
+			panelColor.Enabled = false;
+		}
+
+		private void radioButtonSpecularTint_CheckedChanged( object sender, EventArgs e ) {
+			floatTrackbarControlIOR.Enabled = false;
+			panelColor.Enabled = true;
+		}
+
+		private void checkBoxData_CheckedChanged( object sender, EventArgs e ) {
+			floatTrackbarControlIOR.Enabled = !checkBoxData.Checked;
 			panelColor.Enabled = !checkBoxData.Checked;
 			outputPanel1.FromData = checkBoxData.Checked;
 		}
 
-		private void floatTrackbarControl1_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
-		{
-			outputPanel1.IOR = _Sender.Value;
-			outputPanel2.IOR = _Sender.Value;
+		Color	IOR_to_Color( float _IOR_red, float _IOR_green, float _IOR_blue ) {
+			float	F0_red = IOR_to_F0( _IOR_red );
+			float	F0_green = IOR_to_F0( _IOR_green );
+			float	F0_blue = IOR_to_F0( _IOR_blue );
+
+			Color	result = Color.FromArgb( (int) (255 * F0_red), (int) (255 * F0_green), (int) (255 * F0_blue) );
+			return result;
 		}
 
-		private void panelColor_Click( object sender, EventArgs e )
-		{
+		private void floatTrackbarControl1_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+
+			outputPanel2.MaxIOR = floatTrackbarControlIOR.VisibleRangeMax;	// So we match the visible range
+
+			if ( !floatTrackbarControlIOR.Enabled )
+				return;	// Changed externally from specular tint modification, don't change panels' values!
+
+			outputPanel1.IOR_red = _Sender.Value;
+			outputPanel1.IOR_green = _Sender.Value;
+			outputPanel1.IOR_blue = _Sender.Value;
+
+			outputPanel2.IOR = _Sender.Value;
+
+			panelColor.BackColor = IOR_to_Color( _Sender.Value, _Sender.Value, _Sender.Value );
+		}
+
+		private void panelColor_Click( object sender, EventArgs e ) {
+			colorDialog1.Color = IOR_to_Color( outputPanel1.IOR_red, outputPanel1.IOR_green, outputPanel1.IOR_blue );
 			if ( colorDialog1.ShowDialog( this ) != DialogResult.OK )
 				return;
 
-			outputPanel1.SpecularTint = colorDialog1.Color;
-			outputPanel2.SpecularTint = colorDialog1.Color;
 			panelColor.BackColor = colorDialog1.Color;
+
+			float	F0_red = colorDialog1.Color.R / 255.0f;
+			float	F0_green = colorDialog1.Color.G / 255.0f;
+			float	F0_blue = colorDialog1.Color.B / 255.0f;
+
+			float	IOR_red = F0_to_IOR( F0_red );
+			float	IOR_green = F0_to_IOR( F0_green );
+			float	IOR_blue = F0_to_IOR( F0_blue );
+
+			floatTrackbarControlIOR.Value = Math.Max( Math.Max( IOR_red, IOR_green ), IOR_blue );
+			floatTrackbarControlIOR.VisibleRangeMax = Math.Max( 10.0f, 2.0f * floatTrackbarControlIOR.Value );
+
+			outputPanel1.IOR_red = IOR_red;
+			outputPanel1.IOR_green = IOR_green;
+			outputPanel1.IOR_blue = IOR_blue;
+
+			outputPanel2.IOR = Math.Max( Math.Max( IOR_red, IOR_green ), IOR_blue );
 		}
 
-		private void buttonLoadData_Click( object sender, EventArgs e )
-		{
+		private void buttonLoadData_Click( object sender, EventArgs e ) {
 			if ( openFileDialogRefract.ShowDialog( this ) != DialogResult.OK )
 				return;
 
@@ -138,6 +190,10 @@ namespace TestFresnel
 			{
 				MessageBox.Show( this, "Failed to load data file:" + _e.Message, "Argh!", MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
+		}
+
+		private void floatTrackbarControlVerticalScale_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+			outputPanel2.VerticalScale = floatTrackbarControlVerticalScale.Value;
 		}
 	}
 }

@@ -638,17 +638,42 @@ namespace AreaLightTest
 
 			// Write tables
 			float2	Temp = new float2();
+
+			float2[]	Integral_SpecularReflectance = new float2[_TableSize];
+
 			PixelsBuffer Buff = TexTableStaging.Map( 0, 0 );
 			using ( System.IO.BinaryReader R = Buff.OpenStreamRead() )
 				using ( System.IO.FileStream S = _TableFileName.Create() )
 					using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) )
-						for ( int Y=0; Y < _TableSize; Y++ )
+						for ( int Y=0; Y < _TableSize; Y++ ) {
+							float2	SumSpecularlyReflected = float2.Zero;
 							for ( int X=0; X < _TableSize; X++ ) {
 								Temp.x = R.ReadSingle();
 								Temp.y = R.ReadSingle();
 								W.Write( Temp.x );
 								W.Write( Temp.y );
+
+								SumSpecularlyReflected.x += Temp.x;
+								SumSpecularlyReflected.y += Temp.y;
 							}
+
+							// Normalize and store "not specularly reflected" light
+							SumSpecularlyReflected = SumSpecularlyReflected / _TableSize;
+
+							float	sum_dielectric = 1.0f - (0.04f * SumSpecularlyReflected.x + SumSpecularlyReflected.y);
+							float	sum_metallic = 1.0f - (SumSpecularlyReflected.x + SumSpecularlyReflected.y);
+
+							Integral_SpecularReflectance[Y] = SumSpecularlyReflected;
+						}
+			TexTableStaging.UnMap( 0, 0 );
+
+			string	TotalSpecularReflectionTableFileName = System.IO.Path.GetFileNameWithoutExtension( _TableFileName.FullName ) + ".table";
+			using ( System.IO.FileStream S = new System.IO.FileInfo( TotalSpecularReflectionTableFileName ).Create() )
+				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) )
+					for ( int i=0; i < _TableSize; i++ ) {
+						W.Write( Integral_SpecularReflectance[i].x );
+						W.Write( Integral_SpecularReflectance[i].y );
+					}
 		}
 
 #else

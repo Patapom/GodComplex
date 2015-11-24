@@ -12,7 +12,7 @@ namespace TestFresnel
 	public partial class OutputPanel2 : Panel
 	{
 		private const float	MIN_IOR = 0.1f;		// Minimum plotted IOR
-		private const float	MAX_IOR = 10.0f;	// Maximum plotted IOR
+//		private const float	MAX_IOR = 10.0f;	// Maximum plotted IOR
 
 		protected Bitmap	m_Bitmap = null;
 
@@ -40,11 +40,20 @@ namespace TestFresnel
 			}
 		}
 
-		protected Color			m_SpecularTint = Color.White;
-		public Color			SpecularTint {
-			get { return m_SpecularTint; }
+		protected float			m_MaxIOR = 10.0f;
+		public float			MaxIOR {
+			get { return m_MaxIOR; }
 			set {
-				m_SpecularTint = value;
+				m_MaxIOR = value;
+				UpdateBitmap();
+			}
+		}
+
+		protected float			m_VerticalScale = 1.0f;
+		public float			VerticalScale {
+			get { return m_VerticalScale; }
+			set {
+				m_VerticalScale = value;
 				UpdateBitmap();
 			}
 		}
@@ -81,30 +90,35 @@ namespace TestFresnel
 				DrawLine( G, 0, 1, 1, 1, Pens.Gray );
 
 				float	x = 0.0f;
-				float	yr, yg, yb;
-				Eval( MIN_IOR, out yr, out yg, out yb );
+				float	yr, yg, yb, yy;
+				Eval( MIN_IOR, out yr, out yg, out yb, out yy );
 				for ( int X=10; X <= Width; X++ )
 				{
 					float	px = x;
 					float	pyr = yr;
 					float	pyg = yg;
 					float	pyb = yb;
+					float	pyy = yy;
 					x = (float) (X-10.0f) / (Width - 10);
 
-					float	CurrentIOR = MIN_IOR + x * (MAX_IOR - MIN_IOR);
+					float	CurrentIOR = MIN_IOR + x * (m_MaxIOR - MIN_IOR);
 
-					Eval( CurrentIOR, out yr, out yg, out yb );
+					Eval( CurrentIOR, out yr, out yg, out yb, out yy );
 
 					DrawLine( G, px, pyr, x, yr, Pens.Red );
 					DrawLine( G, px, pyg, x, yg, Pens.LimeGreen );
 					DrawLine( G, px, pyb, x, yb, Pens.Blue );
+					DrawLine( G, px, pyy, x, yy, Pens.Gold );
 				}
 
-				Eval( m_IOR, out yr, out yg, out yb );
-				G.DrawString( "Fdr = " + yr + "\r\nFdr_a = " + yb, Font, Brushes.Black, 12.0f, 20 );
+				Eval( m_IOR, out yr, out yg, out yb, out yy );
+
+				string	T = "Fdr = " + yr.ToString( "G4" ) + "\r\nFdr_in = " + yg.ToString( "G4" ) + "\r\nFdr_a = " + yb.ToString( "G4" );
+				SizeF	TextSize = G.MeasureString( T, Font );
+				G.DrawString( T, Font, Brushes.Black, Width - TextSize.Width - 12.0f, Height - TextSize.Height - 20 );
 
 				// Show current IOR
-				float	x_IOR = (m_IOR - MIN_IOR) / (MAX_IOR - MIN_IOR);
+				float	x_IOR = (IOR - MIN_IOR) / (m_MaxIOR - MIN_IOR);
 				DrawLine( G, x_IOR, 0.0f, x_IOR, 1.0f, Pens.Black );
 			}
 
@@ -117,6 +131,9 @@ namespace TestFresnel
 		}
 		protected void		DrawLine( Graphics G, float x0, float y0, float x1, float y1, Pen _Pen )
 		{
+			y0 *= m_VerticalScale;
+			y1 *= m_VerticalScale;
+
 			float	X0 = 10 + (Width-20) * x0;
 			float	Y0 = Height - 10 - (Height-20) * y0;
 			float	X1 = 10 + (Width-20) * x1;
@@ -124,7 +141,7 @@ namespace TestFresnel
 			G.DrawLine( _Pen, X0, Y0, X1, Y1 );
 		}
 
-		protected delegate void		FresnelEval( float x, out float yr, out float yg, out float yb );
+		protected delegate void		FresnelEval( float x, out float yr, out float yg, out float yb, out float yy );
 
 		/// <summary>
 		/// Analytic expression for Fdr as found in 
@@ -180,15 +197,18 @@ namespace TestFresnel
 			return (float) Fdr;
 		}
 
-		protected void		Fresnel_Schlick( float _IOR, out float yr, out float yg, out float yb ) {
+		protected void		Fresnel_Schlick( float _IOR, out float yr, out float yg, out float yb, out float yy ) {
 			yr = FdrIntegral_Schlick( _IOR );
-			yg = 0.0f;
-			yb = FdrAnalytic( _IOR );
+			yg = 1.0f - (1.0f - yr) / (_IOR*_IOR);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
 
-// yr *= 0.25f;
-// yb *= 0.25f;
-//yr /= (float) Math.PI;
-//yb /= (float) Math.PI;
+
+			float	eta = 1.0f / _IOR;	// eta is "the relative index of refraction of the medium with the reflected ray to the other medium"
+										// So eta = IOR_air / IOR_other
+
+			yb = FdrAnalytic( eta );
+			yy = 1.0f - (1.0f - yb) / (eta*eta);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
+
+//yg = (1.0f - yr) / (_IOR*_IOR);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
 
 		}
 
@@ -244,15 +264,19 @@ namespace TestFresnel
 			return (float) Fdr;
 		}
 
-		protected void		Fresnel_Precise( float _IOR, out float yr, out float yg, out float yb ) {
+		protected void		Fresnel_Precise( float _IOR, out float yr, out float yg, out float yb, out float yy ) {
 			yr = FdrIntegral_Precise( _IOR );
-			yg = 0.0f;
-			yb = FdrAnalytic( _IOR );
+			yg = 1.0f - (1.0f - yr) / (_IOR*_IOR);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
 
-// yr *= 0.25f;
-// yb *= 0.3f;
-//yr /= (float) Math.PI;
-//yb /= (float) Math.PI;
+
+			float	eta = 1.0f / _IOR;	// eta is "the relative index of refraction of the medium with the reflected ray to the other medium"
+										// So eta = IOR_air / IOR_other
+
+			yb = FdrAnalytic( eta );
+			yy = 1.0f - (1.0f - yb) / (eta*eta);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
+
+
+//yg = (1.0f - yr) / (_IOR*_IOR);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
 
 		}
 		#endregion
