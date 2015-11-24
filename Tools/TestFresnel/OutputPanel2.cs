@@ -20,6 +20,7 @@ namespace TestFresnel
 		{
 			SCHLICK,
 			PRECISE,
+			TABLE,		// Precomputed table created from the TestAreaLight "precompute BRDF" method
 		}
 
 		protected FRESNEL_TYPE	m_Type = FRESNEL_TYPE.SCHLICK;
@@ -45,6 +46,26 @@ namespace TestFresnel
 			get { return m_MaxIOR; }
 			set {
 				m_MaxIOR = value;
+				UpdateBitmap();
+			}
+		}
+
+		public float[,]			m_Table = null;
+
+		protected float			m_Roughness = 1.0f;
+		public float			Roughness {
+			get { return m_Roughness; }
+			set {
+				m_Roughness = value;
+				UpdateBitmap();
+			}
+		}
+
+		protected bool			m_PlotAgainstF0 = false;
+		public bool				PlotAgainstF0 {
+			get { return m_PlotAgainstF0; }
+			set {
+				m_PlotAgainstF0 = value;
 				UpdateBitmap();
 			}
 		}
@@ -85,44 +106,86 @@ namespace TestFresnel
 				switch ( m_Type ) {
 					case FRESNEL_TYPE.SCHLICK:	Eval = Fresnel_Schlick; break;
 					case FRESNEL_TYPE.PRECISE:	Eval = Fresnel_Precise; break;
+					case FRESNEL_TYPE.TABLE:	Eval = Fresnel_Table; break;
 				}
 
 				DrawLine( G, 0, 1, 1, 1, Pens.Gray );
 
 				float	x = 0.0f;
 				float	yr, yg, yb, yy;
-				Eval( MIN_IOR, out yr, out yg, out yb, out yy );
-				for ( int X=10; X <= Width; X++ )
-				{
-					float	px = x;
-					float	pyr = yr;
-					float	pyg = yg;
-					float	pyb = yb;
-					float	pyy = yy;
-					x = (float) (X-10.0f) / (Width - 10);
 
-					float	CurrentIOR = MIN_IOR + x * (m_MaxIOR - MIN_IOR);
+				if ( !m_PlotAgainstF0 ) {
+					// Plot against IOR
+					Eval( MIN_IOR, out yr, out yg, out yb, out yy );
+					for ( int X=10; X <= Width; X++ ) {
+						float	px = x;
+						float	pyr = yr;
+						float	pyg = yg;
+						float	pyb = yb;
+						float	pyy = yy;
+						x = (float) (X-10.0f) / (Width - 10);
 
-					Eval( CurrentIOR, out yr, out yg, out yb, out yy );
+						float	CurrentIOR = MIN_IOR + x * (m_MaxIOR - MIN_IOR);
 
-					DrawLine( G, px, pyr, x, yr, Pens.Red );
-					DrawLine( G, px, pyg, x, yg, Pens.LimeGreen );
-					DrawLine( G, px, pyb, x, yb, Pens.Blue );
-					DrawLine( G, px, pyy, x, yy, Pens.Gold );
+						Eval( CurrentIOR, out yr, out yg, out yb, out yy );
+
+						Clamp( ref yr );
+						Clamp( ref yg );
+						Clamp( ref yb );
+						Clamp( ref yy );
+
+						DrawLine( G, px, pyr, x, yr, Pens.Red );
+						DrawLine( G, px, pyg, x, yg, Pens.LimeGreen );
+						DrawLine( G, px, pyb, x, yb, Pens.Blue );
+						DrawLine( G, px, pyy, x, yy, Pens.Gold );
+					}
+
+					// Show current IOR
+					float	x_IOR = (IOR - MIN_IOR) / (m_MaxIOR - MIN_IOR);
+					DrawLine( G, x_IOR, 0.0f, x_IOR, 1.0f, Pens.Black );
+				} else {
+					// plot against F0
+					Eval( Form1.F0_to_IOR( 0.0f ), out yr, out yg, out yb, out yy );
+					for ( int X=10; X <= Width; X++ ) {
+						float	px = x;
+						float	pyr = yr;
+						float	pyg = yg;
+						float	pyb = yb;
+						float	pyy = yy;
+						x = (float) (X-10.0f) / (Width - 10);
+
+						float	CurrentIOR = Form1.F0_to_IOR( x );
+
+						Eval( CurrentIOR, out yr, out yg, out yb, out yy );
+
+						Clamp( ref yr );
+						Clamp( ref yg );
+						Clamp( ref yb );
+						Clamp( ref yy );
+
+						DrawLine( G, px, pyr, x, yr, Pens.Red );
+						DrawLine( G, px, pyg, x, yg, Pens.LimeGreen );
+						DrawLine( G, px, pyb, x, yb, Pens.Blue );
+						DrawLine( G, px, pyy, x, yy, Pens.Gold );
+					}
+
+					// Show current IOR
+					float	x_IOR = Form1.IOR_to_F0( IOR );
+					DrawLine( G, x_IOR, 0.0f, x_IOR, 1.0f, Pens.Black );
 				}
 
+				// Draw values at current IOR
 				Eval( m_IOR, out yr, out yg, out yb, out yy );
-
 				string	T = "Fdr = " + yr.ToString( "G4" ) + "\r\nFdr_in = " + yg.ToString( "G4" ) + "\r\nFdr_a = " + yb.ToString( "G4" );
 				SizeF	TextSize = G.MeasureString( T, Font );
 				G.DrawString( T, Font, Brushes.Black, Width - TextSize.Width - 12.0f, Height - TextSize.Height - 20 );
-
-				// Show current IOR
-				float	x_IOR = (IOR - MIN_IOR) / (m_MaxIOR - MIN_IOR);
-				DrawLine( G, x_IOR, 0.0f, x_IOR, 1.0f, Pens.Black );
 			}
 
 			Invalidate();
+		}
+
+		void	Clamp( ref float x ) {
+			x = Math.Max( -100.0f, Math.Min( 100.0f, x ) );
 		}
 
 		protected void		DrawLine( Graphics G, float x0, float y0, float x1, float y1 )
@@ -198,15 +261,15 @@ namespace TestFresnel
 		}
 
 		protected void		Fresnel_Schlick( float _IOR, out float yr, out float yg, out float yb, out float yy ) {
-			yr = FdrIntegral_Schlick( _IOR );
-			yg = 1.0f - (1.0f - yr) / (_IOR*_IOR);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
+			yr = 1.0f - FdrIntegral_Schlick( _IOR );
+			yg = 1.0f - yr / (_IOR*_IOR);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
 
 
 			float	eta = 1.0f / _IOR;	// eta is "the relative index of refraction of the medium with the reflected ray to the other medium"
 										// So eta = IOR_air / IOR_other
 
-			yb = FdrAnalytic( eta );
-			yy = 1.0f - (1.0f - yb) / (eta*eta);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
+			yb = 1.0f - FdrAnalytic( eta );
+			yy = 1.0f - yb / (eta*eta);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
 
 //yg = (1.0f - yr) / (_IOR*_IOR);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
 
@@ -265,20 +328,81 @@ namespace TestFresnel
 		}
 
 		protected void		Fresnel_Precise( float _IOR, out float yr, out float yg, out float yb, out float yy ) {
-			yr = FdrIntegral_Precise( _IOR );
-			yg = 1.0f - (1.0f - yr) / (_IOR*_IOR);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
+			yr = 1.0f - FdrIntegral_Precise( _IOR );
+			yg = 1.0f - yr / (_IOR*_IOR);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
 
 
 			float	eta = 1.0f / _IOR;	// eta is "the relative index of refraction of the medium with the reflected ray to the other medium"
 										// So eta = IOR_air / IOR_other
 
-			yb = FdrAnalytic( eta );
-			yy = 1.0f - (1.0f - yb) / (eta*eta);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
+			yb = 1.0f - FdrAnalytic( eta );
+			yy = 1.0f - yb / (eta*eta);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
 
 
 //yg = (1.0f - yr) / (_IOR*_IOR);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
 
 		}
+
+		#endregion
+
+		#region Table
+
+		/// <summary>
+		/// In the TestAreaLight project we have a Compute Shader that's able to precompute the BRDF integral for our specular model (i.e. Ward)
+		/// It creates a 2D table where X represents cos(ThetaV), the view angle and Y represents the roughness from 0.01 to 1 (very rough).
+		/// I simply added all the X terms to obtain a single dimension of float2 values depending on roughness.
+		/// 
+		/// Since the BRDF integral was computed so that F0 could be factored out, for each roughness we obtain 2 values (x,y) that can be recombined as:
+		/// 
+		///		TotalSpecularReflection = F0 * x + y
+		///	
+		/// Where F0 is the vertical specular reflection coefficient (or specular tint) directly linked to IOR
+		/// We therefore assume that:
+		/// 
+		///		TotalDiffuseReflection  = 1 - TotalSpecularReflection
+		///								= 1 - (F0 * x + y)
+		/// 
+		/// </summary>
+		/// <param name="_IOR"></param>
+		/// <param name="yr"></param>
+		/// <param name="yg"></param>
+		/// <param name="yb"></param>
+		/// <param name="yy"></param>
+		/// 
+		void	BilinearSampleTable( float _roughness, out float _x, out float _y ) {
+			_roughness *= 64.0f;
+			int		R0 = (int) Math.Floor( _roughness );
+			float	r = _roughness - R0;
+			R0 = Math.Min( 63, R0 );
+			int		R1 = Math.Min( 63, R0+1 );
+
+			_x = (1.0f - r) * m_Table[R0,0] + r * m_Table[R1,0];
+			_y = (1.0f - r) * m_Table[R0,1] + r * m_Table[R1,1];
+		}
+
+		protected void		Fresnel_Table( float _IOR, out float yr, out float yg, out float yb, out float yy ) {
+
+			float	F0 = Form1.IOR_to_F0( _IOR );
+
+			float	x, y;
+			BilinearSampleTable( m_Roughness, out x, out y );
+
+			float	TotalSpecularReflection = F0 * x + y;
+			float	TotalDiffuseReflection = 1.0f - TotalSpecularReflection;
+
+			yr = TotalDiffuseReflection;
+
+			float	dummy;
+			Fresnel_Schlick( _IOR, out yg, out dummy, out dummy, out dummy );
+			Fresnel_Precise( _IOR, out yb, out dummy, out dummy, out dummy );
+
+			float	eta = 1.0f / _IOR;	// eta is "the relative index of refraction of the medium with the reflected ray to the other medium"
+										// So eta = IOR_air / IOR_other
+
+			yy = FdrAnalytic( eta );
+//			yy = 1.0f - (1.0f - yy) / (eta*eta);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
+		}
+
 		#endregion
 
 		protected override void OnSizeChanged( EventArgs e )

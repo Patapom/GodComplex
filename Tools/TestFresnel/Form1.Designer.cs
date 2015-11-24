@@ -38,17 +38,20 @@
 			this.buttonLoadData = new System.Windows.Forms.Button();
 			this.checkBoxData = new System.Windows.Forms.CheckBox();
 			this.label2 = new System.Windows.Forms.Label();
-			this.outputPanel2 = new TestFresnel.OutputPanel2(this.components);
-			this.outputPanel1 = new TestFresnel.OutputPanel(this.components);
-			this.label3 = new System.Windows.Forms.Label();
 			this.label4 = new System.Windows.Forms.Label();
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.radioButtonIOR = new System.Windows.Forms.RadioButton();
 			this.radioButtonSpecularTint = new System.Windows.Forms.RadioButton();
 			this.floatTrackbarControlVerticalScale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label1 = new System.Windows.Forms.Label();
-			this.outputPanel1.SuspendLayout();
+			this.checkBoxusePreComputedTable = new System.Windows.Forms.CheckBox();
+			this.floatTrackbarControlRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.outputPanel2 = new TestFresnel.OutputPanel2(this.components);
+			this.outputPanel1 = new TestFresnel.OutputPanel(this.components);
+			this.label3 = new System.Windows.Forms.Label();
+			this.checkBoxPlotAgainstF0 = new System.Windows.Forms.CheckBox();
 			this.panel1.SuspendLayout();
+			this.outputPanel1.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// radioButtonSchlick
@@ -143,38 +146,6 @@
 			this.label2.TabIndex = 3;
 			this.label2.Text = "Fresnel against cos(theta)";
 			// 
-			// outputPanel2
-			// 
-			this.outputPanel2.FresnelType = TestFresnel.OutputPanel2.FRESNEL_TYPE.SCHLICK;
-			this.outputPanel2.IOR = 1F;
-			this.outputPanel2.Location = new System.Drawing.Point(12, 447);
-			this.outputPanel2.Name = "outputPanel2";
-			this.outputPanel2.Size = new System.Drawing.Size(559, 268);
-			this.outputPanel2.TabIndex = 8;
-			// 
-			// outputPanel1
-			// 
-			this.outputPanel1.Controls.Add(this.label3);
-			this.outputPanel1.Data = null;
-			this.outputPanel1.FresnelType = TestFresnel.OutputPanel.FRESNEL_TYPE.SCHLICK;
-			this.outputPanel1.FromData = false;
-			this.outputPanel1.IOR_blue = 1F;
-			this.outputPanel1.IOR_green = 1F;
-			this.outputPanel1.IOR_red = 1F;
-			this.outputPanel1.Location = new System.Drawing.Point(12, 35);
-			this.outputPanel1.Name = "outputPanel1";
-			this.outputPanel1.Size = new System.Drawing.Size(559, 377);
-			this.outputPanel1.TabIndex = 0;
-			// 
-			// label3
-			// 
-			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(-3, 396);
-			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(128, 13);
-			this.label3.TabIndex = 3;
-			this.label3.Text = "Fresnel against cos(theta)";
-			// 
 			// label4
 			// 
 			this.label4.AutoSize = true;
@@ -244,15 +215,91 @@
 			this.label1.TabIndex = 11;
 			this.label1.Text = "Vertical Scale";
 			// 
+			// checkBoxusePreComputedTable
+			// 
+			this.checkBoxusePreComputedTable.AutoSize = true;
+			this.checkBoxusePreComputedTable.Location = new System.Drawing.Point(577, 671);
+			this.checkBoxusePreComputedTable.Name = "checkBoxusePreComputedTable";
+			this.checkBoxusePreComputedTable.Size = new System.Drawing.Size(145, 17);
+			this.checkBoxusePreComputedTable.TabIndex = 6;
+			this.checkBoxusePreComputedTable.Text = "Use Pre-Computed Table";
+			this.checkBoxusePreComputedTable.UseVisualStyleBackColor = true;
+			this.checkBoxusePreComputedTable.CheckedChanged += new System.EventHandler(this.checkBoxusePreComputedtable_CheckedChanged);
+			// 
+			// floatTrackbarControlRoughness
+			// 
+			this.floatTrackbarControlRoughness.Enabled = false;
+			this.floatTrackbarControlRoughness.Location = new System.Drawing.Point(577, 694);
+			this.floatTrackbarControlRoughness.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRoughness.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRoughness.Name = "floatTrackbarControlRoughness";
+			this.floatTrackbarControlRoughness.RangeMax = 1F;
+			this.floatTrackbarControlRoughness.RangeMin = 0.0001F;
+			this.floatTrackbarControlRoughness.Size = new System.Drawing.Size(197, 20);
+			this.floatTrackbarControlRoughness.TabIndex = 2;
+			this.floatTrackbarControlRoughness.Value = 1F;
+			this.floatTrackbarControlRoughness.VisibleRangeMax = 1F;
+			this.floatTrackbarControlRoughness.VisibleRangeMin = 0.0001F;
+			this.floatTrackbarControlRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughness_ValueChanged);
+			// 
+			// outputPanel2
+			// 
+			this.outputPanel2.FresnelType = TestFresnel.OutputPanel2.FRESNEL_TYPE.SCHLICK;
+			this.outputPanel2.IOR = 1F;
+			this.outputPanel2.Location = new System.Drawing.Point(12, 447);
+			this.outputPanel2.MaxIOR = 10F;
+			this.outputPanel2.Name = "outputPanel2";
+			this.outputPanel2.Roughness = 1F;
+			this.outputPanel2.Size = new System.Drawing.Size(559, 268);
+			this.outputPanel2.TabIndex = 8;
+			this.outputPanel2.VerticalScale = 1F;
+			// 
+			// outputPanel1
+			// 
+			this.outputPanel1.Controls.Add(this.label3);
+			this.outputPanel1.Data = null;
+			this.outputPanel1.FresnelType = TestFresnel.OutputPanel.FRESNEL_TYPE.SCHLICK;
+			this.outputPanel1.FromData = false;
+			this.outputPanel1.IOR_blue = 1F;
+			this.outputPanel1.IOR_green = 1F;
+			this.outputPanel1.IOR_red = 1F;
+			this.outputPanel1.Location = new System.Drawing.Point(12, 35);
+			this.outputPanel1.Name = "outputPanel1";
+			this.outputPanel1.Size = new System.Drawing.Size(559, 377);
+			this.outputPanel1.TabIndex = 0;
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point(-3, 396);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(128, 13);
+			this.label3.TabIndex = 3;
+			this.label3.Text = "Fresnel against cos(theta)";
+			// 
+			// checkBoxPlotAgainstF0
+			// 
+			this.checkBoxPlotAgainstF0.AutoSize = true;
+			this.checkBoxPlotAgainstF0.Location = new System.Drawing.Point(580, 489);
+			this.checkBoxPlotAgainstF0.Name = "checkBoxPlotAgainstF0";
+			this.checkBoxPlotAgainstF0.Size = new System.Drawing.Size(96, 17);
+			this.checkBoxPlotAgainstF0.TabIndex = 6;
+			this.checkBoxPlotAgainstF0.Text = "Plot against F0";
+			this.checkBoxPlotAgainstF0.UseVisualStyleBackColor = true;
+			this.checkBoxPlotAgainstF0.CheckedChanged += new System.EventHandler(this.checkBoxPlotAgainstF0_CheckedChanged);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(823, 727);
 			this.Controls.Add(this.label1);
+			this.Controls.Add(this.floatTrackbarControlRoughness);
 			this.Controls.Add(this.floatTrackbarControlVerticalScale);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.outputPanel2);
+			this.Controls.Add(this.checkBoxPlotAgainstF0);
+			this.Controls.Add(this.checkBoxusePreComputedTable);
 			this.Controls.Add(this.checkBoxData);
 			this.Controls.Add(this.buttonLoadData);
 			this.Controls.Add(this.label4);
@@ -261,11 +308,12 @@
 			this.Controls.Add(this.radioButtonSchlick);
 			this.Controls.Add(this.outputPanel1);
 			this.Name = "Form1";
+			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Form1";
-			this.outputPanel1.ResumeLayout(false);
-			this.outputPanel1.PerformLayout();
 			this.panel1.ResumeLayout(false);
 			this.panel1.PerformLayout();
+			this.outputPanel1.ResumeLayout(false);
+			this.outputPanel1.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -291,6 +339,9 @@
 		private System.Windows.Forms.RadioButton radioButtonSpecularTint;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlVerticalScale;
 		private System.Windows.Forms.Label label1;
+		private System.Windows.Forms.CheckBox checkBoxusePreComputedTable;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughness;
+		private System.Windows.Forms.CheckBox checkBoxPlotAgainstF0;
 	}
 }
 

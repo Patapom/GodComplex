@@ -34,9 +34,19 @@ namespace TestFresnel
 			return IOR;
 		}
 
+		public float[,]	m_IntegralSpecularReflection = new float[64,2];
+
 		public Form1()
 		{
 			InitializeComponent();
+
+			using ( System.IO.FileStream S = new System.IO.FileInfo( "../../../TestAreaLight/BRDF0_64x64.table" ).OpenRead() )
+				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) )
+					for ( int i=0; i < 64; i++ ) {
+						m_IntegralSpecularReflection[i,0] = R.ReadSingle();
+						m_IntegralSpecularReflection[i,1] = R.ReadSingle();
+					}
+			outputPanel2.m_Table = m_IntegralSpecularReflection;
 		}
 
 		private void radioButtonSchlick_CheckedChanged( object sender, EventArgs e ) {
@@ -194,6 +204,22 @@ namespace TestFresnel
 
 		private void floatTrackbarControlVerticalScale_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			outputPanel2.VerticalScale = floatTrackbarControlVerticalScale.Value;
+		}
+
+		private void checkBoxusePreComputedtable_CheckedChanged( object sender, EventArgs e ) {
+			if ( checkBoxusePreComputedTable.Checked )
+				outputPanel2.FresnelType = OutputPanel2.FRESNEL_TYPE.TABLE;
+			else
+				outputPanel2.FresnelType = radioButtonPrecise.Checked ? OutputPanel2.FRESNEL_TYPE.PRECISE : OutputPanel2.FRESNEL_TYPE.SCHLICK;
+			floatTrackbarControlRoughness.Enabled = checkBoxusePreComputedTable.Checked;
+		}
+
+		private void floatTrackbarControlRoughness_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+			outputPanel2.Roughness = floatTrackbarControlRoughness.Value;
+		}
+
+		private void checkBoxPlotAgainstF0_CheckedChanged( object sender, EventArgs e ) {
+			outputPanel2.PlotAgainstF0 = checkBoxPlotAgainstF0.Checked;
 		}
 	}
 }
