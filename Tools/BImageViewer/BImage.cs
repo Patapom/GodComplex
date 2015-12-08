@@ -11,8 +11,10 @@ namespace BImageViewer
 	{
 		#region CONSTANTS
 
-		const uint	SUPPORTED_VERSION = 13;
+//		const uint	SUPPORTED_VERSION = 13;
+		const uint	SUPPORTED_VERSION = 17;
 		const uint	MAGIC = 0x004D4942 | (SUPPORTED_VERSION << 24);
+//		#define BIMAGE_MAGIC (unsigned int)( ('B'<<0)|('I'<<8)|('M'<<16)|(BIMAGE_VERSION<<24) )
 
 		#endregion
 
@@ -208,9 +210,9 @@ namespace BImageViewer
 			}
 
 			public void		Read( BinaryReader _R ) {
-				m_layout = (Layout) ReadBigUInt32( _R );
-				m_type = (Type) ReadBigUInt32( _R );
-				m_swizzle = (Swizzle) ReadBigUInt32( _R );
+				m_layout = (Layout) _R.ReadUInt32();
+				m_type = (Type) _R.ReadUInt32();
+				m_swizzle = (Swizzle) _R.ReadUInt32();
 			}
 
 			public override string ToString() {
@@ -220,7 +222,7 @@ namespace BImageViewer
 
 		public class	ImageOptions {
 
-			const uint	SUPPORTED_IMAGEOPTS_VERSION = 16;
+			const uint	SUPPORTED_IMAGEOPTS_VERSION = 18;
 
 			public enum TYPE {
 				TT_2D,
@@ -281,22 +283,22 @@ namespace BImageViewer
 
 			public void		Read( BinaryReader _R ) {
 
-				uint	version = ReadBigUInt32( _R );
+				uint	version = _R.ReadUInt32();
 				if ( version != SUPPORTED_IMAGEOPTS_VERSION )
 					throw new Exception( "Unsupported image options version " + version + " (supported version is " + SUPPORTED_IMAGEOPTS_VERSION + ")!" );
 
-				m_type = (TYPE) ReadBigUInt32( _R );
+				m_type = (TYPE) _R.ReadUInt32();
 				m_format.Read( _R );
 
-				m_minWidth = ReadBigUInt32( _R );
-				m_minHeight = ReadBigUInt32( _R );
-				m_maxWidth = ReadBigUInt32( _R );
-				m_maxHeight = ReadBigUInt32( _R );
-				m_depth = ReadBigUInt32( _R );
-				m_minNumLevels = ReadBigUInt32( _R );
-				m_maxNumLevels = ReadBigUInt32( _R );
-				m_arraySize = ReadBigUInt32( _R );
-				m_flags = ReadBigUInt16( _R );
+				m_minWidth = _R.ReadUInt32();
+				m_minHeight = _R.ReadUInt32();
+				m_maxWidth = _R.ReadUInt32();
+				m_maxHeight = _R.ReadUInt32();
+				m_depth = _R.ReadUInt32();
+				m_minNumLevels = _R.ReadUInt32();
+				m_maxNumLevels = _R.ReadUInt32();
+				m_arraySize = _R.ReadUInt32();
+				m_flags = _R.ReadUInt16();
 			}
 		}
 
@@ -318,12 +320,12 @@ namespace BImageViewer
 			}
 
 			public void		Read( BinaryReader _R, uint _MipOffset ) {
-				m_MipLevel = _MipOffset + ReadBigUInt32( _R );
-				m_SliceIndex = ReadBigUInt32( _R );
-				m_Width = ReadBigUInt32( _R );
-				m_Height = ReadBigUInt32( _R );
+				m_MipLevel = _MipOffset + _R.ReadUInt32();
+				m_SliceIndex = _R.ReadUInt32();
+				m_Width = _R.ReadUInt32();
+				m_Height = _R.ReadUInt32();
 
-				int	ContentSize = (int) ReadBigUInt32( _R );
+				int	ContentSize = (int) _R.ReadUInt32();
 				if ( !m_Owner.m_Opts.m_format.IsDepth && ContentSize != m_Width * m_Height * (m_Owner.m_Opts.m_format.BitsCount >> 3) )
 					throw new Exception( "Unexpected content size!" );
 
@@ -350,10 +352,10 @@ namespace BImageViewer
 			using ( FileStream S = _FileName.OpenRead() )
 				using ( BinaryReader R = new BinaryReader( S ) ) {
 
-					m_sourceFileTime = ReadBigUInt32( R );
-					m_Magic = ReadBigUInt32( R );
+					m_sourceFileTime = R.ReadUInt32();
+					m_Magic = R.ReadUInt32();
 					if ( m_Magic != MAGIC )
-						throw new Exception( "Image has out of date magic!" );
+						throw new Exception( "Image has unsupported magic!" );
 
 					m_Opts.Read( R );
 
@@ -389,6 +391,8 @@ namespace BImageViewer
 							totalSlicesInFile += depth;
 							depth = Math.Max( 1, depth >> 1 );
 						}
+					} else if ( m_Opts.m_type == ImageOptions.TYPE.TT_CUBIC ) {
+						totalSlicesInFile *= 6;
 					}
 
 					uint	mipOffset = (uint) Slices.Count;
@@ -409,8 +413,6 @@ namespace BImageViewer
 
 			RendererManaged.PIXEL_FORMAT	TextureFormat = m_Opts.m_format.EquivalentRendererFormat;
 
-			uint	W = m_Opts.m_curWidth;
-			uint	H = m_Opts.m_curHeight;
 			uint	ArraySize = m_Opts.m_arraySize;
 			uint	MipsCount = m_Opts.m_curNumLevels;
 			uint	PixelSize = m_Opts.m_format.BitsCount >> 3;
@@ -418,17 +420,14 @@ namespace BImageViewer
 			List<RendererManaged.PixelsBuffer>	Content = new List<RendererManaged.PixelsBuffer>();
 			for ( uint SliceIndex=0; SliceIndex < ArraySize; SliceIndex++ ) {
 				for ( uint MipLevelIndex=0; MipLevelIndex < MipsCount; MipLevelIndex++ ) {
-					ImageSlice	Slice = m_Slices[SliceIndex*MipsCount+MipLevelIndex];
+					ImageSlice	Slice = m_Slices[MipLevelIndex*ArraySize+SliceIndex];	// Stupidly stored in reverse order!
 
-					RendererManaged.PixelsBuffer	Pixels = new RendererManaged.PixelsBuffer( (int) (W * H * PixelSize) );
+					RendererManaged.PixelsBuffer	Pixels = new RendererManaged.PixelsBuffer( (int) (Slice.m_Width * Slice.m_Height * PixelSize) );
 					Content.Add( Pixels );
 
 					using ( BinaryWriter Writer = Pixels.OpenStreamWrite() )
 						Writer.Write( Slice.m_Content );
 				}
-
-				W = Math.Max( 1, W >> 1 );
-				H = Math.Max( 1, H >> 1 );
 			}
 
 			RendererManaged.Texture2D	Result = new RendererManaged.Texture2D( _Device, (int) m_Opts.m_curWidth, (int) m_Opts.m_curHeight, (int) m_Opts.m_arraySize, (int) m_Opts.m_curNumLevels, TextureFormat, false, false, Content.ToArray() );
@@ -437,9 +436,29 @@ namespace BImageViewer
 
 		public RendererManaged.Texture2D	CreateTextureCube( RendererManaged.Device _Device ) {
 			if ( m_Opts.m_type != ImageOptions.TYPE.TT_CUBIC )
-				throw new Exception( "The image is not a 2D texture!" );
+				throw new Exception( "The image is not a cube map texture!" );
 
-			throw new Exception( "Texture cubes are not supported yet!" );
+			RendererManaged.PIXEL_FORMAT	TextureFormat = m_Opts.m_format.EquivalentRendererFormat;
+
+			uint	ArraySize = 6 * m_Opts.m_arraySize;
+			uint	MipsCount = m_Opts.m_curNumLevels;
+			uint	PixelSize = m_Opts.m_format.BitsCount >> 3;
+
+			List<RendererManaged.PixelsBuffer>	Content = new List<RendererManaged.PixelsBuffer>();
+			for ( uint SliceIndex=0; SliceIndex < ArraySize; SliceIndex++ ) {
+				for ( uint MipLevelIndex=0; MipLevelIndex < MipsCount; MipLevelIndex++ ) {
+					ImageSlice	Slice = m_Slices[MipLevelIndex*ArraySize+SliceIndex];	// Stupidly stored in reverse order!
+
+					RendererManaged.PixelsBuffer	Pixels = new RendererManaged.PixelsBuffer( (int) (Slice.m_Width * Slice.m_Height * PixelSize) );
+					Content.Add( Pixels );
+
+					using ( BinaryWriter Writer = Pixels.OpenStreamWrite() )
+						Writer.Write( Slice.m_Content );
+				}
+			}
+
+			RendererManaged.Texture2D	Result = new RendererManaged.Texture2D( _Device, (int) m_Opts.m_curWidth, (int) m_Opts.m_curHeight, -6 * (int) m_Opts.m_arraySize, (int) m_Opts.m_curNumLevels, TextureFormat, false, false, Content.ToArray() );
+			return Result;
 		}
 
 		public RendererManaged.Texture3D	CreateTexture3D( RendererManaged.Device _Device ) {
@@ -449,17 +468,17 @@ namespace BImageViewer
 			throw new Exception( "Texture 3D are not supported yet!" );
 		}
 
-		private static ushort ReadBigUInt16( BinaryReader _R ) {
-			ushort	value = _R.ReadUInt16();
-			ushort	result = (ushort) (((value & 0x0000FF00U) >> 8) | ((value & 0x000000FFU) << 8));
-			return result;
-		}
-
-		private static uint	ReadBigUInt32( BinaryReader _R ) {
-			uint	value = _R.ReadUInt32();
-			uint	result = ((value & 0xFF000000U) >> 24) | ((value & 0x00FF0000U) >> 8) | ((value & 0x0000FF00U) << 8) | ((value & 0x000000FFU) << 24);
-			return result;
-		}
+// 		private static ushort ReadBigUInt16( BinaryReader _R ) {
+// 			ushort	value = _R.ReadUInt16();
+// 			ushort	result = (ushort) (((value & 0x0000FF00U) >> 8) | ((value & 0x000000FFU) << 8));
+// 			return result;
+// 		}
+// 
+// 		private static uint	ReadBigUInt32( BinaryReader _R ) {
+// 			uint	value = _R.ReadUInt32();
+// 			uint	result = ((value & 0xFF000000U) >> 24) | ((value & 0x00FF0000U) >> 8) | ((value & 0x0000FF00U) << 8) | ((value & 0x000000FFU) << 24);
+// 			return result;
+// 		}
 
 		#endregion
 	}

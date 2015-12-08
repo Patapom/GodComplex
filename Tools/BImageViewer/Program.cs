@@ -13,6 +13,12 @@ namespace BImageViewer
 		[STAThread]
 		static void Main( string[] _args )
 		{
+
+
+//_args = new string[] { @"..\..\..\Arkane\BImages\stainedglass2_area.bimage7" };
+_args = new string[] { @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_1127_cube_BC6H_UF16.bimage" };
+
+
 			if ( _args.Length != 1 ) {
 				MessageBox.Show( "Missing filename argument! Can't open unspecified file...", "BImage Viewer" );
 				return;

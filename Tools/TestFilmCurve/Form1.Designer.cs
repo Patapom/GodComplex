@@ -53,6 +53,9 @@
 			this.label10 = new System.Windows.Forms.Label();
 			this.checkBoxEnable = new System.Windows.Forms.CheckBox();
 			this.buttonReset = new System.Windows.Forms.Button();
+			this.floatTrackbarControlDebugLuminanceLevel = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label11 = new System.Windows.Forms.Label();
+			this.checkBoxDebugLuminanceLevel = new System.Windows.Forms.CheckBox();
 			this.panelOutput = new TestFilmicCurve.PanelOutput3D(this.components);
 			this.outputPanelHammersley1 = new TestFilmicCurve.OutputPanelHammersley(this.components);
 			this.panelGraph = new TestFilmicCurve.OutputPanel(this.components);
@@ -65,10 +68,10 @@
 			this.floatTrackbarControlScaleX.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlScaleX.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlScaleX.Name = "floatTrackbarControlScaleX";
+			this.floatTrackbarControlScaleX.RangeMin = 1.0001F;
 			this.floatTrackbarControlScaleX.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlScaleX.TabIndex = 1;
 			this.floatTrackbarControlScaleX.Value = 10F;
-			this.floatTrackbarControlScaleX.VisibleRangeMax = 20F;
 			this.floatTrackbarControlScaleX.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScaleX_ValueChanged);
 			// 
 			// floatTrackbarControlScaleY
@@ -78,10 +81,12 @@
 			this.floatTrackbarControlScaleY.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlScaleY.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlScaleY.Name = "floatTrackbarControlScaleY";
+			this.floatTrackbarControlScaleY.RangeMax = 1F;
+			this.floatTrackbarControlScaleY.RangeMin = 0.0001F;
 			this.floatTrackbarControlScaleY.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlScaleY.TabIndex = 1;
 			this.floatTrackbarControlScaleY.Value = 1F;
-			this.floatTrackbarControlScaleY.VisibleRangeMax = 5F;
+			this.floatTrackbarControlScaleY.VisibleRangeMax = 1F;
 			this.floatTrackbarControlScaleY.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScaleY_ValueChanged);
 			// 
 			// floatTrackbarControlWhitePoint
@@ -93,7 +98,7 @@
 			this.floatTrackbarControlWhitePoint.Name = "floatTrackbarControlWhitePoint";
 			this.floatTrackbarControlWhitePoint.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlWhitePoint.TabIndex = 1;
-			this.floatTrackbarControlWhitePoint.Value = 10F;
+			this.floatTrackbarControlWhitePoint.Value = 8F;
 			this.floatTrackbarControlWhitePoint.VisibleRangeMax = 20F;
 			this.floatTrackbarControlWhitePoint.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlWhitePoint_ValueChanged);
 			// 
@@ -283,7 +288,7 @@
 			// floatTrackbarControlExposure
 			// 
 			this.floatTrackbarControlExposure.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlExposure.Location = new System.Drawing.Point(735, 343);
+			this.floatTrackbarControlExposure.Location = new System.Drawing.Point(747, 343);
 			this.floatTrackbarControlExposure.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlExposure.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlExposure.Name = "floatTrackbarControlExposure";
@@ -291,8 +296,8 @@
 			this.floatTrackbarControlExposure.RangeMin = -10F;
 			this.floatTrackbarControlExposure.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlExposure.TabIndex = 1;
-			this.floatTrackbarControlExposure.Value = 0F;
-			this.floatTrackbarControlExposure.VisibleRangeMax = 2F;
+			this.floatTrackbarControlExposure.Value = 3F;
+			this.floatTrackbarControlExposure.VisibleRangeMax = 3F;
 			this.floatTrackbarControlExposure.VisibleRangeMin = -2F;
 			// 
 			// label10
@@ -310,7 +315,7 @@
 			this.checkBoxEnable.AutoSize = true;
 			this.checkBoxEnable.Checked = true;
 			this.checkBoxEnable.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxEnable.Location = new System.Drawing.Point(711, 382);
+			this.checkBoxEnable.Location = new System.Drawing.Point(711, 369);
 			this.checkBoxEnable.Name = "checkBoxEnable";
 			this.checkBoxEnable.Size = new System.Drawing.Size(131, 17);
 			this.checkBoxEnable.TabIndex = 6;
@@ -319,13 +324,47 @@
 			// 
 			// buttonReset
 			// 
-			this.buttonReset.Location = new System.Drawing.Point(708, 416);
+			this.buttonReset.Location = new System.Drawing.Point(708, 250);
 			this.buttonReset.Name = "buttonReset";
 			this.buttonReset.Size = new System.Drawing.Size(75, 23);
 			this.buttonReset.TabIndex = 5;
 			this.buttonReset.Text = "Reset";
 			this.buttonReset.UseVisualStyleBackColor = true;
 			this.buttonReset.Click += new System.EventHandler(this.buttonReset_Click);
+			// 
+			// floatTrackbarControlDebugLuminanceLevel
+			// 
+			this.floatTrackbarControlDebugLuminanceLevel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlDebugLuminanceLevel.Location = new System.Drawing.Point(747, 428);
+			this.floatTrackbarControlDebugLuminanceLevel.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlDebugLuminanceLevel.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlDebugLuminanceLevel.Name = "floatTrackbarControlDebugLuminanceLevel";
+			this.floatTrackbarControlDebugLuminanceLevel.RangeMin = 0.0001F;
+			this.floatTrackbarControlDebugLuminanceLevel.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlDebugLuminanceLevel.TabIndex = 1;
+			this.floatTrackbarControlDebugLuminanceLevel.Value = 1F;
+			this.floatTrackbarControlDebugLuminanceLevel.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlDebugLuminanceLevel_ValueChanged);
+			// 
+			// label11
+			// 
+			this.label11.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.label11.AutoSize = true;
+			this.label11.Location = new System.Drawing.Point(708, 432);
+			this.label11.Name = "label11";
+			this.label11.Size = new System.Drawing.Size(33, 13);
+			this.label11.TabIndex = 2;
+			this.label11.Text = "Luma";
+			// 
+			// checkBoxDebugLuminanceLevel
+			// 
+			this.checkBoxDebugLuminanceLevel.AutoSize = true;
+			this.checkBoxDebugLuminanceLevel.Location = new System.Drawing.Point(711, 405);
+			this.checkBoxDebugLuminanceLevel.Name = "checkBoxDebugLuminanceLevel";
+			this.checkBoxDebugLuminanceLevel.Size = new System.Drawing.Size(142, 17);
+			this.checkBoxDebugLuminanceLevel.TabIndex = 6;
+			this.checkBoxDebugLuminanceLevel.Text = "Debug Luminance Level";
+			this.checkBoxDebugLuminanceLevel.UseVisualStyleBackColor = true;
+			this.checkBoxDebugLuminanceLevel.CheckedChanged += new System.EventHandler(this.checkBoxDebugLuminanceLevel_CheckedChanged);
 			// 
 			// panelOutput
 			// 
@@ -352,12 +391,14 @@
 			this.panelGraph.B = 0.5F;
 			this.panelGraph.C = 0.1F;
 			this.panelGraph.D = 0.2F;
+			this.panelGraph.DebugLuminance = 1F;
 			this.panelGraph.E = 0.02F;
 			this.panelGraph.F = 0.3F;
 			this.panelGraph.Location = new System.Drawing.Point(935, 12);
 			this.panelGraph.Name = "panelGraph";
 			this.panelGraph.ScaleX = 1F;
 			this.panelGraph.ScaleY = 1F;
+			this.panelGraph.ShowDebugLuminance = false;
 			this.panelGraph.Size = new System.Drawing.Size(317, 223);
 			this.panelGraph.TabIndex = 0;
 			this.panelGraph.WhitePoint = 10F;
@@ -367,12 +408,14 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1264, 586);
+			this.Controls.Add(this.checkBoxDebugLuminanceLevel);
 			this.Controls.Add(this.checkBoxEnable);
 			this.Controls.Add(this.buttonReset);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.panelOutput);
 			this.Controls.Add(this.outputPanelHammersley1);
 			this.Controls.Add(this.label9);
+			this.Controls.Add(this.label11);
 			this.Controls.Add(this.label10);
 			this.Controls.Add(this.label8);
 			this.Controls.Add(this.label7);
@@ -390,6 +433,7 @@
 			this.Controls.Add(this.floatTrackbarControlB);
 			this.Controls.Add(this.floatTrackbarControlScaleY);
 			this.Controls.Add(this.floatTrackbarControlA);
+			this.Controls.Add(this.floatTrackbarControlDebugLuminanceLevel);
 			this.Controls.Add(this.floatTrackbarControlExposure);
 			this.Controls.Add(this.floatTrackbarControlScaleX);
 			this.Controls.Add(this.panelGraph);
@@ -430,6 +474,9 @@
 		private System.Windows.Forms.Label label10;
 		private System.Windows.Forms.CheckBox checkBoxEnable;
 		private System.Windows.Forms.Button buttonReset;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDebugLuminanceLevel;
+		private System.Windows.Forms.Label label11;
+		private System.Windows.Forms.CheckBox checkBoxDebugLuminanceLevel;
 	}
 }
 

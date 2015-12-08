@@ -20,7 +20,7 @@ namespace TestFilmicCurve
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Main {
 			public float3		_Resolution;
-// 			public float		iGlobalTime;
+ 			public float		_GlobalTime;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -47,6 +47,7 @@ namespace TestFilmicCurve
 
 			public float		_SaturationFactor;
 			public float		_DarkenFactor;
+			public float		_DebugLuminanceLevel;
 		}
 
 		private ConstantBuffer<CB_Main>			m_CB_Main = null;
@@ -58,6 +59,8 @@ namespace TestFilmicCurve
 
 		private Camera				m_Camera = new Camera();
 		private CameraManipulator	m_Manipulator = new CameraManipulator();
+
+		private DateTime			m_startTime = DateTime.Now;
 
 		public unsafe Form1()
 		{
@@ -127,8 +130,7 @@ namespace TestFilmicCurve
 			m_Manipulator.InitializeCamera( new float3( 0, 0, 1 ), new float3( 0, 0, 0 ), float3.UnitY );
 		}
 
-		protected override void OnFormClosed( FormClosedEventArgs e )
-		{
+		protected override void OnFormClosed( FormClosedEventArgs e ) {
 			if ( m_Device == null )
 				return;
 
@@ -168,6 +170,7 @@ namespace TestFilmicCurve
 				return;
 
 			m_CB_Main.m._Resolution = new float3( panelOutput.Width, panelOutput.Height, 0 );
+			m_CB_Main.m._GlobalTime = (float) (DateTime.Now - m_startTime).TotalSeconds;
 			m_CB_Main.UpdateData();
 
 			m_Device.SetRenderTarget( m_Device.DefaultTarget, null );
@@ -178,7 +181,7 @@ namespace TestFilmicCurve
 				m_Tex_CubeMap.SetPS( 0 );
 
 				m_CB_ToneMapping.m._Exposure = (float) Math.Pow( 2, floatTrackbarControlExposure.Value );
-				m_CB_ToneMapping.m._Flags = checkBoxEnable.Checked ? 1U : 0U;
+				m_CB_ToneMapping.m._Flags = (checkBoxEnable.Checked ? 1U : 0U) | (checkBoxDebugLuminanceLevel.Checked ? 2U : 0U);
 				m_CB_ToneMapping.m._A = floatTrackbarControlA.Value;
 				m_CB_ToneMapping.m._B = floatTrackbarControlB.Value;
 				m_CB_ToneMapping.m._C = floatTrackbarControlC.Value;
@@ -186,6 +189,7 @@ namespace TestFilmicCurve
 				m_CB_ToneMapping.m._E = floatTrackbarControlE.Value;
 				m_CB_ToneMapping.m._F = floatTrackbarControlF.Value;
 				m_CB_ToneMapping.m._WhitePoint = floatTrackbarControlWhitePoint.Value;
+				m_CB_ToneMapping.m._DebugLuminanceLevel = floatTrackbarControlDebugLuminanceLevel.Value;
 				m_CB_ToneMapping.UpdateData();
 
 				m_Device.RenderFullscreenQuad( m_Shader_ToneMapping );
@@ -240,6 +244,16 @@ namespace TestFilmicCurve
 		private void floatTrackbarControlF_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			panelGraph.F = _Sender.Value;
+		}
+
+		private void checkBoxDebugLuminanceLevel_CheckedChanged( object sender, EventArgs e )
+		{
+			panelGraph.ShowDebugLuminance = checkBoxDebugLuminanceLevel.Checked;
+		}
+
+		private void floatTrackbarControlDebugLuminanceLevel_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			panelGraph.DebugLuminance = _Sender.Value;
 		}
 
 		private void buttonReload_Click( object sender, EventArgs e )
