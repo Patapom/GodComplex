@@ -4,6 +4,8 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+#ifndef AUTOEXPOSURE_COMMON_INCLUDED
+#define AUTOEXPOSURE_COMMON_INCLUDED
 
 // Auto-exposure structure
 struct autoExposure_t {
@@ -124,3 +126,5 @@ float	ComputeStickyIntegralWeight( float _BucketDelta ) {
 autoExposure_t	ReadAutoExposureParameters() {
 	return _bufferAutoExposure[0];
 }
+
+#endif // #ifndef AUTOEXPOSURE_COMMON_INCLUDED

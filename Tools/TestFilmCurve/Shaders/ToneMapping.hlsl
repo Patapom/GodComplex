@@ -1,4 +1,7 @@
 #include "Global.hlsl"
+#include "AutoExposure/Common.hlsl"
+#include "AutoExposure/DebugDrawDigits.hlsl"
+#include "AutoExposure/DebugHistogram.hlsl"
 
 // Pines slides =>
 // 	• increase contrast in log space around middle gray ( log(0.18) )
@@ -20,6 +23,8 @@ cbuffer CB_ToneMapping : register( b10 ) {
 	float	_SaturationFactor;
 	float	_DarkenFactor;
 	float	_DebugLuminanceLevel;
+	float	_MouseU;
+	float	_MouseV;
 };
 
 struct VS_IN {
@@ -47,8 +52,14 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 
 	float2	UV = _In.__Position.xy / _Resolution.xy;
 	float3	OriginalColor = _texHDR.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
-			OriginalColor *= _Exposure;
 
+	// Apply auto-exposure
+	autoExposure_t	currentExposure = ReadAutoExposureParameters();
+
+//	OriginalColor *= _Exposure;
+	OriginalColor /= currentExposure.EngineLuminanceFactor;
+
+	// Apply tone mapping
 	float3	Color = OriginalColor;
 	if ( _Flags & 1 ) {
 		Color = max( 0.0, ToneMappingFilmic( 3.0 * Color ) / max( 1e-3, ToneMappingFilmic( _WhitePoint ) ) );
@@ -75,6 +86,11 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 			bool	checker = (pixelIndex.x & 1) ^ (pixelIndex.y & 1);
 			Color =  checker ? float3( 1, 0, 0 ) : float3( 0, 0, 1 );
 		}
+	}
+
+	// Show debug histogram
+	if ( _Flags & 4 ) {
+		DEBUG_DisplayLuminanceHistogram( UV, float2( _MouseU, _MouseV ), (_Flags & 2) ? _DebugLuminanceLevel : 0.0001, _Resolution.xy, _GlobalTime, Color, OriginalColor );
 	}
 
 	return Color;

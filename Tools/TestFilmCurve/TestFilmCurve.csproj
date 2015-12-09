@@ -243,6 +243,8 @@
     <Content Include="Shaders\AutoExposure\Common.hlsl" />
     <Content Include="Shaders\AutoExposure\ComputeTallHistogram.hlsl" />
     <Content Include="Shaders\AutoExposure\ComputeAutoExposure.hlsl" />
+    <Content Include="Shaders\AutoExposure\DebugDrawDigits.hlsl" />
+    <Content Include="Shaders\AutoExposure\DebugHistogram.hlsl" />
     <Content Include="Shaders\AutoExposure\FinalizeHistogram.hlsl" />
     <Content Include="Shaders\RenderCubeMap.hlsl" />
     <Content Include="Shaders\ToneMapping.hlsl" />

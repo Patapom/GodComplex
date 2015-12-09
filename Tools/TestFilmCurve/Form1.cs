@@ -61,6 +61,8 @@ namespace TestFilmicCurve
 			public float		_SaturationFactor;
 			public float		_DarkenFactor;
 			public float		_DebugLuminanceLevel;
+			public float		_MouseU;
+			public float		_MouseV;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -179,6 +181,15 @@ namespace TestFilmicCurve
 			m_Tex_TallHistogram = new Texture2D( m_Device, 128, tallHistogramHeight, 1, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
 			m_Tex_Histogram = new Texture2D( m_Device, 128, 1, 1, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
 			m_Buffer_AutoExposureSource = new StructuredBuffer<autoExposure_t>( m_Device, 1, true );
+			m_Buffer_AutoExposureSource.m[0].EngineLuminanceFactor = 1.0f;
+			m_Buffer_AutoExposureSource.m[0].LuminanceFactor = 1.0f;
+			m_Buffer_AutoExposureSource.m[0].MinLuminanceLDR = 0.0f;
+			m_Buffer_AutoExposureSource.m[0].MaxLuminanceLDR = 1.0f;
+			m_Buffer_AutoExposureSource.m[0].MiddleGreyLuminanceLDR = 1.0f;
+			m_Buffer_AutoExposureSource.m[0].EV = 0.0f;
+			m_Buffer_AutoExposureSource.m[0].Fstop = 0.0f;
+			m_Buffer_AutoExposureSource.m[0].PeakHistogramValue = 0;
+			m_Buffer_AutoExposureSource.Write();
 			m_Buffer_AutoExposureTarget = new StructuredBuffer<autoExposure_t>( m_Device, 1, true );
 
 			// Load cube map
@@ -270,17 +281,20 @@ namespace TestFilmicCurve
 			//////////////////////////////////////////////////////////////////////////
 			// 2] Compute auto-exposure
 			if ( m_Shader_ComputeTallHistogram.Use() ) {
+				// Build a 128xH "tall histogram"
 				m_Device.RemoveRenderTargets();
 				m_Tex_HDR.SetCS( 0 );
 				m_Tex_TallHistogram.SetCSUAV( 0 );
 				m_Shader_ComputeTallHistogram.Dispatch( 1, m_Tex_TallHistogram.Height, 1 );
 			}
 			if ( m_Shader_FinalizeHistogram.Use() ) {
+				// Build the 128x1 standard histogram
 				m_Tex_Histogram.SetCSUAV( 0 );
 				m_Tex_TallHistogram.SetCS( 0 );
 				m_Shader_FinalizeHistogram.Dispatch( 128, 1, 1 );
 			}
 			if ( m_Shader_ComputeAutoExposure.Use() ) {
+				// Compute auto-exposure from histogram and last value
 				m_Buffer_AutoExposureSource.SetInput( 0 );
 				m_Buffer_AutoExposureTarget.SetOutput( 0 );
 				m_Tex_Histogram.SetCS( 1 );
@@ -311,8 +325,17 @@ namespace TestFilmicCurve
 			if ( m_Shader_ToneMapping.Use() ) {
 				m_Device.SetRenderTarget( m_Device.DefaultTarget, null );
 
+				float	mouseU = 1.0f;
+				float	mouseV = 0.0f;
+				Point	clientMousePos = panelOutput.PointToClient( Control.MousePosition );
+				if (	clientMousePos.X >= 0 && clientMousePos.X < panelOutput.Width
+					&&  clientMousePos.Y >= 0 && clientMousePos.Y < panelOutput.Height ) {
+					mouseU = (float) clientMousePos.X / panelOutput.Width;
+					mouseV = (float) clientMousePos.Y / panelOutput.Height;
+				}
+
 				m_CB_ToneMapping.m._Exposure = (float) Math.Pow( 2, floatTrackbarControlExposure.Value );
-				m_CB_ToneMapping.m._Flags = (checkBoxEnable.Checked ? 1U : 0U) | (checkBoxDebugLuminanceLevel.Checked ? 2U : 0U);
+				m_CB_ToneMapping.m._Flags = (checkBoxEnable.Checked ? 1U : 0U) | (checkBoxDebugLuminanceLevel.Checked ? 2U : 0U) | (checkBoxShowHistogram.Checked ? 4U : 0U);
 				m_CB_ToneMapping.m._A = floatTrackbarControlA.Value;
 				m_CB_ToneMapping.m._B = floatTrackbarControlB.Value;
 				m_CB_ToneMapping.m._C = floatTrackbarControlC.Value;
@@ -321,10 +344,12 @@ namespace TestFilmicCurve
 				m_CB_ToneMapping.m._F = floatTrackbarControlF.Value;
 				m_CB_ToneMapping.m._WhitePoint = floatTrackbarControlWhitePoint.Value;
 				m_CB_ToneMapping.m._DebugLuminanceLevel = floatTrackbarControlDebugLuminanceLevel.Value;
+				m_CB_ToneMapping.m._MouseU = mouseU;
+				m_CB_ToneMapping.m._MouseV = mouseV;
 				m_CB_ToneMapping.UpdateData();
 
 				m_Buffer_AutoExposureSource.SetInput( 0 );
-				m_Tex_Histogram.SetCS( 1 );
+				m_Tex_Histogram.SetPS( 1 );
 				m_Tex_HDR.SetPS( 2 );
 
 				m_Device.RenderFullscreenQuad( m_Shader_ToneMapping );
