@@ -185,7 +185,7 @@ namespace TestFresnel
 
 				// Draw values at current IOR
 				Eval( m_IOR, out yr, out yg, out yb, out yy );
-				string	T = "Fdr = " + yr.ToString( "G4" ) + "\r\nFdr_in = " + yg.ToString( "G4" ) + "\r\nFdr_a = " + yb.ToString( "G4" );
+				string	T = "R = " + yr.ToString( "G4" ) + "\r\nG = " + yg.ToString( "G4" ) + "\r\nB = " + yb.ToString( "G4" ) + "\r\nA = " + yy.ToString( "G4" );
 				SizeF	TextSize = G.MeasureString( T, Font );
 				G.DrawString( T, Font, Brushes.Black, Width - TextSize.Width - 12.0f, Height - TextSize.Height - 20 );
 			}
@@ -222,10 +222,10 @@ namespace TestFresnel
 		/// <returns></returns>
 		float	FdrAnalytic( float _eta ) {
 			float	result;
-			if ( _eta >= 1.0f ) {
-				result = -1.4399f / (_eta*_eta) + 0.7099f / _eta + 0.6681f + 0.0636f * _eta; 
-			} else {
+			if ( _eta < 1.0f ) {
 				result = -0.4399f + 0.7099f / _eta - 0.3319f / (_eta * _eta) + 0.0636f / (_eta * _eta * _eta); 
+			} else {
+				result = -1.4399f / (_eta*_eta) + 0.7099f / _eta + 0.6681f + 0.0636f * _eta; 
 			}
 			return result;
 		}
@@ -436,6 +436,8 @@ y *= 1.0f-m_Roughness*m_Roughness;
 
 			TotalSpecularReflection = F0 * x + y;
 			TotalDiffuseReflection = 1.0f - TotalSpecularReflection;
+//			TotalDiffuseReflection = (1.0f - TotalSpecularReflection) / (_IOR*_IOR);	// From "Determination of Absorption and Scattering Coefficients for Nonhomogeneous Media 2 - Experiment", Egan, Hilgeman (1973) eq. 12
+
 			TotalDiffuseReflection *= m_PeakFactor;
 
 			yy = TotalDiffuseReflection;
