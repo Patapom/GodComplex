@@ -5,7 +5,7 @@ using System.Text;
 
 using System.IO;
 
-namespace BImageViewer
+namespace TestFilmicCurve
 {
 	public class BImage
 	{

@@ -23,6 +23,9 @@ namespace TestFilmicCurve
 		protected float		m_E = 0.02f;
 		protected float		m_F = 0.3f;
 
+		protected bool		m_ShowDebugLuminance = false;
+		protected float		m_DebugLuminance = 1.0f;
+
 		public float	ScaleX
 		{
 			get { return m_ScaleX; }
@@ -77,6 +80,16 @@ namespace TestFilmicCurve
 			set { m_F = value; UpdateBitmap(); }
 		}
 
+		public bool		ShowDebugLuminance {
+			get { return m_ShowDebugLuminance; }
+			set { m_ShowDebugLuminance = value; UpdateBitmap(); }
+		}
+
+		public float	DebugLuminance {
+			get { return m_DebugLuminance; }
+			set { m_DebugLuminance = value; if ( m_ShowDebugLuminance ) UpdateBitmap(); }
+		}
+
 		public OutputPanel()
 		{
 			InitializeComponent();
@@ -119,7 +132,7 @@ namespace TestFilmicCurve
 
 		protected void		UpdateBitmap()
 		{
-			if ( m_Bitmap == null )
+			if ( m_Bitmap == null || m_ScaleX <= 1.0f )
 				return;
 
 			using ( Graphics G = Graphics.FromImage( m_Bitmap ) )
@@ -129,29 +142,54 @@ namespace TestFilmicCurve
 				G.DrawLine( Pens.Black, 10, 0, 10, Height );
 				G.DrawLine( Pens.Black, 0, Height-10, Width, Height-10 );
 
-				float	x = 0.0f;
-				float	y = GetFilmicCurve( x );
-				for ( int X=10; X < Width; X++ )
-				{
-					float	px = x;
-					float	py = y;
-					x = (float) X / (Width - 20);
-					y = m_ScaleY * GetFilmicCurve( m_ScaleX * x );
-
-					DrawLine( G, px, py, x, y );
+				for ( int i=1; i < 10; i++ ) {
+					float	X = LogLuminance2Client( i );
+					DrawLine( G, Pens.Black, X, 0.0f, X, 0.01f );
+							X = LogLuminance2Client( 10*i );
+					DrawLine( G, Pens.Black, X, 0.0f, X, 0.01f );
+							X = LogLuminance2Client( 100*i );
+					DrawLine( G, Pens.Black, X, 0.0f, X, 0.01f );
 				}
+
+				DrawLine( G, Pens.LightGray, 10, 1.0f, Width, 1.0f );
+
+				float	Xw = LogLuminance2Client( m_WhitePoint );
+				DrawLine( G, Pens.LightGreen, Xw, 0.0f, Xw, 1.0f );
+
+				if ( m_ShowDebugLuminance ) {
+					float	Xd = LogLuminance2Client( m_DebugLuminance );
+					DrawLine( G, Pens.Gold, Xd, 0.0f, Xd, 1.0f );
+				}
+
+				float	py = GetFilmicCurve( Client2LogLuminance( 10 ) );
+				for ( int X=11; X < Width; X++ ) {
+					float	y = GetFilmicCurve( Client2LogLuminance( X ) );
+					DrawLine( G, Pens.Black, X-1, py, X, y );
+					py = y;
+				}
+
 			}
 
 			Invalidate();
 		}
 
-		protected void		DrawLine( Graphics G, float x0, float y0, float x1, float y1 )
-		{
-			float	X0 = 10 + (Width-20) * x0;
-			float	Y0 = Height - 10 - (Height-20) * y0;
-			float	X1 = 10 + (Width-20) * x1;
-			float	Y1 = Height - 10 - (Height-20) * y1;
-			G.DrawLine( Pens.Black, X0, Y0, X1, Y1 );
+		float		Client2LogLuminance( float _ClientX ) {
+			float	x = (float) (_ClientX - 10) / (Width - 20);	// in [0,1]
+			double	logScale = Math.Log10( m_ScaleX );
+			x = (float) Math.Pow( 10.0, logScale * x );
+			return x;
+		}
+
+		float		LogLuminance2Client( float _logLuminance ) {
+			double	logScale = Math.Log10( m_ScaleX );
+			float	x = (float) (Math.Log10( _logLuminance ) / logScale);
+			return 10.0f + (Width-20) * x;
+		}
+
+		protected void		DrawLine( Graphics G, Pen P, float x0, float y0, float x1, float y1 ) {
+			float	Y0 = Height - 10 - (Height-20) * m_ScaleY * y0;
+			float	Y1 = Height - 10 - (Height-20) * m_ScaleY * y1;
+			G.DrawLine( P, x0, Y0, x1, Y1 );
 		}
 
 		protected float		Filmic( float x )
