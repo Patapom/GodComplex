@@ -25,7 +25,7 @@ groupshared uint	Histogram[NUMTHREADY][HISTOGRAM_SIZE];		// Here we have as many
 [numthreads( NUMTHREADX, NUMTHREADY, NUMTHREADZ )]
 void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, uint3 _DispatchThreadID : SV_DISPATCHTHREADID ) {
 
-	uint2	Dimensions = uint2( ceil( 1.0 / _Resolution.xy ) );
+	uint2	Dimensions = uint2( _Resolution.xy );
 	uint	Width = Dimensions.x;
 	uint	Height = Dimensions.y;
 
@@ -48,7 +48,7 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 			continue;	// Don't accumulate pixels outside the screen otherwise we have a bias toward blacks!
 
 		float	Luminance = dot( LUMINANCE, _texSourceImageHDR[PixelIndex].xyz );
-				Luminance *= BISOU_TO_WORLD_LUMINANCE;	// BISOU TO WORLD (?? units => cd/m²)
+				Luminance *= BISOU_TO_WORLD_LUMINANCE;	// BISOU TO WORLD (bisou units => cd/m²)
 
 		// Reject black pixels that are clearly an error!
 		if ( Luminance < MIN_ADAPTABLE_SCENE_LUMINANCE )

@@ -3,6 +3,10 @@
 #include "AutoExposure/DebugDrawDigits.hlsl"
 #include "AutoExposure/DebugHistogram.hlsl"
 
+
+Texture2D<uint>		_texTallHistogram : register(t3);	// The histogram from last pass used as a RO texture!
+
+
 // Pines slides =>
 // 	• increase contrast in log space around middle gray ( log(0.18) )
 // 	• add toe and shoulder to taste (requires knowledge of display)
@@ -53,19 +57,23 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float2	UV = _In.__Position.xy / _Resolution.xy;
 	float3	OriginalColor = _texHDR.SampleLevel( LinearClamp, UV, 0.0 ).xyz;
 
+
+// Debug tall histogram
+// 	uint2	PixPos = uint2( 0.4 * _In.__Position.xy );
+// 	if ( PixPos.x < 128 && PixPos.y < 202 )
+// 		return 0.01 * _texTallHistogram[PixPos];
+
+
 	// Apply auto-exposure
 	autoExposure_t	currentExposure = ReadAutoExposureParameters();
-
-//	OriginalColor *= _Exposure;
-	OriginalColor /= currentExposure.EngineLuminanceFactor;
+	float3	Color = OriginalColor * currentExposure.EngineLuminanceFactor;
 
 	// Apply tone mapping
-	float3	Color = OriginalColor;
 	if ( _Flags & 1 ) {
 		Color = max( 0.0, ToneMappingFilmic( 3.0 * Color ) / max( 1e-3, ToneMappingFilmic( _WhitePoint ) ) );
 
 //		Color = Sigmoid( 1.0 * Color );
-
+		
 // 		// Try darkening saturated colors
 // //		Color = saturate( Color );
 // 		float	MinRGB = min( min( Color.x, Color.y ), Color.z );
@@ -77,17 +85,19 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 // 		Color *= 1.0 - _A * pow( abs( S ), _B );
 // //		Color = S;
  	}
-
+	
 	if ( _Flags & 2 ) {
-		float	Luma = dot( OriginalColor, LUMINANCE );
-		if ( abs( Luma - _DebugLuminanceLevel ) < 0.1 ) {
-
+		// Show debug luminance value
+		float	Color_WorldLuma = BISOU_TO_WORLD_LUMINANCE * dot( OriginalColor, LUMINANCE );
+		float	Color_dB = Luminance2dB( Color_WorldLuma );
+		float	Debug_dB = Luminance2dB( _DebugLuminanceLevel );
+		if ( abs( Color_dB - Debug_dB ) < 0.4 ) {
 			uint2	pixelIndex = uint2( floor( 0.25 * _In.__Position.xy + 4.0 * _GlobalTime ) );
 			bool	checker = (pixelIndex.x & 1) ^ (pixelIndex.y & 1);
-			Color =  checker ? float3( 1, 0, 0 ) : float3( 0, 0, 1 );
+			Color = checker ? float3( 1, 0, 0 ) : float3( 0, 0, 1 );
 		}
 	}
-
+	
 	// Show debug histogram
 	if ( _Flags & 4 ) {
 		DEBUG_DisplayLuminanceHistogram( UV, float2( _MouseU, _MouseV ), (_Flags & 2) ? _DebugLuminanceLevel : 0.0001, _Resolution.xy, _GlobalTime, Color, OriginalColor );

@@ -350,13 +350,13 @@
 			this.floatTrackbarControlExposure.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlExposure.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlExposure.Name = "floatTrackbarControlExposure";
-			this.floatTrackbarControlExposure.RangeMax = 10F;
-			this.floatTrackbarControlExposure.RangeMin = -10F;
+			this.floatTrackbarControlExposure.RangeMax = 20F;
+			this.floatTrackbarControlExposure.RangeMin = -20F;
 			this.floatTrackbarControlExposure.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlExposure.TabIndex = 1;
-			this.floatTrackbarControlExposure.Value = 3F;
-			this.floatTrackbarControlExposure.VisibleRangeMax = 3F;
-			this.floatTrackbarControlExposure.VisibleRangeMin = -2F;
+			this.floatTrackbarControlExposure.Value = 0F;
+			this.floatTrackbarControlExposure.VisibleRangeMax = 6F;
+			this.floatTrackbarControlExposure.VisibleRangeMin = -6F;
 			// 
 			// floatTrackbarControlScaleX
 			// 

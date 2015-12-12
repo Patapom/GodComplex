@@ -351,9 +351,11 @@ namespace TestFilmicCurve
 				m_Buffer_AutoExposureSource.SetInput( 0 );
 				m_Tex_Histogram.SetPS( 1 );
 				m_Tex_HDR.SetPS( 2 );
+m_Tex_TallHistogram.SetPS( 3 );
 
 				m_Device.RenderFullscreenQuad( m_Shader_ToneMapping );
 
+m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 				m_Tex_Histogram.RemoveFromLastAssignedSlots();
 				m_Tex_HDR.RemoveFromLastAssignedSlots();
 			}
