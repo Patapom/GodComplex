@@ -40,7 +40,7 @@ void	DEBUG_DisplayLuminanceHistogram( float2 _UV, float2 _mouseUV, float _debugL
 	// Debug on screen luminances by pointing the histogram with the mouse
 	if ( _mouseUV.x < LUM_HISTOGRAM_INSET_WIDTH && _mouseUV.y > 1.0-LUM_HISTOGRAM_INSET_HEIGHT ) {
 		float2	MouseUV = float2( _mouseUV.x / LUM_HISTOGRAM_INSET_WIDTH, (_mouseUV.y - 1.0 + LUM_HISTOGRAM_INSET_HEIGHT) / LUM_HISTOGRAM_INSET_HEIGHT );
-#if 1
+#if 0
 		float	mouseLuminance_dB = MIN_ADAPTABLE_SCENE_LUMINANCE_DB + MouseUV.x * SCENE_LUMINANCE_RANGE_DB;
 		float	ScreenWorldLuminance_dB = Luminance2dB( ScreenWorldLuminance );
 		_Color = lerp( float3( 1, 0, 0 ), _Color, saturate( 10.0 * abs( ScreenWorldLuminance_dB - mouseLuminance_dB ) ) );
@@ -101,7 +101,7 @@ void	DEBUG_DisplayLuminanceHistogram( float2 _UV, float2 _mouseUV, float _debugL
 
 				Integral += Weight * CurrentHistoValue;
 			}
-			Integral *= 8.0 / (AveragePixelsCount * TARGET_MONITOR_BUCKETS_COUNT);
+			Integral *= 0.5 / (AveragePixelsCount * TARGET_MONITOR_BUCKETS_COUNT);
 
 //Integral = 0.2 * ComputeStickyIntegralWeight( fHistoBucketIndex - CurrentFrameTargetBucket );
 

@@ -180,11 +180,11 @@
 			// 
 			// checkBoxEnable
 			// 
-			this.checkBoxEnable.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.checkBoxEnable.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.checkBoxEnable.AutoSize = true;
 			this.checkBoxEnable.Checked = true;
 			this.checkBoxEnable.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxEnable.Location = new System.Drawing.Point(979, 612);
+			this.checkBoxEnable.Location = new System.Drawing.Point(976, 264);
 			this.checkBoxEnable.Name = "checkBoxEnable";
 			this.checkBoxEnable.Size = new System.Drawing.Size(131, 17);
 			this.checkBoxEnable.TabIndex = 6;
@@ -193,8 +193,8 @@
 			// 
 			// buttonReset
 			// 
-			this.buttonReset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonReset.Location = new System.Drawing.Point(976, 493);
+			this.buttonReset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonReset.Location = new System.Drawing.Point(976, 287);
 			this.buttonReset.Name = "buttonReset";
 			this.buttonReset.Size = new System.Drawing.Size(75, 23);
 			this.buttonReset.TabIndex = 5;
@@ -206,7 +206,7 @@
 			// 
 			this.label11.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.label11.AutoSize = true;
-			this.label11.Location = new System.Drawing.Point(976, 675);
+			this.label11.Location = new System.Drawing.Point(976, 682);
 			this.label11.Name = "label11";
 			this.label11.Size = new System.Drawing.Size(33, 13);
 			this.label11.TabIndex = 2;
@@ -216,7 +216,7 @@
 			// 
 			this.checkBoxDebugLuminanceLevel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.checkBoxDebugLuminanceLevel.AutoSize = true;
-			this.checkBoxDebugLuminanceLevel.Location = new System.Drawing.Point(979, 648);
+			this.checkBoxDebugLuminanceLevel.Location = new System.Drawing.Point(979, 655);
 			this.checkBoxDebugLuminanceLevel.Name = "checkBoxDebugLuminanceLevel";
 			this.checkBoxDebugLuminanceLevel.Size = new System.Drawing.Size(142, 17);
 			this.checkBoxDebugLuminanceLevel.TabIndex = 6;
@@ -333,7 +333,7 @@
 			// floatTrackbarControlDebugLuminanceLevel
 			// 
 			this.floatTrackbarControlDebugLuminanceLevel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlDebugLuminanceLevel.Location = new System.Drawing.Point(1015, 671);
+			this.floatTrackbarControlDebugLuminanceLevel.Location = new System.Drawing.Point(1015, 678);
 			this.floatTrackbarControlDebugLuminanceLevel.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlDebugLuminanceLevel.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlDebugLuminanceLevel.Name = "floatTrackbarControlDebugLuminanceLevel";
@@ -375,7 +375,9 @@
 			// 
 			this.checkBoxShowHistogram.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.checkBoxShowHistogram.AutoSize = true;
-			this.checkBoxShowHistogram.Location = new System.Drawing.Point(979, 697);
+			this.checkBoxShowHistogram.Checked = true;
+			this.checkBoxShowHistogram.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxShowHistogram.Location = new System.Drawing.Point(979, 612);
 			this.checkBoxShowHistogram.Name = "checkBoxShowHistogram";
 			this.checkBoxShowHistogram.Size = new System.Drawing.Size(138, 17);
 			this.checkBoxShowHistogram.TabIndex = 6;
