@@ -136,7 +136,132 @@ namespace AreaLightTest
 			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
 
 			Application.Idle += new EventHandler( Application_Idle );
+
+			TestBisou();
 		}
+
+
+        #region Test Bisou
+
+ 
+
+        // Conversions sRGB RGB <=> CIE XYZ using D65 illuminant (sRGB white point)
+
+        float3    RGB2XYZ( float3 _RGB ) {
+
+                        return new float3(           _RGB.Dot( new float3( 0.4124f, 0.3576f, 0.1805f ) ),
+
+                                                                                                        _RGB.Dot( new float3( 0.2126f, 0.7152f, 0.0722f ) ),                                // <= Y component is the LUMINANCE defined above
+
+                                                                                                        _RGB.Dot( new float3( 0.0193f, 0.1192f, 0.9505f ) ) );
+
+        }
+
+                               
+
+        float3    XYZ2RGB( float3 _XYZ ) {
+
+                        return new float3(           _XYZ.Dot( new float3(  3.2406f, -1.5372f, -0.4986f ) ),
+
+                                                                                                        _XYZ.Dot( new float3( -0.9689f,  1.8758f,  0.0415f ) ),
+
+                                                                                                        _XYZ.Dot( new float3(  0.0557f, -0.2040f,  1.0570f ) ) );
+
+        }
+
+ 
+
+        // Conversions CIE XYZ <=> CIE xyY (xy = chromaticities, Y = luminance)
+
+        // Y = Y
+
+        // x = X / ( X + Y + Z )
+
+        // y = Y / ( X + Y + Z )
+
+        float3    XYZ2xyY( float3 _XYZ ) {
+
+                        float3    xyY;
+
+                        xyY.z  = _XYZ.y;
+
+                        xyY.x = _XYZ.x / (_XYZ.x + _XYZ.y + _XYZ.z);
+
+                        xyY.y = _XYZ.y / (_XYZ.x + _XYZ.y + _XYZ.z);
+
+                        return xyY;
+
+        }
+
+ 
+
+        // X = x * ( Y / y )
+
+        // Y = Y
+
+        // Z = ( 1 - x - y ) * ( Y / y )
+
+        float3    xyY2XYZ( float3 _xyY ) {
+
+                        float       Y_over_y = _xyY.z / _xyY.y;
+
+                                               
+
+                        float3    XYZ;
+
+                        XYZ.x = _xyY.x * Y_over_y;
+
+                        XYZ.y = _xyY.z;
+
+                        XYZ.z = (1.0f - _xyY.x - _xyY.y) * Y_over_y; 
+
+                               
+
+                        return XYZ;
+
+        }
+
+ 
+
+        // Conversions sRGB RGB <=> CIE xyY
+
+        // Simply re-using the above
+
+        float3    RGB2xyY( float3 _RGB ) {
+
+                        return XYZ2xyY( RGB2XYZ( _RGB ) );
+
+        }
+
+ 
+
+        float3    xyY2RGB( float3 _xyY ) {
+
+                        return XYZ2RGB( xyY2XYZ( _xyY ) );
+
+        }
+
+ 
+
+        void                       TestBisou() {
+            Random	RNG = new Random( 1 );
+
+            for ( int i=0; i < 1000; i++ ) {
+				float3	color = new float3( (float) RNG.NextDouble(), (float) RNG.NextDouble(), (float) RNG.NextDouble() );
+				float	amount = (float) RNG.NextDouble();
+				float3	ciexyY = RGB2xyY( color );
+//ciexyY.z = Math.Min( 1.0f, ciexyY.z * (1.0f + amount) );
+						ciexyY.z = ciexyY.z * (1.0f + amount);
+				float3	brightenedColor_xyY = xyY2RGB( ciexyY );
+				float3	brightenedColor = (1.0f + amount) * color;
+				bool	different = (brightenedColor - brightenedColor_xyY).Length > 1e-3f;
+				Console.WriteLine( "color ({0}, {1}, {2}) => brightned_xyY ({3}, {4}, {5}), brightned ({6}, {7}, {8})" + (different ? " ####DIFFERENT####" : ""), color.x, color.y, color.z, brightenedColor_xyY.x, brightenedColor_xyY.y, brightenedColor_xyY.z, brightenedColor.x, brightenedColor.y, brightenedColor.z );
+	
+            }
+
+        }
+
+        #endregion
 
 		#region Image Helpers
 

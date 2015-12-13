@@ -47,17 +47,23 @@ namespace TestGenerateFarDistanceField
 // 			public float		_FalseColorsMaxRange;
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_Distance {
+			public float3		_Direction;
+		}
+
 		private ConstantBuffer<CB_Main>		m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>	m_CB_Camera = null;
 		private ConstantBuffer<CB_Object>	m_CB_Object = null;
+		private ConstantBuffer<CB_Distance>	m_CB_DistanceField = null;
 
 		private Shader				m_Shader_RenderScene = null;
 		private ComputeShader[]		m_Shader_SplatDepthStencil = new ComputeShader[3];
+		private ComputeShader[]		m_Shader_BuildDistanceField = new ComputeShader[3];
 		private Shader				m_Shader_PostProcess = null;
 
 		private Texture2D			m_Tex_TempTarget = null;
-		private Texture3D[]			m_Tex_TempDepth3D = new Texture3D[3];
-		private Texture3D			m_Tex_DistanceField = null;
+		private Texture3D[]			m_Tex_TempDepth3D = new Texture3D[4];
 
 		private Primitive			m_Prim_Quad = null;
 		private Primitive			m_Prim_Rectangle = null;
@@ -111,6 +117,13 @@ namespace TestGenerateFarDistanceField
 				m_Shader_PostProcess = null;
 			}
 
+			try {
+				m_Shader_BuildDistanceField[0] = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/BuildDistanceField.hlsl" ) ), "CS_X", null );
+			} catch ( Exception _e ) {
+				MessageBox.Show( "Shader \"BuildDistanceField\" failed to compile!\n\n" + _e.Message, "Distance Field Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				m_Shader_PostProcess = null;
+			}
+
 			#if DEBUG && !BISOU
 				try {
 					m_Shader_SplatDepthStencil[0] = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS0", null );
@@ -138,6 +151,7 @@ namespace TestGenerateFarDistanceField
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
 			m_CB_Object = new ConstantBuffer<CB_Object>( m_Device, 2 );
+			m_CB_DistanceField = new ConstantBuffer<CB_Distance>( m_Device, 2 );
 
 			BuildPrimitives();
 
@@ -157,12 +171,13 @@ namespace TestGenerateFarDistanceField
 
 				m_Tex_TempDepth3D[depthLevel] = new Texture3D( m_Device, W, H, D, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
 			}
+			m_Tex_TempDepth3D[3] = new Texture3D( m_Device, W, H, D, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
 
 // 			int	cellsCountX = (panelOutput.Width + 7) >> 3;
 // 			int	cellsCountY = (panelOutput.Height + 7) >> 3;
 // 			int	cellsCountZ = 64;
 // 			m_Tex_DistanceField = new Texture3D( m_Device, cellsCountX, cellsCountY, cellsCountZ, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );	// TODO: Use mips to smooth stuff up?
-			m_Tex_DistanceField = new Texture3D( m_Device, W, H, D, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );	// TODO: Use mips to smooth stuff up?
+//			m_Tex_DistanceField = new Texture3D( m_Device, W, H, D, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );	// TODO: Use mips to smooth stuff up?
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
@@ -173,10 +188,10 @@ namespace TestGenerateFarDistanceField
 		protected override void OnClosed( EventArgs e ) {
 			base.OnClosed( e );
 
-			m_Tex_DistanceField.Dispose();
-			m_Tex_TempDepth3D[0].Dispose();
-			m_Tex_TempDepth3D[1].Dispose();
+			m_Tex_TempDepth3D[3].Dispose();
 			m_Tex_TempDepth3D[2].Dispose();
+			m_Tex_TempDepth3D[1].Dispose();
+			m_Tex_TempDepth3D[0].Dispose();
 			m_Tex_TempTarget.Dispose();
 
 			m_Prim_Cube.Dispose();
@@ -184,6 +199,7 @@ namespace TestGenerateFarDistanceField
 			m_Prim_Rectangle.Dispose();
 			m_Prim_Quad.Dispose();
 
+			m_CB_DistanceField.Dispose();
 			m_CB_Object.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Main.Dispose();
@@ -423,6 +439,7 @@ namespace TestGenerateFarDistanceField
 				m_Prim_Cube.Render( m_Shader_RenderScene );
 			}
 
+
 			//////////////////////////////////////////////////////////////////////////
 			// Splat depth-stencil into 3D map
 
@@ -469,6 +486,49 @@ namespace TestGenerateFarDistanceField
 
 
 			//////////////////////////////////////////////////////////////////////////
+			// Build the distance field
+			if ( m_Shader_BuildDistanceField[0] != null && m_Shader_BuildDistanceField[0].Use() ) {
+
+				int	groupsCountX = m_Tex_TempDepth3D[3].Width;
+				int	groupsCountY = m_Tex_TempDepth3D[3].Height;
+				int	groupsCountZ = m_Tex_TempDepth3D[3].Depth;
+
+				// =========== Build along X ===========
+				m_CB_DistanceField.m._Direction = float3.UnitX;
+				m_CB_DistanceField.UpdateData();
+
+				m_Tex_TempDepth3D[2].SetCS( 0 );
+				m_Tex_TempDepth3D[3].SetCSUAV( 0 );
+
+				m_Shader_BuildDistanceField[0].Dispatch( groupsCountX, groupsCountY, groupsCountZ );
+
+				m_Tex_TempDepth3D[3].RemoveFromLastAssignedSlotUAV();		// So we can use it as input
+ 
+// 				// =========== Build along Y ===========
+// 				m_CB_DistanceField.m._Direction = float3.UnitY;
+// 				m_CB_DistanceField.UpdateData();
+// 
+// 				m_Tex_TempDepth3D[3].SetCS( 0 );
+// 				m_Tex_TempDepth3D[2].SetCSUAV( 0 );
+// 
+// 				m_Shader_BuildDistanceField.Dispatch( groupsCountX, groupsCountY, groupsCountZ );
+// 
+// 				m_Tex_TempDepth3D[2].RemoveFromLastAssignedSlotUAV();		// So we can use it as input
+// 
+// 				// =========== Build along Z ===========
+// 				m_CB_DistanceField.m._Direction = float3.UnitZ;
+// 				m_CB_DistanceField.UpdateData();
+// 
+// 				m_Tex_TempDepth3D[2].SetCS( 0 );
+// 				m_Tex_TempDepth3D[3].SetCSUAV( 0 );
+// 
+// 				m_Shader_BuildDistanceField.Dispatch( groupsCountX, groupsCountY, groupsCountZ );
+// 
+// 				m_Tex_TempDepth3D[3].RemoveFromLastAssignedSlotUAV();		// So we can use it as input
+			}
+
+
+			//////////////////////////////////////////////////////////////////////////
 			// Display rendered scene + distance field stuff
 			if ( m_Shader_PostProcess != null && m_Shader_PostProcess.Use() ) {
 				m_Device.SetRenderTarget( m_Device.DefaultTarget, null );
@@ -476,12 +536,12 @@ namespace TestGenerateFarDistanceField
 
 				m_Tex_TempTarget.SetPS( 0 );
 //				m_Tex_TempDepth3D[2].SetPS( 1 );
-m_Tex_TempDepth3D[2].SetPS( 1 );
+m_Tex_TempDepth3D[3].SetPS( 1 );
 
 				m_Prim_Quad.Render( m_Shader_PostProcess );
 
 				m_Tex_TempTarget.RemoveFromLastAssignedSlots();
-				m_Tex_DistanceField.RemoveFromLastAssignedSlots();
+//				m_Tex_DistanceField.RemoveFromLastAssignedSlots();
 			}
 
 			m_Device.Present( false );
