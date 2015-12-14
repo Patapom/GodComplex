@@ -88,8 +88,6 @@ namespace TestFilmicCurve
 		private ComputeShader						m_Shader_ComputeAutoExposure = null;
 		private Shader								m_Shader_ToneMapping = null;
 
-// 		private StructuredBuffer<UInt32>			m_Buffer_TallHistogram = null;
-// 		private StructuredBuffer<UInt32>			m_Buffer_Histogram = null;
 		private Texture2D							m_Tex_TallHistogram = null;
 		private Texture2D							m_Tex_Histogram = null;
 		private StructuredBuffer<autoExposure_t>	m_Buffer_AutoExposureSource = null;
@@ -176,8 +174,6 @@ namespace TestFilmicCurve
 
 			// Create the histogram & auto-exposure buffers
 			int	tallHistogramHeight = (panelOutput.Height + 3) >> 2;
-// 			m_Buffer_TallHistogram = new StructuredBuffer<uint>( m_Device, 128, true );
-// 			m_Buffer_Histogram = new StructuredBuffer<uint>( m_Device, 128, true );
 			m_Tex_TallHistogram = new Texture2D( m_Device, 128, tallHistogramHeight, 1, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
 			m_Tex_Histogram = new Texture2D( m_Device, 128, 1, 1, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
 			m_Buffer_AutoExposureSource = new StructuredBuffer<autoExposure_t>( m_Device, 1, true );
@@ -195,7 +191,14 @@ namespace TestFilmicCurve
 			// Load cube map
 //			m_Tex_CubeMap = DirectXTexManaged.TextureCreator.CreateTexture2DFromDDSFile( m_Device, "garage4_hd.dds" );
 			{
-				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_1127_cube_BC6H_UF16.bimage" ) );
+//				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_28_cube_BC6H_UF16.bimage" ) );		// Tunnel
+// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_89_cube_BC6H_UF16.bimage" ) );		// Large sky
+// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_115_cube_BC6H_UF16.bimage" ) );	// Indoor
+// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_123_cube_BC6H_UF16.bimage" ) );	// Under the arch
+// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_189_cube_BC6H_UF16.bimage" ) );	// Indoor viewing out (vista)
+// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_246_cube_BC6H_UF16.bimage" ) );	// Nice! Statue's feet
+ 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_248_cube_BC6H_UF16.bimage" ) );	// Nice! In a corner with lot of sky
+//				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_1127_cube_BC6H_UF16.bimage" ) );	// Okay. Corner, with vista and sky
 				m_Tex_CubeMap = I.CreateTextureCube( m_Device );
 			}
 
@@ -227,8 +230,6 @@ namespace TestFilmicCurve
 
 			m_Buffer_AutoExposureTarget.Dispose();
 			m_Buffer_AutoExposureSource.Dispose();
-// 			m_Buffer_Histogram.Dispose();
-// 			m_Buffer_TallHistogram.Dispose();
 			m_Tex_Histogram.Dispose();
 			m_Tex_TallHistogram.Dispose();
 			m_Tex_HDR.Dispose();
@@ -334,7 +335,7 @@ namespace TestFilmicCurve
 					mouseV = (float) clientMousePos.Y / panelOutput.Height;
 				}
 
-				m_CB_ToneMapping.m._Exposure = (float) Math.Pow( 2, floatTrackbarControlExposure.Value );
+				m_CB_ToneMapping.m._Exposure = 1.0f;//(float) Math.Pow( 2, floatTrackbarControlExposure.Value );
 				m_CB_ToneMapping.m._Flags = (checkBoxEnable.Checked ? 1U : 0U) | (checkBoxDebugLuminanceLevel.Checked ? 2U : 0U) | (checkBoxShowHistogram.Checked ? 4U : 0U);
 				m_CB_ToneMapping.m._A = floatTrackbarControlA.Value;
 				m_CB_ToneMapping.m._B = floatTrackbarControlB.Value;
@@ -351,9 +352,11 @@ namespace TestFilmicCurve
 				m_Buffer_AutoExposureSource.SetInput( 0 );
 				m_Tex_Histogram.SetPS( 1 );
 				m_Tex_HDR.SetPS( 2 );
+m_Tex_TallHistogram.SetPS( 3 );
 
 				m_Device.RenderFullscreenQuad( m_Shader_ToneMapping );
 
+m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 				m_Tex_Histogram.RemoveFromLastAssignedSlots();
 				m_Tex_HDR.RemoveFromLastAssignedSlots();
 			}

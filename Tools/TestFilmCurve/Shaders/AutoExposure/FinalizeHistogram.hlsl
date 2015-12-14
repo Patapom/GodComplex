@@ -65,7 +65,7 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	// Write the sum of the 4 remaining rows
 	if ( _GroupThreadID.y == 0 ) {
 //		_texFinalHistogram[uint2( _GroupID.x, 0 )] = Rows[0] + Rows[1];
-//		_texFinalHistogram[uint2( _GroupID.x, 0 )] = Rows[0] + Rows[1] + Rows[2] + Rows[3];
-_texFinalHistogram[uint2( _GroupID.x, 0 )] = uint( floor( 1000 * abs(sin( _GroupID.x * 3.14 / 128 )) ) );
+		_texFinalHistogram[uint2( _GroupID.x, 0 )] = Rows[0] + Rows[1] + Rows[2] + Rows[3];
+//_texFinalHistogram[uint2( _GroupID.x, 0 )] = uint( floor( 1000 * abs(sin( _GroupID.x * 3.14 / 128 )) ) );
 	}
 }
