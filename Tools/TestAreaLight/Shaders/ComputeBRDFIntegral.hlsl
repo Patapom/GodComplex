@@ -90,7 +90,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 		Sum += Fresnel * BRDF;
 	}
 
-	_TexBRDFIntegral[PixelIndex] = Sum / SAMPLES_COUNT;
+	Sum /= SAMPLES_COUNT;
+	_TexBRDFIntegral[PixelIndex] = Sum;
 }
 
 #else

@@ -27,7 +27,9 @@ namespace BImageViewer
 			public uint			m_ImageDepth;
 			public uint			m_ImageType;
 
+			public float		m_Time;
 			public float		m_MipLevel;
+			public float		m_Exposure;
 		};
 
 		ConstantBuffer< CB_Global >		m_CB_Global;
@@ -38,6 +40,7 @@ namespace BImageViewer
 		Texture2D						m_TexCube = null;
 		Texture3D						m_Tex3D = null;
 
+		DateTime						m_startTime = DateTime.Now;
 //		Primitive						m_Prim_Cube;
 
 		public ViewerForm( BImage _Image )
@@ -69,18 +72,26 @@ namespace BImageViewer
 					integerTrackbarControlMipLevel.RangeMax = m_Tex2D.MipLevelsCount;
 					integerTrackbarControlMipLevel.VisibleRangeMax = m_Tex2D.MipLevelsCount;
 
-				}
-				else if ( _Image.m_Opts.m_type == BImage.ImageOptions.TYPE.TT_CUBIC ) {
+				} else if ( _Image.m_Opts.m_type == BImage.ImageOptions.TYPE.TT_CUBIC ) {
 					m_TexCube = _Image.CreateTextureCube( m_Device );
 
-					m_CB_Global.m.m_ImageWidth = (uint) m_Tex2D.Width;
-					m_CB_Global.m.m_ImageHeight = (uint) m_Tex2D.Height;
-					m_CB_Global.m.m_ImageDepth = (uint) m_Tex2D.ArraySize;
+					m_CB_Global.m.m_ImageWidth = (uint) m_TexCube.Width;
+					m_CB_Global.m.m_ImageHeight = (uint) m_TexCube.Height;
+					m_CB_Global.m.m_ImageDepth = (uint) m_TexCube.ArraySize;
 					m_CB_Global.m.m_ImageType = 1;
-				}
-				else if ( _Image.m_Opts.m_type == BImage.ImageOptions.TYPE.TT_3D ) {
+
+					integerTrackbarControlMipLevel.RangeMax = m_TexCube.MipLevelsCount;
+					integerTrackbarControlMipLevel.VisibleRangeMax = m_TexCube.MipLevelsCount;
+
+				} else if ( _Image.m_Opts.m_type == BImage.ImageOptions.TYPE.TT_3D ) {
 					m_Tex3D = _Image.CreateTexture3D( m_Device );
 				}
+
+				// Enable EV manipulation for HDR images
+				bool	showExposure = _Image.m_Opts.m_format.m_type == BImage.PixelFormat.Type.FLOAT;
+				labelEV.Visible = showExposure;
+				floatTrackbarControlEV.Visible = showExposure;
+
 			}
 			catch ( Exception _e )
 			{
@@ -107,16 +118,16 @@ namespace BImageViewer
 		}
 
 
-		bool	m_bHasRendered = false;
-		void Application_Idle( object sender, EventArgs e )
-		{
+		void Application_Idle( object sender, EventArgs e ) {
 			if ( m_Device == null )
 				return;
 
 			// Update camera
 			m_CB_Global.m.m_ScreenWidth = (uint) Width;
 			m_CB_Global.m.m_ScreenHeight = (uint) Height;
+			m_CB_Global.m.m_Time = (float) (DateTime.Now - m_startTime).TotalSeconds;
 			m_CB_Global.m.m_MipLevel = (float) integerTrackbarControlMipLevel.Value;
+			m_CB_Global.m.m_Exposure = (float) Math.Pow( 2.0, floatTrackbarControlEV.Visible ? (float) floatTrackbarControlEV.Value : 0.0f );
 			m_CB_Global.UpdateData();
 
 			// Clear
@@ -140,7 +151,6 @@ namespace BImageViewer
 			}
 
 			m_Device.Present( false );
-			m_bHasRendered = true;
 		}
 
 		private void ViewerForm_KeyDown( object sender, KeyEventArgs e )

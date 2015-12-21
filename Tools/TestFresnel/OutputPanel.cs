@@ -49,27 +49,46 @@ namespace TestFresnel
 			}
 		}
 
-		protected float			m_IOR = 1.0f;
-		public float			IOR
+		protected float			m_IOR_red = 1.0f;
+		public float			IOR_red
 		{
-			get { return m_IOR; }
-			set
-			{
-				m_IOR = value;
+			get { return m_IOR_red; }
+			set {
+				m_IOR_red = value;
 				UpdateBitmap();
 			}
 		}
 
-		protected Color			m_SpecularTint = Color.White;
-		public Color			SpecularTint
+		protected float			m_IOR_green = 1.0f;
+		public float			IOR_green
 		{
-			get { return m_SpecularTint; }
-			set
-			{
-				m_SpecularTint = value;
+			get { return m_IOR_green; }
+			set {
+				m_IOR_green = value;
 				UpdateBitmap();
 			}
 		}
+
+		protected float			m_IOR_blue = 1.0f;
+		public float			IOR_blue
+		{
+			get { return m_IOR_blue; }
+			set {
+				m_IOR_blue = value;
+				UpdateBitmap();
+			}
+		}
+
+// 		protected Color			m_SpecularTint = Color.White;
+// 		public Color			SpecularTint
+// 		{
+// 			get { return m_SpecularTint; }
+// 			set
+// 			{
+// 				m_SpecularTint = value;
+// 				UpdateBitmap();
+// 			}
+// 		}
 
 		protected RefractionData[]	m_Data = null;
 		public RefractionData[]		Data
@@ -185,10 +204,6 @@ namespace TestFresnel
 
 		protected delegate void		FresnelEval( float x, out float yr, out float yg, out float yb );
 
-		// F0 = ((n2 - n1) / (n2 + n1))²
-		// Assuming n1=1 (air)
-		// We look for n2 so:
-		//	n2 = (1+a)/(1-a) with a = sqrt(F0)
 		protected float		F0r;
 		protected float		F0g;
 		protected float		F0b;
@@ -197,10 +212,10 @@ namespace TestFresnel
 // 			var	IOR = (1+Math.sqrt(this.fresnelF0)) / (1-Math.sqrt(this.fresnelF0));
 // 			if ( !isFinite( IOR ) )
 // 				IOR = 1e30;	// Simply use a huge number instead...
-			float	F0 = (float) Math.Pow( (m_IOR - 1.0) / (m_IOR + 1.0), 2.0 );
-			F0r = F0 * m_SpecularTint.R / 255.0f;
-			F0g = F0 * m_SpecularTint.G / 255.0f;
-			F0b = F0 * m_SpecularTint.B / 255.0f;
+
+			F0r = Form1.IOR_to_F0( m_IOR_red );
+			F0g = Form1.IOR_to_F0( m_IOR_green );
+			F0b = Form1.IOR_to_F0( m_IOR_blue );
 		}
 		protected void		Fresnel_Schlick( float _CosTheta, out float yr, out float yg, out float yb )
 		{
@@ -225,16 +240,7 @@ namespace TestFresnel
 		///		c = cos(theta)
 		///		theta = angle between normal and half vector
 		/// </summary>
-		protected void		PreparePrecise()
-		{
-			float	F0 = (float) Math.Pow( (m_IOR - 1.0) / (m_IOR + 1.0), 2.0 );
-			F0r = F0 * m_SpecularTint.R / 255.0f;
-			F0g = F0 * m_SpecularTint.G / 255.0f;
-			F0b = F0 * m_SpecularTint.B / 255.0f;
-
-			F0r = (float) ((1.0+Math.Sqrt( F0r )) / (1.0-Math.Sqrt( F0r )));
-			F0g = (float) ((1.0+Math.Sqrt( F0g )) / (1.0-Math.Sqrt( F0g )));
-			F0b = (float) ((1.0+Math.Sqrt( F0b )) / (1.0-Math.Sqrt( F0b )));
+		protected void		PreparePrecise() {
 		}
 		protected void		Fresnel_Precise( float _CosTheta, out float yr, out float yg, out float yb )
 		{
@@ -242,23 +248,12 @@ namespace TestFresnel
 // 			double	g = Math.Sqrt( m_IOR*m_IOR - 1.0 + c*c );
 // 			float	F = (float) (0.5 * Math.Pow( (g-c) / (g+c), 2.0 ) * (1.0 + Math.Pow( (c*(g+c) - 1) / (c*(g-c) + 1), 2.0 )) );
 
-
-			double	g = Math.Sqrt( F0r*F0r - 1.0 + c*c );
+			double	g = Math.Sqrt( Math.Max( 0.0, m_IOR_red*m_IOR_red - 1.0 + c*c ) );
 			yr = (float) (0.5 * Math.Pow( (g-c) / (g+c), 2.0 ) * (1.0 + Math.Pow( (c*(g+c) - 1) / (c*(g-c) + 1), 2.0 )) );
-			g = Math.Sqrt( F0g*F0g - 1.0 + c*c );
+			g = Math.Sqrt( Math.Max( 0.0, m_IOR_green*m_IOR_green - 1.0 + c*c ) );
 			yg = (float) (0.5 * Math.Pow( (g-c) / (g+c), 2.0 ) * (1.0 + Math.Pow( (c*(g+c) - 1) / (c*(g-c) + 1), 2.0 )) );
-			g = Math.Sqrt( F0b*F0b - 1.0 + c*c );
+			g = Math.Sqrt( Math.Max( 0.0, m_IOR_blue*m_IOR_blue - 1.0 + c*c ) );
 			yb = (float) (0.5 * Math.Pow( (g-c) / (g+c), 2.0 ) * (1.0 + Math.Pow( (c*(g+c) - 1) / (c*(g-c) + 1), 2.0 )) );
-
-// 			yr = F * F0r;
-// 			yg = F * F0g;
-// 			yb = F * F0b;
-// 			yr = F0r + (1.0f - F0r) * F;
-// 			yg = F0g + (1.0f - F0g) * F;
-// 			yb = F0b + (1.0f - F0b) * F;
-// 			yr = F0r * (1-F) + F;
-// 			yg = F0g * (1-F) + F;
-// 			yb = F0b * (1-F) + F;
 		}
 
 		//////////////////////////////////////////////////////////////////////////
