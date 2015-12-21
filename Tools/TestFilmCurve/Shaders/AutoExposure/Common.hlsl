@@ -51,10 +51,10 @@ static const float	WORLD_TO_BISOU_LUMINANCE = 1.0 / BISOU_TO_WORLD_LUMINANCE;
 
 
 static const float	MIN_ADAPTABLE_SCENE_LUMINANCE = 1e-2;										// 0.01 cd/m² for star light but we limit to 0.01 cd/m² because we don't want to adapt that low!
-static const float	MAX_ADAPTABLE_SCENE_LUMINANCE = 1e5;										// 100,000 cd/m² for the Sun
-static const float	SCENE_LUMINANCE_RANGE_DB = 140.0;											// Scene dynamic range in decibels = 20.log10( MAX / MIN )
+static const float	MAX_ADAPTABLE_SCENE_LUMINANCE = 1e4;										// 100,000 cd/m² for the Sun
+static const float	SCENE_LUMINANCE_RANGE_DB = 120.0;											// Scene dynamic range in decibels = 20.log10( MAX / MIN )
 static const float	MIN_ADAPTABLE_SCENE_LUMINANCE_DB = -40;										// Minimum range in decibels
-static const float	MAX_ADAPTABLE_SCENE_LUMINANCE_DB = 100;										// Maximum range in decibels
+static const float	MAX_ADAPTABLE_SCENE_LUMINANCE_DB = 80;										// Maximum range in decibels
 
 static const uint	TARGET_MONITOR_BITS_PRECISION = 8;											// Target monitors usually have 8 bits precision.
 static const float	TARGET_MONITOR_LUMINANCE_RANGE = (1 << TARGET_MONITOR_BITS_PRECISION) - 1;	// So it has a range of 255 (the brightest pixel is 255 times brighter than the lowest)

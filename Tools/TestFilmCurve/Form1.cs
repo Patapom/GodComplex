@@ -105,9 +105,17 @@ namespace TestFilmicCurve
 		{
 			InitializeComponent();
 
-			panelGraph.ScaleX = floatTrackbarControlScaleX.Value;
-			panelGraph.ScaleY = floatTrackbarControlScaleY.Value;
-			
+			panelGraph_Hable.ScaleX = floatTrackbarControlScaleX.Value;
+			panelGraph_Hable.ScaleY = floatTrackbarControlScaleY.Value;
+
+			outputPanelFilmic_Insomniac.ScaleX = floatTrackbarControlScaleX.Value;
+			outputPanelFilmic_Insomniac.ScaleY = floatTrackbarControlScaleY.Value;
+			outputPanelFilmic_Insomniac.BlackPoint = floatTrackbarControlIG_BlackPoint.Value;
+			outputPanelFilmic_Insomniac.WhitePoint = floatTrackbarControlIG_WhitePoint.Value;
+			outputPanelFilmic_Insomniac.JunctionPoint = floatTrackbarControlIG_JunctionPoint.Value;
+			outputPanelFilmic_Insomniac.ToeStrength = floatTrackbarControlIG_ToeStrength.Value;
+			outputPanelFilmic_Insomniac.ShoulderStrength = floatTrackbarControlIG_ShoulderStrength.Value;
+
 // 			using ( Bitmap B = new Bitmap( 512, 512, PixelFormat.Format32bppArgb ) )
 // 			{
 // 				BitmapData	LockedBitmap = B.LockBits( new Rectangle( 0, 0, 512, 512 ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
@@ -336,14 +344,29 @@ namespace TestFilmicCurve
 				}
 
 				m_CB_ToneMapping.m._Exposure = 1.0f;//(float) Math.Pow( 2, floatTrackbarControlExposure.Value );
-				m_CB_ToneMapping.m._Flags = (checkBoxEnable.Checked ? 1U : 0U) | (checkBoxDebugLuminanceLevel.Checked ? 2U : 0U) | (checkBoxShowHistogram.Checked ? 4U : 0U);
-				m_CB_ToneMapping.m._A = floatTrackbarControlA.Value;
-				m_CB_ToneMapping.m._B = floatTrackbarControlB.Value;
-				m_CB_ToneMapping.m._C = floatTrackbarControlC.Value;
-				m_CB_ToneMapping.m._D = floatTrackbarControlD.Value;
-				m_CB_ToneMapping.m._E = floatTrackbarControlE.Value;
-				m_CB_ToneMapping.m._F = floatTrackbarControlF.Value;
-				m_CB_ToneMapping.m._WhitePoint = floatTrackbarControlWhitePoint.Value;
+				m_CB_ToneMapping.m._Flags = (checkBoxEnable.Checked ? 1U : 0U)
+										  | (checkBoxDebugLuminanceLevel.Checked ? 2U : 0U)
+										  | (checkBoxShowHistogram.Checked ? 4U : 0U)
+										  | (tabControlToneMappingTypes.SelectedIndex == 0 ? 0U : 8U);
+				if ( tabControlToneMappingTypes.SelectedIndex == 0 ) {
+					m_CB_ToneMapping.m._WhitePoint = floatTrackbarControlIG_WhitePoint.Value;
+					m_CB_ToneMapping.m._A = floatTrackbarControlIG_BlackPoint.Value;
+					m_CB_ToneMapping.m._B = floatTrackbarControlIG_JunctionPoint.Value;
+					m_CB_ToneMapping.m._C = floatTrackbarControlIG_ToeStrength.Value;
+					m_CB_ToneMapping.m._D = floatTrackbarControlIG_ShoulderStrength.Value;
+
+					// Compute junction factor
+					m_CB_ToneMapping.m._E = (1.0f - floatTrackbarControlIG_ToeStrength.Value) * (floatTrackbarControlIG_JunctionPoint.Value - floatTrackbarControlIG_BlackPoint.Value) / ((1.0f - floatTrackbarControlIG_ShoulderStrength.Value) * (floatTrackbarControlIG_WhitePoint.Value - floatTrackbarControlIG_JunctionPoint.Value) + (1.0f - floatTrackbarControlIG_ToeStrength.Value) * (floatTrackbarControlIG_JunctionPoint.Value - floatTrackbarControlIG_BlackPoint.Value));
+				} else {
+					// Hable Filmic
+					m_CB_ToneMapping.m._WhitePoint = floatTrackbarControlWhitePoint.Value;
+					m_CB_ToneMapping.m._A = floatTrackbarControlA.Value;
+					m_CB_ToneMapping.m._B = floatTrackbarControlB.Value;
+					m_CB_ToneMapping.m._C = floatTrackbarControlC.Value;
+					m_CB_ToneMapping.m._D = floatTrackbarControlD.Value;
+					m_CB_ToneMapping.m._E = floatTrackbarControlE.Value;
+					m_CB_ToneMapping.m._F = floatTrackbarControlF.Value;
+				}
 				m_CB_ToneMapping.m._DebugLuminanceLevel = floatTrackbarControlDebugLuminanceLevel.Value;
 				m_CB_ToneMapping.m._MouseU = mouseU;
 				m_CB_ToneMapping.m._MouseV = mouseV;
@@ -369,57 +392,98 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 
 		private void floatTrackbarControlScaleX_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			panelGraph.ScaleX = _Sender.Value;
+			panelGraph_Hable.ScaleX = _Sender.Value;
+			outputPanelFilmic_Insomniac.ScaleX = _Sender.Value;
 		}
 
 		private void floatTrackbarControlScaleY_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			panelGraph.ScaleY = _Sender.Value;
+			panelGraph_Hable.ScaleY = _Sender.Value;
+			outputPanelFilmic_Insomniac.ScaleY = _Sender.Value;
 		}
+
+		private void tabControlToneMappingTypes_SelectedIndexChanged( object sender, EventArgs e )
+		{
+			outputPanelFilmic_Insomniac.Visible = tabControlToneMappingTypes.SelectedIndex == 0;
+			panelGraph_Hable.Visible = tabControlToneMappingTypes.SelectedIndex == 1;
+		}
+
+		#region Hable
 
 		private void floatTrackbarControlWhitePoint_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			panelGraph.WhitePoint = _Sender.Value;
+			panelGraph_Hable.WhitePoint = _Sender.Value;
 		}
 
 		private void floatTrackbarControlA_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			panelGraph.A = _Sender.Value;
+			panelGraph_Hable.A = _Sender.Value;
 		}
 
 		private void floatTrackbarControlB_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			panelGraph.B = _Sender.Value;
+			panelGraph_Hable.B = _Sender.Value;
 		}
 
 		private void floatTrackbarControlC_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			panelGraph.C = _Sender.Value;
+			panelGraph_Hable.C = _Sender.Value;
 		}
 
 		private void floatTrackbarControlD_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			panelGraph.D = _Sender.Value;
+			panelGraph_Hable.D = _Sender.Value;
 		}
 
 		private void floatTrackbarControlE_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			panelGraph.E = _Sender.Value;
+			panelGraph_Hable.E = _Sender.Value;
 		}
 
 		private void floatTrackbarControlF_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			panelGraph.F = _Sender.Value;
+			panelGraph_Hable.F = _Sender.Value;
 		}
+
+		#endregion
+
+		#region Insomniac Games
+
+		private void floatTrackbarControlIG_BlackPoint_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			outputPanelFilmic_Insomniac.BlackPoint = _Sender.Value;
+		}
+
+		private void floatTrackbarControlIG_WhitePoint_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			outputPanelFilmic_Insomniac.WhitePoint = _Sender.Value;
+		}
+
+		private void floatTrackbarControlIG_JunctionPoint_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			outputPanelFilmic_Insomniac.JunctionPoint = _Sender.Value;
+		}
+
+		private void floatTrackbarControlIG_ToeStrength_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			outputPanelFilmic_Insomniac.ToeStrength = _Sender.Value;
+		}
+
+		private void floatTrackbarControlIG_ShoulderStrength_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			outputPanelFilmic_Insomniac.ShoulderStrength = _Sender.Value;
+		}
+
+		#endregion
 
 		private void checkBoxDebugLuminanceLevel_CheckedChanged( object sender, EventArgs e )
 		{
-			panelGraph.ShowDebugLuminance = checkBoxDebugLuminanceLevel.Checked;
+			panelGraph_Hable.ShowDebugLuminance = checkBoxDebugLuminanceLevel.Checked;
 		}
 
 		private void floatTrackbarControlDebugLuminanceLevel_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			panelGraph.DebugLuminance = _Sender.Value;
+			panelGraph_Hable.DebugLuminance = _Sender.Value;
 		}
 
 		private void buttonReload_Click( object sender, EventArgs e )

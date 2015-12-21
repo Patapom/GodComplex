@@ -169,6 +169,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BImage.cs" />
+    <Compile Include="OutputPanelFilmic_Insomniac.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="OutputPanelFilmic_Insomniac.Designer.cs">
+      <DependentUpon>OutputPanelFilmic_Insomniac.cs</DependentUpon>
+    </Compile>
     <Compile Include="OutputPanelHammersley.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -181,11 +187,11 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="OutputPanel.cs">
+    <Compile Include="OutputPanelFilmic_Hable.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="OutputPanel.Designer.cs">
-      <DependentUpon>OutputPanel.cs</DependentUpon>
+    <Compile Include="OutputPanelFilmic_Hable.Designer.cs">
+      <DependentUpon>OutputPanelFilmic_Hable.cs</DependentUpon>
     </Compile>
     <Compile Include="PanelOutput3D.cs">
       <SubType>Component</SubType>
