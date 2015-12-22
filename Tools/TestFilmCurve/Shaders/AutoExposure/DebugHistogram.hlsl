@@ -44,19 +44,17 @@ void	DEBUG_DisplayLuminanceHistogram( float _white_level, float2 _UV, float2 _mo
 	// Debug on screen luminances by pointing the histogram with the mouse
 	if ( _mouseUV.x < LUM_HISTOGRAM_INSET_WIDTH && _mouseUV.y > 1.0-LUM_HISTOGRAM_INSET_HEIGHT ) {
 		float2	MouseUV = float2( _mouseUV.x / LUM_HISTOGRAM_INSET_WIDTH, (_mouseUV.y - 1.0 + LUM_HISTOGRAM_INSET_HEIGHT) / LUM_HISTOGRAM_INSET_HEIGHT );
-#if 0
-		float	mouseLuminance_dB = MIN_ADAPTABLE_SCENE_LUMINANCE_DB + MouseUV.x * SCENE_LUMINANCE_RANGE_DB;
-		float	ScreenWorldLuminance_dB = Luminance2dB( ScreenWorldLuminance );
-		_Color = lerp( float3( 1, 0, 0 ), _Color, saturate( 10.0 * abs( ScreenWorldLuminance_dB - mouseLuminance_dB ) ) );
-#else
-//		float	fHistoBucketIndex = ceil( HISTOGRAM_BUCKETS_COUNT * MouseUV.x );
-		float	fHistoBucketIndex = HISTOGRAM_BUCKETS_COUNT * MouseUV.x;
-		float	HistoLuminance = MIN_ADAPTABLE_SCENE_LUMINANCE * dB2Luminance( fHistoBucketIndex * HISTOGRAM_BUCKET_RANGE_DB );
-		float	BisouLuminance = WORLD_TO_BISOU_LUMINANCE * HistoLuminance;
+		#if 0
+			float	mouseLuminance_dB = MIN_ADAPTABLE_SCENE_LUMINANCE_DB + MouseUV.x * SCENE_LUMINANCE_RANGE_DB;
+			float	ScreenWorldLuminance_dB = Luminance2dB( ScreenWorldLuminance );
+			_Color = lerp( float3( 1, 0, 0 ), _Color, saturate( 10.0 * abs( ScreenWorldLuminance_dB - mouseLuminance_dB ) ) );
+		#else
+			float	HistoLuminance = HistogramBucketIndex2Luminance( HISTOGRAM_BUCKETS_COUNT * MouseUV.x );
+			float	BisouLuminance = WORLD_TO_BISOU_LUMINANCE * HistoLuminance;
 
-		float	ScreenLuminance = dot( LUMINANCE, _OriginalColor );
-		_Color = lerp( float3( 1, 0, 0 ), _Color, saturate( 10.0 * abs( ScreenLuminance - BisouLuminance ) / BisouLuminance ) );
-#endif
+			float	ScreenLuminance = dot( LUMINANCE, _OriginalColor );
+			_Color = lerp( float3( 1, 0, 0 ), _Color, saturate( 10.0 * abs( ScreenLuminance - BisouLuminance ) / BisouLuminance ) );
+		#endif
 	}
 
 	if ( _UV.x < LUM_HISTOGRAM_INSET_WIDTH && _UV.y > 1.0-LUM_HISTOGRAM_INSET_HEIGHT ) {

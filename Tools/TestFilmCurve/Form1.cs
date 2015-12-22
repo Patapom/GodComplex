@@ -111,6 +111,8 @@ namespace TestFilmicCurve
 			panelGraph_Hable.ScaleX = floatTrackbarControlScaleX.Value;
 			panelGraph_Hable.ScaleY = floatTrackbarControlScaleY.Value;
 
+			buttonReset_Click( buttonReset, EventArgs.Empty );
+
 			outputPanelFilmic_Insomniac.ScaleX = floatTrackbarControlScaleX.Value;
 			outputPanelFilmic_Insomniac.ScaleY = floatTrackbarControlScaleY.Value;
 			outputPanelFilmic_Insomniac.BlackPoint = floatTrackbarControlIG_BlackPoint.Value;
@@ -202,13 +204,13 @@ namespace TestFilmicCurve
 			// Load cube map
 //			m_Tex_CubeMap = DirectXTexManaged.TextureCreator.CreateTexture2DFromDDSFile( m_Device, "garage4_hd.dds" );
 			{
-//				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_28_cube_BC6H_UF16.bimage" ) );		// Tunnel
+				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_28_cube_BC6H_UF16.bimage" ) );		// Tunnel
 // 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_89_cube_BC6H_UF16.bimage" ) );		// Large sky
 // 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_115_cube_BC6H_UF16.bimage" ) );	// Indoor
 // 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_123_cube_BC6H_UF16.bimage" ) );	// Under the arch
 // 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_189_cube_BC6H_UF16.bimage" ) );	// Indoor viewing out (vista)
 // 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_246_cube_BC6H_UF16.bimage" ) );	// Nice! Statue's feet
- 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_248_cube_BC6H_UF16.bimage" ) );	// Nice! In a corner with lot of sky
+// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_248_cube_BC6H_UF16.bimage" ) );	// Nice! In a corner with lot of sky
 //				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_1127_cube_BC6H_UF16.bimage" ) );	// Okay. Corner, with vista and sky
 				m_Tex_CubeMap = I.CreateTextureCube( m_Device );
 			}
@@ -324,7 +326,7 @@ namespace TestFilmicCurve
 				m_CB_AutoExposure.m._fstop_bias = 0.0f;					// (0.0) F-stop number bias to override automatic computation (NOTE: This will NOT change exposure, only the F number)
 				m_CB_AutoExposure.m._reference_camera_fps = 30.0f;		// (30.0) Default camera at 30 FPS
 				m_CB_AutoExposure.m._adapt_min_luminance = 0.1f;		// (0.03) Prevents the auto-exposure to adapt to luminances lower than this
-				m_CB_AutoExposure.m._adapt_max_luminance = 2000.0f;		// (2000.0) Prevents the auto-exposure to adapt to luminances higher than this
+				m_CB_AutoExposure.m._adapt_max_luminance = 3000.0f;		// (2000.0) Prevents the auto-exposure to adapt to luminances higher than this
 				m_CB_AutoExposure.m._adapt_speed_up = 0.99f;			// (0.99) Adaptation speed from low to high luminances
 				m_CB_AutoExposure.m._adapt_speed_down = 0.99f;			// (0.99) Adaptation speed from high to low luminances
 				m_CB_AutoExposure.UpdateData();
@@ -505,7 +507,7 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 			if ( tabControlToneMappingTypes.SelectedIndex == 0 ) {
 				floatTrackbarControlIG_BlackPoint.Value = 0.0f;
 				floatTrackbarControlIG_WhitePoint.Value = 10.0f;
-				floatTrackbarControlIG_JunctionPoint.Value = 0.2f;
+				floatTrackbarControlIG_JunctionPoint.Value = 0.5f;
 				floatTrackbarControlIG_ToeStrength.Value = 0.25f;
 				floatTrackbarControlIG_ShoulderStrength.Value = 0.8f;
 			} else {

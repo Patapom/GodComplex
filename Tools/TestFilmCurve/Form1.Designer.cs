@@ -150,7 +150,7 @@
 			// buttonReload
 			// 
 			this.buttonReload.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonReload.Location = new System.Drawing.Point( 976, 794 );
+			this.buttonReload.Location = new System.Drawing.Point( 1128, 794 );
 			this.buttonReload.Name = "buttonReload";
 			this.buttonReload.Size = new System.Drawing.Size( 75, 23 );
 			this.buttonReload.TabIndex = 5;
@@ -162,7 +162,7 @@
 			// 
 			this.label8.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label8.AutoSize = true;
-			this.label8.Location = new System.Drawing.Point( 1115, 268 );
+			this.label8.Location = new System.Drawing.Point( 1270, 269 );
 			this.label8.Name = "label8";
 			this.label8.Size = new System.Drawing.Size( 44, 13 );
 			this.label8.TabIndex = 2;
@@ -172,7 +172,7 @@
 			// 
 			this.label9.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label9.AutoSize = true;
-			this.label9.Location = new System.Drawing.Point( 1115, 295 );
+			this.label9.Location = new System.Drawing.Point( 1270, 296 );
 			this.label9.Name = "label9";
 			this.label9.Size = new System.Drawing.Size( 44, 13 );
 			this.label9.TabIndex = 2;
@@ -182,7 +182,7 @@
 			// 
 			this.label10.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.label10.AutoSize = true;
-			this.label10.Location = new System.Drawing.Point( 976, 590 );
+			this.label10.Location = new System.Drawing.Point( 1131, 591 );
 			this.label10.Name = "label10";
 			this.label10.Size = new System.Drawing.Size( 21, 13 );
 			this.label10.TabIndex = 2;
@@ -194,7 +194,7 @@
 			this.checkBoxEnable.AutoSize = true;
 			this.checkBoxEnable.Checked = true;
 			this.checkBoxEnable.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxEnable.Location = new System.Drawing.Point( 973, 303 );
+			this.checkBoxEnable.Location = new System.Drawing.Point( 1128, 304 );
 			this.checkBoxEnable.Name = "checkBoxEnable";
 			this.checkBoxEnable.Size = new System.Drawing.Size( 131, 17 );
 			this.checkBoxEnable.TabIndex = 6;
@@ -204,7 +204,7 @@
 			// buttonReset
 			// 
 			this.buttonReset.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonReset.Location = new System.Drawing.Point( 976, 261 );
+			this.buttonReset.Location = new System.Drawing.Point( 1131, 262 );
 			this.buttonReset.Name = "buttonReset";
 			this.buttonReset.Size = new System.Drawing.Size( 75, 23 );
 			this.buttonReset.TabIndex = 5;
@@ -216,7 +216,7 @@
 			// 
 			this.label11.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.label11.AutoSize = true;
-			this.label11.Location = new System.Drawing.Point( 976, 682 );
+			this.label11.Location = new System.Drawing.Point( 1131, 683 );
 			this.label11.Name = "label11";
 			this.label11.Size = new System.Drawing.Size( 33, 13 );
 			this.label11.TabIndex = 2;
@@ -226,7 +226,7 @@
 			// 
 			this.checkBoxDebugLuminanceLevel.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.checkBoxDebugLuminanceLevel.AutoSize = true;
-			this.checkBoxDebugLuminanceLevel.Location = new System.Drawing.Point( 979, 655 );
+			this.checkBoxDebugLuminanceLevel.Location = new System.Drawing.Point( 1134, 656 );
 			this.checkBoxDebugLuminanceLevel.Name = "checkBoxDebugLuminanceLevel";
 			this.checkBoxDebugLuminanceLevel.Size = new System.Drawing.Size( 142, 17 );
 			this.checkBoxDebugLuminanceLevel.TabIndex = 6;
@@ -309,7 +309,7 @@
 			// floatTrackbarControlScaleY
 			// 
 			this.floatTrackbarControlScaleY.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlScaleY.Location = new System.Drawing.Point( 1165, 290 );
+			this.floatTrackbarControlScaleY.Location = new System.Drawing.Point( 1320, 291 );
 			this.floatTrackbarControlScaleY.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlScaleY.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlScaleY.Name = "floatTrackbarControlScaleY";
@@ -336,7 +336,7 @@
 			// floatTrackbarControlDebugLuminanceLevel
 			// 
 			this.floatTrackbarControlDebugLuminanceLevel.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlDebugLuminanceLevel.Location = new System.Drawing.Point( 1015, 678 );
+			this.floatTrackbarControlDebugLuminanceLevel.Location = new System.Drawing.Point( 1170, 679 );
 			this.floatTrackbarControlDebugLuminanceLevel.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlDebugLuminanceLevel.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlDebugLuminanceLevel.Name = "floatTrackbarControlDebugLuminanceLevel";
@@ -349,7 +349,7 @@
 			// floatTrackbarControlExposure
 			// 
 			this.floatTrackbarControlExposure.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlExposure.Location = new System.Drawing.Point( 1015, 586 );
+			this.floatTrackbarControlExposure.Location = new System.Drawing.Point( 1170, 587 );
 			this.floatTrackbarControlExposure.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlExposure.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlExposure.Name = "floatTrackbarControlExposure";
@@ -364,7 +364,7 @@
 			// floatTrackbarControlScaleX
 			// 
 			this.floatTrackbarControlScaleX.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlScaleX.Location = new System.Drawing.Point( 1165, 264 );
+			this.floatTrackbarControlScaleX.Location = new System.Drawing.Point( 1320, 265 );
 			this.floatTrackbarControlScaleX.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlScaleX.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlScaleX.Name = "floatTrackbarControlScaleX";
@@ -380,7 +380,7 @@
 			this.checkBoxShowHistogram.AutoSize = true;
 			this.checkBoxShowHistogram.Checked = true;
 			this.checkBoxShowHistogram.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowHistogram.Location = new System.Drawing.Point( 979, 612 );
+			this.checkBoxShowHistogram.Location = new System.Drawing.Point( 1134, 613 );
 			this.checkBoxShowHistogram.Name = "checkBoxShowHistogram";
 			this.checkBoxShowHistogram.Size = new System.Drawing.Size( 138, 17 );
 			this.checkBoxShowHistogram.TabIndex = 6;
@@ -390,9 +390,10 @@
 			// 
 			// tabControlToneMappingTypes
 			// 
+			this.tabControlToneMappingTypes.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.tabControlToneMappingTypes.Controls.Add( this.tabPageCustom );
 			this.tabControlToneMappingTypes.Controls.Add( this.tabPageToneMappingHabble );
-			this.tabControlToneMappingTypes.Location = new System.Drawing.Point( 976, 12 );
+			this.tabControlToneMappingTypes.Location = new System.Drawing.Point( 1131, 13 );
 			this.tabControlToneMappingTypes.Name = "tabControlToneMappingTypes";
 			this.tabControlToneMappingTypes.SelectedIndex = 0;
 			this.tabControlToneMappingTypes.Size = new System.Drawing.Size( 334, 236 );
@@ -490,7 +491,7 @@
 			this.floatTrackbarControlIG_BlackPoint.Size = new System.Drawing.Size( 200, 20 );
 			this.floatTrackbarControlIG_BlackPoint.TabIndex = 3;
 			this.floatTrackbarControlIG_BlackPoint.Value = 0F;
-			this.floatTrackbarControlIG_BlackPoint.VisibleRangeMax = 1F;
+			this.floatTrackbarControlIG_BlackPoint.VisibleRangeMax = 0.1F;
 			this.floatTrackbarControlIG_BlackPoint.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler( this.floatTrackbarControlIG_BlackPoint_ValueChanged );
 			// 
 			// label16
@@ -560,13 +561,13 @@
 						| System.Windows.Forms.AnchorStyles.Right)));
 			this.panelOutput.Location = new System.Drawing.Point( 12, 12 );
 			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size( 955, 805 );
+			this.panelOutput.Size = new System.Drawing.Size( 1110, 805 );
 			this.panelOutput.TabIndex = 4;
 			// 
 			// outputPanelHammersley1
 			// 
 			this.outputPanelHammersley1.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.outputPanelHammersley1.Location = new System.Drawing.Point( 1232, 586 );
+			this.outputPanelHammersley1.Location = new System.Drawing.Point( 1387, 587 );
 			this.outputPanelHammersley1.Name = "outputPanelHammersley1";
 			this.outputPanelHammersley1.Size = new System.Drawing.Size( 106, 103 );
 			this.outputPanelHammersley1.TabIndex = 3;
@@ -577,7 +578,7 @@
 			this.outputPanelFilmic_Insomniac.BlackPoint = 0F;
 			this.outputPanelFilmic_Insomniac.DebugLuminance = 1F;
 			this.outputPanelFilmic_Insomniac.JunctionPoint = 0.5F;
-			this.outputPanelFilmic_Insomniac.Location = new System.Drawing.Point( 976, 324 );
+			this.outputPanelFilmic_Insomniac.Location = new System.Drawing.Point( 1131, 325 );
 			this.outputPanelFilmic_Insomniac.Name = "outputPanelFilmic_Insomniac";
 			this.outputPanelFilmic_Insomniac.ScaleX = 1F;
 			this.outputPanelFilmic_Insomniac.ScaleY = 1F;
@@ -598,7 +599,7 @@
 			this.panelGraph_Hable.DebugLuminance = 1F;
 			this.panelGraph_Hable.E = 0.02F;
 			this.panelGraph_Hable.F = 0.3F;
-			this.panelGraph_Hable.Location = new System.Drawing.Point( 976, 326 );
+			this.panelGraph_Hable.Location = new System.Drawing.Point( 1131, 327 );
 			this.panelGraph_Hable.Name = "panelGraph_Hable";
 			this.panelGraph_Hable.ScaleX = 1F;
 			this.panelGraph_Hable.ScaleY = 1F;
