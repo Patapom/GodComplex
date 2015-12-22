@@ -142,6 +142,11 @@ namespace TestFilmicCurve
 				G.DrawLine( Pens.Black, 10, 0, 10, Height );
 				G.DrawLine( Pens.Black, 0, Height-10, Width, Height-10 );
 
+				DrawLine( G, Pens.LightGray, 10, 1.0f, Width, 1.0f );
+
+				float	Xw = LogLuminance2Client( m_WhitePoint );
+				DrawLine( G, Pens.LightGreen, Xw, 0.0f, Xw, 1.0f );
+
 				for ( int i=1; i <= 10; i++ ) {
 					float	height = 0.02f * (1.0f + (i==1 ? 1 : 0));
 					DrawLine( G, Pens.Black, LogLuminance2Client( 0.01f * i ), 0.0f, LogLuminance2Client( 0.01f * i ), height );
@@ -149,11 +154,6 @@ namespace TestFilmicCurve
 					DrawLine( G, Pens.Black, LogLuminance2Client( 1.0f * i ), 0.0f, LogLuminance2Client( 1.0f * i ), height );
 					DrawLine( G, Pens.Black, LogLuminance2Client( 10.0f * i ), 0.0f, LogLuminance2Client( 10.0f * i ), height );
 				}
-
-				DrawLine( G, Pens.LightGray, 10, 1.0f, Width, 1.0f );
-
-				float	Xw = LogLuminance2Client( m_WhitePoint );
-				DrawLine( G, Pens.LightGreen, Xw, 0.0f, Xw, 1.0f );
 
 // 				if ( m_ShowDebugLuminance ) {
 // 					float	Xd = LogLuminance2Client( m_DebugLuminance );

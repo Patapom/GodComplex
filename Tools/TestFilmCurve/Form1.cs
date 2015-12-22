@@ -118,8 +118,8 @@ namespace TestFilmicCurve
 			outputPanelFilmic_Insomniac.BlackPoint = floatTrackbarControlIG_BlackPoint.Value;
 			outputPanelFilmic_Insomniac.WhitePoint = floatTrackbarControlIG_WhitePoint.Value;
 			outputPanelFilmic_Insomniac.JunctionPoint = floatTrackbarControlIG_JunctionPoint.Value;
-			outputPanelFilmic_Insomniac.ToeStrength = floatTrackbarControlIG_ToeStrength.Value;
-			outputPanelFilmic_Insomniac.ShoulderStrength = floatTrackbarControlIG_ShoulderStrength.Value;
+			outputPanelFilmic_Insomniac.ToeStrength = ComputeToeStrength();
+			outputPanelFilmic_Insomniac.ShoulderStrength = ComputeShoulderStrength();
 
 // 			using ( Bitmap B = new Bitmap( 512, 512, PixelFormat.Format32bppArgb ) )
 // 			{
@@ -362,8 +362,8 @@ namespace TestFilmicCurve
 					m_CB_ToneMapping.m._WhitePoint = floatTrackbarControlIG_WhitePoint.Value;
 					m_CB_ToneMapping.m._A = floatTrackbarControlIG_BlackPoint.Value;
 					m_CB_ToneMapping.m._B = floatTrackbarControlIG_JunctionPoint.Value;
-					m_CB_ToneMapping.m._C = floatTrackbarControlIG_ToeStrength.Value;
-					m_CB_ToneMapping.m._D = floatTrackbarControlIG_ShoulderStrength.Value;
+					m_CB_ToneMapping.m._C = ComputeToeStrength();// floatTrackbarControlIG_ToeStrength.Value;
+					m_CB_ToneMapping.m._D = ComputeShoulderStrength();// floatTrackbarControlIG_ShoulderStrength.Value;
 
 					// Compute junction factor
 					m_CB_ToneMapping.m._E = (1.0f - floatTrackbarControlIG_ToeStrength.Value) * (floatTrackbarControlIG_JunctionPoint.Value - floatTrackbarControlIG_BlackPoint.Value) / ((1.0f - floatTrackbarControlIG_ShoulderStrength.Value) * (floatTrackbarControlIG_WhitePoint.Value - floatTrackbarControlIG_JunctionPoint.Value) + (1.0f - floatTrackbarControlIG_ToeStrength.Value) * (floatTrackbarControlIG_JunctionPoint.Value - floatTrackbarControlIG_BlackPoint.Value));
@@ -474,14 +474,28 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 			outputPanelFilmic_Insomniac.JunctionPoint = _Sender.Value;
 		}
 
-		private void floatTrackbarControlIG_ToeStrength_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
-		{
-			outputPanelFilmic_Insomniac.ToeStrength = _Sender.Value;
+		float	ComputeToeStrength() {
+//			return (float) Math.Pow( floatTrackbarControlIG_ToeStrength.Value, floatTrackbarControlTest.Value );
+			return (float) Math.Pow( floatTrackbarControlIG_ToeStrength.Value, 2.0 );	// Empirical
 		}
 
+		private void floatTrackbarControlIG_ToeStrength_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			outputPanelFilmic_Insomniac.ToeStrength = ComputeToeStrength();
+		}
+
+		float	ComputeShoulderStrength() {
+//			return (float) Math.Pow( floatTrackbarControlIG_ShoulderStrength.Value, floatTrackbarControlTest.Value );
+			return (float) Math.Pow( floatTrackbarControlIG_ShoulderStrength.Value, 0.2 );	// Empirical
+		}
 		private void floatTrackbarControlIG_ShoulderStrength_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			outputPanelFilmic_Insomniac.ShoulderStrength = _Sender.Value;
+			outputPanelFilmic_Insomniac.ShoulderStrength = ComputeShoulderStrength();
+		}
+
+		private void floatTrackbarControlTest_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			outputPanelFilmic_Insomniac.ToeStrength = ComputeToeStrength();
 		}
 
 		#endregion

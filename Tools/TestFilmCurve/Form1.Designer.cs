@@ -70,6 +70,7 @@
 			this.label13 = new System.Windows.Forms.Label();
 			this.label12 = new System.Windows.Forms.Label();
 			this.tabPageToneMappingHabble = new System.Windows.Forms.TabPage();
+			this.floatTrackbarControlTest = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.panelOutput = new TestFilmicCurve.PanelOutput3D( this.components );
 			this.outputPanelHammersley1 = new TestFilmicCurve.OutputPanelHammersley( this.components );
 			this.outputPanelFilmic_Insomniac = new TestFilmicCurve.OutputPanelFilmic_Insomniac( this.components );
@@ -242,8 +243,9 @@
 			this.floatTrackbarControlWhitePoint.Name = "floatTrackbarControlWhitePoint";
 			this.floatTrackbarControlWhitePoint.Size = new System.Drawing.Size( 200, 20 );
 			this.floatTrackbarControlWhitePoint.TabIndex = 1;
-			this.floatTrackbarControlWhitePoint.Value = 8F;
+			this.floatTrackbarControlWhitePoint.Value = 10F;
 			this.floatTrackbarControlWhitePoint.VisibleRangeMax = 20F;
+			this.floatTrackbarControlWhitePoint.VisibleRangeMin = 1F;
 			this.floatTrackbarControlWhitePoint.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler( this.floatTrackbarControlWhitePoint_ValueChanged );
 			// 
 			// floatTrackbarControlF
@@ -404,6 +406,7 @@
 			// 
 			this.tabPageCustom.Controls.Add( this.floatTrackbarControlIG_JunctionPoint );
 			this.tabPageCustom.Controls.Add( this.floatTrackbarControlIG_WhitePoint );
+			this.tabPageCustom.Controls.Add( this.floatTrackbarControlTest );
 			this.tabPageCustom.Controls.Add( this.floatTrackbarControlIG_ShoulderStrength );
 			this.tabPageCustom.Controls.Add( this.floatTrackbarControlIG_ToeStrength );
 			this.tabPageCustom.Controls.Add( this.label15 );
@@ -554,6 +557,19 @@
 			this.tabPageToneMappingHabble.Text = "Hable";
 			this.tabPageToneMappingHabble.UseVisualStyleBackColor = true;
 			// 
+			// floatTrackbarControlTest
+			// 
+			this.floatTrackbarControlTest.Location = new System.Drawing.Point( 99, 169 );
+			this.floatTrackbarControlTest.MaximumSize = new System.Drawing.Size( 10000, 20 );
+			this.floatTrackbarControlTest.MinimumSize = new System.Drawing.Size( 70, 20 );
+			this.floatTrackbarControlTest.Name = "floatTrackbarControlTest";
+			this.floatTrackbarControlTest.RangeMin = 0F;
+			this.floatTrackbarControlTest.Size = new System.Drawing.Size( 200, 20 );
+			this.floatTrackbarControlTest.TabIndex = 3;
+			this.floatTrackbarControlTest.Value = 1F;
+			this.floatTrackbarControlTest.Visible = false;
+			this.floatTrackbarControlTest.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler( this.floatTrackbarControlTest_ValueChanged );
+			// 
 			// panelOutput
 			// 
 			this.panelOutput.Anchor = ((System.Windows.Forms.AnchorStyles) ((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
@@ -692,6 +708,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlIG_JunctionPoint;
 		private System.Windows.Forms.Label label16;
 		private OutputPanelFilmic_Insomniac outputPanelFilmic_Insomniac;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTest;
 	}
 }
 
