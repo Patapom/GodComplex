@@ -13,13 +13,13 @@
 #define NUMTHREADY	4
 #define NUMTHREADZ	1
 
-static const uint	PASSES_COUNT = HISTOGRAM_SIZE / NUMTHREADX;	// To address the entire histogram, we need to make each thread in the group process several buckets
+static const uint	PASSES_COUNT = HISTOGRAM_BUCKETS_COUNT / NUMTHREADX;	// To address the entire histogram, we need to make each thread in the group process several buckets
 																// A typical histogram size of 128 and 32 threads per group will require 4 passes to address all 4*32=128 buckets...
 
 Texture2D<float4>	_texSourceImageHDR : register(t0);			// Source image
 RWTexture2D<uint>	_texTallHistogram : register(u0);			// The histogram used as a RW texture
 
-groupshared uint	Histogram[NUMTHREADY][HISTOGRAM_SIZE];		// Here we have as many histograms as processed scanlines
+groupshared uint	Histogram[NUMTHREADY][HISTOGRAM_BUCKETS_COUNT];		// Here we have as many histograms as processed scanlines
 																// The NUMTHREADY histograms are added together into a single one that we store at the end of the shader
 
 [numthreads( NUMTHREADX, NUMTHREADY, NUMTHREADZ )]
@@ -32,7 +32,7 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	// Clear the histogram
 	[unroll]
 	for ( uint i=0; i < PASSES_COUNT; i++ ) {
-		int	BucketIndex = NUMTHREADX * i + _GroupThreadID.x;
+		uint	BucketIndex = NUMTHREADX * i + _GroupThreadID.x;
 		Histogram[_GroupThreadID.y][BucketIndex] = 0;
 	}
 	GroupMemoryBarrierWithGroupSync();
@@ -54,12 +54,10 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 		if ( Luminance < MIN_ADAPTABLE_SCENE_LUMINANCE )
 			continue;
 
-		float	Luminance_dB = Luminance2dB( Luminance );	// 20 * log10( Luminance )
+		float	Luminance_BucketIndex = Luminance2HistogramBucketIndex( Luminance );	// 20 * log10( Luminance ) => Histo bucket
 
-// Writing outside the target's range [0,127] crashes the driver!
-//			uint	BucketIndex = uint( floor( HISTOGRAM_SIZE * saturate( (Luminance_dB - MIN_ADAPTABLE_SCENE_LUMINANCE_DB) / (MAX_ADAPTABLE_SCENE_LUMINANCE_DB - MIN_ADAPTABLE_SCENE_LUMINANCE_DB) ) ) );
-
-		uint	BucketIndex = clamp( uint( floor( HISTOGRAM_SIZE * (Luminance_dB - MIN_ADAPTABLE_SCENE_LUMINANCE_DB) / (MAX_ADAPTABLE_SCENE_LUMINANCE_DB - MIN_ADAPTABLE_SCENE_LUMINANCE_DB) ) ), 0, HISTOGRAM_SIZE-1 );
+		uint	BucketIndex = uint( floor( Luminance_BucketIndex ) );
+				BucketIndex = clamp( BucketIndex, 0, HISTOGRAM_BUCKETS_COUNT-1 );		// Writing outside the target's range [0,127] crashes the driver!
 
 		uint old;
 		InterlockedAdd( Histogram[_GroupThreadID.y][BucketIndex], 1, old );
@@ -72,7 +70,7 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 		if ( _GroupThreadID.y < 8 ) {
 			[unroll]
 			for ( uint i=0; i < PASSES_COUNT; i++ ) {
-				int	BucketIndex = NUMTHREADX * i + _GroupThreadID.x;
+				uint	BucketIndex = NUMTHREADX * i + _GroupThreadID.x;
 				Histogram[_GroupThreadID.y][BucketIndex] += Histogram[8+_GroupThreadID.y][BucketIndex];
 			}
 		}
@@ -85,7 +83,7 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 		if ( _GroupThreadID.y < 4 ) {
 			[unroll]
 			for ( uint i=0; i < PASSES_COUNT; i++ ) {
-				int	BucketIndex = NUMTHREADX * i + _GroupThreadID.x;
+				uint	BucketIndex = NUMTHREADX * i + _GroupThreadID.x;
 				Histogram[_GroupThreadID.y][BucketIndex] += Histogram[4+_GroupThreadID.y][BucketIndex];
 			}
 		}
@@ -98,7 +96,7 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 		if ( _GroupThreadID.y < 2 ) {
 			[unroll]
 			for ( uint i=0; i < PASSES_COUNT; i++ ) {
-				int	BucketIndex = NUMTHREADX * i + _GroupThreadID.x;
+				uint	BucketIndex = NUMTHREADX * i + _GroupThreadID.x;
 				Histogram[_GroupThreadID.y][BucketIndex] += Histogram[2+_GroupThreadID.y][BucketIndex];
 			}
 		}
@@ -109,7 +107,7 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	if ( _GroupThreadID.y == 0 ) {
 		[unroll]
 		for ( uint i=0; i < PASSES_COUNT; i++ ) {
-			int	BucketIndex = NUMTHREADX * i + _GroupThreadID.x;
+			uint	BucketIndex = NUMTHREADX * i + _GroupThreadID.x;
 			#if NUMTHREADY > 1
 				_texTallHistogram[uint2( BucketIndex, _GroupID.y )] = Histogram[0][BucketIndex] + Histogram[1][BucketIndex];	// Add the two last lines together and store into destination
 			#else // NUMTHREADY == 1

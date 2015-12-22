@@ -11,7 +11,7 @@
 struct autoExposure_t {
 	float	EngineLuminanceFactor;		// The actual factor to apply to values stored to the HDR render target (it's simply LuminanceFactor * WORLD_TO_BISOU_LUMINANCE so it's a division by about 100)
 
-	float	LuminanceFactor;			// The factor to apply to the HDR luminance to bring it to the LDR luminance (warning: still in world units, you must multiply by WORLD_TO_BISOU_LUMINANCE for a valid engine factor)
+	float	TargetLuminance;			// The factor to apply to the HDR luminance to bring it to the LDR luminance (warning: still in world units, you must multiply by WORLD_TO_BISOU_LUMINANCE for a valid engine factor)
 	float	MinLuminanceLDR;			// Minimum luminance (cd/m²) the screen will display as the value sRGB 1
 	float	MaxLuminanceLDR;			// Maximum luminance (cd/m²) the screen will display as the value sRGB 255
 	float	MiddleGreyLuminanceLDR;		// "Reference EV" luminance (cd/m²) the screen will display as the value sRGB 128 (55 linear)
@@ -49,7 +49,6 @@ Texture2D<uint>						_texHistogram : register(t1);		// The image histogram (for 
 static const float	BISOU_TO_WORLD_LUMINANCE = 139.26;
 static const float	WORLD_TO_BISOU_LUMINANCE = 1.0 / BISOU_TO_WORLD_LUMINANCE;
 
-
 static const float	MIN_ADAPTABLE_SCENE_LUMINANCE = 1e-2;										// 0.01 cd/m² for star light but we limit to 0.01 cd/m² because we don't want to adapt that low!
 static const float	MAX_ADAPTABLE_SCENE_LUMINANCE = 1e4;										// 100,000 cd/m² for the Sun
 static const float	SCENE_LUMINANCE_RANGE_DB = 120.0;											// Scene dynamic range in decibels = 20.log10( MAX / MIN )
@@ -60,9 +59,9 @@ static const uint	TARGET_MONITOR_BITS_PRECISION = 8;											// Target monitor
 static const float	TARGET_MONITOR_LUMINANCE_RANGE = (1 << TARGET_MONITOR_BITS_PRECISION) - 1;	// So it has a range of 255 (the brightest pixel is 255 times brighter than the lowest)
 static const float	TARGET_MONITOR_LUMINANCE_RANGE_DB = 48.164799306236991234198223155919;		// Target monitor's dynamic range in decibels = 20.log10( 1 << BITS )
 
-static const uint	HISTOGRAM_SIZE = 128;														// We choose to have 128 buckets in our histogram
-static const float	HISTOGRAM_BUCKET_RANGE_DB = SCENE_LUMINANCE_RANGE_DB / HISTOGRAM_SIZE;		// Range of a single histogram bucket (in dB)
-static const float	TARGET_MONITOR_BUCKETS_COUNT = TARGET_MONITOR_LUMINANCE_RANGE_DB / HISTOGRAM_BUCKET_RANGE_DB;	// Amount of buckets covered by the target monitor range
+static const uint	HISTOGRAM_BUCKETS_COUNT = 128;														// We choose to have 128 buckets in our histogram
+static const float	HISTOGRAM_BUCKET_RANGE_DB = SCENE_LUMINANCE_RANGE_DB / HISTOGRAM_BUCKETS_COUNT;		// Range of a single histogram bucket (in dB)
+//static const float	TARGET_MONITOR_BUCKETS_COUNT = TARGET_MONITOR_LUMINANCE_RANGE_DB / HISTOGRAM_BUCKET_RANGE_DB;	// Amount of buckets covered by the target monitor range
 
 
 // After measuring a luminance of 240cd/m² on a typical display device (DELL U2412M) using the i1 Display Pro probe and taking pictures
@@ -93,6 +92,18 @@ float	dB2Luminance( float _dB ) {
 	return pow( 10.0, 0.05 * _dB );
 }
 
+// Converts a luminance to an histogram bucket index
+float	Luminance2HistogramBucketIndex( float _Luminance ) {
+	float	dB = Luminance2dB( _Luminance );
+	return (dB - MIN_ADAPTABLE_SCENE_LUMINANCE_DB) * (1.0 / HISTOGRAM_BUCKET_RANGE_DB);
+}
+
+// Converts an histogram bucket index to a luminance
+float	HistogramBucketIndex2Luminance( float _BucketIndex ) {
+	float	dB = MIN_ADAPTABLE_SCENE_LUMINANCE_DB + _BucketIndex * HISTOGRAM_BUCKET_RANGE_DB;
+	return dB2Luminance( dB );
+}
+
 
 // These are constants controling the "sticky integral"
 // The idea is simply to give less weight to luminances that are too far from the currently adapted luminance
@@ -107,10 +118,10 @@ static const float	WEIGHT_FADE_BUCKETS_COUNT = 20.0;	// Amount of buckets away f
 static const float	WEIGHT_FADE_LOW_VALUE = 0.4;		// Minimum weight value for buckets too far away
 //static const float	WEIGHT_FADE_LOW_VALUE = 1.0;		// <== Uncomment this to disable sticky integral mode
 
-float	ComputeStickyIntegralTargetBucket( autoExposure_t _LastFrameResult ) {
-	return (Luminance2dB( _LastFrameResult.MaxLuminanceLDR ) - MIN_ADAPTABLE_SCENE_LUMINANCE_DB) / HISTOGRAM_BUCKET_RANGE_DB	// <== This gives the index of the max currently adapted bucket
-			+ WEIGHT_FADE_BUCKET_BIAS * TARGET_MONITOR_BUCKETS_COUNT;															// <== That we offset with a specific bias
-}
+//float	ComputeStickyIntegralTargetBucket( autoExposure_t _LastFrameResult ) {
+//	return (Luminance2dB( _LastFrameResult.MaxLuminanceLDR ) - MIN_ADAPTABLE_SCENE_LUMINANCE_DB) / HISTOGRAM_BUCKET_RANGE_DB	// <== This gives the index of the max currently adapted bucket
+//			+ WEIGHT_FADE_BUCKET_BIAS * TARGET_MONITOR_BUCKETS_COUNT;															// <== That we offset with a specific bias
+//}
 
 // _BucketDelta = distance between currently measured bucket and previously adapted target bucket
 float	ComputeStickyIntegralWeight( float _BucketDelta ) {

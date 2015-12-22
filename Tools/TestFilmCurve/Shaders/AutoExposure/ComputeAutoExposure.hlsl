@@ -19,6 +19,8 @@
 
 
 cbuffer CB_AutoExposure : register( b10 ) {
+	float	_delta_time;				// Clamped delta-time
+	float	_white_level;				// (1.0) White level for tone mapping
 	float	_clip_shadows;				// (0.0) Shadow cropping in histogram (first buckets will be ignored, leading to brighter image)
 	float	_clip_highlights;			// (1.0) Highlights cropping in histogram (last buckets will be ignored, leading to darker image)
 	float	_EV;						// (0.0) Your typical EV setting
@@ -39,12 +41,16 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 	autoExposure_t	LastFrameResult = _bufferAutoExposure[0];
 
+	// Compute luminance range in dB and the amount of buckets covered by the monitor
+	float	MonitorLuminanceRange_dB = Luminance2dB( 255.0 * _white_level );
+	float	MonitorBucketsCount = MonitorLuminanceRange_dB / HISTOGRAM_BUCKET_RANGE_DB;
+
 	// Compute the start & end bucket indices based on shadows/highlights clipping boundaries (it's basically the same as a level in photoshop)
 	// They're computed by specifying the bottom and top % of the 48dB histogram range we want to consider (shadow / highlights)
-	// Once renormalized using HISTOGRAM_SIZE * 48dB / 140dB, we get the min/max bucket index
-	// (remember that TARGET_MONITOR_BUCKETS_COUNT = HISTOGRAM_SIZE * monitor luminance range / scene luminance range)
+	// Once renormalized using HISTOGRAM_BUCKETS_COUNT * 48dB / 140dB, we get the min/max bucket index
+	// (remember that TARGET_MONITOR_BUCKETS_COUNT = HISTOGRAM_BUCKETS_COUNT * monitor luminance range / scene luminance range)
 	//
-	uint2	ClippedBucketIndex = uint2( _clip_shadows * TARGET_MONITOR_BUCKETS_COUNT, _clip_highlights * TARGET_MONITOR_BUCKETS_COUNT );
+	uint2	ClippedBucketIndex = uint2( _clip_shadows * MonitorBucketsCount, _clip_highlights * MonitorBucketsCount );
 
 #if 0
 	// =====================================================================================
@@ -83,8 +89,8 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	//	we will account for all possible integrals and keep the one that gives the highest result.
 	// This is where we'll place our low dynamic range, thus ensuring we're covering most of the significant pixels...
 	//
-	LastBucketIndex = HISTOGRAM_SIZE - uint( TARGET_MONITOR_BUCKETS_COUNT - ClippedBucketIndex.y );	// If less than 100% of the monitor's range is accounted for (i.e. bright luminances cut)
-																									//	then we don't need to integrate all the way to the end of the histogram...
+	LastBucketIndex = HISTOGRAM_BUCKETS_COUNT - uint( MonitorBucketsCount - ClippedBucketIndex.y );	// If less than 100% of the monitor's range is accounted for (i.e. bright luminances cut)
+																							//	then we don't need to integrate all the way to the end of the histogram...
 
 	uint	MaxIntegralTailBucketPosition = TailBucketPosition.x;
 	float	MaxIntegral = Integral;
@@ -114,18 +120,13 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	// =====================================================================================
 	// 1] Compute the initial integral using a stupid sum
 	// Use a "sticky integral" that attributes a lesser weight to samples that are far away from current exposure
-	float	LastFrameTargetBucket = ComputeStickyIntegralTargetBucket( LastFrameResult );
-
 	Result.PeakHistogramValue = 0;
-	uint2	TailBucketPosition = uint2( ClippedBucketIndex.x, 0 );												// Start from the specified minimum bucket
-	uint2	HeadBucketPosition = TailBucketPosition;															// We'll make head index grow
+	uint2	TailBucketPosition = uint2( ClippedBucketIndex.x, 0 );					// Start from the specified minimum bucket
+	uint2	HeadBucketPosition = TailBucketPosition;								// We'll make head index grow
 	float	Integral = 0.0;
-
 	for ( ; HeadBucketPosition.x < ClippedBucketIndex.y; HeadBucketPosition.x++ ) {
 		uint	HistoValue = _texHistogram[HeadBucketPosition].x;
-		float	Weight = ComputeStickyIntegralWeight( HeadBucketPosition.x - LastFrameTargetBucket );
-
-		Integral += Weight * HistoValue;																		// Add each interior bucket once
+		Integral += HistoValue;														// Add each interior bucket once
 		Result.PeakHistogramValue = max( Result.PeakHistogramValue, HistoValue );
 	}
 
@@ -136,7 +137,7 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	//	we will account for all possible integrals and keep the one that gives the highest result.
 	// This is where we'll place our low dynamic range, thus ensuring we're covering most of the significant pixels...
 	//
-	uint	LastBucketIndex = HISTOGRAM_SIZE - uint( TARGET_MONITOR_BUCKETS_COUNT - ClippedBucketIndex.y );	// If less than 100% of the monitor's range is accounted for (i.e. bright luminances cut)
+	uint	LastBucketIndex = HISTOGRAM_BUCKETS_COUNT - uint( MonitorBucketsCount - ClippedBucketIndex.y );	// If less than 100% of the monitor's range is accounted for (i.e. bright luminances cut)
 																											//	then we don't need to integrate all the way to the end of the histogram...
 
 	uint	MaxIntegralTailBucketPosition = TailBucketPosition.x;
@@ -146,13 +147,11 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 		// Subtract tail bucket integral
 		uint	HistoValueTail = _texHistogram[TailBucketPosition].x; TailBucketPosition.x++;
-		float	Weight = ComputeStickyIntegralWeight( TailBucketPosition.x - LastFrameTargetBucket );
-		Integral -= Weight * HistoValueTail;
+		Integral -= HistoValueTail;
 
 		// Add head bucket integral
 		uint	HistoValueHead = _texHistogram[HeadBucketPosition].x; HeadBucketPosition.x++;
-				Weight = ComputeStickyIntegralWeight( HeadBucketPosition.x - LastFrameTargetBucket );
-		Integral += Weight * HistoValueHead;
+		Integral += HistoValueHead;
 
 		// Update max integral & peak value
 		if ( Integral >= MaxIntegral ) {	// Here, using > or >= makes a huge difference for histograms we can completely encompass in our LDR range!
@@ -166,7 +165,7 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 	// Make a completely black image have a centered window
 	if ( MaxIntegral == 0.0 ) {
-		MaxIntegralTailBucketPosition = (HISTOGRAM_SIZE - TARGET_MONITOR_BUCKETS_COUNT) / 2;
+		MaxIntegralTailBucketPosition = (HISTOGRAM_BUCKETS_COUNT - MonitorBucketsCount) / 2;
 	}
 
 //### Use as debug value
@@ -177,10 +176,10 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 	// =====================================================================================
 	// 3] Clamp target position to authorized range
-	float	MinAdaptableLuminance_dB = Luminance2dB( _adapt_min_luminance );
-	float	MaxAdaptableLuminance_dB = Luminance2dB( _adapt_max_luminance );
+	float	MinAdaptableLuminance_Bucket = Luminance2HistogramBucketIndex( _adapt_min_luminance );
+	float	MaxAdaptableLuminance_Bucket = Luminance2HistogramBucketIndex( _adapt_max_luminance );
 
-	float	TargetTailBucketPosition = clamp( MaxIntegralTailBucketPosition, MinAdaptableLuminance_dB + TARGET_MONITOR_BUCKETS_COUNT, MaxAdaptableLuminance_dB );
+	float	TargetTailBucketPosition = clamp( MaxIntegralTailBucketPosition, MinAdaptableLuminance_Bucket, MaxAdaptableLuminance_Bucket - MonitorBucketsCount );
 
 
 	// =====================================================================================
@@ -188,39 +187,23 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	// We now know the index of the "tail bucket" (the left bucket of the LDR histogram) so we can easily retrieve
 	//	the luminance factor as decibels and as a global factor afterward.
 	//
-	float	LuminanceFactor_dB = TargetTailBucketPosition * HISTOGRAM_BUCKET_RANGE_DB;		// = 20.log10( LuminanceFactor )
-	float	TargetLuminanceFactor = dB2Luminance( LuminanceFactor_dB );
-
-	// Override the default EV using our traditional camera EV bias
-	TargetLuminanceFactor *= exp2( -_EV );
+	float	TargetLuminance_dB = MIN_ADAPTABLE_SCENE_LUMINANCE_DB + TargetTailBucketPosition * HISTOGRAM_BUCKET_RANGE_DB;	// = 20.log10( LuminanceFactor )
+	float	TargetLuminance = dB2Luminance( TargetLuminance_dB );
+			TargetLuminance *= exp2( -_EV );	// Override the default EV using our traditional camera EV bias
 
 
 	// =====================================================================================
 	// 5] Perform temporal adaptation based on last frame's parameters
-#if 0
-// TODO! For the moment, simply use the immediate value...
-Result.LuminanceFactor = TargetLuminanceFactor;
 
-#else
-// TODO! For the moment, simply use a dummy interpolation
- 	// The user's adapted luminance level is simulated by closing the gap between adapted luminance and current luminance by some % every frame
+	// The user's adapted luminance level is simulated by closing the gap between adapted luminance and current luminance by some % every frame
 	// This is not an accurate model of human adaptation, which can sometimes take longer than half an hour.
-	const float	DeltaTime = 1.0 / 30.0;			// TODO: Pass it as a parameter!
-
-	#if 0
-		float	TemporalAdaptationSpeed = LastFrameResult.LuminanceFactor < TargetLuminanceFactor ? _adapt_speed_up : _adapt_speed_down;
-		Result.LuminanceFactor = lerp( LastFrameResult.LuminanceFactor, TargetLuminanceFactor, 1.0 - pow( abs(1.0 - TemporalAdaptationSpeed), DeltaTime ) );
-	#else
-		if ( LastFrameResult.LuminanceFactor < TargetLuminanceFactor )
-			Result.LuminanceFactor = lerp( TargetLuminanceFactor, LastFrameResult.LuminanceFactor, pow( abs(1.0 - _adapt_speed_up), DeltaTime ) );
-		else
-		{
-			float	InvTargetLuminanceFactor = 1.0 / max( 1e-4, TargetLuminanceFactor );
-			float	InvLastFrameLuminanceFactor = 1.0 / max( 1e-4, LastFrameResult.LuminanceFactor );
-			Result.LuminanceFactor = 1.0 / lerp( InvTargetLuminanceFactor, InvLastFrameLuminanceFactor, pow( abs(1.0 - _adapt_speed_down), DeltaTime ) );
-		}
-	#endif
-#endif
+	if ( LastFrameResult.TargetLuminance < TargetLuminance ) {
+		Result.TargetLuminance = lerp( TargetLuminance, LastFrameResult.TargetLuminance, pow( abs(1.0 - _adapt_speed_up), _delta_time ) );
+	} else {
+		float	InvTargetLuminanceFactor = 1.0 / max( 1e-4, TargetLuminance );
+		float	InvLastFrameLuminanceFactor = 1.0 / max( 1e-4, LastFrameResult.TargetLuminance );
+		Result.TargetLuminance = 1.0 / lerp( InvTargetLuminanceFactor, InvLastFrameLuminanceFactor, pow( abs(1.0 - _adapt_speed_down), _delta_time ) );
+	}
 
 
 	// =====================================================================================
@@ -231,23 +214,24 @@ Result.LuminanceFactor = TargetLuminanceFactor;
 	// _ The sRGB value used as "reference for the 0 EV" is sRGB 128, which is mapped to (128/256)^2.2 = 0.21 (i.e. pixel value = 55)
 	//		so L_ref = L0 * 55 will be the luminance we'll use as a reference to compute the "absolute EV"
 	// 
-	Result.MinLuminanceLDR = MIN_ADAPTABLE_SCENE_LUMINANCE * Result.LuminanceFactor;			// Minimum luminance the screen will display as the value 1
-	Result.MaxLuminanceLDR = Result.MinLuminanceLDR * TARGET_MONITOR_LUMINANCE_RANGE;			// Maximum luminance the screen will display as the value 255
-	Result.MiddleGreyLuminanceLDR = Result.MinLuminanceLDR * 55.497598410127913869937213614334;	// Reference EV luminance the screen will display as the value 255*(0.5^2.2) ~= 55
+	Result.MinLuminanceLDR = Result.TargetLuminance;												// Minimum luminance the screen will display as the value 1
+	Result.MaxLuminanceLDR = Result.MinLuminanceLDR * _white_level * TARGET_MONITOR_LUMINANCE_RANGE;// Maximum luminance the screen will display as the value 255
+	Result.MiddleGreyLuminanceLDR = Result.MinLuminanceLDR * 55.497598410127913869937213614334;		// Reference EV luminance the screen will display as the value 255*(0.5^2.2) ~= 55
 
-	float	PowEV = Result.MiddleGreyLuminanceLDR / ABSOLUTE_EV_REFERENCE_LUMINANCE;			// Absolute EV exponent based on our measured reference of 0.15 cd/m²
-	Result.EV = log2( PowEV );																	// Absolute Exposure Value
+	float	PowEV = Result.MiddleGreyLuminanceLDR / ABSOLUTE_EV_REFERENCE_LUMINANCE;				// Absolute EV exponent based on our measured reference of 0.15 cd/m²
+	Result.EV = log2( PowEV );																		// Absolute Exposure Value
 
 	// Using EV = log2( F² / t ) and knowing both EV and t (given), we retrieve the F-stop number as
 	//	F = sqrt( t * 2^EV )
 	Result.Fstop = sqrt( PowEV / _reference_camera_fps );
-	Result.Fstop += _fstop_bias;																// Although it's not physically correct, nevertheless we let the user bias that value...
+	Result.Fstop += _fstop_bias;																	// Although it's not physically correct, nevertheless we let the user bias that value...
 
 	// =====================================================================================
 	// 7] Build the final engine factor
 	// 
-	float	MaxEngineLuminance = Result.MaxLuminanceLDR * WORLD_TO_BISOU_LUMINANCE;	// This is the highest adaptable luminance, in arkane units
-	Result.EngineLuminanceFactor = 1.0 / MaxEngineLuminance;						// So it must map to 1... Simple!
+	float	WhiteLevelLuminance = Result.MinLuminanceLDR * 1.0 * TARGET_MONITOR_LUMINANCE_RANGE;	// Even though we can adapt to larger luminances thanks to tone mapping, keep a _UNIT_ white level so the user is not confused!
+	float	WhiteLevelEngineLuminance = WhiteLevelLuminance * WORLD_TO_BISOU_LUMINANCE;				// This is the highest adaptable luminance, in bisou units
+	Result.EngineLuminanceFactor = 1.0 / WhiteLevelEngineLuminance;									// So it must map to 1... Simple!
 
 	// Write the result
 	_targetBufferAutoExposure[0] = Result;

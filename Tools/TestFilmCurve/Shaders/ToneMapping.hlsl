@@ -114,7 +114,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 // 		Color *= 1.0 - _A * pow( abs( S ), _B );
 // //		Color = S;
  	}
-	
+
 	if ( _Flags & 2 ) {
 		// Show debug luminance value
 		float	Color_WorldLuma = BISOU_TO_WORLD_LUMINANCE * dot( OriginalColor, LUMINANCE );
@@ -129,7 +129,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	
 	// Show debug histogram
 	if ( _Flags & 4 ) {
-		DEBUG_DisplayLuminanceHistogram( UV, float2( _MouseU, _MouseV ), (_Flags & 2) ? _DebugLuminanceLevel : 0.0001, _Resolution.xy, _GlobalTime, Color, OriginalColor );
+		DEBUG_DisplayLuminanceHistogram( _WhitePoint, UV, float2( _MouseU, _MouseV ), (_Flags & 2) ? _DebugLuminanceLevel : 0.0001, _Resolution.xy, _GlobalTime, Color, OriginalColor );
 	}
 
 	return Color;

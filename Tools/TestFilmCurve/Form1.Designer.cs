@@ -313,12 +313,12 @@
 			this.floatTrackbarControlScaleY.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlScaleY.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlScaleY.Name = "floatTrackbarControlScaleY";
-			this.floatTrackbarControlScaleY.RangeMax = 1F;
+			this.floatTrackbarControlScaleY.RangeMax = 100F;
 			this.floatTrackbarControlScaleY.RangeMin = 0.0001F;
 			this.floatTrackbarControlScaleY.Size = new System.Drawing.Size( 200, 20 );
 			this.floatTrackbarControlScaleY.TabIndex = 1;
 			this.floatTrackbarControlScaleY.Value = 1F;
-			this.floatTrackbarControlScaleY.VisibleRangeMax = 1F;
+			this.floatTrackbarControlScaleY.VisibleRangeMax = 2F;
 			this.floatTrackbarControlScaleY.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler( this.floatTrackbarControlScaleY_ValueChanged );
 			// 
 			// floatTrackbarControlA
@@ -427,7 +427,7 @@
 			this.floatTrackbarControlIG_JunctionPoint.Name = "floatTrackbarControlIG_JunctionPoint";
 			this.floatTrackbarControlIG_JunctionPoint.Size = new System.Drawing.Size( 200, 20 );
 			this.floatTrackbarControlIG_JunctionPoint.TabIndex = 3;
-			this.floatTrackbarControlIG_JunctionPoint.Value = 0.55F;
+			this.floatTrackbarControlIG_JunctionPoint.Value = 0.2F;
 			this.floatTrackbarControlIG_JunctionPoint.VisibleRangeMax = 1F;
 			this.floatTrackbarControlIG_JunctionPoint.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler( this.floatTrackbarControlIG_JunctionPoint_ValueChanged );
 			// 
@@ -437,10 +437,11 @@
 			this.floatTrackbarControlIG_WhitePoint.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlIG_WhitePoint.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlIG_WhitePoint.Name = "floatTrackbarControlIG_WhitePoint";
+			this.floatTrackbarControlIG_WhitePoint.RangeMin = 0.001F;
 			this.floatTrackbarControlIG_WhitePoint.Size = new System.Drawing.Size( 200, 20 );
 			this.floatTrackbarControlIG_WhitePoint.TabIndex = 3;
-			this.floatTrackbarControlIG_WhitePoint.Value = 1F;
-			this.floatTrackbarControlIG_WhitePoint.VisibleRangeMax = 5F;
+			this.floatTrackbarControlIG_WhitePoint.Value = 10F;
+			this.floatTrackbarControlIG_WhitePoint.VisibleRangeMin = 1F;
 			this.floatTrackbarControlIG_WhitePoint.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler( this.floatTrackbarControlIG_WhitePoint_ValueChanged );
 			// 
 			// floatTrackbarControlIG_ShoulderStrength
@@ -467,7 +468,7 @@
 			this.floatTrackbarControlIG_ToeStrength.RangeMin = 0F;
 			this.floatTrackbarControlIG_ToeStrength.Size = new System.Drawing.Size( 200, 20 );
 			this.floatTrackbarControlIG_ToeStrength.TabIndex = 3;
-			this.floatTrackbarControlIG_ToeStrength.Value = 0.5F;
+			this.floatTrackbarControlIG_ToeStrength.Value = 0.25F;
 			this.floatTrackbarControlIG_ToeStrength.VisibleRangeMax = 1F;
 			this.floatTrackbarControlIG_ToeStrength.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler( this.floatTrackbarControlIG_ToeStrength_ValueChanged );
 			// 

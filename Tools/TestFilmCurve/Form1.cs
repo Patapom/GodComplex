@@ -35,6 +35,8 @@ namespace TestFilmicCurve
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_AutoExposure {
+			public float		_delta_time;
+			public float		_white_level;				// (1.0) White level for tone mapping
 			public float		_clip_shadows;				// (0.0) Shadow cropping in histogram (first buckets will be ignored, leading to brighter image)
 			public float		_clip_highlights;			// (1.0) Highlights cropping in histogram (last buckets will be ignored, leading to darker image)
 			public float		_EV;						// (0.0) Your typical EV setting
@@ -68,7 +70,7 @@ namespace TestFilmicCurve
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct autoExposure_t {
 			public float	EngineLuminanceFactor;		// The actual factor to apply to values stored to the HDR render target (it's simply LuminanceFactor * WORLD_TO_BISOU_LUMINANCE so it's a division by about 100)
-			public float	LuminanceFactor;			// The factor to apply to the HDR luminance to bring it to the LDR luminance (warning: still in world units, you must multiply by WORLD_TO_BISOU_LUMINANCE for a valid engine factor)
+			public float	TargetLuminance;			// The target luminance to apply to the HDR luminance to bring it to the LDR luminance (warning: still in world units, you must multiply by WORLD_TO_BISOU_LUMINANCE for a valid engine factor)
 			public float	MinLuminanceLDR;			// Minimum luminance (cd/m²) the screen will display as the value sRGB 1
 			public float	MaxLuminanceLDR;			// Maximum luminance (cd/m²) the screen will display as the value sRGB 255
 			public float	MiddleGreyLuminanceLDR;		// "Reference EV" luminance (cd/m²) the screen will display as the value sRGB 128 (55 linear)
@@ -100,6 +102,7 @@ namespace TestFilmicCurve
 		private CameraManipulator					m_Manipulator = new CameraManipulator();
 
 		private DateTime							m_startTime = DateTime.Now;
+		private DateTime							m_lastTime = DateTime.Now;
 
 		public unsafe Form1()
 		{
@@ -186,7 +189,7 @@ namespace TestFilmicCurve
 			m_Tex_Histogram = new Texture2D( m_Device, 128, 1, 1, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
 			m_Buffer_AutoExposureSource = new StructuredBuffer<autoExposure_t>( m_Device, 1, true );
 			m_Buffer_AutoExposureSource.m[0].EngineLuminanceFactor = 1.0f;
-			m_Buffer_AutoExposureSource.m[0].LuminanceFactor = 1.0f;
+			m_Buffer_AutoExposureSource.m[0].TargetLuminance = 1.0f;
 			m_Buffer_AutoExposureSource.m[0].MinLuminanceLDR = 0.0f;
 			m_Buffer_AutoExposureSource.m[0].MaxLuminanceLDR = 1.0f;
 			m_Buffer_AutoExposureSource.m[0].MiddleGreyLuminanceLDR = 1.0f;
@@ -268,13 +271,15 @@ namespace TestFilmicCurve
 			m_CB_Camera.UpdateData();
 		}
 
-		void Application_Idle( object sender, EventArgs e )
-		{
+		void Application_Idle( object sender, EventArgs e ) {
 			if ( m_Device == null )
 				return;
 
 			m_CB_Main.m._Resolution = new float3( panelOutput.Width, panelOutput.Height, 0 );
-			m_CB_Main.m._GlobalTime = (float) (DateTime.Now - m_startTime).TotalSeconds;
+			DateTime	Now = DateTime.Now;
+			float		DeltaTime = (float) (Now - m_lastTime).TotalSeconds;
+			m_lastTime = Now;
+			m_CB_Main.m._GlobalTime = (float) (Now - m_startTime).TotalSeconds;
 			m_CB_Main.UpdateData();
 
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
@@ -309,6 +314,9 @@ namespace TestFilmicCurve
 				m_Tex_Histogram.SetCS( 1 );
 
 				float	EV = floatTrackbarControlExposure.Value;
+
+				m_CB_AutoExposure.m._delta_time = Math.Max( 0.01f, Math.Min( 1.0f, DeltaTime ) );
+				m_CB_AutoExposure.m._white_level = checkBoxEnable.Checked ? floatTrackbarControlIG_WhitePoint.Value : 1.0f;
 
 				m_CB_AutoExposure.m._clip_shadows = 0.0f;				// (0.0) Shadow cropping in histogram (first buckets will be ignored, leading to brighter image)
 				m_CB_AutoExposure.m._clip_highlights = 1.0f;			// (1.0) Highlights cropping in histogram (last buckets will be ignored, leading to darker image)
@@ -494,13 +502,21 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 
 		private void buttonReset_Click( object sender, EventArgs e )
 		{
-			floatTrackbarControlA.Value = 0.15f;
-			floatTrackbarControlB.Value = 0.5f;
-			floatTrackbarControlC.Value = 0.1f;
-			floatTrackbarControlD.Value = 0.2f;
-			floatTrackbarControlE.Value = 0.02f;
-			floatTrackbarControlF.Value = 0.3f;
-			floatTrackbarControlWhitePoint.Value = 10f;
+			if ( tabControlToneMappingTypes.SelectedIndex == 0 ) {
+				floatTrackbarControlIG_BlackPoint.Value = 0.0f;
+				floatTrackbarControlIG_WhitePoint.Value = 10.0f;
+				floatTrackbarControlIG_JunctionPoint.Value = 0.2f;
+				floatTrackbarControlIG_ToeStrength.Value = 0.25f;
+				floatTrackbarControlIG_ShoulderStrength.Value = 0.8f;
+			} else {
+				floatTrackbarControlA.Value = 0.15f;
+				floatTrackbarControlB.Value = 0.5f;
+				floatTrackbarControlC.Value = 0.1f;
+				floatTrackbarControlD.Value = 0.2f;
+				floatTrackbarControlE.Value = 0.02f;
+				floatTrackbarControlF.Value = 0.3f;
+				floatTrackbarControlWhitePoint.Value = 10f;
+			}
 		}
 
 		#endregion
