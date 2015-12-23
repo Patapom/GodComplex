@@ -129,6 +129,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestGenerateFarDistanceFiel
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConvexHull", "Tools\TestConvexHull\TestConvexHull.csproj", "{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestGenerateFarDistanceField2", "Tools\TestGenerateFarDistanceField2\TestGenerateFarDistanceField2.csproj", "{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug DirectX10|Any CPU = Debug DirectX10|Any CPU
@@ -2021,6 +2023,34 @@ Global
 		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Release|x64.ActiveCfg = Release|x86
 		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Release|x86.ActiveCfg = Release|x86
 		{47B4C83F-5F15-492C-AA9A-1CC4633C59F8}.Release|x86.Build.0 = Release|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Debug DirectX10|Any CPU.ActiveCfg = Debug|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Debug DirectX10|Mixed Platforms.Build.0 = Debug|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Debug DirectX10|Win32.ActiveCfg = Debug|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Debug DirectX10|x64.ActiveCfg = Debug|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Debug DirectX10|x86.ActiveCfg = Debug|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Debug DirectX10|x86.Build.0 = Debug|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Debug|Win32.ActiveCfg = Debug|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Debug|x64.ActiveCfg = Debug|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Debug|x86.ActiveCfg = Debug|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Debug|x86.Build.0 = Debug|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Profile|Any CPU.ActiveCfg = Release|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Profile|Mixed Platforms.ActiveCfg = Release|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Profile|Mixed Platforms.Build.0 = Release|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Profile|Win32.ActiveCfg = Release|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Profile|x64.ActiveCfg = Release|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Profile|x86.ActiveCfg = Release|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Profile|x86.Build.0 = Release|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Release|Any CPU.ActiveCfg = Release|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Release|Mixed Platforms.Build.0 = Release|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Release|Win32.ActiveCfg = Release|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Release|x64.ActiveCfg = Release|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Release|x86.ActiveCfg = Release|x86
+		{F3AE50C7-1C1F-4BC3-AF4B-8260672FE30A}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

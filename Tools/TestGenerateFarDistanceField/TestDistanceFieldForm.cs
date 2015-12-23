@@ -1,4 +1,4 @@
-﻿//#define BISOU
+﻿#define BISOU	// Define this to avoid compiling the heavy shaders, even in DEBUG mode
 
 using System;
 using System.Collections.Generic;
@@ -118,7 +118,7 @@ namespace TestGenerateFarDistanceField
 			}
 
 			try {
-				m_Shader_BuildDistanceField[0] = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/BuildDistanceField.hlsl" ) ), "CS_X", null );
+//				m_Shader_BuildDistanceField[0] = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/BuildDistanceField.hlsl" ) ), "CS_X", null );
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader \"BuildDistanceField\" failed to compile!\n\n" + _e.Message, "Distance Field Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_PostProcess = null;
@@ -535,8 +535,8 @@ namespace TestGenerateFarDistanceField
 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 				m_Tex_TempTarget.SetPS( 0 );
-//				m_Tex_TempDepth3D[2].SetPS( 1 );
-m_Tex_TempDepth3D[3].SetPS( 1 );
+				m_Tex_TempDepth3D[2].SetPS( 1 );
+//m_Tex_TempDepth3D[3].SetPS( 1 );
 
 				m_Prim_Quad.Render( m_Shader_PostProcess );
 

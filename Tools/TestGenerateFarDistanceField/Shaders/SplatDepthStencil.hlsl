@@ -30,13 +30,12 @@ void	CS0( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, 
 
 	//////////////////////////////////////////////////////////////////////////////////////////
 	// Assign to proper cell
-	uint	ThreadOffset = 4 * ThreadIndex;
 	[unroll]
 	for ( uint i=0; i < 4; i++ )
 		gs_csPositions0[ThreadIndex][i] = 0.0;
 
 	uint	CellIndex = floor( 4.0 * csPosition.z );
-	if ( CellIndex < 4 )
+	if ( CellIndex < 4U )
 		gs_csPositions0[ThreadIndex][CellIndex] = float4( csPosition.xyz, 1.0 );	// Each thread/pixel will write one value to one of the 4 available depth cells
  
  	GroupMemoryBarrierWithGroupSync();
@@ -84,7 +83,7 @@ void	CS1( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, 
 		for ( uint j=0; j < 4; j++ ) {
 			float3	csPosition = csPositions[j];
 			uint	CellIndex = uint( floor( 16.0 * csPosition.z ) );
-			if ( CellIndex < 16 )
+			if ( CellIndex < 16U )
 				gs_csPositions1[ThreadIndex][CellIndex] = float4( csPosition, 1.0 );	// Each thread/pixel will write its 4 values to 4 of the 16 available depth cells
 		}
 	}
@@ -141,7 +140,7 @@ void	CS2( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, 
 		for ( uint j=0; j < 16; j++ ) {
 			float3	csPosition = csPositions[j];
 			uint	CellIndex = uint( floor( 64.0 * csPosition.z ) );
-			if ( CellIndex < 64 )
+			if ( CellIndex < 64U )
 				gs_csPositions2[ThreadIndex][CellIndex] += float4( csPosition, 1.0 );	// Each thread/pixel will write to one of the 64 available depth cells
 		}
 	}

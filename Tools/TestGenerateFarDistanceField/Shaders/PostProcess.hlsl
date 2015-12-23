@@ -23,11 +23,11 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	float2	UV = _In.__Position.xy / iResolution.xy;
 	if ( all( UV < 0.4 ) ) {
 		UV /= 0.4;
-//		float3	UVW = float3( UV, 0.5 * (1.0 + sin( 4.0 * iGlobalTime ) ) );
-
-		float3	UVW = float3( UV, abs( 2.0 * frac( 0.25 * iGlobalTime ) - 1.0 ) );
+//		float3	UVW = float3( UV, abs( 2.0 * frac( 0.25 * iGlobalTime ) - 1.0 ) );
+		float3	UVW = float3( UV, (0.5 + floor( 64.0 * abs( 2.0 * frac( 0.25 * iGlobalTime ) - 1.0 ) )) / 64.0 );
 		Color = 1.0 * _TexDistance.SampleLevel( LinearClamp, UVW, 0.0 ).z;
 		Color = Color.z >= 1.0 ? float3( 0, 0, 0 ) : Color;
+return float4( Color, 1 );
 
 //		float	Z = 1.0;
 //		[unroll]
