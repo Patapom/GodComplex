@@ -19,6 +19,8 @@ cbuffer CB_Camera : register(b1) {
 	float4x4	_World2Proj;
 	float4x4	_Camera2Proj;
 	float4x4	_Proj2Camera;
+
+	float4x4	_OldCamera2NewCamera;
 };
 
 SamplerState LinearClamp	: register( s0 );

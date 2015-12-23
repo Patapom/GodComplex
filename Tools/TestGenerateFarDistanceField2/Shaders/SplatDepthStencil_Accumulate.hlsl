@@ -4,7 +4,6 @@
 Texture2D< float >		_TexDepthStencil : register(t0);
 RWTexture3D< uint >		_TexTarget0 : register(u0);
 RWTexture3D< uint >		_TexTarget1 : register(u1);
-RWTexture3D< float4 >	_TexTarget2 : register(u2);
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // 1st shader clears the accumulator
@@ -14,7 +13,6 @@ void	CS_Clear( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREA
 	_TexTarget0[_DispatchThreadID] = 0U;
 	_TexTarget1[_DispatchThreadID] = 0U;
 }
-
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // 2nd shader accumulates normalized positions to camera-space voxels
@@ -55,21 +53,4 @@ void	CS_Accumulate( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 	uint	onSenFout;
 	InterlockedAdd( _TexTarget0[voxelIndex], value0, onSenFout );
 	InterlockedAdd( _TexTarget1[voxelIndex], value1, onSenFout );
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////
-// 3rd shader normalizes the accumulated data
-//
-[numthreads( 4, 4, 4 )]
-void	CS_Finalize( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, uint3 _DispatchThreadID : SV_DISPATCHTHREADID ) {
-	// Read packed values
-	uint	value0 = _TexTarget0[_DispatchThreadID];
-	uint	value1 = _TexTarget1[_DispatchThreadID];
-
-	float3	voxelInnerCoordinate = float3( (value0 >> 16) & 0xFFFFU, value0 & 0xFFFFU, (value1 >> 16) & 0xFFFFU );
-	value1 &= 0xFFFFU;
-
-	float4	result = value1 > 0 ? float4( voxelInnerCoordinate / (256.0 * value1), 0.0 ) : float4( 0, 0, 0, 1 );
-
-	_TexTarget2[_DispatchThreadID] = result;
 }

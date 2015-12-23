@@ -32,6 +32,8 @@ namespace TestGenerateFarDistanceField
 			public float4x4		_World2Proj;
 			public float4x4		_Camera2Proj;
 			public float4x4		_Proj2Camera;
+
+			public float4x4		_OldCamera2NewCamera;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -60,15 +62,16 @@ namespace TestGenerateFarDistanceField
 		private Shader				m_Shader_RenderScene = null;
 		private ComputeShader		m_Shader_ClearAccumulator = null;
 		private ComputeShader		m_Shader_SplatDepthStencil = null;
+		private ComputeShader		m_Shader_Reproject = null;
 		private ComputeShader		m_Shader_FinalizeSplat = null;
 //		private ComputeShader[]		m_Shader_BuildDistanceField = new ComputeShader[3];
 		private Shader				m_Shader_PostProcess = null;
 
 		private Texture2D			m_Tex_TempTarget = null;
-		private Texture3D			m_Tex_TempDepthAccumulatorRG = null;	// Accumulates positions splat from depth buffer
-		private Texture3D			m_Tex_TempDepthAccumulatorBA = null;	// Accumulates positions splat from depth buffer
-		private Texture3D			m_Tex_SplatDepthStencil = null;			// Final depth buffer average splat
-		private Texture3D[]			m_Tex_DistanceField = new Texture3D[2];	// Double-buffered distance field
+		private Texture3D			m_Tex_TempDepthAccumulatorRG = null;		// Accumulates positions splat from depth buffer
+		private Texture3D			m_Tex_TempDepthAccumulatorBA = null;		// Accumulates positions splat from depth buffer
+		private Texture3D[]			m_Tex_SplatDepthStencil = new Texture3D[2];	// Final depth buffer average splat
+		private Texture3D[]			m_Tex_DistanceField = new Texture3D[2];		// Double-buffered distance field
 
 		private Primitive			m_Prim_Quad = null;
 		private Primitive			m_Prim_Rectangle = null;
@@ -91,7 +94,7 @@ namespace TestGenerateFarDistanceField
 		{
 			InitializeComponent();
 
-			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
+//			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
 
 			Application.Idle += new EventHandler( Application_Idle );
 		}
@@ -131,9 +134,10 @@ namespace TestGenerateFarDistanceField
 
 			#if DEBUG && !BISOU
 				try {
-					m_Shader_ClearAccumulator = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS_Clear", null );
-					m_Shader_SplatDepthStencil = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS_Accumulate", null );
-					m_Shader_FinalizeSplat = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil.hlsl" ) ), "CS_Finalize", null );
+					m_Shader_ClearAccumulator = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil_Accumulate.hlsl" ) ), "CS_Clear", null );
+					m_Shader_SplatDepthStencil = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil_Accumulate.hlsl" ) ), "CS_Accumulate", null );
+					m_Shader_Reproject = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil_Reproject.hlsl" ) ), "CS", null );
+					m_Shader_FinalizeSplat = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/SplatDepthStencil_Finalize.hlsl" ) ), "CS", null );
 				} catch ( Exception _e ) {
 					MessageBox.Show( "Shader \"SplatDepthStencil\" failed to compile!\n\n" + _e.Message, "Distance Field Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 					m_Shader_ClearAccumulator = null;
@@ -166,9 +170,13 @@ namespace TestGenerateFarDistanceField
 			// Allocate several 3D textures for depth-stencil reduction
 			m_Tex_TempDepthAccumulatorRG = new Texture3D( m_Device, 64, 64, 64, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
 			m_Tex_TempDepthAccumulatorBA = new Texture3D( m_Device, 64, 64, 64, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
-			m_Tex_SplatDepthStencil = new Texture3D( m_Device, 64, 64, 64, 1, PIXEL_FORMAT.RGBA8_UNORM, false, true, null );
+			m_Tex_SplatDepthStencil[0] = new Texture3D( m_Device, 64, 64, 64, 1, PIXEL_FORMAT.RGBA8_UNORM, false, true, null );
+			m_Tex_SplatDepthStencil[1] = new Texture3D( m_Device, 64, 64, 64, 1, PIXEL_FORMAT.RGBA8_UNORM, false, true, null );
 			m_Tex_DistanceField[0] = new Texture3D( m_Device, 64, 64, 64, 6, PIXEL_FORMAT.R16_FLOAT, false, true, null );
 			m_Tex_DistanceField[1] = new Texture3D( m_Device, 64, 64, 64, 6, PIXEL_FORMAT.R16_FLOAT, false, true, null );
+
+			m_Device.Clear( m_Tex_SplatDepthStencil[0], float4.Zero );
+			m_Device.Clear( m_Tex_SplatDepthStencil[1], float4.Zero );
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
@@ -181,7 +189,8 @@ namespace TestGenerateFarDistanceField
 
 			m_Tex_DistanceField[1].Dispose();
 			m_Tex_DistanceField[0].Dispose();
-			m_Tex_SplatDepthStencil.Dispose();
+			m_Tex_SplatDepthStencil[0].Dispose();
+			m_Tex_SplatDepthStencil[1].Dispose();
 			m_Tex_TempDepthAccumulatorBA.Dispose();
 			m_Tex_TempDepthAccumulatorRG.Dispose();
 			m_Tex_TempTarget.Dispose();
@@ -206,14 +215,17 @@ namespace TestGenerateFarDistanceField
 			m_Device = null;
 		}
 
-		void Application_Idle( object sender, EventArgs e )
-		{
+		void Application_Idle( object sender, EventArgs e ) {
 			if ( m_Device == null )
 				return;
 
 			m_CB_Main.m.iGlobalTime = (float) (DateTime.Now - m_TimeSTart).TotalSeconds;
 			m_CB_Main.m.iResolution.Set( panelOutput.Width, panelOutput.Height, 1 );
 			m_CB_Main.UpdateData();
+
+
+			// Force call
+			Camera_CameraTransformChanged( null, EventArgs.Empty );
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -289,23 +301,37 @@ namespace TestGenerateFarDistanceField
 				m_Shader_SplatDepthStencil.Dispatch( groupsCountX, groupsCountY, 1 );
 
 				m_Device.DefaultDepthStencil.RemoveFromLastAssignedSlots();		// So we can use it again next time!
+			}
+
+			if ( m_Shader_Reproject != null && m_Shader_Reproject.Use() ) {
+				// Reproject previous frame's result
+				m_Tex_SplatDepthStencil[0].SetCS( 0 );
+
+				int	groupsCount = m_Tex_SplatDepthStencil[0].Width / 4;
+				m_Shader_Reproject.Dispatch( groupsCount, groupsCount, groupsCount );
+
 				m_Tex_TempDepthAccumulatorRG.RemoveFromLastAssignedSlotUAV();	// So we can use it as input
 				m_Tex_TempDepthAccumulatorBA.RemoveFromLastAssignedSlotUAV();	// So we can use it as input
 			}
 
 			if ( m_Shader_FinalizeSplat != null && m_Shader_FinalizeSplat.Use() ) {
 				// Finalize splat
-				m_Tex_TempDepthAccumulatorRG.SetCSUAV( 0 );
-				m_Tex_TempDepthAccumulatorBA.SetCSUAV( 1 );
-				m_Tex_SplatDepthStencil.SetCSUAV( 2 );
+				m_Tex_TempDepthAccumulatorRG.SetCS( 0 );
+				m_Tex_TempDepthAccumulatorBA.SetCS( 1 );
+				m_Tex_SplatDepthStencil[1].SetCSUAV( 0 );
 
-				int	groupsCount = m_Tex_SplatDepthStencil.Width / 4;
+				int	groupsCount = m_Tex_SplatDepthStencil[1].Width / 4;
 				m_Shader_FinalizeSplat.Dispatch( groupsCount, groupsCount, groupsCount );
 
 				m_Tex_TempDepthAccumulatorRG.RemoveFromLastAssignedSlots();
 				m_Tex_TempDepthAccumulatorBA.RemoveFromLastAssignedSlots();
-				m_Tex_SplatDepthStencil.RemoveFromLastAssignedSlotUAV();		// So we can use it as input
+				m_Tex_SplatDepthStencil[1].RemoveFromLastAssignedSlotUAV();		// So we can use it as input
 			}
+
+			// Swap 3D textures
+			Texture3D	Temp = m_Tex_SplatDepthStencil[0];
+			m_Tex_SplatDepthStencil[0] = m_Tex_SplatDepthStencil[1];
+			m_Tex_SplatDepthStencil[1] = Temp;
 
 
 // 			//////////////////////////////////////////////////////////////////////////
@@ -358,13 +384,13 @@ namespace TestGenerateFarDistanceField
 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 				m_Tex_TempTarget.SetPS( 0 );
-				m_Tex_SplatDepthStencil.SetPS( 1 );
+				m_Tex_SplatDepthStencil[0].SetPS( 1 );
 //m_Tex_TempDepth3D[3].SetPS( 1 );
 
 				m_Prim_Quad.Render( m_Shader_PostProcess );
 
 				m_Tex_TempTarget.RemoveFromLastAssignedSlots();
-				m_Tex_SplatDepthStencil.RemoveFromLastAssignedSlots();
+				m_Tex_SplatDepthStencil[0].RemoveFromLastAssignedSlots();
 //				m_Tex_DistanceField.RemoveFromLastAssignedSlots();
 			}
 
@@ -516,8 +542,10 @@ namespace TestGenerateFarDistanceField
 
 		#endregion
 
-		void Camera_CameraTransformChanged( object sender, EventArgs e )
-		{
+		void Camera_CameraTransformChanged( object sender, EventArgs e ) {
+
+			float4x4	OldCamera2World = m_CB_Camera.m._Camera2World;
+
 			m_CB_Camera.m._Camera2World = m_Camera.Camera2World;
 			m_CB_Camera.m._World2Camera = m_Camera.World2Camera;
 
@@ -526,6 +554,9 @@ namespace TestGenerateFarDistanceField
 
 			m_CB_Camera.m._World2Proj = m_CB_Camera.m._World2Camera * m_CB_Camera.m._Camera2Proj;
 			m_CB_Camera.m._Proj2World = m_CB_Camera.m._Proj2Camera * m_CB_Camera.m._Camera2World;
+
+			// Allows transformation from old to new camera space (for reprojection)
+			m_CB_Camera.m._OldCamera2NewCamera = OldCamera2World * m_CB_Camera.m._World2Camera;
 
 			m_CB_Camera.UpdateData();
 		}

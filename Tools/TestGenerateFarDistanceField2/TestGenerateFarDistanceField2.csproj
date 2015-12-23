@@ -96,8 +96,10 @@
     <None Include="Shaders\Global.hlsl" />
     <Content Include="Shaders\BuildDistanceField.hlsl" />
     <None Include="Shaders\CommonDistanceField.hlsl" />
+    <Content Include="Shaders\SplatDepthStencil_Accumulate.hlsl" />
+    <Content Include="Shaders\SplatDepthStencil_Finalize.hlsl" />
     <Content Include="Shaders\PostProcess.hlsl" />
-    <Content Include="Shaders\SplatDepthStencil.hlsl" />
+    <Content Include="Shaders\SplatDepthStencil_Reproject.hlsl" />
     <Content Include="Shaders\RenderScene.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

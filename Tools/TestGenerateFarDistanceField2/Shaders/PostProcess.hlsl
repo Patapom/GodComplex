@@ -40,7 +40,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		uint3	iUVW = uint3( 64.0 * UV.x, 64.0 * (1.0 - UV.y), 0 );
 		for ( ; iUVW.z < 64; iUVW.z++ ) {
 			float4	distance = _TexDistance[iUVW];
-			if ( distance.w < 1.0 ) {
+			if ( distance.w > 0.0 ) {
 				Z = iUVW.z / 64.0;
 				break;
 			}
