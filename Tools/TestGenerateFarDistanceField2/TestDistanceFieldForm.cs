@@ -175,7 +175,7 @@ namespace TestGenerateFarDistanceField
 			BuildPrimitives();
 
 			// Allocate texture
-			m_Tex_TempTarget = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 1, 1, PIXEL_FORMAT.RGBA8_UNORM_sRGB, false, false, null );
+			m_Tex_TempTarget = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 2, 1, PIXEL_FORMAT.RGBA8_UNORM_sRGB, false, false, null );
 
 			// Allocate several 3D textures for depth-stencil reduction
 			m_Tex_TempDepthAccumulatorRG = new Texture3D( m_Device, 64, 64, 64, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
@@ -244,7 +244,7 @@ namespace TestGenerateFarDistanceField
 			// Render scene
 			if ( m_Shader_RenderScene != null && m_Shader_RenderScene.Use() ) {
 
-				m_Device.SetRenderTarget( m_Tex_TempTarget, m_Device.DefaultDepthStencil );
+				m_Device.SetRenderTargets( m_Tex_TempTarget.Width, m_Tex_TempTarget.Height, new IView[] { m_Tex_TempTarget.GetView( 0, 1, 0, 1 ), m_Tex_TempTarget.GetView( 0, 1, 1, 1 ) }, m_Device.DefaultDepthStencil );
 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 
 				m_Device.Clear( m_Tex_TempTarget, float4.Zero );
@@ -404,16 +404,14 @@ namespace TestGenerateFarDistanceField
 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 				m_Tex_TempTarget.SetPS( 0 );
-				m_Tex_SplatDepthStencil[0].SetPS( 1 );
+				m_Device.DefaultDepthStencil.SetPS( 1 );
 				m_Tex_DistanceField[0].SetPS( 2 );
-				m_Tex_DistanceField[1].SetPS( 3 );
 
 				m_Prim_Quad.Render( m_Shader_PostProcess );
 
 				m_Tex_TempTarget.RemoveFromLastAssignedSlots();
-				m_Tex_SplatDepthStencil[0].RemoveFromLastAssignedSlots();
+				m_Device.DefaultDepthStencil.RemoveFromLastAssignedSlots();
 				m_Tex_DistanceField[0].RemoveFromLastAssignedSlots();
-				m_Tex_DistanceField[1].RemoveFromLastAssignedSlots();
 			}
 
 			m_Device.Present( false );

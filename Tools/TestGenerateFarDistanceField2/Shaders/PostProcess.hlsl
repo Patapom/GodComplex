@@ -1,9 +1,9 @@
 #include "Global.hlsl"
+#include "CommonDistanceField.hlsl"
 
-Texture2D< float3 >	_TexSource : register(t0);
-Texture3D< float4 >	_TexVoxelPositions : register(t1);
-Texture3D< float >	_TexDistance : register(t2);
-Texture3D< float >	_TexDistance2 : register(t3);
+Texture2DArray< float3 >	_TexSource : register(t0);
+Texture2D< float >			_TexDepthStencil : register(t1);
+Texture3D< float >			_TexDistanceField : register(t2);
 
 struct VS_IN {
 	float4	__Position : SV_POSITION;
@@ -11,58 +11,100 @@ struct VS_IN {
 
 VS_IN	VS( VS_IN _In ) { return _In; }
 
-float4	PS( VS_IN _In ) : SV_TARGET0 {
+float3	ComputeCameraSpacePosition( float2 _UV ) {
+	float2	PixelPosition = _UV * iResolution.xy;
+	float	Zproj = _TexDepthStencil[floor(PixelPosition)];
+	float4	projPosition = float4( 2.0 * (PixelPosition.x + 0.5) / iResolution.x - 1.0, 1.0 - 2.0 * (PixelPosition.y + 0.5) / iResolution.y, Zproj, 1.0 );
+	float4	csPosition = mul( projPosition, _Proj2Camera );
+	return csPosition.xyz / csPosition.w;
+}
+
+float3	ComputeIntersection( float3 _csPosition ) {
+
+	float	maxDistance = length( _csPosition );
+	float4	csView = float4( _csPosition / maxDistance, 1.0 );
+	float4	csPos = 0.1 * csView;	// Walk away a little
+
+maxDistance = min( 20.0, maxDistance );
+
+	[fastopt]
+	[loop]
+	while ( csPos.w < maxDistance ) {
+		float3	vxPos = CameraSpace2Voxel( csPos.xyz );
+		float	csDistance = max( 0.01, VOXEL_SIZE * SampleDistanceLevel( _TexDistanceField, vxPos, 0.0 ) );
+		csPos += csDistance * csView;
+		if ( csDistance < 0.01 )
+			break;
+	}
+
+	return csPos.xyz;
+}
+
+float3	ComputeAO( float3 _csPosition, float3 _csNormal ) {
+
+//return 1.0 * _TexDistanceField.Sample( LinearClamp, INV_VOXELS_COUNT * CameraSpace2Voxel( _csPosition ) );
+//return 0.01 * csPosition.z;
+
+	// Try computing normal from the distance field (TODO!)
+//_csNormal = normalize( ComputeNormal( _TexDistanceField, CameraSpace2Voxel( _csPosition ), 1.0 ) );
+//return _csNormal;
+//float3	wsNormal = mul( float4( _csNormal, 0.0 ), _Camera2World ).xyz;
+//return normalize( wsNormal );
+
+#if 0
+	// Try cone tracing
+#else
+	// Sample a few times
+	float	stepSize = 0.4;
+	uint	stepsCount = 8;
+	float4	csUnitStep = float4( _csNormal, 1.0 );
+	float4	csStep = stepSize * csUnitStep;
+	float4	csPos = float4( _csPosition, 0.0 ) + 0.0 * csUnitStep;
+	float	sumDistances = 0.0;
+	for ( uint i=0; i < stepsCount; i++ ) {
+		float	distance = SampleDistanceLevel( _TexDistanceField, CameraSpace2Voxel( csPos.xyz ), 0.0 );
+		sumDistances += distance;
+		csPos += csStep;
+	}
+
+	return saturate( VOXEL_SIZE * sumDistances / csPos.w );
+#endif
+}
+
+
+float3	PS( VS_IN _In ) : SV_TARGET0 {
 	uint2	PixelPos = uint2(_In.__Position.xy);
-	float3	Color = _TexSource[PixelPos];
-
-	uint2	CellPosXY = PixelPos >> 3;	// Cells are 8x8 pixels
-	uint	CellPosZ = uint( 64.0 * abs( 1.0 - 2.0 * frac( 1.0 * iGlobalTime ) ) );
-	float3	DistanceField = _TexVoxelPositions[uint3( CellPosXY, CellPosZ )].xyz;
-
-//	Color = lerp( float3( 1, 0, 0 ), Color, saturate( DistanceField.w ) );
-//	Color += 0.1 * DistanceField;
-
 	float2	UV = _In.__Position.xy / iResolution.xy;
+
+	float3	Color = _TexSource[uint3(PixelPos,0)];
+	float3	wsNormal = _TexSource[uint3(PixelPos,1)];
+	float3	csNormal = mul( float4( wsNormal, 0 ), _World2Camera ).xyz;
+//Color = csNormal;
+
+	float3	csPosition = ComputeCameraSpacePosition( UV );
+
 	if ( all( UV < 0.4 ) ) {
 		UV /= 0.4;
+
+wsNormal = _TexSource.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
+csNormal = mul( float4( wsNormal, 0 ), _World2Camera ).xyz;
+
+		float3	csPosition = ComputeCameraSpacePosition( UV );
+		float3	csRayMarchedPosition = ComputeIntersection( csPosition );
+//return 0.05 * length( csRayMarchedPosition );
+return ComputeAO( csPosition, csNormal );
+return ComputeAO( csRayMarchedPosition, csNormal );
+
 		float	time = 0.25 * iGlobalTime;
 //		float	time = 4.0 * iGlobalTime;
 //		float3	UVW = float3( UV, abs( 2.0 * frac( time ) - 1.0 ) );
 		float3	UVW = float3( UV, (0.5 + floor( 64.0 * abs( 2.0 * frac( time ) - 1.0 ) )) / 64.0 );
-		Color = _TexVoxelPositions.SampleLevel( LinearClamp, UVW, 0.0 ).xyz;
-		Color = 1/32.0 * _TexDistance.SampleLevel( LinearClamp, UVW, 0.0 );
+		Color = 1/32.0 * _TexDistanceField.SampleLevel( LinearClamp, UVW, 0.0 );
 //		Color = Color.z >= 1.0 ? float3( 0, 0, 0 ) : Color;
-return float4( Color, 1 );
-
-//		float	Z = 1.0;
-//		[unroll]
-//		for ( uint i=0; i < 4; i++ ) Z = min( Z, _TexVoxelPositions.SampleLevel( PointClamp, float3( UV, (i+0.5) / 4.0 ), 0.0 ).z );
-//		for ( uint i=0; i < 16; i++ ) Z = min( Z, _TexVoxelPositions.SampleLevel( PointClamp, float3( UV, (i+0.5) / 16.0 ), 0.0 ).z );
-
-		float	Z = 0.0;
-		uint3	iUVW = uint3( 64.0 * UV.x, 64.0 * (1.0 - UV.y), 0 );
-		for ( ; iUVW.z < 64; iUVW.z++ ) {
-			float4	distance = _TexVoxelPositions[iUVW];
-			if ( distance.w > 0.0 ) {
-				Z = iUVW.z / 64.0;
-				break;
-			}
-		}
-
-//		float	Z = 0.0;
-//		float	SumWeights = 0.0;
-//		[unroll]
-//		for ( uint i=0; i < 64; i++ ) {
-//			float biZ = _TexVoxelPositions.SampleLevel( PointClamp, float3( UV, (i+0.5) / 64.0 ), 0.0 ).z;
-//			if ( biZ < 1.0 ) {
-//				Z += biZ;
-//				SumWeights += 1.0;
-//			}
-//		}
-//		Z *= SumWeights > 0.0 ? 1.0 / SumWeights : 0.0;
-
-		Color = Z;
+return Color;
 	}
 
-	return float4( Color, 1.0 );
+	float	AO = ComputeAO( csPosition, csNormal ).x;
+
+	return AO * Color;
 }

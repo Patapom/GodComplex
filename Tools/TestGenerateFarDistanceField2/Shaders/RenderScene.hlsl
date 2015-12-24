@@ -26,6 +26,11 @@ struct PS_IN {
 	float2	UV : TEXCOORDS0;
 };
 
+struct PS_OUT {
+	float4	Color : SV_TARGET0;
+	float4	wsNormal : SV_TARGET1;
+};
+
 PS_IN	VS( VS_IN _In ) {
 	
 	PS_IN	Out;
@@ -58,7 +63,7 @@ float	Smith_GGX( float _dot, float _alpha2 ) {
 	return 2.0 * _dot / (_dot + sqrt( _alpha2 + (1.0 - _alpha2) * _dot*_dot ));
 }
 
-float4	PS( PS_IN _In ) : SV_TARGET0 {
+PS_OUT	PS( PS_IN _In ) {
 	float4	Debug = 0.0;
 
 	float3	wsPosition = _In.Position;
@@ -142,5 +147,9 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float3	Radiance_out = Radiance_in * (BRDF_diffuse + BRDF_specular) * LdotN;
 
 	float3	Result = 0.01 * float3( 1, 0.98, 0.8 ) + Radiance_out;
-	return float4( Result, 1 );
+
+	PS_OUT	result;
+	result.Color = float4( Result, 1 );
+	result.wsNormal = float4( wsNormal, 1 );
+	return result;
 }
