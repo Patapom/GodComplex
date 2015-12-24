@@ -53,7 +53,7 @@ float3	ComputeAO( float3 _csPosition, float3 _csNormal ) {
 
 #if 0
 	// Try cone tracing
-#else
+#elif 0
 	// Sample a few times
 	float	stepSize = 0.4;
 	uint	stepsCount = 8;
@@ -68,6 +68,22 @@ float3	ComputeAO( float3 _csPosition, float3 _csNormal ) {
 	}
 
 	return saturate( VOXEL_SIZE * sumDistances / csPos.w );
+#else
+	// Sample a few times
+	float	stepSize = 0.3;
+	uint	stepsCount = 4;
+	float4	csUnitStep = float4( _csNormal, 1.0 );
+	float4	csStep = stepSize * csUnitStep;
+	float4	csPos = float4( _csPosition, 0.0 ) + 0.5 * csUnitStep;
+	float	sumAO = 0.0;
+	for ( uint i=0; i < stepsCount; i++ ) {
+		float	distance = VOXEL_SIZE * SampleDistanceLevel( _TexDistanceField, CameraSpace2Voxel( csPos.xyz ), 0.0 );
+//		sumAO += (csPos.w - distance) * pow( 2.0, 1.0 / (1+i) );
+		sumAO += (csPos.w - distance) * pow( 2.0, -4.0 * csPos.w );
+		csPos += csStep;
+	}
+
+	return 1.0 - saturate( 12.0 * sumAO / stepsCount );
 #endif
 }
 
