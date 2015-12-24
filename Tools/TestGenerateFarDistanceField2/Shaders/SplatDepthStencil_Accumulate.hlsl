@@ -40,6 +40,8 @@ void	CS_Accumulate( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 	// Compute voxel position
 	float3	voxelPosition = CameraSpace2Voxel( csPosition.xyz );
 	uint3	voxelIndex = floor( voxelPosition );
+	if ( any(voxelIndex >= VOXELS_COUNT) )
+		return;
 	float3	voxelInnerCoordinate = voxelPosition - voxelIndex;
 
 	// Compute fixed-point position within voxel
@@ -47,7 +49,7 @@ void	CS_Accumulate( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 
 	// Pack values as true UINTs
 	uint	value0 = (voxelFixedPoint.x << 16) | voxelFixedPoint.y;
-	uint	value1 = (voxelFixedPoint.z << 16) | 1U;
+	uint	value1 = (voxelFixedPoint.z << 16) | 256U;
 
 	// Accumulate to target
 	uint	onSenFout;

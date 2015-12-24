@@ -94,8 +94,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Global.hlsl" />
-    <Content Include="Shaders\BuildDistanceField.hlsl" />
+    <Content Include="Shaders\BuildDistanceField_X.hlsl" />
     <None Include="Shaders\CommonDistanceField.hlsl" />
+    <Content Include="Shaders\BuildDistanceField_Y.hlsl" />
+    <Content Include="Shaders\BuildDistanceField_Z.hlsl" />
     <Content Include="Shaders\SplatDepthStencil_Accumulate.hlsl" />
     <Content Include="Shaders\SplatDepthStencil_Finalize.hlsl" />
     <Content Include="Shaders\PostProcess.hlsl" />

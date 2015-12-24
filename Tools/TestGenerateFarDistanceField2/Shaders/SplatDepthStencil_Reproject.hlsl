@@ -17,6 +17,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 	// Compute camera space position
 	float3	oldcsPosition = Voxel2CameraSpace( _DispatchThreadID + previousFrameVoxelInnerCoordinate.xyz );
+//	float3	oldcsPosition = Voxel2CameraSpace( _DispatchThreadID + 0.5 );
 
 	// Transform into current camera space
 	float3	csPosition = mul( float4( oldcsPosition, 1.0 ), _OldCamera2NewCamera ).xyz;
@@ -24,6 +25,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	// Then back into voxel space
 	float3	voxelPosition = CameraSpace2Voxel( csPosition );
 	uint3	voxelIndex = floor( voxelPosition );
+	if ( any(voxelIndex >= VOXELS_COUNT) )
+		return;
 	float3	voxelInnerCoordinate = voxelPosition - voxelIndex;
 
 	// Compute fixed-point position within voxel
@@ -31,7 +34,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 	// Pack values as true UINTs
 	uint	value0 = (voxelFixedPoint.x << 16) | voxelFixedPoint.y;
-	uint	value1 = (voxelFixedPoint.z << 16) | 1U;
+	uint	value1 = (voxelFixedPoint.z << 16) | 256U;
 
 	// Accumulate to target
 	uint	onSenFout;
