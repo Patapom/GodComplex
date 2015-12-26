@@ -14,9 +14,11 @@ using Nuaj.Cirrus.Utility;
 
 namespace TestGenerateFarDistanceField
 {
-	public partial class TestDistanceFieldForm : Form
-	{
-		private Device				m_Device = new Device();
+	public partial class TestDistanceFieldForm : Form {
+
+		const int				VOXELS_COUNT = 128;
+
+		private Device			m_Device = new Device();
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Main {
@@ -178,12 +180,12 @@ namespace TestGenerateFarDistanceField
 			m_Tex_TempTarget = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 2, 1, PIXEL_FORMAT.RGBA8_UNORM_sRGB, false, false, null );
 
 			// Allocate several 3D textures for depth-stencil reduction
-			m_Tex_TempDepthAccumulatorRG = new Texture3D( m_Device, 64, 64, 64, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
-			m_Tex_TempDepthAccumulatorBA = new Texture3D( m_Device, 64, 64, 64, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
-			m_Tex_SplatDepthStencil[0] = new Texture3D( m_Device, 64, 64, 64, 1, PIXEL_FORMAT.RGBA8_UNORM, false, true, null );
-			m_Tex_SplatDepthStencil[1] = new Texture3D( m_Device, 64, 64, 64, 1, PIXEL_FORMAT.RGBA8_UNORM, false, true, null );
-			m_Tex_DistanceField[0] = new Texture3D( m_Device, 64, 64, 64, 6, PIXEL_FORMAT.R16_FLOAT, false, true, null );
-			m_Tex_DistanceField[1] = new Texture3D( m_Device, 64, 64, 64, 6, PIXEL_FORMAT.R16_FLOAT, false, true, null );
+			m_Tex_TempDepthAccumulatorRG = new Texture3D( m_Device, VOXELS_COUNT, VOXELS_COUNT, VOXELS_COUNT, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
+			m_Tex_TempDepthAccumulatorBA = new Texture3D( m_Device, VOXELS_COUNT, VOXELS_COUNT, VOXELS_COUNT, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
+			m_Tex_SplatDepthStencil[0] = new Texture3D( m_Device, VOXELS_COUNT, VOXELS_COUNT, VOXELS_COUNT, 1, PIXEL_FORMAT.RGBA8_UNORM, false, true, null );
+			m_Tex_SplatDepthStencil[1] = new Texture3D( m_Device, VOXELS_COUNT, VOXELS_COUNT, VOXELS_COUNT, 1, PIXEL_FORMAT.RGBA8_UNORM, false, true, null );
+			m_Tex_DistanceField[0] = new Texture3D( m_Device, VOXELS_COUNT, VOXELS_COUNT, VOXELS_COUNT, 6, PIXEL_FORMAT.R16_FLOAT, false, true, null );
+			m_Tex_DistanceField[1] = new Texture3D( m_Device, VOXELS_COUNT, VOXELS_COUNT, VOXELS_COUNT, 6, PIXEL_FORMAT.R16_FLOAT, false, true, null );
 
 			m_Device.Clear( m_Tex_SplatDepthStencil[0], float4.Zero );
 			m_Device.Clear( m_Tex_SplatDepthStencil[1], float4.Zero );
@@ -299,7 +301,7 @@ namespace TestGenerateFarDistanceField
 				m_Tex_TempDepthAccumulatorRG.SetCSUAV( 0 );
 				m_Tex_TempDepthAccumulatorBA.SetCSUAV( 1 );
 
-				int	groupsCount = m_Tex_TempDepthAccumulatorRG.Width / 4;
+				int	groupsCount = VOXELS_COUNT / 4;
 				m_Shader_ClearAccumulator.Dispatch( groupsCount, groupsCount, groupsCount );
 			}
 
@@ -319,7 +321,7 @@ namespace TestGenerateFarDistanceField
 // 				// Reproject previous frame's result
 // 				m_Tex_SplatDepthStencil[0].SetCS( 0 );
 // 
-// 				int	groupsCount = m_Tex_SplatDepthStencil[0].Width / 4;
+// 				int	groupsCount = VOXELS_COUNT / 4;
 // 				m_Shader_Reproject.Dispatch( groupsCount, groupsCount, groupsCount );
 // 
 // 			}
@@ -332,7 +334,7 @@ namespace TestGenerateFarDistanceField
 				m_Tex_TempDepthAccumulatorBA.SetCS( 1 );
 				m_Tex_SplatDepthStencil[1].SetCSUAV( 0 );
 
-				int	groupsCount = m_Tex_SplatDepthStencil[1].Width / 4;
+				int	groupsCount = VOXELS_COUNT / 4;
 				m_Shader_FinalizeSplat.Dispatch( groupsCount, groupsCount, groupsCount );
 
 				m_Tex_TempDepthAccumulatorRG.RemoveFromLastAssignedSlots();
@@ -354,9 +356,9 @@ namespace TestGenerateFarDistanceField
 				m_Tex_SplatDepthStencil[0].SetCS( 0 );	// Source texture with positions within voxels
 				m_Tex_DistanceField[0].SetCSUAV( 0 );	// Target distance field
 
-				int	groupsCountX = m_Tex_DistanceField[0].Width;		// Horizontal sweep
-				int	groupsCountY = m_Tex_DistanceField[0].Height >> 3;
-				int	groupsCountZ = m_Tex_DistanceField[0].Depth >> 3;
+				int	groupsCountX = VOXELS_COUNT;		// Horizontal sweep
+				int	groupsCountY = VOXELS_COUNT >> 3;
+				int	groupsCountZ = VOXELS_COUNT >> 3;
 
 				m_Shader_BuildDistanceField[0].Dispatch( groupsCountX, groupsCountY, groupsCountZ );
 
@@ -370,9 +372,9 @@ namespace TestGenerateFarDistanceField
 				m_Tex_DistanceField[0].SetCS( 0 );
 				m_Tex_DistanceField[1].SetCSUAV( 0 );
 
-				int	groupsCountX = m_Tex_DistanceField[1].Width >> 3;
-				int	groupsCountY = m_Tex_DistanceField[1].Height;		// Vertical sweep
-				int	groupsCountZ = m_Tex_DistanceField[1].Depth >> 3;
+				int	groupsCountX = VOXELS_COUNT >> 3;
+				int	groupsCountY = VOXELS_COUNT;		// Vertical sweep
+				int	groupsCountZ = VOXELS_COUNT >> 3;
 
 				m_Shader_BuildDistanceField[1].Dispatch( groupsCountX, groupsCountY, groupsCountZ );
 
@@ -386,9 +388,9 @@ namespace TestGenerateFarDistanceField
 				m_Tex_DistanceField[1].SetCS( 0 );
 				m_Tex_DistanceField[0].SetCSUAV( 0 );
 
-				int	groupsCountX = m_Tex_DistanceField[1].Width >> 3;
-				int	groupsCountY = m_Tex_DistanceField[1].Height >> 3;
-				int	groupsCountZ = m_Tex_DistanceField[1].Depth;		// Depth sweep
+				int	groupsCountX = VOXELS_COUNT >> 3;
+				int	groupsCountY = VOXELS_COUNT >> 3;
+				int	groupsCountZ = VOXELS_COUNT;		// Depth sweep
 
 				m_Shader_BuildDistanceField[2].Dispatch( groupsCountX, groupsCountY, groupsCountZ );
 

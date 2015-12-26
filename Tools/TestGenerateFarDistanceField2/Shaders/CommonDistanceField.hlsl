@@ -2,7 +2,7 @@
 // Common values for the distance field voxels
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-static const uint	VOXELS_COUNT = 64;										// 3D Texture dimension
+static const uint	VOXELS_COUNT = 128;										// 3D Texture dimension
 static const float	INV_VOXELS_COUNT = 1.0 / VOXELS_COUNT;
 static const float	VOXEL_SIZE = 0.1;										// In meters
 static const float	INV_VOXEL_SIZE = 1.0 / VOXEL_SIZE;

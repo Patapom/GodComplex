@@ -17,11 +17,12 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	uint3	VoxelPosition = uint3( _GroupID.x, _DispatchThreadID.yz );
 	float4	vxPos_Center = _TexSource[VoxelPosition];
 	if ( vxPos_Center.w > 0.0 ) {
-//		float3	delta = (VoxelPosition.xyz+0.5) - (VoxelPosition.xyz+vxPos_Center.xyz);	// Actual computation
+//		float3	delta = (VoxelPosition+0.5) - (VoxelPosition+vxPos_Center.xyz);	// Actual computation
 		float3	delta = 0.5 - vxPos_Center.xyz;			// Simplified
 		_TexTarget[VoxelPosition] = length( delta );
 		return;
 	}
+	float3	vxCenter = VoxelPosition + 0.5;	// Center of our current voxel
 
 	uint3	VoxelPosition_Left = VoxelPosition;
 	uint3	VoxelPosition_Right = VoxelPosition;
@@ -32,7 +33,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 		if ( VoxelPosition_Left.x < VOXELS_COUNT ) {
 			float4	vxPos = _TexSource[VoxelPosition_Left];
 			if ( vxPos.w > 0.0 ) {
-				float3	delta = (VoxelPosition+0.5) - (VoxelPosition_Left + vxPos.xyz);
+				float3	delta = (VoxelPosition_Left + vxPos.xyz) - vxCenter;
 				_TexTarget[VoxelPosition] = length( delta );
 				return;
 			}
@@ -40,7 +41,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 		if ( VoxelPosition_Right.x < VOXELS_COUNT ) {
 			float4	vxPos = _TexSource[VoxelPosition_Right];
 			if ( vxPos.w > 0.0 ) {
-				float3	delta = (VoxelPosition+0.5) - (VoxelPosition_Right + vxPos.xyz);
+				float3	delta = (VoxelPosition_Right + vxPos.xyz) - vxCenter;
 				_TexTarget[VoxelPosition] = length( delta );
 				return;
 			}

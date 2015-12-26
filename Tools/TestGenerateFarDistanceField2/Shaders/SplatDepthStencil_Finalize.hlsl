@@ -22,5 +22,5 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 //	voxelInnerCoordinate.xyz += previousFrameResult.xyz;
 //	value1 += previousFrameResult.w;
 
-	_TexTarget[_DispatchThreadID] = value1 > 10 ? float4( voxelInnerCoordinate / value1, 1.0 ) : 0.0;
+	_TexTarget[_DispatchThreadID] = value1 > 0 ? float4( voxelInnerCoordinate / value1, 1.0 ) : 0.0;
 }
