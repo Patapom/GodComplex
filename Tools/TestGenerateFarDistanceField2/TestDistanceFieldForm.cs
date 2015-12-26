@@ -177,7 +177,8 @@ namespace TestGenerateFarDistanceField
 			BuildPrimitives();
 
 			// Allocate texture
-			m_Tex_TempTarget = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 2, 1, PIXEL_FORMAT.RGBA8_UNORM_sRGB, false, false, null );
+//			m_Tex_TempTarget = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 2, 1, PIXEL_FORMAT.RGBA8_UNORM_sRGB, false, false, null );
+			m_Tex_TempTarget = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 2, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, false, null );
 
 			// Allocate several 3D textures for depth-stencil reduction
 			m_Tex_TempDepthAccumulatorRG = new Texture3D( m_Device, VOXELS_COUNT, VOXELS_COUNT, VOXELS_COUNT, 1, PIXEL_FORMAT.R32_UINT, false, true, null );

@@ -20,9 +20,9 @@ float3	ComputeCameraSpacePosition( float2 _UV ) {
 	return csPosition.xyz / csPosition.w;
 }
 
-float3	ComputeIntersection( float3 _csPosition, float3 _csDirection, float _maxDistance, float _eps=0.2 ) {
+float4	ComputeIntersection( float3 _csPosition, float3 _csDirection, float _maxDistance, float _initialStepSize=0.0, float _eps=0.2 ) {
 	float4	csDir = float4( _csDirection, 1.0 );
-	float4	csPos = float4( _csPosition, 0.0 );
+	float4	csPos = float4( _csPosition, 0.0 ) + _initialStepSize * csDir;
 
 	[fastopt]
 	[loop]
@@ -32,7 +32,7 @@ float3	ComputeIntersection( float3 _csPosition, float3 _csDirection, float _maxD
 		csPos += csDistance * csDir;
 		if ( csDistance < _eps )
 			break;
-		csPos += saturate( _eps - csDistance ) * csDir;
+		csPos += saturate( _eps - csDistance ) * csDir;	// Make sure we take a minimal step each time
 	}
 
 //float	eps = 0.1;
@@ -40,13 +40,10 @@ float3	ComputeIntersection( float3 _csPosition, float3 _csDirection, float _maxD
 //return lerp( float3( 0,0,1 ), lerp( float3( 0,1,0 ), float3( 1,0,0 ), saturate( value ) ), saturate( 1.0+value ) );
 //return 0.5 * csPos.w / _maxDistance;
 
-//return csPos.w;
-//return 0.1 * stepsCount;
-//return 0.5 * csPos.w / _maxDistance;
-	return csPos.xyz;
+	return csPos;
 }
 
-float3	ComputeAO( float3 _csPosition, float3 _csNormal ) {
+float3	ComputeAO( float3 _csPosition, float3 _csNormal, float2 _pixelPosition ) {
 
 //return 1.0 * _TexDistanceField.Sample( LinearClamp, INV_VOXELS_COUNT * CameraSpace2Voxel( _csPosition ) );
 //return 0.01 * csPosition.z;
@@ -58,6 +55,33 @@ float3	ComputeAO( float3 _csPosition, float3 _csNormal ) {
 //return normalize( wsNormal );
 
 #if 0
+	// Try multiple traces
+	const uint	SAMPLES_COUNT = 16U;
+	const float	INITIAL_STEP = 0.1;
+	const float	MAX_AO_DISTANCE = 8.0;
+
+	float3	csTangent = normalize( cross( float3( 0, 0, -1 ), _csNormal ) );
+	float3	csBiTangent = cross( csTangent, _csNormal );
+	float	sumHitDistances = 0.0;
+	for ( uint i=0; i < SAMPLES_COUNT; i++ ) {
+		float	rand = frac( sin(_pixelPosition.x*i)*sin(1767.0654+_pixelPosition.y*i)*43758.5453123 );
+		float	theta = 0.8 * 2.0 * asin( sqrt( 0.5 * rand ) );	// in [0,PI/2]
+		float2	scTheta;
+		sincos( theta, scTheta.x, scTheta.y );
+		float2	scPhi;
+		sincos( 2.0*PI*i/SAMPLES_COUNT, scPhi.x, scPhi.y );
+
+		float3	tsDir = float3( scTheta.x * scPhi.y, scTheta.x * scPhi.x, scTheta.y );
+		float3	csDir = tsDir.x * csTangent + tsDir.y * csBiTangent + tsDir.z * _csNormal;
+
+		float4	csHit = ComputeIntersection( _csPosition, csDir, MAX_AO_DISTANCE, INITIAL_STEP, 0.04 );
+//return 0.5 * csHit.w / MAX_AO_DISTANCE;
+		sumHitDistances += min( csHit.w, MAX_AO_DISTANCE );
+	}
+
+	return sumHitDistances / (SAMPLES_COUNT * MAX_AO_DISTANCE);
+
+#elif 0
 	// "Cone tracing"
 	float4	csDir = float4( _csNormal, 1.0 );
 	float4	csPos = float4( _csPosition, 0.0 ) + 0.05 * _csPosition.z * csDir;	// Walk away a little
@@ -88,13 +112,13 @@ return 1.0 - stepsCount / 32.0;
 	float	averageConAngle = 2.0 * INVPI * asin( sumConeAngles.x / sumConeAngles.y );
 	return averageConAngle;
 
-#elif 1
+#elif 0
 	// Sample a few times
-	float	stepSize = 0.4;
+	float	stepSize = 0.2;
 	uint	stepsCount = 8;
 	float4	csUnitStep = float4( _csNormal, 1.0 );
 	float4	csStep = stepSize * csUnitStep;
-	float4	csPos = float4( _csPosition, 0.0 ) + 0.0 * csUnitStep;
+	float4	csPos = float4( _csPosition, 0.0 ) + 0.01 * csUnitStep;
 	float	sumDistances = 0.0;
 	for ( uint i=0; i < stepsCount; i++ ) {
 		float	distance = SampleDistanceLevel( _TexDistanceField, CameraSpace2Voxel( csPos.xyz ), 0.0 );
@@ -105,20 +129,20 @@ return 1.0 - stepsCount / 32.0;
 	return saturate( VOXEL_SIZE * sumDistances / csPos.w );
 #else
 	// Sample a few times
-	float	stepSize = 0.3;
-	uint	stepsCount = 4;
+	float	stepSize = 0.1;
+	uint	stepsCount = 10;
 	float4	csUnitStep = float4( _csNormal, 1.0 );
 	float4	csStep = stepSize * csUnitStep;
-	float4	csPos = float4( _csPosition, 0.0 ) + 0.5 * csUnitStep;
+	float4	csPos = float4( _csPosition, 0.0 ) + 0.4 * csUnitStep;
 	float	sumAO = 0.0;
 	for ( uint i=0; i < stepsCount; i++ ) {
 		float	distance = VOXEL_SIZE * SampleDistanceLevel( _TexDistanceField, CameraSpace2Voxel( csPos.xyz ), 0.0 );
 //		sumAO += (csPos.w - distance) * pow( 2.0, 1.0 / (1+i) );
-		sumAO += (csPos.w - distance) * pow( 2.0, -4.0 * csPos.w );
+		sumAO += (csPos.w - distance) * pow( 2.0, -2.0 * csPos.w );
 		csPos += csStep;
 	}
 
-	return 1.0 - saturate( 12.0 * sumAO / stepsCount );
+	return 1.0 - saturate( 4.0 * sumAO / stepsCount );
 #endif
 }
 
@@ -130,10 +154,21 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float3	Color = _TexSource[uint3(PixelPos,0)];
 	float3	wsNormal = _TexSource[uint3(PixelPos,1)];
 	float3	csNormal = mul( float4( wsNormal, 0 ), _World2Camera ).xyz;
-//Color = csNormal;
 
 	if ( all( UV < 0.4 ) ) {
 		UV /= 0.4;
+
+wsNormal = _TexSource.Sample( LinearClamp, float3( UV, 1.0 ) );
+csNormal = mul( float4( wsNormal, 0 ), _World2Camera ).xyz;
+//wsNormal = mul( float4( csNormal, 0 ), _Camera2World ).xyz;
+
+//csNormal = float3(	dot( wsNormal, _Camera2World[0].xyz ),
+//					dot( wsNormal, _Camera2World[1].xyz ),
+//					dot( wsNormal, _Camera2World[2].xyz ) );
+
+//return wsNormal;
+//return csNormal;
+//return _Camera2World[0].xyz;
 
 		#if 0	// Visualize distance field slices as orthographic projection
 			uint3	voxelIndex = uint3( VOXELS_COUNT * UV.x, VOXELS_COUNT * (1.0-UV.y), 0 );
@@ -161,22 +196,26 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 
 			wsNormal = _TexSource.SampleLevel( LinearClamp, float3( UV, 1 ), 0.0 ).xyz;
 			csNormal = mul( float4( wsNormal, 0 ), _World2Camera ).xyz;
-			return ComputeAO( csPosition, csNormal );
+			return ComputeAO( csPosition, csNormal, PixelPos );
 		#endif
 
 //maxDistance = 40.0;
 //maxDistance = min( VOXEL_SIZE * VOXELS_COUNT, maxDistance );
 //maxDistance = min( 40.0, maxDistance );
 
-//		float3	csRayMarchedPosition = ComputeIntersection( 0.1 * csView, csView, maxDistance );
-		float3	csRayMarchedPosition = ComputeIntersection( csPosition + 0.1 * csNormal, csNormal, 8.0 );
+//		float3	csRayMarchedPosition = ComputeIntersection( 0.0, csView, maxDistance, 0.1 ).xyz;
+		float3	csRayMarchedPosition = ComputeIntersection( csPosition, csNormal, 8.0, 0.1 ).xyz;
 //return 0.1 * csRayMarchedPosition;
 //return 1.0 * length( csRayMarchedPosition - csPosition );
 //return ComputeAO( csRayMarchedPosition, csNormal );
 	}
 
+//return -_Camera2World[0].xyz;
+//return wsNormal;
+//return csNormal;
+
 	float3	csPosition = ComputeCameraSpacePosition( UV );
-	float	AO = ComputeAO( csPosition, csNormal ).x;
+	float	AO = ComputeAO( csPosition, csNormal, PixelPos ).x;
 
 	return AO * Color;
 }
