@@ -35,7 +35,7 @@ namespace ShaderToy
 		}
 
 		private ConstantBuffer<CB_Main>	m_CB_Main = null;
-		private Shader		m_Shader_Christmas = null;
+		private Shader		m_Shader = null;
 		private Texture2D	m_Tex_Christmas = null;
 		private Primitive	m_Prim_Quad = null;
 
@@ -343,16 +343,16 @@ namespace ShaderToy
 
 			try
 			{
-//				m_Shader_Christmas = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Christmas.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
-//				m_Shader_Christmas = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Airlight.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
-				m_Shader_Christmas = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/VoronoiInterpolation.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+//				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Christmas.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+//				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Airlight.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+//				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/VoronoiInterpolation.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Room.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 
 				m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			}
-			catch ( Exception _e )
-			{
+			catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
-				m_Shader_Christmas = null;
+				m_Shader = null;
 			}
 
 			// Initialize Voronoï neighbor positions
@@ -373,9 +373,9 @@ namespace ShaderToy
 			if ( m_Device == null )
 				return;
 
-			if ( m_Shader_Christmas != null ) {
+			if ( m_Shader != null ) {
 				m_CB_Main.Dispose();
-				m_Shader_Christmas.Dispose();
+				m_Shader.Dispose();
 			}
 			m_Prim_Quad.Dispose();
 //			m_Tex_Christmas.Dispose();
@@ -402,7 +402,7 @@ namespace ShaderToy
 				return;
 
 			// Post render command
-			if ( m_Shader_Christmas != null ) {
+			if ( m_Shader != null ) {
 				m_Device.SetRenderTarget( m_Device.DefaultTarget, null );
 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
@@ -414,8 +414,8 @@ namespace ShaderToy
 
 //				m_Tex_Christmas.SetPS( 0 );
 
-				m_Shader_Christmas.Use();
-				m_Prim_Quad.Render( m_Shader_Christmas );
+				m_Shader.Use();
+				m_Prim_Quad.Render( m_Shader );
 			} else {
 				m_Device.Clear( new float4( 1.0f, 0, 0, 0 ) );
 			}
