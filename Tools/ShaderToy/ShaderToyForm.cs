@@ -10,13 +10,13 @@ using System.Windows.Forms;
 using System.Drawing.Imaging;
 
 using RendererManaged;
+using Nuaj.Cirrus.Utility;
 
 namespace ShaderToy
 {
 	public partial class ShaderToyForm : Form
 	{
 		private Device		m_Device = new Device();
-
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Main {
@@ -34,10 +34,26 @@ namespace ShaderToy
 			public uint			_ShowWeights;
 		}
 
-		private ConstantBuffer<CB_Main>	m_CB_Main = null;
-		private Shader		m_Shader = null;
-		private Texture2D	m_Tex_Christmas = null;
-		private Primitive	m_Prim_Quad = null;
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_Camera {
+			public float4x4		_Camera2World;
+			public float4x4		_World2Camera;
+			public float4x4		_Proj2World;
+			public float4x4		_World2Proj;
+			public float4x4		_Camera2Proj;
+			public float4x4		_Proj2Camera;
+
+			public float4x4		_OldCamera2NewCamera;
+		}
+
+		private ConstantBuffer<CB_Main>		m_CB_Main = null;
+		private ConstantBuffer<CB_Camera>	m_CB_Camera = null;
+		private Shader						m_Shader = null;
+//		private Texture2D					m_Tex_Christmas = null;
+		private Primitive					m_Prim_Quad = null;
+
+		private Camera						m_Camera = new Camera();
+		private CameraManipulator			m_Manipulator = new CameraManipulator();
 
 		//////////////////////////////////////////////////////////////////////////
 		// Timing
@@ -45,7 +61,9 @@ namespace ShaderToy
 		private double						m_Ticks2Seconds;
 		public float						m_StartGameTime = 0;
 		public float						m_CurrentGameTime = 0;
-		public float						m_DeltaTime = 0;		// Delta time used for the current frame
+		public float						m_StartFPSTime = 0;
+		public int							m_SumFrames = 0;
+		public float						m_AverageFrameTime = 0.0f;
 
 		public ShaderToyForm()
 		{
@@ -347,13 +365,14 @@ namespace ShaderToy
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Airlight.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/VoronoiInterpolation.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Room.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
-
-				m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			}
 			catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader = null;
 			}
+
+			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
+			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
 
 			// Initialize Voronoï neighbor positions
 			m_CB_Main.m._MainPosition = new float2( 0.0f, 0.0f );
@@ -361,6 +380,11 @@ namespace ShaderToy
 			m_CB_Main.m._NeighborPosition1 = new float2( 0.6f, -0.4f );
 			m_CB_Main.m._NeighborPosition2 = new float2( -0.2f, 0.8f );
 			m_CB_Main.m._NeighborPosition3 = new float2( -0.6f, 0.14f );
+
+			// Setup camera
+			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
+			m_Manipulator.Attach( panelOutput, m_Camera );
+			m_Manipulator.InitializeCamera( new float3( 0, 1, 2.5f ), new float3( 0, 1, 0 ), float3.UnitY );
 
 			// Start game time
 			m_Ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
@@ -373,8 +397,10 @@ namespace ShaderToy
 			if ( m_Device == null )
 				return;
 
+			m_CB_Camera.Dispose();
+			m_CB_Main.Dispose();
+
 			if ( m_Shader != null ) {
-				m_CB_Main.Dispose();
 				m_Shader.Dispose();
 			}
 			m_Prim_Quad.Dispose();
@@ -385,12 +411,30 @@ namespace ShaderToy
 			base.OnFormClosed( e );
 		}
 
+		void Camera_CameraTransformChanged( object sender, EventArgs e ) {
+
+//			float4x4	OldCamera2World = m_CB_Camera.m._Camera2World;
+
+			m_CB_Camera.m._Camera2World = m_Camera.Camera2World;
+			m_CB_Camera.m._World2Camera = m_Camera.World2Camera;
+
+			m_CB_Camera.m._Camera2Proj = m_Camera.Camera2Proj;
+			m_CB_Camera.m._Proj2Camera = m_CB_Camera.m._Camera2Proj.Inverse;
+
+			m_CB_Camera.m._World2Proj = m_CB_Camera.m._World2Camera * m_CB_Camera.m._Camera2Proj;
+			m_CB_Camera.m._Proj2World = m_CB_Camera.m._Proj2Camera * m_CB_Camera.m._Camera2World;
+
+			// Allows transformation from old to new camera space (for reprojection)
+//			m_CB_Camera.m._OldCamera2NewCamera = OldCamera2World * m_CB_Camera.m._World2Camera;
+
+			m_CB_Camera.UpdateData();
+		}
+
 		/// <summary>
 		/// Gets the current game time in seconds
 		/// </summary>
 		/// <returns></returns>
-		public float	GetGameTime()
-		{
+		public float	GetGameTime() {
 			long	Ticks = m_StopWatch.ElapsedTicks;
 			float	Time = (float) (Ticks * m_Ticks2Seconds);
 			return Time;
@@ -401,13 +445,25 @@ namespace ShaderToy
 			if ( m_Device == null )
 				return;
 
+			float	lastGameTime = m_CurrentGameTime;
+			m_CurrentGameTime = GetGameTime();
+			
+			if ( m_CurrentGameTime - m_StartFPSTime > 1.0f ) {
+				m_AverageFrameTime = (m_CurrentGameTime - m_StartFPSTime) / Math.Max( 1, m_SumFrames );
+				m_SumFrames = 0;
+				m_StartFPSTime = m_CurrentGameTime;
+			}
+			m_SumFrames++;
+
+			Camera_CameraTransformChanged( m_Camera, EventArgs.Empty );
+
 			// Post render command
 			if ( m_Shader != null ) {
 				m_Device.SetRenderTarget( m_Device.DefaultTarget, null );
 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 				m_CB_Main.m.iResolution = new float3( panelOutput.Width, panelOutput.Height, 0 );
-				m_CB_Main.m.iGlobalTime = GetGameTime() - m_StartGameTime;
+				m_CB_Main.m.iGlobalTime = m_CurrentGameTime - m_StartGameTime;
 				m_CB_Main.m._WeightMultiplier = floatTrackbarControlWeightMultiplier.Value;
 				m_CB_Main.m._ShowWeights = (uint) ((checkBoxShowWeights.Checked ? 1 : 0) | (checkBoxSmoothStep.Checked ? 2 : 0));
 				m_CB_Main.UpdateData();
@@ -423,9 +479,8 @@ namespace ShaderToy
 			// Show!
 			m_Device.Present( false );
 
-
 			// Update window text
-//			Text = "Zombizous Prototype - " + m_Game.m_CurrentGameTime.ToString( "G5" ) + "s";
+			Text = "ShaderToy - " + m_CurrentGameTime.ToString( "G5" ) + "s - Avg. Frame Time " + (1000.0f * m_AverageFrameTime).ToString( "G5" ) + " ms (" + (1.0f / m_AverageFrameTime).ToString( "G5" ) + " FPS)";
 		}
 
 		private void buttonReload_Click( object sender, EventArgs e )
