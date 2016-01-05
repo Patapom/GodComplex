@@ -22,6 +22,7 @@ namespace TestFilmicCurve
 		protected float		m_ShoulderStrength = 0.0f;
 		private float		k;
 
+		protected bool		m_ShowLogLuminance = false;
 		protected bool		m_ShowDebugLuminance = false;
 		protected float		m_DebugLuminance = 1.0f;
 
@@ -67,6 +68,11 @@ namespace TestFilmicCurve
 			set { m_ShoulderStrength = value; UpdateBitmap(); }
 		}
 
+		public bool		ShowLogLuminance {
+			get { return m_ShowLogLuminance; }
+			set { m_ShowLogLuminance = value; UpdateBitmap(); }
+		}
+
 		public bool		ShowDebugLuminance {
 			get { return m_ShowDebugLuminance; }
 			set { m_ShowDebugLuminance = value; UpdateBitmap(); }
@@ -103,30 +109,49 @@ namespace TestFilmicCurve
 
 				DrawLine( G, Pens.LightGray, 10, 1.0f, Width, 1.0f );
 
-				float	Xw = LogLuminance2Client( m_WhitePoint );
-				DrawLine( G, Pens.LightGreen, Xw, 0.0f, Xw, 1.0f );
-
-				for ( int i=1; i <= 10; i++ ) {
-					float	height = 0.02f * (1.0f + (i==1 ? 1 : 0));
-					DrawLine( G, Pens.Black, LogLuminance2Client( 0.01f * i ), 0.0f, LogLuminance2Client( 0.01f * i ), height );
-					DrawLine( G, Pens.Black, LogLuminance2Client( 0.1f * i ), 0.0f, LogLuminance2Client( 0.1f * i ), height );
-					DrawLine( G, Pens.Black, LogLuminance2Client( 1.0f * i ), 0.0f, LogLuminance2Client( 1.0f * i ), height );
-					DrawLine( G, Pens.Black, LogLuminance2Client( 10.0f * i ), 0.0f, LogLuminance2Client( 10.0f * i ), height );
-				}
-
-// 				if ( m_ShowDebugLuminance ) {
-// 					float	Xd = LogLuminance2Client( m_DebugLuminance );
-// 					DrawLine( G, Pens.Gold, Xd, 0.0f, Xd, 1.0f );
-// 				}
-
 				// Compute junction factor
 				k = (1.0f - m_ToeStrength) * (m_JunctionPoint - m_BlackPoint) / ((1.0f - m_ShoulderStrength) * (m_WhitePoint - m_JunctionPoint) + (1.0f - m_ToeStrength) * (m_JunctionPoint - m_BlackPoint));
 
-				float	py = Filmic( Client2LogLuminance( 10 ) );
-				for ( int X=11; X < Width; X++ ) {
-					float	y = Filmic( Client2LogLuminance( X ) );
-					DrawLine( G, Pens.Black, X-1, py, X, y );
-					py = y;
+				if ( m_ShowLogLuminance ) {
+					float	Xw = LogLuminance2Client( m_WhitePoint );
+					DrawLine( G, Pens.LightGreen, Xw, 0.0f, Xw, 1.0f );
+
+					for ( int i=1; i <= 10; i++ ) {
+						float	height = 0.02f * (1.0f + (i==1 ? 1 : 0));
+						DrawLine( G, Pens.Black, LogLuminance2Client( 0.01f * i ), 0.0f, LogLuminance2Client( 0.01f * i ), height );
+						DrawLine( G, Pens.Black, LogLuminance2Client( 0.1f * i ), 0.0f, LogLuminance2Client( 0.1f * i ), height );
+						DrawLine( G, Pens.Black, LogLuminance2Client( 1.0f * i ), 0.0f, LogLuminance2Client( 1.0f * i ), height );
+						DrawLine( G, Pens.Black, LogLuminance2Client( 10.0f * i ), 0.0f, LogLuminance2Client( 10.0f * i ), height );
+					}
+
+// 					if ( m_ShowDebugLuminance ) {
+// 						float	Xd = LogLuminance2Client( m_DebugLuminance );
+// 						DrawLine( G, Pens.Gold, Xd, 0.0f, Xd, 1.0f );
+// 					}
+
+					float	py = Filmic( Client2LogLuminance( 10 ) );
+					for ( int X=11; X < Width; X++ ) {
+						float	y = Filmic( Client2LogLuminance( X ) );
+						DrawLine( G, Pens.Black, X-1, py, X, y );
+						py = y;
+					}
+				} else {
+					float	Xw = Luminance2Client( m_WhitePoint );
+					DrawLine( G, Pens.LightGreen, Xw, 0.0f, Xw, 1.0f );
+
+					int	MaxI = (int) Math.Ceiling( m_WhitePoint );
+					for ( int i=0; i < MaxI; i++ )
+						for ( int j=0; j < 10; j++ ) {
+							float	height = 0.02f * (1.0f + (j==0 ? 1 : 0));
+							DrawLine( G, Pens.Black, Luminance2Client( i + 0.1f * j ), 0.0f, Luminance2Client( i + 0.1f * j ), height );
+						}
+
+					float	py = Filmic( Client2Luminance( 10 ) );
+					for ( int X=11; X < Width; X++ ) {
+						float	y = Filmic( Client2Luminance( X ) );
+						DrawLine( G, Pens.Black, X-1, py, X, y );
+						py = y;
+					}
 				}
 			}
 

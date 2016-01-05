@@ -99,8 +99,17 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 
 		if ( _Flags & 8 )
 			Color = max( 0.0, ToneMappingFilmic_Hable( Color ) / max( 1e-3, ToneMappingFilmic_Hable( _WhitePoint ) ) );
-		else
+		else if ( _Flags & 16 ) {
+//			float	Lum = dot( Color, LUMINANCE );
+			float	Lum = max( max( Color.x, Color.y ), Color.z );
+			Color /= Lum;
+			Lum = ToneMappingFilmic_Insomniac( Lum );
+			Color = saturate( Lum * Color );
+		} else {
 			Color = saturate( ToneMappingFilmic_Insomniac( Color ) );
+//			Color = max( 0.0, ToneMappingFilmic_Insomniac( Color ) / ToneMappingFilmic_Insomniac( _WhitePoint ) );
+		}
+
 //		Color = Sigmoid( 1.0 * Color );
 		
 // 		// Try darkening saturated colors
@@ -130,6 +139,19 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	// Show debug histogram
 	if ( _Flags & 4 ) {
 		DEBUG_DisplayLuminanceHistogram( _WhitePoint, UV, float2( _MouseU, _MouseV ), (_Flags & 2) ? _DebugLuminanceLevel : 0.0001, _Resolution.xy, _GlobalTime, Color, OriginalColor );
+
+		// Debug curves
+		// if ( UV.x < 0.4 && UV.y > 0.75 ) {
+		// 	UV.x /= 0.4;
+		// 	UV.y = (UV.y - 0.75) / 0.25;
+		// 	float	LumaLDR = 1.0 - UV.y;
+		// 	float	LumaHDR = 10.0 * UV.x;
+		// 	float3	ToneMappedColor = (_Flags & 8) ? (ToneMappingFilmic_Hable( LumaHDR ) / max( 1e-3, ToneMappingFilmic_Hable( _WhitePoint ) )) : ToneMappingFilmic_Insomniac( LumaHDR );
+		// 
+		// 	Color.x = ToneMappedColor.x < LumaLDR ? 1 : 0;
+		// 	Color.y = ToneMappedColor.y < LumaLDR ? 1 : 0;
+		// 	Color.z = ToneMappedColor.z < LumaLDR ? 1 : 0;
+		// }
 	}
 
 	return Color;

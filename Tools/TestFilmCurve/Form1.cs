@@ -7,6 +7,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Drawing.Imaging;
+using Microsoft.Win32;
 
 using RendererManaged;
 using Nuaj.Cirrus.Utility;
@@ -15,6 +16,8 @@ namespace TestFilmicCurve
 {
 	public partial class Form1 : Form
 	{
+		private RegistryKey	m_AppKey;
+
 		private Device		m_Device = new Device();
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -108,10 +111,12 @@ namespace TestFilmicCurve
 		{
 			InitializeComponent();
 
+			m_AppKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( @"Software\Patapom\ToneMapping" );
+
 			panelGraph_Hable.ScaleX = floatTrackbarControlScaleX.Value;
 			panelGraph_Hable.ScaleY = floatTrackbarControlScaleY.Value;
 
-			buttonReset_Click( buttonReset, EventArgs.Empty );
+			SaveResetValues();
 
 			outputPanelFilmic_Insomniac.ScaleX = floatTrackbarControlScaleX.Value;
 			outputPanelFilmic_Insomniac.ScaleY = floatTrackbarControlScaleY.Value;
@@ -202,17 +207,18 @@ namespace TestFilmicCurve
 			m_Buffer_AutoExposureTarget = new StructuredBuffer<autoExposure_t>( m_Device, 1, true );
 
 			// Load cube map
-//			m_Tex_CubeMap = DirectXTexManaged.TextureCreator.CreateTexture2DFromDDSFile( m_Device, "garage4_hd.dds" );
-			{
-				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_28_cube_BC6H_UF16.bimage" ) );		// Tunnel
-// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_89_cube_BC6H_UF16.bimage" ) );		// Large sky
-// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_115_cube_BC6H_UF16.bimage" ) );	// Indoor
-// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_123_cube_BC6H_UF16.bimage" ) );	// Under the arch
-// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_189_cube_BC6H_UF16.bimage" ) );	// Indoor viewing out (vista)
-// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_246_cube_BC6H_UF16.bimage" ) );	// Nice! Statue's feet
-// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_248_cube_BC6H_UF16.bimage" ) );	// Nice! In a corner with lot of sky
-//				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_1127_cube_BC6H_UF16.bimage" ) );	// Okay. Corner, with vista and sky
-				m_Tex_CubeMap = I.CreateTextureCube( m_Device );
+			try {
+				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( "garage4_hd.dds" ) );
+//				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\hdrcube6.dds" ) );
+//				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_28_cube_BC6H_UF16.bimage" ) );		// Tunnel
+// 				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_89_cube_BC6H_UF16.bimage" ) );		// Large sky
+// 				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_115_cube_BC6H_UF16.bimage" ) );	// Indoor
+// 				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_123_cube_BC6H_UF16.bimage" ) );	// Under the arch
+// 				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_189_cube_BC6H_UF16.bimage" ) );	// Indoor viewing out (vista)
+// 				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_246_cube_BC6H_UF16.bimage" ) );	// Nice! Statue's feet
+// 				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_248_cube_BC6H_UF16.bimage" ) );	// Nice! In a corner with lot of sky
+
+			} catch ( Exception ) {
 			}
 
 			// Setup camera
@@ -246,7 +252,8 @@ namespace TestFilmicCurve
 			m_Tex_Histogram.Dispose();
 			m_Tex_TallHistogram.Dispose();
 			m_Tex_HDR.Dispose();
-			m_Tex_CubeMap.Dispose();
+			if ( m_Tex_CubeMap != null )
+				m_Tex_CubeMap.Dispose();
 
 			m_CB_AutoExposure.Dispose();
 			m_CB_ToneMapping.Dispose();
@@ -290,7 +297,8 @@ namespace TestFilmicCurve
 			// 1] Render to the HDR buffer
 			if ( m_Shader_RenderHDR.Use() ) {
 				m_Device.SetRenderTarget( m_Tex_HDR, null );
-				m_Tex_CubeMap.SetPS( 0 );
+				if ( m_Tex_CubeMap != null )
+					m_Tex_CubeMap.SetPS( 0 );
 				m_Device.RenderFullscreenQuad( m_Shader_RenderHDR );
 			}
 
@@ -318,7 +326,10 @@ namespace TestFilmicCurve
 				float	EV = floatTrackbarControlExposure.Value;
 
 				m_CB_AutoExposure.m._delta_time = Math.Max( 0.01f, Math.Min( 1.0f, DeltaTime ) );
-				m_CB_AutoExposure.m._white_level = checkBoxEnable.Checked ? floatTrackbarControlIG_WhitePoint.Value : 1.0f;
+				if ( checkBoxEnable.Checked ) {
+					m_CB_AutoExposure.m._white_level = tabControlToneMappingTypes.SelectedIndex == 0 ? floatTrackbarControlIG_WhitePoint.Value : floatTrackbarControlWhitePoint.Value;
+				} else
+					m_CB_AutoExposure.m._white_level = 1.0f;
 
 				m_CB_AutoExposure.m._clip_shadows = 0.0f;				// (0.0) Shadow cropping in histogram (first buckets will be ignored, leading to brighter image)
 				m_CB_AutoExposure.m._clip_highlights = 1.0f;			// (1.0) Highlights cropping in histogram (last buckets will be ignored, leading to darker image)
@@ -357,16 +368,22 @@ namespace TestFilmicCurve
 				m_CB_ToneMapping.m._Flags = (checkBoxEnable.Checked ? 1U : 0U)
 										  | (checkBoxDebugLuminanceLevel.Checked ? 2U : 0U)
 										  | (checkBoxShowHistogram.Checked ? 4U : 0U)
-										  | (tabControlToneMappingTypes.SelectedIndex == 0 ? 0U : 8U);
+										  | (tabControlToneMappingTypes.SelectedIndex == 0 ? 0U : 8U)
+										  | (checkBoxLuminanceOnly.Checked ? 16U : 0U);
 				if ( tabControlToneMappingTypes.SelectedIndex == 0 ) {
 					m_CB_ToneMapping.m._WhitePoint = floatTrackbarControlIG_WhitePoint.Value;
 					m_CB_ToneMapping.m._A = floatTrackbarControlIG_BlackPoint.Value;
-					m_CB_ToneMapping.m._B = floatTrackbarControlIG_JunctionPoint.Value;
+					m_CB_ToneMapping.m._B = Math.Min( m_CB_ToneMapping.m._WhitePoint-1e-3f, floatTrackbarControlIG_JunctionPoint.Value );
 					m_CB_ToneMapping.m._C = ComputeToeStrength();// floatTrackbarControlIG_ToeStrength.Value;
 					m_CB_ToneMapping.m._D = ComputeShoulderStrength();// floatTrackbarControlIG_ShoulderStrength.Value;
 
 					// Compute junction factor
-					m_CB_ToneMapping.m._E = (1.0f - floatTrackbarControlIG_ToeStrength.Value) * (floatTrackbarControlIG_JunctionPoint.Value - floatTrackbarControlIG_BlackPoint.Value) / ((1.0f - floatTrackbarControlIG_ShoulderStrength.Value) * (floatTrackbarControlIG_WhitePoint.Value - floatTrackbarControlIG_JunctionPoint.Value) + (1.0f - floatTrackbarControlIG_ToeStrength.Value) * (floatTrackbarControlIG_JunctionPoint.Value - floatTrackbarControlIG_BlackPoint.Value));
+					float	b = m_CB_ToneMapping.m._A;
+					float	w = m_CB_ToneMapping.m._WhitePoint;
+					float	t = m_CB_ToneMapping.m._C;
+					float	s = m_CB_ToneMapping.m._D;
+					float	c = m_CB_ToneMapping.m._B;
+					m_CB_ToneMapping.m._E = (1.0f - t) * (c - b) / ((1.0f - s) * (w - c) + (1.0f - t) * (c - b));
 				} else {
 					// Hable Filmic
 					m_CB_ToneMapping.m._WhitePoint = floatTrackbarControlWhitePoint.Value;
@@ -416,6 +433,12 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 		{
 			outputPanelFilmic_Insomniac.Visible = tabControlToneMappingTypes.SelectedIndex == 0;
 			panelGraph_Hable.Visible = tabControlToneMappingTypes.SelectedIndex == 1;
+		}
+
+		private void checkBoxLogLuminance_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanelFilmic_Insomniac.ShowLogLuminance = checkBoxLogLuminance.Checked;
+			panelGraph_Hable.ShowLogLuminance = checkBoxLogLuminance.Checked;
 		}
 
 		#region Hable
@@ -476,7 +499,7 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 
 		float	ComputeToeStrength() {
 //			return (float) Math.Pow( floatTrackbarControlIG_ToeStrength.Value, floatTrackbarControlTest.Value );
-			return (float) Math.Pow( floatTrackbarControlIG_ToeStrength.Value, 2.0 );	// Empirical
+			return Math.Min( 0.999f, (float) Math.Pow( floatTrackbarControlIG_ToeStrength.Value, 2.0 ) );	// Empirical
 		}
 
 		private void floatTrackbarControlIG_ToeStrength_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
@@ -486,7 +509,7 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 
 		float	ComputeShoulderStrength() {
 //			return (float) Math.Pow( floatTrackbarControlIG_ShoulderStrength.Value, floatTrackbarControlTest.Value );
-			return (float) Math.Pow( floatTrackbarControlIG_ShoulderStrength.Value, 0.2 );	// Empirical
+			return Math.Min( 0.999f, (float) Math.Pow( floatTrackbarControlIG_ShoulderStrength.Value, 0.2 ) );	// Empirical
 		}
 		private void floatTrackbarControlIG_ShoulderStrength_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
 		{
@@ -516,25 +539,96 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 				m_Device.ReloadModifiedShaders();
 		}
 
+		float	m_resetValue_IG_b;
+		float	m_resetValue_IG_w;
+		float	m_resetValue_IG_c;
+		float	m_resetValue_IG_t;
+		float	m_resetValue_IG_s;
+
+		float	m_resetValue_Hable_A;
+		float	m_resetValue_Hable_B;
+		float	m_resetValue_Hable_C;
+		float	m_resetValue_Hable_D;
+		float	m_resetValue_Hable_E;
+		float	m_resetValue_Hable_F;
+		float	m_resetValue_Hable_W;
+		void	SaveResetValues() {
+			m_resetValue_IG_b = floatTrackbarControlIG_BlackPoint.Value;
+			m_resetValue_IG_w = floatTrackbarControlIG_WhitePoint.Value;
+			m_resetValue_IG_c = floatTrackbarControlIG_JunctionPoint.Value;
+			m_resetValue_IG_t = floatTrackbarControlIG_ToeStrength.Value;
+			m_resetValue_IG_s = floatTrackbarControlIG_ShoulderStrength.Value;
+
+			m_resetValue_Hable_A = floatTrackbarControlA.Value;
+			m_resetValue_Hable_B = floatTrackbarControlB.Value;
+			m_resetValue_Hable_C = floatTrackbarControlC.Value;
+			m_resetValue_Hable_D = floatTrackbarControlD.Value;
+			m_resetValue_Hable_E = floatTrackbarControlE.Value;
+			m_resetValue_Hable_F = floatTrackbarControlF.Value;
+			m_resetValue_Hable_W = floatTrackbarControlWhitePoint.Value;
+		}
+
 		private void buttonReset_Click( object sender, EventArgs e )
 		{
 			if ( tabControlToneMappingTypes.SelectedIndex == 0 ) {
-				floatTrackbarControlIG_BlackPoint.Value = 0.0f;
-				floatTrackbarControlIG_WhitePoint.Value = 10.0f;
-				floatTrackbarControlIG_JunctionPoint.Value = 0.5f;
-				floatTrackbarControlIG_ToeStrength.Value = 0.25f;
-				floatTrackbarControlIG_ShoulderStrength.Value = 0.8f;
+				floatTrackbarControlIG_BlackPoint.Value = m_resetValue_IG_b;
+				 floatTrackbarControlIG_WhitePoint.Value = m_resetValue_IG_w;
+				 floatTrackbarControlIG_JunctionPoint.Value = m_resetValue_IG_c;
+				 floatTrackbarControlIG_ToeStrength.Value = m_resetValue_IG_t;
+				 floatTrackbarControlIG_ShoulderStrength.Value = m_resetValue_IG_s;
 			} else {
-				floatTrackbarControlA.Value = 0.15f;
-				floatTrackbarControlB.Value = 0.5f;
-				floatTrackbarControlC.Value = 0.1f;
-				floatTrackbarControlD.Value = 0.2f;
-				floatTrackbarControlE.Value = 0.02f;
-				floatTrackbarControlF.Value = 0.3f;
-				floatTrackbarControlWhitePoint.Value = 10f;
+				floatTrackbarControlA.Value = m_resetValue_Hable_A;
+				floatTrackbarControlB.Value = m_resetValue_Hable_B;
+				floatTrackbarControlC.Value = m_resetValue_Hable_C;
+				floatTrackbarControlD.Value = m_resetValue_Hable_D;
+				floatTrackbarControlE.Value = m_resetValue_Hable_E;
+				floatTrackbarControlF.Value = m_resetValue_Hable_F;
+				floatTrackbarControlWhitePoint.Value = m_resetValue_Hable_W;
 			}
 		}
 
 		#endregion
+
+		private void panelOutput_DoubleClick( object sender, EventArgs e )
+		{
+			string	CubeMapName = m_AppKey.GetValue( "LastSelectedCubeMap", new System.IO.FileInfo( "garage4_hd.dds" ).FullName ) as string;
+			openFileDialog.FileName = System.IO.Path.GetFileName( CubeMapName );
+			openFileDialog.InitialDirectory = System.IO.Path.GetDirectoryName( CubeMapName );
+			if ( openFileDialog.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			System.IO.FileInfo	SelectedMapFile = new System.IO.FileInfo( openFileDialog.FileName );
+			try
+			{
+				Texture2D	Tex_CubeMap = LoadCubeMap( SelectedMapFile );
+				if ( Tex_CubeMap == null )
+					throw new Exception( "Failed to create cube map!" );
+
+				if ( m_Tex_CubeMap != null )
+					m_Tex_CubeMap.Dispose();
+				m_Tex_CubeMap = Tex_CubeMap;
+
+				m_AppKey.SetValue( "LastSelectedCubeMap", SelectedMapFile.FullName );
+			} catch ( Exception _e ) {
+				MessageBox.Show( this, "An error occurred while opening cube map file \"" + SelectedMapFile.FullName + "\":\r\n\r\n" + _e.Message, "Film Tone Mapping Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
+		}
+
+		Texture2D LoadCubeMap( System.IO.FileInfo _FileName ) {
+			if ( !_FileName.Exists )
+				throw new Exception( "File not found!" );
+			
+			string	Ext = _FileName.Extension.ToLower();
+			switch ( Ext ) {
+				case ".dds":
+					return DirectXTexManaged.TextureCreator.CreateTexture2DFromDDSFile( m_Device, _FileName.FullName );
+				case ".bimage": {
+					BImage I = new BImage( _FileName );
+					return I.CreateTextureCube( m_Device );
+				}
+				default:
+					throw new Exception( "Unsupported image extension!" );
+			}
+		}
 	}
 }
