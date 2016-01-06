@@ -72,11 +72,16 @@
 			this.label12 = new System.Windows.Forms.Label();
 			this.tabPageToneMappingHabble = new System.Windows.Forms.TabPage();
 			this.checkBoxLogLuminance = new System.Windows.Forms.CheckBox();
+			this.openFileDialogCubeMap = new System.Windows.Forms.OpenFileDialog();
+			this.checkBoxAutoExposureUseWhiteLevel = new System.Windows.Forms.CheckBox();
 			this.panelOutput = new TestFilmicCurve.PanelOutput3D(this.components);
 			this.outputPanelHammersley1 = new TestFilmicCurve.OutputPanelHammersley(this.components);
 			this.outputPanelFilmic_Insomniac = new TestFilmicCurve.OutputPanelFilmic_Insomniac(this.components);
 			this.panelGraph_Hable = new TestFilmicCurve.OutputPanelFilmic_Hable(this.components);
-			this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
+			this.saveFileDialogPreset = new System.Windows.Forms.SaveFileDialog();
+			this.openFileDialogPreset = new System.Windows.Forms.OpenFileDialog();
+			this.buttonLoadPreset = new System.Windows.Forms.Button();
+			this.buttonSavePreset = new System.Windows.Forms.Button();
 			this.tabControlToneMappingTypes.SuspendLayout();
 			this.tabPageCustom.SuspendLayout();
 			this.tabPageToneMappingHabble.SuspendLayout();
@@ -165,7 +170,7 @@
 			// 
 			this.label8.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label8.AutoSize = true;
-			this.label8.Location = new System.Drawing.Point(1270, 269);
+			this.label8.Location = new System.Drawing.Point(1270, 257);
 			this.label8.Name = "label8";
 			this.label8.Size = new System.Drawing.Size(44, 13);
 			this.label8.TabIndex = 2;
@@ -175,7 +180,7 @@
 			// 
 			this.label9.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label9.AutoSize = true;
-			this.label9.Location = new System.Drawing.Point(1270, 296);
+			this.label9.Location = new System.Drawing.Point(1270, 284);
 			this.label9.Name = "label9";
 			this.label9.Size = new System.Drawing.Size(44, 13);
 			this.label9.TabIndex = 2;
@@ -312,7 +317,7 @@
 			// floatTrackbarControlScaleY
 			// 
 			this.floatTrackbarControlScaleY.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlScaleY.Location = new System.Drawing.Point(1320, 291);
+			this.floatTrackbarControlScaleY.Location = new System.Drawing.Point(1320, 279);
 			this.floatTrackbarControlScaleY.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlScaleY.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlScaleY.Name = "floatTrackbarControlScaleY";
@@ -367,7 +372,7 @@
 			// floatTrackbarControlScaleX
 			// 
 			this.floatTrackbarControlScaleX.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlScaleX.Location = new System.Drawing.Point(1320, 265);
+			this.floatTrackbarControlScaleX.Location = new System.Drawing.Point(1320, 253);
 			this.floatTrackbarControlScaleX.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlScaleX.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlScaleX.Name = "floatTrackbarControlScaleX";
@@ -582,6 +587,25 @@
 			this.checkBoxLogLuminance.UseVisualStyleBackColor = true;
 			this.checkBoxLogLuminance.CheckedChanged += new System.EventHandler(this.checkBoxLogLuminance_CheckedChanged);
 			// 
+			// openFileDialogCubeMap
+			// 
+			this.openFileDialogCubeMap.DefaultExt = "*.dds";
+			this.openFileDialogCubeMap.Filter = "Image Files|*.dds;*.bimage|All Files|*.*";
+			this.openFileDialogCubeMap.Title = "Choose a cube map texture to load";
+			// 
+			// checkBoxAutoExposureUseWhiteLevel
+			// 
+			this.checkBoxAutoExposureUseWhiteLevel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.checkBoxAutoExposureUseWhiteLevel.AutoSize = true;
+			this.checkBoxAutoExposureUseWhiteLevel.Checked = true;
+			this.checkBoxAutoExposureUseWhiteLevel.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxAutoExposureUseWhiteLevel.Location = new System.Drawing.Point(1265, 304);
+			this.checkBoxAutoExposureUseWhiteLevel.Name = "checkBoxAutoExposureUseWhiteLevel";
+			this.checkBoxAutoExposureUseWhiteLevel.Size = new System.Drawing.Size(218, 17);
+			this.checkBoxAutoExposureUseWhiteLevel.TabIndex = 6;
+			this.checkBoxAutoExposureUseWhiteLevel.Text = "Auto-Exposure Accounts for White Level";
+			this.checkBoxAutoExposureUseWhiteLevel.UseVisualStyleBackColor = true;
+			// 
 			// panelOutput
 			// 
 			this.panelOutput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -640,21 +664,52 @@
 			this.panelGraph_Hable.Visible = false;
 			this.panelGraph_Hable.WhitePoint = 10F;
 			// 
-			// openFileDialog
+			// saveFileDialogPreset
 			// 
-			this.openFileDialog.DefaultExt = "*.dds";
-			this.openFileDialog.Filter = "Image Files|*.dds;*.bimage|All Files|*.*";
-			this.openFileDialog.Title = "Choose a cube map texture to load";
+			this.saveFileDialogPreset.DefaultExt = "*.xml";
+			this.saveFileDialogPreset.Filter = "Preset Files|*.xml|All Files|*.*";
+			this.saveFileDialogPreset.Title = "Choose a preset file to save";
+			// 
+			// openFileDialogPreset
+			// 
+			this.openFileDialogPreset.DefaultExt = "*.xml";
+			this.openFileDialogPreset.Filter = "Preset Files|*.xml|All Files|*.*";
+			this.openFileDialogPreset.Title = "Choose a preset to load";
+			// 
+			// buttonLoadPreset
+			// 
+			this.buttonLoadPreset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonLoadPreset.Location = new System.Drawing.Point(1359, 794);
+			this.buttonLoadPreset.Name = "buttonLoadPreset";
+			this.buttonLoadPreset.Size = new System.Drawing.Size(75, 23);
+			this.buttonLoadPreset.TabIndex = 8;
+			this.buttonLoadPreset.Text = "Load Preset";
+			this.buttonLoadPreset.UseVisualStyleBackColor = true;
+			this.buttonLoadPreset.Click += new System.EventHandler(this.buttonLoadPreset_Click);
+			// 
+			// buttonSavePreset
+			// 
+			this.buttonSavePreset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonSavePreset.Location = new System.Drawing.Point(1445, 794);
+			this.buttonSavePreset.Name = "buttonSavePreset";
+			this.buttonSavePreset.Size = new System.Drawing.Size(75, 23);
+			this.buttonSavePreset.TabIndex = 8;
+			this.buttonSavePreset.Text = "Save Preset";
+			this.buttonSavePreset.UseVisualStyleBackColor = true;
+			this.buttonSavePreset.Click += new System.EventHandler(this.buttonSavePreset_Click);
 			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1532, 829);
+			this.Controls.Add(this.buttonSavePreset);
+			this.Controls.Add(this.buttonLoadPreset);
 			this.Controls.Add(this.tabControlToneMappingTypes);
 			this.Controls.Add(this.checkBoxShowHistogram);
 			this.Controls.Add(this.checkBoxLogLuminance);
 			this.Controls.Add(this.checkBoxDebugLuminanceLevel);
+			this.Controls.Add(this.checkBoxAutoExposureUseWhiteLevel);
 			this.Controls.Add(this.checkBoxEnable);
 			this.Controls.Add(this.buttonReset);
 			this.Controls.Add(this.buttonReload);
@@ -732,7 +787,12 @@
 		private OutputPanelFilmic_Insomniac outputPanelFilmic_Insomniac;
 		private System.Windows.Forms.CheckBox checkBoxLuminanceOnly;
 		private System.Windows.Forms.CheckBox checkBoxLogLuminance;
-		private System.Windows.Forms.OpenFileDialog openFileDialog;
+		private System.Windows.Forms.OpenFileDialog openFileDialogCubeMap;
+		private System.Windows.Forms.CheckBox checkBoxAutoExposureUseWhiteLevel;
+		private System.Windows.Forms.SaveFileDialog saveFileDialogPreset;
+		private System.Windows.Forms.OpenFileDialog openFileDialogPreset;
+		private System.Windows.Forms.Button buttonLoadPreset;
+		private System.Windows.Forms.Button buttonSavePreset;
 	}
 }
 

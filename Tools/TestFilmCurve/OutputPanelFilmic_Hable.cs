@@ -177,7 +177,7 @@ namespace TestFilmicCurve
 					float	Xw = Luminance2Client( m_WhitePoint );
 					DrawLine( G, Pens.LightGreen, Xw, 0.0f, Xw, 1.0f );
 
-					int	MaxI = (int) Math.Ceiling( m_WhitePoint );
+					int	MaxI = (int) Math.Ceiling( m_ScaleX );
 					for ( int i=0; i < MaxI; i++ )
 						for ( int j=0; j < 10; j++ ) {
 							float	height = 0.02f * (1.0f + (j==0 ? 1 : 0));
