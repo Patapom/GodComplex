@@ -7,6 +7,8 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Drawing.Imaging;
+using Microsoft.Win32;
+using System.Xml;
 
 using RendererManaged;
 using Nuaj.Cirrus.Utility;
@@ -15,6 +17,8 @@ namespace TestFilmicCurve
 {
 	public partial class Form1 : Form
 	{
+		private RegistryKey	m_AppKey;
+
 		private Device		m_Device = new Device();
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -108,10 +112,16 @@ namespace TestFilmicCurve
 		{
 			InitializeComponent();
 
+			#if !DEBUG
+			buttonReload.Visible = false;
+			#endif
+
+			m_AppKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( @"Software\Patapom\ToneMapping" );
+
 			panelGraph_Hable.ScaleX = floatTrackbarControlScaleX.Value;
 			panelGraph_Hable.ScaleY = floatTrackbarControlScaleY.Value;
 
-			buttonReset_Click( buttonReset, EventArgs.Empty );
+			SaveResetValues();
 
 			outputPanelFilmic_Insomniac.ScaleX = floatTrackbarControlScaleX.Value;
 			outputPanelFilmic_Insomniac.ScaleY = floatTrackbarControlScaleY.Value;
@@ -150,6 +160,10 @@ namespace TestFilmicCurve
 			Application.Idle += new EventHandler( Application_Idle );
 		}
 
+		void MessageBox( string _Text, MessageBoxButtons _Buttons, MessageBoxIcon _Icon ) {
+			System.Windows.Forms.MessageBox.Show( this, _Text, "Filmic Tone Mapping Test", _Buttons, _Icon );
+		}
+
 		protected override void OnLoad( EventArgs e )
 		{
 			base.OnLoad( e );
@@ -158,7 +172,7 @@ namespace TestFilmicCurve
 				m_Device.Init( panelOutput.Handle, false, true );
 			} catch ( Exception _e ) {
 				m_Device = null;
-				MessageBox.Show( "Failed to initialize DX device!\n\n" + _e.Message, "Filmic Tone Mapping Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				MessageBox( "Failed to initialize DX device!\n\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 				return;
 			}
 
@@ -168,13 +182,21 @@ namespace TestFilmicCurve
 			m_CB_ToneMapping = new ConstantBuffer<CB_ToneMapping>( m_Device, 10 );
 
 			try {
+			#if DEBUG
 				m_Shader_RenderHDR = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderCubeMap.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_Shader_ComputeTallHistogram = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/AutoExposure/ComputeTallHistogram.hlsl" ) ), "CS", null );
 				m_Shader_FinalizeHistogram = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/AutoExposure/FinalizeHistogram.hlsl" ) ), "CS", null );
 				m_Shader_ComputeAutoExposure = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/AutoExposure/ComputeAutoExposure.hlsl" ) ), "CS", null );
 				m_Shader_ToneMapping = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/ToneMapping.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			#else
+				m_Shader_RenderHDR = Shader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/RenderCubeMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				m_Shader_ComputeTallHistogram = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/AutoExposure/ComputeTallHistogram.hlsl" ), "CS" );
+				m_Shader_FinalizeHistogram = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/AutoExposure/FinalizeHistogram.hlsl" ), "CS" );
+				m_Shader_ComputeAutoExposure = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/AutoExposure/ComputeAutoExposure.hlsl" ), "CS" );
+				m_Shader_ToneMapping = Shader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/ToneMapping.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+			#endif
 			} catch ( Exception _e ) {
-				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "Filmic Tone Mapping Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				MessageBox( "Shader failed to compile!\n\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_RenderHDR = null;
 				m_Shader_ComputeTallHistogram = null;
 				m_Shader_FinalizeHistogram = null;
@@ -202,17 +224,18 @@ namespace TestFilmicCurve
 			m_Buffer_AutoExposureTarget = new StructuredBuffer<autoExposure_t>( m_Device, 1, true );
 
 			// Load cube map
-//			m_Tex_CubeMap = DirectXTexManaged.TextureCreator.CreateTexture2DFromDDSFile( m_Device, "garage4_hd.dds" );
-			{
-				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_28_cube_BC6H_UF16.bimage" ) );		// Tunnel
-// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_89_cube_BC6H_UF16.bimage" ) );		// Large sky
-// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_115_cube_BC6H_UF16.bimage" ) );	// Indoor
-// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_123_cube_BC6H_UF16.bimage" ) );	// Under the arch
-// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_189_cube_BC6H_UF16.bimage" ) );	// Indoor viewing out (vista)
-// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_246_cube_BC6H_UF16.bimage" ) );	// Nice! Statue's feet
-// 				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_248_cube_BC6H_UF16.bimage" ) );	// Nice! In a corner with lot of sky
-//				BImage I = new BImage( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_1127_cube_BC6H_UF16.bimage" ) );	// Okay. Corner, with vista and sky
-				m_Tex_CubeMap = I.CreateTextureCube( m_Device );
+			try {
+				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( "garage4_hd.dds" ) );
+//				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\hdrcube6.dds" ) );
+//				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_28_cube_BC6H_UF16.bimage" ) );		// Tunnel
+// 				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_89_cube_BC6H_UF16.bimage" ) );		// Large sky
+// 				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_115_cube_BC6H_UF16.bimage" ) );	// Indoor
+// 				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_123_cube_BC6H_UF16.bimage" ) );	// Under the arch
+// 				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_189_cube_BC6H_UF16.bimage" ) );	// Indoor viewing out (vista)
+// 				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_246_cube_BC6H_UF16.bimage" ) );	// Nice! Statue's feet
+// 				m_Tex_CubeMap = LoadCubeMap( new System.IO.FileInfo( @"..\..\..\Arkane\CubeMaps\dust_return\pr_obe_248_cube_BC6H_UF16.bimage" ) );	// Nice! In a corner with lot of sky
+
+			} catch ( Exception ) {
 			}
 
 			// Setup camera
@@ -221,41 +244,47 @@ namespace TestFilmicCurve
 			m_Manipulator.InitializeCamera( new float3( 0, 0, 1 ), new float3( 0, 0, 0 ), float3.UnitY );
 		}
 
-		protected override void OnFormClosed( FormClosedEventArgs e ) {
+		protected bool	m_closing = false;
+		protected override void OnFormClosing( FormClosingEventArgs e ) {
+			m_closing = true;
 			if ( m_Device == null )
 				return;
 
-			if ( m_Shader_ToneMapping != null ) {
-				m_Shader_ToneMapping.Dispose();
-			}
-			if ( m_Shader_ComputeAutoExposure != null ) {
-				m_Shader_ComputeAutoExposure.Dispose();
-			}
-			if ( m_Shader_FinalizeHistogram != null ) {
-				m_Shader_FinalizeHistogram.Dispose();
-			}
-			if ( m_Shader_ComputeTallHistogram != null ) {
-				m_Shader_ComputeTallHistogram.Dispose();
-			}
-			if ( m_Shader_RenderHDR != null ) {
-				m_Shader_RenderHDR.Dispose();
-			}
+			#if DEBUG
+				if ( m_Shader_ToneMapping != null ) {
+					m_Shader_ToneMapping.Dispose();
+				}
+				if ( m_Shader_ComputeAutoExposure != null ) {
+					m_Shader_ComputeAutoExposure.Dispose();
+				}
+				if ( m_Shader_FinalizeHistogram != null ) {
+					m_Shader_FinalizeHistogram.Dispose();
+				}
+				if ( m_Shader_ComputeTallHistogram != null ) {
+					m_Shader_ComputeTallHistogram.Dispose();
+				}
+				if ( m_Shader_RenderHDR != null ) {
+					m_Shader_RenderHDR.Dispose();
+				}
 
-			m_Buffer_AutoExposureTarget.Dispose();
-			m_Buffer_AutoExposureSource.Dispose();
-			m_Tex_Histogram.Dispose();
-			m_Tex_TallHistogram.Dispose();
-			m_Tex_HDR.Dispose();
-			m_Tex_CubeMap.Dispose();
+				m_Buffer_AutoExposureTarget.Dispose();
+				m_Buffer_AutoExposureSource.Dispose();
+				m_Tex_Histogram.Dispose();
+				m_Tex_TallHistogram.Dispose();
+				m_Tex_HDR.Dispose();
+				if ( m_Tex_CubeMap != null )
+					m_Tex_CubeMap.Dispose();
 
-			m_CB_AutoExposure.Dispose();
-			m_CB_ToneMapping.Dispose();
-			m_CB_Camera.Dispose();
-			m_CB_Main.Dispose();
+				m_CB_AutoExposure.Dispose();
+				m_CB_ToneMapping.Dispose();
+				m_CB_Camera.Dispose();
+				m_CB_Main.Dispose();
 
-			m_Device.Exit();
+				m_Device.Exit();
+				m_Device = null;
+			#endif
 
-			base.OnFormClosed( e );
+			base.OnFormClosing( e );
 		}
 
 		void Camera_CameraTransformChanged( object sender, EventArgs e )
@@ -274,7 +303,9 @@ namespace TestFilmicCurve
 		}
 
 		void Application_Idle( object sender, EventArgs e ) {
-			if ( m_Device == null )
+			if ( m_Device == null || m_closing )
+				return;
+			if ( m_Tex_CubeMap == null )
 				return;
 
 			m_CB_Main.m._Resolution = new float3( panelOutput.Width, panelOutput.Height, 0 );
@@ -290,7 +321,8 @@ namespace TestFilmicCurve
 			// 1] Render to the HDR buffer
 			if ( m_Shader_RenderHDR.Use() ) {
 				m_Device.SetRenderTarget( m_Tex_HDR, null );
-				m_Tex_CubeMap.SetPS( 0 );
+				if ( m_Tex_CubeMap != null )
+					m_Tex_CubeMap.SetPS( 0 );
 				m_Device.RenderFullscreenQuad( m_Shader_RenderHDR );
 			}
 
@@ -318,7 +350,10 @@ namespace TestFilmicCurve
 				float	EV = floatTrackbarControlExposure.Value;
 
 				m_CB_AutoExposure.m._delta_time = Math.Max( 0.01f, Math.Min( 1.0f, DeltaTime ) );
-				m_CB_AutoExposure.m._white_level = checkBoxEnable.Checked ? floatTrackbarControlIG_WhitePoint.Value : 1.0f;
+				if ( checkBoxEnable.Checked && checkBoxAutoExposureUseWhiteLevel.Checked ) {
+					m_CB_AutoExposure.m._white_level = tabControlToneMappingTypes.SelectedIndex == 0 ? floatTrackbarControlIG_WhitePoint.Value : floatTrackbarControlWhitePoint.Value;
+				} else
+					m_CB_AutoExposure.m._white_level = 1.0f;
 
 				m_CB_AutoExposure.m._clip_shadows = 0.0f;				// (0.0) Shadow cropping in histogram (first buckets will be ignored, leading to brighter image)
 				m_CB_AutoExposure.m._clip_highlights = 1.0f;			// (1.0) Highlights cropping in histogram (last buckets will be ignored, leading to darker image)
@@ -357,16 +392,22 @@ namespace TestFilmicCurve
 				m_CB_ToneMapping.m._Flags = (checkBoxEnable.Checked ? 1U : 0U)
 										  | (checkBoxDebugLuminanceLevel.Checked ? 2U : 0U)
 										  | (checkBoxShowHistogram.Checked ? 4U : 0U)
-										  | (tabControlToneMappingTypes.SelectedIndex == 0 ? 0U : 8U);
+										  | (tabControlToneMappingTypes.SelectedIndex == 0 ? 0U : 8U)
+										  | (checkBoxLuminanceOnly.Checked ? 16U : 0U);
 				if ( tabControlToneMappingTypes.SelectedIndex == 0 ) {
 					m_CB_ToneMapping.m._WhitePoint = floatTrackbarControlIG_WhitePoint.Value;
 					m_CB_ToneMapping.m._A = floatTrackbarControlIG_BlackPoint.Value;
-					m_CB_ToneMapping.m._B = floatTrackbarControlIG_JunctionPoint.Value;
+					m_CB_ToneMapping.m._B = Math.Min( m_CB_ToneMapping.m._WhitePoint-1e-3f, floatTrackbarControlIG_JunctionPoint.Value );
 					m_CB_ToneMapping.m._C = ComputeToeStrength();// floatTrackbarControlIG_ToeStrength.Value;
 					m_CB_ToneMapping.m._D = ComputeShoulderStrength();// floatTrackbarControlIG_ShoulderStrength.Value;
 
 					// Compute junction factor
-					m_CB_ToneMapping.m._E = (1.0f - floatTrackbarControlIG_ToeStrength.Value) * (floatTrackbarControlIG_JunctionPoint.Value - floatTrackbarControlIG_BlackPoint.Value) / ((1.0f - floatTrackbarControlIG_ShoulderStrength.Value) * (floatTrackbarControlIG_WhitePoint.Value - floatTrackbarControlIG_JunctionPoint.Value) + (1.0f - floatTrackbarControlIG_ToeStrength.Value) * (floatTrackbarControlIG_JunctionPoint.Value - floatTrackbarControlIG_BlackPoint.Value));
+					float	b = m_CB_ToneMapping.m._A;
+					float	w = m_CB_ToneMapping.m._WhitePoint;
+					float	t = m_CB_ToneMapping.m._C;
+					float	s = m_CB_ToneMapping.m._D;
+					float	c = m_CB_ToneMapping.m._B;
+					m_CB_ToneMapping.m._E = (1.0f - t) * (c - b) / ((1.0f - s) * (w - c) + (1.0f - t) * (c - b));
 				} else {
 					// Hable Filmic
 					m_CB_ToneMapping.m._WhitePoint = floatTrackbarControlWhitePoint.Value;
@@ -416,6 +457,12 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 		{
 			outputPanelFilmic_Insomniac.Visible = tabControlToneMappingTypes.SelectedIndex == 0;
 			panelGraph_Hable.Visible = tabControlToneMappingTypes.SelectedIndex == 1;
+		}
+
+		private void checkBoxLogLuminance_CheckedChanged( object sender, EventArgs e )
+		{
+			outputPanelFilmic_Insomniac.ShowLogLuminance = checkBoxLogLuminance.Checked;
+			panelGraph_Hable.ShowLogLuminance = checkBoxLogLuminance.Checked;
 		}
 
 		#region Hable
@@ -476,7 +523,7 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 
 		float	ComputeToeStrength() {
 //			return (float) Math.Pow( floatTrackbarControlIG_ToeStrength.Value, floatTrackbarControlTest.Value );
-			return (float) Math.Pow( floatTrackbarControlIG_ToeStrength.Value, 2.0 );	// Empirical
+			return Math.Min( 0.999f, (float) Math.Pow( floatTrackbarControlIG_ToeStrength.Value, 2.0 ) );	// Empirical
 		}
 
 		private void floatTrackbarControlIG_ToeStrength_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
@@ -486,7 +533,7 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 
 		float	ComputeShoulderStrength() {
 //			return (float) Math.Pow( floatTrackbarControlIG_ShoulderStrength.Value, floatTrackbarControlTest.Value );
-			return (float) Math.Pow( floatTrackbarControlIG_ShoulderStrength.Value, 0.2 );	// Empirical
+			return Math.Min( 0.999f, (float) Math.Pow( floatTrackbarControlIG_ShoulderStrength.Value, 0.2 ) );	// Empirical
 		}
 		private void floatTrackbarControlIG_ShoulderStrength_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
 		{
@@ -516,25 +563,198 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 				m_Device.ReloadModifiedShaders();
 		}
 
+		float	m_resetValue_IG_b;
+		float	m_resetValue_IG_w;
+		float	m_resetValue_IG_c;
+		float	m_resetValue_IG_t;
+		float	m_resetValue_IG_s;
+
+		float	m_resetValue_Hable_A;
+		float	m_resetValue_Hable_B;
+		float	m_resetValue_Hable_C;
+		float	m_resetValue_Hable_D;
+		float	m_resetValue_Hable_E;
+		float	m_resetValue_Hable_F;
+		float	m_resetValue_Hable_W;
+		void	SaveResetValues() {
+			m_resetValue_IG_b = floatTrackbarControlIG_BlackPoint.Value;
+			m_resetValue_IG_w = floatTrackbarControlIG_WhitePoint.Value;
+			m_resetValue_IG_c = floatTrackbarControlIG_JunctionPoint.Value;
+			m_resetValue_IG_t = floatTrackbarControlIG_ToeStrength.Value;
+			m_resetValue_IG_s = floatTrackbarControlIG_ShoulderStrength.Value;
+
+			m_resetValue_Hable_A = floatTrackbarControlA.Value;
+			m_resetValue_Hable_B = floatTrackbarControlB.Value;
+			m_resetValue_Hable_C = floatTrackbarControlC.Value;
+			m_resetValue_Hable_D = floatTrackbarControlD.Value;
+			m_resetValue_Hable_E = floatTrackbarControlE.Value;
+			m_resetValue_Hable_F = floatTrackbarControlF.Value;
+			m_resetValue_Hable_W = floatTrackbarControlWhitePoint.Value;
+		}
+
 		private void buttonReset_Click( object sender, EventArgs e )
 		{
 			if ( tabControlToneMappingTypes.SelectedIndex == 0 ) {
-				floatTrackbarControlIG_BlackPoint.Value = 0.0f;
-				floatTrackbarControlIG_WhitePoint.Value = 10.0f;
-				floatTrackbarControlIG_JunctionPoint.Value = 0.5f;
-				floatTrackbarControlIG_ToeStrength.Value = 0.25f;
-				floatTrackbarControlIG_ShoulderStrength.Value = 0.8f;
+				floatTrackbarControlIG_BlackPoint.Value = m_resetValue_IG_b;
+				 floatTrackbarControlIG_WhitePoint.Value = m_resetValue_IG_w;
+				 floatTrackbarControlIG_JunctionPoint.Value = m_resetValue_IG_c;
+				 floatTrackbarControlIG_ToeStrength.Value = m_resetValue_IG_t;
+				 floatTrackbarControlIG_ShoulderStrength.Value = m_resetValue_IG_s;
 			} else {
-				floatTrackbarControlA.Value = 0.15f;
-				floatTrackbarControlB.Value = 0.5f;
-				floatTrackbarControlC.Value = 0.1f;
-				floatTrackbarControlD.Value = 0.2f;
-				floatTrackbarControlE.Value = 0.02f;
-				floatTrackbarControlF.Value = 0.3f;
-				floatTrackbarControlWhitePoint.Value = 10f;
+				floatTrackbarControlA.Value = m_resetValue_Hable_A;
+				floatTrackbarControlB.Value = m_resetValue_Hable_B;
+				floatTrackbarControlC.Value = m_resetValue_Hable_C;
+				floatTrackbarControlD.Value = m_resetValue_Hable_D;
+				floatTrackbarControlE.Value = m_resetValue_Hable_E;
+				floatTrackbarControlF.Value = m_resetValue_Hable_F;
+				floatTrackbarControlWhitePoint.Value = m_resetValue_Hable_W;
 			}
 		}
 
 		#endregion
+
+		private void panelOutput_DoubleClick( object sender, EventArgs e )
+		{
+			string	CubeMapName = m_AppKey.GetValue( "LastSelectedCubeMap", new System.IO.FileInfo( "garage4_hd.dds" ).FullName ) as string;
+			openFileDialogCubeMap.FileName = System.IO.Path.GetFileName( CubeMapName );
+			openFileDialogCubeMap.InitialDirectory = System.IO.Path.GetDirectoryName( CubeMapName );
+			if ( openFileDialogCubeMap.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			System.IO.FileInfo	SelectedMapFile = new System.IO.FileInfo( openFileDialogCubeMap.FileName );
+			try
+			{
+				Texture2D	Tex_CubeMap = LoadCubeMap( SelectedMapFile );
+				if ( Tex_CubeMap == null )
+					throw new Exception( "Failed to create cube map!" );
+
+				m_closing = true;
+				if ( m_Tex_CubeMap != null )
+					m_Tex_CubeMap.Dispose();
+				m_Tex_CubeMap = Tex_CubeMap;
+				m_closing = false;
+
+				m_AppKey.SetValue( "LastSelectedCubeMap", SelectedMapFile.FullName );
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while opening cube map file \"" + SelectedMapFile.FullName + "\":\r\n\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
+		}
+
+		Texture2D LoadCubeMap( System.IO.FileInfo _FileName ) {
+			if ( !_FileName.Exists )
+				throw new Exception( "File not found!" );
+			
+			string	Ext = _FileName.Extension.ToLower();
+			switch ( Ext ) {
+				case ".dds":
+					return DirectXTexManaged.TextureCreator.CreateTexture2DFromDDSFile( m_Device, _FileName.FullName );
+				case ".bimage": {
+					BImage I = new BImage( _FileName );
+					return I.CreateTextureCube( m_Device );
+				}
+				default:
+					throw new Exception( "Unsupported image extension!" );
+			}
+		}
+
+		void	LoadPreset( System.IO.FileInfo _FileName ) {
+			XmlDocument	Doc = new System.Xml.XmlDocument();
+			Doc.Load( _FileName.FullName );
+
+			XmlElement	Root = Doc["Root"];
+
+			// Serialize Insomniac version
+			XmlElement	Props_IG = Root["Insomniac"];
+			ReadValue( Props_IG, "BlackPoint", floatTrackbarControlIG_BlackPoint );
+			ReadValue( Props_IG, "WhitePoint", floatTrackbarControlIG_WhitePoint );
+			ReadValue( Props_IG, "JunctionPoint", floatTrackbarControlIG_JunctionPoint );
+			ReadValue( Props_IG, "ToeStrength", floatTrackbarControlIG_ToeStrength );
+			ReadValue( Props_IG, "ShoulderStrength", floatTrackbarControlIG_ShoulderStrength );
+
+			// Serialize Hable version
+			XmlElement	Props_Hable = Root["Hable"];
+			ReadValue( Props_Hable, "WhitePoint", floatTrackbarControlWhitePoint );
+			ReadValue( Props_Hable, "A", floatTrackbarControlA );
+			ReadValue( Props_Hable, "B", floatTrackbarControlB );
+			ReadValue( Props_Hable, "C", floatTrackbarControlC );
+			ReadValue( Props_Hable, "D", floatTrackbarControlD );
+			ReadValue( Props_Hable, "E", floatTrackbarControlE );
+			ReadValue( Props_Hable, "F", floatTrackbarControlF );
+		}
+
+		void	SavePreset( System.IO.FileInfo _FileName ) {
+			XmlDocument	Doc = new System.Xml.XmlDocument();
+
+			XmlElement	Root = Doc.CreateElement( "Root" );
+			Doc.AppendChild( Root );
+
+			// Serialize Insomniac version
+			XmlElement	Props_IG = Doc.CreateElement( "Insomniac" );
+			Root.AppendChild( Props_IG );
+			AppendValue( Props_IG, "BlackPoint", floatTrackbarControlIG_BlackPoint.Value );
+			AppendValue( Props_IG, "WhitePoint", floatTrackbarControlIG_WhitePoint.Value );
+			AppendValue( Props_IG, "JunctionPoint", floatTrackbarControlIG_JunctionPoint.Value );
+			AppendValue( Props_IG, "ToeStrength", floatTrackbarControlIG_ToeStrength.Value );
+			AppendValue( Props_IG, "ShoulderStrength", floatTrackbarControlIG_ShoulderStrength.Value );
+
+			// Serialize Hable version
+			XmlElement	Props_Hable = Doc.CreateElement( "Hable" );
+			Root.AppendChild( Props_Hable );
+			AppendValue( Props_Hable, "WhitePoint", floatTrackbarControlWhitePoint.Value );
+			AppendValue( Props_Hable, "A", floatTrackbarControlA.Value );
+			AppendValue( Props_Hable, "B", floatTrackbarControlB.Value );
+			AppendValue( Props_Hable, "C", floatTrackbarControlC.Value );
+			AppendValue( Props_Hable, "D", floatTrackbarControlD.Value );
+			AppendValue( Props_Hable, "E", floatTrackbarControlE.Value );
+			AppendValue( Props_Hable, "F", floatTrackbarControlF.Value );
+
+			Doc.Save( _FileName.FullName );
+		}
+
+		void	ReadValue( XmlElement _parent, string _key, FloatTrackbarControl _trackbar ) {
+			XmlElement	Child = _parent[_key];
+			float		value = float.Parse( Child.GetAttribute( "Value" ) );
+			_trackbar.Value = value;
+		}
+
+		void	AppendValue( XmlElement _parent, string _key, float _value ) {
+			XmlElement	Child = _parent.OwnerDocument.CreateElement( _key );
+			_parent.AppendChild( Child );
+			Child.SetAttribute( "Value", _value.ToString() );
+		}
+
+		private void buttonLoadPreset_Click( object sender, EventArgs e )
+		{
+			string	PreviousFileName = m_AppKey.GetValue( "LastSelectedPresetFile", new System.IO.FileInfo( "default.xml" ).FullName ) as string;
+			openFileDialogPreset.FileName = System.IO.Path.GetFileName( PreviousFileName );
+			openFileDialogPreset.InitialDirectory = System.IO.Path.GetDirectoryName( PreviousFileName );
+			if ( openFileDialogPreset.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			System.IO.FileInfo	SelectedFile = new System.IO.FileInfo( openFileDialogPreset.FileName );
+			try {
+				LoadPreset( SelectedFile );
+				m_AppKey.SetValue( "LastSelectedPresetFile", SelectedFile.FullName );
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while opening preset file \"" + SelectedFile.FullName + "\":\r\n\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
+		}
+
+		private void buttonSavePreset_Click( object sender, EventArgs e )
+		{
+			string	PreviousFileName = m_AppKey.GetValue( "LastSelectedPresetFile", new System.IO.FileInfo( "default.xml" ).FullName ) as string;
+			saveFileDialogPreset.FileName = System.IO.Path.GetFileName( PreviousFileName );
+			saveFileDialogPreset.InitialDirectory = System.IO.Path.GetDirectoryName( PreviousFileName );
+			if ( saveFileDialogPreset.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			System.IO.FileInfo	SelectedFile = new System.IO.FileInfo( saveFileDialogPreset.FileName );
+			try {
+				SavePreset( SelectedFile );
+				m_AppKey.SetValue( "LastSelectedPresetFile", SelectedFile.FullName );
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while opening preset file \"" + SelectedFile.FullName + "\":\r\n\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
+		}
 	}
 }
