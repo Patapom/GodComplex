@@ -980,7 +980,7 @@ void	Shader::SaveBinaryBlob( const char* _pShaderFileName, D3D_SHADER_MACRO* _pM
 
 	// Write the blob's length
 	Length = _Blob.GetBufferSize();
-	ASSERT( Length < 65536, "Shader length doesn't fit on 16 bits!" );
+//	ASSERT( Length < 65536, "Shader length doesn't fit on 16 bits!" );
 	fwrite( &Length, sizeof(int), 1, pFile );
 
 	// Write the blob's content

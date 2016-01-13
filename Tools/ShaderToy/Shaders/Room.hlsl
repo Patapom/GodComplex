@@ -20,6 +20,7 @@ cbuffer CB_Main : register(b0) {
 	uint	_OnSenFout5;
 	float	_DebugPlaneHeight;
 	uint	_DebugFlags;
+	float	_DebugParm;
 };
 
 cbuffer CB_Camera : register(b1) {
@@ -121,29 +122,158 @@ float	bowl( float3 p, float3 n, float r_out, float r_in, float h ) {
 	return subtract( hollowedSphere, plane( p, n, h ) );
 }
 
+float	sphereConvex( float3 p, float r, const float dAngle = PI / 10.0 ) {
+
+	float3	dir = normalize( p );
+	float	phi = atan2( dir.z, dir.x );
+	float	theta = acos( clamp( dir.y, -1.0, 1.0 ) );
+
+	phi = dAngle * (0.5 + floor( phi / dAngle ) );
+	theta = dAngle * (0.5 + floor( theta / dAngle ) );
+
+	float2	scPhi;
+	sincos( phi, scPhi.x, scPhi.y );
+	float2	scTheta;
+	sincos( theta, scTheta.x, scTheta.y );
+
+	float3	planeDir = float3( scTheta.x * scPhi.y, scTheta.y, scTheta.x * scPhi.x );
+	float	planeDist = r * cos( 0.5 * dAngle );
+	float3	planePos = planeDist * planeDir;
+	float	planeHitDistance = dot( p - planePos, planeDir ) / dot( planeDir, dir );
+	float3	planeHitPos = p - planeHitDistance * dir;
+
+	return length( p - planeHitPos );
+	return subtract( sphere( p, r ), length( p - planeHitPos ) );
+}
+
+float	sphereConvex2( float3 p, float r, const float dAngle = PI / 10.0 ) {
+
+p.y *= -1.0;
+
+	float	interval = 0.001 + _DebugParm;
+
+	float	dist = length( p );
+	float3	dir = 0.5 * p / dist;
+	float2	stereoP = float2( dir.xz ) / (1.0 + dir.y);
+
+#if 1
+	// Cartersian repeat
+	stereoP = interval * (frac( 0.5 + stereoP / interval ) - 0.5);
+#endif
+
+#if 0
+	// Polar repeat
+	interval = 0.125 * PI;
+	float	radius = length( stereoP );
+	float	angle = atan2( stereoP.y, stereoP.x );
+			angle = fmod( PI + 0.5 * interval + angle, interval ) - 0.5*interval;
+	sincos( angle, stereoP.x, stereoP.y );
+	stereoP *= radius;
+#endif
+
+#if 0
+	// Croute repeat
+	float	radius = length( stereoP );
+	float	newRadius = mod( radius, interval );
+	stereoP *= newRadius / radius;
+#endif
+
+	// Unproject back to 3D cartesian
+	float3	newDir = float3( 2.0 * stereoP.x, 1.0 - dot(stereoP,stereoP), 2.0 * stereoP.y ) / (1.0 + dot(stereoP,stereoP) );
+	float3	newP = dist * newDir;
+
+//	return length(newP) - r;
+	return newP.y - r;
+}
+
+// Repeat around the origin by a fixed angle.
+// For easier use, num of repetitions is used to specify the angle.
+float pModPolar( inout float2 p, float repetitions ) {
+	float	angle = 2.0*PI / repetitions;
+	float	halfAngle = 0.5 * angle;
+	float	a = halfAngle + atan2( p.y, p.x );
+	float	r = length( p );
+	float	cell = floor( a / angle );
+	a = fmod( 100.0 * angle + a, angle ) - halfAngle;
+	p = float2( cos(a), sin(a) ) * r;
+
+	// For an odd number of repetitions, fix cell index of the cell in -x direction
+	// (cell index would be e.g. -5 and 5 in the two halves of the cell):
+//	if ( abs(cell) >= (repetitions/2) ) cell = abs(cell);
+
+	return cell;
+}
+
+float3	pModSpherical( in float3 p, float repetitions ) {
+	float	angle = 2.0*PI / repetitions;
+	float	halfAngle = 0.5 * angle;
+
+	float	r = length( p );
+	float	phi = atan2( p.z, p.x );
+			phi = fmod( 100.5 * angle + phi, angle ) - halfAngle;
+
+	float	theta = asin( clamp( p.y / r, -1.0, 1.0 ) );
+			angle = PI / repetitions;;
+			halfAngle = 0.5 * angle;
+			theta = fmod( 100.5 * angle + theta, angle ) - halfAngle;
+
+	float2	scPhi, scTheta;
+	sincos( phi, scPhi.x, scPhi.y );
+	sincos( theta, scTheta.x, scTheta.y );
+	return r * float3( scTheta.y * scPhi.y, scTheta.x, scTheta.y * scPhi.x );
+}
+
+float	sphereConvex3( float3 p, float r, const float dAngle = PI / 10.0 ) {
+	pModPolar( p.xz, 18.0 );
+	pModPolar( p.xy, 18.0 );
+//	pModPolar( p.xz, lerp( 36.0, 36.0, abs( p.y ) ) );	// Funky
+//	pModPolar( p.xy, lerp( 18.0, 36.0, abs( p.z + p.y ) ) );
+	return p.x - r;
+//	return dot( float2( p.x, -p.z ), SQRT2 ) - r;
+}
+
+float	sphereConvex4( float3 p, float r, const float dAngle = PI / 10.0 ) {
+	p = pModSpherical( p, 18.0 );
+//	return dot( p, normalize(
+//	return length( p ) - r;
+	return p.x - r;
+//	return dot( float2( p.x, -p.z ), SQRT2 ) - r;
+}
+
 float	map( float3 p ) {
+//	float	room = min( -box2( p.xz - float2( 0, 0 ), float2( 4, 4 ) ), plane( p, float3( 0, 1, 0 ), 0.0 ) );
+	float	room = -box2( p.xz - float2( 0, 0 ), float2( 4, 4 ) );	// Without floor
+	float	obj = sphere( p - float3( 0, 1, 0 ), 1.0 );
+//	if ( obj > 2.0 )
+//		return room;
+
+	return min( room, sphereConvex2( p - float3( 0, 1, 0 ), 1.0 ) );
+
 //	return sphere( p - float3( 0, 0.0, 0 ), 1.0 );
-	return min3( bowl( p - float3( 0, 1, 0 ), float3( 0, -1, 0 ), 1.0, 0.95, 0.3 ), plane( p, float3( 0, 1, 0 ), 0.0 ), -box2( p.xz - float2( 0, 0 ), float2( 4, 4 ) ) );
-	return min3(
-		sphere( p - float3( 0, 0.6, 0 ), 0.6 )
-		, plane( p, float3( 0, 1, 0 ), 0.0 )
-//		, box( scale( p - float3( -1, 0.2, 0 ), float3( 1, 1, 1 ) ), float3( 1, 0.2, 1 ) )
-		, box( p - float3( -1, 0.2, 0 ), float3( 0.5, 0.2, 0.5 ) )
-		);
+//	return min3( bowl( p - float3( 0, 1, 0 ), float3( 0, -1, 0 ), 1.0, 0.95, 0.3 ), plane( p, float3( 0, 1, 0 ), 0.0 ), -box2( p.xz - float2( 0, 0 ), float2( 4, 4 ) ) );
+//	return min3(
+//		sphere( p - float3( 0, 0.6, 0 ), 0.6 )
+//		, plane( p, float3( 0, 1, 0 ), 0.0 )
+////		, box( scale( p - float3( -1, 0.2, 0 ), float3( 1, 1, 1 ) ), float3( 1, 0.2, 1 ) )
+//		, box( p - float3( -1, 0.2, 0 ), float3( 0.5, 0.2, 0.5 ) )
+//		);
 }
 
 float3	normal( float3 p, const float _eps=0.01 ) {
 	const float2	e = float2( _eps, 0.0 );
+#if 0
 	return float3(
 			map( p + e.xyy ) - map( p - e.xyy ),
 			map( p + e.yxy ) - map( p - e.yxy ),
 			map( p + e.yyx ) - map( p - e.yyx )
 		) / (2.0 * _eps);
-//	return normalize( float3(
-//			map( p + e.xyy ) - map( p - e.xyy ),
-//			map( p + e.yxy ) - map( p - e.yxy ),
-//			map( p + e.yyx ) - map( p - e.yyx )
-//		) );
+#else
+	return normalize( float3(
+			map( p + e.xyy ) - map( p - e.xyy ),
+			map( p + e.yxy ) - map( p - e.yxy ),
+			map( p + e.yyx ) - map( p - e.yyx )
+		) );
+#endif
 }
 
 float	AO( float3 p, float3 n, float _strength, const float _stepSize=0.1, const uint _stepsCount=5 ) {
@@ -276,11 +406,11 @@ float3	ComputeLighting( float3 _pos, float3 _normal, float3 _view, float3 _IOR )
 	Surf.wsView = _view;
 	Surf.roughness = 0.1;
 
-	float3	LightPos = float3( 0, 4, 0 );
+	float3	LightPos = float3( 0, 8, 0 );
 	float3	LightX = float3( 1, 0, 0 );
 	float3	LightZ = float3( 0, -1, 0 );
 	float2	LightScale = float2( 1.0, 1.0 );
-	float	LightIntensity = 20.0;
+	float	LightIntensity = 40.0;
 	float	Shadow = 1.0;
 	float	LightDiffusion = 1.0;
 	float3	ProjectionDirection = float3( 0, 1, 0 );
@@ -314,24 +444,24 @@ float3	Shader( float2 _UV ) {
 	float4	hitPosition = ComputeHit( wsPos, wsView, 0.1, 40.0, pixelRadius );
 	float3	N = normal( hitPosition.xyz );
 	float3	Lighting0 = ComputeLighting( hitPosition.xyz, N, -wsView, IOR );
-
 			Lighting0 *= AO( hitPosition.xyz, N, 20.0, 0.1 );
 
 	float3	wsReflect = reflect( wsView, N );
 	float4	secondHitPosition = ComputeHit( hitPosition.xyz, wsReflect, 0.01, 40.0, pixelRadius );
 	float3	N2 = normal( secondHitPosition.xyz );
 	float3	Lighting1 = ComputeLighting( secondHitPosition.xyz, N2, -wsReflect, IOR );
+			Lighting1 *= AO( secondHitPosition.xyz, N2, 20.0, 0.1 );
 
 	float3	Fresnel = FresnelAccurate( IOR, saturate( dot( -wsView, N ) ) );
 	float3	Lighting = lerp( Lighting0, Lighting1, Fresnel );
 
+color = Lighting;
 //color = secondHitPosition.w;
 //color = 0.1 * hitPosition.w;
 //color = N;
 //color = 0.5 * (1.0+N);
 //color = 0.25 * hitPosition.xyz;
 //color = AO( hitPosition.xyz, N, 50.0, 0.1 );
-color = Lighting;
 //color = Fresnel;
 //if ( hitPosition.w > 100.0 ) return 0.0;
 //	return smoothstep( 0, 0.5, abs( fmod( 100.0 + 20.0 * (hitPosition.x + hitPosition.z), 2.0 ) - 1.0 ) );

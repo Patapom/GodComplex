@@ -36,6 +36,7 @@
 			this.checkBoxShowWeights = new System.Windows.Forms.CheckBox();
 			this.checkBoxSmoothStep = new System.Windows.Forms.CheckBox();
 			this.panelOutput = new ShaderToy.PanelOutput( this.components );
+			this.floatTrackbarControlParm = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlWeightMultiplier
@@ -100,6 +101,18 @@
 			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler( this.panelOutput_MouseMove );
 			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler( this.panelOutput_MouseUp );
 			// 
+			// floatTrackbarControlParm
+			// 
+			this.floatTrackbarControlParm.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlParm.Location = new System.Drawing.Point( 1020, 87 );
+			this.floatTrackbarControlParm.MaximumSize = new System.Drawing.Size( 10000, 20 );
+			this.floatTrackbarControlParm.MinimumSize = new System.Drawing.Size( 70, 20 );
+			this.floatTrackbarControlParm.Name = "floatTrackbarControlParm";
+			this.floatTrackbarControlParm.Size = new System.Drawing.Size( 200, 20 );
+			this.floatTrackbarControlParm.TabIndex = 1;
+			this.floatTrackbarControlParm.Value = 0F;
+			this.floatTrackbarControlParm.VisibleRangeMax = 1F;
+			// 
 			// ShaderToyForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF( 6F, 13F );
@@ -108,6 +121,7 @@
 			this.Controls.Add( this.checkBoxSmoothStep );
 			this.Controls.Add( this.checkBoxShowWeights );
 			this.Controls.Add( this.buttonReload );
+			this.Controls.Add( this.floatTrackbarControlParm );
 			this.Controls.Add( this.floatTrackbarControlWeightMultiplier );
 			this.Controls.Add( this.panelOutput );
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
@@ -127,6 +141,7 @@
 		private System.Windows.Forms.Timer timer;
 		private System.Windows.Forms.CheckBox checkBoxShowWeights;
 		private System.Windows.Forms.CheckBox checkBoxSmoothStep;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlParm;
 	}
 }
 
