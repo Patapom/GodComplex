@@ -188,7 +188,7 @@ p.y *= -1.0;
 
 // Repeat around the origin by a fixed angle.
 // For easier use, num of repetitions is used to specify the angle.
-float pModPolar( inout float2 p, float repetitions ) {
+float	pModPolar( inout float2 p, float repetitions ) {
 	float	angle = 2.0*PI / repetitions;
 	float	halfAngle = 0.5 * angle;
 	float	a = halfAngle + atan2( p.y, p.x );
