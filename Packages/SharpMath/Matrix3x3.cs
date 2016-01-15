@@ -526,7 +526,7 @@ namespace WMath
 			double	b = M[COEFFS.G]*M[COEFFS.C] + M[COEFFS.H]*M[COEFFS.F] + M[COEFFS.D]*M[COEFFS.B] - M[COEFFS.A]*M[COEFFS.I] - M[COEFFS.E]*M[COEFFS.I] - M[COEFFS.A]*M[COEFFS.E];
 			double	c = M[COEFFS.A] + M[COEFFS.E] + M[COEFFS.I];
 
-			double[]	Roots = UtilityFunctions.SolveCubic( a, b, c, 1 );
+			double[]	Roots = Functions.SolveCubic( a, b, c, 1 );
 
 			double	Check0 = a + (Roots[0] * (b + Roots[0] * (c + Roots[0])));
 			double	Check1 = a + (Roots[1] * (b + Roots[1] * (c + Roots[1])));

@@ -256,9 +256,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="BoundingSphere.cs" />
+    <Compile Include="Functions.cs" />
     <Compile Include="QuasiRandom.cs" />
     <Compile Include="Random.cs" />
-    <Compile Include="Utility.cs" />
     <Compile Include="Matrix.cs" />
     <Compile Include="Matrix3x3.cs">
       <SubType>Code</SubType>

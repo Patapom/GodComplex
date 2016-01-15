@@ -99,8 +99,8 @@ namespace AreaLightTest
 		private Texture2D	m_Tex_AreaLightSATFade = null;
 		private Texture2D	m_Tex_FalseColors = null;
 
-		private Texture2D	m_Tex_GlossMap = null;
-		private Texture2D	m_Tex_Normal = null;
+// 		private Texture2D	m_Tex_GlossMap = null;
+// 		private Texture2D	m_Tex_Normal = null;
 
 		private Texture2D	m_Tex_ShadowMap = null;
 #if FILTER_EXP_SHADOW_MAP

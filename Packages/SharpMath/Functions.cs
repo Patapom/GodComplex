@@ -5,34 +5,104 @@ namespace WMath
 	/// <summary>
 	/// A bunch of utility functions stolen from http://www.johndcook.com
 	/// </summary>
-	public class UtilityFunctions
+	public class Functions
 	{
 		/// <summary>
-		/// Error function (http://en.wikipedia.org/wiki/Error_function)
+		/// Error Function
+		/// Implementation from formula 7.1.26 from "1964 Abramowitz, Stegun - Handbook of Mathematical Functions"
 		/// </summary>
 		/// <param name="x"></param>
 		/// <returns></returns>
-		public static double Erf(double x)
-		{
+		public static double erf( double x ) {
 			// constants
-			double a1 = 0.254829592;
+			double a1 =  0.254829592;
 			double a2 = -0.284496736;
-			double a3 = 1.421413741;
+			double a3 =  1.421413741;
 			double a4 = -1.453152027;
-			double a5 = 1.061405429;
-			double p = 0.3275911;
-
+			double a5 =  1.061405429;
+			double p  =  0.3275911;
+ 
 			// Save the sign of x
 			int sign = 1;
 			if (x < 0)
 				sign = -1;
 			x = Math.Abs(x);
-
+ 
 			// A&S formula 7.1.26
-			double t = 1.0 / (1.0 + p*x);
+			double t = 1.0/(1.0 + p*x);
 			double y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*Math.Exp(-x*x);
 
 			return sign*y;
+		}
+
+		/// <summary>
+		/// Inverse error function from "Mike Giles - Approximating the erfinv function"
+		/// (http://people.maths.ox.ac.uk/gilesm/files/gems_erfinv.pdf)
+		/// </summary>
+		/// <param name="x"></param>
+		/// <returns></returns>
+		public static double erfinv( double x ) {
+			double	p;
+			double	w = - Math.Log( (1.0-x)*(1.0+x) );
+			if ( w < 5.0 ) {
+				w = w - 2.5;
+				p = 2.81022636e-08;
+				p = 3.43273939e-07 + p*w;
+				p = -3.5233877e-06 + p*w;
+				p = -4.39150654e-06 + p*w;
+				p = 0.00021858087 + p*w;
+				p = -0.00125372503 + p*w;
+				p = -0.00417768164 + p*w;
+				p = 0.246640727f + p*w;
+				p = 1.50140941f + p*w;
+			}
+			else {
+				w = Math.Sqrt(w) - 3.0;
+				p = -0.000200214257;
+				p = 0.000100950558 + p*w;
+				p = 0.00134934322 + p*w;
+				p = -0.00367342844 + p*w;
+				p = 0.00573950773 + p*w;
+				p = -0.0076224613 + p*w;
+				p = 0.00943887047 + p*w;
+				p = 1.00167406 + p*w;
+				p = 2.83297682 + p*w;
+			}
+			return p * x;
+		}
+
+		/// <summary>
+		/// The gamma function to compute real value factorials
+		/// https://en.wikipedia.org/wiki/Gamma_function 
+		/// </summary>
+		/// <param name="x"></param>
+		/// <returns></returns>
+		public static double  gamma( double x ) {
+			double  result = Math.Exp( abgamma(x + 5) ) / (x*(x + 1)*(x + 2)*(x + 3)*(x + 4));
+			return result;
+		}
+
+		/// <summary>
+		/// The beta function
+		/// </summary>
+		/// <param name="m"></param>
+		/// <param name="n"></param>
+		/// <returns></returns>
+		public static double beta( double m, double n ) {
+			return gamma(m)*gamma(n) / gamma(m + n);	// cf. wikipedia
+		}
+
+		static double[]  gam = new double[10];
+		static double  abgamma (double x) {
+			gam[0] = 1.0 / 12.0;
+			gam[1] = 1.0 / 30.0;
+			gam[2] = 53.0 / 210.0;
+			gam[3] = 195.0 / 371.0;
+			gam[4] = 22999.0 / 22737.0;
+			gam[5] = 29944523.0 / 19733142.0;
+			gam[6] = 109535241009.0 / 48264275462.0;
+			double	temp = 0.5*Math.Log(2*Math.PI) - x + (x - 0.5)* Math.Log(x) + gam[0]/(x + gam[1]/(x + gam[2]/(x + gam[3]/(x + gam[4] / (x + gam[5]/(x + gam[6]/x))))));
+			return temp;
 		}
 
 		/// <summary>
@@ -40,8 +110,7 @@ namespace WMath
 		/// </summary>
 		/// <param name="x"></param>
 		/// <returns></returns>
-		public static double Phi(double x)
-		{
+		public static double Phi(double x) {
 			// constants
 			double a1 = 0.254829592;
 			double a2 = -0.284496736;
@@ -68,22 +137,17 @@ namespace WMath
 		/// </summary>
 		/// <param name="p"></param>
 		/// <returns></returns>
-		public static double NormalCDFInverse(double p)
-		{
-			if (p <= 0.0 || p >= 1.0)
-			{
+		public static double NormalCDFInverse(double p) {
+			if (p <= 0.0 || p >= 1.0) {
 				string msg = String.Format("Invalid input argument: {0}.", p);
 				throw new ArgumentOutOfRangeException(msg);
 			}
 
 			// See article above for explanation of this section.
-			if (p < 0.5)
-			{
+			if (p < 0.5) {
 				// F^-1(p) = - G^-1(p)
 				return -RationalApproximation( Math.Sqrt(-2.0*Math.Log(p)) );
-			}
-			else
-			{
+			} else {
 				// F^-1(p) = G^-1(1-p)
 				return RationalApproximation( Math.Sqrt(-2.0*Math.Log(1.0 - p)) );
 			}
@@ -129,8 +193,7 @@ namespace WMath
 				return Math.Exp(x) - 1.0;
 		}
 
-		public static double RationalApproximation(double t)
-		{
+		public static double RationalApproximation(double t) {
 			// Abramowitz and Stegun formula 26.2.23.
 			// The absolute value of the error should be less than 4.5 e-4.
 			double[] c = {2.515517, 0.802853, 0.010328};
@@ -145,8 +208,7 @@ namespace WMath
 		/// <param name="x">We require x > 0</param>
 		/// <returns></returns>
 		/// <remarks>Note that the functions Gamma and LogGamma are mutually dependent.</remarks>
-		public static double Gamma( double x )
-		{
+		public static double Gamma( double x ) {
 			if (x <= 0.0)
 			{
 				string msg = string.Format("Invalid input argument {0}. Argument must be positive.", x);
