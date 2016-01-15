@@ -13,7 +13,7 @@ using Nuaj.Cirrus.Utility;
 
 namespace TestMSBSDF
 {
-	public partial class Form1 : Form
+	public partial class TestForm : Form
 	{
 		const int				HEIGHTFIELD_SIZE = 256;
 		static readonly double	SQRT2 = Math.Sqrt( 2.0 );
@@ -22,6 +22,13 @@ namespace TestMSBSDF
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Main {
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_ComputeBeckmann {
+			public float4		_Position_Size;
+			public uint			_HeightFieldResolution;
+			public uint			_SamplesCount;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -34,9 +41,26 @@ namespace TestMSBSDF
 			public float4x4		_Proj2Camera;
 		}
 
-		private ConstantBuffer<CB_Main>			m_CB_Main = null;
-		private ConstantBuffer<CB_Camera>		m_CB_Camera = null;
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_Render {
+			public uint			_Flags;
+		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct SB_Beckmann {
+			public float		m_phase;
+			public float		m_frequencyX;
+			public float		m_frequencyY;
+		}
+
+		private ConstantBuffer<CB_Main>				m_CB_Main = null;
+		private ConstantBuffer<CB_Camera>			m_CB_Camera = null;
+		private ConstantBuffer<CB_ComputeBeckmann>	m_CB_ComputeBeckmann = null;
+		private ConstantBuffer<CB_Render>			m_CB_Render = null;
+
+		private StructuredBuffer<SB_Beckmann>		m_SB_Beckmann;
+
+		private ComputeShader		m_Shader_ComputeBeckmannSurface = null;
 		private Shader				m_Shader_RenderHeightField = null;
 		private Texture2D			m_Tex_Heightfield = null;
 		private Primitive			m_Prim_Heightfield = null;
@@ -44,7 +68,7 @@ namespace TestMSBSDF
 		private Camera				m_Camera = new Camera();
 		private CameraManipulator	m_Manipulator = new CameraManipulator();
 
-		public Form1() {
+		public TestForm() {
 			InitializeComponent();
 
 			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
@@ -58,12 +82,9 @@ namespace TestMSBSDF
 		{
 			base.OnLoad( e );
 
-			try
-			{
+			try {
 				m_Device.Init( panelOutput.Handle, false, true );
-			}
-			catch ( Exception _e )
-			{
+			} catch ( Exception _e ) {
 				m_Device = null;
 				MessageBox( "Failed to initialize DX device!\n\n" + _e.Message );
 				return;
@@ -71,9 +92,12 @@ namespace TestMSBSDF
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
+			m_CB_ComputeBeckmann = new ConstantBuffer<CB_ComputeBeckmann>( m_Device, 10 );
+			m_CB_Render = new ConstantBuffer<CB_Render>( m_Device, 10 );
 
 			try {
-				m_Shader_RenderHeightField = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderHeightField.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );;
+				m_Shader_ComputeBeckmannSurface = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/ComputeBeckmannSurface.hlsl" ) ), "CS", null );
+				m_Shader_RenderHeightField = new Shader( m_Device, new ShaderFile( new FileInfo( "Shaders/RenderHeightField.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );;
 			} catch ( Exception _e ) {
 				MessageBox( "Shader \"RenderHeightField\" failed to compile!\n\n" + _e.Message );
 				m_Shader_RenderHeightField = null;
@@ -81,7 +105,9 @@ namespace TestMSBSDF
 
 			BuildPrimHeightfield();
 
-			BuildBeckmannSurfaceTexture( 0.8f, 1000 );
+			m_SB_Beckmann = new StructuredBuffer<SB_Beckmann>( m_Device, 1024, true );
+
+			BuildBeckmannSurfaceTexture( floatTrackbarControlBeckmannRoughness.Value );
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
@@ -132,60 +158,77 @@ namespace TestMSBSDF
 		///	From "2015 Heitz - Generating Procedural Beckmann Surfaces"
 		/// </summary>
 		/// <remarks>Only isotropic roughness is supported</remarks>
-		/// 
-		double[]	m_phi, m_fx, m_fy;
-		void	BuildBeckmannSurfaceTexture( float _roughness, int N ) {
+		void	BuildBeckmannSurfaceTexture( float _roughness ) {
 			PixelsBuffer	Content = new PixelsBuffer( HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE*System.Runtime.InteropServices.Marshal.SizeOf(typeof(Single)) );
 
 			// Precompute stuff that resemble a lot to the Box-Muller algorithm to generate normal distribution random values
-			m_phi = new double[N];
-			m_fx = new double[N];
-			m_fy = new double[N];
-			for ( int i=0; i < N; i++ ) {
+			WMath.SimpleRNG.SetSeed( 521288629, 362436069 );
+			for ( int i=0; i < m_SB_Beckmann.m.Length; i++ ) {
 				double	U0 = WMath.SimpleRNG.GetUniform();
 				double	U1 = WMath.SimpleRNG.GetUniform();
 				double	U2 = WMath.SimpleRNG.GetUniform();
 
-				m_phi[i] = 2.0 * Math.PI * U0;							// Phase
+				m_SB_Beckmann.m[i].m_phase = (float) (2.0 * Math.PI * U0);	// Phase
 
 				double	theta = 2.0 * Math.PI * U1;
 				double	radius = Math.Sqrt( -Math.Log( U2 ) );
-				m_fx[i] = radius * Math.Cos( theta ) * _roughness;		// Frequency in X direction
-				m_fy[i] = radius * Math.Sin( theta ) * _roughness;		// Frequency in Y direction
+				m_SB_Beckmann.m[i].m_frequencyX = (float) (radius * Math.Cos( theta ) * _roughness);	// Frequency in X direction
+				m_SB_Beckmann.m[i].m_frequencyY = (float) (radius * Math.Sin( theta ) * _roughness);	// Frequency in Y direction
 			}
-			double	scale = Math.Sqrt( 2.0 / N );
+//			double	scale = Math.Sqrt( 2.0 / N );
 
-			// Generate heights
-			float	range = 128.0f;
-			float2	pos;
-			float	height;
-			float	minHeight = float.MaxValue, maxHeight = -float.MaxValue;
-			double	accum;
-			using ( BinaryWriter W = Content.OpenStreamWrite() ) {
-				for ( int Y=0; Y < HEIGHTFIELD_SIZE; Y++ ) {
-					pos.y = range * (2.0f * Y / (HEIGHTFIELD_SIZE-1) - 1.0f);
-					for ( int X=0; X < HEIGHTFIELD_SIZE; X++ ) {
-						pos.x = range * (2.0f * X / (HEIGHTFIELD_SIZE-1) - 1.0f);
+			m_SB_Beckmann.Write();
+			m_SB_Beckmann.SetInput( 0 );
 
-//						height = (float) WMath.SimpleRNG.GetNormal();
-//						height = (float) GenerateNormalDistributionHeight();
+			#if true
+				if ( m_Tex_Heightfield == null )
+					m_Tex_Heightfield = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
 
-						accum = 0.0;
-						for ( int i=0; i < N; i++ ) {
-							accum += Math.Cos( m_phi[i] + pos.x * m_fx[i] + pos.y * m_fy[i] );
+				// Run the CS
+				if ( m_Shader_ComputeBeckmannSurface.Use() ) {
+					m_Tex_Heightfield.SetCSUAV( 0 );
+					m_CB_ComputeBeckmann.m._Position_Size.Set( -128.0f, -128.0f, 256.0f, 256.0f );
+					m_CB_ComputeBeckmann.m._HeightFieldResolution = HEIGHTFIELD_SIZE;
+					m_CB_ComputeBeckmann.m._SamplesCount = (uint) m_SB_Beckmann.m.Length;
+					m_CB_ComputeBeckmann.UpdateData();
+
+					m_Shader_ComputeBeckmannSurface.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, 1 );
+
+					m_Tex_Heightfield.RemoveFromLastAssignedSlotUAV();
+				}
+			#else
+				// Generate heights
+				float	range = 128.0f;
+				float2	pos;
+				float	height;
+				float	minHeight = float.MaxValue, maxHeight = -float.MaxValue;
+				double	accum;
+				using ( BinaryWriter W = Content.OpenStreamWrite() ) {
+					for ( int Y=0; Y < HEIGHTFIELD_SIZE; Y++ ) {
+						pos.y = range * (2.0f * Y / (HEIGHTFIELD_SIZE-1) - 1.0f);
+						for ( int X=0; X < HEIGHTFIELD_SIZE; X++ ) {
+							pos.x = range * (2.0f * X / (HEIGHTFIELD_SIZE-1) - 1.0f);
+
+	//						height = (float) WMath.SimpleRNG.GetNormal();
+	//						height = (float) GenerateNormalDistributionHeight();
+
+							accum = 0.0;
+							for ( int i=0; i < N; i++ ) {
+								accum += Math.Cos( m_phi[i] + pos.x * m_fx[i] + pos.y * m_fy[i] );
+							}
+							height = (float) (scale * accum);
+
+							minHeight = Math.Min( minHeight, height );
+							maxHeight = Math.Max( maxHeight, height );
+
+							W.Write( height );
 						}
-						height = (float) (scale * accum);
-
-						minHeight = Math.Min( minHeight, height );
-						maxHeight = Math.Max( maxHeight, height );
-
-						W.Write( height );
 					}
 				}
-			}
-			Content.CloseStream();
+				Content.CloseStream();
 
-			m_Tex_Heightfield = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { Content } );
+				m_Tex_Heightfield = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { Content } );
+			#endif
 		}
 
 		protected override void OnFormClosed( FormClosedEventArgs e )
@@ -193,14 +236,18 @@ namespace TestMSBSDF
 			if ( m_Device == null )
 				return;
 
-			if ( m_Shader_RenderHeightField != null ) {
-				m_Shader_RenderHeightField.Dispose();
-			}
+			m_Shader_ComputeBeckmannSurface.Dispose();
+			m_Shader_RenderHeightField.Dispose();
 
 			m_Tex_Heightfield.Dispose();
 			m_Prim_Heightfield.Dispose();
-			m_CB_Main.Dispose();
+
+			m_SB_Beckmann.Dispose();
+
+			m_CB_Render.Dispose();
+			m_CB_ComputeBeckmann.Dispose();
 			m_CB_Camera.Dispose();
+			m_CB_Main.Dispose();
 
 			m_Device.Exit();
 
@@ -230,9 +277,9 @@ namespace TestMSBSDF
 
 		#endregion
 
-		void Application_Idle( object sender, EventArgs e )
-		{
-			if ( m_Device == null )
+		bool	m_pauseRendering = false;
+		void Application_Idle( object sender, EventArgs e ) {
+			if ( m_Device == null || m_pauseRendering )
 				return;
 
 			// Setup global data
@@ -248,6 +295,10 @@ namespace TestMSBSDF
 			if ( m_Shader_RenderHeightField != null && m_Shader_RenderHeightField.Use() ) {
 				m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
+
+				m_CB_Render.m._Flags = checkBoxShowNormals.Checked ? 1U : 0U;
+				m_CB_Render.UpdateData();
+
 				m_Prim_Heightfield.Render( m_Shader_RenderHeightField );
 			}
 
@@ -258,6 +309,21 @@ namespace TestMSBSDF
 		private void buttonReload_Click( object sender, EventArgs e )
 		{
 			m_Device.ReloadModifiedShaders();
+		}
+
+		private void floatTrackbarControlBeckmannRoughness_SliderDragStop( FloatTrackbarControl _Sender, float _fStartValue )
+		{
+		}
+
+		private void floatTrackbarControlBeckmannRoughness_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			try {
+				m_pauseRendering = true;
+				BuildBeckmannSurfaceTexture( floatTrackbarControlBeckmannRoughness.Value );
+			} catch ( Exception ) {
+			} finally {
+				m_pauseRendering = false;
+			}
 		}
 	}
 }
