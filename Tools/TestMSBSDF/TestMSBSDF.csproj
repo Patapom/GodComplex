@@ -95,6 +95,7 @@
   <ItemGroup />
   <ItemGroup>
     <Content Include="Shaders\ComputeBeckmannSurface.hlsl" />
+    <Content Include="Shaders\RayTraceSurface.hlsl" />
     <None Include="Shaders\Global.hlsl" />
     <Content Include="Shaders\RenderHeightfield.hlsl" />
   </ItemGroup>

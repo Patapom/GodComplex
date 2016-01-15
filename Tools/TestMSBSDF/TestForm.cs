@@ -25,13 +25,6 @@ namespace TestMSBSDF
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		private struct CB_ComputeBeckmann {
-			public float4		_Position_Size;
-			public uint			_HeightFieldResolution;
-			public uint			_SamplesCount;
-		}
-
-		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Camera {
 			public float4x4		_Camera2World;
 			public float4x4		_World2Camera;
@@ -42,8 +35,16 @@ namespace TestMSBSDF
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		private struct CB_Render {
-			public uint			_Flags;
+		private struct CB_ComputeBeckmann {
+			public float4		_Position_Size;
+			public uint			_HeightFieldResolution;
+			public uint			_SamplesCount;
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_RayTrace {
+			public float3		_Direction;
+			public float		_Roughness;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -53,16 +54,27 @@ namespace TestMSBSDF
 			public float		m_frequencyY;
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_Render {
+			public uint			_Flags;
+			public uint			_ScatteringOrder;
+		}
+
 		private ConstantBuffer<CB_Main>				m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>			m_CB_Camera = null;
 		private ConstantBuffer<CB_ComputeBeckmann>	m_CB_ComputeBeckmann = null;
+		private ConstantBuffer<CB_RayTrace>			m_CB_RayTrace = null;
 		private ConstantBuffer<CB_Render>			m_CB_Render = null;
 
 		private StructuredBuffer<SB_Beckmann>		m_SB_Beckmann;
 
 		private ComputeShader		m_Shader_ComputeBeckmannSurface = null;
+		private ComputeShader		m_Shader_RayTraceSurface = null;
 		private Shader				m_Shader_RenderHeightField = null;
+
 		private Texture2D			m_Tex_Heightfield = null;
+		private Texture2D			m_Tex_OutgoingDirections = null;
+
 		private Primitive			m_Prim_Heightfield = null;
 
 		private Camera				m_Camera = new Camera();
@@ -93,10 +105,12 @@ namespace TestMSBSDF
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
 			m_CB_ComputeBeckmann = new ConstantBuffer<CB_ComputeBeckmann>( m_Device, 10 );
+			m_CB_RayTrace = new ConstantBuffer<CB_RayTrace>( m_Device, 10 );
 			m_CB_Render = new ConstantBuffer<CB_Render>( m_Device, 10 );
 
 			try {
 				m_Shader_ComputeBeckmannSurface = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/ComputeBeckmannSurface.hlsl" ) ), "CS", null );
+				m_Shader_RayTraceSurface = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/RayTraceSurface.hlsl" ) ), "CS", null );
 				m_Shader_RenderHeightField = new Shader( m_Device, new ShaderFile( new FileInfo( "Shaders/RenderHeightField.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );;
 			} catch ( Exception _e ) {
 				MessageBox( "Shader \"RenderHeightField\" failed to compile!\n\n" + _e.Message );
@@ -108,6 +122,8 @@ namespace TestMSBSDF
 			m_SB_Beckmann = new StructuredBuffer<SB_Beckmann>( m_Device, 1024, true );
 
 			BuildBeckmannSurfaceTexture( floatTrackbarControlBeckmannRoughness.Value );
+
+			m_Tex_OutgoingDirections = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 4, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
@@ -196,7 +212,7 @@ namespace TestMSBSDF
 
 					m_Tex_Heightfield.RemoveFromLastAssignedSlotUAV();
 				}
-			#else
+			#else	// CPU version
 				// Generate heights
 				float	range = 128.0f;
 				float2	pos;
@@ -231,20 +247,52 @@ namespace TestMSBSDF
 			#endif
 		}
 
+		/// <summary>
+		/// Performs a ray-tracing of the surface
+		/// Outputs resulting directions into a texture then performs a histogram
+		/// </summary>
+		/// <param name="_Roughness"></param>
+		void	RayTraceSurface( float _Roughness, float _Theta, float _Phi ) {
+			if ( !m_Shader_RayTraceSurface.Use() )
+				return;
+
+			float	sinTheta = (float) Math.Sin( _Theta );
+			float	cosTheta = (float) Math.Cos( _Theta );
+			float	sinPhi = (float) Math.Sin( _Phi );
+			float	cosPhi = (float) Math.Cos( _Phi );
+
+			m_CB_RayTrace.m._Direction.Set( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );	// Minus sign because we need the direction pointing TOWARD the surface (i.e. z < 0)
+			m_CB_RayTrace.m._Roughness = _Roughness;
+			m_CB_RayTrace.UpdateData();
+
+			m_Tex_Heightfield.SetCS( 0 );
+			m_Tex_OutgoingDirections.RemoveFromLastAssignedSlots();
+			m_Tex_OutgoingDirections.SetCSUAV( 0 );
+
+			m_Device.Clear( m_Tex_OutgoingDirections, float4.Zero );
+
+			m_Shader_RayTraceSurface.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, 1 );
+
+			m_Tex_OutgoingDirections.RemoveFromLastAssignedSlotUAV();
+		}
+
 		protected override void OnFormClosed( FormClosedEventArgs e )
 		{
 			if ( m_Device == null )
 				return;
 
+			m_Shader_RayTraceSurface.Dispose();
 			m_Shader_ComputeBeckmannSurface.Dispose();
 			m_Shader_RenderHeightField.Dispose();
 
+			m_Tex_OutgoingDirections.Dispose();
 			m_Tex_Heightfield.Dispose();
 			m_Prim_Heightfield.Dispose();
 
 			m_SB_Beckmann.Dispose();
 
 			m_CB_Render.Dispose();
+			m_CB_RayTrace.Dispose();
 			m_CB_ComputeBeckmann.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Main.Dispose();
@@ -254,8 +302,7 @@ namespace TestMSBSDF
 			base.OnFormClosed( e );
 		}
 
-		void Camera_CameraTransformChanged( object sender, EventArgs e )
-		{
+		void Camera_CameraTransformChanged( object sender, EventArgs e ) {
 			m_CB_Camera.m._Camera2World = m_Camera.Camera2World;
 			m_CB_Camera.m._World2Camera = m_Camera.World2Camera;
 
@@ -286,6 +333,7 @@ namespace TestMSBSDF
 			m_CB_Main.UpdateData();
 
 			m_Tex_Heightfield.Set( 0 );
+			m_Tex_OutgoingDirections.SetPS( 1 );
 
 			// =========== Render scene ===========
 			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
@@ -296,7 +344,8 @@ namespace TestMSBSDF
 				m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 
-				m_CB_Render.m._Flags = checkBoxShowNormals.Checked ? 1U : 0U;
+				m_CB_Render.m._Flags = (checkBoxShowNormals.Checked ? 1U : 0U) | (checkBoxShowOutgoingDirections.Checked ? 2U : 0U);
+				m_CB_Render.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value;
 				m_CB_Render.UpdateData();
 
 				m_Prim_Heightfield.Render( m_Shader_RenderHeightField );
@@ -320,6 +369,17 @@ namespace TestMSBSDF
 			try {
 				m_pauseRendering = true;
 				BuildBeckmannSurfaceTexture( floatTrackbarControlBeckmannRoughness.Value );
+			} catch ( Exception ) {
+			} finally {
+				m_pauseRendering = false;
+			}
+		}
+
+		private void buttonRayTrace_Click( object sender, EventArgs e )
+		{
+			try {
+				m_pauseRendering = true;
+				RayTraceSurface( floatTrackbarControlBeckmannRoughness.Value, (float) Math.PI * floatTrackbarControlTheta.Value / 180.0f, 0.0f );
 			} catch ( Exception ) {
 			} finally {
 				m_pauseRendering = false;

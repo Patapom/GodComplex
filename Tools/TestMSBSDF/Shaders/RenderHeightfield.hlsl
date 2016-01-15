@@ -2,9 +2,11 @@
 
 cbuffer CB_Render : register(b10) {
 	uint	_Flags;
+	uint	_ScatteringOrder;
 }
 
-Texture2D< float4 >	_Tex_HeightField : register( t0 );
+Texture2D< float4 >			_Tex_HeightField : register( t0 );
+Texture2DArray< float4 >	_Tex_OutgoingDirections : register( t1 );
 
 struct VS_IN {
 	float3	Position : POSITION;
@@ -38,6 +40,12 @@ float3	PS( PS_IN _In ) : SV_TARGET0 {
 	if ( _Flags&1 ) {
 //		return _Tex_HeightField.SampleLevel( LinearClamp, _In.UV, 0.0 ).xyz;
 		return 0.5 * (1.0 + _Tex_HeightField.SampleLevel( LinearClamp, _In.UV, 0.0 ).xyz);
-	} else
-		return (3.0+_Tex_HeightField.SampleLevel( LinearWrap, _In.UV, 0.0 ).w) / 6.0;
+	} else if ( _Flags&2 ) {
+		// Show outgoing directions
+		return (3.0 + _Tex_OutgoingDirections.SampleLevel( LinearClamp, float3( _In.UV, 0.0 ), 0.0 ).w) / 6.0;
+		return _Tex_OutgoingDirections.SampleLevel( LinearClamp, float3( _In.UV, 0.0 ), 0.0 ).xyz;
+	}
+
+	// Default height visualization
+	return (3.0+_Tex_HeightField.SampleLevel( LinearWrap, _In.UV, 0.0 ).w) / 6.0;
 }

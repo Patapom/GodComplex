@@ -1,6 +1,7 @@
 
-#define PI		3.1415926535897932384626433832795
-#define INVPI	0.31830988618379067153776752674503
+#define PI			3.1415926535897932384626433832795
+#define INVPI		0.31830988618379067153776752674503
+#define INFINITY	1e12
 
 cbuffer CB_Main : register(b0) {
 };
@@ -87,8 +88,32 @@ float3	FresnelAccurate( float3 _IOR, float _CosTheta, float _FresnelStrength=1.0
 	return 0.5 * a * b;
 }
 
-// Smooth minimum by iQ
-float SmoothMin( float a, float b, float k ) {
-    float res = exp( -k*a ) + exp( -k*b );
-    return -log( res ) / k;
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// Importance Sampling + RNG
+
+// Code from http://forum.unity3d.com/threads/bitwise-operation-hammersley-point-sampling-is-there-an-alternate-method.200000/
+float ReverseBits( uint bits ) {
+	bits = (bits << 16u) | (bits >> 16u);
+	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+}
+
+float rand( float n ) { return frac(sin(n) * 43758.5453123); }
+
+float rand( float2 _seed ) {
+	return frac( sin( dot( _seed, float2( 12.9898, 78.233 ) ) ) * 43758.5453 );
+//= frac( sin(_pixelPosition.x*i)*sin(1767.0654+_pixelPosition.y*i)*43758.5453123 );
+}
+
+// Build orthonormal basis from a 3D Unit Vector Without normalization [Frisvad2012])
+void BuildOrthonormalBasis( float3 _normal, out float3 _tangent, out float3 _bitangent ) {
+	float a = _normal.z > -0.9999999 ? 1.0 / (1.0 + _normal.z) : 0.0;
+	float b = -_normal.x * _normal.y * a;
+
+	_tangent = float3( 1.0 - _normal.x*_normal.x*a, b, -_normal.x );
+	_bitangent = float3( b, 1.0 - _normal.y*_normal.y*a, -_normal.y );
 }
