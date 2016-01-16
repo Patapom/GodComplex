@@ -16,6 +16,10 @@ namespace TestMSBSDF
 	public partial class TestForm : Form
 	{
 		const int				HEIGHTFIELD_SIZE = 256;
+		const int				MAX_SCATTERING_ORDER = 4;
+		const int				LOBES_COUNT_THETA = 64;
+		const int				LOBES_COUNT_PHI = 2 * LOBES_COUNT_THETA;
+
 		static readonly double	SQRT2 = Math.Sqrt( 2.0 );
 
 		private Device		m_Device = new Device();
@@ -49,6 +53,11 @@ namespace TestMSBSDF
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_Finalize {
+			public uint			_IterationsCount;
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct SB_Beckmann {
 			public float		m_phase;
 			public float		m_frequencyX;
@@ -59,25 +68,34 @@ namespace TestMSBSDF
 		private struct CB_Render {
 			public uint			_Flags;
 			public uint			_ScatteringOrder;
+			public uint			_IterationsCount;
 		}
 
 		private ConstantBuffer<CB_Main>				m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>			m_CB_Camera = null;
 		private ConstantBuffer<CB_ComputeBeckmann>	m_CB_ComputeBeckmann = null;
 		private ConstantBuffer<CB_RayTrace>			m_CB_RayTrace = null;
+		private ConstantBuffer<CB_Finalize>			m_CB_Finalize = null;
 		private ConstantBuffer<CB_Render>			m_CB_Render = null;
 
 		private StructuredBuffer<SB_Beckmann>		m_SB_Beckmann;
 
 		private ComputeShader		m_Shader_ComputeBeckmannSurface = null;
 		private ComputeShader		m_Shader_RayTraceSurface = null;
+		private ComputeShader		m_Shader_AccumulateOutgoingDirections = null;
+		private ComputeShader		m_Shader_FinalizeOutgoingDirections = null;
 		private Shader				m_Shader_RenderHeightField = null;
 
 		private Texture2D			m_Tex_Random = null;
 		private Texture2D			m_Tex_Heightfield = null;
-		private Texture2D[]			m_Tex_OutgoingDirections = new Texture2D[2];
+		private Texture2D			m_Tex_OutgoingDirections = null;
+		private Texture2D			m_Tex_LobeHistogram_Decimal = null;
+		private Texture2D			m_Tex_LobeHistogram_Integer = null;
+		private Texture2D			m_Tex_LobeHistogram = null;
+		private int					m_lastComputedHistogramIterationsCount = 1;
 
 		private Primitive			m_Prim_Heightfield = null;
+		private Primitive			m_Prim_Lobe = null;
 
 		private Camera				m_Camera = new Camera();
 		private CameraManipulator	m_Manipulator = new CameraManipulator();
@@ -108,11 +126,14 @@ namespace TestMSBSDF
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
 			m_CB_ComputeBeckmann = new ConstantBuffer<CB_ComputeBeckmann>( m_Device, 10 );
 			m_CB_RayTrace = new ConstantBuffer<CB_RayTrace>( m_Device, 10 );
+			m_CB_Finalize = new ConstantBuffer<CB_Finalize>( m_Device, 10 );
 			m_CB_Render = new ConstantBuffer<CB_Render>( m_Device, 10 );
 
 			try {
 				m_Shader_ComputeBeckmannSurface = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/ComputeBeckmannSurface.hlsl" ) ), "CS", null );
 				m_Shader_RayTraceSurface = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/RayTraceSurface.hlsl" ) ), "CS", null );
+				m_Shader_AccumulateOutgoingDirections = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ) ), "CS", null );
+				m_Shader_FinalizeOutgoingDirections = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ) ), "CS_Finalize", null );
 				m_Shader_RenderHeightField = new Shader( m_Device, new ShaderFile( new FileInfo( "Shaders/RenderHeightField.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );;
 			} catch ( Exception _e ) {
 				MessageBox( "Shader \"RenderHeightField\" failed to compile!\n\n" + _e.Message );
@@ -120,20 +141,74 @@ namespace TestMSBSDF
 			}
 
 			BuildPrimHeightfield();
+			BuildPrimLobe();
 
 			m_SB_Beckmann = new StructuredBuffer<SB_Beckmann>( m_Device, 1024, true );
 
 			BuildRandomTexture();
 			BuildBeckmannSurfaceTexture( floatTrackbarControlBeckmannRoughness.Value );
 			
-			m_Tex_OutgoingDirections[0] = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 4, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
-			m_Tex_OutgoingDirections[1] = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 4, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
+			m_Tex_OutgoingDirections = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
+			m_Tex_LobeHistogram_Decimal = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
+			m_Tex_LobeHistogram_Integer = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
+			m_Tex_LobeHistogram = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_Manipulator.Attach( panelOutput, m_Camera );
 			m_Manipulator.InitializeCamera( new float3( 0, 1, 2 ), new float3( 0, 0, 0 ), float3.UnitY );
+
+			// Perform a simple initial trace
+			try {
+				buttonRayTrace_Click( buttonRayTrace, EventArgs.Empty );
+			} catch ( Exception ) {
+				m_Device = null;
+			}
 		}
+
+		protected override void OnFormClosed( FormClosedEventArgs e ) {
+			if ( m_Device == null )
+				return;
+
+			m_Shader_RenderHeightField.Dispose();
+			m_Shader_FinalizeOutgoingDirections.Dispose();
+			m_Shader_AccumulateOutgoingDirections.Dispose();
+			m_Shader_RayTraceSurface.Dispose();
+			m_Shader_ComputeBeckmannSurface.Dispose();
+
+			m_Tex_LobeHistogram_Decimal.Dispose();
+			m_Tex_LobeHistogram_Integer.Dispose();
+			m_Tex_OutgoingDirections.Dispose();
+			m_Tex_Heightfield.Dispose();
+			m_Tex_Random.Dispose();
+
+			m_Prim_Lobe.Dispose();
+			m_Prim_Heightfield.Dispose();
+
+			m_SB_Beckmann.Dispose();
+
+			m_CB_Render.Dispose();
+			m_CB_Finalize.Dispose();
+			m_CB_RayTrace.Dispose();
+			m_CB_ComputeBeckmann.Dispose();
+			m_CB_Camera.Dispose();
+			m_CB_Main.Dispose();
+
+			m_Device.Exit();
+
+			base.OnFormClosed( e );
+		}
+
+		void	MessageBox( string _Text ) {
+			MessageBox( _Text, MessageBoxButtons.OK, MessageBoxIcon.Error );
+		}
+		void	MessageBox( string _Text, MessageBoxButtons _Buttons, MessageBoxIcon _Icon ) {
+			System.Windows.Forms.MessageBox.Show( _Text, "MS BSDF Test", _Buttons, _Icon );
+		}
+
+		#endregion
+
+		#region Primitives
 
 		void	BuildPrimHeightfield() {
 			VertexP3[]	Vertices = new VertexP3[HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE];
@@ -162,6 +237,36 @@ namespace TestMSBSDF
 
 			m_Prim_Heightfield = new Primitive( m_Device, HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3 );
 		}
+
+		void	BuildPrimLobe() {
+			VertexP3[]	Vertices = new VertexP3[LOBES_COUNT_PHI*LOBES_COUNT_THETA];
+			for ( uint Y=0; Y < LOBES_COUNT_THETA; Y++ ) {
+				float	theta = 2.0f * (float) Math.Asin( Math.Sqrt( 0.5 * Y / LOBES_COUNT_THETA ) );
+				for ( uint X=0; X < LOBES_COUNT_PHI; X++ ) {
+					float	phi = 2.0f * (float) Math.PI * X / LOBES_COUNT_PHI;
+
+					Vertices[LOBES_COUNT_PHI*Y+X].P.Set( (float) (Math.Sin( theta ) * Math.Cos( phi )), (float) Math.Cos( theta ), -(float) (Math.Sin( theta ) * Math.Sin( phi )) );	// Phi=0 => +X, Phi=PI/2 => -Z in our Y-up frame
+				}
+			}
+
+			List<uint>	Indices = new List<uint>();
+			for ( uint Y=0; Y < LOBES_COUNT_THETA-1; Y++ ) {
+				uint	IndexStart0 = LOBES_COUNT_PHI*Y;		// Start index of top band
+				uint	IndexStart1 = LOBES_COUNT_PHI*(Y+1);	// Start index of bottom band
+				for ( uint X=0; X < LOBES_COUNT_PHI; X++ ) {
+					Indices.Add( IndexStart0++ );
+					Indices.Add( IndexStart1++ );
+				}
+				if ( Y != LOBES_COUNT_THETA-1 ) {
+					Indices.Add( IndexStart1-1 );			// Double current band's last index (first degenerate triangle => finish current band)
+					Indices.Add( IndexStart0 );				// Double next band's first index (second degenerate triangle => start new band)
+				}
+			}
+
+			m_Prim_Lobe = new Primitive( m_Device, HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3 );
+		}
+
+		#endregion
 
 		double	GenerateNormalDistributionHeight() {
 			double	U = WMath.SimpleRNG.GetUniform();	// Uniform distribution in ]0,1[
@@ -192,10 +297,9 @@ namespace TestMSBSDF
 		}
 
 		/// <summary>
-		/// Builds a heightfield whose heights are distributed according to the following probability:
+		/// Builds a heightfield whose heights are distributed according to the following probability (a.k.a. the normal distribution with sigma=1 and µ=0):
 		///		p(height) = exp( -0.5*height^2 ) / sqrt(2PI)
 		///	
-		///	(a.k.a. the normal distribution with sigma=1 and µ=0)
 		///	From "2015 Heitz - Generating Procedural Beckmann Surfaces"
 		/// </summary>
 		/// <remarks>Only isotropic roughness is supported</remarks>
@@ -280,8 +384,6 @@ namespace TestMSBSDF
 		/// </summary>
 		/// <param name="_Roughness"></param>
 		void	RayTraceSurface( float _roughness, float _theta, float _phi, int _iterationsCount ) {
-			if ( !m_Shader_RayTraceSurface.Use() )
-				return;
 
 			float	sinTheta = (float) Math.Sin( _theta );
 			float	cosTheta = (float) Math.Cos( _theta );
@@ -291,62 +393,99 @@ namespace TestMSBSDF
 			m_CB_RayTrace.m._Direction.Set( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );	// Minus sign because we need the direction pointing TOWARD the surface (i.e. z < 0)
 			m_CB_RayTrace.m._Roughness = _roughness;
 
-			m_Tex_Heightfield.SetCS( 0 );
-			m_Tex_Random.SetCS( 1 );
+			m_Tex_OutgoingDirections.RemoveFromLastAssignedSlots();
+			m_Tex_LobeHistogram.RemoveFromLastAssignedSlots();
+			m_lastComputedHistogramIterationsCount = _iterationsCount;
 
-			m_Device.Clear( m_Tex_OutgoingDirections[0], float4.Zero );	// Clear source directions and weights
-			m_Device.Clear( m_Tex_OutgoingDirections[1], float4.Zero );	// Clear target directions and weights
+			m_Device.Clear( m_Tex_LobeHistogram_Decimal, float4.Zero );	// Clear counters
+			m_Device.Clear( m_Tex_LobeHistogram_Integer, float4.Zero );
 
 			WMath.Hammersley	pRNG = new WMath.Hammersley();
 			double[,]			sequence = pRNG.BuildSequence( _iterationsCount, 2 );
 			for ( int iterationIndex=0; iterationIndex < _iterationsCount; iterationIndex++ ) {
-				// Update trace offset
-				m_CB_RayTrace.m._Offset.Set( (float) sequence[iterationIndex,0], (float) sequence[iterationIndex,1] );
-				m_CB_RayTrace.UpdateData();
+				// 1] Ray-trace surface
+				if ( m_Shader_RayTraceSurface.Use() ) {
+					// Update trace offset
+					m_CB_RayTrace.m._Offset.Set( (float) sequence[iterationIndex,0], (float) sequence[iterationIndex,1] );
+					m_CB_RayTrace.UpdateData();
 
-				m_Tex_OutgoingDirections[0].RemoveFromLastAssignedSlots();
-				m_Tex_OutgoingDirections[0].SetCS( 2 );		// Use previous buffer as input for accumulation
-				m_Tex_OutgoingDirections[1].SetCSUAV( 0 );	// New target buffer where to accumulate
+					m_Device.Clear( m_Tex_OutgoingDirections, float4.Zero );	// Clear target directions and weights
 
-				m_Shader_RayTraceSurface.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, 1 );
+					m_Tex_Heightfield.SetCS( 0 );
+					m_Tex_Random.SetCS( 1 );
+					m_Tex_OutgoingDirections.SetCSUAV( 0 );	// New target buffer where to accumulate
 
-				m_Tex_OutgoingDirections[1].RemoveFromLastAssignedSlotUAV();
+					m_Shader_RayTraceSurface.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, 1 );
 
-				// Swap
-				Texture2D	temp = m_Tex_OutgoingDirections[0];
-				m_Tex_OutgoingDirections[0] = m_Tex_OutgoingDirections[1];
-				m_Tex_OutgoingDirections[1] = temp;
+					m_Tex_OutgoingDirections.RemoveFromLastAssignedSlotUAV();
+				}
+
+				// 2] Accumulate into target histogram
+				if ( m_Shader_AccumulateOutgoingDirections.Use() ) {
+					m_Tex_OutgoingDirections.SetCS( 0 );
+					m_Tex_LobeHistogram_Decimal.SetCSUAV( 0 );
+					m_Tex_LobeHistogram_Integer.SetCSUAV( 1 );
+
+					m_Shader_AccumulateOutgoingDirections.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, MAX_SCATTERING_ORDER );
+
+ 					m_Tex_LobeHistogram_Decimal.RemoveFromLastAssignedSlotUAV();
+ 					m_Tex_LobeHistogram_Integer.RemoveFromLastAssignedSlotUAV();
+					m_Tex_OutgoingDirections.RemoveFromLastAssignedSlots();
+				}
+			}
+
+			// 3] Finalize
+			if ( m_Shader_FinalizeOutgoingDirections.Use() ) {
+ 				m_Tex_LobeHistogram_Decimal.SetCSUAV( 0 );
+ 				m_Tex_LobeHistogram_Integer.SetCSUAV( 1 );
+				m_Tex_LobeHistogram.SetCSUAV( 2 );
+
+				m_CB_Finalize.m._IterationsCount = (uint) _iterationsCount;
+				m_CB_Finalize.UpdateData();
+
+				m_Shader_FinalizeOutgoingDirections.Dispatch( (LOBES_COUNT_PHI + 15) >> 4, (LOBES_COUNT_THETA + 15) >> 4, MAX_SCATTERING_ORDER );
+
+ 				m_Tex_LobeHistogram_Decimal.RemoveFromLastAssignedSlotUAV();
+ 				m_Tex_LobeHistogram_Integer.RemoveFromLastAssignedSlotUAV();
+				m_Tex_LobeHistogram.RemoveFromLastAssignedSlotUAV();
 			}
 		}
 
-		protected override void OnFormClosed( FormClosedEventArgs e )
-		{
-			if ( m_Device == null )
+		bool	m_pauseRendering = false;
+		void Application_Idle( object sender, EventArgs e ) {
+			if ( m_Device == null || m_pauseRendering )
 				return;
 
-			m_Shader_RayTraceSurface.Dispose();
-			m_Shader_ComputeBeckmannSurface.Dispose();
-			m_Shader_RenderHeightField.Dispose();
+			// Setup global data
+			m_CB_Main.UpdateData();
 
-			m_Tex_OutgoingDirections[1].Dispose();
-			m_Tex_OutgoingDirections[0].Dispose();
-			m_Tex_Heightfield.Dispose();
-			m_Tex_Random.Dispose();
+			m_Tex_Heightfield.Set( 0 );
+			m_Tex_OutgoingDirections.SetPS( 1 );
 
-			m_Prim_Heightfield.Dispose();
+			m_Tex_LobeHistogram.SetPS( 2 );
 
-			m_SB_Beckmann.Dispose();
+			// =========== Render scene ===========
+			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
+			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
 
-			m_CB_Render.Dispose();
-			m_CB_RayTrace.Dispose();
-			m_CB_ComputeBeckmann.Dispose();
-			m_CB_Camera.Dispose();
-			m_CB_Main.Dispose();
+			// Render heightfield
+			if ( m_Shader_RenderHeightField != null && m_Shader_RenderHeightField.Use() ) {
+				m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
+				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 
-			m_Device.Exit();
+				m_CB_Render.m._Flags = (checkBoxShowNormals.Checked ? 1U : 0U) | (checkBoxShowOutgoingDirections.Checked ? 2U : 0U) | (checkBoxShowOutgoingDirectionsHistogram.Checked ? 4U : 0U);
+				m_CB_Render.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value;
+				m_CB_Render.m._IterationsCount = (uint) m_lastComputedHistogramIterationsCount;
+				m_CB_Render.UpdateData();
 
-			base.OnFormClosed( e );
+				m_Prim_Heightfield.Render( m_Shader_RenderHeightField );
+			}
+
+			// Show!
+			m_Device.Present( false );
 		}
+
+		#region EVENT HANDLERS
 
 		void Camera_CameraTransformChanged( object sender, EventArgs e ) {
 			m_CB_Camera.m._Camera2World = m_Camera.Camera2World;
@@ -361,53 +500,9 @@ namespace TestMSBSDF
 			m_CB_Camera.UpdateData();
 		}
 
-		void	MessageBox( string _Text ) {
-			MessageBox( _Text, MessageBoxButtons.OK, MessageBoxIcon.Error );
-		}
-		void	MessageBox( string _Text, MessageBoxButtons _Buttons, MessageBoxIcon _Icon ) {
-			System.Windows.Forms.MessageBox.Show( _Text, "MS BSDF Test", _Buttons, _Icon );
-		}
-
-		#endregion
-
-		bool	m_pauseRendering = false;
-		void Application_Idle( object sender, EventArgs e ) {
-			if ( m_Device == null || m_pauseRendering )
-				return;
-
-			// Setup global data
-			m_CB_Main.UpdateData();
-
-			m_Tex_Heightfield.Set( 0 );
-			m_Tex_OutgoingDirections[0].SetPS( 1 );
-
-			// =========== Render scene ===========
-			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
-			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
-
-			// Render heightfield
-			if ( m_Shader_RenderHeightField != null && m_Shader_RenderHeightField.Use() ) {
-				m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
-				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
-
-				m_CB_Render.m._Flags = (checkBoxShowNormals.Checked ? 1U : 0U) | (checkBoxShowOutgoingDirections.Checked ? 2U : 0U);
-				m_CB_Render.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value;
-				m_CB_Render.UpdateData();
-
-				m_Prim_Heightfield.Render( m_Shader_RenderHeightField );
-			}
-
-			// Show!
-			m_Device.Present( false );
-		}
-
 		private void buttonReload_Click( object sender, EventArgs e )
 		{
 			m_Device.ReloadModifiedShaders();
-		}
-
-		private void floatTrackbarControlBeckmannRoughness_SliderDragStop( FloatTrackbarControl _Sender, float _fStartValue )
-		{
 		}
 
 		private void floatTrackbarControlBeckmannRoughness_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
@@ -426,10 +521,14 @@ namespace TestMSBSDF
 			try {
 				m_pauseRendering = true;
 				RayTraceSurface( floatTrackbarControlBeckmannRoughness.Value, (float) Math.PI * floatTrackbarControlTheta.Value / 180.0f, (float) Math.PI * floatTrackbarControlPhi.Value / 180.0f, integerTrackbarControlIterationsCount.Value );
-			} catch ( Exception ) {
-			} finally {
 				m_pauseRendering = false;
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while ray-tracing the surface using " + integerTrackbarControlIterationsCount.Value + " iterations:\r\n" + _e.Message + "\r\n\r\nDisabling device..." );
+				m_Device.Exit();
+				m_Device = null;
 			}
 		}
+
+		#endregion
 	}
 }

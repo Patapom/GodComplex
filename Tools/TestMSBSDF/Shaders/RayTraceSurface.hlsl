@@ -4,9 +4,6 @@
 //
 #include "Global.hlsl"
 
-static const float	HEIGHTFIELD_SIZE = 256.0;
-static const float	INV_HEIGHTFIELD_SIZE = 1.0 / HEIGHTFIELD_SIZE;
-
 static const float	MAX_HEIGHT = 6.0;					// Arbitrary top height
 static const float	INITIAL_HEIGHT = MAX_HEIGHT - 0.1;	// So we're almost sure to start above the heightfield
 static const float	STEP_SIZE = 1.0;					// Ray-tracing step size
@@ -19,7 +16,7 @@ cbuffer CB_Raytrace : register(b10) {
 
 Texture2D< float4 >			_Tex_HeightField : register( t0 );
 Texture2D< float4 >			_Tex_Random : register( t1 );
-Texture2DArray< float4 >	_Tex_SourceOutgoingDirections : register( t2 );
+//Texture2DArray< float4 >	_Tex_SourceOutgoingDirections : register( t2 );
 RWTexture2DArray< float4 >	_Tex_OutgoingDirections : register( u0 );
 
 //////////////////////////////////////////////////////////////////////////
@@ -148,9 +145,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 //direction = normal;
 //direction = hitPosition.xyz;
 
-	float4	existingDirection = _Tex_SourceOutgoingDirections[uint3( pixelPosition, 0 )];
-	float4	accumulatedDirection = existingDirection + float4( direction, weight );
-
-//	_Tex_OutgoingDirections[uint3( pixelPosition, 0 )] = accumulatedDirection;
-	_Tex_OutgoingDirections[uint3( pixelPosition, scatteringIndex-1 )] = accumulatedDirection;
+//	float4	existingDirection = _Tex_SourceOutgoingDirections[uint3( pixelPosition, 0 )];
+//	float4	accumulatedDirection = existingDirection + float4( direction, weight );
+//	_Tex_OutgoingDirections[uint3( pixelPosition, scatteringIndex-1 )] = accumulatedDirection;
+	_Tex_OutgoingDirections[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );	// Don't accumulate! This is done by the histogram generation!
 }

@@ -3,6 +3,14 @@
 #define INVPI		0.31830988618379067153776752674503
 #define INFINITY	1e12
 
+// Dimensions of the height field
+static const uint	HEIGHTFIELD_SIZE = 256;
+static const float	INV_HEIGHTFIELD_SIZE = 1.0 / HEIGHTFIELD_SIZE;
+
+// Dimensions of the hemispherical lobe
+static const uint	LOBES_COUNT_THETA = 64;
+static const uint	LOBES_COUNT_PHI = 128;
+
 cbuffer CB_Main : register(b0) {
 };
 
@@ -26,6 +34,9 @@ SamplerState LinearBorder	: register( s6 );	// Black border
 
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.nuaj.net/index.php?title=Colorimetry)
 
+
+float	pow2( float x ) { return x * x; }
+float	pow3( float x ) { return x * x * x; }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // FRESNEL
