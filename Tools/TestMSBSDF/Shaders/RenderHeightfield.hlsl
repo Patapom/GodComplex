@@ -8,7 +8,6 @@ cbuffer CB_Render : register(b10) {
 
 Texture2D< float4 >			_Tex_HeightField : register( t0 );
 Texture2DArray< float4 >	_Tex_OutgoingDirections : register( t1 );
-
 Texture2DArray< float >		_Tex_DirectionsHistogram : register( t2 );
 
 struct VS_IN {
@@ -28,7 +27,7 @@ PS_IN	VS( VS_IN _In ) {
 	PS_IN	Out;
 	Out.UV = float2( 0.5 * (1.0 + lsPosition.x), 0.5 * (1.0 - lsPosition.y) );
 
-	float	H0 = 0*0.01 * _Tex_HeightField.SampleLevel( LinearWrap, Out.UV, 0.0 ).w;
+	float	H0 = (_flags < 2U ? 0.01 : 0.0) * _Tex_HeightField.SampleLevel( LinearWrap, Out.UV, 0.0 ).w;
 
 	Out.__Position = mul( float4( lsPosition.x, H0, -lsPosition.y, 1.0 ), _World2Proj );
 	Out.Normal = float3( 0.0, H0, 0.0 );

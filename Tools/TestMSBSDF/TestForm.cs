@@ -15,7 +15,7 @@ namespace TestMSBSDF
 {
 	public partial class TestForm : Form
 	{
-		const int				HEIGHTFIELD_SIZE = 256;
+		const int				HEIGHTFIELD_SIZE = 512;
 		const int				MAX_SCATTERING_ORDER = 4;
 		const int				LOBES_COUNT_THETA = 64;
 		const int				LOBES_COUNT_PHI = 2 * LOBES_COUNT_THETA;
@@ -71,12 +71,19 @@ namespace TestMSBSDF
 			public uint			_IterationsCount;
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_RenderLobe {
+			public float		_LobeIntensity;
+			public uint			_ScatteringOrder;
+		}
+
 		private ConstantBuffer<CB_Main>				m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>			m_CB_Camera = null;
 		private ConstantBuffer<CB_ComputeBeckmann>	m_CB_ComputeBeckmann = null;
 		private ConstantBuffer<CB_RayTrace>			m_CB_RayTrace = null;
 		private ConstantBuffer<CB_Finalize>			m_CB_Finalize = null;
 		private ConstantBuffer<CB_Render>			m_CB_Render = null;
+		private ConstantBuffer<CB_RenderLobe>		m_CB_RenderLobe = null;
 
 		private StructuredBuffer<SB_Beckmann>		m_SB_Beckmann;
 
@@ -85,6 +92,7 @@ namespace TestMSBSDF
 		private ComputeShader		m_Shader_AccumulateOutgoingDirections = null;
 		private ComputeShader		m_Shader_FinalizeOutgoingDirections = null;
 		private Shader				m_Shader_RenderHeightField = null;
+		private Shader				m_Shader_RenderLobe = null;
 
 		private Texture2D			m_Tex_Random = null;
 		private Texture2D			m_Tex_Heightfield = null;
@@ -128,16 +136,17 @@ namespace TestMSBSDF
 			m_CB_RayTrace = new ConstantBuffer<CB_RayTrace>( m_Device, 10 );
 			m_CB_Finalize = new ConstantBuffer<CB_Finalize>( m_Device, 10 );
 			m_CB_Render = new ConstantBuffer<CB_Render>( m_Device, 10 );
+			m_CB_RenderLobe = new ConstantBuffer<CB_RenderLobe>( m_Device, 10 );
 
 			try {
 				m_Shader_ComputeBeckmannSurface = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/ComputeBeckmannSurface.hlsl" ) ), "CS", null );
 				m_Shader_RayTraceSurface = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/RayTraceSurface.hlsl" ) ), "CS", null );
 				m_Shader_AccumulateOutgoingDirections = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ) ), "CS", null );
 				m_Shader_FinalizeOutgoingDirections = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ) ), "CS_Finalize", null );
-				m_Shader_RenderHeightField = new Shader( m_Device, new ShaderFile( new FileInfo( "Shaders/RenderHeightField.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );;
+				m_Shader_RenderHeightField = new Shader( m_Device, new ShaderFile( new FileInfo( "Shaders/RenderHeightField.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
+				m_Shader_RenderLobe = new Shader( m_Device, new ShaderFile( new FileInfo( "Shaders/RenderLobe.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
 			} catch ( Exception _e ) {
 				MessageBox( "Shader \"RenderHeightField\" failed to compile!\n\n" + _e.Message );
-				m_Shader_RenderHeightField = null;
 			}
 
 			BuildPrimHeightfield();
@@ -170,6 +179,7 @@ namespace TestMSBSDF
 			if ( m_Device == null )
 				return;
 
+			m_Shader_RenderLobe.Dispose();
 			m_Shader_RenderHeightField.Dispose();
 			m_Shader_FinalizeOutgoingDirections.Dispose();
 			m_Shader_AccumulateOutgoingDirections.Dispose();
@@ -187,6 +197,7 @@ namespace TestMSBSDF
 
 			m_SB_Beckmann.Dispose();
 
+			m_CB_RenderLobe.Dispose();
 			m_CB_Render.Dispose();
 			m_CB_Finalize.Dispose();
 			m_CB_RayTrace.Dispose();
@@ -216,7 +227,7 @@ namespace TestMSBSDF
 				float	y = -1.0f + 2.0f * Y / (HEIGHTFIELD_SIZE-1);
 				for ( uint X=0; X < HEIGHTFIELD_SIZE; X++ ) {
 					float	x = -1.0f + 2.0f * X / (HEIGHTFIELD_SIZE-1);
-					Vertices[256*Y+X].P.Set( x, y, 0.0f );
+					Vertices[HEIGHTFIELD_SIZE*Y+X].P.Set( x, y, 0.0f );
 				}
 			}
 
@@ -241,7 +252,7 @@ namespace TestMSBSDF
 		void	BuildPrimLobe() {
 			VertexP3[]	Vertices = new VertexP3[LOBES_COUNT_PHI*LOBES_COUNT_THETA];
 			for ( uint Y=0; Y < LOBES_COUNT_THETA; Y++ ) {
-				float	theta = 2.0f * (float) Math.Asin( Math.Sqrt( 0.5 * Y / LOBES_COUNT_THETA ) );
+				float	theta = 2.0f * (float) Math.Asin( Math.Sqrt( 0.5 * Y / (LOBES_COUNT_THETA-1) ) );
 				for ( uint X=0; X < LOBES_COUNT_PHI; X++ ) {
 					float	phi = 2.0f * (float) Math.PI * X / LOBES_COUNT_PHI;
 
@@ -257,13 +268,15 @@ namespace TestMSBSDF
 					Indices.Add( IndexStart0++ );
 					Indices.Add( IndexStart1++ );
 				}
+				Indices.Add( IndexStart0-LOBES_COUNT_PHI );	// Loop
+				Indices.Add( IndexStart1-LOBES_COUNT_PHI );
 				if ( Y != LOBES_COUNT_THETA-1 ) {
 					Indices.Add( IndexStart1-1 );			// Double current band's last index (first degenerate triangle => finish current band)
 					Indices.Add( IndexStart0 );				// Double next band's first index (second degenerate triangle => start new band)
 				}
 			}
 
-			m_Prim_Lobe = new Primitive( m_Device, HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3 );
+			m_Prim_Lobe = new Primitive( m_Device, LOBES_COUNT_PHI*LOBES_COUNT_THETA, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3 );
 		}
 
 		#endregion
@@ -276,7 +289,7 @@ namespace TestMSBSDF
 		}
 
 		/// <summary>
-		/// Builds many random values
+		/// Builds many random values into a texture
 		/// </summary>
 		void	BuildRandomTexture() {
 			PixelsBuffer	Content = new PixelsBuffer( HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE*System.Runtime.InteropServices.Marshal.SizeOf(typeof(float4)) );
@@ -330,7 +343,9 @@ namespace TestMSBSDF
 				// Run the CS
 				if ( m_Shader_ComputeBeckmannSurface.Use() ) {
 					m_Tex_Heightfield.SetCSUAV( 0 );
-					m_CB_ComputeBeckmann.m._Position_Size.Set( -128.0f, -128.0f, 256.0f, 256.0f );
+					float	size = floatTrackbarControlBeckmannSizeFactor.Value * HEIGHTFIELD_SIZE;
+//					m_CB_ComputeBeckmann.m._Position_Size.Set( -128.0f, -128.0f, 256.0f, 256.0f );
+					m_CB_ComputeBeckmann.m._Position_Size.Set( -0.5f * size, -0.5f * size, size, size );
 					m_CB_ComputeBeckmann.m._HeightFieldResolution = HEIGHTFIELD_SIZE;
 					m_CB_ComputeBeckmann.m._SamplesCount = (uint) m_SB_Beckmann.m.Length;
 					m_CB_ComputeBeckmann.UpdateData();
@@ -452,7 +467,7 @@ namespace TestMSBSDF
 		}
 
 		bool	m_pauseRendering = false;
-		void Application_Idle( object sender, EventArgs e ) {
+		void	Application_Idle( object sender, EventArgs e ) {
 			if ( m_Device == null || m_pauseRendering )
 				return;
 
@@ -461,24 +476,32 @@ namespace TestMSBSDF
 
 			m_Tex_Heightfield.Set( 0 );
 			m_Tex_OutgoingDirections.SetPS( 1 );
-
-			m_Tex_LobeHistogram.SetPS( 2 );
+			m_Tex_LobeHistogram.Set( 2 );
 
 			// =========== Render scene ===========
+			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
+			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
+
 			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
 			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
 
 			// Render heightfield
-			if ( m_Shader_RenderHeightField != null && m_Shader_RenderHeightField.Use() ) {
-				m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
-				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
-
+			if ( !radioButtonHideSurface.Checked && m_Shader_RenderHeightField.Use() ) {
 				m_CB_Render.m._Flags = (checkBoxShowNormals.Checked ? 1U : 0U) | (checkBoxShowOutgoingDirections.Checked ? 2U : 0U) | (checkBoxShowOutgoingDirectionsHistogram.Checked ? 4U : 0U);
 				m_CB_Render.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value;
 				m_CB_Render.m._IterationsCount = (uint) m_lastComputedHistogramIterationsCount;
 				m_CB_Render.UpdateData();
 
 				m_Prim_Heightfield.Render( m_Shader_RenderHeightField );
+			}
+
+			// Render lobe
+			if ( checkBoxShowLobe.Checked && m_Shader_RenderLobe.Use() ) {
+				m_CB_RenderLobe.m._LobeIntensity = floatTrackbarControlLobeIntensity.Value;
+				m_CB_RenderLobe.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value;
+				m_CB_RenderLobe.UpdateData();
+
+				m_Prim_Lobe.Render( m_Shader_RenderLobe );
 			}
 
 			// Show!

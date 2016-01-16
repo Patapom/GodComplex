@@ -4,7 +4,7 @@
 #define INFINITY	1e12
 
 // Dimensions of the height field
-static const uint	HEIGHTFIELD_SIZE = 256;
+static const uint	HEIGHTFIELD_SIZE = 512;
 static const float	INV_HEIGHTFIELD_SIZE = 1.0 / HEIGHTFIELD_SIZE;
 
 // Dimensions of the hemispherical lobe

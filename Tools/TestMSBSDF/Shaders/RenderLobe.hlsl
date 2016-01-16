@@ -1,12 +1,11 @@
 #include "Global.hlsl"
 
 cbuffer CB_Render : register(b10) {
-	uint	_Flags;
+	float	_Intensity;
 	uint	_ScatteringOrder;
 }
 
-Texture2D< uint >			_Tex_HeightField : register( t0 );
-Texture2DArray< float4 >	_Tex_OutgoingDirections : register( t1 );
+Texture2DArray< float >		_Tex_DirectionsHistogram : register( t2 );
 
 struct VS_IN {
 	float3	Position : POSITION;
@@ -14,45 +13,34 @@ struct VS_IN {
 
 struct PS_IN {
 	float4	__Position : SV_POSITION;
-	float3	Normal : NORMAL;
-	float2	UV : TEXCOORDS0;
+	float3	Color : TEXCOORDS0;
 };
 
 PS_IN	VS( VS_IN _In ) {
 
-	float3	lsPosition = _In.Position;
+	float3	lsDirection = _In.Position;												// Direction in our local object's Y-up space (which is also our world space BTW)
+	float3	mfDirection = float3( lsDirection.x, -lsDirection.z, lsDirection.y );	// Direction in µ-facet Z-up space
+
+	float	theta = acos( clamp( mfDirection.z, -1.0, 1.0 ) );
+	float	phi = fmod( 2.0 * PI + atan2( mfDirection.y, mfDirection.x ), 2.0 * PI );
+
+	float	thetaBinIndex = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) );		// Inverse of 2*asin( sqrt( i / (2 * N) ) )
+	float2	UV = float2( phi / (2.0 * PI), thetaBinIndex / LOBES_COUNT_THETA );
+	float	lobeIntensity = _Tex_DirectionsHistogram.SampleLevel( PointClamp, float3( UV, _ScatteringOrder ), 0.0 );
+			lobeIntensity *= LOBES_COUNT_THETA * LOBES_COUNT_PHI;
+			lobeIntensity *= _Intensity;
+			lobeIntensity = max( 0.01, lobeIntensity );
+
+	float3	lsPosition = lobeIntensity * lsDirection;
 
 	PS_IN	Out;
-	Out.UV = float2( 0.5 * (1.0 + lsPosition.x), 0.5 * (1.0 - lsPosition.y) );
-
-	float	H0 = 0.01 * _Tex_HeightField.SampleLevel( LinearWrap, Out.UV, 0.0 ).w;
-
-	Out.__Position = mul( float4( lsPosition.x, H0, -lsPosition.y, 1.0 ), _World2Proj );
-	Out.Normal = float3( 0.0, H0, 0.0 );
+	Out.__Position = mul( float4( lsPosition, 1.0 ), _World2Proj );
+	Out.Color = 0.1 * lobeIntensity;
 
 	return Out;
 }
 
 float3	PS( PS_IN _In ) : SV_TARGET0 {
-//	return float3( _In.UV, 0 );
-//	return 0.5 * (1.0 + _In.Normal.y );
-
-	if ( _Flags&1 ) {
-//		return _Tex_HeightField.SampleLevel( LinearClamp, _In.UV, 0.0 ).xyz;
-		return 0.5 * (1.0 + _Tex_HeightField.SampleLevel( LinearClamp, _In.UV, 0.0 ).xyz);
-	} else if ( _Flags&2 ) {
-		// Show outgoing directions
-//		return 0.01 * length( _Tex_OutgoingDirections.SampleLevel( LinearClamp, float3( _In.UV, _ScatteringOrder ), 0.0 ).xyz - float3( HEIGHTFIELD_SIZE * _In.UV, 0.0 ) );	// Show distance from exit ray to entry point
-//		return 1.0 * length( _Tex_OutgoingDirections.SampleLevel( LinearClamp, float3( _In.UV, _ScatteringOrder ), 0.0 ).xy / HEIGHTFIELD_SIZE - _In.UV );	// Show HORIZONTAL distance from exit ray to entry point
-//		return (_Tex_OutgoingDirections.SampleLevel( LinearClamp, float3( _In.UV, 0.0 ), _ScatteringOrder ).w-1) / 4.0;		// Show scattering order-1
-//		return (3.0 + _Tex_OutgoingDirections.SampleLevel( LinearClamp, float3( _In.UV, _ScatteringOrder ), 0.0 ).w) / 6.0;	// Show height when stored in W
-
-		float4	Height_Weight = _Tex_OutgoingDirections.SampleLevel( LinearClamp, float3( _In.UV, _ScatteringOrder ), 0.0 );
-		Height_Weight /= max( 1.0, Height_Weight.w );
-		return Height_Weight.xyz;				// Show direction
-		return 0.5 * (1.0 + Height_Weight.xyz);	// Show direction
-	}
-
-	// Default height visualization
-	return (3.0+_Tex_HeightField.SampleLevel( LinearWrap, _In.UV, 0.0 ).w) / 6.0;
+//	return float3( 1, 0, 0 );
+	return _In.Color;
 }
