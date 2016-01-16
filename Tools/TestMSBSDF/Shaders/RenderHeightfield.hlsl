@@ -42,8 +42,15 @@ float3	PS( PS_IN _In ) : SV_TARGET0 {
 		return 0.5 * (1.0 + _Tex_HeightField.SampleLevel( LinearClamp, _In.UV, 0.0 ).xyz);
 	} else if ( _Flags&2 ) {
 		// Show outgoing directions
-		return (3.0 + _Tex_OutgoingDirections.SampleLevel( LinearClamp, float3( _In.UV, 0.0 ), 0.0 ).w) / 6.0;
-		return _Tex_OutgoingDirections.SampleLevel( LinearClamp, float3( _In.UV, 0.0 ), 0.0 ).xyz;
+//		return 0.01 * length( _Tex_OutgoingDirections.SampleLevel( LinearClamp, float3( _In.UV, _ScatteringOrder ), 0.0 ).xyz - float3( 256.0 * _In.UV, 0.0 ) );	// Show distance from exit ray to entry point
+//		return 1.0 * length( _Tex_OutgoingDirections.SampleLevel( LinearClamp, float3( _In.UV, _ScatteringOrder ), 0.0 ).xy / 256.0 - _In.UV );	// Show HORIZONTAL distance from exit ray to entry point
+//		return (_Tex_OutgoingDirections.SampleLevel( LinearClamp, float3( _In.UV, 0.0 ), _ScatteringOrder ).w-1) / 4.0;		// Show scattering order-1
+//		return (3.0 + _Tex_OutgoingDirections.SampleLevel( LinearClamp, float3( _In.UV, _ScatteringOrder ), 0.0 ).w) / 6.0;	// Show height when stored in W
+
+		float4	Height_Weight = _Tex_OutgoingDirections.SampleLevel( LinearClamp, float3( _In.UV, _ScatteringOrder ), 0.0 );
+		Height_Weight /= max( 1.0, Height_Weight.w );
+		return Height_Weight.xyz;				// Show direction
+		return 0.5 * (1.0 + Height_Weight.xyz);	// Show direction
 	}
 
 	// Default height visualization

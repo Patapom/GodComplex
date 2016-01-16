@@ -304,7 +304,7 @@ namespace Nuaj.Cirrus.Utility
 			if ( !m_bSliderDragging )
 				return;
 
-			int	NewValue = (int) Math.Floor( VisibleRangeMin + (float) (e.X - m_SliderRectangle.X) * (VisibleRangeMax - VisibleRangeMin) / m_SliderRectangle.Width );
+			int	NewValue = (int) Math.Floor( VisibleRangeMin + (float) (e.X - m_SliderRectangle.X) * (VisibleRangeMax - VisibleRangeMin) / m_SliderRectangle.Width + 0.5f );
 			Value = Math.Max( VisibleRangeMin, Math.Min( VisibleRangeMax, NewValue ) );
 		}
 

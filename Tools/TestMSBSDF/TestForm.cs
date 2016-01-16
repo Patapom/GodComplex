@@ -45,6 +45,7 @@ namespace TestMSBSDF
 		private struct CB_RayTrace {
 			public float3		_Direction;
 			public float		_Roughness;
+			public float2		_Offset;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -72,8 +73,9 @@ namespace TestMSBSDF
 		private ComputeShader		m_Shader_RayTraceSurface = null;
 		private Shader				m_Shader_RenderHeightField = null;
 
+		private Texture2D			m_Tex_Random = null;
 		private Texture2D			m_Tex_Heightfield = null;
-		private Texture2D			m_Tex_OutgoingDirections = null;
+		private Texture2D[]			m_Tex_OutgoingDirections = new Texture2D[2];
 
 		private Primitive			m_Prim_Heightfield = null;
 
@@ -121,14 +123,16 @@ namespace TestMSBSDF
 
 			m_SB_Beckmann = new StructuredBuffer<SB_Beckmann>( m_Device, 1024, true );
 
+			BuildRandomTexture();
 			BuildBeckmannSurfaceTexture( floatTrackbarControlBeckmannRoughness.Value );
-
-			m_Tex_OutgoingDirections = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 4, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
+			
+			m_Tex_OutgoingDirections[0] = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 4, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
+			m_Tex_OutgoingDirections[1] = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 4, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_Manipulator.Attach( panelOutput, m_Camera );
-			m_Manipulator.InitializeCamera( new float3( 0, 1, 4 ), new float3( 0, 0, 0 ), float3.UnitY );
+			m_Manipulator.InitializeCamera( new float3( 0, 1, 2 ), new float3( 0, 0, 0 ), float3.UnitY );
 		}
 
 		void	BuildPrimHeightfield() {
@@ -167,6 +171,27 @@ namespace TestMSBSDF
 		}
 
 		/// <summary>
+		/// Builds many random values
+		/// </summary>
+		void	BuildRandomTexture() {
+			PixelsBuffer	Content = new PixelsBuffer( HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE*System.Runtime.InteropServices.Marshal.SizeOf(typeof(float4)) );
+
+			WMath.SimpleRNG.SetSeed( 561321987, 132194982 );
+			using ( BinaryWriter W = Content.OpenStreamWrite() )
+				for ( int Y=0; Y < HEIGHTFIELD_SIZE; Y++ ) {
+					for ( int X=0; X < HEIGHTFIELD_SIZE; X++ ) {
+						W.Write( (float) WMath.SimpleRNG.GetUniform() );
+						W.Write( (float) WMath.SimpleRNG.GetUniform() );
+						W.Write( (float) WMath.SimpleRNG.GetUniform() );
+						W.Write( (float) WMath.SimpleRNG.GetUniform() );
+					}
+				}
+			Content.CloseStream();
+
+			m_Tex_Random = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { Content } );
+		}
+
+		/// <summary>
 		/// Builds a heightfield whose heights are distributed according to the following probability:
 		///		p(height) = exp( -0.5*height^2 ) / sqrt(2PI)
 		///	
@@ -175,7 +200,6 @@ namespace TestMSBSDF
 		/// </summary>
 		/// <remarks>Only isotropic roughness is supported</remarks>
 		void	BuildBeckmannSurfaceTexture( float _roughness ) {
-			PixelsBuffer	Content = new PixelsBuffer( HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE*System.Runtime.InteropServices.Marshal.SizeOf(typeof(Single)) );
 
 			// Precompute stuff that resemble a lot to the Box-Muller algorithm to generate normal distribution random values
 			WMath.SimpleRNG.SetSeed( 521288629, 362436069 );
@@ -191,7 +215,6 @@ namespace TestMSBSDF
 				m_SB_Beckmann.m[i].m_frequencyX = (float) (radius * Math.Cos( theta ) * _roughness);	// Frequency in X direction
 				m_SB_Beckmann.m[i].m_frequencyY = (float) (radius * Math.Sin( theta ) * _roughness);	// Frequency in Y direction
 			}
-//			double	scale = Math.Sqrt( 2.0 / N );
 
 			m_SB_Beckmann.Write();
 			m_SB_Beckmann.SetInput( 0 );
@@ -213,6 +236,10 @@ namespace TestMSBSDF
 					m_Tex_Heightfield.RemoveFromLastAssignedSlotUAV();
 				}
 			#else	// CPU version
+				PixelsBuffer	Content = new PixelsBuffer( HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE*System.Runtime.InteropServices.Marshal.SizeOf(typeof(float4)) );
+
+				double	scale = Math.Sqrt( 2.0 / N );
+
 				// Generate heights
 				float	range = 128.0f;
 				float2	pos;
@@ -252,28 +279,44 @@ namespace TestMSBSDF
 		/// Outputs resulting directions into a texture then performs a histogram
 		/// </summary>
 		/// <param name="_Roughness"></param>
-		void	RayTraceSurface( float _Roughness, float _Theta, float _Phi ) {
+		void	RayTraceSurface( float _roughness, float _theta, float _phi, int _iterationsCount ) {
 			if ( !m_Shader_RayTraceSurface.Use() )
 				return;
 
-			float	sinTheta = (float) Math.Sin( _Theta );
-			float	cosTheta = (float) Math.Cos( _Theta );
-			float	sinPhi = (float) Math.Sin( _Phi );
-			float	cosPhi = (float) Math.Cos( _Phi );
+			float	sinTheta = (float) Math.Sin( _theta );
+			float	cosTheta = (float) Math.Cos( _theta );
+			float	sinPhi = (float) Math.Sin( _phi );
+			float	cosPhi = (float) Math.Cos( _phi );
 
 			m_CB_RayTrace.m._Direction.Set( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );	// Minus sign because we need the direction pointing TOWARD the surface (i.e. z < 0)
-			m_CB_RayTrace.m._Roughness = _Roughness;
-			m_CB_RayTrace.UpdateData();
+			m_CB_RayTrace.m._Roughness = _roughness;
 
 			m_Tex_Heightfield.SetCS( 0 );
-			m_Tex_OutgoingDirections.RemoveFromLastAssignedSlots();
-			m_Tex_OutgoingDirections.SetCSUAV( 0 );
+			m_Tex_Random.SetCS( 1 );
 
-			m_Device.Clear( m_Tex_OutgoingDirections, float4.Zero );
+			m_Device.Clear( m_Tex_OutgoingDirections[0], float4.Zero );	// Clear source directions and weights
+			m_Device.Clear( m_Tex_OutgoingDirections[1], float4.Zero );	// Clear target directions and weights
 
-			m_Shader_RayTraceSurface.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, 1 );
+			WMath.Hammersley	pRNG = new WMath.Hammersley();
+			double[,]			sequence = pRNG.BuildSequence( _iterationsCount, 2 );
+			for ( int iterationIndex=0; iterationIndex < _iterationsCount; iterationIndex++ ) {
+				// Update trace offset
+				m_CB_RayTrace.m._Offset.Set( (float) sequence[iterationIndex,0], (float) sequence[iterationIndex,1] );
+				m_CB_RayTrace.UpdateData();
 
-			m_Tex_OutgoingDirections.RemoveFromLastAssignedSlotUAV();
+				m_Tex_OutgoingDirections[0].RemoveFromLastAssignedSlots();
+				m_Tex_OutgoingDirections[0].SetCS( 2 );		// Use previous buffer as input for accumulation
+				m_Tex_OutgoingDirections[1].SetCSUAV( 0 );	// New target buffer where to accumulate
+
+				m_Shader_RayTraceSurface.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, 1 );
+
+				m_Tex_OutgoingDirections[1].RemoveFromLastAssignedSlotUAV();
+
+				// Swap
+				Texture2D	temp = m_Tex_OutgoingDirections[0];
+				m_Tex_OutgoingDirections[0] = m_Tex_OutgoingDirections[1];
+				m_Tex_OutgoingDirections[1] = temp;
+			}
 		}
 
 		protected override void OnFormClosed( FormClosedEventArgs e )
@@ -285,8 +328,11 @@ namespace TestMSBSDF
 			m_Shader_ComputeBeckmannSurface.Dispose();
 			m_Shader_RenderHeightField.Dispose();
 
-			m_Tex_OutgoingDirections.Dispose();
+			m_Tex_OutgoingDirections[1].Dispose();
+			m_Tex_OutgoingDirections[0].Dispose();
 			m_Tex_Heightfield.Dispose();
+			m_Tex_Random.Dispose();
+
 			m_Prim_Heightfield.Dispose();
 
 			m_SB_Beckmann.Dispose();
@@ -333,7 +379,7 @@ namespace TestMSBSDF
 			m_CB_Main.UpdateData();
 
 			m_Tex_Heightfield.Set( 0 );
-			m_Tex_OutgoingDirections.SetPS( 1 );
+			m_Tex_OutgoingDirections[0].SetPS( 1 );
 
 			// =========== Render scene ===========
 			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
@@ -379,7 +425,7 @@ namespace TestMSBSDF
 		{
 			try {
 				m_pauseRendering = true;
-				RayTraceSurface( floatTrackbarControlBeckmannRoughness.Value, (float) Math.PI * floatTrackbarControlTheta.Value / 180.0f, 0.0f );
+				RayTraceSurface( floatTrackbarControlBeckmannRoughness.Value, (float) Math.PI * floatTrackbarControlTheta.Value / 180.0f, (float) Math.PI * floatTrackbarControlPhi.Value / 180.0f, integerTrackbarControlIterationsCount.Value );
 			} catch ( Exception ) {
 			} finally {
 				m_pauseRendering = false;

@@ -40,6 +40,10 @@
 			this.buttonRayTrace = new System.Windows.Forms.Button();
 			this.checkBoxShowOutgoingDirections = new System.Windows.Forms.CheckBox();
 			this.integerTrackbarControlScatteringOrder = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlIterationsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label3 = new System.Windows.Forms.Label();
+			this.label4 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlPhi = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.SuspendLayout();
 			// 
 			// panelOutput
@@ -120,13 +124,13 @@
 			this.label2.AutoSize = true;
 			this.label2.Location = new System.Drawing.Point( 851, 141 );
 			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size( 80, 13 );
+			this.label2.Size = new System.Drawing.Size( 111, 13 );
 			this.label2.TabIndex = 3;
-			this.label2.Text = "Incoming Angle";
+			this.label2.Text = "Incoming Angle Theta";
 			// 
 			// buttonRayTrace
 			// 
-			this.buttonRayTrace.Location = new System.Drawing.Point( 854, 184 );
+			this.buttonRayTrace.Location = new System.Drawing.Point( 854, 261 );
 			this.buttonRayTrace.Name = "buttonRayTrace";
 			this.buttonRayTrace.Size = new System.Drawing.Size( 75, 23 );
 			this.buttonRayTrace.TabIndex = 6;
@@ -159,16 +163,70 @@
 			this.integerTrackbarControlScatteringOrder.Value = 0;
 			this.integerTrackbarControlScatteringOrder.VisibleRangeMax = 3;
 			// 
+			// integerTrackbarControlIterationsCount
+			// 
+			this.integerTrackbarControlIterationsCount.Anchor = ((System.Windows.Forms.AnchorStyles) (((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+						| System.Windows.Forms.AnchorStyles.Right)));
+			this.integerTrackbarControlIterationsCount.Location = new System.Drawing.Point( 854, 235 );
+			this.integerTrackbarControlIterationsCount.MaximumSize = new System.Drawing.Size( 10000, 20 );
+			this.integerTrackbarControlIterationsCount.MinimumSize = new System.Drawing.Size( 70, 20 );
+			this.integerTrackbarControlIterationsCount.Name = "integerTrackbarControlIterationsCount";
+			this.integerTrackbarControlIterationsCount.RangeMax = 100;
+			this.integerTrackbarControlIterationsCount.RangeMin = 1;
+			this.integerTrackbarControlIterationsCount.Size = new System.Drawing.Size( 246, 20 );
+			this.integerTrackbarControlIterationsCount.TabIndex = 7;
+			this.integerTrackbarControlIterationsCount.Value = 1;
+			this.integerTrackbarControlIterationsCount.VisibleRangeMax = 10;
+			this.integerTrackbarControlIterationsCount.VisibleRangeMin = 1;
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point( 851, 219 );
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size( 81, 13 );
+			this.label3.TabIndex = 3;
+			this.label3.Text = "Iterations Count";
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point( 851, 180 );
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size( 98, 13 );
+			this.label4.TabIndex = 3;
+			this.label4.Text = "Incoming Angle Phi";
+			// 
+			// floatTrackbarControlPhi
+			// 
+			this.floatTrackbarControlPhi.Anchor = ((System.Windows.Forms.AnchorStyles) (((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+						| System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlPhi.Location = new System.Drawing.Point( 854, 196 );
+			this.floatTrackbarControlPhi.MaximumSize = new System.Drawing.Size( 10000, 20 );
+			this.floatTrackbarControlPhi.MinimumSize = new System.Drawing.Size( 70, 20 );
+			this.floatTrackbarControlPhi.Name = "floatTrackbarControlPhi";
+			this.floatTrackbarControlPhi.RangeMax = 180F;
+			this.floatTrackbarControlPhi.RangeMin = -180F;
+			this.floatTrackbarControlPhi.Size = new System.Drawing.Size( 246, 20 );
+			this.floatTrackbarControlPhi.TabIndex = 5;
+			this.floatTrackbarControlPhi.Value = 0F;
+			this.floatTrackbarControlPhi.VisibleRangeMax = 180F;
+			this.floatTrackbarControlPhi.VisibleRangeMin = -180F;
+			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF( 6F, 13F );
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size( 1112, 654 );
+			this.Controls.Add( this.integerTrackbarControlIterationsCount );
 			this.Controls.Add( this.integerTrackbarControlScatteringOrder );
 			this.Controls.Add( this.buttonRayTrace );
+			this.Controls.Add( this.floatTrackbarControlPhi );
 			this.Controls.Add( this.floatTrackbarControlTheta );
 			this.Controls.Add( this.checkBoxShowOutgoingDirections );
 			this.Controls.Add( this.checkBoxShowNormals );
+			this.Controls.Add( this.label3 );
+			this.Controls.Add( this.label4 );
 			this.Controls.Add( this.label2 );
 			this.Controls.Add( this.label1 );
 			this.Controls.Add( this.floatTrackbarControlBeckmannRoughness );
@@ -195,6 +253,10 @@
 		private System.Windows.Forms.Button buttonRayTrace;
 		private System.Windows.Forms.CheckBox checkBoxShowOutgoingDirections;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlScatteringOrder;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlIterationsCount;
+		private System.Windows.Forms.Label label3;
+		private System.Windows.Forms.Label label4;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPhi;
 	}
 }
 
