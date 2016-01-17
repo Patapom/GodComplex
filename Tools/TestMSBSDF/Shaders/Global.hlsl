@@ -1,6 +1,7 @@
 
 #define PI			3.1415926535897932384626433832795
 #define INVPI		0.31830988618379067153776752674503
+#define SQRTPI		1.7724538509055160272981674833411
 #define INFINITY	1e12
 
 // Dimensions of the height field (must match C# declaration)
@@ -45,13 +46,11 @@ float	pow3( float x ) { return x * x * x; }
 //	F0 = ((n2 - n1) / (n2 + n1))²
 //	=> n2 = (1 + sqrt(F0)) / (1 - sqrt(F0))
 //
-float	Fresnel_IORFromF0( float _F0 )
-{
+float	Fresnel_IORFromF0( float _F0 ) {
 	float	SqrtF0 = sqrt( _F0 );
 	return (1.0 + SqrtF0) / (1.00001 - SqrtF0);
 }
-float3	Fresnel_IORFromF0( float3 _F0 )
-{
+float3	Fresnel_IORFromF0( float3 _F0 ) {
 	float3	SqrtF0 = sqrt( _F0 );
 	return (1.0 + SqrtF0) / (1.00001 - SqrtF0);
 }
@@ -60,20 +59,17 @@ float3	Fresnel_IORFromF0( float3 _F0 )
 //	IOR = (1 + sqrt(F0)) / (1 - sqrt(F0))
 //	=> F0 = ((n2 - 1) / (n2 + 1))²
 //
-float	Fresnel_F0FromIOR( float _IOR )
-{
+float	Fresnel_F0FromIOR( float _IOR ) {
 	float	ratio = (_IOR - 1.0) / (_IOR + 1.0);
 	return ratio * ratio;
 }
-float3	Fresnel_F0FromIOR( float3 _IOR )
-{
+float3	Fresnel_F0FromIOR( float3 _IOR ) {
 	float3	ratio = (_IOR - 1.0) / (_IOR + 1.0);
 	return ratio * ratio;
 }
 
 // Schlick's approximation to Fresnel reflection (http://en.wikipedia.org/wiki/Schlick's_approximation)
-float3	FresnelSchlick( float3 _F0, float _CosTheta, float _FresnelStrength=1.0 )
-{
+float3	FresnelSchlick( float3 _F0, float _CosTheta, float _FresnelStrength=1.0 ) {
 	float	t = 1.0 - saturate( _CosTheta );
 	float	t2 = t * t;
 	float	t4 = t2 * t2;
@@ -82,8 +78,7 @@ float3	FresnelSchlick( float3 _F0, float _CosTheta, float _FresnelStrength=1.0 )
 
 // Full accurate Fresnel computation (from Walter's paper §5.1 => http://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf)
 // For dielectrics only but who cares!?
-float3	FresnelAccurate( float3 _IOR, float _CosTheta, float _FresnelStrength=1.0 )
-{
+float3	FresnelAccurate( float3 _IOR, float _CosTheta, float _FresnelStrength=1.0 ) {
 	float	c = lerp( 1.0, _CosTheta, _FresnelStrength );
 	float3	g_squared = max( 0.0, _IOR*_IOR - 1.0 + c*c );
 // 	if ( g_squared < 0.0 )
@@ -127,4 +122,25 @@ void BuildOrthonormalBasis( float3 _normal, out float3 _tangent, out float3 _bit
 
 	_tangent = float3( 1.0 - _normal.x*_normal.x*a, b, -_normal.x );
 	_bitangent = float3( b, 1.0 - _normal.y*_normal.y*a, -_normal.y );
+}
+
+// Error function implementation from formula 7.1.26 from "1964 Abramowitz, Stegun - Handbook of Mathematical Functions"
+float erf( float x ) {
+    // constants
+    float	a1 =  0.254829592;
+    float	a2 = -0.284496736;
+    float	a3 =  1.421413741;
+    float	a4 = -1.453152027;
+    float	a5 =  1.061405429;
+    float	p  =  0.3275911;
+ 
+    // Save the sign of x
+    float	sign = x < 0.0 ? -1 : 1;
+    x = abs(x);
+ 
+    // A&S formula 7.1.26
+    float t = 1.0/(1.0 + p*x);
+    float y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*exp(-x*x);
+ 
+    return sign*y;
 }

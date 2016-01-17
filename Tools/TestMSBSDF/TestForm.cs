@@ -75,8 +75,12 @@ namespace TestMSBSDF
 		private struct CB_RenderLobe {
 			public float3		_Direction;
 			public float		_LobeIntensity;
+			public float3		_ReflectedDirection;
 			public uint			_ScatteringOrder;
 			public uint			_Flags;
+			public float		_Roughness;
+			public float		_ScaleR;
+			public float		_ScaleT;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -586,28 +590,60 @@ namespace TestMSBSDF
 				m_Prim_Heightfield.Render( m_Shader_RenderHeightField );
 			}
 
-			// Render lobe
-			if ( checkBoxShowLobe.Checked ) {
-				if ( m_Shader_RenderLobe.Use() ) {
+			// Render lobes
+			if ( checkBoxShowLobe.Checked || checkBoxShowAnalyticalBeckmann.Checked ) {
+				// Compute reflected direction to orient the lobe against
+				float3	reflectedDirection = m_lastComputedDirection;
+						reflectedDirection.z = -reflectedDirection.z;
 
-					// Compute reflected direction to orient the lobe against
-					float3	reflectedDirection = m_lastComputedDirection;
-							reflectedDirection.z = -reflectedDirection.z;
+				m_CB_RenderLobe.m._Direction = m_lastComputedDirection;
+				m_CB_RenderLobe.m._LobeIntensity = floatTrackbarControlLobeIntensity.Value;
+				m_CB_RenderLobe.m._ReflectedDirection = reflectedDirection;
+				m_CB_RenderLobe.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value - 1;
+				m_CB_RenderLobe.m._Flags = checkBoxShowAnalyticalBeckmann.Checked ? 2U : 0U;
+m_CB_RenderLobe.m._Roughness = floatTrackbarControlBeckmannRoughness.Value;
+				m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR.Value;
+				m_CB_RenderLobe.m._ScaleT = floatTrackbarControlLobeScaleT.Value;
 
-					m_CB_RenderLobe.m._Direction = reflectedDirection;
-					m_CB_RenderLobe.m._LobeIntensity = floatTrackbarControlLobeIntensity.Value;
-					m_CB_RenderLobe.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value - 1;
-					m_CB_RenderLobe.m._Flags = 0U;
-					m_CB_RenderLobe.UpdateData();
-
-					m_Prim_Lobe.Render( m_Shader_RenderLobe );
-
-					if ( checkBoxShowWireframe.Checked ) {
-						m_CB_RenderLobe.m._Flags = 1U;	// Wireframe mode
+				if ( checkBoxShowLobe.Checked ) {
+					// Show simulated lobe
+					if ( m_Shader_RenderLobe.Use() ) {
+						m_CB_RenderLobe.m._Flags = 0U;
 						m_CB_RenderLobe.UpdateData();
-						m_Device.SetRenderStates( RASTERIZER_STATE.WIREFRAME, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.NOCHANGE );
 
 						m_Prim_Lobe.Render( m_Shader_RenderLobe );
+
+						if ( checkBoxShowWireframe.Checked ) {
+							m_CB_RenderLobe.m._Flags |= 1U;	// Wireframe mode
+							m_CB_RenderLobe.UpdateData();
+							m_Device.SetRenderStates( RASTERIZER_STATE.WIREFRAME, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.NOCHANGE );
+
+							m_Prim_Lobe.Render( m_Shader_RenderLobe );
+						}
+					}
+				}
+
+				if ( checkBoxShowAnalyticalBeckmann.Checked ) {
+					// Show analytical Beckmann lobe
+					if ( m_Shader_RenderLobe.Use() ) {
+						uint	flags = 0U;
+						if ( radioButtonAnalyticalBeckmann.Checked ) flags = 00U;
+						else if ( radioButtonAnalyticalGGX.Checked ) flags = 01U;
+						else if ( radioButtonAnalyticalPhong.Checked ) flags = 02U;
+//						else if ( radioButtonAnalyticalPhong.Checked ) flags = 03U;	// Other
+
+						m_CB_RenderLobe.m._Flags = 2U | (flags << 2);	// Analytical
+						m_CB_RenderLobe.UpdateData();
+
+						m_Prim_Lobe.Render( m_Shader_RenderLobe );
+
+						if ( checkBoxShowWireframe.Checked ) {
+							m_CB_RenderLobe.m._Flags |= 1U;	// Wireframe mode
+							m_CB_RenderLobe.UpdateData();
+							m_Device.SetRenderStates( RASTERIZER_STATE.WIREFRAME, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.NOCHANGE );
+
+							m_Prim_Lobe.Render( m_Shader_RenderLobe );
+						}
 					}
 				}
 
