@@ -115,6 +115,7 @@ namespace TestMSBSDF
 		private Texture2D			m_Tex_LobeHistogram_Decimal = null;
 		private Texture2D			m_Tex_LobeHistogram_Integer = null;
 		private Texture2D			m_Tex_LobeHistogram = null;
+		private Texture2D			m_Tex_LobeHistogram_CPU = null;
 
 		private Primitive			m_Prim_Heightfield = null;
 		private Primitive			m_Prim_Lobe = null;
@@ -182,6 +183,7 @@ namespace TestMSBSDF
 			m_Tex_LobeHistogram_Decimal = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
 			m_Tex_LobeHistogram_Integer = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
 			m_Tex_LobeHistogram = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
+			m_Tex_LobeHistogram_CPU = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32_FLOAT, true, false, null );
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
@@ -208,6 +210,8 @@ namespace TestMSBSDF
 			m_Shader_RayTraceSurface.Dispose();
 			m_Shader_ComputeBeckmannSurface.Dispose();
 
+			m_Tex_LobeHistogram_CPU.Dispose();
+			m_Tex_LobeHistogram.Dispose();
 			m_Tex_LobeHistogram_Decimal.Dispose();
 			m_Tex_LobeHistogram_Integer.Dispose();
 			m_Tex_OutgoingDirections.Dispose();
@@ -559,6 +563,9 @@ namespace TestMSBSDF
  				m_Tex_LobeHistogram_Integer.RemoveFromLastAssignedSlotUAV();
 				m_Tex_LobeHistogram.RemoveFromLastAssignedSlotUAV();
 			}
+
+			// 4] Read back to CPU for fitting
+			m_Tex_LobeHistogram_CPU.CopyFrom( m_Tex_LobeHistogram );
 		}
 
 		bool	m_pauseRendering = false;
@@ -706,6 +713,123 @@ m_CB_RenderLobe.m._Roughness = floatTrackbarControlBeckmannRoughness.Value;
 				m_Device.Exit();
 				m_Device = null;
 			}
+		}
+
+		#endregion
+
+		#region Lobe Fitting
+
+		class	LobeModel : WMath.BFGS.Model {
+
+			double		m_theta;
+			double		m_phi;
+			double		m_roughness;
+			double[,]	m_histogramData;
+
+			public LobeModel() {}
+
+			public void		Init( double _theta, double _phi, double _roughness, Texture2D _texHistogram_CPU, int _scatteringOrder ) {
+				_scatteringOrder--;	// Because scattering order 1 is actually stored in first slice of the texture array
+
+				// 1] Readback lobe texture data into an array
+				int	W = _texHistogram_CPU.Width;
+				int	H = _texHistogram_CPU.Height;
+				m_histogramData = new double[W,H];
+				PixelsBuffer	Content = _texHistogram_CPU.Map( 0, _scatteringOrder );
+				using ( BinaryReader R = Content.OpenStreamRead() )
+					for ( int Y=0; Y < H; Y++ )
+						for ( int X=0; X < W; X++ )
+							m_histogramData[X,Y] = R.ReadSingle();
+				Content.CloseStream();
+				_texHistogram_CPU.UnMap( 0, _scatteringOrder );
+
+				// 2] Setup initial parameters
+				m_theta = _theta;
+				m_phi = _phi;
+				m_roughness = _roughness;
+
+				m_parameters[0] = m_theta;
+				m_parameters[1] = m_roughness;
+				m_parameters[2] = 1.0;			// Initialize lobe size
+				m_parameters[3] = 1.0;			// Initialize lobe scale along tangent
+				m_parameters[4] = 1.0;			// Initialize lobe scale along bitangent
+			}
+
+			#region Model Implementation
+
+			double[]		m_parameters = new double[5];
+
+			public override double[]		Parameters {
+				get { return m_parameters; }
+				set { m_parameters = value; }
+			}
+
+			public override double Eval( double[] _NewParameters ) {
+
+// TODO: Estimate lobe aligned with axis bent by theta and scaled in its tangent and bitangent directions!
+
+// 			// Prepare the array of luminance values from the BRDF
+// 			double[]	Values = InitMatrix( 90, 90 );
+// 			var	Luminance = new vec3( 0.2126, 0.7152, 0.0722 );		// Observer. = 2°, Illuminant = D65
+// 			for ( int Y=0; Y < 90; Y++ )
+// 				for ( int X=0; X < 90; X++ ) {
+// 					var	Reflectance = _BRDFTarget.sample( X, Y );
+// 					var	Luma = Luminance.dot( Reflectance );
+// 					Values[Y][X] = Luma;
+// 				}
+// 
+// 			// Prepare our evaluation functions
+// 			var	Goal = 0.01;
+// 			var	C, B, Diff;
+// 
+// 			var	SumSqDifference;
+// 			double	EvalModel( double[] _Params ) {	// We must return the difference between current function and target BRDF
+// 
+// 				// Apply constraints
+// 				_ConstraintCallback( _Params );
+// 
+// 				// Prepare model
+// 				_PrepareEvalModelCallback( _Params );
+// 
+// 				SumSqDifference = 0.0;
+// 				for ( Y=0; Y < 90; Y++ )
+// 					for ( X=0; X < 90; X++ )
+// 					{
+// 						C = _EvalModelCallback( _Params, X, Y );
+// 
+// // Use log
+// C = Math.log( Math.max( 1e-8, C ) );
+// 
+// 					// Actual BRDF
+// 					B = Values[Y][X];
+// 
+// // Use log
+// B = Math.log( Math.max( 1e-8, B ) );
+// 
+// 						Diff = C - B;
+// 						Diff *= Diff;
+// 						SumSqDifference += Diff;
+// 					}
+// 
+// 				if ( double.IsNaN( SumSqDifference ) )
+// 					throw new Exception( "NaN in eval!" );
+// 
+// 				return SumSqDifference;
+// 			}
+
+				return 0.0;
+			}
+
+			#endregion
+		}
+		LobeModel	m_lobeModel = new LobeModel();
+
+		void	PerformLobeFitting( float _theta, float _phi, float _roughness, int _scatteringOrder ) {
+
+			m_lobeModel.Init( _theta, _phi, _roughness, m_Tex_LobeHistogram_CPU, _scatteringOrder );
+
+			WMath.BFGS	Fitter = new WMath.BFGS();
+			Fitter.Minimize( m_lobeModel );
 		}
 
 		#endregion

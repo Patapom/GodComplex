@@ -256,6 +256,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="BoundingSphere.cs" />
+    <Compile Include="FittingBFGS.cs" />
     <Compile Include="Functions.cs" />
     <Compile Include="QuasiRandom.cs" />
     <Compile Include="Random.cs" />
