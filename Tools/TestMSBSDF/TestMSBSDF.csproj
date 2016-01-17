@@ -96,6 +96,7 @@
   <ItemGroup>
     <Content Include="Shaders\ComputeBeckmannSurface.hlsl" />
     <Content Include="Shaders\AccumulateOutgoingDirections.hlsl" />
+    <Content Include="Shaders\RenderCylinder.hlsl" />
     <Content Include="Shaders\RenderLobe.hlsl" />
     <Content Include="Shaders\RayTraceSurface.hlsl" />
     <None Include="Shaders\Global.hlsl" />

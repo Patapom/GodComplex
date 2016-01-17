@@ -15,9 +15,9 @@ namespace TestMSBSDF
 {
 	public partial class TestForm : Form
 	{
-		const int				HEIGHTFIELD_SIZE = 512;
+		const int				HEIGHTFIELD_SIZE = 512;						//  (must match HLSL declaration)
 		const int				MAX_SCATTERING_ORDER = 4;
-		const int				LOBES_COUNT_THETA = 64;
+		const int				LOBES_COUNT_THETA = 128;					// (must match HLSL declaration)
 		const int				LOBES_COUNT_PHI = 2 * LOBES_COUNT_THETA;
 
 		static readonly double	SQRT2 = Math.Sqrt( 2.0 );
@@ -73,8 +73,17 @@ namespace TestMSBSDF
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_RenderLobe {
+			public float3		_Direction;
 			public float		_LobeIntensity;
 			public uint			_ScatteringOrder;
+			public uint			_Flags;
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_RenderCylinder {
+			public float3		_Direction;
+			public float		_Length;
+			public float		_Radius;
 		}
 
 		private ConstantBuffer<CB_Main>				m_CB_Main = null;
@@ -84,6 +93,7 @@ namespace TestMSBSDF
 		private ConstantBuffer<CB_Finalize>			m_CB_Finalize = null;
 		private ConstantBuffer<CB_Render>			m_CB_Render = null;
 		private ConstantBuffer<CB_RenderLobe>		m_CB_RenderLobe = null;
+		private ConstantBuffer<CB_RenderCylinder>	m_CB_RenderCylinder = null;
 
 		private StructuredBuffer<SB_Beckmann>		m_SB_Beckmann;
 
@@ -93,6 +103,7 @@ namespace TestMSBSDF
 		private ComputeShader		m_Shader_FinalizeOutgoingDirections = null;
 		private Shader				m_Shader_RenderHeightField = null;
 		private Shader				m_Shader_RenderLobe = null;
+		private Shader				m_Shader_RenderCylinder = null;
 
 		private Texture2D			m_Tex_Random = null;
 		private Texture2D			m_Tex_Heightfield = null;
@@ -100,13 +111,16 @@ namespace TestMSBSDF
 		private Texture2D			m_Tex_LobeHistogram_Decimal = null;
 		private Texture2D			m_Tex_LobeHistogram_Integer = null;
 		private Texture2D			m_Tex_LobeHistogram = null;
-		private int					m_lastComputedHistogramIterationsCount = 1;
 
 		private Primitive			m_Prim_Heightfield = null;
 		private Primitive			m_Prim_Lobe = null;
+		private Primitive			m_Prim_Cylinder = null;
 
 		private Camera				m_Camera = new Camera();
 		private CameraManipulator	m_Manipulator = new CameraManipulator();
+
+		private float3				m_lastComputedDirection;
+		private int					m_lastComputedHistogramIterationsCount = 1;
 
 		public TestForm() {
 			InitializeComponent();
@@ -137,6 +151,7 @@ namespace TestMSBSDF
 			m_CB_Finalize = new ConstantBuffer<CB_Finalize>( m_Device, 10 );
 			m_CB_Render = new ConstantBuffer<CB_Render>( m_Device, 10 );
 			m_CB_RenderLobe = new ConstantBuffer<CB_RenderLobe>( m_Device, 10 );
+			m_CB_RenderCylinder = new ConstantBuffer<CB_RenderCylinder>( m_Device, 10 );
 
 			try {
 				m_Shader_ComputeBeckmannSurface = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/ComputeBeckmannSurface.hlsl" ) ), "CS", null );
@@ -145,12 +160,14 @@ namespace TestMSBSDF
 				m_Shader_FinalizeOutgoingDirections = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ) ), "CS_Finalize", null );
 				m_Shader_RenderHeightField = new Shader( m_Device, new ShaderFile( new FileInfo( "Shaders/RenderHeightField.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
 				m_Shader_RenderLobe = new Shader( m_Device, new ShaderFile( new FileInfo( "Shaders/RenderLobe.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
+				m_Shader_RenderCylinder = new Shader( m_Device, new ShaderFile( new FileInfo( "Shaders/RenderCylinder.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
 			} catch ( Exception _e ) {
 				MessageBox( "Shader \"RenderHeightField\" failed to compile!\n\n" + _e.Message );
 			}
 
 			BuildPrimHeightfield();
 			BuildPrimLobe();
+			BuildPrimCylinder();
 
 			m_SB_Beckmann = new StructuredBuffer<SB_Beckmann>( m_Device, 1024, true );
 
@@ -179,6 +196,7 @@ namespace TestMSBSDF
 			if ( m_Device == null )
 				return;
 
+			m_Shader_RenderCylinder.Dispose();
 			m_Shader_RenderLobe.Dispose();
 			m_Shader_RenderHeightField.Dispose();
 			m_Shader_FinalizeOutgoingDirections.Dispose();
@@ -197,6 +215,7 @@ namespace TestMSBSDF
 
 			m_SB_Beckmann.Dispose();
 
+			m_CB_RenderCylinder.Dispose();
 			m_CB_RenderLobe.Dispose();
 			m_CB_Render.Dispose();
 			m_CB_Finalize.Dispose();
@@ -250,33 +269,103 @@ namespace TestMSBSDF
 		}
 
 		void	BuildPrimLobe() {
-			VertexP3[]	Vertices = new VertexP3[LOBES_COUNT_PHI*LOBES_COUNT_THETA];
-			for ( uint Y=0; Y < LOBES_COUNT_THETA; Y++ ) {
-				float	theta = 2.0f * (float) Math.Asin( Math.Sqrt( 0.5 * Y / (LOBES_COUNT_THETA-1) ) );
-				for ( uint X=0; X < LOBES_COUNT_PHI; X++ ) {
-					float	phi = 2.0f * (float) Math.PI * X / LOBES_COUNT_PHI;
+			const int	RESOLUTION_THETA = 4 * LOBES_COUNT_THETA;
+			const int	RESOLUTION_PHI = 2 * RESOLUTION_THETA;
 
-					Vertices[LOBES_COUNT_PHI*Y+X].P.Set( (float) (Math.Sin( theta ) * Math.Cos( phi )), (float) Math.Cos( theta ), -(float) (Math.Sin( theta ) * Math.Sin( phi )) );	// Phi=0 => +X, Phi=PI/2 => -Z in our Y-up frame
+			#if true	// FULL SPHERE
+				VertexP3[]	Vertices = new VertexP3[RESOLUTION_PHI*2*RESOLUTION_THETA];
+				for ( uint Y=0; Y < 2*RESOLUTION_THETA; Y++ ) {
+					float	theta = 2.0f * (float) Math.Asin( Math.Sqrt( (float) Y / (2*RESOLUTION_THETA-1) ) );
+					for ( uint X=0; X < RESOLUTION_PHI; X++ ) {
+						float	phi = 2.0f * (float) Math.PI * X / RESOLUTION_PHI;
+						Vertices[RESOLUTION_PHI*Y+X].P.Set( (float) (Math.Sin( theta ) * Math.Cos( phi )), (float) Math.Cos( theta ), -(float) (Math.Sin( theta ) * Math.Sin( phi )) );	// Phi=0 => +X, Phi=PI/2 => -Z in our Y-up frame
+					}
+				}
+
+				List<uint>	Indices = new List<uint>();
+				for ( uint Y=0; Y < 2*RESOLUTION_THETA-1; Y++ ) {
+					uint	IndexStart0 = RESOLUTION_PHI*Y;		// Start index of top band
+					uint	IndexStart1 = RESOLUTION_PHI*(Y+1);	// Start index of bottom band
+					for ( uint X=0; X < RESOLUTION_PHI; X++ ) {
+						Indices.Add( IndexStart0++ );
+						Indices.Add( IndexStart1++ );
+					}
+					Indices.Add( IndexStart0-RESOLUTION_PHI );	// Loop
+					Indices.Add( IndexStart1-RESOLUTION_PHI );
+					if ( Y != 2*RESOLUTION_THETA-1 ) {
+						Indices.Add( IndexStart1-1 );			// Double current band's last index (first degenerate triangle => finish current band)
+						Indices.Add( IndexStart0 );				// Double next band's first index (second degenerate triangle => start new band)
+					}
+				}
+				m_Prim_Lobe = new Primitive( m_Device, RESOLUTION_PHI*2*RESOLUTION_THETA, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3 );
+			#else	// HEMISPHERE
+				VertexP3[]	Vertices = new VertexP3[RESOLUTION_PHI*RESOLUTION_THETA];
+				for ( uint Y=0; Y < RESOLUTION_THETA; Y++ ) {
+//					float	theta = 2.0f * (float) Math.Asin( Math.Sqrt( 0.5 * Y / (RESOLUTION_THETA-1) ) );
+					float	theta = 0.5f * (float) Math.PI * Y / (RESOLUTION_THETA-1);
+					for ( uint X=0; X < RESOLUTION_PHI; X++ ) {
+						float	phi = 2.0f * (float) Math.PI * X / RESOLUTION_PHI;
+
+						Vertices[RESOLUTION_PHI*Y+X].P.Set( (float) (Math.Sin( theta ) * Math.Cos( phi )), (float) Math.Cos( theta ), -(float) (Math.Sin( theta ) * Math.Sin( phi )) );	// Phi=0 => +X, Phi=PI/2 => -Z in our Y-up frame
+					}
+				}
+
+				List<uint>	Indices = new List<uint>();
+				for ( uint Y=0; Y < RESOLUTION_THETA-1; Y++ ) {
+					uint	IndexStart0 = RESOLUTION_PHI*Y;		// Start index of top band
+					uint	IndexStart1 = RESOLUTION_PHI*(Y+1);	// Start index of bottom band
+					for ( uint X=0; X < RESOLUTION_PHI; X++ ) {
+						Indices.Add( IndexStart0++ );
+						Indices.Add( IndexStart1++ );
+					}
+					Indices.Add( IndexStart0-RESOLUTION_PHI );	// Loop
+					Indices.Add( IndexStart1-RESOLUTION_PHI );
+					if ( Y != RESOLUTION_THETA-1 ) {
+						Indices.Add( IndexStart1-1 );			// Double current band's last index (first degenerate triangle => finish current band)
+						Indices.Add( IndexStart0 );				// Double next band's first index (second degenerate triangle => start new band)
+					}
+				}
+				m_Prim_Lobe = new Primitive( m_Device, RESOLUTION_PHI*RESOLUTION_THETA, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3 );
+			#endif
+		}
+
+		void	BuildPrimCylinder() {
+			const int	COUNT = 20;
+
+			// Build 2 circles at Y=0 and Y=1
+			VertexP3[]	Vertices = new VertexP3[2*COUNT];
+			for ( uint Y=0; Y < 2; Y++ ) {
+				for ( uint X=0; X < COUNT; X++ ) {
+					float	phi = 2.0f * (float) Math.PI * X / COUNT;
+					Vertices[COUNT*Y+X].P.Set( (float) Math.Cos( phi ), Y, (float) Math.Sin( phi ) );
 				}
 			}
 
+			// Link the 2 circles with quads
 			List<uint>	Indices = new List<uint>();
-			for ( uint Y=0; Y < LOBES_COUNT_THETA-1; Y++ ) {
-				uint	IndexStart0 = LOBES_COUNT_PHI*Y;		// Start index of top band
-				uint	IndexStart1 = LOBES_COUNT_PHI*(Y+1);	// Start index of bottom band
-				for ( uint X=0; X < LOBES_COUNT_PHI; X++ ) {
-					Indices.Add( IndexStart0++ );
-					Indices.Add( IndexStart1++ );
-				}
-				Indices.Add( IndexStart0-LOBES_COUNT_PHI );	// Loop
-				Indices.Add( IndexStart1-LOBES_COUNT_PHI );
-				if ( Y != LOBES_COUNT_THETA-1 ) {
-					Indices.Add( IndexStart1-1 );			// Double current band's last index (first degenerate triangle => finish current band)
-					Indices.Add( IndexStart0 );				// Double next band's first index (second degenerate triangle => start new band)
-				}
+			for ( uint X=0; X < COUNT; X++ ) {
+				uint	NX = (X+1) % COUNT;
+				Indices.Add( X );
+				Indices.Add( COUNT+X );
+				Indices.Add( COUNT+NX );
+
+				Indices.Add( X );
+				Indices.Add( COUNT+NX );
+				Indices.Add( NX );
 			}
 
-			m_Prim_Lobe = new Primitive( m_Device, LOBES_COUNT_PHI*LOBES_COUNT_THETA, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3 );
+			// Cap the circles
+			for ( uint X=1; X < COUNT-1; X++ ) {
+				Indices.Add( 0 );
+				Indices.Add( X );
+				Indices.Add( X+1 );
+
+				Indices.Add( COUNT+0 );
+				Indices.Add( COUNT+X+1 );	// Indices reversed for bottom triangles, although we render in CULL_NONE so we don't really care...
+				Indices.Add( COUNT+X );
+			}
+
+			m_Prim_Cylinder = new Primitive( m_Device, 2*COUNT, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3 );
 		}
 
 		#endregion
@@ -405,12 +494,14 @@ namespace TestMSBSDF
 			float	sinPhi = (float) Math.Sin( _phi );
 			float	cosPhi = (float) Math.Cos( _phi );
 
-			m_CB_RayTrace.m._Direction.Set( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );	// Minus sign because we need the direction pointing TOWARD the surface (i.e. z < 0)
+			m_lastComputedDirection.Set( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );	// Minus sign because we need the direction pointing TOWARD the surface (i.e. z < 0)
+			m_lastComputedHistogramIterationsCount = _iterationsCount;
+
+			m_CB_RayTrace.m._Direction = m_lastComputedDirection;
 			m_CB_RayTrace.m._Roughness = _roughness;
 
 			m_Tex_OutgoingDirections.RemoveFromLastAssignedSlots();
 			m_Tex_LobeHistogram.RemoveFromLastAssignedSlots();
-			m_lastComputedHistogramIterationsCount = _iterationsCount;
 
 			m_Device.Clear( m_Tex_LobeHistogram_Decimal, float4.Zero );	// Clear counters
 			m_Device.Clear( m_Tex_LobeHistogram_Integer, float4.Zero );
@@ -488,7 +579,7 @@ namespace TestMSBSDF
 			// Render heightfield
 			if ( !radioButtonHideSurface.Checked && m_Shader_RenderHeightField.Use() ) {
 				m_CB_Render.m._Flags = (checkBoxShowNormals.Checked ? 1U : 0U) | (checkBoxShowOutgoingDirections.Checked ? 2U : 0U) | (checkBoxShowOutgoingDirectionsHistogram.Checked ? 4U : 0U);
-				m_CB_Render.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value;
+				m_CB_Render.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value - 1;
 				m_CB_Render.m._IterationsCount = (uint) m_lastComputedHistogramIterationsCount;
 				m_CB_Render.UpdateData();
 
@@ -496,12 +587,41 @@ namespace TestMSBSDF
 			}
 
 			// Render lobe
-			if ( checkBoxShowLobe.Checked && m_Shader_RenderLobe.Use() ) {
-				m_CB_RenderLobe.m._LobeIntensity = floatTrackbarControlLobeIntensity.Value;
-				m_CB_RenderLobe.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value;
-				m_CB_RenderLobe.UpdateData();
+			if ( checkBoxShowLobe.Checked ) {
+				if ( m_Shader_RenderLobe.Use() ) {
 
-				m_Prim_Lobe.Render( m_Shader_RenderLobe );
+					// Compute reflected direction to orient the lobe against
+					float3	reflectedDirection = m_lastComputedDirection;
+							reflectedDirection.z = -reflectedDirection.z;
+
+					m_CB_RenderLobe.m._Direction = reflectedDirection;
+					m_CB_RenderLobe.m._LobeIntensity = floatTrackbarControlLobeIntensity.Value;
+					m_CB_RenderLobe.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value - 1;
+					m_CB_RenderLobe.m._Flags = 0U;
+					m_CB_RenderLobe.UpdateData();
+
+					m_Prim_Lobe.Render( m_Shader_RenderLobe );
+
+					if ( checkBoxShowWireframe.Checked ) {
+						m_CB_RenderLobe.m._Flags = 1U;	// Wireframe mode
+						m_CB_RenderLobe.UpdateData();
+						m_Device.SetRenderStates( RASTERIZER_STATE.WIREFRAME, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.NOCHANGE );
+
+						m_Prim_Lobe.Render( m_Shader_RenderLobe );
+					}
+				}
+
+				// Render cylinder
+				if ( m_Shader_RenderCylinder.Use() ) {
+					m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.NOCHANGE );
+
+					m_CB_RenderCylinder.m._Direction = m_lastComputedDirection;
+					m_CB_RenderCylinder.m._Length = 10.0f;
+					m_CB_RenderCylinder.m._Radius = 0.025f;
+					m_CB_RenderCylinder.UpdateData();
+
+					m_Prim_Cylinder.Render( m_Shader_RenderCylinder );
+				}
 			}
 
 			// Show!

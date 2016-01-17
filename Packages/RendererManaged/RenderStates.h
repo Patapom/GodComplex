@@ -14,6 +14,7 @@ namespace RendererManaged {
 		CULL_NONE,
 		CULL_BACK,
 		CULL_FRONT,
+		WIREFRAME,
 	};
 
 	public enum class	DEPTHSTENCIL_STATE

@@ -3,13 +3,13 @@
 #define INVPI		0.31830988618379067153776752674503
 #define INFINITY	1e12
 
-// Dimensions of the height field
+// Dimensions of the height field (must match C# declaration)
 static const uint	HEIGHTFIELD_SIZE = 512;
 static const float	INV_HEIGHTFIELD_SIZE = 1.0 / HEIGHTFIELD_SIZE;
 
-// Dimensions of the hemispherical lobe
-static const uint	LOBES_COUNT_THETA = 64;
-static const uint	LOBES_COUNT_PHI = 128;
+// Dimensions of the hemispherical lobe (must match C# declaration)
+static const uint	LOBES_COUNT_THETA = 128;
+static const uint	LOBES_COUNT_PHI = 2*LOBES_COUNT_THETA;
 
 cbuffer CB_Main : register(b0) {
 };

@@ -47,34 +47,32 @@ void	RendererManaged::Device::ClearDepthStencil( Texture2D^ _RenderTarget, float
 void	RendererManaged::Device::SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCIL_STATE _DS, BLEND_STATE _BS )
 {
 	::RasterizerState*	pRS = NULL;
-	switch ( _RS )
-	{
-	case RASTERIZER_STATE::NOCHANGE: break;
-	case RASTERIZER_STATE::CULL_NONE:	pRS = m_pDevice->m_pRS_CullNone; break;
-	case RASTERIZER_STATE::CULL_BACK:	pRS = m_pDevice->m_pRS_CullBack; break;
-	case RASTERIZER_STATE::CULL_FRONT:	pRS = m_pDevice->m_pRS_CullFront; break;
-	default: throw gcnew Exception( "Unsupported rasterizer state!" );
+	switch ( _RS ) {
+		case RASTERIZER_STATE::NOCHANGE: break;
+		case RASTERIZER_STATE::CULL_NONE:	pRS = m_pDevice->m_pRS_CullNone; break;
+		case RASTERIZER_STATE::CULL_BACK:	pRS = m_pDevice->m_pRS_CullBack; break;
+		case RASTERIZER_STATE::CULL_FRONT:	pRS = m_pDevice->m_pRS_CullFront; break;
+		case RASTERIZER_STATE::WIREFRAME:	pRS = m_pDevice->m_pRS_WireFrame; break;
+		default: throw gcnew Exception( "Unsupported rasterizer state!" );
 	}
 
 	::DepthStencilState*	pDS = NULL;
-	switch ( _DS )
-	{
-	case DEPTHSTENCIL_STATE::NOCHANGE: break;
-	case DEPTHSTENCIL_STATE::DISABLED:					pDS = m_pDevice->m_pDS_Disabled; break;
-	case DEPTHSTENCIL_STATE::READ_DEPTH_LESS_EQUAL:		pDS = m_pDevice->m_pDS_ReadLessEqual; break;
-	case DEPTHSTENCIL_STATE::READ_WRITE_DEPTH_LESS:		pDS = m_pDevice->m_pDS_ReadWriteLess; break;
-	case DEPTHSTENCIL_STATE::READ_WRITE_DEPTH_GREATER:	pDS = m_pDevice->m_pDS_ReadWriteGreater; break;
-	default: throw gcnew Exception( "Unsupported depth stencil state!" );
+	switch ( _DS ) {
+		case DEPTHSTENCIL_STATE::NOCHANGE: break;
+		case DEPTHSTENCIL_STATE::DISABLED:					pDS = m_pDevice->m_pDS_Disabled; break;
+		case DEPTHSTENCIL_STATE::READ_DEPTH_LESS_EQUAL:		pDS = m_pDevice->m_pDS_ReadLessEqual; break;
+		case DEPTHSTENCIL_STATE::READ_WRITE_DEPTH_LESS:		pDS = m_pDevice->m_pDS_ReadWriteLess; break;
+		case DEPTHSTENCIL_STATE::READ_WRITE_DEPTH_GREATER:	pDS = m_pDevice->m_pDS_ReadWriteGreater; break;
+		default: throw gcnew Exception( "Unsupported depth stencil state!" );
 	}
 
 	::BlendState*	pBS = NULL;
-	switch ( _BS )
-	{
-	case BLEND_STATE::NOCHANGE: break;
-	case BLEND_STATE::DISABLED:		pBS = m_pDevice->m_pBS_Disabled; break;
-	case BLEND_STATE::ALPHA_BLEND:	pBS = m_pDevice->m_pBS_AlphaBlend; break;
-	case BLEND_STATE::ADDITIVE:		pBS = m_pDevice->m_pBS_Additive; break;
-	default: throw gcnew Exception( "Unsupported blend state!" );
+	switch ( _BS ) {
+		case BLEND_STATE::NOCHANGE: break;
+		case BLEND_STATE::DISABLED:		pBS = m_pDevice->m_pBS_Disabled; break;
+		case BLEND_STATE::ALPHA_BLEND:	pBS = m_pDevice->m_pBS_AlphaBlend; break;
+		case BLEND_STATE::ADDITIVE:		pBS = m_pDevice->m_pBS_Additive; break;
+		default: throw gcnew Exception( "Unsupported blend state!" );
 	}
 
 	m_pDevice->SetStates( pRS, pDS, pBS );
