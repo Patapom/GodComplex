@@ -109,7 +109,7 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 		for ( uint i=0; i < PASSES_COUNT; i++ ) {
 			uint	BucketIndex = NUMTHREADX * i + _GroupThreadID.x;
 			#if NUMTHREADY > 1
-				_texTallHistogram[uint2( BucketIndex, _GroupID.y )] = Histogram[0][BucketIndex] + Histogram[1][BucketIndex];	// Add the two last lines together and store into destination
+				_texTallHistogram[uint2( BucketIndex, _GroupID.y )] = Histogram[0][BucketIndex] + Histogram[1][BucketIndex];	// Add the last two lines together and store into destination
 			#else // NUMTHREADY == 1
 				_texTallHistogram[uint2( BucketIndex, _GroupID.y )] = Histogram[0][BucketIndex];								// Simply write result into destination
 			#endif

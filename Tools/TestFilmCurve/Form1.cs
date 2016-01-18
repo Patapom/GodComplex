@@ -19,6 +19,8 @@ namespace TestFilmicCurve
 	{
 		private RegistryKey	m_AppKey;
 
+		private AdvancedParmsForm	m_advancedParmsForm;
+
 		private Device		m_Device = new Device();
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -111,6 +113,10 @@ namespace TestFilmicCurve
 		public unsafe Form1()
 		{
 			InitializeComponent();
+
+			Console.WriteLine( Color.LightGreen.ToString() );
+
+			m_advancedParmsForm = new AdvancedParmsForm( this );
 
 			#if !DEBUG
 			buttonReload.Visible = false;
@@ -360,10 +366,10 @@ namespace TestFilmicCurve
 				m_CB_AutoExposure.m._EV = EV;							// (0.0) Your typical EV setting
 				m_CB_AutoExposure.m._fstop_bias = 0.0f;					// (0.0) F-stop number bias to override automatic computation (NOTE: This will NOT change exposure, only the F number)
 				m_CB_AutoExposure.m._reference_camera_fps = 30.0f;		// (30.0) Default camera at 30 FPS
-				m_CB_AutoExposure.m._adapt_min_luminance = 0.1f;		// (0.03) Prevents the auto-exposure to adapt to luminances lower than this
-				m_CB_AutoExposure.m._adapt_max_luminance = 3000.0f;		// (2000.0) Prevents the auto-exposure to adapt to luminances higher than this
-				m_CB_AutoExposure.m._adapt_speed_up = 0.99f;			// (0.99) Adaptation speed from low to high luminances
-				m_CB_AutoExposure.m._adapt_speed_down = 0.99f;			// (0.99) Adaptation speed from high to low luminances
+				m_CB_AutoExposure.m._adapt_min_luminance = m_advancedParmsForm.floatTrackbarControlMinLuminance.Value;		// (0.03) Prevents the auto-exposure to adapt to luminances lower than this
+				m_CB_AutoExposure.m._adapt_max_luminance = m_advancedParmsForm.floatTrackbarControlMaxLuminance.Value;		// (2000.0) Prevents the auto-exposure to adapt to luminances higher than this
+				m_CB_AutoExposure.m._adapt_speed_up = m_advancedParmsForm.floatTrackbarControlAdaptationSpeedBright.Value;	// (0.99) Adaptation speed from low to high luminances
+				m_CB_AutoExposure.m._adapt_speed_down = m_advancedParmsForm.floatTrackbarControlAdaptationSpeedDark.Value;	// (0.99) Adaptation speed from high to low luminances
 				m_CB_AutoExposure.UpdateData();
 
 				m_Shader_ComputeAutoExposure.Dispatch( 1, 1, 1 );
@@ -611,8 +617,6 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 			}
 		}
 
-		#endregion
-
 		private void panelOutput_DoubleClick( object sender, EventArgs e )
 		{
 			string	CubeMapName = m_AppKey.GetValue( "LastSelectedCubeMap", new System.IO.FileInfo( "garage4_hd.dds" ).FullName ) as string;
@@ -680,6 +684,15 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 			ReadValue( Props_Hable, "D", floatTrackbarControlD );
 			ReadValue( Props_Hable, "E", floatTrackbarControlE );
 			ReadValue( Props_Hable, "F", floatTrackbarControlF );
+
+			// Serialize advanced parms
+			XmlElement	Props_Advanced = Root["Advanced"];
+			if ( Props_Advanced != null ) {
+				ReadValue( Props_Advanced, "AdaptationBright", m_advancedParmsForm.floatTrackbarControlAdaptationSpeedBright );
+				ReadValue( Props_Advanced, "AdaptationDark", m_advancedParmsForm.floatTrackbarControlAdaptationSpeedDark );
+				ReadValue( Props_Advanced, "MinLuminance", m_advancedParmsForm.floatTrackbarControlMinLuminance );
+				ReadValue( Props_Advanced, "MaxLuminance", m_advancedParmsForm.floatTrackbarControlMaxLuminance );
+			}
 		}
 
 		void	SavePreset( System.IO.FileInfo _FileName ) {
@@ -691,22 +704,30 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 			// Serialize Insomniac version
 			XmlElement	Props_IG = Doc.CreateElement( "Insomniac" );
 			Root.AppendChild( Props_IG );
-			AppendValue( Props_IG, "BlackPoint", floatTrackbarControlIG_BlackPoint.Value );
-			AppendValue( Props_IG, "WhitePoint", floatTrackbarControlIG_WhitePoint.Value );
-			AppendValue( Props_IG, "JunctionPoint", floatTrackbarControlIG_JunctionPoint.Value );
-			AppendValue( Props_IG, "ToeStrength", floatTrackbarControlIG_ToeStrength.Value );
-			AppendValue( Props_IG, "ShoulderStrength", floatTrackbarControlIG_ShoulderStrength.Value );
+			AppendValue( Props_IG, "BlackPoint", floatTrackbarControlIG_BlackPoint );
+			AppendValue( Props_IG, "WhitePoint", floatTrackbarControlIG_WhitePoint );
+			AppendValue( Props_IG, "JunctionPoint", floatTrackbarControlIG_JunctionPoint );
+			AppendValue( Props_IG, "ToeStrength", floatTrackbarControlIG_ToeStrength );
+			AppendValue( Props_IG, "ShoulderStrength", floatTrackbarControlIG_ShoulderStrength );
 
 			// Serialize Hable version
 			XmlElement	Props_Hable = Doc.CreateElement( "Hable" );
 			Root.AppendChild( Props_Hable );
-			AppendValue( Props_Hable, "WhitePoint", floatTrackbarControlWhitePoint.Value );
-			AppendValue( Props_Hable, "A", floatTrackbarControlA.Value );
-			AppendValue( Props_Hable, "B", floatTrackbarControlB.Value );
-			AppendValue( Props_Hable, "C", floatTrackbarControlC.Value );
-			AppendValue( Props_Hable, "D", floatTrackbarControlD.Value );
-			AppendValue( Props_Hable, "E", floatTrackbarControlE.Value );
-			AppendValue( Props_Hable, "F", floatTrackbarControlF.Value );
+			AppendValue( Props_Hable, "WhitePoint", floatTrackbarControlWhitePoint );
+			AppendValue( Props_Hable, "A", floatTrackbarControlA );
+			AppendValue( Props_Hable, "B", floatTrackbarControlB );
+			AppendValue( Props_Hable, "C", floatTrackbarControlC );
+			AppendValue( Props_Hable, "D", floatTrackbarControlD );
+			AppendValue( Props_Hable, "E", floatTrackbarControlE );
+			AppendValue( Props_Hable, "F", floatTrackbarControlF );
+
+			// Serialize advanced parms
+			XmlElement	Props_Advanced = Doc.CreateElement( "Advanced" );
+			Root.AppendChild( Props_Advanced );
+			AppendValue( Props_Advanced, "AdaptationBright", m_advancedParmsForm.floatTrackbarControlAdaptationSpeedBright );
+			AppendValue( Props_Advanced, "AdaptationDark", m_advancedParmsForm.floatTrackbarControlAdaptationSpeedDark );
+			AppendValue( Props_Advanced, "MinLuminance", m_advancedParmsForm.floatTrackbarControlMinLuminance );
+			AppendValue( Props_Advanced, "MaxLuminance", m_advancedParmsForm.floatTrackbarControlMaxLuminance );
 
 			Doc.Save( _FileName.FullName );
 		}
@@ -717,10 +738,10 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 			_trackbar.Value = value;
 		}
 
-		void	AppendValue( XmlElement _parent, string _key, float _value ) {
+		void	AppendValue( XmlElement _parent, string _key, FloatTrackbarControl _trackbar ) {
 			XmlElement	Child = _parent.OwnerDocument.CreateElement( _key );
 			_parent.AppendChild( Child );
-			Child.SetAttribute( "Value", _value.ToString() );
+			Child.SetAttribute( "Value", _trackbar.Value.ToString() );
 		}
 
 		private void buttonLoadPreset_Click( object sender, EventArgs e )
@@ -756,5 +777,12 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 				MessageBox( "An error occurred while opening preset file \"" + SelectedFile.FullName + "\":\r\n\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
 		}
+
+		private void buttonShowAdvancedParms_Click( object sender, EventArgs e ) {
+//			m_advancedParmsForm.Location = buttonShowAdvancedParms.Location;// + new Size( buttonShowAdvancedParms.Width, 0 );
+			m_advancedParmsForm.Visible = !m_advancedParmsForm.Visible;
+		}
+
+		#endregion
 	}
 }

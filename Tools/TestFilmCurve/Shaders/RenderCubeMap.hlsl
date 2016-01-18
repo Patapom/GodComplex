@@ -1,4 +1,5 @@
 #include "Global.hlsl"
+#include "AutoExposure/Common.hlsl"
 
 struct VS_IN {
 	float4	__Position : SV_POSITION;
@@ -16,6 +17,8 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float3	wsView = normalize( wsView4.xyz / wsView4.w - _Camera2World[3].xyz );
 
 	wsView = wsView.zxy;	// idTech Z-up orientation
+
+//return 100.0 * WORLD_TO_BISOU_LUMINANCE;
 
 	return _texCubeMap.Sample( LinearWrap, wsView ).xyz;
 }

@@ -47,8 +47,7 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 	// Compute the start & end bucket indices based on shadows/highlights clipping boundaries (it's basically the same as a level in photoshop)
 	// They're computed by specifying the bottom and top % of the 48dB histogram range we want to consider (shadow / highlights)
-	// Once renormalized using HISTOGRAM_BUCKETS_COUNT * 48dB / 140dB, we get the min/max bucket index
-	// (remember that TARGET_MONITOR_BUCKETS_COUNT = HISTOGRAM_BUCKETS_COUNT * monitor luminance range / scene luminance range)
+	// Once renormalized using MonitorBucketsCount, we get the min/max bucket index...
 	//
 	uint2	ClippedBucketIndex = uint2( _clip_shadows * MonitorBucketsCount, _clip_highlights * MonitorBucketsCount );
 
@@ -123,7 +122,7 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	Result.PeakHistogramValue = 0;
 	uint2	TailBucketPosition = uint2( ClippedBucketIndex.x, 0 );					// Start from the specified minimum bucket
 	uint2	HeadBucketPosition = TailBucketPosition;								// We'll make head index grow
-	float	Integral = 0.0;
+	uint	Integral = 0U;
 	for ( ; HeadBucketPosition.x < ClippedBucketIndex.y; HeadBucketPosition.x++ ) {
 		uint	HistoValue = _texHistogram[HeadBucketPosition].x;
 		Integral += HistoValue;														// Add each interior bucket once
@@ -141,7 +140,7 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 																											//	then we don't need to integrate all the way to the end of the histogram...
 
 	uint	MaxIntegralTailBucketPosition = TailBucketPosition.x;
-	float	MaxIntegral = Integral;
+	uint	MaxIntegral = Integral;
 
 	while ( HeadBucketPosition.x < LastBucketIndex ) {
 
@@ -164,7 +163,7 @@ void CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 #endif
 
 	// Make a completely black image have a centered window
-	if ( MaxIntegral == 0.0 ) {
+	if ( MaxIntegral == 0U ) {
 		MaxIntegralTailBucketPosition = (HISTOGRAM_BUCKETS_COUNT - MonitorBucketsCount) / 2;
 	}
 

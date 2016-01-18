@@ -104,31 +104,6 @@ float	HistogramBucketIndex2Luminance( float _BucketIndex ) {
 	return dB2Luminance( dB );
 }
 
-
-// These are constants controling the "sticky integral"
-// The idea is simply to give less weight to luminances that are too far from the currently adapted luminance
-// The weight is controled by a smooth curve going from 1 to LowValue in N buckets
-// This way, the integral is less likely to move away from current adapted value because of slightly equal integral values:
-//	When there's about an equal amount of dark and bright pixels, the integral can flip from dark to bright adaptation easily
-//	but by giving less weights to luminances too far away from current luminances, we're increasing the luminance
-//	discrepancy required to trigger the flip...
-//
-static const float	WEIGHT_FADE_BUCKET_BIAS = -0.0;		// Weight is at its maximum at maximum luminance minus this bias (in buckets)
-static const float	WEIGHT_FADE_BUCKETS_COUNT = 20.0;	// Amount of buckets away from goal to reach the minimum weight
-static const float	WEIGHT_FADE_LOW_VALUE = 0.4;		// Minimum weight value for buckets too far away
-//static const float	WEIGHT_FADE_LOW_VALUE = 1.0;		// <== Uncomment this to disable sticky integral mode
-
-//float	ComputeStickyIntegralTargetBucket( autoExposure_t _LastFrameResult ) {
-//	return (Luminance2dB( _LastFrameResult.MaxLuminanceLDR ) - MIN_ADAPTABLE_SCENE_LUMINANCE_DB) / HISTOGRAM_BUCKET_RANGE_DB	// <== This gives the index of the max currently adapted bucket
-//			+ WEIGHT_FADE_BUCKET_BIAS * TARGET_MONITOR_BUCKETS_COUNT;															// <== That we offset with a specific bias
-//}
-
-// _BucketDelta = distance between currently measured bucket and previously adapted target bucket
-float	ComputeStickyIntegralWeight( float _BucketDelta ) {
-	return 1.0;
-//	return lerp( WEIGHT_FADE_LOW_VALUE, 1.0, smoothstep( WEIGHT_FADE_BUCKETS_COUNT, 0.0, abs(_BucketDelta) ) );
-}
-
 // Computes the exposure factor based on the user's provided EV
 // float	ComputeExposureFactor() {
 // 	return exp2( -($(PostFX/Luminance/customEVBias).x + $(env/autoexp/EV)) );
