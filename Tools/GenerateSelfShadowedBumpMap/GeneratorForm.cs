@@ -487,22 +487,21 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 				double	Exponent = 1.0 / (1.0 + LobeExponent);
 				for ( int RayIndex=0; RayIndex < RaysCount; RayIndex++ )
 				{
-					if ( false )
-					{
-						double	Phi = 2.0 * Math.PI * WMath.SimpleRNG.GetUniform();
-//						double	Theta = Math.Acos( Math.Pow( WMath.SimpleRNG.GetUniform(), Exponent ) );
-						double	Theta = Math.PI / 3.0 * WMath.SimpleRNG.GetUniform();
-
-						WMath.Vector	RayLocal = new WMath.Vector(
-							(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
-							(float) (Math.Sin( Phi ) * Math.Sin( Theta )),
-							(float) Math.Cos( Theta ) );
-
-						Rays[0,RayIndex] = RayLocal.x * Xr + RayLocal.y * Yr + RayLocal.z * Basis[0];
-						Rays[1,RayIndex] = RayLocal.x * Xg + RayLocal.y * Yg + RayLocal.z * Basis[1];
-						Rays[2,RayIndex] = RayLocal.x * Xb + RayLocal.y * Yb + RayLocal.z * Basis[2];
-					}
-					else
+// 					if ( false ) {
+// 						double	Phi = 2.0 * Math.PI * WMath.SimpleRNG.GetUniform();
+// //						double	Theta = Math.Acos( Math.Pow( WMath.SimpleRNG.GetUniform(), Exponent ) );
+// 						double	Theta = Math.PI / 3.0 * WMath.SimpleRNG.GetUniform();
+// 
+// 						WMath.Vector	RayLocal = new WMath.Vector(
+// 							(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
+// 							(float) (Math.Sin( Phi ) * Math.Sin( Theta )),
+// 							(float) Math.Cos( Theta ) );
+// 
+// 						Rays[0,RayIndex] = RayLocal.x * Xr + RayLocal.y * Yr + RayLocal.z * Basis[0];
+// 						Rays[1,RayIndex] = RayLocal.x * Xg + RayLocal.y * Yg + RayLocal.z * Basis[1];
+// 						Rays[2,RayIndex] = RayLocal.x * Xb + RayLocal.y * Yb + RayLocal.z * Basis[2];
+// 					}
+// 					else
 					{
 						double	Phi = Math.PI / 3.0 * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0);
 						double	Theta = 0.49 * Math.PI * WMath.SimpleRNG.GetUniform();

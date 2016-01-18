@@ -96,7 +96,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 #else
 
-static const uint	SAMPLES_THETA = 256;					// Integrating from [0,PI/2]
+static const uint	SAMPLES_THETA = 256;			// Integrating from [0,PI/2]
 static const uint	SAMPLES_PHI = 2*SAMPLES_THETA;	// Integrating from [0,PI] (only an hemisphere since it's symmetric)
 
 static const float	dPhi = 2.0 * PI / SAMPLES_PHI;

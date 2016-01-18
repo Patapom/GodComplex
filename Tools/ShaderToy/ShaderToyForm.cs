@@ -32,6 +32,7 @@ namespace ShaderToy
 			public uint			_IsolatedProbeIndex;
 			public float		_WeightMultiplier;
 			public uint			_ShowWeights;
+			public float		_DebugParm;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -466,6 +467,7 @@ namespace ShaderToy
 				m_CB_Main.m.iGlobalTime = m_CurrentGameTime - m_StartGameTime;
 				m_CB_Main.m._WeightMultiplier = floatTrackbarControlWeightMultiplier.Value;
 				m_CB_Main.m._ShowWeights = (uint) ((checkBoxShowWeights.Checked ? 1 : 0) | (checkBoxSmoothStep.Checked ? 2 : 0));
+				m_CB_Main.m._DebugParm = floatTrackbarControlParm.Value;
 				m_CB_Main.UpdateData();
 
 //				m_Tex_Christmas.SetPS( 0 );
@@ -480,7 +482,7 @@ namespace ShaderToy
 			m_Device.Present( false );
 
 			// Update window text
-			Text = "ShaderToy - " + m_CurrentGameTime.ToString( "G5" ) + "s - Avg. Frame Time " + (1000.0f * m_AverageFrameTime).ToString( "G5" ) + " ms (" + (1.0f / m_AverageFrameTime).ToString( "G5" ) + " FPS)";
+			Text = "ShaderToy - Avg. Frame Time " + (1000.0f * m_AverageFrameTime).ToString( "G5" ) + " ms (" + (1.0f / m_AverageFrameTime).ToString( "G5" ) + " FPS)";
 		}
 
 		private void buttonReload_Click( object sender, EventArgs e )
