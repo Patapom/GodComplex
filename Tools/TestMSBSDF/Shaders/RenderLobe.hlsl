@@ -77,7 +77,7 @@ float	PhongNDF( float _cosTheta_M, float _roughness ) {
 	return (n+2)*pow( _cosTheta_M, n ) / PI;
 }
 
-// Same as Beckmann but with modified a bit
+// Same as Beckmann but with a modified a bit
 float	PhongG1( float _cosTheta_V, float _roughness ) {
 	float	n = Roughness2PhongExponent( _roughness );
 	float	sqCosTheta_V = _cosTheta_V * _cosTheta_V;
@@ -92,7 +92,10 @@ PS_IN	VS( VS_IN _In ) {
 	float3	wsIncomingDirection = -float3( _Direction.x, _Direction.z, -_Direction.y );								// Actual INCOMING ray direction in Y-up pointing AWAY from the surface (hence the - sign)
 	float3	wsReflectedDirection = float3( _ReflectedDirection.x, _ReflectedDirection.z, -_ReflectedDirection.y );	// Actual REFLECTED ray direction in Y-up
 	float3	tangent, biTangent;
-	BuildOrthonormalBasis( wsReflectedDirection, tangent, biTangent );
+//	BuildOrthonormalBasis( wsReflectedDirection, tangent, biTangent );
+	tangent = normalize( float3( 1e-10 + wsReflectedDirection.z, 0, -wsReflectedDirection.x ) );
+	biTangent = cross( tangent, wsReflectedDirection );
+
 
 //	float3	lsDirection = _In.Position;												// Direction in our local object's Y-up space (which is also our world space BTW)
 	float3	lsDirection = _In.Position.x * tangent + _In.Position.y * wsReflectedDirection + _In.Position.z * biTangent;	// Direction, aligned with reflected ray
@@ -138,15 +141,18 @@ PS_IN	VS( VS_IN _In ) {
 		lobeIntensity *= 10.0 * _ScaleR;
 		lobeIntensity *= lsDirection.y < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
 
-		lsPosition = lobeIntensity * lsDirection;
 
 		// Tangential scale
+//		lsPosition = lobeIntensity * lsDirection;
 //		float3	lsTangent = wsReflectedDirection.y < 0.9999 ? normalize( cross( wsReflectedDirection, float3( 0, 1, 0 ) ) ) : float3( 1, 0, 0 );
-		float3	lsTangent = wsReflectedDirection.z < 0.9999 ? normalize( cross( wsReflectedDirection, float3( 0, 0, 1 ) ) ) : float3( 1, 0, 0 );
-		float3	lsBiTangent = cross( wsReflectedDirection, lsTangent );
-		float	T = dot( lsPosition, lsTangent );
-		float	B = dot( lsPosition, lsBiTangent );
-		lsPosition = lsPosition + T * (_ScaleT - 1.0) * lsTangent + B * (_ScaleB - 1.0) * lsBiTangent;
+//		float3	lsTangent = wsReflectedDirection.z < 0.9999 ? normalize( cross( wsReflectedDirection, float3( 0, 0, 1 ) ) ) : float3( 1, 0, 0 );
+//		float3	lsBiTangent = cross( wsReflectedDirection, lsTangent );
+//		float	T = dot( lsPosition, lsTangent );
+//		float	B = dot( lsPosition, lsBiTangent );
+//		lsPosition = lsPosition + T * (_ScaleT - 1.0) * lsTangent + B * (_ScaleB - 1.0) * lsBiTangent;
+
+
+		lsPosition = lobeIntensity * (_ScaleT * _In.Position.x * tangent + _ScaleB * _In.Position.z * biTangent + _ScaleR * _In.Position.y * wsReflectedDirection);
 
 	} else {
 		// Show simulated lobe

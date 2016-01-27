@@ -443,7 +443,7 @@
 			</ToolsOptionsSubCategory>
 			<ToolsOptionsSubCategory name="General" RegisteredName="General" PackageName="Text Management Package">
 				<PropertyValue name="DragNDropTextEditing">true</PropertyValue>
-				<PropertyValue name="HighlightCurrentLine">true</PropertyValue>
+				<PropertyValue name="HighlightCurrentLine">false</PropertyValue>
 				<PropertyValue name="VerticalScrollBar">true</PropertyValue>
 				<PropertyValue name="EditorEmulation">0</PropertyValue>
 				<PropertyValue name="DetectUTF8WithoutSignature">true</PropertyValue>
@@ -698,18 +698,21 @@
 										</TabGroup>
 									</DockGroup>
 									<DockGroup Orientation="Vertical" IsVisible="True" DockedHeight="*" DockedWidth="*">
-										<DocumentGroupContainer Orientation="Vertical" IsVisible="True" DockedHeight="*" DockedWidth="*">
-											<wm:WMDocumentGroup IsVisible="True">
-												<wm:ToolWindowView ContextVisibilityEnabled="False" Name="ST:0:0:{46c87f81-5a06-43a8-9e25-85d33bac49f8}" FloatingHeight="614.4" FloatingWidth="819.2"/>
-												<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" Name="ST:0:0:{269a02dc-6af8-11d3-bdc4-00c04f688e50}" FloatingHeight="614.4" FloatingWidth="819.2"/>
-												<wm:ToolWindowView ForceCreate="ForceCreate" Name="ST:0:0:{99b8fa2f-ab90-4f57-9c32-949f146f1914}" FloatingHeight="614.4" FloatingWidth="819.2"/>
-												<wm:ToolWindowView ForceCreate="ForceCreate" Name="ST:0:0:{c79b74ff-f1d7-4c94-aefa-4d22bfe1b1f9}" FloatingHeight="614.4" FloatingWidth="819.2"/>
-												<wm:ToolWindowView ContextVisibilityEnabled="False" Name="ST:0:0:{e5c2cce5-61d0-4cd8-a946-13ec76cfdb01}" FloatingHeight="614.4" FloatingWidth="819.2"/>
-												<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="DontForceCreate" Name="ST:0:0:{93a69444-e846-4571-9e03-a8433ad9ddf9}" FloatingHeight="614.4" FloatingWidth="819.2"/>
-												<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="DontForceCreate" Name="ST:0:0:{cb4d394c-6408-4607-8c42-0910d3147a4e}" FloatingHeight="614.4" FloatingWidth="819.2"/>
-												<wm:ToolWindowView ForceCreate="DontForceCreate" Name="ST:0:0:{387cb18d-6153-4156-9257-9ac3f9207bbe}" FloatingTop="100" FloatingLeft="100" FloatingHeight="450" FloatingWidth="450"/>
-											</wm:WMDocumentGroup>
-										</DocumentGroupContainer>
+										<DockGroup IsVisible="True" DockedHeight="*" DockedWidth="*">
+											<wm:ToolWindowView ForceCreate="ForceCreate" IconIndex="1" IconResourceID="301" IconResourcePackage="8c28e535-abc9-4f92-b5c9-6c16617c8884" Name="ST:0:0:{b8f809ca-7d14-4935-8657-727dc294e16b}" DockedWidth="650" FloatingTop="100" FloatingLeft="100" FloatingHeight="450" FloatingWidth="450"/>
+											<DocumentGroupContainer Orientation="Vertical" IsVisible="True" DockedHeight="*" DockedWidth="*">
+												<wm:WMDocumentGroup IsVisible="True">
+													<wm:ToolWindowView ContextVisibilityEnabled="False" Name="ST:0:0:{46c87f81-5a06-43a8-9e25-85d33bac49f8}" FloatingHeight="614.4" FloatingWidth="819.2"/>
+													<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" Name="ST:0:0:{269a02dc-6af8-11d3-bdc4-00c04f688e50}" FloatingHeight="614.4" FloatingWidth="819.2"/>
+													<wm:ToolWindowView ForceCreate="ForceCreate" Name="ST:0:0:{99b8fa2f-ab90-4f57-9c32-949f146f1914}" FloatingHeight="614.4" FloatingWidth="819.2"/>
+													<wm:ToolWindowView ForceCreate="ForceCreate" Name="ST:0:0:{c79b74ff-f1d7-4c94-aefa-4d22bfe1b1f9}" FloatingHeight="614.4" FloatingWidth="819.2"/>
+													<wm:ToolWindowView ContextVisibilityEnabled="False" Name="ST:0:0:{e5c2cce5-61d0-4cd8-a946-13ec76cfdb01}" FloatingHeight="614.4" FloatingWidth="819.2"/>
+													<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="DontForceCreate" Name="ST:0:0:{93a69444-e846-4571-9e03-a8433ad9ddf9}" FloatingHeight="614.4" FloatingWidth="819.2"/>
+													<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="DontForceCreate" Name="ST:0:0:{cb4d394c-6408-4607-8c42-0910d3147a4e}" FloatingHeight="614.4" FloatingWidth="819.2"/>
+													<wm:ToolWindowView ForceCreate="DontForceCreate" Name="ST:0:0:{387cb18d-6153-4156-9257-9ac3f9207bbe}" FloatingTop="100" FloatingLeft="100" FloatingHeight="450" FloatingWidth="450"/>
+												</wm:WMDocumentGroup>
+											</DocumentGroupContainer>
+										</DockGroup>
 										<DockGroup DockedHeight="374.68" DockedWidth="747.52">
 											<TabGroup DockedHeight="374.68" DockedWidth="747.52">
 												<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" Name="ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}" DockedHeight="374.68" DockedWidth="747.52" FloatingHeight="199.68" FloatingWidth="747.52"/>
@@ -783,7 +786,7 @@
 						</AutoHideRoot>
 					</MainSite>
 					<wm:WMFloatSite Id="19df48ca-2747-4583-8dc2-8564329a3888" FloatingTop="79" FloatingLeft="0" FloatingHeight="298" FloatingWidth="379">
-						<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="DontForceCreate" IconIndex="7" IconResourceID="6650" IconResourcePackage="da9fb551-c724-11d0-ae1f-00a0c90fffc3" Name="ST:0:0:{cf2ddc32-8cad-11d2-9302-005345000000}" IsSelected="True" DockedHeight="100" DockedWidth="100" FloatingTop="79" FloatingLeft="0" FloatingHeight="298" FloatingWidth="379"/>
+						<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" IconIndex="7" IconResourceID="6650" IconResourcePackage="da9fb551-c724-11d0-ae1f-00a0c90fffc3" Name="ST:0:0:{cf2ddc32-8cad-11d2-9302-005345000000}" IsSelected="True" DockedHeight="100" DockedWidth="100" FloatingTop="79" FloatingLeft="0" FloatingHeight="298" FloatingWidth="379"/>
 					</wm:WMFloatSite>
 					<wm:WMFloatSite Id="5e7b6239-f0a0-4a5e-b4be-98a8cfd46eb3" FloatingHeight="245.76" FloatingWidth="266.24">
 						<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" Name="ST:0:0:{e830ec50-c2b5-11d2-9375-0080c747d9a0}" DockedHeight="100" DockedWidth="100" FloatingHeight="245.76" FloatingWidth="266.24"/>
@@ -1139,11 +1142,11 @@
 			<NoToolWin>
 				<WindowProfile xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:wm="clr-namespace:Microsoft.VisualStudio.Platform.WindowManagement;assembly=Microsoft.VisualStudio.Platform.WindowManagement" Name="NoToolWin" xmlns="clr-namespace:Microsoft.VisualStudio.PlatformUI.Shell;assembly=Microsoft.VisualStudio.Shell.ViewManager">
 					<MainSite IsVisible="True">
-						<AutoHideRoot IsVisible="True" DockedHeight="*" DockedWidth="*" DockRestriction="DocumentGroup, Document, OutsideView">
-							<AutoHideChannel Orientation="Vertical">
-								<AutoHideGroup>
+						<AutoHideRoot IsVisible="True" DockedHeight="*" DockedWidth="*" DockRestriction="AlwaysFloating">
+							<AutoHideChannel Orientation="Vertical" IsVisible="True">
+								<AutoHideGroup IsVisible="True">
 									<wm:ToolWindowView ForceCreate="ForceCreate" Name="ST:0:0:{25f7e850-ffa1-11d0-b63f-00a0c922e851}" DockedHeight="768" DockedWidth="204.8" FloatingHeight="537.6" FloatingWidth="256"/>
-									<wm:ToolWindowView ForceCreate="ForceCreate" Name="ST:0:0:{873151d0-cf2e-48cc-b4bf-ad0394f6a3c3}" DockedHeight="768" DockedWidth="204.8" FloatingHeight="537.6" FloatingWidth="256"/>
+									<wm:ToolWindowView ForceCreate="ForceCreate" Name="ST:0:0:{873151d0-cf2e-48cc-b4bf-ad0394f6a3c3}" IsVisible="True" DockedHeight="768" DockedWidth="204.8" FloatingHeight="537.6" FloatingWidth="256"/>
 								</AutoHideGroup>
 							</AutoHideChannel>
 							<AutoHideChannel Dock="Right" Orientation="Vertical"/>
@@ -1174,7 +1177,7 @@
 										</TabGroup>
 									</DockGroup>
 									<DockGroup Orientation="Vertical" IsVisible="True" DockedHeight="*" DockedWidth="*">
-										<DocumentGroupContainer IsVisible="True" DockedHeight="*" DockedWidth="*">
+										<DocumentGroupContainer Orientation="Vertical" IsVisible="True" DockedHeight="*" DockedWidth="*">
 											<wm:WMDocumentGroup>
 												<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="DontForceCreate" Name="ST:0:0:{387cb18d-6153-4156-9257-9ac3f9207bbe}" FloatingHeight="614.4" FloatingWidth="819.2"/>
 												<wm:ToolWindowView ContextVisibilityEnabled="False" Name="ST:0:0:{46c87f81-5a06-43a8-9e25-85d33bac49f8}" FloatingHeight="614.4" FloatingWidth="819.2"/>
@@ -1191,7 +1194,7 @@
 												<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" Name="ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}" DockedHeight="199.68" DockedWidth="747.52" FloatingHeight="199.68" FloatingWidth="747.52"/>
 												<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" Name="ST:0:0:{4a9b7e51-aa16-11d0-a8c5-00a0c921a4d2}" DockedHeight="199.68" DockedWidth="747.52" FloatingHeight="199.68" FloatingWidth="747.52"/>
 												<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" Name="ST:0:0:{588470cc-84f8-4a57-9ac4-86bca0625ff4}" DockedHeight="199.68" DockedWidth="747.52" FloatingHeight="199.68" FloatingWidth="747.52"/>
-												<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" Name="ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}" DockedHeight="199.68" DockedWidth="747.52" FloatingHeight="199.68" FloatingWidth="747.52"/>
+												<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" IconIndex="3" IconResourceID="6650" IconResourcePackage="da9fb551-c724-11d0-ae1f-00a0c90fffc3" Name="ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}" DockedHeight="199.68" DockedWidth="747.52" FloatingHeight="199.68" FloatingWidth="747.52"/>
 												<wm:ToolWindowView ContextVisibilityEnabled="False" Name="ST:0:0:{fdffccf2-5f63-404f-86ad-33693f544948}" DockedHeight="199.68" DockedWidth="747.52" FloatingHeight="199.68" FloatingWidth="747.52"/>
 												<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" Name="ST:0:0:{0f887920-c2b6-11d2-9375-0080c747d9a0}" DockedHeight="199.68" DockedWidth="747.52" FloatingHeight="199.68" FloatingWidth="747.52"/>
 												<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" Name="ST:0:0:{0f887921-c2b6-11d2-9375-0080c747d9a0}" DockedHeight="199.68" DockedWidth="747.52" FloatingHeight="199.68" FloatingWidth="747.52"/>
@@ -1463,30 +1466,31 @@
 			<PropertyValue name="FileMapping&gt;0">cb&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{694DD9B6-B865-4C5B-AD85-86356E9C88DC}</PropertyValue>
 			<PropertyValue name="FileMapping&gt;1">cginc&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
 			<PropertyValue name="FileMapping&gt;2">fx&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
-			<PropertyValue name="FileMapping&gt;3">hlsl&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
+			<PropertyValue name="FileMapping&gt;3">hlsl&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{694DD9B6-B865-4C5B-AD85-86356E9C88DC}</PropertyValue>
 			<PropertyValue name="FileMapping&gt;4">java&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{694DD9B6-B865-4C5B-AD85-86356E9C88DC}</PropertyValue>
 			<PropertyValue name="FileMapping&gt;5">js&gt;{A52A054C-5228-4819-B568-E5B8040801B5}&gt;{00000000-0000-0000-0000-000000000000}</PropertyValue>
 			<PropertyValue name="FileMapping&gt;6">php&gt;{C76D83F8-A489-11D0-8195-00A0C91BBEE3}&gt;{00000000-0000-0000-0000-000000000000}</PropertyValue>
 			<PropertyValue name="FileMapping&gt;7">ps&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
 			<PropertyValue name="FileMapping&gt;8">shader&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
 			<PropertyValue name="FileMapping&gt;9">vs&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
-			<PropertyValue name="NumberOfDefaultEditors">0</PropertyValue>
+			<PropertyValue name="NumberOfDefaultEditors">1</PropertyValue>
+			<PropertyValue name="DefaultEditor&gt;0">hlsl&gt;1&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;NoGuid</PropertyValue>
 		</Category>
 		<Category name="Environment_UnifiedFind" Category="{DF00ADDF-C14C-4ffd-9325-634FD605850B}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_UnifiedFind" PackageName="Visual Studio Environment Package">
-			<PropertyValue name="Options">MatchCase=1 WholeWord=0 Hidden=0 Up=0 Selection=0 Block=0 KeepCase=0 SubFolders=1 KeepOpen=0 NameOnly=0 Plain Document Find</PropertyValue>
-			<PropertyValue name="DialogOptions">MatchCase=0 WholeWord=0 Hidden=1 Up=0 Selection=0 Block=0 KeepCase=0 SubFolders=1 KeepOpen=0 NameOnly=0 Plain Solution FindAll</PropertyValue>
+			<PropertyValue name="Options">MatchCase=0 WholeWord=0 Hidden=0 Up=0 Selection=0 Block=0 KeepCase=0 SubFolders=0 KeepOpen=0 NameOnly=0 Plain Document Find</PropertyValue>
+			<PropertyValue name="DialogOptions">MatchCase=0 WholeWord=0 Hidden=0 Up=0 Selection=0 Block=0 KeepCase=0 SubFolders=1 KeepOpen=0 NameOnly=0 Plain Solution Find</PropertyValue>
 			<PropertyValue name="AdornmentOptions">MatchCase=0 WholeWord=0 Hidden=0 Up=0 Selection=0 Block=0 KeepCase=0 SubFolders=0 KeepOpen=0 NameOnly=0 Plain Document Find</PropertyValue>
 			<PropertyValue name="Result list">1</PropertyValue>
 			<PropertyValue name="ShowEndOfSearch">1</PropertyValue>
 			<PropertyValue name="ShowNoFound">1</PropertyValue>
-			<PropertyValue name="ShowAllReplacementsNotAllowed">0</PropertyValue>
-			<PropertyValue name="ShowSomeReplacementsNotAllowed">0</PropertyValue>
+			<PropertyValue name="ShowAllReplacementsNotAllowed">1</PropertyValue>
+			<PropertyValue name="ShowSomeReplacementsNotAllowed">1</PropertyValue>
 			<PropertyValue name="ShowNoMore">1</PropertyValue>
 			<PropertyValue name="ShowFindStart">1</PropertyValue>
 			<PropertyValue name="ShowCancel">1</PropertyValue>
 			<PropertyValue name="ShowCancelBeforeReplacementsMade">1</PropertyValue>
-			<PropertyValue name="ShowReplaceInFilesWarning">0</PropertyValue>
-			<PropertyValue name="ShowCancelEntireReplaceAfterCancellingSCC">0</PropertyValue>
+			<PropertyValue name="ShowReplaceInFilesWarning">1</PropertyValue>
+			<PropertyValue name="ShowCancelEntireReplaceAfterCancellingSCC">1</PropertyValue>
 			<PropertyValue name="FindTextFromEditor">1</PropertyValue>
 			<PropertyValue name="HitReplaced">1</PropertyValue>
 			<PropertyValue name="Syntax">Regex</PropertyValue>
@@ -1542,21 +1546,17 @@
 					</Category>
 					<Category GUID="{75A05685-00A8-4DED-BAE5-E7A50BFA929A}" FontName="Lucida Console" FontSize="8" CharSet="0" FontIsDefault="No">
 						<Items>
-							<Item Name="outlining.collapsehintadornment" Foreground="0x00E8DDD7" Background="0x00B7B7B7" BoldFont="No"/>
+							<Item Name="XML Doc Comment" Foreground="0x00005100" Background="0x02000000" BoldFont="No"/>
 							<Item Name="Comment" Foreground="0x00005100" Background="0x02000000" BoldFont="No"/>
 							<Item Name="Identifier" Foreground="0x00040004" Background="0x00B7B7B7" BoldFont="No"/>
-							<Item Name="XML Doc Comment" Foreground="0x00005100" Background="0x02000000" BoldFont="No"/>
+							<Item Name="outlining.collapsehintadornment" Foreground="0x00E8DDD7" Background="0x00B7B7B7" BoldFont="No"/>
+							<Item Name="VA Class" Foreground="0x00FF0000" Background="0x02000000" BoldFont="No"/>
+							<Item Name="VA Macro / Enum" Foreground="0x00A000A0" Background="0x02000000" BoldFont="No"/>
 							<Item Name="VA Brace Matching" Foreground="0x02000000" Background="0x02000000" BoldFont="Yes"/>
-							<Item Name="VA Brace Error" Foreground="0x000000FF" Background="0x02000000" BoldFont="Yes"/>
+							<Item Name="VA Column Indicator" Foreground="0x00000000" Background="0x02000000" BoldFont="No"/>
 							<Item Name="VA Find Reference" Foreground="0x02000000" Background="0x00FFFFE0" BoldFont="No"/>
 							<Item Name="VA Find Reference (Modified)" Foreground="0x02000000" Background="0x00E1E4FF" BoldFont="No"/>
 							<Item Name="VA Find Result" Foreground="0x02000000" Background="0x00B7FFFF" BoldFont="No"/>
-							<Item Name="VA Class" Foreground="0x00FF0000" Background="0x02000000" BoldFont="No"/>
-							<Item Name="VA Method" Foreground="0x00000088" Background="0x02000000" BoldFont="No"/>
-							<Item Name="VA Macro / Enum" Foreground="0x00A000A0" Background="0x02000000" BoldFont="No"/>
-							<Item Name="VA Variable" Foreground="0x00800000" Background="0x02000000" BoldFont="No"/>
-							<Item Name="VA Current Line" Foreground="0x00C0C0C0" Background="0x00EBEBEB" BoldFont="No"/>
-							<Item Name="VA Column Indicator" Foreground="0x00000000" Background="0x02000000" BoldFont="No"/>
 						</Items>
 					</Category>
 					<Category GUID="{8259ACED-490A-41B3-A0FB-64C842CCDC80}" FontName="Tahoma" FontSize="8" CharSet="0" FontIsDefault="No">
@@ -1583,6 +1583,17 @@
 					<Category GUID="{A9A5637F-B2A8-422E-8FB5-DFB4625F0111}" FontName="Tahoma" FontSize="8" CharSet="0" FontIsDefault="No">
 						<Items/>
 					</Category>
+					<Category GUID="{B36B0228-DBAD-4DB0-B9C7-2AD3E572010F}" FontName="Segoe UI" FontSize="9" CharSet="1" FontIsDefault="No">
+						<Items>
+							<Item Name="Different content" Foreground="0x000014E5" Background="0x00FFFFFF" BoldFont="No"/>
+							<Item Name="Identical content" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
+							<Item Name="Source Only" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
+							<Item Name="Target Only" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
+							<Item Name="Not Downloaded" Foreground="0x006D6D6D" Background="0x00FFFFFF" BoldFont="No"/>
+							<Item Name="Even Row Items" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
+							<Item Name="Odd Row Items" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
+						</Items>
+					</Category>
 					<Category GUID="{CE2ECED5-C21C-464C-9B45-15E10E9F9EF9}" FontIsDefault="Yes">
 						<Items>
 							<Item Name="Plain Text" Foreground="0x02000000" Background="0x00AAAAAA" BoldFont="No"/>
@@ -1594,9 +1605,9 @@
 						<Items>
 							<Item Name="Comment" Foreground="0x00005100" Background="0x02000000" BoldFont="No"/>
 							<Item Name="Identifier" Foreground="0x00040004" Background="0x00B7B7B7" BoldFont="No"/>
-							<Item Name="User Types" Foreground="0x00806A20" Background="0x02000000" BoldFont="No"/>
-							<Item Name="XML Comment" Foreground="0x00005100" Background="0x02000000" BoldFont="No"/>
 							<Item Name="XML Doc Comment" Foreground="0x00005100" Background="0x02000000" BoldFont="No"/>
+							<Item Name="XML Comment" Foreground="0x00005100" Background="0x02000000" BoldFont="No"/>
+							<Item Name="User Types" Foreground="0x00806A20" Background="0x02000000" BoldFont="No"/>
 						</Items>
 					</Category>
 					<Category GUID="{EE1BE240-4E81-4BEB-8EEA-54322B6B1BF5}" FontIsDefault="Yes">
@@ -1998,6 +2009,48 @@
 						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
 						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
 						<Column Name="ProviderKnowsOrder" Width="19" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="250" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="250" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="250" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
 						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
 						<Column Name="Description" Width="250" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
 						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
@@ -5092,11 +5145,12 @@
 		<PropertyValue name="tools.options.justmycode.caller">0</PropertyValue>
 		<PropertyValue name="tools.options.rules.actions"/>
 	</Category>
-	<Category name="Source Control_TeamFoundation" Category="{2A718788-A6D9-44C5-90EF-438BF5B06A74}" Package="{4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}" RegisteredName="Source Control_TeamFoundation" PackageName="Microsoft.VisualStudio.TeamFoundation.VersionControl.HatPackage, Microsoft.VisualStudio.TeamFoundation.VersionControl, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+	<Category name="Source Control_TeamFoundation" Category="{2A718788-A6D9-44C5-90EF-438BF5B06A74}" Package="{4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}" RegisteredName="Source Control_TeamFoundation" PackageName="Microsoft.VisualStudio.TeamFoundation.VersionControl.HatPackage, Microsoft.VisualStudio.TeamFoundation.VersionControl, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
 		<PropertyValue name="IsProxyEnabled">False</PropertyValue>
 		<PropertyValue name="ProxyUrl"/>
-		<PropertyValue name="ShowDeletedItems">false</PropertyValue>
 		<PropertyValue name="GetLatestOnCheckOut">false</PropertyValue>
+		<PropertyValue name="AttemptToAutoResolveConflicts">true</PropertyValue>
+		<PropertyValue name="ShowDeletedItems">false</PropertyValue>
 		<PropertyValue name="OpenSceToMostRecentPath">true</PropertyValue>
 		<PropertyValue name="PromptToConfirmMergeResult">-1</PropertyValue>
 	</Category>

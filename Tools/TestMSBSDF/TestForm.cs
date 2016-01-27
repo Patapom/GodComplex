@@ -738,8 +738,6 @@ namespace TestMSBSDF
 
 			TestForm	m_owner = null;
 			float3		m_direction;
-			float3		m_tangent;
-			float3		m_biTangent;
 			double		m_cosPhi;
 			double		m_sinPhi;
 			double		m_roughness;
@@ -789,14 +787,6 @@ namespace TestMSBSDF
 				set {
 					m_parameters = value;
 
-					// Update reflection vector and tangent space
-					double	cosTheta = Math.Cos( m_parameters[0] );
-					double	sinTheta = Math.Sin( m_parameters[0] );
-					m_direction.Set( (float) (sinTheta * m_cosPhi), (float) (sinTheta * m_sinPhi), (float) cosTheta );
-
-					m_tangent = m_direction.z < 0.9999f ? m_direction.Cross( float3.UnitZ ).Normalized : float3.UnitX;
-					m_biTangent = m_direction.Cross( m_tangent );
-
 					// Update track bar parameters
 					m_owner.floatTrackbarControlAnalyticalLobeTheta.Value = (float) (180.0 * m_parameters[0] / Math.PI);
 					m_owner.floatTrackbarControlAnalyticalLobeRoughness.Value = (float) m_parameters[1];
@@ -813,84 +803,115 @@ namespace TestMSBSDF
 				}
 			}
 
-			public override double Eval( double[] _NewParameters ) {
+			public override double Eval( double[] _newParameters ) {
 
+				double	lobeTheta = Math.Max( 0.0, Math.Min( 0.4999 * Math.PI, m_parameters[0] ) );
+				double	lobeRoughness = Math.Max( 0.0, Math.Min( 1.0, _newParameters[1] ) );
+				double	lobeScaleR = Math.Max( 1e-6, _newParameters[2] );
+				double	lobeScaleT = Math.Max( 1e-6, _newParameters[3] );
+				double	lobeScaleB = Math.Max( 1e-6, _newParameters[4] );
 
+				double	invLobeScaleN = 1.0 / lobeScaleR;
+				double	invLobeScaleT = 1.0 / lobeScaleT;
+				double	invLobeScaleB = 1.0 / lobeScaleB;
 
-// 	float3	wsIncomingDirection = -float3( _Direction.x, _Direction.z, -_Direction.y );								// Actual INCOMING ray direction in Y-up pointing AWAY from the surface (hence the - sign)
-// 	float3	wsReflectedDirection = float3( _ReflectedDirection.x, _ReflectedDirection.z, -_ReflectedDirection.y );	// Actual REFLECTED ray direction in Y-up
-// 	float3	tangent, biTangent;
-// 	BuildOrthonormalBasis( wsReflectedDirection, tangent, biTangent );
-// 
-// //	float3	lsDirection = _In.Position;												// Direction in our local object's Y-up space (which is also our world space BTW)
-// 	float3	lsDirection = _In.Position.x * tangent + _In.Position.y * wsReflectedDirection + _In.Position.z * biTangent;	// Direction, aligned with reflected ray
-// 
-// 	float3	mfDirection = float3( lsDirection.x, -lsDirection.z, lsDirection.y );	// Direction in µ-facet Z-up space
-// 
-// 	float	theta = acos( clamp( mfDirection.z, -1.0, 1.0 ) );
-// 	float	phi = fmod( 2.0 * PI + atan2( mfDirection.y, mfDirection.x ), 2.0 * PI );
-// 
-// 	float	thetaBinIndex = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) );		// Inverse of 2*asin( sqrt( i / (2 * N) ) )
-// 	float2	UV = float2( phi / (2.0 * PI), thetaBinIndex / LOBES_COUNT_THETA );
-// 
+				// Compute constant masking term due to incoming direction
+ 				double	maskingIncoming = PhongG1( m_direction.z, lobeRoughness );		// Masking( incoming )
 
+				// Compute lobe's reflection vector and tangent space using new parameters
+				double	cosTheta = Math.Cos( m_parameters[0] );
+				double	sinTheta = Math.Sin( m_parameters[0] );
 
-// TODO: Estimate lobe aligned with axis bent by theta and scaled in its tangent and bitangent directions!
+				float3	lobe_normal = new float3( (float) (sinTheta * m_cosPhi), (float) (sinTheta * m_sinPhi), (float) cosTheta );
+// 				float3	lobe_tangent = m_direction.z < 0.9999f ? m_direction.Cross( float3.UnitZ ).Normalized : float3.UnitX;
+// 				float3	lobe_biTangent = m_direction.Cross( lobe_tangent );
+				float3	lobe_tangent = new float3( (float) m_sinPhi, -(float) m_cosPhi, 0.0f );	// Always lying in the X^Y plane
+				float3	lobe_biTangent = lobe_tangent.Cross( m_direction );
 
-// 			// Prepare the array of luminance values from the BRDF
-// 			double[]	Values = InitMatrix( 90, 90 );
-// 			var	Luminance = new vec3( 0.2126, 0.7152, 0.0722 );		// Observer. = 2°, Illuminant = D65
-// 			for ( int Y=0; Y < 90; Y++ )
-// 				for ( int X=0; X < 90; X++ ) {
-// 					var	Reflectance = _BRDFTarget.sample( X, Y );
-// 					var	Luma = Luminance.dot( Reflectance );
-// 					Values[Y][X] = Luma;
-// 				}
-// 
-// 			// Prepare our evaluation functions
-// 			var	Goal = 0.01;
-// 			var	C, B, Diff;
-// 
-// 			var	SumSqDifference;
-// 			double	EvalModel( double[] _Params ) {	// We must return the difference between current function and target BRDF
-// 
-// 				// Apply constraints
-// 				_ConstraintCallback( _Params );
-// 
-// 				// Prepare model
-// 				_PrepareEvalModelCallback( _Params );
-// 
-// 				SumSqDifference = 0.0;
-// 				for ( Y=0; Y < 90; Y++ )
-// 					for ( X=0; X < 90; X++ )
-// 					{
-// 						C = _EvalModelCallback( _Params, X, Y );
-// 
-// // Use log
-// C = Math.log( Math.max( 1e-8, C ) );
-// 
-// 					// Actual BRDF
-// 					B = Values[Y][X];
-// 
-// // Use log
-// B = Math.log( Math.max( 1e-8, B ) );
-// 
-// 						Diff = C - B;
-// 						Diff *= Diff;
-// 						SumSqDifference += Diff;
-// 					}
-// 
-// 				if ( double.IsNaN( SumSqDifference ) )
-// 					throw new Exception( "NaN in eval!" );
-// 
-// 				return SumSqDifference;
-// 			}
+				// Compute sum
+				double	phi, theta, cosPhi, sinPhi;
+				double	simulatedIntensity, simulatedIntensity_scaled, invSimulatedIntensity_scaled, lobeIntensity;
+				float3	microfacet_direction = float3.Zero;
+				float3	lobe_direction = float3.Zero;
+				double	lobeT, lobeB, lobeN;
 
-				return 0.0;
+				double	sum = 0.0;
+				for ( int Y=0; Y < LOBES_COUNT_THETA; Y++ ) {
+
+					// Y = theta bin index = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) )
+					// We need theta:
+					theta = 2.0 * Math.Asin( Math.Sqrt( 0.5 * Y / LOBES_COUNT_THETA ) );
+					cosTheta = Math.Cos( theta );
+					sinTheta = Math.Sin( theta );
+
+					for ( int X=0; X < LOBES_COUNT_PHI; X++ ) {
+
+						// X = phi bin index = LOBES_COUNT_PHI * X / (2PI)
+						// We need phi:
+						phi = 2.0 * Math.PI * X / LOBES_COUNT_PHI;
+						cosPhi = Math.Cos( phi );
+						sinPhi = Math.Sin( phi );
+
+						// Build simulated microfacet reflection direction in macro-surface space
+						simulatedIntensity = m_histogramData[X,Y];
+						microfacet_direction.Set( (float) (cosPhi * sinTheta), (float) (sinPhi * sinTheta), (float) cosTheta );
+
+						// Compute maksing term due to outgoing direction
+						double	maskingOutGoing = PhongG1( microfacet_direction.z, lobeRoughness );		// Masking( outgoing )
+
+						// Transform direction into local lobe space
+						// In the pixel shader that displays our lobes, the lobe's vertex position/direction is computed like this:
+						//
+						//	float3	worldLobeDirection = _ScaleT * localLobeDirection.x * tangent + _ScaleB * localLobeDirection.y * biTangent + _ScaleR * localLobeDirection.z * wsReflectedDirection;
+						//
+						// Here, we have the microfacet direction that we need to express into local lobe reference frame so we apply:
+						//
+						lobeT = simulatedIntensity * invLobeScaleT * microfacet_direction.Dot( lobe_tangent );
+						lobeB = simulatedIntensity * invLobeScaleB * microfacet_direction.Dot( lobe_biTangent );
+						lobeN = simulatedIntensity * invLobeScaleN * microfacet_direction.Dot( lobe_normal );
+
+						simulatedIntensity_scaled = Math.Sqrt( lobeT*lobeT + lobeB*lobeB + lobeN*lobeN );
+						invSimulatedIntensity_scaled = 1.0 / simulatedIntensity_scaled;
+						lobe_direction = new float3( (float) (invSimulatedIntensity_scaled * lobeT), (float) (invSimulatedIntensity_scaled * lobeB), (float) (invSimulatedIntensity_scaled * lobeN) );
+
+						// Compute the lobe intensity in local space
+						float	cosTheta_M = lobe_direction.Dot( lobe_normal );	// Angle with pseudo normal (actually, the bent reflection direction)
+ 						lobeIntensity = PhongNDF( cosTheta_M, lobeRoughness );	// NDF
+ 						lobeIntensity *= maskingIncoming * maskingOutGoing;		// * Masking terms
+
+						// Sum the difference between scaled simulated intensity and local lobe intensity
+						sum += simulatedIntensity_scaled - lobeIntensity;
+					}
+				}
+				sum /= LOBES_COUNT_THETA * LOBES_COUNT_PHI;
+
+				return sum;
 			}
 
 			#endregion
+
+
+			double	Roughness2PhongExponent( double _roughness ) {
+				return Math.Pow( 2.0, 10.0 * (1.0 - _roughness) + 1.0 );	// From https://seblagarde.wordpress.com/2011/08/17/hello-world/
+			}
+
+			// D(m) = a² / (PI * cos(theta_m)^4 * (a² + tan(theta_m)²)²)
+			// Simplified into  D(m) = a² / (PI * (cos(theta_m)²*(a²-1) + 1)²)
+			double	PhongNDF( double _cosTheta_M, double _roughness ) {
+				double	n = Roughness2PhongExponent( _roughness );
+				return (n+2)*Math.Pow( _cosTheta_M, n ) / Math.PI;
+			}
+
+			// Same as Beckmann but with a modified a bit
+			double	PhongG1( double _cosTheta_V, double _roughness ) {
+				double	n = Roughness2PhongExponent( _roughness );
+				double	sqCosTheta_V = _cosTheta_V * _cosTheta_V;
+				double	tanThetaV = Math.Sqrt( (1.0 - sqCosTheta_V) / sqCosTheta_V );
+				double	a = Math.Sqrt( 1.0 + 0.5 * n) / tanThetaV;
+				return a < 1.6 ? (3.535 * a + 2.181 * a*a) / (1.0 + 2.276 * a + 2.577 * a*a) : 1.0;
+			}
 		}
+
 		LobeModel	m_lobeModel = null;
 
 		void	PerformLobeFitting( float3 _direction, float _roughness, int _scatteringOrder ) {
