@@ -45,6 +45,10 @@
 			this.radioButtonShowHeights = new System.Windows.Forms.RadioButton();
 			this.radioButtonHideSurface = new System.Windows.Forms.RadioButton();
 			this.groupBoxDisplay = new System.Windows.Forms.GroupBox();
+			this.panel2 = new System.Windows.Forms.Panel();
+			this.radioButtonAnalyticalPhong = new System.Windows.Forms.RadioButton();
+			this.radioButtonAnalyticalGGX = new System.Windows.Forms.RadioButton();
+			this.radioButtonAnalyticalBeckmann = new System.Windows.Forms.RadioButton();
 			this.checkBoxShowAnalyticalBeckmann = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowWireframe = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowLobe = new System.Windows.Forms.CheckBox();
@@ -59,10 +63,10 @@
 			this.floatTrackbarControlTheta = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlBeckmannSizeFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlBeckmannRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.panel2 = new System.Windows.Forms.Panel();
-			this.radioButtonAnalyticalBeckmann = new System.Windows.Forms.RadioButton();
-			this.radioButtonAnalyticalGGX = new System.Windows.Forms.RadioButton();
-			this.radioButtonAnalyticalPhong = new System.Windows.Forms.RadioButton();
+			this.floatTrackbarControlLobeScaleB = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlAnalyticalLobeTheta = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label8 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlAnalyticalLobeRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.panel1.SuspendLayout();
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
@@ -72,7 +76,7 @@
 			// 
 			this.panelOutput.Location = new System.Drawing.Point( 12, 12 );
 			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size( 833, 630 );
+			this.panelOutput.Size = new System.Drawing.Size( 833, 677 );
 			this.panelOutput.TabIndex = 0;
 			// 
 			// timer1
@@ -83,7 +87,7 @@
 			// buttonReload
 			// 
 			this.buttonReload.Anchor = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonReload.Location = new System.Drawing.Point( 984, 619 );
+			this.buttonReload.Location = new System.Drawing.Point( 1015, 752 );
 			this.buttonReload.Name = "buttonReload";
 			this.buttonReload.Size = new System.Drawing.Size( 116, 23 );
 			this.buttonReload.TabIndex = 1;
@@ -220,28 +224,74 @@
 			this.groupBoxDisplay.Controls.Add( this.checkBoxShowAnalyticalBeckmann );
 			this.groupBoxDisplay.Controls.Add( this.checkBoxShowWireframe );
 			this.groupBoxDisplay.Controls.Add( this.checkBoxShowLobe );
+			this.groupBoxDisplay.Controls.Add( this.floatTrackbarControlAnalyticalLobeTheta );
 			this.groupBoxDisplay.Controls.Add( this.panel1 );
+			this.groupBoxDisplay.Controls.Add( this.label8 );
 			this.groupBoxDisplay.Controls.Add( this.label7 );
 			this.groupBoxDisplay.Controls.Add( this.label5 );
+			this.groupBoxDisplay.Controls.Add( this.floatTrackbarControlLobeScaleB );
 			this.groupBoxDisplay.Controls.Add( this.floatTrackbarControlLobeScaleT );
+			this.groupBoxDisplay.Controls.Add( this.floatTrackbarControlAnalyticalLobeRoughness );
 			this.groupBoxDisplay.Controls.Add( this.floatTrackbarControlLobeScaleR );
 			this.groupBoxDisplay.Controls.Add( this.floatTrackbarControlLobeIntensity );
 			this.groupBoxDisplay.Controls.Add( this.integerTrackbarControlScatteringOrder );
 			this.groupBoxDisplay.Location = new System.Drawing.Point( 854, 257 );
 			this.groupBoxDisplay.Name = "groupBoxDisplay";
-			this.groupBoxDisplay.Size = new System.Drawing.Size( 246, 356 );
+			this.groupBoxDisplay.Size = new System.Drawing.Size( 275, 489 );
 			this.groupBoxDisplay.TabIndex = 9;
 			this.groupBoxDisplay.TabStop = false;
 			this.groupBoxDisplay.Text = "Display";
+			// 
+			// panel2
+			// 
+			this.panel2.Controls.Add( this.radioButtonAnalyticalPhong );
+			this.panel2.Controls.Add( this.radioButtonAnalyticalGGX );
+			this.panel2.Controls.Add( this.radioButtonAnalyticalBeckmann );
+			this.panel2.Location = new System.Drawing.Point( 6, 438 );
+			this.panel2.Name = "panel2";
+			this.panel2.Size = new System.Drawing.Size( 233, 22 );
+			this.panel2.TabIndex = 10;
+			// 
+			// radioButtonAnalyticalPhong
+			// 
+			this.radioButtonAnalyticalPhong.AutoSize = true;
+			this.radioButtonAnalyticalPhong.Checked = true;
+			this.radioButtonAnalyticalPhong.Location = new System.Drawing.Point( 140, 2 );
+			this.radioButtonAnalyticalPhong.Name = "radioButtonAnalyticalPhong";
+			this.radioButtonAnalyticalPhong.Size = new System.Drawing.Size( 56, 17 );
+			this.radioButtonAnalyticalPhong.TabIndex = 0;
+			this.radioButtonAnalyticalPhong.TabStop = true;
+			this.radioButtonAnalyticalPhong.Text = "Phong";
+			this.radioButtonAnalyticalPhong.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonAnalyticalGGX
+			// 
+			this.radioButtonAnalyticalGGX.AutoSize = true;
+			this.radioButtonAnalyticalGGX.Location = new System.Drawing.Point( 86, 2 );
+			this.radioButtonAnalyticalGGX.Name = "radioButtonAnalyticalGGX";
+			this.radioButtonAnalyticalGGX.Size = new System.Drawing.Size( 48, 17 );
+			this.radioButtonAnalyticalGGX.TabIndex = 0;
+			this.radioButtonAnalyticalGGX.Text = "GGX";
+			this.radioButtonAnalyticalGGX.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonAnalyticalBeckmann
+			// 
+			this.radioButtonAnalyticalBeckmann.AutoSize = true;
+			this.radioButtonAnalyticalBeckmann.Location = new System.Drawing.Point( 4, 2 );
+			this.radioButtonAnalyticalBeckmann.Name = "radioButtonAnalyticalBeckmann";
+			this.radioButtonAnalyticalBeckmann.Size = new System.Drawing.Size( 76, 17 );
+			this.radioButtonAnalyticalBeckmann.TabIndex = 0;
+			this.radioButtonAnalyticalBeckmann.Text = "Beckmann";
+			this.radioButtonAnalyticalBeckmann.UseVisualStyleBackColor = true;
 			// 
 			// checkBoxShowAnalyticalBeckmann
 			// 
 			this.checkBoxShowAnalyticalBeckmann.AutoSize = true;
 			this.checkBoxShowAnalyticalBeckmann.Location = new System.Drawing.Point( 6, 221 );
 			this.checkBoxShowAnalyticalBeckmann.Name = "checkBoxShowAnalyticalBeckmann";
-			this.checkBoxShowAnalyticalBeckmann.Size = new System.Drawing.Size( 180, 17 );
+			this.checkBoxShowAnalyticalBeckmann.Size = new System.Drawing.Size( 188, 17 );
 			this.checkBoxShowAnalyticalBeckmann.TabIndex = 9;
-			this.checkBoxShowAnalyticalBeckmann.Text = "Show Analytical Lobe with size...";
+			this.checkBoxShowAnalyticalBeckmann.Text = "Show Analytical Lobe with angle...";
 			this.checkBoxShowAnalyticalBeckmann.UseVisualStyleBackColor = true;
 			// 
 			// checkBoxShowWireframe
@@ -249,7 +299,7 @@
 			this.checkBoxShowWireframe.AutoSize = true;
 			this.checkBoxShowWireframe.Checked = true;
 			this.checkBoxShowWireframe.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowWireframe.Location = new System.Drawing.Point( 6, 333 );
+			this.checkBoxShowWireframe.Location = new System.Drawing.Point( 6, 466 );
 			this.checkBoxShowWireframe.Name = "checkBoxShowWireframe";
 			this.checkBoxShowWireframe.Size = new System.Drawing.Size( 104, 17 );
 			this.checkBoxShowWireframe.TabIndex = 9;
@@ -259,6 +309,8 @@
 			// checkBoxShowLobe
 			// 
 			this.checkBoxShowLobe.AutoSize = true;
+			this.checkBoxShowLobe.Checked = true;
+			this.checkBoxShowLobe.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxShowLobe.Location = new System.Drawing.Point( 6, 166 );
 			this.checkBoxShowLobe.Name = "checkBoxShowLobe";
 			this.checkBoxShowLobe.Size = new System.Drawing.Size( 198, 17 );
@@ -269,23 +321,23 @@
 			// label7
 			// 
 			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point( 6, 262 );
+			this.label7.Location = new System.Drawing.Point( 6, 309 );
 			this.label7.Name = "label7";
-			this.label7.Size = new System.Drawing.Size( 142, 13 );
+			this.label7.Size = new System.Drawing.Size( 98, 13 );
 			this.label7.TabIndex = 3;
-			this.label7.Text = "And tangential scale factor...";
+			this.label7.Text = "And scale factors...";
 			// 
 			// floatTrackbarControlLobeScaleT
 			// 
 			this.floatTrackbarControlLobeScaleT.Anchor = ((System.Windows.Forms.AnchorStyles) (((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
 						| System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlLobeScaleT.Location = new System.Drawing.Point( 6, 278 );
+			this.floatTrackbarControlLobeScaleT.Location = new System.Drawing.Point( 6, 351 );
 			this.floatTrackbarControlLobeScaleT.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlLobeScaleT.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlLobeScaleT.Name = "floatTrackbarControlLobeScaleT";
 			this.floatTrackbarControlLobeScaleT.RangeMax = 10000F;
 			this.floatTrackbarControlLobeScaleT.RangeMin = 0F;
-			this.floatTrackbarControlLobeScaleT.Size = new System.Drawing.Size( 233, 20 );
+			this.floatTrackbarControlLobeScaleT.Size = new System.Drawing.Size( 262, 20 );
 			this.floatTrackbarControlLobeScaleT.TabIndex = 5;
 			this.floatTrackbarControlLobeScaleT.Value = 1F;
 			this.floatTrackbarControlLobeScaleT.VisibleRangeMax = 2F;
@@ -294,13 +346,13 @@
 			// 
 			this.floatTrackbarControlLobeScaleR.Anchor = ((System.Windows.Forms.AnchorStyles) (((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
 						| System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlLobeScaleR.Location = new System.Drawing.Point( 6, 239 );
+			this.floatTrackbarControlLobeScaleR.Location = new System.Drawing.Point( 7, 325 );
 			this.floatTrackbarControlLobeScaleR.MaximumSize = new System.Drawing.Size( 10000, 20 );
 			this.floatTrackbarControlLobeScaleR.MinimumSize = new System.Drawing.Size( 70, 20 );
 			this.floatTrackbarControlLobeScaleR.Name = "floatTrackbarControlLobeScaleR";
 			this.floatTrackbarControlLobeScaleR.RangeMax = 10000F;
 			this.floatTrackbarControlLobeScaleR.RangeMin = 0F;
-			this.floatTrackbarControlLobeScaleR.Size = new System.Drawing.Size( 233, 20 );
+			this.floatTrackbarControlLobeScaleR.Size = new System.Drawing.Size( 262, 20 );
 			this.floatTrackbarControlLobeScaleR.TabIndex = 5;
 			this.floatTrackbarControlLobeScaleR.Value = 10F;
 			// 
@@ -314,7 +366,7 @@
 			this.floatTrackbarControlLobeIntensity.Name = "floatTrackbarControlLobeIntensity";
 			this.floatTrackbarControlLobeIntensity.RangeMax = 10000F;
 			this.floatTrackbarControlLobeIntensity.RangeMin = 0F;
-			this.floatTrackbarControlLobeIntensity.Size = new System.Drawing.Size( 233, 20 );
+			this.floatTrackbarControlLobeIntensity.Size = new System.Drawing.Size( 262, 20 );
 			this.floatTrackbarControlLobeIntensity.TabIndex = 5;
 			this.floatTrackbarControlLobeIntensity.Value = 10F;
 			// 
@@ -328,7 +380,7 @@
 			this.integerTrackbarControlScatteringOrder.Name = "integerTrackbarControlScatteringOrder";
 			this.integerTrackbarControlScatteringOrder.RangeMax = 4;
 			this.integerTrackbarControlScatteringOrder.RangeMin = 1;
-			this.integerTrackbarControlScatteringOrder.Size = new System.Drawing.Size( 234, 20 );
+			this.integerTrackbarControlScatteringOrder.Size = new System.Drawing.Size( 263, 20 );
 			this.integerTrackbarControlScatteringOrder.TabIndex = 7;
 			this.integerTrackbarControlScatteringOrder.Value = 2;
 			this.integerTrackbarControlScatteringOrder.VisibleRangeMax = 4;
@@ -353,10 +405,10 @@
 			this.integerTrackbarControlIterationsCount.Name = "integerTrackbarControlIterationsCount";
 			this.integerTrackbarControlIterationsCount.RangeMax = 2048;
 			this.integerTrackbarControlIterationsCount.RangeMin = 1;
-			this.integerTrackbarControlIterationsCount.Size = new System.Drawing.Size( 246, 20 );
+			this.integerTrackbarControlIterationsCount.Size = new System.Drawing.Size( 275, 20 );
 			this.integerTrackbarControlIterationsCount.TabIndex = 7;
-			this.integerTrackbarControlIterationsCount.Value = 256;
-			this.integerTrackbarControlIterationsCount.VisibleRangeMax = 512;
+			this.integerTrackbarControlIterationsCount.Value = 1024;
+			this.integerTrackbarControlIterationsCount.VisibleRangeMax = 2048;
 			this.integerTrackbarControlIterationsCount.VisibleRangeMin = 1;
 			// 
 			// floatTrackbarControlPhi
@@ -369,7 +421,7 @@
 			this.floatTrackbarControlPhi.Name = "floatTrackbarControlPhi";
 			this.floatTrackbarControlPhi.RangeMax = 180F;
 			this.floatTrackbarControlPhi.RangeMin = -180F;
-			this.floatTrackbarControlPhi.Size = new System.Drawing.Size( 246, 20 );
+			this.floatTrackbarControlPhi.Size = new System.Drawing.Size( 275, 20 );
 			this.floatTrackbarControlPhi.TabIndex = 5;
 			this.floatTrackbarControlPhi.Value = 0F;
 			this.floatTrackbarControlPhi.VisibleRangeMax = 180F;
@@ -385,9 +437,9 @@
 			this.floatTrackbarControlTheta.Name = "floatTrackbarControlTheta";
 			this.floatTrackbarControlTheta.RangeMax = 89.9F;
 			this.floatTrackbarControlTheta.RangeMin = 0F;
-			this.floatTrackbarControlTheta.Size = new System.Drawing.Size( 246, 20 );
+			this.floatTrackbarControlTheta.Size = new System.Drawing.Size( 275, 20 );
 			this.floatTrackbarControlTheta.TabIndex = 5;
-			this.floatTrackbarControlTheta.Value = 0F;
+			this.floatTrackbarControlTheta.Value = 45F;
 			this.floatTrackbarControlTheta.VisibleRangeMax = 89.9F;
 			// 
 			// floatTrackbarControlBeckmannSizeFactor
@@ -400,7 +452,7 @@
 			this.floatTrackbarControlBeckmannSizeFactor.Name = "floatTrackbarControlBeckmannSizeFactor";
 			this.floatTrackbarControlBeckmannSizeFactor.RangeMax = 10F;
 			this.floatTrackbarControlBeckmannSizeFactor.RangeMin = 0F;
-			this.floatTrackbarControlBeckmannSizeFactor.Size = new System.Drawing.Size( 246, 20 );
+			this.floatTrackbarControlBeckmannSizeFactor.Size = new System.Drawing.Size( 275, 20 );
 			this.floatTrackbarControlBeckmannSizeFactor.TabIndex = 2;
 			this.floatTrackbarControlBeckmannSizeFactor.Value = 1F;
 			this.floatTrackbarControlBeckmannSizeFactor.VisibleRangeMax = 2F;
@@ -416,61 +468,72 @@
 			this.floatTrackbarControlBeckmannRoughness.Name = "floatTrackbarControlBeckmannRoughness";
 			this.floatTrackbarControlBeckmannRoughness.RangeMax = 1F;
 			this.floatTrackbarControlBeckmannRoughness.RangeMin = 0F;
-			this.floatTrackbarControlBeckmannRoughness.Size = new System.Drawing.Size( 246, 20 );
+			this.floatTrackbarControlBeckmannRoughness.Size = new System.Drawing.Size( 275, 20 );
 			this.floatTrackbarControlBeckmannRoughness.TabIndex = 2;
 			this.floatTrackbarControlBeckmannRoughness.Value = 0.8F;
 			this.floatTrackbarControlBeckmannRoughness.VisibleRangeMax = 1F;
 			this.floatTrackbarControlBeckmannRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler( this.floatTrackbarControlBeckmannRoughness_ValueChanged );
 			// 
-			// panel2
+			// floatTrackbarControlLobeScaleB
 			// 
-			this.panel2.Controls.Add( this.radioButtonAnalyticalPhong );
-			this.panel2.Controls.Add( this.radioButtonAnalyticalGGX );
-			this.panel2.Controls.Add( this.radioButtonAnalyticalBeckmann );
-			this.panel2.Location = new System.Drawing.Point( 6, 305 );
-			this.panel2.Name = "panel2";
-			this.panel2.Size = new System.Drawing.Size( 233, 22 );
-			this.panel2.TabIndex = 10;
+			this.floatTrackbarControlLobeScaleB.Anchor = ((System.Windows.Forms.AnchorStyles) (((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+						| System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlLobeScaleB.Location = new System.Drawing.Point( 6, 377 );
+			this.floatTrackbarControlLobeScaleB.MaximumSize = new System.Drawing.Size( 10000, 20 );
+			this.floatTrackbarControlLobeScaleB.MinimumSize = new System.Drawing.Size( 70, 20 );
+			this.floatTrackbarControlLobeScaleB.Name = "floatTrackbarControlLobeScaleB";
+			this.floatTrackbarControlLobeScaleB.RangeMax = 10000F;
+			this.floatTrackbarControlLobeScaleB.RangeMin = 0F;
+			this.floatTrackbarControlLobeScaleB.Size = new System.Drawing.Size( 262, 20 );
+			this.floatTrackbarControlLobeScaleB.TabIndex = 5;
+			this.floatTrackbarControlLobeScaleB.Value = 1F;
+			this.floatTrackbarControlLobeScaleB.VisibleRangeMax = 2F;
 			// 
-			// radioButtonAnalyticalBeckmann
+			// floatTrackbarControlAnalyticalLobeTheta
 			// 
-			this.radioButtonAnalyticalBeckmann.AutoSize = true;
-			this.radioButtonAnalyticalBeckmann.Checked = true;
-			this.radioButtonAnalyticalBeckmann.Location = new System.Drawing.Point( 4, 2 );
-			this.radioButtonAnalyticalBeckmann.Name = "radioButtonAnalyticalBeckmann";
-			this.radioButtonAnalyticalBeckmann.Size = new System.Drawing.Size( 76, 17 );
-			this.radioButtonAnalyticalBeckmann.TabIndex = 0;
-			this.radioButtonAnalyticalBeckmann.TabStop = true;
-			this.radioButtonAnalyticalBeckmann.Text = "Beckmann";
-			this.radioButtonAnalyticalBeckmann.UseVisualStyleBackColor = true;
+			this.floatTrackbarControlAnalyticalLobeTheta.Anchor = ((System.Windows.Forms.AnchorStyles) (((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+						| System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlAnalyticalLobeTheta.Location = new System.Drawing.Point( 6, 244 );
+			this.floatTrackbarControlAnalyticalLobeTheta.MaximumSize = new System.Drawing.Size( 10000, 20 );
+			this.floatTrackbarControlAnalyticalLobeTheta.MinimumSize = new System.Drawing.Size( 70, 20 );
+			this.floatTrackbarControlAnalyticalLobeTheta.Name = "floatTrackbarControlAnalyticalLobeTheta";
+			this.floatTrackbarControlAnalyticalLobeTheta.RangeMax = 89.9F;
+			this.floatTrackbarControlAnalyticalLobeTheta.RangeMin = 0F;
+			this.floatTrackbarControlAnalyticalLobeTheta.Size = new System.Drawing.Size( 262, 20 );
+			this.floatTrackbarControlAnalyticalLobeTheta.TabIndex = 5;
+			this.floatTrackbarControlAnalyticalLobeTheta.Value = 45F;
+			this.floatTrackbarControlAnalyticalLobeTheta.VisibleRangeMax = 89.9F;
 			// 
-			// radioButtonAnalyticalGGX
+			// label8
 			// 
-			this.radioButtonAnalyticalGGX.AutoSize = true;
-			this.radioButtonAnalyticalGGX.Location = new System.Drawing.Point( 86, 2 );
-			this.radioButtonAnalyticalGGX.Name = "radioButtonAnalyticalGGX";
-			this.radioButtonAnalyticalGGX.Size = new System.Drawing.Size( 48, 17 );
-			this.radioButtonAnalyticalGGX.TabIndex = 0;
-			this.radioButtonAnalyticalGGX.TabStop = true;
-			this.radioButtonAnalyticalGGX.Text = "GGX";
-			this.radioButtonAnalyticalGGX.UseVisualStyleBackColor = true;
+			this.label8.AutoSize = true;
+			this.label8.Location = new System.Drawing.Point( 6, 267 );
+			this.label8.Name = "label8";
+			this.label8.Size = new System.Drawing.Size( 87, 13 );
+			this.label8.TabIndex = 3;
+			this.label8.Text = "And roughness...";
 			// 
-			// radioButtonAnalyticalPhong
+			// floatTrackbarControlAnalyticalLobeRoughness
 			// 
-			this.radioButtonAnalyticalPhong.AutoSize = true;
-			this.radioButtonAnalyticalPhong.Location = new System.Drawing.Point( 140, 2 );
-			this.radioButtonAnalyticalPhong.Name = "radioButtonAnalyticalPhong";
-			this.radioButtonAnalyticalPhong.Size = new System.Drawing.Size( 56, 17 );
-			this.radioButtonAnalyticalPhong.TabIndex = 0;
-			this.radioButtonAnalyticalPhong.TabStop = true;
-			this.radioButtonAnalyticalPhong.Text = "Phong";
-			this.radioButtonAnalyticalPhong.UseVisualStyleBackColor = true;
+			this.floatTrackbarControlAnalyticalLobeRoughness.Anchor = ((System.Windows.Forms.AnchorStyles) (((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+						| System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlAnalyticalLobeRoughness.Location = new System.Drawing.Point( 6, 286 );
+			this.floatTrackbarControlAnalyticalLobeRoughness.MaximumSize = new System.Drawing.Size( 10000, 20 );
+			this.floatTrackbarControlAnalyticalLobeRoughness.MinimumSize = new System.Drawing.Size( 70, 20 );
+			this.floatTrackbarControlAnalyticalLobeRoughness.Name = "floatTrackbarControlAnalyticalLobeRoughness";
+			this.floatTrackbarControlAnalyticalLobeRoughness.RangeMax = 1F;
+			this.floatTrackbarControlAnalyticalLobeRoughness.RangeMin = 0F;
+			this.floatTrackbarControlAnalyticalLobeRoughness.Size = new System.Drawing.Size( 262, 20 );
+			this.floatTrackbarControlAnalyticalLobeRoughness.TabIndex = 2;
+			this.floatTrackbarControlAnalyticalLobeRoughness.Value = 0.8F;
+			this.floatTrackbarControlAnalyticalLobeRoughness.VisibleRangeMax = 1F;
+			this.floatTrackbarControlAnalyticalLobeRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler( this.floatTrackbarControlBeckmannRoughness_ValueChanged );
 			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF( 6F, 13F );
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size( 1112, 654 );
+			this.ClientSize = new System.Drawing.Size( 1141, 778 );
 			this.Controls.Add( this.groupBoxDisplay );
 			this.Controls.Add( this.integerTrackbarControlIterationsCount );
 			this.Controls.Add( this.buttonRayTrace );
@@ -535,6 +598,10 @@
 		private System.Windows.Forms.RadioButton radioButtonAnalyticalPhong;
 		private System.Windows.Forms.RadioButton radioButtonAnalyticalGGX;
 		private System.Windows.Forms.RadioButton radioButtonAnalyticalBeckmann;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLobeScaleB;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAnalyticalLobeTheta;
+		private System.Windows.Forms.Label label8;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAnalyticalLobeRoughness;
 	}
 }
 

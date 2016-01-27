@@ -81,6 +81,7 @@ namespace TestMSBSDF
 			public float		_Roughness;
 			public float		_ScaleR;
 			public float		_ScaleT;
+			public float		_ScaleB;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -600,17 +601,28 @@ namespace TestMSBSDF
 			// Render lobes
 			if ( checkBoxShowLobe.Checked || checkBoxShowAnalyticalBeckmann.Checked ) {
 				// Compute reflected direction to orient the lobe against
-				float3	reflectedDirection = m_lastComputedDirection;
-						reflectedDirection.z = -reflectedDirection.z;
+//				float3	reflectedDirection = m_lastComputedDirection;
+
+				float	theta = (float) Math.PI * floatTrackbarControlAnalyticalLobeTheta.Value / 180.0f;
+				float	phi = (float) Math.PI * floatTrackbarControlPhi.Value / 180.0f;
+				float	sinTheta = (float) Math.Sin( theta );
+				float	cosTheta = (float) Math.Cos( theta );
+				float	sinPhi = (float) Math.Sin( phi );
+				float	cosPhi = (float) Math.Cos( phi );
+
+				float3	reflectedDirection = new float3( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );	// Minus sign because we need the direction pointing TOWARD the surface (i.e. z < 0)
+
+						reflectedDirection.z = -reflectedDirection.z;	// Mirror against surface
 
 				m_CB_RenderLobe.m._Direction = m_lastComputedDirection;
 				m_CB_RenderLobe.m._LobeIntensity = floatTrackbarControlLobeIntensity.Value;
 				m_CB_RenderLobe.m._ReflectedDirection = reflectedDirection;
 				m_CB_RenderLobe.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value - 1;
 				m_CB_RenderLobe.m._Flags = checkBoxShowAnalyticalBeckmann.Checked ? 2U : 0U;
-m_CB_RenderLobe.m._Roughness = floatTrackbarControlBeckmannRoughness.Value;
+				m_CB_RenderLobe.m._Roughness = floatTrackbarControlAnalyticalLobeRoughness.Value;
 				m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR.Value;
 				m_CB_RenderLobe.m._ScaleT = floatTrackbarControlLobeScaleT.Value;
+				m_CB_RenderLobe.m._ScaleB = floatTrackbarControlLobeScaleB.Value;
 
 				if ( checkBoxShowLobe.Checked ) {
 					// Show simulated lobe

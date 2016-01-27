@@ -14,6 +14,7 @@ cbuffer CB_Render : register(b10) {
 	float	_Roughness;
 	float	_ScaleR;		// Scale factor along reflected ray
 	float	_ScaleT;		// Scale factor along tangential axis
+	float	_ScaleB;		// Scale factor along bi-tangential axis
 }
 
 Texture2DArray< float >		_Tex_DirectionsHistogram : register( t2 );
@@ -141,8 +142,10 @@ PS_IN	VS( VS_IN _In ) {
 
 		// Tangential scale
 		float3	lsTangent = wsReflectedDirection.y < 0.9999 ? normalize( cross( wsReflectedDirection, float3( 0, 1, 0 ) ) ) : float3( 1, 0, 0 );
-		float	L = dot( lsPosition, lsTangent );
-		lsPosition = lsPosition + L * (_ScaleT - 1.0) * lsTangent;
+		float3	lsBiTangent = cross( wsReflectedDirection, lsTangent );
+		float	T = dot( lsPosition, lsTangent );
+		float	B = dot( lsPosition, lsBiTangent );
+		lsPosition = lsPosition + T * (_ScaleT - 1.0) * lsTangent + B * (_ScaleB - 1.0) * lsBiTangent;
 
 	} else {
 		// Show simulated lobe
