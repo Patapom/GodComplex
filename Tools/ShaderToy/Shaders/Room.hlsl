@@ -241,8 +241,8 @@ float	sphereConvex4( float3 p, float r, const float dAngle = PI / 10.0 ) {
 }
 
 float	map( float3 p ) {
-//	float	room = min( -box2( p.xz - float2( 0, 0 ), float2( 4, 4 ) ), plane( p, float3( 0, 1, 0 ), 0.0 ) );
-	float	room = -box2( p.xz - float2( 0, 0 ), float2( 4, 4 ) );	// Without floor
+	float	room = min( -box2( p.xz - float2( 0, 0 ), float2( 4, 4 ) ), plane( p, float3( 0, 1, 0 ), 0.0 ) );
+//	float	room = -box2( p.xz - float2( 0, 0 ), float2( 4, 4 ) );	// Without floor
 	float	obj = sphere( p - float3( 0, 1, 0 ), 1.0 );
 //	if ( obj > 2.0 )
 //		return room;

@@ -67,6 +67,7 @@
 			this.floatTrackbarControlAnalyticalLobeTheta = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label8 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlAnalyticalLobeRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.buttonFit = new System.Windows.Forms.Button();
 			this.panel1.SuspendLayout();
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
@@ -220,6 +221,7 @@
 			this.groupBoxDisplay.Anchor = ((System.Windows.Forms.AnchorStyles) ((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
 						| System.Windows.Forms.AnchorStyles.Left)
 						| System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBoxDisplay.Controls.Add( this.buttonFit );
 			this.groupBoxDisplay.Controls.Add( this.panel2 );
 			this.groupBoxDisplay.Controls.Add( this.checkBoxShowAnalyticalBeckmann );
 			this.groupBoxDisplay.Controls.Add( this.checkBoxShowWireframe );
@@ -529,6 +531,16 @@
 			this.floatTrackbarControlAnalyticalLobeRoughness.VisibleRangeMax = 1F;
 			this.floatTrackbarControlAnalyticalLobeRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler( this.floatTrackbarControlBeckmannRoughness_ValueChanged );
 			// 
+			// buttonFit
+			// 
+			this.buttonFit.Location = new System.Drawing.Point( 54, 406 );
+			this.buttonFit.Name = "buttonFit";
+			this.buttonFit.Size = new System.Drawing.Size( 161, 25 );
+			this.buttonFit.TabIndex = 11;
+			this.buttonFit.Text = "FIT";
+			this.buttonFit.UseVisualStyleBackColor = true;
+			this.buttonFit.Click += new System.EventHandler( this.buttonFit_Click );
+			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF( 6F, 13F );
@@ -602,6 +614,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAnalyticalLobeTheta;
 		private System.Windows.Forms.Label label8;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAnalyticalLobeRoughness;
+		private System.Windows.Forms.Button buttonFit;
 	}
 }
 

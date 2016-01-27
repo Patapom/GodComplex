@@ -141,7 +141,8 @@ PS_IN	VS( VS_IN _In ) {
 		lsPosition = lobeIntensity * lsDirection;
 
 		// Tangential scale
-		float3	lsTangent = wsReflectedDirection.y < 0.9999 ? normalize( cross( wsReflectedDirection, float3( 0, 1, 0 ) ) ) : float3( 1, 0, 0 );
+//		float3	lsTangent = wsReflectedDirection.y < 0.9999 ? normalize( cross( wsReflectedDirection, float3( 0, 1, 0 ) ) ) : float3( 1, 0, 0 );
+		float3	lsTangent = wsReflectedDirection.z < 0.9999 ? normalize( cross( wsReflectedDirection, float3( 0, 0, 1 ) ) ) : float3( 1, 0, 0 );
 		float3	lsBiTangent = cross( wsReflectedDirection, lsTangent );
 		float	T = dot( lsPosition, lsTangent );
 		float	B = dot( lsPosition, lsBiTangent );

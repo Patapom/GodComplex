@@ -126,6 +126,7 @@ namespace TestMSBSDF
 		private CameraManipulator	m_Manipulator = new CameraManipulator();
 
 		private float3				m_lastComputedDirection;
+		private float				m_lastComputedRoughness;
 		private int					m_lastComputedHistogramIterationsCount = 1;
 
 		public TestForm() {
@@ -504,10 +505,12 @@ namespace TestMSBSDF
 			float	cosPhi = (float) Math.Cos( _phi );
 
 			m_lastComputedDirection.Set( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );	// Minus sign because we need the direction pointing TOWARD the surface (i.e. z < 0)
+			m_lastComputedRoughness = _roughness;
+
 			m_lastComputedHistogramIterationsCount = _iterationsCount;
 
 			m_CB_RayTrace.m._Direction = m_lastComputedDirection;
-			m_CB_RayTrace.m._Roughness = _roughness;
+			m_CB_RayTrace.m._Roughness = m_lastComputedRoughness;
 
 			m_Tex_OutgoingDirections.RemoveFromLastAssignedSlots();
 			m_Tex_LobeHistogram.RemoveFromLastAssignedSlots();
@@ -733,14 +736,22 @@ namespace TestMSBSDF
 
 		class	LobeModel : WMath.BFGS.Model {
 
-			double		m_theta;
-			double		m_phi;
+			TestForm	m_owner = null;
+			float3		m_direction;
+			float3		m_tangent;
+			float3		m_biTangent;
+			double		m_cosPhi;
+			double		m_sinPhi;
 			double		m_roughness;
 			double[,]	m_histogramData;
 
-			public LobeModel() {}
+			int			m_iterationsCount = 0;
 
-			public void		Init( double _theta, double _phi, double _roughness, Texture2D _texHistogram_CPU, int _scatteringOrder ) {
+			public LobeModel( TestForm _owner ) {
+				m_owner = _owner;
+			}
+
+			public void		Init( float3 _direction, double _roughness, Texture2D _texHistogram_CPU, int _scatteringOrder ) {
 				_scatteringOrder--;	// Because scattering order 1 is actually stored in first slice of the texture array
 
 				// 1] Readback lobe texture data into an array
@@ -756,15 +767,17 @@ namespace TestMSBSDF
 				_texHistogram_CPU.UnMap( 0, _scatteringOrder );
 
 				// 2] Setup initial parameters
-				m_theta = _theta;
-				m_phi = _phi;
+				m_direction = _direction;
+				m_direction.z = -m_direction.z;	// Mirror against surface to obtain reflected direction
 				m_roughness = _roughness;
 
-				m_parameters[0] = m_theta;
-				m_parameters[1] = m_roughness;
-				m_parameters[2] = 1.0;			// Initialize lobe size
-				m_parameters[3] = 1.0;			// Initialize lobe scale along tangent
-				m_parameters[4] = 1.0;			// Initialize lobe scale along bitangent
+				double	phi = Math.Atan2( m_direction.y, m_direction.x );
+				m_cosPhi = Math.Cos( phi );
+				m_sinPhi = Math.Sin( phi );
+
+				float	theta = (float) Math.Acos( m_direction.z );
+
+				Parameters = new double[] { theta, m_roughness, 1, 1, 1 };
 			}
 
 			#region Model Implementation
@@ -773,10 +786,54 @@ namespace TestMSBSDF
 
 			public override double[]		Parameters {
 				get { return m_parameters; }
-				set { m_parameters = value; }
+				set {
+					m_parameters = value;
+
+					// Update reflection vector and tangent space
+					double	cosTheta = Math.Cos( m_parameters[0] );
+					double	sinTheta = Math.Sin( m_parameters[0] );
+					m_direction.Set( (float) (sinTheta * m_cosPhi), (float) (sinTheta * m_sinPhi), (float) cosTheta );
+
+					m_tangent = m_direction.z < 0.9999f ? m_direction.Cross( float3.UnitZ ).Normalized : float3.UnitX;
+					m_biTangent = m_direction.Cross( m_tangent );
+
+					// Update track bar parameters
+					m_owner.floatTrackbarControlAnalyticalLobeTheta.Value = (float) (180.0 * m_parameters[0] / Math.PI);
+					m_owner.floatTrackbarControlAnalyticalLobeRoughness.Value = (float) m_parameters[1];
+					m_owner.floatTrackbarControlLobeScaleR.Value = (float) m_parameters[2];
+					m_owner.floatTrackbarControlLobeScaleT.Value = (float) m_parameters[3];
+					m_owner.floatTrackbarControlLobeScaleB.Value = (float) m_parameters[4];
+
+					// Repaint every N iterations
+					m_iterationsCount++;
+					if ( m_iterationsCount == 5 ) {
+						m_iterationsCount = 0;
+						m_owner.panelOutput.Refresh();
+					}
+				}
 			}
 
 			public override double Eval( double[] _NewParameters ) {
+
+
+
+// 	float3	wsIncomingDirection = -float3( _Direction.x, _Direction.z, -_Direction.y );								// Actual INCOMING ray direction in Y-up pointing AWAY from the surface (hence the - sign)
+// 	float3	wsReflectedDirection = float3( _ReflectedDirection.x, _ReflectedDirection.z, -_ReflectedDirection.y );	// Actual REFLECTED ray direction in Y-up
+// 	float3	tangent, biTangent;
+// 	BuildOrthonormalBasis( wsReflectedDirection, tangent, biTangent );
+// 
+// //	float3	lsDirection = _In.Position;												// Direction in our local object's Y-up space (which is also our world space BTW)
+// 	float3	lsDirection = _In.Position.x * tangent + _In.Position.y * wsReflectedDirection + _In.Position.z * biTangent;	// Direction, aligned with reflected ray
+// 
+// 	float3	mfDirection = float3( lsDirection.x, -lsDirection.z, lsDirection.y );	// Direction in µ-facet Z-up space
+// 
+// 	float	theta = acos( clamp( mfDirection.z, -1.0, 1.0 ) );
+// 	float	phi = fmod( 2.0 * PI + atan2( mfDirection.y, mfDirection.x ), 2.0 * PI );
+// 
+// 	float	thetaBinIndex = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) );		// Inverse of 2*asin( sqrt( i / (2 * N) ) )
+// 	float2	UV = float2( phi / (2.0 * PI), thetaBinIndex / LOBES_COUNT_THETA );
+// 
+
 
 // TODO: Estimate lobe aligned with axis bent by theta and scaled in its tangent and bitangent directions!
 
@@ -834,16 +891,27 @@ namespace TestMSBSDF
 
 			#endregion
 		}
-		LobeModel	m_lobeModel = new LobeModel();
+		LobeModel	m_lobeModel = null;
 
-		void	PerformLobeFitting( float _theta, float _phi, float _roughness, int _scatteringOrder ) {
+		void	PerformLobeFitting( float3 _direction, float _roughness, int _scatteringOrder ) {
 
-			m_lobeModel.Init( _theta, _phi, _roughness, m_Tex_LobeHistogram_CPU, _scatteringOrder );
+			m_lobeModel = new LobeModel( this );
+			m_lobeModel.Init( _direction, _roughness, m_Tex_LobeHistogram_CPU, _scatteringOrder );
 
 			WMath.BFGS	Fitter = new WMath.BFGS();
 			Fitter.Minimize( m_lobeModel );
 		}
 
 		#endregion
+
+		private void buttonFit_Click( object sender, EventArgs e )
+		{
+			try {
+				PerformLobeFitting( m_lastComputedDirection, m_lastComputedRoughness, integerTrackbarControlScatteringOrder.Value );
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while performing lobe fitting:\r\n" + _e.Message );
+			} finally {
+			}
+		}
 	}
 }
