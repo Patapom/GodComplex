@@ -65,6 +65,20 @@ namespace WMath
 		}
 
 		/// <summary>
+		/// Gets the amount of iterations performed by the algorithm
+		/// </summary>
+		public int		IterationsCount {
+			get { return m_iterationsCount; }
+		}
+
+		/// <summary>
+		/// Gets the minimum reached by the minimization
+		/// </summary>
+		public double	FunctionMinimum {
+			get { return m_functionMinimum; }
+		}
+
+		/// <summary>
 		/// Performs minimization
 		/// </summary>
 		/// <param name="_model"></param>
@@ -171,7 +185,7 @@ namespace WMath
 					pi_norm += temp2 * temp2;
 				}
 
-				// update Hessian using BFGS formula:
+				// Update Hessian using BFGS formula:
 				// note that we should not update Hessian when successive pi's are almost linearly dependent;
 				//	this can be ensured by checking pi.qi = pi|H|pi, which ought to be positive enough if H is positive definite.
 				double	ZERO_PRODUCT = 1.0e-8;

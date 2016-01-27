@@ -760,7 +760,7 @@ namespace TestMSBSDF
 				using ( BinaryReader R = Content.OpenStreamRead() )
 					for ( int Y=0; Y < H; Y++ )
 						for ( int X=0; X < W; X++ )
-							m_histogramData[X,Y] = R.ReadSingle();
+							m_histogramData[X,Y] = W * H * R.ReadSingle();
 				Content.CloseStream();
 				_texHistogram_CPU.UnMap( 0, _scatteringOrder );
 
@@ -805,7 +805,7 @@ namespace TestMSBSDF
 
 			public override double Eval( double[] _newParameters ) {
 
-				double	lobeTheta = Math.Max( 0.0, Math.Min( 0.4999 * Math.PI, m_parameters[0] ) );
+				double	lobeTheta = Math.Max( 0.0, Math.Min( 0.4999 * Math.PI, _newParameters[0] ) );
 				double	lobeRoughness = Math.Max( 0.0, Math.Min( 1.0, _newParameters[1] ) );
 				double	lobeScaleR = Math.Max( 1e-6, _newParameters[2] );
 				double	lobeScaleT = Math.Max( 1e-6, _newParameters[3] );
@@ -819,8 +819,8 @@ namespace TestMSBSDF
  				double	maskingIncoming = PhongG1( m_direction.z, lobeRoughness );		// Masking( incoming )
 
 				// Compute lobe's reflection vector and tangent space using new parameters
-				double	cosTheta = Math.Cos( m_parameters[0] );
-				double	sinTheta = Math.Sin( m_parameters[0] );
+				double	cosTheta = Math.Cos( lobeTheta );
+				double	sinTheta = Math.Sin( lobeTheta );
 
 				float3	lobe_normal = new float3( (float) (sinTheta * m_cosPhi), (float) (sinTheta * m_sinPhi), (float) cosTheta );
 // 				float3	lobe_tangent = m_direction.z < 0.9999f ? m_direction.Cross( float3.UnitZ ).Normalized : float3.UnitX;
@@ -871,16 +871,16 @@ namespace TestMSBSDF
 						lobeN = simulatedIntensity * invLobeScaleN * microfacet_direction.Dot( lobe_normal );
 
 						simulatedIntensity_scaled = Math.Sqrt( lobeT*lobeT + lobeB*lobeB + lobeN*lobeN );
-						invSimulatedIntensity_scaled = 1.0 / simulatedIntensity_scaled;
+						invSimulatedIntensity_scaled = simulatedIntensity_scaled > 1e-12 ? 1.0 / simulatedIntensity_scaled : 0.0;
 						lobe_direction = new float3( (float) (invSimulatedIntensity_scaled * lobeT), (float) (invSimulatedIntensity_scaled * lobeB), (float) (invSimulatedIntensity_scaled * lobeN) );
 
 						// Compute the lobe intensity in local space
-						float	cosTheta_M = lobe_direction.Dot( lobe_normal );	// Angle with pseudo normal (actually, the bent reflection direction)
+						float	cosTheta_M = Math.Max( 0.0f, lobe_direction.z );// Angle with pseudo normal (actually, the bent reflection direction)
  						lobeIntensity = PhongNDF( cosTheta_M, lobeRoughness );	// NDF
  						lobeIntensity *= maskingIncoming * maskingOutGoing;		// * Masking terms
 
 						// Sum the difference between scaled simulated intensity and local lobe intensity
-						sum += simulatedIntensity_scaled - lobeIntensity;
+						sum += (simulatedIntensity_scaled - lobeIntensity) * (simulatedIntensity_scaled - lobeIntensity);
 					}
 				}
 				sum /= LOBES_COUNT_THETA * LOBES_COUNT_PHI;
@@ -913,14 +913,16 @@ namespace TestMSBSDF
 		}
 
 		LobeModel	m_lobeModel = null;
+		WMath.BFGS	m_Fitter = new WMath.BFGS();
 
 		void	PerformLobeFitting( float3 _direction, float _roughness, int _scatteringOrder ) {
+
+			checkBoxShowAnalyticalBeckmann.Checked = true;
 
 			m_lobeModel = new LobeModel( this );
 			m_lobeModel.Init( _direction, _roughness, m_Tex_LobeHistogram_CPU, _scatteringOrder );
 
-			WMath.BFGS	Fitter = new WMath.BFGS();
-			Fitter.Minimize( m_lobeModel );
+			m_Fitter.Minimize( m_lobeModel );
 		}
 
 		#endregion
@@ -929,6 +931,9 @@ namespace TestMSBSDF
 		{
 			try {
 				PerformLobeFitting( m_lastComputedDirection, m_lastComputedRoughness, integerTrackbarControlScatteringOrder.Value );
+
+				MessageBox( "Fitting succeeded after " + m_Fitter.IterationsCount + " iterations.\r\nReached minimum: " + m_Fitter.FunctionMinimum, MessageBoxButtons.OK, MessageBoxIcon.Information );
+
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while performing lobe fitting:\r\n" + _e.Message );
 			} finally {
