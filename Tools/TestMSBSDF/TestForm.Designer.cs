@@ -330,12 +330,12 @@
 			this.floatTrackbarControlAnalyticalLobeTheta.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlAnalyticalLobeTheta.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlAnalyticalLobeTheta.Name = "floatTrackbarControlAnalyticalLobeTheta";
-			this.floatTrackbarControlAnalyticalLobeTheta.RangeMax = 89.9F;
+			this.floatTrackbarControlAnalyticalLobeTheta.RangeMax = 89.999F;
 			this.floatTrackbarControlAnalyticalLobeTheta.RangeMin = 0F;
 			this.floatTrackbarControlAnalyticalLobeTheta.Size = new System.Drawing.Size(262, 20);
 			this.floatTrackbarControlAnalyticalLobeTheta.TabIndex = 5;
 			this.floatTrackbarControlAnalyticalLobeTheta.Value = 39.5F;
-			this.floatTrackbarControlAnalyticalLobeTheta.VisibleRangeMax = 89.9F;
+			this.floatTrackbarControlAnalyticalLobeTheta.VisibleRangeMax = 89.999F;
 			// 
 			// label8
 			// 

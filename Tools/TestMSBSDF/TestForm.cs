@@ -285,7 +285,8 @@ namespace TestMSBSDF
 			#if true	// FULL SPHERE
 				VertexP3[]	Vertices = new VertexP3[RESOLUTION_PHI*2*RESOLUTION_THETA];
 				for ( uint Y=0; Y < 2*RESOLUTION_THETA; Y++ ) {
-					float	theta = 2.0f * (float) Math.Asin( Math.Sqrt( (float) Y / (2*RESOLUTION_THETA-1) ) );
+//					float	theta = 2.0f * (float) Math.Asin( Math.Sqrt( (float) Y / (2*RESOLUTION_THETA-1) ) );
+					float	theta = (float) Math.PI * (float) Y / (2*RESOLUTION_THETA-1);
 					for ( uint X=0; X < RESOLUTION_PHI; X++ ) {
 						float	phi = 2.0f * (float) Math.PI * X / RESOLUTION_PHI;
 						Vertices[RESOLUTION_PHI*Y+X].P.Set( (float) (Math.Sin( theta ) * Math.Cos( phi )), (float) Math.Cos( theta ), -(float) (Math.Sin( theta ) * Math.Sin( phi )) );	// Phi=0 => +X, Phi=PI/2 => -Z in our Y-up frame
@@ -454,7 +455,7 @@ namespace TestMSBSDF
 					m_Tex_Heightfield.RemoveFromLastAssignedSlotUAV();
 				}
 			#else	// CPU version
-				PixelsBuffer	Content = new PixelsBuffer( HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE*System.Runtime.InteropServices.Marshal.SizeOf(typeof(float4)) );
+				PixelsBuffer	Content = new PixelsBuffer( HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE*System.Runtime.InteropServices.Marshal.SizeOf(typeof(float)) );
 
 				double	scale = Math.Sqrt( 2.0 / N );
 
