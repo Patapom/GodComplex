@@ -1,0 +1,49 @@
+﻿Build started 1/28/2016 12:27:01 PM.
+     1>Project "C:\Users\stephane-lb\Documents\GodComplex\RendererD3D11\RendererLib.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D DIRECTX10 /D WIN32 /D NDEBUG /D _LIB /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"C:\Users\stephane-lb\Documents\GodComplex\Release DirectX10\RendererLib.pch" /Fo"C:\Users\stephane-lb\Documents\GodComplex\Release DirectX10\\" /Fd"C:\Users\stephane-lb\Documents\GodComplex\Release DirectX10\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt stdafx.cpp
+         stdafx.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D DIRECTX10 /D WIN32 /D NDEBUG /D _LIB /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"C:\Users\stephane-lb\Documents\GodComplex\Release DirectX10\\" /Fd"C:\Users\stephane-lb\Documents\GodComplex\Release DirectX10\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt ..\NuajAPI\API\Hashtable.cpp ..\NuajAPI\Math\Math.cpp ..\Utility\TextureFilePOM.cpp Components\Component.cpp Components\ComputeShader.cpp Components\ConstantBuffer.cpp Components\Primitive.cpp Components\Shader.cpp Components\States.cpp Components\StructuredBuffer.cpp Components\Texture2D.cpp Components\Texture3D.cpp Device.cpp Structures\DepthStencilFormats.cpp Structures\PixelFormats.cpp Structures\VertexFormats.cpp
+         Hashtable.cpp
+         Math.cpp
+         TextureFilePOM.cpp
+     1>c:\program files (x86)\microsoft sdks\windows\v7.1a\include\sal_supp.h(57): warning C4005: '__useHeader' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\sal.h(2872) : see previous definition of '__useHeader'
+     1>c:\program files (x86)\microsoft sdks\windows\v7.1a\include\specstrings_supp.h(77): warning C4005: '__on_failure' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\sal.h(2882) : see previous definition of '__on_failure'
+         Component.cpp
+     1>c:\program files (x86)\microsoft sdks\windows\v7.1a\include\sal_supp.h(57): warning C4005: '__useHeader' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\sal.h(2872) : see previous definition of '__useHeader'
+     1>c:\program files (x86)\microsoft sdks\windows\v7.1a\include\specstrings_supp.h(77): warning C4005: '__on_failure' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\sal.h(2882) : see previous definition of '__on_failure'
+         ComputeShader.cpp
+     1>c:\program files (x86)\microsoft sdks\windows\v7.1a\include\sal_supp.h(57): warning C4005: '__useHeader' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\sal.h(2872) : see previous definition of '__useHeader'
+     1>c:\program files (x86)\microsoft sdks\windows\v7.1a\include\specstrings_supp.h(77): warning C4005: '__on_failure' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\sal.h(2882) : see previous definition of '__on_failure'
+         ConstantBuffer.cpp
+     1>c:\program files (x86)\microsoft sdks\windows\v7.1a\include\sal_supp.h(57): warning C4005: '__useHeader' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\sal.h(2872) : see previous definition of '__useHeader'
+     1>c:\program files (x86)\microsoft sdks\windows\v7.1a\include\specstrings_supp.h(77): warning C4005: '__on_failure' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\sal.h(2882) : see previous definition of '__on_failure'
+         Primitive.cpp
+     1>c:\program files (x86)\microsoft sdks\windows\v7.1a\include\sal_supp.h(57): warning C4005: '__useHeader' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\sal.h(2872) : see previous definition of '__useHeader'
+     1>c:\program files (x86)\microsoft sdks\windows\v7.1a\include\specstrings_supp.h(77): warning C4005: '__on_failure' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\sal.h(2882) : see previous definition of '__on_failure'
+         Shader.cpp
+     1>c:\program files (x86)\microsoft sdks\windows\v7.1a\include\sal_supp.h(57): warning C4005: '__useHeader' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\sal.h(2872) : see previous definition of '__useHeader'
+     1>c:\program files (x86)\microsoft sdks\windows\v7.1a\include\specstrings_supp.h(77): warning C4005: '__on_failure' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\sal.h(2882) : see previous definition of '__on_failure'
+         States.cpp
+     1>c:\program files (x86)\microsoft sdks\windows\v7.1a\include\sal_supp.h(57): warning C4005: '__useHeader' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\sal.h(2872) : see previous definition of '__useHeader'
+     1>c:\program files (x86)\microsoft sdks\windows\v7.1a\include\specstrings_supp.h(77): warning C4005: '__on_failure' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\sal.h(2882) : see previous definition of '__on_failure'
+         StructuredBuffer.cpp
+     1>Done Building Project "C:\Users\stephane-lb\Documents\GodComplex\RendererD3D11\RendererLib.vcxproj" (Build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:03.15
