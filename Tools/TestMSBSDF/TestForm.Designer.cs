@@ -29,7 +29,6 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.panelOutput = new PanelOutput3D();
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.label1 = new System.Windows.Forms.Label();
@@ -68,17 +67,11 @@
 			this.floatTrackbarControlTheta = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlBeckmannSizeFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlBeckmannRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
 			this.panel1.SuspendLayout();
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.SuspendLayout();
-			// 
-			// panelOutput
-			// 
-			this.panelOutput.Location = new System.Drawing.Point(12, 12);
-			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size(833, 677);
-			this.panelOutput.TabIndex = 0;
 			// 
 			// timer1
 			// 
@@ -295,11 +288,11 @@
 			this.radioButtonAnalyticalBeckmann.Text = "Beckmann";
 			this.radioButtonAnalyticalBeckmann.UseVisualStyleBackColor = true;
 			// 
-			// checkBoxShowAnalyticalBeckmann
+			// checkBoxShowAnalyticalLobe
 			// 
 			this.checkBoxShowAnalyticalLobe.AutoSize = true;
 			this.checkBoxShowAnalyticalLobe.Location = new System.Drawing.Point(6, 221);
-			this.checkBoxShowAnalyticalLobe.Name = "checkBoxShowAnalyticalBeckmann";
+			this.checkBoxShowAnalyticalLobe.Name = "checkBoxShowAnalyticalLobe";
 			this.checkBoxShowAnalyticalLobe.Size = new System.Drawing.Size(188, 17);
 			this.checkBoxShowAnalyticalLobe.TabIndex = 9;
 			this.checkBoxShowAnalyticalLobe.Text = "Show Analytical Lobe with angle...";
@@ -341,7 +334,7 @@
 			this.floatTrackbarControlAnalyticalLobeTheta.RangeMin = 0F;
 			this.floatTrackbarControlAnalyticalLobeTheta.Size = new System.Drawing.Size(262, 20);
 			this.floatTrackbarControlAnalyticalLobeTheta.TabIndex = 5;
-			this.floatTrackbarControlAnalyticalLobeTheta.Value = 45F;
+			this.floatTrackbarControlAnalyticalLobeTheta.Value = 39.5F;
 			this.floatTrackbarControlAnalyticalLobeTheta.VisibleRangeMax = 89.9F;
 			// 
 			// label8
@@ -374,8 +367,8 @@
 			this.floatTrackbarControlLobeScaleB.RangeMin = 0F;
 			this.floatTrackbarControlLobeScaleB.Size = new System.Drawing.Size(262, 20);
 			this.floatTrackbarControlLobeScaleB.TabIndex = 5;
-			this.floatTrackbarControlLobeScaleB.Value = 1F;
-			this.floatTrackbarControlLobeScaleB.VisibleRangeMax = 2F;
+			this.floatTrackbarControlLobeScaleB.Value = 0.7758F;
+			this.floatTrackbarControlLobeScaleB.VisibleRangeMax = 1F;
 			// 
 			// floatTrackbarControlLobeScaleT
 			// 
@@ -389,8 +382,8 @@
 			this.floatTrackbarControlLobeScaleT.RangeMin = 0F;
 			this.floatTrackbarControlLobeScaleT.Size = new System.Drawing.Size(262, 20);
 			this.floatTrackbarControlLobeScaleT.TabIndex = 5;
-			this.floatTrackbarControlLobeScaleT.Value = 1F;
-			this.floatTrackbarControlLobeScaleT.VisibleRangeMax = 2F;
+			this.floatTrackbarControlLobeScaleT.Value = 0.2384F;
+			this.floatTrackbarControlLobeScaleT.VisibleRangeMax = 1F;
 			// 
 			// floatTrackbarControlAnalyticalLobeRoughness
 			// 
@@ -404,7 +397,7 @@
 			this.floatTrackbarControlAnalyticalLobeRoughness.RangeMin = 0F;
 			this.floatTrackbarControlAnalyticalLobeRoughness.Size = new System.Drawing.Size(262, 20);
 			this.floatTrackbarControlAnalyticalLobeRoughness.TabIndex = 2;
-			this.floatTrackbarControlAnalyticalLobeRoughness.Value = 0.8F;
+			this.floatTrackbarControlAnalyticalLobeRoughness.Value = 0.9646F;
 			this.floatTrackbarControlAnalyticalLobeRoughness.VisibleRangeMax = 1F;
 			this.floatTrackbarControlAnalyticalLobeRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlBeckmannRoughness_ValueChanged);
 			// 
@@ -420,7 +413,8 @@
 			this.floatTrackbarControlLobeScaleR.RangeMin = 0F;
 			this.floatTrackbarControlLobeScaleR.Size = new System.Drawing.Size(262, 20);
 			this.floatTrackbarControlLobeScaleR.TabIndex = 5;
-			this.floatTrackbarControlLobeScaleR.Value = 10F;
+			this.floatTrackbarControlLobeScaleR.Value = 0.2222F;
+			this.floatTrackbarControlLobeScaleR.VisibleRangeMax = 1F;
 			// 
 			// floatTrackbarControlLobeIntensity
 			// 
@@ -539,6 +533,13 @@
 			this.floatTrackbarControlBeckmannRoughness.Value = 0.8F;
 			this.floatTrackbarControlBeckmannRoughness.VisibleRangeMax = 1F;
 			this.floatTrackbarControlBeckmannRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlBeckmannRoughness_ValueChanged);
+			// 
+			// panelOutput
+			// 
+			this.panelOutput.Location = new System.Drawing.Point(12, 12);
+			this.panelOutput.Name = "panelOutput";
+			this.panelOutput.Size = new System.Drawing.Size(833, 677);
+			this.panelOutput.TabIndex = 0;
 			// 
 			// TestForm
 			// 
