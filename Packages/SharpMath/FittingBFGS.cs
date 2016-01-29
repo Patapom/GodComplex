@@ -10,23 +10,23 @@ namespace WMath
 	/// </summary>
 	public class BFGS {
 
-		public abstract class	Model {
+		public interface Model {
 			/// <summary>
 			/// Gets or sets the free parameters used by the model
 			/// </summary>
-			public abstract double[]	Parameters	{ get; set; }
+			double[]	Parameters	{ get; set; }
 
 			/// <summary>
 			/// Evaluates the model given a set of parameters
 			/// </summary>
 			/// <returns>The difference between the model's estimate and the measured data</returns>
-			public abstract double		Eval( double[] _NewParameters );
+			double		Eval( double[] _NewParameters );
 
 			/// <summary>
 			/// Applies constraints to the array of parameters
 			/// </summary>
 			/// <param name="_Parameters"></param>
-			public abstract void		Constrain( double[] _Parameters );
+			void		Constrain( double[] _Parameters );
 		}
 
 		public delegate float	ProgressCallback( float _progress );

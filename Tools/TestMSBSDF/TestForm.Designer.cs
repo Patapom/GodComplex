@@ -334,7 +334,7 @@
 			this.floatTrackbarControlAnalyticalLobeTheta.RangeMin = 0F;
 			this.floatTrackbarControlAnalyticalLobeTheta.Size = new System.Drawing.Size(262, 20);
 			this.floatTrackbarControlAnalyticalLobeTheta.TabIndex = 5;
-			this.floatTrackbarControlAnalyticalLobeTheta.Value = 39.5F;
+			this.floatTrackbarControlAnalyticalLobeTheta.Value = 40F;
 			this.floatTrackbarControlAnalyticalLobeTheta.VisibleRangeMax = 89.999F;
 			// 
 			// label8
@@ -359,6 +359,7 @@
 			// 
 			this.floatTrackbarControlLobeScaleB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlLobeScaleB.Enabled = false;
 			this.floatTrackbarControlLobeScaleB.Location = new System.Drawing.Point(6, 377);
 			this.floatTrackbarControlLobeScaleB.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeScaleB.MinimumSize = new System.Drawing.Size(70, 20);
@@ -367,13 +368,14 @@
 			this.floatTrackbarControlLobeScaleB.RangeMin = 0F;
 			this.floatTrackbarControlLobeScaleB.Size = new System.Drawing.Size(262, 20);
 			this.floatTrackbarControlLobeScaleB.TabIndex = 5;
-			this.floatTrackbarControlLobeScaleB.Value = 0.7758F;
+			this.floatTrackbarControlLobeScaleB.Value = 1F;
 			this.floatTrackbarControlLobeScaleB.VisibleRangeMax = 1F;
 			// 
 			// floatTrackbarControlLobeScaleT
 			// 
 			this.floatTrackbarControlLobeScaleT.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlLobeScaleT.Enabled = false;
 			this.floatTrackbarControlLobeScaleT.Location = new System.Drawing.Point(6, 351);
 			this.floatTrackbarControlLobeScaleT.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeScaleT.MinimumSize = new System.Drawing.Size(70, 20);
@@ -382,7 +384,7 @@
 			this.floatTrackbarControlLobeScaleT.RangeMin = 0F;
 			this.floatTrackbarControlLobeScaleT.Size = new System.Drawing.Size(262, 20);
 			this.floatTrackbarControlLobeScaleT.TabIndex = 5;
-			this.floatTrackbarControlLobeScaleT.Value = 0.2384F;
+			this.floatTrackbarControlLobeScaleT.Value = 1F;
 			this.floatTrackbarControlLobeScaleT.VisibleRangeMax = 1F;
 			// 
 			// floatTrackbarControlAnalyticalLobeRoughness
@@ -397,7 +399,7 @@
 			this.floatTrackbarControlAnalyticalLobeRoughness.RangeMin = 0F;
 			this.floatTrackbarControlAnalyticalLobeRoughness.Size = new System.Drawing.Size(262, 20);
 			this.floatTrackbarControlAnalyticalLobeRoughness.TabIndex = 2;
-			this.floatTrackbarControlAnalyticalLobeRoughness.Value = 0.9646F;
+			this.floatTrackbarControlAnalyticalLobeRoughness.Value = 0.9343F;
 			this.floatTrackbarControlAnalyticalLobeRoughness.VisibleRangeMax = 1F;
 			this.floatTrackbarControlAnalyticalLobeRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlBeckmannRoughness_ValueChanged);
 			// 
@@ -413,7 +415,7 @@
 			this.floatTrackbarControlLobeScaleR.RangeMin = 0F;
 			this.floatTrackbarControlLobeScaleR.Size = new System.Drawing.Size(262, 20);
 			this.floatTrackbarControlLobeScaleR.TabIndex = 5;
-			this.floatTrackbarControlLobeScaleR.Value = 0.2222F;
+			this.floatTrackbarControlLobeScaleR.Value = 0.1919F;
 			this.floatTrackbarControlLobeScaleR.VisibleRangeMax = 1F;
 			// 
 			// floatTrackbarControlLobeIntensity

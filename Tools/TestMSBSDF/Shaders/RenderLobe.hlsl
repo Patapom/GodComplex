@@ -99,8 +99,8 @@ PS_IN	VS( VS_IN _In ) {
 	float3	lsPosition = float3( _In.Position.x, -_In.Position.z, _In.Position.y );	// Vertex position in Z-up, in local "reflected direction space"
 
 
-#if 0
-
+#if 1
+/*
 	// This is an attempt at inverting the problem, the analytical lobe's direction is now Z-up
 	//	and we try to place the simulated lobe into the analytical lobe's local space
 	//
@@ -168,18 +168,22 @@ lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
 		wsPosition = lobeIntensity * float3( lsPosition.x, lsPosition.z, -lsPosition.y );	// Vertex position in Y-up
 	}
 
-
 #else
+*/
 
 	float	lobeIntensity;
 	float3	wsPosition;
 	if ( _Flags & 2 ) {
 		// Show analytical lobe
-		float3	wsScaledDirection = _ScaleT * lsPosition.x * wsTangent + _ScaleB * lsPosition.y * wsBiTangent + _ScaleR * lsPosition.z * wsReflectedDirection;	// World space direction, aligned with reflected ray
+//		float3	wsScaledDirection = _ScaleT * lsPosition.x * wsTangent + _ScaleB * lsPosition.y * wsBiTangent + _ScaleR * lsPosition.z * wsReflectedDirection;	// World space direction, aligned with reflected ray
+		float3	wsScaledDirection = lsPosition.x * wsTangent + lsPosition.y * wsBiTangent + _ScaleR * lsPosition.z * wsReflectedDirection;	// World space direction, aligned with reflected ray
 		float3	wsDirection = normalize( wsScaledDirection );
 
 		float	cosTheta_M = saturate( dot( wsDirection, wsReflectedDirection ) );	// Theta_M = angle between reflected direction and the lobe's current direction
 																					// (we simply made the lobe BEND toward the reflected direction, as if it was the new surface's normal)
+
+//cosTheta_M = saturate( _ScaleR * lsPosition.z / sqrt( pow2( _ScaleT * lsPosition.x ) + pow2( _ScaleB * lsPosition.y ) + pow2( _ScaleR * lsPosition.z ) ) );
+//cosTheta_M = saturate( _ScaleR * lsPosition.z / sqrt( 1.0 + (_ScaleR*_ScaleR - 1) * lsPosition.z*lsPosition.z ) );
 
 		switch ( (_Flags >> 2) ) {
 		case 2:
@@ -207,9 +211,9 @@ lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
 
 		lobeIntensity *= wsDirection.z < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
 
+//lobeIntensity = 1;
 
 lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
-
 
 		wsDirection = wsScaledDirection;
 		wsPosition = lobeIntensity * float3( wsDirection.x, wsDirection.z, -wsDirection.y );	// Vertex position in Y-up
