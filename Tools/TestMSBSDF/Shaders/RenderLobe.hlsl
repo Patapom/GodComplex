@@ -89,73 +89,66 @@ float	PhongG1( float _cosTheta_V, float _roughness ) {
 
 PS_IN	VS( VS_IN _In ) {
 
-	float3	wsIncomingDirection = -float3( _Direction.x, _Direction.z, -_Direction.y );								// Actual INCOMING ray direction in Y-up pointing AWAY from the surface (hence the - sign)
-	float3	wsReflectedDirection = float3( _ReflectedDirection.x, _ReflectedDirection.z, -_ReflectedDirection.y );	// Actual REFLECTED ray direction in Y-up
-	float3	tangent, biTangent;
-//	BuildOrthonormalBasis( wsReflectedDirection, tangent, biTangent );
-	tangent = normalize( float3( 1e-10 + wsReflectedDirection.z, 0, -wsReflectedDirection.x ) );
-	biTangent = cross( tangent, wsReflectedDirection );
+	float3	wsIncomingDirection = -_Direction;			// Actual INCOMING ray direction pointing AWAY from the surface (hence the - sign)
+	float3	wsReflectedDirection = _ReflectedDirection;	// Actual REFLECTED ray direction
+	float3	wsTangent, wsBiTangent;
+//	BuildOrthonormalBasis( wsReflectedDirection, wsTangent, wsBiTangent );
+	wsTangent = normalize( float3( 1e-10 + wsReflectedDirection.y, -wsReflectedDirection.x, 0 ) );	// Always lying in the X^Y plane
+	wsBiTangent = cross( wsReflectedDirection, wsTangent );
 
-
-//	float3	lsDirection = _In.Position;												// Direction in our local object's Y-up space (which is also our world space BTW)
-	float3	lsDirection = _In.Position.x * tangent + _In.Position.y * wsReflectedDirection + _In.Position.z * biTangent;	// Direction, aligned with reflected ray
-
-	float3	mfDirection = float3( lsDirection.x, -lsDirection.z, lsDirection.y );	// Direction in µ-facet Z-up space
-
-	float	theta = acos( clamp( mfDirection.z, -1.0, 1.0 ) );
-	float	phi = fmod( 2.0 * PI + atan2( mfDirection.y, mfDirection.x ), 2.0 * PI );
+	float3	lsPosition = float3( _In.Position.x, -_In.Position.z, _In.Position.y );	// Vertex position in Z-up, in local "reflected direction space"
 
 	float	lobeIntensity;
-	float3	lsPosition;
+	float3	wsPosition;
 	if ( _Flags & 2 ) {
-		// Show analytical Beckmann lobe
-		float	cosTheta_M = mfDirection.z;
-		cosTheta_M = saturate( dot( lsDirection, wsReflectedDirection ) );	// Theta_M = angle between reflected direction and the lobe's vertex direction (we simply made the lobe BEND toward the reflected direction, as if it was the new surface's normal)
+		// Show analytical lobe
+		float3	wsScaledDirection = _ScaleT * lsPosition.x * wsTangent + _ScaleB * lsPosition.y * wsBiTangent + _ScaleR * lsPosition.z * wsReflectedDirection;	// World space direction, aligned with reflected ray
+		float3	wsDirection = normalize( wsScaledDirection );
+
+		float	cosTheta_M = saturate( dot( wsDirection, wsReflectedDirection ) );	// Theta_M = angle between reflected direction and the lobe's current direction
+																					// (we simply made the lobe BEND toward the reflected direction, as if it was the new surface's normal)
 
 		switch ( (_Flags >> 2) ) {
 		case 2:
 			// Phong
 			lobeIntensity = PhongNDF( cosTheta_M, _Roughness );					// NDF
-			lobeIntensity *= PhongG1( wsIncomingDirection.y, _Roughness );		// * Masking( incoming )
-			lobeIntensity *= PhongG1( lsDirection.y, _Roughness );				// * Masking( outgoing )
+			lobeIntensity *= PhongG1( wsIncomingDirection.z, _Roughness );		// * Masking( incoming )
+			lobeIntensity *= PhongG1( wsDirection.z, _Roughness );				// * Masking( outgoing )
 			break;
 		case 1:
 			// GGX
 			lobeIntensity = GGXNDF( cosTheta_M, _Roughness );					// NDF
-			lobeIntensity *= GGXG1( wsIncomingDirection.y, _Roughness );		// * Masking( incoming )
-			lobeIntensity *= GGXG1( lsDirection.y, _Roughness );				// * Masking( outgoing )
+			lobeIntensity *= GGXG1( wsIncomingDirection.z, _Roughness );		// * Masking( incoming )
+			lobeIntensity *= GGXG1( wsDirection.z, _Roughness );				// * Masking( outgoing )
 			break;
 		default:
 			// Beckmann
 			lobeIntensity = BeckmannNDF( cosTheta_M, _Roughness );				// NDF
-			lobeIntensity *= BeckmannG1( wsIncomingDirection.y, _Roughness );	// * Masking( incoming )
-			lobeIntensity *= BeckmannG1( lsDirection.y, _Roughness );			// * Masking( outgoing )
+			lobeIntensity *= BeckmannG1( wsIncomingDirection.z, _Roughness );	// * Masking( incoming )
+			lobeIntensity *= BeckmannG1( wsDirection.z, _Roughness );			// * Masking( outgoing )
 			break;
 		}
 
-		float	IOR = Fresnel_IORFromF0( 0.04 );
-		lobeIntensity *= FresnelAccurate( IOR, lsDirection.y ).x;
+//		float	IOR = Fresnel_IORFromF0( 0.04 );
+//		lobeIntensity *= FresnelAccurate( IOR, lsDirection.y ).x;
 
-//lobeIntensity *= cosTheta_M;
-
-		lobeIntensity *= 10.0 * _ScaleR;
-		lobeIntensity *= lsDirection.y < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
+		lobeIntensity *= wsDirection.z < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
 
 
-		// Tangential scale
-//		lsPosition = lobeIntensity * lsDirection;
-//		float3	lsTangent = wsReflectedDirection.y < 0.9999 ? normalize( cross( wsReflectedDirection, float3( 0, 1, 0 ) ) ) : float3( 1, 0, 0 );
-//		float3	lsTangent = wsReflectedDirection.z < 0.9999 ? normalize( cross( wsReflectedDirection, float3( 0, 0, 1 ) ) ) : float3( 1, 0, 0 );
-//		float3	lsBiTangent = cross( wsReflectedDirection, lsTangent );
-//		float	T = dot( lsPosition, lsTangent );
-//		float	B = dot( lsPosition, lsBiTangent );
-//		lsPosition = lsPosition + T * (_ScaleT - 1.0) * lsTangent + B * (_ScaleB - 1.0) * lsBiTangent;
+lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
 
 
-		lsPosition = lobeIntensity * (_ScaleT * _In.Position.x * tangent + _ScaleB * _In.Position.z * biTangent + _ScaleR * _In.Position.y * wsReflectedDirection);
+		wsDirection = wsScaledDirection;
+		wsPosition = lobeIntensity * float3( wsDirection.x, wsDirection.z, -wsDirection.y );	// Vertex position in Y-up
 
 	} else {
 		// Show simulated lobe
+		float3	wsDirection = lsPosition.x * wsTangent + lsPosition.y * wsBiTangent + lsPosition.z * wsReflectedDirection;	// Direction in world space, aligned with reflected ray
+
+		float	cosTheta_M = wsDirection.z;
+		float	theta = acos( clamp( cosTheta_M, -1.0, 1.0 ) );
+		float	phi = fmod( 2.0 * PI + atan2( wsDirection.y, wsDirection.x ), 2.0 * PI );
+
 		float	thetaBinIndex = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) );		// Inverse of 2*asin( sqrt( i / (2 * N) ) )
 		float2	UV = float2( phi / (2.0 * PI), thetaBinIndex / LOBES_COUNT_THETA );
 //		float	lobeIntensity = _Tex_DirectionsHistogram.SampleLevel( PointClamp, float3( UV, _ScatteringOrder ), 0.0 );
@@ -164,13 +157,13 @@ PS_IN	VS( VS_IN _In ) {
 		lobeIntensity *= _Intensity;							// Manual intensity scale
 
 		lobeIntensity = max( 0.01, lobeIntensity );				// So we always at least see something
-		lobeIntensity *= lsDirection.y < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
+		lobeIntensity *= wsDirection.z < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
 
-		lsPosition = lobeIntensity * lsDirection;
+		wsPosition = lobeIntensity * float3( wsDirection.x, wsDirection.z, -wsDirection.y );	// Vertex position in Y-up
 	}
 
 	PS_IN	Out;
-	Out.__Position = mul( float4( lsPosition, 1.0 ), _World2Proj );
+	Out.__Position = mul( float4( wsPosition, 1.0 ), _World2Proj );
 	Out.Color = 0.1 * lobeIntensity;
 
 	return Out;

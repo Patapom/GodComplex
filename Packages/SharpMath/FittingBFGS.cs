@@ -21,6 +21,12 @@ namespace WMath
 			/// </summary>
 			/// <returns>The difference between the model's estimate and the measured data</returns>
 			public abstract double		Eval( double[] _NewParameters );
+
+			/// <summary>
+			/// Applies constraints to the array of parameters
+			/// </summary>
+			/// <param name="_Parameters"></param>
+			public abstract void		Constrain( double[] _Parameters );
 		}
 
 		public delegate float	ProgressCallback( float _progress );
@@ -236,27 +242,34 @@ namespace WMath
 				double	OldCoeff = _Params[i];
 
 				_Params[i] -= EPS;
+				m_model.Constrain( _Params );		// Pom: constrain!
+				double	parmMin = _Params[i];
+
 				double	OffsetValueNeg = m_model.Eval( _Params );
 
 				_Params[i] += 2*EPS;
+				m_model.Constrain( _Params );		// Pom: constrain!
+				double	parmMax = _Params[i];
+
 				double	OffsetValuePos = m_model.Eval( _Params );
 
 				_Params[i] = OldCoeff;
 
-				m_evalCallsCount+=2;	// Two more evals
-
 //				double	derivative = (OffsetValue - CentralValue) / EPS;
-				double	derivative = (OffsetValuePos - OffsetValueNeg) / (2.0*EPS);
+//				double	derivative = (OffsetValuePos - OffsetValueNeg) / (2.0*EPS);
+				double	delta = parmMax - parmMin;
+				double	derivative = delta > 0.0 ? (OffsetValuePos - OffsetValueNeg) / delta : 0.0;
 
 				_Gradient[i] = derivative;
 			}
 
+			m_evalCallsCount += 2*m_coefficientsCount;
 			m_evalGradientCallsCount++;
 		}
 
 		//////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////
-		double	LinearSearch( double _FunctionMinimum, double[] _Gradient, double[] x, double[] _Direction, double[] xout ) {
+		double	LinearSearch( double _FunctionMinimum, double[] _Gradient, double[] x, double[] _Direction, double[] _xout ) {
 			double	ZERO = 1.0E-10;
 			double	SIGMA = 1.0E-4;
 			double	BETA = 0.5;
@@ -284,15 +297,18 @@ namespace WMath
 			for ( int d=0; d < dLimit; ++d )
 				p += _Gradient[d] * Direction[d];
 			if ( p >= 0.0 )
-				throw new Exception( "'Direction' is not a descent direction [p = " + p + "]!" );
+				throw new Exception( "'Direction is not a descent direction [p = " + p + "]!" );
 
 			double	alpha = 1.0; // initial step size
 			for ( int i=0; ; ++i ) {
 				// take the step:
 				for ( int d=0; d < dLimit; ++d )
-					xout[d] = x[d] + alpha * Direction[d];
+					_xout[d] = x[d] + alpha * Direction[d];
 
-				double	fx_alpha = m_model.Eval( xout );
+				// Pom: constrain!
+				m_model.Constrain( _xout );
+
+				double	fx_alpha = m_model.Eval( _xout );
 //				System.out.println (i + " _FunctionMinimum = " + fx_alpha);
 
 				if ( fx_alpha < _FunctionMinimum + SIGMA * alpha * p )
@@ -308,7 +324,10 @@ namespace WMath
 					// prevent alpha from becoming too small
 					if ( fx_alpha > _FunctionMinimum ) {
 						for ( int d=0; d < dLimit; ++d )
-							xout[d] = x[d];
+							_xout[d] = x[d];
+
+						// Pom: constrain!
+						m_model.Constrain( _xout );
 
 						return _FunctionMinimum;
 					} else {

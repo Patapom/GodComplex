@@ -108,7 +108,6 @@
   <ItemGroup>
     <None Include="Shaders\Room.hlsl" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <None Include="Shaders\Includes\AreaLight.hlsl" />
   </ItemGroup>
