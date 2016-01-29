@@ -89,9 +89,6 @@ float	PhongG1( float _cosTheta_V, float _roughness ) {
 
 PS_IN	VS( VS_IN _In ) {
 
-#if 1
-
-	// This is an attempt at inverting the problem, the analytical lobe's direction is now Z-up
 	float3	wsIncomingDirection = -_Direction;			// Actual INCOMING ray direction pointing AWAY from the surface (hence the - sign)
 	float3	wsReflectedDirection = _ReflectedDirection;	// Actual REFLECTED ray direction
 	float3	wsTangent, wsBiTangent;
@@ -101,6 +98,12 @@ PS_IN	VS( VS_IN _In ) {
 
 	float3	lsPosition = float3( _In.Position.x, -_In.Position.z, _In.Position.y );	// Vertex position in Z-up, in local "reflected direction space"
 
+
+#if 0
+
+	// This is an attempt at inverting the problem, the analytical lobe's direction is now Z-up
+	//	and we try to place the simulated lobe into the analytical lobe's local space
+	//
 	float3	wsPosition = _ScaleT * lsPosition.x * wsTangent + _ScaleB * lsPosition.y * wsBiTangent + _ScaleR * lsPosition.z * wsReflectedDirection;
 	float3	wsDirection = normalize( wsPosition );
 
@@ -167,15 +170,6 @@ lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
 
 
 #else
-
-	float3	wsIncomingDirection = -_Direction;			// Actual INCOMING ray direction pointing AWAY from the surface (hence the - sign)
-	float3	wsReflectedDirection = _ReflectedDirection;	// Actual REFLECTED ray direction
-	float3	wsTangent, wsBiTangent;
-//	BuildOrthonormalBasis( wsReflectedDirection, wsTangent, wsBiTangent );
-	wsTangent = normalize( float3( 1e-10 + wsReflectedDirection.y, -wsReflectedDirection.x, 0 ) );	// Always lying in the X^Y plane
-	wsBiTangent = cross( wsReflectedDirection, wsTangent );
-
-	float3	lsPosition = float3( _In.Position.x, -_In.Position.z, _In.Position.y );	// Vertex position in Z-up, in local "reflected direction space"
 
 	float	lobeIntensity;
 	float3	wsPosition;

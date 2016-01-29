@@ -799,6 +799,7 @@ namespace TestMSBSDF
 //					if ( m_iterationsCount == 5 ) {
 						m_iterationsCount = 0;
 						m_owner.panelOutput.Refresh();
+						Application.DoEvents();	// Force processing events for refresh
 //					}
 				}
 			}
