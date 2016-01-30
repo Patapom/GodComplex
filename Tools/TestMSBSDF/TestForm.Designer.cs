@@ -71,6 +71,7 @@
 			this.label9 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlFitTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label10 = new System.Windows.Forms.Label();
+			this.checkBoxTest = new System.Windows.Forms.CheckBox();
 			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
 			this.panel1.SuspendLayout();
 			this.groupBoxDisplay.SuspendLayout();
@@ -218,6 +219,7 @@
 			this.groupBoxDisplay.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBoxDisplay.Controls.Add(this.buttonFit);
 			this.groupBoxDisplay.Controls.Add(this.checkBoxShowWireframe);
 			this.groupBoxDisplay.Controls.Add(this.checkBoxShowLobe);
 			this.groupBoxDisplay.Controls.Add(this.panel1);
@@ -234,7 +236,7 @@
 			// 
 			// buttonFit
 			// 
-			this.buttonFit.Location = new System.Drawing.Point(59, 256);
+			this.buttonFit.Location = new System.Drawing.Point(59, 481);
 			this.buttonFit.Name = "buttonFit";
 			this.buttonFit.Size = new System.Drawing.Size(161, 25);
 			this.buttonFit.TabIndex = 11;
@@ -536,8 +538,8 @@
 			// 
 			// panelFit
 			// 
-			this.panelFit.Controls.Add(this.buttonFit);
 			this.panelFit.Controls.Add(this.panel2);
+			this.panelFit.Controls.Add(this.checkBoxTest);
 			this.panelFit.Controls.Add(this.floatTrackbarControlFitTolerance);
 			this.panelFit.Controls.Add(this.floatTrackbarControlLobeScaleR);
 			this.panelFit.Controls.Add(this.floatTrackbarControlAnalyticalLobeRoughness);
@@ -551,7 +553,7 @@
 			this.panelFit.Controls.Add(this.checkBoxShowAnalyticalLobe);
 			this.panelFit.Location = new System.Drawing.Point(0, 211);
 			this.panelFit.Name = "panelFit";
-			this.panelFit.Size = new System.Drawing.Size(269, 284);
+			this.panelFit.Size = new System.Drawing.Size(269, 264);
 			this.panelFit.TabIndex = 12;
 			// 
 			// label9
@@ -587,6 +589,18 @@
 			this.label10.Size = new System.Drawing.Size(81, 13);
 			this.label10.TabIndex = 3;
 			this.label10.Text = "Using tolerance";
+			// 
+			// checkBoxTest
+			// 
+			this.checkBoxTest.AutoSize = true;
+			this.checkBoxTest.Checked = true;
+			this.checkBoxTest.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxTest.Location = new System.Drawing.Point(10, 215);
+			this.checkBoxTest.Name = "checkBoxTest";
+			this.checkBoxTest.Size = new System.Drawing.Size(119, 17);
+			this.checkBoxTest.TabIndex = 9;
+			this.checkBoxTest.Text = "Use Center of Mass";
+			this.checkBoxTest.UseVisualStyleBackColor = true;
 			// 
 			// panelOutput
 			// 
@@ -675,6 +689,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlFitTolerance;
 		private System.Windows.Forms.Label label9;
 		private System.Windows.Forms.Label label10;
+		private System.Windows.Forms.CheckBox checkBoxTest;
 	}
 }
 
