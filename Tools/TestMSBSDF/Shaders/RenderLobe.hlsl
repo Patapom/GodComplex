@@ -67,7 +67,8 @@ float	GGXG1( float _cosTheta_V, float _roughness ) {
 }
 
 float	Roughness2PhongExponent( float _roughness ) {
-	return exp2( 10.0 * (1.0 - _roughness) + 1.0 );	// From https://seblagarde.wordpress.com/2011/08/17/hello-world/
+//	return exp2( 10.0 * (1.0 - _roughness) + 1.0 );	// From https://seblagarde.wordpress.com/2011/08/17/hello-world/
+	return exp2( 10.0 * (1.0 - _roughness) + 0.5 );	// Actually, we'd like some fatter rough lobes
 }
 
 // D(m) = a² / (PI * cos(theta_m)^4 * (a² + tan(theta_m)²)²)
@@ -82,7 +83,7 @@ float	PhongG1( float _cosTheta_V, float _roughness ) {
 	float	n = Roughness2PhongExponent( _roughness );
 	float	sqCosTheta_V = _cosTheta_V * _cosTheta_V;
 	float	tanThetaV = sqrt( (1.0 - sqCosTheta_V) / sqCosTheta_V );
-	float	a = sqrt( 1.0 + 0.5 * n) / tanThetaV;
+	float	a = sqrt( 1.0 + 0.5 * n ) / tanThetaV;
 	return a < 1.6 ? (3.535 * a + 2.181 * a*a) / (1.0 + 2.276 * a + 2.577 * a*a) : 1.0;
 }
 
@@ -94,7 +95,7 @@ PS_IN	VS( VS_IN _In ) {
 	float3	wsTangent, wsBiTangent;
 //	BuildOrthonormalBasis( wsReflectedDirection, wsTangent, wsBiTangent );
 	wsTangent = normalize( float3( 1e-10 + wsReflectedDirection.y, -wsReflectedDirection.x, 0 ) );	// Always lying in the X^Y plane
-	wsBiTangent = cross( wsReflectedDirection, wsTangent );
+	wsBiTangent = cross( wsTangent, wsReflectedDirection );
 
 	float3	lsPosition = float3( _In.Position.x, -_In.Position.z, _In.Position.y );	// Vertex position in Z-up, in local "reflected direction space"
 
@@ -248,9 +249,9 @@ lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
 	return Out;
 }
 
-float3	PS( PS_IN _In ) : SV_TARGET0 {
+float4	PS( PS_IN _In ) : SV_TARGET0 {
 	if ( _Flags & 2 )
-		return _Flags & 1 ? float3( 0, 0.1, 0 ) : _In.Color * float3( 0.5, 1.0, 0.5 );
+		return _Flags & 1 ? float4( 0, 0.1, 0, 1 ) : float4( _In.Color * float3( 0.5, 1.0, 0.5 ), 1 );
 	else
-		return _Flags & 1 ? float3( 0.1, 0, 0 ) : _In.Color;
+		return _Flags & 1 ? float4( 0.1, 0, 0, 1 ) : float4( _In.Color, 0.5 );
 }

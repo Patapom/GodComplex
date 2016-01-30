@@ -247,7 +247,7 @@ namespace WMath
 
 				double	OffsetValueNeg = m_model.Eval( _Params );
 
-				_Params[i] += 2*EPS;
+				_Params[i] = OldCoeff + EPS;
 				m_model.Constrain( _Params );		// Pom: constrain!
 				double	parmMax = _Params[i];
 
