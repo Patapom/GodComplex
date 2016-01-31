@@ -17,7 +17,8 @@ cbuffer CB_Render : register(b10) {
 	float	_ScaleB;		// Scale factor along bi-tangential axis
 }
 
-Texture2DArray< float >		_Tex_DirectionsHistogram : register( t2 );
+Texture2DArray< float >		_Tex_DirectionsHistogram_Reflected : register( t2 );
+Texture2DArray< float >		_Tex_DirectionsHistogram_Transmitted : register( t3 );
 
 struct VS_IN {
 	float3	Position : POSITION;
@@ -100,78 +101,6 @@ PS_IN	VS( VS_IN _In ) {
 	float3	lsPosition = float3( _In.Position.x, -_In.Position.z, _In.Position.y );	// Vertex position in Z-up, in local "reflected direction space"
 
 
-#if 1
-/*
-	// This is an attempt at inverting the problem, the analytical lobe's direction is now Z-up
-	//	and we try to place the simulated lobe into the analytical lobe's local space
-	//
-	float3	wsPosition = _ScaleT * lsPosition.x * wsTangent + _ScaleB * lsPosition.y * wsBiTangent + _ScaleR * lsPosition.z * wsReflectedDirection;
-	float3	wsDirection = normalize( wsPosition );
-
-	float	lobeIntensity;
-	if ( _Flags & 2 ) {
-		// Show analytical lobe
-		float	cosTheta_M = saturate( lsPosition.z );	// Theta_M = angle between reflected direction and the lobe's current direction
-														// (we simply made the lobe BEND toward the reflected direction, as if it was the new surface's normal)
-
-		switch ( (_Flags >> 2) ) {
-		case 2:
-			// Phong
-			lobeIntensity = PhongNDF( cosTheta_M, _Roughness );					// NDF
-			lobeIntensity *= PhongG1( wsIncomingDirection.z, _Roughness );		// * Masking( incoming )
-			lobeIntensity *= PhongG1( wsDirection.z, _Roughness );				// * Masking( outgoing )
-			break;
-		case 1:
-			// GGX
-			lobeIntensity = GGXNDF( cosTheta_M, _Roughness );					// NDF
-			lobeIntensity *= GGXG1( wsIncomingDirection.z, _Roughness );		// * Masking( incoming )
-			lobeIntensity *= GGXG1( wsDirection.z, _Roughness );				// * Masking( outgoing )
-			break;
-		default:
-			// Beckmann
-			lobeIntensity = BeckmannNDF( cosTheta_M, _Roughness );				// NDF
-			lobeIntensity *= BeckmannG1( wsIncomingDirection.z, _Roughness );	// * Masking( incoming )
-			lobeIntensity *= BeckmannG1( wsDirection.z, _Roughness );			// * Masking( outgoing )
-			break;
-		}
-
-//		float	IOR = Fresnel_IORFromF0( 0.04 );
-//		lobeIntensity *= FresnelAccurate( IOR, lsDirection.y ).x;
-
-		lobeIntensity *= wsDirection.z < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
-
-
-lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
-
-
-		wsPosition = lobeIntensity * float3( lsPosition.x, lsPosition.z, -lsPosition.y );	// Vertex position in Y-up
-
-	} else {
-		// Show simulated lobe
-		float	cosTheta_M = wsDirection.z;
-		float	theta = acos( clamp( cosTheta_M, -1.0, 1.0 ) );
-		float	phi = fmod( 2.0 * PI + atan2( wsDirection.y, wsDirection.x ), 2.0 * PI );
-
-		float	thetaBinIndex = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) );		// Inverse of 2*asin( sqrt( i / (2 * N) ) )
-		float2	UV = float2( phi / (2.0 * PI), thetaBinIndex / LOBES_COUNT_THETA );
-//		float	lobeIntensity = _Tex_DirectionsHistogram.SampleLevel( PointClamp, float3( UV, _ScatteringOrder ), 0.0 );
-		lobeIntensity = _Tex_DirectionsHistogram.SampleLevel( LinearClamp, float3( UV, _ScatteringOrder ), 0.0 );
-		lobeIntensity *= LOBES_COUNT_THETA * LOBES_COUNT_PHI;	// Re-scale due to lobe's discretization
-		lobeIntensity *= _Intensity;							// Manual intensity scale
-
-		lobeIntensity = max( 0.01, lobeIntensity );				// So we always at least see something
-		lobeIntensity *= wsDirection.z < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
-
-		// Scale world direction by lobe intensity and transform back into local space
-		wsDirection *= lobeIntensity;
-		lsPosition = float3( dot( wsDirection, wsTangent ) / _ScaleT,  dot( wsDirection, wsBiTangent ) / _ScaleB,  dot( wsDirection, wsReflectedDirection ) / _ScaleR );
-
-		wsPosition = lobeIntensity * float3( lsPosition.x, lsPosition.z, -lsPosition.y );	// Vertex position in Y-up
-	}
-
-#else
-*/
-
 	float	lobeIntensity;
 	float3	wsPosition;
 	if ( _Flags & 2 ) {
@@ -186,7 +115,7 @@ lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
 //cosTheta_M = saturate( _ScaleR * lsPosition.z / sqrt( pow2( _ScaleT * lsPosition.x ) + pow2( _ScaleB * lsPosition.y ) + pow2( _ScaleR * lsPosition.z ) ) );
 //cosTheta_M = saturate( _ScaleR * lsPosition.z / sqrt( 1.0 + (_ScaleR*_ScaleR - 1) * lsPosition.z*lsPosition.z ) );
 
-		switch ( (_Flags >> 2) ) {
+		switch ( (_Flags >> 3) ) {
 		case 2:
 			// Phong
 			lobeIntensity = PhongNDF( cosTheta_M, _Roughness );					// NDF
@@ -211,8 +140,6 @@ lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
 //		lobeIntensity *= FresnelAccurate( IOR, lsDirection.y ).x;
 
 		lobeIntensity *= wsDirection.z < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
-
-//lobeIntensity = 1;
 
 lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
 
@@ -229,8 +156,8 @@ lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
 
 		float	thetaBinIndex = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) );		// Inverse of 2*asin( sqrt( i / (2 * N) ) )
 		float2	UV = float2( phi / (2.0 * PI), thetaBinIndex / LOBES_COUNT_THETA );
-//		float	lobeIntensity = _Tex_DirectionsHistogram.SampleLevel( PointClamp, float3( UV, _ScatteringOrder ), 0.0 );
-		lobeIntensity = _Tex_DirectionsHistogram.SampleLevel( LinearClamp, float3( UV, _ScatteringOrder ), 0.0 );
+//		lobeIntensity = _Tex_DirectionsHistogram_Reflected.SampleLevel( PointClamp, float3( UV, _ScatteringOrder ), 0.0 );
+		lobeIntensity = _Tex_DirectionsHistogram_Reflected.SampleLevel( LinearClamp, float3( UV, _ScatteringOrder ), 0.0 );
 		lobeIntensity *= LOBES_COUNT_THETA * LOBES_COUNT_PHI;	// Re-scale due to lobe's discretization
 		lobeIntensity *= _Intensity;							// Manual intensity scale
 
@@ -239,8 +166,6 @@ lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
 
 		wsPosition = lobeIntensity * float3( wsDirection.x, wsDirection.z, -wsDirection.y );	// Vertex position in Y-up
 	}
-
-#endif
 
 	PS_IN	Out;
 	Out.__Position = mul( float4( wsPosition, 1.0 ), _World2Proj );

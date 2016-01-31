@@ -4,20 +4,22 @@
 //
 #include "Global.hlsl"
 
-static const float	MAX_HEIGHT = 6.0;					// Arbitrary top height
-static const float	INITIAL_HEIGHT = MAX_HEIGHT - 0.1;	// So we're almost sure to start above the heightfield
-static const float	STEP_SIZE = 1.0;					// Ray-tracing step size
+static const float	MAX_HEIGHT = 6.0;					// Arbitrary top height above which the ray is deemed to escape the surface
+static const float	INITIAL_HEIGHT = MAX_HEIGHT - 0.1;	// So we're almost sure to start above the heightfield but below the escape height
+static const float	STEP_SIZE = 1.0;					// Ray-tracing step size @TODO: Try smaller step size to see if result is the same (maybe very rough surface require smaller steps to avoid missing peaks?)
 
 cbuffer CB_Raytrace : register(b10) {
 	float3	_direction;			// Incoming ray direction
 	float	_roughness;			// Surface roughness in [0,1]
 	float2	_offset;			// Horizontal offset in surface in [0,1]
+	float	_albedo;			// Surface albedo in [0,1]
+	float	_IOR;				// Surface IOR
 };
 
 Texture2D< float4 >			_Tex_HeightField : register( t0 );
-Texture2D< float4 >			_Tex_Random : register( t1 );
-//Texture2DArray< float4 >	_Tex_SourceOutgoingDirections : register( t2 );
-RWTexture2DArray< float4 >	_Tex_OutgoingDirections : register( u0 );
+Texture2DArray< float4 >	_Tex_Random : register( t1 );
+RWTexture2DArray< float4 >	_Tex_OutgoingDirections_Reflected : register( u0 );
+RWTexture2DArray< float4 >	_Tex_OutgoingDirections_Transmitted : register( u1 );
 
 //////////////////////////////////////////////////////////////////////////
 // Ray-traces the height field
@@ -40,12 +42,12 @@ float4	RayTrace( float3 _position, float3 _direction, out float3 _normal ) {
 
 	[loop]
 	[fastopt]
-	while ( abs(pos.z) < MAX_HEIGHT && pos.w < maxStepsCount ) {
-		ppos = pos;
-		pNH = NH;
+	while ( abs(pos.z) < MAX_HEIGHT && pos.w < maxStepsCount ) {	// The ray stops if it either escapes the surface or runs for too long without any intersection
+		ppos = pos;	// Keep previous ray position
+		pNH = NH;	// Keep previous heightfield's height + normal
 
-		pos += dir;
-		NH =_Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * pos.xy, 0.0 );
+		pos += dir;	// March
+		NH =_Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * pos.xy, 0.0 );	// New height field's height + normal
 
 		// Compute possible intersection of the 2 segments (i.e. heightfield segment versus ray segment)
 		float	deltaP = pos.z - ppos.z;	// Difference in ray height
@@ -91,13 +93,18 @@ float4	RayTrace( float3 _position, float3 _direction, out float3 _normal ) {
 	}
 #endif
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Conductor Ray-Tracing
+// We only account for albedo
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 [numthreads( 16, 16, 1 )]
-void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, uint3 _DispatchThreadID : SV_DISPATCHTHREADID ) {
+void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, uint3 _DispatchThreadID : SV_DISPATCHTHREADID ) {
 
 	uint2	pixelPosition = _DispatchThreadID.xy;
 
-	float3	targetPosition = float3( pixelPosition + _offset, 0.0 );
-	float3	position = targetPosition + (INITIAL_HEIGHT / _direction.z) * _direction;
+	float3	targetPosition = float3( pixelPosition + _offset, 0.0 );					// The target point of our ray is the heightfield's texel
+	float3	position = targetPosition + (INITIAL_HEIGHT / _direction.z) * _direction;	// So start from there and go back along the ray direction to reach the start height
 	float3	direction = _direction;
 	float	weight = 1.0;
 
@@ -105,8 +112,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	float4	hitPosition = float4( position, 0 );
 	float3	normal;
 
-	float4	random = _Tex_Random[pixelPosition];
-//*
+	float4	random = _Tex_Random[uint3(pixelPosition,0)];
+
 	[loop]
 	[fastopt]
 	for ( ; scatteringIndex < 4; scatteringIndex++ ) {
@@ -125,17 +132,16 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 		// Assume 100% reflective conductor (no Fresnel)
 //		weight = 1.0;	// TODO: Handle absorption/transmission
 
+		weight *= _albedo;	// Each bump into the surface decreases the weight by the albedo, 2 bumps we have albedo², 3 bumps we have albedo^3, etc. That explains the saturation of colors!
+
 		// Update random seed
 		random.xy = random.zw;
 		random.z = rand( random.z );
 		random.w = rand( random.w );
 	}
-//*/
 
 //hitPosition = RayTrace( position, direction, normal );
-
 //normal = normalize( float3( 1, 0, 10 ) );
-
 //weight = scatteringIndex;
 //direction = float3( 0, 0, 1 );
 //direction = float3( position.xy * INV_HEIGHTFIELD_SIZE, position.z );
@@ -145,8 +151,87 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 //direction = normal;
 //direction = hitPosition.xyz;
 
-//	float4	existingDirection = _Tex_SourceOutgoingDirections[uint3( pixelPosition, 0 )];
-//	float4	accumulatedDirection = existingDirection + float4( direction, weight );
-//	_Tex_OutgoingDirections[uint3( pixelPosition, scatteringIndex-1 )] = accumulatedDirection;
-	_Tex_OutgoingDirections[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );	// Don't accumulate! This is done by the histogram generation!
+	_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );	// Don't accumulate! This is done by the histogram generation!
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Dielectric Ray-Tracing
+// After each bump, the ray has a non-zero chance to be transmitted below the surface depending on the incidence angle with the surface and the Fresnel reflectance
+// The weight is never decreased but its sign may oscillate between +1 (reflected) and -1 (transmitted)
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+// From Walter 2007
+// Expects i pointing away from the surface
+// eta = IOR_over / IOR_under
+//
+float3	Refract( float3 i, float3 n, float eta ) {
+	float	c = dot( i, n );
+	return (eta * c - sign(c) * sqrt( 1.0 + eta * (c*c - 1.0))) * n - eta * i;
+
+#if 0
+	// From http://asawicki.info/news_1301_reflect_and_refract_functions.html
+	float	cosTheta = dot( n, i );
+	float	k = 1.0 - eta * eta * (1.0 - cosTheta * cosTheta);
+	i = eta * i - (eta * cosTheta + sqrt(max( 0.0, k ))) * n;
+	return k >= 0.0;
+#endif
+}
+
+[numthreads( 16, 16, 1 )]
+void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, uint3 _DispatchThreadID : SV_DISPATCHTHREADID ) {
+
+	uint2	pixelPosition = _DispatchThreadID.xy;
+
+	float3	targetPosition = float3( pixelPosition + _offset, 0.0 );					// The target point of our ray is the heightfield's texel
+	float3	position = targetPosition + (INITIAL_HEIGHT / _direction.z) * _direction;	// So start from there and go back along the ray direction to reach the start height
+	float3	direction = _direction;
+	float	weight = 1.0;
+
+	uint	scatteringIndex = 0;	// No scattering yet
+	float4	hitPosition = float4( position, 0 );
+	float3	normal;
+
+	float4	random = _Tex_Random[uint3(pixelPosition,0)];
+	float4	random2 = _Tex_Random[uint3(pixelPosition,1)];
+
+	float	IOR = _IOR;
+
+	[loop]
+	[fastopt]
+	for ( ; scatteringIndex < 4; scatteringIndex++ ) {
+		hitPosition = RayTrace( position, direction, normal );
+		if ( hitPosition.w > 1e3 )
+			break;	// The ray escaped the surface!
+
+		float	cosTheta = abs( dot( direction, normal ) );	// cos( incidence angle with the surface's normal )
+															// abs is there to guarantee we don't care whether we're above or under the surface (i.e. inverted normal or not)
+		float	F = FresnelAccurate( cosTheta, IOR );
+
+		if ( random2.x < F ) {
+			// Reflect off the surface
+			direction = reflect( direction, normal );
+		} else {
+			// Refract through the surface
+			IOR = 1.0 / IOR;	// Swap above/under surface (we do that BEFORE calling Refract because it expects eta = IOR_above / IOR_below)
+			direction = Refract( -direction, weight * normal, IOR );
+			weight *= -1.0;		// Swap above/under surface
+		}
+
+		// Update random seeds
+		random.xy = random.zw;
+		random.z = rand( random.z );
+		random.w = rand( random.w );
+
+		random2.xyz = random2.yzw;
+		random2.w = rand( random2.w );
+	}
+
+
+	// Don't accumulate! This is done by the histogram generation!
+	if ( weight >= 0.0 )
+		_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );
+	else
+		_Tex_OutgoingDirections_Transmitted[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, -weight );
 }
