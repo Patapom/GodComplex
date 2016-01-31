@@ -2,11 +2,14 @@
 // This shader performs a ray-tracing of the surface accounting for multiple scattering
 //////////////////////////////////////////////////////////////////////////
 //
+// @TODO:
+//	• Find why we have an energy leak!
+//
 #include "Global.hlsl"
 
-static const float	MAX_HEIGHT = 6.0;					// Arbitrary top height above which the ray is deemed to escape the surface
+static const float	MAX_HEIGHT = 8.0;					// Arbitrary top height above which the ray is deemed to escape the surface
 static const float	INITIAL_HEIGHT = MAX_HEIGHT - 0.1;	// So we're almost sure to start above the heightfield but below the escape height
-static const float	STEP_SIZE = 1.0;					// Ray-tracing step size @TODO: Try smaller step size to see if result is the same (maybe very rough surface require smaller steps to avoid missing peaks?)
+static const float	STEP_SIZE = 1.0;					// Ray-tracing step size
 
 static const float	OFF_SURFACE_DISTANCE = 1e-2;
 
@@ -28,8 +31,8 @@ RWTexture2DArray< float4 >	_Tex_OutgoingDirections_Transmitted : register( u1 );
 //	_position, _direction, the ray to trace through the height field
 //	_normal, the normal at intersection
 // returns the hit position (xyz) and hit distance (w) from original position (or INFINITY when no hit)
-float4	RayTrace( float3 _position, float3 _direction, out float3 _normal ) {
-	float4	dir = STEP_SIZE * float4( _direction, 1.0 );
+float4	RayTrace( float3 _position, float3 _direction, out float3 _normal, bool _aboveSurface ) {
+	float4	dir = float4( _direction, 1.0 );
 	float4	ppos;
 	float4	pos = float4( _position, 0.0 );
 
@@ -38,9 +41,11 @@ float4	RayTrace( float3 _position, float3 _direction, out float3 _normal ) {
 
 	_normal = NH.xyz;
 
-	float	maxStepsCount = min(	0.5 * HEIGHTFIELD_SIZE,					// Anyway, can't ray-trace more than this amount of steps
-									2.0 * MAX_HEIGHT / abs( _direction.z )	// How many steps does it take, using the ray direction, to move from -MAX_HEIGHT to +MAX_HEIGHT ?
-								);
+//	float	maxStepsCount = min(	0.5 * HEIGHTFIELD_SIZE / STEP_SIZE,		// Anyway, can't ray-trace more than this amount of steps
+//									2.0 * MAX_HEIGHT / abs( _direction.z )	// How many steps does it take, using the ray direction, to move from -MAX_HEIGHT to +MAX_HEIGHT ?
+//								);
+
+	float	maxStepsCount = 2.0 * MAX_HEIGHT / abs( _direction.z );	// How many steps does it take, using the ray direction, to move from -MAX_HEIGHT to +MAX_HEIGHT ?
 
 	[loop]
 	[fastopt]
@@ -48,19 +53,33 @@ float4	RayTrace( float3 _position, float3 _direction, out float3 _normal ) {
 		ppos = pos;	// Keep previous ray position
 		pNH = NH;	// Keep previous heightfield's height + normal
 
-		pos += dir;	// March
+		// Compute an adaptive step size based on the difference of height with the surface: the closer we get, the smaller the steps
+		float	stepSize = STEP_SIZE * lerp( 0.01, 1.0, saturate( 0.5 * abs( pos.z - NH.w ) ) );
+		float4	step = stepSize * dir;
+
+		pos += step;	// March
 		NH =_Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * pos.xy, 0.0 );	// New height field's height + normal
 
-		// Compute possible intersection of the 2 segments (i.e. heightfield segment versus ray segment)
+		// Compute possible intersection between the 2 segments (i.e. heightfield segment versus ray segment)
 		float	deltaP = pos.z - ppos.z;	// Difference in ray height
 		float	deltaH = NH.w - pNH.w;		// Difference in height field
 		float	t = (ppos.z - pNH.w) / (deltaH - deltaP);
-		if ( t > 0.0 && t <= 1.0 ) {
+		if ( t >= 0.0 && t <= 1.0 ) {
 			// Compute true intersection & interpolate normal
-			pos = ppos + t * dir;
+			pos = ppos + t * step;
 			_normal = normalize( lerp( pNH.xyz, NH.xyz, t ) );
 			return pos;
 		}
+
+//*
+		if ( _aboveSurface && pos.z < NH.w ) {
+			_normal = float3( 0, 0, 1 );
+			return float4( pos.xy, MAX_HEIGHT, 0.0 );	// Escape upward
+		} else if ( !_aboveSurface && pos.z > NH.w ) {
+			_normal = float3( 0, 0, -1 );
+			return float4( pos.xy, -MAX_HEIGHT, 0.0 );	// Escape downward
+		}
+//*/
 	}
 
 	return float4( pos.xyz, INFINITY );	// No hit!
@@ -101,7 +120,7 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 	[loop]
 	[fastopt]
 	for ( ; scatteringIndex < 4; scatteringIndex++ ) {
-		hitPosition = RayTrace( position, direction, normal );
+		hitPosition = RayTrace( position, direction, normal, true );
 		if ( hitPosition.w > 1e3 )
 			break;	// The ray escaped the surface!
 
@@ -189,7 +208,7 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 	[loop]
 	[fastopt]
 	for ( ; scatteringIndex < 4; scatteringIndex++ ) {
-		hitPosition = RayTrace( position, direction, normal );
+		hitPosition = RayTrace( position, direction, normal, weight >= 0.0 );
 		if ( hitPosition.w > 1e3 )
 			break;	// The ray escaped the surface!
 
