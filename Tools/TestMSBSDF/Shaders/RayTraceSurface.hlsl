@@ -42,7 +42,7 @@ float4	RayTrace( float3 _position, float3 _direction, out float3 _normal ) {
 
 	[loop]
 	[fastopt]
-	while ( abs(pos.z) < MAX_HEIGHT && pos.w < maxStepsCount ) {	// The ray stops if it either escapes the surface or runs for too long without any intersection
+	while ( abs(pos.z) < MAX_HEIGHT && pos.w < maxStepsCount ) {	// The ray stops if it either escapes the surface (above or below) or runs for too long without any intersection
 		ppos = pos;	// Keep previous ray position
 		pNH = NH;	// Keep previous heightfield's height + normal
 
@@ -197,7 +197,7 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 	float4	random2 = _Tex_Random[uint3(pixelPosition,1)];
 
 	float	IOR = _IOR;
-
+//*
 	[loop]
 	[fastopt]
 	for ( ; scatteringIndex < 4; scatteringIndex++ ) {
@@ -207,7 +207,7 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 
 		float	cosTheta = abs( dot( direction, normal ) );	// cos( incidence angle with the surface's normal )
 															// abs is there to guarantee we don't care whether we're above or under the surface (i.e. inverted normal or not)
-		float	F = FresnelAccurate( cosTheta, IOR );
+		float	F = FresnelAccurate( IOR, cosTheta );
 
 		if ( random2.x < F ) {
 			// Reflect off the surface
@@ -217,6 +217,9 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 			IOR = 1.0 / IOR;	// Swap above/under surface (we do that BEFORE calling Refract because it expects eta = IOR_above / IOR_below)
 			direction = Refract( -direction, weight * normal, IOR );
 			weight *= -1.0;		// Swap above/under surface
+
+scatteringIndex++;
+break;
 		}
 
 		// Update random seeds
@@ -228,10 +231,32 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 		random2.w = rand( random2.w );
 	}
 
+//	weight *= direction.z * weight;	// Last "magic trick" where we accumulate to the opposite lobe if ever the direction is wrong (i.e. very long grazing angles)
+									// For example, we could have a downward direction in the upper lobe, or an upward direction in the lower lobe...
+
+//*/
+
+/*
+float	theta = 2.0 * asin( sqrt( 0.5 * (pixelPosition.x + random.x) / 512 ) );
+float	phi = 2.0 * PI * (pixelPosition.y + random.y) / 512;
+//float	theta = 2.0 * asin( sqrt( 0.5 * random.x ) );
+//float	phi = 2.0 * PI * random.y;
+direction = float3( sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta) );
+//direction = normalize( direction - _direction );
+
+//IOR = 1.0 / IOR;	// Swap above/under surface (we do that BEFORE calling Refract because it expects eta = IOR_above / IOR_below)
+direction = Refract( direction, float3( 0, 0, 1 ), 1.0 / IOR );
+//direction = -direction;
+weight = -1.0;
+
+
+scatteringIndex = 2;
+
+//*/
 
 	// Don't accumulate! This is done by the histogram generation!
 	if ( weight >= 0.0 )
 		_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );
 	else
-		_Tex_OutgoingDirections_Transmitted[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, -weight );
+		_Tex_OutgoingDirections_Transmitted[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction.xy, -direction.z, -weight );
 }

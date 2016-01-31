@@ -1,8 +1,5 @@
 #include "Global.hlsl"
 
-#define	USE_PHONG	1
-//#define	USE_GGX		1
-
 cbuffer CB_Render : register(b10) {
 	float3	_Direction;
 	float	_Intensity;
@@ -17,8 +14,8 @@ cbuffer CB_Render : register(b10) {
 	float	_ScaleB;		// Scale factor along bi-tangential axis
 }
 
-Texture2DArray< float >		_Tex_DirectionsHistogram_Reflected : register( t2 );
-Texture2DArray< float >		_Tex_DirectionsHistogram_Transmitted : register( t3 );
+Texture2DArray< float >		_Tex_DirectionsHistogram_Reflected : register( t3 );
+Texture2DArray< float >		_Tex_DirectionsHistogram_Transmitted : register( t4 );
 
 struct VS_IN {
 	float3	Position : POSITION;
@@ -92,7 +89,7 @@ float	PhongG1( float _cosTheta_V, float _roughness ) {
 PS_IN	VS( VS_IN _In ) {
 
 	float3	wsIncomingDirection = -_Direction;			// Actual INCOMING ray direction pointing AWAY from the surface (hence the - sign)
-	float3	wsReflectedDirection = _ReflectedDirection;	// Actual REFLECTED ray direction
+	float3	wsReflectedDirection = _ReflectedDirection;	// Actual REFLECTED ray direction (or REFRACTED when rendering bottom lobes)
 	float3	wsTangent, wsBiTangent;
 //	BuildOrthonormalBasis( wsReflectedDirection, wsTangent, wsBiTangent );
 	wsTangent = normalize( float3( 1e-10 + wsReflectedDirection.y, -wsReflectedDirection.x, 0 ) );	// Always lying in the X^Y plane
@@ -100,6 +97,7 @@ PS_IN	VS( VS_IN _In ) {
 
 	float3	lsPosition = float3( _In.Position.x, -_In.Position.z, _In.Position.y );	// Vertex position in Z-up, in local "reflected direction space"
 
+	float	lobeSign = _Flags & 4U ? -1.0 : 1.0;	// -1 for transmitted lobe, +1 for reflected lobe
 
 	float	lobeIntensity;
 	float3	wsPosition;
@@ -139,9 +137,9 @@ PS_IN	VS( VS_IN _In ) {
 //		float	IOR = Fresnel_IORFromF0( 0.04 );
 //		lobeIntensity *= FresnelAccurate( IOR, lsDirection.y ).x;
 
-		lobeIntensity *= wsDirection.z < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
+		lobeIntensity *= (lobeSign * wsDirection.z) < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
 
-lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
+		lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
 
 		wsDirection = wsScaledDirection;
 		wsPosition = lobeIntensity * float3( wsDirection.x, wsDirection.z, -wsDirection.y );	// Vertex position in Y-up
@@ -150,19 +148,27 @@ lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
 		// Show simulated lobe
 		float3	wsDirection = lsPosition.x * wsTangent + lsPosition.y * wsBiTangent + lsPosition.z * wsReflectedDirection;	// Direction in world space, aligned with reflected ray
 
-		float	cosTheta_M = wsDirection.z;
+		float	cosTheta_M = lobeSign * wsDirection.z;
 		float	theta = acos( clamp( cosTheta_M, -1.0, 1.0 ) );
 		float	phi = fmod( 2.0 * PI + atan2( wsDirection.y, wsDirection.x ), 2.0 * PI );
 
 		float	thetaBinIndex = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) );		// Inverse of 2*asin( sqrt( i / (2 * N) ) )
 		float2	UV = float2( phi / (2.0 * PI), thetaBinIndex / LOBES_COUNT_THETA );
+
 //		lobeIntensity = _Tex_DirectionsHistogram_Reflected.SampleLevel( PointClamp, float3( UV, _ScatteringOrder ), 0.0 );
-		lobeIntensity = _Tex_DirectionsHistogram_Reflected.SampleLevel( LinearClamp, float3( UV, _ScatteringOrder ), 0.0 );
+		lobeIntensity = (_Flags & 4U) ? _Tex_DirectionsHistogram_Transmitted.SampleLevel( LinearClamp, float3( UV, _ScatteringOrder ), 0.0 )
+									  : _Tex_DirectionsHistogram_Reflected.SampleLevel( LinearClamp, float3( UV, _ScatteringOrder ), 0.0 );
+
 		lobeIntensity *= LOBES_COUNT_THETA * LOBES_COUNT_PHI;	// Re-scale due to lobe's discretization
+
+//lobeIntensity = 100000 * _Tex_DirectionsHistogram_Transmitted.SampleLevel( LinearClamp, float3( UV, _ScatteringOrder ), 0.0 );
+
+//lobeIntensity = 1.0;
+
+		lobeIntensity = max( 0.001, lobeIntensity );			// So we always at least see something
 		lobeIntensity *= _Intensity;							// Manual intensity scale
 
-		lobeIntensity = max( 0.01, lobeIntensity );				// So we always at least see something
-		lobeIntensity *= wsDirection.z < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
+		lobeIntensity *= (lobeSign * wsDirection.z) < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
 
 		wsPosition = lobeIntensity * float3( wsDirection.x, wsDirection.z, -wsDirection.y );	// Vertex position in Y-up
 	}
@@ -175,8 +181,17 @@ lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
 }
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
-	if ( _Flags & 2 )
-		return _Flags & 1 ? float4( 0, 0.1, 0, 1 ) : float4( _In.Color * float3( 0.5, 1.0, 0.5 ), 1 );
-	else
-		return _Flags & 1 ? float4( 0.1, 0, 0, 1 ) : float4( _In.Color, 0.5 );
+	if ( _Flags & 4 ) {
+		// Transmitted lobe
+		if ( _Flags & 2 )
+			return _Flags & 1 ? float4( 0.1, 0.1, 0, 1 ) : float4( _In.Color * float3( 1.0, 1.0, 0.5 ), 1 );
+		else
+			return _Flags & 1 ? float4( 0, 0, 0.1, 1 ) : float4( _In.Color, 0.5 );
+	} else {
+		// Reflected lobe
+		if ( _Flags & 2 )
+			return _Flags & 1 ? float4( 0, 0.1, 0, 1 ) : float4( _In.Color * float3( 0.5, 1.0, 0.5 ), 1 );
+		else
+			return _Flags & 1 ? float4( 0.1, 0, 0, 1 ) : float4( _In.Color, 0.5 );
+	}
 }
