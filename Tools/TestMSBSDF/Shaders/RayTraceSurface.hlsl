@@ -11,7 +11,7 @@ static const float	MAX_HEIGHT = 8.0;					// Arbitrary top height above which the
 static const float	INITIAL_HEIGHT = MAX_HEIGHT - 0.1;	// So we're almost sure to start above the heightfield but below the escape height
 static const float	STEP_SIZE = 1.0;					// Ray-tracing step size
 
-static const float	OFF_SURFACE_DISTANCE = 1e-2;
+static const float	OFF_SURFACE_DISTANCE = 1e-3;
 
 cbuffer CB_Raytrace : register(b10) {
 	float3	_direction;			// Incoming ray direction
@@ -26,30 +26,37 @@ Texture2DArray< float4 >	_Tex_Random : register( t1 );
 RWTexture2DArray< float4 >	_Tex_OutgoingDirections_Reflected : register( u0 );
 RWTexture2DArray< float4 >	_Tex_OutgoingDirections_Transmitted : register( u1 );
 
+
 //////////////////////////////////////////////////////////////////////////
 // Ray-traces the height field
 //	_position, _direction, the ray to trace through the height field
 //	_normal, the normal at intersection
 // returns the hit position (xyz) and hit distance (w) from original position (or INFINITY when no hit)
 float4	RayTrace( float3 _position, float3 _direction, out float3 _normal, bool _aboveSurface ) {
-	float4	dir = float4( _direction, 1.0 );
-	float4	ppos;
-	float4	pos = float4( _position, 0.0 );
 
-	float4	pNH;
+	// Compute maximum ray distance
+	float	maxDistance = min(	1.0 * HEIGHTFIELD_SIZE,					// Anyway, can't ray-trace more than this size
+								2.0 * MAX_HEIGHT / abs( _direction.z )	// How long does it take, using the current ray direction, to move from -MAX_HEIGHT to +MAX_HEIGHT ?
+							);
+
+//	float	maxDistance = 2.0 * MAX_HEIGHT / abs( _direction.z );	// How many steps does it take, using the ray direction, to move from -MAX_HEIGHT to +MAX_HEIGHT ?
+
+	// Build initial direction and position as extended vectors
+	float4	dir = float4( _direction, 1.0 );
+
+	float4	pos = float4( _position, 0.0 );
+	float4	ppos;
+
+	// Sample initial height and normal
 	float4	NH = _Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * pos.xy, 0.0 );	// Normal + Height
+	float4	pNH;
 
 	_normal = NH.xyz;
 
-//	float	maxStepsCount = min(	0.5 * HEIGHTFIELD_SIZE / STEP_SIZE,		// Anyway, can't ray-trace more than this amount of steps
-//									2.0 * MAX_HEIGHT / abs( _direction.z )	// How many steps does it take, using the ray direction, to move from -MAX_HEIGHT to +MAX_HEIGHT ?
-//								);
-
-	float	maxStepsCount = 2.0 * MAX_HEIGHT / abs( _direction.z );	// How many steps does it take, using the ray direction, to move from -MAX_HEIGHT to +MAX_HEIGHT ?
-
+	// Main loop using adaptive step size
 	[loop]
 	[fastopt]
-	while ( abs(pos.z) < MAX_HEIGHT && pos.w < maxStepsCount ) {	// The ray stops if it either escapes the surface (above or below) or runs for too long without any intersection
+	while ( abs(pos.z) < MAX_HEIGHT && pos.w < maxDistance ) {	// The ray stops if it either escapes the surface (above or below) or runs for too long without any intersection
 		ppos = pos;	// Keep previous ray position
 		pNH = NH;	// Keep previous heightfield's height + normal
 
@@ -57,12 +64,13 @@ float4	RayTrace( float3 _position, float3 _direction, out float3 _normal, bool _
 		float	stepSize = STEP_SIZE * lerp( 0.01, 1.0, saturate( 0.5 * abs( pos.z - NH.w ) ) );
 		float4	step = stepSize * dir;
 
-		pos += step;	// March
-		NH =_Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * pos.xy, 0.0 );	// New height field's height + normal
+		// March one step and sample heightfield again
+		pos += step;
+		NH =_Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * pos.xy, 0.0 );	// New height field's normal + height
 
 		// Compute possible intersection between the 2 segments (i.e. heightfield segment versus ray segment)
-		float	deltaP = pos.z - ppos.z;	// Difference in ray height
-		float	deltaH = NH.w - pNH.w;		// Difference in height field
+		float	deltaP = step.z;//pos.z - ppos.z;			// Difference in ray height
+		float	deltaH = NH.w - pNH.w;						// Difference in height field
 		float	t = (ppos.z - pNH.w) / (deltaH - deltaP);
 		if ( t >= 0.0 && t <= 1.0 ) {
 			// Compute true intersection & interpolate normal
@@ -71,15 +79,24 @@ float4	RayTrace( float3 _position, float3 _direction, out float3 _normal, bool _
 			return pos;
 		}
 
-//*
-		if ( _aboveSurface && pos.z < NH.w ) {
-			_normal = float3( 0, 0, 1 );
-			return float4( pos.xy, MAX_HEIGHT, 0.0 );	// Escape upward
-		} else if ( !_aboveSurface && pos.z > NH.w ) {
-			_normal = float3( 0, 0, -1 );
-			return float4( pos.xy, -MAX_HEIGHT, 0.0 );	// Escape downward
-		}
+		#if 1
+			// Fix any error
+			if ( _aboveSurface && pos.z < NH.w ) {
+				pos.z = NH.w + 1e-2;
+			} else if ( !_aboveSurface && pos.z > NH.w ) {
+				pos.z = NH.w - 1e-2;
+			}	
+		#else
+/*			// Report the error as a visible peak
+			if ( _aboveSurface && pos.z < NH.w ) {
+				_normal = float3( 0, 0, 1 );
+				return float4( pos.xy, MAX_HEIGHT, 0.0 );	// Escape upward
+			} else if ( !_aboveSurface && pos.z > NH.w ) {
+				_normal = float3( 0, 0, -1 );
+				return float4( pos.xy, -MAX_HEIGHT, 0.0 );	// Escape downward
+			}
 //*/
+		#endif
 	}
 
 	return float4( pos.xyz, INFINITY );	// No hit!
@@ -129,7 +146,7 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 
 		// Bounce off the surface
 		#if 1
-			direction = reflect( direction, normal );	// Simple, don't use inverse CDF!
+			direction = reflect( direction, normal );
 		#else
 			direction = GenerateDirection( normal, _roughness, random );
 		#endif
@@ -140,6 +157,16 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 
 		// Now, walk a little to avoid hitting the surface again
 		position = GetOffSurface( position, direction, normal, OFF_SURFACE_DISTANCE );
+
+		#if 1
+			float4	NH = _Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * position.xy, 0.0 );	// Normal + Height
+			if ( position.z < NH.w-1e-2 ) {
+				position.z = NH.w+1e-2;				// Ensure make sure we're always ABOVE the surface!
+//				direction = float3( 0, 0, -1 );
+//				break;
+			}
+
+		#endif
 
 		// Update random seed
 		random.xy = random.zw;

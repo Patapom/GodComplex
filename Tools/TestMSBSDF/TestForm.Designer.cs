@@ -100,6 +100,7 @@
 			this.checkBoxCompensateScatteringFactor = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowXRay = new System.Windows.Forms.CheckBox();
 			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
+			this.checkBoxInitializeDirectionTowardCenterOfMass = new System.Windows.Forms.CheckBox();
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.groupBoxSurface.SuspendLayout();
@@ -711,6 +712,7 @@
 			this.groupBoxAnalyticalLobe.Controls.Add(this.panel2);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.tabControlAnalyticalLobes);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxShowAnalyticalLobe);
+			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxInitializeDirectionTowardCenterOfMass);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxTest);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.floatTrackbarControlFitTolerance);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.label10);
@@ -956,6 +958,18 @@
 			this.panelOutput.Size = new System.Drawing.Size(876, 835);
 			this.panelOutput.TabIndex = 0;
 			// 
+			// checkBoxInitializeDirectionTowardCenterOfMass
+			// 
+			this.checkBoxInitializeDirectionTowardCenterOfMass.AutoSize = true;
+			this.checkBoxInitializeDirectionTowardCenterOfMass.Checked = true;
+			this.checkBoxInitializeDirectionTowardCenterOfMass.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxInitializeDirectionTowardCenterOfMass.Location = new System.Drawing.Point(211, 225);
+			this.checkBoxInitializeDirectionTowardCenterOfMass.Name = "checkBoxInitializeDirectionTowardCenterOfMass";
+			this.checkBoxInitializeDirectionTowardCenterOfMass.Size = new System.Drawing.Size(176, 17);
+			this.checkBoxInitializeDirectionTowardCenterOfMass.TabIndex = 9;
+			this.checkBoxInitializeDirectionTowardCenterOfMass.Text = "Initial Dir. Toward Cent. of Mass";
+			this.checkBoxInitializeDirectionTowardCenterOfMass.UseVisualStyleBackColor = true;
+			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1068,6 +1082,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAnalyticalLobeRoughness_T;
 		private System.Windows.Forms.CheckBox checkBoxCompensateScatteringFactor;
 		private System.Windows.Forms.CheckBox checkBoxShowXRay;
+		private System.Windows.Forms.CheckBox checkBoxInitializeDirectionTowardCenterOfMass;
 	}
 }
 

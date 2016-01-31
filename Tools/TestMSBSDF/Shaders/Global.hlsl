@@ -2,7 +2,7 @@
 #define PI			3.1415926535897932384626433832795
 #define INVPI		0.31830988618379067153776752674503
 #define SQRTPI		1.7724538509055160272981674833411
-#define INFINITY	1e12
+#define INFINITY	1e6
 
 // Dimensions of the height field (must match C# declaration)
 static const uint	HEIGHTFIELD_SIZE = 512;
