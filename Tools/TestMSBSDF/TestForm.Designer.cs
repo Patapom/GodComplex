@@ -206,11 +206,11 @@
 			// label5
 			// 
 			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(6, 54);
+			this.label5.Location = new System.Drawing.Point(6, 53);
 			this.label5.Name = "label5";
-			this.label5.Size = new System.Drawing.Size(84, 13);
+			this.label5.Size = new System.Drawing.Size(106, 13);
 			this.label5.TabIndex = 3;
-			this.label5.Text = "Scattering Order";
+			this.label5.Text = "Lobe Intensity Factor";
 			// 
 			// radioButtonShowHeights
 			// 
@@ -333,9 +333,9 @@
 			this.checkBoxShowLobe.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxShowLobe.Location = new System.Drawing.Point(9, 25);
 			this.checkBoxShowLobe.Name = "checkBoxShowLobe";
-			this.checkBoxShowLobe.Size = new System.Drawing.Size(116, 17);
+			this.checkBoxShowLobe.Size = new System.Drawing.Size(133, 17);
 			this.checkBoxShowLobe.TabIndex = 9;
-			this.checkBoxShowLobe.Text = "Show with intensity";
+			this.checkBoxShowLobe.Text = "Show Scattering Order";
 			this.checkBoxShowLobe.UseVisualStyleBackColor = true;
 			// 
 			// floatTrackbarControlAnalyticalLobeTheta
@@ -428,13 +428,13 @@
 			// 
 			this.floatTrackbarControlLobeIntensity.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlLobeIntensity.Location = new System.Drawing.Point(123, 23);
+			this.floatTrackbarControlLobeIntensity.Location = new System.Drawing.Point(142, 48);
 			this.floatTrackbarControlLobeIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeIntensity.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlLobeIntensity.Name = "floatTrackbarControlLobeIntensity";
 			this.floatTrackbarControlLobeIntensity.RangeMax = 10000F;
 			this.floatTrackbarControlLobeIntensity.RangeMin = 0F;
-			this.floatTrackbarControlLobeIntensity.Size = new System.Drawing.Size(247, 20);
+			this.floatTrackbarControlLobeIntensity.Size = new System.Drawing.Size(233, 20);
 			this.floatTrackbarControlLobeIntensity.TabIndex = 5;
 			this.floatTrackbarControlLobeIntensity.Value = 1F;
 			this.floatTrackbarControlLobeIntensity.VisibleRangeMax = 2F;
@@ -443,13 +443,13 @@
 			// 
 			this.integerTrackbarControlScatteringOrder.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.integerTrackbarControlScatteringOrder.Location = new System.Drawing.Point(123, 49);
+			this.integerTrackbarControlScatteringOrder.Location = new System.Drawing.Point(142, 24);
 			this.integerTrackbarControlScatteringOrder.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlScatteringOrder.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlScatteringOrder.Name = "integerTrackbarControlScatteringOrder";
 			this.integerTrackbarControlScatteringOrder.RangeMax = 4;
 			this.integerTrackbarControlScatteringOrder.RangeMin = 1;
-			this.integerTrackbarControlScatteringOrder.Size = new System.Drawing.Size(247, 20);
+			this.integerTrackbarControlScatteringOrder.Size = new System.Drawing.Size(233, 20);
 			this.integerTrackbarControlScatteringOrder.TabIndex = 7;
 			this.integerTrackbarControlScatteringOrder.Value = 2;
 			this.integerTrackbarControlScatteringOrder.VisibleRangeMax = 4;
@@ -927,11 +927,11 @@
 			this.checkBoxCompensateScatteringFactor.AutoSize = true;
 			this.checkBoxCompensateScatteringFactor.Checked = true;
 			this.checkBoxCompensateScatteringFactor.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxCompensateScatteringFactor.Location = new System.Drawing.Point(123, 75);
+			this.checkBoxCompensateScatteringFactor.Location = new System.Drawing.Point(142, 74);
 			this.checkBoxCompensateScatteringFactor.Name = "checkBoxCompensateScatteringFactor";
-			this.checkBoxCompensateScatteringFactor.Size = new System.Drawing.Size(174, 17);
+			this.checkBoxCompensateScatteringFactor.Size = new System.Drawing.Size(247, 17);
 			this.checkBoxCompensateScatteringFactor.TabIndex = 9;
-			this.checkBoxCompensateScatteringFactor.Text = "Use pow( 10, scattering ) factor";
+			this.checkBoxCompensateScatteringFactor.Text = "Use pow( 10, scattering ) Compensation Factor";
 			this.checkBoxCompensateScatteringFactor.UseVisualStyleBackColor = true;
 			// 
 			// checkBoxShowXRay

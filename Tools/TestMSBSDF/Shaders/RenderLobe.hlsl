@@ -183,17 +183,19 @@ PS_IN	VS( VS_IN _In ) {
 }
 
 float4	PS( PS_IN _In ) : SV_TARGET0 {
+	float	solidAlpha = 0.5;
+	float	wireframeAlpha = 0.1;
 	if ( _Flags & 4 ) {
 		// Transmitted lobe
 		if ( _Flags & 2 )
-			return _Flags & 1 ? float4( 0.1, 0.1, 0, 0.25 ) : float4( _In.Color * float3( 1.0, 1.0, 0.5 ), 1 );
+			return _Flags & 1 ? float4( 0.1, 0.1, 0, wireframeAlpha ) : float4( _In.Color * float3( 1.0, 1.0, 0.5 ), solidAlpha );
 		else
-			return _Flags & 1 ? float4( 0, 0, 0.1, 0.25 ) : float4( _In.Color, 0.5 );
+			return _Flags & 1 ? float4( 0, 0, 0.1, wireframeAlpha ) : float4( _In.Color, solidAlpha );
 	} else {
 		// Reflected lobe
 		if ( _Flags & 2 )
-			return _Flags & 1 ? float4( 0, 0.1, 0, 0.25 ) : float4( _In.Color * float3( 0.5, 1.0, 0.5 ), 1 );
+			return _Flags & 1 ? float4( 0, 0.1, 0, wireframeAlpha ) : float4( _In.Color * float3( 0.5, 1.0, 0.5 ), solidAlpha );
 		else
-			return _Flags & 1 ? float4( 0.1, 0, 0, 0.25 ) : float4( _In.Color, 0.5 );
+			return _Flags & 1 ? float4( 0.1, 0, 0, wireframeAlpha ) : float4( _In.Color, solidAlpha );
 	}
 }

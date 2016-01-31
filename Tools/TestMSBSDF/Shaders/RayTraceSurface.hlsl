@@ -8,6 +8,8 @@ static const float	MAX_HEIGHT = 6.0;					// Arbitrary top height above which the
 static const float	INITIAL_HEIGHT = MAX_HEIGHT - 0.1;	// So we're almost sure to start above the heightfield but below the escape height
 static const float	STEP_SIZE = 1.0;					// Ray-tracing step size @TODO: Try smaller step size to see if result is the same (maybe very rough surface require smaller steps to avoid missing peaks?)
 
+static const float	OFF_SURFACE_DISTANCE = 1e-2;
+
 cbuffer CB_Raytrace : register(b10) {
 	float3	_direction;			// Incoming ray direction
 	float	_roughness;			// Surface roughness in [0,1]
@@ -64,34 +66,16 @@ float4	RayTrace( float3 _position, float3 _direction, out float3 _normal ) {
 	return float4( pos.xyz, INFINITY );	// No hit!
 }
 
-#if 0
-	// Source: http://blog.tobias-franke.eu/2014/03/30/notes_on_importance_sampling.html
-	float2	ImportanceSample_GGX( float2 xi, float a ) {
-		return float2(	2.0 * PI * xi.x,									// Phi
-						sqrt( (1.0f - xi.y) / ((a*a - 1.0) * xi.y + 1.0) )	// cos( Theta )
-					 );
-	}
+// Computes the new position so that we're at least off the surface by the given distance
+//	_position is assumed to be on the surface (i.e. hit position)
+//	_direction is assumed to either be the reflected or refracted direction, pointing AWAY from the surface
+//	_normal is the surface's normal
+//	_offDistance is the distance we need to get off the surface
+float3	GetOffSurface( float3 _position, float3 _direction, float3 _normal, float _offDistance ) {
+	float	d = _offDistance / dot( _direction, _normal );	// Distance we need to walk along direction to reach a plane at _offDistance from surface
+	return _position + d * _direction;
+}
 
-	//////////////////////////////////////////////////////////////////////////
-	// Generates a random outgoing direction following the NDF of the surface
-	//	_normal, the normal to the surface 
-	//	_roughness, the roughness of the surface
-	//	_U, two random numbers
-	float3	GenerateDirection( float3 _normal, float _roughness, float2 _U ) {
-		float3	tangent, biTangent;
-		BuildOrthonormalBasis( _normal, tangent, biTangent );
-
-		float2	phi_cosTheta = ImportanceSample_GGX( _U, _roughness );
-
-		float2	scPhi;
-		sincos( phi_cosTheta.x, scPhi.x, scPhi.y );
-		float2	scTheta = float2( sqrt( 1.0 - phi_cosTheta.y*phi_cosTheta.y ), phi_cosTheta.y );
-
-		float3	lsDirection = float3( scPhi.x * scTheta.x, scPhi.y * scTheta.x, scTheta.y );	// Local space direction (i.e. microfacet space)
-
-		return lsDirection.x * tangent + lsDirection.y * biTangent + lsDirection.z * _normal;	// World space direction (i.e. surface space)
-	}
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Conductor Ray-Tracing
@@ -121,18 +105,22 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 		if ( hitPosition.w > 1e3 )
 			break;	// The ray escaped the surface!
 
+		// Walk to hit
+		position = hitPosition.xyz;
+
 		// Bounce off the surface
 		#if 1
 			direction = reflect( direction, normal );	// Simple, don't use inverse CDF!
 		#else
-			position = hitPosition.xyz;
 			direction = GenerateDirection( normal, _roughness, random );
 		#endif
 
-		// Assume 100% reflective conductor (no Fresnel)
-//		weight = 1.0;	// TODO: Handle absorption/transmission
+		// Each bump into the surface decreases the weight by the albedo
+		// 2 bumps we have albedo², 3 bumps we have albedo^3, etc. That explains the saturation of colors!
+		weight *= _albedo;
 
-		weight *= _albedo;	// Each bump into the surface decreases the weight by the albedo, 2 bumps we have albedo², 3 bumps we have albedo^3, etc. That explains the saturation of colors!
+		// Now, walk a little to avoid hitting the surface again
+		position = GetOffSurface( position, direction, normal, OFF_SURFACE_DISTANCE );
 
 		// Update random seed
 		random.xy = random.zw;
@@ -197,7 +185,7 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 	float4	random2 = _Tex_Random[uint3(pixelPosition,1)];
 
 	float	IOR = _IOR;
-//*
+
 	[loop]
 	[fastopt]
 	for ( ; scatteringIndex < 4; scatteringIndex++ ) {
@@ -205,12 +193,13 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 		if ( hitPosition.w > 1e3 )
 			break;	// The ray escaped the surface!
 
+		// Walk to hit
+		position = hitPosition.xyz;
+
 		float3	orientedNormal = weight * normal;							// Either standard normal, or reversed if we're standing below the surface...
 		float	cosTheta = abs( dot( direction, orientedNormal ) );	// cos( incidence angle with the surface's normal )
 
 		float	F = FresnelAccurate( IOR, cosTheta );						// 1 for grazing angles or very large IOR, like metals
-																			// 0 for IOR = 1
-//F = 0.0;
 
 		// Randomly reflect or refract depending on Fresnel
 		if ( random2.x < F ) {
@@ -219,12 +208,13 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 		} else {
 			// Refract through the surface
 			IOR = 1.0 / IOR;	// Swap above/under surface (we do that BEFORE calling Refract because it expects eta = IOR_above / IOR_below)
-			direction = Refract( -direction, -orientedNormal, IOR );
+			direction = Refract( -direction, orientedNormal, IOR );
 			weight *= -1.0;		// Swap above/under surface
-
-scatteringIndex++;
-break;
+			orientedNormal = -orientedNormal;	// For GetOffSurface() to have a correct normal pointing away from surface (since we just passed through, we need to invert it right away)
 		}
+
+		// Now, walk a little to avoid hitting the surface again
+		position = GetOffSurface( position, direction, orientedNormal, OFF_SURFACE_DISTANCE );
 
 		// Update random seeds
 		random.xy = random.zw;
@@ -235,28 +225,13 @@ break;
 		random2.w = rand( random2.w );
 	}
 
+// Actually, don't do that as it changes the lobe a lot!!
+// The question is: what to do with those rays as they are quite numerous?
+// Are they lost? Although no energy can be lost...
+// Where do they come from? Are these all from long rays going toward the surface but never intersecting?
+//
 //	weight *= direction.z * weight;	// Last "magic trick" where we accumulate to the opposite lobe if ever the direction is wrong (i.e. very long grazing angles)
 									// For example, we could have a downward direction in the upper lobe, or an upward direction in the lower lobe...
-
-//*/
-
-/*
-float	theta = 2.0 * asin( sqrt( 0.5 * (pixelPosition.x + random.x) / 512 ) );
-float	phi = 2.0 * PI * (pixelPosition.y + random.y) / 512;
-//float	theta = 2.0 * asin( sqrt( 0.5 * random.x ) );
-//float	phi = 2.0 * PI * random.y;
-direction = float3( sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta) );
-//direction = normalize( direction - _direction );
-
-//IOR = 1.0 / IOR;	// Swap above/under surface (we do that BEFORE calling Refract because it expects eta = IOR_above / IOR_below)
-direction = Refract( direction, float3( 0, 0, 1 ), 1.0 / IOR );
-//direction = -direction;
-weight = -1.0;
-
-
-scatteringIndex = 2;
-
-//*/
 
 	// Don't accumulate! This is done by the histogram generation!
 	if ( weight >= 0.0 )
