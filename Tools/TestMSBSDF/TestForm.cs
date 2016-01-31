@@ -779,7 +779,9 @@ namespace TestMSBSDF
 				else if ( radioButtonAnalyticalGGX.Checked ) flags = 01U;
 				else if ( radioButtonAnalyticalPhong.Checked ) flags = 02U;
 //					else if ( radioButtonAnalyticalPhong.Checked ) flags = 03U;	// Other
-				flags <<= 3;	// First 3 bits are reserved!
+				flags <<= 4;	// First 3 bits are reserved!
+
+				uint	generalDisplayFlags = checkBoxCompensateScatteringFactor.Checked ? 08U : 0U;	// Apply scattering order compensation factor
 
 
 				//////////////////////////////////////////////////////////////////////////
@@ -788,7 +790,7 @@ namespace TestMSBSDF
 				// Render analytical lobes
 				if ( checkBoxShowAnalyticalLobe.Checked ) {
 					m_Device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
-					m_CB_RenderLobe.m._Flags = 2U | flags;
+					m_CB_RenderLobe.m._Flags = 2U | generalDisplayFlags | flags;
 					m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
 					m_CB_RenderLobe.m._Roughness = floatTrackbarControlAnalyticalLobeRoughness.Value;
 					m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR.Value;
@@ -800,7 +802,7 @@ namespace TestMSBSDF
 
 					if ( m_lastComputedSurfaceType == SURFACE_TYPE.DIELECTRIC ) {
 						// Show transmitted lobe
-						m_CB_RenderLobe.m._Flags = 2U | 4U | flags;
+						m_CB_RenderLobe.m._Flags = 2U | 4U | generalDisplayFlags | flags;
 						m_CB_RenderLobe.m._ReflectedDirection = analyticalTransmittedDirection;
 						m_CB_RenderLobe.m._Roughness = floatTrackbarControlAnalyticalLobeRoughness_T.Value;
 						m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR_T.Value;
@@ -814,10 +816,10 @@ namespace TestMSBSDF
 
 				// Render simulated lobes
 				if ( checkBoxShowLobe.Checked ) {
-					if ( m_fitting )
+					if ( m_fitting || checkBoxShowXRay.Checked )
 						m_Device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.ALPHA_BLEND );	// Show as transparent during fitting...
 
-					m_CB_RenderLobe.m._Flags = 0U;
+					m_CB_RenderLobe.m._Flags = generalDisplayFlags | 0U;
 					m_CB_RenderLobe.m._ReflectedDirection = simulatedReflectedDirection;
 					m_CB_RenderLobe.UpdateData();
 
@@ -825,7 +827,7 @@ namespace TestMSBSDF
 
 					if ( m_lastComputedSurfaceType == SURFACE_TYPE.DIELECTRIC ) {
 						// Show transmitted lobe
-						m_CB_RenderLobe.m._Flags = 4U;
+						m_CB_RenderLobe.m._Flags = generalDisplayFlags | 4U;
 						m_CB_RenderLobe.m._ReflectedDirection = simulatedTransmittedDirection;
 						m_CB_RenderLobe.UpdateData();
 
@@ -837,29 +839,11 @@ namespace TestMSBSDF
 				// Render again, in wireframe this time
 				//
 				if ( !m_fitting && checkBoxShowWireframe.Checked ) {
-					m_Device.SetRenderStates( RASTERIZER_STATE.WIREFRAME, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.DISABLED );
-
-					// Render simulated lobes
-					if ( checkBoxShowLobe.Checked ) {
-						m_CB_RenderLobe.m._Flags = 1U;	// Wireframe mode
-						m_CB_RenderLobe.m._ReflectedDirection = simulatedReflectedDirection;
-						m_CB_RenderLobe.UpdateData();
-
-						m_Prim_Lobe.Render( m_Shader_RenderLobe );
-
-						if ( m_lastComputedSurfaceType == SURFACE_TYPE.DIELECTRIC ) {
-							// Show transmitted lobe
-							m_CB_RenderLobe.m._Flags = 1U | 4U;
-							m_CB_RenderLobe.m._ReflectedDirection = simulatedTransmittedDirection;
-							m_CB_RenderLobe.UpdateData();
-
-							m_Prim_Lobe.Render( m_Shader_RenderLobe );
-						}
-					}
+					m_Device.SetRenderStates( RASTERIZER_STATE.WIREFRAME, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, checkBoxShowXRay.Checked ? BLEND_STATE.ALPHA_BLEND : BLEND_STATE.DISABLED );
 
 					// Render analytical lobes
 					if ( checkBoxShowAnalyticalLobe.Checked ) {
-						m_CB_RenderLobe.m._Flags = 1U | 2U | flags;
+						m_CB_RenderLobe.m._Flags = generalDisplayFlags | 1U | 2U | flags;
 						m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
 						m_CB_RenderLobe.m._Roughness = floatTrackbarControlAnalyticalLobeRoughness.Value;
 						m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR.Value;
@@ -871,12 +855,31 @@ namespace TestMSBSDF
 
 						if ( m_lastComputedSurfaceType == SURFACE_TYPE.DIELECTRIC ) {
 							// Show transmitted lobe
-							m_CB_RenderLobe.m._Flags = 1U | 2U | 4U | flags;
+							m_CB_RenderLobe.m._Flags = generalDisplayFlags | 1U | 2U | 4U | flags;
 							m_CB_RenderLobe.m._ReflectedDirection = analyticalTransmittedDirection;
 							m_CB_RenderLobe.m._Roughness = floatTrackbarControlAnalyticalLobeRoughness_T.Value;
 							m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR_T.Value;
 							m_CB_RenderLobe.m._ScaleT = floatTrackbarControlLobeScaleT_T.Value;
 							m_CB_RenderLobe.m._ScaleB = floatTrackbarControlLobeScaleB_T.Value;
+							m_CB_RenderLobe.UpdateData();
+
+							m_Prim_Lobe.Render( m_Shader_RenderLobe );
+						}
+					}
+
+					// Render simulated lobes
+					if ( checkBoxShowLobe.Checked ) {
+
+						m_CB_RenderLobe.m._Flags = generalDisplayFlags | 1U;	// Wireframe mode
+						m_CB_RenderLobe.m._ReflectedDirection = simulatedReflectedDirection;
+						m_CB_RenderLobe.UpdateData();
+
+						m_Prim_Lobe.Render( m_Shader_RenderLobe );
+
+						if ( m_lastComputedSurfaceType == SURFACE_TYPE.DIELECTRIC ) {
+							// Show transmitted lobe
+							m_CB_RenderLobe.m._Flags = generalDisplayFlags | 1U | 4U;
+							m_CB_RenderLobe.m._ReflectedDirection = simulatedTransmittedDirection;
 							m_CB_RenderLobe.UpdateData();
 
 							m_Prim_Lobe.Render( m_Shader_RenderLobe );

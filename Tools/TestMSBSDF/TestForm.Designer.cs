@@ -97,6 +97,8 @@
 			this.floatTrackbarControlLobeScaleR_T = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label19 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlAnalyticalLobeRoughness_T = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxCompensateScatteringFactor = new System.Windows.Forms.CheckBox();
+			this.checkBoxShowXRay = new System.Windows.Forms.CheckBox();
 			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
@@ -263,7 +265,7 @@
 			this.panel2.Controls.Add(this.radioButtonAnalyticalPhong);
 			this.panel2.Controls.Add(this.radioButtonAnalyticalGGX);
 			this.panel2.Controls.Add(this.radioButtonAnalyticalBeckmann);
-			this.panel2.Location = new System.Drawing.Point(68, 17);
+			this.panel2.Location = new System.Drawing.Point(68, 16);
 			this.panel2.Name = "panel2";
 			this.panel2.Size = new System.Drawing.Size(198, 22);
 			this.panel2.TabIndex = 10;
@@ -434,7 +436,8 @@
 			this.floatTrackbarControlLobeIntensity.RangeMin = 0F;
 			this.floatTrackbarControlLobeIntensity.Size = new System.Drawing.Size(247, 20);
 			this.floatTrackbarControlLobeIntensity.TabIndex = 5;
-			this.floatTrackbarControlLobeIntensity.Value = 10F;
+			this.floatTrackbarControlLobeIntensity.Value = 1F;
+			this.floatTrackbarControlLobeIntensity.VisibleRangeMax = 2F;
 			// 
 			// integerTrackbarControlScatteringOrder
 			// 
@@ -743,6 +746,8 @@
 			this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.groupBox1.Controls.Add(this.floatTrackbarControlLobeIntensity);
 			this.groupBox1.Controls.Add(this.integerTrackbarControlScatteringOrder);
+			this.groupBox1.Controls.Add(this.checkBoxCompensateScatteringFactor);
+			this.groupBox1.Controls.Add(this.checkBoxShowXRay);
 			this.groupBox1.Controls.Add(this.checkBoxShowWireframe);
 			this.groupBox1.Controls.Add(this.label5);
 			this.groupBox1.Controls.Add(this.checkBoxShowLobe);
@@ -917,6 +922,30 @@
 			this.floatTrackbarControlAnalyticalLobeRoughness_T.Value = 0.9444F;
 			this.floatTrackbarControlAnalyticalLobeRoughness_T.VisibleRangeMax = 1F;
 			// 
+			// checkBoxCompensateScatteringFactor
+			// 
+			this.checkBoxCompensateScatteringFactor.AutoSize = true;
+			this.checkBoxCompensateScatteringFactor.Checked = true;
+			this.checkBoxCompensateScatteringFactor.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxCompensateScatteringFactor.Location = new System.Drawing.Point(123, 75);
+			this.checkBoxCompensateScatteringFactor.Name = "checkBoxCompensateScatteringFactor";
+			this.checkBoxCompensateScatteringFactor.Size = new System.Drawing.Size(174, 17);
+			this.checkBoxCompensateScatteringFactor.TabIndex = 9;
+			this.checkBoxCompensateScatteringFactor.Text = "Use pow( 10, scattering ) factor";
+			this.checkBoxCompensateScatteringFactor.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxShowXRay
+			// 
+			this.checkBoxShowXRay.AutoSize = true;
+			this.checkBoxShowXRay.Checked = true;
+			this.checkBoxShowXRay.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxShowXRay.Location = new System.Drawing.Point(233, 0);
+			this.checkBoxShowXRay.Name = "checkBoxShowXRay";
+			this.checkBoxShowXRay.Size = new System.Drawing.Size(85, 17);
+			this.checkBoxShowXRay.TabIndex = 9;
+			this.checkBoxShowXRay.Text = "Show X-Ray";
+			this.checkBoxShowXRay.UseVisualStyleBackColor = true;
+			// 
 			// panelOutput
 			// 
 			this.panelOutput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -1037,6 +1066,8 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLobeScaleR_T;
 		private System.Windows.Forms.Label label19;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAnalyticalLobeRoughness_T;
+		private System.Windows.Forms.CheckBox checkBoxCompensateScatteringFactor;
+		private System.Windows.Forms.CheckBox checkBoxShowXRay;
 	}
 }
 

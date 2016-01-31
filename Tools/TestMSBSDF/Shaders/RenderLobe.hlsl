@@ -99,6 +99,8 @@ PS_IN	VS( VS_IN _In ) {
 
 	float	lobeSign = _Flags & 4U ? -1.0 : 1.0;	// -1 for transmitted lobe, +1 for reflected lobe
 
+	float	intensityMultiplier = _Intensity * (_Flags & 8 ? pow( 10.0, _ScatteringOrder ) : 1.0);
+
 	float	lobeIntensity;
 	float3	wsPosition;
 	if ( _Flags & 2 ) {
@@ -113,7 +115,7 @@ PS_IN	VS( VS_IN _In ) {
 //cosTheta_M = saturate( _ScaleR * lsPosition.z / sqrt( pow2( _ScaleT * lsPosition.x ) + pow2( _ScaleB * lsPosition.y ) + pow2( _ScaleR * lsPosition.z ) ) );
 //cosTheta_M = saturate( _ScaleR * lsPosition.z / sqrt( 1.0 + (_ScaleR*_ScaleR - 1) * lsPosition.z*lsPosition.z ) );
 
-		switch ( (_Flags >> 3) ) {
+		switch ( (_Flags >> 4) ) {
 		case 2:
 			// Phong
 			lobeIntensity = PhongNDF( cosTheta_M, _Roughness );					// NDF
@@ -139,7 +141,7 @@ PS_IN	VS( VS_IN _In ) {
 
 		lobeIntensity *= (lobeSign * wsDirection.z) < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
 
-		lobeIntensity *= _Intensity;	// So we match the simulated lobe's intensity scale
+		lobeIntensity *= intensityMultiplier;	// So we match the simulated lobe's intensity scale
 
 		wsDirection = wsScaledDirection;
 		wsPosition = lobeIntensity * float3( wsDirection.x, wsDirection.z, -wsDirection.y );	// Vertex position in Y-up
@@ -165,8 +167,8 @@ PS_IN	VS( VS_IN _In ) {
 
 //lobeIntensity = 1.0;
 
-		lobeIntensity = max( 0.001, lobeIntensity );			// So we always at least see something
-		lobeIntensity *= _Intensity;							// Manual intensity scale
+		lobeIntensity *= intensityMultiplier;				// Manual intensity scale
+		lobeIntensity = max( 0.01, lobeIntensity );			// So we always at least see something
 
 		lobeIntensity *= (lobeSign * wsDirection.z) < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
 
@@ -184,14 +186,14 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	if ( _Flags & 4 ) {
 		// Transmitted lobe
 		if ( _Flags & 2 )
-			return _Flags & 1 ? float4( 0.1, 0.1, 0, 1 ) : float4( _In.Color * float3( 1.0, 1.0, 0.5 ), 1 );
+			return _Flags & 1 ? float4( 0.1, 0.1, 0, 0.25 ) : float4( _In.Color * float3( 1.0, 1.0, 0.5 ), 1 );
 		else
-			return _Flags & 1 ? float4( 0, 0, 0.1, 1 ) : float4( _In.Color, 0.5 );
+			return _Flags & 1 ? float4( 0, 0, 0.1, 0.25 ) : float4( _In.Color, 0.5 );
 	} else {
 		// Reflected lobe
 		if ( _Flags & 2 )
-			return _Flags & 1 ? float4( 0, 0.1, 0, 1 ) : float4( _In.Color * float3( 0.5, 1.0, 0.5 ), 1 );
+			return _Flags & 1 ? float4( 0, 0.1, 0, 0.25 ) : float4( _In.Color * float3( 0.5, 1.0, 0.5 ), 1 );
 		else
-			return _Flags & 1 ? float4( 0.1, 0, 0, 1 ) : float4( _In.Color, 0.5 );
+			return _Flags & 1 ? float4( 0.1, 0, 0, 0.25 ) : float4( _In.Color, 0.5 );
 	}
 }

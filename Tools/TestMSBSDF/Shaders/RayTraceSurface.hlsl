@@ -36,7 +36,7 @@ float4	RayTrace( float3 _position, float3 _direction, out float3 _normal ) {
 
 	_normal = NH.xyz;
 
-	float	maxStepsCount = min(	0.25 * HEIGHTFIELD_SIZE,				// Anyway, can't ray-trace more than this amount of steps
+	float	maxStepsCount = min(	0.5 * HEIGHTFIELD_SIZE,					// Anyway, can't ray-trace more than this amount of steps
 									2.0 * MAX_HEIGHT / abs( _direction.z )	// How many steps does it take, using the ray direction, to move from -MAX_HEIGHT to +MAX_HEIGHT ?
 								);
 
@@ -205,17 +205,21 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 		if ( hitPosition.w > 1e3 )
 			break;	// The ray escaped the surface!
 
-		float	cosTheta = abs( dot( direction, normal ) );	// cos( incidence angle with the surface's normal )
-															// abs is there to guarantee we don't care whether we're above or under the surface (i.e. inverted normal or not)
-		float	F = FresnelAccurate( IOR, cosTheta );
+		float3	orientedNormal = weight * normal;							// Either standard normal, or reversed if we're standing below the surface...
+		float	cosTheta = abs( dot( direction, orientedNormal ) );	// cos( incidence angle with the surface's normal )
 
+		float	F = FresnelAccurate( IOR, cosTheta );						// 1 for grazing angles or very large IOR, like metals
+																			// 0 for IOR = 1
+//F = 0.0;
+
+		// Randomly reflect or refract depending on Fresnel
 		if ( random2.x < F ) {
 			// Reflect off the surface
-			direction = reflect( direction, normal );
+			direction = reflect( direction, orientedNormal );
 		} else {
 			// Refract through the surface
 			IOR = 1.0 / IOR;	// Swap above/under surface (we do that BEFORE calling Refract because it expects eta = IOR_above / IOR_below)
-			direction = Refract( -direction, weight * normal, IOR );
+			direction = Refract( -direction, -orientedNormal, IOR );
 			weight *= -1.0;		// Swap above/under surface
 
 scatteringIndex++;
