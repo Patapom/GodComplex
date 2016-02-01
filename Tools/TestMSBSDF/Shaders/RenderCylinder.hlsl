@@ -3,6 +3,7 @@
 cbuffer CB_Render : register(b10) {
 	float3	_Direction;
 	float	_Length;
+	float3	_Color;
 	float	_Radius;
 }
 
@@ -12,7 +13,6 @@ struct VS_IN {
 
 struct PS_IN {
 	float4	__Position : SV_POSITION;
-	float3	Color : TEXCOORDS0;
 };
 
 PS_IN	VS( VS_IN _In ) {
@@ -21,7 +21,7 @@ PS_IN	VS( VS_IN _In ) {
 			lsPosition.xz *= _Radius;
 			lsPosition.y *= _Length;	// Now properly scaled
 
-	float3	wsDirection = -float3( _Direction.x, _Direction.z, -_Direction.y );	// Actual ray incoming direction in Y-up, reversed as we want the one pointing out of the surface
+	float3	wsDirection = float3( _Direction.x, _Direction.z, -_Direction.y );	// Actual ray incoming direction in Y-up
 	float3	tangent, biTangent;
 	BuildOrthonormalBasis( wsDirection, tangent, biTangent );
 
@@ -29,11 +29,10 @@ PS_IN	VS( VS_IN _In ) {
 
 	PS_IN	Out;
 	Out.__Position = mul( float4( wsPosition, 1.0 ), _World2Proj );
-	Out.Color = float3( 1, 0, 0 );
 
 	return Out;
 }
 
 float3	PS( PS_IN _In ) : SV_TARGET0 {
-	return _In.Color;
+	return _Color;
 }
