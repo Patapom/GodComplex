@@ -48,6 +48,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutomationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AutomationForm.Designer.cs">
+      <DependentUpon>AutomationForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="PanelOutput3D.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -59,6 +65,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="AutomationForm.resx">
+      <DependentUpon>AutomationForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="PanelOutput3D.resx">
       <DependentUpon>PanelOutput3D.cs</DependentUpon>
     </EmbeddedResource>

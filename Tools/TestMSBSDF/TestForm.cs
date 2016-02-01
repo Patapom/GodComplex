@@ -15,6 +15,8 @@ namespace TestMSBSDF
 {
 	public partial class TestForm : Form
 	{
+		#region CONSTANTS
+
 		const int				HEIGHTFIELD_SIZE = 512;						//  (must match HLSL declaration)
 		const int				MAX_SCATTERING_ORDER = 4;
 		const int				LOBES_COUNT_THETA = 128;					// (must match HLSL declaration)
@@ -22,7 +24,9 @@ namespace TestMSBSDF
 
 		static readonly double	SQRT2 = Math.Sqrt( 2.0 );
 
-		private Device		m_Device = new Device();
+		#endregion
+
+		#region NESTED TYPES
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Main {
@@ -95,11 +99,17 @@ namespace TestMSBSDF
 			public float		_Radius;
 		}
 		
-		enum SURFACE_TYPE {
+		public enum SURFACE_TYPE {
 			CONDUCTOR,
 			DIELECTRIC,
 			DIFFUSE,
 		}
+
+		#endregion
+
+		#region FIELDS
+
+		private Device			m_Device = new Device();
 
 		private ConstantBuffer<CB_Main>				m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>			m_CB_Camera = null;
@@ -148,8 +158,14 @@ namespace TestMSBSDF
 		private SURFACE_TYPE		m_lastComputedSurfaceType;
 		private int					m_lastComputedHistogramIterationsCount = 1;
 
+		private AutomationForm		m_automation = new AutomationForm();
+
+		#endregion
+
 		public TestForm() {
 			InitializeComponent();
+
+			m_automation.Owner = this;
 
 			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
 
@@ -412,6 +428,8 @@ namespace TestMSBSDF
 
 		#endregion
 
+		#region Textures Generation
+
 		double	GenerateNormalDistributionHeight() {
 			double	U = WMath.SimpleRNG.GetUniform();	// Uniform distribution in ]0,1[
 			double	errfinv = WMath.Functions.erfinv( 2.0 * U - 1.0 );
@@ -527,11 +545,15 @@ namespace TestMSBSDF
 			#endif
 		}
 
+		#endregion
+
+		#region Ray-Tracing Simulation
+
 		// Assuming n1=1 (air) we get:
 		//	F0 = ((n2 - n1) / (n2 + n1))²
 		//	=> n2 = (1 + sqrt(F0)) / (1 - sqrt(F0))
 		//
-		float	Fresnel_IORFromF0( float _F0 ) {
+		public static float	Fresnel_IORFromF0( float _F0 ) {
 			double	SqrtF0 = Math.Sqrt( _F0 );
 			return (float) ((1.0 + SqrtF0) / (1.00000001 - SqrtF0));
 		}
@@ -540,7 +562,7 @@ namespace TestMSBSDF
 		// Expects _incoming pointing AWAY from the surface
 		// eta = IOR_over / IOR_under
 		//
-		static float3	Refract( float3 _incoming, float3 _normal, float _eta ) {
+		public static float3	Refract( float3 _incoming, float3 _normal, float _eta ) {
 			float	c = _incoming.Dot( _normal );
 			float	k = (float) (_eta * c - Math.Sign(c) * Math.Sqrt( 1.0 + _eta * (c*c - 1.0)));
 			return  k * _normal - _eta * _incoming;
@@ -561,7 +583,7 @@ namespace TestMSBSDF
 		/// <param name="_theta">Vertical angle of incidence</param>
 		/// <param name="_phi">Azimuthal angle of incidence</param>
 		/// <param name="_iterationsCount">Amount of iterations of beam tracing</param>
-		void	RayTraceSurface( float _roughness, float _albedo, float _F0, SURFACE_TYPE _surfaceType, float _theta, float _phi, int _iterationsCount ) {
+		public void	RayTraceSurface( float _roughness, float _albedo, float _F0, SURFACE_TYPE _surfaceType, float _theta, float _phi, int _iterationsCount ) {
 
 			float	sinTheta = (float) Math.Sin( _theta );
 			float	cosTheta = (float) Math.Cos( _theta );
@@ -740,6 +762,14 @@ namespace TestMSBSDF
 					m_Device.Clear( m_Tex_LobeHistogram_Transmitted, float4.Zero );
 				}
 			}
+		}
+
+		#endregion
+
+		public void	UpdateApplication() {
+			panelOutput.Refresh();
+			Application_Idle( null, EventArgs.Empty );
+			Application.DoEvents();	// Force processing events for refresh
 		}
 
 		bool	m_pauseRendering = false;
@@ -1148,9 +1178,7 @@ namespace TestMSBSDF
 					m_iterationsCount++;
 //					if ( m_iterationsCount == 5 ) {
 						m_iterationsCount = 0;
-						m_owner.panelOutput.Refresh();
-						m_owner.Application_Idle( null, EventArgs.Empty );
-						Application.DoEvents();	// Force processing events for refresh
+						m_owner.UpdateApplication();
 //					}
 				}
 			}
@@ -1471,6 +1499,11 @@ namespace TestMSBSDF
 				m_fitting = false;
 				groupBoxAnalyticalLobe.Enabled = true;
 			}
+		}
+
+		private void buttonAutomation_Click( object sender, EventArgs e )
+		{
+			m_automation.Show( this );	// Simply show, the form is always there, never disposed except when we are...
 		}
 	}
 }

@@ -17,6 +17,9 @@
 			{
 				components.Dispose();
 			}
+
+			m_automation.Dispose();
+
 			base.Dispose( disposing );
 		}
 
@@ -105,6 +108,7 @@
 			this.label21 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlLobeMaskingImportance_T = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
+			this.buttonAutomation = new System.Windows.Forms.Button();
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.groupBoxSurface.SuspendLayout();
@@ -1017,11 +1021,22 @@
 			this.panelOutput.Size = new System.Drawing.Size(876, 835);
 			this.panelOutput.TabIndex = 0;
 			// 
+			// buttonAutomation
+			// 
+			this.buttonAutomation.Location = new System.Drawing.Point(1205, 848);
+			this.buttonAutomation.Name = "buttonAutomation";
+			this.buttonAutomation.Size = new System.Drawing.Size(75, 23);
+			this.buttonAutomation.TabIndex = 14;
+			this.buttonAutomation.Text = "&Automation";
+			this.buttonAutomation.UseVisualStyleBackColor = true;
+			this.buttonAutomation.Click += new System.EventHandler(this.buttonAutomation_Click);
+			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1287, 884);
+			this.Controls.Add(this.buttonAutomation);
 			this.Controls.Add(this.groupBoxAnalyticalLobe);
 			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.buttonFit);
@@ -1134,6 +1149,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLobeMaskingImportance;
 		private System.Windows.Forms.Label label21;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLobeMaskingImportance_T;
+		private System.Windows.Forms.Button buttonAutomation;
 	}
 }
 
