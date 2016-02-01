@@ -1068,7 +1068,7 @@ namespace TestMSBSDF
 				m_owner = _owner;
 			}
 
-			public void		Init( float3 _incomingDirection, double _theta, bool _computeInitialThetaUsingCenterOfMass, double _roughness, double _IOR, double _scaleGlobal, double _scaleB, double _scaleN, double _MaskingImportance, double _toleranceFactor, Texture2D _texHistogram_CPU, int _scatteringOrder, bool _fittingReflectedLobe ) {
+			public void		Init( float3 _incomingDirection, double _theta, bool _computeInitialThetaUsingCenterOfMass, double _roughness, double _IOR, double _scaleGlobal, double _scaleB, double _scaleN, double _MaskingImportance, double _oversizeFactor, Texture2D _texHistogram_CPU, int _scatteringOrder, bool _fittingReflectedLobe ) {
 				int	scattMin = _scatteringOrder-1;		// Because scattering order 1 is actually stored in first slice of the texture array
 				int	scattMax = scattMin+1;				// To simulate a single scattering order
 //				int	scattMax = MAX_SCATTERING_ORDER;	// To simulate all scattering orders accumulated
@@ -1142,7 +1142,7 @@ namespace TestMSBSDF
 				m_incomingDirection_CosPhi = Math.Cos( incomingPhi );
 				m_incomingDirection_SinPhi = Math.Sin( incomingPhi );
 
-				m_toleranceFactor = _toleranceFactor;
+				m_toleranceFactor = _oversizeFactor;
 				m_fittingReflectedLobe = _fittingReflectedLobe;
 				m_lobeType = m_owner.radioButtonAnalyticalPhong.Checked ? 0 : (m_owner.radioButtonAnalyticalBeckmann.Checked ? 1 : 2);
 
@@ -1426,7 +1426,7 @@ namespace TestMSBSDF
 		LobeModel	m_lobeModel = null;
 		WMath.BFGS	m_Fitter = new WMath.BFGS();
 
-		void	PerformLobeFitting( float3 _incomingDirection, float _theta, bool _computeInitialThetaUsingCenterOfMass, float _roughness, float _IOR, float _scaleT, float _scaleB, float _scaleN, float _MaskingImportance, float _ToleranceFactor, int _scatteringOrder, bool _reflected ) {
+		void	PerformLobeFitting( float3 _incomingDirection, float _theta, bool _computeInitialThetaUsingCenterOfMass, float _roughness, float _IOR, float _scaleT, float _scaleB, float _scaleN, float _MaskingImportance, float _OversizeFactor, int _scatteringOrder, bool _reflected ) {
 
 			checkBoxShowAnalyticalLobe.Checked = true;
 
@@ -1435,7 +1435,7 @@ namespace TestMSBSDF
 
 			// Initialize lobe model
 			m_lobeModel = new LobeModel( this );
-			m_lobeModel.Init( _incomingDirection, _theta, _computeInitialThetaUsingCenterOfMass, _roughness, _IOR, _scaleT, _scaleB, _scaleN, _MaskingImportance, _ToleranceFactor,  m_Tex_LobeHistogram_CPU, _scatteringOrder, _reflected );
+			m_lobeModel.Init( _incomingDirection, _theta, _computeInitialThetaUsingCenterOfMass, _roughness, _IOR, _scaleT, _scaleB, _scaleN, _MaskingImportance, _OversizeFactor,  m_Tex_LobeHistogram_CPU, _scatteringOrder, _reflected );
 
 // 			if ( !checkBoxTest.Checked ) {
 // 				m_Fitter.SuccessTolerance = 1e-4;
@@ -1484,7 +1484,7 @@ namespace TestMSBSDF
 									scaleB,
 									scaleR,
 									maskingImportance,
-									floatTrackbarControlFitTolerance.Value,
+									floatTrackbarControlFitOversize.Value,
 									integerTrackbarControlScatteringOrder.Value,
 									fittingReflectedLobe
 									);
@@ -1501,9 +1501,8 @@ namespace TestMSBSDF
 			}
 		}
 
-		private void buttonAutomation_Click( object sender, EventArgs e )
-		{
-			m_automation.Show( this );	// Simply show, the form is always there, never disposed except when we are...
+		private void buttonAutomation_Click( object sender, EventArgs e ) {
+			m_automation.Visible = !m_automation.Visible;	// Simply toggle show/hide, the form is always there, never disposed except when we are...
 		}
 	}
 }

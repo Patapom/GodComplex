@@ -104,6 +104,19 @@
 			this.integerTrackbarControlRetries = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label24 = new System.Windows.Forms.Label();
 			this.label25 = new System.Windows.Forms.Label();
+			this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.resultsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.loadToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.saveToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
+			this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
+			this.recentToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.floatTrackbarControlFitOversize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label26 = new System.Windows.Forms.Label();
 			this.groupBox1.SuspendLayout();
 			this.panel6.SuspendLayout();
 			this.panel5.SuspendLayout();
@@ -116,6 +129,7 @@
 			this.panel2.SuspendLayout();
 			this.panel1.SuspendLayout();
 			this.groupBox4.SuspendLayout();
+			this.menuStrip1.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// groupBox1
@@ -128,7 +142,7 @@
 			this.groupBox1.Controls.Add(this.label20);
 			this.groupBox1.Controls.Add(this.label22);
 			this.groupBox1.Controls.Add(this.label21);
-			this.groupBox1.Location = new System.Drawing.Point(12, 45);
+			this.groupBox1.Location = new System.Drawing.Point(0, 48);
 			this.groupBox1.Name = "groupBox1";
 			this.groupBox1.Size = new System.Drawing.Size(616, 287);
 			this.groupBox1.TabIndex = 0;
@@ -501,19 +515,20 @@
 			this.panelParameters.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.panelParameters.Controls.Add(this.groupBox1);
 			this.panelParameters.Controls.Add(this.groupBox4);
 			this.panelParameters.Controls.Add(this.groupBox2);
 			this.panelParameters.Controls.Add(this.panel1);
-			this.panelParameters.Location = new System.Drawing.Point(12, 12);
+			this.panelParameters.Location = new System.Drawing.Point(12, 27);
 			this.panelParameters.Name = "panelParameters";
-			this.panelParameters.Size = new System.Drawing.Size(1017, 742);
+			this.panelParameters.Size = new System.Drawing.Size(1017, 557);
 			this.panelParameters.TabIndex = 1;
 			// 
 			// groupBox2
 			// 
 			this.groupBox2.Controls.Add(this.groupBox3);
 			this.groupBox2.Controls.Add(this.panel2);
-			this.groupBox2.Location = new System.Drawing.Point(622, 33);
+			this.groupBox2.Location = new System.Drawing.Point(622, 43);
 			this.groupBox2.Name = "groupBox2";
 			this.groupBox2.Size = new System.Drawing.Size(395, 292);
 			this.groupBox2.TabIndex = 0;
@@ -773,7 +788,7 @@
 			this.panel1.Controls.Add(this.radioButtonSurfaceTypeDiffuse);
 			this.panel1.Controls.Add(this.radioButtonSurfaceTypeDielectric);
 			this.panel1.Controls.Add(this.radioButtonSurfaceTypeConductor);
-			this.panel1.Location = new System.Drawing.Point(0, 0);
+			this.panel1.Location = new System.Drawing.Point(15, 15);
 			this.panel1.Name = "panel1";
 			this.panel1.Size = new System.Drawing.Size(307, 27);
 			this.panel1.TabIndex = 1;
@@ -824,6 +839,8 @@
 			// 
 			// groupBox4
 			// 
+			this.groupBox4.Controls.Add(this.floatTrackbarControlFitOversize);
+			this.groupBox4.Controls.Add(this.label26);
 			this.groupBox4.Controls.Add(this.label23);
 			this.groupBox4.Controls.Add(this.label19);
 			this.groupBox4.Controls.Add(this.integerTrackbarControlRetries);
@@ -833,7 +850,7 @@
 			this.groupBox4.Controls.Add(this.integerTrackbarControlMaxIterations);
 			this.groupBox4.Controls.Add(this.floatTrackbarControlGradientTolerance);
 			this.groupBox4.Controls.Add(this.floatTrackbarControlGoalTolerance);
-			this.groupBox4.Location = new System.Drawing.Point(0, 326);
+			this.groupBox4.Location = new System.Drawing.Point(3, 350);
 			this.groupBox4.Name = "groupBox4";
 			this.groupBox4.Size = new System.Drawing.Size(405, 169);
 			this.groupBox4.TabIndex = 2;
@@ -995,14 +1012,117 @@
 			this.label25.TabIndex = 1;
 			this.label25.Text = "times";
 			// 
+			// menuStrip1
+			// 
+			this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.fileToolStripMenuItem,
+            this.resultsToolStripMenuItem});
+			this.menuStrip1.Location = new System.Drawing.Point(0, 0);
+			this.menuStrip1.Name = "menuStrip1";
+			this.menuStrip1.Size = new System.Drawing.Size(1041, 24);
+			this.menuStrip1.TabIndex = 2;
+			this.menuStrip1.Text = "menuStrip1";
+			// 
+			// fileToolStripMenuItem
+			// 
+			this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.openToolStripMenuItem,
+            this.saveToolStripMenuItem,
+            this.toolStripMenuItem2,
+            this.recentToolStripMenuItem});
+			this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
+			this.fileToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
+			this.fileToolStripMenuItem.Text = "&Settings";
+			// 
+			// openToolStripMenuItem
+			// 
+			this.openToolStripMenuItem.Name = "openToolStripMenuItem";
+			this.openToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.openToolStripMenuItem.Text = "&Load";
+			// 
+			// saveToolStripMenuItem
+			// 
+			this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
+			this.saveToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.saveToolStripMenuItem.Text = "&Save";
+			// 
+			// resultsToolStripMenuItem
+			// 
+			this.resultsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.loadToolStripMenuItem,
+            this.saveToolStripMenuItem1,
+            this.toolStripMenuItem1,
+            this.exportToolStripMenuItem});
+			this.resultsToolStripMenuItem.Name = "resultsToolStripMenuItem";
+			this.resultsToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
+			this.resultsToolStripMenuItem.Text = "&Results";
+			// 
+			// loadToolStripMenuItem
+			// 
+			this.loadToolStripMenuItem.Name = "loadToolStripMenuItem";
+			this.loadToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.loadToolStripMenuItem.Text = "&Load";
+			// 
+			// saveToolStripMenuItem1
+			// 
+			this.saveToolStripMenuItem1.Name = "saveToolStripMenuItem1";
+			this.saveToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
+			this.saveToolStripMenuItem1.Text = "&Save";
+			// 
+			// toolStripMenuItem1
+			// 
+			this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+			this.toolStripMenuItem1.Size = new System.Drawing.Size(149, 6);
+			// 
+			// exportToolStripMenuItem
+			// 
+			this.exportToolStripMenuItem.Name = "exportToolStripMenuItem";
+			this.exportToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.exportToolStripMenuItem.Text = "E&xport";
+			// 
+			// toolStripMenuItem2
+			// 
+			this.toolStripMenuItem2.Name = "toolStripMenuItem2";
+			this.toolStripMenuItem2.Size = new System.Drawing.Size(149, 6);
+			// 
+			// recentToolStripMenuItem
+			// 
+			this.recentToolStripMenuItem.Name = "recentToolStripMenuItem";
+			this.recentToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.recentToolStripMenuItem.Text = "&Recent";
+			// 
+			// floatTrackbarControlFitOversize
+			// 
+			this.floatTrackbarControlFitOversize.Location = new System.Drawing.Point(145, 132);
+			this.floatTrackbarControlFitOversize.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlFitOversize.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlFitOversize.Name = "floatTrackbarControlFitOversize";
+			this.floatTrackbarControlFitOversize.RangeMax = 2F;
+			this.floatTrackbarControlFitOversize.RangeMin = 0F;
+			this.floatTrackbarControlFitOversize.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlFitOversize.TabIndex = 7;
+			this.floatTrackbarControlFitOversize.Value = 1.02F;
+			this.floatTrackbarControlFitOversize.VisibleRangeMax = 1.1F;
+			this.floatTrackbarControlFitOversize.VisibleRangeMin = 1F;
+			// 
+			// label26
+			// 
+			this.label26.AutoSize = true;
+			this.label26.Location = new System.Drawing.Point(6, 137);
+			this.label26.Name = "label26";
+			this.label26.Size = new System.Drawing.Size(112, 13);
+			this.label26.TabIndex = 6;
+			this.label26.Text = "Fitting Oversize Factor";
+			// 
 			// AutomationForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1041, 766);
-			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.panelParameters);
+			this.Controls.Add(this.menuStrip1);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
+			this.MainMenuStrip = this.menuStrip1;
 			this.Name = "AutomationForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Text = "Automation Form";
@@ -1028,7 +1148,10 @@
 			this.panel1.PerformLayout();
 			this.groupBox4.ResumeLayout(false);
 			this.groupBox4.PerformLayout();
+			this.menuStrip1.ResumeLayout(false);
+			this.menuStrip1.PerformLayout();
 			this.ResumeLayout(false);
+			this.PerformLayout();
 
 		}
 
@@ -1109,5 +1232,18 @@
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlRetries;
 		private System.Windows.Forms.Label label24;
 		private System.Windows.Forms.Label label25;
+		private System.Windows.Forms.MenuStrip menuStrip1;
+		private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem openToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem resultsToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem loadToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem1;
+		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
+		private System.Windows.Forms.ToolStripMenuItem exportToolStripMenuItem;
+		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
+		private System.Windows.Forms.ToolStripMenuItem recentToolStripMenuItem;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlFitOversize;
+		private System.Windows.Forms.Label label26;
 	}
 }
