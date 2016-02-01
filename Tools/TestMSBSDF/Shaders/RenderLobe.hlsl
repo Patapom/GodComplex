@@ -9,9 +9,10 @@ cbuffer CB_Render : register(b10) {
 
 	// Analytical Beckmann lobe
 	float	_Roughness;
-	float	_ScaleR;		// Scale factor along reflected ray
-	float	_ScaleT;		// Scale factor along tangential axis
-	float	_ScaleB;		// Scale factor along bi-tangential axis
+	float	_ScaleR;			// Scale factor along reflected ray
+	float	_ScaleT;			// Scale factor along tangential axis
+	float	_ScaleB;			// Scale factor along bi-tangential axis
+	float	_MaskingImportance;	// Importance of the masking function
 }
 
 Texture2DArray< float >		_Tex_DirectionsHistogram_Reflected : register( t3 );
@@ -66,7 +67,7 @@ float	GGXG1( float _cosTheta_V, float _roughness ) {
 
 float	Roughness2PhongExponent( float _roughness ) {
 //	return exp2( 10.0 * (1.0 - _roughness) + 1.0 );	// From https://seblagarde.wordpress.com/2011/08/17/hello-world/
-	return exp2( 10.0 * (1.0 - _roughness) + 0.5 );	// Actually, we'd like some fatter rough lobes
+	return exp2( 10.0 * (1.0 - _roughness) + 0.0 ) - 1.0;	// Actually, we'd like some fatter rough lobes
 }
 
 // D(m) = a² / (PI * cos(theta_m)^4 * (a² + tan(theta_m)²)²)
@@ -76,7 +77,7 @@ float	PhongNDF( float _cosTheta_M, float _roughness ) {
 	return (n+2)*pow( _cosTheta_M, n ) / PI;
 }
 
-// Same as Beckmann but with a modified a bit
+// Same as Beckmann but modified a bit
 float	PhongG1( float _cosTheta_V, float _roughness ) {
 	float	n = Roughness2PhongExponent( _roughness );
 	float	sqCosTheta_V = _cosTheta_V * _cosTheta_V;
@@ -99,7 +100,7 @@ PS_IN	VS( VS_IN _In ) {
 
 	float	lobeSign = _Flags & 4U ? -1.0 : 1.0;	// -1 for transmitted lobe, +1 for reflected lobe
 
-	float	intensityMultiplier = _Intensity * (_Flags & 8 ? pow( 10.0, _ScatteringOrder ) : 1.0);
+	float	intensityMultiplier = _Intensity * (_Flags & 8 ? pow( 3.0, _ScatteringOrder ) : 1.0);
 
 	float	lobeIntensity;
 	float3	wsPosition;
@@ -115,26 +116,32 @@ PS_IN	VS( VS_IN _In ) {
 //cosTheta_M = saturate( _ScaleR * lsPosition.z / sqrt( pow2( _ScaleT * lsPosition.x ) + pow2( _ScaleB * lsPosition.y ) + pow2( _ScaleR * lsPosition.z ) ) );
 //cosTheta_M = saturate( _ScaleR * lsPosition.z / sqrt( 1.0 + (_ScaleR*_ScaleR - 1) * lsPosition.z*lsPosition.z ) );
 
+		float	maskingShadowing = 1.0;
 		switch ( (_Flags >> 4) ) {
 		case 2:
 			// Phong
 			lobeIntensity = PhongNDF( cosTheta_M, _Roughness );					// NDF
-			lobeIntensity *= PhongG1( wsIncomingDirection.z, _Roughness );		// * Masking( incoming )
-			lobeIntensity *= PhongG1( wsDirection.z, _Roughness );				// * Masking( outgoing )
+			maskingShadowing = PhongG1( wsIncomingDirection.z, _Roughness );	// * Masking( incoming )
+			maskingShadowing *= PhongG1( wsDirection.z, _Roughness );			// * Masking( outgoing )
 			break;
 		case 1:
 			// GGX
 			lobeIntensity = GGXNDF( cosTheta_M, _Roughness );					// NDF
-			lobeIntensity *= GGXG1( wsIncomingDirection.z, _Roughness );		// * Masking( incoming )
-			lobeIntensity *= GGXG1( wsDirection.z, _Roughness );				// * Masking( outgoing )
+			maskingShadowing = GGXG1( wsIncomingDirection.z, _Roughness );		// * Masking( incoming )
+			maskingShadowing *= GGXG1( wsDirection.z, _Roughness );				// * Masking( outgoing )
 			break;
 		default:
 			// Beckmann
 			lobeIntensity = BeckmannNDF( cosTheta_M, _Roughness );				// NDF
-			lobeIntensity *= BeckmannG1( wsIncomingDirection.z, _Roughness );	// * Masking( incoming )
-			lobeIntensity *= BeckmannG1( wsDirection.z, _Roughness );			// * Masking( outgoing )
+			maskingShadowing = BeckmannG1( wsIncomingDirection.z, _Roughness );	// * Masking( incoming )
+			maskingShadowing *= BeckmannG1( wsDirection.z, _Roughness );		// * Masking( outgoing )
 			break;
 		}
+
+		lobeIntensity *= lerp( 1.0, maskingShadowing, _MaskingImportance );
+
+		lobeIntensity *= _ScaleT;	// Now used as "global scale factor"
+
 
 //		float	IOR = Fresnel_IORFromF0( 0.04 );
 //		lobeIntensity *= FresnelAccurate( IOR, lsDirection.y ).x;
