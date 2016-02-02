@@ -694,7 +694,7 @@ namespace TestMSBSDF
 		bool			m_computing = false;
 		bool			m_isReflectedLobe = true;
 
-		Results			m_results = new Results();
+		Results			m_document = null;
 		Results.Result	m_selectedResult = null;		// Current selection
 
 		public new TestForm		Owner {
@@ -735,8 +735,8 @@ namespace TestMSBSDF
 			m_lobeModel = new LobeModel();
 			m_lobeModel.ParametersChanged += m_lobeModel_ParametersChanged;
 
-			//
-			integerTrackbarControlRayCastingIterations.SimulateValueChange();
+			// Attach a default document
+			AttachDocument( new Results() );
 		}
 
 		#region Automation Core
@@ -746,10 +746,10 @@ namespace TestMSBSDF
 		/// </summary>
 		void	PrepareFitter() {
 
-			double	functionMinimumTolerance = Math.Pow( 10.0, m_results.m_settings.m_logTolerance_Minimum );
-			double	gradientTolerance = Math.Pow( 10.0, m_results.m_settings.m_logTolerance_Gradient );
+			double	functionMinimumTolerance = Math.Pow( 10.0, m_document.m_settings.m_logTolerance_Minimum );
+			double	gradientTolerance = Math.Pow( 10.0, m_document.m_settings.m_logTolerance_Gradient );
 
-			m_fitter.MaxIterations = m_results.m_settings.m_maxIterations;
+			m_fitter.MaxIterations = m_document.m_settings.m_maxIterations;
 			m_fitter.SuccessTolerance = functionMinimumTolerance;
 			m_fitter.GradientSuccessTolerance = gradientTolerance;
 		}
@@ -770,7 +770,7 @@ namespace TestMSBSDF
 			float	albedo = _result.m_surfaceAlbedoF0;
 			float	F0 = _result.m_surfaceAlbedoF0;
 
-			m_owner.RayTraceSurface( _result.m_surfaceRoughness, albedo, F0, m_results.m_surface.m_type, _result.m_incomingAngleTheta, _result.m_incomingAnglePhi, m_results.m_surface.m_rayTracingIterationsCount );
+			m_owner.RayTraceSurface( _result.m_surfaceRoughness, albedo, F0, m_document.m_surface.m_type, _result.m_incomingAngleTheta, _result.m_incomingAnglePhi, m_document.m_surface.m_rayTracingIterationsCount );
 		}
 
 		/// <summary>
@@ -779,6 +779,8 @@ namespace TestMSBSDF
 		/// <param name="_result"></param>
 		/// <param name="_reflected"></param>
 		void	PerformLobeFitting( Results.Result _result, bool _reflected ) {
+
+			m_isReflectedLobe = _reflected;	// Global flag for current fitting
 
 			// Read back histogram to CPU for fitting
 			Texture2D	Tex_SimulatedLobeHistogram = m_owner.GetSimulationHistogram( _reflected );
@@ -794,14 +796,14 @@ namespace TestMSBSDF
 
 			float3				refractedDirection = TestForm.Refract( -incomingDirection, float3.UnitZ, 1.0f / TestForm.Fresnel_IORFromF0( _result.m_surfaceAlbedoF0 ) );
 
-			LobeModel.LOBE_TYPE	lobeType = m_results.m_settings.m_lobeModel;
+			LobeModel.LOBE_TYPE	lobeType = m_document.m_settings.m_lobeModel;
 
 			Results.Result.LobeParameters	lobeResults = _reflected ? _result.m_reflected : _result.m_refracted;
 
 			lobeResults.Initialize( _result, m_lobeModel, _reflected ? reflectedDirection : refractedDirection );
 
 			// Initialize lobe model using initialized lobe results
-			m_lobeModel.InitLobeData( lobeType, incomingDirection, lobeResults.m_theta, lobeResults.m_roughness, lobeResults.m_scale, lobeResults.m_flatten, lobeResults.m_masking, m_results.m_settings.m_oversizeFactor, true );
+			m_lobeModel.InitLobeData( lobeType, incomingDirection, lobeResults.m_theta, lobeResults.m_roughness, lobeResults.m_scale, lobeResults.m_flatten, lobeResults.m_masking, m_document.m_settings.m_oversizeFactor, true );
 
 			// Peform fitting
 			m_fitter.Minimize( m_lobeModel );
@@ -814,18 +816,18 @@ namespace TestMSBSDF
 		bool		m_internalDocumentChange = false;
 		void		AttachDocument( Results _doc ) {
 			// Detach existing doc first
-			DetachDocument( m_results );
+			DetachDocument( m_document );
 
 			m_internalDocumentChange = true;
-			m_results = _doc;
+			m_document = _doc;
 
 			// Subscribe to the document's events
-			m_results.ResultStateChanged += m_results_ResultStateChanged;
-			m_results.m_surface.LockStateChanged += m_surface_LockStateChanged;
-			m_results.m_surface.ScatteringOrdersCountChanged += m_surface_ScatteringOrdersCountChanged;
-			m_results.m_surface.m_incomingAngle.ValueChanged += m_simulationParameter_ValueChanged;
-			m_results.m_surface.m_roughness.ValueChanged += m_simulationParameter_ValueChanged;
-			m_results.m_surface.m_albedoF0.ValueChanged += m_simulationParameter_ValueChanged;
+			m_document.ResultStateChanged += m_results_ResultStateChanged;
+			m_document.m_surface.LockStateChanged += m_surface_LockStateChanged;
+			m_document.m_surface.ScatteringOrdersCountChanged += m_surface_ScatteringOrdersCountChanged;
+			m_document.m_surface.m_incomingAngle.ValueChanged += m_simulationParameter_ValueChanged;
+			m_document.m_surface.m_roughness.ValueChanged += m_simulationParameter_ValueChanged;
+			m_document.m_surface.m_albedoF0.ValueChanged += m_simulationParameter_ValueChanged;
 
 			// Mirror
 			Document2UI();
@@ -840,15 +842,15 @@ namespace TestMSBSDF
 			m_internalDocumentChange = true;
 
 			// Unsubscribe from the document's events
-			m_results.m_surface.m_incomingAngle.ValueChanged -= m_simulationParameter_ValueChanged;
-			m_results.m_surface.m_roughness.ValueChanged -= m_simulationParameter_ValueChanged;
-			m_results.m_surface.m_albedoF0.ValueChanged -= m_simulationParameter_ValueChanged;
-			m_results.m_surface.ScatteringOrdersCountChanged -= m_surface_ScatteringOrdersCountChanged;
-			m_results.m_surface.LockStateChanged -= m_surface_LockStateChanged;
-			m_results.ResultStateChanged -= m_results_ResultStateChanged;
+			m_document.m_surface.m_incomingAngle.ValueChanged -= m_simulationParameter_ValueChanged;
+			m_document.m_surface.m_roughness.ValueChanged -= m_simulationParameter_ValueChanged;
+			m_document.m_surface.m_albedoF0.ValueChanged -= m_simulationParameter_ValueChanged;
+			m_document.m_surface.ScatteringOrdersCountChanged -= m_surface_ScatteringOrdersCountChanged;
+			m_document.m_surface.LockStateChanged -= m_surface_LockStateChanged;
+			m_document.ResultStateChanged -= m_results_ResultStateChanged;
 
 			SelectedResult = null;	// Clear selection
-			m_results = null;
+			m_document = null;
 
 			m_internalDocumentChange = false;
 		}
@@ -868,30 +870,30 @@ namespace TestMSBSDF
 		/// </summary>
 		void	DocumentSurface2UI() {
 
-			switch ( m_results.m_surface.m_type ) {
+			switch ( m_document.m_surface.m_type ) {
 				case TestForm.SURFACE_TYPE.CONDUCTOR: radioButtonSurfaceTypeConductor.Checked = true; break;
 				case TestForm.SURFACE_TYPE.DIELECTRIC: radioButtonSurfaceTypeDielectric.Checked = true; break;
 				case TestForm.SURFACE_TYPE.DIFFUSE: radioButtonSurfaceTypeDiffuse.Checked = true; break;
 			}
 
-			floatTrackbarControlParam0_Min.Value = m_results.m_surface.m_incomingAngle.Min;
-			floatTrackbarControlParam0_Max.Value = m_results.m_surface.m_incomingAngle.Max;
-			integerTrackbarControlParam0_Steps.Value = m_results.m_surface.m_incomingAngle.StepsCount;
-			floatTrackbarControlParam1_Min.Value = m_results.m_surface.m_roughness.Min;
-			floatTrackbarControlParam1_Max.Value = m_results.m_surface.m_roughness.Max;
-			integerTrackbarControlParam1_Steps.Value = m_results.m_surface.m_roughness.StepsCount;
-			floatTrackbarControlParam2_Min.Value = m_results.m_surface.m_albedoF0.Min;
-			floatTrackbarControlParam2_Max.Value = m_results.m_surface.m_albedoF0.Max;
-			integerTrackbarControlParam2_Steps.Value = m_results.m_surface.m_albedoF0.StepsCount;
-			integerTrackbarControlScatteringOrder_Min.Value = m_results.m_surface.ScatteringOrderMin;
-			integerTrackbarControlScatteringOrder_Max.Value = m_results.m_surface.ScatteringOrderMax;
-			integerTrackbarControlRayCastingIterations.Value = m_results.m_surface.m_rayTracingIterationsCount;
-			checkBoxParam0_InclusiveStart.Checked = m_results.m_surface.m_incomingAngle.InclusiveMin;
-			checkBoxParam0_InclusiveEnd.Checked = m_results.m_surface.m_incomingAngle.InclusiveMax;
-			checkBoxParm1_InclusiveStart.Checked = m_results.m_surface.m_roughness.InclusiveMin;
-			checkBoxParam1_InclusiveEnd.Checked = m_results.m_surface.m_roughness.InclusiveMax;
-			checkBoxParm2_InclusiveStart.Checked = m_results.m_surface.m_albedoF0.InclusiveMin;
-			checkBoxParm2_InclusiveEnd.Checked = m_results.m_surface.m_albedoF0.InclusiveMax;
+			floatTrackbarControlParam0_Min.Value = m_document.m_surface.m_incomingAngle.Min;
+			floatTrackbarControlParam0_Max.Value = m_document.m_surface.m_incomingAngle.Max;
+			integerTrackbarControlParam0_Steps.Value = m_document.m_surface.m_incomingAngle.StepsCount;
+			floatTrackbarControlParam1_Min.Value = m_document.m_surface.m_roughness.Min;
+			floatTrackbarControlParam1_Max.Value = m_document.m_surface.m_roughness.Max;
+			integerTrackbarControlParam1_Steps.Value = m_document.m_surface.m_roughness.StepsCount;
+			floatTrackbarControlParam2_Min.Value = m_document.m_surface.m_albedoF0.Min;
+			floatTrackbarControlParam2_Max.Value = m_document.m_surface.m_albedoF0.Max;
+			integerTrackbarControlParam2_Steps.Value = m_document.m_surface.m_albedoF0.StepsCount;
+			integerTrackbarControlScatteringOrder_Min.Value = m_document.m_surface.ScatteringOrderMin;
+			integerTrackbarControlScatteringOrder_Max.Value = m_document.m_surface.ScatteringOrderMax;
+			integerTrackbarControlRayCastingIterations.Value = m_document.m_surface.m_rayTracingIterationsCount;
+			checkBoxParam0_InclusiveStart.Checked = m_document.m_surface.m_incomingAngle.InclusiveMin;
+			checkBoxParam0_InclusiveEnd.Checked = m_document.m_surface.m_incomingAngle.InclusiveMax;
+			checkBoxParm1_InclusiveStart.Checked = m_document.m_surface.m_roughness.InclusiveMin;
+			checkBoxParam1_InclusiveEnd.Checked = m_document.m_surface.m_roughness.InclusiveMax;
+			checkBoxParm2_InclusiveStart.Checked = m_document.m_surface.m_albedoF0.InclusiveMin;
+			checkBoxParm2_InclusiveEnd.Checked = m_document.m_surface.m_albedoF0.InclusiveMax;
 		}
 
 		/// <summary>
@@ -899,58 +901,58 @@ namespace TestMSBSDF
 		/// </summary>
 		void	DocumentSettings2UI() {
 
-			switch ( m_results.m_settings.m_lobeModel ) {
+			switch ( m_document.m_settings.m_lobeModel ) {
 				case LobeModel.LOBE_TYPE.MODIFIED_PHONG: radioButtonLobe_ModifiedPhong.Checked = true; break;
 				case LobeModel.LOBE_TYPE.BECKMANN: radioButtonLobe_Beckmann.Checked = true; break;
 				case LobeModel.LOBE_TYPE.GGX: radioButtonLobe_GGX.Checked = true; break;
 			}
 
-			switch ( m_results.m_settings.m_initialRoughness ) {
+			switch ( m_document.m_settings.m_initialRoughness ) {
 				case Results.Settings.GUESS_INITIAL_ROUGHNESS.SURFACE: radioButtonInitRoughness_UseSurface.Checked = true; break;
 				case Results.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM: radioButtonInitRoughness_Custom.Checked = true; break;
 				case Results.Settings.GUESS_INITIAL_ROUGHNESS.NO_CHANGE: radioButtonInitRoughness_NoChange.Checked = true; break;
 			}
 
-			switch ( m_results.m_settings.m_initialMasking ) {
+			switch ( m_document.m_settings.m_initialMasking ) {
 				case Results.Settings.GUESS_INITIAL_MASKING.CUSTOM: radioButtonInitMasking_Custom.Checked = true; break;
 				case Results.Settings.GUESS_INITIAL_MASKING.NO_CHANGE: radioButtonInitMasking_NoChange.Checked = true; break;
 			}
 
-			switch ( m_results.m_settings.m_initialFlatten ) {
+			switch ( m_document.m_settings.m_initialFlatten ) {
 				case Results.Settings.GUESS_INITIAL_FLATTEN.CUSTOM: radioButtonInitFlatten_Custom.Checked = true; break;
 				case Results.Settings.GUESS_INITIAL_FLATTEN.NO_CHANGE: radioButtonInitFlatten_NoChange.Checked = true; break;
 			}
 
-			switch ( m_results.m_settings.m_initialScale ) {
+			switch ( m_document.m_settings.m_initialScale ) {
 				case Results.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS: radioButtonInitScale_CoMFactor.Checked = true; break;
 				case Results.Settings.GUESS_INITIAL_SCALE.NO_CHANGE: radioButtonInitScale_NoChange.Checked = true; break;
 			}
 
-			switch ( m_results.m_settings.m_initialDirection ) {
+			switch ( m_document.m_settings.m_initialDirection ) {
 				case Results.Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS: radioButtonInitDirection_TowardCoM.Checked = true; break;
 				case Results.Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION: radioButtonInitDirection_TowardReflected.Checked = true; break;
 				case Results.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE: radioButtonInitDirection_NoChange.Checked = true; break;
 			}
 
-			checkBoxInitDirection_Inherit.Checked = m_results.m_settings.m_inheritDirection;
-			checkBoxInitScale_Inherit.Checked = m_results.m_settings.m_inheritScale;
-			checkBoxInitFlatten_Inherit.Checked = m_results.m_settings.m_inheritFlatten;
-			checkBoxInitScale_Inherit.Checked = m_results.m_settings.m_inheritRoughness;
-			checkBoxInitMasking_Inherit.Checked = m_results.m_settings.m_inheritMasking;
-			floatTrackbarControlInit_Scale.Value = m_results.m_settings.m_customScale;
-			floatTrackbarControlInit_Flatten.Value = m_results.m_settings.m_customFlatten;
-			floatTrackbarControlInit_CustomRoughness.Value = m_results.m_settings.m_customRoughness;
-			floatTrackbarControlInit_MaskingImportance.Value = m_results.m_settings.m_customMasking;
+			checkBoxInitDirection_Inherit.Checked = m_document.m_settings.m_inheritDirection;
+			checkBoxInitScale_Inherit.Checked = m_document.m_settings.m_inheritScale;
+			checkBoxInitFlatten_Inherit.Checked = m_document.m_settings.m_inheritFlatten;
+			checkBoxInitScale_Inherit.Checked = m_document.m_settings.m_inheritRoughness;
+			checkBoxInitMasking_Inherit.Checked = m_document.m_settings.m_inheritMasking;
+			floatTrackbarControlInit_Scale.Value = m_document.m_settings.m_customScale;
+			floatTrackbarControlInit_Flatten.Value = m_document.m_settings.m_customFlatten;
+			floatTrackbarControlInit_CustomRoughness.Value = m_document.m_settings.m_customRoughness;
+			floatTrackbarControlInit_MaskingImportance.Value = m_document.m_settings.m_customMasking;
 		}
 
 		/// <summary>
 		/// Mirrors the document's lobe settings to the UI
 		/// </summary>
 		void	DocumentLobeSettings2UI() {
-			integerTrackbarControlMaxIterations.Value = m_results.m_settings.m_maxIterations;
-			floatTrackbarControlGoalTolerance.Value = m_results.m_settings.m_logTolerance_Minimum;
-			floatTrackbarControlGradientTolerance.Value = m_results.m_settings.m_logTolerance_Gradient;
-			integerTrackbarControlRetries.Value = m_results.m_settings.m_maxRetries;
+			integerTrackbarControlMaxIterations.Value = m_document.m_settings.m_maxIterations;
+			floatTrackbarControlGoalTolerance.Value = m_document.m_settings.m_logTolerance_Minimum;
+			floatTrackbarControlGradientTolerance.Value = m_document.m_settings.m_logTolerance_Gradient;
+			integerTrackbarControlRetries.Value = m_document.m_settings.m_maxRetries;
 		}
 
 		void m_surface_ScatteringOrdersCountChanged()
@@ -966,7 +968,7 @@ namespace TestMSBSDF
 		}
 
 		void m_surface_LockStateChanged() {
-			groupBoxSimulationParameters.Enabled = !m_results.m_surface.IsLocked;
+			groupBoxSimulationParameters.Enabled = !m_document.m_surface.IsLocked;
 		}
 
 		void m_results_ResultStateChanged( AutomationForm.Results.Result _result )
@@ -1004,6 +1006,9 @@ namespace TestMSBSDF
 
 //				MessageBox( "Fitting succeeded after " + m_Fitter.IterationsCount + " iterations.\r\nReached minimum: " + m_Fitter.FunctionMinimum, MessageBoxButtons.OK, MessageBoxIcon.Information );
 
+			// @TODO
+			throw new Exception( );
+
 			try {
 
 
@@ -1027,20 +1032,29 @@ namespace TestMSBSDF
 			if ( !completionArrayControl.IsPointValid( e.Location ) )
 				return;	// Not a valid candidate for simulation
 
+			// Compute a single value
+			m_document.InitializeResults();
 
 
+			PrepareFitter();
+			UpdateSurfaceRoughness( SelectedResult );
+			Simulate( SelectedResult );
+			PerformLobeFitting( SelectedResult, true );	// Fit reflected lobe...
 		}
 
 		private void buttonClearResults_Click( object sender, EventArgs e ) {
 			if ( MessageBox( "Are you sure you want to erase current results?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
 				return;
 
+			//@TODO
 			throw new Exception();
 		}
 
-		private void newToolStripMenuItem_Click( object sender, EventArgs e )
-		{
-			throw new Exception();
+		private void newToolStripMenuItem_Click( object sender, EventArgs e ) {
+			if ( MessageBox( "Are you sure you want to start a new document and lose existing results?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
+				return;
+
+			AttachDocument( new Results() );
 		}
 
 		private void saveToolStripMenuItem1_Click( object sender, EventArgs e ) {
@@ -1052,7 +1066,7 @@ namespace TestMSBSDF
 					return;
 
 				XmlDocument	Doc = new XmlDocument();
-				m_results.Save( Doc );
+				m_document.Save( Doc );
 
 				Doc.Save( FileName );
 
@@ -1075,7 +1089,7 @@ namespace TestMSBSDF
 				XmlDocument	Doc = new XmlDocument();
 				Doc.Load( FileName );
 
-				m_results.Load( Doc );
+				m_document.Load( Doc );
 
 				m_AppKey.SetValue( "LastResultsFileName", openFileDialogResults.FileName );
 
@@ -1087,13 +1101,13 @@ namespace TestMSBSDF
 
 		private void completionArrayControl_SelectionChanged( CompletionArrayControl _Sender )
 		{
-			Results.Result[,,]	layerResults = m_results.m_results[integerTrackbarControlViewScatteringOrder.Value];
+			Results.Result[,,]	layerResults = m_document.m_results[integerTrackbarControlViewScatteringOrder.Value];
 			SelectedResult = layerResults[_Sender.SelectedX,_Sender.SelectedY, _Sender.SelectedZ];
 		}
 
 		private void integerTrackbarControlViewScatteringOrder_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
-			Results.Result[,,]	layerResults = m_results.m_results[_Sender.Value];
+			Results.Result[,,]	layerResults = m_document.m_results[_Sender.Value];
 
 			SelectedResult = layerResults[completionArrayControl.SelectedX, completionArrayControl.SelectedY, completionArrayControl.SelectedZ];
 		}
@@ -1118,86 +1132,86 @@ namespace TestMSBSDF
 
 		private void LobeTypeCheckChanged( object sender, EventArgs e )
 		{
-			m_results.m_settings.m_lobeModel =	radioButtonLobe_ModifiedPhong.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG :
+			m_document.m_settings.m_lobeModel =	radioButtonLobe_ModifiedPhong.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG :
 												(radioButtonLobe_Beckmann.Checked ? LobeModel.LOBE_TYPE.BECKMANN :
 												LobeModel.LOBE_TYPE.GGX);
 		}
 
 		private void radioButtonInitRoughness_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_settings.m_initialRoughness = radioButtonInitRoughness_UseSurface.Checked ?	Results.Settings.GUESS_INITIAL_ROUGHNESS.SURFACE :
+			m_document.m_settings.m_initialRoughness = radioButtonInitRoughness_UseSurface.Checked ?	Results.Settings.GUESS_INITIAL_ROUGHNESS.SURFACE :
 													(radioButtonInitRoughness_Custom.Checked ?		Results.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM :
 																									Results.Settings.GUESS_INITIAL_ROUGHNESS.NO_CHANGE);
 		}
 
 		private void radioButtonInitMasking_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_settings.m_initialMasking = radioButtonInitMasking_Custom.Checked ?	Results.Settings.GUESS_INITIAL_MASKING.CUSTOM :
+			m_document.m_settings.m_initialMasking = radioButtonInitMasking_Custom.Checked ?	Results.Settings.GUESS_INITIAL_MASKING.CUSTOM :
 																							Results.Settings.GUESS_INITIAL_MASKING.NO_CHANGE;
 		}
 
 		private void radioButtonInitFlatten_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_settings.m_initialFlatten = radioButtonInitFlatten_Custom.Checked ?	Results.Settings.GUESS_INITIAL_FLATTEN.CUSTOM :
+			m_document.m_settings.m_initialFlatten = radioButtonInitFlatten_Custom.Checked ?	Results.Settings.GUESS_INITIAL_FLATTEN.CUSTOM :
 																							Results.Settings.GUESS_INITIAL_FLATTEN.NO_CHANGE;
 		}
 
 		private void radioButtonInitScale_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_settings.m_initialScale = radioButtonInitScale_CoMFactor.Checked ?	Results.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS :
+			m_document.m_settings.m_initialScale = radioButtonInitScale_CoMFactor.Checked ?	Results.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS :
 																							Results.Settings.GUESS_INITIAL_SCALE.NO_CHANGE;
 		}
 
 		private void radioButtonInitDirection_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_settings.m_initialDirection = radioButtonInitDirection_TowardCoM.Checked ?		Results.Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS :
+			m_document.m_settings.m_initialDirection = radioButtonInitDirection_TowardCoM.Checked ?		Results.Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS :
 													(radioButtonInitDirection_TowardReflected.Checked ?	Results.Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION :
 																										Results.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE);
 		}
 
 		private void checkBoxInitDirection_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_settings.m_inheritDirection = checkBoxInitDirection_Inherit.Checked;
+			m_document.m_settings.m_inheritDirection = checkBoxInitDirection_Inherit.Checked;
 		}
 
 		private void checkBoxInitScale_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_settings.m_inheritScale = checkBoxInitScale_Inherit.Checked;
+			m_document.m_settings.m_inheritScale = checkBoxInitScale_Inherit.Checked;
 		}
 
 		private void checkBoxInitFlatten_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_settings.m_inheritFlatten = checkBoxInitFlatten_Inherit.Checked;
+			m_document.m_settings.m_inheritFlatten = checkBoxInitFlatten_Inherit.Checked;
 		}
 
 		private void checkBoxInitRoughness_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_settings.m_inheritRoughness = checkBoxInitScale_Inherit.Checked;
+			m_document.m_settings.m_inheritRoughness = checkBoxInitScale_Inherit.Checked;
 		}
 
 		private void checkBoxInitMasking_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_settings.m_inheritMasking = checkBoxInitMasking_Inherit.Checked;
+			m_document.m_settings.m_inheritMasking = checkBoxInitMasking_Inherit.Checked;
 		}
 
 		private void floatTrackbarControlInit_Scale_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_results.m_settings.m_customScale = _Sender.Value;
+			m_document.m_settings.m_customScale = _Sender.Value;
 		}
 
 		private void floatTrackbarControlInit_Flatten_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_results.m_settings.m_customFlatten = _Sender.Value;
+			m_document.m_settings.m_customFlatten = _Sender.Value;
 		}
 
 		private void floatTrackbarControlInit_CustomRoughness_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_results.m_settings.m_customRoughness = _Sender.Value;
+			m_document.m_settings.m_customRoughness = _Sender.Value;
 		}
 
 		private void floatTrackbarControlInit_MaskingImportance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_results.m_settings.m_customMasking = _Sender.Value;
+			m_document.m_settings.m_customMasking = _Sender.Value;
 		}
 
 		#endregion
@@ -1208,75 +1222,75 @@ namespace TestMSBSDF
 		{
 			labelParm2.Text = SurfaceType == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0";
 
-			m_results.m_surface.m_type = radioButtonSurfaceTypeConductor.Checked ?	TestForm.SURFACE_TYPE.CONDUCTOR : (
+			m_document.m_surface.m_type = radioButtonSurfaceTypeConductor.Checked ?	TestForm.SURFACE_TYPE.CONDUCTOR : (
 										radioButtonSurfaceTypeDielectric.Checked ?	TestForm.SURFACE_TYPE.DIELECTRIC :
 																					TestForm.SURFACE_TYPE.DIFFUSE);
 		}
 
 		private void floatTrackbarControlParam0_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_results.m_surface.m_incomingAngle.Min = floatTrackbarControlParam0_Min.Value;
+			m_document.m_surface.m_incomingAngle.Min = floatTrackbarControlParam0_Min.Value;
 		}
 
 		private void floatTrackbarControlParam0_Max_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_results.m_surface.m_incomingAngle.Max = floatTrackbarControlParam0_Max.Value;
+			m_document.m_surface.m_incomingAngle.Max = floatTrackbarControlParam0_Max.Value;
 		}
 
 		private void integerTrackbarControlParam0_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
-			m_results.m_surface.m_incomingAngle.StepsCount = integerTrackbarControlParam0_Steps.Value;
-			completionArrayControl.Init( m_results.m_surface.m_incomingAngle.StepsCount, m_results.m_surface.m_roughness.StepsCount, m_results.m_surface.m_albedoF0.StepsCount );
+			m_document.m_surface.m_incomingAngle.StepsCount = integerTrackbarControlParam0_Steps.Value;
+			completionArrayControl.Init( m_document.m_surface.m_incomingAngle.StepsCount, m_document.m_surface.m_roughness.StepsCount, m_document.m_surface.m_albedoF0.StepsCount );
 		}
 
 		private void floatTrackbarControlParam1_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_results.m_surface.m_roughness.Min = floatTrackbarControlParam1_Min.Value;
+			m_document.m_surface.m_roughness.Min = floatTrackbarControlParam1_Min.Value;
 		}
 
 		private void floatTrackbarControlParam1_Max_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_results.m_surface.m_roughness.Max = floatTrackbarControlParam1_Max.Value;
+			m_document.m_surface.m_roughness.Max = floatTrackbarControlParam1_Max.Value;
 		}
 
 		private void integerTrackbarControlParam1_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
-			m_results.m_surface.m_roughness.StepsCount = integerTrackbarControlParam1_Steps.Value;
-			completionArrayControl.Init( m_results.m_surface.m_incomingAngle.StepsCount, m_results.m_surface.m_roughness.StepsCount, m_results.m_surface.m_albedoF0.StepsCount );
+			m_document.m_surface.m_roughness.StepsCount = integerTrackbarControlParam1_Steps.Value;
+			completionArrayControl.Init( m_document.m_surface.m_incomingAngle.StepsCount, m_document.m_surface.m_roughness.StepsCount, m_document.m_surface.m_albedoF0.StepsCount );
 		}
 
 		private void floatTrackbarControlParam2_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_results.m_surface.m_albedoF0.Min = floatTrackbarControlParam2_Min.Value;
+			m_document.m_surface.m_albedoF0.Min = floatTrackbarControlParam2_Min.Value;
 		}
 
 		private void floatTrackbarControlParam2_Max_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_results.m_surface.m_albedoF0.Max = floatTrackbarControlParam2_Max.Value;
+			m_document.m_surface.m_albedoF0.Max = floatTrackbarControlParam2_Max.Value;
 		}
 
 		private void integerTrackbarControlParam2_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
-			m_results.m_surface.m_albedoF0.StepsCount = integerTrackbarControlParam2_Steps.Value;
-			completionArrayControl.Init( m_results.m_surface.m_incomingAngle.StepsCount, m_results.m_surface.m_roughness.StepsCount, m_results.m_surface.m_albedoF0.StepsCount );
+			m_document.m_surface.m_albedoF0.StepsCount = integerTrackbarControlParam2_Steps.Value;
+			completionArrayControl.Init( m_document.m_surface.m_incomingAngle.StepsCount, m_document.m_surface.m_roughness.StepsCount, m_document.m_surface.m_albedoF0.StepsCount );
 			integerTrackbarControlViewAlbedoSlice.RangeMax = _Sender.Value - 1;
 		}
 
 		private void integerTrackbarControlScatteringOrder_Min_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
-			m_results.m_surface.ScatteringOrderMin = integerTrackbarControlScatteringOrder_Min.Value;
+			m_document.m_surface.ScatteringOrderMin = integerTrackbarControlScatteringOrder_Min.Value;
 			integerTrackbarControlViewScatteringOrder.VisibleRangeMin = _Sender.Value;
 		}
 
 		private void integerTrackbarControlScatteringOrder_Max_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
-			m_results.m_surface.ScatteringOrderMax = integerTrackbarControlScatteringOrder_Max.Value;
+			m_document.m_surface.ScatteringOrderMax = integerTrackbarControlScatteringOrder_Max.Value;
 			integerTrackbarControlViewScatteringOrder.VisibleRangeMax = _Sender.Value;
 		}
 
 		private void integerTrackbarControlRayCastingIterations_ValueChanged(Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue)
 		{
-			m_results.m_surface.m_rayTracingIterationsCount = integerTrackbarControlRayCastingIterations.Value;
+			m_document.m_surface.m_rayTracingIterationsCount = integerTrackbarControlRayCastingIterations.Value;
 
 			long	count = TestForm.HEIGHTFIELD_SIZE * TestForm.HEIGHTFIELD_SIZE;
 					count *= (long) integerTrackbarControlRayCastingIterations.Value;
@@ -1286,32 +1300,32 @@ namespace TestMSBSDF
 
 		private void checkBoxParam0_InclusiveStart_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_surface.m_incomingAngle.InclusiveMin = checkBoxParam0_InclusiveStart.Checked;
+			m_document.m_surface.m_incomingAngle.InclusiveMin = checkBoxParam0_InclusiveStart.Checked;
 		}
 
 		private void checkBoxParam0_InclusiveEnd_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_surface.m_incomingAngle.InclusiveMax = checkBoxParam0_InclusiveEnd.Checked;
+			m_document.m_surface.m_incomingAngle.InclusiveMax = checkBoxParam0_InclusiveEnd.Checked;
 		}
 
 		private void checkBoxParm1_InclusiveStart_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_surface.m_roughness.InclusiveMin = checkBoxParm1_InclusiveStart.Checked;
+			m_document.m_surface.m_roughness.InclusiveMin = checkBoxParm1_InclusiveStart.Checked;
 		}
 
 		private void checkBoxParam1_InclusiveEnd_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_surface.m_roughness.InclusiveMax = checkBoxParam1_InclusiveEnd.Checked;
+			m_document.m_surface.m_roughness.InclusiveMax = checkBoxParam1_InclusiveEnd.Checked;
 		}
 
 		private void checkBoxParm2_InclusiveStart_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_surface.m_albedoF0.InclusiveMin = checkBoxParm2_InclusiveStart.Checked;
+			m_document.m_surface.m_albedoF0.InclusiveMin = checkBoxParm2_InclusiveStart.Checked;
 		}
 
 		private void checkBoxParm2_InclusiveEnd_CheckedChanged( object sender, EventArgs e )
 		{
-			m_results.m_surface.m_albedoF0.InclusiveMax = checkBoxParm2_InclusiveEnd.Checked;
+			m_document.m_surface.m_albedoF0.InclusiveMax = checkBoxParm2_InclusiveEnd.Checked;
 		}
 
 		#endregion
@@ -1320,27 +1334,27 @@ namespace TestMSBSDF
 
 		private void integerTrackbarControlMaxIterations_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
-			m_results.m_settings.m_maxIterations = integerTrackbarControlMaxIterations.Value;
+			m_document.m_settings.m_maxIterations = integerTrackbarControlMaxIterations.Value;
 		}
 
 		private void floatTrackbarControlGoalTolerance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_results.m_settings.m_logTolerance_Minimum = floatTrackbarControlGoalTolerance.Value;
+			m_document.m_settings.m_logTolerance_Minimum = floatTrackbarControlGoalTolerance.Value;
 		}
 
 		private void floatTrackbarControlGradientTolerance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_results.m_settings.m_logTolerance_Gradient = floatTrackbarControlGradientTolerance.Value;
+			m_document.m_settings.m_logTolerance_Gradient = floatTrackbarControlGradientTolerance.Value;
 		}
 
 		private void integerTrackbarControlRetries_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
-			m_results.m_settings.m_maxRetries = integerTrackbarControlRetries.Value;
+			m_document.m_settings.m_maxRetries = integerTrackbarControlRetries.Value;
 		}
 
 		private void floatTrackbarControlFitOversize_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_results.m_settings.m_oversizeFactor = floatTrackbarControlFitOversize.Value;
+			m_document.m_settings.m_oversizeFactor = floatTrackbarControlFitOversize.Value;
 		}
 
 		#endregion
