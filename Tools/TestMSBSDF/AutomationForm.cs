@@ -22,6 +22,9 @@ namespace TestMSBSDF
 
 		class	Results {
 
+			public delegate void	SettingsChangedEventHandler();
+			public delegate void	ResultStateChangedEventHandler( Result _result );
+
 			public class	Settings {
 
 				public enum GUESS_INITIAL_DIRECTION {
@@ -92,7 +95,7 @@ namespace TestMSBSDF
 					public int		StepsCount	{
 						get { return m_stepsCount; }
 						set {
-							value = Math.Max( 0, value );
+							value = Math.Max( 1, value );
 							if ( value == m_stepsCount )
 								return;
 
@@ -136,6 +139,23 @@ namespace TestMSBSDF
 						m_rangeMax = _rangeMax;
 					}
 
+					/// <summary>
+					/// Builds the min/step values to correctly interpolate that parameter using a loop going from 0 to stepsCount-1
+					/// </summary>
+					/// <param name="_min"></param>
+					/// <param name="_step"></param>
+					public void		BuildMinStep( out float _min, out float _step ) {
+						_step = m_max - m_min;
+						if ( !m_inclusiveMin && !m_inclusiveMax ) {
+							_step /= m_stepsCount+1;						// 0 => min+step, stepsCount-1 => max-step
+						} else if ( m_inclusiveMin && m_inclusiveMax ) {
+							_step /= m_stepsCount > 1 ? m_stepsCount-1 : 1;	// 0 => min, stepsCount-1 => max
+						} else {
+							_step /= m_stepsCount;							// 0 => min, stepsCount-1 => max-step
+						}
+						_min = m_min + (m_inclusiveMin ? 0 : _step);
+					}
+
 					public void		Save( XmlElement _parent ) {
 						_parent.SetAttribute( "Min", m_min.ToString() );
 						_parent.SetAttribute( "Max", m_max.ToString() );
@@ -159,7 +179,7 @@ namespace TestMSBSDF
 				public Parameter				m_incomingAngle = new Parameter( 0, 0.5f * (float) Math.PI );
 				public Parameter				m_surfaceRoughness = new Parameter( 0, 1.0f );
 				public Parameter				m_albedoF0 = new Parameter( 0, 1.0f );
-				public Parameter				m_scatteringOrders = new Parameter( 1, 4 );
+				private Parameter				m_scatteringOrders = new Parameter( 1, 4 );
 
 				// Fitter parameters
 				public int						m_maxIterations = 200;
@@ -183,6 +203,21 @@ namespace TestMSBSDF
 				public GUESS_INITIAL_MASKING	m_initialMasking = GUESS_INITIAL_MASKING.CUSTOM;
 				public bool						m_inheritMasking = true;
 				public float					m_customMasking = 1.0f;
+
+
+				public int			ScatteringOrderMin {
+					get { return (int) m_scatteringOrders.Min; }
+					set { m_scatteringOrders.Min = value; }
+				}
+
+				public int			ScatteringOrderMax {
+					get { return (int) m_scatteringOrders.Max; }
+					set { m_scatteringOrders.Max = value; }
+				}
+
+				public int			ScatteringOrdersCount {
+					get { return 1 + ScatteringOrderMax - ScatteringOrderMin; }
+				}
 
 				public	Settings() {
 				}
@@ -209,11 +244,11 @@ namespace TestMSBSDF
 					XmlElement	ElemFitterParms = AppendChild( _parent, "Fitter" );
 					_parent.AppendChild( ElemFitterParms );
 
-					Attrib( ElemFitterParms, "Max Iterations", m_maxIterations );
-					Attrib( ElemFitterParms, "logTolerance Minimum", m_logTolerance_Minimum );
-					Attrib( ElemFitterParms, "logTolerance Gradient", m_logTolerance_Gradient );
-					Attrib( ElemFitterParms, "Max Retries", m_maxRetries );
-					Attrib( ElemFitterParms, "Oversize Factor", m_oversizeFactor );
+					Attrib( ElemFitterParms, "MaxIterations", m_maxIterations );
+					Attrib( ElemFitterParms, "logToleranceMinimum", m_logTolerance_Minimum );
+					Attrib( ElemFitterParms, "logToleranceGradient", m_logTolerance_Gradient );
+					Attrib( ElemFitterParms, "MaxRetries", m_maxRetries );
+					Attrib( ElemFitterParms, "OversizeFactor", m_oversizeFactor );
 
 					// Lobe parameters
 					XmlElement	ElemLobeParms = AppendChild( _parent, "Lobe" );
@@ -242,13 +277,82 @@ namespace TestMSBSDF
 
 			public class	Result {
 
+				public class	LobeResults {
+					public double	m_theta;
+					public double	m_roughness;
+					public double	m_scale;
+					public double	m_flatten;
+					public double	m_masking;
+
+					public void		Save( XmlElement _parent ) {
+						Attrib( _parent, "theta", m_theta );
+						Attrib( _parent, "roughness", m_roughness );
+						Attrib( _parent, "scale", m_scale );
+						Attrib( _parent, "flatten", m_flatten );
+						Attrib( _parent, "masking", m_masking );
+					}
+
+					public void		Load( XmlElement _parent ) {
+
+					}
+				}
+
+				Results			m_owner = null;
+				int				m_X;
+				int				m_Y;
+				int				m_Z;
+				float			m_state = 0.0f;
+				public string	m_error = null;
+
 				// Input parameters
 				public double	m_incomingAngleTheta;
 				public double	m_incomingAnglePhi;
+				public double	m_surfaceRoughness;
+				public double	m_surfaceAlbedoF0;
 
+				// Fitted parameters
+				LobeResults		m_reflected = new LobeResults();
+				LobeResults		m_refracted = new LobeResults();
+
+				public int		X	{ get { return m_X; } }
+				public int		Y	{ get { return m_Y; } }
+				public int		Z	{ get { return m_Z; } }
+
+				public float	State {
+					get { return m_state; }
+					set {
+						if ( value == m_state )
+							return;
+
+						m_state = value;
+						m_owner.ResultStateChanged( this );
+					}
+				}
+
+				public Result( Results _owner, int _X, int _Y, int _Z ) {
+					m_owner = _owner;
+					m_X = _X;
+					m_Y = _Y;
+					m_Z = _Z;
+				}
 
 				public void		Save( XmlElement _parent ) {
+					Attrib( _parent, "Index", "(" + m_X + "," + m_Y + ", " + m_Z + ")" );
+					Attrib( _parent, "State", m_state );
+					Attrib( _parent, "Error", m_error != null ? m_error : "" );
 
+					// Store surface parameters
+					Attrib( _parent, "incomingTheta", m_incomingAngleTheta );
+					Attrib( _parent, "incomingPhi", m_incomingAnglePhi );
+					Attrib( _parent, "surfaceRoughness", m_surfaceRoughness );
+					Attrib( _parent, "albedoF0", m_surfaceAlbedoF0 );
+
+					XmlElement	ElemReflected = AppendChild( _parent, "LobeReflected" );
+					m_reflected.Save( ElemReflected );
+					if ( m_owner.m_settings.m_surfaceType == TestForm.SURFACE_TYPE.DIELECTRIC ) {
+						XmlElement	ElemRefracted = AppendChild( _parent, "LobeRefracted" );
+						m_reflected.Save( ElemReflected );
+					}
 				}
 
 				public void		Load( XmlElement _parent ) {
@@ -258,42 +362,105 @@ namespace TestMSBSDF
 			}
 
 			public Settings		m_settings = new Settings();
+			public Result[][,,]	m_results = new Result[0][,,];
 
-			public Result[,,]	m_results = new Result[0,0,0];
+			public event ResultStateChangedEventHandler	ResultStateChanged;
 
 			public Results() {
 
+			}
+
+			/// <summary>
+			/// Initializes the array of results of the correct dimensions using the current settings
+			/// </summary>
+			public void		InitializeResults() {
+
+				int	orders = m_settings.ScatteringOrdersCount;
+				int	dimX = m_settings.m_incomingAngle.StepsCount;
+				int	dimY = m_settings.m_surfaceRoughness.StepsCount;
+				int	dimZ = m_settings.m_albedoF0.StepsCount;
+
+				double	incomingAnglePhi = 0.0;	//@TODO?? We don't care about anisotropy anyway...
+
+				m_results = new Result[orders][,,];
+				for ( int order=0; order < orders; order++ ) {
+
+					m_results[order] = new Result[dimX,dimY,dimZ];
+
+					float	incomingAngleMin, incomingAngleStep;
+					m_settings.m_incomingAngle.BuildMinStep( out incomingAngleMin, out incomingAngleStep );
+					float	roughnessMin, roughnessStep;
+					m_settings.m_incomingAngle.BuildMinStep( out roughnessMin, out roughnessStep );
+					float	albedoF0Min, albedoF0Step;
+					m_settings.m_albedoF0.BuildMinStep( out albedoF0Min, out albedoF0Step );
+
+					float	albedoF0 = albedoF0Min;
+					for ( int Z=0; Z < dimZ; Z++, albedoF0+=albedoF0Step ) {
+						float	roughness = roughnessMin;
+						for ( int Y=0; Y < dimY; Y++, roughness+=roughnessStep ) {
+							float	incomingAngle = incomingAngleMin;
+							for ( int X=0; X < dimX; X++, incomingAngle+=incomingAngleStep ) {
+								Result	R = new Result( this, X, Y, Z );
+								m_results[order][X,Y,Z] = R;
+
+								R.State = 0.0f;			// Not computed yet!
+								R.m_error = null;		// No error yet...
+
+								R.m_incomingAngleTheta = incomingAngle;
+								R.m_incomingAnglePhi = incomingAnglePhi;
+								R.m_surfaceRoughness = roughness;
+								R.m_surfaceAlbedoF0 = albedoF0;
+							}
+						}
+					}
+				}
 			}
 
 			public void		Save( XmlDocument _doc ) {
 
 				XmlElement	Root = _doc.CreateElement( "Root" );
 
-				XmlElement	ElmSettings = _doc.CreateElement( "Settings" );
-				Root.AppendChild( ElmSettings );
+				XmlElement	ElmSettings = AppendChild( Root, "Settings" );
 				m_settings.Save( ElmSettings );
 
-				XmlElement	ElmResults = _doc.CreateElement( "Results" );
-				Root.AppendChild( ElmResults );
+				// Save results in an array
+				XmlElement	ElmResults = AppendChild( Root, "Results" );
 
-				int	W = m_results.GetLength(0);
-				int	H = m_results.GetLength(1);
-				int	D = m_results.GetLength(2);
-				ElmResults.SetAttribute( "SizeX", W.ToString() );
-				ElmResults.SetAttribute( "SizeY", H.ToString() );
-				ElmResults.SetAttribute( "SizeZ", D.ToString() );
-				for ( int Z=0; Z < D; Z++ )
-					for ( int Y=0; Y < H; Y++ )
-						for ( int X=0; X < W; X++ ) {
-							XmlElement	ElmResult = _doc.CreateElement( "Result" );
-							ElmResults.AppendChild( ElmResult );
-							m_results[X,Y,Z].Save( ElmResult );
-						}
+				int	orders = m_results.Length;
+				Attrib( ElmResults, "OrdersCount", orders );
+
+				for ( int order=0; order < orders; order++ ) {
+					XmlElement	ElmOrderResults = AppendChild( ElmResults, "Order" );
+					Attrib( ElmOrderResults, "Index", order );
+
+					Result[,,]	orderResults = m_results[order];
+
+					int	W = orderResults.GetLength(0);
+					int	H = orderResults.GetLength(1);
+					int	D = orderResults.GetLength(2);
+					Attrib( ElmResults, "SizeX", W );
+					Attrib( ElmResults, "SizeY", H );
+					Attrib( ElmResults, "SizeZ", D );
+					for ( int Z=0; Z < D; Z++ )
+						for ( int Y=0; Y < H; Y++ )
+							for ( int X=0; X < W; X++ ) {
+								XmlElement	ElmResult = AppendChild( ElmOrderResults, "Result" );
+								orderResults[X,Y,Z].Save( ElmResult );
+							}
+				}
 			}
 
 			public void		Load( XmlDocument _doc ) {
 
 			}
+
+// 			/// <summary>
+// 			/// Called by our results to notify of a state change
+// 			/// </summary>
+// 			/// <param name="_result"></param>
+// 			void	NotifyResultStateChanged( Result _result ) {
+// 
+// 			}
 
 			#region XML Helpers
 
@@ -330,10 +497,6 @@ namespace TestMSBSDF
 
 		Results			m_results = new Results();
 
-// 		result structure
-// 			=> reflected + refracted!
-
-
 		public new TestForm		Owner {
 			get { return m_owner; }
 			set { m_owner = value; }
@@ -359,7 +522,7 @@ namespace TestMSBSDF
 		}
 
 		void	Simulate() {
-			m_owner.RayTraceSurface( )
+			m_owner.RayTraceSurface( );
 		}
 
 		void	PerformLobeFitting( float3 _incomingDirection, float _theta, bool _computeInitialThetaUsingCenterOfMass, float _roughness, float _scale, float _flatteningFactor, float _MaskingImportance, float _OversizeFactor, int _scatteringOrder, bool _reflected ) {

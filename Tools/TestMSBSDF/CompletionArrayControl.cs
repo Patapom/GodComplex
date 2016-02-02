@@ -325,8 +325,7 @@ namespace TestMSBSDF
 			// Paint the rectangles
 			float	margin = 2.0f;
 
-//			using ( GraphicsPath P = GetRoundedRect( new RectangleF( 0, 0, rectangleWidth - 2*margin-1, rectangleHeight - 2*margin-1 ), 2.0f ) )
-			{
+			using ( GraphicsPath P = GetRoundedRect( new RectangleF( 0, 0, rectangleWidth - 2*margin-1, rectangleHeight - 2*margin-1 ), 2.0f ) ) {
 				for ( int X=0; X < m_dimensionX; X++ ) {
 					float	x0 = X * rectangleWidth;
 					float	x1 = (X+1) * rectangleWidth;
@@ -337,9 +336,8 @@ namespace TestMSBSDF
 						float	state = m_states[X,Y,m_currentLayerIndex];
 						if ( state < 0.0f )
 							FillRectangle( e.Graphics, m_brushFailed, x0+margin, y0+margin, x1-margin, y1-margin );
-						} else {
+						else
 							FillRectangle( e.Graphics, m_brushSuccess, x0+margin, y0+margin, x0+state*(rectangleWidth-2*margin), y1-margin );
-						}
 					}
 				}
 
@@ -350,7 +348,7 @@ namespace TestMSBSDF
 				e.Graphics.TranslateTransform( selectionX, selectionY );
 				e.Graphics.ScaleTransform( (rectangleWidth+2*margin)/rectangleWidth, (rectangleHeight+2*margin)/rectangleHeight );
 				e.Graphics.DrawPath( m_penSelection, P );
-//			}
+			}
 		}
 
 		void	FillRectangle( Graphics _g, Brush _brush, float x0, float y0, float x1, float y1 ) {
