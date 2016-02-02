@@ -1320,6 +1320,7 @@
 			this.floatTrackbarControlFitOversize.Value = 1.02F;
 			this.floatTrackbarControlFitOversize.VisibleRangeMax = 1.1F;
 			this.floatTrackbarControlFitOversize.VisibleRangeMin = 1F;
+			this.floatTrackbarControlFitOversize.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlFitOversize_ValueChanged);
 			// 
 			// label26
 			// 
@@ -1360,6 +1361,7 @@
 			this.integerTrackbarControlRetries.TabIndex = 3;
 			this.integerTrackbarControlRetries.Value = 2;
 			this.integerTrackbarControlRetries.VisibleRangeMax = 4;
+			this.integerTrackbarControlRetries.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRetries_ValueChanged);
 			// 
 			// label24
 			// 
@@ -1398,6 +1400,7 @@
 			this.integerTrackbarControlMaxIterations.TabIndex = 3;
 			this.integerTrackbarControlMaxIterations.Value = 200;
 			this.integerTrackbarControlMaxIterations.VisibleRangeMax = 200;
+			this.integerTrackbarControlMaxIterations.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlMaxIterations_ValueChanged);
 			// 
 			// floatTrackbarControlGradientTolerance
 			// 
@@ -1412,6 +1415,7 @@
 			this.floatTrackbarControlGradientTolerance.Value = -6F;
 			this.floatTrackbarControlGradientTolerance.VisibleRangeMax = 0F;
 			this.floatTrackbarControlGradientTolerance.VisibleRangeMin = -8F;
+			this.floatTrackbarControlGradientTolerance.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGradientTolerance_ValueChanged);
 			// 
 			// floatTrackbarControlGoalTolerance
 			// 
@@ -1426,6 +1430,7 @@
 			this.floatTrackbarControlGoalTolerance.Value = -6F;
 			this.floatTrackbarControlGoalTolerance.VisibleRangeMax = 0F;
 			this.floatTrackbarControlGoalTolerance.VisibleRangeMin = -8F;
+			this.floatTrackbarControlGoalTolerance.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGoalTolerance_ValueChanged);
 			// 
 			// menuStrip1
 			// 

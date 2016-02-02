@@ -827,6 +827,9 @@ namespace TestMSBSDF
 			m_results.m_surface.m_roughness.ValueChanged += m_simulationParameter_ValueChanged;
 			m_results.m_surface.m_albedoF0.ValueChanged += m_simulationParameter_ValueChanged;
 
+			// Mirror
+			Document2UI();
+
 			m_internalDocumentChange = false;
 		}
 
@@ -856,6 +859,7 @@ namespace TestMSBSDF
 		void	Document2UI() {
 
 			DocumentSurface2UI();
+			DocumentLobeSettings2UI();
 			DocumentSettings2UI();
 		}
 
@@ -937,6 +941,16 @@ namespace TestMSBSDF
 			floatTrackbarControlInit_Flatten.Value = m_results.m_settings.m_customFlatten;
 			floatTrackbarControlInit_CustomRoughness.Value = m_results.m_settings.m_customRoughness;
 			floatTrackbarControlInit_MaskingImportance.Value = m_results.m_settings.m_customMasking;
+		}
+
+		/// <summary>
+		/// Mirrors the document's lobe settings to the UI
+		/// </summary>
+		void	DocumentLobeSettings2UI() {
+			integerTrackbarControlMaxIterations.Value = m_results.m_settings.m_maxIterations;
+			floatTrackbarControlGoalTolerance.Value = m_results.m_settings.m_logTolerance_Minimum;
+			floatTrackbarControlGradientTolerance.Value = m_results.m_settings.m_logTolerance_Gradient;
+			integerTrackbarControlRetries.Value = m_results.m_settings.m_maxRetries;
 		}
 
 		void m_surface_ScatteringOrdersCountChanged()
@@ -1298,6 +1312,35 @@ namespace TestMSBSDF
 		private void checkBoxParm2_InclusiveEnd_CheckedChanged( object sender, EventArgs e )
 		{
 			m_results.m_surface.m_albedoF0.InclusiveMax = checkBoxParm2_InclusiveEnd.Checked;
+		}
+
+		#endregion
+
+		#region Lobe Fitter
+
+		private void integerTrackbarControlMaxIterations_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			m_results.m_settings.m_maxIterations = integerTrackbarControlMaxIterations.Value;
+		}
+
+		private void floatTrackbarControlGoalTolerance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_results.m_settings.m_logTolerance_Minimum = floatTrackbarControlGoalTolerance.Value;
+		}
+
+		private void floatTrackbarControlGradientTolerance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_results.m_settings.m_logTolerance_Gradient = floatTrackbarControlGradientTolerance.Value;
+		}
+
+		private void integerTrackbarControlRetries_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			m_results.m_settings.m_maxRetries = integerTrackbarControlRetries.Value;
+		}
+
+		private void floatTrackbarControlFitOversize_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_results.m_settings.m_oversizeFactor = floatTrackbarControlFitOversize.Value;
 		}
 
 		#endregion
