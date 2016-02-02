@@ -27,10 +27,11 @@ namespace TestMSBSDF
 		LOBE_TYPE	m_lobeType;
 		float3		m_direction;
 		float3		m_centerOfMass;
+		bool		m_fitUsingCenterOfMass;
 //		double		m_IOR;
 		double		m_incomingDirection_CosPhi;
 		double		m_incomingDirection_SinPhi;
-		double		m_toleranceFactor;
+		double		m_oversizeFactor;
 
 		// The data we want to fit against
 		int			W, H;
@@ -116,6 +117,18 @@ namespace TestMSBSDF
 			m_centerOfMass /= W*H;
 		}
 
+		/// <summary>
+		/// Initialize the lobe model parameters
+		/// </summary>
+		/// <param name="_lobeType">Type of lobe to fit</param>
+		/// <param name="_incomingDirection">Incoming light direction, pointing TOWARD the surface (Z-up)</param>
+		/// <param name="_theta">Initial lobe theta angle</param>
+		/// <param name="_roughness">Initial lobe roughness</param>
+		/// <param name="_scale">Initial lobe scale</param>
+		/// <param name="_flatteningFactor">Initial lobe flattening</param>
+		/// <param name="_MaskingImportance">Initial lobe masking/shadowing importance</param>
+		/// <param name="_oversizeFactor">Simulation oversize factor. A value of 1 makes the lobe fit exactly, a value higher than one will make the fit lobe smaller than the simulated data, a value lower than one will make the lob larger than the simulated data</param>
+		/// <param name="_fitUsingCenterOfMass">If true, the fitting distance is measured against a sphere centered on the Center of Mass rather than the (0,0,0) origin. Precision is usually better when using this option.</param>
 		public void		InitLobeData(	LOBE_TYPE _lobeType,
 										float3 _incomingDirection,
 										double _theta,
@@ -123,12 +136,15 @@ namespace TestMSBSDF
 //										double _IOR,
 										double _scale,
 										double _flatteningFactor,
-										double _MaskingImportance,
-										double _oversizeFactor ) {
+										double _maskingImportance,
+										double _oversizeFactor,
+										bool _fitUsingCenterOfMass ) {
 
 
 			// =========================================================================
 			// 4] Setup initial parameters
+			m_lobeType = _lobeType;
+
 			m_direction = _incomingDirection;
 			m_direction.z = -m_direction.z;	// Mirror against surface to obtain reflected direction against which we'll compute masking/shadowing of incoming ray
 
@@ -138,10 +154,10 @@ namespace TestMSBSDF
 			m_incomingDirection_CosPhi = Math.Cos( incomingPhi );
 			m_incomingDirection_SinPhi = Math.Sin( incomingPhi );
 
-			m_toleranceFactor = _oversizeFactor;
-			m_lobeType = _lobeType;
+			m_oversizeFactor = _oversizeFactor;
+			m_fitUsingCenterOfMass = _fitUsingCenterOfMass;
 
-			Parameters = new double[] { _theta, _roughness, _scale, _flatteningFactor, _MaskingImportance };
+			Parameters = new double[] { _theta, _roughness, _scale, _flatteningFactor, _maskingImportance };
 		}
 
 		#region Model Implementation
@@ -159,10 +175,10 @@ namespace TestMSBSDF
 			double	lobeTheta = _newParameters[0];
 			double	lobeRoughness = _newParameters[1];
 			double	lobeGlobalScale = _newParameters[2];
-			double	lobeScaleN = _newParameters[3];
+			double	lobeFlatten = _newParameters[3];
 			double	maskingImportance = _newParameters[4];
 
-			double	invLobeScaleN = 1.0 / lobeScaleN;
+			double	invLobeFlatten = 1.0 / lobeFlatten;
 
 			// Compute constant masking term due to incoming direction
  			double	maskingIncoming = Masking( m_direction.z, lobeRoughness );		// Masking( incoming )
@@ -172,10 +188,10 @@ namespace TestMSBSDF
 			double	sinTheta = Math.Sin( lobeTheta );
 
 			float3	lobe_normal = new float3( (float) (sinTheta * m_incomingDirection_CosPhi), (float) (sinTheta * m_incomingDirection_SinPhi), (float) cosTheta );
-// 				if ( !m_fittingReflectedLobe ) {
-// 					lobe_normal = Refract( lobe_normal, float3.UnitZ, (float) m_IOR );
-// 					lobe_normal.z = -lobe_normal.z;
-// 				}
+// 			if ( !m_fittingReflectedLobe ) {
+// 				lobe_normal = Refract( lobe_normal, float3.UnitZ, (float) m_IOR );
+// 				lobe_normal.z = -lobe_normal.z;
+// 			}
 
 			float3	lobe_tangent = new float3( (float) -m_incomingDirection_SinPhi, (float) m_incomingDirection_CosPhi, 0.0f );	// Always lying in the X^Y plane
 			float3	lobe_biTangent = lobe_normal.Cross( lobe_tangent );
@@ -233,8 +249,8 @@ namespace TestMSBSDF
 
 					lobeIntensity *= lobeGlobalScale;
 
-					// Apply additional lobe scaling along the normal
-					// This scale computed like this:
+					// Apply additional lobe scaling/flattening along the normal
+					// This scale is computed like this:
 					//
 					// We know that in the shader, local lobe coordinates are transformed into world space by doing:
 					//	wsDirection_Scaled = float3( lsDirection.x, lsDirection.y, Scale * lsDirection.z );
@@ -259,16 +275,15 @@ namespace TestMSBSDF
 					// So finally:
 					//	L = 1 / sqrt( 1 + wsDirection.z*wsDirection.x * (1 / (Scale*Scale) - 1) )
 					//
-					length = 1.0 / Math.Sqrt( 1.0 + Vz*Vz * (invLobeScaleN*invLobeScaleN - 1.0) );
+					length = 1.0 / Math.Sqrt( 1.0 + Vz*Vz * (invLobeFlatten*invLobeFlatten - 1.0) );
 
 					outgoingIntensity_Analytical = lobeIntensity * length;	// Lobe intensity was estimated in lobe space, account for scaling when converting back in world space
 
 					// Sum the difference between simulated intensity and lobe intensity
-					outgoingIntensity_Analytical *= m_toleranceFactor;	// Apply tolerance factor so we're always a bit smaller than the simulated lobe
+					outgoingIntensity_Analytical *= m_oversizeFactor;	// Apply tolerance factor so we're always a bit smaller than the simulated lobe
 
 
-//						#if true	// Use center of mass?
-					if ( m_owner.checkBoxTest.Checked ) {
+					if ( m_fitUsingCenterOfMass ) {
 						double	difference0 = outgoingIntensity_Simulated - outgoingIntensity_Analytical;
 
 						float3	wsLobePosition_Simulated = (float) outgoingIntensity_Simulated * wsOutgoingDirection;
@@ -284,15 +299,14 @@ namespace TestMSBSDF
 
 						difference = 0.5 * difference0 + 0.5 * difference1;
 
-//							difference *= (wsLobePosition_Simulated - wsLobePosition_Analytical).Length;
-//							difference += (wsLobePosition_Simulated - wsLobePosition_Analytical).Length;	// We also add the distance between lobe positions so it goes to the best of the 2 minima!
+//						difference *= (wsLobePosition_Simulated - wsLobePosition_Analytical).Length;
+//						difference += (wsLobePosition_Simulated - wsLobePosition_Analytical).Length;	// We also add the distance between lobe positions so it goes to the best of the 2 minima!
 
 					} else {
 						difference = outgoingIntensity_Simulated - outgoingIntensity_Analytical;
-//							difference = outgoingIntensity_Simulated / Math.Max( 1e-6, outgoingIntensity_Analytical ) - 1.0;
-//							difference = outgoingIntensity_Analytical / Math.Max( 1e-6, outgoingIntensity_Simulated ) - 1.0;
+//						difference = outgoingIntensity_Simulated / Math.Max( 1e-6, outgoingIntensity_Analytical ) - 1.0;
+//						difference = outgoingIntensity_Analytical / Math.Max( 1e-6, outgoingIntensity_Simulated ) - 1.0;
 					}
-//						#endif
 
 
 					sum += difference * difference;

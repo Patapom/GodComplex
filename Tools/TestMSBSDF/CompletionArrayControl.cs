@@ -19,10 +19,6 @@ namespace TestMSBSDF
 
 		#region NESTED TYPES
 
-		public enum	STATE {
-
-		}
-
  		public delegate void	SelectionChangedEventHandler( CompletionArrayControl _Sender );
 
 		#endregion
@@ -32,7 +28,7 @@ namespace TestMSBSDF
 		protected int				m_dimensionX = 10;
 		protected int				m_dimensionY = 4;
 		protected int				m_dimensionZ = 1;
-		protected int[,,]			m_states = null;
+		protected float[,,]			m_states = null;
 
 		protected int				m_currentLayerIndex = 0;
 
@@ -98,7 +94,7 @@ namespace TestMSBSDF
 			}
 		}
 
-		public int				SelectedState {
+		public float			SelectedState {
 			get { return m_states[m_selectedX, m_selectedY, m_selectedZ]; }
 			set {
 				m_states[m_selectedX, m_selectedY, m_selectedZ] = value;
@@ -210,10 +206,33 @@ namespace TestMSBSDF
 			m_dimensionX = _dimensionX;
 			m_dimensionY = _dimensionY;
 			m_dimensionZ = _dimensionZ;
-			m_states = new int[m_dimensionX,m_dimensionY,m_dimensionZ];
+			m_states = new float[m_dimensionX,m_dimensionY,m_dimensionZ];
 
 			m_currentLayerIndex = Math.Max( 0, Math.Min( m_dimensionZ-1, m_currentLayerIndex ) );
 
+			Invalidate();
+		}
+
+		/// <summary>
+		/// Gets a state
+		/// </summary>
+		/// <param name="_X"></param>
+		/// <param name="_Y"></param>
+		/// <param name="_Z"></param>
+		/// <returns></returns>
+		public float			GetState( int _X, int _Y, int _Z ) {
+			return m_states[_X, _Y, _Z];
+		}
+
+		/// <summary>
+		/// Sets a state
+		/// </summary>
+		/// <param name="_X"></param>
+		/// <param name="_Y"></param>
+		/// <param name="_Z"></param>
+		/// <param name="_state"></param>
+		public void				SetState( int _X, int _Y, int _Z, float _state ) {
+			m_states[_X, _Y, _Z] = _state;
 			Invalidate();
 		}
 
@@ -239,6 +258,17 @@ namespace TestMSBSDF
 				SelectionChanged( this );
 
 			Invalidate();
+		}
+
+		public bool				IsPointValid( Point _clientPos ) {
+			int	X = _clientPos.X * m_dimensionX / Width;
+			if ( X < 0 || X >= m_dimensionX )
+				return false;
+			int	Y = _clientPos.Y * Math.Max( 8, m_dimensionY ) / Height;
+			if ( Y < 0 || Y >= m_dimensionY )
+				return false;
+
+			return true;
 		}
 
 		#region Control Members
@@ -295,7 +325,8 @@ namespace TestMSBSDF
 			// Paint the rectangles
 			float	margin = 2.0f;
 
-			using ( GraphicsPath P = GetRoundedRect( new RectangleF( 0, 0, rectangleWidth - 2*margin-1, rectangleHeight - 2*margin-1 ), 2.0f ) ) {
+//			using ( GraphicsPath P = GetRoundedRect( new RectangleF( 0, 0, rectangleWidth - 2*margin-1, rectangleHeight - 2*margin-1 ), 2.0f ) )
+			{
 				for ( int X=0; X < m_dimensionX; X++ ) {
 					float	x0 = X * rectangleWidth;
 					float	x1 = (X+1) * rectangleWidth;
@@ -303,14 +334,11 @@ namespace TestMSBSDF
 						float	y0 = Y * rectangleHeight;
 						float	y1 = (Y+1) * rectangleHeight;
 
-						int	state = m_states[X,Y,m_currentLayerIndex];
-						switch ( state ) {
-							case 1:	// Done
-								FillRectangle( e.Graphics, P, m_brushSuccess, x0+margin, y0+margin );
-								break;
-							case 2:	// Failed
-								FillRectangle( e.Graphics, P, m_brushFailed, x0+margin, y0+margin );
-								break;
+						float	state = m_states[X,Y,m_currentLayerIndex];
+						if ( state < 0.0f )
+							FillRectangle( e.Graphics, m_brushFailed, x0+margin, y0+margin, x1-margin, y1-margin );
+						} else {
+							FillRectangle( e.Graphics, m_brushSuccess, x0+margin, y0+margin, x0+state*(rectangleWidth-2*margin), y1-margin );
 						}
 					}
 				}
@@ -322,13 +350,14 @@ namespace TestMSBSDF
 				e.Graphics.TranslateTransform( selectionX, selectionY );
 				e.Graphics.ScaleTransform( (rectangleWidth+2*margin)/rectangleWidth, (rectangleHeight+2*margin)/rectangleHeight );
 				e.Graphics.DrawPath( m_penSelection, P );
-			}
+//			}
 		}
 
-		void	FillRectangle( Graphics _g, GraphicsPath _path, Brush _brush, float x0, float y0 ) {
-			_g.ResetTransform();
-			_g.TranslateTransform( x0, y0 );
-			_g.FillPath( _brush, _path );
+		void	FillRectangle( Graphics _g, Brush _brush, float x0, float y0, float x1, float y1 ) {
+// 			_g.ResetTransform();
+// 			_g.TranslateTransform( x0, y0 );
+// 			_g.FillPath( _brush, _path );
+			_g.FillRectangle( _brush, x0, y0, 1+x1-x0, 1+y1-y0 );
 		}
 
 		#region Rounded Rectangle Path Creation

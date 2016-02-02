@@ -17,10 +17,10 @@ namespace TestMSBSDF
 	{
 		#region CONSTANTS
 
-		const int				HEIGHTFIELD_SIZE = 512;						//  (must match HLSL declaration)
-		const int				MAX_SCATTERING_ORDER = 4;
-		const int				LOBES_COUNT_THETA = 128;					// (must match HLSL declaration)
-		const int				LOBES_COUNT_PHI = 2 * LOBES_COUNT_THETA;
+		public const int				HEIGHTFIELD_SIZE = 512;						//  (must match HLSL declaration)
+		public const int				MAX_SCATTERING_ORDER = 4;
+		public const int				LOBES_COUNT_THETA = 128;					// (must match HLSL declaration)
+		public const int				LOBES_COUNT_PHI = 2 * LOBES_COUNT_THETA;
 
 		static readonly double	SQRT2 = Math.Sqrt( 2.0 );
 
@@ -766,6 +766,32 @@ namespace TestMSBSDF
 
 		#endregion
 
+		public void	UpdateLobeParameters( double[] _parameters, bool _isReflectedLobe ) {
+
+			checkBoxShowAnalyticalLobe.Checked = true;
+
+			// Update track bar parameters
+			if ( _isReflectedLobe ) {
+				floatTrackbarControlAnalyticalLobeTheta.Value = (float) (180.0 * _parameters[0] / Math.PI);
+				floatTrackbarControlAnalyticalLobeRoughness.Value = (float) _parameters[1];
+				floatTrackbarControlLobeScaleT.Value = (float) _parameters[2];
+				floatTrackbarControlLobeScaleR.Value = (float) _parameters[3];
+//						floatTrackbarControlLobeScaleB.Value = (float) m_parameters[4];
+				floatTrackbarControlLobeMaskingImportance.Value = (float) _parameters[4];
+			} else {
+				floatTrackbarControlAnalyticalLobeTheta_T.Value = (float) (180.0 * _parameters[0] / Math.PI);
+				floatTrackbarControlAnalyticalLobeRoughness_T.Value = (float) _parameters[1];
+				floatTrackbarControlLobeScaleT_T.Value = (float) _parameters[2];
+				floatTrackbarControlLobeScaleR_T.Value = (float) _parameters[3];
+//						floatTrackbarControlLobeScaleB_T.Value = (float) m_parameters[4];
+				floatTrackbarControlLobeMaskingImportance_T.Value = (float) _parameters[4];
+			}
+
+			// Repaint
+			UpdateApplication();
+
+		}
+
 		public void	UpdateApplication() {
 			panelOutput.Refresh();
 			Application_Idle( null, EventArgs.Empty );
@@ -1002,13 +1028,11 @@ namespace TestMSBSDF
 			panelOutput.Invalidate();
 		}
 
-		private void buttonReload_Click( object sender, EventArgs e )
-		{
+		private void buttonReload_Click( object sender, EventArgs e ) {
 			m_Device.ReloadModifiedShaders();
 		}
 
-		private void floatTrackbarControlBeckmannRoughness_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
-		{
+		private void floatTrackbarControlBeckmannRoughness_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue ) {
 			try {
 				m_pauseRendering = true;
 				BuildBeckmannSurfaceTexture( floatTrackbarControlBeckmannRoughness.Value );
@@ -1022,8 +1046,7 @@ namespace TestMSBSDF
 			panelDielectric.Enabled = radioButtonDielectric.Checked;
 		}
 
-		private void buttonRayTrace_Click( object sender, EventArgs e )
-		{
+		private void buttonRayTrace_Click( object sender, EventArgs e ) {
 			try {
 				m_pauseRendering = true;
 
@@ -1060,26 +1083,7 @@ namespace TestMSBSDF
 			if ( m_lobeModel == null ) {
 				m_lobeModel = new LobeModel();
 				m_lobeModel.ParametersChanged += ( double[] _parameters ) => {
-
-					// Update track bar parameters
-					if ( _reflected ) {
-						floatTrackbarControlAnalyticalLobeTheta.Value = (float) (180.0 * _parameters[0] / Math.PI);
-						floatTrackbarControlAnalyticalLobeRoughness.Value = (float) _parameters[1];
-						floatTrackbarControlLobeScaleT.Value = (float) _parameters[2];
-						floatTrackbarControlLobeScaleR.Value = (float) _parameters[3];
-//						floatTrackbarControlLobeScaleB.Value = (float) m_parameters[4];
-						floatTrackbarControlLobeMaskingImportance.Value = (float) _parameters[4];
-					} else {
-						floatTrackbarControlAnalyticalLobeTheta_T.Value = (float) (180.0 * _parameters[0] / Math.PI);
-						floatTrackbarControlAnalyticalLobeRoughness_T.Value = (float) _parameters[1];
-						floatTrackbarControlLobeScaleT_T.Value = (float) _parameters[2];
-						floatTrackbarControlLobeScaleR_T.Value = (float) _parameters[3];
-//						floatTrackbarControlLobeScaleB_T.Value = (float) m_parameters[4];
-						floatTrackbarControlLobeMaskingImportance_T.Value = (float) _parameters[4];
-					}
-
-					// Repaint
-					UpdateApplication();
+					UpdateLobeParameters( _parameters, _reflected );
 				};
 			}
 
@@ -1097,7 +1101,7 @@ namespace TestMSBSDF
 
 			LobeModel.LOBE_TYPE	lobeType = radioButtonAnalyticalPhong.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG : (radioButtonAnalyticalBeckmann.Checked ? LobeModel.LOBE_TYPE.BECKMANN : LobeModel.LOBE_TYPE.GGX);
 
-			m_lobeModel.InitLobeData( lobeType, _incomingDirection, _theta, _roughness, _scale, _flatteningFactor, _MaskingImportance, _OversizeFactor );
+			m_lobeModel.InitLobeData( lobeType, _incomingDirection, _theta, _roughness, _scale, _flatteningFactor, _MaskingImportance, _OversizeFactor, checkBoxTest.Checked );
 
 // 			if ( !checkBoxTest.Checked ) {
 // 				m_Fitter.SuccessTolerance = 1e-4;
@@ -1110,16 +1114,10 @@ namespace TestMSBSDF
 			panelOutput.Invalidate();
 		}
 
-		void m_lobeModel_ParametersChanged()
-		{
-			throw new NotImplementedException();
-		}
-
 		#endregion
 
 		bool		m_fitting = false;
-		private void buttonFit_Click( object sender, EventArgs e )
-		{
+		private void buttonFit_Click( object sender, EventArgs e ) {
 			if ( m_fitting )
 				throw new Exception( "Canceled!" );
 
