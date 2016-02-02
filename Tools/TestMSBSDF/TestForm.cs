@@ -1046,387 +1046,10 @@ namespace TestMSBSDF
 
 		#region Lobe Fitting
 
-		class	LobeModel : WMath.BFGS.Model {
-
-			TestForm	m_owner = null;
-			float3		m_direction;
-			float3		m_centerOfMass;
-			double		m_IOR;
-//			double		m_maskingImportance;
-			double		m_incomingDirection_CosPhi;
-			double		m_incomingDirection_SinPhi;
-			double		m_toleranceFactor;
-			bool		m_fittingReflectedLobe;
-			int			m_lobeType;
-			double[,]	m_histogramData;
-
-			int			m_iterationsCount = 0;
-
-			double[]	m_parameters = new double[3];
-
-			public LobeModel( TestForm _owner ) {
-				m_owner = _owner;
-			}
-
-			public void		Init( float3 _incomingDirection, double _theta, bool _computeInitialThetaUsingCenterOfMass, double _roughness, double _IOR, double _scaleGlobal, double _scaleB, double _scaleN, double _MaskingImportance, double _oversizeFactor, Texture2D _texHistogram_CPU, int _scatteringOrder, bool _fittingReflectedLobe ) {
-				int	scattMin = _scatteringOrder-1;		// Because scattering order 1 is actually stored in first slice of the texture array
-				int	scattMax = scattMin+1;				// To simulate a single scattering order
-//				int	scattMax = MAX_SCATTERING_ORDER;	// To simulate all scattering orders accumulated
-
-				// =========================================================================
-				// 1] Readback lobe texture data into an array
-				int	W = _texHistogram_CPU.Width;
-				int	H = _texHistogram_CPU.Height;
-				m_histogramData = new double[W,H];
-
-				for ( int scatteringOrder=scattMin; scatteringOrder < scattMax; scatteringOrder++ ) {
-					PixelsBuffer	Content = _texHistogram_CPU.Map( 0, scatteringOrder );
-					using ( BinaryReader R = Content.OpenStreamRead() )
-						for ( int Y=0; Y < H; Y++ )
-							for ( int X=0; X < W; X++ )
-								m_histogramData[X,Y] += W * H * R.ReadSingle();
-					Content.CloseStream();
-					_texHistogram_CPU.UnMap( 0, scatteringOrder );
-				}
-
-
-				// =========================================================================
-				// 2] Compute center of mass from which we'll measure distances
-				m_centerOfMass = float3.Zero;
-				float3	wsOutgoingDirection = float3.Zero;
-				for ( int Y=0; Y < H; Y++ ) {
-					// Y = theta bin index = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) )
-					// We need theta:
-					double	theta = 2.0 * Math.Asin( Math.Sqrt( 0.5 * Y / LOBES_COUNT_THETA ) );
-					double	cosTheta = Math.Cos( theta );
-					double	sinTheta = Math.Sin( theta );
-
-					for ( int X=0; X < W; X++ ) {
-
-						// X = phi bin index = LOBES_COUNT_PHI * X / (2PI)
-						// We need phi:
-						double	phi = 2.0 * Math.PI * X / LOBES_COUNT_PHI;
-						double	cosPhi = Math.Cos( phi );
-						double	sinPhi = Math.Sin( phi );
-
-						// Build simulated microfacet reflection direction in macro-surface space
-						double	outgoingIntensity = m_histogramData[X,Y];
-						wsOutgoingDirection.Set( (float) (outgoingIntensity * cosPhi * sinTheta), (float) (outgoingIntensity * sinPhi * sinTheta), (float) (outgoingIntensity * cosTheta) );
-
-						// Accumulate lobe position
-						m_centerOfMass += wsOutgoingDirection;
-					}
-				}
-				m_centerOfMass /= W*H;
-
-				// =========================================================================
-				// 3] Optionally override theta to use the direction of the center of mass
-				// (quite intuitive to start by aligning our lobe along the main simulated lobe direction!)
-				if ( _computeInitialThetaUsingCenterOfMass ) {
-					float3	towardCenterOfMass = m_centerOfMass.Normalized;
-					_theta = Math.Acos( towardCenterOfMass.z );
-//					_scaleN = 2.0 * m_centerOfMass.Length;		// Also assume we should match the simulated lobe's length
-					_scaleN = 0.5;									// Start from a semi-flattened shape so it can choose either direction...
-					_scaleGlobal = 0.01 * m_centerOfMass.Length;	// In fact, I realized the algorithm converged much faster starting from a very small lobe!! (~20 iterations compared to 200 otherwise, because the gradient leads the algorithm in the wrong direction too fast and it takes hell of a time to get back on tracks afterwards if we start from too large a lobe!)
-				}
-
-				// =========================================================================
-				// 4] Setup initial parameters
-				m_direction = _incomingDirection;
-				m_direction.z = -m_direction.z;	// Mirror against surface to obtain reflected direction against which we'll compute masking/shadowing of incoming ray
-
-				m_IOR = _IOR;
-//				m_maskingImportance = _MaskingImportance;
-
-				double	incomingPhi = Math.Atan2( m_direction.y, m_direction.x );
-				m_incomingDirection_CosPhi = Math.Cos( incomingPhi );
-				m_incomingDirection_SinPhi = Math.Sin( incomingPhi );
-
-				m_toleranceFactor = _oversizeFactor;
-				m_fittingReflectedLobe = _fittingReflectedLobe;
-				m_lobeType = m_owner.radioButtonAnalyticalPhong.Checked ? 0 : (m_owner.radioButtonAnalyticalBeckmann.Checked ? 1 : 2);
-
-
-				Parameters = new double[] { _theta, _roughness, _scaleN, _scaleGlobal, _MaskingImportance };
-			}
-
-			#region Model Implementation
-
-			public double[]		Parameters {
-				get { return m_parameters; }
-				set {
-					m_parameters = value;
-
-					// Update track bar parameters
-					if ( m_fittingReflectedLobe ) {
-						m_owner.floatTrackbarControlAnalyticalLobeTheta.Value = (float) (180.0 * m_parameters[0] / Math.PI);
-						m_owner.floatTrackbarControlAnalyticalLobeRoughness.Value = (float) m_parameters[1];
-						m_owner.floatTrackbarControlLobeScaleR.Value = (float) m_parameters[2];
-						m_owner.floatTrackbarControlLobeScaleT.Value = (float) m_parameters[3];
-//						m_owner.floatTrackbarControlLobeScaleB.Value = (float) m_parameters[4];
-						m_owner.floatTrackbarControlLobeMaskingImportance.Value = (float) m_parameters[4];
-					} else {
-						m_owner.floatTrackbarControlAnalyticalLobeTheta_T.Value = (float) (180.0 * m_parameters[0] / Math.PI);
-						m_owner.floatTrackbarControlAnalyticalLobeRoughness_T.Value = (float) m_parameters[1];
-						m_owner.floatTrackbarControlLobeScaleR_T.Value = (float) m_parameters[2];
-						m_owner.floatTrackbarControlLobeScaleT_T.Value = (float) m_parameters[3];
-//						m_owner.floatTrackbarControlLobeScaleB_T.Value = (float) m_parameters[4];
-						m_owner.floatTrackbarControlLobeMaskingImportance_T.Value = (float) m_parameters[4];
-					}
-
-					// Repaint every N iterations
-					m_iterationsCount++;
-//					if ( m_iterationsCount == 5 ) {
-						m_iterationsCount = 0;
-						m_owner.UpdateApplication();
-//					}
-				}
-			}
-
-			public double Eval( double[] _newParameters ) {
-
-				double	lobeTheta = _newParameters[0];
-				double	lobeRoughness = _newParameters[1];
-				double	lobeScaleN = _newParameters[2];
-				double	lobeGlobalScale = _newParameters[3];
-				double	maskingImportance = _newParameters[4];
-
-				double	invLobeScaleN = 1.0 / lobeScaleN;
-
-				// Compute constant masking term due to incoming direction
- 				double	maskingIncoming = Masking( m_direction.z, lobeRoughness );		// Masking( incoming )
-
-				// Compute lobe's reflection vector and tangent space using new parameters
-				double	cosTheta = Math.Cos( lobeTheta );
-				double	sinTheta = Math.Sin( lobeTheta );
-
-				float3	lobe_normal = new float3( (float) (sinTheta * m_incomingDirection_CosPhi), (float) (sinTheta * m_incomingDirection_SinPhi), (float) cosTheta );
-// 				if ( !m_fittingReflectedLobe ) {
-// 					lobe_normal = Refract( lobe_normal, float3.UnitZ, (float) m_IOR );
-// 					lobe_normal.z = -lobe_normal.z;
-// 				}
-
-				float3	lobe_tangent = new float3( (float) -m_incomingDirection_SinPhi, (float) m_incomingDirection_CosPhi, 0.0f );	// Always lying in the X^Y plane
-				float3	lobe_biTangent = lobe_normal.Cross( lobe_tangent );
-
-				// Compute sum
-				double	phi, theta, cosPhi, sinPhi;
-				double	outgoingIntensity_Simulated, length;
-				double	outgoingIntensity_Analytical, lobeIntensity;
-				double	difference;
-				float3	wsOutgoingDirection = float3.Zero;
-				float3	wsOutgoingDirection2 = float3.Zero;
-				float3	lsOutgoingDirection = float3.Zero;
-				double	maskingOutGoing = 0.0;
-
-				double	sum = 0.0;
-				double	sum_Simulated = 0.0;
-				double	sum_Analytical = 0.0;
-				double	sqSum_Simulated = 0.0;
-				double	sqSum_Analytical = 0.0;
-				for ( int Y=0; Y < LOBES_COUNT_THETA; Y++ ) {
-
-					// Y = theta bin index = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) )
-					// We need theta:
-					theta = 2.0 * Math.Asin( Math.Sqrt( 0.5 * Y / LOBES_COUNT_THETA ) );
-					cosTheta = Math.Cos( theta );
-					sinTheta = Math.Sin( theta );
-
-					for ( int X=0; X < LOBES_COUNT_PHI; X++ ) {
-
-						// X = phi bin index = LOBES_COUNT_PHI * X / (2PI)
-						// We need phi:
-						phi = 2.0 * Math.PI * X / LOBES_COUNT_PHI;
-						cosPhi = Math.Cos( phi );
-						sinPhi = Math.Sin( phi );
-
-						// Build simulated microfacet reflection direction in macro-surface space
-						outgoingIntensity_Simulated = m_histogramData[X,Y];
-						wsOutgoingDirection.Set( (float) (cosPhi * sinTheta), (float) (sinPhi * sinTheta), (float) cosTheta );
-
-						// Compute maksing term due to outgoing direction
-						maskingOutGoing = Masking( wsOutgoingDirection.z, lobeRoughness );		// Masking( outgoing )
-
-						// Compute projection of world space direction onto reflected direction
-						float	Vz = wsOutgoingDirection.Dot( lobe_normal );
-
-//Vz = Math.Min( 0.99f, Vz );
-
-						float	cosTheta_M = Math.Max( 1e-6f, Vz );
-
-						// Compute the lobe intensity in local space
-						lobeIntensity = NDF( cosTheta_M, lobeRoughness );
-
-						double	maskingShadowing = 1.0 + maskingImportance * (maskingIncoming * maskingOutGoing - 1.0);	// = 1 when importance = 0, = masking when importance = 1
- 						lobeIntensity *= maskingShadowing;	// * Masking terms
-
-						lobeIntensity *= lobeGlobalScale;
-
-						// Apply additional lobe scaling along the normal
-						// This scale computed like this:
-						//
-						// We know that in the shader, local lobe coordinates are transformed into world space by doing:
-						//	wsDirection_Scaled = float3( lsDirection.x, lsDirection.y, Scale * lsDirection.z );
-						//	float	L = length( wsDirection_Scaled );
-						//	wsDirection = wsDirection_Scaled / L;
-						//
-						// We need to compute L so we write:
-						//
-						//	lsDirection.x = L * wsDirection.x
-						//	lsDirection.y = L * wsDirection.y
-						//	lsDirection.z = L * wsDirection.z / Scale
-						//
-						// We know that:
-						//	sqrt( lsDirection.x*lsDirection.x + lsDirection.y*lsDirection.y + lsDirection.z*lsDirection.z ) = 1
-						//
-						// So:
-						//	L * sqrt( wsDirection.x*wsDirection.x + wsDirection.y*wsDirection.y + wsDirection.z*wsDirection.z / (Scale*Scale) ) = 1
-						//
-						// And:
-						//	L = 1 / sqrt( 1 - wsDirection.z*wsDirection.x + wsDirection.z*wsDirection.z / (Scale*Scale) )
-						//
-						// So finally:
-						//	L = 1 / sqrt( 1 + wsDirection.z*wsDirection.x * (1 / (Scale*Scale) - 1) )
-						//
-						length = 1.0 / Math.Sqrt( 1.0 + Vz*Vz * (invLobeScaleN*invLobeScaleN - 1.0) );
-
-						outgoingIntensity_Analytical = lobeIntensity * length;	// Lobe intensity was estimated in lobe space, account for scaling when converting back in world space
-
-						// Sum the difference between simulated intensity and lobe intensity
-						outgoingIntensity_Analytical *= m_toleranceFactor;	// Apply tolerance factor so we're always a bit smaller than the simulated lobe
-
-
-//						#if true	// Use center of mass?
-						if ( m_owner.checkBoxTest.Checked ) {
-							double	difference0 = outgoingIntensity_Simulated - outgoingIntensity_Analytical;
-
-							float3	wsLobePosition_Simulated = (float) outgoingIntensity_Simulated * wsOutgoingDirection;
-							float3	wsLobePosition_Analytical = (float) outgoingIntensity_Analytical * wsOutgoingDirection;
-							// Subtract center of mass
-							wsLobePosition_Simulated -= m_centerOfMass;
-							wsLobePosition_Analytical -= m_centerOfMass;
-							// Compute new intensities, relative to center of mass
-							outgoingIntensity_Simulated = wsLobePosition_Simulated.Length;
-							outgoingIntensity_Analytical = wsLobePosition_Analytical.Length;
-
-							double	difference1 = outgoingIntensity_Simulated - outgoingIntensity_Analytical;
-
-							difference = 0.5 * difference0 + 0.5 * difference1;
-
-//							difference *= (wsLobePosition_Simulated - wsLobePosition_Analytical).Length;
-//							difference += (wsLobePosition_Simulated - wsLobePosition_Analytical).Length;	// We also add the distance between lobe positions so it goes to the best of the 2 minima!
-
-						} else {
-							difference = outgoingIntensity_Simulated - outgoingIntensity_Analytical;
-//							difference = outgoingIntensity_Simulated / Math.Max( 1e-6, outgoingIntensity_Analytical ) - 1.0;
-//							difference = outgoingIntensity_Analytical / Math.Max( 1e-6, outgoingIntensity_Simulated ) - 1.0;
-						}
-//						#endif
-
-
-						sum += difference * difference;
-
-						sum_Simulated += outgoingIntensity_Simulated;
-						sum_Analytical += outgoingIntensity_Analytical;
-						sqSum_Simulated += outgoingIntensity_Simulated*outgoingIntensity_Simulated;
-						sqSum_Analytical += outgoingIntensity_Analytical*outgoingIntensity_Analytical;
-					}
-				}
-				sum /= LOBES_COUNT_THETA * LOBES_COUNT_PHI;	// Not very useful since BFGS won't care but I'm doing it anyway to have some sort of normalized sum, better for us humans
-
-				return sum;
-			}
-
-			public void Constrain( double[] _Parameters ) {
-				_Parameters[0] = Math.Max( 0.0, Math.Min( 0.4999 * Math.PI, _Parameters[0] ) );
-				_Parameters[1] = Math.Max( 1e-4, Math.Min( 1.0, _Parameters[1] ) );
-				_Parameters[2] = Math.Max( 1e-3, Math.Min( 10.0, _Parameters[2] ) );
-				_Parameters[3] = Math.Max( 1e-6, Math.Min( 10.0, _Parameters[3] ) );
-				_Parameters[4] = Math.Max( 0.0, Math.Min( 1.0, _Parameters[4] ) );
-			}
-
-			#endregion
-
-			double	Masking( double _cosTheta_V, double _roughness ) {
-				switch ( m_lobeType ) {
-					case 1:		return BeckmannG1( _cosTheta_V, _roughness );
-					case 2:		return GGXG1( _cosTheta_V, _roughness );
-					default:	return PhongG1( _cosTheta_V, _roughness );
-				}
-			}
-
-			double	NDF( double _cosTheta_M, double _roughness ) {
-				switch ( m_lobeType ) {
-					case 1:		return BeckmannNDF( _cosTheta_M, _roughness );
-					case 2:		return GGXNDF( _cosTheta_M, _roughness );
-					default:	return PhongNDF( _cosTheta_M, _roughness );
-				}
-			}
-
-			double	Roughness2PhongExponent( double _roughness ) {
-//				return Math.Pow( 2.0, 10.0 * (1.0 - _roughness) + 1.0 );		// From https://seblagarde.wordpress.com/2011/08/17/hello-world/
-				return Math.Pow( 2.0, 10.0 * (1.0 - _roughness) + 0.0 ) - 1.0;	// Actually, we'd like some fatter rough lobes
-			}
-
-			// D(m) = a² / (PI * cos(theta_m)^4 * (a² + tan(theta_m)²)²)
-			// Simplified into  D(m) = a² / (PI * (cos(theta_m)²*(a²-1) + 1)²)
-			double	PhongNDF( double _cosTheta_M, double _roughness ) {
-				double	n = Roughness2PhongExponent( _roughness );
-				return (n+2)*Math.Pow( _cosTheta_M, n ) / Math.PI;
-			}
-
-			// Same as Beckmann but with a modified a bit
-			double	PhongG1( double _cosTheta_V, double _roughness ) {
-				double	n = Roughness2PhongExponent( _roughness );
-				double	sqCosTheta_V = _cosTheta_V * _cosTheta_V;
-				double	tanThetaV = Math.Sqrt( (1.0 - sqCosTheta_V) / sqCosTheta_V );
-				double	a = Math.Sqrt( 1.0 + 0.5 * n ) / tanThetaV;
-				return a < 1.6 ? (3.535 * a + 2.181 * a*a) / (1.0 + 2.276 * a + 2.577 * a*a) : 1.0;
-			}
-
-			// From Walter 2007
-			// D(m) = exp( -tan( theta_m )² / a² ) / (PI * a² * cos(theta_m)^4)
-			double	BeckmannNDF( double _cosTheta_M, double _roughness ) {
-				double	sqCosTheta_M = _cosTheta_M * _cosTheta_M;
-				double	a2 = _roughness*_roughness;
-				return Math.Exp( -(1.0 - sqCosTheta_M) / (sqCosTheta_M * a2) ) / (Math.PI * a2 * sqCosTheta_M*sqCosTheta_M);
-			}
-
-			// Masking G1(v,m) = 2 / (1 + erf( 1/(a * tan(theta_v)) ) + exp(-a²) / (a*sqrt(PI)))
-			double	BeckmannG1( double _cosTheta_V, double _roughness ) {
-				double	sqCosTheta_V = _cosTheta_V * _cosTheta_V;
-				double	tanThetaV = Math.Sqrt( (1.0 - sqCosTheta_V) / sqCosTheta_V );
-				double	a = 1.0 / (_roughness * tanThetaV);
-
-				#if true	// Simplified numeric version
-					return a < 1.6 ? (3.535 * a + 2.181 * a*a) / (1.0 + 2.276 * a + 2.577 * a*a) : 1.0;
-				#else	// Analytical
-					return 2.0 / (1.0 + erf( a ) + exp( -a*a ) / (a * SQRTPI));
-				#endif
-			}
-
-			// D(m) = a² / (PI * cos(theta_m)^4 * (a² + tan(theta_m)²)²)
-			// Simplified into  D(m) = a² / (PI * (cos(theta_m)²*(a²-1) + 1)²)
-			double	GGXNDF( double _cosTheta_M, double _roughness ) {
-				double	sqCosTheta_M = _cosTheta_M * _cosTheta_M;
-				double	a2 = _roughness*_roughness;
-//				return a2 / (Math.PI * sqCosTheta_M*sqCosTheta_M * pow2( a2 + (1.0-sqCosTheta_M)/sqCosTheta_M ));
-				return a2 / (Math.PI * Math.Pow( sqCosTheta_M * (a2-1.0) + 1.0, 2.0 ));
-			}
-
-			// Masking G1(v,m) = 2 / (1 + sqrt( 1 + a² * tan(theta_v)² ))
-			// Simplified into G1(v,m) = 2*cos(theta_v) / (1 + sqrt( cos(theta_v)² * (1-a²) + a² ))
-			double	GGXG1( double _cosTheta_V, double _roughness ) {
-				double	sqCosTheta_V = _cosTheta_V * _cosTheta_V;
-				double	a2 = _roughness*_roughness;
-				return 2.0 * _cosTheta_V / (1.0 + Math.Sqrt( sqCosTheta_V * (1.0 - a2) + a2 ));
-			}
-		}
-
 		LobeModel	m_lobeModel = null;
 		WMath.BFGS	m_Fitter = new WMath.BFGS();
 
-		void	PerformLobeFitting( float3 _incomingDirection, float _theta, bool _computeInitialThetaUsingCenterOfMass, float _roughness, float _IOR, float _scaleT, float _scaleB, float _scaleN, float _MaskingImportance, float _OversizeFactor, int _scatteringOrder, bool _reflected ) {
+		void	PerformLobeFitting( float3 _incomingDirection, float _theta, bool _computeInitialThetaUsingCenterOfMass, float _roughness, float _IOR, float _scale, float _flatteningFactor, float _MaskingImportance, float _OversizeFactor, int _scatteringOrder, bool _reflected ) {
 
 			checkBoxShowAnalyticalLobe.Checked = true;
 
@@ -1434,8 +1057,47 @@ namespace TestMSBSDF
 			m_Tex_LobeHistogram_CPU.CopyFrom( _reflected ? m_Tex_LobeHistogram_Reflected : m_Tex_LobeHistogram_Transmitted );
 
 			// Initialize lobe model
-			m_lobeModel = new LobeModel( this );
-			m_lobeModel.Init( _incomingDirection, _theta, _computeInitialThetaUsingCenterOfMass, _roughness, _IOR, _scaleT, _scaleB, _scaleN, _MaskingImportance, _OversizeFactor,  m_Tex_LobeHistogram_CPU, _scatteringOrder, _reflected );
+			if ( m_lobeModel == null ) {
+				m_lobeModel = new LobeModel();
+				m_lobeModel.ParametersChanged += ( double[] _parameters ) => {
+
+					// Update track bar parameters
+					if ( _reflected ) {
+						floatTrackbarControlAnalyticalLobeTheta.Value = (float) (180.0 * _parameters[0] / Math.PI);
+						floatTrackbarControlAnalyticalLobeRoughness.Value = (float) _parameters[1];
+						floatTrackbarControlLobeScaleT.Value = (float) _parameters[2];
+						floatTrackbarControlLobeScaleR.Value = (float) _parameters[3];
+//						floatTrackbarControlLobeScaleB.Value = (float) m_parameters[4];
+						floatTrackbarControlLobeMaskingImportance.Value = (float) _parameters[4];
+					} else {
+						floatTrackbarControlAnalyticalLobeTheta_T.Value = (float) (180.0 * _parameters[0] / Math.PI);
+						floatTrackbarControlAnalyticalLobeRoughness_T.Value = (float) _parameters[1];
+						floatTrackbarControlLobeScaleT_T.Value = (float) _parameters[2];
+						floatTrackbarControlLobeScaleR_T.Value = (float) _parameters[3];
+//						floatTrackbarControlLobeScaleB_T.Value = (float) m_parameters[4];
+						floatTrackbarControlLobeMaskingImportance_T.Value = (float) _parameters[4];
+					}
+
+					// Repaint
+					UpdateApplication();
+				};
+			}
+
+			m_lobeModel.InitTargetData( m_Tex_LobeHistogram_CPU, _scatteringOrder );
+
+			if ( _computeInitialThetaUsingCenterOfMass ) {
+				// Optionally override theta to use the direction of the center of mass
+				// (quite intuitive to start by aligning our lobe along the main simulated lobe direction!)
+				float3	towardCenterOfMass = m_lobeModel.CenterOfMass.Normalized;
+				_theta = (float) Math.Acos( towardCenterOfMass.z );
+//				_scale = 2.0 * m_centerOfMass.Length;				// Also assume we should match the simulated lobe's length
+				_flatteningFactor = 0.5f;							// Start from a semi-flattened shape so it can choose either direction...
+				_scale = 0.01f * m_lobeModel.CenterOfMass.Length;	// In fact, I realized the algorithm converged much faster starting from a very small lobe!! (~20 iterations compared to 200 otherwise, because the gradient leads the algorithm in the wrong direction too fast and it takes hell of a time to get back on tracks afterwards if we start from too large a lobe!)
+			}
+
+			LobeModel.LOBE_TYPE	lobeType = radioButtonAnalyticalPhong.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG : (radioButtonAnalyticalBeckmann.Checked ? LobeModel.LOBE_TYPE.BECKMANN : LobeModel.LOBE_TYPE.GGX);
+
+			m_lobeModel.InitLobeData( lobeType, _incomingDirection, _theta, _roughness, _scale, _flatteningFactor, _MaskingImportance, _OversizeFactor );
 
 // 			if ( !checkBoxTest.Checked ) {
 // 				m_Fitter.SuccessTolerance = 1e-4;
@@ -1446,6 +1108,11 @@ namespace TestMSBSDF
 			m_Fitter.Minimize( m_lobeModel );
 
 			panelOutput.Invalidate();
+		}
+
+		void m_lobeModel_ParametersChanged()
+		{
+			throw new NotImplementedException();
 		}
 
 		#endregion
@@ -1480,14 +1147,13 @@ namespace TestMSBSDF
 									checkBoxInitializeDirectionTowardCenterOfMass.Checked,
 									roughness,
 									m_lastComputedIOR,
-									scaleT,
-									scaleB,
 									scaleR,
+									scaleT,
 									maskingImportance,
 									floatTrackbarControlFitOversize.Value,
 									integerTrackbarControlScatteringOrder.Value,
 									fittingReflectedLobe
-									);
+								);
 
 				MessageBox( "Fitting succeeded after " + m_Fitter.IterationsCount + " iterations.\r\nReached minimum: " + m_Fitter.FunctionMinimum, MessageBoxButtons.OK, MessageBoxIcon.Information );
 

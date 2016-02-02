@@ -54,6 +54,13 @@
     <Compile Include="AutomationForm.Designer.cs">
       <DependentUpon>AutomationForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="CompletionArrayControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CompletionArrayControl.Designer.cs">
+      <DependentUpon>CompletionArrayControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="LobeModel.cs" />
     <Compile Include="PanelOutput3D.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -67,6 +74,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="AutomationForm.resx">
       <DependentUpon>AutomationForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CompletionArrayControl.resx">
+      <DependentUpon>CompletionArrayControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="PanelOutput3D.resx">
       <DependentUpon>PanelOutput3D.cs</DependentUpon>
