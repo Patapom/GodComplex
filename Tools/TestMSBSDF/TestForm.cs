@@ -468,7 +468,7 @@ namespace TestMSBSDF
 		///	From "2015 Heitz - Generating Procedural Beckmann Surfaces"
 		/// </summary>
 		/// <remarks>Only isotropic roughness is supported</remarks>
-		void	BuildBeckmannSurfaceTexture( float _roughness ) {
+		public void	BuildBeckmannSurfaceTexture( float _roughness ) {
 
 			// Precompute stuff that resemble a lot to the Box-Muller algorithm to generate normal distribution random values
 			WMath.SimpleRNG.SetSeed( 521288629, 362436069 );
@@ -762,6 +762,11 @@ namespace TestMSBSDF
 					m_Device.Clear( m_Tex_LobeHistogram_Transmitted, float4.Zero );
 				}
 			}
+		}
+
+		public Texture2D	GetSimulationHistogram( bool _reflectedLobe ) {
+			m_Tex_LobeHistogram_CPU.CopyFrom( _reflectedLobe ? m_Tex_LobeHistogram_Reflected : m_Tex_LobeHistogram_Transmitted );
+			return m_Tex_LobeHistogram_CPU;
 		}
 
 		#endregion

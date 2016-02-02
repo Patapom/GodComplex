@@ -25,48 +25,40 @@ namespace TestMSBSDF
 			public delegate void	SettingsChangedEventHandler();
 			public delegate void	ResultStateChangedEventHandler( Result _result );
 
-			public class	Settings {
+			/// <summary>
+			/// Contains the surface parameters that guide the automation
+			/// These settings have a "locked state" that throws an exception if they are
+			///  modified after they are locked, this is to ensure a current set of results
+			///  doesn't see its dimensions change once the automation has begun...
+			/// </summary>
+			public class	SurfaceParameters {
 
-				public enum GUESS_INITIAL_DIRECTION {
-					CENTER_OF_MASS,
-					REFLECTED_DIRECTION,
-					NO_CHANGE,
-				}
+				#region NESTED TYPES
 
-				public enum GUESS_INITIAL_ROUGHNESS {
-					SURFACE,
-					CUSTOM,
-				}
-
-				public enum GUESS_INITIAL_SCALE {
-					FACTOR_CENTER_OF_MASS,
-					NO_CHANGE,
-				}
-
-				public enum GUESS_INITIAL_FLATTEN {
-					CUSTOM,
-				}
-
-				public enum GUESS_INITIAL_MASKING {
-					CUSTOM,
-				}
+				public delegate void	LockStateChangedEventHandler();
+				public delegate void	ScatteringOrdersCountChangedEventHandler();
 
 				public class	Parameter {
 
 					public delegate	void	ValueChangedEventHandler( Parameter _P );
 
-					float	m_rangeMin = 0.0f;
-					float	m_rangeMax = 1.0f;
+					SurfaceParameters	m_owner;
 
-					float	m_min = 0.0f;
-					float	m_max = 1.0f;
-					int		m_stepsCount = 1;
-					bool	m_inclusiveMin = true;
-					bool	m_inclusiveMax = false;
+					float				m_rangeMin = 0.0f;
+					float				m_rangeMax = 1.0f;
+
+					float				m_min = 0.0f;
+					float				m_max = 1.0f;
+					int					m_stepsCount = 1;
+					bool				m_inclusiveMin = true;
+					bool				m_inclusiveMax = false;
 
 					public float	Min	{
 						get { return m_min; }
 						set {
+							if ( m_owner.m_locked )
+								throw new Exception( "Parameter space settings are locked and can't be changed anymore!" );
+
 							value = Math.Max( m_rangeMin, Math.Min( m_rangeMax, value ) );
 							if ( value == m_min )
 								return;
@@ -81,6 +73,9 @@ namespace TestMSBSDF
 					public float	Max	{
 						get { return m_max; }
 						set {
+							if ( m_owner.m_locked )
+								throw new Exception( "Parameter space settings are locked and can't be changed anymore!" );
+
 							value = Math.Max( m_rangeMin, Math.Min( m_rangeMax, value ) );
 							if ( value == m_max )
 								return;
@@ -95,6 +90,9 @@ namespace TestMSBSDF
 					public int		StepsCount	{
 						get { return m_stepsCount; }
 						set {
+							if ( m_owner.m_locked )
+								throw new Exception( "Parameter space settings are locked and can't be changed anymore!" );
+
 							value = Math.Max( 1, value );
 							if ( value == m_stepsCount )
 								return;
@@ -109,6 +107,9 @@ namespace TestMSBSDF
 					public bool		InclusiveMin	{
 						get { return m_inclusiveMin; }
 						set {
+							if ( m_owner.m_locked )
+								throw new Exception( "Parameter space settings are locked and can't be changed anymore!" );
+
 							if ( value == m_inclusiveMin )
 								return;
 
@@ -122,6 +123,9 @@ namespace TestMSBSDF
 					public bool		InclusiveMax	{
 						get { return m_inclusiveMax; }
 						set {
+							if ( m_owner.m_locked )
+								throw new Exception( "Parameter space settings are locked and can't be changed anymore!" );
+
 							if ( value == m_inclusiveMax )
 								return;
 
@@ -134,7 +138,8 @@ namespace TestMSBSDF
 
 					public event ValueChangedEventHandler	ValueChanged;
 
-					public Parameter( float _rangeMin, float _rangeMax ) {
+					public Parameter( SurfaceParameters _owner, float _rangeMin, float _rangeMax ) {
+						m_owner = _owner;
 						m_rangeMin = _rangeMin;
 						m_rangeMax = _rangeMax;
 					}
@@ -173,37 +178,22 @@ namespace TestMSBSDF
 					}
 				}
 
-				// Surface parameters
-				public TestForm.SURFACE_TYPE	m_surfaceType = TestForm.SURFACE_TYPE.CONDUCTOR;
+				#endregion
+
 				public int						m_rayTracingIterationsCount = 1024;
-				public Parameter				m_incomingAngle = new Parameter( 0, 0.5f * (float) Math.PI );
-				public Parameter				m_surfaceRoughness = new Parameter( 0, 1.0f );
-				public Parameter				m_albedoF0 = new Parameter( 0, 1.0f );
-				private Parameter				m_scatteringOrders = new Parameter( 1, 4 );
+				public TestForm.SURFACE_TYPE	m_type = TestForm.SURFACE_TYPE.CONDUCTOR;
+				private bool					m_locked = false;	// Once computations have started, we can't touch the settings anymore!
+				public Parameter				m_incomingAngle = null;
+				public Parameter				m_roughness = null;
+				public Parameter				m_albedoF0 = null;
+				private Parameter				m_scatteringOrders = null;	// Actually an integer parameter, must be accessed through properties below
 
-				// Fitter parameters
-				public int						m_maxIterations = 200;
-				public float					m_logTolerance_Minimum = -6.0f;
-				public float					m_logTolerance_Gradient = -6.0f;
-				public int						m_maxRetries = 2;
-				public float					m_oversizeFactor = 1.0f;
+				public event LockStateChangedEventHandler				LockStateChanged;
+				public event ScatteringOrdersCountChangedEventHandler	ScatteringOrdersCountChanged;
 
-				// Lobe parameters
-				public LobeModel.LOBE_TYPE		m_lobeModel = LobeModel.LOBE_TYPE.MODIFIED_PHONG;
-				public GUESS_INITIAL_DIRECTION	m_initialDirection = GUESS_INITIAL_DIRECTION.CENTER_OF_MASS;
-				public bool						m_inheritDirection = true;
-				public GUESS_INITIAL_ROUGHNESS	m_initialRoughness = GUESS_INITIAL_ROUGHNESS.SURFACE;
-				public bool						m_inheritRoughness = true;
-				public GUESS_INITIAL_SCALE		m_initialScale = GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS;
-				public bool						m_inheritScale = true;
-				public float					m_customScale = 0.05f;
-				public GUESS_INITIAL_FLATTEN	m_initialFlatten = GUESS_INITIAL_FLATTEN.CUSTOM;
-				public bool						m_inheritFlatten = true;
-				public float					m_customFlatten = 0.5f;
-				public GUESS_INITIAL_MASKING	m_initialMasking = GUESS_INITIAL_MASKING.CUSTOM;
-				public bool						m_inheritMasking = true;
-				public float					m_customMasking = 1.0f;
-
+				public bool			IsLocked {
+					get { return m_locked; }
+				}
 
 				public int			ScatteringOrderMin {
 					get { return (int) m_scatteringOrders.Min; }
@@ -219,29 +209,118 @@ namespace TestMSBSDF
 					get { return 1 + ScatteringOrderMax - ScatteringOrderMin; }
 				}
 
+				public	SurfaceParameters() {
+					m_incomingAngle = new Parameter( this, 0, 0.5f * (float) Math.PI );
+					m_roughness = new Parameter( this, 0, 1.0f );
+					m_albedoF0 = new Parameter( this, 0, 1.0f );
+					m_scatteringOrders = new Parameter( this, 1, 4 );
+					m_scatteringOrders.ValueChanged += m_scatteringOrders_ValueChanged;
+				}
+
+				public void		Lock() {
+					if ( m_locked )
+						throw new Exception( "Surface is already locked!" );
+
+					m_locked = true;
+
+					if ( LockStateChanged != null )
+						LockStateChanged();
+				}
+
+				public void		Save( XmlElement _parent ) {
+					Attrib( _parent, "Surface Type", m_type );
+					Attrib( _parent, "RayTrace Iterations", m_rayTracingIterationsCount );
+					Attrib( _parent, "Locked", m_locked );
+
+					XmlElement ElemParm0 = AppendChild( _parent, "IncomingAngle" );
+					m_incomingAngle.Save( ElemParm0 );
+
+					XmlElement ElemParm1 = AppendChild( _parent, "SurfaceRoughness" );
+					m_roughness.Save( ElemParm1 );
+
+					XmlElement ElemParm2 = AppendChild( _parent, "AlbedoF0" );
+					m_albedoF0.Save( ElemParm2 );
+
+					XmlElement ElemParm3 = AppendChild( _parent, "IncomingAngle" );
+					m_scatteringOrders.Save( ElemParm3 );
+				}
+
+				public void		Load( XmlElement _parent ) {
+
+				}
+
+				// Simple forward
+				void m_scatteringOrders_ValueChanged( SurfaceParameters.Parameter _P ) {
+					if ( ScatteringOrdersCountChanged != null )
+						ScatteringOrdersCountChanged();
+				}
+			}
+
+			/// <summary>
+			/// This class contains the simulation settings
+			/// Although discouraged, they can be changed even when the simulation has already begun
+			/// </summary>
+			public class	Settings {
+
+				public enum GUESS_INITIAL_DIRECTION {
+					CENTER_OF_MASS,
+					REFLECTED_DIRECTION,
+					NO_CHANGE,				// Means no change from last computation
+				}
+
+				public enum GUESS_INITIAL_ROUGHNESS {
+					SURFACE,
+					CUSTOM,
+					NO_CHANGE,				// Means no change from last computation
+				}
+
+				public enum GUESS_INITIAL_SCALE {
+					FACTOR_CENTER_OF_MASS,
+					NO_CHANGE,				// Means no change from last computation
+				}
+
+				public enum GUESS_INITIAL_FLATTEN {
+					CUSTOM,
+					NO_CHANGE,				// Means no change from last computation
+				}
+
+				public enum GUESS_INITIAL_MASKING {
+					CUSTOM,
+					NO_CHANGE,				// Means no change from last computation
+				}
+
+				// Fitter parameters
+				public int						m_maxIterations = 200;
+				public float					m_logTolerance_Minimum = -6.0f;
+				public float					m_logTolerance_Gradient = -6.0f;
+				public int						m_maxRetries = 2;
+				public float					m_oversizeFactor = 1.0f;
+
+				// Lobe parameters
+				public LobeModel.LOBE_TYPE		m_lobeModel = LobeModel.LOBE_TYPE.MODIFIED_PHONG;
+				public GUESS_INITIAL_DIRECTION	m_initialDirection = GUESS_INITIAL_DIRECTION.CENTER_OF_MASS;
+				public bool						m_inheritDirection = true;
+				public GUESS_INITIAL_ROUGHNESS	m_initialRoughness = GUESS_INITIAL_ROUGHNESS.SURFACE;
+				public bool						m_inheritRoughness = true;
+				public float					m_customRoughness = 0.8f;
+				public GUESS_INITIAL_SCALE		m_initialScale = GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS;
+				public bool						m_inheritScale = true;
+				public float					m_customScale = 0.05f;
+				public GUESS_INITIAL_FLATTEN	m_initialFlatten = GUESS_INITIAL_FLATTEN.CUSTOM;
+				public bool						m_inheritFlatten = true;
+				public float					m_customFlatten = 0.5f;
+				public GUESS_INITIAL_MASKING	m_initialMasking = GUESS_INITIAL_MASKING.CUSTOM;
+				public bool						m_inheritMasking = true;
+				public float					m_customMasking = 1.0f;
+
+
 				public	Settings() {
 				}
 
 				public void		Save( XmlElement _parent ) {
-					// Save surface parameters
-					XmlElement	ElemSurfaceParms = AppendChild( _parent, "Surface" );
-					Attrib( ElemSurfaceParms, "Surface Type", m_surfaceType );
-					Attrib( ElemSurfaceParms, "RayTrace Iterations", m_rayTracingIterationsCount );
-
-					XmlElement ElemParm0 = AppendChild( ElemSurfaceParms, "IncomingAngle" );
-					m_incomingAngle.Save( ElemParm0 );
-
-					XmlElement ElemParm1 = AppendChild( ElemSurfaceParms, "SurfaceRoughness" );
-					m_surfaceRoughness.Save( ElemParm1 );
-
-					XmlElement ElemParm2 = AppendChild( ElemSurfaceParms, "AlbedoF0" );
-					m_albedoF0.Save( ElemParm2 );
-
-					XmlElement ElemParm3 = AppendChild( ElemSurfaceParms, "IncomingAngle" );
-					m_scatteringOrders.Save( ElemParm3 );
 
 					// Fitter parameters
-					XmlElement	ElemFitterParms = AppendChild( _parent, "Fitter" );
+					XmlElement	ElemFitterParms = AppendChild( _parent, "FitterParameters" );
 					_parent.AppendChild( ElemFitterParms );
 
 					Attrib( ElemFitterParms, "MaxIterations", m_maxIterations );
@@ -251,13 +330,14 @@ namespace TestMSBSDF
 					Attrib( ElemFitterParms, "OversizeFactor", m_oversizeFactor );
 
 					// Lobe parameters
-					XmlElement	ElemLobeParms = AppendChild( _parent, "Lobe" );
+					XmlElement	ElemLobeParms = AppendChild( _parent, "LobeParameters" );
 
 					Attrib( ElemLobeParms, "Model", m_lobeModel );
 					Attrib( ElemLobeParms, "initialDirection",	m_initialDirection );
 					Attrib( ElemLobeParms, "inheritDirection",	m_inheritDirection );
 					Attrib( ElemLobeParms, "initialRoughness",	m_initialRoughness );
 					Attrib( ElemLobeParms, "inheritRoughness",	m_inheritRoughness );
+					Attrib( ElemLobeParms, "customRoughness",	m_customRoughness );
 					Attrib( ElemLobeParms, "initialScale",		m_initialScale );
 					Attrib( ElemLobeParms, "inheritScale",		m_inheritScale );
 					Attrib( ElemLobeParms, "customScale",		m_customScale );
@@ -277,12 +357,108 @@ namespace TestMSBSDF
 
 			public class	Result {
 
-				public class	LobeResults {
-					public double	m_theta;
-					public double	m_roughness;
-					public double	m_scale;
-					public double	m_flatten;
-					public double	m_masking;
+				public class	LobeParameters {
+					public double	m_theta = 0.0;
+					public double	m_roughness = 0.8;
+					public double	m_scale = 0.1;
+					public double	m_flatten = 0.5;
+					public double	m_masking = 1.0;
+
+					/// <summary>
+					/// Initializes the lobe results based on current settings
+					/// </summary>
+					/// <param name="_owner">Our owner result</param>
+					/// <param name="_lobe"></param>
+					/// <param name="_reflectedDirection"></param>
+					public void		Initialize( Result _owner, LobeModel _lobe, float3 _reflectedDirection ) {
+						Settings		S = _owner.m_owner.m_settings;
+
+						bool			reflected = this == _owner.m_reflected;	// Are we the reflected or refracted lobe result?
+						LobeParameters	previousParams = null;
+						if ( _owner.m_Y > 0 ) {
+							Result		previousResult = _owner.m_owner.m_results[_owner.ScatteringOrder][_owner.m_X, _owner.m_Y-1, _owner.m_Z];
+							previousParams = reflected ? previousResult.m_reflected : previousResult.m_refracted;
+						}
+
+						//////////////////////////////////////////////////////////////////////////
+						// Initialize theta
+						if ( S.m_inheritDirection && previousParams != null ) {
+							// Re-use last fitted direction with the same angle of incidence but different roughness
+							m_theta = previousParams.m_theta;
+						} else {
+							switch ( S.m_initialDirection ) {
+								case Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS: {
+									// Override theta to use the direction of the center of mass
+									// (it's quite intuitive to start by aligning our lobe along the main simulated lobe direction!)
+									float3	towardCenterOfMass = _lobe.CenterOfMass.Normalized;
+									m_theta = (float) Math.Acos( towardCenterOfMass.z );
+									break;
+								}
+								case Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION:
+									m_theta = Math.Acos( _reflectedDirection.z );
+									break;
+							}
+						}
+
+						//////////////////////////////////////////////////////////////////////////
+						// Initialize roughness
+						if ( S.m_inheritRoughness && previousParams != null ) {
+							// Re-use last fitted roughness with the same angle of incidence but different roughness
+							m_roughness = previousParams.m_roughness;
+						} else {
+							switch ( S.m_initialRoughness ) {
+								case Settings.GUESS_INITIAL_ROUGHNESS.SURFACE:
+									m_roughness = _owner.m_surfaceRoughness;
+									break;
+								case Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM:
+									m_roughness = S.m_customRoughness;
+									break;
+							}
+						}
+
+						//////////////////////////////////////////////////////////////////////////
+						// Initialize scale
+						if ( S.m_inheritScale && previousParams != null ) {
+							// Re-use last fitted scale with the same angle of incidence but different roughness
+							m_scale = previousParams.m_scale;
+						} else {
+							switch ( S.m_initialScale ) {
+								case Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS: {
+									m_scale = _lobe.CenterOfMass.Length;
+									m_scale *= S.m_customScale;	// In fact it's better to have a very small scale as I realized the algorithm converged much faster starting from a very small lobe!!
+																// (~20 iterations compared to 200 otherwise, because the gradient leads the algorithm in the wrong direction too fast and it takes hell
+																//	of a time to get back on tracks afterwards if we start from too large a lobe!)
+									break;
+								}
+							}
+						}
+
+						//////////////////////////////////////////////////////////////////////////
+						// Initialize flattening factor
+						if ( S.m_inheritFlatten && previousParams != null ) {
+							// Re-use last fitted flatten with the same angle of incidence but different roughness
+							m_flatten = previousParams.m_flatten;
+						} else {
+							switch ( S.m_initialFlatten ) {
+								case Settings.GUESS_INITIAL_FLATTEN.CUSTOM:
+									m_flatten = S.m_customFlatten;
+									break;
+							}
+						}
+
+						//////////////////////////////////////////////////////////////////////////
+						// Initialize masking importance
+						if ( S.m_inheritMasking && previousParams != null ) {
+							// Re-use last fitted masking with the same angle of incidence but different roughness
+							m_masking = previousParams.m_masking;
+						} else {
+							switch ( S.m_initialMasking ) {
+								case Settings.GUESS_INITIAL_MASKING.CUSTOM:
+									m_masking = S.m_customMasking;
+									break;
+							}
+						}
+					}
 
 					public void		Save( XmlElement _parent ) {
 						Attrib( _parent, "theta", m_theta );
@@ -298,6 +474,7 @@ namespace TestMSBSDF
 				}
 
 				Results			m_owner = null;
+				int				m_order;
 				int				m_X;
 				int				m_Y;
 				int				m_Z;
@@ -305,18 +482,19 @@ namespace TestMSBSDF
 				public string	m_error = null;
 
 				// Input parameters
-				public double	m_incomingAngleTheta;
-				public double	m_incomingAnglePhi;
-				public double	m_surfaceRoughness;
-				public double	m_surfaceAlbedoF0;
+				public float	m_incomingAngleTheta;
+				public float	m_incomingAnglePhi;
+				public float	m_surfaceRoughness;
+				public float	m_surfaceAlbedoF0;
 
 				// Fitted parameters
-				LobeResults		m_reflected = new LobeResults();
-				LobeResults		m_refracted = new LobeResults();
+				public LobeParameters		m_reflected = new LobeParameters();
+				public LobeParameters		m_refracted = new LobeParameters();
 
-				public int		X	{ get { return m_X; } }
-				public int		Y	{ get { return m_Y; } }
-				public int		Z	{ get { return m_Z; } }
+				public int		ScatteringOrder	{ get { return m_order; } }
+				public int		X				{ get { return m_X; } }
+				public int		Y				{ get { return m_Y; } }
+				public int		Z				{ get { return m_Z; } }
 
 				public float	State {
 					get { return m_state; }
@@ -329,8 +507,23 @@ namespace TestMSBSDF
 					}
 				}
 
-				public Result( Results _owner, int _X, int _Y, int _Z ) {
+				/// <summary>
+				/// Gets the incoming direction, pointing toward the surface
+				/// </summary>
+				public float3	IncomingDirection {
+					get {
+						double	cosTheta = Math.Cos( m_incomingAngleTheta );
+						double	sinTheta = Math.Sin( m_incomingAngleTheta );
+						double	cosPhi = Math.Cos( m_incomingAnglePhi );
+						double	sinPhi = Math.Sin( m_incomingAnglePhi );
+						float3	result = new float3( -(float) (cosPhi * sinTheta), -(float) (sinPhi * sinTheta), -(float) cosTheta );
+						return result;
+					}
+				}
+
+				public Result( Results _owner, int _order, int _X, int _Y, int _Z ) {
 					m_owner = _owner;
+					m_order = _order;
 					m_X = _X;
 					m_Y = _Y;
 					m_Z = _Z;
@@ -349,7 +542,7 @@ namespace TestMSBSDF
 
 					XmlElement	ElemReflected = AppendChild( _parent, "LobeReflected" );
 					m_reflected.Save( ElemReflected );
-					if ( m_owner.m_settings.m_surfaceType == TestForm.SURFACE_TYPE.DIELECTRIC ) {
+					if ( m_owner.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
 						XmlElement	ElemRefracted = AppendChild( _parent, "LobeRefracted" );
 						m_reflected.Save( ElemReflected );
 					}
@@ -361,8 +554,9 @@ namespace TestMSBSDF
 
 			}
 
-			public Settings		m_settings = new Settings();
-			public Result[][,,]	m_results = new Result[0][,,];
+			public SurfaceParameters	m_surface = new SurfaceParameters();
+			public Settings				m_settings = new Settings();
+			public Result[][,,]			m_results = new Result[0][,,];
 
 			public event ResultStateChangedEventHandler	ResultStateChanged;
 
@@ -374,13 +568,12 @@ namespace TestMSBSDF
 			/// Initializes the array of results of the correct dimensions using the current settings
 			/// </summary>
 			public void		InitializeResults() {
+				int	orders = m_surface.ScatteringOrdersCount;
+				int	dimX = m_surface.m_incomingAngle.StepsCount;
+				int	dimY = m_surface.m_roughness.StepsCount;
+				int	dimZ = m_surface.m_albedoF0.StepsCount;
 
-				int	orders = m_settings.ScatteringOrdersCount;
-				int	dimX = m_settings.m_incomingAngle.StepsCount;
-				int	dimY = m_settings.m_surfaceRoughness.StepsCount;
-				int	dimZ = m_settings.m_albedoF0.StepsCount;
-
-				double	incomingAnglePhi = 0.0;	//@TODO?? We don't care about anisotropy anyway...
+				float	incomingAnglePhi = 0.0f;	//@TODO?? We don't care about anisotropy anyway...
 
 				m_results = new Result[orders][,,];
 				for ( int order=0; order < orders; order++ ) {
@@ -388,11 +581,11 @@ namespace TestMSBSDF
 					m_results[order] = new Result[dimX,dimY,dimZ];
 
 					float	incomingAngleMin, incomingAngleStep;
-					m_settings.m_incomingAngle.BuildMinStep( out incomingAngleMin, out incomingAngleStep );
+					m_surface.m_incomingAngle.BuildMinStep( out incomingAngleMin, out incomingAngleStep );
 					float	roughnessMin, roughnessStep;
-					m_settings.m_incomingAngle.BuildMinStep( out roughnessMin, out roughnessStep );
+					m_surface.m_incomingAngle.BuildMinStep( out roughnessMin, out roughnessStep );
 					float	albedoF0Min, albedoF0Step;
-					m_settings.m_albedoF0.BuildMinStep( out albedoF0Min, out albedoF0Step );
+					m_surface.m_albedoF0.BuildMinStep( out albedoF0Min, out albedoF0Step );
 
 					float	albedoF0 = albedoF0Min;
 					for ( int Z=0; Z < dimZ; Z++, albedoF0+=albedoF0Step ) {
@@ -400,7 +593,7 @@ namespace TestMSBSDF
 						for ( int Y=0; Y < dimY; Y++, roughness+=roughnessStep ) {
 							float	incomingAngle = incomingAngleMin;
 							for ( int X=0; X < dimX; X++, incomingAngle+=incomingAngleStep ) {
-								Result	R = new Result( this, X, Y, Z );
+								Result	R = new Result( this, order, X, Y, Z );
 								m_results[order][X,Y,Z] = R;
 
 								R.State = 0.0f;			// Not computed yet!
@@ -414,11 +607,17 @@ namespace TestMSBSDF
 						}
 					}
 				}
+
+				// Lock the surface!
+				m_surface.Lock();
 			}
 
 			public void		Save( XmlDocument _doc ) {
 
 				XmlElement	Root = _doc.CreateElement( "Root" );
+
+				XmlElement	ElmSurface = AppendChild( Root, "SurfaceParameters" );
+				m_surface.Save( ElmSurface );
 
 				XmlElement	ElmSettings = AppendChild( Root, "Settings" );
 				m_settings.Save( ElmSettings );
@@ -490,16 +689,35 @@ namespace TestMSBSDF
 		RegistryKey		m_AppKey;
 
 		LobeModel		m_lobeModel = null;
-		WMath.BFGS		m_Fitter = new WMath.BFGS();
+		WMath.BFGS		m_fitter = new WMath.BFGS();
 
 		bool			m_computing = false;
 		bool			m_isReflectedLobe = true;
 
 		Results			m_results = new Results();
+		Results.Result	m_selectedResult = null;		// Current selection
 
 		public new TestForm		Owner {
 			get { return m_owner; }
 			set { m_owner = value; }
+		}
+
+		/// <summary>
+		/// Gets or sets the result currently selected in the completion control
+		/// </summary>
+		Results.Result	SelectedResult {
+			get { return m_selectedResult; }
+			set {
+				if ( value == m_selectedResult )
+					return;
+
+				m_selectedResult = value;
+
+				if ( m_selectedResult == null )
+					return;
+
+				completionArrayControl.Select( m_selectedResult.X, m_selectedResult.Y, m_selectedResult.Z );
+			}
 		}
 
 		TestForm.SURFACE_TYPE	SurfaceType {
@@ -521,43 +739,196 @@ namespace TestMSBSDF
 			integerTrackbarControlRayCastingIterations.SimulateValueChange();
 		}
 
-		void	Simulate() {
-			m_owner.RayTraceSurface( );
+		#region Automation Core
+
+		/// <summary>
+		/// Prepare the fitter using current settings
+		/// </summary>
+		void	PrepareFitter() {
+
+			double	functionMinimumTolerance = Math.Pow( 10.0, m_results.m_settings.m_logTolerance_Minimum );
+			double	gradientTolerance = Math.Pow( 10.0, m_results.m_settings.m_logTolerance_Gradient );
+
+			m_fitter.MaxIterations = m_results.m_settings.m_maxIterations;
+			m_fitter.SuccessTolerance = functionMinimumTolerance;
+			m_fitter.GradientSuccessTolerance = gradientTolerance;
 		}
 
-		void	PerformLobeFitting( float3 _incomingDirection, float _theta, bool _computeInitialThetaUsingCenterOfMass, float _roughness, float _scale, float _flatteningFactor, float _MaskingImportance, float _OversizeFactor, int _scatteringOrder, bool _reflected ) {
+		/// <summary>
+		/// Recomputes the surface heightfield for the specified roughness
+		/// </summary>
+		/// <param name="_result"></param>
+		void	UpdateSurfaceRoughness( Results.Result _result ) {
+			m_owner.BuildBeckmannSurfaceTexture( (float) _result.m_surfaceRoughness );
+		}
 
-			m_isReflectedLobe = _reflected;
+		/// <summary>
+		/// Simulates incoming rays on surface (core routine)
+		/// </summary>
+		void	Simulate( Results.Result _result ) {
+
+			float	albedo = _result.m_surfaceAlbedoF0;
+			float	F0 = _result.m_surfaceAlbedoF0;
+
+			m_owner.RayTraceSurface( _result.m_surfaceRoughness, albedo, F0, m_results.m_surface.m_type, _result.m_incomingAngleTheta, _result.m_incomingAnglePhi, m_results.m_surface.m_rayTracingIterationsCount );
+		}
+
+		/// <summary>
+		/// Perform lobe fitting of the simulated data
+		/// </summary>
+		/// <param name="_result"></param>
+		/// <param name="_reflected"></param>
+		void	PerformLobeFitting( Results.Result _result, bool _reflected ) {
 
 			// Read back histogram to CPU for fitting
-			Texture2D	Tex_SimulatedLobeHistogram = m_owner.
-			m_Tex_LobeHistogram_CPU.CopyFrom( _reflected ? m_Tex_LobeHistogram_Reflected : m_Tex_LobeHistogram_Transmitted );
+			Texture2D	Tex_SimulatedLobeHistogram = m_owner.GetSimulationHistogram( _reflected );
 
-			// Initialize lobe model
-			m_lobeModel.InitTargetData( m_Tex_LobeHistogram_CPU, _scatteringOrder );
+			// Initialize lobe data & compute center of mass
+			m_lobeModel.InitTargetData( Tex_SimulatedLobeHistogram, _result.ScatteringOrder );
 
-			if ( _computeInitialThetaUsingCenterOfMass ) {
-				// Optionally override theta to use the direction of the center of mass
-				// (quite intuitive to start by aligning our lobe along the main simulated lobe direction!)
-				float3	towardCenterOfMass = m_lobeModel.CenterOfMass.Normalized;
-				_theta = (float) Math.Acos( towardCenterOfMass.z );
-//				_scale = 2.0 * m_centerOfMass.Length;				// Also assume we should match the simulated lobe's length
-				_flatteningFactor = 0.5f;							// Start from a semi-flattened shape so it can choose either direction...
-				_scale = 0.01f * m_lobeModel.CenterOfMass.Length;	// In fact, I realized the algorithm converged much faster starting from a very small lobe!! (~20 iterations compared to 200 otherwise, because the gradient leads the algorithm in the wrong direction too fast and it takes hell of a time to get back on tracks afterwards if we start from too large a lobe!)
-			}
+			// Initialize preliminary lobe results
+			float3				incomingDirection = _result.IncomingDirection;
 
-			LobeModel.LOBE_TYPE	lobeType = radioButtonAnalyticalPhong.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG : (radioButtonAnalyticalBeckmann.Checked ? LobeModel.LOBE_TYPE.BECKMANN : LobeModel.LOBE_TYPE.GGX);
+			float3				reflectedDirection = incomingDirection;
+								reflectedDirection.z = -reflectedDirection.z;	// Mirror against surface
 
-			m_lobeModel.InitLobeData( lobeType, _incomingDirection, _theta, _roughness, _scale, _flatteningFactor, _MaskingImportance, _OversizeFactor, checkBoxTest.Checked );
+			float3				refractedDirection = TestForm.Refract( -incomingDirection, float3.UnitZ, 1.0f / TestForm.Fresnel_IORFromF0( _result.m_surfaceAlbedoF0 ) );
 
-// 			if ( !checkBoxTest.Checked ) {
-// 				m_Fitter.SuccessTolerance = 1e-4;
-// 				m_Fitter.GradientSuccessTolerance = 1e-4;
-// 			}
+			LobeModel.LOBE_TYPE	lobeType = m_results.m_settings.m_lobeModel;
+
+			Results.Result.LobeParameters	lobeResults = _reflected ? _result.m_reflected : _result.m_refracted;
+
+			lobeResults.Initialize( _result, m_lobeModel, _reflected ? reflectedDirection : refractedDirection );
+
+			// Initialize lobe model using initialized lobe results
+			m_lobeModel.InitLobeData( lobeType, incomingDirection, lobeResults.m_theta, lobeResults.m_roughness, lobeResults.m_scale, lobeResults.m_flatten, lobeResults.m_masking, m_results.m_settings.m_oversizeFactor, true );
 
 			// Peform fitting
-			m_Fitter.Minimize( m_lobeModel );
+			m_fitter.Minimize( m_lobeModel );
 		}
+
+		#endregion
+
+		#region Document Management
+
+		bool		m_internalDocumentChange = false;
+		void		AttachDocument( Results _doc ) {
+			// Detach existing doc first
+			DetachDocument( m_results );
+
+			m_internalDocumentChange = true;
+			m_results = _doc;
+
+			// Subscribe to the document's events
+			m_results.ResultStateChanged += m_results_ResultStateChanged;
+			m_results.m_surface.LockStateChanged += m_surface_LockStateChanged;
+			m_results.m_surface.ScatteringOrdersCountChanged += m_surface_ScatteringOrdersCountChanged;
+			m_results.m_surface.m_incomingAngle.ValueChanged += m_simulationParameter_ValueChanged;
+			m_results.m_surface.m_roughness.ValueChanged += m_simulationParameter_ValueChanged;
+			m_results.m_surface.m_albedoF0.ValueChanged += m_simulationParameter_ValueChanged;
+
+			m_internalDocumentChange = false;
+		}
+
+		void		DetachDocument( Results _doc ) {
+			if ( _doc == null )
+				return;
+
+			m_internalDocumentChange = true;
+
+			// Unsubscribe from the document's events
+			m_results.m_surface.m_incomingAngle.ValueChanged -= m_simulationParameter_ValueChanged;
+			m_results.m_surface.m_roughness.ValueChanged -= m_simulationParameter_ValueChanged;
+			m_results.m_surface.m_albedoF0.ValueChanged -= m_simulationParameter_ValueChanged;
+			m_results.m_surface.ScatteringOrdersCountChanged -= m_surface_ScatteringOrdersCountChanged;
+			m_results.m_surface.LockStateChanged -= m_surface_LockStateChanged;
+			m_results.ResultStateChanged -= m_results_ResultStateChanged;
+
+			SelectedResult = null;	// Clear selection
+			m_results = null;
+
+			m_internalDocumentChange = false;
+		}
+
+		/// <summary>
+		/// Mirrors the document's values to the UI
+		/// </summary>
+		void	Document2UI() {
+
+			DocumentSettings2UI();
+		}
+
+		/// <summary>
+		/// Mirrors the document's settings to the UI
+		/// </summary>
+		void	DocumentSettings2UI() {
+
+			switch ( m_results.m_settings.m_lobeModel ) {
+				case LobeModel.LOBE_TYPE.MODIFIED_PHONG: radioButtonLobe_ModifiedPhong.Checked = true; break;
+				case LobeModel.LOBE_TYPE.BECKMANN: radioButtonLobe_Beckmann.Checked = true; break;
+				case LobeModel.LOBE_TYPE.GGX: radioButtonLobe_GGX.Checked = true; break;
+			}
+
+			switch ( m_results.m_settings.m_initialRoughness ) {
+				case Results.Settings.GUESS_INITIAL_ROUGHNESS.SURFACE: radioButtonInitRoughness_UseSurface.Checked = true; break;
+				case Results.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM: radioButtonInitRoughness_Custom.Checked = true; break;
+				case Results.Settings.GUESS_INITIAL_ROUGHNESS.NO_CHANGE: radioButtonInitRoughness_NoChange.Checked = true; break;
+			}
+
+			switch ( m_results.m_settings.m_initialMasking ) {
+				case Results.Settings.GUESS_INITIAL_MASKING.CUSTOM: radioButtonInitMasking_Custom.Checked = true; break;
+				case Results.Settings.GUESS_INITIAL_MASKING.NO_CHANGE: radioButtonInitMasking_NoChange.Checked = true; break;
+			}
+
+			switch ( m_results.m_settings.m_initialFlatten ) {
+				case Results.Settings.GUESS_INITIAL_FLATTEN.CUSTOM: radioButtonInitFlatten_Custom.Checked = true; break;
+				case Results.Settings.GUESS_INITIAL_FLATTEN.NO_CHANGE: radioButtonInitFlatten_NoChange.Checked = true; break;
+			}
+
+			switch ( m_results.m_settings.m_initialScale ) {
+				case Results.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS: radioButtonInitScale_CoMFactor.Checked = true; break;
+				case Results.Settings.GUESS_INITIAL_SCALE.NO_CHANGE: radioButtonInitScale_NoChange.Checked = true; break;
+			}
+
+			switch ( m_results.m_settings.m_initialDirection ) {
+				case Results.Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS: radioButtonInitDirection_TowardCoM.Checked = true; break;
+				case Results.Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION: radioButtonInitDirection_TowardReflected.Checked = true; break;
+				case Results.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE: radioButtonInitDirection_NoChange.Checked = true; break;
+			}
+
+			checkBoxInitDirection_Inherit.Checked = m_results.m_settings.m_inheritDirection;
+			checkBoxInitScale_Inherit.Checked = m_results.m_settings.m_inheritScale;
+			checkBoxInitFlatten_Inherit.Checked = m_results.m_settings.m_inheritFlatten;
+			checkBoxInitScale_Inherit.Checked = m_results.m_settings.m_inheritRoughness;
+			checkBoxInitMasking_Inherit.Checked = m_results.m_settings.m_inheritMasking;
+			floatTrackbarControlInit_Scale.Value = m_results.m_settings.m_customScale;
+			floatTrackbarControlInit_Flatten.Value = m_results.m_settings.m_customFlatten;
+			floatTrackbarControlInit_CustomRoughness.Value = m_results.m_settings.m_customRoughness;
+			floatTrackbarControlInit_MaskingImportance.Value = m_results.m_settings.m_customMasking;
+		}
+
+		void m_surface_ScatteringOrdersCountChanged()
+		{
+			throw new NotImplementedException();
+			//@TODO: Update 
+		}
+
+		void m_simulationParameter_ValueChanged( AutomationForm.Results.SurfaceParameters.Parameter _P )
+		{
+			throw new NotImplementedException();
+			//@TODO: Update completion control dimensions
+		}
+
+		void m_surface_LockStateChanged() {
+			groupBoxSimulationParameters.Enabled = !m_results.m_surface.IsLocked;
+		}
+
+		void m_results_ResultStateChanged( AutomationForm.Results.Result _result )
+		{
+			throw new NotImplementedException();
+		}
+
+		#endregion
 
 		DialogResult	MessageBox( string _Text ) {
 			return MessageBox( _Text, MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -573,11 +944,6 @@ namespace TestMSBSDF
 			Visible = false;	// Only hide, don't close!
 			e.Cancel = true;
 			base.OnFormClosing( e );
-		}
-
-		private void checkBoxInit_StartSmall_CheckedChanged( object sender, EventArgs e )
-		{
-//			floatTrackbarControlInit_StartSmallFactor.Enabled = checkBoxInit_StartSmall.Checked;
 		}
 
 		private void radioButtonInit_UseCustomRoughness_CheckedChanged( object sender, EventArgs e )
@@ -628,12 +994,12 @@ namespace TestMSBSDF
 			if ( MessageBox( "Are you sure you want to erase current results?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
 				return;
 
-
+			throw new Exception();
 		}
 
 		private void newToolStripMenuItem_Click( object sender, EventArgs e )
 		{
-
+			throw new Exception();
 		}
 
 		private void saveToolStripMenuItem1_Click( object sender, EventArgs e ) {
@@ -685,5 +1051,129 @@ namespace TestMSBSDF
 
 			labelTotalRaysCount.Text = "Total Simulated Rays: " + count;
 		}
+
+		private void integerTrackbarControlParam0_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			completionArrayControl.Init( m_results.m_surface.m_incomingAngle.StepsCount, m_results.m_surface.m_roughness.StepsCount, m_results.m_surface.m_albedoF0.StepsCount );
+		}
+
+		private void completionArrayControl_SelectionChanged( CompletionArrayControl _Sender )
+		{
+			Results.Result[,,]	layerResults = m_results.m_results[integerTrackbarControlViewScatteringOrder.Value];
+			SelectedResult = layerResults[_Sender.SelectedX,_Sender.SelectedY, _Sender.SelectedZ];
+		}
+
+		private void integerTrackbarControlViewScatteringOrder_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			Results.Result[,,]	layerResults = m_results.m_results[_Sender.Value];
+
+			SelectedResult = layerResults[completionArrayControl.SelectedX, completionArrayControl.SelectedY, completionArrayControl.SelectedZ];
+		}
+
+		private void integerTrackbarControlViewAlbedoSlice_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			completionArrayControl.SelectedZ = _Sender.Value;
+		}
+
+		private void contextMenuStripSelection_Opening( object sender, CancelEventArgs e )
+		{
+			if ( SelectedResult == null )
+				e.Cancel = true;
+
+			//@TODO: Handle selection
+		}
+
+		
+		#region UI => Document Mirroring
+
+		#region Settings
+
+		private void LobeTypeCheckChanged( object sender, EventArgs e )
+		{
+			m_results.m_settings.m_lobeModel =	radioButtonLobe_ModifiedPhong.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG :
+												(radioButtonLobe_Beckmann.Checked ? LobeModel.LOBE_TYPE.BECKMANN :
+												LobeModel.LOBE_TYPE.GGX);
+		}
+
+		private void radioButtonInitRoughness_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_settings.m_initialRoughness = radioButtonInitRoughness_UseSurface.Checked ?	Results.Settings.GUESS_INITIAL_ROUGHNESS.SURFACE :
+													(radioButtonInitRoughness_Custom.Checked ?		Results.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM :
+																									Results.Settings.GUESS_INITIAL_ROUGHNESS.NO_CHANGE);
+		}
+
+		private void radioButtonInitMasking_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_settings.m_initialMasking = radioButtonInitMasking_Custom.Checked ?	Results.Settings.GUESS_INITIAL_MASKING.CUSTOM :
+																							Results.Settings.GUESS_INITIAL_MASKING.NO_CHANGE;
+		}
+
+		private void radioButtonInitFlatten_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_settings.m_initialFlatten = radioButtonInitFlatten_Custom.Checked ?	Results.Settings.GUESS_INITIAL_FLATTEN.CUSTOM :
+																							Results.Settings.GUESS_INITIAL_FLATTEN.NO_CHANGE;
+		}
+
+		private void radioButtonInitScale_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_settings.m_initialScale = radioButtonInitScale_CoMFactor.Checked ?	Results.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS :
+																							Results.Settings.GUESS_INITIAL_SCALE.NO_CHANGE;
+		}
+
+		private void radioButtonInitDirection_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_settings.m_initialDirection = radioButtonInitDirection_TowardCoM.Checked ?		Results.Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS :
+													(radioButtonInitDirection_TowardReflected.Checked ?	Results.Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION :
+																										Results.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE);
+		}
+
+		private void checkBoxInitDirection_Inherit_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_settings.m_inheritDirection = checkBoxInitDirection_Inherit.Checked;
+		}
+
+		private void checkBoxInitScale_Inherit_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_settings.m_inheritScale = checkBoxInitScale_Inherit.Checked;
+		}
+
+		private void checkBoxInitFlatten_Inherit_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_settings.m_inheritFlatten = checkBoxInitFlatten_Inherit.Checked;
+		}
+
+		private void checkBoxInitRoughness_Inherit_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_settings.m_inheritRoughness = checkBoxInitScale_Inherit.Checked;
+		}
+
+		private void checkBoxInitMasking_Inherit_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_settings.m_inheritMasking = checkBoxInitMasking_Inherit.Checked;
+		}
+
+		private void floatTrackbarControlInit_Scale_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_results.m_settings.m_customScale = _Sender.Value;
+		}
+
+		private void floatTrackbarControlInit_Flatten_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_results.m_settings.m_customFlatten = _Sender.Value;
+		}
+
+		private void floatTrackbarControlInit_CustomRoughness_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_results.m_settings.m_customRoughness = _Sender.Value;
+		}
+
+		private void floatTrackbarControlInit_MaskingImportance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_results.m_settings.m_customMasking = _Sender.Value;
+		}
+
+		#endregion
+
+		#endregion
 	}
 }

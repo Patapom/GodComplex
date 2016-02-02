@@ -30,8 +30,6 @@ namespace TestMSBSDF
 		protected int				m_dimensionZ = 1;
 		protected float[,,]			m_states = null;
 
-		protected int				m_currentLayerIndex = 0;
-
 		protected int				m_selectedX = 0;
 		protected int				m_selectedY = 0;
 		protected int				m_selectedZ = 0;
@@ -98,19 +96,6 @@ namespace TestMSBSDF
 			get { return m_states[m_selectedX, m_selectedY, m_selectedZ]; }
 			set {
 				m_states[m_selectedX, m_selectedY, m_selectedZ] = value;
-				Invalidate();
-			}
-		}
-
-		public int				CurrentLayerIndex {
-			get { return m_currentLayerIndex; }
-			set {
-				value = Math.Max( 0, Math.Min( m_dimensionZ-1, value ) );
-				if ( value == m_currentLayerIndex )
-					return;
-
-				m_currentLayerIndex = value;
-
 				Invalidate();
 			}
 		}
@@ -208,7 +193,9 @@ namespace TestMSBSDF
 			m_dimensionZ = _dimensionZ;
 			m_states = new float[m_dimensionX,m_dimensionY,m_dimensionZ];
 
-			m_currentLayerIndex = Math.Max( 0, Math.Min( m_dimensionZ-1, m_currentLayerIndex ) );
+			m_selectedX = 0;
+			m_selectedY = 0;
+			m_selectedZ = 0;
 
 			Invalidate();
 		}
@@ -277,7 +264,7 @@ namespace TestMSBSDF
 		{
 			base.OnMouseDown( e );
 
-			Select( e.X * m_dimensionX / Width, e.Y * m_dimensionY / Height, m_currentLayerIndex );
+			Select( e.X * m_dimensionX / Width, e.Y * m_dimensionY / Height, m_selectedZ );
 		}
 
 		protected override void OnEnabledChanged( EventArgs e )
@@ -333,7 +320,7 @@ namespace TestMSBSDF
 						float	y0 = Y * rectangleHeight;
 						float	y1 = (Y+1) * rectangleHeight;
 
-						float	state = m_states[X,Y,m_currentLayerIndex];
+						float	state = m_states[X,Y,m_selectedZ];
 						if ( state < 0.0f )
 							FillRectangle( e.Graphics, m_brushFailed, x0+margin, y0+margin, x1-margin, y1-margin );
 						else

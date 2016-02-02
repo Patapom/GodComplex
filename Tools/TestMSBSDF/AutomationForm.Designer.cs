@@ -29,7 +29,7 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.groupBox1 = new System.Windows.Forms.GroupBox();
+			this.groupBoxSimulationParameters = new System.Windows.Forms.GroupBox();
 			this.panel6 = new System.Windows.Forms.Panel();
 			this.checkBoxParm2_InclusiveStart = new System.Windows.Forms.CheckBox();
 			this.checkBoxParm2_InclusiveEnd = new System.Windows.Forms.CheckBox();
@@ -69,23 +69,31 @@
 			this.label11 = new System.Windows.Forms.Label();
 			this.label21 = new System.Windows.Forms.Label();
 			this.panelParameters = new System.Windows.Forms.Panel();
-			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
+			this.contextMenuStripSelection = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.computeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.startFromHereToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
+			this.clearToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.integerTrackbarControlViewAlbedoSlice = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlViewScatteringOrder = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.groupBox2 = new System.Windows.Forms.GroupBox();
 			this.groupBoxCustomInitialGuesses = new System.Windows.Forms.GroupBox();
 			this.panel9 = new System.Windows.Forms.Panel();
 			this.radioButtonInitMasking_Custom = new System.Windows.Forms.RadioButton();
+			this.radioButtonInitMasking_NoChange = new System.Windows.Forms.RadioButton();
 			this.checkBoxInitMasking_Inherit = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlInit_MaskingImportance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label8 = new System.Windows.Forms.Label();
 			this.panel8 = new System.Windows.Forms.Panel();
 			this.radioButtonInitFlatten_Custom = new System.Windows.Forms.RadioButton();
+			this.radioButtonInitFlatten_NoChange = new System.Windows.Forms.RadioButton();
 			this.checkBoxInitFlatten_Inherit = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlInit_Flatten = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label28 = new System.Windows.Forms.Label();
 			this.panel7 = new System.Windows.Forms.Panel();
 			this.radioButtonInitScale_CoMFactor = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitScale_NoChange = new System.Windows.Forms.RadioButton();
-			this.floatTrackbarControlInit_StartSmallFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlInit_Scale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxInitScale_Inherit = new System.Windows.Forms.CheckBox();
 			this.label27 = new System.Windows.Forms.Label();
 			this.panel4 = new System.Windows.Forms.Panel();
@@ -96,6 +104,7 @@
 			this.label10 = new System.Windows.Forms.Label();
 			this.panel3 = new System.Windows.Forms.Panel();
 			this.floatTrackbarControlInit_CustomRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.radioButtonInitRoughness_NoChange = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitRoughness_UseSurface = new System.Windows.Forms.RadioButton();
 			this.checkBoxInitRoughness_Inherit = new System.Windows.Forms.CheckBox();
 			this.radioButtonInitRoughness_Custom = new System.Windows.Forms.RadioButton();
@@ -105,11 +114,13 @@
 			this.radioButtonLobe_GGX = new System.Windows.Forms.RadioButton();
 			this.radioButtonLobe_Beckmann = new System.Windows.Forms.RadioButton();
 			this.radioButtonLobe_ModifiedPhong = new System.Windows.Forms.RadioButton();
+			this.label30 = new System.Windows.Forms.Label();
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.label1 = new System.Windows.Forms.Label();
 			this.radioButtonSurfaceTypeDiffuse = new System.Windows.Forms.RadioButton();
 			this.radioButtonSurfaceTypeDielectric = new System.Windows.Forms.RadioButton();
 			this.radioButtonSurfaceTypeConductor = new System.Windows.Forms.RadioButton();
+			this.label29 = new System.Windows.Forms.Label();
 			this.groupBox4 = new System.Windows.Forms.GroupBox();
 			this.floatTrackbarControlFitOversize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label26 = new System.Windows.Forms.Label();
@@ -125,6 +136,7 @@
 			this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
 			this.menuStrip1 = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.newToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
@@ -138,12 +150,13 @@
 			this.buttonClearResults = new System.Windows.Forms.Button();
 			this.openFileDialogResults = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogResults = new System.Windows.Forms.SaveFileDialog();
-			this.newToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.groupBox1.SuspendLayout();
+			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
+			this.groupBoxSimulationParameters.SuspendLayout();
 			this.panel6.SuspendLayout();
 			this.panel5.SuspendLayout();
 			this.panelIncidentAngle.SuspendLayout();
 			this.panelParameters.SuspendLayout();
+			this.contextMenuStripSelection.SuspendLayout();
 			this.groupBox2.SuspendLayout();
 			this.groupBoxCustomInitialGuesses.SuspendLayout();
 			this.panel9.SuspendLayout();
@@ -157,25 +170,25 @@
 			this.menuStrip1.SuspendLayout();
 			this.SuspendLayout();
 			// 
-			// groupBox1
+			// groupBoxSimulationParameters
 			// 
-			this.groupBox1.Controls.Add(this.panel6);
-			this.groupBox1.Controls.Add(this.panel5);
-			this.groupBox1.Controls.Add(this.integerTrackbarControlScatteringOrder_Max);
-			this.groupBox1.Controls.Add(this.integerTrackbarControlRayCastingIterations);
-			this.groupBox1.Controls.Add(this.integerTrackbarControlScatteringOrder_Min);
-			this.groupBox1.Controls.Add(this.panelIncidentAngle);
-			this.groupBox1.Controls.Add(this.label20);
-			this.groupBox1.Controls.Add(this.label22);
-			this.groupBox1.Controls.Add(this.labelTotalRaysCount);
-			this.groupBox1.Controls.Add(this.label11);
-			this.groupBox1.Controls.Add(this.label21);
-			this.groupBox1.Location = new System.Drawing.Point(0, 48);
-			this.groupBox1.Name = "groupBox1";
-			this.groupBox1.Size = new System.Drawing.Size(616, 325);
-			this.groupBox1.TabIndex = 0;
-			this.groupBox1.TabStop = false;
-			this.groupBox1.Text = "Simulation Parameters";
+			this.groupBoxSimulationParameters.Controls.Add(this.panel6);
+			this.groupBoxSimulationParameters.Controls.Add(this.panel5);
+			this.groupBoxSimulationParameters.Controls.Add(this.integerTrackbarControlScatteringOrder_Max);
+			this.groupBoxSimulationParameters.Controls.Add(this.integerTrackbarControlRayCastingIterations);
+			this.groupBoxSimulationParameters.Controls.Add(this.integerTrackbarControlScatteringOrder_Min);
+			this.groupBoxSimulationParameters.Controls.Add(this.panelIncidentAngle);
+			this.groupBoxSimulationParameters.Controls.Add(this.label20);
+			this.groupBoxSimulationParameters.Controls.Add(this.label22);
+			this.groupBoxSimulationParameters.Controls.Add(this.labelTotalRaysCount);
+			this.groupBoxSimulationParameters.Controls.Add(this.label11);
+			this.groupBoxSimulationParameters.Controls.Add(this.label21);
+			this.groupBoxSimulationParameters.Location = new System.Drawing.Point(0, 48);
+			this.groupBoxSimulationParameters.Name = "groupBoxSimulationParameters";
+			this.groupBoxSimulationParameters.Size = new System.Drawing.Size(616, 325);
+			this.groupBoxSimulationParameters.TabIndex = 0;
+			this.groupBoxSimulationParameters.TabStop = false;
+			this.groupBoxSimulationParameters.Text = "Simulation Parameters";
 			// 
 			// panel6
 			// 
@@ -515,6 +528,7 @@
 			this.integerTrackbarControlParam0_Steps.Size = new System.Drawing.Size(200, 20);
 			this.integerTrackbarControlParam0_Steps.TabIndex = 3;
 			this.integerTrackbarControlParam0_Steps.Value = 30;
+			this.integerTrackbarControlParam0_Steps.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam0_Steps_ValueChanged);
 			// 
 			// floatTrackbarControlParam0_Max
 			// 
@@ -636,28 +650,81 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.panelParameters.Controls.Add(this.completionArrayControl);
-			this.panelParameters.Controls.Add(this.groupBox1);
+			this.panelParameters.Controls.Add(this.groupBoxSimulationParameters);
+			this.panelParameters.Controls.Add(this.integerTrackbarControlViewAlbedoSlice);
+			this.panelParameters.Controls.Add(this.integerTrackbarControlViewScatteringOrder);
 			this.panelParameters.Controls.Add(this.groupBox2);
+			this.panelParameters.Controls.Add(this.label30);
 			this.panelParameters.Controls.Add(this.panel1);
+			this.panelParameters.Controls.Add(this.label29);
 			this.panelParameters.Location = new System.Drawing.Point(12, 27);
 			this.panelParameters.Name = "panelParameters";
 			this.panelParameters.Size = new System.Drawing.Size(1057, 725);
 			this.panelParameters.TabIndex = 1;
 			// 
-			// completionArrayControl
+			// contextMenuStripSelection
 			// 
-			this.completionArrayControl.BackColor = System.Drawing.SystemColors.ControlLight;
-			this.completionArrayControl.CurrentLayerIndex = 0;
-			this.completionArrayControl.GridColor = System.Drawing.Color.Black;
-			this.completionArrayControl.Location = new System.Drawing.Point(0, 558);
-			this.completionArrayControl.Name = "completionArrayControl";
-			this.completionArrayControl.SelectedState = 1;
-			this.completionArrayControl.SelectedX = 0;
-			this.completionArrayControl.SelectedY = 0;
-			this.completionArrayControl.SelectedZ = 0;
-			this.completionArrayControl.Size = new System.Drawing.Size(616, 155);
-			this.completionArrayControl.TabIndex = 3;
-			this.completionArrayControl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.completionArrayControl_MouseDoubleClick);
+			this.contextMenuStripSelection.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.computeToolStripMenuItem,
+            this.startFromHereToolStripMenuItem,
+            this.toolStripMenuItem3,
+            this.clearToolStripMenuItem});
+			this.contextMenuStripSelection.Name = "contextMenuStripSelection";
+			this.contextMenuStripSelection.Size = new System.Drawing.Size(154, 76);
+			this.contextMenuStripSelection.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStripSelection_Opening);
+			// 
+			// computeToolStripMenuItem
+			// 
+			this.computeToolStripMenuItem.Name = "computeToolStripMenuItem";
+			this.computeToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+			this.computeToolStripMenuItem.Text = "&Compute";
+			// 
+			// startFromHereToolStripMenuItem
+			// 
+			this.startFromHereToolStripMenuItem.Name = "startFromHereToolStripMenuItem";
+			this.startFromHereToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+			this.startFromHereToolStripMenuItem.Text = "&Start from here";
+			// 
+			// toolStripMenuItem3
+			// 
+			this.toolStripMenuItem3.Name = "toolStripMenuItem3";
+			this.toolStripMenuItem3.Size = new System.Drawing.Size(150, 6);
+			// 
+			// clearToolStripMenuItem
+			// 
+			this.clearToolStripMenuItem.Name = "clearToolStripMenuItem";
+			this.clearToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+			this.clearToolStripMenuItem.Text = "Clea&r";
+			// 
+			// integerTrackbarControlViewAlbedoSlice
+			// 
+			this.integerTrackbarControlViewAlbedoSlice.Location = new System.Drawing.Point(733, 627);
+			this.integerTrackbarControlViewAlbedoSlice.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlViewAlbedoSlice.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlViewAlbedoSlice.Name = "integerTrackbarControlViewAlbedoSlice";
+			this.integerTrackbarControlViewAlbedoSlice.RangeMax = 4;
+			this.integerTrackbarControlViewAlbedoSlice.RangeMin = 1;
+			this.integerTrackbarControlViewAlbedoSlice.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlViewAlbedoSlice.TabIndex = 3;
+			this.integerTrackbarControlViewAlbedoSlice.Value = 2;
+			this.integerTrackbarControlViewAlbedoSlice.VisibleRangeMax = 4;
+			this.integerTrackbarControlViewAlbedoSlice.VisibleRangeMin = 1;
+			this.integerTrackbarControlViewAlbedoSlice.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlViewAlbedoSlice_ValueChanged);
+			// 
+			// integerTrackbarControlViewScatteringOrder
+			// 
+			this.integerTrackbarControlViewScatteringOrder.Location = new System.Drawing.Point(733, 601);
+			this.integerTrackbarControlViewScatteringOrder.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlViewScatteringOrder.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlViewScatteringOrder.Name = "integerTrackbarControlViewScatteringOrder";
+			this.integerTrackbarControlViewScatteringOrder.RangeMax = 4;
+			this.integerTrackbarControlViewScatteringOrder.RangeMin = 1;
+			this.integerTrackbarControlViewScatteringOrder.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlViewScatteringOrder.TabIndex = 3;
+			this.integerTrackbarControlViewScatteringOrder.Value = 2;
+			this.integerTrackbarControlViewScatteringOrder.VisibleRangeMax = 4;
+			this.integerTrackbarControlViewScatteringOrder.VisibleRangeMin = 1;
+			this.integerTrackbarControlViewScatteringOrder.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlViewScatteringOrder_ValueChanged);
 			// 
 			// groupBox2
 			// 
@@ -689,6 +756,7 @@
 			// panel9
 			// 
 			this.panel9.Controls.Add(this.radioButtonInitMasking_Custom);
+			this.panel9.Controls.Add(this.radioButtonInitMasking_NoChange);
 			this.panel9.Controls.Add(this.checkBoxInitMasking_Inherit);
 			this.panel9.Controls.Add(this.floatTrackbarControlInit_MaskingImportance);
 			this.panel9.Controls.Add(this.label8);
@@ -707,6 +775,18 @@
 			this.radioButtonInitMasking_Custom.TabIndex = 0;
 			this.radioButtonInitMasking_Custom.TabStop = true;
 			this.radioButtonInitMasking_Custom.UseVisualStyleBackColor = true;
+			this.radioButtonInitMasking_Custom.CheckedChanged += new System.EventHandler(this.radioButtonInitMasking_CheckedChanged);
+			// 
+			// radioButtonInitMasking_NoChange
+			// 
+			this.radioButtonInitMasking_NoChange.AutoSize = true;
+			this.radioButtonInitMasking_NoChange.Location = new System.Drawing.Point(105, 26);
+			this.radioButtonInitMasking_NoChange.Name = "radioButtonInitMasking_NoChange";
+			this.radioButtonInitMasking_NoChange.Size = new System.Drawing.Size(139, 17);
+			this.radioButtonInitMasking_NoChange.TabIndex = 0;
+			this.radioButtonInitMasking_NoChange.Text = "No Change from Current";
+			this.radioButtonInitMasking_NoChange.UseVisualStyleBackColor = true;
+			this.radioButtonInitMasking_NoChange.CheckedChanged += new System.EventHandler(this.radioButtonInitMasking_CheckedChanged);
 			// 
 			// checkBoxInitMasking_Inherit
 			// 
@@ -721,7 +801,7 @@
 			this.toolTip1.SetToolTip(this.checkBoxInitMasking_Inherit, "If checked, the parameter will be first initialized with your option of choice th" +
         "en it will inherit the value that was previosuly fitted");
 			this.checkBoxInitMasking_Inherit.UseVisualStyleBackColor = true;
-			this.checkBoxInitMasking_Inherit.CheckedChanged += new System.EventHandler(this.checkBoxInit_StartSmall_CheckedChanged);
+			this.checkBoxInitMasking_Inherit.CheckedChanged += new System.EventHandler(this.checkBoxInitMasking_Inherit_CheckedChanged);
 			// 
 			// floatTrackbarControlInit_MaskingImportance
 			// 
@@ -735,6 +815,7 @@
 			this.floatTrackbarControlInit_MaskingImportance.TabIndex = 2;
 			this.floatTrackbarControlInit_MaskingImportance.Value = 1F;
 			this.floatTrackbarControlInit_MaskingImportance.VisibleRangeMax = 1F;
+			this.floatTrackbarControlInit_MaskingImportance.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_MaskingImportance_ValueChanged);
 			// 
 			// label8
 			// 
@@ -749,6 +830,7 @@
 			// panel8
 			// 
 			this.panel8.Controls.Add(this.radioButtonInitFlatten_Custom);
+			this.panel8.Controls.Add(this.radioButtonInitFlatten_NoChange);
 			this.panel8.Controls.Add(this.checkBoxInitFlatten_Inherit);
 			this.panel8.Controls.Add(this.floatTrackbarControlInit_Flatten);
 			this.panel8.Controls.Add(this.label28);
@@ -767,6 +849,18 @@
 			this.radioButtonInitFlatten_Custom.TabIndex = 0;
 			this.radioButtonInitFlatten_Custom.TabStop = true;
 			this.radioButtonInitFlatten_Custom.UseVisualStyleBackColor = true;
+			this.radioButtonInitFlatten_Custom.CheckedChanged += new System.EventHandler(this.radioButtonInitFlatten_CheckedChanged);
+			// 
+			// radioButtonInitFlatten_NoChange
+			// 
+			this.radioButtonInitFlatten_NoChange.AutoSize = true;
+			this.radioButtonInitFlatten_NoChange.Location = new System.Drawing.Point(102, 27);
+			this.radioButtonInitFlatten_NoChange.Name = "radioButtonInitFlatten_NoChange";
+			this.radioButtonInitFlatten_NoChange.Size = new System.Drawing.Size(139, 17);
+			this.radioButtonInitFlatten_NoChange.TabIndex = 0;
+			this.radioButtonInitFlatten_NoChange.Text = "No Change from Current";
+			this.radioButtonInitFlatten_NoChange.UseVisualStyleBackColor = true;
+			this.radioButtonInitFlatten_NoChange.CheckedChanged += new System.EventHandler(this.radioButtonInitFlatten_CheckedChanged);
 			// 
 			// checkBoxInitFlatten_Inherit
 			// 
@@ -781,7 +875,7 @@
 			this.toolTip1.SetToolTip(this.checkBoxInitFlatten_Inherit, "If checked, the parameter will be first initialized with your option of choice th" +
         "en it will inherit the value that was previosuly fitted");
 			this.checkBoxInitFlatten_Inherit.UseVisualStyleBackColor = true;
-			this.checkBoxInitFlatten_Inherit.CheckedChanged += new System.EventHandler(this.checkBoxInit_StartSmall_CheckedChanged);
+			this.checkBoxInitFlatten_Inherit.CheckedChanged += new System.EventHandler(this.checkBoxInitFlatten_Inherit_CheckedChanged);
 			// 
 			// floatTrackbarControlInit_Flatten
 			// 
@@ -796,6 +890,7 @@
 			this.toolTip1.SetToolTip(this.floatTrackbarControlInit_Flatten, "Specifies the lobe\'s flattening to start with (diffuse lobes tend to be flatter)");
 			this.floatTrackbarControlInit_Flatten.Value = 0.5F;
 			this.floatTrackbarControlInit_Flatten.VisibleRangeMax = 1F;
+			this.floatTrackbarControlInit_Flatten.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_Flatten_ValueChanged);
 			// 
 			// label28
 			// 
@@ -811,7 +906,7 @@
 			// 
 			this.panel7.Controls.Add(this.radioButtonInitScale_CoMFactor);
 			this.panel7.Controls.Add(this.radioButtonInitScale_NoChange);
-			this.panel7.Controls.Add(this.floatTrackbarControlInit_StartSmallFactor);
+			this.panel7.Controls.Add(this.floatTrackbarControlInit_Scale);
 			this.panel7.Controls.Add(this.checkBoxInitScale_Inherit);
 			this.panel7.Controls.Add(this.label27);
 			this.panel7.Location = new System.Drawing.Point(3, 112);
@@ -830,6 +925,7 @@
 			this.radioButtonInitScale_CoMFactor.TabStop = true;
 			this.radioButtonInitScale_CoMFactor.Text = "Factor of Center of Mass Vector\'s Length";
 			this.radioButtonInitScale_CoMFactor.UseVisualStyleBackColor = true;
+			this.radioButtonInitScale_CoMFactor.CheckedChanged += new System.EventHandler(this.radioButtonInitScale_CheckedChanged);
 			// 
 			// radioButtonInitScale_NoChange
 			// 
@@ -840,22 +936,23 @@
 			this.radioButtonInitScale_NoChange.TabIndex = 0;
 			this.radioButtonInitScale_NoChange.Text = "No Change from Current";
 			this.radioButtonInitScale_NoChange.UseVisualStyleBackColor = true;
-			this.radioButtonInitScale_NoChange.CheckedChanged += new System.EventHandler(this.radioButtonInit_UseCustomRoughness_CheckedChanged);
+			this.radioButtonInitScale_NoChange.CheckedChanged += new System.EventHandler(this.radioButtonInitScale_CheckedChanged);
 			// 
-			// floatTrackbarControlInit_StartSmallFactor
+			// floatTrackbarControlInit_Scale
 			// 
-			this.floatTrackbarControlInit_StartSmallFactor.Location = new System.Drawing.Point(119, 21);
-			this.floatTrackbarControlInit_StartSmallFactor.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlInit_StartSmallFactor.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlInit_StartSmallFactor.Name = "floatTrackbarControlInit_StartSmallFactor";
-			this.floatTrackbarControlInit_StartSmallFactor.RangeMax = 1F;
-			this.floatTrackbarControlInit_StartSmallFactor.RangeMin = 0F;
-			this.floatTrackbarControlInit_StartSmallFactor.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlInit_StartSmallFactor.TabIndex = 2;
-			this.toolTip1.SetToolTip(this.floatTrackbarControlInit_StartSmallFactor, "Specifies the percentage of the size of the simulated lobe to start with (smaller" +
+			this.floatTrackbarControlInit_Scale.Location = new System.Drawing.Point(119, 21);
+			this.floatTrackbarControlInit_Scale.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlInit_Scale.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlInit_Scale.Name = "floatTrackbarControlInit_Scale";
+			this.floatTrackbarControlInit_Scale.RangeMax = 1F;
+			this.floatTrackbarControlInit_Scale.RangeMin = 0F;
+			this.floatTrackbarControlInit_Scale.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlInit_Scale.TabIndex = 2;
+			this.toolTip1.SetToolTip(this.floatTrackbarControlInit_Scale, "Specifies the percentage of the size of the simulated lobe to start with (smaller" +
         " initial lobes make simulation converge faster)");
-			this.floatTrackbarControlInit_StartSmallFactor.Value = 0.05F;
-			this.floatTrackbarControlInit_StartSmallFactor.VisibleRangeMax = 1F;
+			this.floatTrackbarControlInit_Scale.Value = 0.05F;
+			this.floatTrackbarControlInit_Scale.VisibleRangeMax = 1F;
+			this.floatTrackbarControlInit_Scale.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_Scale_ValueChanged);
 			// 
 			// checkBoxInitScale_Inherit
 			// 
@@ -870,7 +967,7 @@
 			this.toolTip1.SetToolTip(this.checkBoxInitScale_Inherit, "If checked, the parameter will be first initialized with your option of choice th" +
         "en it will inherit the value that was previosuly fitted");
 			this.checkBoxInitScale_Inherit.UseVisualStyleBackColor = true;
-			this.checkBoxInitScale_Inherit.CheckedChanged += new System.EventHandler(this.checkBoxInit_StartSmall_CheckedChanged);
+			this.checkBoxInitScale_Inherit.CheckedChanged += new System.EventHandler(this.checkBoxInitScale_Inherit_CheckedChanged);
 			// 
 			// label27
 			// 
@@ -907,6 +1004,7 @@
 			this.toolTip1.SetToolTip(this.radioButtonInitDirection_TowardCoM, "Initial orientation is aligned toward the Center of Mass of the simulated lobe (b" +
         "etter estimate)");
 			this.radioButtonInitDirection_TowardCoM.UseVisualStyleBackColor = true;
+			this.radioButtonInitDirection_TowardCoM.CheckedChanged += new System.EventHandler(this.radioButtonInitDirection_CheckedChanged);
 			// 
 			// radioButtonInitDirection_NoChange
 			// 
@@ -917,7 +1015,7 @@
 			this.radioButtonInitDirection_NoChange.TabIndex = 0;
 			this.radioButtonInitDirection_NoChange.Text = "No Change from Current";
 			this.radioButtonInitDirection_NoChange.UseVisualStyleBackColor = true;
-			this.radioButtonInitDirection_NoChange.CheckedChanged += new System.EventHandler(this.radioButtonInit_UseCustomRoughness_CheckedChanged);
+			this.radioButtonInitDirection_NoChange.CheckedChanged += new System.EventHandler(this.radioButtonInitDirection_CheckedChanged);
 			// 
 			// radioButtonInitDirection_TowardReflected
 			// 
@@ -929,7 +1027,7 @@
 			this.radioButtonInitDirection_TowardReflected.Text = "Reflected/Refracted Direction";
 			this.toolTip1.SetToolTip(this.radioButtonInitDirection_TowardReflected, "Initial orientation is aligned toward the reflected/refracted direction");
 			this.radioButtonInitDirection_TowardReflected.UseVisualStyleBackColor = true;
-			this.radioButtonInitDirection_TowardReflected.CheckedChanged += new System.EventHandler(this.radioButtonInit_UseCustomRoughness_CheckedChanged);
+			this.radioButtonInitDirection_TowardReflected.CheckedChanged += new System.EventHandler(this.radioButtonInitDirection_CheckedChanged);
 			// 
 			// checkBoxInitDirection_Inherit
 			// 
@@ -944,7 +1042,7 @@
 			this.toolTip1.SetToolTip(this.checkBoxInitDirection_Inherit, "If checked, the parameter will be first initialized with your option of choice th" +
         "en it will inherit the value that was previosuly fitted");
 			this.checkBoxInitDirection_Inherit.UseVisualStyleBackColor = true;
-			this.checkBoxInitDirection_Inherit.CheckedChanged += new System.EventHandler(this.checkBoxInit_StartSmall_CheckedChanged);
+			this.checkBoxInitDirection_Inherit.CheckedChanged += new System.EventHandler(this.checkBoxInitDirection_Inherit_CheckedChanged);
 			// 
 			// label10
 			// 
@@ -959,6 +1057,7 @@
 			// panel3
 			// 
 			this.panel3.Controls.Add(this.floatTrackbarControlInit_CustomRoughness);
+			this.panel3.Controls.Add(this.radioButtonInitRoughness_NoChange);
 			this.panel3.Controls.Add(this.radioButtonInitRoughness_UseSurface);
 			this.panel3.Controls.Add(this.checkBoxInitRoughness_Inherit);
 			this.panel3.Controls.Add(this.radioButtonInitRoughness_Custom);
@@ -981,6 +1080,18 @@
 			this.floatTrackbarControlInit_CustomRoughness.TabIndex = 2;
 			this.floatTrackbarControlInit_CustomRoughness.Value = 0.5F;
 			this.floatTrackbarControlInit_CustomRoughness.VisibleRangeMax = 1F;
+			this.floatTrackbarControlInit_CustomRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_CustomRoughness_ValueChanged);
+			// 
+			// radioButtonInitRoughness_NoChange
+			// 
+			this.radioButtonInitRoughness_NoChange.AutoSize = true;
+			this.radioButtonInitRoughness_NoChange.Location = new System.Drawing.Point(105, 48);
+			this.radioButtonInitRoughness_NoChange.Name = "radioButtonInitRoughness_NoChange";
+			this.radioButtonInitRoughness_NoChange.Size = new System.Drawing.Size(139, 17);
+			this.radioButtonInitRoughness_NoChange.TabIndex = 0;
+			this.radioButtonInitRoughness_NoChange.Text = "No Change from Current";
+			this.radioButtonInitRoughness_NoChange.UseVisualStyleBackColor = true;
+			this.radioButtonInitRoughness_NoChange.CheckedChanged += new System.EventHandler(this.radioButtonInitRoughness_CheckedChanged);
 			// 
 			// radioButtonInitRoughness_UseSurface
 			// 
@@ -993,6 +1104,7 @@
 			this.radioButtonInitRoughness_UseSurface.TabStop = true;
 			this.radioButtonInitRoughness_UseSurface.Text = "Surface Roughness";
 			this.radioButtonInitRoughness_UseSurface.UseVisualStyleBackColor = true;
+			this.radioButtonInitRoughness_UseSurface.CheckedChanged += new System.EventHandler(this.radioButtonInitRoughness_CheckedChanged);
 			// 
 			// checkBoxInitRoughness_Inherit
 			// 
@@ -1007,7 +1119,7 @@
 			this.toolTip1.SetToolTip(this.checkBoxInitRoughness_Inherit, "If checked, the parameter will be first initialized with your option of choice th" +
         "en it will inherit the value that was previosuly fitted");
 			this.checkBoxInitRoughness_Inherit.UseVisualStyleBackColor = true;
-			this.checkBoxInitRoughness_Inherit.CheckedChanged += new System.EventHandler(this.checkBoxInit_StartSmall_CheckedChanged);
+			this.checkBoxInitRoughness_Inherit.CheckedChanged += new System.EventHandler(this.checkBoxInitRoughness_Inherit_CheckedChanged);
 			// 
 			// radioButtonInitRoughness_Custom
 			// 
@@ -1017,7 +1129,7 @@
 			this.radioButtonInitRoughness_Custom.Size = new System.Drawing.Size(14, 13);
 			this.radioButtonInitRoughness_Custom.TabIndex = 0;
 			this.radioButtonInitRoughness_Custom.UseVisualStyleBackColor = true;
-			this.radioButtonInitRoughness_Custom.CheckedChanged += new System.EventHandler(this.radioButtonInit_UseCustomRoughness_CheckedChanged);
+			this.radioButtonInitRoughness_Custom.CheckedChanged += new System.EventHandler(this.radioButtonInitRoughness_CheckedChanged);
 			// 
 			// label9
 			// 
@@ -1059,6 +1171,7 @@
 			this.radioButtonLobe_GGX.TabIndex = 0;
 			this.radioButtonLobe_GGX.Text = "GGX";
 			this.radioButtonLobe_GGX.UseVisualStyleBackColor = true;
+			this.radioButtonLobe_GGX.CheckedChanged += new System.EventHandler(this.LobeTypeCheckChanged);
 			// 
 			// radioButtonLobe_Beckmann
 			// 
@@ -1070,6 +1183,7 @@
 			this.radioButtonLobe_Beckmann.TabIndex = 0;
 			this.radioButtonLobe_Beckmann.Text = "Beckmann";
 			this.radioButtonLobe_Beckmann.UseVisualStyleBackColor = true;
+			this.radioButtonLobe_Beckmann.CheckedChanged += new System.EventHandler(this.LobeTypeCheckChanged);
 			// 
 			// radioButtonLobe_ModifiedPhong
 			// 
@@ -1082,6 +1196,16 @@
 			this.radioButtonLobe_ModifiedPhong.TabStop = true;
 			this.radioButtonLobe_ModifiedPhong.Text = "Modified Phong";
 			this.radioButtonLobe_ModifiedPhong.UseVisualStyleBackColor = true;
+			this.radioButtonLobe_ModifiedPhong.CheckedChanged += new System.EventHandler(this.LobeTypeCheckChanged);
+			// 
+			// label30
+			// 
+			this.label30.AutoSize = true;
+			this.label30.Location = new System.Drawing.Point(619, 630);
+			this.label30.Name = "label30";
+			this.label30.Size = new System.Drawing.Size(106, 13);
+			this.label30.TabIndex = 1;
+			this.label30.Text = "View albedo/F0 slice";
 			// 
 			// panel1
 			// 
@@ -1137,6 +1261,15 @@
 			this.radioButtonSurfaceTypeConductor.Text = "Conductor";
 			this.radioButtonSurfaceTypeConductor.UseVisualStyleBackColor = true;
 			this.radioButtonSurfaceTypeConductor.CheckedChanged += new System.EventHandler(this.radioButtonSurfaceType_CheckedChanged);
+			// 
+			// label29
+			// 
+			this.label29.AutoSize = true;
+			this.label29.Location = new System.Drawing.Point(619, 604);
+			this.label29.Name = "label29";
+			this.label29.Size = new System.Drawing.Size(106, 13);
+			this.label29.TabIndex = 1;
+			this.label29.Text = "View scattering order";
 			// 
 			// groupBox4
 			// 
@@ -1301,6 +1434,13 @@
 			this.fileToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
 			this.fileToolStripMenuItem.Text = "&Settings";
 			// 
+			// newToolStripMenuItem
+			// 
+			this.newToolStripMenuItem.Name = "newToolStripMenuItem";
+			this.newToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+			this.newToolStripMenuItem.Text = "&New";
+			this.newToolStripMenuItem.Click += new System.EventHandler(this.newToolStripMenuItem_Click);
+			// 
 			// openToolStripMenuItem
 			// 
 			this.openToolStripMenuItem.Name = "openToolStripMenuItem";
@@ -1396,12 +1536,21 @@
 			this.saveFileDialogResults.Filter = "Result Files (*.xml)|*.xml|All Files|*.*";
 			this.saveFileDialogResults.Title = "Choose an XML results file to save";
 			// 
-			// newToolStripMenuItem
+			// completionArrayControl
 			// 
-			this.newToolStripMenuItem.Name = "newToolStripMenuItem";
-			this.newToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-			this.newToolStripMenuItem.Text = "&New";
-			this.newToolStripMenuItem.Click += new System.EventHandler(this.newToolStripMenuItem_Click);
+			this.completionArrayControl.BackColor = System.Drawing.SystemColors.ControlLight;
+			this.completionArrayControl.ContextMenuStrip = this.contextMenuStripSelection;
+			this.completionArrayControl.GridColor = System.Drawing.Color.Black;
+			this.completionArrayControl.Location = new System.Drawing.Point(0, 558);
+			this.completionArrayControl.Name = "completionArrayControl";
+			this.completionArrayControl.SelectedState = 1F;
+			this.completionArrayControl.SelectedX = 0;
+			this.completionArrayControl.SelectedY = 0;
+			this.completionArrayControl.SelectedZ = 0;
+			this.completionArrayControl.Size = new System.Drawing.Size(616, 155);
+			this.completionArrayControl.TabIndex = 3;
+			this.completionArrayControl.SelectionChanged += new TestMSBSDF.CompletionArrayControl.SelectionChangedEventHandler(this.completionArrayControl_SelectionChanged);
+			this.completionArrayControl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.completionArrayControl_MouseDoubleClick);
 			// 
 			// AutomationForm
 			// 
@@ -1418,8 +1567,8 @@
 			this.Name = "AutomationForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Text = "Automation Form";
-			this.groupBox1.ResumeLayout(false);
-			this.groupBox1.PerformLayout();
+			this.groupBoxSimulationParameters.ResumeLayout(false);
+			this.groupBoxSimulationParameters.PerformLayout();
 			this.panel6.ResumeLayout(false);
 			this.panel6.PerformLayout();
 			this.panel5.ResumeLayout(false);
@@ -1427,6 +1576,8 @@
 			this.panelIncidentAngle.ResumeLayout(false);
 			this.panelIncidentAngle.PerformLayout();
 			this.panelParameters.ResumeLayout(false);
+			this.panelParameters.PerformLayout();
+			this.contextMenuStripSelection.ResumeLayout(false);
 			this.groupBox2.ResumeLayout(false);
 			this.groupBoxCustomInitialGuesses.ResumeLayout(false);
 			this.panel9.ResumeLayout(false);
@@ -1454,7 +1605,7 @@
 
 		#endregion
 
-		private System.Windows.Forms.GroupBox groupBox1;
+		private System.Windows.Forms.GroupBox groupBoxSimulationParameters;
 		private System.Windows.Forms.Panel panelParameters;
 		private System.Windows.Forms.Panel panel1;
 		private System.Windows.Forms.Label label1;
@@ -1478,7 +1629,7 @@
 		private System.Windows.Forms.RadioButton radioButtonLobe_Beckmann;
 		private System.Windows.Forms.RadioButton radioButtonLobe_ModifiedPhong;
 		private System.Windows.Forms.GroupBox groupBoxCustomInitialGuesses;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_StartSmallFactor;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_Scale;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_Flatten;
 		private System.Windows.Forms.RadioButton radioButtonInitRoughness_UseSurface;
 		private System.Windows.Forms.Label label9;
@@ -1564,5 +1715,17 @@
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlRayCastingIterations;
 		private System.Windows.Forms.Label labelTotalRaysCount;
 		private System.Windows.Forms.ToolStripMenuItem newToolStripMenuItem;
+		private System.Windows.Forms.RadioButton radioButtonInitMasking_NoChange;
+		private System.Windows.Forms.RadioButton radioButtonInitFlatten_NoChange;
+		private System.Windows.Forms.RadioButton radioButtonInitRoughness_NoChange;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlViewScatteringOrder;
+		private System.Windows.Forms.Label label29;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlViewAlbedoSlice;
+		private System.Windows.Forms.Label label30;
+		private System.Windows.Forms.ContextMenuStrip contextMenuStripSelection;
+		private System.Windows.Forms.ToolStripMenuItem computeToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem startFromHereToolStripMenuItem;
+		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
+		private System.Windows.Forms.ToolStripMenuItem clearToolStripMenuItem;
 	}
 }
