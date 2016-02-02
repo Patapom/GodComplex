@@ -693,6 +693,7 @@ namespace TestMSBSDF
 
 		bool			m_computing = false;
 		bool			m_isReflectedLobe = true;
+		Results.Result.LobeParameters	m_currentFittedResult = null;
 
 		Results			m_document = null;
 		Results.Result	m_selectedResult = null;		// Current selection
@@ -781,6 +782,7 @@ namespace TestMSBSDF
 		void	PerformLobeFitting( Results.Result _result, bool _reflected ) {
 
 			m_isReflectedLobe = _reflected;	// Global flag for current fitting
+			m_currentFittedResult = _reflected ? _result.m_reflected : _result.m_refracted;
 
 			// Read back histogram to CPU for fitting
 			Texture2D	Tex_SimulatedLobeHistogram = m_owner.GetSimulationHistogram( _reflected );
@@ -957,7 +959,7 @@ namespace TestMSBSDF
 
 		void m_surface_ScatteringOrdersCountChanged()
 		{
-			throw new NotImplementedException();
+//			throw new NotImplementedException();
 			//@TODO: Update 
 		}
 
@@ -1025,6 +1027,15 @@ namespace TestMSBSDF
 		}
 
 		void m_lobeModel_ParametersChanged( double[] _parameters ) {
+
+			// Store new parameters
+			m_currentFittedResult.m_theta = _parameters[0];
+			m_currentFittedResult.m_roughness = _parameters[1];
+			m_currentFittedResult.m_scale = _parameters[2];
+			m_currentFittedResult.m_flatten = _parameters[3];
+			m_currentFittedResult.m_masking = _parameters[4];
+
+			// Update 3D rendering
 			m_owner.UpdateLobeParameters( _parameters, m_isReflectedLobe );
 		}
 
